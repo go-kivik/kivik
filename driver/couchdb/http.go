@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 const jsonType = "application/json"
 
-func (c *client) getJSON(url string, i interface{}) error {
-	fullURL := c.url(url)
+func (c *client) getJSON(url string, i interface{}, query url.Values) error {
+	fullURL := c.url(url, query)
 	fmt.Printf("URL = %s\n", fullURL)
 	req, err := http.NewRequest("GET", fullURL, nil)
 	if err != nil {

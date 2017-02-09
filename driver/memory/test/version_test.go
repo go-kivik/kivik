@@ -5,17 +5,16 @@ import (
 	"testing"
 
 	"github.com/flimzy/kivik"
-	_ "github.com/flimzy/kivik/driver/couchdb"
+	_ "github.com/flimzy/kivik/driver/memory"
 )
 
-const TestServer = "https://kivik.cloudant.com/"
-const TestServerAuth = "https://kivik:K1v1k123@kivik.cloudant.com/"
-const ExpectedVersion = "2.0.0"
+const TestServer = "memdb"
+const ExpectedVersion = "0.0.1"
 
 func TestVersion(t *testing.T) {
-	s, err := kivik.New("couch", TestServer)
+	s, err := kivik.New("memory", TestServer)
 	if err != nil {
-		t.Fatalf("Error connecting to " + TestServer)
+		t.Fatalf("Error connecting to %s: %s\n", TestServer, err)
 	}
 	version, err := s.Version()
 	if err != nil {
@@ -26,12 +25,12 @@ func TestVersion(t *testing.T) {
 	}
 }
 
-var ExpectedAllDBs = []string{"_replicator", "_users"}
+var ExpectedAllDBs = []string{}
 
 func TestAllDBs(t *testing.T) {
-	s, err := kivik.New("couch", TestServerAuth)
+	s, err := kivik.New("memory", TestServer)
 	if err != nil {
-		t.Fatalf("Error connecting to " + TestServerAuth)
+		t.Fatalf("Error connecting to %s: %s\n", TestServer, err)
 	}
 	allDBs, err := s.AllDBs()
 	if err != nil {
@@ -43,7 +42,7 @@ func TestAllDBs(t *testing.T) {
 }
 
 func TestUUIDs(t *testing.T) {
-	s, err := kivik.New("couch", TestServer)
+	s, err := kivik.New("memory", TestServer)
 	if err != nil {
 		t.Fatalf("Error connecting to %s: %s\n", TestServer, err)
 	}

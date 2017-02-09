@@ -27,6 +27,13 @@ type Client interface {
 	// OpenDB(name string) (DB, error)
 }
 
+// UUIDer is an optional interface that may be implemented by a Client. Generally,
+// this should not be used, but it is part of the CouchDB spec, so it is included
+// for completeness.
+type UUIDer interface {
+	UUIDs(count int) ([]string, error)
+}
+
 // DB is a database handle.
 type DB interface {
 	// AllDocs()

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/flimzy/kivik"
@@ -36,7 +37,7 @@ func init() {
 }
 
 type client struct {
-	baseURL  string
+	baseURL  *url.URL
 	authUser string
 	authPass string
 	client   *http.Client
@@ -44,8 +45,13 @@ type client struct {
 
 var _ driver.Client = &client{}
 
-func (c *client) url(path string) string {
-	return c.baseURL + "/" + strings.TrimLeft(path, "/")
+func (c *client) url(path string, query url.Values) string {
+	myURL := *c.baseURL // Make a copy
+	myURL.Path = myURL.Path + strings.TrimLeft(path, "/")
+	if query != nil {
+		myURL.RawQuery = query.Encode()
+	}
+	return myURL.String()
 }
 
 // NewClient establishes a new connection to a CouchDB server instance. If
@@ -70,7 +76,7 @@ func (c *Couch) NewClient(urlstring string) (driver.Client, error) {
 	}
 	u.RawQuery, u.Fragment = "", ""
 	return &client{
-		baseURL:  strings.TrimRight(u.String(), "/"),
+		baseURL:  u,
 		client:   httpClient,
 		authUser: user,
 		authPass: pass,
@@ -85,6 +91,8 @@ type info struct {
 		Version string `json:"version"`
 	} `json:"vendor"`
 }
+
+var _ driver.ServerInfo = &info{}
 
 func (i *info) UnmarshalJSON(data []byte) error {
 	type alias info
@@ -105,10 +113,20 @@ func (i *info) Vendor() string            { return i.Vend.Name }
 // ServerInfo returns the server's version info.
 func (c *client) ServerInfo() (driver.ServerInfo, error) {
 	i := &info{}
-	return i, c.getJSON("/", i)
+	return i, c.getJSON("/", i, nil)
 }
 
 func (c *client) AllDBs() ([]string, error) {
 	var allDBs []string
-	return allDBs, c.getJSON("/_all_dbs", &allDBs)
+	return allDBs, c.getJSON("/_all_dbs", &allDBs, nil)
+}
+
+func (c *client) UUIDs(count int) ([]string, error) {
+	var uuids struct {
+		UUIDs []string `json:"uuids"`
+	}
+	err := c.getJSON("/_uuids", &uuids, url.Values{
+		"count": []string{strconv.Itoa(count)},
+	})
+	return uuids.UUIDs, err
 }

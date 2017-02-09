@@ -34,6 +34,12 @@ type UUIDer interface {
 	UUIDs(count int) ([]string, error)
 }
 
+// Cluster is an optional interface that may be implemented by a Client for
+// servers that support clustering operations (specifically CouchDB 2.0)
+type Cluster interface {
+	Membership() (allNodes []string, clusterNodes []string, err error)
+}
+
 // DB is a database handle.
 type DB interface {
 	// AllDocs()

@@ -2,7 +2,6 @@
 package kivik
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/flimzy/kivik/driver"
@@ -59,5 +58,15 @@ func (c *Client) UUIDs(count int) ([]string, error) {
 	if uuider, ok := c.driverClient.(driver.UUIDer); ok {
 		return uuider.UUIDs(count)
 	}
-	return nil, errors.New("kivik: UUIDs() not implemented by driver")
+	return nil, NotImplemented
+}
+
+// Membership returns the list of nodes that are part of the cluster as
+// clusterNodes, and all known nodes, including cluster nodes, as allNodes.
+// Not all servers or clients will support this method.
+func (c *Client) Membership() (allNodes []string, clusterNodes []string, err error) {
+	if cluster, ok := c.driverClient.(driver.Cluster); ok {
+		return cluster.Membership()
+	}
+	return nil, nil, NotImplemented
 }

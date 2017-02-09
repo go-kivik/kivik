@@ -130,3 +130,12 @@ func (c *client) UUIDs(count int) ([]string, error) {
 	})
 	return uuids.UUIDs, err
 }
+
+func (c *client) Membership() ([]string, []string, error) {
+	var membership struct {
+		All     []string `json:"all_nodes"`
+		Cluster []string `json:"cluster_nodes"`
+	}
+	err := c.getJSON("/_membership", &membership, nil)
+	return membership.All, membership.Cluster, err
+}

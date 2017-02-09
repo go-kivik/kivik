@@ -3,30 +3,77 @@ package couchdb
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
 )
 
-type couch struct{}
+// Couch represents the parent driver instance. The default driver uses a
+// default http.Client. To change the timeout or other attributes, register
+// a new instance with a custom HTTPClient value.
+//
+//    func init() {
+//        kivik.Register("myCouch", &couchdb.Couch{
+//            HTTPClient: &http.Client{Timeout: 15},
+//        })
+//    }
+//    // ... then later
+//    client, err := kivik("myCouch", ...)
+//
+type Couch struct {
+	HTTPClient *http.Client
+}
 
-var _ driver.Driver = &couch{}
+var _ driver.Driver = &Couch{}
 
 func init() {
-	kivik.Register("couch", &couch{})
+	kivik.Register("couch", &Couch{
+		HTTPClient: &http.Client{},
+	})
 }
 
-type server struct {
-	url string
+type client struct {
+	baseURL  string
+	authUser string
+	authPass string
+	client   *http.Client
 }
 
-var _ driver.Conn = &server{}
+var _ driver.Client = &client{}
 
-func (c *couch) Open(name string) (driver.Conn, error) {
-	return &server{
-		url: name,
+func (c *client) url(path string) string {
+	return c.baseURL + "/" + strings.TrimLeft(path, "/")
+}
+
+// NewClient establishes a new connection to a CouchDB server instance. If
+// auth credentials are included in the URL, they are used to make the
+// connection.
+func (c *Couch) NewClient(urlstring string) (driver.Client, error) {
+	u, err := url.Parse(urlstring)
+	if err != nil {
+		return nil, err
+	}
+	var user, pass string
+	if u.User != nil {
+		user = u.User.Username()
+		pass, _ = u.User.Password()
+	}
+	// Copy all the values, so multiple connections don't fight with each other.
+	httpClient := &http.Client{
+		Transport:     c.HTTPClient.Transport,
+		CheckRedirect: c.HTTPClient.CheckRedirect,
+		Jar:           c.HTTPClient.Jar,
+		Timeout:       c.HTTPClient.Timeout,
+	}
+	u.RawQuery, u.Fragment = "", ""
+	return &client{
+		baseURL:  strings.TrimRight(u.String(), "/"),
+		client:   httpClient,
+		authUser: user,
+		authPass: pass,
 	}, nil
 }
 
@@ -56,28 +103,12 @@ func (i *info) Version() string           { return i.Ver }
 func (i *info) Vendor() string            { return i.Vend.Name }
 
 // ServerInfo returns the server's version info.
-func (s *server) ServerInfo() (driver.ServerInfo, error) {
-	req, err := http.NewRequest("GET", s.url, nil)
-	if err != nil {
-		return nil, err
-	}
-	client := &http.Client{}
-	req.Header.Add("Accept", "application/json")
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Unexpected response: %d (%s)", resp.StatusCode, resp.Status)
-	}
-	if resp.Header.Get("Content-Type") != "application/json" {
-		return nil, fmt.Errorf("Got unexpected response content type of '%s'", resp.Header.Get("Content-Type"))
-	}
-	dec := json.NewDecoder(resp.Body)
-	defer resp.Body.Close()
+func (c *client) ServerInfo() (driver.ServerInfo, error) {
 	i := &info{}
-	if err := dec.Decode(&i); err != nil {
-		return nil, err
-	}
-	return i, nil
+	return i, c.getJSON("/", i)
+}
+
+func (c *client) AllDBs() ([]string, error) {
+	var allDBs []string
+	return allDBs, c.getJSON("/_all_dbs", &allDBs)
 }

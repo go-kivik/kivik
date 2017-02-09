@@ -4,9 +4,9 @@ import "encoding/json"
 
 // Driver is the interface that must be implemented by a database driver.
 type Driver interface {
-	// Open returns a connection handle to the database. The name is in a
+	// NewClient returns a connection handle to the database. The name is in a
 	// driver-specific format.
-	Open(name string) (Conn, error)
+	NewClient(name string) (Client, error)
 }
 
 // ServerInfo represents the response a server gives witha GET request to '/'.
@@ -19,10 +19,11 @@ type ServerInfo interface {
 	Vendor() string
 }
 
-// Conn is a connection to a database server.
-type Conn interface {
+// Client is a connection to a database server.
+type Client interface {
 	// VersionInfo returns the server implementation's details.
 	ServerInfo() (ServerInfo, error)
+	AllDBs() ([]string, error)
 	// OpenDB(name string) (DB, error)
 }
 
@@ -85,9 +86,9 @@ type Session interface {
 	// OpenDB(name string) (DB, error)
 }
 
-// Configer is an optional interface that may be implemented by a Conn.
+// Configer is an optional interface that may be implemented by a Client.
 //
-// If a Conn does implement Configer, it allows backend configuration
+// If a Client does implement Configer, it allows backend configuration
 // to be queried and modified via the API.
 type Configer interface {
 	// GetConfig() (map[string]interface{}, error)

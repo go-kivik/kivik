@@ -8,4 +8,4 @@ func (e kivikError) Error() string {
 
 // NotImplemented is returned as an error if the underlying driver does not
 // implement an optional method.
-const NotImplemented kivikError = "kivik: UUIDs() not implemented by driver"
+const NotImplemented kivikError = "kivik: method not implemented by driver"

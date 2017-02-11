@@ -69,3 +69,13 @@ func (c *Client) Membership() (allNodes []string, clusterNodes []string, err err
 	}
 	return nil, nil, NotImplemented
 }
+
+// Log reads the server log, if supported by the client driver. This method will
+// read up to len(buf) bytes of logs from the server, ending at offset bytes from
+// the end, placing the logs in buf. The number of read bytes will be returned.
+func (c *Client) Log(buf []byte, offset int) (int, error) {
+	if logger, ok := c.driverClient.(driver.Logger); ok {
+		return logger.Log(buf, offset)
+	}
+	return 0, NotImplemented
+}

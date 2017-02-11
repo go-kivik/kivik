@@ -34,6 +34,15 @@ type UUIDer interface {
 	UUIDs(count int) ([]string, error)
 }
 
+// Logger is an optional interface that may be implemented by a Client. When
+// implemented, the method should fill the passed buf []byte array with the most
+// recent server logs. If offset is present, offset bytes should be skipped at
+// the end of the log. The return value is the number of bytes read, up to
+// len(buf).
+type Logger interface {
+	Log(buf []byte, offset int) (int, error)
+}
+
 // Cluster is an optional interface that may be implemented by a Client for
 // servers that support clustering operations (specifically CouchDB 2.0)
 type Cluster interface {

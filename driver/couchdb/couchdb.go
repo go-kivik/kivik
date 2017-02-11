@@ -139,3 +139,11 @@ func (c *client) Membership() ([]string, []string, error) {
 	err := c.getJSON("/_membership", &membership, nil)
 	return membership.All, membership.Cluster, err
 }
+
+func (c *client) Log(buf []byte, offset int) (int, error) {
+	err := c.getText("_log", buf, url.Values{
+		"offset": []string{strconv.Itoa(offset)},
+		"bytes":  []string{strconv.Itoa(len(buf))},
+	})
+	return len(buf), err
+}

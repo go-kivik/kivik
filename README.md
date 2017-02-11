@@ -70,6 +70,9 @@ at all. My development goals are, in rough order of priority:
 1-4 are being done roughly in parallel, although the features of the various
 drivers are not entirely the same.
 
+You can see a complete overview of the current status on the
+[Compatibility chart](https://github.com/flimzy/kivik/blob/master/COMPATIBILITY.md)
+
 ## Why the name "Kivik"?
 
 [Kivik](http://www.ikea.com/us/en/catalog/categories/series/18329/) is a line

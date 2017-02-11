@@ -11,6 +11,7 @@ before_install:
 install:
     - go get -u github.com/gopherjs/gopherjs
     - go get github.com/pborman/uuid
+    - go get -u -d -tags=js github.com/gopherjs/jsbuiltin
     - go get -u gopkg.in/alecthomas/gometalinter.v1
     - gometalinter.v1 --install
 

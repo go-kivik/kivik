@@ -1,0 +1,14 @@
+{
+    "name": "kivik",
+    "version": "0.0.1",
+    "description": "Isomorphic Go and GopherJS client library for CouchDB & PouchDB",
+    "author": "Jonathan Hall <flimzy@flimzy.com>",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/flimzy/kivik"
+    },
+    "devDependencies": {
+        "pouchdb": ">=4.0.2",
+        "memdown": ">=1.1.0"
+    }
+}

@@ -1,4 +1,3 @@
-// Package kivik is an assemble-your-own CouchDB API, proxy, cache, and server..
 package kivik
 
 import (

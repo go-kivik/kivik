@@ -26,7 +26,12 @@ type Client interface {
 	AllDBs() ([]string, error)
 	// DBExists returns true if the database exists.
 	DBExists(dbName string) (bool, error)
-	// OpenDB(name string) (DB, error)
+	// CreateDB creates the requested DB. The dbName is validated as a valid
+	// CouchDB database name prior to calling this function, so the driver can
+	// assume a valid name.
+	CreateDB(dbName string) error
+	// DestroyDB deletes the requested DB.
+	DestroyDB(dbName string) error
 }
 
 // UUIDer is an optional interface that may be implemented by a Client. Generally,

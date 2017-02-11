@@ -155,3 +155,17 @@ func (c *client) DBExists(dbName string) (bool, error) {
 	}
 	return err == nil, err
 }
+
+func (c *client) CreateDB(dbName string) error {
+	var result struct {
+		OK bool `json:"ok"`
+	}
+	return c.putJSON(dbName, &result, nil)
+}
+
+func (c *client) DestroyDB(dbName string) error {
+	var result struct {
+		OK bool `json:"ok"`
+	}
+	return c.deleteJSON(dbName, &result, nil)
+}

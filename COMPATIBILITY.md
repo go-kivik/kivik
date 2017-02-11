@@ -31,8 +31,8 @@ Key:
 | DELETE /_config/{section}/{key}                            | ⌛ Not Yet   |                 | ⌛ Not Yet      |  ？ Unknown       | ？ Unknown
 | HEAD /{db}                                                 | ✅ Yes       | DBExists()      | ✅ Yes          |  ✅ Yes           | ✅ Yes
 | GET /{db}                                                  | ⌛ Not Yet   |                 | ⌛ Not Yet      |  ⌛ Not Yet       | ⌛ Not Yet
-| PUT /{db}                                                  | ⌛ Not Yet   |                 | ⌛ Not Yet      |  ⌛ Not Yet       | ⌛ Not Yet
-| DELETE /{db}                                               | ⌛ Not Yet   |                 | ⌛ Not Yet      |  ⌛ Not Yet       | ⌛ Not Yet
+| PUT /{db}                                                  | ✅ Yes       | CreateDB()      | ✅ Yes          |  ⌛ Not Yet       | ⌛ Not Yet
+| DELETE /{db}                                               | ✅ Yes       | DestroyDB()     | ✅ Yes          |  ⌛ Not Yet       | ⌛ Not Yet
 | POST /{db}                                                 | ⌛ Not Yet   |                 | ⌛ Not Yet      |  ⌛ Not Yet       | ⌛ Not Yet
 | GET /{db}/_all_docs                                        | ⌛ Not Yet   |                 | ⌛ Not Yet      |  ⌛ Not Yet       | ⌛ Not Yet
 | POST /{db}/_all_docs                                       | ⌛ Not Yet   |                 | ⌛ Not Yet      |  ⌛ Not Yet       | ⌛ Not Yet

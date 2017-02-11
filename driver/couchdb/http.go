@@ -47,14 +47,26 @@ func (c *client) makeRequest(method string, url string, query url.Values, accept
 	return resp, nil
 }
 
-func (c *client) getJSON(url string, i interface{}, query url.Values) error {
-	resp, err := c.makeRequest("GET", url, query, jsonType)
+func (c *client) doJSON(method, url string, i interface{}, query url.Values) error {
+	resp, err := c.makeRequest(method, url, query, jsonType)
 	if err != nil {
 		return err
 	}
 	dec := json.NewDecoder(resp.Body)
 	defer resp.Body.Close()
 	return dec.Decode(i)
+}
+
+func (c *client) getJSON(url string, i interface{}, query url.Values) error {
+	return c.doJSON(http.MethodGet, url, i, query)
+}
+
+func (c *client) putJSON(url string, i interface{}, query url.Values) error {
+	return c.doJSON(http.MethodPut, url, i, query)
+}
+
+func (c *client) deleteJSON(url string, i interface{}, query url.Values) error {
+	return c.doJSON(http.MethodDelete, url, i, query)
 }
 
 func (c *client) getText(url string, buf []byte, query url.Values) error {

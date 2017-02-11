@@ -1,7 +1,9 @@
 package kivik
 
 import (
+	"errors"
 	"fmt"
+	"regexp"
 
 	"github.com/flimzy/kivik/driver"
 )
@@ -78,4 +80,25 @@ func (c *Client) Log(buf []byte, offset int) (int, error) {
 		return logger.Log(buf, offset)
 	}
 	return 0, NotImplemented
+}
+
+// DBExists returns true if the specified database exists.
+func (c *Client) DBExists(dbName string) (bool, error) {
+	return c.driverClient.DBExists(dbName)
+}
+
+// Copied verbatim from http://docs.couchdb.org/en/2.0.0/api/database/common.html#head--db
+var validDBName = regexp.MustCompile("^[a-z][a-z0-9_$()+/-]*$")
+
+// CreateDB creates a DB of the requested name.
+func (c *Client) CreateDB(dbName string) error {
+	if !validDBName.MatchString(dbName) {
+		return errors.New("kivik: invalid database name")
+	}
+	return c.driverClient.CreateDB(dbName)
+}
+
+// DestroyDB deletes the requested DB.
+func (c *Client) DestroyDB(dbName string) error {
+	return c.driverClient.DestroyDB(dbName)
 }

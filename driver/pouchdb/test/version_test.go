@@ -4,14 +4,12 @@ import (
 	"testing"
 
 	"github.com/flimzy/kivik"
-	_ "github.com/flimzy/kivik/driver/pouchdb"
 )
 
-const TestServer = ""
 const ExpectedVersion = "6.1.2"
 
 func TestVersion(t *testing.T) {
-	s, err := kivik.New("pouchdb", TestServer)
+	s, err := kivik.New("memdown", TestServer)
 	if err != nil {
 		t.Fatalf("Error connecting to %s: %s\n", TestServer, err)
 	}

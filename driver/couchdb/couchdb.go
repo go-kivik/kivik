@@ -147,3 +147,25 @@ func (c *client) Log(buf []byte, offset int) (int, error) {
 	})
 	return len(buf), err
 }
+
+func (c *client) DBExists(dbName string) (bool, error) {
+	err := c.head(dbName, nil)
+	if StatusCode(err) == http.StatusNotFound {
+		return false, nil
+	}
+	return err == nil, err
+}
+
+func (c *client) CreateDB(dbName string) error {
+	var result struct {
+		OK bool `json:"ok"`
+	}
+	return c.putJSON(dbName, &result, nil)
+}
+
+func (c *client) DestroyDB(dbName string) error {
+	var result struct {
+		OK bool `json:"ok"`
+	}
+	return c.deleteJSON(dbName, &result, nil)
+}

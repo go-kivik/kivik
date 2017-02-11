@@ -20,6 +20,14 @@ func (e *HTTPError) Error() string {
 	return fmt.Sprintf("HTTP Error: %s: %s", e.Status, e.Reason)
 }
 
+// StatusCode returns the status code of the error.
+func StatusCode(err error) int {
+	if httperr, ok := err.(*HTTPError); ok {
+		return httperr.StatusCode
+	}
+	return 0
+}
+
 // ResponseError returns an error from the HTTP response.
 func ResponseError(resp *http.Response) error {
 	if resp.StatusCode < 300 {

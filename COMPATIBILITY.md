@@ -9,11 +9,11 @@ Key:
 - ？ Unknown : This feature has not been implemented, and no determination has yet been made on the feasibility of implementing it.
 
 | API endpoint                                               | Implemented? | Kivik method(s) | CouchDB Driver | PouchDB Driver     | Memory Driver | Notes
-| --------------------------------------------------------|--------------|-----------------|----------------|--------------------|---------------|---
+| -----------------------------------------------------------|--------------|-----------------|----------------|--------------------|---------------|---
 | GET /                                                      | ☑️ partial   | Version()       | ✅ Yes          | ✅ Emulated        | ✅ Yes
 | GET /_active_tasks                                         | ⌛ Not Yet   |                 | ⌛ Not Yet      | ⌛ Not Yet         | ⌛ Not Yet
-| GET /_all_dbs                                              | ✅ Yes       | AllDBs()        | ✅ Yes          | ✅ Yes (w/ plugin) | ✅ Yes
-| GET /_db_updates                                           | ⌛ Not Yet   |                 | ⌛ Not Yet      | ⌛ Not Yet         |
+| GET /_all_dbs                                              | ✅ Yes       | AllDBs()        | ✅ Yes          | ✅ Yes (w/ plugin) | ✅ Yes        | Unit tests broken in PouchDB due to an [apparent bug](https://github.com/nolanlawson/pouchdb-all-dbs/issues/25) in the pouchdb-all-dbs plugin.
+| GET /_db_updates                                           | ⌛ Not Yet   |                 | ⌛ Not Yet      | ⌛ Not Yet         | ⌛ Not Yet
 | GET /_log                                                  | ✅ Yes       | Log()           | ✅ Yes          | ⁿ̷ₐ Not Applicable  | ⌛ Not Yet
 | GET /_replicate                                            | ⌛ Not Yet   |                 | ⌛ Not Yet      | ⌛ Not Yet         | ⌛ Not Yet
 | GET /_restart                                              | ⌛ Not Yet   |                 | ⌛ Not Yet      | ⁿ̷ₐ Not Applicable  | ⌛ Not Yet
@@ -29,10 +29,10 @@ Key:
 | GET /_config/{section}/{key}                               | ⌛ Not Yet   |                 | ⌛ Not Yet      |  ？ Unknown       | ？ Unknown
 | PUT /_config/{section}/{key}                               | ⌛ Not Yet   |                 | ⌛ Not Yet      |  ？ Unknown       | ？ Unknown
 | DELETE /_config/{section}/{key}                            | ⌛ Not Yet   |                 | ⌛ Not Yet      |  ？ Unknown       | ？ Unknown
-| HEAD /{db}                                                 | ⌛ Not Yet   |                 | ⌛ Not Yet      |  ⌛ Not Yet       | ⌛ Not Yet
+| HEAD /{db}                                                 | ✅ Yes       | DBExists()      | ✅ Yes          |  ✅ Yes*          | ✅ Yes      | *PouchDB offers no way to check the existence of a local database, so this operation creates the database.
 | GET /{db}                                                  | ⌛ Not Yet   |                 | ⌛ Not Yet      |  ⌛ Not Yet       | ⌛ Not Yet
-| PUT /{db}                                                  | ⌛ Not Yet   |                 | ⌛ Not Yet      |  ⌛ Not Yet       | ⌛ Not Yet
-| DELETE /{db}                                               | ⌛ Not Yet   |                 | ⌛ Not Yet      |  ⌛ Not Yet       | ⌛ Not Yet
+| PUT /{db}                                                  | ✅ Yes       | CreateDB()      | ✅ Yes          |  ✅ Yes*          | ✅ Yes      | *PouchDB offers no way to check the existence of a local database, so this operation will never fail if the database already exists
+| DELETE /{db}                                               | ✅ Yes       | DestroyDB()     | ✅ Yes          |  ✅ Yes*          | ✅ Yes      | *PouchDb offers no way to check the existence of a local database, so this operation will never fail if the database does not exist
 | POST /{db}                                                 | ⌛ Not Yet   |                 | ⌛ Not Yet      |  ⌛ Not Yet       | ⌛ Not Yet
 | GET /{db}/_all_docs                                        | ⌛ Not Yet   |                 | ⌛ Not Yet      |  ⌛ Not Yet       | ⌛ Not Yet
 | POST /{db}/_all_docs                                       | ⌛ Not Yet   |                 | ⌛ Not Yet      |  ⌛ Not Yet       | ⌛ Not Yet

@@ -3,11 +3,13 @@ package memory
 
 import (
 	"encoding/json"
+	"net/http"
 
 	"github.com/pborman/uuid"
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
+	"github.com/flimzy/kivik/errors"
 )
 
 type memDriver struct{}
@@ -28,7 +30,9 @@ type client struct {
 var _ driver.Client = &client{}
 
 func (d *memDriver) NewClient(name string) (driver.Client, error) {
-	return &client{}, nil
+	return &client{
+		dbs: make(map[string]database),
+	}, nil
 }
 
 type serverInfo struct {
@@ -67,4 +71,25 @@ func (c *client) UUIDs(count int) ([]string, error) {
 		uuids[i] = uuid.New()
 	}
 	return uuids, nil
+}
+
+func (c *client) DBExists(dbName string) (bool, error) {
+	_, ok := c.dbs[dbName]
+	return ok, nil
+}
+
+func (c *client) CreateDB(dbName string) error {
+	if exists, _ := c.DBExists(dbName); exists {
+		return errors.Status(http.StatusPreconditionFailed, "database exists")
+	}
+	c.dbs[dbName] = database{}
+	return nil
+}
+
+func (c *client) DestroyDB(dbName string) error {
+	if exists, _ := c.DBExists(dbName); !exists {
+		return errors.Status(http.StatusNotFound, "database not found")
+	}
+	delete(c.dbs, dbName)
+	return nil
 }

@@ -18,4 +18,12 @@ func TestDBExists(t *testing.T) {
 	if exists {
 		t.Errorf("DB should not exist")
 	}
+	// FIXME: Uncomment this once it's possible to create a database
+	// exists, err = s.DBExists("_users")
+	// if err != nil {
+	// 	t.Fatalf("Failed to check DB existence: %s", err)
+	// }
+	// if !exists {
+	// 	t.Errorf("DB '_users' should exist")
+	// }
 }

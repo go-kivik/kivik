@@ -25,5 +25,4 @@ func TestDBExists(t *testing.T) {
 	if !exists {
 		t.Errorf("DB '_users' should exist")
 	}
-
 }

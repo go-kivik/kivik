@@ -147,3 +147,11 @@ func (c *client) Log(buf []byte, offset int) (int, error) {
 	})
 	return len(buf), err
 }
+
+func (c *client) DBExists(dbName string) (bool, error) {
+	err := c.head(dbName, nil)
+	if StatusCode(err) == http.StatusNotFound {
+		return false, nil
+	}
+	return err == nil, err
+}

@@ -79,3 +79,8 @@ func (c *Client) Log(buf []byte, offset int) (int, error) {
 	}
 	return 0, NotImplemented
 }
+
+// DBExists returns true if the specified database exists.
+func (c *Client) DBExists(dbName string) (bool, error) {
+	return c.driverClient.DBExists(dbName)
+}

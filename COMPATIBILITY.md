@@ -29,7 +29,7 @@ Key:
 | GET /_config/{section}/{key}                               | ⌛ Not Yet   |                 | ⌛ Not Yet      |  ？ Unknown       | ？ Unknown
 | PUT /_config/{section}/{key}                               | ⌛ Not Yet   |                 | ⌛ Not Yet      |  ？ Unknown       | ？ Unknown
 | DELETE /_config/{section}/{key}                            | ⌛ Not Yet   |                 | ⌛ Not Yet      |  ？ Unknown       | ？ Unknown
-| HEAD /{db}                                                 | ⌛ Not Yet   |                 | ⌛ Not Yet      |  ⌛ Not Yet       | ⌛ Not Yet
+| HEAD /{db}                                                 | ✅ Yes       | DBExists()      | ⌛ Not Yet      |  ⌛ Not Yet       | ✅ Yes
 | GET /{db}                                                  | ⌛ Not Yet   |                 | ⌛ Not Yet      |  ⌛ Not Yet       | ⌛ Not Yet
 | PUT /{db}                                                  | ⌛ Not Yet   |                 | ⌛ Not Yet      |  ⌛ Not Yet       | ⌛ Not Yet
 | DELETE /{db}                                               | ⌛ Not Yet   |                 | ⌛ Not Yet      |  ⌛ Not Yet       | ⌛ Not Yet

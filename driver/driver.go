@@ -24,6 +24,8 @@ type Client interface {
 	// VersionInfo returns the server implementation's details.
 	ServerInfo() (ServerInfo, error)
 	AllDBs() ([]string, error)
+	// DBExists returns true if the database exists.
+	DBExists(dbName string) (bool, error)
 	// OpenDB(name string) (DB, error)
 }
 

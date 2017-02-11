@@ -68,3 +68,8 @@ func (c *client) UUIDs(count int) ([]string, error) {
 	}
 	return uuids, nil
 }
+
+func (c *client) DBExists(dbName string) (bool, error) {
+	_, ok := c.dbs[dbName]
+	return ok, nil
+}

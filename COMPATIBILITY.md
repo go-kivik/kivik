@@ -12,7 +12,7 @@ Key:
 | --------------------------------------------------------|--------------|-----------------|----------------|--------------------|---------------|---
 | GET /                                                      | ☑️ partial   | Version()       | ✅ Yes          | ✅ Emulated        | ✅ Yes
 | GET /_active_tasks                                         | ⌛ Not Yet   |                 | ⌛ Not Yet      | ⌛ Not Yet         | ⌛ Not Yet
-| GET /_all_dbs                                              | ✅ Yes       | AllDBs()        | ✅ Yes          | ✅ Yes (w/ plugin) | ✅ Yes
+| GET /_all_dbs                                              | ✅ Yes       | AllDBs()        | ✅ Yes          | ✅ Yes (w/ plugin) | ✅ Yes        | Unit tests broken in PouchDB due to an [apparent bug](https://github.com/nolanlawson/pouchdb-all-dbs/issues/25) in the pouchdb-all-dbs plugin.
 | GET /_db_updates                                           | ⌛ Not Yet   |                 | ⌛ Not Yet      | ⌛ Not Yet         |
 | GET /_log                                                  | ✅ Yes       | Log()           | ✅ Yes          | ⁿ̷ₐ Not Applicable  | ⌛ Not Yet
 | GET /_replicate                                            | ⌛ Not Yet   |                 | ⌛ Not Yet      | ⌛ Not Yet         | ⌛ Not Yet

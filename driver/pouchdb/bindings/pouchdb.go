@@ -34,7 +34,7 @@ func Defaults(options map[string]interface{}) *PouchDB {
 //
 // See https://pouchdb.com/api.html#create_database
 func (p *PouchDB) New(dbName string, options map[string]interface{}) *DB {
-	return p.New(dbName, options)
+	return &DB{Object: p.Object.New(dbName, options)}
 }
 
 // Version returns the version of the currently running PouchDB library.
@@ -85,4 +85,18 @@ func (db *DB) Info() (*DBInfo, error) {
 	})
 	info := <-resultCh
 	return info, err
+}
+
+// Destroy destroys the database.
+func (db *DB) Destroy(options map[string]interface{}) error {
+	resultCh := make(chan *js.Object)
+	var err error
+	db.Call("destroy", options, func(e, r *js.Object) {
+		if e != nil {
+			err = &js.Error{Object: e}
+		}
+		resultCh <- r
+	})
+	_ = <-resultCh
+	return err
 }

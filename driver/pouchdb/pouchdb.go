@@ -2,12 +2,13 @@ package pouchdb
 
 import (
 	"encoding/json"
-	"fmt"
+	"net/http"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/driver/pouchdb/bindings"
+	"github.com/flimzy/kivik/errors"
+	"github.com/gopherjs/gopherjs/js"
 )
 
 // Driver represents the configuration for a PouchDB driver. You may specify
@@ -91,10 +92,31 @@ func (c *client) ServerInfo() (driver.ServerInfo, error) {
 	}, nil
 }
 
-// DBExists returns true if the requested DB exists.
+// DBExists returns true if the requested DB exists. This function only works
+// for remote databases. For local databases, it creates the database. Silly
+// PouchDB.
 func (c *client) DBExists(dbName string) (bool, error) {
-	info, err := c.pouch.New(dbName, map[string]interface{}{"skip_setup": true}).Info()
-	spew.Dump(info)
-	fmt.Printf("err = %s\n", err)
-	return err == nil, err
+	_, err := c.pouch.New(dbName, map[string]interface{}{"skip_setup": true}).Info()
+	if err == nil {
+		return true, nil
+	}
+	if jsObs, ok := err.(*js.Error); ok {
+		if jsObs.Get("status").Int() == http.StatusNotFound {
+			return false, nil
+		}
+	}
+	return false, err
+}
+
+func (c *client) CreateDB(dbName string) error {
+	_, err := c.pouch.New(dbName, nil).Info()
+	return err
+}
+
+func (c *client) DestroyDB(dbName string) error {
+	if exists, _ := c.DBExists(dbName); !exists {
+		// This will only ever do anything for a remote database
+		return errors.Status(http.StatusNotFound, "database does not exist")
+	}
+	return c.pouch.New(dbName, nil).Destroy(nil)
 }

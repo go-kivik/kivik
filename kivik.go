@@ -35,10 +35,9 @@ func New(driverName, dataSourceName string) (*Client, error) {
 	}, nil
 }
 
-// Version returns the reported server version
-func (c *Client) Version() (string, error) {
-	si, err := c.driverClient.ServerInfo()
-	return si.Version(), err
+// ServerInfo returns version and vendor info about the backend.
+func (c *Client) ServerInfo() (driver.ServerInfo, error) {
+	return c.driverClient.ServerInfo()
 }
 
 // DB returns a handle to the requested database. No validation is done at

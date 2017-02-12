@@ -41,16 +41,12 @@ type serverInfo struct {
 var _ driver.ServerInfo = &serverInfo{}
 
 func (i *serverInfo) Response() json.RawMessage {
-	return []byte(`{"couchdb":"Welcome","uuid":"a176f89954c3ddba7aa592d712c25140","version":"0.0.1","vendor":{"name":"Kivik Memory Adaptor","version":"0.0.1"}}`)
+	return []byte(`{"couchdb":"Welcome","version":"0.0.1","vendor":{"name":"Kivik Memory Adaptor","version":"0.0.1"}}`)
 }
 
-func (i *serverInfo) Vendor() string {
-	return "Kivik"
-}
-
-func (i *serverInfo) Version() string {
-	return "0.0.1"
-}
+func (i *serverInfo) Vendor() string        { return "Kivik Memory Adaptor" }
+func (i *serverInfo) Version() string       { return "0.0.1" }
+func (i *serverInfo) VendorVersion() string { return "0.0.1" }
 
 // ServerInfo returns the server info for this driver.
 func (c *client) ServerInfo() (driver.ServerInfo, error) {

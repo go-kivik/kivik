@@ -83,8 +83,9 @@ func (i *pouchInfo) Response() json.RawMessage {
 	})
 	return data
 }
-func (i *pouchInfo) Vendor() string  { return "PouchDB" }
-func (i *pouchInfo) Version() string { return i.vers }
+func (i *pouchInfo) Vendor() string        { return "PouchDB" }
+func (i *pouchInfo) Version() string       { return i.vers }
+func (i *pouchInfo) VendorVersion() string { return i.vers }
 
 func (c *client) ServerInfo() (driver.ServerInfo, error) {
 	return &pouchInfo{

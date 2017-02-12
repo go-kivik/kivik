@@ -17,6 +17,8 @@ type ServerInfo interface {
 	Version() string
 	// Vendor should return the name of the vendor.
 	Vendor() string
+	// VendorVersion should return the vendor version number.
+	VendorVersion() string
 }
 
 // Client is a connection to a database server.

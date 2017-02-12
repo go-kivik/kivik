@@ -7,8 +7,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	_ "github.com/flimzy/kivik/driver/couchdb"
 	_ "github.com/flimzy/kivik/driver/memory"
 	"github.com/flimzy/kivik/serve"
+	"github.com/flimzy/kivik/test"
 )
 
 func main() {
@@ -18,33 +20,37 @@ func main() {
 	flagQuiet := pflag.Lookup("quiet")
 
 	cmdServe := &cobra.Command{
-		Use:   "serve [options]",
-		Short: "serve",
+		Use:   "serve",
+		Short: "Start a Kivik test server",
 	}
 	cmdServe.Flags().AddFlag(flagVerbose)
 	cmdServe.Flags().AddFlag(flagQuiet)
-	var addr string
-	cmdServe.Flags().StringVarP(&addr, "http", "", ":5984", "HTTP bind address to serve")
+	var listenAddr string
+	cmdServe.Flags().StringVarP(&listenAddr, "http", "", ":5984", "HTTP bind address to serve")
 	var driver string
 	cmdServe.Flags().StringVarP(&driver, "driver", "d", "memory", "Backend driver to use")
 	var dsn string
 	cmdServe.Flags().StringVarP(&dsn, "dsn", "", "", "Data source name")
 	cmdServe.Run = func(cmd *cobra.Command, args []string) {
-		fmt.Printf("Serving on %s\n", addr)
-		service := serve.New(driver, dsn)
-		err := service.Start(addr)
-		fmt.Println(err)
+		fmt.Printf("Listening on %s\n", listenAddr)
+		fmt.Println(serve.New(driver, dsn).Start(listenAddr))
 		os.Exit(1)
 	}
 
 	cmdTest := &cobra.Command{
-		Use:   "test [options] [server]",
+		Use:   "test",
 		Short: "Run the test suite against the remote server",
 	}
 	cmdTest.Flags().AddFlag(flagVerbose)
 	cmdTest.Flags().AddFlag(flagQuiet)
+	cmdTest.Flags().StringVarP(&dsn, "dsn", "", "", "Data source name")
+	var tests []string
+	cmdTest.Flags().StringSliceVarP(&tests, "test", "", []string{"auto"}, "List of tests to run")
 	cmdTest.Run = func(cmd *cobra.Command, args []string) {
-		fmt.Printf("Test [%s]\n", args)
+		if err := test.Test("couch", dsn, tests); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 	}
 
 	rootCmd := &cobra.Command{

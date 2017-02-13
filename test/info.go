@@ -7,8 +7,9 @@ import (
 )
 
 var versionREs = map[string]*regexp.Regexp{
-	SuiteCouch:   regexp.MustCompile(`^1\.\d\.\d$`),
-	SuiteCouch20: regexp.MustCompile(`^2\.0\.0$`),
+	SuiteCouch:       regexp.MustCompile(`^1\.\d\.\d$`),
+	SuiteCouch20:     regexp.MustCompile(`^2\.0\.0$`),
+	SuiteKivikServer: regexp.MustCompile(`^1\.6\.1$`),
 }
 
 var vendorNames = map[string]string{
@@ -17,6 +18,7 @@ var vendorNames = map[string]string{
 	SuiteCouch20:     "The Apache Software Foundation",
 	SuiteKivikMemory: "Kivik Memory Adaptor",
 	SuitePouch:       "PouchDB",
+	SuiteKivikServer: "Kivik",
 }
 
 var vendorVersionREs = map[string]*regexp.Regexp{
@@ -25,6 +27,7 @@ var vendorVersionREs = map[string]*regexp.Regexp{
 	SuiteCouch20:     regexp.MustCompile(`^2\.0\.0$`),
 	SuiteKivikMemory: regexp.MustCompile(`^\d\.\d\.\d$`),
 	SuiteCloudant:    regexp.MustCompile(`^\d\d\d\d$`),
+	SuiteKivikServer: regexp.MustCompile(`^0\.0\.1$`),
 }
 
 func init() {

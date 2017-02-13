@@ -13,5 +13,5 @@ func TestMemory(t *testing.T) {
 		t.Errorf("Failed to connect to memory driver: %s", err)
 		return
 	}
-	runSubTests(client, []string{SuiteKivikMemory}, t)
+	RunSubtests(client, []string{SuiteKivikMemory}, t)
 }

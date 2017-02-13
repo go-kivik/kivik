@@ -19,6 +19,7 @@ const (
 	SuiteCouch20     = "couch2.0"
 	SuiteKivikMemory = "kivikmemory"
 	SuiteCloudant    = "cloudant"
+	SuiteKivikServer = "kivikserver"
 )
 
 // AllSuites is a list of all defined suites.
@@ -72,7 +73,7 @@ func mainTest(driver, dsn string, testSuites []string, t *testing.T) {
 		testSuites = append(testSuites, test)
 	}
 	fmt.Printf("Going to run the following test suites: %s\n", strings.Join(testSuites, ", "))
-	runSubTests(client, testSuites, t)
+	RunSubtests(client, testSuites, t)
 }
 
 func detectCompatibility(client *kivik.Client) ([]string, error) {
@@ -112,7 +113,8 @@ func RegisterTest(suite, name string, fn testFunc) {
 // FailFunc is passed to each test, and should be called whenever a test fails.
 type FailFunc func(format string, args ...interface{})
 
-func runSubTests(client *kivik.Client, suites []string, t *testing.T) {
+// RunSubtests executes the requested suites of tests against the client.
+func RunSubtests(client *kivik.Client, suites []string, t *testing.T) {
 	for _, suite := range suites {
 		for name, fn := range tests[suite] {
 			t.Run(name, func(t *testing.T) {

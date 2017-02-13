@@ -2,7 +2,10 @@
 // meaningful errors.
 package errors
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 // StatusError is an error message bundled with an HTTP status code.
 type StatusError struct {
@@ -12,6 +15,12 @@ type StatusError struct {
 
 func (se *StatusError) Error() string {
 	return fmt.Sprintf("error status %d: %s", se.StatusCode, se.Message)
+}
+
+// New is a wrapper around the standard errors.New, to avoid the need for
+// multiple imports.
+func New(msg string) error {
+	return errors.New(msg)
 }
 
 // Status returns a new error with the designated HTTP status.

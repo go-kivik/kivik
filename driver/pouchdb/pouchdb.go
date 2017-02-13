@@ -137,8 +137,6 @@ func (c *client) DBExists(dbName string) (bool, error) {
 }
 
 func (c *client) CreateDB(dbName string) error {
-	dburl := c.dbURL(dbName)
-	fmt.Printf("going to create %s\n", dburl)
 	_, err := c.pouch.New(c.dbURL(dbName), nil).Info()
 	return err
 }

@@ -1,22 +1,13 @@
 package test
 
-import (
-	"fmt"
-	"math/rand"
-	"time"
-
-	"github.com/flimzy/kivik"
-)
+import "github.com/flimzy/kivik"
 
 func init() {
-	for _, suite := range []string{SuiteMinimal, SuitePouch, SuiteCouch, SuiteCouch20, SuiteKivikMemory, SuiteCloudant, SuiteKivikServer} {
+	for _, suite := range []string{SuiteMinimal, SuitePouch, SuiteCouch, SuiteCouch20, SuiteKivikMemory, SuiteCloudant} { // FIXME: SuiteKivikServer
 		RegisterTest(suite, "AllDBs", false, AllDBs)
 		RegisterTest(suite, "AllDBsRW", true, AllDBsRW)
 	}
-	rnd = rand.New(rand.NewSource(time.Now().UnixNano()))
 }
-
-var rnd *rand.Rand
 
 // AllDBs tests the '/_all_dbs' endpoint.
 func AllDBs(client *kivik.Client, suite string, fail FailFunc) {
@@ -47,7 +38,7 @@ func AllDBs(client *kivik.Client, suite string, fail FailFunc) {
 
 // AllDBsRW tests the '/_all_dbs' endpoint in RW mode.
 func AllDBsRW(client *kivik.Client, suite string, fail FailFunc) {
-	testDB := fmt.Sprintf("kivik$%d", rnd.Int63())
+	testDB := testDBName()
 	if err := client.CreateDB(testDB); err != nil {
 		fail("Failed to create test DB '%s': %s", testDB, err)
 		return

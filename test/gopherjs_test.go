@@ -9,7 +9,7 @@ import (
 	"github.com/gopherjs/gopherjs/js"
 
 	"github.com/flimzy/kivik"
-	_ "github.com/flimzy/kivik/driver/pouchdb"
+	"github.com/flimzy/kivik/driver/pouchdb"
 )
 
 func init() {

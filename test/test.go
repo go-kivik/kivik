@@ -2,10 +2,12 @@ package test
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/flimzy/kivik"
 )
@@ -22,6 +24,16 @@ const (
 	SuiteCloudant    = "cloudant"
 	SuiteKivikServer = "kivikserver"
 )
+
+var rnd *rand.Rand
+
+func init() {
+	rnd = rand.New(rand.NewSource(time.Now().UnixNano()))
+}
+
+func testDBName() string {
+	return fmt.Sprintf("kivik$%d", rnd.Int63())
+}
 
 // AllSuites is a list of all defined suites.
 var AllSuites = []string{SuiteMinimal, SuitePouch, SuitePouchRemote, SuiteCouch, SuiteCouch20, SuiteKivikMemory, SuiteCloudant, SuiteKivikServer}

@@ -4,7 +4,7 @@ import "github.com/flimzy/kivik"
 
 func init() {
 	for _, suite := range []string{SuiteCouch, SuiteCouch20, SuiteCloudant, SuiteKivikMemory} { // FIXME: SuiteKivikServer,
-		RegisterTest(suite, "UUIDs", UUIDs)
+		RegisterTest(suite, "UUIDs", false, UUIDs)
 	}
 }
 

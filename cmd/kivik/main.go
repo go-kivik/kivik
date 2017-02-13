@@ -48,6 +48,8 @@ func main() {
 	cmdTest.Flags().BoolVarP(&listTests, "list", "l", false, "List available tests")
 	var run string
 	cmdTest.Flags().StringVarP(&run, "run", "", "", "Run only those tests matching the regular expression")
+	var rw bool
+	cmdTest.Flags().BoolVarP(&rw, "write", "w", false, "Allow tests which write to the database")
 	cmdTest.Run = func(cmd *cobra.Command, args []string) {
 		if listTests {
 			test.ListTests()
@@ -62,7 +64,7 @@ func main() {
 		if verbose {
 			flag.Set("test.v", "true")
 		}
-		test.RunTests("couch", dsn, tests, run)
+		test.RunTests("couch", dsn, rw, tests, run)
 	}
 
 	rootCmd := &cobra.Command{

@@ -15,7 +15,7 @@ func TestMemory(t *testing.T) {
 		t.Errorf("Failed to connect to memory driver: %s\n", err)
 		return
 	}
-	RunSubtests(client, []string{SuiteKivikMemory}, t)
+	RunSubtests(client, true, []string{SuiteKivikMemory}, t)
 }
 
 func TestCloudant(t *testing.T) {
@@ -28,7 +28,7 @@ func TestCloudant(t *testing.T) {
 		t.Errorf("Failed to connect to cloudant: %s\n", err)
 		return
 	}
-	RunSubtests(client, []string{SuiteCloudant}, t)
+	RunSubtests(client, true, []string{SuiteCloudant}, t)
 }
 
 func TestCouch16(t *testing.T) {
@@ -41,7 +41,7 @@ func TestCouch16(t *testing.T) {
 		t.Errorf("Failed to connect to CouchDB 1.6: %s\n", err)
 		return
 	}
-	RunSubtests(client, []string{SuiteCouch}, t)
+	RunSubtests(client, true, []string{SuiteCouch}, t)
 }
 
 func TestCouch20(t *testing.T) {
@@ -54,5 +54,5 @@ func TestCouch20(t *testing.T) {
 		t.Errorf("Failed to connect to CouchDB 2.0: %s\n", err)
 		return
 	}
-	RunSubtests(client, []string{SuiteCouch20}, t)
+	RunSubtests(client, true, []string{SuiteCouch20}, t)
 }

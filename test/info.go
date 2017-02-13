@@ -6,6 +6,12 @@ import (
 	"github.com/flimzy/kivik"
 )
 
+func init() {
+	for _, suite := range AllSuites {
+		RegisterTest(suite, "ServerInfo", false, ServerInfo)
+	}
+}
+
 var versionREs = map[string]*regexp.Regexp{
 	SuiteCouch:       regexp.MustCompile(`^1\.\d\.\d$`),
 	SuiteCouch20:     regexp.MustCompile(`^2\.0\.0$`),
@@ -28,12 +34,6 @@ var vendorVersionREs = map[string]*regexp.Regexp{
 	SuiteKivikMemory: regexp.MustCompile(`^\d\.\d\.\d$`),
 	SuiteCloudant:    regexp.MustCompile(`^\d\d\d\d$`),
 	SuiteKivikServer: regexp.MustCompile(`^0\.0\.1$`),
-}
-
-func init() {
-	for _, suite := range AllSuites {
-		RegisterTest(suite, "ServerInfo", ServerInfo)
-	}
 }
 
 // ServerInfo tests the '/' endpoint

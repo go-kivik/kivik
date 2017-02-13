@@ -9,9 +9,12 @@ before_install:
     - npm install
 
 install:
+    # Normal Go deps
+    - go get github.com/pborman/uuid github.com/dimfeld/httptreemux
+    # GopherJS deps
     - go get -u github.com/gopherjs/gopherjs
-    - go get github.com/pborman/uuid
     - go get -u -d -tags=js github.com/gopherjs/jsbuiltin
+    # Linter
     - go get -u gopkg.in/alecthomas/gometalinter.v1
     - gometalinter.v1 --install
 

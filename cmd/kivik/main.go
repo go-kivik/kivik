@@ -46,8 +46,10 @@ func main() {
 	cmdTest.Flags().StringVarP(&dsn, "dsn", "", "", "Data source name")
 	var tests []string
 	cmdTest.Flags().StringSliceVarP(&tests, "test", "", []string{"auto"}, "List of tests to run")
+	var run string
+	cmdTest.Flags().StringVarP(&run, "run", "", "", "Run only those tests matching the regular expression")
 	cmdTest.Run = func(cmd *cobra.Command, args []string) {
-		if err := test.Test("couch", dsn, tests); err != nil {
+		if err := test.RunTests("couch", dsn, tests, run); err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}

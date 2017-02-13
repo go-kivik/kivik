@@ -5,9 +5,9 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"testing"
 
 	"github.com/flimzy/kivik"
-	"github.com/pkg/errors"
 )
 
 // The available test suites
@@ -24,16 +24,33 @@ const (
 // AllSuites is a list of all defined suites.
 var AllSuites = []string{SuiteMinimal, SuitePouch, SuiteCouch, SuiteCouch20, SuiteKivikMemory, SuiteCloudant}
 
-// RunTests runs the requested test suites against the requested driver and DSN.
-func RunTests(driver, dsn string, testSuites []string, run string) error {
-	runRE, err := regexp.Compile(run)
-	if err != nil {
-		return err
+// ListTests prints a list of available test suites to stdout.
+func ListTests() {
+	fmt.Printf("Available test suites:\n\tauto\n")
+	for _, suite := range AllSuites {
+		fmt.Printf("\t%s\n", suite)
 	}
+}
+
+// RunTests runs the requested test suites against the requested driver and DSN.
+func RunTests(driver, dsn string, testSuites []string, run string) {
+	internalTests := []testing.InternalTest{
+		testing.InternalTest{
+			Name: "Main",
+			F: func(t *testing.T) {
+				mainTest(driver, dsn, testSuites, t)
+			},
+		},
+	}
+	m := testing.MainStart(regexp.MatchString, internalTests, nil, nil)
+	os.Exit(m.Run())
+}
+
+func mainTest(driver, dsn string, testSuites []string, t *testing.T) {
 	fmt.Printf("Connecting to %s ...\n", dsn)
 	client, err := kivik.New(driver, dsn)
 	if err != nil {
-		return err
+		t.Fatalf("Failed to connect to %s (%s driver): %s\n", dsn, driver, err)
 	}
 	tests := make(map[string]struct{})
 	for _, test := range testSuites {
@@ -41,13 +58,13 @@ func RunTests(driver, dsn string, testSuites []string, run string) error {
 	}
 	if _, ok := tests[SuiteAuto]; ok {
 		fmt.Printf("Detecting target service compatibility...\n")
-		t, err := detectCompatibility(client)
+		suites, err := detectCompatibility(client)
 		if err != nil {
-			return errors.Wrap(err, "failed to determine server compatibility")
+			t.Fatalf("Unable to determine server suite compatibility: %s\n", err)
 		}
 		tests = make(map[string]struct{})
-		for _, test := range t {
-			tests[test] = struct{}{}
+		for _, suite := range suites {
+			tests[suite] = struct{}{}
 		}
 	}
 	testSuites = make([]string, 0, len(tests))
@@ -55,11 +72,7 @@ func RunTests(driver, dsn string, testSuites []string, run string) error {
 		testSuites = append(testSuites, test)
 	}
 	fmt.Printf("Going to run the following test suites: %s\n", strings.Join(testSuites, ", "))
-	if result := testMain(client, testSuites, runRE); result > 0 {
-		fmt.Println("FAILED")
-		os.Exit(result)
-	}
-	return nil
+	runSubTests(client, testSuites, t)
 }
 
 func detectCompatibility(client *kivik.Client) ([]string, error) {
@@ -99,24 +112,38 @@ func RegisterTest(suite, name string, fn testFunc) {
 // FailFunc is passed to each test, and should be called whenever a test fails.
 type FailFunc func(format string, args ...interface{})
 
-func testMain(client *kivik.Client, suites []string, runRE *regexp.Regexp) int {
-	var failed bool
+func runSubTests(client *kivik.Client, suites []string, t *testing.T) {
 	for _, suite := range suites {
 		for name, fn := range tests[suite] {
-			if !runRE.MatchString(name) {
-				continue
-			}
-			fail := func(format string, args ...interface{}) {
-				format = fmt.Sprintf("[%s] %s: %s\n", suite, name, strings.TrimSpace(format))
-				fmt.Printf(format, args...)
-				failed = true
-
-			}
-			fn(client, suite, fail)
+			t.Run(name, func(t *testing.T) {
+				fail := func(format string, args ...interface{}) {
+					format = fmt.Sprintf("[%s] %s: %s\n", suite, name, strings.TrimSpace(format))
+					t.Errorf(format, args...)
+				}
+				fn(client, suite, fail)
+			})
 		}
 	}
-	if failed {
-		return 1
+}
+
+func gatherTests(client *kivik.Client, suites []string) []testing.InternalTest {
+	internalTests := make([]testing.InternalTest, 0)
+	for _, suite := range suites {
+		for name, fn := range tests[suite] {
+			// if !runRE.MatchString(name) {
+			// 	continue
+			// }
+			internalTests = append(internalTests, testing.InternalTest{
+				Name: name,
+				F: func(t *testing.T) {
+					fail := func(format string, args ...interface{}) {
+						format = fmt.Sprintf("[%s] %s: %s\n", suite, name, strings.TrimSpace(format))
+						t.Errorf(format, args...)
+					}
+					fn(client, suite, fail)
+				},
+			})
+		}
 	}
-	return 0
+	return internalTests
 }

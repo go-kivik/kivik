@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 
@@ -14,17 +15,15 @@ import (
 )
 
 func main() {
-	pflag.BoolP("verbose", "v", false, "Verbose output")
+	var verbose bool
+	pflag.BoolVarP(&verbose, "verbose", "v", false, "Verbose output")
 	flagVerbose := pflag.Lookup("verbose")
-	pflag.BoolP("quiet", "q", false, "Supress non-fatal warnings")
-	flagQuiet := pflag.Lookup("quiet")
 
 	cmdServe := &cobra.Command{
 		Use:   "serve",
 		Short: "Start a Kivik test server",
 	}
 	cmdServe.Flags().AddFlag(flagVerbose)
-	cmdServe.Flags().AddFlag(flagQuiet)
 	var listenAddr string
 	cmdServe.Flags().StringVarP(&listenAddr, "http", "", ":5984", "HTTP bind address to serve")
 	var driver string
@@ -38,21 +37,32 @@ func main() {
 	}
 
 	cmdTest := &cobra.Command{
-		Use:   "test",
+		Use:   "test [Remote Server DSN]",
 		Short: "Run the test suite against the remote server",
 	}
 	cmdTest.Flags().AddFlag(flagVerbose)
-	cmdTest.Flags().AddFlag(flagQuiet)
-	cmdTest.Flags().StringVarP(&dsn, "dsn", "", "", "Data source name")
+	// cmdTest.Flags().StringVarP(&dsn, "dsn", "", "", "Data source name")
 	var tests []string
 	cmdTest.Flags().StringSliceVarP(&tests, "test", "", []string{"auto"}, "List of tests to run")
+	var listTests bool
+	cmdTest.Flags().BoolVarP(&listTests, "list", "l", false, "List available tests")
 	var run string
 	cmdTest.Flags().StringVarP(&run, "run", "", "", "Run only those tests matching the regular expression")
 	cmdTest.Run = func(cmd *cobra.Command, args []string) {
-		if err := test.RunTests("couch", dsn, tests, run); err != nil {
-			fmt.Println(err)
+		if listTests {
+			test.ListTests()
+			os.Exit(0)
+		}
+		if len(args) != 1 {
+			cmd.Usage()
 			os.Exit(1)
 		}
+		dsn := args[0]
+		flag.Set("test.run", run)
+		if verbose {
+			flag.Set("test.v", "true")
+		}
+		test.RunTests("couch", dsn, tests, run)
 	}
 
 	rootCmd := &cobra.Command{

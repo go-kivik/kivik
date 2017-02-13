@@ -23,7 +23,7 @@ const (
 )
 
 // AllSuites is a list of all defined suites.
-var AllSuites = []string{SuiteMinimal, SuitePouch, SuiteCouch, SuiteCouch20, SuiteKivikMemory, SuiteCloudant}
+var AllSuites = []string{SuiteMinimal, SuitePouch, SuiteCouch, SuiteCouch20, SuiteKivikMemory, SuiteCloudant, SuiteKivikServer}
 
 // ListTests prints a list of available test suites to stdout.
 func ListTests() {

@@ -142,9 +142,13 @@ func (c *client) CreateDB(dbName string) error {
 }
 
 func (c *client) DestroyDB(dbName string) error {
-	if exists, _ := c.DBExists(c.dbURL(dbName)); !exists {
+	exists, err := c.DBExists(dbName)
+	if err != nil {
+		return err
+	}
+	if !exists {
 		// This will only ever do anything for a remote database
 		return errors.Status(http.StatusNotFound, "database does not exist")
 	}
-	return c.pouch.New(dbName, nil).Destroy(nil)
+	return c.pouch.New(c.dbURL(dbName), nil).Destroy(nil)
 }

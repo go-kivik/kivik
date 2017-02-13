@@ -32,7 +32,7 @@ func init() {
 }
 
 func testDBName() string {
-	return fmt.Sprintf("kivik$%d", rnd.Int63())
+	return fmt.Sprintf("kivik$%016x", rnd.Int63())
 }
 
 // AllSuites is a list of all defined suites.

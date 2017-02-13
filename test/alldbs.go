@@ -9,10 +9,8 @@ import (
 )
 
 func init() {
-	for _, suite := range AllSuites {
+	for _, suite := range []string{SuiteMinimal, SuitePouch, SuiteCouch, SuiteCouch20, SuiteKivikMemory, SuiteCloudant, SuiteKivikServer} {
 		RegisterTest(suite, "AllDBs", false, AllDBs)
-	}
-	for _, suite := range AllSuites {
 		RegisterTest(suite, "AllDBsRW", true, AllDBsRW)
 	}
 	rnd = rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -25,7 +23,7 @@ func AllDBs(client *kivik.Client, suite string, fail FailFunc) {
 	var expected []string
 
 	switch suite {
-	case SuiteCouch, SuiteCloudant, SuiteCouch20:
+	case SuitePouchRemote, SuiteCouch, SuiteCloudant, SuiteCouch20:
 		expected = []string{"_replicator", "_users"}
 	}
 	allDBs, err := client.AllDBs()

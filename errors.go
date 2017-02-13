@@ -21,3 +21,9 @@ const NotImplemented kivikError = "kivik: method not implemented by driver"
 func ErrNotFound(err error) bool {
 	return errors.StatusCode(err) == http.StatusNotFound
 }
+
+// ErrForbidden returns true if the error is the result of an HTTP 403/Forbidden
+// response.
+func ErrForbidden(err error) bool {
+	return errors.StatusCode(err) == http.StatusForbidden
+}

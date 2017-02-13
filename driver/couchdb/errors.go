@@ -3,14 +3,15 @@ package couchdb
 import (
 	"encoding/json"
 	"fmt"
+	"mime"
 	"net/http"
 )
 
 // HTTPError is an error that represents an HTTP transport error.
 type HTTPError struct {
-	StatusCode int
-	Status     string
-	Reason     string `json:"reason"`
+	Code   int
+	Status string
+	Reason string `json:"reason"`
 }
 
 func (e *HTTPError) Error() string {
@@ -20,10 +21,15 @@ func (e *HTTPError) Error() string {
 	return fmt.Sprintf("HTTP Error: %s: %s", e.Status, e.Reason)
 }
 
+// StatusCode returns the embedded status code.
+func (e *HTTPError) StatusCode() int {
+	return e.Code
+}
+
 // StatusCode returns the status code of the error.
 func StatusCode(err error) int {
 	if httperr, ok := err.(*HTTPError); ok {
-		return httperr.StatusCode
+		return httperr.Code
 	}
 	return 0
 }
@@ -33,12 +39,17 @@ func ResponseError(resp *http.Response) error {
 	if resp.StatusCode < 300 {
 		return nil
 	}
-	err := &HTTPError{}
-	dec := json.NewDecoder(resp.Body)
-	if err := dec.Decode(err); err != nil {
-		fmt.Printf("Failed to decode error response: %s", err)
+	httpErr := &HTTPError{}
+	if resp.Request.Method != "HEAD" && resp.ContentLength > 0 {
+		if cType, _, _ := mime.ParseMediaType(resp.Header.Get("Content-Type")); cType == jsonType {
+			dec := json.NewDecoder(resp.Body)
+			defer resp.Body.Close()
+			if err := dec.Decode(httpErr); err != nil {
+				fmt.Printf("Failed to decode error response: %s\n", err)
+			}
+		}
 	}
-	err.StatusCode = resp.StatusCode
-	err.Status = resp.Status
-	return err
+	httpErr.Code = resp.StatusCode
+	httpErr.Status = resp.Status
+	return httpErr
 }

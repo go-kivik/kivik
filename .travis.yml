@@ -23,4 +23,4 @@ script:
     - go install # to make gotype (run by gometalinter) happy
     - gometalinter.v1
     - go test $(go list ./... | grep -v pouchdb)
-    - gopherjs test $(go list ./... | grep pouchdb)
+    - gopherjs test github.com/flimzy/kivik/test

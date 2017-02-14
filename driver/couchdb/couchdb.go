@@ -109,6 +109,7 @@ func (i *info) UnmarshalJSON(data []byte) error {
 func (i *info) Response() json.RawMessage { return i.Data }
 func (i *info) Version() string           { return i.Ver }
 func (i *info) Vendor() string            { return i.Vend.Name }
+func (i *info) VendorVersion() string     { return i.Vend.Version }
 
 // ServerInfo returns the server's version info.
 func (c *client) ServerInfo() (driver.ServerInfo, error) {

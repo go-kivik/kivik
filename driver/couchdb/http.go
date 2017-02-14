@@ -3,6 +3,7 @@ package couchdb
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"mime"
 	"net/http"
 	"net/url"
@@ -72,9 +73,13 @@ func (c *client) deleteJSON(url string, i interface{}, query url.Values) error {
 func (c *client) getText(url string, buf []byte, query url.Values) error {
 	resp, err := c.makeRequest("GET", url, query, textType)
 	if err != nil {
+		fmt.Printf("err: %s\n", err)
 		return err
 	}
 	_, err = resp.Body.Read(buf)
+	if err == nil || err == io.EOF {
+		return nil
+	}
 	return err
 }
 

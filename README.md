@@ -71,7 +71,7 @@ at all. My development goals are, in rough order of priority:
 drivers are not entirely the same.
 
 You can see a complete overview of the current status on the
-[Compatibility chart](https://github.com/flimzy/kivik/blob/master/COMPATIBILITY.md)
+[Compatibility chart](https://github.com/flimzy/kivik/blob/master/doc/COMPATIBILITY.md)
 
 ## Why the name "Kivik"?
 

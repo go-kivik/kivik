@@ -2,7 +2,10 @@ package pouchdb
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
@@ -41,8 +44,17 @@ func init() {
 	kivik.Register("pouch", &Driver{})
 }
 
-// NewClient returns a PouchDB client handle. The connection string is ignored.
-func (d *Driver) NewClient(_ string) (driver.Client, error) {
+// NewClient returns a PouchDB client handle. Provide a dsn only for remote
+// databases. Otherwise specify ""
+func (d *Driver) NewClient(dsn string) (driver.Client, error) {
+	var baseURL *url.URL
+	if dsn != "" {
+		var err error
+		baseURL, err = url.Parse(dsn)
+		if err != nil {
+			return nil, fmt.Errorf("Invalid DSN URL '%s' provided: %s", dsn, err)
+		}
+	}
 	var pouch *bindings.PouchDB
 	if d.Defaults == nil {
 		pouch = bindings.GlobalPouchDB()
@@ -50,11 +62,13 @@ func (d *Driver) NewClient(_ string) (driver.Client, error) {
 		pouch = bindings.Defaults(d.Defaults)
 	}
 	return &client{
+		dsn:   baseURL,
 		pouch: pouch,
 	}, nil
 }
 
 type client struct {
+	dsn   *url.URL
 	pouch *bindings.PouchDB
 }
 
@@ -63,7 +77,10 @@ var _ driver.Client = &client{}
 // AllDBs returns the list of all existing databases. This function depends on
 // the pouchdb-all-dbs plugin being loaded.
 func (c *client) AllDBs() ([]string, error) {
-	return c.pouch.AllDBs()
+	if c.dsn == nil {
+		return c.pouch.AllDBs()
+	}
+	return nil, errors.New("AllDBs() not implemented for remote PouchDB databases")
 }
 
 type pouchInfo struct {
@@ -83,8 +100,9 @@ func (i *pouchInfo) Response() json.RawMessage {
 	})
 	return data
 }
-func (i *pouchInfo) Vendor() string  { return "PouchDB" }
-func (i *pouchInfo) Version() string { return i.vers }
+func (i *pouchInfo) Vendor() string        { return "PouchDB" }
+func (i *pouchInfo) Version() string       { return i.vers }
+func (i *pouchInfo) VendorVersion() string { return i.vers }
 
 func (c *client) ServerInfo() (driver.ServerInfo, error) {
 	return &pouchInfo{
@@ -92,11 +110,21 @@ func (c *client) ServerInfo() (driver.ServerInfo, error) {
 	}, nil
 }
 
+func (c *client) dbURL(db string) string {
+	if c.dsn == nil {
+		// No transformation for local databases
+		return db
+	}
+	myURL := *c.dsn // Make a copy
+	myURL.Path = myURL.Path + strings.TrimLeft(db, "/")
+	return myURL.String()
+}
+
 // DBExists returns true if the requested DB exists. This function only works
 // for remote databases. For local databases, it creates the database. Silly
 // PouchDB.
 func (c *client) DBExists(dbName string) (bool, error) {
-	_, err := c.pouch.New(dbName, map[string]interface{}{"skip_setup": true}).Info()
+	_, err := c.pouch.New(c.dbURL(dbName), map[string]interface{}{"skip_setup": true}).Info()
 	if err == nil {
 		return true, nil
 	}
@@ -109,14 +137,18 @@ func (c *client) DBExists(dbName string) (bool, error) {
 }
 
 func (c *client) CreateDB(dbName string) error {
-	_, err := c.pouch.New(dbName, nil).Info()
+	_, err := c.pouch.New(c.dbURL(dbName), nil).Info()
 	return err
 }
 
 func (c *client) DestroyDB(dbName string) error {
-	if exists, _ := c.DBExists(dbName); !exists {
+	exists, err := c.DBExists(dbName)
+	if err != nil {
+		return err
+	}
+	if !exists {
 		// This will only ever do anything for a remote database
 		return errors.Status(http.StatusNotFound, "database does not exist")
 	}
-	return c.pouch.New(dbName, nil).Destroy(nil)
+	return c.pouch.New(c.dbURL(dbName), nil).Destroy(nil)
 }

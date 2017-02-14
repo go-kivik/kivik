@@ -57,8 +57,8 @@ type ContextKey string
 
 // ContextKeys are used to store values in the context passed to HTTP handlers.
 const (
-	ClientContextKey ContextKey = "kivik client"
-	ClientServiceKey ContextKey = "kivik service"
+	ClientContextKey  ContextKey = "kivik client"
+	ServiceContextKey ContextKey = "kivik service"
 )
 
 // Server returns an unstarted server instance.
@@ -69,17 +69,28 @@ func (s *Service) Server() (http.Handler, error) {
 	}
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, ClientContextKey, client)
-	ctx = context.WithValue(ctx, ClientServiceKey, s)
+	ctx = context.WithValue(ctx, ServiceContextKey, s)
 	router := httptreemux.New()
 	router.DefaultContext = ctx
 	ctxRoot := router.UsingContext()
 	ctxRoot.Handler(http.MethodGet, "/", handler(root))
+	ctxRoot.Handler(http.MethodGet, "/_all_dbs", handler(allDBs))
+	ctxRoot.Handler(http.MethodPut, "/:db", handler(createDB))
 	return router, nil
 }
 
 func getService(r *http.Request) *Service {
-	service, _ := r.Context().Value(ClientServiceKey).(*Service)
+	service, _ := r.Context().Value(ServiceContextKey).(*Service)
 	return service
+}
+
+func getClient(r *http.Request) *kivik.Client {
+	client, _ := r.Context().Value(ClientContextKey).(*kivik.Client)
+	return client
+}
+
+func getParams(r *http.Request) map[string]string {
+	return httptreemux.ContextParams(r.Context())
 }
 
 type vendorInfo struct {
@@ -137,5 +148,27 @@ func root(w http.ResponseWriter, r *http.Request) error {
 			Name:    vendName,
 			Version: vendVers,
 		},
+	})
+}
+
+func allDBs(w http.ResponseWriter, r *http.Request) error {
+	w.Header().Set("Content-Type", jsonType)
+	client := getClient(r)
+	dbs, err := client.AllDBs()
+	if err != nil {
+		return err
+	}
+	return json.NewEncoder(w).Encode(dbs)
+}
+
+func createDB(w http.ResponseWriter, r *http.Request) error {
+	w.Header().Set("Content-Type", jsonType)
+	params := getParams(r)
+	client := getClient(r)
+	if err := client.CreateDB(params["db"]); err != nil {
+		return err
+	}
+	return json.NewEncoder(w).Encode(map[string]interface{}{
+		"ok": true,
 	})
 }

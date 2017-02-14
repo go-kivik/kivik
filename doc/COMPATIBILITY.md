@@ -21,7 +21,7 @@
 |--------------|------------------------------|:-------------------------------------:|:-------------------------------------:|:------------------------------:|:------------------------------:|:-----------------------------------:|:------------------------------------------:|
 | GET /        | ServerInfo()                 | ✅ | ✅ | ✅ | ✅ | ✅ |
 | GET /_active_tasks |                        |    |    |    | ⁿ/ₐ |
-| GET /_all_dbs      | AllDBs()               |    | ✅ | ✅ | ☑️<sup>[1](#pouchAllDbs1),[2](#pouchAllDbs2),[3](pouchAllDbs3)</sup> | ✅
+| GET /_all_dbs      | AllDBs()               | ✅ | ✅ | ✅ | ☑️<sup>[1](#pouchAllDbs1),[2](#pouchAllDbs2),[3](pouchAllDbs3)</sup> | ✅
 | GET /_db_updates
 | GET /_log          | Log()                  |    |    | ✅ | ⁿ/ₐ
 | GET /_replicate
@@ -40,7 +40,7 @@
 | DELETE /_config/{section}/{key}
 | HEAD /{db}         | DBExists()             |    |    | ✅ | ✅<sup>[5](#pouchDBExists)</sup>
 | GET /{db}
-| PUT /{db}          | CreateDB()             |    |    | ✅ | ✅<sup>[5](#pouchDBExists)</sup>
+| PUT /{db}          | CreateDB()             | ✅ |    | ✅ | ✅<sup>[5](#pouchDBExists)</sup>
 | DELETE /{db}       | DestroyDB()            |    |    | ✅ | ✅<sup>[5](#pouchDBExists)</sup>
 | POST /{db}
 | GET /{db}/_all_docs

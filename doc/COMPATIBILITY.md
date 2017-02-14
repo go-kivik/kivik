@@ -38,7 +38,7 @@
 | GET /_config/{section}/{key}
 | PUT /_config/{section}/{key}
 | DELETE /_config/{section}/{key}
-| HEAD /{db}         | DBExists()             |    |    | ✅ | ✅<sup>[5](#pouchDBExists)</sup>
+| HEAD /{db}         | DBExists()             | ✅ |    | ✅ | ✅<sup>[5](#pouchDBExists)</sup>
 | GET /{db}
 | PUT /{db}          | CreateDB()             | ✅ |    | ✅ | ✅<sup>[5](#pouchDBExists)</sup>
 | DELETE /{db}       | DestroyDB()            |    |    | ✅ | ✅<sup>[5](#pouchDBExists)</sup>

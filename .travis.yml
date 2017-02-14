@@ -21,6 +21,6 @@ install:
 script:
     - diff -u <(echo -n) <(gofmt -d ./)
     - go install # to make gotype (run by gometalinter) happy
-    - gometalinter.v1
+    - gometalinter.v1 --deadline=30s
     - go test $(go list ./... | grep -v pouchdb)
     - gopherjs test github.com/flimzy/kivik/test

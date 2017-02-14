@@ -1,11 +1,11 @@
 package kivik
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
 
 	"github.com/flimzy/kivik/driver"
+	"github.com/flimzy/kivik/errors"
 )
 
 // Client is a client connection handle to a CouchDB-like server.
@@ -92,7 +92,7 @@ var validDBName = regexp.MustCompile("^[a-z][a-z0-9_$()+/-]*$")
 // CreateDB creates a DB of the requested name.
 func (c *Client) CreateDB(dbName string) error {
 	if !validDBName.MatchString(dbName) {
-		return errors.New("kivik: invalid database name")
+		return errors.Status(errors.StatusBadRequest, "invalid database name")
 	}
 	return c.driverClient.CreateDB(dbName)
 }

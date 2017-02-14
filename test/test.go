@@ -21,6 +21,7 @@ const (
 	SuiteCouch       = "couch"
 	SuiteCouch20     = "couch2.0"
 	SuiteKivikMemory = "kivikmemory"
+	SuiteKivikFS     = "kivikfilesystem"
 	SuiteCloudant    = "cloudant"
 	SuiteKivikServer = "kivikserver"
 )
@@ -36,7 +37,7 @@ func testDBName() string {
 }
 
 // AllSuites is a list of all defined suites.
-var AllSuites = []string{SuiteMinimal, SuitePouch, SuitePouchRemote, SuiteCouch, SuiteCouch20, SuiteKivikMemory, SuiteCloudant, SuiteKivikServer}
+var AllSuites = []string{SuiteMinimal, SuitePouch, SuitePouchRemote, SuiteCouch, SuiteCouch20, SuiteKivikMemory, SuiteKivikFS, SuiteCloudant, SuiteKivikServer}
 
 // ListTests prints a list of available test suites to stdout.
 func ListTests() {

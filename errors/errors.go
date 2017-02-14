@@ -3,8 +3,29 @@
 package errors
 
 import (
-	"errors"
 	"fmt"
+
+	"github.com/pkg/errors"
+)
+
+// HTTP response codes permitted by the CouchDB API.
+// See http://docs.couchdb.org/en/1.6.1/api/basics.html#http-status-codes
+const (
+	StatusOK                           = 200
+	StatusCreated                      = 201
+	StatusAccepted                     = 202
+	StatusNotModified                  = 304
+	StatusBadRequest                   = 400
+	StatusUnauthorized                 = 401
+	StatusForbidden                    = 403
+	StatusNotFound                     = 404
+	StatusResourceNotAllowed           = 405
+	StatusConflict                     = 409
+	StatusPreconditionFailed           = 412
+	StatusBadContentType               = 415
+	StatusRequestedRangeNotSatisfiable = 416
+	StatusExpectationFailed            = 417
+	StatusInternalServerError          = 500
 )
 
 // StatusError is an error message bundled with an HTTP status code.
@@ -56,4 +77,43 @@ func Statusf(status int, format string, args ...interface{}) error {
 		statusCode: status,
 		message:    fmt.Sprintf(format, args...),
 	}
+}
+
+type wrappedError struct {
+	err        error
+	statusCode int
+}
+
+func (e *wrappedError) Error() string {
+	return e.err.Error()
+}
+
+func (e *wrappedError) StatusCode() int {
+	return e.statusCode
+}
+
+// WrapStatus bundles an existing error with a status code.
+func WrapStatus(status int, err error) error {
+	if err == nil {
+		return nil
+	}
+	return &wrappedError{
+		err:        err,
+		statusCode: status,
+	}
+}
+
+// Wrap is a wrapper around pkg/errors.Wrap()
+func Wrap(err error, msg string) error {
+	return errors.Wrap(err, msg)
+}
+
+// Wrapf is a wrapper around pkg/errors.Wrapf()
+func Wrapf(err error, format string, args ...interface{}) error {
+	return errors.Wrapf(err, format, args...)
+}
+
+// Cause is a wrapper around pkg/errors.Cause()
+func Cause(err error) error {
+	return errors.Cause(err)
 }

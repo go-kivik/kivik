@@ -61,6 +61,14 @@ const (
 	ServiceContextKey ContextKey = "kivik service"
 )
 
+const (
+	mGET    = http.MethodGet
+	mPUT    = http.MethodPut
+	mHEAD   = http.MethodHead
+	mDELETE = http.MethodDelete
+	mCOPY   = "COPY"
+)
+
 // Server returns an unstarted server instance.
 func (s *Service) Server() (http.Handler, error) {
 	client, err := kivik.New(s.DriverName, s.DataSourceName)
@@ -71,11 +79,15 @@ func (s *Service) Server() (http.Handler, error) {
 	ctx = context.WithValue(ctx, ClientContextKey, client)
 	ctx = context.WithValue(ctx, ServiceContextKey, s)
 	router := httptreemux.New()
+	router.HeadCanUseGet = true
 	router.DefaultContext = ctx
 	ctxRoot := router.UsingContext()
-	ctxRoot.Handler(http.MethodGet, "/", handler(root))
-	ctxRoot.Handler(http.MethodGet, "/_all_dbs", handler(allDBs))
-	ctxRoot.Handler(http.MethodPut, "/:db", handler(createDB))
+	ctxRoot.Handler(mGET, "/", handler(root))
+	ctxRoot.Handler(mGET, "/_all_dbs", handler(allDBs))
+	ctxRoot.Handler(mPUT, "/:db", handler(createDB))
+	ctxRoot.Handler(mHEAD, "/:db", handler(dbExists))
+	// ctxRoot.Handler(mDELETE, "/:db", handler(destroyDB) )
+	// ctxRoot.Handler(http.MethodGet, "/:db", handler(getDB))
 	return router, nil
 }
 
@@ -171,4 +183,19 @@ func createDB(w http.ResponseWriter, r *http.Request) error {
 	return json.NewEncoder(w).Encode(map[string]interface{}{
 		"ok": true,
 	})
+}
+
+func dbExists(w http.ResponseWriter, r *http.Request) error {
+	params := getParams(r)
+	client := getClient(r)
+	exists, err := client.DBExists(params["db"])
+	if err != nil {
+		return err
+	}
+	if exists {
+		w.WriteHeader(http.StatusOK)
+	} else {
+		w.WriteHeader(http.StatusNotFound)
+	}
+	return nil
 }

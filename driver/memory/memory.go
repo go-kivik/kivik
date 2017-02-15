@@ -2,13 +2,13 @@
 package memory
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/pborman/uuid"
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
+	"github.com/flimzy/kivik/driver/common"
 	"github.com/flimzy/kivik/errors"
 )
 
@@ -24,6 +24,7 @@ func init() {
 type database struct{}
 
 type client struct {
+	*common.Client
 	dbs map[string]database
 }
 
@@ -31,26 +32,9 @@ var _ driver.Client = &client{}
 
 func (d *memDriver) NewClient(name string) (driver.Client, error) {
 	return &client{
-		dbs: make(map[string]database),
+		Client: common.NewClient("0.0.1", "Kivik Memory Adaptor", "0.0.1"),
+		dbs:    make(map[string]database),
 	}, nil
-}
-
-type serverInfo struct {
-}
-
-var _ driver.ServerInfo = &serverInfo{}
-
-func (i *serverInfo) Response() json.RawMessage {
-	return []byte(`{"couchdb":"Welcome","version":"0.0.1","vendor":{"name":"Kivik Memory Adaptor","version":"0.0.1"}}`)
-}
-
-func (i *serverInfo) Vendor() string        { return "Kivik Memory Adaptor" }
-func (i *serverInfo) Version() string       { return "0.0.1" }
-func (i *serverInfo) VendorVersion() string { return "0.0.1" }
-
-// ServerInfo returns the server info for this driver.
-func (c *client) ServerInfo() (driver.ServerInfo, error) {
-	return &serverInfo{}, nil
 }
 
 func (c *client) AllDBs() ([]string, error) {

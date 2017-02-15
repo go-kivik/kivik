@@ -19,9 +19,9 @@
 
 | API Endpoint | ![Kivik API](images/api.png) | ![Kivik HTTP Server](images/http.png) | ![Kivik Test Suite](images/tests.png) | ![CouchDB](images/couchdb.png) | ![PouchDB](images/pouchdb.png) | ![Memory Driver](images/memory.png) | ![Filesystem Driver](images/filesystem.png) |
 |--------------|------------------------------|:-------------------------------------:|:-------------------------------------:|:------------------------------:|:------------------------------:|:-----------------------------------:|:------------------------------------------:|
-| GET /        | ServerInfo()                 | ✅ | ✅ | ✅ | ✅ | ✅ |
+| GET /        | ServerInfo()                 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅
 | GET /_active_tasks |                        |    |    |    | ⁿ/ₐ |
-| GET /_all_dbs      | AllDBs()               | ✅ | ✅ | ✅ | ☑️<sup>[1](#pouchAllDbs1),[2](#pouchAllDbs2),[3](pouchAllDbs3)</sup> | ✅
+| GET /_all_dbs      | AllDBs()               | ✅ | ✅ | ✅ | ☑️<sup>[1](#pouchAllDbs1),[2](#pouchAllDbs2),[3](pouchAllDbs3)</sup> | ✅ | ✅
 | GET /_db_updates
 | GET /_log          | Log()                  |    |    | ✅ | ⁿ/ₐ
 | GET /_replicate
@@ -38,10 +38,10 @@
 | GET /_config/{section}/{key}
 | PUT /_config/{section}/{key}
 | DELETE /_config/{section}/{key}
-| HEAD /{db}         | DBExists()             | ✅ |    | ✅ | ✅<sup>[5](#pouchDBExists)</sup>
+| HEAD /{db}         | DBExists()             | ✅ |    | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
 | GET /{db}
-| PUT /{db}          | CreateDB()             | ✅ |    | ✅ | ✅<sup>[5](#pouchDBExists)</sup>
-| DELETE /{db}       | DestroyDB()            |    |    | ✅ | ✅<sup>[5](#pouchDBExists)</sup>
+| PUT /{db}          | CreateDB()             | ✅ |    | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
+| DELETE /{db}       | DestroyDB()            |    |    | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
 | POST /{db}
 | GET /{db}/_all_docs
 | POST /{db}/_all_docs

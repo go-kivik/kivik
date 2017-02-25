@@ -101,3 +101,14 @@ func (c *Client) CreateDB(dbName string) error {
 func (c *Client) DestroyDB(dbName string) error {
 	return c.driverClient.DestroyDB(dbName)
 }
+
+// SetAuth overrides any existing authentication method with that passed. The
+// argument passed must be of a type understood by the underlying driver. Not
+// all drivers implement authentication. If the type passed is not understood
+// by the driver, an error will be returned.
+func (c *Client) SetAuth(a interface{}) error {
+	if auth, ok := c.driverClient.(driver.Authenticator); ok {
+		return auth.SetAuth(a)
+	}
+	return NotImplemented
+}

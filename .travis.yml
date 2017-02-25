@@ -3,6 +3,10 @@ sudo: required
 
 language: go
 
+os:
+    - linux
+    - osx
+
 go:
     - 1.7.x
     - 1.8.x
@@ -16,6 +20,9 @@ matrix:
     include:
         - go: 1.8.x
           env: MODE=gopherjs
+        - go: 1.8.x
+          env: MODE=gopherjs
+          os: osx
         - go: 1.8.x
           env: MODE=linter
 

@@ -17,6 +17,20 @@
 - ⁿ/ₐ Not Applicable : This feature is supported, and doesn't make sense to emulate.
 - ❌ No : This feature is supported by the backend, but there are no plans to add support to Kivik
 
+<a name="authTable">
+
+| Authentication Method | ![Kivik HTTP Server](images/http.png) | ![Kivik Test Suite](images/tests.png) | ![CouchDB](images/couchdb.png) | ![PouchDB](images/pouchdb.png) | ![Memory Driver](images/memory.png) | ![Filesystem Driver](images/filesystem.png) |
+|--------------|:-------------------------------------:|:-------------------------------------:|:------------------------------:|:------------------------------:|:-----------------------------------:|:------------------------------------------:|
+| HTTP Basic Auth    |    |    | ✅ | ✅<sup>[1](#pouchDbAuth)</sup> | ⁿ/ₐ | ⁿ/ₐ<sup>[2](#fsAuth)</sup>
+| Cookie Auth        |    |    |    |    | ⁿ/ₐ | ⁿ/ₐ<sup>[2](#fsAuth)</sup>
+| Proxy Auth         |    |    |    |    | ⁿ/ₐ | ⁿ/ₐ<sup>[2](#fsAuth)</sup>
+| OAuth 1.0          |    |    |    |    | ⁿ/ₐ | ⁿ/ₐ<sup>[2](#fsAuth)</sup>
+
+### Notes
+
+1. <a name="pouchDbAuth"> PouchDB Auth support is only for remote databases. Local databases rely on a same-origin policy.
+2. <a name="fsAuth">The Filesystem driver depends on whatever standard filesystem permissions are implemented by your operating system. This means that you do have the option on a Unix filesystem, for instance, to set read/write permissions on a user/group level, and Kivik will naturally honor these, and report access denied errors as one would expect.
+
 | API Endpoint | ![Kivik API](images/api.png) | ![Kivik HTTP Server](images/http.png) | ![Kivik Test Suite](images/tests.png) | ![CouchDB](images/couchdb.png) | ![PouchDB](images/pouchdb.png) | ![Memory Driver](images/memory.png) | ![Filesystem Driver](images/filesystem.png) |
 |--------------|------------------------------|:-------------------------------------:|:-------------------------------------:|:------------------------------:|:------------------------------:|:-----------------------------------:|:------------------------------------------:|
 | GET /        | ServerInfo()                 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅
@@ -30,9 +44,9 @@
 | GET /_utils        |                        |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
 | GET /_membership   | Membership()           |    |    | ✅<sup>[4](#couchMembership)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
 | GET /favicon.ico   |                        |    | ❌ | ❌ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
-| POST /_session     |                        |    |    |    | ⁿ/ₐ
-| GET /_session      |                        |    |    |    | ⁿ/ₐ
-| DELETE /_session   |                        |    |    |    | ⁿ/ₐ
+| POST /_session<sup>[6](#cookieAuth)</sup> | |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
+| GET /_session<sup>[6](#cookieAuth)</sup> |  |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
+| DELETE /_session<sup>[6](#cookieAuth)</sup> | |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
 | GET /_config
 | GET /_config/{section}
 | GET /_config/{section}/{key}
@@ -107,3 +121,4 @@
  without creating it, so `DBExists()` always returns true, `CreateDB()` does not return an error
  if the database already existed, and `DestroyDB()` does not return an error if the database does
  not exist.
+6. <a name="cookieAuth"> See the CookieAuth section in the [Authentication methods table](#authTable)

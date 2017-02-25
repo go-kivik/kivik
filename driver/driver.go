@@ -36,6 +36,14 @@ type Client interface {
 	DestroyDB(dbName string) error
 }
 
+// Authenticator is an optional interface that may be implemented by a Client
+// that supports authenitcated connections.
+type Authenticator interface {
+	// SetAuth can be used to set the authenticator. The argument type is
+	// driver-specific. An invalid argument passed should return an error.
+	SetAuth(interface{}) error
+}
+
 // UUIDer is an optional interface that may be implemented by a Client. Generally,
 // this should not be used, but it is part of the CouchDB spec, so it is included
 // for completeness.

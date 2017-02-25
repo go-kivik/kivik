@@ -25,8 +25,10 @@ func (c *client) makeRequest(method string, url string, query url.Values, accept
 			return nil, fmt.Errorf("Invalid Accept type: %s", accept)
 		}
 		req.Header.Add("Accept", accept)
-		if c.authUser != "" {
-			req.SetBasicAuth(c.authUser, c.authPass)
+		if c.auth != nil {
+			if err = c.auth.SetAuth(req); err != nil {
+				return nil, err
+			}
 		}
 	}
 	resp, err := c.client.Do(req)

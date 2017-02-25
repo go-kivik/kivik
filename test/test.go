@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
-	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -47,21 +46,52 @@ func ListTests() {
 	}
 }
 
-// RunTests runs the requested test suites against the requested driver and DSN.
-func RunTests(driver, dsn string, rw bool, testSuites []string, run string) {
-	internalTests := []testing.InternalTest{
-		testing.InternalTest{
-			Name: "Main",
-			F: func(t *testing.T) {
-				mainTest(driver, dsn, rw, testSuites, t)
-			},
-		},
-	}
-	m := testing.MainStart(regexp.MatchString, internalTests, nil, nil)
-	os.Exit(m.Run())
+// Tester mimics (or can be fulfilled by) a *testin.T struct
+type Tester interface {
+	Errorf(format string, args ...interface{})
+	Fatalf(format string, args ...interface{})
 }
 
-func mainTest(driver, dsn string, rw bool, testSuites []string, t *testing.T) {
+type tester struct {
+	verbose bool
+	failed  bool
+}
+
+func (t *tester) Errorf(format string, args ...interface{}) {
+	t.failed = true
+	fmt.Printf(format, args...)
+}
+
+func (t *tester) Fatalf(format string, args ...interface{}) {
+	t.Errorf(format, args...)
+	os.Exit(1)
+}
+
+// Options are the options to run a test from the command line tool.
+type Options struct {
+	Driver  string
+	DSN     string
+	Verbose bool
+	RW      bool
+	Match   string
+	Suites  []string
+}
+
+// RunTests runs the requested test suites against the requested driver and DSN.
+func RunTests(opts Options) {
+	t := &tester{
+		verbose: opts.Verbose,
+	}
+	mainTest(opts.Driver, opts.DSN, opts.RW, opts.Suites, t)
+	if t.failed {
+		fmt.Printf("FAILED\n")
+		os.Exit(1)
+	}
+	fmt.Printf("PASSED\n")
+	os.Exit(0)
+}
+
+func mainTest(driver, dsn string, rw bool, testSuites []string, t Tester) {
 	fmt.Printf("Connecting to %s ...\n", dsn)
 	client, err := kivik.New(driver, dsn)
 	if err != nil {
@@ -86,7 +116,7 @@ func mainTest(driver, dsn string, rw bool, testSuites []string, t *testing.T) {
 	for test := range tests {
 		testSuites = append(testSuites, test)
 	}
-	fmt.Printf("Going to run the following test suites: %s\n", strings.Join(testSuites, ", "))
+	fmt.Printf("Running the following test suites: %s\n", strings.Join(testSuites, ", "))
 	RunSubtests(client, rw, testSuites, t)
 }
 
@@ -138,7 +168,7 @@ func RegisterTest(suite, name string, rw bool, fn testFunc) {
 type FailFunc func(format string, args ...interface{})
 
 // RunSubtests executes the requested suites of tests against the client.
-func RunSubtests(client *kivik.Client, rw bool, suites []string, t *testing.T) {
+func RunSubtests(client *kivik.Client, rw bool, suites []string, t Tester) {
 	for _, suite := range suites {
 		for name, fn := range tests[suite] {
 			runTest(client, name, suite, fn, t)
@@ -151,14 +181,12 @@ func RunSubtests(client *kivik.Client, rw bool, suites []string, t *testing.T) {
 	}
 }
 
-func runTest(client *kivik.Client, name, suite string, fn testFunc, t *testing.T) {
-	t.Run(name, func(t *testing.T) {
-		fail := func(format string, args ...interface{}) {
-			format = fmt.Sprintf("[%s] %s: %s\n", suite, name, strings.TrimSpace(format))
-			t.Errorf(format, args...)
-		}
-		fn(client, suite, fail)
-	})
+func runTest(client *kivik.Client, name, suite string, fn testFunc, t Tester) {
+	fail := func(format string, args ...interface{}) {
+		format = fmt.Sprintf("[%s] %s: %s\n", suite, name, strings.TrimSpace(format))
+		t.Errorf(format, args...)
+	}
+	fn(client, suite, fail)
 }
 
 func gatherTests(client *kivik.Client, suites []string) []testing.InternalTest {

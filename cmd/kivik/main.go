@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 
@@ -59,12 +58,14 @@ func main() {
 			cmd.Usage()
 			os.Exit(1)
 		}
-		dsn := args[0]
-		flag.Set("test.run", run)
-		if verbose {
-			flag.Set("test.v", "true")
-		}
-		test.RunTests("couch", dsn, rw, tests, run)
+		test.RunTests(test.Options{
+			Driver:  "couch",
+			DSN:     args[0],
+			Verbose: verbose,
+			RW:      rw,
+			Suites:  tests,
+			Match:   run,
+		})
 	}
 
 	rootCmd := &cobra.Command{

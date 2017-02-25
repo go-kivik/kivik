@@ -10,10 +10,12 @@ go get github.com/pborman/uuid \
 
 case "$1" in
     "gopherjs")
-        # Install nodejs and dependencies
-        curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash -
-        sudo apt-get update -qq
-        sudo apt-get install -y nodejs
+        if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+            # Install nodejs and dependencies, but only for Linux
+            curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash -
+            sudo apt-get update -qq
+            sudo apt-get install -y nodejs
+        fi
         npm install
         # Then install GopherJS and related dependencies
         go get -u github.com/gopherjs/gopherjs; \

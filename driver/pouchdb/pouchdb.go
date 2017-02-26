@@ -47,13 +47,22 @@ func init() {
 // NewClient returns a PouchDB client handle. Provide a dsn only for remote
 // databases. Otherwise specify ""
 func (d *Driver) NewClient(dsn string) (driver.Client, error) {
-	var baseURL *url.URL
+	var u *url.URL
+	var auth Authenticator
 	if dsn != "" {
 		var err error
-		baseURL, err = url.Parse(dsn)
+		u, err = url.Parse(dsn)
 		if err != nil {
 			return nil, fmt.Errorf("Invalid DSN URL '%s' provided: %s", dsn, err)
 		}
+		if u.User != nil {
+			pass, _ := u.User.Password()
+			auth = &BasicAuth{
+				Name:     u.User.Username(),
+				Password: pass,
+			}
+		}
+		u.User = nil
 	}
 	var pouch *bindings.PouchDB
 	if d.Defaults == nil {
@@ -62,13 +71,15 @@ func (d *Driver) NewClient(dsn string) (driver.Client, error) {
 		pouch = bindings.Defaults(d.Defaults)
 	}
 	return &client{
-		dsn:   baseURL,
+		dsn:   u,
 		pouch: pouch,
+		auth:  auth,
 	}, nil
 }
 
 type client struct {
 	dsn   *url.URL
+	auth  Authenticator
 	pouch *bindings.PouchDB
 }
 
@@ -120,11 +131,29 @@ func (c *client) dbURL(db string) string {
 	return myURL.String()
 }
 
+// Options is a struct of options, as documented in the PouchDB API.
+type Options map[string]interface{}
+
+func (c *client) options(opts Options) (Options, error) {
+	if c.auth != nil {
+		if err := c.auth.Authenticate(opts); err != nil {
+			return nil, err
+		}
+	}
+	return opts, nil
+}
+
 // DBExists returns true if the requested DB exists. This function only works
 // for remote databases. For local databases, it creates the database. Silly
 // PouchDB.
 func (c *client) DBExists(dbName string) (bool, error) {
-	_, err := c.pouch.New(c.dbURL(dbName), map[string]interface{}{"skip_setup": true}).Info()
+	opts, err := c.options(Options{
+		"skip_setup": true,
+	})
+	if err != nil {
+		return false, err
+	}
+	_, err = c.pouch.New(c.dbURL(dbName), opts).Info()
 	if err == nil {
 		return true, nil
 	}
@@ -137,7 +166,11 @@ func (c *client) DBExists(dbName string) (bool, error) {
 }
 
 func (c *client) CreateDB(dbName string) error {
-	_, err := c.pouch.New(c.dbURL(dbName), nil).Info()
+	opts, err := c.options(Options{})
+	if err != nil {
+		return err
+	}
+	_, err = c.pouch.New(c.dbURL(dbName), opts).Info()
 	return err
 }
 
@@ -150,5 +183,9 @@ func (c *client) DestroyDB(dbName string) error {
 		// This will only ever do anything for a remote database
 		return errors.Status(http.StatusNotFound, "database does not exist")
 	}
-	return c.pouch.New(c.dbURL(dbName), nil).Destroy(nil)
+	opts, err := c.options(Options{})
+	if err != nil {
+		return err
+	}
+	return c.pouch.New(c.dbURL(dbName), opts).Destroy(nil)
 }

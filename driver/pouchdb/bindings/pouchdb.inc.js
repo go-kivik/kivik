@@ -8,3 +8,7 @@ if ( $global.PouchDB === undefined ) {
 try {
     require('pouchdb-all-dbs')($global.PouchDB);
 } catch(e) {}
+
+try {
+    global.XMLHttpRequest = require('xhr2');
+} catch(e) {}

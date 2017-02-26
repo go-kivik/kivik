@@ -1,7 +1,3 @@
-// +build !js
-
-// JS disabled until net/http polyfill can be figured out. See https://github.com/gopherjs/gopherjs/issues/586
-
 package test
 
 import (

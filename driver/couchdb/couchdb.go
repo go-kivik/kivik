@@ -77,6 +77,7 @@ func (c *Couch) NewClient(urlstring string) (driver.Client, error) {
 		Timeout:       c.HTTPClient.Timeout,
 	}
 	u.RawQuery, u.Fragment = "", ""
+	u.User = nil
 	return &client{
 		baseURL: u,
 		client:  httpClient,

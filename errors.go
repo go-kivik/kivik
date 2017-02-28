@@ -16,10 +16,6 @@ func (e kivikError) Error() string {
 // implement an optional method.
 const NotImplemented kivikError = "kivik: method not implemented by driver"
 
-// ErrNoAuthenticator is returned if Authenticate() is called, and no authenticator
-// is set.
-const ErrNoAuthenticator kivikError = "kivik: no authenticator set"
-
 // ErrNotFound returns true if the error is the result of an HTTP 404/Not Found
 // response.
 func ErrNotFound(err error) bool {

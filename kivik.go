@@ -103,23 +103,12 @@ func (c *Client) DestroyDB(dbName string) error {
 	return c.driverClient.DestroyDB(dbName)
 }
 
-// SetAuth overrides any existing authentication method with that passed, and
-// attempts to authenticate.
-func (c *Client) SetAuth(a interface{}) error {
-	if _, ok := c.driverClient.(driver.Authenticator); ok {
-		c.authenticator = a
-		return nil
-	}
-	return NotImplemented
-}
-
-// Authenticate calls the configured authenticator to authenticate the client.
-func (c *Client) Authenticate() error {
+// Authenticate authenticates the client with the passed authenticator, which
+// is driver-specific. If the driver does not understand the authenticator, an
+// error will be returned.
+func (c *Client) Authenticate(a interface{}) error {
 	if auth, ok := c.driverClient.(driver.Authenticator); ok {
-		if c.authenticator == nil {
-			return ErrNoAuthenticator
-		}
-		return auth.Authenticate(c.authenticator)
+		return auth.Authenticate(a)
 	}
 	return NotImplemented
 

@@ -12,6 +12,7 @@ import (
 	"github.com/flimzy/kivik/driver/pouchdb/bindings"
 	"github.com/flimzy/kivik/errors"
 	"github.com/gopherjs/gopherjs/js"
+	"github.com/imdario/mergo"
 )
 
 // Driver represents the configuration for a PouchDB driver. You may specify
@@ -48,20 +49,15 @@ func init() {
 // databases. Otherwise specify ""
 func (d *Driver) NewClient(dsn string) (driver.Client, error) {
 	var u *url.URL
-	var auth Authenticator
+	var auth authenticator
+	var user *url.Userinfo
 	if dsn != "" {
 		var err error
 		u, err = url.Parse(dsn)
 		if err != nil {
 			return nil, fmt.Errorf("Invalid DSN URL '%s' provided: %s", dsn, err)
 		}
-		if u.User != nil {
-			pass, _ := u.User.Password()
-			auth = &BasicAuth{
-				Name:     u.User.Username(),
-				Password: pass,
-			}
-		}
+		user = u.User
 		u.User = nil
 	}
 	var pouch *bindings.PouchDB
@@ -70,16 +66,27 @@ func (d *Driver) NewClient(dsn string) (driver.Client, error) {
 	} else {
 		pouch = bindings.Defaults(d.Defaults)
 	}
-	return &client{
+	client := &client{
 		dsn:   u,
 		pouch: pouch,
-		auth:  auth,
-	}, nil
+		opts:  make(map[string]Options),
+	}
+	if user != nil {
+		pass, _ := user.Password()
+		auth = &BasicAuth{
+			Name:     user.Username(),
+			Password: pass,
+		}
+		if err := auth.authenticate(client); err != nil {
+			return nil, err
+		}
+	}
+	return client, nil
 }
 
 type client struct {
 	dsn   *url.URL
-	auth  Authenticator
+	opts  map[string]Options
 	pouch *bindings.PouchDB
 }
 
@@ -135,12 +142,14 @@ func (c *client) dbURL(db string) string {
 type Options map[string]interface{}
 
 func (c *client) options(opts Options) (Options, error) {
-	if c.auth != nil {
-		if err := c.auth.Authenticate(opts); err != nil {
+	o := Options{}
+	for _, defOpts := range c.opts {
+		if err := mergo.MergeWithOverwrite(&o, defOpts); err != nil {
 			return nil, err
 		}
 	}
-	return opts, nil
+	err := mergo.MergeWithOverwrite(&o, opts)
+	return o, err
 }
 
 // DBExists returns true if the requested DB exists. This function only works

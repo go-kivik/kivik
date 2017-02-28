@@ -37,9 +37,9 @@ func init() {
 }
 
 type client struct {
-	baseURL *url.URL
-	auth    Authenticator
-	client  *http.Client
+	baseURL    *url.URL
+	auth       driver.Authenticator
+	httpClient *http.Client
 }
 
 var _ driver.Client = &client{}
@@ -61,14 +61,6 @@ func (c *Couch) NewClient(urlstring string) (driver.Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	var auth Authenticator
-	if u.User != nil {
-		pass, _ := u.User.Password()
-		auth = &BasicAuth{
-			Name:     u.User.Username(),
-			Password: pass,
-		}
-	}
 	// Copy all the values, so multiple connections don't fight with each other.
 	httpClient := &http.Client{
 		Transport:     c.HTTPClient.Transport,
@@ -77,12 +69,23 @@ func (c *Couch) NewClient(urlstring string) (driver.Client, error) {
 		Timeout:       c.HTTPClient.Timeout,
 	}
 	u.RawQuery, u.Fragment = "", ""
+	user := u.User
 	u.User = nil
-	return &client{
-		baseURL: u,
-		client:  httpClient,
-		auth:    auth,
-	}, nil
+	client := &client{
+		baseURL:    u,
+		httpClient: httpClient,
+	}
+	if user != nil {
+		pass, _ := user.Password()
+		auth := &BasicAuth{
+			Name:     user.Username(),
+			Password: pass,
+		}
+		if err := auth.authenticate(client); err != nil {
+			return nil, err
+		}
+	}
+	return client, nil
 }
 
 type info struct {

@@ -10,9 +10,10 @@ import (
 
 // Client is a client connection handle to a CouchDB-like server.
 type Client struct {
-	driver       driver.Driver
-	dsn          string
-	driverClient driver.Client
+	driver        driver.Driver
+	dsn           string
+	driverClient  driver.Client
+	authenticator interface{}
 }
 
 // New creates a new client object specified by its database driver name
@@ -102,13 +103,24 @@ func (c *Client) DestroyDB(dbName string) error {
 	return c.driverClient.DestroyDB(dbName)
 }
 
-// SetAuth overrides any existing authentication method with that passed. The
-// argument passed must be of a type understood by the underlying driver. Not
-// all drivers implement authentication. If the type passed is not understood
-// by the driver, an error will be returned.
+// SetAuth overrides any existing authentication method with that passed, and
+// attempts to authenticate.
 func (c *Client) SetAuth(a interface{}) error {
-	if auth, ok := c.driverClient.(driver.Authenticator); ok {
-		return auth.SetAuth(a)
+	if _, ok := c.driverClient.(driver.Authenticator); ok {
+		c.authenticator = a
+		return nil
 	}
 	return NotImplemented
+}
+
+// Authenticate calls the configured authenticator to authenticate the client.
+func (c *Client) Authenticate() error {
+	if auth, ok := c.driverClient.(driver.Authenticator); ok {
+		if c.authenticator == nil {
+			return ErrNoAuthenticator
+		}
+		return auth.Authenticate(c.authenticator)
+	}
+	return NotImplemented
+
 }

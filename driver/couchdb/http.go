@@ -12,33 +12,67 @@ import (
 const jsonType = "application/json"
 const textType = "text/plain"
 
-func (c *client) makeRequest(method string, url string, query url.Values, accept string) (*http.Response, error) {
-	fullURL := c.url(url, query)
-	req, err := http.NewRequest(method, fullURL, nil)
+type request struct {
+	client *client
+	method string
+	url    string
+	body   io.Reader
+	query  url.Values
+	header http.Header
+}
+
+func (c *client) newRequest(method, url string) *request {
+	return &request{
+		client: c,
+		method: method,
+		url:    url,
+		header: http.Header{},
+	}
+}
+
+func (r *request) Body(body io.Reader) *request {
+	r.body = body
+	return r
+}
+
+func (r *request) Query(query url.Values) *request {
+	r.query = query
+	return r
+}
+
+func (r *request) AddHeader(key, value string) *request {
+	r.header.Add(key, value)
+	return r
+}
+
+func (r *request) Do() (*http.Response, error) {
+	c := r.client
+	fullURL := c.url(r.url, r.query)
+	req, err := http.NewRequest(r.method, fullURL, r.body)
 	if err != nil {
 		return nil, err
 	}
 	var reqMediaType string
-	if accept != "" {
+	if accept := r.header.Get("Accept"); accept != "" {
 		reqMediaType, _, err = mime.ParseMediaType(accept)
 		if err != nil {
 			return nil, fmt.Errorf("Invalid Accept type: %s", accept)
 		}
-		req.Header.Add("Accept", accept)
 	}
-	if c.auth != nil {
-		if err = c.auth.Authenticate(req); err != nil {
-			return nil, err
+	// Copy all the headers
+	for key, values := range r.header {
+		for _, value := range values {
+			req.Header.Add(key, value)
 		}
 	}
-	resp, err := c.client.Do(req)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	if err = ResponseError(resp); err != nil {
 		return nil, err
 	}
-	if accept != "" {
+	if reqMediaType != "" {
 		respMediaType, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse header Content-Type: %s", resp.Header.Get("Content-Type"))
@@ -48,6 +82,13 @@ func (c *client) makeRequest(method string, url string, query url.Values, accept
 		}
 	}
 	return resp, nil
+}
+
+func (c *client) makeRequest(method string, url string, query url.Values, accept string) (*http.Response, error) {
+	return c.newRequest(method, url).
+		AddHeader("Accept", accept).
+		Query(query).
+		Do()
 }
 
 func (c *client) doJSON(method, url string, i interface{}, query url.Values) error {

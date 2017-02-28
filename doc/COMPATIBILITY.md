@@ -22,7 +22,7 @@
 | Authentication Method | ![Kivik HTTP Server](images/http.png) | ![Kivik Test Suite](images/tests.png) | ![CouchDB](images/couchdb.png) | ![PouchDB](images/pouchdb.png) | ![Memory Driver](images/memory.png) | ![Filesystem Driver](images/filesystem.png) |
 |--------------|:-------------------------------------:|:-------------------------------------:|:------------------------------:|:------------------------------:|:-----------------------------------:|:------------------------------------------:|
 | HTTP Basic Auth    |    |    | ✅ | ✅<sup>[1](#pouchDbAuth)</sup> | ⁿ/ₐ | ⁿ/ₐ<sup>[2](#fsAuth)</sup>
-| Cookie Auth        |    |    |    |    | ⁿ/ₐ | ⁿ/ₐ<sup>[2](#fsAuth)</sup>
+| Cookie Auth        |    | ✅ | ✅ |    | ⁿ/ₐ | ⁿ/ₐ<sup>[2](#fsAuth)</sup>
 | Proxy Auth         |    |    |    |    | ⁿ/ₐ | ⁿ/ₐ<sup>[2](#fsAuth)</sup>
 | OAuth 1.0          |    |    |    |    | ⁿ/ₐ | ⁿ/ₐ<sup>[2](#fsAuth)</sup>
 
@@ -44,7 +44,7 @@
 | GET /_utils        |                        |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
 | GET /_membership   | Membership()           |    |    | ✅<sup>[4](#couchMembership)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
 | GET /favicon.ico   |                        |    | ❌ | ❌ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
-| POST /_session<sup>[6](#cookieAuth)</sup> | |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
+| POST /_session<sup>[6](#cookieAuth)</sup> | |    | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
 | GET /_session<sup>[6](#cookieAuth)</sup> |  |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
 | DELETE /_session<sup>[6](#cookieAuth)</sup> | |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
 | GET /_config

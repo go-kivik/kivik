@@ -77,7 +77,7 @@ func (c *Couch) NewClient(urlstring string) (driver.Client, error) {
 	}
 	if user != nil {
 		pass, _ := user.Password()
-		auth := &BasicAuth{
+		auth := &CookieAuth{
 			Name:     user.Username(),
 			Password: pass,
 		}

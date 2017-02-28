@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/http/cookiejar"
 
-	"github.com/davecgh/go-spew/spew"
+	"golang.org/x/net/publicsuffix"
 )
 
 // CookieAuth provides CouchDB Cookie auth services as described at
@@ -19,6 +20,11 @@ type CookieAuth struct {
 
 // Authenticate initiates a session, and sets HTTP Cookie headers.
 func (a *CookieAuth) authenticate(c *client) error {
+	if jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List}); err == nil {
+		c.httpClient.Jar = jar
+	} else {
+		return err
+	}
 	var body io.Reader
 	if b, err := json.Marshal(a); err == nil {
 		body = bytes.NewBuffer(b)
@@ -26,17 +32,12 @@ func (a *CookieAuth) authenticate(c *client) error {
 		panic(err)
 	}
 
-	resp, err := c.newRequest(http.MethodPost, "/_session").
+	_, err := c.newRequest(http.MethodPost, "/_session").
 		AddHeader("Content-Type", jsonType).
 		AddHeader("Accept", jsonType).
 		Body(body).
 		Do()
-	if err != nil {
-		return err
-	}
-	spew.Dump(resp)
-
-	return nil
+	return err
 }
 
 // SetCookie sets the cookie directly. This can be used if authentication is

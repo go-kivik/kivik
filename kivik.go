@@ -58,7 +58,7 @@ func (c *Client) UUIDs(count int) ([]string, error) {
 	if uuider, ok := c.driverClient.(driver.UUIDer); ok {
 		return uuider.UUIDs(count)
 	}
-	return nil, NotImplemented
+	return nil, ErrNotImplemented
 }
 
 // Membership returns the list of nodes that are part of the cluster as
@@ -68,7 +68,7 @@ func (c *Client) Membership() (allNodes []string, clusterNodes []string, err err
 	if cluster, ok := c.driverClient.(driver.Cluster); ok {
 		return cluster.Membership()
 	}
-	return nil, nil, NotImplemented
+	return nil, nil, ErrNotImplemented
 }
 
 // Log reads the server log, if supported by the client driver. This method will
@@ -78,7 +78,7 @@ func (c *Client) Log(buf []byte, offset int) (int, error) {
 	if logger, ok := c.driverClient.(driver.Logger); ok {
 		return logger.Log(buf, offset)
 	}
-	return 0, NotImplemented
+	return 0, ErrNotImplemented
 }
 
 // DBExists returns true if the specified database exists.
@@ -109,6 +109,5 @@ func (c *Client) Authenticate(a interface{}) error {
 	if auth, ok := c.driverClient.(driver.Authenticator); ok {
 		return auth.Authenticate(a)
 	}
-	return NotImplemented
-
+	return ErrNotImplemented
 }

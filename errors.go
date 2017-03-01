@@ -12,9 +12,9 @@ func (e kivikError) Error() string {
 	return string(e)
 }
 
-// NotImplemented is returned as an error if the underlying driver does not
+// ErrNotImplemented is returned as an error if the underlying driver does not
 // implement an optional method.
-const NotImplemented kivikError = "kivik: method not implemented by driver"
+const ErrNotImplemented kivikError = "kivik: method not implemented by driver"
 
 // ErrNotFound returns true if the error is the result of an HTTP 404/Not Found
 // response.

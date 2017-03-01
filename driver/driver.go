@@ -39,9 +39,10 @@ type Client interface {
 // Authenticator is an optional interface that may be implemented by a Client
 // that supports authenitcated connections.
 type Authenticator interface {
-	// SetAuth can be used to set the authenticator. The argument type is
-	// driver-specific. An invalid argument passed should return an error.
-	SetAuth(interface{}) error
+	// Authenticate attempts to authenticate the client using an authenticator.
+	// If the authenticator is not known to the client, an error should be
+	// returned.
+	Authenticate(authenticator interface{}) error
 }
 
 // UUIDer is an optional interface that may be implemented by a Client. Generally,

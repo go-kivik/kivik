@@ -6,7 +6,8 @@ go get github.com/pborman/uuid \
     github.com/dimfeld/httptreemux \
     github.com/pkg/errors \
     github.com/spf13/cobra \
-    github.com/spf13/pflag
+    github.com/spf13/pflag \
+    golang.org/x/net/publicsuffix
 
 case "$1" in
     "gopherjs")
@@ -17,6 +18,8 @@ case "$1" in
             sudo apt-get install -y nodejs
         fi
         npm install
+        # Install Go deps only needed by PouchDB driver
+        go get github.com/imdario/mergo
         # Then install GopherJS and related dependencies
         go get -u github.com/gopherjs/gopherjs; \
         go get -u -d -tags=js github.com/gopherjs/jsbuiltin; \

@@ -40,10 +40,12 @@ func (c *Client) ServerInfo() (driver.ServerInfo, error) {
 	return c.driverClient.ServerInfo()
 }
 
-// DB returns a handle to the requested database. No validation is done at
-// this stage.
-func (c *Client) DB(name string) *DB {
-	return &DB{}
+// DB returns a handle to the requested database.
+func (c *Client) DB(dbName string) (*DB, error) {
+	db, err := c.driverClient.DB(dbName)
+	return &DB{
+		driverDB: db,
+	}, err
 }
 
 // AllDBs returns a list of all databases.

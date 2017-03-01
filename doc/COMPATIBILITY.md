@@ -58,7 +58,7 @@
 | PUT /{db}          | CreateDB()             | ✅ |    | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
 | DELETE /{db}       | DestroyDB()            |    |    | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
 | POST /{db}
-| GET /{db}/_all_docs
+| GET /{db}/_all_docs | AllDocs()             |    | ✅ | ✅ |
 | POST /{db}/_all_docs
 | POST /{db}/_bulk_docs
 | GET /{db}/_changes

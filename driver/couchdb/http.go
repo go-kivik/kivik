@@ -1,6 +1,7 @@
 package couchdb
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,8 +10,11 @@ import (
 	"net/url"
 )
 
-const jsonType = "application/json"
-const textType = "text/plain"
+const (
+	typeJSON  = "application/json"
+	typeText  = "text/plain"
+	typeMixed = "multipart/mixed"
+)
 
 type request struct {
 	client *client
@@ -28,6 +32,15 @@ func (c *client) newRequest(method, url string) *request {
 		url:    url,
 		header: http.Header{},
 	}
+}
+
+func (r *request) BodyJSON(i interface{}) *request {
+	body, err := json.Marshal(i)
+	if err != nil {
+		panic(err)
+	}
+	r.body = bytes.NewReader(body)
+	return r
 }
 
 func (r *request) Body(body io.Reader) *request {
@@ -84,6 +97,16 @@ func (r *request) Do() (*http.Response, error) {
 	return resp, nil
 }
 
+func (r *request) DoJSON(i interface{}) error {
+	resp, err := r.Do()
+	if err != nil {
+		return err
+	}
+	dec := json.NewDecoder(resp.Body)
+	defer resp.Body.Close()
+	return dec.Decode(i)
+}
+
 func (c *client) makeRequest(method string, url string, query url.Values, accept string) (*http.Response, error) {
 	return c.newRequest(method, url).
 		AddHeader("Accept", accept).
@@ -92,7 +115,7 @@ func (c *client) makeRequest(method string, url string, query url.Values, accept
 }
 
 func (c *client) doJSON(method, url string, i interface{}, query url.Values) error {
-	resp, err := c.makeRequest(method, url, query, jsonType)
+	resp, err := c.makeRequest(method, url, query, typeJSON)
 	if err != nil {
 		return err
 	}
@@ -114,7 +137,7 @@ func (c *client) deleteJSON(url string, i interface{}, query url.Values) error {
 }
 
 func (c *client) getText(url string, buf []byte, query url.Values) error {
-	resp, err := c.makeRequest("GET", url, query, textType)
+	resp, err := c.makeRequest("GET", url, query, typeText)
 	if err != nil {
 		return err
 	}

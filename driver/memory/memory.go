@@ -73,3 +73,10 @@ func (c *client) DestroyDB(dbName string) error {
 	delete(c.dbs, dbName)
 	return nil
 }
+
+func (c *client) DB(dbName string) (driver.DB, error) {
+	return &db{
+		client: c,
+		dbName: dbName,
+	}, nil
+}

@@ -1,6 +1,9 @@
 package driver
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"net/url"
+)
 
 // Driver is the interface that must be implemented by a database driver.
 type Driver interface {
@@ -34,6 +37,10 @@ type Client interface {
 	CreateDB(dbName string) error
 	// DestroyDB deletes the requested DB.
 	DestroyDB(dbName string) error
+	// DB returns a handleto the requested database
+	DB(dbName string) (DB, error)
+	// // Put stores the document in the database.
+	// Put(docID string, doc interface{}) (rev string, err error)
 }
 
 // Authenticator is an optional interface that may be implemented by a Client
@@ -69,9 +76,11 @@ type Cluster interface {
 
 // DB is a database handle.
 type DB interface {
-	// AllDocs()
+	AllDocs(docs interface{}, options url.Values) (offset, totalrows int, err error)
 	// BulkDocs()
-	// Get()
+	// Get fetches the requested document from the database, and unmarshals it
+	// into doc.
+	Get(docID string, doc interface{}, options url.Values) error
 	// GetAttachment()
 	// Compact()
 	// CompactDDoc(ddoc string)
@@ -88,9 +97,9 @@ type DB interface {
 	// Close() error
 }
 
-type DBFlusher interface {
-	// Flush() // _ensure_full_commit
-}
+// type DBFlusher interface {
+// 	// Flush() // _ensure_full_commit
+// }
 
 // Header is an optional interface that a DB may implement. If it is not
 // impemented, Get() will be used instead.

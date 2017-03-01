@@ -22,7 +22,7 @@
 | Authentication Method | ![Kivik HTTP Server](images/http.png) | ![Kivik Test Suite](images/tests.png) | ![CouchDB](images/couchdb.png) | ![PouchDB](images/pouchdb.png) | ![Memory Driver](images/memory.png) | ![Filesystem Driver](images/filesystem.png) |
 |--------------|:-------------------------------------:|:-------------------------------------:|:------------------------------:|:------------------------------:|:-----------------------------------:|:------------------------------------------:|
 | HTTP Basic Auth    |    |    | ✅ | ✅<sup>[1](#pouchDbAuth)</sup> | ⁿ/ₐ | ⁿ/ₐ<sup>[2](#fsAuth)</sup>
-| Cookie Auth        |    | ✅ | ✅ |    | ⁿ/ₐ | ⁿ/ₐ<sup>[2](#fsAuth)</sup>
+| Cookie Auth        |    | ✅ | ✅<sup>[3](#couchGopherJSAuth)</sup> |    | ⁿ/ₐ | ⁿ/ₐ<sup>[2](#fsAuth)</sup>
 | Proxy Auth         |    |    |    |    | ⁿ/ₐ | ⁿ/ₐ<sup>[2](#fsAuth)</sup>
 | OAuth 1.0          |    |    |    |    | ⁿ/ₐ | ⁿ/ₐ<sup>[2](#fsAuth)</sup>
 
@@ -30,6 +30,7 @@
 
 1. <a name="pouchDbAuth"> PouchDB Auth support is only for remote databases. Local databases rely on a same-origin policy.
 2. <a name="fsAuth">The Filesystem driver depends on whatever standard filesystem permissions are implemented by your operating system. This means that you do have the option on a Unix filesystem, for instance, to set read/write permissions on a user/group level, and Kivik will naturally honor these, and report access denied errors as one would expect.
+3. <a name="couchGopherJSAuth">Due to security limitations in the XMLHttpRequest spec, when compiling the standard CouchDB driver with GopherJS, CookieAuth will not work.
 
 | API Endpoint | ![Kivik API](images/api.png) | ![Kivik HTTP Server](images/http.png) | ![Kivik Test Suite](images/tests.png) | ![CouchDB](images/couchdb.png) | ![PouchDB](images/pouchdb.png) | ![Memory Driver](images/memory.png) | ![Filesystem Driver](images/filesystem.png) |
 |--------------|------------------------------|:-------------------------------------:|:-------------------------------------:|:------------------------------:|:------------------------------:|:-----------------------------------:|:------------------------------------------:|

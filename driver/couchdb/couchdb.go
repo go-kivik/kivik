@@ -38,7 +38,6 @@ func init() {
 
 type client struct {
 	baseURL    *url.URL
-	auth       driver.Authenticator
 	httpClient *http.Client
 }
 
@@ -54,8 +53,10 @@ func (c *client) url(path string, query url.Values) string {
 }
 
 // NewClient establishes a new connection to a CouchDB server instance. If
-// auth credentials are included in the URL, they are used to make the
-// connection.
+// auth credentials are included in the URL, they are used to authenticate using
+// CookieAuth (or BasicAuth if compiled with GopherJS). If you wish to use a
+// different auth mechanism, do not specify credentials here, and instead call
+// Authenticate() later.
 func (c *Couch) NewClient(urlstring string) (driver.Client, error) {
 	u, err := url.Parse(urlstring)
 	if err != nil {
@@ -76,11 +77,9 @@ func (c *Couch) NewClient(urlstring string) (driver.Client, error) {
 		httpClient: httpClient,
 	}
 	if user != nil {
-		pass, _ := user.Password()
-		auth := &CookieAuth{
-			Name:     user.Username(),
-			Password: pass,
-		}
+		auth := DefaultAuth
+		auth.Name = user.Username()
+		auth.Password, _ = user.Password()
 		if err := auth.authenticate(client); err != nil {
 			return nil, err
 		}

@@ -10,10 +10,9 @@ import (
 
 // Client is a client connection handle to a CouchDB-like server.
 type Client struct {
-	driver        driver.Driver
-	dsn           string
-	driverClient  driver.Client
-	authenticator interface{}
+	driver       driver.Driver
+	dsn          string
+	driverClient driver.Client
 }
 
 // New creates a new client object specified by its database driver name

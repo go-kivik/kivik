@@ -1,10 +1,11 @@
 package couchdb
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
+
+	"github.com/flimzy/kivik/driver/common"
 )
 
 type db struct {
@@ -37,18 +38,14 @@ func optionsToParams(opts map[string]interface{}) (url.Values, error) {
 
 // AllDocs returns all of the documents in the database.
 func (d *db) AllDocs(docs interface{}, opts map[string]interface{}) (offset, totalrows int, err error) {
-	var result struct {
-		Offset    int             `json:"offset"`
-		TotalRows int             `json:"total_rows"`
-		Rows      json.RawMessage `json:"rows"`
-	}
-	err = d.client.newRequest(http.MethodGet, d.path("_all_docs")).
+	resp, err := d.client.newRequest(http.MethodGet, d.path("_all_docs")).
 		AddHeader("Accept", typeJSON).
-		DoJSON(&result)
+		Do()
 	if err != nil {
 		return 0, 0, err
 	}
-	return result.Offset, result.TotalRows, json.Unmarshal(result.Rows, docs)
+	defer resp.Body.Close()
+	return common.AllDocs(resp.Body, docs)
 }
 
 // Get fetches the requested document.

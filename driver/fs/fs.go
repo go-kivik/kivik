@@ -20,6 +20,12 @@ type fsDriver struct{}
 
 var _ driver.Driver = &fsDriver{}
 
+// Identifying constants
+const (
+	Version = "0.0.1"
+	Vendor  = "Kivik Memory Adaptor"
+)
+
 func init() {
 	kivik.Register("fs", &fsDriver{})
 }
@@ -32,7 +38,7 @@ func (d *fsDriver) NewClient(dir string) (driver.Client, error) {
 		return nil, err
 	}
 	return &client{
-		Client: common.NewClient("0.0.1", "Kivik Filesystem Adaptor", "0.0.1"),
+		Client: common.NewClient(Version, Vendor, Version),
 		root:   dir,
 	}, nil
 }

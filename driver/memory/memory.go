@@ -30,9 +30,15 @@ type client struct {
 
 var _ driver.Client = &client{}
 
+// Identifying constants
+const (
+	Version = "0.0.1"
+	Vendor  = "Kivik Memory Adaptor"
+)
+
 func (d *memDriver) NewClient(name string) (driver.Client, error) {
 	return &client{
-		Client: common.NewClient("0.0.1", "Kivik Memory Adaptor", "0.0.1"),
+		Client: common.NewClient(Version, Vendor, Version),
 		dbs:    make(map[string]database),
 	}, nil
 }

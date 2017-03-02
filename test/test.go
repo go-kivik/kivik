@@ -19,11 +19,22 @@ const (
 	SuitePouchRemote = "pouchremote"
 	SuiteCouch16     = "couch16"
 	SuiteCouch20     = "couch20"
-	SuiteKivikMemory = "kivikmemory"
-	SuiteKivikFS     = "kivikfilesystem"
 	SuiteCloudant    = "cloudant"
 	SuiteKivikServer = "kivikserver"
+	SuiteKivikMemory = "kivikmemory"
+	SuiteKivikFS     = "kivikfilesystem"
 )
+
+var driverMap = map[string]string{
+	SuitePouchLocal:  "pouch",
+	SuitePouchRemote: "pouch",
+	SuiteCouch16:     "couch",
+	SuiteCouch20:     "couch",
+	SuiteCloudant:    "couch",
+	SuiteKivikServer: "couch",
+	SuiteKivikMemory: "memory",
+	SuiteKivikFS:     "fs",
+}
 
 var rnd *rand.Rand
 

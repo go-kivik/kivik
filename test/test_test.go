@@ -19,41 +19,28 @@ func TestMemory(t *testing.T) {
 	RunSubtests(client, true, []string{SuiteKivikMemory}, t)
 }
 
-func TestCloudant(t *testing.T) {
-	dsn := os.Getenv("KIVIK_CLOUDANT_DSN")
+func doTest(suite, envName string, t *testing.T) {
+	dsn := os.Getenv(envName)
 	if dsn == "" {
-		t.Skip("KIVIK_CLOUDANT_DSN: Cloudant DSN not set; skipping tests")
+		t.Skip("%s: %s DSN not set; skipping tests", envName, suite)
 	}
-	client, err := kivik.New("couch", dsn)
+	client, err := kivik.New(driverMap[suite], dsn)
 	if err != nil {
-		t.Errorf("Failed to connect to cloudant: %s\n", err)
+		t.Errorf("Failed to connect to %s: %s\n", suite, err)
 		return
 	}
-	RunSubtests(client, true, []string{SuiteCloudant}, t)
+	RunSubtests(client, true, []string{suite}, t)
+
+}
+
+func TestCloudant(t *testing.T) {
+	doTest(SuiteCloudant, "KIVIK_CLOUDANT_DSN", t)
 }
 
 func TestCouch16(t *testing.T) {
-	dsn := os.Getenv("KIVIK_COUCH16_DSN")
-	if dsn == "" {
-		t.Skip("KIVIK_COUCH16_DSN: Couch 1.6 DSN not set; skipping tests")
-	}
-	client, err := kivik.New("couch", dsn)
-	if err != nil {
-		t.Errorf("Failed to connect to CouchDB 1.6: %s\n", err)
-		return
-	}
-	RunSubtests(client, true, []string{SuiteCouch16}, t)
+	doTest(SuiteCouch16, "KIVIK_COUCH16_DSN", t)
 }
 
 func TestCouch20(t *testing.T) {
-	dsn := os.Getenv("KIVIK_COUCH20_DSN")
-	if dsn == "" {
-		t.Skip("KIVIK_COUCH16_DSN: Couch 2.0 DSN not set; skipping tests")
-	}
-	client, err := kivik.New("couch", dsn)
-	if err != nil {
-		t.Errorf("Failed to connect to CouchDB 2.0: %s\n", err)
-		return
-	}
-	RunSubtests(client, true, []string{SuiteCouch20}, t)
+	doTest(SuiteCouch20, "KIVIK_COUCH20_DSN", t)
 }

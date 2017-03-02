@@ -100,3 +100,18 @@ func (db *DB) Destroy(options map[string]interface{}) error {
 	_ = <-resultCh
 	return err
 }
+
+// AllDocs returns a list of all documents in the database.
+func (db *DB) AllDocs(options map[string]interface{}) ([]byte, error) {
+	resultCh := make(chan *js.Object)
+	var err error
+	db.Call("allDocs", options, func(e, r *js.Object) {
+		if e != nil {
+			err = &js.Error{Object: e}
+		}
+		resultCh <- r
+	})
+	result := <-resultCh
+	resultJSON := js.Global.Get("JSON").Call("stringify", result).String()
+	return []byte(resultJSON), err
+}

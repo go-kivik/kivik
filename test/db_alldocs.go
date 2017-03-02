@@ -19,7 +19,7 @@ func AllDocsCouch(client *kivik.Client, _ string, fail FailFunc) {
 		fail("Failed to connect to database: %s", err)
 	}
 	docs := []interface{}{}
-	offset, total, err := db.AllDocs(&docs, nil)
+	offset, total, _, err := db.AllDocs(&docs, nil)
 	if err != nil {
 		fail("Failed to fetch AllDocs: %s", err)
 		return

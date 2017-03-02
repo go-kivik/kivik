@@ -14,6 +14,7 @@
 
 - ✅ Yes : This feature is fully supported
 - ☑️ Partial : This feature is partially supported
+- ？ Untested : This feature has been implemented, but is not yet fully tested.
 - ⁿ/ₐ Not Applicable : This feature is supported, and doesn't make sense to emulate.
 - ❌ No : This feature is supported by the backend, but there are no plans to add support to Kivik
 
@@ -58,7 +59,7 @@
 | PUT /{db}          | CreateDB()             | ✅ |    | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
 | DELETE /{db}       | DestroyDB()            |    |    | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
 | POST /{db}
-| GET /{db}/_all_docs | AllDocs()             |    | ✅ | ✅ |
+| GET /{db}/_all_docs | AllDocs()             |    | ✅ | ✅ | ？ | ？ |
 | POST /{db}/_all_docs
 | POST /{db}/_bulk_docs
 | GET /{db}/_changes

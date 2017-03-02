@@ -1,9 +1,6 @@
 package driver
 
-import (
-	"encoding/json"
-	"net/url"
-)
+import "encoding/json"
 
 // Driver is the interface that must be implemented by a database driver.
 type Driver interface {
@@ -76,11 +73,11 @@ type Cluster interface {
 
 // DB is a database handle.
 type DB interface {
-	AllDocs(docs interface{}, options url.Values) (offset, totalrows int, err error)
+	AllDocs(docs interface{}, options map[string]interface{}) (offset, totalrows int, seq string, err error)
 	// BulkDocs()
 	// Get fetches the requested document from the database, and unmarshals it
 	// into doc.
-	Get(docID string, doc interface{}, options url.Values) error
+	Get(docID string, doc interface{}, options map[string]interface{}) error
 	// GetAttachment()
 	// Compact()
 	// CompactDDoc(ddoc string)

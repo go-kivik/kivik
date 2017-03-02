@@ -14,26 +14,36 @@ import (
 
 // The available test suites
 const (
-	SuiteAuto        = "auto"
-	SuitePouchLocal  = "pouch"
-	SuitePouchRemote = "pouchremote"
-	SuiteCouch16     = "couch16"
-	SuiteCouch20     = "couch20"
-	SuiteCloudant    = "cloudant"
-	SuiteKivikServer = "kivikserver"
-	SuiteKivikMemory = "kivikmemory"
-	SuiteKivikFS     = "kivikfilesystem"
+	SuiteAuto              = "auto"
+	SuitePouchLocal        = "pouch"
+	SuitePouchRemote       = "pouchRemote"
+	SuitePouchRemoteNoAuth = "pouchRemoteNoAuth"
+	SuiteCouch16           = "couch16"
+	SuiteCouch16NoAuth     = "couch16NoAuth"
+	SuiteCouch20           = "couch20"
+	SuiteCouch20NoAuth     = "couch20NoAuth"
+	SuiteCloudant          = "cloudant"
+	SuiteCloudantNoAuth    = "cloudantNoAuth"
+	SuiteKivikServer       = "kivikServer"
+	SuiteKivikServerNoAuth = "kivikServerNoAuth"
+	SuiteKivikMemory       = "kivikMemory"
+	SuiteKivikFS           = "kivikFilesystem"
 )
 
 var driverMap = map[string]string{
-	SuitePouchLocal:  "pouch",
-	SuitePouchRemote: "pouch",
-	SuiteCouch16:     "couch",
-	SuiteCouch20:     "couch",
-	SuiteCloudant:    "couch",
-	SuiteKivikServer: "couch",
-	SuiteKivikMemory: "memory",
-	SuiteKivikFS:     "fs",
+	SuitePouchLocal:        "pouch",
+	SuitePouchRemote:       "pouch",
+	SuitePouchRemoteNoAuth: "pouch",
+	SuiteCouch16:           "couch",
+	SuiteCouch16NoAuth:     "couch",
+	SuiteCouch20:           "couch",
+	SuiteCouch20NoAuth:     "couch",
+	SuiteCloudant:          "couch",
+	SuiteCloudantNoAuth:    "couch",
+	SuiteKivikServer:       "couch",
+	SuiteKivikServerNoAuth: "couch",
+	SuiteKivikMemory:       "memory",
+	SuiteKivikFS:           "fs",
 }
 
 var rnd *rand.Rand

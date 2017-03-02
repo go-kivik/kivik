@@ -1,12 +1,36 @@
 package test
 
-import "github.com/flimzy/kivik"
+import (
+	"net/http"
+
+	"github.com/flimzy/kivik"
+	"github.com/flimzy/kivik/errors"
+)
 
 func init() {
 	for _, suite := range []string{SuitePouchLocal, SuiteCouch16, SuiteCouch20, SuiteKivikMemory, SuiteCloudant, SuiteKivikServer} {
 		RegisterTest(suite, "AllDBs", false, AllDBs)
 		RegisterTest(suite, "AllDBsRW", true, AllDBsRW)
 	}
+	// Without auth, all we can do is RO tests
+	for _, suite := range []string{SuiteCouch16NoAuth, SuiteCouch20NoAuth} {
+		RegisterTest(suite, "AllDBs", false, AllDBs)
+	}
+	// Cloudant rejects unauthorized _all_dbs queries by default.
+	RegisterTest(SuiteCloudantNoAuth, "AllDBsFailNoAuth", false, AllDBsFailNoAuth)
+}
+
+// AllDBsFailNoAuth tests unauthorized clients
+func AllDBsFailNoAuth(client *kivik.Client, suite string, fail FailFunc) {
+	_, err := client.AllDBs()
+	switch errors.StatusCode(err) {
+	case 0:
+		fail("AllDBs(): should have failed for %s", suite)
+	case http.StatusUnauthorized:
+	default:
+		fail("AllDBs(): Expected 401/Unauthorized, got: %s", err)
+	}
+	return
 }
 
 // AllDBs tests the '/_all_dbs' endpoint.

@@ -33,8 +33,8 @@ func (a *CookieAuth) authenticate(c *client) error {
 	}
 
 	_, err := c.newRequest(http.MethodPost, "/_session").
-		AddHeader("Content-Type", jsonType).
-		AddHeader("Accept", jsonType).
+		AddHeader("Content-Type", typeJSON).
+		AddHeader("Accept", typeJSON).
 		Body(body).
 		Do()
 	return err

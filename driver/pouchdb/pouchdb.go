@@ -198,3 +198,13 @@ func (c *client) DestroyDB(dbName string) error {
 	}
 	return c.pouch.New(c.dbURL(dbName), opts).Destroy(nil)
 }
+
+func (c *client) DB(dbName string) (driver.DB, error) {
+	opts, err := c.options(Options{})
+	if err != nil {
+		return nil, err
+	}
+	return &db{
+		db: c.pouch.New(c.dbURL(dbName), opts),
+	}, nil
+}

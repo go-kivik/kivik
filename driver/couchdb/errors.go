@@ -41,7 +41,7 @@ func ResponseError(resp *http.Response) error {
 	}
 	httpErr := &HTTPError{}
 	if resp.Request.Method != "HEAD" && resp.ContentLength > 0 {
-		if cType, _, _ := mime.ParseMediaType(resp.Header.Get("Content-Type")); cType == jsonType {
+		if cType, _, _ := mime.ParseMediaType(resp.Header.Get("Content-Type")); cType == typeJSON {
 			dec := json.NewDecoder(resp.Body)
 			defer resp.Body.Close()
 			if err := dec.Decode(httpErr); err != nil {

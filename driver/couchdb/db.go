@@ -37,12 +37,12 @@ func optionsToParams(opts map[string]interface{}) (url.Values, error) {
 }
 
 // AllDocs returns all of the documents in the database.
-func (d *db) AllDocs(docs interface{}, opts map[string]interface{}) (offset, totalrows int, err error) {
+func (d *db) AllDocs(docs interface{}, opts map[string]interface{}) (offset, totalrows int, seq string, err error) {
 	resp, err := d.client.newRequest(http.MethodGet, d.path("_all_docs")).
 		AddHeader("Accept", typeJSON).
 		Do()
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, "", err
 	}
 	defer resp.Body.Close()
 	return common.AllDocs(resp.Body, docs)

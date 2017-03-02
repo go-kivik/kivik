@@ -73,7 +73,7 @@ type Cluster interface {
 
 // DB is a database handle.
 type DB interface {
-	AllDocs(docs interface{}, options map[string]interface{}) (offset, totalrows int, err error)
+	AllDocs(docs interface{}, options map[string]interface{}) (offset, totalrows int, seq string, err error)
 	// BulkDocs()
 	// Get fetches the requested document from the database, and unmarshals it
 	// into doc.

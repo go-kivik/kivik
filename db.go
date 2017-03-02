@@ -8,7 +8,7 @@ type DB struct {
 }
 
 // AllDocs returns a list of all documents in the database.
-func (db *DB) AllDocs(docs interface{}, options Options) (offset, totalrows int, err error) {
+func (db *DB) AllDocs(docs interface{}, options Options) (offset, totalrows int, seq string, err error) {
 	return db.driverDB.AllDocs(docs, options)
 }
 

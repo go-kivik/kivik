@@ -11,10 +11,10 @@ type db struct {
 	db *bindings.DB
 }
 
-func (d *db) AllDocs(docs interface{}, options map[string]interface{}) (offset, totalrows int, err error) {
+func (d *db) AllDocs(docs interface{}, options map[string]interface{}) (offset, totalrows int, seq string, err error) {
 	body, err := d.db.AllDocs(options)
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, "", err
 	}
 	return common.AllDocs(bytes.NewReader(body), docs)
 }

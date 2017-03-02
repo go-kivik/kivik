@@ -20,13 +20,13 @@ func init() {
 	})
 }
 
-func TestPouch(t *testing.T) {
+func TestPouchLocal(t *testing.T) {
 	client, err := kivik.New("memdown", "")
 	if err != nil {
 		t.Errorf("Failed to connect to PouchDB/memdown driver: %s", err)
 		return
 	}
-	RunSubtests(client, true, []string{SuitePouch}, t)
+	RunSubtests(client, true, []string{SuitePouchLocal}, t)
 }
 
 func TestPouchRemote(t *testing.T) {

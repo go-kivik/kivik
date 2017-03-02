@@ -8,7 +8,7 @@ func init() {
 		RegisterTest(suite, "DBExists", false, DBExists)
 	}
 	// For the rest, the only way to be sure a db exists is to create it first
-	for _, suite := range []string{SuitePouch, SuitePouchRemote, SuiteKivikMemory, SuiteKivikServer} {
+	for _, suite := range []string{SuitePouchLocal, SuitePouchRemote, SuiteKivikMemory, SuiteKivikServer} {
 		RegisterTest(suite, "DBExistsRW", true, DBExistsRW)
 	}
 	// For all of them, except local PouchDB, we can check for non-existence without writing

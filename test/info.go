@@ -23,12 +23,12 @@ var vendorNames = map[string]string{
 	SuiteCouch:       "The Apache Software Foundation",
 	SuiteCouch20:     "The Apache Software Foundation",
 	SuiteKivikMemory: "Kivik Memory Adaptor",
-	SuitePouch:       "PouchDB",
+	SuitePouchLocal:  "PouchDB",
 	SuiteKivikServer: "Kivik",
 }
 
 var vendorVersionREs = map[string]*regexp.Regexp{
-	SuitePouch:       regexp.MustCompile(`^\d\.\d\.\d$`),
+	SuitePouchLocal:  regexp.MustCompile(`^\d\.\d\.\d$`),
 	SuiteCouch:       regexp.MustCompile(`^1\.\d\.\d$`),
 	SuiteCouch20:     regexp.MustCompile(`^2\.0\.0$`),
 	SuiteKivikMemory: regexp.MustCompile(`^\d\.\d\.\d$`),

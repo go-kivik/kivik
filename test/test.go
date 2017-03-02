@@ -15,7 +15,7 @@ import (
 // The available test suites
 const (
 	SuiteAuto        = "auto"
-	SuitePouch       = "pouch"
+	SuitePouchLocal  = "pouch"
 	SuitePouchRemote = "pouchremote"
 	SuiteCouch       = "couch"
 	SuiteCouch20     = "couch2.0"
@@ -36,7 +36,7 @@ func testDBName() string {
 }
 
 // AllSuites is a list of all defined suites.
-var AllSuites = []string{SuitePouch, SuitePouchRemote, SuiteCouch, SuiteCouch20, SuiteKivikMemory, SuiteKivikFS, SuiteCloudant, SuiteKivikServer}
+var AllSuites = []string{SuitePouchLocal, SuitePouchRemote, SuiteCouch, SuiteCouch20, SuiteKivikMemory, SuiteKivikFS, SuiteCloudant, SuiteKivikServer}
 
 // ListTests prints a list of available test suites to stdout.
 func ListTests() {
@@ -127,7 +127,7 @@ func detectCompatibility(client *kivik.Client) ([]string, error) {
 	}
 	switch info.Vendor() {
 	case "PouchDB":
-		return []string{SuitePouch}, nil
+		return []string{SuitePouchLocal}, nil
 	case "IBM Cloudant":
 		return []string{SuiteCloudant}, nil
 	case "The Apache Software Foundation":

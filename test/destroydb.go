@@ -8,7 +8,7 @@ func init() {
 		RegisterTest(suite, "NotDestroyDB", true, NotDestroyDB)
 	}
 	// Local Pouch will never fail to destroy a DB, so skip NotDestroyDB for it.
-	RegisterTest(SuitePouch, "DestroyDB", true, DestroyDB)
+	RegisterTest(SuitePouchLocal, "DestroyDB", true, DestroyDB)
 }
 
 // DestroyDB tests database destruction

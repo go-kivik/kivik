@@ -56,7 +56,8 @@ func (d *db) Get(docID string, doc interface{}, opts map[string]interface{}) err
 	if err != nil {
 		return err
 	}
-	return d.client.newRequest(http.MethodGet, d.url(docID, params)).
+	return d.client.newRequest(http.MethodGet, d.path(docID)).
+		Query(params).
 		AddHeader("Accept", typeJSON).
 		AddHeader("Accept", typeMixed).
 		DoJSON(doc)
@@ -78,7 +79,7 @@ func (d *db) Put(docID string, doc interface{}) (rev string, err error) {
 	var result struct {
 		Rev string `json:"rev"`
 	}
-	err = d.client.newRequest(http.MethodPut, d.url(docID, nil)).
+	err = d.client.newRequest(http.MethodPut, d.path(docID)).
 		AddHeader("Accept", typeJSON).
 		AddHeader("Content-Type", typeJSON).
 		If(curRev != "", func(r *request) { r.AddHeader("If-Match", curRev) }).

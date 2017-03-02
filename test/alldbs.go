@@ -3,7 +3,7 @@ package test
 import "github.com/flimzy/kivik"
 
 func init() {
-	for _, suite := range []string{SuitePouchLocal, SuiteCouch, SuiteCouch20, SuiteKivikMemory, SuiteCloudant, SuiteKivikServer} {
+	for _, suite := range []string{SuitePouchLocal, SuiteCouch16, SuiteCouch20, SuiteKivikMemory, SuiteCloudant, SuiteKivikServer} {
 		RegisterTest(suite, "AllDBs", false, AllDBs)
 		RegisterTest(suite, "AllDBsRW", true, AllDBsRW)
 	}
@@ -14,7 +14,7 @@ func AllDBs(client *kivik.Client, suite string, fail FailFunc) {
 	var expected []string
 
 	switch suite {
-	case SuitePouchRemote, SuiteCouch, SuiteCloudant, SuiteCouch20:
+	case SuitePouchRemote, SuiteCouch16, SuiteCloudant, SuiteCouch20:
 		expected = []string{"_replicator", "_users"}
 	}
 	allDBs, err := client.AllDBs()

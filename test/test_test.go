@@ -42,7 +42,7 @@ func TestCouch16(t *testing.T) {
 		t.Errorf("Failed to connect to CouchDB 1.6: %s\n", err)
 		return
 	}
-	RunSubtests(client, true, []string{SuiteCouch}, t)
+	RunSubtests(client, true, []string{SuiteCouch16}, t)
 }
 
 func TestCouch20(t *testing.T) {

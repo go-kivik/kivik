@@ -3,7 +3,7 @@ package test
 import "github.com/flimzy/kivik"
 
 func init() {
-	for _, suite := range []string{SuiteCouch, SuiteCouch20, SuiteCloudant} {
+	for _, suite := range []string{SuiteCouch16, SuiteCouch20, SuiteCloudant} {
 		RegisterTest(suite, "AllDocsCouch", false, AllDocsCouch)
 	}
 	// for _, suite := range []string{SuitePouch, , SuiteKivikMemory, SuiteKivikServer} {

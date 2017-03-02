@@ -17,8 +17,8 @@ const (
 	SuiteAuto        = "auto"
 	SuitePouchLocal  = "pouch"
 	SuitePouchRemote = "pouchremote"
-	SuiteCouch       = "couch"
-	SuiteCouch20     = "couch2.0"
+	SuiteCouch16     = "couch16"
+	SuiteCouch20     = "couch20"
 	SuiteKivikMemory = "kivikmemory"
 	SuiteKivikFS     = "kivikfilesystem"
 	SuiteCloudant    = "cloudant"
@@ -36,7 +36,7 @@ func testDBName() string {
 }
 
 // AllSuites is a list of all defined suites.
-var AllSuites = []string{SuitePouchLocal, SuitePouchRemote, SuiteCouch, SuiteCouch20, SuiteKivikMemory, SuiteKivikFS, SuiteCloudant, SuiteKivikServer}
+var AllSuites = []string{SuitePouchLocal, SuitePouchRemote, SuiteCouch16, SuiteCouch20, SuiteKivikMemory, SuiteKivikFS, SuiteCloudant, SuiteKivikServer}
 
 // ListTests prints a list of available test suites to stdout.
 func ListTests() {
@@ -134,7 +134,7 @@ func detectCompatibility(client *kivik.Client) ([]string, error) {
 		if info.Version() == "2.0" {
 			return []string{SuiteCouch20}, nil
 		}
-		return []string{SuiteCouch}, nil
+		return []string{SuiteCouch16}, nil
 	case "Kivik Memory Adaptor":
 		return []string{SuiteKivikMemory}, nil
 	}

@@ -36,8 +36,6 @@ type Client interface {
 	DestroyDB(dbName string) error
 	// DB returns a handleto the requested database
 	DB(dbName string) (DB, error)
-	// // Put stores the document in the database.
-	// Put(docID string, doc interface{}) (rev string, err error)
 }
 
 // Authenticator is an optional interface that may be implemented by a Client
@@ -78,6 +76,10 @@ type DB interface {
 	// Get fetches the requested document from the database, and unmarshals it
 	// into doc.
 	Get(docID string, doc interface{}, options map[string]interface{}) error
+	// CreateDoc creates a new doc, with a server-generated ID.
+	CreateDoc(doc interface{}) (docID, rev string, err error)
+	// Put writes the document in the database.
+	Put(docID string, doc interface{}) (rev string, err error)
 	// GetAttachment()
 	// Compact()
 	// CompactDDoc(ddoc string)

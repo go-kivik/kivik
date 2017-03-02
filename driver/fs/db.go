@@ -12,3 +12,11 @@ func (d *db) AllDocs(docs interface{}, _ map[string]interface{}) (offset, totalr
 func (d *db) Get(docID string, doc interface{}, opts map[string]interface{}) error {
 	return nil
 }
+
+func (d *db) CreateDoc(doc interface{}) (docID, rev string, err error) {
+	return "", "", nil
+}
+
+func (d *db) Put(docID string, doc interface{}) (rev string, err error) {
+	return "", nil
+}

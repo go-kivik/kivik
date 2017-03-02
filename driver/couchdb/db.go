@@ -1,6 +1,8 @@
 package couchdb
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -65,5 +67,22 @@ func (d *db) CreateDoc(doc interface{}) (docID, rev string, err error) {
 }
 
 func (d *db) Put(docID string, doc interface{}) (rev string, err error) {
-	return "", nil
+	body, err := json.Marshal(doc)
+	if err != nil {
+		return "", err
+	}
+	curRev, err := ouchdb.ExtractRev(body)
+	if err != nil {
+		return "", err
+	}
+	var result struct {
+		Rev string `json:"rev"`
+	}
+	err = d.client.newRequest(http.MethodPut, d.url(docID, nil)).
+		AddHeader("Accept", typeJSON).
+		AddHeader("Content-Type", typeJSON).
+		If(curRev != "", func(r *request) { r.AddHeader("If-Match", curRev) }).
+		Body(bytes.NewReader(body)).
+		DoJSON(&result)
+	return result.Rev, err
 }

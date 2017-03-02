@@ -58,6 +58,13 @@ func (r *request) AddHeader(key, value string) *request {
 	return r
 }
 
+func (r *request) If(cond bool, fn func(*request)) *request {
+	if cond {
+		fn(r)
+	}
+	return r
+}
+
 func (r *request) Do() (*http.Response, error) {
 	c := r.client
 	fullURL := c.url(r.url, r.query)

@@ -1,16 +1,14 @@
 package memory
 
-import "net/url"
-
 type db struct {
 	*client
 	dbName string
 }
 
-func (d *db) AllDocs(docs interface{}, opts url.Values) (offset, total int, err error) {
+func (d *db) AllDocs(docs interface{}, opts map[string]interface{}) (offset, total int, err error) {
 	return 0, 0, nil
 }
 
-func (d *db) Get(docID string, doc interface{}, opts url.Values) error {
+func (d *db) Get(docID string, doc interface{}, opts map[string]interface{}) error {
 	return nil
 }

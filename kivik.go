@@ -15,6 +15,9 @@ type Client struct {
 	driverClient driver.Client
 }
 
+// Options is a collection of options. The keys and values are backend specific.
+type Options map[string]interface{}
+
 // New creates a new client object specified by its database driver name
 // and a driver-specific data source name.
 func New(driverName, dataSourceName string) (*Client, error) {

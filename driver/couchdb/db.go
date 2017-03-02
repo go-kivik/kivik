@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/flimzy/kivik/driver/common"
+	"github.com/flimzy/kivik/driver/ouchdb"
 )
 
 type db struct {
@@ -45,7 +45,7 @@ func (d *db) AllDocs(docs interface{}, opts map[string]interface{}) (offset, tot
 		return 0, 0, "", err
 	}
 	defer resp.Body.Close()
-	return common.AllDocs(resp.Body, docs)
+	return ouchdb.AllDocs(resp.Body, docs)
 }
 
 // Get fetches the requested document.

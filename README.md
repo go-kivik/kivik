@@ -31,6 +31,9 @@ be https://github.com/fjl/go-couchdb, but it has several shortcomings:
     to acquire, thanks to the author not responding to issues).
   - It [doesn't support CouchDB 2.0](https://github.com/fjl/go-couchdb/issues/14).
     The API differences between 1.6.1 and 2.0 are minor, but they do exist.
+  - It doesn't natively support CookieAuth (it does allow a generic Auth method
+    which could be used to do this, but I think it's appropriate to put directly
+    in the library).
 
 2. I want a single client API that works with both CouchDB and [PouchDB](https://pouchdb.com/).
 I have previously written [go-pouchdb](https://github.com/flimzy/go-pouchdb), which is

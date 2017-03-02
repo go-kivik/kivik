@@ -6,7 +6,7 @@ func init() {
 	for _, suite := range []string{SuiteCouch, SuiteCouch20, SuiteCloudant} {
 		RegisterTest(suite, "AllDocsCouch", false, AllDocsCouch)
 	}
-	// for _, suite := range []string{SuiteMinimal, SuitePouch, , SuiteKivikMemory, SuiteKivikServer} {
+	// for _, suite := range []string{SuitePouch, , SuiteKivikMemory, SuiteKivikServer} {
 	// 	RegisterTest(suite, "AllDocs", false, AllDocs)
 	// 	// RegisterTest(suite, "AllDocsRW", true, AllDocsRW)
 	// }

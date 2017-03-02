@@ -1,6 +1,7 @@
 package test
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"os"
@@ -13,7 +14,6 @@ import (
 
 // The available test suites
 const (
-	SuiteMinimal     = "minimal"
 	SuiteAuto        = "auto"
 	SuitePouch       = "pouch"
 	SuitePouchRemote = "pouchremote"
@@ -36,7 +36,7 @@ func testDBName() string {
 }
 
 // AllSuites is a list of all defined suites.
-var AllSuites = []string{SuiteMinimal, SuitePouch, SuitePouchRemote, SuiteCouch, SuiteCouch20, SuiteKivikMemory, SuiteKivikFS, SuiteCloudant, SuiteKivikServer}
+var AllSuites = []string{SuitePouch, SuitePouchRemote, SuiteCouch, SuiteCouch20, SuiteKivikMemory, SuiteKivikFS, SuiteCloudant, SuiteKivikServer}
 
 // ListTests prints a list of available test suites to stdout.
 func ListTests() {
@@ -138,7 +138,7 @@ func detectCompatibility(client *kivik.Client) ([]string, error) {
 	case "Kivik Memory Adaptor":
 		return []string{SuiteKivikMemory}, nil
 	}
-	return []string{SuiteMinimal}, nil
+	return []string{}, errors.New("Unable to automatically determine the proper test suite")
 }
 
 type testFunc func(*kivik.Client, string, FailFunc)

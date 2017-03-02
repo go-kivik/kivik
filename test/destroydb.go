@@ -3,7 +3,7 @@ package test
 import "github.com/flimzy/kivik"
 
 func init() {
-	for _, suite := range []string{SuiteMinimal, SuitePouchRemote, SuiteCouch, SuiteCouch20, SuiteKivikMemory, SuiteCloudant} { //FIXME: SuiteKivikServer
+	for _, suite := range []string{SuitePouchRemote, SuiteCouch, SuiteCouch20, SuiteKivikMemory, SuiteCloudant} { //FIXME: SuiteKivikServer
 		RegisterTest(suite, "DestroyDB", true, DestroyDB)
 		RegisterTest(suite, "NotDestroyDB", true, NotDestroyDB)
 	}

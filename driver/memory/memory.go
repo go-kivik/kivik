@@ -3,6 +3,7 @@ package memory
 
 import (
 	"net/http"
+	"sync"
 
 	"github.com/pborman/uuid"
 
@@ -20,12 +21,10 @@ func init() {
 	kivik.Register("memory", &memDriver{})
 }
 
-// database is an in-memory database representation.
-type database struct{}
-
 type client struct {
 	*common.Client
-	dbs map[string]database
+	mutex sync.RWMutex
+	dbs   map[string]*database
 }
 
 var _ driver.Client = &client{}
@@ -39,7 +38,7 @@ const (
 func (d *memDriver) NewClient(name string) (driver.Client, error) {
 	return &client{
 		Client: common.NewClient(Version, Vendor, Version),
-		dbs:    make(map[string]database),
+		dbs:    make(map[string]*database),
 	}, nil
 }
 
@@ -60,6 +59,8 @@ func (c *client) UUIDs(count int) ([]string, error) {
 }
 
 func (c *client) DBExists(dbName string) (bool, error) {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
 	_, ok := c.dbs[dbName]
 	return ok, nil
 }
@@ -68,7 +69,9 @@ func (c *client) CreateDB(dbName string) error {
 	if exists, _ := c.DBExists(dbName); exists {
 		return errors.Status(http.StatusPreconditionFailed, "database exists")
 	}
-	c.dbs[dbName] = database{}
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	c.dbs[dbName] = &database{}
 	return nil
 }
 
@@ -76,6 +79,8 @@ func (c *client) DestroyDB(dbName string) error {
 	if exists, _ := c.DBExists(dbName); !exists {
 		return errors.Status(http.StatusNotFound, "database not found")
 	}
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
 	delete(c.dbs, dbName)
 	return nil
 }

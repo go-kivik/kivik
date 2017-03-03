@@ -8,7 +8,7 @@ package test
 import "github.com/flimzy/kivik"
 
 func init() {
-	for _, suite := range []string{SuiteCouch, SuiteCouch20} { //FIXME: SuiteKivikServer
+	for _, suite := range []string{SuiteCouch16, SuiteCouch20} { //FIXME: SuiteKivikServer
 		RegisterTest(suite, "Log", false, Log)
 	}
 	RegisterTest(SuiteCloudant, "Log", false, CloudantLog)

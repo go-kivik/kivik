@@ -78,7 +78,7 @@
 | PUT /{db}/_revs_limit
 | HEAD /{db}/{docid}
 | GET /{db}/{docid}
-| PUT /{db}/{docid}
+| PUT /{db}/{docid}   | Put()                 |    | ✅ | ✅ |
 | DELETE /{db}/{docid}
 | COPY /{db}/{docid}
 | HEAD /{db}/{docid}/{attname}

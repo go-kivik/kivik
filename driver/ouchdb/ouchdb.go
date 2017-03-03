@@ -30,3 +30,12 @@ func AllDocs(body io.Reader, docs interface{}) (offset, totalRows int, updateSeq
 	}
 	return result.Offset, result.TotalRows, result.UpdateSeq, json.Unmarshal(result.Rows, docs)
 }
+
+// ExtractRev extracts just the _rev JSON key from a JSON blob.
+func ExtractRev(doc []byte) (string, error) {
+	var result struct {
+		Rev string `json:"_rev"`
+	}
+	err := json.Unmarshal(doc, &result)
+	return result.Rev, err
+}

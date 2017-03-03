@@ -3,12 +3,12 @@ package test
 import "github.com/flimzy/kivik"
 
 func init() {
-	for _, suite := range []string{SuiteMinimal, SuitePouchRemote, SuiteCouch, SuiteCouch20, SuiteKivikMemory, SuiteCloudant} { //FIXME: SuiteKivikServer
+	for _, suite := range []string{SuitePouchRemote, SuiteCouch16, SuiteCouch20, SuiteKivikMemory, SuiteCloudant} { //FIXME: SuiteKivikServer
 		RegisterTest(suite, "DestroyDB", true, DestroyDB)
 		RegisterTest(suite, "NotDestroyDB", true, NotDestroyDB)
 	}
 	// Local Pouch will never fail to destroy a DB, so skip NotDestroyDB for it.
-	RegisterTest(SuitePouch, "DestroyDB", true, DestroyDB)
+	RegisterTest(SuitePouchLocal, "DestroyDB", true, DestroyDB)
 }
 
 // DestroyDB tests database destruction

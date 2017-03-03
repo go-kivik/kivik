@@ -1,4 +1,6 @@
-package serve
+// +build !js
+
+package test
 
 import (
 	"net/http/httptest"
@@ -7,11 +9,11 @@ import (
 	"github.com/flimzy/kivik"
 	_ "github.com/flimzy/kivik/driver/couchdb"
 	_ "github.com/flimzy/kivik/driver/memory"
-	"github.com/flimzy/kivik/test"
+	"github.com/flimzy/kivik/serve"
 )
 
 func TestServer(t *testing.T) {
-	handler, err := New("memory", "").Server()
+	handler, err := serve.New("memory", "").Server()
 	if err != nil {
 		t.Fatalf("Failed to initialize server: %s\n", err)
 	}
@@ -22,5 +24,5 @@ func TestServer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to initialize client: %s\n", err)
 	}
-	test.RunSubtests(client, true, []string{test.SuiteKivikServer}, t)
+	RunSubtests(client, true, []string{SuiteKivikServer}, t)
 }

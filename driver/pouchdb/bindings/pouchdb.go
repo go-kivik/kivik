@@ -79,7 +79,7 @@ func (db *DB) Info() (*DBInfo, error) {
 	var err error
 	db.Call("info", func(e *js.Object, i *DBInfo) {
 		if e != nil {
-			err = &js.Error{Object: e}
+			err = &pouchError{Object: e}
 		}
 		resultCh <- i
 	})

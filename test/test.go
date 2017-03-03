@@ -1,6 +1,7 @@
 package test
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"os"
@@ -13,17 +14,37 @@ import (
 
 // The available test suites
 const (
-	SuiteMinimal     = "minimal"
-	SuiteAuto        = "auto"
-	SuitePouch       = "pouch"
-	SuitePouchRemote = "pouchremote"
-	SuiteCouch       = "couch"
-	SuiteCouch20     = "couch2.0"
-	SuiteKivikMemory = "kivikmemory"
-	SuiteKivikFS     = "kivikfilesystem"
-	SuiteCloudant    = "cloudant"
-	SuiteKivikServer = "kivikserver"
+	SuiteAuto              = "auto"
+	SuitePouchLocal        = "pouch"
+	SuitePouchRemote       = "pouchRemote"
+	SuitePouchRemoteNoAuth = "pouchRemoteNoAuth"
+	SuiteCouch16           = "couch16"
+	SuiteCouch16NoAuth     = "couch16NoAuth"
+	SuiteCouch20           = "couch20"
+	SuiteCouch20NoAuth     = "couch20NoAuth"
+	SuiteCloudant          = "cloudant"
+	SuiteCloudantNoAuth    = "cloudantNoAuth"
+	SuiteKivikServer       = "kivikServer"
+	SuiteKivikServerNoAuth = "kivikServerNoAuth"
+	SuiteKivikMemory       = "kivikMemory"
+	SuiteKivikFS           = "kivikFilesystem"
 )
+
+var driverMap = map[string]string{
+	SuitePouchLocal:        "pouch",
+	SuitePouchRemote:       "pouch",
+	SuitePouchRemoteNoAuth: "pouch",
+	SuiteCouch16:           "couch",
+	SuiteCouch16NoAuth:     "couch",
+	SuiteCouch20:           "couch",
+	SuiteCouch20NoAuth:     "couch",
+	SuiteCloudant:          "couch",
+	SuiteCloudantNoAuth:    "couch",
+	SuiteKivikServer:       "couch",
+	SuiteKivikServerNoAuth: "couch",
+	SuiteKivikMemory:       "memory",
+	SuiteKivikFS:           "fs",
+}
 
 var rnd *rand.Rand
 
@@ -36,7 +57,7 @@ func testDBName() string {
 }
 
 // AllSuites is a list of all defined suites.
-var AllSuites = []string{SuiteMinimal, SuitePouch, SuitePouchRemote, SuiteCouch, SuiteCouch20, SuiteKivikMemory, SuiteKivikFS, SuiteCloudant, SuiteKivikServer}
+var AllSuites = []string{SuitePouchLocal, SuitePouchRemote, SuiteCouch16, SuiteCouch20, SuiteKivikMemory, SuiteKivikFS, SuiteCloudant, SuiteKivikServer}
 
 // ListTests prints a list of available test suites to stdout.
 func ListTests() {
@@ -127,18 +148,18 @@ func detectCompatibility(client *kivik.Client) ([]string, error) {
 	}
 	switch info.Vendor() {
 	case "PouchDB":
-		return []string{SuitePouch}, nil
+		return []string{SuitePouchLocal}, nil
 	case "IBM Cloudant":
 		return []string{SuiteCloudant}, nil
 	case "The Apache Software Foundation":
 		if info.Version() == "2.0" {
 			return []string{SuiteCouch20}, nil
 		}
-		return []string{SuiteCouch}, nil
+		return []string{SuiteCouch16}, nil
 	case "Kivik Memory Adaptor":
 		return []string{SuiteKivikMemory}, nil
 	}
-	return []string{SuiteMinimal}, nil
+	return []string{}, errors.New("Unable to automatically determine the proper test suite")
 }
 
 type testFunc func(*kivik.Client, string, FailFunc)

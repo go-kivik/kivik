@@ -3,7 +3,6 @@
 package test
 
 import (
-	"os"
 	"testing"
 
 	"github.com/gopherjs/gopherjs/js"
@@ -20,24 +19,19 @@ func init() {
 	})
 }
 
-func TestPouch(t *testing.T) {
+func TestPouchLocal(t *testing.T) {
 	client, err := kivik.New("memdown", "")
 	if err != nil {
 		t.Errorf("Failed to connect to PouchDB/memdown driver: %s", err)
 		return
 	}
-	RunSubtests(client, true, []string{SuitePouch}, t)
+	RunSubtests(client, true, []string{SuitePouchLocal}, t)
 }
 
 func TestPouchRemote(t *testing.T) {
-	dsn := os.Getenv("KIVIK_COUCH16_DSN")
-	if dsn == "" {
-		t.Skip("KIVIK_COUCH16_DSN: Couch 1.6 DSN not set; skipping remote PouchDB tests")
-	}
-	client, err := kivik.New("pouch", dsn)
-	if err != nil {
-		t.Errorf("Failed to connect to remote PouchDB: %s\n", err)
-		return
-	}
-	RunSubtests(client, true, []string{SuitePouchRemote}, t)
+	doTest(SuitePouchRemote, "KIVIK_COUCH16_DSN", true, t)
+}
+
+func TestPouchRemoteNoAuth(t *testing.T) {
+	doTest(SuitePouchRemoteNoAuth, "KIVIK_COUCH16_DSN", false, t)
 }

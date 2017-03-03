@@ -20,22 +20,25 @@ func init() {
 // DestroyDB tests database destruction
 func DestroyDB(clients *Clients, suite string, t *testing.T) {
 	admin := clients.Admin
-	testDB := testDBName()
-	if err := admin.CreateDB(testDB); err != nil {
-		t.Errorf("Failed to create database '%s': %s", testDB, err)
-		return
-	}
 	t.Run("Admin", func(t *testing.T) {
+		t.Parallel()
+		testDB := testDBName()
+		if err := admin.CreateDB(testDB); err != nil {
+			t.Errorf("Failed to create database '%s': %s", testDB, err)
+			return
+		}
 		testDestroyDB(clients.Admin, testDB, 0, t)
 	})
 	if clients.NoAuth == nil {
 		return
 	}
-	if err := admin.CreateDB(testDB); err != nil {
-		t.Errorf("Failed to create database '%s': %s", testDB, err)
-		return
-	}
 	t.Run("NoAuth", func(t *testing.T) {
+		t.Parallel()
+		testDB := testDBName()
+		if err := admin.CreateDB(testDB); err != nil {
+			t.Errorf("Failed to create database '%s': %s", testDB, err)
+			return
+		}
 		testDestroyDB(clients.NoAuth, testDB, http.StatusUnauthorized, t)
 	})
 }

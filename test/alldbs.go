@@ -31,15 +31,16 @@ func AllDBs(clients *Clients, suite string, t *testing.T) {
 			t.Run("NoAuth", func(t *testing.T) {
 				testAllDBsUnauthorized(client, t)
 			})
-		} else {
-			t.Run("NoAuth", func(t *testing.T) {
-				testAllDBs(client, expected, t)
-			})
+			return
 		}
+		t.Run("NoAuth", func(t *testing.T) {
+			testAllDBs(client, expected, t)
+		})
 	}
 }
 
 func testAllDBsUnauthorized(client *kivik.Client, t *testing.T) {
+	t.Parallel()
 	_, err := client.AllDBs()
 	switch errors.StatusCode(err) {
 	case 0:
@@ -52,6 +53,7 @@ func testAllDBsUnauthorized(client *kivik.Client, t *testing.T) {
 }
 
 func testAllDBs(client *kivik.Client, expected []string, t *testing.T) {
+	t.Parallel()
 	allDBs, err := client.AllDBs()
 	if err != nil {
 		t.Errorf("Failed to get all DBs: %s", err)

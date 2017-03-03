@@ -49,6 +49,8 @@ func main() {
 	cmdTest.Flags().StringVarP(&run, "run", "", "", "Run only those tests matching the regular expression")
 	var rw bool
 	cmdTest.Flags().BoolVarP(&rw, "write", "w", false, "Allow tests which write to the database")
+	var cleanup bool
+	cmdTest.Flags().BoolVarP(&cleanup, "cleanup", "c", false, "Clean up after previous test run, then exit")
 	cmdTest.Run = func(cmd *cobra.Command, args []string) {
 		if listTests {
 			test.ListTests()
@@ -65,6 +67,7 @@ func main() {
 			RW:      rw,
 			Suites:  tests,
 			Match:   run,
+			Cleanup: cleanup,
 		})
 	}
 

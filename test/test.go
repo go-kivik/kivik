@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -55,8 +56,11 @@ func init() {
 	rnd = rand.New(rand.NewSource(time.Now().UnixNano()))
 }
 
+// TestDBPrefix is used to prefix temporary database names during tests.
+const TestDBPrefix = "kivik$"
+
 func testDBName() string {
-	return fmt.Sprintf("kivik$%016x", rnd.Int63())
+	return fmt.Sprintf("%s%016x", TestDBPrefix, rnd.Int63())
 }
 
 // ListTests prints a list of available test suites to stdout.
@@ -75,10 +79,49 @@ type Options struct {
 	RW      bool
 	Match   string
 	Suites  []string
+	Cleanup bool
+}
+
+// CleanupTests attempts to clean up any stray test databases created by a
+// previous test run.
+func CleanupTests(driver, dsn string, verbose bool) error {
+	client, err := kivik.New(driver, dsn)
+	if err != nil {
+		return err
+	}
+	allDBs, err := client.AllDBs()
+	if err != nil {
+		return err
+	}
+	var count int
+	for _, dbName := range allDBs {
+		if strings.HasPrefix(dbName, TestDBPrefix) {
+			if verbose {
+				fmt.Printf("\t--- Deleting %s\n", dbName)
+				count++
+			}
+			err := client.DestroyDB(dbName)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	if verbose {
+		fmt.Printf("Deleted %d test databases\n", count)
+	}
+	return nil
 }
 
 // RunTests runs the requested test suites against the requested driver and DSN.
 func RunTests(opts Options) {
+	if opts.Cleanup {
+		err := CleanupTests(opts.Driver, opts.DSN, opts.Verbose)
+		if err != nil {
+			fmt.Printf("Cleanup failed: %s\n", err)
+			os.Exit(1)
+		}
+		os.Exit(0)
+	}
 	flag.Set("test.run", opts.Match)
 	if opts.Verbose {
 		flag.Set("test.v", "true")

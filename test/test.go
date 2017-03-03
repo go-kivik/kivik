@@ -2,6 +2,7 @@ package test
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"math/rand"
 	"net/url"
@@ -75,8 +76,8 @@ type Tester interface {
 }
 
 type tester struct {
-	verbose bool
-	failed  bool
+	chatty bool
+	failed bool
 }
 
 func (t *tester) Errorf(format string, args ...interface{}) {
@@ -101,22 +102,18 @@ type Options struct {
 
 // RunTests runs the requested test suites against the requested driver and DSN.
 func RunTests(opts Options) {
-	t := &tester{
-		verbose: opts.Verbose,
+	flag.Set("test.run", opts.Match)
+	if opts.Verbose {
+		flag.Set("test.v", "true")
 	}
-	mainTest(opts.Driver, opts.DSN, opts.RW, opts.Suites, t)
-	if t.failed {
-		fmt.Printf("FAILED\n")
-		os.Exit(1)
-	}
-	fmt.Printf("PASSED\n")
-	os.Exit(0)
+	mainTest(opts.Driver, opts.DSN, opts.RW, opts.Suites)
 }
 
-func mainTest(driver, dsn string, rw bool, testSuites []string, t Tester) {
+func mainTest(driver, dsn string, rw bool, testSuites []string) {
 	clients, err := connectClients(driver, dsn)
 	if err != nil {
-		t.Fatalf("Failed to connect to %s (%s driver): %s\n", dsn, driver, err)
+		fmt.Printf("Failed to connect to %s (%s driver): %s\n", dsn, driver, err)
+		os.Exit(1)
 	}
 	tests := make(map[string]struct{})
 	for _, test := range testSuites {
@@ -126,7 +123,8 @@ func mainTest(driver, dsn string, rw bool, testSuites []string, t Tester) {
 		fmt.Printf("Detecting target service compatibility...\n")
 		suites, err := detectCompatibility(clients.Admin)
 		if err != nil {
-			t.Fatalf("Unable to determine server suite compatibility: %s\n", err)
+			fmt.Printf("Unable to determine server suite compatibility: %s\n", err)
+			os.Exit(1)
 		}
 		tests = make(map[string]struct{})
 		for _, suite := range suites {
@@ -138,9 +136,8 @@ func mainTest(driver, dsn string, rw bool, testSuites []string, t Tester) {
 		testSuites = append(testSuites, test)
 	}
 	fmt.Printf("Running the following test suites: %s\n", strings.Join(testSuites, ", "))
-	for _, suite := range testSuites {
-		RunSubtests(clients, rw, suite, t)
-	}
+	m := testing.MainStart(&deps{}, gatherTests(clients, testSuites), nil, nil)
+	os.Exit(m.Run())
 }
 
 func detectCompatibility(client *kivik.Client) ([]string, error) {
@@ -214,9 +211,6 @@ func gatherTests(clients *Clients, suites []string) []testing.InternalTest {
 	internalTests := make([]testing.InternalTest, 0)
 	for _, suite := range suites {
 		for name, fn := range tests[suite] {
-			// if !runRE.MatchString(name) {
-			//      continue
-			// }
 			internalTests = append(internalTests, testing.InternalTest{
 				Name: name,
 				F: func(t *testing.T) {

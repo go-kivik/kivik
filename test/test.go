@@ -106,15 +106,13 @@ func RunTests(opts Options) {
 	if opts.Verbose {
 		flag.Set("test.v", "true")
 	}
-	mainTest(opts.Driver, opts.DSN, opts.RW, opts.Suites)
-}
 
-func mainTest(driver, dsn string, rw bool, testSuites []string) {
-	clients, err := connectClients(driver, dsn)
+	clients, err := connectClients(opts.Driver, opts.DSN)
 	if err != nil {
-		fmt.Printf("Failed to connect to %s (%s driver): %s\n", dsn, driver, err)
+		fmt.Printf("Failed to connect to %s (%s driver): %s\n", opts.DSN, opts.Driver, err)
 		os.Exit(1)
 	}
+	testSuites := opts.Suites
 	tests := make(map[string]struct{})
 	for _, test := range testSuites {
 		tests[test] = struct{}{}
@@ -136,8 +134,7 @@ func mainTest(driver, dsn string, rw bool, testSuites []string) {
 		testSuites = append(testSuites, test)
 	}
 	fmt.Printf("Running the following test suites: %s\n", strings.Join(testSuites, ", "))
-	m := testing.MainStart(&deps{}, gatherTests(clients, testSuites), nil, nil)
-	os.Exit(m.Run())
+	mainStart(clients, testSuites, opts.RW)
 }
 
 func detectCompatibility(client *kivik.Client) ([]string, error) {
@@ -188,26 +185,27 @@ func RegisterTest(suite, name string, rw bool, fn testFunc) {
 type FailFunc func(format string, args ...interface{})
 
 // RunSubtests executes the requested suites of tests against the client.
-func RunSubtests(clients *Clients, rw bool, suite string, t Tester) {
+func RunSubtests(clients *Clients, rw bool, suite string, t *testing.T) {
 	for name, fn := range tests[suite] {
-		runTest(clients, name, suite, fn, t)
+		runSubtest(clients, name, suite, fn, t)
 	}
 	if rw {
 		for name, fn := range rwtests[suite] {
-			runTest(clients, name, suite, fn, t)
+			runSubtest(clients, name, suite, fn, t)
 		}
 	}
 }
 
-func runTest(clients *Clients, name, suite string, fn testFunc, t Tester) {
-	fail := func(format string, args ...interface{}) {
-		format = fmt.Sprintf("[%s] %s: %s\n", suite, name, strings.TrimSpace(format))
-		t.Errorf(format, args...)
-	}
-	fn(clients, suite, fail)
+func runSubtest(clients *Clients, name, suite string, fn testFunc, t *testing.T) {
+	t.Run(name, func(t *testing.T) {
+		fail := func(format string, args ...interface{}) {
+			t.Errorf(format, args...)
+		}
+		fn(clients, suite, fail)
+	})
 }
 
-func gatherTests(clients *Clients, suites []string) []testing.InternalTest {
+func gatherTests(clients *Clients, suites []string, rw bool) []testing.InternalTest {
 	internalTests := make([]testing.InternalTest, 0)
 	for _, suite := range suites {
 		for name, fn := range tests[suite] {
@@ -215,12 +213,24 @@ func gatherTests(clients *Clients, suites []string) []testing.InternalTest {
 				Name: name,
 				F: func(t *testing.T) {
 					fail := func(format string, args ...interface{}) {
-						format = fmt.Sprintf("[%s] %s: %s\n", suite, name, strings.TrimSpace(format))
-						t.Errorf(format, args...)
+						t.Errorf(strings.TrimSpace(format), args...)
 					}
 					fn(clients, suite, fail)
 				},
 			})
+		}
+		if rw {
+			for name, fn := range rwtests[suite] {
+				internalTests = append(internalTests, testing.InternalTest{
+					Name: name,
+					F: func(t *testing.T) {
+						fail := func(format string, args ...interface{}) {
+							t.Errorf(format, args...)
+						}
+						fn(clients, suite, fail)
+					},
+				})
+			}
 		}
 	}
 	return internalTests

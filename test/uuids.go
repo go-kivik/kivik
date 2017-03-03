@@ -1,6 +1,10 @@
 package test
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/flimzy/kivik"
+)
 
 func init() {
 	for _, suite := range []string{SuiteCouch16, SuiteCouch20, SuiteCloudant, SuiteKivikMemory} { // FIXME: SuiteKivikServer,
@@ -10,7 +14,19 @@ func init() {
 
 // UUIDs tests the '/_uuids' endpoint
 func UUIDs(clients *Clients, _ string, t *testing.T) {
-	client := clients.Admin
+	t.Run("Admin", func(t *testing.T) {
+		testUUIDs(clients.Admin, t)
+	})
+	if clients.NoAuth == nil {
+		return
+	}
+	t.Run("NoAuth", func(t *testing.T) {
+		testUUIDs(clients.NoAuth, t)
+	})
+}
+
+func testUUIDs(client *kivik.Client, t *testing.T) {
+	t.Parallel()
 	uuidCount := 3
 	uuids, err := client.UUIDs(uuidCount)
 	if err != nil {

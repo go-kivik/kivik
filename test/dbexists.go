@@ -32,23 +32,45 @@ func DBExistsRW(clients *Clients, suite string, t *testing.T) {
 		t.Errorf("Failed to create testDB '%s': %s", testDB, err)
 		return
 	}
-	checkDBExists(client, testDB, true, 0, t)
+	t.Run("Admin", func(t *testing.T) {
+		checkDBExists(clients.Admin, testDB, true, 0, t)
+	})
+	if clients.NoAuth == nil {
+		return
+	}
+	t.Run("NoAuth", func(t *testing.T) {
+		checkDBExists(clients.NoAuth, testDB, true, 0, t)
+	})
 }
 
 // DBExists checks for the existence of the '_users' system database
 func DBExists(clients *Clients, suite string, t *testing.T) {
-	checkDBExists(clients.Admin, "_users", true, 0, t)
-}
-
-// DBExistsUnauthorized checks for the existence of the '_users' system database,
-// but expects an unauthorized response
-func DBExistsUnauthorized(clients *Clients, suite string, t *testing.T) {
-	checkDBExists(clients.Admin, "_users", false, 401, t)
+	t.Run("Admin", func(t *testing.T) {
+		checkDBExists(clients.Admin, "_users", true, 0, t)
+	})
+	if clients.NoAuth == nil {
+		return
+	}
+	t.Run("NoAuth", func(t *testing.T) {
+		if suite == SuiteCloudant {
+			checkDBExists(clients.NoAuth, "_users", false, http.StatusUnauthorized, t)
+		} else {
+			checkDBExists(clients.NoAuth, "_users", true, 0, t)
+		}
+	})
 }
 
 // DBNotExists checks that a database does not exist
 func DBNotExists(clients *Clients, suite string, t *testing.T) {
-	checkDBExists(clients.Admin, testDBName(), false, 0, t)
+	t.Run("Admin", func(t *testing.T) {
+		checkDBExists(clients.Admin, testDBName(), false, 0, t)
+	})
+	if clients.NoAuth == nil {
+		return
+	}
+	t.Run("NoAuth", func(t *testing.T) {
+		checkDBExists(clients.NoAuth, testDBName(), false, 0, t)
+	})
 }
 
 func checkDBExists(client *kivik.Client, dbName string, expected bool, expectedStatus int, t *testing.T) {

@@ -27,13 +27,12 @@ func doTest(suite, envName string, requireAuth bool, t *testing.T) {
 	if dsn == "" {
 		t.Skip("%s: %s DSN not set; skipping tests", envName, suite)
 	}
-	clients, err := connectClients(driverMap[suite], dsn)
+	clients, err := connectClients(driverMap[suite], dsn, t)
 	if err != nil {
 		t.Errorf("Failed to connect to %s: %s\n", suite, err)
 		return
 	}
 	RunSubtests(clients, true, suite, t)
-
 }
 
 func TestCloudant(t *testing.T) {

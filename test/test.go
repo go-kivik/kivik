@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math/rand"
 	"net/url"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -84,23 +83,34 @@ func RunTests(opts Options) {
 	if opts.Verbose {
 		flag.Set("test.v", "true")
 	}
-
-	clients, err := connectClients(opts.Driver, opts.DSN)
-	if err != nil {
-		fmt.Printf("Failed to connect to %s (%s driver): %s\n", opts.DSN, opts.Driver, err)
-		os.Exit(1)
+	tests := []testing.InternalTest{
+		testing.InternalTest{
+			Name: "MainTest",
+			F: func(t *testing.T) {
+				Test(opts.Driver, opts.DSN, opts.Suites, opts.RW, t)
+			},
+		},
 	}
-	testSuites := opts.Suites
+
+	mainStart(tests)
+}
+
+// Test is the main test entry point when running tests through the command line
+// tool.
+func Test(driver, dsn string, testSuites []string, rw bool, t *testing.T) {
+	clients, err := connectClients(driver, dsn, t)
+	if err != nil {
+		t.Fatalf("Failed to connect to %s (%s driver): %s\n", dsn, driver, err)
+	}
 	tests := make(map[string]struct{})
 	for _, test := range testSuites {
 		tests[test] = struct{}{}
 	}
 	if _, ok := tests[SuiteAuto]; ok {
-		fmt.Printf("Detecting target service compatibility...\n")
+		t.Log("Detecting target service compatibility...")
 		suites, err := detectCompatibility(clients.Admin)
 		if err != nil {
-			fmt.Printf("Unable to determine server suite compatibility: %s\n", err)
-			os.Exit(1)
+			t.Fatalf("Unable to determine server suite compatibility: %s\n", err)
 		}
 		tests = make(map[string]struct{})
 		for _, suite := range suites {
@@ -111,8 +121,10 @@ func RunTests(opts Options) {
 	for test := range tests {
 		testSuites = append(testSuites, test)
 	}
-	fmt.Printf("Running the following test suites: %s\n", strings.Join(testSuites, ", "))
-	mainStart(clients, testSuites, opts.RW)
+	t.Logf("Running the following test suites: %s\n", strings.Join(testSuites, ", "))
+	for _, suite := range testSuites {
+		RunSubtests(clients, rw, suite, t)
+	}
 }
 
 func detectCompatibility(client *kivik.Client) ([]string, error) {
@@ -177,37 +189,13 @@ func runSubtest(clients *Clients, name, suite string, fn testFunc, t *testing.T)
 	})
 }
 
-func internalTest(clients *Clients, name, suite string, fn testFunc) testing.InternalTest {
-	return testing.InternalTest{
-		Name: name,
-		F: func(t *testing.T) {
-			fn(clients, suite, t)
-		},
-	}
-}
-
-func gatherTests(clients *Clients, suites []string, rw bool) []testing.InternalTest {
-	internalTests := make([]testing.InternalTest, 0)
-	for _, suite := range suites {
-		for name, fn := range tests[suite] {
-			internalTests = append(internalTests, internalTest(clients, name, suite, fn))
-		}
-		if rw {
-			for name, fn := range rwtests[suite] {
-				internalTests = append(internalTests, internalTest(clients, name, suite, fn))
-			}
-		}
-	}
-	return internalTests
-}
-
 // Clients is a collection of client connections with different security access.
 type Clients struct {
 	Admin  *kivik.Client
 	NoAuth *kivik.Client
 }
 
-func connectClients(driverName, dsn string) (*Clients, error) {
+func connectClients(driverName, dsn string, t *testing.T) (*Clients, error) {
 	var noAuthDSN string
 	if parsed, err := url.Parse(dsn); err == nil {
 		if parsed.User == nil {
@@ -217,14 +205,14 @@ func connectClients(driverName, dsn string) (*Clients, error) {
 		noAuthDSN = parsed.String()
 	}
 	clients := &Clients{}
-	fmt.Printf("Connecting to %s ...\n", dsn)
+	t.Logf("Connecting to %s ...\n", dsn)
 	if client, err := kivik.New(driverName, dsn); err == nil {
 		clients.Admin = client
 	} else {
 		return nil, err
 	}
 
-	fmt.Printf("Connecting to %s ...\n", noAuthDSN)
+	t.Logf("Connecting to %s ...\n", noAuthDSN)
 	if client, err := kivik.New(driverName, noAuthDSN); err == nil {
 		clients.NoAuth = client
 	} else {

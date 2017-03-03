@@ -1,6 +1,12 @@
 package test
 
-import "testing"
+import (
+	"net/http"
+	"testing"
+
+	"github.com/flimzy/kivik"
+	"github.com/flimzy/kivik/errors"
+)
 
 func init() {
 	for _, suite := range []string{SuitePouchLocal, SuiteCouch16, SuiteCouch20, SuiteKivikMemory, SuiteCloudant, SuiteKivikServer} {
@@ -11,13 +17,41 @@ func init() {
 
 // AllDBs tests the '/_all_dbs' endpoint.
 func AllDBs(clients *Clients, suite string, t *testing.T) {
-	client := clients.Admin
 	var expected []string
 
 	switch suite {
 	case SuitePouchRemote, SuiteCouch16, SuiteCloudant, SuiteCouch20:
 		expected = []string{"_replicator", "_users"}
 	}
+	t.Run("Admin", func(t *testing.T) {
+		testAllDBs(clients.Admin, expected, t)
+	})
+	if client := clients.NoAuth; client != nil {
+		if suite == SuiteCloudant {
+			t.Run("NoAuth", func(t *testing.T) {
+				testAllDBsUnauthorized(client, t)
+			})
+		} else {
+			t.Run("NoAuth", func(t *testing.T) {
+				testAllDBs(client, expected, t)
+			})
+		}
+	}
+}
+
+func testAllDBsUnauthorized(client *kivik.Client, t *testing.T) {
+	_, err := client.AllDBs()
+	switch errors.StatusCode(err) {
+	case 0:
+		t.Errorf("Unauthorized request should have returned error")
+	case http.StatusUnauthorized:
+		// Expected
+	default:
+		t.Errorf("Expected %d/%s, but got %s", http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized), err)
+	}
+}
+
+func testAllDBs(client *kivik.Client, expected []string, t *testing.T) {
 	allDBs, err := client.AllDBs()
 	if err != nil {
 		t.Errorf("Failed to get all DBs: %s", err)

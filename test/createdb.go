@@ -1,7 +1,6 @@
 package test
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 	"testing"
@@ -19,8 +18,7 @@ func init() {
 func CreateDB(clients *Clients, suite string, t *testing.T) {
 	client := clients.Admin
 	testDB := testDBName()
-	fmt.Printf("testDB = %s\n", testDB)
-	// defer client.DestroyDB(testDB)
+	defer client.DestroyDB(testDB)
 	err := client.CreateDB(testDB)
 	if strings.Contains(suite, "NoAuth") {
 		switch errors.StatusCode(err) {

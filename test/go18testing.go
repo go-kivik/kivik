@@ -30,7 +30,7 @@ func (d *deps) StopCPUProfile()                                   {}
 func (d *deps) WriteHeapProfile(_ io.Writer) error                { return nil }
 func (d *deps) WriteProfileTo(_ string, _ io.Writer, _ int) error { return nil }
 
-func mainStart(clients *Clients, suites []string, rw bool) {
-	m := testing.MainStart(&deps{}, gatherTests(clients, suites, rw), nil, nil)
+func mainStart(tests []testing.InternalTest) {
+	m := testing.MainStart(&deps{}, tests, nil, nil)
 	os.Exit(m.Run())
 }

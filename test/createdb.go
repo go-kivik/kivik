@@ -2,9 +2,9 @@ package test
 
 import (
 	"net/http"
-	"strings"
 	"testing"
 
+	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/errors"
 )
 
@@ -16,21 +16,35 @@ func init() {
 
 // CreateDB tests database creation.
 func CreateDB(clients *Clients, suite string, t *testing.T) {
-	client := clients.Admin
+	t.Run("Admin", func(t *testing.T) {
+		testCreateDB(clients.Admin, t)
+	})
+	if clients.NoAuth == nil {
+		return
+	}
+	t.Run("NoAuth", func(t *testing.T) {
+		testCreateDBUnauthorized(clients.NoAuth, t)
+	})
+}
+
+func testCreateDBUnauthorized(client *kivik.Client, t *testing.T) {
+	testDB := testDBName()
+	defer client.DestroyDB(testDB) // Just in case we succeed
+	err := client.CreateDB(testDB)
+	switch errors.StatusCode(err) {
+	case 0:
+		t.Errorf("CreateDB: Should fail for unauthenticated session")
+	case http.StatusUnauthorized:
+		// Expected
+	default:
+		t.Errorf("CreateDB: Expected 401/Unauthorized, Got: %s", err)
+	}
+}
+
+func testCreateDB(client *kivik.Client, t *testing.T) {
 	testDB := testDBName()
 	defer client.DestroyDB(testDB)
 	err := client.CreateDB(testDB)
-	if strings.Contains(suite, "NoAuth") {
-		switch errors.StatusCode(err) {
-		case 0:
-			t.Errorf("CreateDB: Should fail for unauthenticated session")
-		case http.StatusUnauthorized:
-			// Expected
-		default:
-			t.Errorf("CreateDB: Expected 401/Unauthorized, Got: %s", err)
-		}
-		return
-	}
 	if err != nil {
 		t.Errorf("Failed to create database '%s': %s", testDB, err)
 	}

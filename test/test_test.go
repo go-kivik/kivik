@@ -37,25 +37,13 @@ func doTest(suite, envName string, requireAuth bool, t *testing.T) {
 }
 
 func TestCloudant(t *testing.T) {
-	doTest(SuiteCloudant, "KIVIK_CLOUDANT_DSN", true, t)
-}
-
-func TestCloudantNoAuth(t *testing.T) {
-	doTest(SuiteCloudantNoAuth, "KIVIK_CLOUDANT_DSN", false, t)
+	doTest(SuiteCloudant, "KIVIK_TEST_DSN_CLOUDANT", true, t)
 }
 
 func TestCouch16(t *testing.T) {
-	doTest(SuiteCouch16, "KIVIK_COUCH16_DSN", true, t)
-}
-
-func TestCouch16NoAuth(t *testing.T) {
-	doTest(SuiteCouch16NoAuth, "KIVIK_COUCH16_DSN", false, t)
+	doTest(SuiteCouch16, "KIVIK_TEST_DSN_COUCH16", true, t)
 }
 
 func TestCouch20(t *testing.T) {
-	doTest(SuiteCouch20, "KIVIK_COUCH20_DSN", true, t)
-}
-
-func TestCouch20NoAuth(t *testing.T) {
-	doTest(SuiteCouch20NoAuth, "KIVIK_COUCH20_DSN", false, t)
+	doTest(SuiteCouch20, "KIVIK_TEST_DSN_COUCH20", true, t)
 }

@@ -32,9 +32,5 @@ func TestPouchLocal(t *testing.T) {
 }
 
 func TestPouchRemote(t *testing.T) {
-	doTest(SuitePouchRemote, "KIVIK_COUCH16_DSN", true, t)
-}
-
-func TestPouchRemoteNoAuth(t *testing.T) {
-	doTest(SuitePouchRemoteNoAuth, "KIVIK_COUCH16_DSN", false, t)
+	doTest(SuitePouchRemote, "KIVIK_TEST_DSN_COUCH16", true, t)
 }

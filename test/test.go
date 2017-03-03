@@ -16,36 +16,38 @@ import (
 
 // The available test suites
 const (
-	SuiteAuto              = "auto"
-	SuitePouchLocal        = "pouch"
-	SuitePouchRemote       = "pouchRemote"
-	SuitePouchRemoteNoAuth = "pouchRemoteNoAuth"
-	SuiteCouch16           = "couch16"
-	SuiteCouch16NoAuth     = "couch16NoAuth"
-	SuiteCouch20           = "couch20"
-	SuiteCouch20NoAuth     = "couch20NoAuth"
-	SuiteCloudant          = "cloudant"
-	SuiteCloudantNoAuth    = "cloudantNoAuth"
-	SuiteKivikServer       = "kivikServer"
-	SuiteKivikServerNoAuth = "kivikServerNoAuth"
-	SuiteKivikMemory       = "kivikMemory"
-	SuiteKivikFS           = "kivikFilesystem"
+	SuiteAuto        = "auto"
+	SuitePouchLocal  = "pouch"
+	SuitePouchRemote = "pouchRemote"
+	SuiteCouch16     = "couch16"
+	SuiteCouch20     = "couch20"
+	SuiteCloudant    = "cloudant"
+	SuiteKivikServer = "kivikServer"
+	SuiteKivikMemory = "kivikMemory"
+	SuiteKivikFS     = "kivikFilesystem"
 )
 
+// AllSuites is a list of all defined suites.
+var AllSuites = []string{
+	SuitePouchLocal,
+	SuitePouchRemote,
+	SuiteCouch16,
+	SuiteCouch20,
+	SuiteKivikMemory,
+	SuiteKivikFS,
+	SuiteCloudant,
+	SuiteKivikServer,
+}
+
 var driverMap = map[string]string{
-	SuitePouchLocal:        "pouch",
-	SuitePouchRemote:       "pouch",
-	SuitePouchRemoteNoAuth: "pouch",
-	SuiteCouch16:           "couch",
-	SuiteCouch16NoAuth:     "couch",
-	SuiteCouch20:           "couch",
-	SuiteCouch20NoAuth:     "couch",
-	SuiteCloudant:          "couch",
-	SuiteCloudantNoAuth:    "couch",
-	SuiteKivikServer:       "couch",
-	SuiteKivikServerNoAuth: "couch",
-	SuiteKivikMemory:       "memory",
-	SuiteKivikFS:           "fs",
+	SuitePouchLocal:  "pouch",
+	SuitePouchRemote: "pouch",
+	SuiteCouch16:     "couch",
+	SuiteCouch20:     "couch",
+	SuiteCloudant:    "couch",
+	SuiteKivikServer: "couch",
+	SuiteKivikMemory: "memory",
+	SuiteKivikFS:     "fs",
 }
 
 var rnd *rand.Rand
@@ -57,9 +59,6 @@ func init() {
 func testDBName() string {
 	return fmt.Sprintf("kivik$%016x", rnd.Int63())
 }
-
-// AllSuites is a list of all defined suites.
-var AllSuites = []string{SuitePouchLocal, SuitePouchRemote, SuiteCouch16, SuiteCouch20, SuiteKivikMemory, SuiteKivikFS, SuiteCloudant, SuiteKivikServer}
 
 // ListTests prints a list of available test suites to stdout.
 func ListTests() {

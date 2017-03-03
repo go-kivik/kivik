@@ -24,5 +24,8 @@ func TestServer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to initialize client: %s\n", err)
 	}
-	RunSubtests(client, true, []string{SuiteKivikServer}, t)
+	clients := &Clients{
+		Admin: client,
+	}
+	RunSubtests(clients, true, SuiteKivikServer, t)
 }

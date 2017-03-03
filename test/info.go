@@ -2,6 +2,7 @@ package test
 
 import (
 	"regexp"
+	"testing"
 
 	"github.com/flimzy/kivik"
 )
@@ -37,25 +38,38 @@ var vendorVersionREs = map[string]*regexp.Regexp{
 }
 
 // ServerInfo tests the '/' endpoint
-func ServerInfo(client *kivik.Client, suite string, fail FailFunc) {
+func ServerInfo(clients *Clients, suite string, t *testing.T) {
+	t.Run("Admin", func(t *testing.T) {
+		testServerInfo(clients.Admin, suite, t)
+	})
+	if clients.NoAuth == nil {
+		return
+	}
+	t.Run("NoAuth", func(t *testing.T) {
+		testServerInfo(clients.NoAuth, suite, t)
+	})
+}
+
+func testServerInfo(client *kivik.Client, suite string, t *testing.T) {
+	t.Parallel()
 	info, err := client.ServerInfo()
 	if err != nil {
-		fail("%s", err)
+		t.Errorf("%s", err)
 		return
 	}
 	if re, ok := versionREs[suite]; ok {
 		if !re.MatchString(info.Version()) {
-			fail("Version %s does not match %s\n", info.Version(), re)
+			t.Errorf("Version %s does not match %s\n", info.Version(), re)
 		}
 	}
 	if name, ok := vendorNames[suite]; ok {
 		if name != info.Vendor() {
-			fail("ServerInfo: Vendor Name %s does not match %s\n", info.Vendor(), name)
+			t.Errorf("ServerInfo: Vendor Name %s does not match %s\n", info.Vendor(), name)
 		}
 	}
 	if re, ok := vendorVersionREs[suite]; ok {
 		if !re.MatchString(info.VendorVersion()) {
-			fail("Vendor Version %s does not match %s\n", info.VendorVersion(), re)
+			t.Errorf("Vendor Version %s does not match %s\n", info.VendorVersion(), re)
 		}
 	}
 }

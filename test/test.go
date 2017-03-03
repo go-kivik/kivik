@@ -2,8 +2,10 @@ package test
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"math/rand"
+	"net/url"
 	"os"
 	"strings"
 	"testing"
@@ -14,36 +16,38 @@ import (
 
 // The available test suites
 const (
-	SuiteAuto              = "auto"
-	SuitePouchLocal        = "pouch"
-	SuitePouchRemote       = "pouchRemote"
-	SuitePouchRemoteNoAuth = "pouchRemoteNoAuth"
-	SuiteCouch16           = "couch16"
-	SuiteCouch16NoAuth     = "couch16NoAuth"
-	SuiteCouch20           = "couch20"
-	SuiteCouch20NoAuth     = "couch20NoAuth"
-	SuiteCloudant          = "cloudant"
-	SuiteCloudantNoAuth    = "cloudantNoAuth"
-	SuiteKivikServer       = "kivikServer"
-	SuiteKivikServerNoAuth = "kivikServerNoAuth"
-	SuiteKivikMemory       = "kivikMemory"
-	SuiteKivikFS           = "kivikFilesystem"
+	SuiteAuto        = "auto"
+	SuitePouchLocal  = "pouch"
+	SuitePouchRemote = "pouchRemote"
+	SuiteCouch16     = "couch16"
+	SuiteCouch20     = "couch20"
+	SuiteCloudant    = "cloudant"
+	SuiteKivikServer = "kivikServer"
+	SuiteKivikMemory = "kivikMemory"
+	SuiteKivikFS     = "kivikFilesystem"
 )
 
+// AllSuites is a list of all defined suites.
+var AllSuites = []string{
+	SuitePouchLocal,
+	SuitePouchRemote,
+	SuiteCouch16,
+	SuiteCouch20,
+	SuiteKivikMemory,
+	SuiteKivikFS,
+	SuiteCloudant,
+	SuiteKivikServer,
+}
+
 var driverMap = map[string]string{
-	SuitePouchLocal:        "pouch",
-	SuitePouchRemote:       "pouch",
-	SuitePouchRemoteNoAuth: "pouch",
-	SuiteCouch16:           "couch",
-	SuiteCouch16NoAuth:     "couch",
-	SuiteCouch20:           "couch",
-	SuiteCouch20NoAuth:     "couch",
-	SuiteCloudant:          "couch",
-	SuiteCloudantNoAuth:    "couch",
-	SuiteKivikServer:       "couch",
-	SuiteKivikServerNoAuth: "couch",
-	SuiteKivikMemory:       "memory",
-	SuiteKivikFS:           "fs",
+	SuitePouchLocal:  "pouch",
+	SuitePouchRemote: "pouch",
+	SuiteCouch16:     "couch",
+	SuiteCouch20:     "couch",
+	SuiteCloudant:    "couch",
+	SuiteKivikServer: "couch",
+	SuiteKivikMemory: "memory",
+	SuiteKivikFS:     "fs",
 }
 
 var rnd *rand.Rand
@@ -52,12 +56,12 @@ func init() {
 	rnd = rand.New(rand.NewSource(time.Now().UnixNano()))
 }
 
-func testDBName() string {
-	return fmt.Sprintf("kivik$%016x", rnd.Int63())
-}
+// TestDBPrefix is used to prefix temporary database names during tests.
+const TestDBPrefix = "kivik$"
 
-// AllSuites is a list of all defined suites.
-var AllSuites = []string{SuitePouchLocal, SuitePouchRemote, SuiteCouch16, SuiteCouch20, SuiteKivikMemory, SuiteKivikFS, SuiteCloudant, SuiteKivikServer}
+func testDBName() string {
+	return fmt.Sprintf("%s%016x", TestDBPrefix, rnd.Int63())
+}
 
 // ListTests prints a list of available test suites to stdout.
 func ListTests() {
@@ -65,27 +69,6 @@ func ListTests() {
 	for _, suite := range AllSuites {
 		fmt.Printf("\t%s\n", suite)
 	}
-}
-
-// Tester mimics (or can be fulfilled by) a *testin.T struct
-type Tester interface {
-	Errorf(format string, args ...interface{})
-	Fatalf(format string, args ...interface{})
-}
-
-type tester struct {
-	verbose bool
-	failed  bool
-}
-
-func (t *tester) Errorf(format string, args ...interface{}) {
-	t.failed = true
-	fmt.Printf(format, args...)
-}
-
-func (t *tester) Fatalf(format string, args ...interface{}) {
-	t.Errorf(format, args...)
-	os.Exit(1)
 }
 
 // Options are the options to run a test from the command line tool.
@@ -96,25 +79,69 @@ type Options struct {
 	RW      bool
 	Match   string
 	Suites  []string
+	Cleanup bool
+}
+
+// CleanupTests attempts to clean up any stray test databases created by a
+// previous test run.
+func CleanupTests(driver, dsn string, verbose bool) error {
+	client, err := kivik.New(driver, dsn)
+	if err != nil {
+		return err
+	}
+	allDBs, err := client.AllDBs()
+	if err != nil {
+		return err
+	}
+	var count int
+	for _, dbName := range allDBs {
+		if strings.HasPrefix(dbName, TestDBPrefix) {
+			if verbose {
+				fmt.Printf("\t--- Deleting %s\n", dbName)
+				count++
+			}
+			err := client.DestroyDB(dbName)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	if verbose {
+		fmt.Printf("Deleted %d test databases\n", count)
+	}
+	return nil
 }
 
 // RunTests runs the requested test suites against the requested driver and DSN.
 func RunTests(opts Options) {
-	t := &tester{
-		verbose: opts.Verbose,
+	if opts.Cleanup {
+		err := CleanupTests(opts.Driver, opts.DSN, opts.Verbose)
+		if err != nil {
+			fmt.Printf("Cleanup failed: %s\n", err)
+			os.Exit(1)
+		}
+		os.Exit(0)
 	}
-	mainTest(opts.Driver, opts.DSN, opts.RW, opts.Suites, t)
-	if t.failed {
-		fmt.Printf("FAILED\n")
-		os.Exit(1)
+	flag.Set("test.run", opts.Match)
+	if opts.Verbose {
+		flag.Set("test.v", "true")
 	}
-	fmt.Printf("PASSED\n")
-	os.Exit(0)
+	tests := []testing.InternalTest{
+		testing.InternalTest{
+			Name: "MainTest",
+			F: func(t *testing.T) {
+				Test(opts.Driver, opts.DSN, opts.Suites, opts.RW, t)
+			},
+		},
+	}
+
+	mainStart(tests)
 }
 
-func mainTest(driver, dsn string, rw bool, testSuites []string, t Tester) {
-	fmt.Printf("Connecting to %s ...\n", dsn)
-	client, err := kivik.New(driver, dsn)
+// Test is the main test entry point when running tests through the command line
+// tool.
+func Test(driver, dsn string, testSuites []string, rw bool, t *testing.T) {
+	clients, err := connectClients(driver, dsn, t)
 	if err != nil {
 		t.Fatalf("Failed to connect to %s (%s driver): %s\n", dsn, driver, err)
 	}
@@ -123,8 +150,8 @@ func mainTest(driver, dsn string, rw bool, testSuites []string, t Tester) {
 		tests[test] = struct{}{}
 	}
 	if _, ok := tests[SuiteAuto]; ok {
-		fmt.Printf("Detecting target service compatibility...\n")
-		suites, err := detectCompatibility(client)
+		t.Log("Detecting target service compatibility...")
+		suites, err := detectCompatibility(clients.Admin)
 		if err != nil {
 			t.Fatalf("Unable to determine server suite compatibility: %s\n", err)
 		}
@@ -137,8 +164,10 @@ func mainTest(driver, dsn string, rw bool, testSuites []string, t Tester) {
 	for test := range tests {
 		testSuites = append(testSuites, test)
 	}
-	fmt.Printf("Running the following test suites: %s\n", strings.Join(testSuites, ", "))
-	RunSubtests(client, rw, testSuites, t)
+	t.Logf("Running the following test suites: %s\n", strings.Join(testSuites, ", "))
+	for _, suite := range testSuites {
+		RunSubtests(clients, rw, suite, t)
+	}
 }
 
 func detectCompatibility(client *kivik.Client) ([]string, error) {
@@ -162,7 +191,7 @@ func detectCompatibility(client *kivik.Client) ([]string, error) {
 	return []string{}, errors.New("Unable to automatically determine the proper test suite")
 }
 
-type testFunc func(*kivik.Client, string, FailFunc)
+type testFunc func(*Clients, string, *testing.T)
 
 // tests is a map of the format map[suite]map[name]testFunc
 var tests = make(map[string]map[string]testFunc)
@@ -185,49 +214,53 @@ func RegisterTest(suite, name string, rw bool, fn testFunc) {
 	tests[suite][name] = fn
 }
 
-// FailFunc is passed to each test, and should be called whenever a test fails.
-type FailFunc func(format string, args ...interface{})
-
 // RunSubtests executes the requested suites of tests against the client.
-func RunSubtests(client *kivik.Client, rw bool, suites []string, t Tester) {
-	for _, suite := range suites {
-		for name, fn := range tests[suite] {
-			runTest(client, name, suite, fn, t)
-		}
-		if rw {
-			for name, fn := range rwtests[suite] {
-				runTest(client, name, suite, fn, t)
-			}
+func RunSubtests(clients *Clients, rw bool, suite string, t *testing.T) {
+	for name, fn := range tests[suite] {
+		runSubtest(clients, name, suite, fn, t)
+	}
+	if rw {
+		for name, fn := range rwtests[suite] {
+			runSubtest(clients, name, suite, fn, t)
 		}
 	}
 }
 
-func runTest(client *kivik.Client, name, suite string, fn testFunc, t Tester) {
-	fail := func(format string, args ...interface{}) {
-		format = fmt.Sprintf("[%s] %s: %s\n", suite, name, strings.TrimSpace(format))
-		t.Errorf(format, args...)
-	}
-	fn(client, suite, fail)
+func runSubtest(clients *Clients, name, suite string, fn testFunc, t *testing.T) {
+	t.Run(name, func(t *testing.T) {
+		fn(clients, suite, t)
+	})
 }
 
-func gatherTests(client *kivik.Client, suites []string) []testing.InternalTest {
-	internalTests := make([]testing.InternalTest, 0)
-	for _, suite := range suites {
-		for name, fn := range tests[suite] {
-			// if !runRE.MatchString(name) {
-			// 	continue
-			// }
-			internalTests = append(internalTests, testing.InternalTest{
-				Name: name,
-				F: func(t *testing.T) {
-					fail := func(format string, args ...interface{}) {
-						format = fmt.Sprintf("[%s] %s: %s\n", suite, name, strings.TrimSpace(format))
-						t.Errorf(format, args...)
-					}
-					fn(client, suite, fail)
-				},
-			})
+// Clients is a collection of client connections with different security access.
+type Clients struct {
+	Admin  *kivik.Client
+	NoAuth *kivik.Client
+}
+
+func connectClients(driverName, dsn string, t *testing.T) (*Clients, error) {
+	var noAuthDSN string
+	if parsed, err := url.Parse(dsn); err == nil {
+		if parsed.User == nil {
+			return nil, errors.New("DSN does not contain authentication credentials")
 		}
+		parsed.User = nil
+		noAuthDSN = parsed.String()
 	}
-	return internalTests
+	clients := &Clients{}
+	t.Logf("Connecting to %s ...\n", dsn)
+	if client, err := kivik.New(driverName, dsn); err == nil {
+		clients.Admin = client
+	} else {
+		return nil, err
+	}
+
+	t.Logf("Connecting to %s ...\n", noAuthDSN)
+	if client, err := kivik.New(driverName, noAuthDSN); err == nil {
+		clients.NoAuth = client
+	} else {
+		return nil, err
+	}
+
+	return clients, nil
 }

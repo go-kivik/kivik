@@ -25,13 +25,12 @@ func TestPouchLocal(t *testing.T) {
 		t.Errorf("Failed to connect to PouchDB/memdown driver: %s", err)
 		return
 	}
-	RunSubtests(client, true, []string{SuitePouchLocal}, t)
+	clients := &Clients{
+		Admin: client,
+	}
+	RunSubtests(clients, true, SuitePouchLocal, t)
 }
 
 func TestPouchRemote(t *testing.T) {
-	doTest(SuitePouchRemote, "KIVIK_COUCH16_DSN", true, t)
-}
-
-func TestPouchRemoteNoAuth(t *testing.T) {
-	doTest(SuitePouchRemoteNoAuth, "KIVIK_COUCH16_DSN", false, t)
+	doTest(SuitePouchRemote, "KIVIK_TEST_DSN_COUCH16", true, t)
 }

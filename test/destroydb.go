@@ -1,9 +1,11 @@
 package test
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/flimzy/kivik"
+	"github.com/flimzy/kivik/errors"
 )
 
 func init() {
@@ -17,26 +19,53 @@ func init() {
 
 // DestroyDB tests database destruction
 func DestroyDB(clients *Clients, suite string, t *testing.T) {
-	client := clients.Admin
+	admin := clients.Admin
 	testDB := testDBName()
-	if err := client.CreateDB(testDB); err != nil {
+	if err := admin.CreateDB(testDB); err != nil {
 		t.Errorf("Failed to create database '%s': %s", testDB, err)
+		return
 	}
-	if err := client.DestroyDB(testDB); err != nil {
-		t.Errorf("Failed to destroy database '%s': %s", testDB, err)
+	t.Run("Admin", func(t *testing.T) {
+		testDestroyDB(clients.Admin, testDB, 0, t)
+	})
+	if clients.NoAuth == nil {
+		return
+	}
+	if err := admin.CreateDB(testDB); err != nil {
+		t.Errorf("Failed to create database '%s': %s", testDB, err)
+		return
+	}
+	t.Run("NoAuth", func(t *testing.T) {
+		testDestroyDB(clients.NoAuth, testDB, http.StatusUnauthorized, t)
+	})
+}
+
+func testDestroyDB(client *kivik.Client, dbName string, status int, t *testing.T) {
+	err := client.DestroyDB(dbName)
+	switch errors.StatusCode(err) {
+	case status:
+		// Expected
+	case 0:
+		t.Errorf("Expected failure with status %d/%s", status, http.StatusText(status))
+	default:
+		t.Errorf("Failed to destroy database '%s': %s", dbName, err)
 	}
 }
 
 // NotDestroyDB tests that database destruction fails if the db doesn't exist
 func NotDestroyDB(clients *Clients, suite string, t *testing.T) {
-	client := clients.Admin
 	testDB := testDBName()
-	err := client.DestroyDB(testDB)
-	if err == nil {
-		t.Errorf("Database destruction should have failed for non-existent database")
+	t.Run("Admin", func(t *testing.T) {
+		testDestroyDB(clients.Admin, testDB, http.StatusNotFound, t)
+	})
+	if clients.NoAuth == nil {
 		return
 	}
-	if !kivik.ErrNotFound(err) {
-		t.Errorf("Database destruction should have indicated NotFound, but instead: %s", err)
-	}
+	t.Run("NoAuth", func(t *testing.T) {
+		if suite == SuiteCloudant {
+			testDestroyDB(clients.NoAuth, testDB, http.StatusNotFound, t)
+			return
+		}
+		testDestroyDB(clients.NoAuth, testDB, http.StatusUnauthorized, t)
+	})
 }

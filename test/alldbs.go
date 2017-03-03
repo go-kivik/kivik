@@ -1,5 +1,7 @@
 package test
 
+import "testing"
+
 func init() {
 	for _, suite := range []string{SuitePouchLocal, SuiteCouch16, SuiteCouch20, SuiteKivikMemory, SuiteCloudant, SuiteKivikServer} {
 		RegisterTest(suite, "AllDBs", false, AllDBs)
@@ -8,7 +10,7 @@ func init() {
 }
 
 // AllDBs tests the '/_all_dbs' endpoint.
-func AllDBs(clients *Clients, suite string, fail FailFunc) {
+func AllDBs(clients *Clients, suite string, t *testing.T) {
 	client := clients.Admin
 	var expected []string
 
@@ -18,7 +20,7 @@ func AllDBs(clients *Clients, suite string, fail FailFunc) {
 	}
 	allDBs, err := client.AllDBs()
 	if err != nil {
-		fail("Failed to get all DBs: %s", err)
+		t.Errorf("Failed to get all DBs: %s", err)
 		return
 	}
 	if len(expected) == 0 {
@@ -30,23 +32,23 @@ func AllDBs(clients *Clients, suite string, fail FailFunc) {
 	}
 	for _, exp := range expected {
 		if _, ok := dblist[exp]; !ok {
-			fail("Database '%s' missing from allDBs result", exp)
+			t.Errorf("Database '%s' missing from allDBs result", exp)
 		}
 	}
 }
 
 // AllDBsRW tests the '/_all_dbs' endpoint in RW mode.
-func AllDBsRW(clients *Clients, suite string, fail FailFunc) {
+func AllDBsRW(clients *Clients, suite string, t *testing.T) {
 	client := clients.Admin
 	testDB := testDBName()
 	if err := client.CreateDB(testDB); err != nil {
-		fail("Failed to create test DB '%s': %s", testDB, err)
+		t.Errorf("Failed to create test DB '%s': %s", testDB, err)
 		return
 	}
 	defer client.DestroyDB(testDB)
 	allDBs, err := client.AllDBs()
 	if err != nil {
-		fail("Failed to get all DBs: %s", err)
+		t.Errorf("Failed to get all DBs: %s", err)
 		return
 	}
 	for _, db := range allDBs {
@@ -54,5 +56,5 @@ func AllDBsRW(clients *Clients, suite string, fail FailFunc) {
 			return
 		}
 	}
-	fail("Test database '%s' missing from allDbs result", testDB)
+	t.Errorf("Test database '%s' missing from allDbs result", testDB)
 }

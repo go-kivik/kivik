@@ -69,27 +69,6 @@ func ListTests() {
 	}
 }
 
-// Tester mimics (or can be fulfilled by) a *testin.T struct
-type Tester interface {
-	Errorf(format string, args ...interface{})
-	Fatalf(format string, args ...interface{})
-}
-
-type tester struct {
-	chatty bool
-	failed bool
-}
-
-func (t *tester) Errorf(format string, args ...interface{}) {
-	t.failed = true
-	fmt.Printf(format, args...)
-}
-
-func (t *tester) Fatalf(format string, args ...interface{}) {
-	t.Errorf(format, args...)
-	os.Exit(1)
-}
-
 // Options are the options to run a test from the command line tool.
 type Options struct {
 	Driver  string
@@ -158,7 +137,7 @@ func detectCompatibility(client *kivik.Client) ([]string, error) {
 	return []string{}, errors.New("Unable to automatically determine the proper test suite")
 }
 
-type testFunc func(*Clients, string, FailFunc)
+type testFunc func(*Clients, string, *testing.T)
 
 // tests is a map of the format map[suite]map[name]testFunc
 var tests = make(map[string]map[string]testFunc)
@@ -181,9 +160,6 @@ func RegisterTest(suite, name string, rw bool, fn testFunc) {
 	tests[suite][name] = fn
 }
 
-// FailFunc is passed to each test, and should be called whenever a test fails.
-type FailFunc func(format string, args ...interface{})
-
 // RunSubtests executes the requested suites of tests against the client.
 func RunSubtests(clients *Clients, rw bool, suite string, t *testing.T) {
 	for name, fn := range tests[suite] {
@@ -198,38 +174,28 @@ func RunSubtests(clients *Clients, rw bool, suite string, t *testing.T) {
 
 func runSubtest(clients *Clients, name, suite string, fn testFunc, t *testing.T) {
 	t.Run(name, func(t *testing.T) {
-		fail := func(format string, args ...interface{}) {
-			t.Errorf(format, args...)
-		}
-		fn(clients, suite, fail)
+		fn(clients, suite, t)
 	})
+}
+
+func internalTest(clients *Clients, name, suite string, fn testFunc) testing.InternalTest {
+	return testing.InternalTest{
+		Name: name,
+		F: func(t *testing.T) {
+			fn(clients, suite, t)
+		},
+	}
 }
 
 func gatherTests(clients *Clients, suites []string, rw bool) []testing.InternalTest {
 	internalTests := make([]testing.InternalTest, 0)
 	for _, suite := range suites {
 		for name, fn := range tests[suite] {
-			internalTests = append(internalTests, testing.InternalTest{
-				Name: name,
-				F: func(t *testing.T) {
-					fail := func(format string, args ...interface{}) {
-						t.Errorf(strings.TrimSpace(format), args...)
-					}
-					fn(clients, suite, fail)
-				},
-			})
+			internalTests = append(internalTests, internalTest(clients, name, suite, fn))
 		}
 		if rw {
 			for name, fn := range rwtests[suite] {
-				internalTests = append(internalTests, testing.InternalTest{
-					Name: name,
-					F: func(t *testing.T) {
-						fail := func(format string, args ...interface{}) {
-							t.Errorf(format, args...)
-						}
-						fn(clients, suite, fail)
-					},
-				})
+				internalTests = append(internalTests, internalTest(clients, name, suite, fn))
 			}
 		}
 	}

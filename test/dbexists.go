@@ -2,6 +2,7 @@ package test
 
 import (
 	"net/http"
+	"testing"
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/errors"
@@ -23,43 +24,43 @@ func init() {
 }
 
 // DBExistsRW creates a test database to check for its existence
-func DBExistsRW(clients *Clients, suite string, fail FailFunc) {
+func DBExistsRW(clients *Clients, suite string, t *testing.T) {
 	client := clients.Admin
 	testDB := testDBName()
 	defer client.DestroyDB(testDB)
 	if err := client.CreateDB(testDB); err != nil {
-		fail("Failed to create testDB '%s': %s", testDB, err)
+		t.Errorf("Failed to create testDB '%s': %s", testDB, err)
 		return
 	}
-	checkDBExists(client, testDB, true, 0, fail)
+	checkDBExists(client, testDB, true, 0, t)
 }
 
 // DBExists checks for the existence of the '_users' system database
-func DBExists(clients *Clients, suite string, fail FailFunc) {
-	checkDBExists(clients.Admin, "_users", true, 0, fail)
+func DBExists(clients *Clients, suite string, t *testing.T) {
+	checkDBExists(clients.Admin, "_users", true, 0, t)
 }
 
 // DBExistsUnauthorized checks for the existence of the '_users' system database,
 // but expects an unauthorized response
-func DBExistsUnauthorized(clients *Clients, suite string, fail FailFunc) {
-	checkDBExists(clients.Admin, "_users", false, 401, fail)
+func DBExistsUnauthorized(clients *Clients, suite string, t *testing.T) {
+	checkDBExists(clients.Admin, "_users", false, 401, t)
 }
 
 // DBNotExists checks that a database does not exist
-func DBNotExists(clients *Clients, suite string, fail FailFunc) {
-	checkDBExists(clients.Admin, testDBName(), false, 0, fail)
+func DBNotExists(clients *Clients, suite string, t *testing.T) {
+	checkDBExists(clients.Admin, testDBName(), false, 0, t)
 }
 
-func checkDBExists(client *kivik.Client, dbName string, expected bool, expectedStatus int, fail FailFunc) {
+func checkDBExists(client *kivik.Client, dbName string, expected bool, expectedStatus int, t *testing.T) {
 	exists, err := client.DBExists(dbName)
 	status := errors.StatusCode(err)
 	if status == expectedStatus && exists == expected {
 		return
 	}
 	if exists != expected {
-		fail("Returned %t for '%s', expected %t", exists, dbName, expected)
+		t.Errorf("Returned %t for '%s', expected %t", exists, dbName, expected)
 	}
 	if status != expectedStatus {
-		fail("Failed to check existence of '%s'.\n\tExpected: %d/%s\n\t  Actual: %d/%s", dbName, expectedStatus, http.StatusText(expectedStatus), status, err)
+		t.Errorf("Failed to check existence of '%s'.\n\tExpected: %d/%s\n\t  Actual: %d/%s", dbName, expectedStatus, http.StatusText(expectedStatus), status, err)
 	}
 }

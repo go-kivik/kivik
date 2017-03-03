@@ -5,7 +5,11 @@
 
 package test
 
-import "github.com/flimzy/kivik"
+import (
+	"testing"
+
+	"github.com/flimzy/kivik"
+)
 
 func init() {
 	for _, suite := range []string{SuiteCouch16, SuiteCouch20} { //FIXME: SuiteKivikServer
@@ -15,27 +19,27 @@ func init() {
 }
 
 // Log tests the /_log endpoint
-func Log(clients *Clients, suite string, fail FailFunc) {
+func Log(clients *Clients, suite string, t *testing.T) {
 	client := clients.Admin
 	logBuf := make([]byte, 1000)
 	if _, err := client.Log(logBuf, 0); err != nil {
-		fail("Error reading 1000 log bytes: %s", err)
+		t.Errorf("Error reading 1000 log bytes: %s", err)
 	}
 	logBuf = make([]byte, 0, 1000)
 	if _, err := client.Log(logBuf, 0); err != nil {
-		fail("Error reading 0 log bytes: %s", err)
+		t.Errorf("Error reading 0 log bytes: %s", err)
 	}
 }
 
 // CloudantLog tests the /_log endpoint for Cloudant, which returns an error
-func CloudantLog(clients *Clients, suite string, fail FailFunc) {
+func CloudantLog(clients *Clients, suite string, t *testing.T) {
 	client := clients.Admin
 	logBuf := make([]byte, 1000)
 	_, err := client.Log(logBuf, 0)
 	if err == nil {
-		fail("Expected an error")
+		t.Errorf("Expected an error")
 	}
 	if !kivik.ErrForbidden(err) {
-		fail("Expected 403/Forbidden, got %s", err)
+		t.Errorf("Expected 403/Forbidden, got %s", err)
 	}
 }

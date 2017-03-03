@@ -1,6 +1,9 @@
 package test
 
-import "regexp"
+import (
+	"regexp"
+	"testing"
+)
 
 func init() {
 	for _, suite := range AllSuites {
@@ -33,26 +36,26 @@ var vendorVersionREs = map[string]*regexp.Regexp{
 }
 
 // ServerInfo tests the '/' endpoint
-func ServerInfo(clients *Clients, suite string, fail FailFunc) {
+func ServerInfo(clients *Clients, suite string, t *testing.T) {
 	client := clients.Admin
 	info, err := client.ServerInfo()
 	if err != nil {
-		fail("%s", err)
+		t.Errorf("%s", err)
 		return
 	}
 	if re, ok := versionREs[suite]; ok {
 		if !re.MatchString(info.Version()) {
-			fail("Version %s does not match %s\n", info.Version(), re)
+			t.Errorf("Version %s does not match %s\n", info.Version(), re)
 		}
 	}
 	if name, ok := vendorNames[suite]; ok {
 		if name != info.Vendor() {
-			fail("ServerInfo: Vendor Name %s does not match %s\n", info.Vendor(), name)
+			t.Errorf("ServerInfo: Vendor Name %s does not match %s\n", info.Vendor(), name)
 		}
 	}
 	if re, ok := vendorVersionREs[suite]; ok {
 		if !re.MatchString(info.VendorVersion()) {
-			fail("Vendor Version %s does not match %s\n", info.VendorVersion(), re)
+			t.Errorf("Vendor Version %s does not match %s\n", info.VendorVersion(), re)
 		}
 	}
 }

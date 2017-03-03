@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"testing"
 
 	"github.com/flimzy/kivik/errors"
 )
@@ -15,7 +16,7 @@ func init() {
 }
 
 // CreateDB tests database creation.
-func CreateDB(clients *Clients, suite string, fail FailFunc) {
+func CreateDB(clients *Clients, suite string, t *testing.T) {
 	client := clients.Admin
 	testDB := testDBName()
 	fmt.Printf("testDB = %s\n", testDB)
@@ -24,15 +25,15 @@ func CreateDB(clients *Clients, suite string, fail FailFunc) {
 	if strings.Contains(suite, "NoAuth") {
 		switch errors.StatusCode(err) {
 		case 0:
-			fail("CreateDB: Should fail for unauthenticated session")
+			t.Errorf("CreateDB: Should fail for unauthenticated session")
 		case http.StatusUnauthorized:
 			// Expected
 		default:
-			fail("CreateDB: Expected 401/Unauthorized, Got: %s", err)
+			t.Errorf("CreateDB: Expected 401/Unauthorized, Got: %s", err)
 		}
 		return
 	}
 	if err != nil {
-		fail("Failed to create database '%s': %s", testDB, err)
+		t.Errorf("Failed to create database '%s': %s", testDB, err)
 	}
 }

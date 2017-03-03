@@ -3,6 +3,8 @@ package test
 import (
 	"regexp"
 	"testing"
+
+	"github.com/flimzy/kivik"
 )
 
 func init() {
@@ -37,7 +39,19 @@ var vendorVersionREs = map[string]*regexp.Regexp{
 
 // ServerInfo tests the '/' endpoint
 func ServerInfo(clients *Clients, suite string, t *testing.T) {
-	client := clients.Admin
+	t.Run("Admin", func(t *testing.T) {
+		testServerInfo(clients.Admin, suite, t)
+	})
+	if clients.NoAuth == nil {
+		return
+	}
+	t.Run("NoAuth", func(t *testing.T) {
+		testServerInfo(clients.NoAuth, suite, t)
+	})
+}
+
+func testServerInfo(client *kivik.Client, suite string, t *testing.T) {
+	t.Parallel()
 	info, err := client.ServerInfo()
 	if err != nil {
 		t.Errorf("%s", err)

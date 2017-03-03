@@ -28,5 +28,5 @@ func TestFS(t *testing.T) {
 		t.Errorf("Failed to connect to FS driver: %s\n", err)
 		return
 	}
-	RunSubtests(client, true, []string{SuiteKivikFS}, t)
+	RunSubtests(client, true, SuiteKivikFS, t)
 }

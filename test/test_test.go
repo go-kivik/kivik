@@ -18,7 +18,7 @@ func TestMemory(t *testing.T) {
 		t.Errorf("Failed to connect to memory driver: %s\n", err)
 		return
 	}
-	RunSubtests(client, true, []string{SuiteKivikMemory}, t)
+	RunSubtests(client, true, SuiteKivikMemory, t)
 }
 
 func doTest(suite, envName string, requireAuth bool, t *testing.T) {
@@ -44,7 +44,7 @@ func doTest(suite, envName string, requireAuth bool, t *testing.T) {
 		t.Errorf("Failed to connect to %s: %s\n", suite, err)
 		return
 	}
-	RunSubtests(client, true, []string{suite}, t)
+	RunSubtests(client, true, suite, t)
 
 }
 

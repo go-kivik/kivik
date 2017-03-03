@@ -138,7 +138,9 @@ func mainTest(driver, dsn string, rw bool, testSuites []string, t Tester) {
 		testSuites = append(testSuites, test)
 	}
 	fmt.Printf("Running the following test suites: %s\n", strings.Join(testSuites, ", "))
-	RunSubtests(client, rw, testSuites, t)
+	for _, suite := range testSuites {
+		RunSubtests(client, rw, suite, t)
+	}
 }
 
 func detectCompatibility(client *kivik.Client) ([]string, error) {
@@ -189,15 +191,13 @@ func RegisterTest(suite, name string, rw bool, fn testFunc) {
 type FailFunc func(format string, args ...interface{})
 
 // RunSubtests executes the requested suites of tests against the client.
-func RunSubtests(client *kivik.Client, rw bool, suites []string, t Tester) {
-	for _, suite := range suites {
-		for name, fn := range tests[suite] {
+func RunSubtests(client *kivik.Client, rw bool, suite string, t Tester) {
+	for name, fn := range tests[suite] {
+		runTest(client, name, suite, fn, t)
+	}
+	if rw {
+		for name, fn := range rwtests[suite] {
 			runTest(client, name, suite, fn, t)
-		}
-		if rw {
-			for name, fn := range rwtests[suite] {
-				runTest(client, name, suite, fn, t)
-			}
 		}
 	}
 }

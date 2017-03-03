@@ -1,7 +1,5 @@
 package test
 
-import "github.com/flimzy/kivik"
-
 func init() {
 	for _, suite := range []string{SuiteCouch16, SuiteCouch20, SuiteCloudant, SuiteKivikMemory} { // FIXME: SuiteKivikServer,
 		RegisterTest(suite, "UUIDs", false, UUIDs)
@@ -9,7 +7,8 @@ func init() {
 }
 
 // UUIDs tests the '/_uuids' endpoint
-func UUIDs(client *kivik.Client, _ string, fail FailFunc) {
+func UUIDs(clients *Clients, _ string, fail FailFunc) {
+	client := clients.Admin
 	uuidCount := 3
 	uuids, err := client.UUIDs(uuidCount)
 	if err != nil {

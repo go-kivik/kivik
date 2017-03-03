@@ -25,7 +25,10 @@ func TestPouchLocal(t *testing.T) {
 		t.Errorf("Failed to connect to PouchDB/memdown driver: %s", err)
 		return
 	}
-	RunSubtests(client, true, SuitePouchLocal, t)
+	clients := &Clients{
+		Admin: client,
+	}
+	RunSubtests(clients, true, SuitePouchLocal, t)
 }
 
 func TestPouchRemote(t *testing.T) {

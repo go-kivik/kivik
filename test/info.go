@@ -1,10 +1,6 @@
 package test
 
-import (
-	"regexp"
-
-	"github.com/flimzy/kivik"
-)
+import "regexp"
 
 func init() {
 	for _, suite := range AllSuites {
@@ -37,7 +33,8 @@ var vendorVersionREs = map[string]*regexp.Regexp{
 }
 
 // ServerInfo tests the '/' endpoint
-func ServerInfo(client *kivik.Client, suite string, fail FailFunc) {
+func ServerInfo(clients *Clients, suite string, fail FailFunc) {
+	client := clients.Admin
 	info, err := client.ServerInfo()
 	if err != nil {
 		fail("%s", err)

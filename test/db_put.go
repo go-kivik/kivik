@@ -1,7 +1,5 @@
 package test
 
-import "github.com/flimzy/kivik"
-
 func init() {
 	for _, suite := range []string{SuiteCouch16, SuiteCouch20, SuiteCloudant} {
 		RegisterTest(suite, "Put", true, Put)
@@ -16,7 +14,8 @@ type testDoc struct {
 }
 
 // Put tests creating and updating documents.
-func Put(client *kivik.Client, _ string, fail FailFunc) {
+func Put(clients *Clients, _ string, fail FailFunc) {
+	client := clients.Admin
 	testDB := testDBName()
 	defer client.DestroyDB(testDB)
 	if err := client.CreateDB(testDB); err != nil {

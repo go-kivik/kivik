@@ -1,7 +1,5 @@
 package test
 
-import "github.com/flimzy/kivik"
-
 func init() {
 	for _, suite := range []string{SuiteCouch20, SuiteCloudant} {
 		RegisterTest(suite, "Membership", false, Membership)
@@ -9,7 +7,8 @@ func init() {
 }
 
 // Membership tests the /_membership endpoint
-func Membership(client *kivik.Client, suite string, fail FailFunc) {
+func Membership(clients *Clients, suite string, fail FailFunc) {
+	client := clients.Admin
 	all, cluster, err := client.Membership()
 	if err != nil {
 		fail("Failed to read membership: %s", err)

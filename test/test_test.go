@@ -1,8 +1,6 @@
 package test
 
 import (
-	"fmt"
-	"net/url"
 	"os"
 	"testing"
 
@@ -18,7 +16,10 @@ func TestMemory(t *testing.T) {
 		t.Errorf("Failed to connect to memory driver: %s\n", err)
 		return
 	}
-	RunSubtests(client, true, SuiteKivikMemory, t)
+	clients := &Clients{
+		Admin: client,
+	}
+	RunSubtests(clients, true, SuiteKivikMemory, t)
 }
 
 func doTest(suite, envName string, requireAuth bool, t *testing.T) {
@@ -26,25 +27,12 @@ func doTest(suite, envName string, requireAuth bool, t *testing.T) {
 	if dsn == "" {
 		t.Skip("%s: %s DSN not set; skipping tests", envName, suite)
 	}
-	parsed, err := url.Parse(dsn)
-	if err != nil {
-		panic(err)
-	}
-	if requireAuth {
-		if parsed.User == nil {
-			t.Skip("%s: %s DSN does not include auth; skipping tests", envName, suite)
-		}
-	} else {
-		parsed.User = nil
-		dsn = parsed.String()
-	}
-	fmt.Printf("dsn = %s\n", dsn)
-	client, err := kivik.New(driverMap[suite], dsn)
+	clients, err := connectClients(driverMap[suite], dsn)
 	if err != nil {
 		t.Errorf("Failed to connect to %s: %s\n", suite, err)
 		return
 	}
-	RunSubtests(client, true, suite, t)
+	RunSubtests(clients, true, suite, t)
 
 }
 

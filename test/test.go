@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"net/url"
 	"os"
 	"strings"
 	"testing"
@@ -113,8 +114,7 @@ func RunTests(opts Options) {
 }
 
 func mainTest(driver, dsn string, rw bool, testSuites []string, t Tester) {
-	fmt.Printf("Connecting to %s ...\n", dsn)
-	client, err := kivik.New(driver, dsn)
+	clients, err := connectClients(driver, dsn)
 	if err != nil {
 		t.Fatalf("Failed to connect to %s (%s driver): %s\n", dsn, driver, err)
 	}
@@ -124,7 +124,7 @@ func mainTest(driver, dsn string, rw bool, testSuites []string, t Tester) {
 	}
 	if _, ok := tests[SuiteAuto]; ok {
 		fmt.Printf("Detecting target service compatibility...\n")
-		suites, err := detectCompatibility(client)
+		suites, err := detectCompatibility(clients.Admin)
 		if err != nil {
 			t.Fatalf("Unable to determine server suite compatibility: %s\n", err)
 		}
@@ -139,7 +139,7 @@ func mainTest(driver, dsn string, rw bool, testSuites []string, t Tester) {
 	}
 	fmt.Printf("Running the following test suites: %s\n", strings.Join(testSuites, ", "))
 	for _, suite := range testSuites {
-		RunSubtests(client, rw, suite, t)
+		RunSubtests(clients, rw, suite, t)
 	}
 }
 
@@ -164,7 +164,7 @@ func detectCompatibility(client *kivik.Client) ([]string, error) {
 	return []string{}, errors.New("Unable to automatically determine the proper test suite")
 }
 
-type testFunc func(*kivik.Client, string, FailFunc)
+type testFunc func(*Clients, string, FailFunc)
 
 // tests is a map of the format map[suite]map[name]testFunc
 var tests = make(map[string]map[string]testFunc)
@@ -191,31 +191,31 @@ func RegisterTest(suite, name string, rw bool, fn testFunc) {
 type FailFunc func(format string, args ...interface{})
 
 // RunSubtests executes the requested suites of tests against the client.
-func RunSubtests(client *kivik.Client, rw bool, suite string, t Tester) {
+func RunSubtests(clients *Clients, rw bool, suite string, t Tester) {
 	for name, fn := range tests[suite] {
-		runTest(client, name, suite, fn, t)
+		runTest(clients, name, suite, fn, t)
 	}
 	if rw {
 		for name, fn := range rwtests[suite] {
-			runTest(client, name, suite, fn, t)
+			runTest(clients, name, suite, fn, t)
 		}
 	}
 }
 
-func runTest(client *kivik.Client, name, suite string, fn testFunc, t Tester) {
+func runTest(clients *Clients, name, suite string, fn testFunc, t Tester) {
 	fail := func(format string, args ...interface{}) {
 		format = fmt.Sprintf("[%s] %s: %s\n", suite, name, strings.TrimSpace(format))
 		t.Errorf(format, args...)
 	}
-	fn(client, suite, fail)
+	fn(clients, suite, fail)
 }
 
-func gatherTests(client *kivik.Client, suites []string) []testing.InternalTest {
+func gatherTests(clients *Clients, suites []string) []testing.InternalTest {
 	internalTests := make([]testing.InternalTest, 0)
 	for _, suite := range suites {
 		for name, fn := range tests[suite] {
 			// if !runRE.MatchString(name) {
-			// 	continue
+			//      continue
 			// }
 			internalTests = append(internalTests, testing.InternalTest{
 				Name: name,
@@ -224,10 +224,43 @@ func gatherTests(client *kivik.Client, suites []string) []testing.InternalTest {
 						format = fmt.Sprintf("[%s] %s: %s\n", suite, name, strings.TrimSpace(format))
 						t.Errorf(format, args...)
 					}
-					fn(client, suite, fail)
+					fn(clients, suite, fail)
 				},
 			})
 		}
 	}
 	return internalTests
+}
+
+// Clients is a collection of client connections with different security access.
+type Clients struct {
+	Admin  *kivik.Client
+	NoAuth *kivik.Client
+}
+
+func connectClients(driverName, dsn string) (*Clients, error) {
+	var noAuthDSN string
+	if parsed, err := url.Parse(dsn); err == nil {
+		if parsed.User == nil {
+			return nil, errors.New("DSN does not contain authentication credentials")
+		}
+		parsed.User = nil
+		noAuthDSN = parsed.String()
+	}
+	clients := &Clients{}
+	fmt.Printf("Connecting to %s ...\n", dsn)
+	if client, err := kivik.New(driverName, dsn); err == nil {
+		clients.Admin = client
+	} else {
+		return nil, err
+	}
+
+	fmt.Printf("Connecting to %s ...\n", noAuthDSN)
+	if client, err := kivik.New(driverName, noAuthDSN); err == nil {
+		clients.NoAuth = client
+	} else {
+		return nil, err
+	}
+
+	return clients, nil
 }

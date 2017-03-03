@@ -15,7 +15,8 @@ func init() {
 }
 
 // Log tests the /_log endpoint
-func Log(client *kivik.Client, suite string, fail FailFunc) {
+func Log(clients *Clients, suite string, fail FailFunc) {
+	client := clients.Admin
 	logBuf := make([]byte, 1000)
 	if _, err := client.Log(logBuf, 0); err != nil {
 		fail("Error reading 1000 log bytes: %s", err)
@@ -27,7 +28,8 @@ func Log(client *kivik.Client, suite string, fail FailFunc) {
 }
 
 // CloudantLog tests the /_log endpoint for Cloudant, which returns an error
-func CloudantLog(client *kivik.Client, suite string, fail FailFunc) {
+func CloudantLog(clients *Clients, suite string, fail FailFunc) {
+	client := clients.Admin
 	logBuf := make([]byte, 1000)
 	_, err := client.Log(logBuf, 0)
 	if err == nil {

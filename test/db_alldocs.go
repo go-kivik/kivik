@@ -1,7 +1,5 @@
 package test
 
-import "github.com/flimzy/kivik"
-
 func init() {
 	for _, suite := range []string{SuiteCouch16, SuiteCouch20, SuiteCloudant} {
 		RegisterTest(suite, "AllDocsCouch", false, AllDocsCouch)
@@ -13,7 +11,8 @@ func init() {
 }
 
 // AllDocsCouch tests the /{db}/_all_docs endpoint for CouchDB-like backends.
-func AllDocsCouch(client *kivik.Client, _ string, fail FailFunc) {
+func AllDocsCouch(clients *Clients, _ string, fail FailFunc) {
+	client := clients.Admin
 	db, err := client.DB("_replicator")
 	if err != nil {
 		fail("Failed to connect to database: %s", err)

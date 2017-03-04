@@ -52,6 +52,7 @@ func (l *Logger) Log(buf []byte, offset int) (int, error) {
 	l.f.Sync()
 	l.mutex.Unlock()
 	f, err := os.Open(l.filename)
+	defer f.Close()
 	if err != nil {
 		return 0, err
 	}
@@ -60,12 +61,10 @@ func (l *Logger) Log(buf []byte, offset int) (int, error) {
 		return 0, err
 	}
 	if st.Size() > int64(len(buf)) {
-		var x int64
-		x, err = f.Seek(-int64(offset+len(buf)), os.SEEK_END)
+		_, err = f.Seek(-int64(offset+len(buf)), os.SEEK_END)
 		if err != nil {
 			return 0, err
 		}
-		fmt.Printf("x = %d\n", x)
 	}
 	n, err := f.Read(buf)
 	if err != nil && err != io.EOF {

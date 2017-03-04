@@ -41,7 +41,6 @@ func log(w http.ResponseWriter, r *http.Request) error {
 		offset = DefaultLogOffset
 	}
 
-	fmt.Printf("length = %d, offset = %d\n", length, offset)
 	buf := make([]byte, length)
 	n, err := logger.Log(buf, offset)
 	if err != nil {

@@ -10,6 +10,7 @@ import (
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/driver/proxy"
+	"github.com/flimzy/kivik/errors"
 )
 
 // Version is the version of this library.
@@ -35,11 +36,11 @@ type Service struct {
 	// VendorName is the vendor name string to report to clients. Defaults to the library
 	// vendor string.
 	VendorName string
-	// Logger is a logger where logs can be sent. It is the responsibility of
+	// LogWriter is a logger where logs can be sent. It is the responsibility of
 	// the developer to ensure that the logs are available to the backend driver,
 	// if the Log() method is expected to work. By default, a null logger is used
 	// which discards all log messages.
-	Logger LogWriter
+	LogWriter LogWriter
 }
 
 // NewKivikClient returns a new service to serve a standard *kivik.Client.
@@ -99,7 +100,7 @@ func (s *Service) Server() (http.Handler, error) {
 	ctxRoot.Handler(mHEAD, "/:db", handler(dbExists))
 	// ctxRoot.Handler(mDELETE, "/:db", handler(destroyDB) )
 	// ctxRoot.Handler(http.MethodGet, "/:db", handler(getDB))
-	return router, nil
+	return requestLogger(s, router), nil
 }
 
 func getService(r *http.Request) *Service {
@@ -134,19 +135,12 @@ const (
 
 type handler func(w http.ResponseWriter, r *http.Request) error
 
-type statusCoder interface {
-	StatusCode() int
-}
-
 func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	err := h(w, r)
 	if err == nil {
 		return
 	}
-	var status int
-	if statuser, ok := err.(statusCoder); ok {
-		status = statuser.StatusCode()
-	}
+	status := errors.StatusCode(err)
 	if status == 0 {
 		status = http.StatusInternalServerError
 	}

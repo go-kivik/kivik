@@ -50,13 +50,14 @@ func main() {
 			fmt.Fprintf(os.Stderr, "Failed to connect: %s", err)
 			os.Exit(1)
 		}
-		loggingClient := serve.LoggingClient{
+		service := serve.New(serve.LoggingClient{
 			Client:    proxy.NewClient(client),
 			Logger:    logger,
 			LogWriter: logger,
-		}
+		})
+		service.LogWriter = logger
 		fmt.Printf("Listening on %s\n", listenAddr)
-		fmt.Println(serve.New(loggingClient).Start(listenAddr))
+		fmt.Println(service.Start(listenAddr))
 		os.Exit(1)
 	}
 

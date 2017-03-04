@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/dimfeld/httptreemux"
 
 	"github.com/flimzy/kivik"
@@ -192,7 +191,6 @@ func createDB(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", typeJSON)
 	params := getParams(r)
 	client := getClient(r)
-	spew.Dump(client)
 	if err := client.CreateDB(params["db"]); err != nil {
 		return err
 	}

@@ -11,6 +11,7 @@ import (
 // HTTP response codes permitted by the CouchDB API.
 // See http://docs.couchdb.org/en/1.6.1/api/basics.html#http-status-codes
 const (
+	StatusNoError                      = 0
 	StatusOK                           = 200
 	StatusCreated                      = 201
 	StatusAccepted                     = 202
@@ -54,7 +55,7 @@ func StatusCode(err error) int {
 	if scErr, ok := err.(StatusCoder); ok {
 		return scErr.StatusCode()
 	}
-	return 0
+	return StatusNoError
 }
 
 // New is a wrapper around the standard errors.New, to avoid the need for

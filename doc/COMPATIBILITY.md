@@ -39,7 +39,7 @@
 | GET /_active_tasks |                        |    |    |    | ⁿ/ₐ |
 | GET /_all_dbs      | AllDBs()               | ✅ | ✅ | ✅ | ☑️<sup>[1](#pouchAllDbs1),[2](#pouchAllDbs2),[3](pouchAllDbs3)</sup> | ✅ | ✅
 | GET /_db_updates
-| GET /_log          | Log()                  |    | ✅ | ✅ | ⁿ/ₐ
+| GET /_log          | Log()                  | ✅ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | GET /_replicate
 | GET /_restart      |                        |    |    |    | ⁿ/ₐ
 | GET /_stats
@@ -48,16 +48,16 @@
 | GET /favicon.ico   |                        |    | ❌ | ❌ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
 | POST /_session<sup>[6](#cookieAuth)</sup> | |    | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
 | GET /_session<sup>[6](#cookieAuth)</sup> |  |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
-| DELETE /_session<sup>[6](#cookieAuth)</sup> | |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
+| DELETE /_session<sup>[6](#cookieAuth)</sup> | |  |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
 | GET /_config
 | GET /_config/{section}
 | GET /_config/{section}/{key}
 | PUT /_config/{section}/{key}
 | DELETE /_config/{section}/{key}
-| HEAD /{db}         | DBExists()             | ✅ |    | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
+| HEAD /{db}         | DBExists()             | ✅ | ✅ | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
 | GET /{db}
-| PUT /{db}          | CreateDB()             | ✅ |    | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
-| DELETE /{db}       | DestroyDB()            |    |    | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
+| PUT /{db}          | CreateDB()             | ✅ | ✅ | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
+| DELETE /{db}       | DestroyDB()            |    | ✅ | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
 | POST /{db}
 | GET /{db}/_all_docs | AllDocs()             |    | ☑️<sup>[7](#todoConflicts),[8](#todoIncludeDocs),[9](#todoOrdering),[10](#todoLimit)</sup> | ✅ | ？ | ？ |
 | POST /{db}/_all_docs

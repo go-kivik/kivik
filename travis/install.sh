@@ -10,6 +10,9 @@ go get github.com/pborman/uuid \
     golang.org/x/net/publicsuffix
 
 case "$1" in
+    "standard")
+        go get github.com/NYTimes/gziphandler
+    ;;
     "gopherjs")
         if [ "$TRAVIS_OS_NAME" == "linux" ]; then
             # Install nodejs and dependencies, but only for Linux

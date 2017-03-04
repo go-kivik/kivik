@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/NYTimes/gziphandler"
 	"github.com/dimfeld/httptreemux"
 
 	"github.com/flimzy/kivik"
@@ -100,7 +101,11 @@ func (s *Service) Server() (http.Handler, error) {
 	ctxRoot.Handler(mHEAD, "/:db", handler(dbExists))
 	// ctxRoot.Handler(mDELETE, "/:db", handler(destroyDB) )
 	// ctxRoot.Handler(http.MethodGet, "/:db", handler(getDB))
-	return requestLogger(s, router), nil
+
+	handle := http.Handler(router)
+	handle = gziphandler.GzipHandler(handle)
+	handle = requestLogger(s, handle)
+	return handle, nil
 }
 
 func getService(r *http.Request) *Service {

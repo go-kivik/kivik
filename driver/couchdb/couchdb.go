@@ -187,19 +187,3 @@ type putResponse struct {
 	OK  bool   `json:"ok"`
 	Rev string `json:"rev"`
 }
-
-// func (c *client) Put(docID string, doc interface{}) (string, error) {
-// 	var body []byte
-// 	if b, err := json.Marshal(doc); err == nil {
-// 		body = b
-// 	} else {
-// 		return "", err
-// 	}
-// 	var resp putResponse
-// 	err := c.newRequest(http.MethodPut, dbName+"/"+docID).
-// 		AddHeader("Accept", typeJSON).
-// 		AddHeader("Content-Type", typeJSON).
-// 		Body(bytes.NewReader(body)).
-// 		DoJSON(&resp)
-// 	return resp.Rev, err
-// }

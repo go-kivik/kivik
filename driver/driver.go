@@ -139,6 +139,7 @@ type Session interface {
 // If a Client does implement Configer, it allows backend configuration
 // to be queried and modified via the API.
 type Configer interface {
+	GetAllConfig() (map[string]map[string]string, error)
 	// GetConfig() (map[string]interface{}, error)
 	// SetConfig(key string, value interface{}) error
 	// ClearConfig(key string) error

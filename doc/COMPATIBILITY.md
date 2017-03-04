@@ -39,7 +39,7 @@
 | GET /_active_tasks |                        |    |    |    | ⁿ/ₐ |
 | GET /_all_dbs      | AllDBs()               | ✅ | ✅ | ✅ | ☑️<sup>[1](#pouchAllDbs1),[2](#pouchAllDbs2),[3](pouchAllDbs3)</sup> | ✅ | ✅
 | GET /_db_updates
-| GET /_log          | Log()                  |    |    | ✅ | ⁿ/ₐ
+| GET /_log          | Log()                  | ✅ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | GET /_replicate
 | GET /_restart      |                        |    |    |    | ⁿ/ₐ
 | GET /_stats
@@ -48,18 +48,18 @@
 | GET /favicon.ico   |                        |    | ❌ | ❌ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
 | POST /_session<sup>[6](#cookieAuth)</sup> | |    | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
 | GET /_session<sup>[6](#cookieAuth)</sup> |  |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
-| DELETE /_session<sup>[6](#cookieAuth)</sup> | |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
+| DELETE /_session<sup>[6](#cookieAuth)</sup> | |  |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
 | GET /_config
 | GET /_config/{section}
 | GET /_config/{section}/{key}
 | PUT /_config/{section}/{key}
 | DELETE /_config/{section}/{key}
-| HEAD /{db}         | DBExists()             | ✅ |    | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
+| HEAD /{db}         | DBExists()             | ✅ | ✅ | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
 | GET /{db}
-| PUT /{db}          | CreateDB()             | ✅ |    | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
-| DELETE /{db}       | DestroyDB()            |    |    | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
+| PUT /{db}          | CreateDB()             | ✅ | ✅ | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
+| DELETE /{db}       | DestroyDB()            |    | ✅ | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
 | POST /{db}
-| GET /{db}/_all_docs | AllDocs()             |    | ✅ | ✅ | ？ | ？ |
+| GET /{db}/_all_docs | AllDocs()             |    | ☑️<sup>[7](#todoConflicts),[8](#todoIncludeDocs),[9](#todoOrdering),[10](#todoLimit)</sup> | ✅ | ？ | ？ |
 | POST /{db}/_all_docs
 | POST /{db}/_bulk_docs
 | GET /{db}/_changes
@@ -77,8 +77,8 @@
 | GET /{db}/_revs_limit
 | PUT /{db}/_revs_limit
 | HEAD /{db}/{docid}
-| GET /{db}/{docid}   | Get()                 |    | ☑️ | ✅ |
-| PUT /{db}/{docid}   | Put()                 |    | ☑️ | ✅ |
+| GET /{db}/{docid}   | Get()                 |    | ☑️<sup>[7](#todoConflicts),[11](#todoAttachments)</sup> | ✅ |
+| PUT /{db}/{docid}   | Put()                 |    | ☑️<sup>[11](#todoAttachments)</sup> | ✅ |
 | DELETE /{db}/{docid}
 | COPY /{db}/{docid}
 | HEAD /{db}/{docid}/{attname}
@@ -124,3 +124,8 @@
  if the database already existed, and `DestroyDB()` does not return an error if the database does
  not exist.
 6. <a name="cookieAuth"> See the CookieAuth section in the [Authentication methods table](#authTable)
+7. <a name="todoConflicts"> **TODO:** Conflicts are not yet tested.
+8. <a name="todoIncludeDocs"> **TODO:** include_docs is not yet tested.
+9. <a name="todoOrdering"> **TODO:** Ordering is not yet tested.
+10. <a name="todoLimit"> **TODO:** Limits are not yet tested.
+11. <a name="todoAttachments"> **TODO:** Attachments are not yet tested.

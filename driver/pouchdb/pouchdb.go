@@ -11,7 +11,6 @@ import (
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/driver/pouchdb/bindings"
 	"github.com/flimzy/kivik/errors"
-	"github.com/gopherjs/gopherjs/js"
 	"github.com/imdario/mergo"
 )
 
@@ -152,6 +151,10 @@ func (c *client) options(opts Options) (Options, error) {
 	return o, err
 }
 
+func (c *client) isRemote() bool {
+	return c.dsn != nil
+}
+
 // DBExists returns true if the requested DB exists. This function only works
 // for remote databases. For local databases, it creates the database. Silly
 // PouchDB.
@@ -166,15 +169,18 @@ func (c *client) DBExists(dbName string) (bool, error) {
 	if err == nil {
 		return true, nil
 	}
-	if jsObs, ok := err.(*js.Error); ok {
-		if jsObs.Get("status").Int() == http.StatusNotFound {
-			return false, nil
-		}
+	if errors.StatusCode(err) == http.StatusNotFound {
+		return false, nil
 	}
 	return false, err
 }
 
 func (c *client) CreateDB(dbName string) error {
+	if c.isRemote() {
+		if exists, _ := c.DBExists(dbName); exists {
+			return errors.Status(http.StatusPreconditionFailed, "database exists")
+		}
+	}
 	opts, err := c.options(Options{})
 	if err != nil {
 		return err

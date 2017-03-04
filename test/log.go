@@ -14,7 +14,7 @@ import (
 )
 
 func init() {
-	for _, suite := range []string{SuiteCouch16, SuiteCouch20, SuiteCloudant} { //FIXME: SuiteKivikServer
+	for _, suite := range []string{SuiteCouch16, SuiteCouch20, SuiteCloudant, SuiteKivikServer} {
 		RegisterTest(suite, "Log", false, Log)
 	}
 	// RegisterTest(SuiteCloudant, "Log", false, CloudantLog)

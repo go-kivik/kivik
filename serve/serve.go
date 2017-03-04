@@ -5,9 +5,12 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/dimfeld/httptreemux"
 
 	"github.com/flimzy/kivik"
+	"github.com/flimzy/kivik/driver"
+	"github.com/flimzy/kivik/driver/proxy"
 )
 
 // Version is the version of this library.
@@ -22,11 +25,8 @@ const CompatVersion = "1.6.1"
 // Service defines a CouchDB-like service to serve. You will define one of these
 // per server endpoint.
 type Service struct {
-	// DriverName is the name of the registerd driver.
-	DriverName string
-	// DataSourceName is the name passed to the driver's NewClient() method.
-	// Typically the path to a remote server, or equivalent.
-	DataSourceName string
+	// Client is an instance of a driver.Client, which will be served.
+	Client driver.Client
 	// CompatVersion is the compatibility version to report to clients. Defaults
 	// to 1.6.1.
 	CompatVersion string
@@ -36,11 +36,26 @@ type Service struct {
 	// VendorName is the vendor name string to report to clients. Defaults to the library
 	// vendor string.
 	VendorName string
+	// Logger is a logger where logs can be sent. It is the responsibility of
+	// the developer to ensure that the logs are available to the backend driver,
+	// if the Log() method is expected to work. By default, a null logger is used
+	// which discards all log messages.
+	Logger Logger
+}
+
+// NewKivikClient returns a new service to serve a standard *kivik.Client.
+// This is the same as:
+//
+//    import "github.com/flimzy/kivik/driver/proxy"
+//
+//    New(proxy.NewClient(client))
+func NewKivikClient(client *kivik.Client) *Service {
+	return New(proxy.NewClient(client))
 }
 
 // New returns a new service definition.
-func New(driverName, dataSource string) *Service {
-	return &Service{DriverName: driverName, DataSourceName: dataSource}
+func New(backend driver.Client) *Service {
+	return &Service{Client: backend}
 }
 
 // Start begins serving connections on the requested bind address.
@@ -71,12 +86,8 @@ const (
 
 // Server returns an unstarted server instance.
 func (s *Service) Server() (http.Handler, error) {
-	client, err := kivik.New(s.DriverName, s.DataSourceName)
-	if err != nil {
-		return nil, err
-	}
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, ClientContextKey, client)
+	ctx = context.WithValue(ctx, ClientContextKey, s.Client)
 	ctx = context.WithValue(ctx, ServiceContextKey, s)
 	router := httptreemux.New()
 	router.HeadCanUseGet = true
@@ -84,6 +95,7 @@ func (s *Service) Server() (http.Handler, error) {
 	ctxRoot := router.UsingContext()
 	ctxRoot.Handler(mGET, "/", handler(root))
 	ctxRoot.Handler(mGET, "/_all_dbs", handler(allDBs))
+	ctxRoot.Handler(mGET, "/_log", handler(log))
 	ctxRoot.Handler(mPUT, "/:db", handler(createDB))
 	ctxRoot.Handler(mHEAD, "/:db", handler(dbExists))
 	// ctxRoot.Handler(mDELETE, "/:db", handler(destroyDB) )
@@ -92,12 +104,12 @@ func (s *Service) Server() (http.Handler, error) {
 }
 
 func getService(r *http.Request) *Service {
-	service, _ := r.Context().Value(ServiceContextKey).(*Service)
+	service := r.Context().Value(ServiceContextKey).(*Service)
 	return service
 }
 
-func getClient(r *http.Request) *kivik.Client {
-	client, _ := r.Context().Value(ClientContextKey).(*kivik.Client)
+func getClient(r *http.Request) driver.Client {
+	client := r.Context().Value(ClientContextKey).(driver.Client)
 	return client
 }
 
@@ -116,7 +128,10 @@ type serverInfo struct {
 	Vendor  vendorInfo `json:"vendor"`
 }
 
-const jsonType = "application/json"
+const (
+	typeJSON = "application/json"
+	typeText = "text/plain"
+)
 
 type handler func(w http.ResponseWriter, r *http.Request) error
 
@@ -143,7 +158,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func root(w http.ResponseWriter, r *http.Request) error {
-	w.Header().Set("Content-Type", jsonType)
+	w.Header().Set("Content-Type", typeJSON)
 	svc := getService(r)
 	vendVers := svc.VendorVersion
 	if vendVers == "" {
@@ -164,7 +179,7 @@ func root(w http.ResponseWriter, r *http.Request) error {
 }
 
 func allDBs(w http.ResponseWriter, r *http.Request) error {
-	w.Header().Set("Content-Type", jsonType)
+	w.Header().Set("Content-Type", typeJSON)
 	client := getClient(r)
 	dbs, err := client.AllDBs()
 	if err != nil {
@@ -174,9 +189,10 @@ func allDBs(w http.ResponseWriter, r *http.Request) error {
 }
 
 func createDB(w http.ResponseWriter, r *http.Request) error {
-	w.Header().Set("Content-Type", jsonType)
+	w.Header().Set("Content-Type", typeJSON)
 	params := getParams(r)
 	client := getClient(r)
+	spew.Dump(client)
 	if err := client.CreateDB(params["db"]); err != nil {
 		return err
 	}

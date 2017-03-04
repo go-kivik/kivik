@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/flimzy/kivik"
-	"github.com/flimzy/kivik/driver"
 	_ "github.com/flimzy/kivik/driver/couchdb"
 	_ "github.com/flimzy/kivik/driver/memory"
 	"github.com/flimzy/kivik/driver/proxy"
@@ -15,16 +14,9 @@ import (
 	"github.com/flimzy/kivik/serve"
 )
 
-type customClient struct {
-	driver.Client
-	*memory.Logger
-}
-
-var _ driver.Client = &customClient{}
-
 func TestServer(t *testing.T) {
 	memClient, _ := kivik.New("memory", "")
-	backend := &customClient{
+	backend := &serve.LoggingClient{
 		Client: proxy.NewClient(memClient),
 		Logger: memory.New(10),
 	}

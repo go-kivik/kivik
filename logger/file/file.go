@@ -21,14 +21,14 @@ type Logger struct {
 	f        *os.File
 }
 
-var _ serve.Logger = &Logger{}
+var _ serve.LogWriter = &Logger{}
 var _ driver.Logger = &Logger{}
 
 var now = time.Now
 
 // New opens a new file logger.
 func New(filename string) (*Logger, error) {
-	f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0600)
+	f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
 		return nil, err
 	}
@@ -60,9 +60,12 @@ func (l *Logger) Log(buf []byte, offset int) (int, error) {
 		return 0, err
 	}
 	if st.Size() > int64(len(buf)) {
-		if _, err = f.Seek(int64(offset-len(buf)), 2); err != nil {
+		var x int64
+		x, err = f.Seek(-int64(offset+len(buf)), os.SEEK_END)
+		if err != nil {
 			return 0, err
 		}
+		fmt.Printf("x = %d\n", x)
 	}
 	n, err := f.Read(buf)
 	if err != nil && err != io.EOF {

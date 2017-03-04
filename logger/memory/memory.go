@@ -31,7 +31,7 @@ type Logger struct {
 	ring *ring.Ring
 }
 
-var _ serve.Logger = &Logger{}
+var _ serve.LogWriter = &Logger{}
 var _ driver.Logger = &Logger{}
 
 // New returns a new logger, with the specified capacity. Once more than cap

@@ -17,23 +17,6 @@ const (
 	DefaultLogOffset = 0
 )
 
-// Level is a log level
-type Level int
-
-// The log levels specified by CouchDB.
-// See http://docs.couchdb.org/en/2.0.0/config/logging.html
-const (
-	LogLevelDebug = iota
-	LogLevelInfo
-	LogLevelWarn
-	LogLevelError
-)
-
-// Logger is an interface for a logging backend.
-type Logger interface {
-	WriteLog(level Level, message string)
-}
-
 func log(w http.ResponseWriter, r *http.Request) error {
 	logger, ok := getClient(r).(driver.Logger)
 	if !ok {
@@ -58,11 +41,12 @@ func log(w http.ResponseWriter, r *http.Request) error {
 		offset = DefaultLogOffset
 	}
 
+	fmt.Printf("length = %d, offset = %d\n", length, offset)
 	buf := make([]byte, length)
-	if _, err = logger.Log(buf, offset); err != nil {
-		fmt.Printf("err3:%s", err)
+	n, err := logger.Log(buf, offset)
+	if err != nil {
 		return err
 	}
-	w.Write(buf)
+	w.Write(buf[0:n])
 	return nil
 }

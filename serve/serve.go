@@ -40,7 +40,7 @@ type Service struct {
 	// the developer to ensure that the logs are available to the backend driver,
 	// if the Log() method is expected to work. By default, a null logger is used
 	// which discards all log messages.
-	Logger Logger
+	Logger LogWriter
 }
 
 // NewKivikClient returns a new service to serve a standard *kivik.Client.

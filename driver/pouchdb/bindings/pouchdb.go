@@ -51,7 +51,7 @@ func (p *PouchDB) AllDBs() ([]string, error) {
 	var err error
 	p.Call("allDbs", func(e, r *js.Object) {
 		if e != nil {
-			err = &js.Error{Object: e}
+			err = &pouchError{Object: e}
 		}
 		resultCh <- r
 	})
@@ -93,7 +93,7 @@ func (db *DB) Destroy(options map[string]interface{}) error {
 	var err error
 	db.Call("destroy", options, func(e, r *js.Object) {
 		if e != nil {
-			err = &js.Error{Object: e}
+			err = &pouchError{Object: e}
 		}
 		resultCh <- r
 	})
@@ -107,7 +107,7 @@ func (db *DB) AllDocs(options map[string]interface{}) ([]byte, error) {
 	var err error
 	db.Call("allDocs", options, func(e, r *js.Object) {
 		if e != nil {
-			err = &js.Error{Object: e}
+			err = &pouchError{Object: e}
 		}
 		resultCh <- r
 	})

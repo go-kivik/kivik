@@ -21,7 +21,10 @@ func CreateDB(clients *Clients, suite string, t *testing.T) {
 		testDB := testDBName()
 		defer clients.Admin.DestroyDB(testDB)
 		testCreateDB(clients.Admin, testDB, 0, t)
-		testCreateDB(clients.Admin, testDB, http.StatusPreconditionFailed, t)
+		if suite != SuitePouchLocal {
+			// Local PouchDB never complains about this
+			testCreateDB(clients.Admin, testDB, http.StatusPreconditionFailed, t)
+		}
 	})
 	if clients.NoAuth == nil {
 		return

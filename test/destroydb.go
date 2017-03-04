@@ -51,7 +51,7 @@ func testDestroyDB(client *kivik.Client, dbName string, status int, t *testing.T
 	case 0:
 		t.Errorf("Expected failure with status %d/%s", status, http.StatusText(status))
 	default:
-		t.Errorf("Failed to destroy database '%s': %s", dbName, err)
+		t.Errorf("Unexpected failure destroying database '%s'.\nExpected: %d/%s\n  Actual: %s\n", dbName, status, http.StatusText(status), err)
 	}
 }
 
@@ -65,7 +65,7 @@ func NotDestroyDB(clients *Clients, suite string, t *testing.T) {
 		return
 	}
 	t.Run("NoAuth", func(t *testing.T) {
-		if suite == SuiteCloudant {
+		if suite == SuiteCloudant || suite == SuitePouchRemote {
 			testDestroyDB(clients.NoAuth, testDB, http.StatusNotFound, t)
 			return
 		}

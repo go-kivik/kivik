@@ -10,7 +10,6 @@ import (
 
 // Client is a client connection handle to a CouchDB-like server.
 type Client struct {
-	driver       driver.Driver
 	dsn          string
 	driverClient driver.Client
 }
@@ -32,7 +31,6 @@ func New(driverName, dataSourceName string) (*Client, error) {
 		return nil, err
 	}
 	return &Client{
-		driver:       driveri,
 		dsn:          dataSourceName,
 		driverClient: client,
 	}, nil

@@ -4,78 +4,38 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
-	"github.com/flimzy/kivik/driver"
+	"github.com/flimzy/kivik/logger"
 )
 
-// LogLevel is a log level
-type LogLevel int
-
-func (l LogLevel) String() string {
-	switch l {
-	case LogLevelDebug:
-		return "debug"
-	case LogLevelInfo:
-		return "info"
-	case LogLevelWarn:
-		return "warning"
-	case LogLevelError:
-		return "error"
-	default:
-		return "unknown"
-	}
-}
-
-// The log levels specified by CouchDB.
-// See http://docs.couchdb.org/en/2.0.0/config/logging.html
-const (
-	LogLevelDebug = iota
-	LogLevelInfo
-	LogLevelWarn
-	LogLevelError
-)
-
-// LogWriter is an interface for a logging backend.
-type LogWriter interface {
-	// Write log should write the passed message to the logging backend.
-	// The message is guaranteed not to end with any trailing newline or spaces.
-	WriteLog(level LogLevel, message string) error
-}
-
-// LoggingClient bundles a driver.Client, driver.Logger, and a LogWriter, to
-// both log requests, and serve logs.
-type LoggingClient struct {
-	driver.Client
-	driver.Logger
-	LogWriter
-}
-
-func (s *Service) log(level LogLevel, format string, args ...interface{}) {
+func (s *Service) log(level logger.LogLevel, format string, args ...interface{}) {
+	msg := strings.TrimSpace(fmt.Sprintf(format, args...))
 	if s.LogWriter == nil {
+		fmt.Printf("[%s] [%s] [--] %s\n", time.Now().Format(logger.TimeFormat), level, msg)
 		return
 	}
-	msg := strings.TrimSpace(fmt.Sprintf(format, args...))
 	s.LogWriter.WriteLog(level, msg)
 }
 
 // Debug logs a debug message to the registered logger.
 func (s *Service) Debug(format string, args ...interface{}) {
-	s.log(LogLevelDebug, format, args...)
+	s.log(logger.LogLevelDebug, format, args...)
 }
 
 // Info logs an informational message to the registered logger.
 func (s *Service) Info(format string, args ...interface{}) {
-	s.log(LogLevelInfo, format, args...)
+	s.log(logger.LogLevelInfo, format, args...)
 }
 
 // Warn logs a warning message to the registered logger.
 func (s *Service) Warn(format string, args ...interface{}) {
-	s.log(LogLevelWarn, format, args...)
+	s.log(logger.LogLevelWarn, format, args...)
 }
 
 // Error logs an error message to the registered logger.
 func (s *Service) Error(format string, args ...interface{}) {
-	s.log(LogLevelError, format, args...)
+	s.log(logger.LogLevelError, format, args...)
 }
 
 type statusWriter struct {

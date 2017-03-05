@@ -3,15 +3,19 @@ package serve
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/dimfeld/httptreemux"
 
-	"github.com/flimzy/kivik"
+	"github.com/flimzy/kivik/config"
 	"github.com/flimzy/kivik/driver"
-	"github.com/flimzy/kivik/driver/proxy"
 	"github.com/flimzy/kivik/errors"
+	"github.com/flimzy/kivik/logger"
+	"github.com/flimzy/kivik/logger/memlogger"
 )
 
 // Version is the version of this library.
@@ -39,33 +43,69 @@ type Service struct {
 	VendorName string
 	// LogWriter is a logger where logs can be sent. It is the responsibility of
 	// the developer to ensure that the logs are available to the backend driver,
-	// if the Log() method is expected to work. By default, a null logger is used
-	// which discards all log messages.
-	LogWriter LogWriter
+	// if the Log() method is expected to work. By default, logs are written to
+	// standard output.
+	LogWriter logger.LogWriter
+	// Config is the configuration backend. By default the Client is used, if
+	// it satisfies the driver.Config interface. Otherwise, a new memconf
+	// instance is instantiated.
+	config *config.Config
 }
 
-// NewKivikClient returns a new service to serve a standard *kivik.Client.
-// This is the same as:
-//
-//    import "github.com/flimzy/kivik/driver/proxy"
-//
-//    New(proxy.NewClient(client))
-func NewKivikClient(client *kivik.Client) *Service {
-	return New(proxy.NewClient(client))
+// Config returns a connection to the configuration backend.
+func (s *Service) Config() *config.Config {
+	if s.config == nil {
+		if conf, ok := s.Client.(driver.Config); ok {
+			s.config = config.New(conf)
+		}
+		s.config = defaultConfig()
+	}
+	return s.config
 }
 
-// New returns a new service definition.
-func New(backend driver.Client) *Service {
-	return &Service{Client: backend}
+// SetConfig sets the configuration backend.
+func (s *Service) SetConfig(config *config.Config) {
+	s.config = config
+}
+
+// Init initializes a configured server. This is automatically called when
+// Start() is called, so this is meant to be used if you want to bind the server
+// yourself.
+func (s *Service) Init() (http.Handler, error) {
+	logConf, _ := s.Config().GetSection("log")
+	if s.LogWriter == nil {
+		s.LogWriter = &memlogger.Logger{}
+	}
+	if err := s.LogWriter.Init(logConf); err != nil {
+		return nil, errors.Wrap(err, "failed to initialize logger")
+	}
+	return s.setupRoutes()
 }
 
 // Start begins serving connections on the requested bind address.
-func (s *Service) Start(addr string) error {
-	server, err := s.Server()
+func (s *Service) Start() error {
+	server, err := s.Init()
 	if err != nil {
 		return err
 	}
+	addr := fmt.Sprintf("%s:%d",
+		s.Config().GetString("httpd", "bind_address"),
+		s.Config().GetInt("httpd", "port"),
+	)
+	s.Info("Listening on %s", addr)
 	return http.ListenAndServe(addr, server)
+}
+
+// Bind sets the HTTP daemon bind address and port.
+func (s *Service) Bind(addr string) error {
+	port := addr[strings.LastIndex(addr, ":")+1:]
+	if _, err := strconv.Atoi(port); err != nil {
+		return errors.Wrapf(err, "invalid port '%s'", port)
+	}
+	host := strings.TrimSuffix(addr, ":"+port)
+	s.Config().Set("httpd", "bind_address", host)
+	s.Config().Set("httpd", "port", port)
+	return nil
 }
 
 // ContextKey is a type for context keys.
@@ -85,8 +125,7 @@ const (
 	mCOPY   = "COPY"
 )
 
-// Server returns an unstarted server instance.
-func (s *Service) Server() (http.Handler, error) {
+func (s *Service) setupRoutes() (http.Handler, error) {
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, ClientContextKey, s.Client)
 	ctx = context.WithValue(ctx, ServiceContextKey, s)
@@ -103,7 +142,18 @@ func (s *Service) Server() (http.Handler, error) {
 	// ctxRoot.Handler(http.MethodGet, "/:db", handler(getDB))
 
 	handle := http.Handler(router)
-	handle = gziphandler.GzipHandler(handle)
+	if s.Config().GetBool("httpd", "enable_compression") {
+		level := s.Config().GetInt("httpd", "compression_level")
+		if level == 0 {
+			level = 8
+		}
+		gzipHandler, err := gziphandler.NewGzipLevelHandler(int(level))
+		if err != nil {
+			return nil, errors.Wrapf(err, "invalid httpd.compression_level '%s'", level)
+		}
+		s.Info("Enabling HTTPD cmpression, level %d", level)
+		handle = gzipHandler(handle)
+	}
 	handle = requestLogger(s, handle)
 	return handle, nil
 }

@@ -8,10 +8,13 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/flimzy/kivik"
+	"github.com/flimzy/kivik/driver"
 	_ "github.com/flimzy/kivik/driver/couchdb"
 	_ "github.com/flimzy/kivik/driver/memory"
 	"github.com/flimzy/kivik/driver/proxy"
-	"github.com/flimzy/kivik/logger/file"
+	"github.com/flimzy/kivik/logger"
+	"github.com/flimzy/kivik/logger/logfile"
+	"github.com/flimzy/kivik/logger/memlogger"
 	"github.com/flimzy/kivik/serve"
 	"github.com/flimzy/kivik/test"
 )
@@ -28,36 +31,43 @@ func main() {
 	cmdServe.Flags().AddFlag(flagVerbose)
 	var listenAddr string
 	cmdServe.Flags().StringVarP(&listenAddr, "http", "", ":5984", "HTTP bind address to serve")
-	var driver string
-	cmdServe.Flags().StringVarP(&driver, "driver", "d", "memory", "Backend driver to use")
+	var driverName string
+	cmdServe.Flags().StringVarP(&driverName, "driver", "d", "memory", "Backend driver to use")
 	var dsn string
 	cmdServe.Flags().StringVarP(&dsn, "dsn", "", "", "Data source name")
 	var logFile string
 	cmdServe.Flags().StringVarP(&logFile, "log", "l", "", "Server log file")
 	cmdServe.Run = func(cmd *cobra.Command, args []string) {
-		var logger *file.Logger
-		if logFile != "" {
-			var err error
-			logger, err = file.New(logFile)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Failed to open log file '%s': %s", logFile, err)
-				os.Exit(1)
-			}
-		}
+		service := &serve.Service{}
 
-		client, err := kivik.New(driver, dsn)
+		client, err := kivik.New(driverName, dsn)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to connect: %s", err)
 			os.Exit(1)
 		}
-		service := serve.New(serve.LoggingClient{
-			Client:    proxy.NewClient(client),
-			Logger:    logger,
-			LogWriter: logger,
-		})
-		service.LogWriter = logger
+		var log interface {
+			driver.Logger
+			logger.LogWriter
+		}
+		if logFile != "" {
+			log = &logfile.Logger{}
+			service.Config().Set("log", "file", logFile)
+		} else {
+			log = &memlogger.Logger{}
+		}
+		service.LogWriter = log
+		service.Client = struct {
+			driver.Client
+			driver.Logger
+		}{
+			Client: proxy.NewClient(client),
+			Logger: log,
+		}
+		if listenAddr != "" {
+			service.Bind(listenAddr)
+		}
 		fmt.Printf("Listening on %s\n", listenAddr)
-		fmt.Println(service.Start(listenAddr))
+		fmt.Println(service.Start())
 		os.Exit(1)
 	}
 

@@ -118,3 +118,8 @@ func Wrapf(err error, format string, args ...interface{}) error {
 func Cause(err error) error {
 	return errors.Cause(err)
 }
+
+// Errorf is a wrapper around pkg/errors.Errorf()
+func Errorf(format string, args ...interface{}) error {
+	return errors.Errorf(format, args...)
+}

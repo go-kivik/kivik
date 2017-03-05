@@ -1,52 +1,67 @@
-// Package memory provides a simple in-memory logger, intended for testing.
-package memory
+// Package memlogger provides a simple in-memory logger, intended for testing.
+package memlogger
 
 import (
 	"container/ring"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/flimzy/kivik/driver"
-	"github.com/flimzy/kivik/serve"
+	"github.com/flimzy/kivik/logger"
+	"github.com/pkg/errors"
 )
-
-// DateFormat is the date format used by CouchDB logs.
-const DateFormat = time.RFC1123
 
 type log struct {
 	time    time.Time
-	level   serve.LogLevel
+	level   logger.LogLevel
 	message string
 }
 
 var now = time.Now
 
 func (l log) String() string {
-	return fmt.Sprintf("[%s] [%s] [--] %s\n", l.time.Format(DateFormat), l.level, l.message)
+	return fmt.Sprintf("[%s] [%s] [--] %s\n", l.time.Format(logger.TimeFormat), l.level, l.message)
 }
 
-// Logger is an in-memory logger instance. It fulfills both the serve.Logger
+// Logger is an in-memory logger instance. It fulfills both the logger.Logger
 // and driver.Logger interfaces
 type Logger struct {
 	ring *ring.Ring
 }
 
-var _ serve.LogWriter = &Logger{}
+var _ logger.LogWriter = &Logger{}
 var _ driver.Logger = &Logger{}
 
-// New returns a new logger, with the specified capacity. Once more than cap
-// lines have been logged, the oldest logs will be dropped.
-func New(cap int) *Logger {
-	if cap <= 0 {
-		panic("cap must be > 0")
+// Init initializes the memory logger. It considers the following configuration
+// parameters:
+//
+// - capacity: The number of log entries to keep in memory. Defaults to 100.
+//  - level: The minimum log level to log to the file. (default: info)
+func (l *Logger) Init(conf map[string]string) error {
+	l.ring = nil
+	cap, err := getCapacity(conf)
+	if err != nil {
+		return err
 	}
-	return &Logger{
-		ring: ring.New(cap),
+	l.ring = ring.New(cap)
+	return nil
+}
+
+func getCapacity(conf map[string]string) (int, error) {
+	cap, ok := conf["capacity"]
+	if !ok {
+		return 100, nil
 	}
+	c, err := strconv.Atoi(cap)
+	if err != nil {
+		return 0, errors.Wrapf(err, "invalid capacity '%s'", cap)
+	}
+	return c, nil
 }
 
 // WriteLog logs the message at the designated level.
-func (l *Logger) WriteLog(level serve.LogLevel, message string) error {
+func (l *Logger) WriteLog(level logger.LogLevel, message string) error {
 	l.ring.Value = log{
 		time:    now(),
 		level:   level,

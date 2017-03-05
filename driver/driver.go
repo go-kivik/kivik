@@ -139,7 +139,30 @@ type Session interface {
 // If a Client does implement Configer, it allows backend configuration
 // to be queried and modified via the API.
 type Configer interface {
-	// GetConfig() (map[string]interface{}, error)
-	// SetConfig(key string, value interface{}) error
-	// ClearConfig(key string) error
+	Config() (Config, error)
+}
+
+// Config is the minimal interface that a Config backend must implement.
+type Config interface {
+	GetAll() (config map[string]map[string]string, err error)
+	Set(secName, key, value string) error
+	Delete(secName, key string) error
+}
+
+// ConfigSection is an optional interface that may be implemented by a Config
+// backend. If not implemented, it will be emulated with GetAll() and SetAll().
+// The only reason for a config backend to implement this interface is if
+// reading a config section alone can be more efficient than reading the entire
+// configuration for the specific storage backend.
+type ConfigSection interface {
+	GetSection(secName string) (section map[string]string, err error)
+}
+
+// ConfigItem is an optional interface that may be implemented by a Config
+// backend. If not implemented, it will be emulated with GetAll() and SetAll().
+// The only reason for a config backend to implement this interface is if
+// reading a single config value alone can be more efficient than reading the
+// entire configuration for the specific storage backend.
+type ConfigItem interface {
+	Get(secName, key string) (value string, err error)
 }

@@ -1,4 +1,4 @@
-package file
+package logfile
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/flimzy/kivik/serve"
+	"github.com/flimzy/kivik/logger"
 )
 
 type logTest struct {
@@ -54,13 +54,13 @@ func TestLog(t *testing.T) {
 			}
 			// defer os.Remove(f.Name())
 			fmt.Printf("logging to: %s\n", f.Name())
-			log, err := New(f.Name())
-			if err != nil {
+			log := &Logger{}
+			if err = log.Init(map[string]string{"file": f.Name()}); err != nil {
 				t.Errorf("Failed to open logger: %s", err)
 			}
 			buf := make([]byte, test.BufSize)
 			for _, msg := range test.Messages {
-				log.WriteLog(serve.LogLevelInfo, msg)
+				log.WriteLog(logger.LogLevelInfo, msg)
 			}
 			n, err := log.Log(buf, 0)
 			if err != nil {

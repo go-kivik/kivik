@@ -1,4 +1,4 @@
-package file
+package logfile
 
 import (
 	"fmt"
@@ -8,11 +8,9 @@ import (
 	"time"
 
 	"github.com/flimzy/kivik/driver"
-	"github.com/flimzy/kivik/serve"
+	"github.com/flimzy/kivik/errors"
+	"github.com/flimzy/kivik/logger"
 )
-
-// DateFormat is the date format used by CouchDB logs.
-const DateFormat = time.RFC1123
 
 // Logger is a file logger instance.
 type Logger struct {
@@ -21,28 +19,38 @@ type Logger struct {
 	f        *os.File
 }
 
-var _ serve.LogWriter = &Logger{}
+var _ logger.LogWriter = &Logger{}
 var _ driver.Logger = &Logger{}
 
 var now = time.Now
 
-// New opens a new file logger.
-func New(filename string) (*Logger, error) {
+// Init initializes the logger. It looks for the following configuration
+// parameters:
+//
+//  - file: The file to which logs are written. (required)
+func (l *Logger) Init(conf map[string]string) error {
+	if l.f != nil {
+		l.f.Close()
+		l.filename = ""
+	}
+	filename, ok := conf["file"]
+	if !ok {
+		return errors.New("log.file must be configured")
+	}
 	f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
-		return nil, err
+		return errors.Wrap(err, "failed to open log file")
 	}
-	return &Logger{
-		filename: filename,
-		f:        f,
-	}, nil
+	l.filename = filename
+	l.f = f
+	return nil
 }
 
 // WriteLog writes a log to the opened log file.
-func (l *Logger) WriteLog(level serve.LogLevel, message string) error {
+func (l *Logger) WriteLog(level logger.LogLevel, message string) error {
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
-	_, err := fmt.Fprintf(l.f, "[%s] [%s] [--] %s\n", now().Format(DateFormat), level, message)
+	_, err := fmt.Fprintf(l.f, "[%s] [%s] [--] %s\n", now().Format(logger.TimeFormat), level, message)
 	return err
 }
 

@@ -1,10 +1,11 @@
-package memory
+package memlogger
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
-	"github.com/flimzy/kivik/serve"
+	"github.com/flimzy/kivik/logger"
 )
 
 type logTest struct {
@@ -49,10 +50,13 @@ func TestLog(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
-			log := New(test.RingSize)
+			log := &Logger{}
+			log.Init(map[string]string{
+				"capacity": fmt.Sprintf("%d", test.RingSize),
+			})
 			buf := make([]byte, test.BufSize)
 			for _, msg := range test.Messages {
-				log.WriteLog(serve.LogLevelInfo, msg)
+				log.WriteLog(logger.LogLevelInfo, msg)
 			}
 			n, err := log.Log(buf, 0)
 			if err != nil {

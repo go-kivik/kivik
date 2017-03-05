@@ -102,7 +102,7 @@ func (s *Service) Bind(addr string) error {
 	if _, err := strconv.Atoi(port); err != nil {
 		return errors.Wrapf(err, "invalid port '%s'", port)
 	}
-	host := strings.TrimSuffix(addr, port)
+	host := strings.TrimSuffix(addr, ":"+port)
 	s.Config().Set("httpd", "bind_address", host)
 	s.Config().Set("httpd", "port", port)
 	return nil

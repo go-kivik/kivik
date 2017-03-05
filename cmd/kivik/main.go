@@ -14,7 +14,6 @@ import (
 	"github.com/flimzy/kivik/driver/proxy"
 	"github.com/flimzy/kivik/logger"
 	"github.com/flimzy/kivik/logger/logfile"
-	"github.com/flimzy/kivik/logger/memlogger"
 	"github.com/flimzy/kivik/serve"
 	"github.com/flimzy/kivik/test"
 )
@@ -52,18 +51,17 @@ func main() {
 		if logFile != "" {
 			log = &logfile.Logger{}
 			service.Config().Set("log", "file", logFile)
-		} else {
-			log = &memlogger.Logger{}
+			service.LogWriter = log
+			kivik.Register("loggingClient", loggingClient{
+				Client: proxy.NewClient(client),
+				Logger: log,
+			})
+			client, err = kivik.New("loggingClient", "")
+			if err != nil {
+				panic(err)
+			}
 		}
-		service.LogWriter = log
-		kivik.Register("loggingClient", loggingClient{
-			Client: proxy.NewClient(client),
-			Logger: log,
-		})
-		service.Client, err = kivik.New("loggingClient", "")
-		if err != nil {
-			panic(err)
-		}
+		service.Client = client
 		if listenAddr != "" {
 			service.Bind(listenAddr)
 		}

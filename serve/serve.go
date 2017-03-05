@@ -15,7 +15,6 @@ import (
 	"github.com/flimzy/kivik/config"
 	"github.com/flimzy/kivik/errors"
 	"github.com/flimzy/kivik/logger"
-	"github.com/flimzy/kivik/logger/memlogger"
 )
 
 // Version is the version of this library.
@@ -72,12 +71,11 @@ func (s *Service) SetConfig(config *config.Config) {
 // Start() is called, so this is meant to be used if you want to bind the server
 // yourself.
 func (s *Service) Init() (http.Handler, error) {
-	logConf, _ := s.Config().GetSection("log")
-	if s.LogWriter == nil {
-		s.LogWriter = &memlogger.Logger{}
-	}
-	if err := s.LogWriter.Init(logConf); err != nil {
-		return nil, errors.Wrap(err, "failed to initialize logger")
+	if s.LogWriter != nil {
+		logConf, _ := s.Config().GetSection("log")
+		if err := s.LogWriter.Init(logConf); err != nil {
+			return nil, errors.Wrap(err, "failed to initialize logger")
+		}
 	}
 	return s.setupRoutes()
 }

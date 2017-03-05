@@ -5,9 +5,20 @@ import (
 	"github.com/flimzy/kivik/driver"
 )
 
+// CompleteClient is a composite of all compulsory and optional driver.* client
+// interfaces.
+type CompleteClient interface {
+	driver.Client
+	driver.Authenticator
+	driver.UUIDer
+	driver.Logger
+	driver.Cluster
+	driver.Configer
+}
+
 // NewClient wraps an existing *kivik.Client connection, allowing it to be used
 // as a driver.Client
-func NewClient(c *kivik.Client) driver.Client {
+func NewClient(c *kivik.Client) CompleteClient {
 	return &client{c}
 }
 
@@ -16,10 +27,19 @@ type client struct {
 }
 
 var _ driver.Client = &client{}
+var _ driver.Authenticator = &client{}
+var _ driver.UUIDer = &client{}
+var _ driver.Logger = &client{}
+var _ driver.Cluster = &client{}
+var _ driver.Configer = &client{}
 
 func (c *client) DB(name string) (driver.DB, error) {
 	d, err := c.Client.DB(name)
 	return &db{d}, err
+}
+
+func (c *client) Config() (driver.Config, error) {
+	return c.Config()
 }
 
 type db struct {

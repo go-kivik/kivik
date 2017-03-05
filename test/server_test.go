@@ -17,17 +17,27 @@ import (
 	"github.com/flimzy/kivik/serve/config/memconf"
 )
 
+type customDriver struct {
+	driver.Client
+	driver.Logger
+}
+
+func (cd customDriver) NewClient(_ string) (driver.Client, error) {
+	return cd, nil
+}
+
 func TestServer(t *testing.T) {
 	memClient, _ := kivik.New("memory", "")
 	log := &memlogger.Logger{}
-	backend := struct {
-		driver.Client
-		driver.Logger
-	}{
+	kivik.Register("custom", customDriver{
 		Client: proxy.NewClient(memClient),
 		Logger: log,
-	}
+	})
 	service := serve.Service{}
+	backend, err := kivik.New("custom", "")
+	if err != nil {
+		t.Fatalf("Failed to connect to custom driver: %s", err)
+	}
 	service.Client = backend
 	service.LogWriter = log
 	service.SetConfig(config.New(memconf.New()))

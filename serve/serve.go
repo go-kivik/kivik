@@ -11,8 +11,8 @@ import (
 	"github.com/NYTimes/gziphandler"
 	"github.com/dimfeld/httptreemux"
 
+	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/config"
-	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/errors"
 	"github.com/flimzy/kivik/logger"
 	"github.com/flimzy/kivik/logger/memlogger"
@@ -31,7 +31,7 @@ const CompatVersion = "1.6.1"
 // per server endpoint.
 type Service struct {
 	// Client is an instance of a driver.Client, which will be served.
-	Client driver.Client
+	Client *kivik.Client
 	// CompatVersion is the compatibility version to report to clients. Defaults
 	// to 1.6.1.
 	CompatVersion string
@@ -55,8 +55,8 @@ type Service struct {
 // Config returns a connection to the configuration backend.
 func (s *Service) Config() *config.Config {
 	if s.config == nil {
-		if conf, ok := s.Client.(driver.Config); ok {
-			s.config = config.New(conf)
+		if conf, err := s.Client.Config(); err != nil {
+			s.config = conf
 		}
 		s.config = defaultConfig()
 	}
@@ -138,6 +138,9 @@ func (s *Service) setupRoutes() (http.Handler, error) {
 	ctxRoot.Handler(mGET, "/_log", handler(log))
 	ctxRoot.Handler(mPUT, "/:db", handler(createDB))
 	ctxRoot.Handler(mHEAD, "/:db", handler(dbExists))
+	ctxRoot.Handler(mGET, "/_config", handler(getConfig))
+	ctxRoot.Handler(mGET, "/_config/:section", handler(getConfigSection))
+	ctxRoot.Handler(mGET, "/_config/:section/:key", handler(getConfigItem))
 	// ctxRoot.Handler(mDELETE, "/:db", handler(destroyDB) )
 	// ctxRoot.Handler(http.MethodGet, "/:db", handler(getDB))
 
@@ -163,8 +166,8 @@ func getService(r *http.Request) *Service {
 	return service
 }
 
-func getClient(r *http.Request) driver.Client {
-	client := r.Context().Value(ClientContextKey).(driver.Client)
+func getClient(r *http.Request) *kivik.Client {
+	client := r.Context().Value(ClientContextKey).(*kivik.Client)
 	return client
 }
 

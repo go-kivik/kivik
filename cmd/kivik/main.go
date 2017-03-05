@@ -56,12 +56,13 @@ func main() {
 			log = &memlogger.Logger{}
 		}
 		service.LogWriter = log
-		service.Client = struct {
-			driver.Client
-			driver.Logger
-		}{
+		kivik.Register("loggingClient", loggingClient{
 			Client: proxy.NewClient(client),
 			Logger: log,
+		})
+		service.Client, err = kivik.New("loggingClient", "")
+		if err != nil {
+			panic(err)
 		}
 		if listenAddr != "" {
 			service.Bind(listenAddr)
@@ -116,4 +117,13 @@ func main() {
 	if err != nil {
 		os.Exit(2)
 	}
+}
+
+type loggingClient struct {
+	driver.Client
+	driver.Logger
+}
+
+func (lc loggingClient) NewClient(_ string) (driver.Client, error) {
+	return lc, nil
 }

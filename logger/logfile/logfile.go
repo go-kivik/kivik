@@ -12,14 +12,10 @@ import (
 	"github.com/flimzy/kivik/logger"
 )
 
-// DateFormat is the date format used by CouchDB logs.
-const DateFormat = time.RFC1123
-
 // Logger is a file logger instance.
 type Logger struct {
 	mutex    sync.RWMutex
 	filename string
-	level    logger.LogLevel
 	f        *os.File
 }
 
@@ -32,19 +28,14 @@ var now = time.Now
 // parameters:
 //
 //  - file: The file to which logs are written. (required)
-//  - level: The minimum log level to log to the file. (default: info)
 func (l *Logger) Init(conf map[string]string) error {
 	if l.f != nil {
 		l.f.Close()
 		l.filename = ""
-		l.level = 0
 	}
 	filename, ok := conf["file"]
 	if !ok {
 		return errors.New("log.file must be configured")
-	}
-	if err := l.setLevel(conf); err != nil {
-		return err
 	}
 	f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
@@ -55,25 +46,11 @@ func (l *Logger) Init(conf map[string]string) error {
 	return nil
 }
 
-func (l *Logger) setLevel(conf map[string]string) error {
-	level, ok := conf["level"]
-	if !ok {
-		// Default to Info
-		l.level = logger.LogLevelInfo
-		return nil
-	}
-	l.level, ok = logger.StringToLogLevel(level)
-	if !ok {
-		return errors.Errorf("unknown loglevel '%s'", level)
-	}
-	return nil
-}
-
 // WriteLog writes a log to the opened log file.
 func (l *Logger) WriteLog(level logger.LogLevel, message string) error {
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
-	_, err := fmt.Fprintf(l.f, "[%s] [%s] [--] %s\n", now().Format(DateFormat), level, message)
+	_, err := fmt.Fprintf(l.f, "[%s] [%s] [--] %s\n", now().Format(logger.TimeFormat), level, message)
 	return err
 }
 

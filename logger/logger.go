@@ -3,7 +3,11 @@ package logger
 import (
 	"net/http"
 	"strings"
+	"time"
 )
+
+// TimeFormat is the default time format used for CouchDB logs.
+const TimeFormat = time.RFC1123
 
 // LogLevel is a log level
 type LogLevel int

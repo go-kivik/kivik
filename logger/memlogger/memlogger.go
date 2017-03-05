@@ -12,9 +12,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// DateFormat is the date format used by CouchDB logs.
-const DateFormat = time.RFC1123
-
 type log struct {
 	time    time.Time
 	level   logger.LogLevel
@@ -24,14 +21,13 @@ type log struct {
 var now = time.Now
 
 func (l log) String() string {
-	return fmt.Sprintf("[%s] [%s] [--] %s\n", l.time.Format(DateFormat), l.level, l.message)
+	return fmt.Sprintf("[%s] [%s] [--] %s\n", l.time.Format(logger.TimeFormat), l.level, l.message)
 }
 
 // Logger is an in-memory logger instance. It fulfills both the logger.Logger
 // and driver.Logger interfaces
 type Logger struct {
-	ring  *ring.Ring
-	level logger.LogLevel
+	ring *ring.Ring
 }
 
 var _ logger.LogWriter = &Logger{}
@@ -43,13 +39,9 @@ var _ driver.Logger = &Logger{}
 // - capacity: The number of log entries to keep in memory. Defaults to 100.
 //  - level: The minimum log level to log to the file. (default: info)
 func (l *Logger) Init(conf map[string]string) error {
-	fmt.Printf("Initializing memory logger\n")
 	l.ring = nil
 	cap, err := getCapacity(conf)
 	if err != nil {
-		return err
-	}
-	if err := l.setLevel(conf); err != nil {
 		return err
 	}
 	l.ring = ring.New(cap)
@@ -66,20 +58,6 @@ func getCapacity(conf map[string]string) (int, error) {
 		return 0, errors.Wrapf(err, "invalid capacity '%s'", cap)
 	}
 	return c, nil
-}
-
-func (l *Logger) setLevel(conf map[string]string) error {
-	level, ok := conf["level"]
-	if !ok {
-		// Default to Info
-		l.level = logger.LogLevelInfo
-		return nil
-	}
-	l.level, ok = logger.StringToLogLevel(level)
-	if !ok {
-		return errors.Errorf("unknown loglevel '%s'", level)
-	}
-	return nil
 }
 
 // WriteLog logs the message at the designated level.

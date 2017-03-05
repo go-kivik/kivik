@@ -16,7 +16,6 @@ import (
 	"github.com/flimzy/kivik/errors"
 	"github.com/flimzy/kivik/logger"
 	"github.com/flimzy/kivik/logger/memlogger"
-	"github.com/flimzy/kivik/serve/config/memconf"
 )
 
 // Version is the version of this library.
@@ -44,8 +43,8 @@ type Service struct {
 	VendorName string
 	// LogWriter is a logger where logs can be sent. It is the responsibility of
 	// the developer to ensure that the logs are available to the backend driver,
-	// if the Log() method is expected to work. By default, a null logger is used
-	// which discards all log messages.
+	// if the Log() method is expected to work. By default, logs are written to
+	// standard output.
 	LogWriter logger.LogWriter
 	// Config is the configuration backend. By default the Client is used, if
 	// it satisfies the driver.Config interface. Otherwise, a new memconf
@@ -59,7 +58,7 @@ func (s *Service) Config() *config.Config {
 		if conf, ok := s.Client.(driver.Config); ok {
 			s.config = config.New(conf)
 		}
-		s.config = config.New(memconf.New())
+		s.config = defaultConfig()
 	}
 	return s.config
 }
@@ -93,6 +92,7 @@ func (s *Service) Start() error {
 		s.Config().GetString("httpd", "bind_address"),
 		s.Config().GetInt("httpd", "port"),
 	)
+	s.Info("Listening on %s", addr)
 	return http.ListenAndServe(addr, server)
 }
 
@@ -151,6 +151,7 @@ func (s *Service) setupRoutes() (http.Handler, error) {
 		if err != nil {
 			return nil, errors.Wrapf(err, "invalid httpd.compression_level '%s'", level)
 		}
+		s.Info("Enabling HTTPD cmpression, level %d", level)
 		handle = gzipHandler(handle)
 	}
 	handle = requestLogger(s, handle)

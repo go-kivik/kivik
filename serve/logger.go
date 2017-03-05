@@ -4,15 +4,17 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/flimzy/kivik/logger"
 )
 
 func (s *Service) log(level logger.LogLevel, format string, args ...interface{}) {
+	msg := strings.TrimSpace(fmt.Sprintf(format, args...))
 	if s.LogWriter == nil {
+		fmt.Printf("[%s] [%s] [--] %s\n", time.Now().Format(logger.TimeFormat), level, msg)
 		return
 	}
-	msg := strings.TrimSpace(fmt.Sprintf(format, args...))
 	s.LogWriter.WriteLog(level, msg)
 }
 

@@ -43,14 +43,14 @@ type statusWriter struct {
 	status int
 }
 
-func (w statusWriter) WriteHeader(status int) {
+func (w *statusWriter) WriteHeader(status int) {
 	w.status = status
 	w.ResponseWriter.WriteHeader(status)
 }
 
 func requestLogger(s *Service, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		sw := statusWriter{ResponseWriter: w}
+		sw := &statusWriter{ResponseWriter: w, status: http.StatusOK}
 		next.ServeHTTP(sw, r)
 		ip := r.RemoteAddr
 		ip = ip[0:strings.LastIndex(ip, ":")]

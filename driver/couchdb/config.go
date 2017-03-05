@@ -38,3 +38,17 @@ func (c *config) Delete(secName, key string) error {
 		Do()
 	return err
 }
+
+func (c *config) GetSection(secName string) (map[string]string, error) {
+	sec := map[string]string{}
+	return sec, c.newRequest(http.MethodGet, fmt.Sprintf("/_config/%s", secName)).
+		AddHeader("Accept", typeJSON).
+		DoJSON(&sec)
+}
+
+func (c *config) Get(secName, key string) (string, error) {
+	var value string
+	return value, c.newRequest(http.MethodGet, fmt.Sprintf("_config/%s/%s", secName, key)).
+		AddHeader("Accept", typeJSON).
+		DoJSON(&value)
+}

@@ -1,7 +1,6 @@
 package serve
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/flimzy/kivik/config"
@@ -27,7 +26,7 @@ func getConfig(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	return json.NewEncoder(w).Encode(conf)
+	return serveJSON(w, conf)
 }
 
 func getConfigSection(w http.ResponseWriter, r *http.Request) error {
@@ -43,7 +42,7 @@ func getConfigSection(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	return json.NewEncoder(w).Encode(conf)
+	return serveJSON(w, conf)
 }
 
 func getConfigItem(w http.ResponseWriter, r *http.Request) error {
@@ -63,5 +62,5 @@ func getConfigItem(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	return json.NewEncoder(w).Encode(conf)
+	return serveJSON(w, conf)
 }

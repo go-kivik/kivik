@@ -200,6 +200,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if status == 0 {
 		status = http.StatusInternalServerError
 	}
+	w.Header().Add("Content-Type", typeJSON)
 	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"error": err.Error(),
@@ -262,4 +263,10 @@ func dbExists(w http.ResponseWriter, r *http.Request) error {
 		w.WriteHeader(http.StatusNotFound)
 	}
 	return nil
+}
+
+// serveJSON serves i as JSON to w.
+func serveJSON(w http.ResponseWriter, i interface{}) error {
+	w.Header().Set("Content-Type", typeJSON)
+	return json.NewEncoder(w).Encode(i)
 }

@@ -155,8 +155,8 @@ type ConfigSection interface {
 	GetSection(secName string) (section map[string]string, err error)
 }
 
-// ConfigItems is an optional interface that may be implemented by a Config
+// ConfigItem is an optional interface that may be implemented by a Config
 // backend. If not implemented, it will be emulated with GetAll() and SetAll().
-type ConfigItems interface {
+type ConfigItem interface {
 	Get(secName, key string) (value string, err error)
 }

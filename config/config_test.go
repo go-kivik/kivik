@@ -66,7 +66,7 @@ func TestMinimalConfiger(t *testing.T) {
 	if err == nil {
 		t.Errorf("Expected NotFound for non-existant key")
 	}
-	expectedErrMsg = "error status 404: section not found"
+	expectedErrMsg = "error status 404: configuration section 'animals' not found"
 	if err.Error() != expectedErrMsg {
 		t.Errorf("Expected error '%s', got '%s'", expectedErrMsg, err.Error())
 	}

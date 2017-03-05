@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/flimzy/kivik/serve"
+	"github.com/flimzy/kivik/logger"
 )
 
 type logTest struct {
@@ -56,7 +56,7 @@ func TestLog(t *testing.T) {
 			})
 			buf := make([]byte, test.BufSize)
 			for _, msg := range test.Messages {
-				log.WriteLog(serve.LogLevelInfo, msg)
+				log.WriteLog(logger.LogLevelInfo, msg)
 			}
 			n, err := log.Log(buf, 0)
 			if err != nil {

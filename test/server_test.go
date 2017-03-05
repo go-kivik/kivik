@@ -8,6 +8,7 @@ import (
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/config"
+	"github.com/flimzy/kivik/driver"
 	_ "github.com/flimzy/kivik/driver/couchdb"
 	_ "github.com/flimzy/kivik/driver/memory"
 	"github.com/flimzy/kivik/driver/proxy"
@@ -18,16 +19,19 @@ import (
 
 func TestServer(t *testing.T) {
 	memClient, _ := kivik.New("memory", "")
-	logger := &memlogger.Logger{}
-	backend := &serve.LoggingClient{
+	log := &memlogger.Logger{}
+	backend := struct {
+		driver.Client
+		driver.Logger
+	}{
 		Client: proxy.NewClient(memClient),
-		Logger: logger,
+		Logger: log,
 	}
 	service := serve.Service{}
 	service.Client = backend
-	service.LogWriter = logger
-	service.Config = config.New(memconf.New())
-	service.Config.Set("log", "capacity", "10")
+	service.LogWriter = log
+	service.SetConfig(config.New(memconf.New()))
+	service.Config().Set("log", "capacity", "10")
 	handler, err := service.Init()
 	if err != nil {
 		t.Fatalf("Failed to initialize server: %s\n", err)

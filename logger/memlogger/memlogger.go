@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/flimzy/kivik/driver"
-	"github.com/flimzy/kivik/serve"
+	"github.com/flimzy/kivik/logger"
 	"github.com/pkg/errors"
 )
 
@@ -17,7 +17,7 @@ const DateFormat = time.RFC1123
 
 type log struct {
 	time    time.Time
-	level   serve.LogLevel
+	level   logger.LogLevel
 	message string
 }
 
@@ -27,14 +27,14 @@ func (l log) String() string {
 	return fmt.Sprintf("[%s] [%s] [--] %s\n", l.time.Format(DateFormat), l.level, l.message)
 }
 
-// Logger is an in-memory logger instance. It fulfills both the serve.Logger
+// Logger is an in-memory logger instance. It fulfills both the logger.Logger
 // and driver.Logger interfaces
 type Logger struct {
 	ring  *ring.Ring
-	level serve.LogLevel
+	level logger.LogLevel
 }
 
-var _ serve.LogWriter = &Logger{}
+var _ logger.LogWriter = &Logger{}
 var _ driver.Logger = &Logger{}
 
 // Init initializes the memory logger. It considers the following configuration
@@ -72,10 +72,10 @@ func (l *Logger) setLevel(conf map[string]string) error {
 	level, ok := conf["level"]
 	if !ok {
 		// Default to Info
-		l.level = serve.LogLevelInfo
+		l.level = logger.LogLevelInfo
 		return nil
 	}
-	l.level, ok = serve.StringToLogLevel(level)
+	l.level, ok = logger.StringToLogLevel(level)
 	if !ok {
 		return errors.Errorf("unknown loglevel '%s'", level)
 	}
@@ -83,7 +83,7 @@ func (l *Logger) setLevel(conf map[string]string) error {
 }
 
 // WriteLog logs the message at the designated level.
-func (l *Logger) WriteLog(level serve.LogLevel, message string) error {
+func (l *Logger) WriteLog(level logger.LogLevel, message string) error {
 	l.ring.Value = log{
 		time:    now(),
 		level:   level,

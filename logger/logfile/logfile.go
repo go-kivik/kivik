@@ -9,7 +9,7 @@ import (
 
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/errors"
-	"github.com/flimzy/kivik/serve"
+	"github.com/flimzy/kivik/logger"
 )
 
 // DateFormat is the date format used by CouchDB logs.
@@ -19,11 +19,11 @@ const DateFormat = time.RFC1123
 type Logger struct {
 	mutex    sync.RWMutex
 	filename string
-	level    serve.LogLevel
+	level    logger.LogLevel
 	f        *os.File
 }
 
-var _ serve.LogWriter = &Logger{}
+var _ logger.LogWriter = &Logger{}
 var _ driver.Logger = &Logger{}
 
 var now = time.Now
@@ -59,10 +59,10 @@ func (l *Logger) setLevel(conf map[string]string) error {
 	level, ok := conf["level"]
 	if !ok {
 		// Default to Info
-		l.level = serve.LogLevelInfo
+		l.level = logger.LogLevelInfo
 		return nil
 	}
-	l.level, ok = serve.StringToLogLevel(level)
+	l.level, ok = logger.StringToLogLevel(level)
 	if !ok {
 		return errors.Errorf("unknown loglevel '%s'", level)
 	}
@@ -70,7 +70,7 @@ func (l *Logger) setLevel(conf map[string]string) error {
 }
 
 // WriteLog writes a log to the opened log file.
-func (l *Logger) WriteLog(level serve.LogLevel, message string) error {
+func (l *Logger) WriteLog(level logger.LogLevel, message string) error {
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
 	_, err := fmt.Fprintf(l.f, "[%s] [%s] [--] %s\n", now().Format(DateFormat), level, message)

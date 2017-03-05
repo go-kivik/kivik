@@ -3,6 +3,7 @@ package config
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/errors"
@@ -45,7 +46,7 @@ func (c *Config) GetSection(secName string) (map[string]string, error) {
 	if sec, ok := conf[secName]; ok {
 		return sec, nil
 	}
-	return nil, errors.Status(http.StatusNotFound, "section not found")
+	return nil, errors.Statusf(http.StatusNotFound, "configuration section '%s' not found", secName)
 }
 
 // Get retrieves a specific config value.
@@ -75,9 +76,16 @@ func (c *Config) GetString(secName, key string) string {
 	return value
 }
 
-//GetInt returns the requested value as an int64.
+// GetInt returns the requested value as an int64.
 func (c *Config) GetInt(secName, key string) int64 {
 	value, _ := c.Get(secName, key)
 	i, _ := strconv.ParseInt(value, 10, 64)
 	return i
+}
+
+// GetBool returns the requested value as a boolean. A value is considered
+// true if it equals "true" (case insensitive).
+func (c *Config) GetBool(secName, key string) bool {
+	value, _ := c.Get(secName, key)
+	return strings.ToLower(value) == "true"
 }

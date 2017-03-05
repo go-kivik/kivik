@@ -11,11 +11,11 @@ import (
 	"github.com/NYTimes/gziphandler"
 	"github.com/dimfeld/httptreemux"
 
-	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/config"
 	"github.com/flimzy/kivik/driver"
-	"github.com/flimzy/kivik/driver/proxy"
 	"github.com/flimzy/kivik/errors"
+	"github.com/flimzy/kivik/logger"
+	"github.com/flimzy/kivik/logger/memlogger"
 	"github.com/flimzy/kivik/serve/config/memconf"
 )
 
@@ -46,44 +46,40 @@ type Service struct {
 	// the developer to ensure that the logs are available to the backend driver,
 	// if the Log() method is expected to work. By default, a null logger is used
 	// which discards all log messages.
-	LogWriter LogWriter
+	LogWriter logger.LogWriter
 	// Config is the configuration backend. By default the Client is used, if
 	// it satisfies the driver.Config interface. Otherwise, a new memconf
 	// instance is instantiated.
-	Config *config.Config
+	config *config.Config
 }
 
-// NewKivikClient returns a new service to serve a standard *kivik.Client.
-// This is the same as:
-//
-//    import "github.com/flimzy/kivik/driver/proxy"
-//
-//    New(proxy.NewClient(client))
-func NewKivikClient(client *kivik.Client) *Service {
-	return New(proxy.NewClient(client))
+// Config returns a connection to the configuration backend.
+func (s *Service) Config() *config.Config {
+	if s.config == nil {
+		if conf, ok := s.Client.(driver.Config); ok {
+			s.config = config.New(conf)
+		}
+		s.config = config.New(memconf.New())
+	}
+	return s.config
 }
 
-// New returns a new service definition.
-func New(backend driver.Client) *Service {
-	conf, ok := backend.(driver.Config)
-	if !ok {
-		conf = memconf.New()
-	}
-	return &Service{
-		Client: backend,
-		Config: config.New(conf),
-	}
+// SetConfig sets the configuration backend.
+func (s *Service) SetConfig(config *config.Config) {
+	s.config = config
 }
 
 // Init initializes a configured server. This is automatically called when
 // Start() is called, so this is meant to be used if you want to bind the server
 // yourself.
 func (s *Service) Init() (http.Handler, error) {
-	logConf, err := s.Config.GetSection("log")
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to read configuration")
+	logConf, _ := s.Config().GetSection("log")
+	if s.LogWriter == nil {
+		s.LogWriter = &memlogger.Logger{}
 	}
-	s.LogWriter.Init(logConf)
+	if err := s.LogWriter.Init(logConf); err != nil {
+		return nil, errors.Wrap(err, "failed to initialize logger")
+	}
 	return s.setupRoutes()
 }
 
@@ -94,8 +90,8 @@ func (s *Service) Start() error {
 		return err
 	}
 	addr := fmt.Sprintf("%s:%d",
-		s.Config.GetString("httpd", "bind_address"),
-		s.Config.GetInt("httpd", "port"),
+		s.Config().GetString("httpd", "bind_address"),
+		s.Config().GetInt("httpd", "port"),
 	)
 	return http.ListenAndServe(addr, server)
 }
@@ -107,8 +103,8 @@ func (s *Service) Bind(addr string) error {
 		return errors.Wrapf(err, "invalid port '%s'", port)
 	}
 	host := strings.TrimSuffix(addr, port)
-	s.Config.Set("httpd", "bind_address", host)
-	s.Config.Set("httpd", "port", port)
+	s.Config().Set("httpd", "bind_address", host)
+	s.Config().Set("httpd", "port", port)
 	return nil
 }
 
@@ -146,7 +142,17 @@ func (s *Service) setupRoutes() (http.Handler, error) {
 	// ctxRoot.Handler(http.MethodGet, "/:db", handler(getDB))
 
 	handle := http.Handler(router)
-	handle = gziphandler.GzipHandler(handle)
+	if s.Config().GetBool("httpd", "enable_compression") {
+		level := s.Config().GetInt("httpd", "compression_level")
+		if level == 0 {
+			level = 8
+		}
+		gzipHandler, err := gziphandler.NewGzipLevelHandler(int(level))
+		if err != nil {
+			return nil, errors.Wrapf(err, "invalid httpd.compression_level '%s'", level)
+		}
+		handle = gzipHandler(handle)
+	}
 	handle = requestLogger(s, handle)
 	return handle, nil
 }

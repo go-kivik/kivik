@@ -151,12 +151,18 @@ type Config interface {
 
 // ConfigSection is an optional interface that may be implemented by a Config
 // backend. If not implemented, it will be emulated with GetAll() and SetAll().
+// The only reason for a config backend to implement this interface is if
+// reading a config section alone can be more efficient than reading the entire
+// configuration for the specific storage backend.
 type ConfigSection interface {
 	GetSection(secName string) (section map[string]string, err error)
 }
 
 // ConfigItem is an optional interface that may be implemented by a Config
 // backend. If not implemented, it will be emulated with GetAll() and SetAll().
+// The only reason for a config backend to implement this interface is if
+// reading a single config value alone can be more efficient than reading the
+// entire configuration for the specific storage backend.
 type ConfigItem interface {
 	Get(secName, key string) (value string, err error)
 }

@@ -1,4 +1,4 @@
-package file
+package logfile
 
 import (
 	"fmt"
@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/flimzy/kivik/driver"
+	"github.com/flimzy/kivik/errors"
 	"github.com/flimzy/kivik/serve"
 )
 
@@ -18,6 +19,7 @@ const DateFormat = time.RFC1123
 type Logger struct {
 	mutex    sync.RWMutex
 	filename string
+	level    serve.LogLevel
 	f        *os.File
 }
 
@@ -26,16 +28,45 @@ var _ driver.Logger = &Logger{}
 
 var now = time.Now
 
-// New opens a new file logger.
-func New(filename string) (*Logger, error) {
+// Init initializes the logger. It looks for the following configuration
+// parameters:
+//
+//  - file: The file to which logs are written. (required)
+//  - level: The minimum log level to log to the file. (default: info)
+func (l *Logger) Init(conf map[string]string) error {
+	if l.f != nil {
+		l.f.Close()
+		l.filename = ""
+		l.level = 0
+	}
+	filename, ok := conf["file"]
+	if !ok {
+		return errors.New("log.file must be configured")
+	}
+	if err := l.setLevel(conf); err != nil {
+		return err
+	}
 	f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
-		return nil, err
+		return errors.Wrap(err, "failed to open log file")
 	}
-	return &Logger{
-		filename: filename,
-		f:        f,
-	}, nil
+	l.filename = filename
+	l.f = f
+	return nil
+}
+
+func (l *Logger) setLevel(conf map[string]string) error {
+	level, ok := conf["level"]
+	if !ok {
+		// Default to Info
+		l.level = serve.LogLevelInfo
+		return nil
+	}
+	l.level, ok = serve.StringToLogLevel(level)
+	if !ok {
+		return errors.Errorf("unknown loglevel '%s'", level)
+	}
+	return nil
 }
 
 // WriteLog writes a log to the opened log file.

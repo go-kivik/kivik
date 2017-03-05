@@ -1,8 +1,7 @@
-package file
+package memlogger
 
 import (
 	"fmt"
-	"io/ioutil"
 	"testing"
 	"time"
 
@@ -12,6 +11,7 @@ import (
 type logTest struct {
 	Name      string
 	Messages  []string
+	RingSize  int
 	BufSize   int
 	ExpectedN int
 	Expected  string
@@ -29,35 +29,31 @@ func TestLog(t *testing.T) {
 		logTest{
 			Name:     "Single long",
 			Messages: []string{"test 1"},
+			RingSize: 2,
 			BufSize:  100,
 			Expected: "[Mon, 02 Jan 2006 15:04:05 MST] [info] [--] test 1\n",
 		},
 		logTest{
 			Name:     "Two logs",
 			Messages: []string{"test 1", "test 2"},
+			RingSize: 2,
 			BufSize:  100,
 			Expected: "on, 02 Jan 2006 15:04:05 MST] [info] [--] test 1\n[Mon, 02 Jan 2006 15:04:05 MST] [info] [--] test 2\n",
 		},
 		logTest{
 			Name:     "Overflow ring",
 			Messages: []string{"test 1", "test 2", "test 3", "Abracadabra"},
+			RingSize: 2,
 			BufSize:  100,
 			Expected: "2 Jan 2006 15:04:05 MST] [info] [--] test 3\n[Mon, 02 Jan 2006 15:04:05 MST] [info] [--] Abracadabra\n",
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
-			f, err := ioutil.TempFile("", "kivik-log-")
-			if err != nil {
-				t.Errorf("Failed to create temp file: %s", err)
-				return
-			}
-			// defer os.Remove(f.Name())
-			fmt.Printf("logging to: %s\n", f.Name())
-			log, err := New(f.Name())
-			if err != nil {
-				t.Errorf("Failed to open logger: %s", err)
-			}
+			log := &Logger{}
+			log.Init(map[string]string{
+				"capacity": fmt.Sprintf("%d", test.RingSize),
+			})
 			buf := make([]byte, test.BufSize)
 			for _, msg := range test.Messages {
 				log.WriteLog(serve.LogLevelInfo, msg)

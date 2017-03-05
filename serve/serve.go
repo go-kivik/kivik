@@ -3,15 +3,20 @@ package serve
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/dimfeld/httptreemux"
 
 	"github.com/flimzy/kivik"
+	"github.com/flimzy/kivik/config"
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/driver/proxy"
 	"github.com/flimzy/kivik/errors"
+	"github.com/flimzy/kivik/serve/config/memconf"
 )
 
 // Version is the version of this library.
@@ -42,6 +47,10 @@ type Service struct {
 	// if the Log() method is expected to work. By default, a null logger is used
 	// which discards all log messages.
 	LogWriter LogWriter
+	// Config is the configuration backend. By default the Client is used, if
+	// it satisfies the driver.Config interface. Otherwise, a new memconf
+	// instance is instantiated.
+	Config *config.Config
 }
 
 // NewKivikClient returns a new service to serve a standard *kivik.Client.
@@ -56,16 +65,51 @@ func NewKivikClient(client *kivik.Client) *Service {
 
 // New returns a new service definition.
 func New(backend driver.Client) *Service {
-	return &Service{Client: backend}
+	conf, ok := backend.(driver.Config)
+	if !ok {
+		conf = memconf.New()
+	}
+	return &Service{
+		Client: backend,
+		Config: config.New(conf),
+	}
+}
+
+// Init initializes a configured server. This is automatically called when
+// Start() is called, so this is meant to be used if you want to bind the server
+// yourself.
+func (s *Service) Init() (http.Handler, error) {
+	logConf, err := s.Config.GetSection("log")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read configuration")
+	}
+	s.LogWriter.Init(logConf)
+	return s.setupRoutes()
 }
 
 // Start begins serving connections on the requested bind address.
-func (s *Service) Start(addr string) error {
-	server, err := s.Server()
+func (s *Service) Start() error {
+	server, err := s.Init()
 	if err != nil {
 		return err
 	}
+	addr := fmt.Sprintf("%s:%d",
+		s.Config.GetString("httpd", "bind_address"),
+		s.Config.GetInt("httpd", "port"),
+	)
 	return http.ListenAndServe(addr, server)
+}
+
+// Bind sets the HTTP daemon bind address and port.
+func (s *Service) Bind(addr string) error {
+	port := addr[strings.LastIndex(addr, ":")+1:]
+	if _, err := strconv.Atoi(port); err != nil {
+		return errors.Wrapf(err, "invalid port '%s'", port)
+	}
+	host := strings.TrimSuffix(addr, port)
+	s.Config.Set("httpd", "bind_address", host)
+	s.Config.Set("httpd", "port", port)
+	return nil
 }
 
 // ContextKey is a type for context keys.
@@ -85,8 +129,7 @@ const (
 	mCOPY   = "COPY"
 )
 
-// Server returns an unstarted server instance.
-func (s *Service) Server() (http.Handler, error) {
+func (s *Service) setupRoutes() (http.Handler, error) {
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, ClientContextKey, s.Client)
 	ctx = context.WithValue(ctx, ServiceContextKey, s)

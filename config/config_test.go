@@ -1,4 +1,4 @@
-package kivik
+package config
 
 import (
 	"fmt"

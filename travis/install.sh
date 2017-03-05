@@ -3,15 +3,18 @@ set -euC
 
 # Install generic dependencies, needed for all builds
 go get github.com/pborman/uuid \
-    github.com/dimfeld/httptreemux \
     github.com/pkg/errors \
-    github.com/spf13/cobra \
-    github.com/spf13/pflag \
-    golang.org/x/net/publicsuffix
+    golang.org/x/net/publicsuffix \
+    github.com/flimzy/diff
 
 case "$1" in
     "standard")
-        go get github.com/NYTimes/gziphandler
+        # These dependencies are only needed for the server, so no need to
+        # install them for GopherJS.
+        go get github.com/NYTimes/gziphandler \
+            github.com/dimfeld/httptreemux \
+            github.com/spf13/cobra \
+            github.com/spf13/pflag
     ;;
     "gopherjs")
         if [ "$TRAVIS_OS_NAME" == "linux" ]; then

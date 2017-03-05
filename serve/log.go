@@ -14,14 +14,14 @@ const (
 func log(w http.ResponseWriter, r *http.Request) error {
 	client := getClient(r)
 
-	length, ok, err := intParam(r, "bytes")
+	length, ok, err := intQueryParam(r, "bytes")
 	if err != nil {
 		return err
 	}
 	if !ok {
 		length = DefaultLogBytes
 	}
-	offset, ok, err := intParam(r, "offset")
+	offset, ok, err := intQueryParam(r, "offset")
 	if err != nil {
 		return err
 	}

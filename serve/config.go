@@ -18,11 +18,7 @@ func defaultConfig() *config.Config {
 }
 
 func getConfig(w http.ResponseWriter, r *http.Request) error {
-	config, err := getClient(r).Config()
-	if err != nil {
-		return err
-	}
-	conf, err := config.GetAll()
+	conf, err := getService(r).Config().GetAll()
 	if err != nil {
 		return err
 	}
@@ -30,15 +26,11 @@ func getConfig(w http.ResponseWriter, r *http.Request) error {
 }
 
 func getConfigSection(w http.ResponseWriter, r *http.Request) error {
-	config, err := getClient(r).Config()
-	if err != nil {
-		return err
-	}
 	sec, ok := stringParam(r, "section")
 	if !ok {
 		return errors.Status(http.StatusBadRequest, "section required")
 	}
-	conf, err := config.GetSection(sec)
+	conf, err := getService(r).Config().GetSection(sec)
 	if err != nil {
 		return err
 	}
@@ -46,10 +38,6 @@ func getConfigSection(w http.ResponseWriter, r *http.Request) error {
 }
 
 func getConfigItem(w http.ResponseWriter, r *http.Request) error {
-	config, err := getClient(r).Config()
-	if err != nil {
-		return err
-	}
 	sec, ok := stringParam(r, "section")
 	if !ok {
 		return errors.Status(http.StatusBadRequest, "section required")
@@ -58,7 +46,7 @@ func getConfigItem(w http.ResponseWriter, r *http.Request) error {
 	if !ok {
 		return errors.Status(http.StatusBadRequest, "key required")
 	}
-	conf, err := config.Get(sec, key)
+	conf, err := getService(r).Config().Get(sec, key)
 	if err != nil {
 		return err
 	}

@@ -10,7 +10,14 @@ import (
 )
 
 func (s *Service) log(level logger.LogLevel, format string, args ...interface{}) {
+	l, ok := logger.StringToLogLevel(s.Config().GetString("log", "level"))
+	if !ok {
+		l = logger.DefaultLogLevel
+	}
 	msg := strings.TrimSpace(fmt.Sprintf(format, args...))
+	if l < level {
+		return
+	}
 	if s.LogWriter == nil {
 		fmt.Printf("[%s] [%s] [--] %s\n", time.Now().Format(logger.TimeFormat), level, msg)
 		return

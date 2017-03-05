@@ -12,6 +12,7 @@ import (
 // defaultConfig returns a default server configuration.
 func defaultConfig() *config.Config {
 	conf := memconf.New()
+	conf.Set("log", "level", "info")
 	conf.Set("httpd", "enable_compression", "true")
 	conf.Set("httpd", "compression_level", "8")
 	return config.New(conf)

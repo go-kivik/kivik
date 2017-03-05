@@ -9,6 +9,9 @@ import (
 // TimeFormat is the default time format used for CouchDB logs.
 const TimeFormat = time.RFC1123
 
+// DefaultLogLevel is the default log level
+const DefaultLogLevel = LogLevelInfo
+
 // LogLevel is a log level
 type LogLevel int
 

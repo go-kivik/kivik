@@ -52,13 +52,25 @@ func init() {
 // TestDBPrefix is used to prefix temporary database names during tests.
 const TestDBPrefix = "kivik$"
 
+// Go 1.8+ supports this interface on the *testing.T type, but we need to check
+// for the sake of earlier versions.
+type namer interface {
+	Name() string
+}
+
 // TestDBName generates a randomized string suitable for a database name for
 // testing.
 func TestDBName(t *testing.T) string {
-	id := strings.ToLower(t.Name())
-	id = id[strings.Index(id, "/")+1:]
-	id = strings.Replace(id, "/", "_", -1)
-	return fmt.Sprintf("%s%s$%016x", TestDBPrefix, id, rnd.Int63())
+	var id string
+
+	// All this non-sense to support Go < 1.8, which doesn't support t.Name()
+	var ti interface{} = t
+	if n, ok := ti.(namer); ok {
+		id = strings.ToLower(n.Name())
+		id = id[strings.Index(id, "/")+1:]
+		id = strings.Replace(id, "/", "_", -1) + "$"
+	}
+	return fmt.Sprintf("%s%s%016x", TestDBPrefix, id, rnd.Int63())
 }
 
 // RunAdmin runs the test function iff c.Admin is set.

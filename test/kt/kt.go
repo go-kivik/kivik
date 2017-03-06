@@ -61,6 +61,11 @@ func (c *Context) Int(key string) int {
 	return c.Config.Int(c.T, key)
 }
 
+// IsSet returns true if the value is set in the configuration.
+func (c *Context) IsSet(key string) bool {
+	return c.Config.Interface(c.T, key) != nil
+}
+
 // Run wraps t.Run()
 func (c *Context) Run(name string, fn testFunc) {
 	c.T.Run(name, func(t *testing.T) {

@@ -25,5 +25,9 @@ func init() {
 
 		"CreateDB/NoAuth.status":         http.StatusUnauthorized,
 		"CreateDB/Admin/Recreate.status": http.StatusPreconditionFailed,
+
+		"AllDocs/Admin.databases":  []string{"foo"},
+		"AllDocs/Admin/foo.status": http.StatusNotFound,
+		"AllDocs/RW.skip":          true, // FIXME: Not sure why this is broken
 	})
 }

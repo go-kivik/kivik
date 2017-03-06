@@ -33,5 +33,13 @@ func init() {
 
 		"CreateDB/NoAuth.status":         http.StatusUnauthorized,
 		"CreateDB/Admin/Recreate.status": http.StatusPreconditionFailed,
+
+		"AllDocs/Admin.databases":            []string{"_replicator", "chicken"},
+		"AllDocs/Admin/_replicator.expected": []string{"_design/_replicator"},
+		"AllDocs/Admin/_replicator.offset":   0,
+		"AllDocs/Admin/chicken.status":       http.StatusNotFound,
+		"AllDocs/NoAuth.databases":           []string{"_replicator", "chicken"},
+		"AllDocs/NoAuth/_replicator.status":  http.StatusForbidden,
+		"AllDocs/NoAuth/chicken.status":      http.StatusNotFound,
 	})
 }

@@ -10,10 +10,11 @@ import (
 	"testing"
 
 	"github.com/flimzy/kivik"
+	"github.com/flimzy/kivik/test/kt"
 
 	// Tests
 	_ "github.com/flimzy/kivik/test/client"
-	"github.com/flimzy/kivik/test/kt"
+	_ "github.com/flimzy/kivik/test/db"
 )
 
 // The available test suites

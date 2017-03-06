@@ -52,9 +52,8 @@ func testAllDBs(client *kivik.Client, conf kt.SuiteConfig, expected []string, t 
 	if status > 0 {
 		return
 	}
-	if len(allDBs) != len(expected) {
-		d := diff.TextSlices(expected, allDBs)
-		t.Errorf("Found %d databases, expected %d:\n%s\n", len(allDBs), len(expected), d)
+	if d := diff.TextSlices(expected, allDBs); d != "" {
+		t.Errorf("AllDBs() returned unexpected list:\n%s\n", d)
 	}
 	if len(expected) == 0 {
 		return

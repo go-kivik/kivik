@@ -1,10 +1,14 @@
 package test
 
-import "github.com/flimzy/kivik/test/kt"
+import (
+	"net/http"
+
+	"github.com/flimzy/kivik/test/kt"
+)
 
 func init() {
 	RegisterSuite(SuiteKivikFS, kt.SuiteConfig{
 		"AllDBs.expected": []string{},
+		"Config.status":   http.StatusNotImplemented,
 	})
-
 }

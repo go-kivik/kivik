@@ -74,3 +74,10 @@ func (c *Clients) RunNoAuth(t *testing.T, fn func(*testing.T)) {
 		t.Run("NoAuth", fn)
 	}
 }
+
+// RunRW runs the test function iff c.RW is true.
+func (c *Clients) RunRW(t *testing.T, fn func(*testing.T)) {
+	if c.RW {
+		t.Run("RW", fn)
+	}
+}

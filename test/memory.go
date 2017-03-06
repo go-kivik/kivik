@@ -9,6 +9,10 @@ import (
 func init() {
 	RegisterSuite(SuiteKivikMemory, kt.SuiteConfig{
 		"AllDBs.expected": []string{},
-		"Config.status":   http.StatusNotImplemented,
+
+		"Config.status": http.StatusNotImplemented,
+
+		"CreateDB/NoAuth.status":         http.StatusUnauthorized,
+		"CreateDB/Admin/Recreate.status": http.StatusPreconditionFailed,
 	})
 }

@@ -24,5 +24,8 @@ func init() {
 		"Config/RW/Admin/Set.status":             http.StatusForbidden,
 		"Config/RW/NoAuth/Delete.status":         http.StatusUnauthorized,
 		"Config/RW/Admin/Delete.status":          http.StatusForbidden,
+
+		"CreateDB/NoAuth.status":         http.StatusUnauthorized,
+		"CreateDB/Admin/Recreate.status": http.StatusPreconditionFailed,
 	})
 }

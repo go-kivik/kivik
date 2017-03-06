@@ -18,6 +18,10 @@ func IsError(err error, status int, t *testing.T) bool {
 		t.Errorf("Expected failure %d/%s", status, http.StatusText(status))
 		return true
 	default:
+		if status == 0 {
+			t.Errorf("Unexpected failure: %s", err)
+			return true
+		}
 		t.Errorf("Unexpected failure state.\nExpected: %d/%s\n  Actual: %s", status, http.StatusText(status), err)
 		return true
 	}

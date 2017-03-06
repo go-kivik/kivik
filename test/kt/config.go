@@ -40,7 +40,7 @@ func (c SuiteConfig) Bool(t *testing.T, key string) bool {
 
 // Skip will skip the currently running test if configuration dictates.
 func (c SuiteConfig) Skip(t *testing.T) {
-	if c.Bool(t, "Skip") {
+	if c.Bool(t, "skip") {
 		t.Skip("Test skipped by suite configuration")
 	}
 }
@@ -54,5 +54,11 @@ func (c SuiteConfig) StringSlice(t *testing.T, key string) []string {
 // Int returns an int.
 func (c SuiteConfig) Int(t *testing.T, key string) int {
 	v, _ := c.Interface(t, key).(int)
+	return v
+}
+
+// String returns a string.
+func (c SuiteConfig) String(t *testing.T, key string) string {
+	v, _ := c.Interface(t, key).(string)
 	return v
 }

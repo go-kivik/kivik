@@ -18,15 +18,18 @@ func allDBs(clients *kt.Clients, conf kt.SuiteConfig, t *testing.T) {
 	}
 	if clients.RW && clients.Admin != nil {
 		t.Run("RW", func(t *testing.T) {
+			conf.Skip(t)
 			testAllDBsRW(clients, conf, t)
 		})
 	}
 	clients.RunAdmin(t, func(t *testing.T) {
-		t.Parallel()
+		conf.Skip(t)
+		// t.Parallel()
 		testAllDBs(clients.Admin, conf, conf.StringSlice(t, "expected"), t)
 	})
 	clients.RunNoAuth(t, func(t *testing.T) {
-		t.Parallel()
+		conf.Skip(t)
+		// t.Parallel()
 		testAllDBs(clients.NoAuth, conf, conf.StringSlice(t, "expected"), t)
 	})
 }
@@ -41,9 +44,11 @@ func testAllDBsRW(clients *kt.Clients, conf kt.SuiteConfig, t *testing.T) {
 	}
 	expected := append(conf.StringSlice(t, "expected"), dbName)
 	clients.RunAdmin(t, func(t *testing.T) {
+		conf.Skip(t)
 		testAllDBs(clients.Admin, conf, expected, t)
 	})
 	clients.RunNoAuth(t, func(t *testing.T) {
+		conf.Skip(t)
 		testAllDBs(clients.NoAuth, conf, expected, t)
 	})
 }

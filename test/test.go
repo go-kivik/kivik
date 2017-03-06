@@ -12,6 +12,10 @@ import (
 	"time"
 
 	"github.com/flimzy/kivik"
+
+	// Tests
+	_ "github.com/flimzy/kivik/test/client"
+	"github.com/flimzy/kivik/test/kt"
 )
 
 // The available test suites
@@ -89,27 +93,32 @@ func CleanupTests(driver, dsn string, verbose bool) error {
 	if err != nil {
 		return err
 	}
+	count, err := doCleanup(client, verbose)
+	if verbose {
+		fmt.Printf("Deleted %d test databases\n", count)
+	}
+	return err
+}
+
+func doCleanup(client *kivik.Client, verbose bool) (int, error) {
 	allDBs, err := client.AllDBs()
 	if err != nil {
-		return err
+		return 0, err
 	}
 	var count int
 	for _, dbName := range allDBs {
 		if strings.HasPrefix(dbName, TestDBPrefix) {
 			if verbose {
 				fmt.Printf("\t--- Deleting %s\n", dbName)
-				count++
 			}
 			err := client.DestroyDB(dbName)
 			if err != nil {
-				return err
+				return count, err
 			}
+			count++
 		}
 	}
-	if verbose {
-		fmt.Printf("Deleted %d test databases\n", count)
-	}
-	return nil
+	return count, nil
 }
 
 // RunTests runs the requested test suites against the requested driver and DSN.
@@ -145,6 +154,7 @@ func Test(driver, dsn string, testSuites []string, rw bool, t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to connect to %s (%s driver): %s\n", dsn, driver, err)
 	}
+	clients.RW = rw
 	tests := make(map[string]struct{})
 	for _, test := range testSuites {
 		tests[test] = struct{}{}
@@ -166,13 +176,16 @@ func Test(driver, dsn string, testSuites []string, rw bool, t *testing.T) {
 	}
 	t.Logf("Running the following test suites: %s\n", strings.Join(testSuites, ", "))
 	for _, suite := range testSuites {
-		conf, ok := suites[suite]
-		if !ok {
-			t.Skipf("No configuration found for suite '%s'", suite)
-		}
-		conf.Set("RW", rw)
-		RunSubtests(clients, conf, suite, t)
+		runTests(clients, suite, t)
 	}
+}
+
+func runTests(clients *kt.Clients, suite string, t *testing.T) {
+	conf, ok := suites[suite]
+	if !ok {
+		t.Skipf("No configuration found for suite '%s'", suite)
+	}
+	kt.RunSubtests(clients, conf, t)
 }
 
 func detectCompatibility(client *kivik.Client) ([]string, error) {
@@ -196,37 +209,7 @@ func detectCompatibility(client *kivik.Client) ([]string, error) {
 	return []string{}, errors.New("Unable to automatically determine the proper test suite")
 }
 
-type testFunc func(*Clients, string, SuiteConfig, *testing.T)
-
-// tests is a map of the format map[suite]map[name]testFunc
-var tests = make(map[string]map[string]testFunc)
-
-// RegisterTest registers a test to be run for the given test suite. rw should
-// be true if the test writes to the database.
-func RegisterTest(suite, name string, fn testFunc) {
-	if _, ok := tests[suite]; !ok {
-		tests[suite] = make(map[string]testFunc)
-	}
-	tests[suite][name] = fn
-	return
-}
-
-// RunSubtests executes the requested suites of tests against the client.
-func RunSubtests(clients *Clients, conf SuiteConfig, suite string, t *testing.T) {
-	for name, fn := range tests[suite] {
-		t.Run(name, func(t *testing.T) {
-			fn(clients, suite, conf, t)
-		})
-	}
-}
-
-// Clients is a collection of client connections with different security access.
-type Clients struct {
-	Admin  *kivik.Client
-	NoAuth *kivik.Client
-}
-
-func connectClients(driverName, dsn string, t *testing.T) (*Clients, error) {
+func connectClients(driverName, dsn string, t *testing.T) (*kt.Clients, error) {
 	var noAuthDSN string
 	if parsed, err := url.Parse(dsn); err == nil {
 		if parsed.User == nil {
@@ -235,7 +218,7 @@ func connectClients(driverName, dsn string, t *testing.T) (*Clients, error) {
 		parsed.User = nil
 		noAuthDSN = parsed.String()
 	}
-	clients := &Clients{}
+	clients := &kt.Clients{}
 	t.Logf("Connecting to %s ...\n", dsn)
 	if client, err := kivik.New(driverName, dsn); err == nil {
 		clients.Admin = client

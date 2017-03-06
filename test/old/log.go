@@ -1,4 +1,4 @@
-// +build !js
+// +build !js,ignore
 
 // This test is disabled in GopherJS, becuase node is ultra-picky about the
 // apparently mal-formed headers that CouchDB sends on these requests.

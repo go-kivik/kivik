@@ -2,12 +2,10 @@ package config
 
 import (
 	"fmt"
-	"net/http"
 	"testing"
 
 	"github.com/flimzy/diff"
 	"github.com/flimzy/kivik/driver"
-	"github.com/flimzy/kivik/errors"
 )
 
 type testMinConfig struct {
@@ -44,8 +42,8 @@ func TestMinimalConfiger(t *testing.T) {
 	if _, err := c.GetSection("fruit"); err != nil {
 		t.Errorf("Failed to get existing section")
 	}
-	if _, err := c.GetSection("foo"); errors.StatusCode(err) != http.StatusNotFound {
-		t.Errorf("Expected NotFound for non-existant section")
+	if _, err := c.GetSection("foo"); err != nil {
+		t.Errorf("Failed to get non-existant section")
 	}
 	if _, err := c.Get("fruit", "apple"); err != nil {
 		t.Errorf("Failed to get existing value")
@@ -66,7 +64,7 @@ func TestMinimalConfiger(t *testing.T) {
 	if err == nil {
 		t.Errorf("Expected NotFound for non-existant key")
 	}
-	expectedErrMsg = "error status 404: configuration section 'animals' not found"
+	expectedErrMsg = "error status 404: config key not found"
 	if err.Error() != expectedErrMsg {
 		t.Errorf("Expected error '%s', got '%s'", expectedErrMsg, err.Error())
 	}

@@ -9,7 +9,7 @@ import (
 type SuiteConfig map[string]interface{}
 
 func name(t *testing.T) string {
-	name := t.Name()
+	name := tName(t)
 	return name[strings.Index(name, "/")+1:]
 }
 

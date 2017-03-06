@@ -166,7 +166,12 @@ func Test(driver, dsn string, testSuites []string, rw bool, t *testing.T) {
 	}
 	t.Logf("Running the following test suites: %s\n", strings.Join(testSuites, ", "))
 	for _, suite := range testSuites {
-		RunSubtests(clients, rw, suite, t)
+		conf, ok := suites[suite]
+		if !ok {
+			t.Skipf("No configuration found for suite '%s'", suite)
+		}
+		conf.Set("RW", rw)
+		RunSubtests(clients, conf, suite, t)
 	}
 }
 
@@ -191,45 +196,28 @@ func detectCompatibility(client *kivik.Client) ([]string, error) {
 	return []string{}, errors.New("Unable to automatically determine the proper test suite")
 }
 
-type testFunc func(*Clients, string, *testing.T)
+type testFunc func(*Clients, string, SuiteConfig, *testing.T)
 
 // tests is a map of the format map[suite]map[name]testFunc
 var tests = make(map[string]map[string]testFunc)
 
-var rwtests = make(map[string]map[string]testFunc)
-
 // RegisterTest registers a test to be run for the given test suite. rw should
 // be true if the test writes to the database.
-func RegisterTest(suite, name string, rw bool, fn testFunc) {
-	if rw {
-		if _, ok := rwtests[suite]; !ok {
-			rwtests[suite] = make(map[string]testFunc)
-		}
-		rwtests[suite][name] = fn
-		return
-	}
+func RegisterTest(suite, name string, fn testFunc) {
 	if _, ok := tests[suite]; !ok {
 		tests[suite] = make(map[string]testFunc)
 	}
 	tests[suite][name] = fn
+	return
 }
 
 // RunSubtests executes the requested suites of tests against the client.
-func RunSubtests(clients *Clients, rw bool, suite string, t *testing.T) {
+func RunSubtests(clients *Clients, conf SuiteConfig, suite string, t *testing.T) {
 	for name, fn := range tests[suite] {
-		runSubtest(clients, name, suite, fn, t)
+		t.Run(name, func(t *testing.T) {
+			fn(clients, suite, conf, t)
+		})
 	}
-	if rw {
-		for name, fn := range rwtests[suite] {
-			runSubtest(clients, name, suite, fn, t)
-		}
-	}
-}
-
-func runSubtest(clients *Clients, name, suite string, fn testFunc, t *testing.T) {
-	t.Run(name, func(t *testing.T) {
-		fn(clients, suite, t)
-	})
 }
 
 // Clients is a collection of client connections with different security access.

@@ -13,6 +13,9 @@ func init() {
 }
 
 func allDBs(clients *kt.Clients, conf kt.SuiteConfig, t *testing.T) {
+	if conf.Bool(t, "skip") {
+		return
+	}
 	if clients.RW && clients.Admin != nil {
 		t.Run("RW", func(t *testing.T) {
 			testAllDBsRW(clients, conf, t)

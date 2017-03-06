@@ -20,15 +20,6 @@ func doTest(suite, envName string, t *testing.T) {
 		return
 	}
 	clients.RW = true
-	if clients.Admin != nil {
-		count, err := doCleanup(clients.Admin, true)
-		if count > 0 {
-			t.Logf("Pre-cleanup removed %d databases from previous test runs", count)
-		}
-		if err != nil {
-			t.Fatalf("Pre-cleanup failed: %s", err)
-		}
-	}
 	runTests(clients, suite, t)
 }
 

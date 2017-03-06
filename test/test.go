@@ -170,6 +170,21 @@ func runTests(clients *kt.Clients, suite string, t *testing.T) {
 	if !ok {
 		t.Skipf("No configuration found for suite '%s'", suite)
 	}
+	// This is run as a sub-test so configuration will work nicely.
+	t.Run("PreCleanup", func(t *testing.T) {
+		if conf.Bool(t, "skip") {
+			return
+		}
+		clients.RunAdmin(t, func(t *testing.T) {
+			count, err := doCleanup(clients.Admin, true)
+			if count > 0 {
+				t.Logf("Pre-cleanup removed %d databases from previous test runs", count)
+			}
+			if err != nil {
+				t.Fatalf("Pre-cleanup failed: %s", err)
+			}
+		})
+	})
 	kt.RunSubtests(clients, conf, t)
 }
 

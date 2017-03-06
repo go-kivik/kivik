@@ -35,25 +35,21 @@
 
 | API Endpoint | ![Kivik API](images/api.png) | ![Kivik HTTP Server](images/http.png) | ![Kivik Test Suite](images/tests.png) | ![CouchDB](images/couchdb.png) | ![PouchDB](images/pouchdb.png) | ![Memory Driver](images/memory.png) | ![Filesystem Driver](images/filesystem.png) |
 |--------------|------------------------------|:-------------------------------------:|:-------------------------------------:|:------------------------------:|:------------------------------:|:-----------------------------------:|:------------------------------------------:|
-| GET /        | ServerInfo()                 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅
-| GET /_active_tasks |                        |    |    |    | ⁿ/ₐ |
+| GET /        | ServerInfo()                 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| GET /_active_tasks |                        |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | GET /_all_dbs      | AllDBs()               | ✅ | ✅ | ✅ | ☑️<sup>[1](#pouchAllDbs1),[2](#pouchAllDbs2),[3](pouchAllDbs3)</sup> | ✅ | ✅
 | GET /_db_updates
 | GET /_log          | Log()                  | ✅ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | GET /_replicate
-| GET /_restart      |                        |    |    |    | ⁿ/ₐ
+| GET /_restart      |                        |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | GET /_stats
-| GET /_utils        |                        |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
-| GET /_membership   | Membership()           |    |    | ✅<sup>[4](#couchMembership)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
-| GET /favicon.ico   |                        |    | ❌ | ❌ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
-| POST /_session<sup>[6](#cookieAuth)</sup> | |    | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
-| GET /_session<sup>[6](#cookieAuth)</sup> |  |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
-| DELETE /_session<sup>[6](#cookieAuth)</sup> | |  |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
-| GET /_config
-| GET /_config/{section}
-| GET /_config/{section}/{key}
-| PUT /_config/{section}/{key}
-| DELETE /_config/{section}/{key}
+| GET /_utils        |                        |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
+| GET /_membership   | Membership()           | ❌<sup>[12](#kivikCluster)</sup> | ✅ | ✅<sup>[4](#couchMembership)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
+| GET /favicon.ico   |                        |    | ❌ | ❌ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
+| POST /_session<sup>[6](#cookieAuth)</sup> | |    | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
+| GET /_session<sup>[6](#cookieAuth)</sup> |  |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
+| DELETE /_session<sup>[6](#cookieAuth)</sup> | |  |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
+| * /_config         | Config()               |    | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | HEAD /{db}         | DBExists()             | ✅ | ✅ | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
 | GET /{db}
 | PUT /{db}          | CreateDB()             | ✅ | ✅ | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
@@ -129,3 +125,4 @@
 9. <a name="todoOrdering"> **TODO:** Ordering is not yet tested.
 10. <a name="todoLimit"> **TODO:** Limits are not yet tested.
 11. <a name="todoAttachments"> **TODO:** Attachments are not yet tested.
+12. <a name="kivikCluster"> There are no plans at present to support clustering.

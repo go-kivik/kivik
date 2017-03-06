@@ -11,11 +11,10 @@ import (
 	"github.com/NYTimes/gziphandler"
 	"github.com/dimfeld/httptreemux"
 
+	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/config"
-	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/errors"
 	"github.com/flimzy/kivik/logger"
-	"github.com/flimzy/kivik/logger/memlogger"
 )
 
 // Version is the version of this library.
@@ -31,7 +30,7 @@ const CompatVersion = "1.6.1"
 // per server endpoint.
 type Service struct {
 	// Client is an instance of a driver.Client, which will be served.
-	Client driver.Client
+	Client *kivik.Client
 	// CompatVersion is the compatibility version to report to clients. Defaults
 	// to 1.6.1.
 	CompatVersion string
@@ -46,18 +45,14 @@ type Service struct {
 	// if the Log() method is expected to work. By default, logs are written to
 	// standard output.
 	LogWriter logger.LogWriter
-	// Config is the configuration backend. By default the Client is used, if
-	// it satisfies the driver.Config interface. Otherwise, a new memconf
-	// instance is instantiated.
+	// Config is the configuration backend. If none is specified, anew memconf
+	// instance is instantiated the first time configuration is requested.
 	config *config.Config
 }
 
 // Config returns a connection to the configuration backend.
 func (s *Service) Config() *config.Config {
 	if s.config == nil {
-		if conf, ok := s.Client.(driver.Config); ok {
-			s.config = config.New(conf)
-		}
 		s.config = defaultConfig()
 	}
 	return s.config
@@ -72,12 +67,11 @@ func (s *Service) SetConfig(config *config.Config) {
 // Start() is called, so this is meant to be used if you want to bind the server
 // yourself.
 func (s *Service) Init() (http.Handler, error) {
-	logConf, _ := s.Config().GetSection("log")
-	if s.LogWriter == nil {
-		s.LogWriter = &memlogger.Logger{}
-	}
-	if err := s.LogWriter.Init(logConf); err != nil {
-		return nil, errors.Wrap(err, "failed to initialize logger")
+	if s.LogWriter != nil {
+		logConf, _ := s.Config().GetSection("log")
+		if err := s.LogWriter.Init(logConf); err != nil {
+			return nil, errors.Wrap(err, "failed to initialize logger")
+		}
 	}
 	return s.setupRoutes()
 }
@@ -138,6 +132,9 @@ func (s *Service) setupRoutes() (http.Handler, error) {
 	ctxRoot.Handler(mGET, "/_log", handler(log))
 	ctxRoot.Handler(mPUT, "/:db", handler(createDB))
 	ctxRoot.Handler(mHEAD, "/:db", handler(dbExists))
+	ctxRoot.Handler(mGET, "/_config", handler(getConfig))
+	ctxRoot.Handler(mGET, "/_config/:section", handler(getConfigSection))
+	ctxRoot.Handler(mGET, "/_config/:section/:key", handler(getConfigItem))
 	// ctxRoot.Handler(mDELETE, "/:db", handler(destroyDB) )
 	// ctxRoot.Handler(http.MethodGet, "/:db", handler(getDB))
 
@@ -163,8 +160,8 @@ func getService(r *http.Request) *Service {
 	return service
 }
 
-func getClient(r *http.Request) driver.Client {
-	client := r.Context().Value(ClientContextKey).(driver.Client)
+func getClient(r *http.Request) *kivik.Client {
+	client := r.Context().Value(ClientContextKey).(*kivik.Client)
 	return client
 }
 
@@ -199,6 +196,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if status == 0 {
 		status = http.StatusInternalServerError
 	}
+	w.Header().Add("Content-Type", typeJSON)
 	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"error": err.Error(),
@@ -261,4 +259,10 @@ func dbExists(w http.ResponseWriter, r *http.Request) error {
 		w.WriteHeader(http.StatusNotFound)
 	}
 	return nil
+}
+
+// serveJSON serves i as JSON to w.
+func serveJSON(w http.ResponseWriter, i interface{}) error {
+	w.Header().Set("Content-Type", typeJSON)
+	return json.NewEncoder(w).Encode(i)
 }

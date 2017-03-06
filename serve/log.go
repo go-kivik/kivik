@@ -1,12 +1,6 @@
 package serve
 
-import (
-	"fmt"
-	"net/http"
-
-	"github.com/flimzy/kivik"
-	"github.com/flimzy/kivik/driver"
-)
+import "net/http"
 
 const (
 	// DefaultLogBytes is the default number of log bytes to return.
@@ -18,23 +12,17 @@ const (
 )
 
 func log(w http.ResponseWriter, r *http.Request) error {
-	logger, ok := getClient(r).(driver.Logger)
-	if !ok {
-		return kivik.ErrNotImplemented
-	}
+	client := getClient(r)
 
-	w.Header().Set("Content-Type", typeText)
-	length, ok, err := intParam(r, "bytes")
+	length, ok, err := intQueryParam(r, "bytes")
 	if err != nil {
-		fmt.Printf("err1:%s", err)
 		return err
 	}
 	if !ok {
 		length = DefaultLogBytes
 	}
-	offset, ok, err := intParam(r, "offset")
+	offset, ok, err := intQueryParam(r, "offset")
 	if err != nil {
-		fmt.Printf("err2:%s", err)
 		return err
 	}
 	if !ok {
@@ -42,10 +30,11 @@ func log(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	buf := make([]byte, length)
-	n, err := logger.Log(buf, offset)
+	n, err := client.Log(buf, offset)
 	if err != nil {
 		return err
 	}
+	w.Header().Set("Content-Type", typeText)
 	w.Write(buf[0:n])
 	return nil
 }

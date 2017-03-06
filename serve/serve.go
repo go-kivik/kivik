@@ -45,18 +45,14 @@ type Service struct {
 	// if the Log() method is expected to work. By default, logs are written to
 	// standard output.
 	LogWriter logger.LogWriter
-	// Config is the configuration backend. By default the Client is used, if
-	// it satisfies the driver.Config interface. Otherwise, a new memconf
-	// instance is instantiated.
+	// Config is the configuration backend. If none is specified, anew memconf
+	// instance is instantiated the first time configuration is requested.
 	config *config.Config
 }
 
 // Config returns a connection to the configuration backend.
 func (s *Service) Config() *config.Config {
 	if s.config == nil {
-		if conf, err := s.Client.Config(); err != nil {
-			s.config = conf
-		}
 		s.config = defaultConfig()
 	}
 	return s.config

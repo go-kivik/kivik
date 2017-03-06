@@ -1,3 +1,5 @@
+// +build !js
+
 package test
 
 import (
@@ -50,7 +52,7 @@ func TestServer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to initialize client: %s\n", err)
 	}
-	clients := &kt.Clients{
+	clients := &kt.Context{
 		RW:    true,
 		Admin: client,
 	}

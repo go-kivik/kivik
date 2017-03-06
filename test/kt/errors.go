@@ -2,27 +2,47 @@ package kt
 
 import (
 	"net/http"
-	"testing"
 
 	"github.com/flimzy/kivik/errors"
 )
 
-// IsError checks a kivik error against the expected status code (0 = no
-// error), and returns true if the expectation is unmet.
-func IsError(err error, status int, t *testing.T) bool {
+// CheckError compares the error's status code with that expected.
+func (c *Context) CheckError(err error) (match bool, success bool) {
+	status := c.Int("status")
 	switch errors.StatusCode(err) {
 	case status:
 		// This is expected
-		return false
+		return true, status == 0
 	case 0:
-		t.Errorf("Expected failure %d/%s", status, http.StatusText(status))
-		return true
+		c.Errorf("Expected failure %d/%s", status, http.StatusText(status))
+		return false, true
 	default:
 		if status == 0 {
-			t.Errorf("Unexpected failure: %s", err)
-			return true
+			c.Errorf("Unexpected failure: %s", err)
+			return false, false
 		}
-		t.Errorf("Unexpected failure state.\nExpected: %d/%s\n  Actual: %s", status, http.StatusText(status), err)
-		return true
+		c.Errorf("Unexpected failure state.\nExpected: %d/%s\n  Actual: %s", status, http.StatusText(status), err)
+		return false, false
 	}
+}
+
+// IsExpected checks the error against the expected status, and returns true
+// if they match.
+func (c *Context) IsExpected(err error) bool {
+	m, _ := c.CheckError(err)
+	return m
+}
+
+// IsSuccess is similar to IsExpected, except for its return value. This method
+// returns true if the expected status == 0, regardless of the error.
+func (c *Context) IsSuccess(err error) bool {
+	_, s := c.CheckError(err)
+	return s
+}
+
+// IsExpectedSuccess combines IsExpected() and IsSuccess(), returning true only
+// if there is no error, and no error was expected.
+func (c *Context) IsExpectedSuccess(err error) bool {
+	m, s := c.CheckError(err)
+	return m && s
 }

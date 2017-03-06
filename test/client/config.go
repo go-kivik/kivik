@@ -3,7 +3,6 @@ package client
 import (
 	"sort"
 	"strings"
-	"testing"
 
 	"github.com/flimzy/diff"
 	"github.com/flimzy/kivik"
@@ -16,115 +15,90 @@ func init() {
 	kt.Register("Config", configTest)
 }
 
-func configTest(clients *kt.Clients, conf kt.SuiteConfig, t *testing.T) {
-	conf.Skip(t)
-	clients.RunRW(t, func(t *testing.T) {
-		conf.Skip(t)
-		configRW(clients, conf, t)
+func configTest(ctx *kt.Context) {
+	ctx.RunRW(func(ctx *kt.Context) {
+		configRW(ctx)
 	})
-	clients.RunAdmin(t, func(t *testing.T) {
-		conf.Skip(t)
-		testConfig(clients.Admin, conf, t)
+	ctx.RunAdmin(func(ctx *kt.Context) {
+		testConfig(ctx, ctx.Admin)
 	})
-	clients.RunNoAuth(t, func(t *testing.T) {
-		conf.Skip(t)
-		testConfig(clients.NoAuth, conf, t)
+	ctx.RunNoAuth(func(ctx *kt.Context) {
+		testConfig(ctx, ctx.NoAuth)
 	})
 }
 
-func configRW(clients *kt.Clients, conf kt.SuiteConfig, t *testing.T) {
-	clients.RunAdmin(t, func(t *testing.T) {
-		conf.Skip(t)
-		t.Run("Set", func(t *testing.T) {
-			conf.Skip(t)
-			testSet(clients.Admin, conf, t)
+func configRW(ctx *kt.Context) {
+	ctx.RunAdmin(func(ctx *kt.Context) {
+		ctx.Run("Set", func(ctx *kt.Context) {
+			testSet(ctx, ctx.Admin)
 		})
-		t.Run("Delete", func(t *testing.T) {
-			conf.Skip(t)
-			testDelete(clients.Admin, clients.Admin, conf, t)
+		ctx.Run("Delete", func(ctx *kt.Context) {
+			testDelete(ctx, ctx.Admin)
 		})
 	})
-	clients.RunNoAuth(t, func(t *testing.T) {
-		conf.Skip(t)
-		t.Run("Set", func(t *testing.T) {
-			testSet(clients.NoAuth, conf, t)
+	ctx.RunNoAuth(func(ctx *kt.Context) {
+		ctx.Run("Set", func(ctx *kt.Context) {
+			testSet(ctx, ctx.NoAuth)
 		})
-		t.Run("Delete", func(t *testing.T) {
-			conf.Skip(t)
-			testDelete(clients.Admin, clients.NoAuth, conf, t)
+		ctx.Run("Delete", func(ctx *kt.Context) {
+			testDelete(ctx, ctx.NoAuth)
 		})
 	})
 }
 
-func testSet(client *kivik.Client, conf kt.SuiteConfig, t *testing.T) {
+func testSet(ctx *kt.Context, client *kivik.Client) {
 	c, _ := client.Config()
 	defer c.Delete("kivik", "kivik")
-	status := conf.Int(t, "status")
 	err := c.Set("kivik", "kivik", "kivik")
-	if kt.IsError(err, status, t) {
-		return
-	}
-	if status > 0 {
+	if !ctx.IsExpectedSuccess(err) {
 		return
 	}
 	// Set should be 100% idempotent, so check that we get the same result
 	err2 := c.Set("kivik", "kivik", "kivik")
 	if errors.StatusCode(err) != errors.StatusCode(err2) {
-		t.Errorf("Resetting config resulted in a different error. %s followed by %s", err, err2)
+		ctx.Errorf("Resetting config resulted in a different error. %s followed by %s", err, err2)
 		return
 	}
-	t.Run("Retreive", func(t *testing.T) {
-		conf.Skip(t)
-		status := conf.Int(t, "status")
+	ctx.Run("Retreive", func(ctx *kt.Context) {
 		value, err := c.Get("kivik", "kivik")
-		if kt.IsError(err, status, t) {
-			return
-		}
-		if status > 0 {
+		if !ctx.IsExpectedSuccess(err) {
 			return
 		}
 		if value != "kivik" {
-			t.Errorf("Stored 'kivik', but retrieved '%s'", value)
+			ctx.Errorf("Stored 'kivik', but retrieved '%s'", value)
 		}
 	})
 }
 
-func testDelete(admin, client *kivik.Client, conf kt.SuiteConfig, t *testing.T) {
-	ac, _ := admin.Config()
+func testDelete(ctx *kt.Context, client *kivik.Client) {
+	ac, _ := ctx.Admin.Config()
 	c, _ := client.Config()
 	_ = ac.Set("kivik", "foo", "bar")
 	defer ac.Delete("kivik", "foo")
-	t.Run("NonExistantSection", func(t *testing.T) {
-		kt.IsError(c.Delete("kivikkivik", "xyz"), conf.Int(t, "status"), t)
+	ctx.Run("NonExistantSection", func(ctx *kt.Context) {
+		ctx.CheckError(c.Delete("kivikkivik", "xyz"))
 	})
-	t.Run("NonExistantKey", func(t *testing.T) {
-		kt.IsError(c.Delete("kivik", "bar"), conf.Int(t, "status"), t)
+	ctx.Run("NonExistantKey", func(ctx *kt.Context) {
+		ctx.CheckError(c.Delete("kivik", "bar"))
 	})
-	t.Run("ExistingKey", func(t *testing.T) {
-		kt.IsError(c.Delete("kivik", "foo"), conf.Int(t, "status"), t)
+	ctx.Run("ExistingKey", func(ctx *kt.Context) {
+		ctx.CheckError(c.Delete("kivik", "foo"))
 	})
 }
 
-func testConfig(client *kivik.Client, conf kt.SuiteConfig, t *testing.T) {
+func testConfig(ctx *kt.Context, client *kivik.Client) {
 	var c *config.Config
 	{
 		var err error
 		c, err = client.Config()
-		status := conf.Int(t, "status")
-		if kt.IsError(err, status, t) {
-			return
-		}
-		if status > 0 {
+		if !ctx.IsExpectedSuccess(err) {
 			return
 		}
 	}
-	t.Run("GetAll", func(t *testing.T) {
-		conf.Skip(t)
-		t.Parallel()
-		status := conf.Int(t, "status")
+	ctx.Run("GetAll", func(ctx *kt.Context) {
+		ctx.Parallel()
 		all, err := c.GetAll()
-		_ = kt.IsError(err, status, t)
-		if status > 0 {
+		if !ctx.IsSuccess(err) {
 			return
 		}
 		sections := make([]string, 0, len(all))
@@ -132,24 +106,18 @@ func testConfig(client *kivik.Client, conf kt.SuiteConfig, t *testing.T) {
 			sections = append(sections, sec)
 		}
 		sort.Strings(sections)
-		if d := diff.TextSlices(conf.StringSlice(t, "expected_sections"), sections); d != "" {
-			t.Errorf("GetAll() returned unexpected sections:\n%s\n", d)
+		if d := diff.TextSlices(ctx.StringSlice("expected_sections"), sections); d != "" {
+			ctx.Errorf("GetAll() returned unexpected sections:\n%s\n", d)
 		}
 	})
-	t.Run("GetSection", func(t *testing.T) {
-		conf.Skip(t)
-		t.Parallel()
-		for _, secName := range conf.StringSlice(t, "sections") {
+	ctx.Run("GetSection", func(ctx *kt.Context) {
+		ctx.Parallel()
+		for _, s := range ctx.StringSlice("sections") {
 			func(secName string) {
-				t.Run(secName, func(t *testing.T) {
-					conf.Skip(t)
-					t.Parallel()
-					status := conf.Int(t, "status")
+				ctx.Run(secName, func(ctx *kt.Context) {
+					ctx.Parallel()
 					sec, err := c.GetSection(secName)
-					if kt.IsError(err, status, t) {
-						return
-					}
-					if status > 0 {
+					if !ctx.IsExpectedSuccess(err) {
 						return
 					}
 					keys := make([]string, 0, len(sec))
@@ -157,36 +125,31 @@ func testConfig(client *kivik.Client, conf kt.SuiteConfig, t *testing.T) {
 						keys = append(keys, key)
 					}
 					sort.Strings(keys)
-					if d := diff.TextSlices(conf.StringSlice(t, "keys"), keys); d != "" {
-						t.Errorf("GetSection() returned unexpected keys:\n%s\n", d)
+					if d := diff.TextSlices(ctx.StringSlice("keys"), keys); d != "" {
+						ctx.Errorf("GetSection() returned unexpected keys:\n%s\n", d)
 					}
 				})
-			}(secName)
+			}(s)
 		}
 	})
-	t.Run("GetItem", func(t *testing.T) {
-		conf.Skip(t)
-		for _, item := range conf.StringSlice(t, "items") {
+	ctx.Run("GetItem", func(ctx *kt.Context) {
+		ctx.Parallel()
+		for _, i := range ctx.StringSlice("items") {
 			func(item string) {
-				i := strings.Split(item, ".")
-				secName, key := i[0], i[1]
-				t.Run(item, func(t *testing.T) {
-					conf.Skip(t)
-					t.Parallel()
-					status := conf.Int(t, "status")
+				ctx.Run(item, func(ctx *kt.Context) {
+					ctx.Parallel()
+					parts := strings.Split(item, ".")
+					secName, key := parts[0], parts[1]
 					value, err := c.Get(secName, key)
-					if kt.IsError(err, status, t) {
+					if !ctx.IsExpectedSuccess(err) {
 						return
 					}
-					if status > 0 {
-						return
-					}
-					expected := conf.String(t, "expected")
+					expected := ctx.String("expected")
 					if value != expected {
-						t.Errorf("%s = '%s', expected '%s'", item, value, expected)
+						ctx.Errorf("%s = '%s', expected '%s'", item, value, expected)
 					}
 				})
-			}(item)
+			}(i)
 		}
 	})
 }

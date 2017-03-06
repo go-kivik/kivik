@@ -1,8 +1,6 @@
 package client
 
 import (
-	"testing"
-
 	"github.com/flimzy/diff"
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/test/kt"
@@ -12,58 +10,44 @@ func init() {
 	kt.Register("AllDBs", allDBs)
 }
 
-func allDBs(clients *kt.Clients, conf kt.SuiteConfig, t *testing.T) {
-	if conf.Bool(t, "skip") {
-		return
-	}
-	if clients.RW && clients.Admin != nil {
-		t.Run("RW", func(t *testing.T) {
-			conf.Skip(t)
-			testAllDBsRW(clients, conf, t)
+func allDBs(ctx *kt.Context) {
+	if ctx.RW && ctx.Admin != nil {
+		ctx.Run("RW", func(ctx *kt.Context) {
+			testAllDBsRW(ctx)
 		})
 	}
-	clients.RunAdmin(t, func(t *testing.T) {
-		conf.Skip(t)
+	ctx.RunAdmin(func(ctx *kt.Context) {
 		// t.Parallel()
-		testAllDBs(clients.Admin, conf, conf.StringSlice(t, "expected"), t)
+		testAllDBs(ctx, ctx.Admin, ctx.StringSlice("expected"))
 	})
-	clients.RunNoAuth(t, func(t *testing.T) {
-		conf.Skip(t)
-		// t.Parallel()
-		testAllDBs(clients.NoAuth, conf, conf.StringSlice(t, "expected"), t)
+	ctx.RunNoAuth(func(ctx *kt.Context) {
+		testAllDBs(ctx, ctx.NoAuth, ctx.StringSlice("expected"))
 	})
 }
 
-func testAllDBsRW(clients *kt.Clients, conf kt.SuiteConfig, t *testing.T) {
-	admin := clients.Admin
-	dbName := kt.TestDBName(t)
+func testAllDBsRW(ctx *kt.Context) {
+	admin := ctx.Admin
+	dbName := ctx.TestDBName()
 	defer admin.DestroyDB(dbName)
 	if err := admin.CreateDB(dbName); err != nil {
-		t.Errorf("Failed to create test DB '%s': %s", dbName, err)
+		ctx.Errorf("Failed to create test DB '%s': %s", dbName, err)
 		return
 	}
-	expected := append(conf.StringSlice(t, "expected"), dbName)
-	clients.RunAdmin(t, func(t *testing.T) {
-		conf.Skip(t)
-		testAllDBs(clients.Admin, conf, expected, t)
+	expected := append(ctx.StringSlice("expected"), dbName)
+	ctx.RunAdmin(func(ctx *kt.Context) {
+		testAllDBs(ctx, ctx.Admin, expected)
 	})
-	clients.RunNoAuth(t, func(t *testing.T) {
-		conf.Skip(t)
-		testAllDBs(clients.NoAuth, conf, expected, t)
+	ctx.RunNoAuth(func(ctx *kt.Context) {
+		testAllDBs(ctx, ctx.NoAuth, expected)
 	})
 }
 
-func testAllDBs(client *kivik.Client, conf kt.SuiteConfig, expected []string, t *testing.T) {
+func testAllDBs(ctx *kt.Context, client *kivik.Client, expected []string) {
 	allDBs, err := client.AllDBs()
-	status := conf.Int(t, "status")
-	kt.IsError(err, status, t)
-	if status > 0 {
+	if !ctx.IsExpectedSuccess(err) {
 		return
 	}
 	if d := diff.TextSlices(expected, allDBs); d != "" {
-		t.Errorf("AllDBs() returned unexpected list:\n%s\n", d)
-	}
-	if len(expected) == 0 {
-		return
+		ctx.Errorf("AllDBs() returned unexpected list:\n%s\n", d)
 	}
 }

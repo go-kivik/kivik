@@ -11,17 +11,72 @@ import (
 	"github.com/flimzy/kivik"
 )
 
-// Clients is a collection of client connections with different security access.
-type Clients struct {
+// Context is a collection of client connections with different security access.
+type Context struct {
 	// RW is true if we should run read-write tests.
 	RW bool
 	// Admin is a client connection with database admin priveleges.
 	Admin *kivik.Client
 	// NoAuth isa client connection with no authentication.
 	NoAuth *kivik.Client
+	// Config is the suite config
+	Config SuiteConfig
+	// T is the *testing.T value
+	T *testing.T
 }
 
-type testFunc func(*Clients, SuiteConfig, *testing.T)
+// Skip will skip the currently running test if configuration dictates.
+func (c *Context) Skip() {
+	if c.Config.Bool(c.T, "skip") {
+		c.T.Skip("Test skipped by suite configuration")
+	}
+}
+
+// Skipf is a wrapper around t.Skipf()
+func (c *Context) Skipf(format string, args ...interface{}) {
+	c.T.Skipf(format, args...)
+}
+
+// Logf is a wrapper around t.Logf()
+func (c *Context) Logf(format string, args ...interface{}) {
+	c.T.Logf(format, args...)
+}
+
+//Fatalf is a wrapper around t.Fatalf()
+func (c *Context) Fatalf(format string, args ...interface{}) {
+	c.T.Fatalf(format, args...)
+}
+
+// StringSlice returns a string slice from the config.
+func (c *Context) StringSlice(key string) []string {
+	return c.Config.StringSlice(c.T, key)
+}
+
+func (c *Context) String(key string) string {
+	return c.Config.String(c.T, key)
+}
+
+// Int returns an int from the config.
+func (c *Context) Int(key string) int {
+	return c.Config.Int(c.T, key)
+}
+
+// Run wraps t.Run()
+func (c *Context) Run(name string, fn testFunc) {
+	c.T.Run(name, func(t *testing.T) {
+		ctx := &Context{
+			RW:     c.RW,
+			Admin:  c.Admin,
+			NoAuth: c.NoAuth,
+			Config: c.Config,
+			T:      t,
+		}
+		ctx.Skip()
+		fn(ctx)
+	})
+}
+
+type testFunc func(*Context)
 
 // tests is a map of the format map[suite]map[name]testFunc
 var tests = make(map[string]testFunc)
@@ -34,12 +89,9 @@ func Register(name string, fn testFunc) {
 }
 
 // RunSubtests executes the requested suites of tests against the client.
-func RunSubtests(clients *Clients, conf SuiteConfig, t *testing.T) {
+func RunSubtests(ctx *Context) {
 	for name, fn := range tests {
-		t.Run(name, func(t *testing.T) {
-			conf.Skip(t)
-			fn(clients, conf, t)
-		})
+		ctx.Run(name, fn)
 	}
 }
 
@@ -60,11 +112,11 @@ type namer interface {
 
 // TestDBName generates a randomized string suitable for a database name for
 // testing.
-func TestDBName(t *testing.T) string {
+func (c *Context) TestDBName() string {
 	var id string
 
 	// All this non-sense to support Go < 1.8, which doesn't support t.Name()
-	var ti interface{} = t
+	var ti interface{} = c.T
 	if n, ok := ti.(namer); ok {
 		id = strings.ToLower(n.Name())
 		id = id[strings.Index(id, "/")+1:]
@@ -74,22 +126,32 @@ func TestDBName(t *testing.T) string {
 }
 
 // RunAdmin runs the test function iff c.Admin is set.
-func (c *Clients) RunAdmin(t *testing.T, fn func(*testing.T)) {
+func (c *Context) RunAdmin(fn testFunc) {
 	if c.Admin != nil {
-		t.Run("Admin", fn)
+		c.Run("Admin", fn)
 	}
 }
 
 // RunNoAuth runs the test function iff c.NoAuth is set.
-func (c *Clients) RunNoAuth(t *testing.T, fn func(*testing.T)) {
+func (c *Context) RunNoAuth(fn testFunc) {
 	if c.NoAuth != nil {
-		t.Run("NoAuth", fn)
+		c.Run("NoAuth", fn)
 	}
 }
 
 // RunRW runs the test function iff c.RW is true.
-func (c *Clients) RunRW(t *testing.T, fn func(*testing.T)) {
+func (c *Context) RunRW(fn testFunc) {
 	if c.RW {
-		t.Run("RW", fn)
+		c.Run("RW", fn)
 	}
+}
+
+// Errorf is a wrapper around t.Errorf()
+func (c *Context) Errorf(format string, args ...interface{}) {
+	c.T.Errorf(format, args...)
+}
+
+// Parallel is a wrapper around t.Parallel()
+func (c *Context) Parallel() {
+	c.T.Parallel()
 }

@@ -25,7 +25,7 @@ func TestPouchLocal(t *testing.T) {
 		t.Errorf("Failed to connect to PouchDB/memdown driver: %s", err)
 		return
 	}
-	clients := &kt.Clients{
+	clients := &kt.Context{
 		RW:    true,
 		Admin: client,
 	}

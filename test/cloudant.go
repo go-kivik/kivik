@@ -8,9 +8,10 @@ import (
 
 func init() {
 	RegisterSuite(SuiteCloudant, kt.SuiteConfig{
-		"AllDBs.expected":                        []string{"_replicator", "_users"},
-		"AllDBs/NoAuth.status":                   http.StatusUnauthorized,
-		"AllDBs/RW/NoAuth.status":                http.StatusUnauthorized,
+		"AllDBs.expected":         []string{"_replicator", "_users"},
+		"AllDBs/NoAuth.status":    http.StatusUnauthorized,
+		"AllDBs/RW/NoAuth.status": http.StatusUnauthorized,
+
 		"Config/Admin/GetAll.status":             http.StatusForbidden,
 		"Config/Admin/GetSection.sections":       []string{"chicken"},
 		"Config/Admin/GetSection/chicken.status": http.StatusForbidden,

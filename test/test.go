@@ -165,27 +165,26 @@ func Test(driver, dsn string, testSuites []string, rw bool, t *testing.T) {
 	}
 }
 
-func runTests(clients *kt.Clients, suite string, t *testing.T) {
+func runTests(ctx *kt.Context, suite string, t *testing.T) {
 	conf, ok := suites[suite]
 	if !ok {
-		t.Skipf("No configuration found for suite '%s'", suite)
+		ctx.Skipf("No configuration found for suite '%s'", suite)
 	}
+	ctx.Config = conf
+	ctx.T = t
 	// This is run as a sub-test so configuration will work nicely.
-	t.Run("PreCleanup", func(t *testing.T) {
-		if conf.Bool(t, "skip") {
-			return
-		}
-		clients.RunAdmin(t, func(t *testing.T) {
-			count, err := doCleanup(clients.Admin, true)
+	ctx.Run("PreCleanup", func(ctx *kt.Context) {
+		ctx.RunAdmin(func(ctx *kt.Context) {
+			count, err := doCleanup(ctx.Admin, true)
 			if count > 0 {
-				t.Logf("Pre-cleanup removed %d databases from previous test runs", count)
+				ctx.Logf("Pre-cleanup removed %d databases from previous test runs", count)
 			}
 			if err != nil {
-				t.Fatalf("Pre-cleanup failed: %s", err)
+				ctx.Fatalf("Pre-cleanup failed: %s", err)
 			}
 		})
 	})
-	kt.RunSubtests(clients, conf, t)
+	kt.RunSubtests(ctx)
 }
 
 func detectCompatibility(client *kivik.Client) ([]string, error) {
@@ -209,7 +208,7 @@ func detectCompatibility(client *kivik.Client) ([]string, error) {
 	return []string{}, errors.New("Unable to automatically determine the proper test suite")
 }
 
-func connectClients(driverName, dsn string, t *testing.T) (*kt.Clients, error) {
+func connectClients(driverName, dsn string, t *testing.T) (*kt.Context, error) {
 	var noAuthDSN string
 	if parsed, err := url.Parse(dsn); err == nil {
 		if parsed.User == nil {
@@ -218,7 +217,7 @@ func connectClients(driverName, dsn string, t *testing.T) (*kt.Clients, error) {
 		parsed.User = nil
 		noAuthDSN = parsed.String()
 	}
-	clients := &kt.Clients{}
+	clients := &kt.Context{}
 	t.Logf("Connecting to %s ...\n", dsn)
 	if client, err := kivik.New(driverName, dsn); err == nil {
 		clients.Admin = client

@@ -13,33 +13,50 @@ func init() {
 }
 
 func allDBs(clients *kt.Clients, conf kt.SuiteConfig, t *testing.T) {
-	t.Run("Admin", func(t *testing.T) {
-		testAllDBs(clients.Admin, conf, t)
+	if clients.RW && clients.Admin != nil {
+		t.Run("RW", func(t *testing.T) {
+			testAllDBsRW(clients, conf, t)
+		})
+	}
+	clients.RunAdmin(t, func(t *testing.T) {
+		t.Parallel()
+		testAllDBs(clients.Admin, conf, conf.StringSlice(t, "expected"), t)
+	})
+	clients.RunNoAuth(t, func(t *testing.T) {
+		t.Parallel()
+		testAllDBs(clients.NoAuth, conf, conf.StringSlice(t, "expected"), t)
 	})
 }
 
-func testAllDBs(client *kivik.Client, conf kt.SuiteConfig, t *testing.T) {
-	t.Parallel()
-	allDBs, err := client.AllDBs()
-	if err != nil {
-		t.Errorf("Failed to get all DBs: %s", err)
+func testAllDBsRW(clients *kt.Clients, conf kt.SuiteConfig, t *testing.T) {
+	admin := clients.Admin
+	dbName := kt.TestDBName(t)
+	defer admin.DestroyDB(dbName)
+	if err := admin.CreateDB(dbName); err != nil {
+		t.Errorf("Failed to create test DB '%s': %s", dbName, err)
 		return
 	}
-	expected := conf.StringSlice(t, "expected")
+	expected := append(conf.StringSlice(t, "expected"), dbName)
+	clients.RunAdmin(t, func(t *testing.T) {
+		testAllDBs(clients.Admin, conf, expected, t)
+	})
+	clients.RunNoAuth(t, func(t *testing.T) {
+		testAllDBs(clients.NoAuth, conf, expected, t)
+	})
+}
+
+func testAllDBs(client *kivik.Client, conf kt.SuiteConfig, expected []string, t *testing.T) {
+	allDBs, err := client.AllDBs()
+	status := conf.Int(t, "status")
+	kt.IsError(err, status, t)
+	if status > 0 {
+		return
+	}
 	if len(allDBs) != len(expected) {
 		d := diff.TextSlices(expected, allDBs)
 		t.Errorf("Found %d databases, expected %d:\n%s\n", len(allDBs), len(expected), d)
 	}
 	if len(expected) == 0 {
 		return
-	}
-	dblist := make(map[string]struct{})
-	for _, db := range allDBs {
-		dblist[db] = struct{}{}
-	}
-	for _, exp := range expected {
-		if _, ok := dblist[exp]; !ok {
-			t.Errorf("Database '%s' missing from allDBs result", exp)
-		}
 	}
 }

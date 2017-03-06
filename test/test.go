@@ -4,12 +4,10 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"math/rand"
 	"net/url"
 	"os"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/flimzy/kivik"
 
@@ -54,19 +52,6 @@ var driverMap = map[string]string{
 	SuiteKivikFS:     "fs",
 }
 
-var rnd *rand.Rand
-
-func init() {
-	rnd = rand.New(rand.NewSource(time.Now().UnixNano()))
-}
-
-// TestDBPrefix is used to prefix temporary database names during tests.
-const TestDBPrefix = "kivik$"
-
-func testDBName() string {
-	return fmt.Sprintf("%s%016x", TestDBPrefix, rnd.Int63())
-}
-
 // ListTests prints a list of available test suites to stdout.
 func ListTests() {
 	fmt.Printf("Available test suites:\n\tauto\n")
@@ -107,7 +92,7 @@ func doCleanup(client *kivik.Client, verbose bool) (int, error) {
 	}
 	var count int
 	for _, dbName := range allDBs {
-		if strings.HasPrefix(dbName, TestDBPrefix) {
+		if strings.HasPrefix(dbName, kt.TestDBPrefix) {
 			if verbose {
 				fmt.Printf("\t--- Deleting %s\n", dbName)
 			}

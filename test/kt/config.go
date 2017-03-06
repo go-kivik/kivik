@@ -50,3 +50,9 @@ func (c SuiteConfig) StringSlice(t *testing.T, key string) []string {
 	v, _ := c.Interface(t, key).([]string)
 	return v
 }
+
+// Int returns an int.
+func (c SuiteConfig) Int(t *testing.T, key string) int {
+	v, _ := c.Interface(t, key).(int)
+	return v
+}

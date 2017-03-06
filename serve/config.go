@@ -14,6 +14,7 @@ func defaultConfig() *config.Config {
 	conf.Set("log", "level", "info")
 	conf.Set("httpd", "enable_compression", "true")
 	conf.Set("httpd", "compression_level", "8")
+	conf.Set("httpd", "port", "5984")
 	return config.New(conf)
 }
 

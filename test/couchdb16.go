@@ -69,5 +69,9 @@ func init() {
 
 		"Get/RW/group/Admin/bogus.status":  kivik.StatusNotFound,
 		"Get/RW/group/NoAuth/bogus.status": kivik.StatusNotFound,
+
+		"Flush.databases":                     []string{"_users", "chicken"},
+		"Flush/NoAuth/chicken/DoFlush.status": kivik.StatusNotFound,
+		"Flush/Admin/chicken/DoFlush.status":  kivik.StatusNotFound,
 	})
 }

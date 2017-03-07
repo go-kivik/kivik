@@ -37,5 +37,7 @@ func init() {
 		"ServerInfo.vendor_version": `^0\.0\.1$`,
 
 		"Get.skip": true, // FIXME: Update when driver supports Get
+
+		"Flush.skip": true, // FIXME: Fix this when it is supported
 	})
 }

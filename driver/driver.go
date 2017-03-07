@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"time"
 )
 
 // Driver is the interface that must be implemented by a database driver.
@@ -100,9 +101,17 @@ type DB interface {
 	// Close() error
 }
 
-// type DBFlusher interface {
-// 	// Flush() // _ensure_full_commit
-// }
+// DBFlusher is an optional interface that may be implemented by a database
+// that can force a flush of the database backend file(s) to disk or other
+// permanent storage.
+type DBFlusher interface {
+	// Flush requests a flush of disk cache to disk or other permanent storage.
+	// The response a timestamp when the database backend opened the storage
+	// backend.
+	//
+	// See http://docs.couchdb.org/en/2.0.0/api/database/compact.html#db-ensure-full-commit
+	Flush() (time.Time, error)
+}
 
 // Header is an optional interface that a DB may implement. If it is not
 // impemented, Get() will be used instead.

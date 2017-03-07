@@ -68,5 +68,11 @@ func init() {
 		"Get/RW/group/Admin/bogus.status":  kivik.StatusNotFound,
 
 		"Put/RW/NoAuth/Create.status": kivik.StatusUnauthorized,
+
+		"Flush.databases":                           []string{"_users", "chicken"},
+		"Flush/Admin/chicken/DoFlush.status":        kivik.StatusNotFound,
+		"Flush/NoAuth/chicken/DoFlush.status":       kivik.StatusNotFound,
+		"Flush/NoAuth/_users/DoFlush.status":        kivik.StatusUnauthorized,
+		"Flush/Admin/_users/DoFlush/Timestamp.skip": true, // Cloudant always sets the timestamp to 0
 	})
 }

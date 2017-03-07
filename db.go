@@ -2,6 +2,7 @@ package kivik
 
 import (
 	"strings"
+	"time"
 
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/errors"
@@ -38,4 +39,16 @@ func (db *DB) Put(docID string, doc interface{}) (rev string, err error) {
 		return "", errors.Status(errors.StatusBadRequest, "invalid document ID")
 	}
 	return db.driverDB.Put(docID, doc)
+}
+
+// Flush requests a flush of disk cache to disk or other permanent storage.
+// The response a timestamp when the database backend opened the storage
+// backend.
+//
+// See http://docs.couchdb.org/en/2.0.0/api/database/compact.html#db-ensure-full-commit
+func (db *DB) Flush() (time.Time, error) {
+	if flusher, ok := db.driverDB.(driver.DBFlusher); ok {
+		return flusher.Flush()
+	}
+	return time.Time{}, ErrNotImplemented
 }

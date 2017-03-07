@@ -55,5 +55,7 @@ func init() {
 		"Get.skip": true, // FIXME: Fix this when we can delete database
 
 		"Put.skip": true, // FIXME: Fix this when we can write docs
+
+		"Flush.skip": true, // FIXME: Fix this when it is supported
 	})
 }

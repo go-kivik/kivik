@@ -1,15 +1,16 @@
 package test
 
 import (
-	"errors"
 	"flag"
 	"fmt"
+	"net/http"
 	"net/url"
 	"os"
 	"strings"
 	"testing"
 
 	"github.com/flimzy/kivik"
+	"github.com/flimzy/kivik/errors"
 	"github.com/flimzy/kivik/test/kt"
 
 	// Tests
@@ -93,12 +94,14 @@ func doCleanup(client *kivik.Client, verbose bool) (int, error) {
 	}
 	var count int
 	for _, dbName := range allDBs {
+		// FIXME: This filtering should be possible in AllDBs(), but all the
+		// backends need to support it first.
 		if strings.HasPrefix(dbName, kt.TestDBPrefix) {
 			if verbose {
 				fmt.Printf("\t--- Deleting %s\n", dbName)
 			}
 			err := client.DestroyDB(dbName)
-			if err != nil {
+			if err != nil && errors.StatusCode(err) != http.StatusNotFound {
 				return count, err
 			}
 			count++

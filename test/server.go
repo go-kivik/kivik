@@ -23,8 +23,9 @@ func init() {
 		"Config/RW/NoAuth.skip":                      true, // FIXME: Update this when the server supports auth
 		"Config/RW.skip":                             true, // FIXME: Update this when the server can write config
 
-		"CreateDB/NoAuth.status":         http.StatusUnauthorized,
-		"CreateDB/Admin/Recreate.status": http.StatusPreconditionFailed,
+		"CreateDB/RW.skip": true, // FIXME: Update when the server can destroy databases
+		// "CreateDB/NoAuth.status":         http.StatusUnauthorized,
+		// "CreateDB/Admin/Recreate.status": http.StatusPreconditionFailed,
 
 		"AllDocs/Admin.databases":  []string{"foo"},
 		"AllDocs/Admin/foo.status": http.StatusNotFound,

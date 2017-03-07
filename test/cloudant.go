@@ -25,8 +25,8 @@ func init() {
 		"Config/RW/NoAuth/Delete.status":         http.StatusUnauthorized,
 		"Config/RW/Admin/Delete.status":          http.StatusForbidden,
 
-		"CreateDB/NoAuth.status":         http.StatusUnauthorized,
-		"CreateDB/Admin/Recreate.status": http.StatusPreconditionFailed,
+		"CreateDB/RW/NoAuth.status":         http.StatusUnauthorized,
+		"CreateDB/RW/Admin/Recreate.status": http.StatusPreconditionFailed,
 
 		"AllDocs/Admin.databases":            []string{"_replicator", "chicken"},
 		"AllDocs/Admin/_replicator.expected": []string{"_design/_replicator"},

@@ -31,8 +31,8 @@ func init() {
 		"Config/RW/Admin/Delete/NonExistantKey.status":     http.StatusNotFound,
 		"Config/RW/Admin/Delete/NonExistantSection.status": http.StatusNotFound,
 
-		"CreateDB/NoAuth.status":         http.StatusUnauthorized,
-		"CreateDB/Admin/Recreate.status": http.StatusPreconditionFailed,
+		"CreateDB/RW/NoAuth.status":         http.StatusUnauthorized,
+		"CreateDB/RW/Admin/Recreate.status": http.StatusPreconditionFailed,
 
 		"AllDocs/Admin.databases":            []string{"_replicator", "chicken"},
 		"AllDocs/Admin/_replicator.expected": []string{"_design/_replicator"},

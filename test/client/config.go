@@ -28,65 +28,72 @@ func configTest(ctx *kt.Context) {
 }
 
 func configRW(ctx *kt.Context) {
-	ctx.RunAdmin(func(ctx *kt.Context) {
-		ctx.Run("Set", func(ctx *kt.Context) {
-			testSet(ctx, ctx.Admin)
+	ctx.Run("group", func(ctx *kt.Context) {
+		ctx.RunAdmin(func(ctx *kt.Context) {
+			ctx.Parallel()
+			ctx.Run("Set", func(ctx *kt.Context) {
+				testSet(ctx, ctx.Admin, "kivikadmin")
+			})
+			ctx.Run("Delete", func(ctx *kt.Context) {
+				testDelete(ctx, ctx.Admin, "kivikadmin")
+			})
 		})
-		ctx.Run("Delete", func(ctx *kt.Context) {
-			testDelete(ctx, ctx.Admin)
-		})
-	})
-	ctx.RunNoAuth(func(ctx *kt.Context) {
-		ctx.Run("Set", func(ctx *kt.Context) {
-			testSet(ctx, ctx.NoAuth)
-		})
-		ctx.Run("Delete", func(ctx *kt.Context) {
-			testDelete(ctx, ctx.NoAuth)
+		ctx.RunNoAuth(func(ctx *kt.Context) {
+			ctx.Parallel()
+			ctx.Run("Set", func(ctx *kt.Context) {
+				testSet(ctx, ctx.NoAuth, "kiviknoauth")
+			})
+			ctx.Run("Delete", func(ctx *kt.Context) {
+				testDelete(ctx, ctx.NoAuth, "kiviknoauth")
+			})
 		})
 	})
 }
 
-func testSet(ctx *kt.Context, client *kivik.Client) {
+func testSet(ctx *kt.Context, client *kivik.Client, name string) {
+	ctx.Parallel()
 	c, _ := client.Config()
-	defer c.Delete("kivik", "kivik")
-	err := c.Set("kivik", "kivik", "kivik")
+	defer c.Delete(name, name)
+	err := c.Set(name, name, name)
 	if !ctx.IsExpectedSuccess(err) {
 		return
 	}
 	// Set should be 100% idempotent, so check that we get the same result
-	err2 := c.Set("kivik", "kivik", "kivik")
+	err2 := c.Set(name, name, name+name)
 	if errors.StatusCode(err) != errors.StatusCode(err2) {
 		ctx.Errorf("Resetting config resulted in a different error. %s followed by %s", err, err2)
 		return
 	}
 	ctx.Run("Retreive", func(ctx *kt.Context) {
-		value, err := c.Get("kivik", "kivik")
+		value, err := c.Get(name, name)
 		if !ctx.IsExpectedSuccess(err) {
 			return
 		}
-		if value != "kivik" {
-			ctx.Errorf("Stored 'kivik', but retrieved '%s'", value)
+		if value != name+name {
+			ctx.Errorf("Stored '%s', but retrieved '%s'", name+name, value)
 		}
 	})
 }
 
-func testDelete(ctx *kt.Context, client *kivik.Client) {
+func testDelete(ctx *kt.Context, client *kivik.Client, secName string) {
+	ctx.Parallel()
 	ac, _ := ctx.Admin.Config()
 	c, _ := client.Config()
-	_ = ac.Set("kivik", "foo", "bar")
-	defer ac.Delete("kivik", "foo")
+	_ = ac.Set(secName, "foo", "bar")
+	defer ac.Delete(secName, "foo")
 	ctx.Run("NonExistantSection", func(ctx *kt.Context) {
-		ctx.CheckError(c.Delete("kivikkivik", "xyz"))
+		ctx.CheckError(c.Delete(secName+"nonexistant", "xyz"))
 	})
 	ctx.Run("NonExistantKey", func(ctx *kt.Context) {
-		ctx.CheckError(c.Delete("kivik", "bar"))
+		ctx.CheckError(c.Delete(secName, "baz"))
 	})
 	ctx.Run("ExistingKey", func(ctx *kt.Context) {
-		ctx.CheckError(c.Delete("kivik", "foo"))
+		ctx.CheckError(c.Delete(secName, "foo"))
 	})
 }
 
 func testConfig(ctx *kt.Context, client *kivik.Client) {
+	ctx.Parallel()
 	var c *config.Config
 	{
 		var err error

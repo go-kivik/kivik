@@ -12,17 +12,16 @@ func init() {
 func createDB(ctx *kt.Context) {
 	ctx.RunRW(func(ctx *kt.Context) {
 		ctx.RunAdmin(func(ctx *kt.Context) {
-			ctx.Parallel()
 			testCreateDB(ctx, ctx.Admin)
 		})
 		ctx.RunNoAuth(func(ctx *kt.Context) {
-			ctx.Parallel()
 			testCreateDB(ctx, ctx.NoAuth)
 		})
 	})
 }
 
 func testCreateDB(ctx *kt.Context, client *kivik.Client) {
+	ctx.Parallel()
 	dbName := ctx.TestDBName()
 	defer ctx.Admin.DestroyDB(dbName)
 	if !ctx.IsExpectedSuccess(client.CreateDB(dbName)) {

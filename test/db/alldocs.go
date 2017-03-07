@@ -35,11 +35,13 @@ func testAllDocsRW(ctx *kt.Context) {
 		ctx.Errorf("Failed to set up temp db: %s", err)
 	}
 	defer ctx.Admin.DestroyDB(dbName)
-	ctx.RunAdmin(func(ctx *kt.Context) {
-		doTest(ctx, ctx.Admin, dbName, 0, expected)
-	})
-	ctx.RunNoAuth(func(ctx *kt.Context) {
-		doTest(ctx, ctx.NoAuth, dbName, 0, expected)
+	ctx.Run("group", func(ctx *kt.Context) {
+		ctx.RunAdmin(func(ctx *kt.Context) {
+			doTest(ctx, ctx.Admin, dbName, 0, expected)
+		})
+		ctx.RunNoAuth(func(ctx *kt.Context) {
+			doTest(ctx, ctx.NoAuth, dbName, 0, expected)
+		})
 	})
 }
 
@@ -83,6 +85,7 @@ func testAllDocs(ctx *kt.Context, client *kivik.Client) {
 }
 
 func doTest(ctx *kt.Context, client *kivik.Client, dbName string, expOffset int, expected []string) {
+	ctx.Parallel()
 	db, err := client.DB(dbName)
 	// Errors may be deferred here, so only return if we actually get
 	// an error.

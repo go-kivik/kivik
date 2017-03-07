@@ -27,17 +27,20 @@ func dbExists(ctx *kt.Context) {
 			ctx.Errorf("Failed to create test DB: %s", err)
 			return
 		}
-		ctx.RunAdmin(func(ctx *kt.Context) {
-			checkDBExists(ctx, ctx.Admin, dbName)
-		})
-		ctx.RunNoAuth(func(ctx *kt.Context) {
-			checkDBExists(ctx, ctx.NoAuth, dbName)
+		ctx.Run("group", func(ctx *kt.Context) {
+			ctx.RunAdmin(func(ctx *kt.Context) {
+				checkDBExists(ctx, ctx.Admin, dbName)
+			})
+			ctx.RunNoAuth(func(ctx *kt.Context) {
+				checkDBExists(ctx, ctx.NoAuth, dbName)
+			})
 		})
 	})
 }
 
 func checkDBExists(ctx *kt.Context, client *kivik.Client, dbName string) {
 	ctx.Run(dbName, func(ctx *kt.Context) {
+		ctx.Parallel()
 		exists, err := client.DBExists(dbName)
 		if !ctx.IsExpectedSuccess(err) {
 			return

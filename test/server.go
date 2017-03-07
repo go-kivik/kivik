@@ -29,10 +29,11 @@ func init() {
 
 		"AllDocs/Admin.databases":  []string{"foo"},
 		"AllDocs/Admin/foo.status": http.StatusNotFound,
-		"AllDocs/RW.skip":          true, // FIXME: Not sure why this is broken
+		"AllDocs/RW.skip":          true, // FIXME: Update when the server can destroy databases
 
 		"DBExists.databases":            []string{"chicken"},
 		"DBExists/Admin/chicken.exists": false,
-		"DBExists/RW/Admin.exists":      true,
+		"DBExists/RW.skip":              true, // FIXME: Update when the server can destroy databases
+		// "DBExists/RW/Admin.exists":      true,
 	})
 }

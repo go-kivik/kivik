@@ -24,5 +24,8 @@ func init() {
 		"DBExists/RW/Admin.exists":      true,
 
 		"Membership.status": http.StatusNotImplemented,
+
+		"UUIDs.counts": []int{1},
+		"UUIDs.status": http.StatusNotImplemented,
 	})
 }

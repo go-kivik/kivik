@@ -37,5 +37,9 @@ func init() {
 		// "DBExists/RW/Admin.exists":      true,
 
 		"Membership.status": http.StatusMethodNotAllowed, // FIXME: Make the server respond with 404, or unimplemented
+
+		"UUIDs/Admin.counts":         []int{-1, 0, 1, 10},
+		"UUIDs.status":               http.StatusMethodNotAllowed, // FIXME: Implement UUIDs in the server
+		"UUIDs/Admin/-1Count.status": http.StatusBadRequest,
 	})
 }

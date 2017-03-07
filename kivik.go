@@ -2,6 +2,7 @@ package kivik
 
 import (
 	"fmt"
+	"net/http"
 	"regexp"
 
 	"github.com/flimzy/kivik/driver"
@@ -58,6 +59,9 @@ func (c *Client) AllDBs() ([]string, error) {
 // method may not be implemented by all backends, in which case an error will
 // be returned. Generally, there are better ways to generate UUIDs.
 func (c *Client) UUIDs(count int) ([]string, error) {
+	if count < 0 {
+		return nil, errors.Status(http.StatusBadRequest, "count must be a positive integer")
+	}
 	if uuider, ok := c.driverClient.(driver.UUIDer); ok {
 		return uuider.UUIDs(count)
 	}

@@ -47,5 +47,9 @@ func init() {
 
 		"Membership.all_min_count":     2,
 		"Membership.cluster_min_count": 2,
+
+		"UUIDs.counts":                []int{-1, 0, 1, 10},
+		"UUIDs/Admin/-1Count.status":  http.StatusBadRequest,
+		"UUIDs/NoAuth/-1Count.status": http.StatusBadRequest,
 	})
 }

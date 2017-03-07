@@ -51,5 +51,9 @@ func init() {
 		"DBExists/RW/group/NoAuth.exists": true,
 
 		"Membership.status": http.StatusBadRequest,
+
+		"UUIDs.counts":                []int{-1, 0, 1, 10},
+		"UUIDs/Admin/-1Count.status":  http.StatusBadRequest,
+		"UUIDs/NoAuth/-1Count.status": http.StatusBadRequest,
 	})
 }

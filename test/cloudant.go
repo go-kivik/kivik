@@ -53,5 +53,9 @@ func init() {
 
 		"Log/Admin.status":  kivik.StatusForbidden,
 		"Log/NoAuth.status": kivik.StatusUnauthorized,
+
+		"ServerInfo.version":        `^2\.0\.0$`,
+		"ServerInfo.vendor":         `^IBM Cloudant$`,
+		"ServerInfo.vendor_version": `^\d\d\d\d$`,
 	})
 }

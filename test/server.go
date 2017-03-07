@@ -45,5 +45,9 @@ func init() {
 		"Log/Admin/Offset-1000.status":        http.StatusBadRequest,
 		"Log/Admin/HTTP/TextBytes.status":     http.StatusBadRequest,
 		"Log/Admin/HTTP/NegativeBytes.status": http.StatusBadRequest,
+
+		"ServerInfo.version":        `^1\.6\.1$`,
+		"ServerInfo.vendor":         "Kivik",
+		"ServerInfo.vendor_version": `^0\.0\.1$`,
 	})
 }

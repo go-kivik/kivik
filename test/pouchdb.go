@@ -20,6 +20,10 @@ func init() {
 		"AllDocs/Admin.skip":  true,
 		"AllDocs/NoAuth.skip": true,
 		"AllDocs/RW.skip":     true, // FIXME: Not sure why this is broken
+
+		"ServerInfo.version":        `^1\.6\.1$`,
+		"ServerInfo.vendor":         "Kivik",
+		"ServerInfo.vendor_version": `^0\.0\.1$`,
 	})
 	RegisterSuite(SuitePouchRemote, kt.SuiteConfig{
 		"PreCleanup.skip": true,
@@ -40,5 +44,9 @@ func init() {
 		"AllDocs/NoAuth.databases":           []string{"_replicator"},
 		"AllDocs/NoAuth/_replicator.status":  http.StatusForbidden,
 		"AllDocs/RW.skip":                    true, // FIXME: Not sure why this is broken
+
+		"ServerInfo.version":        `^1\.6\.1$`,
+		"ServerInfo.vendor":         "Kivik",
+		"ServerInfo.vendor_version": `^0\.0\.1$`,
 	})
 }

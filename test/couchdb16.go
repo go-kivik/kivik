@@ -60,5 +60,9 @@ func init() {
 		"Log/Admin/Offset-1000.skip":          true, // This appears to trigger a bug in CouchDB, that sometimes returns 500, and sometimes returns a log
 		"Log/Admin/HTTP/NegativeBytes.status": http.StatusInternalServerError,
 		"Log/Admin/HTTP/TextBytes.status":     http.StatusInternalServerError,
+
+		"ServerInfo.version":        `^1\.6\.1$`,
+		"ServerInfo.vendor":         `^The Apache Software Foundation$`,
+		"ServerInfo.vendor_version": `^1\.6\.1$`,
 	})
 }

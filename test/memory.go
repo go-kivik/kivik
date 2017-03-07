@@ -30,5 +30,9 @@ func init() {
 
 		"Log.status":          http.StatusNotImplemented,
 		"Log/Admin/HTTP.skip": true,
+
+		"ServerInfo.version":        `^0\.0\.1$`,
+		"ServerInfo.vendor":         `^Kivik Memory Adaptor$`,
+		"ServerInfo.vendor_version": `^0\.0\.1$`,
 	})
 }

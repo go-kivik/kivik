@@ -83,8 +83,15 @@ func (c *Context) StringSlice(key string) []string {
 	return c.Config.StringSlice(c.T, key)
 }
 
+// String returns a string from config.
 func (c *Context) String(key string) string {
 	return c.Config.String(c.T, key)
+}
+
+// MustString returns a string from config, or fails if the value is unset.
+func (c *Context) MustString(key string) string {
+	c.MustBeSet(key)
+	return c.String(key)
 }
 
 // Int returns an int from the config.

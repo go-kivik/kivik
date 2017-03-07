@@ -102,6 +102,7 @@ func rawLogTest(ctx *kt.Context, client *kivik.Client, name, path string) {
 		resp, err := httpClient.Do(req)
 		if err != nil {
 			ctx.Errorf("Failed to send HTTP request: %s", err)
+			return
 		}
 		ctx.CheckError(couchdb.ResponseError(resp))
 	})

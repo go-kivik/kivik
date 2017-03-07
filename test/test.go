@@ -238,3 +238,17 @@ func connectClients(driverName, dsn string, t *testing.T) (*kt.Context, error) {
 
 	return clients, nil
 }
+
+func doTest(suite, envName string, t *testing.T) {
+	dsn := os.Getenv(envName)
+	if dsn == "" {
+		t.Skipf("%s: %s DSN not set; skipping tests", envName, suite)
+	}
+	clients, err := connectClients(driverMap[suite], dsn, t)
+	if err != nil {
+		t.Errorf("Failed to connect to %s: %s\n", suite, err)
+		return
+	}
+	clients.RW = true
+	runTests(clients, suite, t)
+}

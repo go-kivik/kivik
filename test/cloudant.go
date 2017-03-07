@@ -66,5 +66,7 @@ func init() {
 		"Get/RW/group/NoAuth/bob.status":   kivik.StatusUnauthorized,
 		"Get/RW/group/NoAuth/bogus.status": kivik.StatusUnauthorized,
 		"Get/RW/group/Admin/bogus.status":  kivik.StatusNotFound,
+
+		"Put/RW/NoAuth/Create.status": kivik.StatusUnauthorized,
 	})
 }

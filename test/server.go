@@ -53,5 +53,7 @@ func init() {
 		"ServerInfo.vendor_version": `^0\.0\.1$`,
 
 		"Get.skip": true, // FIXME: Fix this when we can delete database
+
+		"Put.skip": true, // FIXME: Fix this when we can write docs
 	})
 }

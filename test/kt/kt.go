@@ -47,6 +47,25 @@ func (c *Context) Fatalf(format string, args ...interface{}) {
 	c.T.Fatalf(format, args...)
 }
 
+// MustBeSet ends the test with a failure if the config key is not set.
+func (c *Context) MustBeSet(key string) {
+	if !c.IsSet(key) {
+		c.T.Fatalf("'%s' not set. Please configure this test.", key)
+	}
+}
+
+// MustStringSlice returns a string slice, or fails if the value is unset.
+func (c *Context) MustStringSlice(key string) []string {
+	c.MustBeSet(key)
+	return c.StringSlice(key)
+}
+
+// MustBool returns a bool, or fails if the value is unset.
+func (c *Context) MustBool(key string) bool {
+	c.MustBeSet(key)
+	return c.Bool(key)
+}
+
 // StringSlice returns a string slice from the config.
 func (c *Context) StringSlice(key string) []string {
 	return c.Config.StringSlice(c.T, key)
@@ -59,6 +78,11 @@ func (c *Context) String(key string) string {
 // Int returns an int from the config.
 func (c *Context) Int(key string) int {
 	return c.Config.Int(c.T, key)
+}
+
+// Bool returns a bool from the config.
+func (c *Context) Bool(key string) bool {
+	return c.Config.Bool(c.T, key)
 }
 
 // IsSet returns true if the value is set in the configuration.

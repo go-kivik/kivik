@@ -18,5 +18,9 @@ func init() {
 		"AllDocs.skip": true, // FIXME: Not yet implemented
 		// "AllDocs/Admin.databases":  []string{"foo"},
 		// "AllDocs/Admin/foo.status": http.StatusNotFound,
+
+		"DBExists/Admin.databases":      []string{"chicken"},
+		"DBExists/Admin/chicken.exists": false,
+		"DBExists/RW/Admin.exists":      true,
 	})
 }

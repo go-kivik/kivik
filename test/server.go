@@ -29,5 +29,9 @@ func init() {
 		"AllDocs/Admin.databases":  []string{"foo"},
 		"AllDocs/Admin/foo.status": http.StatusNotFound,
 		"AllDocs/RW.skip":          true, // FIXME: Not sure why this is broken
+
+		"DBExists.databases":            []string{"chicken"},
+		"DBExists/Admin/chicken.exists": false,
+		"DBExists/RW/Admin.exists":      true,
 	})
 }

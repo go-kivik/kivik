@@ -41,5 +41,13 @@ func init() {
 		"AllDocs/NoAuth.databases":           []string{"_replicator", "chicken"},
 		"AllDocs/NoAuth/_replicator.status":  http.StatusForbidden,
 		"AllDocs/NoAuth/chicken.status":      http.StatusNotFound,
+
+		"DBExists.databases":             []string{"_users", "chicken"},
+		"DBExists/Admin/_users.exists":   true,
+		"DBExists/Admin/chicken.exists":  false,
+		"DBExists/NoAuth/_users.exists":  true,
+		"DBExists/NoAuth/chicken.exists": false,
+		"DBExists/RW/Admin.exists":       true,
+		"DBExists/RW/NoAuth.exists":      true,
 	})
 }

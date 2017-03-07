@@ -18,10 +18,10 @@ func (c *Context) CheckError(err error) (match bool, success bool) {
 		return false, true
 	default:
 		if status == 0 {
-			c.Errorf("Unexpected failure: %s", err)
+			c.Errorf("Unexpected failure: %d/%s", errors.StatusCode(err), err)
 			return false, false
 		}
-		c.Errorf("Unexpected failure state.\nExpected: %d/%s\n  Actual: %s", status, http.StatusText(status), err)
+		c.Errorf("Unexpected failure state.\nExpected: %d/%s\n  Actual: %d/%s", status, http.StatusText(status), errors.StatusCode(err), err)
 		return false, false
 	}
 }

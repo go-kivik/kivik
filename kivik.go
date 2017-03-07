@@ -2,6 +2,7 @@ package kivik
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"regexp"
 
@@ -117,4 +118,14 @@ func (c *Client) Authenticate(a interface{}) error {
 		return auth.Authenticate(a)
 	}
 	return ErrNotImplemented
+}
+
+// HTTPRequest returns an HTTP request to the CouchDB server. The path is
+// expected to be a path relative to the CouchDB root. Any authentication
+// headers will be set in the returned request.
+func (c *Client) HTTPRequest(method, path string, body io.Reader) (*http.Request, *http.Client, error) {
+	if reqer, ok := c.driverClient.(driver.HTTPRequester); ok {
+		return reqer.HTTPRequest(method, path, body)
+	}
+	return nil, nil, ErrNotImplemented
 }

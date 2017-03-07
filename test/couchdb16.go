@@ -55,5 +55,10 @@ func init() {
 		"UUIDs.counts":                []int{-1, 0, 1, 10},
 		"UUIDs/Admin/-1Count.status":  http.StatusBadRequest,
 		"UUIDs/NoAuth/-1Count.status": http.StatusBadRequest,
+
+		"Log/NoAuth.status":                   http.StatusUnauthorized,
+		"Log/Admin/Offset-1000.skip":          true, // This appears to trigger a bug in CouchDB, that sometimes returns 500, and sometimes returns a log
+		"Log/Admin/HTTP/NegativeBytes.status": http.StatusInternalServerError,
+		"Log/Admin/HTTP/TextBytes.status":     http.StatusInternalServerError,
 	})
 }

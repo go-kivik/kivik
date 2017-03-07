@@ -66,6 +66,18 @@ func (c *Context) MustBool(key string) bool {
 	return c.Bool(key)
 }
 
+// IntSlice returns a []int from config.
+func (c *Context) IntSlice(key string) []int {
+	v, _ := c.Config.Interface(c.T, key).([]int)
+	return v
+}
+
+// MustIntSlice returns a []int, or fails if the value is unset.
+func (c *Context) MustIntSlice(key string) []int {
+	c.MustBeSet(key)
+	return c.IntSlice(key)
+}
+
 // StringSlice returns a string slice from the config.
 func (c *Context) StringSlice(key string) []string {
 	return c.Config.StringSlice(c.T, key)
@@ -78,6 +90,12 @@ func (c *Context) String(key string) string {
 // Int returns an int from the config.
 func (c *Context) Int(key string) int {
 	return c.Config.Int(c.T, key)
+}
+
+// MustInt returns an int from the config, or fails if the value is unset.
+func (c *Context) MustInt(key string) int {
+	c.MustBeSet(key)
+	return c.Int(key)
 }
 
 // Bool returns a bool from the config.
@@ -172,6 +190,16 @@ func (c *Context) RunNoAuth(fn testFunc) {
 func (c *Context) RunRW(fn testFunc) {
 	if c.RW {
 		c.Run("RW", fn)
+	}
+}
+
+// RunRO runs the test function iff c.RW is false. Note that unlike RunRW, this
+// does not start a new subtest. This should usually be run in conjunction with
+// RunRW, to run only RO or RW tests, in situations where running both would be
+// redundant.
+func (c *Context) RunRO(fn testFunc) {
+	if !c.RW {
+		fn(c)
 	}
 }
 

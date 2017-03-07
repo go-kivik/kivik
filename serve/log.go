@@ -1,6 +1,10 @@
 package serve
 
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/flimzy/kivik/errors"
+)
 
 const (
 	// DefaultLogBytes is the default number of log bytes to return.
@@ -21,12 +25,18 @@ func log(w http.ResponseWriter, r *http.Request) error {
 	if !ok {
 		length = DefaultLogBytes
 	}
+	if length < 0 {
+		return errors.Status(http.StatusBadRequest, "bytes must be a positive integer")
+	}
 	offset, ok, err := intQueryParam(r, "offset")
 	if err != nil {
 		return err
 	}
 	if !ok {
 		offset = DefaultLogOffset
+	}
+	if offset < 0 {
+		return errors.Status(http.StatusBadRequest, "offset must be a positive integer")
 	}
 
 	buf := make([]byte, length)

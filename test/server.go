@@ -41,5 +41,9 @@ func init() {
 		"UUIDs/Admin.counts":         []int{-1, 0, 1, 10},
 		"UUIDs.status":               http.StatusMethodNotAllowed, // FIXME: Implement UUIDs in the server
 		"UUIDs/Admin/-1Count.status": http.StatusBadRequest,
+
+		"Log/Admin/Offset-1000.status":        http.StatusBadRequest,
+		"Log/Admin/HTTP/TextBytes.status":     http.StatusBadRequest,
+		"Log/Admin/HTTP/NegativeBytes.status": http.StatusBadRequest,
 	})
 }

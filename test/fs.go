@@ -27,5 +27,8 @@ func init() {
 
 		"UUIDs.counts": []int{1},
 		"UUIDs.status": http.StatusNotImplemented,
+
+		"Log.status":          http.StatusNotImplemented,
+		"Log/Admin/HTTP.skip": true,
 	})
 }

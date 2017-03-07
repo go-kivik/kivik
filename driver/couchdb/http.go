@@ -10,6 +10,16 @@ import (
 	"net/url"
 )
 
+func (c *client) HTTPRequest(method, path string, body io.Reader) (*http.Request, *http.Client, error) {
+	parsedURL, err := url.Parse(path)
+	if err != nil {
+		return nil, nil, err
+	}
+	fullURL := c.url(parsedURL.Path, parsedURL.Query())
+	req, err := http.NewRequest(method, fullURL, body)
+	return req, c.httpClient, err
+}
+
 const (
 	typeJSON  = "application/json"
 	typeText  = "text/plain"

@@ -44,5 +44,8 @@ func init() {
 		"DBExists/NoAuth/chicken.exists":  false,
 		"DBExists/RW/group/Admin.exists":  true,
 		"DBExists/RW/group/NoAuth.status": http.StatusUnauthorized,
+
+		"Membership.all_min_count":     2,
+		"Membership.cluster_min_count": 2,
 	})
 }

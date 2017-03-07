@@ -35,5 +35,7 @@ func init() {
 		"DBExists/Admin/chicken.exists": false,
 		"DBExists/RW.skip":              true, // FIXME: Update when the server can destroy databases
 		// "DBExists/RW/Admin.exists":      true,
+
+		"Membership.status": http.StatusMethodNotAllowed, // FIXME: Make the server respond with 404, or unimplemented
 	})
 }

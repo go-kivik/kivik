@@ -49,5 +49,7 @@ func init() {
 		"DBExists/NoAuth/chicken.exists":  false,
 		"DBExists/RW/group/Admin.exists":  true,
 		"DBExists/RW/group/NoAuth.exists": true,
+
+		"Membership.status": http.StatusBadRequest,
 	})
 }

@@ -22,5 +22,7 @@ func init() {
 		"DBExists/Admin.databases":      []string{"chicken"},
 		"DBExists/Admin/chicken.exists": false,
 		"DBExists/RW/Admin.exists":      true,
+
+		"Membership.status": http.StatusNotImplemented,
 	})
 }

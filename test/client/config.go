@@ -96,7 +96,6 @@ func testConfig(ctx *kt.Context, client *kivik.Client) {
 		}
 	}
 	ctx.Run("GetAll", func(ctx *kt.Context) {
-		ctx.Parallel()
 		all, err := c.GetAll()
 		if !ctx.IsSuccess(err) {
 			return
@@ -111,11 +110,9 @@ func testConfig(ctx *kt.Context, client *kivik.Client) {
 		}
 	})
 	ctx.Run("GetSection", func(ctx *kt.Context) {
-		ctx.Parallel()
 		for _, s := range ctx.StringSlice("sections") {
 			func(secName string) {
 				ctx.Run(secName, func(ctx *kt.Context) {
-					ctx.Parallel()
 					sec, err := c.GetSection(secName)
 					if !ctx.IsExpectedSuccess(err) {
 						return
@@ -133,11 +130,9 @@ func testConfig(ctx *kt.Context, client *kivik.Client) {
 		}
 	})
 	ctx.Run("GetItem", func(ctx *kt.Context) {
-		ctx.Parallel()
 		for _, i := range ctx.StringSlice("items") {
 			func(item string) {
 				ctx.Run(item, func(ctx *kt.Context) {
-					ctx.Parallel()
 					parts := strings.Split(item, ".")
 					secName, key := parts[0], parts[1]
 					value, err := c.Get(secName, key)

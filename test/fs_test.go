@@ -26,6 +26,7 @@ func TestFS(t *testing.T) {
 		return
 	}
 	clients := &kt.Context{
+		RW:    true,
 		Admin: client,
 	}
 	runTests(clients, SuiteKivikFS, t)

@@ -15,6 +15,7 @@ func TestMemory(t *testing.T) {
 		return
 	}
 	clients := &kt.Context{
+		RW:    true,
 		Admin: client,
 	}
 	runTests(clients, SuiteKivikMemory, t)

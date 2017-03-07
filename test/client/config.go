@@ -16,6 +16,12 @@ func init() {
 }
 
 func configTest(ctx *kt.Context) {
+	if _, err := ctx.Admin.Config(); err != nil {
+		if errors.StatusCode(err) != kivik.StatusNotImplemented {
+			ctx.Fatalf("Config() returned error: %s", err)
+		}
+		ctx.Skipf("Config() not supported by driver")
+	}
 	ctx.RunRW(func(ctx *kt.Context) {
 		configRW(ctx)
 	})
@@ -77,18 +83,25 @@ func testSet(ctx *kt.Context, client *kivik.Client, name string) {
 
 func testDelete(ctx *kt.Context, client *kivik.Client, secName string) {
 	ctx.Parallel()
-	ac, _ := ctx.Admin.Config()
 	c, _ := client.Config()
-	_ = ac.Set(secName, "foo", "bar")
+	ac, _ := ctx.Admin.Config()
 	defer ac.Delete(secName, "foo")
-	ctx.Run("NonExistantSection", func(ctx *kt.Context) {
-		ctx.CheckError(c.Delete(secName+"nonexistant", "xyz"))
-	})
-	ctx.Run("NonExistantKey", func(ctx *kt.Context) {
-		ctx.CheckError(c.Delete(secName, "baz"))
-	})
-	ctx.Run("ExistingKey", func(ctx *kt.Context) {
-		ctx.CheckError(c.Delete(secName, "foo"))
+	if !ctx.IsExpected(ac.Set(secName, "foo", "bar")) {
+		return
+	}
+	ctx.Run("group", func(ctx *kt.Context) {
+		ctx.Run("NonExistantSection", func(ctx *kt.Context) {
+			ctx.Parallel()
+			ctx.CheckError(c.Delete(secName+"nonexistant", "xyz"))
+		})
+		ctx.Run("NonExistantKey", func(ctx *kt.Context) {
+			ctx.Parallel()
+			ctx.CheckError(c.Delete(secName, "baz"))
+		})
+		ctx.Run("ExistingKey", func(ctx *kt.Context) {
+			ctx.Parallel()
+			ctx.CheckError(c.Delete(secName, "foo"))
+		})
 	})
 }
 
@@ -103,6 +116,7 @@ func testConfig(ctx *kt.Context, client *kivik.Client) {
 		}
 	}
 	ctx.Run("GetAll", func(ctx *kt.Context) {
+		ctx.Parallel()
 		all, err := c.GetAll()
 		if !ctx.IsSuccess(err) {
 			return
@@ -117,6 +131,7 @@ func testConfig(ctx *kt.Context, client *kivik.Client) {
 		}
 	})
 	ctx.Run("GetSection", func(ctx *kt.Context) {
+		ctx.Parallel()
 		for _, s := range ctx.StringSlice("sections") {
 			func(secName string) {
 				ctx.Run(secName, func(ctx *kt.Context) {
@@ -137,6 +152,7 @@ func testConfig(ctx *kt.Context, client *kivik.Client) {
 		}
 	})
 	ctx.Run("GetItem", func(ctx *kt.Context) {
+		ctx.Parallel()
 		for _, i := range ctx.StringSlice("items") {
 			func(item string) {
 				ctx.Run(item, func(ctx *kt.Context) {

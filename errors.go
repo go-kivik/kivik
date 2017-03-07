@@ -25,6 +25,7 @@ const (
 	StatusRequestedRangeNotSatisfiable = 416
 	StatusExpectationFailed            = 417
 	StatusInternalServerError          = 500
+	StatusNotImplemented               = 501
 )
 
 type kivikError string
@@ -36,7 +37,7 @@ func (e kivikError) Error() string {
 func (e kivikError) StatusCode() int {
 	switch e {
 	case ErrNotImplemented:
-		return http.StatusNotImplemented
+		return StatusNotImplemented
 	default:
 		return 0
 	}

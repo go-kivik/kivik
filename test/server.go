@@ -51,5 +51,7 @@ func init() {
 		"ServerInfo.version":        `^1\.6\.1$`,
 		"ServerInfo.vendor":         "Kivik",
 		"ServerInfo.vendor_version": `^0\.0\.1$`,
+
+		"Get.skip": true, // FIXME: Fix this when we can delete database
 	})
 }

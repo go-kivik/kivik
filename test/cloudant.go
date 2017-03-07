@@ -62,5 +62,9 @@ func init() {
 		"ServerInfo.version":        `^2\.0\.0$`,
 		"ServerInfo.vendor":         `^IBM Cloudant$`,
 		"ServerInfo.vendor_version": `^\d\d\d\d$`,
+
+		"Get/RW/group/NoAuth/bob.status":   kivik.StatusUnauthorized,
+		"Get/RW/group/NoAuth/bogus.status": kivik.StatusUnauthorized,
+		"Get/RW/group/Admin/bogus.status":  kivik.StatusNotFound,
 	})
 }

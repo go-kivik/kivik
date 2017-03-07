@@ -66,5 +66,8 @@ func init() {
 		"ServerInfo.version":        `^1\.6\.1$`,
 		"ServerInfo.vendor":         `^The Apache Software Foundation$`,
 		"ServerInfo.vendor_version": `^1\.6\.1$`,
+
+		"Get/RW/group/Admin/bogus.status":  kivik.StatusNotFound,
+		"Get/RW/group/NoAuth/bogus.status": kivik.StatusNotFound,
 	})
 }

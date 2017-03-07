@@ -35,5 +35,7 @@ func init() {
 		"ServerInfo.version":        `^0\.0\.1$`,
 		"ServerInfo.vendor":         "Kivik",
 		"ServerInfo.vendor_version": `^0\.0\.1$`,
+
+		"Get.skip": true, // FIXME: Update when driver supports Get
 	})
 }

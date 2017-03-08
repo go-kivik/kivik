@@ -62,7 +62,7 @@
 | POST /{db}/_changes
 | POST /{db}/_compact
 | POST /{db}/_compact/{ddoc}
-| POST /{db}/_ensure_full_commit | Flush()    |    | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ |    |
+| POST /{db}/_ensure_full_commit | Flush()    | ✅ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ |    |
 | POST /{db}/_view_cleanup
 | GET /{db}/_security
 | PUT /{db}/_security

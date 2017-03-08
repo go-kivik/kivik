@@ -3,7 +3,7 @@ package pouchdb
 import "errors"
 
 // Authenticator is an authentication interface, which may be implemented by
-// any PouchDB-centric authentication type..
+// any PouchDB-centric authentication type.
 type authenticator interface {
 	authenticate(*client) error
 }

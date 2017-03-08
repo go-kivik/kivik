@@ -3,6 +3,7 @@ package test
 import (
 	"net/http"
 
+	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/test/kt"
 )
 
@@ -56,6 +57,7 @@ func init() {
 
 		"Put.skip": true, // FIXME: Fix this when we can write docs
 
-		"Flush.skip": true, // FIXME: Fix this when it is supported
+		"Flush.databases":                    []string{"chicken"},
+		"Flush/Admin/chicken/DoFlush.status": kivik.StatusNotImplemented,
 	})
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/flimzy/kivik/driver/ouchdb"
@@ -17,7 +18,7 @@ type db struct {
 }
 
 func (d *db) path(path string) string {
-	return d.dbName + "/" + path
+	return d.dbName + "/" + strings.TrimPrefix(path, "/")
 }
 
 func optionsToParams(opts map[string]interface{}) (url.Values, error) {

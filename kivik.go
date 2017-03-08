@@ -12,6 +12,9 @@ import (
 
 // Client is a client connection handle to a CouchDB-like server.
 type Client struct {
+	// AutoFlush turns on the AutoFlush flag for new database connections.
+	AutoFlush bool
+
 	dsn          string
 	driverClient driver.Client
 }
@@ -47,7 +50,8 @@ func (c *Client) ServerInfo() (driver.ServerInfo, error) {
 func (c *Client) DB(dbName string) (*DB, error) {
 	db, err := c.driverClient.DB(dbName)
 	return &DB{
-		driverDB: db,
+		AutoFlush: c.AutoFlush,
+		driverDB:  db,
 	}, err
 }
 

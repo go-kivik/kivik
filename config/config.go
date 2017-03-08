@@ -37,16 +37,17 @@ func (c *Config) Delete(secName, key string) error {
 // GetSection returns a complete config section.
 func (c *Config) GetSection(secName string) (map[string]string, error) {
 	if sectioner, ok := c.Config.(driver.ConfigSection); ok {
-		return sectioner.GetSection(secName)
+		sec, err := sectioner.GetSection(secName)
+		if errors.StatusCode(err) == http.StatusNotFound {
+			err = nil
+		}
+		return sec, err
 	}
 	conf, err := c.GetAll()
 	if err != nil {
 		return nil, err
 	}
-	if sec, ok := conf[secName]; ok {
-		return sec, nil
-	}
-	return nil, errors.Statusf(http.StatusNotFound, "configuration section '%s' not found", secName)
+	return conf[secName], nil
 }
 
 // Get retrieves a specific config value.

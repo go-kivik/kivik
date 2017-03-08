@@ -1,3 +1,5 @@
+// +build !js
+
 package test
 
 import (
@@ -6,14 +8,9 @@ import (
 	"testing"
 
 	"github.com/flimzy/kivik"
+	_ "github.com/flimzy/kivik/driver/fs"
+	"github.com/flimzy/kivik/test/kt"
 )
-
-/*
-
-   The FS driver tests are done here, so they don't run in GopherJS, since
-   there is no FS in the browser.
-
-*/
 
 func TestFS(t *testing.T) {
 	tempDir, err := ioutil.TempDir("", "kivik.test.")
@@ -28,8 +25,9 @@ func TestFS(t *testing.T) {
 		t.Errorf("Failed to connect to FS driver: %s\n", err)
 		return
 	}
-	clients := &Clients{
+	clients := &kt.Context{
+		RW:    true,
 		Admin: client,
 	}
-	RunSubtests(clients, true, SuiteKivikFS, t)
+	runTests(clients, SuiteKivikFS, t)
 }

@@ -2,6 +2,8 @@ package kivik
 
 import (
 	"fmt"
+	"io"
+	"net/http"
 	"regexp"
 
 	"github.com/flimzy/kivik/driver"
@@ -58,6 +60,9 @@ func (c *Client) AllDBs() ([]string, error) {
 // method may not be implemented by all backends, in which case an error will
 // be returned. Generally, there are better ways to generate UUIDs.
 func (c *Client) UUIDs(count int) ([]string, error) {
+	if count < 0 {
+		return nil, errors.Status(http.StatusBadRequest, "count must be a positive integer")
+	}
 	if uuider, ok := c.driverClient.(driver.UUIDer); ok {
 		return uuider.UUIDs(count)
 	}
@@ -113,4 +118,14 @@ func (c *Client) Authenticate(a interface{}) error {
 		return auth.Authenticate(a)
 	}
 	return ErrNotImplemented
+}
+
+// HTTPRequest returns an HTTP request to the CouchDB server. The path is
+// expected to be a path relative to the CouchDB root. Any authentication
+// headers will be set in the returned request.
+func (c *Client) HTTPRequest(method, path string, body io.Reader) (*http.Request, *http.Client, error) {
+	if reqer, ok := c.driverClient.(driver.HTTPRequester); ok {
+		return reqer.HTTPRequest(method, path, body)
+	}
+	return nil, nil, ErrNotImplemented
 }

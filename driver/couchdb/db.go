@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/flimzy/kivik/driver/ouchdb"
 )
@@ -86,4 +87,15 @@ func (d *db) Put(docID string, doc interface{}) (rev string, err error) {
 		Body(bytes.NewReader(body)).
 		DoJSON(&result)
 	return result.Rev, err
+}
+
+func (d *db) Flush() (time.Time, error) {
+	result := struct {
+		T int64 `json:"instance_start_time,string"`
+	}{}
+	err := d.client.newRequest(http.MethodPost, d.path("/_ensure_full_commit")).
+		AddHeader("Accept", typeJSON).
+		AddHeader("Content-Type", typeJSON).
+		DoJSON(&result)
+	return time.Unix(0, 0).Add(time.Duration(result.T) * time.Microsecond), err
 }

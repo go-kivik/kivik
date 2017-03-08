@@ -10,7 +10,7 @@
 - ![Memory Driver](images/memory.png) : Supported by Kivik Memory backend
 - ![Filesystem Driver](images/filesystem.png) : Supported by the Kivik Filesystem backend
 
-## Statuses
+## API Functionality
 
 - ✅ Yes : This feature is fully supported
 - ☑️ Partial : This feature is partially supported
@@ -62,7 +62,7 @@
 | POST /{db}/_changes
 | POST /{db}/_compact
 | POST /{db}/_compact/{ddoc}
-| POST /{db}/_ensure_full_commit
+| POST /{db}/_ensure_full_commit | Flush()    |    | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ |    |
 | POST /{db}/_view_cleanup
 | GET /{db}/_security
 | PUT /{db}/_security
@@ -115,10 +115,10 @@
 2. <a name="pouchAllDbs2"> Unit tests broken in PouchDB due to an [apparent bug](https://github.com/nolanlawson/pouchdb-all-dbs/issues/25) in the pouchdb-all-dbs plugin.
 3. <a name="pouchAllDbs3"> Does not work for remote PouchDB connections, due to a limitation in the `pouchdb-all-dbs` plugin. Perhaps a workaround will be possible in the future.
 4. <a name="couchMembership"> Available for CouchDB 2.0+ servers only.
-5. <a name="pouchDBExists"> PouchDB offers no way to check for the existence of a local database
- without creating it, so `DBExists()` always returns true, `CreateDB()` does not return an error
- if the database already existed, and `DestroyDB()` does not return an error if the database does
- not exist.
+5. <a name="pouchDBExists"> PouchDB offers no way to check for the existence of
+ a local database without creating it, so `DBExists()` always returns true,
+ `CreateDB()` does not return an error if the database already existed, and
+ `DestroyDB()` does not return an error if the database does not exist.
 6. <a name="cookieAuth"> See the CookieAuth section in the [Authentication methods table](#authTable)
 7. <a name="todoConflicts"> **TODO:** Conflicts are not yet tested.
 8. <a name="todoIncludeDocs"> **TODO:** include_docs is not yet tested.
@@ -126,3 +126,15 @@
 10. <a name="todoLimit"> **TODO:** Limits are not yet tested.
 11. <a name="todoAttachments"> **TODO:** Attachments are not yet tested.
 12. <a name="kivikCluster"> There are no plans at present to support clustering.
+
+## HTTP Status Codes
+
+The CouchDB API prescribes some status codes which, to me, don't make a lot of
+sense. This is particularly true of a few error status codes. It seems the folks
+at [Cloudant](https://cloudant.com/) share my opinion, as they have chaned some
+as well.
+
+In particular, the CouchDB API returns a status 500 **Internal Server Error** for
+quite a number of malformed requests.  Example: `/_uuids?count=-1` will return
+500.  Cloudant and Kivik both return 400 **Bad Request** in this case, and in
+many other cases as well, as this seems to better reflect the actual state.

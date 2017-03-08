@@ -9,12 +9,11 @@ import (
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/config"
 	"github.com/flimzy/kivik/driver"
-	_ "github.com/flimzy/kivik/driver/couchdb"
-	_ "github.com/flimzy/kivik/driver/memory"
 	"github.com/flimzy/kivik/driver/proxy"
 	"github.com/flimzy/kivik/logger/memlogger"
 	"github.com/flimzy/kivik/serve"
 	"github.com/flimzy/kivik/serve/config/memconf"
+	"github.com/flimzy/kivik/test/kt"
 )
 
 type customDriver struct {
@@ -53,8 +52,9 @@ func TestServer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to initialize client: %s\n", err)
 	}
-	clients := &Clients{
+	clients := &kt.Context{
+		RW:    true,
 		Admin: client,
 	}
-	RunSubtests(clients, true, SuiteKivikServer, t)
+	runTests(clients, SuiteKivikServer, t)
 }

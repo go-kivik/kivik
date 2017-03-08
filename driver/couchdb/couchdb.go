@@ -42,6 +42,7 @@ type client struct {
 }
 
 var _ driver.Client = &client{}
+var _ driver.HTTPRequester = &client{}
 
 func (c *client) url(path string, query url.Values) string {
 	myURL := *c.baseURL // Make a copy

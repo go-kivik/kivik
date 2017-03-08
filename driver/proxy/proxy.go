@@ -14,6 +14,7 @@ type CompleteClient interface {
 	driver.Logger
 	driver.Cluster
 	driver.Configer
+	driver.HTTPRequester
 }
 
 // NewClient wraps an existing *kivik.Client connection, allowing it to be used
@@ -26,12 +27,7 @@ type client struct {
 	*kivik.Client
 }
 
-var _ driver.Client = &client{}
-var _ driver.Authenticator = &client{}
-var _ driver.UUIDer = &client{}
-var _ driver.Logger = &client{}
-var _ driver.Cluster = &client{}
-var _ driver.Configer = &client{}
+var _ CompleteClient = &client{}
 
 func (c *client) DB(name string) (driver.DB, error) {
 	d, err := c.Client.DB(name)

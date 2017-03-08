@@ -1,6 +1,11 @@
 package driver
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"io"
+	"net/http"
+	"time"
+)
 
 // Driver is the interface that must be implemented by a database driver.
 type Driver interface {
@@ -96,9 +101,17 @@ type DB interface {
 	// Close() error
 }
 
-// type DBFlusher interface {
-// 	// Flush() // _ensure_full_commit
-// }
+// DBFlusher is an optional interface that may be implemented by a database
+// that can force a flush of the database backend file(s) to disk or other
+// permanent storage.
+type DBFlusher interface {
+	// Flush requests a flush of disk cache to disk or other permanent storage.
+	// The response a timestamp when the database backend opened the storage
+	// backend.
+	//
+	// See http://docs.couchdb.org/en/2.0.0/api/database/compact.html#db-ensure-full-commit
+	Flush() (time.Time, error)
+}
 
 // Header is an optional interface that a DB may implement. If it is not
 // impemented, Get() will be used instead.
@@ -165,4 +178,13 @@ type ConfigSection interface {
 // entire configuration for the specific storage backend.
 type ConfigItem interface {
 	Get(secName, key string) (value string, err error)
+}
+
+// HTTPRequester is an optional interface that should be implemented by any
+// client that uses HTTP to talk to a CouchDB server.
+type HTTPRequester interface {
+	// HTTPRequest returns an HTTP request to the CouchDB server, and the internal
+	// *http.Client. The path is expected to be a path relative to the CouchDB
+	// root. In particular, any host or schema in the path are ignored.
+	HTTPRequest(method, path string, body io.Reader) (*http.Request, *http.Client, error)
 }

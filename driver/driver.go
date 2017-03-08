@@ -85,6 +85,8 @@ type DB interface {
 	CreateDoc(doc interface{}) (docID, rev string, err error)
 	// Put writes the document in the database.
 	Put(docID string, doc interface{}) (rev string, err error)
+	// Delete marks the specified document as deleted.
+	Delete(docID, rev string) (newRev string, err error)
 	// GetAttachment()
 	// Compact()
 	// CompactDDoc(ddoc string)

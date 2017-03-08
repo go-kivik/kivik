@@ -40,5 +40,7 @@ func init() {
 		"Get.skip": true, // FIXME: Update when driver supports Get
 
 		"Flush.skip": true,
+
+		"Delete.skip": true, // FIXME: Unimplemented
 	})
 }

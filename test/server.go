@@ -59,5 +59,7 @@ func init() {
 
 		"Flush.databases":                    []string{"chicken"},
 		"Flush/Admin/chicken/DoFlush.status": kivik.StatusNotImplemented,
+
+		"Delete.skip": true, // FIXME: Fix this when we can delete docs.
 	})
 }

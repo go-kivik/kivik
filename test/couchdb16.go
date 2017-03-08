@@ -73,5 +73,12 @@ func init() {
 		"Flush.databases":                     []string{"_users", "chicken"},
 		"Flush/NoAuth/chicken/DoFlush.status": kivik.StatusNotFound,
 		"Flush/Admin/chicken/DoFlush.status":  kivik.StatusNotFound,
+
+		"Delete/RW/Admin/group/MissingDoc.status":        kivik.StatusNotFound,
+		"Delete/RW/Admin/group/InvalidRevFormat.status":  kivik.StatusBadRequest,
+		"Delete/RW/Admin/group/WrongRev.status":          kivik.StatusConflict,
+		"Delete/RW/NoAuth/group/MissingDoc.status":       kivik.StatusNotFound,
+		"Delete/RW/NoAuth/group/InvalidRevFormat.status": kivik.StatusBadRequest,
+		"Delete/RW/NoAuth/group/WrongRev.status":         kivik.StatusConflict,
 	})
 }

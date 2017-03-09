@@ -1,6 +1,7 @@
 package memlogger
 
 import (
+	"bytes"
 	"fmt"
 	"testing"
 	"time"
@@ -12,7 +13,7 @@ type logTest struct {
 	Name      string
 	Messages  []string
 	RingSize  int
-	BufSize   int
+	BufSize   int64
 	ExpectedN int
 	Expected  string
 }
@@ -54,19 +55,21 @@ func TestLog(t *testing.T) {
 			log.Init(map[string]string{
 				"capacity": fmt.Sprintf("%d", test.RingSize),
 			})
-			buf := make([]byte, test.BufSize)
 			for _, msg := range test.Messages {
 				log.WriteLog(logger.LogLevelInfo, msg)
 			}
-			n, err := log.Log(buf, 0)
+			logR, err := log.Log(test.BufSize, 0)
 			if err != nil {
 				t.Fatalf("Unexpected error reading log: %s", err)
 			}
-			if n != len(test.Expected) {
-				t.Errorf("Expected to read %d bytes, but read %d\n", len(test.Expected), n)
+			defer logR.Close()
+			buf := &bytes.Buffer{}
+			buf.ReadFrom(logR)
+			if buf.Len() != len(test.Expected) {
+				t.Errorf("Expected to read %d bytes, but read %d\n", len(test.Expected), buf.Len())
 			}
-			if string(buf[0:n]) != test.Expected {
-				t.Errorf("Logs don't match\nExpected: %s\n  Acutal: %s\n", test.Expected, string(buf[0:n]))
+			if string(buf.String()) != test.Expected {
+				t.Errorf("Logs don't match\nExpected: %s\n  Acutal: %s\n", test.Expected, buf.String())
 			}
 		})
 	}

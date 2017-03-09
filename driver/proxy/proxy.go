@@ -14,7 +14,6 @@ type CompleteClient interface {
 	driver.Logger
 	driver.Cluster
 	driver.Configer
-	driver.HTTPRequester
 }
 
 // NewClient wraps an existing *kivik.Client connection, allowing it to be used

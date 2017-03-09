@@ -2,8 +2,6 @@ package driver
 
 import (
 	"encoding/json"
-	"io"
-	"net/http"
 	"time"
 )
 
@@ -180,13 +178,4 @@ type ConfigSection interface {
 // entire configuration for the specific storage backend.
 type ConfigItem interface {
 	Get(secName, key string) (value string, err error)
-}
-
-// HTTPRequester is an optional interface that should be implemented by any
-// client that uses HTTP to talk to a CouchDB server.
-type HTTPRequester interface {
-	// HTTPRequest returns an HTTP request to the CouchDB server, and the internal
-	// *http.Client. The path is expected to be a path relative to the CouchDB
-	// root. In particular, any host or schema in the path are ignored.
-	HTTPRequest(method, path string, body io.Reader) (*http.Request, *http.Client, error)
 }

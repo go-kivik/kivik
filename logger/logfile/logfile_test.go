@@ -1,8 +1,9 @@
 package logfile
 
 import (
-	"fmt"
+	"bytes"
 	"io/ioutil"
+	"os"
 	"testing"
 	"time"
 
@@ -12,9 +13,40 @@ import (
 type logTest struct {
 	Name      string
 	Messages  []string
-	BufSize   int
-	ExpectedN int
+	BufSize   int64
+	ExpectedN int64
 	Expected  string
+}
+
+func TestLogErrors(t *testing.T) {
+	f, err := ioutil.TempFile("", "kivik-log-")
+	if err != nil {
+		t.Errorf("Failed to create temp file: %s", err)
+		return
+	}
+	defer os.Remove(f.Name())
+	client := &Logger{}
+	if err = client.Init(map[string]string{"file": f.Name()}); err != nil {
+		t.Errorf("Failed to open logger: %s", err)
+	}
+
+	if _, err := client.Log(-100, 0); err == nil {
+		t.Errorf("No error for invalid length argument")
+	}
+	if _, err := client.Log(0, -100); err == nil {
+		t.Errorf("No error for invalid offset argument")
+	}
+
+	log, err := client.Log(0, 0)
+	if err != nil {
+		t.Errorf("Error reading 0 bytes: %s", err)
+	}
+	defer log.Close()
+	buf := &bytes.Buffer{}
+	buf.ReadFrom(log)
+	if buf.Len() > 0 {
+		t.Errorf("Read more than 0 bytes")
+	}
 }
 
 func TestLog(t *testing.T) {
@@ -52,25 +84,26 @@ func TestLog(t *testing.T) {
 				t.Errorf("Failed to create temp file: %s", err)
 				return
 			}
-			// defer os.Remove(f.Name())
-			fmt.Printf("logging to: %s\n", f.Name())
+			defer os.Remove(f.Name())
 			log := &Logger{}
 			if err = log.Init(map[string]string{"file": f.Name()}); err != nil {
 				t.Errorf("Failed to open logger: %s", err)
 			}
-			buf := make([]byte, test.BufSize)
 			for _, msg := range test.Messages {
 				log.WriteLog(logger.LogLevelInfo, msg)
 			}
-			n, err := log.Log(buf, 0)
+			logR, err := log.Log(test.BufSize, 0)
 			if err != nil {
 				t.Fatalf("Unexpected error reading log: %s", err)
 			}
-			if n != len(test.Expected) {
-				t.Errorf("Expected to read %d bytes, but read %d\n", len(test.Expected), n)
+			defer logR.Close()
+			buf := &bytes.Buffer{}
+			buf.ReadFrom(logR)
+			if buf.Len() != len(test.Expected) {
+				t.Errorf("Expected to read %d bytes, but read %d\n", len(test.Expected), buf.Len())
 			}
-			if string(buf[0:n]) != test.Expected {
-				t.Errorf("Logs don't match\nExpected: %s\n  Acutal: %s\n", test.Expected, string(buf[0:n]))
+			if string(buf.String()) != test.Expected {
+				t.Errorf("Logs don't match\nExpected: %s\n  Acutal: %s\n", test.Expected, buf.String())
 			}
 		})
 	}

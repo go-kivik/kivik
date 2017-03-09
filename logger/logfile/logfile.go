@@ -1,8 +1,10 @@
 package logfile
 
 import (
+	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"sync"
 	"time"
@@ -20,7 +22,7 @@ type Logger struct {
 }
 
 var _ logger.LogWriter = &Logger{}
-var _ driver.Logger = &Logger{}
+var _ driver.LogReader = &Logger{}
 
 var now = time.Now
 
@@ -54,29 +56,39 @@ func (l *Logger) WriteLog(level logger.LogLevel, message string) error {
 	return err
 }
 
+type logReadCloser struct {
+	io.Reader
+	io.Closer
+}
+
 // Log reads the log file.
-func (l *Logger) Log(buf []byte, offset int) (int, error) {
-	l.mutex.Lock()
+func (l *Logger) Log(length, offset int64) (io.ReadCloser, error) {
+	if length < 0 {
+		return nil, errors.New("length must be a positive integer")
+	}
+	if offset < 0 {
+		return nil, errors.New("offset must be a positive integer")
+	}
+	if length == 0 {
+		return ioutil.NopCloser(&bytes.Buffer{}), nil
+	}
 	l.f.Sync()
-	l.mutex.Unlock()
 	f, err := os.Open(l.filename)
-	defer f.Close()
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 	st, err := f.Stat()
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	if st.Size() > int64(len(buf)) {
-		_, err = f.Seek(-int64(offset+len(buf)), os.SEEK_END)
+	if st.Size() > length {
+		_, err := f.Seek(-(offset + length), os.SEEK_END)
 		if err != nil {
-			return 0, err
+			return nil, err
 		}
 	}
-	n, err := f.Read(buf)
-	if err != nil && err != io.EOF {
-		return n, err
-	}
-	return n, nil
+	return &logReadCloser{
+		Reader: &io.LimitedReader{R: f, N: length},
+		Closer: f,
+	}, nil
 }

@@ -4,7 +4,6 @@ package couchdb
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
@@ -30,16 +29,12 @@ const (
 //    // ... then later
 //    client, err := kivik("myCouch", ...)
 //
-type Couch struct {
-	HTTPClient *http.Client
-}
+type Couch struct{}
 
 var _ driver.Driver = &Couch{}
 
 func init() {
-	kivik.Register("couch", &Couch{
-		HTTPClient: &http.Client{},
-	})
+	kivik.Register("couch", &Couch{})
 }
 
 type client struct {

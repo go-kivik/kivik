@@ -5,6 +5,27 @@ import (
 	"testing"
 )
 
+func TestDefaultAuth(t *testing.T) {
+	dsn, err := url.Parse(dsn(t))
+	if err != nil {
+		t.Fatalf("Failed to parse DSN '%s': %s", dsn, err)
+	}
+	user := dsn.User.Username()
+	client := getClient(t)
+
+	if name := getAuthName(client, t); name != user {
+		t.Errorf("Unexpected authentication name. Expected '%s', got '%s'", user, name)
+	}
+
+	if err = client.Logout(); err != nil {
+		t.Errorf("Failed to de-authenticate: %s", err)
+	}
+
+	if name := getAuthName(client, t); name != "" {
+		t.Errorf("Unexpected authentication name after logout '%s'", name)
+	}
+}
+
 func TestBasicAuth(t *testing.T) {
 	dsn, err := url.Parse(dsn(t))
 	if err != nil {

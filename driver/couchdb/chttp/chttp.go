@@ -36,20 +36,43 @@ type Client struct {
 	auth Authenticator
 }
 
-// defaultHTTPClient is the default *http.Client to be used when none is
-// specified.
-var defaultHTTPClient = &http.Client{}
-
-// New returns a connection to a remote CouchDB server.
+// New returns a connection to a remote CouchDB server. If credentials are
+// included in the URL, CookieAuth is attempted first, with BasicAuth used as
+// a fallback. If both fail, an error is returned. If you wish to use some other
+// authentication mechanism, do not specify credentials in the URL, and instead
+// call the Auth() method later.
 func New(dsn string) (*Client, error) {
 	dsnURL, err := url.Parse(dsn)
 	if err != nil {
 		return nil, err
 	}
-	return &Client{
-		Client: defaultHTTPClient,
+	user := dsnURL.User
+	dsnURL.User = nil
+	c := &Client{
+		Client: &http.Client{},
 		dsn:    dsnURL,
-	}, nil
+	}
+	if user != nil {
+		password, _ := user.Password()
+		if err := c.defaultAuth(user.Username(), password); err != nil {
+			return nil, err
+		}
+	}
+	return c, nil
+}
+
+func (c *Client) defaultAuth(username, password string) error {
+	err := c.Auth(&CookieAuth{
+		Username: username,
+		Password: password,
+	})
+	if err == nil {
+		return nil
+	}
+	return c.Auth(&BasicAuth{
+		Username: username,
+		Password: password,
+	})
 }
 
 // Auth authenticates using the provided Authenticator.

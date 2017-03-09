@@ -3,13 +3,19 @@ package couchdb
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
-	"net/url"
-	"strconv"
-	"strings"
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
+	"github.com/flimzy/kivik/driver/couchdb/chttp"
+	"github.com/flimzy/kivik/errors"
+)
+
+const (
+	typeJSON  = "application/json"
+	typeText  = "text/plain"
+	typeMixed = "multipart/mixed"
 )
 
 // Couch represents the parent driver instance. The default driver uses a
@@ -37,54 +43,21 @@ func init() {
 }
 
 type client struct {
-	baseURL    *url.URL
-	httpClient *http.Client
+	*chttp.Client
 }
 
 var _ driver.Client = &client{}
-
-func (c *client) url(path string, query url.Values) string {
-	myURL := *c.baseURL // Make a copy
-	myURL.Path = myURL.Path + strings.TrimLeft(path, "/")
-	if query != nil {
-		myURL.RawQuery = query.Encode()
-	}
-	return myURL.String()
-}
 
 // NewClient establishes a new connection to a CouchDB server instance. If
 // auth credentials are included in the URL, they are used to authenticate using
 // CookieAuth (or BasicAuth if compiled with GopherJS). If you wish to use a
 // different auth mechanism, do not specify credentials here, and instead call
 // Authenticate() later.
-func (c *Couch) NewClient(urlstring string) (driver.Client, error) {
-	u, err := url.Parse(urlstring)
-	if err != nil {
-		return nil, err
-	}
-	// Copy all the values, so multiple connections don't fight with each other.
-	httpClient := &http.Client{
-		Transport:     c.HTTPClient.Transport,
-		CheckRedirect: c.HTTPClient.CheckRedirect,
-		Jar:           c.HTTPClient.Jar,
-		Timeout:       c.HTTPClient.Timeout,
-	}
-	u.RawQuery, u.Fragment = "", ""
-	user := u.User
-	u.User = nil
-	client := &client{
-		baseURL:    u,
-		httpClient: httpClient,
-	}
-	if user != nil {
-		auth := DefaultAuth
-		auth.Name = user.Username()
-		auth.Password, _ = user.Password()
-		if err := auth.authenticate(client); err != nil {
-			return nil, err
-		}
-	}
-	return client, nil
+func (c *Couch) NewClient(dsn string) (driver.Client, error) {
+	chttpClient, err := chttp.New(dsn)
+	return &client{
+		Client: chttpClient,
+	}, err
 }
 
 type info struct {
@@ -118,22 +91,19 @@ func (i *info) VendorVersion() string     { return i.Vend.Version }
 // ServerInfo returns the server's version info.
 func (c *client) ServerInfo() (driver.ServerInfo, error) {
 	i := &info{}
-	return i, c.getJSON("/", i, nil)
+	return i, c.DoJSON(chttp.MethodGet, "/", nil, i)
 }
 
 func (c *client) AllDBs() ([]string, error) {
 	var allDBs []string
-	return allDBs, c.getJSON("/_all_dbs", &allDBs, nil)
+	return allDBs, c.DoJSON(chttp.MethodGet, "/_all_dbs", nil, &allDBs)
 }
 
 func (c *client) UUIDs(count int) ([]string, error) {
 	var uuids struct {
 		UUIDs []string `json:"uuids"`
 	}
-	err := c.getJSON("/_uuids", &uuids, url.Values{
-		"count": []string{strconv.Itoa(count)},
-	})
-	return uuids.UUIDs, err
+	return uuids.UUIDs, c.DoJSON(chttp.MethodGet, fmt.Sprintf("/_uuids?count=%d", count), nil, &uuids)
 }
 
 func (c *client) Membership() ([]string, []string, error) {
@@ -141,38 +111,23 @@ func (c *client) Membership() ([]string, []string, error) {
 		All     []string `json:"all_nodes"`
 		Cluster []string `json:"cluster_nodes"`
 	}
-	err := c.getJSON("/_membership", &membership, nil)
-	return membership.All, membership.Cluster, err
-}
-
-func (c *client) Log(buf []byte, offset int) (int, error) {
-	err := c.getText("_log", buf, url.Values{
-		"offset": []string{strconv.Itoa(offset)},
-		"bytes":  []string{strconv.Itoa(len(buf))},
-	})
-	return len(buf), err
+	return membership.All, membership.Cluster, c.DoJSON(chttp.MethodGet, "/_membership", nil, &membership)
 }
 
 func (c *client) DBExists(dbName string) (bool, error) {
-	err := c.head(dbName, nil)
-	if StatusCode(err) == http.StatusNotFound {
+	err := c.DoError(chttp.MethodHead, dbName, nil)
+	if errors.StatusCode(err) == kivik.StatusNotFound {
 		return false, nil
 	}
 	return err == nil, err
 }
 
 func (c *client) CreateDB(dbName string) error {
-	var result struct {
-		OK bool `json:"ok"`
-	}
-	return c.putJSON(dbName, &result, nil)
+	return c.DoError(chttp.MethodPut, dbName, nil)
 }
 
 func (c *client) DestroyDB(dbName string) error {
-	var result struct {
-		OK bool `json:"ok"`
-	}
-	return c.deleteJSON(dbName, &result, nil)
+	return c.DoError(chttp.MethodDelete, dbName, nil)
 }
 
 func (c *client) DB(dbName string) (driver.DB, error) {

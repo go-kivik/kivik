@@ -1,3 +1,5 @@
+// +build !js
+
 package chttp
 
 import (
@@ -8,21 +10,19 @@ import (
 	"testing"
 )
 
-func dsn() (string, bool) {
+func dsn(t *testing.T) string {
 	for _, env := range []string{"KIVIK_TEST_DSN_COUCH16", "KIVIK_TEST_DSN_COUCH20", "KIVIK_TEST_DSN_CLOUDANT"} {
 		dsn := os.Getenv(env)
 		if dsn != "" {
-			return dsn, true
+			return dsn
 		}
 	}
-	return "", false
+	t.Skip("DSN not set")
+	return ""
 }
 
 func getClient(t *testing.T) *Client {
-	dsn, ok := dsn()
-	if !ok {
-		t.Skip("No DSN set, skipping test.")
-	}
+	dsn := dsn(t)
 	client, err := New(dsn)
 	if err != nil {
 		t.Fatalf("Failed to connect to '%s': %s", dsn, err)
@@ -32,7 +32,7 @@ func getClient(t *testing.T) *Client {
 
 func TestDo(t *testing.T) {
 	client := getClient(t)
-	res, err := client.Do("GET", "/", &Options{Accept: "application/json"})
+	res, err := client.DoReq("GET", "/", &Options{Accept: "application/json"})
 	if err != nil {
 		t.Errorf("Failed to make request GET /: %s", err)
 	}
@@ -58,7 +58,7 @@ func TestJSONBody(t *testing.T) {
 		"foo": "bar",
 		"bar": "baz",
 	}
-	_, err := client.Do("GET", "/_session", &Options{JSON: bogusQuery})
+	_, err := client.DoReq("GET", "/_session", &Options{JSON: bogusQuery})
 	if err != nil {
 		t.Errorf("Failed to make request: %s", err)
 	}

@@ -2,6 +2,7 @@ package kivik
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"regexp"
 
@@ -83,13 +84,13 @@ func (c *Client) Membership() (allNodes []string, clusterNodes []string, err err
 }
 
 // Log reads the server log, if supported by the client driver. This method will
-// read up to len(buf) bytes of logs from the server, ending at offset bytes from
-// the end, placing the logs in buf. The number of read bytes will be returned.
-func (c *Client) Log(buf []byte, offset int) (int, error) {
-	if logger, ok := c.driverClient.(driver.Logger); ok {
-		return logger.Log(buf, offset)
+// read up to length bytes of logs from the server, ending at offset bytes from
+// the end. The caller must close the ReadCloser.
+func (c *Client) Log(length, offset int64) (io.ReadCloser, error) {
+	if logger, ok := c.driverClient.(driver.LogReader); ok {
+		return logger.Log(length, offset)
 	}
-	return 0, ErrNotImplemented
+	return nil, ErrNotImplemented
 }
 
 // DBExists returns true if the specified database exists.

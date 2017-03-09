@@ -2,6 +2,7 @@ package driver
 
 import (
 	"encoding/json"
+	"io"
 	"time"
 )
 
@@ -57,13 +58,9 @@ type UUIDer interface {
 	UUIDs(count int) ([]string, error)
 }
 
-// Logger is an optional interface that may be implemented by a Client. When
-// implemented, the method should fill the passed buf []byte array with the most
-// recent server logs. If offset is present, offset bytes should be skipped at
-// the end of the log. The return value is the number of bytes read, up to
-// len(buf).
-type Logger interface {
-	Log(buf []byte, offset int) (int, error)
+// LogReader is an optional interface that may be implemented by a Client.
+type LogReader interface {
+	Log(length, offset int64) (io.ReadCloser, error)
 }
 
 // Cluster is an optional interface that may be implemented by a Client for

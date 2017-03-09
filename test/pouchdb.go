@@ -28,6 +28,8 @@ func init() {
 		"ServerInfo.vendor_version": `^6\.\d\.\d$`,
 
 		"Get.skip": true, // FIXME: Update this when Get is implemented
+
+		"Delete.skip": true, // FIXME: Unimplemented
 	})
 	RegisterSuite(SuitePouchRemote, kt.SuiteConfig{
 		// Features which are not supported by PouchDB
@@ -68,5 +70,7 @@ func init() {
 		"ServerInfo.vendor_version": `^6\.\d\.\d$`,
 
 		"Get.skip": true, // FIXME: Update this when Get is implemented
+
+		"Delete.skip": true, // FIXME: Unimplemented
 	})
 }

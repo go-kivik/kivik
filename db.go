@@ -54,6 +54,12 @@ func (db *DB) Put(docID string, doc interface{}) (rev string, err error) {
 	return db.driverDB.Put(docID, doc)
 }
 
+// Delete marks the specified document as deleted.
+func (db *DB) Delete(docID, rev string) (newRev string, err error) {
+	defer db.autoFlush()
+	return db.driverDB.Delete(docID, rev)
+}
+
 // Flush requests a flush of disk cache to disk or other permanent storage.
 // The response a timestamp when the database backend opened the storage
 // backend.

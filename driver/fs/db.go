@@ -20,3 +20,7 @@ func (d *db) CreateDoc(doc interface{}) (docID, rev string, err error) {
 func (d *db) Put(docID string, doc interface{}) (rev string, err error) {
 	return "", nil
 }
+
+func (d *db) Delete(docID, rev string) (newRev string, err error) {
+	return "", nil
+}

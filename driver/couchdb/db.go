@@ -90,6 +90,18 @@ func (d *db) Put(docID string, doc interface{}) (rev string, err error) {
 	return result.Rev, err
 }
 
+func (d *db) Delete(docID, rev string) (string, error) {
+	query := url.Values{}
+	query.Add("rev", rev)
+	var result struct {
+		Rev string `json:"rev"`
+	}
+	return result.Rev, d.client.newRequest(http.MethodDelete, d.path(docID)).
+		Query(query).
+		AddHeader("Accept", typeJSON).
+		DoJSON(&result)
+}
+
 func (d *db) Flush() (time.Time, error) {
 	result := struct {
 		T int64 `json:"instance_start_time,string"`

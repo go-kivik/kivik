@@ -74,5 +74,10 @@ func init() {
 		"Flush/NoAuth/chicken/DoFlush.status":       kivik.StatusNotFound,
 		"Flush/NoAuth/_users/DoFlush.status":        kivik.StatusUnauthorized,
 		"Flush/Admin/_users/DoFlush/Timestamp.skip": true, // Cloudant always sets the timestamp to 0
+
+		"Delete/RW/Admin/group/MissingDoc.status":       kivik.StatusNotFound,
+		"Delete/RW/Admin/group/InvalidRevFormat.status": kivik.StatusBadRequest,
+		"Delete/RW/Admin/group/WrongRev.status":         kivik.StatusConflict,
+		"Delete/RW/NoAuth.status":                       kivik.StatusUnauthorized,
 	})
 }

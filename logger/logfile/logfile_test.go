@@ -2,6 +2,7 @@ package logfile
 
 import (
 	"bytes"
+	"context"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -18,6 +19,8 @@ type logTest struct {
 	Expected  string
 }
 
+var CTX = context.Background()
+
 func TestLogErrors(t *testing.T) {
 	f, err := ioutil.TempFile("", "kivik-log-")
 	if err != nil {
@@ -30,14 +33,14 @@ func TestLogErrors(t *testing.T) {
 		t.Errorf("Failed to open logger: %s", err)
 	}
 
-	if _, err := client.Log(-100, 0); err == nil {
+	if _, err = client.LogContext(CTX, -100, 0); err == nil {
 		t.Errorf("No error for invalid length argument")
 	}
-	if _, err := client.Log(0, -100); err == nil {
+	if _, err = client.LogContext(CTX, 0, -100); err == nil {
 		t.Errorf("No error for invalid offset argument")
 	}
 
-	log, err := client.Log(0, 0)
+	log, err := client.LogContext(CTX, 0, 0)
 	if err != nil {
 		t.Errorf("Error reading 0 bytes: %s", err)
 	}
@@ -92,7 +95,7 @@ func TestLog(t *testing.T) {
 			for _, msg := range test.Messages {
 				log.WriteLog(logger.LogLevelInfo, msg)
 			}
-			logR, err := log.Log(test.BufSize, 0)
+			logR, err := log.LogContext(CTX, test.BufSize, 0)
 			if err != nil {
 				t.Fatalf("Unexpected error reading log: %s", err)
 			}

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -45,7 +46,7 @@ func main() {
 			os.Exit(1)
 		}
 		var log interface {
-			driver.Logger
+			driver.LogReader
 			logger.LogWriter
 		}
 		if logFile != "" {
@@ -53,8 +54,8 @@ func main() {
 			service.Config().Set("log", "file", logFile)
 			service.LogWriter = log
 			kivik.Register("loggingClient", loggingClient{
-				Client: proxy.NewClient(client),
-				Logger: log,
+				Client:    proxy.NewClient(client),
+				LogReader: log,
 			})
 			client, err = kivik.New("loggingClient", "")
 			if err != nil {
@@ -119,9 +120,9 @@ func main() {
 
 type loggingClient struct {
 	driver.Client
-	driver.Logger
+	driver.LogReader
 }
 
-func (lc loggingClient) NewClient(_ string) (driver.Client, error) {
+func (lc loggingClient) NewClientContext(_ context.Context, _ string) (driver.Client, error) {
 	return lc, nil
 }

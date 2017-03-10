@@ -2,6 +2,7 @@ package logfile
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -62,8 +63,8 @@ type logReadCloser struct {
 	io.Closer
 }
 
-// Log reads the log file.
-func (l *Logger) Log(length, offset int64) (io.ReadCloser, error) {
+// LogContext reads the log file.
+func (l *Logger) LogContext(_ context.Context, length, offset int64) (io.ReadCloser, error) {
 	if length < 0 {
 		return nil, errors.Status(kivik.StatusBadRequest, "invalid length specified")
 	}

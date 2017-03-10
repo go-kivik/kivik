@@ -89,7 +89,7 @@ type testSecConfig struct {
 	log []string
 }
 
-func (c *testSecConfig) GetSection(secName string) (map[string]string, error) {
+func (c *testSecConfig) GetSectionContext(_ context.Context, secName string) (map[string]string, error) {
 	c.log = append(c.log, fmt.Sprintf("GetSection(%s)", secName))
 	return nil, nil
 }
@@ -117,7 +117,7 @@ type testFullConfig struct {
 	log []string
 }
 
-func (c *testFullConfig) Get(secName, key string) (string, error) {
+func (c *testFullConfig) GetContext(_ context.Context, secName, key string) (string, error) {
 	c.log = append(c.log, fmt.Sprintf("Get(%s,%s)", secName, key))
 	return "", nil
 }

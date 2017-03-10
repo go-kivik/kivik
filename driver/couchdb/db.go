@@ -50,6 +50,9 @@ func (d *db) AllDocsContext(ctx context.Context, docs interface{}, opts map[stri
 	if err != nil {
 		return 0, 0, "", err
 	}
+	if err = chttp.ResponseError(resp.Response); err != nil {
+		return 0, 0, "", err
+	}
 	defer resp.Body.Close()
 	return ouchdb.AllDocs(resp.Body, docs)
 }
@@ -84,7 +87,7 @@ func (d *db) DeleteContext(ctx context.Context, docID, rev string) (string, erro
 	var result struct {
 		Rev string `json:"rev"`
 	}
-	return result.Rev, d.Client.DoJSON(ctx, chttp.MethodDelete, d.path(docID, query), nil, result)
+	return result.Rev, d.Client.DoJSON(ctx, chttp.MethodDelete, d.path(docID, query), nil, &result)
 }
 
 func (d *db) FlushContext(ctx context.Context) (time.Time, error) {

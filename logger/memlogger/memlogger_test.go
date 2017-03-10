@@ -2,6 +2,7 @@ package memlogger
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -17,6 +18,8 @@ type logTest struct {
 	ExpectedN int
 	Expected  string
 }
+
+var CTX = context.Background()
 
 func TestLog(t *testing.T) {
 	now = func() time.Time {
@@ -58,7 +61,7 @@ func TestLog(t *testing.T) {
 			for _, msg := range test.Messages {
 				log.WriteLog(logger.LogLevelInfo, msg)
 			}
-			logR, err := log.Log(test.BufSize, 0)
+			logR, err := log.LogContext(CTX, test.BufSize, 0)
 			if err != nil {
 				t.Fatalf("Unexpected error reading log: %s", err)
 			}

@@ -52,14 +52,15 @@ func init() {
 		"DBExists/RW/group/Admin.exists":  true,
 		"DBExists/RW/group/NoAuth.exists": true,
 
-		"Membership.status": kivik.StatusBadRequest,
+		"Membership.status": kivik.StatusNotImplemented,
 
 		"UUIDs.counts":                []int{-1, 0, 1, 10},
 		"UUIDs/Admin/-1Count.status":  kivik.StatusBadRequest,
 		"UUIDs/NoAuth/-1Count.status": kivik.StatusBadRequest,
 
 		"Log/NoAuth.status":                   kivik.StatusUnauthorized,
-		"Log/Admin/Offset-1000.skip":          true, // This appears to trigger a bug in CouchDB, that sometimes returns 500, and sometimes returns a log
+		"Log/NoAuth/Offset-1000.status":       kivik.StatusBadRequest,
+		"Log/Admin/Offset-1000.status":        kivik.StatusBadRequest,
 		"Log/Admin/HTTP/NegativeBytes.status": kivik.StatusInternalServerError,
 		"Log/Admin/HTTP/TextBytes.status":     kivik.StatusInternalServerError,
 

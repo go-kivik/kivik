@@ -1,14 +1,18 @@
 package couchdb
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/flimzy/kivik/driver/couchdb/chttp"
+)
 
 type authenticator interface {
-	authenticate(*client) error
+	Authenticate(*chttp.Client) error
 }
 
 func (c *client) Authenticate(a interface{}) error {
 	if auth, ok := a.(authenticator); ok {
-		return auth.authenticate(c)
+		return auth.Authenticate(c.Client)
 	}
 	return errors.New("invalid authenticator")
 }

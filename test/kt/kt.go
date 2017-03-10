@@ -167,10 +167,16 @@ type namer interface {
 // TestDBName generates a randomized string suitable for a database name for
 // testing.
 func (c *Context) TestDBName() string {
+	return TestDBName(c.T)
+}
+
+// TestDBName generates a randomized string suitable for a database name for
+// testing.
+func TestDBName(t *testing.T) string {
 	var id string
 
 	// All this non-sense to support Go < 1.8, which doesn't support t.Name()
-	var ti interface{} = c.T
+	var ti interface{} = t
 	if n, ok := ti.(namer); ok {
 		id = strings.ToLower(n.Name())
 		id = id[strings.Index(id, "/")+1:]

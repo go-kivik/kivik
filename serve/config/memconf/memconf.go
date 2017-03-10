@@ -3,6 +3,7 @@
 package memconf
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/flimzy/kivik/driver"
@@ -19,13 +20,13 @@ func New() *Config {
 	return &Config{}
 }
 
-// GetAll returns the full configuration tree.
-func (c Config) GetAll() (map[string]map[string]string, error) {
+// GetAllContext returns the full configuration tree.
+func (c Config) GetAllContext(_ context.Context) (map[string]map[string]string, error) {
 	return c, nil
 }
 
-// Set sets a configuration value.
-func (c Config) Set(secName, key, value string) error {
+// SetContext sets a configuration value.
+func (c Config) SetContext(_ context.Context, secName, key, value string) error {
 	if _, ok := c[secName]; !ok {
 		c[secName] = make(map[string]string)
 	}
@@ -33,8 +34,8 @@ func (c Config) Set(secName, key, value string) error {
 	return nil
 }
 
-// Delete clears a configuration key.
-func (c Config) Delete(secName, key string) error {
+// DeleteContext clears a configuration key.
+func (c Config) DeleteContext(_ context.Context, secName, key string) error {
 	if _, ok := c[secName]; !ok {
 		return errors.Status(http.StatusNotFound, "configuration section not found")
 	}

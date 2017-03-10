@@ -1,6 +1,7 @@
 package config
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -14,7 +15,7 @@ type testMinConfig struct {
 
 var _ driver.Config = &testMinConfig{}
 
-func (c *testMinConfig) GetAll() (map[string]map[string]string, error) {
+func (c *testMinConfig) GetAllContext(_ context.Context) (map[string]map[string]string, error) {
 	c.log = append(c.log, "GetAll()")
 	return map[string]map[string]string{
 		"fruit": map[string]string{
@@ -23,12 +24,12 @@ func (c *testMinConfig) GetAll() (map[string]map[string]string, error) {
 	}, nil
 }
 
-func (c *testMinConfig) Set(secName, key, value string) error {
+func (c *testMinConfig) SetContext(_ context.Context, secName, key, value string) error {
 	c.log = append(c.log, fmt.Sprintf("Set(%s,%s,%s)", secName, key, value))
 	return nil
 }
 
-func (c *testMinConfig) Delete(secName, key string) error {
+func (c *testMinConfig) DeleteContext(_ context.Context, secName, key string) error {
 	c.log = append(c.log, fmt.Sprintf("Delete(%s,%s)", secName, key))
 	return nil
 }
@@ -88,7 +89,7 @@ type testSecConfig struct {
 	log []string
 }
 
-func (c *testSecConfig) GetSection(secName string) (map[string]string, error) {
+func (c *testSecConfig) GetSectionContext(_ context.Context, secName string) (map[string]string, error) {
 	c.log = append(c.log, fmt.Sprintf("GetSection(%s)", secName))
 	return nil, nil
 }
@@ -116,7 +117,7 @@ type testFullConfig struct {
 	log []string
 }
 
-func (c *testFullConfig) Get(secName, key string) (string, error) {
+func (c *testFullConfig) GetContext(_ context.Context, secName, key string) (string, error) {
 	c.log = append(c.log, fmt.Sprintf("Get(%s,%s)", secName, key))
 	return "", nil
 }

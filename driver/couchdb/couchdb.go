@@ -2,14 +2,18 @@
 package couchdb
 
 import (
-	"encoding/json"
-	"net/http"
-	"net/url"
-	"strconv"
+	"context"
 	"strings"
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
+	"github.com/flimzy/kivik/driver/couchdb/chttp"
+)
+
+const (
+	typeJSON  = "application/json"
+	typeText  = "text/plain"
+	typeMixed = "multipart/mixed"
 )
 
 // Couch represents the parent driver instance. The default driver uses a
@@ -24,159 +28,73 @@ import (
 //    // ... then later
 //    client, err := kivik("myCouch", ...)
 //
-type Couch struct {
-	HTTPClient *http.Client
-}
+type Couch struct{}
 
 var _ driver.Driver = &Couch{}
 
 func init() {
-	kivik.Register("couch", &Couch{
-		HTTPClient: &http.Client{},
-	})
+	kivik.Register("couch", &Couch{})
 }
 
+// CompatMode is a flag indicating the compatibility mode of the driver.
+type CompatMode int
+
+// Compatibility modes
+const (
+	CompatUnknown = iota
+	CompatCouch16
+	CompatCouch20
+)
+
+const (
+	VendorCouchDB  = "The Apache Software Foundation"
+	VendorCloudant = "IBM Cloudant"
+)
+
 type client struct {
-	baseURL    *url.URL
-	httpClient *http.Client
+	*chttp.Client
+	Compat CompatMode
 }
 
 var _ driver.Client = &client{}
-var _ driver.HTTPRequester = &client{}
 
-func (c *client) url(path string, query url.Values) string {
-	myURL := *c.baseURL // Make a copy
-	myURL.Path = myURL.Path + strings.TrimLeft(path, "/")
-	if query != nil {
-		myURL.RawQuery = query.Encode()
-	}
-	return myURL.String()
-}
-
-// NewClient establishes a new connection to a CouchDB server instance. If
+// NewClientContext establishes a new connection to a CouchDB server instance. If
 // auth credentials are included in the URL, they are used to authenticate using
 // CookieAuth (or BasicAuth if compiled with GopherJS). If you wish to use a
 // different auth mechanism, do not specify credentials here, and instead call
 // Authenticate() later.
-func (c *Couch) NewClient(urlstring string) (driver.Client, error) {
-	u, err := url.Parse(urlstring)
+func (d *Couch) NewClientContext(ctx context.Context, dsn string) (driver.Client, error) {
+	chttpClient, err := chttp.New(dsn)
 	if err != nil {
 		return nil, err
 	}
-	// Copy all the values, so multiple connections don't fight with each other.
-	httpClient := &http.Client{
-		Transport:     c.HTTPClient.Transport,
-		CheckRedirect: c.HTTPClient.CheckRedirect,
-		Jar:           c.HTTPClient.Jar,
-		Timeout:       c.HTTPClient.Timeout,
+	c := &client{
+		Client: chttpClient,
 	}
-	u.RawQuery, u.Fragment = "", ""
-	user := u.User
-	u.User = nil
-	client := &client{
-		baseURL:    u,
-		httpClient: httpClient,
+	c.setCompatMode(ctx)
+	return c, nil
+}
+
+func (c *client) setCompatMode(ctx context.Context) {
+	info, err := c.ServerInfoContext(ctx)
+	if err != nil {
+		// We don't want to error here, in case the / endpoint is just blocked
+		// for security reasons or something; but then we also can't infer the
+		// compat mode, so just return, defaulting to CompatUnknown.
+		return
 	}
-	if user != nil {
-		auth := DefaultAuth
-		auth.Name = user.Username()
-		auth.Password, _ = user.Password()
-		if err := auth.authenticate(client); err != nil {
-			return nil, err
+	switch info.Vendor() {
+	case VendorCouchDB, VendorCloudant:
+		switch {
+		case strings.HasPrefix(info.Version(), "2.0."):
+			c.Compat = CompatCouch20
+		case strings.HasPrefix(info.Version(), "1.6"):
+			c.Compat = CompatCouch16
 		}
 	}
-	return client, nil
 }
 
-type info struct {
-	Data json.RawMessage
-	Ver  string `json:"version"`
-	Vend struct {
-		Name    string `json:"name"`
-		Version string `json:"version"`
-	} `json:"vendor"`
-}
-
-var _ driver.ServerInfo = &info{}
-
-func (i *info) UnmarshalJSON(data []byte) error {
-	type alias info
-	var a alias
-	if err := json.Unmarshal(data, &a); err != nil {
-		return err
-	}
-	i.Data = data
-	i.Ver = a.Ver
-	i.Vend = a.Vend
-	return nil
-}
-
-func (i *info) Response() json.RawMessage { return i.Data }
-func (i *info) Version() string           { return i.Ver }
-func (i *info) Vendor() string            { return i.Vend.Name }
-func (i *info) VendorVersion() string     { return i.Vend.Version }
-
-// ServerInfo returns the server's version info.
-func (c *client) ServerInfo() (driver.ServerInfo, error) {
-	i := &info{}
-	return i, c.getJSON("/", i, nil)
-}
-
-func (c *client) AllDBs() ([]string, error) {
-	var allDBs []string
-	return allDBs, c.getJSON("/_all_dbs", &allDBs, nil)
-}
-
-func (c *client) UUIDs(count int) ([]string, error) {
-	var uuids struct {
-		UUIDs []string `json:"uuids"`
-	}
-	err := c.getJSON("/_uuids", &uuids, url.Values{
-		"count": []string{strconv.Itoa(count)},
-	})
-	return uuids.UUIDs, err
-}
-
-func (c *client) Membership() ([]string, []string, error) {
-	var membership struct {
-		All     []string `json:"all_nodes"`
-		Cluster []string `json:"cluster_nodes"`
-	}
-	err := c.getJSON("/_membership", &membership, nil)
-	return membership.All, membership.Cluster, err
-}
-
-func (c *client) Log(buf []byte, offset int) (int, error) {
-	err := c.getText("_log", buf, url.Values{
-		"offset": []string{strconv.Itoa(offset)},
-		"bytes":  []string{strconv.Itoa(len(buf))},
-	})
-	return len(buf), err
-}
-
-func (c *client) DBExists(dbName string) (bool, error) {
-	err := c.head(dbName, nil)
-	if StatusCode(err) == http.StatusNotFound {
-		return false, nil
-	}
-	return err == nil, err
-}
-
-func (c *client) CreateDB(dbName string) error {
-	var result struct {
-		OK bool `json:"ok"`
-	}
-	return c.putJSON(dbName, &result, nil)
-}
-
-func (c *client) DestroyDB(dbName string) error {
-	var result struct {
-		OK bool `json:"ok"`
-	}
-	return c.deleteJSON(dbName, &result, nil)
-}
-
-func (c *client) DB(dbName string) (driver.DB, error) {
+func (c *client) DBContext(_ context.Context, dbName string) (driver.DB, error) {
 	return &db{
 		client: c,
 		dbName: dbName,

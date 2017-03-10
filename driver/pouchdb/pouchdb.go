@@ -1,6 +1,7 @@
 package pouchdb
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -44,9 +45,9 @@ func init() {
 	kivik.Register("pouch", &Driver{})
 }
 
-// NewClient returns a PouchDB client handle. Provide a dsn only for remote
+// NewClientContext returns a PouchDB client handle. Provide a dsn only for remote
 // databases. Otherwise specify ""
-func (d *Driver) NewClient(dsn string) (driver.Client, error) {
+func (d *Driver) NewClientContext(_ context.Context, dsn string) (driver.Client, error) {
 	var u *url.URL
 	var auth authenticator
 	var user *url.Userinfo
@@ -93,7 +94,7 @@ var _ driver.Client = &client{}
 
 // AllDBs returns the list of all existing databases. This function depends on
 // the pouchdb-all-dbs plugin being loaded.
-func (c *client) AllDBs() ([]string, error) {
+func (c *client) AllDBsContext(_ context.Context) ([]string, error) {
 	if c.dsn == nil {
 		return c.pouch.AllDBs()
 	}
@@ -121,7 +122,7 @@ func (i *pouchInfo) Vendor() string        { return "PouchDB" }
 func (i *pouchInfo) Version() string       { return i.vers }
 func (i *pouchInfo) VendorVersion() string { return i.vers }
 
-func (c *client) ServerInfo() (driver.ServerInfo, error) {
+func (c *client) ServerInfoContext(_ context.Context) (driver.ServerInfo, error) {
 	return &pouchInfo{
 		vers: c.pouch.Version(),
 	}, nil
@@ -155,10 +156,10 @@ func (c *client) isRemote() bool {
 	return c.dsn != nil
 }
 
-// DBExists returns true if the requested DB exists. This function only works
-// for remote databases. For local databases, it creates the database. Silly
-// PouchDB.
-func (c *client) DBExists(dbName string) (bool, error) {
+// DBExistsContext returns true if the requested DB exists. This function only
+// works for remote databases. For local databases, it creates the database.
+// Silly PouchDB.
+func (c *client) DBExistsContext(_ context.Context, dbName string) (bool, error) {
 	opts, err := c.options(Options{
 		"skip_setup": true,
 	})
@@ -175,9 +176,9 @@ func (c *client) DBExists(dbName string) (bool, error) {
 	return false, err
 }
 
-func (c *client) CreateDB(dbName string) error {
+func (c *client) CreateDBContext(ctx context.Context, dbName string) error {
 	if c.isRemote() {
-		if exists, _ := c.DBExists(dbName); exists {
+		if exists, _ := c.DBExistsContext(ctx, dbName); exists {
 			return errors.Status(http.StatusPreconditionFailed, "database exists")
 		}
 	}
@@ -189,8 +190,8 @@ func (c *client) CreateDB(dbName string) error {
 	return err
 }
 
-func (c *client) DestroyDB(dbName string) error {
-	exists, err := c.DBExists(dbName)
+func (c *client) DestroyDBContext(ctx context.Context, dbName string) error {
+	exists, err := c.DBExistsContext(ctx, dbName)
 	if err != nil {
 		return err
 	}
@@ -205,7 +206,7 @@ func (c *client) DestroyDB(dbName string) error {
 	return c.pouch.New(c.dbURL(dbName), opts).Destroy(nil)
 }
 
-func (c *client) DB(dbName string) (driver.DB, error) {
+func (c *client) DBContext(_ context.Context, dbName string) (driver.DB, error) {
 	opts, err := c.options(Options{})
 	if err != nil {
 		return nil, err

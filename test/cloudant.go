@@ -56,8 +56,10 @@ func init() {
 		"UUIDs/Admin/-1Count.status":  kivik.StatusBadRequest,
 		"UUIDs/NoAuth/-1Count.status": kivik.StatusBadRequest,
 
-		"Log/Admin.status":  kivik.StatusForbidden,
-		"Log/NoAuth.status": kivik.StatusUnauthorized,
+		"Log/Admin.status":              kivik.StatusForbidden,
+		"Log/NoAuth.status":             kivik.StatusUnauthorized,
+		"Log/Admin/Offset-1000.status":  kivik.StatusBadRequest,
+		"Log/NoAuth/Offset-1000.status": kivik.StatusBadRequest,
 
 		"ServerInfo.version":        `^2\.0\.0$`,
 		"ServerInfo.vendor":         `^IBM Cloudant$`,

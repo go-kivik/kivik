@@ -3,6 +3,7 @@
 package common
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/flimzy/kivik/driver"
@@ -24,8 +25,8 @@ func NewClient(version, vendorName, vendorVersion string) *Client {
 	}
 }
 
-// ServerInfo returns the configured server info.
-func (c *Client) ServerInfo() (driver.ServerInfo, error) {
+// ServerInfoContext returns the configured server info.
+func (c *Client) ServerInfoContext(_ context.Context) (driver.ServerInfo, error) {
 	return c.serverInfo, nil
 }
 

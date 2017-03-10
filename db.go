@@ -1,6 +1,7 @@
 package kivik
 
 import (
+	"context"
 	"strings"
 	"time"
 
@@ -24,50 +25,80 @@ func (db *DB) autoFlush() {
 	}
 }
 
-// AllDocs returns a list of all documents in the database.
+// AllDocs calls AllDocsContext with a background context.
 func (db *DB) AllDocs(docs interface{}, options Options) (offset, totalrows int, seq string, err error) {
-	return db.driverDB.AllDocs(docs, options)
+	return db.AllDocsContext(context.Background(), docs, options)
 }
 
-// Get fetches the requested document.
+// AllDocsContext returns a list of all documents in the database.
+func (db *DB) AllDocsContext(ctx context.Context, docs interface{}, options Options) (offset, totalrows int, seq string, err error) {
+	return db.driverDB.AllDocsContext(ctx, docs, options)
+}
+
+// Get calls GetContext with a background context.
 func (db *DB) Get(docID string, doc interface{}, options Options) error {
-	return db.driverDB.Get(docID, doc, options)
+	return db.GetContext(context.Background(), docID, doc, options)
 }
 
-// CreateDoc creates a new doc with an auto-generated unique ID. The generated
-// docID and new rev are returned.
+// GetContext fetches the requested document.
+func (db *DB) GetContext(ctx context.Context, docID string, doc interface{}, options Options) error {
+	return db.driverDB.GetContext(ctx, docID, doc, options)
+}
+
+// CreateDoc calls CreateDocContext with a background context.
 func (db *DB) CreateDoc(doc interface{}) (docID, rev string, err error) {
-	defer db.autoFlush()
-	return db.driverDB.CreateDoc(doc)
+	return db.CreateDocContext(context.Background(), doc)
 }
 
-// Put creates a new doc or updates an existing one, with the specified docID.
-// If the document already exists, the current revision must be included in doc,
-// with JSON key '_rev', otherwise a conflict will occur. The new rev is
-// returned.
+// CreateDocContext creates a new doc with an auto-generated unique ID. The generated
+// docID and new rev are returned.
+func (db *DB) CreateDocContext(ctx context.Context, doc interface{}) (docID, rev string, err error) {
+	defer db.autoFlush()
+	return db.driverDB.CreateDocContext(ctx, doc)
+}
+
+// Put calls PutContext with a background context.
 func (db *DB) Put(docID string, doc interface{}) (rev string, err error) {
+	return db.PutContext(context.Background(), docID, doc)
+}
+
+// PutContext creates a new doc or updates an existing one, with the specified
+// docID. If the document already exists, the current revision must be included
+// in doc, with JSON key '_rev', otherwise a conflict will occur. The new rev is
+// returned.
+func (db *DB) PutContext(ctx context.Context, docID string, doc interface{}) (rev string, err error) {
 	defer db.autoFlush()
 	// The '/' char is only permitted in the case of '_design/', so check that here
 	if designDoc := strings.TrimPrefix(docID, "_design/"); strings.Contains(designDoc, "/") {
 		return "", errors.Status(errors.StatusBadRequest, "invalid document ID")
 	}
-	return db.driverDB.Put(docID, doc)
+	return db.driverDB.PutContext(ctx, docID, doc)
 }
 
-// Delete marks the specified document as deleted.
+// Delete calls DeleteContext with a background context.
 func (db *DB) Delete(docID, rev string) (newRev string, err error) {
-	defer db.autoFlush()
-	return db.driverDB.Delete(docID, rev)
+	return db.DeleteContext(context.Background(), docID, rev)
 }
 
-// Flush requests a flush of disk cache to disk or other permanent storage.
+// DeleteContext marks the specified document as deleted.
+func (db *DB) DeleteContext(ctx context.Context, docID, rev string) (newRev string, err error) {
+	defer db.autoFlush()
+	return db.driverDB.DeleteContext(ctx, docID, rev)
+}
+
+// Flush calls FlushContext with a background context.
+func (db *DB) Flush() (time.Time, error) {
+	return db.FlushContext(context.Background())
+}
+
+// FlushContext requests a flush of disk cache to disk or other permanent storage.
 // The response a timestamp when the database backend opened the storage
 // backend.
 //
 // See http://docs.couchdb.org/en/2.0.0/api/database/compact.html#db-ensure-full-commit
-func (db *DB) Flush() (time.Time, error) {
+func (db *DB) FlushContext(ctx context.Context) (time.Time, error) {
 	if flusher, ok := db.driverDB.(driver.DBFlusher); ok {
-		return flusher.Flush()
+		return flusher.FlushContext(ctx)
 	}
 	return time.Time{}, ErrNotImplemented
 }

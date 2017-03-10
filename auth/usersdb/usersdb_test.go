@@ -20,8 +20,8 @@ type tuser struct {
 }
 
 var testUser = &tuser{
-	ID:       "org.couchdb.user:test",
-	Name:     "test",
+	ID:       "org.couchdb.user:testUsersdb",
+	Name:     "testUsersdb",
 	Type:     "user",
 	Roles:    []string{"coolguy"},
 	Password: "abc123",
@@ -39,14 +39,14 @@ func TestCouchAuth(t *testing.T) {
 	}
 	defer db.Delete(testUser.ID, rev)
 	auth := New(db)
-	valid, err := auth.Validate(kt.CTX, "test", "abc123")
+	valid, err := auth.Validate(kt.CTX, "testUsersdb", "abc123")
 	if err != nil {
 		t.Errorf("Validation failure for good password: %s", err)
 	}
 	if !valid {
 		t.Errorf("User should have been validated")
 	}
-	notValid, err := auth.Validate(kt.CTX, "test", "foobar")
+	notValid, err := auth.Validate(kt.CTX, "testUsersdb", "foobar")
 	if err != nil {
 		t.Errorf("Validation failure for bad password: %s", err)
 	}
@@ -61,7 +61,7 @@ func TestCouchAuth(t *testing.T) {
 		t.Errorf("User should not have been validated with wrong username")
 	}
 
-	roles, err := auth.Roles(kt.CTX, "test")
+	roles, err := auth.Roles(kt.CTX, "testUsersdb")
 	if err != nil {
 		t.Errorf("Failed to get roles for valid user: %s", err)
 	}

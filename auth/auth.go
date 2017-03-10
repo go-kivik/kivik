@@ -7,8 +7,11 @@ import "context"
 // A Handler is used by a server to validate auth credentials.
 type Handler interface {
 	// Validate returns true if the credentials are valid, false otherwise.
+	// Validate must not return a Not Found error if the user does not exist,
+	// rather returning a false validation.
 	Validate(ctx context.Context, username, password string) (ok bool, err error)
-	// Roles returns the roles to which the user belongs.
+	// Roles returns the roles to which the user belongs. Roles must return
+	// a Not Found error if the user does not exist.
 	Roles(ctx context.Context, username string) (roles []string, err error)
 }
 

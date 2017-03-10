@@ -52,10 +52,13 @@ type StatusCoder interface {
 
 // StatusCode extracts an embedded HTTP status code from an error.
 func StatusCode(err error) int {
+	if err == nil {
+		return StatusNoError
+	}
 	if scErr, ok := err.(StatusCoder); ok {
 		return scErr.StatusCode()
 	}
-	return StatusNoError
+	return StatusInternalServerError
 }
 
 // New is a wrapper around the standard errors.New, to avoid the need for

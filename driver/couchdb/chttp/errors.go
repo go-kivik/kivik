@@ -27,10 +27,13 @@ func (e *HTTPError) StatusCode() int {
 
 // StatusCode returns the status code of the error.
 func StatusCode(err error) int {
+	if err == nil {
+		return 0
+	}
 	if httperr, ok := err.(*HTTPError); ok {
 		return httperr.Code
 	}
-	return 0
+	return http.StatusInternalServerError
 }
 
 // ResponseError returns an error from an *http.Response.

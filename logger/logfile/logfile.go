@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/errors"
 	"github.com/flimzy/kivik/logger"
@@ -64,10 +65,10 @@ type logReadCloser struct {
 // Log reads the log file.
 func (l *Logger) Log(length, offset int64) (io.ReadCloser, error) {
 	if length < 0 {
-		return nil, errors.New("length must be a positive integer")
+		return nil, errors.Status(kivik.StatusBadRequest, "invalid length specified")
 	}
 	if offset < 0 {
-		return nil, errors.New("offset must be a positive integer")
+		return nil, errors.Status(kivik.StatusBadRequest, "invalid offset specified")
 	}
 	if length == 0 {
 		return ioutil.NopCloser(&bytes.Buffer{}), nil

@@ -2,6 +2,7 @@
 package memlogger
 
 import (
+	"bytes"
 	"container/ring"
 	"context"
 	"fmt"
@@ -10,9 +11,10 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
+	"github.com/flimzy/kivik/errors"
 	"github.com/flimzy/kivik/logger"
-	"github.com/pkg/errors"
 )
 
 var now = time.Now
@@ -83,6 +85,15 @@ func (r *memLogReader) Read(p []byte) (n int, err error) {
 
 // LogContext returns the requested log.
 func (l *Logger) LogContext(_ context.Context, length, offset int64) (io.ReadCloser, error) {
+	if length < 0 {
+		return nil, errors.Status(kivik.StatusBadRequest, "invalid length specified")
+	}
+	if offset < 0 {
+		return nil, errors.Status(kivik.StatusBadRequest, "invalid offset specified")
+	}
+	if length == 0 {
+		return ioutil.NopCloser(&bytes.Buffer{}), nil
+	}
 	cur := l.ring.Prev()
 	list := make([]*string, 0, length/100)
 	remain := length

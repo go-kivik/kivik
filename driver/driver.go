@@ -113,12 +113,6 @@ type DBFlusher interface {
 	FlushContext(ctx context.Context) (time.Time, error)
 }
 
-// Header is an optional interface that a DB may implement. If it is not
-// impemented, Get() will be used instead.
-type Header interface {
-	// Head()
-}
-
 // Copier is an optional interface that may be implemented by a DB.
 //
 // If a DB does implement Copier, Copy() functions will use it.  If a DB does
@@ -127,24 +121,6 @@ type Header interface {
 // a GET followed by PUT.
 type Copier interface {
 	// Copy() error
-}
-
-// Sessioner is an optional interface that may be implemented by a Driver.
-//
-// If Sessioner is not implemented, authenticated connections will not be
-// possible.
-type Sessioner interface {
-	// Authenticate(user, pass string) (Session, error)
-	// GET
-	// DELETE
-}
-
-// Session is an interface for an authentication session.
-type Session interface {
-	// Name() string
-	// Cookie() string
-	// Roles() []string
-	// OpenDB(name string) (DB, error)
 }
 
 // Configer is an optional interface that may be implemented by a Client.

@@ -11,3 +11,10 @@ type Handler interface {
 	// Roles returns the roles to which the user belongs.
 	Roles(ctx context.Context, username string) (roles []string, err error)
 }
+
+// PBKDF2KeyLength is the key length, in bytes, of the PBKDF2 keys used by
+// CouchDB.
+const PBKDF2KeyLength = 20
+
+// SchemePBKDF2 is the default CouchDB password scheme.
+const SchemePBKDF2 = "pbkdf2"

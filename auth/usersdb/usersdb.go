@@ -14,7 +14,6 @@ import (
 )
 
 const userPrefix = "org.couchdb.user:"
-const pbkdf2KeyLength = 20
 
 type db struct {
 	*kivik.DB
@@ -45,12 +44,12 @@ func (db *db) Validate(ctx context.Context, username, password string) (bool, er
 	}
 	switch u.PasswordScheme {
 	case "":
-		return false, errors.New("No password scheme set for user")
-	case "pbkdf2":
+		return false, errors.New("no password scheme set for user")
+	case auth.SchemePBKDF2:
 	default:
-		return false, errors.Errorf("Unsupported password scheme: %s", u.PasswordScheme)
+		return false, errors.Errorf("unsupported password scheme: %s", u.PasswordScheme)
 	}
-	key := fmt.Sprintf("%x", pbkdf2.Key([]byte(password), []byte(u.Salt), u.Iterations, pbkdf2KeyLength, sha1.New))
+	key := fmt.Sprintf("%x", pbkdf2.Key([]byte(password), []byte(u.Salt), u.Iterations, auth.PBKDF2KeyLength, sha1.New))
 	return key == u.DerivedKey, nil
 }
 

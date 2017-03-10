@@ -27,7 +27,19 @@ func New(c *config.Config) auth.Handler {
 	return &conf{c}
 }
 
+func (c *conf) isAdminParty(ctx context.Context) (bool, error) {
+	sec, err := c.GetSectionContext(ctx, "admins")
+	return len(sec) == 0, err
+}
+
 func (c *conf) Validate(ctx context.Context, username, password string) (bool, error) {
+	adminParty, err := c.isAdminParty(ctx)
+	if err != nil {
+		return false, err
+	}
+	if adminParty {
+		return true, nil
+	}
 	hash, err := c.GetContext(ctx, "admins", username)
 	if err != nil {
 		if errors.StatusCode(err) == errors.StatusNotFound {
@@ -60,8 +72,14 @@ func keySaltIter(hash string) (key, salt string, iterations int, err error) {
 }
 
 func (c *conf) Roles(ctx context.Context, username string) ([]string, error) {
-	_, err := c.GetContext(ctx, "admins", username)
+	adminParty, err := c.isAdminParty(ctx)
 	if err != nil {
+		return nil, err
+	}
+	if adminParty {
+		return []string{"_admin"}, nil
+	}
+	if _, err = c.GetContext(ctx, "admins", username); err != nil {
 		return nil, err
 	}
 	return []string{"_admin"}, nil

@@ -1,6 +1,7 @@
 package driver
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"time"
@@ -28,18 +29,18 @@ type ServerInfo interface {
 // Client is a connection to a database server.
 type Client interface {
 	// VersionInfo returns the server implementation's details.
-	ServerInfo() (ServerInfo, error)
-	AllDBs() ([]string, error)
+	ServerInfoContext(ctx context.Context) (ServerInfo, error)
+	AllDBsContext(ctx context.Context) ([]string, error)
 	// DBExists returns true if the database exists.
-	DBExists(dbName string) (bool, error)
+	DBExistsContext(ctx context.Context, dbName string) (bool, error)
 	// CreateDB creates the requested DB. The dbName is validated as a valid
 	// CouchDB database name prior to calling this function, so the driver can
 	// assume a valid name.
-	CreateDB(dbName string) error
+	CreateDBContext(ctx context.Context, dbName string) error
 	// DestroyDB deletes the requested DB.
-	DestroyDB(dbName string) error
+	DestroyDBContext(ctx context.Context, dbName string) error
 	// DB returns a handleto the requested database
-	DB(dbName string) (DB, error)
+	DBContext(ctx context.Context, dbName string) (DB, error)
 }
 
 // Authenticator is an optional interface that may be implemented by a Client
@@ -48,40 +49,42 @@ type Authenticator interface {
 	// Authenticate attempts to authenticate the client using an authenticator.
 	// If the authenticator is not known to the client, an error should be
 	// returned.
-	Authenticate(authenticator interface{}) error
+	AuthenticateContext(ctx context.Context, authenticator interface{}) error
 }
 
 // UUIDer is an optional interface that may be implemented by a Client. Generally,
 // this should not be used, but it is part of the CouchDB spec, so it is included
 // for completeness.
 type UUIDer interface {
-	UUIDs(count int) ([]string, error)
+	UUIDsContext(ctx context.Context, count int) ([]string, error)
 }
 
 // LogReader is an optional interface that may be implemented by a Client.
 type LogReader interface {
-	Log(length, offset int64) (io.ReadCloser, error)
+	// Log reads the server log, up to length bytes, beginning offset bytes from
+	// the end.
+	LogContext(ctx context.Context, length, offset int64) (io.ReadCloser, error)
 }
 
 // Cluster is an optional interface that may be implemented by a Client for
 // servers that support clustering operations (specifically CouchDB 2.0)
 type Cluster interface {
-	Membership() (allNodes []string, clusterNodes []string, err error)
+	MembershipContext(ctx context.Context) (allNodes []string, clusterNodes []string, err error)
 }
 
 // DB is a database handle.
 type DB interface {
-	AllDocs(docs interface{}, options map[string]interface{}) (offset, totalrows int, seq string, err error)
+	AllDocsContext(ctx context.Context, docs interface{}, options map[string]interface{}) (offset, totalrows int, seq string, err error)
 	// BulkDocs()
 	// Get fetches the requested document from the database, and unmarshals it
 	// into doc.
-	Get(docID string, doc interface{}, options map[string]interface{}) error
+	GetContext(ctx context.Context, docID string, doc interface{}, options map[string]interface{}) error
 	// CreateDoc creates a new doc, with a server-generated ID.
-	CreateDoc(doc interface{}) (docID, rev string, err error)
+	CreateDocContext(ctx context.Context, doc interface{}) (docID, rev string, err error)
 	// Put writes the document in the database.
-	Put(docID string, doc interface{}) (rev string, err error)
+	PutContext(ctx context.Context, docID string, doc interface{}) (rev string, err error)
 	// Delete marks the specified document as deleted.
-	Delete(docID, rev string) (newRev string, err error)
+	DeleteContext(ctx context.Context, docID, rev string) (newRev string, err error)
 	// GetAttachment()
 	// Compact()
 	// CompactDDoc(ddoc string)
@@ -107,7 +110,7 @@ type DBFlusher interface {
 	// backend.
 	//
 	// See http://docs.couchdb.org/en/2.0.0/api/database/compact.html#db-ensure-full-commit
-	Flush() (time.Time, error)
+	FlushContext(ctx context.Context) (time.Time, error)
 }
 
 // Header is an optional interface that a DB may implement. If it is not
@@ -149,14 +152,14 @@ type Session interface {
 // If a Client does implement Configer, it allows backend configuration
 // to be queried and modified via the API.
 type Configer interface {
-	Config() (Config, error)
+	ConfigContext(ctx context.Context) (Config, error)
 }
 
 // Config is the minimal interface that a Config backend must implement.
 type Config interface {
-	GetAll() (config map[string]map[string]string, err error)
-	Set(secName, key, value string) error
-	Delete(secName, key string) error
+	GetAllContext(ctx context.Context) (config map[string]map[string]string, err error)
+	SetContext(ctx context.Context, secName, key, value string) error
+	DeleteContext(ctx context.Context, secName, key string) error
 }
 
 // ConfigSection is an optional interface that may be implemented by a Config
@@ -165,7 +168,7 @@ type Config interface {
 // reading a config section alone can be more efficient than reading the entire
 // configuration for the specific storage backend.
 type ConfigSection interface {
-	GetSection(secName string) (section map[string]string, err error)
+	GetSectionContext(ctx context.Context, secName string) (section map[string]string, err error)
 }
 
 // ConfigItem is an optional interface that may be implemented by a Config
@@ -174,5 +177,5 @@ type ConfigSection interface {
 // reading a single config value alone can be more efficient than reading the
 // entire configuration for the specific storage backend.
 type ConfigItem interface {
-	Get(secName, key string) (value string, err error)
+	GetContext(ctx context.Context, secName, key string) (value string, err error)
 }

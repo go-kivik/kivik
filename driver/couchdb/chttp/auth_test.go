@@ -3,6 +3,8 @@ package chttp
 import (
 	"net/url"
 	"testing"
+
+	"golang.org/x/net/context"
 )
 
 func TestDefaultAuth(t *testing.T) {
@@ -17,7 +19,7 @@ func TestDefaultAuth(t *testing.T) {
 		t.Errorf("Unexpected authentication name. Expected '%s', got '%s'", user, name)
 	}
 
-	if err = client.Logout(); err != nil {
+	if err = client.Logout(context.Background()); err != nil {
 		t.Errorf("Failed to de-authenticate: %s", err)
 	}
 
@@ -41,7 +43,7 @@ func TestBasicAuth(t *testing.T) {
 		t.Errorf("Unexpected authentication name '%s'", name)
 	}
 
-	if err = client.Logout(); err == nil {
+	if err = client.Logout(context.Background()); err == nil {
 		t.Errorf("Logout should have failed prior to login")
 	}
 
@@ -50,17 +52,17 @@ func TestBasicAuth(t *testing.T) {
 		Username: user.Username(),
 		Password: password,
 	}
-	if err = client.Auth(ba); err != nil {
+	if err = client.Auth(context.Background(), ba); err != nil {
 		t.Errorf("Failed to authenticate: %s", err)
 	}
-	if err = client.Auth(ba); err == nil {
+	if err = client.Auth(context.Background(), ba); err == nil {
 		t.Errorf("Expected error trying to double-auth")
 	}
 	if name := getAuthName(client, t); name != user.Username() {
 		t.Errorf("Unexpected auth name. Expected '%s', got '%s'", user.Username(), name)
 	}
 
-	if err = client.Logout(); err != nil {
+	if err = client.Logout(context.Background()); err != nil {
 		t.Errorf("Failed to de-authenticate: %s", err)
 	}
 
@@ -75,7 +77,7 @@ func getAuthName(client *Client, t *testing.T) string {
 			Name string `json:"name"`
 		} `json:"userCtx"`
 	}{}
-	if err := client.DoJSON("GET", "/_session", nil, &result); err != nil {
+	if err := client.DoJSON(context.Background(), "GET", "/_session", nil, &result); err != nil {
 		t.Errorf("Failed to check session info: %s", err)
 	}
 	return result.Ctx.Name
@@ -96,7 +98,7 @@ func TestCookieAuth(t *testing.T) {
 		t.Errorf("Unexpected authentication name '%s'", name)
 	}
 
-	if err = client.Logout(); err == nil {
+	if err = client.Logout(context.Background()); err == nil {
 		t.Errorf("Logout should have failed prior to login")
 	}
 
@@ -105,17 +107,17 @@ func TestCookieAuth(t *testing.T) {
 		Username: user.Username(),
 		Password: password,
 	}
-	if err = client.Auth(ba); err != nil {
+	if err = client.Auth(context.Background(), ba); err != nil {
 		t.Errorf("Failed to authenticate: %s", err)
 	}
-	if err = client.Auth(ba); err == nil {
+	if err = client.Auth(context.Background(), ba); err == nil {
 		t.Errorf("Expected error trying to double-auth")
 	}
 	if name := getAuthName(client, t); name != user.Username() {
 		t.Errorf("Unexpected auth name. Expected '%s', got '%s'", user.Username(), name)
 	}
 
-	if err = client.Logout(); err != nil {
+	if err = client.Logout(context.Background()); err != nil {
 		t.Errorf("Failed to de-authenticate: %s", err)
 	}
 

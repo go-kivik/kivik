@@ -4,6 +4,7 @@ package chttp
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"os"
 	"strings"
@@ -32,7 +33,7 @@ func getClient(t *testing.T) *Client {
 
 func TestDo(t *testing.T) {
 	client := getClient(t)
-	res, err := client.DoReq("GET", "/", &Options{Accept: "application/json"})
+	res, err := client.DoReq(context.Background(), "GET", "/", &Options{Accept: "application/json"})
 	if err != nil {
 		t.Errorf("Failed to make request GET /: %s", err)
 	}
@@ -58,7 +59,7 @@ func TestJSONBody(t *testing.T) {
 		"foo": "bar",
 		"bar": "baz",
 	}
-	_, err := client.DoReq("GET", "/_session", &Options{JSON: bogusQuery})
+	_, err := client.DoReq(context.Background(), "GET", "/_session", &Options{JSON: bogusQuery})
 	if err != nil {
 		t.Errorf("Failed to make request: %s", err)
 	}

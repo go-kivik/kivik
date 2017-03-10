@@ -7,12 +7,12 @@ import (
 	"github.com/flimzy/kivik/errors"
 )
 
-func intQueryParam(r *http.Request, key string) (int, bool, error) {
+func intQueryParam(r *http.Request, key string) (int64, bool, error) {
 	value, ok := stringQueryParam(r, key)
 	if !ok {
 		return 0, false, nil
 	}
-	iValue, err := strconv.Atoi(value)
+	iValue, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {
 		return 0, true, errors.Statusf(http.StatusBadRequest, "%s parameter must be an integer", key)
 	}

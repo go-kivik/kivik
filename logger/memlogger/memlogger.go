@@ -3,6 +3,7 @@ package memlogger
 
 import (
 	"container/ring"
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -80,8 +81,8 @@ func (r *memLogReader) Read(p []byte) (n int, err error) {
 	return
 }
 
-// Log returns the requested log.
-func (l *Logger) Log(length, offset int64) (io.ReadCloser, error) {
+// LogContext returns the requested log.
+func (l *Logger) LogContext(_ context.Context, length, offset int64) (io.ReadCloser, error) {
 	cur := l.ring.Prev()
 	list := make([]*string, 0, length/100)
 	remain := length

@@ -1,6 +1,7 @@
 package serve
 
 import (
+	"io"
 	"net/http"
 
 	"github.com/flimzy/kivik/errors"
@@ -39,7 +40,7 @@ func log(w http.ResponseWriter, r *http.Request) error {
 		return errors.Status(http.StatusBadRequest, "offset must be a positive integer")
 	}
 
-	logR, err := client.LogContext(context.Background(), length, offset)
+	logR, err := client.LogContext(r.Context(), length, offset)
 	if err != nil {
 		return err
 	}

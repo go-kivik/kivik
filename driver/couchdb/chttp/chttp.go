@@ -4,6 +4,7 @@ package chttp
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"mime"
@@ -36,12 +37,17 @@ type Client struct {
 	auth Authenticator
 }
 
-// New returns a connection to a remote CouchDB server. If credentials are
+// New calls NewContext() with a Background context.
+func New(dsn string) (*Client, error) {
+	return NewContext(context.Background(), dsn)
+}
+
+// NewContext returns a connection to a remote CouchDB server. If credentials are
 // included in the URL, CookieAuth is attempted first, with BasicAuth used as
 // a fallback. If both fail, an error is returned. If you wish to use some other
 // authentication mechanism, do not specify credentials in the URL, and instead
 // call the Auth() method later.
-func New(dsn string) (*Client, error) {
+func NewContext(ctx context.Context, dsn string) (*Client, error) {
 	dsnURL, err := url.Parse(dsn)
 	if err != nil {
 		return nil, err
@@ -54,33 +60,33 @@ func New(dsn string) (*Client, error) {
 	}
 	if user != nil {
 		password, _ := user.Password()
-		if err := c.defaultAuth(user.Username(), password); err != nil {
+		if err := c.defaultAuth(ctx, user.Username(), password); err != nil {
 			return nil, err
 		}
 	}
 	return c, nil
 }
 
-func (c *Client) defaultAuth(username, password string) error {
-	err := c.Auth(&CookieAuth{
+func (c *Client) defaultAuth(ctx context.Context, username, password string) error {
+	err := c.Auth(ctx, &CookieAuth{
 		Username: username,
 		Password: password,
 	})
 	if err == nil {
 		return nil
 	}
-	return c.Auth(&BasicAuth{
+	return c.Auth(ctx, &BasicAuth{
 		Username: username,
 		Password: password,
 	})
 }
 
 // Auth authenticates using the provided Authenticator.
-func (c *Client) Auth(a Authenticator) error {
+func (c *Client) Auth(ctx context.Context, a Authenticator) error {
 	if c.auth != nil {
 		return errors.New("auth already set; log out first")
 	}
-	if err := a.Authenticate(c); err != nil {
+	if err := a.Authenticate(ctx, c); err != nil {
 		return err
 	}
 	c.auth = a
@@ -88,11 +94,11 @@ func (c *Client) Auth(a Authenticator) error {
 }
 
 // Logout logs out after authentication.
-func (c *Client) Logout() error {
+func (c *Client) Logout(ctx context.Context) error {
 	if c.auth == nil {
 		return errors.New("not authenticated")
 	}
-	err := c.auth.Logout(c)
+	err := c.auth.Logout(ctx, c)
 	c.auth = nil
 	return err
 }
@@ -139,8 +145,8 @@ func (r *Response) DecodeJSON(i interface{}) error {
 // DoJSON combines DoReq() and, ResponseError(), and (*Response).DecodeJSON(), and
 // discards the response. It is intended for cases where the only information
 // needed from the response is the status code and JSON body.
-func (c *Client) DoJSON(method, path string, opts *Options, i interface{}) error {
-	res, err := c.DoReq(method, path, opts)
+func (c *Client) DoJSON(ctx context.Context, method, path string, opts *Options, i interface{}) error {
+	res, err := c.DoReq(ctx, method, path, opts)
 	if err != nil {
 		return err
 	}
@@ -152,7 +158,7 @@ func (c *Client) DoJSON(method, path string, opts *Options, i interface{}) error
 
 // NewRequest returns a new *http.Request to the CouchDB server, and the
 // specified path. The host, schema, etc, of the specified path are ignored.
-func (c *Client) NewRequest(method, path string, body io.Reader) (*http.Request, error) {
+func (c *Client) NewRequest(ctx context.Context, method, path string, body io.Reader) (*http.Request, error) {
 	reqPath, err := url.Parse(path)
 	if err != nil {
 		return nil, err
@@ -160,13 +166,17 @@ func (c *Client) NewRequest(method, path string, body io.Reader) (*http.Request,
 	url := *c.dsn // Make a copy
 	url.Path = reqPath.Path
 	url.RawQuery = reqPath.RawQuery
-	return http.NewRequest(method, url.String(), body)
+	req, err := http.NewRequest(method, url.String(), body)
+	if err != nil {
+		return nil, err
+	}
+	return req.WithContext(ctx), nil
 }
 
 // DoReq does an HTTP request. An error is returned only if there was an error
 // processing the request. In particular, an error status code, such as 400
 // or 500, does _not_ cause an error to be returned.
-func (c *Client) DoReq(method, path string, opts *Options) (*Response, error) {
+func (c *Client) DoReq(ctx context.Context, method, path string, opts *Options) (*Response, error) {
 	if opts != nil && opts.JSON != nil && opts.Body != nil {
 		return nil, errors.New("must not specify both Body and JSON options")
 	}
@@ -185,7 +195,7 @@ func (c *Client) DoReq(method, path string, opts *Options) (*Response, error) {
 			opts.ContentType = typeJSON
 		}
 	}
-	req, err := c.NewRequest(method, path, body)
+	req, err := c.NewRequest(ctx, method, path, body)
 	if err != nil {
 		return nil, err
 	}
@@ -227,8 +237,8 @@ func setHeaders(req *http.Request, opts *Options) {
 // DoError is the same as DoReq(), followed by checking the response error. This
 // method is meant for cases where the only information you need from the
 // response is the status code.
-func (c *Client) DoError(method, path string, opts *Options) error {
-	res, err := c.DoReq(method, path, opts)
+func (c *Client) DoError(ctx context.Context, method, path string, opts *Options) error {
+	res, err := c.DoReq(ctx, method, path, opts)
 	if err != nil {
 		return err
 	}

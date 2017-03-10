@@ -2,6 +2,7 @@
 package couchdb
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -84,48 +85,48 @@ func (i *info) Vendor() string            { return i.Vend.Name }
 func (i *info) VendorVersion() string     { return i.Vend.Version }
 
 // ServerInfo returns the server's version info.
-func (c *client) ServerInfo() (driver.ServerInfo, error) {
+func (c *client) ServerInfoContext(ctx context.Context) (driver.ServerInfo, error) {
 	i := &info{}
-	return i, c.DoJSON(chttp.MethodGet, "/", nil, i)
+	return i, c.DoJSON(ctx, chttp.MethodGet, "/", nil, i)
 }
 
-func (c *client) AllDBs() ([]string, error) {
+func (c *client) AllDBsContext(ctx context.Context) ([]string, error) {
 	var allDBs []string
-	return allDBs, c.DoJSON(chttp.MethodGet, "/_all_dbs", nil, &allDBs)
+	return allDBs, c.DoJSON(ctx, chttp.MethodGet, "/_all_dbs", nil, &allDBs)
 }
 
-func (c *client) UUIDs(count int) ([]string, error) {
+func (c *client) UUIDsContext(ctx context.Context, count int) ([]string, error) {
 	var uuids struct {
 		UUIDs []string `json:"uuids"`
 	}
-	return uuids.UUIDs, c.DoJSON(chttp.MethodGet, fmt.Sprintf("/_uuids?count=%d", count), nil, &uuids)
+	return uuids.UUIDs, c.DoJSON(ctx, chttp.MethodGet, fmt.Sprintf("/_uuids?count=%d", count), nil, &uuids)
 }
 
-func (c *client) Membership() ([]string, []string, error) {
+func (c *client) MembershipContext(ctx context.Context) ([]string, []string, error) {
 	var membership struct {
 		All     []string `json:"all_nodes"`
 		Cluster []string `json:"cluster_nodes"`
 	}
-	return membership.All, membership.Cluster, c.DoJSON(chttp.MethodGet, "/_membership", nil, &membership)
+	return membership.All, membership.Cluster, c.DoJSON(ctx, chttp.MethodGet, "/_membership", nil, &membership)
 }
 
-func (c *client) DBExists(dbName string) (bool, error) {
-	err := c.DoError(chttp.MethodHead, dbName, nil)
+func (c *client) DBExistsContext(ctx context.Context, dbName string) (bool, error) {
+	err := c.DoError(ctx, chttp.MethodHead, dbName, nil)
 	if errors.StatusCode(err) == kivik.StatusNotFound {
 		return false, nil
 	}
 	return err == nil, err
 }
 
-func (c *client) CreateDB(dbName string) error {
-	return c.DoError(chttp.MethodPut, dbName, nil)
+func (c *client) CreateDBContext(ctx context.Context, dbName string) error {
+	return c.DoError(ctx, chttp.MethodPut, dbName, nil)
 }
 
-func (c *client) DestroyDB(dbName string) error {
-	return c.DoError(chttp.MethodDelete, dbName, nil)
+func (c *client) DestroyDBContext(ctx context.Context, dbName string) error {
+	return c.DoError(ctx, chttp.MethodDelete, dbName, nil)
 }
 
-func (c *client) DB(dbName string) (driver.DB, error) {
+func (c *client) DBContext(_ context.Context, dbName string) (driver.DB, error) {
 	return &db{
 		client: c,
 		dbName: dbName,

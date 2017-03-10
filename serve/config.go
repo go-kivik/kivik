@@ -1,6 +1,7 @@
 package serve
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/flimzy/kivik/config"
@@ -10,11 +11,12 @@ import (
 
 // defaultConfig returns a default server configuration.
 func defaultConfig() *config.Config {
+	ctx := context.Background()
 	conf := memconf.New()
-	conf.Set("log", "level", "info")
-	conf.Set("httpd", "enable_compression", "true")
-	conf.Set("httpd", "compression_level", "8")
-	conf.Set("httpd", "port", "5984")
+	conf.SetContext(ctx, "log", "level", "info")
+	conf.SetContext(ctx, "httpd", "enable_compression", "true")
+	conf.SetContext(ctx, "httpd", "compression_level", "8")
+	conf.SetContext(ctx, "httpd", "port", "5984")
 	return config.New(conf)
 }
 

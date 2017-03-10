@@ -2,9 +2,10 @@ package memory
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
-	"net/http"
 
+	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver/ouchdb"
 	"github.com/flimzy/kivik/errors"
 )
@@ -50,9 +51,9 @@ start_key_doc_id (string) – Alias for startkey_docid param.
 update_seq (boolean) – Response includes an update_seq value indicating which sequence id of the underlying database the view reflects. Default is false.
 */
 
-func (d *db) AllDocs(docs interface{}, opts map[string]interface{}) (offset, total int, seq string, err error) {
-	if exists, _ := d.client.DBExists(d.dbName); !exists {
-		return 0, 0, "", errors.Status(http.StatusNotFound, "database not found")
+func (d *db) AllDocsContext(ctx context.Context, docs interface{}, opts map[string]interface{}) (offset, total int, seq string, err error) {
+	if exists, _ := d.client.DBExistsContext(ctx, d.dbName); !exists {
+		return 0, 0, "", errors.Status(kivik.StatusNotFound, "database not found")
 	}
 	db := d.getDB()
 	db.mutex.RLock()
@@ -79,18 +80,18 @@ func (d *db) AllDocs(docs interface{}, opts map[string]interface{}) (offset, tot
 	return ouchdb.AllDocs(bytes.NewReader(body), docs)
 }
 
-func (d *db) Get(docID string, doc interface{}, opts map[string]interface{}) error {
+func (d *db) GetContext(_ context.Context, docID string, doc interface{}, opts map[string]interface{}) error {
 	return nil
 }
 
-func (d *db) CreateDoc(doc interface{}) (docID, rev string, err error) {
+func (d *db) CreateDocContext(_ context.Context, doc interface{}) (docID, rev string, err error) {
 	return "", "", nil
 }
 
-func (d *db) Put(docID string, doc interface{}) (rev string, err error) {
+func (d *db) PutContext(_ context.Context, docID string, doc interface{}) (rev string, err error) {
 	return "", nil
 }
 
-func (d *db) Delete(docID, rev string) (newRev string, err error) {
+func (d *db) DeleteContext(_ context.Context, docID, rev string) (newRev string, err error) {
 	return "", nil
 }

@@ -1,13 +1,14 @@
 package couchdb
 
 import (
+	"context"
 	"fmt"
-	"net/http"
 
 	"github.com/flimzy/kivik/driver"
+	"github.com/flimzy/kivik/driver/couchdb/chttp"
 )
 
-func (c *client) Config() (driver.Config, error) {
+func (c *client) ConfigContext(_ context.Context) (driver.Config, error) {
 	return &config{client: c}, nil
 }
 
@@ -17,38 +18,25 @@ type config struct {
 
 var _ driver.Config = &config{}
 
-func (c *config) GetAll() (map[string]map[string]string, error) {
+func (c *config) GetAllContext(ctx context.Context) (map[string]map[string]string, error) {
 	conf := map[string]map[string]string{}
-	return conf, c.newRequest(http.MethodGet, "/_config").
-		AddHeader("Accept", typeJSON).
-		DoJSON(&conf)
+	return conf, c.DoJSON(ctx, chttp.MethodGet, "/_config", nil, &conf)
 }
 
-func (c *config) Set(secName, key, value string) error {
-	_, err := c.newRequest(http.MethodPut, fmt.Sprintf("/_config/%s/%s", secName, key)).
-		AddHeader("Content-Type", typeJSON).
-		AddHeader("Accept", typeJSON).
-		BodyJSON(value).
-		Do()
-	return err
+func (c *config) SetContext(ctx context.Context, secName, key, value string) error {
+	return c.DoError(ctx, chttp.MethodPut, fmt.Sprintf("/_config/%s/%s", secName, key), &chttp.Options{JSON: value})
 }
 
-func (c *config) Delete(secName, key string) error {
-	_, err := c.newRequest(http.MethodDelete, fmt.Sprintf("/_config/%s/%s", secName, key)).
-		Do()
-	return err
+func (c *config) DeleteContext(ctx context.Context, secName, key string) error {
+	return c.DoError(ctx, chttp.MethodDelete, fmt.Sprintf("/_config/%s/%s", secName, key), nil)
 }
 
-func (c *config) GetSection(secName string) (map[string]string, error) {
+func (c *config) GetSectionContext(ctx context.Context, secName string) (map[string]string, error) {
 	sec := map[string]string{}
-	return sec, c.newRequest(http.MethodGet, fmt.Sprintf("/_config/%s", secName)).
-		AddHeader("Accept", typeJSON).
-		DoJSON(&sec)
+	return sec, c.DoJSON(ctx, chttp.MethodGet, fmt.Sprintf("/_config/%s", secName), nil, &sec)
 }
 
-func (c *config) Get(secName, key string) (string, error) {
+func (c *config) GetContext(ctx context.Context, secName, key string) (string, error) {
 	var value string
-	return value, c.newRequest(http.MethodGet, fmt.Sprintf("_config/%s/%s", secName, key)).
-		AddHeader("Accept", typeJSON).
-		DoJSON(&value)
+	return value, c.DoJSON(ctx, chttp.MethodGet, fmt.Sprintf("_config/%s/%s", secName, key), nil, &value)
 }

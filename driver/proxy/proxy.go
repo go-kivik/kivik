@@ -1,6 +1,8 @@
 package proxy
 
 import (
+	"context"
+
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
 )
@@ -28,13 +30,13 @@ type client struct {
 
 var _ CompleteClient = &client{}
 
-func (c *client) DB(name string) (driver.DB, error) {
-	d, err := c.Client.DB(name)
+func (c *client) DBContext(ctx context.Context, name string) (driver.DB, error) {
+	d, err := c.Client.DBContext(ctx, name)
 	return &db{d}, err
 }
 
-func (c *client) Config() (driver.Config, error) {
-	return c.Config()
+func (c *client) ConfigContext(ctx context.Context) (driver.Config, error) {
+	return c.ConfigContext(ctx)
 }
 
 type db struct {
@@ -43,10 +45,10 @@ type db struct {
 
 var _ driver.DB = &db{}
 
-func (d *db) AllDocs(i interface{}, opts map[string]interface{}) (int, int, string, error) {
-	return d.DB.AllDocs(i, opts)
+func (d *db) AllDocsContext(ctx context.Context, i interface{}, opts map[string]interface{}) (int, int, string, error) {
+	return d.DB.AllDocsContext(ctx, i, opts)
 }
 
-func (d *db) Get(id string, i interface{}, opts map[string]interface{}) error {
-	return d.DB.Get(id, i, opts)
+func (d *db) GetContext(ctx context.Context, id string, i interface{}, opts map[string]interface{}) error {
+	return d.DB.GetContext(ctx, id, i, opts)
 }

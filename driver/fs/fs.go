@@ -2,6 +2,7 @@
 package fs
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -80,8 +81,8 @@ var _ driver.Client = &client{}
 // Taken verbatim from http://docs.couchdb.org/en/2.0.0/api/database/common.html
 var validDBNameRE = regexp.MustCompile("^[a-z][a-z0-9_$()+/-]*$")
 
-// AllDBs returns a list of all DBs present in the configured root dir.
-func (c *client) AllDBs() ([]string, error) {
+// AllDBsContext returns a list of all DBs present in the configured root dir.
+func (c *client) AllDBsContext(_ context.Context) ([]string, error) {
 	files, err := ioutil.ReadDir(c.root)
 	if err != nil {
 		return nil, errors.WrapStatus(errors.StatusInternalServerError, err)
@@ -102,9 +103,9 @@ func (c *client) AllDBs() ([]string, error) {
 	return filenames, nil
 }
 
-// CreateDB creates a database
-func (c *client) CreateDB(dbName string) error {
-	exists, err := c.DBExists(dbName)
+// CreateDBContext creates a database
+func (c *client) CreateDBContext(ctx context.Context, dbName string) error {
+	exists, err := c.DBExistsContext(ctx, dbName)
 	if err != nil {
 		return err
 	}
@@ -117,8 +118,8 @@ func (c *client) CreateDB(dbName string) error {
 	return nil
 }
 
-// DBExists returns true if the database exists.
-func (c *client) DBExists(dbName string) (bool, error) {
+// DBExistsContext returns true if the database exists.
+func (c *client) DBExistsContext(_ context.Context, dbName string) (bool, error) {
 	_, err := os.Stat(c.root + "/" + dbName)
 	if err == nil {
 		return true, nil
@@ -129,9 +130,9 @@ func (c *client) DBExists(dbName string) (bool, error) {
 	return false, errors.WrapStatus(errors.StatusInternalServerError, err)
 }
 
-// DestroyDB destroys the database
-func (c *client) DestroyDB(dbName string) error {
-	exists, err := c.DBExists(dbName)
+// DestroyDBContext destroys the database
+func (c *client) DestroyDBContext(ctx context.Context, dbName string) error {
+	exists, err := c.DBExistsContext(ctx, dbName)
 	if err != nil {
 		return err
 	}
@@ -144,7 +145,7 @@ func (c *client) DestroyDB(dbName string) error {
 	return nil
 }
 
-func (c *client) DB(dbName string) (driver.DB, error) {
+func (c *client) DBContext(_ context.Context, dbName string) (driver.DB, error) {
 	return &db{
 		client: c,
 		dbName: dbName,

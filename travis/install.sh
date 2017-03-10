@@ -5,7 +5,8 @@ set -euC
 go get github.com/pborman/uuid \
     github.com/pkg/errors \
     golang.org/x/net/publicsuffix \
-    github.com/flimzy/diff
+    github.com/flimzy/diff \
+    golang.org/x/crypto/pbkdf2
 
 case "$1" in
     "standard")

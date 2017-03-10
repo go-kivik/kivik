@@ -46,6 +46,7 @@ const (
 	CompatCouch20
 )
 
+// Known vendor strings
 const (
 	VendorCouchDB  = "The Apache Software Foundation"
 	VendorCloudant = "IBM Cloudant"

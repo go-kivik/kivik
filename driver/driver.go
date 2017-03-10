@@ -11,7 +11,7 @@ import (
 type Driver interface {
 	// NewClient returns a connection handle to the database. The name is in a
 	// driver-specific format.
-	NewClient(name string) (Client, error)
+	NewClientContext(ctx context.Context, name string) (Client, error)
 }
 
 // ServerInfo represents the response a server gives witha GET request to '/'.

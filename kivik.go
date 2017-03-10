@@ -23,16 +23,21 @@ type Client struct {
 // Options is a collection of options. The keys and values are backend specific.
 type Options map[string]interface{}
 
-// New creates a new client object specified by its database driver name
-// and a driver-specific data source name.
+// New calls NewContext with a background context.
 func New(driverName, dataSourceName string) (*Client, error) {
+	return NewContext(context.Background(), driverName, dataSourceName)
+}
+
+// NewContext creates a new client object specified by its database driver name
+// and a driver-specific data source name.
+func NewContext(ctx context.Context, driverName, dataSourceName string) (*Client, error) {
 	driversMu.RLock()
 	driveri, ok := drivers[driverName]
 	driversMu.RUnlock()
 	if !ok {
 		return nil, fmt.Errorf("kivik: unknown driver %q (forgotten import?)", driverName)
 	}
-	client, err := driveri.NewClient(dataSourceName)
+	client, err := driveri.NewClientContext(ctx, dataSourceName)
 	if err != nil {
 		return nil, err
 	}

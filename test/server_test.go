@@ -3,6 +3,7 @@
 package test
 
 import (
+	"context"
 	"net/http/httptest"
 	"testing"
 
@@ -21,7 +22,7 @@ type customDriver struct {
 	driver.LogReader
 }
 
-func (cd customDriver) NewClient(_ string) (driver.Client, error) {
+func (cd customDriver) NewClientContext(_ context.Context, _ string) (driver.Client, error) {
 	return cd, nil
 }
 

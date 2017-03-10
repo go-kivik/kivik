@@ -31,7 +31,7 @@ func init() {
 	kivik.Register("fs", &fsDriver{})
 }
 
-func (d *fsDriver) NewClient(dir string) (driver.Client, error) {
+func (d *fsDriver) NewClientContext(_ context.Context, dir string) (driver.Client, error) {
 	if err := validateRootDir(dir); err != nil {
 		if os.IsPermission(errors.Cause(err)) {
 			return nil, errors.Status(errors.StatusUnauthorized, "access denied")

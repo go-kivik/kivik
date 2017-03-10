@@ -3,13 +3,11 @@ package couchdb
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
+	"strings"
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/driver/couchdb/chttp"
-	"github.com/flimzy/kivik/errors"
 )
 
 const (
@@ -38,92 +36,62 @@ func init() {
 	kivik.Register("couch", &Couch{})
 }
 
+// CompatMode is a flag indicating the compatibility mode of the driver.
+type CompatMode int
+
+// Compatibility modes
+const (
+	CompatUnknown = iota
+	CompatCouch16
+	CompatCouch20
+)
+
+const (
+	VendorCouchDB  = "The Apache Software Foundation"
+	VendorCloudant = "IBM Cloudant"
+)
+
 type client struct {
 	*chttp.Client
+	Compat CompatMode
 }
 
 var _ driver.Client = &client{}
 
-// NewClient establishes a new connection to a CouchDB server instance. If
+// NewClientContext establishes a new connection to a CouchDB server instance. If
 // auth credentials are included in the URL, they are used to authenticate using
 // CookieAuth (or BasicAuth if compiled with GopherJS). If you wish to use a
 // different auth mechanism, do not specify credentials here, and instead call
 // Authenticate() later.
-func (c *Couch) NewClient(dsn string) (driver.Client, error) {
+func (d *Couch) NewClientContext(ctx context.Context, dsn string) (driver.Client, error) {
 	chttpClient, err := chttp.New(dsn)
-	return &client{
+	if err != nil {
+		return nil, err
+	}
+	c := &client{
 		Client: chttpClient,
-	}, err
-}
-
-type info struct {
-	Data json.RawMessage
-	Ver  string `json:"version"`
-	Vend struct {
-		Name    string `json:"name"`
-		Version string `json:"version"`
-	} `json:"vendor"`
-}
-
-var _ driver.ServerInfo = &info{}
-
-func (i *info) UnmarshalJSON(data []byte) error {
-	type alias info
-	var a alias
-	if err := json.Unmarshal(data, &a); err != nil {
-		return err
 	}
-	i.Data = data
-	i.Ver = a.Ver
-	i.Vend = a.Vend
-	return nil
+	c.setCompatMode(ctx)
+	return c, nil
 }
 
-func (i *info) Response() json.RawMessage { return i.Data }
-func (i *info) Version() string           { return i.Ver }
-func (i *info) Vendor() string            { return i.Vend.Name }
-func (i *info) VendorVersion() string     { return i.Vend.Version }
-
-// ServerInfo returns the server's version info.
-func (c *client) ServerInfoContext(ctx context.Context) (driver.ServerInfo, error) {
-	i := &info{}
-	return i, c.DoJSON(ctx, chttp.MethodGet, "/", nil, i)
-}
-
-func (c *client) AllDBsContext(ctx context.Context) ([]string, error) {
-	var allDBs []string
-	return allDBs, c.DoJSON(ctx, chttp.MethodGet, "/_all_dbs", nil, &allDBs)
-}
-
-func (c *client) UUIDsContext(ctx context.Context, count int) ([]string, error) {
-	var uuids struct {
-		UUIDs []string `json:"uuids"`
+func (c *client) setCompatMode(ctx context.Context) {
+	info, err := c.ServerInfoContext(ctx)
+	if err != nil {
+		// We don't want to error here, in case the / endpoint is just blocked
+		// for security reasons or something; but then we also can't infer the
+		// compat mode, so just return, defaulting to CompatUnknown.
+		return
 	}
-	return uuids.UUIDs, c.DoJSON(ctx, chttp.MethodGet, fmt.Sprintf("/_uuids?count=%d", count), nil, &uuids)
-}
-
-func (c *client) MembershipContext(ctx context.Context) ([]string, []string, error) {
-	var membership struct {
-		All     []string `json:"all_nodes"`
-		Cluster []string `json:"cluster_nodes"`
+	switch info.Vendor() {
+	case VendorCouchDB, VendorCloudant:
+		switch {
+		case strings.HasPrefix(info.Version(), "2.0."):
+			c.Compat = CompatCouch20
+		case strings.HasPrefix(info.Version(), "1.6"):
+			c.Compat = CompatCouch16
+		}
 	}
-	return membership.All, membership.Cluster, c.DoJSON(ctx, chttp.MethodGet, "/_membership", nil, &membership)
-}
-
-func (c *client) DBExistsContext(ctx context.Context, dbName string) (bool, error) {
-	err := c.DoError(ctx, chttp.MethodHead, dbName, nil)
-	if errors.StatusCode(err) == kivik.StatusNotFound {
-		return false, nil
-	}
-	return err == nil, err
-}
-
-func (c *client) CreateDBContext(ctx context.Context, dbName string) error {
-	return c.DoError(ctx, chttp.MethodPut, dbName, nil)
-}
-
-func (c *client) DestroyDBContext(ctx context.Context, dbName string) error {
-	return c.DoError(ctx, chttp.MethodDelete, dbName, nil)
 }
 
 func (c *client) DBContext(_ context.Context, dbName string) (driver.DB, error) {

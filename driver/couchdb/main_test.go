@@ -1,10 +1,13 @@
 package couchdb
 
 import (
+	"context"
 	"net/url"
 	"os"
 	"testing"
 )
+
+var CTX = context.Background()
 
 func dsn(t *testing.T) string {
 	for _, env := range []string{"KIVIK_TEST_DSN_COUCH16", "KIVIK_TEST_DSN_COUCH20", "KIVIK_TEST_DSN_CLOUDANT"} {
@@ -29,7 +32,7 @@ func noAuthDSN(t *testing.T) string {
 
 func connect(dsn string, t *testing.T) *client {
 	couch := &Couch{}
-	driverClient, err := couch.NewClient(dsn)
+	driverClient, err := couch.NewClientContext(CTX, dsn)
 	if err != nil {
 		t.Fatalf("Failed to connect to '%s': %s", dsn, err)
 	}

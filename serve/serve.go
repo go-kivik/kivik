@@ -10,6 +10,7 @@ import (
 	"github.com/dimfeld/httptreemux"
 
 	"github.com/flimzy/kivik"
+	"github.com/flimzy/kivik/auth"
 	"github.com/flimzy/kivik/config"
 	"github.com/flimzy/kivik/errors"
 	"github.com/flimzy/kivik/logger"
@@ -29,6 +30,9 @@ const CompatVersion = "1.6.1"
 type Service struct {
 	// Client is an instance of a driver.Client, which will be served.
 	Client *kivik.Client
+	// AuthHandler authenticates user credentials. If no auth handler is
+	// specified, the server will run in PERPETUAL ADMIN PARTY!
+	AuthHandler auth.Handler
 	// CompatVersion is the compatibility version to report to clients. Defaults
 	// to 1.6.1.
 	CompatVersion string
@@ -74,7 +78,7 @@ func (s *Service) Init() (http.Handler, error) {
 	return s.setupRoutes()
 }
 
-// Start begins serving connections on the requested bind address.
+// Start begins serving connections.
 func (s *Service) Start() error {
 	server, err := s.Init()
 	if err != nil {
@@ -84,6 +88,9 @@ func (s *Service) Start() error {
 		s.Config().GetString("httpd", "bind_address"),
 		s.Config().GetInt("httpd", "port"),
 	)
+	if s.AuthHandler == nil {
+		s.Warn("No AuthHandler specified! Running in PERMANENT ADMIN PARTY mode!")
+	}
 	s.Info("Listening on %s", addr)
 	return http.ListenAndServe(addr, server)
 }

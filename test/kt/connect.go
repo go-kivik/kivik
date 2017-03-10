@@ -11,7 +11,8 @@ import (
 
 var CTX = context.Background()
 
-func dsn(t *testing.T) string {
+// DSN returns a testing DSN from the environment.
+func DSN(t *testing.T) string {
 	for _, env := range []string{"KIVIK_TEST_DSN_COUCH16", "KIVIK_TEST_DSN_COUCH20", "KIVIK_TEST_DSN_CLOUDANT"} {
 		dsn := os.Getenv(env)
 		if dsn != "" {
@@ -22,8 +23,9 @@ func dsn(t *testing.T) string {
 	return ""
 }
 
-func noAuthDSN(t *testing.T) string {
-	dsn := dsn(t)
+// NoAuthDSN returns a testing DSN with credentials stripped.
+func NoAuthDSN(t *testing.T) string {
+	dsn := DSN(t)
 	parsed, err := url.Parse(dsn)
 	if err != nil {
 		t.Fatalf("invalid DSN: %s", err)
@@ -42,10 +44,10 @@ func connect(dsn string, t *testing.T) *kivik.Client {
 
 // GetClient returns a connection to a CouchDB client, for testing.
 func GetClient(t *testing.T) *kivik.Client {
-	return connect(dsn(t), t)
+	return connect(DSN(t), t)
 }
 
 // GetNoAuthClient returns an unauthenticated connection to a CouchDB client, for testing.
 func GetNoAuthClient(t *testing.T) *kivik.Client {
-	return connect(noAuthDSN(t), t)
+	return connect(NoAuthDSN(t), t)
 }

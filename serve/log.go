@@ -39,12 +39,11 @@ func log(w http.ResponseWriter, r *http.Request) error {
 		return errors.Status(http.StatusBadRequest, "offset must be a positive integer")
 	}
 
-	buf := make([]byte, length)
-	n, err := client.Log(buf, offset)
+	logR, err := client.LogContext(context.Background(), length, offset)
 	if err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", typeText)
-	w.Write(buf[0:n])
-	return nil
+	_, err = io.Copy(w, logR)
+	return err
 }

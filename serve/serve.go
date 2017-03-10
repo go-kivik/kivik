@@ -158,16 +158,14 @@ const (
 type handler func(w http.ResponseWriter, r *http.Request) error
 
 func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	err := h(w, r)
-	if err == nil {
-		return
+	if err := h(w, r); err != nil {
+		reportError(w, err)
 	}
-	status := errors.StatusCode(err)
-	if status == 0 {
-		status = http.StatusInternalServerError
-	}
+}
+
+func reportError(w http.ResponseWriter, err error) {
 	w.Header().Add("Content-Type", typeJSON)
-	w.WriteHeader(status)
+	w.WriteHeader(errors.StatusCode(err))
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"error": err.Error(),
 	})

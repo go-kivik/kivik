@@ -43,5 +43,6 @@ func (s *Service) setupRoutes() (http.Handler, error) {
 		handle = gzipHandler(handle)
 	}
 	handle = requestLogger(s, handle)
+	handle = authHandler(s, handle)
 	return handle, nil
 }

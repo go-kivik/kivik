@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/flimzy/kivik"
+	"github.com/flimzy/kivik/auth/confadmin"
 	"github.com/flimzy/kivik/config"
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/driver/proxy"
@@ -38,9 +39,11 @@ func TestServer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to connect to custom driver: %s", err)
 	}
+	conf := config.New(memconf.New())
 	service.Client = backend
+	service.AuthHandler = confadmin.New(conf)
 	service.LogWriter = log
-	service.SetConfig(config.New(memconf.New()))
+	service.SetConfig(conf)
 	service.Config().Set("log", "capacity", "10")
 	handler, err := service.Init()
 	if err != nil {

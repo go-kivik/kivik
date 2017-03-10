@@ -24,7 +24,7 @@ var testUser = &tuser{
 }
 
 func TestBadDSN(t *testing.T) {
-	if _, err := New("ht\\tp:/! This is really bogus!"); err == nil {
+	if _, err := New("http://foo.com:port with spaces/"); err == nil {
 		t.Errorf("Expected error for invalid URL.")
 	}
 	if _, err := New("http://foo:bar@foo.com/"); err == nil {

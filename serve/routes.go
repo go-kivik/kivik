@@ -1,12 +1,12 @@
 package serve
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/dimfeld/httptreemux"
 	"github.com/pkg/errors"
-	"golang.org/x/net/context"
 )
 
 func (s *Service) setupRoutes() (http.Handler, error) {

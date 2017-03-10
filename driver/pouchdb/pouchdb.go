@@ -94,9 +94,9 @@ var _ driver.Client = &client{}
 
 // AllDBs returns the list of all existing databases. This function depends on
 // the pouchdb-all-dbs plugin being loaded.
-func (c *client) AllDBsContext(_ context.Context) ([]string, error) {
+func (c *client) AllDBsContext(ctx context.Context) ([]string, error) {
 	if c.dsn == nil {
-		return c.pouch.AllDBs()
+		return c.pouch.AllDBs(ctx)
 	}
 	return nil, errors.New("AllDBs() not implemented for remote PouchDB databases")
 }
@@ -159,14 +159,14 @@ func (c *client) isRemote() bool {
 // DBExistsContext returns true if the requested DB exists. This function only
 // works for remote databases. For local databases, it creates the database.
 // Silly PouchDB.
-func (c *client) DBExistsContext(_ context.Context, dbName string) (bool, error) {
+func (c *client) DBExistsContext(ctx context.Context, dbName string) (bool, error) {
 	opts, err := c.options(Options{
 		"skip_setup": true,
 	})
 	if err != nil {
 		return false, err
 	}
-	_, err = c.pouch.New(c.dbURL(dbName), opts).Info()
+	_, err = c.pouch.New(c.dbURL(dbName), opts).Info(ctx)
 	if err == nil {
 		return true, nil
 	}
@@ -186,7 +186,7 @@ func (c *client) CreateDBContext(ctx context.Context, dbName string) error {
 	if err != nil {
 		return err
 	}
-	_, err = c.pouch.New(c.dbURL(dbName), opts).Info()
+	_, err = c.pouch.New(c.dbURL(dbName), opts).Info(ctx)
 	return err
 }
 
@@ -203,7 +203,7 @@ func (c *client) DestroyDBContext(ctx context.Context, dbName string) error {
 	if err != nil {
 		return err
 	}
-	return c.pouch.New(c.dbURL(dbName), opts).Destroy(nil)
+	return c.pouch.New(c.dbURL(dbName), opts).Destroy(ctx, nil)
 }
 
 func (c *client) DBContext(_ context.Context, dbName string) (driver.DB, error) {

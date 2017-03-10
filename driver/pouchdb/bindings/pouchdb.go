@@ -3,7 +3,9 @@
 package bindings
 
 import (
+	"context"
 	"errors"
+	"time"
 
 	"github.com/gopherjs/gopherjs/js"
 	"github.com/gopherjs/jsbuiltin"
@@ -42,27 +44,68 @@ func (p *PouchDB) Version() string {
 	return p.Get("version").String()
 }
 
-// AllDBs returns the list of all existing (undeleted) databases.
-func (p *PouchDB) AllDBs() ([]string, error) {
-	if jsbuiltin.TypeOf(p.Get("allDbs")) != "function" {
-		return nil, errors.New("pouchdb-all-dbs plugin not loaded")
+type caller interface {
+	Call(string, ...interface{}) *js.Object
+}
+
+func setTimeout(ctx context.Context, options map[string]interface{}) map[string]interface{} {
+	if ctx == nil { // Just to be safe
+		return options
 	}
+	deadline, ok := ctx.Deadline()
+	if !ok {
+		return options
+	}
+	if options == nil {
+		options = make(map[string]interface{})
+	}
+	if _, ok := options["ajax"]; !ok {
+		options["ajax"] = make(map[string]interface{})
+	}
+	ajax := options["ajax"].(map[string]interface{})
+	ajax["timeout"] = int(deadline.Sub(time.Now()) * 1000)
+	return options
+}
+
+// callBack executes the 'method' of 'o' as a callback, setting result to the
+// callback's return value. An error is returned if either the callback returns
+// an error, or if the context is cancelled. No attempt is made to abort the
+// callback in the case that the context is cancelled.
+func callBack(ctx context.Context, o caller, method string, args ...interface{}) (*js.Object, error) {
 	resultCh := make(chan *js.Object)
 	var err error
-	p.Call("allDbs", func(e, r *js.Object) {
+	args = append(args, func(e, r *js.Object) {
 		if e != nil {
 			err = &pouchError{Object: e}
 		}
 		resultCh <- r
 	})
-	result := <-resultCh
-	var allDBs []string
-	if result != js.Undefined {
-		for i := 0; i < result.Length(); i++ {
-			allDBs = append(allDBs, result.Index(i).String())
-		}
+	o.Call(method, args...)
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case result := <-resultCh:
+		return result, err
 	}
-	return allDBs, err
+}
+
+// AllDBs returns the list of all existing (undeleted) databases.
+func (p *PouchDB) AllDBs(ctx context.Context) ([]string, error) {
+	if jsbuiltin.TypeOf(p.Get("allDbs")) != "function" {
+		return nil, errors.New("pouchdb-all-dbs plugin not loaded")
+	}
+	result, err := callBack(ctx, p, "allDbs")
+	if err != nil {
+		return nil, err
+	}
+	if result == js.Undefined {
+		return nil, nil
+	}
+	allDBs := make([]string, result.Length())
+	for i := range allDBs {
+		allDBs[i] = result.Index(i).String()
+	}
+	return allDBs, nil
 }
 
 // DBInfo is a struct respresenting information about a specific database.
@@ -74,44 +117,20 @@ type DBInfo struct {
 }
 
 // Info returns info about the database.
-func (db *DB) Info() (*DBInfo, error) {
-	resultCh := make(chan *DBInfo)
-	var err error
-	db.Call("info", func(e *js.Object, i *DBInfo) {
-		if e != nil {
-			err = &pouchError{Object: e}
-		}
-		resultCh <- i
-	})
-	info := <-resultCh
-	return info, err
+func (db *DB) Info(ctx context.Context) (*DBInfo, error) {
+	result, err := callBack(ctx, db, "info")
+	return &DBInfo{Object: result}, err
 }
 
 // Destroy destroys the database.
-func (db *DB) Destroy(options map[string]interface{}) error {
-	resultCh := make(chan *js.Object)
-	var err error
-	db.Call("destroy", options, func(e, r *js.Object) {
-		if e != nil {
-			err = &pouchError{Object: e}
-		}
-		resultCh <- r
-	})
-	_ = <-resultCh
+func (db *DB) Destroy(ctx context.Context, options map[string]interface{}) error {
+	_, err := callBack(ctx, db, "destroy", setTimeout(ctx, options))
 	return err
 }
 
 // AllDocs returns a list of all documents in the database.
-func (db *DB) AllDocs(options map[string]interface{}) ([]byte, error) {
-	resultCh := make(chan *js.Object)
-	var err error
-	db.Call("allDocs", options, func(e, r *js.Object) {
-		if e != nil {
-			err = &pouchError{Object: e}
-		}
-		resultCh <- r
-	})
-	result := <-resultCh
+func (db *DB) AllDocs(ctx context.Context, options map[string]interface{}) ([]byte, error) {
+	result, err := callBack(ctx, db, "allDocs", setTimeout(ctx, options))
 	resultJSON := js.Global.Get("JSON").Call("stringify", result).String()
 	return []byte(resultJSON), err
 }

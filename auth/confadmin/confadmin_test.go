@@ -49,20 +49,6 @@ func TestInvalidHashes(t *testing.T) {
 func TestConfAdminAuth(t *testing.T) {
 	conf := config.New(memconf.New())
 	auth := New(conf)
-	adminParty, err := auth.Validate(kt.CTX, "admin", "party")
-	if err != nil {
-		t.Errorf("Admin party failed: %s", err)
-	}
-	if !adminParty {
-		t.Errorf("Expected the admin party!")
-	}
-	adminPartyRoles, err := auth.Roles(kt.CTX, "admin")
-	if err != nil {
-		t.Errorf("Admin party roles failes: %s", err)
-	}
-	if !reflect.DeepEqual(adminPartyRoles, []string{"_admin"}) {
-		t.Errorf("Unexpected admin party roles: %v", adminPartyRoles)
-	}
 
 	conf.Set("admins", "test", "-pbkdf2-792221164f257de22ad72a8e94760388233e5714,7897f3451f59da741c87ec5f10fe7abe,10")
 	valid, err := auth.Validate(kt.CTX, "test", "abc123")

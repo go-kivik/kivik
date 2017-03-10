@@ -12,8 +12,8 @@ type db struct {
 	db *bindings.DB
 }
 
-func (d *db) AllDocsContext(_ context.Context, docs interface{}, options map[string]interface{}) (offset, totalrows int, updateSeq string, err error) {
-	body, err := d.db.AllDocs(options)
+func (d *db) AllDocsContext(ctx context.Context, docs interface{}, options map[string]interface{}) (offset, totalrows int, updateSeq string, err error) {
+	body, err := d.db.AllDocs(ctx, options)
 	if err != nil {
 		return 0, 0, "", err
 	}

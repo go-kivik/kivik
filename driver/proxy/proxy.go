@@ -11,7 +11,7 @@ type CompleteClient interface {
 	driver.Client
 	driver.Authenticator
 	driver.UUIDer
-	driver.Logger
+	driver.LogReader
 	driver.Cluster
 	driver.Configer
 }

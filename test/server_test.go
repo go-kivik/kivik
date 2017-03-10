@@ -18,7 +18,7 @@ import (
 
 type customDriver struct {
 	driver.Client
-	driver.Logger
+	driver.LogReader
 }
 
 func (cd customDriver) NewClient(_ string) (driver.Client, error) {
@@ -29,8 +29,8 @@ func TestServer(t *testing.T) {
 	memClient, _ := kivik.New("memory", "")
 	log := &memlogger.Logger{}
 	kivik.Register("custom", customDriver{
-		Client: proxy.NewClient(memClient),
-		Logger: log,
+		Client:    proxy.NewClient(memClient),
+		LogReader: log,
 	})
 	service := serve.Service{}
 	backend, err := kivik.New("custom", "")

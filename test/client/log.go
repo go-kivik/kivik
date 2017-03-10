@@ -1,6 +1,7 @@
 package client
 
 import (
+	"bytes"
 	"strings"
 
 	"github.com/flimzy/kivik"
@@ -13,9 +14,8 @@ func init() {
 
 type logTest struct {
 	name     string
-	len      int
-	cap      int
-	offset   int
+	len      int64
+	offset   int64
 	contains string
 }
 
@@ -24,33 +24,25 @@ func log(ctx *kt.Context) {
 	ctx.Admin.DBExists("abracadabra")
 	tests := []logTest{
 		logTest{
-			name: "Len0Cap0",
+			name: "Len0",
 		},
 		logTest{
-			name: "Len0Cap1000",
-			cap:  1000,
-		},
-		logTest{
-			name: "Len1000Cap1000",
+			name: "Len1000",
 			len:  1000,
-			cap:  1000,
 		},
 		logTest{
 			name:     "Contains",
 			len:      10000,
-			cap:      10000,
 			contains: "HEAD /abracadabra",
 		},
 		logTest{
 			name:   "Offset1000",
 			len:    1000,
-			cap:    1000,
 			offset: 1000,
 		},
 		logTest{
 			name:   "Offset-1000",
 			len:    1000,
-			cap:    1000,
 			offset: -1000,
 		},
 	}
@@ -71,12 +63,13 @@ func log(ctx *kt.Context) {
 func doLogTest(ctx *kt.Context, client *kivik.Client, test logTest) {
 	ctx.Run(test.name, func(ctx *kt.Context) {
 		ctx.Parallel()
-		buf := make([]byte, test.len, test.cap)
-		bufLen, err := client.Log(buf, test.offset)
+		logR, err := client.Log(test.len, test.offset)
 		if !ctx.IsExpectedSuccess(err) {
 			return
 		}
-		log := string(buf[0:bufLen])
+		buf := &bytes.Buffer{}
+		buf.ReadFrom(logR)
+		log := buf.String()
 		if test.contains != "" && !strings.Contains(log, test.contains) {
 			ctx.Errorf("Log does not contain expected string '%s':\n%s", test.contains, log)
 		}

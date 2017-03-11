@@ -1,15 +1,15 @@
 package serve
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 
-	"github.com/dimfeld/httptreemux"
-
 	"github.com/flimzy/kivik"
+	"github.com/flimzy/kivik/auth"
 	"github.com/flimzy/kivik/authdb"
 	"github.com/flimzy/kivik/config"
 	"github.com/flimzy/kivik/errors"
@@ -33,6 +33,10 @@ type Service struct {
 	// UserStore provides access to a user database for use by authentication
 	// handlers.
 	UserStore authdb.UserStore
+	// AuthHandler is a slice of authentication handlers. If no auth
+	// handlers are configured, the server will operate as a PERPETUAL
+	// ADMIN PARTY!
+	AuthHandlers []auth.Handler
 	// CompatVersion is the compatibility version to report to clients. Defaults
 	// to 1.6.1.
 	CompatVersion string
@@ -47,9 +51,15 @@ type Service struct {
 	// if the Log() method is expected to work. By default, logs are written to
 	// standard output.
 	LogWriter logger.LogWriter
-	// Config is the configuration backend. If none is specified, anew memconf
+
+	// config is the configuration backend. If none is specified, anew memconf
 	// instance is instantiated the first time configuration is requested.
 	config *config.Config
+
+	// authHandlers is a map version of AuthHandlers for easier internal
+	// use.
+	authHandlers     map[string]auth.Handler
+	authHandlerNames []string
 }
 
 // Config returns a connection to the configuration backend.
@@ -88,11 +98,43 @@ func (s *Service) Start() error {
 		s.Config().GetString("httpd", "bind_address"),
 		s.Config().GetInt("httpd", "port"),
 	)
-	if s.UserStore == nil {
-		s.Warn("No AuthHandler specified! Running in PERMANENT ADMIN PARTY mode!")
-	}
+	s.authHandlersSetup()
 	s.Info("Listening on %s", addr)
 	return http.ListenAndServe(addr, server)
+}
+
+func (s *Service) authHandlersSetup() {
+	if s.AuthHandlers == nil || len(s.AuthHandlers) == 0 {
+		s.Warn("No AuthHandler specified! Welcome to the PERPETUAL ADMIN PARTY!")
+	}
+	s.authHandlers = make(map[string]auth.Handler)
+	s.authHandlerNames = make([]string, len(s.AuthHandlers))
+	for _, handler := range s.AuthHandlers {
+		name := handler.MethodName()
+		if _, ok := s.authHandlers[name]; ok {
+			panic(fmt.Sprintf("Multiple auth handlers for for `%s` registered", name))
+		}
+		s.authHandlers[name] = handler
+		s.authHandlerNames = append(s.authHandlerNames, name)
+	}
+	if s.UserStore == nil {
+		// Set up a dummy user store that always returns Unauthorized.
+		// This allows us to guarantee that AuthHandlers will always get
+		// a valid UserStore. And perhaps some AuthHandlers don't
+		// actually require a user store, or implement their own
+		// somehow.
+		s.UserStore = &nilUserStore{}
+	}
+}
+
+type nilUserStore struct{}
+
+func (u *nilUserStore) Validate(_ context.Context, _, _ string) (*authdb.UserContext, error) {
+	return nil, kivik.ErrUnauthorized
+}
+
+func (u *nilUserStore) UserCtx(_ context.Context, _ string) (*authdb.UserContext, error) {
+	return nil, kivik.ErrUnauthorized
 }
 
 // Bind sets the HTTP daemon bind address and port.
@@ -115,20 +157,6 @@ const (
 	mDELETE = http.MethodDelete
 	mCOPY   = "COPY"
 )
-
-func getService(r *http.Request) *Service {
-	service := r.Context().Value(ServiceContextKey).(*Service)
-	return service
-}
-
-func getClient(r *http.Request) *kivik.Client {
-	client := r.Context().Value(ClientContextKey).(*kivik.Client)
-	return client
-}
-
-func getParams(r *http.Request) map[string]string {
-	return httptreemux.ContextParams(r.Context())
-}
 
 type vendorInfo struct {
 	Name    string `json:"name"`

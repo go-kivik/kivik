@@ -1,30 +1,59 @@
 package serve
 
-import "golang.org/x/net/context"
+import (
+	"fmt"
+	"net/http"
+
+	"github.com/dimfeld/httptreemux"
+	"github.com/flimzy/kivik"
+	"github.com/flimzy/kivik/auth"
+	"golang.org/x/net/context"
+)
 
 type contextKey struct {
 	name string
 }
 
 var (
-	// AuthUserKey is a context key used to access the authenticated user, ifany.
-	AuthUserKey = &contextKey{"auth-user"}
-	// AuthRolesKey is a context key used to access the authenticated user's roles.
-	AuthRolesKey = &contextKey{"auth-roles"}
+	// SessionKey is a context key used to access the authenticated session.
+	SessionKey = &contextKey{"session"}
 	// ClientContextKey is a context key used to access the kivik client.
-	ClientContextKey = &contextKey{"kivik-client"}
+	ClientContextKey = &contextKey{"client"}
 	// ServiceContextKey is a context key used to access the serve.Service struct.
-	ServiceContextKey = &contextKey{"kivik-service"}
+	ServiceContextKey = &contextKey{"service"}
 )
 
-// GetUser gets the authenticated user from the context.
-func GetUser(ctx context.Context) (string, bool) {
-	u, ok := ctx.Value(AuthUserKey).(string)
-	return u, ok
+func setContext(s *Service, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("Setting context\n")
+		ctx := r.Context()
+		ctx = context.WithValue(ctx, ClientContextKey, s.Client)
+		ctx = context.WithValue(ctx, ServiceContextKey, s)
+		r = r.WithContext(ctx)
+		next.ServeHTTP(w, r)
+	})
 }
 
-// GetRoles gets the authenticated user's roles from the context.
-func GetRoles(ctx context.Context) ([]string, bool) {
-	r, ok := ctx.Value(AuthRolesKey).([]string)
-	return r, ok
+// MustGetSession returns the user context for the currently authenticated user.
+// If no session is set, the function panics.
+func MustGetSession(ctx context.Context) *auth.Session {
+	s, ok := ctx.Value(SessionKey).(*auth.Session)
+	if !ok {
+		panic("No session!")
+	}
+	return s
+}
+
+func getService(r *http.Request) *Service {
+	service := r.Context().Value(ServiceContextKey).(*Service)
+	return service
+}
+
+func getClient(r *http.Request) *kivik.Client {
+	client := r.Context().Value(ClientContextKey).(*kivik.Client)
+	return client
+}
+
+func getParams(r *http.Request) map[string]string {
+	return httptreemux.ContextParams(r.Context())
 }

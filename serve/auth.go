@@ -6,54 +6,51 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/flimzy/kivik"
+	"github.com/flimzy/kivik/auth"
+	"github.com/flimzy/kivik/authdb"
 	"github.com/flimzy/kivik/errors"
 )
 
 func authHandler(s *Service, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if err := s.validate(r); err != nil {
+		session, err := s.validate(r)
+		if err != nil && errors.StatusCode(err) != kivik.StatusUnauthorized {
 			reportError(w, err)
 			return
 		}
+		ctx := r.Context()
+		ctx = context.WithValue(ctx, SessionKey, session)
+		r = r.WithContext(ctx)
 		next.ServeHTTP(w, r)
 	})
 }
 
 // validate must return a 401 error if there is an authentication failure.
 // No error means the user is permitted.
-func (s *Service) validate(r *http.Request) error {
-	if r.URL.Path == "/" {
-		return nil
+func (s *Service) validate(r *http.Request) (*auth.Session, error) {
+	if s.authHandlers == nil {
+		// Perpetual admin party
+		return s.createSession("", &authdb.UserContext{Roles: []string{"_admin"}}), nil
 	}
-	if r.URL.Path == "/_session" && r.Method == http.MethodGet {
-		return nil
-	}
-	if r.URL.Path == "/_uuids" {
-		return nil
-	}
-	adminParty, err := s.isAdminParty(r.Context())
-	if err != nil {
-		return err
-	}
-	if adminParty {
-		return nil
-	}
-	if username, password, ok := r.BasicAuth(); ok {
-		_, err := s.UserStore.Validate(r.Context(), username, password)
-		if err != nil {
-			s.Error("AuthHandler failed for username '%s': %s", username, err)
-			return errors.Status(kivik.StatusInternalServerError, "authentication failure")
+	for methodName, handler := range s.authHandlers {
+		uCtx, err := handler.Authenticate(r, s.UserStore)
+		switch {
+		case errors.StatusCode(err) == kivik.StatusUnauthorized:
+			continue
+		case err != nil:
+			return nil, err
+		default:
+			return s.createSession(methodName, uCtx), nil
 		}
-		return nil
 	}
-	return errors.Status(kivik.StatusUnauthorized, "not authorized")
+	// None of the auth methods succeeded, so return unauthorized
+	return s.createSession("", nil), nil
 }
 
-func (s *Service) isAdminParty(ctx context.Context) (bool, error) {
-	if s.UserStore == nil {
-		// Perpetual Admin Party!
-		return true, nil
+func (s *Service) createSession(method string, user *authdb.UserContext) *auth.Session {
+	return &auth.Session{
+		AuthMethod: method,
+		Handlers:   s.authHandlerNames,
+		User:       user,
 	}
-	sec, err := s.Config().GetSectionContext(ctx, "admins")
-	return len(sec) == 0, err
 }

@@ -5,6 +5,7 @@ package authdb
 import (
 	"context"
 	"crypto/sha1"
+	"encoding/json"
 	"fmt"
 
 	"golang.org/x/crypto/pbkdf2"
@@ -32,7 +33,7 @@ const SchemePBKDF2 = "pbkdf2"
 // See http://docs.couchdb.org/en/2.0.0/json-structure.html#userctx-object.
 type UserContext struct {
 	Database     string   `json:"db,omitempty"`
-	AuthDatabase string   `json:"authentication_db,omitempty"`
+	AuthDatabase string   `json:"-"`
 	Name         string   `json:"name"`
 	Roles        []string `json:"roles"`
 }
@@ -41,4 +42,24 @@ type UserContext struct {
 func ValidatePBKDF2(password, salt, derivedKey string, iterations int) bool {
 	hash := fmt.Sprintf("%x", pbkdf2.Key([]byte(password), []byte(salt), iterations, PBKDF2KeyLength, sha1.New))
 	return hash == derivedKey
+}
+
+// MarshalJSON satisfies the json.Marshaler interface.
+func (c *UserContext) MarshalJSON() ([]byte, error) {
+	roles := c.Roles
+	if roles == nil {
+		roles = []string{}
+	}
+	output := map[string]interface{}{
+		"roles": roles,
+	}
+	if c.Database != "" {
+		output["db"] = c.Database
+	}
+	if c.Name != "" {
+		output["name"] = c.Name
+	} else {
+		output["name"] = nil
+	}
+	return json.Marshal(output)
 }

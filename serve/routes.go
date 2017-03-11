@@ -1,7 +1,6 @@
 package serve
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/NYTimes/gziphandler"
@@ -41,15 +40,6 @@ func (s *Service) setupRoutes() (http.Handler, error) {
 	}
 	handle = requestLogger(s, handle)
 	handle = authHandler(s, handle)
+	handle = setContext(s, handle)
 	return handle, nil
-}
-
-func setContext(s *Service, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		ctx = context.WithValue(ctx, ClientContextKey, s.Client)
-		ctx = context.WithValue(ctx, ServiceContextKey, s)
-		r = r.WithContext(ctx)
-		next.ServeHTTP(w, r)
-	})
 }

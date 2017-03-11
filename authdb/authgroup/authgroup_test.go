@@ -25,8 +25,8 @@ type tuser struct {
 }
 
 var testUser = &tuser{
-	ID:       "org.couchdb.user:test",
-	Name:     "test",
+	ID:       "org.couchdb.user:testFoo",
+	Name:     "testFoo",
 	Type:     "user",
 	Roles:    []string{"coolguy"},
 	Password: "abc123",
@@ -71,14 +71,14 @@ func TestConfAdminAuth(t *testing.T) {
 		t.Errorf("User should not have been validated with wrong password")
 	}
 
-	uCtx, err = auth.Validate(kt.CTX, "test", "abc123")
+	uCtx, err = auth.Validate(kt.CTX, "testFoo", "abc123")
 	if err != nil {
 		t.Errorf("Validation failure for good password: %s", err)
 	}
 	if uCtx == nil {
 		t.Errorf("User should have been validated")
 	}
-	uCtx, err = auth.Validate(kt.CTX, "test", "foobar")
+	uCtx, err = auth.Validate(kt.CTX, "testFoo", "foobar")
 	if errors.StatusCode(err) != kivik.StatusUnauthorized {
 		t.Errorf("Expected Unauthorized for bad password, got %s", err)
 	}
@@ -93,11 +93,11 @@ func TestConfAdminAuth(t *testing.T) {
 		t.Errorf("User should not have been validated with wrong username")
 	}
 
-	uCtx, err = auth.UserCtx(kt.CTX, "test")
+	uCtx, err = auth.UserCtx(kt.CTX, "testFoo")
 	if err != nil {
 		t.Errorf("Failed to get roles for valid user: %s", err)
 	}
-	if !reflect.DeepEqual(uCtx, &authdb.UserContext{Name: "test", Roles: []string{"coolguy"}}) {
+	if !reflect.DeepEqual(uCtx, &authdb.UserContext{Name: "testFoo", Roles: []string{"coolguy"}}) {
 		t.Errorf("Got unexpected context: %v", uCtx)
 	}
 

@@ -12,7 +12,7 @@ func init() {
 		"AllDBs.expected": []string{},
 		"AllDBs/RW.skip":  true, // FIXME: Enable this when it's possible to delete DB from the server
 
-		"Config/Admin/GetAll.expected_sections":      []string{"log"},
+		"Config/Admin/GetAll.expected_sections":      []string{"admins", "log"},
 		"Config/Admin/GetSection.sections":           []string{"log", "chicken"},
 		"Config/Admin/GetSection/log.keys":           []string{"capacity"},
 		"Config/Admin/GetSection/chicken.keys":       []string{},

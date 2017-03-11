@@ -26,6 +26,7 @@ func (s *Service) setupRoutes() (http.Handler, error) {
 	ctxRoot.Handler(mGET, "/_config", handler(getConfig))
 	ctxRoot.Handler(mGET, "/_config/:section", handler(getConfigSection))
 	ctxRoot.Handler(mGET, "/_config/:section/:key", handler(getConfigItem))
+	ctxRoot.Handler(mGET, "/_session", handler(getSession))
 	// ctxRoot.Handler(mDELETE, "/:db", handler(destroyDB) )
 	// ctxRoot.Handler(http.MethodGet, "/:db", handler(getDB))
 

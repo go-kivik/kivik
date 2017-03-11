@@ -4,7 +4,9 @@ package test
 
 import (
 	"context"
+	"fmt"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/flimzy/kivik"
@@ -40,11 +42,13 @@ func TestServer(t *testing.T) {
 		t.Fatalf("Failed to connect to custom driver: %s", err)
 	}
 	conf := config.New(memconf.New())
+	conf.Set("log", "capacity", "10")
+	// Set admin/abc123 credentials
+	conf.Set("admins", "admin", "-pbkdf2-792221164f257de22ad72a8e94760388233e5714,7897f3451f59da741c87ec5f10fe7abe,10")
 	service.Client = backend
 	service.AuthHandler = confadmin.New(conf)
 	service.LogWriter = log
 	service.SetConfig(conf)
-	service.Config().Set("log", "capacity", "10")
 	handler, err := service.Init()
 	if err != nil {
 		t.Fatalf("Failed to initialize server: %s\n", err)
@@ -52,7 +56,10 @@ func TestServer(t *testing.T) {
 	server := httptest.NewServer(handler)
 	defer server.Close()
 
-	client, err := kivik.New("couch", server.URL)
+	dsn, _ := url.Parse(server.URL)
+	dsn.User = url.UserPassword("admin", "abc123")
+	fmt.Printf("dsn = %s\n", dsn.String())
+	client, err := kivik.New("couch", dsn.String())
 	if err != nil {
 		t.Fatalf("Failed to initialize client: %s\n", err)
 	}

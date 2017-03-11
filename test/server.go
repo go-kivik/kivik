@@ -30,9 +30,11 @@ func init() {
 
 		"DestroyDB.skip": true, // FIXME: Update when the server can destroy databases
 
-		"AllDocs/Admin.databases":  []string{"foo"},
-		"AllDocs/Admin/foo.status": http.StatusNotFound,
-		"AllDocs/RW.skip":          true, // FIXME: Update when the server can destroy databases
+		"AllDocs/Admin.databases":   []string{"foo"},
+		"AllDocs/Admin/foo.status":  http.StatusNotFound,
+		"AllDocs/RW.skip":           true, // FIXME: Update when the server can destroy databases
+		"AllDocs/NoAuth.databases":  []string{"foo"},
+		"AllDocs/NoAuth/foo.status": http.StatusNotFound,
 
 		"DBExists.databases":            []string{"chicken"},
 		"DBExists/Admin/chicken.exists": false,
@@ -51,6 +53,7 @@ func init() {
 		"Log/Admin/Offset-1000.status":        http.StatusBadRequest,
 		"Log/Admin/HTTP/TextBytes.status":     http.StatusBadRequest,
 		"Log/Admin/HTTP/NegativeBytes.status": http.StatusBadRequest,
+		"Log/NoAuth/Offset-1000.status":       http.StatusBadRequest,
 
 		"ServerInfo.version":        `^1\.6\.1$`,
 		"ServerInfo.vendor":         "Kivik",

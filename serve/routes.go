@@ -13,6 +13,7 @@ func (s *Service) setupRoutes() (http.Handler, error) {
 	router.HeadCanUseGet = true
 	ctxRoot := router.UsingContext()
 	ctxRoot.Handler(mGET, "/", handler(root))
+	ctxRoot.Handler(mGET, "/favicon.ico", handler(favicon))
 	ctxRoot.Handler(mGET, "/_all_dbs", handler(allDBs))
 	ctxRoot.Handler(mGET, "/_log", handler(log))
 	ctxRoot.Handler(mPUT, "/:db", handler(createDB))

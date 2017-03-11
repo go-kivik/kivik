@@ -16,6 +16,8 @@ case "$1" in
             github.com/dimfeld/httptreemux \
             github.com/spf13/cobra \
             github.com/spf13/pflag
+        go get -u github.com/jteeuwen/go-bindata/...
+        go-bindata -pkg serve -nocompress -prefix "serve/files" -o serve/files.go serve/files
     ;;
     "gopherjs")
         if [ "$TRAVIS_OS_NAME" == "linux" ]; then

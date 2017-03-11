@@ -51,6 +51,9 @@ type Service struct {
 	// if the Log() method is expected to work. By default, logs are written to
 	// standard output.
 	LogWriter logger.LogWriter
+	// Favicon is the path to a file to serve as favicon.ico. If unset, a default
+	// image is used.
+	Favicon string
 
 	// config is the configuration backend. If none is specified, anew memconf
 	// instance is instantiated the first time configuration is requested.

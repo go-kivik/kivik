@@ -45,7 +45,7 @@
 | GET /_stats
 | GET /_utils        |                        |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | GET /_membership   | Membership()           | ❌<sup>[12](#kivikCluster)</sup> | ✅ | ✅<sup>[4](#couchMembership)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
-| GET /favicon.ico   |                        |    | ❌ | ❌ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
+| GET /favicon.ico   |                        | ✅ | ❌ | ❌ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | POST /_session<sup>[6](#cookieAuth)</sup> | ⁿ/ₐ<sup>[13](#getSession)</sup> |    | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | GET /_session<sup>[6](#cookieAuth)</sup> | ⁿ/ₐ<sup>[13](#getSession)</sup> | ☑️ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | DELETE /_session<sup>[6](#cookieAuth)</sup> | ⁿ/ₐ<sup>[13](#getSession)</sup> |  |    | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |

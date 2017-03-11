@@ -4,14 +4,11 @@ package confadmin
 
 import (
 	"context"
-	"crypto/sha1"
-	"fmt"
 	"strconv"
 	"strings"
 
-	"golang.org/x/crypto/pbkdf2"
-
-	"github.com/flimzy/kivik/auth"
+	"github.com/flimzy/kivik"
+	"github.com/flimzy/kivik/authdb"
 	"github.com/flimzy/kivik/config"
 	"github.com/flimzy/kivik/errors"
 )
@@ -20,30 +17,36 @@ type conf struct {
 	*config.Config
 }
 
-var _ auth.Handler = &conf{}
+var _ authdb.UserStore = &conf{}
 
 // New returns a new confadmin authentication service provider.
-func New(c *config.Config) auth.Handler {
+func New(c *config.Config) authdb.UserStore {
 	return &conf{c}
 }
 
-func (c *conf) Validate(ctx context.Context, username, password string) (bool, error) {
+func (c *conf) Validate(ctx context.Context, username, password string) (*authdb.UserContext, error) {
 	hash, err := c.GetContext(ctx, "admins", username)
 	if err != nil {
-		if errors.StatusCode(err) == errors.StatusNotFound {
-			return false, nil
+		if errors.StatusCode(err) == kivik.StatusNotFound {
+			err = errors.Status(kivik.StatusUnauthorized, "unauthorized")
 		}
-		return false, err
+		return nil, err
 	}
 	derivedKey, salt, iterations, err := keySaltIter(hash)
 	if err != nil {
-		return false, errors.Wrap(err, "unrecognized password hash")
+		return nil, errors.Wrap(err, "unrecognized password hash")
 	}
-	key := fmt.Sprintf("%x", pbkdf2.Key([]byte(password), []byte(salt), iterations, auth.PBKDF2KeyLength, sha1.New))
-	return key == derivedKey, nil
+	if !authdb.ValidatePBKDF2(password, salt, derivedKey, iterations) {
+		return nil, errors.Status(kivik.StatusUnauthorized, "unauthorized")
+	}
+	return &authdb.UserContext{
+		AuthDatabase: "config",
+		Name:         username,
+		Roles:        []string{"_admin"},
+	}, nil
 }
 
-const hashPrefix = "-" + auth.SchemePBKDF2 + "-"
+const hashPrefix = "-" + authdb.SchemePBKDF2 + "-"
 
 func keySaltIter(hash string) (key, salt string, iterations int, err error) {
 	if !strings.HasPrefix(hash, hashPrefix) {
@@ -59,9 +62,12 @@ func keySaltIter(hash string) (key, salt string, iterations int, err error) {
 	return parts[0], parts[1], iterations, nil
 }
 
-func (c *conf) Roles(ctx context.Context, username string) ([]string, error) {
+func (c *conf) UserCtx(ctx context.Context, username string) (*authdb.UserContext, error) {
 	if _, err := c.GetContext(ctx, "admins", username); err != nil {
 		return nil, err
 	}
-	return []string{"_admin"}, nil
+	return &authdb.UserContext{
+		Name:  username,
+		Roles: []string{"_admin"},
+	}, nil
 }

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/flimzy/kivik"
+	"github.com/flimzy/kivik/authdb"
 	"github.com/flimzy/kivik/config"
 	_ "github.com/flimzy/kivik/driver/couchdb"
 	"github.com/flimzy/kivik/errors"
@@ -51,36 +52,36 @@ func TestConfAdminAuth(t *testing.T) {
 	auth := New(conf)
 
 	conf.Set("admins", "test", "-pbkdf2-792221164f257de22ad72a8e94760388233e5714,7897f3451f59da741c87ec5f10fe7abe,10")
-	valid, err := auth.Validate(kt.CTX, "test", "abc123")
+	uCtx, err := auth.Validate(kt.CTX, "test", "abc123")
 	if err != nil {
 		t.Errorf("Validation failure for good password: %s", err)
 	}
-	if !valid {
+	if uCtx == nil {
 		t.Errorf("User should have been validated")
 	}
-	notValid, err := auth.Validate(kt.CTX, "test", "foobar")
-	if err != nil {
-		t.Errorf("Validation failure for bad password: %s", err)
+	uCtx, err = auth.Validate(kt.CTX, "test", "foobar")
+	if errors.StatusCode(err) != kivik.StatusUnauthorized {
+		t.Errorf("Expected Unauthorized for bad password, got %s", err)
 	}
-	if notValid {
+	if uCtx != nil {
 		t.Errorf("User should not have been validated with wrong password")
 	}
-	notValid, err = auth.Validate(kt.CTX, "nobody", "foo")
-	if err != nil {
-		t.Errorf("Validation failure for bad username: %s", err)
+	uCtx, err = auth.Validate(kt.CTX, "nobody", "foo")
+	if errors.StatusCode(err) != kivik.StatusUnauthorized {
+		t.Errorf("Expected Unauthorized for bad username, got %s", err)
 	}
-	if notValid {
+	if uCtx != nil {
 		t.Errorf("User should not have been validated with wrong username")
 	}
 
-	roles, err := auth.Roles(kt.CTX, "test")
+	uCtx, err = auth.UserCtx(kt.CTX, "test")
 	if err != nil {
 		t.Errorf("Failed to get roles for valid user: %s", err)
 	}
-	if !reflect.DeepEqual(roles, []string{"_admin"}) {
-		t.Errorf("Got unexpected roles: %v", roles)
+	if !reflect.DeepEqual(uCtx, &authdb.UserContext{Name: "test", Roles: []string{"_admin"}}) {
+		t.Errorf("Got unexpected context: %v", uCtx)
 	}
-	_, err = auth.Roles(kt.CTX, "nobody")
+	_, err = auth.UserCtx(kt.CTX, "nobody")
 	if errors.StatusCode(err) != kivik.StatusNotFound {
 		var msg string
 		if err != nil {

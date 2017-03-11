@@ -39,20 +39,18 @@ func (s *Service) validate(r *http.Request) error {
 		return nil
 	}
 	if username, password, ok := r.BasicAuth(); ok {
-		valid, err := s.AuthHandler.Validate(r.Context(), username, password)
+		_, err := s.UserStore.Validate(r.Context(), username, password)
 		if err != nil {
 			s.Error("AuthHandler failed for username '%s': %s", username, err)
 			return errors.Status(kivik.StatusInternalServerError, "authentication failure")
 		}
-		if valid {
-			return nil
-		}
+		return nil
 	}
 	return errors.Status(kivik.StatusUnauthorized, "not authorized")
 }
 
 func (s *Service) isAdminParty(ctx context.Context) (bool, error) {
-	if s.AuthHandler == nil {
+	if s.UserStore == nil {
 		// Perpetual Admin Party!
 		return true, nil
 	}

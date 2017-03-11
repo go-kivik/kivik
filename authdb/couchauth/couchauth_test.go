@@ -3,7 +3,9 @@ package couchauth
 import (
 	"testing"
 
+	"github.com/flimzy/kivik"
 	_ "github.com/flimzy/kivik/driver/couchdb"
+	"github.com/flimzy/kivik/errors"
 	"github.com/flimzy/kivik/test/kt"
 )
 
@@ -47,25 +49,25 @@ func TestCouchAuth(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to connect to remote server: %s", err)
 	}
-	valid, err := auth.Validate(kt.CTX, "test", "abc123")
+	uCtx, err := auth.Validate(kt.CTX, "test", "abc123")
 	if err != nil {
 		t.Errorf("Validation failure for good password: %s", err)
 	}
-	if !valid {
+	if uCtx == nil {
 		t.Errorf("User should have been validated")
 	}
-	notValid, err := auth.Validate(kt.CTX, "test", "foobar")
-	if err != nil {
-		t.Errorf("Validation failure for bad password: %s", err)
+	uCtx, err = auth.Validate(kt.CTX, "test", "foobar")
+	if errors.StatusCode(err) != kivik.StatusUnauthorized {
+		t.Errorf("Expected Unauthorized for bad password, got %s", err)
 	}
-	if notValid {
+	if uCtx != nil {
 		t.Errorf("User should not have been validated with wrong password")
 	}
-	notValid, err = auth.Validate(kt.CTX, "nobody", "foo")
-	if err != nil {
-		t.Errorf("Validation failure for bad username: %s", err)
+	uCtx, err = auth.Validate(kt.CTX, "nobody", "foo")
+	if errors.StatusCode(err) != kivik.StatusUnauthorized {
+		t.Errorf("Expected Unauthorized for bad username, got %s", err)
 	}
-	if notValid {
+	if uCtx != nil {
 		t.Errorf("User should not have been validated with wrong username")
 	}
 

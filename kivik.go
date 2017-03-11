@@ -47,6 +47,11 @@ func NewContext(ctx context.Context, driverName, dataSourceName string) (*Client
 	}, nil
 }
 
+// DSN returns the data source name used to connect this client.
+func (c *Client) DSN() string {
+	return c.dsn
+}
+
 // ServerInfo calls ServerInfoContext with a background context.
 func (c *Client) ServerInfo() (driver.ServerInfo, error) {
 	return c.ServerInfoContext(context.Background())

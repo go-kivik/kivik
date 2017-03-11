@@ -4,13 +4,12 @@ package test
 
 import (
 	"context"
-	"fmt"
 	"net/http/httptest"
 	"net/url"
 	"testing"
 
 	"github.com/flimzy/kivik"
-	"github.com/flimzy/kivik/auth/confadmin"
+	"github.com/flimzy/kivik/authdb/confadmin"
 	"github.com/flimzy/kivik/config"
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/driver/proxy"
@@ -46,7 +45,7 @@ func TestServer(t *testing.T) {
 	// Set admin/abc123 credentials
 	conf.Set("admins", "admin", "-pbkdf2-792221164f257de22ad72a8e94760388233e5714,7897f3451f59da741c87ec5f10fe7abe,10")
 	service.Client = backend
-	service.AuthHandler = confadmin.New(conf)
+	service.UserStore = confadmin.New(conf)
 	service.LogWriter = log
 	service.SetConfig(conf)
 	handler, err := service.Init()
@@ -58,7 +57,6 @@ func TestServer(t *testing.T) {
 
 	dsn, _ := url.Parse(server.URL)
 	dsn.User = url.UserPassword("admin", "abc123")
-	fmt.Printf("dsn = %s\n", dsn.String())
 	client, err := kivik.New("couch", dsn.String())
 	if err != nil {
 		t.Fatalf("Failed to initialize client: %s\n", err)

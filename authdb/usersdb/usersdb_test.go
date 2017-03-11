@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/flimzy/kivik"
+	"github.com/flimzy/kivik/authdb"
 	_ "github.com/flimzy/kivik/driver/couchdb"
 	"github.com/flimzy/kivik/errors"
 	"github.com/flimzy/kivik/test/kt"
@@ -39,36 +40,36 @@ func TestCouchAuth(t *testing.T) {
 	}
 	defer db.Delete(testUser.ID, rev)
 	auth := New(db)
-	valid, err := auth.Validate(kt.CTX, "testUsersdb", "abc123")
+	uCtx, err := auth.Validate(kt.CTX, "testUsersdb", "abc123")
 	if err != nil {
 		t.Errorf("Validation failure for good password: %s", err)
 	}
-	if !valid {
+	if uCtx == nil {
 		t.Errorf("User should have been validated")
 	}
-	notValid, err := auth.Validate(kt.CTX, "testUsersdb", "foobar")
-	if err != nil {
-		t.Errorf("Validation failure for bad password: %s", err)
+	uCtx, err = auth.Validate(kt.CTX, "testUsersdb", "foobar")
+	if errors.StatusCode(err) != kivik.StatusUnauthorized {
+		t.Errorf("Expected Unauthorized password, got %s", err)
 	}
-	if notValid {
+	if uCtx != nil {
 		t.Errorf("User should not have been validated with wrong password")
 	}
-	notValid, err = auth.Validate(kt.CTX, "nobody", "foo")
-	if err != nil {
-		t.Errorf("Validation failure for bad username: %s", err)
+	uCtx, err = auth.Validate(kt.CTX, "nobody", "foo")
+	if errors.StatusCode(err) != kivik.StatusUnauthorized {
+		t.Errorf("Expected Unauthorized for bad username, got %s", err)
 	}
-	if notValid {
+	if uCtx != nil {
 		t.Errorf("User should not have been validated with wrong username")
 	}
 
-	roles, err := auth.Roles(kt.CTX, "testUsersdb")
+	uCtx, err = auth.UserCtx(kt.CTX, "testUsersdb")
 	if err != nil {
 		t.Errorf("Failed to get roles for valid user: %s", err)
 	}
-	if !reflect.DeepEqual(roles, []string{"coolguy"}) {
+	if !reflect.DeepEqual(uCtx, &authdb.UserContext{Name: "testUsersdb", Roles: []string{"coolguy"}}) {
 		t.Errorf("Got unexpected roles.")
 	}
-	_, err = auth.Roles(kt.CTX, "nobody")
+	_, err = auth.UserCtx(kt.CTX, "nobody")
 	if errors.StatusCode(err) != kivik.StatusNotFound {
 		var msg string
 		if err != nil {

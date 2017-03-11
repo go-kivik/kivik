@@ -15,7 +15,8 @@ case "$1" in
         go get github.com/NYTimes/gziphandler \
             github.com/dimfeld/httptreemux \
             github.com/spf13/cobra \
-            github.com/spf13/pflag
+            github.com/spf13/pflag \
+            github.com/ajg/form
         go get -u github.com/jteeuwen/go-bindata/...
         go-bindata -pkg serve -nocompress -prefix "serve/files" -o serve/files.go serve/files
     ;;

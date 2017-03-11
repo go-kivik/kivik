@@ -35,6 +35,8 @@ type UserContext struct {
 	Database string   `json:"db,omitempty"`
 	Name     string   `json:"name"`
 	Roles    []string `json:"roles"`
+	// Salt is needed to calculate cookie tokens.
+	Salt string `json:"-"`
 }
 
 // ValidatePBKDF2 returns true if the calculated hash matches the derivedKey.

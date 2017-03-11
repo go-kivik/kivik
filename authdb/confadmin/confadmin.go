@@ -25,15 +25,11 @@ func New(c *config.Config) authdb.UserStore {
 }
 
 func (c *conf) Validate(ctx context.Context, username, password string) (*authdb.UserContext, error) {
-	hash, err := c.GetContext(ctx, "admins", username)
+	derivedKey, salt, iterations, err := c.getKeySaltIter(ctx, username)
 	if err != nil {
 		if errors.StatusCode(err) == kivik.StatusNotFound {
-			err = errors.Status(kivik.StatusUnauthorized, "unauthorized")
+			return nil, kivik.ErrUnauthorized
 		}
-		return nil, err
-	}
-	derivedKey, salt, iterations, err := keySaltIter(hash)
-	if err != nil {
 		return nil, errors.Wrap(err, "unrecognized password hash")
 	}
 	if !authdb.ValidatePBKDF2(password, salt, derivedKey, iterations) {
@@ -42,12 +38,17 @@ func (c *conf) Validate(ctx context.Context, username, password string) (*authdb
 	return &authdb.UserContext{
 		Name:  username,
 		Roles: []string{"_admin"},
+		Salt:  salt,
 	}, nil
 }
 
 const hashPrefix = "-" + authdb.SchemePBKDF2 + "-"
 
-func keySaltIter(hash string) (key, salt string, iterations int, err error) {
+func (c *conf) getKeySaltIter(ctx context.Context, username string) (key, salt string, iterations int, err error) {
+	hash, err := c.GetContext(ctx, "admins", username)
+	if err != nil {
+		return "", "", 0, err
+	}
 	if !strings.HasPrefix(hash, hashPrefix) {
 		return "", "", 0, errors.New("unrecognized password scheme")
 	}
@@ -62,11 +63,16 @@ func keySaltIter(hash string) (key, salt string, iterations int, err error) {
 }
 
 func (c *conf) UserCtx(ctx context.Context, username string) (*authdb.UserContext, error) {
-	if _, err := c.GetContext(ctx, "admins", username); err != nil {
-		return nil, err
+	_, salt, _, err := c.getKeySaltIter(ctx, username)
+	if err != nil {
+		if errors.StatusCode(err) == kivik.StatusNotFound {
+			return nil, kivik.ErrNotFound
+		}
+		return nil, errors.Wrap(err, "unrecognized password hash")
 	}
 	return &authdb.UserContext{
 		Name:  username,
 		Roles: []string{"_admin"},
+		Salt:  salt,
 	}, nil
 }

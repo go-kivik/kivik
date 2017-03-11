@@ -45,9 +45,6 @@ func (c *client) Validate(ctx context.Context, username, password string) (*auth
 		return nil, err
 	}
 	result := struct {
-		Info struct {
-			AuthDB string `json:"authentication_db"`
-		} `json:"info"`
 		Ctx struct {
 			Name  string   `json:"name"`
 			Roles []string `json:"roles"`
@@ -59,9 +56,9 @@ func (c *client) Validate(ctx context.Context, username, password string) (*auth
 		return nil, err
 	}
 	return &authdb.UserContext{
-		AuthDatabase: result.Info.AuthDB,
-		Name:         result.Ctx.Name,
-		Roles:        result.Ctx.Roles,
+		Name:  result.Ctx.Name,
+		Roles: result.Ctx.Roles,
+		Salt:  "", // FIXME
 	}, nil
 }
 

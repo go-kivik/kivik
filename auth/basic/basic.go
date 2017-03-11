@@ -9,27 +9,22 @@ import (
 	"github.com/flimzy/kivik/authdb"
 )
 
-type basic struct {
-	store authdb.UserStore
-}
+// HTTPBasicAuth provides HTTP Basic Auth
+type HTTPBasicAuth struct{}
 
-var _ auth.Handler = &basic{}
+var _ auth.Handler = &HTTPBasicAuth{}
 
-// New returns a new HTTP Basic Auth handler.
-func New(store authdb.UserStore) auth.Handler {
-	return &basic{
-		store: store,
-	}
-}
-
-func (a *basic) MethodName() string {
+// MethodName returns "default"
+func (a *HTTPBasicAuth) MethodName() string {
 	return "default" // For compatibility with the name used by CouchDB
 }
 
-func (a *basic) Authenticate(r *http.Request) (*authdb.UserContext, error) {
+// Authenticate authenticates a request against a user store using HTTP Basic
+// Auth.
+func (a *HTTPBasicAuth) Authenticate(r *http.Request, store authdb.UserStore) (*authdb.UserContext, error) {
 	username, password, ok := r.BasicAuth()
 	if !ok {
 		return nil, kivik.ErrUnauthorized
 	}
-	return a.store.Validate(r.Context(), username, password)
+	return store.Validate(r.Context(), username, password)
 }

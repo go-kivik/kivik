@@ -1,14 +1,17 @@
 package serve
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/auth"
+	"github.com/flimzy/kivik/authdb"
 	"github.com/flimzy/kivik/config"
 	"github.com/flimzy/kivik/errors"
 	"github.com/flimzy/kivik/logger"
@@ -28,6 +31,10 @@ const CompatVersion = "1.6.1"
 type Service struct {
 	// Client is an instance of a driver.Client, which will be served.
 	Client *kivik.Client
+	// UserStore provides access to the user database. This is passed to auth
+	// handlers, and is used to authenticate sessions. If unset, a nil UserStore
+	// will be used which authenticates all uses. PERPETUAL ADMIN PARTY!
+	UserStore authdb.UserStore
 	// AuthHandler is a slice of authentication handlers. If no auth
 	// handlers are configured, the server will operate as a PERPETUAL
 	// ADMIN PARTY!
@@ -84,6 +91,9 @@ func (s *Service) Init() (http.Handler, error) {
 		}
 	}
 	s.authHandlersSetup()
+	if s.Config().GetString("couch_httpd_auth", "secret") == "" {
+		s.Warn("couch_httpd_auth.secret is not set. This is insecure!")
+	}
 	return s.setupRoutes()
 }
 
@@ -115,6 +125,24 @@ func (s *Service) authHandlersSetup() {
 		s.authHandlers[name] = handler
 		s.authHandlerNames = append(s.authHandlerNames, name)
 	}
+	if s.UserStore == nil {
+		s.UserStore = &perpetualAdminParty{}
+	}
+}
+
+type perpetualAdminParty struct{}
+
+var _ authdb.UserStore = &perpetualAdminParty{}
+
+func (p *perpetualAdminParty) Validate(ctx context.Context, username, _ string) (*authdb.UserContext, error) {
+	return p.UserCtx(ctx, username)
+}
+
+func (p *perpetualAdminParty) UserCtx(_ context.Context, username string) (*authdb.UserContext, error) {
+	return &authdb.UserContext{
+		Name:  username,
+		Roles: []string{"_admin"},
+	}, nil
 }
 
 // Bind sets the HTTP daemon bind address and port.
@@ -150,8 +178,10 @@ type serverInfo struct {
 }
 
 const (
-	typeJSON = "application/json"
-	typeText = "text/plain"
+	typeJSON  = "application/json"
+	typeText  = "text/plain"
+	typeForm  = "application/x-www-form-urlencoded"
+	typeMForm = "multipart/form-data"
 )
 
 type handler func(w http.ResponseWriter, r *http.Request) error
@@ -164,9 +194,22 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func reportError(w http.ResponseWriter, err error) {
 	w.Header().Add("Content-Type", typeJSON)
-	w.WriteHeader(errors.StatusCode(err))
+	status := errors.StatusCode(err)
+	if status == 0 {
+		status = 500
+	}
+	w.WriteHeader(status)
+	short := err.Error()
+	reason := errors.Reason(err)
+	if reason == "" {
+		reason = short
+	} else {
+		short = strings.ToLower(http.StatusText(status))
+	}
+	spew.Dump(err)
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"error": err.Error(),
+		"error":  short,
+		"reason": reason,
 	})
 }
 

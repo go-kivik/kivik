@@ -46,9 +46,9 @@ func TestServer(t *testing.T) {
 	// Set admin/abc123 credentials
 	conf.Set("admins", "admin", "-pbkdf2-792221164f257de22ad72a8e94760388233e5714,7897f3451f59da741c87ec5f10fe7abe,10")
 	service.Client = backend
-	userStore := confadmin.New(conf)
+	service.UserStore = confadmin.New(conf)
 	service.AuthHandlers = []auth.Handler{
-		basic.New(userStore),
+		&basic.HTTPBasicAuth{},
 	}
 	service.LogWriter = log
 	service.SetConfig(conf)

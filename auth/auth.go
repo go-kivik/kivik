@@ -15,7 +15,7 @@ type Handler interface {
 	// Authenticate authenticates the HTTP request. On success, a user context
 	// must be returned. Any error other than Unauthorized will immediately
 	// terminate the authentication process, returning an error to the client.
-	Authenticate(*http.Request) (*authdb.UserContext, error)
+	Authenticate(*http.Request, authdb.UserStore) (*authdb.UserContext, error)
 }
 
 // Session represents an authenticated session.

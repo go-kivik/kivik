@@ -55,9 +55,9 @@ func (db *db) Validate(ctx context.Context, username, password string) (*authdb.
 		return nil, errors.Status(kivik.StatusUnauthorized, "unauthorized")
 	}
 	return &authdb.UserContext{
-		AuthDatabase: "TODO", // FIXME: Read the actual database name once GET /{db} is supported
-		Name:         u.Name,
-		Roles:        u.Roles,
+		Name:  u.Name,
+		Roles: u.Roles,
+		Salt:  u.Salt,
 	}, nil
 }
 
@@ -67,5 +67,6 @@ func (db *db) UserCtx(ctx context.Context, username string) (*authdb.UserContext
 	return &authdb.UserContext{
 		Name:  u.Name,
 		Roles: u.Roles,
+		Salt:  u.Salt,
 	}, err
 }

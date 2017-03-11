@@ -11,8 +11,9 @@ import (
 	"github.com/flimzy/kivik/errors"
 )
 
-func authHandler(s *Service, next http.Handler) http.Handler {
+func authHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		s := getService(r)
 		session, err := s.validate(r)
 		if err != nil && errors.StatusCode(err) != kivik.StatusUnauthorized {
 			reportError(w, err)
@@ -33,7 +34,7 @@ func (s *Service) validate(r *http.Request) (*auth.Session, error) {
 		return s.createSession("", &authdb.UserContext{Roles: []string{"_admin"}}), nil
 	}
 	for methodName, handler := range s.authHandlers {
-		uCtx, err := handler.Authenticate(r)
+		uCtx, err := handler.Authenticate(r, s.UserStore)
 		switch {
 		case errors.StatusCode(err) == kivik.StatusUnauthorized:
 			continue

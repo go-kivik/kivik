@@ -66,8 +66,9 @@ func TestCouchAuth(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to get roles for valid user: %s", err)
 	}
+	uCtx.Salt = "" // It's random, so remove it
 	if !reflect.DeepEqual(uCtx, &authdb.UserContext{Name: "testUsersdb", Roles: []string{"coolguy"}}) {
-		t.Errorf("Got unexpected roles.")
+		t.Errorf("Got unexpected output: %v", uCtx)
 	}
 	_, err = auth.UserCtx(kt.CTX, "nobody")
 	if errors.StatusCode(err) != kivik.StatusNotFound {

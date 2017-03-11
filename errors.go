@@ -40,6 +40,8 @@ func (e kivikError) StatusCode() int {
 		return StatusNotImplemented
 	case ErrUnauthorized:
 		return StatusUnauthorized
+	case ErrNotFound:
+		return StatusNotFound
 	default:
 		return 0
 	}
@@ -49,14 +51,11 @@ func (e kivikError) StatusCode() int {
 // implement an optional method.
 const ErrNotImplemented kivikError = "kivik: method not implemented by driver or backend"
 
-// ErrUnauthorized is a generic unauthorized error.
+// ErrUnauthorized is a generic Unauthorized error.
 const ErrUnauthorized kivikError = "unauthorized"
 
-// ErrNotFound returns true if the error is the result of an HTTP 404/Not Found
-// response.
-func ErrNotFound(err error) bool {
-	return errors.StatusCode(err) == http.StatusNotFound
-}
+// ErrNotFound is a generic Not Found error.
+const ErrNotFound kivikError = "not found"
 
 // ErrForbidden returns true if the error is the result of an HTTP 403/Forbidden
 // response.

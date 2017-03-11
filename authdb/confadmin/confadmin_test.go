@@ -78,7 +78,7 @@ func TestConfAdminAuth(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to get roles for valid user: %s", err)
 	}
-	if !reflect.DeepEqual(uCtx, &authdb.UserContext{Name: "test", Roles: []string{"_admin"}}) {
+	if !reflect.DeepEqual(uCtx, &authdb.UserContext{Name: "test", Roles: []string{"_admin"}, Salt: "7897f3451f59da741c87ec5f10fe7abe"}) {
 		t.Errorf("Got unexpected context: %v", uCtx)
 	}
 	_, err = auth.UserCtx(kt.CTX, "nobody")

@@ -5,7 +5,8 @@ import (
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/dimfeld/httptreemux"
-	"github.com/pkg/errors"
+
+	"github.com/flimzy/kivik/errors"
 )
 
 func (s *Service) setupRoutes() (http.Handler, error) {
@@ -22,7 +23,10 @@ func (s *Service) setupRoutes() (http.Handler, error) {
 	ctxRoot.Handler(mGET, "/_config", handler(getConfig))
 	ctxRoot.Handler(mGET, "/_config/:section", handler(getConfigSection))
 	ctxRoot.Handler(mGET, "/_config/:section/:key", handler(getConfigItem))
+
 	ctxRoot.Handler(mGET, "/_session", handler(getSession))
+	ctxRoot.Handler(mPOST, "/_session", handler(postSession))
+	ctxRoot.Handler(mDELETE, "/_session", handler(deleteSession))
 	// ctxRoot.Handler(mDELETE, "/:db", handler(destroyDB) )
 	// ctxRoot.Handler(http.MethodGet, "/:db", handler(getDB))
 
@@ -39,8 +43,8 @@ func (s *Service) setupRoutes() (http.Handler, error) {
 		s.Info("Enabling HTTPD cmpression, level %d", level)
 		handle = gzipHandler(handle)
 	}
-	handle = requestLogger(s, handle)
-	handle = authHandler(s, handle)
+	handle = requestLogger(handle)
+	handle = authHandler(handle)
 	handle = setContext(s, handle)
 	return handle, nil
 }

@@ -46,9 +46,9 @@
 | GET /_utils        |                        |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | GET /_membership   | Membership()           | ❌<sup>[12](#kivikCluster)</sup> | ✅ | ✅<sup>[4](#couchMembership)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
 | GET /favicon.ico   |                        |    | ❌ | ❌ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
-| POST /_session<sup>[6](#cookieAuth)</sup> | |    | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
-| GET /_session<sup>[6](#cookieAuth)</sup> |  |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
-| DELETE /_session<sup>[6](#cookieAuth)</sup> | |  |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
+| POST /_session<sup>[6](#cookieAuth)</sup> | ⁿ/ₐ<sup>[13](#getSession)</sup> |    | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
+| GET /_session<sup>[6](#cookieAuth)</sup> | ⁿ/ₐ<sup>[13](#getSession)</sup> |    |    | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
+| DELETE /_session<sup>[6](#cookieAuth)</sup> | ⁿ/ₐ<sup>[13](#getSession)</sup> |  |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | * /_config         | Config()               |    | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | HEAD /{db}         | DBExists()             | ✅ | ✅ | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
 | GET /{db}
@@ -126,6 +126,7 @@
 10. <a name="todoLimit"> **TODO:** Limits are not yet tested.
 11. <a name="todoAttachments"> **TODO:** Attachments are not yet tested.
 12. <a name="kivikCluster"> There are no plans at present to support clustering.
+13. <a name="getSession"> Used for authentication, but not exposed to the client API.
 
 ## HTTP Status Codes
 

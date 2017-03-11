@@ -40,9 +40,8 @@ func (c *conf) Validate(ctx context.Context, username, password string) (*authdb
 		return nil, errors.Status(kivik.StatusUnauthorized, "unauthorized")
 	}
 	return &authdb.UserContext{
-		AuthDatabase: "config",
-		Name:         username,
-		Roles:        []string{"_admin"},
+		Name:  username,
+		Roles: []string{"_admin"},
 	}, nil
 }
 

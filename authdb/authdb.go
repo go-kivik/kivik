@@ -32,10 +32,9 @@ const SchemePBKDF2 = "pbkdf2"
 // UserContext represents a CouchDB UserContext object.
 // See http://docs.couchdb.org/en/2.0.0/json-structure.html#userctx-object.
 type UserContext struct {
-	Database     string   `json:"db,omitempty"`
-	AuthDatabase string   `json:"-"`
-	Name         string   `json:"name"`
-	Roles        []string `json:"roles"`
+	Database string   `json:"db,omitempty"`
+	Name     string   `json:"name"`
+	Roles    []string `json:"roles"`
 }
 
 // ValidatePBKDF2 returns true if the calculated hash matches the derivedKey.

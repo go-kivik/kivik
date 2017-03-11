@@ -38,12 +38,15 @@ func init() {
 		"DBExists/Admin/chicken.exists": false,
 		"DBExists/RW.skip":              true, // FIXME: Update when the server can destroy databases
 		// "DBExists/RW/Admin.exists":      true,
+		"DBExists/NoAuth.skip": true, // TODO
 
 		"Membership.status": http.StatusMethodNotAllowed, // FIXME: Make the server respond with 404, or unimplemented
 
-		"UUIDs/Admin.counts":         []int{-1, 0, 1, 10},
-		"UUIDs.status":               http.StatusMethodNotAllowed, // FIXME: Implement UUIDs in the server
-		"UUIDs/Admin/-1Count.status": http.StatusBadRequest,
+		"UUIDs/Admin.counts":          []int{-1, 0, 1, 10},
+		"UUIDs.status":                http.StatusMethodNotAllowed, // FIXME: Implement UUIDs in the server
+		"UUIDs/Admin/-1Count.status":  http.StatusBadRequest,
+		"UUIDs/NoAuth.counts":         []int{-1, 0, 1, 10},
+		"UUIDs/NoAuth/-1Count.status": http.StatusBadRequest,
 
 		"Log/Admin/Offset-1000.status":        http.StatusBadRequest,
 		"Log/Admin/HTTP/TextBytes.status":     http.StatusBadRequest,
@@ -57,9 +60,21 @@ func init() {
 
 		"Put.skip": true, // FIXME: Fix this when we can write docs
 
-		"Flush.databases":                    []string{"chicken"},
-		"Flush/Admin/chicken/DoFlush.status": kivik.StatusNotImplemented,
+		"Flush.databases":                     []string{"chicken"},
+		"Flush/Admin/chicken/DoFlush.status":  kivik.StatusNotImplemented, // FIXME: Update when implemented
+		"Flush/NoAuth/chicken/DoFlush.status": kivik.StatusNotImplemented, // FIXME: Update when implemented
 
 		"Delete.skip": true, // FIXME: Fix this when we can delete docs.
+
+		"Session/Get/Admin.info.authentication_handlers":  "default",
+		"Session/Get/Admin.info.authentication_db":        "",
+		"Session/Get/Admin.info.authenticated":            "default",
+		"Session/Get/Admin.userCtx.roles":                 "_admin",
+		"Session/Get/Admin.ok":                            "true",
+		"Session/Get/NoAuth.info.authentication_handlers": "default",
+		"Session/Get/NoAuth.info.authentication_db":       "",
+		"Session/Get/NoAuth.info.authenticated":           "",
+		"Session/Get/NoAuth.userCtx.roles":                "",
+		"Session/Get/NoAuth.ok":                           "true",
 	})
 }

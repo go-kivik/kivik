@@ -33,7 +33,7 @@ func (s *Service) validate(r *http.Request) (*auth.Session, error) {
 		return s.createSession("", &authdb.UserContext{Roles: []string{"_admin"}}), nil
 	}
 	for methodName, handler := range s.authHandlers {
-		uCtx, err := handler.Authenticate(r, s.UserStore)
+		uCtx, err := handler.Authenticate(r)
 		switch {
 		case errors.StatusCode(err) == kivik.StatusUnauthorized:
 			continue
@@ -48,8 +48,10 @@ func (s *Service) validate(r *http.Request) (*auth.Session, error) {
 }
 
 func (s *Service) createSession(method string, user *authdb.UserContext) *auth.Session {
+	userDB := s.Config().GetString("couch_httpd_auth", "authentication_db")
 	return &auth.Session{
 		AuthMethod: method,
+		AuthDB:     userDB,
 		Handlers:   s.authHandlerNames,
 		User:       user,
 	}

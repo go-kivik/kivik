@@ -1,7 +1,6 @@
 package serve
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -10,7 +9,6 @@ import (
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/auth"
-	"github.com/flimzy/kivik/authdb"
 	"github.com/flimzy/kivik/config"
 	"github.com/flimzy/kivik/errors"
 	"github.com/flimzy/kivik/logger"
@@ -30,9 +28,6 @@ const CompatVersion = "1.6.1"
 type Service struct {
 	// Client is an instance of a driver.Client, which will be served.
 	Client *kivik.Client
-	// UserStore provides access to a user database for use by authentication
-	// handlers.
-	UserStore authdb.UserStore
 	// AuthHandler is a slice of authentication handlers. If no auth
 	// handlers are configured, the server will operate as a PERPETUAL
 	// ADMIN PARTY!
@@ -88,6 +83,7 @@ func (s *Service) Init() (http.Handler, error) {
 			return nil, errors.Wrap(err, "failed to initialize logger")
 		}
 	}
+	s.authHandlersSetup()
 	return s.setupRoutes()
 }
 
@@ -101,7 +97,6 @@ func (s *Service) Start() error {
 		s.Config().GetString("httpd", "bind_address"),
 		s.Config().GetInt("httpd", "port"),
 	)
-	s.authHandlersSetup()
 	s.Info("Listening on %s", addr)
 	return http.ListenAndServe(addr, server)
 }
@@ -111,7 +106,7 @@ func (s *Service) authHandlersSetup() {
 		s.Warn("No AuthHandler specified! Welcome to the PERPETUAL ADMIN PARTY!")
 	}
 	s.authHandlers = make(map[string]auth.Handler)
-	s.authHandlerNames = make([]string, len(s.AuthHandlers))
+	s.authHandlerNames = make([]string, 0, len(s.AuthHandlers))
 	for _, handler := range s.AuthHandlers {
 		name := handler.MethodName()
 		if _, ok := s.authHandlers[name]; ok {
@@ -120,24 +115,6 @@ func (s *Service) authHandlersSetup() {
 		s.authHandlers[name] = handler
 		s.authHandlerNames = append(s.authHandlerNames, name)
 	}
-	if s.UserStore == nil {
-		// Set up a dummy user store that always returns Unauthorized.
-		// This allows us to guarantee that AuthHandlers will always get
-		// a valid UserStore. And perhaps some AuthHandlers don't
-		// actually require a user store, or implement their own
-		// somehow.
-		s.UserStore = &nilUserStore{}
-	}
-}
-
-type nilUserStore struct{}
-
-func (u *nilUserStore) Validate(_ context.Context, _, _ string) (*authdb.UserContext, error) {
-	return nil, kivik.ErrUnauthorized
-}
-
-func (u *nilUserStore) UserCtx(_ context.Context, _ string) (*authdb.UserContext, error) {
-	return nil, kivik.ErrUnauthorized
 }
 
 // Bind sets the HTTP daemon bind address and port.

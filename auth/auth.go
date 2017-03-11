@@ -9,18 +9,19 @@ import (
 
 // Handler is an auth handler.
 type Handler interface {
-	// MethodName identifies the handler.
+	// MethodName identifies the handler. It is only called once on server
+	// start up.
 	MethodName() string
-	// Authenticate authenticates the HTTP request against the user store.
-	// On success, a user context must be returned. Any error other than
-	// Unauthorized will immediately terminate the authentication process,
-	// returning an error to the client.
-	Authenticate(*http.Request, authdb.UserStore) (*authdb.UserContext, error)
+	// Authenticate authenticates the HTTP request. On success, a user context
+	// must be returned. Any error other than Unauthorized will immediately
+	// terminate the authentication process, returning an error to the client.
+	Authenticate(*http.Request) (*authdb.UserContext, error)
 }
 
 // Session represents an authenticated session.
 type Session struct {
 	AuthMethod string
+	AuthDB     string
 	Handlers   []string
 	User       *authdb.UserContext
 }
@@ -34,7 +35,7 @@ func (s *Session) MarshalJSON() ([]byte, error) {
 	result := map[string]interface{}{
 		"info": map[string]interface{}{
 			"authenticated":           s.AuthMethod,
-			"authentication_db":       user.AuthDatabase,
+			"authentication_db":       s.AuthDB,
 			"authentication_handlers": s.Handlers,
 		},
 		"ok":      true,

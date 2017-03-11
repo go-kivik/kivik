@@ -1,7 +1,6 @@
 package serve
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/dimfeld/httptreemux"
@@ -25,7 +24,6 @@ var (
 
 func setContext(s *Service, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("Setting context\n")
 		ctx := r.Context()
 		ctx = context.WithValue(ctx, ClientContextKey, s.Client)
 		ctx = context.WithValue(ctx, ServiceContextKey, s)

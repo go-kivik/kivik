@@ -9,6 +9,8 @@ import (
 	"testing"
 
 	"github.com/flimzy/kivik"
+	"github.com/flimzy/kivik/auth"
+	"github.com/flimzy/kivik/auth/basic"
 	"github.com/flimzy/kivik/authdb/confadmin"
 	"github.com/flimzy/kivik/config"
 	"github.com/flimzy/kivik/driver"
@@ -16,7 +18,6 @@ import (
 	"github.com/flimzy/kivik/logger/memlogger"
 	"github.com/flimzy/kivik/serve"
 	"github.com/flimzy/kivik/serve/config/memconf"
-	"github.com/flimzy/kivik/test/kt"
 )
 
 type customDriver struct {
@@ -45,7 +46,10 @@ func TestServer(t *testing.T) {
 	// Set admin/abc123 credentials
 	conf.Set("admins", "admin", "-pbkdf2-792221164f257de22ad72a8e94760388233e5714,7897f3451f59da741c87ec5f10fe7abe,10")
 	service.Client = backend
-	service.UserStore = confadmin.New(conf)
+	userStore := confadmin.New(conf)
+	service.AuthHandlers = []auth.Handler{
+		basic.New(userStore),
+	}
 	service.LogWriter = log
 	service.SetConfig(conf)
 	handler, err := service.Init()
@@ -57,13 +61,10 @@ func TestServer(t *testing.T) {
 
 	dsn, _ := url.Parse(server.URL)
 	dsn.User = url.UserPassword("admin", "abc123")
-	client, err := kivik.New("couch", dsn.String())
+	clients, err := connectClients("couch", dsn.String(), t)
 	if err != nil {
-		t.Fatalf("Failed to initialize client: %s\n", err)
+		t.Fatalf("Failed to initialize client: %s", err)
 	}
-	clients := &kt.Context{
-		RW:    true,
-		Admin: client,
-	}
+	clients.RW = true
 	runTests(clients, SuiteKivikServer, t)
 }

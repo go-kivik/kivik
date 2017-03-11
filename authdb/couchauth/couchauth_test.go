@@ -40,6 +40,8 @@ func TestCouchAuth(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to connect to db: %s", err)
 	}
+	// Courtesy flush
+	kt.DeleteUser(db, testUser.ID, t)
 	rev, err := db.Put(testUser.ID, testUser)
 	if err != nil {
 		t.Fatalf("Failed to create user: %s", err)

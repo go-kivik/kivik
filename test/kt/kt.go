@@ -10,6 +10,7 @@ import (
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver/couchdb/chttp"
+	"github.com/flimzy/kivik/errors"
 )
 
 // Context is a collection of client connections with different security access.
@@ -236,4 +237,22 @@ func (c *Context) Errorf(format string, args ...interface{}) {
 // Parallel is a wrapper around t.Parallel()
 func (c *Context) Parallel() {
 	c.T.Parallel()
+}
+
+// DeleteUser deletes a user.
+func DeleteUser(db *kivik.DB, username string, t *testing.T) {
+	name := "org.couchdb.user:" + username
+	u := struct {
+		Rev string `json:"_rev"`
+	}{}
+	err := db.Get(name, &u, nil)
+	if errors.StatusCode(err) == kivik.StatusNotFound {
+		return
+	}
+	if err != nil {
+		t.Fatalf("Failed to fetch user '%s' for deleting: %s", username, err)
+	}
+	if _, err = db.Delete(name, u.Rev); err != nil {
+		t.Fatalf("Failed to delete user '%s': %s", username, err)
+	}
 }

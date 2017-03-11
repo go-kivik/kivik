@@ -10,12 +10,8 @@ import (
 )
 
 func (s *Service) setupRoutes() (http.Handler, error) {
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, ClientContextKey, s.Client)
-	ctx = context.WithValue(ctx, ServiceContextKey, s)
 	router := httptreemux.New()
 	router.HeadCanUseGet = true
-	router.DefaultContext = ctx
 	ctxRoot := router.UsingContext()
 	ctxRoot.Handler(mGET, "/", handler(root))
 	ctxRoot.Handler(mGET, "/_all_dbs", handler(allDBs))
@@ -46,4 +42,14 @@ func (s *Service) setupRoutes() (http.Handler, error) {
 	handle = requestLogger(s, handle)
 	handle = authHandler(s, handle)
 	return handle, nil
+}
+
+func setContext(s *Service, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		ctx = context.WithValue(ctx, ClientContextKey, s.Client)
+		ctx = context.WithValue(ctx, ServiceContextKey, s)
+		r = r.WithContext(ctx)
+		next.ServeHTTP(w, r)
+	})
 }

@@ -107,15 +107,6 @@ func (s *Service) Bind(addr string) error {
 	return nil
 }
 
-// ContextKey is a type for context keys.
-type ContextKey string
-
-// ContextKeys are used to store values in the context passed to HTTP handlers.
-const (
-	ClientContextKey  ContextKey = "kivik client"
-	ServiceContextKey ContextKey = "kivik service"
-)
-
 const (
 	mGET    = http.MethodGet
 	mPUT    = http.MethodPut

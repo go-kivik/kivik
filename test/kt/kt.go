@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/flimzy/kivik"
+	"github.com/flimzy/kivik/driver/couchdb/chttp"
 )
 
 // Context is a collection of client connections with different security access.
@@ -17,12 +18,29 @@ type Context struct {
 	RW bool
 	// Admin is a client connection with database admin priveleges.
 	Admin *kivik.Client
+	// CHTTPAdmin is a chttp connection with admin priveleges.
+	CHTTPAdmin *chttp.Client
 	// NoAuth isa client connection with no authentication.
 	NoAuth *kivik.Client
+	// CHTTPNoAuth is a chttp connection with no authentication.
+	CHTTPNoAuth *chttp.Client
 	// Config is the suite config
 	Config SuiteConfig
 	// T is the *testing.T value
 	T *testing.T
+}
+
+// Clone returns a shallow copy of itself with a new t.
+func (c *Context) Child(t *testing.T) *Context {
+	return &Context{
+		RW:          c.RW,
+		Admin:       c.Admin,
+		CHTTPAdmin:  c.CHTTPAdmin,
+		NoAuth:      c.NoAuth,
+		CHTTPNoAuth: c.CHTTPNoAuth,
+		Config:      c.Config,
+		T:           t,
+	}
 }
 
 // Skip will skip the currently running test if configuration dictates.
@@ -118,13 +136,7 @@ func (c *Context) IsSet(key string) bool {
 // Run wraps t.Run()
 func (c *Context) Run(name string, fn testFunc) {
 	c.T.Run(name, func(t *testing.T) {
-		ctx := &Context{
-			RW:     c.RW,
-			Admin:  c.Admin,
-			NoAuth: c.NoAuth,
-			Config: c.Config,
-			T:      t,
-		}
+		ctx := c.Child(t)
 		ctx.Skip()
 		fn(ctx)
 	})

@@ -81,5 +81,16 @@ func init() {
 		"Delete/RW/NoAuth/group/MissingDoc.status":       kivik.StatusNotFound,
 		"Delete/RW/NoAuth/group/InvalidRevFormat.status": kivik.StatusBadRequest,
 		"Delete/RW/NoAuth/group/WrongRev.status":         kivik.StatusConflict,
+
+		"Session/Get/Admin.info.authentication_handlers":  "oauth,cookie,default",
+		"Session/Get/Admin.info.authentication_db":        "_users",
+		"Session/Get/Admin.info.authenticated":            "cookie",
+		"Session/Get/Admin.userCtx.roles":                 "_admin",
+		"Session/Get/Admin.ok":                            "true",
+		"Session/Get/NoAuth.info.authentication_handlers": "oauth,cookie,default",
+		"Session/Get/NoAuth.info.authentication_db":       "_users",
+		"Session/Get/NoAuth.info.authenticated":           "",
+		"Session/Get/NoAuth.userCtx.roles":                "",
+		"Session/Get/NoAuth.ok":                           "true",
 	})
 }

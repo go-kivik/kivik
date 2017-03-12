@@ -57,7 +57,7 @@ func (w *statusWriter) WriteHeader(status int) {
 
 func requestLogger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		s := getService(r)
+		s := GetService(r)
 		sw := &statusWriter{ResponseWriter: w, status: http.StatusOK}
 		next.ServeHTTP(sw, r)
 		ip := r.RemoteAddr

@@ -11,6 +11,7 @@ import (
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/auth"
 	"github.com/flimzy/kivik/auth/basic"
+	"github.com/flimzy/kivik/auth/cookie"
 	"github.com/flimzy/kivik/authdb/confadmin"
 	"github.com/flimzy/kivik/config"
 	"github.com/flimzy/kivik/driver"
@@ -49,6 +50,7 @@ func TestServer(t *testing.T) {
 	service.UserStore = confadmin.New(conf)
 	service.AuthHandlers = []auth.Handler{
 		&basic.HTTPBasicAuth{},
+		&cookie.Auth{},
 	}
 	service.LogWriter = log
 	service.SetConfig(conf)

@@ -69,12 +69,12 @@ func init() {
 
 		"Delete.skip": true, // FIXME: Fix this when we can delete docs.
 
-		"Session/Get/Admin.info.authentication_handlers":  "default",
+		"Session/Get/Admin.info.authentication_handlers":  "default,cookie",
 		"Session/Get/Admin.info.authentication_db":        "",
-		"Session/Get/Admin.info.authenticated":            "default",
+		"Session/Get/Admin.info.authenticated":            "cookie",
 		"Session/Get/Admin.userCtx.roles":                 "_admin",
 		"Session/Get/Admin.ok":                            "true",
-		"Session/Get/NoAuth.info.authentication_handlers": "default",
+		"Session/Get/NoAuth.info.authentication_handlers": "default,cookie",
 		"Session/Get/NoAuth.info.authentication_db":       "",
 		"Session/Get/NoAuth.info.authenticated":           "",
 		"Session/Get/NoAuth.userCtx.roles":                "",

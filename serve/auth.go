@@ -13,7 +13,7 @@ import (
 
 func authHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		s := getService(r)
+		s := GetService(r)
 		session, err := s.validate(r)
 		if err != nil && errors.StatusCode(err) != kivik.StatusUnauthorized {
 			reportError(w, err)
@@ -40,7 +40,7 @@ func (s *Service) validate(r *http.Request) (*auth.Session, error) {
 			continue
 		case err != nil:
 			return nil, err
-		default:
+		case uCtx != nil:
 			return s.createSession(methodName, uCtx), nil
 		}
 	}

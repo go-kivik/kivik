@@ -213,7 +213,7 @@ func reportError(w http.ResponseWriter, err error) {
 
 func root(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", typeJSON)
-	svc := getService(r)
+	svc := GetService(r)
 	vendVers := svc.VendorVersion
 	if vendVers == "" {
 		vendVers = Version

@@ -69,12 +69,8 @@ func postSession(w http.ResponseWriter, r *http.Request) error {
 	if authData.Name == nil {
 		return errors.Status(kivik.StatusBadRequest, "request body must contain a username")
 	}
-	s := getService(r)
+	s := GetService(r)
 	user, err := s.UserStore.Validate(r.Context(), *authData.Name, authData.Password)
-	if err != nil {
-		return err
-	}
-	secret, err := s.getAuthSecret(r.Context())
 	if err != nil {
 		return err
 	}
@@ -88,7 +84,10 @@ func postSession(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	// Success, so create a cookie
-	token := createAuthToken(*authData.Name, secret, user.Salt, time.Now().Unix())
+	token, err := s.CreateAuthToken(r.Context(), *authData.Name, user.Salt, time.Now().Unix())
+	if err != nil {
+		return err
+	}
 	w.Header().Set("Cache-Control", "must-revalidate")
 	http.SetCookie(w, &http.Cookie{
 		Name:     SessionCookieName,
@@ -124,13 +123,18 @@ func redirectURL(r *http.Request) (string, error) {
 	return parsed.String(), nil
 }
 
-func createAuthToken(name, secret, salt string, time int64) string {
+// CreateAuthToken hashes a user name, salt, timestamp, and the server secret
+// into an authentication token.
+func (s *Service) CreateAuthToken(ctx context.Context, name, salt string, time int64) (string, error) {
+	secret, err := s.getAuthSecret(ctx)
+	if err != nil {
+		return "", err
+	}
 	sessionData := fmt.Sprintf("%s:%X", name, time)
 	h := hmac.New(sha1.New, []byte(secret+salt))
 	h.Write([]byte(sessionData))
 	hashData := string(h.Sum(nil))
-	b64Data := base64.RawURLEncoding.EncodeToString([]byte(sessionData + ":" + hashData))
-	return b64Data
+	return base64.RawURLEncoding.EncodeToString([]byte(sessionData + ":" + hashData)), nil
 }
 
 func deleteSession(w http.ResponseWriter, r *http.Request) error {

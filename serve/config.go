@@ -21,7 +21,7 @@ func defaultConfig() *config.Config {
 }
 
 func getConfig(w http.ResponseWriter, r *http.Request) error {
-	conf, err := getService(r).Config().GetAll()
+	conf, err := GetService(r).Config().GetAll()
 	if err != nil {
 		return err
 	}
@@ -33,7 +33,7 @@ func getConfigSection(w http.ResponseWriter, r *http.Request) error {
 	if !ok {
 		return errors.Status(http.StatusBadRequest, "section required")
 	}
-	conf, err := getService(r).Config().GetSection(sec)
+	conf, err := GetService(r).Config().GetSection(sec)
 	if err != nil {
 		return err
 	}
@@ -49,7 +49,7 @@ func getConfigItem(w http.ResponseWriter, r *http.Request) error {
 	if !ok {
 		return errors.Status(http.StatusBadRequest, "key required")
 	}
-	conf, err := getService(r).Config().Get(sec, key)
+	conf, err := GetService(r).Config().Get(sec, key)
 	if err != nil {
 		return err
 	}

@@ -11,7 +11,7 @@ import (
 )
 
 func favicon(w http.ResponseWriter, r *http.Request) error {
-	s := getService(r)
+	s := GetService(r)
 	var ico io.Reader
 	if s.Favicon == "" {
 		asset, err := Asset("favicon.ico")

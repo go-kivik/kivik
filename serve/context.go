@@ -42,7 +42,8 @@ func MustGetSession(ctx context.Context) *auth.Session {
 	return s
 }
 
-func getService(r *http.Request) *Service {
+// GetService extracts the Kivik service from the request.
+func GetService(r *http.Request) *Service {
 	service := r.Context().Value(ServiceContextKey).(*Service)
 	return service
 }

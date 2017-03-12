@@ -1,11 +1,7 @@
 package serve
 
 import (
-	"crypto/hmac"
-	"crypto/sha1"
-	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -121,20 +117,6 @@ func redirectURL(r *http.Request) (string, error) {
 		return "", errors.Status(kivik.StatusBadRequest, "invalid redirection url")
 	}
 	return parsed.String(), nil
-}
-
-// CreateAuthToken hashes a user name, salt, timestamp, and the server secret
-// into an authentication token.
-func (s *Service) CreateAuthToken(ctx context.Context, name, salt string, time int64) (string, error) {
-	secret, err := s.getAuthSecret(ctx)
-	if err != nil {
-		return "", err
-	}
-	sessionData := fmt.Sprintf("%s:%X", name, time)
-	h := hmac.New(sha1.New, []byte(secret+salt))
-	h.Write([]byte(sessionData))
-	hashData := string(h.Sum(nil))
-	return base64.RawURLEncoding.EncodeToString([]byte(sessionData + ":" + hashData)), nil
 }
 
 func deleteSession(w http.ResponseWriter, r *http.Request) error {

@@ -3,15 +3,11 @@
 package cookie
 
 import (
-	"bytes"
-	"encoding/base64"
 	"net/http"
-	"strconv"
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/auth"
 	"github.com/flimzy/kivik/authdb"
-	"github.com/flimzy/kivik/errors"
 	"github.com/flimzy/kivik/serve"
 )
 
@@ -31,9 +27,8 @@ func (a *Auth) Authenticate(r *http.Request, store authdb.UserStore) (*authdb.Us
 	if err != nil {
 		return nil, nil
 	}
-	name, t, err := decodeCookie(cookie.Value)
+	name, _, err := serve.DecodeCookie(cookie.Value)
 	if err != nil {
-		// Invalid cookie, continue as though there is no cookie
 		return nil, nil
 	}
 	user, err := store.UserCtx(r.Context(), name)
@@ -42,28 +37,12 @@ func (a *Auth) Authenticate(r *http.Request, store authdb.UserStore) (*authdb.Us
 		return nil, nil
 	}
 	s := serve.GetService(r)
-	token, err := s.CreateAuthToken(r.Context(), name, user.Salt, t)
+	valid, err := s.ValidateCookie(r.Context(), user, cookie.Value)
 	if err != nil {
 		return nil, nil
 	}
-	if token != cookie.Value {
-		return nil, errors.Status(kivik.StatusUnauthorized, "bad cookie")
+	if !valid {
+		return nil, kivik.ErrUnauthorized
 	}
 	return user, nil
-}
-
-func decodeCookie(cookie string) (name string, created int64, err error) {
-	data, err := base64.RawURLEncoding.DecodeString(cookie)
-	if err != nil {
-		return "", 0, err
-	}
-	parts := bytes.Split(data, []byte(":"))
-	if len(parts) != 3 {
-		return "", 0, errors.New("invalid cookie")
-	}
-	t, err := strconv.ParseInt(string(parts[1]), 16, 64)
-	if err != nil {
-		return "", 0, errors.Wrap(err, "invalid timestamp")
-	}
-	return string(parts[0]), t, nil
 }

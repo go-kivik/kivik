@@ -225,10 +225,7 @@ func testCreateSession(ctx *kt.Context, client *chttp.Client) {
 				if err != nil {
 					ctx.Fatalf("Failed to decode cookie value: %s", err)
 				}
-				parts := strings.Split(string(val), ":")
-				if len(parts) != 3 {
-					ctx.Fatalf("Invalid cookie value")
-				}
+				parts := strings.SplitN(string(val), ":", 3)
 				if parts[0] != name {
 					ctx.Errorf("Cookie does not match username. Want '%s', got '%s'", name, parts[0])
 				}

@@ -3,8 +3,6 @@ package serve
 import (
 	"net/http"
 	"testing"
-
-	"github.com/flimzy/kivik/test/kt"
 )
 
 type redirTest struct {
@@ -53,39 +51,4 @@ func TestRedirectURL(t *testing.T) {
 			}
 		})
 	}
-}
-
-type tokenTest struct {
-	Name     string
-	Salt     string
-	Created  int64
-	Expected string
-	Err      string
-}
-
-func TestCreateAuthToken(t *testing.T) {
-	s := &Service{}
-	tests := []tokenTest{
-		{Name: "admin", Salt: "foo bar baz", Created: 1489322879, Expected: "YWRtaW46NThDNTQzN0Y6OnE2cBAuoQKvVBHF2l4PIqKHqDM"},
-		{Name: "bob", Salt: "0123456789abc", Created: 1489322879, Expected: "Ym9iOjU4QzU0MzdGOihHwWRLS2vekOgsRrH1cEVrk6za"},
-	}
-
-	for _, test := range tests {
-		func(test tokenTest) {
-			t.Run(test.Name, func(t *testing.T) {
-				result, err := s.CreateAuthToken(kt.CTX, test.Name, test.Salt, test.Created)
-				var errMsg string
-				if err != nil {
-					errMsg = err.Error()
-				}
-				if errMsg != test.Err {
-					t.Errorf("Unexpected error. Expected '%s', got '%s'", test.Err, errMsg)
-				}
-				if result != test.Expected {
-					t.Errorf("Expected: %s\n  Actual: %s\n", test.Expected, result)
-				}
-			})
-		}(test)
-	}
-
 }

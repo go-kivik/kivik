@@ -16,7 +16,8 @@ case "$1" in
             github.com/dimfeld/httptreemux \
             github.com/spf13/cobra \
             github.com/spf13/pflag \
-            github.com/ajg/form
+            github.com/ajg/form \
+            github.com/justinas/alice
         go get -u github.com/jteeuwen/go-bindata/...
         go-bindata -pkg serve -nocompress -prefix "serve/files" -o serve/files.go serve/files
     ;;

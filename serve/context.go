@@ -22,14 +22,16 @@ var (
 	ServiceContextKey = &contextKey{"service"}
 )
 
-func setContext(s *Service, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		ctx = context.WithValue(ctx, ClientContextKey, s.Client)
-		ctx = context.WithValue(ctx, ServiceContextKey, s)
-		r = r.WithContext(ctx)
-		next.ServeHTTP(w, r)
-	})
+func setContext(s *Service) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+			ctx = context.WithValue(ctx, ClientContextKey, s.Client)
+			ctx = context.WithValue(ctx, ServiceContextKey, s)
+			r = r.WithContext(ctx)
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
 // MustGetSession returns the user context for the currently authenticated user.

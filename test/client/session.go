@@ -31,6 +31,9 @@ func session(ctx *kt.Context) {
 	ctx.Run("Post", func(ctx *kt.Context) {
 		testCreateSession(ctx, ctx.CHTTPNoAuth)
 	})
+	ctx.Run("Delete", func(ctx *kt.Context) {
+		testDeleteSession(ctx, ctx.CHTTPNoAuth)
+	})
 }
 
 func testSession(ctx *kt.Context, client *chttp.Client) {
@@ -50,7 +53,7 @@ func testSession(ctx *kt.Context, client *chttp.Client) {
 			Roles []string `json:"roles"`
 		} `json:"userCtx"`
 	}{}
-	err := client.DoJSON(kt.CTX, chttp.MethodGet, "/_session", nil, &uCtx)
+	_, err := client.DoJSON(kt.CTX, chttp.MethodGet, "/_session", nil, &uCtx)
 	if !ctx.IsExpectedSuccess(err) {
 		return
 	}
@@ -98,8 +101,7 @@ func testCreateSession(ctx *kt.Context, client *chttp.Client) {
 	}
 	var name, password string
 	if ctx.Admin != nil {
-		dsn, _ := url.Parse(ctx.Admin.DSN())
-		if dsn.User != nil {
+		if dsn, _ := url.Parse(ctx.Admin.DSN()); dsn.User != nil {
 			name = dsn.User.Username()
 			password, _ = dsn.User.Password()
 		}
@@ -250,5 +252,94 @@ func testCreateSession(ctx *kt.Context, client *chttp.Client) {
 				}
 			})
 		}(postTest)
+	}
+}
+
+type deleteSessionTest struct {
+	Name   string
+	Creds  bool
+	Cookie *http.Cookie
+}
+
+func testDeleteSession(ctx *kt.Context, client *chttp.Client) {
+	ctx.Parallel()
+	if client == nil {
+		ctx.Skipf("No CHTTP client")
+	}
+	// Re-create client, so we can override defaults
+	client, _ = chttp.New(client.DSN())
+	// Don't save sessions
+	client.Jar = nil
+	var cookie *http.Cookie
+	if ctx.Admin != nil {
+		if dsn, _ := url.Parse(ctx.Admin.DSN()); dsn.User != nil {
+			name := dsn.User.Username()
+			password, _ := dsn.User.Password()
+			r, err := client.DoReq(kt.CTX, chttp.MethodPost, "/_session", &chttp.Options{
+				Body: bytes.NewBuffer([]byte(fmt.Sprintf(`{"name":"%s","password":"%s"}`, name, password))),
+			})
+			if err != nil {
+				ctx.Errorf("Failed to establish session: %s", err)
+			}
+			for _, c := range r.Cookies() {
+				if c.Name == kivik.SessionCookieName {
+					cookie = c
+					break
+				}
+			}
+		}
+
+	}
+	tests := []deleteSessionTest{
+		{Name: "ValidSession", Creds: true, Cookie: cookie},
+		{Name: "NoSession"},
+		// {Name: "InvalidSession"},
+		// {Name: "ExpiredSession"},
+	}
+	for _, test := range tests {
+		func(test deleteSessionTest) {
+			ctx.Run(test.Name, func(ctx *kt.Context) {
+				if test.Creds && cookie == nil {
+					ctx.Skipf("Credentials required but missing, skipping test.")
+				}
+				response := struct {
+					OK bool `json:"ok"`
+				}{}
+				req, err := client.NewRequest(kt.CTX, chttp.MethodDelete, "/_session", nil)
+				if err != nil {
+					ctx.Fatalf("Failed to create request: %s", err)
+				}
+				if test.Cookie != nil {
+					req.AddCookie(test.Cookie)
+				}
+				r, err := client.Do(req)
+				if err == nil {
+					err = chttp.ResponseError(r)
+				}
+				if err == nil {
+					defer r.Body.Close()
+					err = json.NewDecoder(r.Body).Decode(&response)
+				}
+				if !ctx.IsExpectedSuccess(err) {
+					return
+				}
+				if _, ok := r.Header["Cache-Control"]; !ok {
+					ctx.Errorf("No Cache-Control set in response.")
+				} else {
+					cc := r.Header.Get("Cache-Control")
+					if strings.ToLower(cc) != "must-revalidate" {
+						ctx.Errorf("Expected Cache-Control: must-revalidate, but got'%s", cc)
+					}
+				}
+				for _, c := range r.Cookies() {
+					if c.Name == kivik.SessionCookieName {
+						if c.Value != "" {
+							ctx.Errorf("Expected empty cookie value, got '%s'", c.Value)
+						}
+						break
+					}
+				}
+			})
+		}(test)
 	}
 }

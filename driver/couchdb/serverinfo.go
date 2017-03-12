@@ -11,7 +11,8 @@ import (
 // ServerInfo returns the server's version info.
 func (c *client) ServerInfoContext(ctx context.Context) (driver.ServerInfo, error) {
 	i := &info{}
-	return i, c.DoJSON(ctx, chttp.MethodGet, "/", nil, i)
+	_, err := c.DoJSON(ctx, chttp.MethodGet, "/", nil, i)
+	return i, err
 }
 
 type info struct {

@@ -20,7 +20,8 @@ var _ driver.Config = &config{}
 
 func (c *config) GetAllContext(ctx context.Context) (map[string]map[string]string, error) {
 	conf := map[string]map[string]string{}
-	return conf, c.DoJSON(ctx, chttp.MethodGet, "/_config", nil, &conf)
+	_, err := c.DoJSON(ctx, chttp.MethodGet, "/_config", nil, &conf)
+	return conf, err
 }
 
 func (c *config) SetContext(ctx context.Context, secName, key, value string) error {
@@ -33,10 +34,12 @@ func (c *config) DeleteContext(ctx context.Context, secName, key string) error {
 
 func (c *config) GetSectionContext(ctx context.Context, secName string) (map[string]string, error) {
 	sec := map[string]string{}
-	return sec, c.DoJSON(ctx, chttp.MethodGet, fmt.Sprintf("/_config/%s", secName), nil, &sec)
+	_, err := c.DoJSON(ctx, chttp.MethodGet, fmt.Sprintf("/_config/%s", secName), nil, &sec)
+	return sec, err
 }
 
 func (c *config) GetContext(ctx context.Context, secName, key string) (string, error) {
 	var value string
-	return value, c.DoJSON(ctx, chttp.MethodGet, fmt.Sprintf("_config/%s/%s", secName, key), nil, &value)
+	_, err := c.DoJSON(ctx, chttp.MethodGet, fmt.Sprintf("_config/%s/%s", secName, key), nil, &value)
+	return value, err
 }

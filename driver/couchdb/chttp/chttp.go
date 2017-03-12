@@ -145,22 +145,20 @@ type Response struct {
 // closes the response body.
 func (r *Response) DecodeJSON(i interface{}) error {
 	defer r.Body.Close()
-	dec := json.NewDecoder(r.Body)
-	return dec.Decode(i)
+	return json.NewDecoder(r.Body).Decode(i)
 }
 
 // DoJSON combines DoReq() and, ResponseError(), and (*Response).DecodeJSON(), and
-// discards the response. It is intended for cases where the only information
-// needed from the response is the status code and JSON body.
-func (c *Client) DoJSON(ctx context.Context, method, path string, opts *Options, i interface{}) error {
+// discards the response.
+func (c *Client) DoJSON(ctx context.Context, method, path string, opts *Options, i interface{}) (*Response, error) {
 	res, err := c.DoReq(ctx, method, path, opts)
 	if err != nil {
-		return err
+		return res, err
 	}
 	if err = ResponseError(res.Response); err != nil {
-		return err
+		return res, err
 	}
-	return res.DecodeJSON(i)
+	return res, res.DecodeJSON(i)
 }
 
 // NewRequest returns a new *http.Request to the CouchDB server, and the

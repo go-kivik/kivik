@@ -6,8 +6,6 @@ import (
 	"github.com/NYTimes/gziphandler"
 	"github.com/dimfeld/httptreemux"
 	"github.com/justinas/alice"
-
-	"github.com/flimzy/kivik/errors"
 )
 
 func (s *Service) setupRoutes() (http.Handler, error) {
@@ -34,23 +32,26 @@ func (s *Service) setupRoutes() (http.Handler, error) {
 	// ctxRoot.Handler(mDELETE, "/:db", handler(destroyDB) )
 	// ctxRoot.Handler(http.MethodGet, "/:db", handler(getDB))
 
-	middlewares := alice.New(
+	return alice.New(
 		setContext(s),
 		authHandler,
 		requestLogger,
-	)
+		gzipHandler(s),
+	).Then(router), nil
+}
 
-	if s.Config().GetBool("httpd", "enable_compression") {
-		level := s.Config().GetInt("httpd", "compression_level")
-		if level == 0 {
-			level = 8
-		}
-		gzipHandler, err := gziphandler.NewGzipLevelHandler(int(level))
-		if err != nil {
-			return nil, errors.Wrapf(err, "invalid httpd.compression_level '%s'", level)
-		}
-		s.Info("Enabling HTTPD cmpression, level %d", level)
-		middlewares.Append(gzipHandler)
+func gzipHandler(s *Service) func(http.Handler) http.Handler {
+	level := s.Config().GetInt("httpd", "compression_level")
+	if level == 0 {
+		level = 8
 	}
-	return middlewares.Then(router), nil
+	gzipHandler, err := gziphandler.NewGzipLevelHandler(int(level))
+	if err != nil {
+		s.Warn("invalid httpd.compression_level '%s'", level)
+		return func(h http.Handler) http.Handler {
+			return h
+		}
+	}
+	s.Info("Enabling HTTPD cmpression, level %d", level)
+	return gzipHandler
 }

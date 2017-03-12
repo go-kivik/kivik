@@ -19,7 +19,7 @@ case "$1" in
             github.com/ajg/form \
             github.com/justinas/alice
         go get -u github.com/jteeuwen/go-bindata/...
-        go-bindata -pkg serve -nocompress -prefix "serve/files" -o serve/files.go serve/files
+        go generate ./...
     ;;
     "gopherjs")
         if [ "$TRAVIS_OS_NAME" == "linux" ]; then

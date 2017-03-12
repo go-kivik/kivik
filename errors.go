@@ -13,6 +13,7 @@ const (
 	StatusOK                           = 200
 	StatusCreated                      = 201
 	StatusAccepted                     = 202
+	StatusFound                        = 302
 	StatusNotModified                  = 304
 	StatusBadRequest                   = 400
 	StatusUnauthorized                 = 401

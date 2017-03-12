@@ -7,15 +7,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"golang.org/x/net/context"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/errors"
 )
+
+// SessionCookieName is the name of the CouchDB session cookie.
+const SessionCookieName = "AuthSession"
 
 // DefaultInsecureSecret is the hash secret used if couch_httpd_auth.secret
 // is unconfigured. Please configure couch_httpd_auth.secret, or they're all
@@ -57,17 +61,16 @@ func (s *Service) getSessionTimeout(ctx context.Context) (int, error) {
 func postSession(w http.ResponseWriter, r *http.Request) error {
 	authData := struct {
 		Name     *string `form:"name" json:"name"`
-		Password *string `form:"password" json:"password"`
+		Password string  `form:"password" json:"password"`
 	}{}
 	if err := BindParams(r, &authData); err != nil {
 		return errors.Status(kivik.StatusBadRequest, "unable to parse request data")
 	}
-	fmt.Printf("Got %v\n", authData)
-	if authData.Name == nil || authData.Password == nil {
-		return errors.Status(kivik.StatusUnauthorized, "Name or password is incorrect.")
+	if authData.Name == nil {
+		return errors.Status(kivik.StatusBadRequest, "request body must contain a username")
 	}
 	s := getService(r)
-	user, err := s.UserStore.Validate(r.Context(), *authData.Name, *authData.Password)
+	user, err := s.UserStore.Validate(r.Context(), *authData.Name, authData.Password)
 	if err != nil {
 		return err
 	}
@@ -79,19 +82,46 @@ func postSession(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+	next, err := redirectURL(r)
+	if err != nil {
+		return err
+	}
 
 	// Success, so create a cookie
 	token := createAuthToken(*authData.Name, secret, user.Salt, time.Now().Unix())
 	w.Header().Set("Cache-Control", "must-revalidate")
 	http.SetCookie(w, &http.Cookie{
-		Name:     "AuthSession",
+		Name:     SessionCookieName,
 		Value:    token,
 		Path:     "/",
 		MaxAge:   timeout,
 		HttpOnly: true,
 	})
-	spew.Dump(token)
-	return nil
+	w.Header().Add("Content-Type", typeJSON)
+	if next != "" {
+		w.Header().Add("Location", next)
+		w.WriteHeader(kivik.StatusFound)
+	}
+	return json.NewEncoder(w).Encode(map[string]interface{}{
+		"ok":    true,
+		"name":  user.Name,
+		"roles": user.Roles,
+	})
+}
+
+func redirectURL(r *http.Request) (string, error) {
+	next, ok := stringQueryParam(r, "next")
+	if !ok {
+		return "", nil
+	}
+	if !strings.HasPrefix(next, "/") {
+		return "", errors.Status(kivik.StatusBadRequest, "redirection url must be relative to server root")
+	}
+	parsed, err := url.Parse(next)
+	if err != nil {
+		return "", errors.Status(kivik.StatusBadRequest, "invalid redirection url")
+	}
+	return parsed.String(), nil
 }
 
 func createAuthToken(name, secret, salt string, time int64) string {
@@ -99,7 +129,7 @@ func createAuthToken(name, secret, salt string, time int64) string {
 	h := hmac.New(sha1.New, []byte(secret+salt))
 	h.Write([]byte(sessionData))
 	hashData := string(h.Sum(nil))
-	b64Data := base64.StdEncoding.EncodeToString([]byte(sessionData + ":" + hashData))
+	b64Data := base64.RawURLEncoding.EncodeToString([]byte(sessionData + ":" + hashData))
 	return b64Data
 }
 

@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/auth"
 	"github.com/flimzy/kivik/authdb"
@@ -206,7 +205,6 @@ func reportError(w http.ResponseWriter, err error) {
 	} else {
 		short = strings.ToLower(http.StatusText(status))
 	}
-	spew.Dump(err)
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"error":  short,
 		"reason": reason,

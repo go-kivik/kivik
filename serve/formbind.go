@@ -2,7 +2,6 @@ package serve
 
 import (
 	"encoding/json"
-	"fmt"
 	"mime"
 	"net/http"
 
@@ -13,7 +12,6 @@ import (
 // BindParams binds the request form or JSON body to the provided struct.
 func BindParams(r *http.Request, i interface{}) error {
 	mtype, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type"))
-	fmt.Printf("mtype = %s\n", mtype)
 	switch mtype {
 	case typeJSON:
 		defer r.Body.Close()

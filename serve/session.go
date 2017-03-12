@@ -121,5 +121,16 @@ func redirectURL(r *http.Request) (string, error) {
 }
 
 func deleteSession(w http.ResponseWriter, r *http.Request) error {
-	return nil
+	http.SetCookie(w, &http.Cookie{
+		Name:     kivik.SessionCookieName,
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		HttpOnly: true,
+	})
+	w.Header().Add("Content-Type", typeJSON)
+	w.Header().Set("Cache-Control", "must-revalidate")
+	return json.NewEncoder(w).Encode(map[string]interface{}{
+		"ok": true,
+	})
 }

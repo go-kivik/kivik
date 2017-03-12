@@ -81,5 +81,31 @@ func init() {
 		"Delete/RW/Admin/group/InvalidRevFormat.status": kivik.StatusBadRequest,
 		"Delete/RW/Admin/group/WrongRev.status":         kivik.StatusConflict,
 		"Delete/RW/NoAuth.status":                       kivik.StatusUnauthorized,
+
+		"Session/Get/Admin.info.authentication_handlers":  "delegated,cookie,default,local",
+		"Session/Get/Admin.info.authentication_db":        "_users",
+		"Session/Get/Admin.info.authenticated":            "cookie",
+		"Session/Get/Admin.userCtx.roles":                 "_admin,_reader,_writer",
+		"Session/Get/Admin.ok":                            "true",
+		"Session/Get/NoAuth.info.authentication_handlers": "delegated,cookie,default,local",
+		"Session/Get/NoAuth.info.authentication_db":       "_users",
+		"Session/Get/NoAuth.info.authenticated":           "local",
+		"Session/Get/NoAuth.userCtx.roles":                "",
+		"Session/Get/NoAuth.ok":                           "true",
+
+		"Session/Post/EmptyJSON.status":                               kivik.StatusBadRequest,
+		"Session/Post/BogusTypeJSON.status":                           kivik.StatusBadRequest,
+		"Session/Post/BogusTypeForm.status":                           kivik.StatusBadRequest,
+		"Session/Post/EmptyForm.status":                               kivik.StatusBadRequest,
+		"Session/Post/BadJSON.status":                                 kivik.StatusBadRequest,
+		"Session/Post/BadForm.status":                                 kivik.StatusBadRequest,
+		"Session/Post/MeaninglessJSON.status":                         kivik.StatusInternalServerError,
+		"Session/Post/MeaninglessForm.status":                         kivik.StatusBadRequest,
+		"Session/Post/GoodJSON.status":                                kivik.StatusUnauthorized,
+		"Session/Post/BadQueryParam.status":                           kivik.StatusUnauthorized,
+		"Session/Post/BadCredsJSON.status":                            kivik.StatusUnauthorized,
+		"Session/Post/BadCredsForm.status":                            kivik.StatusUnauthorized,
+		"Session/Post/GoodCredsJSONRemoteRedirHeaderInjection.status": kivik.StatusBadRequest,
+		"Session/Post/GoodCredsJSONRemoteRedirInvalidURL.skip":        true, // Cloudant doesn't sanitize the Location value, so sends unparseable headers.
 	})
 }

@@ -33,8 +33,9 @@ const (
 type Client struct {
 	*http.Client
 
-	dsn  *url.URL
-	auth Authenticator
+	rawDSN string
+	dsn    *url.URL
+	auth   Authenticator
 }
 
 // New calls NewContext() with a Background context.
@@ -57,6 +58,7 @@ func NewContext(ctx context.Context, dsn string) (*Client, error) {
 	c := &Client{
 		Client: &http.Client{},
 		dsn:    dsnURL,
+		rawDSN: dsn,
 	}
 	if user != nil {
 		password, _ := user.Password()
@@ -65,6 +67,11 @@ func NewContext(ctx context.Context, dsn string) (*Client, error) {
 		}
 	}
 	return c, nil
+}
+
+// DSN returns the unparsed DSN used to connect.
+func (c *Client) DSN() string {
+	return c.rawDSN
 }
 
 func (c *Client) defaultAuth(ctx context.Context, username, password string) error {

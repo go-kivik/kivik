@@ -5,7 +5,8 @@ set -euC
 go get github.com/pborman/uuid \
     github.com/pkg/errors \
     golang.org/x/net/publicsuffix \
-    github.com/flimzy/diff
+    github.com/flimzy/diff \
+    golang.org/x/crypto/pbkdf2
 
 case "$1" in
     "standard")
@@ -14,7 +15,10 @@ case "$1" in
         go get github.com/NYTimes/gziphandler \
             github.com/dimfeld/httptreemux \
             github.com/spf13/cobra \
-            github.com/spf13/pflag
+            github.com/spf13/pflag \
+            github.com/ajg/form
+        go get -u github.com/jteeuwen/go-bindata/...
+        go-bindata -pkg serve -nocompress -prefix "serve/files" -o serve/files.go serve/files
     ;;
     "gopherjs")
         if [ "$TRAVIS_OS_NAME" == "linux" ]; then

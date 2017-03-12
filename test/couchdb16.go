@@ -81,5 +81,31 @@ func init() {
 		"Delete/RW/NoAuth/group/MissingDoc.status":       kivik.StatusNotFound,
 		"Delete/RW/NoAuth/group/InvalidRevFormat.status": kivik.StatusBadRequest,
 		"Delete/RW/NoAuth/group/WrongRev.status":         kivik.StatusConflict,
+
+		"Session/Get/Admin.info.authentication_handlers":  "oauth,cookie,default",
+		"Session/Get/Admin.info.authentication_db":        "_users",
+		"Session/Get/Admin.info.authenticated":            "cookie",
+		"Session/Get/Admin.userCtx.roles":                 "_admin",
+		"Session/Get/Admin.ok":                            "true",
+		"Session/Get/NoAuth.info.authentication_handlers": "oauth,cookie,default",
+		"Session/Get/NoAuth.info.authentication_db":       "_users",
+		"Session/Get/NoAuth.info.authenticated":           "",
+		"Session/Get/NoAuth.userCtx.roles":                "",
+		"Session/Get/NoAuth.ok":                           "true",
+
+		"Session/Post/EmptyJSON.status":                             kivik.StatusBadRequest,
+		"Session/Post/BogusTypeJSON.status":                         kivik.StatusUnauthorized,
+		"Session/Post/BogusTypeForm.status":                         kivik.StatusUnauthorized,
+		"Session/Post/EmptyForm.status":                             kivik.StatusUnauthorized,
+		"Session/Post/BadJSON.status":                               kivik.StatusBadRequest,
+		"Session/Post/BadForm.status":                               kivik.StatusUnauthorized,
+		"Session/Post/MeaninglessJSON.status":                       kivik.StatusInternalServerError,
+		"Session/Post/MeaninglessForm.status":                       kivik.StatusUnauthorized,
+		"Session/Post/GoodJSON.status":                              kivik.StatusUnauthorized,
+		"Session/Post/BadQueryParam.status":                         kivik.StatusUnauthorized,
+		"Session/Post/BadCredsJSON.status":                          kivik.StatusUnauthorized,
+		"Session/Post/BadCredsForm.status":                          kivik.StatusUnauthorized,
+		"Session/Post/GoodCredsJSONRemoteRedirHeaderInjection.skip": true, // CouchDB allows header injection
+		"Session/Post/GoodCredsJSONRemoteRedirInvalidURL.skip":      true, // CouchDB doesn't sanitize the Location value, so sends unparseable headers.
 	})
 }

@@ -38,7 +38,7 @@ func StatusCode(err error) int {
 
 // ResponseError returns an error from an *http.Response.
 func ResponseError(resp *http.Response) error {
-	if resp.StatusCode < 300 {
+	if resp.StatusCode < 400 {
 		return nil
 	}
 	httpErr := &HTTPError{}

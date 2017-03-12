@@ -36,12 +36,17 @@ type StatusError struct {
 }
 
 func (se *StatusError) Error() string {
-	return fmt.Sprintf("error status %d: %s", se.statusCode, se.message)
+	return fmt.Sprintf("%d %s", se.statusCode, se.message)
 }
 
 // StatusCode returns the StatusError's embedded HTTP status code.
 func (se *StatusError) StatusCode() int {
 	return se.statusCode
+}
+
+// Reason returns the error's underlying reason.
+func (se *StatusError) Reason() string {
+	return se.message
 }
 
 // StatusCoder is an optional error interface, which returns the error's
@@ -59,6 +64,22 @@ func StatusCode(err error) int {
 		return scErr.StatusCode()
 	}
 	return StatusInternalServerError
+}
+
+// Reasoner is an interface for an error that contains a reason.
+type Reasoner interface {
+	Reason() string
+}
+
+// Reason returns the error's reason if there is one.
+func Reason(err error) string {
+	if err == nil {
+		return ""
+	}
+	if reasoner, ok := err.(Reasoner); ok {
+		return reasoner.Reason()
+	}
+	return ""
 }
 
 // New is a wrapper around the standard errors.New, to avoid the need for

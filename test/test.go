@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/flimzy/kivik"
+	"github.com/flimzy/kivik/driver/couchdb/chttp"
 	"github.com/flimzy/kivik/errors"
 	"github.com/flimzy/kivik/test/kt"
 
@@ -228,6 +229,11 @@ func connectClients(driverName, dsn string, t *testing.T) (*kt.Context, error) {
 	} else {
 		return nil, err
 	}
+	if chttpClient, err := chttp.New(dsn); err == nil {
+		clients.CHTTPAdmin = chttpClient
+	} else {
+		return nil, err
+	}
 
 	t.Logf("Connecting to %s ...\n", noAuthDSN)
 	if client, err := kivik.New(driverName, noAuthDSN); err == nil {
@@ -235,7 +241,11 @@ func connectClients(driverName, dsn string, t *testing.T) (*kt.Context, error) {
 	} else {
 		return nil, err
 	}
-
+	if chttpClient, err := chttp.New(noAuthDSN); err == nil {
+		clients.CHTTPNoAuth = chttpClient
+	} else {
+		return nil, err
+	}
 	return clients, nil
 }
 

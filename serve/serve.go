@@ -1,15 +1,16 @@
 package serve
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 
-	"github.com/dimfeld/httptreemux"
-
 	"github.com/flimzy/kivik"
+	"github.com/flimzy/kivik/auth"
+	"github.com/flimzy/kivik/authdb"
 	"github.com/flimzy/kivik/config"
 	"github.com/flimzy/kivik/errors"
 	"github.com/flimzy/kivik/logger"
@@ -29,6 +30,14 @@ const CompatVersion = "1.6.1"
 type Service struct {
 	// Client is an instance of a driver.Client, which will be served.
 	Client *kivik.Client
+	// UserStore provides access to the user database. This is passed to auth
+	// handlers, and is used to authenticate sessions. If unset, a nil UserStore
+	// will be used which authenticates all uses. PERPETUAL ADMIN PARTY!
+	UserStore authdb.UserStore
+	// AuthHandler is a slice of authentication handlers. If no auth
+	// handlers are configured, the server will operate as a PERPETUAL
+	// ADMIN PARTY!
+	AuthHandlers []auth.Handler
 	// CompatVersion is the compatibility version to report to clients. Defaults
 	// to 1.6.1.
 	CompatVersion string
@@ -43,9 +52,18 @@ type Service struct {
 	// if the Log() method is expected to work. By default, logs are written to
 	// standard output.
 	LogWriter logger.LogWriter
-	// Config is the configuration backend. If none is specified, anew memconf
+	// Favicon is the path to a file to serve as favicon.ico. If unset, a default
+	// image is used.
+	Favicon string
+
+	// config is the configuration backend. If none is specified, anew memconf
 	// instance is instantiated the first time configuration is requested.
 	config *config.Config
+
+	// authHandlers is a map version of AuthHandlers for easier internal
+	// use.
+	authHandlers     map[string]auth.Handler
+	authHandlerNames []string
 }
 
 // Config returns a connection to the configuration backend.
@@ -71,10 +89,14 @@ func (s *Service) Init() (http.Handler, error) {
 			return nil, errors.Wrap(err, "failed to initialize logger")
 		}
 	}
+	s.authHandlersSetup()
+	if s.Config().GetString("couch_httpd_auth", "secret") == "" {
+		s.Warn("couch_httpd_auth.secret is not set. This is insecure!")
+	}
 	return s.setupRoutes()
 }
 
-// Start begins serving connections on the requested bind address.
+// Start begins serving connections.
 func (s *Service) Start() error {
 	server, err := s.Init()
 	if err != nil {
@@ -86,6 +108,40 @@ func (s *Service) Start() error {
 	)
 	s.Info("Listening on %s", addr)
 	return http.ListenAndServe(addr, server)
+}
+
+func (s *Service) authHandlersSetup() {
+	if s.AuthHandlers == nil || len(s.AuthHandlers) == 0 {
+		s.Warn("No AuthHandler specified! Welcome to the PERPETUAL ADMIN PARTY!")
+	}
+	s.authHandlers = make(map[string]auth.Handler)
+	s.authHandlerNames = make([]string, 0, len(s.AuthHandlers))
+	for _, handler := range s.AuthHandlers {
+		name := handler.MethodName()
+		if _, ok := s.authHandlers[name]; ok {
+			panic(fmt.Sprintf("Multiple auth handlers for for `%s` registered", name))
+		}
+		s.authHandlers[name] = handler
+		s.authHandlerNames = append(s.authHandlerNames, name)
+	}
+	if s.UserStore == nil {
+		s.UserStore = &perpetualAdminParty{}
+	}
+}
+
+type perpetualAdminParty struct{}
+
+var _ authdb.UserStore = &perpetualAdminParty{}
+
+func (p *perpetualAdminParty) Validate(ctx context.Context, username, _ string) (*authdb.UserContext, error) {
+	return p.UserCtx(ctx, username)
+}
+
+func (p *perpetualAdminParty) UserCtx(_ context.Context, username string) (*authdb.UserContext, error) {
+	return &authdb.UserContext{
+		Name:  username,
+		Roles: []string{"_admin"},
+	}, nil
 }
 
 // Bind sets the HTTP daemon bind address and port.
@@ -100,15 +156,6 @@ func (s *Service) Bind(addr string) error {
 	return nil
 }
 
-// ContextKey is a type for context keys.
-type ContextKey string
-
-// ContextKeys are used to store values in the context passed to HTTP handlers.
-const (
-	ClientContextKey  ContextKey = "kivik client"
-	ServiceContextKey ContextKey = "kivik service"
-)
-
 const (
 	mGET    = http.MethodGet
 	mPUT    = http.MethodPut
@@ -117,20 +164,6 @@ const (
 	mDELETE = http.MethodDelete
 	mCOPY   = "COPY"
 )
-
-func getService(r *http.Request) *Service {
-	service := r.Context().Value(ServiceContextKey).(*Service)
-	return service
-}
-
-func getClient(r *http.Request) *kivik.Client {
-	client := r.Context().Value(ClientContextKey).(*kivik.Client)
-	return client
-}
-
-func getParams(r *http.Request) map[string]string {
-	return httptreemux.ContextParams(r.Context())
-}
 
 type vendorInfo struct {
 	Name    string `json:"name"`
@@ -144,31 +177,43 @@ type serverInfo struct {
 }
 
 const (
-	typeJSON = "application/json"
-	typeText = "text/plain"
+	typeJSON  = "application/json"
+	typeText  = "text/plain"
+	typeForm  = "application/x-www-form-urlencoded"
+	typeMForm = "multipart/form-data"
 )
 
 type handler func(w http.ResponseWriter, r *http.Request) error
 
 func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	err := h(w, r)
-	if err == nil {
-		return
+	if err := h(w, r); err != nil {
+		reportError(w, err)
 	}
+}
+
+func reportError(w http.ResponseWriter, err error) {
+	w.Header().Add("Content-Type", typeJSON)
 	status := errors.StatusCode(err)
 	if status == 0 {
-		status = http.StatusInternalServerError
+		status = 500
 	}
-	w.Header().Add("Content-Type", typeJSON)
 	w.WriteHeader(status)
+	short := err.Error()
+	reason := errors.Reason(err)
+	if reason == "" {
+		reason = short
+	} else {
+		short = strings.ToLower(http.StatusText(status))
+	}
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"error": err.Error(),
+		"error":  short,
+		"reason": reason,
 	})
 }
 
 func root(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", typeJSON)
-	svc := getService(r)
+	svc := GetService(r)
 	vendVers := svc.VendorVersion
 	if vendVers == "" {
 		vendVers = Version

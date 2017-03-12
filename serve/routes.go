@@ -1,23 +1,20 @@
 package serve
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/dimfeld/httptreemux"
-	"github.com/pkg/errors"
+
+	"github.com/flimzy/kivik/errors"
 )
 
 func (s *Service) setupRoutes() (http.Handler, error) {
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, ClientContextKey, s.Client)
-	ctx = context.WithValue(ctx, ServiceContextKey, s)
 	router := httptreemux.New()
 	router.HeadCanUseGet = true
-	router.DefaultContext = ctx
 	ctxRoot := router.UsingContext()
 	ctxRoot.Handler(mGET, "/", handler(root))
+	ctxRoot.Handler(mGET, "/favicon.ico", handler(favicon))
 	ctxRoot.Handler(mGET, "/_all_dbs", handler(allDBs))
 	ctxRoot.Handler(mGET, "/_log", handler(log))
 	ctxRoot.Handler(mPUT, "/:db", handler(createDB))
@@ -26,6 +23,13 @@ func (s *Service) setupRoutes() (http.Handler, error) {
 	ctxRoot.Handler(mGET, "/_config", handler(getConfig))
 	ctxRoot.Handler(mGET, "/_config/:section", handler(getConfigSection))
 	ctxRoot.Handler(mGET, "/_config/:section/:key", handler(getConfigItem))
+
+	ctxRoot.Handler(mGET, "/_session", handler(getSession))
+	// TODO: Should this be registered as part of an auth handler? If there's no
+	// cookie auth handler, why bother with this endpoint? Would other handlers
+	// potentially want to register different endpoints?
+	ctxRoot.Handler(mPOST, "/_session", handler(postSession))
+	ctxRoot.Handler(mDELETE, "/_session", handler(deleteSession))
 	// ctxRoot.Handler(mDELETE, "/:db", handler(destroyDB) )
 	// ctxRoot.Handler(http.MethodGet, "/:db", handler(getDB))
 
@@ -42,6 +46,8 @@ func (s *Service) setupRoutes() (http.Handler, error) {
 		s.Info("Enabling HTTPD cmpression, level %d", level)
 		handle = gzipHandler(handle)
 	}
-	handle = requestLogger(s, handle)
+	handle = requestLogger(handle)
+	handle = authHandler(handle)
+	handle = setContext(s, handle)
 	return handle, nil
 }

@@ -55,7 +55,7 @@ func TestMinimalConfiger(t *testing.T) {
 	if err == nil {
 		t.Errorf("Expected NotFound for non-existant key")
 	}
-	expectedErrMsg := "error status 404: config key not found"
+	expectedErrMsg := "404 config key not found"
 	if err.Error() != expectedErrMsg {
 		t.Errorf("Expected error '%s', got '%s'", expectedErrMsg, err.Error())
 	}
@@ -65,7 +65,7 @@ func TestMinimalConfiger(t *testing.T) {
 	if err == nil {
 		t.Errorf("Expected NotFound for non-existant key")
 	}
-	expectedErrMsg = "error status 404: config key not found"
+	expectedErrMsg = "404 config key not found"
 	if err.Error() != expectedErrMsg {
 		t.Errorf("Expected error '%s', got '%s'", expectedErrMsg, err.Error())
 	}

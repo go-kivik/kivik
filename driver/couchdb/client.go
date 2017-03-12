@@ -11,14 +11,16 @@ import (
 
 func (c *client) AllDBsContext(ctx context.Context) ([]string, error) {
 	var allDBs []string
-	return allDBs, c.DoJSON(ctx, chttp.MethodGet, "/_all_dbs", nil, &allDBs)
+	_, err := c.DoJSON(ctx, chttp.MethodGet, "/_all_dbs", nil, &allDBs)
+	return allDBs, err
 }
 
 func (c *client) UUIDsContext(ctx context.Context, count int) ([]string, error) {
 	var uuids struct {
 		UUIDs []string `json:"uuids"`
 	}
-	return uuids.UUIDs, c.DoJSON(ctx, chttp.MethodGet, fmt.Sprintf("/_uuids?count=%d", count), nil, &uuids)
+	_, err := c.DoJSON(ctx, chttp.MethodGet, fmt.Sprintf("/_uuids?count=%d", count), nil, &uuids)
+	return uuids.UUIDs, err
 }
 
 // MembershipContext returns membership information. As a special case, if Couch
@@ -32,7 +34,8 @@ func (c *client) MembershipContext(ctx context.Context) ([]string, []string, err
 		All     []string `json:"all_nodes"`
 		Cluster []string `json:"cluster_nodes"`
 	}
-	return membership.All, membership.Cluster, c.DoJSON(ctx, chttp.MethodGet, "/_membership", nil, &membership)
+	_, err := c.DoJSON(ctx, chttp.MethodGet, "/_membership", nil, &membership)
+	return membership.All, membership.Cluster, err
 }
 
 func (c *client) DBExistsContext(ctx context.Context, dbName string) (bool, error) {

@@ -76,7 +76,7 @@ func getAuthName(client *Client, t *testing.T) string {
 			Name string `json:"name"`
 		} `json:"userCtx"`
 	}{}
-	if err := client.DoJSON(context.Background(), "GET", "/_session", nil, &result); err != nil {
+	if _, err := client.DoJSON(context.Background(), "GET", "/_session", nil, &result); err != nil {
 		t.Errorf("Failed to check session info: %s", err)
 	}
 	return result.Ctx.Name

@@ -63,7 +63,8 @@ func (d *db) GetContext(ctx context.Context, docID string, doc interface{}, opts
 	if err != nil {
 		return err
 	}
-	return d.Client.DoJSON(ctx, http.MethodGet, d.path(docID, params), &chttp.Options{Accept: "application/json; multipart/mixed"}, doc)
+	_, err = d.Client.DoJSON(ctx, http.MethodGet, d.path(docID, params), &chttp.Options{Accept: "application/json; multipart/mixed"}, doc)
+	return err
 }
 
 func (d *db) CreateDocContext(ctx context.Context, doc interface{}) (docID, rev string, err error) {
@@ -71,14 +72,16 @@ func (d *db) CreateDocContext(ctx context.Context, doc interface{}) (docID, rev 
 		ID  string `json:"id"`
 		Rev string `json:"rev"`
 	}{}
-	return result.ID, result.Rev, d.Client.DoJSON(ctx, chttp.MethodPost, d.dbName, &chttp.Options{JSON: doc}, &result)
+	_, err = d.Client.DoJSON(ctx, chttp.MethodPost, d.dbName, &chttp.Options{JSON: doc}, &result)
+	return result.ID, result.Rev, err
 }
 
 func (d *db) PutContext(ctx context.Context, docID string, doc interface{}) (rev string, err error) {
 	result := struct {
 		Rev string `json:"rev"`
 	}{}
-	return result.Rev, d.Client.DoJSON(ctx, chttp.MethodPut, d.path(docID, nil), &chttp.Options{JSON: doc}, &result)
+	_, err = d.Client.DoJSON(ctx, chttp.MethodPut, d.path(docID, nil), &chttp.Options{JSON: doc}, &result)
+	return result.Rev, err
 }
 
 func (d *db) DeleteContext(ctx context.Context, docID, rev string) (string, error) {
@@ -87,13 +90,14 @@ func (d *db) DeleteContext(ctx context.Context, docID, rev string) (string, erro
 	var result struct {
 		Rev string `json:"rev"`
 	}
-	return result.Rev, d.Client.DoJSON(ctx, chttp.MethodDelete, d.path(docID, query), nil, &result)
+	_, err := d.Client.DoJSON(ctx, chttp.MethodDelete, d.path(docID, query), nil, &result)
+	return result.Rev, err
 }
 
 func (d *db) FlushContext(ctx context.Context) (time.Time, error) {
 	result := struct {
 		T int64 `json:"instance_start_time,string"`
 	}{}
-	err := d.Client.DoJSON(ctx, chttp.MethodPost, d.path("/_ensure_full_commit", nil), nil, &result)
+	_, err := d.Client.DoJSON(ctx, chttp.MethodPost, d.path("/_ensure_full_commit", nil), nil, &result)
 	return time.Unix(0, 0).Add(time.Duration(result.T) * time.Microsecond), err
 }

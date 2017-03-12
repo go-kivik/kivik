@@ -79,5 +79,18 @@ func init() {
 		"Session/Get/NoAuth.info.authenticated":           "",
 		"Session/Get/NoAuth.userCtx.roles":                "",
 		"Session/Get/NoAuth.ok":                           "true",
+
+		"Session/Post/EmptyJSON.status":       kivik.StatusBadRequest,
+		"Session/Post/BogusTypeJSON.status":   kivik.StatusBadRequest,
+		"Session/Post/BogusTypeForm.status":   kivik.StatusBadRequest,
+		"Session/Post/EmptyForm.status":       kivik.StatusBadRequest,
+		"Session/Post/BadJSON.status":         kivik.StatusBadRequest,
+		"Session/Post/BadForm.status":         kivik.StatusBadRequest,
+		"Session/Post/MeaninglessJSON.status": kivik.StatusBadRequest,
+		"Session/Post/MeaninglessForm.status": kivik.StatusBadRequest,
+		"Session/Post/GoodJSON.status":        kivik.StatusUnauthorized,
+		"Session/Post/BadQueryParam.status":   kivik.StatusUnauthorized,
+		"Session/Post/BadCredsJSON.status":    kivik.StatusUnauthorized,
+		"Session/Post/BadCredsForm.status":    kivik.StatusUnauthorized,
 	})
 }

@@ -1,11 +1,18 @@
 package client
 
 import (
+	"bytes"
+	"encoding/base64"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strings"
 
+	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver/couchdb/chttp"
+	"github.com/flimzy/kivik/serve"
 	"github.com/flimzy/kivik/test/kt"
 )
 
@@ -22,9 +29,13 @@ func session(ctx *kt.Context) {
 			testSession(ctx, ctx.CHTTPNoAuth)
 		})
 	})
+	ctx.Run("Post", func(ctx *kt.Context) {
+		testCreateSession(ctx, ctx.CHTTPNoAuth)
+	})
 }
 
 func testSession(ctx *kt.Context, client *chttp.Client) {
+	ctx.Parallel()
 	if client == nil {
 		ctx.Skipf("No CHTTP client")
 	}
@@ -65,5 +76,180 @@ func testSession(ctx *kt.Context, client *chttp.Client) {
 	actual := uCtx.UserCtx.Name
 	if actual != expected {
 		ctx.Errorf("Unexpected value for `%s`. Expected '%s', actual '%s'", "userCtx.name", expected, actual)
+	}
+}
+
+type sessionPostTest struct {
+	Name    string
+	Query   string
+	Options *chttp.Options
+	// True if the test requires valid credentials
+	Creds bool
+}
+
+func testCreateSession(ctx *kt.Context, client *chttp.Client) {
+	if client == nil {
+		ctx.Skipf("No CHTTP client")
+	}
+	// Re-create client, so we can override defaults
+	client, _ = chttp.New(client.DSN())
+	// Don't follow redirect
+	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		return http.ErrUseLastResponse
+	}
+	var name, password string
+	if ctx.Admin != nil {
+		dsn, _ := url.Parse(ctx.Admin.DSN())
+		if dsn.User != nil {
+			name = dsn.User.Username()
+			password, _ = dsn.User.Password()
+		}
+	}
+	tests := []sessionPostTest{
+		{Name: "EmptyJSON", Options: &chttp.Options{ContentType: "application/json"}},
+		{Name: "BadJSON", Options: &chttp.Options{ContentType: "application/json",
+			Body: bytes.NewBuffer([]byte("oink")),
+		}},
+		{Name: "BogusTypeJSON", Creds: true, Options: &chttp.Options{ContentType: "image/gif",
+			Body: bytes.NewBuffer([]byte(fmt.Sprintf(`{"name":"%s","password":"%s"}`, name, password))),
+		}},
+		{Name: "BogusTypeForm", Creds: true, Options: &chttp.Options{ContentType: "image/gif",
+			Body: bytes.NewBuffer([]byte(fmt.Sprintf(`name=%s&password=%s`, name, password))),
+		}},
+		{Name: "EmptyForm", Options: &chttp.Options{ContentType: "application/x-www-form-urlencoded"}},
+		{Name: "BadForm", Options: &chttp.Options{ContentType: "application/x-www-form-urlencoded",
+			Body: bytes.NewBuffer([]byte("o\\ink")),
+		}},
+		{Name: "MeaninglessJSON", Options: &chttp.Options{ContentType: "application/json",
+			Body: bytes.NewBuffer([]byte(`{"ok":true}`)),
+		}},
+		{Name: "MeaninglessForm", Options: &chttp.Options{ContentType: "application/x-www-form-urlencoded",
+			Body: bytes.NewBuffer([]byte("ok=true")),
+		}},
+		{Name: "GoodJSON", Options: &chttp.Options{ContentType: "application/json",
+			Body: bytes.NewBuffer([]byte(`{"name":"bob","password":"abc123"}`)),
+		}},
+		{Name: "BadQueryParam", Query: "foobarbaz!", Options: &chttp.Options{ContentType: "application/json",
+			Body: bytes.NewBuffer([]byte(`{"name":"bob","password":"abc123"}`)),
+		}},
+		{Name: "GoodCredsJSON", Creds: true, Options: &chttp.Options{ContentType: "application/json",
+			Body: bytes.NewBuffer([]byte(fmt.Sprintf(`{"name":"%s","password":"%s"}`, name, password))),
+		}},
+		{Name: "GoodCredsForm", Creds: true, Options: &chttp.Options{ContentType: "application/x-www-form-urlencoded",
+			Body: bytes.NewBuffer([]byte(fmt.Sprintf(`name=%s&password=%s`, name, password))),
+		}},
+		{Name: "BadCredsJSON", Creds: true, Options: &chttp.Options{ContentType: "application/json",
+			Body: bytes.NewBuffer([]byte(fmt.Sprintf(`{"name":"%s","password":"%sxxx"}`, name, password))),
+		}},
+		{Name: "BadCredsForm", Creds: true, Options: &chttp.Options{ContentType: "application/x-www-form-urlencoded",
+			Body: bytes.NewBuffer([]byte(fmt.Sprintf(`name=%s&password=%sxxx`, name, password))),
+		}},
+		{Name: "GoodCredsJSONRedirEmpty", Creds: true, Query: "next=", Options: &chttp.Options{ContentType: "application/json",
+			Body: bytes.NewBuffer([]byte(fmt.Sprintf(`{"name":"%s","password":"%s"}`, name, password))),
+		}},
+		{Name: "GoodCredsJSONRedirRelative", Creds: true, Query: "next=/_session", Options: &chttp.Options{ContentType: "application/json",
+			Body: bytes.NewBuffer([]byte(fmt.Sprintf(`{"name":"%s","password":"%s"}`, name, password))),
+		}},
+		{Name: "GoodCredsJSONRedirRelativeNoSlash", Creds: true, Query: "next=foobar", Options: &chttp.Options{ContentType: "application/json",
+			Body: bytes.NewBuffer([]byte(fmt.Sprintf(`{"name":"%s","password":"%s"}`, name, password))),
+		}},
+		{Name: "GoodCredsJSONRemoteRedirAbsolute", Creds: true, Query: "next=http://google.com/", Options: &chttp.Options{ContentType: "application/json",
+			Body: bytes.NewBuffer([]byte(fmt.Sprintf(`{"name":"%s","password":"%s"}`, name, password))),
+		}},
+		{Name: "GoodCredsJSONRemoteRedirInvalidURL", Creds: true, Query: "next=/session%25%26%26", Options: &chttp.Options{ContentType: "application/json",
+			Body: bytes.NewBuffer([]byte(fmt.Sprintf(`{"name":"%s","password":"%s"}`, name, password))),
+		}},
+		{Name: "GoodCredsJSONRemoteRedirHeaderInjection", Creds: true, Query: "next=/foo\nX-Injected: oink", Options: &chttp.Options{ContentType: "application/json",
+			Body: bytes.NewBuffer([]byte(fmt.Sprintf(`{"name":"%s","password":"%s"}`, name, password))),
+		}},
+		{Name: "AcceptPlain", Creds: true, Options: &chttp.Options{ContentType: "application/json", Accept: "text/plain",
+			Body: bytes.NewBuffer([]byte(fmt.Sprintf(`{"name":"%s","password":"%s"}`, name, password))),
+		}},
+		{Name: "AcceptImage", Creds: true, Options: &chttp.Options{ContentType: "application/json", Accept: "image/gif",
+			Body: bytes.NewBuffer([]byte(fmt.Sprintf(`{"name":"%s","password":"%s"}`, name, password))),
+		}},
+	}
+	for _, postTest := range tests {
+		func(test sessionPostTest) {
+			ctx.Run(test.Name, func(ctx *kt.Context) {
+				if test.Creds && name == "" {
+					ctx.Skipf("Credentials required but missing, skipping test.")
+				}
+				ctx.Parallel()
+				reqURL := "/_session"
+				if test.Query != "" {
+					reqURL += "?" + test.Query
+				}
+				r, err := client.DoReq(kt.CTX, chttp.MethodPost, reqURL, test.Options)
+				if err == nil {
+					err = chttp.ResponseError(r.Response)
+				}
+				if !ctx.IsExpectedSuccess(err) {
+					return
+				}
+				defer r.Body.Close()
+				if _, ok := r.Header["Cache-Control"]; !ok {
+					ctx.Errorf("No Cache-Control set in response.")
+				} else {
+					cc := r.Header.Get("Cache-Control")
+					if strings.ToLower(cc) != "must-revalidate" {
+						ctx.Errorf("Expected Cache-Control: must-revalidate, but got'%s", cc)
+					}
+				}
+				if strings.HasPrefix(test.Query, "next=") {
+					if r.StatusCode != kivik.StatusFound {
+						ctx.Errorf("Expected redirect")
+					} else {
+						q, _ := url.ParseQuery(test.Query)
+						loc := r.Header.Get("Location")
+						next := q.Get("next")
+						if !strings.HasSuffix(loc, next) {
+							ctx.Errorf("Expected Location: ...%s, got: %s", next, loc)
+						}
+					}
+				}
+				cookies := r.Response.Cookies()
+				if len(cookies) != 1 {
+					ctx.Errorf("Expected 1 cookie, got %d", len(cookies))
+				}
+				if cookies[0].Name != serve.SessionCookieName {
+					ctx.Errorf("Server set cookie '%s', expected '%s'", cookies[0].Name, serve.SessionCookieName)
+				}
+				if !cookies[0].HttpOnly {
+					ctx.Errorf("Cookie is not set HttpOnly")
+				}
+				if cookies[0].Path != "/" {
+					ctx.Errorf("Unexpected cookie path. Got '%s', expected '/'", cookies[0].Path)
+				}
+				val, err := base64.RawURLEncoding.DecodeString(cookies[0].Value)
+				if err != nil {
+					ctx.Fatalf("Failed to decode cookie value: %s", err)
+				}
+				parts := strings.Split(string(val), ":")
+				if len(parts) != 3 {
+					ctx.Fatalf("Invalid cookie value")
+				}
+				if parts[0] != name {
+					ctx.Errorf("Cookie does not match username. Want '%s', got '%s'", name, parts[0])
+				}
+				if _, err := hex.DecodeString(parts[1]); err != nil {
+					ctx.Errorf("Failed to decode cookie timestamp: %s", err)
+				}
+				response := struct {
+					OK    bool     `json:"ok"`
+					Name  *string  `json:"name"`
+					Roles []string `json:"roles"`
+				}{}
+				if err := json.NewDecoder(r.Body).Decode(&response); err != nil {
+					ctx.Fatalf("Failed to decode response: %s", err)
+				}
+				if !response.OK {
+					ctx.Errorf("Expected OK response")
+				}
+				if response.Name != nil && *response.Name != name {
+					ctx.Errorf("Unexpected name in response. Expected '%s', got '%s'", name, *response.Name)
+				}
+			})
+		}(postTest)
 	}
 }

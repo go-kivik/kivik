@@ -38,6 +38,7 @@ func init() {
 		"Membership.skip": true,
 		"Config.skip":     true,
 		"Flush.skip":      true,
+		"Session.skip":    true,
 
 		"PreCleanup.skip": true,
 

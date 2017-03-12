@@ -97,5 +97,6 @@ func init() {
 		"Session/Post/GoodCredsJSONRemoteRedirHeaderInjection.status": kivik.StatusBadRequest,
 		"Session/Post/GoodCredsJSONRemoteRedirInvalidURL.status":      kivik.StatusBadRequest,
 		"Session/Post/GoodCredsJSONRedirEmpty.status":                 kivik.StatusBadRequest,
+		"Session/Post/GoodCredsJSONRedirSchemaless.status":            kivik.StatusBadRequest,
 	})
 }

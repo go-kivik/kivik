@@ -30,6 +30,7 @@ func TestRedirectURL(t *testing.T) {
 		{Name: "NoSlash", Input: "foobar", Err: "400 redirection url must be relative to server root"},
 		{Name: "Relative", Input: "/_session", Expected: "/_session"},
 		{Name: "InvalidRelative", Input: "/session%25%26%26", Err: "400 invalid redirection url"},
+		{Name: "Schemaless", Input: "//evil.org", Err: "400 invalid redirection url"},
 	}
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {

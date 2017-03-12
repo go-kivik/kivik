@@ -112,6 +112,10 @@ func redirectURL(r *http.Request) (string, error) {
 	if !strings.HasPrefix(next, "/") {
 		return "", errors.Status(kivik.StatusBadRequest, "redirection url must be relative to server root")
 	}
+	if strings.HasPrefix(next, "//") {
+		// Possible schemaless url
+		return "", errors.Status(kivik.StatusBadRequest, "invalid redirection url")
+	}
 	parsed, err := url.Parse(next)
 	if err != nil {
 		return "", errors.Status(kivik.StatusBadRequest, "invalid redirection url")

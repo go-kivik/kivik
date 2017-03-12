@@ -14,9 +14,6 @@ import (
 	"github.com/flimzy/kivik/errors"
 )
 
-// SessionCookieName is the name of the CouchDB session cookie.
-const SessionCookieName = "AuthSession"
-
 // DefaultInsecureSecret is the hash secret used if couch_httpd_auth.secret
 // is unconfigured. Please configure couch_httpd_auth.secret, or they're all
 // gonna laugh at you!
@@ -86,7 +83,7 @@ func postSession(w http.ResponseWriter, r *http.Request) error {
 	}
 	w.Header().Set("Cache-Control", "must-revalidate")
 	http.SetCookie(w, &http.Cookie{
-		Name:     SessionCookieName,
+		Name:     kivik.SessionCookieName,
 		Value:    token,
 		Path:     "/",
 		MaxAge:   timeout,

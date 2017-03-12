@@ -12,7 +12,6 @@ import (
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver/couchdb/chttp"
-	"github.com/flimzy/kivik/serve"
 	"github.com/flimzy/kivik/test/kt"
 )
 
@@ -215,8 +214,8 @@ func testCreateSession(ctx *kt.Context, client *chttp.Client) {
 				if len(cookies) != 1 {
 					ctx.Errorf("Expected 1 cookie, got %d", len(cookies))
 				}
-				if cookies[0].Name != serve.SessionCookieName {
-					ctx.Errorf("Server set cookie '%s', expected '%s'", cookies[0].Name, serve.SessionCookieName)
+				if cookies[0].Name != kivik.SessionCookieName {
+					ctx.Errorf("Server set cookie '%s', expected '%s'", cookies[0].Name, kivik.SessionCookieName)
 				}
 				if !cookies[0].HttpOnly {
 					ctx.Errorf("Cookie is not set HttpOnly")

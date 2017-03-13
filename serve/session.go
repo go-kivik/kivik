@@ -11,6 +11,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/flimzy/kivik"
+	"github.com/flimzy/kivik/auth"
 	"github.com/flimzy/kivik/errors"
 )
 
@@ -133,4 +134,18 @@ func deleteSession(w http.ResponseWriter, r *http.Request) error {
 	return json.NewEncoder(w).Encode(map[string]interface{}{
 		"ok": true,
 	})
+}
+
+func setSession() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+			// We store a pointer to a pointer, so the underlying pointer can
+			// be updated by the auth process, without losing the reference.
+			session := &auth.Session{}
+			ctx = context.WithValue(ctx, SessionKey, &session)
+			r = r.WithContext(ctx)
+			next.ServeHTTP(w, r)
+		})
+	}
 }

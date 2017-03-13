@@ -34,9 +34,10 @@ func (s *Service) setupRoutes() (http.Handler, error) {
 
 	return alice.New(
 		setContext(s),
-		authHandler,
+		setSession(),
 		requestLogger,
 		gzipHandler(s),
+		authHandler,
 	).Then(router), nil
 }
 

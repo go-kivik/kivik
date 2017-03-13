@@ -37,7 +37,15 @@ func setContext(s *Service) func(http.Handler) http.Handler {
 // MustGetSession returns the user context for the currently authenticated user.
 // If no session is set, the function panics.
 func MustGetSession(ctx context.Context) *auth.Session {
-	s, ok := ctx.Value(SessionKey).(*auth.Session)
+	s, ok := ctx.Value(SessionKey).(**auth.Session)
+	if !ok {
+		panic("No session!")
+	}
+	return *s
+}
+
+func mustGetSessionPtr(ctx context.Context) **auth.Session {
+	s, ok := ctx.Value(SessionKey).(**auth.Session)
 	if !ok {
 		panic("No session!")
 	}

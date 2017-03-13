@@ -47,21 +47,20 @@ func (s *Service) Error(format string, args ...interface{}) {
 
 type statusWriter struct {
 	http.ResponseWriter
-	status int
+	status *int
 }
 
 func (w *statusWriter) WriteHeader(status int) {
-	w.status = status
+	w.status = &status
 	w.ResponseWriter.WriteHeader(status)
 }
 
 func requestLogger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		s := GetService(r)
-		sw := &statusWriter{ResponseWriter: w, status: http.StatusOK}
+		sw := &statusWriter{ResponseWriter: w}
 		next.ServeHTTP(sw, r)
 		ip := r.RemoteAddr
 		ip = ip[0:strings.LastIndex(ip, ":")]
-		s.Info("%s - - %s %s %d", ip, r.Method, r.URL.String(), sw.status)
+		GetService(r).Info("%s - - %s %s %d", ip, r.Method, r.URL.String(), sw.status)
 	})
 }

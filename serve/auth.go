@@ -3,32 +3,44 @@ package serve
 import (
 	"net/http"
 
-	"golang.org/x/net/context"
-
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/auth"
 	"github.com/flimzy/kivik/authdb"
 	"github.com/flimzy/kivik/errors"
 )
 
+type doneWriter struct {
+	http.ResponseWriter
+	done bool
+}
+
+func (w *doneWriter) WriteHeader(status int) {
+	w.done = true
+	w.WriteHeader(status)
+}
+
 func authHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		dw := &doneWriter{ResponseWriter: w}
 		s := GetService(r)
-		session, err := s.validate(r)
+		session, err := s.validate(dw, r)
 		if err != nil && errors.StatusCode(err) != kivik.StatusUnauthorized {
 			reportError(w, err)
 			return
 		}
-		ctx := r.Context()
-		ctx = context.WithValue(ctx, SessionKey, session)
-		r = r.WithContext(ctx)
+		sessionPtr := mustGetSessionPtr(r.Context())
+		*sessionPtr = session
+		if dw.done {
+			// The auth handler already responded to the request
+			return
+		}
 		next.ServeHTTP(w, r)
 	})
 }
 
 // validate must return a 401 error if there is an authentication failure.
 // No error means the user is permitted.
-func (s *Service) validate(r *http.Request) (*auth.Session, error) {
+func (s *Service) validate(w http.ResponseWriter, r *http.Request) (*auth.Session, error) {
 	if s.authHandlers == nil {
 		// Perpetual admin party
 		return s.createSession("", &authdb.UserContext{Roles: []string{"_admin"}}), nil

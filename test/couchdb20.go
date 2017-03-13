@@ -7,7 +7,7 @@ import (
 
 func init() {
 	RegisterSuite(SuiteCouch20, kt.SuiteConfig{
-		"AllDBs.expected": []string{"_replicator", "_users"},
+		"AllDBs.expected": []string{"_global_changes", "_replicator", "_users"},
 
 		"Config/Admin/GetAll.expected_sections": []string{"admins", "attachments", "compaction_daemon", "cors", "couch_httpd_auth",
 			"couch_httpd_oauth", "couchdb", "daemons", "database_compaction", "httpd", "httpd_db_handlers", "httpd_design_handlers",
@@ -58,11 +58,7 @@ func init() {
 		"UUIDs/Admin/-1Count.status":  kivik.StatusBadRequest,
 		"UUIDs/NoAuth/-1Count.status": kivik.StatusBadRequest,
 
-		"Log/NoAuth.status":                   kivik.StatusUnauthorized,
-		"Log/NoAuth/Offset-1000.status":       kivik.StatusBadRequest,
-		"Log/Admin/Offset-1000.status":        kivik.StatusBadRequest,
-		"Log/Admin/HTTP/NegativeBytes.status": kivik.StatusInternalServerError,
-		"Log/Admin/HTTP/TextBytes.status":     kivik.StatusInternalServerError,
+		"Log.skip": true, // This was removed in CouchDB 2.0
 
 		"ServerInfo.version":        `^1\.6\.1$`,
 		"ServerInfo.vendor":         `^The Apache Software Foundation$`,

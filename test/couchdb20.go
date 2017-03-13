@@ -7,8 +7,9 @@ import (
 
 func init() {
 	RegisterSuite(SuiteCouch20, kt.SuiteConfig{
-		"AllDBs.expected": []string{"_replicator", "_users"},
+		"AllDBs.expected": []string{"_global_changes", "_replicator", "_users"},
 
+		"Config.skip": true, // FIXME: CouchDB config has moved
 		"Config/Admin/GetAll.expected_sections": []string{"admins", "attachments", "compaction_daemon", "cors", "couch_httpd_auth",
 			"couch_httpd_oauth", "couchdb", "daemons", "database_compaction", "httpd", "httpd_db_handlers", "httpd_design_handlers",
 			"httpd_global_handlers", "log", "query_server_config", "query_servers", "replicator", "ssl", "stats", "uuids", "vendor",
@@ -41,7 +42,7 @@ func init() {
 		"AllDocs/Admin/_replicator.offset":   0,
 		"AllDocs/Admin/chicken.status":       kivik.StatusNotFound,
 		"AllDocs/NoAuth.databases":           []string{"_replicator", "chicken"},
-		"AllDocs/NoAuth/_replicator.status":  kivik.StatusForbidden,
+		"AllDocs/NoAuth/_replicator.status":  kivik.StatusUnauthorized,
 		"AllDocs/NoAuth/chicken.status":      kivik.StatusNotFound,
 
 		"DBExists.databases":              []string{"_users", "chicken"},
@@ -52,28 +53,29 @@ func init() {
 		"DBExists/RW/group/Admin.exists":  true,
 		"DBExists/RW/group/NoAuth.exists": true,
 
-		"Membership.status": kivik.StatusNotImplemented,
+		"Membership/Admin.all":      []string{"nonode@nohost"},
+		"Membership/NoAuth.all":     []string{"nonode@nohost"},
+		"Membership/Admin.cluster":  []string{"nonode@nohost"},
+		"Membership/NoAuth.cluster": []string{"nonode@nohost"},
 
 		"UUIDs.counts":                []int{-1, 0, 1, 10},
 		"UUIDs/Admin/-1Count.status":  kivik.StatusBadRequest,
 		"UUIDs/NoAuth/-1Count.status": kivik.StatusBadRequest,
 
-		"Log/NoAuth.status":                   kivik.StatusUnauthorized,
-		"Log/NoAuth/Offset-1000.status":       kivik.StatusBadRequest,
-		"Log/Admin/Offset-1000.status":        kivik.StatusBadRequest,
-		"Log/Admin/HTTP/NegativeBytes.status": kivik.StatusInternalServerError,
-		"Log/Admin/HTTP/TextBytes.status":     kivik.StatusInternalServerError,
+		"Log.skip": true, // This was removed in CouchDB 2.0
 
-		"ServerInfo.version":        `^1\.6\.1$`,
+		"ServerInfo.version":        `^2\.0\.0$`,
 		"ServerInfo.vendor":         `^The Apache Software Foundation$`,
-		"ServerInfo.vendor_version": `^1\.6\.1$`,
+		"ServerInfo.vendor_version": ``, // CouchDB 2.0 no longer has a vendor version
 
 		"Get/RW/group/Admin/bogus.status":  kivik.StatusNotFound,
 		"Get/RW/group/NoAuth/bogus.status": kivik.StatusNotFound,
 
-		"Flush.databases":                     []string{"_users", "chicken"},
-		"Flush/NoAuth/chicken/DoFlush.status": kivik.StatusNotFound,
-		"Flush/Admin/chicken/DoFlush.status":  kivik.StatusNotFound,
+		"Flush.databases":                            []string{"_users", "chicken"},
+		"Flush/NoAuth/chicken/DoFlush.status":        kivik.StatusNotFound,
+		"Flush/Admin/chicken/DoFlush.status":         kivik.StatusNotFound,
+		"Flush/Admin/_users/DoFlush/Timestamp.skip":  true, // CouchDB 2.0 always returns 0?
+		"Flush/NoAuth/_users/DoFlush/Timestamp.skip": true, // CouchDB 2.0 always returns 0?
 
 		"Delete/RW/Admin/group/MissingDoc.status":        kivik.StatusNotFound,
 		"Delete/RW/Admin/group/InvalidRevFormat.status":  kivik.StatusBadRequest,
@@ -82,25 +84,25 @@ func init() {
 		"Delete/RW/NoAuth/group/InvalidRevFormat.status": kivik.StatusBadRequest,
 		"Delete/RW/NoAuth/group/WrongRev.status":         kivik.StatusConflict,
 
-		"Session/Get/Admin.info.authentication_handlers":  "oauth,cookie,default",
+		"Session/Get/Admin.info.authentication_handlers":  "cookie,default",
 		"Session/Get/Admin.info.authentication_db":        "_users",
 		"Session/Get/Admin.info.authenticated":            "cookie",
 		"Session/Get/Admin.userCtx.roles":                 "_admin",
 		"Session/Get/Admin.ok":                            "true",
-		"Session/Get/NoAuth.info.authentication_handlers": "oauth,cookie,default",
+		"Session/Get/NoAuth.info.authentication_handlers": "cookie,default",
 		"Session/Get/NoAuth.info.authentication_db":       "_users",
 		"Session/Get/NoAuth.info.authenticated":           "",
 		"Session/Get/NoAuth.userCtx.roles":                "",
 		"Session/Get/NoAuth.ok":                           "true",
 
 		"Session/Post/EmptyJSON.status":                             kivik.StatusBadRequest,
-		"Session/Post/BogusTypeJSON.status":                         kivik.StatusUnauthorized,
-		"Session/Post/BogusTypeForm.status":                         kivik.StatusUnauthorized,
-		"Session/Post/EmptyForm.status":                             kivik.StatusUnauthorized,
+		"Session/Post/BogusTypeJSON.status":                         kivik.StatusBadRequest,
+		"Session/Post/BogusTypeForm.status":                         kivik.StatusBadRequest,
+		"Session/Post/EmptyForm.status":                             kivik.StatusBadRequest,
 		"Session/Post/BadJSON.status":                               kivik.StatusBadRequest,
-		"Session/Post/BadForm.status":                               kivik.StatusUnauthorized,
+		"Session/Post/BadForm.status":                               kivik.StatusBadRequest,
 		"Session/Post/MeaninglessJSON.status":                       kivik.StatusInternalServerError,
-		"Session/Post/MeaninglessForm.status":                       kivik.StatusUnauthorized,
+		"Session/Post/MeaninglessForm.status":                       kivik.StatusBadRequest,
 		"Session/Post/GoodJSON.status":                              kivik.StatusUnauthorized,
 		"Session/Post/BadQueryParam.status":                         kivik.StatusUnauthorized,
 		"Session/Post/BadCredsJSON.status":                          kivik.StatusUnauthorized,

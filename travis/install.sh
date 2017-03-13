@@ -28,18 +28,19 @@ function setup_docker {
     docker pull couchdb:1.6.1
     docker run -d -p 6000:5984 --name couchdb16 couchdb:1.6.1
     wait_for_server http://localhost:6000/
-    curl -X PUT http://localhost:6000/_config/log/file -d '"/tmp/log"'
-    curl -X PUT http://localhost:6000/_config/couchdb/delayed_commits -d '"false"'
-    curl -X PUT http://localhost:6000/_config/admins/admin -d '"abc123"'
-    docker pull couchdb:latest
-    docker run -d -p 6001:5984 --name couchdb20 couchdb:latest
+    curl --fail -X PUT http://localhost:6000/_config/log/file -d '"/tmp/log"'
+    curl --fail -X PUT http://localhost:6000/_config/couchdb/delayed_commits -d '"false"'
+    curl --fail -X PUT http://localhost:6000/_config/admins/admin -d '"abc123"'
+    docker pull klaemo/couchdb:latest
+    docker run -d -p 6001:5984 --name couchdb20 klaemo/couchdb:latest
     wait_for_server http://localhost:6001/
-    curl -X PUT http://localhost:6001/_config/log/file -d '"/tmp/log"'
-    curl -X PUT http://localhost:6001/_config/couchdb/delayed_commits -d '"false"'
-    curl -X PUT http://localhost:6001/_users
-    curl -X PUT http://localhost:6001/_replicator
-    curl -X PUT http://localhost:6001/_global_changes
-    curl -X PUT http://localhost:6001/_config/admins/admin -d '"abc123"'
+    curl --fail -X GET http://localhost:6001/_node/nonode@nohost/_config
+    curl --fail -X PUT http://localhost:6001/_node/nonode@nohost/_config/log/file -d '"/tmp/log"'
+    curl --fail -X PUT http://localhost:6001/_node/nonode@nohost/_config/couchdb/delayed_commits -d '"false"'
+    curl --fail -X PUT http://localhost:6001/_users
+    curl --fail -X PUT http://localhost:6001/_replicator
+    curl --fail -X PUT http://localhost:6001/_global_changes
+    curl --fail -X PUT http://localhost:6001/_node/nonode@nohost/_config/admins/admin -d '"abc123"'
 }
 
 case "$1" in

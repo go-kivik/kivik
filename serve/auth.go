@@ -46,7 +46,7 @@ func (s *Service) validate(w http.ResponseWriter, r *http.Request) (*auth.Sessio
 		return s.createSession("", &authdb.UserContext{Roles: []string{"_admin"}}), nil
 	}
 	for methodName, handler := range s.authHandlers {
-		uCtx, err := handler.Authenticate(r, s.UserStore)
+		uCtx, err := handler.Authenticate(w, r)
 		switch {
 		case errors.StatusCode(err) == kivik.StatusUnauthorized:
 			continue

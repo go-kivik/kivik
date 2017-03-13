@@ -22,7 +22,8 @@ func (a *Auth) MethodName() string {
 }
 
 // Authenticate authenticates a request with cookie auth against the user store.
-func (a *Auth) Authenticate(r *http.Request, store authdb.UserStore) (*authdb.UserContext, error) {
+func (a *Auth) Authenticate(w http.ResponseWriter, r *http.Request) (*authdb.UserContext, error) {
+	store := serve.GetService(r)
 	cookie, err := r.Cookie(kivik.SessionCookieName)
 	if err != nil {
 		return nil, nil

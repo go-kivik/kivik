@@ -5,8 +5,7 @@ import (
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/dimfeld/httptreemux"
-
-	"github.com/flimzy/kivik/errors"
+	"github.com/justinas/alice"
 )
 
 func (s *Service) setupRoutes() (http.Handler, error) {
@@ -25,29 +24,34 @@ func (s *Service) setupRoutes() (http.Handler, error) {
 	ctxRoot.Handler(mGET, "/_config/:section/:key", handler(getConfigItem))
 
 	ctxRoot.Handler(mGET, "/_session", handler(getSession))
-	// TODO: Should this be registered as part of an auth handler? If there's no
-	// cookie auth handler, why bother with this endpoint? Would other handlers
-	// potentially want to register different endpoints?
-	ctxRoot.Handler(mPOST, "/_session", handler(postSession))
-	ctxRoot.Handler(mDELETE, "/_session", handler(deleteSession))
+	// Note that DELETE and POST for the /_session endpoint are handled by the
+	// cookie auth handler. This means if you aren't using cookie auth, that
+	// these methods will return 405.
+
 	// ctxRoot.Handler(mDELETE, "/:db", handler(destroyDB) )
 	// ctxRoot.Handler(http.MethodGet, "/:db", handler(getDB))
 
-	handle := http.Handler(router)
-	if s.Config().GetBool("httpd", "enable_compression") {
-		level := s.Config().GetInt("httpd", "compression_level")
-		if level == 0 {
-			level = 8
-		}
-		gzipHandler, err := gziphandler.NewGzipLevelHandler(int(level))
-		if err != nil {
-			return nil, errors.Wrapf(err, "invalid httpd.compression_level '%s'", level)
-		}
-		s.Info("Enabling HTTPD cmpression, level %d", level)
-		handle = gzipHandler(handle)
+	return alice.New(
+		setContext(s),
+		setSession(),
+		requestLogger,
+		gzipHandler(s),
+		authHandler,
+	).Then(router), nil
+}
+
+func gzipHandler(s *Service) func(http.Handler) http.Handler {
+	level := s.Config().GetInt("httpd", "compression_level")
+	if level == 0 {
+		level = 8
 	}
-	handle = requestLogger(handle)
-	handle = authHandler(handle)
-	handle = setContext(s, handle)
-	return handle, nil
+	gzipHandler, err := gziphandler.NewGzipLevelHandler(int(level))
+	if err != nil {
+		s.Warn("invalid httpd.compression_level '%s'", level)
+		return func(h http.Handler) http.Handler {
+			return h
+		}
+	}
+	s.Info("Enabling HTTPD cmpression, level %d", level)
+	return gzipHandler
 }

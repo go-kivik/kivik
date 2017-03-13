@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"mime"
 	"net/http"
+
+	"github.com/flimzy/kivik"
 )
 
 // HTTPError is an error that represents an HTTP transport error.
@@ -43,7 +45,7 @@ func ResponseError(resp *http.Response) error {
 	}
 	httpErr := &HTTPError{}
 	if resp.Request.Method != "HEAD" && resp.ContentLength != 0 {
-		if ct, _, _ := mime.ParseMediaType(resp.Header.Get("Content-Type")); ct == typeJSON {
+		if ct, _, _ := mime.ParseMediaType(resp.Header.Get("Content-Type")); ct == kivik.TypeJSON {
 			dec := json.NewDecoder(resp.Body)
 			defer resp.Body.Close()
 			if err := dec.Decode(httpErr); err != nil {

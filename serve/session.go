@@ -3,14 +3,11 @@ package serve
 import (
 	"encoding/json"
 	"net/http"
-	"net/url"
-	"strconv"
-	"strings"
-	"time"
 
 	"golang.org/x/net/context"
 
 	"github.com/flimzy/kivik"
+	"github.com/flimzy/kivik/auth"
 	"github.com/flimzy/kivik/errors"
 )
 
@@ -40,97 +37,16 @@ func (s *Service) getAuthSecret(ctx context.Context) (string, error) {
 	return secret, nil
 }
 
-func (s *Service) getSessionTimeout(ctx context.Context) (int, error) {
-	timeout, err := s.Config().GetContext(ctx, "couch_httpd_auth", "timeout")
-	if errors.StatusCode(err) == kivik.StatusNotFound {
-		return DefaultSessionTimeout, nil
+func setSession() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+			// We store a pointer to a pointer, so the underlying pointer can
+			// be updated by the auth process, without losing the reference.
+			session := &auth.Session{}
+			ctx = context.WithValue(ctx, SessionKey, &session)
+			r = r.WithContext(ctx)
+			next.ServeHTTP(w, r)
+		})
 	}
-	if err != nil {
-		return 0, err
-	}
-	return strconv.Atoi(timeout)
-}
-
-func postSession(w http.ResponseWriter, r *http.Request) error {
-	authData := struct {
-		Name     *string `form:"name" json:"name"`
-		Password string  `form:"password" json:"password"`
-	}{}
-	if err := BindParams(r, &authData); err != nil {
-		return errors.Status(kivik.StatusBadRequest, "unable to parse request data")
-	}
-	if authData.Name == nil {
-		return errors.Status(kivik.StatusBadRequest, "request body must contain a username")
-	}
-	s := GetService(r)
-	user, err := s.UserStore.Validate(r.Context(), *authData.Name, authData.Password)
-	if err != nil {
-		return err
-	}
-	timeout, err := s.getSessionTimeout(r.Context())
-	if err != nil {
-		return err
-	}
-	next, err := redirectURL(r)
-	if err != nil {
-		return err
-	}
-
-	// Success, so create a cookie
-	token, err := s.CreateAuthToken(r.Context(), *authData.Name, user.Salt, time.Now().Unix())
-	if err != nil {
-		return err
-	}
-	w.Header().Set("Cache-Control", "must-revalidate")
-	http.SetCookie(w, &http.Cookie{
-		Name:     kivik.SessionCookieName,
-		Value:    token,
-		Path:     "/",
-		MaxAge:   timeout,
-		HttpOnly: true,
-	})
-	w.Header().Add("Content-Type", typeJSON)
-	if next != "" {
-		w.Header().Add("Location", next)
-		w.WriteHeader(kivik.StatusFound)
-	}
-	return json.NewEncoder(w).Encode(map[string]interface{}{
-		"ok":    true,
-		"name":  user.Name,
-		"roles": user.Roles,
-	})
-}
-
-func redirectURL(r *http.Request) (string, error) {
-	next, ok := stringQueryParam(r, "next")
-	if !ok {
-		return "", nil
-	}
-	if !strings.HasPrefix(next, "/") {
-		return "", errors.Status(kivik.StatusBadRequest, "redirection url must be relative to server root")
-	}
-	if strings.HasPrefix(next, "//") {
-		// Possible schemaless url
-		return "", errors.Status(kivik.StatusBadRequest, "invalid redirection url")
-	}
-	parsed, err := url.Parse(next)
-	if err != nil {
-		return "", errors.Status(kivik.StatusBadRequest, "invalid redirection url")
-	}
-	return parsed.String(), nil
-}
-
-func deleteSession(w http.ResponseWriter, r *http.Request) error {
-	http.SetCookie(w, &http.Cookie{
-		Name:     kivik.SessionCookieName,
-		Value:    "",
-		Path:     "/",
-		MaxAge:   -1,
-		HttpOnly: true,
-	})
-	w.Header().Add("Content-Type", typeJSON)
-	w.Header().Set("Cache-Control", "must-revalidate")
-	return json.NewEncoder(w).Encode(map[string]interface{}{
-		"ok": true,
-	})
 }

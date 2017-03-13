@@ -13,9 +13,13 @@ type Handler interface {
 	// start up.
 	MethodName() string
 	// Authenticate authenticates the HTTP request. On success, a user context
-	// must be returned. Any error other than Unauthorized will immediately
-	// terminate the authentication process, returning an error to the client.
-	Authenticate(*http.Request, authdb.UserStore) (*authdb.UserContext, error)
+	// must be returned. Any error will immediately terminate the authentication
+	// process, returning an error to the client. In particular, this means that
+	// an "unauthorized" error must not be returned if fallthrough is intended.
+	// If a response is sent, execution does not continue. This allows handlers
+	// to expose their own API endpoints (for example, the default cookie auth
+	// handler adds POST /_session and DELETE /_session handlers).
+	Authenticate(http.ResponseWriter, *http.Request) (*authdb.UserContext, error)
 }
 
 // Session represents an authenticated session.

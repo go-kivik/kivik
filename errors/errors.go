@@ -8,25 +8,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-// HTTP response codes permitted by the CouchDB API.
-// See http://docs.couchdb.org/en/1.6.1/api/basics.html#http-status-codes
+// Duplicates of statuses in the kivik package, put here to avoid an import
+// cycle.
 const (
-	StatusNoError                      = 0
-	StatusOK                           = 200
-	StatusCreated                      = 201
-	StatusAccepted                     = 202
-	StatusNotModified                  = 304
-	StatusBadRequest                   = 400
-	StatusUnauthorized                 = 401
-	StatusForbidden                    = 403
-	StatusNotFound                     = 404
-	StatusResourceNotAllowed           = 405
-	StatusConflict                     = 409
-	StatusPreconditionFailed           = 412
-	StatusBadContentType               = 415
-	StatusRequestedRangeNotSatisfiable = 416
-	StatusExpectationFailed            = 417
-	StatusInternalServerError          = 500
+	statusNoError             = 0
+	statusInternalServerError = 500
 )
 
 // StatusError is an error message bundled with an HTTP status code.
@@ -58,12 +44,12 @@ type StatusCoder interface {
 // StatusCode extracts an embedded HTTP status code from an error.
 func StatusCode(err error) int {
 	if err == nil {
-		return StatusNoError
+		return statusNoError
 	}
 	if scErr, ok := err.(StatusCoder); ok {
 		return scErr.StatusCode()
 	}
-	return StatusInternalServerError
+	return statusInternalServerError
 }
 
 // Reasoner is an interface for an error that contains a reason.

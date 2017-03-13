@@ -158,7 +158,7 @@ func (c *Client) CreateDB(dbName string) error {
 // CreateDBContext creates a DB of the requested name.
 func (c *Client) CreateDBContext(ctx context.Context, dbName string) error {
 	if !validDBName.MatchString(dbName) {
-		return errors.Status(errors.StatusBadRequest, "invalid database name")
+		return errors.Status(StatusBadRequest, "invalid database name")
 	}
 	return c.driverClient.CreateDBContext(ctx, dbName)
 }

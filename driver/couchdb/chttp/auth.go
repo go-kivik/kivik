@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 
+	"github.com/flimzy/kivik"
+
 	"golang.org/x/net/publicsuffix"
 )
 
@@ -41,7 +43,7 @@ func (a *BasicAuth) RoundTrip(req *http.Request) (*http.Response, error) {
 // Authenticate sets HTTP Basic Auth headers for the client.
 func (a *BasicAuth) Authenticate(ctx context.Context, c *Client) error {
 	// First see if the credentials seem good
-	req, err := c.NewRequest(ctx, MethodGet, "/_session", nil)
+	req, err := c.NewRequest(ctx, kivik.MethodGet, "/_session", nil)
 	if err != nil {
 		return err
 	}
@@ -87,7 +89,7 @@ func (a *CookieAuth) Authenticate(ctx context.Context, c *Client) error {
 	if err := a.setCookieJar(c); err != nil {
 		return err
 	}
-	return c.DoError(ctx, MethodPost, "/_session", &Options{JSON: a})
+	return c.DoError(ctx, kivik.MethodPost, "/_session", &Options{JSON: a})
 }
 
 func (a *CookieAuth) setCookieJar(c *Client) error {
@@ -106,7 +108,7 @@ func (a *CookieAuth) setCookieJar(c *Client) error {
 
 // Logout deletes the remote session.
 func (a *CookieAuth) Logout(ctx context.Context, c *Client) error {
-	err := c.DoError(ctx, MethodDelete, "/_session", nil)
+	err := c.DoError(ctx, kivik.MethodDelete, "/_session", nil)
 	if a.setJar {
 		c.Jar = nil
 	}

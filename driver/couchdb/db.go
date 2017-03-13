@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver/couchdb/chttp"
 	"github.com/flimzy/kivik/driver/ouchdb"
 )
@@ -46,7 +47,7 @@ func optionsToParams(opts map[string]interface{}) (url.Values, error) {
 
 // AllDocsContext returns all of the documents in the database.
 func (d *db) AllDocsContext(ctx context.Context, docs interface{}, opts map[string]interface{}) (offset, totalrows int, seq string, err error) {
-	resp, err := d.Client.DoReq(ctx, chttp.MethodGet, d.path("_all_docs", nil), nil)
+	resp, err := d.Client.DoReq(ctx, kivik.MethodGet, d.path("_all_docs", nil), nil)
 	if err != nil {
 		return 0, 0, "", err
 	}
@@ -72,7 +73,7 @@ func (d *db) CreateDocContext(ctx context.Context, doc interface{}) (docID, rev 
 		ID  string `json:"id"`
 		Rev string `json:"rev"`
 	}{}
-	_, err = d.Client.DoJSON(ctx, chttp.MethodPost, d.dbName, &chttp.Options{JSON: doc}, &result)
+	_, err = d.Client.DoJSON(ctx, kivik.MethodPost, d.dbName, &chttp.Options{JSON: doc}, &result)
 	return result.ID, result.Rev, err
 }
 
@@ -80,7 +81,7 @@ func (d *db) PutContext(ctx context.Context, docID string, doc interface{}) (rev
 	result := struct {
 		Rev string `json:"rev"`
 	}{}
-	_, err = d.Client.DoJSON(ctx, chttp.MethodPut, d.path(docID, nil), &chttp.Options{JSON: doc}, &result)
+	_, err = d.Client.DoJSON(ctx, kivik.MethodPut, d.path(docID, nil), &chttp.Options{JSON: doc}, &result)
 	return result.Rev, err
 }
 
@@ -90,7 +91,7 @@ func (d *db) DeleteContext(ctx context.Context, docID, rev string) (string, erro
 	var result struct {
 		Rev string `json:"rev"`
 	}
-	_, err := d.Client.DoJSON(ctx, chttp.MethodDelete, d.path(docID, query), nil, &result)
+	_, err := d.Client.DoJSON(ctx, kivik.MethodDelete, d.path(docID, query), nil, &result)
 	return result.Rev, err
 }
 
@@ -98,6 +99,6 @@ func (d *db) FlushContext(ctx context.Context) (time.Time, error) {
 	result := struct {
 		T int64 `json:"instance_start_time,string"`
 	}{}
-	_, err := d.Client.DoJSON(ctx, chttp.MethodPost, d.path("/_ensure_full_commit", nil), nil, &result)
+	_, err := d.Client.DoJSON(ctx, kivik.MethodPost, d.path("/_ensure_full_commit", nil), nil, &result)
 	return time.Unix(0, 0).Add(time.Duration(result.T) * time.Microsecond), err
 }

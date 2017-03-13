@@ -53,7 +53,7 @@ func testSession(ctx *kt.Context, client *chttp.Client) {
 			Roles []string `json:"roles"`
 		} `json:"userCtx"`
 	}{}
-	_, err := client.DoJSON(kt.CTX, chttp.MethodGet, "/_session", nil, &uCtx)
+	_, err := client.DoJSON(kt.CTX, kivik.MethodGet, "/_session", nil, &uCtx)
 	if !ctx.IsExpectedSuccess(err) {
 		return
 	}
@@ -184,7 +184,7 @@ func testCreateSession(ctx *kt.Context, client *chttp.Client) {
 				if test.Query != "" {
 					reqURL += "?" + test.Query
 				}
-				r, err := client.DoReq(kt.CTX, chttp.MethodPost, reqURL, test.Options)
+				r, err := client.DoReq(kt.CTX, kivik.MethodPost, reqURL, test.Options)
 				if err == nil {
 					err = chttp.ResponseError(r.Response)
 				}
@@ -275,7 +275,7 @@ func testDeleteSession(ctx *kt.Context, client *chttp.Client) {
 		if dsn, _ := url.Parse(ctx.Admin.DSN()); dsn.User != nil {
 			name := dsn.User.Username()
 			password, _ := dsn.User.Password()
-			r, err := client.DoReq(kt.CTX, chttp.MethodPost, "/_session", &chttp.Options{
+			r, err := client.DoReq(kt.CTX, kivik.MethodPost, "/_session", &chttp.Options{
 				Body: bytes.NewBuffer([]byte(fmt.Sprintf(`{"name":"%s","password":"%s"}`, name, password))),
 			})
 			if err != nil {
@@ -305,7 +305,7 @@ func testDeleteSession(ctx *kt.Context, client *chttp.Client) {
 				response := struct {
 					OK bool `json:"ok"`
 				}{}
-				req, err := client.NewRequest(kt.CTX, chttp.MethodDelete, "/_session", nil)
+				req, err := client.NewRequest(kt.CTX, kivik.MethodDelete, "/_session", nil)
 				if err != nil {
 					ctx.Fatalf("Failed to create request: %s", err)
 				}

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/logger"
 )
 
@@ -47,11 +48,11 @@ func (s *Service) Error(format string, args ...interface{}) {
 
 type statusWriter struct {
 	http.ResponseWriter
-	status *int
+	status int
 }
 
 func (w *statusWriter) WriteHeader(status int) {
-	w.status = &status
+	w.status = status
 	w.ResponseWriter.WriteHeader(status)
 }
 
@@ -61,6 +62,10 @@ func requestLogger(next http.Handler) http.Handler {
 		next.ServeHTTP(sw, r)
 		ip := r.RemoteAddr
 		ip = ip[0:strings.LastIndex(ip, ":")]
-		GetService(r).Info("%s - - %s %s %d", ip, r.Method, r.URL.String(), sw.status)
+		status := sw.status
+		if status == 0 {
+			status = kivik.StatusOK
+		}
+		GetService(r).Info("%s - - %s %s %d", ip, r.Method, r.URL.String(), status)
 	})
 }

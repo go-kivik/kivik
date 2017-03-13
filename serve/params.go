@@ -8,7 +8,7 @@ import (
 )
 
 func intQueryParam(r *http.Request, key string) (int64, bool, error) {
-	value, ok := stringQueryParam(r, key)
+	value, ok := StringQueryParam(r, key)
 	if !ok {
 		return 0, false, nil
 	}
@@ -19,7 +19,8 @@ func intQueryParam(r *http.Request, key string) (int64, bool, error) {
 	return iValue, true, nil
 }
 
-func stringQueryParam(r *http.Request, key string) (string, bool) {
+// StringQueryParam extracts a query paramter as string.
+func StringQueryParam(r *http.Request, key string) (string, bool) {
 	values := r.URL.Query()
 	if _, ok := values[key]; !ok {
 		return "", false

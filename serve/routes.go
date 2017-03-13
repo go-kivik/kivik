@@ -24,11 +24,10 @@ func (s *Service) setupRoutes() (http.Handler, error) {
 	ctxRoot.Handler(mGET, "/_config/:section/:key", handler(getConfigItem))
 
 	ctxRoot.Handler(mGET, "/_session", handler(getSession))
-	// TODO: Should this be registered as part of an auth handler? If there's no
-	// cookie auth handler, why bother with this endpoint? Would other handlers
-	// potentially want to register different endpoints?
-	ctxRoot.Handler(mPOST, "/_session", handler(postSession))
-	ctxRoot.Handler(mDELETE, "/_session", handler(deleteSession))
+	// Note that DELETE and POST for the /_session endpoint are handled by the
+	// cookie auth handler. This means if you aren't using cookie auth, that
+	// these methods will return 405.
+
 	// ctxRoot.Handler(mDELETE, "/:db", handler(destroyDB) )
 	// ctxRoot.Handler(http.MethodGet, "/:db", handler(getDB))
 

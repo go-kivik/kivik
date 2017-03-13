@@ -3,10 +3,8 @@ package serve
 import (
 	"net/http"
 
-	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/auth"
 	"github.com/flimzy/kivik/authdb"
-	"github.com/flimzy/kivik/errors"
 )
 
 type doneWriter struct {
@@ -16,7 +14,12 @@ type doneWriter struct {
 
 func (w *doneWriter) WriteHeader(status int) {
 	w.done = true
-	w.WriteHeader(status)
+	w.ResponseWriter.WriteHeader(status)
+}
+
+func (w *doneWriter) Write(b []byte) (int, error) {
+	w.done = true
+	return w.ResponseWriter.Write(b)
 }
 
 func authHandler(next http.Handler) http.Handler {
@@ -24,7 +27,7 @@ func authHandler(next http.Handler) http.Handler {
 		dw := &doneWriter{ResponseWriter: w}
 		s := GetService(r)
 		session, err := s.validate(dw, r)
-		if err != nil && errors.StatusCode(err) != kivik.StatusUnauthorized {
+		if err != nil {
 			reportError(w, err)
 			return
 		}
@@ -47,12 +50,10 @@ func (s *Service) validate(w http.ResponseWriter, r *http.Request) (*auth.Sessio
 	}
 	for methodName, handler := range s.authHandlers {
 		uCtx, err := handler.Authenticate(w, r)
-		switch {
-		case errors.StatusCode(err) == kivik.StatusUnauthorized:
-			continue
-		case err != nil:
+		if err != nil {
 			return nil, err
-		case uCtx != nil:
+		}
+		if uCtx != nil {
 			return s.createSession(methodName, uCtx), nil
 		}
 	}

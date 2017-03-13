@@ -59,11 +59,8 @@ func (a *Auth) validateCookie(w http.ResponseWriter, r *http.Request) (*authdb.U
 	}
 	s := serve.GetService(r)
 	valid, err := s.ValidateCookie(r.Context(), user, cookie.Value)
-	if err != nil {
+	if err != nil || !valid {
 		return nil, nil
-	}
-	if !valid {
-		return nil, kivik.ErrUnauthorized
 	}
 	return user, nil
 }

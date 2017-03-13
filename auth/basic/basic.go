@@ -4,7 +4,6 @@ package basic
 import (
 	"net/http"
 
-	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/auth"
 	"github.com/flimzy/kivik/authdb"
 	"github.com/flimzy/kivik/serve"
@@ -26,7 +25,7 @@ func (a *HTTPBasicAuth) Authenticate(w http.ResponseWriter, r *http.Request) (*a
 	store := serve.GetService(r).UserStore
 	username, password, ok := r.BasicAuth()
 	if !ok {
-		return nil, kivik.ErrUnauthorized
+		return nil, nil
 	}
 	return store.Validate(r.Context(), username, password)
 }

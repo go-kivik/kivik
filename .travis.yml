@@ -1,5 +1,7 @@
 dist: trusty
 sudo: required
+services:
+    - docker
 
 language: go
 
@@ -12,7 +14,11 @@ go:
     - 1.8.x
     - master
 env:
-    - MODE=standard
+    global:
+        - KIVIK_TEST_DSN_COUCH16="http://admin:abc123@localhost:6000/"
+        - KIVIK_TEST_DSN_COUCH20="http://admin:abc123@localhost:6001/"
+    matrix:
+        - MODE=standard
 
 matrix:
     allow_failures:

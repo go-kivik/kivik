@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/url"
 
+	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/authdb"
 	"github.com/flimzy/kivik/driver/couchdb/chttp"
 	"github.com/flimzy/kivik/errors"
@@ -32,7 +33,7 @@ func New(dsn string) (authdb.UserStore, error) {
 }
 
 func (c *client) Validate(ctx context.Context, username, password string) (*authdb.UserContext, error) {
-	req, err := c.NewRequest(ctx, chttp.MethodGet, "/_session", nil)
+	req, err := c.NewRequest(ctx, kivik.MethodGet, "/_session", nil)
 	if err != nil {
 		return nil, err
 	}

@@ -18,7 +18,7 @@ func (c *client) LogContext(ctx context.Context, length, offset int64) (io.ReadC
 	if offset < 0 {
 		return nil, errors.Status(kivik.StatusBadRequest, "invalid offset specified")
 	}
-	resp, err := c.DoReq(ctx, chttp.MethodGet, fmt.Sprintf("/_log?bytes=%d&offset=%d", length, offset), nil)
+	resp, err := c.DoReq(ctx, kivik.MethodGet, fmt.Sprintf("/_log?bytes=%d&offset=%d", length, offset), nil)
 	if err != nil {
 		return nil, err
 	}

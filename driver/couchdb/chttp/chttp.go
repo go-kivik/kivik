@@ -11,22 +11,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/flimzy/kivik"
 	"github.com/pkg/errors"
-)
-
-// HTTP methods supported by this library.
-const (
-	MethodGet    = "GET"
-	MethodPut    = "PUT"
-	MethodPost   = "POST"
-	MethodHead   = "HEAD"
-	MethodDelete = "DELETE"
-	MethodCopy   = "COPY"
-)
-
-const (
-	typeJSON = "application/json"
-	typeText = "text/plain"
 )
 
 // Client represents a client connection. It embeds an *http.Client
@@ -197,7 +183,7 @@ func (c *Client) DoReq(ctx context.Context, method, path string, opts *Options) 
 			if err := enc.Encode(opts.JSON); err != nil {
 				return nil, err
 			}
-			opts.ContentType = typeJSON
+			opts.ContentType = kivik.TypeJSON
 		}
 	}
 	req, err := c.NewRequest(ctx, method, path, body)
@@ -225,8 +211,8 @@ func (c *Client) DoReq(ctx context.Context, method, path string, opts *Options) 
 }
 
 func setHeaders(req *http.Request, opts *Options) {
-	accept := typeJSON
-	contentType := typeJSON
+	accept := kivik.TypeJSON
+	contentType := kivik.TypeJSON
 	if opts != nil {
 		if opts.Accept != "" {
 			accept = opts.Accept

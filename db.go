@@ -70,7 +70,7 @@ func (db *DB) PutContext(ctx context.Context, docID string, doc interface{}) (re
 	defer db.autoFlush()
 	// The '/' char is only permitted in the case of '_design/', so check that here
 	if designDoc := strings.TrimPrefix(docID, "_design/"); strings.Contains(designDoc, "/") {
-		return "", errors.Status(errors.StatusBadRequest, "invalid document ID")
+		return "", errors.Status(StatusBadRequest, "invalid document ID")
 	}
 	return db.driverDB.PutContext(ctx, docID, doc)
 }

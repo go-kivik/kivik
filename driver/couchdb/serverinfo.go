@@ -4,14 +4,14 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
-	"github.com/flimzy/kivik/driver/couchdb/chttp"
 )
 
 // ServerInfo returns the server's version info.
 func (c *client) ServerInfoContext(ctx context.Context) (driver.ServerInfo, error) {
 	i := &info{}
-	_, err := c.DoJSON(ctx, chttp.MethodGet, "/", nil, i)
+	_, err := c.DoJSON(ctx, kivik.MethodGet, "/", nil, i)
 	return i, err
 }
 

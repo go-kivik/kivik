@@ -34,7 +34,7 @@ func init() {
 func (d *fsDriver) NewClientContext(_ context.Context, dir string) (driver.Client, error) {
 	if err := validateRootDir(dir); err != nil {
 		if os.IsPermission(errors.Cause(err)) {
-			return nil, errors.Status(errors.StatusUnauthorized, "access denied")
+			return nil, errors.Status(kivik.StatusUnauthorized, "access denied")
 		}
 		return nil, err
 	}
@@ -85,7 +85,7 @@ var validDBNameRE = regexp.MustCompile("^[a-z][a-z0-9_$()+/-]*$")
 func (c *client) AllDBsContext(_ context.Context) ([]string, error) {
 	files, err := ioutil.ReadDir(c.root)
 	if err != nil {
-		return nil, errors.WrapStatus(errors.StatusInternalServerError, err)
+		return nil, errors.WrapStatus(kivik.StatusInternalServerError, err)
 	}
 	filenames := make([]string, 0, len(files))
 	for _, file := range files {
@@ -110,10 +110,10 @@ func (c *client) CreateDBContext(ctx context.Context, dbName string) error {
 		return err
 	}
 	if exists {
-		return errors.Status(errors.StatusPreconditionFailed, "database already exists")
+		return errors.Status(kivik.StatusPreconditionFailed, "database already exists")
 	}
 	if err := os.Mkdir(c.root+"/"+dbName, dirMode); err != nil {
-		return errors.WrapStatus(errors.StatusInternalServerError, err)
+		return errors.WrapStatus(kivik.StatusInternalServerError, err)
 	}
 	return nil
 }
@@ -127,7 +127,7 @@ func (c *client) DBExistsContext(_ context.Context, dbName string) (bool, error)
 	if os.IsNotExist(err) {
 		return false, nil
 	}
-	return false, errors.WrapStatus(errors.StatusInternalServerError, err)
+	return false, errors.WrapStatus(kivik.StatusInternalServerError, err)
 }
 
 // DestroyDBContext destroys the database
@@ -137,10 +137,10 @@ func (c *client) DestroyDBContext(ctx context.Context, dbName string) error {
 		return err
 	}
 	if !exists {
-		return errors.Status(errors.StatusNotFound, "database does not exist")
+		return errors.Status(kivik.StatusNotFound, "database does not exist")
 	}
 	if err = os.RemoveAll(c.root + "/" + dbName); err != nil {
-		return errors.WrapStatus(errors.StatusInternalServerError, err)
+		return errors.WrapStatus(kivik.StatusInternalServerError, err)
 	}
 	return nil
 }

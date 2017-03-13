@@ -171,12 +171,12 @@ func Test(driver, dsn string, testSuites []string, rw bool, t *testing.T) {
 }
 
 func runTests(ctx *kt.Context, suite string, t *testing.T) {
+	ctx.T = t
 	conf, ok := suites[suite]
 	if !ok {
 		ctx.Skipf("No configuration found for suite '%s'", suite)
 	}
 	ctx.Config = conf
-	ctx.T = t
 	// This is run as a sub-test so configuration will work nicely.
 	ctx.Run("PreCleanup", func(ctx *kt.Context) {
 		ctx.RunAdmin(func(ctx *kt.Context) {

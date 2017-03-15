@@ -166,7 +166,7 @@ func (db *DB) Get(ctx context.Context, docID string, opts map[string]interface{}
 // Delete marks a document as deleted.
 // See https://pouchdb.com/api.html#delete_document
 func (db *DB) Delete(ctx context.Context, doc interface{}) (rev string, err error) {
-	result, err := callBack(ctx, db, "delete", doc, setTimeout(ctx, nil))
+	result, err := callBack(ctx, db, "remove", doc, setTimeout(ctx, nil))
 	if err != nil {
 		return "", err
 	}

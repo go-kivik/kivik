@@ -37,6 +37,11 @@ func (d *db) DeleteContext(_ context.Context, docID, rev string) (newRev string,
 	return "", nil
 }
 
-func (d *db) InfoContext(_ context.Context) (*driver.DBInfo, error) {
-	return nil, nil
+func (d *db) InfoContext(ctx context.Context) (*driver.DBInfo, error) {
+	i, err := d.db.Info(ctx)
+	return &driver.DBInfo{
+		Name:      i.Name,
+		DocCount:  i.DocCount,
+		UpdateSeq: i.UpdateSeq,
+	}, err
 }

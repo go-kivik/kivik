@@ -111,8 +111,8 @@ func (p *PouchDB) AllDBs(ctx context.Context) ([]string, error) {
 // DBInfo is a struct respresenting information about a specific database.
 type DBInfo struct {
 	*js.Object
-	DBName    string `js:"db_name"`
-	DocCount  int    `js:"doc_count"`
+	Name      string `js:"db_name"`
+	DocCount  int64  `js:"doc_count"`
 	UpdateSeq string `js:"update_seq"`
 }
 

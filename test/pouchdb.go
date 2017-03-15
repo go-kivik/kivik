@@ -73,5 +73,7 @@ func init() {
 		"Get.skip": true, // FIXME: Update this when Get is implemented
 
 		"Delete.skip": true, // FIXME: Unimplemented
+
+		"DBInfo.skip": true, // FIXME: Implement Put() and Delete() first
 	})
 }

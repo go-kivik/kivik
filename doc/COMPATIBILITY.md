@@ -22,10 +22,11 @@
 
 | Authentication Method | ![Kivik HTTP Server](images/http.png) | ![Kivik Test Suite](images/tests.png) | ![CouchDB](images/couchdb.png) | ![PouchDB](images/pouchdb.png) | ![Memory Driver](images/memory.png) | ![Filesystem Driver](images/filesystem.png) |
 |--------------|:-------------------------------------:|:-------------------------------------:|:------------------------------:|:------------------------------:|:-----------------------------------:|:------------------------------------------:|
-| HTTP Basic Auth    |    |    | ✅ | ✅<sup>[1](#pouchDbAuth)</sup> | ⁿ/ₐ | ⁿ/ₐ<sup>[2](#fsAuth)</sup>
-| Cookie Auth        |    | ✅ | ✅<sup>[3](#couchGopherJSAuth)</sup> |    | ⁿ/ₐ | ⁿ/ₐ<sup>[2](#fsAuth)</sup>
+| HTTP Basic Auth    | ✅ | ✅ | ✅ | ✅<sup>[1](#pouchDbAuth)</sup> | ⁿ/ₐ | ⁿ/ₐ<sup>[2](#fsAuth)</sup>
+| Cookie Auth        | ✅ | ✅ | ✅<sup>[3](#couchGopherJSAuth)</sup> |    | ⁿ/ₐ | ⁿ/ₐ<sup>[2](#fsAuth)</sup>
 | Proxy Auth         |    |    |    |    | ⁿ/ₐ | ⁿ/ₐ<sup>[2](#fsAuth)</sup>
 | OAuth 1.0          |    |    |    |    | ⁿ/ₐ | ⁿ/ₐ<sup>[2](#fsAuth)</sup>
+| OAuth 2.0          |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
 
 ### Notes
 

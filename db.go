@@ -134,6 +134,14 @@ func (db *DB) Info() (*DBInfo, error) {
 // InfoContext returns basic statistics about the database.
 func (db *DB) InfoContext(ctx context.Context) (*DBInfo, error) {
 	i, err := db.driverDB.InfoContext(ctx)
-	di := DBInfo(*i)
-	return &di, err
+	// For Go 1.7
+	return &DBInfo{
+		Name:         i.Name,
+		DocCount:     i.DocCount,
+		DeletedCount: i.DeletedCount,
+		UpdateSeq:    i.UpdateSeq,
+		DiskSize:     i.DiskSize,
+		ActiveSize:   i.ActiveSize,
+		ExternalSize: i.ExternalSize,
+	}, err
 }

@@ -44,10 +44,6 @@ func (p *PouchDB) Version() string {
 	return p.Get("version").String()
 }
 
-type caller interface {
-	Call(string, ...interface{}) *js.Object
-}
-
 func setTimeout(ctx context.Context, options map[string]interface{}) map[string]interface{} {
 	if ctx == nil { // Just to be safe
 		return options
@@ -67,6 +63,10 @@ func setTimeout(ctx context.Context, options map[string]interface{}) map[string]
 	return options
 }
 
+type caller interface {
+	Call(string, ...interface{}) *js.Object
+}
+
 // callBack executes the 'method' of 'o' as a callback, setting result to the
 // callback's return value. An error is returned if either the callback returns
 // an error, or if the context is cancelled. No attempt is made to abort the
@@ -74,13 +74,12 @@ func setTimeout(ctx context.Context, options map[string]interface{}) map[string]
 func callBack(ctx context.Context, o caller, method string, args ...interface{}) (*js.Object, error) {
 	resultCh := make(chan *js.Object)
 	var err error
-	args = append(args, func(e, r *js.Object) {
-		if e != nil {
-			err = &pouchError{Object: e}
-		}
+	o.Call(method, args...).Call("then", func(r *js.Object) {
 		resultCh <- r
+	}).Call("catch", func(e *js.Object) {
+		err = &pouchError{Object: e}
+		close(resultCh)
 	})
-	o.Call(method, args...)
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()

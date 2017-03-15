@@ -121,6 +121,26 @@ func (db *DB) Info(ctx context.Context) (*DBInfo, error) {
 	return &DBInfo{Object: result}, err
 }
 
+// Put creates a new document or update an existing document.
+// See https://pouchdb.com/api.html#create_document
+func (db *DB) Put(ctx context.Context, doc interface{}) (rev string, err error) {
+	result, err := callBack(ctx, db, "put", doc, setTimeout(ctx, nil))
+	if err != nil {
+		return "", err
+	}
+	return result.Get("rev").String(), nil
+}
+
+// Delete marks a document as deleted.
+// See https://pouchdb.com/api.html#delete_document
+func (db *DB) Delete(ctx context.Context, doc interface{}) (rev string, err error) {
+	result, err := callBack(ctx, db, "delete", doc, setTimeout(ctx, nil))
+	if err != nil {
+		return "", err
+	}
+	return result.Get("rev").String(), nil
+}
+
 // Destroy destroys the database.
 func (db *DB) Destroy(ctx context.Context, options map[string]interface{}) error {
 	_, err := callBack(ctx, db, "destroy", setTimeout(ctx, options))
@@ -130,6 +150,9 @@ func (db *DB) Destroy(ctx context.Context, options map[string]interface{}) error
 // AllDocs returns a list of all documents in the database.
 func (db *DB) AllDocs(ctx context.Context, options map[string]interface{}) ([]byte, error) {
 	result, err := callBack(ctx, db, "allDocs", setTimeout(ctx, options))
+	if err != nil {
+		return nil, err
+	}
 	resultJSON := js.Global.Get("JSON").Call("stringify", result).String()
 	return []byte(resultJSON), err
 }

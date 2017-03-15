@@ -20,8 +20,7 @@ func init() {
 		"CreateDB.skip": true, // FIXME: No way to validate if this works unless/until allDbs works
 		"DBExists.skip": true, // FIXME: Maybe fix this if/when allDBs works?
 
-		"AllDocs/Admin.skip": true,
-		"AllDocs/RW.skip":    true, // FIXME: Not sure why this is broken
+		"AllDocs/Admin.skip": false,
 
 		"ServerInfo.version":        `^6\.\d\.\d$`,
 		"ServerInfo.vendor":         `^PouchDB$`,
@@ -29,7 +28,11 @@ func init() {
 
 		"Get.skip": true, // FIXME: Update this when Get is implemented
 
-		"Delete.skip": true, // FIXME: Unimplemented
+		"Delete/RW/Admin/group/MissingDoc.status":       kivik.StatusNotFound,
+		"Delete/RW/Admin/group/InvalidRevFormat.status": kivik.StatusBadRequest,
+		"Delete/RW/Admin/group/WrongRev.status":         kivik.StatusConflict,
+
+		"DBInfo/Admin.skip": true, // No predefined DBs for Local PouchDB
 	})
 	RegisterSuite(SuitePouchRemote, kt.SuiteConfig{
 		// Features which are not supported by PouchDB
@@ -64,7 +67,6 @@ func init() {
 		"AllDocs/Admin/_replicator.offset":   0,
 		"AllDocs/NoAuth.databases":           []string{"_replicator"},
 		"AllDocs/NoAuth/_replicator.status":  kivik.StatusForbidden,
-		"AllDocs/RW.skip":                    true, // FIXME: Not sure why this is broken
 
 		"ServerInfo.version":        `^6\.\d\.\d$`,
 		"ServerInfo.vendor":         `^PouchDB$`,
@@ -72,8 +74,13 @@ func init() {
 
 		"Get.skip": true, // FIXME: Update this when Get is implemented
 
-		"Delete.skip": true, // FIXME: Unimplemented
+		"Delete/RW/Admin/group/MissingDoc.status":        kivik.StatusNotFound,
+		"Delete/RW/Admin/group/InvalidRevFormat.status":  kivik.StatusBadRequest,
+		"Delete/RW/Admin/group/WrongRev.status":          kivik.StatusConflict,
+		"Delete/RW/NoAuth/group/MissingDoc.status":       kivik.StatusNotFound,
+		"Delete/RW/NoAuth/group/InvalidRevFormat.status": kivik.StatusBadRequest,
+		"Delete/RW/NoAuth/group/WrongRev.status":         kivik.StatusConflict,
 
-		"DBInfo.skip": true, // FIXME: Implement Put() and Delete() first
+		"DBInfo.databases": []string{"_users"},
 	})
 }

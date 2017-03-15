@@ -29,12 +29,15 @@ func (d *db) CreateDocContext(_ context.Context, doc interface{}) (docID, rev st
 	return "", "", nil
 }
 
-func (d *db) PutContext(_ context.Context, docID string, doc interface{}) (rev string, err error) {
-	return "", nil
+func (d *db) PutContext(ctx context.Context, _ string, doc interface{}) (rev string, err error) {
+	return d.db.Put(ctx, doc)
 }
 
-func (d *db) DeleteContext(_ context.Context, docID, rev string) (newRev string, err error) {
-	return "", nil
+func (d *db) DeleteContext(ctx context.Context, docID, rev string) (newRev string, err error) {
+	return d.db.Delete(ctx, map[string]string{
+		"_id":  docID,
+		"_rev": rev,
+	})
 }
 
 func (d *db) InfoContext(ctx context.Context) (*driver.DBInfo, error) {

@@ -9,6 +9,8 @@ import (
 
 func init() {
 	RegisterSuite(SuitePouchLocal, kt.SuiteConfig{
+		"PreCleanup.skip": true,
+
 		// Features which are not supported by PouchDB
 		"UUIDs.skip":      true,
 		"Log.skip":        true,

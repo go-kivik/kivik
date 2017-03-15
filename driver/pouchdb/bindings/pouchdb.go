@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/gopherjs/gopherjs/js"
@@ -72,7 +73,21 @@ type caller interface {
 // callback's return value. An error is returned if either the callback returns
 // an error, or if the context is cancelled. No attempt is made to abort the
 // callback in the case that the context is cancelled.
-func callBack(ctx context.Context, o caller, method string, args ...interface{}) (*js.Object, error) {
+func callBack(ctx context.Context, o caller, method string, args ...interface{}) (r *js.Object, e error) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch r.(type) {
+			case *js.Object:
+				e = newPouchError(r.(*js.Object))
+			case error:
+				// This shouldn't ever happen, but just in case
+				e = r.(error)
+			default:
+				// Catch all for everything else
+				e = fmt.Errorf("%v", r)
+			}
+		}
+	}()
 	resultCh := make(chan *js.Object)
 	var err error
 	o.Call(method, args...).Call("then", func(r *js.Object) {

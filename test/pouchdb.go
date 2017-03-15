@@ -26,7 +26,8 @@ func init() {
 		"ServerInfo.vendor":         `^PouchDB$`,
 		"ServerInfo.vendor_version": `^6\.\d\.\d$`,
 
-		"Get.skip": true, // FIXME: Update this when Get is implemented
+		"Get/RW/group/Admin/bogus.status":  kivik.StatusNotFound,
+		"Get/RW/group/NoAuth/bogus.status": kivik.StatusNotFound,
 
 		"Delete/RW/Admin/group/MissingDoc.status":       kivik.StatusNotFound,
 		"Delete/RW/Admin/group/InvalidRevFormat.status": kivik.StatusBadRequest,
@@ -72,7 +73,8 @@ func init() {
 		"ServerInfo.vendor":         `^PouchDB$`,
 		"ServerInfo.vendor_version": `^6\.\d\.\d$`,
 
-		"Get.skip": true, // FIXME: Update this when Get is implemented
+		"Get/RW/group/Admin/bogus.status":  kivik.StatusNotFound,
+		"Get/RW/group/NoAuth/bogus.status": kivik.StatusNotFound,
 
 		"Delete/RW/Admin/group/MissingDoc.status":        kivik.StatusNotFound,
 		"Delete/RW/Admin/group/InvalidRevFormat.status":  kivik.StatusBadRequest,

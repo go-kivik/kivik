@@ -3,6 +3,7 @@ package pouchdb
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/driver/ouchdb"
@@ -21,8 +22,12 @@ func (d *db) AllDocsContext(ctx context.Context, docs interface{}, options map[s
 	return ouchdb.AllDocs(bytes.NewReader(body), docs)
 }
 
-func (d *db) GetContext(_ context.Context, docID string, doc interface{}, options map[string]interface{}) error {
-	return nil
+func (d *db) GetContext(ctx context.Context, docID string, doc interface{}, options map[string]interface{}) error {
+	body, err := d.db.Get(ctx, docID, options)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(body, &doc)
 }
 
 func (d *db) CreateDocContext(_ context.Context, doc interface{}) (docID, rev string, err error) {

@@ -4,6 +4,7 @@ package bindings
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"time"
 
@@ -77,7 +78,7 @@ func callBack(ctx context.Context, o caller, method string, args ...interface{})
 	o.Call(method, args...).Call("then", func(r *js.Object) {
 		resultCh <- r
 	}).Call("catch", func(e *js.Object) {
-		err = &pouchError{Object: e}
+		err = newPouchError(e)
 		close(resultCh)
 	})
 	select {
@@ -124,11 +125,27 @@ func (db *DB) Info(ctx context.Context) (*DBInfo, error) {
 // Put creates a new document or update an existing document.
 // See https://pouchdb.com/api.html#create_document
 func (db *DB) Put(ctx context.Context, doc interface{}) (rev string, err error) {
-	result, err := callBack(ctx, db, "put", doc, setTimeout(ctx, nil))
+	jsonDoc, err := json.Marshal(doc)
+	if err != nil {
+		return "", err
+	}
+	jsDoc := js.Global.Get("JSON").Call("parse", string(jsonDoc))
+	result, err := callBack(ctx, db, "put", jsDoc, setTimeout(ctx, nil))
 	if err != nil {
 		return "", err
 	}
 	return result.Get("rev").String(), nil
+}
+
+// Get fetches the requested document from the database.
+// See https://pouchdb.com/api.html#fetch_document
+func (db *DB) Get(ctx context.Context, docID string, opts map[string]interface{}) (doc []byte, err error) {
+	result, err := callBack(ctx, db, "get", docID, setTimeout(ctx, opts))
+	if err != nil {
+		return nil, err
+	}
+	resultJSON := js.Global.Get("JSON").Call("stringify", result).String()
+	return []byte(resultJSON), err
 }
 
 // Delete marks a document as deleted.

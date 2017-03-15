@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 
+	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/driver/ouchdb"
 	"github.com/flimzy/kivik/driver/pouchdb/bindings"
 )
@@ -34,4 +35,8 @@ func (d *db) PutContext(_ context.Context, docID string, doc interface{}) (rev s
 
 func (d *db) DeleteContext(_ context.Context, docID, rev string) (newRev string, err error) {
 	return "", nil
+}
+
+func (d *db) InfoContext(_ context.Context) (*driver.DBInfo, error) {
+	return nil, nil
 }

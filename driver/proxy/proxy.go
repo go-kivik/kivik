@@ -52,3 +52,9 @@ func (d *db) AllDocsContext(ctx context.Context, i interface{}, opts map[string]
 func (d *db) GetContext(ctx context.Context, id string, i interface{}, opts map[string]interface{}) error {
 	return d.DB.GetContext(ctx, id, i, opts)
 }
+
+func (d *db) InfoContext(ctx context.Context) (*driver.DBInfo, error) {
+	i, err := d.DB.InfoContext(ctx)
+	di := driver.DBInfo(*i)
+	return &di, err
+}

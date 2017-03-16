@@ -192,3 +192,10 @@ func (db *DB) AllDocs(ctx context.Context, options map[string]interface{}) ([]by
 	resultJSON := js.Global.Get("JSON").Call("stringify", result).String()
 	return []byte(resultJSON), err
 }
+
+// Compact compacts the database, and waits for it to complete. This may take
+// a long time! Please wrap this call in a goroutine.
+func (db *DB) Compact() error {
+	_, err := callBack(context.Background(), db, "compact")
+	return err
+}

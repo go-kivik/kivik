@@ -111,5 +111,7 @@ func init() {
 		"Session/Post/GoodCredsJSONRemoteRedirInvalidURL.skip":      true, // CouchDB doesn't sanitize the Location value, so sends unparseable headers.
 
 		"DBInfo.databases": []string{"_users"},
+
+		"Compact.skip": false,
 	})
 }

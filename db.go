@@ -108,6 +108,8 @@ func (db *DB) FlushContext(ctx context.Context) (time.Time, error) {
 type DBInfo struct {
 	// Name is the name of the database.
 	Name string
+	// CompactRunning is true if the database is currently being compacted.
+	CompactRunning bool
 	// DocCount is the number of documents are currently stored in the database.
 	DocCount int64
 	// DeletedCount is a count of documents which have been deleted from the
@@ -136,12 +138,24 @@ func (db *DB) InfoContext(ctx context.Context) (*DBInfo, error) {
 	i, err := db.driverDB.InfoContext(ctx)
 	// For Go 1.7
 	return &DBInfo{
-		Name:         i.Name,
-		DocCount:     i.DocCount,
-		DeletedCount: i.DeletedCount,
-		UpdateSeq:    i.UpdateSeq,
-		DiskSize:     i.DiskSize,
-		ActiveSize:   i.ActiveSize,
-		ExternalSize: i.ExternalSize,
+		Name:           i.Name,
+		CompactRunning: i.CompactRunning,
+		DocCount:       i.DocCount,
+		DeletedCount:   i.DeletedCount,
+		UpdateSeq:      i.UpdateSeq,
+		DiskSize:       i.DiskSize,
+		ActiveSize:     i.ActiveSize,
+		ExternalSize:   i.ExternalSize,
 	}, err
+}
+
+// Compact calls CompactContext with a background context.
+func (db *DB) Compact() error {
+	return db.CompactContext(context.Background())
+}
+
+// CompactContext begins compaction of the database. Check the CompactRunning
+// field returned by Info() to see if the compaction has completed.
+func (db *DB) CompactContext(ctx context.Context) error {
+	return db.driverDB.CompactContext(ctx)
 }

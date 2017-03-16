@@ -100,3 +100,8 @@ func (d *db) DeleteContext(_ context.Context, docID, rev string) (newRev string,
 func (d *db) InfoContext(_ context.Context) (*driver.DBInfo, error) {
 	return nil, nil
 }
+
+func (c *client) CompactContext(_ context.Context) error {
+	// FIXME
+	return nil
+}

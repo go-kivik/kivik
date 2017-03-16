@@ -57,7 +57,7 @@
 | DELETE /{db}       | DestroyDB()            |    | ✅ | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
 | POST /{db}         | CreateDoc()            |    | ✅ | ✅ | ✅ |
 | GET /{db}/_all_docs | AllDocs()             |    | ✅ | ✅ | ✅ | ☑️<sup>[7](#todoConflicts),[8](#todoIncludeDocs),[9](#todoOrdering),[10](#todoLimit)</sup> | ✅ | ？ | ？ |
-| POST /{db}/_all_docs
+| POST /{db}/_all_docs | ⁿ/ₐ                   |    |    | ❌ | ❌ | ⁿ/ₐ | ⁿ/ₐ |
 | POST /{db}/_bulk_docs
 | GET /{db}/_changes
 | POST /{db}/_changes

@@ -42,5 +42,7 @@ func init() {
 		"Flush.skip": true,
 
 		"Delete.skip": true, // FIXME: Unimplemented
+
+		"DBInfo.skip": true, // FIXME: Unimplemented
 	})
 }

@@ -102,3 +102,46 @@ func (db *DB) FlushContext(ctx context.Context) (time.Time, error) {
 	}
 	return time.Time{}, ErrNotImplemented
 }
+
+// DBInfo is a struct of information about a database instance. Not all fields
+// are supported by all database drivers.
+type DBInfo struct {
+	// Name is the name of the database.
+	Name string
+	// DocCount is the number of documents are currently stored in the database.
+	DocCount int64
+	// DeletedCount is a count of documents which have been deleted from the
+	// database.
+	DeletedCount int64
+	// UpdateSeq is the current update sequence for the database.
+	UpdateSeq string
+	// DiskSize is the number of bytes used on-disk to store the database.
+	DiskSize int64
+	// ActiveSize is the number of bytes used on-disk to store active documents.
+	// If this number is lower than DiskSize, then compaction would free disk
+	// space.
+	ActiveSize int64
+	// ExternalSize is the size of the documents in the database, as represented
+	// as JSON, before compression.
+	ExternalSize int64
+}
+
+// Info calls InfoContext with a background context.
+func (db *DB) Info() (*DBInfo, error) {
+	return db.InfoContext(context.Background())
+}
+
+// InfoContext returns basic statistics about the database.
+func (db *DB) InfoContext(ctx context.Context) (*DBInfo, error) {
+	i, err := db.driverDB.InfoContext(ctx)
+	// For Go 1.7
+	return &DBInfo{
+		Name:         i.Name,
+		DocCount:     i.DocCount,
+		DeletedCount: i.DeletedCount,
+		UpdateSeq:    i.UpdateSeq,
+		DiskSize:     i.DiskSize,
+		ActiveSize:   i.ActiveSize,
+		ExternalSize: i.ExternalSize,
+	}, err
+}

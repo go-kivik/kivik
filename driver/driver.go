@@ -72,20 +72,35 @@ type Cluster interface {
 	MembershipContext(ctx context.Context) (allNodes []string, clusterNodes []string, err error)
 }
 
+// DBInfo provides statistics about a database.
+type DBInfo struct {
+	Name         string `json:"db_name"`
+	DocCount     int64  `json:"doc_count"`
+	DeletedCount int64  `json:"doc_del_count"`
+	UpdateSeq    string `json:"update_seq"`
+	DiskSize     int64  `json:"disk_size"`
+	ActiveSize   int64  `json:"data_size"`
+	ExternalSize int64  `json:"-"`
+}
+
 // DB is a database handle.
 type DB interface {
+	// AllDocsContext returns all of the documents in the database, subject
+	// to the options provided.
 	AllDocsContext(ctx context.Context, docs interface{}, options map[string]interface{}) (offset, totalrows int, seq string, err error)
-	// BulkDocs()
-	// Get fetches the requested document from the database, and unmarshals it
+	// GetContext fetches the requested document from the database, and unmarshals it
 	// into doc.
 	GetContext(ctx context.Context, docID string, doc interface{}, options map[string]interface{}) error
-	// CreateDoc creates a new doc, with a server-generated ID.
+	// CreateDocContext creates a new doc, with a server-generated ID.
 	CreateDocContext(ctx context.Context, doc interface{}) (docID, rev string, err error)
-	// Put writes the document in the database.
+	// PutContext writes the document in the database.
 	PutContext(ctx context.Context, docID string, doc interface{}) (rev string, err error)
-	// Delete marks the specified document as deleted.
+	// DeleteContext marks the specified document as deleted.
 	DeleteContext(ctx context.Context, docID, rev string) (newRev string, err error)
+	// InfoContext returns information about the database
+	InfoContext(ctx context.Context) (*DBInfo, error)
 	// GetAttachment()
+	// BulkDocs()
 	// Compact()
 	// CompactDDoc(ddoc string)
 	// ViewCleanup()

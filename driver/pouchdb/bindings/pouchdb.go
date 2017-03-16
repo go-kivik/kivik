@@ -5,6 +5,7 @@ package bindings
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/gopherjs/gopherjs/js"
@@ -44,10 +45,6 @@ func (p *PouchDB) Version() string {
 	return p.Get("version").String()
 }
 
-type caller interface {
-	Call(string, ...interface{}) *js.Object
-}
-
 func setTimeout(ctx context.Context, options map[string]interface{}) map[string]interface{} {
 	if ctx == nil { // Just to be safe
 		return options
@@ -67,20 +64,37 @@ func setTimeout(ctx context.Context, options map[string]interface{}) map[string]
 	return options
 }
 
+type caller interface {
+	Call(string, ...interface{}) *js.Object
+}
+
 // callBack executes the 'method' of 'o' as a callback, setting result to the
 // callback's return value. An error is returned if either the callback returns
 // an error, or if the context is cancelled. No attempt is made to abort the
 // callback in the case that the context is cancelled.
-func callBack(ctx context.Context, o caller, method string, args ...interface{}) (*js.Object, error) {
+func callBack(ctx context.Context, o caller, method string, args ...interface{}) (r *js.Object, e error) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch r.(type) {
+			case *js.Object:
+				e = newPouchError(r.(*js.Object))
+			case error:
+				// This shouldn't ever happen, but just in case
+				e = r.(error)
+			default:
+				// Catch all for everything else
+				e = fmt.Errorf("%v", r)
+			}
+		}
+	}()
 	resultCh := make(chan *js.Object)
 	var err error
-	args = append(args, func(e, r *js.Object) {
-		if e != nil {
-			err = &pouchError{Object: e}
-		}
+	o.Call(method, args...).Call("then", func(r *js.Object) {
 		resultCh <- r
+	}).Call("catch", func(e *js.Object) {
+		err = newPouchError(e)
+		close(resultCh)
 	})
-	o.Call(method, args...)
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
@@ -111,8 +125,8 @@ func (p *PouchDB) AllDBs(ctx context.Context) ([]string, error) {
 // DBInfo is a struct respresenting information about a specific database.
 type DBInfo struct {
 	*js.Object
-	DBName    string `js:"db_name"`
-	DocCount  int    `js:"doc_count"`
+	Name      string `js:"db_name"`
+	DocCount  int64  `js:"doc_count"`
 	UpdateSeq string `js:"update_seq"`
 }
 
@@ -120,6 +134,37 @@ type DBInfo struct {
 func (db *DB) Info(ctx context.Context) (*DBInfo, error) {
 	result, err := callBack(ctx, db, "info")
 	return &DBInfo{Object: result}, err
+}
+
+// Put creates a new document or update an existing document.
+// See https://pouchdb.com/api.html#create_document
+func (db *DB) Put(ctx context.Context, doc interface{}) (rev string, err error) {
+	result, err := callBack(ctx, db, "put", doc, setTimeout(ctx, nil))
+	if err != nil {
+		return "", err
+	}
+	return result.Get("rev").String(), nil
+}
+
+// Get fetches the requested document from the database.
+// See https://pouchdb.com/api.html#fetch_document
+func (db *DB) Get(ctx context.Context, docID string, opts map[string]interface{}) (doc []byte, err error) {
+	result, err := callBack(ctx, db, "get", docID, setTimeout(ctx, opts))
+	if err != nil {
+		return nil, err
+	}
+	resultJSON := js.Global.Get("JSON").Call("stringify", result).String()
+	return []byte(resultJSON), err
+}
+
+// Delete marks a document as deleted.
+// See https://pouchdb.com/api.html#delete_document
+func (db *DB) Delete(ctx context.Context, doc interface{}) (rev string, err error) {
+	result, err := callBack(ctx, db, "remove", doc, setTimeout(ctx, nil))
+	if err != nil {
+		return "", err
+	}
+	return result.Get("rev").String(), nil
 }
 
 // Destroy destroys the database.
@@ -131,6 +176,9 @@ func (db *DB) Destroy(ctx context.Context, options map[string]interface{}) error
 // AllDocs returns a list of all documents in the database.
 func (db *DB) AllDocs(ctx context.Context, options map[string]interface{}) ([]byte, error) {
 	result, err := callBack(ctx, db, "allDocs", setTimeout(ctx, options))
+	if err != nil {
+		return nil, err
+	}
 	resultJSON := js.Global.Get("JSON").Call("stringify", result).String()
 	return []byte(resultJSON), err
 }

@@ -18,3 +18,18 @@ func TestAllDocs(t *testing.T) {
 		t.Fatalf("Failed: %s", err)
 	}
 }
+
+func TestDBInfo(t *testing.T) {
+	client := getClient(t)
+	db, err := client.DBContext(kt.CTX, "_users")
+	if err != nil {
+		t.Fatalf("Failed to connect to db: %s", err)
+	}
+	info, err := db.InfoContext(kt.CTX)
+	if err != nil {
+		t.Fatalf("Failed: %s", err)
+	}
+	if info.Name != "_users" {
+		t.Errorf("Unexpected name %s", info.Name)
+	}
+}

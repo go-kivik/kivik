@@ -98,5 +98,7 @@ func init() {
 		"Session/Post/GoodCredsJSONRemoteRedirInvalidURL.status":      kivik.StatusBadRequest,
 		"Session/Post/GoodCredsJSONRedirEmpty.status":                 kivik.StatusBadRequest,
 		"Session/Post/GoodCredsJSONRedirSchemaless.status":            kivik.StatusBadRequest,
+
+		"DBInfo.skip": true, // FIXME: Unimplemented
 	})
 }

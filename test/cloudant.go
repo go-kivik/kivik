@@ -107,5 +107,9 @@ func init() {
 		"Session/Post/BadCredsForm.status":                            kivik.StatusUnauthorized,
 		"Session/Post/GoodCredsJSONRemoteRedirHeaderInjection.status": kivik.StatusBadRequest,
 		"Session/Post/GoodCredsJSONRemoteRedirInvalidURL.skip":        true, // Cloudant doesn't sanitize the Location value, so sends unparseable headers.
+
+		"DBInfo.databases":        []string{"_users"},
+		"DBInfo/NoAuth.status":    kivik.StatusUnauthorized,
+		"DBInfo/RW/NoAuth.status": kivik.StatusUnauthorized,
 	})
 }

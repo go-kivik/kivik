@@ -1,7 +1,9 @@
 package couchdb
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -9,6 +11,7 @@ import (
 	"time"
 
 	"github.com/flimzy/kivik"
+	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/driver/couchdb/chttp"
 	"github.com/flimzy/kivik/driver/ouchdb"
 )
@@ -101,4 +104,29 @@ func (d *db) FlushContext(ctx context.Context) (time.Time, error) {
 	}{}
 	_, err := d.Client.DoJSON(ctx, kivik.MethodPost, d.path("/_ensure_full_commit", nil), nil, &result)
 	return time.Unix(0, 0).Add(time.Duration(result.T) * time.Microsecond), err
+}
+
+func (d *db) InfoContext(ctx context.Context) (*driver.DBInfo, error) {
+	result := struct {
+		driver.DBInfo
+		Sizes struct {
+			File     int64 `json:"file"`
+			External int64 `json:"external"`
+			Active   int64 `json:"active"`
+		} `json:"sizes"`
+		UpdateSeq json.RawMessage `json:"update_seq"`
+	}{}
+	_, err := d.Client.DoJSON(ctx, kivik.MethodGet, d.dbName, nil, &result)
+	info := result.DBInfo
+	if result.Sizes.File > 0 {
+		info.DiskSize = result.Sizes.File
+	}
+	if result.Sizes.External > 0 {
+		info.ExternalSize = result.Sizes.External
+	}
+	if result.Sizes.Active > 0 {
+		info.ActiveSize = result.Sizes.Active
+	}
+	info.UpdateSeq = string(bytes.Trim(result.UpdateSeq, `"`))
+	return &info, err
 }

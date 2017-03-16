@@ -89,3 +89,8 @@ func (d *db) CompactContext(_ context.Context) error {
 	}()
 	return nil
 }
+
+// CompactViewContext is unimplemented for PouchDB
+func (d *db) CompactViewContext(_ context.Context, _ string) error {
+	return nil
+}

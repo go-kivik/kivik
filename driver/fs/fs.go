@@ -151,8 +151,3 @@ func (c *client) DBContext(_ context.Context, dbName string) (driver.DB, error) 
 		dbName: dbName,
 	}, nil
 }
-
-func (c *client) CompactContext(_ context.Context) error {
-	// FIXME
-	return nil
-}

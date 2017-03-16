@@ -82,26 +82,36 @@ func (d *db) AllDocsContext(ctx context.Context, docs interface{}, opts map[stri
 }
 
 func (d *db) GetContext(_ context.Context, docID string, doc interface{}, opts map[string]interface{}) error {
+	// FIXME: Unimplemented
 	return nil
 }
 
 func (d *db) CreateDocContext(_ context.Context, doc interface{}) (docID, rev string, err error) {
+	// FIXME: Unimplemented
 	return "", "", nil
 }
 
 func (d *db) PutContext(_ context.Context, docID string, doc interface{}) (rev string, err error) {
+	// FIXME: Unimplemented
 	return "", nil
 }
 
 func (d *db) DeleteContext(_ context.Context, docID, rev string) (newRev string, err error) {
+	// FIXME: Unimplemented
 	return "", nil
 }
 
 func (d *db) InfoContext(_ context.Context) (*driver.DBInfo, error) {
+	// FIXME: Unimplemented
 	return nil, nil
 }
 
 func (c *client) CompactContext(_ context.Context) error {
-	// FIXME
+	// FIXME: Unimplemented
+	return nil
+}
+
+func (d *db) CompactViewContext(_ context.Context, _ string) error {
+	// FIXME: Unimplemented
 	return nil
 }

@@ -102,9 +102,10 @@ type DB interface {
 	InfoContext(ctx context.Context) (*DBInfo, error)
 	// CompactContext initiates compaction of the database.
 	CompactContext(ctx context.Context) error
+	// CompactViewContext initiates compaction of the view.
+	CompactViewContext(ctx context.Context, ddocID string) error
 	// GetAttachment()
 	// BulkDocs()
-	// CompactDDoc(ddoc string)
 	// ViewCleanup()
 	// GetSecurity()
 	// SetSecurity()

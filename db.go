@@ -156,6 +156,19 @@ func (db *DB) Compact() error {
 
 // CompactContext begins compaction of the database. Check the CompactRunning
 // field returned by Info() to see if the compaction has completed.
+// See http://docs.couchdb.org/en/2.0.0/api/database/compact.html#db-compact
 func (db *DB) CompactContext(ctx context.Context) error {
 	return db.driverDB.CompactContext(ctx)
+}
+
+// CompactView calls CompactViewContext with a background context.
+func (db *DB) CompactView(ddocID string) error {
+	return db.CompactViewContext(context.Background(), ddocID)
+}
+
+// CompactViewContext compats the view indexes associated with the specified
+// design document.
+// See http://docs.couchdb.org/en/2.0.0/api/database/compact.html#db-compact-design-doc
+func (db *DB) CompactViewContext(ctx context.Context, ddocID string) error {
+	return db.driverDB.CompactViewContext(ctx, ddocID)
 }

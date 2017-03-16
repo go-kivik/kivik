@@ -138,3 +138,11 @@ func (d *db) CompactContext(ctx context.Context) error {
 	}
 	return chttp.ResponseError(res.Response)
 }
+
+func (d *db) CompactViewContext(ctx context.Context, ddocID string) error {
+	res, err := d.Client.DoReq(ctx, kivik.MethodPost, d.path("/_compact/"+ddocID, nil), nil)
+	if err != nil {
+		return err
+	}
+	return chttp.ResponseError(res.Response)
+}

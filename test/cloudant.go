@@ -111,5 +111,7 @@ func init() {
 		"DBInfo.databases":        []string{"_users"},
 		"DBInfo/NoAuth.status":    kivik.StatusUnauthorized,
 		"DBInfo/RW/NoAuth.status": kivik.StatusUnauthorized,
+
+		"CreateDoc/RW/group/NoAuth.status": kivik.StatusUnauthorized,
 	})
 }

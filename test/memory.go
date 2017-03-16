@@ -7,6 +7,9 @@ import (
 
 func init() {
 	RegisterSuite(SuiteKivikMemory, kt.SuiteConfig{
+		// Unsupported features
+		"Flush.skip": true,
+
 		"AllDBs.expected": []string{},
 
 		"Config.status": kivik.StatusNotImplemented,
@@ -37,12 +40,9 @@ func init() {
 		"ServerInfo.vendor":         `^Kivik Memory Adaptor$`,
 		"ServerInfo.vendor_version": `^0\.0\.1$`,
 
-		"Get.skip": true, // FIXME: Update when driver supports Get
-
-		"Flush.skip": true,
-
-		"Delete.skip": true, // FIXME: Unimplemented
-
-		"DBInfo.skip": true, // FIXME: Unimplemented
+		"Get.skip":       true, // FIXME: Unimplemented
+		"Delete.skip":    true, // FIXME: Unimplemented
+		"DBInfo.skip":    true, // FIXME: Unimplemented
+		"CreateDoc.skip": true, // FIXME: Unimplemented
 	})
 }

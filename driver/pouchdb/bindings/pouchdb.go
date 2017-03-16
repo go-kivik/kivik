@@ -146,6 +146,16 @@ func (db *DB) Put(ctx context.Context, doc interface{}) (rev string, err error) 
 	return result.Get("rev").String(), nil
 }
 
+// Post creates a new document and lets PouchDB auto-generate the ID.
+// See https://pouchdb.com/api.html#using-dbpost
+func (db *DB) Post(ctx context.Context, doc interface{}) (docID, rev string, err error) {
+	result, err := callBack(ctx, db, "post", doc, setTimeout(ctx, nil))
+	if err != nil {
+		return "", "", err
+	}
+	return result.Get("id").String(), result.Get("rev").String(), nil
+}
+
 // Get fetches the requested document from the database.
 // See https://pouchdb.com/api.html#fetch_document
 func (db *DB) Get(ctx context.Context, docID string, opts map[string]interface{}) (doc []byte, err error) {

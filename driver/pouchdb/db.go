@@ -33,8 +33,13 @@ func (d *db) GetContext(ctx context.Context, docID string, doc interface{}, opti
 	return json.Unmarshal(body, &doc)
 }
 
-func (d *db) CreateDocContext(_ context.Context, doc interface{}) (docID, rev string, err error) {
-	return "", "", nil
+func (d *db) CreateDocContext(ctx context.Context, doc interface{}) (docID, rev string, err error) {
+	jsonDoc, err := json.Marshal(doc)
+	if err != nil {
+		return "", "", err
+	}
+	jsDoc := js.Global.Get("JSON").Call("parse", string(jsonDoc))
+	return d.db.Post(ctx, jsDoc)
 }
 
 func (d *db) PutContext(ctx context.Context, docID string, doc interface{}) (rev string, err error) {

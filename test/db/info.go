@@ -55,19 +55,19 @@ func rwTests(ctx *kt.Context, client *kivik.Client) {
 			}
 		}
 	}
-	testDBInfo(ctx, client, dbname, 6, 4)
+	testDBInfo(ctx, client, dbname, 6)
 }
 
 func roTests(ctx *kt.Context, client *kivik.Client) {
 	for _, dbname := range ctx.MustStringSlice("databases") {
 		ctx.Run(dbname, func(ctx *kt.Context) {
 			ctx.Parallel()
-			testDBInfo(ctx, client, dbname, 0, 0)
+			testDBInfo(ctx, client, dbname, 0)
 		})
 	}
 }
 
-func testDBInfo(ctx *kt.Context, client *kivik.Client, dbname string, docCount, delCount int64) {
+func testDBInfo(ctx *kt.Context, client *kivik.Client, dbname string, docCount int64) {
 	db, err := client.DB(dbname)
 	if err != nil {
 		ctx.Fatalf("Failed to connect to db: %s", err)
@@ -82,11 +82,6 @@ func testDBInfo(ctx *kt.Context, client *kivik.Client, dbname string, docCount, 
 	if docCount > 0 {
 		if docCount != info.DocCount {
 			ctx.Errorf("DocCount: Expected %d, actual %d", docCount, info.DocCount)
-		}
-	}
-	if delCount > 0 {
-		if delCount != info.DeletedCount {
-			ctx.Errorf("DeletedCount: Expected %d, actual %d", delCount, info.DeletedCount)
 		}
 	}
 }

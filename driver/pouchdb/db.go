@@ -8,6 +8,7 @@ import (
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/driver/ouchdb"
 	"github.com/flimzy/kivik/driver/pouchdb/bindings"
+	"github.com/gopherjs/gopherjs/js"
 )
 
 type db struct {
@@ -34,8 +35,14 @@ func (d *db) CreateDocContext(_ context.Context, doc interface{}) (docID, rev st
 	return "", "", nil
 }
 
-func (d *db) PutContext(ctx context.Context, _ string, doc interface{}) (rev string, err error) {
-	return d.db.Put(ctx, doc)
+func (d *db) PutContext(ctx context.Context, docID string, doc interface{}) (rev string, err error) {
+	jsonDoc, err := json.Marshal(doc)
+	if err != nil {
+		return "", err
+	}
+	jsDoc := js.Global.Get("JSON").Call("parse", string(jsonDoc))
+	jsDoc.Set("_id", docID)
+	return d.db.Put(ctx, jsDoc)
 }
 
 func (d *db) DeleteContext(ctx context.Context, docID, rev string) (newRev string, err error) {

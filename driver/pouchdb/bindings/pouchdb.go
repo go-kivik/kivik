@@ -4,7 +4,6 @@ package bindings
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -140,12 +139,7 @@ func (db *DB) Info(ctx context.Context) (*DBInfo, error) {
 // Put creates a new document or update an existing document.
 // See https://pouchdb.com/api.html#create_document
 func (db *DB) Put(ctx context.Context, doc interface{}) (rev string, err error) {
-	jsonDoc, err := json.Marshal(doc)
-	if err != nil {
-		return "", err
-	}
-	jsDoc := js.Global.Get("JSON").Call("parse", string(jsonDoc))
-	result, err := callBack(ctx, db, "put", jsDoc, setTimeout(ctx, nil))
+	result, err := callBack(ctx, db, "put", doc, setTimeout(ctx, nil))
 	if err != nil {
 		return "", err
 	}

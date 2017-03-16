@@ -22,7 +22,7 @@ func init() {
 		"CreateDB.skip": true, // FIXME: No way to validate if this works unless/until allDbs works
 		"DBExists.skip": true, // FIXME: Maybe fix this if/when allDBs works?
 
-		"AllDocs/Admin.skip": false,
+		"AllDocs/Admin.databases": []string{},
 
 		"ServerInfo.version":        `^6\.\d\.\d$`,
 		"ServerInfo.vendor":         `^PouchDB$`,

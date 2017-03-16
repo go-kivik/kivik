@@ -36,12 +36,10 @@ func init() {
 		"ServerInfo.vendor":         "Kivik",
 		"ServerInfo.vendor_version": `^0\.0\.1$`,
 
-		"Get.skip": true, // FIXME: Update when driver supports Get
-
-		"Flush.skip": true, // FIXME: Fix this when it is supported
-
-		"Delete.skip": true, // FIXME: Unimplemented
-
-		"DBInfo.skip": true, // FIXME: Unimplemented
+		"Get.skip":       true, // FIXME: Unimplemented
+		"Flush.skip":     true, // FIXME: Unimplemented
+		"Delete.skip":    true, // FIXME: Unimplemented
+		"DBInfo.skip":    true, // FIXME: Unimplemented
+		"CreateDoc.skip": true, // FIXME: Unimplemented
 	})
 }

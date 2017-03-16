@@ -199,3 +199,10 @@ func (db *DB) Compact() error {
 	_, err := callBack(context.Background(), db, "compact")
 	return err
 }
+
+// ViewCleanup cleans up views, and waits for it to complete. This may take a
+// long time! Please wrap this call in a goroutine.
+func (db *DB) ViewCleanup() error {
+	_, err := callBack(context.Background(), db, "viewCleanup")
+	return err
+}

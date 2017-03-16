@@ -172,3 +172,15 @@ func (db *DB) CompactView(ddocID string) error {
 func (db *DB) CompactViewContext(ctx context.Context, ddocID string) error {
 	return db.driverDB.CompactViewContext(ctx, ddocID)
 }
+
+// ViewCleanup calls ViewCleanupContext with a background context.
+func (db *DB) ViewCleanup() error {
+	return db.ViewCleanupContext(context.Background())
+}
+
+// ViewCleanupContext removes view index files that are no longer required as a
+// result of changed views within design documents.
+// See http://docs.couchdb.org/en/2.0.0/api/database/compact.html#db-view-cleanup
+func (db *DB) ViewCleanupContext(ctx context.Context) error {
+	return db.driverDB.ViewCleanupContext(ctx)
+}

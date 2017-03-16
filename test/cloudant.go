@@ -116,5 +116,8 @@ func init() {
 
 		"Compact/RW/Admin.status":  kivik.StatusForbidden,
 		"Compact/RW/NoAuth.status": kivik.StatusUnauthorized,
+
+		"ViewCleanup/RW/Admin.status":  kivik.StatusForbidden,
+		"ViewCleanup/RW/NoAuth.status": kivik.StatusUnauthorized,
 	})
 }

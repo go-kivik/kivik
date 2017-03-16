@@ -94,3 +94,14 @@ func (d *db) CompactContext(_ context.Context) error {
 func (d *db) CompactViewContext(_ context.Context, _ string) error {
 	return nil
 }
+
+func (d *db) ViewCleanupContext(_ context.Context) error {
+	d.compacting = true
+	go func() {
+		defer func() { d.compacting = false }()
+		if err := d.db.ViewCleanup(); err != nil {
+			fmt.Fprintf(os.Stderr, "view cleanup failed: %s", err)
+		}
+	}()
+	return nil
+}

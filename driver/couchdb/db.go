@@ -146,3 +146,11 @@ func (d *db) CompactViewContext(ctx context.Context, ddocID string) error {
 	}
 	return chttp.ResponseError(res.Response)
 }
+
+func (d *db) ViewCleanupContext(ctx context.Context) error {
+	res, err := d.Client.DoReq(ctx, kivik.MethodPost, d.path("/_view_cleanup", nil), nil)
+	if err != nil {
+		return err
+	}
+	return chttp.ResponseError(res.Response)
+}

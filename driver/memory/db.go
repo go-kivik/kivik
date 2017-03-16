@@ -115,3 +115,8 @@ func (d *db) CompactViewContext(_ context.Context, _ string) error {
 	// FIXME: Unimplemented
 	return nil
 }
+
+func (d *db) ViewCleanupContext(_ context.Context) error {
+	// FIXME: Unimplemented
+	return nil
+}

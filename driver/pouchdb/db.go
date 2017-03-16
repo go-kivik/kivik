@@ -5,9 +5,11 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/driver/ouchdb"
 	"github.com/flimzy/kivik/driver/pouchdb/bindings"
+	"github.com/flimzy/kivik/errors"
 	"github.com/gopherjs/gopherjs/js"
 )
 
@@ -41,6 +43,11 @@ func (d *db) PutContext(ctx context.Context, docID string, doc interface{}) (rev
 		return "", err
 	}
 	jsDoc := js.Global.Get("JSON").Call("parse", string(jsonDoc))
+	if id := jsDoc.Get("_id"); id != js.Undefined {
+		if id.String() != docID {
+			return "", errors.Status(kivik.StatusBadRequest, "id argument must match _id field in document")
+		}
+	}
 	jsDoc.Set("_id", docID)
 	return d.db.Put(ctx, jsDoc)
 }

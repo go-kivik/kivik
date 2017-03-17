@@ -54,7 +54,8 @@ const (
 
 type client struct {
 	*chttp.Client
-	Compat CompatMode
+	Compat      CompatMode
+	forceCommit bool
 }
 
 var _ driver.Client = &client{}
@@ -97,8 +98,9 @@ func (c *client) setCompatMode(ctx context.Context) {
 
 func (c *client) DBContext(_ context.Context, dbName string) (driver.DB, error) {
 	return &db{
-		client: c,
-		dbName: dbName,
+		client:      c,
+		dbName:      dbName,
+		forceCommit: c.forceCommit,
 	}, nil
 }
 

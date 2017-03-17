@@ -109,6 +109,8 @@ type Options struct {
 	// It an error to set both Body and JSON on the same request. When this is
 	// set, ContentType is unconditionally set to 'application/json'.
 	JSON interface{}
+	// ForceCommit adds the X-Couch-Full-Commit: true header to requests
+	ForceCommit bool
 }
 
 // Response represents a response from a CouchDB server.
@@ -219,6 +221,9 @@ func setHeaders(req *http.Request, opts *Options) {
 		}
 		if opts.ContentType != "" {
 			contentType = opts.ContentType
+		}
+		if opts.ForceCommit {
+			req.Header.Add("X-Couch-Full-Commit", "true")
 		}
 	}
 	req.Header.Add("Accept", accept)

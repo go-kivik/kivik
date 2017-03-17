@@ -43,6 +43,10 @@ func (d *memDriver) NewClientContext(_ context.Context, name string) (driver.Cli
 	}, nil
 }
 
+func (c *client) SetDefault(_ string, _ interface{}) error {
+	return errors.New("no options supported")
+}
+
 func (c *client) AllDBsContext(_ context.Context) ([]string, error) {
 	dbs := make([]string, 0, len(c.dbs))
 	for k := range c.dbs {

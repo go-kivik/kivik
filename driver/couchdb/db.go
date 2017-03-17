@@ -18,7 +18,8 @@ import (
 
 type db struct {
 	*client
-	dbName string
+	dbName      string
+	forceCommit bool
 }
 
 func (d *db) path(path string, query url.Values) string {
@@ -76,7 +77,11 @@ func (d *db) CreateDocContext(ctx context.Context, doc interface{}) (docID, rev 
 		ID  string `json:"id"`
 		Rev string `json:"rev"`
 	}{}
-	_, err = d.Client.DoJSON(ctx, kivik.MethodPost, d.dbName, &chttp.Options{JSON: doc}, &result)
+	opts := &chttp.Options{
+		JSON:        doc,
+		ForceCommit: d.forceCommit,
+	}
+	_, err = d.Client.DoJSON(ctx, kivik.MethodPost, d.dbName, opts, &result)
 	return result.ID, result.Rev, err
 }
 
@@ -84,7 +89,11 @@ func (d *db) PutContext(ctx context.Context, docID string, doc interface{}) (rev
 	result := struct {
 		Rev string `json:"rev"`
 	}{}
-	_, err = d.Client.DoJSON(ctx, kivik.MethodPut, d.path(docID, nil), &chttp.Options{JSON: doc}, &result)
+	opts := &chttp.Options{
+		JSON:        doc,
+		ForceCommit: d.forceCommit,
+	}
+	_, err = d.Client.DoJSON(ctx, kivik.MethodPut, d.path(docID, nil), opts, &result)
 	return result.Rev, err
 }
 
@@ -94,7 +103,10 @@ func (d *db) DeleteContext(ctx context.Context, docID, rev string) (string, erro
 	var result struct {
 		Rev string `json:"rev"`
 	}
-	_, err := d.Client.DoJSON(ctx, kivik.MethodDelete, d.path(docID, query), nil, &result)
+	opts := &chttp.Options{
+		ForceCommit: d.forceCommit,
+	}
+	_, err := d.Client.DoJSON(ctx, kivik.MethodDelete, d.path(docID, query), opts, &result)
 	return result.Rev, err
 }
 

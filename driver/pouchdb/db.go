@@ -13,6 +13,7 @@ import (
 	"github.com/flimzy/kivik/driver/pouchdb/bindings"
 	"github.com/flimzy/kivik/errors"
 	"github.com/gopherjs/gopherjs/js"
+	"github.com/imdario/mergo"
 )
 
 type db struct {
@@ -20,6 +21,21 @@ type db struct {
 	// compacting is set true when compaction begins, and unset when the
 	// callback returns.
 	compacting bool
+
+	opts map[string]interface{}
+}
+
+func (d *db) options(opts map[string]interface{}) (map[string]interface{}, error) {
+	o := Options{}
+	if err := mergo.MergeWithOverwrite(&o, d.opts); err != nil {
+		return nil, err
+	}
+	return o, mergo.MergeWithOverwrite(&o, opts)
+}
+
+func (d *db) SetOption(key string, value interface{}) error {
+	d.opts[key] = value
+	return nil
 }
 
 func (d *db) AllDocsContext(ctx context.Context, docs interface{}, options map[string]interface{}) (offset, totalrows int, updateSeq string, err error) {

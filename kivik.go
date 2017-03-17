@@ -13,9 +13,6 @@ import (
 
 // Client is a client connection handle to a CouchDB-like server.
 type Client struct {
-	// AutoFlush turns on the AutoFlush flag for new database connections.
-	AutoFlush bool
-
 	dsn          string
 	driverClient driver.Client
 }
@@ -47,6 +44,12 @@ func NewContext(ctx context.Context, driverName, dataSourceName string) (*Client
 	}, nil
 }
 
+// SetDefault sets databse default values for the client which will be passed
+// along to new DB connections. Available options are driver specific.
+func (c *Client) SetDefault(key string, value interface{}) error {
+	return c.driverClient.SetDefault(key, value)
+}
+
 // DSN returns the data source name used to connect this client.
 func (c *Client) DSN() string {
 	return c.dsn
@@ -71,8 +74,7 @@ func (c *Client) DB(dbName string) (*DB, error) {
 func (c *Client) DBContext(ctx context.Context, dbName string) (*DB, error) {
 	db, err := c.driverClient.DBContext(ctx, dbName)
 	return &DB{
-		AutoFlush: c.AutoFlush,
-		driverDB:  db,
+		driverDB: db,
 	}, err
 }
 

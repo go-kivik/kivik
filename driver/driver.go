@@ -41,6 +41,9 @@ type Client interface {
 	DestroyDBContext(ctx context.Context, dbName string) error
 	// DB returns a handleto the requested database
 	DBContext(ctx context.Context, dbName string) (DB, error)
+	// SetDefault allows the user to set a default option to be propogated to
+	// future DB instances.
+	SetDefault(key string, value interface{}) error
 }
 
 // Authenticator is an optional interface that may be implemented by a Client
@@ -98,6 +101,8 @@ type Security struct {
 
 // DB is a database handle.
 type DB interface {
+	// SetOption allows setting a database-specific option.
+	SetOption(key string, value interface{}) error
 	// AllDocsContext returns all of the documents in the database, subject
 	// to the options provided.
 	AllDocsContext(ctx context.Context, docs interface{}, options map[string]interface{}) (offset, totalrows int, seq string, err error)

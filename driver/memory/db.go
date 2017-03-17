@@ -27,30 +27,9 @@ type indexDocValue struct {
 	Rev string `json:"rev"`
 }
 
-/* Options for AllDocs:
-
-Per-doc options:
-conflicts (boolean) – Includes conflicts information in response. Ignored if include_docs isn’t true. Default is false.
-include_docs (boolean) – Include the full content of the documents in the return. Default is false.
-
-Per-call options:
-descending (boolean) – Return the documents in descending by key order. Default is false.
-endkey (string) – Stop returning records when the specified key is reached. Optional.
-end_key (string) – Alias for endkey param.
-endkey_docid (string) – Stop returning records when the specified document ID is reached. Optional.
-end_key_doc_id (string) – Alias for endkey_docid param.
-inclusive_end (boolean) – Specifies whether the specified end key should be included in the result. Default is true.
-key (string) – Return only documents that match the specified key. Optional.
-keys (string) – Return only documents that match the specified keys. Optional.
-limit (number) – Limit the number of the returned documents to the specified number. Optional.
-skip (number) – Skip this number of records before starting to return the results. Default is 0.
-stale (string) – Allow the results from a stale view to be used, without triggering a rebuild of all views within the encompassing design doc. Supported values: ok and update_after. Optional.
-startkey (string) – Return records starting with the specified key. Optional.
-start_key (string) – Alias for startkey param.
-startkey_docid (string) – Return records starting with the specified document ID. Optional.
-start_key_doc_id (string) – Alias for startkey_docid param.
-update_seq (boolean) – Response includes an update_seq value indicating which sequence id of the underlying database the view reflects. Default is false.
-*/
+func (d *db) SetOption(_ string, _ interface{}) error {
+	return errors.New("no options supported")
+}
 
 func (d *db) AllDocsContext(ctx context.Context, docs interface{}, opts map[string]interface{}) (offset, total int, seq string, err error) {
 	if exists, _ := d.client.DBExistsContext(ctx, d.dbName); !exists {

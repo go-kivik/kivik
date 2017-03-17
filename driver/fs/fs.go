@@ -81,6 +81,10 @@ var _ driver.Client = &client{}
 // Taken verbatim from http://docs.couchdb.org/en/2.0.0/api/database/common.html
 var validDBNameRE = regexp.MustCompile("^[a-z][a-z0-9_$()+/-]*$")
 
+func (c *client) SetDefault(_ string, _ interface{}) error {
+	return errors.New("no options supported")
+}
+
 // AllDBsContext returns a list of all DBs present in the configured root dir.
 func (c *client) AllDBsContext(_ context.Context) ([]string, error) {
 	files, err := ioutil.ReadDir(c.root)

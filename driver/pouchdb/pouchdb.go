@@ -92,6 +92,16 @@ type client struct {
 
 var _ driver.Client = &client{}
 
+const optionsDefaultKey = "defaults"
+
+func (c *client) SetDefault(key string, value interface{}) error {
+	if _, ok := c.opts[optionsDefaultKey]; !ok {
+		c.opts[optionsDefaultKey] = Options{}
+	}
+	c.opts[optionsDefaultKey][key] = value
+	return nil
+}
+
 // AllDBs returns the list of all existing databases. This function depends on
 // the pouchdb-all-dbs plugin being loaded.
 func (c *client) AllDBsContext(ctx context.Context) ([]string, error) {
@@ -148,8 +158,7 @@ func (c *client) options(opts Options) (Options, error) {
 			return nil, err
 		}
 	}
-	err := mergo.MergeWithOverwrite(&o, opts)
-	return o, err
+	return o, mergo.MergeWithOverwrite(&o, opts)
 }
 
 func (c *client) isRemote() bool {

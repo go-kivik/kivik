@@ -11,18 +11,13 @@ import (
 
 // DB is a handle to a specific database.
 type DB struct {
-	// AutoFlush automatically requests a flush after each database write. This
-	// creates additional network traffic, and may hurt server performance. This
-	// option has no effect if the `delayed_commits` is false on the server.
-	AutoFlush bool
-
 	driverDB driver.DB
 }
 
-func (db *DB) autoFlush() {
-	if db.AutoFlush {
-		_, _ = db.Flush()
-	}
+// SetOption sets a database-specific option. Available options are driver
+// specific.
+func (db *DB) SetOption(key string, value interface{}) error {
+	return db.driverDB.SetOption(key, value)
 }
 
 // AllDocs calls AllDocsContext with a background context.
@@ -53,7 +48,6 @@ func (db *DB) CreateDoc(doc interface{}) (docID, rev string, err error) {
 // CreateDocContext creates a new doc with an auto-generated unique ID. The generated
 // docID and new rev are returned.
 func (db *DB) CreateDocContext(ctx context.Context, doc interface{}) (docID, rev string, err error) {
-	defer db.autoFlush()
 	return db.driverDB.CreateDocContext(ctx, doc)
 }
 
@@ -67,7 +61,6 @@ func (db *DB) Put(docID string, doc interface{}) (rev string, err error) {
 // in doc, with JSON key '_rev', otherwise a conflict will occur. The new rev is
 // returned.
 func (db *DB) PutContext(ctx context.Context, docID string, doc interface{}) (rev string, err error) {
-	defer db.autoFlush()
 	// The '/' char is only permitted in the case of '_design/', so check that here
 	if designDoc := strings.TrimPrefix(docID, "_design/"); strings.Contains(designDoc, "/") {
 		return "", errors.Status(StatusBadRequest, "invalid document ID")
@@ -82,7 +75,6 @@ func (db *DB) Delete(docID, rev string) (newRev string, err error) {
 
 // DeleteContext marks the specified document as deleted.
 func (db *DB) DeleteContext(ctx context.Context, docID, rev string) (newRev string, err error) {
-	defer db.autoFlush()
 	return db.driverDB.DeleteContext(ctx, docID, rev)
 }
 

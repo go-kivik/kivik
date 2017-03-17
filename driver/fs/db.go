@@ -2,6 +2,7 @@ package fs
 
 import (
 	"context"
+	"errors"
 
 	"github.com/flimzy/kivik/driver"
 )
@@ -9,6 +10,10 @@ import (
 type db struct {
 	*client
 	dbName string
+}
+
+func (d *db) SetOption(_ string, _ interface{}) error {
+	return errors.New("no options supported")
 }
 
 func (d *db) AllDocsContext(_ context.Context, docs interface{}, _ map[string]interface{}) (offset, totalrows int, seq string, err error) {

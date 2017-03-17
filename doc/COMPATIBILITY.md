@@ -65,8 +65,8 @@
 | POST /{db}/_compact/{ddoc} | CompactView()  |    |    | ✅ | ⁿ/ₐ |    |    |
 | POST /{db}/_ensure_full_commit | Flush()    | ✅ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ |    |
 | POST /{db}/_view_cleanup | ViewCleanup()    |    | ✅ | ✅ | ✅ |     |    |
-| GET /{db}/_security
-| PUT /{db}/_security
+| GET /{db}/_security |                       |    | ✅ | ✅ |
+| PUT /{db}/_security |                       |    |    |    |
 | POST /{db}/_temp_view
 | POST /{db}/_purge
 | POST /{db}/_missing_revs

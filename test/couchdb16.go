@@ -113,5 +113,7 @@ func init() {
 		"Compact/RW/NoAuth.status": kivik.StatusUnauthorized,
 
 		"ViewCleanup/RW/NoAuth.status": kivik.StatusUnauthorized,
+
+		"Security.databases": []string{"_replicator", "_users"},
 	})
 }

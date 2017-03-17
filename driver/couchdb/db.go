@@ -154,3 +154,9 @@ func (d *db) ViewCleanupContext(ctx context.Context) error {
 	}
 	return chttp.ResponseError(res.Response)
 }
+
+func (d *db) SecurityContext(ctx context.Context) (*driver.Security, error) {
+	var sec *driver.Security
+	_, err := d.Client.DoJSON(ctx, kivik.MethodGet, d.path("/_security", nil), nil, &sec)
+	return sec, err
+}

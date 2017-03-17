@@ -113,5 +113,8 @@ func init() {
 		"DBInfo.databases": []string{"_users"},
 
 		"Compact.skip": false,
+
+		"Security.databases":                     []string{"_replicator", "_users", "_global_changes"},
+		"Security/NoAuth/_global_changes.status": kivik.StatusUnauthorized,
 	})
 }

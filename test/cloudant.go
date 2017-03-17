@@ -119,5 +119,9 @@ func init() {
 
 		"ViewCleanup/RW/Admin.status":  kivik.StatusForbidden,
 		"ViewCleanup/RW/NoAuth.status": kivik.StatusUnauthorized,
+
+		"Security.databases":                    []string{"_replicator", "_users", "_global_changes"},
+		"Security/Admin/_global_changes.status": kivik.StatusForbidden,
+		"Security/NoAuth.status":                kivik.StatusUnauthorized,
 	})
 }

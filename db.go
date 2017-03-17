@@ -175,3 +175,21 @@ func (db *DB) ViewCleanup() error {
 func (db *DB) ViewCleanupContext(ctx context.Context) error {
 	return db.driverDB.ViewCleanupContext(ctx)
 }
+
+// Security calls SecurityContext with a background context
+func (db *DB) Security() (*Security, error) {
+	return db.SecurityContext(context.Background())
+}
+
+// SecurityContext returns the database's security document.
+// See http://couchdb.readthedocs.io/en/latest/api/database/security.html
+func (db *DB) SecurityContext(ctx context.Context) (*Security, error) {
+	s, err := db.driverDB.SecurityContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &Security{
+		Admins:  Members(s.Admins),
+		Members: Members(s.Members),
+	}, err
+}

@@ -84,6 +84,18 @@ type DBInfo struct {
 	ExternalSize   int64  `json:"-"`
 }
 
+// Members represents the members of a database security document.
+type Members struct {
+	Names []string `json:"names,omitempty"`
+	Roles []string `json:"roles,omitempty"`
+}
+
+// Security represents a database security document.
+type Security struct {
+	Admins  Members `json:"admins"`
+	Members Members `json:"members"`
+}
+
 // DB is a database handle.
 type DB interface {
 	// AllDocsContext returns all of the documents in the database, subject
@@ -106,10 +118,11 @@ type DB interface {
 	CompactViewContext(ctx context.Context, ddocID string) error
 	// ViewCleanupContext cleans up stale view files.
 	ViewCleanupContext(ctx context.Context) error
+	// SecurityContext returns the database's security document.
+	SecurityContext(ctx context.Context) (*Security, error)
 	// GetAttachment()
 	// BulkDocs()
 	// ViewCleanup()
-	// GetSecurity()
 	// SetSecurity()
 	// // TempView() // No longer supported in 2.0
 	// Purge()       // Optional?

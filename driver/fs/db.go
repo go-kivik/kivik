@@ -55,3 +55,8 @@ func (d *db) ViewCleanupContext(_ context.Context) error {
 	// FIXME: Unimplemented
 	return nil
 }
+
+func (d *db) SecurityContext(_ context.Context) (*driver.Security, error) {
+	// FIXME: Unimplemented
+	return nil, nil
+}

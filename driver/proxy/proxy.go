@@ -58,3 +58,15 @@ func (d *db) InfoContext(ctx context.Context) (*driver.DBInfo, error) {
 	dbinfo := driver.DBInfo(*i)
 	return &dbinfo, err
 }
+
+func (d *db) SecurityContext(ctx context.Context) (*driver.Security, error) {
+	s, err := d.DB.SecurityContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	sec := driver.Security{
+		Admins:  driver.Members(s.Admins),
+		Members: driver.Members(s.Members),
+	}
+	return &sec, err
+}

@@ -65,8 +65,8 @@
 | POST /{db}/_compact/{ddoc} | CompactView()  |    |    | ✅ | ⁿ/ₐ |    |    |
 | POST /{db}/_ensure_full_commit | Flush()    | ✅ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ |    |
 | POST /{db}/_view_cleanup | ViewCleanup()    |    | ✅ | ✅ | ✅ |     |    |
-| GET /{db}/_security
-| PUT /{db}/_security
+| GET /{db}/_security |                       |    | ✅ | ✅ | ⁿ/ₐ<sup>[14](#pouchPlugin)</sup>
+| PUT /{db}/_security |                       |    | ✅ | ✅ | ⁿ/ₐ<sup>[14](#pouchPlugin)</sup>
 | POST /{db}/_temp_view
 | POST /{db}/_purge
 | POST /{db}/_missing_revs
@@ -112,9 +112,13 @@
 
 ### Notes
 
-1. <a name="pouchAllDbs1"> PouchDB support for AllDbs depends on the [pouchdb-all-dbs plugin](https://github.com/nolanlawson/pouchdb-all-dbs).
-2. <a name="pouchAllDbs2"> Unit tests broken in PouchDB due to an [apparent bug](https://github.com/nolanlawson/pouchdb-all-dbs/issues/25) in the pouchdb-all-dbs plugin.
-3. <a name="pouchAllDbs3"> Does not work for remote PouchDB connections, due to a limitation in the `pouchdb-all-dbs` plugin. Perhaps a workaround will be possible in the future.
+1. <a name="pouchAllDbs1"> PouchDB support for AllDbs depends on the
+    [pouchdb-all-dbs plugin](https://github.com/nolanlawson/pouchdb-all-dbs).
+2. <a name="pouchAllDbs2"> Unit tests broken in PouchDB due to an [apparent
+    bug](https://github.com/nolanlawson/pouchdb-all-dbs/issues/25) in the
+    pouchdb-all-dbs plugin.
+3. <a name="pouchAllDbs3"> Does not work for remote PouchDB connections, due to
+    a limitation in the `pouchdb-all-dbs` plugin. Perhaps a workaround will be possible in the future.
 4. <a name="couchMembership"> Available for CouchDB 2.0+ servers only.
 5. <a name="pouchDBExists"> PouchDB offers no way to check for the existence of
  a local database without creating it, so `DBExists()` always returns true,
@@ -127,7 +131,11 @@
 10. <a name="todoLimit"> **TODO:** Limits are not yet tested.
 11. <a name="todoAttachments"> **TODO:** Attachments are not yet tested.
 12. <a name="kivikCluster"> There are no plans at present to support clustering.
-13. <a name="getSession"> Used for authentication, but not exposed directly to the client API.
+13. <a name="getSession"> Used for authentication, but not exposed directly to
+    the client API.
+14. <a name="pouchPlugin"> This feature is not available in the core PouchDB
+    package. Support is provided in PouchDB plugins, so including optional
+    support here may be possiblein the future.
 
 ## HTTP Status Codes
 

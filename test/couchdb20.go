@@ -113,5 +113,15 @@ func init() {
 		"DBInfo.databases": []string{"_users"},
 
 		"Compact.skip": false,
+
+		"Security.databases":                     []string{"_replicator", "_users", "_global_changes", "chicken"},
+		"Security/Admin/chicken.status":          kivik.StatusNotFound,
+		"Security/NoAuth/_global_changes.status": kivik.StatusUnauthorized,
+		"Security/NoAuth/chicken.status":         kivik.StatusNotFound,
+		"Security/RW/group/NoAuth.status":        kivik.StatusUnauthorized,
+
+		"SetSecurity/RW/Admin/NotExists.status":  kivik.StatusNotFound,
+		"SetSecurity/RW/NoAuth/NotExists.status": kivik.StatusNotFound,
+		"SetSecurity/RW/NoAuth/Exists.status":    kivik.StatusInternalServerError, // Can you say WTF?
 	})
 }

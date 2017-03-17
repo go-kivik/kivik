@@ -55,14 +55,26 @@ func (d *db) GetContext(ctx context.Context, id string, i interface{}, opts map[
 
 func (d *db) InfoContext(ctx context.Context) (*driver.DBInfo, error) {
 	i, err := d.DB.InfoContext(ctx)
-	// For Go 1.7
-	return &driver.DBInfo{
-		Name:         i.Name,
-		DocCount:     i.DocCount,
-		DeletedCount: i.DeletedCount,
-		UpdateSeq:    i.UpdateSeq,
-		DiskSize:     i.DiskSize,
-		ActiveSize:   i.ActiveSize,
-		ExternalSize: i.ExternalSize,
-	}, err
+	dbinfo := driver.DBInfo(*i)
+	return &dbinfo, err
+}
+
+func (d *db) SecurityContext(ctx context.Context) (*driver.Security, error) {
+	s, err := d.DB.SecurityContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	sec := driver.Security{
+		Admins:  driver.Members(s.Admins),
+		Members: driver.Members(s.Members),
+	}
+	return &sec, err
+}
+
+func (d *db) SetSecurityContext(ctx context.Context, security *driver.Security) error {
+	sec := &kivik.Security{
+		Admins:  kivik.Members(security.Admins),
+		Members: kivik.Members(security.Members),
+	}
+	return d.DB.SetSecurityContext(ctx, sec)
 }

@@ -141,6 +141,14 @@ type DB interface {
 	// Close() error
 }
 
+// Rever is an optional interface that may be implemented by a database. If not
+// implemented by the driver, the GetContext method will be used to emulate
+// the functionality.
+type Rever interface {
+	// RevContext returns the most current revision of the requested document.
+	RevContext(ctx context.Context, docID string) (rev string, err error)
+}
+
 // DBFlusher is an optional interface that may be implemented by a database
 // that can force a flush of the database backend file(s) to disk or other
 // permanent storage.

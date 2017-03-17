@@ -14,6 +14,7 @@
 
 - ✅ Yes : This feature is fully supported
 - ☑️ Partial : This feature is partially supported
+- ⍻ Emulated : The feature does not exist in the native driver, but is emulated.
 - ？ Untested : This feature has been implemented, but is not yet fully tested.
 - ⁿ/ₐ Not Applicable : This feature is supported, and doesn't make sense to emulate.
 - ❌ No : This feature is supported by the backend, but there are no plans to add support to Kivik
@@ -73,7 +74,7 @@
 | POST /{db}/_revs_diff
 | GET /{db}/_revs_limit
 | PUT /{db}/_revs_limit
-| HEAD /{db}/{docid}
+| HEAD /{db}/{docid}  | Rev()                 |    | ✅ | ✅ | ⍻ |
 | GET /{db}/{docid}   | Get()                 |    | ☑️<sup>[7](#todoConflicts),[11](#todoAttachments)</sup> | ✅ | ✅
 | PUT /{db}/{docid}   | Put()                 |    | ☑️<sup>[11](#todoAttachments)</sup> | ✅ | ✅
 | DELETE /{db}/{docid}| Delete()              |    | ✅ | ✅ | ✅

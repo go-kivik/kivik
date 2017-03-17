@@ -181,3 +181,16 @@ func (d *db) SetSecurityContext(ctx context.Context, security *driver.Security) 
 	defer res.Body.Close()
 	return chttp.ResponseError(res.Response)
 }
+
+// RevContext returns the most current rev of the requested document.
+func (d *db) RevContext(ctx context.Context, docID string) (rev string, err error) {
+	res, err := d.Client.DoReq(ctx, http.MethodHead, d.path(docID, nil), nil)
+	if err != nil {
+		return "", err
+	}
+	defer res.Response.Body.Close()
+	if err = chttp.ResponseError(res.Response); err != nil {
+		return "", err
+	}
+	return strings.Trim(res.Header.Get("Etag"), `""`), nil
+}

@@ -200,3 +200,21 @@ func (db *DB) SetSecurityContext(ctx context.Context, security *Security) error 
 	}
 	return db.driverDB.SetSecurityContext(ctx, sec)
 }
+
+// Rev calls RevContext with a background context.
+func (db *DB) Rev(docID string) (rev string, err error) {
+	return db.RevContext(context.Background(), docID)
+}
+
+// RevContext returns the most current rev of the requested document. This can
+// be more efficient than a full document fetch, becuase only the rev is
+// fetched from the server.
+func (db *DB) RevContext(ctx context.Context, docID string) (rev string, err error) {
+	if r, ok := db.driverDB.(driver.Rever); ok {
+		return r.RevContext(ctx, docID)
+	}
+	var doc struct {
+		Rev string `json:"_rev"`
+	}
+	return doc.Rev, db.GetContext(ctx, docID, &doc, nil)
+}

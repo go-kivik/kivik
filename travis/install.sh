@@ -70,6 +70,10 @@ case "$1" in
         # Then install GopherJS and related dependencies
         go get -u github.com/gopherjs/gopherjs
 
+        # Source maps (mainly to make GopherJS quieter; I don't really care
+        # about source maps in Travis)
+        npm install source-map-support
+
         # Set up GopherJS for syscalls
         (
             cd $GOPATH/src/github.com/gopherjs/gopherjs/node-syscall/

@@ -9,6 +9,7 @@ import (
 	"github.com/flimzy/kivik"
 )
 
+// CTX is a background context for testing.
 var CTX = context.Background()
 
 // DSN returns a testing DSN from the environment.

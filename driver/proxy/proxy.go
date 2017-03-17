@@ -55,14 +55,6 @@ func (d *db) GetContext(ctx context.Context, id string, i interface{}, opts map[
 
 func (d *db) InfoContext(ctx context.Context) (*driver.DBInfo, error) {
 	i, err := d.DB.InfoContext(ctx)
-	// For Go 1.7
-	return &driver.DBInfo{
-		Name:         i.Name,
-		DocCount:     i.DocCount,
-		DeletedCount: i.DeletedCount,
-		UpdateSeq:    i.UpdateSeq,
-		DiskSize:     i.DiskSize,
-		ActiveSize:   i.ActiveSize,
-		ExternalSize: i.ExternalSize,
-	}, err
+	dbinfo := driver.DBInfo(*i)
+	return &dbinfo, err
 }

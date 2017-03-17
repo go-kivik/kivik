@@ -107,25 +107,25 @@ func (db *DB) FlushContext(ctx context.Context) (time.Time, error) {
 // are supported by all database drivers.
 type DBInfo struct {
 	// Name is the name of the database.
-	Name string
+	Name string `json:"db_name"`
 	// CompactRunning is true if the database is currently being compacted.
-	CompactRunning bool
+	CompactRunning bool `json:"compact_running"`
 	// DocCount is the number of documents are currently stored in the database.
-	DocCount int64
+	DocCount int64 `json:"doc_count"`
 	// DeletedCount is a count of documents which have been deleted from the
 	// database.
-	DeletedCount int64
+	DeletedCount int64 `json:"doc_del_count"`
 	// UpdateSeq is the current update sequence for the database.
-	UpdateSeq string
+	UpdateSeq string `json:"update_seq"`
 	// DiskSize is the number of bytes used on-disk to store the database.
-	DiskSize int64
+	DiskSize int64 `json:"disk_size"`
 	// ActiveSize is the number of bytes used on-disk to store active documents.
 	// If this number is lower than DiskSize, then compaction would free disk
 	// space.
-	ActiveSize int64
+	ActiveSize int64 `json:"data_size"`
 	// ExternalSize is the size of the documents in the database, as represented
 	// as JSON, before compression.
-	ExternalSize int64
+	ExternalSize int64 `json:"-"`
 }
 
 // Info calls InfoContext with a background context.
@@ -136,17 +136,8 @@ func (db *DB) Info() (*DBInfo, error) {
 // InfoContext returns basic statistics about the database.
 func (db *DB) InfoContext(ctx context.Context) (*DBInfo, error) {
 	i, err := db.driverDB.InfoContext(ctx)
-	// For Go 1.7
-	return &DBInfo{
-		Name:           i.Name,
-		CompactRunning: i.CompactRunning,
-		DocCount:       i.DocCount,
-		DeletedCount:   i.DeletedCount,
-		UpdateSeq:      i.UpdateSeq,
-		DiskSize:       i.DiskSize,
-		ActiveSize:     i.ActiveSize,
-		ExternalSize:   i.ExternalSize,
-	}, err
+	dbinfo := DBInfo(*i)
+	return &dbinfo, err
 }
 
 // Compact calls CompactContext with a background context.

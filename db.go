@@ -176,13 +176,13 @@ func (db *DB) ViewCleanupContext(ctx context.Context) error {
 	return db.driverDB.ViewCleanupContext(ctx)
 }
 
-// Security calls SecurityContext with a background context
+// Security calls SecurityContext with a background context.
 func (db *DB) Security() (*Security, error) {
 	return db.SecurityContext(context.Background())
 }
 
 // SecurityContext returns the database's security document.
-// See http://couchdb.readthedocs.io/en/latest/api/database/security.html
+// See http://couchdb.readthedocs.io/en/latest/api/database/security.html#get--db-_security
 func (db *DB) SecurityContext(ctx context.Context) (*Security, error) {
 	s, err := db.driverDB.SecurityContext(ctx)
 	if err != nil {
@@ -192,4 +192,19 @@ func (db *DB) SecurityContext(ctx context.Context) (*Security, error) {
 		Admins:  Members(s.Admins),
 		Members: Members(s.Members),
 	}, err
+}
+
+// SetSecurity calls SetSecurityContext with a background context.
+func (db *DB) SetSecurity(security *Security) error {
+	return db.SetSecurityContext(context.Background(), security)
+}
+
+// SetSecurityContext sets the database's security document.
+// See http://couchdb.readthedocs.io/en/latest/api/database/security.html#put--db-_security
+func (db *DB) SetSecurityContext(ctx context.Context, security *Security) error {
+	sec := &driver.Security{
+		Admins:  driver.Members(security.Admins),
+		Members: driver.Members(security.Members),
+	}
+	return db.driverDB.SetSecurityContext(ctx, sec)
 }

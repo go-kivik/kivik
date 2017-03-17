@@ -120,6 +120,8 @@ type DB interface {
 	ViewCleanupContext(ctx context.Context) error
 	// SecurityContext returns the database's security document.
 	SecurityContext(ctx context.Context) (*Security, error)
+	// SetSecurityContext sets the database's security document.
+	SetSecurityContext(ctx context.Context, security *Security) error
 	// GetAttachment()
 	// BulkDocs()
 	// ViewCleanup()

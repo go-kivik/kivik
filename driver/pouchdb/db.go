@@ -109,3 +109,7 @@ func (d *db) ViewCleanupContext(_ context.Context) error {
 func (d *db) SecurityContext(ctx context.Context) (*driver.Security, error) {
 	return nil, kivik.ErrNotImplemented
 }
+
+func (d *db) SetSecurityContext(_ context.Context, _ *driver.Security) error {
+	return kivik.ErrNotImplemented
+}

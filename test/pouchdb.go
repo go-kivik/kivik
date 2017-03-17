@@ -12,12 +12,13 @@ func init() {
 		"PreCleanup.skip": true,
 
 		// Features which are not supported by PouchDB
-		"UUIDs.skip":      true,
-		"Log.skip":        true,
-		"Membership.skip": true,
-		"Config.skip":     true,
-		"Flush.skip":      true,
-		"Security.skip":   true, // FIXME: Perhaps implement later with a plugin?
+		"UUIDs.skip":       true,
+		"Log.skip":         true,
+		"Membership.skip":  true,
+		"Config.skip":      true,
+		"Flush.skip":       true,
+		"Security.skip":    true, // FIXME: Perhaps implement later with a plugin?
+		"SetSecurity.skip": true, // FIXME: Perhaps implement later with a plugin?
 
 		"AllDBs.skip":   true, // FIXME: Find a way to test with the plugin
 		"CreateDB.skip": true, // FIXME: No way to validate if this works unless/until allDbs works
@@ -40,13 +41,14 @@ func init() {
 	})
 	RegisterSuite(SuitePouchRemote, kt.SuiteConfig{
 		// Features which are not supported by PouchDB
-		"UUIDs.skip":      true,
-		"Log.skip":        true,
-		"Membership.skip": true,
-		"Config.skip":     true,
-		"Flush.skip":      true,
-		"Session.skip":    true,
-		"Security.skip":   true, // FIXME: Perhaps implement later with a plugin?
+		"UUIDs.skip":       true,
+		"Log.skip":         true,
+		"Membership.skip":  true,
+		"Config.skip":      true,
+		"Flush.skip":       true,
+		"Session.skip":     true,
+		"Security.skip":    true, // FIXME: Perhaps implement later with a plugin?
+		"SetSecurity.skip": true, // FIXME: Perhaps implement later with a plugin?
 
 		"PreCleanup.skip": true,
 

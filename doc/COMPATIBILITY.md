@@ -66,7 +66,7 @@
 | POST /{db}/_ensure_full_commit | Flush()    | ✅ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ |    |
 | POST /{db}/_view_cleanup | ViewCleanup()    |    | ✅ | ✅ | ✅ |     |    |
 | GET /{db}/_security |                       |    | ✅ | ✅ | ⁿ/ₐ<sup>[14](#pouchPlugin)</sup>
-| PUT /{db}/_security |                       |    |    |    | ⁿ/ₐ<sup>[14](#pouchPlugin)</sup>
+| PUT /{db}/_security |                       |    | ✅ | ✅ | ⁿ/ₐ<sup>[14](#pouchPlugin)</sup>
 | POST /{db}/_temp_view
 | POST /{db}/_purge
 | POST /{db}/_missing_revs

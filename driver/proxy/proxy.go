@@ -70,3 +70,11 @@ func (d *db) SecurityContext(ctx context.Context) (*driver.Security, error) {
 	}
 	return &sec, err
 }
+
+func (d *db) SetSecurityContext(ctx context.Context, security *driver.Security) error {
+	sec := &kivik.Security{
+		Admins:  kivik.Members(security.Admins),
+		Members: kivik.Members(security.Members),
+	}
+	return d.DB.SetSecurityContext(ctx, sec)
+}

@@ -114,6 +114,13 @@ func init() {
 
 		"ViewCleanup/RW/NoAuth.status": kivik.StatusUnauthorized,
 
-		"Security.databases": []string{"_replicator", "_users"},
+		"Security.databases":              []string{"_replicator", "_users", "chicken"},
+		"Security/Admin/chicken.status":   kivik.StatusNotFound,
+		"Security/NoAuth/chicken.status":  kivik.StatusNotFound,
+		"Security/RW/group/NoAuth.status": kivik.StatusUnauthorized,
+
+		"SetSecurity/RW/Admin/NotExists.status":  kivik.StatusNotFound,
+		"SetSecurity/RW/NoAuth/NotExists.status": kivik.StatusNotFound,
+		"SetSecurity/RW/NoAuth/Exists.status":    kivik.StatusUnauthorized,
 	})
 }

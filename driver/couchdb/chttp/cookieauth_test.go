@@ -1,33 +1,16 @@
+// +build !js
+// This test doesn't work in nodejs
+
 package chttp
 
 import (
-	"context"
 	"net/url"
 	"testing"
+
+	"golang.org/x/net/context"
 )
 
-func TestDefaultAuth(t *testing.T) {
-	dsn, err := url.Parse(dsn(t))
-	if err != nil {
-		t.Fatalf("Failed to parse DSN '%s': %s", dsn, err)
-	}
-	user := dsn.User.Username()
-	client := getClient(t)
-
-	if name := getAuthName(client, t); name != user {
-		t.Errorf("Unexpected authentication name. Expected '%s', got '%s'", user, name)
-	}
-
-	if err = client.Logout(context.Background()); err != nil {
-		t.Errorf("Failed to de-authenticate: %s", err)
-	}
-
-	if name := getAuthName(client, t); name != "" {
-		t.Errorf("Unexpected authentication name after logout '%s'", name)
-	}
-}
-
-func TestBasicAuth(t *testing.T) {
+func TestCookieAuth(t *testing.T) {
 	dsn, err := url.Parse(dsn(t))
 	if err != nil {
 		t.Fatalf("Failed to parse DSN '%s': %s", dsn, err)
@@ -47,7 +30,7 @@ func TestBasicAuth(t *testing.T) {
 	}
 
 	password, _ := user.Password()
-	ba := &BasicAuth{
+	ba := &CookieAuth{
 		Username: user.Username(),
 		Password: password,
 	}
@@ -68,16 +51,4 @@ func TestBasicAuth(t *testing.T) {
 	if name := getAuthName(client, t); name != "" {
 		t.Errorf("Unexpected authentication name after logout '%s'", name)
 	}
-}
-
-func getAuthName(client *Client, t *testing.T) string {
-	result := struct {
-		Ctx struct {
-			Name string `json:"name"`
-		} `json:"userCtx"`
-	}{}
-	if _, err := client.DoJSON(context.Background(), "GET", "/_session", nil, &result); err != nil {
-		t.Errorf("Failed to check session info: %s", err)
-	}
-	return result.Ctx.Name
 }

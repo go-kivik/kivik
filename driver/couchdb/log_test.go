@@ -1,3 +1,6 @@
+// +build !js
+// This one fails in nodejs, due to invalid headers from the server
+
 package couchdb
 
 import (

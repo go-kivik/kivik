@@ -113,5 +113,11 @@ func init() {
 		"DBInfo/RW/NoAuth.status": kivik.StatusUnauthorized,
 
 		"CreateDoc/RW/group/NoAuth.status": kivik.StatusUnauthorized,
+
+		"Compact/RW/Admin.status":  kivik.StatusForbidden,
+		"Compact/RW/NoAuth.status": kivik.StatusUnauthorized,
+
+		"ViewCleanup/RW/Admin.status":  kivik.StatusForbidden,
+		"ViewCleanup/RW/NoAuth.status": kivik.StatusUnauthorized,
 	})
 }

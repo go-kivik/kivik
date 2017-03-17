@@ -30,7 +30,7 @@ func testDelete(ctx *kt.Context, client *kivik.Client) {
 	ctx.Parallel()
 	dbName := ctx.TestDBName()
 	if err := ctx.Admin.CreateDB(dbName); err != nil {
-		ctx.Errorf("Failed to create test db: %s", err)
+		ctx.Errorf("Failed to create test db '%s': %s", dbName, err)
 		return
 	}
 	defer ctx.Admin.DestroyDB(dbName)

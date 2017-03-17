@@ -74,13 +74,14 @@ type Cluster interface {
 
 // DBInfo provides statistics about a database.
 type DBInfo struct {
-	Name         string `json:"db_name"`
-	DocCount     int64  `json:"doc_count"`
-	DeletedCount int64  `json:"doc_del_count"`
-	UpdateSeq    string `json:"update_seq"`
-	DiskSize     int64  `json:"disk_size"`
-	ActiveSize   int64  `json:"data_size"`
-	ExternalSize int64  `json:"-"`
+	Name           string `json:"db_name"`
+	CompactRunning bool   `json:"compact_running"`
+	DocCount       int64  `json:"doc_count"`
+	DeletedCount   int64  `json:"doc_del_count"`
+	UpdateSeq      string `json:"update_seq"`
+	DiskSize       int64  `json:"disk_size"`
+	ActiveSize     int64  `json:"data_size"`
+	ExternalSize   int64  `json:"-"`
 }
 
 // DB is a database handle.
@@ -99,10 +100,14 @@ type DB interface {
 	DeleteContext(ctx context.Context, docID, rev string) (newRev string, err error)
 	// InfoContext returns information about the database
 	InfoContext(ctx context.Context) (*DBInfo, error)
+	// CompactContext initiates compaction of the database.
+	CompactContext(ctx context.Context) error
+	// CompactViewContext initiates compaction of the view.
+	CompactViewContext(ctx context.Context, ddocID string) error
+	// ViewCleanupContext cleans up stale view files.
+	ViewCleanupContext(ctx context.Context) error
 	// GetAttachment()
 	// BulkDocs()
-	// Compact()
-	// CompactDDoc(ddoc string)
 	// ViewCleanup()
 	// GetSecurity()
 	// SetSecurity()

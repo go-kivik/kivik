@@ -9,10 +9,10 @@ fi
 
 case "$1" in
     "standard")
-        go test $(go list ./... | grep -v pouchdb)
+        go test $(go list ./... | grep -v /pouchdb)
     ;;
     "gopherjs")
-        gopherjs test github.com/flimzy/kivik/test
+        gopherjs test $(go list ./... | grep -v kivik/serve)
     ;;
     "linter")
         diff -u <(echo -n) <(gofmt -d ./)

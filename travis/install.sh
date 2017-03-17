@@ -8,6 +8,18 @@ go get github.com/pborman/uuid \
     golang.org/x/net/publicsuffix \
     github.com/flimzy/diff \
     golang.org/x/crypto/pbkdf2
+# These dependencies are only needed for the server
+go get github.com/NYTimes/gziphandler \
+    github.com/dimfeld/httptreemux \
+    github.com/spf13/cobra \
+    github.com/spf13/pflag \
+    github.com/ajg/form \
+    github.com/justinas/alice
+
+function generate {
+    go get -u github.com/jteeuwen/go-bindata/...
+    go generate ./...
+}
 
 function wait_for_server {
     printf "Waiting for $1"
@@ -28,34 +40,25 @@ function setup_docker {
     docker pull couchdb:1.6.1
     docker run -d -p 6000:5984 --name couchdb16 couchdb:1.6.1
     wait_for_server http://localhost:6000/
-    curl --fail -X PUT http://localhost:6000/_config/log/file -d '"/tmp/log"'
-    curl --fail -X PUT http://localhost:6000/_config/couchdb/delayed_commits -d '"false"'
-    curl --fail -X PUT http://localhost:6000/_config/admins/admin -d '"abc123"'
+    curl --silent --fail -o /dev/null -X PUT http://localhost:6000/_config/log/file -d '"/tmp/log"'
+    curl --silent --fail -o /dev/null -X PUT http://localhost:6000/_config/couchdb/delayed_commits -d '"false"'
+    curl --silent --fail -o /dev/null -X PUT http://localhost:6000/_config/admins/admin -d '"abc123"'
     docker pull klaemo/couchdb:latest
     docker run -d -p 6001:5984 --name couchdb20 klaemo/couchdb:latest
     wait_for_server http://localhost:6001/
-    curl --fail -X GET http://localhost:6001/_node/nonode@nohost/_config
-    curl --fail -X PUT http://localhost:6001/_node/nonode@nohost/_config/log/file -d '"/tmp/log"'
-    curl --fail -X PUT http://localhost:6001/_node/nonode@nohost/_config/couchdb/delayed_commits -d '"false"'
-    curl --fail -X PUT http://localhost:6001/_users
-    curl --fail -X PUT http://localhost:6001/_replicator
-    curl --fail -X PUT http://localhost:6001/_global_changes
-    curl --fail -X PUT http://localhost:6001/_node/nonode@nohost/_config/admins/admin -d '"abc123"'
+    curl --silent --fail -o /dev/null -X GET http://localhost:6001/_node/nonode@nohost/_config
+    curl --silent --fail -o /dev/null -X PUT http://localhost:6001/_node/nonode@nohost/_config/log/file -d '"/tmp/log"'
+    curl --silent --fail -o /dev/null -X PUT http://localhost:6001/_node/nonode@nohost/_config/couchdb/delayed_commits -d '"false"'
+    curl --silent --fail -o /dev/null -X PUT http://localhost:6001/_users
+    curl --silent --fail -o /dev/null -X PUT http://localhost:6001/_replicator
+    curl --silent --fail -o /dev/null -X PUT http://localhost:6001/_global_changes
+    curl --silent --fail -o /dev/null -X PUT http://localhost:6001/_node/nonode@nohost/_config/admins/admin -d '"abc123"'
 }
 
 case "$1" in
     "standard")
-        # These dependencies are only needed for the server, so no need to
-        # install them for GopherJS.
-        go get github.com/NYTimes/gziphandler \
-            github.com/dimfeld/httptreemux \
-            github.com/spf13/cobra \
-            github.com/spf13/pflag \
-            github.com/ajg/form \
-            github.com/justinas/alice
-        go get -u github.com/jteeuwen/go-bindata/...
-        go generate ./...
         setup_docker
+        generate
     ;;
     "gopherjs")
         if [ "$TRAVIS_OS_NAME" == "linux" ]; then
@@ -69,8 +72,23 @@ case "$1" in
         go get github.com/imdario/mergo
         # Then install GopherJS and related dependencies
         go get -u github.com/gopherjs/gopherjs
+
+        # Source maps (mainly to make GopherJS quieter; I don't really care
+        # about source maps in Travis)
+        npm install source-map-support
+
+        # Set up GopherJS for syscalls
+        (
+            cd $GOPATH/src/github.com/gopherjs/gopherjs/node-syscall/
+            npm install --global node-gyp
+            node-gyp rebuild
+            mkdir -p ~/.node_libraries/
+            cp build/Release/syscall.node ~/.node_libraries/syscall.node
+        )
+
         go get -u -d -tags=js github.com/gopherjs/jsbuiltin
         setup_docker
+        generate
     ;;
     "linter")
         go get -u gopkg.in/alecthomas/gometalinter.v1

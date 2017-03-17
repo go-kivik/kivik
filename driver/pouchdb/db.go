@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
+	"os"
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
@@ -15,6 +17,9 @@ import (
 
 type db struct {
 	db *bindings.DB
+	// compacting is set true when compaction begins, and unset when the
+	// callback returns.
+	compacting bool
 }
 
 func (d *db) AllDocsContext(ctx context.Context, docs interface{}, options map[string]interface{}) (offset, totalrows int, updateSeq string, err error) {
@@ -67,8 +72,36 @@ func (d *db) DeleteContext(ctx context.Context, docID, rev string) (newRev strin
 func (d *db) InfoContext(ctx context.Context) (*driver.DBInfo, error) {
 	i, err := d.db.Info(ctx)
 	return &driver.DBInfo{
-		Name:      i.Name,
-		DocCount:  i.DocCount,
-		UpdateSeq: i.UpdateSeq,
+		Name:           i.Name,
+		CompactRunning: d.compacting,
+		DocCount:       i.DocCount,
+		UpdateSeq:      i.UpdateSeq,
 	}, err
+}
+
+func (d *db) CompactContext(_ context.Context) error {
+	d.compacting = true
+	go func() {
+		defer func() { d.compacting = false }()
+		if err := d.db.Compact(); err != nil {
+			fmt.Fprintf(os.Stderr, "compaction failed: %s", err)
+		}
+	}()
+	return nil
+}
+
+// CompactViewContext is unimplemented for PouchDB
+func (d *db) CompactViewContext(_ context.Context, _ string) error {
+	return nil
+}
+
+func (d *db) ViewCleanupContext(_ context.Context) error {
+	d.compacting = true
+	go func() {
+		defer func() { d.compacting = false }()
+		if err := d.db.ViewCleanup(); err != nil {
+			fmt.Fprintf(os.Stderr, "view cleanup failed: %s", err)
+		}
+	}()
+	return nil
 }

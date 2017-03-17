@@ -43,11 +43,11 @@ func ResponseError(resp *http.Response) error {
 	if resp.StatusCode < 400 {
 		return nil
 	}
+	defer resp.Body.Close()
 	httpErr := &HTTPError{}
 	if resp.Request.Method != "HEAD" && resp.ContentLength != 0 {
 		if ct, _, _ := mime.ParseMediaType(resp.Header.Get("Content-Type")); ct == kivik.TypeJSON {
 			dec := json.NewDecoder(resp.Body)
-			defer resp.Body.Close()
 			if err := dec.Decode(httpErr); err != nil {
 				fmt.Printf("Failed to decode error response: %s\n", err)
 			}

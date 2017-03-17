@@ -44,5 +44,6 @@ func init() {
 		"Delete.skip":    true, // FIXME: Unimplemented
 		"DBInfo.skip":    true, // FIXME: Unimplemented
 		"CreateDoc.skip": true, // FIXME: Unimplemented
+		"Compact.skip":   true, // FIXME: Unimplemented
 	})
 }

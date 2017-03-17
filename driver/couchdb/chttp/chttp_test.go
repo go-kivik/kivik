@@ -1,5 +1,3 @@
-// +build !js
-
 package chttp
 
 import (
@@ -59,7 +57,7 @@ func TestJSONBody(t *testing.T) {
 		"foo": "bar",
 		"bar": "baz",
 	}
-	_, err := client.DoReq(context.Background(), "GET", "/_session", &Options{JSON: bogusQuery})
+	_, err := client.DoReq(context.Background(), "POST", "/_session", &Options{JSON: bogusQuery})
 	if err != nil {
 		t.Errorf("Failed to make request: %s", err)
 	}

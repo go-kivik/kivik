@@ -2,6 +2,7 @@ package chttp
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/cookiejar"
@@ -52,8 +53,20 @@ func (a *BasicAuth) Authenticate(ctx context.Context, c *Client) error {
 	if err != nil {
 		return err
 	}
+	defer res.Body.Close()
 	if err = ResponseError(res); err != nil {
 		return err
+	}
+	result := struct {
+		Ctx struct {
+			Name string `json:"name"`
+		} `json:"userCtx"`
+	}{}
+	if err = json.NewDecoder(res.Body).Decode(&result); err != nil {
+		return err
+	}
+	if result.Ctx.Name != a.Username {
+		return errors.New("authentication failed")
 	}
 	// Everything looks good, lets make this official
 	a.transport = c.Transport
@@ -89,7 +102,28 @@ func (a *CookieAuth) Authenticate(ctx context.Context, c *Client) error {
 	if err := a.setCookieJar(c); err != nil {
 		return err
 	}
-	return c.DoError(ctx, kivik.MethodPost, "/_session", &Options{JSON: a})
+	if err := c.DoError(ctx, kivik.MethodPost, "/_session", &Options{JSON: a}); err != nil {
+		return err
+	}
+	return validateAuth(ctx, a.Username, c)
+}
+
+func validateAuth(ctx context.Context, username string, client *Client) error {
+	// This does a final request to validate that auth was successful. Cookies
+	// may be filtered by a proxy, or a misconfigured client, so this check is
+	// necessary.
+	result := struct {
+		Ctx struct {
+			Name string `json:"name"`
+		} `json:"userCtx"`
+	}{}
+	if _, err := client.DoJSON(ctx, "GET", "/_session", nil, &result); err != nil {
+		return err
+	}
+	if result.Ctx.Name != username {
+		return errors.New("authentication failed")
+	}
+	return nil
 }
 
 func (a *CookieAuth) setCookieJar(c *Client) error {

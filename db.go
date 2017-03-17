@@ -108,6 +108,8 @@ func (db *DB) FlushContext(ctx context.Context) (time.Time, error) {
 type DBInfo struct {
 	// Name is the name of the database.
 	Name string
+	// CompactRunning is true if the database is currently being compacted.
+	CompactRunning bool
 	// DocCount is the number of documents are currently stored in the database.
 	DocCount int64
 	// DeletedCount is a count of documents which have been deleted from the
@@ -136,12 +138,49 @@ func (db *DB) InfoContext(ctx context.Context) (*DBInfo, error) {
 	i, err := db.driverDB.InfoContext(ctx)
 	// For Go 1.7
 	return &DBInfo{
-		Name:         i.Name,
-		DocCount:     i.DocCount,
-		DeletedCount: i.DeletedCount,
-		UpdateSeq:    i.UpdateSeq,
-		DiskSize:     i.DiskSize,
-		ActiveSize:   i.ActiveSize,
-		ExternalSize: i.ExternalSize,
+		Name:           i.Name,
+		CompactRunning: i.CompactRunning,
+		DocCount:       i.DocCount,
+		DeletedCount:   i.DeletedCount,
+		UpdateSeq:      i.UpdateSeq,
+		DiskSize:       i.DiskSize,
+		ActiveSize:     i.ActiveSize,
+		ExternalSize:   i.ExternalSize,
 	}, err
+}
+
+// Compact calls CompactContext with a background context.
+func (db *DB) Compact() error {
+	return db.CompactContext(context.Background())
+}
+
+// CompactContext begins compaction of the database. Check the CompactRunning
+// field returned by Info() to see if the compaction has completed.
+// See http://docs.couchdb.org/en/2.0.0/api/database/compact.html#db-compact
+func (db *DB) CompactContext(ctx context.Context) error {
+	return db.driverDB.CompactContext(ctx)
+}
+
+// CompactView calls CompactViewContext with a background context.
+func (db *DB) CompactView(ddocID string) error {
+	return db.CompactViewContext(context.Background(), ddocID)
+}
+
+// CompactViewContext compats the view indexes associated with the specified
+// design document.
+// See http://docs.couchdb.org/en/2.0.0/api/database/compact.html#db-compact-design-doc
+func (db *DB) CompactViewContext(ctx context.Context, ddocID string) error {
+	return db.driverDB.CompactViewContext(ctx, ddocID)
+}
+
+// ViewCleanup calls ViewCleanupContext with a background context.
+func (db *DB) ViewCleanup() error {
+	return db.ViewCleanupContext(context.Background())
+}
+
+// ViewCleanupContext removes view index files that are no longer required as a
+// result of changed views within design documents.
+// See http://docs.couchdb.org/en/2.0.0/api/database/compact.html#db-view-cleanup
+func (db *DB) ViewCleanupContext(ctx context.Context) error {
+	return db.driverDB.ViewCleanupContext(ctx)
 }

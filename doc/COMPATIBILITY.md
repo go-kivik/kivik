@@ -57,14 +57,14 @@
 | DELETE /{db}       | DestroyDB()            |    | ✅ | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
 | POST /{db}         | CreateDoc()            |    | ✅ | ✅ | ✅ |
 | GET /{db}/_all_docs | AllDocs()             |    | ✅ | ✅ | ✅ | ☑️<sup>[7](#todoConflicts),[8](#todoIncludeDocs),[9](#todoOrdering),[10](#todoLimit)</sup> | ✅ | ？ | ？ |
-| POST /{db}/_all_docs
+| POST /{db}/_all_docs | ⁿ/ₐ                   |    |    | ❌ | ❌ | ⁿ/ₐ | ⁿ/ₐ |
 | POST /{db}/_bulk_docs
 | GET /{db}/_changes
 | POST /{db}/_changes
-| POST /{db}/_compact
-| POST /{db}/_compact/{ddoc}
+| POST /{db}/_compact  | Compact()            |    | ✅ | ✅ | ✅ |     |    |
+| POST /{db}/_compact/{ddoc} | CompactView()  |    |    | ✅ | ⁿ/ₐ |    |    |
 | POST /{db}/_ensure_full_commit | Flush()    | ✅ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ |    |
-| POST /{db}/_view_cleanup
+| POST /{db}/_view_cleanup | ViewCleanup()    |    | ✅ | ✅ | ✅ |     |    |
 | GET /{db}/_security
 | PUT /{db}/_security
 | POST /{db}/_temp_view

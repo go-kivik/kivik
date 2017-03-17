@@ -69,6 +69,16 @@ case "$1" in
         go get github.com/imdario/mergo
         # Then install GopherJS and related dependencies
         go get -u github.com/gopherjs/gopherjs
+
+        # Set up GopherJS for syscalls
+        (
+            cd $GOPATH/src/github.com/gopherjs/gopherjs/node-syscall/
+            npm install --global node-gyp
+            node-gyp rebuild
+            mkdir -p ~/.node_libraries/
+            cp build/Release/syscall.node ~/.node_libraries/syscall.node
+        )
+
         go get -u -d -tags=js github.com/gopherjs/jsbuiltin
         setup_docker
     ;;

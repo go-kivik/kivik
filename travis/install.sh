@@ -8,6 +8,18 @@ go get github.com/pborman/uuid \
     golang.org/x/net/publicsuffix \
     github.com/flimzy/diff \
     golang.org/x/crypto/pbkdf2
+# These dependencies are only needed for the server
+go get github.com/NYTimes/gziphandler \
+    github.com/dimfeld/httptreemux \
+    github.com/spf13/cobra \
+    github.com/spf13/pflag \
+    github.com/ajg/form \
+    github.com/justinas/alice
+
+function generate {
+    go get -u github.com/jteeuwen/go-bindata/...
+    go generate ./...
+}
 
 function wait_for_server {
     printf "Waiting for $1"
@@ -45,17 +57,8 @@ function setup_docker {
 
 case "$1" in
     "standard")
-        # These dependencies are only needed for the server, so no need to
-        # install them for GopherJS.
-        go get github.com/NYTimes/gziphandler \
-            github.com/dimfeld/httptreemux \
-            github.com/spf13/cobra \
-            github.com/spf13/pflag \
-            github.com/ajg/form \
-            github.com/justinas/alice
-        go get -u github.com/jteeuwen/go-bindata/...
-        go generate ./...
         setup_docker
+        generate
     ;;
     "gopherjs")
         if [ "$TRAVIS_OS_NAME" == "linux" ]; then
@@ -85,6 +88,7 @@ case "$1" in
 
         go get -u -d -tags=js github.com/gopherjs/jsbuiltin
         setup_docker
+        generate
     ;;
     "linter")
         go get -u gopkg.in/alecthomas/gometalinter.v1

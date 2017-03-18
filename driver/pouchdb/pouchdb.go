@@ -223,11 +223,14 @@ func (c *client) DBContext(ctx context.Context, dbName string) (driver.DB, error
 	if !exists {
 		return nil, kivik.ErrNotFound
 	}
-	opts, err := c.options(Options{})
+	opts, err := c.options(Options{
+		"revs_limit": 999,
+	})
 	if err != nil {
 		return nil, err
 	}
 	return &db{
-		db: c.pouch.New(c.dbURL(dbName), opts),
+		db:     c.pouch.New(c.dbURL(dbName), opts),
+		client: c,
 	}, nil
 }

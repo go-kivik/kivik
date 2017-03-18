@@ -39,7 +39,7 @@
 |--------------|------------------------------|:-------------------------------------:|:-------------------------------------:|:------------------------------:|:------------------------------:|:-----------------------------------:|:------------------------------------------:|
 | GET /        | ServerInfo()                 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | GET /_active_tasks |                        |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
-| GET /_all_dbs      | AllDBs()               | ✅ | ✅ | ✅ | ☑️<sup>[1](#pouchAllDbs1),[2](#pouchAllDbs2),[3](pouchAllDbs3)</sup> | ✅ | ✅
+| GET /_all_dbs      | AllDBs()               | ✅ | ✅ | ✅ | ☑️<sup>[1](#pouchAllDbs1),[2](#pouchAllDbs2),[3](pouchLocalOnly)</sup> | ✅ | ✅
 | GET /_db_updates
 | GET /_log          | Log()                  | ✅ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | GET /_replicate
@@ -72,8 +72,8 @@
 | POST /{db}/_purge
 | POST /{db}/_missing_revs
 | POST /{db}/_revs_diff
-| GET /{db}/_revs_limit | RevsLimit()         |    | ✅ | ✅ |
-| PUT /{db}/_revs_limit | SetRevsLimit()      |    |
+| GET /{db}/_revs_limit | RevsLimit()         |    | ✅ | ✅ | ☑️<sup>[3](#pouchLocalOnly)</sup> |
+| PUT /{db}/_revs_limit | SetRevsLimit()      |    | ✅ | ✅ | ☑️<sup>[3](#pouchLocalOnly)</sup> |
 | HEAD /{db}/{docid}  | Rev()                 |    | ✅ | ✅ | ⍻ |
 | GET /{db}/{docid}   | Get()                 |    | ☑️<sup>[7](#todoConflicts),[11](#todoAttachments)</sup> | ✅ | ✅
 | PUT /{db}/{docid}   | Put()                 |    | ☑️<sup>[11](#todoAttachments)</sup> | ✅ | ✅
@@ -118,8 +118,8 @@
 2. <a name="pouchAllDbs2"> Unit tests broken in PouchDB due to an [apparent
     bug](https://github.com/nolanlawson/pouchdb-all-dbs/issues/25) in the
     pouchdb-all-dbs plugin.
-3. <a name="pouchAllDbs3"> Does not work for remote PouchDB connections, due to
-    a limitation in the `pouchdb-all-dbs` plugin. Perhaps a workaround will be possible in the future.
+3. <a name="pouchLocalOnly"> Supported for local PouchDB databases only. A work
+    around may be possible in the future for remote databases.
 4. <a name="couchMembership"> Available for CouchDB 2.0+ servers only.
 5. <a name="pouchDBExists"> PouchDB offers no way to check for the existence of
  a local database without creating it, so `DBExists()` always returns true,

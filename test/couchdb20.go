@@ -145,5 +145,6 @@ func init() {
 		"RevsLimit/NoAuth/_global_changes.status": kivik.StatusUnauthorized,
 		"RevsLimit/NoAuth/chicken.status":         kivik.StatusNotFound,
 		"RevsLimit/NoAuth/_duck.status":           kivik.StatusUnauthorized,
+		"RevsLimit/RW/NoAuth/Set.status":          kivik.StatusInternalServerError, // Stupid bug in Couch 2.0
 	})
 }

@@ -18,6 +18,7 @@ import (
 
 type db struct {
 	db *bindings.DB
+
 	// compacting is set true when compaction begins, and unset when the
 	// callback returns.
 	compacting bool
@@ -128,4 +129,12 @@ func (d *db) SecurityContext(ctx context.Context) (*driver.Security, error) {
 
 func (d *db) SetSecurityContext(_ context.Context, _ *driver.Security) error {
 	return kivik.ErrNotImplemented
+}
+
+func (d *db) RevsLimitContext(_ context.Context) (limit int, err error) {
+	return 0, nil
+}
+
+func (d *db) SetRevsLimitContext(_ context.Context, limit int) error {
+	return nil
 }

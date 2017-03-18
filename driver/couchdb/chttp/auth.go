@@ -102,7 +102,7 @@ func (a *CookieAuth) Authenticate(ctx context.Context, c *Client) error {
 	if err := a.setCookieJar(c); err != nil {
 		return err
 	}
-	if err := c.DoError(ctx, kivik.MethodPost, "/_session", &Options{JSON: a}); err != nil {
+	if _, err := c.DoError(ctx, kivik.MethodPost, "/_session", &Options{JSON: a}); err != nil {
 		return err
 	}
 	return validateAuth(ctx, a.Username, c)
@@ -142,7 +142,7 @@ func (a *CookieAuth) setCookieJar(c *Client) error {
 
 // Logout deletes the remote session.
 func (a *CookieAuth) Logout(ctx context.Context, c *Client) error {
-	err := c.DoError(ctx, kivik.MethodDelete, "/_session", nil)
+	_, err := c.DoError(ctx, kivik.MethodDelete, "/_session", nil)
 	if a.setJar {
 		c.Jar = nil
 	}

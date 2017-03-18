@@ -221,3 +221,27 @@ func (db *DB) RevContext(ctx context.Context, docID string) (rev string, err err
 	err = db.GetContext(ctx, docID, &doc, nil)
 	return doc.Rev, err
 }
+
+// RevsLimit calls RevsLimitContext with a background context.
+func (db *DB) RevsLimit() (limit int, err error) {
+	return db.RevsLimitContext(context.Background())
+}
+
+// RevsLimitContext returns the maximum number of document revisions that will
+// be tracked.
+// See http://couchdb.readthedocs.io/en/latest/api/database/misc.html#get--db-_revs_limit
+func (db *DB) RevsLimitContext(ctx context.Context) (limit int, err error) {
+	return db.driverDB.RevsLimitContext(ctx)
+}
+
+// SetRevsLimit calls SetRevsLimitContext with a background context.
+func (db *DB) SetRevsLimit(limit int) error {
+	return db.SetRevsLimitContext(context.Background(), limit)
+}
+
+// SetRevsLimitContext sets the maximum number of document revisions that will
+// be tracked.
+// See http://couchdb.readthedocs.io/en/latest/api/database/misc.html#put--db-_revs_limit
+func (db *DB) SetRevsLimitContext(ctx context.Context, limit int) error {
+	return db.driverDB.SetRevsLimitContext(ctx, limit)
+}

@@ -232,11 +232,12 @@ func setHeaders(req *http.Request, opts *Options) {
 
 // DoError is the same as DoReq(), followed by checking the response error. This
 // method is meant for cases where the only information you need from the
-// response is the status code.
-func (c *Client) DoError(ctx context.Context, method, path string, opts *Options) error {
+// response is the status code. It unconditionally closes the response body.
+func (c *Client) DoError(ctx context.Context, method, path string, opts *Options) (*Response, error) {
 	res, err := c.DoReq(ctx, method, path, opts)
 	if err != nil {
-		return err
+		return res, err
 	}
-	return ResponseError(res.Response)
+	defer res.Response.Body.Close()
+	return res, ResponseError(res.Response)
 }

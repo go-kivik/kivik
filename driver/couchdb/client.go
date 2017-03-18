@@ -38,7 +38,7 @@ func (c *client) MembershipContext(ctx context.Context) ([]string, []string, err
 }
 
 func (c *client) DBExistsContext(ctx context.Context, dbName string) (bool, error) {
-	err := c.DoError(ctx, kivik.MethodHead, dbName, nil)
+	_, err := c.DoError(ctx, kivik.MethodHead, dbName, nil)
 	if errors.StatusCode(err) == kivik.StatusNotFound {
 		return false, nil
 	}
@@ -46,9 +46,11 @@ func (c *client) DBExistsContext(ctx context.Context, dbName string) (bool, erro
 }
 
 func (c *client) CreateDBContext(ctx context.Context, dbName string) error {
-	return c.DoError(ctx, kivik.MethodPut, dbName, nil)
+	_, err := c.DoError(ctx, kivik.MethodPut, dbName, nil)
+	return err
 }
 
 func (c *client) DestroyDBContext(ctx context.Context, dbName string) error {
-	return c.DoError(ctx, kivik.MethodDelete, dbName, nil)
+	_, err := c.DoError(ctx, kivik.MethodDelete, dbName, nil)
+	return err
 }

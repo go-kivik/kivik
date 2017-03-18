@@ -40,12 +40,13 @@ func init() {
 		"ServerInfo.vendor":         `^Kivik Memory Adaptor$`,
 		"ServerInfo.vendor_version": `^0\.0\.1$`,
 
-		"Get.skip":       true, // FIXME: Unimplemented
-		"Delete.skip":    true, // FIXME: Unimplemented
-		"DBInfo.skip":    true, // FIXME: Unimplemented
-		"CreateDoc.skip": true, // FIXME: Unimplemented
-		"Compact.skip":   true, // FIXME: Unimplemented
-		"Security.skip":  true, // FIXME: Unimplemented
-		"RevsLimit.skip": true, // FIXME: Unimplemented
+		"Get.skip":         true,                       // FIXME: Unimplemented
+		"Delete.skip":      true,                       // FIXME: Unimplemented
+		"DBInfo.skip":      true,                       // FIXME: Unimplemented
+		"CreateDoc.skip":   true,                       // FIXME: Unimplemented
+		"Compact.skip":     true,                       // FIXME: Unimplemented
+		"Security.skip":    true,                       // FIXME: Unimplemented
+		"RevsLimit.skip":   true,                       // FIXME: Unimplemented
+		"DBUpdates.status": kivik.StatusNotImplemented, // FIXME: Unimplemented
 	})
 }

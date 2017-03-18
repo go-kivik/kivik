@@ -19,6 +19,7 @@ func init() {
 		"Flush.skip":       true,
 		"Security.skip":    true, // FIXME: Perhaps implement later with a plugin?
 		"SetSecurity.skip": true, // FIXME: Perhaps implement later with a plugin?
+		"DBUpdates.skip":   true,
 
 		"AllDBs.skip":   true, // FIXME: Find a way to test with the plugin
 		"CreateDB.skip": true, // FIXME: No way to validate if this works unless/until allDbs works
@@ -54,6 +55,7 @@ func init() {
 		"Session.skip":     true,
 		"Security.skip":    true, // FIXME: Perhaps implement later with a plugin?
 		"SetSecurity.skip": true, // FIXME: Perhaps implement later with a plugin?
+		"DBUpdates.skip":   true,
 
 		"PreCleanup.skip": true,
 

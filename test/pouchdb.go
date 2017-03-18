@@ -33,6 +33,9 @@ func init() {
 		"Get/RW/group/Admin/bogus.status":  kivik.StatusNotFound,
 		"Get/RW/group/NoAuth/bogus.status": kivik.StatusNotFound,
 
+		"Rev/RW/group/Admin/bogus.status":  kivik.StatusNotFound,
+		"Rev/RW/group/NoAuth/bogus.status": kivik.StatusNotFound,
+
 		"Delete/RW/Admin/group/MissingDoc.status":       kivik.StatusNotFound,
 		"Delete/RW/Admin/group/InvalidRevFormat.status": kivik.StatusBadRequest,
 		"Delete/RW/Admin/group/WrongRev.status":         kivik.StatusConflict,
@@ -81,6 +84,9 @@ func init() {
 
 		"Get/RW/group/Admin/bogus.status":  kivik.StatusNotFound,
 		"Get/RW/group/NoAuth/bogus.status": kivik.StatusNotFound,
+
+		"Rev/RW/group/Admin/bogus.status":  kivik.StatusNotFound,
+		"Rev/RW/group/NoAuth/bogus.status": kivik.StatusNotFound,
 
 		"Delete/RW/Admin/group/MissingDoc.status":        kivik.StatusNotFound,
 		"Delete/RW/Admin/group/InvalidRevFormat.status":  kivik.StatusBadRequest,

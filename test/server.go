@@ -105,5 +105,6 @@ func init() {
 		"ViewCleanup.skip": true, // FIXME: Unimplemented
 		"Security.skip":    true, // FIXME: Unimplemented
 		"SetSecurity.skip": true, // FIXME: Unimplemented
+		"Rev.skip":         true, // FIXME: When Get works
 	})
 }

@@ -216,5 +216,8 @@ func (db *DB) RevContext(ctx context.Context, docID string) (rev string, err err
 	var doc struct {
 		Rev string `json:"_rev"`
 	}
-	return doc.Rev, db.GetContext(ctx, docID, &doc, nil)
+	// These last two lines cannot be combined for GopherJS due to a bug.
+	// See https://github.com/gopherjs/gopherjs/issues/608
+	err = db.GetContext(ctx, docID, &doc, nil)
+	return doc.Rev, err
 }

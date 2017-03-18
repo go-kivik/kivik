@@ -12,7 +12,7 @@ import (
 )
 
 func (c *client) DBUpdates() (updateChan <-chan *driver.DBUpdate, closer func() error, err error) {
-	resp, err := c.DoReq(context.Background(), kivik.MethodGet, "/_db_updates?feed=continuous", nil)
+	resp, err := c.DoReq(context.Background(), kivik.MethodGet, "/_db_updates?feed=continuous&since=now", nil)
 	if err != nil {
 		return nil, nil, err
 	}

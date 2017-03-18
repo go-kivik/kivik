@@ -72,8 +72,8 @@
 | POST /{db}/_purge
 | POST /{db}/_missing_revs
 | POST /{db}/_revs_diff
-| GET /{db}/_revs_limit
-| PUT /{db}/_revs_limit
+| GET /{db}/_revs_limit | RevsLimit()         |    | ✅ | ✅ |
+| PUT /{db}/_revs_limit | SetRevsLimit()      |    |
 | HEAD /{db}/{docid}  | Rev()                 |    | ✅ | ✅ | ⍻ |
 | GET /{db}/{docid}   | Get()                 |    | ☑️<sup>[7](#todoConflicts),[11](#todoAttachments)</sup> | ✅ | ✅
 | PUT /{db}/{docid}   | Put()                 |    | ☑️<sup>[11](#todoAttachments)</sup> | ✅ | ✅

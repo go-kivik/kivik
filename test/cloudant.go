@@ -134,5 +134,16 @@ func init() {
 		"SetSecurity/RW/Admin/NotExists.status":  kivik.StatusNotFound,
 		"SetSecurity/RW/NoAuth/NotExists.status": kivik.StatusNotFound,
 		"SetSecurity/RW/NoAuth/Exists.status":    kivik.StatusUnauthorized,
+
+		"RevsLimit.databases":                     []string{"_replicator", "_users", "_global_changes", "chicken", "_duck"},
+		"RevsLimit.revs_limit":                    1000,
+		"RevsLimit/Admin/_global_changes.status":  kivik.StatusForbidden,
+		"RevsLimit/Admin/chicken.status":          kivik.StatusNotFound,
+		"RevsLimit/Admin/_duck.status":            kivik.StatusForbidden,
+		"RevsLimit/NoAuth/_global_changes.status": kivik.StatusUnauthorized,
+		"RevsLimit/NoAuth/_users.status":          kivik.StatusUnauthorized,
+		"RevsLimit/NoAuth/_replicator.status":     kivik.StatusUnauthorized,
+		"RevsLimit/NoAuth/chicken.status":         kivik.StatusNotFound,
+		"RevsLimit/NoAuth/_duck.status":           kivik.StatusUnauthorized,
 	})
 }

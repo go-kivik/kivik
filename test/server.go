@@ -106,5 +106,6 @@ func init() {
 		"Security.skip":    true, // FIXME: Unimplemented
 		"SetSecurity.skip": true, // FIXME: Unimplemented
 		"Rev.skip":         true, // FIXME: When Get works
+		"RevsLimit.skip":   true, // FIXME: Unimplemented
 	})
 }

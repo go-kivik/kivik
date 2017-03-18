@@ -32,19 +32,22 @@ func init() {
 		"DestroyDB/RW/NoAuth/NonExistantDB.status": kivik.StatusNotFound,
 		"DestroyDB/RW/NoAuth/ExistingDB.status":    kivik.StatusUnauthorized,
 
-		"AllDocs/Admin.databases":            []string{"_replicator", "chicken"},
+		"AllDocs.databases":                  []string{"_replicator", "chicken", "_duck"},
 		"AllDocs/Admin/_replicator.expected": []string{"_design/_replicator"},
 		"AllDocs/Admin/_replicator.offset":   0,
 		"AllDocs/Admin/chicken.status":       kivik.StatusNotFound,
-		"AllDocs/NoAuth.databases":           []string{"_replicator", "chicken"},
+		"AllDocs/Admin/_duck.status":         kivik.StatusForbidden,
 		"AllDocs/NoAuth/_replicator.status":  kivik.StatusUnauthorized,
 		"AllDocs/NoAuth/chicken.status":      kivik.StatusNotFound,
+		"AllDocs/NoAuth/_duck.status":        kivik.StatusUnauthorized,
 		"AllDocs/RW/group/NoAuth.status":     kivik.StatusUnauthorized,
 
-		"DBExists.databases":              []string{"_users", "chicken"},
+		"DBExists.databases":              []string{"_users", "chicken", "_duck"},
 		"DBExists/Admin/_users.exists":    true,
 		"DBExists/Admin/chicken.exists":   false,
+		"DBExists/Admin/_duck.status":     kivik.StatusForbidden,
 		"DBExists/NoAuth/_users.status":   kivik.StatusUnauthorized,
+		"DBExists/NoAuth/_duck.status":    kivik.StatusUnauthorized,
 		"DBExists/NoAuth/chicken.exists":  false,
 		"DBExists/RW/group/Admin.exists":  true,
 		"DBExists/RW/group/NoAuth.status": kivik.StatusUnauthorized,
@@ -75,11 +78,13 @@ func init() {
 
 		"Put/RW/NoAuth/Create.status": kivik.StatusUnauthorized,
 
-		"Flush.databases":                           []string{"_users", "chicken"},
+		"Flush.databases":                           []string{"_users", "chicken", "_duck"},
 		"Flush/Admin/chicken/DoFlush.status":        kivik.StatusNotFound,
+		"Flush/Admin/_duck/DoFlush.status":          kivik.StatusForbidden,
 		"Flush/NoAuth/chicken/DoFlush.status":       kivik.StatusNotFound,
 		"Flush/NoAuth/_users/DoFlush.status":        kivik.StatusUnauthorized,
 		"Flush/Admin/_users/DoFlush/Timestamp.skip": true, // Cloudant always sets the timestamp to 0
+		"Flush/NoAuth/_duck/DoFlush.status":         kivik.StatusUnauthorized,
 
 		"Delete/RW/Admin/group/MissingDoc.status":       kivik.StatusNotFound,
 		"Delete/RW/Admin/group/InvalidRevFormat.status": kivik.StatusBadRequest,
@@ -112,9 +117,13 @@ func init() {
 		"Session/Post/GoodCredsJSONRemoteRedirHeaderInjection.status": kivik.StatusBadRequest,
 		"Session/Post/GoodCredsJSONRemoteRedirInvalidURL.skip":        true, // Cloudant doesn't sanitize the Location value, so sends unparseable headers.
 
-		"DBInfo.databases":        []string{"_users"},
-		"DBInfo/NoAuth.status":    kivik.StatusUnauthorized,
-		"DBInfo/RW/NoAuth.status": kivik.StatusUnauthorized,
+		"DBInfo.databases":             []string{"_users", "chicken", "_duck"},
+		"DBInfo/Admin/chicken.status":  kivik.StatusNotFound,
+		"DBInfo/Admin/_duck.status":    kivik.StatusForbidden,
+		"DBInfo/NoAuth/_users.status":  kivik.StatusUnauthorized,
+		"DBInfo/NoAuth/chicken.status": kivik.StatusNotFound,
+		"DBInfo/NoAuth/_duck.status":   kivik.StatusUnauthorized,
+		"DBInfo/RW/NoAuth.status":      kivik.StatusUnauthorized,
 
 		"CreateDoc/RW/group/NoAuth.status": kivik.StatusUnauthorized,
 
@@ -124,11 +133,13 @@ func init() {
 		"ViewCleanup/RW/Admin.status":  kivik.StatusForbidden,
 		"ViewCleanup/RW/NoAuth.status": kivik.StatusUnauthorized,
 
-		"Security.databases":                    []string{"_replicator", "_users", "_global_changes", "chicken"},
+		"Security.databases":                    []string{"_replicator", "_users", "_global_changes", "chicken", "_duck"},
 		"Security/Admin/_global_changes.status": kivik.StatusForbidden,
 		"Security/Admin/chicken.status":         kivik.StatusNotFound,
+		"Security/Admin/_duck.status":           kivik.StatusForbidden,
 		"Security/NoAuth.status":                kivik.StatusUnauthorized,
 		"Security/NoAuth/chicken.status":        kivik.StatusNotFound,
+		"Security/NoAuth/_duck.status":          kivik.StatusUnauthorized,
 		"Security/RW/group/NoAuth.status":       kivik.StatusUnauthorized,
 
 		"SetSecurity/RW/Admin/NotExists.status":  kivik.StatusNotFound,

@@ -225,6 +225,7 @@ func connectClients(driverName, dsn string, t *testing.T) (*kt.Context, error) {
 	clients := &kt.Context{}
 	t.Logf("Connecting to %s ...\n", dsn)
 	if client, err := kivik.New(driverName, dsn); err == nil {
+		_ = client.SetDefault("force_commit", true)
 		clients.Admin = client
 	} else {
 		return nil, err
@@ -237,6 +238,7 @@ func connectClients(driverName, dsn string, t *testing.T) (*kt.Context, error) {
 
 	t.Logf("Connecting to %s ...\n", noAuthDSN)
 	if client, err := kivik.New(driverName, noAuthDSN); err == nil {
+		_ = client.SetDefault("force_commit", true)
 		clients.NoAuth = client
 	} else {
 		return nil, err

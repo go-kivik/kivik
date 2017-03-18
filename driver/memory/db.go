@@ -109,3 +109,13 @@ func (d *db) SetSecurityContext(_ context.Context, _ *driver.Security) error {
 	// FIXME: Unimplemented
 	return nil
 }
+
+func (d *db) RevsLimitContext(_ context.Context) (limit int, err error) {
+	// FIXME: Unimplemented
+	return 0, nil
+}
+
+func (d *db) SetRevsLimitContext(_ context.Context, limit int) error {
+	// FIXME: Unimplemented
+	return nil
+}

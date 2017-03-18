@@ -127,6 +127,12 @@ type DB interface {
 	SecurityContext(ctx context.Context) (*Security, error)
 	// SetSecurityContext sets the database's security document.
 	SetSecurityContext(ctx context.Context, security *Security) error
+	// RevsLimitContext returns the the maximum number of document revisions
+	// that will be tracked.
+	RevsLimitContext(ctx context.Context) (limit int, err error)
+	// SetRevsLimitContext sets the maximum number of document revisions that
+	// will be tracked.
+	SetRevsLimitContext(ctx context.Context, limit int) error
 	// GetAttachment()
 	// BulkDocs()
 	// ViewCleanup()

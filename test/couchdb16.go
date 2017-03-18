@@ -36,19 +36,22 @@ func init() {
 		"DestroyDB/RW/NoAuth.status":              kivik.StatusUnauthorized,
 		"DestroyDB/RW/Admin/NonExistantDB.status": kivik.StatusNotFound,
 
-		"AllDocs/Admin.databases":            []string{"_replicator", "chicken"},
+		"AllDocs.databases":                  []string{"_replicator", "chicken", "_duck"},
 		"AllDocs/Admin/_replicator.expected": []string{"_design/_replicator"},
 		"AllDocs/Admin/_replicator.offset":   0,
 		"AllDocs/Admin/chicken.status":       kivik.StatusNotFound,
-		"AllDocs/NoAuth.databases":           []string{"_replicator", "chicken"},
+		"AllDocs/Admin/_duck.status":         kivik.StatusBadRequest,
 		"AllDocs/NoAuth/_replicator.status":  kivik.StatusForbidden,
 		"AllDocs/NoAuth/chicken.status":      kivik.StatusNotFound,
+		"AllDocs/NoAuth/_duck.status":        kivik.StatusBadRequest,
 
-		"DBExists.databases":              []string{"_users", "chicken"},
+		"DBExists.databases":              []string{"_users", "chicken", "_duck"},
 		"DBExists/Admin/_users.exists":    true,
 		"DBExists/Admin/chicken.exists":   false,
+		"DBExists/Admin/_duck.status":     kivik.StatusBadRequest,
 		"DBExists/NoAuth/_users.exists":   true,
 		"DBExists/NoAuth/chicken.exists":  false,
+		"DBExists/NoAuth/_duck.status":    kivik.StatusBadRequest,
 		"DBExists/RW/group/Admin.exists":  true,
 		"DBExists/RW/group/NoAuth.exists": true,
 
@@ -74,9 +77,11 @@ func init() {
 		"Rev/RW/group/Admin/bogus.status":  kivik.StatusNotFound,
 		"Rev/RW/group/NoAuth/bogus.status": kivik.StatusNotFound,
 
-		"Flush.databases":                     []string{"_users", "chicken"},
-		"Flush/NoAuth/chicken/DoFlush.status": kivik.StatusNotFound,
+		"Flush.databases":                     []string{"_users", "chicken", "_duck"},
 		"Flush/Admin/chicken/DoFlush.status":  kivik.StatusNotFound,
+		"Flush/Admin/_duck/DoFlush.status":    kivik.StatusBadRequest,
+		"Flush/NoAuth/chicken/DoFlush.status": kivik.StatusNotFound,
+		"Flush/NoAuth/_duck/DoFlush.status":   kivik.StatusBadRequest,
 
 		"Delete/RW/Admin/group/MissingDoc.status":        kivik.StatusNotFound,
 		"Delete/RW/Admin/group/InvalidRevFormat.status":  kivik.StatusBadRequest,
@@ -111,19 +116,34 @@ func init() {
 		"Session/Post/GoodCredsJSONRemoteRedirHeaderInjection.skip": true, // CouchDB allows header injection
 		"Session/Post/GoodCredsJSONRemoteRedirInvalidURL.skip":      true, // CouchDB doesn't sanitize the Location value, so sends unparseable headers.
 
-		"DBInfo.databases": []string{"_users"},
+		"DBInfo.databases":             []string{"_users", "chicken", "_duck"},
+		"DBInfo/Admin/chicken.status":  kivik.StatusNotFound,
+		"DBInfo/Admin/_duck.status":    kivik.StatusBadRequest,
+		"DBInfo/NoAuth/chicken.status": kivik.StatusNotFound,
+		"DBInfo/NoAuth/_duck.status":   kivik.StatusBadRequest,
 
 		"Compact/RW/NoAuth.status": kivik.StatusUnauthorized,
 
 		"ViewCleanup/RW/NoAuth.status": kivik.StatusUnauthorized,
 
-		"Security.databases":              []string{"_replicator", "_users", "chicken"},
+		"Security.databases":              []string{"_replicator", "_users", "chicken", "_duck"},
 		"Security/Admin/chicken.status":   kivik.StatusNotFound,
+		"Security/Admin/_duck.status":     kivik.StatusBadRequest,
 		"Security/NoAuth/chicken.status":  kivik.StatusNotFound,
+		"Security/NoAuth/_duck.status":    kivik.StatusBadRequest,
 		"Security/RW/group/NoAuth.status": kivik.StatusUnauthorized,
 
 		"SetSecurity/RW/Admin/NotExists.status":  kivik.StatusNotFound,
 		"SetSecurity/RW/NoAuth/NotExists.status": kivik.StatusNotFound,
 		"SetSecurity/RW/NoAuth/Exists.status":    kivik.StatusUnauthorized,
+
+		"RevsLimit.databases":                     []string{"_replicator", "_users", "chicken", "_duck"},
+		"RevsLimit.revs_limit":                    1000,
+		"RevsLimit/Admin/chicken.status":          kivik.StatusNotFound,
+		"RevsLimit/Admin/_duck.status":            kivik.StatusBadRequest,
+		"RevsLimit/NoAuth/_global_changes.status": kivik.StatusUnauthorized,
+		"RevsLimit/NoAuth/chicken.status":         kivik.StatusNotFound,
+		"RevsLimit/NoAuth/_duck.status":           kivik.StatusBadRequest,
+		"RevsLimit/RW/NoAuth/Set.status":          kivik.StatusUnauthorized,
 	})
 }

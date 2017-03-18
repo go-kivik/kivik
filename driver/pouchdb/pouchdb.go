@@ -215,12 +215,22 @@ func (c *client) DestroyDBContext(ctx context.Context, dbName string) error {
 	return c.pouch.New(c.dbURL(dbName), opts).Destroy(ctx, nil)
 }
 
-func (c *client) DBContext(_ context.Context, dbName string) (driver.DB, error) {
-	opts, err := c.options(Options{})
+func (c *client) DBContext(ctx context.Context, dbName string) (driver.DB, error) {
+	exists, err := c.DBExistsContext(ctx, dbName)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, kivik.ErrNotFound
+	}
+	opts, err := c.options(Options{
+		"revs_limit": 999,
+	})
 	if err != nil {
 		return nil, err
 	}
 	return &db{
-		db: c.pouch.New(c.dbURL(dbName), opts),
+		db:     c.pouch.New(c.dbURL(dbName), opts),
+		client: c,
 	}, nil
 }

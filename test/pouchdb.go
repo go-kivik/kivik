@@ -41,6 +41,8 @@ func init() {
 		"Delete/RW/Admin/group/WrongRev.status":         kivik.StatusConflict,
 
 		"DBInfo/Admin.skip": true, // No predefined DBs for Local PouchDB
+
+		"RevsLimit.databases": []string{},
 	})
 	RegisterSuite(SuitePouchRemote, kt.SuiteConfig{
 		// Features which are not supported by PouchDB
@@ -72,11 +74,14 @@ func init() {
 		"DestroyDB/RW/Admin/NonExistantDB.status":  kivik.StatusNotFound,
 		"DestroyDB/RW/NoAuth/ExistingDB.status":    kivik.StatusUnauthorized,
 
-		"AllDocs/Admin.databases":            []string{"_replicator"},
+		"AllDocs.databases":                  []string{"_replicator", "_users", "chicken"},
 		"AllDocs/Admin/_replicator.expected": []string{"_design/_replicator"},
 		"AllDocs/Admin/_replicator.offset":   0,
-		"AllDocs/NoAuth.databases":           []string{"_replicator"},
+		"AllDocs/Admin/_users.expected":      []string{"_design/_auth"},
+		"AllDocs/Admin/chicken.status":       kivik.StatusNotFound,
 		"AllDocs/NoAuth/_replicator.status":  kivik.StatusForbidden,
+		"AllDocs/NoAuth/_users.status":       kivik.StatusForbidden,
+		"AllDocs/NoAuth/chicken.status":      kivik.StatusNotFound,
 
 		"ServerInfo.version":        `^6\.\d\.\d$`,
 		"ServerInfo.vendor":         `^PouchDB$`,
@@ -95,6 +100,10 @@ func init() {
 		"Delete/RW/NoAuth/group/InvalidRevFormat.status": kivik.StatusBadRequest,
 		"Delete/RW/NoAuth/group/WrongRev.status":         kivik.StatusConflict,
 
-		"DBInfo.databases": []string{"_users"},
+		"DBInfo.databases":             []string{"_users", "chicken"},
+		"DBInfo/Admin/chicken.status":  kivik.StatusNotFound,
+		"DBInfo/NoAuth/chicken.status": kivik.StatusNotFound,
+
+		"RevsLimit.skip": true, // FIXME: Unsupported for remote databases. Perhaps later with a plugin?
 	})
 }

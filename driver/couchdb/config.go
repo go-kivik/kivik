@@ -26,11 +26,13 @@ func (c *config) GetAllContext(ctx context.Context) (map[string]map[string]strin
 }
 
 func (c *config) SetContext(ctx context.Context, secName, key, value string) error {
-	return c.DoError(ctx, kivik.MethodPut, fmt.Sprintf("/_config/%s/%s", secName, key), &chttp.Options{JSON: value})
+	_, err := c.DoError(ctx, kivik.MethodPut, fmt.Sprintf("/_config/%s/%s", secName, key), &chttp.Options{JSON: value})
+	return err
 }
 
 func (c *config) DeleteContext(ctx context.Context, secName, key string) error {
-	return c.DoError(ctx, kivik.MethodDelete, fmt.Sprintf("/_config/%s/%s", secName, key), nil)
+	_, err := c.DoError(ctx, kivik.MethodDelete, fmt.Sprintf("/_config/%s/%s", secName, key), nil)
+	return err
 }
 
 func (c *config) GetSectionContext(ctx context.Context, secName string) (map[string]string, error) {

@@ -13,28 +13,27 @@ import (
 	"github.com/flimzy/kivik/driver/pouchdb/bindings"
 	"github.com/flimzy/kivik/errors"
 	"github.com/gopherjs/gopherjs/js"
-	"github.com/imdario/mergo"
 )
 
 type db struct {
 	db *bindings.DB
+
+	client *client
+
 	// compacting is set true when compaction begins, and unset when the
 	// callback returns.
 	compacting bool
-
-	opts map[string]interface{}
 }
 
-func (d *db) options(opts map[string]interface{}) (map[string]interface{}, error) {
-	o := Options{}
-	if err := mergo.MergeWithOverwrite(&o, d.opts); err != nil {
-		return nil, err
-	}
-	return o, mergo.MergeWithOverwrite(&o, opts)
-}
-
+// SetOption sets a connection-time option by replacing the underling DB
+// instance.
 func (d *db) SetOption(key string, value interface{}) error {
-	d.opts[key] = value
+	// Get the existing options
+	opts := d.db.Object.Get("__opts")
+	// Then set the new value
+	opts.Set(key, value)
+	// Then re-establish the connection
+	d.db = &bindings.DB{Object: d.client.pouch.Object.New("", opts)}
 	return nil
 }
 
@@ -128,4 +127,13 @@ func (d *db) SecurityContext(ctx context.Context) (*driver.Security, error) {
 
 func (d *db) SetSecurityContext(_ context.Context, _ *driver.Security) error {
 	return kivik.ErrNotImplemented
+}
+
+func (d *db) RevsLimitContext(_ context.Context) (limit int, err error) {
+	return d.db.RevsLimit()
+}
+
+func (d *db) SetRevsLimitContext(_ context.Context, limit int) error {
+	return d.SetOption("revs_limit", limit)
+	// return d.db.SetRevsLimit(limit)
 }

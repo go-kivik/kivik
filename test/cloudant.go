@@ -156,5 +156,9 @@ func init() {
 		"RevsLimit/NoAuth/_replicator.status":     kivik.StatusUnauthorized,
 		"RevsLimit/NoAuth/chicken.status":         kivik.StatusNotFound,
 		"RevsLimit/NoAuth/_duck.status":           kivik.StatusUnauthorized,
+		"RevsLimit/RW/NoAuth/Set.status":          kivik.StatusUnauthorized,
+
+		"DBUpdates/RW/Admin.status":  kivik.StatusNotFound, // Cloudant apparently disables this
+		"DBUpdates/RW/NoAuth.status": kivik.StatusUnauthorized,
 	})
 }

@@ -145,5 +145,7 @@ func init() {
 		"RevsLimit/NoAuth/chicken.status":         kivik.StatusNotFound,
 		"RevsLimit/NoAuth/_duck.status":           kivik.StatusBadRequest,
 		"RevsLimit/RW/NoAuth/Set.status":          kivik.StatusUnauthorized,
+
+		"DBUpdates/RW/NoAuth.status": kivik.StatusUnauthorized,
 	})
 }

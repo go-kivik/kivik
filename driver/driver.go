@@ -121,7 +121,7 @@ type DB interface {
 	SetOption(key string, value interface{}) error
 	// AllDocsContext returns all of the documents in the database, subject
 	// to the options provided.
-	AllDocsContext(ctx context.Context, docs interface{}, options map[string]interface{}) (offset, totalrows int, seq string, err error)
+	AllDocsContext(ctx context.Context, options map[string]interface{}) (Rows, error)
 	// GetContext fetches the requested document from the database, and unmarshals it
 	// into doc.
 	GetContext(ctx context.Context, docID string, doc interface{}, options map[string]interface{}) error

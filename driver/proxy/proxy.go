@@ -45,8 +45,12 @@ type db struct {
 
 var _ driver.DB = &db{}
 
-func (d *db) AllDocsContext(ctx context.Context, i interface{}, opts map[string]interface{}) (int, int, string, error) {
-	return d.DB.AllDocsContext(ctx, i, opts)
+func (d *db) AllDocsContext(ctx context.Context, opts map[string]interface{}) (driver.Rows, error) {
+	kivikRows, err := d.DB.AllDocsContext(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	return &rows{kivikRows}, nil
 }
 
 func (d *db) GetContext(ctx context.Context, id string, i interface{}, opts map[string]interface{}) error {

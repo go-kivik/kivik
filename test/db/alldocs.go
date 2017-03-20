@@ -78,13 +78,15 @@ func testAllDocs(ctx *kt.Context, client *kivik.Client) {
 		return
 	}
 	for _, dbName := range ctx.StringSlice("databases") {
-		ctx.Run(dbName, func(ctx *kt.Context) {
-			doTest(ctx, client, dbName, ctx.Int("offset"), ctx.StringSlice("expected"))
-		})
+		func(dbName string) {
+			ctx.Run(dbName, func(ctx *kt.Context) {
+				doTest(ctx, client, dbName, int64(ctx.Int("offset")), ctx.StringSlice("expected"))
+			})
+		}(dbName)
 	}
 }
 
-func doTest(ctx *kt.Context, client *kivik.Client, dbName string, expOffset int, expected []string) {
+func doTest(ctx *kt.Context, client *kivik.Client, dbName string, expOffset int64, expected []string) {
 	ctx.Parallel()
 	db, err := client.DB(dbName)
 	// Errors may be deferred here, so only return if we actually get
@@ -93,25 +95,24 @@ func doTest(ctx *kt.Context, client *kivik.Client, dbName string, expOffset int,
 		return
 	}
 
-	docs := []struct {
-		ID string `json:"id"`
-	}{}
-	offset, total, _, err := db.AllDocs(&docs, nil)
+	rows, err := db.AllDocs(nil)
 	if !ctx.IsExpectedSuccess(err) {
 		return
 	}
-	if offset != expOffset {
-		ctx.Errorf("offset: Expected %d, got %d", expOffset, offset)
+	docIDs := make([]string, 0, len(expected))
+	for rows.Next() {
+		docIDs = append(docIDs, rows.ID())
 	}
-	if total != len(expected) {
-		ctx.Errorf("total: Expected %d, got %d", len(expected), total)
+	if rows.Err() != nil {
+		ctx.Fatalf("Failed to fetch row: %s", rows.Err())
 	}
-	docIDs := make([]string, 0, len(docs))
-	for _, doc := range docs {
-		docIDs = append(docIDs, doc.ID)
-	}
-	sort.Strings(docIDs)
 	if d := diff.TextSlices(expected, docIDs); d != "" {
 		ctx.Errorf("Unexpected document IDs returned:\n%s\n", d)
+	}
+	if expOffset != rows.Offset() {
+		ctx.Errorf("offset: Expected %d, got %d", expOffset, rows.Offset())
+	}
+	if int64(len(expected)) != rows.TotalRows() {
+		ctx.Errorf("total rows: Expected %d, got %d", len(expected), rows.TotalRows())
 	}
 }

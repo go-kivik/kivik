@@ -13,7 +13,6 @@ import (
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/driver/couchdb/chttp"
-	"github.com/flimzy/kivik/driver/ouchdb"
 )
 
 type db struct {
@@ -50,16 +49,15 @@ func optionsToParams(opts map[string]interface{}) (url.Values, error) {
 }
 
 // AllDocsContext returns all of the documents in the database.
-func (d *db) AllDocsContext(ctx context.Context, docs interface{}, opts map[string]interface{}) (offset, totalrows int, seq string, err error) {
+func (d *db) AllDocsContext(ctx context.Context, opts map[string]interface{}) (driver.Rows, error) {
 	resp, err := d.Client.DoReq(ctx, kivik.MethodGet, d.path("_all_docs", nil), nil)
 	if err != nil {
-		return 0, 0, "", err
+		return nil, err
 	}
 	if err = chttp.ResponseError(resp.Response); err != nil {
-		return 0, 0, "", err
+		return nil, err
 	}
-	defer resp.Body.Close()
-	return ouchdb.AllDocs(resp.Body, docs)
+	return newRows(resp.Body), nil
 }
 
 // GetContext fetches the requested document.

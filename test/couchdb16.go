@@ -147,5 +147,7 @@ func init() {
 		"RevsLimit/RW/NoAuth/Set.status":          kivik.StatusUnauthorized,
 
 		"DBUpdates/RW/NoAuth.status": kivik.StatusUnauthorized,
+
+		"Changes.options": kivik.Options{},
 	})
 }

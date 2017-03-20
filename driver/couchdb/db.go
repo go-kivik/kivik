@@ -215,7 +215,7 @@ func (d *db) SetRevsLimitContext(ctx context.Context, limit int) error {
 
 // ChangesContext returns the changes stream for the database.
 func (d *db) ChangesContext(ctx context.Context, opts map[string]interface{}) (driver.Rows, error) {
-	options, err := optionsToParams(opts)
+	options, err := optionsToParams(opts, map[string]interface{}{"feed": "continuous"})
 	if err != nil {
 		return nil, err
 	}
@@ -226,5 +226,5 @@ func (d *db) ChangesContext(ctx context.Context, opts map[string]interface{}) (d
 	if err = chttp.ResponseError(resp.Response); err != nil {
 		return nil, err
 	}
-	return newRows(resp.Body), nil
+	return newChangesRows(resp.Body), nil
 }

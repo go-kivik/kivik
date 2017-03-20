@@ -1,6 +1,9 @@
 package driver
 
-import "encoding/json"
+import (
+	"bytes"
+	"encoding/json"
+)
 
 // Row is a generic view result row.
 type Row struct {
@@ -12,6 +15,11 @@ type Row struct {
 	// Value is the raw, un-decoded JSON value. For most built-in views (such as
 	// /_all_docs), this is `{"rev":"X-xxx"}`.
 	Value json.RawMessage `json:"value"`
+	// Seq is the update sequence for the changes feed.
+	Seq SequenceID `json:"seq"`
+	// Deleted is set to true for the changes feed, if the document has been
+	// deleted.
+	Deleted bool `json:"deleted"`
 	// Doc is the raw, un-decoded JSON document. This is only populated by views
 	// which return docs, such as /_all_docs?include_docs=true.
 	Doc json.RawMessage `json:"doc"`
@@ -20,10 +28,22 @@ type Row struct {
 	Changes Changes `json:"changes"`
 }
 
+// SequenceID is a CouchDB update sequence ID. This is just a string, but has
+// a special JSON unmarshaler to work with both CouchDB 2.0.0 (which uses
+// normal) strings for sequence IDs, and earlier versions (which use integers)
+type SequenceID string
+
+// UnmarshalJSON satisfies the json.Unmarshaler interface.
+func (id *SequenceID) UnmarshalJSON(data []byte) error {
+	sid := SequenceID(bytes.Trim(data, `""`))
+	*id = sid
+	return nil
+}
+
 // Changes represents a "changes" field of a result in the /_changes stream.
 type Changes []string
 
-// UnmarshalJSON fulfils the json.Unmarshaler interface
+// UnmarshalJSON satisfies the json.Unmarshaler interface
 func (c *Changes) UnmarshalJSON(data []byte) error {
 	var changes []struct {
 		Rev string `json:"rev"`

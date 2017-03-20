@@ -46,5 +46,6 @@ func init() {
 		"Security.skip":    true,                       // FIXME: Unimplemented
 		"RevsLimit.skip":   true,                       // FIXME: Unimplemented
 		"DBUpdates.status": kivik.StatusNotImplemented, // FIXME: Unimplemented
+		"Changes.status":   true,                       // FIXME: Unimplemented
 	})
 }

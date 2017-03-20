@@ -31,7 +31,7 @@ type Context struct {
 	T *testing.T
 }
 
-// Clone returns a shallow copy of itself with a new t.
+// Child returns a shallow copy of itself with a new t.
 func (c *Context) Child(t *testing.T) *Context {
 	return &Context{
 		RW:          c.RW,
@@ -129,9 +129,20 @@ func (c *Context) Bool(key string) bool {
 	return c.Config.Bool(c.T, key)
 }
 
+// Interface returns the configuration value as an interface{}.
+func (c *Context) Interface(key string) interface{} {
+	return c.Config.get(name(c.T), key)
+}
+
+// MustInterface returns an interface{} from the config, or fails if the value is unset.
+func (c *Context) MustInterface(key string) interface{} {
+	c.MustBeSet(key)
+	return c.Interface(key)
+}
+
 // IsSet returns true if the value is set in the configuration.
 func (c *Context) IsSet(key string) bool {
-	return c.Config.Interface(c.T, key) != nil
+	return c.Interface(key) != nil
 }
 
 // Run wraps t.Run()

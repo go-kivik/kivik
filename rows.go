@@ -11,7 +11,7 @@ import (
 	"github.com/flimzy/kivik/driver"
 )
 
-// Rows is the result of a multi-value query, such as a view or _all-docs. Its
+// Rows is the result of a multi-value query, such as a view or /_all_docs. Its
 // cursor starts before the first value of a result set. Use Next to advance
 // through the rows.
 type Rows struct {
@@ -166,6 +166,23 @@ func (r *Rows) Key() string {
 		return r.curRow.Key
 	}
 	return ""
+}
+
+// Changes returns a list of changed revs. Only valid for the changes feed..
+func (r *Rows) Changes() []string {
+	if r.curRow != nil {
+		return r.curRow.Changes
+	}
+	return nil
+}
+
+// Deleted returns true for the changes feed if the change relates to a deleted
+// document.
+func (r *Rows) Deleted() bool {
+	if r.curRow != nil {
+		return r.curRow.Deleted
+	}
+	return false
 }
 
 // Offset returns the starting offset where the result set started. It is

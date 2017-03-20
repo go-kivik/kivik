@@ -137,3 +137,8 @@ func (d *db) SetRevsLimitContext(_ context.Context, limit int) error {
 	return d.SetOption("revs_limit", limit)
 	// return d.db.SetRevsLimit(limit)
 }
+
+func (d *db) ChangesContext(ctx context.Context, options map[string]interface{}) (driver.Rows, error) {
+	// FIXME: Unimplemented
+	return nil, nil
+}

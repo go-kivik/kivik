@@ -82,3 +82,11 @@ func (d *db) SetSecurityContext(ctx context.Context, security *driver.Security) 
 	}
 	return d.DB.SetSecurityContext(ctx, sec)
 }
+
+func (d *db) ChangesContext(ctx context.Context, opts map[string]interface{}) (driver.Rows, error) {
+	kivikRows, err := d.DB.ChangesContext(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	return &rows{kivikRows}, nil
+}

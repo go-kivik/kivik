@@ -210,3 +210,19 @@ func (d *db) SetRevsLimitContext(ctx context.Context, limit int) error {
 	_, err = d.Client.DoError(ctx, http.MethodPut, d.path("/_revs_limit", nil), &chttp.Options{Body: bytes.NewBuffer(body)})
 	return err
 }
+
+// ChangesContext returns the changes stream for the database.
+func (d *db) ChangesContext(ctx context.Context, opts map[string]interface{}) (driver.Rows, error) {
+	options, err := optionsToParams(opts)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := d.Client.DoReq(ctx, kivik.MethodGet, d.path("_changes", options), nil)
+	if err != nil {
+		return nil, err
+	}
+	if err = chttp.ResponseError(resp.Response); err != nil {
+		return nil, err
+	}
+	return newRows(resp.Body), nil
+}

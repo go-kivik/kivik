@@ -91,3 +91,8 @@ func (d *db) SetRevsLimitContext(_ context.Context, limit int) error {
 	// FIXME: Unimplemented
 	return nil
 }
+
+func (d *db) ChangesContext(ctx context.Context, opts map[string]interface{}) (driver.Rows, error) {
+	// FIXME: Unimplemented
+	return nil, nil
+}

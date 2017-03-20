@@ -133,6 +133,10 @@ type DB interface {
 	// SetRevsLimitContext sets the maximum number of document revisions that
 	// will be tracked.
 	SetRevsLimitContext(ctx context.Context, limit int) error
+	// ChangesContext returns a Rows iterator for the changes feed. In
+	// continuous mode, the iterator will continue indefinately, until Close is
+	// called.
+	ChangesContext(ctx context.Context, options map[string]interface{}) (Rows, error)
 	// GetAttachment()
 	// BulkDocs()
 	// ViewCleanup()

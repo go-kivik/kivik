@@ -18,11 +18,16 @@ func (r *rows) Next(row *driver.Row) error {
 		return r.Rows.Err()
 	}
 	var value json.RawMessage
-	if err := r.Rows.Scan(&value); err != nil {
+	if err := r.Rows.ScanValue(&value); err != nil {
+		return err
+	}
+	var doc json.RawMessage
+	if err := r.Rows.ScanDoc(&doc); err != nil {
 		return err
 	}
 	row.ID = r.Rows.ID()
 	row.Key = r.Rows.Key()
 	row.Value = value
+	row.Doc = doc
 	return nil
 }

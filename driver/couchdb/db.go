@@ -33,11 +33,13 @@ func optionsToParams(opts map[string]interface{}) (url.Values, error) {
 	params := url.Values{}
 	for key, i := range opts {
 		var values []string
-		switch i.(type) {
+		switch v := i.(type) {
 		case string:
-			values = []string{i.(string)}
+			values = []string{v}
 		case []string:
-			values = i.([]string)
+			values = v
+		case bool:
+			values = []string{fmt.Sprintf("%t", v)}
 		default:
 			return nil, fmt.Errorf("Cannot convert type %T to []string", i)
 		}
@@ -50,7 +52,11 @@ func optionsToParams(opts map[string]interface{}) (url.Values, error) {
 
 // AllDocsContext returns all of the documents in the database.
 func (d *db) AllDocsContext(ctx context.Context, opts map[string]interface{}) (driver.Rows, error) {
-	resp, err := d.Client.DoReq(ctx, kivik.MethodGet, d.path("_all_docs", nil), nil)
+	options, err := optionsToParams(opts)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := d.Client.DoReq(ctx, kivik.MethodGet, d.path("_all_docs", options), nil)
 	if err != nil {
 		return nil, err
 	}

@@ -16,9 +16,9 @@ import (
 type Row struct {
 }
 
-// Scan copies the data from the result value into the value pointed at by dest.
+// ScanValue copies the data from the result value into the value pointed at by dest.
 // Think of this as a json.Unmarshal into dest.
-func (d *Row) Scan(dest interface{}) error {
+func (d *Row) ScanValue(dest interface{}) error {
 	return nil
 }
 
@@ -112,7 +112,7 @@ func (r *Rows) close(err error) error {
 
 var errNilPtr = errors.New("kivik: destination pointer is nil")
 
-// Scan copies the data from the result value into the value pointed at by
+// ScanValue copies the data from the result value into the value pointed at by
 // dest. Think of this as a json.Unmarshal into dest.
 //
 // If the dest argument has type *[]byte, Scan stores a copy of the input data.
@@ -124,7 +124,17 @@ var errNilPtr = errors.New("kivik: destination pointer is nil")
 //
 // For all other types, refer to the documentation for json.Unmarshal for type
 // conversion rules.
-func (r *Rows) Scan(dest interface{}) error {
+func (r *Rows) ScanValue(dest interface{}) error {
+	return r.scan(dest, r.curRow.Value)
+}
+
+// ScanDoc works the same as ScanValue, but on the doc field of the result. It
+// is only valid for results that include documents.
+func (r *Rows) ScanDoc(dest interface{}) error {
+	return r.scan(dest, r.curRow.Doc)
+}
+
+func (r *Rows) scan(dest interface{}, val json.RawMessage) error {
 	r.closemu.RLock()
 	if r.closed {
 		r.closemu.RUnlock()
@@ -139,18 +149,18 @@ func (r *Rows) Scan(dest interface{}) error {
 		if d == nil {
 			return errNilPtr
 		}
-		tgt := make([]byte, len(r.curRow.Value))
-		copy(tgt, r.curRow.Value)
+		tgt := make([]byte, len(val))
+		copy(tgt, val)
 		*d = tgt
 		return nil
 	case *json.RawMessage:
 		if d == nil {
 			return errNilPtr
 		}
-		*d = r.curRow.Value
+		*d = val
 		return nil
 	}
-	return json.Unmarshal(r.curRow.Value, dest)
+	return json.Unmarshal(val, dest)
 }
 
 // ID returns the ID of the last-read result.

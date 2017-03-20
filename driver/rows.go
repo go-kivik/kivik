@@ -4,9 +4,17 @@ import "encoding/json"
 
 // Row is a generic view result row.
 type Row struct {
-	ID    string          `json:"id"`
-	Key   string          `json:"key"`
+	// ID is the document ID of the result.
+	ID string `json:"id"`
+	// Key is the view key of the result. For built-in views, this is the same
+	// as ID.
+	Key string `json:"key"`
+	// Value is the raw, un-decoded JSON value. For most built-in views (such as
+	// /_all_docs), this is `{"rev":"X-xxx"}`.
 	Value json.RawMessage `json:"value"`
+	// Doc is the raw, un-decoded JSON document. This is only populated by views
+	// which return docs, such as /_all_docs?include_docs=true.
+	Doc json.RawMessage `json:"doc"`
 }
 
 // Rows is an iterator over a view's results.

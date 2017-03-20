@@ -36,12 +36,13 @@ func (d *db) SetOption(key string, value interface{}) error {
 }
 
 func (d *db) AllDocsContext(ctx context.Context, options map[string]interface{}) (driver.Rows, error) {
-	return nil, nil
-	// body, err := d.db.AllDocs(ctx, options)
-	// if err != nil {
-	// 	return 0, 0, "", err
-	// }
-	// return ouchdb.AllDocs(bytes.NewReader(body), docs)
+	result, err := d.db.AllDocs(ctx, options)
+	if err != nil {
+		return nil, err
+	}
+	return &rows{
+		Object: result,
+	}, nil
 }
 
 func (d *db) GetContext(ctx context.Context, docID string, doc interface{}, options map[string]interface{}) error {

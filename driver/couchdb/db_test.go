@@ -14,7 +14,9 @@ func TestAllDocs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to connect to db: %s", err)
 	}
-	rows, err := db.AllDocsContext(kt.CTX, nil)
+	rows, err := db.AllDocsContext(kt.CTX, map[string]interface{}{
+		"include_docs": true,
+	})
 	if err != nil {
 		t.Fatalf("Failed: %s", err)
 	}

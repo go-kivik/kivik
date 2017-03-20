@@ -57,7 +57,7 @@
 | PUT /{db}          | CreateDB()             | ✅ | ✅ | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
 | DELETE /{db}       | DestroyDB()            |    | ✅ | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
 | POST /{db}         | CreateDoc()            |    | ✅ | ✅ | ✅ |
-| GET /{db}/_all_docs | AllDocs()             |    | ✅ | ✅ | ✅ | ☑️<sup>[7](#todoConflicts),[8](#todoIncludeDocs),[9](#todoOrdering),[10](#todoLimit)</sup> | ✅ | ？ | ？ |
+| GET /{db}/_all_docs | AllDocs()             |    | ☑️<sup>[7](#todoConflicts),[9](#todoOrdering),[10](#todoLimit)</sup> | ✅ | ？ | ？ |
 | POST /{db}/_all_docs | ⁿ/ₐ                   |    |    | ❌ | ❌ | ⁿ/ₐ | ⁿ/ₐ |
 | POST /{db}/_bulk_docs
 | GET /{db}/_changes
@@ -127,7 +127,6 @@
  `DestroyDB()` does not return an error if the database does not exist.
 6. <a name="cookieAuth"> See the CookieAuth section in the [Authentication methods table](#authTable)
 7. <a name="todoConflicts"> **TODO:** Conflicts are not yet tested.
-8. <a name="todoIncludeDocs"> **TODO:** include_docs is not yet tested.
 9. <a name="todoOrdering"> **TODO:** Ordering is not yet tested.
 10. <a name="todoLimit"> **TODO:** Limits are not yet tested.
 11. <a name="todoAttachments"> **TODO:** Attachments are not yet tested.

@@ -186,13 +186,8 @@ func (db *DB) Destroy(ctx context.Context, options map[string]interface{}) error
 }
 
 // AllDocs returns a list of all documents in the database.
-func (db *DB) AllDocs(ctx context.Context, options map[string]interface{}) ([]byte, error) {
-	result, err := callBack(ctx, db, "allDocs", setTimeout(ctx, options))
-	if err != nil {
-		return nil, err
-	}
-	resultJSON := js.Global.Get("JSON").Call("stringify", result).String()
-	return []byte(resultJSON), err
+func (db *DB) AllDocs(ctx context.Context, options map[string]interface{}) (*js.Object, error) {
+	return callBack(ctx, db, "allDocs", setTimeout(ctx, options))
 }
 
 // Compact compacts the database, and waits for it to complete. This may take

@@ -29,22 +29,24 @@ func (d *db) path(path string, query url.Values) string {
 	return url.String()
 }
 
-func optionsToParams(opts map[string]interface{}) (url.Values, error) {
+func optionsToParams(opts ...map[string]interface{}) (url.Values, error) {
 	params := url.Values{}
-	for key, i := range opts {
-		var values []string
-		switch v := i.(type) {
-		case string:
-			values = []string{v}
-		case []string:
-			values = v
-		case bool:
-			values = []string{fmt.Sprintf("%t", v)}
-		default:
-			return nil, fmt.Errorf("Cannot convert type %T to []string", i)
-		}
-		for _, value := range values {
-			params.Add(key, value)
+	for _, optsSet := range opts {
+		for key, i := range optsSet {
+			var values []string
+			switch v := i.(type) {
+			case string:
+				values = []string{v}
+			case []string:
+				values = v
+			case bool:
+				values = []string{fmt.Sprintf("%t", v)}
+			default:
+				return nil, fmt.Errorf("Cannot convert type %T to []string", i)
+			}
+			for _, value := range values {
+				params.Add(key, value)
+			}
 		}
 	}
 	return params, nil

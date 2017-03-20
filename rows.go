@@ -39,7 +39,7 @@ func (r *Rows) initContextClose(ctx context.Context) {
 // awaitDone blocks until the rows are closed or the context is cancelled.
 func (r *Rows) awaitDone(ctx context.Context) {
 	<-ctx.Done()
-	r.close(ctx.Err())
+	_ = r.close(ctx.Err())
 }
 
 // Next prepares the next result value for reading with the Scan method. It

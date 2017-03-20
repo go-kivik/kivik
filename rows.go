@@ -11,17 +11,6 @@ import (
 	"github.com/flimzy/kivik/driver"
 )
 
-// Row is the result of a query that can only return a single row (typically a
-// document).
-type Row struct {
-}
-
-// ScanValue copies the data from the result value into the value pointed at by dest.
-// Think of this as a json.Unmarshal into dest.
-func (d *Row) ScanValue(dest interface{}) error {
-	return nil
-}
-
 // Rows is the result of a multi-value query, such as a view or _all-docs. Its
 // cursor starts before the first value of a result set. Use Next to advance
 // through the rows.

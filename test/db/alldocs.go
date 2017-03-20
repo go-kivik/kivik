@@ -134,8 +134,12 @@ func doTestWithDocs(ctx *kt.Context, client *kivik.Client, dbName string, expOff
 	if err != nil && !ctx.IsExpectedSuccess(err) {
 		return
 	}
+	opts := map[string]interface{}{
+		"include_docs": true,
+		"update_seq":   true,
+	}
 
-	rows, err := db.AllDocs(map[string]interface{}{"include_docs": true})
+	rows, err := db.AllDocs(opts)
 	if !ctx.IsExpectedSuccess(err) {
 		return
 	}
@@ -170,6 +174,9 @@ func doTestWithDocs(ctx *kt.Context, client *kivik.Client, dbName string, expOff
 	}
 	if expOffset != rows.Offset() {
 		ctx.Errorf("offset: Expected %d, got %d", expOffset, rows.Offset())
+	}
+	if rows.UpdateSeq() == "" {
+		ctx.Errorf("Expected updated sequence")
 	}
 	if int64(len(expected)) != rows.TotalRows() {
 		ctx.Errorf("total rows: Expected %d, got %d", len(expected), rows.TotalRows())

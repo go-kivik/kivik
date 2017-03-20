@@ -1,6 +1,7 @@
 package couchdb
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,6 +12,7 @@ import (
 type rows struct {
 	offset    int64
 	totalRows int64
+	updateSeq string
 	body      io.ReadCloser
 	dec       *json.Decoder
 	// closed is true after all rows have been processed
@@ -31,6 +33,10 @@ func (r *rows) Offset() int64 {
 
 func (r *rows) TotalRows() int64 {
 	return r.totalRows
+}
+
+func (r *rows) UpdateSeq() string {
+	return r.updateSeq
 }
 
 func (r *rows) Close() error {
@@ -113,12 +119,23 @@ func (r *rows) finish() error {
 // parseMeta parses result metadata
 func (r *rows) parseMeta(key string) error {
 	switch key {
+	case "update_seq":
+		return r.readUpdateSeq()
 	case "offset":
 		return r.dec.Decode(&r.offset)
 	case "total_rows":
 		return r.dec.Decode(&r.totalRows)
 	}
 	return fmt.Errorf("Unexpected key: %s", key)
+}
+
+func (r *rows) readUpdateSeq() error {
+	var raw json.RawMessage
+	if err := r.dec.Decode(&raw); err != nil {
+		return err
+	}
+	r.updateSeq = string(bytes.Trim(raw, `""`))
+	return nil
 }
 
 func (r *rows) nextRow(row *driver.Row) error {

@@ -23,6 +23,9 @@ type Rows interface {
 	Offset() int64
 	// TotalRows is the number of documents in the database/view.
 	TotalRows() int64
+	// UpdateSeq is the update sequence of the database, if requested in the
+	// result set.
+	UpdateSeq() string
 	// Next is called to populate row with the values of the next row in a
 	// result set.
 	//

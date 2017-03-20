@@ -185,6 +185,12 @@ func (r *Rows) TotalRows() int64 {
 	return r.rowsi.TotalRows()
 }
 
+// UpdateSeq returns the sequence id of the underlying database the view
+// reflects, if requested in the query.
+func (r *Rows) UpdateSeq() string {
+	return r.rowsi.UpdateSeq()
+}
+
 // Err returns the error, if any, that was encountered during iteration. Err
 // may be called after an explicit or implicit Close.
 func (r *Rows) Err() error {

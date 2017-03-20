@@ -14,8 +14,9 @@ var jsJSON = js.Global.Get("JSON")
 
 type rows struct {
 	*js.Object
-	Off   int64 `js:"offset"`
-	TRows int64 `js:"total_rows"`
+	Off   int64  `js:"offset"`
+	TRows int64  `js:"total_rows"`
+	USeq  string `js:"update_seq"`
 }
 
 var _ driver.Rows = &rows{}
@@ -54,4 +55,8 @@ func (r *rows) Offset() int64 {
 
 func (r *rows) TotalRows() int64 {
 	return r.TRows
+}
+
+func (r *rows) UpdateSeq() string {
+	return "" // PouchDB doesn't support this option
 }

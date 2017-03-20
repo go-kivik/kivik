@@ -175,9 +175,11 @@ func doTestWithDocs(ctx *kt.Context, client *kivik.Client, dbName string, expOff
 	if expOffset != rows.Offset() {
 		ctx.Errorf("offset: Expected %d, got %d", expOffset, rows.Offset())
 	}
-	if rows.UpdateSeq() == "" {
-		ctx.Errorf("Expected updated sequence")
-	}
+	ctx.Run("UpdateSeq", func(ctx *kt.Context) {
+		if rows.UpdateSeq() == "" {
+			ctx.Errorf("Expected updated sequence")
+		}
+	})
 	if int64(len(expected)) != rows.TotalRows() {
 		ctx.Errorf("total rows: Expected %d, got %d", len(expected), rows.TotalRows())
 	}

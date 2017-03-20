@@ -25,7 +25,8 @@ func init() {
 		"CreateDB.skip": true, // FIXME: No way to validate if this works unless/until allDbs works
 		"DBExists.skip": true, // FIXME: Maybe fix this if/when allDBs works?
 
-		"AllDocs/Admin.databases": []string{},
+		"AllDocs/Admin.databases":                        []string{},
+		"AllDocs/RW/group/Admin/WithDocs/UpdateSeq.skip": true,
 
 		"ServerInfo.version":        `^6\.\d\.\d$`,
 		"ServerInfo.vendor":         `^PouchDB$`,
@@ -76,14 +77,20 @@ func init() {
 		"DestroyDB/RW/Admin/NonExistantDB.status":  kivik.StatusNotFound,
 		"DestroyDB/RW/NoAuth/ExistingDB.status":    kivik.StatusUnauthorized,
 
-		"AllDocs.databases":                  []string{"_replicator", "_users", "chicken"},
-		"AllDocs/Admin/_replicator.expected": []string{"_design/_replicator"},
-		"AllDocs/Admin/_replicator.offset":   0,
-		"AllDocs/Admin/_users.expected":      []string{"_design/_auth"},
-		"AllDocs/Admin/chicken.status":       kivik.StatusNotFound,
-		"AllDocs/NoAuth/_replicator.status":  kivik.StatusForbidden,
-		"AllDocs/NoAuth/_users.status":       kivik.StatusForbidden,
-		"AllDocs/NoAuth/chicken.status":      kivik.StatusNotFound,
+		"AllDocs.databases":                                  []string{"_replicator", "_users", "chicken"},
+		"AllDocs/Admin/_replicator.expected":                 []string{"_design/_replicator"},
+		"AllDocs/Admin/_replicator.offset":                   0,
+		"AllDocs/Admin/_users.expected":                      []string{"_design/_auth"},
+		"AllDocs/Admin/chicken.status":                       kivik.StatusNotFound,
+		"AllDocs/NoAuth/_replicator.status":                  kivik.StatusForbidden,
+		"AllDocs/NoAuth/_users.status":                       kivik.StatusForbidden,
+		"AllDocs/NoAuth/chicken.status":                      kivik.StatusNotFound,
+		"AllDocs/Admin/_replicator/WithDocs/UpdateSeq.skip":  true,
+		"AllDocs/Admin/_users/WithDocs/UpdateSeq.skip":       true,
+		"AllDocs/RW/group/Admin/WithDocs/UpdateSeq.skip":     true,
+		"AllDocs/RW/group/Admin/WithoutDocs/UpdateSeq.skip":  true,
+		"AllDocs/RW/group/NoAuth/WithDocs/UpdateSeq.skip":    true,
+		"AllDocs/RW/group/NoAuth/WithoutDocs/UpdateSeq.skip": true,
 
 		"ServerInfo.version":        `^6\.\d\.\d$`,
 		"ServerInfo.vendor":         `^PouchDB$`,

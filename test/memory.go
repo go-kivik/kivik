@@ -17,9 +17,7 @@ func init() {
 		"CreateDB/RW/NoAuth.status":         kivik.StatusUnauthorized,
 		"CreateDB/RW/Admin/Recreate.status": kivik.StatusPreconditionFailed,
 
-		"AllDocs/Admin.databases":  []string{"foo"},
-		"AllDocs/Admin/foo.status": kivik.StatusNotFound,
-		"AllDocs/RW.skip":          true, // FIXME: Update this when the memory driver can create documents
+		"AllDocs.skip": true, // FIXME: Unimplemented
 
 		"DBExists/Admin.databases":       []string{"chicken"},
 		"DBExists/Admin/chicken.exists":  false,

@@ -1,7 +1,6 @@
 package pouchdb
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -9,7 +8,6 @@ import (
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
-	"github.com/flimzy/kivik/driver/ouchdb"
 	"github.com/flimzy/kivik/driver/pouchdb/bindings"
 	"github.com/flimzy/kivik/errors"
 	"github.com/gopherjs/gopherjs/js"
@@ -37,12 +35,14 @@ func (d *db) SetOption(key string, value interface{}) error {
 	return nil
 }
 
-func (d *db) AllDocsContext(ctx context.Context, docs interface{}, options map[string]interface{}) (offset, totalrows int, updateSeq string, err error) {
-	body, err := d.db.AllDocs(ctx, options)
+func (d *db) AllDocsContext(ctx context.Context, options map[string]interface{}) (driver.Rows, error) {
+	result, err := d.db.AllDocs(ctx, options)
 	if err != nil {
-		return 0, 0, "", err
+		return nil, err
 	}
-	return ouchdb.AllDocs(bytes.NewReader(body), docs)
+	return &rows{
+		Object: result,
+	}, nil
 }
 
 func (d *db) GetContext(ctx context.Context, docID string, doc interface{}, options map[string]interface{}) error {

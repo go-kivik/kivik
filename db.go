@@ -21,13 +21,19 @@ func (db *DB) SetOption(key string, value interface{}) error {
 }
 
 // AllDocs calls AllDocsContext with a background context.
-func (db *DB) AllDocs(docs interface{}, options Options) (offset, totalrows int, seq string, err error) {
-	return db.AllDocsContext(context.Background(), docs, options)
+func (db *DB) AllDocs(options Options) (*Rows, error) {
+	return db.AllDocsContext(context.Background(), options)
 }
 
 // AllDocsContext returns a list of all documents in the database.
-func (db *DB) AllDocsContext(ctx context.Context, docs interface{}, options Options) (offset, totalrows int, seq string, err error) {
-	return db.driverDB.AllDocsContext(ctx, docs, options)
+func (db *DB) AllDocsContext(ctx context.Context, options Options) (*Rows, error) {
+	rowsi, err := db.driverDB.AllDocsContext(ctx, options)
+	if err != nil {
+		return nil, err
+	}
+	rows := &Rows{rowsi: rowsi}
+	rows.initContextClose(ctx)
+	return rows, nil
 }
 
 // Get calls GetContext with a background context.

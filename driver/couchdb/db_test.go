@@ -1,8 +1,10 @@
 package couchdb
 
 import (
+	"io"
 	"testing"
 
+	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/test/kt"
 )
 
@@ -12,10 +14,21 @@ func TestAllDocs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to connect to db: %s", err)
 	}
-	docs := []interface{}{}
-	_, _, _, err = db.AllDocsContext(kt.CTX, &docs, nil)
+	rows, err := db.AllDocsContext(kt.CTX, map[string]interface{}{
+		"include_docs": true,
+	})
 	if err != nil {
 		t.Fatalf("Failed: %s", err)
+	}
+
+	for {
+		err := rows.Next(&driver.Row{})
+		if err != nil {
+			if err != io.EOF {
+				t.Fatalf("Iteration failed: %s", err)
+			}
+			break
+		}
 	}
 }
 

@@ -13,7 +13,6 @@ import (
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/driver/couchdb/chttp"
-	"github.com/flimzy/kivik/driver/ouchdb"
 )
 
 type db struct {
@@ -34,11 +33,13 @@ func optionsToParams(opts map[string]interface{}) (url.Values, error) {
 	params := url.Values{}
 	for key, i := range opts {
 		var values []string
-		switch i.(type) {
+		switch v := i.(type) {
 		case string:
-			values = []string{i.(string)}
+			values = []string{v}
 		case []string:
-			values = i.([]string)
+			values = v
+		case bool:
+			values = []string{fmt.Sprintf("%t", v)}
 		default:
 			return nil, fmt.Errorf("Cannot convert type %T to []string", i)
 		}
@@ -50,16 +51,19 @@ func optionsToParams(opts map[string]interface{}) (url.Values, error) {
 }
 
 // AllDocsContext returns all of the documents in the database.
-func (d *db) AllDocsContext(ctx context.Context, docs interface{}, opts map[string]interface{}) (offset, totalrows int, seq string, err error) {
-	resp, err := d.Client.DoReq(ctx, kivik.MethodGet, d.path("_all_docs", nil), nil)
+func (d *db) AllDocsContext(ctx context.Context, opts map[string]interface{}) (driver.Rows, error) {
+	options, err := optionsToParams(opts)
 	if err != nil {
-		return 0, 0, "", err
+		return nil, err
+	}
+	resp, err := d.Client.DoReq(ctx, kivik.MethodGet, d.path("_all_docs", options), nil)
+	if err != nil {
+		return nil, err
 	}
 	if err = chttp.ResponseError(resp.Response); err != nil {
-		return 0, 0, "", err
+		return nil, err
 	}
-	defer resp.Body.Close()
-	return ouchdb.AllDocs(resp.Body, docs)
+	return newRows(resp.Body), nil
 }
 
 // GetContext fetches the requested document.

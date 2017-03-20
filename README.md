@@ -29,6 +29,8 @@ be https://github.com/fjl/go-couchdb, but it has several shortcomings:
     In fact, it has no license at all, which, strictly speaking, means it should
     not ever be used by anyone without permission (which is presently impossible
     to acquire, thanks to the author not responding to issues).
+  - It doesn't support iterating over result sets, forcing one to load all
+    results of a query into memory at once.
   - It [doesn't support CouchDB 2.0](https://github.com/fjl/go-couchdb/issues/14).
     The API differences between 1.6.1 and 2.0 are minor, but they do exist.
   - It doesn't natively support CookieAuth (it does allow a generic Auth method

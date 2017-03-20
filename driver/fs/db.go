@@ -16,9 +16,9 @@ func (d *db) SetOption(_ string, _ interface{}) error {
 	return errors.New("no options supported")
 }
 
-func (d *db) AllDocsContext(_ context.Context, docs interface{}, _ map[string]interface{}) (offset, totalrows int, seq string, err error) {
+func (d *db) AllDocsContext(_ context.Context, _ map[string]interface{}) (driver.Rows, error) {
 	// FIXME: Unimplemented
-	return 0, 0, "", nil
+	return nil, nil
 }
 
 func (d *db) GetContext(_ context.Context, docID string, doc interface{}, opts map[string]interface{}) error {

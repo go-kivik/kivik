@@ -17,6 +17,7 @@ case "$1" in
     "linter")
         diff -u <(echo -n) <(gofmt -d ./)
         go install # to make gotype (run by gometalinter) happy
-        gometalinter.v1 --deadline=30s
+        gometalinter.v1 --deadline=30s \
+            --exclude="Errors unhandled\..*\(gas\)"  # This is an annoying duplicate of errcheck
     ;;
 esac

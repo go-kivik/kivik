@@ -1,6 +1,7 @@
 package client
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/flimzy/kivik"
@@ -24,54 +25,39 @@ func updates(ctx *kt.Context) {
 
 const maxWait = 5 * time.Second
 
-type updateEvent struct {
-	Update *kivik.DBUpdate
-	Error  error
-}
-
 func testUpdates(ctx *kt.Context, client *kivik.Client) {
 	ctx.Parallel()
 	updates, err := client.DBUpdates()
 	if !ctx.IsExpectedSuccess(err) {
 		return
 	}
-	events := make(chan *updateEvent)
+	dbname := ctx.TestDBName()
+	eventErrors := make(chan error)
 	go func() {
-		var event *kivik.DBUpdate
-		for {
-			event, err = updates.Next()
-			events <- &updateEvent{
-				Update: event,
-				Error:  err,
-			}
-			if err != nil {
-				close(events)
-				break
+		for updates.Next() {
+			if updates.DBName() == dbname {
+				if updates.Type() == "created" {
+					break
+				} else {
+					eventErrors <- fmt.Errorf("Unexpected event type '%s'", updates.Type())
+				}
 			}
 		}
+		eventErrors <- updates.Err()
+		close(eventErrors)
 	}()
-	dbname := ctx.TestDBName()
 	defer ctx.Admin.DestroyDB(dbname)
 	if err = ctx.Admin.CreateDB(dbname); err != nil {
 		ctx.Fatalf("Failed to create db: %s", err)
 	}
 	timer := time.NewTimer(maxWait)
-Loop:
-	for {
-		select {
-		case event := <-events:
-			if event.Error != nil {
-				ctx.Fatalf("Error reading event: %s", err)
-			}
-			if event.Update.DBName == dbname {
-				if event.Update.Type != "created" {
-					ctx.Errorf("Unexpected event type '%s'", event.Update.Type)
-				}
-				break Loop
-			}
-		case <-timer.C:
-			ctx.Fatalf("Failed to read expected event in %s", maxWait)
+	select {
+	case err := <-eventErrors:
+		if err != nil {
+			ctx.Fatalf("Error reading event: %s", err)
 		}
+	case <-timer.C:
+		ctx.Fatalf("Failed to read expected event in %s", maxWait)
 	}
 	if err := updates.Close(); err != nil {
 		ctx.Errorf("Updates close failed: %s", err)

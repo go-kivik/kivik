@@ -2,7 +2,7 @@ package couchdb
 
 import (
 	"encoding/json"
-	"runtime"
+	"io"
 
 	"golang.org/x/net/context"
 
@@ -11,34 +11,31 @@ import (
 	"github.com/flimzy/kivik/driver/couchdb/chttp"
 )
 
-func (c *client) DBUpdates() (updateChan <-chan *driver.DBUpdate, closer func() error, err error) {
+type couchUpdates struct {
+	body io.ReadCloser
+	dec  *json.Decoder
+}
+
+var _ driver.DBUpdates = &couchUpdates{}
+
+func (u *couchUpdates) Next(update *driver.DBUpdate) error {
+	return u.dec.Decode(update)
+}
+
+func (u *couchUpdates) Close() error {
+	return u.body.Close()
+}
+
+func (c *client) DBUpdates() (updates driver.DBUpdates, err error) {
 	resp, err := c.DoReq(context.Background(), kivik.MethodGet, "/_db_updates?feed=continuous&since=now", nil)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	if err := chttp.ResponseError(resp.Response); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	feed := make(chan *driver.DBUpdate)
-	done := make(chan struct{})
-	closer = func() error {
-		resp.Response.Body.Close()
-		close(done)
-		return nil
-	}
-	go func(feed chan<- *driver.DBUpdate, done <-chan struct{}) {
-		dec := json.NewDecoder(resp.Response.Body)
-		for dec.More() {
-			var event *driver.DBUpdate
-			err := dec.Decode(&event)
-			event.Error = err
-			select {
-			case <-done:
-				close(feed)
-				runtime.Goexit()
-			case feed <- event:
-			}
-		}
-	}(feed, done)
-	return feed, closer, nil
+	return &couchUpdates{
+		body: resp.Response.Body,
+		dec:  json.NewDecoder(resp.Response.Body),
+	}, nil
 }

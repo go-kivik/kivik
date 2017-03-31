@@ -1,0 +1,26 @@
+package: github.com/flimzy/kivik
+ignore:
+- github.com/gopherjs/gopherjs
+import:
+- package: github.com/NYTimes/gziphandler
+  version: d8206bba2a6097c0d75f4ac204a4814e47125cdd
+- package: github.com/ajg/form
+  version: ~1.5.0
+- package: github.com/dimfeld/httptreemux
+  version: ~3.8.0
+- package: github.com/flimzy/diff
+- package: github.com/justinas/alice
+  version: ~1.0.0
+- package: github.com/pborman/uuid
+  version: ~1.0.0
+- package: github.com/pkg/errors
+  version: ~0.8.0
+- package: github.com/spf13/cobra
+- package: github.com/spf13/pflag
+- package: golang.org/x/crypto
+  subpackages:
+  - pbkdf2
+- package: golang.org/x/net
+  subpackages:
+  - context
+  - publicsuffix

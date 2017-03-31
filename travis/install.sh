@@ -2,23 +2,32 @@
 set -euC
 set -o xtrace
 
-# Install generic dependencies, needed for all builds
-go get github.com/pborman/uuid \
-    github.com/pkg/errors \
-    golang.org/x/net/publicsuffix \
-    github.com/flimzy/diff \
-    golang.org/x/crypto/pbkdf2
-# These dependencies are only needed for the server
-go get github.com/NYTimes/gziphandler \
-    github.com/dimfeld/httptreemux \
-    github.com/spf13/cobra \
-    github.com/spf13/pflag \
-    github.com/ajg/form \
-    github.com/justinas/alice
+if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+    brew install glide
+else
+    sudo add-apt-repository -y ppa:masterminds/glide && sudo apt-get update
+    sudo apt-get install glide
+fi
+
+glide update
+
+# # Install generic dependencies, needed for all builds
+# go get github.com/pborman/uuid \
+#     github.com/pkg/errors \
+#     golang.org/x/net/publicsuffix \
+#     github.com/flimzy/diff \
+#     golang.org/x/crypto/pbkdf2
+# # These dependencies are only needed for the server
+# go get github.com/NYTimes/gziphandler \
+#     github.com/dimfeld/httptreemux \
+#     github.com/spf13/cobra \
+#     github.com/spf13/pflag \
+#     github.com/ajg/form \
+#     github.com/justinas/alice
 
 function generate {
     go get -u github.com/jteeuwen/go-bindata/...
-    go generate ./...
+    go generate $(go list ./... | grep -v /vendor/)
 }
 
 function wait_for_server {
@@ -68,8 +77,8 @@ case "$1" in
             sudo apt-get install -y nodejs
         fi
         npm install
-        # Install Go deps only needed by PouchDB driver
-        go get github.com/imdario/mergo
+        # Install Go deps only needed by PouchDB driver/GopherJS
+        glide -y glide.gopherjs.yaml install
         # Then install GopherJS and related dependencies
         go get -u github.com/gopherjs/gopherjs
 

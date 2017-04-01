@@ -257,8 +257,8 @@ func (db *DB) Changes(options Options) (*Rows, error) {
 	return db.ChangesContext(context.Background(), options)
 }
 
-// ChangesContext returns an iterator over the list of changes made to documents
-// in the database, in time order of application.
+// ChangesContext returns an iterator over the real-time changes feed. The
+// feed remains open until explicitly closed, or an error is encountered.
 // See http://couchdb.readthedocs.io/en/latest/api/database/changes.html#get--db-_changes
 func (db *DB) ChangesContext(ctx context.Context, options Options) (*Rows, error) {
 	rowsi, err := db.driverDB.ChangesContext(ctx, options)

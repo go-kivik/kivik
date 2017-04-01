@@ -1,6 +1,8 @@
 package db
 
 import (
+	"time"
+
 	"github.com/flimzy/diff"
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/test/kt"
@@ -23,6 +25,8 @@ func changes(ctx *kt.Context) {
 	})
 }
 
+const maxWait = 5 * time.Second
+
 func testChanges(ctx *kt.Context, client *kivik.Client) {
 	ctx.Parallel()
 	dbname := ctx.TestDBName()
@@ -34,8 +38,7 @@ func testChanges(ctx *kt.Context, client *kivik.Client) {
 	if err != nil {
 		ctx.Fatalf("failed to connect to db: %s", err)
 	}
-	opts := ctx.MustInterface("options")
-	changes, err := db.Changes(opts.(kivik.Options))
+	changes, err := db.Changes(nil)
 	if !ctx.IsExpectedSuccess(err) {
 		return
 	}
@@ -68,13 +71,29 @@ func testChanges(ctx *kt.Context, client *kivik.Client) {
 	}
 	expected = append(expected, rev)
 	revs := make([]string, 0, 3)
-	for i := 0; i < 3; i++ {
-		if !changes.Next() {
-			ctx.Errorf("Only read %d changes", i)
+	errChan := make(chan error)
+	go func() {
+		for changes.Next() {
+			for _, ch := range changes.Changes() {
+				revs = append(revs, ch)
+			}
+			if len(revs) >= len(expected) {
+				changes.Close()
+			}
 		}
-		for _, ch := range changes.Changes() {
-			revs = append(revs, ch)
+		if err = changes.Err(); err != nil {
+			errChan <- err
 		}
+		close(errChan)
+	}()
+	timer := time.NewTimer(maxWait)
+	select {
+	case chErr, ok := <-errChan:
+		if ok {
+			ctx.Errorf("Error reading changes: %s", chErr)
+		}
+	case <-timer.C:
+		ctx.Errorf("Failed to read changes in %s", maxWait)
 	}
 	if err = changes.Err(); err != nil {
 		ctx.Errorf("iteration failed: %s", err)

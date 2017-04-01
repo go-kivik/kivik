@@ -16,18 +16,7 @@ const (
 	typeMixed = "multipart/mixed"
 )
 
-// Couch represents the parent driver instance. The default driver uses a
-// default http.Client. To change the timeout or other attributes, register
-// a new instance with a custom HTTPClient value.
-//
-//    func init() {
-//        kivik.Register("myCouch", &couchdb.Couch{
-//            HTTPClient: &http.Client{Timeout: 15},
-//        })
-//    }
-//    // ... then later
-//    client, err := kivik("myCouch", ...)
-//
+// Couch represents the parent driver instance.
 type Couch struct{}
 
 var _ driver.Driver = &Couch{}

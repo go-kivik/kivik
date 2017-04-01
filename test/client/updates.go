@@ -31,9 +31,13 @@ func testUpdates(ctx *kt.Context, client *kivik.Client) {
 	if !ctx.IsExpectedSuccess(err) {
 		return
 	}
+	// Two instances to test concurrency
+	updates2, err := client.DBUpdates()
+	if !ctx.IsExpectedSuccess(err) {
+		return
+	}
 	dbname := ctx.TestDBName()
-	eventErrors := make(chan error)
-	go func() {
+	readUpdates := func(updates *kivik.DBUpdateFeed, eventErrors chan<- error) {
 		for updates.Next() {
 			if updates.DBName() == dbname {
 				if updates.Type() == "created" {
@@ -45,7 +49,11 @@ func testUpdates(ctx *kt.Context, client *kivik.Client) {
 		}
 		eventErrors <- updates.Err()
 		close(eventErrors)
-	}()
+	}
+	eventErrors := make(chan error)
+	eventErrors2 := make(chan error)
+	go readUpdates(updates, eventErrors)
+	go readUpdates(updates2, eventErrors2)
 	defer ctx.Admin.DestroyDB(dbname)
 	if err = ctx.Admin.CreateDB(dbname); err != nil {
 		ctx.Fatalf("Failed to create db: %s", err)
@@ -55,6 +63,10 @@ func testUpdates(ctx *kt.Context, client *kivik.Client) {
 	case err := <-eventErrors:
 		if err != nil {
 			ctx.Fatalf("Error reading event: %s", err)
+		}
+	case err := <-eventErrors2:
+		if err != nil {
+			ctx.Fatalf("Error reading concurrent event: %s", err)
 		}
 	case <-timer.C:
 		ctx.Fatalf("Failed to read expected event in %s", maxWait)

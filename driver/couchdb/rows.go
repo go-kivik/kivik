@@ -51,7 +51,7 @@ func (r *rows) Next(row *driver.Row) error {
 		// We haven't begun yet
 		r.dec = json.NewDecoder(r.body)
 		// consume the first '{'
-		if err := r.consumeDelim(json.Delim('{')); err != nil {
+		if err := consumeDelim(r.dec, json.Delim('{')); err != nil {
 			return err
 		}
 		if err := r.begin(); err != nil {
@@ -84,7 +84,7 @@ func (r *rows) begin() error {
 		}
 		if key == "rows" {
 			// Consume the first '['
-			return r.consumeDelim(json.Delim('['))
+			return consumeDelim(r.dec, json.Delim('['))
 		}
 		if err := r.parseMeta(key); err != nil {
 			return err
@@ -140,7 +140,7 @@ func (r *rows) readUpdateSeq() error {
 
 func (r *rows) nextRow(row *driver.Row) error {
 	if !r.dec.More() {
-		if err := r.consumeDelim(json.Delim(']')); err != nil {
+		if err := consumeDelim(r.dec, json.Delim(']')); err != nil {
 			return err
 		}
 		return io.EOF
@@ -151,8 +151,8 @@ func (r *rows) nextRow(row *driver.Row) error {
 
 // consumeDelim consumes the expected delimiter from the stream, or returns an
 // error if an unexpected token was found.
-func (r *rows) consumeDelim(expectedDelim json.Delim) error {
-	t, err := r.dec.Token()
+func consumeDelim(dec *json.Decoder, expectedDelim json.Delim) error {
+	t, err := dec.Token()
 	if err != nil {
 		return err
 	}

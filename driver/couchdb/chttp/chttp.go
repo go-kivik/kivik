@@ -111,6 +111,8 @@ type Options struct {
 	JSON interface{}
 	// ForceCommit adds the X-Couch-Full-Commit: true header to requests
 	ForceCommit bool
+	// Destination is the target ID for COPY
+	Destination string
 }
 
 // Response represents a response from a CouchDB server.
@@ -213,6 +215,9 @@ func setHeaders(req *http.Request, opts *Options) {
 		}
 		if opts.ForceCommit {
 			req.Header.Add("X-Couch-Full-Commit", "true")
+		}
+		if opts.Destination != "" {
+			req.Header.Add("Destination", opts.Destination)
 		}
 	}
 	req.Header.Add("Accept", accept)

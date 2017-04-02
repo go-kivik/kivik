@@ -216,3 +216,20 @@ func (d *db) SetRevsLimitContext(ctx context.Context, limit int) error {
 	_, err = d.Client.DoError(ctx, http.MethodPut, d.path("/_revs_limit", nil), &chttp.Options{Body: bytes.NewBuffer(body)})
 	return err
 }
+
+func (d *db) CopyContext(ctx context.Context, targetID, sourceID string, options map[string]interface{}) (targetRev string, err error) {
+	params, err := optionsToParams(options)
+	if err != nil {
+		return "", err
+	}
+	opts := &chttp.Options{
+		ForceCommit: d.forceCommit,
+		Destination: targetID,
+	}
+	resp, err := d.Client.DoReq(ctx, kivik.MethodCopy, d.path(sourceID, params), opts)
+	if err != nil {
+		return "", err
+	}
+	resp.Response.Body.Close()
+	return chttp.GetRev(resp.Response)
+}

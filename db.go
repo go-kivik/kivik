@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/errors"
 )
@@ -268,4 +269,29 @@ func (db *DB) ChangesContext(ctx context.Context, options Options) (*Rows, error
 	rows := &Rows{rowsi: rowsi}
 	rows.initContextClose(ctx)
 	return rows, nil
+}
+
+// Copy calls CopyContext with a background context.
+func (db *DB) Copy(targetID, sourceID string, options Options) (targetRev string, err error) {
+	return db.CopyContex(context.Background(), targetID, sourceID, options)
+}
+
+// CopyContext copies the source document to a new document with an ID of
+// targetID. If the database backend does not support COPY directly, the
+// operation will be emulated with a Get followed by Put. The target will be
+// an exact copy of the source, with only the ID and revision changed.
+//
+// See http://docs.couchdb.org/en/2.0.0/api/document/common.html#copy--db-docid
+func (db *DB) CopyContext(ctx context.Context, targetID, sourceID string, options Options) (targetRev string, err error) {
+	if copier, ok := db.driverDB.(driver.Copier); ok {
+		targetRev, err = copier.CopyContext(ctx, targetID, sourceID, options)
+		if err != kivik.ErrNotImplemented {
+			return targetRev, err
+		}
+	}
+	var doc interface{}
+	if err = db.GetContext(ctx, sourceID, &doc, options); err != nil {
+		return nil, err
+	}
+	return db.PutContext(ctx, targetID, doc)
 }

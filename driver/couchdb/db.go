@@ -94,28 +94,30 @@ func (d *db) CreateDocContext(ctx context.Context, doc interface{}) (docID, rev 
 }
 
 func (d *db) PutContext(ctx context.Context, docID string, doc interface{}) (rev string, err error) {
-	result := struct {
-		Rev string `json:"rev"`
-	}{}
 	opts := &chttp.Options{
 		JSON:        doc,
 		ForceCommit: d.forceCommit,
 	}
-	_, err = d.Client.DoJSON(ctx, kivik.MethodPut, d.path(docID, nil), opts, &result)
-	return result.Rev, err
+	resp, err := d.Client.DoReq(ctx, kivik.MethodPut, d.path(docID, nil), opts)
+	if err != nil {
+		return "", err
+	}
+	resp.Response.Body.Close()
+	return chttp.GetRev(resp.Response)
 }
 
 func (d *db) DeleteContext(ctx context.Context, docID, rev string) (string, error) {
 	query := url.Values{}
 	query.Add("rev", rev)
-	var result struct {
-		Rev string `json:"rev"`
-	}
 	opts := &chttp.Options{
 		ForceCommit: d.forceCommit,
 	}
-	_, err := d.Client.DoJSON(ctx, kivik.MethodDelete, d.path(docID, query), opts, &result)
-	return result.Rev, err
+	resp, err := d.Client.DoReq(ctx, kivik.MethodDelete, d.path(docID, query), opts)
+	if err != nil {
+		return "", err
+	}
+	resp.Response.Body.Close()
+	return chttp.GetRev(resp.Response)
 }
 
 func (d *db) FlushContext(ctx context.Context) (time.Time, error) {

@@ -229,3 +229,16 @@ func (c *Client) DoError(ctx context.Context, method, path string, opts *Options
 	defer res.Response.Body.Close()
 	return res, ResponseError(res.Response)
 }
+
+// GetRev extracts the revision from the response's Etag header
+func GetRev(resp *http.Response) (rev string, err error) {
+	if err = ResponseError(resp); err != nil {
+		return "", err
+	}
+	if _, ok := resp.Header["Etag"]; !ok {
+		return "", errors.New("no Etag header found")
+	}
+	rev = resp.Header.Get("Etag")
+	// trim quote marks (")
+	return rev[1 : len(rev)-1], nil
+}

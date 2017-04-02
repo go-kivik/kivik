@@ -177,7 +177,7 @@ type DBFlusher interface {
 // http.StatusUnimplemented, the driver will emulate a copy by doing
 // a GET followed by PUT.
 type Copier interface {
-	// Copy() error
+	CopyContext(ctx context.Context, targetID, sourceID string, options map[string]interface{}) (targetRev string, err error)
 }
 
 // Configer is an optional interface that may be implemented by a Client.

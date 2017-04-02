@@ -25,7 +25,7 @@ func (d *db) ChangesContext(ctx context.Context, opts map[string]interface{}) (d
 	if err != nil {
 		return nil, err
 	}
-	if err = chttp.ResponseError(resp.Response); err != nil {
+	if err = chttp.ResponseError(resp); err != nil {
 		return nil, err
 	}
 	return newChangesRows(resp.Body), nil

@@ -109,5 +109,6 @@ func init() {
 		"RevsLimit.skip":   true, // FIXME: Unimplemented
 		"DBUpdates.skip":   true, // FIXME: Unimplemented
 		"Changes.skip":     true, // FIXME: Unimplemented
+		"Copy.skip":        true, // FIXME: Unimplemented, depends on Get/Put or Copy
 	})
 }

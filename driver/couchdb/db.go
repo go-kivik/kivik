@@ -64,7 +64,7 @@ func (d *db) AllDocsContext(ctx context.Context, opts map[string]interface{}) (d
 	if err != nil {
 		return nil, err
 	}
-	if err = chttp.ResponseError(resp.Response); err != nil {
+	if err = chttp.ResponseError(resp); err != nil {
 		return nil, err
 	}
 	return newRows(resp.Body), nil
@@ -94,28 +94,30 @@ func (d *db) CreateDocContext(ctx context.Context, doc interface{}) (docID, rev 
 }
 
 func (d *db) PutContext(ctx context.Context, docID string, doc interface{}) (rev string, err error) {
-	result := struct {
-		Rev string `json:"rev"`
-	}{}
 	opts := &chttp.Options{
 		JSON:        doc,
 		ForceCommit: d.forceCommit,
 	}
-	_, err = d.Client.DoJSON(ctx, kivik.MethodPut, d.path(docID, nil), opts, &result)
-	return result.Rev, err
+	resp, err := d.Client.DoReq(ctx, kivik.MethodPut, d.path(docID, nil), opts)
+	if err != nil {
+		return "", err
+	}
+	resp.Body.Close()
+	return chttp.GetRev(resp)
 }
 
 func (d *db) DeleteContext(ctx context.Context, docID, rev string) (string, error) {
 	query := url.Values{}
 	query.Add("rev", rev)
-	var result struct {
-		Rev string `json:"rev"`
-	}
 	opts := &chttp.Options{
 		ForceCommit: d.forceCommit,
 	}
-	_, err := d.Client.DoJSON(ctx, kivik.MethodDelete, d.path(docID, query), opts, &result)
-	return result.Rev, err
+	resp, err := d.Client.DoReq(ctx, kivik.MethodDelete, d.path(docID, query), opts)
+	if err != nil {
+		return "", err
+	}
+	resp.Body.Close()
+	return chttp.GetRev(resp)
 }
 
 func (d *db) FlushContext(ctx context.Context) (time.Time, error) {
@@ -156,7 +158,7 @@ func (d *db) CompactContext(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	return chttp.ResponseError(res.Response)
+	return chttp.ResponseError(res)
 }
 
 func (d *db) CompactViewContext(ctx context.Context, ddocID string) error {
@@ -164,7 +166,7 @@ func (d *db) CompactViewContext(ctx context.Context, ddocID string) error {
 	if err != nil {
 		return err
 	}
-	return chttp.ResponseError(res.Response)
+	return chttp.ResponseError(res)
 }
 
 func (d *db) ViewCleanupContext(ctx context.Context) error {
@@ -172,7 +174,7 @@ func (d *db) ViewCleanupContext(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	return chttp.ResponseError(res.Response)
+	return chttp.ResponseError(res)
 }
 
 func (d *db) SecurityContext(ctx context.Context) (*driver.Security, error) {
@@ -187,7 +189,7 @@ func (d *db) SetSecurityContext(ctx context.Context, security *driver.Security) 
 		return err
 	}
 	defer res.Body.Close()
-	return chttp.ResponseError(res.Response)
+	return chttp.ResponseError(res)
 }
 
 // RevContext returns the most current rev of the requested document.
@@ -213,4 +215,21 @@ func (d *db) SetRevsLimitContext(ctx context.Context, limit int) error {
 	}
 	_, err = d.Client.DoError(ctx, http.MethodPut, d.path("/_revs_limit", nil), &chttp.Options{Body: bytes.NewBuffer(body)})
 	return err
+}
+
+func (d *db) CopyContext(ctx context.Context, targetID, sourceID string, options map[string]interface{}) (targetRev string, err error) {
+	params, err := optionsToParams(options)
+	if err != nil {
+		return "", err
+	}
+	opts := &chttp.Options{
+		ForceCommit: d.forceCommit,
+		Destination: targetID,
+	}
+	resp, err := d.Client.DoReq(ctx, kivik.MethodCopy, d.path(sourceID, params), opts)
+	if err != nil {
+		return "", err
+	}
+	resp.Body.Close()
+	return chttp.GetRev(resp)
 }

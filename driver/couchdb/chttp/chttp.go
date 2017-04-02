@@ -7,7 +7,6 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"mime"
 	"net/http"
 	"net/url"
 
@@ -111,6 +110,8 @@ type Options struct {
 	JSON interface{}
 	// ForceCommit adds the X-Couch-Full-Commit: true header to requests
 	ForceCommit bool
+	// Destination is the target ID for COPY
+	Destination string
 }
 
 // Response represents a response from a CouchDB server.
@@ -119,34 +120,27 @@ type Response struct {
 
 	// ContentType is the base content type, parsed from the response headers.
 	ContentType string
-	// ContentParams are any parameters supplied in the content type headers.
-	ContentParams map[string]string
-	// CacheControl is the content of the Cache-Control header.
-	CacheControl string
-	// Etag is the content of the Etag header.
-	Etag string
-	// TransferEncoding is the content of the Transfer-Encoding header.
-	TransferEncoding string
 }
 
 // DecodeJSON unmarshals the response body into i. This method consumes and
 // closes the response body.
-func (r *Response) DecodeJSON(i interface{}) error {
+func DecodeJSON(r *http.Response, i interface{}) error {
 	defer r.Body.Close()
 	return json.NewDecoder(r.Body).Decode(i)
 }
 
 // DoJSON combines DoReq() and, ResponseError(), and (*Response).DecodeJSON(), and
 // discards the response.
-func (c *Client) DoJSON(ctx context.Context, method, path string, opts *Options, i interface{}) (*Response, error) {
+func (c *Client) DoJSON(ctx context.Context, method, path string, opts *Options, i interface{}) (*http.Response, error) {
 	res, err := c.DoReq(ctx, method, path, opts)
 	if err != nil {
 		return res, err
 	}
-	if err = ResponseError(res.Response); err != nil {
+	if err = ResponseError(res); err != nil {
 		return res, err
 	}
-	return res, res.DecodeJSON(i)
+	err = DecodeJSON(res, i)
+	return res, err
 }
 
 // NewRequest returns a new *http.Request to the CouchDB server, and the
@@ -169,7 +163,7 @@ func (c *Client) NewRequest(ctx context.Context, method, path string, body io.Re
 // DoReq does an HTTP request. An error is returned only if there was an error
 // processing the request. In particular, an error status code, such as 400
 // or 500, does _not_ cause an error to be returned.
-func (c *Client) DoReq(ctx context.Context, method, path string, opts *Options) (*Response, error) {
+func (c *Client) DoReq(ctx context.Context, method, path string, opts *Options) (*http.Response, error) {
 	if opts != nil && opts.JSON != nil && opts.Body != nil {
 		return nil, errors.New("must not specify both Body and JSON options")
 	}
@@ -194,22 +188,7 @@ func (c *Client) DoReq(ctx context.Context, method, path string, opts *Options) 
 	}
 	setHeaders(req, opts)
 
-	res, err := c.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	ct, ctParams, err := mime.ParseMediaType(res.Header.Get("Content-Type"))
-	if err != nil {
-		return nil, errors.Wrap(err, "invalid Content-Type header in HTTP response")
-	}
-	return &Response{
-		Response:         res,
-		ContentType:      ct,
-		ContentParams:    ctParams,
-		CacheControl:     res.Header.Get("Cache-Control"),
-		Etag:             res.Header.Get("Etag"),
-		TransferEncoding: res.Header.Get("Transfer-Encoding"),
-	}, nil
+	return c.Do(req)
 }
 
 func setHeaders(req *http.Request, opts *Options) {
@@ -225,6 +204,9 @@ func setHeaders(req *http.Request, opts *Options) {
 		if opts.ForceCommit {
 			req.Header.Add("X-Couch-Full-Commit", "true")
 		}
+		if opts.Destination != "" {
+			req.Header.Add("Destination", opts.Destination)
+		}
 	}
 	req.Header.Add("Accept", accept)
 	req.Header.Add("Content-Type", contentType)
@@ -233,11 +215,24 @@ func setHeaders(req *http.Request, opts *Options) {
 // DoError is the same as DoReq(), followed by checking the response error. This
 // method is meant for cases where the only information you need from the
 // response is the status code. It unconditionally closes the response body.
-func (c *Client) DoError(ctx context.Context, method, path string, opts *Options) (*Response, error) {
+func (c *Client) DoError(ctx context.Context, method, path string, opts *Options) (*http.Response, error) {
 	res, err := c.DoReq(ctx, method, path, opts)
 	if err != nil {
 		return res, err
 	}
-	defer res.Response.Body.Close()
-	return res, ResponseError(res.Response)
+	defer res.Body.Close()
+	return res, ResponseError(res)
+}
+
+// GetRev extracts the revision from the response's Etag header
+func GetRev(resp *http.Response) (rev string, err error) {
+	if err = ResponseError(resp); err != nil {
+		return "", err
+	}
+	if _, ok := resp.Header["Etag"]; !ok {
+		return "", errors.New("no Etag header found")
+	}
+	rev = resp.Header.Get("Etag")
+	// trim quote marks (")
+	return rev[1 : len(rev)-1], nil
 }

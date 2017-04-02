@@ -186,7 +186,7 @@ func testCreateSession(ctx *kt.Context, client *chttp.Client) {
 				}
 				r, err := client.DoReq(kt.CTX, kivik.MethodPost, reqURL, test.Options)
 				if err == nil {
-					err = chttp.ResponseError(r.Response)
+					err = chttp.ResponseError(r)
 				}
 				if !ctx.IsExpectedSuccess(err) {
 					return
@@ -212,7 +212,7 @@ func testCreateSession(ctx *kt.Context, client *chttp.Client) {
 						}
 					}
 				}
-				cookies := r.Response.Cookies()
+				cookies := r.Cookies()
 				if len(cookies) != 1 {
 					ctx.Errorf("Expected 1 cookie, got %d", len(cookies))
 				}

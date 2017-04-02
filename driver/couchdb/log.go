@@ -22,5 +22,5 @@ func (c *client) LogContext(ctx context.Context, length, offset int64) (io.ReadC
 	if err != nil {
 		return nil, err
 	}
-	return resp.Body, chttp.ResponseError(resp.Response)
+	return resp.Body, chttp.ResponseError(resp)
 }

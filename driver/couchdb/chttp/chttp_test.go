@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"mime"
 	"os"
 	"strings"
 	"testing"
@@ -46,8 +47,12 @@ func TestDo(t *testing.T) {
 	if err = json.Unmarshal(body.Bytes(), &i); err != nil {
 		t.Errorf("Body is not valid JSON: %s", err)
 	}
-	if res.ContentType != "application/json" {
-		t.Errorf("Unexpected content type: %s", res.ContentType)
+	ct, _, err := mime.ParseMediaType(res.Header.Get("Content-Type"))
+	if err != nil {
+		t.Errorf("Failed to parse content type: %s", err)
+	}
+	if ct != "application/json" {
+		t.Errorf("Unexpected content type: %s", ct)
 	}
 }
 

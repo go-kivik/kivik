@@ -31,11 +31,11 @@ func (c *client) DBUpdates() (updates driver.DBUpdates, err error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := chttp.ResponseError(resp.Response); err != nil {
+	if err := chttp.ResponseError(resp); err != nil {
 		return nil, err
 	}
 	return &couchUpdates{
-		body: resp.Response.Body,
-		dec:  json.NewDecoder(resp.Response.Body),
+		body: resp.Body,
+		dec:  json.NewDecoder(resp.Body),
 	}, nil
 }

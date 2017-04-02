@@ -7,7 +7,6 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"mime"
 	"net/http"
 	"net/url"
 
@@ -132,15 +131,15 @@ func DecodeJSON(r *http.Response, i interface{}) error {
 
 // DoJSON combines DoReq() and, ResponseError(), and (*Response).DecodeJSON(), and
 // discards the response.
-func (c *Client) DoJSON(ctx context.Context, method, path string, opts *Options, i interface{}) (*Response, error) {
+func (c *Client) DoJSON(ctx context.Context, method, path string, opts *Options, i interface{}) (*http.Response, error) {
 	res, err := c.DoReq(ctx, method, path, opts)
 	if err != nil {
 		return res, err
 	}
-	if err = ResponseError(res.Response); err != nil {
+	if err = ResponseError(res); err != nil {
 		return res, err
 	}
-	err = DecodeJSON(res.Response, i)
+	err = DecodeJSON(res, i)
 	return res, err
 }
 
@@ -164,7 +163,7 @@ func (c *Client) NewRequest(ctx context.Context, method, path string, body io.Re
 // DoReq does an HTTP request. An error is returned only if there was an error
 // processing the request. In particular, an error status code, such as 400
 // or 500, does _not_ cause an error to be returned.
-func (c *Client) DoReq(ctx context.Context, method, path string, opts *Options) (*Response, error) {
+func (c *Client) DoReq(ctx context.Context, method, path string, opts *Options) (*http.Response, error) {
 	if opts != nil && opts.JSON != nil && opts.Body != nil {
 		return nil, errors.New("must not specify both Body and JSON options")
 	}
@@ -189,18 +188,7 @@ func (c *Client) DoReq(ctx context.Context, method, path string, opts *Options) 
 	}
 	setHeaders(req, opts)
 
-	res, err := c.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	ct, _, err := mime.ParseMediaType(res.Header.Get("Content-Type"))
-	if err != nil {
-		return nil, errors.Wrap(err, "invalid Content-Type header in HTTP response")
-	}
-	return &Response{
-		Response:    res,
-		ContentType: ct,
-	}, nil
+	return c.Do(req)
 }
 
 func setHeaders(req *http.Request, opts *Options) {
@@ -227,13 +215,13 @@ func setHeaders(req *http.Request, opts *Options) {
 // DoError is the same as DoReq(), followed by checking the response error. This
 // method is meant for cases where the only information you need from the
 // response is the status code. It unconditionally closes the response body.
-func (c *Client) DoError(ctx context.Context, method, path string, opts *Options) (*Response, error) {
+func (c *Client) DoError(ctx context.Context, method, path string, opts *Options) (*http.Response, error) {
 	res, err := c.DoReq(ctx, method, path, opts)
 	if err != nil {
 		return res, err
 	}
-	defer res.Response.Body.Close()
-	return res, ResponseError(res.Response)
+	defer res.Body.Close()
+	return res, ResponseError(res)
 }
 
 // GetRev extracts the revision from the response's Etag header

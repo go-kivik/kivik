@@ -64,7 +64,7 @@ func (d *db) AllDocsContext(ctx context.Context, opts map[string]interface{}) (d
 	if err != nil {
 		return nil, err
 	}
-	if err = chttp.ResponseError(resp.Response); err != nil {
+	if err = chttp.ResponseError(resp); err != nil {
 		return nil, err
 	}
 	return newRows(resp.Body), nil
@@ -102,8 +102,8 @@ func (d *db) PutContext(ctx context.Context, docID string, doc interface{}) (rev
 	if err != nil {
 		return "", err
 	}
-	resp.Response.Body.Close()
-	return chttp.GetRev(resp.Response)
+	resp.Body.Close()
+	return chttp.GetRev(resp)
 }
 
 func (d *db) DeleteContext(ctx context.Context, docID, rev string) (string, error) {
@@ -116,8 +116,8 @@ func (d *db) DeleteContext(ctx context.Context, docID, rev string) (string, erro
 	if err != nil {
 		return "", err
 	}
-	resp.Response.Body.Close()
-	return chttp.GetRev(resp.Response)
+	resp.Body.Close()
+	return chttp.GetRev(resp)
 }
 
 func (d *db) FlushContext(ctx context.Context) (time.Time, error) {
@@ -158,7 +158,7 @@ func (d *db) CompactContext(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	return chttp.ResponseError(res.Response)
+	return chttp.ResponseError(res)
 }
 
 func (d *db) CompactViewContext(ctx context.Context, ddocID string) error {
@@ -166,7 +166,7 @@ func (d *db) CompactViewContext(ctx context.Context, ddocID string) error {
 	if err != nil {
 		return err
 	}
-	return chttp.ResponseError(res.Response)
+	return chttp.ResponseError(res)
 }
 
 func (d *db) ViewCleanupContext(ctx context.Context) error {
@@ -174,7 +174,7 @@ func (d *db) ViewCleanupContext(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	return chttp.ResponseError(res.Response)
+	return chttp.ResponseError(res)
 }
 
 func (d *db) SecurityContext(ctx context.Context) (*driver.Security, error) {
@@ -189,7 +189,7 @@ func (d *db) SetSecurityContext(ctx context.Context, security *driver.Security) 
 		return err
 	}
 	defer res.Body.Close()
-	return chttp.ResponseError(res.Response)
+	return chttp.ResponseError(res)
 }
 
 // RevContext returns the most current rev of the requested document.
@@ -230,6 +230,6 @@ func (d *db) CopyContext(ctx context.Context, targetID, sourceID string, options
 	if err != nil {
 		return "", err
 	}
-	resp.Response.Body.Close()
-	return chttp.GetRev(resp.Response)
+	resp.Body.Close()
+	return chttp.GetRev(resp)
 }

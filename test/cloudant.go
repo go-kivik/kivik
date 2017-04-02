@@ -160,5 +160,7 @@ func init() {
 
 		"DBUpdates/RW/Admin.status":  kivik.StatusNotFound, // Cloudant apparently disables this
 		"DBUpdates/RW/NoAuth.status": kivik.StatusUnauthorized,
+
+		"Changes/RW/group/NoAuth.status": kivik.StatusUnauthorized,
 	})
 }

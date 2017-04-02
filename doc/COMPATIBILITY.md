@@ -60,7 +60,7 @@
 | GET /{db}/_all_docs | AllDocs()             |    | ☑️<sup>[7](#todoConflicts),[9](#todoOrdering),[10](#todoLimit)</sup> | ✅ | ？ | ？ |
 | POST /{db}/_all_docs | ⁿ/ₐ                   |    |    | ❌ | ❌ | ⁿ/ₐ | ⁿ/ₐ |
 | POST /{db}/_bulk_docs
-| GET /{db}/_changes
+| GET /{db}/_changes   | Changes()<sup>[8](#changesContinuous)</sup> |    | ✅ | ✅ |
 | POST /{db}/_changes
 | POST /{db}/_compact  | Compact()            |    | ✅ | ✅ | ✅ |     |    |
 | POST /{db}/_compact/{ddoc} | CompactView()  |    |    | ✅ | ⁿ/ₐ |    |    |
@@ -127,6 +127,7 @@
  `DestroyDB()` does not return an error if the database does not exist.
 6. <a name="cookieAuth"> See the CookieAuth section in the [Authentication methods table](#authTable)
 7. <a name="todoConflicts"> **TODO:** Conflicts are not yet tested.
+8. <a name="changesContinuous"> Changes feed operates in continuous mode only.
 9. <a name="todoOrdering"> **TODO:** Ordering is not yet tested.
 10. <a name="todoLimit"> **TODO:** Limits are not yet tested.
 11. <a name="todoAttachments"> **TODO:** Attachments are not yet tested.

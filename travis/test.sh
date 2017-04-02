@@ -9,15 +9,16 @@ fi
 
 case "$1" in
     "standard")
-        go test $(go list ./... | grep -v /pouchdb)
+        go test $(go list ./... | grep -v /vendor/ | grep -v /pouchdb)
     ;;
     "gopherjs")
-        gopherjs test $(go list ./... | grep -v kivik/serve)
+        gopherjs test $(go list ./... | grep -v /vendor/ | grep -v kivik/serve)
     ;;
     "linter")
-        diff -u <(echo -n) <(gofmt -d ./)
+        go list -f '{{.Dir}}' ./... | grep -v /vendor/
+        diff -u <(echo -n) <(gofmt -e -d $(find . -type f -name '*.go' -not -path "./vendor/*"))
         go install # to make gotype (run by gometalinter) happy
-        gometalinter.v1 --deadline=30s \
+        gometalinter.v1 --deadline=30s --vendor \
             --exclude="Errors unhandled\..*\(gas\)"  # This is an annoying duplicate of errcheck
     ;;
 esac

@@ -10,7 +10,11 @@ import (
 	"github.com/flimzy/kivik/driver"
 )
 
-var jsJSON = js.Global.Get("JSON")
+var jsJSON *js.Object
+
+func init() {
+	jsJSON = js.Global.Get("JSON")
+}
 
 type rows struct {
 	*js.Object

@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/errors"
 )
@@ -273,7 +272,7 @@ func (db *DB) ChangesContext(ctx context.Context, options Options) (*Rows, error
 
 // Copy calls CopyContext with a background context.
 func (db *DB) Copy(targetID, sourceID string, options Options) (targetRev string, err error) {
-	return db.CopyContex(context.Background(), targetID, sourceID, options)
+	return db.CopyContext(context.Background(), targetID, sourceID, options)
 }
 
 // CopyContext copies the source document to a new document with an ID of
@@ -285,13 +284,14 @@ func (db *DB) Copy(targetID, sourceID string, options Options) (targetRev string
 func (db *DB) CopyContext(ctx context.Context, targetID, sourceID string, options Options) (targetRev string, err error) {
 	if copier, ok := db.driverDB.(driver.Copier); ok {
 		targetRev, err = copier.CopyContext(ctx, targetID, sourceID, options)
-		if err != kivik.ErrNotImplemented {
+		if err != ErrNotImplemented {
 			return targetRev, err
 		}
 	}
-	var doc interface{}
+	var doc map[string]interface{}
 	if err = db.GetContext(ctx, sourceID, &doc, options); err != nil {
-		return nil, err
+		return "", err
 	}
+	delete(doc, "_rev")
 	return db.PutContext(ctx, targetID, doc)
 }

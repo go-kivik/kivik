@@ -47,5 +47,6 @@ func init() {
 		"RevsLimit.skip":   true,                       // FIXME: Unimplemented
 		"DBUpdates.status": kivik.StatusNotImplemented, // FIXME: Unimplemented
 		"Changes.skip":     true,                       // FIXME: Unimplemented
+		"Copy.skip":        true,                       // FIXME: Unimplemented, depends on Get/Put or Copy
 	})
 }

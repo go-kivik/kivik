@@ -119,14 +119,6 @@ type Response struct {
 
 	// ContentType is the base content type, parsed from the response headers.
 	ContentType string
-	// ContentParams are any parameters supplied in the content type headers.
-	ContentParams map[string]string
-	// CacheControl is the content of the Cache-Control header.
-	CacheControl string
-	// Etag is the content of the Etag header.
-	Etag string
-	// TransferEncoding is the content of the Transfer-Encoding header.
-	TransferEncoding string
 }
 
 // DecodeJSON unmarshals the response body into i. This method consumes and
@@ -198,17 +190,13 @@ func (c *Client) DoReq(ctx context.Context, method, path string, opts *Options) 
 	if err != nil {
 		return nil, err
 	}
-	ct, ctParams, err := mime.ParseMediaType(res.Header.Get("Content-Type"))
+	ct, _, err := mime.ParseMediaType(res.Header.Get("Content-Type"))
 	if err != nil {
 		return nil, errors.Wrap(err, "invalid Content-Type header in HTTP response")
 	}
 	return &Response{
-		Response:         res,
-		ContentType:      ct,
-		ContentParams:    ctParams,
-		CacheControl:     res.Header.Get("Cache-Control"),
-		Etag:             res.Header.Get("Etag"),
-		TransferEncoding: res.Header.Get("Transfer-Encoding"),
+		Response:    res,
+		ContentType: ct,
 	}, nil
 }
 

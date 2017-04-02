@@ -123,7 +123,7 @@ type Response struct {
 
 // DecodeJSON unmarshals the response body into i. This method consumes and
 // closes the response body.
-func (r *Response) DecodeJSON(i interface{}) error {
+func DecodeJSON(r *http.Response, i interface{}) error {
 	defer r.Body.Close()
 	return json.NewDecoder(r.Body).Decode(i)
 }
@@ -138,7 +138,8 @@ func (c *Client) DoJSON(ctx context.Context, method, path string, opts *Options,
 	if err = ResponseError(res.Response); err != nil {
 		return res, err
 	}
-	return res, res.DecodeJSON(i)
+	err = DecodeJSON(res.Response, i)
+	return res, err
 }
 
 // NewRequest returns a new *http.Request to the CouchDB server, and the

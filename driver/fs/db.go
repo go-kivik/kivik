@@ -85,3 +85,8 @@ func (d *db) ChangesContext(_ context.Context, _ map[string]interface{}) (driver
 	// FIXME: Unimplemented
 	return nil, nil
 }
+
+func (d *db) BulkDocsContext(_ context.Context, _ ...interface{}) (driver.BulkResults, error) {
+	// FIXME: Unimplemented
+	return nil, nil
+}

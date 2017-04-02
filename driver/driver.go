@@ -137,17 +137,33 @@ type DB interface {
 	// continuous mode, the iterator will continue indefinately, until Close is
 	// called.
 	ChangesContext(ctx context.Context, options map[string]interface{}) (Rows, error)
+	// BulkDocsContext alls bulk create, update and/or delete operations. It
+	// returns an iterator over the results.
+	BulkDocsContext(ctx context.Context, docs ...interface{}) (BulkResults, error)
 	// GetAttachment()
-	// BulkDocs()
 	// ViewCleanup()
 	// SetSecurity()
 	// // TempView() // No longer supported in 2.0
-	// Purge()       // Optional?
-	// MissingRevs() // Optional?
-	// RevsDiff()    // Optional?
-	// Changes()
 	// // Close invalidates and potentially stops any pending queries.
 	// Close() error
+}
+
+// BulkResult is the result of a single doc update in a BulkDocs request.
+type BulkResult struct {
+	ID    string `json:"id"`
+	Rev   string `json:"rev"`
+	Error error
+}
+
+// BulkResults is an iterator over the results for a BulkDocs call.
+type BulkResults interface {
+	// Next is called to populate *BulkResult with the values of the next bulk
+	// result in the set.
+	//
+	// Next should return io.EOF when there are no more results.
+	Next(*BulkResult) error
+	// Close closes the bulk results iterator.
+	Close() error
 }
 
 // Rever is an optional interface that may be implemented by a database. If not

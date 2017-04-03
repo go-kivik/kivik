@@ -3,7 +3,6 @@
 package chttp
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"io"
@@ -168,23 +167,31 @@ func (c *Client) DoReq(ctx context.Context, method, path string, opts *Options) 
 		return nil, errors.New("must not specify both Body and JSON options")
 	}
 	var body io.Reader
+	var encErr error
 	if opts != nil {
 		switch {
 		case opts.Body != nil:
 			body = opts.Body
 		case opts.JSON != nil:
-			buf := &bytes.Buffer{}
-			body = buf
-			enc := json.NewEncoder(buf)
-			if err := enc.Encode(opts.JSON); err != nil {
-				return nil, err
-			}
+			// Do this with a pipe, so we don't have to store the whole encoded
+			// blob in memory; also we can start writing the request a bit sooner.
+			// It does make error checking a bit more complex, but not too much;
+			// we just check encErr below.
+			var w *io.PipeWriter
+			body, w = io.Pipe()
+			go func() {
+				encErr = json.NewEncoder(w).Encode(opts.JSON)
+				w.Close()
+			}()
 			opts.ContentType = kivik.TypeJSON
 		}
 	}
 	req, err := c.NewRequest(ctx, method, path, body)
 	if err != nil {
 		return nil, err
+	}
+	if encErr != nil {
+		return nil, encErr
 	}
 	setHeaders(req, opts)
 

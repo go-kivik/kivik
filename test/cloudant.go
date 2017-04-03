@@ -162,5 +162,11 @@ func init() {
 		"DBUpdates/RW/NoAuth.status": kivik.StatusUnauthorized,
 
 		"Changes/RW/group/NoAuth.status": kivik.StatusUnauthorized,
+
+		"Copy/RW/group/NoAuth.status": kivik.StatusUnauthorized,
+
+		"BulkDocs/RW/NoAuth.status":                    kivik.StatusUnauthorized,
+		"BulkDocs/RW/NoAuth/group/Mix/Conflict.status": kivik.StatusConflict,
+		"BulkDocs/RW/Admin/group/Mix/Conflict.status":  kivik.StatusConflict,
 	})
 }

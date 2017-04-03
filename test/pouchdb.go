@@ -45,6 +45,8 @@ func init() {
 		"DBInfo/Admin.skip": true, // No predefined DBs for Local PouchDB
 
 		"RevsLimit.databases": []string{},
+
+		"BulkDocs/RW/Admin/group/Mix/Conflict.status": kivik.StatusConflict,
 	})
 	RegisterSuite(SuitePouchRemote, kt.SuiteConfig{
 		// Features which are not supported by PouchDB
@@ -114,5 +116,8 @@ func init() {
 		"DBInfo/NoAuth/chicken.status": kivik.StatusNotFound,
 
 		"RevsLimit.skip": true, // FIXME: Unsupported for remote databases. Perhaps later with a plugin?
+
+		"BulkDocs/RW/NoAuth/group/Mix/Conflict.status": kivik.StatusConflict,
+		"BulkDocs/RW/Admin/group/Mix/Conflict.status":  kivik.StatusConflict,
 	})
 }

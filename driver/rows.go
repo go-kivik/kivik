@@ -68,7 +68,7 @@ type Rows interface {
 	// UpdateSeq is the update sequence of the database, if requested in the
 	// result set.
 	UpdateSeq() string
-	// Next is called to populate row with the values of the next row in a
+	// Next is called to populate *Row with the values of the next row in a
 	// result set.
 	//
 	// Next should return io.EOF when there are no more rows.

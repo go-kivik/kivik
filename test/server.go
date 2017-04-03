@@ -110,5 +110,6 @@ func init() {
 		"DBUpdates.skip":   true, // FIXME: Unimplemented
 		"Changes.skip":     true, // FIXME: Unimplemented
 		"Copy.skip":        true, // FIXME: Unimplemented, depends on Get/Put or Copy
+		"BulkDocs.skip":    true, // FIXME: Unimplemented
 	})
 }

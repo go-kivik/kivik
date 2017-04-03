@@ -48,5 +48,6 @@ func init() {
 		"DBUpdates.status": kivik.StatusNotImplemented, // FIXME: Unimplemented
 		"Changes.skip":     true,                       // FIXME: Unimplemented
 		"Copy.skip":        true,                       // FIXME: Unimplemented, depends on Get/Put or Copy
+		"BulkDocs.skip":    true,                       // FIXME: Unimplemented
 	})
 }

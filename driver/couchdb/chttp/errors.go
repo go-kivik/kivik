@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/flimzy/kivik"
+	"github.com/pkg/errors"
 )
 
 // HTTPError is an error that represents an HTTP transport error.
@@ -49,7 +50,7 @@ func ResponseError(resp *http.Response) error {
 		if ct, _, _ := mime.ParseMediaType(resp.Header.Get("Content-Type")); ct == kivik.TypeJSON {
 			dec := json.NewDecoder(resp.Body)
 			if err := dec.Decode(httpErr); err != nil {
-				fmt.Printf("Failed to decode error response: %s\n", err)
+				return errors.Wrap(err, "failed to decode error response")
 			}
 		}
 	}

@@ -43,9 +43,9 @@
 | GET /_db_updates   | DBUpdates()            |    | ✅ | ✅ | ⁿ/ₐ |
 | GET /_log          | Log()                  | ✅ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | GET /_replicate
-| GET /_restart      |                        |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
-| GET /_stats
-| GET /_utils        |                        |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
+| GET /_restart      | ⁿ/ₐ                     |    |    | ❌<sup>[15]<#notPublic></sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
+| GET /_stats        | ⁿ/ₐ                     |    |    | ❌<sup>[15]<#notPublic></sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
+| GET /_utils        | ⁿ/ₐ                     |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | GET /_membership   | Membership()           | ❌<sup>[12](#kivikCluster)</sup> | ✅ | ✅<sup>[4](#couchMembership)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
 | GET /favicon.ico   |                        | ✅ | ❌ | ❌ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | POST /_session<sup>[6](#cookieAuth)</sup> | ⁿ/ₐ<sup>[13](#getSession)</sup> | ✅ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
@@ -59,7 +59,7 @@
 | POST /{db}         | CreateDoc()            |    | ✅ | ✅ | ✅ |
 | GET /{db}/_all_docs | AllDocs()             |    | ☑️<sup>[7](#todoConflicts),[9](#todoOrdering),[10](#todoLimit)</sup> | ✅ | ？ | ？ |
 | POST /{db}/_all_docs | ⁿ/ₐ                   |    |    | ❌ | ❌ | ⁿ/ₐ | ⁿ/ₐ |
-| POST /{db}/_bulk_docs
+| POST /{db}/_bulk_docs | BulkDocs()          |    | ✅ | ✅ | ✅  |    |    |
 | GET /{db}/_changes   | Changes()<sup>[8](#changesContinuous)</sup> |    | ✅ | ✅ |
 | POST /{db}/_changes
 | POST /{db}/_compact  | Compact()            |    | ✅ | ✅ | ✅ |     |    |
@@ -68,10 +68,10 @@
 | POST /{db}/_view_cleanup | ViewCleanup()    |    | ✅ | ✅ | ✅ |     |    |
 | GET /{db}/_security |                       |    | ✅ | ✅ | ⁿ/ₐ<sup>[14](#pouchPlugin)</sup>
 | PUT /{db}/_security |                       |    | ✅ | ✅ | ⁿ/ₐ<sup>[14](#pouchPlugin)</sup>
-| POST /{db}/_temp_view
-| POST /{db}/_purge
-| POST /{db}/_missing_revs
-| POST /{db}/_revs_diff
+| POST /{db}/_temp_view | ⁿ/ₐ                  | ⁿ/ₐ | ⁿ/ₐ| ⁿ/ₐ<sup>[16](#tempViews)</sup> | ⁿ/ₐ<sup>[17](#pouchTempViews)</sup> | ⁿ/ₐ | ⁿ/ₐ |
+| POST /{db}/_purge   | ⁿ/ₐ                    |    |    | ❌<sup>[15]<#notPublic></sup> |
+| POST /{db}/_missing_revs | ⁿ/ₐ               |    |    | ❌<sup>[15]<#notPublic></sup> |
+| POST /{db}/_revs_diff | ⁿ/ₐ                  |    |    | ❌<sup>[15]<#notPublic></sup> |
 | GET /{db}/_revs_limit | RevsLimit()         |    | ✅ | ✅ | ☑️<sup>[3](#pouchLocalOnly)</sup> |
 | PUT /{db}/_revs_limit | SetRevsLimit()      |    | ✅ | ✅ | ☑️<sup>[3](#pouchLocalOnly)</sup> |
 | HEAD /{db}/{docid}  | Rev()                 |    | ✅ | ✅ | ⍻ |
@@ -137,6 +137,19 @@
 14. <a name="pouchPlugin"> This feature is not available in the core PouchDB
     package. Support is provided in PouchDB plugins, so including optional
     support here may be possiblein the future.
+15. <a name="notPublic"> This feature is not considered (by me, if nobody else)
+    part of the public CouchDB API, so there are no (immediate) plans to
+    implement support. If you feel this should change for a given feature,
+    please create an issue and explain your reasons.
+16. <a name="tempViews"> As of CouchDB 2.0, temp views are no longer supported,
+    so I see no reason to support them in this library for older server versions.
+    If you feel they should be supported, please create an issue and make your
+    case.
+17. <a name="pouchTempViews"> At present, PouchDB effectively supports temp
+    views by calling [query](https://pouchdb.com/api.html#query_database) with
+    a JS function. This feature is scheduled for removal from PouchDB (into a
+    plugin), but until then, this functionality can still be used via the
+    Query() method, by passing a JS function as an option.
 
 ## HTTP Status Codes
 

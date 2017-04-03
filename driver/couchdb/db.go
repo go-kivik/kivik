@@ -102,7 +102,7 @@ func (d *db) PutContext(ctx context.Context, docID string, doc interface{}) (rev
 	if err != nil {
 		return "", err
 	}
-	resp.Body.Close()
+	defer resp.Body.Close()
 	return chttp.GetRev(resp)
 }
 
@@ -116,7 +116,7 @@ func (d *db) DeleteContext(ctx context.Context, docID, rev string) (string, erro
 	if err != nil {
 		return "", err
 	}
-	resp.Body.Close()
+	defer resp.Body.Close()
 	return chttp.GetRev(resp)
 }
 
@@ -230,6 +230,6 @@ func (d *db) CopyContext(ctx context.Context, targetID, sourceID string, options
 	if err != nil {
 		return "", err
 	}
-	resp.Body.Close()
+	defer resp.Body.Close()
 	return chttp.GetRev(resp)
 }

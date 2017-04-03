@@ -230,6 +230,6 @@ func (d *db) CopyContext(ctx context.Context, targetID, sourceID string, options
 	if err != nil {
 		return "", err
 	}
-	resp.Body.Close()
+	defer resp.Body.Close()
 	return chttp.GetRev(resp)
 }

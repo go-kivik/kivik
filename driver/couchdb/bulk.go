@@ -58,11 +58,14 @@ func (r *bulkResults) Close() error {
 	return r.body.Close()
 }
 
-func (d *db) BulkDocsContext(_ context.Context, _ ...interface{}) (driver.BulkResults, error) {
+func (d *db) BulkDocsContext(ctx context.Context, docs ...interface{}) (driver.BulkResults, error) {
 	opts := &chttp.Options{
+		JSON: map[string]interface{}{
+			"docs": docs,
+		},
 		ForceCommit: d.forceCommit,
 	}
-	resp, err := d.Client.DoReq(context.Background(), kivik.MethodGet, d.path("_bulk_docs", nil), opts)
+	resp, err := d.Client.DoReq(ctx, kivik.MethodPost, d.path("_bulk_docs", nil), opts)
 	if err != nil {
 		return nil, err
 	}

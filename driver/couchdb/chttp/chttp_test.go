@@ -62,7 +62,11 @@ func TestJSONBody(t *testing.T) {
 		"foo": "bar",
 		"bar": "baz",
 	}
-	_, err := client.DoReq(context.Background(), "POST", "/_session", &Options{JSON: bogusQuery})
+	buf := &bytes.Buffer{}
+	if err := json.NewEncoder(buf).Encode(bogusQuery); err != nil {
+		t.Fatalf("JSON encoding failed: %s", err)
+	}
+	_, err := client.DoReq(context.Background(), "POST", "/_session", &Options{Body: buf})
 	if err != nil {
 		t.Errorf("Failed to make request: %s", err)
 	}

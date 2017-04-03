@@ -1,7 +1,9 @@
 package couchdb
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/flimzy/kivik"
@@ -26,7 +28,11 @@ func (c *config) GetAllContext(ctx context.Context) (map[string]map[string]strin
 }
 
 func (c *config) SetContext(ctx context.Context, secName, key, value string) error {
-	_, err := c.DoError(ctx, kivik.MethodPut, fmt.Sprintf("/_config/%s/%s", secName, key), &chttp.Options{JSON: value})
+	buf := &bytes.Buffer{}
+	if err := json.NewEncoder(buf).Encode(value); err != nil {
+		return err
+	}
+	_, err := c.DoError(ctx, kivik.MethodPut, fmt.Sprintf("/_config/%s/%s", secName, key), &chttp.Options{Body: buf})
 	return err
 }
 

@@ -60,7 +60,7 @@
 | GET /{db}/_all_docs | AllDocs()             |    | ☑️<sup>[7](#todoConflicts),[9](#todoOrdering),[10](#todoLimit)</sup> | ✅ | ？ | ？ |
 | POST /{db}/_all_docs | ⁿ/ₐ                   |    |    | ❌ | ❌ | ⁿ/ₐ | ⁿ/ₐ |
 | POST /{db}/_bulk_docs | BulkDocs()          |    | ✅ | ✅ | ✅  |    |    |
-| GET /{db}/_changes   | Changes()<sup>[8](#changesContinuous)</sup> |    | ✅ | ✅ |
+| GET /{db}/_changes   | Changes()<sup>[8](#changesContinuous)</sup> |    | ✅ | ✅ | ✅ |    |    |
 | POST /{db}/_changes
 | POST /{db}/_compact  | Compact()            |    | ✅ | ✅ | ✅ |     |    |
 | POST /{db}/_compact/{ddoc} | CompactView()  |    |    | ✅ | ⁿ/ₐ |    |    |

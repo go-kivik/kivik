@@ -10,6 +10,7 @@ test-standard: generate
 	./travis/test.sh standard
 
 test-gopherjs: generate
+	rm -rf ${GOPATH}/pkg/*_js
 	./travis/test.sh gopherjs
 
 generate:

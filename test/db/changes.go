@@ -3,7 +3,6 @@ package db
 import (
 	"time"
 
-	"github.com/flimzy/diff"
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/test/kt"
 )
@@ -76,6 +75,10 @@ func testChanges(ctx *kt.Context, client *kivik.Client) {
 		for changes.Next() {
 			for _, ch := range changes.Changes() {
 				revs = append(revs, ch)
+				if ch == expected[len(expected)-1] {
+					// We got the last one
+					changes.Close()
+				}
 			}
 			if len(revs) >= len(expected) {
 				changes.Close()
@@ -93,13 +96,23 @@ func testChanges(ctx *kt.Context, client *kivik.Client) {
 			ctx.Errorf("Error reading changes: %s", chErr)
 		}
 	case <-timer.C:
+		changes.Close()
 		ctx.Errorf("Failed to read changes in %s", maxWait)
 	}
 	if err = changes.Err(); err != nil {
 		ctx.Errorf("iteration failed: %s", err)
 	}
-	if d := diff.AsJSON(expected, revs); d != "" {
-		ctx.Errorf("Changes revs not as expected:\n%s\n", d)
+	expectedRevs := make(map[string]struct{})
+	for _, rev := range expected {
+		expectedRevs[rev] = struct{}{}
+	}
+	for _, rev := range revs {
+		if _, ok := expectedRevs[rev]; !ok {
+			ctx.Errorf("Unexpected rev in changes feed: %s", rev)
+		}
+	}
+	if expected[len(expected)-1] != revs[len(revs)-1] {
+		ctx.Errorf("Did not receive final change.")
 	}
 	if err = changes.Close(); err != nil {
 		ctx.Errorf("Error closing changes feed: %s", err)

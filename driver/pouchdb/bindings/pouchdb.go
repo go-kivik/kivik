@@ -79,7 +79,7 @@ func callBack(ctx context.Context, o caller, method string, args ...interface{})
 		if r := recover(); r != nil {
 			switch r.(type) {
 			case *js.Object:
-				e = newPouchError(r.(*js.Object))
+				e = NewPouchError(r.(*js.Object))
 			case error:
 				// This shouldn't ever happen, but just in case
 				e = r.(error)
@@ -94,7 +94,7 @@ func callBack(ctx context.Context, o caller, method string, args ...interface{})
 	o.Call(method, args...).Call("then", func(r *js.Object) {
 		resultCh <- r
 	}).Call("catch", func(e *js.Object) {
-		err = newPouchError(e)
+		err = NewPouchError(e)
 		close(resultCh)
 	})
 	select {
@@ -230,4 +230,25 @@ func (db *DB) RevsLimit() (limit int, err error) {
 // See https://pouchdb.com/api.html#batch_create
 func (db *DB) BulkDocs(ctx context.Context, docs ...interface{}) (*js.Object, error) {
 	return callBack(ctx, db, "bulkDocs", docs, setTimeout(ctx, nil))
+}
+
+// Changes returns an event emitter object.
+//
+// See https://pouchdb.com/api.html#changes
+func (db *DB) Changes(ctx context.Context, options map[string]interface{}) (changes *js.Object, e error) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch r.(type) {
+			case *js.Object:
+				e = NewPouchError(r.(*js.Object))
+			case error:
+				// This shouldn't ever happen, but just in case
+				e = r.(error)
+			default:
+				// Catch all for everything else
+				e = fmt.Errorf("%v", r)
+			}
+		}
+	}()
+	return db.Call("changes", setTimeout(ctx, options)), nil
 }

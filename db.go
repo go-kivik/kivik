@@ -293,5 +293,6 @@ func (db *DB) CopyContext(ctx context.Context, targetID, sourceID string, option
 		return "", err
 	}
 	delete(doc, "_rev")
+	doc["_id"] = targetID
 	return db.PutContext(ctx, targetID, doc)
 }

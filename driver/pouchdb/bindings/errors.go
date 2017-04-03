@@ -13,7 +13,7 @@ type pouchError struct {
 	Status  int
 }
 
-func newPouchError(o *js.Object) error {
+func NewPouchError(o *js.Object) error {
 	var err, msg string
 	switch {
 	case o.Get("reason") != js.Undefined:

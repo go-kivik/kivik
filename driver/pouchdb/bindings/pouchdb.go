@@ -79,7 +79,7 @@ func callBack(ctx context.Context, o caller, method string, args ...interface{})
 		if r := recover(); r != nil {
 			switch r.(type) {
 			case *js.Object:
-				e = newPouchError(r.(*js.Object))
+				e = NewPouchError(r.(*js.Object))
 			case error:
 				// This shouldn't ever happen, but just in case
 				e = r.(error)
@@ -94,7 +94,7 @@ func callBack(ctx context.Context, o caller, method string, args ...interface{})
 	o.Call(method, args...).Call("then", func(r *js.Object) {
 		resultCh <- r
 	}).Call("catch", func(e *js.Object) {
-		err = newPouchError(e)
+		err = NewPouchError(e)
 		close(resultCh)
 	})
 	select {

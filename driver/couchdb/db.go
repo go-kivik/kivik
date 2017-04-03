@@ -85,17 +85,28 @@ func (d *db) CreateDocContext(ctx context.Context, doc interface{}) (docID, rev 
 		ID  string `json:"id"`
 		Rev string `json:"rev"`
 	}{}
+	var jsonErr error
+	var cancel context.CancelFunc
+	ctx, cancel = context.WithCancel(ctx)
+	defer cancel()
 	opts := &chttp.Options{
-		JSON:        doc,
+		Body:        chttp.EncodeBody(doc, &jsonErr, cancel),
 		ForceCommit: d.forceCommit,
 	}
 	_, err = d.Client.DoJSON(ctx, kivik.MethodPost, d.dbName, opts, &result)
+	if jsonErr != nil {
+		return "", "", jsonErr
+	}
 	return result.ID, result.Rev, err
 }
 
 func (d *db) PutContext(ctx context.Context, docID string, doc interface{}) (rev string, err error) {
+	var jsonErr error
+	var cancel context.CancelFunc
+	ctx, cancel = context.WithCancel(ctx)
+	defer cancel()
 	opts := &chttp.Options{
-		JSON:        doc,
+		Body:        chttp.EncodeBody(doc, &jsonErr, cancel),
 		ForceCommit: d.forceCommit,
 	}
 	resp, err := d.Client.DoReq(ctx, kivik.MethodPut, d.path(docID, nil), opts)
@@ -103,7 +114,11 @@ func (d *db) PutContext(ctx context.Context, docID string, doc interface{}) (rev
 		return "", err
 	}
 	defer resp.Body.Close()
-	return chttp.GetRev(resp)
+	rev, err = chttp.GetRev(resp)
+	if jsonErr != nil {
+		return "", jsonErr
+	}
+	return rev, err
 }
 
 func (d *db) DeleteContext(ctx context.Context, docID, rev string) (string, error) {
@@ -184,7 +199,17 @@ func (d *db) SecurityContext(ctx context.Context) (*driver.Security, error) {
 }
 
 func (d *db) SetSecurityContext(ctx context.Context, security *driver.Security) error {
-	res, err := d.Client.DoReq(ctx, kivik.MethodPut, d.path("/_security", nil), &chttp.Options{JSON: security})
+	var jsonErr error
+	var cancel context.CancelFunc
+	ctx, cancel = context.WithCancel(ctx)
+	defer cancel()
+	opts := &chttp.Options{
+		Body: chttp.EncodeBody(security, &jsonErr, cancel),
+	}
+	res, err := d.Client.DoReq(ctx, kivik.MethodPut, d.path("/_security", nil), opts)
+	if jsonErr != nil {
+		return jsonErr
+	}
 	if err != nil {
 		return err
 	}

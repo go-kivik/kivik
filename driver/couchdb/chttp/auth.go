@@ -1,6 +1,7 @@
 package chttp
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -102,7 +103,11 @@ func (a *CookieAuth) Authenticate(ctx context.Context, c *Client) error {
 	if err := a.setCookieJar(c); err != nil {
 		return err
 	}
-	if _, err := c.DoError(ctx, kivik.MethodPost, "/_session", &Options{JSON: a}); err != nil {
+	buf := &bytes.Buffer{}
+	if err := json.NewEncoder(buf).Encode(a); err != nil {
+		return err
+	}
+	if _, err := c.DoError(ctx, kivik.MethodPost, "/_session", &Options{Body: buf}); err != nil {
 		return err
 	}
 	return validateAuth(ctx, a.Username, c)

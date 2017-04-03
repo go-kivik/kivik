@@ -105,7 +105,10 @@ type Options struct {
 	Body io.Reader
 	// JSON is an arbitrary data type which is marshaled to the request's body.
 	// It an error to set both Body and JSON on the same request. When this is
-	// set, ContentType is unconditionally set to 'application/json'.
+	// set, ContentType is unconditionally set to 'application/json'. Note that
+	// for large JSON payloads, it can be beneficial to do your own JSON stream
+	// encoding, so that the request can be live on the wire during JSON
+	// encoding.
 	JSON interface{}
 	// ForceCommit adds the X-Couch-Full-Commit: true header to requests
 	ForceCommit bool
@@ -167,35 +170,32 @@ func (c *Client) DoReq(ctx context.Context, method, path string, opts *Options) 
 		return nil, errors.New("must not specify both Body and JSON options")
 	}
 	var body io.Reader
-	var encErr error
 	if opts != nil {
-		switch {
-		case opts.Body != nil:
+		if opts.Body != nil {
 			body = opts.Body
-		case opts.JSON != nil:
-			// Do this with a pipe, so we don't have to store the whole encoded
-			// blob in memory; also we can start writing the request a bit sooner.
-			// It does make error checking a bit more complex, but not too much;
-			// we just check encErr below.
-			var w *io.PipeWriter
-			body, w = io.Pipe()
-			go func() {
-				encErr = json.NewEncoder(w).Encode(opts.JSON)
-				w.Close()
-			}()
-			opts.ContentType = kivik.TypeJSON
 		}
 	}
 	req, err := c.NewRequest(ctx, method, path, body)
 	if err != nil {
 		return nil, err
 	}
-	if encErr != nil {
-		return nil, encErr
-	}
 	setHeaders(req, opts)
 
 	return c.Do(req)
+}
+
+// EncodeBody JSON encodes i to r. If an encoding error occurs, err will be set
+// and cancel() called.
+func EncodeBody(i interface{}, err *error, cancel context.CancelFunc) (r io.Reader) {
+	r, w := io.Pipe()
+	go func() {
+		if jsonErr := json.NewEncoder(w).Encode(i); jsonErr != nil {
+			*err = jsonErr
+			cancel()
+		}
+		w.Close()
+	}()
+	return r
 }
 
 func setHeaders(req *http.Request, opts *Options) {

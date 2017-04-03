@@ -115,10 +115,5 @@ func (db *DB) BulkDocsContext(ctx context.Context, docs ...interface{}) (*BulkRe
 	if err != nil {
 		return nil, err
 	}
-	if bulki == nil {
-		panic("nil")
-	}
-	// spew.Dump(bulki)
-	// spew.Dump(err)
 	return &BulkResults{bulki: bulki}, nil
 }

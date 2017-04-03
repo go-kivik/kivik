@@ -225,3 +225,9 @@ func (db *DB) RevsLimit() (limit int, err error) {
 	}
 	return defaultRevsLimit, nil
 }
+
+// BulkDocs creates, updates, or deletes docs in bulk.
+// See https://pouchdb.com/api.html#batch_create
+func (db *DB) BulkDocs(ctx context.Context, docs ...interface{}) (*js.Object, error) {
+	return callBack(ctx, db, "bulkDocs", docs, setTimeout(ctx, nil))
+}

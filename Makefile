@@ -1,4 +1,4 @@
-test: linter standard
+test: linter test-standard test-gopherjs
 
 clean:
 	rm -f serve/files.go
@@ -6,8 +6,11 @@ clean:
 linter: clean
 	# ./travis/test.sh linter
 
-standard: generate
+test-standard: generate
 	./travis/test.sh standard
+
+test-gopherjs: generate
+	./travis/test.sh gopherjs
 
 generate:
 	go generate $$(go list ./... | grep -v /vendor/)

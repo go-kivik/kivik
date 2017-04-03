@@ -43,8 +43,8 @@
 | GET /_db_updates   | DBUpdates()            |    | ✅ | ✅ | ⁿ/ₐ |
 | GET /_log          | Log()                  | ✅ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | GET /_replicate
-| GET /_restart      | ⁿ/ₐ                     |    |    | ❌<sup>[15]<#notPublic></sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
-| GET /_stats        | ⁿ/ₐ                     |    |    | ❌<sup>[15]<#notPublic></sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
+| GET /_restart      | ⁿ/ₐ                     |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
+| GET /_stats        | ⁿ/ₐ                     |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | GET /_utils        | ⁿ/ₐ                     |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | GET /_membership   | Membership()           | ❌<sup>[12](#kivikCluster)</sup> | ✅ | ✅<sup>[4](#couchMembership)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
 | GET /favicon.ico   |                        | ✅ | ❌ | ❌ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
@@ -69,9 +69,9 @@
 | GET /{db}/_security |                       |    | ✅ | ✅ | ⁿ/ₐ<sup>[14](#pouchPlugin)</sup>
 | PUT /{db}/_security |                       |    | ✅ | ✅ | ⁿ/ₐ<sup>[14](#pouchPlugin)</sup>
 | POST /{db}/_temp_view | ⁿ/ₐ                  | ⁿ/ₐ | ⁿ/ₐ| ⁿ/ₐ<sup>[16](#tempViews)</sup> | ⁿ/ₐ<sup>[17](#pouchTempViews)</sup> | ⁿ/ₐ | ⁿ/ₐ |
-| POST /{db}/_purge   | ⁿ/ₐ                    |    |    | ❌<sup>[15]<#notPublic></sup> |
-| POST /{db}/_missing_revs | ⁿ/ₐ               |    |    | ❌<sup>[15]<#notPublic></sup> |
-| POST /{db}/_revs_diff | ⁿ/ₐ                  |    |    | ❌<sup>[15]<#notPublic></sup> |
+| POST /{db}/_purge   | ⁿ/ₐ                    |    |    | ❌<sup>[15](#notPublic)</sup> |
+| POST /{db}/_missing_revs | ⁿ/ₐ               |    |    | ❌<sup>[15](#notPublic)</sup> |
+| POST /{db}/_revs_diff | ⁿ/ₐ                  |    |    | ❌<sup>[15](#notPublic)</sup> |
 | GET /{db}/_revs_limit | RevsLimit()         |    | ✅ | ✅ | ☑️<sup>[3](#pouchLocalOnly)</sup> |
 | PUT /{db}/_revs_limit | SetRevsLimit()      |    | ✅ | ✅ | ☑️<sup>[3](#pouchLocalOnly)</sup> |
 | HEAD /{db}/{docid}  | Rev()                 |    | ✅ | ✅ | ⍻ |

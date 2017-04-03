@@ -61,7 +61,7 @@
 | POST /{db}/_all_docs | ⁿ/ₐ                   |    |    | ❌ | ❌ | ⁿ/ₐ | ⁿ/ₐ |
 | POST /{db}/_bulk_docs | BulkDocs()          |    | ✅ | ✅ | ✅  |    |    |
 | GET /{db}/_changes   | Changes()<sup>[8](#changesContinuous)</sup> |    | ✅ | ✅ | ✅ |    |    |
-| POST /{db}/_changes
+| POST /{db}/_changes  |                      |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | POST /{db}/_compact  | Compact()            |    | ✅ | ✅ | ✅ |     |    |
 | POST /{db}/_compact/{ddoc} | CompactView()  |    |    | ✅ | ⁿ/ₐ |    |    |
 | POST /{db}/_ensure_full_commit | Flush()    | ✅ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ |    |
@@ -69,9 +69,9 @@
 | GET /{db}/_security |                       |    | ✅ | ✅ | ⁿ/ₐ<sup>[14](#pouchPlugin)</sup>
 | PUT /{db}/_security |                       |    | ✅ | ✅ | ⁿ/ₐ<sup>[14](#pouchPlugin)</sup>
 | POST /{db}/_temp_view | ⁿ/ₐ                  | ⁿ/ₐ | ⁿ/ₐ| ⁿ/ₐ<sup>[16](#tempViews)</sup> | ⁿ/ₐ<sup>[17](#pouchTempViews)</sup> | ⁿ/ₐ | ⁿ/ₐ |
-| POST /{db}/_purge   | ⁿ/ₐ                    |    |    | ❌<sup>[15](#notPublic)</sup> |
-| POST /{db}/_missing_revs | ⁿ/ₐ               |    |    | ❌<sup>[15](#notPublic)</sup> |
-| POST /{db}/_revs_diff | ⁿ/ₐ                  |    |    | ❌<sup>[15](#notPublic)</sup> |
+| POST /{db}/_purge   | ⁿ/ₐ                    |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
+| POST /{db}/_missing_revs | ⁿ/ₐ               |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
+| POST /{db}/_revs_diff | ⁿ/ₐ                  |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
 | GET /{db}/_revs_limit | RevsLimit()         |    | ✅ | ✅ | ☑️<sup>[3](#pouchLocalOnly)</sup> |
 | PUT /{db}/_revs_limit | SetRevsLimit()      |    | ✅ | ✅ | ☑️<sup>[3](#pouchLocalOnly)</sup> |
 | HEAD /{db}/{docid}  | Rev()                 |    | ✅ | ✅ | ⍻ |

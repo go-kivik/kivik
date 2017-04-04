@@ -296,3 +296,14 @@ func (db *DB) CopyContext(ctx context.Context, targetID, sourceID string, option
 	doc["_id"] = targetID
 	return db.PutContext(ctx, targetID, doc)
 }
+
+// PutAttachment calls PutAttachmentContext with a background context.
+func (db *DB) PutAttachment(docID string, att *Attachment) (rev string, err error) {
+	return db.PutAttachmentContext(context.Background(), docID, att)
+}
+
+// PutAttachmentContext uploads the supplied content as an attachment to the
+// specified document.
+func (db *DB) PutAttachmentContext(ctx context.Context, docID string, att *Attachment) (rev string, err error) {
+	return db.driverDB.PutAttachmentContext(ctx, docID, att.Filename, att.ContentType, att)
+}

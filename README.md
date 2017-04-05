@@ -63,8 +63,9 @@ proxy servers, which could be quite interesting.
 
 ## What is the development status?
 
-Kivik is in early stages of development. At the moment, it barely does anything
-at all. My development goals are, in rough order of priority:
+Kivik is in early stages of development. At the moment, the client libraries are
+nearly complete for both CouchDB and PouchDB. My development goals are, in rough
+order of priority:
 
 1. Complete the 'kivik' client API.
 2. Complete the CouchDB driver.
@@ -72,8 +73,11 @@ at all. My development goals are, in rough order of priority:
 4. Complete the Memory driver.
 5. Write a 'serve' mode.
 
-1-4 are being done roughly in parallel, although the features of the various
-drivers are not entirely the same.
+1-3 are being done roughly in parallel, although the features of the various
+drivers are not entirely identical. When the CouchDB and PouchDB drivers are
+essentially complete, I'll work on fleshing out the Memory driver, which will
+make automated testing without a real CouchDB server easier. Then I will work
+on completing the 'serve' mode.
 
 You can see a complete overview of the current status on the
 [Compatibility chart](https://github.com/flimzy/kivik/blob/master/doc/COMPATIBILITY.md)

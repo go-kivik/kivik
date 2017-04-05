@@ -31,6 +31,10 @@ func testUpdates(ctx *kt.Context, client *kivik.Client) {
 	if !ctx.IsExpectedSuccess(err) {
 		return
 	}
+	// It seems that DBUpdates doesn't always start responding immediately,
+	// so introduce a small delay to ensure we're reporting updates before we
+	// actually do the updates.
+	time.Sleep(10 * time.Millisecond)
 	dbname := ctx.TestDBName()
 	eventErrors := make(chan error)
 	go func() {

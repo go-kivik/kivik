@@ -47,6 +47,8 @@ func init() {
 		"RevsLimit.databases": []string{},
 
 		"BulkDocs/RW/Admin/group/Mix/Conflict.status": kivik.StatusConflict,
+
+		"PutAttachment/RW/group/Admin/Conflict.status": kivik.StatusConflict,
 	})
 	RegisterSuite(SuitePouchRemote, kt.SuiteConfig{
 		// Features which are not supported by PouchDB
@@ -119,5 +121,8 @@ func init() {
 
 		"BulkDocs/RW/NoAuth/group/Mix/Conflict.status": kivik.StatusConflict,
 		"BulkDocs/RW/Admin/group/Mix/Conflict.status":  kivik.StatusConflict,
+
+		"PutAttachment/RW/group/Admin/Conflict.status":  kivik.StatusConflict,
+		"PutAttachment/RW/group/NoAuth/Conflict.status": kivik.StatusConflict,
 	})
 }

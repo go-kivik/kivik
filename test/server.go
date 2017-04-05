@@ -99,17 +99,18 @@ func init() {
 		"Session/Post/GoodCredsJSONRedirEmpty.status":                 kivik.StatusBadRequest,
 		"Session/Post/GoodCredsJSONRedirSchemaless.status":            kivik.StatusBadRequest,
 
-		"DBInfo.skip":      true, // FIXME: Unimplemented
-		"CreateDoc.skip":   true, // FIXME: Unimplemented
-		"Compact.skip":     true, // FIXME: Unimplemented
-		"ViewCleanup.skip": true, // FIXME: Unimplemented
-		"Security.skip":    true, // FIXME: Unimplemented
-		"SetSecurity.skip": true, // FIXME: Unimplemented
-		"Rev.skip":         true, // FIXME: When Get works
-		"RevsLimit.skip":   true, // FIXME: Unimplemented
-		"DBUpdates.skip":   true, // FIXME: Unimplemented
-		"Changes.skip":     true, // FIXME: Unimplemented
-		"Copy.skip":        true, // FIXME: Unimplemented, depends on Get/Put or Copy
-		"BulkDocs.skip":    true, // FIXME: Unimplemented
+		"DBInfo.skip":        true, // FIXME: Unimplemented
+		"CreateDoc.skip":     true, // FIXME: Unimplemented
+		"Compact.skip":       true, // FIXME: Unimplemented
+		"ViewCleanup.skip":   true, // FIXME: Unimplemented
+		"Security.skip":      true, // FIXME: Unimplemented
+		"SetSecurity.skip":   true, // FIXME: Unimplemented
+		"Rev.skip":           true, // FIXME: When Get works
+		"RevsLimit.skip":     true, // FIXME: Unimplemented
+		"DBUpdates.skip":     true, // FIXME: Unimplemented
+		"Changes.skip":       true, // FIXME: Unimplemented
+		"Copy.skip":          true, // FIXME: Unimplemented, depends on Get/Put or Copy
+		"BulkDocs.skip":      true, // FIXME: Unimplemented
+		"PutAttachment.skip": true, // FIXME: Unimplemented
 	})
 }

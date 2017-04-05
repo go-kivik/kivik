@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"context"
+	"io"
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
@@ -94,4 +95,9 @@ func (d *db) ChangesContext(ctx context.Context, opts map[string]interface{}) (d
 func (d *db) BulkDocsContext(_ context.Context, _ ...interface{}) (driver.BulkResults, error) {
 	// FIXME: Unimplemented
 	return nil, nil
+}
+
+func (d *db) PutAttachmentContext(_ context.Context, _, _, _, _ string, _ io.Reader) (string, error) {
+	// FIXME: Unimplemented
+	return "", nil
 }

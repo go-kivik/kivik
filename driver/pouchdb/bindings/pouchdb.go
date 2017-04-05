@@ -3,8 +3,10 @@
 package bindings
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -251,4 +253,28 @@ func (db *DB) Changes(ctx context.Context, options map[string]interface{}) (chan
 		}
 	}()
 	return db.Call("changes", setTimeout(ctx, options)), nil
+}
+
+// PutAttachment attaches a binary object to a document.
+//
+// See https://pouchdb.com/api.html#save_attachment
+func (db *DB) PutAttachment(ctx context.Context, docID, filename, rev string, body io.Reader, ctype string) (*js.Object, error) {
+	att := attachmentObject(ctype, body)
+	if rev == "" {
+		return callBack(ctx, db, "putAttachment", docID, filename, att, ctype)
+	}
+	return callBack(ctx, db, "putAttachment", docID, filename, rev, att, ctype)
+}
+
+// attachmentObject converts an io.Reader to a JavaScript Buffer in node, or
+// a Blob in the browser
+func attachmentObject(contentType string, content io.Reader) *js.Object {
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(content)
+	if buffer := js.Global.Get("Buffer"); jsbuiltin.TypeOf(buffer) == "function" {
+		// The Buffer type is supported, so we'll use that
+		return buffer.New(buf.String())
+	}
+	// We must be in the browser, so return a Blob instead
+	return js.Global.Get("Blob").New([]interface{}{buf.Bytes()}, map[string]string{"type": contentType})
 }

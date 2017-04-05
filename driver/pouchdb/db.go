@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/flimzy/kivik"
@@ -135,4 +136,12 @@ func (d *db) RevsLimitContext(_ context.Context) (limit int, err error) {
 
 func (d *db) SetRevsLimitContext(_ context.Context, limit int) error {
 	return d.SetOption("revs_limit", limit)
+}
+
+func (d *db) PutAttachmentContext(ctx context.Context, docID, rev, filename, contentType string, body io.Reader) (newRev string, err error) {
+	result, err := d.db.PutAttachment(ctx, docID, filename, rev, body, contentType)
+	if err != nil {
+		return "", err
+	}
+	return result.Get("rev").String(), nil
 }

@@ -48,7 +48,7 @@ func ResponseError(resp *http.Response) error {
 	if resp.Request.Method != "HEAD" && resp.ContentLength != 0 {
 		if ct, _, _ := mime.ParseMediaType(resp.Header.Get("Content-Type")); ct == kivik.TypeJSON {
 			if err := json.NewDecoder(resp.Body).Decode(httpErr); err != nil {
-				fmt.Printf("failed to decode error response: %s\n", err)
+				httpErr.Reason = fmt.Sprintf("unknown (failed to decode error response: %s)", err)
 			}
 		}
 	}

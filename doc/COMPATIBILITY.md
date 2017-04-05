@@ -81,7 +81,7 @@
 | COPY /{db}/{docid}  | Copy()                |    | ✅ | ✅ | ⍻
 | HEAD /{db}/{docid}/{attname}
 | GET /{db}/{docid}/{attname}
-| PUT /{db}/{docid}/{attname}
+| PUT /{db}/{docid}/{attname} | PutAttachment() |  | ✅ | ✅ |
 | DELETE /{db}/{docid}/{attname}
 | HEAD /{db}/_design/{ddoc}
 | GET /{db}/_design/{ddoc}

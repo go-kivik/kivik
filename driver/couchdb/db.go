@@ -260,6 +260,21 @@ func (d *db) CopyContext(ctx context.Context, targetID, sourceID string, options
 	return chttp.GetRev(resp)
 }
 
-func (d *db) PutAttachmentContext(ctx context.Context, docID, filename, contentType string, body io.Reader) (rev string, err error) {
-	return "", nil
+func (d *db) PutAttachmentContext(ctx context.Context, docID, rev, filename, contentType string, body io.Reader) (newRev string, err error) {
+	opts := &chttp.Options{
+		Body:        body,
+		ContentType: contentType,
+	}
+	query := url.Values{}
+	if rev != "" {
+		query.Add("rev", rev)
+	}
+	var response struct {
+		Rev string `json:"rev"`
+	}
+	_, err = d.Client.DoJSON(ctx, kivik.MethodPut, d.path(docID+"/"+filename, query), opts, &response)
+	if err != nil {
+		return "", err
+	}
+	return response.Rev, nil
 }

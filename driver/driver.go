@@ -142,7 +142,7 @@ type DB interface {
 	BulkDocsContext(ctx context.Context, docs ...interface{}) (BulkResults, error)
 	// PutAttachmentContext uploads an attachment to the specified document,
 	// returning the new revision.
-	PutAttachmentContext(ctx context.Context, docID, filename, contentType string, body io.Reader) (rev string, err error)
+	PutAttachmentContext(ctx context.Context, docID, rev, filename, contentType string, body io.Reader) (newRev string, err error)
 	// GetAttachment()
 	// ViewCleanup()
 	// SetSecurity()

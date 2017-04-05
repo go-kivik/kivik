@@ -97,7 +97,7 @@ func (d *db) BulkDocsContext(_ context.Context, _ ...interface{}) (driver.BulkRe
 	return nil, nil
 }
 
-func (d *db) PutAttachmentContext(_ context.Context, _, _, _ string, _ io.Reader) (string, error) {
+func (d *db) PutAttachmentContext(_ context.Context, _, _, _, _ string, _ io.Reader) (string, error) {
 	// FIXME: Unimplemented
 	return "", nil
 }

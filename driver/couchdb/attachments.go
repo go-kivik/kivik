@@ -88,3 +88,8 @@ func getMD5Checksum(resp *http.Response) (md5sum driver.Checksum, err error) {
 	copy(md5sum[:], hash)
 	return md5sum, err
 }
+
+func (d *db) DeleteAttachmentContext(ctx context.Context, docID, rev, filename string) (newRev string, err error) {
+	// FIXME: Unimplemented
+	return "", nil
+}

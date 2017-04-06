@@ -357,3 +357,14 @@ func (db *DB) GetAttachmentMetaContext(ctx context.Context, docID, rev, filename
 		MD5:         att.MD5,
 	}, nil
 }
+
+// DeleteAttachment calls DeleteAttachmentContext with a background context.
+func (db *DB) DeleteAttachment(docID, rev, filename string) (newRev string, err error) {
+	return db.DeleteAttachmentContext(context.Background(), docID, rev, filename)
+}
+
+// DeleteAttachmentContext delets an attachment from a document, returning the
+// document's new revision.
+func (db *DB) DeleteAttachmentContext(ctx context.Context, docID, rev, filename string) (newRev string, err error) {
+	return db.driverDB.DeleteAttachmentContext(ctx, docID, rev, filename)
+}

@@ -218,3 +218,8 @@ func (b *blobReader) Close() (err error) {
 	b.Call("close")
 	return nil
 }
+
+func (d *db) DeleteAttachmentContext(ctx context.Context, docID, rev, filename string) (newRev string, err error) {
+	// FIXME: Unimplemented
+	return "", nil
+}

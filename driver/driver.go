@@ -143,9 +143,12 @@ type DB interface {
 	// PutAttachmentContext uploads an attachment to the specified document,
 	// returning the new revision.
 	PutAttachmentContext(ctx context.Context, docID, rev, filename, contentType string, body io.Reader) (newRev string, err error)
-	// GetAttachmentContext fetches an attachment for the associated document ID. rev
-	// may be empty, to fetch the most recent document version.
+	// GetAttachmentContext fetches an attachment for the associated document ID.
+	// rev may be empty, to fetch the most recent document version.
 	GetAttachmentContext(ctx context.Context, docID, rev, filename string) (contentType string, md5sum Checksum, body io.ReadCloser, err error)
+	// DeleteAttachmentContext deletes an attachment from a document, returning
+	// the document's new revision.
+	DeleteAttachmentContext(ctx context.Context, docID, rev, filename string) (newRev string, err error)
 	// // Close invalidates and potentially stops any pending queries.
 	// Close() error
 }

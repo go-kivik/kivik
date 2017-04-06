@@ -101,3 +101,8 @@ func (d *db) GetAttachmentContext(ctx context.Context, docID, rev, filename stri
 	// FIXME: Unimplemented
 	return "", driver.Checksum{}, nil, nil
 }
+
+func (d *db) DeleteAttachmentContext(ctx context.Context, docID, rev, filename string) (newRev string, err error) {
+	// FIXME: Unimplemented
+	return "", nil
+}

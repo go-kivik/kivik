@@ -51,5 +51,6 @@ func init() {
 		"GetAttachment.skip":     true,                       // FIXME: Unimplemented
 		"GetAttachmentMeta.skip": true,                       // FIXME: Unimplemented
 		"PutAttachment.skip":     true,                       // FIXME: Unimplemented
+		"DeleteAttachment.skip":  true,                       // FIXME: Unimplemented
 	})
 }

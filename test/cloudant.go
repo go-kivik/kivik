@@ -175,7 +175,10 @@ func init() {
 		"GetAttachmentMeta/RW/group/Admin/NotFound.status": kivik.StatusNotFound,
 		"GetAttachmentMeta/RW/group/NoAuth.status":         kivik.StatusUnauthorized,
 
-		"PutAttachment/RW/group/Admin/Conflict.status": kivik.StatusInternalServerError, // Stupid bug
+		"PutAttachment/RW/group/Admin/Conflict.status": kivik.StatusInternalServerError, // COUCHDB-3361
 		"PutAttachment/RW/group/NoAuth.status":         kivik.StatusUnauthorized,
+
+		// "DeleteAttachment/RW/group/Admin/NotFound.status":  kivik.StatusNotFound, // COUCHDB-3362
+		"DeleteAttachment/RW/group/NoAuth.status": kivik.StatusUnauthorized,
 	})
 }

@@ -307,3 +307,22 @@ func (db *DB) PutAttachment(docID, rev string, att *Attachment) (newRev string, 
 func (db *DB) PutAttachmentContext(ctx context.Context, docID, rev string, att *Attachment) (newRev string, err error) {
 	return db.driverDB.PutAttachmentContext(ctx, docID, rev, att.Filename, att.ContentType, att)
 }
+
+// GetAttachment calls GetAttachmentContext with a background context.
+func (db *DB) GetAttachment(docID, rev, filename string) (*Attachment, error) {
+	return db.GetAttachmentContext(context.Background(), docID, rev, filename)
+}
+
+// GetAttachmentContext returns a file attachment associated with the document.
+func (db *DB) GetAttachmentContext(ctx context.Context, docID, rev, filename string) (*Attachment, error) {
+	cType, md5sum, body, err := db.driverDB.GetAttachmentContext(ctx, docID, rev, filename)
+	if err != nil {
+		return nil, err
+	}
+	return &Attachment{
+		ReadCloser:  body,
+		Filename:    filename,
+		ContentType: cType,
+		MD5:         Checksum(md5sum),
+	}, nil
+}

@@ -5,7 +5,6 @@ package bindings
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -77,20 +76,7 @@ type caller interface {
 // an error, or if the context is cancelled. No attempt is made to abort the
 // callback in the case that the context is cancelled.
 func callBack(ctx context.Context, o caller, method string, args ...interface{}) (r *js.Object, e error) {
-	defer func() {
-		if r := recover(); r != nil {
-			switch r.(type) {
-			case *js.Object:
-				e = NewPouchError(r.(*js.Object))
-			case error:
-				// This shouldn't ever happen, but just in case
-				e = r.(error)
-			default:
-				// Catch all for everything else
-				e = fmt.Errorf("%v", r)
-			}
-		}
-	}()
+	defer RecoverError(&e)
 	resultCh := make(chan *js.Object)
 	var err error
 	o.Call(method, args...).Call("then", func(r *js.Object) {
@@ -210,15 +196,7 @@ const defaultRevsLimit = 1000
 
 // RevsLimit returns the current revs_limit setting for the database.
 func (db *DB) RevsLimit() (limit int, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			if e, ok := r.(error); ok {
-				err = e
-			} else {
-				err = fmt.Errorf("%v", r)
-			}
-		}
-	}()
+	defer RecoverError(&err)
 	if db.Object.Get("_adaptor").String() == "http" {
 		return 0, errors.Status(http.StatusNotImplemented, "revs_limit unimplemented for remote databases")
 	}
@@ -238,20 +216,7 @@ func (db *DB) BulkDocs(ctx context.Context, docs ...interface{}) (*js.Object, er
 //
 // See https://pouchdb.com/api.html#changes
 func (db *DB) Changes(ctx context.Context, options map[string]interface{}) (changes *js.Object, e error) {
-	defer func() {
-		if r := recover(); r != nil {
-			switch r.(type) {
-			case *js.Object:
-				e = NewPouchError(r.(*js.Object))
-			case error:
-				// This shouldn't ever happen, but just in case
-				e = r.(error)
-			default:
-				// Catch all for everything else
-				e = fmt.Errorf("%v", r)
-			}
-		}
-	}()
+	defer RecoverError(&e)
 	return db.Call("changes", setTimeout(ctx, options)), nil
 }
 
@@ -259,7 +224,10 @@ func (db *DB) Changes(ctx context.Context, options map[string]interface{}) (chan
 //
 // See https://pouchdb.com/api.html#save_attachment
 func (db *DB) PutAttachment(ctx context.Context, docID, filename, rev string, body io.Reader, ctype string) (*js.Object, error) {
-	att := attachmentObject(ctype, body)
+	att, err := attachmentObject(ctype, body)
+	if err != nil {
+		return nil, err
+	}
 	if rev == "" {
 		return callBack(ctx, db, "putAttachment", docID, filename, att, ctype)
 	}
@@ -268,13 +236,25 @@ func (db *DB) PutAttachment(ctx context.Context, docID, filename, rev string, bo
 
 // attachmentObject converts an io.Reader to a JavaScript Buffer in node, or
 // a Blob in the browser
-func attachmentObject(contentType string, content io.Reader) *js.Object {
+func attachmentObject(contentType string, content io.Reader) (att *js.Object, err error) {
+	RecoverError(&err)
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(content)
 	if buffer := js.Global.Get("Buffer"); jsbuiltin.TypeOf(buffer) == "function" {
 		// The Buffer type is supported, so we'll use that
-		return buffer.New(buf.String())
+		return buffer.New(buf.String()), nil
 	}
-	// We must be in the browser, so return a Blob instead
-	return js.Global.Get("Blob").New([]interface{}{buf.Bytes()}, map[string]string{"type": contentType})
+	if js.Global.Get("Blob") != js.Undefined {
+		// We have Blob support, must be in a browser
+		return js.Global.Get("Blob").New([]interface{}{buf.Bytes()}, map[string]string{"type": contentType}), nil
+	}
+	// Not sure what to do
+	return nil, errors.New("No Blob or Buffer support?!?")
+}
+
+// GetAttachment returns attachment data.
+//
+// See https://pouchdb.com/api.html#get_attachment
+func (db *DB) GetAttachment(ctx context.Context, docID, filename string, options map[string]interface{}) (*js.Object, error) {
+	return callBack(ctx, db, "getAttachment", docID, filename, setTimeout(ctx, options))
 }

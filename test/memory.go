@@ -49,6 +49,7 @@ func init() {
 		"Changes.skip":       true,                       // FIXME: Unimplemented
 		"Copy.skip":          true,                       // FIXME: Unimplemented, depends on Get/Put or Copy
 		"BulkDocs.skip":      true,                       // FIXME: Unimplemented
+		"GetAttachment.skip": true,                       // FIXME: Unimplemented
 		"PutAttachment.skip": true,                       // FIXME: Unimplemented
 	})
 }

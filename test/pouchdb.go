@@ -48,6 +48,8 @@ func init() {
 
 		"BulkDocs/RW/Admin/group/Mix/Conflict.status": kivik.StatusConflict,
 
+		"GetAttachment/RW/group/Admin/NotFound.status": kivik.StatusNotFound,
+
 		"PutAttachment/RW/group/Admin/Conflict.status": kivik.StatusConflict,
 	})
 	RegisterSuite(SuitePouchRemote, kt.SuiteConfig{
@@ -121,6 +123,9 @@ func init() {
 
 		"BulkDocs/RW/NoAuth/group/Mix/Conflict.status": kivik.StatusConflict,
 		"BulkDocs/RW/Admin/group/Mix/Conflict.status":  kivik.StatusConflict,
+
+		"GetAttachment/RW/group/Admin/NotFound.status":  kivik.StatusNotFound,
+		"GetAttachment/RW/group/NoAuth/NotFound.status": kivik.StatusNotFound,
 
 		"PutAttachment/RW/group/Admin/Conflict.status":  kivik.StatusConflict,
 		"PutAttachment/RW/group/NoAuth/Conflict.status": kivik.StatusConflict,

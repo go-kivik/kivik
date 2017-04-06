@@ -169,6 +169,9 @@ func init() {
 		"BulkDocs/RW/NoAuth/group/Mix/Conflict.status": kivik.StatusConflict,
 		"BulkDocs/RW/Admin/group/Mix/Conflict.status":  kivik.StatusConflict,
 
+		"GetAttachment/RW/group/Admin/NotFound.status": kivik.StatusNotFound,
+		"GetAttachment/RW/group/NoAuth.status":         kivik.StatusUnauthorized,
+
 		"PutAttachment/RW/group/Admin/Conflict.status": kivik.StatusInternalServerError, // Stupid bug
 		"PutAttachment/RW/group/NoAuth.status":         kivik.StatusUnauthorized,
 	})

@@ -159,5 +159,8 @@ func init() {
 
 		"PutAttachment/RW/group/Admin/Conflict.status":  kivik.StatusConflict,
 		"PutAttachment/RW/group/NoAuth/Conflict.status": kivik.StatusConflict,
+
+		// "DeleteAttachment/RW/group/Admin/NotFound.status":  kivik.StatusNotFound, // COUCHDB-3362
+		// "DeleteAttachment/RW/group/NoAuth/NotFound.status": kivik.StatusNotFound, // COUCHDB-3362
 	})
 }

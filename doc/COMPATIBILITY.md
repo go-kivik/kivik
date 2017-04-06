@@ -82,7 +82,7 @@
 | HEAD /{db}/{docid}/{attname} | GetAttachmentMeta() | | ✅ | ✅ | ⍻ |
 | GET /{db}/{docid}/{attname} | GetAttachment() |  | ✅ | ✅ | ✅ |
 | PUT /{db}/{docid}/{attname} | PutAttachment() |  | ✅ | ✅ | ✅ |
-| DELETE /{db}/{docid}/{attname} | DeleteAttachment() | | ✅ |
+| DELETE /{db}/{docid}/{attname} | DeleteAttachment() | | ✅ | ✅ | ✅ |
 | HEAD /{db}/_design/{ddoc}
 | GET /{db}/_design/{ddoc}
 | PUT /{db}/_design/{ddoc}

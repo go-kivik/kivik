@@ -243,3 +243,10 @@ func attachmentObject(contentType string, content io.Reader) *js.Object {
 	// We must be in the browser, so return a Blob instead
 	return js.Global.Get("Blob").New([]interface{}{buf.Bytes()}, map[string]string{"type": contentType})
 }
+
+// GetAttachment returns attachment data.
+//
+// See https://pouchdb.com/api.html#get_attachment
+func (db *DB) GetAttachment(ctx context.Context, docID, filename string, options map[string]interface{}) (*js.Object, error) {
+	return callBack(ctx, db, "getAttachment", docID, filename, setTimeout(ctx, options))
+}

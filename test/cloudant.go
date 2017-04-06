@@ -177,5 +177,7 @@ func init() {
 
 		"PutAttachment/RW/group/Admin/Conflict.status": kivik.StatusInternalServerError, // Stupid bug
 		"PutAttachment/RW/group/NoAuth.status":         kivik.StatusUnauthorized,
+
+		"DeleteAttachment/RW/group/NoAuth.status": kivik.StatusUnauthorized,
 	})
 }

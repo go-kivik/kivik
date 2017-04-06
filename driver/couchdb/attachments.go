@@ -90,6 +90,16 @@ func getMD5Checksum(resp *http.Response) (md5sum driver.Checksum, err error) {
 }
 
 func (d *db) DeleteAttachmentContext(ctx context.Context, docID, rev, filename string) (newRev string, err error) {
-	// FIXME: Unimplemented
-	return "", nil
+	query := url.Values{}
+	if rev != "" {
+		query.Add("rev", rev)
+	}
+	var response struct {
+		Rev string `json:"rev"`
+	}
+	_, err = d.Client.DoJSON(ctx, kivik.MethodDelete, d.path(docID+"/"+filename, query), nil, &response)
+	if err != nil {
+		return "", err
+	}
+	return response.Rev, nil
 }

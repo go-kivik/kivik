@@ -32,41 +32,37 @@ func delAttachment(ctx *kt.Context) {
 }
 
 func testDeleteAttachments(ctx *kt.Context, client *kivik.Client, dbname, filename string) {
-	adb, err := ctx.Admin.DB(dbname)
-	if err != nil {
-		ctx.Fatalf("Failed to open db: %s", err)
-	}
-	docID := ctx.TestDBName()
-	doc := map[string]interface{}{
-		"_id": docID,
-		"_attachments": map[string]interface{}{
-			"foo.txt": map[string]interface{}{
-				"content_type": "text/plain",
-				"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGVkIHRleHQ=",
-			},
-		},
-	}
-	if _, err := adb.Put(docID, doc); err != nil {
-		ctx.Fatalf("Failed to create doc: %s", err)
-	}
 	ctx.Run(filename, func(ctx *kt.Context) {
 		ctx.Parallel()
+		adb, err := ctx.Admin.DB(dbname)
+		if err != nil {
+			ctx.Fatalf("Failed to open db: %s", err)
+		}
+		docID := ctx.TestDBName()
+		doc := map[string]interface{}{
+			"_id": docID,
+			"_attachments": map[string]interface{}{
+				"foo.txt": map[string]interface{}{
+					"content_type": "text/plain",
+					"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGVkIHRleHQ=",
+				},
+			},
+		}
+		rev, err := adb.Put(docID, doc)
+		if err != nil {
+			ctx.Fatalf("Failed to create doc: %s", err)
+		}
 		db, err := client.DB(dbname)
 		if err != nil {
 			ctx.Fatalf("Failed to connect to db")
 		}
-		rev, err := db.DeleteAttachment(docID, "", filename)
+		rev, err = db.DeleteAttachment(docID, rev, filename)
 		if !ctx.IsExpectedSuccess(err) {
 			return
 		}
-		var doc struct {
-			Rev string `json:"_rev"`
-		}
-		if err := db.Get("foo", &doc, nil); err != nil {
+		var x struct{}
+		if err := db.Get(docID, &x, map[string]interface{}{"rev": rev}); err != nil {
 			ctx.Fatalf("Failed to get deleted doc: %s", err)
-		}
-		if doc.Rev != rev {
-			ctx.Errorf("DeleteAttachment returned rev %s, expected %s", rev, doc.Rev)
 		}
 	})
 }

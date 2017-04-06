@@ -14,6 +14,7 @@ import (
 // Client is a client connection handle to a CouchDB-like server.
 type Client struct {
 	dsn          string
+	driverName   string
 	driverClient driver.Client
 }
 
@@ -40,6 +41,7 @@ func NewContext(ctx context.Context, driverName, dataSourceName string) (*Client
 	}
 	return &Client{
 		dsn:          dataSourceName,
+		driverName:   driverName,
 		driverClient: client,
 	}, nil
 }
@@ -48,6 +50,11 @@ func NewContext(ctx context.Context, driverName, dataSourceName string) (*Client
 // along to new DB connections. Available options are driver specific.
 func (c *Client) SetDefault(key string, value interface{}) error {
 	return c.driverClient.SetDefault(key, value)
+}
+
+// Driver returns the name of the driver string used to connect this client.
+func (c *Client) Driver() string {
+	return c.driverName
 }
 
 // DSN returns the data source name used to connect this client.

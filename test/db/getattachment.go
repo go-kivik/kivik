@@ -58,8 +58,10 @@ func testGetAttachments(ctx *kt.Context, client *kivik.Client, dbname, filename 
 		if !ctx.IsExpectedSuccess(err) {
 			return
 		}
-		if att.ContentType != "text/plain" {
-			ctx.Errorf("Content-Type: Expected %s, Actual %s", "text/plain", att.ContentType)
+		if client.Driver() != "pouch" && client.Driver() != "memdown" {
+			if att.ContentType != "text/plain" {
+				ctx.Errorf("Content-Type: Expected %s, Actual %s", "text/plain", att.ContentType)
+			}
 		}
 	})
 }

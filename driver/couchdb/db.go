@@ -3,7 +3,9 @@ package couchdb
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -277,4 +279,50 @@ func (d *db) PutAttachmentContext(ctx context.Context, docID, rev, filename, con
 		return "", err
 	}
 	return response.Rev, nil
+}
+
+func (d *db) GetAttachmentContext(ctx context.Context, docID, rev, filename string) (cType string, md5sum driver.Checksum, body io.ReadCloser, err error) {
+	resp, err := d.fetchAttachment(ctx, docID, rev, filename)
+	if err != nil {
+		return "", driver.Checksum{}, nil, err
+	}
+	return d.decodeAttachment(resp)
+}
+
+func (d *db) fetchAttachment(ctx context.Context, docID, rev, filename string) (*http.Response, error) {
+	query := url.Values{}
+	if rev != "" {
+		query.Add("rev", rev)
+	}
+	resp, err := d.Client.DoReq(ctx, kivik.MethodGet, d.path(docID+"/"+filename, query), nil)
+	if err != nil {
+		return nil, err
+	}
+	return resp, chttp.ResponseError(resp)
+}
+
+func (d *db) decodeAttachment(resp *http.Response) (cType string, md5sum driver.Checksum, body io.ReadCloser, err error) {
+	var ok bool
+	if cType, ok = getContentType(resp); !ok {
+		return "", driver.Checksum{}, nil, errors.New("no Content-Type in response")
+	}
+
+	md5sum, err = getMD5Checksum(resp)
+
+	return cType, md5sum, resp.Body, err
+}
+
+func getContentType(resp *http.Response) (ctype string, ok bool) {
+	ctype = resp.Header.Get("Content-Type")
+	_, ok = resp.Header["Content-Type"]
+	return ctype, ok
+}
+
+func getMD5Checksum(resp *http.Response) (md5sum driver.Checksum, err error) {
+	hash, err := base64.StdEncoding.DecodeString(resp.Header.Get("Content-MD5"))
+	if err != nil {
+		err = fmt.Errorf("failed to decode MD5 checksum: %s", err)
+	}
+	copy(md5sum[:], hash)
+	return md5sum, err
 }

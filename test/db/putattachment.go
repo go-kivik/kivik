@@ -1,6 +1,8 @@
 package db
 
 import (
+	"io"
+	"io/ioutil"
 	"strings"
 
 	"github.com/flimzy/kivik"
@@ -46,14 +48,14 @@ func testPutAttachment(ctx *kt.Context, client *kivik.Client, dbname string) {
 		if err2 != nil {
 			ctx.Fatalf("Failed to create doc: %s", err2)
 		}
-		att := kivik.NewAttachment("test.txt", "text/plain", strings.NewReader("test content"))
+		att := kivik.NewAttachment("test.txt", "text/plain", stringReadCloser("test content"))
 		_, err = db.PutAttachment(docID, rev, att)
 		ctx.CheckError(err)
 	})
 	ctx.Run("Create", func(ctx *kt.Context) {
 		ctx.Parallel()
 		docID := ctx.TestDBName()
-		att := kivik.NewAttachment("test.txt", "text/plain", strings.NewReader("test content"))
+		att := kivik.NewAttachment("test.txt", "text/plain", stringReadCloser("test content"))
 		_, err = db.PutAttachment(docID, "", att)
 		ctx.CheckError(err)
 	})
@@ -67,8 +69,12 @@ func testPutAttachment(ctx *kt.Context, client *kivik.Client, dbname string) {
 		if err2 != nil {
 			ctx.Fatalf("Failed to create doc: %s", err2)
 		}
-		att := kivik.NewAttachment("test.txt", "text/plain", strings.NewReader("test content"))
+		att := kivik.NewAttachment("test.txt", "text/plain", stringReadCloser("test content"))
 		_, err = db.PutAttachment(docID, "5-20bd3c7d7d6b81390c6679d8bae8795b", att)
 		ctx.CheckError(err)
 	})
+}
+
+func stringReadCloser(str string) io.ReadCloser {
+	return ioutil.NopCloser(strings.NewReader(str))
 }

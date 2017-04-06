@@ -101,3 +101,8 @@ func (d *db) PutAttachmentContext(_ context.Context, _, _, _, _ string, _ io.Rea
 	// FIXME: Unimplemented
 	return "", nil
 }
+
+func (d *db) GetAttachmentContext(ctx context.Context, docID, rev, filename string) (contentType string, md5sum driver.Checksum, body io.ReadCloser, err error) {
+	// FIXME: Unimplemented
+	return "", [16]byte{}, nil, nil
+}

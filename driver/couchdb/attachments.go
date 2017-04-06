@@ -33,20 +33,30 @@ func (d *db) PutAttachmentContext(ctx context.Context, docID, rev, filename, con
 	return response.Rev, nil
 }
 
+func (d *db) GetAttachmentMetaContext(ctx context.Context, docID, rev, filename string) (cType string, md5sum driver.Checksum, err error) {
+	resp, err := d.fetchAttachment(ctx, kivik.MethodHead, docID, rev, filename)
+	if err != nil {
+		return "", driver.Checksum{}, err
+	}
+	cType, md5sum, body, err := d.decodeAttachment(resp)
+	body.Close()
+	return cType, md5sum, err
+}
+
 func (d *db) GetAttachmentContext(ctx context.Context, docID, rev, filename string) (cType string, md5sum driver.Checksum, body io.ReadCloser, err error) {
-	resp, err := d.fetchAttachment(ctx, docID, rev, filename)
+	resp, err := d.fetchAttachment(ctx, kivik.MethodGet, docID, rev, filename)
 	if err != nil {
 		return "", driver.Checksum{}, nil, err
 	}
 	return d.decodeAttachment(resp)
 }
 
-func (d *db) fetchAttachment(ctx context.Context, docID, rev, filename string) (*http.Response, error) {
+func (d *db) fetchAttachment(ctx context.Context, method, docID, rev, filename string) (*http.Response, error) {
 	query := url.Values{}
 	if rev != "" {
 		query.Add("rev", rev)
 	}
-	resp, err := d.Client.DoReq(ctx, kivik.MethodGet, d.path(docID+"/"+filename, query), nil)
+	resp, err := d.Client.DoReq(ctx, method, d.path(docID+"/"+filename, query), nil)
 	if err != nil {
 		return nil, err
 	}

@@ -224,7 +224,10 @@ func (db *DB) Changes(ctx context.Context, options map[string]interface{}) (chan
 //
 // See https://pouchdb.com/api.html#save_attachment
 func (db *DB) PutAttachment(ctx context.Context, docID, filename, rev string, body io.Reader, ctype string) (*js.Object, error) {
-	att := attachmentObject(ctype, body)
+	att, err := attachmentObject(ctype, body)
+	if err != nil {
+		return nil, err
+	}
 	if rev == "" {
 		return callBack(ctx, db, "putAttachment", docID, filename, att, ctype)
 	}
@@ -233,15 +236,20 @@ func (db *DB) PutAttachment(ctx context.Context, docID, filename, rev string, bo
 
 // attachmentObject converts an io.Reader to a JavaScript Buffer in node, or
 // a Blob in the browser
-func attachmentObject(contentType string, content io.Reader) *js.Object {
+func attachmentObject(contentType string, content io.Reader) (att *js.Object, err error) {
+	RecoverError(&err)
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(content)
 	if buffer := js.Global.Get("Buffer"); jsbuiltin.TypeOf(buffer) == "function" {
 		// The Buffer type is supported, so we'll use that
-		return buffer.New(buf.String())
+		return buffer.New(buf.String()), nil
 	}
-	// We must be in the browser, so return a Blob instead
-	return js.Global.Get("Blob").New([]interface{}{buf.Bytes()}, map[string]string{"type": contentType})
+	if js.Global.Get("Blob") != js.Undefined {
+		// We have Blob support, must be in a browser
+		return js.Global.Get("Blob").New([]interface{}{buf.Bytes()}, map[string]string{"type": contentType}), nil
+	}
+	// Not sure what to do
+	return nil, errors.New("No Blob or Buffer support?!?")
 }
 
 // GetAttachment returns attachment data.

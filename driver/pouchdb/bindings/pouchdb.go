@@ -5,7 +5,6 @@ package bindings
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -77,20 +76,7 @@ type caller interface {
 // an error, or if the context is cancelled. No attempt is made to abort the
 // callback in the case that the context is cancelled.
 func callBack(ctx context.Context, o caller, method string, args ...interface{}) (r *js.Object, e error) {
-	defer func() {
-		if r := recover(); r != nil {
-			switch r.(type) {
-			case *js.Object:
-				e = NewPouchError(r.(*js.Object))
-			case error:
-				// This shouldn't ever happen, but just in case
-				e = r.(error)
-			default:
-				// Catch all for everything else
-				e = fmt.Errorf("%v", r)
-			}
-		}
-	}()
+	defer RecoverError(&e)
 	resultCh := make(chan *js.Object)
 	var err error
 	o.Call(method, args...).Call("then", func(r *js.Object) {
@@ -210,15 +196,7 @@ const defaultRevsLimit = 1000
 
 // RevsLimit returns the current revs_limit setting for the database.
 func (db *DB) RevsLimit() (limit int, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			if e, ok := r.(error); ok {
-				err = e
-			} else {
-				err = fmt.Errorf("%v", r)
-			}
-		}
-	}()
+	defer RecoverError(&err)
 	if db.Object.Get("_adaptor").String() == "http" {
 		return 0, errors.Status(http.StatusNotImplemented, "revs_limit unimplemented for remote databases")
 	}
@@ -238,20 +216,7 @@ func (db *DB) BulkDocs(ctx context.Context, docs ...interface{}) (*js.Object, er
 //
 // See https://pouchdb.com/api.html#changes
 func (db *DB) Changes(ctx context.Context, options map[string]interface{}) (changes *js.Object, e error) {
-	defer func() {
-		if r := recover(); r != nil {
-			switch r.(type) {
-			case *js.Object:
-				e = NewPouchError(r.(*js.Object))
-			case error:
-				// This shouldn't ever happen, but just in case
-				e = r.(error)
-			default:
-				// Catch all for everything else
-				e = fmt.Errorf("%v", r)
-			}
-		}
-	}()
+	defer RecoverError(&e)
 	return db.Call("changes", setTimeout(ctx, options)), nil
 }
 

@@ -258,3 +258,10 @@ func attachmentObject(contentType string, content io.Reader) (att *js.Object, er
 func (db *DB) GetAttachment(ctx context.Context, docID, filename string, options map[string]interface{}) (*js.Object, error) {
 	return callBack(ctx, db, "getAttachment", docID, filename, setTimeout(ctx, options))
 }
+
+// RemoveAttachment deletes an attachment from a document.
+//
+// See https://pouchdb.com/api.html#delete_attachment
+func (db *DB) RemoveAttachment(ctx context.Context, docID, filename, rev string) (*js.Object, error) {
+	return callBack(ctx, db, "removeAttachment", docID, filename, rev)
+}

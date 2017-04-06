@@ -143,7 +143,7 @@ type DB interface {
 	// PutAttachmentContext uploads an attachment to the specified document,
 	// returning the new revision.
 	PutAttachmentContext(ctx context.Context, docID, rev, filename, contentType string, body io.Reader) (newRev string, err error)
-	// GetAttachment fetches an attachment for the associated document ID. rev
+	// GetAttachmentContext fetches an attachment for the associated document ID. rev
 	// may be empty, to fetch the most recent document version.
 	GetAttachmentContext(ctx context.Context, docID, rev, filename string) (contentType string, md5sum Checksum, body io.ReadCloser, err error)
 	// // Close invalidates and potentially stops any pending queries.
@@ -152,6 +152,14 @@ type DB interface {
 
 // Checksum is a 128-bit MD5 checksum of a file's content.
 type Checksum [16]byte
+
+// AttachmentMetaer is an optional interface which may be satisfied by a
+// DB. If satisfied, it may be used to fetch meta data about an attachment. If
+// not satisfied, GetAttachmentContext will be used instead.
+type AttachmentMetaer interface {
+	// GetAttachmentMetaContext returns meta information about an attachment.
+	GetAttachmentMetaContext(ctx context.Context, docID, rev, filename string) (contentType string, md5sum Checksum, err error)
+}
 
 // BulkResult is the result of a single doc update in a BulkDocs request.
 type BulkResult struct {

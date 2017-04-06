@@ -155,6 +155,9 @@ func init() {
 		"GetAttachment/RW/group/Admin/NotFound.status":  kivik.StatusNotFound,
 		"GetAttachment/RW/group/NoAuth/NotFound.status": kivik.StatusNotFound,
 
+		"GetAttachmentMeta/RW/group/Admin/NotFound.status":  kivik.StatusNotFound,
+		"GetAttachmentMeta/RW/group/NoAuth/NotFound.status": kivik.StatusNotFound,
+
 		"PutAttachment/RW/group/Admin/Conflict.status":  kivik.StatusInternalServerError, // Stupid bug
 		"PutAttachment/RW/group/NoAuth/Conflict.status": kivik.StatusInternalServerError, // Stupid bug
 	})

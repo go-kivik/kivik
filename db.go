@@ -326,3 +326,34 @@ func (db *DB) GetAttachmentContext(ctx context.Context, docID, rev, filename str
 		MD5:         Checksum(md5sum),
 	}, nil
 }
+
+// GetAttachmentMeta calls GetAttachmentMetaContext with a background context.
+func (db *DB) GetAttachmentMeta(docID, rev, filename string) (*Attachment, error) {
+	return db.GetAttachmentMetaContext(context.Background(), docID, rev, filename)
+}
+
+// GetAttachmentMetaContext returns meta data about an attachment. The attachment
+// content returned will be empty.
+func (db *DB) GetAttachmentMetaContext(ctx context.Context, docID, rev, filename string) (*Attachment, error) {
+	if metaer, ok := db.driverDB.(driver.AttachmentMetaer); ok {
+		cType, md5sum, err := metaer.GetAttachmentMetaContext(ctx, docID, rev, filename)
+		if err != nil {
+			return nil, err
+		}
+		return &Attachment{
+			Filename:    filename,
+			ContentType: cType,
+			MD5:         Checksum(md5sum),
+		}, nil
+	}
+	att, err := db.GetAttachmentContext(ctx, docID, rev, filename)
+	if err != nil {
+		return nil, err
+	}
+	_ = att.Close()
+	return &Attachment{
+		Filename:    att.Filename,
+		ContentType: att.ContentType,
+		MD5:         att.MD5,
+	}, nil
+}

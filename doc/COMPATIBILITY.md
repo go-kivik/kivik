@@ -77,9 +77,9 @@
 | HEAD /{db}/{docid}  | Rev()                 |    | ✅ | ✅ | ⍻ |
 | GET /{db}/{docid}   | Get()                 |    | ☑️<sup>[7](#todoConflicts),[11](#todoAttachments)</sup> | ✅ | ✅
 | PUT /{db}/{docid}   | Put()                 |    | ☑️<sup>[11](#todoAttachments)</sup> | ✅ | ✅
-| DELETE /{db}/{docid}| Delete()              |    | ✅ | ✅ | ✅
-| COPY /{db}/{docid}  | Copy()                |    | ✅ | ✅ | ⍻
-| HEAD /{db}/{docid}/{attname}
+| DELETE /{db}/{docid}| Delete()              |    | ✅ | ✅ | ✅ |
+| COPY /{db}/{docid}  | Copy()                |    | ✅ | ✅ | ⍻ |
+| HEAD /{db}/{docid}/{attname} | GetAttachmentMeta() | | ✅ | ✅ | ⍻ |
 | GET /{db}/{docid}/{attname} | GetAttachment() |  | ✅ | ✅ | ✅ |
 | PUT /{db}/{docid}/{attname} | PutAttachment() |  | ✅ | ✅ | ✅ |
 | DELETE /{db}/{docid}/{attname}

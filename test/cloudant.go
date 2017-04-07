@@ -179,6 +179,8 @@ func init() {
 		"PutAttachment/RW/group/NoAuth.status":         kivik.StatusUnauthorized,
 
 		// "DeleteAttachment/RW/group/Admin/NotFound.status":  kivik.StatusNotFound, // COUCHDB-3362
-		"DeleteAttachment/RW/group/NoAuth.status": kivik.StatusUnauthorized,
+		"DeleteAttachment/RW/group/NoAuth.status":       kivik.StatusUnauthorized,
+		"DeleteAttachment/RW/group/Admin/NoDoc.status":  kivik.StatusInternalServerError,
+		"DeleteAttachment/RW/group/NoAuth/NoDoc.status": kivik.StatusUnauthorized,
 	})
 }

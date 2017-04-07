@@ -21,17 +21,35 @@ func delAttachment(ctx *kt.Context) {
 				ctx.Parallel()
 				testDeleteAttachments(ctx, ctx.Admin, dbname, "foo.txt")
 				testDeleteAttachments(ctx, ctx.Admin, dbname, "NotFound")
+				testDeleteAttachmentNoDoc(ctx, ctx.Admin, dbname)
 			})
 			ctx.RunNoAuth(func(ctx *kt.Context) {
 				ctx.Parallel()
 				testDeleteAttachments(ctx, ctx.NoAuth, dbname, "foo.txt")
 				testDeleteAttachments(ctx, ctx.NoAuth, dbname, "NotFound")
+				testDeleteAttachmentNoDoc(ctx, ctx.NoAuth, dbname)
 			})
 		})
 	})
 }
 
+func testDeleteAttachmentNoDoc(ctx *kt.Context, client *kivik.Client, dbname string) {
+	db, err := client.DB(dbname)
+	if err != nil {
+		ctx.Fatalf("Failed to connect to db")
+	}
+	ctx.Run("NoDoc", func(ctx *kt.Context) {
+		ctx.Parallel()
+		_, err := db.DeleteAttachment("nonexistantdoc", "2-4259cd84694a6345d6c534ed65f1b30b", "foo.txt")
+		ctx.CheckError(err)
+	})
+}
+
 func testDeleteAttachments(ctx *kt.Context, client *kivik.Client, dbname, filename string) {
+	db, err := client.DB(dbname)
+	if err != nil {
+		ctx.Fatalf("Failed to connect to db")
+	}
 	ctx.Run(filename, func(ctx *kt.Context) {
 		ctx.Parallel()
 		adb, err := ctx.Admin.DB(dbname)
@@ -51,10 +69,6 @@ func testDeleteAttachments(ctx *kt.Context, client *kivik.Client, dbname, filena
 		rev, err := adb.Put(docID, doc)
 		if err != nil {
 			ctx.Fatalf("Failed to create doc: %s", err)
-		}
-		db, err := client.DB(dbname)
-		if err != nil {
-			ctx.Fatalf("Failed to connect to db")
 		}
 		rev, err = db.DeleteAttachment(docID, rev, filename)
 		if !ctx.IsExpectedSuccess(err) {

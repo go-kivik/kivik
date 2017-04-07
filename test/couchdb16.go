@@ -162,5 +162,7 @@ func init() {
 
 		// "DeleteAttachment/RW/group/Admin/NotFound.status":  kivik.StatusNotFound, // COUCHDB-3362
 		// "DeleteAttachment/RW/group/NoAuth/NotFound.status": kivik.StatusNotFound, // COUCHDB-3362
+		"DeleteAttachment/RW/group/Admin/NoDoc.status":  kivik.StatusConflict,
+		"DeleteAttachment/RW/group/NoAuth/NoDoc.status": kivik.StatusConflict,
 	})
 }

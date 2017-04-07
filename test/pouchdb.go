@@ -55,6 +55,7 @@ func init() {
 		"PutAttachment/RW/group/Admin/Conflict.status": kivik.StatusConflict,
 
 		// "DeleteAttachment/RW/group/Admin/NotFound.status": kivik.StatusNotFound, // https://github.com/pouchdb/pouchdb/issues/6409
+		"DeleteAttachment/RW/group/Admin/NoDoc.status": kivik.StatusNotFound,
 	})
 	RegisterSuite(SuitePouchRemote, kt.SuiteConfig{
 		// Features which are not supported by PouchDB
@@ -139,5 +140,7 @@ func init() {
 
 		// "DeleteAttachment/RW/group/Admin/NotFound.status":  kivik.StatusNotFound, // COUCHDB-3362
 		// "DeleteAttachment/RW/group/NoAuth/NotFound.status": kivik.StatusNotFound, // COUCHDB-3362
+		"DeleteAttachment/RW/group/Admin/NoDoc.status":  kivik.StatusConflict,
+		"DeleteAttachment/RW/group/NoAuth/NoDoc.status": kivik.StatusConflict,
 	})
 }

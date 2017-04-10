@@ -54,13 +54,13 @@ func optionsToParams(opts ...map[string]interface{}) (url.Values, error) {
 	return params, nil
 }
 
-// AllDocsContext returns all of the documents in the database.
-func (d *db) AllDocsContext(ctx context.Context, opts map[string]interface{}) (driver.Rows, error) {
+// rowsQuery performs a query that returns a rows iterator.
+func (d *db) rowsQuery(ctx context.Context, path string, opts map[string]interface{}) (driver.Rows, error) {
 	options, err := optionsToParams(opts)
 	if err != nil {
 		return nil, err
 	}
-	resp, err := d.Client.DoReq(ctx, kivik.MethodGet, d.path("_all_docs", options), nil)
+	resp, err := d.Client.DoReq(ctx, kivik.MethodGet, d.path(path, options), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -68,6 +68,16 @@ func (d *db) AllDocsContext(ctx context.Context, opts map[string]interface{}) (d
 		return nil, err
 	}
 	return newRows(resp.Body), nil
+}
+
+// AllDocsContext returns all of the documents in the database.
+func (d *db) AllDocsContext(ctx context.Context, opts map[string]interface{}) (driver.Rows, error) {
+	return d.rowsQuery(ctx, "_all_docs", opts)
+}
+
+// QueryContext queries a view.
+func (d *db) QueryContext(ctx context.Context, ddoc, view string, opts map[string]interface{}) (driver.Rows, error) {
+	return d.rowsQuery(ctx, fmt.Sprintf("_design/%s/_view/%s", ddoc, view), opts)
 }
 
 // GetContext fetches the requested document.

@@ -93,7 +93,7 @@
 | PUT /{db}/_design/{ddoc}/{attname}    | PutAttachment()     |    |    | ？ | ？ |
 | DELETE /{db}/_design/{ddoc}/{attname} | DeleteAttachment()  |    |    | ？ | ？ |
 | GET /{db}/_design/{ddoc}/_info        | ⁿ/ₐ                  |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
-| GET /{db}/_design/{ddoc}/_view/{view}
+| GET /{db}/_design/{ddoc}/_view/{view} | Query()             |    |    | ？ | ？<sup>[18](#pouchViews)</sup> |
 | POST /{db}/_design/{ddoc}/_view/{view}
 | GET /{db}/_design/{ddoc}/_show/{func} | ⁿ/ₐ |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
 | POST /{db}/_design/{ddoc}/_show/{func} | ⁿ/ₐ|    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
@@ -150,6 +150,9 @@
     a JS function. This feature is scheduled for removal from PouchDB (into a
     plugin), but until then, this functionality can still be used via the
     Query() method, by passing a JS function as an option.
+18. <a name="pouchViews"> Only queries against defined design documents are
+    supported. That is to say, providing raw JS functions is not supported. If
+    you need this, please create an issue to make your case.
 
 ## HTTP Status Codes
 

@@ -33,6 +33,11 @@ func (d *db) AllDocsContext(ctx context.Context, opts map[string]interface{}) (d
 	return nil, nil
 }
 
+func (d *db) QueryContext(ctx context.Context, ddoc, view string, opts map[string]interface{}) (driver.Rows, error) {
+	// FIXME: Unimplemented
+	return nil, nil
+}
+
 func (d *db) GetContext(_ context.Context, docID string, doc interface{}, opts map[string]interface{}) error {
 	// FIXME: Unimplemented
 	return nil

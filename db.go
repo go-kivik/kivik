@@ -36,6 +36,26 @@ func (db *DB) AllDocsContext(ctx context.Context, options Options) (*Rows, error
 	return rows, nil
 }
 
+// Query calls QueryContext with a background context.
+func (db *DB) Query(ddoc, view string, options Options) (*Rows, error) {
+	return db.QueryContext(context.Background(), ddoc, view, options)
+}
+
+// QueryContext executes the specified view function from the specified design
+// document. ddoc and view may or may not be be prefixed with '_design/'
+// and '_view/' respectively. No other
+func (db *DB) QueryContext(ctx context.Context, ddoc, view string, options Options) (*Rows, error) {
+	ddoc = strings.TrimPrefix(ddoc, "_design/")
+	view = strings.TrimPrefix(view, "_view/")
+	rowsi, err := db.driverDB.QueryContext(ctx, ddoc, view, options)
+	if err != nil {
+		return nil, err
+	}
+	rows := &Rows{rowsi: rowsi}
+	rows.initContextClose(ctx)
+	return rows, nil
+}
+
 // Get calls GetContext with a background context.
 func (db *DB) Get(docID string, doc interface{}, options Options) error {
 	return db.GetContext(context.Background(), docID, doc, options)

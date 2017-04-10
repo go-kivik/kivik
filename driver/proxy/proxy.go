@@ -54,6 +54,14 @@ func (d *db) AllDocsContext(ctx context.Context, opts map[string]interface{}) (d
 	return &rows{kivikRows}, nil
 }
 
+func (d *db) QueryContext(ctx context.Context, ddoc, view string, opts map[string]interface{}) (driver.Rows, error) {
+	kivikRows, err := d.DB.QueryContext(ctx, ddoc, view, opts)
+	if err != nil {
+		return nil, err
+	}
+	return &rows{kivikRows}, nil
+}
+
 func (d *db) GetContext(ctx context.Context, id string, i interface{}, opts map[string]interface{}) error {
 	return d.DB.GetContext(ctx, id, i, opts)
 }

@@ -79,37 +79,37 @@
 | PUT /{db}/{docid}   | Put()                 |    | ☑️<sup>[11](#todoAttachments)</sup> | ✅ | ✅
 | DELETE /{db}/{docid}| Delete()              |    | ✅ | ✅ | ✅ |
 | COPY /{db}/{docid}  | Copy()                |    | ✅ | ✅ | ⍻ |
-| HEAD /{db}/{docid}/{attname} | GetAttachmentMeta() | | ✅ | ✅ | ⍻ |
-| GET /{db}/{docid}/{attname} | GetAttachment() |  | ✅ | ✅ | ✅ |
-| PUT /{db}/{docid}/{attname} | PutAttachment() |  | ✅ | ✅ | ✅ |
-| DELETE /{db}/{docid}/{attname} | DeleteAttachment() | | ✅ | ✅ | ✅ |
-| HEAD /{db}/_design/{ddoc}
-| GET /{db}/_design/{ddoc}
-| PUT /{db}/_design/{ddoc}
-| DELETE /{db}/_design/{ddoc}
-| COPY /{db}/_design/{ddoc}
-| HEAD /{db}/_design/{ddoc}/{attname}
-| GET /{db}/_design/{ddoc}/{attname}
-| PUT /{db}/_design/{ddoc}/{attname}
-| DELETE /{db}/_design/{ddoc}/{attname}
-| GET /{db}/_design/{ddoc}/_info
+| HEAD /{db}/{docid}/{attname}          | GetAttachmentMeta() |    | ✅ | ✅ | ⍻ |
+| GET /{db}/{docid}/{attname}           | GetAttachment()     |    | ✅ | ✅ | ✅ |
+| PUT /{db}/{docid}/{attname}           | PutAttachment()     |    | ✅ | ✅ | ✅ |
+| DELETE /{db}/{docid}/{attname}        | DeleteAttachment()  |    | ✅ | ✅ | ✅ |
+| HEAD /{db}/_design/{ddoc}             | Rev()               |    |    | ？ | ？ |
+| GET /{db}/_design/{ddoc}              | Get()               |    |    | ？ | ？ |
+| PUT /{db}/_design/{ddoc}              | Put()               |    |    | ？ | ？ |
+| DELETE /{db}/_design/{ddoc}           | Delete()            |    |    | ？ | ？ |
+| COPY /{db}/_design/{ddoc}             | Copy()              |    |    | ？ | ？ |
+| HEAD /{db}/_design/{ddoc}/{attname}   | GetAttachmentMeta() |    |    | ？ | ？ |
+| GET /{db}/_design/{ddoc}/{attname}    | GetAttachment()     |    |    | ？ | ？ |
+| PUT /{db}/_design/{ddoc}/{attname}    | PutAttachment()     |    |    | ？ | ？ |
+| DELETE /{db}/_design/{ddoc}/{attname} | DeleteAttachment()  |    |    | ？ | ？ |
+| GET /{db}/_design/{ddoc}/_info        | ⁿ/ₐ                  |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
 | GET /{db}/_design/{ddoc}/_view/{view}
 | POST /{db}/_design/{ddoc}/_view/{view}
-| GET /{db}/_design/{ddoc}/_show/{func}
-| POST /{db}/_design/{ddoc}/_show/{func}
-| GET /{db}/_design/{ddoc}/_show/{func}/{docid}
-| POST /{db}/_design/{ddoc}/_show/{func}/{docid}
-| GET /{db}/_design/{ddoc}/_list/{func}/{view}
-| POST /{db}/_design/{ddoc}/_list/{func}/{view}
-| GET /{db}/_design/{ddoc}/_list/{func}/{other-ddoc}/{view}
-| POST /{db}/_design/{ddoc}/_list/{func}/{other-ddoc}/{view}
-| POST /{db}/_design/{ddoc}/_update/{func}
-| PUT /{db}/_design/{ddoc}/_update/{func}/{docid}
-| ANY /{db}/_design/{ddoc}/_rewrite/{path}
-| GET /{db}/_local/{docid}
-| PUT /{db}/_local/{docid}
-| DELETE /{db}/_local/{docid}
-| COPY /{db}/_local/{docid}
+| GET /{db}/_design/{ddoc}/_show/{func} | ⁿ/ₐ |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
+| POST /{db}/_design/{ddoc}/_show/{func} | ⁿ/ₐ|    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
+| GET /{db}/_design/{ddoc}/_show/{func}/{docid} |ⁿ/ₐ| | | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
+| POST /{db}/_design/{ddoc}/_show/{func}/{docid} |ⁿ/ₐ| | |❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
+| GET /{db}/_design/{ddoc}/_list/{func}/{view} | ⁿ/ₐ| | | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
+| POST /{db}/_design/{ddoc}/_list/{func}/{view} |ⁿ/ₐ| | | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
+| GET /{db}/_design/{ddoc}/_list/{func}/{other-ddoc}/{view} |ⁿ/ₐ| | |❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
+| POST /{db}/_design/{ddoc}/_list/{func}/{other-ddoc}/{view} |ⁿ/ₐ| | |❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
+| POST /{db}/_design/{ddoc}/_update/{func} | ⁿ/ₐ |   |   |❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
+| PUT /{db}/_design/{ddoc}/_update/{func}/{docid} |ⁿ/ₐ| | |❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
+| ANY /{db}/_design/{ddoc}/_rewrite/{path} | ⁿ/ₐ |  |   | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
+| GET /{db}/_local/{docid}    | Get()               |    |    | ？ | ？ |
+| PUT /{db}/_local/{docid}    | Put()               |    |    | ？ | ？ |
+| DELETE /{db}/_local/{docid} | Delete()            |    |    | ？ | ？ |
+| COPY /{db}/_local/{docid}   | Copy()              |    |    | ？ | ？ |
 
 ### Notes
 

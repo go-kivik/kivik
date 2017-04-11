@@ -93,7 +93,7 @@
 | PUT /{db}/_design/{ddoc}/{attname}    | PutAttachment()     |    |    | ？ | ？ |
 | DELETE /{db}/_design/{ddoc}/{attname} | DeleteAttachment()  |    |    | ？ | ？ |
 | GET /{db}/_design/{ddoc}/_info        | ⁿ/ₐ                  |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
-| GET /{db}/_design/{ddoc}/_view/{view} | Query()             |    |    | ？ | ？<sup>[18](#pouchViews)</sup> |
+| GET /{db}/_design/{ddoc}/_view/{view} | Query()             |    | ✅ | ✅ | ✅<sup>[18](#pouchViews)</sup> |
 | POST /{db}/_design/{ddoc}/_view/{view}
 | GET /{db}/_design/{ddoc}/_show/{func} | ⁿ/ₐ |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
 | POST /{db}/_design/{ddoc}/_show/{func} | ⁿ/ₐ|    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |

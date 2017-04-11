@@ -11,7 +11,7 @@ type Row struct {
 	ID string `json:"id"`
 	// Key is the view key of the result. For built-in views, this is the same
 	// as ID.
-	Key string `json:"key"`
+	Key json.RawMessage `json:"key"`
 	// Value is the raw, un-decoded JSON value. For most built-in views (such as
 	// /_all_docs), this is `{"rev":"X-xxx"}`.
 	Value json.RawMessage `json:"value"`

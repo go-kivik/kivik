@@ -180,7 +180,7 @@ func (db *DB) AllDocs(ctx context.Context, options map[string]interface{}) (*js.
 
 // Query queries a map/reduce function.
 func (db *DB) Query(ctx context.Context, ddoc, view string, options map[string]interface{}) (*js.Object, error) {
-	return callBack(ctx, db, "query", ddoc, view, setTimeout(ctx, options))
+	return callBack(ctx, db, "query", ddoc+"/"+view, setTimeout(ctx, options))
 }
 
 // Compact compacts the database, and waits for it to complete. This may take

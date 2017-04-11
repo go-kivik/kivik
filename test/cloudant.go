@@ -42,6 +42,8 @@ func init() {
 		"AllDocs/NoAuth/_duck.status":        kivik.StatusUnauthorized,
 		"AllDocs/RW/group/NoAuth.status":     kivik.StatusUnauthorized,
 
+		"Query/RW/group/NoAuth.status": kivik.StatusUnauthorized,
+
 		"DBExists.databases":              []string{"_users", "chicken", "_duck"},
 		"DBExists/Admin/_users.exists":    true,
 		"DBExists/Admin/chicken.exists":   false,

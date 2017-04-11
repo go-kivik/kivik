@@ -46,7 +46,7 @@ func (d *db) AllDocsContext(ctx context.Context, options map[string]interface{})
 }
 
 func (d *db) QueryContext(ctx context.Context, ddoc, view string, options map[string]interface{}) (driver.Rows, error) {
-	result, err := d.db.Query(ctx, ddoc+"/"+view, options)
+	result, err := d.db.Query(ctx, ddoc, view, options)
 	if err != nil {
 		return nil, err
 	}

@@ -26,7 +26,7 @@ func (r *rows) Next(row *driver.Row) error {
 		return err
 	}
 	row.ID = r.Rows.ID()
-	row.Key = r.Rows.Key()
+	row.Key = json.RawMessage(r.Rows.Key())
 	row.Value = value
 	row.Doc = doc
 	return nil

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"strings"
 	"sync"
 
 	"golang.org/x/net/context"
@@ -123,6 +124,12 @@ func (r *Rows) ScanDoc(dest interface{}) error {
 	return r.scan(dest, r.curRow.Doc)
 }
 
+// ScanKey works the same as ScanValue, but on the key field of the result. For
+// simple keys, which are just strings, the Key() method may be easier to use.
+func (r *Rows) ScanKey(dest interface{}) error {
+	return r.scan(dest, r.curRow.Key)
+}
+
 func (r *Rows) scan(dest interface{}, val json.RawMessage) error {
 	r.closemu.RLock()
 	if r.closed {
@@ -160,10 +167,11 @@ func (r *Rows) ID() string {
 	return ""
 }
 
-// Key returns the Key of the last-read result.
+// Key returns the Key of the last-read result as a de-quoted JSON object. For
+// compound keys, the ScanKey() method may be more convenient.
 func (r *Rows) Key() string {
 	if r.curRow != nil {
-		return r.curRow.Key
+		return strings.Trim(string(r.curRow.Key), `"`)
 	}
 	return ""
 }

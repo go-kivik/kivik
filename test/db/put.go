@@ -94,5 +94,18 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 			_, err := db.Put(doc["_id"].(string), doc)
 			ctx.CheckError(err)
 		})
+		ctx.Run("Conflict", func(ctx *kt.Context) {
+			ctx.Parallel()
+			doc := map[string]interface{}{
+				"_id":  "duplicate",
+				"name": "Bob",
+			}
+			_, err := db.Put(doc["_id"].(string), doc)
+			if err != nil {
+				ctx.Fatalf("Failed to create document for duplicate test: %s", err)
+			}
+			_, err = db.Put(doc["_id"].(string), doc)
+			ctx.CheckError(err)
+		})
 	})
 }

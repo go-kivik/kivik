@@ -60,6 +60,7 @@ func init() {
 		"DeleteAttachment/RW/group/Admin/NoDoc.status": kivik.StatusNotFound,
 
 		"Put/RW/Admin/group/LeadingUnderscoreInID.status": kivik.StatusBadRequest,
+		"Put/RW/Admin/group/Conflict.status":              kivik.StatusConflict,
 	})
 	RegisterSuite(SuitePouchRemote, kt.SuiteConfig{
 		// Features which are not supported by PouchDB
@@ -151,7 +152,9 @@ func init() {
 		"DeleteAttachment/RW/group/NoAuth/NoDoc.status": kivik.StatusConflict,
 
 		"Put/RW/Admin/group/LeadingUnderscoreInID.status":  kivik.StatusBadRequest,
+		"Put/RW/Admin/group/Conflict.status":               kivik.StatusConflict,
 		"Put/RW/NoAuth/group/DesignDoc.status":             kivik.StatusUnauthorized,
 		"Put/RW/NoAuth/group/LeadingUnderscoreInID.status": kivik.StatusBadRequest,
+		"Put/RW/NoAuth/group/Conflict.status":              kivik.StatusConflict,
 	})
 }

@@ -88,10 +88,10 @@
 | PUT /{db}/_design/{ddoc}              | Put()               |    | ✅ | ✅ | ✅ |
 | DELETE /{db}/_design/{ddoc}           | Delete()            |    | ✅ | ✅ | ✅ |
 | COPY /{db}/_design/{ddoc}             | Copy()              |    | ✅ | ✅ | ⍻ |
-| HEAD /{db}/_design/{ddoc}/{attname}   | GetAttachmentMeta() |    |    | ？ | ？ |
-| GET /{db}/_design/{ddoc}/{attname}    | GetAttachment()     |    |    | ？ | ？ |
-| PUT /{db}/_design/{ddoc}/{attname}    | PutAttachment()     |    |    | ？ | ？ |
-| DELETE /{db}/_design/{ddoc}/{attname} | DeleteAttachment()  |    |    | ？ | ？ |
+| HEAD /{db}/_design/{ddoc}/{attname}   | GetAttachmentMeta() |    | ✅ | ✅ | ✅ |
+| GET /{db}/_design/{ddoc}/{attname}    | GetAttachment()     |    | ✅ | ✅ | ✅ |
+| PUT /{db}/_design/{ddoc}/{attname}    | PutAttachment()     |    | ✅ | ✅ | ✅ |
+| DELETE /{db}/_design/{ddoc}/{attname} | DeleteAttachment()  |    | ✅ | ✅ | ✅ |
 | GET /{db}/_design/{ddoc}/_info        | ⁿ/ₐ                  |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
 | GET /{db}/_design/{ddoc}/_view/{view} | Query()             |    | ✅ | ✅ | ✅<sup>[18](#pouchViews)</sup> |
 | POST /{db}/_design/{ddoc}/_view/{view}

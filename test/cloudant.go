@@ -175,11 +175,11 @@ func init() {
 		"BulkDocs/RW/NoAuth/group/Mix/Conflict.status": kivik.StatusConflict,
 		"BulkDocs/RW/Admin/group/Mix/Conflict.status":  kivik.StatusConflict,
 
-		"GetAttachment/RW/group/Admin/NotFound.status": kivik.StatusNotFound,
-		"GetAttachment/RW/group/NoAuth.status":         kivik.StatusUnauthorized,
+		"GetAttachment/RW/group/Admin/foo/NotFound.status": kivik.StatusNotFound,
+		"GetAttachment/RW/group/NoAuth.status":             kivik.StatusUnauthorized,
 
-		"GetAttachmentMeta/RW/group/Admin/NotFound.status": kivik.StatusNotFound,
-		"GetAttachmentMeta/RW/group/NoAuth.status":         kivik.StatusUnauthorized,
+		"GetAttachmentMeta/RW/group/Admin/foo/NotFound.status": kivik.StatusNotFound,
+		"GetAttachmentMeta/RW/group/NoAuth.status":             kivik.StatusUnauthorized,
 
 		"PutAttachment/RW/group/Admin/Conflict.status": kivik.StatusInternalServerError, // COUCHDB-3361
 		"PutAttachment/RW/group/NoAuth.status":         kivik.StatusUnauthorized,

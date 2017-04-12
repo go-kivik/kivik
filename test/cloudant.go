@@ -184,5 +184,8 @@ func init() {
 		"DeleteAttachment/RW/group/NoAuth.status":       kivik.StatusUnauthorized,
 		"DeleteAttachment/RW/group/Admin/NoDoc.status":  kivik.StatusInternalServerError,
 		"DeleteAttachment/RW/group/NoAuth/NoDoc.status": kivik.StatusUnauthorized,
+
+		"Put/RW/Admin/group/LeadingUnderscoreInID.status": kivik.StatusBadRequest,
+		"Put/RW/NoAuth/group.status":                      kivik.StatusUnauthorized,
 	})
 }

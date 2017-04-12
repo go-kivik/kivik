@@ -165,5 +165,9 @@ func init() {
 		// "DeleteAttachment/RW/group/NoAuth/NotFound.status": kivik.StatusNotFound, // COUCHDB-3362
 		"DeleteAttachment/RW/group/Admin/NoDoc.status":  kivik.StatusInternalServerError,
 		"DeleteAttachment/RW/group/NoAuth/NoDoc.status": kivik.StatusInternalServerError,
+
+		"Put/RW/Admin/group/LeadingUnderscoreInID.status":  kivik.StatusBadRequest,
+		"Put/RW/NoAuth/group/LeadingUnderscoreInID.status": kivik.StatusBadRequest,
+		"Put/RW/NoAuth/group/DesignDoc.status":             kivik.StatusUnauthorized,
 	})
 }

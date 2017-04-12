@@ -77,7 +77,7 @@ func (d *db) AllDocsContext(ctx context.Context, opts map[string]interface{}) (d
 
 // QueryContext queries a view.
 func (d *db) QueryContext(ctx context.Context, ddoc, view string, opts map[string]interface{}) (driver.Rows, error) {
-	return d.rowsQuery(ctx, fmt.Sprintf("_design/%s/_view/%s", ddoc, view), opts)
+	return d.rowsQuery(ctx, fmt.Sprintf("_design/%s/_view/%s", encodeDocID(ddoc), encodeDocID(view)), opts)
 }
 
 // GetContext fetches the requested document.
@@ -86,7 +86,7 @@ func (d *db) GetContext(ctx context.Context, docID string, doc interface{}, opts
 	if err != nil {
 		return err
 	}
-	_, err = d.Client.DoJSON(ctx, http.MethodGet, d.path(docID, params), &chttp.Options{Accept: "application/json; multipart/mixed"}, doc)
+	_, err = d.Client.DoJSON(ctx, http.MethodGet, d.path(encodeDocID(docID), params), &chttp.Options{Accept: "application/json; multipart/mixed"}, doc)
 	return err
 }
 
@@ -161,7 +161,7 @@ func (d *db) DeleteContext(ctx context.Context, docID, rev string) (string, erro
 	opts := &chttp.Options{
 		ForceCommit: d.forceCommit,
 	}
-	resp, err := d.Client.DoReq(ctx, kivik.MethodDelete, d.path(docID, query), opts)
+	resp, err := d.Client.DoReq(ctx, kivik.MethodDelete, d.path(encodeDocID(docID), query), opts)
 	if err != nil {
 		return "", err
 	}
@@ -253,7 +253,7 @@ func (d *db) SetSecurityContext(ctx context.Context, security *driver.Security) 
 
 // RevContext returns the most current rev of the requested document.
 func (d *db) RevContext(ctx context.Context, docID string) (rev string, err error) {
-	res, err := d.Client.DoError(ctx, http.MethodHead, d.path(docID, nil), nil)
+	res, err := d.Client.DoError(ctx, http.MethodHead, d.path(encodeDocID(docID), nil), nil)
 	if err != nil {
 		return "", err
 	}
@@ -285,7 +285,7 @@ func (d *db) CopyContext(ctx context.Context, targetID, sourceID string, options
 		ForceCommit: d.forceCommit,
 		Destination: targetID,
 	}
-	resp, err := d.Client.DoReq(ctx, kivik.MethodCopy, d.path(sourceID, params), opts)
+	resp, err := d.Client.DoReq(ctx, kivik.MethodCopy, d.path(encodeDocID(sourceID), params), opts)
 	if err != nil {
 		return "", err
 	}

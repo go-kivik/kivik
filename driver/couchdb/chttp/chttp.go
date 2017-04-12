@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/flimzy/kivik"
 	"github.com/pkg/errors"
@@ -176,9 +177,22 @@ func (c *Client) DoReq(ctx context.Context, method, path string, opts *Options) 
 	if err != nil {
 		return nil, err
 	}
+	fixPath(req, path)
 	setHeaders(req, opts)
 
 	return c.Do(req)
+}
+
+// fixPath sets the request's URL.RawPath to work with escaped '/' chars in
+// paths.
+func fixPath(req *http.Request, path string) {
+	if !strings.Contains(path, "%2F") {
+		// No need for special treatment
+		return
+	}
+	// Remove any query parameters
+	parts := strings.Split(path, "?")
+	req.URL.RawPath = "/" + strings.TrimPrefix(parts[0], "/")
 }
 
 // EncodeBody JSON encodes i to r. If an encoding error occurs, err will be set

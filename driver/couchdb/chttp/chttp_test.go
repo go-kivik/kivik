@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"mime"
+	"net/http"
 	"os"
 	"strings"
 	"testing"
@@ -69,5 +70,24 @@ func TestJSONBody(t *testing.T) {
 	_, err := client.DoReq(context.Background(), "POST", "/_session", &Options{Body: buf})
 	if err != nil {
 		t.Errorf("Failed to make request: %s", err)
+	}
+}
+
+func TestFixPath(t *testing.T) {
+	tests := []struct {
+		Input    string
+		Expected string
+	}{
+		{Input: "foo", Expected: "/foo"},
+		{Input: "foo?oink=yes", Expected: "/foo"},
+		{Input: "foo/bar", Expected: "/foo/bar"},
+		{Input: "foo%2Fbar", Expected: "/foo%2Fbar"},
+	}
+	for _, test := range tests {
+		req, _ := http.NewRequest("GET", "http://localhost/"+test.Input, nil)
+		fixPath(req, test.Input)
+		if req.URL.EscapedPath() != test.Expected {
+			t.Errorf("Path for '%s' not fixed.\n\tExpected: %s\n\t  Actual: %s\n", test.Input, test.Expected, req.URL.EscapedPath())
+		}
 	}
 }

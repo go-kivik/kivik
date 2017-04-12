@@ -87,7 +87,7 @@
 | GET /{db}/_design/{ddoc}              | Get()               |    |    | ？ | ？ |
 | PUT /{db}/_design/{ddoc}              | Put()               |    | ✅ | ✅ | ✅ |
 | DELETE /{db}/_design/{ddoc}           | Delete()            |    | ✅ | ✅ | ✅ |
-| COPY /{db}/_design/{ddoc}             | Copy()              |    |    | ？ | ？ |
+| COPY /{db}/_design/{ddoc}             | Copy()              |    | ✅ | ✅ | ⍻ |
 | HEAD /{db}/_design/{ddoc}/{attname}   | GetAttachmentMeta() |    |    | ？ | ？ |
 | GET /{db}/_design/{ddoc}/{attname}    | GetAttachment()     |    |    | ？ | ？ |
 | PUT /{db}/_design/{ddoc}/{attname}    | PutAttachment()     |    |    | ？ | ？ |
@@ -110,7 +110,7 @@
 | GET /{db}/_local/{docid}    | Get()               |    |    | ？ | ？ |
 | PUT /{db}/_local/{docid}    | Put()               |    | ✅ | ✅ | ✅ |
 | DELETE /{db}/_local/{docid} | Delete()            |    | ✅ | ✅ | ✅ |
-| COPY /{db}/_local/{docid}   | Copy()              |    |    | ？ | ？ |
+| COPY /{db}/_local/{docid}   | Copy()              |    | ✅ | ✅ | ⍻ |
 
 ### Notes
 

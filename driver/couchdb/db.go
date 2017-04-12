@@ -123,6 +123,9 @@ func (d *db) PutContext(ctx context.Context, docID string, doc interface{}) (rev
 	if err != nil {
 		return "", err
 	}
+	if err = chttp.ResponseError(resp); err != nil {
+		return "", err
+	}
 	defer resp.Body.Close()
 	rev, err = chttp.GetRev(resp)
 	if jsonErr != nil {

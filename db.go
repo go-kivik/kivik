@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/flimzy/kivik/driver"
-	"github.com/flimzy/kivik/errors"
 )
 
 // DB is a handle to a specific database.
@@ -87,10 +86,6 @@ func (db *DB) Put(docID string, doc interface{}) (rev string, err error) {
 // in doc, with JSON key '_rev', otherwise a conflict will occur. The new rev is
 // returned.
 func (db *DB) PutContext(ctx context.Context, docID string, doc interface{}) (rev string, err error) {
-	// The '/' char is only permitted in the case of '_design/', so check that here
-	if designDoc := strings.TrimPrefix(docID, "_design/"); strings.Contains(designDoc, "/") {
-		return "", errors.Status(StatusBadRequest, "invalid document ID")
-	}
 	return db.driverDB.PutContext(ctx, docID, doc)
 }
 

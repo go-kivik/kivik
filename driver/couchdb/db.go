@@ -110,7 +110,29 @@ func (d *db) CreateDocContext(ctx context.Context, doc interface{}) (docID, rev 
 	return result.ID, result.Rev, err
 }
 
+const (
+	prefixDesign = "_design/"
+	prefixLocal  = "_local/"
+)
+
+// encodeDocID ensures that any '/' chars in the docID are escaped, except
+// those found in the strings '_design/' and '_local'
+func encodeDocID(docID string) string {
+	for _, prefix := range []string{prefixDesign, prefixLocal} {
+		if strings.HasPrefix(docID, prefix) {
+			return prefix + replaceSlash(strings.TrimPrefix(docID, prefix))
+		}
+	}
+	return replaceSlash(docID)
+}
+
+// replaceSlash replaces any '/' char with '%2F'
+func replaceSlash(docID string) string {
+	return strings.Replace(docID, "/", "%2F", -1)
+}
+
 func (d *db) PutContext(ctx context.Context, docID string, doc interface{}) (rev string, err error) {
+	docID = encodeDocID(docID)
 	var jsonErr error
 	var cancel context.CancelFunc
 	ctx, cancel = context.WithCancel(ctx)

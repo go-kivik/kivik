@@ -132,7 +132,6 @@ func replaceSlash(docID string) string {
 }
 
 func (d *db) PutContext(ctx context.Context, docID string, doc interface{}) (rev string, err error) {
-	docID = encodeDocID(docID)
 	var jsonErr error
 	var cancel context.CancelFunc
 	ctx, cancel = context.WithCancel(ctx)
@@ -141,19 +140,19 @@ func (d *db) PutContext(ctx context.Context, docID string, doc interface{}) (rev
 		Body:        chttp.EncodeBody(doc, &jsonErr, cancel),
 		ForceCommit: d.forceCommit,
 	}
-	resp, err := d.Client.DoReq(ctx, kivik.MethodPut, d.path(docID, nil), opts)
+	var result struct {
+		ID  string `json:"id"`
+		Rev string `json:"rev"`
+	}
+	_, err = d.Client.DoJSON(ctx, kivik.MethodPut, d.path(encodeDocID(docID), nil), opts, &result)
 	if err != nil {
 		return "", err
 	}
-	if err = chttp.ResponseError(resp); err != nil {
-		return "", err
+	if result.ID != docID {
+		// This should never happen; this is mostly for debugging and internal use
+		return result.Rev, fmt.Errorf("created document ID (%s) does not match that requested (%s)", result.ID, docID)
 	}
-	defer resp.Body.Close()
-	rev, err = chttp.GetRev(resp)
-	if jsonErr != nil {
-		return "", jsonErr
-	}
-	return rev, err
+	return result.Rev, nil
 }
 
 func (d *db) DeleteContext(ctx context.Context, docID, rev string) (string, error) {

@@ -42,6 +42,8 @@ func init() {
 		"AllDocs/NoAuth/_duck.status":        kivik.StatusUnauthorized,
 		"AllDocs/RW/group/NoAuth.status":     kivik.StatusUnauthorized,
 
+		"Query/RW/group/NoAuth.status": kivik.StatusUnauthorized,
+
 		"DBExists.databases":              []string{"_users", "chicken", "_duck"},
 		"DBExists/Admin/_users.exists":    true,
 		"DBExists/Admin/chicken.exists":   false,
@@ -68,13 +70,17 @@ func init() {
 		"ServerInfo.vendor":         `^IBM Cloudant$`,
 		"ServerInfo.vendor_version": `^\d\d\d\d$`,
 
-		"Get/RW/group/NoAuth/bob.status":   kivik.StatusUnauthorized,
-		"Get/RW/group/NoAuth/bogus.status": kivik.StatusUnauthorized,
-		"Get/RW/group/Admin/bogus.status":  kivik.StatusNotFound,
+		"Get/RW/group/Admin/bogus.status":        kivik.StatusNotFound,
+		"Get/RW/group/NoAuth/bob.status":         kivik.StatusUnauthorized,
+		"Get/RW/group/NoAuth/bogus.status":       kivik.StatusUnauthorized,
+		"Get/RW/group/NoAuth/_design/foo.status": kivik.StatusUnauthorized,
+		"Get/RW/group/NoAuth/_local/foo.status":  kivik.StatusUnauthorized,
 
-		"Rev/RW/group/NoAuth/bob.status":   kivik.StatusUnauthorized,
-		"Rev/RW/group/NoAuth/bogus.status": kivik.StatusUnauthorized,
-		"Rev/RW/group/Admin/bogus.status":  kivik.StatusNotFound,
+		"Rev/RW/group/Admin/bogus.status":        kivik.StatusNotFound,
+		"Rev/RW/group/NoAuth/bob.status":         kivik.StatusUnauthorized,
+		"Rev/RW/group/NoAuth/bogus.status":       kivik.StatusUnauthorized,
+		"Rev/RW/group/NoAuth/_design/foo.status": kivik.StatusUnauthorized,
+		"Rev/RW/group/NoAuth/_local/foo.status":  kivik.StatusUnauthorized,
 
 		"Put/RW/NoAuth/Create.status": kivik.StatusUnauthorized,
 
@@ -169,11 +175,11 @@ func init() {
 		"BulkDocs/RW/NoAuth/group/Mix/Conflict.status": kivik.StatusConflict,
 		"BulkDocs/RW/Admin/group/Mix/Conflict.status":  kivik.StatusConflict,
 
-		"GetAttachment/RW/group/Admin/NotFound.status": kivik.StatusNotFound,
-		"GetAttachment/RW/group/NoAuth.status":         kivik.StatusUnauthorized,
+		"GetAttachment/RW/group/Admin/foo/NotFound.status": kivik.StatusNotFound,
+		"GetAttachment/RW/group/NoAuth.status":             kivik.StatusUnauthorized,
 
-		"GetAttachmentMeta/RW/group/Admin/NotFound.status": kivik.StatusNotFound,
-		"GetAttachmentMeta/RW/group/NoAuth.status":         kivik.StatusUnauthorized,
+		"GetAttachmentMeta/RW/group/Admin/foo/NotFound.status": kivik.StatusNotFound,
+		"GetAttachmentMeta/RW/group/NoAuth.status":             kivik.StatusUnauthorized,
 
 		"PutAttachment/RW/group/Admin/Conflict.status": kivik.StatusInternalServerError, // COUCHDB-3361
 		"PutAttachment/RW/group/NoAuth.status":         kivik.StatusUnauthorized,
@@ -182,5 +188,10 @@ func init() {
 		"DeleteAttachment/RW/group/NoAuth.status":       kivik.StatusUnauthorized,
 		"DeleteAttachment/RW/group/Admin/NoDoc.status":  kivik.StatusInternalServerError,
 		"DeleteAttachment/RW/group/NoAuth/NoDoc.status": kivik.StatusUnauthorized,
+
+		"Put/RW/Admin/group/LeadingUnderscoreInID.status": kivik.StatusBadRequest,
+		"Put/RW/Admin/group/Conflict.status":              kivik.StatusConflict,
+		"Put/RW/NoAuth/group.status":                      kivik.StatusUnauthorized,
+		"Put/RW/NoAuth/group/Conflict.skip":               true,
 	})
 }

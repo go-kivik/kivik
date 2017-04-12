@@ -33,7 +33,7 @@ var input = `
 }
 `
 
-var expectedKeys = []string{"meatballs", "spaghetti", "tomato sauce"}
+var expectedKeys = []string{`"meatballs"`, `"spaghetti"`, `"tomato sauce"`}
 
 func TestRowsIterator(t *testing.T) {
 	rows := newRows(ioutil.NopCloser(strings.NewReader(input)))
@@ -47,8 +47,8 @@ func TestRowsIterator(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Next() failed: %s", err)
 		}
-		if row.Key != expectedKeys[count] {
-			t.Errorf("Expected key #%d to be %s, got %s", count, expectedKeys[count], row.Key)
+		if string(row.Key) != expectedKeys[count] {
+			t.Errorf("Expected key #%d to be %s, got %s", count, expectedKeys[count], string(row.Key))
 		}
 		if count++; count > 10 {
 			t.Fatalf("Ran too many iterations.")

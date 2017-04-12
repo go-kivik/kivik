@@ -46,3 +46,21 @@ func TestDBInfo(t *testing.T) {
 		t.Errorf("Unexpected name %s", info.Name)
 	}
 }
+
+func TestEncodeDocID(t *testing.T) {
+	tests := []struct {
+		Input    string
+		Expected string
+	}{
+		{Input: "foo", Expected: "foo"},
+		{Input: "foo/bar", Expected: "foo%2Fbar"},
+		{Input: "_design/foo", Expected: "_design/foo"},
+		{Input: "_design/foo/bar", Expected: "_design/foo%2Fbar"},
+	}
+	for _, test := range tests {
+		result := encodeDocID(test.Input)
+		if result != test.Expected {
+			t.Errorf("Unexpected encoded DocID from %s\n\tExpected: %s\n\t  Actual: %s\n", test.Input, test.Expected, result)
+		}
+	}
+}

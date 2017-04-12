@@ -28,6 +28,8 @@ func init() {
 		"AllDocs/Admin.databases":                        []string{},
 		"AllDocs/RW/group/Admin/WithDocs/UpdateSeq.skip": true,
 
+		"Query/RW/group/Admin/WithDocs/UpdateSeq.skip": true,
+
 		"ServerInfo.version":        `^6\.\d\.\d$`,
 		"ServerInfo.vendor":         `^PouchDB$`,
 		"ServerInfo.vendor_version": `^6\.\d\.\d$`,
@@ -48,14 +50,17 @@ func init() {
 
 		"BulkDocs/RW/Admin/group/Mix/Conflict.status": kivik.StatusConflict,
 
-		"GetAttachment/RW/group/Admin/NotFound.status": kivik.StatusNotFound,
+		"GetAttachment/RW/group/Admin/foo/NotFound.status": kivik.StatusNotFound,
 
-		"GetAttachmentMeta/RW/group/Admin/NotFound.status": kivik.StatusNotFound,
+		"GetAttachmentMeta/RW/group/Admin/foo/NotFound.status": kivik.StatusNotFound,
 
 		"PutAttachment/RW/group/Admin/Conflict.status": kivik.StatusConflict,
 
 		// "DeleteAttachment/RW/group/Admin/NotFound.status": kivik.StatusNotFound, // https://github.com/pouchdb/pouchdb/issues/6409
 		"DeleteAttachment/RW/group/Admin/NoDoc.status": kivik.StatusNotFound,
+
+		"Put/RW/Admin/group/LeadingUnderscoreInID.status": kivik.StatusBadRequest,
+		"Put/RW/Admin/group/Conflict.status":              kivik.StatusConflict,
 	})
 	RegisterSuite(SuitePouchRemote, kt.SuiteConfig{
 		// Features which are not supported by PouchDB
@@ -103,6 +108,9 @@ func init() {
 		"AllDocs/RW/group/NoAuth/WithDocs/UpdateSeq.skip":    true,
 		"AllDocs/RW/group/NoAuth/WithoutDocs/UpdateSeq.skip": true,
 
+		"Query/RW/group/Admin/WithDocs/UpdateSeq.skip":  true,
+		"Query/RW/group/NoAuth/WithDocs/UpdateSeq.skip": true,
+
 		"ServerInfo.version":        `^6\.\d\.\d$`,
 		"ServerInfo.vendor":         `^PouchDB$`,
 		"ServerInfo.vendor_version": `^6\.\d\.\d$`,
@@ -119,6 +127,7 @@ func init() {
 		"Delete/RW/NoAuth/group/MissingDoc.status":       kivik.StatusNotFound,
 		"Delete/RW/NoAuth/group/InvalidRevFormat.status": kivik.StatusBadRequest,
 		"Delete/RW/NoAuth/group/WrongRev.status":         kivik.StatusConflict,
+		"Delete/RW/NoAuth/group/DesignDoc.status":        kivik.StatusUnauthorized,
 
 		"DBInfo.databases":             []string{"_users", "chicken"},
 		"DBInfo/Admin/chicken.status":  kivik.StatusNotFound,
@@ -129,18 +138,27 @@ func init() {
 		"BulkDocs/RW/NoAuth/group/Mix/Conflict.status": kivik.StatusConflict,
 		"BulkDocs/RW/Admin/group/Mix/Conflict.status":  kivik.StatusConflict,
 
-		"GetAttachment/RW/group/Admin/NotFound.status":  kivik.StatusNotFound,
-		"GetAttachment/RW/group/NoAuth/NotFound.status": kivik.StatusNotFound,
+		"GetAttachment/RW/group/Admin/foo/NotFound.status":  kivik.StatusNotFound,
+		"GetAttachment/RW/group/NoAuth/foo/NotFound.status": kivik.StatusNotFound,
 
-		"GetAttachmentMeta/RW/group/Admin/NotFound.status":  kivik.StatusNotFound,
-		"GetAttachmentMeta/RW/group/NoAuth/NotFound.status": kivik.StatusNotFound,
+		"GetAttachmentMeta/RW/group/Admin/foo/NotFound.status":  kivik.StatusNotFound,
+		"GetAttachmentMeta/RW/group/NoAuth/foo/NotFound.status": kivik.StatusNotFound,
 
-		"PutAttachment/RW/group/Admin/Conflict.status":  kivik.StatusConflict,
-		"PutAttachment/RW/group/NoAuth/Conflict.status": kivik.StatusConflict,
+		"PutAttachment/RW/group/Admin/Conflict.status":         kivik.StatusConflict,
+		"PutAttachment/RW/group/NoAuth/Conflict.status":        kivik.StatusConflict,
+		"PutAttachment/RW/group/NoAuth/UpdateDesignDoc.status": kivik.StatusUnauthorized,
+		"PutAttachment/RW/group/NoAuth/CreateDesignDoc.status": kivik.StatusUnauthorized,
 
 		// "DeleteAttachment/RW/group/Admin/NotFound.status":  kivik.StatusNotFound, // COUCHDB-3362
 		// "DeleteAttachment/RW/group/NoAuth/NotFound.status": kivik.StatusNotFound, // COUCHDB-3362
-		"DeleteAttachment/RW/group/Admin/NoDoc.status":  kivik.StatusConflict,
-		"DeleteAttachment/RW/group/NoAuth/NoDoc.status": kivik.StatusConflict,
+		"DeleteAttachment/RW/group/Admin/NoDoc.status":      kivik.StatusConflict,
+		"DeleteAttachment/RW/group/NoAuth/NoDoc.status":     kivik.StatusConflict,
+		"DeleteAttachment/RW/group/NoAuth/DesignDoc.status": kivik.StatusUnauthorized,
+
+		"Put/RW/Admin/group/LeadingUnderscoreInID.status":  kivik.StatusBadRequest,
+		"Put/RW/Admin/group/Conflict.status":               kivik.StatusConflict,
+		"Put/RW/NoAuth/group/DesignDoc.status":             kivik.StatusUnauthorized,
+		"Put/RW/NoAuth/group/LeadingUnderscoreInID.status": kivik.StatusBadRequest,
+		"Put/RW/NoAuth/group/Conflict.status":              kivik.StatusConflict,
 	})
 }

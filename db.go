@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/flimzy/kivik/driver"
-	"github.com/flimzy/kivik/errors"
 )
 
 // DB is a handle to a specific database.
@@ -28,6 +27,26 @@ func (db *DB) AllDocs(options Options) (*Rows, error) {
 // AllDocsContext returns a list of all documents in the database.
 func (db *DB) AllDocsContext(ctx context.Context, options Options) (*Rows, error) {
 	rowsi, err := db.driverDB.AllDocsContext(ctx, options)
+	if err != nil {
+		return nil, err
+	}
+	rows := &Rows{rowsi: rowsi}
+	rows.initContextClose(ctx)
+	return rows, nil
+}
+
+// Query calls QueryContext with a background context.
+func (db *DB) Query(ddoc, view string, options Options) (*Rows, error) {
+	return db.QueryContext(context.Background(), ddoc, view, options)
+}
+
+// QueryContext executes the specified view function from the specified design
+// document. ddoc and view may or may not be be prefixed with '_design/'
+// and '_view/' respectively. No other
+func (db *DB) QueryContext(ctx context.Context, ddoc, view string, options Options) (*Rows, error) {
+	ddoc = strings.TrimPrefix(ddoc, "_design/")
+	view = strings.TrimPrefix(view, "_view/")
+	rowsi, err := db.driverDB.QueryContext(ctx, ddoc, view, options)
 	if err != nil {
 		return nil, err
 	}
@@ -67,10 +86,6 @@ func (db *DB) Put(docID string, doc interface{}) (rev string, err error) {
 // in doc, with JSON key '_rev', otherwise a conflict will occur. The new rev is
 // returned.
 func (db *DB) PutContext(ctx context.Context, docID string, doc interface{}) (rev string, err error) {
-	// The '/' char is only permitted in the case of '_design/', so check that here
-	if designDoc := strings.TrimPrefix(docID, "_design/"); strings.Contains(designDoc, "/") {
-		return "", errors.Status(StatusBadRequest, "invalid document ID")
-	}
 	return db.driverDB.PutContext(ctx, docID, doc)
 }
 

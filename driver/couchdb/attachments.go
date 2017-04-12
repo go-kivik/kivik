@@ -26,7 +26,7 @@ func (d *db) PutAttachmentContext(ctx context.Context, docID, rev, filename, con
 	var response struct {
 		Rev string `json:"rev"`
 	}
-	_, err = d.Client.DoJSON(ctx, kivik.MethodPut, d.path(docID+"/"+filename, query), opts, &response)
+	_, err = d.Client.DoJSON(ctx, kivik.MethodPut, d.path(encodeDocID(docID)+"/"+filename, query), opts, &response)
 	if err != nil {
 		return "", err
 	}
@@ -56,7 +56,7 @@ func (d *db) fetchAttachment(ctx context.Context, method, docID, rev, filename s
 	if rev != "" {
 		query.Add("rev", rev)
 	}
-	resp, err := d.Client.DoReq(ctx, method, d.path(docID+"/"+filename, query), nil)
+	resp, err := d.Client.DoReq(ctx, method, d.path(encodeDocID(docID)+"/"+filename, query), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func (d *db) DeleteAttachmentContext(ctx context.Context, docID, rev, filename s
 	var response struct {
 		Rev string `json:"rev"`
 	}
-	_, err = d.Client.DoJSON(ctx, kivik.MethodDelete, d.path(docID+"/"+filename, query), nil, &response)
+	_, err = d.Client.DoJSON(ctx, kivik.MethodDelete, d.path(encodeDocID(docID)+"/"+filename, query), nil, &response)
 	if err != nil {
 		return "", err
 	}

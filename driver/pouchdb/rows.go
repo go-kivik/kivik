@@ -45,7 +45,7 @@ func (r *rows) Next(row *driver.Row) (err error) {
 	}
 	next := r.Get("rows").Call("shift")
 	row.ID = next.Get("id").String()
-	row.Key = next.Get("key").String()
+	row.Key = json.RawMessage(jsJSON.Call("stringify", next.Get("key")).String())
 	row.Value = json.RawMessage(jsJSON.Call("stringify", next.Get("value")).String())
 	if doc := next.Get("doc"); doc != js.Undefined {
 		row.Doc = json.RawMessage(jsJSON.Call("stringify", doc).String())

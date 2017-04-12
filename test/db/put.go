@@ -29,21 +29,82 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 	if !ctx.IsExpectedSuccess(err) {
 		return
 	}
+	ctx.Run("group", func(ctx *kt.Context) {
+		ctx.Run("Create", func(ctx *kt.Context) {
+			ctx.Parallel()
 
-	doc := &testDoc{
-		ID:   ctx.TestDBName(),
-		Name: "Alberto",
-		Age:  32,
-	}
-	ctx.Run("Create", func(ctx *kt.Context) {
-		rev, err := db.Put(doc.ID, doc)
-		if !ctx.IsExpectedSuccess(err) {
-			return
-		}
-		doc.Rev = rev
-		doc.Age = 40
-		ctx.Run("Update", func(ctx *kt.Context) {
-			_, err := db.Put(doc.ID, doc)
+			doc := &testDoc{
+				ID:   ctx.TestDBName(),
+				Name: "Alberto",
+				Age:  32,
+			}
+			rev, err := db.Put(doc.ID, doc)
+			if !ctx.IsExpectedSuccess(err) {
+				return
+			}
+			doc.Rev = rev
+			doc.Age = 40
+			ctx.Run("Update", func(ctx *kt.Context) {
+				_, err := db.Put(doc.ID, doc)
+				ctx.CheckError(err)
+			})
+		})
+		ctx.Run("DesignDoc", func(ctx *kt.Context) {
+			ctx.Parallel()
+			doc := map[string]interface{}{
+				"_id":      "_design/testddoc",
+				"language": "javascript",
+				"views": map[string]interface{}{
+					"testview": map[string]interface{}{
+						"map": `function(doc) {
+			                if (doc.include) {
+			                    emit(doc._id, doc.index);
+			                }
+			            }`,
+					},
+				},
+			}
+			_, err := db.Put(doc["_id"].(string), doc)
+			ctx.CheckError(err)
+		})
+		ctx.Run("Local", func(ctx *kt.Context) {
+			ctx.Parallel()
+			doc := map[string]interface{}{
+				"_id":  "_local/foo",
+				"name": "Bob",
+			}
+			_, err := db.Put(doc["_id"].(string), doc)
+			ctx.CheckError(err)
+		})
+		ctx.Run("LeadingUnderscoreInID", func(ctx *kt.Context) {
+			ctx.Parallel()
+			doc := map[string]interface{}{
+				"_id":  "_badid",
+				"name": "Bob",
+			}
+			_, err := db.Put(doc["_id"].(string), doc)
+			ctx.CheckError(err)
+		})
+		ctx.Run("SlashInID", func(ctx *kt.Context) {
+			ctx.Parallel()
+			doc := map[string]interface{}{
+				"_id":  "foo/bar",
+				"name": "Bob",
+			}
+			_, err := db.Put(doc["_id"].(string), doc)
+			ctx.CheckError(err)
+		})
+		ctx.Run("Conflict", func(ctx *kt.Context) {
+			ctx.Parallel()
+			doc := map[string]interface{}{
+				"_id":  "duplicate",
+				"name": "Bob",
+			}
+			_, err := db.Put(doc["_id"].(string), doc)
+			if err != nil {
+				ctx.Fatalf("Failed to create document for duplicate test: %s", err)
+			}
+			_, err = db.Put(doc["_id"].(string), doc)
 			ctx.CheckError(err)
 		})
 	})

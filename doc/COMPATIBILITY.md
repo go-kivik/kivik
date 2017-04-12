@@ -83,7 +83,7 @@
 | GET /{db}/{docid}/{attname}           | GetAttachment()     |    | ✅ | ✅ | ✅ |
 | PUT /{db}/{docid}/{attname}           | PutAttachment()     |    | ✅ | ✅ | ✅ |
 | DELETE /{db}/{docid}/{attname}        | DeleteAttachment()  |    | ✅ | ✅ | ✅ |
-| HEAD /{db}/_design/{ddoc}             | Rev()               |    |    | ？ | ？ |
+| HEAD /{db}/_design/{ddoc}             | Rev()               |    | ✅ | ✅ | ✅ |
 | GET /{db}/_design/{ddoc}              | Get()               |    |    | ？ | ？ |
 | PUT /{db}/_design/{ddoc}              | Put()               |    | ✅ | ✅ | ✅ |
 | DELETE /{db}/_design/{ddoc}           | Delete()            |    |    | ？ | ？ |
@@ -106,6 +106,7 @@
 | POST /{db}/_design/{ddoc}/_update/{func} | ⁿ/ₐ |   |   |❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
 | PUT /{db}/_design/{ddoc}/_update/{func}/{docid} |ⁿ/ₐ| | |❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
 | ANY /{db}/_design/{ddoc}/_rewrite/{path} | ⁿ/ₐ |  |   | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
+| HEAD /{db}/_local/{docid}   | Rev()               |    | ✅ | ✅ | ✅ |
 | GET /{db}/_local/{docid}    | Get()               |    |    | ？ | ？ |
 | PUT /{db}/_local/{docid}    | Put()               |    | ✅ | ✅ | ✅ |
 | DELETE /{db}/_local/{docid} | Delete()            |    |    | ？ | ？ |

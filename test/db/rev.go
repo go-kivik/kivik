@@ -1,6 +1,8 @@
 package db
 
 import (
+	"strings"
+
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/test/kt"
 )
@@ -28,6 +30,25 @@ func rev(ctx *kt.Context) {
 			ctx.Fatalf("Failed to create doc in test db: %s", err)
 		}
 		doc.Rev = rev
+
+		ddoc := &testDoc{
+			ID: "_design/foo",
+		}
+		rev, err = db.Put(ddoc.ID, ddoc)
+		if err != nil {
+			ctx.Fatalf("Failed to create design doc in test db: %s", err)
+		}
+		ddoc.Rev = rev
+
+		local := &testDoc{
+			ID: "_local/foo",
+		}
+		rev, err = db.Put(local.ID, local)
+		if err != nil {
+			ctx.Fatalf("Failed to create local doc in test db: %s", err)
+		}
+		local.Rev = rev
+
 		ctx.Run("group", func(ctx *kt.Context) {
 			ctx.RunAdmin(func(ctx *kt.Context) {
 				ctx.Parallel()
@@ -36,6 +57,8 @@ func rev(ctx *kt.Context) {
 					return
 				}
 				testRev(ctx, db, doc)
+				testRev(ctx, db, ddoc)
+				testRev(ctx, db, local)
 				testRev(ctx, db, &testDoc{ID: "bogus"})
 			})
 			ctx.RunNoAuth(func(ctx *kt.Context) {
@@ -45,6 +68,8 @@ func rev(ctx *kt.Context) {
 					return
 				}
 				testRev(ctx, db, doc)
+				testRev(ctx, db, ddoc)
+				testRev(ctx, db, local)
 				testRev(ctx, db, &testDoc{ID: "bogus"})
 			})
 		})
@@ -61,6 +86,10 @@ func testRev(ctx *kt.Context, db *kivik.DB, expectedDoc *testDoc) {
 		doc := &testDoc{}
 		if err = db.Get(expectedDoc.ID, &doc, nil); err != nil {
 			ctx.Fatalf("Failed to get doc: %s", err)
+		}
+		if strings.HasPrefix(expectedDoc.ID, "_local/") {
+			// Revisions are meaningless for _local docs
+			return
 		}
 		if rev != doc.Rev {
 			ctx.Errorf("Unexpected rev. Expected: %s, Actual: %s", doc.Rev, rev)

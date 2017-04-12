@@ -70,9 +70,11 @@ func init() {
 		"ServerInfo.vendor":         `^IBM Cloudant$`,
 		"ServerInfo.vendor_version": `^\d\d\d\d$`,
 
-		"Get/RW/group/NoAuth/bob.status":   kivik.StatusUnauthorized,
-		"Get/RW/group/NoAuth/bogus.status": kivik.StatusUnauthorized,
-		"Get/RW/group/Admin/bogus.status":  kivik.StatusNotFound,
+		"Get/RW/group/Admin/bogus.status":        kivik.StatusNotFound,
+		"Get/RW/group/NoAuth/bob.status":         kivik.StatusUnauthorized,
+		"Get/RW/group/NoAuth/bogus.status":       kivik.StatusUnauthorized,
+		"Get/RW/group/NoAuth/_design/foo.status": kivik.StatusUnauthorized,
+		"Get/RW/group/NoAuth/_local/foo.status":  kivik.StatusUnauthorized,
 
 		"Rev/RW/group/Admin/bogus.status":        kivik.StatusNotFound,
 		"Rev/RW/group/NoAuth/bob.status":         kivik.StatusUnauthorized,

@@ -28,6 +28,7 @@ func get(ctx *kt.Context) {
 		if err != nil {
 			ctx.Fatalf("Failed to connect to test db: %s", err)
 		}
+
 		doc := &testDoc{
 			ID:   "bob",
 			Name: "Robert",
@@ -38,6 +39,27 @@ func get(ctx *kt.Context) {
 			ctx.Fatalf("Failed to create doc in test db: %s", err)
 		}
 		doc.Rev = rev
+
+		ddoc := &testDoc{
+			ID:   "_design/foo",
+			Name: "Designer",
+		}
+		rev, err = db.Put(ddoc.ID, ddoc)
+		if err != nil {
+			ctx.Fatalf("Failed to create design doc in test db: %s", err)
+		}
+		ddoc.Rev = rev
+
+		local := &testDoc{
+			ID:   "_local/foo",
+			Name: "Designer",
+		}
+		rev, err = db.Put(local.ID, local)
+		if err != nil {
+			ctx.Fatalf("Failed to create local doc in test db: %s", err)
+		}
+		local.Rev = rev
+
 		ctx.Run("group", func(ctx *kt.Context) {
 			ctx.RunAdmin(func(ctx *kt.Context) {
 				ctx.Parallel()
@@ -46,6 +68,8 @@ func get(ctx *kt.Context) {
 					return
 				}
 				testGet(ctx, db, doc)
+				testGet(ctx, db, ddoc)
+				testGet(ctx, db, local)
 				testGet(ctx, db, &testDoc{ID: "bogus"})
 			})
 			ctx.RunNoAuth(func(ctx *kt.Context) {
@@ -55,6 +79,8 @@ func get(ctx *kt.Context) {
 					return
 				}
 				testGet(ctx, db, doc)
+				testGet(ctx, db, ddoc)
+				testGet(ctx, db, local)
 				testGet(ctx, db, &testDoc{ID: "bogus"})
 			})
 		})

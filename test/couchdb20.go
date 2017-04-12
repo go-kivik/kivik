@@ -91,6 +91,7 @@ func init() {
 		"Delete/RW/NoAuth/group/MissingDoc.status":       kivik.StatusNotFound,
 		"Delete/RW/NoAuth/group/InvalidRevFormat.status": kivik.StatusBadRequest,
 		"Delete/RW/NoAuth/group/WrongRev.status":         kivik.StatusConflict,
+		"Delete/RW/NoAuth/group/DesignDoc.status":        kivik.StatusUnauthorized,
 
 		"Session/Get/Admin.info.authentication_handlers":  "cookie,default",
 		"Session/Get/Admin.info.authentication_db":        "_users",

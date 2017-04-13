@@ -116,5 +116,6 @@ func init() {
 		"PutAttachment.skip":     true, // FIXME: Unimplemented
 		"DeleteAttachment.skip":  true, // FIXME: Unimplemented
 		"Query.skip":             true, // FIXME: Unimplemented
+		"Find.skip":              true, // FIXME: Unimplemented
 	})
 }

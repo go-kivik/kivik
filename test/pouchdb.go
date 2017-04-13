@@ -28,6 +28,8 @@ func init() {
 		"AllDocs/Admin.databases":                        []string{},
 		"AllDocs/RW/group/Admin/WithDocs/UpdateSeq.skip": true,
 
+		"Find/Admin.databases": []string{},
+
 		"Query/RW/group/Admin/WithDocs/UpdateSeq.skip": true,
 
 		"ServerInfo.version":        `^6\.\d\.\d$`,
@@ -107,6 +109,8 @@ func init() {
 		"AllDocs/RW/group/Admin/WithoutDocs/UpdateSeq.skip":  true,
 		"AllDocs/RW/group/NoAuth/WithDocs/UpdateSeq.skip":    true,
 		"AllDocs/RW/group/NoAuth/WithoutDocs/UpdateSeq.skip": true,
+
+		"Find.skip": true, // Find doesn't work with CouchDB 1.6, which we use for these tests
 
 		"Query/RW/group/Admin/WithDocs/UpdateSeq.skip":  true,
 		"Query/RW/group/NoAuth/WithDocs/UpdateSeq.skip": true,

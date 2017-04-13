@@ -36,6 +36,8 @@ be https://github.com/fjl/go-couchdb, but it has several shortcomings:
   - It doesn't natively support CookieAuth (it does allow a generic Auth method
     which could be used to do this, but I think it's appropriate to put directly
     in the library).
+  - It doesn't support the new MongoDB-style `/_find` interface now available in
+    CouchDB 2.0 (also present in PouchDB).
 
 2. I want a single client API that works with both CouchDB and [PouchDB](https://pouchdb.com/).
 I have previously written [go-pouchdb](https://github.com/flimzy/go-pouchdb), which is
@@ -53,9 +55,9 @@ with the sql / sql/driver approach, by implementing a mock driver, but was not
 possible with any existing CouchDB client libraries. This library intends to
 remedy that.
 
-5. In the future term, I intend to expand kivik to support a 'serve' mode. This
-will allow running a minimal stand-alone CouchDB server or proxy, for the purpose
-of testing. My personal goal is to run a kivik server with a memory backend, so
+5. In the future, I intend to expand kivik to support a 'serve' mode. This will
+allow running a minimal stand-alone CouchDB server or proxy, for the purpose of
+testing. My personal goal is to run a kivik server with a memory backend, so
 that I can test a CouchDB app, or PouchDB syncing, against my kivik server,
 without the administrative overhead of installing a full-fledged CouchDB instance.
 If successful, this opens up additional possibilities of creating simple CouchDB

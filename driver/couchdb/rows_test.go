@@ -96,3 +96,38 @@ func TestRowsIteratorErrors(t *testing.T) {
 		}
 	}
 }
+
+var findInput = `
+{"docs":[
+{"id":"SpaghettiWithMeatballs","key":"meatballs","value":1},
+{"id":"SpaghettiWithMeatballs","key":"spaghetti","value":1},
+{"id":"SpaghettiWithMeatballs","key":"tomato sauce","value":1}
+]}
+`
+
+func TestFindRowsIterator(t *testing.T) {
+	rows := newRows(ioutil.NopCloser(strings.NewReader(findInput)))
+	var count int
+	for {
+		row := &driver.Row{}
+		err := rows.Next(row)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			t.Fatalf("Next() failed: %s", err)
+		}
+		if count++; count > 10 {
+			t.Fatalf("Ran too many iterations.")
+		}
+	}
+	if count != 3 {
+		t.Errorf("Expected 3 rows, got %d", count)
+	}
+	if err := rows.Next(&driver.Row{}); err != io.EOF {
+		t.Errorf("Calling Next() after end returned unexpected error: %s", err)
+	}
+	if err := rows.Close(); err != nil {
+		t.Errorf("Error closing rows iterator: %s", err)
+	}
+}

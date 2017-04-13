@@ -156,6 +156,16 @@ type DB interface {
 	QueryContext(ctx context.Context, ddoc, view string, options map[string]interface{}) (Rows, error)
 }
 
+// Finder is an optional interface which may be implemented by a database. The
+// Finder interface provides access to the new (in CouchDB 2.0) MongoDB-style
+// query interface.
+type Finder interface {
+	// FindContext executes a query using the new /_find interface. If query is
+	// a string, []byte, or json.RawMessage, it should be treated as a raw JSON
+	// payload. Any other type should be marshaled to JSON.
+	FindContext(ctx context.Context, query interface{}) (Rows, error)
+}
+
 // Checksum is a 128-bit MD5 checksum of a file's content.
 type Checksum [16]byte
 

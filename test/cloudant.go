@@ -42,6 +42,16 @@ func init() {
 		"AllDocs/NoAuth/_duck.status":        kivik.StatusUnauthorized,
 		"AllDocs/RW/group/NoAuth.status":     kivik.StatusUnauthorized,
 
+		"Find.databases":                  []string{"_replicator", "chicken", "_duck"},
+		"Find/Admin/_replicator.expected": []string{"_design/_replicator"},
+		"Find/Admin/_replicator.offset":   0,
+		"Find/Admin/chicken.status":       kivik.StatusNotFound,
+		"Find/Admin/_duck.status":         kivik.StatusForbidden,
+		"Find/NoAuth/_replicator.status":  kivik.StatusUnauthorized,
+		"Find/NoAuth/chicken.status":      kivik.StatusNotFound,
+		"Find/NoAuth/_duck.status":        kivik.StatusUnauthorized,
+		"Find/RW/group/NoAuth.status":     kivik.StatusUnauthorized,
+
 		"Query/RW/group/NoAuth.status": kivik.StatusUnauthorized,
 
 		"DBExists.databases":              []string{"_users", "chicken", "_duck"},

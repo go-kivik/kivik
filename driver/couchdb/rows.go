@@ -17,6 +17,8 @@ type rows struct {
 	dec       *json.Decoder
 	// closed is true after all rows have been processed
 	closed bool
+	// isFindRows is set to true if this result set is from the _find interface.
+	isFindRows bool
 }
 
 var _ driver.Rows = &rows{}
@@ -82,7 +84,8 @@ func (r *rows) begin() error {
 			// The JSON parser should never permit this
 			return fmt.Errorf("Unexpected token: (%T) %v", t, t)
 		}
-		if key == "rows" {
+		if key == "rows" || key == "docs" {
+			r.isFindRows = key == "docs"
 			// Consume the first '['
 			return consumeDelim(r.dec, json.Delim('['))
 		}
@@ -145,8 +148,10 @@ func (r *rows) nextRow(row *driver.Row) error {
 		}
 		return io.EOF
 	}
-	err := r.dec.Decode(row)
-	return err
+	if r.isFindRows {
+		return r.dec.Decode(&row.Doc)
+	}
+	return r.dec.Decode(row)
 }
 
 // consumeDelim consumes the expected delimiter from the stream, or returns an

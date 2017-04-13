@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -61,6 +62,35 @@ func (d *db) rowsQuery(ctx context.Context, path string, opts map[string]interfa
 		return nil, err
 	}
 	resp, err := d.Client.DoReq(ctx, kivik.MethodGet, d.path(path, options), nil)
+	if err != nil {
+		return nil, err
+	}
+	if err = chttp.ResponseError(resp); err != nil {
+		return nil, err
+	}
+	return newRows(resp.Body), nil
+}
+
+func (d *db) FindContext(ctx context.Context, query interface{}) (driver.Rows, error) {
+	if d.client.Compat == CompatCouch16 {
+		return nil, kivik.ErrNotImplemented
+	}
+	var body io.Reader
+	switch t := query.(type) {
+	case string:
+		body = strings.NewReader(t)
+	case []byte:
+		body = bytes.NewReader(t)
+	case json.RawMessage:
+		body = bytes.NewReader(t)
+	default:
+		buf := &bytes.Buffer{}
+		if err := json.NewEncoder(buf).Encode(query); err != nil {
+			return nil, err
+		}
+		body = buf
+	}
+	resp, err := d.Client.DoReq(ctx, kivik.MethodPost, d.path("_find", nil), &chttp.Options{Body: body})
 	if err != nil {
 		return nil, err
 	}

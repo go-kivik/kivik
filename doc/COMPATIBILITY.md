@@ -60,6 +60,11 @@
 | GET /{db}/_all_docs | AllDocs()             |    | ☑️<sup>[7](#todoConflicts),[9](#todoOrdering),[10](#todoLimit)</sup> | ✅ | ？ | ？ |
 | POST /{db}/_all_docs | ⁿ/ₐ                   |    |    | ❌ | ❌ | ⁿ/ₐ | ⁿ/ₐ |
 | POST /{db}/_bulk_docs | BulkDocs()          |    | ✅ | ✅ | ✅  |    |    |
+| POST /{db}/_find     | Find()               |    | ✅ | ✅ |    |
+| POST /{db}/_index    | CreateIndex()        |    |    |    |    |
+| GET /{db}/_index     | GetIndexes()         |    |    |    |    |
+| DELETE /{db}/_index  | DeleteIndex()        |    |    |    |    |
+| POST /{db}/_explain  | Explain()            |    |    |    |    |
 | GET /{db}/_changes   | Changes()<sup>[8](#changesContinuous)</sup> |    | ✅ | ✅ | ✅ |    |    |
 | POST /{db}/_changes  |                      |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | POST /{db}/_compact  | Compact()            |    | ✅ | ✅ | ✅ |     |    |

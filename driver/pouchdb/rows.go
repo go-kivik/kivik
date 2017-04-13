@@ -2,12 +2,12 @@ package pouchdb
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 
 	"github.com/gopherjs/gopherjs/js"
 
 	"github.com/flimzy/kivik/driver"
+	"github.com/flimzy/kivik/driver/pouchdb/bindings"
 )
 
 var jsJSON *js.Object
@@ -26,20 +26,12 @@ type rows struct {
 var _ driver.Rows = &rows{}
 
 func (r *rows) Close() error {
-	r.Set("rows", nil) // Free up memory used by any remaining rows
+	r.Delete("rows") // Free up memory used by any remaining rows
 	return nil
 }
 
 func (r *rows) Next(row *driver.Row) (err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			if e, ok := r.(error); ok {
-				err = e
-			} else {
-				err = fmt.Errorf("%v", r)
-			}
-		}
-	}()
+	defer bindings.RecoverError(&err)
 	if r.Get("rows") == js.Undefined || r.Get("rows").Length() == 0 {
 		return io.EOF
 	}

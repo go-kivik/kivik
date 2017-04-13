@@ -5,6 +5,7 @@ package bindings
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
 	"time"
@@ -191,7 +192,27 @@ func (db *DB) Find(ctx context.Context, query interface{}) (*js.Object, error) {
 	if jsbuiltin.TypeOf(db.Object.Get("find")) != jsbuiltin.TypeFunction {
 		return nil, kivik.ErrNotImplemented
 	}
+	query, err := objectifyQuery(query)
+	if err != nil {
+		return nil, err
+	}
 	return callBack(ctx, db, "find", query)
+}
+
+func objectifyQuery(query interface{}) (interface{}, error) {
+	var buf []byte
+	switch t := query.(type) {
+	case string:
+		buf = []byte(t)
+	case []byte:
+		buf = t
+	case json.RawMessage:
+		buf = t
+	default:
+		return query, nil
+	}
+	err := json.Unmarshal(buf, &query)
+	return query, err
 }
 
 // Compact compacts the database, and waits for it to complete. This may take

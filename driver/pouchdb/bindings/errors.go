@@ -3,7 +3,10 @@ package bindings
 import (
 	"fmt"
 
+	"github.com/flimzy/kivik"
+	"github.com/flimzy/kivik/errors"
 	"github.com/gopherjs/gopherjs/js"
+	"github.com/gopherjs/jsbuiltin"
 )
 
 type pouchError struct {
@@ -13,6 +16,7 @@ type pouchError struct {
 	Status  int
 }
 
+// NewPouchError parses a PouchDB error.
 func NewPouchError(o *js.Object) error {
 	var err, msg string
 	switch {
@@ -20,6 +24,10 @@ func NewPouchError(o *js.Object) error {
 		msg = o.Get("reason").String()
 	case o.Get("message") != js.Undefined:
 		msg = o.Get("message").String()
+	default:
+		if jsbuiltin.InstanceOf(o, js.Global.Get("Error")) {
+			return errors.Status(kivik.StatusInternalServerError, o.Get("message").String())
+		}
 	}
 	switch {
 	case o.Get("name") != js.Undefined:

@@ -12,6 +12,7 @@ import (
 	"github.com/gopherjs/gopherjs/js"
 	"github.com/gopherjs/jsbuiltin"
 
+	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/errors"
 )
 
@@ -181,6 +182,16 @@ func (db *DB) AllDocs(ctx context.Context, options map[string]interface{}) (*js.
 // Query queries a map/reduce function.
 func (db *DB) Query(ctx context.Context, ddoc, view string, options map[string]interface{}) (*js.Object, error) {
 	return callBack(ctx, db, "query", ddoc+"/"+view, setTimeout(ctx, options))
+}
+
+// Find executes a MongoDB-style find query with the pouchdb-find plugin, if it
+// is installed. If the plugin is not installed, a NotImplemented error will be
+// returned.
+func (db *DB) Find(ctx context.Context, query interface{}) (*js.Object, error) {
+	if jsbuiltin.TypeOf(db.Object.Get("find")) != jsbuiltin.TypeFunction {
+		return nil, kivik.ErrNotImplemented
+	}
+	return callBack(ctx, db, "find", query)
 }
 
 // Compact compacts the database, and waits for it to complete. This may take

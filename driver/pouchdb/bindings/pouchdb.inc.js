@@ -10,5 +10,9 @@ try {
 } catch(e) {}
 
 try {
+    $global.PouchDB.plugin(require('pouchdb-find'));
+} catch(e) {}
+
+try {
     global.XMLHttpRequest = require('xhr2');
 } catch(e) {}

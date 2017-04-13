@@ -8,7 +8,8 @@
         "url": "https://github.com/flimzy/kivik"
     },
     "devDependencies": {
-        "pouchdb": ">=4.0.2",
+        "pouchdb": "*",
+        "pouchdb-find": "*",
         "pouchdb-all-dbs": "*",
         "memdown": ">=1.1.0",
         "xhr2": "*"

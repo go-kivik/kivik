@@ -1,2 +1,6 @@
 test/pouch__all_dbs__/
 serve/files.go
+vendor
+test.*
+glide.lock
+node_modules

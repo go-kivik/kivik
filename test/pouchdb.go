@@ -71,6 +71,9 @@ func init() {
 		"CreateIndex/RW/Admin/group/InvalidJSON.status":  kivik.StatusBadRequest,
 
 		"GetIndexes.databases": []string{},
+
+		"DeleteIndex/RW/Admin/group/NotFoundDdoc.status": kivik.StatusNotFound,
+		"DeleteIndex/RW/Admin/group/NotFoundName.status": kivik.StatusNotFound,
 	})
 	RegisterSuite(SuitePouchRemote, kt.SuiteConfig{
 		// Features which are not supported by PouchDB

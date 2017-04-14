@@ -184,6 +184,17 @@ func init() {
 		"Put/RW/NoAuth/group/DesignDoc.status":             kivik.StatusUnauthorized,
 		"Put/RW/NoAuth/group/Conflict.status":              kivik.StatusConflict,
 
-		"CreateIndex/RW/NoAuth.status": kivik.StatusInternalServerError, // COUCHDB-3374
+		"CreateIndex/RW/Admin/group/EmptyIndex.status":   kivik.StatusBadRequest,
+		"CreateIndex/RW/Admin/group/BlankIndex.status":   kivik.StatusBadRequest,
+		"CreateIndex/RW/Admin/group/InvalidIndex.status": kivik.StatusBadRequest,
+		"CreateIndex/RW/Admin/group/NilIndex.status":     kivik.StatusBadRequest,
+		"CreateIndex/RW/Admin/group/InvalidJSON.status":  kivik.StatusBadRequest,
+
+		"CreateIndex/RW/NoAuth/group/EmptyIndex.status":   kivik.StatusBadRequest,
+		"CreateIndex/RW/NoAuth/group/BlankIndex.status":   kivik.StatusBadRequest,
+		"CreateIndex/RW/NoAuth/group/InvalidIndex.status": kivik.StatusBadRequest,
+		"CreateIndex/RW/NoAuth/group/NilIndex.status":     kivik.StatusBadRequest,
+		"CreateIndex/RW/NoAuth/group/InvalidJSON.status":  kivik.StatusBadRequest,
+		"CreateIndex/RW/NoAuth/group/Valid.status":        kivik.StatusInternalServerError, // COUCHDB-3374
 	})
 }

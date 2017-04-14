@@ -63,6 +63,12 @@ func init() {
 
 		"Put/RW/Admin/group/LeadingUnderscoreInID.status": kivik.StatusBadRequest,
 		"Put/RW/Admin/group/Conflict.status":              kivik.StatusConflict,
+
+		"CreateIndex/RW/Admin/group/EmptyIndex.status":   kivik.StatusInternalServerError,
+		"CreateIndex/RW/Admin/group/BlankIndex.status":   kivik.StatusBadRequest,
+		"CreateIndex/RW/Admin/group/InvalidIndex.status": kivik.StatusInternalServerError,
+		"CreateIndex/RW/Admin/group/NilIndex.status":     kivik.StatusInternalServerError,
+		"CreateIndex/RW/Admin/group/InvalidJSON.status":  kivik.StatusBadRequest,
 	})
 	RegisterSuite(SuitePouchRemote, kt.SuiteConfig{
 		// Features which are not supported by PouchDB

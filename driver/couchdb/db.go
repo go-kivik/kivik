@@ -14,6 +14,7 @@ import (
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/driver/couchdb/chttp"
+	"github.com/flimzy/kivik/errors"
 )
 
 type db struct {
@@ -345,7 +346,7 @@ func deJSONify(i interface{}) (interface{}, error) {
 	}
 	var x interface{}
 	err := json.Unmarshal(data, &x)
-	return x, err
+	return x, errors.WrapStatus(kivik.StatusBadRequest, err)
 }
 
 func (d *db) CreateIndexContext(ctx context.Context, ddoc, name string, index interface{}) error {
@@ -367,7 +368,7 @@ func (d *db) CreateIndexContext(ctx context.Context, ddoc, name string, index in
 	}
 	body := &bytes.Buffer{}
 	if err = json.NewEncoder(body).Encode(parameters); err != nil {
-		return err
+		return errors.WrapStatus(kivik.StatusBadRequest, err)
 	}
 	_, err = d.Client.DoError(ctx, kivik.MethodPost, d.path("_index", nil), &chttp.Options{Body: body})
 	return err

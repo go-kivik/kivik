@@ -18,6 +18,11 @@ type pouchError struct {
 
 // NewPouchError parses a PouchDB error.
 func NewPouchError(o *js.Object) error {
+	status := o.Get("status").Int()
+	if status == 0 {
+		status = kivik.StatusInternalServerError
+	}
+
 	var err, msg string
 	switch {
 	case o.Get("reason") != js.Undefined:
@@ -26,7 +31,7 @@ func NewPouchError(o *js.Object) error {
 		msg = o.Get("message").String()
 	default:
 		if jsbuiltin.InstanceOf(o, js.Global.Get("Error")) {
-			return errors.Status(kivik.StatusInternalServerError, o.Get("message").String())
+			return errors.Status(status, o.Get("message").String())
 		}
 	}
 	switch {
@@ -38,7 +43,7 @@ func NewPouchError(o *js.Object) error {
 	return &pouchError{
 		Err:     err,
 		Message: msg,
-		Status:  o.Get("status").Int(),
+		Status:  status,
 	}
 }
 

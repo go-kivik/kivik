@@ -64,7 +64,7 @@
 | POST /{db}/_index    | CreateIndex()        |    | ✅ | ✅ | ✅ |
 | GET /{db}/_index     | GetIndexes()         |    | ✅ | ✅ | ✅ |
 | DELETE /{db}/_index  | DeleteIndex()        |    | ✅ | ✅ | ✅ |
-| POST /{db}/_explain  | Explain()            |    |    |    |    |
+| POST /{db}/_explain  |                      |    |    | ❌<sup>[15](#notPublic)</sup> |    |
 | GET /{db}/_changes   | Changes()<sup>[8](#changesContinuous)</sup> |    | ✅ | ✅ | ✅ |    |    |
 | POST /{db}/_changes  |                      |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | POST /{db}/_compact  | Compact()            |    | ✅ | ✅ | ✅ |     |    |

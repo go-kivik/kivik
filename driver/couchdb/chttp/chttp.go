@@ -200,10 +200,6 @@ func (c *Client) DoReq(ctx context.Context, method, path string, opts *Options) 
 // fixPath sets the request's URL.RawPath to work with escaped '/' chars in
 // paths.
 func fixPath(req *http.Request, path string) {
-	if !strings.Contains(path, "%2F") {
-		// No need for special treatment
-		return
-	}
 	// Remove any query parameters
 	parts := strings.Split(path, "?")
 	req.URL.RawPath = "/" + strings.TrimPrefix(parts[0], "/")

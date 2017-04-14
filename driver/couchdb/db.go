@@ -373,3 +373,9 @@ func (d *db) CreateIndexContext(ctx context.Context, ddoc, name string, index in
 	_, err = d.Client.DoError(ctx, kivik.MethodPost, d.path("_index", nil), &chttp.Options{Body: body})
 	return err
 }
+
+func (d *db) DeleteIndexContext(ctx context.Context, ddoc, name string) error {
+	path := fmt.Sprintf("_index/%s/json/%s", ddoc, name)
+	_, err := d.Client.DoError(ctx, kivik.MethodDelete, d.path(path, nil), nil)
+	return err
+}

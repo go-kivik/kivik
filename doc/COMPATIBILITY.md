@@ -63,7 +63,7 @@
 | POST /{db}/_find     | Find()               |    | ✅ | ✅ | ✅ |
 | POST /{db}/_index    | CreateIndex()        |    | ✅ | ✅ | ✅ |
 | GET /{db}/_index     | GetIndexes()         |    |    |    |    |
-| DELETE /{db}/_index  | DeleteIndex()        |    |    |    |    |
+| DELETE /{db}/_index  | DeleteIndex()        |    | ✅ | ✅ |    |
 | POST /{db}/_explain  | Explain()            |    |    |    |    |
 | GET /{db}/_changes   | Changes()<sup>[8](#changesContinuous)</sup> |    | ✅ | ✅ | ✅ |    |    |
 | POST /{db}/_changes  |                      |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |

@@ -215,5 +215,9 @@ func init() {
 		"CreateIndex/RW/NoAuth/group/NilIndex.status":     kivik.StatusUnauthorized,
 		"CreateIndex/RW/NoAuth/group/InvalidJSON.status":  kivik.StatusBadRequest,
 		"CreateIndex/RW/NoAuth/group/Valid.status":        kivik.StatusUnauthorized,
+
+		"DeleteIndex/RW/Admin/group/NotFoundDdoc.status": kivik.StatusNotFound,
+		"DeleteIndex/RW/Admin/group/NotFoundName.status": kivik.StatusNotFound,
+		"DeleteIndex/RW/NoAuth.status":                   kivik.StatusUnauthorized,
 	})
 }

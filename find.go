@@ -42,3 +42,16 @@ func (db *DB) CreateIndexContext(ctx context.Context, ddoc, name string, index i
 	}
 	return ErrNotImplemented
 }
+
+// DeleteIndex calls DeleteIndexContext with a background context.
+func (db *DB) DeleteIndex(ddoc, name string) error {
+	return db.DeleteIndexContext(context.Background(), ddoc, name)
+}
+
+// DeleteIndexContext deletes the requested index.
+func (db *DB) DeleteIndexContext(ctx context.Context, ddoc, name string) error {
+	if finder, ok := db.driverDB.(driver.Finder); ok {
+		return finder.DeleteIndexContext(ctx, ddoc, name)
+	}
+	return ErrNotImplemented
+}

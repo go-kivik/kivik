@@ -170,6 +170,8 @@ type Finder interface {
 	// string, []byte, or json.RawMessage, it should be treated as a raw JSON
 	// payload. Any other type should be marshaled to JSON.
 	CreateIndexContext(ctx context.Context, ddoc, name string, index interface{}) error
+	// DeleteIndex deletes the requested index.
+	DeleteIndexContext(ctx context.Context, ddoc, name string) error
 }
 
 // Checksum is a 128-bit MD5 checksum of a file's content.

@@ -71,24 +71,30 @@ func (d *db) rowsQuery(ctx context.Context, path string, opts map[string]interfa
 	return newRows(resp.Body), nil
 }
 
+// jsonify converts a string, []byte, json.RawMessage, or an arbitrary type into
+// an io.Reader of JSON marshaled data.
+func jsonify(i interface{}) (io.Reader, error) {
+	switch t := i.(type) {
+	case string:
+		return strings.NewReader(t), nil
+	case []byte:
+		return bytes.NewReader(t), nil
+	case json.RawMessage:
+		return bytes.NewReader(t), nil
+	default:
+		buf := &bytes.Buffer{}
+		err := json.NewEncoder(buf).Encode(i)
+		return buf, err
+	}
+}
+
 func (d *db) FindContext(ctx context.Context, query interface{}) (driver.Rows, error) {
 	if d.client.Compat == CompatCouch16 {
 		return nil, kivik.ErrNotImplemented
 	}
-	var body io.Reader
-	switch t := query.(type) {
-	case string:
-		body = strings.NewReader(t)
-	case []byte:
-		body = bytes.NewReader(t)
-	case json.RawMessage:
-		body = bytes.NewReader(t)
-	default:
-		buf := &bytes.Buffer{}
-		if err := json.NewEncoder(buf).Encode(query); err != nil {
-			return nil, err
-		}
-		body = buf
+	body, err := jsonify(query)
+	if err != nil {
+		return nil, err
 	}
 	resp, err := d.Client.DoReq(ctx, kivik.MethodPost, d.path("_find", nil), &chttp.Options{Body: body})
 	if err != nil {

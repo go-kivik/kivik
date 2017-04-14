@@ -192,16 +192,18 @@ func (db *DB) Find(ctx context.Context, query interface{}) (*js.Object, error) {
 	if jsbuiltin.TypeOf(db.Object.Get("find")) != jsbuiltin.TypeFunction {
 		return nil, kivik.ErrNotImplemented
 	}
-	query, err := objectifyQuery(query)
+	queryObj, err := Objectify(query)
 	if err != nil {
 		return nil, err
 	}
-	return callBack(ctx, db, "find", query)
+	return callBack(ctx, db, "find", queryObj)
 }
 
-func objectifyQuery(query interface{}) (interface{}, error) {
+// Objectify unmarshals a string, []byte, or json.RawMessage into an interface{}.
+// All other types are just passed through.
+func Objectify(i interface{}) (interface{}, error) {
 	var buf []byte
-	switch t := query.(type) {
+	switch t := i.(type) {
 	case string:
 		buf = []byte(t)
 	case []byte:
@@ -209,10 +211,11 @@ func objectifyQuery(query interface{}) (interface{}, error) {
 	case json.RawMessage:
 		buf = t
 	default:
-		return query, nil
+		return i, nil
 	}
-	err := json.Unmarshal(buf, &query)
-	return query, err
+	var x interface{}
+	err := json.Unmarshal(buf, &x)
+	return x, errors.WrapStatus(kivik.StatusBadRequest, err)
 }
 
 // Compact compacts the database, and waits for it to complete. This may take
@@ -301,4 +304,14 @@ func (db *DB) GetAttachment(ctx context.Context, docID, filename string, options
 // See https://pouchdb.com/api.html#delete_attachment
 func (db *DB) RemoveAttachment(ctx context.Context, docID, filename, rev string) (*js.Object, error) {
 	return callBack(ctx, db, "removeAttachment", docID, filename, rev)
+}
+
+// CreateIndex creates an index to be used by MongoDB-style queries with the
+// pouchdb-find plugin, if it is installed. If the plugin is not installed, a
+// NotImplemented error will be returned.
+func (db *DB) CreateIndex(ctx context.Context, index interface{}) (*js.Object, error) {
+	if jsbuiltin.TypeOf(db.Object.Get("find")) != jsbuiltin.TypeFunction {
+		return nil, kivik.ErrNotImplemented
+	}
+	return callBack(ctx, db, "createIndex", index)
 }

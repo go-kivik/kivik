@@ -1,7 +1,10 @@
 test: linter test-standard test-gopherjs
 
-clean:
+clean: clean-cache
 	rm -f serve/files.go
+
+clean-cache:
+	rm -rf ${GOPATH}/pkg/*_js
 
 linter: clean
 	# ./travis/test.sh linter
@@ -9,8 +12,7 @@ linter: clean
 test-standard: generate
 	./travis/test.sh standard
 
-test-gopherjs: generate
-	rm -rf ${GOPATH}/pkg/*_js
+test-gopherjs: generate clean-cache
 	./travis/test.sh gopherjs
 
 generate:

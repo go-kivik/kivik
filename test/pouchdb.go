@@ -63,6 +63,12 @@ func init() {
 
 		"Put/RW/Admin/group/LeadingUnderscoreInID.status": kivik.StatusBadRequest,
 		"Put/RW/Admin/group/Conflict.status":              kivik.StatusConflict,
+
+		"CreateIndex/RW/Admin/group/EmptyIndex.status":   kivik.StatusInternalServerError,
+		"CreateIndex/RW/Admin/group/BlankIndex.status":   kivik.StatusBadRequest,
+		"CreateIndex/RW/Admin/group/InvalidIndex.status": kivik.StatusInternalServerError,
+		"CreateIndex/RW/Admin/group/NilIndex.status":     kivik.StatusInternalServerError,
+		"CreateIndex/RW/Admin/group/InvalidJSON.status":  kivik.StatusBadRequest,
 	})
 	RegisterSuite(SuitePouchRemote, kt.SuiteConfig{
 		// Features which are not supported by PouchDB
@@ -110,7 +116,8 @@ func init() {
 		"AllDocs/RW/group/NoAuth/WithDocs/UpdateSeq.skip":    true,
 		"AllDocs/RW/group/NoAuth/WithoutDocs/UpdateSeq.skip": true,
 
-		"Find.skip": true, // Find doesn't work with CouchDB 1.6, which we use for these tests
+		"Find.skip":        true, // Find doesn't work with CouchDB 1.6, which we use for these tests
+		"CreateIndex.skip": true, // Find doesn't work with CouchDB 1.6, which we use for these tests
 
 		"Query/RW/group/Admin/WithDocs/UpdateSeq.skip":  true,
 		"Query/RW/group/NoAuth/WithDocs/UpdateSeq.skip": true,

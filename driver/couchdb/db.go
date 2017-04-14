@@ -14,6 +14,7 @@ import (
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/driver/couchdb/chttp"
+	"github.com/flimzy/kivik/errors"
 )
 
 type db struct {
@@ -71,24 +72,30 @@ func (d *db) rowsQuery(ctx context.Context, path string, opts map[string]interfa
 	return newRows(resp.Body), nil
 }
 
+// jsonify converts a string, []byte, json.RawMessage, or an arbitrary type into
+// an io.Reader of JSON marshaled data.
+func jsonify(i interface{}) (io.Reader, error) {
+	switch t := i.(type) {
+	case string:
+		return strings.NewReader(t), nil
+	case []byte:
+		return bytes.NewReader(t), nil
+	case json.RawMessage:
+		return bytes.NewReader(t), nil
+	default:
+		buf := &bytes.Buffer{}
+		err := json.NewEncoder(buf).Encode(i)
+		return buf, err
+	}
+}
+
 func (d *db) FindContext(ctx context.Context, query interface{}) (driver.Rows, error) {
 	if d.client.Compat == CompatCouch16 {
 		return nil, kivik.ErrNotImplemented
 	}
-	var body io.Reader
-	switch t := query.(type) {
-	case string:
-		body = strings.NewReader(t)
-	case []byte:
-		body = bytes.NewReader(t)
-	case json.RawMessage:
-		body = bytes.NewReader(t)
-	default:
-		buf := &bytes.Buffer{}
-		if err := json.NewEncoder(buf).Encode(query); err != nil {
-			return nil, err
-		}
-		body = buf
+	body, err := jsonify(query)
+	if err != nil {
+		return nil, err
 	}
 	resp, err := d.Client.DoReq(ctx, kivik.MethodPost, d.path("_find", nil), &chttp.Options{Body: body})
 	if err != nil {
@@ -321,4 +328,48 @@ func (d *db) CopyContext(ctx context.Context, targetID, sourceID string, options
 	}
 	defer resp.Body.Close()
 	return chttp.GetRev(resp)
+}
+
+// deJSONify unmarshals a string, []byte, or json.RawMessage. All other types
+// are returned as-is.
+func deJSONify(i interface{}) (interface{}, error) {
+	var data []byte
+	switch t := i.(type) {
+	case string:
+		data = []byte(t)
+	case []byte:
+		data = t
+	case json.RawMessage:
+		data = []byte(t)
+	default:
+		return i, nil
+	}
+	var x interface{}
+	err := json.Unmarshal(data, &x)
+	return x, errors.WrapStatus(kivik.StatusBadRequest, err)
+}
+
+func (d *db) CreateIndexContext(ctx context.Context, ddoc, name string, index interface{}) error {
+	if d.client.Compat == CompatCouch16 {
+		return kivik.ErrNotImplemented
+	}
+	indexObj, err := deJSONify(index)
+	if err != nil {
+		return err
+	}
+	parameters := struct {
+		Index interface{} `json:"index"`
+		Ddoc  string      `json:"ddoc,omitempty"`
+		Name  string      `json:"name,omitempty"`
+	}{
+		Index: indexObj,
+		Ddoc:  ddoc,
+		Name:  name,
+	}
+	body := &bytes.Buffer{}
+	if err = json.NewEncoder(body).Encode(parameters); err != nil {
+		return errors.WrapStatus(kivik.StatusBadRequest, err)
+	}
+	_, err = d.Client.DoError(ctx, kivik.MethodPost, d.path("_index", nil), &chttp.Options{Body: body})
+	return err
 }

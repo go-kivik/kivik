@@ -164,6 +164,12 @@ type Finder interface {
 	// a string, []byte, or json.RawMessage, it should be treated as a raw JSON
 	// payload. Any other type should be marshaled to JSON.
 	FindContext(ctx context.Context, query interface{}) (Rows, error)
+	// CreateIndexContext creates an index if it doesn't already exist. If the
+	// index already exists, it should do nothing. ddoc and name may be empty,
+	// in which case they should be provided by the backend. If index is a
+	// string, []byte, or json.RawMessage, it should be treated as a raw JSON
+	// payload. Any other type should be marshaled to JSON.
+	CreateIndexContext(ctx context.Context, ddoc, name string, index interface{}) error
 }
 
 // Checksum is a 128-bit MD5 checksum of a file's content.

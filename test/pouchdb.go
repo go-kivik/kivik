@@ -48,8 +48,6 @@ func init() {
 
 		"DBInfo/Admin.skip": true, // No predefined DBs for Local PouchDB
 
-		"RevsLimit.databases": []string{},
-
 		"BulkDocs/RW/Admin/group/Mix/Conflict.status": kivik.StatusConflict,
 
 		"GetAttachment/RW/group/Admin/foo/NotFound.status": kivik.StatusNotFound,
@@ -150,8 +148,6 @@ func init() {
 		"DBInfo.databases":             []string{"_users", "chicken"},
 		"DBInfo/Admin/chicken.status":  kivik.StatusNotFound,
 		"DBInfo/NoAuth/chicken.status": kivik.StatusNotFound,
-
-		"RevsLimit.skip": true, // FIXME: Unsupported for remote databases. Perhaps later with a plugin?
 
 		"BulkDocs/RW/NoAuth/group/Mix/Conflict.status": kivik.StatusConflict,
 		"BulkDocs/RW/Admin/group/Mix/Conflict.status":  kivik.StatusConflict,

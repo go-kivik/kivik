@@ -106,7 +106,6 @@ func init() {
 		"Security.skip":          true, // FIXME: Unimplemented
 		"SetSecurity.skip":       true, // FIXME: Unimplemented
 		"Rev.skip":               true, // FIXME: When Get works
-		"RevsLimit.skip":         true, // FIXME: Unimplemented
 		"DBUpdates.skip":         true, // FIXME: Unimplemented
 		"Changes.skip":           true, // FIXME: Unimplemented
 		"Copy.skip":              true, // FIXME: Unimplemented, depends on Get/Put or Copy

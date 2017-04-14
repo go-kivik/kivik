@@ -77,8 +77,8 @@
 | POST /{db}/_purge                     | ⁿ/ₐ                  |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
 | POST /{db}/_missing_revs              | ⁿ/ₐ                  |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
 | POST /{db}/_revs_diff                 | ⁿ/ₐ                  |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
-| GET /{db}/_revs_limit                 | RevsLimit()         |    | ✅ | ✅ | ☑️<sup>[3](#pouchLocalOnly)</sup> |
-| PUT /{db}/_revs_limit                 | SetRevsLimit()      |    | ✅ | ✅ | ☑️<sup>[3](#pouchLocalOnly)</sup> |
+| GET /{db}/_revs_limit                 | ⁿ/ₐ                  |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
+| PUT /{db}/_revs_limit                 | ⁿ/ₐ                  |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
 | HEAD /{db}/{docid}                    | Rev()               |    | ✅ | ✅ | ⍻ |
 | GET /{db}/{docid}                     | Get()               |    | ☑️<sup>[7](#todoConflicts),[11](#todoAttachments)</sup> | ✅ | ✅
 | PUT /{db}/{docid}                     | Put()               |    | ☑️<sup>[11](#todoAttachments)</sup> | ✅ | ✅

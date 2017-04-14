@@ -15,29 +15,7 @@ import (
 	"github.com/imdario/mergo"
 )
 
-// Driver represents the configuration for a PouchDB driver. You may specify
-// custom configuration PouchDB by registering your own instance of this driver.
-// For example, to use the memdown driver (https://github.com/level/memdown) in
-// Node.js for unit tests:
-//
-//     func init() {
-//         kivik.Register("memdown", pouchdb.Driver{
-//             Defaults: map[string]interface{}{
-//                 "db": js.Global.Call("require", "memdown"),
-//             },
-//         })
-//    }
-//
-//    func main() {
-//        db := kivik.NewClient("memdown", "")
-//        // ...
-//    }
-//
-type Driver struct {
-	// Options is a map of default options to pass to the PouchDB constructor.
-	// See https://pouchdb.com/api.html#defaults
-	Defaults map[string]interface{}
-}
+type Driver struct{}
 
 var _ driver.Driver = &Driver{}
 
@@ -60,12 +38,7 @@ func (d *Driver) NewClientContext(_ context.Context, dsn string) (driver.Client,
 		user = u.User
 		u.User = nil
 	}
-	var pouch *bindings.PouchDB
-	if d.Defaults == nil {
-		pouch = bindings.GlobalPouchDB()
-	} else {
-		pouch = bindings.Defaults(d.Defaults)
-	}
+	pouch := bindings.GlobalPouchDB()
 	client := &client{
 		dsn:   u,
 		pouch: pouch,
@@ -94,17 +67,9 @@ var _ driver.Client = &client{}
 
 const optionsDefaultKey = "defaults"
 
-func (c *client) SetDefault(key string, value interface{}) error {
-	if _, ok := c.opts[optionsDefaultKey]; !ok {
-		c.opts[optionsDefaultKey] = Options{}
-	}
-	c.opts[optionsDefaultKey][key] = value
-	return nil
-}
-
 // AllDBs returns the list of all existing databases. This function depends on
 // the pouchdb-all-dbs plugin being loaded.
-func (c *client) AllDBsContext(ctx context.Context) ([]string, error) {
+func (c *client) AllDBsContext(ctx context.Context, _ map[string]interface{}) ([]string, error) {
 	if c.dsn == nil {
 		return c.pouch.AllDBs(ctx)
 	}
@@ -132,7 +97,7 @@ func (i *pouchInfo) Vendor() string        { return "PouchDB" }
 func (i *pouchInfo) Version() string       { return i.vers }
 func (i *pouchInfo) VendorVersion() string { return i.vers }
 
-func (c *client) ServerInfoContext(_ context.Context) (driver.ServerInfo, error) {
+func (c *client) ServerInfoContext(_ context.Context, _ map[string]interface{}) (driver.ServerInfo, error) {
 	return &pouchInfo{
 		vers: c.pouch.Version(),
 	}, nil
@@ -151,14 +116,19 @@ func (c *client) dbURL(db string) string {
 // Options is a struct of options, as documented in the PouchDB API.
 type Options map[string]interface{}
 
-func (c *client) options(opts Options) (Options, error) {
+func (c *client) options(options ...Options) (Options, error) {
 	o := Options{}
 	for _, defOpts := range c.opts {
 		if err := mergo.MergeWithOverwrite(&o, defOpts); err != nil {
 			return nil, err
 		}
 	}
-	return o, mergo.MergeWithOverwrite(&o, opts)
+	for _, opts := range options {
+		if err := mergo.MergeWithOverwrite(&o, opts); err != nil {
+			return nil, err
+		}
+	}
+	return o, nil
 }
 
 func (c *client) isRemote() bool {
@@ -168,10 +138,8 @@ func (c *client) isRemote() bool {
 // DBExistsContext returns true if the requested DB exists. This function only
 // works for remote databases. For local databases, it creates the database.
 // Silly PouchDB.
-func (c *client) DBExistsContext(ctx context.Context, dbName string) (bool, error) {
-	opts, err := c.options(Options{
-		"skip_setup": true,
-	})
+func (c *client) DBExistsContext(ctx context.Context, dbName string, options map[string]interface{}) (bool, error) {
+	opts, err := c.options(options, Options{"skip_setup": true})
 	if err != nil {
 		return false, err
 	}
@@ -185,13 +153,13 @@ func (c *client) DBExistsContext(ctx context.Context, dbName string) (bool, erro
 	return false, err
 }
 
-func (c *client) CreateDBContext(ctx context.Context, dbName string) error {
+func (c *client) CreateDBContext(ctx context.Context, dbName string, options map[string]interface{}) error {
 	if c.isRemote() {
-		if exists, _ := c.DBExistsContext(ctx, dbName); exists {
+		if exists, _ := c.DBExistsContext(ctx, dbName, options); exists {
 			return errors.Status(http.StatusPreconditionFailed, "database exists")
 		}
 	}
-	opts, err := c.options(Options{})
+	opts, err := c.options(options)
 	if err != nil {
 		return err
 	}
@@ -199,8 +167,8 @@ func (c *client) CreateDBContext(ctx context.Context, dbName string) error {
 	return err
 }
 
-func (c *client) DestroyDBContext(ctx context.Context, dbName string) error {
-	exists, err := c.DBExistsContext(ctx, dbName)
+func (c *client) DestroyDBContext(ctx context.Context, dbName string, options map[string]interface{}) error {
+	exists, err := c.DBExistsContext(ctx, dbName, options)
 	if err != nil {
 		return err
 	}
@@ -208,24 +176,22 @@ func (c *client) DestroyDBContext(ctx context.Context, dbName string) error {
 		// This will only ever do anything for a remote database
 		return errors.Status(http.StatusNotFound, "database does not exist")
 	}
-	opts, err := c.options(Options{})
+	opts, err := c.options(options)
 	if err != nil {
 		return err
 	}
 	return c.pouch.New(c.dbURL(dbName), opts).Destroy(ctx, nil)
 }
 
-func (c *client) DBContext(ctx context.Context, dbName string) (driver.DB, error) {
-	exists, err := c.DBExistsContext(ctx, dbName)
+func (c *client) DBContext(ctx context.Context, dbName string, options map[string]interface{}) (driver.DB, error) {
+	exists, err := c.DBExistsContext(ctx, dbName, options)
 	if err != nil {
 		return nil, err
 	}
 	if !exists {
 		return nil, kivik.ErrNotFound
 	}
-	opts, err := c.options(Options{
-		"revs_limit": 999,
-	})
+	opts, err := c.options(options)
 	if err != nil {
 		return nil, err
 	}

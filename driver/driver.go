@@ -29,21 +29,18 @@ type ServerInfo interface {
 // Client is a connection to a database server.
 type Client interface {
 	// VersionInfo returns the server implementation's details.
-	ServerInfoContext(ctx context.Context) (ServerInfo, error)
-	AllDBsContext(ctx context.Context) ([]string, error)
+	ServerInfoContext(ctx context.Context, options map[string]interface{}) (ServerInfo, error)
+	AllDBsContext(ctx context.Context, options map[string]interface{}) ([]string, error)
 	// DBExists returns true if the database exists.
-	DBExistsContext(ctx context.Context, dbName string) (bool, error)
+	DBExistsContext(ctx context.Context, dbName string, options map[string]interface{}) (bool, error)
 	// CreateDB creates the requested DB. The dbName is validated as a valid
 	// CouchDB database name prior to calling this function, so the driver can
 	// assume a valid name.
-	CreateDBContext(ctx context.Context, dbName string) error
+	CreateDBContext(ctx context.Context, dbName string, options map[string]interface{}) error
 	// DestroyDB deletes the requested DB.
-	DestroyDBContext(ctx context.Context, dbName string) error
+	DestroyDBContext(ctx context.Context, dbName string, options map[string]interface{}) error
 	// DB returns a handleto the requested database
-	DBContext(ctx context.Context, dbName string) (DB, error)
-	// SetDefault allows the user to set a default option to be propogated to
-	// future DB instances.
-	SetDefault(key string, value interface{}) error
+	DBContext(ctx context.Context, dbName string, options map[string]interface{}) (DB, error)
 }
 
 // Authenticator is an optional interface that may be implemented by a Client
@@ -101,8 +98,6 @@ type Security struct {
 
 // DB is a database handle.
 type DB interface {
-	// SetOption allows setting a database-specific option.
-	SetOption(key string, value interface{}) error
 	// AllDocsContext returns all of the documents in the database, subject
 	// to the options provided.
 	AllDocsContext(ctx context.Context, options map[string]interface{}) (Rows, error)
@@ -127,12 +122,6 @@ type DB interface {
 	SecurityContext(ctx context.Context) (*Security, error)
 	// SetSecurityContext sets the database's security document.
 	SetSecurityContext(ctx context.Context, security *Security) error
-	// RevsLimitContext returns the the maximum number of document revisions
-	// that will be tracked.
-	RevsLimitContext(ctx context.Context) (limit int, err error)
-	// SetRevsLimitContext sets the maximum number of document revisions that
-	// will be tracked.
-	SetRevsLimitContext(ctx context.Context, limit int) error
 	// ChangesContext returns a Rows iterator for the changes feed. In
 	// continuous mode, the iterator will continue indefinately, until Close is
 	// called.

@@ -278,22 +278,6 @@ func (d *db) RevContext(ctx context.Context, docID string) (rev string, err erro
 	return strings.Trim(res.Header.Get("Etag"), `""`), nil
 }
 
-// RevsLimitContext returns the maximum number of document revisions that will
-// be tracked.
-func (d *db) RevsLimitContext(ctx context.Context) (limit int, err error) {
-	_, err = d.Client.DoJSON(ctx, http.MethodGet, d.path("/_revs_limit", nil), nil, &limit)
-	return limit, err
-}
-
-func (d *db) SetRevsLimitContext(ctx context.Context, limit int) error {
-	body, err := json.Marshal(limit)
-	if err != nil {
-		return err
-	}
-	_, err = d.Client.DoError(ctx, http.MethodPut, d.path("/_revs_limit", nil), &chttp.Options{Body: bytes.NewBuffer(body)})
-	return err
-}
-
 func (d *db) CopyContext(ctx context.Context, targetID, sourceID string, options map[string]interface{}) (targetRev string, err error) {
 	params, err := optionsToParams(options)
 	if err != nil {

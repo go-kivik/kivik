@@ -8,7 +8,7 @@ import (
 	"github.com/flimzy/kivik/errors"
 )
 
-func (c *client) AllDBsContext(ctx context.Context) ([]string, error) {
+func (c *client) AllDBsContext(ctx context.Context, _ map[string]interface{}) ([]string, error) {
 	var allDBs []string
 	_, err := c.DoJSON(ctx, kivik.MethodGet, "/_all_dbs", nil, &allDBs)
 	return allDBs, err
@@ -37,7 +37,7 @@ func (c *client) MembershipContext(ctx context.Context) ([]string, []string, err
 	return membership.All, membership.Cluster, err
 }
 
-func (c *client) DBExistsContext(ctx context.Context, dbName string) (bool, error) {
+func (c *client) DBExistsContext(ctx context.Context, dbName string, _ map[string]interface{}) (bool, error) {
 	_, err := c.DoError(ctx, kivik.MethodHead, dbName, nil)
 	if errors.StatusCode(err) == kivik.StatusNotFound {
 		return false, nil
@@ -45,12 +45,12 @@ func (c *client) DBExistsContext(ctx context.Context, dbName string) (bool, erro
 	return err == nil, err
 }
 
-func (c *client) CreateDBContext(ctx context.Context, dbName string) error {
+func (c *client) CreateDBContext(ctx context.Context, dbName string, _ map[string]interface{}) error {
 	_, err := c.DoError(ctx, kivik.MethodPut, dbName, nil)
 	return err
 }
 
-func (c *client) DestroyDBContext(ctx context.Context, dbName string) error {
+func (c *client) DestroyDBContext(ctx context.Context, dbName string, _ map[string]interface{}) error {
 	_, err := c.DoError(ctx, kivik.MethodDelete, dbName, nil)
 	return err
 }

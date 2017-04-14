@@ -75,7 +75,7 @@ func testGetAttachmentMeta(ctx *kt.Context, client *kivik.Client, dbname, docID,
 		if !ctx.IsExpectedSuccess(err) {
 			return
 		}
-		if client.Driver() != "pouch" && client.Driver() != "memdown" {
+		if client.Driver() != "pouch" {
 			if att.ContentType != "text/plain" {
 				ctx.Errorf("Content-Type: Expected %s, Actual %s", "text/plain", att.ContentType)
 			}

@@ -2,7 +2,6 @@ package fs
 
 import (
 	"context"
-	"errors"
 	"io"
 
 	"github.com/flimzy/kivik/driver"
@@ -11,10 +10,6 @@ import (
 type db struct {
 	*client
 	dbName string
-}
-
-func (d *db) SetOption(_ string, _ interface{}) error {
-	return errors.New("no options supported")
 }
 
 func (d *db) AllDocsContext(_ context.Context, _ map[string]interface{}) (driver.Rows, error) {
@@ -73,16 +68,6 @@ func (d *db) SecurityContext(_ context.Context) (*driver.Security, error) {
 }
 
 func (d *db) SetSecurityContext(_ context.Context, _ *driver.Security) error {
-	// FIXME: Unimplemented
-	return nil
-}
-
-func (d *db) RevsLimitContext(_ context.Context) (limit int, err error) {
-	// FIXME: Unimplemented
-	return 0, nil
-}
-
-func (d *db) SetRevsLimitContext(_ context.Context, limit int) error {
 	// FIXME: Unimplemented
 	return nil
 }

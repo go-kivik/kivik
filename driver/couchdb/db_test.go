@@ -4,13 +4,14 @@ import (
 	"io"
 	"testing"
 
+	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/test/kt"
 )
 
 func TestAllDocs(t *testing.T) {
 	client := getClient(t)
-	db, err := client.DBContext(kt.CTX, "_users")
+	db, err := client.DBContext(kt.CTX, "_users", kivik.Options{"force_commit": true})
 	if err != nil {
 		t.Fatalf("Failed to connect to db: %s", err)
 	}
@@ -34,7 +35,7 @@ func TestAllDocs(t *testing.T) {
 
 func TestDBInfo(t *testing.T) {
 	client := getClient(t)
-	db, err := client.DBContext(kt.CTX, "_users")
+	db, err := client.DBContext(kt.CTX, "_users", kivik.Options{"force_commit": true})
 	if err != nil {
 		t.Fatalf("Failed to connect to db: %s", err)
 	}

@@ -7,7 +7,6 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"net/http"
 	"time"
 
 	"github.com/gopherjs/gopherjs/js"
@@ -232,20 +231,6 @@ func (db *DB) Compact() error {
 func (db *DB) ViewCleanup() error {
 	_, err := callBack(context.Background(), db, "viewCleanup")
 	return err
-}
-
-const defaultRevsLimit = 1000
-
-// RevsLimit returns the current revs_limit setting for the database.
-func (db *DB) RevsLimit() (limit int, err error) {
-	defer RecoverError(&err)
-	if db.Object.Get("_adaptor").String() == "http" {
-		return 0, errors.Status(http.StatusNotImplemented, "revs_limit unimplemented for remote databases")
-	}
-	if revsLimit := db.Object.Get("__opts").Get("revs_limit"); revsLimit != js.Undefined {
-		return revsLimit.Int(), nil
-	}
-	return defaultRevsLimit, nil
 }
 
 // BulkDocs creates, updates, or deletes docs in bulk.

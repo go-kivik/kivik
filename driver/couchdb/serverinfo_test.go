@@ -8,7 +8,7 @@ import (
 
 func TestServerInfo(t *testing.T) {
 	client := getClient(t)
-	_, err := client.ServerInfoContext(kt.CTX)
+	_, err := client.ServerInfoContext(kt.CTX, nil)
 	if err != nil {
 		t.Fatalf("Faled to get server info: %s", err)
 	}

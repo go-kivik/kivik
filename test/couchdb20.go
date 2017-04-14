@@ -147,15 +147,6 @@ func init() {
 		"SetSecurity/RW/NoAuth/NotExists.status": kivik.StatusNotFound,
 		"SetSecurity/RW/NoAuth/Exists.status":    kivik.StatusInternalServerError, // Can you say WTF?
 
-		"RevsLimit.databases":                     []string{"_replicator", "_users", "_global_changes", "chicken", "_duck"},
-		"RevsLimit.revs_limit":                    1000,
-		"RevsLimit/Admin/chicken.status":          kivik.StatusNotFound,
-		"RevsLimit/Admin/_duck.status":            kivik.StatusNotFound,
-		"RevsLimit/NoAuth/_global_changes.status": kivik.StatusUnauthorized,
-		"RevsLimit/NoAuth/chicken.status":         kivik.StatusNotFound,
-		"RevsLimit/NoAuth/_duck.status":           kivik.StatusUnauthorized,
-		"RevsLimit/RW/NoAuth/Set.status":          kivik.StatusInternalServerError, // Stupid bug in Couch 2.0
-
 		"DBUpdates/RW/NoAuth.status": kivik.StatusUnauthorized,
 
 		"BulkDocs/RW/NoAuth/group/Mix/Conflict.status": kivik.StatusConflict,

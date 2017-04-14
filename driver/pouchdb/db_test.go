@@ -10,15 +10,13 @@ import (
 )
 
 func init() {
-	kivik.Register("memdown", &Driver{
-		Defaults: map[string]interface{}{
-			"db": js.Global.Call("require", "memdown"),
-		},
+	js.Global.Get("PouchDB").Call("defaults", map[string]interface{}{
+		"db": js.Global.Call("require", "memdown"),
 	})
 }
 
 func TestPut(t *testing.T) {
-	client, err := kivik.New("memdown", "")
+	client, err := kivik.New("pouch", "")
 	if err != nil {
 		t.Errorf("Failed to connect to PouchDB/memdown driver: %s", err)
 		return

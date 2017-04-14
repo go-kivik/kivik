@@ -39,6 +39,20 @@ func (d *db) CreateIndexContext(ctx context.Context, ddoc, name string, index in
 	return err
 }
 
+func (d *db) GetIndexesContext(ctx context.Context) (indexes []driver.Index, err error) {
+	defer bindings.RecoverError(&err)
+	result, err := d.db.GetIndexes(ctx)
+	if err != nil {
+		return nil, err
+	}
+	// This might not be the most efficient, but it's easy
+	var final struct {
+		Indexes []driver.Index `json:"indexes"`
+	}
+	err = json.Unmarshal([]byte(js.Global.Get("JSON").Call("stringify", result).String()), &final)
+	return final.Indexes, err
+}
+
 func (d *db) DeleteIndexContext(ctx context.Context, ddoc, name string) error {
 	indexObj, err := buildIndex(ddoc, name, map[string]interface{}{})
 	if err != nil {

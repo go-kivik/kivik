@@ -320,6 +320,16 @@ func (db *DB) CreateIndex(ctx context.Context, index interface{}) (*js.Object, e
 	return callBack(ctx, db, "createIndex", index)
 }
 
+// GetIndexes returns the list of currently defined indexes on the database.
+//
+// See https://github.com/pouchdb/pouchdb/tree/master/packages/node_modules/pouchdb-find#dbgetindexescallback
+func (db *DB) GetIndexes(ctx context.Context) (*js.Object, error) {
+	if jsbuiltin.TypeOf(db.Object.Get("find")) != jsbuiltin.TypeFunction {
+		return nil, kivik.ErrNotImplemented
+	}
+	return callBack(ctx, db, "getIndexes")
+}
+
 // DeleteIndex deletes an index used by the MongoDB-style queries with the
 // pouchdb-find plugin, if it is installed. If the plugin is not installed, a
 // NotImplemeneted error will be returned.

@@ -45,7 +45,8 @@ func init() {
 		"AllDocs/NoAuth/chicken.status":      kivik.StatusNotFound,
 		"AllDocs/NoAuth/_duck.status":        kivik.StatusBadRequest,
 
-		"Find.skip": true, // Couchdb 1.6 doesn't support the find interface
+		"Find.status":        kivik.StatusNotImplemented, // Couchdb 1.6 doesn't support the find interface
+		"CreateIndex.status": kivik.StatusNotImplemented, // Couchdb 1.6 doesn't support the find interface
 
 		"DBExists.databases":              []string{"_users", "chicken", "_duck"},
 		"DBExists/Admin/_users.exists":    true,

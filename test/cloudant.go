@@ -203,5 +203,7 @@ func init() {
 		"Put/RW/Admin/group/Conflict.status":              kivik.StatusConflict,
 		"Put/RW/NoAuth/group.status":                      kivik.StatusUnauthorized,
 		"Put/RW/NoAuth/group/Conflict.skip":               true,
+
+		"CreateIndex/RW/NoAuth.status": kivik.StatusUnauthorized,
 	})
 }

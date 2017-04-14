@@ -322,3 +322,47 @@ func (d *db) CopyContext(ctx context.Context, targetID, sourceID string, options
 	defer resp.Body.Close()
 	return chttp.GetRev(resp)
 }
+
+// deJSONify unmarshals a string, []byte, or json.RawMessage. All other types
+// are returned as-is.
+func deJSONify(i interface{}) (interface{}, error) {
+	var data []byte
+	switch t := i.(type) {
+	case string:
+		data = []byte(t)
+	case []byte:
+		data = t
+	case json.RawMessage:
+		data = []byte(t)
+	default:
+		return i, nil
+	}
+	var x interface{}
+	err := json.Unmarshal(data, &x)
+	return x, err
+}
+
+func (d *db) CreateIndexContext(ctx context.Context, ddoc, name string, index interface{}) error {
+	if d.client.Compat == CompatCouch16 {
+		return kivik.ErrNotImplemented
+	}
+	indexObj, err := deJSONify(index)
+	if err != nil {
+		return err
+	}
+	parameters := struct {
+		Index interface{} `json:"index"`
+		Ddoc  string      `json:"ddoc,omitempty"`
+		Name  string      `json:"name,omitempty"`
+	}{
+		Index: indexObj,
+		Ddoc:  ddoc,
+		Name:  name,
+	}
+	body := &bytes.Buffer{}
+	if err = json.NewEncoder(body).Encode(parameters); err != nil {
+		return err
+	}
+	_, err = d.Client.DoError(ctx, kivik.MethodPost, d.path("_index", nil), &chttp.Options{Body: body})
+	return err
+}

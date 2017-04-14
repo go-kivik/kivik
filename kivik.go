@@ -9,6 +9,7 @@ import (
 
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/errors"
+	"github.com/imdario/mergo"
 )
 
 // Client is a client connection handle to a CouchDB-like server.
@@ -20,6 +21,16 @@ type Client struct {
 
 // Options is a collection of options. The keys and values are backend specific.
 type Options map[string]interface{}
+
+func mergeOptions(otherOpts ...Options) (Options, error) {
+	var options Options
+	for _, opts := range otherOpts {
+		if err := mergo.MergeWithOverwrite(&options, opts); err != nil {
+			return nil, err
+		}
+	}
+	return options, nil
+}
 
 // New calls NewContext with a background context.
 func New(driverName, dataSourceName string) (*Client, error) {
@@ -46,12 +57,6 @@ func NewContext(ctx context.Context, driverName, dataSourceName string) (*Client
 	}, nil
 }
 
-// SetDefault sets databse default values for the client which will be passed
-// along to new DB connections. Available options are driver specific.
-func (c *Client) SetDefault(key string, value interface{}) error {
-	return c.driverClient.SetDefault(key, value)
-}
-
 // Driver returns the name of the driver string used to connect this client.
 func (c *Client) Driver() string {
 	return c.driverName
@@ -68,31 +73,44 @@ func (c *Client) ServerInfo() (driver.ServerInfo, error) {
 }
 
 // ServerInfoContext returns version and vendor info about the backend.
-func (c *Client) ServerInfoContext(ctx context.Context) (driver.ServerInfo, error) {
-	return c.driverClient.ServerInfoContext(ctx)
+func (c *Client) ServerInfoContext(ctx context.Context, options ...Options) (driver.ServerInfo, error) {
+	opts, err := mergeOptions(options...)
+	if err != nil {
+		return nil, err
+	}
+	return c.driverClient.ServerInfoContext(ctx, opts)
 }
 
 // DB calls DBContext with a background context.
-func (c *Client) DB(dbName string) (*DB, error) {
-	return c.DBContext(context.Background(), dbName)
+func (c *Client) DB(dbName string, options ...Options) (*DB, error) {
+	return c.DBContext(context.Background(), dbName, options...)
 }
 
-// DBContext returns a handle to the requested database.
-func (c *Client) DBContext(ctx context.Context, dbName string) (*DB, error) {
-	db, err := c.driverClient.DBContext(ctx, dbName)
+// DBContext returns a handle to the requested database. Any options parameters
+// passed are merged, with later values taking precidence.
+func (c *Client) DBContext(ctx context.Context, dbName string, options ...Options) (*DB, error) {
+	opts, err := mergeOptions(options...)
+	if err != nil {
+		return nil, err
+	}
+	db, err := c.driverClient.DBContext(ctx, dbName, opts)
 	return &DB{
 		driverDB: db,
 	}, err
 }
 
 // AllDBs calls AllDBsContext with a background context.
-func (c *Client) AllDBs() ([]string, error) {
-	return c.AllDBsContext(context.Background())
+func (c *Client) AllDBs(options ...Options) ([]string, error) {
+	return c.AllDBsContext(context.Background(), options...)
 }
 
 // AllDBsContext returns a list of all databases.
-func (c *Client) AllDBsContext(ctx context.Context) ([]string, error) {
-	return c.driverClient.AllDBsContext(ctx)
+func (c *Client) AllDBsContext(ctx context.Context, options ...Options) ([]string, error) {
+	opts, err := mergeOptions(options...)
+	if err != nil {
+		return nil, err
+	}
+	return c.driverClient.AllDBsContext(ctx, opts)
 }
 
 // UUIDs calls UUIDsContext with a background context.
@@ -147,39 +165,51 @@ func (c *Client) LogContext(ctx context.Context, length, offset int64) (io.ReadC
 }
 
 // DBExists calls DBExistsContext with a background context.
-func (c *Client) DBExists(dbName string) (bool, error) {
-	return c.DBExistsContext(context.Background(), dbName)
+func (c *Client) DBExists(dbName string, options ...Options) (bool, error) {
+	return c.DBExistsContext(context.Background(), dbName, options...)
 }
 
 // DBExistsContext returns true if the specified database exists.
-func (c *Client) DBExistsContext(ctx context.Context, dbName string) (bool, error) {
-	return c.driverClient.DBExistsContext(ctx, dbName)
+func (c *Client) DBExistsContext(ctx context.Context, dbName string, options ...Options) (bool, error) {
+	opts, err := mergeOptions(options...)
+	if err != nil {
+		return false, err
+	}
+	return c.driverClient.DBExistsContext(ctx, dbName, opts)
 }
 
 // Copied verbatim from http://docs.couchdb.org/en/2.0.0/api/database/common.html#head--db
 var validDBName = regexp.MustCompile("^[a-z][a-z0-9_$()+/-]*$")
 
 // CreateDB calls CreateDBContext with a background context.
-func (c *Client) CreateDB(dbName string) error {
-	return c.CreateDBContext(context.Background(), dbName)
+func (c *Client) CreateDB(dbName string, options ...Options) error {
+	return c.CreateDBContext(context.Background(), dbName, options...)
 }
 
 // CreateDBContext creates a DB of the requested name.
-func (c *Client) CreateDBContext(ctx context.Context, dbName string) error {
+func (c *Client) CreateDBContext(ctx context.Context, dbName string, options ...Options) error {
+	opts, err := mergeOptions(options...)
+	if err != nil {
+		return err
+	}
 	if !validDBName.MatchString(dbName) {
 		return errors.Status(StatusBadRequest, "invalid database name")
 	}
-	return c.driverClient.CreateDBContext(ctx, dbName)
+	return c.driverClient.CreateDBContext(ctx, dbName, opts)
 }
 
 // DestroyDB calls DestroyDBContext with a background context.
-func (c *Client) DestroyDB(dbName string) error {
-	return c.DestroyDBContext(context.Background(), dbName)
+func (c *Client) DestroyDB(dbName string, options ...Options) error {
+	return c.DestroyDBContext(context.Background(), dbName, options...)
 }
 
 // DestroyDBContext deletes the requested DB.
-func (c *Client) DestroyDBContext(ctx context.Context, dbName string) error {
-	return c.driverClient.DestroyDBContext(ctx, dbName)
+func (c *Client) DestroyDBContext(ctx context.Context, dbName string, options ...Options) error {
+	opts, err := mergeOptions(options...)
+	if err != nil {
+		return err
+	}
+	return c.driverClient.DestroyDBContext(ctx, dbName, opts)
 }
 
 // Authenticate calls AuthenticateContext with a background context.

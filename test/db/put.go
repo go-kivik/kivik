@@ -38,14 +38,18 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 				Name: "Alberto",
 				Age:  32,
 			}
-			rev, err := db.Put(doc.ID, doc)
+			var rev string
+			err = kt.Retry(func() error {
+				rev, err = db.Put(doc.ID, doc)
+				return err
+			})
 			if !ctx.IsExpectedSuccess(err) {
 				return
 			}
 			doc.Rev = rev
 			doc.Age = 40
 			ctx.Run("Update", func(ctx *kt.Context) {
-				_, err := db.Put(doc.ID, doc)
+				_, err = db.Put(doc.ID, doc)
 				ctx.CheckError(err)
 			})
 		})
@@ -64,7 +68,10 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 					},
 				},
 			}
-			_, err := db.Put(doc["_id"].(string), doc)
+			err = kt.Retry(func() error {
+				_, err = db.Put(doc["_id"].(string), doc)
+				return err
+			})
 			ctx.CheckError(err)
 		})
 		ctx.Run("Local", func(ctx *kt.Context) {
@@ -73,7 +80,10 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 				"_id":  "_local/foo",
 				"name": "Bob",
 			}
-			_, err := db.Put(doc["_id"].(string), doc)
+			err = kt.Retry(func() error {
+				_, err = db.Put(doc["_id"].(string), doc)
+				return err
+			})
 			ctx.CheckError(err)
 		})
 		ctx.Run("LeadingUnderscoreInID", func(ctx *kt.Context) {
@@ -82,7 +92,10 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 				"_id":  "_badid",
 				"name": "Bob",
 			}
-			_, err := db.Put(doc["_id"].(string), doc)
+			err = kt.Retry(func() error {
+				_, err = db.Put(doc["_id"].(string), doc)
+				return err
+			})
 			ctx.CheckError(err)
 		})
 		ctx.Run("SlashInID", func(ctx *kt.Context) {
@@ -91,7 +104,10 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 				"_id":  "foo/bar",
 				"name": "Bob",
 			}
-			_, err := db.Put(doc["_id"].(string), doc)
+			err = kt.Retry(func() error {
+				_, err = db.Put(doc["_id"].(string), doc)
+				return err
+			})
 			ctx.CheckError(err)
 		})
 		ctx.Run("Conflict", func(ctx *kt.Context) {
@@ -100,11 +116,17 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 				"_id":  "duplicate",
 				"name": "Bob",
 			}
-			_, err := db.Put(doc["_id"].(string), doc)
+			err = kt.Retry(func() error {
+				_, err = db.Put(doc["_id"].(string), doc)
+				return err
+			})
 			if err != nil {
 				ctx.Fatalf("Failed to create document for duplicate test: %s", err)
 			}
-			_, err = db.Put(doc["_id"].(string), doc)
+			err = kt.Retry(func() error {
+				_, err = db.Put(doc["_id"].(string), doc)
+				return err
+			})
 			ctx.CheckError(err)
 		})
 	})

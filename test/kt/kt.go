@@ -256,3 +256,23 @@ func DeleteUser(db *kivik.DB, username string, t *testing.T) {
 		t.Fatalf("Failed to delete user '%s': %s", username, err)
 	}
 }
+
+// Retry will try an operation up to 3 times, in case of one of the following
+// failures. All other failures are returned.
+func Retry(fn func() error) error {
+	var err error
+	for i := 0; i < 3; i++ {
+		err = fn()
+		if err != nil {
+			msg := strings.TrimSpace(err.Error())
+			if strings.HasSuffix(msg, ": io: read/write on closed pipe") ||
+				strings.HasSuffix(msg, ": write: broken pipe") ||
+				strings.HasSuffix(msg, ": read: connection reset by peer") {
+				fmt.Printf("Retrying after error: %s\n", err)
+				continue
+			}
+		}
+		break
+	}
+	return err
+}

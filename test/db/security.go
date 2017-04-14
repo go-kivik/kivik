@@ -54,7 +54,10 @@ func security(ctx *kt.Context) {
 		if err != nil {
 			ctx.Fatalf("Failed to open db: %s", err)
 		}
-		if err = db.SetSecurity(sec); err != nil {
+		err = kt.Retry(func() error {
+			return db.SetSecurity(sec)
+		})
+		if err != nil {
 			ctx.Fatalf("Failed to set security: %s", err)
 		}
 		ctx.Run("group", func(ctx *kt.Context) {
@@ -103,7 +106,10 @@ func testSetSecurity(ctx *kt.Context, client *kivik.Client, dbname string) {
 	if err != nil {
 		ctx.Fatalf("Failed to open db: %s", err)
 	}
-	ctx.CheckError(db.SetSecurity(sec))
+	err = kt.Retry(func() error {
+		return db.SetSecurity(sec)
+	})
+	ctx.CheckError(err)
 }
 
 func testGetSecurity(ctx *kt.Context, client *kivik.Client, dbname string, expected *kivik.Security) {

@@ -31,8 +31,28 @@ type client struct {
 
 var _ CompleteClient = &client{}
 
-func (c *client) DBContext(ctx context.Context, name string) (driver.DB, error) {
-	d, err := c.Client.DBContext(ctx, name)
+func (c *client) AllDBsContext(ctx context.Context, options map[string]interface{}) ([]string, error) {
+	return c.Client.AllDBsContext(ctx, options)
+}
+
+func (c *client) CreateDBContext(ctx context.Context, dbname string, options map[string]interface{}) error {
+	return c.Client.CreateDBContext(ctx, dbname, options)
+}
+
+func (c *client) DBExistsContext(ctx context.Context, dbname string, options map[string]interface{}) (bool, error) {
+	return c.Client.DBExistsContext(ctx, dbname, options)
+}
+
+func (c *client) DestroyDBContext(ctx context.Context, dbname string, options map[string]interface{}) error {
+	return c.Client.DestroyDBContext(ctx, dbname, options)
+}
+
+func (c *client) ServerInfoContext(ctx context.Context, options map[string]interface{}) (driver.ServerInfo, error) {
+	return c.Client.ServerInfoContext(ctx, options)
+}
+
+func (c *client) DBContext(ctx context.Context, name string, options map[string]interface{}) (driver.DB, error) {
+	d, err := c.Client.DBContext(ctx, name, options)
 	return &db{d}, err
 }
 

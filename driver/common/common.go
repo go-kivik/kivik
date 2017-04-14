@@ -26,7 +26,7 @@ func NewClient(version, vendorName, vendorVersion string) *Client {
 }
 
 // ServerInfoContext returns the configured server info.
-func (c *Client) ServerInfoContext(_ context.Context) (driver.ServerInfo, error) {
+func (c *Client) ServerInfoContext(_ context.Context, _ map[string]interface{}) (driver.ServerInfo, error) {
 	return c.serverInfo, nil
 }
 

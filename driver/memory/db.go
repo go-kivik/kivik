@@ -5,7 +5,6 @@ import (
 	"io"
 
 	"github.com/flimzy/kivik/driver"
-	"github.com/flimzy/kivik/errors"
 )
 
 // database is an in-memory database representation.
@@ -22,10 +21,6 @@ type indexDoc struct {
 
 type indexDocValue struct {
 	Rev string `json:"rev"`
-}
-
-func (d *db) SetOption(_ string, _ interface{}) error {
-	return errors.New("no options supported")
 }
 
 func (d *db) AllDocsContext(ctx context.Context, opts map[string]interface{}) (driver.Rows, error) {
@@ -84,16 +79,6 @@ func (d *db) SecurityContext(_ context.Context) (*driver.Security, error) {
 }
 
 func (d *db) SetSecurityContext(_ context.Context, _ *driver.Security) error {
-	// FIXME: Unimplemented
-	return nil
-}
-
-func (d *db) RevsLimitContext(_ context.Context) (limit int, err error) {
-	// FIXME: Unimplemented
-	return 0, nil
-}
-
-func (d *db) SetRevsLimitContext(_ context.Context, limit int) error {
 	// FIXME: Unimplemented
 	return nil
 }

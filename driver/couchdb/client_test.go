@@ -11,7 +11,7 @@ import (
 
 func TestAllDBs(t *testing.T) {
 	client := getClient(t)
-	_, err := client.AllDBsContext(kt.CTX)
+	_, err := client.AllDBsContext(kt.CTX, nil)
 	if err != nil {
 		t.Fatalf("Failed: %s", err)
 	}
@@ -51,7 +51,7 @@ func TestMembership(t *testing.T) {
 
 func TestDBExists(t *testing.T) {
 	client := getClient(t)
-	exists, err := client.DBExistsContext(kt.CTX, "_users")
+	exists, err := client.DBExistsContext(kt.CTX, "_users", nil)
 	if err != nil {
 		t.Fatalf("Failed: %s", err)
 	}
@@ -63,11 +63,11 @@ func TestDBExists(t *testing.T) {
 func TestCreateAndDestroyDB(t *testing.T) {
 	client := getClient(t)
 	dbName := kt.TestDBName(t)
-	defer client.DestroyDBContext(kt.CTX, dbName)
-	if err := client.CreateDBContext(kt.CTX, dbName); err != nil {
+	defer client.DestroyDBContext(kt.CTX, dbName, nil)
+	if err := client.CreateDBContext(kt.CTX, dbName, nil); err != nil {
 		t.Errorf("Create failed: %s", err)
 	}
-	if err := client.DestroyDBContext(kt.CTX, dbName); err != nil {
+	if err := client.DestroyDBContext(kt.CTX, dbName, nil); err != nil {
 		t.Errorf("Destroy failed: %s", err)
 	}
 }

@@ -23,18 +23,6 @@ type db struct {
 	compacting bool
 }
 
-// SetOption sets a connection-time option by replacing the underling DB
-// instance.
-func (d *db) SetOption(key string, value interface{}) error {
-	// Get the existing options
-	opts := d.db.Object.Get("__opts")
-	// Then set the new value
-	opts.Set(key, value)
-	// Then re-establish the connection
-	d.db = &bindings.DB{Object: d.client.pouch.Object.New("", opts)}
-	return nil
-}
-
 func (d *db) AllDocsContext(ctx context.Context, options map[string]interface{}) (driver.Rows, error) {
 	result, err := d.db.AllDocs(ctx, options)
 	if err != nil {
@@ -137,12 +125,4 @@ func (d *db) SecurityContext(ctx context.Context) (*driver.Security, error) {
 
 func (d *db) SetSecurityContext(_ context.Context, _ *driver.Security) error {
 	return kivik.ErrNotImplemented
-}
-
-func (d *db) RevsLimitContext(_ context.Context) (limit int, err error) {
-	return d.db.RevsLimit()
-}
-
-func (d *db) SetRevsLimitContext(_ context.Context, limit int) error {
-	return d.SetOption("revs_limit", limit)
 }

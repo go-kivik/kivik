@@ -1,44 +1,28 @@
 package couchdb
 
-import (
-	"errors"
-	"fmt"
-)
+import "fmt"
 
 // Available options
 const (
 	optionForceCommit = "force_commit"
 )
 
-// SetDefault allows setting default database options.
-func (c *client) SetDefault(key string, value interface{}) error {
-	switch key {
-	case optionForceCommit:
-		return c.setForceCommit(value)
+func getAnyKey(i map[string]interface{}) (string, bool) {
+	for k := range i {
+		return k, true
 	}
-	return errors.New("unknown option")
+	return "", false
 }
 
-func (c *client) setForceCommit(value interface{}) error {
-	if force, ok := value.(bool); ok {
-		c.forceCommit = force
-		return nil
+func forceCommit(opts map[string]interface{}) (bool, error) {
+	fc, ok := opts[optionForceCommit]
+	if !ok {
+		return false, nil
 	}
-	return fmt.Errorf("invalid type %t for option %s", value, optionForceCommit)
-}
-
-func (d *db) SetOption(key string, value interface{}) error {
-	switch key {
-	case optionForceCommit:
-		return d.setForceCommit(value)
+	fcBool, ok := fc.(bool)
+	if !ok {
+		return false, fmt.Errorf("kivik: option '%s' must be bool, not %T", optionForceCommit, fcBool)
 	}
-	return errors.New("unknown option")
-}
-
-func (d *db) setForceCommit(value interface{}) error {
-	if force, ok := value.(bool); ok {
-		d.forceCommit = force
-		return nil
-	}
-	return fmt.Errorf("invalid type %t for options %s", value, optionForceCommit)
+	delete(opts, optionForceCommit)
+	return fcBool, nil
 }

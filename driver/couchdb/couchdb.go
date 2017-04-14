@@ -3,6 +3,7 @@ package couchdb
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/flimzy/kivik"
@@ -43,8 +44,7 @@ const (
 
 type client struct {
 	*chttp.Client
-	Compat      CompatMode
-	forceCommit bool
+	Compat CompatMode
 }
 
 var _ driver.Client = &client{}
@@ -67,7 +67,7 @@ func (d *Couch) NewClientContext(ctx context.Context, dsn string) (driver.Client
 }
 
 func (c *client) setCompatMode(ctx context.Context) {
-	info, err := c.ServerInfoContext(ctx)
+	info, err := c.ServerInfoContext(ctx, nil)
 	if err != nil {
 		// We don't want to error here, in case the / endpoint is just blocked
 		// for security reasons or something; but then we also can't infer the
@@ -85,11 +85,18 @@ func (c *client) setCompatMode(ctx context.Context) {
 	}
 }
 
-func (c *client) DBContext(_ context.Context, dbName string) (driver.DB, error) {
+func (c *client) DBContext(_ context.Context, dbName string, options map[string]interface{}) (driver.DB, error) {
+	forceCommit, err := forceCommit(options)
+	if err != nil {
+		return nil, err
+	}
+	if key, exists := getAnyKey(options); exists {
+		return nil, fmt.Errorf("kivik: unrecognized option '%s'", key)
+	}
 	return &db{
 		client:      c,
 		dbName:      dbName,
-		forceCommit: c.forceCommit,
+		forceCommit: forceCommit,
 	}, nil
 }
 

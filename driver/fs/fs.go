@@ -81,12 +81,8 @@ var _ driver.Client = &client{}
 // Taken verbatim from http://docs.couchdb.org/en/2.0.0/api/database/common.html
 var validDBNameRE = regexp.MustCompile("^[a-z][a-z0-9_$()+/-]*$")
 
-func (c *client) SetDefault(_ string, _ interface{}) error {
-	return errors.New("no options supported")
-}
-
 // AllDBsContext returns a list of all DBs present in the configured root dir.
-func (c *client) AllDBsContext(_ context.Context) ([]string, error) {
+func (c *client) AllDBsContext(_ context.Context, _ map[string]interface{}) ([]string, error) {
 	files, err := ioutil.ReadDir(c.root)
 	if err != nil {
 		return nil, errors.WrapStatus(kivik.StatusInternalServerError, err)
@@ -108,8 +104,8 @@ func (c *client) AllDBsContext(_ context.Context) ([]string, error) {
 }
 
 // CreateDBContext creates a database
-func (c *client) CreateDBContext(ctx context.Context, dbName string) error {
-	exists, err := c.DBExistsContext(ctx, dbName)
+func (c *client) CreateDBContext(ctx context.Context, dbName string, options map[string]interface{}) error {
+	exists, err := c.DBExistsContext(ctx, dbName, options)
 	if err != nil {
 		return err
 	}
@@ -123,7 +119,7 @@ func (c *client) CreateDBContext(ctx context.Context, dbName string) error {
 }
 
 // DBExistsContext returns true if the database exists.
-func (c *client) DBExistsContext(_ context.Context, dbName string) (bool, error) {
+func (c *client) DBExistsContext(_ context.Context, dbName string, _ map[string]interface{}) (bool, error) {
 	_, err := os.Stat(c.root + "/" + dbName)
 	if err == nil {
 		return true, nil
@@ -135,8 +131,8 @@ func (c *client) DBExistsContext(_ context.Context, dbName string) (bool, error)
 }
 
 // DestroyDBContext destroys the database
-func (c *client) DestroyDBContext(ctx context.Context, dbName string) error {
-	exists, err := c.DBExistsContext(ctx, dbName)
+func (c *client) DestroyDBContext(ctx context.Context, dbName string, options map[string]interface{}) error {
+	exists, err := c.DBExistsContext(ctx, dbName, options)
 	if err != nil {
 		return err
 	}
@@ -149,7 +145,7 @@ func (c *client) DestroyDBContext(ctx context.Context, dbName string) error {
 	return nil
 }
 
-func (c *client) DBContext(_ context.Context, dbName string) (driver.DB, error) {
+func (c *client) DBContext(_ context.Context, dbName string, options map[string]interface{}) (driver.DB, error) {
 	return &db{
 		client: c,
 		dbName: dbName,

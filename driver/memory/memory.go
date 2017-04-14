@@ -43,11 +43,7 @@ func (d *memDriver) NewClientContext(_ context.Context, name string) (driver.Cli
 	}, nil
 }
 
-func (c *client) SetDefault(_ string, _ interface{}) error {
-	return errors.New("no options supported")
-}
-
-func (c *client) AllDBsContext(_ context.Context) ([]string, error) {
+func (c *client) AllDBsContext(_ context.Context, _ map[string]interface{}) ([]string, error) {
 	dbs := make([]string, 0, len(c.dbs))
 	for k := range c.dbs {
 		dbs = append(dbs, k)
@@ -63,15 +59,15 @@ func (c *client) UUIDsContext(_ context.Context, count int) ([]string, error) {
 	return uuids, nil
 }
 
-func (c *client) DBExistsContext(_ context.Context, dbName string) (bool, error) {
+func (c *client) DBExistsContext(_ context.Context, dbName string, _ map[string]interface{}) (bool, error) {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 	_, ok := c.dbs[dbName]
 	return ok, nil
 }
 
-func (c *client) CreateDBContext(ctx context.Context, dbName string) error {
-	if exists, _ := c.DBExistsContext(ctx, dbName); exists {
+func (c *client) CreateDBContext(ctx context.Context, dbName string, options map[string]interface{}) error {
+	if exists, _ := c.DBExistsContext(ctx, dbName, options); exists {
 		return errors.Status(http.StatusPreconditionFailed, "database exists")
 	}
 	c.mutex.Lock()
@@ -80,8 +76,8 @@ func (c *client) CreateDBContext(ctx context.Context, dbName string) error {
 	return nil
 }
 
-func (c *client) DestroyDBContext(ctx context.Context, dbName string) error {
-	if exists, _ := c.DBExistsContext(ctx, dbName); !exists {
+func (c *client) DestroyDBContext(ctx context.Context, dbName string, options map[string]interface{}) error {
+	if exists, _ := c.DBExistsContext(ctx, dbName, options); !exists {
 		return errors.Status(http.StatusNotFound, "database not found")
 	}
 	c.mutex.Lock()
@@ -90,7 +86,7 @@ func (c *client) DestroyDBContext(ctx context.Context, dbName string) error {
 	return nil
 }
 
-func (c *client) DBContext(_ context.Context, dbName string) (driver.DB, error) {
+func (c *client) DBContext(_ context.Context, dbName string, options map[string]interface{}) (driver.DB, error) {
 	return &db{
 		client: c,
 		dbName: dbName,

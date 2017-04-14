@@ -36,54 +36,54 @@
 3. <a name="couchGopherJSAuth">Due to security limitations in the XMLHttpRequest spec, when compiling the standard CouchDB driver with GopherJS, CookieAuth will not work.
 
 | API Endpoint | ![Kivik API](images/api.png) | ![Kivik HTTP Server](images/http.png) | ![Kivik Test Suite](images/tests.png) | ![CouchDB](images/couchdb.png) | ![PouchDB](images/pouchdb.png) | ![Memory Driver](images/memory.png) | ![Filesystem Driver](images/filesystem.png) |
-|--------------|------------------------------|:-------------------------------------:|:-------------------------------------:|:------------------------------:|:------------------------------:|:-----------------------------------:|:------------------------------------------:|
-| GET /        | ServerInfo()                 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| GET /_active_tasks |                        |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
-| GET /_all_dbs      | AllDBs()               | ✅ | ✅ | ✅ | ☑️<sup>[1](#pouchAllDbs1),[2](#pouchAllDbs2),[3](pouchLocalOnly)</sup> | ✅ | ✅
-| GET /_db_updates   | DBUpdates()            |    | ✅ | ✅ | ⁿ/ₐ |
-| GET /_log          | Log()                  | ✅ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
+|---------------------------------------|----------------------|:-------------------------------------:|:-------------------------------------:|:------------------------------:|:------------------------------:|:-----------------------------------:|:------------------------------------------:|
+| GET /                                 | ServerInfo()         | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| GET /_active_tasks                    | ⁿ/ₐ                   |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
+| GET /_all_dbs                         | AllDBs()             | ✅ | ✅ | ✅ | ☑️<sup>[1](#pouchAllDbs1),[2](#pouchAllDbs2),[3](pouchLocalOnly)</sup> | ✅ | ✅
+| GET /_db_updates                      | DBUpdates()          |    | ✅ | ✅ | ⁿ/ₐ |
+| GET /_log                             | Log()                | ✅ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | GET /_replicate
-| GET /_restart      | ⁿ/ₐ                     |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
-| GET /_stats        | ⁿ/ₐ                     |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
-| GET /_utils        | ⁿ/ₐ                     |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
-| GET /_membership   | Membership()           | ❌<sup>[12](#kivikCluster)</sup> | ✅ | ✅<sup>[4](#couchMembership)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
-| GET /favicon.ico   |                        | ✅ | ❌ | ❌ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
+| GET /_restart                         | ⁿ/ₐ                   |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
+| GET /_stats                           | ⁿ/ₐ                   |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
+| GET /_utils                           | ⁿ/ₐ                   |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
+| GET /_membership                      | Membership()         | ❌<sup>[12](#kivikCluster)</sup> | ✅ | ✅<sup>[4](#couchMembership)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
+| GET /favicon.ico                      | ⁿ/ₐ                  | ✅ | ❌ | ❌ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | POST /_session<sup>[6](#cookieAuth)</sup> | ⁿ/ₐ<sup>[13](#getSession)</sup> | ✅ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | GET /_session<sup>[6](#cookieAuth)</sup> | ⁿ/ₐ<sup>[13](#getSession)</sup> | ☑️ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | DELETE /_session<sup>[6](#cookieAuth)</sup> | ⁿ/ₐ<sup>[13](#getSession)</sup> | ✅ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
-| * /_config         | Config()               |    | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
-| HEAD /{db}         | DBExists()             | ✅ | ✅ | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
-| GET /{db}          | Info()                 |    | ✅ | ✅ | ✅
-| PUT /{db}          | CreateDB()             | ✅ | ✅ | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
-| DELETE /{db}       | DestroyDB()            |    | ✅ | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
-| POST /{db}         | CreateDoc()            |    | ✅ | ✅ | ✅ |
-| GET /{db}/_all_docs | AllDocs()             |    | ☑️<sup>[7](#todoConflicts),[9](#todoOrdering),[10](#todoLimit)</sup> | ✅ | ？ | ？ |
-| POST /{db}/_all_docs | ⁿ/ₐ                   |    |    | ❌ | ❌ | ⁿ/ₐ | ⁿ/ₐ |
-| POST /{db}/_bulk_docs | BulkDocs()          |    | ✅ | ✅ | ✅  |    |    |
-| POST /{db}/_find     | Find()               |    | ✅ | ✅ | ✅ |
-| POST /{db}/_index    | CreateIndex()        |    | ✅ | ✅ | ✅ |
-| GET /{db}/_index     | GetIndexes()         |    | ✅ | ✅ | ✅ |
-| DELETE /{db}/_index  | DeleteIndex()        |    | ✅ | ✅ | ✅ |
-| POST /{db}/_explain  |                      |    |    | ❌<sup>[15](#notPublic)</sup> |    |
-| GET /{db}/_changes   | Changes()<sup>[8](#changesContinuous)</sup> |    | ✅ | ✅ | ✅ |    |    |
-| POST /{db}/_changes  |                      |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
-| POST /{db}/_compact  | Compact()            |    | ✅ | ✅ | ✅ |     |    |
-| POST /{db}/_compact/{ddoc} | CompactView()  |    |    | ✅ | ⁿ/ₐ |    |    |
-| POST /{db}/_ensure_full_commit | Flush()    | ✅ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ |    |
-| POST /{db}/_view_cleanup | ViewCleanup()    |    | ✅ | ✅ | ✅ |     |    |
-| GET /{db}/_security |                       |    | ✅ | ✅ | ⁿ/ₐ<sup>[14](#pouchPlugin)</sup>
-| PUT /{db}/_security |                       |    | ✅ | ✅ | ⁿ/ₐ<sup>[14](#pouchPlugin)</sup>
-| POST /{db}/_temp_view | ⁿ/ₐ                  | ⁿ/ₐ | ⁿ/ₐ| ⁿ/ₐ<sup>[16](#tempViews)</sup> | ⁿ/ₐ<sup>[17](#pouchTempViews)</sup> | ⁿ/ₐ | ⁿ/ₐ |
-| POST /{db}/_purge   | ⁿ/ₐ                    |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
-| POST /{db}/_missing_revs | ⁿ/ₐ               |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
-| POST /{db}/_revs_diff | ⁿ/ₐ                  |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
-| GET /{db}/_revs_limit | RevsLimit()         |    | ✅ | ✅ | ☑️<sup>[3](#pouchLocalOnly)</sup> |
-| PUT /{db}/_revs_limit | SetRevsLimit()      |    | ✅ | ✅ | ☑️<sup>[3](#pouchLocalOnly)</sup> |
-| HEAD /{db}/{docid}  | Rev()                 |    | ✅ | ✅ | ⍻ |
-| GET /{db}/{docid}   | Get()                 |    | ☑️<sup>[7](#todoConflicts),[11](#todoAttachments)</sup> | ✅ | ✅
-| PUT /{db}/{docid}   | Put()                 |    | ☑️<sup>[11](#todoAttachments)</sup> | ✅ | ✅
-| DELETE /{db}/{docid}| Delete()              |    | ✅ | ✅ | ✅ |
-| COPY /{db}/{docid}  | Copy()                |    | ✅ | ✅ | ⍻ |
+| * /_config                            | Config()            |    | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
+| HEAD /{db}                            | DBExists()          | ✅ | ✅ | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
+| GET /{db}                             | Info()              |    | ✅ | ✅ | ✅
+| PUT /{db}                             | CreateDB()          | ✅ | ✅ | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
+| DELETE /{db}                          | DestroyDB()         |    | ✅ | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
+| POST /{db}                            | CreateDoc()         |    | ✅ | ✅ | ✅ |
+| GET /{db}/_all_docs                   | AllDocs()           |    | ☑️<sup>[7](#todoConflicts),[9](#todoOrdering),[10](#todoLimit)</sup> | ✅ | ？ | ？ |
+| POST /{db}/_all_docs                  | ⁿ/ₐ                  |    |    | ❌ | ❌ | ⁿ/ₐ | ⁿ/ₐ |
+| POST /{db}/_bulk_docs                 | BulkDocs()          |    | ✅ | ✅ | ✅  |    |    |
+| POST /{db}/_find                      | Find()              |    | ✅ | ✅ | ✅ |
+| POST /{db}/_index                     | CreateIndex()       |    | ✅ | ✅ | ✅ |
+| GET /{db}/_index                      | GetIndexes()        |    | ✅ | ✅ | ✅ |
+| DELETE /{db}/_index                   | DeleteIndex()       |    | ✅ | ✅ | ✅ |
+| POST /{db}/_explain                   | ⁿ/ₐ                  |    |    | ❌<sup>[15](#notPublic)</sup> |    |
+| GET /{db}/_changes                    | Changes()<sup>[8](#changesContinuous)</sup> |    | ✅ | ✅ | ✅ |    |    |
+| POST /{db}/_changes                   |                     |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
+| POST /{db}/_compact                   | Compact()           |    | ✅ | ✅ | ✅ |     |    |
+| POST /{db}/_compact/{ddoc}            | CompactView()       |    |    | ✅ | ⁿ/ₐ |    |    |
+| POST /{db}/_ensure_full_commit        | Flush()             | ✅ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ |    |
+| POST /{db}/_view_cleanup              | ViewCleanup()       |    | ✅ | ✅ | ✅ |     |    |
+| GET /{db}/_security                   | Security()          |    | ✅ | ✅ | ⁿ/ₐ<sup>[14](#pouchPlugin)</sup>
+| PUT /{db}/_security                   | SetSecurity()       |    | ✅ | ✅ | ⁿ/ₐ<sup>[14](#pouchPlugin)</sup>
+| POST /{db}/_temp_view                 | ⁿ/ₐ                  | ⁿ/ₐ | ⁿ/ₐ| ⁿ/ₐ<sup>[16](#tempViews)</sup> | ⁿ/ₐ<sup>[17](#pouchTempViews)</sup> | ⁿ/ₐ | ⁿ/ₐ |
+| POST /{db}/_purge                     | ⁿ/ₐ                  |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
+| POST /{db}/_missing_revs              | ⁿ/ₐ                  |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
+| POST /{db}/_revs_diff                 | ⁿ/ₐ                  |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
+| GET /{db}/_revs_limit                 | RevsLimit()         |    | ✅ | ✅ | ☑️<sup>[3](#pouchLocalOnly)</sup> |
+| PUT /{db}/_revs_limit                 | SetRevsLimit()      |    | ✅ | ✅ | ☑️<sup>[3](#pouchLocalOnly)</sup> |
+| HEAD /{db}/{docid}                    | Rev()               |    | ✅ | ✅ | ⍻ |
+| GET /{db}/{docid}                     | Get()               |    | ☑️<sup>[7](#todoConflicts),[11](#todoAttachments)</sup> | ✅ | ✅
+| PUT /{db}/{docid}                     | Put()               |    | ☑️<sup>[11](#todoAttachments)</sup> | ✅ | ✅
+| DELETE /{db}/{docid}                  | Delete()            |    | ✅ | ✅ | ✅ |
+| COPY /{db}/{docid}                    | Copy()              |    | ✅ | ✅ | ⍻ |
 | HEAD /{db}/{docid}/{attname}          | GetAttachmentMeta() |    | ✅ | ✅ | ⍻ |
 | GET /{db}/{docid}/{attname}           | GetAttachment()     |    | ✅ | ✅ | ✅ |
 | PUT /{db}/{docid}/{attname}           | PutAttachment()     |    | ✅ | ✅ | ✅ |
@@ -144,9 +144,10 @@
     package. Support is provided in PouchDB plugins, so including optional
     support here may be possiblein the future.
 15. <a name="notPublic"> This feature is not considered (by me, if nobody else)
-    part of the public CouchDB API, so there are no (immediate) plans to
-    implement support. If you feel this should change for a given feature,
-    please create an issue and explain your reasons.
+    part of the public CouchDB API, or otherwise not meaningful to make part of
+    the Kivik API, so there are no (immediate) plans to implement support. If
+    you feel this should change for a given feature, please create an issue and
+    explain your reasons.
 16. <a name="tempViews"> As of CouchDB 2.0, temp views are no longer supported,
     so I see no reason to support them in this library for older server versions.
     If you feel they should be supported, please create an issue and make your
@@ -164,7 +165,7 @@
 
 The CouchDB API prescribes some status codes which, to me, don't make a lot of
 sense. This is particularly true of a few error status codes. It seems the folks
-at [Cloudant](https://cloudant.com/) share my opinion, as they have chaned some
+at [Cloudant](https://cloudant.com/) share my opinion, as they have changed some
 as well.
 
 In particular, the CouchDB API returns a status 500 **Internal Server Error** for

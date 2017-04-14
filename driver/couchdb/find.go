@@ -56,6 +56,17 @@ func (d *db) CreateIndexContext(ctx context.Context, ddoc, name string, index in
 	return err
 }
 
+func (d *db) GetIndexesContext(ctx context.Context) ([]driver.Index, error) {
+	if d.client.Compat == CompatCouch16 {
+		return nil, kivik.ErrNotImplemented
+	}
+	var result struct {
+		Indexes []driver.Index `json:"indexes"`
+	}
+	_, err := d.Client.DoJSON(ctx, kivik.MethodGet, d.path("_index", nil), nil, &result)
+	return result.Indexes, err
+}
+
 func (d *db) DeleteIndexContext(ctx context.Context, ddoc, name string) error {
 	path := fmt.Sprintf("_index/%s/json/%s", ddoc, name)
 	_, err := d.Client.DoError(ctx, kivik.MethodDelete, d.path(path, nil), nil)

@@ -62,7 +62,7 @@
 | POST /{db}/_bulk_docs | BulkDocs()          |    | ✅ | ✅ | ✅  |    |    |
 | POST /{db}/_find     | Find()               |    | ✅ | ✅ | ✅ |
 | POST /{db}/_index    | CreateIndex()        |    | ✅ | ✅ | ✅ |
-| GET /{db}/_index     | GetIndexes()         |    |    |    |    |
+| GET /{db}/_index     | GetIndexes()         |    | ✅ | ✅ |    |
 | DELETE /{db}/_index  | DeleteIndex()        |    | ✅ | ✅ |    |
 | POST /{db}/_explain  | Explain()            |    |    |    |    |
 | GET /{db}/_changes   | Changes()<sup>[8](#changesContinuous)</sup> |    | ✅ | ✅ | ✅ |    |    |

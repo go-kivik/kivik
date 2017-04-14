@@ -55,3 +55,29 @@ func (db *DB) DeleteIndexContext(ctx context.Context, ddoc, name string) error {
 	}
 	return ErrNotImplemented
 }
+
+// Index is a MonboDB-style index definition.
+type Index struct {
+	DesignDoc  string      `json:"ddoc,omitempty"`
+	Name       string      `json:"name"`
+	Type       string      `json:"type"`
+	Definition interface{} `json:"def"`
+}
+
+// GetIndexes calls GetIndexesContext with a background context.
+func (db *DB) GetIndexes() ([]Index, error) {
+	return db.GetIndexesContext(context.Background())
+}
+
+// GetIndexesContext returns the indexes defined on the current database.
+func (db *DB) GetIndexesContext(ctx context.Context) ([]Index, error) {
+	if finder, ok := db.driverDB.(driver.Finder); ok {
+		dIndexes, err := finder.GetIndexesContext(ctx)
+		indexes := make([]Index, len(dIndexes))
+		for i, index := range dIndexes {
+			indexes[i] = Index(index)
+		}
+		return indexes, err
+	}
+	return nil, ErrNotImplemented
+}

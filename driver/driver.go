@@ -170,6 +170,18 @@ type Finder interface {
 	// string, []byte, or json.RawMessage, it should be treated as a raw JSON
 	// payload. Any other type should be marshaled to JSON.
 	CreateIndexContext(ctx context.Context, ddoc, name string, index interface{}) error
+	// GetIndexesContext returns a list of all indexes in the database.
+	GetIndexesContext(ctx context.Context) ([]Index, error)
+	// DeleteIndex deletes the requested index.
+	DeleteIndexContext(ctx context.Context, ddoc, name string) error
+}
+
+// Index is a MonboDB-style index definition.
+type Index struct {
+	DesignDoc  string      `json:"ddoc,omitempty"`
+	Name       string      `json:"name"`
+	Type       string      `json:"type"`
+	Definition interface{} `json:"def"`
 }
 
 // Checksum is a 128-bit MD5 checksum of a file's content.

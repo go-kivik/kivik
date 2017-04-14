@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"strings"
 
 	"github.com/gopherjs/gopherjs/js"
 
+	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/driver/pouchdb/bindings"
 )
@@ -36,6 +38,52 @@ func (d *db) CreateIndexContext(ctx context.Context, ddoc, name string, index in
 		return err
 	}
 	_, err = d.db.CreateIndex(ctx, indexObj)
+	return err
+}
+
+func (d *db) GetIndexesContext(ctx context.Context) (indexes []driver.Index, err error) {
+	defer bindings.RecoverError(&err)
+	result, err := d.db.GetIndexes(ctx)
+	if err != nil {
+		return nil, err
+	}
+	// This might not be the most efficient, but it's easy
+	var final struct {
+		Indexes []driver.Index `json:"indexes"`
+	}
+	err = json.Unmarshal([]byte(js.Global.Get("JSON").Call("stringify", result).String()), &final)
+	return final.Indexes, err
+}
+
+// findIndex attempts to find the requested index definition
+func (d *db) findIndex(ctx context.Context, ddoc, name string) (interface{}, error) {
+	ddoc = "_design/" + strings.TrimPrefix(ddoc, "_design/")
+	indexes, err := d.GetIndexesContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, idx := range indexes {
+		if idx.Type == "special" {
+			continue
+		}
+		if idx.DesignDoc == ddoc && idx.Name == name {
+			return map[string]interface{}{
+				"ddoc": idx.DesignDoc,
+				"name": idx.Name,
+				"type": idx.Type,
+				"def":  idx.Definition,
+			}, nil
+		}
+	}
+	return nil, kivik.ErrNotFound
+}
+
+func (d *db) DeleteIndexContext(ctx context.Context, ddoc, name string) error {
+	index, err := d.findIndex(ctx, ddoc, name)
+	if err != nil {
+		return err
+	}
+	_, err = d.db.DeleteIndex(ctx, index)
 	return err
 }
 

@@ -48,6 +48,8 @@ func init() {
 		"Find.databases":     []string{"_users"},
 		"Find.status":        kivik.StatusNotImplemented, // Couchdb 1.6 doesn't support the find interface
 		"CreateIndex.status": kivik.StatusNotImplemented, // Couchdb 1.6 doesn't support the find interface
+		"GetIndexes.skip":    true,                       // Couchdb 1.6 doesn't support the find interface
+		"DeleteIndex.skip":   true,                       // Couchdb 1.6 doesn't support the find interface
 
 		"DBExists.databases":              []string{"_users", "chicken", "_duck"},
 		"DBExists/Admin/_users.exists":    true,

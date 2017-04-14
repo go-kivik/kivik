@@ -3,7 +3,13 @@ package kt
 import (
 	"strings"
 	"testing"
+
+	"github.com/flimzy/kivik"
 )
+
+// AllDocsIndex is the default index for _all_docs
+var AllDocsIndex = kivik.Index{Name: "_all_docs", Type: "special",
+	Definition: map[string]interface{}{"fields": []map[string]string{{"_id": "asc"}}}}
 
 // SuiteConfig represents the configuration for a test suite.
 type SuiteConfig map[string]interface{}

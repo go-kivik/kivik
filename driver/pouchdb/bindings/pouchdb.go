@@ -188,6 +188,8 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, options map[string]i
 // Find executes a MongoDB-style find query with the pouchdb-find plugin, if it
 // is installed. If the plugin is not installed, a NotImplemented error will be
 // returned.
+//
+// See https://github.com/pouchdb/pouchdb/tree/master/packages/node_modules/pouchdb-find#dbfindrequest--callback
 func (db *DB) Find(ctx context.Context, query interface{}) (*js.Object, error) {
 	if jsbuiltin.TypeOf(db.Object.Get("find")) != jsbuiltin.TypeFunction {
 		return nil, kivik.ErrNotImplemented
@@ -309,9 +311,33 @@ func (db *DB) RemoveAttachment(ctx context.Context, docID, filename, rev string)
 // CreateIndex creates an index to be used by MongoDB-style queries with the
 // pouchdb-find plugin, if it is installed. If the plugin is not installed, a
 // NotImplemented error will be returned.
+//
+// See https://github.com/pouchdb/pouchdb/tree/master/packages/node_modules/pouchdb-find#dbcreateindexindex--callback
 func (db *DB) CreateIndex(ctx context.Context, index interface{}) (*js.Object, error) {
 	if jsbuiltin.TypeOf(db.Object.Get("find")) != jsbuiltin.TypeFunction {
 		return nil, kivik.ErrNotImplemented
 	}
 	return callBack(ctx, db, "createIndex", index)
+}
+
+// GetIndexes returns the list of currently defined indexes on the database.
+//
+// See https://github.com/pouchdb/pouchdb/tree/master/packages/node_modules/pouchdb-find#dbgetindexescallback
+func (db *DB) GetIndexes(ctx context.Context) (*js.Object, error) {
+	if jsbuiltin.TypeOf(db.Object.Get("find")) != jsbuiltin.TypeFunction {
+		return nil, kivik.ErrNotImplemented
+	}
+	return callBack(ctx, db, "getIndexes")
+}
+
+// DeleteIndex deletes an index used by the MongoDB-style queries with the
+// pouchdb-find plugin, if it is installed. If the plugin is not installed, a
+// NotImplemeneted error will be returned.
+//
+// See: https://github.com/pouchdb/pouchdb/tree/master/packages/node_modules/pouchdb-find#dbdeleteindexindex--callback
+func (db *DB) DeleteIndex(ctx context.Context, index interface{}) (*js.Object, error) {
+	if jsbuiltin.TypeOf(db.Object.Get("find")) != jsbuiltin.TypeFunction {
+		return nil, kivik.ErrNotImplemented
+	}
+	return callBack(ctx, db, "deleteIndex", index)
 }

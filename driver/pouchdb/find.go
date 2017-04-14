@@ -39,6 +39,15 @@ func (d *db) CreateIndexContext(ctx context.Context, ddoc, name string, index in
 	return err
 }
 
+func (d *db) DeleteIndexContext(ctx context.Context, ddoc, name string) error {
+	indexObj, err := buildIndex(ddoc, name, map[string]interface{}{})
+	if err != nil {
+		return err
+	}
+	_, err = d.db.DeleteIndex(ctx, indexObj)
+	return err
+}
+
 func (d *db) FindContext(ctx context.Context, query interface{}) (driver.Rows, error) {
 	result, err := d.db.Find(ctx, query)
 	if err != nil {

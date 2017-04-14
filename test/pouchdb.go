@@ -118,6 +118,7 @@ func init() {
 
 		"Find.skip":        true, // Find doesn't work with CouchDB 1.6, which we use for these tests
 		"CreateIndex.skip": true, // Find doesn't work with CouchDB 1.6, which we use for these tests
+		"DeleteIndex.skip": true, // Find doesn't work with CouchDB 1.6, which we use for these tests
 
 		"Query/RW/group/Admin/WithDocs/UpdateSeq.skip":  true,
 		"Query/RW/group/NoAuth/WithDocs/UpdateSeq.skip": true,

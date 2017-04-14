@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
@@ -13,7 +14,6 @@ import (
 	"github.com/flimzy/kivik/authdb"
 	"github.com/flimzy/kivik/config"
 	"github.com/flimzy/kivik/errors"
-	"github.com/flimzy/kivik/logger"
 )
 
 // Version is the version of this library.
@@ -47,11 +47,6 @@ type Service struct {
 	// VendorName is the vendor name string to report to clients. Defaults to the library
 	// vendor string.
 	VendorName string
-	// LogWriter is a logger where logs can be sent. It is the responsibility of
-	// the developer to ensure that the logs are available to the backend driver,
-	// if the Log() method is expected to work. By default, logs are written to
-	// standard output.
-	LogWriter logger.LogWriter
 	// Favicon is the path to a file to serve as favicon.ico. If unset, a default
 	// image is used.
 	Favicon string
@@ -83,15 +78,9 @@ func (s *Service) SetConfig(config *config.Config) {
 // Start() is called, so this is meant to be used if you want to bind the server
 // yourself.
 func (s *Service) Init() (http.Handler, error) {
-	if s.LogWriter != nil {
-		logConf, _ := s.Config().GetSection("log")
-		if err := s.LogWriter.Init(logConf); err != nil {
-			return nil, errors.Wrap(err, "failed to initialize logger")
-		}
-	}
 	s.authHandlersSetup()
 	if s.Config().GetString("couch_httpd_auth", "secret") == "" {
-		s.Warn("couch_httpd_auth.secret is not set. This is insecure!")
+		fmt.Fprintf(os.Stderr, "couch_httpd_auth.secret is not set. This is insecure!\n")
 	}
 	return s.setupRoutes()
 }
@@ -106,13 +95,13 @@ func (s *Service) Start() error {
 		s.Config().GetString("httpd", "bind_address"),
 		s.Config().GetInt("httpd", "port"),
 	)
-	s.Info("Listening on %s", addr)
+	fmt.Fprintf(os.Stderr, "Listening on %s\n", addr)
 	return http.ListenAndServe(addr, server)
 }
 
 func (s *Service) authHandlersSetup() {
 	if s.AuthHandlers == nil || len(s.AuthHandlers) == 0 {
-		s.Warn("No AuthHandler specified! Welcome to the PERPETUAL ADMIN PARTY!")
+		fmt.Fprintf(os.Stderr, "No AuthHandler specified! Welcome to the PERPETUAL ADMIN PARTY!\n")
 	}
 	s.authHandlers = make(map[string]auth.Handler)
 	s.authHandlerNames = make([]string, 0, len(s.AuthHandlers))

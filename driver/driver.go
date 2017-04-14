@@ -59,13 +59,6 @@ type UUIDer interface {
 	UUIDsContext(ctx context.Context, count int) ([]string, error)
 }
 
-// LogReader is an optional interface that may be implemented by a Client.
-type LogReader interface {
-	// Log reads the server log, up to length bytes, beginning offset bytes from
-	// the end.
-	LogContext(ctx context.Context, length, offset int64) (io.ReadCloser, error)
-}
-
 // Cluster is an optional interface that may be implemented by a Client for
 // servers that support clustering operations (specifically CouchDB 2.0)
 type Cluster interface {

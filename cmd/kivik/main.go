@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"os"
 
@@ -9,12 +8,8 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/flimzy/kivik"
-	"github.com/flimzy/kivik/driver"
 	_ "github.com/flimzy/kivik/driver/couchdb"
 	_ "github.com/flimzy/kivik/driver/memory"
-	"github.com/flimzy/kivik/driver/proxy"
-	"github.com/flimzy/kivik/logger"
-	"github.com/flimzy/kivik/logger/logfile"
 	"github.com/flimzy/kivik/serve"
 	"github.com/flimzy/kivik/test"
 )
@@ -35,32 +30,13 @@ func main() {
 	cmdServe.Flags().StringVarP(&driverName, "driver", "d", "memory", "Backend driver to use")
 	var dsn string
 	cmdServe.Flags().StringVarP(&dsn, "dsn", "", "", "Data source name")
-	var logFile string
-	cmdServe.Flags().StringVarP(&logFile, "log", "l", "", "Server log file")
 	cmdServe.Run = func(cmd *cobra.Command, args []string) {
 		service := &serve.Service{}
 
 		client, err := kivik.New(driverName, dsn)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to connect: %s", err)
+			fmt.Fprintf(os.Stderr, "Failed to connect: %s\n", err)
 			os.Exit(1)
-		}
-		var log interface {
-			driver.LogReader
-			logger.LogWriter
-		}
-		if logFile != "" {
-			log = &logfile.Logger{}
-			service.Config().Set("log", "file", logFile)
-			service.LogWriter = log
-			kivik.Register("loggingClient", loggingClient{
-				Client:    proxy.NewClient(client),
-				LogReader: log,
-			})
-			client, err = kivik.New("loggingClient", "")
-			if err != nil {
-				panic(err)
-			}
 		}
 		service.Client = client
 		if listenAddr != "" {
@@ -116,13 +92,4 @@ func main() {
 	if err != nil {
 		os.Exit(2)
 	}
-}
-
-type loggingClient struct {
-	driver.Client
-	driver.LogReader
-}
-
-func (lc loggingClient) NewClientContext(_ context.Context, _ string) (driver.Client, error) {
-	return lc, nil
 }

@@ -98,6 +98,18 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 			})
 			ctx.CheckError(err)
 		})
+		ctx.Run("HeavilyEscapedID", func(ctx *kt.Context) {
+			ctx.Parallel()
+			doc := map[string]interface{}{
+				"_id":  "foo+bar & spáces ?!*,",
+				"name": "Bob",
+			}
+			err = kt.Retry(func() error {
+				_, err = db.Put(doc["_id"].(string), doc)
+				return err
+			})
+			ctx.CheckError(err)
+		})
 		ctx.Run("SlashInID", func(ctx *kt.Context) {
 			ctx.Parallel()
 			doc := map[string]interface{}{

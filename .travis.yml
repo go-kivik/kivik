@@ -31,6 +31,8 @@ matrix:
           os: osx
         - go: 1.8.x
           env: MODE=linter
+        - go: 1.8.x
+          env: MODE=coverage
 
 install:
     - ./travis/install.sh $MODE

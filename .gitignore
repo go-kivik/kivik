@@ -4,3 +4,4 @@ vendor
 test.*
 glide.lock
 node_modules
+coverage.txt

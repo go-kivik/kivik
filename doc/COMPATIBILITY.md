@@ -46,7 +46,7 @@
 | GET /_restart                         | ⁿ/ₐ                   |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | GET /_stats                           | ⁿ/ₐ                   |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | GET /_utils                           | ⁿ/ₐ                   |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
-| GET /_membership                      | Membership()         | ❌<sup>[12](#kivikCluster)</sup> | ✅ | ✅<sup>[4](#couchMembership)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
+| GET /_membership                      | ⁿ/ₐ                   | ❌<sup>[12](#kivikCluster)</sup> |   | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
 | GET /favicon.ico                      | ⁿ/ₐ                  | ✅ | ❌ | ❌ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | POST /_session<sup>[6](#cookieAuth)</sup> | ⁿ/ₐ<sup>[13](#getSession)</sup> | ✅ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | GET /_session<sup>[6](#cookieAuth)</sup> | ⁿ/ₐ<sup>[13](#getSession)</sup> | ☑️ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
@@ -123,7 +123,6 @@
     pouchdb-all-dbs plugin.
 3. <a name="pouchLocalOnly"> Supported for local PouchDB databases only. A work
     around may be possible in the future for remote databases.
-4. <a name="couchMembership"> Available for CouchDB 2.0+ servers only.
 5. <a name="pouchDBExists"> PouchDB offers no way to check for the existence of
  a local database without creating it, so `DBExists()` always returns true,
  `CreateDB()` does not return an error if the database already existed, and

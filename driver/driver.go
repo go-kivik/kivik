@@ -59,12 +59,6 @@ type UUIDer interface {
 	UUIDsContext(ctx context.Context, count int) ([]string, error)
 }
 
-// Cluster is an optional interface that may be implemented by a Client for
-// servers that support clustering operations (specifically CouchDB 2.0)
-type Cluster interface {
-	MembershipContext(ctx context.Context) (allNodes []string, clusterNodes []string, err error)
-}
-
 // DBInfo provides statistics about a database.
 type DBInfo struct {
 	Name           string `json:"db_name"`

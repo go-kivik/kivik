@@ -14,7 +14,6 @@ func init() {
 		// Features which are not supported by PouchDB
 		"UUIDs.skip":       true,
 		"Log.skip":         true,
-		"Membership.skip":  true,
 		"Config.skip":      true,
 		"Flush.skip":       true,
 		"Security.skip":    true, // FIXME: Perhaps implement later with a plugin?
@@ -77,7 +76,6 @@ func init() {
 		// Features which are not supported by PouchDB
 		"UUIDs.skip":       true,
 		"Log.skip":         true,
-		"Membership.skip":  true,
 		"Config.skip":      true,
 		"Flush.skip":       true,
 		"Session.skip":     true,

@@ -130,21 +130,6 @@ func (c *Client) UUIDsContext(ctx context.Context, count int) ([]string, error) 
 	return nil, ErrNotImplemented
 }
 
-// Membership calls MembershipContext with a background context.
-func (c *Client) Membership() (allNodes []string, clusterNodes []string, err error) {
-	return c.MembershipContext(context.Background())
-}
-
-// MembershipContext returns the list of nodes that are part of the cluster as
-// clusterNodes, and all known nodes, including cluster nodes, as allNodes.
-// Not all servers or clients will support this method.
-func (c *Client) MembershipContext(ctx context.Context) (allNodes []string, clusterNodes []string, err error) {
-	if cluster, ok := c.driverClient.(driver.Cluster); ok {
-		return cluster.MembershipContext(ctx)
-	}
-	return nil, nil, ErrNotImplemented
-}
-
 // DBExists calls DBExistsContext with a background context.
 func (c *Client) DBExists(dbName string, options ...Options) (bool, error) {
 	return c.DBExistsContext(context.Background(), dbName, options...)

@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/errors"
 	"github.com/flimzy/kivik/test/kt"
 )
@@ -39,14 +38,6 @@ func validateUUID(uuid string) error {
 	}
 	_, err := hex.DecodeString(uuid)
 	return err
-}
-
-func TestMembership(t *testing.T) {
-	client := getClient(t)
-	_, _, err := client.MembershipContext(kt.CTX)
-	if err != nil && errors.StatusCode(err) != kivik.StatusNotImplemented {
-		t.Errorf("Failed: %s", err)
-	}
 }
 
 func TestDBExists(t *testing.T) {

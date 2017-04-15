@@ -56,7 +56,13 @@ func (r *replication) Target() string        { return r.Tgt }
 func (r *replication) StartTime() time.Time  { return r.Start }
 
 func (r *replication) Cancel(ctx context.Context) error {
-	return nil
+	var doc map[string]interface{}
+	if err := r.Ge(ctx, r.DocID, &doc, nil); err != nil {
+		return err
+	}
+	doc["cancel"] = true
+	_, err := r.Put(ctx, r.DocID, doc)
+	return err
 }
 
 func (r *replication) Update(ctx context.Context, state *driver.ReplicationState) error {

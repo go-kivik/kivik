@@ -72,6 +72,26 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 				ctx.Errorf("Expected a replication ID")
 			}
 		})
+		ctx.Run("Cancel", func(ctx *kt.Context) {
+			ctx.Parallel()
+			dbnameA := ctx.TestDBName()
+			dbnameB := ctx.TestDBName()
+			defer ctx.Admin.DestroyDB(dbnameA)
+			defer ctx.Admin.DestroyDB(dbnameB)
+			if err := ctx.Admin.CreateDB(dbnameA); err != nil {
+				ctx.Fatalf("Failed to create db: %s", err)
+			}
+			if err := ctx.Admin.CreateDB(dbnameB); err != nil {
+				ctx.Fatalf("Failed to create db: %s", err)
+			}
+			replID := ctx.TestDBName()
+			rep, err := client.Replicate(kt.CTX, dbnameA, dbnameB, kivik.Options{"_id": replID})
+			if !ctx.IsExpectedSuccess(err) {
+				return
+			}
+			defer rep.Delete(kt.CTX)
+			ctx.CheckError(rep.Cancel(kt.CTX))
+		})
 		ctx.Run("MissingSource", func(ctx *kt.Context) {
 			ctx.Parallel()
 			replID := ctx.TestDBName()

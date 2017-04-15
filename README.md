@@ -1,5 +1,14 @@
 [![Build Status](https://travis-ci.org/flimzy/kivik.svg?branch=master)](https://travis-ci.org/flimzy/kivik) [![GoDoc](https://godoc.org/github.com/flimzy/kivik?status.png)](http://godoc.org/github.com/flimzy/kivik)
 
+# !!! NOTICE !!!
+
+**This package is under heavy, active development. The API is in constant flux.
+Be prepared for breaking changes to occur with no notice!**
+
+Until version 1.0 is released, if you are using this package, you should
+probably vendor it, and upgrade only after testing that your code works with
+the latest version.
+
 # Kivik
 
 Package kivik provides a generic interface to CouchDB or CouchDB-like databases.

@@ -1,7 +1,9 @@
 package serve
 
 import (
+	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/dimfeld/httptreemux"
@@ -15,7 +17,6 @@ func (s *Service) setupRoutes() (http.Handler, error) {
 	ctxRoot.Handler(mGET, "/", handler(root))
 	ctxRoot.Handler(mGET, "/favicon.ico", handler(favicon))
 	ctxRoot.Handler(mGET, "/_all_dbs", handler(allDBs))
-	ctxRoot.Handler(mGET, "/_log", handler(log))
 	ctxRoot.Handler(mPUT, "/:db", handler(createDB))
 	ctxRoot.Handler(mHEAD, "/:db", handler(dbExists))
 	ctxRoot.Handler(mPOST, "/:db/_ensure_full_commit", handler(flush))
@@ -47,11 +48,11 @@ func gzipHandler(s *Service) func(http.Handler) http.Handler {
 	}
 	gzipHandler, err := gziphandler.NewGzipLevelHandler(int(level))
 	if err != nil {
-		s.Warn("invalid httpd.compression_level '%s'", level)
+		fmt.Fprintf(os.Stderr, "invalid httpd.compression_level %d\n", level)
 		return func(h http.Handler) http.Handler {
 			return h
 		}
 	}
-	s.Info("Enabling HTTPD cmpression, level %d", level)
+	fmt.Fprintf(os.Stderr, "Enabling HTTPD cmpression, level %d\n", level)
 	return gzipHandler
 }

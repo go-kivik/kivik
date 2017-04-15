@@ -97,7 +97,7 @@ func (d *db) CompactContext(_ context.Context) error {
 	go func() {
 		defer func() { d.compacting = false }()
 		if err := d.db.Compact(); err != nil {
-			fmt.Fprintf(os.Stderr, "compaction failed: %s", err)
+			fmt.Fprintf(os.Stderr, "compaction failed: %s\n", err)
 		}
 	}()
 	return nil
@@ -113,7 +113,7 @@ func (d *db) ViewCleanupContext(_ context.Context) error {
 	go func() {
 		defer func() { d.compacting = false }()
 		if err := d.db.ViewCleanup(); err != nil {
-			fmt.Fprintf(os.Stderr, "view cleanup failed: %s", err)
+			fmt.Fprintf(os.Stderr, "view cleanup failed: %s\n", err)
 		}
 	}()
 	return nil

@@ -14,14 +14,13 @@ type CompleteClient interface {
 	driver.Client
 	driver.Authenticator
 	driver.UUIDer
-	driver.LogReader
 	driver.Cluster
 	driver.Configer
 }
 
 // NewClient wraps an existing *kivik.Client connection, allowing it to be used
 // as a driver.Client
-func NewClient(c *kivik.Client) CompleteClient {
+func NewClient(c *kivik.Client) driver.Client {
 	return &client{c}
 }
 

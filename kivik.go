@@ -3,7 +3,6 @@ package kivik
 import (
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"regexp"
 
@@ -144,24 +143,6 @@ func (c *Client) MembershipContext(ctx context.Context) (allNodes []string, clus
 		return cluster.MembershipContext(ctx)
 	}
 	return nil, nil, ErrNotImplemented
-}
-
-// Log reads the server log, if supported by the client driver. This method will
-// read up to length bytes of logs from the server, ending at offset bytes from
-// the end. The caller must close the ReadCloser.
-func (c *Client) Log(length, offset int64) (io.ReadCloser, error) {
-	return c.LogContext(context.Background(), length, offset)
-}
-
-// LogContext reads the server log, if supported by the client driver. This
-// method will read up to length bytes of logs from the server, ending at offset
-// bytes from the end. The provided context must be non-nil. The caller must
-// close the ReadCloser.
-func (c *Client) LogContext(ctx context.Context, length, offset int64) (io.ReadCloser, error) {
-	if logger, ok := c.driverClient.(driver.LogReader); ok {
-		return logger.LogContext(ctx, length, offset)
-	}
-	return nil, ErrNotImplemented
 }
 
 // DBExists calls DBExistsContext with a background context.

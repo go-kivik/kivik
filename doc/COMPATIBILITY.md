@@ -41,7 +41,7 @@
 | GET /_active_tasks                    | ⁿ/ₐ                   |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | GET /_all_dbs                         | AllDBs()             | ✅ | ✅ | ✅ | ☑️<sup>[1](#pouchAllDbs1),[2](#pouchAllDbs2),[3](pouchLocalOnly)</sup> | ✅ | ✅
 | GET /_db_updates                      | DBUpdates()          |    | ✅ | ✅ | ⁿ/ₐ |
-| GET /_log                             | Log()                | ✅ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
+| GET /_log                             | ⁿ/ₐ                   |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | GET /_replicate
 | GET /_restart                         | ⁿ/ₐ                   |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | GET /_stats                           | ⁿ/ₐ                   |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |

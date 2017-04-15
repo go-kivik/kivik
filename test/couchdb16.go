@@ -167,5 +167,7 @@ func init() {
 		"Put/RW/NoAuth/group/Conflict.status":              kivik.StatusConflict,
 
 		"GetReplications/NoAuth.status": kivik.StatusForbidden,
+
+		"Replicate/RW/NoAuth.status": kivik.StatusForbidden,
 	})
 }

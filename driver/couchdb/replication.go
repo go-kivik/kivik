@@ -38,12 +38,14 @@ func (re *replicationError) UnmarshalJSON(data []byte) error {
 }
 
 type replication struct {
-	RepID string    `json:"_id"`
+	DocID string    `json:"_id"`
+	RepID string    `json:"_replication_id"`
 	Src   string    `json:"source"`
 	Tgt   string    `json:"target"`
 	Start time.Time `json:"-"`
 	Ste   string    `json:"_replication_state"`
 	Err   error     `json:"-"`
+	*db
 }
 
 var _ driver.Replication = &replication{}
@@ -62,7 +64,12 @@ func (r *replication) Update(ctx context.Context, state *driver.ReplicationState
 }
 
 func (r *replication) Delete(ctx context.Context) error {
-	return nil
+	rev, err := r.Rev(ctx, r.DocID)
+	if err != nil {
+		return err
+	}
+	_, err = r.db.Delete(ctx, r.DocID, rev)
+	return err
 }
 
 func (c *client) GetReplications(ctx context.Context, options map[string]interface{}) ([]driver.Replication, error) {
@@ -75,6 +82,7 @@ func (c *client) GetReplications(ctx context.Context, options map[string]interfa
 	var result struct {
 		Rows []struct {
 			Doc struct {
+				DocID         string            `json:"_id"`
 				ReplicationID string            `json:"_replication_id"`
 				Source        string            `json:"source"`
 				Target        string            `json:"target"`
@@ -97,6 +105,7 @@ func (c *client) GetReplications(ctx context.Context, options map[string]interfa
 			continue
 		}
 		rep := &replication{
+			DocID: row.Doc.DocID,
 			RepID: row.Doc.ReplicationID,
 			Src:   row.Doc.Source,
 			Tgt:   row.Doc.Target,
@@ -109,6 +118,9 @@ func (c *client) GetReplications(ctx context.Context, options map[string]interfa
 }
 
 func (c *client) Replicate(ctx context.Context, targetDSN, sourceDSN string, options map[string]interface{}) (driver.Replication, error) {
+	if options == nil {
+		options = make(map[string]interface{})
+	}
 	// Allow overriding source and target with options, i.e. for OAuth1 options
 	if _, ok := options["source"]; !ok {
 		options["source"] = sourceDSN
@@ -120,11 +132,17 @@ func (c *client) Replicate(ctx context.Context, targetDSN, sourceDSN string, opt
 	if err := json.NewEncoder(body).Encode(options); err != nil {
 		return nil, err
 	}
-	var rep replication
-	resp, err := c.Client.DoJSON(ctx, kivik.MethodPost, "/_replicator", &chttp.Options{Body: body}, &rep)
+	var repStub struct {
+		ID string `json:"id"`
+	}
+	resp, err := c.Client.DoJSON(ctx, kivik.MethodPost, "/_replicator", &chttp.Options{Body: body}, &repStub)
 	if err != nil {
 		return nil, err
 	}
+	rep := &replication{
+		DocID: repStub.ID,
+	}
 	rep.Start, _ = time.Parse(time.RFC1123, resp.Header.Get("Date"))
-	return &rep, nil
+	rep.db = &db{client: c, dbName: "_replicator", forceCommit: true}
+	return rep, nil
 }

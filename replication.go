@@ -1,10 +1,10 @@
 package kivik
 
 import (
+	"context"
 	"time"
 
 	"github.com/flimzy/kivik/driver"
-	"golang.org/x/net/context"
 )
 
 // Replication represents an active or completed replication.
@@ -26,10 +26,15 @@ type Replication struct {
 	LastUpdate       time.Time
 	EndTime          time.Time
 	Status           string
-	Error            error
+	lastError        error
 
 	irep driver.Replication
 	done bool
+}
+
+// Err returns the error, if any, that caused the replication to abort.
+func (r *Replication) Err() error {
+	return r.lastError
 }
 
 func newReplication(rep driver.Replication) *Replication {
@@ -40,6 +45,16 @@ func newReplication(rep driver.Replication) *Replication {
 		Target:        rep.Target(),
 		irep:          rep,
 	}
+}
+
+// Delete deletes a replication. If it is currently running, it will be
+// cancelled.
+func (r *Replication) Delete(ctx context.Context) error {
+	if err := r.irep.Delete(ctx); err != nil {
+		return err
+	}
+	r.done = true
+	return nil
 }
 
 // Update requests a replication state update from the server. If there is an
@@ -58,8 +73,8 @@ func (r *Replication) Update(ctx context.Context) error {
 	r.EndTime = rep.EndTime
 	r.SourceSeq = rep.SourceSeq
 	r.Status = rep.Status
-	r.Error = rep.Error
-	if rep.Status == "complete" || rep.Status == "error" || r.Error != nil {
+	r.lastError = rep.Error
+	if rep.Status == "complete" || rep.Status == "error" || r.lastError != nil {
 		r.done = true
 	}
 	return nil
@@ -110,7 +125,10 @@ func (c *Client) Replicate(ctx context.Context, targetDSN, sourceDSN string, opt
 			return nil, err
 		}
 		rep, err := replicator.Replicate(ctx, targetDSN, sourceDSN, opts)
-		return newReplication(rep), err
+		if err != nil {
+			return nil, err
+		}
+		return newReplication(rep), nil
 	}
 	return nil, ErrNotImplemented
 }

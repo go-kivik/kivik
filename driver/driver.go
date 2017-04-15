@@ -71,6 +71,7 @@ type Replication interface {
 // ClientReplicator is an optional interface that may be implemented by a Client
 // that supports replication between two database.
 type ClientReplicator interface {
+	// Replicate initiates a replication.
 	Replicate(ctx context.Context, targetDSN, sourceDSN string, options map[string]interface{}) (Replication, error)
 	// GetReplications returns a list of replicatoins (i.e. all docs in the
 	// _replicator database)

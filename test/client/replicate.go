@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/test/kt"
 )
@@ -24,7 +23,7 @@ func replicate(ctx *kt.Context) {
 	})
 }
 
-const replicationTimeLimit = 5 * time.Second
+const replicationTimeLimit = 10 * time.Second
 
 func testReplication(ctx *kt.Context, client *kivik.Client) {
 	dbname1 := ctx.TestDBName()
@@ -52,8 +51,7 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 			go func() {
 				for rep.Active() {
 					err = rep.Update(cx)
-					spew.Dump(rep)
-					time.Sleep(10 * time.Millisecond)
+					time.Sleep(100 * time.Millisecond)
 				}
 				done <- struct{}{}
 			}()
@@ -70,6 +68,12 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 			}
 			if rep.ReplicationID == "" {
 				ctx.Errorf("Expected a replication ID")
+			}
+			if rep.Source != dbname2 {
+				ctx.Errorf("Unexpected source. Expected: %s, Actual: %s\n", dbname2, rep.Source)
+			}
+			if rep.Target != dbname1 {
+				ctx.Errorf("Unexpected target. Expected: %s, Actual: %s\n", dbname1, rep.Target)
 			}
 		})
 		ctx.Run("Cancel", func(ctx *kt.Context) {

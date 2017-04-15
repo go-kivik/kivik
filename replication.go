@@ -23,7 +23,7 @@ type Replication struct {
 	DocsRead         int64
 	DocsWritten      int64
 	Progress         float64
-	LastUpdate       time.Time
+	UpdateTime       time.Time
 	EndTime          time.Time
 	Status           string
 	lastError        error
@@ -65,11 +65,12 @@ func (r *Replication) Update(ctx context.Context) error {
 	if err := r.irep.Update(ctx, &rep); err != nil {
 		return err
 	}
+	r.ReplicationID = rep.ReplicationID
 	r.DocWriteFailures = rep.DocWriteFailures
 	r.DocsRead = rep.DocsRead
 	r.DocsWritten = rep.DocsWritten
 	r.Progress = rep.Progress
-	r.LastUpdate = rep.LastUpdate
+	r.UpdateTime = rep.UpdateTime
 	r.EndTime = rep.EndTime
 	r.SourceSeq = rep.SourceSeq
 	r.Status = rep.Status

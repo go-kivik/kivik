@@ -4,8 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/driver/couchdb/chttp"
@@ -66,6 +69,46 @@ func (r *replication) Cancel(ctx context.Context) error {
 }
 
 func (r *replication) Update(ctx context.Context, state *driver.ReplicationState) error {
+	reps, err := r.db.client.GetReplications(ctx, map[string]interface{}{"key": `"` + r.DocID + `"`})
+	if err != nil {
+		return err
+	}
+	fmt.Printf("len(reps) = %d\n", len(reps))
+	if len(reps) == 0 {
+		return errors.New("replication not found in _replicator database")
+	}
+	if len(reps) > 1 {
+		panic("too many replications returned")
+	}
+	fmt.Printf("rep id = %s\n", reps[0].ReplicationID())
+	if state.ReplicationID == "" {
+		state.ReplicationID = reps[0].ReplicationID()
+		// state.Source = reps[0].Source()
+		// state.Target = reps[0].Target()
+	}
+	/*
+		type ReplicationState struct {
+			DocWriteFailures int64     `json:"doc_write_failures"`
+			DocsRead         int64     `json:"docs_read"`
+			DocsWritten      int64     `json:"docs_written"`
+			Progress         float64   `json:"progress"`
+			LastUpdate       time.Time // updated_on / time.Now() for pouchdb
+			EndTime          time.Time `json:"end_time"`
+			SourceSeq        string    `json:"source_seq"` // last_seq for PouchDB
+			Status           string    `json:"status"`
+			Error            error     `json:"-"`
+			UpdateFunc       func(*ReplicationState) error
+		}
+		type Replication interface {
+			Source() string
+			Target() string
+			// Update should fetch the current replication state from the server.
+			Update(context.Context, *ReplicationState) error
+			Cancel(context.Context) error
+			Delete(context.Context) error
+		}
+	*/
+	spew.Dump(reps)
 	return nil
 }
 
@@ -81,6 +124,7 @@ func (r *replication) Delete(ctx context.Context) error {
 func (c *client) GetReplications(ctx context.Context, options map[string]interface{}) ([]driver.Replication, error) {
 	delete(options, "conflicts")
 	delete(options, "update_seq")
+	options["include_docs"] = true
 	params, err := optionsToParams(options)
 	if err != nil {
 		return nil, err
@@ -94,7 +138,7 @@ func (c *client) GetReplications(ctx context.Context, options map[string]interfa
 				Target        string            `json:"target"`
 				State         string            `json:"_replication_state"`
 				Error         *replicationError `json:"_replication_state_reason,omitempty"`
-			}
+			} `json:"doc"`
 		} `json:"rows"`
 	}
 	path := "/_replicator/_all_docs"
@@ -106,8 +150,7 @@ func (c *client) GetReplications(ctx context.Context, options map[string]interfa
 	}
 	reps := make([]driver.Replication, 0, len(result.Rows))
 	for _, row := range result.Rows {
-		if row.Doc.ReplicationID == "" {
-			// We expect this for the permanent default design doc
+		if row.Doc.DocID == "_design/_replicator" {
 			continue
 		}
 		rep := &replication{
@@ -150,5 +193,6 @@ func (c *client) Replicate(ctx context.Context, targetDSN, sourceDSN string, opt
 	}
 	rep.Start, _ = time.Parse(time.RFC1123, resp.Header.Get("Date"))
 	rep.db = &db{client: c, dbName: "_replicator", forceCommit: true}
+
 	return rep, nil
 }

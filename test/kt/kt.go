@@ -265,9 +265,9 @@ func Retry(fn func() error) error {
 		err = fn()
 		if err != nil {
 			msg := strings.TrimSpace(err.Error())
-			if strings.HasSuffix(msg, ": io: read/write on closed pipe") ||
-				strings.HasSuffix(msg, ": write: broken pipe") ||
-				strings.HasSuffix(msg, ": read: connection reset by peer") {
+			if strings.HasSuffix(msg, "io: read/write on closed pipe") ||
+				strings.HasSuffix(msg, "write: broken pipe") ||
+				strings.HasSuffix(msg, "read: connection reset by peer") {
 				fmt.Printf("Retrying after error: %s\n", err)
 				continue
 			}

@@ -13,6 +13,10 @@ func (c *Client) Config() (*config.Config, error) {
 }
 
 // ConfigContext returns the server's configuration.
+//
+// DO NOT USE THIS FUNCTION.
+//
+// This functionality is going away soon!
 func (c *Client) ConfigContext(ctx context.Context) (*config.Config, error) {
 	if conf, ok := c.driverClient.(driver.Configer); ok {
 		c, err := conf.ConfigContext(ctx)

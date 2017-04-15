@@ -51,22 +51,20 @@
 | POST /_session<sup>[6](#cookieAuth)</sup> | ⁿ/ₐ<sup>[13](#getSession)</sup> | ✅ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | GET /_session<sup>[6](#cookieAuth)</sup> | ⁿ/ₐ<sup>[13](#getSession)</sup> | ☑️ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | DELETE /_session<sup>[6](#cookieAuth)</sup> | ⁿ/ₐ<sup>[13](#getSession)</sup> | ✅ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
-| * /_config                            | Config()            |    | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
+| * /_config                            | ⁿ/ₐ                  |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | HEAD /{db}                            | DBExists()          | ✅ | ✅ | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
 | GET /{db}                             | Info()              |    | ✅ | ✅ | ✅
 | PUT /{db}                             | CreateDB()          | ✅ | ✅ | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
 | DELETE /{db}                          | DestroyDB()         |    | ✅ | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
 | POST /{db}                            | CreateDoc()         |    | ✅ | ✅ | ✅ |
-| GET /{db}/_all_docs                   | AllDocs()           |    | ☑️<sup>[7](#todoConflicts),[9](#todoOrdering),[10](#todoLimit)</sup> | ✅ | ？ | ？ |
-| POST /{db}/_all_docs                  | ⁿ/ₐ                  |    |    | ❌ | ❌ | ⁿ/ₐ | ⁿ/ₐ |
+| (GET|POST) /{db}/_all_docs            | AllDocs()           |    | ☑️<sup>[7](#todoConflicts),[9](#todoOrdering),[10](#todoLimit)</sup> | ✅ | ？ | ？ |
 | POST /{db}/_bulk_docs                 | BulkDocs()          |    | ✅ | ✅ | ✅  |    |    |
 | POST /{db}/_find                      | Find()              |    | ✅ | ✅ | ✅ |
 | POST /{db}/_index                     | CreateIndex()       |    | ✅ | ✅ | ✅ |
 | GET /{db}/_index                      | GetIndexes()        |    | ✅ | ✅ | ✅ |
 | DELETE /{db}/_index                   | DeleteIndex()       |    | ✅ | ✅ | ✅ |
 | POST /{db}/_explain                   | ⁿ/ₐ                  |    |    | ❌<sup>[15](#notPublic)</sup> |    |
-| GET /{db}/_changes                    | Changes()<sup>[8](#changesContinuous)</sup> |    | ✅ | ✅ | ✅ |    |    |
-| POST /{db}/_changes                   |                     |    |    |    | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
+| (GET|POST) /{db}/_changes             | Changes()<sup>[8](#changesContinuous)</sup> |    | ✅ | ✅ | ✅ |    |    |
 | POST /{db}/_compact                   | Compact()           |    | ✅ | ✅ | ✅ |     |    |
 | POST /{db}/_compact/{ddoc}            | CompactView()       |    |    | ✅ | ⁿ/ₐ |    |    |
 | POST /{db}/_ensure_full_commit        | Flush()             | ✅ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ |    |
@@ -98,8 +96,7 @@
 | PUT /{db}/_design/{ddoc}/{attname}    | PutAttachment()     |    | ✅ | ✅ | ✅ |
 | DELETE /{db}/_design/{ddoc}/{attname} | DeleteAttachment()  |    | ✅ | ✅ | ✅ |
 | GET /{db}/_design/{ddoc}/_info        | ⁿ/ₐ                  |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
-| GET /{db}/_design/{ddoc}/_view/{view} | Query()             |    | ✅ | ✅ | ✅<sup>[18](#pouchViews)</sup> |
-| POST /{db}/_design/{ddoc}/_view/{view}
+| (GET|POST) /{db}/_design/{ddoc}/_view/{view} | Query()      |    | ✅ | ✅ | ✅<sup>[18](#pouchViews)</sup> |
 | GET /{db}/_design/{ddoc}/_show/{func} | ⁿ/ₐ |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
 | POST /{db}/_design/{ddoc}/_show/{func} | ⁿ/ₐ|    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
 | GET /{db}/_design/{ddoc}/_show/{func}/{docid} |ⁿ/ₐ| | | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |

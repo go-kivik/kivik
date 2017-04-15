@@ -165,5 +165,7 @@ func init() {
 		"Put/RW/NoAuth/group/LeadingUnderscoreInID.status": kivik.StatusBadRequest,
 		"Put/RW/NoAuth/group/DesignDoc.status":             kivik.StatusUnauthorized,
 		"Put/RW/NoAuth/group/Conflict.status":              kivik.StatusConflict,
+
+		"GetReplications/NoAuth.status": kivik.StatusForbidden,
 	})
 }

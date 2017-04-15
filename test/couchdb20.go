@@ -192,5 +192,7 @@ func init() {
 		"DeleteIndex/RW/Admin/group/NotFoundName.status":  kivik.StatusNotFound,
 		"DeleteIndex/RW/NoAuth/group/NotFoundDdoc.status": kivik.StatusNotFound,
 		"DeleteIndex/RW/NoAuth/group/NotFoundName.status": kivik.StatusNotFound,
+
+		"GetReplications/NoAuth.status": kivik.StatusUnauthorized,
 	})
 }

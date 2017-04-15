@@ -41,6 +41,42 @@ type Client interface {
 	DB(ctx context.Context, dbName string, options map[string]interface{}) (DB, error)
 }
 
+// ReplicationState represents a snap-shot state of a replication, as provided
+// by the _active_tasks endpoint.
+type ReplicationState struct {
+	DocWriteFailures int64     `json:"doc_write_failures"`
+	DocsRead         int64     `json:"docs_read"`
+	DocsWritten      int64     `json:"docs_written"`
+	Progress         float64   `json:"progress"`
+	LastUpdate       time.Time // updated_on / time.Now() for pouchdb
+	EndTime          time.Time `json:"end_time"`
+	SourceSeq        string    `json:"source_seq"` // last_seq for PouchDB
+	Status           string    `json:"status"`
+	Error            error     `json:"-"`
+	UpdateFunc       func(*ReplicationState) error
+}
+
+// Replication represents an active or completed replication.
+type Replication interface {
+	ReplicationID() string
+	StartTime() time.Time
+	Source() string
+	Target() string
+	// UpdateContext should fetch the current replication state from the server.
+	Update(context.Context, *ReplicationState) error
+	Cancel(context.Context) error
+	Delete(context.Context) error
+}
+
+// ClientReplicator is an optional interface that may be implemented by a Client
+// that supports replication between two database.
+type ClientReplicator interface {
+	Replicate(ctx context.Context, targetDSN, sourceDSN string, options map[string]interface{}) (Replication, error)
+	// GetReplications returns a list of replicatoins (i.e. all docs in the
+	// _replicator database)
+	GetReplications(ctx context.Context, options map[string]interface{}) ([]Replication, error)
+}
+
 // Authenticator is an optional interface that may be implemented by a Client
 // that supports authenitcated connections.
 type Authenticator interface {

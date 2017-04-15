@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/flimzy/kivik.svg?branch=master)](https://travis-ci.org/flimzy/kivik) [![GoDoc](https://godoc.org/github.com/flimzy/kivik?status.png)](http://godoc.org/github.com/flimzy/kivik)
+[![Build Status](https://travis-ci.org/flimzy/kivik.svg?branch=master)](https://travis-ci.org/flimzy/kivik) [![Codecov](https://img.shields.io/codecov/c/github/flimzy/kivik.svg?style=flat)](https://codecov.io/gh/flimzy/kivik) [![GoDoc](https://godoc.org/github.com/flimzy/kivik?status.svg)](http://godoc.org/github.com/flimzy/kivik)
 
 # !!! NOTICE !!!
 

@@ -95,7 +95,7 @@ func (d *db) AllDocsContext(ctx context.Context, opts map[string]interface{}) (d
 
 // QueryContext queries a view.
 func (d *db) QueryContext(ctx context.Context, ddoc, view string, opts map[string]interface{}) (driver.Rows, error) {
-	return d.rowsQuery(ctx, fmt.Sprintf("_design/%s/_view/%s", encodeDocID(ddoc), encodeDocID(view)), opts)
+	return d.rowsQuery(ctx, fmt.Sprintf("_design/%s/_view/%s", chttp.EncodeDocID(ddoc), chttp.EncodeDocID(view)), opts)
 }
 
 // GetContext fetches the requested document.
@@ -104,7 +104,7 @@ func (d *db) GetContext(ctx context.Context, docID string, doc interface{}, opts
 	if err != nil {
 		return err
 	}
-	_, err = d.Client.DoJSON(ctx, http.MethodGet, d.path(encodeDocID(docID), params), &chttp.Options{Accept: "application/json; multipart/mixed"}, doc)
+	_, err = d.Client.DoJSON(ctx, http.MethodGet, d.path(chttp.EncodeDocID(docID), params), &chttp.Options{Accept: "application/json; multipart/mixed"}, doc)
 	return err
 }
 
@@ -128,27 +128,6 @@ func (d *db) CreateDocContext(ctx context.Context, doc interface{}) (docID, rev 
 	return result.ID, result.Rev, err
 }
 
-const (
-	prefixDesign = "_design/"
-	prefixLocal  = "_local/"
-)
-
-// encodeDocID ensures that any '/' chars in the docID are escaped, except
-// those found in the strings '_design/' and '_local'
-func encodeDocID(docID string) string {
-	for _, prefix := range []string{prefixDesign, prefixLocal} {
-		if strings.HasPrefix(docID, prefix) {
-			return prefix + replaceSlash(strings.TrimPrefix(docID, prefix))
-		}
-	}
-	return replaceSlash(docID)
-}
-
-// replaceSlash replaces any '/' char with '%2F'
-func replaceSlash(docID string) string {
-	return strings.Replace(docID, "/", "%2F", -1)
-}
-
 func (d *db) PutContext(ctx context.Context, docID string, doc interface{}) (rev string, err error) {
 	var jsonErr error
 	var cancel context.CancelFunc
@@ -162,7 +141,7 @@ func (d *db) PutContext(ctx context.Context, docID string, doc interface{}) (rev
 		ID  string `json:"id"`
 		Rev string `json:"rev"`
 	}
-	_, err = d.Client.DoJSON(ctx, kivik.MethodPut, d.path(encodeDocID(docID), nil), opts, &result)
+	_, err = d.Client.DoJSON(ctx, kivik.MethodPut, d.path(chttp.EncodeDocID(docID), nil), opts, &result)
 	if err != nil {
 		return "", err
 	}
@@ -179,7 +158,7 @@ func (d *db) DeleteContext(ctx context.Context, docID, rev string) (string, erro
 	opts := &chttp.Options{
 		ForceCommit: d.forceCommit,
 	}
-	resp, err := d.Client.DoReq(ctx, kivik.MethodDelete, d.path(encodeDocID(docID), query), opts)
+	resp, err := d.Client.DoReq(ctx, kivik.MethodDelete, d.path(chttp.EncodeDocID(docID), query), opts)
 	if err != nil {
 		return "", err
 	}
@@ -271,7 +250,7 @@ func (d *db) SetSecurityContext(ctx context.Context, security *driver.Security) 
 
 // RevContext returns the most current rev of the requested document.
 func (d *db) RevContext(ctx context.Context, docID string) (rev string, err error) {
-	res, err := d.Client.DoError(ctx, http.MethodHead, d.path(encodeDocID(docID), nil), nil)
+	res, err := d.Client.DoError(ctx, http.MethodHead, d.path(chttp.EncodeDocID(docID), nil), nil)
 	if err != nil {
 		return "", err
 	}
@@ -287,7 +266,7 @@ func (d *db) CopyContext(ctx context.Context, targetID, sourceID string, options
 		ForceCommit: d.forceCommit,
 		Destination: targetID,
 	}
-	resp, err := d.Client.DoReq(ctx, kivik.MethodCopy, d.path(encodeDocID(sourceID), params), opts)
+	resp, err := d.Client.DoReq(ctx, kivik.MethodCopy, d.path(chttp.EncodeDocID(sourceID), params), opts)
 	if err != nil {
 		return "", err
 	}

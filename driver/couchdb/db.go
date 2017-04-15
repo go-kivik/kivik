@@ -136,6 +136,12 @@ const (
 // encodeDocID ensures that any '/' chars in the docID are escaped, except
 // those found in the strings '_design/' and '_local'
 func encodeDocID(docID string) string {
+	parts := strings.Split(docID, "/")
+	for i, part := range parts {
+		parts[i] = url.QueryEscape(part)
+	}
+	docID = strings.Join(parts, "/")
+
 	for _, prefix := range []string{prefixDesign, prefixLocal} {
 		if strings.HasPrefix(docID, prefix) {
 			return prefix + replaceSlash(strings.TrimPrefix(docID, prefix))

@@ -25,8 +25,6 @@ func init() {
 
 		"DestroyDB/RW/Admin/NonExistantDB.status": kivik.StatusNotFound,
 
-		"Membership.status": kivik.StatusNotImplemented,
-
 		"UUIDs.counts":               []int{-1, 0, 1, 10},
 		"UUIDs/Admin/-1Count.status": kivik.StatusBadRequest,
 		// "UUIDs.status": kivik.StatusNotImplemented,

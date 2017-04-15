@@ -25,8 +25,8 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 	dbName := ctx.TestDBName()
 	defer ctx.Admin.DestroyDB(dbName)
 	_ = ctx.Admin.CreateDB(dbName)
-	db, err := client.DB(dbName)
-	if !ctx.IsExpectedSuccess(err) {
+	db, e := client.DB(dbName)
+	if !ctx.IsExpectedSuccess(e) {
 		return
 	}
 	ctx.Run("group", func(ctx *kt.Context) {
@@ -39,7 +39,8 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 				Age:  32,
 			}
 			var rev string
-			err = kt.Retry(func() error {
+			err := kt.Retry(func() error {
+				var err error
 				rev, err = db.Put(doc.ID, doc)
 				return err
 			})
@@ -68,8 +69,8 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 					},
 				},
 			}
-			err = kt.Retry(func() error {
-				_, err = db.Put(doc["_id"].(string), doc)
+			err := kt.Retry(func() error {
+				_, err := db.Put(doc["_id"].(string), doc)
 				return err
 			})
 			ctx.CheckError(err)
@@ -80,8 +81,8 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 				"_id":  "_local/foo",
 				"name": "Bob",
 			}
-			err = kt.Retry(func() error {
-				_, err = db.Put(doc["_id"].(string), doc)
+			err := kt.Retry(func() error {
+				_, err := db.Put(doc["_id"].(string), doc)
 				return err
 			})
 			ctx.CheckError(err)
@@ -92,8 +93,8 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 				"_id":  "_badid",
 				"name": "Bob",
 			}
-			err = kt.Retry(func() error {
-				_, err = db.Put(doc["_id"].(string), doc)
+			err := kt.Retry(func() error {
+				_, err := db.Put(doc["_id"].(string), doc)
 				return err
 			})
 			ctx.CheckError(err)
@@ -104,8 +105,8 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 				"_id":  "foo+bar & spáces ?!*,",
 				"name": "Bob",
 			}
-			err = kt.Retry(func() error {
-				_, err = db.Put(doc["_id"].(string), doc)
+			err := kt.Retry(func() error {
+				_, err := db.Put(doc["_id"].(string), doc)
 				return err
 			})
 			ctx.CheckError(err)
@@ -116,8 +117,8 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 				"_id":  "foo/bar",
 				"name": "Bob",
 			}
-			err = kt.Retry(func() error {
-				_, err = db.Put(doc["_id"].(string), doc)
+			err := kt.Retry(func() error {
+				_, err := db.Put(doc["_id"].(string), doc)
 				return err
 			})
 			ctx.CheckError(err)
@@ -128,8 +129,8 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 				"_id":  "duplicate",
 				"name": "Bob",
 			}
-			err = kt.Retry(func() error {
-				_, err = db.Put(doc["_id"].(string), doc)
+			err := kt.Retry(func() error {
+				_, err := db.Put(doc["_id"].(string), doc)
 				return err
 			})
 			if err != nil {

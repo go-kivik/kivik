@@ -178,7 +178,7 @@ func (c *Client) DoReq(ctx context.Context, method, path string, opts *Options) 
 	return c.Do(req)
 }
 
-// fixPath sets the request's URL.RawPath to work with escaped '/' chars in
+// fixPath sets the request's URL.RawPath to work with escaped characters in
 // paths.
 func fixPath(req *http.Request, path string) {
 	// Remove any query parameters

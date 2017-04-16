@@ -1,6 +1,8 @@
 package db
 
 import (
+	"context"
+
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/test/kt"
 )
@@ -23,9 +25,9 @@ func put(ctx *kt.Context) {
 func testPut(ctx *kt.Context, client *kivik.Client) {
 	ctx.Parallel()
 	dbName := ctx.TestDBName()
-	defer ctx.Admin.DestroyDB(dbName)
-	_ = ctx.Admin.CreateDB(dbName)
-	db, e := client.DB(dbName)
+	defer ctx.Admin.DestroyDB(context.Background(), dbName)
+	_ = ctx.Admin.CreateDB(context.Background(), dbName)
+	db, e := client.DB(context.Background(), dbName)
 	if !ctx.IsExpectedSuccess(e) {
 		return
 	}
@@ -41,7 +43,7 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 			var rev string
 			err := kt.Retry(func() error {
 				var err error
-				rev, err = db.Put(doc.ID, doc)
+				rev, err = db.Put(context.Background(), doc.ID, doc)
 				return err
 			})
 			if !ctx.IsExpectedSuccess(err) {
@@ -50,7 +52,7 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 			doc.Rev = rev
 			doc.Age = 40
 			ctx.Run("Update", func(ctx *kt.Context) {
-				_, err = db.Put(doc.ID, doc)
+				_, err = db.Put(context.Background(), doc.ID, doc)
 				ctx.CheckError(err)
 			})
 		})
@@ -70,7 +72,7 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 				},
 			}
 			err := kt.Retry(func() error {
-				_, err := db.Put(doc["_id"].(string), doc)
+				_, err := db.Put(context.Background(), doc["_id"].(string), doc)
 				return err
 			})
 			ctx.CheckError(err)
@@ -82,7 +84,7 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 				"name": "Bob",
 			}
 			err := kt.Retry(func() error {
-				_, err := db.Put(doc["_id"].(string), doc)
+				_, err := db.Put(context.Background(), doc["_id"].(string), doc)
 				return err
 			})
 			ctx.CheckError(err)
@@ -94,7 +96,7 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 				"name": "Bob",
 			}
 			err := kt.Retry(func() error {
-				_, err := db.Put(doc["_id"].(string), doc)
+				_, err := db.Put(context.Background(), doc["_id"].(string), doc)
 				return err
 			})
 			ctx.CheckError(err)
@@ -106,7 +108,7 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 				"name": "Bob",
 			}
 			err := kt.Retry(func() error {
-				_, err := db.Put(doc["_id"].(string), doc)
+				_, err := db.Put(context.Background(), doc["_id"].(string), doc)
 				return err
 			})
 			ctx.CheckError(err)
@@ -118,7 +120,7 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 				"name": "Bob",
 			}
 			err := kt.Retry(func() error {
-				_, err := db.Put(doc["_id"].(string), doc)
+				_, err := db.Put(context.Background(), doc["_id"].(string), doc)
 				return err
 			})
 			ctx.CheckError(err)
@@ -130,14 +132,14 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 				"name": "Bob",
 			}
 			err := kt.Retry(func() error {
-				_, err := db.Put(doc["_id"].(string), doc)
+				_, err := db.Put(context.Background(), doc["_id"].(string), doc)
 				return err
 			})
 			if err != nil {
 				ctx.Fatalf("Failed to create document for duplicate test: %s", err)
 			}
 			err = kt.Retry(func() error {
-				_, err = db.Put(doc["_id"].(string), doc)
+				_, err = db.Put(context.Background(), doc["_id"].(string), doc)
 				return err
 			})
 			ctx.CheckError(err)

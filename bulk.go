@@ -1,10 +1,9 @@
 package kivik
 
 import (
+	"context"
 	"io"
 	"sync"
-
-	"golang.org/x/net/context"
 
 	"github.com/flimzy/kivik/driver"
 )
@@ -101,17 +100,12 @@ func (r *BulkResults) Err() error {
 	return r.lasterr
 }
 
-// BulkDocs calls BulkDocsContext with a background context.
-func (db *DB) BulkDocs(docs ...interface{}) (*BulkResults, error) {
-	return db.BulkDocsContext(context.Background(), docs...)
-}
-
-// BulkDocsContext allows you to create and update multiple documents at the
-// same time within a single request. This function returns an iterator over
-// the results of the bulk operation.
+// BulkDocs allows you to create and update multiple documents at the same time
+// within a single request. This function returns an iterator over the results
+// of the bulk operation.
 // See http://docs.couchdb.org/en/2.0.0/api/database/bulk-api.html#db-bulk-docs
-func (db *DB) BulkDocsContext(ctx context.Context, docs ...interface{}) (*BulkResults, error) {
-	bulki, err := db.driverDB.BulkDocsContext(ctx, docs...)
+func (db *DB) BulkDocs(ctx context.Context, docs ...interface{}) (*BulkResults, error) {
+	bulki, err := db.driverDB.BulkDocs(ctx, docs...)
 	if err != nil {
 		return nil, err
 	}

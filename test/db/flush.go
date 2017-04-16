@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"time"
 
 	"github.com/flimzy/kivik"
@@ -24,12 +25,12 @@ func flushTest(ctx *kt.Context, client *kivik.Client) {
 	ctx.Parallel()
 	for _, dbName := range ctx.MustStringSlice("databases") {
 		ctx.Run(dbName, func(ctx *kt.Context) {
-			db, err := client.DB(dbName)
+			db, err := client.DB(context.Background(), dbName)
 			if !ctx.IsExpectedSuccess(err) {
 				return
 			}
 			ctx.Run("DoFlush", func(ctx *kt.Context) {
-				ts, err := db.Flush()
+				ts, err := db.Flush(context.Background())
 				if !ctx.IsExpectedSuccess(err) {
 					return
 				}

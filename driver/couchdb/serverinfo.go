@@ -9,7 +9,7 @@ import (
 )
 
 // ServerInfo returns the server's version info.
-func (c *client) ServerInfoContext(ctx context.Context, _ map[string]interface{}) (driver.ServerInfo, error) {
+func (c *client) ServerInfo(ctx context.Context, _ map[string]interface{}) (driver.ServerInfo, error) {
 	i := &info{}
 	_, err := c.DoJSON(ctx, kivik.MethodGet, "/", nil, i)
 	return i, err

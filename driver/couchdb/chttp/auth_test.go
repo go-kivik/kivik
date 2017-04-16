@@ -34,7 +34,7 @@ func TestBasicAuth(t *testing.T) {
 	}
 	user := dsn.User
 	dsn.User = nil
-	client, err := New(dsn.String())
+	client, err := New(context.Background(), dsn.String())
 	if err != nil {
 		t.Fatalf("Failed to connect: %s", err)
 	}

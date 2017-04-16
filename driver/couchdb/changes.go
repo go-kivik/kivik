@@ -10,8 +10,8 @@ import (
 	"github.com/flimzy/kivik/driver/couchdb/chttp"
 )
 
-// ChangesContext returns the changes stream for the database.
-func (d *db) ChangesContext(ctx context.Context, opts map[string]interface{}) (driver.Rows, error) {
+// Changes returns the changes stream for the database.
+func (d *db) Changes(ctx context.Context, opts map[string]interface{}) (driver.Rows, error) {
 	overrideOpts := map[string]interface{}{
 		"feed":      "continuous",
 		"since":     "now",

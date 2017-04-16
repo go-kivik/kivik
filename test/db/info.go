@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/flimzy/kivik"
@@ -35,22 +36,22 @@ func dbInfo(ctx *kt.Context) {
 
 func rwTests(ctx *kt.Context, client *kivik.Client) {
 	dbname := ctx.TestDBName()
-	defer ctx.Admin.DestroyDB(dbname)
-	if err := ctx.Admin.CreateDB(dbname); err != nil {
+	defer ctx.Admin.DestroyDB(context.Background(), dbname)
+	if err := ctx.Admin.CreateDB(context.Background(), dbname); err != nil {
 		ctx.Fatalf("Failed to create test db: %s", err)
 	}
-	db, err := ctx.Admin.DB(dbname)
+	db, err := ctx.Admin.DB(context.Background(), dbname)
 	if err != nil {
 		ctx.Fatalf("Failed to connect to db: %s", err)
 	}
 	for i := 0; i < 10; i++ {
 		id := fmt.Sprintf("%d", i)
-		rev, err := db.Put(id, struct{}{})
+		rev, err := db.Put(context.Background(), id, struct{}{})
 		if err != nil {
 			ctx.Fatalf("Failed to create document ID %s: %s", id, err)
 		}
 		if i > 5 {
-			if _, err = db.Delete(id, rev); err != nil {
+			if _, err = db.Delete(context.Background(), id, rev); err != nil {
 				ctx.Fatalf("Failed to delete document ID %s: %s", id, err)
 			}
 		}
@@ -70,12 +71,12 @@ func roTests(ctx *kt.Context, client *kivik.Client) {
 }
 
 func testDBInfo(ctx *kt.Context, client *kivik.Client, dbname string, docCount int64) {
-	db, err := client.DB(dbname)
+	db, err := client.DB(context.Background(), dbname)
 	// Check against the same status for connecting, and db.Info() later, because
 	// where the error might occur is backend-specific.
 	var info *kivik.DBInfo
 	if err == nil {
-		info, err = db.Info()
+		info, err = db.Info(context.Background())
 	}
 	if !ctx.IsExpectedSuccess(err) {
 		return

@@ -35,22 +35,22 @@ var testUser = &tuser{
 func TestConfAdminAuth(t *testing.T) {
 	// Set up first auth backend
 	conf1 := config.New(memconf.New())
-	conf1.Set("admins", "bob", "-pbkdf2-792221164f257de22ad72a8e94760388233e5714,7897f3451f59da741c87ec5f10fe7abe,10")
+	conf1.Set(kt.CTX, "admins", "bob", "-pbkdf2-792221164f257de22ad72a8e94760388233e5714,7897f3451f59da741c87ec5f10fe7abe,10")
 	auth1 := confadmin.New(conf1)
 
 	// Set up second auth backend
 	client := kt.GetClient(t)
-	db, err := client.DB("_users")
+	db, err := client.DB(kt.CTX, "_users")
 	if err != nil {
 		t.Fatalf("Failed to connect to db: %s", err)
 	}
 	// Courtesy flush
 	kt.DeleteUser(db, testUser.ID, t)
-	rev, err := db.Put(testUser.ID, testUser)
+	rev, err := db.Put(kt.CTX, testUser.ID, testUser)
 	if err != nil {
 		t.Fatalf("Failed to create user: %s", err)
 	}
-	defer db.Delete(testUser.ID, rev)
+	defer db.Delete(kt.CTX, testUser.ID, rev)
 	auth2 := usersdb.New(db)
 
 	auth := New(auth1, auth2)

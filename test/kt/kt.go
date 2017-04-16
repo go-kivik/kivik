@@ -2,6 +2,7 @@
 package kt
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"strings"
@@ -249,14 +250,14 @@ func DeleteUser(db *kivik.DB, username string, t *testing.T) {
 	u := struct {
 		Rev string `json:"_rev"`
 	}{}
-	err := db.Get(name, &u, nil)
+	err := db.Get(context.Background(), name, &u, nil)
 	if errors.StatusCode(err) == kivik.StatusNotFound {
 		return
 	}
 	if err != nil {
 		t.Fatalf("Failed to fetch user '%s' for deleting: %s", username, err)
 	}
-	if _, err = db.Delete(name, u.Rev); err != nil {
+	if _, err = db.Delete(context.Background(), name, u.Rev); err != nil {
 		t.Fatalf("Failed to delete user '%s': %s", username, err)
 	}
 }

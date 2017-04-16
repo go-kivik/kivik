@@ -1,13 +1,12 @@
 package kivik
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
 	"strings"
 	"sync"
-
-	"golang.org/x/net/context"
 
 	"github.com/flimzy/kivik/driver"
 )

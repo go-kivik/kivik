@@ -30,15 +30,15 @@ var testUser = &tuser{
 
 func TestCouchAuth(t *testing.T) {
 	client := kt.GetClient(t)
-	db, err := client.DB("_users")
+	db, err := client.DB(kt.CTX, "_users")
 	if err != nil {
 		t.Fatalf("Failed to connect to db: %s", err)
 	}
-	rev, err := db.Put(testUser.ID, testUser)
+	rev, err := db.Put(kt.CTX, testUser.ID, testUser)
 	if err != nil {
 		t.Fatalf("Failed to create user: %s", err)
 	}
-	defer db.Delete(testUser.ID, rev)
+	defer db.Delete(kt.CTX, testUser.ID, rev)
 	auth := New(db)
 	uCtx, err := auth.Validate(kt.CTX, "testUsersdb", "abc123")
 	if err != nil {

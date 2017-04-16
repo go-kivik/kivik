@@ -24,13 +24,13 @@ func compact(ctx *kt.Context) {
 
 func testCompact(ctx *kt.Context, client *kivik.Client) {
 	dbname := ctx.TestDBName()
-	defer ctx.Admin.DestroyDB(dbname)
-	if err := ctx.Admin.CreateDB(dbname); err != nil {
+	defer ctx.Admin.DestroyDB(kt.CTX, dbname)
+	if err := ctx.Admin.CreateDB(kt.CTX, dbname); err != nil {
 		ctx.Fatalf("Failed to create test db: %s", err)
 	}
-	db, err := client.DB(dbname)
+	db, err := client.DB(kt.CTX, dbname)
 	if err != nil {
 		ctx.Fatalf("Failed to connect to db: %s", err)
 	}
-	ctx.CheckError(db.Compact())
+	ctx.CheckError(db.Compact(kt.CTX))
 }

@@ -1,10 +1,9 @@
 package serve
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
-
-	"golang.org/x/net/context"
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/auth"
@@ -27,7 +26,7 @@ func getSession(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (s *Service) getAuthSecret(ctx context.Context) (string, error) {
-	secret, err := s.Config().GetContext(ctx, "couch_httpd_auth", "secret")
+	secret, err := s.Config().Get(ctx, "couch_httpd_auth", "secret")
 	if errors.StatusCode(err) == kivik.StatusNotFound {
 		return DefaultInsecureSecret, nil
 	}

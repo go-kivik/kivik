@@ -88,18 +88,18 @@ func jsonify(i interface{}) (io.Reader, error) {
 	}
 }
 
-// AllDocsContext returns all of the documents in the database.
-func (d *db) AllDocsContext(ctx context.Context, opts map[string]interface{}) (driver.Rows, error) {
+// AllDocs returns all of the documents in the database.
+func (d *db) AllDocs(ctx context.Context, opts map[string]interface{}) (driver.Rows, error) {
 	return d.rowsQuery(ctx, "_all_docs", opts)
 }
 
-// QueryContext queries a view.
-func (d *db) QueryContext(ctx context.Context, ddoc, view string, opts map[string]interface{}) (driver.Rows, error) {
+// Query queries a view.
+func (d *db) Query(ctx context.Context, ddoc, view string, opts map[string]interface{}) (driver.Rows, error) {
 	return d.rowsQuery(ctx, fmt.Sprintf("_design/%s/_view/%s", chttp.EncodeDocID(ddoc), chttp.EncodeDocID(view)), opts)
 }
 
-// GetContext fetches the requested document.
-func (d *db) GetContext(ctx context.Context, docID string, doc interface{}, opts map[string]interface{}) error {
+// Get fetches the requested document.
+func (d *db) Get(ctx context.Context, docID string, doc interface{}, opts map[string]interface{}) error {
 	params, err := optionsToParams(opts)
 	if err != nil {
 		return err
@@ -108,7 +108,7 @@ func (d *db) GetContext(ctx context.Context, docID string, doc interface{}, opts
 	return err
 }
 
-func (d *db) CreateDocContext(ctx context.Context, doc interface{}) (docID, rev string, err error) {
+func (d *db) CreateDoc(ctx context.Context, doc interface{}) (docID, rev string, err error) {
 	result := struct {
 		ID  string `json:"id"`
 		Rev string `json:"rev"`
@@ -128,7 +128,7 @@ func (d *db) CreateDocContext(ctx context.Context, doc interface{}) (docID, rev 
 	return result.ID, result.Rev, err
 }
 
-func (d *db) PutContext(ctx context.Context, docID string, doc interface{}) (rev string, err error) {
+func (d *db) Put(ctx context.Context, docID string, doc interface{}) (rev string, err error) {
 	var jsonErr error
 	var cancel context.CancelFunc
 	ctx, cancel = context.WithCancel(ctx)
@@ -152,7 +152,7 @@ func (d *db) PutContext(ctx context.Context, docID string, doc interface{}) (rev
 	return result.Rev, nil
 }
 
-func (d *db) DeleteContext(ctx context.Context, docID, rev string) (string, error) {
+func (d *db) Delete(ctx context.Context, docID, rev string) (string, error) {
 	query := url.Values{}
 	query.Add("rev", rev)
 	opts := &chttp.Options{
@@ -166,7 +166,7 @@ func (d *db) DeleteContext(ctx context.Context, docID, rev string) (string, erro
 	return chttp.GetRev(resp)
 }
 
-func (d *db) FlushContext(ctx context.Context) (time.Time, error) {
+func (d *db) Flush(ctx context.Context) (time.Time, error) {
 	result := struct {
 		T int64 `json:"instance_start_time,string"`
 	}{}
@@ -174,7 +174,7 @@ func (d *db) FlushContext(ctx context.Context) (time.Time, error) {
 	return time.Unix(0, 0).Add(time.Duration(result.T) * time.Microsecond), err
 }
 
-func (d *db) InfoContext(ctx context.Context) (*driver.DBInfo, error) {
+func (d *db) Info(ctx context.Context) (*driver.DBInfo, error) {
 	result := struct {
 		driver.DBInfo
 		Sizes struct {
@@ -199,7 +199,7 @@ func (d *db) InfoContext(ctx context.Context) (*driver.DBInfo, error) {
 	return &info, err
 }
 
-func (d *db) CompactContext(ctx context.Context) error {
+func (d *db) Compact(ctx context.Context) error {
 	res, err := d.Client.DoReq(ctx, kivik.MethodPost, d.path("/_compact", nil), nil)
 	if err != nil {
 		return err
@@ -207,7 +207,7 @@ func (d *db) CompactContext(ctx context.Context) error {
 	return chttp.ResponseError(res)
 }
 
-func (d *db) CompactViewContext(ctx context.Context, ddocID string) error {
+func (d *db) CompactView(ctx context.Context, ddocID string) error {
 	res, err := d.Client.DoReq(ctx, kivik.MethodPost, d.path("/_compact/"+ddocID, nil), nil)
 	if err != nil {
 		return err
@@ -215,7 +215,7 @@ func (d *db) CompactViewContext(ctx context.Context, ddocID string) error {
 	return chttp.ResponseError(res)
 }
 
-func (d *db) ViewCleanupContext(ctx context.Context) error {
+func (d *db) ViewCleanup(ctx context.Context) error {
 	res, err := d.Client.DoReq(ctx, kivik.MethodPost, d.path("/_view_cleanup", nil), nil)
 	if err != nil {
 		return err
@@ -223,13 +223,13 @@ func (d *db) ViewCleanupContext(ctx context.Context) error {
 	return chttp.ResponseError(res)
 }
 
-func (d *db) SecurityContext(ctx context.Context) (*driver.Security, error) {
+func (d *db) Security(ctx context.Context) (*driver.Security, error) {
 	var sec *driver.Security
 	_, err := d.Client.DoJSON(ctx, kivik.MethodGet, d.path("/_security", nil), nil, &sec)
 	return sec, err
 }
 
-func (d *db) SetSecurityContext(ctx context.Context, security *driver.Security) error {
+func (d *db) SetSecurity(ctx context.Context, security *driver.Security) error {
 	var jsonErr error
 	var cancel context.CancelFunc
 	ctx, cancel = context.WithCancel(ctx)
@@ -248,8 +248,8 @@ func (d *db) SetSecurityContext(ctx context.Context, security *driver.Security) 
 	return chttp.ResponseError(res)
 }
 
-// RevContext returns the most current rev of the requested document.
-func (d *db) RevContext(ctx context.Context, docID string) (rev string, err error) {
+// Rev returns the most current rev of the requested document.
+func (d *db) Rev(ctx context.Context, docID string) (rev string, err error) {
 	res, err := d.Client.DoError(ctx, http.MethodHead, d.path(chttp.EncodeDocID(docID), nil), nil)
 	if err != nil {
 		return "", err
@@ -257,7 +257,7 @@ func (d *db) RevContext(ctx context.Context, docID string) (rev string, err erro
 	return strings.Trim(res.Header.Get("Etag"), `""`), nil
 }
 
-func (d *db) CopyContext(ctx context.Context, targetID, sourceID string, options map[string]interface{}) (targetRev string, err error) {
+func (d *db) Copy(ctx context.Context, targetID, sourceID string, options map[string]interface{}) (targetRev string, err error) {
 	params, err := optionsToParams(options)
 	if err != nil {
 		return "", err

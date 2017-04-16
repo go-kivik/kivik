@@ -49,13 +49,13 @@ type client struct {
 
 var _ driver.Client = &client{}
 
-// NewClientContext establishes a new connection to a CouchDB server instance. If
+// NewClient establishes a new connection to a CouchDB server instance. If
 // auth credentials are included in the URL, they are used to authenticate using
 // CookieAuth (or BasicAuth if compiled with GopherJS). If you wish to use a
 // different auth mechanism, do not specify credentials here, and instead call
 // Authenticate() later.
-func (d *Couch) NewClientContext(ctx context.Context, dsn string) (driver.Client, error) {
-	chttpClient, err := chttp.New(dsn)
+func (d *Couch) NewClient(ctx context.Context, dsn string) (driver.Client, error) {
+	chttpClient, err := chttp.New(ctx, dsn)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +67,7 @@ func (d *Couch) NewClientContext(ctx context.Context, dsn string) (driver.Client
 }
 
 func (c *client) setCompatMode(ctx context.Context) {
-	info, err := c.ServerInfoContext(ctx, nil)
+	info, err := c.ServerInfo(ctx, nil)
 	if err != nil {
 		// We don't want to error here, in case the / endpoint is just blocked
 		// for security reasons or something; but then we also can't infer the
@@ -85,7 +85,7 @@ func (c *client) setCompatMode(ctx context.Context) {
 	}
 }
 
-func (c *client) DBContext(_ context.Context, dbName string, options map[string]interface{}) (driver.DB, error) {
+func (c *client) DB(_ context.Context, dbName string, options map[string]interface{}) (driver.DB, error) {
 	forceCommit, err := forceCommit(options)
 	if err != nil {
 		return nil, err

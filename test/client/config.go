@@ -16,7 +16,7 @@ func init() {
 }
 
 func configTest(ctx *kt.Context) {
-	if _, err := ctx.Admin.Config(); err != nil {
+	if _, err := ctx.Admin.Config(kt.CTX); err != nil {
 		if errors.StatusCode(err) != kivik.StatusNotImplemented {
 			ctx.Fatalf("Config() returned error: %s", err)
 		}
@@ -58,20 +58,20 @@ func configRW(ctx *kt.Context) {
 
 func testSet(ctx *kt.Context, client *kivik.Client, name string) {
 	ctx.Parallel()
-	c, _ := client.Config()
-	defer c.Delete(name, name)
-	err := c.Set(name, name, name)
+	c, _ := client.Config(kt.CTX)
+	defer c.Delete(kt.CTX, name, name)
+	err := c.Set(kt.CTX, name, name, name)
 	if !ctx.IsExpectedSuccess(err) {
 		return
 	}
 	// Set should be 100% idempotent, so check that we get the same result
-	err2 := c.Set(name, name, name+name)
+	err2 := c.Set(kt.CTX, name, name, name+name)
 	if errors.StatusCode(err) != errors.StatusCode(err2) {
 		ctx.Errorf("Resetting config resulted in a different error. %s followed by %s", err, err2)
 		return
 	}
 	ctx.Run("Retreive", func(ctx *kt.Context) {
-		value, err := c.Get(name, name)
+		value, err := c.Get(kt.CTX, name, name)
 		if !ctx.IsExpectedSuccess(err) {
 			return
 		}
@@ -83,24 +83,24 @@ func testSet(ctx *kt.Context, client *kivik.Client, name string) {
 
 func testDelete(ctx *kt.Context, client *kivik.Client, secName string) {
 	ctx.Parallel()
-	c, _ := client.Config()
-	ac, _ := ctx.Admin.Config()
-	defer ac.Delete(secName, "foo")
-	if !ctx.IsExpected(ac.Set(secName, "foo", "bar")) {
+	c, _ := client.Config(kt.CTX)
+	ac, _ := ctx.Admin.Config(kt.CTX)
+	defer ac.Delete(kt.CTX, secName, "foo")
+	if !ctx.IsExpected(ac.Set(kt.CTX, secName, "foo", "bar")) {
 		return
 	}
 	ctx.Run("group", func(ctx *kt.Context) {
 		ctx.Run("NonExistantSection", func(ctx *kt.Context) {
 			ctx.Parallel()
-			ctx.CheckError(c.Delete(secName+"nonexistant", "xyz"))
+			ctx.CheckError(c.Delete(kt.CTX, secName+"nonexistant", "xyz"))
 		})
 		ctx.Run("NonExistantKey", func(ctx *kt.Context) {
 			ctx.Parallel()
-			ctx.CheckError(c.Delete(secName, "baz"))
+			ctx.CheckError(c.Delete(kt.CTX, secName, "baz"))
 		})
 		ctx.Run("ExistingKey", func(ctx *kt.Context) {
 			ctx.Parallel()
-			ctx.CheckError(c.Delete(secName, "foo"))
+			ctx.CheckError(c.Delete(kt.CTX, secName, "foo"))
 		})
 	})
 }
@@ -110,14 +110,14 @@ func testConfig(ctx *kt.Context, client *kivik.Client) {
 	var c *config.Config
 	{
 		var err error
-		c, err = client.Config()
+		c, err = client.Config(kt.CTX)
 		if !ctx.IsExpectedSuccess(err) {
 			return
 		}
 	}
 	ctx.Run("GetAll", func(ctx *kt.Context) {
 		ctx.Parallel()
-		all, err := c.GetAll()
+		all, err := c.GetAll(kt.CTX)
 		if !ctx.IsSuccess(err) {
 			return
 		}
@@ -135,7 +135,7 @@ func testConfig(ctx *kt.Context, client *kivik.Client) {
 		for _, s := range ctx.StringSlice("sections") {
 			func(secName string) {
 				ctx.Run(secName, func(ctx *kt.Context) {
-					sec, err := c.GetSection(secName)
+					sec, err := c.GetSection(kt.CTX, secName)
 					if !ctx.IsExpectedSuccess(err) {
 						return
 					}
@@ -158,7 +158,7 @@ func testConfig(ctx *kt.Context, client *kivik.Client) {
 				ctx.Run(item, func(ctx *kt.Context) {
 					parts := strings.Split(item, ".")
 					secName, key := parts[0], parts[1]
-					value, err := c.Get(secName, key)
+					value, err := c.Get(kt.CTX, secName, key)
 					if !ctx.IsExpectedSuccess(err) {
 						return
 					}

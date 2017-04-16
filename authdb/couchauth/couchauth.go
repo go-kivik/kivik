@@ -20,7 +20,7 @@ var _ authdb.UserStore = &client{}
 
 // New returns a new auth user store, which authenticates users against a remote
 // CouchDB server.
-func New(dsn string) (authdb.UserStore, error) {
+func New(ctx context.Context, dsn string) (authdb.UserStore, error) {
 	p, err := url.Parse(dsn)
 	if err != nil {
 		return nil, err
@@ -28,7 +28,7 @@ func New(dsn string) (authdb.UserStore, error) {
 	if p.User != nil {
 		return nil, errors.New("DSN must not contain authentication credentials")
 	}
-	c, err := chttp.New(dsn)
+	c, err := chttp.New(ctx, dsn)
 	return &client{c}, err
 }
 

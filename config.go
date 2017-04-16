@@ -7,19 +7,14 @@ import (
 	"github.com/flimzy/kivik/driver"
 )
 
-// Config calls ConfigContext with a background context.
-func (c *Client) Config() (*config.Config, error) {
-	return c.ConfigContext(context.Background())
-}
-
-// ConfigContext returns the server's configuration.
+// Config returns the server's configuration.
 //
 // DO NOT USE THIS FUNCTION.
 //
 // This functionality is going away soon!
-func (c *Client) ConfigContext(ctx context.Context) (*config.Config, error) {
+func (c *Client) Config(ctx context.Context) (*config.Config, error) {
 	if conf, ok := c.driverClient.(driver.Configer); ok {
-		c, err := conf.ConfigContext(ctx)
+		c, err := conf.Config(ctx)
 		return config.New(c), err
 	}
 	return nil, ErrNotImplemented

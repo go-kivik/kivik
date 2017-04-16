@@ -20,13 +20,13 @@ func New() *Config {
 	return &Config{}
 }
 
-// GetAllContext returns the full configuration tree.
-func (c Config) GetAllContext(_ context.Context) (map[string]map[string]string, error) {
+// GetAll returns the full configuration tree.
+func (c Config) GetAll(_ context.Context) (map[string]map[string]string, error) {
 	return c, nil
 }
 
-// SetContext sets a configuration value.
-func (c Config) SetContext(_ context.Context, secName, key, value string) error {
+// Set sets a configuration value.
+func (c Config) Set(_ context.Context, secName, key, value string) error {
 	if _, ok := c[secName]; !ok {
 		c[secName] = make(map[string]string)
 	}
@@ -34,8 +34,8 @@ func (c Config) SetContext(_ context.Context, secName, key, value string) error 
 	return nil
 }
 
-// DeleteContext clears a configuration key.
-func (c Config) DeleteContext(_ context.Context, secName, key string) error {
+// Delete clears a configuration key.
+func (c Config) Delete(_ context.Context, secName, key string) error {
 	if _, ok := c[secName]; !ok {
 		return errors.Status(http.StatusNotFound, "configuration section not found")
 	}

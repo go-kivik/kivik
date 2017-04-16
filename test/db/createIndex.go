@@ -24,38 +24,38 @@ func createIndex(ctx *kt.Context) {
 
 func testCreateIndex(ctx *kt.Context, client *kivik.Client) {
 	dbname := ctx.TestDBName()
-	defer ctx.Admin.DestroyDB(dbname)
-	if err := ctx.Admin.CreateDB(dbname); err != nil {
+	defer ctx.Admin.DestroyDB(kt.CTX, dbname)
+	if err := ctx.Admin.CreateDB(kt.CTX, dbname); err != nil {
 		ctx.Fatalf("Failed to create db: %s", err)
 	}
-	db, err := client.DB(dbname)
+	db, err := client.DB(kt.CTX, dbname)
 	if err != nil {
 		ctx.Fatalf("Failed to open db: %s", err)
 	}
 	ctx.Run("group", func(ctx *kt.Context) {
 		ctx.Run("Valid", func(ctx *kt.Context) {
 			ctx.Parallel()
-			ctx.CheckError(db.CreateIndex("", "", `{"fields":["foo"]}`))
+			ctx.CheckError(db.CreateIndex(kt.CTX, "", "", `{"fields":["foo"]}`))
 		})
 		ctx.Run("NilIndex", func(ctx *kt.Context) {
 			ctx.Parallel()
-			ctx.CheckError(db.CreateIndex("", "", nil))
+			ctx.CheckError(db.CreateIndex(kt.CTX, "", "", nil))
 		})
 		ctx.Run("BlankIndex", func(ctx *kt.Context) {
 			ctx.Parallel()
-			ctx.CheckError(db.CreateIndex("", "", ""))
+			ctx.CheckError(db.CreateIndex(kt.CTX, "", "", ""))
 		})
 		ctx.Run("EmptyIndex", func(ctx *kt.Context) {
 			ctx.Parallel()
-			ctx.CheckError(db.CreateIndex("", "", "{}"))
+			ctx.CheckError(db.CreateIndex(kt.CTX, "", "", "{}"))
 		})
 		ctx.Run("InvalidIndex", func(ctx *kt.Context) {
 			ctx.Parallel()
-			ctx.CheckError(db.CreateIndex("", "", `{"oink":true}`))
+			ctx.CheckError(db.CreateIndex(kt.CTX, "", "", `{"oink":true}`))
 		})
 		ctx.Run("InvalidJSON", func(ctx *kt.Context) {
 			ctx.Parallel()
-			ctx.CheckError(db.CreateIndex("", "", `chicken`))
+			ctx.CheckError(db.CreateIndex(kt.CTX, "", "", `chicken`))
 		})
 	})
 }

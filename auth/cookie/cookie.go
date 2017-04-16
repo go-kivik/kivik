@@ -3,14 +3,13 @@
 package cookie
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/auth"
@@ -150,7 +149,7 @@ func deleteSession(w http.ResponseWriter, r *http.Request) error {
 }
 
 func getSessionTimeout(ctx context.Context, s *serve.Service) (int, error) {
-	timeout, err := s.Config().GetContext(ctx, "couch_httpd_auth", "timeout")
+	timeout, err := s.Config().Get(ctx, "couch_httpd_auth", "timeout")
 	if errors.StatusCode(err) == kivik.StatusNotFound {
 		return serve.DefaultSessionTimeout, nil
 	}

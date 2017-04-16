@@ -2,13 +2,12 @@ package serve
 
 import (
 	"bytes"
+	"context"
 	"crypto/hmac"
 	"crypto/sha1"
 	"encoding/base64"
 	"fmt"
 	"strconv"
-
-	"golang.org/x/net/context"
 
 	"github.com/flimzy/kivik/authdb"
 	"github.com/pkg/errors"

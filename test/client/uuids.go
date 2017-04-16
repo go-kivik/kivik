@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/flimzy/kivik"
@@ -27,7 +28,7 @@ func uuids(ctx *kt.Context) {
 func testUUIDs(ctx *kt.Context, client *kivik.Client, count int) {
 	ctx.Run(fmt.Sprintf("%dCount", count), func(ctx *kt.Context) {
 		ctx.Parallel()
-		uuids, err := client.UUIDs(count)
+		uuids, err := client.UUIDs(context.Background(), count)
 		if !ctx.IsExpectedSuccess(err) {
 			return
 		}

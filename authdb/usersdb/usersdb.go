@@ -37,7 +37,7 @@ type user struct {
 
 func (db *db) Validate(ctx context.Context, username, password string) (*authdb.UserContext, error) {
 	var u user
-	if err := db.GetContext(ctx, userPrefix+username, &u, nil); err != nil {
+	if err := db.Get(ctx, userPrefix+username, &u, nil); err != nil {
 		if errors.StatusCode(err) == kivik.StatusNotFound {
 			err = errors.Status(kivik.StatusUnauthorized, "unauthorized")
 		}
@@ -63,7 +63,7 @@ func (db *db) Validate(ctx context.Context, username, password string) (*authdb.
 
 func (db *db) UserCtx(ctx context.Context, username string) (*authdb.UserContext, error) {
 	var u user
-	err := db.GetContext(ctx, userPrefix+username, &u, nil)
+	err := db.Get(ctx, userPrefix+username, &u, nil)
 	return &authdb.UserContext{
 		Name:  u.Name,
 		Roles: u.Roles,

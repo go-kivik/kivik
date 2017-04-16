@@ -1,6 +1,7 @@
 package serve
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -42,7 +43,7 @@ func (s *Service) setupRoutes() (http.Handler, error) {
 }
 
 func gzipHandler(s *Service) func(http.Handler) http.Handler {
-	level := s.Config().GetInt("httpd", "compression_level")
+	level := s.Config().GetInt(context.TODO(), "httpd", "compression_level")
 	if level == 0 {
 		level = 8
 	}

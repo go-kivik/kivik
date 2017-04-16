@@ -1,6 +1,7 @@
 package couchauth
 
 import (
+	"context"
 	"testing"
 
 	"github.com/flimzy/kivik"
@@ -26,28 +27,28 @@ var testUser = &tuser{
 }
 
 func TestBadDSN(t *testing.T) {
-	if _, err := New("http://foo.com:port with spaces/"); err == nil {
+	if _, err := New(context.Background(), "http://foo.com:port with spaces/"); err == nil {
 		t.Errorf("Expected error for invalid URL.")
 	}
-	if _, err := New("http://foo:bar@foo.com/"); err == nil {
+	if _, err := New(context.Background(), "http://foo:bar@foo.com/"); err == nil {
 		t.Error("Expected error for DSN with credentials.")
 	}
 }
 
 func TestCouchAuth(t *testing.T) {
 	client := kt.GetClient(t)
-	db, err := client.DB("_users")
+	db, err := client.DB(kt.CTX, "_users")
 	if err != nil {
 		t.Fatalf("Failed to connect to db: %s", err)
 	}
 	// Courtesy flush
 	kt.DeleteUser(db, testUser.ID, t)
-	rev, err := db.Put(testUser.ID, testUser)
+	rev, err := db.Put(kt.CTX, testUser.ID, testUser)
 	if err != nil {
 		t.Fatalf("Failed to create user: %s", err)
 	}
-	defer db.Delete(testUser.ID, rev)
-	auth, err := New(kt.NoAuthDSN(t))
+	defer db.Delete(kt.CTX, testUser.ID, rev)
+	auth, err := New(context.Background(), kt.NoAuthDSN(t))
 	if err != nil {
 		t.Fatalf("Failed to connect to remote server: %s", err)
 	}

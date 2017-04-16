@@ -23,15 +23,15 @@ func bulkDocs(ctx *kt.Context) {
 func testBulkDocs(ctx *kt.Context, client *kivik.Client) {
 	ctx.Parallel()
 	dbname := ctx.TestDBName()
-	defer ctx.Admin.DestroyDB(dbname)
-	if err := ctx.Admin.CreateDB(dbname); err != nil {
+	defer ctx.Admin.DestroyDB(kt.CTX, dbname)
+	if err := ctx.Admin.CreateDB(kt.CTX, dbname); err != nil {
 		ctx.Fatalf("Failed to create db: %s", err)
 	}
-	adb, err := ctx.Admin.DB(dbname)
+	adb, err := ctx.Admin.DB(kt.CTX, dbname)
 	if err != nil {
 		ctx.Fatalf("Failed to connect to db as admin: %s", err)
 	}
-	db, err := client.DB(dbname)
+	db, err := client.DB(kt.CTX, dbname)
 	if err != nil {
 		ctx.Fatalf("Failed to connect to db: %s", err)
 	}
@@ -41,7 +41,7 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) {
 			doc := map[string]string{
 				"name": "Robert",
 			}
-			updates, err := db.BulkDocs(doc)
+			updates, err := db.BulkDocs(kt.CTX, doc)
 			if !ctx.IsExpectedSuccess(err) {
 				return
 			}
@@ -60,12 +60,12 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) {
 				"_id":  ctx.TestDBName(),
 				"name": "Alice",
 			}
-			rev, err := adb.Put(doc["_id"], doc)
+			rev, err := adb.Put(kt.CTX, doc["_id"], doc)
 			if err != nil {
 				ctx.Fatalf("Failed to create doc: %s", err)
 			}
 			doc["_rev"] = rev
-			updates, err := db.BulkDocs(doc)
+			updates, err := db.BulkDocs(kt.CTX, doc)
 			if !ctx.IsExpectedSuccess(err) {
 				return
 			}
@@ -85,13 +85,13 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) {
 				"_id":  id,
 				"name": "Alice",
 			}
-			rev, err := adb.Put(id, doc)
+			rev, err := adb.Put(kt.CTX, id, doc)
 			if err != nil {
 				ctx.Fatalf("Failed to create doc: %s", err)
 			}
 			doc["_rev"] = rev
 			doc["_deleted"] = true
-			updates, err := db.BulkDocs(doc)
+			updates, err := db.BulkDocs(kt.CTX, doc)
 			if !ctx.IsExpectedSuccess(err) {
 				return
 			}
@@ -117,7 +117,7 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) {
 				"name": "Robert",
 			}
 
-			rev1, err := adb.Put(id1, doc1)
+			rev1, err := adb.Put(kt.CTX, id1, doc1)
 			if err != nil {
 				ctx.Fatalf("Failed to create doc1: %s", err)
 			}
@@ -128,7 +128,7 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) {
 				"_id":  id2,
 				"name": "Alice",
 			}
-			rev2, err := adb.Put(id2, doc2)
+			rev2, err := adb.Put(kt.CTX, id2, doc2)
 			if err != nil {
 				ctx.Fatalf("Failed to create doc2: %s", err)
 			}
@@ -139,12 +139,12 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) {
 			doc3 := map[string]string{
 				"_id": id3,
 			}
-			_, err = adb.Put(id3, doc3)
+			_, err = adb.Put(kt.CTX, id3, doc3)
 			if err != nil {
 				ctx.Fatalf("Failed to create doc2: %s", err)
 			}
 
-			updates, err := db.BulkDocs(doc0, doc1, doc2, doc3)
+			updates, err := db.BulkDocs(kt.CTX, doc0, doc1, doc2, doc3)
 			if !ctx.IsExpectedSuccess(err) {
 				return
 			}

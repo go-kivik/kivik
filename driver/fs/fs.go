@@ -31,7 +31,7 @@ func init() {
 	kivik.Register("fs", &fsDriver{})
 }
 
-func (d *fsDriver) NewClientContext(_ context.Context, dir string) (driver.Client, error) {
+func (d *fsDriver) NewClient(_ context.Context, dir string) (driver.Client, error) {
 	if err := validateRootDir(dir); err != nil {
 		if os.IsPermission(errors.Cause(err)) {
 			return nil, errors.Status(kivik.StatusUnauthorized, "access denied")
@@ -81,8 +81,8 @@ var _ driver.Client = &client{}
 // Taken verbatim from http://docs.couchdb.org/en/2.0.0/api/database/common.html
 var validDBNameRE = regexp.MustCompile("^[a-z][a-z0-9_$()+/-]*$")
 
-// AllDBsContext returns a list of all DBs present in the configured root dir.
-func (c *client) AllDBsContext(_ context.Context, _ map[string]interface{}) ([]string, error) {
+// AllDBs returns a list of all DBs present in the configured root dir.
+func (c *client) AllDBs(_ context.Context, _ map[string]interface{}) ([]string, error) {
 	files, err := ioutil.ReadDir(c.root)
 	if err != nil {
 		return nil, errors.WrapStatus(kivik.StatusInternalServerError, err)
@@ -103,9 +103,9 @@ func (c *client) AllDBsContext(_ context.Context, _ map[string]interface{}) ([]s
 	return filenames, nil
 }
 
-// CreateDBContext creates a database
-func (c *client) CreateDBContext(ctx context.Context, dbName string, options map[string]interface{}) error {
-	exists, err := c.DBExistsContext(ctx, dbName, options)
+// CreateDB creates a database
+func (c *client) CreateDB(ctx context.Context, dbName string, options map[string]interface{}) error {
+	exists, err := c.DBExists(ctx, dbName, options)
 	if err != nil {
 		return err
 	}
@@ -118,8 +118,8 @@ func (c *client) CreateDBContext(ctx context.Context, dbName string, options map
 	return nil
 }
 
-// DBExistsContext returns true if the database exists.
-func (c *client) DBExistsContext(_ context.Context, dbName string, _ map[string]interface{}) (bool, error) {
+// DBExistsreturns true if the database exists.
+func (c *client) DBExists(_ context.Context, dbName string, _ map[string]interface{}) (bool, error) {
 	_, err := os.Stat(c.root + "/" + dbName)
 	if err == nil {
 		return true, nil
@@ -130,9 +130,9 @@ func (c *client) DBExistsContext(_ context.Context, dbName string, _ map[string]
 	return false, errors.WrapStatus(kivik.StatusInternalServerError, err)
 }
 
-// DestroyDBContext destroys the database
-func (c *client) DestroyDBContext(ctx context.Context, dbName string, options map[string]interface{}) error {
-	exists, err := c.DBExistsContext(ctx, dbName, options)
+// DestroyDB destroys the database
+func (c *client) DestroyDB(ctx context.Context, dbName string, options map[string]interface{}) error {
+	exists, err := c.DBExists(ctx, dbName, options)
 	if err != nil {
 		return err
 	}
@@ -145,7 +145,7 @@ func (c *client) DestroyDBContext(ctx context.Context, dbName string, options ma
 	return nil
 }
 
-func (c *client) DBContext(_ context.Context, dbName string, options map[string]interface{}) (driver.DB, error) {
+func (c *client) DB(_ context.Context, dbName string, options map[string]interface{}) (driver.DB, error) {
 	return &db{
 		client: c,
 		dbName: dbName,

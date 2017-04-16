@@ -3,6 +3,7 @@
 package test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/flimzy/kivik"
@@ -19,7 +20,7 @@ func init() {
 }
 
 func TestPouchLocal(t *testing.T) {
-	client, err := kivik.New("pouch", "")
+	client, err := kivik.New(context.Background(), "pouch", "")
 	if err != nil {
 		t.Errorf("Failed to connect to PouchDB driver: %s", err)
 		return

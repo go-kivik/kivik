@@ -12,8 +12,8 @@ func init() {
 func delAttachment(ctx *kt.Context) {
 	ctx.RunRW(func(ctx *kt.Context) {
 		dbname := ctx.TestDBName()
-		defer ctx.Admin.DestroyDB(dbname)
-		if err := ctx.Admin.CreateDB(dbname); err != nil {
+		defer ctx.Admin.DestroyDB(kt.CTX, dbname)
+		if err := ctx.Admin.CreateDB(kt.CTX, dbname); err != nil {
 			ctx.Fatalf("Failed to create db: %s", err)
 		}
 		ctx.Run("group", func(ctx *kt.Context) {
@@ -36,13 +36,13 @@ func delAttachment(ctx *kt.Context) {
 }
 
 func testDeleteAttachmentNoDoc(ctx *kt.Context, client *kivik.Client, dbname string) {
-	db, err := client.DB(dbname)
+	db, err := client.DB(kt.CTX, dbname)
 	if err != nil {
 		ctx.Fatalf("Failed to connect to db")
 	}
 	ctx.Run("NoDoc", func(ctx *kt.Context) {
 		ctx.Parallel()
-		_, err := db.DeleteAttachment("nonexistantdoc", "2-4259cd84694a6345d6c534ed65f1b30b", "foo.txt")
+		_, err := db.DeleteAttachment(kt.CTX, "nonexistantdoc", "2-4259cd84694a6345d6c534ed65f1b30b", "foo.txt")
 		ctx.CheckError(err)
 	})
 }
@@ -61,12 +61,12 @@ func testDeleteAttachmentsDDoc(ctx *kt.Context, client *kivik.Client, dbname, fi
 
 func doDeleteAttachmentTest(ctx *kt.Context, client *kivik.Client, dbname, docID, filename string) {
 
-	db, err := client.DB(dbname)
+	db, err := client.DB(kt.CTX, dbname)
 	if err != nil {
 		ctx.Fatalf("Failed to connect to db")
 	}
 	ctx.Parallel()
-	adb, err := ctx.Admin.DB(dbname)
+	adb, err := ctx.Admin.DB(kt.CTX, dbname)
 	if err != nil {
 		ctx.Fatalf("Failed to open db: %s", err)
 	}
@@ -79,16 +79,16 @@ func doDeleteAttachmentTest(ctx *kt.Context, client *kivik.Client, dbname, docID
 			},
 		},
 	}
-	rev, err := adb.Put(docID, doc)
+	rev, err := adb.Put(kt.CTX, docID, doc)
 	if err != nil {
 		ctx.Fatalf("Failed to create doc: %s", err)
 	}
-	rev, err = db.DeleteAttachment(docID, rev, filename)
+	rev, err = db.DeleteAttachment(kt.CTX, docID, rev, filename)
 	if !ctx.IsExpectedSuccess(err) {
 		return
 	}
 	var x struct{}
-	if err := db.Get(docID, &x, map[string]interface{}{"rev": rev}); err != nil {
+	if err := db.Get(kt.CTX, docID, &x, map[string]interface{}{"rev": rev}); err != nil {
 		ctx.Fatalf("Failed to get deleted doc: %s", err)
 	}
 }

@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"sort"
 
 	"github.com/flimzy/diff"
@@ -28,7 +29,7 @@ func testQueryRW(ctx *kt.Context) {
 	if err != nil {
 		ctx.Errorf("Failed to set up temp db: %s", err)
 	}
-	defer ctx.Admin.DestroyDB(dbName)
+	defer ctx.Admin.DestroyDB(context.Background(), dbName)
 	ctx.Run("group", func(ctx *kt.Context) {
 		ctx.RunAdmin(func(ctx *kt.Context) {
 			doQueryTest(ctx, ctx.Admin, dbName, 0, expected)
@@ -55,14 +56,14 @@ var ddoc = map[string]interface{}{
 
 func setUpQueryTest(ctx *kt.Context) (dbName string, docIDs []string, err error) {
 	dbName = ctx.TestDBName()
-	if err = ctx.Admin.CreateDB(dbName); err != nil {
+	if err = ctx.Admin.CreateDB(context.Background(), dbName); err != nil {
 		return dbName, nil, errors.Wrap(err, "failed to create db")
 	}
-	db, err := ctx.Admin.DB(dbName)
+	db, err := ctx.Admin.DB(context.Background(), dbName)
 	if err != nil {
 		return dbName, nil, errors.Wrap(err, "failed to connect to db")
 	}
-	if _, err := db.Put(ddoc["_id"].(string), ddoc); err != nil {
+	if _, err := db.Put(context.Background(), ddoc["_id"].(string), ddoc); err != nil {
 		return dbName, nil, errors.Wrap(err, "failed to create design doc")
 	}
 	docIDs = make([]string, 10)
@@ -77,7 +78,7 @@ func setUpQueryTest(ctx *kt.Context) (dbName string, docIDs []string, err error)
 			Include: true,
 			Index:   i,
 		}
-		if _, err := db.Put(doc.ID, doc); err != nil {
+		if _, err := db.Put(context.Background(), doc.ID, doc); err != nil {
 			return dbName, nil, errors.Wrap(err, "failed to create doc")
 		}
 		docIDs[i] = id
@@ -98,14 +99,14 @@ func doQueryTest(ctx *kt.Context, client *kivik.Client, dbName string, expOffset
 
 func doQueryTestWithoutDocs(ctx *kt.Context, client *kivik.Client, dbName string, expOffset int64, expected []string) {
 	ctx.Parallel()
-	db, err := client.DB(dbName)
+	db, err := client.DB(context.Background(), dbName)
 	// Errors may be deferred here, so only return if we actually get
 	// an error.
 	if err != nil && !ctx.IsExpectedSuccess(err) {
 		return
 	}
 
-	rows, err := db.Query("testddoc", "testview", nil)
+	rows, err := db.Query(context.Background(), "testddoc", "testview", nil)
 	if !ctx.IsExpectedSuccess(err) {
 		return
 	}
@@ -129,7 +130,7 @@ func doQueryTestWithoutDocs(ctx *kt.Context, client *kivik.Client, dbName string
 
 func doQueryTestWithDocs(ctx *kt.Context, client *kivik.Client, dbName string, expOffset int64, expected []string) {
 	ctx.Parallel()
-	db, err := client.DB(dbName)
+	db, err := client.DB(context.Background(), dbName)
 	// Errors may be deferred here, so only return if we actually get
 	// an error.
 	if err != nil && !ctx.IsExpectedSuccess(err) {
@@ -140,7 +141,7 @@ func doQueryTestWithDocs(ctx *kt.Context, client *kivik.Client, dbName string, e
 		"update_seq":   true,
 	}
 
-	rows, err := db.Query("testddoc", "testview", opts)
+	rows, err := db.Query(context.Background(), "testddoc", "testview", opts)
 	if !ctx.IsExpectedSuccess(err) {
 		return
 	}

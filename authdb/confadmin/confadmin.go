@@ -45,7 +45,7 @@ func (c *conf) Validate(ctx context.Context, username, password string) (*authdb
 const hashPrefix = "-" + authdb.SchemePBKDF2 + "-"
 
 func (c *conf) getKeySaltIter(ctx context.Context, username string) (key, salt string, iterations int, err error) {
-	hash, err := c.GetContext(ctx, "admins", username)
+	hash, err := c.Get(ctx, "admins", username)
 	if err != nil {
 		return "", "", 0, err
 	}

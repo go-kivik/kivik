@@ -7,7 +7,7 @@ import (
 	"github.com/flimzy/kivik/driver/couchdb/chttp"
 )
 
-func (c *client) AuthenticateContext(ctx context.Context, a interface{}) error {
+func (c *client) Authenticate(ctx context.Context, a interface{}) error {
 	if auth, ok := a.(chttp.Authenticator); ok {
 		return auth.Authenticate(ctx, c.Client)
 	}

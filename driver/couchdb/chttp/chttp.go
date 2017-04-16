@@ -23,17 +23,12 @@ type Client struct {
 	auth   Authenticator
 }
 
-// New calls NewContext() with a Background context.
-func New(dsn string) (*Client, error) {
-	return NewContext(context.Background(), dsn)
-}
-
-// NewContext returns a connection to a remote CouchDB server. If credentials are
+// New returns a connection to a remote CouchDB server. If credentials are
 // included in the URL, CookieAuth is attempted first, with BasicAuth used as
 // a fallback. If both fail, an error is returned. If you wish to use some other
 // authentication mechanism, do not specify credentials in the URL, and instead
 // call the Auth() method later.
-func NewContext(ctx context.Context, dsn string) (*Client, error) {
+func New(ctx context.Context, dsn string) (*Client, error) {
 	dsnURL, err := url.Parse(dsn)
 	if err != nil {
 		return nil, err

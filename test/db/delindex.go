@@ -1,6 +1,8 @@
 package db
 
 import (
+	"context"
+
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/test/kt"
 )
@@ -24,33 +26,33 @@ func delindex(ctx *kt.Context) {
 
 func testDelIndex(ctx *kt.Context, client *kivik.Client) {
 	dbname := ctx.TestDBName()
-	defer ctx.Admin.DestroyDB(dbname)
-	if err := ctx.Admin.CreateDB(dbname); err != nil {
+	defer ctx.Admin.DestroyDB(context.Background(), dbname)
+	if err := ctx.Admin.CreateDB(context.Background(), dbname); err != nil {
 		ctx.Fatalf("Failed to create db: %s", err)
 	}
-	dba, err := ctx.Admin.DB(dbname)
+	dba, err := ctx.Admin.DB(context.Background(), dbname)
 	if err != nil {
 		ctx.Fatalf("Failed to open db as admin: %s", err)
 	}
-	if err = dba.CreateIndex("foo", "bar", `{"fields":["foo"]}`); err != nil {
+	if err = dba.CreateIndex(context.Background(), "foo", "bar", `{"fields":["foo"]}`); err != nil {
 		ctx.Fatalf("Failed to create index: %s", err)
 	}
-	db, err := client.DB(dbname)
+	db, err := client.DB(context.Background(), dbname)
 	if err != nil {
 		ctx.Fatalf("Failed to open db: %s", err)
 	}
 	ctx.Run("group", func(ctx *kt.Context) {
 		ctx.Run("ValidIndex", func(ctx *kt.Context) {
 			ctx.Parallel()
-			ctx.CheckError(db.DeleteIndex("foo", "bar"))
+			ctx.CheckError(db.DeleteIndex(context.Background(), "foo", "bar"))
 		})
 		ctx.Run("NotFoundDdoc", func(ctx *kt.Context) {
 			ctx.Parallel()
-			ctx.CheckError(db.DeleteIndex("notFound", "bar"))
+			ctx.CheckError(db.DeleteIndex(context.Background(), "notFound", "bar"))
 		})
 		ctx.Run("NotFoundName", func(ctx *kt.Context) {
 			ctx.Parallel()
-			ctx.CheckError(db.DeleteIndex("foo", "notFound"))
+			ctx.CheckError(db.DeleteIndex(context.Background(), "foo", "notFound"))
 		})
 	})
 }

@@ -13,7 +13,7 @@ import (
 	"github.com/gopherjs/jsbuiltin"
 )
 
-func (d *db) PutAttachmentContext(ctx context.Context, docID, rev, filename, contentType string, body io.Reader) (newRev string, err error) {
+func (d *db) PutAttachment(ctx context.Context, docID, rev, filename, contentType string, body io.Reader) (newRev string, err error) {
 	result, err := d.db.PutAttachment(ctx, docID, filename, rev, body, contentType)
 	if err != nil {
 		return "", err
@@ -21,7 +21,7 @@ func (d *db) PutAttachmentContext(ctx context.Context, docID, rev, filename, con
 	return result.Get("rev").String(), nil
 }
 
-func (d *db) GetAttachmentContext(ctx context.Context, docID, rev, filename string) (cType string, md5sum driver.Checksum, body io.ReadCloser, err error) {
+func (d *db) GetAttachment(ctx context.Context, docID, rev, filename string) (cType string, md5sum driver.Checksum, body io.ReadCloser, err error) {
 	result, err := d.fetchAttachment(ctx, docID, rev, filename)
 	if err != nil {
 		return "", driver.Checksum{}, nil, err
@@ -90,7 +90,7 @@ func (b *blobReader) Close() (err error) {
 	return nil
 }
 
-func (d *db) DeleteAttachmentContext(ctx context.Context, docID, rev, filename string) (newRev string, err error) {
+func (d *db) DeleteAttachment(ctx context.Context, docID, rev, filename string) (newRev string, err error) {
 	result, err := d.db.RemoveAttachment(ctx, docID, filename, rev)
 	if err != nil {
 		return "", err

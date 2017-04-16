@@ -1,6 +1,7 @@
 package pouchdb
 
 import (
+	"context"
 	"testing"
 
 	"github.com/flimzy/kivik"
@@ -16,21 +17,21 @@ func init() {
 }
 
 func TestPut(t *testing.T) {
-	client, err := kivik.New("pouch", "")
+	client, err := kivik.New(context.Background(), "pouch", "")
 	if err != nil {
 		t.Errorf("Failed to connect to PouchDB/memdown driver: %s", err)
 		return
 	}
 	dbname := kt.TestDBName(t)
-	defer client.DestroyDB(dbname)
-	if err = client.CreateDB(dbname); err != nil {
+	defer client.DestroyDB(context.Background(), dbname)
+	if err = client.CreateDB(context.Background(), dbname); err != nil {
 		t.Fatalf("Failed to create db: %s", err)
 	}
-	db, err := client.DB(dbname)
+	db, err := client.DB(context.Background(), dbname)
 	if err != nil {
 		t.Fatalf("Failed to connect to db: %s", err)
 	}
-	_, err = db.Put("foo", map[string]string{"_id": "bar"})
+	_, err = db.Put(context.Background(), "foo", map[string]string{"_id": "bar"})
 	if errors.StatusCode(err) != kivik.StatusBadRequest {
 		t.Errorf("Expected Bad Request for mismatched IDs, got %s", err)
 	}

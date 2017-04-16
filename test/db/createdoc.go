@@ -12,10 +12,10 @@ func init() {
 func createDoc(ctx *kt.Context) {
 	ctx.RunRW(func(ctx *kt.Context) {
 		dbname := ctx.TestDBName()
-		if err := ctx.Admin.CreateDB(dbname); err != nil {
+		if err := ctx.Admin.CreateDB(kt.CTX, dbname); err != nil {
 			ctx.Fatalf("Failed to create test db: %s", err)
 		}
-		defer ctx.Admin.DestroyDB(dbname)
+		defer ctx.Admin.DestroyDB(kt.CTX, dbname)
 		ctx.Run("group", func(ctx *kt.Context) {
 			ctx.RunAdmin(func(ctx *kt.Context) {
 				ctx.Parallel()
@@ -30,19 +30,19 @@ func createDoc(ctx *kt.Context) {
 }
 
 func testCreate(ctx *kt.Context, client *kivik.Client, dbname string) {
-	db, err := client.DB(dbname)
+	db, err := client.DB(kt.CTX, dbname)
 	if err != nil {
 		ctx.Fatalf("Failed to connect to database: %s", err)
 	}
 	ctx.Run("WithoutID", func(ctx *kt.Context) {
 		ctx.Parallel()
-		_, _, err := db.CreateDoc(map[string]string{"foo": "bar"})
+		_, _, err := db.CreateDoc(kt.CTX, map[string]string{"foo": "bar"})
 		ctx.CheckError(err)
 	})
 	ctx.Run("WithID", func(ctx *kt.Context) {
 		ctx.Parallel()
 		id := ctx.TestDBName()
-		docID, _, err := db.CreateDoc(map[string]string{"foo": "bar", "_id": id})
+		docID, _, err := db.CreateDoc(kt.CTX, map[string]string{"foo": "bar", "_id": id})
 		if !ctx.IsExpectedSuccess(err) {
 			return
 		}

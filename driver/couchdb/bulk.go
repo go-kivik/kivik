@@ -58,7 +58,7 @@ func (r *bulkResults) Close() error {
 	return r.body.Close()
 }
 
-func (d *db) BulkDocsContext(ctx context.Context, docs ...interface{}) (driver.BulkResults, error) {
+func (d *db) BulkDocs(ctx context.Context, docs ...interface{}) (driver.BulkResults, error) {
 	var jsonErr error
 	var cancel context.CancelFunc
 	ctx, cancel = context.WithCancel(ctx)

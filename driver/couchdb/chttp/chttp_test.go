@@ -24,7 +24,7 @@ func dsn(t *testing.T) string {
 
 func getClient(t *testing.T) *Client {
 	dsn := dsn(t)
-	client, err := New(dsn)
+	client, err := New(context.Background(), dsn)
 	if err != nil {
 		t.Fatalf("Failed to connect to '%s': %s", dsn, err)
 	}

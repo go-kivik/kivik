@@ -1,6 +1,8 @@
 package client
 
 import (
+	"context"
+
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/test/kt"
 )
@@ -22,8 +24,8 @@ func dbExists(ctx *kt.Context) {
 	})
 	ctx.RunRW(func(ctx *kt.Context) {
 		dbName := ctx.TestDBName()
-		defer ctx.Admin.DestroyDB(dbName)
-		if err := ctx.Admin.CreateDB(dbName); err != nil {
+		defer ctx.Admin.DestroyDB(context.Background(), dbName)
+		if err := ctx.Admin.CreateDB(context.Background(), dbName); err != nil {
 			ctx.Errorf("Failed to create test DB: %s", err)
 			return
 		}
@@ -41,7 +43,7 @@ func dbExists(ctx *kt.Context) {
 func checkDBExists(ctx *kt.Context, client *kivik.Client, dbName string) {
 	ctx.Run(dbName, func(ctx *kt.Context) {
 		ctx.Parallel()
-		exists, err := client.DBExists(dbName)
+		exists, err := client.DBExists(context.Background(), dbName)
 		if !ctx.IsExpectedSuccess(err) {
 			return
 		}

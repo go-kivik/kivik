@@ -34,7 +34,7 @@ func testAllDocsRW(ctx *kt.Context) {
 	if err != nil {
 		ctx.Errorf("Failed to set up temp db: %s", err)
 	}
-	defer ctx.Admin.DestroyDB(dbName)
+	defer ctx.Admin.DestroyDB(kt.CTX, dbName)
 	ctx.Run("group", func(ctx *kt.Context) {
 		ctx.RunAdmin(func(ctx *kt.Context) {
 			doTest(ctx, ctx.Admin, dbName, 0, expected)
@@ -47,10 +47,10 @@ func testAllDocsRW(ctx *kt.Context) {
 
 func setUpAllDocsTest(ctx *kt.Context) (dbName string, docIDs []string, err error) {
 	dbName = ctx.TestDBName()
-	if err = ctx.Admin.CreateDB(dbName); err != nil {
+	if err = ctx.Admin.CreateDB(kt.CTX, dbName); err != nil {
 		return dbName, nil, errors.Wrap(err, "failed to create db")
 	}
-	db, err := ctx.Admin.DB(dbName)
+	db, err := ctx.Admin.DB(kt.CTX, dbName)
 	if err != nil {
 		return dbName, nil, errors.Wrap(err, "failed to connect to db")
 	}
@@ -62,7 +62,7 @@ func setUpAllDocsTest(ctx *kt.Context) (dbName string, docIDs []string, err erro
 		}{
 			ID: id,
 		}
-		if _, err := db.Put(doc.ID, doc); err != nil {
+		if _, err := db.Put(kt.CTX, doc.ID, doc); err != nil {
 			return dbName, nil, errors.Wrap(err, "failed to create doc")
 		}
 		docIDs[i] = id
@@ -97,14 +97,14 @@ func doTest(ctx *kt.Context, client *kivik.Client, dbName string, expOffset int6
 
 func doTestWithoutDocs(ctx *kt.Context, client *kivik.Client, dbName string, expOffset int64, expected []string) {
 	ctx.Parallel()
-	db, err := client.DB(dbName)
+	db, err := client.DB(kt.CTX, dbName)
 	// Errors may be deferred here, so only return if we actually get
 	// an error.
 	if err != nil && !ctx.IsExpectedSuccess(err) {
 		return
 	}
 
-	rows, err := db.AllDocs(nil)
+	rows, err := db.AllDocs(kt.CTX, nil)
 	if !ctx.IsExpectedSuccess(err) {
 		return
 	}
@@ -128,7 +128,7 @@ func doTestWithoutDocs(ctx *kt.Context, client *kivik.Client, dbName string, exp
 
 func doTestWithDocs(ctx *kt.Context, client *kivik.Client, dbName string, expOffset int64, expected []string) {
 	ctx.Parallel()
-	db, err := client.DB(dbName)
+	db, err := client.DB(kt.CTX, dbName)
 	// Errors may be deferred here, so only return if we actually get
 	// an error.
 	if err != nil && !ctx.IsExpectedSuccess(err) {
@@ -139,7 +139,7 @@ func doTestWithDocs(ctx *kt.Context, client *kivik.Client, dbName string, expOff
 		"update_seq":   true,
 	}
 
-	rows, err := db.AllDocs(opts)
+	rows, err := db.AllDocs(kt.CTX, opts)
 	if !ctx.IsExpectedSuccess(err) {
 		return
 	}

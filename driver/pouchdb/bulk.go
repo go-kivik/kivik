@@ -56,7 +56,7 @@ func (r *bulkResults) Close() error {
 	return nil
 }
 
-func (d *db) BulkDocsContext(ctx context.Context, docs ...interface{}) (driver.BulkResults, error) {
+func (d *db) BulkDocs(ctx context.Context, docs ...interface{}) (driver.BulkResults, error) {
 	result, err := d.db.BulkDocs(ctx, docs...)
 	if err != nil {
 		return nil, err

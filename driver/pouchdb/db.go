@@ -23,7 +23,7 @@ type db struct {
 	compacting bool
 }
 
-func (d *db) AllDocsContext(ctx context.Context, options map[string]interface{}) (driver.Rows, error) {
+func (d *db) AllDocs(ctx context.Context, options map[string]interface{}) (driver.Rows, error) {
 	result, err := d.db.AllDocs(ctx, options)
 	if err != nil {
 		return nil, err
@@ -33,7 +33,7 @@ func (d *db) AllDocsContext(ctx context.Context, options map[string]interface{})
 	}, nil
 }
 
-func (d *db) QueryContext(ctx context.Context, ddoc, view string, options map[string]interface{}) (driver.Rows, error) {
+func (d *db) Query(ctx context.Context, ddoc, view string, options map[string]interface{}) (driver.Rows, error) {
 	result, err := d.db.Query(ctx, ddoc, view, options)
 	if err != nil {
 		return nil, err
@@ -43,7 +43,7 @@ func (d *db) QueryContext(ctx context.Context, ddoc, view string, options map[st
 	}, nil
 }
 
-func (d *db) GetContext(ctx context.Context, docID string, doc interface{}, options map[string]interface{}) error {
+func (d *db) Get(ctx context.Context, docID string, doc interface{}, options map[string]interface{}) error {
 	body, err := d.db.Get(ctx, docID, options)
 	if err != nil {
 		return err
@@ -51,7 +51,7 @@ func (d *db) GetContext(ctx context.Context, docID string, doc interface{}, opti
 	return json.Unmarshal(body, &doc)
 }
 
-func (d *db) CreateDocContext(ctx context.Context, doc interface{}) (docID, rev string, err error) {
+func (d *db) CreateDoc(ctx context.Context, doc interface{}) (docID, rev string, err error) {
 	jsonDoc, err := json.Marshal(doc)
 	if err != nil {
 		return "", "", err
@@ -60,7 +60,7 @@ func (d *db) CreateDocContext(ctx context.Context, doc interface{}) (docID, rev 
 	return d.db.Post(ctx, jsDoc)
 }
 
-func (d *db) PutContext(ctx context.Context, docID string, doc interface{}) (rev string, err error) {
+func (d *db) Put(ctx context.Context, docID string, doc interface{}) (rev string, err error) {
 	jsonDoc, err := json.Marshal(doc)
 	if err != nil {
 		return "", err
@@ -75,14 +75,14 @@ func (d *db) PutContext(ctx context.Context, docID string, doc interface{}) (rev
 	return d.db.Put(ctx, jsDoc)
 }
 
-func (d *db) DeleteContext(ctx context.Context, docID, rev string) (newRev string, err error) {
+func (d *db) Delete(ctx context.Context, docID, rev string) (newRev string, err error) {
 	return d.db.Delete(ctx, map[string]string{
 		"_id":  docID,
 		"_rev": rev,
 	})
 }
 
-func (d *db) InfoContext(ctx context.Context) (*driver.DBInfo, error) {
+func (d *db) Info(ctx context.Context) (*driver.DBInfo, error) {
 	i, err := d.db.Info(ctx)
 	return &driver.DBInfo{
 		Name:           i.Name,
@@ -92,7 +92,7 @@ func (d *db) InfoContext(ctx context.Context) (*driver.DBInfo, error) {
 	}, err
 }
 
-func (d *db) CompactContext(_ context.Context) error {
+func (d *db) Compact(_ context.Context) error {
 	d.compacting = true
 	go func() {
 		defer func() { d.compacting = false }()
@@ -103,12 +103,12 @@ func (d *db) CompactContext(_ context.Context) error {
 	return nil
 }
 
-// CompactViewContext is unimplemented for PouchDB
-func (d *db) CompactViewContext(_ context.Context, _ string) error {
+// CompactView  is unimplemented for PouchDB.
+func (d *db) CompactView(_ context.Context, _ string) error {
 	return nil
 }
 
-func (d *db) ViewCleanupContext(_ context.Context) error {
+func (d *db) ViewCleanup(_ context.Context) error {
 	d.compacting = true
 	go func() {
 		defer func() { d.compacting = false }()
@@ -119,10 +119,10 @@ func (d *db) ViewCleanupContext(_ context.Context) error {
 	return nil
 }
 
-func (d *db) SecurityContext(ctx context.Context) (*driver.Security, error) {
+func (d *db) Security(ctx context.Context) (*driver.Security, error) {
 	return nil, kivik.ErrNotImplemented
 }
 
-func (d *db) SetSecurityContext(_ context.Context, _ *driver.Security) error {
+func (d *db) SetSecurity(_ context.Context, _ *driver.Security) error {
 	return kivik.ErrNotImplemented
 }

@@ -9,11 +9,11 @@ import (
 func flush(w http.ResponseWriter, r *http.Request) error {
 	params := getParams(r)
 	client := getClient(r)
-	db, err := client.DB(params["db"])
+	db, err := client.DB(r.Context(), params["db"])
 	if err != nil {
 		return err
 	}
-	ts, err := db.Flush()
+	ts, err := db.Flush(r.Context())
 	if err != nil {
 		return err
 	}

@@ -1,6 +1,7 @@
 package couchdb
 
 import (
+	"context"
 	"encoding/hex"
 	"testing"
 
@@ -10,7 +11,7 @@ import (
 
 func TestAllDBs(t *testing.T) {
 	client := getClient(t)
-	_, err := client.AllDBsContext(kt.CTX, nil)
+	_, err := client.AllDBs(context.Background(), nil)
 	if err != nil {
 		t.Fatalf("Failed: %s", err)
 	}
@@ -18,7 +19,7 @@ func TestAllDBs(t *testing.T) {
 
 func TestUUIDs(t *testing.T) {
 	client := getClient(t)
-	uuids, err := client.UUIDsContext(kt.CTX, 5)
+	uuids, err := client.UUIDs(context.Background(), 5)
 	if err != nil {
 		t.Fatalf("Failed: %s", err)
 	}
@@ -42,7 +43,7 @@ func validateUUID(uuid string) error {
 
 func TestDBExists(t *testing.T) {
 	client := getClient(t)
-	exists, err := client.DBExistsContext(kt.CTX, "_users", nil)
+	exists, err := client.DBExists(context.Background(), "_users", nil)
 	if err != nil {
 		t.Fatalf("Failed: %s", err)
 	}
@@ -54,11 +55,11 @@ func TestDBExists(t *testing.T) {
 func TestCreateAndDestroyDB(t *testing.T) {
 	client := getClient(t)
 	dbName := kt.TestDBName(t)
-	defer client.DestroyDBContext(kt.CTX, dbName, nil)
-	if err := client.CreateDBContext(kt.CTX, dbName, nil); err != nil {
+	defer client.DestroyDB(context.Background(), dbName, nil)
+	if err := client.CreateDB(context.Background(), dbName, nil); err != nil {
 		t.Errorf("Create failed: %s", err)
 	}
-	if err := client.DestroyDBContext(kt.CTX, dbName, nil); err != nil {
+	if err := client.DestroyDB(context.Background(), dbName, nil); err != nil {
 		t.Errorf("Destroy failed: %s", err)
 	}
 }

@@ -36,7 +36,7 @@ func NoAuthDSN(t *testing.T) string {
 }
 
 func connect(dsn string, t *testing.T) *kivik.Client {
-	client, err := kivik.New("couch", dsn)
+	client, err := kivik.New(context.Background(), "couch", dsn)
 	if err != nil {
 		t.Fatalf("Failed to connect to '%s': %s", dsn, err)
 	}

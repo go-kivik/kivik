@@ -1,6 +1,7 @@
 package couchdb
 
 import (
+	"context"
 	"testing"
 
 	"github.com/flimzy/kivik/test/kt"
@@ -8,7 +9,7 @@ import (
 
 func connect(dsn string, t *testing.T) *client {
 	couch := &Couch{}
-	driverClient, err := couch.NewClientContext(kt.CTX, dsn)
+	driverClient, err := couch.NewClient(context.Background(), dsn)
 	if err != nil {
 		t.Fatalf("Failed to connect to '%s': %s", dsn, err)
 	}

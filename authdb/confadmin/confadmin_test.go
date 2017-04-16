@@ -33,15 +33,15 @@ var testUser = &tuser{
 func TestInvalidHashes(t *testing.T) {
 	conf := config.New(memconf.New())
 	auth := New(conf)
-	conf.Set("admins", "test", "-pbkXXdf2-792221164f257de22ad72a8e94760388233e5714,7897f3451f59da741c87ec5f10fe7abe,10")
+	conf.Set(kt.CTX, "admins", "test", "-pbkXXdf2-792221164f257de22ad72a8e94760388233e5714,7897f3451f59da741c87ec5f10fe7abe,10")
 	if _, err := auth.Validate(kt.CTX, "test", "123"); err == nil {
 		t.Errorf("Expected error for invalid scheme")
 	}
-	conf.Set("admins", "test", "-pbkdf2-792221164f257de22ad72a8e,94760388233e5714,7897f345,1f59da741c87ec5f10fe7abe,10")
+	conf.Set(kt.CTX, "admins", "test", "-pbkdf2-792221164f257de22ad72a8e,94760388233e5714,7897f345,1f59da741c87ec5f10fe7abe,10")
 	if _, err := auth.Validate(kt.CTX, "test", "123"); err == nil {
 		t.Errorf("Expected error for too many commas")
 	}
-	conf.Set("admins", "test", "-pbkdf2-792221164f257de22ad72a8e94760388233e5714,7897f3451f59da741c87ec5f10fe7abe,pig")
+	conf.Set(kt.CTX, "admins", "test", "-pbkdf2-792221164f257de22ad72a8e94760388233e5714,7897f3451f59da741c87ec5f10fe7abe,pig")
 	if _, err := auth.Validate(kt.CTX, "test", "123"); err == nil {
 		t.Errorf("Expected error for invalid iterations integer")
 	}
@@ -51,7 +51,7 @@ func TestConfAdminAuth(t *testing.T) {
 	conf := config.New(memconf.New())
 	auth := New(conf)
 
-	conf.Set("admins", "test", "-pbkdf2-792221164f257de22ad72a8e94760388233e5714,7897f3451f59da741c87ec5f10fe7abe,10")
+	conf.Set(kt.CTX, "admins", "test", "-pbkdf2-792221164f257de22ad72a8e94760388233e5714,7897f3451f59da741c87ec5f10fe7abe,10")
 	uCtx, err := auth.Validate(kt.CTX, "test", "abc123")
 	if err != nil {
 		t.Errorf("Validation failure for good password: %s", err)

@@ -7,6 +7,11 @@ if [ "${TRAVIS_OS_NAME:-}" == "osx" ]; then
     unset KIVIK_TEST_DSN_COUCH20
 fi
 
+function join_list {
+    local IFS=","
+    echo "$*"
+}
+
 case "$1" in
     "standard")
         go test $(go list ./... | grep -v /vendor/ | grep -v /pouchdb)
@@ -20,4 +25,21 @@ case "$1" in
         gometalinter.v1 --deadline=30s --vendor \
             --exclude="Errors unhandled\..*\(gas\)"  # This is an annoying duplicate of errcheck
     ;;
+    "coverage")
+        echo "" > coverage.txt
+
+        TEST_PKGS=$(find -name "*_test.go" | grep -v /vendor/ | grep -v /pouchdb/ | xargs dirname | sort -u | sed -e "s#^.#github.com/flimzy/kivik#" )
+
+        for d in $TEST_PKGS; do
+            go test -i $d
+            DEPS=$(go list -f $'{{range $f := .Imports}}{{$f}}\n{{end}}' $d | grep -v /vendor/ | grep -v /pouchdb/ | grep ^github.com/flimzy/kivik | tr '\n' ' ')
+            echo "Testing $d for coverage in: $DEPS"
+            go test -coverprofile=profile.out -covermode=set -coverpkg=$(join_list $d $DEPS) $d
+            if [ -f profile.out ]; then
+                cat profile.out >> coverage.txt
+                rm profile.out
+            fi
+        done
+
+        bash <(curl -s https://codecov.io/bash)
 esac

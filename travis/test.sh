@@ -14,7 +14,7 @@ function join_list {
 
 case "$1" in
     "standard")
-        go test $(go list ./... | grep -v /vendor/ | grep -v /pouchdb)
+        go test -race $(go list ./... | grep -v /vendor/ | grep -v /pouchdb)
     ;;
     "gopherjs")
         gopherjs test $(go list ./... | grep -v /vendor/ | grep -v kivik/serve)

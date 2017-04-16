@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -174,6 +175,7 @@ func RunSubtests(ctx *Context) {
 }
 
 var rnd *rand.Rand
+var rndMU = &sync.Mutex{}
 
 func init() {
 	rnd = rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -194,6 +196,8 @@ func TestDBName(t *testing.T) string {
 	id := strings.ToLower(tName(t))
 	id = id[strings.Index(id, "/")+1:]
 	id = strings.Replace(id, "/", "_", -1) + "$"
+	rndMU.Lock()
+	defer rndMU.Unlock()
 	dbname := fmt.Sprintf("%s%s%016x", TestDBPrefix, id, rnd.Int63())
 	return dbname
 }

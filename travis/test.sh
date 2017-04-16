@@ -32,7 +32,7 @@ case "$1" in
 
         for d in $TEST_PKGS; do
             go test -i $d
-            DEPS=$(go list -f $'{{range $f := .Imports}}{{$f}}\n{{end}}' $d | grep -v /vendor/ | grep -v /pouchdb/ | grep ^github.com/flimzy/kivik | tr '\n' ' ')
+            DEPS=$(go list -f $'{{range $f := .Imports}}{{$f}}\n{{end}}' $d | grep -v /vendor/ | grep -v /pouchdb/ | grep -v /kivik/test/ | grep ^github.com/flimzy/kivik | tr '\n' ' ')
             echo "Testing $d for coverage in: $DEPS"
             go test -coverprofile=profile.out -covermode=set -coverpkg=$(join_list $d $DEPS) $d
             if [ -f profile.out ]; then

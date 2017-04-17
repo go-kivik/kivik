@@ -9,9 +9,6 @@ import (
 	"github.com/flimzy/kivik"
 )
 
-// CTX is a background context for testing.
-var CTX = context.Background()
-
 // DSN returns a testing DSN from the environment.
 func DSN(t *testing.T) string {
 	for _, env := range []string{"KIVIK_TEST_DSN_COUCH16", "KIVIK_TEST_DSN_COUCH20", "KIVIK_TEST_DSN_CLOUDANT"} {

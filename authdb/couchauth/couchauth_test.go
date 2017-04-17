@@ -37,36 +37,36 @@ func TestBadDSN(t *testing.T) {
 
 func TestCouchAuth(t *testing.T) {
 	client := kt.GetClient(t)
-	db, err := client.DB(kt.CTX, "_users")
+	db, err := client.DB(context.Background(), "_users")
 	if err != nil {
 		t.Fatalf("Failed to connect to db: %s", err)
 	}
 	// Courtesy flush
 	kt.DeleteUser(db, testUser.ID, t)
-	rev, err := db.Put(kt.CTX, testUser.ID, testUser)
+	rev, err := db.Put(context.Background(), testUser.ID, testUser)
 	if err != nil {
 		t.Fatalf("Failed to create user: %s", err)
 	}
-	defer db.Delete(kt.CTX, testUser.ID, rev)
+	defer db.Delete(context.Background(), testUser.ID, rev)
 	auth, err := New(context.Background(), kt.NoAuthDSN(t))
 	if err != nil {
 		t.Fatalf("Failed to connect to remote server: %s", err)
 	}
-	uCtx, err := auth.Validate(kt.CTX, "test", "abc123")
+	uCtx, err := auth.Validate(context.Background(), "test", "abc123")
 	if err != nil {
 		t.Errorf("Validation failure for good password: %s", err)
 	}
 	if uCtx == nil {
 		t.Errorf("User should have been validated")
 	}
-	uCtx, err = auth.Validate(kt.CTX, "test", "foobar")
+	uCtx, err = auth.Validate(context.Background(), "test", "foobar")
 	if errors.StatusCode(err) != kivik.StatusUnauthorized {
 		t.Errorf("Expected Unauthorized for bad password, got %s", err)
 	}
 	if uCtx != nil {
 		t.Errorf("User should not have been validated with wrong password")
 	}
-	uCtx, err = auth.Validate(kt.CTX, "nobody", "foo")
+	uCtx, err = auth.Validate(context.Background(), "nobody", "foo")
 	if errors.StatusCode(err) != kivik.StatusUnauthorized {
 		t.Errorf("Expected Unauthorized for bad username, got %s", err)
 	}
@@ -74,14 +74,14 @@ func TestCouchAuth(t *testing.T) {
 		t.Errorf("User should not have been validated with wrong username")
 	}
 
-	// roles, err := auth.Roles(kt.CTX, "test")
+	// roles, err := auth.Roles(context.Background(), "test")
 	// if err != nil {
 	// 	t.Errorf("Failed to get roles for valid user: %s", err)
 	// }
 	// if !reflect.DeepEqual(roles, []string{"coolguy"}) {
 	// 	t.Errorf("Got unexpected roles.")
 	// }
-	// _, err = auth.Roles(kt.CTX, "nobody")
+	// _, err = auth.Roles(context.Background(), "nobody")
 	// if errors.StatusCode(err) != kivik.StatusNotFound {
 	// 	var msg string
 	// 	if err != nil {

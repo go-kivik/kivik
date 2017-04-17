@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -9,8 +10,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver/couchdb/chttp"
@@ -55,7 +54,7 @@ func testSession(ctx *kt.Context, client *chttp.Client) {
 			Roles []string `json:"roles"`
 		} `json:"userCtx"`
 	}{}
-	_, err := client.DoJSON(kt.CTX, kivik.MethodGet, "/_session", nil, &uCtx)
+	_, err := client.DoJSON(context.Background(), kivik.MethodGet, "/_session", nil, &uCtx)
 	if !ctx.IsExpectedSuccess(err) {
 		return
 	}
@@ -186,7 +185,7 @@ func testCreateSession(ctx *kt.Context, client *chttp.Client) {
 				if test.Query != "" {
 					reqURL += "?" + test.Query
 				}
-				r, err := client.DoReq(kt.CTX, kivik.MethodPost, reqURL, test.Options)
+				r, err := client.DoReq(context.Background(), kivik.MethodPost, reqURL, test.Options)
 				if err == nil {
 					err = chttp.ResponseError(r)
 				}
@@ -277,7 +276,7 @@ func testDeleteSession(ctx *kt.Context, client *chttp.Client) {
 		if dsn, _ := url.Parse(ctx.Admin.DSN()); dsn.User != nil {
 			name := dsn.User.Username()
 			password, _ := dsn.User.Password()
-			r, err := client.DoReq(kt.CTX, kivik.MethodPost, "/_session", &chttp.Options{
+			r, err := client.DoReq(context.Background(), kivik.MethodPost, "/_session", &chttp.Options{
 				Body: bytes.NewBuffer([]byte(fmt.Sprintf(`{"name":"%s","password":"%s"}`, name, password))),
 			})
 			if err != nil {
@@ -307,7 +306,7 @@ func testDeleteSession(ctx *kt.Context, client *chttp.Client) {
 				response := struct {
 					OK bool `json:"ok"`
 				}{}
-				req, err := client.NewRequest(kt.CTX, kivik.MethodDelete, "/_session", nil)
+				req, err := client.NewRequest(context.Background(), kivik.MethodDelete, "/_session", nil)
 				if err != nil {
 					ctx.Fatalf("Failed to create request: %s", err)
 				}

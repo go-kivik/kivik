@@ -1,11 +1,5 @@
 package kivik
 
-import (
-	"net/http"
-
-	"github.com/flimzy/kivik/errors"
-)
-
 type kivikError string
 
 func (e kivikError) Error() string {
@@ -34,9 +28,3 @@ const ErrUnauthorized kivikError = "unauthorized"
 
 // ErrNotFound is a generic Not Found error.
 const ErrNotFound kivikError = "not found"
-
-// ErrForbidden returns true if the error is the result of an HTTP 403/Forbidden
-// response.
-func ErrForbidden(err error) bool {
-	return errors.StatusCode(err) == http.StatusForbidden
-}

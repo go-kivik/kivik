@@ -106,7 +106,7 @@ func doQueryTestWithoutDocs(ctx *kt.Context, client *kivik.Client, dbName string
 		return
 	}
 
-	rows, err := db.Query(context.Background(), "testddoc", "testview", nil)
+	rows, err := db.Query(context.Background(), "testddoc", "testview")
 	if !ctx.IsExpectedSuccess(err) {
 		return
 	}

@@ -76,7 +76,7 @@ func copyTest(ctx *kt.Context, client *kivik.Client, dbname string, source map[s
 			ctx.Fatalf("Failed to open db: %s", err)
 		}
 		targetID := ctx.TestDBName()
-		rev, err := db.Copy(context.Background(), targetID, source["_id"], nil)
+		rev, err := db.Copy(context.Background(), targetID, source["_id"])
 		if !ctx.IsExpectedSuccess(err) {
 			return
 		}
@@ -94,7 +94,7 @@ func copyTest(ctx *kt.Context, client *kivik.Client, dbname string, source map[s
 				ctx.Fatalf("Failed to copy doc with rev option: %s", err)
 			}
 			var readCopy map[string]string
-			if err := db.Get(context.Background(), targetID2, &readCopy, nil); err != nil {
+			if err := db.Get(context.Background(), targetID2, &readCopy); err != nil {
 				ctx.Fatalf("Failed to read copy: %s", err)
 			}
 			if readCopy["name"] != "Robert" {

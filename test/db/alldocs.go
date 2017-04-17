@@ -105,7 +105,7 @@ func doTestWithoutDocs(ctx *kt.Context, client *kivik.Client, dbName string, exp
 		return
 	}
 
-	rows, err := db.AllDocs(context.Background(), nil)
+	rows, err := db.AllDocs(context.Background())
 	if !ctx.IsExpectedSuccess(err) {
 		return
 	}

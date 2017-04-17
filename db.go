@@ -14,8 +14,12 @@ type DB struct {
 }
 
 // AllDocs returns a list of all documents in the database.
-func (db *DB) AllDocs(ctx context.Context, options Options) (*Rows, error) {
-	rowsi, err := db.driverDB.AllDocs(ctx, options)
+func (db *DB) AllDocs(ctx context.Context, options ...Options) (*Rows, error) {
+	opts, err := mergeOptions(options...)
+	if err != nil {
+		return nil, err
+	}
+	rowsi, err := db.driverDB.AllDocs(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -27,10 +31,14 @@ func (db *DB) AllDocs(ctx context.Context, options Options) (*Rows, error) {
 // Query executes the specified view function from the specified design
 // document. ddoc and view may or may not be be prefixed with '_design/'
 // and '_view/' respectively. No other
-func (db *DB) Query(ctx context.Context, ddoc, view string, options Options) (*Rows, error) {
+func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) (*Rows, error) {
+	opts, err := mergeOptions(options...)
+	if err != nil {
+		return nil, err
+	}
 	ddoc = strings.TrimPrefix(ddoc, "_design/")
 	view = strings.TrimPrefix(view, "_view/")
-	rowsi, err := db.driverDB.Query(ctx, ddoc, view, options)
+	rowsi, err := db.driverDB.Query(ctx, ddoc, view, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -40,8 +48,12 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, options Options) (*R
 }
 
 // Get fetches the requested document.
-func (db *DB) Get(ctx context.Context, docID string, doc interface{}, options Options) error {
-	return db.driverDB.Get(ctx, docID, doc, options)
+func (db *DB) Get(ctx context.Context, docID string, doc interface{}, options ...Options) error {
+	opts, err := mergeOptions(options...)
+	if err != nil {
+		return err
+	}
+	return db.driverDB.Get(ctx, docID, doc, opts)
 }
 
 // CreateDoc creates a new doc with an auto-generated unique ID. The generated
@@ -170,8 +182,12 @@ func (db *DB) Rev(ctx context.Context, docID string) (rev string, err error) {
 // Changes returns an iterator over the real-time changes feed. The feed remains
 // open until explicitly closed, or an error is encountered.
 // See http://couchdb.readthedocs.io/en/latest/api/database/changes.html#get--db-_changes
-func (db *DB) Changes(ctx context.Context, options Options) (*Rows, error) {
-	rowsi, err := db.driverDB.Changes(ctx, options)
+func (db *DB) Changes(ctx context.Context, options ...Options) (*Rows, error) {
+	opts, err := mergeOptions(options...)
+	if err != nil {
+		return nil, err
+	}
+	rowsi, err := db.driverDB.Changes(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -186,15 +202,19 @@ func (db *DB) Changes(ctx context.Context, options Options) (*Rows, error) {
 // source, with only the ID and revision changed.
 //
 // See http://docs.couchdb.org/en/2.0.0/api/document/common.html#copy--db-docid
-func (db *DB) Copy(ctx context.Context, targetID, sourceID string, options Options) (targetRev string, err error) {
+func (db *DB) Copy(ctx context.Context, targetID, sourceID string, options ...Options) (targetRev string, err error) {
+	opts, err := mergeOptions(options...)
+	if err != nil {
+		return "", err
+	}
 	if copier, ok := db.driverDB.(driver.Copier); ok {
-		targetRev, err = copier.Copy(ctx, targetID, sourceID, options)
+		targetRev, err = copier.Copy(ctx, targetID, sourceID, opts)
 		if err != ErrNotImplemented {
 			return targetRev, err
 		}
 	}
 	var doc map[string]interface{}
-	if err = db.Get(ctx, sourceID, &doc, options); err != nil {
+	if err = db.Get(ctx, sourceID, &doc, opts); err != nil {
 		return "", err
 	}
 	delete(doc, "_rev")

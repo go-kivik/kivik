@@ -250,7 +250,7 @@ func DeleteUser(db *kivik.DB, username string, t *testing.T) {
 	u := struct {
 		Rev string `json:"_rev"`
 	}{}
-	err := db.Get(context.Background(), name, &u, nil)
+	err := db.Get(context.Background(), name, &u)
 	if errors.StatusCode(err) == kivik.StatusNotFound {
 		return
 	}

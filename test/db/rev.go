@@ -85,7 +85,7 @@ func testRev(ctx *kt.Context, db *kivik.DB, expectedDoc *testDoc) {
 			return
 		}
 		doc := &testDoc{}
-		if err = db.Get(context.Background(), expectedDoc.ID, &doc, nil); err != nil {
+		if err = db.Get(context.Background(), expectedDoc.ID, &doc); err != nil {
 			ctx.Fatalf("Failed to get doc: %s", err)
 		}
 		if strings.HasPrefix(expectedDoc.ID, "_local/") {

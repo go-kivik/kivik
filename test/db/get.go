@@ -93,7 +93,7 @@ func testGet(ctx *kt.Context, db *kivik.DB, expectedDoc *testDoc) {
 	ctx.Run(expectedDoc.ID, func(ctx *kt.Context) {
 		ctx.Parallel()
 		doc := &testDoc{}
-		err := db.Get(context.Background(), expectedDoc.ID, &doc, nil)
+		err := db.Get(context.Background(), expectedDoc.ID, &doc)
 		if !ctx.IsExpectedSuccess(err) {
 			return
 		}

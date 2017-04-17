@@ -9,6 +9,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/flimzy/diff"
 )
 
 func dsn(t *testing.T) string {
@@ -120,6 +122,7 @@ func TestEncodeBody(t *testing.T) {
 	for _, test := range tests {
 		func(test encodeTest) {
 			t.Run(test.Name, func(t *testing.T) {
+				t.Parallel()
 				var err error
 				r := EncodeBody(test.Input, &err, func() {})
 				buf := &bytes.Buffer{}
@@ -134,6 +137,72 @@ func TestEncodeBody(t *testing.T) {
 				}
 				if msg != test.Error {
 					t.Errorf("Error\nExpected: %s\n  Actual: %s\n", test.Error, msg)
+				}
+			})
+		}(test)
+	}
+}
+
+func TestSetHeaders(t *testing.T) {
+	type shTest struct {
+		Name     string
+		Options  *Options
+		Expected http.Header
+	}
+	tests := []shTest{
+		{
+			Name: "NoOpts",
+			Expected: http.Header{
+				"Accept":       []string{"application/json"},
+				"Content-Type": []string{"application/json"},
+			},
+		},
+		{
+			Name:    "Content-Type",
+			Options: &Options{ContentType: "image/gif"},
+			Expected: http.Header{
+				"Accept":       []string{"application/json"},
+				"Content-Type": []string{"image/gif"},
+			},
+		},
+		{
+			Name:    "Accept",
+			Options: &Options{Accept: "image/gif"},
+			Expected: http.Header{
+				"Accept":       []string{"image/gif"},
+				"Content-Type": []string{"application/json"},
+			},
+		},
+		{
+			Name:    "ForceCommit",
+			Options: &Options{ForceCommit: true},
+			Expected: http.Header{
+				"Accept":              []string{"application/json"},
+				"Content-Type":        []string{"application/json"},
+				"X-Couch-Full-Commit": []string{"true"},
+			},
+		},
+		{
+			Name:    "Destination",
+			Options: &Options{Destination: "somewhere nice"},
+			Expected: http.Header{
+				"Accept":       []string{"application/json"},
+				"Content-Type": []string{"application/json"},
+				"Destination":  []string{"somewhere nice"},
+			},
+		},
+	}
+	for _, test := range tests {
+		func(test shTest) {
+			t.Run(test.Name, func(t *testing.T) {
+				t.Parallel()
+				req, err := http.NewRequest("GET", "/", nil)
+				if err != nil {
+					panic(err)
+				}
+				setHeaders(req, test.Options)
+				if d := diff.Interface(test.Expected, req.Header); d != "" {
+					t.Errorf("Headers:\n%s\n", d)
 				}
 			})
 		}(test)

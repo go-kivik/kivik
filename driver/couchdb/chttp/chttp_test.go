@@ -91,3 +91,51 @@ func TestFixPath(t *testing.T) {
 		}
 	}
 }
+
+func TestEncodeBody(t *testing.T) {
+	type encodeTest struct {
+		Name     string
+		Input    interface{}
+		Error    string
+		Expected string
+	}
+	tests := []encodeTest{
+		{
+			Name:     "Null",
+			Expected: "null",
+		},
+		{
+			Name: "Struct",
+			Input: struct {
+				Foo string `json:"foo"`
+			}{Foo: "bar"},
+			Expected: `{"foo":"bar"}`,
+		},
+		{
+			Name:  "JSONError",
+			Input: func() {}, // Functions cannot be marshaled to JSON
+			Error: "json: unsupported type: func()",
+		},
+	}
+	for _, test := range tests {
+		func(test encodeTest) {
+			t.Run(test.Name, func(t *testing.T) {
+				var err error
+				r := EncodeBody(test.Input, &err, func() {})
+				buf := &bytes.Buffer{}
+				buf.ReadFrom(r)
+				var msg string
+				if err != nil {
+					msg = err.Error()
+				}
+				result := strings.TrimSpace(buf.String())
+				if result != test.Expected {
+					t.Errorf("Result\nExpected: %s\n  Actual: %s\n", test.Expected, result)
+				}
+				if msg != test.Error {
+					t.Errorf("Error\nExpected: %s\n  Actual: %s\n", test.Error, msg)
+				}
+			})
+		}(test)
+	}
+}

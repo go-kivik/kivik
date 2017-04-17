@@ -1,9 +1,12 @@
 package couchdb
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"io"
 	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/flimzy/diff"
@@ -97,6 +100,56 @@ func TestOptionsToParams(t *testing.T) {
 				}
 				if d := diff.Interface(test.Expected, params); d != "" {
 					t.Errorf("Params not as expected:\n%s\n", d)
+				}
+			})
+		}(test)
+	}
+}
+
+func TestJSONify(t *testing.T) {
+	type jsonifyTest struct {
+		Name     string
+		Input    interface{}
+		Expected string
+	}
+	tests := []jsonifyTest{
+		{
+			Name:     "Null",
+			Expected: "null",
+		},
+		{
+			Name:     "String",
+			Input:    `{"foo":"bar"}`,
+			Expected: `{"foo":"bar"}`,
+		},
+		{
+			Name:     "ByteSlice",
+			Input:    []byte(`{"foo":"bar"}`),
+			Expected: `{"foo":"bar"}`,
+		},
+		{
+			Name:     "RawMessage",
+			Input:    json.RawMessage(`{"foo":"bar"}`),
+			Expected: `{"foo":"bar"}`,
+		},
+		{
+			Name:     "Interface",
+			Input:    map[string]string{"foo": "bar"},
+			Expected: `{"foo":"bar"}`,
+		},
+	}
+	for _, test := range tests {
+		func(test jsonifyTest) {
+			t.Run(test.Name, func(t *testing.T) {
+				r, err := jsonify(test.Input)
+				if err != nil {
+					t.Fatalf("jsonify failed: %s", err)
+				}
+				buf := &bytes.Buffer{}
+				buf.ReadFrom(r)
+				result := strings.TrimSpace(buf.String())
+				if result != test.Expected {
+					t.Errorf("Expected: `%s`\n  Actual: `%s`", test.Expected, result)
 				}
 			})
 		}(test)

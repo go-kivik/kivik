@@ -22,7 +22,7 @@ type StatusError struct {
 }
 
 func (se *StatusError) Error() string {
-	return fmt.Sprintf("%d %s", se.statusCode, se.message)
+	return se.message
 }
 
 // StatusCode returns the StatusError's embedded HTTP status code.

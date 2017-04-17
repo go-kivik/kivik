@@ -45,7 +45,7 @@ func optionsToParams(opts ...map[string]interface{}) (url.Values, error) {
 			case int, uint, uint8, uint16, uint32, uint64, int8, int16, int32, int64:
 				values = []string{fmt.Sprintf("%d", v)}
 			default:
-				return nil, fmt.Errorf("Cannot convert type %T to []string", i)
+				return nil, fmt.Errorf("cannot convert type %T to []string", i)
 			}
 			for _, value := range values {
 				params.Add(key, value)

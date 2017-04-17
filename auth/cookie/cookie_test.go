@@ -15,14 +15,14 @@ type redirTest struct {
 func TestRedirectURL(t *testing.T) {
 	tests := []redirTest{
 		{Name: "NoURL", Input: "-"},
-		{Name: "EmptyValue", Input: "", Err: "400 redirection url must be relative to server root"},
-		{Name: "Absolute", Input: "http://google.com/", Err: "400 redirection url must be relative to server root"},
-		{Name: "HeaderInjection", Input: "next=/foo\nX-Injected: oink", Err: "400 redirection url must be relative to server root"},
-		{Name: "InvalidURL", Input: "://google.com/", Err: "400 redirection url must be relative to server root"},
-		{Name: "NoSlash", Input: "foobar", Err: "400 redirection url must be relative to server root"},
+		{Name: "EmptyValue", Input: "", Err: "redirection url must be relative to server root"},
+		{Name: "Absolute", Input: "http://google.com/", Err: "redirection url must be relative to server root"},
+		{Name: "HeaderInjection", Input: "next=/foo\nX-Injected: oink", Err: "redirection url must be relative to server root"},
+		{Name: "InvalidURL", Input: "://google.com/", Err: "redirection url must be relative to server root"},
+		{Name: "NoSlash", Input: "foobar", Err: "redirection url must be relative to server root"},
 		{Name: "Relative", Input: "/_session", Expected: "/_session"},
-		{Name: "InvalidRelative", Input: "/session%25%26%26", Err: "400 invalid redirection url"},
-		{Name: "Schemaless", Input: "//evil.org", Err: "400 invalid redirection url"},
+		{Name: "InvalidRelative", Input: "/session%25%26%26", Err: "invalid redirection url"},
+		{Name: "Schemaless", Input: "//evil.org", Err: "invalid redirection url"},
 	}
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {

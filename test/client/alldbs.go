@@ -1,6 +1,8 @@
 package client
 
 import (
+	"context"
+
 	"github.com/flimzy/diff"
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/test/kt"
@@ -27,8 +29,8 @@ func allDBs(ctx *kt.Context) {
 func testAllDBsRW(ctx *kt.Context) {
 	admin := ctx.Admin
 	dbName := ctx.TestDBName()
-	defer admin.DestroyDB(dbName)
-	if err := admin.CreateDB(dbName); err != nil {
+	defer admin.DestroyDB(context.Background(), dbName)
+	if err := admin.CreateDB(context.Background(), dbName); err != nil {
 		ctx.Errorf("Failed to create test DB '%s': %s", dbName, err)
 		return
 	}
@@ -45,7 +47,7 @@ func testAllDBsRW(ctx *kt.Context) {
 
 func testAllDBs(ctx *kt.Context, client *kivik.Client, expected []string) {
 	ctx.Parallel()
-	allDBs, err := client.AllDBs()
+	allDBs, err := client.AllDBs(context.Background())
 	if !ctx.IsExpectedSuccess(err) {
 		return
 	}

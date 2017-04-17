@@ -14,7 +14,7 @@ import (
 	"github.com/flimzy/kivik/driver/couchdb/chttp"
 )
 
-func (d *db) PutAttachmentContext(ctx context.Context, docID, rev, filename, contentType string, body io.Reader) (newRev string, err error) {
+func (d *db) PutAttachment(ctx context.Context, docID, rev, filename, contentType string, body io.Reader) (newRev string, err error) {
 	opts := &chttp.Options{
 		Body:        body,
 		ContentType: contentType,
@@ -33,7 +33,7 @@ func (d *db) PutAttachmentContext(ctx context.Context, docID, rev, filename, con
 	return response.Rev, nil
 }
 
-func (d *db) GetAttachmentMetaContext(ctx context.Context, docID, rev, filename string) (cType string, md5sum driver.Checksum, err error) {
+func (d *db) GetAttachmentMeta(ctx context.Context, docID, rev, filename string) (cType string, md5sum driver.Checksum, err error) {
 	resp, err := d.fetchAttachment(ctx, kivik.MethodHead, docID, rev, filename)
 	if err != nil {
 		return "", driver.Checksum{}, err
@@ -43,7 +43,7 @@ func (d *db) GetAttachmentMetaContext(ctx context.Context, docID, rev, filename 
 	return cType, md5sum, err
 }
 
-func (d *db) GetAttachmentContext(ctx context.Context, docID, rev, filename string) (cType string, md5sum driver.Checksum, body io.ReadCloser, err error) {
+func (d *db) GetAttachment(ctx context.Context, docID, rev, filename string) (cType string, md5sum driver.Checksum, body io.ReadCloser, err error) {
 	resp, err := d.fetchAttachment(ctx, kivik.MethodGet, docID, rev, filename)
 	if err != nil {
 		return "", driver.Checksum{}, nil, err
@@ -89,7 +89,7 @@ func getMD5Checksum(resp *http.Response) (md5sum driver.Checksum, err error) {
 	return md5sum, err
 }
 
-func (d *db) DeleteAttachmentContext(ctx context.Context, docID, rev, filename string) (newRev string, err error) {
+func (d *db) DeleteAttachment(ctx context.Context, docID, rev, filename string) (newRev string, err error) {
 	query := url.Values{}
 	if rev != "" {
 		query.Add("rev", rev)

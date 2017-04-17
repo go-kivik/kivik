@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -33,7 +34,7 @@ func main() {
 	cmdServe.Run = func(cmd *cobra.Command, args []string) {
 		service := &serve.Service{}
 
-		client, err := kivik.New(driverName, dsn)
+		client, err := kivik.New(context.Background(), driverName, dsn)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to connect: %s\n", err)
 			os.Exit(1)

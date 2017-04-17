@@ -79,7 +79,7 @@ func (s *Service) SetConfig(config *config.Config) {
 // yourself.
 func (s *Service) Init() (http.Handler, error) {
 	s.authHandlersSetup()
-	if s.Config().GetString("couch_httpd_auth", "secret") == "" {
+	if s.Config().GetString(context.TODO(), "couch_httpd_auth", "secret") == "" {
 		fmt.Fprintf(os.Stderr, "couch_httpd_auth.secret is not set. This is insecure!\n")
 	}
 	return s.setupRoutes()
@@ -92,8 +92,8 @@ func (s *Service) Start() error {
 		return err
 	}
 	addr := fmt.Sprintf("%s:%d",
-		s.Config().GetString("httpd", "bind_address"),
-		s.Config().GetInt("httpd", "port"),
+		s.Config().GetString(context.TODO(), "httpd", "bind_address"),
+		s.Config().GetInt(context.TODO(), "httpd", "port"),
 	)
 	fmt.Fprintf(os.Stderr, "Listening on %s\n", addr)
 	return http.ListenAndServe(addr, server)
@@ -140,8 +140,8 @@ func (s *Service) Bind(addr string) error {
 		return errors.Wrapf(err, "invalid port '%s'", port)
 	}
 	host := strings.TrimSuffix(addr, ":"+port)
-	s.Config().Set("httpd", "bind_address", host)
-	s.Config().Set("httpd", "port", port)
+	s.Config().Set(context.TODO(), "httpd", "bind_address", host)
+	s.Config().Set(context.TODO(), "httpd", "port", port)
 	return nil
 }
 
@@ -224,7 +224,7 @@ func root(w http.ResponseWriter, r *http.Request) error {
 func allDBs(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", typeJSON)
 	client := getClient(r)
-	dbs, err := client.AllDBs()
+	dbs, err := client.AllDBs(r.Context())
 	if err != nil {
 		return err
 	}
@@ -235,7 +235,7 @@ func createDB(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", typeJSON)
 	params := getParams(r)
 	client := getClient(r)
-	if err := client.CreateDB(params["db"]); err != nil {
+	if err := client.CreateDB(r.Context(), params["db"]); err != nil {
 		return err
 	}
 	return json.NewEncoder(w).Encode(map[string]interface{}{
@@ -246,7 +246,7 @@ func createDB(w http.ResponseWriter, r *http.Request) error {
 func dbExists(w http.ResponseWriter, r *http.Request) error {
 	params := getParams(r)
 	client := getClient(r)
-	exists, err := client.DBExists(params["db"])
+	exists, err := client.DBExists(r.Context(), params["db"])
 	if err != nil {
 		return err
 	}

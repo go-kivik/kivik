@@ -26,6 +26,9 @@ case "$1" in
             --exclude="Errors unhandled\..*\(gas\)"  # This is an annoying duplicate of errcheck
     ;;
     "coverage")
+        # Use only CouchDB 2.0 for the coverage tests, primarily because CouchDB
+        # is sporadic with failures, and leads to fluctuating coverage stats.
+        unset KIVIK_TEST_DSN_COUCH16
         echo "" > coverage.txt
 
         TEST_PKGS=$(find -name "*_test.go" | grep -v /vendor/ | grep -v /pouchdb | xargs dirname | sort -u | sed -e "s#^.#github.com/flimzy/kivik#" )

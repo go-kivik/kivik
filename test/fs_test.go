@@ -3,6 +3,7 @@
 package test
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -20,7 +21,7 @@ func TestFS(t *testing.T) {
 	}
 	os.RemoveAll(tempDir)       // So the driver can re-create it as desired
 	defer os.RemoveAll(tempDir) // To clean up after tests
-	client, err := kivik.New("fs", tempDir)
+	client, err := kivik.New(context.Background(), "fs", tempDir)
 	if err != nil {
 		t.Errorf("Failed to connect to FS driver: %s\n", err)
 		return

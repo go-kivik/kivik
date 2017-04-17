@@ -1,6 +1,8 @@
 package db
 
 import (
+	"context"
+
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/test/kt"
 )
@@ -12,11 +14,11 @@ func init() {
 func getAttachment(ctx *kt.Context) {
 	ctx.RunRW(func(ctx *kt.Context) {
 		dbname := ctx.TestDBName()
-		defer ctx.Admin.DestroyDB(dbname)
-		if err := ctx.Admin.CreateDB(dbname); err != nil {
+		defer ctx.Admin.DestroyDB(context.Background(), dbname)
+		if err := ctx.Admin.CreateDB(context.Background(), dbname); err != nil {
 			ctx.Fatalf("Failed to create db: %s", err)
 		}
-		adb, err := ctx.Admin.DB(dbname)
+		adb, err := ctx.Admin.DB(context.Background(), dbname)
 		if err != nil {
 			ctx.Fatalf("Failed to open db: %s", err)
 		}
@@ -30,7 +32,7 @@ func getAttachment(ctx *kt.Context) {
 				},
 			},
 		}
-		if _, err = adb.Put("foo", doc); err != nil {
+		if _, err = adb.Put(context.Background(), "foo", doc); err != nil {
 			ctx.Fatalf("Failed to create doc: %s", err)
 		}
 
@@ -43,7 +45,7 @@ func getAttachment(ctx *kt.Context) {
 				},
 			},
 		}
-		if _, err = adb.Put("_design/foo", ddoc); err != nil {
+		if _, err = adb.Put(context.Background(), "_design/foo", ddoc); err != nil {
 			ctx.Fatalf("Failed to create design doc: %s", err)
 		}
 
@@ -67,11 +69,11 @@ func getAttachment(ctx *kt.Context) {
 func testGetAttachments(ctx *kt.Context, client *kivik.Client, dbname, docID, filename string) {
 	ctx.Run(docID+"/"+filename, func(ctx *kt.Context) {
 		ctx.Parallel()
-		db, err := client.DB(dbname)
+		db, err := client.DB(context.Background(), dbname)
 		if err != nil {
 			ctx.Fatalf("Failed to connect to db")
 		}
-		att, err := db.GetAttachment(docID, "", filename)
+		att, err := db.GetAttachment(context.Background(), docID, "", filename)
 		if !ctx.IsExpectedSuccess(err) {
 			return
 		}

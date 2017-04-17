@@ -1,10 +1,9 @@
 package couchdb
 
 import (
+	"context"
 	"encoding/json"
 	"io"
-
-	"golang.org/x/net/context"
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"

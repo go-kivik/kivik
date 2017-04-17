@@ -1,6 +1,8 @@
 package db
 
 import (
+	"context"
+
 	"github.com/flimzy/diff"
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/test/kt"
@@ -20,11 +22,11 @@ type testDoc struct {
 func get(ctx *kt.Context) {
 	ctx.RunRW(func(ctx *kt.Context) {
 		dbName := ctx.TestDBName()
-		defer ctx.Admin.DestroyDB(dbName)
-		if err := ctx.Admin.CreateDB(dbName); err != nil {
+		defer ctx.Admin.DestroyDB(context.Background(), dbName)
+		if err := ctx.Admin.CreateDB(context.Background(), dbName); err != nil {
 			ctx.Fatalf("Failed to create test db: %s", err)
 		}
-		db, err := ctx.Admin.DB(dbName)
+		db, err := ctx.Admin.DB(context.Background(), dbName)
 		if err != nil {
 			ctx.Fatalf("Failed to connect to test db: %s", err)
 		}
@@ -34,7 +36,7 @@ func get(ctx *kt.Context) {
 			Name: "Robert",
 			Age:  32,
 		}
-		rev, err := db.Put(doc.ID, doc)
+		rev, err := db.Put(context.Background(), doc.ID, doc)
 		if err != nil {
 			ctx.Fatalf("Failed to create doc in test db: %s", err)
 		}
@@ -44,7 +46,7 @@ func get(ctx *kt.Context) {
 			ID:   "_design/foo",
 			Name: "Designer",
 		}
-		rev, err = db.Put(ddoc.ID, ddoc)
+		rev, err = db.Put(context.Background(), ddoc.ID, ddoc)
 		if err != nil {
 			ctx.Fatalf("Failed to create design doc in test db: %s", err)
 		}
@@ -54,7 +56,7 @@ func get(ctx *kt.Context) {
 			ID:   "_local/foo",
 			Name: "Designer",
 		}
-		rev, err = db.Put(local.ID, local)
+		rev, err = db.Put(context.Background(), local.ID, local)
 		if err != nil {
 			ctx.Fatalf("Failed to create local doc in test db: %s", err)
 		}
@@ -63,7 +65,7 @@ func get(ctx *kt.Context) {
 		ctx.Run("group", func(ctx *kt.Context) {
 			ctx.RunAdmin(func(ctx *kt.Context) {
 				ctx.Parallel()
-				db, err := ctx.Admin.DB(dbName)
+				db, err := ctx.Admin.DB(context.Background(), dbName)
 				if !ctx.IsExpectedSuccess(err) {
 					return
 				}
@@ -74,7 +76,7 @@ func get(ctx *kt.Context) {
 			})
 			ctx.RunNoAuth(func(ctx *kt.Context) {
 				ctx.Parallel()
-				db, err := ctx.NoAuth.DB(dbName)
+				db, err := ctx.NoAuth.DB(context.Background(), dbName)
 				if !ctx.IsExpectedSuccess(err) {
 					return
 				}
@@ -91,7 +93,7 @@ func testGet(ctx *kt.Context, db *kivik.DB, expectedDoc *testDoc) {
 	ctx.Run(expectedDoc.ID, func(ctx *kt.Context) {
 		ctx.Parallel()
 		doc := &testDoc{}
-		err := db.Get(expectedDoc.ID, &doc, nil)
+		err := db.Get(context.Background(), expectedDoc.ID, &doc)
 		if !ctx.IsExpectedSuccess(err) {
 			return
 		}

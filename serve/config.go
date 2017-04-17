@@ -13,15 +13,15 @@ import (
 func defaultConfig() *config.Config {
 	ctx := context.Background()
 	conf := memconf.New()
-	conf.SetContext(ctx, "log", "level", "info")
-	conf.SetContext(ctx, "httpd", "enable_compression", "true")
-	conf.SetContext(ctx, "httpd", "compression_level", "8")
-	conf.SetContext(ctx, "httpd", "port", "5984")
+	conf.Set(ctx, "log", "level", "info")
+	conf.Set(ctx, "httpd", "enable_compression", "true")
+	conf.Set(ctx, "httpd", "compression_level", "8")
+	conf.Set(ctx, "httpd", "port", "5984")
 	return config.New(conf)
 }
 
 func getConfig(w http.ResponseWriter, r *http.Request) error {
-	conf, err := GetService(r).Config().GetAll()
+	conf, err := GetService(r).Config().GetAll(r.Context())
 	if err != nil {
 		return err
 	}
@@ -33,7 +33,7 @@ func getConfigSection(w http.ResponseWriter, r *http.Request) error {
 	if !ok {
 		return errors.Status(http.StatusBadRequest, "section required")
 	}
-	conf, err := GetService(r).Config().GetSection(sec)
+	conf, err := GetService(r).Config().GetSection(r.Context(), sec)
 	if err != nil {
 		return err
 	}
@@ -49,7 +49,7 @@ func getConfigItem(w http.ResponseWriter, r *http.Request) error {
 	if !ok {
 		return errors.Status(http.StatusBadRequest, "key required")
 	}
-	conf, err := GetService(r).Config().Get(sec, key)
+	conf, err := GetService(r).Config().Get(r.Context(), sec, key)
 	if err != nil {
 		return err
 	}

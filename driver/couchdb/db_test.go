@@ -1,21 +1,21 @@
 package couchdb
 
 import (
+	"context"
 	"io"
 	"testing"
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
-	"github.com/flimzy/kivik/test/kt"
 )
 
 func TestAllDocs(t *testing.T) {
 	client := getClient(t)
-	db, err := client.DBContext(kt.CTX, "_users", kivik.Options{"force_commit": true})
+	db, err := client.DB(context.Background(), "_users", kivik.Options{"force_commit": true})
 	if err != nil {
 		t.Fatalf("Failed to connect to db: %s", err)
 	}
-	rows, err := db.AllDocsContext(kt.CTX, map[string]interface{}{
+	rows, err := db.AllDocs(context.Background(), map[string]interface{}{
 		"include_docs": true,
 	})
 	if err != nil {
@@ -35,11 +35,11 @@ func TestAllDocs(t *testing.T) {
 
 func TestDBInfo(t *testing.T) {
 	client := getClient(t)
-	db, err := client.DBContext(kt.CTX, "_users", kivik.Options{"force_commit": true})
+	db, err := client.DB(context.Background(), "_users", kivik.Options{"force_commit": true})
 	if err != nil {
 		t.Fatalf("Failed to connect to db: %s", err)
 	}
-	info, err := db.InfoContext(kt.CTX)
+	info, err := db.Info(context.Background())
 	if err != nil {
 		t.Fatalf("Failed: %s", err)
 	}

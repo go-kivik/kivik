@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"regexp"
 
 	"github.com/flimzy/kivik"
@@ -22,7 +23,7 @@ func info(ctx *kt.Context) {
 
 func testServerInfo(ctx *kt.Context, client *kivik.Client) {
 	ctx.Parallel()
-	info, err := client.ServerInfo()
+	info, err := client.ServerInfo(context.Background())
 	if !ctx.IsExpectedSuccess(err) {
 		return
 	}

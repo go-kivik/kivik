@@ -1,10 +1,10 @@
 package serve
 
 import (
+	"context"
 	"testing"
 
 	"github.com/flimzy/kivik/authdb"
-	"github.com/flimzy/kivik/test/kt"
 )
 
 type validateTest struct {
@@ -26,7 +26,7 @@ func TestValidateCookie(t *testing.T) {
 	for _, test := range tests {
 		func(test validateTest) {
 			t.Run(test.Name, func(t *testing.T) {
-				valid, err := s.ValidateCookie(kt.CTX, test.User, test.Cookie)
+				valid, err := s.ValidateCookie(context.Background(), test.User, test.Cookie)
 				var errMsg string
 				if err != nil {
 					errMsg = err.Error()
@@ -97,7 +97,7 @@ func TestCreateAuthToken(t *testing.T) {
 	for _, test := range tests {
 		func(test tokenTest) {
 			t.Run(test.Name, func(t *testing.T) {
-				result, err := s.CreateAuthToken(kt.CTX, test.Name, test.Salt, test.Created)
+				result, err := s.CreateAuthToken(context.Background(), test.Name, test.Salt, test.Created)
 				var errMsg string
 				if err != nil {
 					errMsg = err.Error()

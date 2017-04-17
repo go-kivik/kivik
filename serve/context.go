@@ -1,12 +1,12 @@
 package serve
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/dimfeld/httptreemux"
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/auth"
-	"golang.org/x/net/context"
 )
 
 type contextKey struct {

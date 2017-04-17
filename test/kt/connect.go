@@ -9,9 +9,6 @@ import (
 	"github.com/flimzy/kivik"
 )
 
-// CTX is a background context for testing.
-var CTX = context.Background()
-
 // DSN returns a testing DSN from the environment.
 func DSN(t *testing.T) string {
 	for _, env := range []string{"KIVIK_TEST_DSN_COUCH16", "KIVIK_TEST_DSN_COUCH20", "KIVIK_TEST_DSN_CLOUDANT"} {
@@ -36,7 +33,7 @@ func NoAuthDSN(t *testing.T) string {
 }
 
 func connect(dsn string, t *testing.T) *kivik.Client {
-	client, err := kivik.New("couch", dsn)
+	client, err := kivik.New(context.Background(), "couch", dsn)
 	if err != nil {
 		t.Fatalf("Failed to connect to '%s': %s", dsn, err)
 	}

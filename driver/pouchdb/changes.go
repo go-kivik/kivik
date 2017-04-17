@@ -53,7 +53,7 @@ func (c *changesFeed) Close() error {
 	return nil
 }
 
-func (d *db) ChangesContext(ctx context.Context, options map[string]interface{}) (driver.Rows, error) {
+func (d *db) Changes(ctx context.Context, options map[string]interface{}) (driver.Rows, error) {
 	opts := map[string]interface{}{
 		"live":    true,
 		"timeout": false,

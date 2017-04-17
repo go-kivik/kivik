@@ -1,6 +1,8 @@
 package db
 
 import (
+	"context"
+
 	"github.com/flimzy/diff"
 
 	"github.com/flimzy/kivik"
@@ -46,16 +48,16 @@ func security(ctx *kt.Context) {
 	})
 	ctx.RunRW(func(ctx *kt.Context) {
 		dbname := ctx.TestDBName()
-		defer ctx.Admin.DestroyDB(dbname)
-		if err := ctx.Admin.CreateDB(dbname); err != nil {
+		defer ctx.Admin.DestroyDB(context.Background(), dbname)
+		if err := ctx.Admin.CreateDB(context.Background(), dbname); err != nil {
 			ctx.Fatalf("Failed to create db: %s", err)
 		}
-		db, err := ctx.Admin.DB(dbname)
+		db, err := ctx.Admin.DB(context.Background(), dbname)
 		if err != nil {
 			ctx.Fatalf("Failed to open db: %s", err)
 		}
 		err = kt.Retry(func() error {
-			return db.SetSecurity(sec)
+			return db.SetSecurity(context.Background(), sec)
 		})
 		if err != nil {
 			ctx.Fatalf("Failed to set security: %s", err)
@@ -88,10 +90,10 @@ func testSetSecurityTests(ctx *kt.Context, client *kivik.Client) {
 	ctx.Run("Exists", func(ctx *kt.Context) {
 		ctx.Parallel()
 		dbname := ctx.TestDBName()
-		if err := ctx.Admin.CreateDB(dbname); err != nil {
+		if err := ctx.Admin.CreateDB(context.Background(), dbname); err != nil {
 			ctx.Fatalf("Failed to create db: %s", err)
 		}
-		defer ctx.Admin.DestroyDB(dbname)
+		defer ctx.Admin.DestroyDB(context.Background(), dbname)
 		testSetSecurity(ctx, client, dbname)
 	})
 	ctx.Run("NotExists", func(ctx *kt.Context) {
@@ -102,22 +104,22 @@ func testSetSecurityTests(ctx *kt.Context, client *kivik.Client) {
 }
 
 func testSetSecurity(ctx *kt.Context, client *kivik.Client, dbname string) {
-	db, err := client.DB(dbname)
+	db, err := client.DB(context.Background(), dbname)
 	if err != nil {
 		ctx.Fatalf("Failed to open db: %s", err)
 	}
 	err = kt.Retry(func() error {
-		return db.SetSecurity(sec)
+		return db.SetSecurity(context.Background(), sec)
 	})
 	ctx.CheckError(err)
 }
 
 func testGetSecurity(ctx *kt.Context, client *kivik.Client, dbname string, expected *kivik.Security) {
-	db, err := client.DB(dbname)
+	db, err := client.DB(context.Background(), dbname)
 	if err != nil {
 		ctx.Fatalf("Failed to open db: %s", err)
 	}
-	sec, err := db.Security()
+	sec, err := db.Security(context.Background())
 	if !ctx.IsExpectedSuccess(err) {
 		return
 	}

@@ -31,7 +31,7 @@ func deJSONify(i interface{}) (interface{}, error) {
 	return x, errors.WrapStatus(kivik.StatusBadRequest, err)
 }
 
-func (d *db) CreateIndexContext(ctx context.Context, ddoc, name string, index interface{}) error {
+func (d *db) CreateIndex(ctx context.Context, ddoc, name string, index interface{}) error {
 	if d.client.Compat == CompatCouch16 {
 		return kivik.ErrNotImplemented
 	}
@@ -56,7 +56,7 @@ func (d *db) CreateIndexContext(ctx context.Context, ddoc, name string, index in
 	return err
 }
 
-func (d *db) GetIndexesContext(ctx context.Context) ([]driver.Index, error) {
+func (d *db) GetIndexes(ctx context.Context) ([]driver.Index, error) {
 	if d.client.Compat == CompatCouch16 {
 		return nil, kivik.ErrNotImplemented
 	}
@@ -67,13 +67,13 @@ func (d *db) GetIndexesContext(ctx context.Context) ([]driver.Index, error) {
 	return result.Indexes, err
 }
 
-func (d *db) DeleteIndexContext(ctx context.Context, ddoc, name string) error {
+func (d *db) DeleteIndex(ctx context.Context, ddoc, name string) error {
 	path := fmt.Sprintf("_index/%s/json/%s", ddoc, name)
 	_, err := d.Client.DoError(ctx, kivik.MethodDelete, d.path(path, nil), nil)
 	return err
 }
 
-func (d *db) FindContext(ctx context.Context, query interface{}) (driver.Rows, error) {
+func (d *db) Find(ctx context.Context, query interface{}) (driver.Rows, error) {
 	if d.client.Compat == CompatCouch16 {
 		return nil, kivik.ErrNotImplemented
 	}

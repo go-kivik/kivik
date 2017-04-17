@@ -1,6 +1,7 @@
 package test
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"net/http"
@@ -77,7 +78,7 @@ type Options struct {
 // CleanupTests attempts to clean up any stray test databases created by a
 // previous test run.
 func CleanupTests(driver, dsn string, verbose bool) error {
-	client, err := kivik.New(driver, dsn)
+	client, err := kivik.New(context.Background(), driver, dsn)
 	if err != nil {
 		return err
 	}
@@ -89,7 +90,7 @@ func CleanupTests(driver, dsn string, verbose bool) error {
 }
 
 func doCleanup(client *kivik.Client, verbose bool) (int, error) {
-	allDBs, err := client.AllDBs()
+	allDBs, err := client.AllDBs(context.Background())
 	if err != nil {
 		return 0, err
 	}
@@ -101,7 +102,7 @@ func doCleanup(client *kivik.Client, verbose bool) (int, error) {
 			if verbose {
 				fmt.Printf("\t--- Deleting %s\n", dbName)
 			}
-			err := client.DestroyDB(dbName)
+			err := client.DestroyDB(context.Background(), dbName)
 			if err != nil && errors.StatusCode(err) != http.StatusNotFound {
 				return count, err
 			}
@@ -193,7 +194,7 @@ func runTests(ctx *kt.Context, suite string, t *testing.T) {
 }
 
 func detectCompatibility(client *kivik.Client) ([]string, error) {
-	info, err := client.ServerInfo()
+	info, err := client.ServerInfo(context.Background())
 	if err != nil {
 		return nil, err
 	}
@@ -224,24 +225,24 @@ func connectClients(driverName, dsn string, t *testing.T) (*kt.Context, error) {
 	}
 	clients := &kt.Context{}
 	t.Logf("Connecting to %s ...\n", dsn)
-	if client, err := kivik.New(driverName, dsn); err == nil {
+	if client, err := kivik.New(context.Background(), driverName, dsn); err == nil {
 		clients.Admin = client
 	} else {
 		return nil, err
 	}
-	if chttpClient, err := chttp.New(dsn); err == nil {
+	if chttpClient, err := chttp.New(context.Background(), dsn); err == nil {
 		clients.CHTTPAdmin = chttpClient
 	} else {
 		return nil, err
 	}
 
 	t.Logf("Connecting to %s ...\n", noAuthDSN)
-	if client, err := kivik.New(driverName, noAuthDSN); err == nil {
+	if client, err := kivik.New(context.Background(), driverName, noAuthDSN); err == nil {
 		clients.NoAuth = client
 	} else {
 		return nil, err
 	}
-	if chttpClient, err := chttp.New(noAuthDSN); err == nil {
+	if chttpClient, err := chttp.New(context.Background(), noAuthDSN); err == nil {
 		clients.CHTTPNoAuth = chttpClient
 	} else {
 		return nil, err

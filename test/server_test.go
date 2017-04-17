@@ -24,22 +24,22 @@ type customDriver struct {
 	driver.Client
 }
 
-func (cd customDriver) NewClientContext(_ context.Context, _ string) (driver.Client, error) {
+func (cd customDriver) NewClient(_ context.Context, _ string) (driver.Client, error) {
 	return cd, nil
 }
 
 func TestServer(t *testing.T) {
-	memClient, _ := kivik.New("memory", "")
+	memClient, _ := kivik.New(context.Background(), "memory", "")
 	kivik.Register("custom", customDriver{proxy.NewClient(memClient)})
 	service := serve.Service{}
-	backend, err := kivik.New("custom", "")
+	backend, err := kivik.New(context.Background(), "custom", "")
 	if err != nil {
 		t.Fatalf("Failed to connect to custom driver: %s", err)
 	}
 	conf := config.New(memconf.New())
-	conf.Set("log", "capacity", "10")
+	conf.Set(context.Background(), "log", "capacity", "10")
 	// Set admin/abc123 credentials
-	conf.Set("admins", "admin", "-pbkdf2-792221164f257de22ad72a8e94760388233e5714,7897f3451f59da741c87ec5f10fe7abe,10")
+	conf.Set(context.Background(), "admins", "admin", "-pbkdf2-792221164f257de22ad72a8e94760388233e5714,7897f3451f59da741c87ec5f10fe7abe,10")
 	service.Client = backend
 	service.UserStore = confadmin.New(conf)
 	service.AuthHandlers = []auth.Handler{

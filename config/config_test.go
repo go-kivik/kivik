@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/flimzy/diff"
+
 	"github.com/flimzy/kivik/driver"
 )
 
@@ -15,7 +16,7 @@ type testMinConfig struct {
 
 var _ driver.Config = &testMinConfig{}
 
-func (c *testMinConfig) GetAllContext(_ context.Context) (map[string]map[string]string, error) {
+func (c *testMinConfig) GetAll(_ context.Context) (map[string]map[string]string, error) {
 	c.log = append(c.log, "GetAll()")
 	return map[string]map[string]string{
 		"fruit": map[string]string{
@@ -24,12 +25,12 @@ func (c *testMinConfig) GetAllContext(_ context.Context) (map[string]map[string]
 	}, nil
 }
 
-func (c *testMinConfig) SetContext(_ context.Context, secName, key, value string) error {
+func (c *testMinConfig) Set(_ context.Context, secName, key, value string) error {
 	c.log = append(c.log, fmt.Sprintf("Set(%s,%s,%s)", secName, key, value))
 	return nil
 }
 
-func (c *testMinConfig) DeleteContext(_ context.Context, secName, key string) error {
+func (c *testMinConfig) Delete(_ context.Context, secName, key string) error {
 	c.log = append(c.log, fmt.Sprintf("Delete(%s,%s)", secName, key))
 	return nil
 }
@@ -37,21 +38,21 @@ func (c *testMinConfig) DeleteContext(_ context.Context, secName, key string) er
 func TestMinimalConfiger(t *testing.T) {
 	tc := &testMinConfig{}
 	c := &Config{Config: tc}
-	_, _ = c.GetAll()
-	_ = c.Set("foo", "bar", "baz")
-	_ = c.Delete("foo", "bar")
-	if _, err := c.GetSection("fruit"); err != nil {
+	_, _ = c.GetAll(context.Background())
+	_ = c.Set(context.Background(), "foo", "bar", "baz")
+	_ = c.Delete(context.Background(), "foo", "bar")
+	if _, err := c.GetSection(context.Background(), "fruit"); err != nil {
 		t.Errorf("Failed to get existing section")
 	}
-	if _, err := c.GetSection("foo"); err != nil {
+	if _, err := c.GetSection(context.Background(), "foo"); err != nil {
 		t.Errorf("Failed to get non-existant section")
 	}
-	if _, err := c.Get("fruit", "apple"); err != nil {
+	if _, err := c.Get(context.Background(), "fruit", "apple"); err != nil {
 		t.Errorf("Failed to get existing value")
 	}
 
 	// Existing section, non-existing key
-	_, err := c.Get("fruit", "orange")
+	_, err := c.Get(context.Background(), "fruit", "orange")
 	if err == nil {
 		t.Errorf("Expected NotFound for non-existant key")
 	}
@@ -61,7 +62,7 @@ func TestMinimalConfiger(t *testing.T) {
 	}
 
 	// Non-existing section
-	_, err = c.Get("animals", "duck")
+	_, err = c.Get(context.Background(), "animals", "duck")
 	if err == nil {
 		t.Errorf("Expected NotFound for non-existant key")
 	}
@@ -89,7 +90,7 @@ type testSecConfig struct {
 	log []string
 }
 
-func (c *testSecConfig) GetSectionContext(_ context.Context, secName string) (map[string]string, error) {
+func (c *testSecConfig) GetSection(_ context.Context, secName string) (map[string]string, error) {
 	c.log = append(c.log, fmt.Sprintf("GetSection(%s)", secName))
 	return nil, nil
 }
@@ -97,8 +98,8 @@ func (c *testSecConfig) GetSectionContext(_ context.Context, secName string) (ma
 func TestSecConfiger(t *testing.T) {
 	tc := &testSecConfig{}
 	c := &Config{Config: tc}
-	_, _ = c.GetSection("fruit")
-	_, _ = c.Get("fruit", "salad")
+	_, _ = c.GetSection(context.Background(), "fruit")
+	_, _ = c.Get(context.Background(), "fruit", "salad")
 	expectedMinLog := []string{}
 	expectedSecLog := []string{
 		"GetSection(fruit)",
@@ -117,7 +118,7 @@ type testFullConfig struct {
 	log []string
 }
 
-func (c *testFullConfig) GetContext(_ context.Context, secName, key string) (string, error) {
+func (c *testFullConfig) Get(_ context.Context, secName, key string) (string, error) {
 	c.log = append(c.log, fmt.Sprintf("Get(%s,%s)", secName, key))
 	return "", nil
 }
@@ -125,8 +126,8 @@ func (c *testFullConfig) GetContext(_ context.Context, secName, key string) (str
 func TestFullConfiger(t *testing.T) {
 	tc := &testFullConfig{}
 	c := &Config{Config: tc}
-	_, _ = c.GetSection("fruit")
-	_, _ = c.Get("fruit", "salad")
+	_, _ = c.GetSection(context.Background(), "fruit")
+	_, _ = c.Get(context.Background(), "fruit", "salad")
 	expectedMinLog := []string{}
 	expectedSecLog := []string{
 		"GetSection(fruit)",

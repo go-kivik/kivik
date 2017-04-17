@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"strings"
 
 	"github.com/flimzy/kivik"
@@ -14,18 +15,18 @@ func init() {
 func rev(ctx *kt.Context) {
 	ctx.RunRW(func(ctx *kt.Context) {
 		dbName := ctx.TestDBName()
-		defer ctx.Admin.DestroyDB(dbName)
-		if err := ctx.Admin.CreateDB(dbName); err != nil {
+		defer ctx.Admin.DestroyDB(context.Background(), dbName)
+		if err := ctx.Admin.CreateDB(context.Background(), dbName); err != nil {
 			ctx.Fatalf("Failed to create test db: %s", err)
 		}
-		db, err := ctx.Admin.DB(dbName)
+		db, err := ctx.Admin.DB(context.Background(), dbName)
 		if err != nil {
 			ctx.Fatalf("Failed to connect to test db: %s", err)
 		}
 		doc := &testDoc{
 			ID: "bob",
 		}
-		rev, err := db.Put(doc.ID, doc)
+		rev, err := db.Put(context.Background(), doc.ID, doc)
 		if err != nil {
 			ctx.Fatalf("Failed to create doc in test db: %s", err)
 		}
@@ -34,7 +35,7 @@ func rev(ctx *kt.Context) {
 		ddoc := &testDoc{
 			ID: "_design/foo",
 		}
-		rev, err = db.Put(ddoc.ID, ddoc)
+		rev, err = db.Put(context.Background(), ddoc.ID, ddoc)
 		if err != nil {
 			ctx.Fatalf("Failed to create design doc in test db: %s", err)
 		}
@@ -43,7 +44,7 @@ func rev(ctx *kt.Context) {
 		local := &testDoc{
 			ID: "_local/foo",
 		}
-		rev, err = db.Put(local.ID, local)
+		rev, err = db.Put(context.Background(), local.ID, local)
 		if err != nil {
 			ctx.Fatalf("Failed to create local doc in test db: %s", err)
 		}
@@ -52,7 +53,7 @@ func rev(ctx *kt.Context) {
 		ctx.Run("group", func(ctx *kt.Context) {
 			ctx.RunAdmin(func(ctx *kt.Context) {
 				ctx.Parallel()
-				db, err := ctx.Admin.DB(dbName)
+				db, err := ctx.Admin.DB(context.Background(), dbName)
 				if !ctx.IsExpectedSuccess(err) {
 					return
 				}
@@ -63,7 +64,7 @@ func rev(ctx *kt.Context) {
 			})
 			ctx.RunNoAuth(func(ctx *kt.Context) {
 				ctx.Parallel()
-				db, err := ctx.NoAuth.DB(dbName)
+				db, err := ctx.NoAuth.DB(context.Background(), dbName)
 				if !ctx.IsExpectedSuccess(err) {
 					return
 				}
@@ -79,12 +80,12 @@ func rev(ctx *kt.Context) {
 func testRev(ctx *kt.Context, db *kivik.DB, expectedDoc *testDoc) {
 	ctx.Run(expectedDoc.ID, func(ctx *kt.Context) {
 		ctx.Parallel()
-		rev, err := db.Rev(expectedDoc.ID)
+		rev, err := db.Rev(context.Background(), expectedDoc.ID)
 		if !ctx.IsExpectedSuccess(err) {
 			return
 		}
 		doc := &testDoc{}
-		if err = db.Get(expectedDoc.ID, &doc, nil); err != nil {
+		if err = db.Get(context.Background(), expectedDoc.ID, &doc); err != nil {
 			ctx.Fatalf("Failed to get doc: %s", err)
 		}
 		if strings.HasPrefix(expectedDoc.ID, "_local/") {

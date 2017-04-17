@@ -1,6 +1,8 @@
 package db
 
 import (
+	"context"
+
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/test/kt"
 )
@@ -12,11 +14,11 @@ func init() {
 func copy(ctx *kt.Context) {
 	ctx.RunRW(func(ctx *kt.Context) {
 		dbname := ctx.TestDBName()
-		defer ctx.Admin.DestroyDB(dbname)
-		if err := ctx.Admin.CreateDB(dbname); err != nil {
+		defer ctx.Admin.DestroyDB(context.Background(), dbname)
+		if err := ctx.Admin.CreateDB(context.Background(), dbname); err != nil {
 			ctx.Fatalf("Failed to create db: %s", err)
 		}
-		db, err := ctx.Admin.DB(dbname)
+		db, err := ctx.Admin.DB(context.Background(), dbname)
 		if err != nil {
 			ctx.Fatalf("Failed to open db: %s", err)
 		}
@@ -25,7 +27,7 @@ func copy(ctx *kt.Context) {
 			"_id":  "foo",
 			"name": "Robert",
 		}
-		rev, err := db.Put(doc["_id"], doc)
+		rev, err := db.Put(context.Background(), doc["_id"], doc)
 		if err != nil {
 			ctx.Fatalf("Failed to create source doc: %s", err)
 		}
@@ -35,7 +37,7 @@ func copy(ctx *kt.Context) {
 			"_id":  "_design/foo",
 			"name": "Robert",
 		}
-		rev, err = db.Put(ddoc["_id"], ddoc)
+		rev, err = db.Put(context.Background(), ddoc["_id"], ddoc)
 		if err != nil {
 			ctx.Fatalf("Failed to create source design doc: %s", err)
 		}
@@ -45,7 +47,7 @@ func copy(ctx *kt.Context) {
 			"_id":  "_local/foo",
 			"name": "Robert",
 		}
-		rev, err = db.Put(local["_id"], local)
+		rev, err = db.Put(context.Background(), local["_id"], local)
 		if err != nil {
 			ctx.Fatalf("Failed to create source design doc: %s", err)
 		}
@@ -69,12 +71,12 @@ func copy(ctx *kt.Context) {
 func copyTest(ctx *kt.Context, client *kivik.Client, dbname string, source map[string]string) {
 	ctx.Run(source["_id"], func(ctx *kt.Context) {
 		ctx.Parallel()
-		db, err := client.DB(dbname)
+		db, err := client.DB(context.Background(), dbname)
 		if err != nil {
 			ctx.Fatalf("Failed to open db: %s", err)
 		}
 		targetID := ctx.TestDBName()
-		rev, err := db.Copy(targetID, source["_id"], nil)
+		rev, err := db.Copy(context.Background(), targetID, source["_id"])
 		if !ctx.IsExpectedSuccess(err) {
 			return
 		}
@@ -84,15 +86,15 @@ func copyTest(ctx *kt.Context, client *kivik.Client, dbname string, source map[s
 				"name": "Bob",
 				"_rev": rev,
 			}
-			if _, err := db.Put(targetID, copy); err != nil {
+			if _, err := db.Put(context.Background(), targetID, copy); err != nil {
 				ctx.Fatalf("Failed to update copy: %s", err)
 			}
 			targetID2 := ctx.TestDBName()
-			if _, err := db.Copy(targetID2, targetID, kivik.Options{"rev": rev}); err != nil {
+			if _, err := db.Copy(context.Background(), targetID2, targetID, kivik.Options{"rev": rev}); err != nil {
 				ctx.Fatalf("Failed to copy doc with rev option: %s", err)
 			}
 			var readCopy map[string]string
-			if err := db.Get(targetID2, &readCopy, nil); err != nil {
+			if err := db.Get(context.Background(), targetID2, &readCopy); err != nil {
 				ctx.Fatalf("Failed to read copy: %s", err)
 			}
 			if readCopy["name"] != "Robert" {

@@ -1,6 +1,7 @@
 package test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/flimzy/kivik"
@@ -9,7 +10,7 @@ import (
 )
 
 func TestMemory(t *testing.T) {
-	client, err := kivik.New("memory", "")
+	client, err := kivik.New(context.Background(), "memory", "")
 	if err != nil {
 		t.Errorf("Failed to connect to memory driver: %s\n", err)
 		return

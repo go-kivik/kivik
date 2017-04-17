@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"time"
 
 	"github.com/flimzy/kivik"
@@ -29,15 +30,15 @@ const maxWait = 5 * time.Second
 func testChanges(ctx *kt.Context, client *kivik.Client) {
 	ctx.Parallel()
 	dbname := ctx.TestDBName()
-	defer ctx.Admin.DestroyDB(dbname)
-	if err := ctx.Admin.CreateDB(dbname); err != nil {
+	defer ctx.Admin.DestroyDB(context.Background(), dbname)
+	if err := ctx.Admin.CreateDB(context.Background(), dbname); err != nil {
 		ctx.Fatalf("Failed to create db: %s", err)
 	}
-	db, err := client.DB(dbname)
+	db, err := client.DB(context.Background(), dbname)
 	if err != nil {
 		ctx.Fatalf("failed to connect to db: %s", err)
 	}
-	changes, err := db.Changes(nil)
+	changes, err := db.Changes(context.Background())
 	if !ctx.IsExpectedSuccess(err) {
 		return
 	}
@@ -51,20 +52,20 @@ func testChanges(ctx *kt.Context, client *kivik.Client) {
 		ID:    ctx.TestDBName(),
 		Value: "foo",
 	}
-	rev, err := db.Put(doc.ID, doc)
+	rev, err := db.Put(context.Background(), doc.ID, doc)
 	if err != nil {
 		ctx.Fatalf("Failed to create doc: %s", err)
 	}
 	expected = append(expected, rev)
 	doc.Rev = rev
 	doc.Value = "bar"
-	rev, err = db.Put(doc.ID, doc)
+	rev, err = db.Put(context.Background(), doc.ID, doc)
 	if err != nil {
 		ctx.Fatalf("Failed to update doc: %s", err)
 	}
 	expected = append(expected, rev)
 	doc.Rev = rev
-	rev, err = db.Delete(doc.ID, doc.Rev)
+	rev, err = db.Delete(context.Background(), doc.ID, doc.Rev)
 	if err != nil {
 		ctx.Fatalf("Failed to delete doc: %s", err)
 	}

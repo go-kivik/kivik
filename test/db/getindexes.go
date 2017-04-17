@@ -1,6 +1,8 @@
 package db
 
 import (
+	"context"
+
 	"github.com/flimzy/diff"
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/test/kt"
@@ -45,15 +47,15 @@ func roGetIndexesTests(ctx *kt.Context, client *kivik.Client) {
 
 func rwGetIndexesTests(ctx *kt.Context, client *kivik.Client) {
 	dbname := ctx.TestDBName()
-	defer ctx.Admin.DestroyDB(dbname)
-	if err := ctx.Admin.CreateDB(dbname); err != nil {
+	defer ctx.Admin.DestroyDB(context.Background(), dbname)
+	if err := ctx.Admin.CreateDB(context.Background(), dbname); err != nil {
 		ctx.Fatalf("Failed to create db: %s", err)
 	}
-	dba, err := ctx.Admin.DB(dbname)
+	dba, err := ctx.Admin.DB(context.Background(), dbname)
 	if err != nil {
 		ctx.Fatalf("Failed to open db as admin: %s", err)
 	}
-	if err = dba.CreateIndex("foo", "bar", `{"fields":["foo"]}`); err != nil {
+	if err = dba.CreateIndex(context.Background(), "foo", "bar", `{"fields":["foo"]}`); err != nil {
 		ctx.Fatalf("Failed to create index: %s", err)
 	}
 	testGetIndexes(ctx, client, dbname, []kivik.Index{
@@ -72,11 +74,11 @@ func rwGetIndexesTests(ctx *kt.Context, client *kivik.Client) {
 }
 
 func testGetIndexes(ctx *kt.Context, client *kivik.Client, dbname string, expected interface{}) {
-	db, err := client.DB(dbname)
+	db, err := client.DB(context.Background(), dbname)
 	if err != nil {
 		ctx.Fatalf("Failed to open db: %s", err)
 	}
-	indexes, err := db.GetIndexes()
+	indexes, err := db.GetIndexes(context.Background())
 	if !ctx.IsExpectedSuccess(err) {
 		return
 	}

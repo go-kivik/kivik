@@ -32,7 +32,7 @@ func buildIndex(ddoc, name string, index interface{}) (*js.Object, error) {
 	return o, nil
 }
 
-func (d *db) CreateIndexContext(ctx context.Context, ddoc, name string, index interface{}) error {
+func (d *db) CreateIndex(ctx context.Context, ddoc, name string, index interface{}) error {
 	indexObj, err := buildIndex(ddoc, name, index)
 	if err != nil {
 		return err
@@ -41,7 +41,7 @@ func (d *db) CreateIndexContext(ctx context.Context, ddoc, name string, index in
 	return err
 }
 
-func (d *db) GetIndexesContext(ctx context.Context) (indexes []driver.Index, err error) {
+func (d *db) GetIndexes(ctx context.Context) (indexes []driver.Index, err error) {
 	defer bindings.RecoverError(&err)
 	result, err := d.db.GetIndexes(ctx)
 	if err != nil {
@@ -58,7 +58,7 @@ func (d *db) GetIndexesContext(ctx context.Context) (indexes []driver.Index, err
 // findIndex attempts to find the requested index definition
 func (d *db) findIndex(ctx context.Context, ddoc, name string) (interface{}, error) {
 	ddoc = "_design/" + strings.TrimPrefix(ddoc, "_design/")
-	indexes, err := d.GetIndexesContext(ctx)
+	indexes, err := d.GetIndexes(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func (d *db) findIndex(ctx context.Context, ddoc, name string) (interface{}, err
 	return nil, kivik.ErrNotFound
 }
 
-func (d *db) DeleteIndexContext(ctx context.Context, ddoc, name string) error {
+func (d *db) DeleteIndex(ctx context.Context, ddoc, name string) error {
 	index, err := d.findIndex(ctx, ddoc, name)
 	if err != nil {
 		return err
@@ -87,7 +87,7 @@ func (d *db) DeleteIndexContext(ctx context.Context, ddoc, name string) error {
 	return err
 }
 
-func (d *db) FindContext(ctx context.Context, query interface{}) (driver.Rows, error) {
+func (d *db) Find(ctx context.Context, query interface{}) (driver.Rows, error) {
 	result, err := d.db.Find(ctx, query)
 	if err != nil {
 		return nil, err

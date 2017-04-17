@@ -17,25 +17,14 @@ type HTTPError struct {
 
 func (e *HTTPError) Error() string {
 	if e.Reason == "" {
-		return fmt.Sprintf("%d %s", e.Code, http.StatusText(e.Code))
+		return http.StatusText(e.Code)
 	}
-	return fmt.Sprintf("%d %s: %s", e.Code, http.StatusText(e.Code), e.Reason)
+	return fmt.Sprintf("%s: %s", http.StatusText(e.Code), e.Reason)
 }
 
 // StatusCode returns the embedded status code.
 func (e *HTTPError) StatusCode() int {
 	return e.Code
-}
-
-// StatusCode returns the status code of the error.
-func StatusCode(err error) int {
-	if err == nil {
-		return 0
-	}
-	if httperr, ok := err.(*HTTPError); ok {
-		return httperr.Code
-	}
-	return http.StatusInternalServerError
 }
 
 // ResponseError returns an error from an *http.Response.

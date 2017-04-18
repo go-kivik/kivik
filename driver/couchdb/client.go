@@ -2,7 +2,6 @@ package couchdb
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/errors"
@@ -12,14 +11,6 @@ func (c *client) AllDBs(ctx context.Context, _ map[string]interface{}) ([]string
 	var allDBs []string
 	_, err := c.DoJSON(ctx, kivik.MethodGet, "/_all_dbs", nil, &allDBs)
 	return allDBs, err
-}
-
-func (c *client) UUIDs(ctx context.Context, count int) ([]string, error) {
-	var uuids struct {
-		UUIDs []string `json:"uuids"`
-	}
-	_, err := c.DoJSON(ctx, kivik.MethodGet, fmt.Sprintf("/_uuids?count=%d", count), nil, &uuids)
-	return uuids.UUIDs, err
 }
 
 func (c *client) DBExists(ctx context.Context, dbName string, _ map[string]interface{}) (bool, error) {

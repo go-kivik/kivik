@@ -52,13 +52,6 @@ type Authenticator interface {
 	Authenticate(ctx context.Context, authenticator interface{}) error
 }
 
-// UUIDer is an optional interface that may be implemented by a Client. Generally,
-// this should not be used, but it is part of the CouchDB spec, so it is included
-// for completeness.
-type UUIDer interface {
-	UUIDs(ctx context.Context, count int) ([]string, error)
-}
-
 // DBInfo provides statistics about a database.
 type DBInfo struct {
 	Name           string `json:"db_name"`

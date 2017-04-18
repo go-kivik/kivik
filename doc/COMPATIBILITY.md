@@ -46,6 +46,7 @@
 | GET /_restart                         | ⁿ/ₐ                   |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | GET /_stats                           | ⁿ/ₐ                   |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | GET /_utils                           | ⁿ/ₐ                   |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
+| GET /_uuids                           | ⁿ/ₐ                   |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | GET /_membership                      | ⁿ/ₐ                   | ❌<sup>[12](#kivikCluster)</sup> |   | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ
 | GET /favicon.ico                      | ⁿ/ₐ                  | ✅ | ❌ | ❌ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | POST /_session<sup>[6](#cookieAuth)</sup> | ⁿ/ₐ<sup>[13](#getSession)</sup> | ✅ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |

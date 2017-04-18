@@ -13,7 +13,6 @@ import (
 type CompleteClient interface {
 	driver.Client
 	driver.Authenticator
-	driver.UUIDer
 	driver.Configer
 }
 

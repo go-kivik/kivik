@@ -42,12 +42,6 @@ func init() {
 		// "DBExists/RW/Admin.exists":      true,
 		"DBExists/NoAuth.skip": true, // TODO
 
-		"UUIDs/Admin.counts":          []int{-1, 0, 1, 10},
-		"UUIDs.status":                http.StatusMethodNotAllowed, // FIXME: Implement UUIDs in the server
-		"UUIDs/Admin/-1Count.status":  http.StatusBadRequest,
-		"UUIDs/NoAuth.counts":         []int{-1, 0, 1, 10},
-		"UUIDs/NoAuth/-1Count.status": http.StatusBadRequest,
-
 		"Log/Admin/Offset-1000.status":        http.StatusBadRequest,
 		"Log/Admin/HTTP/TextBytes.status":     http.StatusBadRequest,
 		"Log/Admin/HTTP/NegativeBytes.status": http.StatusBadRequest,

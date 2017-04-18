@@ -64,10 +64,6 @@ func init() {
 		"DBExists/RW/group/Admin.exists":  true,
 		"DBExists/RW/group/NoAuth.exists": true,
 
-		"UUIDs.counts":                []int{-1, 0, 1, 10},
-		"UUIDs/Admin/-1Count.status":  kivik.StatusBadRequest,
-		"UUIDs/NoAuth/-1Count.status": kivik.StatusBadRequest,
-
 		"Log.skip": true, // This was removed in CouchDB 2.0
 
 		"ServerInfo.version":        `^2\.0\.0$`,

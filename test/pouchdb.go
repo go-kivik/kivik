@@ -12,7 +12,6 @@ func init() {
 		"PreCleanup.skip": true,
 
 		// Features which are not supported by PouchDB
-		"UUIDs.skip":       true,
 		"Log.skip":         true,
 		"Config.skip":      true,
 		"Flush.skip":       true,
@@ -74,7 +73,6 @@ func init() {
 	})
 	RegisterSuite(SuitePouchRemote, kt.SuiteConfig{
 		// Features which are not supported by PouchDB
-		"UUIDs.skip":       true,
 		"Log.skip":         true,
 		"Config.skip":      true,
 		"Flush.skip":       true,

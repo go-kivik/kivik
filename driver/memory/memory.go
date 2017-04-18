@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/pborman/uuid"
-
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/driver/common"
@@ -49,14 +47,6 @@ func (c *client) AllDBs(_ context.Context, _ map[string]interface{}) ([]string, 
 		dbs = append(dbs, k)
 	}
 	return dbs, nil
-}
-
-func (c *client) UUIDs(_ context.Context, count int) ([]string, error) {
-	uuids := make([]string, count)
-	for i := 0; i < count; i++ {
-		uuids[i] = uuid.New()
-	}
-	return uuids, nil
 }
 
 func (c *client) DBExists(_ context.Context, dbName string, _ map[string]interface{}) (bool, error) {

@@ -64,10 +64,6 @@ func init() {
 		"DBExists/RW/group/Admin.exists":  true,
 		"DBExists/RW/group/NoAuth.status": kivik.StatusUnauthorized,
 
-		"UUIDs.counts":                []int{-1, 0, 1, 10},
-		"UUIDs/Admin/-1Count.status":  kivik.StatusBadRequest,
-		"UUIDs/NoAuth/-1Count.status": kivik.StatusBadRequest,
-
 		"Log/Admin.status":              kivik.StatusForbidden,
 		"Log/NoAuth.status":             kivik.StatusUnauthorized,
 		"Log/Admin/Offset-1000.status":  kivik.StatusBadRequest,

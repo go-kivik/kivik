@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"time"
 )
 
 // Driver is the interface that must be implemented by a database driver.
@@ -41,30 +42,37 @@ type Client interface {
 	DB(ctx context.Context, dbName string, options map[string]interface{}) (DB, error)
 }
 
-// ReplicationState represents a snap-shot state of a replication, as provided
-// by the _active_tasks endpoint.
-type ReplicationState struct {
-	ReplicationID    string    `json:"_replication_id"`
-	Source           string    `json:"source"`
-	Target           string    `json:"target"`
-	StarTime         time.Time `json:"start_time"`
-	UpdateTime       time.Time // updated_on / time.Now() for pouchdb
-	EndTime          time.Time `json:"end_time"`
-	DocWriteFailures int64     `json:"doc_write_failures"`
-	DocsRead         int64     `json:"docs_read"`
-	DocsWritten      int64     `json:"docs_written"`
-	Progress         float64   `json:"progress"`
-	SourceSeq        string    `json:"source_seq"` // last_seq for PouchDB
-	Status           string    `json:"status"`
-	Error            error     `json:"-"`
+// Replication represents a _replicator document.
+type Replication interface {
+	// The following methods are called just once, when the Replication is first
+	// returned from Replicate() or GetReplications().
+	ReplicationID() string
+	Source() string
+	Target() string
+	StartTime() time.Time
+	EndTime() time.Time
+	State() string
+	Err() error
+
+	// These methods may be triggered by user actions.
+
+	// Cancel cancels a running replication.
+	Cancel(context.Context) error
+	// Delete deletes a replication, which cancels it if it is running.
+	Delete(context.Context) error
+	// Update fetches the latest replication state from the server.
+	Update(context.Context, *ReplicationInfo) error
 }
 
-// Replication represents an active or completed replication.
-type Replication interface {
-	// UpdateContext should fetch the current replication state from the server.
-	Update(context.Context, *ReplicationState) error
-	Cancel(context.Context) error
-	Delete(context.Context) error
+// ReplicationInfo represents a snap-shot state of a replication, as provided
+// by the _active_tasks endpoint.
+type ReplicationInfo struct {
+	StartTime        time.Time
+	EndTime          time.Time
+	DocWriteFailures int64
+	DocsRead         int64
+	DocsWritten      int64
+	Progress         float64
 }
 
 // ClientReplicator is an optional interface that may be implemented by a Client

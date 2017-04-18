@@ -2,89 +2,153 @@ package kivik
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/flimzy/kivik/driver"
 )
 
-// Replication represents an active or completed replication.
-type Replication struct {
-	// Constant values
+// ReplicationState represents a replication's state
+type ReplicationState string
 
-	ReplicationID string    // Available immediately
-	Source        string    // "
-	Target        string    // "
-	StartTime     time.Time // "
-	SourceSeq     string
+// The possible values for the _replication_state field in _replicator documents
+// plus a blank value for unstarted replications.
+const (
+	ReplicationNotStarted ReplicationState = ""
+	ReplicationStarted    ReplicationState = "triggered"
+	ReplicationError      ReplicationState = "error"
+	ReplicationComplete   ReplicationState = "completed"
+)
 
-	// Values updated with Update()
+// A RateLimiter may be used to limit the rate at which a server is polled for
+// replication status updates.  It receives the last valid ReplicationInfo, and
+// the last error returned by the Update method, and should return a duration to
+// wait until the next Update call is executed.
+type RateLimiter func(status *ReplicationInfo, err error) time.Duration
 
-	DocWriteFailures int64
-	DocsRead         int64
-	DocsWritten      int64
-	Progress         float64
-	UpdateTime       time.Time
-	EndTime          time.Time
-	Status           string
-	lastError        error
+// DefaultRateLimiter implements a rate limit of up to 2.5 seconds.
+var DefaultRateLimiter = ConstantRateLimiter(500 * time.Millisecond)
 
-	irep driver.Replication
-	done bool
+// ConstantRateLimiter returns a RateLimiter that always returns the same delay.
+func ConstantRateLimiter(delay time.Duration) RateLimiter {
+	return RateLimiter(func(_ *ReplicationInfo, _ error) time.Duration {
+		return delay
+	})
 }
 
-// Err returns the error, if any, that caused the replication to abort.
-func (r *Replication) Err() error {
-	return r.lastError
+// Replication represents a CouchDB replication process.
+type Replication struct {
+	ReplicationID string
+	Source        string
+	Target        string
+
+	info      *driver.ReplicationInfo
+	statusErr error
+	irep      driver.Replication
+
+	rateLimitFunc RateLimiter
+	// rateLimitChan is closed when the rate limit has expired.
+	rateLimitTimer *time.Timer
+	// This mutex protects both rateLimitFunc setting, and rateLimitChan
+	rateLimitMU sync.Mutex
 }
 
 func newReplication(rep driver.Replication) *Replication {
-	return &Replication{
+	r := &Replication{
 		ReplicationID: rep.ReplicationID(),
-		StartTime:     rep.StartTime(),
 		Source:        rep.Source(),
 		Target:        rep.Target(),
 		irep:          rep,
 	}
+	return r
+}
+
+// SetRateLimiter sets a rate limit function to prevent fast polling of the
+// server for replication status updates. This allows calling Update() in a
+// tight loop, without worrying about hitting the server too fast.
+//
+// Example:
+//
+//  rep, _ := db.Replicate("target","source")
+//  rep.SetRateLimiter(ConstantRateLimiter(500 * time.Millisecond))
+//  for {
+//      if err := rep.Update(); err != nil {
+//          break
+//      }
+//      // Push update status to UI...
+//  }
+func (r *Replication) SetRateLimiter(fn RateLimiter) {
+	r.rateLimitMU.Lock()
+	defer r.rateLimitMU.Unlock()
+	r.rateLimitFunc = fn
+}
+
+// StartTime returns the replication start time, once the replication has been
+// triggered.
+func (r *Replication) StartTime() time.Time {
+	return r.irep.StartTime()
+}
+
+// EndTime returns the replication end time, once the replication has terminated.
+func (r *Replication) EndTime() time.Time {
+	return r.irep.EndTime()
+}
+
+// State returns the current replication state
+func (r *Replication) State() ReplicationState {
+	return ReplicationState(r.irep.State())
+}
+
+// Err returns the error, if any, that caused the replication to abort.
+func (r *Replication) Err() error {
+	return r.irep.Err()
+}
+
+// IsActive returns true if the replication has not yet completed or
+// errored.
+func (r *Replication) IsActive() bool {
+	return r.State() != ReplicationError && r.State() != ReplicationComplete
 }
 
 // Delete deletes a replication. If it is currently running, it will be
 // cancelled.
 func (r *Replication) Delete(ctx context.Context) error {
-	if err := r.irep.Delete(ctx); err != nil {
-		return err
+	return r.irep.Delete(ctx)
+}
+
+func (r *Replication) rateLimitWait() {
+	if r.rateLimitFunc != nil {
+		r.rateLimitMU.Lock()
+		// if the timer isn't set, it means this is the first request, so no
+		// rate limiting is in effect yet.
+		if r.rateLimitTimer != nil {
+			<-r.rateLimitTimer.C
+		}
 	}
-	r.done = true
-	return nil
+}
+
+func (r *Replication) resetRateLimit(info driver.ReplicationInfo, err error) {
+	if r.rateLimitFunc != nil {
+		defer r.rateLimitMU.Unlock()
+		kivikInfo := ReplicationInfo(info)
+		delay := r.rateLimitFunc(&kivikInfo, err)
+		r.rateLimitTimer = time.NewTimer(delay)
+	}
 }
 
 // Update requests a replication state update from the server. If there is an
 // error retrieving the update, it is returned and the replication state is
 // unaltered.
 func (r *Replication) Update(ctx context.Context) error {
-	var rep driver.ReplicationState
-	if err := r.irep.Update(ctx, &rep); err != nil {
-		return err
+	r.rateLimitWait()
+	var info driver.ReplicationInfo
+	defer r.resetRateLimit(info, r.statusErr)
+	r.statusErr = r.irep.Update(ctx, &info)
+	if r.statusErr != nil {
+		return r.statusErr
 	}
-	r.ReplicationID = rep.ReplicationID
-	r.DocWriteFailures = rep.DocWriteFailures
-	r.DocsRead = rep.DocsRead
-	r.DocsWritten = rep.DocsWritten
-	r.Progress = rep.Progress
-	r.UpdateTime = rep.UpdateTime
-	r.EndTime = rep.EndTime
-	r.SourceSeq = rep.SourceSeq
-	r.Status = rep.Status
-	r.lastError = rep.Error
-	if rep.Status == "complete" || rep.Status == "error" || r.lastError != nil {
-		r.done = true
-	}
+	r.info = &info
 	return nil
-}
-
-// Active returns true if the replication is still active. Note that a
-// replication can switch from inactive to active if it is restarted.
-func (r *Replication) Active() bool {
-	return !r.done
 }
 
 // Cancel cancels the replication.
@@ -132,4 +196,14 @@ func (c *Client) Replicate(ctx context.Context, targetDSN, sourceDSN string, opt
 		return newReplication(rep), nil
 	}
 	return nil, ErrNotImplemented
+}
+
+// ReplicationInfo represents a snapshot of the status of a replication.
+type ReplicationInfo struct {
+	StartTime        time.Time
+	EndTime          time.Time
+	DocWriteFailures int64
+	DocsRead         int64
+	DocsWritten      int64
+	Progress         float64
 }

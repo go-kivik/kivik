@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
-	"fmt"
+	"strconv"
+	"sync"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
@@ -40,88 +40,148 @@ func (re *replicationError) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+type replicationStateTime time.Time
+
+func (t *replicationStateTime) UnmarshalJSON(data []byte) error {
+	seconds, err := strconv.ParseInt(string(data), 10, 64)
+	if err != nil {
+		return err
+	}
+	epochTime := replicationStateTime(time.Unix(seconds, 0))
+	*t = epochTime
+	return nil
+}
+
 type replication struct {
-	DocID string    `json:"_id"`
-	RepID string    `json:"_replication_id"`
-	Src   string    `json:"source"`
-	Tgt   string    `json:"target"`
-	Start time.Time `json:"-"`
-	Ste   string    `json:"_replication_state"`
-	Err   error     `json:"-"`
+	docID         string
+	replicationID string
+	source        string
+	target        string
+	startTime     time.Time
+	endTime       time.Time
+	state         string
+	err           error
+
+	// mu protects the above values
+	mu sync.RWMutex
+
 	*db
 }
 
 var _ driver.Replication = &replication{}
 
-func (r *replication) ReplicationID() string { return r.RepID }
-func (r *replication) Source() string        { return r.Src }
-func (r *replication) Target() string        { return r.Tgt }
-func (r *replication) StartTime() time.Time  { return r.Start }
+func newReplication(docID string) *replication {
+	return &replication{
+		docID: docID,
+	}
+}
+
+func (r *replication) readLock() func() {
+	r.mu.RLock()
+	return r.mu.RUnlock
+}
+
+func (r *replication) ReplicationID() string { defer r.readLock()(); return r.replicationID }
+func (r *replication) Source() string        { defer r.readLock()(); return r.source }
+func (r *replication) Target() string        { defer r.readLock()(); return r.target }
+func (r *replication) StartTime() time.Time  { defer r.readLock()(); return r.startTime }
+func (r *replication) EndTime() time.Time    { defer r.readLock()(); return r.endTime }
+func (r *replication) State() string         { defer r.readLock()(); return r.state }
+func (r *replication) Err() error            { defer r.readLock()(); return r.err }
 
 func (r *replication) Cancel(ctx context.Context) error {
 	var doc map[string]interface{}
-	if err := r.Ge(ctx, r.DocID, &doc, nil); err != nil {
+	if err := r.Get(ctx, r.docID, &doc, nil); err != nil {
 		return err
 	}
 	doc["cancel"] = true
-	_, err := r.Put(ctx, r.DocID, doc)
+	_, err := r.Put(ctx, r.docID, doc)
 	return err
 }
 
-func (r *replication) Update(ctx context.Context, state *driver.ReplicationState) error {
-	reps, err := r.db.client.GetReplications(ctx, map[string]interface{}{"key": `"` + r.DocID + `"`})
+func (r *replication) Update(ctx context.Context, state *driver.ReplicationInfo) error {
+	err := r.updateMain(ctx)
+	return err
+}
+
+// updateMain updates the "main" fields: those stored directly in r.
+func (r *replication) updateMain(ctx context.Context) error {
+	doc, err := r.getReplicatorDoc(ctx)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("len(reps) = %d\n", len(reps))
-	if len(reps) == 0 {
-		return errors.New("replication not found in _replicator database")
-	}
-	if len(reps) > 1 {
-		panic("too many replications returned")
-	}
-	fmt.Printf("rep id = %s\n", reps[0].ReplicationID())
-	if state.ReplicationID == "" {
-		state.ReplicationID = reps[0].ReplicationID()
-		// state.Source = reps[0].Source()
-		// state.Target = reps[0].Target()
-	}
-	/*
-		type ReplicationState struct {
-			DocWriteFailures int64     `json:"doc_write_failures"`
-			DocsRead         int64     `json:"docs_read"`
-			DocsWritten      int64     `json:"docs_written"`
-			Progress         float64   `json:"progress"`
-			LastUpdate       time.Time // updated_on / time.Now() for pouchdb
-			EndTime          time.Time `json:"end_time"`
-			SourceSeq        string    `json:"source_seq"` // last_seq for PouchDB
-			Status           string    `json:"status"`
-			Error            error     `json:"-"`
-			UpdateFunc       func(*ReplicationState) error
-		}
-		type Replication interface {
-			Source() string
-			Target() string
-			// Update should fetch the current replication state from the server.
-			Update(context.Context, *ReplicationState) error
-			Cancel(context.Context) error
-			Delete(context.Context) error
-		}
-	*/
-	spew.Dump(reps)
+	r.setFromReplicatorDoc(doc)
 	return nil
 }
 
+/*
+type ReplicationInfo struct {
+	StartTime        time.Time
+	EndTime          time.Time
+	DocWriteFailures int64
+	DocsRead         int64
+	DocsWritten      int64
+	Progress         float64
+	Status           string
+}
+*/
+
+func (r *replication) getReplicatorDoc(ctx context.Context) (*replicatorDoc, error) {
+	var doc replicatorDoc
+	err := r.db.Get(ctx, r.docID, &doc, nil)
+	spew.Dump(doc)
+	return &doc, err
+}
+
+func (r *replication) setFromReplicatorDoc(doc *replicatorDoc) {
+	r.mu.Lock()
+	r.mu.Unlock()
+	switch kivik.ReplicationState(doc.State) {
+	case kivik.ReplicationStarted:
+		r.startTime = time.Time(doc.StateTime)
+	case kivik.ReplicationError, kivik.ReplicationComplete:
+		r.endTime = time.Time(doc.StateTime)
+	}
+	r.state = doc.State
+	if doc.Error != nil {
+		r.err = doc.Error
+	} else {
+		r.err = nil
+	}
+	if r.source == "" {
+		r.source = doc.Source
+	}
+	if r.target == "" {
+		r.target = doc.Target
+	}
+	if r.replicationID == "" {
+		r.replicationID = doc.ReplicationID
+	}
+}
+
 func (r *replication) Delete(ctx context.Context) error {
-	rev, err := r.Rev(ctx, r.DocID)
+	rev, err := r.Rev(ctx, r.docID)
 	if err != nil {
 		return err
 	}
-	_, err = r.db.Delete(ctx, r.DocID, rev)
+	_, err = r.db.Delete(ctx, r.docID, rev)
 	return err
 }
 
+type replicatorDoc struct {
+	DocID         string               `json:"_id"`
+	ReplicationID string               `json:"_replication_id"`
+	Source        string               `json:"source"`
+	Target        string               `json:"target"`
+	State         string               `json:"_replication_state"`
+	StateTime     replicationStateTime `json:"_replication_state_time"`
+	Error         *replicationError    `json:"_replication_state_reason,omitempty"`
+}
+
 func (c *client) GetReplications(ctx context.Context, options map[string]interface{}) ([]driver.Replication, error) {
+	if options == nil {
+		options = map[string]interface{}{}
+	}
 	delete(options, "conflicts")
 	delete(options, "update_seq")
 	options["include_docs"] = true
@@ -131,14 +191,7 @@ func (c *client) GetReplications(ctx context.Context, options map[string]interfa
 	}
 	var result struct {
 		Rows []struct {
-			Doc struct {
-				DocID         string            `json:"_id"`
-				ReplicationID string            `json:"_replication_id"`
-				Source        string            `json:"source"`
-				Target        string            `json:"target"`
-				State         string            `json:"_replication_state"`
-				Error         *replicationError `json:"_replication_state_reason,omitempty"`
-			} `json:"doc"`
+			Doc replicatorDoc `json:"doc"`
 		} `json:"rows"`
 	}
 	path := "/_replicator/_all_docs"
@@ -153,14 +206,8 @@ func (c *client) GetReplications(ctx context.Context, options map[string]interfa
 		if row.Doc.DocID == "_design/_replicator" {
 			continue
 		}
-		rep := &replication{
-			DocID: row.Doc.DocID,
-			RepID: row.Doc.ReplicationID,
-			Src:   row.Doc.Source,
-			Tgt:   row.Doc.Target,
-			Ste:   row.Doc.State,
-			Err:   row.Doc.Error,
-		}
+		rep := newReplication(row.Doc.DocID)
+		rep.setFromReplicatorDoc(&row.Doc)
 		reps = append(reps, rep)
 	}
 	return reps, nil
@@ -184,15 +231,14 @@ func (c *client) Replicate(ctx context.Context, targetDSN, sourceDSN string, opt
 	var repStub struct {
 		ID string `json:"id"`
 	}
-	resp, err := c.Client.DoJSON(ctx, kivik.MethodPost, "/_replicator", &chttp.Options{Body: body}, &repStub)
+	_, err := c.Client.DoJSON(ctx, kivik.MethodPost, "/_replicator", &chttp.Options{Body: body}, &repStub)
 	if err != nil {
 		return nil, err
 	}
-	rep := &replication{
-		DocID: repStub.ID,
-	}
-	rep.Start, _ = time.Parse(time.RFC1123, resp.Header.Get("Date"))
+	rep := newReplication(repStub.ID)
 	rep.db = &db{client: c, dbName: "_replicator", forceCommit: true}
-
+	// Do an update to get the initial state, but don't fail if there's an error
+	// at this stage, because we successfully created the replication doc.
+	_ = rep.updateMain(ctx)
 	return rep, nil
 }

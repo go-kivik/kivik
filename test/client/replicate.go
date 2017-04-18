@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/test/kt"
 )
@@ -26,32 +27,34 @@ func replicate(ctx *kt.Context) {
 const replicationTimeLimit = 10 * time.Second
 
 func testReplication(ctx *kt.Context, client *kivik.Client) {
-	dbname1 := ctx.TestDBName()
-	dbname2 := ctx.TestDBName()
-	defer ctx.Admin.DestroyDB(dbname1)
-	defer ctx.Admin.DestroyDB(dbname2)
-	if err := ctx.Admin.CreateDB(dbname1); err != nil {
-		ctx.Fatalf("Failed to create db: %s", err)
-	}
-	if err := ctx.Admin.CreateDB(dbname2); err != nil {
-		ctx.Fatalf("Failed to create db: %s", err)
-	}
+	dbname1 := ctx.TestDB()
+	dbname2 := ctx.TestDB()
+	defer ctx.Admin.DestroyDB(context.Background(), dbname1)
+	defer ctx.Admin.DestroyDB(context.Background(), dbname2)
 	ctx.Run("group", func(ctx *kt.Context) {
 		ctx.Run("ValidReplication", func(ctx *kt.Context) {
 			ctx.Parallel()
 			replID := ctx.TestDBName()
-			rep, err := client.Replicate(kt.CTX, dbname1, dbname2, kivik.Options{"_id": replID})
+			rep, err := client.Replicate(context.Background(), dbname1, dbname2, kivik.Options{"_id": replID})
 			if !ctx.IsExpectedSuccess(err) {
 				return
 			}
-			defer rep.Delete(kt.CTX)
+			rep.SetRateLimiter(kivik.ConstantRateLimiter(250 * time.Millisecond))
+			defer rep.Delete(context.Background())
 			done := make(chan struct{})
 			cx, cancel := context.WithCancel(context.Background())
 			defer cancel()
+			var updateErr error
 			go func() {
-				for rep.Active() {
-					err = rep.Update(cx)
-					time.Sleep(100 * time.Millisecond)
+				for rep.IsActive() {
+					select {
+					case <-cx.Done():
+						return
+					default:
+					}
+					if updateErr = rep.Update(cx); updateErr != nil {
+						break
+					}
 				}
 				done <- struct{}{}
 			}()
@@ -59,10 +62,12 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 			case <-time.After(replicationTimeLimit):
 				ctx.Errorf("Replication failed to complete in %s", replicationTimeLimit)
 			case <-done:
-				if err != nil {
-					ctx.Errorf("Replication update failed: %s", err)
+				if updateErr != nil {
+					ctx.Errorf("Replication update failed: %s", rep.Err())
 				}
 			}
+			e := rep.Err()
+			spew.Dump(e)
 			if !ctx.IsExpectedSuccess(rep.Err()) {
 				return
 			}
@@ -78,41 +83,35 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 		})
 		ctx.Run("Cancel", func(ctx *kt.Context) {
 			ctx.Parallel()
-			dbnameA := ctx.TestDBName()
-			dbnameB := ctx.TestDBName()
-			defer ctx.Admin.DestroyDB(dbnameA)
-			defer ctx.Admin.DestroyDB(dbnameB)
-			if err := ctx.Admin.CreateDB(dbnameA); err != nil {
-				ctx.Fatalf("Failed to create db: %s", err)
-			}
-			if err := ctx.Admin.CreateDB(dbnameB); err != nil {
-				ctx.Fatalf("Failed to create db: %s", err)
-			}
+			dbnameA := ctx.TestDB()
+			dbnameB := ctx.TestDB()
+			defer ctx.Admin.DestroyDB(context.Background(), dbnameA)
+			defer ctx.Admin.DestroyDB(context.Background(), dbnameB)
 			replID := ctx.TestDBName()
-			rep, err := client.Replicate(kt.CTX, dbnameA, dbnameB, kivik.Options{"_id": replID})
+			rep, err := client.Replicate(context.Background(), dbnameA, dbnameB, kivik.Options{"_id": replID})
 			if !ctx.IsExpectedSuccess(err) {
 				return
 			}
-			defer rep.Delete(kt.CTX)
-			ctx.CheckError(rep.Cancel(kt.CTX))
+			defer rep.Delete(context.Background())
+			ctx.CheckError(rep.Cancel(context.Background()))
 		})
 		ctx.Run("MissingSource", func(ctx *kt.Context) {
 			ctx.Parallel()
 			replID := ctx.TestDBName()
-			rep, err := client.Replicate(kt.CTX, dbname1, "foo", kivik.Options{"_id": replID})
+			rep, err := client.Replicate(context.Background(), dbname1, "foo", kivik.Options{"_id": replID})
 			if !ctx.IsExpectedSuccess(err) {
 				return
 			}
-			rep.Delete(kt.CTX)
+			rep.Delete(context.Background())
 		})
 		ctx.Run("MissingTarget", func(ctx *kt.Context) {
 			ctx.Parallel()
 			replID := ctx.TestDBName()
-			rep, err := client.Replicate(kt.CTX, "foo", dbname2, kivik.Options{"_id": replID})
+			rep, err := client.Replicate(context.Background(), "foo", dbname2, kivik.Options{"_id": replID})
 			if !ctx.IsExpectedSuccess(err) {
 				return
 			}
-			rep.Delete(kt.CTX)
+			rep.Delete(context.Background())
 		})
 	})
 }

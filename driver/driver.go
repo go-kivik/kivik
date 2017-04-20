@@ -56,8 +56,6 @@ type Replication interface {
 
 	// These methods may be triggered by user actions.
 
-	// Cancel cancels a running replication.
-	Cancel(context.Context) error
 	// Delete deletes a replication, which cancels it if it is running.
 	Delete(context.Context) error
 	// Update fetches the latest replication state from the server.

@@ -31,6 +31,10 @@ func init() {
 		"Version.vendor":         "Kivik",
 		"Version.vendor_version": `^0\.0\.1$`,
 
+		// Replications not to be implemented
+		"GetReplications.skip": true,
+		"Replicate.skip":       true,
+
 		"Get.skip":               true,                       // FIXME: Unimplemented
 		"Flush.skip":             true,                       // FIXME: Unimplemented
 		"Delete.skip":            true,                       // FIXME: Unimplemented
@@ -55,6 +59,5 @@ func init() {
 		"SetSecurity.skip":       true,                       // FIXME: Unimplemented
 		"ViewCleanup.skip":       true,                       // FIXME: Unimplemented
 		"Rev.skip":               true,                       // FIXME: Unimplemented
-		"GetReplications.skip":   true,                       // FIXME: Unimplemented
 	})
 }

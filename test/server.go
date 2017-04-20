@@ -112,5 +112,6 @@ func init() {
 		"GetIndexes.skip":        true, // FIXME: Unimplemented
 		"DeleteIndex.skip":       true, // FIXME: Unimplemented
 		"GetReplications.skip":   true, // FIXME: Unimplemented
+		"Replicate.skip":         true, // FIXME: Unimplemented
 	})
 }

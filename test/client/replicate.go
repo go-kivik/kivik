@@ -2,9 +2,9 @@ package client
 
 import (
 	"context"
+	"errors"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/test/kt"
 )
@@ -27,8 +27,8 @@ func replicate(ctx *kt.Context) {
 const replicationTimeLimit = 10 * time.Second
 
 func testReplication(ctx *kt.Context, client *kivik.Client) {
-	dbname1 := ctx.TestDB()
-	dbname2 := ctx.TestDB()
+	dbname1 := "http://localhost:5984/" + ctx.TestDB()
+	dbname2 := "http://localhost:5984/" + ctx.TestDB()
 	defer ctx.Admin.DestroyDB(context.Background(), dbname1)
 	defer ctx.Admin.DestroyDB(context.Background(), dbname2)
 	ctx.Run("group", func(ctx *kt.Context) {
@@ -60,18 +60,16 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 			}()
 			select {
 			case <-time.After(replicationTimeLimit):
-				ctx.Errorf("Replication failed to complete in %s", replicationTimeLimit)
+				ctx.Fatalf("Replication failed to complete in %s", replicationTimeLimit)
 			case <-done:
 				if updateErr != nil {
-					ctx.Errorf("Replication update failed: %s", rep.Err())
+					ctx.Fatalf("Replication update failed: %s", rep.Err())
 				}
 			}
-			e := rep.Err()
-			spew.Dump(e)
 			if !ctx.IsExpectedSuccess(rep.Err()) {
 				return
 			}
-			if rep.ReplicationID == "" {
+			if rep.ReplicationID() == "" {
 				ctx.Errorf("Expected a replication ID")
 			}
 			if rep.Source != dbname2 {
@@ -80,25 +78,56 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 			if rep.Target != dbname1 {
 				ctx.Errorf("Unexpected target. Expected: %s, Actual: %s\n", dbname1, rep.Target)
 			}
+			if rep.State() != kivik.ReplicationComplete {
+				ctx.Errorf("Replication failed to complete. Final state: %s\n", rep.State())
+			}
 		})
 		ctx.Run("Cancel", func(ctx *kt.Context) {
 			ctx.Parallel()
-			dbnameA := ctx.TestDB()
-			dbnameB := ctx.TestDB()
+			dbnameA := "http://localhost:5984/" + ctx.TestDB()
+			dbnameB := "http://localhost:5984/" + ctx.TestDB()
 			defer ctx.Admin.DestroyDB(context.Background(), dbnameA)
 			defer ctx.Admin.DestroyDB(context.Background(), dbnameB)
 			replID := ctx.TestDBName()
-			rep, err := client.Replicate(context.Background(), dbnameA, dbnameB, kivik.Options{"_id": replID})
+			rep, err := client.Replicate(context.Background(), dbnameA, dbnameB, kivik.Options{"_id": replID, "continuous": true})
 			if !ctx.IsExpectedSuccess(err) {
 				return
 			}
 			defer rep.Delete(context.Background())
-			ctx.CheckError(rep.Cancel(context.Background()))
+			done := make(chan struct{})
+			cx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			var updateErr error
+			go func() {
+				defer func() { done <- struct{}{} }()
+				for rep.IsActive() {
+					if rep.State() == kivik.ReplicationStarted {
+						return
+					}
+					select {
+					case <-cx.Done():
+						updateErr = errors.New("replication completed normally")
+					default:
+					}
+					if updateErr = rep.Update(cx); updateErr != nil {
+						return
+					}
+				}
+			}()
+			select {
+			case <-time.After(replicationTimeLimit):
+				ctx.Fatalf("Replication failed to complete in %s", replicationTimeLimit)
+			case <-done:
+				if updateErr != nil {
+					ctx.Fatalf("Replication cancelation failed: %s", rep.Err())
+				}
+			}
+			ctx.CheckError(rep.Delete(context.Background()))
 		})
 		ctx.Run("MissingSource", func(ctx *kt.Context) {
 			ctx.Parallel()
 			replID := ctx.TestDBName()
-			rep, err := client.Replicate(context.Background(), dbname1, "foo", kivik.Options{"_id": replID})
+			rep, err := client.Replicate(context.Background(), dbname1, "http://localhost:5984/foo", kivik.Options{"_id": replID})
 			if !ctx.IsExpectedSuccess(err) {
 				return
 			}
@@ -107,7 +136,7 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 		ctx.Run("MissingTarget", func(ctx *kt.Context) {
 			ctx.Parallel()
 			replID := ctx.TestDBName()
-			rep, err := client.Replicate(context.Background(), "foo", dbname2, kivik.Options{"_id": replID})
+			rep, err := client.Replicate(context.Background(), "http://localhost:5984/foo", dbname2, kivik.Options{"_id": replID})
 			if !ctx.IsExpectedSuccess(err) {
 				return
 			}

@@ -38,9 +38,8 @@ func ConstantRateLimiter(delay time.Duration) RateLimiter {
 
 // Replication represents a CouchDB replication process.
 type Replication struct {
-	ReplicationID string
-	Source        string
-	Target        string
+	Source string
+	Target string
 
 	info      *driver.ReplicationInfo
 	statusErr error
@@ -55,12 +54,16 @@ type Replication struct {
 
 func newReplication(rep driver.Replication) *Replication {
 	r := &Replication{
-		ReplicationID: rep.ReplicationID(),
-		Source:        rep.Source(),
-		Target:        rep.Target(),
-		irep:          rep,
+		Source: rep.Source(),
+		Target: rep.Target(),
+		irep:   rep,
 	}
 	return r
+}
+
+// ReplicationID returns the _replication_id field of the replicator document.
+func (r *Replication) ReplicationID() string {
+	return r.irep.ReplicationID()
 }
 
 // SetRateLimiter sets a rate limit function to prevent fast polling of the
@@ -148,15 +151,6 @@ func (r *Replication) Update(ctx context.Context) error {
 		return r.statusErr
 	}
 	r.info = &info
-	return nil
-}
-
-// Cancel cancels the replication.
-func (r *Replication) Cancel(ctx context.Context) error {
-	if err := r.irep.Cancel(ctx); err != nil {
-		return err
-	}
-	_ = r.Update(ctx)
 	return nil
 }
 

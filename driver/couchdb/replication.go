@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"sync"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/driver/couchdb/chttp"
@@ -43,13 +43,18 @@ func (re *replicationError) UnmarshalJSON(data []byte) error {
 type replicationStateTime time.Time
 
 func (t *replicationStateTime) UnmarshalJSON(data []byte) error {
-	seconds, err := strconv.ParseInt(string(data), 10, 64)
-	if err != nil {
-		return err
+	input := string(bytes.Trim(data, `"`))
+	if ts, err := time.Parse(time.RFC3339, input); err == nil {
+		*t = replicationStateTime(ts)
+		return nil
 	}
-	epochTime := replicationStateTime(time.Unix(seconds, 0))
-	*t = epochTime
-	return nil
+	// Fallback for really old versions of CouchDB
+	if seconds, err := strconv.ParseInt(input, 10, 64); err == nil {
+		epochTime := replicationStateTime(time.Unix(seconds, 0).UTC())
+		*t = epochTime
+		return nil
+	}
+	return fmt.Errorf("kivik: '%s' does not appear to be a valid timestamp", string(data))
 }
 
 type replication struct {
@@ -89,16 +94,6 @@ func (r *replication) EndTime() time.Time    { defer r.readLock()(); return r.en
 func (r *replication) State() string         { defer r.readLock()(); return r.state }
 func (r *replication) Err() error            { defer r.readLock()(); return r.err }
 
-func (r *replication) Cancel(ctx context.Context) error {
-	var doc map[string]interface{}
-	if err := r.Get(ctx, r.docID, &doc, nil); err != nil {
-		return err
-	}
-	doc["cancel"] = true
-	_, err := r.Put(ctx, r.docID, doc)
-	return err
-}
-
 func (r *replication) Update(ctx context.Context, state *driver.ReplicationInfo) error {
 	err := r.updateMain(ctx)
 	return err
@@ -127,9 +122,12 @@ type ReplicationInfo struct {
 */
 
 func (r *replication) getReplicatorDoc(ctx context.Context) (*replicatorDoc, error) {
+	body, err := r.db.Get(ctx, r.docID, nil)
+	if err != nil {
+		return nil, err
+	}
 	var doc replicatorDoc
-	err := r.db.Get(ctx, r.docID, &doc, nil)
-	spew.Dump(doc)
+	err = json.Unmarshal(body, &doc)
 	return &doc, err
 }
 

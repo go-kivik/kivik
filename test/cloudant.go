@@ -214,5 +214,7 @@ func init() {
 		"DeleteIndex/RW/NoAuth.status":                   kivik.StatusUnauthorized,
 
 		"GetReplications/NoAuth.status": kivik.StatusUnauthorized,
+
+		"Replicate/RW/NoAuth.status": kivik.StatusUnauthorized,
 	})
 }

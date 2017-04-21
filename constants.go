@@ -1,7 +1,5 @@
 package kivik
 
-import "net/http"
-
 // SessionCookieName is the name of the CouchDB session cookie.
 const SessionCookieName = "AuthSession"
 
@@ -15,11 +13,11 @@ const (
 // methods in the standard http package, with the addition of MethodCopy, and
 // a few methods left out which are not used by CouchDB.
 const (
-	MethodGet    = http.MethodGet
-	MethodHead   = http.MethodHead
-	MethodPost   = http.MethodPost
-	MethodPut    = http.MethodPut
-	MethodDelete = http.MethodDelete
+	MethodGet    = "GET"
+	MethodHead   = "HEAD"
+	MethodPost   = "POST"
+	MethodPut    = "PUT"
+	MethodDelete = "DELETE"
 	MethodCopy   = "COPY"
 )
 

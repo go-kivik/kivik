@@ -75,9 +75,13 @@ type replication struct {
 
 var _ driver.Replication = &replication{}
 
-func newReplication(docID string) *replication {
+func (c *client) newReplication(docID string) *replication {
 	return &replication{
 		docID: docID,
+		db: &db{
+			client: c,
+			dbName: "_replicator",
+		},
 	}
 }
 
@@ -204,7 +208,7 @@ func (c *client) GetReplications(ctx context.Context, options map[string]interfa
 		if row.Doc.DocID == "_design/_replicator" {
 			continue
 		}
-		rep := newReplication(row.Doc.DocID)
+		rep := c.newReplication(row.Doc.DocID)
 		rep.setFromReplicatorDoc(&row.Doc)
 		reps = append(reps, rep)
 	}
@@ -233,7 +237,7 @@ func (c *client) Replicate(ctx context.Context, targetDSN, sourceDSN string, opt
 	if err != nil {
 		return nil, err
 	}
-	rep := newReplication(repStub.ID)
+	rep := c.newReplication(repStub.ID)
 	rep.db = &db{client: c, dbName: "_replicator", forceCommit: true}
 	// Do an update to get the initial state, but don't fail if there's an error
 	// at this stage, because we successfully created the replication doc.

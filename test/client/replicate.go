@@ -14,6 +14,7 @@ func init() {
 }
 
 func replicate(ctx *kt.Context) {
+	defer lockReplication(ctx)()
 	ctx.RunRW(func(ctx *kt.Context) {
 		ctx.RunAdmin(func(ctx *kt.Context) {
 			testReplication(ctx, ctx.Admin)

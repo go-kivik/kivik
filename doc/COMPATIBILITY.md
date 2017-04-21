@@ -42,7 +42,7 @@
 | GET /_all_dbs                         | AllDBs()             | ✅ | ✅ | ✅ | ☑️<sup>[1](#pouchAllDbs1),[2](#pouchAllDbs2),[3](pouchLocalOnly)</sup> | ✅ | ✅
 | GET /_db_updates                      | DBUpdates()          |    | ✅ | ✅ | ⁿ/ₐ |
 | GET /_log                             | ⁿ/ₐ                   |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
-| GET /_replicate
+| GET /_replicate                       | Replicate()          |    | ✅ | ✅<sup>[4](#replicator)</sup> | ✅ |
 | GET /_restart                         | ⁿ/ₐ                   |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | GET /_stats                           | ⁿ/ₐ                   |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | GET /_utils                           | ⁿ/ₐ                   |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
@@ -124,10 +124,12 @@
     pouchdb-all-dbs plugin.
 3. <a name="pouchLocalOnly"> Supported for local PouchDB databases only. A work
     around may be possible in the future for remote databases.
+4. <a name="replicator"> Replications are actually done via the _replicator
+   database, not the /_replicate endpoint.
 5. <a name="pouchDBExists"> PouchDB offers no way to check for the existence of
- a local database without creating it, so `DBExists()` always returns true,
- `CreateDB()` does not return an error if the database already existed, and
- `DestroyDB()` does not return an error if the database does not exist.
+   a local database without creating it, so `DBExists()` always returns true,
+   `CreateDB()` does not return an error if the database already existed, and
+   `DestroyDB()` does not return an error if the database does not exist.
 6. <a name="cookieAuth"> See the CookieAuth section in the [Authentication methods table](#authTable)
 7. <a name="todoConflicts"> **TODO:** Conflicts are not yet tested.
 8. <a name="changesContinuous"> Changes feed operates in continuous mode only.

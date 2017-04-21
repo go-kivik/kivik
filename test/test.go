@@ -154,7 +154,7 @@ func cleanupDatabases(ctx context.Context, client *kivik.Client, verbose bool) (
 	}
 	docs, err := replicator.AllDocs(context.Background(), map[string]interface{}{"include_docs": true})
 	if err != nil {
-		if errors.StatusCode(err) == kivik.StatusNotImplemented {
+		if errors.StatusCode(err) == kivik.StatusNotImplemented || errors.StatusCode(err) == kivik.StatusNotFound {
 			return count, nil
 		}
 		return count, err

@@ -215,6 +215,7 @@ func init() {
 
 		"GetReplications/NoAuth.status": kivik.StatusUnauthorized,
 
+		"Replicate.timeoutSeconds":   300,
 		"Replicate/RW/NoAuth.status": kivik.StatusUnauthorized,
 	})
 }

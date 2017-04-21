@@ -168,6 +168,8 @@ func init() {
 
 		"GetReplications/NoAuth.status": kivik.StatusForbidden,
 
+		"Replicate.timeoutSeconds":   120,
+		"Replicate.prefix":           "none",
 		"Replicate/RW/NoAuth.status": kivik.StatusForbidden,
 	})
 }

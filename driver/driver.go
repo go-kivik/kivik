@@ -65,8 +65,6 @@ type Replication interface {
 // ReplicationInfo represents a snap-shot state of a replication, as provided
 // by the _active_tasks endpoint.
 type ReplicationInfo struct {
-	StartTime        time.Time
-	EndTime          time.Time
 	DocWriteFailures int64
 	DocsRead         int64
 	DocsWritten      int64

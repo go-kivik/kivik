@@ -194,8 +194,6 @@ func (c *Client) Replicate(ctx context.Context, targetDSN, sourceDSN string, opt
 
 // ReplicationInfo represents a snapshot of the status of a replication.
 type ReplicationInfo struct {
-	StartTime        time.Time
-	EndTime          time.Time
 	DocWriteFailures int64
 	DocsRead         int64
 	DocsWritten      int64

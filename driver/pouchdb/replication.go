@@ -6,8 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"honnef.co/go/js/console"
-
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/driver/pouchdb/bindings"
@@ -42,9 +40,7 @@ func (c *client) newReplication(target, source string, rep *js.Object) *replicat
 		jsObj:  rep,
 	}
 	rep.Call("on", "change", func(info *js.Object) {
-		r.lastEvent = "change"
-		r.lastState = &replicationState{Object: info}
-		r.lastError = nil
+		r.handleUpdate("change", &replicationState{Object: info}, nil)
 	})
 	rep.Call("on", "paused", func(err *js.Object) {
 		r.state = string(kivik.ReplicationNotStarted)
@@ -53,24 +49,26 @@ func (c *client) newReplication(target, source string, rep *js.Object) *replicat
 		r.state = string(kivik.ReplicationStarted)
 	})
 	rep.Call("on", "denied", func(err *js.Object) {
-		console.Log(err)
-		r.lastEvent = "denied"
-		r.lastError = fmt.Errorf("%v", err)
+		r.handleUpdate("denied", nil, fmt.Errorf("%v", err))
 	})
 	rep.Call("on", "complete", func(info *js.Object) {
-		r.lastEvent = "complete"
-		r.lastState = &replicationState{Object: info}
-		r.lastError = nil
+		r.handleUpdate("complete", &replicationState{Object: info}, nil)
 	})
 	rep.Call("on", "error", func(err *js.Object) {
-		console.Log(err)
-		r.lastEvent = "error"
-		r.lastError = fmt.Errorf("%v", err)
+		r.handleUpdate("error", nil, fmt.Errorf("%v", err))
 	})
 	c.replicationsMU.Lock()
 	defer c.replicationsMU.Unlock()
 	c.replications = append(c.replications, r)
 	return r
+}
+
+func (r *replication) handleUpdate(event string, state *replicationState, err error) {
+	r.lastEvent = event
+	r.lastError = err
+	if state != nil {
+		r.lastState = state
+	}
 }
 
 type replicationState struct {

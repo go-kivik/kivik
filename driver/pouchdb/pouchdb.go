@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
@@ -61,6 +62,10 @@ type client struct {
 	dsn   *url.URL
 	opts  map[string]Options
 	pouch *bindings.PouchDB
+
+	// This mantains a list of running replications
+	replications   []*replication
+	replicationsMU sync.RWMutex
 }
 
 var _ driver.Client = &client{}

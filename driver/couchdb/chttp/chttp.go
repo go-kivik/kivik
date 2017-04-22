@@ -175,21 +175,7 @@ func (c *Client) DoReq(ctx context.Context, method, path string, opts *Options) 
 	fixPath(req, path)
 	setHeaders(req, opts)
 
-	// call Do in a loop to check for errors that probably shouldn't happen.
-	// A work-around for the possible issue https://github.com/golang/go/issues/19943
-	var resp *http.Response
-	for i := 0; i < 3; i++ {
-		resp, err = c.Do(req)
-		if err != nil {
-			msg := err.Error()
-			if strings.HasSuffix(msg, ": EOF") ||
-				strings.HasSuffix(msg, ": http: server closed idle connection") {
-				continue
-			}
-		}
-		return resp, err
-	}
-	return resp, err
+	return c.Do(req)
 }
 
 // fixPath sets the request's URL.RawPath to work with escaped '/' chars in

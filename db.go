@@ -175,21 +175,6 @@ func (db *DB) Rev(ctx context.Context, docID string) (rev string, err error) {
 	return doc.Rev, err
 }
 
-// Changes returns an iterator over the real-time changes feed. The feed remains
-// open until explicitly closed, or an error is encountered.
-// See http://couchdb.readthedocs.io/en/latest/api/database/changes.html#get--db-_changes
-func (db *DB) Changes(ctx context.Context, options ...Options) (*Rows, error) {
-	opts, err := mergeOptions(options...)
-	if err != nil {
-		return nil, err
-	}
-	rowsi, err := db.driverDB.Changes(ctx, opts)
-	if err != nil {
-		return nil, err
-	}
-	return newRows(ctx, rowsi), nil
-}
-
 // Copy copies the source document to a new document with an ID of targetID. If
 // the database backend does not support COPY directly, the operation will be
 // emulated with a Get followed by Put. The target will be an exact copy of the

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/flimzy/diff"
-	"github.com/flimzy/kivik/driver"
 )
 
 type TestFeed struct {
@@ -15,7 +14,7 @@ type TestFeed struct {
 	i   int64
 }
 
-var _ driver.Iterator = &TestFeed{}
+var _ iterator = &TestFeed{}
 
 func (f *TestFeed) SetValue() interface{} { i := int64(0); return &i }
 func (f *TestFeed) Close() error          { return nil }

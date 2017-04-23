@@ -14,15 +14,11 @@ import (
 
 type changesFeed struct {
 	changes *js.Object
-	feed    <-chan *driver.Row
+	feed    <-chan *driver.Change
 	err     error
 }
 
-var _ driver.Rows = &changesFeed{}
-
-func (c *changesFeed) Offset() int64     { return 0 }
-func (c *changesFeed) TotalRows() int64  { return 0 }
-func (c *changesFeed) UpdateSeq() string { return "" }
+var _ driver.Changes = &changesFeed{}
 
 type changeRow struct {
 	*js.Object
@@ -33,10 +29,7 @@ type changeRow struct {
 	Deleted bool       `js:"deleted"`
 }
 
-func (c *changesFeed) Next(row *driver.Row) error {
-	// // Zero the value
-	// newRow := new(driver.Row)
-	// *row = *newRow
+func (c *changesFeed) Next(row *driver.Change) error {
 	if c.err != nil {
 		return c.err
 	}
@@ -53,7 +46,7 @@ func (c *changesFeed) Close() error {
 	return nil
 }
 
-func (d *db) Changes(ctx context.Context, options map[string]interface{}) (driver.Rows, error) {
+func (d *db) Changes(ctx context.Context, options map[string]interface{}) (driver.Changes, error) {
 	opts := map[string]interface{}{
 		"live":    true,
 		"timeout": false,
@@ -66,7 +59,7 @@ func (d *db) Changes(ctx context.Context, options map[string]interface{}) (drive
 		return nil, err
 	}
 
-	feed := make(chan *driver.Row, 32)
+	feed := make(chan *driver.Change, 32)
 	c := &changesFeed{
 		changes: changes,
 		feed:    feed,
@@ -92,7 +85,7 @@ func (d *db) Changes(ctx context.Context, options map[string]interface{}) (drive
 			if change.Doc != js.Undefined {
 				doc = json.RawMessage(js.Global.Get("JSON").Call("stringify", change.Doc).String())
 			}
-			row := &driver.Row{
+			row := &driver.Change{
 				ID:      change.ID,
 				Seq:     driver.SequenceID(change.Seq),
 				Deleted: change.Deleted,

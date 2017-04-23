@@ -109,12 +109,8 @@ func (d *db) SetSecurity(ctx context.Context, security *driver.Security) error {
 	return d.DB.SetSecurity(ctx, sec)
 }
 
-func (d *db) Changes(ctx context.Context, opts map[string]interface{}) (driver.Rows, error) {
-	kivikRows, err := d.DB.Changes(ctx, opts)
-	if err != nil {
-		return nil, err
-	}
-	return &rows{kivikRows}, nil
+func (d *db) Changes(ctx context.Context, opts map[string]interface{}) (driver.Changes, error) {
+	return nil, kivik.ErrNotImplemented
 }
 
 func (d *db) BulkDocs(_ context.Context, _ ...interface{}) (driver.BulkResults, error) {

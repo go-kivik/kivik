@@ -83,7 +83,7 @@ func (d *db) SetSecurity(_ context.Context, _ *driver.Security) error {
 	return nil
 }
 
-func (d *db) Changes(ctx context.Context, opts map[string]interface{}) (driver.Rows, error) {
+func (d *db) Changes(ctx context.Context, opts map[string]interface{}) (driver.Changes, error) {
 	// FIXME: Unimplemented
 	return nil, nil
 }

@@ -1,18 +1,26 @@
 package kivik
 
 import (
+	"context"
+	"encoding/json"
+	"errors"
 	"io"
 	"sync"
-
-	"golang.org/x/net/context"
-
-	"github.com/flimzy/kivik/driver"
 )
 
-type Iterator struct {
-	feed driver.Iterator
+type iterator interface {
+	// SetValue is called once, and should return a zero-value for the iterator
+	// type.
+	SetValue() interface{}
+	Next(interface{}) error
+	Close() error
+}
 
-	closemu sync.RWMutex
+// An Iterator allows ...
+type Iterator struct {
+	feed iterator
+
+	mu      sync.RWMutex
 	ready   bool // Set to true once Next() has been called
 	closed  bool
 	lasterr error // non-nil only if closed is true
@@ -22,7 +30,20 @@ type Iterator struct {
 	curVal interface{}
 }
 
-func newIterator(ctx context.Context, feed driver.Iterator) *Iterator {
+func (i *Iterator) rlock() (unlock func(), err error) {
+	i.mu.RLock()
+	if i.closed {
+		i.mu.RUnlock()
+		return nil, errors.New("kivik: Iterator is closed")
+	}
+	if !i.ready {
+		i.mu.RUnlock()
+		return nil, errors.New("kivik: Iterator access before calling Next")
+	}
+	return func() { i.mu.RUnlock() }, nil
+}
+
+func newIterator(ctx context.Context, feed iterator) *Iterator {
 	i := &Iterator{
 		feed:   feed,
 		curVal: feed.SetValue(),
@@ -50,8 +71,8 @@ func (i *Iterator) Next() bool {
 }
 
 func (i *Iterator) next() (doClose, ok bool) {
-	i.closemu.RLock()
-	defer i.closemu.RUnlock()
+	i.mu.RLock()
+	defer i.mu.RUnlock()
 	if i.closed {
 		return false, false
 	}
@@ -73,8 +94,8 @@ func (i *Iterator) Close() error {
 }
 
 func (i *Iterator) close(err error) error {
-	i.closemu.Lock()
-	defer i.closemu.Unlock()
+	i.mu.Lock()
+	defer i.mu.Unlock()
 	if i.closed {
 		return nil
 	}
@@ -96,10 +117,30 @@ func (i *Iterator) close(err error) error {
 // Err returns the error, if any, that was encountered during iteration. Err
 // may be called after an explicit or implicit Close.
 func (i *Iterator) Err() error {
-	i.closemu.RLock()
-	defer i.closemu.RUnlock()
+	i.mu.RLock()
+	defer i.mu.RUnlock()
 	if i.lasterr == io.EOF {
 		return nil
 	}
 	return i.lasterr
+}
+
+func scan(dest interface{}, val json.RawMessage) error {
+	switch d := dest.(type) {
+	case *[]byte:
+		if d == nil {
+			return errNilPtr
+		}
+		tgt := make([]byte, len(val))
+		copy(tgt, val)
+		*d = tgt
+		return nil
+	case *json.RawMessage:
+		if d == nil {
+			return errNilPtr
+		}
+		*d = val
+		return nil
+	}
+	return json.Unmarshal(val, dest)
 }

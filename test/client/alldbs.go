@@ -28,12 +28,8 @@ func allDBs(ctx *kt.Context) {
 
 func testAllDBsRW(ctx *kt.Context) {
 	admin := ctx.Admin
-	dbName := ctx.TestDBName()
-	defer admin.DestroyDB(context.Background(), dbName)
-	if err := admin.CreateDB(context.Background(), dbName); err != nil {
-		ctx.Errorf("Failed to create test DB '%s': %s", dbName, err)
-		return
-	}
+	dbName := ctx.TestDB()
+	defer admin.DestroyDB(context.Background(), dbName, ctx.Options("db"))
 	expected := append(ctx.StringSlice("expected"), dbName)
 	ctx.Run("group", func(ctx *kt.Context) {
 		ctx.RunAdmin(func(ctx *kt.Context) {

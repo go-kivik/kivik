@@ -136,6 +136,13 @@ func (c *Context) Interface(key string) interface{} {
 	return c.Config.get(name(c.T), key)
 }
 
+// Options returns an options map value.
+func (c *Context) Options(key string) map[string]interface{} {
+	i := c.Config.get(name(c.T), key)
+	o, _ := i.(map[string]interface{})
+	return o
+}
+
 // MustInterface returns an interface{} from the config, or fails if the value is unset.
 func (c *Context) MustInterface(key string) interface{} {
 	c.MustBeSet(key)
@@ -184,6 +191,15 @@ func init() {
 
 // TestDBPrefix is used to prefix temporary database names during tests.
 const TestDBPrefix = "kivik$"
+
+// TestDB creates a test database and returns its name.
+func (c *Context) TestDB() string {
+	dbname := c.TestDBName()
+	if err := c.Admin.CreateDB(context.Background(), dbname, c.Options("db")); err != nil {
+		c.Fatalf("Failed to create database: %s", err)
+	}
+	return dbname
+}
 
 // TestDBName generates a randomized string suitable for a database name for
 // testing.

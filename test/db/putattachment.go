@@ -16,11 +16,8 @@ func init() {
 
 func putAttachment(ctx *kt.Context) {
 	ctx.RunRW(func(ctx *kt.Context) {
-		dbname := ctx.TestDBName()
-		defer ctx.Admin.DestroyDB(context.Background(), dbname)
-		if err := ctx.Admin.CreateDB(context.Background(), dbname); err != nil {
-			ctx.Fatalf("Failed to create db: %s", err)
-		}
+		dbname := ctx.TestDB()
+		defer ctx.Admin.DestroyDB(context.Background(), dbname, ctx.Options("db"))
 		ctx.Run("group", func(ctx *kt.Context) {
 			ctx.RunAdmin(func(ctx *kt.Context) {
 				ctx.Parallel()
@@ -35,11 +32,11 @@ func putAttachment(ctx *kt.Context) {
 }
 
 func testPutAttachment(ctx *kt.Context, client *kivik.Client, dbname string) {
-	db, e := client.DB(context.Background(), dbname)
+	db, e := client.DB(context.Background(), dbname, ctx.Options("db"))
 	if e != nil {
 		ctx.Fatalf("Failed to open db: %s", e)
 	}
-	adb, e2 := ctx.Admin.DB(context.Background(), dbname)
+	adb, e2 := ctx.Admin.DB(context.Background(), dbname, ctx.Options("db"))
 	if e2 != nil {
 		ctx.Fatalf("Failed to open admin db: %s", e2)
 	}

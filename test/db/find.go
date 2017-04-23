@@ -35,7 +35,7 @@ func testFindRW(ctx *kt.Context) {
 	if err != nil {
 		ctx.Errorf("Failed to set up temp db: %s", err)
 	}
-	defer ctx.Admin.DestroyDB(context.Background(), dbName)
+	defer ctx.Admin.DestroyDB(context.Background(), dbName, ctx.Options("db"))
 	ctx.Run("group", func(ctx *kt.Context) {
 		ctx.RunAdmin(func(ctx *kt.Context) {
 			doFindTest(ctx, ctx.Admin, dbName, 0, expected)
@@ -47,11 +47,8 @@ func testFindRW(ctx *kt.Context) {
 }
 
 func setUpFindTest(ctx *kt.Context) (dbName string, docIDs []string, err error) {
-	dbName = ctx.TestDBName()
-	if err = ctx.Admin.CreateDB(context.Background(), dbName); err != nil {
-		return dbName, nil, errors.Wrap(err, "failed to create db")
-	}
-	db, err := ctx.Admin.DB(context.Background(), dbName)
+	dbName = ctx.TestDB()
+	db, err := ctx.Admin.DB(context.Background(), dbName, ctx.Options("db"))
 	if err != nil {
 		return dbName, nil, errors.Wrap(err, "failed to connect to db")
 	}
@@ -89,7 +86,7 @@ func testFind(ctx *kt.Context, client *kivik.Client) {
 
 func doFindTest(ctx *kt.Context, client *kivik.Client, dbName string, expOffset int64, expected []string) {
 	ctx.Parallel()
-	db, err := client.DB(context.Background(), dbName)
+	db, err := client.DB(context.Background(), dbName, ctx.Options("db"))
 	// Errors may be deferred here, so only return if we actually get
 	// an error.
 	if err != nil && !ctx.IsExpectedSuccess(err) {

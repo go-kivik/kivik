@@ -11,7 +11,7 @@ import (
 )
 
 // Changes returns the changes stream for the database.
-func (d *db) Changes(ctx context.Context, opts map[string]interface{}) (driver.Rows, error) {
+func (d *db) Changes(ctx context.Context, opts map[string]interface{}) (driver.Changes, error) {
 	overrideOpts := map[string]interface{}{
 		"feed":      "continuous",
 		"since":     "now",
@@ -43,13 +43,13 @@ func newChangesRows(r io.ReadCloser) *changesRows {
 	}
 }
 
-var _ driver.Rows = &changesRows{}
+var _ driver.Changes = &changesRows{}
 
 func (r *changesRows) Close() error {
 	return r.body.Close()
 }
 
-func (r *changesRows) Next(row *driver.Row) error {
+func (r *changesRows) Next(row *driver.Change) error {
 	if r.closed {
 		return io.EOF
 	}
@@ -62,7 +62,3 @@ func (r *changesRows) Next(row *driver.Row) error {
 
 	return r.dec.Decode(row)
 }
-
-func (r *changesRows) Offset() int64     { return 0 }
-func (r *changesRows) TotalRows() int64  { return 0 }
-func (r *changesRows) UpdateSeq() string { return "" }

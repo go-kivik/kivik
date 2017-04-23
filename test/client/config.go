@@ -91,7 +91,10 @@ func testDelete(ctx *kt.Context, client *kivik.Client, secName string) {
 	c, _ := client.Config(context.Background())
 	ac, _ := ctx.Admin.Config(context.Background())
 	defer ac.Delete(context.Background(), secName, "foo")
-	if !ctx.IsExpected(ac.Set(context.Background(), secName, "foo", "bar")) {
+	err := kt.Retry(func() error {
+		return ac.Set(context.Background(), secName, "foo", "bar")
+	})
+	if !ctx.IsExpected(err) {
 		return
 	}
 	ctx.Run("group", func(ctx *kt.Context) {

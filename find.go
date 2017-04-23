@@ -15,9 +15,7 @@ func (db *DB) Find(ctx context.Context, query interface{}) (*Rows, error) {
 		if err != nil {
 			return nil, err
 		}
-		rows := &Rows{rowsi: rowsi}
-		rows.initContextClose(ctx)
-		return rows, nil
+		return newRows(ctx, rowsi), nil
 	}
 	return nil, ErrNotImplemented
 }

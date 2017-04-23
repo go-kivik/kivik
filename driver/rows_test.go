@@ -12,7 +12,7 @@ func TestChangesUnmarshal(t *testing.T) {
                 {"rev": "6-460637e73a6288cb24d532bf91f32969"},
                 {"rev": "5-eeaa298781f60b7bcae0c91bdedd1b87"}
             ]`
-	var changes Changes
+	var changes ChangedRevs
 	if err := json.Unmarshal([]byte(input), &changes); err != nil {
 		t.Fatalf("unmarshal failed: %s", err)
 	}

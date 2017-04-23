@@ -242,7 +242,7 @@ func (d *db) SetSecurity(ctx context.Context, security *driver.Security) error {
 	}
 	res, err := d.Client.DoReq(ctx, kivik.MethodPut, d.path("/_security", nil), opts)
 	if jsonErr := errFunc(); jsonErr != nil {
-		if res.Body != nil {
+		if res != nil && res.Body != nil {
 			res.Body.Close()
 		}
 		return jsonErr

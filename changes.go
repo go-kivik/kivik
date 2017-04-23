@@ -37,12 +37,11 @@ type changesIterator struct{ driver.Changes }
 
 var _ iterator = &changesIterator{}
 
-func (c *changesIterator) SetValue() interface{}    { return &driver.Change{} }
 func (c *changesIterator) Next(i interface{}) error { return c.Changes.Next(i.(*driver.Change)) }
 
 func newChanges(ctx context.Context, changesi driver.Changes) *Changes {
 	return &Changes{
-		iter:     newIterator(ctx, &changesIterator{changesi}),
+		iter:     newIterator(ctx, &changesIterator{changesi}, &driver.Change{}),
 		changesi: changesi,
 	}
 }

@@ -9,9 +9,6 @@ import (
 )
 
 type iterator interface {
-	// SetValue is called once, and should return a zero-value for the iterator
-	// type.
-	SetValue() interface{}
 	Next(interface{}) error
 	Close() error
 }
@@ -42,10 +39,15 @@ func (i *iter) rlock() (unlock func(), err error) {
 	return func() { i.mu.RUnlock() }, nil
 }
 
-func newIterator(ctx context.Context, feed iterator) *iter {
+// newIterator instantiates a new iterator.
+//
+// ctx is a possibly-cancellable context
+// zeroValue is an empty instance of the data type this iterator iterates over
+// feed is the iterator interface, which typically wraps a driver.X iterator
+func newIterator(ctx context.Context, feed iterator, zeroValue interface{}) *iter {
 	i := &iter{
 		feed:   feed,
-		curVal: feed.SetValue(),
+		curVal: zeroValue,
 	}
 	ctx, i.cancel = context.WithCancel(ctx)
 	go i.awaitDone(ctx)

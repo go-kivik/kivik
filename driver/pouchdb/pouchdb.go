@@ -155,7 +155,11 @@ func (c *client) CreateDB(ctx context.Context, dbName string, options map[string
 }
 
 func (c *client) DestroyDB(ctx context.Context, dbName string, options map[string]interface{}) error {
-	exists, err := c.DBExists(ctx, dbName, options)
+	opts, err := c.options(options)
+	if err != nil {
+		return err
+	}
+	exists, err := c.DBExists(ctx, dbName, opts)
 	if err != nil {
 		return err
 	}
@@ -163,22 +167,15 @@ func (c *client) DestroyDB(ctx context.Context, dbName string, options map[strin
 		// This will only ever do anything for a remote database
 		return errors.Status(http.StatusNotFound, "database does not exist")
 	}
-	opts, err := c.options(options)
-	if err != nil {
-		return err
-	}
 	return c.pouch.New(c.dbURL(dbName), opts).Destroy(ctx, nil)
 }
 
 func (c *client) DB(ctx context.Context, dbName string, options map[string]interface{}) (driver.DB, error) {
-	exists, err := c.DBExists(ctx, dbName, options)
+	opts, err := c.options(options)
 	if err != nil {
 		return nil, err
 	}
-	if !exists {
-		return nil, kivik.ErrNotFound
-	}
-	opts, err := c.options(options)
+	exists, err := c.DBExists(ctx, dbName, opts)
 	if err != nil {
 		return nil, err
 	}

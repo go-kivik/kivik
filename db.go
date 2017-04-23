@@ -23,9 +23,7 @@ func (db *DB) AllDocs(ctx context.Context, options ...Options) (*Rows, error) {
 	if err != nil {
 		return nil, err
 	}
-	rows := &Rows{rowsi: rowsi}
-	rows.initContextClose(ctx)
-	return rows, nil
+	return newRows(ctx, rowsi), nil
 }
 
 // Query executes the specified view function from the specified design
@@ -42,9 +40,7 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) 
 	if err != nil {
 		return nil, err
 	}
-	rows := &Rows{rowsi: rowsi}
-	rows.initContextClose(ctx)
-	return rows, nil
+	return newRows(ctx, rowsi), nil
 }
 
 // Get fetches the requested document.
@@ -191,9 +187,7 @@ func (db *DB) Changes(ctx context.Context, options ...Options) (*Rows, error) {
 	if err != nil {
 		return nil, err
 	}
-	rows := &Rows{rowsi: rowsi}
-	rows.initContextClose(ctx)
-	return rows, nil
+	return newRows(ctx, rowsi), nil
 }
 
 // Copy copies the source document to a new document with an ID of targetID. If

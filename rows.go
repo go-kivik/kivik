@@ -6,7 +6,6 @@ import (
 	"errors"
 	"io"
 	"strings"
-	"sync"
 
 	"github.com/flimzy/kivik/driver"
 )
@@ -15,88 +14,20 @@ import (
 // cursor starts before the first value of a result set. Use Next to advance
 // through the rows.
 type Rows struct {
-	rowsi  driver.Rows
-	cancel func() // called when Rows is closed, may be nil.
-
-	// closemu prevents Rows from closing while thereis an active streaming
-	// result. It is held for read during non-close operations and exclusively
-	// during close.
-	//
-	// closemu guards lasterr and closed.
-	closemu sync.RWMutex
-	closed  bool
-	lasterr error // non-nil only if closed is true
-
-	curRow *driver.Row
+	*Iterator
+	rowsi driver.Rows
 }
 
-// initContextClose closes the Rows when the context is cancelled.
-func (r *Rows) initContextClose(ctx context.Context) {
-	ctx, r.cancel = context.WithCancel(ctx)
-	go r.awaitDone(ctx)
-}
+type rowsIterator struct{ driver.Rows }
 
-// awaitDone blocks until the rows are closed or the context is cancelled.
-func (r *Rows) awaitDone(ctx context.Context) {
-	<-ctx.Done()
-	_ = r.close(ctx.Err())
-}
+func (r *rowsIterator) SetValue() interface{}    { return &driver.Row{} }
+func (r *rowsIterator) Next(i interface{}) error { return r.Rows.Next(i.(*driver.Row)) }
 
-// Next prepares the next result value for reading with the Scan method. It
-// returns true on success, or false if there is no next result or an error
-// occurs while preparing it. Err should be consulted to distinguish between
-// the two.
-func (r *Rows) Next() bool {
-	doClose, ok := r.next()
-	if doClose {
-		_ = r.Close()
+func newRows(ctx context.Context, rowsi driver.Rows) *Rows {
+	return &Rows{
+		Iterator: newIterator(ctx, &rowsIterator{rowsi}),
+		rowsi:    rowsi,
 	}
-	return ok
-}
-
-func (r *Rows) next() (doClose, ok bool) {
-	r.closemu.RLock()
-	defer r.closemu.RUnlock()
-	if r.closed {
-		return false, false
-	}
-	if r.curRow == nil {
-		r.curRow = &driver.Row{}
-	}
-	r.lasterr = r.rowsi.Next(r.curRow)
-	if r.lasterr != nil {
-		return true, false
-	}
-	return false, true
-}
-
-// Close closes the Rows, preventing further enumeration, and freeing any
-// resources (such as the http request body) of the underlying query. If Next is
-// called and there are no further results, Rows is closed automatically and it
-// will suffice to check the result of Err. Close is idempotent and does not
-// affect the result of Err.
-func (r *Rows) Close() error {
-	return r.close(nil)
-}
-
-func (r *Rows) close(err error) error {
-	r.closemu.Lock()
-	defer r.closemu.Unlock()
-	if r.closed {
-		return nil
-	}
-	r.closed = true
-
-	if r.lasterr == nil {
-		r.lasterr = err
-	}
-
-	err = r.rowsi.Close()
-
-	if r.cancel != nil {
-		r.cancel()
-	}
-	return err
 }
 
 var errNilPtr = errors.New("kivik: destination pointer is nil")
@@ -114,19 +45,19 @@ var errNilPtr = errors.New("kivik: destination pointer is nil")
 // For all other types, refer to the documentation for json.Unmarshal for type
 // conversion rules.
 func (r *Rows) ScanValue(dest interface{}) error {
-	return r.scan(dest, r.curRow.Value)
+	return r.scan(dest, r.curVal.(*driver.Row).Value)
 }
 
 // ScanDoc works the same as ScanValue, but on the doc field of the result. It
 // is only valid for results that include documents.
 func (r *Rows) ScanDoc(dest interface{}) error {
-	return r.scan(dest, r.curRow.Doc)
+	return r.scan(dest, r.curVal.(*driver.Row).Doc)
 }
 
 // ScanKey works the same as ScanValue, but on the key field of the result. For
 // simple keys, which are just strings, the Key() method may be easier to use.
 func (r *Rows) ScanKey(dest interface{}) error {
-	return r.scan(dest, r.curRow.Key)
+	return r.scan(dest, r.curVal.(*driver.Row).Key)
 }
 
 func (r *Rows) scan(dest interface{}, val json.RawMessage) error {
@@ -136,7 +67,7 @@ func (r *Rows) scan(dest interface{}, val json.RawMessage) error {
 		return errors.New("kivik: Rows are closed")
 	}
 	r.closemu.RUnlock()
-	if r.curRow == nil {
+	if !r.ready {
 		return errors.New("kivik: Scan called without calling Next")
 	}
 	switch d := dest.(type) {
@@ -160,36 +91,24 @@ func (r *Rows) scan(dest interface{}, val json.RawMessage) error {
 
 // ID returns the ID of the last-read result.
 func (r *Rows) ID() string {
-	if r.curRow != nil {
-		return r.curRow.ID
-	}
-	return ""
+	return r.curVal.(*driver.Row).ID
 }
 
 // Key returns the Key of the last-read result as a de-quoted JSON object. For
 // compound keys, the ScanKey() method may be more convenient.
 func (r *Rows) Key() string {
-	if r.curRow != nil {
-		return strings.Trim(string(r.curRow.Key), `"`)
-	}
-	return ""
+	return strings.Trim(string(r.curVal.(*driver.Row).Key), `"`)
 }
 
 // Changes returns a list of changed revs. Only valid for the changes feed..
 func (r *Rows) Changes() []string {
-	if r.curRow != nil {
-		return r.curRow.Changes
-	}
-	return nil
+	return r.curVal.(*driver.Row).Changes
 }
 
 // Deleted returns true for the changes feed if the change relates to a deleted
 // document.
 func (r *Rows) Deleted() bool {
-	if r.curRow != nil {
-		return r.curRow.Deleted
-	}
-	return false
+	return r.curVal.(*driver.Row).Deleted
 }
 
 // Offset returns the starting offset where the result set started. It is

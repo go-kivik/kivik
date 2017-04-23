@@ -13,6 +13,7 @@ type Iterator struct {
 	feed driver.Iterator
 
 	closemu sync.RWMutex
+	ready   bool // Set to true once Next() has been called
 	closed  bool
 	lasterr error // non-nil only if closed is true
 
@@ -54,6 +55,7 @@ func (i *Iterator) next() (doClose, ok bool) {
 	if i.closed {
 		return false, false
 	}
+	i.ready = true
 	i.lasterr = i.feed.Next(i.curVal)
 	if i.lasterr != nil {
 		return true, false

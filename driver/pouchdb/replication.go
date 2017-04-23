@@ -95,13 +95,16 @@ func (r *replication) EndTime() time.Time    { defer r.readLock()(); return r.en
 func (r *replication) State() string         { defer r.readLock()(); return r.state }
 func (r *replication) Err() error            { defer r.readLock()(); return r.err }
 
-func (r *replication) Update(ctx context.Context, state *driver.ReplicationInfo) error {
+func (r *replication) Update(ctx context.Context, state *driver.ReplicationInfo) (err error) {
+	defer bindings.RecoverError(&err)
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.lastError != nil {
 		r.err = r.lastError
 	}
 	switch r.lastEvent {
+	case "":
+		return nil
 	case "denied", "error":
 		r.state = string(kivik.ReplicationError)
 	case "complete":
@@ -109,7 +112,7 @@ func (r *replication) Update(ctx context.Context, state *driver.ReplicationInfo)
 	case "change":
 		r.state = string(kivik.ReplicationStarted)
 	default:
-		return fmt.Errorf("Unexpected event %s", r.lastEvent)
+		return fmt.Errorf("Unexpected event: %s", r.lastEvent)
 	}
 	if !r.lastState.StartTime.IsZero() && r.startTime.IsZero() {
 		r.startTime = r.lastState.StartTime
@@ -117,6 +120,7 @@ func (r *replication) Update(ctx context.Context, state *driver.ReplicationInfo)
 	if !r.lastState.EndTime.IsZero() && r.endTime.IsZero() {
 		r.endTime = r.lastState.EndTime
 	}
+	r.lastState = nil
 	return nil
 }
 
@@ -136,11 +140,21 @@ func (r *replication) Delete(ctx context.Context) (err error) {
 	return errors.Status(kivik.StatusNotFound, "replication not found")
 }
 
-func replicationEndpoint(dsn string, object interface{}) interface{} {
-	if object != nil {
-		return object
+func replicationEndpoint(dsn string, object interface{}) (name string, obj interface{}, err error) {
+	defer bindings.RecoverError(&err)
+	if object == nil {
+		return dsn, dsn, nil
 	}
-	return dsn
+	switch t := object.(type) {
+	case *js.Object:
+		// Assume it's a raw PouchDB object
+		return t.Get("name").String(), t, nil
+	case *bindings.DB:
+		// Unwrap the bare object
+		return t.Object.Get("name").String(), t.Object, nil
+	}
+	// Just let it pass through
+	return "<unknown>", obj, nil
 }
 
 func (c *client) Replicate(_ context.Context, targetDSN, sourceDSN string, options map[string]interface{}) (driver.Replication, error) {
@@ -149,26 +163,21 @@ func (c *client) Replicate(_ context.Context, targetDSN, sourceDSN string, optio
 		return nil, err
 	}
 	// Allow overriding source and target with options, i.e. for PouchDB objects
-	source := replicationEndpoint(sourceDSN, opts["source"])
-	target := replicationEndpoint(targetDSN, opts["target"])
-	delete(opts, "source")
-	delete(opts, "target")
-	rep, err := c.pouch.Replicate(source, target, opts)
+	sourceName, sourceObj, err := replicationEndpoint(sourceDSN, opts["source"])
 	if err != nil {
 		return nil, err
 	}
-	return c.newReplication(extractDSN(target), extractDSN(source), rep), nil
-}
-
-func extractDSN(e interface{}) string {
-	switch t := e.(type) {
-	case string:
-		return t
-	case *client:
-		return t.dsn.String()
-	default:
-		return "<unknown>"
+	targetName, targetObj, err := replicationEndpoint(targetDSN, opts["target"])
+	if err != nil {
+		return nil, err
 	}
+	delete(opts, "source")
+	delete(opts, "target")
+	rep, err := c.pouch.Replicate(sourceObj, targetObj, opts)
+	if err != nil {
+		return nil, err
+	}
+	return c.newReplication(targetName, sourceName, rep), nil
 }
 
 func (c *client) GetReplications(_ context.Context, options map[string]interface{}) ([]driver.Replication, error) {

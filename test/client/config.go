@@ -61,12 +61,16 @@ func testSet(ctx *kt.Context, client *kivik.Client, name string) {
 	ctx.Parallel()
 	c, _ := client.Config(context.Background())
 	defer c.Delete(context.Background(), name, name)
-	err := c.Set(context.Background(), name, name, name)
+	err := kt.Retry(func() error {
+		return c.Set(context.Background(), name, name, name)
+	})
 	if !ctx.IsExpectedSuccess(err) {
 		return
 	}
 	// Set should be 100% idempotent, so check that we get the same result
-	err2 := c.Set(context.Background(), name, name, name+name)
+	err2 := kt.Retry(func() error {
+		return c.Set(context.Background(), name, name, name+name)
+	})
 	if errors.StatusCode(err) != errors.StatusCode(err2) {
 		ctx.Errorf("Resetting config resulted in a different error. %s followed by %s", err, err2)
 		return

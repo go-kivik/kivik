@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/flimzy/kivik"
+	"github.com/flimzy/kivik/driver/pouchdb/bindings"
 	"github.com/flimzy/kivik/test/kt"
 )
 
@@ -26,6 +27,24 @@ func replicate(ctx *kt.Context) {
 	})
 }
 
+func callReplicate(ctx *kt.Context, client *kivik.Client, target, source, repID string, opts kivik.Options) (*kivik.Replication, error) {
+	opts = replicationOptions(ctx, client, target, source, repID, opts)
+	return client.Replicate(context.Background(), target, source, opts)
+}
+
+func replicationOptions(ctx *kt.Context, client *kivik.Client, target, source, repID string, in map[string]interface{}) map[string]interface{} {
+	if in == nil {
+		in = make(map[string]interface{})
+	}
+	if ctx.String("mode") != "pouchdb" {
+		in["_id"] = repID
+		return in
+	}
+	in["source"] = bindings.GlobalPouchDB().New(source, ctx.Options("db"))
+	in["target"] = bindings.GlobalPouchDB().New(target, ctx.Options("db"))
+	return in
+}
+
 func testReplication(ctx *kt.Context, client *kivik.Client) {
 	prefix := ctx.String("prefix")
 	switch prefix {
@@ -36,14 +55,13 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 	}
 	dbname1 := prefix + ctx.TestDB()
 	dbname2 := prefix + ctx.TestDB()
-	defer ctx.Admin.DestroyDB(context.Background(), dbname1)
-	defer ctx.Admin.DestroyDB(context.Background(), dbname2)
+	defer ctx.Admin.DestroyDB(context.Background(), dbname1, ctx.Options("db"))
+	defer ctx.Admin.DestroyDB(context.Background(), dbname2, ctx.Options("db"))
 	ctx.Run("group", func(ctx *kt.Context) {
 		ctx.Run("ValidReplication", func(ctx *kt.Context) {
 			ctx.Parallel()
 			replID := ctx.TestDBName()
-			var rep *kivik.Replication
-			rep, err := client.Replicate(context.Background(), dbname1, dbname2, kivik.Options{"_id": replID})
+			rep, err := callReplicate(ctx, client, dbname1, dbname2, replID, nil)
 			if !ctx.IsExpectedSuccess(err) {
 				return
 			}
@@ -79,8 +97,15 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 				if !ctx.IsExpectedSuccess(rep.Err()) {
 					return
 				}
-				if rep.ReplicationID() == "" {
-					ctx.Errorf("Expected a replication ID")
+				switch ctx.String("mode") {
+				case "pouchdb":
+					if rep.ReplicationID() != "" {
+						ctx.Errorf("Did not expect replication ID")
+					}
+				default:
+					if rep.ReplicationID() == "" {
+						ctx.Errorf("Expected a replication ID")
+					}
 				}
 				if rep.Source != dbname2 {
 					ctx.Errorf("Unexpected source. Expected: %s, Actual: %s\n", dbname2, rep.Source)
@@ -97,10 +122,10 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 			ctx.Parallel()
 			dbnameA := prefix + ctx.TestDB()
 			dbnameB := prefix + ctx.TestDB()
-			defer ctx.Admin.DestroyDB(context.Background(), dbnameA)
-			defer ctx.Admin.DestroyDB(context.Background(), dbnameB)
+			defer ctx.Admin.DestroyDB(context.Background(), dbnameA, ctx.Options("db"))
+			defer ctx.Admin.DestroyDB(context.Background(), dbnameB, ctx.Options("db"))
 			replID := ctx.TestDBName()
-			rep, err := client.Replicate(context.Background(), dbnameA, dbnameB, kivik.Options{"_id": replID, "continuous": true})
+			rep, err := callReplicate(ctx, client, dbnameA, dbnameB, replID, kivik.Options{"continuous": true})
 			if !ctx.IsExpectedSuccess(err) {
 				return
 			}
@@ -139,7 +164,7 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 		ctx.Run("MissingSource", func(ctx *kt.Context) {
 			ctx.Parallel()
 			replID := ctx.TestDBName()
-			rep, err := client.Replicate(context.Background(), dbname1, "http://localhost:5984/foo", kivik.Options{"_id": replID})
+			rep, err := callReplicate(ctx, client, dbname1, "http://localhost:5984/foo", replID, nil)
 			if !ctx.IsExpectedSuccess(err) {
 				return
 			}
@@ -148,7 +173,7 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 		ctx.Run("MissingTarget", func(ctx *kt.Context) {
 			ctx.Parallel()
 			replID := ctx.TestDBName()
-			rep, err := client.Replicate(context.Background(), "http://localhost:5984/foo", dbname2, kivik.Options{"_id": replID})
+			rep, err := callReplicate(ctx, client, "http://localhost:5984/foo", dbname2, replID, nil)
 			if !ctx.IsExpectedSuccess(err) {
 				return
 			}

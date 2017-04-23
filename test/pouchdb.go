@@ -73,6 +73,10 @@ func init() {
 
 		"DeleteIndex/RW/Admin/group/NotFoundDdoc.status": kivik.StatusNotFound,
 		"DeleteIndex/RW/Admin/group/NotFoundName.status": kivik.StatusNotFound,
+
+		"Replicate.prefix":         "none",
+		"Replicate.timeoutSeconds": 5,
+		"Replicate.mode":           "pouchdb",
 	})
 	RegisterSuite(SuitePouchRemote, kt.SuiteConfig{
 		// Features which are not supported by PouchDB

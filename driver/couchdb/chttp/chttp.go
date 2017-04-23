@@ -200,18 +200,23 @@ func fixPath(req *http.Request, path string) {
 	req.URL.RawPath = "/" + strings.TrimPrefix(parts[0], "/")
 }
 
-// EncodeBody JSON encodes i to r. If an encoding error occurs, err will be set
-// and cancel() called.
-func EncodeBody(i interface{}, err *error, cancel context.CancelFunc) (r io.Reader) {
+// EncodeBody JSON encodes i to r. A call to errFunc will block until encoding
+// has completed, then return the errur status of the encoding job. If an
+// encoding error occurs, cancel() called.
+func EncodeBody(i interface{}, cancel context.CancelFunc) (r io.Reader, errFunc func() error) {
 	r, w := io.Pipe()
+	errChan := make(chan error, 1)
 	go func() {
-		if jsonErr := json.NewEncoder(w).Encode(i); jsonErr != nil {
-			*err = jsonErr
+		if err := json.NewEncoder(w).Encode(i); err != nil {
 			cancel()
+			errChan <- err
 		}
+		close(errChan)
 		w.Close()
 	}()
-	return r
+	return r, func() error {
+		return <-errChan
+	}
 }
 
 func setHeaders(req *http.Request, opts *Options) {

@@ -3,7 +3,6 @@ package kivik
 import (
 	"context"
 	"errors"
-	"io"
 	"strings"
 
 	"github.com/flimzy/kivik/driver"
@@ -11,8 +10,30 @@ import (
 
 // Rows is an iterator over a a multi-value query.
 type Rows struct {
-	*Iterator
+	*iter
 	rowsi driver.Rows
+}
+
+// Next prepares the next result value for reading. It returns true on success
+// or false if there are no more results or an error  occurs while preparing it.
+// Err should be consulted to distinguish between the two.
+func (r *Rows) Next() bool {
+	return r.iter.Next()
+}
+
+// Err returns the error, if any, that was encountered during iteration. Err may
+// be called after an explicit or implicit Close.
+func (r *Rows) Err() error {
+	return r.iter.Err()
+}
+
+// Close closes the Rows, preventing further enumeration, and freeing any
+// resources (such as the http request body) of the underlying query. If Next is
+// called and there are no further results, Rows is closed automatically and it
+// will suffice to check the result of Err. Close is idempotent and does not
+// affect the result of Err.
+func (r *Rows) Close() error {
+	return r.iter.Close()
 }
 
 type rowsIterator struct{ driver.Rows }
@@ -24,8 +45,8 @@ func (r *rowsIterator) Next(i interface{}) error { return r.Rows.Next(i.(*driver
 
 func newRows(ctx context.Context, rowsi driver.Rows) *Rows {
 	return &Rows{
-		Iterator: newIterator(ctx, &rowsIterator{rowsi}),
-		rowsi:    rowsi,
+		iter:  newIterator(ctx, &rowsIterator{rowsi}),
+		rowsi: rowsi,
 	}
 }
 
@@ -116,15 +137,4 @@ func (r *Rows) TotalRows() int64 {
 // reflects, if requested in the query.
 func (r *Rows) UpdateSeq() string {
 	return r.rowsi.UpdateSeq()
-}
-
-// Err returns the error, if any, that was encountered during iteration. Err
-// may be called after an explicit or implicit Close.
-func (r *Rows) Err() error {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-	if r.lasterr == io.EOF {
-		return nil
-	}
-	return r.lasterr
 }

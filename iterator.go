@@ -16,8 +16,7 @@ type iterator interface {
 	Close() error
 }
 
-// An Iterator allows ...
-type Iterator struct {
+type iter struct {
 	feed iterator
 
 	mu      sync.RWMutex
@@ -30,7 +29,7 @@ type Iterator struct {
 	curVal interface{}
 }
 
-func (i *Iterator) rlock() (unlock func(), err error) {
+func (i *iter) rlock() (unlock func(), err error) {
 	i.mu.RLock()
 	if i.closed {
 		i.mu.RUnlock()
@@ -43,8 +42,8 @@ func (i *Iterator) rlock() (unlock func(), err error) {
 	return func() { i.mu.RUnlock() }, nil
 }
 
-func newIterator(ctx context.Context, feed iterator) *Iterator {
-	i := &Iterator{
+func newIterator(ctx context.Context, feed iterator) *iter {
+	i := &iter{
 		feed:   feed,
 		curVal: feed.SetValue(),
 	}
@@ -54,7 +53,7 @@ func newIterator(ctx context.Context, feed iterator) *Iterator {
 }
 
 // awaitDone blocks until the rows are closed or the context is cancelled, then closes the iterator if it's still open.
-func (i *Iterator) awaitDone(ctx context.Context) {
+func (i *iter) awaitDone(ctx context.Context) {
 	<-ctx.Done()
 	_ = i.close(ctx.Err())
 }
@@ -62,7 +61,7 @@ func (i *Iterator) awaitDone(ctx context.Context) {
 // Next prepares the next iterator result value for reading. It returns true on
 // success, or false if there is no next result or an error occurs while
 // preparing it. Err should be consulted to distinguish between the two.
-func (i *Iterator) Next() bool {
+func (i *iter) Next() bool {
 	doClose, ok := i.next()
 	if doClose {
 		_ = i.Close()
@@ -70,7 +69,7 @@ func (i *Iterator) Next() bool {
 	return ok
 }
 
-func (i *Iterator) next() (doClose, ok bool) {
+func (i *iter) next() (doClose, ok bool) {
 	i.mu.RLock()
 	defer i.mu.RUnlock()
 	if i.closed {
@@ -89,11 +88,11 @@ func (i *Iterator) next() (doClose, ok bool) {
 // called and there are no further results, Iterator is closed automatically and
 // it will suffice to check the result of Err. Close is idempotent and does not
 // affect the result of Err.
-func (i *Iterator) Close() error {
+func (i *iter) Close() error {
 	return i.close(nil)
 }
 
-func (i *Iterator) close(err error) error {
+func (i *iter) close(err error) error {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 	if i.closed {
@@ -116,7 +115,7 @@ func (i *Iterator) close(err error) error {
 
 // Err returns the error, if any, that was encountered during iteration. Err
 // may be called after an explicit or implicit Close.
-func (i *Iterator) Err() error {
+func (i *iter) Err() error {
 	i.mu.RLock()
 	defer i.mu.RUnlock()
 	if i.lasterr == io.EOF {

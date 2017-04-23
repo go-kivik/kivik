@@ -7,8 +7,30 @@ import (
 
 // Changes is an iterator over the database changes feed.
 type Changes struct {
-	*Iterator
+	*iter
 	changesi driver.Changes
+}
+
+// Next prepares the next result value for reading. It returns true on success
+// or false if there are no more results, due to an error or the changes feed
+// having been closed. Err should be consulted to determine any error.
+func (c *Changes) Next() bool {
+	return c.iter.Next()
+}
+
+// Err returns the error, if any, that was encountered during iteration. Err may
+// be called after an explicit or implicit Close.
+func (c *Changes) Err() error {
+	return c.iter.Err()
+}
+
+// Close closes the Changes feed, preventing further enumeration, and freeing
+// any resources (such as the http request body) of the underlying query. If
+// Next is called and there are no further results, Changes is closed
+// automatically and it will suffice to check the result of Err. Close is
+// idempotent and does not affect the result of Err.
+func (c *Changes) Close() error {
+	return c.iter.Close()
 }
 
 type changesIterator struct{ driver.Changes }
@@ -20,7 +42,7 @@ func (c *changesIterator) Next(i interface{}) error { return c.Changes.Next(i.(*
 
 func newChanges(ctx context.Context, changesi driver.Changes) *Changes {
 	return &Changes{
-		Iterator: newIterator(ctx, &changesIterator{changesi}),
+		iter:     newIterator(ctx, &changesIterator{changesi}),
 		changesi: changesi,
 	}
 }

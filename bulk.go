@@ -2,102 +2,79 @@ package kivik
 
 import (
 	"context"
-	"io"
-	"sync"
 
 	"github.com/flimzy/kivik/driver"
 )
 
 // BulkResults is an iterator over the results of a BulkDocs query.
 type BulkResults struct {
+	*iter
 	bulki driver.BulkResults
-
-	// closemu prevents Rows from closing while thereis an active streaming
-	// result. It is held for read during non-close operations and exclusively
-	// during close.
-	//
-	// closemu guards lasterr and closed.
-	closemu sync.RWMutex
-	closed  bool
-	lasterr error // non-nil only if closed is true
-
-	curResult *driver.BulkResult
 }
 
 // Next returns the next BulkResult from the feed. If an error occurs, it will
 // be returned and the feed closed. io.EOF will be returned when there are no
 // more results.
 func (r *BulkResults) Next() bool {
-	doClose, ok := r.next()
-	if doClose {
-		_ = r.Close()
-	}
-	return ok
+	return r.iter.Next()
 }
 
-func (r *BulkResults) next() (doClose, ok bool) {
-	r.closemu.RLock()
-	defer r.closemu.RUnlock()
-	if r.closed {
-		return false, false
-	}
-	if r.curResult == nil {
-		r.curResult = &driver.BulkResult{}
-	}
-	r.lasterr = r.bulki.Next(r.curResult)
-	if r.lasterr != nil {
-		return true, false
-	}
-	return false, true
+// Err returns the error, if any, that was encountered during iteration. Err
+// may be called after an explicit or implicit Close.
+func (r *BulkResults) Err() error {
+	return r.iter.Err()
 }
 
 // Close closes the feed. Any unread updates will still be accessible via
 // Next().
 func (r *BulkResults) Close() error {
-	return r.close(nil)
+	return r.iter.Close()
 }
 
-func (r *BulkResults) close(err error) error {
-	r.closemu.Lock()
-	defer r.closemu.Unlock()
-	if r.closed {
-		return nil
-	}
-	r.closed = true
+type bulkIterator struct{ driver.BulkResults }
 
-	if r.lasterr == nil {
-		r.lasterr = err
-	}
+var _ iterator = &bulkIterator{}
 
-	return r.bulki.Close()
+func (r *bulkIterator) SetValue() interface{}    { return &driver.BulkResult{} }
+func (r *bulkIterator) Next(i interface{}) error { return r.BulkResults.Next(i.(*driver.BulkResult)) }
+
+func newBulkResults(ctx context.Context, bulki driver.BulkResults) *BulkResults {
+	return &BulkResults{
+		iter:  newIterator(ctx, &bulkIterator{bulki}),
+		bulki: bulki,
+	}
 }
 
 // ID returns the document ID name for the current result.
 func (r *BulkResults) ID() string {
-	return r.curResult.ID
+	runlock, err := r.rlock()
+	if err != nil {
+		return ""
+	}
+	defer runlock()
+	return r.curVal.(*driver.BulkResult).ID
 }
 
 // Rev returns the revision of the current curResult.
 func (r *BulkResults) Rev() string {
-	return r.curResult.Rev
+	runlock, err := r.rlock()
+	if err != nil {
+		return ""
+	}
+	defer runlock()
+	return r.curVal.(*driver.BulkResult).Rev
 }
 
 // UpdateErr returns the error associated with the current result, or nil
 // if none. Do not confuse this with Err, which returns an error for the
 // iterator itself.
 func (r *BulkResults) UpdateErr() error {
-	return r.curResult.Error
-}
-
-// Err returns the error, if any, that was encountered during iteration. Err
-// may be called after an explicit or implicit Close.
-func (r *BulkResults) Err() error {
-	r.closemu.RLock()
-	defer r.closemu.RUnlock()
-	if r.lasterr == io.EOF {
+	runlock, err := r.rlock()
+	if err != nil {
 		return nil
 	}
-	return r.lasterr
+	defer runlock()
+	return r.curVal.(*driver.BulkResult).Error
 }
 
 // BulkDocs allows you to create and update multiple documents at the same time
@@ -109,5 +86,5 @@ func (db *DB) BulkDocs(ctx context.Context, docs ...interface{}) (*BulkResults, 
 	if err != nil {
 		return nil, err
 	}
-	return &BulkResults{bulki: bulki}, nil
+	return newBulkResults(ctx, bulki), nil
 }

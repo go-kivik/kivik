@@ -179,6 +179,9 @@ func (c *client) DB(ctx context.Context, dbName string, options map[string]inter
 	if err != nil {
 		return nil, err
 	}
+	if !exists {
+		return nil, kivik.ErrNotFound
+	}
 	return &db{
 		db:     c.pouch.New(c.dbURL(dbName), opts),
 		client: c,

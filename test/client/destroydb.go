@@ -28,15 +28,12 @@ func destroyDB(ctx *kt.Context) {
 func testDestroy(ctx *kt.Context, client *kivik.Client) {
 	ctx.Run("ExistingDB", func(ctx *kt.Context) {
 		ctx.Parallel()
-		dbName := ctx.TestDBName()
-		defer ctx.Admin.DestroyDB(context.Background(), dbName)
-		if err := ctx.Admin.CreateDB(context.Background(), dbName); err != nil {
-			ctx.Fatalf("Failed to create db: %s", err)
-		}
-		ctx.CheckError(client.DestroyDB(context.Background(), dbName))
+		dbName := ctx.TestDB()
+		defer ctx.Admin.DestroyDB(context.Background(), dbName, ctx.Options("db"))
+		ctx.CheckError(client.DestroyDB(context.Background(), dbName, ctx.Options("db")))
 	})
 	ctx.Run("NonExistantDB", func(ctx *kt.Context) {
 		ctx.Parallel()
-		ctx.CheckError(client.DestroyDB(context.Background(), ctx.TestDBName()))
+		ctx.CheckError(client.DestroyDB(context.Background(), ctx.TestDBName(), ctx.Options("db")))
 	})
 }

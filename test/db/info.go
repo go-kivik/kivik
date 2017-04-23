@@ -35,12 +35,9 @@ func dbInfo(ctx *kt.Context) {
 }
 
 func rwTests(ctx *kt.Context, client *kivik.Client) {
-	dbname := ctx.TestDBName()
-	defer ctx.Admin.DestroyDB(context.Background(), dbname)
-	if err := ctx.Admin.CreateDB(context.Background(), dbname); err != nil {
-		ctx.Fatalf("Failed to create test db: %s", err)
-	}
-	db, err := ctx.Admin.DB(context.Background(), dbname)
+	dbname := ctx.TestDB()
+	defer ctx.Admin.DestroyDB(context.Background(), dbname, ctx.Options("db"))
+	db, err := ctx.Admin.DB(context.Background(), dbname, ctx.Options("db"))
 	if err != nil {
 		ctx.Fatalf("Failed to connect to db: %s", err)
 	}
@@ -71,7 +68,7 @@ func roTests(ctx *kt.Context, client *kivik.Client) {
 }
 
 func testDBInfo(ctx *kt.Context, client *kivik.Client, dbname string, docCount int64) {
-	db, err := client.DB(context.Background(), dbname)
+	db, err := client.DB(context.Background(), dbname, ctx.Options("db"))
 	// Check against the same status for connecting, and db.Info() later, because
 	// where the error might occur is backend-specific.
 	var info *kivik.DBInfo

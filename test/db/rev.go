@@ -14,12 +14,9 @@ func init() {
 
 func rev(ctx *kt.Context) {
 	ctx.RunRW(func(ctx *kt.Context) {
-		dbName := ctx.TestDBName()
-		defer ctx.Admin.DestroyDB(context.Background(), dbName)
-		if err := ctx.Admin.CreateDB(context.Background(), dbName); err != nil {
-			ctx.Fatalf("Failed to create test db: %s", err)
-		}
-		db, err := ctx.Admin.DB(context.Background(), dbName)
+		dbName := ctx.TestDB()
+		defer ctx.Admin.DestroyDB(context.Background(), dbName, ctx.Options("db"))
+		db, err := ctx.Admin.DB(context.Background(), dbName, ctx.Options("db"))
 		if err != nil {
 			ctx.Fatalf("Failed to connect to test db: %s", err)
 		}
@@ -53,7 +50,7 @@ func rev(ctx *kt.Context) {
 		ctx.Run("group", func(ctx *kt.Context) {
 			ctx.RunAdmin(func(ctx *kt.Context) {
 				ctx.Parallel()
-				db, err := ctx.Admin.DB(context.Background(), dbName)
+				db, err := ctx.Admin.DB(context.Background(), dbName, ctx.Options("db"))
 				if !ctx.IsExpectedSuccess(err) {
 					return
 				}
@@ -64,7 +61,7 @@ func rev(ctx *kt.Context) {
 			})
 			ctx.RunNoAuth(func(ctx *kt.Context) {
 				ctx.Parallel()
-				db, err := ctx.NoAuth.DB(context.Background(), dbName)
+				db, err := ctx.NoAuth.DB(context.Background(), dbName, ctx.Options("db"))
 				if !ctx.IsExpectedSuccess(err) {
 					return
 				}

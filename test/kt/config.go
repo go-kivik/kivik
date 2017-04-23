@@ -22,12 +22,21 @@ func name(t *testing.T) string {
 // get looks for the requested key at the current level, and if not found it
 // looks at the parent key.
 func (c SuiteConfig) get(name, key string) interface{} {
-	v, ok := c[name+"."+key]
+	var k string
+	if name == "" {
+		k = key
+	} else {
+		k = name + "." + key
+	}
+	v, ok := c[k]
 	if ok {
 		return v
 	}
-	if !strings.Contains(name, "/") {
+	if name == "" {
 		return nil
+	}
+	if !strings.Contains(name, "/") {
+		return c.get("", key)
 	}
 	// Try the parent
 	return c.get(name[0:strings.LastIndex(name, "/")], key)

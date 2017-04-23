@@ -5,10 +5,13 @@ package test
 import (
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/test/kt"
+	"github.com/gopherjs/gopherjs/js"
 )
 
 func init() {
 	RegisterSuite(SuitePouchLocal, kt.SuiteConfig{
+		"db": map[string]interface{}{"db": js.Global.Call("require", "memdown")},
+
 		"PreCleanup.skip": true,
 
 		// Features which are not supported by PouchDB

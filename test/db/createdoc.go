@@ -13,11 +13,8 @@ func init() {
 
 func createDoc(ctx *kt.Context) {
 	ctx.RunRW(func(ctx *kt.Context) {
-		dbname := ctx.TestDBName()
-		if err := ctx.Admin.CreateDB(context.Background(), dbname); err != nil {
-			ctx.Fatalf("Failed to create test db: %s", err)
-		}
-		defer ctx.Admin.DestroyDB(context.Background(), dbname)
+		dbname := ctx.TestDB()
+		defer ctx.Admin.DestroyDB(context.Background(), dbname, ctx.Options("db"))
 		ctx.Run("group", func(ctx *kt.Context) {
 			ctx.RunAdmin(func(ctx *kt.Context) {
 				ctx.Parallel()
@@ -32,7 +29,7 @@ func createDoc(ctx *kt.Context) {
 }
 
 func testCreate(ctx *kt.Context, client *kivik.Client, dbname string) {
-	db, err := client.DB(context.Background(), dbname)
+	db, err := client.DB(context.Background(), dbname, ctx.Options("db"))
 	if err != nil {
 		ctx.Fatalf("Failed to connect to database: %s", err)
 	}

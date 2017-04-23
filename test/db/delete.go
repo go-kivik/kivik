@@ -30,17 +30,13 @@ type deleteDoc struct {
 
 func testDelete(ctx *kt.Context, client *kivik.Client) {
 	ctx.Parallel()
-	dbName := ctx.TestDBName()
-	if err := ctx.Admin.CreateDB(context.Background(), dbName); err != nil {
-		ctx.Errorf("Failed to create test db '%s': %s", dbName, err)
-		return
-	}
-	defer ctx.Admin.DestroyDB(context.Background(), dbName)
-	admdb, err := ctx.Admin.DB(context.Background(), dbName)
+	dbName := ctx.TestDB()
+	defer ctx.Admin.DestroyDB(context.Background(), dbName, ctx.Options("db"))
+	admdb, err := ctx.Admin.DB(context.Background(), dbName, ctx.Options("db"))
 	if err != nil {
 		ctx.Errorf("Failed to connect to db as admin: %s", err)
 	}
-	db, err := client.DB(context.Background(), dbName)
+	db, err := client.DB(context.Background(), dbName, ctx.Options("db"))
 	if err != nil {
 		ctx.Errorf("Failed to connect to db: %s", err)
 		return

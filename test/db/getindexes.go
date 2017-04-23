@@ -46,12 +46,9 @@ func roGetIndexesTests(ctx *kt.Context, client *kivik.Client) {
 }
 
 func rwGetIndexesTests(ctx *kt.Context, client *kivik.Client) {
-	dbname := ctx.TestDBName()
-	defer ctx.Admin.DestroyDB(context.Background(), dbname)
-	if err := ctx.Admin.CreateDB(context.Background(), dbname); err != nil {
-		ctx.Fatalf("Failed to create db: %s", err)
-	}
-	dba, err := ctx.Admin.DB(context.Background(), dbname)
+	dbname := ctx.TestDB()
+	defer ctx.Admin.DestroyDB(context.Background(), dbname, ctx.Options("db"))
+	dba, err := ctx.Admin.DB(context.Background(), dbname, ctx.Options("db"))
 	if err != nil {
 		ctx.Fatalf("Failed to open db as admin: %s", err)
 	}
@@ -74,7 +71,7 @@ func rwGetIndexesTests(ctx *kt.Context, client *kivik.Client) {
 }
 
 func testGetIndexes(ctx *kt.Context, client *kivik.Client, dbname string, expected interface{}) {
-	db, err := client.DB(context.Background(), dbname)
+	db, err := client.DB(context.Background(), dbname, ctx.Options("db"))
 	if err != nil {
 		ctx.Fatalf("Failed to open db: %s", err)
 	}

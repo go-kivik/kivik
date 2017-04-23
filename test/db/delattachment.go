@@ -13,11 +13,8 @@ func init() {
 
 func delAttachment(ctx *kt.Context) {
 	ctx.RunRW(func(ctx *kt.Context) {
-		dbname := ctx.TestDBName()
-		defer ctx.Admin.DestroyDB(context.Background(), dbname)
-		if err := ctx.Admin.CreateDB(context.Background(), dbname); err != nil {
-			ctx.Fatalf("Failed to create db: %s", err)
-		}
+		dbname := ctx.TestDB()
+		defer ctx.Admin.DestroyDB(context.Background(), dbname, ctx.Options("db"))
 		ctx.Run("group", func(ctx *kt.Context) {
 			ctx.RunAdmin(func(ctx *kt.Context) {
 				ctx.Parallel()
@@ -38,7 +35,7 @@ func delAttachment(ctx *kt.Context) {
 }
 
 func testDeleteAttachmentNoDoc(ctx *kt.Context, client *kivik.Client, dbname string) {
-	db, err := client.DB(context.Background(), dbname)
+	db, err := client.DB(context.Background(), dbname, ctx.Options("db"))
 	if err != nil {
 		ctx.Fatalf("Failed to connect to db")
 	}
@@ -63,12 +60,12 @@ func testDeleteAttachmentsDDoc(ctx *kt.Context, client *kivik.Client, dbname, fi
 
 func doDeleteAttachmentTest(ctx *kt.Context, client *kivik.Client, dbname, docID, filename string) {
 
-	db, err := client.DB(context.Background(), dbname)
+	db, err := client.DB(context.Background(), dbname, ctx.Options("db"))
 	if err != nil {
 		ctx.Fatalf("Failed to connect to db")
 	}
 	ctx.Parallel()
-	adb, err := ctx.Admin.DB(context.Background(), dbname)
+	adb, err := ctx.Admin.DB(context.Background(), dbname, ctx.Options("db"))
 	if err != nil {
 		ctx.Fatalf("Failed to open db: %s", err)
 	}

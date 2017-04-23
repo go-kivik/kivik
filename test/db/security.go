@@ -47,12 +47,9 @@ func security(ctx *kt.Context) {
 		}
 	})
 	ctx.RunRW(func(ctx *kt.Context) {
-		dbname := ctx.TestDBName()
-		defer ctx.Admin.DestroyDB(context.Background(), dbname)
-		if err := ctx.Admin.CreateDB(context.Background(), dbname); err != nil {
-			ctx.Fatalf("Failed to create db: %s", err)
-		}
-		db, err := ctx.Admin.DB(context.Background(), dbname)
+		dbname := ctx.TestDB()
+		defer ctx.Admin.DestroyDB(context.Background(), dbname, ctx.Options("db"))
+		db, err := ctx.Admin.DB(context.Background(), dbname, ctx.Options("db"))
 		if err != nil {
 			ctx.Fatalf("Failed to open db: %s", err)
 		}
@@ -90,10 +87,10 @@ func testSetSecurityTests(ctx *kt.Context, client *kivik.Client) {
 	ctx.Run("Exists", func(ctx *kt.Context) {
 		ctx.Parallel()
 		dbname := ctx.TestDBName()
-		if err := ctx.Admin.CreateDB(context.Background(), dbname); err != nil {
+		if err := ctx.Admin.CreateDB(context.Background(), dbname, ctx.Options("db")); err != nil {
 			ctx.Fatalf("Failed to create db: %s", err)
 		}
-		defer ctx.Admin.DestroyDB(context.Background(), dbname)
+		defer ctx.Admin.DestroyDB(context.Background(), dbname, ctx.Options("db"))
 		testSetSecurity(ctx, client, dbname)
 	})
 	ctx.Run("NotExists", func(ctx *kt.Context) {
@@ -104,7 +101,7 @@ func testSetSecurityTests(ctx *kt.Context, client *kivik.Client) {
 }
 
 func testSetSecurity(ctx *kt.Context, client *kivik.Client, dbname string) {
-	db, err := client.DB(context.Background(), dbname)
+	db, err := client.DB(context.Background(), dbname, ctx.Options("db"))
 	if err != nil {
 		ctx.Fatalf("Failed to open db: %s", err)
 	}
@@ -115,7 +112,7 @@ func testSetSecurity(ctx *kt.Context, client *kivik.Client, dbname string) {
 }
 
 func testGetSecurity(ctx *kt.Context, client *kivik.Client, dbname string, expected *kivik.Security) {
-	db, err := client.DB(context.Background(), dbname)
+	db, err := client.DB(context.Background(), dbname, ctx.Options("db"))
 	if err != nil {
 		ctx.Fatalf("Failed to open db: %s", err)
 	}

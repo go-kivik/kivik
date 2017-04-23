@@ -113,28 +113,28 @@ func (d *db) CreateDoc(ctx context.Context, doc interface{}) (docID, rev string,
 		ID  string `json:"id"`
 		Rev string `json:"rev"`
 	}{}
-	var jsonErr error
 	var cancel context.CancelFunc
 	ctx, cancel = context.WithCancel(ctx)
 	defer cancel()
+	body, errFunc := chttp.EncodeBody(doc, cancel)
 	opts := &chttp.Options{
-		Body:        chttp.EncodeBody(doc, &jsonErr, cancel),
+		Body:        body,
 		ForceCommit: d.forceCommit,
 	}
 	_, err = d.Client.DoJSON(ctx, kivik.MethodPost, d.dbName, opts, &result)
-	if jsonErr != nil {
+	if jsonErr := errFunc(); jsonErr != nil {
 		return "", "", jsonErr
 	}
 	return result.ID, result.Rev, err
 }
 
 func (d *db) Put(ctx context.Context, docID string, doc interface{}) (rev string, err error) {
-	var jsonErr error
 	var cancel context.CancelFunc
 	ctx, cancel = context.WithCancel(ctx)
 	defer cancel()
+	body, errFunc := chttp.EncodeBody(doc, cancel)
 	opts := &chttp.Options{
-		Body:        chttp.EncodeBody(doc, &jsonErr, cancel),
+		Body:        body,
 		ForceCommit: d.forceCommit,
 	}
 	var result struct {
@@ -142,6 +142,9 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}) (rev string
 		Rev string `json:"rev"`
 	}
 	_, err = d.Client.DoJSON(ctx, kivik.MethodPut, d.path(chttp.EncodeDocID(docID), nil), opts, &result)
+	if jsonErr := errFunc(); jsonErr != nil {
+		return "", jsonErr
+	}
 	if err != nil {
 		return "", err
 	}
@@ -230,15 +233,18 @@ func (d *db) Security(ctx context.Context) (*driver.Security, error) {
 }
 
 func (d *db) SetSecurity(ctx context.Context, security *driver.Security) error {
-	var jsonErr error
 	var cancel context.CancelFunc
 	ctx, cancel = context.WithCancel(ctx)
 	defer cancel()
+	body, errFunc := chttp.EncodeBody(security, cancel)
 	opts := &chttp.Options{
-		Body: chttp.EncodeBody(security, &jsonErr, cancel),
+		Body: body,
 	}
 	res, err := d.Client.DoReq(ctx, kivik.MethodPut, d.path("/_security", nil), opts)
-	if jsonErr != nil {
+	if jsonErr := errFunc(); jsonErr != nil {
+		if res.Body != nil {
+			res.Body.Close()
+		}
 		return jsonErr
 	}
 	if err != nil {

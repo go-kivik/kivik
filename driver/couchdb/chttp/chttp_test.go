@@ -123,12 +123,11 @@ func TestEncodeBody(t *testing.T) {
 		func(test encodeTest) {
 			t.Run(test.Name, func(t *testing.T) {
 				t.Parallel()
-				var err error
-				r := EncodeBody(test.Input, &err, func() {})
+				r, errFunc := EncodeBody(test.Input, func() {})
 				buf := &bytes.Buffer{}
 				buf.ReadFrom(r)
 				var msg string
-				if err != nil {
+				if err := errFunc(); err != nil {
 					msg = err.Error()
 				}
 				result := strings.TrimSpace(buf.String())

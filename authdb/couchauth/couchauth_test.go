@@ -19,8 +19,6 @@ type tuser struct {
 }
 
 var testUser = &tuser{
-	ID:       "org.couchdb.user:test",
-	Name:     "test",
 	Type:     "user",
 	Roles:    []string{"coolguy"},
 	Password: "abc123",
@@ -37,42 +35,64 @@ func TestBadDSN(t *testing.T) {
 
 func TestCouchAuth(t *testing.T) {
 	client := kt.GetClient(t)
-	db, err := client.DB(context.Background(), "_users")
-	if err != nil {
-		t.Fatalf("Failed to connect to db: %s", err)
+	db, e := client.DB(context.Background(), "_users")
+	if e != nil {
+		t.Fatalf("Failed to connect to db: %s", e)
+	}
+	name := kt.TestDBName(t)
+	user := &tuser{
+		ID:       "org.couchdb.user:" + name,
+		Name:     name,
+		Type:     "user",
+		Roles:    []string{"coolguy"},
+		Password: "abc123",
 	}
 	// Courtesy flush
-	kt.DeleteUser(db, testUser.ID, t)
-	rev, err := db.Put(context.Background(), testUser.ID, testUser)
-	if err != nil {
-		t.Fatalf("Failed to create user: %s", err)
+	kt.DeleteUser(db, user.ID, t)
+	rev, e := db.Put(context.Background(), user.ID, user)
+	if e != nil {
+		t.Fatalf("Failed to create user: %s", e)
 	}
-	defer db.Delete(context.Background(), testUser.ID, rev)
-	auth, err := New(context.Background(), kt.NoAuthDSN(t))
-	if err != nil {
-		t.Fatalf("Failed to connect to remote server: %s", err)
+	defer db.Delete(context.Background(), user.ID, rev)
+	auth, e := New(context.Background(), kt.NoAuthDSN(t))
+	if e != nil {
+		t.Fatalf("Failed to connect to remote server: %s", e)
 	}
-	uCtx, err := auth.Validate(context.Background(), "test", "abc123")
-	if err != nil {
-		t.Errorf("Validation failure for good password: %s", err)
-	}
-	if uCtx == nil {
-		t.Errorf("User should have been validated")
-	}
-	uCtx, err = auth.Validate(context.Background(), "test", "foobar")
-	if errors.StatusCode(err) != kivik.StatusUnauthorized {
-		t.Errorf("Expected Unauthorized for bad password, got %s", err)
-	}
-	if uCtx != nil {
-		t.Errorf("User should not have been validated with wrong password")
-	}
-	uCtx, err = auth.Validate(context.Background(), "nobody", "foo")
-	if errors.StatusCode(err) != kivik.StatusUnauthorized {
-		t.Errorf("Expected Unauthorized for bad username, got %s", err)
-	}
-	if uCtx != nil {
-		t.Errorf("User should not have been validated with wrong username")
-	}
+	t.Run("sync", func(t *testing.T) {
+		t.Run("Validate", func(t *testing.T) {
+			t.Parallel()
+			t.Run("ValidUser", func(t *testing.T) {
+				t.Parallel()
+				uCtx, err := auth.Validate(context.Background(), user.Name, "abc123")
+				if err != nil {
+					t.Errorf("Validation failure for good password: %s", err)
+				}
+				if uCtx == nil {
+					t.Errorf("User should have been validated")
+				}
+			})
+			t.Run("WrongPassword", func(t *testing.T) {
+				t.Parallel()
+				uCtx, err := auth.Validate(context.Background(), user.Name, "foobar")
+				if errors.StatusCode(err) != kivik.StatusUnauthorized {
+					t.Errorf("Expected Unauthorized for bad password, got %s", err)
+				}
+				if uCtx != nil {
+					t.Errorf("User should not have been validated with wrong password")
+				}
+			})
+			t.Run("MissingUser", func(t *testing.T) {
+				t.Parallel()
+				uCtx, err := auth.Validate(context.Background(), "nobody", "foo")
+				if errors.StatusCode(err) != kivik.StatusUnauthorized {
+					t.Errorf("Expected Unauthorized for bad username, got %s", err)
+				}
+				if uCtx != nil {
+					t.Errorf("User should not have been validated with wrong username")
+				}
+			})
+		})
+	})
 
 	// roles, err := auth.Roles(context.Background(), "test")
 	// if err != nil {

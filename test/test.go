@@ -90,7 +90,11 @@ func CleanupTests(driver, dsn string, verbose bool) error {
 }
 
 func doCleanup(client *kivik.Client, verbose bool) (int, error) {
-	allDBs, err := client.AllDBs(context.Background())
+	return cleanupDatabases(context.Background(), client, verbose)
+}
+
+func cleanupDatabases(ctx context.Context, client *kivik.Client, verbose bool) (int, error) {
+	allDBs, err := client.AllDBs(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -102,7 +106,7 @@ func doCleanup(client *kivik.Client, verbose bool) (int, error) {
 			if verbose {
 				fmt.Printf("\t--- Deleting %s\n", dbName)
 			}
-			err := client.DestroyDB(context.Background(), dbName)
+			err := client.DestroyDB(ctx, dbName)
 			if err != nil && errors.StatusCode(err) != http.StatusNotFound {
 				return count, err
 			}

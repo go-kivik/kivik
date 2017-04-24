@@ -18,12 +18,6 @@ type tuser struct {
 	Password string   `json:"password"`
 }
 
-var testUser = &tuser{
-	Type:     "user",
-	Roles:    []string{"coolguy"},
-	Password: "abc123",
-}
-
 func TestBadDSN(t *testing.T) {
 	if _, err := New(context.Background(), "http://foo.com:port with spaces/"); err == nil {
 		t.Errorf("Expected error for invalid URL.")

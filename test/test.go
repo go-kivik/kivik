@@ -8,6 +8,8 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 
 	"github.com/flimzy/kivik"
@@ -90,7 +92,37 @@ func CleanupTests(driver, dsn string, verbose bool) error {
 }
 
 func doCleanup(client *kivik.Client, verbose bool) (int, error) {
-	return cleanupDatabases(context.Background(), client, verbose)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	errCh := make(chan error, 2)
+	var count int32
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		c, err := cleanupDatabases(ctx, client, verbose)
+		if err != nil {
+			cancel()
+		}
+		atomic.AddInt32(&count, int32(c))
+		errCh <- err
+	}()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		c, err := cleanupUsers(ctx, client, verbose)
+		if err != nil {
+			cancel()
+		}
+		atomic.AddInt32(&count, int32(c))
+		errCh <- err
+	}()
+	wg.Wait()
+	err := <-errCh
+	for len(errCh) > 0 {
+		<-errCh
+	}
+	return int(count), err
 }
 
 func cleanupDatabases(ctx context.Context, client *kivik.Client, verbose bool) (int, error) {
@@ -127,7 +159,10 @@ func cleanupUsers(ctx context.Context, client *kivik.Client, verbose bool) (int,
 	}
 	var count int
 	for users.Next() {
-		if strings.HasSuffix("org.couchdb.user:kivik$", users.ID()) {
+		if strings.HasPrefix(users.ID(), "org.couchdb.user:kivik$") {
+			if verbose {
+				fmt.Printf("\t--- Deleting user %s\n", users.ID())
+			}
 			var doc struct {
 				Rev string `json:"_rev"`
 			}

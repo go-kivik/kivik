@@ -116,6 +116,33 @@ func cleanupDatabases(ctx context.Context, client *kivik.Client, verbose bool) (
 	return count, nil
 }
 
+func cleanupUsers(ctx context.Context, client *kivik.Client, verbose bool) (int, error) {
+	db, err := client.DB(ctx, "_users")
+	if err != nil {
+		return 0, err
+	}
+	users, err := db.AllDocs(ctx, map[string]interface{}{"include_docs": true})
+	if err != nil {
+		return 0, err
+	}
+	var count int
+	for users.Next() {
+		if strings.HasSuffix("org.couchdb.user:kivik$", users.ID()) {
+			var doc struct {
+				Rev string `json:"_rev"`
+			}
+			if err = users.ScanDoc(&doc); err != nil {
+				return count, err
+			}
+			if _, err = db.Delete(ctx, users.ID(), doc.Rev); err != nil {
+				return count, err
+			}
+			count++
+		}
+	}
+	return count, users.Err()
+}
+
 // RunTests runs the requested test suites against the requested driver and DSN.
 func RunTests(opts Options) {
 	if opts.Cleanup {

@@ -25,14 +25,6 @@ type tuser struct {
 	Password string   `json:"password"`
 }
 
-var testUser = &tuser{
-	ID:       "org.couchdb.user:testFoo",
-	Name:     "testFoo",
-	Type:     "user",
-	Roles:    []string{"coolguy"},
-	Password: "abc123",
-}
-
 func TestConfAdminAuth(t *testing.T) {
 	// Set up first auth backend
 	conf1 := config.New(memconf.New())
@@ -45,13 +37,19 @@ func TestConfAdminAuth(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to connect to db: %s", err)
 	}
-	// Courtesy flush
-	kt.DeleteUser(db, testUser.ID, t)
-	rev, err := db.Put(context.Background(), testUser.ID, testUser)
+	name := kt.TestDBName(t)
+	user := &tuser{
+		ID:       "org.couchdb.user:" + name,
+		Name:     name,
+		Type:     "user",
+		Roles:    []string{"coolguy"},
+		Password: "abc123",
+	}
+	rev, err := db.Put(context.Background(), user.ID, user)
 	if err != nil {
 		t.Fatalf("Failed to create user: %s", err)
 	}
-	defer db.Delete(context.Background(), testUser.ID, rev)
+	defer db.Delete(context.Background(), user.ID, rev)
 	auth2 := usersdb.New(db)
 
 	auth := New(auth1, auth2)
@@ -72,14 +70,14 @@ func TestConfAdminAuth(t *testing.T) {
 		t.Errorf("User should not have been validated with wrong password")
 	}
 
-	uCtx, err = auth.Validate(context.Background(), "testFoo", "abc123")
+	uCtx, err = auth.Validate(context.Background(), user.Name, "abc123")
 	if err != nil {
 		t.Errorf("Validation failure for good password: %s", err)
 	}
 	if uCtx == nil {
 		t.Errorf("User should have been validated")
 	}
-	uCtx, err = auth.Validate(context.Background(), "testFoo", "foobar")
+	uCtx, err = auth.Validate(context.Background(), user.Name, "foobar")
 	if errors.StatusCode(err) != kivik.StatusUnauthorized {
 		t.Errorf("Expected Unauthorized for bad password, got %s", err)
 	}
@@ -94,12 +92,12 @@ func TestConfAdminAuth(t *testing.T) {
 		t.Errorf("User should not have been validated with wrong username")
 	}
 
-	uCtx, err = auth.UserCtx(context.Background(), "testFoo")
+	uCtx, err = auth.UserCtx(context.Background(), user.Name)
 	if err != nil {
 		t.Errorf("Failed to get roles for valid user: %s", err)
 	}
 	uCtx.Salt = "" // It's random, so don't fail if it doesn't match
-	if !reflect.DeepEqual(uCtx, &authdb.UserContext{Name: "testFoo", Roles: []string{"coolguy"}}) {
+	if !reflect.DeepEqual(uCtx, &authdb.UserContext{Name: user.Name, Roles: []string{"coolguy"}}) {
 		t.Errorf("Got unexpected context: %v", uCtx)
 	}
 

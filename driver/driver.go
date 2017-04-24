@@ -82,7 +82,7 @@ type DB interface {
 	AllDocs(ctx context.Context, options map[string]interface{}) (Rows, error)
 	// Get fetches the requested document from the database, and unmarshals it
 	// into doc.
-	Get(ctx context.Context, docID string, doc interface{}, options map[string]interface{}) error
+	Get(ctx context.Context, docID string, options map[string]interface{}) (json.RawMessage, error)
 	// CreateDoc creates a new doc, with a server-generated ID.
 	CreateDoc(ctx context.Context, doc interface{}) (docID, rev string, err error)
 	// Put writes the document in the database.

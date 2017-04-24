@@ -81,9 +81,13 @@ func testRev(ctx *kt.Context, db *kivik.DB, expectedDoc *testDoc) {
 		if !ctx.IsExpectedSuccess(err) {
 			return
 		}
-		doc := &testDoc{}
-		if err = db.Get(context.Background(), expectedDoc.ID, &doc); err != nil {
+		row, err := db.Get(context.Background(), expectedDoc.ID)
+		if err != nil {
 			ctx.Fatalf("Failed to get doc: %s", err)
+		}
+		doc := &testDoc{}
+		if err = row.ScanDoc(&doc); err != nil {
+			ctx.Fatalf("Failed to scan doc: %s\n", err)
 		}
 		if strings.HasPrefix(expectedDoc.ID, "_local/") {
 			// Revisions are meaningless for _local docs

@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 
 	"github.com/flimzy/kivik"
@@ -79,8 +80,14 @@ func (d *db) Query(ctx context.Context, ddoc, view string, opts map[string]inter
 	return &rows{kivikRows}, nil
 }
 
-func (d *db) Get(ctx context.Context, id string, i interface{}, opts map[string]interface{}) error {
-	return d.DB.Get(ctx, id, i, opts)
+func (d *db) Get(ctx context.Context, id string, opts map[string]interface{}) (json.RawMessage, error) {
+	row, err := d.DB.Get(ctx, id, opts)
+	if err != nil {
+		return nil, err
+	}
+	var raw json.RawMessage
+	err = row.ScanDoc(&raw)
+	return raw, err
 }
 
 func (d *db) Info(ctx context.Context) (*driver.DBInfo, error) {

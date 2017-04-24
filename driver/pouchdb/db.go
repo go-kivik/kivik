@@ -43,12 +43,8 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options map[string]in
 	}, nil
 }
 
-func (d *db) Get(ctx context.Context, docID string, doc interface{}, options map[string]interface{}) error {
-	body, err := d.db.Get(ctx, docID, options)
-	if err != nil {
-		return err
-	}
-	return json.Unmarshal(body, &doc)
+func (d *db) Get(ctx context.Context, docID string, options map[string]interface{}) (json.RawMessage, error) {
+	return d.db.Get(ctx, docID, options)
 }
 
 func (d *db) CreateDoc(ctx context.Context, doc interface{}) (docID, rev string, err error) {

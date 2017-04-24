@@ -21,23 +21,20 @@ type tuser struct {
 	Password string   `json:"password"`
 }
 
-var testUser = &tuser{
-	ID:       "org.couchdb.user:testUsersdb",
-	Name:     "testUsersdb",
-	Type:     "user",
-	Roles:    []string{"coolguy"},
-	Password: "abc123",
-}
-
 func TestCouchAuth(t *testing.T) {
 	client := kt.GetClient(t)
 	db, err := client.DB(context.Background(), "_users")
 	if err != nil {
 		t.Fatalf("Failed to connect to db: %s", err)
 	}
-	user := *testUser
-	user.Name = kt.TestDBName(t)
-	user.ID = "org.couchdb.user:" + user.Name
+	name := kt.TestDBName(t)
+	user := &tuser{
+		ID:       "org.couchdb.user:" + name,
+		Name:     name,
+		Type:     "user",
+		Roles:    []string{"coolguy"},
+		Password: "abc123",
+	}
 	rev, err := db.Put(context.Background(), user.ID, user)
 	if err != nil {
 		t.Fatalf("Failed to create user: %s", err)

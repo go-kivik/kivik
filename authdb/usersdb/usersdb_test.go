@@ -35,17 +35,20 @@ func TestCouchAuth(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to connect to db: %s", err)
 	}
-	rev, err := db.Put(context.Background(), testUser.ID, testUser)
+	user := *testUser
+	user.Name = kt.TestDBName(t)
+	user.ID = "org.couchdb.user:" + user.Name
+	rev, err := db.Put(context.Background(), user.ID, user)
 	if err != nil {
 		t.Fatalf("Failed to create user: %s", err)
 	}
-	defer db.Delete(context.Background(), testUser.ID, rev)
+	defer db.Delete(context.Background(), user.ID, rev)
 	auth := New(db)
 	t.Run("sync", func(t *testing.T) {
 		t.Run("Validate", func(t *testing.T) {
 			t.Parallel()
 			t.Run("ValidUser", func(t *testing.T) {
-				uCtx, err := auth.Validate(context.Background(), "testUsersdb", "abc123")
+				uCtx, err := auth.Validate(context.Background(), user.Name, "abc123")
 				if err != nil {
 					t.Errorf("Validation failure for good password: %s", err)
 				}
@@ -54,7 +57,7 @@ func TestCouchAuth(t *testing.T) {
 				}
 			})
 			t.Run("WrongPassword", func(t *testing.T) {
-				uCtx, err := auth.Validate(context.Background(), "testUsersdb", "foobar")
+				uCtx, err := auth.Validate(context.Background(), user.Name, "foobar")
 				if errors.StatusCode(err) != kivik.StatusUnauthorized {
 					t.Errorf("Expected Unauthorized password, got %s", err)
 				}
@@ -78,12 +81,12 @@ func TestCouchAuth(t *testing.T) {
 			t.Parallel()
 			t.Run("ValidUser", func(t *testing.T) {
 				t.Parallel()
-				uCtx, err := auth.UserCtx(context.Background(), "testUsersdb")
+				uCtx, err := auth.UserCtx(context.Background(), user.Name)
 				if err != nil {
 					t.Errorf("Failed to get roles: %s", err)
 				}
 				uCtx.Salt = "" // It's random, so remove it
-				if !reflect.DeepEqual(uCtx, &authdb.UserContext{Name: "testUsersdb", Roles: []string{"coolguy"}}) {
+				if !reflect.DeepEqual(uCtx, &authdb.UserContext{Name: user.Name, Roles: []string{"coolguy"}}) {
 					t.Errorf("Got unexpected output: %v", uCtx)
 				}
 			})

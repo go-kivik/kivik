@@ -3,7 +3,6 @@ package kivik
 import (
 	"context"
 	"strings"
-	"time"
 
 	"github.com/flimzy/kivik/driver"
 )
@@ -72,15 +71,13 @@ func (db *DB) Delete(ctx context.Context, docID, rev string) (newRev string, err
 }
 
 // Flush requests a flush of disk cache to disk or other permanent storage.
-// The response a timestamp when the database backend opened the storage
-// backend.
 //
 // See http://docs.couchdb.org/en/2.0.0/api/database/compact.html#db-ensure-full-commit
-func (db *DB) Flush(ctx context.Context) (time.Time, error) {
+func (db *DB) Flush(ctx context.Context) error {
 	if flusher, ok := db.driverDB.(driver.DBFlusher); ok {
 		return flusher.Flush(ctx)
 	}
-	return time.Time{}, ErrNotImplemented
+	return ErrNotImplemented
 }
 
 // DBInfo is a struct of information about a database instance. Not all fields

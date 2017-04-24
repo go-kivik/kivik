@@ -76,13 +76,11 @@ func init() {
 		"Rev/RW/group/Admin/bogus.status":  kivik.StatusNotFound,
 		"Rev/RW/group/NoAuth/bogus.status": kivik.StatusNotFound,
 
-		"Flush.databases":                            []string{"_users", "chicken", "_duck"},
-		"Flush/NoAuth/chicken/DoFlush.status":        kivik.StatusNotFound,
-		"Flush/Admin/chicken/DoFlush.status":         kivik.StatusNotFound,
-		"Flush/Admin/_users/DoFlush/Timestamp.skip":  true, // CouchDB 2.0 always returns 0?
-		"Flush/Admin/_duck/DoFlush.status":           kivik.StatusNotFound,
-		"Flush/NoAuth/_users/DoFlush/Timestamp.skip": true, // CouchDB 2.0 always returns 0?
-		"Flush/NoAuth/_duck/DoFlush.status":          kivik.StatusUnauthorized,
+		"Flush.databases":                     []string{"_users", "chicken", "_duck"},
+		"Flush/NoAuth/chicken/DoFlush.status": kivik.StatusNotFound,
+		"Flush/Admin/chicken/DoFlush.status":  kivik.StatusNotFound,
+		"Flush/Admin/_duck/DoFlush.status":    kivik.StatusNotFound,
+		"Flush/NoAuth/_duck/DoFlush.status":   kivik.StatusUnauthorized,
 
 		"Delete/RW/Admin/group/MissingDoc.status":        kivik.StatusNotFound,
 		"Delete/RW/Admin/group/InvalidRevFormat.status":  kivik.StatusBadRequest,

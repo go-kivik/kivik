@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"time"
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/test/kt"
@@ -30,18 +29,10 @@ func flushTest(ctx *kt.Context, client *kivik.Client) {
 				return
 			}
 			ctx.Run("DoFlush", func(ctx *kt.Context) {
-				ts, err := db.Flush(context.Background())
+				err := db.Flush(context.Background())
 				if !ctx.IsExpectedSuccess(err) {
 					return
 				}
-				ctx.Run("Timestamp", func(ctx *kt.Context) {
-					if !time.Now().After(ts) {
-						ctx.Errorf("Timestamp in the future: %s", ts)
-					}
-					if !ts.After(time.Now().Add(-time.Hour * 9000)) { // About a year; just to make sure we're within an order of magnitude
-						ctx.Errorf("Timestamp is in the distant past: %s", ts)
-					}
-				})
 			})
 		})
 	}

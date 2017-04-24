@@ -3,7 +3,6 @@ package serve
 import (
 	"encoding/json"
 	"net/http"
-	"time"
 )
 
 func flush(w http.ResponseWriter, r *http.Request) error {
@@ -13,13 +12,12 @@ func flush(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	ts, err := db.Flush(r.Context())
-	if err != nil {
+	if err = db.Flush(r.Context()); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", typeJSON)
 	return json.NewEncoder(w).Encode(map[string]interface{}{
-		"instance_start_time": int64(ts.Sub(time.Unix(0, 0)).Seconds() * 1e6),
+		"instance_start_time": 0,
 		"ok": true,
 	})
 }

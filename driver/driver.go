@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"time"
 )
 
 // Driver is the interface that must be implemented by a database driver.
@@ -193,11 +192,9 @@ type Rever interface {
 // permanent storage.
 type DBFlusher interface {
 	// Flush requests a flush of disk cache to disk or other permanent storage.
-	// The response a timestamp when the database backend opened the storage
-	// backend.
 	//
 	// See http://docs.couchdb.org/en/2.0.0/api/database/compact.html#db-ensure-full-commit
-	Flush(ctx context.Context) (time.Time, error)
+	Flush(ctx context.Context) error
 }
 
 // Copier is an optional interface that may be implemented by a DB.

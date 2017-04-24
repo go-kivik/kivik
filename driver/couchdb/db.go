@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
@@ -169,12 +168,9 @@ func (d *db) Delete(ctx context.Context, docID, rev string) (string, error) {
 	return chttp.GetRev(resp)
 }
 
-func (d *db) Flush(ctx context.Context) (time.Time, error) {
-	result := struct {
-		T int64 `json:"instance_start_time,string"`
-	}{}
-	_, err := d.Client.DoJSON(ctx, kivik.MethodPost, d.path("/_ensure_full_commit", nil), nil, &result)
-	return time.Unix(0, 0).Add(time.Duration(result.T) * time.Microsecond), err
+func (d *db) Flush(ctx context.Context) error {
+	_, err := d.Client.DoError(ctx, kivik.MethodPost, d.path("/_ensure_full_commit", nil), nil)
+	return err
 }
 
 func (d *db) Info(ctx context.Context) (*driver.DBInfo, error) {

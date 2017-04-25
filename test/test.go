@@ -151,10 +151,18 @@ func cleanupDatabases(ctx context.Context, client *kivik.Client, verbose bool) (
 func cleanupUsers(ctx context.Context, client *kivik.Client, verbose bool) (int, error) {
 	db, err := client.DB(ctx, "_users")
 	if err != nil {
+		switch errors.StatusCode(err) {
+		case kivik.StatusNotFound, kivik.StatusNotImplemented:
+			return 0, nil
+		}
 		return 0, err
 	}
 	users, err := db.AllDocs(ctx, map[string]interface{}{"include_docs": true})
 	if err != nil {
+		switch errors.StatusCode(err) {
+		case kivik.StatusNotFound, kivik.StatusNotImplemented:
+			return 0, nil
+		}
 		return 0, err
 	}
 	var count int

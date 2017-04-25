@@ -51,5 +51,9 @@ func init() {
 		"CreateIndex.skip":       true,                       // FIXME: Unimplemented
 		"GetIndexes.skip":        true,                       // FIXME: Unimplemented
 		"DeleteIndex.skip":       true,                       // FIXME: Unimplemented
+		"Put.skip":               true,                       // FIXME: Unimplemented
+		"SetSecurity.skip":       true,                       // FIXME: Unimplemented
+		"ViewCleanup.skip":       true,                       // FIXME: Unimplemented
+		"Rev.skip":               true,                       // FIXME: Unimplemented
 	})
 }

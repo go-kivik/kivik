@@ -41,8 +41,6 @@ func TestCouchAuth(t *testing.T) {
 		Roles:    []string{"coolguy"},
 		Password: "abc123",
 	}
-	// Courtesy flush
-	kt.DeleteUser(db, user.ID, t)
 	rev, e := db.Put(context.Background(), user.ID, user)
 	if e != nil {
 		t.Fatalf("Failed to create user: %s", e)

@@ -35,14 +35,27 @@ type user struct {
 	DerivedKey     string   `json:"derived_key,omitempty"`
 }
 
-func (db *db) Validate(ctx context.Context, username, password string) (*authdb.UserContext, error) {
+func (db *db) getUser(ctx context.Context, username string) (*user, error) {
+	row, err := db.Get(ctx, userPrefix+username, nil)
+	if err != nil {
+		return nil, err
+	}
 	var u user
-	if err := db.Get(ctx, userPrefix+username, &u, nil); err != nil {
+	if err = row.ScanDoc(&u); err != nil {
+		return nil, err
+	}
+	return &u, nil
+}
+
+func (db *db) Validate(ctx context.Context, username, password string) (*authdb.UserContext, error) {
+	u, err := db.getUser(ctx, username)
+	if err != nil {
 		if errors.StatusCode(err) == kivik.StatusNotFound {
 			err = errors.Status(kivik.StatusUnauthorized, "unauthorized")
 		}
 		return nil, err
 	}
+
 	switch u.PasswordScheme {
 	case "":
 		return nil, errors.New("no password scheme set for user")
@@ -62,11 +75,13 @@ func (db *db) Validate(ctx context.Context, username, password string) (*authdb.
 }
 
 func (db *db) UserCtx(ctx context.Context, username string) (*authdb.UserContext, error) {
-	var u user
-	err := db.Get(ctx, userPrefix+username, &u, nil)
+	u, err := db.getUser(ctx, username)
+	if err != nil {
+		return nil, err
+	}
 	return &authdb.UserContext{
 		Name:  u.Name,
 		Roles: u.Roles,
 		Salt:  u.Salt,
-	}, err
+	}, nil
 }

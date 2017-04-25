@@ -98,13 +98,22 @@ func (d *db) Query(ctx context.Context, ddoc, view string, opts map[string]inter
 }
 
 // Get fetches the requested document.
-func (d *db) Get(ctx context.Context, docID string, doc interface{}, opts map[string]interface{}) error {
+func (d *db) Get(ctx context.Context, docID string, opts map[string]interface{}) (json.RawMessage, error) {
 	params, err := optionsToParams(opts)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	_, err = d.Client.DoJSON(ctx, http.MethodGet, d.path(chttp.EncodeDocID(docID), params), &chttp.Options{Accept: "application/json; multipart/mixed"}, doc)
-	return err
+	resp, err := d.Client.DoReq(ctx, http.MethodGet, d.path(chttp.EncodeDocID(docID), params), &chttp.Options{Accept: "application/json; multipart/mixed"})
+	if err != nil {
+		return nil, err
+	}
+	if respErr := chttp.ResponseError(resp); respErr != nil {
+		return nil, respErr
+	}
+	defer resp.Body.Close()
+	doc := &bytes.Buffer{}
+	doc.ReadFrom(resp.Body)
+	return doc.Bytes(), nil
 }
 
 func (d *db) CreateDoc(ctx context.Context, doc interface{}) (docID, rev string, err error) {

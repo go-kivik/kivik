@@ -90,9 +90,13 @@ func copyTest(ctx *kt.Context, client *kivik.Client, dbname string, source map[s
 			if _, err := db.Copy(context.Background(), targetID2, targetID, kivik.Options{"rev": rev}); err != nil {
 				ctx.Fatalf("Failed to copy doc with rev option: %s", err)
 			}
-			var readCopy map[string]string
-			if err := db.Get(context.Background(), targetID2, &readCopy); err != nil {
+			row, err := db.Get(context.Background(), targetID2)
+			if err != nil {
 				ctx.Fatalf("Failed to read copy: %s", err)
+			}
+			var readCopy map[string]string
+			if err = row.ScanDoc(&readCopy); err != nil {
+				ctx.Fatalf("Failed to scan copy: %s", err)
 			}
 			if readCopy["name"] != "Robert" {
 				ctx.Errorf("Copy-with-rev failed. Name = %s, expected %s", readCopy["name"], "Robert")

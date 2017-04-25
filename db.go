@@ -2,6 +2,7 @@ package kivik
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 
 	"github.com/flimzy/kivik/driver"
@@ -42,13 +43,28 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) 
 	return newRows(ctx, rowsi), nil
 }
 
+// Row is the result of calling Get for a single document.
+type Row struct {
+	doc json.RawMessage
+}
+
+// ScanDoc unmarshals the data from the fetched row into dest. See documentation
+// on Rows.ScanDoc for details.
+func (r *Row) ScanDoc(dest interface{}) error {
+	return scan(dest, r.doc)
+}
+
 // Get fetches the requested document.
-func (db *DB) Get(ctx context.Context, docID string, doc interface{}, options ...Options) error {
+func (db *DB) Get(ctx context.Context, docID string, options ...Options) (*Row, error) {
 	opts, err := mergeOptions(options...)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return db.driverDB.Get(ctx, docID, doc, opts)
+	row, err := db.driverDB.Get(ctx, docID, opts)
+	if err != nil {
+		return nil, err
+	}
+	return &Row{doc: row}, nil
 }
 
 // CreateDoc creates a new doc with an auto-generated unique ID. The generated
@@ -163,13 +179,19 @@ func (db *DB) Rev(ctx context.Context, docID string) (rev string, err error) {
 	if r, ok := db.driverDB.(driver.Rever); ok {
 		return r.Rev(ctx, docID)
 	}
+	// These last two lines cannot be combined for GopherJS due to a bug.
+	// See https://github.com/gopherjs/gopherjs/issues/608
+	row, err := db.Get(ctx, docID, nil)
+	if err != nil {
+		return "", err
+	}
 	var doc struct {
 		Rev string `json:"_rev"`
 	}
-	// These last two lines cannot be combined for GopherJS due to a bug.
-	// See https://github.com/gopherjs/gopherjs/issues/608
-	err = db.Get(ctx, docID, &doc, nil)
-	return doc.Rev, err
+	if err = row.ScanDoc(&doc); err != nil {
+		return "", err
+	}
+	return doc.Rev, nil
 }
 
 // Copy copies the source document to a new document with an ID of targetID. If
@@ -189,8 +211,12 @@ func (db *DB) Copy(ctx context.Context, targetID, sourceID string, options ...Op
 			return targetRev, err
 		}
 	}
+	row, err := db.Get(ctx, sourceID, opts)
+	if err != nil {
+		return "", err
+	}
 	var doc map[string]interface{}
-	if err = db.Get(ctx, sourceID, &doc, opts); err != nil {
+	if err = row.ScanDoc(&doc); err != nil {
 		return "", err
 	}
 	delete(doc, "_rev")

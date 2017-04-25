@@ -2,6 +2,7 @@ package memory
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 
 	"github.com/flimzy/kivik"
@@ -34,9 +35,9 @@ func (d *db) Query(ctx context.Context, ddoc, view string, opts map[string]inter
 	return nil, kivik.ErrNotImplemented
 }
 
-func (d *db) Get(_ context.Context, docID string, doc interface{}, opts map[string]interface{}) error {
+func (d *db) Get(_ context.Context, docID string, opts map[string]interface{}) (json.RawMessage, error) {
 	// FIXME: Unimplemented
-	return kivik.ErrNotImplemented
+	return nil, kivik.ErrNotImplemented
 }
 
 func (d *db) CreateDoc(_ context.Context, doc interface{}) (docID, rev string, err error) {

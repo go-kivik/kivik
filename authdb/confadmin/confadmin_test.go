@@ -14,22 +14,6 @@ import (
 	"github.com/flimzy/kivik/serve/config/memconf"
 )
 
-type tuser struct {
-	ID       string   `json:"_id"`
-	Name     string   `json:"name"`
-	Type     string   `json:"type"`
-	Roles    []string `json:"roles"`
-	Password string   `json:"password"`
-}
-
-var testUser = &tuser{
-	ID:       "org.couchdb.user:test",
-	Name:     "test",
-	Type:     "user",
-	Roles:    []string{"coolguy"},
-	Password: "abc123",
-}
-
 func TestInvalidHashes(t *testing.T) {
 	conf := config.New(memconf.New())
 	auth := New(conf)

@@ -25,14 +25,6 @@ type tuser struct {
 	Password string   `json:"password"`
 }
 
-var testUser = &tuser{
-	ID:       "org.couchdb.user:testFoo",
-	Name:     "testFoo",
-	Type:     "user",
-	Roles:    []string{"coolguy"},
-	Password: "abc123",
-}
-
 func TestConfAdminAuth(t *testing.T) {
 	// Set up first auth backend
 	conf1 := config.New(memconf.New())
@@ -41,82 +33,113 @@ func TestConfAdminAuth(t *testing.T) {
 
 	// Set up second auth backend
 	client := kt.GetClient(t)
-	db, err := client.DB(context.Background(), "_users")
-	if err != nil {
-		t.Fatalf("Failed to connect to db: %s", err)
+	db, e := client.DB(context.Background(), "_users")
+	if e != nil {
+		t.Fatalf("Failed to connect to db: %s", e)
 	}
-	// Courtesy flush
-	kt.DeleteUser(db, testUser.ID, t)
-	rev, err := db.Put(context.Background(), testUser.ID, testUser)
-	if err != nil {
-		t.Fatalf("Failed to create user: %s", err)
+	name := kt.TestDBName(t)
+	user := &tuser{
+		ID:       "org.couchdb.user:" + name,
+		Name:     name,
+		Type:     "user",
+		Roles:    []string{"coolguy"},
+		Password: "abc123",
 	}
-	defer db.Delete(context.Background(), testUser.ID, rev)
+	rev, e := db.Put(context.Background(), user.ID, user)
+	if e != nil {
+		t.Fatalf("Failed to create user: %s", e)
+	}
+	defer db.Delete(context.Background(), user.ID, rev)
 	auth2 := usersdb.New(db)
 
 	auth := New(auth1, auth2)
 
-	uCtx, err := auth.Validate(context.Background(), "bob", "abc123")
-	if err != nil {
-		t.Errorf("Validation failure for bob/good password: %s", err)
-	}
-	if uCtx == nil {
-		t.Errorf("User should have been validated")
-	}
-
-	uCtx, err = auth.Validate(context.Background(), "bob", "foobar")
-	if errors.StatusCode(err) != kivik.StatusUnauthorized {
-		t.Errorf("Expected Unauthorized for bad password, got %s", err)
-	}
-	if uCtx != nil {
-		t.Errorf("User should not have been validated with wrong password")
-	}
-
-	uCtx, err = auth.Validate(context.Background(), "testFoo", "abc123")
-	if err != nil {
-		t.Errorf("Validation failure for good password: %s", err)
-	}
-	if uCtx == nil {
-		t.Errorf("User should have been validated")
-	}
-	uCtx, err = auth.Validate(context.Background(), "testFoo", "foobar")
-	if errors.StatusCode(err) != kivik.StatusUnauthorized {
-		t.Errorf("Expected Unauthorized for bad password, got %s", err)
-	}
-	if uCtx != nil {
-		t.Errorf("User should not have been validated with wrong password")
-	}
-	uCtx, err = auth.Validate(context.Background(), "nobody", "foo")
-	if errors.StatusCode(err) != kivik.StatusUnauthorized {
-		t.Errorf("Expected Unauthorized for bad username, got %s", err)
-	}
-	if uCtx != nil {
-		t.Errorf("User should not have been validated with wrong username")
-	}
-
-	uCtx, err = auth.UserCtx(context.Background(), "testFoo")
-	if err != nil {
-		t.Errorf("Failed to get roles for valid user: %s", err)
-	}
-	uCtx.Salt = "" // It's random, so don't fail if it doesn't match
-	if !reflect.DeepEqual(uCtx, &authdb.UserContext{Name: "testFoo", Roles: []string{"coolguy"}}) {
-		t.Errorf("Got unexpected context: %v", uCtx)
-	}
-
-	uCtx, err = auth.UserCtx(context.Background(), "bob")
-	if err != nil {
-		t.Errorf("Failed to get roles for valid user: %s", err)
-	}
-	if !reflect.DeepEqual(uCtx, &authdb.UserContext{Name: "bob", Roles: []string{"_admin"}, Salt: "7897f3451f59da741c87ec5f10fe7abe"}) {
-		t.Errorf("Got unexpected context: %v", uCtx)
-	}
-
-	_, err = auth.UserCtx(context.Background(), "nobody")
-	if errors.StatusCode(err) != kivik.StatusNotFound {
-		var msg string
-		if err != nil {
-			msg = fmt.Sprintf(" Got: %s", err)
-		}
-		t.Errorf("Expected Not Found fetching roles for bad username.%s", msg)
-	}
+	t.Run("sync", func(t *testing.T) {
+		t.Run("Validate", func(t *testing.T) {
+			t.Parallel()
+			t.Run("BobValid", func(t *testing.T) {
+				t.Parallel()
+				uCtx, err := auth.Validate(context.Background(), "bob", "abc123")
+				if err != nil {
+					t.Errorf("Validation failure for bob/good password: %s", err)
+				}
+				if uCtx == nil {
+					t.Errorf("User should have been validated")
+				}
+			})
+			t.Run("BobInvalid", func(t *testing.T) {
+				t.Parallel()
+				uCtx, err := auth.Validate(context.Background(), "bob", "foobar")
+				if errors.StatusCode(err) != kivik.StatusUnauthorized {
+					t.Errorf("Expected Unauthorized for bad password, got %s", err)
+				}
+				if uCtx != nil {
+					t.Errorf("User should not have been validated with wrong password")
+				}
+			})
+			t.Run("TestUserValid", func(t *testing.T) {
+				t.Parallel()
+				uCtx, err := auth.Validate(context.Background(), user.Name, "abc123")
+				if err != nil {
+					t.Errorf("Validation failure for good password: %s", err)
+				}
+				if uCtx == nil {
+					t.Errorf("User should have been validated")
+				}
+			})
+			t.Run("TestUserInvalid", func(t *testing.T) {
+				t.Parallel()
+				uCtx, err := auth.Validate(context.Background(), user.Name, "foobar")
+				if errors.StatusCode(err) != kivik.StatusUnauthorized {
+					t.Errorf("Expected Unauthorized for bad password, got %s", err)
+				}
+				if uCtx != nil {
+					t.Errorf("User should not have been validated with wrong password")
+				}
+			})
+			t.Run("MissingUser", func(t *testing.T) {
+				t.Parallel()
+				uCtx, err := auth.Validate(context.Background(), "nobody", "foo")
+				if errors.StatusCode(err) != kivik.StatusUnauthorized {
+					t.Errorf("Expected Unauthorized for bad username, got %s", err)
+				}
+				if uCtx != nil {
+					t.Errorf("User should not have been validated with wrong username")
+				}
+			})
+		})
+		t.Run("Context", func(t *testing.T) {
+			t.Parallel()
+			t.Run("TestUser", func(t *testing.T) {
+				uCtx, err := auth.UserCtx(context.Background(), user.Name)
+				if err != nil {
+					t.Errorf("Failed to get roles for valid user: %s", err)
+				}
+				uCtx.Salt = "" // It's random, so don't fail if it doesn't match
+				if !reflect.DeepEqual(uCtx, &authdb.UserContext{Name: user.Name, Roles: []string{"coolguy"}}) {
+					t.Errorf("Got unexpected context: %v", uCtx)
+				}
+			})
+			t.Run("Bob", func(t *testing.T) {
+				t.Parallel()
+				uCtx, err := auth.UserCtx(context.Background(), "bob")
+				if err != nil {
+					t.Errorf("Failed to get roles for valid user: %s", err)
+				}
+				if !reflect.DeepEqual(uCtx, &authdb.UserContext{Name: "bob", Roles: []string{"_admin"}, Salt: "7897f3451f59da741c87ec5f10fe7abe"}) {
+					t.Errorf("Got unexpected context: %v", uCtx)
+				}
+			})
+			t.Run("MissingUser", func(t *testing.T) {
+				_, err := auth.UserCtx(context.Background(), "nobody")
+				if errors.StatusCode(err) != kivik.StatusNotFound {
+					var msg string
+					if err != nil {
+						msg = fmt.Sprintf(" Got: %s", err)
+					}
+					t.Errorf("Expected Not Found fetching roles for bad username.%s", msg)
+				}
+			})
+		})
+	})
 }

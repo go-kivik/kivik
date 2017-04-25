@@ -8,6 +8,8 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 
 	"github.com/flimzy/kivik"
@@ -90,7 +92,41 @@ func CleanupTests(driver, dsn string, verbose bool) error {
 }
 
 func doCleanup(client *kivik.Client, verbose bool) (int, error) {
-	allDBs, err := client.AllDBs(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	errCh := make(chan error, 2)
+	var count int32
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		c, err := cleanupDatabases(ctx, client, verbose)
+		if err != nil {
+			cancel()
+		}
+		atomic.AddInt32(&count, int32(c))
+		errCh <- err
+	}()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		c, err := cleanupUsers(ctx, client, verbose)
+		if err != nil {
+			cancel()
+		}
+		atomic.AddInt32(&count, int32(c))
+		errCh <- err
+	}()
+	wg.Wait()
+	err := <-errCh
+	for len(errCh) > 0 {
+		<-errCh
+	}
+	return int(count), err
+}
+
+func cleanupDatabases(ctx context.Context, client *kivik.Client, verbose bool) (int, error) {
+	allDBs, err := client.AllDBs(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -102,7 +138,7 @@ func doCleanup(client *kivik.Client, verbose bool) (int, error) {
 			if verbose {
 				fmt.Printf("\t--- Deleting %s\n", dbName)
 			}
-			err := client.DestroyDB(context.Background(), dbName)
+			err := client.DestroyDB(ctx, dbName)
 			if err != nil && errors.StatusCode(err) != http.StatusNotFound {
 				return count, err
 			}
@@ -110,6 +146,44 @@ func doCleanup(client *kivik.Client, verbose bool) (int, error) {
 		}
 	}
 	return count, nil
+}
+
+func cleanupUsers(ctx context.Context, client *kivik.Client, verbose bool) (int, error) {
+	db, err := client.DB(ctx, "_users")
+	if err != nil {
+		switch errors.StatusCode(err) {
+		case kivik.StatusNotFound, kivik.StatusNotImplemented:
+			return 0, nil
+		}
+		return 0, err
+	}
+	users, err := db.AllDocs(ctx, map[string]interface{}{"include_docs": true})
+	if err != nil {
+		switch errors.StatusCode(err) {
+		case kivik.StatusNotFound, kivik.StatusNotImplemented:
+			return 0, nil
+		}
+		return 0, err
+	}
+	var count int
+	for users.Next() {
+		if strings.HasPrefix(users.ID(), "org.couchdb.user:kivik$") {
+			if verbose {
+				fmt.Printf("\t--- Deleting user %s\n", users.ID())
+			}
+			var doc struct {
+				Rev string `json:"_rev"`
+			}
+			if err = users.ScanDoc(&doc); err != nil {
+				return count, err
+			}
+			if _, err = db.Delete(ctx, users.ID(), doc.Rev); err != nil {
+				return count, err
+			}
+			count++
+		}
+	}
+	return count, users.Err()
 }
 
 // RunTests runs the requested test suites against the requested driver and DSN.

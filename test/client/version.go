@@ -9,10 +9,10 @@ import (
 )
 
 func init() {
-	kt.Register("ServerInfo", info)
+	kt.Register("Version", version)
 }
 
-func info(ctx *kt.Context) {
+func version(ctx *kt.Context) {
 	ctx.RunAdmin(func(ctx *kt.Context) {
 		testServerInfo(ctx, ctx.Admin)
 	})

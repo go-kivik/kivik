@@ -44,7 +44,7 @@ func TestDBInfo(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to connect to db: %s", err)
 	}
-	info, err := db.Info(context.Background())
+	info, err := db.Stats(context.Background())
 	if err != nil {
 		t.Fatalf("Failed: %s", err)
 	}

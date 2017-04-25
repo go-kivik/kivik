@@ -9,10 +9,10 @@ import (
 )
 
 func init() {
-	kt.Register("DBInfo", dbInfo)
+	kt.Register("Stats", stats)
 }
 
-func dbInfo(ctx *kt.Context) {
+func stats(ctx *kt.Context) {
 	ctx.RunAdmin(func(ctx *kt.Context) {
 		ctx.Parallel()
 		roTests(ctx, ctx.Admin)
@@ -69,21 +69,21 @@ func roTests(ctx *kt.Context, client *kivik.Client) {
 
 func testDBInfo(ctx *kt.Context, client *kivik.Client, dbname string, docCount int64) {
 	db, err := client.DB(context.Background(), dbname, ctx.Options("db"))
-	// Check against the same status for connecting, and db.Info() later, because
+	// Check against the same status for connecting, and db.Stats() later, because
 	// where the error might occur is backend-specific.
-	var info *kivik.DBInfo
+	var stats *kivik.DBStats
 	if err == nil {
-		info, err = db.Info(context.Background())
+		stats, err = db.Stats(context.Background())
 	}
 	if !ctx.IsExpectedSuccess(err) {
 		return
 	}
-	if info.Name != dbname {
-		ctx.Errorf("Name: Expected '%s', actual '%s'", dbname, info.Name)
+	if stats.Name != dbname {
+		ctx.Errorf("Name: Expected '%s', actual '%s'", dbname, stats.Name)
 	}
 	if docCount > 0 {
-		if docCount != info.DocCount {
-			ctx.Errorf("DocCount: Expected %d, actual %d", docCount, info.DocCount)
+		if docCount != stats.DocCount {
+			ctx.Errorf("DocCount: Expected %d, actual %d", docCount, stats.DocCount)
 		}
 	}
 }

@@ -78,9 +78,9 @@ func (d *db) Delete(ctx context.Context, docID, rev string) (newRev string, err 
 	})
 }
 
-func (d *db) Info(ctx context.Context) (*driver.DBInfo, error) {
+func (d *db) Stats(ctx context.Context) (*driver.DBStats, error) {
 	i, err := d.db.Info(ctx)
-	return &driver.DBInfo{
+	return &driver.DBStats{
 		Name:           i.Name,
 		CompactRunning: d.compacting,
 		DocCount:       i.DocCount,

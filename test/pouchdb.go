@@ -33,9 +33,9 @@ func init() {
 
 		"Query/RW/group/Admin/WithDocs/UpdateSeq.skip": true,
 
-		"ServerInfo.version":        `^6\.\d\.\d$`,
-		"ServerInfo.vendor":         `^PouchDB$`,
-		"ServerInfo.vendor_version": `^6\.\d\.\d$`,
+		"Version.version":        `^6\.\d\.\d$`,
+		"Version.vendor":         `^PouchDB$`,
+		"Version.vendor_version": `^6\.\d\.\d$`,
 
 		"Get/RW/group/Admin/bogus.status":  kivik.StatusNotFound,
 		"Get/RW/group/NoAuth/bogus.status": kivik.StatusNotFound,
@@ -47,7 +47,7 @@ func init() {
 		"Delete/RW/Admin/group/InvalidRevFormat.status": kivik.StatusBadRequest,
 		"Delete/RW/Admin/group/WrongRev.status":         kivik.StatusConflict,
 
-		"DBInfo/Admin.skip": true, // No predefined DBs for Local PouchDB
+		"Stats/Admin.skip": true, // No predefined DBs for Local PouchDB
 
 		"BulkDocs/RW/Admin/group/Mix/Conflict.status": kivik.StatusConflict,
 
@@ -126,9 +126,9 @@ func init() {
 		"Query/RW/group/Admin/WithDocs/UpdateSeq.skip":  true,
 		"Query/RW/group/NoAuth/WithDocs/UpdateSeq.skip": true,
 
-		"ServerInfo.version":        `^6\.\d\.\d$`,
-		"ServerInfo.vendor":         `^PouchDB$`,
-		"ServerInfo.vendor_version": `^6\.\d\.\d$`,
+		"Version.version":        `^6\.\d\.\d$`,
+		"Version.vendor":         `^PouchDB$`,
+		"Version.vendor_version": `^6\.\d\.\d$`,
 
 		"Get/RW/group/Admin/bogus.status":  kivik.StatusNotFound,
 		"Get/RW/group/NoAuth/bogus.status": kivik.StatusNotFound,
@@ -144,9 +144,9 @@ func init() {
 		"Delete/RW/NoAuth/group/WrongRev.status":         kivik.StatusConflict,
 		"Delete/RW/NoAuth/group/DesignDoc.status":        kivik.StatusUnauthorized,
 
-		"DBInfo.databases":             []string{"_users", "chicken"},
-		"DBInfo/Admin/chicken.status":  kivik.StatusNotFound,
-		"DBInfo/NoAuth/chicken.status": kivik.StatusNotFound,
+		"Stats.databases":             []string{"_users", "chicken"},
+		"Stats/Admin/chicken.status":  kivik.StatusNotFound,
+		"Stats/NoAuth/chicken.status": kivik.StatusNotFound,
 
 		"BulkDocs/RW/NoAuth/group/Mix/Conflict.status": kivik.StatusConflict,
 		"BulkDocs/RW/Admin/group/Mix/Conflict.status":  kivik.StatusConflict,

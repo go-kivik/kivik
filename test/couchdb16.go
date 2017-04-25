@@ -67,9 +67,9 @@ func init() {
 		"Log/Admin/HTTP/NegativeBytes.status": kivik.StatusInternalServerError,
 		"Log/Admin/HTTP/TextBytes.status":     kivik.StatusInternalServerError,
 
-		"ServerInfo.version":        `^1\.6\.1$`,
-		"ServerInfo.vendor":         `^The Apache Software Foundation$`,
-		"ServerInfo.vendor_version": `^1\.6\.1$`,
+		"Version.version":        `^1\.6\.1$`,
+		"Version.vendor":         `^The Apache Software Foundation$`,
+		"Version.vendor_version": `^1\.6\.1$`,
 
 		"Get/RW/group/Admin/bogus.status":  kivik.StatusNotFound,
 		"Get/RW/group/NoAuth/bogus.status": kivik.StatusNotFound,
@@ -117,11 +117,11 @@ func init() {
 		"Session/Post/GoodCredsJSONRemoteRedirHeaderInjection.skip": true, // CouchDB allows header injection
 		"Session/Post/GoodCredsJSONRemoteRedirInvalidURL.skip":      true, // CouchDB doesn't sanitize the Location value, so sends unparseable headers.
 
-		"DBInfo.databases":             []string{"_users", "chicken", "_duck"},
-		"DBInfo/Admin/chicken.status":  kivik.StatusNotFound,
-		"DBInfo/Admin/_duck.status":    kivik.StatusBadRequest,
-		"DBInfo/NoAuth/chicken.status": kivik.StatusNotFound,
-		"DBInfo/NoAuth/_duck.status":   kivik.StatusBadRequest,
+		"Stats.databases":             []string{"_users", "chicken", "_duck"},
+		"Stats/Admin/chicken.status":  kivik.StatusNotFound,
+		"Stats/Admin/_duck.status":    kivik.StatusBadRequest,
+		"Stats/NoAuth/chicken.status": kivik.StatusNotFound,
+		"Stats/NoAuth/_duck.status":   kivik.StatusBadRequest,
 
 		"Compact/RW/NoAuth.status": kivik.StatusUnauthorized,
 

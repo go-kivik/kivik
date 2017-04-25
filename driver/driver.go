@@ -50,8 +50,8 @@ type Authenticator interface {
 	Authenticate(ctx context.Context, authenticator interface{}) error
 }
 
-// DBInfo provides statistics about a database.
-type DBInfo struct {
+// DBStats contains database statistics..
+type DBStats struct {
 	Name           string `json:"db_name"`
 	CompactRunning bool   `json:"compact_running"`
 	DocCount       int64  `json:"doc_count"`
@@ -88,8 +88,8 @@ type DB interface {
 	Put(ctx context.Context, docID string, doc interface{}) (rev string, err error)
 	// Delete marks the specified document as deleted.
 	Delete(ctx context.Context, docID, rev string) (newRev string, err error)
-	// Info returns information about the database
-	Info(ctx context.Context) (*DBInfo, error)
+	// Stats returns database statistics.
+	Stats(ctx context.Context) (*DBStats, error)
 	// Compact initiates compaction of the database.
 	Compact(ctx context.Context) error
 	// CompactView initiates compaction of the view.

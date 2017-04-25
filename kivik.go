@@ -2,6 +2,7 @@ package kivik
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"regexp"
 
@@ -60,13 +61,31 @@ func (c *Client) DSN() string {
 	return c.dsn
 }
 
-// ServerInfo returns version and vendor info about the backend.
-func (c *Client) ServerInfo(ctx context.Context, options ...Options) (driver.ServerInfo, error) {
-	opts, err := mergeOptions(options...)
+// Version represents a server version response.
+type Version struct {
+	// Version is the version number reported by the server or backend.
+	Version string
+	// Vendor is the vendor string reported by the server or backend.
+	Vendor string
+	// RawResponse is the raw response body returned by the server, useful if
+	// you need additional backend-specific information.
+	//
+	// For the format of this document, see
+	// http://docs.couchdb.org/en/2.0.0/api/server/common.html#get
+	RawResponse json.RawMessage
+}
+
+// Version returns version and vendor info about the backend.
+func (c *Client) Version(ctx context.Context) (*Version, error) {
+	ver, err := c.driverClient.Version(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return c.driverClient.ServerInfo(ctx, opts)
+	return &Version{
+		Version:     ver.Version,
+		Vendor:      ver.Vendor,
+		RawResponse: ver.RawResponse,
+	}, nil
 }
 
 // DB returns a handle to the requested database. Any options parameters

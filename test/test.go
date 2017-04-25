@@ -268,17 +268,17 @@ func runTests(ctx *kt.Context, suite string, t *testing.T) {
 }
 
 func detectCompatibility(client *kivik.Client) ([]string, error) {
-	info, err := client.ServerInfo(context.Background())
+	info, err := client.Version(context.Background())
 	if err != nil {
 		return nil, err
 	}
-	switch info.Vendor() {
+	switch info.Vendor {
 	case "PouchDB":
 		return []string{SuitePouchLocal}, nil
 	case "IBM Cloudant":
 		return []string{SuiteCloudant}, nil
 	case "The Apache Software Foundation":
-		if info.Version() == "2.0" {
+		if strings.HasPrefix(info.Version, "2.0") {
 			return []string{SuiteCouch20}, nil
 		}
 		return []string{SuiteCouch16}, nil

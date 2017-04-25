@@ -67,19 +67,19 @@ func (d *Couch) NewClient(ctx context.Context, dsn string) (driver.Client, error
 }
 
 func (c *client) setCompatMode(ctx context.Context) {
-	info, err := c.ServerInfo(ctx, nil)
+	info, err := c.Version(ctx)
 	if err != nil {
 		// We don't want to error here, in case the / endpoint is just blocked
 		// for security reasons or something; but then we also can't infer the
 		// compat mode, so just return, defaulting to CompatUnknown.
 		return
 	}
-	switch info.Vendor() {
+	switch info.Vendor {
 	case VendorCouchDB, VendorCloudant:
 		switch {
-		case strings.HasPrefix(info.Version(), "2.0."):
+		case strings.HasPrefix(info.Version, "2.0."):
 			c.Compat = CompatCouch20
-		case strings.HasPrefix(info.Version(), "1.6"):
+		case strings.HasPrefix(info.Version, "1.6"):
 			c.Compat = CompatCouch16
 		}
 	}

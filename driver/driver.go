@@ -13,22 +13,21 @@ type Driver interface {
 	NewClient(ctx context.Context, name string) (Client, error)
 }
 
-// ServerInfo represents the response a server gives witha GET request to '/'.
-type ServerInfo interface {
-	// Response is the full response, unparsed.
-	Response() json.RawMessage
-	// Version should return the version string from the top level of the response.
-	Version() string
-	// Vendor should return the name of the vendor.
-	Vendor() string
-	// VendorVersion should return the vendor version number.
-	VendorVersion() string
+// Version represents a server version response.
+type Version struct {
+	// Version is the version number reported by the server or backend.
+	Version string
+	// Vendor is the vendor string reported by the server or backend.
+	Vendor string
+	// RawResponse is the raw response body as returned by the server.
+	RawResponse json.RawMessage
 }
 
 // Client is a connection to a database server.
 type Client interface {
-	// ServerInfo returns the server implementation's details.
-	ServerInfo(ctx context.Context, options map[string]interface{}) (ServerInfo, error)
+	// Version returns the server implementation's details.
+	Version(ctx context.Context) (*Version, error)
+	// AllDBs returns a list of all existing database names.
 	AllDBs(ctx context.Context, options map[string]interface{}) ([]string, error)
 	// DBExists returns true if the database exists.
 	DBExists(ctx context.Context, dbName string, options map[string]interface{}) (bool, error)

@@ -36,7 +36,7 @@ const (
 
 func (d *memDriver) NewClient(_ context.Context, name string) (driver.Client, error) {
 	return &client{
-		Client: common.NewClient(Version, Vendor, Version),
+		Client: common.NewClient(Version, Vendor),
 		dbs:    make(map[string]*database),
 	}, nil
 }

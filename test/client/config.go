@@ -100,15 +100,24 @@ func testDelete(ctx *kt.Context, client *kivik.Client, secName string) {
 	ctx.Run("group", func(ctx *kt.Context) {
 		ctx.Run("NonExistantSection", func(ctx *kt.Context) {
 			ctx.Parallel()
-			ctx.CheckError(c.Delete(context.Background(), secName+"nonexistant", "xyz"))
+			err := kt.Retry(func() error {
+				return c.Delete(context.Background(), secName+"nonexistant", "xyz")
+			})
+			ctx.CheckError(err)
 		})
 		ctx.Run("NonExistantKey", func(ctx *kt.Context) {
 			ctx.Parallel()
-			ctx.CheckError(c.Delete(context.Background(), secName, "baz"))
+			err := kt.Retry(func() error {
+				return c.Delete(context.Background(), secName, "baz")
+			})
+			ctx.CheckError(err)
 		})
 		ctx.Run("ExistingKey", func(ctx *kt.Context) {
 			ctx.Parallel()
-			ctx.CheckError(c.Delete(context.Background(), secName, "foo"))
+			err := kt.Retry(func() error {
+				return c.Delete(context.Background(), secName, "foo")
+			})
+			ctx.CheckError(err)
 		})
 	})
 }

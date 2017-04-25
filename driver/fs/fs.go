@@ -39,7 +39,7 @@ func (d *fsDriver) NewClient(_ context.Context, dir string) (driver.Client, erro
 		return nil, err
 	}
 	return &client{
-		Client: common.NewClient(Version, Vendor, Version),
+		Client: common.NewClient(Version, Vendor),
 		root:   dir,
 	}, nil
 }

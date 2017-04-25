@@ -76,30 +76,12 @@ func (c *client) AllDBs(ctx context.Context, _ map[string]interface{}) ([]string
 	return nil, errors.New("AllDBs() not implemented for remote PouchDB databases")
 }
 
-type pouchInfo struct {
-	vers string
-}
-
-var _ driver.ServerInfo = &pouchInfo{}
-
-func (i *pouchInfo) Response() json.RawMessage {
-	data, _ := json.Marshal(map[string]interface{}{
-		"couchdb": "Welcome",
-		"version": i.Version(),
-		"vendor": map[string]interface{}{
-			"name":    i.Vendor(),
-			"version": i.Version(),
-		},
-	})
-	return data
-}
-func (i *pouchInfo) Vendor() string        { return "PouchDB" }
-func (i *pouchInfo) Version() string       { return i.vers }
-func (i *pouchInfo) VendorVersion() string { return i.vers }
-
-func (c *client) ServerInfo(_ context.Context, _ map[string]interface{}) (driver.ServerInfo, error) {
-	return &pouchInfo{
-		vers: c.pouch.Version(),
+func (c *client) Version(_ context.Context) (*driver.Version, error) {
+	ver := c.pouch.Version()
+	return &driver.Version{
+		Version:     ver,
+		Vendor:      "PouchDB",
+		RawResponse: json.RawMessage(fmt.Sprintf(`{"version":"%s","vendor":{"name":"PouchDB"}}`, ver)),
 	}, nil
 }
 

@@ -44,8 +44,16 @@ func (c *client) DestroyDB(ctx context.Context, dbname string, options map[strin
 	return c.Client.DestroyDB(ctx, dbname, options)
 }
 
-func (c *client) ServerInfo(ctx context.Context, options map[string]interface{}) (driver.ServerInfo, error) {
-	return c.Client.ServerInfo(ctx, options)
+func (c *client) Version(ctx context.Context) (*driver.Version, error) {
+	ver, err := c.Client.Version(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &driver.Version{
+		Version:     ver.Version,
+		Vendor:      ver.Vendor,
+		RawResponse: ver.RawResponse,
+	}, nil
 }
 
 func (c *client) DB(ctx context.Context, name string, options map[string]interface{}) (driver.DB, error) {

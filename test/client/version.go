@@ -23,20 +23,16 @@ func info(ctx *kt.Context) {
 
 func testServerInfo(ctx *kt.Context, client *kivik.Client) {
 	ctx.Parallel()
-	info, err := client.ServerInfo(context.Background())
+	info, err := client.Version(context.Background())
 	if !ctx.IsExpectedSuccess(err) {
 		return
 	}
 	version := regexp.MustCompile(ctx.MustString("version"))
 	vendor := regexp.MustCompile(ctx.MustString("vendor"))
-	vendorVersion := regexp.MustCompile(ctx.MustString("vendor_version"))
-	if !version.MatchString(info.Version()) {
-		ctx.Errorf("Version '%s' does not match /%s/", info.Version(), version)
+	if !version.MatchString(info.Version) {
+		ctx.Errorf("Version '%s' does not match /%s/", info.Version, version)
 	}
-	if !vendor.MatchString(info.Vendor()) {
-		ctx.Errorf("Vendor '%s' doesnot match /%s/", info.Vendor(), vendor)
-	}
-	if !vendorVersion.MatchString(info.VendorVersion()) {
-		ctx.Errorf("Vendor version '%s' does not match /%s", info.VendorVersion(), vendorVersion)
+	if !vendor.MatchString(info.Vendor) {
+		ctx.Errorf("Vendor '%s' doesnot match /%s/", info.Vendor, vendor)
 	}
 }

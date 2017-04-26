@@ -61,8 +61,8 @@ func testPutAttachment(ctx *kt.Context, client *kivik.Client, dbname string) {
 	ctx.Run("Create", func(ctx *kt.Context) {
 		ctx.Parallel()
 		docID := ctx.TestDBName()
-		att := kivik.NewAttachment("test.txt", "text/plain", stringReadCloser("test content"))
 		err := kt.Retry(func() error {
+			att := kivik.NewAttachment("test.txt", "text/plain", stringReadCloser("test content"))
 			_, err := db.PutAttachment(context.Background(), docID, "", att)
 			return err
 		})

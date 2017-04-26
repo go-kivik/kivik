@@ -21,10 +21,10 @@ func (d *db) PutAttachment(ctx context.Context, docID, rev, filename, contentTyp
 	return result.Get("rev").String(), nil
 }
 
-func (d *db) GetAttachment(ctx context.Context, docID, rev, filename string) (cType string, md5sum driver.Checksum, body io.ReadCloser, err error) {
+func (d *db) GetAttachment(ctx context.Context, docID, rev, filename string) (cType string, md5sum driver.MD5sum, body io.ReadCloser, err error) {
 	result, err := d.fetchAttachment(ctx, docID, rev, filename)
 	if err != nil {
-		return "", driver.Checksum{}, nil, err
+		return "", driver.MD5sum{}, nil, err
 	}
 	cType, body, err = parseAttachment(result)
 	return

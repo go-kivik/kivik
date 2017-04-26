@@ -33,20 +33,20 @@ func (d *db) PutAttachment(ctx context.Context, docID, rev, filename, contentTyp
 	return response.Rev, nil
 }
 
-func (d *db) GetAttachmentMeta(ctx context.Context, docID, rev, filename string) (cType string, md5sum driver.Checksum, err error) {
+func (d *db) GetAttachmentMeta(ctx context.Context, docID, rev, filename string) (cType string, md5sum driver.MD5sum, err error) {
 	resp, err := d.fetchAttachment(ctx, kivik.MethodHead, docID, rev, filename)
 	if err != nil {
-		return "", driver.Checksum{}, err
+		return "", driver.MD5sum{}, err
 	}
 	cType, md5sum, body, err := d.decodeAttachment(resp)
 	body.Close()
 	return cType, md5sum, err
 }
 
-func (d *db) GetAttachment(ctx context.Context, docID, rev, filename string) (cType string, md5sum driver.Checksum, body io.ReadCloser, err error) {
+func (d *db) GetAttachment(ctx context.Context, docID, rev, filename string) (cType string, md5sum driver.MD5sum, body io.ReadCloser, err error) {
 	resp, err := d.fetchAttachment(ctx, kivik.MethodGet, docID, rev, filename)
 	if err != nil {
-		return "", driver.Checksum{}, nil, err
+		return "", driver.MD5sum{}, nil, err
 	}
 	return d.decodeAttachment(resp)
 }
@@ -63,10 +63,10 @@ func (d *db) fetchAttachment(ctx context.Context, method, docID, rev, filename s
 	return resp, chttp.ResponseError(resp)
 }
 
-func (d *db) decodeAttachment(resp *http.Response) (cType string, md5sum driver.Checksum, body io.ReadCloser, err error) {
+func (d *db) decodeAttachment(resp *http.Response) (cType string, md5sum driver.MD5sum, body io.ReadCloser, err error) {
 	var ok bool
 	if cType, ok = getContentType(resp); !ok {
-		return "", driver.Checksum{}, nil, errors.New("no Content-Type in response")
+		return "", driver.MD5sum{}, nil, errors.New("no Content-Type in response")
 	}
 
 	md5sum, err = getMD5Checksum(resp)
@@ -80,7 +80,7 @@ func getContentType(resp *http.Response) (ctype string, ok bool) {
 	return ctype, ok
 }
 
-func getMD5Checksum(resp *http.Response) (md5sum driver.Checksum, err error) {
+func getMD5Checksum(resp *http.Response) (md5sum driver.MD5sum, err error) {
 	hash, err := base64.StdEncoding.DecodeString(resp.Header.Get("Content-MD5"))
 	if err != nil {
 		err = fmt.Errorf("failed to decode MD5 checksum: %s", err)

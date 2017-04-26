@@ -111,7 +111,7 @@ type DB interface {
 	PutAttachment(ctx context.Context, docID, rev, filename, contentType string, body io.Reader) (newRev string, err error)
 	// GetAttachment fetches an attachment for the associated document ID. rev
 	// may be an empty string to fetch the most recent document version.
-	GetAttachment(ctx context.Context, docID, rev, filename string) (contentType string, md5sum Checksum, body io.ReadCloser, err error)
+	GetAttachment(ctx context.Context, docID, rev, filename string) (contentType string, md5sum MD5sum, body io.ReadCloser, err error)
 	// DeleteAttachment deletes an attachment from a document, returning the
 	// document's new revision.
 	DeleteAttachment(ctx context.Context, docID, rev, filename string) (newRev string, err error)
@@ -149,15 +149,15 @@ type Index struct {
 	Definition interface{} `json:"def"`
 }
 
-// Checksum is a 128-bit MD5 checksum of a file's content.
-type Checksum [16]byte
+// MD5sum is a 128-bit MD5 checksum.
+type MD5sum [16]byte
 
 // AttachmentMetaer is an optional interface which may be satisfied by a
 // DB. If satisfied, it may be used to fetch meta data about an attachment. If
 // not satisfied, GetAttachment will be used instead.
 type AttachmentMetaer interface {
 	// GetAttachmentMeta returns meta information about an attachment.
-	GetAttachmentMeta(ctx context.Context, docID, rev, filename string) (contentType string, md5sum Checksum, err error)
+	GetAttachmentMeta(ctx context.Context, docID, rev, filename string) (contentType string, md5sum MD5sum, err error)
 }
 
 // BulkResult is the result of a single doc update in a BulkDocs request.

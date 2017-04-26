@@ -44,7 +44,7 @@ func (d *db) Delete(_ context.Context, docID, rev string) (newRev string, err er
 	return "", kivik.ErrNotImplemented
 }
 
-func (d *db) Info(_ context.Context) (*driver.DBInfo, error) {
+func (d *db) Stats(_ context.Context) (*driver.DBStats, error) {
 	// FIXME: Unimplemented
 	return nil, kivik.ErrNotImplemented
 }

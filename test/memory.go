@@ -28,13 +28,13 @@ func init() {
 		"Log.status":          kivik.StatusNotImplemented,
 		"Log/Admin/HTTP.skip": true,
 
-		"ServerInfo.version":        `^0\.0\.1$`,
-		"ServerInfo.vendor":         `^Kivik Memory Adaptor$`,
-		"ServerInfo.vendor_version": `^0\.0\.1$`,
+		"Version.version":        `^0\.0\.1$`,
+		"Version.vendor":         `^Kivik Memory Adaptor$`,
+		"Version.vendor_version": `^0\.0\.1$`,
 
 		"Get.skip":               true,                       // FIXME: Unimplemented
 		"Delete.skip":            true,                       // FIXME: Unimplemented
-		"DBInfo.skip":            true,                       // FIXME: Unimplemented
+		"Stats.skip":             true,                       // FIXME: Unimplemented
 		"CreateDoc.skip":         true,                       // FIXME: Unimplemented
 		"Compact.skip":           true,                       // FIXME: Unimplemented
 		"Security.skip":          true,                       // FIXME: Unimplemented

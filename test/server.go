@@ -47,9 +47,9 @@ func init() {
 		"Log/Admin/HTTP/NegativeBytes.status": http.StatusBadRequest,
 		"Log/NoAuth/Offset-1000.status":       http.StatusBadRequest,
 
-		"ServerInfo.version":        `^1\.6\.1$`,
-		"ServerInfo.vendor":         "Kivik",
-		"ServerInfo.vendor_version": `^0\.0\.1$`,
+		"Version.version":        `^1\.6\.1$`,
+		"Version.vendor":         "Kivik",
+		"Version.vendor_version": `^0\.0\.1$`,
 
 		"Get.skip": true, // FIXME: Fix this when we can delete database
 
@@ -91,7 +91,7 @@ func init() {
 		"Session/Post/GoodCredsJSONRedirEmpty.status":                 kivik.StatusBadRequest,
 		"Session/Post/GoodCredsJSONRedirSchemaless.status":            kivik.StatusBadRequest,
 
-		"DBInfo.skip":            true, // FIXME: Unimplemented
+		"Stats.skip":             true, // FIXME: Unimplemented
 		"CreateDoc.skip":         true, // FIXME: Unimplemented
 		"Compact.skip":           true, // FIXME: Unimplemented
 		"ViewCleanup.skip":       true, // FIXME: Unimplemented

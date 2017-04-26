@@ -69,9 +69,9 @@ func init() {
 		"Log/Admin/Offset-1000.status":  kivik.StatusBadRequest,
 		"Log/NoAuth/Offset-1000.status": kivik.StatusBadRequest,
 
-		"ServerInfo.version":        `^2\.0\.0$`,
-		"ServerInfo.vendor":         `^IBM Cloudant$`,
-		"ServerInfo.vendor_version": `^\d\d\d\d$`,
+		"Version.version":        `^2\.0\.0$`,
+		"Version.vendor":         `^IBM Cloudant$`,
+		"Version.vendor_version": `^\d\d\d\d$`,
 
 		"Get/RW/group/Admin/bogus.status":        kivik.StatusNotFound,
 		"Get/RW/group/NoAuth/bob.status":         kivik.StatusUnauthorized,
@@ -125,13 +125,13 @@ func init() {
 		"Session/Post/GoodCredsJSONRemoteRedirHeaderInjection.status": kivik.StatusBadRequest,
 		"Session/Post/GoodCredsJSONRemoteRedirInvalidURL.skip":        true, // Cloudant doesn't sanitize the Location value, so sends unparseable headers.
 
-		"DBInfo.databases":             []string{"_users", "chicken", "_duck"},
-		"DBInfo/Admin/chicken.status":  kivik.StatusNotFound,
-		"DBInfo/Admin/_duck.status":    kivik.StatusForbidden,
-		"DBInfo/NoAuth/_users.status":  kivik.StatusUnauthorized,
-		"DBInfo/NoAuth/chicken.status": kivik.StatusNotFound,
-		"DBInfo/NoAuth/_duck.status":   kivik.StatusUnauthorized,
-		"DBInfo/RW/NoAuth.status":      kivik.StatusUnauthorized,
+		"Stats.databases":             []string{"_users", "chicken", "_duck"},
+		"Stats/Admin/chicken.status":  kivik.StatusNotFound,
+		"Stats/Admin/_duck.status":    kivik.StatusForbidden,
+		"Stats/NoAuth/_users.status":  kivik.StatusUnauthorized,
+		"Stats/NoAuth/chicken.status": kivik.StatusNotFound,
+		"Stats/NoAuth/_duck.status":   kivik.StatusUnauthorized,
+		"Stats/RW/NoAuth.status":      kivik.StatusUnauthorized,
 
 		"CreateDoc/RW/group/NoAuth.status": kivik.StatusUnauthorized,
 

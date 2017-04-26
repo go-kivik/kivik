@@ -96,9 +96,8 @@ func (db *DB) Flush(ctx context.Context) error {
 	return ErrNotImplemented
 }
 
-// DBInfo is a struct of information about a database instance. Not all fields
-// are supported by all database drivers.
-type DBInfo struct {
+// DBStats contains database statistics..
+type DBStats struct {
 	// Name is the name of the database.
 	Name string `json:"db_name"`
 	// CompactRunning is true if the database is currently being compacted.
@@ -121,11 +120,11 @@ type DBInfo struct {
 	ExternalSize int64 `json:"-"`
 }
 
-// Info returns basic statistics about the database.
-func (db *DB) Info(ctx context.Context) (*DBInfo, error) {
-	i, err := db.driverDB.Info(ctx)
-	dbinfo := DBInfo(*i)
-	return &dbinfo, err
+// Stats returns database statistics.
+func (db *DB) Stats(ctx context.Context) (*DBStats, error) {
+	i, err := db.driverDB.Stats(ctx)
+	stats := DBStats(*i)
+	return &stats, err
 }
 
 // Compact begins compaction of the database. Check the CompactRunning field

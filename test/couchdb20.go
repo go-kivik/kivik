@@ -66,9 +66,9 @@ func init() {
 
 		"Log.skip": true, // This was removed in CouchDB 2.0
 
-		"ServerInfo.version":        `^2\.0\.0$`,
-		"ServerInfo.vendor":         `^The Apache Software Foundation$`,
-		"ServerInfo.vendor_version": ``, // CouchDB 2.0 no longer has a vendor version
+		"Version.version":        `^2\.0\.0$`,
+		"Version.vendor":         `^The Apache Software Foundation$`,
+		"Version.vendor_version": ``, // CouchDB 2.0 no longer has a vendor version
 
 		"Get/RW/group/Admin/bogus.status":  kivik.StatusNotFound,
 		"Get/RW/group/NoAuth/bogus.status": kivik.StatusNotFound,
@@ -116,11 +116,11 @@ func init() {
 		"Session/Post/GoodCredsJSONRemoteRedirHeaderInjection.skip": true, // CouchDB allows header injection
 		"Session/Post/GoodCredsJSONRemoteRedirInvalidURL.skip":      true, // CouchDB doesn't sanitize the Location value, so sends unparseable headers.
 
-		"DBInfo.databases":             []string{"_users", "chicken", "_duck"},
-		"DBInfo/Admin/chicken.status":  kivik.StatusNotFound,
-		"DBInfo/Admin/_duck.status":    kivik.StatusNotFound,
-		"DBInfo/NoAuth/chicken.status": kivik.StatusNotFound,
-		"DBInfo/NoAuth/_duck.status":   kivik.StatusUnauthorized,
+		"Stats.databases":             []string{"_users", "chicken", "_duck"},
+		"Stats/Admin/chicken.status":  kivik.StatusNotFound,
+		"Stats/Admin/_duck.status":    kivik.StatusNotFound,
+		"Stats/NoAuth/chicken.status": kivik.StatusNotFound,
+		"Stats/NoAuth/_duck.status":   kivik.StatusUnauthorized,
 
 		"Compact.skip": false,
 

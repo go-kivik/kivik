@@ -182,9 +182,9 @@ func (d *db) Flush(ctx context.Context) error {
 	return err
 }
 
-func (d *db) Info(ctx context.Context) (*driver.DBInfo, error) {
+func (d *db) Stats(ctx context.Context) (*driver.DBStats, error) {
 	result := struct {
-		driver.DBInfo
+		driver.DBStats
 		Sizes struct {
 			File     int64 `json:"file"`
 			External int64 `json:"external"`
@@ -193,18 +193,18 @@ func (d *db) Info(ctx context.Context) (*driver.DBInfo, error) {
 		UpdateSeq json.RawMessage `json:"update_seq"`
 	}{}
 	_, err := d.Client.DoJSON(ctx, kivik.MethodGet, d.dbName, nil, &result)
-	info := result.DBInfo
+	stats := result.DBStats
 	if result.Sizes.File > 0 {
-		info.DiskSize = result.Sizes.File
+		stats.DiskSize = result.Sizes.File
 	}
 	if result.Sizes.External > 0 {
-		info.ExternalSize = result.Sizes.External
+		stats.ExternalSize = result.Sizes.External
 	}
 	if result.Sizes.Active > 0 {
-		info.ActiveSize = result.Sizes.Active
+		stats.ActiveSize = result.Sizes.Active
 	}
-	info.UpdateSeq = string(bytes.Trim(result.UpdateSeq, `"`))
-	return &info, err
+	stats.UpdateSeq = string(bytes.Trim(result.UpdateSeq, `"`))
+	return &stats, err
 }
 
 func (d *db) Compact(ctx context.Context) error {

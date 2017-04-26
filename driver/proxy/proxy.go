@@ -98,10 +98,10 @@ func (d *db) Get(ctx context.Context, id string, opts map[string]interface{}) (j
 	return raw, err
 }
 
-func (d *db) Info(ctx context.Context) (*driver.DBInfo, error) {
-	i, err := d.DB.Info(ctx)
-	dbinfo := driver.DBInfo(*i)
-	return &dbinfo, err
+func (d *db) Stats(ctx context.Context) (*driver.DBStats, error) {
+	i, err := d.DB.Stats(ctx)
+	stats := driver.DBStats(*i)
+	return &stats, err
 }
 
 func (d *db) Security(ctx context.Context) (*driver.Security, error) {

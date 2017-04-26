@@ -239,7 +239,7 @@ func (db *DB) GetAttachment(ctx context.Context, docID, rev, filename string) (*
 		ReadCloser:  body,
 		Filename:    filename,
 		ContentType: cType,
-		MD5:         Checksum(md5sum),
+		MD5:         MD5sum(md5sum),
 	}, nil
 }
 
@@ -254,7 +254,7 @@ func (db *DB) GetAttachmentMeta(ctx context.Context, docID, rev, filename string
 		return &Attachment{
 			Filename:    filename,
 			ContentType: cType,
-			MD5:         Checksum(md5sum),
+			MD5:         MD5sum(md5sum),
 		}, nil
 	}
 	att, err := db.GetAttachment(ctx, docID, rev, filename)

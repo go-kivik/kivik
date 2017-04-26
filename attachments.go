@@ -5,15 +5,15 @@ import (
 	"io"
 )
 
-// Checksum is a 128-bit MD5 checksum of a file's content.
-type Checksum [16]byte
+// MD5sum is a 128-bit MD5 checksum.
+type MD5sum [16]byte
 
 // Attachment represents a file attachment on a CouchDB document.
 type Attachment struct {
 	io.ReadCloser
 	Filename    string
 	ContentType string
-	MD5         Checksum
+	MD5         [16]byte
 }
 
 // bufCloser wraps a *bytes.Buffer to create an io.ReadCloser

@@ -24,7 +24,6 @@ type replicationState struct {
 type replicationHandler struct {
 	event *string
 	state *replicationState
-	err   error
 
 	mu       sync.Mutex
 	wg       sync.WaitGroup
@@ -50,16 +49,16 @@ func (r *replicationHandler) Status() (string, *replicationState, error) {
 		r.wg.Wait()
 		r.mu.Lock()
 	}
-	event, state, err := r.event, r.state, r.err
+	event, state := r.event, r.state
 	r.event = nil
 	r.mu.Unlock()
 	r.wg.Add(1)
-	return *event, state, err
+	return *event, state, nil
 }
 
-func (r *replicationHandler) handleEvent(event string, info *replicationState, err error) {
+func (r *replicationHandler) handleEvent(event string, info *js.Object) {
 	if r.complete {
-		panic(fmt.Sprintf("Unexpected replication event after complete. %v %v %v", event, info, err))
+		panic(fmt.Sprintf("Unexpected replication event after complete. %v %v", event, info))
 	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -68,36 +67,28 @@ func (r *replicationHandler) handleEvent(event string, info *replicationState, e
 	case bindings.ReplicationEventDenied, bindings.ReplicationEventError, bindings.ReplicationEventComplete:
 		r.complete = true
 	}
-	switch event {
-	case bindings.ReplicationEventDenied, bindings.ReplicationEventError:
-		r.err = err
-	}
-	if r.state == nil {
-		r.state = info
+	if info != nil && info != js.Undefined {
+		r.state = &replicationState{Object: info}
 	}
 	r.wg.Done()
 }
 
 func newReplicationHandler(rep *js.Object) *replicationHandler {
 	r := &replicationHandler{obj: rep}
-	rep.Call("on", bindings.ReplicationEventChange, func(info *js.Object) {
-		r.handleEvent(bindings.ReplicationEventChange, &replicationState{Object: info}, nil)
-	})
-	rep.Call("on", bindings.ReplicationEventComplete, func(info *js.Object) {
-		r.handleEvent(bindings.ReplicationEventComplete, &replicationState{Object: info}, nil)
-	})
-	rep.Call("on", bindings.ReplicationEventPaused, func(err *js.Object) {
-		r.handleEvent(bindings.ReplicationEventPaused, nil, &js.Error{Object: err})
-	})
-	rep.Call("on", bindings.ReplicationEventActive, func(_ *js.Object) {
-		r.handleEvent(bindings.ReplicationEventActive, nil, nil)
-	})
-	rep.Call("on", bindings.ReplicationEventDenied, func(err *js.Object) {
-		r.handleEvent(bindings.ReplicationEventDenied, nil, &js.Error{Object: err})
-	})
-	rep.Call("on", bindings.ReplicationEventError, func(err *js.Object) {
-		r.handleEvent(bindings.ReplicationEventError, nil, &js.Error{Object: err})
-	})
+	for _, event := range []string{
+		bindings.ReplicationEventChange,
+		bindings.ReplicationEventComplete,
+		bindings.ReplicationEventPaused,
+		bindings.ReplicationEventActive,
+		bindings.ReplicationEventDenied,
+		bindings.ReplicationEventError,
+	} {
+		func(e string) {
+			rep.Call("on", e, func(info *js.Object) {
+				r.handleEvent(e, info)
+			})
+		}(event)
+	}
 	r.wg.Add(1)
 	return r
 }

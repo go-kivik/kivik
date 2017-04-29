@@ -69,11 +69,13 @@ func (r *replication) Update(ctx context.Context, state *driver.ReplicationInfo)
 	case bindings.ReplicationEventChange, bindings.ReplicationEventActive:
 		r.state = kivik.ReplicationStarted
 	}
-	if !info.StartTime.IsZero() && r.startTime.IsZero() {
-		r.startTime = info.StartTime
-	}
-	if !info.EndTime.IsZero() && r.endTime.IsZero() {
-		r.endTime = info.EndTime
+	if info != nil {
+		if r.startTime.IsZero() && !info.StartTime.IsZero() {
+			r.startTime = info.StartTime
+		}
+		if r.endTime.IsZero() && !info.EndTime.IsZero() {
+			r.endTime = info.EndTime
+		}
 	}
 	r.err = err
 	return nil

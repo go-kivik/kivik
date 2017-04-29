@@ -168,18 +168,6 @@ func (r *replication) updateMain(ctx context.Context) error {
 	return nil
 }
 
-/*
-type ReplicationInfo struct {
-	StartTime        time.Time
-	EndTime          time.Time
-	DocWriteFailures int64
-	DocsRead         int64
-	DocsWritten      int64
-	Progress         float64
-	Status           string
-}
-*/
-
 func (r *replication) getReplicatorDoc(ctx context.Context) (*replicatorDoc, error) {
 	body, err := r.db.Get(ctx, r.docID, nil)
 	if err != nil {

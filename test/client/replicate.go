@@ -156,7 +156,7 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 				ctx.Fatalf("Replication failed to complete in %s", timeout)
 			case <-done:
 				if updateErr != nil {
-					ctx.Fatalf("Replication cancelation failed: %s", updateErr)
+					ctx.Fatalf("Replication cancellation failed: %s", updateErr)
 				}
 			}
 			ctx.CheckError(rep.Delete(context.Background()))

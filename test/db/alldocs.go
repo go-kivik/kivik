@@ -38,10 +38,10 @@ func testAllDocsRW(ctx *kt.Context) {
 	defer ctx.Admin.DestroyDB(context.Background(), dbName, ctx.Options("db"))
 	ctx.Run("group", func(ctx *kt.Context) {
 		ctx.RunAdmin(func(ctx *kt.Context) {
-			doTest(ctx, ctx.Admin, dbName, 0, expected)
+			doTest(ctx, ctx.Admin, dbName, 0, expected, true)
 		})
 		ctx.RunNoAuth(func(ctx *kt.Context) {
-			doTest(ctx, ctx.NoAuth, dbName, 0, expected)
+			doTest(ctx, ctx.NoAuth, dbName, 0, expected, true)
 		})
 	})
 }
@@ -78,22 +78,22 @@ func testAllDocs(ctx *kt.Context, client *kivik.Client) {
 	for _, dbName := range ctx.StringSlice("databases") {
 		func(dbName string) {
 			ctx.Run(dbName, func(ctx *kt.Context) {
-				doTest(ctx, client, dbName, int64(ctx.Int("offset")), ctx.StringSlice("expected"))
+				doTest(ctx, client, dbName, int64(ctx.Int("offset")), ctx.StringSlice("expected"), false)
 			})
 		}(dbName)
 	}
 }
 
-func doTest(ctx *kt.Context, client *kivik.Client, dbName string, expOffset int64, expected []string) {
+func doTest(ctx *kt.Context, client *kivik.Client, dbName string, expOffset int64, expected []string, exact bool) {
 	ctx.Run("WithDocs", func(ctx *kt.Context) {
-		doTestWithDocs(ctx, client, dbName, expOffset, expected)
+		doTestWithDocs(ctx, client, dbName, expOffset, expected, exact)
 	})
 	ctx.Run("WithoutDocs", func(ctx *kt.Context) {
-		doTestWithoutDocs(ctx, client, dbName, expOffset, expected)
+		doTestWithoutDocs(ctx, client, dbName, expOffset, expected, exact)
 	})
 }
 
-func doTestWithoutDocs(ctx *kt.Context, client *kivik.Client, dbName string, expOffset int64, expected []string) {
+func doTestWithoutDocs(ctx *kt.Context, client *kivik.Client, dbName string, expOffset int64, expected []string, exact bool) {
 	ctx.Parallel()
 	db, err := client.DB(context.Background(), dbName, ctx.Options("db"))
 	// Errors may be deferred here, so only return if we actually get
@@ -113,18 +113,18 @@ func doTestWithoutDocs(ctx *kt.Context, client *kivik.Client, dbName string, exp
 	if rows.Err() != nil {
 		ctx.Fatalf("Failed to fetch row: %s", rows.Err())
 	}
-	if d := diff.TextSlices(expected, docIDs); d != "" {
-		ctx.Errorf("Unexpected document IDs returned:\n%s\n", d)
-	}
+	testExpectedDocs(ctx, expected, docIDs, exact)
 	if expOffset != rows.Offset() {
 		ctx.Errorf("offset: Expected %d, got %d", expOffset, rows.Offset())
 	}
-	if int64(len(expected)) != rows.TotalRows() {
-		ctx.Errorf("total rows: Expected %d, got %d", len(expected), rows.TotalRows())
+	if exact {
+		if int64(len(expected)) != rows.TotalRows() {
+			ctx.Errorf("total rows: Expected %d, got %d", len(expected), rows.TotalRows())
+		}
 	}
 }
 
-func doTestWithDocs(ctx *kt.Context, client *kivik.Client, dbName string, expOffset int64, expected []string) {
+func doTestWithDocs(ctx *kt.Context, client *kivik.Client, dbName string, expOffset int64, expected []string, exact bool) {
 	ctx.Parallel()
 	db, err := client.DB(context.Background(), dbName, ctx.Options("db"))
 	// Errors may be deferred here, so only return if we actually get
@@ -167,9 +167,7 @@ func doTestWithDocs(ctx *kt.Context, client *kivik.Client, dbName string, expOff
 	if rows.Err() != nil {
 		ctx.Fatalf("Failed to fetch row: %s", rows.Err())
 	}
-	if d := diff.TextSlices(expected, docIDs); d != "" {
-		ctx.Errorf("Unexpected document IDs returned:\n%s\n", d)
-	}
+	testExpectedDocs(ctx, expected, docIDs, exact)
 	if expOffset != rows.Offset() {
 		ctx.Errorf("offset: Expected %d, got %d", expOffset, rows.Offset())
 	}
@@ -178,7 +176,27 @@ func doTestWithDocs(ctx *kt.Context, client *kivik.Client, dbName string, expOff
 			ctx.Errorf("Expected updated sequence")
 		}
 	})
-	if int64(len(expected)) != rows.TotalRows() {
-		ctx.Errorf("total rows: Expected %d, got %d", len(expected), rows.TotalRows())
+	if exact {
+		if int64(len(expected)) != rows.TotalRows() {
+			ctx.Errorf("total rows: Expected %d, got %d", len(expected), rows.TotalRows())
+		}
+	}
+}
+
+func testExpectedDocs(ctx *kt.Context, expected, actual []string, exact bool) {
+	if exact {
+		if d := diff.TextSlices(expected, actual); d != "" {
+			ctx.Errorf("Unexpected document IDs returned:\n%s\n", d)
+		}
+		return
+	}
+	actualIDs := make(map[string]struct{})
+	for _, id := range actual {
+		actualIDs[id] = struct{}{}
+	}
+	for _, id := range expected {
+		if _, ok := actualIDs[id]; !ok {
+			ctx.Errorf("Expected document '%s' not found", id)
+		}
 	}
 }

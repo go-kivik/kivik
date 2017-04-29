@@ -39,15 +39,34 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 	case "none":
 		prefix = ""
 	}
-	dbname1 := prefix + ctx.TestDB()
-	dbname2 := prefix + ctx.TestDB()
-	defer ctx.Admin.DestroyDB(context.Background(), dbname1, ctx.Options("db"))
-	defer ctx.Admin.DestroyDB(context.Background(), dbname2, ctx.Options("db"))
+	dbtarget := prefix + ctx.TestDB()
+	dbsource := prefix + ctx.TestDB()
+	defer ctx.Admin.DestroyDB(context.Background(), dbtarget, ctx.Options("db"))
+	defer ctx.Admin.DestroyDB(context.Background(), dbsource, ctx.Options("db"))
+
+	db, err := client.DB(context.Background(), dbsource)
+	if err != nil {
+		ctx.Fatalf("Failed to open db: %s", err)
+	}
+
+	// Create 10 docs for testing sync
+	for i := 0; i < 10; i++ {
+		id := ctx.TestDBName()
+		doc := struct {
+			ID string `json:"id"`
+		}{
+			ID: id,
+		}
+		if _, err := db.Put(context.Background(), doc.ID, doc); err != nil {
+			ctx.Fatalf("Failed to create doc: %s", err)
+		}
+	}
+
 	ctx.Run("group", func(ctx *kt.Context) {
 		ctx.Run("ValidReplication", func(ctx *kt.Context) {
 			ctx.Parallel()
 			replID := ctx.TestDBName()
-			rep, err := callReplicate(ctx, client, dbname1, dbname2, replID, nil)
+			rep, err := callReplicate(ctx, client, dbtarget, dbsource, replID, nil)
 			if !ctx.IsExpectedSuccess(err) {
 				return
 			}
@@ -93,14 +112,17 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 						ctx.Errorf("Expected a replication ID")
 					}
 				}
-				if rep.Source != dbname2 {
-					ctx.Errorf("Unexpected source. Expected: %s, Actual: %s\n", dbname2, rep.Source)
+				if rep.Source != dbsource {
+					ctx.Errorf("Unexpected source. Expected: %s, Actual: %s\n", dbsource, rep.Source)
 				}
-				if rep.Target != dbname1 {
-					ctx.Errorf("Unexpected target. Expected: %s, Actual: %s\n", dbname1, rep.Target)
+				if rep.Target != dbtarget {
+					ctx.Errorf("Unexpected target. Expected: %s, Actual: %s\n", dbtarget, rep.Target)
 				}
 				if rep.State() != kivik.ReplicationComplete {
 					ctx.Errorf("Replication failed to complete. Final state: %s\n", rep.State())
+				}
+				if (rep.Progress() - float64(100)) > 0.0001 {
+					ctx.Errorf("Expected 100%% completion, got %%%02.2f", rep.Progress())
 				}
 			})
 		})
@@ -150,7 +172,7 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 		ctx.Run("MissingSource", func(ctx *kt.Context) {
 			ctx.Parallel()
 			replID := ctx.TestDBName()
-			rep, err := callReplicate(ctx, client, dbname1, "http://localhost:5984/foo", replID, nil)
+			rep, err := callReplicate(ctx, client, dbtarget, "http://localhost:5984/foo", replID, nil)
 			if !ctx.IsExpectedSuccess(err) {
 				return
 			}
@@ -159,7 +181,7 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 		ctx.Run("MissingTarget", func(ctx *kt.Context) {
 			ctx.Parallel()
 			replID := ctx.TestDBName()
-			rep, err := callReplicate(ctx, client, "http://localhost:5984/foo", dbname2, replID, nil)
+			rep, err := callReplicate(ctx, client, "http://localhost:5984/foo", dbsource, replID, nil)
 			if !ctx.IsExpectedSuccess(err) {
 				return
 			}

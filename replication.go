@@ -52,6 +52,38 @@ type Replication struct {
 	rateLimitMU sync.Mutex
 }
 
+// DocsWritten returns the number of documents written, if known.
+func (r *Replication) DocsWritten() int64 {
+	if r.info != nil {
+		return r.info.DocsWritten
+	}
+	return 0
+}
+
+// DocsRead returns the number of documents read, if known.
+func (r *Replication) DocsRead() int64 {
+	if r.info != nil {
+		return r.info.DocsRead
+	}
+	return 0
+}
+
+// DocWriteFailures returns the number of doc write failures, if known.
+func (r *Replication) DocWriteFailures() int64 {
+	if r.info != nil {
+		return r.info.DocWriteFailures
+	}
+	return 0
+}
+
+// Progress returns the current replication progress, if known.
+func (r *Replication) Progress() float64 {
+	if r.info != nil {
+		return r.info.Progress
+	}
+	return 0
+}
+
 func newReplication(rep driver.Replication) *Replication {
 	r := &Replication{
 		Source: rep.Source(),

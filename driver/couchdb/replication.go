@@ -6,12 +6,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/driver/couchdb/chttp"
+	"github.com/flimzy/kivik/errors"
 )
 
 type replicationError struct {
@@ -99,8 +101,61 @@ func (r *replication) State() string         { defer r.readLock()(); return r.st
 func (r *replication) Err() error            { defer r.readLock()(); return r.err }
 
 func (r *replication) Update(ctx context.Context, state *driver.ReplicationInfo) error {
-	err := r.updateMain(ctx)
-	return err
+	if err := r.updateMain(ctx); err != nil {
+		return err
+	}
+	if r.State() == "complete" {
+		state.Progress = 100
+		return nil
+	}
+	info, err := r.updateActiveTasks(ctx)
+	if err != nil {
+		if errors.StatusCode(err) == kivik.StatusNotFound {
+			// not listed in _active_tasks (because the replication is done, or
+			// hasn't yet started), but this isn't an error
+			return nil
+		}
+		return err
+	}
+	state.DocWriteFailures = info.DocWriteFailures
+	state.DocsRead = info.DocsRead
+	state.DocsWritten = info.DocsWritten
+	// state.progress = info.Progress
+	return nil
+}
+
+type activeTask struct {
+	Type             string `json:"type"`
+	ReplicationID    string `json:"replication_id"`
+	DocsWritten      int64  `json:"docs_written"`
+	DocsRead         int64  `json:"docs_read"`
+	DocWriteFailures int64  `json:"doc_write_failures"`
+}
+
+func (r *replication) updateActiveTasks(ctx context.Context) (*activeTask, error) {
+	resp, err := r.client.DoReq(ctx, kivik.MethodGet, "/_active_tasks", nil)
+	if err != nil {
+		return nil, err
+	}
+	if err = chttp.ResponseError(resp); err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	var tasks []*activeTask
+	if err = json.NewDecoder(resp.Body).Decode(&tasks); err != nil {
+		return nil, err
+	}
+	for _, task := range tasks {
+		if task.Type != "replication" {
+			continue
+		}
+		repIDparts := strings.SplitN(task.ReplicationID, "+", 2)
+		if repIDparts[0] != r.replicationID {
+			continue
+		}
+		return task, nil
+	}
+	return nil, errors.Status(kivik.StatusNotFound, "task not found")
 }
 
 // updateMain updates the "main" fields: those stored directly in r.

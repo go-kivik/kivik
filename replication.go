@@ -2,6 +2,7 @@ package kivik
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/flimzy/kivik/driver"
@@ -24,6 +25,7 @@ type Replication struct {
 	Source string
 	Target string
 
+	infoMU    sync.RWMutex
 	info      *driver.ReplicationInfo
 	statusErr error
 	irep      driver.Replication
@@ -32,6 +34,8 @@ type Replication struct {
 // DocsWritten returns the number of documents written, if known.
 func (r *Replication) DocsWritten() int64 {
 	if r.info != nil {
+		r.infoMU.RLock()
+		defer r.infoMU.RUnlock()
 		return r.info.DocsWritten
 	}
 	return 0
@@ -40,6 +44,8 @@ func (r *Replication) DocsWritten() int64 {
 // DocsRead returns the number of documents read, if known.
 func (r *Replication) DocsRead() int64 {
 	if r.info != nil {
+		r.infoMU.RLock()
+		defer r.infoMU.RUnlock()
 		return r.info.DocsRead
 	}
 	return 0
@@ -48,6 +54,8 @@ func (r *Replication) DocsRead() int64 {
 // DocWriteFailures returns the number of doc write failures, if known.
 func (r *Replication) DocWriteFailures() int64 {
 	if r.info != nil {
+		r.infoMU.RLock()
+		defer r.infoMU.RUnlock()
 		return r.info.DocWriteFailures
 	}
 	return 0
@@ -56,6 +64,8 @@ func (r *Replication) DocWriteFailures() int64 {
 // Progress returns the current replication progress, if known.
 func (r *Replication) Progress() float64 {
 	if r.info != nil {
+		r.infoMU.RLock()
+		defer r.infoMU.RUnlock()
 		return r.info.Progress
 	}
 	return 0
@@ -117,7 +127,9 @@ func (r *Replication) Update(ctx context.Context) error {
 	if r.statusErr != nil {
 		return r.statusErr
 	}
+	r.infoMU.Lock()
 	r.info = &info
+	r.infoMU.Unlock()
 	return nil
 }
 

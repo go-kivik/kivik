@@ -34,6 +34,7 @@ func (c *client) newReplication(target, source string, rep *js.Object) *replicat
 		target: target,
 		source: source,
 		rh:     newReplicationHandler(rep),
+		client: c,
 	}
 	c.replicationsMU.Lock()
 	defer c.replicationsMU.Unlock()
@@ -89,6 +90,7 @@ func (r *replication) Delete(ctx context.Context) (err error) {
 			r.client.replications[i] = r.client.replications[last]
 			r.client.replications[last] = nil
 			r.client.replications = r.client.replications[:last]
+			return nil
 		}
 	}
 	return errors.Status(kivik.StatusNotFound, "replication not found")

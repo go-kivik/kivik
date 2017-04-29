@@ -13,11 +13,11 @@ import (
 	"github.com/flimzy/kivik/auth/basic"
 	"github.com/flimzy/kivik/auth/cookie"
 	"github.com/flimzy/kivik/authdb/confadmin"
-	"github.com/flimzy/kivik/config"
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/driver/proxy"
 	"github.com/flimzy/kivik/serve"
-	"github.com/flimzy/kivik/serve/config/memconf"
+	"github.com/flimzy/kivik/serve/conf"
+	"github.com/spf13/viper"
 )
 
 type customDriver struct {
@@ -31,22 +31,22 @@ func (cd customDriver) NewClient(_ context.Context, _ string) (driver.Client, er
 func TestServer(t *testing.T) {
 	memClient, _ := kivik.New(context.Background(), "memory", "")
 	kivik.Register("custom", customDriver{proxy.NewClient(memClient)})
-	service := serve.Service{}
 	backend, err := kivik.New(context.Background(), "custom", "")
 	if err != nil {
 		t.Fatalf("Failed to connect to custom driver: %s", err)
 	}
-	conf := config.New(memconf.New())
-	conf.Set(context.Background(), "log", "capacity", "10")
+	c := &conf.Conf{Viper: viper.New()}
+	c.Set("log.capacity", 10)
 	// Set admin/abc123 credentials
-	conf.Set(context.Background(), "admins", "admin", "-pbkdf2-792221164f257de22ad72a8e94760388233e5714,7897f3451f59da741c87ec5f10fe7abe,10")
+	c.Set("admins.admin", "-pbkdf2-792221164f257de22ad72a8e94760388233e5714,7897f3451f59da741c87ec5f10fe7abe,10")
+	service := serve.Service{}
+	service.Config = c
 	service.Client = backend
-	service.UserStore = confadmin.New(conf)
+	service.UserStore = confadmin.New(c)
 	service.AuthHandlers = []auth.Handler{
 		&basic.HTTPBasicAuth{},
 		&cookie.Auth{},
 	}
-	service.SetConfig(conf)
 	handler, err := service.Init()
 	if err != nil {
 		t.Fatalf("Failed to initialize server: %s\n", err)

@@ -1,7 +1,6 @@
 package serve
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -21,9 +20,6 @@ func (s *Service) setupRoutes() (http.Handler, error) {
 	ctxRoot.Handler(mPUT, "/:db", handler(createDB))
 	ctxRoot.Handler(mHEAD, "/:db", handler(dbExists))
 	ctxRoot.Handler(mPOST, "/:db/_ensure_full_commit", handler(flush))
-	ctxRoot.Handler(mGET, "/_config", handler(getConfig))
-	ctxRoot.Handler(mGET, "/_config/:section", handler(getConfigSection))
-	ctxRoot.Handler(mGET, "/_config/:section/:key", handler(getConfigItem))
 
 	ctxRoot.Handler(mGET, "/_session", handler(getSession))
 	// Note that DELETE and POST for the /_session endpoint are handled by the
@@ -43,7 +39,7 @@ func (s *Service) setupRoutes() (http.Handler, error) {
 }
 
 func gzipHandler(s *Service) func(http.Handler) http.Handler {
-	level := s.Config().GetInt(context.TODO(), "httpd", "compression_level")
+	level := s.Conf().GetInt("httpd.compression_level")
 	if level == 0 {
 		level = 8
 	}

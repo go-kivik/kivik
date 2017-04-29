@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
@@ -80,10 +79,6 @@ func postSession(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	timeout, err := getSessionTimeout(r.Context(), s)
-	if err != nil {
-		return err
-	}
 	next, err := redirectURL(r)
 	if err != nil {
 		return err
@@ -99,7 +94,7 @@ func postSession(w http.ResponseWriter, r *http.Request) error {
 		Name:     kivik.SessionCookieName,
 		Value:    token,
 		Path:     "/",
-		MaxAge:   timeout,
+		MaxAge:   getSessionTimeout(r.Context(), s),
 		HttpOnly: true,
 	})
 	w.Header().Add("Content-Type", kivik.TypeJSON)
@@ -148,13 +143,9 @@ func deleteSession(w http.ResponseWriter, r *http.Request) error {
 	})
 }
 
-func getSessionTimeout(ctx context.Context, s *serve.Service) (int, error) {
-	timeout, err := s.Config().Get(ctx, "couch_httpd_auth", "timeout")
-	if errors.StatusCode(err) == kivik.StatusNotFound {
-		return serve.DefaultSessionTimeout, nil
+func getSessionTimeout(ctx context.Context, s *serve.Service) int {
+	if s.Conf().IsSet("couch_httpd_auth.timeout") {
+		return s.Conf().GetInt("couch_httpd_auth.timeout")
 	}
-	if err != nil {
-		return 0, err
-	}
-	return strconv.Atoi(timeout)
+	return serve.DefaultSessionTimeout
 }

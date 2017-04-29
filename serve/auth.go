@@ -1,7 +1,6 @@
 package serve
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/flimzy/kivik/auth"
@@ -63,10 +62,9 @@ func (s *Service) validate(w http.ResponseWriter, r *http.Request) (*auth.Sessio
 }
 
 func (s *Service) createSession(method string, user *authdb.UserContext) *auth.Session {
-	userDB := s.Config().GetString(context.TODO(), "couch_httpd_auth", "authentication_db")
 	return &auth.Session{
 		AuthMethod: method,
-		AuthDB:     userDB,
+		AuthDB:     s.Conf().GetString("couch_httpd_auth.authentication_db"),
 		Handlers:   s.authHandlerNames,
 		User:       user,
 	}

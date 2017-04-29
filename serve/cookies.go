@@ -16,10 +16,7 @@ import (
 // CreateAuthToken hashes a user name, salt, timestamp, and the server secret
 // into an authentication token.
 func (s *Service) CreateAuthToken(ctx context.Context, name, salt string, time int64) (string, error) {
-	secret, err := s.getAuthSecret(ctx)
-	if err != nil {
-		return "", err
-	}
+	secret := s.getAuthSecret(ctx)
 	sessionData := fmt.Sprintf("%s:%X", name, time)
 	h := hmac.New(sha1.New, []byte(secret+salt))
 	h.Write([]byte(sessionData))

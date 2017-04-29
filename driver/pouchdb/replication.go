@@ -2,7 +2,6 @@ package pouchdb
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -18,17 +17,14 @@ type replication struct {
 	target    string
 	startTime time.Time
 	endTime   time.Time
-	state     string
+	state     kivik.ReplicationState
 	err       error
 
 	// mu protects the above values
 	mu sync.RWMutex
 
-	client    *client
-	jsObj     *js.Object
-	lastEvent string
-	lastState *replicationState
-	lastError error
+	client *client
+	rh     *replicationHandler
 }
 
 var _ driver.Replication = &replication{}
@@ -37,49 +33,12 @@ func (c *client) newReplication(target, source string, rep *js.Object) *replicat
 	r := &replication{
 		target: target,
 		source: source,
-		jsObj:  rep,
+		rh:     newReplicationHandler(rep),
 	}
-	rep.Call("on", "change", func(info *js.Object) {
-		r.handleUpdate("change", &replicationState{Object: info}, nil)
-	})
-	rep.Call("on", "paused", func(err *js.Object) {
-		r.state = string(kivik.ReplicationNotStarted)
-	})
-	rep.Call("on", "active", func() {
-		r.state = string(kivik.ReplicationStarted)
-	})
-	rep.Call("on", "denied", func(err *js.Object) {
-		r.handleUpdate("denied", nil, fmt.Errorf("%v", err))
-	})
-	rep.Call("on", "complete", func(info *js.Object) {
-		r.handleUpdate("complete", &replicationState{Object: info}, nil)
-	})
-	rep.Call("on", "error", func(err *js.Object) {
-		r.handleUpdate("error", nil, fmt.Errorf("%v", err))
-	})
 	c.replicationsMU.Lock()
 	defer c.replicationsMU.Unlock()
 	c.replications = append(c.replications, r)
 	return r
-}
-
-func (r *replication) handleUpdate(event string, state *replicationState, err error) {
-	r.lastEvent = event
-	r.lastError = err
-	if state != nil {
-		r.lastState = state
-	}
-}
-
-type replicationState struct {
-	*js.Object
-	StartTime        time.Time `js:"start_time"`
-	EndTime          time.Time `js:"end_time"`
-	DocsRead         int64     `js:"docs_read"`
-	DocsWritten      int64     `js:"docs_written"`
-	DocWriteFailures int64     `js:"doc_write_failures"`
-	Status           string    `js:"status"`
-	LastSeq          string    `js:"last_seq"`
 }
 
 func (r *replication) readLock() func() {
@@ -92,41 +51,36 @@ func (r *replication) Source() string        { defer r.readLock()(); return r.so
 func (r *replication) Target() string        { defer r.readLock()(); return r.target }
 func (r *replication) StartTime() time.Time  { defer r.readLock()(); return r.startTime }
 func (r *replication) EndTime() time.Time    { defer r.readLock()(); return r.endTime }
-func (r *replication) State() string         { defer r.readLock()(); return r.state }
+func (r *replication) State() string         { defer r.readLock()(); return string(r.state) }
 func (r *replication) Err() error            { defer r.readLock()(); return r.err }
 
-func (r *replication) Update(ctx context.Context, state *driver.ReplicationInfo) (err error) {
-	defer bindings.RecoverError(&err)
+func (r *replication) Update(ctx context.Context, state *driver.ReplicationInfo) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if r.lastError != nil {
-		r.err = r.lastError
+	event, info, err := r.rh.Status()
+	switch event {
+	case bindings.ReplicationEventPaused:
+		r.state = kivik.ReplicationNotStarted
+	case bindings.ReplicationEventDenied, bindings.ReplicationEventError:
+		r.state = kivik.ReplicationError
+	case bindings.ReplicationEventComplete:
+		r.state = kivik.ReplicationComplete
+	case bindings.ReplicationEventChange, bindings.ReplicationEventActive:
+		r.state = kivik.ReplicationStarted
 	}
-	switch r.lastEvent {
-	case "":
-		return nil
-	case "denied", "error":
-		r.state = string(kivik.ReplicationError)
-	case "complete":
-		r.state = string(kivik.ReplicationComplete)
-	case "change":
-		r.state = string(kivik.ReplicationStarted)
-	default:
-		return fmt.Errorf("Unexpected event: %s", r.lastEvent)
+	if !info.StartTime.IsZero() && r.startTime.IsZero() {
+		r.startTime = info.StartTime
 	}
-	if !r.lastState.StartTime.IsZero() && r.startTime.IsZero() {
-		r.startTime = r.lastState.StartTime
+	if !info.EndTime.IsZero() && r.endTime.IsZero() {
+		r.endTime = info.EndTime
 	}
-	if !r.lastState.EndTime.IsZero() && r.endTime.IsZero() {
-		r.endTime = r.lastState.EndTime
-	}
-	r.lastState = nil
+	r.err = err
 	return nil
 }
 
 func (r *replication) Delete(ctx context.Context) (err error) {
 	defer bindings.RecoverError(&err)
-	r.jsObj.Call("cancel")
+	r.rh.Cancel()
 	r.client.replicationsMU.Lock()
 	defer r.client.replicationsMU.Unlock()
 	for i, rep := range r.client.replications {

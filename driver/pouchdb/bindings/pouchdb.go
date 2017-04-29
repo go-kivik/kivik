@@ -327,6 +327,16 @@ func (db *DB) DeleteIndex(ctx context.Context, index interface{}) (*js.Object, e
 	return callBack(ctx, db, "deleteIndex", index)
 }
 
+// Replication events
+const (
+	ReplicationEventChange   = "change"
+	ReplicationEventComplete = "complete"
+	ReplicationEventPaused   = "paused"
+	ReplicationEventActive   = "active"
+	ReplicationEventDenied   = "denied"
+	ReplicationEventError    = "error"
+)
+
 // Replicate initiates a replication.
 // See https://pouchdb.com/api.html#replication
 func (p *PouchDB) Replicate(source, target interface{}, options map[string]interface{}) (result *js.Object, err error) {

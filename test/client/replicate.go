@@ -70,7 +70,6 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 			if !ctx.IsExpectedSuccess(err) {
 				return
 			}
-			rep.SetRateLimiter(kivik.ConstantRateLimiter(250 * time.Millisecond))
 			defer rep.Delete(context.Background())
 			done := make(chan struct{})
 			cx, cancel := context.WithCancel(context.Background())

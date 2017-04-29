@@ -2,7 +2,6 @@ package kivik
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"github.com/flimzy/kivik/driver"
@@ -20,22 +19,6 @@ const (
 	ReplicationComplete   ReplicationState = "completed"
 )
 
-// A RateLimiter may be used to limit the rate at which a server is polled for
-// replication status updates.  It receives the last valid ReplicationInfo, and
-// the last error returned by the Update method, and should return a duration to
-// wait until the next Update call is executed.
-type RateLimiter func(status *ReplicationInfo, err error) time.Duration
-
-// DefaultRateLimiter implements a rate limit of up to 2.5 seconds.
-var DefaultRateLimiter = ConstantRateLimiter(500 * time.Millisecond)
-
-// ConstantRateLimiter returns a RateLimiter that always returns the same delay.
-func ConstantRateLimiter(delay time.Duration) RateLimiter {
-	return RateLimiter(func(_ *ReplicationInfo, _ error) time.Duration {
-		return delay
-	})
-}
-
 // Replication represents a CouchDB replication process.
 type Replication struct {
 	Source string
@@ -44,12 +27,6 @@ type Replication struct {
 	info      *driver.ReplicationInfo
 	statusErr error
 	irep      driver.Replication
-
-	rateLimitFunc RateLimiter
-	// rateLimitChan is closed when the rate limit has expired.
-	rateLimitTimer *time.Timer
-	// This mutex protects both rateLimitFunc setting, and rateLimitChan
-	rateLimitMU sync.Mutex
 }
 
 // DocsWritten returns the number of documents written, if known.
@@ -98,26 +75,6 @@ func (r *Replication) ReplicationID() string {
 	return r.irep.ReplicationID()
 }
 
-// SetRateLimiter sets a rate limit function to prevent fast polling of the
-// server for replication status updates. This allows calling Update() in a
-// tight loop, without worrying about hitting the server too fast.
-//
-// Example:
-//
-//  rep, _ := db.Replicate("target","source")
-//  rep.SetRateLimiter(ConstantRateLimiter(500 * time.Millisecond))
-//  for {
-//      if err := rep.Update(); err != nil {
-//          break
-//      }
-//      // Push update status to UI...
-//  }
-func (r *Replication) SetRateLimiter(fn RateLimiter) {
-	r.rateLimitMU.Lock()
-	defer r.rateLimitMU.Unlock()
-	r.rateLimitFunc = fn
-}
-
 // StartTime returns the replication start time, once the replication has been
 // triggered.
 func (r *Replication) StartTime() time.Time {
@@ -151,33 +108,11 @@ func (r *Replication) Delete(ctx context.Context) error {
 	return r.irep.Delete(ctx)
 }
 
-func (r *Replication) rateLimitWait() {
-	if r.rateLimitFunc != nil {
-		r.rateLimitMU.Lock()
-		// if the timer isn't set, it means this is the first request, so no
-		// rate limiting is in effect yet.
-		if r.rateLimitTimer != nil {
-			<-r.rateLimitTimer.C
-		}
-	}
-}
-
-func (r *Replication) resetRateLimit(info driver.ReplicationInfo, err error) {
-	if r.rateLimitFunc != nil {
-		defer r.rateLimitMU.Unlock()
-		kivikInfo := ReplicationInfo(info)
-		delay := r.rateLimitFunc(&kivikInfo, err)
-		r.rateLimitTimer = time.NewTimer(delay)
-	}
-}
-
 // Update requests a replication state update from the server. If there is an
 // error retrieving the update, it is returned and the replication state is
 // unaltered.
 func (r *Replication) Update(ctx context.Context) error {
-	r.rateLimitWait()
 	var info driver.ReplicationInfo
-	defer r.resetRateLimit(info, r.statusErr)
 	r.statusErr = r.irep.Update(ctx, &info)
 	if r.statusErr != nil {
 		return r.statusErr

@@ -28,6 +28,7 @@ const (
 	StatusForbidden                    = 403
 	StatusNotFound                     = 404
 	StatusResourceNotAllowed           = 405
+	StatusRequestTimeout               = 408
 	StatusConflict                     = 409
 	StatusPreconditionFailed           = 412
 	StatusBadContentType               = 415

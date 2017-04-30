@@ -36,7 +36,10 @@ func (re *replicationError) UnmarshalJSON(data []byte) error {
 	switch string(parts[0]) {
 	case "db_not_found":
 		re.status = kivik.StatusNotFound
+	case "timeout":
+		re.status = kivik.StatusRequestTimeout
 	default:
+		fmt.Printf("Unknown error: %s\n", parts[0])
 		re.status = kivik.StatusInternalServerError
 	}
 	return nil

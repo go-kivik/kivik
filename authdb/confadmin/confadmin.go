@@ -9,22 +9,22 @@ import (
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/authdb"
-	"github.com/flimzy/kivik/config"
 	"github.com/flimzy/kivik/errors"
+	"github.com/flimzy/kivik/serve/conf"
 )
 
-type conf struct {
-	*config.Config
+type confadmin struct {
+	*conf.Conf
 }
 
-var _ authdb.UserStore = &conf{}
+var _ authdb.UserStore = &confadmin{}
 
 // New returns a new confadmin authentication service provider.
-func New(c *config.Config) authdb.UserStore {
-	return &conf{c}
+func New(c *conf.Conf) authdb.UserStore {
+	return &confadmin{c}
 }
 
-func (c *conf) Validate(ctx context.Context, username, password string) (*authdb.UserContext, error) {
+func (c *confadmin) Validate(ctx context.Context, username, password string) (*authdb.UserContext, error) {
 	derivedKey, salt, iterations, err := c.getKeySaltIter(ctx, username)
 	if err != nil {
 		if errors.StatusCode(err) == kivik.StatusNotFound {
@@ -44,11 +44,12 @@ func (c *conf) Validate(ctx context.Context, username, password string) (*authdb
 
 const hashPrefix = "-" + authdb.SchemePBKDF2 + "-"
 
-func (c *conf) getKeySaltIter(ctx context.Context, username string) (key, salt string, iterations int, err error) {
-	hash, err := c.Get(ctx, "admins", username)
-	if err != nil {
-		return "", "", 0, err
+func (c *confadmin) getKeySaltIter(ctx context.Context, username string) (key, salt string, iterations int, err error) {
+	confName := "admins." + username
+	if !c.IsSet(confName) {
+		return "", "", 0, errors.Status(kivik.StatusNotFound, "user not found")
 	}
+	hash := c.GetString(confName)
 	if !strings.HasPrefix(hash, hashPrefix) {
 		return "", "", 0, errors.New("unrecognized password scheme")
 	}
@@ -62,7 +63,7 @@ func (c *conf) getKeySaltIter(ctx context.Context, username string) (key, salt s
 	return parts[0], parts[1], iterations, nil
 }
 
-func (c *conf) UserCtx(ctx context.Context, username string) (*authdb.UserContext, error) {
+func (c *confadmin) UserCtx(ctx context.Context, username string) (*authdb.UserContext, error) {
 	_, salt, _, err := c.getKeySaltIter(ctx, username)
 	if err != nil {
 		if errors.StatusCode(err) == kivik.StatusNotFound {

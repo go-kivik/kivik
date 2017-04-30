@@ -14,7 +14,6 @@ import (
 type CompleteClient interface {
 	driver.Client
 	driver.Authenticator
-	driver.Configer
 }
 
 // NewClient wraps an existing *kivik.Client connection, allowing it to be used
@@ -60,10 +59,6 @@ func (c *client) Version(ctx context.Context) (*driver.Version, error) {
 func (c *client) DB(ctx context.Context, name string, options map[string]interface{}) (driver.DB, error) {
 	d, err := c.Client.DB(ctx, name, options)
 	return &db{d}, err
-}
-
-func (c *client) Config(ctx context.Context) (driver.Config, error) {
-	return c.Config(ctx)
 }
 
 type db struct {

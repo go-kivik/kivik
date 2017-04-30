@@ -9,28 +9,6 @@ func init() {
 	RegisterSuite(SuiteCouch20, kt.SuiteConfig{
 		"AllDBs.expected": []string{"_global_changes", "_replicator", "_users"},
 
-		"Config.skip": true, // FIXME: CouchDB config has moved
-		"Config/Admin/GetAll.expected_sections": []string{"admins", "attachments", "compaction_daemon", "cors", "couch_httpd_auth",
-			"couch_httpd_oauth", "couchdb", "daemons", "database_compaction", "httpd", "httpd_db_handlers", "httpd_design_handlers",
-			"httpd_global_handlers", "log", "query_server_config", "query_servers", "replicator", "ssl", "stats", "uuids", "vendor",
-			"view_compaction"},
-		"Config/Admin/GetSection.sections":                             []string{"log", "chicken"},
-		"Config/Admin/GetSection/log.keys":                             []string{"file", "include_sasl", "level"},
-		"Config/Admin/GetSection/chicken.keys":                         []string{},
-		"Config/Admin/GetItem.items":                                   []string{"log.level", "log.foobar", "logx.level"},
-		"Config/Admin/GetItem/log.foobar.status":                       kivik.StatusNotFound,
-		"Config/Admin/GetItem/logx.level.status":                       kivik.StatusNotFound,
-		"Config/Admin/GetItem/log.level.expected":                      "info",
-		"Config/NoAuth/GetAll.status":                                  kivik.StatusUnauthorized,
-		"Config/NoAuth/GetSection.sections":                            []string{"log", "chicken"},
-		"Config/NoAuth/GetSection.status":                              kivik.StatusUnauthorized,
-		"Config/NoAuth/GetItem.items":                                  []string{"log.level", "log.foobar", "logx.level"},
-		"Config/NoAuth/GetItem.status":                                 kivik.StatusUnauthorized,
-		"Config/RW/group/NoAuth/Set.status":                            kivik.StatusUnauthorized,
-		"Config/RW/group/NoAuth/Delete/group.status":                   kivik.StatusUnauthorized,
-		"Config/RW/group/Admin/Delete/group/NonExistantKey.status":     kivik.StatusNotFound,
-		"Config/RW/group/Admin/Delete/group/NonExistantSection.status": kivik.StatusNotFound,
-
 		"CreateDB/RW/NoAuth.status":         kivik.StatusUnauthorized,
 		"CreateDB/RW/Admin/Recreate.status": kivik.StatusPreconditionFailed,
 

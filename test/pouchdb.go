@@ -16,7 +16,6 @@ func init() {
 
 		// Features which are not supported by PouchDB
 		"Log.skip":         true,
-		"Config.skip":      true,
 		"Flush.skip":       true,
 		"Security.skip":    true, // FIXME: Perhaps implement later with a plugin?
 		"SetSecurity.skip": true, // FIXME: Perhaps implement later with a plugin?
@@ -77,7 +76,6 @@ func init() {
 	RegisterSuite(SuitePouchRemote, kt.SuiteConfig{
 		// Features which are not supported by PouchDB
 		"Log.skip":         true,
-		"Config.skip":      true,
 		"Flush.skip":       true,
 		"Session.skip":     true,
 		"Security.skip":    true, // FIXME: Perhaps implement later with a plugin?

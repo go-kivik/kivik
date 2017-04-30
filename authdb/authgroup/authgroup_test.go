@@ -10,10 +10,9 @@ import (
 	"github.com/flimzy/kivik/authdb"
 	"github.com/flimzy/kivik/authdb/confadmin"
 	"github.com/flimzy/kivik/authdb/usersdb"
-	"github.com/flimzy/kivik/config"
 	_ "github.com/flimzy/kivik/driver/couchdb"
 	"github.com/flimzy/kivik/errors"
-	"github.com/flimzy/kivik/serve/config/memconf"
+	"github.com/flimzy/kivik/serve/conf"
 	"github.com/flimzy/kivik/test/kt"
 )
 
@@ -27,9 +26,9 @@ type tuser struct {
 
 func TestConfAdminAuth(t *testing.T) {
 	// Set up first auth backend
-	conf1 := config.New(memconf.New())
-	conf1.Set(context.Background(), "admins", "bob", "-pbkdf2-792221164f257de22ad72a8e94760388233e5714,7897f3451f59da741c87ec5f10fe7abe,10")
-	auth1 := confadmin.New(conf1)
+	c1 := conf.New()
+	c1.Set("admins.bob", "-pbkdf2-792221164f257de22ad72a8e94760388233e5714,7897f3451f59da741c87ec5f10fe7abe,10")
+	auth1 := confadmin.New(c1)
 
 	// Set up second auth backend
 	client := kt.GetClient(t)

@@ -11,20 +11,6 @@ func init() {
 		"AllDBs/NoAuth.status":          kivik.StatusUnauthorized,
 		"AllDBs/RW/group/NoAuth.status": kivik.StatusUnauthorized,
 
-		"Config/Admin/GetAll.status":                 kivik.StatusForbidden,
-		"Config/Admin/GetSection.sections":           []string{"chicken"},
-		"Config/Admin/GetSection/chicken.status":     kivik.StatusForbidden,
-		"Config/NoAuth/GetAll.status":                kivik.StatusUnauthorized,
-		"Config/NoAuth/GetSection.sections":          []string{"chicken"},
-		"Config/NoAuth/GetItem.items":                []string{"foo.bar"},
-		"Config/NoAuth/GetSection.status":            kivik.StatusUnauthorized,
-		"Config/NoAuth/GetItem.status":               kivik.StatusUnauthorized,
-		"Config/RW/group/NoAuth/Set.status":          kivik.StatusUnauthorized,
-		"Config/RW/group/Admin/Set.status":           kivik.StatusForbidden,
-		"Config/RW/group/NoAuth/Delete.status":       kivik.StatusForbidden,
-		"Config/RW/group/NoAuth/Delete/group.status": kivik.StatusUnauthorized,
-		"Config/RW/group/Admin/Delete.status":        kivik.StatusForbidden,
-
 		"CreateDB/RW/NoAuth.status":         kivik.StatusUnauthorized,
 		"CreateDB/RW/Admin/Recreate.status": kivik.StatusPreconditionFailed,
 

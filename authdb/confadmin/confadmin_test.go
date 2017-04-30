@@ -7,35 +7,34 @@ import (
 	"testing"
 
 	"github.com/flimzy/kivik"
+
 	"github.com/flimzy/kivik/authdb"
-	"github.com/flimzy/kivik/config"
 	_ "github.com/flimzy/kivik/driver/couchdb"
 	"github.com/flimzy/kivik/errors"
-	"github.com/flimzy/kivik/serve/config/memconf"
+	"github.com/flimzy/kivik/serve/conf"
+	"github.com/spf13/viper"
 )
 
 func TestInvalidHashes(t *testing.T) {
-	conf := config.New(memconf.New())
-	auth := New(conf)
-	conf.Set(context.Background(), "admins", "test", "-pbkXXdf2-792221164f257de22ad72a8e94760388233e5714,7897f3451f59da741c87ec5f10fe7abe,10")
+	c := &conf.Conf{Viper: viper.New()}
+	c.Set("admins.test", "-pbkXXdf2-792221164f257de22ad72a8e94760388233e5714,7897f3451f59da741c87ec5f10fe7abe,10")
+	auth := New(c)
 	if _, err := auth.Validate(context.Background(), "test", "123"); err == nil {
 		t.Errorf("Expected error for invalid scheme")
 	}
-	conf.Set(context.Background(), "admins", "test", "-pbkdf2-792221164f257de22ad72a8e,94760388233e5714,7897f345,1f59da741c87ec5f10fe7abe,10")
 	if _, err := auth.Validate(context.Background(), "test", "123"); err == nil {
 		t.Errorf("Expected error for too many commas")
 	}
-	conf.Set(context.Background(), "admins", "test", "-pbkdf2-792221164f257de22ad72a8e94760388233e5714,7897f3451f59da741c87ec5f10fe7abe,pig")
+	c.Set("admins.test", "-pbkdf2-792221164f257de22ad72a8e94760388233e5714,7897f3451f59da741c87ec5f10fe7abe,pig")
 	if _, err := auth.Validate(context.Background(), "test", "123"); err == nil {
 		t.Errorf("Expected error for invalid iterations integer")
 	}
 }
 
 func TestConfAdminAuth(t *testing.T) {
-	conf := config.New(memconf.New())
-	auth := New(conf)
-
-	conf.Set(context.Background(), "admins", "test", "-pbkdf2-792221164f257de22ad72a8e94760388233e5714,7897f3451f59da741c87ec5f10fe7abe,10")
+	c := &conf.Conf{Viper: viper.New()}
+	c.Set("admins.test", "-pbkdf2-792221164f257de22ad72a8e94760388233e5714,7897f3451f59da741c87ec5f10fe7abe,10")
+	auth := New(c)
 
 	t.Run("sync", func(t *testing.T) {
 		t.Run("Validate", func(t *testing.T) {

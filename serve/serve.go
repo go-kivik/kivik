@@ -8,12 +8,13 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/auth"
 	"github.com/flimzy/kivik/authdb"
-	"github.com/flimzy/kivik/config"
 	"github.com/flimzy/kivik/errors"
+	"github.com/flimzy/kivik/serve/conf"
 )
 
 // Version is the version of this library.
@@ -51,9 +52,15 @@ type Service struct {
 	// image is used.
 	Favicon string
 
-	// config is the configuration backend. If none is specified, anew memconf
-	// instance is instantiated the first time configuration is requested.
-	config *config.Config
+	// ConfigFile is the path to a config file to read during startup.
+	ConfigFile string
+
+	// Config is a complete config object. If this is set, config loading is
+	// bypassed.
+	Config *conf.Conf
+
+	conf   *conf.Conf
+	confMU sync.RWMutex
 
 	// authHandlers is a map version of AuthHandlers for easier internal
 	// use.
@@ -61,28 +68,47 @@ type Service struct {
 	authHandlerNames []string
 }
 
-// Config returns a connection to the configuration backend.
-func (s *Service) Config() *config.Config {
-	if s.config == nil {
-		s.config = defaultConfig()
-	}
-	return s.config
-}
-
-// SetConfig sets the configuration backend.
-func (s *Service) SetConfig(config *config.Config) {
-	s.config = config
-}
-
 // Init initializes a configured server. This is automatically called when
 // Start() is called, so this is meant to be used if you want to bind the server
 // yourself.
 func (s *Service) Init() (http.Handler, error) {
 	s.authHandlersSetup()
-	if s.Config().GetString(context.TODO(), "couch_httpd_auth", "secret") == "" {
+	if err := s.loadConf(); err != nil {
+		return nil, err
+	}
+	if !s.Conf().IsSet("couch_httpd_auth.secret") {
 		fmt.Fprintf(os.Stderr, "couch_httpd_auth.secret is not set. This is insecure!\n")
 	}
 	return s.setupRoutes()
+}
+
+func (s *Service) loadConf() error {
+	s.confMU.Lock()
+	defer s.confMU.Unlock()
+	if s.Config != nil {
+		s.conf = s.Config
+		return nil
+	}
+	c, err := conf.Load(s.ConfigFile)
+	if err != nil {
+		return err
+	}
+	s.conf = c
+	return nil
+}
+
+// Conf returns the initialized server configuration.
+func (s *Service) Conf() *conf.Conf {
+	s.confMU.RLock()
+	defer s.confMU.RUnlock()
+	if s.Config != nil {
+		s.confMU.RUnlock()
+		if err := s.loadConf(); err != nil {
+			panic(err)
+		}
+		s.confMU.RLock()
+	}
+	return s.conf
 }
 
 // Start begins serving connections.
@@ -92,8 +118,8 @@ func (s *Service) Start() error {
 		return err
 	}
 	addr := fmt.Sprintf("%s:%d",
-		s.Config().GetString(context.TODO(), "httpd", "bind_address"),
-		s.Config().GetInt(context.TODO(), "httpd", "port"),
+		s.Conf().GetString("httpd.bind_address"),
+		s.Conf().GetInt("httpd.port"),
 	)
 	fmt.Fprintf(os.Stderr, "Listening on %s\n", addr)
 	return http.ListenAndServe(addr, server)
@@ -140,8 +166,8 @@ func (s *Service) Bind(addr string) error {
 		return errors.Wrapf(err, "invalid port '%s'", port)
 	}
 	host := strings.TrimSuffix(addr, ":"+port)
-	s.Config().Set(context.TODO(), "httpd", "bind_address", host)
-	s.Config().Set(context.TODO(), "httpd", "port", port)
+	s.Conf().Set("httpd.bind_address", host)
+	s.Conf().Set("httpd.port", port)
 	return nil
 }
 

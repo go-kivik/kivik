@@ -5,9 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/auth"
-	"github.com/flimzy/kivik/errors"
 )
 
 // DefaultInsecureSecret is the hash secret used if couch_httpd_auth.secret
@@ -25,15 +23,11 @@ func getSession(w http.ResponseWriter, r *http.Request) error {
 	return json.NewEncoder(w).Encode(session)
 }
 
-func (s *Service) getAuthSecret(ctx context.Context) (string, error) {
-	secret, err := s.Config().Get(ctx, "couch_httpd_auth", "secret")
-	if errors.StatusCode(err) == kivik.StatusNotFound {
-		return DefaultInsecureSecret, nil
+func (s *Service) getAuthSecret(ctx context.Context) string {
+	if s.Conf().IsSet("couch_httpd_auth.secret") {
+		return s.Conf().GetString("couch_httpd_auth.secret")
 	}
-	if err != nil {
-		return "", err
-	}
-	return secret, nil
+	return DefaultInsecureSecret
 }
 
 func setSession() func(http.Handler) http.Handler {

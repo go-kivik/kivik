@@ -9,8 +9,6 @@ func init() {
 	RegisterSuite(SuiteKivikFS, kt.SuiteConfig{
 		"AllDBs.expected": []string{},
 
-		"Config.status": kivik.StatusNotImplemented,
-
 		"CreateDB/RW/NoAuth.status":         kivik.StatusUnauthorized,
 		"CreateDB/RW/Admin/Recreate.status": kivik.StatusPreconditionFailed,
 

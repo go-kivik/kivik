@@ -17,7 +17,7 @@ case "$1" in
         go test -race $(go list ./... | grep -v /vendor/ | grep -v /pouchdb)
     ;;
     "gopherjs")
-        gopherjs test $(go list ./... | grep -v /vendor/ | grep -v kivik/serve)
+        gopherjs test $(go list ./... | grep -v /vendor/ | grep -Ev 'kivik/(serve|auth)')
     ;;
     "linter")
         diff -u <(echo -n) <(gofmt -e -d $(find . -type f -name '*.go' -not -path "./vendor/*"))

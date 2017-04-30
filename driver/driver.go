@@ -205,36 +205,3 @@ type DBFlusher interface {
 type Copier interface {
 	Copy(ctx context.Context, targetID, sourceID string, options map[string]interface{}) (targetRev string, err error)
 }
-
-// Configer is an optional interface that may be implemented by a Client.
-//
-// If a Client does implement Configer, it allows backend configuration
-// to be queried and modified via the API.
-type Configer interface {
-	Config(ctx context.Context) (Config, error)
-}
-
-// Config is the minimal interface that a Config backend must implement.
-type Config interface {
-	GetAll(ctx context.Context) (config map[string]map[string]string, err error)
-	Set(ctx context.Context, secName, key, value string) error
-	Delete(ctx context.Context, secName, key string) error
-}
-
-// ConfigSection is an optional interface that may be implemented by a Config
-// backend. If not implemented, it will be emulated with GetAll() and SetAll().
-// The only reason for a config backend to implement this interface is if
-// reading a config section alone can be more efficient than reading the entire
-// configuration for the specific storage backend.
-type ConfigSection interface {
-	GetSection(ctx context.Context, secName string) (section map[string]string, err error)
-}
-
-// ConfigItem is an optional interface that may be implemented by a Config
-// backend. If not implemented, it will be emulated with GetAll() and SetAll().
-// The only reason for a config backend to implement this interface is if
-// reading a single config value alone can be more efficient than reading the
-// entire configuration for the specific storage backend.
-type ConfigItem interface {
-	Get(ctx context.Context, secName, key string) (value string, err error)
-}

@@ -6,13 +6,6 @@ import (
 	"golang.org/x/net/context"
 )
 
-// DBUpdate represents a single DB Update event.
-type DBUpdate struct {
-	DBName string
-	Seq    string
-	Type   string
-}
-
 // DBUpdates provides access to database updates.
 type DBUpdates struct {
 	*iter

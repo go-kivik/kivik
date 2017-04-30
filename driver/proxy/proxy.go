@@ -7,7 +7,10 @@ import (
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
+	"github.com/flimzy/kivik/errors"
 )
+
+var notYetImplemented = errors.Status(kivik.StatusNotImplemented, "kivik: not yet implemented in proxy driver")
 
 // CompleteClient is a composite of all compulsory and optional driver.* client
 // interfaces.
@@ -120,20 +123,20 @@ func (d *db) SetSecurity(ctx context.Context, security *driver.Security) error {
 }
 
 func (d *db) Changes(ctx context.Context, opts map[string]interface{}) (driver.Changes, error) {
-	return nil, kivik.ErrNotImplemented
+	return nil, notYetImplemented
 }
 
 func (d *db) BulkDocs(_ context.Context, _ ...interface{}) (driver.BulkResults, error) {
 	// FIXME: Unimplemented
-	return nil, nil
+	return nil, notYetImplemented
 }
 
 func (d *db) PutAttachment(_ context.Context, _, _, _, _ string, _ io.Reader) (string, error) {
 	// FIXME: Unimplemented
-	return "", nil
+	return "", notYetImplemented
 }
 
 func (d *db) GetAttachment(ctx context.Context, docID, rev, filename string) (contentType string, md5sum driver.MD5sum, body io.ReadCloser, err error) {
 	// FIXME: Unimplemented
-	return "", [16]byte{}, nil, nil
+	return "", [16]byte{}, nil, notYetImplemented
 }

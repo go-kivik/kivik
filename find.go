@@ -4,7 +4,10 @@ import (
 	"context"
 
 	"github.com/flimzy/kivik/driver"
+	"github.com/flimzy/kivik/errors"
 )
+
+var findNotImplemented = errors.Status(StatusNotImplemented, "kivik: driver does not support Find interface")
 
 // Find executes a query using the new /_find interface. The query must be
 // JSON-marshalable to a valid query.
@@ -17,7 +20,7 @@ func (db *DB) Find(ctx context.Context, query interface{}) (*Rows, error) {
 		}
 		return newRows(ctx, rowsi), nil
 	}
-	return nil, ErrNotImplemented
+	return nil, findNotImplemented
 }
 
 // CreateIndex creates an index if it doesn't already exist. ddoc and name may
@@ -28,7 +31,7 @@ func (db *DB) CreateIndex(ctx context.Context, ddoc, name string, index interfac
 	if finder, ok := db.driverDB.(driver.Finder); ok {
 		return finder.CreateIndex(ctx, ddoc, name, index)
 	}
-	return ErrNotImplemented
+	return findNotImplemented
 }
 
 // DeleteIndex deletes the requested index.
@@ -36,7 +39,7 @@ func (db *DB) DeleteIndex(ctx context.Context, ddoc, name string) error {
 	if finder, ok := db.driverDB.(driver.Finder); ok {
 		return finder.DeleteIndex(ctx, ddoc, name)
 	}
-	return ErrNotImplemented
+	return findNotImplemented
 }
 
 // Index is a MonboDB-style index definition.
@@ -57,5 +60,5 @@ func (db *DB) GetIndexes(ctx context.Context) ([]Index, error) {
 		}
 		return indexes, err
 	}
-	return nil, ErrNotImplemented
+	return nil, findNotImplemented
 }

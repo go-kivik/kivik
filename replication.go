@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/flimzy/kivik/driver"
+	"github.com/flimzy/kivik/errors"
 )
 
 // ReplicationState represents a replication's state
@@ -152,7 +153,7 @@ func (c *Client) GetReplications(ctx context.Context, options ...Options) ([]*Re
 		}
 		return replications, nil
 	}
-	return nil, ErrNotImplemented
+	return nil, errors.Status(StatusNotImplemented, "kivik: driver does not support replication")
 }
 
 // Replicate initiates a replication from source to target.
@@ -168,7 +169,7 @@ func (c *Client) Replicate(ctx context.Context, targetDSN, sourceDSN string, opt
 		}
 		return newReplication(rep), nil
 	}
-	return nil, ErrNotImplemented
+	return nil, errors.Status(StatusNotImplemented, "kivik: driver does not support replication")
 }
 
 // ReplicationInfo represents a snapshot of the status of a replication.

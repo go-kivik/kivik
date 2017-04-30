@@ -13,8 +13,8 @@ type DBUpdate struct {
 	Type   string
 }
 
-// DBUpdateFeed provides access to database updates.
-type DBUpdateFeed struct {
+// DBUpdates provides access to database updates.
+type DBUpdates struct {
 	*iter
 	updatesi driver.DBUpdates
 }
@@ -23,19 +23,19 @@ type DBUpdateFeed struct {
 // until an event is received. If an error occurs, it will be returned and
 // the feed closed. If the feed was closed normally, io.EOF will be returned
 // when there are no more events in the buffer.
-func (f *DBUpdateFeed) Next() bool {
+func (f *DBUpdates) Next() bool {
 	return f.iter.Next()
 }
 
 // Close closes the feed. Any unread updates will still be accessible via
 // Next().
-func (f *DBUpdateFeed) Close() error {
+func (f *DBUpdates) Close() error {
 	return f.iter.Close()
 }
 
 // Err returns the error, if any, that was encountered during iteration. Err
 // may be called after an explicit or implicit Close.
-func (f *DBUpdateFeed) Err() error {
+func (f *DBUpdates) Err() error {
 	return f.iter.Err()
 }
 
@@ -45,15 +45,15 @@ var _ iterator = &updatesIterator{}
 
 func (r *updatesIterator) Next(i interface{}) error { return r.DBUpdates.Next(i.(*driver.DBUpdate)) }
 
-func newDBUpdates(ctx context.Context, updatesi driver.DBUpdates) *DBUpdateFeed {
-	return &DBUpdateFeed{
+func newDBUpdates(ctx context.Context, updatesi driver.DBUpdates) *DBUpdates {
+	return &DBUpdates{
 		iter:     newIterator(ctx, &updatesIterator{updatesi}, &driver.DBUpdate{}),
 		updatesi: updatesi,
 	}
 }
 
 // DBName returns the database name for the current update.
-func (f *DBUpdateFeed) DBName() string {
+func (f *DBUpdates) DBName() string {
 	runlock, err := f.rlock()
 	if err != nil {
 		return ""
@@ -63,7 +63,7 @@ func (f *DBUpdateFeed) DBName() string {
 }
 
 // Type returns the type of the current update.
-func (f *DBUpdateFeed) Type() string {
+func (f *DBUpdates) Type() string {
 	runlock, err := f.rlock()
 	if err != nil {
 		return ""
@@ -73,7 +73,7 @@ func (f *DBUpdateFeed) Type() string {
 }
 
 // Seq returns the update sequence of the current update.
-func (f *DBUpdateFeed) Seq() string {
+func (f *DBUpdates) Seq() string {
 	runlock, err := f.rlock()
 	if err != nil {
 		return ""
@@ -83,7 +83,7 @@ func (f *DBUpdateFeed) Seq() string {
 }
 
 // DBUpdates begins polling for database updates.
-func (c *Client) DBUpdates() (*DBUpdateFeed, error) {
+func (c *Client) DBUpdates() (*DBUpdates, error) {
 	updater, ok := c.driverClient.(driver.DBUpdater)
 	if !ok {
 		return nil, errors.Status(StatusNotImplemented, "kivik: driver does not implement DBUpdater")

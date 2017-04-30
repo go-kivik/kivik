@@ -150,5 +150,5 @@ func (c *Client) Authenticate(ctx context.Context, a interface{}) error {
 	if auth, ok := c.driverClient.(driver.Authenticator); ok {
 		return auth.Authenticate(ctx, a)
 	}
-	return ErrNotImplemented
+	return errors.Status(StatusNotImplemented, "kivik: driver does not support authentication")
 }

@@ -10,8 +10,11 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/flimzy/kivik"
 	"github.com/pkg/errors"
+)
+
+const (
+	typeJSON = "application/json"
 )
 
 // Client represents a client connection. It embeds an *http.Client
@@ -206,8 +209,8 @@ func EncodeBody(i interface{}, cancel context.CancelFunc) (r io.Reader, errFunc 
 }
 
 func setHeaders(req *http.Request, opts *Options) {
-	accept := kivik.TypeJSON
-	contentType := kivik.TypeJSON
+	accept := typeJSON
+	contentType := typeJSON
 	if opts != nil {
 		if opts.Accept != "" {
 			accept = opts.Accept

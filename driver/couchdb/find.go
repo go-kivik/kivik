@@ -31,9 +31,11 @@ func deJSONify(i interface{}) (interface{}, error) {
 	return x, errors.WrapStatus(kivik.StatusBadRequest, err)
 }
 
+var findNotImplemented = errors.Status(kivik.StatusNotImplemented, "kivik: Find interface not implemented prior to CouchDB 2.0.0")
+
 func (d *db) CreateIndex(ctx context.Context, ddoc, name string, index interface{}) error {
 	if d.client.Compat == CompatCouch16 {
-		return kivik.ErrNotImplemented
+		return findNotImplemented
 	}
 	indexObj, err := deJSONify(index)
 	if err != nil {
@@ -58,7 +60,7 @@ func (d *db) CreateIndex(ctx context.Context, ddoc, name string, index interface
 
 func (d *db) GetIndexes(ctx context.Context) ([]driver.Index, error) {
 	if d.client.Compat == CompatCouch16 {
-		return nil, kivik.ErrNotImplemented
+		return nil, findNotImplemented
 	}
 	var result struct {
 		Indexes []driver.Index `json:"indexes"`
@@ -75,7 +77,7 @@ func (d *db) DeleteIndex(ctx context.Context, ddoc, name string) error {
 
 func (d *db) Find(ctx context.Context, query interface{}) (driver.Rows, error) {
 	if d.client.Compat == CompatCouch16 {
-		return nil, kivik.ErrNotImplemented
+		return nil, findNotImplemented
 	}
 	body, err := jsonify(query)
 	if err != nil {

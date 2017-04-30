@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/flimzy/kivik/driver"
+	"github.com/flimzy/kivik/errors"
 )
 
 // DB is a handle to a specific database.
@@ -93,7 +94,7 @@ func (db *DB) Flush(ctx context.Context) error {
 	if flusher, ok := db.driverDB.(driver.DBFlusher); ok {
 		return flusher.Flush(ctx)
 	}
-	return ErrNotImplemented
+	return errors.Status(StatusNotImplemented, "kivik: flush not supported by driver")
 }
 
 // DBStats contains database statistics..
@@ -206,7 +207,7 @@ func (db *DB) Copy(ctx context.Context, targetID, sourceID string, options ...Op
 	}
 	if copier, ok := db.driverDB.(driver.Copier); ok {
 		targetRev, err = copier.Copy(ctx, targetID, sourceID, opts)
-		if err != ErrNotImplemented {
+		if errors.StatusCode(err) != StatusNotImplemented {
 			return targetRev, err
 		}
 	}

@@ -11,6 +11,7 @@ import (
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/driver/pouchdb/bindings"
+	"github.com/flimzy/kivik/errors"
 )
 
 var _ driver.Finder = &db{}
@@ -75,7 +76,7 @@ func (d *db) findIndex(ctx context.Context, ddoc, name string) (interface{}, err
 			}, nil
 		}
 	}
-	return nil, kivik.ErrNotFound
+	return nil, errors.Status(kivik.StatusNotFound, "index does not exist")
 }
 
 func (d *db) DeleteIndex(ctx context.Context, ddoc, name string) error {

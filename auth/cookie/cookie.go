@@ -17,6 +17,8 @@ import (
 	"github.com/flimzy/kivik/serve"
 )
 
+const typeJSON = "application/json"
+
 // Auth provides CouchDB Cookie authentication.
 type Auth struct{}
 
@@ -97,7 +99,7 @@ func postSession(w http.ResponseWriter, r *http.Request) error {
 		MaxAge:   getSessionTimeout(r.Context(), s),
 		HttpOnly: true,
 	})
-	w.Header().Add("Content-Type", kivik.TypeJSON)
+	w.Header().Add("Content-Type", typeJSON)
 	if next != "" {
 		w.Header().Add("Location", next)
 		w.WriteHeader(kivik.StatusFound)
@@ -136,7 +138,7 @@ func deleteSession(w http.ResponseWriter, r *http.Request) error {
 		MaxAge:   -1,
 		HttpOnly: true,
 	})
-	w.Header().Add("Content-Type", kivik.TypeJSON)
+	w.Header().Add("Content-Type", typeJSON)
 	w.Header().Set("Cache-Control", "must-revalidate")
 	return json.NewEncoder(w).Encode(map[string]interface{}{
 		"ok": true,

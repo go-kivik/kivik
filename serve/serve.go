@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/auth"
@@ -58,7 +59,8 @@ type Service struct {
 	// bypassed.
 	Config *conf.Conf
 
-	conf *conf.Conf
+	conf   *conf.Conf
+	confMU sync.RWMutex
 
 	// authHandlers is a map version of AuthHandlers for easier internal
 	// use.
@@ -81,6 +83,8 @@ func (s *Service) Init() (http.Handler, error) {
 }
 
 func (s *Service) loadConf() error {
+	s.confMU.Lock()
+	defer s.confMU.Unlock()
 	if s.Config != nil {
 		s.conf = s.Config
 		return nil
@@ -95,11 +99,14 @@ func (s *Service) loadConf() error {
 
 // Conf returns the initialized server configuration.
 func (s *Service) Conf() *conf.Conf {
+	s.confMU.RLock()
+	defer s.confMU.RUnlock()
 	if s.Config != nil {
-		s.conf = s.Config
-	}
-	if s.conf == nil {
-		panic("Conf not loaded")
+		s.confMU.RUnlock()
+		if err := s.loadConf(); err != nil {
+			panic(err)
+		}
+		s.confMU.RLock()
 	}
 	return s.conf
 }

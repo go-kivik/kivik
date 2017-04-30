@@ -28,7 +28,7 @@ func (c *confadmin) Validate(ctx context.Context, username, password string) (*a
 	derivedKey, salt, iterations, err := c.getKeySaltIter(ctx, username)
 	if err != nil {
 		if errors.StatusCode(err) == kivik.StatusNotFound {
-			return nil, kivik.ErrUnauthorized
+			return nil, errors.Status(kivik.StatusUnauthorized, "unauthorized")
 		}
 		return nil, errors.Wrap(err, "unrecognized password hash")
 	}

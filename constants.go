@@ -3,12 +3,6 @@ package kivik
 // SessionCookieName is the name of the CouchDB session cookie.
 const SessionCookieName = "AuthSession"
 
-// Media types commonly used by CouchDB
-const (
-	TypeJSON = "application/json"
-	TypeText = "text/plain"
-)
-
 // HTTP methods supported by CouchDB. This is almost an exact copy of the
 // methods in the standard http package, with the addition of MethodCopy, and
 // a few methods left out which are not used by CouchDB.

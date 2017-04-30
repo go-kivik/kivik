@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"errors"
 	"strings"
 	"time"
 
@@ -71,31 +70,22 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 				return
 			}
 			defer rep.Delete(context.Background())
-			done := make(chan struct{})
-			cx, cancel := context.WithCancel(context.Background())
+			timeout := time.Duration(ctx.MustInt("timeoutSeconds")) * time.Second
+			cx, cancel := context.WithTimeout(context.Background(), timeout)
 			defer cancel()
 			var updateErr error
-			go func() {
-				for rep.IsActive() {
-					select {
-					case <-cx.Done():
-						return
-					default:
-					}
-					if updateErr = rep.Update(cx); updateErr != nil {
-						break
-					}
+			for rep.IsActive() {
+				select {
+				case <-cx.Done():
+					return
+				default:
 				}
-				done <- struct{}{}
-			}()
-			timeout := time.Duration(ctx.MustInt("timeoutSeconds")) * time.Second
-			select {
-			case <-time.After(timeout):
-				ctx.Fatalf("Replication failed to complete in %s", timeout)
-			case <-done:
-				if updateErr != nil {
-					ctx.Fatalf("Replication update failed: %s", updateErr)
+				if updateErr = rep.Update(cx); updateErr != nil {
+					break
 				}
+			}
+			if updateErr != nil {
+				ctx.Fatalf("Replication update failed: %s", updateErr)
 			}
 			ctx.Run("ReplicationResults", func(ctx *kt.Context) {
 				if !ctx.IsExpectedSuccess(rep.Err()) {
@@ -137,36 +127,34 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 				return
 			}
 			defer rep.Delete(context.Background())
-			done := make(chan struct{})
-			cx, cancel := context.WithCancel(context.Background())
-			defer cancel()
-			var updateErr error
-			go func() {
-				defer func() { done <- struct{}{} }()
-				for rep.IsActive() {
-					if rep.State() == kivik.ReplicationStarted {
-						return
-					}
-					select {
-					case <-cx.Done():
-						updateErr = errors.New("replication completed normally")
-					default:
-					}
-					if updateErr = rep.Update(cx); updateErr != nil {
-						return
-					}
-				}
-			}()
 			timeout := time.Duration(ctx.MustInt("timeoutSeconds")) * time.Second
-			select {
-			case <-time.After(timeout):
-				ctx.Fatalf("Replication failed to complete in %s", timeout)
-			case <-done:
-				if updateErr != nil {
-					ctx.Fatalf("Replication cancellation failed: %s", updateErr)
+			cx, cancel := context.WithTimeout(context.Background(), timeout)
+			defer cancel()
+			ctx.CheckError(rep.Delete(context.Background()))
+			for rep.IsActive() {
+				if rep.State() == kivik.ReplicationStarted {
+					return
+				}
+				select {
+				case <-cx.Done():
+					break
+				default:
+				}
+				if err := rep.Update(cx); err != nil {
+					if kivik.StatusCode(err) == kivik.StatusNotFound {
+						// NotFound expected after the replication is cancelled
+						break
+					}
+					ctx.Fatalf("Failed to read update: %s", err)
+					break
 				}
 			}
-			ctx.CheckError(rep.Delete(context.Background()))
+			if err := cx.Err(); err != nil {
+				ctx.Fatalf("context was cancelled: %s", err)
+			}
+			if err := rep.Err(); err != nil {
+				ctx.Fatalf("Replication cancellation failed: %s", err)
+			}
 		})
 		ctx.Run("MissingSource", func(ctx *kt.Context) {
 			ctx.Parallel()

@@ -130,7 +130,12 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 			timeout := time.Duration(ctx.MustInt("timeoutSeconds")) * time.Second
 			cx, cancel := context.WithTimeout(context.Background(), timeout)
 			defer cancel()
-			ctx.CheckError(rep.Delete(context.Background()))
+			for i := 0; i < 2; i++ { // Try up to twice
+				if err = rep.Delete(context.Background()); kivik.StatusCode(err) == kivik.StatusConflict {
+					continue
+				}
+			}
+			ctx.CheckError(err)
 			for rep.IsActive() {
 				if rep.State() == kivik.ReplicationStarted {
 					return

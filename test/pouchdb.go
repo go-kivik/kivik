@@ -72,6 +72,10 @@ func init() {
 
 		"DeleteIndex/RW/Admin/group/NotFoundDdoc.status": kivik.StatusNotFound,
 		"DeleteIndex/RW/Admin/group/NotFoundName.status": kivik.StatusNotFound,
+
+		"Replicate.prefix":         "none",
+		"Replicate.timeoutSeconds": 5,
+		"Replicate.mode":           "pouchdb",
 	})
 	RegisterSuite(SuitePouchRemote, kt.SuiteConfig{
 		// Features which are not supported by PouchDB
@@ -171,5 +175,8 @@ func init() {
 		"Put/RW/NoAuth/group/DesignDoc.status":             kivik.StatusUnauthorized,
 		"Put/RW/NoAuth/group/LeadingUnderscoreInID.status": kivik.StatusBadRequest,
 		"Put/RW/NoAuth/group/Conflict.status":              kivik.StatusConflict,
+
+		"GetReplications.skip": true, // FIXME: Unimplemented
+		"Replicate.skip":       true, // FIXME: Unimplemented
 	})
 }

@@ -86,10 +86,7 @@ func setSecurity(ctx *kt.Context) {
 func testSetSecurityTests(ctx *kt.Context, client *kivik.Client) {
 	ctx.Run("Exists", func(ctx *kt.Context) {
 		ctx.Parallel()
-		dbname := ctx.TestDBName()
-		if err := ctx.Admin.CreateDB(context.Background(), dbname, ctx.Options("db")); err != nil {
-			ctx.Fatalf("Failed to create db: %s", err)
-		}
+		dbname := ctx.TestDB()
 		defer ctx.Admin.DestroyDB(context.Background(), dbname, ctx.Options("db"))
 		testSetSecurity(ctx, client, dbname)
 	})

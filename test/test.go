@@ -145,6 +145,34 @@ func cleanupDatabases(ctx context.Context, client *kivik.Client, verbose bool) (
 			count++
 		}
 	}
+	replicator, err := client.DB(context.Background(), "_replicator")
+	if err != nil {
+		if errors.StatusCode(err) != kivik.StatusNotFound && errors.StatusCode(err) != kivik.StatusNotImplemented {
+			return count, err
+		}
+		return count, nil
+	}
+	docs, err := replicator.AllDocs(context.Background(), map[string]interface{}{"include_docs": true})
+	if err != nil {
+		if errors.StatusCode(err) == kivik.StatusNotImplemented || errors.StatusCode(err) == kivik.StatusNotFound {
+			return count, nil
+		}
+		return count, err
+	}
+	var replDoc struct {
+		Rev string `json:"_rev"`
+	}
+	for docs.Next() {
+		if strings.HasPrefix(docs.ID(), "kivik$") {
+			if err := docs.ScanDoc(&replDoc); err != nil {
+				return count, err
+			}
+			if _, err := replicator.Delete(context.Background(), docs.ID(), replDoc.Rev); err != nil {
+				return count, err
+			}
+			count++
+		}
+	}
 	return count, nil
 }
 

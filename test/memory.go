@@ -30,6 +30,10 @@ func init() {
 		"Version.vendor":         `^Kivik Memory Adaptor$`,
 		"Version.vendor_version": `^0\.0\.1$`,
 
+		// Replications not to be implemented
+		"GetReplications.skip": true,
+		"Replicate.skip":       true,
+
 		"Get.skip":               true,                       // FIXME: Unimplemented
 		"Delete.skip":            true,                       // FIXME: Unimplemented
 		"Stats.skip":             true,                       // FIXME: Unimplemented

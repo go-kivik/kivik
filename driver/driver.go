@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"time"
 )
 
 // Driver is the interface that must be implemented by a database driver.
@@ -39,6 +40,45 @@ type Client interface {
 	DestroyDB(ctx context.Context, dbName string, options map[string]interface{}) error
 	// DB returns a handleto the requested database
 	DB(ctx context.Context, dbName string, options map[string]interface{}) (DB, error)
+}
+
+// Replication represents a _replicator document.
+type Replication interface {
+	// The following methods are called just once, when the Replication is first
+	// returned from Replicate() or GetReplications().
+	ReplicationID() string
+	Source() string
+	Target() string
+	StartTime() time.Time
+	EndTime() time.Time
+	State() string
+	Err() error
+
+	// These methods may be triggered by user actions.
+
+	// Delete deletes a replication, which cancels it if it is running.
+	Delete(context.Context) error
+	// Update fetches the latest replication state from the server.
+	Update(context.Context, *ReplicationInfo) error
+}
+
+// ReplicationInfo represents a snap-shot state of a replication, as provided
+// by the _active_tasks endpoint.
+type ReplicationInfo struct {
+	DocWriteFailures int64
+	DocsRead         int64
+	DocsWritten      int64
+	Progress         float64
+}
+
+// ClientReplicator is an optional interface that may be implemented by a Client
+// that supports replication between two database.
+type ClientReplicator interface {
+	// Replicate initiates a replication.
+	Replicate(ctx context.Context, targetDSN, sourceDSN string, options map[string]interface{}) (Replication, error)
+	// GetReplications returns a list of replicatoins (i.e. all docs in the
+	// _replicator database)
+	GetReplications(ctx context.Context, options map[string]interface{}) ([]Replication, error)
 }
 
 // Authenticator is an optional interface that may be implemented by a Client

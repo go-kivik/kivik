@@ -36,7 +36,6 @@ func TestServer(t *testing.T) {
 		t.Fatalf("Failed to connect to custom driver: %s", err)
 	}
 	c := &conf.Conf{Viper: viper.New()}
-	c.Set("log.capacity", 10)
 	// Set admin/abc123 credentials
 	c.Set("admins.admin", "-pbkdf2-792221164f257de22ad72a8e94760388233e5714,7897f3451f59da741c87ec5f10fe7abe,10")
 	service := serve.Service{}

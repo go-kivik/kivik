@@ -34,5 +34,7 @@ const (
 	StatusRequestedRangeNotSatisfiable = 416
 	StatusExpectationFailed            = 417
 	StatusInternalServerError          = 500
-	StatusNotImplemented               = 501
+	// StatusNotImplemented is not returned by CouchDB proper. It is used by
+	// Kivik for optional features which are not implemented by some drivers.
+	StatusNotImplemented = 501
 )

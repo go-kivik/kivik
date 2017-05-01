@@ -1,14 +1,5 @@
 [![Build Status](https://travis-ci.org/flimzy/kivik.svg?branch=master)](https://travis-ci.org/flimzy/kivik) [![Codecov](https://img.shields.io/codecov/c/github/flimzy/kivik.svg?style=flat)](https://codecov.io/gh/flimzy/kivik) [![GoDoc](https://godoc.org/github.com/flimzy/kivik?status.svg)](http://godoc.org/github.com/flimzy/kivik)
 
-# !!! NOTICE !!!
-
-**This package is under heavy, active development. The API is in constant flux.
-Be prepared for breaking changes to occur with no notice!**
-
-Until version [1.0 is released](https://github.com/flimzy/kivik/milestone/1), if
-you are using this package, you should probably vendor it, and upgrade only
-after testing that your code works with the latest version.
-
 # Kivik
 
 Package kivik provides a generic interface to CouchDB or CouchDB-like databases.
@@ -121,22 +112,12 @@ support natively. Kivik aims to accomplish this in the future.
 
 ## What is the development status?
 
-Kivik is [nearing a 1.0 release](https://github.com/flimzy/kivik/milestone/1).
-The client libraries are nearly complete for both CouchDB and PouchDB. My
-development goals are, in rough order of priority:
+Kivik comes with a complete client API client and backend drivers for CouchDB
+and PouchDB.
 
-1. Complete the 'kivik' client API.
-2. Complete the CouchDB driver.
-3. Complete the PouchDB driver.
-4. Complete the Memory driver.
-5. Write a 'serve' mode.
-
-1-3 are all but done done. I have just to iron out a few rough edges, and do
-some production testing before I declare 1.0 ready.
-
-Next I'll work on fleshing out the Memory driver, which will make automated
-testing without a real CouchDB server easier. Then I will work on completing the
-'serve' mode.
+My next priorities are to work on fleshing out the Memory driver, which will
+make automated testing without a real CouchDB server easier. Then I will work
+on completing the 'serve' mode.
 
 You can see a complete overview of the current status on the
 [Compatibility chart](https://github.com/flimzy/kivik/blob/master/doc/COMPATIBILITY.md)

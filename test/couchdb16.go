@@ -147,8 +147,10 @@ func init() {
 
 		"GetReplications/NoAuth.status": kivik.StatusForbidden,
 
-		"Replicate.timeoutSeconds":   120,
-		"Replicate.prefix":           "none",
-		"Replicate/RW/NoAuth.status": kivik.StatusForbidden,
+		"Replicate.timeoutSeconds":                              120,
+		"Replicate.prefix":                                      "none",
+		"Replicate/RW/NoAuth.status":                            kivik.StatusForbidden,
+		"Replicate/RW/Admin/group/MissingSource/Results.status": kivik.StatusNotFound,
+		"Replicate/RW/Admin/group/MissingTarget/Results.status": kivik.StatusNotFound,
 	})
 }

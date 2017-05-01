@@ -64,56 +64,15 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 	ctx.Run("group", func(ctx *kt.Context) {
 		ctx.Run("ValidReplication", func(ctx *kt.Context) {
 			ctx.Parallel()
-			replID := ctx.TestDBName()
-			rep, err := callReplicate(ctx, client, dbtarget, dbsource, replID, nil)
-			if !ctx.IsExpectedSuccess(err) {
-				return
-			}
-			defer rep.Delete(context.Background())
-			timeout := time.Duration(ctx.MustInt("timeoutSeconds")) * time.Second
-			cx, cancel := context.WithTimeout(context.Background(), timeout)
-			defer cancel()
-			var updateErr error
-			for rep.IsActive() {
-				select {
-				case <-cx.Done():
-					return
-				default:
-				}
-				if updateErr = rep.Update(cx); updateErr != nil {
-					break
-				}
-			}
-			if updateErr != nil {
-				ctx.Fatalf("Replication update failed: %s", updateErr)
-			}
-			ctx.Run("ReplicationResults", func(ctx *kt.Context) {
-				if !ctx.IsExpectedSuccess(rep.Err()) {
-					return
-				}
-				switch ctx.String("mode") {
-				case "pouchdb":
-					if rep.ReplicationID() != "" {
-						ctx.Errorf("Did not expect replication ID")
-					}
-				default:
-					if rep.ReplicationID() == "" {
-						ctx.Errorf("Expected a replication ID")
-					}
-				}
-				if rep.Source != dbsource {
-					ctx.Errorf("Unexpected source. Expected: %s, Actual: %s\n", dbsource, rep.Source)
-				}
-				if rep.Target != dbtarget {
-					ctx.Errorf("Unexpected target. Expected: %s, Actual: %s\n", dbtarget, rep.Target)
-				}
-				if rep.State() != kivik.ReplicationComplete {
-					ctx.Errorf("Replication failed to complete. Final state: %s\n", rep.State())
-				}
-				if (rep.Progress() - float64(100)) > 0.0001 {
-					ctx.Errorf("Expected 100%% completion, got %%%02.2f", rep.Progress())
-				}
-			})
+			doReplicationTest(ctx, client, dbtarget, dbsource)
+		})
+		ctx.Run("MissingSource", func(ctx *kt.Context) {
+			ctx.Parallel()
+			doReplicationTest(ctx, client, dbtarget, "http://localhost:5984/foo")
+		})
+		ctx.Run("MissingTarget", func(ctx *kt.Context) {
+			ctx.Parallel()
+			doReplicationTest(ctx, client, "http://localhost:5984/foo", dbsource)
 		})
 		ctx.Run("Cancel", func(ctx *kt.Context) {
 			ctx.Parallel()
@@ -156,23 +115,58 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 				ctx.Fatalf("Replication cancellation failed: %s", err)
 			}
 		})
-		ctx.Run("MissingSource", func(ctx *kt.Context) {
-			ctx.Parallel()
-			replID := ctx.TestDBName()
-			rep, err := callReplicate(ctx, client, dbtarget, "http://localhost:5984/foo", replID, nil)
-			if !ctx.IsExpectedSuccess(err) {
-				return
+	})
+}
+
+func doReplicationTest(ctx *kt.Context, client *kivik.Client, dbtarget, dbsource string) {
+	replID := ctx.TestDBName()
+	rep, err := callReplicate(ctx, client, dbtarget, dbsource, replID, nil)
+	if !ctx.IsExpectedSuccess(err) {
+		return
+	}
+	defer rep.Delete(context.Background())
+	timeout := time.Duration(ctx.MustInt("timeoutSeconds")) * time.Second
+	cx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	var updateErr error
+	for rep.IsActive() {
+		select {
+		case <-cx.Done():
+			return
+		default:
+		}
+		if updateErr = rep.Update(cx); updateErr != nil {
+			break
+		}
+	}
+	if updateErr != nil {
+		ctx.Fatalf("Replication update failed: %s", updateErr)
+	}
+	ctx.Run("Results", func(ctx *kt.Context) {
+		if !ctx.IsExpectedSuccess(rep.Err()) {
+			return
+		}
+		switch ctx.String("mode") {
+		case "pouchdb":
+			if rep.ReplicationID() != "" {
+				ctx.Errorf("Did not expect replication ID")
 			}
-			rep.Delete(context.Background())
-		})
-		ctx.Run("MissingTarget", func(ctx *kt.Context) {
-			ctx.Parallel()
-			replID := ctx.TestDBName()
-			rep, err := callReplicate(ctx, client, "http://localhost:5984/foo", dbsource, replID, nil)
-			if !ctx.IsExpectedSuccess(err) {
-				return
+		default:
+			if rep.ReplicationID() == "" {
+				ctx.Errorf("Expected a replication ID")
 			}
-			rep.Delete(context.Background())
-		})
+		}
+		if rep.Source != dbsource {
+			ctx.Errorf("Unexpected source. Expected: %s, Actual: %s\n", dbsource, rep.Source)
+		}
+		if rep.Target != dbtarget {
+			ctx.Errorf("Unexpected target. Expected: %s, Actual: %s\n", dbtarget, rep.Target)
+		}
+		if rep.State() != kivik.ReplicationComplete {
+			ctx.Errorf("Replication failed to complete. Final state: %s\n", rep.State())
+		}
+		if (rep.Progress() - float64(100)) > 0.0001 {
+			ctx.Errorf("Expected 100%% completion, got %%%02.2f", rep.Progress())
+		}
 	})
 }

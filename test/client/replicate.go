@@ -76,12 +76,8 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 		})
 		ctx.Run("Cancel", func(ctx *kt.Context) {
 			ctx.Parallel()
-			dbnameA := prefix + ctx.TestDB()
-			dbnameB := prefix + ctx.TestDB()
-			defer ctx.Admin.DestroyDB(context.Background(), dbnameA, ctx.Options("db"))
-			defer ctx.Admin.DestroyDB(context.Background(), dbnameB, ctx.Options("db"))
 			replID := ctx.TestDBName()
-			rep, err := callReplicate(ctx, client, dbnameA, dbnameB, replID, kivik.Options{"continuous": true})
+			rep, err := callReplicate(ctx, client, dbtarget, "http://foo:foo@192.168.2.254/foo", replID, kivik.Options{"continuous": true})
 			if !ctx.IsExpectedSuccess(err) {
 				return
 			}

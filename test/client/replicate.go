@@ -64,7 +64,17 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 	ctx.Run("group", func(ctx *kt.Context) {
 		ctx.Run("ValidReplication", func(ctx *kt.Context) {
 			ctx.Parallel()
-			doReplicationTest(ctx, client, dbtarget, dbsource)
+			tries := 3
+			success := false
+			for i := 0; i < tries; i++ {
+				success = doReplicationTest(ctx, client, dbtarget, dbsource)
+				if success {
+					break
+				}
+			}
+			if !success {
+				ctx.Errorf("Replication failied after %d tries", tries)
+			}
 		})
 		ctx.Run("MissingSource", func(ctx *kt.Context) {
 			ctx.Parallel()
@@ -114,7 +124,8 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 	})
 }
 
-func doReplicationTest(ctx *kt.Context, client *kivik.Client, dbtarget, dbsource string) {
+func doReplicationTest(ctx *kt.Context, client *kivik.Client, dbtarget, dbsource string) (success bool) {
+	success = true
 	replID := ctx.TestDBName()
 	rep, err := callReplicate(ctx, client, dbtarget, dbsource, replID, nil)
 	if !ctx.IsExpectedSuccess(err) {
@@ -140,7 +151,12 @@ func doReplicationTest(ctx *kt.Context, client *kivik.Client, dbtarget, dbsource
 		ctx.Fatalf("Replication update failed: %s", updateErr)
 	}
 	ctx.Run("Results", func(ctx *kt.Context) {
-		if !ctx.IsExpectedSuccess(rep.Err()) {
+		err := rep.Err()
+		if kivik.StatusCode(err) == kivik.StatusRequestTimeout {
+			success = false // Allow retrying
+			return
+		}
+		if !ctx.IsExpectedSuccess(err) {
 			return
 		}
 		switch ctx.String("mode") {
@@ -166,4 +182,5 @@ func doReplicationTest(ctx *kt.Context, client *kivik.Client, dbtarget, dbsource
 			ctx.Errorf("Expected 100%% completion, got %%%02.2f", rep.Progress())
 		}
 	})
+	return success
 }

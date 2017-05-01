@@ -128,6 +128,7 @@ func doReplicationTest(ctx *kt.Context, client *kivik.Client, dbtarget, dbsource
 	for rep.IsActive() {
 		select {
 		case <-cx.Done():
+			ctx.Fatalf("context cancelled waiting for replication: %s", cx.Err())
 			return
 		default:
 		}

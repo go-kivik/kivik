@@ -153,7 +153,7 @@ func testValidReplication(ctx *kt.Context, client *kivik.Client, dbsource, dbtar
 	if !ctx.IsExpectedSuccess(err) {
 		return
 	}
-	// defer rep.Delete(context.Background())
+	defer rep.Delete(context.Background())
 	timeout := time.Duration(ctx.MustInt("timeoutSeconds")) * time.Second
 	cx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()

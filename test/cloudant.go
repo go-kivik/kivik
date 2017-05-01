@@ -201,7 +201,9 @@ func init() {
 
 		"GetReplications/NoAuth.status": kivik.StatusUnauthorized,
 
-		"Replicate.timeoutSeconds":   300,
-		"Replicate/RW/NoAuth.status": kivik.StatusUnauthorized,
+		"Replicate.timeoutSeconds":                              300,
+		"Replicate/RW/NoAuth.status":                            kivik.StatusUnauthorized,
+		"Replicate/RW/Admin/group/MissingSource/Results.status": kivik.StatusInternalServerError,
+		"Replicate/RW/Admin/group/MissingTarget/Results.status": kivik.StatusInternalServerError,
 	})
 }

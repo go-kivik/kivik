@@ -176,7 +176,8 @@ func init() {
 		"Put/RW/NoAuth/group/LeadingUnderscoreInID.status": kivik.StatusBadRequest,
 		"Put/RW/NoAuth/group/Conflict.status":              kivik.StatusConflict,
 
-		"GetReplications.skip": true, // FIXME: Unimplemented
-		"Replicate.skip":       true, // FIXME: Unimplemented
+		"Replicate.prefix":         "none",
+		"Replicate.timeoutSeconds": 5,
+		"Replicate.mode":           "pouchdb",
 	})
 }

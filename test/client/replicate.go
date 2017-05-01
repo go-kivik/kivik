@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -64,56 +65,18 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 	ctx.Run("group", func(ctx *kt.Context) {
 		ctx.Run("ValidReplication", func(ctx *kt.Context) {
 			ctx.Parallel()
-			replID := ctx.TestDBName()
-			rep, err := callReplicate(ctx, client, dbtarget, dbsource, replID, nil)
-			if !ctx.IsExpectedSuccess(err) {
-				return
-			}
-			// defer rep.Delete(context.Background())
-			timeout := time.Duration(ctx.MustInt("timeoutSeconds")) * time.Second
-			cx, cancel := context.WithTimeout(context.Background(), timeout)
-			defer cancel()
-			var updateErr error
-			for rep.IsActive() {
-				select {
-				case <-cx.Done():
-					return
-				default:
-				}
-				if updateErr = rep.Update(cx); updateErr != nil {
+			var success bool
+			tries := 3
+			for i := 0; i < tries; i++ {
+				if !testValidReplication(ctx, client, dbsource, dbtarget) {
+					success = true
 					break
 				}
+				fmt.Printf("Retrying replication test after timeout")
 			}
-			if updateErr != nil {
-				ctx.Fatalf("Replication update failed: %s", updateErr)
+			if !success {
+				ctx.Fatalf("Replication timed out %d times", tries)
 			}
-			ctx.Run("ReplicationResults", func(ctx *kt.Context) {
-				if !ctx.IsExpectedSuccess(rep.Err()) {
-					return
-				}
-				switch ctx.String("mode") {
-				case "pouchdb":
-					if rep.ReplicationID() != "" {
-						ctx.Errorf("Did not expect replication ID")
-					}
-				default:
-					if rep.ReplicationID() == "" {
-						ctx.Errorf("Expected a replication ID")
-					}
-				}
-				if rep.Source != dbsource {
-					ctx.Errorf("Unexpected source. Expected: %s, Actual: %s\n", dbsource, rep.Source)
-				}
-				if rep.Target != dbtarget {
-					ctx.Errorf("Unexpected target. Expected: %s, Actual: %s\n", dbtarget, rep.Target)
-				}
-				if rep.State() != kivik.ReplicationComplete {
-					ctx.Errorf("Replication failed to complete. Final state: %s\n", rep.State())
-				}
-				if (rep.Progress() - float64(100)) > 0.0001 {
-					ctx.Errorf("Expected 100%% completion, got %%%02.2f", rep.Progress())
-				}
-			})
 		})
 		/* FIXME: This needs replications to be delayed. See #113
 		ctx.Run("Cancel", func(ctx *kt.Context) {
@@ -182,4 +145,63 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 			rep.Delete(context.Background())
 		})
 	})
+}
+
+func testValidReplication(ctx *kt.Context, client *kivik.Client, dbsource, dbtarget string) (retry bool) {
+	replID := ctx.TestDBName()
+	rep, err := callReplicate(ctx, client, dbtarget, dbsource, replID, nil)
+	if !ctx.IsExpectedSuccess(err) {
+		return
+	}
+	// defer rep.Delete(context.Background())
+	timeout := time.Duration(ctx.MustInt("timeoutSeconds")) * time.Second
+	cx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	var updateErr error
+	for rep.IsActive() {
+		select {
+		case <-cx.Done():
+			return
+		default:
+		}
+		if updateErr = rep.Update(cx); updateErr != nil {
+			break
+		}
+	}
+	if updateErr != nil {
+		ctx.Fatalf("Replication update failed: %s", updateErr)
+	}
+	ctx.Run("ReplicationResults", func(ctx *kt.Context) {
+		err := rep.Err()
+		if kivik.StatusCode(err) == kivik.StatusRequestTimeout {
+			retry = true
+			return
+		}
+		if !ctx.IsExpectedSuccess(err) {
+			return
+		}
+		switch ctx.String("mode") {
+		case "pouchdb":
+			if rep.ReplicationID() != "" {
+				ctx.Errorf("Did not expect replication ID")
+			}
+		default:
+			if rep.ReplicationID() == "" {
+				ctx.Errorf("Expected a replication ID")
+			}
+		}
+		if rep.Source != dbsource {
+			ctx.Errorf("Unexpected source. Expected: %s, Actual: %s\n", dbsource, rep.Source)
+		}
+		if rep.Target != dbtarget {
+			ctx.Errorf("Unexpected target. Expected: %s, Actual: %s\n", dbtarget, rep.Target)
+		}
+		if rep.State() != kivik.ReplicationComplete {
+			ctx.Errorf("Replication failed to complete. Final state: %s\n", rep.State())
+		}
+		if (rep.Progress() - float64(100)) > 0.0001 {
+			ctx.Errorf("Expected 100%% completion, got %%%02.2f", rep.Progress())
+		}
+	})
+	return retry
 }

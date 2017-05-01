@@ -25,6 +25,10 @@ function wait_for_server {
         n=$[$n+1]
         sleep 1
     done
+    if [ $n -gt 5 ]; then
+        echo "Server $1 didn't respond"
+        exit 1
+    fi
     printf "ready!\n"
 }
 

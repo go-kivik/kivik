@@ -94,9 +94,10 @@ func CleanupTests(driver, dsn string, verbose bool) error {
 func doCleanup(client *kivik.Client, verbose bool) (int, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	errCh := make(chan error, 2)
+	errCh := make(chan error, 3)
 	var count int32
 	var wg sync.WaitGroup
+
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -107,6 +108,7 @@ func doCleanup(client *kivik.Client, verbose bool) (int, error) {
 		atomic.AddInt32(&count, int32(c))
 		errCh <- err
 	}()
+
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -117,6 +119,18 @@ func doCleanup(client *kivik.Client, verbose bool) (int, error) {
 		atomic.AddInt32(&count, int32(c))
 		errCh <- err
 	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		c, err := cleanupReplications(ctx, client, verbose)
+		if err != nil {
+			cancel()
+		}
+		atomic.AddInt32(&count, int32(c))
+		errCh <- err
+	}()
+
 	wg.Wait()
 	err := <-errCh
 	for len(errCh) > 0 {
@@ -126,6 +140,9 @@ func doCleanup(client *kivik.Client, verbose bool) (int, error) {
 }
 
 func cleanupDatabases(ctx context.Context, client *kivik.Client, verbose bool) (int, error) {
+	if verbose {
+		fmt.Printf("Cleaning up stale databases\n")
+	}
 	allDBs, err := client.AllDBs(ctx)
 	if err != nil {
 		return 0, err
@@ -177,6 +194,9 @@ func cleanupDatabases(ctx context.Context, client *kivik.Client, verbose bool) (
 }
 
 func cleanupUsers(ctx context.Context, client *kivik.Client, verbose bool) (int, error) {
+	if verbose {
+		fmt.Printf("Cleaning up stale users\n")
+	}
 	db, err := client.DB(ctx, "_users")
 	if err != nil {
 		switch errors.StatusCode(err) {
@@ -212,6 +232,51 @@ func cleanupUsers(ctx context.Context, client *kivik.Client, verbose bool) (int,
 		}
 	}
 	return count, users.Err()
+}
+
+func cleanupReplications(ctx context.Context, client *kivik.Client, verbose bool) (int, error) {
+	if verbose {
+		fmt.Printf("Cleaning up stale replications\n")
+	}
+	db, err := client.DB(ctx, "_replicator")
+	if err != nil {
+		switch errors.StatusCode(err) {
+		case kivik.StatusNotFound, kivik.StatusNotImplemented:
+			return 0, nil
+		}
+		return 0, err
+	}
+	reps, err := db.AllDocs(ctx, map[string]interface{}{"include_docs": true})
+	if err != nil {
+		switch errors.StatusCode(err) {
+		case kivik.StatusNotFound, kivik.StatusNotImplemented:
+			return 0, nil
+		}
+		return 0, err
+	}
+	var count int
+	for reps.Next() {
+		var doc struct {
+			Rev    string `json:"_rev"`
+			Source string `json:"source"`
+			Target string `json:"target"`
+		}
+		if err = reps.ScanDoc(&doc); err != nil {
+			return count, err
+		}
+		if strings.HasPrefix(reps.ID(), "kivik$") ||
+			strings.HasPrefix(doc.Source, "kivik$") ||
+			strings.HasPrefix(doc.Target, "kivik$") {
+			if verbose {
+				fmt.Printf("\t--- Deleting replication %s\n", reps.ID())
+			}
+			if _, err = db.Delete(ctx, reps.ID(), doc.Rev); err != nil {
+				return count, err
+			}
+			count++
+		}
+	}
+	return count, reps.Err()
 }
 
 // RunTests runs the requested test suites against the requested driver and DSN.

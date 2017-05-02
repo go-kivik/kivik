@@ -117,6 +117,10 @@ func doQueryTestWithoutDocs(ctx *kt.Context, client *kivik.Client, dbName string
 				var i interface{}
 				ctx.CheckError(rows.ScanDoc(&i))
 			})
+			ctx.Run("ScanValue", func(ctx *kt.Context) {
+				var i interface{}
+				ctx.CheckError(rows.ScanValue(&i))
+			})
 		}
 	}
 	if rows.Err() != nil {

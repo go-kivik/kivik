@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 
+	"github.com/flimzy/diff"
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/test/kt"
 )
@@ -166,6 +167,49 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) {
 			if err := updates.Err(); err != nil {
 				ctx.Errorf("Iteration error: %s", err)
 			}
+		})
+		ctx.Run("NonJSON", func(ctx *kt.Context) {
+			ctx.Parallel()
+			id := ctx.TestDBName()
+			docs := []interface{}{
+				struct {
+					Name string `json:"name"`
+				}{Name: "Robert"},
+				struct {
+					ID   string `json:"_id"`
+					Name string `json:"name"`
+				}{ID: id, Name: "Alice"},
+			}
+			updates, err := db.BulkDocs(context.Background(), docs...)
+			if !ctx.IsExpectedSuccess(err) {
+				return
+			}
+			for updates.Next() {
+				if err := updates.UpdateErr(); err != nil {
+					ctx.Errorf("Bulk create failed: %s", err)
+				}
+			}
+			if err := updates.Err(); err != nil {
+				ctx.Errorf("Iteration error: %s", err)
+			}
+			ctx.Run("Retrieve", func(ctx *kt.Context) {
+				row, err := db.Get(context.Background(), id)
+				if err != nil {
+					ctx.Fatalf("failed to retreive bulk-inserted document: %s", err)
+				}
+				var result map[string]interface{}
+				if err = row.ScanDoc(&result); err != nil {
+					ctx.Fatalf("failed to scan bulk-inserted document: %s", err)
+				}
+				expected := map[string]interface{}{
+					"_id":  id,
+					"name": "Alice",
+					"_rev": result["_rev"],
+				}
+				if d := diff.AsJSON(expected, result); d != "" {
+					ctx.Errorf("Retrieved document differs:\n%s\n", d)
+				}
+			})
 		})
 	})
 }

@@ -205,5 +205,8 @@ func init() {
 		"Replicate/RW/NoAuth.status":                            kivik.StatusUnauthorized,
 		"Replicate/RW/Admin/group/MissingSource/Results.status": kivik.StatusInternalServerError,
 		"Replicate/RW/Admin/group/MissingTarget/Results.status": kivik.StatusInternalServerError,
+
+		"Query/RW/group/Admin/WithoutDocs/ScanDoc.status":  kivik.StatusBadRequest,
+		"Query/RW/group/NoAuth/WithoutDocs/ScanDoc.status": kivik.StatusBadRequest,
 	})
 }

@@ -108,8 +108,16 @@ func doQueryTestWithoutDocs(ctx *kt.Context, client *kivik.Client, dbName string
 		return
 	}
 	docIDs := make([]string, 0, len(expected))
+	var scanTested bool
 	for rows.Next() {
 		docIDs = append(docIDs, rows.ID())
+		if !scanTested {
+			scanTested = true
+			ctx.Run("ScanDoc", func(ctx *kt.Context) {
+				var i interface{}
+				ctx.CheckError(rows.ScanDoc(&i))
+			})
+		}
 	}
 	if rows.Err() != nil {
 		ctx.Fatalf("Failed to fetch row: %s", rows.Err())

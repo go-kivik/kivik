@@ -235,10 +235,21 @@ func (db *DB) ViewCleanup() error {
 	return err
 }
 
+var jsJSON = js.Global.Get("JSON")
+
 // BulkDocs creates, updates, or deletes docs in bulk.
 // See https://pouchdb.com/api.html#batch_create
-func (db *DB) BulkDocs(ctx context.Context, docs ...interface{}) (*js.Object, error) {
-	return callBack(ctx, db, "bulkDocs", docs, setTimeout(ctx, nil))
+func (db *DB) BulkDocs(ctx context.Context, docs ...interface{}) (result *js.Object, err error) {
+	defer RecoverError(&err)
+	jsDocs := make([]*js.Object, len(docs))
+	for i, doc := range docs {
+		jsonDoc, err := json.Marshal(doc)
+		if err != nil {
+			return nil, err
+		}
+		jsDocs[i] = jsJSON.Call("parse", string(jsonDoc))
+	}
+	return callBack(ctx, db, "bulkDocs", jsDocs, setTimeout(ctx, nil))
 }
 
 // Changes returns an event emitter object.

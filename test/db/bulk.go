@@ -170,15 +170,18 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) {
 		})
 		ctx.Run("NonJSON", func(ctx *kt.Context) {
 			ctx.Parallel()
-			id := ctx.TestDBName()
+			id1 := ctx.TestDBName()
+			id2 := ctx.TestDBName()
 			docs := []interface{}{
-				struct {
-					Name string `json:"name"`
-				}{Name: "Robert"},
 				struct {
 					ID   string `json:"_id"`
 					Name string `json:"name"`
-				}{ID: id, Name: "Alice"},
+				}{ID: id1, Name: "Robert"},
+				struct {
+					ID   string `json:"_id"`
+					Name string `json:"name"`
+					Age  int    `json:"the_age"`
+				}{ID: id2, Name: "Alice", Age: 32},
 			}
 			updates, err := db.BulkDocs(context.Background(), docs...)
 			if !ctx.IsExpectedSuccess(err) {
@@ -193,7 +196,7 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) {
 				ctx.Errorf("Iteration error: %s", err)
 			}
 			ctx.Run("Retrieve", func(ctx *kt.Context) {
-				row, err := db.Get(context.Background(), id)
+				row, err := db.Get(context.Background(), id2)
 				if err != nil {
 					ctx.Fatalf("failed to retreive bulk-inserted document: %s", err)
 				}
@@ -202,9 +205,10 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) {
 					ctx.Fatalf("failed to scan bulk-inserted document: %s", err)
 				}
 				expected := map[string]interface{}{
-					"_id":  id,
-					"name": "Alice",
-					"_rev": result["_rev"],
+					"_id":     id2,
+					"name":    "Alice",
+					"the_age": 32,
+					"_rev":    result["_rev"],
 				}
 				if d := diff.AsJSON(expected, result); d != "" {
 					ctx.Errorf("Retrieved document differs:\n%s\n", d)

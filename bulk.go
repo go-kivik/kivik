@@ -2,8 +2,10 @@ package kivik
 
 import (
 	"context"
+	"reflect"
 
 	"github.com/flimzy/kivik/driver"
+	"github.com/flimzy/kivik/errors"
 )
 
 // BulkResults is an iterator over the results of a BulkDocs query.
@@ -78,12 +80,35 @@ func (r *BulkResults) UpdateErr() error {
 
 // BulkDocs allows you to create and update multiple documents at the same time
 // within a single request. This function returns an iterator over the results
-// of the bulk operation.
+// of the bulk operation. docs must be a slice, array, or pointer to a slice
+// or array, or the function will panic.
 // See http://docs.couchdb.org/en/2.0.0/api/database/bulk-api.html#db-bulk-docs
-func (db *DB) BulkDocs(ctx context.Context, docs ...interface{}) (*BulkResults, error) {
-	bulki, err := db.driverDB.BulkDocs(ctx, docs...)
+func (db *DB) BulkDocs(ctx context.Context, docs interface{}) (*BulkResults, error) {
+	docsi, err := docsInterfaceSlice(docs)
+	if err != nil {
+		panic(err)
+	}
+	bulki, err := db.driverDB.BulkDocs(ctx, docsi)
 	if err != nil {
 		return nil, err
 	}
 	return newBulkResults(ctx, bulki), nil
+}
+
+func docsInterfaceSlice(docs interface{}) ([]interface{}, error) {
+	if docsi, ok := docs.([]interface{}); ok {
+		return docsi, nil
+	}
+	s := reflect.ValueOf(docs)
+	if s.Kind() == reflect.Ptr {
+		s = s.Elem()
+	}
+	if s.Kind() != reflect.Slice && s.Kind() != reflect.Array {
+		return nil, errors.Statusf(StatusBadRequest, "must be slice or array, got %T", docs)
+	}
+	docsi := make([]interface{}, s.Len())
+	for i := 0; i < s.Len(); i++ {
+		docsi[i] = s.Index(i).Interface()
+	}
+	return docsi, nil
 }

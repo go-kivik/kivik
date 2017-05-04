@@ -41,7 +41,7 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) {
 			doc := map[string]string{
 				"name": "Robert",
 			}
-			updates, err := db.BulkDocs(context.Background(), doc)
+			updates, err := db.BulkDocs(context.Background(), []interface{}{doc})
 			if !ctx.IsExpectedSuccess(err) {
 				return
 			}
@@ -65,7 +65,7 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) {
 				ctx.Fatalf("Failed to create doc: %s", err)
 			}
 			doc["_rev"] = rev
-			updates, err := db.BulkDocs(context.Background(), doc)
+			updates, err := db.BulkDocs(context.Background(), []interface{}{doc})
 			if !ctx.IsExpectedSuccess(err) {
 				return
 			}
@@ -91,7 +91,7 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) {
 			}
 			doc["_rev"] = rev
 			doc["_deleted"] = true
-			updates, err := db.BulkDocs(context.Background(), doc)
+			updates, err := db.BulkDocs(context.Background(), []interface{}{doc})
 			if !ctx.IsExpectedSuccess(err) {
 				return
 			}
@@ -144,7 +144,7 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) {
 				ctx.Fatalf("Failed to create doc2: %s", err)
 			}
 
-			updates, err := db.BulkDocs(context.Background(), doc0, doc1, doc2, doc3)
+			updates, err := db.BulkDocs(context.Background(), []interface{}{doc0, doc1, doc2, doc3})
 			if !ctx.IsExpectedSuccess(err) {
 				return
 			}
@@ -183,7 +183,7 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) {
 					Age  int    `json:"the_age"`
 				}{ID: id2, Name: "Alice", Age: 32},
 			}
-			updates, err := db.BulkDocs(context.Background(), docs...)
+			updates, err := db.BulkDocs(context.Background(), docs)
 			if !ctx.IsExpectedSuccess(err) {
 				return
 			}

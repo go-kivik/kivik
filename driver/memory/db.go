@@ -93,7 +93,7 @@ func (d *db) Changes(ctx context.Context, opts map[string]interface{}) (driver.C
 	return nil, notYetImplemented
 }
 
-func (d *db) BulkDocs(_ context.Context, _ ...interface{}) (driver.BulkResults, error) {
+func (d *db) BulkDocs(_ context.Context, _ []interface{}) (driver.BulkResults, error) {
 	// FIXME: Unimplemented
 	return nil, notYetImplemented
 }

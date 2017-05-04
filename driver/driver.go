@@ -145,7 +145,7 @@ type DB interface {
 	Changes(ctx context.Context, options map[string]interface{}) (Changes, error)
 	// BulkDocs alls bulk create, update and/or delete operations. It returns an
 	// iterator over the results.
-	BulkDocs(ctx context.Context, docs ...interface{}) (BulkResults, error)
+	BulkDocs(ctx context.Context, docs []interface{}) (BulkResults, error)
 	// PutAttachment uploads an attachment to the specified document, returning
 	// the new revision.
 	PutAttachment(ctx context.Context, docID, rev, filename, contentType string, body io.Reader) (newRev string, err error)

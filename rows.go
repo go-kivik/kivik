@@ -2,10 +2,10 @@ package kivik
 
 import (
 	"context"
-	"errors"
 	"strings"
 
 	"github.com/flimzy/kivik/driver"
+	"github.com/flimzy/kivik/errors"
 )
 
 // Rows is an iterator over a a multi-value query.
@@ -80,7 +80,11 @@ func (r *Rows) ScanDoc(dest interface{}) error {
 		return err
 	}
 	defer runlock()
-	return scan(dest, r.curVal.(*driver.Row).Doc)
+	doc := r.curVal.(*driver.Row).Doc
+	if doc == nil {
+		return errors.Status(StatusBadRequest, "kivik: doc is nil; does the query include docs?")
+	}
+	return scan(dest, doc)
 }
 
 // ScanKey works the same as ScanValue, but on the key field of the result. For

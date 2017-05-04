@@ -76,6 +76,8 @@ func init() {
 		"Replicate.prefix":         "none",
 		"Replicate.timeoutSeconds": 5,
 		"Replicate.mode":           "pouchdb",
+
+		"Query/RW/group/Admin/WithoutDocs/ScanDoc.status": kivik.StatusBadRequest,
 	})
 	RegisterSuite(SuitePouchRemote, kt.SuiteConfig{
 		// Features which are not supported by PouchDB
@@ -179,5 +181,8 @@ func init() {
 		"Replicate.prefix":         "none",
 		"Replicate.timeoutSeconds": 5,
 		"Replicate.mode":           "pouchdb",
+
+		"Query/RW/group/Admin/WithoutDocs/ScanDoc.status":  kivik.StatusBadRequest,
+		"Query/RW/group/NoAuth/WithoutDocs/ScanDoc.status": kivik.StatusBadRequest,
 	})
 }

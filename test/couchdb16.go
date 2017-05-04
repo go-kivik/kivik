@@ -152,5 +152,8 @@ func init() {
 		"Replicate/RW/NoAuth.status":                            kivik.StatusForbidden,
 		"Replicate/RW/Admin/group/MissingSource/Results.status": kivik.StatusNotFound,
 		"Replicate/RW/Admin/group/MissingTarget/Results.status": kivik.StatusNotFound,
+
+		"Query/RW/group/Admin/WithoutDocs/ScanDoc.status":  kivik.StatusBadRequest,
+		"Query/RW/group/NoAuth/WithoutDocs/ScanDoc.status": kivik.StatusBadRequest,
 	})
 }

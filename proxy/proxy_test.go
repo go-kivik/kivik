@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -11,6 +12,8 @@ import (
 	"net/url"
 	"os"
 	"testing"
+
+	"github.com/flimzy/diff"
 )
 
 func mustNew(t *testing.T, url string) *Proxy {
@@ -271,6 +274,67 @@ func TestMethodAllowed(t *testing.T) {
 				result := p.methodAllowed(test.Method)
 				if result != test.Expected {
 					t.Errorf("Expected: %t, Actual: %t", test.Expected, result)
+				}
+			})
+		}(test)
+	}
+}
+
+func TestCloneRequest(t *testing.T) {
+	type cloneTest struct {
+		Name     string
+		Input    *http.Request
+		Expected *http.Request
+		Error    string
+	}
+	tests := []cloneTest{
+		{
+			Name:  "SimpleGet",
+			Input: func() *http.Request { r, _ := http.NewRequest("GET", "http://zoo.com", nil); return r }(),
+			Expected: func() *http.Request {
+				r, _ := http.NewRequest("GET", "http://foo.com/", nil)
+				return r.WithContext(context.Background())
+			}(),
+		},
+		{
+			Name:  "URLAuth",
+			Input: func() *http.Request { r, _ := http.NewRequest("GET", "http://foo:bar@zoo.com", nil); return r }(),
+			Expected: func() *http.Request {
+				r, _ := http.NewRequest("GET", "http://foo:bar@foo.com/", nil)
+				r = r.WithContext(context.Background())
+				return r
+			}(),
+		},
+		{
+			Name: "BasicAuth",
+			Input: func() *http.Request {
+				r, _ := http.NewRequest("GET", "http://zoo.com", nil)
+				r.SetBasicAuth("foo", "bar")
+				return r
+			}(),
+			Expected: func() *http.Request {
+				r, _ := http.NewRequest("GET", "http://foo.com/", nil)
+				r = r.WithContext(context.Background())
+				r.Header.Set("Authorization", "Basic Zm9vOmJhcg==")
+				return r
+			}(),
+		},
+	}
+	p := mustNew(t, "http://foo.com/")
+	for _, test := range tests {
+		func(test cloneTest) {
+			t.Run(test.Name, func(t *testing.T) {
+				t.Parallel()
+				result, err := p.cloneRequest(test.Input)
+				var msg string
+				if err != nil {
+					msg = err.Error()
+				}
+				if msg != test.Error {
+					t.Errorf("Expected error: %s\n  Actual error: %s", test.Error, msg)
+				}
+				if d := diff.Interface(test.Expected, result); d != "" {
+					t.Error(d)
 				}
 			})
 		}(test)

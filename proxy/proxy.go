@@ -87,25 +87,43 @@ func (p *Proxy) methodAllowed(method string) bool {
 	return false
 }
 
+// cloneRequest clones the original request, for proxying
+func (p *Proxy) cloneRequest(r *http.Request) (*http.Request, error) {
+	req, err := http.NewRequest(r.Method, p.url(r.URL), r.Body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(r.Context())
+	for header, values := range r.Header {
+		for _, value := range values {
+			req.Header.Set(header, value)
+		}
+	}
+	return req, nil
+}
+
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if !p.methodAllowed(r.Method) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
-	fmt.Printf("purl = %s\n", p.url(r.URL))
-	req, err := http.NewRequest(r.Method, p.url(r.URL), r.Body)
+	req, err := p.cloneRequest(r)
 	if err != nil {
 		proxyError(w, err)
+		return
 	}
-	req = req.WithContext(r.Context())
 	res, err := p.client().Do(req)
 	if err != nil {
 		proxyError(w, err)
+		return
 	}
 	defer res.Body.Close()
 	for header, values := range res.Header {
 		for _, value := range values {
-			w.Header().Add(header, value)
+			if err := p.setHeader(w, res, r, header, value); err != nil {
+				proxyError(w, err)
+				return
+			}
 		}
 	}
 	w.WriteHeader(res.StatusCode)

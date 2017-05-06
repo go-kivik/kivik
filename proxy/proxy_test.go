@@ -3,6 +3,7 @@ package proxy
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -11,6 +12,14 @@ import (
 	"os"
 	"testing"
 )
+
+func mustNew(t *testing.T, url string) *Proxy {
+	p, err := New(url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return p
+}
 
 func TestNew(t *testing.T) {
 	type newTest struct {
@@ -176,11 +185,18 @@ func TestProxy(t *testing.T) {
 			Status:    http.StatusOK,
 			BodyMatch: "Licensed under the Apache License",
 		},
+		{
+			Name:   "InvalidMethod",
+			Method: "CHICKEN",
+			URL:    "http://foo.com/_utils",
+			Status: http.StatusMethodNotAllowed,
+		},
 	}
 	p, err := New(serverDSN(t))
 	if err != nil {
 		t.Fatalf("Failed to initialize proxy: %s", err)
 	}
+	p.StrictMethods = true
 	for _, test := range tests {
 		func(test getTest) {
 			t.Run(test.Name, func(t *testing.T) {
@@ -208,5 +224,33 @@ func TestProxyError(t *testing.T) {
 	expected := "Proxy error: foo error"
 	if string(body) != expected {
 		t.Errorf("Expected: %s\n  Actual: %s\n", expected, body)
+	}
+}
+
+func TestMethodAllowed(t *testing.T) {
+	type maTest struct {
+		Method   string
+		Strict   bool
+		Expected bool
+	}
+	tests := []maTest{
+		{Method: "GET", Strict: true, Expected: true},
+		{Method: "GET", Strict: false, Expected: true},
+		{Method: "COPY", Strict: true, Expected: true},
+		{Method: "COPY", Strict: false, Expected: true},
+		{Method: "CHICKEN", Strict: true, Expected: false},
+		{Method: "CHICKEN", Strict: false, Expected: true},
+	}
+	for _, test := range tests {
+		func(test maTest) {
+			t.Run(fmt.Sprintf("%s:%t", test.Method, test.Strict), func(t *testing.T) {
+				p := mustNew(t, "http://foo.com/")
+				p.StrictMethods = test.Strict
+				result := p.methodAllowed(test.Method)
+				if result != test.Expected {
+					t.Errorf("Expected: %t, Actual: %t", test.Expected, result)
+				}
+			})
+		}(test)
 	}
 }

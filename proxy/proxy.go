@@ -18,6 +18,9 @@ type Proxy struct {
 	// HTTPClient is the HTTP client used to make requests. If unset, defaults
 	// to http.DefaultClient
 	HTTPClient *http.Client
+	// StrictMethods will reject any non-standard CouchDB methods immediately,
+	// rather than relaying to the CouchDB server.
+	StrictMethods bool
 }
 
 var _ http.Handler = &Proxy{}
@@ -60,7 +63,26 @@ func (p *Proxy) client() *http.Client {
 	return p.HTTPClient
 }
 
+// Any other methods are rejected immediately, if StrictMethods is true.
+var supportedMethods = []string{"GET", "HEAD", "POST", "PUT", "DELETE", "COPY"}
+
+func (p *Proxy) methodAllowed(method string) bool {
+	if !p.StrictMethods {
+		return true
+	}
+	for _, m := range supportedMethods {
+		if m == method {
+			return true
+		}
+	}
+	return false
+}
+
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if !p.methodAllowed(r.Method) {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
 	req, err := http.NewRequest(r.Method, p.url(r.URL), r.Body)
 	if err != nil {
 		proxyError(w, err)

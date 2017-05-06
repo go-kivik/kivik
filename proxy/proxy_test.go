@@ -143,7 +143,7 @@ func TestClient(t *testing.T) {
 	tests := []clientTest{
 		{
 			Name:     "None",
-			Expected: http.DefaultClient,
+			Expected: DefaultClient,
 		},
 		{
 			Name:     "Explicit",
@@ -170,26 +170,41 @@ func TestClient(t *testing.T) {
 
 func TestProxy(t *testing.T) {
 	type getTest struct {
-		Name      string
-		Method    string
-		URL       string
-		Body      io.Reader
-		Status    int
-		BodyMatch string
+		Name        string
+		Method      string
+		URL         string
+		Body        io.Reader
+		Status      int
+		BodyMatch   string
+		HeaderMatch map[string]string
 	}
 	tests := []getTest{
-		{
-			Name:      "Utils",
-			Method:    http.MethodGet,
-			URL:       "http://foo.com/_utils",
-			Status:    http.StatusOK,
-			BodyMatch: "Licensed under the Apache License",
-		},
 		{
 			Name:   "InvalidMethod",
 			Method: "CHICKEN",
 			URL:    "http://foo.com/_utils",
 			Status: http.StatusMethodNotAllowed,
+		},
+		{
+			Name:        "UtilsRedirect",
+			Method:      http.MethodGet,
+			URL:         "http://foo.com/_utils",
+			Status:      http.StatusMovedPermanently,
+			HeaderMatch: map[string]string{"Location": "http://foo.com/_utils/"},
+		},
+		{
+			Name:        "UtilsRedirectQuery",
+			Method:      http.MethodGet,
+			URL:         "http://foo.com/_utils?today=tomorrow",
+			Status:      http.StatusMovedPermanently,
+			HeaderMatch: map[string]string{"Location": "http://foo.com/_utils/?today=tomorrow"},
+		},
+		{
+			Name:      "Utils",
+			Method:    http.MethodGet,
+			URL:       "http://foo.com/_utils/",
+			Status:    http.StatusOK,
+			BodyMatch: "Licensed under the Apache License",
 		},
 	}
 	p, err := New(serverDSN(t))
@@ -210,6 +225,12 @@ func TestProxy(t *testing.T) {
 				body, _ := ioutil.ReadAll(resp.Body)
 				if test.BodyMatch != "" && !bytes.Contains(body, []byte(test.BodyMatch)) {
 					t.Errorf("Body does not contain '%s':\n%s", test.BodyMatch, body)
+				}
+				for header, value := range test.HeaderMatch {
+					hv := resp.Header.Get(header)
+					if hv != value {
+						t.Errorf("Header %s: %s, expected %s", header, hv, value)
+					}
 				}
 			})
 		}(test)
@@ -244,6 +265,7 @@ func TestMethodAllowed(t *testing.T) {
 	for _, test := range tests {
 		func(test maTest) {
 			t.Run(fmt.Sprintf("%s:%t", test.Method, test.Strict), func(t *testing.T) {
+				t.Parallel()
 				p := mustNew(t, "http://foo.com/")
 				p.StrictMethods = test.Strict
 				result := p.methodAllowed(test.Method)

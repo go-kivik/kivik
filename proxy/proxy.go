@@ -16,7 +16,8 @@ type Proxy struct {
 	// path is the url.Path with trailing slash removed
 	path string
 	// HTTPClient is the HTTP client used to make requests. If unset, defaults
-	// to http.DefaultClient
+	// DefaultClient, which is distinct from http.DefaultClient in that it does
+	// not follow redirects.
 	HTTPClient *http.Client
 	// StrictMethods will reject any non-standard CouchDB methods immediately,
 	// rather than relaying to the CouchDB server.
@@ -24,6 +25,14 @@ type Proxy struct {
 }
 
 var _ http.Handler = &Proxy{}
+
+// DefaultClient is the default http.Client used to make requests to the
+// backend CouchDB server.
+var DefaultClient = &http.Client{
+	CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
+		return http.ErrUseLastResponse
+	},
+}
 
 // New returns a new Proxy instance, which redirects all requests to the
 // specified URL.
@@ -58,7 +67,7 @@ func (p *Proxy) url(reqURL *url.URL) string {
 
 func (p *Proxy) client() *http.Client {
 	if p.HTTPClient == nil {
-		return http.DefaultClient
+		return DefaultClient
 	}
 	return p.HTTPClient
 }
@@ -83,6 +92,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
+	fmt.Printf("purl = %s\n", p.url(r.URL))
 	req, err := http.NewRequest(r.Method, p.url(r.URL), r.Body)
 	if err != nil {
 		proxyError(w, err)
@@ -102,6 +112,27 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if _, err := io.Copy(w, res.Body); err != nil {
 		proxyError(w, err)
 	}
+}
+
+// setHeader copies the response header to the responsewriter, possibly modifying
+// it based on the request.
+func (p *Proxy) setHeader(w http.ResponseWriter, res *http.Response, req *http.Request, header, value string) error {
+	switch header {
+	case "Location":
+		locURL, err := url.Parse(value)
+		if err != nil {
+			return err
+		}
+		newURL := &url.URL{
+			Scheme:   req.URL.Scheme,
+			Host:     req.URL.Host,
+			Path:     locURL.Path,
+			RawQuery: req.URL.RawQuery,
+		}
+		value = newURL.String()
+	}
+	w.Header().Add(header, value)
+	return nil
 }
 
 func proxyError(w http.ResponseWriter, err error) {

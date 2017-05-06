@@ -3,6 +3,8 @@ package proxy
 
 import (
 	"errors"
+	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -13,6 +15,9 @@ type Proxy struct {
 	baseURL *url.URL
 	// path is the url.Path with trailing slash removed
 	path string
+	// HTTPClient is the HTTP client used to make requests. If unset, defaults
+	// to http.DefaultClient
+	HTTPClient *http.Client
 }
 
 var _ http.Handler = &Proxy{}
@@ -48,6 +53,36 @@ func (p *Proxy) url(reqURL *url.URL) string {
 	return newURL.String()
 }
 
-func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (p *Proxy) client() *http.Client {
+	if p.HTTPClient == nil {
+		return http.DefaultClient
+	}
+	return p.HTTPClient
+}
 
+func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	req, err := http.NewRequest(r.Method, p.url(r.URL), r.Body)
+	if err != nil {
+		proxyError(w, err)
+	}
+	req = req.WithContext(r.Context())
+	res, err := p.client().Do(req)
+	if err != nil {
+		proxyError(w, err)
+	}
+	defer res.Body.Close()
+	for header, values := range res.Header {
+		for _, value := range values {
+			w.Header().Add(header, value)
+		}
+	}
+	w.WriteHeader(res.StatusCode)
+	if _, err := io.Copy(w, res.Body); err != nil {
+		proxyError(w, err)
+	}
+}
+
+func proxyError(w http.ResponseWriter, err error) {
+	w.WriteHeader(http.StatusInternalServerError)
+	fmt.Fprintf(w, "Proxy error: %s", err)
 }

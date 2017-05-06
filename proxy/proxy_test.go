@@ -1,7 +1,14 @@
 package proxy
 
 import (
+	"bytes"
+	"errors"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
 	"net/url"
+	"os"
 	"testing"
 )
 
@@ -99,5 +106,107 @@ func TestURL(t *testing.T) {
 				}
 			})
 		}(test)
+	}
+}
+
+func serverDSN(t *testing.T) string {
+	for _, env := range []string{"KIVIK_TEST_DSN_COUCH16", "KIVIK_TEST_DSN_COUCH20"} {
+		if dsn := os.Getenv(env); dsn != "" {
+			parsed, err := url.Parse(dsn)
+			if err != nil {
+				panic(err)
+			}
+			parsed.User = nil
+			return parsed.String()
+		}
+	}
+	t.Skip("No server specified in environment")
+	return ""
+}
+
+func TestClient(t *testing.T) {
+	type clientTest struct {
+		Name     string
+		Client   *http.Client
+		Expected *http.Client
+	}
+	c := &http.Client{}
+	tests := []clientTest{
+		{
+			Name:     "None",
+			Expected: http.DefaultClient,
+		},
+		{
+			Name:     "Explicit",
+			Client:   c,
+			Expected: c,
+		},
+	}
+	for _, test := range tests {
+		func(test clientTest) {
+			t.Run(test.Name, func(t *testing.T) {
+				p, err := New("http://foo.com")
+				if err != nil {
+					t.Fatal(err)
+				}
+				p.HTTPClient = test.Client
+				result := p.client()
+				if result != test.Expected {
+					t.Error("Returned unexpected client")
+				}
+			})
+		}(test)
+	}
+}
+
+func TestProxy(t *testing.T) {
+	type getTest struct {
+		Name      string
+		Method    string
+		URL       string
+		Body      io.Reader
+		Status    int
+		BodyMatch string
+	}
+	tests := []getTest{
+		{
+			Name:      "Utils",
+			Method:    http.MethodGet,
+			URL:       "http://foo.com/_utils",
+			Status:    http.StatusOK,
+			BodyMatch: "Licensed under the Apache License",
+		},
+	}
+	p, err := New(serverDSN(t))
+	if err != nil {
+		t.Fatalf("Failed to initialize proxy: %s", err)
+	}
+	for _, test := range tests {
+		func(test getTest) {
+			t.Run(test.Name, func(t *testing.T) {
+				req := httptest.NewRequest(test.Method, test.URL, test.Body)
+				w := httptest.NewRecorder()
+				p.ServeHTTP(w, req)
+				resp := w.Result()
+				if resp.StatusCode != test.Status {
+					t.Errorf("Expected status: %d/%s\n  Actual status: %d/%s", test.Status, http.StatusText(test.Status), resp.StatusCode, resp.Status)
+				}
+				body, _ := ioutil.ReadAll(resp.Body)
+				if test.BodyMatch != "" && !bytes.Contains(body, []byte(test.BodyMatch)) {
+					t.Errorf("Body does not contain '%s':\n%s", test.BodyMatch, body)
+				}
+			})
+		}(test)
+	}
+}
+
+func TestProxyError(t *testing.T) {
+	w := httptest.NewRecorder()
+	proxyError(w, errors.New("foo error"))
+	resp := w.Result()
+	body, _ := ioutil.ReadAll(resp.Body)
+	expected := "Proxy error: foo error"
+	if string(body) != expected {
+		t.Errorf("Expected: %s\n  Actual: %s\n", expected, body)
 	}
 }

@@ -242,7 +242,7 @@ func TestProxy(t *testing.T) {
 
 func TestProxyError(t *testing.T) {
 	w := httptest.NewRecorder()
-	proxyError(w, errors.New("foo error"))
+	ProxyError(w, errors.New("foo error"))
 	resp := w.Result()
 	body, _ := ioutil.ReadAll(resp.Body)
 	expected := "Proxy error: foo error"

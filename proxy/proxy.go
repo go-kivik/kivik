@@ -109,26 +109,26 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	req, err := p.cloneRequest(r)
 	if err != nil {
-		proxyError(w, err)
+		ProxyError(w, err)
 		return
 	}
 	res, err := p.client().Do(req)
 	if err != nil {
-		proxyError(w, err)
+		ProxyError(w, err)
 		return
 	}
 	defer res.Body.Close()
 	for header, values := range res.Header {
 		for _, value := range values {
 			if err := p.setHeader(w, res, r, header, value); err != nil {
-				proxyError(w, err)
+				ProxyError(w, err)
 				return
 			}
 		}
 	}
 	w.WriteHeader(res.StatusCode)
 	if _, err := io.Copy(w, res.Body); err != nil {
-		proxyError(w, err)
+		ProxyError(w, err)
 	}
 }
 
@@ -153,7 +153,8 @@ func (p *Proxy) setHeader(w http.ResponseWriter, res *http.Response, req *http.R
 	return nil
 }
 
-func proxyError(w http.ResponseWriter, err error) {
+// ProxyError returns a generic error to the client.
+func ProxyError(w http.ResponseWriter, err error) {
 	w.WriteHeader(http.StatusInternalServerError)
 	fmt.Fprintf(w, "Proxy error: %s", err)
 }

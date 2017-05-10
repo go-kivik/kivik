@@ -2,7 +2,7 @@ package driver
 
 import "encoding/json"
 
-// Changes is an iterator of ther database changes feed.
+// Changes is an iterator of the database changes feed.
 type Changes interface {
 	// Next is called to populate *Change with the values of the next value in
 	// the changes feed.

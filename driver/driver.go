@@ -141,7 +141,7 @@ type DB interface {
 	// SetSecurity sets the database's security document.
 	SetSecurity(ctx context.Context, security *Security) error
 	// Changes returns a Rows iterator for the changes feed. In continuous mode,
-	// the iterator will continue indefinately, until Close is called.
+	// the iterator will continue indefinitely, until Close is called.
 	Changes(ctx context.Context, options map[string]interface{}) (Changes, error)
 	// BulkDocs alls bulk create, update and/or delete operations. It returns an
 	// iterator over the results.

@@ -7,6 +7,7 @@ import (
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/dimfeld/httptreemux"
+	"github.com/flimzy/donewriter"
 	"github.com/justinas/alice"
 )
 
@@ -34,6 +35,7 @@ func (s *Service) setupRoutes() (http.Handler, error) {
 		setSession(),
 		requestLogger,
 		gzipHandler(s),
+		donewriter.WrapWriter,
 		authHandler,
 	).Then(router), nil
 }

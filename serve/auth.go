@@ -3,37 +3,23 @@ package serve
 import (
 	"net/http"
 
+	"github.com/flimzy/donewriter"
+
 	"github.com/flimzy/kivik/auth"
 	"github.com/flimzy/kivik/authdb"
 )
 
-type doneWriter struct {
-	http.ResponseWriter
-	done bool
-}
-
-func (w *doneWriter) WriteHeader(status int) {
-	w.done = true
-	w.ResponseWriter.WriteHeader(status)
-}
-
-func (w *doneWriter) Write(b []byte) (int, error) {
-	w.done = true
-	return w.ResponseWriter.Write(b)
-}
-
 func authHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		dw := &doneWriter{ResponseWriter: w}
 		s := GetService(r)
-		session, err := s.validate(dw, r)
+		session, err := s.validate(w, r)
 		if err != nil {
 			reportError(w, err)
 			return
 		}
 		sessionPtr := mustGetSessionPtr(r.Context())
 		*sessionPtr = session
-		if dw.done {
+		if done, _ := donewriter.WriterIsDone(w); done {
 			// The auth handler already responded to the request
 			return
 		}

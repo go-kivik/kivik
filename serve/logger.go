@@ -30,8 +30,9 @@ func loggerMiddleware(rlog logger.RequestLogger) func(http.Handler) http.Handler
 			start := time.Now()
 			sw := &statusWriter{ResponseWriter: w}
 			next.ServeHTTP(sw, r)
+			session := MustGetSession(r.Context())
 			fields := logger.Fields{
-				logger.FieldUsername:     "",
+				logger.FieldUsername:     session.User.Name,
 				logger.FieldTimestamp:    start,
 				logger.FieldElapsedTime:  time.Now().Sub(start),
 				logger.FieldResponseSize: sw.byteCount,

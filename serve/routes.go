@@ -57,6 +57,6 @@ func gzipHandler(s *Service) func(http.Handler) http.Handler {
 			return h
 		}
 	}
-	fmt.Fprintf(os.Stderr, "Enabling HTTPD cmpression, level %d\n", level)
+	fmt.Fprintf(os.Stderr, "Enabling gzip compression, level %d\n", level)
 	return gzipHandler
 }

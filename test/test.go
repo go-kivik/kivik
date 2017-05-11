@@ -294,7 +294,7 @@ func RunTests(opts Options) {
 		flag.Set("test.v", "true")
 	}
 	tests := []testing.InternalTest{
-		testing.InternalTest{
+		{
 			Name: "MainTest",
 			F: func(t *testing.T) {
 				Test(opts.Driver, opts.DSN, opts.Suites, opts.RW, t)

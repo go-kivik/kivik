@@ -43,7 +43,7 @@ func TestErrors(t *testing.T) {
 					Request: &http.Request{
 						Method: "GET",
 					},
-					Header:        map[string][]string{"Content-Type": []string{"application/json"}},
+					Header:        map[string][]string{"Content-Type": {"application/json"}},
 					ContentLength: 1, // Just non-zero for this test
 					Body:          ioutil.NopCloser(strings.NewReader(`{"code":404,"reason":"db_not_found"}`)),
 				})
@@ -59,7 +59,7 @@ func TestErrors(t *testing.T) {
 					Request: &http.Request{
 						Method: "GET",
 					},
-					Header:        map[string][]string{"Content-Type": []string{"application/json"}},
+					Header:        map[string][]string{"Content-Type": {"application/json"}},
 					ContentLength: 1, // Just non-zero for this test
 					Body:          ioutil.NopCloser(strings.NewReader(`{"code":404}`)),
 				})
@@ -75,7 +75,7 @@ func TestErrors(t *testing.T) {
 					Request: &http.Request{
 						Method: "GET",
 					},
-					Header:        map[string][]string{"Content-Type": []string{"application/json"}},
+					Header:        map[string][]string{"Content-Type": {"application/json"}},
 					ContentLength: 1, // Just non-zero for this test
 					Body:          ioutil.NopCloser(strings.NewReader(`asdf`)),
 				})

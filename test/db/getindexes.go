@@ -57,7 +57,7 @@ func rwGetIndexesTests(ctx *kt.Context, client *kivik.Client) {
 	}
 	testGetIndexes(ctx, client, dbname, []kivik.Index{
 		kt.AllDocsIndex,
-		kivik.Index{
+		{
 			DesignDoc: "_design/foo",
 			Name:      "bar",
 			Type:      "json",

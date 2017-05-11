@@ -19,7 +19,7 @@ func intQueryParam(r *http.Request, key string) (int64, bool, error) {
 	return iValue, true, nil
 }
 
-// StringQueryParam extracts a query paramter as string.
+// StringQueryParam extracts a query parameter as string.
 func StringQueryParam(r *http.Request, key string) (string, bool) {
 	values := r.URL.Query()
 	if _, ok := values[key]; !ok {

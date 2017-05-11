@@ -18,9 +18,9 @@ import (
 type Context struct {
 	// RW is true if we should run read-write tests.
 	RW bool
-	// Admin is a client connection with database admin priveleges.
+	// Admin is a client connection with database admin privileges.
 	Admin *kivik.Client
-	// CHTTPAdmin is a chttp connection with admin priveleges.
+	// CHTTPAdmin is a chttp connection with admin privileges.
 	CHTTPAdmin *chttp.Client
 	// NoAuth isa client connection with no authentication.
 	NoAuth *kivik.Client

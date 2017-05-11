@@ -173,7 +173,7 @@ func (db *DB) SetSecurity(ctx context.Context, security *Security) error {
 }
 
 // Rev returns the most current rev of the requested document. This can
-// be more efficient than a full document fetch, becuase only the rev is
+// be more efficient than a full document fetch, because only the rev is
 // fetched from the server.
 func (db *DB) Rev(ctx context.Context, docID string) (rev string, err error) {
 	if r, ok := db.driverDB.(driver.Rever); ok {

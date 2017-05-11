@@ -198,7 +198,7 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) {
 			ctx.Run("Retrieve", func(ctx *kt.Context) {
 				row, err := db.Get(context.Background(), id2)
 				if err != nil {
-					ctx.Fatalf("failed to retreive bulk-inserted document: %s", err)
+					ctx.Fatalf("failed to retrieve bulk-inserted document: %s", err)
 				}
 				var result map[string]interface{}
 				if err = row.ScanDoc(&result); err != nil {

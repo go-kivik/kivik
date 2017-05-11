@@ -64,22 +64,22 @@ func TestOptionsToParams(t *testing.T) {
 		{
 			Name:     "String",
 			Input:    map[string]interface{}{"foo": "bar"},
-			Expected: map[string][]string{"foo": []string{"bar"}},
+			Expected: map[string][]string{"foo": {"bar"}},
 		},
 		{
 			Name:     "StringSlice",
 			Input:    map[string]interface{}{"foo": []string{"bar", "baz"}},
-			Expected: map[string][]string{"foo": []string{"bar", "baz"}},
+			Expected: map[string][]string{"foo": {"bar", "baz"}},
 		},
 		{
 			Name:     "Bool",
 			Input:    map[string]interface{}{"foo": true},
-			Expected: map[string][]string{"foo": []string{"true"}},
+			Expected: map[string][]string{"foo": {"true"}},
 		},
 		{
 			Name:     "Int",
 			Input:    map[string]interface{}{"foo": 123},
-			Expected: map[string][]string{"foo": []string{"123"}},
+			Expected: map[string][]string{"foo": {"123"}},
 		},
 		{
 			Name:  "Error",

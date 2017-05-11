@@ -8,6 +8,8 @@ import (
 	"github.com/NYTimes/gziphandler"
 	"github.com/dimfeld/httptreemux"
 	"github.com/justinas/alice"
+
+	"github.com/flimzy/kivik/serve/logger"
 )
 
 func (s *Service) setupRoutes() (http.Handler, error) {
@@ -29,10 +31,15 @@ func (s *Service) setupRoutes() (http.Handler, error) {
 	// ctxRoot.Handler(mDELETE, "/:db", handler(destroyDB) )
 	// ctxRoot.Handler(http.MethodGet, "/:db", handler(getDB))
 
+	rlog := s.RequestLogger
+	if rlog == nil {
+		rlog = logger.DefaultLogger
+	}
+
 	return alice.New(
 		setContext(s),
 		setSession(),
-		requestLogger,
+		loggerMiddleware(rlog),
 		gzipHandler(s),
 		authHandler,
 	).Then(router), nil

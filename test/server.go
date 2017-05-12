@@ -35,7 +35,7 @@ func init() {
 		"Log/Admin/HTTP/NegativeBytes.status": http.StatusBadRequest,
 		"Log/NoAuth/Offset-1000.status":       http.StatusBadRequest,
 
-		"Version.version":        `^1\.6\.1$`,
+		"Version.version":        `^0\.0\.0$`,
 		"Version.vendor":         "Kivik",
 		"Version.vendor_version": `^0\.0\.1$`,
 

@@ -1,7 +1,6 @@
 package couchserver
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 
@@ -32,8 +31,6 @@ type Handler struct {
 	Logger        *log.Logger
 }
 
-var _ http.Handler = &Handler{}
-
 // CompatVersion is the default CouchDB compatibility provided by this package.
 const CompatVersion = "0.0.0"
 
@@ -56,7 +53,8 @@ func (h *Handler) vendor() (compatVer, vend, ver string) {
 	return compatVer, vend, ver
 }
 
-func (h *Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+// Main returns an http.Handler to handle all CouchDB endpoints.
+func (h *Handler) Main() http.Handler {
 	r := chi.NewRouter()
 	r.Get("/", h.GetRoot())
 
@@ -68,7 +66,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	   ctxRoot.Handler(mHEAD, "/:db", handler(dbExists))
 	   ctxRoot.Handler(mPOST, "/:db/_ensure_full_commit", handler(flush))
 	*/
-	r.ServeHTTP(w, req)
+	return r
 }
 
 type serverInfo struct {
@@ -80,20 +78,4 @@ type serverInfo struct {
 type vendorInfo struct {
 	Name    string `json:"name"`
 	Version string `json:"version"`
-}
-
-// GetRoot handles requests for: GET /
-func (h *Handler) GetRoot() http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		compatVer, vendName, vendVers := h.vendor()
-		w.Header().Set("Content-Type", typeJSON)
-		h.HandleError(w, json.NewEncoder(w).Encode(serverInfo{
-			CouchDB: "Välkommen",
-			Version: compatVer,
-			Vendor: vendorInfo{
-				Name:    vendName,
-				Version: vendVers,
-			},
-		}))
-	})
 }

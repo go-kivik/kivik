@@ -80,14 +80,6 @@ type vendorInfo struct {
 	Version string `json:"version"`
 }
 
-// HandleError returns a CouchDB-formatted error. It does nothing if err is nil.
-func HandleError(w http.ResponseWriter, err error) {
-	if err == nil {
-		return
-	}
-	// TODO: Actually report an error.
-}
-
 // GetRoot handles requests for: GET /
 func (h *Handler) GetRoot() http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

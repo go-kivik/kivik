@@ -60,9 +60,9 @@ func (h *Handler) Main() http.Handler {
 	r := chi.NewRouter()
 	r.Get("/", h.GetRoot())
 	r.Get("/favicon.ico", h.GetFavicon())
+	r.Get("/_all_dbs", h.GetAllDBs())
 
 	/*
-	   ctxRoot.Handler(mGET, "/_all_dbs", handler(allDBs))
 	   ctxRoot.Handler(mPUT, "/:db", handler(createDB))
 	   ctxRoot.Handler(mHEAD, "/:db", handler(dbExists))
 	   ctxRoot.Handler(mPOST, "/:db/_ensure_full_commit", handler(flush))

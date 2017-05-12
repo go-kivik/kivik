@@ -15,6 +15,7 @@ import (
 	"github.com/flimzy/kivik/authdb"
 	"github.com/flimzy/kivik/errors"
 	"github.com/flimzy/kivik/serve/conf"
+	"github.com/flimzy/kivik/serve/logger"
 )
 
 // Version is the version of this library.
@@ -51,6 +52,8 @@ type Service struct {
 	// Favicon is the path to a file to serve as favicon.ico. If unset, a default
 	// image is used.
 	Favicon string
+	// RequestLogger receives logging information for each request.
+	RequestLogger logger.RequestLogger
 
 	// ConfigFile is the path to a config file to read during startup.
 	ConfigFile string

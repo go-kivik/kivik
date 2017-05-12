@@ -1,17 +1,16 @@
 package serve
 
 import (
-	"fmt"
 	"net/http"
-	"os"
-	"strings"
+	"time"
 
-	"github.com/flimzy/kivik"
+	"github.com/flimzy/kivik/serve/logger"
 )
 
 type statusWriter struct {
 	http.ResponseWriter
-	status int
+	status    int
+	byteCount int
 }
 
 func (w *statusWriter) WriteHeader(status int) {
@@ -19,16 +18,30 @@ func (w *statusWriter) WriteHeader(status int) {
 	w.ResponseWriter.WriteHeader(status)
 }
 
-func requestLogger(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		sw := &statusWriter{ResponseWriter: w}
-		next.ServeHTTP(sw, r)
-		ip := r.RemoteAddr
-		ip = ip[0:strings.LastIndex(ip, ":")]
-		status := sw.status
-		if status == 0 {
-			status = kivik.StatusOK
-		}
-		fmt.Fprintf(os.Stderr, "%s - - %s %s %d\n", ip, r.Method, r.URL.String(), status)
-	})
+func (w *statusWriter) Write(b []byte) (int, error) {
+	n, err := w.ResponseWriter.Write(b)
+	w.byteCount += n
+	return n, err
+}
+
+func loggerMiddleware(rlog logger.RequestLogger) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			start := time.Now()
+			sw := &statusWriter{ResponseWriter: w}
+			next.ServeHTTP(sw, r)
+			session := MustGetSession(r.Context())
+			var username string
+			if session.User != nil {
+				username = session.User.Name
+			}
+			fields := logger.Fields{
+				logger.FieldUsername:     username,
+				logger.FieldTimestamp:    start,
+				logger.FieldElapsedTime:  time.Now().Sub(start),
+				logger.FieldResponseSize: sw.byteCount,
+			}
+			rlog.Log(r, sw.status, fields)
+		})
+	}
 }

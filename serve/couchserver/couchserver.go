@@ -29,6 +29,8 @@ type Handler struct {
 	// kivik.VendorVersion constant.
 	VendorVersion string
 	Logger        *log.Logger
+	// Favicon is the path to a favicon.ico to serve.
+	Favicon string
 }
 
 // CompatVersion is the default CouchDB compatibility provided by this package.
@@ -57,10 +59,9 @@ func (h *Handler) vendor() (compatVer, vend, ver string) {
 func (h *Handler) Main() http.Handler {
 	r := chi.NewRouter()
 	r.Get("/", h.GetRoot())
+	r.Get("/favicon.ico", h.GetFavicon())
 
 	/*
-	   ctxRoot.Handler(mGET, "/", handler(root))
-	   ctxRoot.Handler(mGET, "/favicon.ico", handler(favicon))
 	   ctxRoot.Handler(mGET, "/_all_dbs", handler(allDBs))
 	   ctxRoot.Handler(mPUT, "/:db", handler(createDB))
 	   ctxRoot.Handler(mHEAD, "/:db", handler(dbExists))

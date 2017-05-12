@@ -10,8 +10,6 @@ import (
 	"github.com/flimzy/kivik/errors"
 )
 
-//go:generate go-bindata -pkg serve -nocompress -prefix files -o files.go files
-
 func favicon(w http.ResponseWriter, r *http.Request) error {
 	s := GetService(r)
 	var ico io.Reader

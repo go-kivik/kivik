@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/flimzy/kivik"
 )
@@ -29,7 +28,7 @@ type couchError struct {
 }
 
 // HandleError returns a CouchDB-formatted error. It does nothing if err is nil.
-func HandleError(w http.ResponseWriter, err error) {
+func (h *Handler) HandleError(w http.ResponseWriter, err error) {
 	if err == nil {
 		return
 	}
@@ -40,6 +39,6 @@ func HandleError(w http.ResponseWriter, err error) {
 		Reason: kivik.Reason(err),
 	})
 	if wErr != nil {
-		fmt.Fprintf(os.Stderr, "Failed to send send error: %s", wErr)
+		h.Logger.Printf("Failed to send send error: %s", wErr)
 	}
 }

@@ -2,6 +2,7 @@ package couchserver
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/pressly/chi"
@@ -28,6 +29,7 @@ type Handler struct {
 	// VendorVersion is the vendor version to report. If unset, defaults to the
 	// kivik.VendorVersion constant.
 	VendorVersion string
+	Logger        *log.Logger
 }
 
 var _ http.Handler = &Handler{}
@@ -85,7 +87,7 @@ func (h *Handler) GetRoot() http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		compatVer, vendName, vendVers := h.vendor()
 		w.Header().Set("Content-Type", typeJSON)
-		HandleError(w, json.NewEncoder(w).Encode(serverInfo{
+		h.HandleError(w, json.NewEncoder(w).Encode(serverInfo{
 			CouchDB: "Välkommen",
 			Version: compatVer,
 			Vendor: vendorInfo{

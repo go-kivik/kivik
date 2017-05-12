@@ -36,3 +36,19 @@ func StatusCode(err error) int {
 	}
 	return StatusInternalServerError
 }
+
+type reasoner interface {
+	Reason() string
+}
+
+// Reason returns the reason description for the error, or the error itself
+// if none. A nil error returns an empty string.
+func Reason(err error) string {
+	if err == nil {
+		return ""
+	}
+	if r, ok := err.(reasoner); ok {
+		return r.Reason()
+	}
+	return err.Error()
+}

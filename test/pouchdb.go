@@ -73,9 +73,11 @@ func init() {
 		"DeleteIndex/RW/Admin/group/NotFoundDdoc.status": kivik.StatusNotFound,
 		"DeleteIndex/RW/Admin/group/NotFoundName.status": kivik.StatusNotFound,
 
-		"Replicate.prefix":         "none",
-		"Replicate.timeoutSeconds": 5,
-		"Replicate.mode":           "pouchdb",
+		"Replicate.prefix":                                      "none",
+		"Replicate.timeoutSeconds":                              5,
+		"Replicate.mode":                                        "pouchdb",
+		"Replicate/RW/Admin/group/MissingSource/Results.status": kivik.StatusUnauthorized,
+		"Replicate/RW/Admin/group/MissingTarget/Results.status": kivik.StatusUnauthorized,
 
 		"Query/RW/group/Admin/WithoutDocs/ScanDoc.status": kivik.StatusBadRequest,
 	})
@@ -178,9 +180,13 @@ func init() {
 		"Put/RW/NoAuth/group/LeadingUnderscoreInID.status": kivik.StatusBadRequest,
 		"Put/RW/NoAuth/group/Conflict.status":              kivik.StatusConflict,
 
-		"Replicate.prefix":         "none",
-		"Replicate.timeoutSeconds": 5,
-		"Replicate.mode":           "pouchdb",
+		"Replicate.prefix":                                       "none",
+		"Replicate.timeoutSeconds":                               5,
+		"Replicate.mode":                                         "pouchdb",
+		"Replicate/RW/Admin/group/MissingSource/Results.status":  kivik.StatusUnauthorized,
+		"Replicate/RW/Admin/group/MissingTarget/Results.status":  kivik.StatusUnauthorized,
+		"Replicate/RW/NoAuth/group/MissingSource/Results.status": kivik.StatusUnauthorized,
+		"Replicate/RW/NoAuth/group/MissingTarget/Results.status": kivik.StatusUnauthorized,
 
 		"Query/RW/group/Admin/WithoutDocs/ScanDoc.status":  kivik.StatusBadRequest,
 		"Query/RW/group/NoAuth/WithoutDocs/ScanDoc.status": kivik.StatusBadRequest,

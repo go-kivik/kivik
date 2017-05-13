@@ -18,7 +18,7 @@ const (
 
 // Handler is a CouchDB server handler.
 type Handler struct {
-	*kivik.Client
+	Client *kivik.Client
 	// CompatVersion is the CouchDB compatibility version to report. If unset,
 	// defaults to the CompatVersion constant/.
 	CompatVersion string

@@ -18,6 +18,8 @@ func errorDescription(status int) string {
 		return "not_found"
 	case 500:
 		return "internal_server_error" // TODO: Validate that this is normative
+	case 501:
+		return "not_implemented" // Non-standard
 	}
 	panic(fmt.Sprintf("unknown status %d", status))
 }

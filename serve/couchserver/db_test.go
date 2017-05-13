@@ -62,3 +62,7 @@ func TestHeadDB(t *testing.T) {
 		}
 	})
 }
+
+func TestFlush(t *testing.T) {
+	// TODO
+}

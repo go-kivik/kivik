@@ -63,10 +63,7 @@ func (h *Handler) Main() http.Handler {
 	r.Get("/_all_dbs", h.GetAllDBs())
 	r.Put("/:db", h.PutDB())
 	r.Head("/:db", h.HeadDB())
-
-	/*
-	   ctxRoot.Handler(mPOST, "/:db/_ensure_full_commit", handler(flush))
-	*/
+	r.Post("/:db/_ensure_full_commit", h.Flush())
 	return r
 }
 

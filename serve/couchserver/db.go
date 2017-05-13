@@ -33,3 +33,23 @@ func (h *Handler) HeadDB() http.HandlerFunc {
 		}
 	}
 }
+
+// Flush handles POST /{db}/_ensure_full_commit
+func (h *Handler) Flush() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		db, err := h.Client.DB(r.Context(), DB(r))
+		if err != nil {
+			h.HandleError(w, err)
+			return
+		}
+		if err := db.Flush(r.Context()); err != nil {
+			h.HandleError(w, err)
+			return
+		}
+		w.Header().Set("Content-Type", typeJSON)
+		h.HandleError(w, json.NewEncoder(w).Encode(map[string]interface{}{
+			"instance_start_time": 0,
+			"ok": true,
+		}))
+	}
+}

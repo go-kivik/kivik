@@ -18,6 +18,7 @@ func (s *Service) setupRoutes() (http.Handler, error) {
 		Vendor:        s.VendorName,
 		VendorVersion: s.VendorVersion,
 		Favicon:       s.Favicon,
+		SessionKey:    SessionKey,
 	}
 
 	rlog := s.RequestLogger

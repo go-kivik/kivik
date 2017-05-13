@@ -31,6 +31,8 @@ type Handler struct {
 	Logger        *log.Logger
 	// Favicon is the path to a favicon.ico to serve.
 	Favicon string
+	// SessionKey is a temporary solution to avoid import cycles. Soon I will move the key to another package.
+	SessionKey interface{}
 }
 
 // CompatVersion is the default CouchDB compatibility provided by this package.
@@ -64,6 +66,7 @@ func (h *Handler) Main() http.Handler {
 	r.Put("/:db", h.PutDB())
 	r.Head("/:db", h.HeadDB())
 	r.Post("/:db/_ensure_full_commit", h.Flush())
+	r.Get("/_session", h.GetSession())
 	return r
 }
 

@@ -62,9 +62,9 @@ func (h *Handler) Main() http.Handler {
 	r.Get("/favicon.ico", h.GetFavicon())
 	r.Get("/_all_dbs", h.GetAllDBs())
 	r.Put("/:db", h.PutDB())
+	r.Head("/:db", h.HeadDB())
 
 	/*
-	   ctxRoot.Handler(mHEAD, "/:db", handler(dbExists))
 	   ctxRoot.Handler(mPOST, "/:db/_ensure_full_commit", handler(flush))
 	*/
 	return r

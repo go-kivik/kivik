@@ -68,10 +68,10 @@ func (r *replication) Update(ctx context.Context, state *driver.ReplicationInfo)
 		r.state = kivik.ReplicationStarted
 	}
 	if info != nil {
-		if r.startTime.IsZero() && !info.StartTime.IsZero() {
+		if r.startTime.IsZero() && info.Get("start_time") != js.Undefined && !info.StartTime.IsZero() {
 			r.startTime = info.StartTime
 		}
-		if r.endTime.IsZero() && !info.EndTime.IsZero() {
+		if r.endTime.IsZero() && info.Get("end_time") != js.Undefined && !info.EndTime.IsZero() {
 			r.endTime = info.EndTime
 		}
 	}

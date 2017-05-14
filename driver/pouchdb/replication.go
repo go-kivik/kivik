@@ -2,8 +2,11 @@ package pouchdb
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
+
+	"honnef.co/go/js/console"
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
@@ -53,7 +56,13 @@ func (r *replication) Target() string        { defer r.readLock()(); return r.ta
 func (r *replication) StartTime() time.Time  { defer r.readLock()(); return r.startTime }
 func (r *replication) EndTime() time.Time    { defer r.readLock()(); return r.endTime }
 func (r *replication) State() string         { defer r.readLock()(); return string(r.state) }
-func (r *replication) Err() error            { defer r.readLock()(); return r.err }
+func (r *replication) Err() error {
+	defer r.readLock()()
+	fmt.Printf("Err()\n")
+	console.Log(r.err)
+	fmt.Printf("err = %v\n", r.err)
+	return r.err
+}
 
 func (r *replication) Update(ctx context.Context, state *driver.ReplicationInfo) (err error) {
 	defer bindings.RecoverError(&err)
@@ -66,6 +75,9 @@ func (r *replication) Update(ctx context.Context, state *driver.ReplicationInfo)
 	switch event {
 	case bindings.ReplicationEventDenied, bindings.ReplicationEventError:
 		r.state = kivik.ReplicationError
+		fmt.Printf("Update()\n")
+		console.Log(info)
+		fmt.Printf("info = %v\n", info)
 		r.err = errors.Status(info.Status, info.Message)
 	case bindings.ReplicationEventComplete:
 		r.state = kivik.ReplicationComplete

@@ -77,11 +77,7 @@ func init() {
 		"DeleteIndex/RW/Admin/group/NotFoundDdoc.status": kivik.StatusNotFound,
 		"DeleteIndex/RW/Admin/group/NotFoundName.status": kivik.StatusNotFound,
 
-		"Replicate.prefix":                                      "none",
-		"Replicate.timeoutSeconds":                              5,
-		"Replicate.mode":                                        "pouchdb",
-		"Replicate/RW/Admin/group/MissingSource/Results.status": kivik.StatusUnauthorized,
-		"Replicate/RW/Admin/group/MissingTarget/Results.status": kivik.StatusUnauthorized,
+		"Replicate.skip": true, // No need to do this for both Local and Remote
 
 		"Query/RW/group/Admin/WithoutDocs/ScanDoc.status": kivik.StatusBadRequest,
 	})

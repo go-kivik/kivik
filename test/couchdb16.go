@@ -147,6 +147,7 @@ func init() {
 
 		"GetReplications/NoAuth.status": kivik.StatusForbidden,
 
+		"Replicate.NotFoundDB":                                  "http://localhost:5984/foo",
 		"Replicate.timeoutSeconds":                              120,
 		"Replicate.prefix":                                      "none",
 		"Replicate/RW/NoAuth.status":                            kivik.StatusForbidden,

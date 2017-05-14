@@ -201,6 +201,7 @@ func init() {
 
 		"GetReplications/NoAuth.status": kivik.StatusUnauthorized,
 
+		"Replicate.NotFoundDB":                                  "http://localhost:5984/foo",
 		"Replicate.timeoutSeconds":                              300,
 		"Replicate/RW/NoAuth.status":                            kivik.StatusUnauthorized,
 		"Replicate/RW/Admin/group/MissingSource/Results.status": kivik.StatusInternalServerError,

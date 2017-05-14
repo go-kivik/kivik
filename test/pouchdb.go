@@ -3,6 +3,10 @@
 package test
 
 import (
+	"net/url"
+	"os"
+	"strings"
+
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/test/kt"
 	"github.com/gopherjs/gopherjs/js"
@@ -180,6 +184,19 @@ func init() {
 		"Put/RW/NoAuth/group/LeadingUnderscoreInID.status": kivik.StatusBadRequest,
 		"Put/RW/NoAuth/group/Conflict.status":              kivik.StatusConflict,
 
+		"Replicate.NotFoundDB": func() string {
+			var dsn string
+			for _, env := range []string{"KIVIK_TEST_DSN_COUCH16", "KIVIK_TEST_DSN_COUCH20", "KIVIK_TEST_DSN_CLOUDANT"} {
+				dsn = os.Getenv(env)
+				if dsn != "" {
+					break
+				}
+			}
+			parsed, _ := url.Parse(dsn)
+			parsed.User = nil
+			return strings.TrimSuffix(parsed.String(), "/") + "/doesntexist"
+
+		}(),
 		"Replicate.prefix":                                       "none",
 		"Replicate.timeoutSeconds":                               5,
 		"Replicate.mode":                                         "pouchdb",

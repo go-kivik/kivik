@@ -75,10 +75,7 @@ func (r *replication) Update(ctx context.Context, state *driver.ReplicationInfo)
 	switch event {
 	case bindings.ReplicationEventDenied, bindings.ReplicationEventError:
 		r.state = kivik.ReplicationError
-		fmt.Printf("Update()\n")
-		console.Log(info)
-		fmt.Printf("info = %v\n", info)
-		r.err = errors.Status(info.Status, info.Message)
+		r.err = bindings.NewPouchError(info.Object)
 	case bindings.ReplicationEventComplete:
 		r.state = kivik.ReplicationComplete
 	case bindings.ReplicationEventPaused, bindings.ReplicationEventChange, bindings.ReplicationEventActive:

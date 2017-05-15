@@ -6,11 +6,12 @@ import (
 	"context"
 	"testing"
 
+	"github.com/gopherjs/gopherjs/js"
+
 	"github.com/flimzy/kivik"
 	_ "github.com/flimzy/kivik/driver/pouchdb"
 	"github.com/flimzy/kivik/driver/pouchdb/bindings"
 	"github.com/flimzy/kivik/test/kt"
-	"github.com/gopherjs/gopherjs/js"
 )
 
 func init() {
@@ -33,5 +34,5 @@ func TestPouchLocal(t *testing.T) {
 }
 
 func TestPouchRemote(t *testing.T) {
-	doTest(SuitePouchRemote, "KIVIK_TEST_DSN_COUCH16", t)
+	doTest(SuitePouchRemote, "KIVIK_TEST_DSN_COUCH20", t)
 }

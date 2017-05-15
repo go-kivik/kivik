@@ -28,7 +28,7 @@ function wait_for_server {
     printf "ready!\n"
 }
 
-function setup_docker {
+function setup_couch16 {
     if [ "$TRAVIS_OS_NAME" == "osx" ]; then
         return
     fi
@@ -36,6 +36,12 @@ function setup_docker {
     docker run -d -p 6000:5984 -e COUCHDB_USER=admin -e COUCHDB_PASSWORD=abc123 --name couchdb16 couchdb:1.6.1
     wait_for_server http://localhost:6000/
     curl --silent --fail -o /dev/null -X PUT http://admin:abc123@localhost:6000/_config/replicator/connection_timeout -d '"5000"'
+}
+
+function setup_couch20 {
+    if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+        return
+    fi
     docker pull klaemo/couchdb:latest
     docker run -d -p 6001:5984 -e COUCHDB_USER=admin -e COUCHDB_PASSWORD=abc123 --name couchdb20 klaemo/couchdb:latest
     wait_for_server http://localhost:6001/
@@ -46,7 +52,8 @@ function setup_docker {
 
 case "$1" in
     "standard")
-        setup_docker
+        setup_couch16
+        setup_couch20
         generate
     ;;
     "gopherjs")
@@ -76,7 +83,7 @@ case "$1" in
         )
 
         go get -u -d -tags=js github.com/gopherjs/jsbuiltin
-        setup_docker
+        setup_couch20
         generate
     ;;
     "linter")
@@ -84,7 +91,8 @@ case "$1" in
         gometalinter.v1 --install
     ;;
     "coverage")
-        setup_docker
+        setup_couch16
+        setup_couch20
         generate
     ;;
 esac

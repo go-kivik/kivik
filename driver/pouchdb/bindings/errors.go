@@ -32,17 +32,6 @@ func NewPouchError(o *js.Object) error {
 		msg = o.Get("reason").String()
 	case o.Get("message") != js.Undefined:
 		msg = o.Get("message").String()
-	case o.Get("errno") != js.Undefined:
-		switch o.Get("errno").String() {
-		case "ECONNREFUSED":
-			msg = "connection refused"
-		case "ECONNRESET":
-			msg = "connection reset by peer"
-		case "EPIPE":
-			msg = "broken pipe"
-		case "ETIMEDOUT", "ESOCKETTIMEDOUT":
-			msg = "operation timed out"
-		}
 	default:
 		if jsbuiltin.InstanceOf(o, js.Global.Get("Error")) {
 			return errors.Status(status, o.Get("message").String())
@@ -53,9 +42,21 @@ func NewPouchError(o *js.Object) error {
 		err = o.Get("name").String()
 	case o.Get("error") != js.Undefined:
 		err = o.Get("error").String()
-	case o.Get("syscall") != js.Undefined:
-		err = o.Get("syscall").String()
 	}
+
+	if msg == "" && o.Get("errno") != js.Undefined {
+		switch o.Get("errno").String() {
+		case "ECONNREFUSED":
+			msg = "connection refused"
+		case "ECONNRESET":
+			msg = "connection reset by peer"
+		case "EPIPE":
+			msg = "broken pipe"
+		case "ETIMEDOUT", "ESOCKETTIMEDOUT":
+			msg = "operation timed out"
+		}
+	}
+
 	return &pouchError{
 		Err:     err,
 		Message: msg,

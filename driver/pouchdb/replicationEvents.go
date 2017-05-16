@@ -17,8 +17,9 @@ type replicationState struct {
 	DocsRead         int64     `js:"docs_read"`
 	DocsWritten      int64     `js:"docs_written"`
 	DocWriteFailures int64     `js:"doc_write_failures"`
-	Status           string    `js:"status"`
 	LastSeq          string    `js:"last_seq"`
+	Status           int       `js:"status"`
+	Message          string    `js:"message"`
 }
 
 type replicationHandler struct {

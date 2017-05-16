@@ -59,23 +59,26 @@ func (r *replication) Update(ctx context.Context, state *driver.ReplicationInfo)
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	event, info, err := r.rh.Status()
+	if err != nil {
+		return err
+	}
 	switch event {
 	case bindings.ReplicationEventDenied, bindings.ReplicationEventError:
 		r.state = kivik.ReplicationError
+		r.err = errors.Status(info.Status, info.Message)
 	case bindings.ReplicationEventComplete:
 		r.state = kivik.ReplicationComplete
 	case bindings.ReplicationEventPaused, bindings.ReplicationEventChange, bindings.ReplicationEventActive:
 		r.state = kivik.ReplicationStarted
 	}
 	if info != nil {
-		if r.startTime.IsZero() && !info.StartTime.IsZero() {
+		if r.startTime.IsZero() && info.Get("start_time") != js.Undefined && !info.StartTime.IsZero() {
 			r.startTime = info.StartTime
 		}
-		if r.endTime.IsZero() && !info.EndTime.IsZero() {
+		if r.endTime.IsZero() && info.Get("end_time") != js.Undefined && !info.EndTime.IsZero() {
 			r.endTime = info.EndTime
 		}
 	}
-	r.err = err
 	return nil
 }
 

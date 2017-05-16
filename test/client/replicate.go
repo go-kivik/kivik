@@ -78,11 +78,11 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 		})
 		ctx.Run("MissingSource", func(ctx *kt.Context) {
 			ctx.Parallel()
-			doReplicationTest(ctx, client, dbtarget, "http://localhost:5984/foo")
+			doReplicationTest(ctx, client, dbtarget, ctx.MustString("NotFoundDB"))
 		})
 		ctx.Run("MissingTarget", func(ctx *kt.Context) {
 			ctx.Parallel()
-			doReplicationTest(ctx, client, "http://localhost:5984/foo", dbsource)
+			doReplicationTest(ctx, client, ctx.MustString("NotFoundDB"), dbsource)
 		})
 		ctx.Run("Cancel", func(ctx *kt.Context) {
 			ctx.Parallel()

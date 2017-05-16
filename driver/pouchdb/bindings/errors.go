@@ -3,6 +3,8 @@ package bindings
 import (
 	"fmt"
 
+	"honnef.co/go/js/console"
+
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/errors"
 	"github.com/gopherjs/gopherjs/js"
@@ -18,6 +20,8 @@ type pouchError struct {
 
 // NewPouchError parses a PouchDB error.
 func NewPouchError(o *js.Object) error {
+	fmt.Printf("NewPouchError: %v\n", o)
+	console.Log(o)
 	if o == nil || o == js.Undefined {
 		return nil
 	}

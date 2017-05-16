@@ -3,6 +3,8 @@ package bindings
 import (
 	"fmt"
 
+	"honnef.co/go/js/console"
+
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/errors"
 	"github.com/gopherjs/gopherjs/js"
@@ -18,6 +20,11 @@ type pouchError struct {
 
 // NewPouchError parses a PouchDB error.
 func NewPouchError(o *js.Object) error {
+	fmt.Printf("NewPouchError: %v\n", o)
+	console.Log(o)
+	if o == nil || o == js.Undefined {
+		return nil
+	}
 	status := o.Get("status").Int()
 	if status == 0 {
 		status = kivik.StatusInternalServerError
@@ -40,6 +47,20 @@ func NewPouchError(o *js.Object) error {
 	case o.Get("error") != js.Undefined:
 		err = o.Get("error").String()
 	}
+
+	if msg == "" && o.Get("errno") != js.Undefined {
+		switch o.Get("errno").String() {
+		case "ECONNREFUSED":
+			msg = "connection refused"
+		case "ECONNRESET":
+			msg = "connection reset by peer"
+		case "EPIPE":
+			msg = "broken pipe"
+		case "ETIMEDOUT", "ESOCKETTIMEDOUT":
+			msg = "operation timed out"
+		}
+	}
+
 	return &pouchError{
 		Err:     err,
 		Message: msg,

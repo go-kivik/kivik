@@ -73,9 +73,11 @@ func init() {
 		"DeleteIndex/RW/Admin/group/NotFoundDdoc.status": kivik.StatusNotFound,
 		"DeleteIndex/RW/Admin/group/NotFoundName.status": kivik.StatusNotFound,
 
-		"Replicate.prefix":         "none",
-		"Replicate.timeoutSeconds": 5,
-		"Replicate.mode":           "pouchdb",
+		"Replicate.prefix":                                      "none",
+		"Replicate.timeoutSeconds":                              5,
+		"Replicate.mode":                                        "pouchdb",
+		"Replicate/RW/Admin/group/MissingSource/Results.status": kivik.StatusUnauthorized,
+		"Replicate/RW/Admin/group/MissingTarget/Results.status": kivik.StatusUnauthorized,
 
 		"Query/RW/group/Admin/WithoutDocs/ScanDoc.status": kivik.StatusBadRequest,
 	})
@@ -112,8 +114,8 @@ func init() {
 		"AllDocs/Admin/_replicator.offset":                   0,
 		"AllDocs/Admin/_users.expected":                      []string{"_design/_auth"},
 		"AllDocs/Admin/chicken.status":                       kivik.StatusNotFound,
-		"AllDocs/NoAuth/_replicator.status":                  kivik.StatusForbidden,
-		"AllDocs/NoAuth/_users.status":                       kivik.StatusForbidden,
+		"AllDocs/NoAuth/_replicator.status":                  kivik.StatusUnauthorized,
+		"AllDocs/NoAuth/_users.status":                       kivik.StatusUnauthorized,
 		"AllDocs/NoAuth/chicken.status":                      kivik.StatusNotFound,
 		"AllDocs/Admin/_replicator/WithDocs/UpdateSeq.skip":  true,
 		"AllDocs/Admin/_users/WithDocs/UpdateSeq.skip":       true,
@@ -161,15 +163,15 @@ func init() {
 		"GetAttachmentMeta/RW/group/Admin/foo/NotFound.status":  kivik.StatusNotFound,
 		"GetAttachmentMeta/RW/group/NoAuth/foo/NotFound.status": kivik.StatusNotFound,
 
-		"PutAttachment/RW/group/Admin/Conflict.status":         kivik.StatusConflict,
-		"PutAttachment/RW/group/NoAuth/Conflict.status":        kivik.StatusConflict,
+		"PutAttachment/RW/group/Admin/Conflict.status":         kivik.StatusInternalServerError, // Couch 2.0 bug
+		"PutAttachment/RW/group/NoAuth/Conflict.status":        kivik.StatusInternalServerError, // Couch 2.0 bug
 		"PutAttachment/RW/group/NoAuth/UpdateDesignDoc.status": kivik.StatusUnauthorized,
 		"PutAttachment/RW/group/NoAuth/CreateDesignDoc.status": kivik.StatusUnauthorized,
 
 		// "DeleteAttachment/RW/group/Admin/NotFound.status":  kivik.StatusNotFound, // COUCHDB-3362
 		// "DeleteAttachment/RW/group/NoAuth/NotFound.status": kivik.StatusNotFound, // COUCHDB-3362
-		"DeleteAttachment/RW/group/Admin/NoDoc.status":      kivik.StatusConflict,
-		"DeleteAttachment/RW/group/NoAuth/NoDoc.status":     kivik.StatusConflict,
+		"DeleteAttachment/RW/group/Admin/NoDoc.status":      kivik.StatusInternalServerError, // Couch 2.0 bug
+		"DeleteAttachment/RW/group/NoAuth/NoDoc.status":     kivik.StatusInternalServerError, // Couch 2.0 bug
 		"DeleteAttachment/RW/group/NoAuth/DesignDoc.status": kivik.StatusUnauthorized,
 
 		"Put/RW/Admin/group/LeadingUnderscoreInID.status":  kivik.StatusBadRequest,
@@ -178,9 +180,13 @@ func init() {
 		"Put/RW/NoAuth/group/LeadingUnderscoreInID.status": kivik.StatusBadRequest,
 		"Put/RW/NoAuth/group/Conflict.status":              kivik.StatusConflict,
 
-		"Replicate.prefix":         "none",
-		"Replicate.timeoutSeconds": 5,
-		"Replicate.mode":           "pouchdb",
+		"Replicate.prefix":                                       "none",
+		"Replicate.timeoutSeconds":                               5,
+		"Replicate.mode":                                         "pouchdb",
+		"Replicate/RW/Admin/group/MissingSource/Results.status":  kivik.StatusUnauthorized,
+		"Replicate/RW/Admin/group/MissingTarget/Results.status":  kivik.StatusUnauthorized,
+		"Replicate/RW/NoAuth/group/MissingSource/Results.status": kivik.StatusUnauthorized,
+		"Replicate/RW/NoAuth/group/MissingTarget/Results.status": kivik.StatusUnauthorized,
 
 		"Query/RW/group/Admin/WithoutDocs/ScanDoc.status":  kivik.StatusBadRequest,
 		"Query/RW/group/NoAuth/WithoutDocs/ScanDoc.status": kivik.StatusBadRequest,

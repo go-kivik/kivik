@@ -36,18 +36,27 @@ func TestNewPouchError(t *testing.T) {
 		},
 		{
 			Name: "ECONNREFUSED",
-			Object: func() *js.Object {
-				o := js.Global.Get("Object").New()
-				o.Set("code", "ECONNREFUSED")
-				o.Set("errno", "ECONNREFUSED")
-				o.Set("syscall", "connect")
-				o.Set("address", "127.0.0.1")
-				o.Set("port", "5984")
-				o.Set("status", "500")
-				return o
-			}(),
+			Object: js.Global.Call("ReconstitutePouchError", `{
+                "code":    "ECONNREFUSED",
+                "errno":   "ECONNREFUSED",
+                "syscall": "connect",
+                "address": "127.0.0.1",
+                "port":    5984,
+                "status":  500,
+                "result": {
+                        "ok": false,
+                        "start_time": "Tue May 16 2017 08:26:31 GMT+0000 (UTC)",
+                        "docs_read": 0,
+                        "docs_written": 0,
+                        "doc_write_failures": 0,
+                        "errors": [],
+                        "status": "aborting",
+                        "end_time": "Tue May 16 2017 08:26:31 GMT+0000 (UTC)",
+                        "last_seq": 0
+                    }
+                }`),
 			ExpectedStatus: 500,
-			Expected:       "connect: connection refused",
+			Expected:       "Error: connection refused",
 		},
 	}
 	for _, test := range tests {

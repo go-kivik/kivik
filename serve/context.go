@@ -4,8 +4,6 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/dimfeld/httptreemux"
-	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/auth"
 )
 
@@ -56,13 +54,4 @@ func mustGetSessionPtr(ctx context.Context) **auth.Session {
 func GetService(r *http.Request) *Service {
 	service := r.Context().Value(ServiceContextKey).(*Service)
 	return service
-}
-
-func getClient(r *http.Request) *kivik.Client {
-	client := r.Context().Value(ClientContextKey).(*kivik.Client)
-	return client
-}
-
-func getParams(r *http.Request) map[string]string {
-	return httptreemux.ContextParams(r.Context())
 }

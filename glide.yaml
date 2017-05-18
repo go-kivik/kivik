@@ -6,8 +6,8 @@ import:
   version: d8206bba2a6097c0d75f4ac204a4814e47125cdd
 - package: github.com/ajg/form
   version: ~1.5.0
-- package: github.com/dimfeld/httptreemux
-  version: ~3.8.0
+- package: github.com/pressly/chi
+  version: ~2.1.0
 - package: github.com/flimzy/diff
 - package: github.com/justinas/alice
   version: ~1.0.0

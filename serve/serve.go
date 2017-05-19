@@ -18,15 +18,6 @@ import (
 	"github.com/flimzy/kivik/serve/logger"
 )
 
-// Version is the version of this library.
-const Version = "0.0.1"
-
-// Vendor is the identifying vendor string for this library.
-const Vendor = "Kivik"
-
-// CompatVersion is the default compatibility version reported to clients.
-const CompatVersion = "1.6.1"
-
 // Service defines a CouchDB-like service to serve. You will define one of these
 // per server endpoint.
 type Service struct {
@@ -175,26 +166,6 @@ func (s *Service) Bind(addr string) error {
 }
 
 const (
-	mGET    = http.MethodGet
-	mPUT    = http.MethodPut
-	mHEAD   = http.MethodHead
-	mPOST   = http.MethodPost
-	mDELETE = http.MethodDelete
-	mCOPY   = "COPY"
-)
-
-type vendorInfo struct {
-	Name    string `json:"name"`
-	Version string `json:"version"`
-}
-
-type serverInfo struct {
-	CouchDB string     `json:"couchdb"`
-	Version string     `json:"version"`
-	Vendor  vendorInfo `json:"vendor"`
-}
-
-const (
 	typeJSON  = "application/json"
 	typeText  = "text/plain"
 	typeForm  = "application/x-www-form-urlencoded"
@@ -227,68 +198,4 @@ func reportError(w http.ResponseWriter, err error) {
 		"error":  short,
 		"reason": reason,
 	})
-}
-
-func root(w http.ResponseWriter, r *http.Request) error {
-	w.Header().Set("Content-Type", typeJSON)
-	svc := GetService(r)
-	vendVers := svc.VendorVersion
-	if vendVers == "" {
-		vendVers = Version
-	}
-	vendName := svc.VendorName
-	if vendName == "" {
-		vendName = Vendor
-	}
-	return json.NewEncoder(w).Encode(serverInfo{
-		CouchDB: "Välkommen",
-		Version: CompatVersion,
-		Vendor: vendorInfo{
-			Name:    vendName,
-			Version: vendVers,
-		},
-	})
-}
-
-func allDBs(w http.ResponseWriter, r *http.Request) error {
-	w.Header().Set("Content-Type", typeJSON)
-	client := getClient(r)
-	dbs, err := client.AllDBs(r.Context())
-	if err != nil {
-		return err
-	}
-	return json.NewEncoder(w).Encode(dbs)
-}
-
-func createDB(w http.ResponseWriter, r *http.Request) error {
-	w.Header().Set("Content-Type", typeJSON)
-	params := getParams(r)
-	client := getClient(r)
-	if err := client.CreateDB(r.Context(), params["db"]); err != nil {
-		return err
-	}
-	return json.NewEncoder(w).Encode(map[string]interface{}{
-		"ok": true,
-	})
-}
-
-func dbExists(w http.ResponseWriter, r *http.Request) error {
-	params := getParams(r)
-	client := getClient(r)
-	exists, err := client.DBExists(r.Context(), params["db"])
-	if err != nil {
-		return err
-	}
-	if exists {
-		w.WriteHeader(http.StatusOK)
-	} else {
-		w.WriteHeader(http.StatusNotFound)
-	}
-	return nil
-}
-
-// serveJSON serves i as JSON to w.
-func serveJSON(w http.ResponseWriter, i interface{}) error {
-	w.Header().Set("Content-Type", typeJSON)
-	return json.NewEncoder(w).Encode(i)
 }

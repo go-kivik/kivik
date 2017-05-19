@@ -6,30 +6,20 @@ import (
 	"os"
 
 	"github.com/NYTimes/gziphandler"
-	"github.com/dimfeld/httptreemux"
 	"github.com/justinas/alice"
 
+	"github.com/flimzy/kivik/serve/couchserver"
 	"github.com/flimzy/kivik/serve/logger"
 )
 
 func (s *Service) setupRoutes() (http.Handler, error) {
-	router := httptreemux.New()
-	router.HeadCanUseGet = true
-	ctxRoot := router.UsingContext()
-	ctxRoot.Handler(mGET, "/", handler(root))
-	ctxRoot.Handler(mGET, "/favicon.ico", handler(favicon))
-	ctxRoot.Handler(mGET, "/_all_dbs", handler(allDBs))
-	ctxRoot.Handler(mPUT, "/:db", handler(createDB))
-	ctxRoot.Handler(mHEAD, "/:db", handler(dbExists))
-	ctxRoot.Handler(mPOST, "/:db/_ensure_full_commit", handler(flush))
-
-	ctxRoot.Handler(mGET, "/_session", handler(getSession))
-	// Note that DELETE and POST for the /_session endpoint are handled by the
-	// cookie auth handler. This means if you aren't using cookie auth, that
-	// these methods will return 405.
-
-	// ctxRoot.Handler(mDELETE, "/:db", handler(destroyDB) )
-	// ctxRoot.Handler(http.MethodGet, "/:db", handler(getDB))
+	h := couchserver.Handler{
+		Client:        s.Client,
+		Vendor:        s.VendorName,
+		VendorVersion: s.VendorVersion,
+		Favicon:       s.Favicon,
+		SessionKey:    SessionKey,
+	}
 
 	rlog := s.RequestLogger
 	if rlog == nil {
@@ -42,7 +32,7 @@ func (s *Service) setupRoutes() (http.Handler, error) {
 		loggerMiddleware(rlog),
 		gzipHandler(s),
 		authHandler,
-	).Then(router), nil
+	).Then(h.Main()), nil
 }
 
 func gzipHandler(s *Service) func(http.Handler) http.Handler {

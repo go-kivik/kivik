@@ -2,7 +2,6 @@ package serve
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 
 	"github.com/flimzy/kivik/auth"
@@ -16,12 +15,6 @@ const DefaultInsecureSecret = "They're all gonna laugh at you!"
 // DefaultSessionTimeout is the default session timeout, in seconds, used if
 // couch_httpd_auth.timeout is inuset.
 const DefaultSessionTimeout = 600
-
-func getSession(w http.ResponseWriter, r *http.Request) error {
-	session := MustGetSession(r.Context())
-	w.Header().Add("Content-Type", typeJSON)
-	return json.NewEncoder(w).Encode(session)
-}
 
 func (s *Service) getAuthSecret(ctx context.Context) string {
 	if s.Conf().IsSet("couch_httpd_auth.secret") {

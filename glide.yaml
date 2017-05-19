@@ -1,6 +1,7 @@
 package: github.com/flimzy/kivik
 ignore:
 - github.com/gopherjs/gopherjs
+- github.com/gopherjs/jsbuiltin
 import:
 - package: github.com/NYTimes/gziphandler
   version: d8206bba2a6097c0d75f4ac204a4814e47125cdd

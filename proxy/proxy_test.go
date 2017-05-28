@@ -49,6 +49,11 @@ func TestNew(t *testing.T) {
 			URL:   "http://foo:bar@foo.com/",
 			Error: "proxy URL must not contain auth credentials",
 		},
+		{
+			Name:  "Query",
+			URL:   "http://foo.com?yes=no",
+			Error: "proxy URL must not contain query parameters",
+		},
 	}
 	for _, test := range tests {
 		func(test newTest) {

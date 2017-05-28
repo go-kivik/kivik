@@ -47,6 +47,9 @@ func New(serverURL string) (*Proxy, error) {
 	if parsed.User != nil {
 		return nil, errors.New("proxy URL must not contain auth credentials")
 	}
+	if parsed.RawQuery != "" {
+		return nil, errors.New("proxy URL must not contain query parameters")
+	}
 	return &Proxy{
 		baseURL: parsed,
 		path:    strings.TrimSuffix(parsed.Path, "/"),

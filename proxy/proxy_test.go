@@ -2,8 +2,6 @@ package proxy
 
 import (
 	"bytes"
-	"context"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -12,8 +10,6 @@ import (
 	"net/url"
 	"os"
 	"testing"
-
-	"github.com/flimzy/diff"
 )
 
 func mustNew(t *testing.T, url string) *Proxy {
@@ -72,60 +68,6 @@ func TestNew(t *testing.T) {
 	}
 }
 
-func TestURL(t *testing.T) {
-	type urlTest struct {
-		Name       string
-		ServerURL  string
-		RequestURL string
-		Expected   string
-	}
-	tests := []urlTest{
-		{
-			Name:       "Root",
-			ServerURL:  "https://foobar.com:9000/foo",
-			RequestURL: "http://foo.com:1234/",
-			Expected:   "https://foobar.com:9000/foo/",
-		},
-		{
-			Name:       "FullURL",
-			ServerURL:  "https://foobar.com:9000/foo/",
-			RequestURL: "http://foo.com:1234/_replicator",
-			Expected:   "https://foobar.com:9000/foo/_replicator",
-		},
-		{
-			Name:       "BasicAuth",
-			ServerURL:  "https://foobar.com:9000/foo/",
-			RequestURL: "http://bob:abc123@foo.com:1234/_replicator",
-			Expected:   "https://bob:abc123@foobar.com:9000/foo/_replicator",
-		},
-		{
-			Name:       "Query",
-			ServerURL:  "https://foobar.com:9000/foo/",
-			RequestURL: "http://bob:abc123@foo.com:1234/_replicator?yesterday=today",
-			Expected:   "https://bob:abc123@foobar.com:9000/foo/_replicator?yesterday=today",
-		},
-	}
-	for _, test := range tests {
-		func(test urlTest) {
-			t.Run(test.Name, func(t *testing.T) {
-				t.Parallel()
-				p, err := New(test.ServerURL)
-				if err != nil {
-					t.Fatalf("Proxy instantiation failed: %s", err)
-				}
-				reqURL, err := url.Parse(test.RequestURL)
-				if err != nil {
-					t.Fatalf("Failed to parse URL: %s", err)
-				}
-				result := p.url(reqURL)
-				if result != test.Expected {
-					t.Errorf("Expected: %s\n  Actual: %s", test.Expected, result)
-				}
-			})
-		}(test)
-	}
-}
-
 func serverDSN(t *testing.T) string {
 	for _, env := range []string{"KIVIK_TEST_DSN_COUCH16", "KIVIK_TEST_DSN_COUCH20"} {
 		if dsn := os.Getenv(env); dsn != "" {
@@ -139,41 +81,6 @@ func serverDSN(t *testing.T) string {
 	}
 	t.Skip("No server specified in environment")
 	return ""
-}
-
-func TestClient(t *testing.T) {
-	type clientTest struct {
-		Name     string
-		Client   *http.Client
-		Expected *http.Client
-	}
-	c := &http.Client{}
-	tests := []clientTest{
-		{
-			Name:     "None",
-			Expected: DefaultClient,
-		},
-		{
-			Name:     "Explicit",
-			Client:   c,
-			Expected: c,
-		},
-	}
-	for _, test := range tests {
-		func(test clientTest) {
-			t.Run(test.Name, func(t *testing.T) {
-				p, err := New("http://foo.com")
-				if err != nil {
-					t.Fatal(err)
-				}
-				p.HTTPClient = test.Client
-				result := p.client()
-				if result != test.Expected {
-					t.Error("Returned unexpected client")
-				}
-			})
-		}(test)
-	}
 }
 
 func TestProxy(t *testing.T) {
@@ -200,13 +107,13 @@ func TestProxy(t *testing.T) {
 			Status:      http.StatusMovedPermanently,
 			HeaderMatch: map[string]string{"Location": "http://foo.com/_utils/"},
 		},
-		{
-			Name:        "UtilsRedirectQuery",
-			Method:      http.MethodGet,
-			URL:         "http://foo.com/_utils?today=tomorrow",
-			Status:      http.StatusMovedPermanently,
-			HeaderMatch: map[string]string{"Location": "http://foo.com/_utils/?today=tomorrow"},
-		},
+		// {
+		// 	Name:        "UtilsRedirectQuery",
+		// 	Method:      http.MethodGet,
+		// 	URL:         "http://foo.com/_utils?today=tomorrow",
+		// 	Status:      http.StatusMovedPermanently,
+		// 	HeaderMatch: map[string]string{"Location": "http://foo.com/_utils/?today=tomorrow"},
+		// },
 		{
 			Name:      "Utils",
 			Method:    http.MethodGet,
@@ -245,17 +152,6 @@ func TestProxy(t *testing.T) {
 	}
 }
 
-func TestProxyError(t *testing.T) {
-	w := httptest.NewRecorder()
-	ProxyError(w, errors.New("foo error"))
-	resp := w.Result()
-	body, _ := ioutil.ReadAll(resp.Body)
-	expected := "Proxy error: foo error"
-	if string(body) != expected {
-		t.Errorf("Expected: %s\n  Actual: %s\n", expected, body)
-	}
-}
-
 func TestMethodAllowed(t *testing.T) {
 	type maTest struct {
 		Method   string
@@ -285,61 +181,51 @@ func TestMethodAllowed(t *testing.T) {
 	}
 }
 
-func TestCloneRequest(t *testing.T) {
-	type cloneTest struct {
+func TestSingleJoiningSlash(t *testing.T) {
+	type joinTest struct {
 		Name     string
-		Input    *http.Request
-		Expected *http.Request
-		Error    string
+		PathA    string
+		PathB    string
+		Expected string
 	}
-	tests := []cloneTest{
+	tests := []joinTest{
 		{
-			Name:  "SimpleGet",
-			Input: func() *http.Request { r, _ := http.NewRequest("GET", "http://zoo.com", nil); return r }(),
-			Expected: func() *http.Request {
-				r, _ := http.NewRequest("GET", "http://foo.com/", nil)
-				return r.WithContext(context.Background())
-			}(),
+			Name:     "Empty",
+			PathA:    "",
+			PathB:    "",
+			Expected: "/",
 		},
 		{
-			Name:  "URLAuth",
-			Input: func() *http.Request { r, _ := http.NewRequest("GET", "http://foo:bar@zoo.com", nil); return r }(),
-			Expected: func() *http.Request {
-				r, _ := http.NewRequest("GET", "http://foo:bar@foo.com/", nil)
-				r = r.WithContext(context.Background())
-				return r
-			}(),
+			Name:     "NoSlashes",
+			PathA:    "foo",
+			PathB:    "bar",
+			Expected: "foo/bar",
 		},
 		{
-			Name: "BasicAuth",
-			Input: func() *http.Request {
-				r, _ := http.NewRequest("GET", "http://zoo.com", nil)
-				r.SetBasicAuth("foo", "bar")
-				return r
-			}(),
-			Expected: func() *http.Request {
-				r, _ := http.NewRequest("GET", "http://foo.com/", nil)
-				r = r.WithContext(context.Background())
-				r.Header.Set("Authorization", "Basic Zm9vOmJhcg==")
-				return r
-			}(),
+			Name:     "Trailing",
+			PathA:    "foo/",
+			PathB:    "bar",
+			Expected: "foo/bar",
+		},
+		{
+			Name:     "Leading",
+			PathA:    "foo",
+			PathB:    "/bar",
+			Expected: "foo/bar",
+		},
+		{
+			Name:     "Both",
+			PathA:    "foo/",
+			PathB:    "/bar",
+			Expected: "foo/bar",
 		},
 	}
-	p := mustNew(t, "http://foo.com/")
 	for _, test := range tests {
-		func(test cloneTest) {
+		func(test joinTest) {
 			t.Run(test.Name, func(t *testing.T) {
-				t.Parallel()
-				result, err := p.cloneRequest(test.Input)
-				var msg string
-				if err != nil {
-					msg = err.Error()
-				}
-				if msg != test.Error {
-					t.Errorf("Expected error: %s\n  Actual error: %s", test.Error, msg)
-				}
-				if d := diff.Interface(test.Expected, result); d != "" {
-					t.Error(d)
+				result := singleJoiningSlash(test.PathA, test.PathB)
+				if result != test.Expected {
+					t.Errorf("Expected: %s, Actual: %s", test.Expected, result)
 				}
 			})
 		}(test)

@@ -107,6 +107,12 @@ var _ driver.Rows = &findRows{}
 func (r *findRows) Offset() int64     { return 0 }
 func (r *findRows) TotalRows() int64  { return 0 }
 func (r *findRows) UpdateSeq() string { return "" }
+func (r *findRows) Warning() string {
+	if w := r.Get("warning"); w != js.Undefined {
+		return w.String()
+	}
+	return ""
+}
 
 func (r *findRows) Close() error {
 	r.Delete("docs") // Free up memory used by any remaining rows

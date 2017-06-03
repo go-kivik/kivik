@@ -18,7 +18,7 @@ case "$1" in
     ;;
     "gopherjs")
         unset KIVIK_TEST_DSN_COUCH16
-        gopherjs test $(go list ./... | grep -v /vendor/ | grep -Ev 'kivik/(serve|auth)')
+        gopherjs test $(go list ./... | grep -v /vendor/ | grep -Ev 'kivik/(serve|auth|proxy)')
     ;;
     "linter")
         diff -u <(echo -n) <(gofmt -e -d $(find . -type f -name '*.go' -not -path "./vendor/*"))

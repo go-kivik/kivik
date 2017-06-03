@@ -59,8 +59,15 @@ func (d *db) Delete(_ context.Context, docID, rev string) (newRev string, err er
 }
 
 func (d *db) Stats(_ context.Context) (*driver.DBStats, error) {
-	// FIXME: Unimplemented
-	return nil, notYetImplemented
+	return &driver.DBStats{
+		Name: d.dbName,
+		// DocCount:     0,
+		// DeletedCount: 0,
+		// UpdateSeq:    "",
+		// DiskSize:     0,
+		// ActiveSize:   0,
+		// ExternalSize: 0,
+	}, nil
 }
 
 func (c *client) Compact(_ context.Context) error {

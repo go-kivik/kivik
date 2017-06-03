@@ -55,3 +55,88 @@ func TestStats(t *testing.T) {
 		}(test)
 	}
 }
+
+func setupDB(t *testing.T, s func(driver.DB)) driver.DB {
+	c := setup(t, nil)
+	if err := c.CreateDB(context.Background(), "foo", nil); err != nil {
+		t.Fatal(err)
+	}
+	db, err := c.DB(context.Background(), "foo", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if s != nil {
+		s(db)
+	}
+	return db
+}
+
+func TestPut(t *testing.T) {
+	type putTest struct {
+		Name  string
+		DocID string
+		Doc   interface{}
+		Setup func(driver.DB)
+		Error string
+	}
+	tests := []putTest{
+		{
+			Name:  "Success",
+			DocID: "foo",
+			Doc:   map[string]string{"_id": "foo"},
+		},
+		// {
+		// 	Name:  "Conflict",
+		// 	DocID: "foo",
+		// 	Doc:   map[string]string{"_id": "foo", "_rev": "bar"},
+		// 	Setup: func(db driver.DB) {
+		// 		db.Put(context.Background(), "foo", map[string]string{"_id": "foo"})
+		// 	},
+		// },
+	}
+	for _, test := range tests {
+		func(test putTest) {
+			t.Run(test.Name, func(t *testing.T) {
+				db := setupDB(t, test.Setup)
+				var msg string
+				if _, err := db.Put(context.Background(), test.DocID, test.Doc); err != nil {
+					msg = err.Error()
+				}
+				if msg != test.Error {
+					t.Errorf("Unexpected error: %s", msg)
+				}
+			})
+		}(test)
+	}
+}
+
+// func TestCreateDoc(t *testing.T) {
+// 	type cdTest struct {
+// 		Name  string
+// 		Doc   interface{}
+// 		Error string
+// 	}
+// 	tests := []cdTest{
+// 		{
+// 			Name: "SimpleDoc",
+// 			Doc: map[string]interface{}{
+// 				"foo": "bar",
+// 			},
+// 		},
+// 	}
+// 	for _, test := range tests {
+// 		func(test cdTest) {
+// 			t.Run(test.Name, func(t *testing.T) {
+// 				db := setupDB(t)
+// 				_, _, err := db.CreateDoc(context.Background(), test.Doc)
+// 				var msg string
+// 				if err != nil {
+// 					msg = err.Error()
+// 				}
+// 				if msg != test.Error {
+// 					t.Errorf("Unexpected error: %s", msg)
+// 				}
+// 			})
+// 		}(test)
+// 	}
+// }

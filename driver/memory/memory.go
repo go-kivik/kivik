@@ -62,7 +62,9 @@ func (c *client) CreateDB(ctx context.Context, dbName string, options map[string
 	}
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	c.dbs[dbName] = &database{}
+	c.dbs[dbName] = &database{
+		docs: make(map[string]*document),
+	}
 	return nil
 }
 
@@ -83,5 +85,6 @@ func (c *client) DB(ctx context.Context, dbName string, options map[string]inter
 	return &db{
 		client: c,
 		dbName: dbName,
+		db:     c.dbs[dbName],
 	}, nil
 }

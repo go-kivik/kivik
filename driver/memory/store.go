@@ -1,6 +1,11 @@
 package memory
 
-import "sync"
+import (
+	"fmt"
+	"math/rand"
+	"sync"
+	"time"
+)
 
 type file struct {
 	ContentType string
@@ -14,6 +19,7 @@ type document struct {
 type revision struct {
 	data        map[string]interface{}
 	ID          string
+	RevID       int64
 	Rev         string
 	Attachments map[string]file
 }
@@ -24,10 +30,16 @@ type database struct {
 	updateSeq int64
 }
 
-func (d *db) getDB() *database {
-	c := d.client
-	c.mutex.RLock()
-	defer c.mutex.RUnlock()
-	database, _ := c.dbs[d.dbName]
-	return database
+var rnd *rand.Rand
+var rndMU = &sync.Mutex{}
+
+func init() {
+	rnd = rand.New(rand.NewSource(time.Now().UnixNano()))
+}
+
+func randStr() string {
+	rndMU.Lock()
+	s := fmt.Sprintf("%016x%016x", rnd.Uint64(), rnd.Uint64())
+	rndMU.Unlock()
+	return s
 }

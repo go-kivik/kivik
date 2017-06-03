@@ -3,6 +3,7 @@ package memory
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 
 	"github.com/flimzy/kivik"
@@ -16,6 +17,7 @@ var notYetImplemented = errors.Status(kivik.StatusNotImplemented, "kivik: not ye
 type db struct {
 	*client
 	dbName string
+	db     *database
 }
 
 type indexDoc struct {
@@ -49,8 +51,27 @@ func (d *db) CreateDoc(_ context.Context, doc interface{}) (docID, rev string, e
 }
 
 func (d *db) Put(_ context.Context, docID string, doc interface{}) (rev string, err error) {
-	// FIXME: Unimplemented
-	return "", notYetImplemented
+	if existing, ok := d.db.docs[docID]; ok {
+		last := existing.revs[len(existing.revs)-1]
+		lastRev := fmt.Sprintf("%d-%s", last.RevID, last.Rev)
+		if rev != lastRev {
+			return "", errors.Status(kivik.StatusConflict, "conflicting revision")
+		}
+	}
+	d.db.mutex.Lock()
+	defer d.db.mutex.Unlock()
+	revID := int64(1)
+	revStr := randStr()
+	d.db.docs[docID] = &document{
+		revs: []*revision{
+			{
+				ID:    docID,
+				RevID: revID,
+				Rev:   revStr,
+			},
+		},
+	}
+	return fmt.Sprintf("%d-%s", revID, revStr), nil
 }
 
 func (d *db) Delete(_ context.Context, docID, rev string) (newRev string, err error) {

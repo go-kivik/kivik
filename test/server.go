@@ -44,8 +44,8 @@ func init() {
 		"Put.skip": true, // FIXME: Fix this when we can write docs
 
 		"Flush.databases":                     []string{"chicken"},
-		"Flush/Admin/chicken/DoFlush.status":  kivik.StatusNotImplemented, // FIXME: Update when implemented
-		"Flush/NoAuth/chicken/DoFlush.status": kivik.StatusNotImplemented, // FIXME: Update when implemented
+		"Flush/Admin/chicken/DoFlush.status":  kivik.StatusNotFound, // FIXME: Update when implemented
+		"Flush/NoAuth/chicken/DoFlush.status": kivik.StatusNotFound, // FIXME: Update when implemented
 
 		"Delete.skip": true, // FIXME: Fix this when we can delete docs.
 

@@ -223,20 +223,46 @@ func TestDB(t *testing.T) {
 	type dbTest struct {
 		Name   string
 		DBName string
+		Setup  func(driver.Client)
+		Error  string
 	}
 	tests := []dbTest{
 		{
 			Name:   "NoDBs",
 			DBName: "foo",
+			Error:  "database does not exist",
+		},
+		{
+			Name:   "ExistingDB",
+			DBName: "foo",
+			Setup: func(c driver.Client) {
+				if err := c.CreateDB(context.Background(), "foo", nil); err != nil {
+					panic(err)
+				}
+			},
+		},
+		{
+			Name:   "OtherDB",
+			DBName: "foo",
+			Setup: func(c driver.Client) {
+				if err := c.CreateDB(context.Background(), "bar", nil); err != nil {
+					panic(err)
+				}
+			},
+			Error: "database does not exist",
 		},
 	}
 	for _, test := range tests {
 		func(test dbTest) {
 			t.Run(test.Name, func(t *testing.T) {
-				c := setup(t, nil)
+				c := setup(t, test.Setup)
 				_, err := c.DB(context.Background(), test.DBName, nil)
+				var msg string
 				if err != nil {
-					t.Errorf("Unexpected error: %s", err)
+					msg = err.Error()
+				}
+				if msg != test.Error {
+					t.Errorf("Unexpected error: %s", msg)
 				}
 			})
 		}(test)

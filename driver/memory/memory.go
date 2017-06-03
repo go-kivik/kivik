@@ -68,7 +68,7 @@ func (c *client) CreateDB(ctx context.Context, dbName string, options map[string
 
 func (c *client) DestroyDB(ctx context.Context, dbName string, options map[string]interface{}) error {
 	if exists, _ := c.DBExists(ctx, dbName, options); !exists {
-		return errors.Status(http.StatusNotFound, "database not found")
+		return errors.Status(http.StatusNotFound, "database does not exist")
 	}
 	c.mutex.Lock()
 	defer c.mutex.Unlock()

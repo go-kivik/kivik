@@ -23,11 +23,13 @@ func init() {
 		"AllDocs/NoAuth/chicken.status":     kivik.StatusNotFound,
 		"AllDocs/NoAuth/_duck.status":       kivik.StatusUnauthorized,
 
-		"Find.databases":             []string{"chicken", "_duck"},
-		"Find/Admin/chicken.status":  kivik.StatusNotFound,
-		"Find/Admin/_duck.status":    kivik.StatusNotFound,
-		"Find/NoAuth/chicken.status": kivik.StatusNotFound,
-		"Find/NoAuth/_duck.status":   kivik.StatusUnauthorized,
+		"Find.databases":                       []string{"chicken", "_duck"},
+		"Find/Admin/chicken.status":            kivik.StatusNotFound,
+		"Find/Admin/_duck.status":              kivik.StatusNotFound,
+		"Find/NoAuth/chicken.status":           kivik.StatusNotFound,
+		"Find/NoAuth/_duck.status":             kivik.StatusUnauthorized,
+		"Find/RW/group/Admin/Warning.warning":  "no matching index found, create an index to optimize query time",
+		"Find/RW/group/NoAuth/Warning.warning": "no matching index found, create an index to optimize query time",
 
 		"DBExists.databases":              []string{"_users", "chicken", "_duck"},
 		"DBExists/Admin/_users.exists":    true,

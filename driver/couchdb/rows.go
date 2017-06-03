@@ -13,6 +13,7 @@ type rows struct {
 	offset    int64
 	totalRows int64
 	updateSeq string
+	warning   string
 	body      io.ReadCloser
 	dec       *json.Decoder
 	// closed is true after all rows have been processed
@@ -35,6 +36,10 @@ func (r *rows) Offset() int64 {
 
 func (r *rows) TotalRows() int64 {
 	return r.totalRows
+}
+
+func (r *rows) Warning() string {
+	return r.warning
 }
 
 func (r *rows) UpdateSeq() string {
@@ -128,6 +133,8 @@ func (r *rows) parseMeta(key string) error {
 		return r.dec.Decode(&r.offset)
 	case "total_rows":
 		return r.dec.Decode(&r.totalRows)
+	case "warning":
+		return r.dec.Decode(&r.warning)
 	}
 	return fmt.Errorf("Unexpected key: %s", key)
 }

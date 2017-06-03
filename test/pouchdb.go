@@ -32,7 +32,8 @@ func init() {
 		"AllDocs/Admin.databases":                        []string{},
 		"AllDocs/RW/group/Admin/WithDocs/UpdateSeq.skip": true,
 
-		"Find/Admin.databases": []string{},
+		"Find/Admin.databases":                []string{},
+		"Find/RW/group/Admin/Warning.warning": "no matching index found, create an index to optimize query time",
 
 		"Query/RW/group/Admin/WithDocs/UpdateSeq.skip": true,
 

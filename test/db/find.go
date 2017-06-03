@@ -115,4 +115,15 @@ func doFindTest(ctx *kt.Context, client *kivik.Client, dbName string, expOffset 
 	if d := diff.TextSlices(expected, docIDs); d != "" {
 		ctx.Errorf("Unexpected document IDs returned:\n%s\n", d)
 	}
+	ctx.Run("Warning", func(ctx *kt.Context) {
+		rows, err := db.Find(context.Background(), `{"selector":{"foo":{"$gt":null}}}`)
+		if !ctx.IsExpectedSuccess(err) {
+			return
+		}
+		for rows.Next() {
+		}
+		if w := ctx.String("warning"); w != rows.Warning() {
+			ctx.Errorf("Warning:\nExpected: %s\n  Actual: %s", w, rows.Warning())
+		}
+	})
 }

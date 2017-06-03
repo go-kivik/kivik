@@ -98,7 +98,8 @@ func TestRowsIteratorErrors(t *testing.T) {
 }
 
 var findInput = `
-{"docs":[
+{"warning":"no matching index found, create an index to optimize query time",
+"docs":[
 {"id":"SpaghettiWithMeatballs","key":"meatballs","value":1},
 {"id":"SpaghettiWithMeatballs","key":"spaghetti","value":1},
 {"id":"SpaghettiWithMeatballs","key":"tomato sauce","value":1}
@@ -129,5 +130,8 @@ func TestFindRowsIterator(t *testing.T) {
 	}
 	if err := rows.Close(); err != nil {
 		t.Errorf("Error closing rows iterator: %s", err)
+	}
+	if rows.Warning() != "no matching index found, create an index to optimize query time" {
+		t.Errorf("Unexpected warning: %s", rows.Warning())
 	}
 }

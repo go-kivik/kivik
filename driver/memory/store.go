@@ -1,6 +1,7 @@
 package memory
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"sync"
@@ -20,6 +21,7 @@ type revision struct {
 	data        []byte
 	ID          int64
 	Rev         string
+	Deleted     bool
 	Attachments map[string]file
 }
 
@@ -45,7 +47,19 @@ func (d *database) latestRevision(docID string) (*revision, bool) {
 	return nil, false
 }
 
-func (d *database) addRevision(docID string, data []byte, att map[string]file) string {
+type jsondoc map[string]interface{}
+
+func (d jsondoc) ID() string {
+	id, _ := d["_id"].(string)
+	return id
+}
+
+func (d jsondoc) Rev() string {
+	rev, _ := d["_rev"].(string)
+	return rev
+}
+
+func (d *database) addRevision(docID string, doc jsondoc) string {
 	if d.docs[docID] == nil {
 		d.docs[docID] = &document{
 			revs: make([]*revision, 0, 1),
@@ -59,11 +73,18 @@ func (d *database) addRevision(docID string, data []byte, att map[string]file) s
 		revID = d.docs[docID].revs[l-1].ID + 1
 	}
 	revStr := randStr()
+	rev := fmt.Sprintf("%d-%s", revID, revStr)
+	doc["_rev"] = rev
+	data, err := json.Marshal(doc)
+	if err != nil {
+		panic(err)
+	}
+	deleted, _ := doc["_deleted"].(bool)
 	d.docs[docID].revs = append(d.docs[docID].revs, &revision{
-		data:        data,
-		ID:          revID,
-		Rev:         revStr,
-		Attachments: att,
+		data:    data,
+		ID:      revID,
+		Rev:     revStr,
+		Deleted: deleted,
 	})
-	return fmt.Sprintf("%d-%s", revID, revStr)
+	return rev
 }

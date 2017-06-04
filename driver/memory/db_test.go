@@ -164,7 +164,7 @@ func TestGet(t *testing.T) {
 		Name     string
 		ID       string
 		Opts     map[string]interface{}
-		Setup    func() driver.DB
+		DB       driver.DB
 		Status   int
 		Error    string
 		Expected interface{}
@@ -179,13 +179,13 @@ func TestGet(t *testing.T) {
 		{
 			Name: "ExistingDoc",
 			ID:   "foo",
-			Setup: func() driver.DB {
+			DB: func() driver.DB {
 				db := setupDB(t, nil)
 				if _, err := db.Put(context.Background(), "foo", map[string]string{"_id": "foo", "foo": "bar"}); err != nil {
 					panic(err)
 				}
 				return db
-			},
+			}(),
 			Expected: map[string]string{"_id": "foo", "foo": "bar"},
 		},
 		func() getTest {
@@ -195,9 +195,9 @@ func TestGet(t *testing.T) {
 				panic(err)
 			}
 			return getTest{
-				Name:  "SpecificRev",
-				ID:    "foo",
-				Setup: func() driver.DB { return db },
+				Name: "SpecificRev",
+				ID:   "foo",
+				DB:   db,
 				Opts: map[string]interface{}{
 					"rev": rev,
 				},
@@ -215,9 +215,9 @@ func TestGet(t *testing.T) {
 				panic(err)
 			}
 			return getTest{
-				Name:  "OldRev",
-				ID:    "foo",
-				Setup: func() driver.DB { return db },
+				Name: "OldRev",
+				ID:   "foo",
+				DB:   db,
 				Opts: map[string]interface{}{
 					"rev": rev,
 				},
@@ -230,26 +230,41 @@ func TestGet(t *testing.T) {
 			Opts: map[string]interface{}{
 				"rev": "1-4c6114c65e295552ab1019e2b046b10e",
 			},
-			Setup: func() driver.DB {
+			DB: func() driver.DB {
 				db := setupDB(t, nil)
 				_, err := db.Put(context.Background(), "foo", map[string]string{"_id": "foo", "foo": "Bar"})
 				if err != nil {
 					panic(err)
 				}
 				return db
-			},
+			}(),
 			Status: 404,
 			Error:  "missing",
 		},
+		func() getTest {
+			db := setupDB(t, nil)
+			rev, err := db.Put(context.Background(), "foo", map[string]string{"_id": "foo"})
+			if err != nil {
+				panic(err)
+			}
+			if _, e := db.Delete(context.Background(), "foo", rev); e != nil {
+				panic(e)
+			}
+			return getTest{
+				Name:   "DeletedDoc",
+				ID:     "foo",
+				DB:     db,
+				Status: 404,
+				Error:  "missing",
+			}
+		}(),
 	}
 	for _, test := range tests {
 		func(test getTest) {
 			t.Run(test.Name, func(t *testing.T) {
 				t.Parallel()
-				var db driver.DB
-				if test.Setup != nil {
-					db = test.Setup()
-				} else {
+				db := test.DB
+				if db == nil {
 					db = setupDB(t, nil)
 				}
 				var msg string
@@ -278,6 +293,83 @@ func TestGet(t *testing.T) {
 				if d := diff.AsJSON(test.Expected, result); d != "" {
 					t.Error(d)
 				}
+			})
+		}(test)
+	}
+}
+
+func TestDeleteDoc(t *testing.T) {
+	type delTest struct {
+		Name   string
+		ID     string
+		Rev    string
+		DB     driver.DB
+		Status int
+		Error  string
+	}
+	tests := []delTest{
+		{
+			Name:   "NonExistingDoc",
+			ID:     "foo",
+			Rev:    "1-4c6114c65e295552ab1019e2b046b10e",
+			Status: 404,
+			Error:  "missing",
+		},
+		func() delTest {
+			db := setupDB(t, nil)
+			rev, err := db.Put(context.Background(), "foo", map[string]string{"_id": "foo"})
+			if err != nil {
+				panic(err)
+			}
+			return delTest{
+				Name: "Success",
+				ID:   "foo",
+				DB:   db,
+				Rev:  rev,
+			}
+		}(),
+	}
+	for _, test := range tests {
+		func(test delTest) {
+			t.Run(test.Name, func(t *testing.T) {
+				t.Parallel()
+				db := test.DB
+				if db == nil {
+					db = setupDB(t, nil)
+				}
+				rev, err := db.Delete(context.Background(), test.ID, test.Rev)
+				var msg string
+				var status int
+				if err != nil {
+					msg = err.Error()
+					status = kivik.StatusCode(err)
+				}
+				if msg != test.Error {
+					t.Errorf("Unexpected error: %s", msg)
+				}
+				if status != test.Status {
+					t.Errorf("Unexpected status: %d", status)
+				}
+				if err != nil {
+					return
+				}
+				docJSON, err := db.Get(context.Background(), test.ID, map[string]interface{}{"rev": rev})
+				if err != nil {
+					t.Fatal(err)
+				}
+				var doc interface{}
+				if e := json.Unmarshal(docJSON, &doc); e != nil {
+					t.Fatal(e)
+				}
+				expected := map[string]interface{}{
+					"_id":      test.ID,
+					"_rev":     rev,
+					"_deleted": true,
+				}
+				if d := diff.AsJSON(expected, doc); d != "" {
+					t.Error(d)
+				}
+
 			})
 		}(test)
 	}

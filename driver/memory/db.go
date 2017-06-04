@@ -51,6 +51,9 @@ func (d *db) Get(_ context.Context, docID string, opts map[string]interface{}) (
 			return nil, errors.Status(kivik.StatusNotFound, "missing")
 		}
 		last := existing.revs[len(existing.revs)-1]
+		if last.Deleted {
+			return nil, errors.Status(kivik.StatusNotFound, "missing")
+		}
 		return last.data, nil
 	}
 	return nil, errors.Status(kivik.StatusNotFound, "missing")
@@ -61,42 +64,43 @@ func (d *db) CreateDoc(_ context.Context, doc interface{}) (docID, rev string, e
 	return "", "", notYetImplemented
 }
 
-type docMeta struct {
-	ID  string `json:"_id"`
-	Rev string `json:"_rev"`
-}
-
 func (d *db) Put(_ context.Context, docID string, doc interface{}) (rev string, err error) {
 	docJSON, err := json.Marshal(doc)
 	if err != nil {
 		return "", errors.Status(kivik.StatusBadRequest, "invalid JSON")
 	}
-	var meta docMeta
-	if e := json.Unmarshal(docJSON, &meta); e != nil {
+	var couchDoc jsondoc
+	if e := json.Unmarshal(docJSON, &couchDoc); e != nil {
 		return "", errors.Status(kivik.StatusInternalServerError, "failed to decode encoded document; this is a bug!")
 	}
 
 	if last, ok := d.db.latestRevision(docID); ok {
 		lastRev := fmt.Sprintf("%d-%s", last.ID, last.Rev)
-		if meta.Rev != lastRev {
+		if couchDoc.Rev() != lastRev {
 			return "", errors.Status(kivik.StatusConflict, "document update conflict")
 		}
-		rev := d.db.addRevision(docID, docJSON, nil)
+		rev := d.db.addRevision(docID, couchDoc)
 		return rev, nil
 	}
 
-	if meta.Rev != "" {
+	if couchDoc.Rev() != "" {
 		// Rev should not be set for a new document
 		return "", errors.Status(kivik.StatusConflict, "document update conflict")
 	}
 	d.db.mutex.Lock()
 	defer d.db.mutex.Unlock()
-	return d.db.addRevision(docID, docJSON, nil), nil
+	return d.db.addRevision(docID, couchDoc), nil
 }
 
-func (d *db) Delete(_ context.Context, docID, rev string) (newRev string, err error) {
-	// FIXME: Unimplemented
-	return "", notYetImplemented
+func (d *db) Delete(ctx context.Context, docID, rev string) (newRev string, err error) {
+	if _, ok := d.db.docs[docID]; !ok {
+		return "", errors.Status(kivik.StatusNotFound, "missing")
+	}
+	return d.Put(ctx, docID, map[string]interface{}{
+		"_id":      docID,
+		"_rev":     rev,
+		"_deleted": true,
+	})
 }
 
 func (d *db) Stats(_ context.Context) (*driver.DBStats, error) {

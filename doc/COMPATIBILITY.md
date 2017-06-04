@@ -79,8 +79,8 @@
 | GET /{db}/_revs_limit                 | ⁿ/ₐ                  |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
 | PUT /{db}/_revs_limit                 | ⁿ/ₐ                  |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
 | HEAD /{db}/{docid}                    | Rev()               |    | ✅ | ✅ | ⍻ |
-| GET /{db}/{docid}                     | Get()               |    | ☑️<sup>[7](#todoConflicts),[11](#todoAttachments)</sup> | ✅ | ✅
-| PUT /{db}/{docid}                     | Put()               |    | ☑️<sup>[11](#todoAttachments)</sup> | ✅ | ✅
+| GET /{db}/{docid}                     | Get()               |    | ☑️<sup>[7](#todoConflicts),[11](#todoAttachments)</sup> | ✅ | ✅ |   | ☑️<sup>[18](#memstatus)</sup>
+| PUT /{db}/{docid}                     | Put()               |    | ☑️<sup>[11](#todoAttachments)</sup> | ✅ | ✅ |   | ☑️<sup>[18](#memstatus)</sup>
 | DELETE /{db}/{docid}                  | Delete()            |    | ✅ | ✅ | ✅ |
 | COPY /{db}/{docid}                    | Copy()              |    | ✅ | ✅ | ⍻ |
 | HEAD /{db}/{docid}/{attname}          | GetAttachmentMeta() |    | ✅ | ✅ | ⍻ |
@@ -159,6 +159,8 @@
 18. <a name="pouchViews"> Only queries against defined design documents are
     supported. That is to say, providing raw JS functions is not supported. If
     you need this, please create an issue to make your case.
+19. <a name="memstatus"> See [Issue #142](https://github.com/flimzy/kivik/issues/142)
+    for the current status of the memory driver.
 
 ## HTTP Status Codes
 

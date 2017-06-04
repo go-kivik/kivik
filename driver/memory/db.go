@@ -41,8 +41,11 @@ func (d *db) Query(ctx context.Context, ddoc, view string, opts map[string]inter
 }
 
 func (d *db) Get(_ context.Context, docID string, opts map[string]interface{}) (json.RawMessage, error) {
-	// FIXME: Unimplemented
-	return nil, notYetImplemented
+	if existing, ok := d.db.docs[docID]; ok {
+		last := existing.revs[len(existing.revs)-1]
+		return last.data, nil
+	}
+	return nil, errors.Status(kivik.StatusNotFound, "missing")
 }
 
 func (d *db) CreateDoc(_ context.Context, doc interface{}) (docID, rev string, err error) {

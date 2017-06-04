@@ -27,7 +27,7 @@ type revision struct {
 }
 
 type database struct {
-	mutex     sync.RWMutex
+	mu        sync.RWMutex
 	docs      map[string]*document
 	updateSeq int64
 }
@@ -39,7 +39,31 @@ func init() {
 	rnd = rand.New(rand.NewSource(time.Now().UnixNano()))
 }
 
+func (d *database) getRevision(docID, rev string) (*revision, bool) {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+	doc, ok := d.docs[docID]
+	if !ok {
+		return nil, false
+	}
+	for _, r := range doc.revs {
+		if rev == fmt.Sprintf("%d-%s", r.ID, r.Rev) {
+			return r, true
+		}
+	}
+	return nil, false
+}
+
+func (d *database) docExists(docID string) bool {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+	_, ok := d.docs[docID]
+	return ok
+}
+
 func (d *database) latestRevision(docID string) (*revision, bool) {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
 	doc, ok := d.docs[docID]
 	if ok {
 		last := doc.revs[len(doc.revs)-1]
@@ -61,6 +85,8 @@ func (d jsondoc) Rev() string {
 }
 
 func (d *database) addRevision(doc jsondoc) string {
+	d.mu.Lock()
+	defer d.mu.Unlock()
 	id, ok := doc["_id"].(string)
 	if !ok {
 		panic("_id missing or not a string")

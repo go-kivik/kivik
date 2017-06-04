@@ -43,22 +43,20 @@ func (d *db) Query(ctx context.Context, ddoc, view string, opts map[string]inter
 }
 
 func (d *db) Get(_ context.Context, docID string, opts map[string]interface{}) (json.RawMessage, error) {
-	if existing, ok := d.db.docs[docID]; ok {
-		if rev, ok := opts["rev"].(string); ok {
-			for _, r := range existing.revs {
-				if rev == fmt.Sprintf("%d-%s", r.ID, r.Rev) {
-					return r.data, nil
-				}
-			}
-			return nil, errors.Status(kivik.StatusNotFound, "missing")
-		}
-		last := existing.revs[len(existing.revs)-1]
-		if last.Deleted {
-			return nil, errors.Status(kivik.StatusNotFound, "missing")
-		}
-		return last.data, nil
+	if !d.db.docExists(docID) {
+		return nil, errors.Status(kivik.StatusNotFound, "missing")
 	}
-	return nil, errors.Status(kivik.StatusNotFound, "missing")
+	if rev, ok := opts["rev"].(string); ok {
+		if doc, found := d.db.getRevision(docID, rev); found {
+			return doc.data, nil
+		}
+		return nil, errors.Status(kivik.StatusNotFound, "missing")
+	}
+	last, _ := d.db.latestRevision(docID)
+	if last.Deleted {
+		return nil, errors.Status(kivik.StatusNotFound, "missing")
+	}
+	return last.data, nil
 }
 
 func (d *db) CreateDoc(_ context.Context, doc interface{}) (docID, rev string, err error) {
@@ -94,8 +92,6 @@ func (d *db) Put(_ context.Context, docID string, doc interface{}) (rev string, 
 		// Rev should not be set for a new document
 		return "", errors.Status(kivik.StatusConflict, "document update conflict")
 	}
-	d.db.mutex.Lock()
-	defer d.db.mutex.Unlock()
 	return d.db.addRevision(couchDoc), nil
 }
 
@@ -109,7 +105,7 @@ func (d *db) Delete(ctx context.Context, docID, rev string) (newRev string, err 
 	if !strings.HasPrefix(docID, "_local/") && !validRev(rev) {
 		return "", errors.Status(kivik.StatusBadRequest, "Invalid rev format")
 	}
-	if _, ok := d.db.docs[docID]; !ok {
+	if !d.db.docExists(docID) {
 		return "", errors.Status(kivik.StatusNotFound, "missing")
 	}
 	return d.Put(ctx, docID, map[string]interface{}{

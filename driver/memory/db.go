@@ -55,8 +55,12 @@ func (d *db) Put(_ context.Context, docID string, doc interface{}) (rev string, 
 		last := existing.revs[len(existing.revs)-1]
 		lastRev := fmt.Sprintf("%d-%s", last.RevID, last.Rev)
 		if rev != lastRev {
-			return "", errors.Status(kivik.StatusConflict, "conflicting revision")
+			return "", errors.Status(kivik.StatusConflict, "document update conflict")
 		}
+	}
+	_, err = json.Marshal(doc)
+	if err != nil {
+		return "", errors.Status(kivik.StatusBadRequest, "invalid JSON")
 	}
 	d.db.mutex.Lock()
 	defer d.db.mutex.Unlock()

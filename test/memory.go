@@ -34,8 +34,15 @@ func init() {
 		"GetReplications.skip": true,
 		"Replicate.skip":       true,
 
-		"Get.skip":               true,                       // FIXME: Unimplemented
-		"Delete.skip":            true,                       // FIXME: Unimplemented
+		"Get/RW/group/Admin/bogus.status": kivik.StatusNotFound,
+
+		"Put/RW/Admin/group/LeadingUnderscoreInID.status": kivik.StatusBadRequest,
+		"Put/RW/Admin/group/Conflict.status":              kivik.StatusConflict,
+
+		"Delete/RW/Admin/group/MissingDoc.status":       kivik.StatusNotFound,
+		"Delete/RW/Admin/group/InvalidRevFormat.status": kivik.StatusBadRequest,
+		"Delete/RW/Admin/group/WrongRev.status":         kivik.StatusConflict,
+
 		"Stats.skip":             true,                       // FIXME: Unimplemented
 		"CreateDoc.skip":         true,                       // FIXME: Unimplemented
 		"Compact.skip":           true,                       // FIXME: Unimplemented
@@ -53,7 +60,6 @@ func init() {
 		"CreateIndex.skip":       true,                       // FIXME: Unimplemented
 		"GetIndexes.skip":        true,                       // FIXME: Unimplemented
 		"DeleteIndex.skip":       true,                       // FIXME: Unimplemented
-		"Put.skip":               true,                       // FIXME: Unimplemented
 		"SetSecurity.skip":       true,                       // FIXME: Unimplemented
 		"ViewCleanup.skip":       true,                       // FIXME: Unimplemented
 		"Rev.skip":               true,                       // FIXME: Unimplemented

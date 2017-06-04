@@ -377,6 +377,13 @@ func TestDeleteDoc(t *testing.T) {
 				Rev:  rev,
 			}
 		}(),
+		{
+			Name:   "InvalidRevFormat",
+			ID:     "foo",
+			Rev:    "invalid rev format",
+			Status: 400,
+			Error:  "Invalid rev format",
+		},
 	}
 	for _, test := range tests {
 		func(test delTest) {

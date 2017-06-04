@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"regexp"
 	"strings"
 
 	"github.com/flimzy/kivik"
@@ -98,7 +99,16 @@ func (d *db) Put(_ context.Context, docID string, doc interface{}) (rev string, 
 	return d.db.addRevision(couchDoc), nil
 }
 
+var revRE = regexp.MustCompile("^[0-9]+-[a-f0-9]{32}$")
+
+func validRev(rev string) bool {
+	return revRE.MatchString(rev)
+}
+
 func (d *db) Delete(ctx context.Context, docID, rev string) (newRev string, err error) {
+	if !strings.HasPrefix(docID, "_local/") && !validRev(rev) {
+		return "", errors.Status(kivik.StatusBadRequest, "Invalid rev format")
+	}
 	if _, ok := d.db.docs[docID]; !ok {
 		return "", errors.Status(kivik.StatusNotFound, "missing")
 	}

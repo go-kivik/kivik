@@ -148,6 +148,18 @@ func TestPut(t *testing.T) {
 				Expected: map[string]string{"_id": "foo", "_rev": "2-xxx"},
 			}
 		}(),
+		{
+			Name:     "DesignDoc",
+			DocID:    "_design/foo",
+			Doc:      map[string]string{"foo": "bar"},
+			Expected: map[string]string{"_id": "_design/foo", "foo": "bar", "_rev": "1-xxx"},
+		},
+		{
+			Name:     "LocalDoc",
+			DocID:    "_local/foo",
+			Doc:      map[string]string{"foo": "bar"},
+			Expected: map[string]string{"_id": "_local/foo", "foo": "bar", "_rev": "1-0"},
+		},
 	}
 	for _, test := range tests {
 		func(test putTest) {
@@ -182,9 +194,11 @@ func TestPut(t *testing.T) {
 				if e := json.Unmarshal(resultJSON, &result); e != nil {
 					t.Fatal(e)
 				}
-				if rev, ok := result["_rev"].(string); ok {
-					parts := strings.SplitN(rev, "-", 2)
-					result["_rev"] = parts[0] + "-xxx"
+				if !strings.HasPrefix(test.DocID, "_local/") {
+					if rev, ok := result["_rev"].(string); ok {
+						parts := strings.SplitN(rev, "-", 2)
+						result["_rev"] = parts[0] + "-xxx"
+					}
 				}
 				if d := diff.AsJSON(test.Expected, result); d != "" {
 					t.Error(d)

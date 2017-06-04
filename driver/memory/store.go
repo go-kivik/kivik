@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"strings"
 	"sync"
 	"time"
 )
@@ -59,20 +60,31 @@ func (d jsondoc) Rev() string {
 	return rev
 }
 
-func (d *database) addRevision(docID string, doc jsondoc) string {
-	if d.docs[docID] == nil {
-		d.docs[docID] = &document{
+func (d *database) addRevision(doc jsondoc) string {
+	id, ok := doc["_id"].(string)
+	if !ok {
+		panic("_id missing or not a string")
+	}
+	isLocal := strings.HasPrefix(id, "_local/")
+	if d.docs[id] == nil {
+		d.docs[id] = &document{
 			revs: make([]*revision, 0, 1),
 		}
 	}
 	var revID int64
-	l := len(d.docs[docID].revs)
-	if l == 0 {
+	var revStr string
+	if isLocal {
 		revID = 1
+		revStr = "0"
 	} else {
-		revID = d.docs[docID].revs[l-1].ID + 1
+		l := len(d.docs[id].revs)
+		if l == 0 {
+			revID = 1
+		} else {
+			revID = d.docs[id].revs[l-1].ID + 1
+		}
+		revStr = randStr()
 	}
-	revStr := randStr()
 	rev := fmt.Sprintf("%d-%s", revID, revStr)
 	doc["_rev"] = rev
 	data, err := json.Marshal(doc)
@@ -80,11 +92,16 @@ func (d *database) addRevision(docID string, doc jsondoc) string {
 		panic(err)
 	}
 	deleted, _ := doc["_deleted"].(bool)
-	d.docs[docID].revs = append(d.docs[docID].revs, &revision{
+	newRev := &revision{
 		data:    data,
 		ID:      revID,
 		Rev:     revStr,
 		Deleted: deleted,
-	})
+	}
+	if isLocal {
+		d.docs[id].revs = []*revision{newRev}
+	} else {
+		d.docs[id].revs = append(d.docs[id].revs, newRev)
+	}
 	return rev
 }

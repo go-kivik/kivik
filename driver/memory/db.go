@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
@@ -65,7 +66,8 @@ func (d *db) CreateDoc(_ context.Context, doc interface{}) (docID, rev string, e
 }
 
 func (d *db) Put(_ context.Context, docID string, doc interface{}) (rev string, err error) {
-	if docID[0] == '_' {
+	isLocal := strings.HasPrefix(docID, "_local/")
+	if !isLocal && docID[0] == '_' && !strings.HasPrefix(docID, "_design/") {
 		return "", errors.Status(kivik.StatusBadRequest, "Only reserved document ids may start with underscore.")
 	}
 	docJSON, err := json.Marshal(doc)
@@ -83,7 +85,7 @@ func (d *db) Put(_ context.Context, docID string, doc interface{}) (rev string, 
 		if couchDoc.Rev() != lastRev {
 			return "", errors.Status(kivik.StatusConflict, "document update conflict")
 		}
-		rev := d.db.addRevision(docID, couchDoc)
+		rev := d.db.addRevision(couchDoc)
 		return rev, nil
 	}
 
@@ -93,7 +95,7 @@ func (d *db) Put(_ context.Context, docID string, doc interface{}) (rev string, 
 	}
 	d.db.mutex.Lock()
 	defer d.db.mutex.Unlock()
-	return d.db.addRevision(docID, couchDoc), nil
+	return d.db.addRevision(couchDoc), nil
 }
 
 func (d *db) Delete(ctx context.Context, docID, rev string) (newRev string, err error) {

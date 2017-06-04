@@ -32,6 +32,30 @@ func TestAddRevision(t *testing.T) {
 	if len(r) != 34 {
 		t.Errorf("rev (%s) is %d chars long, expected 34", r, len(r))
 	}
+	t.Run("NoID", func(t *testing.T) {
+		r := func() (i interface{}) {
+			defer func() {
+				i = recover()
+			}()
+			d.addRevision(nil)
+			return nil
+		}()
+		if r == nil {
+			t.Errorf("addRevision without ID should panic")
+		}
+	})
+	t.Run("InvalidJSON", func(t *testing.T) {
+		r := func() (i interface{}) {
+			defer func() {
+				i = recover()
+			}()
+			d.addRevision(jsondoc{"_id": "foo", "invalid": make(chan int)})
+			return nil
+		}()
+		if r == nil {
+			t.Errorf("unmarshalable objects should panic")
+		}
+	})
 }
 
 func TestAddLocalRevision(t *testing.T) {

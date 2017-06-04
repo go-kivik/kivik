@@ -65,6 +65,9 @@ func (d *db) CreateDoc(_ context.Context, doc interface{}) (docID, rev string, e
 }
 
 func (d *db) Put(_ context.Context, docID string, doc interface{}) (rev string, err error) {
+	if docID[0] == '_' {
+		return "", errors.Status(kivik.StatusBadRequest, "Only reserved document ids may start with underscore.")
+	}
 	docJSON, err := json.Marshal(doc)
 	if err != nil {
 		return "", errors.Status(kivik.StatusBadRequest, "invalid JSON")
@@ -73,6 +76,7 @@ func (d *db) Put(_ context.Context, docID string, doc interface{}) (rev string, 
 	if e := json.Unmarshal(docJSON, &couchDoc); e != nil {
 		return "", errors.Status(kivik.StatusInternalServerError, "failed to decode encoded document; this is a bug!")
 	}
+	couchDoc["_id"] = docID
 
 	if last, ok := d.db.latestRevision(docID); ok {
 		lastRev := fmt.Sprintf("%d-%s", last.ID, last.Rev)

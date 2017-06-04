@@ -2,6 +2,7 @@ package memory
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"golang.org/x/net/context"
@@ -75,18 +76,33 @@ func setupDB(t *testing.T, s func(driver.DB)) driver.DB {
 
 func TestPut(t *testing.T) {
 	type putTest struct {
-		Name   string
-		DocID  string
-		Doc    interface{}
-		Setup  func() driver.DB
-		Status int
-		Error  string
+		Name     string
+		DocID    string
+		Doc      interface{}
+		Setup    func() driver.DB
+		Expected interface{}
+		Status   int
+		Error    string
 	}
 	tests := []putTest{
 		{
-			Name:  "Success",
-			DocID: "foo",
-			Doc:   map[string]string{"_id": "foo", "foo": "bar"},
+			Name:   "LeadingUnderscoreInID",
+			DocID:  "_badid",
+			Doc:    map[string]string{"_id": "_badid", "foo": "bar"},
+			Status: 400,
+			Error:  "Only reserved document ids may start with underscore.",
+		},
+		{
+			Name:     "MismatchedIDs",
+			DocID:    "foo",
+			Doc:      map[string]string{"_id": "bar"},
+			Expected: map[string]string{"_id": "foo", "_rev": "1-xxx"},
+		},
+		{
+			Name:     "Success",
+			DocID:    "foo",
+			Doc:      map[string]string{"_id": "foo", "foo": "bar"},
+			Expected: map[string]string{"_id": "foo", "foo": "bar", "_rev": "1-xxx"},
 		},
 		{
 			Name:  "Conflict",
@@ -125,10 +141,11 @@ func TestPut(t *testing.T) {
 				panic(err)
 			}
 			return putTest{
-				Name:  "Update",
-				DocID: "foo",
-				Setup: func() driver.DB { return db },
-				Doc:   map[string]string{"_id": "foo", "_rev": rev},
+				Name:     "Update",
+				DocID:    "foo",
+				Setup:    func() driver.DB { return db },
+				Doc:      map[string]string{"_id": "foo", "_rev": rev},
+				Expected: map[string]string{"_id": "foo", "_rev": "2-xxx"},
 			}
 		}(),
 	}
@@ -153,6 +170,24 @@ func TestPut(t *testing.T) {
 				}
 				if status != test.Status {
 					t.Errorf("Unexpected status code: %d", status)
+				}
+				if msg != "" {
+					return
+				}
+				resultJSON, err := db.Get(context.Background(), test.DocID, nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				var result map[string]interface{}
+				if e := json.Unmarshal(resultJSON, &result); e != nil {
+					t.Fatal(e)
+				}
+				if rev, ok := result["_rev"].(string); ok {
+					parts := strings.SplitN(rev, "-", 2)
+					result["_rev"] = parts[0] + "-xxx"
+				}
+				if d := diff.AsJSON(test.Expected, result); d != "" {
+					t.Error(d)
 				}
 			})
 		}(test)

@@ -1,7 +1,6 @@
 package memory
 
 import (
-	"fmt"
 	"math/rand"
 	"sync"
 	"time"
@@ -35,11 +34,4 @@ var rndMU = &sync.Mutex{}
 
 func init() {
 	rnd = rand.New(rand.NewSource(time.Now().UnixNano()))
-}
-
-func randStr() string {
-	rndMU.Lock()
-	s := fmt.Sprintf("%016x%016x", rnd.Uint64(), rnd.Uint64())
-	rndMU.Unlock()
-	return s
 }

@@ -78,7 +78,7 @@ func TestPut(t *testing.T) {
 		Name   string
 		DocID  string
 		Doc    interface{}
-		Setup  func(driver.DB)
+		Setup  func() driver.DB
 		Status int
 		Error  string
 	}
@@ -92,8 +92,10 @@ func TestPut(t *testing.T) {
 			Name:  "Conflict",
 			DocID: "foo",
 			Doc:   map[string]string{"_id": "foo", "_rev": "bar"},
-			Setup: func(db driver.DB) {
+			Setup: func() driver.DB {
+				db := setupDB(t, nil)
 				db.Put(context.Background(), "foo", map[string]string{"_id": "foo"})
+				return db
 			},
 			Status: 409,
 			Error:  "document update conflict",
@@ -116,12 +118,30 @@ func TestPut(t *testing.T) {
 			Status: 409,
 			Error:  "document update conflict",
 		},
+		func() putTest {
+			db := setupDB(t, nil)
+			rev, err := db.Put(context.Background(), "foo", map[string]string{"_id": "foo", "foo": "bar"})
+			if err != nil {
+				panic(err)
+			}
+			return putTest{
+				Name:  "Update",
+				DocID: "foo",
+				Setup: func() driver.DB { return db },
+				Doc:   map[string]string{"_id": "foo", "_rev": rev},
+			}
+		}(),
 	}
 	for _, test := range tests {
 		func(test putTest) {
 			t.Run(test.Name, func(t *testing.T) {
 				t.Parallel()
-				db := setupDB(t, test.Setup)
+				var db driver.DB
+				if test.Setup != nil {
+					db = test.Setup()
+				} else {
+					db = setupDB(t, nil)
+				}
 				var msg string
 				var status int
 				if _, err := db.Put(context.Background(), test.DocID, test.Doc); err != nil {
@@ -144,7 +164,7 @@ func TestGet(t *testing.T) {
 		Name     string
 		ID       string
 		Opts     map[string]interface{}
-		Setup    func(driver.DB)
+		Setup    func() driver.DB
 		Status   int
 		Error    string
 		Expected interface{}
@@ -159,19 +179,79 @@ func TestGet(t *testing.T) {
 		{
 			Name: "ExistingDoc",
 			ID:   "foo",
-			Setup: func(db driver.DB) {
+			Setup: func() driver.DB {
+				db := setupDB(t, nil)
 				if _, err := db.Put(context.Background(), "foo", map[string]string{"_id": "foo", "foo": "bar"}); err != nil {
 					panic(err)
 				}
+				return db
 			},
 			Expected: map[string]string{"_id": "foo", "foo": "bar"},
+		},
+		func() getTest {
+			db := setupDB(t, nil)
+			rev, err := db.Put(context.Background(), "foo", map[string]string{"_id": "foo", "foo": "Bar"})
+			if err != nil {
+				panic(err)
+			}
+			return getTest{
+				Name:  "SpecificRev",
+				ID:    "foo",
+				Setup: func() driver.DB { return db },
+				Opts: map[string]interface{}{
+					"rev": rev,
+				},
+				Expected: map[string]string{"_id": "foo", "foo": "Bar"},
+			}
+		}(),
+		func() getTest {
+			db := setupDB(t, nil)
+			rev, err := db.Put(context.Background(), "foo", map[string]string{"_id": "foo", "foo": "Bar"})
+			if err != nil {
+				panic(err)
+			}
+			_, err = db.Put(context.Background(), "foo", map[string]string{"_id": "foo", "foo": "baz", "_rev": rev})
+			if err != nil {
+				panic(err)
+			}
+			return getTest{
+				Name:  "OldRev",
+				ID:    "foo",
+				Setup: func() driver.DB { return db },
+				Opts: map[string]interface{}{
+					"rev": rev,
+				},
+				Expected: map[string]string{"_id": "foo", "foo": "Bar"},
+			}
+		}(),
+		{
+			Name: "MissingRev",
+			ID:   "foo",
+			Opts: map[string]interface{}{
+				"rev": "1-4c6114c65e295552ab1019e2b046b10e",
+			},
+			Setup: func() driver.DB {
+				db := setupDB(t, nil)
+				_, err := db.Put(context.Background(), "foo", map[string]string{"_id": "foo", "foo": "Bar"})
+				if err != nil {
+					panic(err)
+				}
+				return db
+			},
+			Status: 404,
+			Error:  "missing",
 		},
 	}
 	for _, test := range tests {
 		func(test getTest) {
 			t.Run(test.Name, func(t *testing.T) {
 				t.Parallel()
-				db := setupDB(t, test.Setup)
+				var db driver.DB
+				if test.Setup != nil {
+					db = test.Setup()
+				} else {
+					db = setupDB(t, nil)
+				}
 				var msg string
 				var status int
 				docJSON, err := db.Get(context.Background(), test.ID, test.Opts)

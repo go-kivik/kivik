@@ -42,6 +42,14 @@ func (d *db) Query(ctx context.Context, ddoc, view string, opts map[string]inter
 
 func (d *db) Get(_ context.Context, docID string, opts map[string]interface{}) (json.RawMessage, error) {
 	if existing, ok := d.db.docs[docID]; ok {
+		if rev, ok := opts["rev"].(string); ok {
+			for _, r := range existing.revs {
+				if rev == fmt.Sprintf("%d-%s", r.ID, r.Rev) {
+					return r.data, nil
+				}
+			}
+			return nil, errors.Status(kivik.StatusNotFound, "missing")
+		}
 		last := existing.revs[len(existing.revs)-1]
 		return last.data, nil
 	}
@@ -59,13 +67,6 @@ type docMeta struct {
 }
 
 func (d *db) Put(_ context.Context, docID string, doc interface{}) (rev string, err error) {
-	if existing, ok := d.db.docs[docID]; ok {
-		last := existing.revs[len(existing.revs)-1]
-		lastRev := fmt.Sprintf("%d-%s", last.RevID, last.Rev)
-		if rev != lastRev {
-			return "", errors.Status(kivik.StatusConflict, "document update conflict")
-		}
-	}
 	docJSON, err := json.Marshal(doc)
 	if err != nil {
 		return "", errors.Status(kivik.StatusBadRequest, "invalid JSON")
@@ -74,25 +75,23 @@ func (d *db) Put(_ context.Context, docID string, doc interface{}) (rev string, 
 	if e := json.Unmarshal(docJSON, &meta); e != nil {
 		return "", errors.Status(kivik.StatusInternalServerError, "failed to decode encoded document; this is a bug!")
 	}
+
+	if last, ok := d.db.latestRevision(docID); ok {
+		lastRev := fmt.Sprintf("%d-%s", last.ID, last.Rev)
+		if meta.Rev != lastRev {
+			return "", errors.Status(kivik.StatusConflict, "document update conflict")
+		}
+		rev := d.db.addRevision(docID, docJSON, nil)
+		return rev, nil
+	}
+
 	if meta.Rev != "" {
 		// Rev should not be set for a new document
 		return "", errors.Status(kivik.StatusConflict, "document update conflict")
 	}
 	d.db.mutex.Lock()
 	defer d.db.mutex.Unlock()
-	revID := int64(1)
-	revStr := randStr()
-	d.db.docs[docID] = &document{
-		revs: []*revision{
-			{
-				ID:    docID,
-				RevID: revID,
-				Rev:   revStr,
-				data:  docJSON,
-			},
-		},
-	}
-	return fmt.Sprintf("%d-%s", revID, revStr), nil
+	return d.db.addRevision(docID, docJSON, nil), nil
 }
 
 func (d *db) Delete(_ context.Context, docID, rev string) (newRev string, err error) {

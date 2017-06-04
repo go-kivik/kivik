@@ -50,6 +50,11 @@ func (d *db) CreateDoc(_ context.Context, doc interface{}) (docID, rev string, e
 	return "", "", notYetImplemented
 }
 
+type docMeta struct {
+	ID  string `json:"_id"`
+	Rev string `json:"_rev"`
+}
+
 func (d *db) Put(_ context.Context, docID string, doc interface{}) (rev string, err error) {
 	if existing, ok := d.db.docs[docID]; ok {
 		last := existing.revs[len(existing.revs)-1]
@@ -58,9 +63,17 @@ func (d *db) Put(_ context.Context, docID string, doc interface{}) (rev string, 
 			return "", errors.Status(kivik.StatusConflict, "document update conflict")
 		}
 	}
-	_, err = json.Marshal(doc)
+	docJSON, err := json.Marshal(doc)
 	if err != nil {
 		return "", errors.Status(kivik.StatusBadRequest, "invalid JSON")
+	}
+	var meta docMeta
+	if e := json.Unmarshal(docJSON, &meta); e != nil {
+		return "", errors.Status(kivik.StatusInternalServerError, "failed to decode encoded document; this is a bug!")
+	}
+	if meta.Rev != "" {
+		// Rev should not be set for a new document
+		return "", errors.Status(kivik.StatusConflict, "document update conflict")
 	}
 	d.db.mutex.Lock()
 	defer d.db.mutex.Unlock()
@@ -72,6 +85,7 @@ func (d *db) Put(_ context.Context, docID string, doc interface{}) (rev string, 
 				ID:    docID,
 				RevID: revID,
 				Rev:   revStr,
+				data:  docJSON,
 			},
 		},
 	}

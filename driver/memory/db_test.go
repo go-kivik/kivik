@@ -108,14 +108,13 @@ func TestPut(t *testing.T) {
 			Status: 400,
 			Error:  "invalid JSON",
 		},
-		// {
-		// 	Name:  "Conflict",
-		// 	DocID: "foo",
-		// 	Doc:   map[string]string{"_id": "foo", "_rev": "bar"},
-		// 	Setup: func(db driver.DB) {
-		// 		db.Put(context.Background(), "foo", map[string]string{"_id": "foo"})
-		// 	},
-		// },
+		{
+			Name:   "InitialRev",
+			DocID:  "foo",
+			Doc:    map[string]string{"_id": "foo", "_rev": "bar"},
+			Status: 409,
+			Error:  "document update conflict",
+		},
 	}
 	for _, test := range tests {
 		func(test putTest) {

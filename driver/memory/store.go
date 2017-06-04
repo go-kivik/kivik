@@ -16,7 +16,7 @@ type document struct {
 }
 
 type revision struct {
-	data        map[string]interface{}
+	data        []byte
 	ID          string
 	RevID       int64
 	Rev         string

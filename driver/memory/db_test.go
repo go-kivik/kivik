@@ -160,6 +160,23 @@ func TestPut(t *testing.T) {
 			Doc:      map[string]string{"foo": "bar"},
 			Expected: map[string]string{"_id": "_local/foo", "foo": "bar", "_rev": "1-0"},
 		},
+		{
+			Name:     "RecreateDeleted",
+			DocID:    "foo",
+			Doc:      map[string]string{"foo": "bar"},
+			Expected: map[string]string{"_id": "foo", "foo": "bar", "_rev": "3-xxx"},
+			Setup: func() driver.DB {
+				db := setupDB(t, nil)
+				rev, err := db.Put(context.Background(), "foo", map[string]string{"_id": "foo"})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if _, e := db.Delete(context.Background(), "foo", rev); e != nil {
+					t.Fatal(e)
+				}
+				return db
+			},
+		},
 	}
 	for _, test := range tests {
 		func(test putTest) {

@@ -70,7 +70,7 @@
 | POST /{db}/_compact/{ddoc}            | CompactView()       |    |    | ✅ | ⁿ/ₐ |    |    |
 | POST /{db}/_ensure_full_commit        | Flush()             | ✅ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ |    |
 | POST /{db}/_view_cleanup              | ViewCleanup()       |    | ✅ | ✅ | ✅ |     |    |
-| GET /{db}/_security                   | Security()          |    | ✅ | ✅ | ⁿ/ₐ<sup>[14](#pouchPlugin)</sup>
+| GET /{db}/_security                   | Security()          |    | ✅ | ✅ | ⁿ/ₐ<sup>[14](#pouchPlugin)</sup> |  | ✅
 | PUT /{db}/_security                   | SetSecurity()       |    | ✅ | ✅ | ⁿ/ₐ<sup>[14](#pouchPlugin)</sup>
 | POST /{db}/_temp_view                 | ⁿ/ₐ                  | ⁿ/ₐ | ⁿ/ₐ| ⁿ/ₐ<sup>[16](#tempViews)</sup> | ⁿ/ₐ<sup>[17](#pouchTempViews)</sup> | ⁿ/ₐ | ⁿ/ₐ |
 | POST /{db}/_purge                     | ⁿ/ₐ                  |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |

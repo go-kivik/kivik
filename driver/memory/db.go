@@ -18,8 +18,9 @@ var notYetImplemented = errors.Status(kivik.StatusNotImplemented, "kivik: not ye
 // database is an in-memory database representation.
 type db struct {
 	*client
-	dbName string
-	db     *database
+	dbName   string
+	db       *database
+	security *kivik.Security
 }
 
 type indexDoc struct {

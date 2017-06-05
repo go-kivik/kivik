@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"sort"
 
 	"github.com/flimzy/diff"
 	"github.com/flimzy/kivik"
@@ -47,6 +48,8 @@ func testAllDBs(ctx *kt.Context, client *kivik.Client, expected []string) {
 	if !ctx.IsExpectedSuccess(err) {
 		return
 	}
+	sort.Strings(expected)
+	sort.Strings(allDBs)
 	if d := diff.TextSlices(expected, allDBs); d != "" {
 		ctx.Errorf("AllDBs() returned unexpected list:\n%s\n", d)
 	}

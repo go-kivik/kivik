@@ -3,6 +3,8 @@ package kivik
 import (
 	"context"
 	"encoding/json"
+	"io"
+	"io/ioutil"
 	"strings"
 
 	"github.com/flimzy/kivik/driver"
@@ -74,12 +76,51 @@ func (db *DB) CreateDoc(ctx context.Context, doc interface{}) (docID, rev string
 	return db.driverDB.CreateDoc(ctx, doc)
 }
 
+// normalizeFromJSON unmarshals a []byte, json.RawMessage or io.Reader to a
+// map[string]interface{}, or passed through any other types.
+func normalizeFromJSON(i interface{}) (interface{}, error) {
+	var body []byte
+	switch t := i.(type) {
+	case []byte:
+		body = t
+	case json.RawMessage:
+		body = t
+	default:
+		r, ok := i.(io.Reader)
+		if !ok {
+			return i, nil
+		}
+		var err error
+		body, err = ioutil.ReadAll(r)
+		if err != nil {
+			return nil, err
+		}
+	}
+	var x map[string]interface{}
+	if err := json.Unmarshal(body, &x); err != nil {
+		return nil, errors.WrapStatus(StatusBadRequest, err)
+	}
+	return x, nil
+}
+
 // Put creates a new doc or updates an existing one, with the specified docID.
 // If the document already exists, the current revision must be included in doc,
 // with JSON key '_rev', otherwise a conflict will occur. The new rev is
 // returned.
+//
+// doc may be one of:
+//
+// - An object to be marshaled to JSON. The resulting JSON structure must
+//   conform to CouchDB standards.
+// - A []byte value, containing a valid JSON document
+// - A json.RawMessage value containing a valid JSON document
+// - An io.Reader, from which a valid JSON document may be read.
 func (db *DB) Put(ctx context.Context, docID string, doc interface{}) (rev string, err error) {
-	return db.driverDB.Put(ctx, docID, doc)
+	i, err := normalizeFromJSON(doc)
+	if err != nil {
+		return "", err
+	}
+	return db.driverDB.Put(ctx, docID, i)
 }
 
 // Delete marks the specified document as deleted.

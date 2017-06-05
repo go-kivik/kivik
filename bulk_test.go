@@ -52,6 +52,17 @@ func TestDocsInterfaceSlice(t *testing.T) {
 			input:    &intSlice,
 			expected: []interface{}{1, 2, 3},
 		},
+		{
+			name: "JSONDoc",
+			input: []interface{}{
+				map[string]string{"foo": "bar"},
+				[]byte(`{"foo":"bar"}`),
+			},
+			expected: []interface{}{
+				map[string]string{"foo": "bar"},
+				map[string]string{"foo": "bar"},
+			},
+		},
 	}
 	for _, test := range tests {
 		func(test diTest) {

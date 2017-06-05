@@ -7,6 +7,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/flimzy/kivik/driver"
 )
 
 type file struct {
@@ -29,6 +31,8 @@ type revision struct {
 type database struct {
 	mu        sync.RWMutex
 	docs      map[string]*document
+	deleted   bool
+	security  *driver.Security
 	updateSeq int64
 }
 

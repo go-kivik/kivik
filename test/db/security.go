@@ -109,11 +109,13 @@ func testSetSecurity(ctx *kt.Context, client *kivik.Client, dbname string) {
 }
 
 func testGetSecurity(ctx *kt.Context, client *kivik.Client, dbname string, expected *kivik.Security) {
-	db, err := client.DB(context.Background(), dbname, ctx.Options("db"))
-	if err != nil {
-		ctx.Fatalf("Failed to open db: %s", err)
-	}
-	sec, err := db.Security(context.Background())
+	sec, err := func() (*kivik.Security, error) {
+		db, err := client.DB(context.Background(), dbname, ctx.Options("db"))
+		if err != nil {
+			return nil, err
+		}
+		return db.Security(context.Background())
+	}()
 	if !ctx.IsExpectedSuccess(err) {
 		return
 	}

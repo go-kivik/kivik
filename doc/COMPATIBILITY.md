@@ -53,7 +53,7 @@
 | GET /_session<sup>[6](#cookieAuth)</sup> | ⁿ/ₐ<sup>[13](#getSession)</sup> | ☑️ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | DELETE /_session<sup>[6](#cookieAuth)</sup> | ⁿ/ₐ<sup>[13](#getSession)</sup> | ✅ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | * /_config                            | ⁿ/ₐ                  |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
-| HEAD /{db}                            | DBExists()          | ✅ | ✅ | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅ |   | ⍻
+| HEAD /{db}                            | DBExists()          | ✅ | ✅ | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
 | GET /{db}                             | Stats()             |    | ✅ | ✅ | ✅ |   | ☑️
 | PUT /{db}                             | CreateDB()          | ✅ | ✅ | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
 | DELETE /{db}                          | DestroyDB()         |    | ✅ | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
@@ -70,18 +70,18 @@
 | POST /{db}/_compact/{ddoc}            | CompactView()       |    |    | ✅ | ⁿ/ₐ |    |    |
 | POST /{db}/_ensure_full_commit        | Flush()             | ✅ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ |    |
 | POST /{db}/_view_cleanup              | ViewCleanup()       |    | ✅ | ✅ | ✅ |     |    |
-| GET /{db}/_security                   | Security()          |    | ✅ | ✅ | ⁿ/ₐ<sup>[14](#pouchPlugin)</sup>
-| PUT /{db}/_security                   | SetSecurity()       |    | ✅ | ✅ | ⁿ/ₐ<sup>[14](#pouchPlugin)</sup>
+| GET /{db}/_security                   | Security()          |    | ✅ | ✅ | ⁿ/ₐ<sup>[14](#pouchPlugin)</sup> | ✅
+| PUT /{db}/_security                   | SetSecurity()       |    | ✅ | ✅ | ⁿ/ₐ<sup>[14](#pouchPlugin)</sup> | ✅
 | POST /{db}/_temp_view                 | ⁿ/ₐ                  | ⁿ/ₐ | ⁿ/ₐ| ⁿ/ₐ<sup>[16](#tempViews)</sup> | ⁿ/ₐ<sup>[17](#pouchTempViews)</sup> | ⁿ/ₐ | ⁿ/ₐ |
 | POST /{db}/_purge                     | ⁿ/ₐ                  |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
 | POST /{db}/_missing_revs              | ⁿ/ₐ                  |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
 | POST /{db}/_revs_diff                 | ⁿ/ₐ                  |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
 | GET /{db}/_revs_limit                 | ⁿ/ₐ                  |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
 | PUT /{db}/_revs_limit                 | ⁿ/ₐ                  |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
-| HEAD /{db}/{docid}                    | Rev()               |    | ✅ | ✅ | ⍻ |
-| GET /{db}/{docid}                     | Get()               |    | ☑️<sup>[7](#todoConflicts),[11](#todoAttachments)</sup> | ✅ | ✅ |   | ☑️<sup>[18](#memstatus)</sup>
-| PUT /{db}/{docid}                     | Put()               |    | ☑️<sup>[11](#todoAttachments)</sup> | ✅ | ✅ |   | ☑️<sup>[18](#memstatus)</sup>
-| DELETE /{db}/{docid}                  | Delete()            |    | ✅ | ✅ | ✅ |   | ✅
+| HEAD /{db}/{docid}                    | Rev()               |    | ✅ | ✅ | ⍻ | ⍻
+| GET /{db}/{docid}                     | Get()               |    | ☑️<sup>[7](#todoConflicts),[11](#todoAttachments)</sup> | ✅ | ✅ | ☑️<sup>[18](#memstatus)</sup>
+| PUT /{db}/{docid}                     | Put()               |    | ☑️<sup>[11](#todoAttachments)</sup> | ✅ | ✅ | ☑️<sup>[18](#memstatus)</sup>
+| DELETE /{db}/{docid}                  | Delete()            |    | ✅ | ✅ | ✅ | ✅
 | COPY /{db}/{docid}                    | Copy()              |    | ✅ | ✅ | ⍻ |
 | HEAD /{db}/{docid}/{attname}          | GetAttachmentMeta() |    | ✅ | ✅ | ⍻ |
 | GET /{db}/{docid}/{attname}           | GetAttachment()     |    | ✅ | ✅ | ✅ |

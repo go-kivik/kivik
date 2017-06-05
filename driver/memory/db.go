@@ -18,8 +18,9 @@ var notYetImplemented = errors.Status(kivik.StatusNotImplemented, "kivik: not ye
 // database is an in-memory database representation.
 type db struct {
 	*client
-	dbName string
-	db     *database
+	dbName   string
+	db       *database
+	security *kivik.Security
 }
 
 type indexDoc struct {
@@ -137,16 +138,6 @@ func (d *db) CompactView(_ context.Context, _ string) error {
 }
 
 func (d *db) ViewCleanup(_ context.Context) error {
-	// FIXME: Unimplemented
-	return notYetImplemented
-}
-
-func (d *db) Security(_ context.Context) (*driver.Security, error) {
-	// FIXME: Unimplemented
-	return nil, notYetImplemented
-}
-
-func (d *db) SetSecurity(_ context.Context, _ *driver.Security) error {
 	// FIXME: Unimplemented
 	return notYetImplemented
 }

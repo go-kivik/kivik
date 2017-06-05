@@ -10,7 +10,7 @@ func init() {
 		// Unsupported features
 		"Flush.skip": true,
 
-		"AllDBs.expected": []string{},
+		"AllDBs.expected": []string{"_users"},
 
 		"CreateDB/RW/NoAuth.status":         kivik.StatusUnauthorized,
 		"CreateDB/RW/Admin/Recreate.status": kivik.StatusPreconditionFailed,
@@ -45,10 +45,15 @@ func init() {
 		"Delete/RW/Admin/group/InvalidRevFormat.status": kivik.StatusBadRequest,
 		"Delete/RW/Admin/group/WrongRev.status":         kivik.StatusConflict,
 
+		"Security.databases":            []string{"_users", "chicken", "_duck"},
+		"Security/Admin/chicken.status": kivik.StatusNotFound,
+		"Security/Admin/_duck.status":   kivik.StatusNotFound,
+
+		"SetSecurity/RW/Admin/NotExists.status": kivik.StatusNotFound,
+
 		"Stats.skip":             true,                       // FIXME: Unimplemented
 		"CreateDoc.skip":         true,                       // FIXME: Unimplemented
 		"Compact.skip":           true,                       // FIXME: Unimplemented
-		"Security.skip":          true,                       // FIXME: Unimplemented
 		"DBUpdates.status":       kivik.StatusNotImplemented, // FIXME: Unimplemented
 		"Changes.skip":           true,                       // FIXME: Unimplemented
 		"Copy.skip":              true,                       // FIXME: Unimplemented, depends on Get/Put or Copy

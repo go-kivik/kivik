@@ -76,7 +76,8 @@ func (c *client) CreateDB(ctx context.Context, dbName string, options map[string
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	c.dbs[dbName] = &database{
-		docs: make(map[string]*document),
+		docs:     make(map[string]*document),
+		security: &driver.Security{},
 	}
 	return nil
 }
@@ -87,6 +88,9 @@ func (c *client) DestroyDB(ctx context.Context, dbName string, options map[strin
 	}
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
+	c.dbs[dbName].mu.Lock()
+	defer c.dbs[dbName].mu.Unlock()
+	c.dbs[dbName].deleted = true // To invalidate any outstanding db handles
 	delete(c.dbs, dbName)
 	return nil
 }

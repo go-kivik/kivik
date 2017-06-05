@@ -19,5 +19,8 @@ func TestMemory(t *testing.T) {
 		RW:    true,
 		Admin: client,
 	}
+	if err := client.CreateDB(context.Background(), "_users"); err != nil {
+		t.Fatal(err)
+	}
 	runTests(clients, SuiteKivikMemory, t)
 }

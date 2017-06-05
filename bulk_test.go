@@ -52,6 +52,38 @@ func TestDocsInterfaceSlice(t *testing.T) {
 			input:    &intSlice,
 			expected: []interface{}{1, 2, 3},
 		},
+		{
+			name: "JSONDoc",
+			input: []interface{}{
+				map[string]string{"foo": "bar"},
+				[]byte(`{"foo":"bar"}`),
+			},
+			expected: []interface{}{
+				map[string]string{"foo": "bar"},
+				map[string]string{"foo": "bar"},
+			},
+		},
+		{
+			name: "BytesArrays",
+			input: [][]byte{
+				[]byte(`{"foo":"bar"}`),
+				[]byte(`{"foo":"bar"}`),
+			},
+			expected: []interface{}{
+				map[string]string{"foo": "bar"},
+				map[string]string{"foo": "bar"},
+			},
+		},
+		{
+			name:  "InvalidJSON",
+			input: []interface{}{[]byte(`invalid`)},
+			error: "invalid character 'i' looking for beginning of value",
+		},
+		{
+			name:  "BytesInvalidJSON",
+			input: [][]byte{[]byte(`invalid`)},
+			error: "invalid character 'i' looking for beginning of value",
+		},
 	}
 	for _, test := range tests {
 		func(test diTest) {

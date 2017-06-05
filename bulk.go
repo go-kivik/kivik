@@ -2,6 +2,7 @@ package kivik
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 
 	"github.com/flimzy/kivik/driver"
@@ -83,10 +84,16 @@ func (r *BulkResults) UpdateErr() error {
 // of the bulk operation. docs must be a slice, array, or pointer to a slice
 // or array, or the function will panic.
 // See http://docs.couchdb.org/en/2.0.0/api/database/bulk-api.html#db-bulk-docs
+//
+// As with Put, each individual document may be a JSON-marshable object, or a
+// raw JSON string in a []byte, json.RawMessage, or io.Reader.
 func (db *DB) BulkDocs(ctx context.Context, docs interface{}) (*BulkResults, error) {
 	docsi, err := docsInterfaceSlice(docs)
 	if err != nil {
-		panic(err)
+		if _, ok := err.(errNotSlice); ok {
+			panic(err)
+		}
+		return nil, err
 	}
 	bulki, err := db.driverDB.BulkDocs(ctx, docsi)
 	if err != nil {
@@ -95,8 +102,25 @@ func (db *DB) BulkDocs(ctx context.Context, docs interface{}) (*BulkResults, err
 	return newBulkResults(ctx, bulki), nil
 }
 
+type errNotSlice struct {
+	i interface{}
+}
+
+func (e errNotSlice) Error() string {
+	return fmt.Sprintf("must be slice or array, got %T", e.i)
+}
+
+func (e errNotSlice) StatusCode() int { return StatusBadRequest }
+
 func docsInterfaceSlice(docs interface{}) ([]interface{}, error) {
 	if docsi, ok := docs.([]interface{}); ok {
+		for i, doc := range docsi {
+			x, err := normalizeFromJSON(doc)
+			if err != nil {
+				return nil, errors.WrapStatus(StatusBadRequest, err)
+			}
+			docsi[i] = x
+		}
 		return docsi, nil
 	}
 	s := reflect.ValueOf(docs)
@@ -104,11 +128,15 @@ func docsInterfaceSlice(docs interface{}) ([]interface{}, error) {
 		s = s.Elem()
 	}
 	if s.Kind() != reflect.Slice && s.Kind() != reflect.Array {
-		return nil, errors.Statusf(StatusBadRequest, "must be slice or array, got %T", docs)
+		return nil, errNotSlice{docs}
 	}
 	docsi := make([]interface{}, s.Len())
 	for i := 0; i < s.Len(); i++ {
-		docsi[i] = s.Index(i).Interface()
+		x, err := normalizeFromJSON(s.Index(i).Interface())
+		if err != nil {
+			return nil, errors.WrapStatus(StatusBadRequest, err)
+		}
+		docsi[i] = x
 	}
 	return docsi, nil
 }

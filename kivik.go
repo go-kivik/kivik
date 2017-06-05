@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"regexp"
 
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/errors"
@@ -119,17 +118,11 @@ func (c *Client) DBExists(ctx context.Context, dbName string, options ...Options
 	return c.driverClient.DBExists(ctx, dbName, opts)
 }
 
-// Copied verbatim from http://docs.couchdb.org/en/2.0.0/api/database/common.html#head--db
-var validDBName = regexp.MustCompile("^[a-z][a-z0-9_$()+/-]*$")
-
 // CreateDB creates a DB of the requested name.
 func (c *Client) CreateDB(ctx context.Context, dbName string, options ...Options) error {
 	opts, err := mergeOptions(options...)
 	if err != nil {
 		return err
-	}
-	if !validDBName.MatchString(dbName) {
-		return errors.Status(StatusBadRequest, "invalid database name")
 	}
 	return c.driverClient.CreateDB(ctx, dbName, opts)
 }

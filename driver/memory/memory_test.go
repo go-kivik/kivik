@@ -97,6 +97,15 @@ func TestCreateDB(t *testing.T) {
 			DBName: "foo",
 		},
 		{
+			Name:   "UsersDB",
+			DBName: "_users",
+		},
+		{
+			Name:   "SystemDB",
+			DBName: "_foo",
+			Error:  "invalid database name",
+		},
+		{
 			Name:   "Duplicate",
 			DBName: "foo",
 			Setup: func(c driver.Client) {

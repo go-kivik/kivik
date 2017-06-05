@@ -4,6 +4,7 @@ package memory
 import (
 	"context"
 	"net/http"
+	"regexp"
 	"sync"
 
 	"github.com/flimzy/kivik"
@@ -56,9 +57,21 @@ func (c *client) DBExists(_ context.Context, dbName string, _ map[string]interfa
 	return ok, nil
 }
 
+// Copied verbatim from http://docs.couchdb.org/en/2.0.0/api/database/common.html#head--db
+var validDBName = regexp.MustCompile("^[a-z][a-z0-9_$()+/-]*$")
+var validNames = map[string]struct{}{
+	"_users":      struct{}{},
+	"_replicator": struct{}{},
+}
+
 func (c *client) CreateDB(ctx context.Context, dbName string, options map[string]interface{}) error {
 	if exists, _ := c.DBExists(ctx, dbName, options); exists {
 		return errors.Status(http.StatusPreconditionFailed, "database exists")
+	}
+	if _, ok := validNames[dbName]; !ok {
+		if !validDBName.MatchString(dbName) {
+			return errors.Status(kivik.StatusBadRequest, "invalid database name")
+		}
 	}
 	c.mutex.Lock()
 	defer c.mutex.Unlock()

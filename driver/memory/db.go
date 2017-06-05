@@ -141,16 +141,6 @@ func (d *db) ViewCleanup(_ context.Context) error {
 	return notYetImplemented
 }
 
-func (d *db) Security(_ context.Context) (*driver.Security, error) {
-	// FIXME: Unimplemented
-	return nil, notYetImplemented
-}
-
-func (d *db) SetSecurity(_ context.Context, _ *driver.Security) error {
-	// FIXME: Unimplemented
-	return notYetImplemented
-}
-
 func (d *db) Changes(ctx context.Context, opts map[string]interface{}) (driver.Changes, error) {
 	// FIXME: Unimplemented
 	return nil, notYetImplemented

@@ -117,7 +117,7 @@ func TestPut(t *testing.T) {
 			Error:  "document update conflict",
 		},
 		{
-			Name:  "InvalidJSON",
+			Name:  "Unmarshalable",
 			DocID: "foo",
 			Doc: func() interface{} {
 				return map[string]interface{}{
@@ -125,7 +125,7 @@ func TestPut(t *testing.T) {
 				}
 			}(),
 			Status: 400,
-			Error:  "invalid JSON",
+			Error:  "json: unsupported type: chan int",
 		},
 		{
 			Name:   "InitialRev",
@@ -448,33 +448,60 @@ func TestDeleteDoc(t *testing.T) {
 	}
 }
 
-// func TestCreateDoc(t *testing.T) {
-// 	type cdTest struct {
-// 		Name  string
-// 		Doc   interface{}
-// 		Error string
-// 	}
-// 	tests := []cdTest{
-// 		{
-// 			Name: "SimpleDoc",
-// 			Doc: map[string]interface{}{
-// 				"foo": "bar",
-// 			},
-// 		},
-// 	}
-// 	for _, test := range tests {
-// 		func(test cdTest) {
-// 			t.Run(test.Name, func(t *testing.T) {
-// 				db := setupDB(t)
-// 				_, _, err := db.CreateDoc(context.Background(), test.Doc)
-// 				var msg string
-// 				if err != nil {
-// 					msg = err.Error()
-// 				}
-// 				if msg != test.Error {
-// 					t.Errorf("Unexpected error: %s", msg)
-// 				}
-// 			})
-// 		}(test)
-// 	}
-// }
+func TestCreateDoc(t *testing.T) {
+	type cdTest struct {
+		Name     string
+		Doc      interface{}
+		Expected map[string]interface{}
+		Error    string
+	}
+	tests := []cdTest{
+		{
+			Name: "SimpleDoc",
+			Doc: map[string]interface{}{
+				"foo": "bar",
+			},
+			Expected: map[string]interface{}{
+				"_rev": "1-xxx",
+				"foo":  "bar",
+			},
+		},
+	}
+	for _, test := range tests {
+		func(test cdTest) {
+			t.Run(test.Name, func(t *testing.T) {
+				db := setupDB(t, nil)
+				docID, _, err := db.CreateDoc(context.Background(), test.Doc)
+				var msg string
+				if err != nil {
+					msg = err.Error()
+				}
+				if msg != test.Error {
+					t.Errorf("Unexpected error: %s", msg)
+				}
+				if err != nil {
+					return
+				}
+				row, err := db.Get(context.Background(), docID, nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				var result map[string]interface{}
+				if e := json.Unmarshal(row, &result); e != nil {
+					t.Fatal(e)
+				}
+				if result["_id"].(string) != docID {
+					t.Errorf("Unexpected id. %s != %s", result["_id"].(string), docID)
+				}
+				delete(result, "_id")
+				if rev, ok := result["_rev"].(string); ok {
+					parts := strings.SplitN(rev, "-", 2)
+					result["_rev"] = parts[0] + "-xxx"
+				}
+				if d := diff.Interface(test.Expected, result); d != "" {
+					t.Error(d)
+				}
+			})
+		}(test)
+	}
+}

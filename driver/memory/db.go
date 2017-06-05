@@ -60,9 +60,18 @@ func (d *db) Get(_ context.Context, docID string, opts map[string]interface{}) (
 	return last.data, nil
 }
 
-func (d *db) CreateDoc(_ context.Context, doc interface{}) (docID, rev string, err error) {
-	// FIXME: Unimplemented
-	return "", "", notYetImplemented
+func (d *db) CreateDoc(ctx context.Context, doc interface{}) (docID, rev string, err error) {
+	couchDoc, err := toCouchDoc(doc)
+	if err != nil {
+		return "", "", err
+	}
+	if id, ok := couchDoc["_id"].(string); ok {
+		docID = id
+	} else {
+		docID = randStr()
+	}
+	rev, err = d.Put(ctx, docID, doc)
+	return docID, rev, err
 }
 
 func (d *db) Put(_ context.Context, docID string, doc interface{}) (rev string, err error) {
@@ -70,13 +79,9 @@ func (d *db) Put(_ context.Context, docID string, doc interface{}) (rev string, 
 	if !isLocal && docID[0] == '_' && !strings.HasPrefix(docID, "_design/") {
 		return "", errors.Status(kivik.StatusBadRequest, "Only reserved document ids may start with underscore.")
 	}
-	docJSON, err := json.Marshal(doc)
+	couchDoc, err := toCouchDoc(doc)
 	if err != nil {
-		return "", errors.Status(kivik.StatusBadRequest, "invalid JSON")
-	}
-	var couchDoc jsondoc
-	if e := json.Unmarshal(docJSON, &couchDoc); e != nil {
-		return "", errors.Status(kivik.StatusInternalServerError, "failed to decode encoded document; this is a bug!")
+		return "", err
 	}
 	couchDoc["_id"] = docID
 
@@ -84,8 +89,7 @@ func (d *db) Put(_ context.Context, docID string, doc interface{}) (rev string, 
 		if !last.Deleted && couchDoc.Rev() != fmt.Sprintf("%d-%s", last.ID, last.Rev) {
 			return "", errors.Status(kivik.StatusConflict, "document update conflict")
 		}
-		rev := d.db.addRevision(couchDoc)
-		return rev, nil
+		return d.db.addRevision(couchDoc), nil
 	}
 
 	if couchDoc.Rev() != "" {

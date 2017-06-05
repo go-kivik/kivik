@@ -8,7 +8,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
+	"github.com/flimzy/kivik/errors"
 )
 
 type file struct {
@@ -76,19 +78,35 @@ func (d *database) latestRevision(docID string) (*revision, bool) {
 	return nil, false
 }
 
-type jsondoc map[string]interface{}
+type couchDoc map[string]interface{}
 
-func (d jsondoc) ID() string {
+func (d couchDoc) ID() string {
 	id, _ := d["_id"].(string)
 	return id
 }
 
-func (d jsondoc) Rev() string {
+func (d couchDoc) Rev() string {
 	rev, _ := d["_rev"].(string)
 	return rev
 }
 
-func (d *database) addRevision(doc jsondoc) string {
+func toCouchDoc(i interface{}) (couchDoc, error) {
+	switch t := i.(type) {
+	case couchDoc:
+		return t, nil
+	}
+	asJSON, err := json.Marshal(i)
+	if err != nil {
+		return nil, errors.WrapStatus(kivik.StatusBadRequest, err)
+	}
+	var m couchDoc
+	if e := json.Unmarshal(asJSON, &m); e != nil {
+		return nil, errors.Status(kivik.StatusInternalServerError, "failed to decode encoded document; this is a bug!")
+	}
+	return m, nil
+}
+
+func (d *database) addRevision(doc couchDoc) string {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	id, ok := doc["_id"].(string)

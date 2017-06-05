@@ -52,7 +52,6 @@ func init() {
 		"SetSecurity/RW/Admin/NotExists.status": kivik.StatusNotFound,
 
 		"Stats.skip":             true,                       // FIXME: Unimplemented
-		"CreateDoc.skip":         true,                       // FIXME: Unimplemented
 		"Compact.skip":           true,                       // FIXME: Unimplemented
 		"DBUpdates.status":       kivik.StatusNotImplemented, // FIXME: Unimplemented
 		"Changes.skip":           true,                       // FIXME: Unimplemented

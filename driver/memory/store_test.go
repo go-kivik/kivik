@@ -14,18 +14,66 @@ func TestRandStr(t *testing.T) {
 	}
 }
 
+func TestToCouchDoc(t *testing.T) {
+	type tcdTest struct {
+		Name     string
+		Input    interface{}
+		Expected couchDoc
+		Error    string
+	}
+	tests := []tcdTest{
+		{
+			Name:     "Map",
+			Input:    map[string]interface{}{"foo": "bar"},
+			Expected: couchDoc{"foo": "bar"},
+		},
+		{
+			Name:     "CouchDoc",
+			Input:    couchDoc{"foo": "bar"},
+			Expected: couchDoc{"foo": "bar"},
+		},
+		{
+			Name:  "Unmarshalable",
+			Input: make(chan int),
+			Error: "json: unsupported type: chan int",
+		},
+		{
+			Name:     "Marshalable",
+			Input:    map[string]string{"foo": "bar"},
+			Expected: couchDoc{"foo": "bar"},
+		},
+	}
+	for _, test := range tests {
+		func(test tcdTest) {
+			t.Run(test.Name, func(t *testing.T) {
+				result, err := toCouchDoc(test.Input)
+				var msg string
+				if err != nil {
+					msg = err.Error()
+				}
+				if msg != test.Error {
+					t.Errorf("Unexpected error: %s", msg)
+				}
+				if d := diff.Interface(test.Expected, result); d != "" {
+					t.Error(d)
+				}
+			})
+		}(test)
+	}
+}
+
 func TestAddRevision(t *testing.T) {
 	d := &database{
 		docs: make(map[string]*document),
 	}
-	r := d.addRevision(jsondoc{"_id": "bar"})
+	r := d.addRevision(couchDoc{"_id": "bar"})
 	if !strings.HasPrefix(r, "1-") {
 		t.Errorf("Expected initial revision to start with '1-', but got '%s'", r)
 	}
 	if len(r) != 34 {
 		t.Errorf("rev (%s) is %d chars long, expected 34", r, len(r))
 	}
-	r = d.addRevision(jsondoc{"_id": "bar"})
+	r = d.addRevision(couchDoc{"_id": "bar"})
 	if !strings.HasPrefix(r, "2-") {
 		t.Errorf("Expected second revision to start with '2-', but got '%s'", r)
 	}
@@ -49,7 +97,7 @@ func TestAddRevision(t *testing.T) {
 			defer func() {
 				i = recover()
 			}()
-			d.addRevision(jsondoc{"_id": "foo", "invalid": make(chan int)})
+			d.addRevision(couchDoc{"_id": "foo", "invalid": make(chan int)})
 			return nil
 		}()
 		if r == nil {
@@ -62,11 +110,11 @@ func TestAddLocalRevision(t *testing.T) {
 	d := &database{
 		docs: make(map[string]*document),
 	}
-	r := d.addRevision(jsondoc{"_id": "_local/foo"})
+	r := d.addRevision(couchDoc{"_id": "_local/foo"})
 	if r != "1-0" {
 		t.Errorf("Expected local revision, got %s", r)
 	}
-	r = d.addRevision(jsondoc{"_id": "_local/foo"})
+	r = d.addRevision(couchDoc{"_id": "_local/foo"})
 	if r != "1-0" {
 		t.Errorf("Expected local revision, got %s", r)
 	}
@@ -100,19 +148,19 @@ func TestGetRevisionFound(t *testing.T) {
 
 func TestRev(t *testing.T) {
 	t.Run("Missing", func(t *testing.T) {
-		d := jsondoc{}
+		d := couchDoc{}
 		if d.Rev() != "" {
 			t.Errorf("Rev should be missing, but got %s", d.Rev())
 		}
 	})
 	t.Run("Set", func(t *testing.T) {
-		d := jsondoc{"_rev": "foo"}
+		d := couchDoc{"_rev": "foo"}
 		if d.Rev() != "foo" {
 			t.Errorf("Rev should be foo, but got %s", d.Rev())
 		}
 	})
 	t.Run("NonString", func(t *testing.T) {
-		d := jsondoc{"_rev": true}
+		d := couchDoc{"_rev": true}
 		if d.Rev() != "" {
 			t.Errorf("Rev should be missing, but got %s", d.Rev())
 		}
@@ -121,19 +169,19 @@ func TestRev(t *testing.T) {
 
 func TestID(t *testing.T) {
 	t.Run("Missing", func(t *testing.T) {
-		d := jsondoc{}
+		d := couchDoc{}
 		if d.ID() != "" {
 			t.Errorf("ID should be missing, but got %s", d.ID())
 		}
 	})
 	t.Run("Set", func(t *testing.T) {
-		d := jsondoc{"_id": "foo"}
+		d := couchDoc{"_id": "foo"}
 		if d.ID() != "foo" {
 			t.Errorf("ID should be foo, but got %s", d.ID())
 		}
 	})
 	t.Run("NonString", func(t *testing.T) {
-		d := jsondoc{"_id": true}
+		d := couchDoc{"_id": true}
 		if d.ID() != "" {
 			t.Errorf("ID should be missing, but got %s", d.ID())
 		}

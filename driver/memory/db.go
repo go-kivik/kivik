@@ -33,11 +33,6 @@ type indexDocValue struct {
 	Rev string `json:"rev"`
 }
 
-func (d *db) AllDocs(ctx context.Context, opts map[string]interface{}) (driver.Rows, error) {
-	// FIXME: Unimplemented
-	return nil, notYetImplemented
-}
-
 func (d *db) Query(ctx context.Context, ddoc, view string, opts map[string]interface{}) (driver.Rows, error) {
 	// FIXME: Unimplemented
 	return nil, notYetImplemented

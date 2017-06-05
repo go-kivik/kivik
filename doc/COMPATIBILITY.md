@@ -53,19 +53,19 @@
 | GET /_session<sup>[6](#cookieAuth)</sup> | ⁿ/ₐ<sup>[13](#getSession)</sup> | ☑️ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | DELETE /_session<sup>[6](#cookieAuth)</sup> | ⁿ/ₐ<sup>[13](#getSession)</sup> | ✅ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
 | * /_config                            | ⁿ/ₐ                  |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ | ⁿ/ₐ | ⁿ/ₐ |
-| HEAD /{db}                            | DBExists()          | ✅ | ✅ | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
-| GET /{db}                             | Info()              |    | ✅ | ✅ | ✅
+| HEAD /{db}                            | DBExists()          | ✅ | ✅ | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅ |   | ⍻
+| GET /{db}                             | Stats()             |    | ✅ | ✅ | ✅ |   | ☑️
 | PUT /{db}                             | CreateDB()          | ✅ | ✅ | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
 | DELETE /{db}                          | DestroyDB()         |    | ✅ | ✅ | ✅<sup>[5](#pouchDBExists)</sup> | ✅ | ✅
 | POST /{db}                            | CreateDoc()         |    | ✅ | ✅ | ✅ |
-| (GET|POST) /{db}/_all_docs            | AllDocs()           |    | ☑️<sup>[7](#todoConflicts),[9](#todoOrdering),[10](#todoLimit)</sup> | ✅ | ？ | ？ |
+| (GET\|POST) /{db}/_all_docs            | AllDocs()           |    | ☑️<sup>[7](#todoConflicts),[9](#todoOrdering),[10](#todoLimit)</sup> | ✅ | ？ | ？ |
 | POST /{db}/_bulk_docs                 | BulkDocs()          |    | ✅ | ✅ | ✅  |    |    |
 | POST /{db}/_find                      | Find()              |    | ✅ | ✅ | ✅ |
 | POST /{db}/_index                     | CreateIndex()       |    | ✅ | ✅ | ✅ |
 | GET /{db}/_index                      | GetIndexes()        |    | ✅ | ✅ | ✅ |
 | DELETE /{db}/_index                   | DeleteIndex()       |    | ✅ | ✅ | ✅ |
 | POST /{db}/_explain                   | ⁿ/ₐ                  |    |    | ❌<sup>[15](#notPublic)</sup> |    |
-| (GET|POST) /{db}/_changes             | Changes()<sup>[8](#changesContinuous)</sup> |    | ✅ | ✅ | ✅ |    |    |
+| (GET\|POST) /{db}/_changes             | Changes()<sup>[8](#changesContinuous)</sup> |    | ✅ | ✅ | ✅ |    |    |
 | POST /{db}/_compact                   | Compact()           |    | ✅ | ✅ | ✅ |     |    |
 | POST /{db}/_compact/{ddoc}            | CompactView()       |    |    | ✅ | ⁿ/ₐ |    |    |
 | POST /{db}/_ensure_full_commit        | Flush()             | ✅ | ✅ | ✅ | ⁿ/ₐ | ⁿ/ₐ |    |
@@ -79,9 +79,9 @@
 | GET /{db}/_revs_limit                 | ⁿ/ₐ                  |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
 | PUT /{db}/_revs_limit                 | ⁿ/ₐ                  |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
 | HEAD /{db}/{docid}                    | Rev()               |    | ✅ | ✅ | ⍻ |
-| GET /{db}/{docid}                     | Get()               |    | ☑️<sup>[7](#todoConflicts),[11](#todoAttachments)</sup> | ✅ | ✅
-| PUT /{db}/{docid}                     | Put()               |    | ☑️<sup>[11](#todoAttachments)</sup> | ✅ | ✅
-| DELETE /{db}/{docid}                  | Delete()            |    | ✅ | ✅ | ✅ |
+| GET /{db}/{docid}                     | Get()               |    | ☑️<sup>[7](#todoConflicts),[11](#todoAttachments)</sup> | ✅ | ✅ |   | ☑️<sup>[18](#memstatus)</sup>
+| PUT /{db}/{docid}                     | Put()               |    | ☑️<sup>[11](#todoAttachments)</sup> | ✅ | ✅ |   | ☑️<sup>[18](#memstatus)</sup>
+| DELETE /{db}/{docid}                  | Delete()            |    | ✅ | ✅ | ✅ |   | ✅
 | COPY /{db}/{docid}                    | Copy()              |    | ✅ | ✅ | ⍻ |
 | HEAD /{db}/{docid}/{attname}          | GetAttachmentMeta() |    | ✅ | ✅ | ⍻ |
 | GET /{db}/{docid}/{attname}           | GetAttachment()     |    | ✅ | ✅ | ✅ |
@@ -97,7 +97,7 @@
 | PUT /{db}/_design/{ddoc}/{attname}    | PutAttachment()     |    | ✅ | ✅ | ✅ |
 | DELETE /{db}/_design/{ddoc}/{attname} | DeleteAttachment()  |    | ✅ | ✅ | ✅ |
 | GET /{db}/_design/{ddoc}/_info        | ⁿ/ₐ                  |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
-| (GET|POST) /{db}/_design/{ddoc}/_view/{view} | Query()      |    | ✅ | ✅ | ✅<sup>[18](#pouchViews)</sup> |
+| (GET\|POST) /{db}/_design/{ddoc}/_view/{view} | Query()      |    | ✅ | ✅ | ✅<sup>[18](#pouchViews)</sup> |
 | GET /{db}/_design/{ddoc}/_show/{func} | ⁿ/ₐ |    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
 | POST /{db}/_design/{ddoc}/_show/{func} | ⁿ/ₐ|    |    | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
 | GET /{db}/_design/{ddoc}/_show/{func}/{docid} |ⁿ/ₐ| | | ❌<sup>[15](#notPublic)</sup> | ⁿ/ₐ |
@@ -159,6 +159,8 @@
 18. <a name="pouchViews"> Only queries against defined design documents are
     supported. That is to say, providing raw JS functions is not supported. If
     you need this, please create an issue to make your case.
+19. <a name="memstatus"> See [Issue #142](https://github.com/flimzy/kivik/issues/142)
+    for the current status of the memory driver.
 
 ## HTTP Status Codes
 

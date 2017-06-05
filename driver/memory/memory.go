@@ -62,13 +62,15 @@ func (c *client) CreateDB(ctx context.Context, dbName string, options map[string
 	}
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	c.dbs[dbName] = &database{}
+	c.dbs[dbName] = &database{
+		docs: make(map[string]*document),
+	}
 	return nil
 }
 
 func (c *client) DestroyDB(ctx context.Context, dbName string, options map[string]interface{}) error {
 	if exists, _ := c.DBExists(ctx, dbName, options); !exists {
-		return errors.Status(http.StatusNotFound, "database not found")
+		return errors.Status(http.StatusNotFound, "database does not exist")
 	}
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
@@ -76,9 +78,13 @@ func (c *client) DestroyDB(ctx context.Context, dbName string, options map[strin
 	return nil
 }
 
-func (c *client) DB(_ context.Context, dbName string, options map[string]interface{}) (driver.DB, error) {
+func (c *client) DB(ctx context.Context, dbName string, options map[string]interface{}) (driver.DB, error) {
+	if exists, _ := c.DBExists(ctx, dbName, options); !exists {
+		return nil, errors.Status(http.StatusNotFound, "database does not exist")
+	}
 	return &db{
 		client: c,
 		dbName: dbName,
+		db:     c.dbs[dbName],
 	}, nil
 }

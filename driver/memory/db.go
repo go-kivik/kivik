@@ -3,7 +3,10 @@ package memory
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
+	"regexp"
+	"strings"
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
@@ -16,6 +19,7 @@ var notYetImplemented = errors.Status(kivik.StatusNotImplemented, "kivik: not ye
 type db struct {
 	*client
 	dbName string
+	db     *database
 }
 
 type indexDoc struct {
@@ -39,8 +43,20 @@ func (d *db) Query(ctx context.Context, ddoc, view string, opts map[string]inter
 }
 
 func (d *db) Get(_ context.Context, docID string, opts map[string]interface{}) (json.RawMessage, error) {
-	// FIXME: Unimplemented
-	return nil, notYetImplemented
+	if !d.db.docExists(docID) {
+		return nil, errors.Status(kivik.StatusNotFound, "missing")
+	}
+	if rev, ok := opts["rev"].(string); ok {
+		if doc, found := d.db.getRevision(docID, rev); found {
+			return doc.data, nil
+		}
+		return nil, errors.Status(kivik.StatusNotFound, "missing")
+	}
+	last, _ := d.db.latestRevision(docID)
+	if last.Deleted {
+		return nil, errors.Status(kivik.StatusNotFound, "missing")
+	}
+	return last.data, nil
 }
 
 func (d *db) CreateDoc(_ context.Context, doc interface{}) (docID, rev string, err error) {
@@ -49,18 +65,66 @@ func (d *db) CreateDoc(_ context.Context, doc interface{}) (docID, rev string, e
 }
 
 func (d *db) Put(_ context.Context, docID string, doc interface{}) (rev string, err error) {
-	// FIXME: Unimplemented
-	return "", notYetImplemented
+	isLocal := strings.HasPrefix(docID, "_local/")
+	if !isLocal && docID[0] == '_' && !strings.HasPrefix(docID, "_design/") {
+		return "", errors.Status(kivik.StatusBadRequest, "Only reserved document ids may start with underscore.")
+	}
+	docJSON, err := json.Marshal(doc)
+	if err != nil {
+		return "", errors.Status(kivik.StatusBadRequest, "invalid JSON")
+	}
+	var couchDoc jsondoc
+	if e := json.Unmarshal(docJSON, &couchDoc); e != nil {
+		return "", errors.Status(kivik.StatusInternalServerError, "failed to decode encoded document; this is a bug!")
+	}
+	couchDoc["_id"] = docID
+
+	if last, ok := d.db.latestRevision(docID); ok {
+		lastRev := fmt.Sprintf("%d-%s", last.ID, last.Rev)
+		if couchDoc.Rev() != lastRev {
+			return "", errors.Status(kivik.StatusConflict, "document update conflict")
+		}
+		rev := d.db.addRevision(couchDoc)
+		return rev, nil
+	}
+
+	if couchDoc.Rev() != "" {
+		// Rev should not be set for a new document
+		return "", errors.Status(kivik.StatusConflict, "document update conflict")
+	}
+	return d.db.addRevision(couchDoc), nil
 }
 
-func (d *db) Delete(_ context.Context, docID, rev string) (newRev string, err error) {
-	// FIXME: Unimplemented
-	return "", notYetImplemented
+var revRE = regexp.MustCompile("^[0-9]+-[a-f0-9]{32}$")
+
+func validRev(rev string) bool {
+	return revRE.MatchString(rev)
+}
+
+func (d *db) Delete(ctx context.Context, docID, rev string) (newRev string, err error) {
+	if !strings.HasPrefix(docID, "_local/") && !validRev(rev) {
+		return "", errors.Status(kivik.StatusBadRequest, "Invalid rev format")
+	}
+	if !d.db.docExists(docID) {
+		return "", errors.Status(kivik.StatusNotFound, "missing")
+	}
+	return d.Put(ctx, docID, map[string]interface{}{
+		"_id":      docID,
+		"_rev":     rev,
+		"_deleted": true,
+	})
 }
 
 func (d *db) Stats(_ context.Context) (*driver.DBStats, error) {
-	// FIXME: Unimplemented
-	return nil, notYetImplemented
+	return &driver.DBStats{
+		Name: d.dbName,
+		// DocCount:     0,
+		// DeletedCount: 0,
+		// UpdateSeq:    "",
+		// DiskSize:     0,
+		// ActiveSize:   0,
+		// ExternalSize: 0,
+	}, nil
 }
 
 func (c *client) Compact(_ context.Context) error {

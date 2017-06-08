@@ -16,7 +16,7 @@ const DefaultInsecureSecret = "They're all gonna laugh at you!"
 // couch_httpd_auth.timeout is inuset.
 const DefaultSessionTimeout = 600
 
-func (s *Service) getAuthSecret(ctx context.Context) string {
+func (s *Service) getAuthSecret() string {
 	if s.Conf().IsSet("couch_httpd_auth.secret") {
 		return s.Conf().GetString("couch_httpd_auth.secret")
 	}

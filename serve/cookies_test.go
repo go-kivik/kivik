@@ -99,7 +99,7 @@ func TestCreateAuthToken(t *testing.T) {
 	for _, test := range tests {
 		func(test tokenTest) {
 			t.Run(test.Name, func(t *testing.T) {
-				result, err := s.CreateAuthToken(context.Background(), test.Name, test.Salt, test.Created)
+				result, err := s.CreateAuthToken(test.Name, test.Salt, test.Created)
 				var errMsg string
 				if err != nil {
 					errMsg = err.Error()

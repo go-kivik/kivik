@@ -3,10 +3,7 @@ package serve
 import (
 	"bytes"
 	"context"
-	"crypto/hmac"
-	"crypto/sha1"
 	"encoding/base64"
-	"fmt"
 	"strconv"
 
 	"github.com/flimzy/kivik/authdb"
@@ -15,13 +12,9 @@ import (
 
 // CreateAuthToken hashes a user name, salt, timestamp, and the server secret
 // into an authentication token.
-func (s *Service) CreateAuthToken(ctx context.Context, name, salt string, time int64) (string, error) {
-	secret := s.getAuthSecret(ctx)
-	sessionData := fmt.Sprintf("%s:%X", name, time)
-	h := hmac.New(sha1.New, []byte(secret+salt))
-	h.Write([]byte(sessionData))
-	hashData := string(h.Sum(nil))
-	return base64.RawURLEncoding.EncodeToString([]byte(sessionData + ":" + hashData)), nil
+func (s *Service) CreateAuthToken(name, salt string, time int64) (string, error) {
+	secret := s.getAuthSecret()
+	return authdb.CreateAuthToken(name, salt, secret, time), nil
 }
 
 // ValidateCookie validates a cookie against a user context.
@@ -30,7 +23,7 @@ func (s *Service) ValidateCookie(ctx context.Context, user *authdb.UserContext, 
 	if err != nil {
 		return false, err
 	}
-	token, err := s.CreateAuthToken(ctx, name, user.Salt, t)
+	token, err := s.CreateAuthToken(name, user.Salt, t)
 	if err != nil {
 		return false, err
 	}

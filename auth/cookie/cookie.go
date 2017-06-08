@@ -87,7 +87,7 @@ func postSession(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	// Success, so create a cookie
-	token, err := s.CreateAuthToken(r.Context(), *authData.Name, user.Salt, time.Now().Unix())
+	token, err := s.CreateAuthToken(*authData.Name, user.Salt, time.Now().Unix())
 	if err != nil {
 		return err
 	}

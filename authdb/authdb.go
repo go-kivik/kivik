@@ -4,7 +4,9 @@ package authdb
 
 import (
 	"context"
+	"crypto/hmac"
 	"crypto/sha1"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 
@@ -43,6 +45,16 @@ type UserContext struct {
 func ValidatePBKDF2(password, salt, derivedKey string, iterations int) bool {
 	hash := fmt.Sprintf("%x", pbkdf2.Key([]byte(password), []byte(salt), iterations, PBKDF2KeyLength, sha1.New))
 	return hash == derivedKey
+}
+
+// CreateAuthToken hashes a username, salt, timestamp, and the server secret
+// into an authentication token.
+func CreateAuthToken(name, salt, secret string, time int64) string {
+	sessionData := fmt.Sprintf("%s:%X", name, time)
+	h := hmac.New(sha1.New, []byte(secret+salt))
+	h.Write([]byte(sessionData))
+	hashData := string(h.Sum(nil))
+	return base64.RawURLEncoding.EncodeToString([]byte(sessionData + ":" + hashData))
 }
 
 // MarshalJSON satisfies the json.Marshaler interface.

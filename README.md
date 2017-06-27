@@ -31,6 +31,7 @@ additional usage examples, [consult the wiki](https://github.com/flimzy/kivik/wi
 package main
 
 import (
+    "context"
     "fmt"
 
     "github.com/flimzy/kivik"

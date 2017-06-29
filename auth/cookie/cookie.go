@@ -58,7 +58,7 @@ func (a *Auth) validateCookie(w http.ResponseWriter, r *http.Request) (*authdb.U
 		return nil, nil
 	}
 	s := serve.GetService(r)
-	valid, err := s.ValidateCookie(r.Context(), user, cookie.Value)
+	valid, err := s.ValidateCookie(user, cookie.Value)
 	if err != nil || !valid {
 		return nil, nil
 	}

@@ -1,7 +1,6 @@
 package serve
 
 import (
-	"context"
 	"testing"
 
 	"github.com/flimzy/kivik/authdb"
@@ -27,7 +26,7 @@ func TestValidateCookie(t *testing.T) {
 	for _, test := range tests {
 		func(test validateTest) {
 			t.Run(test.Name, func(t *testing.T) {
-				valid, err := s.ValidateCookie(context.Background(), test.User, test.Cookie)
+				valid, err := s.ValidateCookie(test.User, test.Cookie)
 				var errMsg string
 				if err != nil {
 					errMsg = err.Error()

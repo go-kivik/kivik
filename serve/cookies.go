@@ -2,7 +2,6 @@ package serve
 
 import (
 	"bytes"
-	"context"
 	"encoding/base64"
 	"strconv"
 
@@ -18,7 +17,7 @@ func (s *Service) CreateAuthToken(name, salt string, time int64) (string, error)
 }
 
 // ValidateCookie validates a cookie against a user context.
-func (s *Service) ValidateCookie(ctx context.Context, user *authdb.UserContext, cookie string) (bool, error) {
+func (s *Service) ValidateCookie(user *authdb.UserContext, cookie string) (bool, error) {
 	name, t, err := DecodeCookie(cookie)
 	if err != nil {
 		return false, err

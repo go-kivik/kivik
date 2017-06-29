@@ -1,12 +1,8 @@
 package serve
 
 import (
-	"bytes"
-	"encoding/base64"
-	"strconv"
-
 	"github.com/flimzy/kivik/authdb"
-	"github.com/pkg/errors"
+	"github.com/flimzy/kivik/serve/cookies"
 )
 
 // CreateAuthToken hashes a user name, salt, timestamp, and the server secret
@@ -18,7 +14,7 @@ func (s *Service) CreateAuthToken(name, salt string, time int64) (string, error)
 
 // ValidateCookie validates a cookie against a user context.
 func (s *Service) ValidateCookie(user *authdb.UserContext, cookie string) (bool, error) {
-	name, t, err := DecodeCookie(cookie)
+	name, t, err := cookies.DecodeCookie(cookie)
 	if err != nil {
 		return false, err
 	}
@@ -27,19 +23,4 @@ func (s *Service) ValidateCookie(user *authdb.UserContext, cookie string) (bool,
 		return false, err
 	}
 	return token == cookie, nil
-}
-
-// DecodeCookie decodes a Base64-encoded cookie, and returns its component
-// parts.
-func DecodeCookie(cookie string) (name string, created int64, err error) {
-	data, err := base64.RawURLEncoding.DecodeString(cookie)
-	if err != nil {
-		return "", 0, err
-	}
-	parts := bytes.SplitN(data, []byte(":"), 3)
-	t, err := strconv.ParseInt(string(parts[1]), 16, 64)
-	if err != nil {
-		return "", 0, errors.Wrap(err, "invalid timestamp")
-	}
-	return string(parts[0]), t, nil
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/flimzy/kivik/authdb"
 	"github.com/flimzy/kivik/errors"
 	"github.com/flimzy/kivik/serve"
+	"github.com/flimzy/kivik/serve/cookies"
 )
 
 const typeJSON = "application/json"
@@ -48,7 +49,7 @@ func (a *Auth) validateCookie(w http.ResponseWriter, r *http.Request) (*authdb.U
 	if err != nil {
 		return nil, nil
 	}
-	name, _, err := serve.DecodeCookie(cookie.Value)
+	name, _, err := cookies.DecodeCookie(cookie.Value)
 	if err != nil {
 		return nil, nil
 	}

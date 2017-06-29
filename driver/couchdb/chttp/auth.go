@@ -110,10 +110,11 @@ func (a *CookieAuth) Authenticate(ctx context.Context, c *Client) error {
 	if _, err := c.DoError(ctx, kivik.MethodPost, "/_session", &Options{Body: buf}); err != nil {
 		return err
 	}
-	return validateAuth(ctx, a.Username, c)
+	return ValidateAuth(ctx, a.Username, c)
 }
 
-func validateAuth(ctx context.Context, username string, client *Client) error {
+// ValidateAuth validates that the requested username is authenticated.
+func ValidateAuth(ctx context.Context, username string, client *Client) error {
 	// This does a final request to validate that auth was successful. Cookies
 	// may be filtered by a proxy, or a misconfigured client, so this check is
 	// necessary.

@@ -1,7 +1,6 @@
 package serve
 
 import (
-	"context"
 	"testing"
 
 	"github.com/flimzy/kivik/authdb"
@@ -27,7 +26,7 @@ func TestValidateCookie(t *testing.T) {
 	for _, test := range tests {
 		func(test validateTest) {
 			t.Run(test.Name, func(t *testing.T) {
-				valid, err := s.ValidateCookie(context.Background(), test.User, test.Cookie)
+				valid, err := s.ValidateCookie(test.User, test.Cookie)
 				var errMsg string
 				if err != nil {
 					errMsg = err.Error()
@@ -37,43 +36,6 @@ func TestValidateCookie(t *testing.T) {
 				}
 				if valid != test.Valid {
 					t.Errorf("Unexpected result. Expected %t, Actual %t", test.Valid, valid)
-				}
-			})
-		}(test)
-	}
-}
-
-type cookieTest struct {
-	TestName string
-	Input    string
-	Name     string
-	Created  int64
-	Err      string
-}
-
-func TestDecodeCookie(t *testing.T) {
-	tests := []cookieTest{
-		{TestName: "Valid", Input: "YWRtaW46NThDNTQzN0Y697rnaWCa_rarAm25wbOg3Gm3mqc", Name: "admin", Created: 1489322879},
-		{TestName: "InvalidBasae64", Input: "bogus base64", Err: "illegal base64 data at input byte 5"},
-		{TestName: "Extra colons", Input: "Zm9vOjEyMzQ1OmJhcjpiYXoK", Name: "foo", Created: 74565},
-		{TestName: "InvalidTimestamp", Input: "Zm9vOmJhcjpiYXoK", Err: `invalid timestamp: strconv.ParseInt: parsing "bar": invalid syntax`},
-	}
-	for _, test := range tests {
-		func(test cookieTest) {
-			t.Run(test.TestName, func(t *testing.T) {
-				name, created, err := DecodeCookie(test.Input)
-				var errMsg string
-				if err != nil {
-					errMsg = err.Error()
-				}
-				if name != test.Name {
-					t.Errorf("Name: Expected '%s', got '%s'", test.Name, name)
-				}
-				if created != test.Created {
-					t.Errorf("Created: Expected %d, got %d", test.Created, created)
-				}
-				if errMsg != test.Err {
-					t.Errorf("Error: Expected '%s', got '%s'", test.Err, errMsg)
 				}
 			})
 		}(test)

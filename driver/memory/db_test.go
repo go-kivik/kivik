@@ -177,6 +177,20 @@ func TestPut(t *testing.T) {
 				return db
 			},
 		},
+		{
+			Name:     "LocalDoc",
+			DocID:    "_local/foo",
+			Doc:      map[string]string{"foo": "baz"},
+			Expected: map[string]string{"_id": "_local/foo", "foo": "baz", "_rev": "1-0"},
+			Setup: func() driver.DB {
+				db := setupDB(t, nil)
+				_, err := db.Put(context.Background(), "_local/foo", map[string]string{"foo": "bar"})
+				if err != nil {
+					t.Fatal(err)
+				}
+				return db
+			},
+		},
 	}
 	for _, test := range tests {
 		func(test putTest) {
@@ -400,6 +414,30 @@ func TestDeleteDoc(t *testing.T) {
 			Rev:    "invalid rev format",
 			Status: 400,
 			Error:  "Invalid rev format",
+		},
+		{
+			Name: "LocalNoRev",
+			ID:   "_local/foo",
+			Rev:  "",
+			DB: func() driver.DB {
+				db := setupDB(t, nil)
+				if _, err := db.Put(context.Background(), "_local/foo", map[string]string{"foo": "bar"}); err != nil {
+					panic(err)
+				}
+				return db
+			}(),
+		},
+		{
+			Name: "LocalWithRev",
+			ID:   "_local/foo",
+			Rev:  "0-1",
+			DB: func() driver.DB {
+				db := setupDB(t, nil)
+				if _, err := db.Put(context.Background(), "_local/foo", map[string]string{"foo": "bar"}); err != nil {
+					panic(err)
+				}
+				return db
+			}(),
 		},
 	}
 	for _, test := range tests {

@@ -86,7 +86,7 @@ func (d *db) Put(_ context.Context, docID string, doc interface{}) (rev string, 
 	couchDoc["_id"] = docID
 
 	if last, ok := d.db.latestRevision(docID); ok {
-		if !last.Deleted && couchDoc.Rev() != fmt.Sprintf("%d-%s", last.ID, last.Rev) {
+		if !last.Deleted && !isLocal && couchDoc.Rev() != fmt.Sprintf("%d-%s", last.ID, last.Rev) {
 			return "", errors.Status(kivik.StatusConflict, "document update conflict")
 		}
 		return d.db.addRevision(couchDoc), nil

@@ -1,6 +1,7 @@
 package couchserver
 
 import (
+	"context"
 	"log"
 	"net/http"
 
@@ -16,9 +17,16 @@ const (
 	typeMForm = "multipart/form-data"
 )
 
+type backend interface {
+	AllDBs(context.Context, ...kivik.Options) ([]string, error)
+	CreateDB(context.Context, string, ...kivik.Options) error
+	DB(context.Context, string, ...kivik.Options) (*kivik.DB, error)
+	DBExists(context.Context, string, ...kivik.Options) (bool, error)
+}
+
 // Handler is a CouchDB server handler.
 type Handler struct {
-	Client *kivik.Client
+	Client backend
 	// CompatVersion is the CouchDB compatibility version to report. If unset,
 	// defaults to the CompatVersion constant/.
 	CompatVersion string
@@ -63,6 +71,7 @@ func (h *Handler) Main() http.Handler {
 	r.Get("/", h.GetRoot())
 	r.Get("/favicon.ico", h.GetFavicon())
 	r.Get("/_all_dbs", h.GetAllDBs())
+	r.Get("/:db", h.GetDB())
 	r.Put("/:db", h.PutDB())
 	r.Head("/:db", h.HeadDB())
 	r.Post("/:db/_ensure_full_commit", h.Flush())

@@ -34,6 +34,22 @@ func (h *Handler) HeadDB() http.HandlerFunc {
 	}
 }
 
+// GetDB handles GET /{db}
+func (h *Handler) GetDB() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		exists, err := h.Client.DBExists(r.Context(), DB(r))
+		if err != nil {
+			h.HandleError(w, err)
+			return
+		}
+		if exists {
+			w.WriteHeader(http.StatusOK)
+		} else {
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}
+}
+
 // Flush handles POST /{db}/_ensure_full_commit
 func (h *Handler) Flush() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

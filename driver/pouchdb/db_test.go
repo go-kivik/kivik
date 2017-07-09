@@ -11,9 +11,10 @@ import (
 )
 
 func init() {
-	js.Global.Get("PouchDB").Call("defaults", map[string]interface{}{
+	memPouch := js.Global.Get("PouchDB").Call("defaults", map[string]interface{}{
 		"db": js.Global.Call("require", "memdown"),
 	})
+	js.Global.Set("PouchDB", memPouch)
 }
 
 func TestPut(t *testing.T) {

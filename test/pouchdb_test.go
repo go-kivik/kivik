@@ -10,14 +10,14 @@ import (
 
 	"github.com/flimzy/kivik"
 	_ "github.com/flimzy/kivik/driver/pouchdb"
-	"github.com/flimzy/kivik/driver/pouchdb/bindings"
 	"github.com/flimzy/kivik/test/kt"
 )
 
 func init() {
-	bindings.GlobalPouchDB().Call("defaults", map[string]interface{}{
+	memPouch := js.Global.Get("PouchDB").Call("defaults", map[string]interface{}{
 		"db": js.Global.Call("require", "memdown"),
 	})
+	js.Global.Set("PouchDB", memPouch)
 }
 
 func TestPouchLocal(t *testing.T) {

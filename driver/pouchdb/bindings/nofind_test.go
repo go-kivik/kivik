@@ -9,19 +9,25 @@ import (
 	"github.com/gopherjs/gopherjs/js"
 )
 
+func init() {
+	memPouch := js.Global.Get("PouchDB").Call("defaults", map[string]interface{}{
+		"db": js.Global.Call("require", "memdown"),
+	})
+	js.Global.Set("PouchDB", memPouch)
+}
+
 // TestNoFind tests that Find() properly returns NotImplemented when the
 // pouchdb-find plugin is not loaded.
 func TestNoFindPlugin(t *testing.T) {
-	memdown := js.Global.Call("require", "memdown")
 	t.Run("FindLoaded", func(t *testing.T) {
-		db := GlobalPouchDB().New("foo", map[string]interface{}{"db": memdown})
+		db := GlobalPouchDB().New("foo", nil)
 		_, err := db.Find(context.Background(), "")
 		if errors.StatusCode(err) == kivik.StatusNotImplemented {
 			t.Errorf("Got StatusNotImplemented when pouchdb-find should be loaded")
 		}
 	})
 	t.Run("FindNotLoaded", func(t *testing.T) {
-		db := GlobalPouchDB().New("foo", map[string]interface{}{"db": memdown})
+		db := GlobalPouchDB().New("foo", nil)
 		db.Object.Set("find", nil) // Fake it
 		_, err := db.Find(context.Background(), "")
 		if code := errors.StatusCode(err); code != kivik.StatusNotImplemented {

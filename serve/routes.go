@@ -13,13 +13,11 @@ import (
 )
 
 func (s *Service) setupRoutes() (http.Handler, error) {
-	h := couchserver.Handler{
-		Client:        s.Client,
-		Vendor:        s.VendorName,
-		VendorVersion: s.VendorVersion,
-		Favicon:       s.Favicon,
-		SessionKey:    SessionKey,
-	}
+	h := couchserver.NewHandler(s.Client)
+	h.Vendor = s.VendorName
+	h.VendorVersion = s.VendorVersion
+	h.Favicon = s.Favicon
+	h.SessionKey = SessionKey
 
 	rlog := s.RequestLogger
 	if rlog == nil {

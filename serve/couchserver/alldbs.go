@@ -8,7 +8,7 @@ import (
 // GetAllDBs handles GET /_all_dbs
 func (h *Handler) GetAllDBs() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		allDBs, err := h.Client.AllDBs(r.Context())
+		allDBs, err := h.client.AllDBs(r.Context())
 		if err != nil {
 			h.HandleError(w, err)
 			return

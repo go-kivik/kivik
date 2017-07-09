@@ -15,7 +15,7 @@ func TestAllDBs(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	h := &Handler{Client: client}
+	h := &Handler{client: &clientWrapper{client}}
 	handler := h.GetAllDBs()
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("GET", "/_all_dbs", nil)

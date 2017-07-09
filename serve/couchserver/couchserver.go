@@ -1,6 +1,7 @@
 package couchserver
 
 import (
+	"context"
 	"log"
 	"net/http"
 
@@ -16,9 +17,31 @@ const (
 	typeMForm = "multipart/form-data"
 )
 
+type db interface {
+	Stats(context.Context) (*kivik.DBStats, error)
+	Flush(context.Context) error
+}
+
+type backend interface {
+	AllDBs(context.Context, ...kivik.Options) ([]string, error)
+	CreateDB(context.Context, string, ...kivik.Options) error
+	DB(context.Context, string, ...kivik.Options) (db, error)
+	DBExists(context.Context, string, ...kivik.Options) (bool, error)
+}
+
+type clientWrapper struct {
+	*kivik.Client
+}
+
+var _ backend = &clientWrapper{}
+
+func (c *clientWrapper) DB(ctx context.Context, dbName string, options ...kivik.Options) (db, error) {
+	return c.Client.DB(ctx, dbName, options...)
+}
+
 // Handler is a CouchDB server handler.
 type Handler struct {
-	Client *kivik.Client
+	client backend
 	// CompatVersion is the CouchDB compatibility version to report. If unset,
 	// defaults to the CompatVersion constant/.
 	CompatVersion string
@@ -33,6 +56,10 @@ type Handler struct {
 	Favicon string
 	// SessionKey is a temporary solution to avoid import cycles. Soon I will move the key to another package.
 	SessionKey interface{}
+}
+
+func NewHandler(client *kivik.Client) *Handler {
+	return &Handler{client: &clientWrapper{client}}
 }
 
 // CompatVersion is the default CouchDB compatibility provided by this package.
@@ -63,6 +90,7 @@ func (h *Handler) Main() http.Handler {
 	r.Get("/", h.GetRoot())
 	r.Get("/favicon.ico", h.GetFavicon())
 	r.Get("/_all_dbs", h.GetAllDBs())
+	r.Get("/:db", h.GetDB())
 	r.Put("/:db", h.PutDB())
 	r.Head("/:db", h.HeadDB())
 	r.Post("/:db/_ensure_full_commit", h.Flush())

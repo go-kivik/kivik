@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"sync"
+	"bytes"
 )
 
 type iterator interface {
@@ -143,5 +144,8 @@ func scan(dest interface{}, val json.RawMessage) error {
 		*d = val
 		return nil
 	}
-	return json.Unmarshal(val, dest)
+	buffer := bytes.NewBuffer(val)
+	d := json.NewDecoder(buffer)
+	d.UseNumber()
+	return d.Decode(dest)
 }

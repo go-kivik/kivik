@@ -179,3 +179,59 @@ func TestPutJSON(t *testing.T) {
 		}(test)
 	}
 }
+
+func TestExtractDocID(t *testing.T) {
+	type ediTest struct {
+		name     string
+		i        interface{}
+		id       string
+		expected bool
+	}
+	tests := []ediTest{
+		{
+			name: "nil",
+		},
+		{
+			name: "string/interface map, no id",
+			i: map[string]interface{}{
+				"value": "foo",
+			},
+		},
+		{
+			name: "string/interface map, with id",
+			i: map[string]interface{}{
+				"_id": "foo",
+			},
+			id:       "foo",
+			expected: true,
+		},
+		{
+			name: "string/string map, with id",
+			i: map[string]string{
+				"_id": "foo",
+			},
+			id:       "foo",
+			expected: true,
+		},
+		{
+			name: "invalid JSON",
+			i:    make(chan int),
+		},
+		{
+			name: "valid JSON",
+			i: struct {
+				ID string `json:"_id"`
+			}{ID: "oink"},
+			id:       "oink",
+			expected: true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			id, ok := extractDocID(test.i)
+			if ok != test.expected || test.id != id {
+				t.Errorf("Expected %t/%s, got %t/%s", test.expected, test.id, ok, id)
+			}
+		})
+	}
+}

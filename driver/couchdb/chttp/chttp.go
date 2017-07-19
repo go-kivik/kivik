@@ -237,8 +237,9 @@ func (c *Client) DoError(ctx context.Context, method, path string, opts *Options
 	if err != nil {
 		return res, err
 	}
-	defer res.Body.Close()
-	return res, ResponseError(res)
+	defer func() { _ = res.Body.Close() }()
+	err = ResponseError(res)
+	return res, err
 }
 
 // GetRev extracts the revision from the response's Etag header

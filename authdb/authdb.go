@@ -58,7 +58,7 @@ func CreateAuthToken(name, salt, secret string, time int64) string {
 	}
 	sessionData := fmt.Sprintf("%s:%X", name, time)
 	h := hmac.New(sha1.New, []byte(secret+salt))
-	h.Write([]byte(sessionData))
+	_, _ = h.Write([]byte(sessionData))
 	hashData := string(h.Sum(nil))
 	return base64.RawURLEncoding.EncodeToString([]byte(sessionData + ":" + hashData))
 }

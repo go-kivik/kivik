@@ -50,6 +50,12 @@ func ValidatePBKDF2(password, salt, derivedKey string, iterations int) bool {
 // CreateAuthToken hashes a username, salt, timestamp, and the server secret
 // into an authentication token.
 func CreateAuthToken(name, salt, secret string, time int64) string {
+	if secret == "" {
+		panic("secret must be set")
+	}
+	if salt == "" {
+		panic("salt must be set")
+	}
 	sessionData := fmt.Sprintf("%s:%X", name, time)
 	h := hmac.New(sha1.New, []byte(secret+salt))
 	h.Write([]byte(sessionData))

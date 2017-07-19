@@ -3,6 +3,7 @@ package kivik
 import (
 	"context"
 	"errors"
+	"io"
 	"testing"
 
 	"github.com/flimzy/diff"
@@ -177,5 +178,45 @@ func TestBulkDocs(t *testing.T) {
 				t.Errorf("Unexpected error: %s", msg)
 			}
 		})
+	}
+}
+
+func TestEmulatedBulkResults(t *testing.T) {
+	results := []driver.BulkResult{
+		{
+			ID:    "chicken",
+			Rev:   "foo",
+			Error: nil,
+		},
+		{
+			ID:    "duck",
+			Rev:   "bar",
+			Error: errors.New("fail"),
+		},
+		{
+			ID:    "dog",
+			Rev:   "baz",
+			Error: nil,
+		},
+	}
+	br := &emulatedBulkResults{results}
+	result := &driver.BulkResult{}
+	if err := br.Next(result); err != nil {
+		t.Errorf("Unexpected error: %s", err)
+	}
+	if d := diff.Interface(&results[0], result); d != "" {
+		t.Error(d)
+	}
+	if err := br.Next(result); err != nil {
+		t.Errorf("Unexpected error: %s", err)
+	}
+	if d := diff.Interface(&results[1], result); d != "" {
+		t.Error(d)
+	}
+	if err := br.Close(); err != nil {
+		t.Errorf("Unexpected error: %s", err)
+	}
+	if err := br.Next(result); err != io.EOF {
+		t.Error("Expected EOF")
 	}
 }

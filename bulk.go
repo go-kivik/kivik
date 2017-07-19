@@ -3,6 +3,7 @@ package kivik
 import (
 	"context"
 	"fmt"
+	"io"
 	"reflect"
 
 	"github.com/flimzy/kivik/driver"
@@ -100,6 +101,26 @@ func (db *DB) BulkDocs(ctx context.Context, docs interface{}) (*BulkResults, err
 		return nil, err
 	}
 	return newBulkResults(ctx, bulki), nil
+}
+
+type emulatedBulkResults struct {
+	results []driver.BulkResult
+}
+
+var _ driver.BulkResults = &emulatedBulkResults{}
+
+func (r *emulatedBulkResults) Close() error {
+	r.results = nil
+	return nil
+}
+
+func (r *emulatedBulkResults) Next(res *driver.BulkResult) error {
+	if len(r.results) == 0 {
+		return io.EOF
+	}
+	*res = r.results[0]
+	r.results = r.results[1:]
+	return nil
 }
 
 type errNotSlice struct {

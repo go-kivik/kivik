@@ -140,6 +140,17 @@ func (db *bdDB) BulkDocs(_ context.Context, docs []interface{}) (driver.BulkResu
 	return nil, db.err
 }
 
+type nonbdDB struct {
+	driver.DB
+}
+
+var _ driver.DB = &nonbdDB{}
+
+func (db *nonbdDB) Put(_ context.Context, _ string, _ interface{}) (string, error) { return "", nil }
+func (db *nonbdDB) CreateDoc(_ context.Context, _ interface{}) (string, string, error) {
+	return "", "", nil
+}
+
 func TestBulkDocs(t *testing.T) {
 	type bdTest struct {
 		name     string
@@ -164,6 +175,14 @@ func TestBulkDocs(t *testing.T) {
 			dbDriver: &bdDB{err: errors.New("bulkdocs failed")},
 			docs:     []int{1, 2, 3},
 			err:      "bulkdocs failed",
+		},
+		{
+			name:     "emulated BulkDocs support",
+			dbDriver: &nonbdDB{},
+			docs: []interface{}{
+				map[string]string{"_id": "foo"},
+				123,
+			},
 		},
 	}
 	for _, test := range tests {

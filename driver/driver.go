@@ -143,9 +143,6 @@ type DB interface {
 	// Changes returns a Rows iterator for the changes feed. In continuous mode,
 	// the iterator will continue indefinitely, until Close is called.
 	Changes(ctx context.Context, options map[string]interface{}) (Changes, error)
-	// BulkDocs alls bulk create, update and/or delete operations. It returns an
-	// iterator over the results.
-	BulkDocs(ctx context.Context, docs []interface{}) (BulkResults, error)
 	// PutAttachment uploads an attachment to the specified document, returning
 	// the new revision.
 	PutAttachment(ctx context.Context, docID, rev, filename, contentType string, body io.Reader) (newRev string, err error)
@@ -159,6 +156,16 @@ type DB interface {
 	// ddoc will be the design doc name without the '_design/' previx.
 	// view will be the view name without the '_view/' prefix.
 	Query(ctx context.Context, ddoc, view string, options map[string]interface{}) (Rows, error)
+}
+
+// BulkDocer is an optional interface which may be implemented by a driver to
+// support bulk insert/update operations. For any driver that does not support
+// the BulkDocer interface, the Put or CreateDoc methods will be called for each
+// document to emulate the same functionality.
+type BulkDocer interface {
+	// BulkDocs alls bulk create, update and/or delete operations. It returns an
+	// iterator over the results.
+	BulkDocs(ctx context.Context, docs []interface{}) (BulkResults, error)
 }
 
 // Finder is an optional interface which may be implemented by a database. The

@@ -103,6 +103,37 @@ func normalizeFromJSON(i interface{}) (interface{}, error) {
 	return x, nil
 }
 
+func extractDocID(i interface{}) (string, bool) {
+	if i == nil {
+		return "", false
+	}
+	var id string
+	var ok bool
+	switch t := i.(type) {
+	case map[string]interface{}:
+		id, ok = t["_id"].(string)
+	case map[string]string:
+		id, ok = t["_id"]
+	default:
+		data, err := json.Marshal(i)
+		if err != nil {
+			return "", false
+		}
+		var result struct {
+			ID string `json:"_id"`
+		}
+		if err := json.Unmarshal(data, &result); err != nil {
+			return "", false
+		}
+		id = result.ID
+		ok = result.ID != ""
+	}
+	if !ok {
+		return "", false
+	}
+	return id, true
+}
+
 // Put creates a new doc or updates an existing one, with the specified docID.
 // If the document already exists, the current revision must be included in doc,
 // with JSON key '_rev', otherwise a conflict will occur. The new rev is

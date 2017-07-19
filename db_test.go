@@ -12,45 +12,11 @@ import (
 	"github.com/flimzy/kivik/driver"
 )
 
-type dummyDB struct{}
+type dummyDB struct {
+	driver.DB
+}
 
 var _ driver.DB = &dummyDB{}
-
-func (n *dummyDB) AllDocs(_ context.Context, _ map[string]interface{}) (driver.Rows, error) {
-	return nil, nil
-}
-func (n *dummyDB) BulkDocs(_ context.Context, _ []interface{}) (driver.BulkResults, error) {
-	return nil, nil
-}
-func (n *dummyDB) Changes(_ context.Context, _ map[string]interface{}) (driver.Changes, error) {
-	return nil, nil
-}
-func (n *dummyDB) CreateDoc(_ context.Context, _ interface{}) (string, string, error) {
-	return "", "", nil
-}
-func (n *dummyDB) DeleteAttachment(_ context.Context, _, _, _ string) (string, error) {
-	return "", nil
-}
-func (n *dummyDB) Get(_ context.Context, _ string, _ map[string]interface{}) (json.RawMessage, error) {
-	return nil, nil
-}
-func (n *dummyDB) GetAttachment(_ context.Context, _, _, _ string) (string, driver.MD5sum, io.ReadCloser, error) {
-	return "", driver.MD5sum{}, nil, nil
-}
-func (n *dummyDB) PutAttachment(_ context.Context, _, _, _, _ string, _ io.Reader) (string, error) {
-	return "", nil
-}
-func (n *dummyDB) Query(_ context.Context, _, _ string, _ map[string]interface{}) (driver.Rows, error) {
-	return nil, nil
-}
-func (n *dummyDB) Compact(_ context.Context) error                                { return nil }
-func (n *dummyDB) CompactView(_ context.Context, _ string) error                  { return nil }
-func (n *dummyDB) Delete(_ context.Context, _, _ string) (string, error)          { return "", nil }
-func (n *dummyDB) Put(_ context.Context, _ string, _ interface{}) (string, error) { return "", nil }
-func (n *dummyDB) Security(_ context.Context) (*driver.Security, error)           { return nil, nil }
-func (n *dummyDB) SetSecurity(_ context.Context, _ *driver.Security) error        { return nil }
-func (n *dummyDB) Stats(_ context.Context) (*driver.DBStats, error)               { return nil, nil }
-func (n *dummyDB) ViewCleanup(_ context.Context) error                            { return nil }
 
 func TestFlushNotSupported(t *testing.T) {
 	db := &DB{
@@ -211,5 +177,61 @@ func TestPutJSON(t *testing.T) {
 				}
 			})
 		}(test)
+	}
+}
+
+func TestExtractDocID(t *testing.T) {
+	type ediTest struct {
+		name     string
+		i        interface{}
+		id       string
+		expected bool
+	}
+	tests := []ediTest{
+		{
+			name: "nil",
+		},
+		{
+			name: "string/interface map, no id",
+			i: map[string]interface{}{
+				"value": "foo",
+			},
+		},
+		{
+			name: "string/interface map, with id",
+			i: map[string]interface{}{
+				"_id": "foo",
+			},
+			id:       "foo",
+			expected: true,
+		},
+		{
+			name: "string/string map, with id",
+			i: map[string]string{
+				"_id": "foo",
+			},
+			id:       "foo",
+			expected: true,
+		},
+		{
+			name: "invalid JSON",
+			i:    make(chan int),
+		},
+		{
+			name: "valid JSON",
+			i: struct {
+				ID string `json:"_id"`
+			}{ID: "oink"},
+			id:       "oink",
+			expected: true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			id, ok := extractDocID(test.i)
+			if ok != test.expected || test.id != id {
+				t.Errorf("Expected %t/%s, got %t/%s", test.expected, test.id, ok, id)
+			}
+		})
 	}
 }

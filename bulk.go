@@ -3,6 +3,7 @@ package kivik
 import (
 	"context"
 	"fmt"
+	"io"
 	"reflect"
 
 	"github.com/flimzy/kivik/driver"
@@ -95,11 +96,50 @@ func (db *DB) BulkDocs(ctx context.Context, docs interface{}) (*BulkResults, err
 		}
 		return nil, err
 	}
-	bulki, err := db.driverDB.BulkDocs(ctx, docsi)
-	if err != nil {
-		return nil, err
+	if bulkDocer, ok := db.driverDB.(driver.BulkDocer); ok {
+		bulki, err := bulkDocer.BulkDocs(ctx, docsi)
+		if err != nil {
+			return nil, err
+		}
+		return newBulkResults(ctx, bulki), nil
 	}
-	return newBulkResults(ctx, bulki), nil
+	var results []driver.BulkResult
+	for _, doc := range docsi {
+		var err error
+		var id, rev string
+		if docID, ok := extractDocID(doc); ok {
+			id = docID
+			_, err = db.Put(ctx, id, doc)
+		} else {
+			_, _, err = db.CreateDoc(ctx, doc)
+		}
+		results = append(results, driver.BulkResult{
+			ID:    id,
+			Rev:   rev,
+			Error: err,
+		})
+	}
+	return newBulkResults(ctx, &emulatedBulkResults{results}), nil
+}
+
+type emulatedBulkResults struct {
+	results []driver.BulkResult
+}
+
+var _ driver.BulkResults = &emulatedBulkResults{}
+
+func (r *emulatedBulkResults) Close() error {
+	r.results = nil
+	return nil
+}
+
+func (r *emulatedBulkResults) Next(res *driver.BulkResult) error {
+	if len(r.results) == 0 {
+		return io.EOF
+	}
+	*res = r.results[0]
+	r.results = r.results[1:]
+	return nil
 }
 
 type errNotSlice struct {

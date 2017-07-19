@@ -30,7 +30,7 @@ func ResponseError(resp *http.Response) error {
 	if resp.StatusCode < 400 {
 		return nil
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	httpErr := &HTTPError{}
 	if resp.Request.Method != "HEAD" && resp.ContentLength != 0 {
 		if ct, _, _ := mime.ParseMediaType(resp.Header.Get("Content-Type")); ct == typeJSON {

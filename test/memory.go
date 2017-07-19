@@ -51,12 +51,14 @@ func init() {
 
 		"SetSecurity/RW/Admin/NotExists.status": kivik.StatusNotFound,
 
+		"BulkDocs/RW/NoAuth/group/Mix/Conflict.status": kivik.StatusConflict,
+		"BulkDocs/RW/Admin/group/Mix/Conflict.status":  kivik.StatusConflict,
+
 		"Stats.skip":             true,                       // FIXME: Unimplemented
 		"Compact.skip":           true,                       // FIXME: Unimplemented
 		"DBUpdates.status":       kivik.StatusNotImplemented, // FIXME: Unimplemented
 		"Changes.skip":           true,                       // FIXME: Unimplemented
 		"Copy.skip":              true,                       // FIXME: Unimplemented, depends on Get/Put or Copy
-		"BulkDocs.skip":          true,                       // FIXME: Unimplemented
 		"GetAttachment.skip":     true,                       // FIXME: Unimplemented
 		"GetAttachmentMeta.skip": true,                       // FIXME: Unimplemented
 		"PutAttachment.skip":     true,                       // FIXME: Unimplemented

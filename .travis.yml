@@ -2,6 +2,10 @@ dist: trusty
 sudo: required
 services:
     - docker
+cache:
+    directories:
+        - node_modules
+        - $HOME/gopath/pkg
 
 language: go
 

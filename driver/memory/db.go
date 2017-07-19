@@ -151,11 +151,6 @@ func (d *db) Changes(ctx context.Context, opts map[string]interface{}) (driver.C
 	return nil, notYetImplemented
 }
 
-func (d *db) BulkDocs(_ context.Context, _ []interface{}) (driver.BulkResults, error) {
-	// FIXME: Unimplemented
-	return nil, notYetImplemented
-}
-
 func (d *db) PutAttachment(_ context.Context, _, _, _, _ string, _ io.Reader) (string, error) {
 	// FIXME: Unimplemented
 	return "", notYetImplemented

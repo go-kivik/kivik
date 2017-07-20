@@ -84,6 +84,8 @@ func (d *db) Put(_ context.Context, docID string, doc interface{}) (rev string, 
 		return "", err
 	}
 	couchDoc["_id"] = docID
+	// TODO: Add support for storing attachments.
+	delete(couchDoc, "_attachments")
 
 	if last, ok := d.db.latestRevision(docID); ok {
 		if !last.Deleted && !isLocal && couchDoc.Rev() != fmt.Sprintf("%d-%s", last.ID, last.Rev) {

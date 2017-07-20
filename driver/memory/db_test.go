@@ -191,6 +191,25 @@ func TestPut(t *testing.T) {
 				return db
 			},
 		},
+		{
+			Name:  "WithAttachments",
+			DocID: "duck",
+			Doc: map[string]interface{}{
+				"_id":   "duck",
+				"value": "quack",
+				"_attachments": []map[string]interface{}{
+					{"foo.css": map[string]string{
+						"content_type": "text/css",
+						"data":         "LyogYW4gZW1wdHkgQ1NTIGZpbGUgKi8=",
+					}},
+				},
+			},
+			Expected: map[string]string{
+				"_id":   "duck",
+				"_rev":  "1-xxx",
+				"value": "quack",
+			},
+		},
 	}
 	for _, test := range tests {
 		func(test putTest) {

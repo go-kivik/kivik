@@ -5,8 +5,7 @@ set -o xtrace
 if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     brew install glide
 else
-    sudo add-apt-repository -y ppa:masterminds/glide && sudo apt-get update
-    sudo apt-get install glide
+    curl https://glide.sh/get | sh
 fi
 
 glide update

@@ -6,6 +6,7 @@ cache:
     directories:
         - node_modules
         - $HOME/gopath/pkg
+        - /var/lib/docker
 
 language: go
 

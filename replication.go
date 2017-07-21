@@ -34,7 +34,7 @@ type Replication struct {
 
 // DocsWritten returns the number of documents written, if known.
 func (r *Replication) DocsWritten() int64 {
-	if r.info != nil {
+	if r != nil && r.info != nil {
 		r.infoMU.RLock()
 		defer r.infoMU.RUnlock()
 		return r.info.DocsWritten

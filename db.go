@@ -14,12 +14,18 @@ import (
 // DB is a handle to a specific database.
 type DB struct {
 	client   *Client
+	name     string
 	driverDB driver.DB
 }
 
 // Client returns the Client used to connect to the database.
 func (db *DB) Client() *Client {
 	return db.client
+}
+
+// Name returns the database name as passed when creating the DB connection.
+func (db *DB) Name() string {
+	return db.name
 }
 
 // AllDocs returns a list of all documents in the database.

@@ -12,6 +12,15 @@ import (
 	"github.com/flimzy/kivik/driver"
 )
 
+func TestClient(t *testing.T) {
+	client := &Client{}
+	db := &DB{client: client}
+	result := db.Client()
+	if result != client {
+		t.Errorf("Unexpected result. Expected %p, got %p", client, result)
+	}
+}
+
 type dummyDB struct {
 	driver.DB
 }

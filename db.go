@@ -13,7 +13,13 @@ import (
 
 // DB is a handle to a specific database.
 type DB struct {
+	client   *Client
 	driverDB driver.DB
+}
+
+// Client returns the Client used to connect to the database.
+func (db *DB) Client() *Client {
+	return db.client
 }
 
 // AllDocs returns a list of all documents in the database.

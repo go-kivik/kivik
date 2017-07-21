@@ -187,7 +187,7 @@ func TestBulkDocs(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			db := &DB{test.dbDriver}
+			db := &DB{driverDB: test.dbDriver}
 			_, err := db.BulkDocs(context.Background(), test.docs)
 			var msg string
 			if err != nil {

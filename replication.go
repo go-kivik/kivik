@@ -104,6 +104,9 @@ func (r *Replication) State() ReplicationState {
 
 // Err returns the error, if any, that caused the replication to abort.
 func (r *Replication) Err() error {
+	if r == nil {
+		return nil
+	}
 	return r.irep.Err()
 }
 

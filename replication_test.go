@@ -1,6 +1,7 @@
 package kivik
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/flimzy/kivik/driver"
@@ -9,10 +10,15 @@ import (
 type fakeRep struct {
 	driver.Replication
 	state string
+	err   error
 }
 
 func (r *fakeRep) State() string {
 	return r.state
+}
+
+func (r *fakeRep) Err() error {
+	return r.err
 }
 
 func TestReplicationIsActive(t *testing.T) {
@@ -64,6 +70,31 @@ func TestReplicationDocsWritten(t *testing.T) {
 		result := r.DocsWritten()
 		if result != 0 {
 			t.Errorf("Unexpected doc count: %d", result)
+		}
+	})
+}
+
+func TestReplicationErr(t *testing.T) {
+	t.Run("No error", func(t *testing.T) {
+		r := &Replication{
+			irep: &fakeRep{},
+		}
+		if err := r.Err(); err != nil {
+			t.Errorf("Unexpected error: %s", err)
+		}
+	})
+	t.Run("Error", func(t *testing.T) {
+		r := &Replication{
+			irep: &fakeRep{err: errors.New("rep error")},
+		}
+		if err := r.Err(); err == nil || err.Error() != "rep error" {
+			t.Errorf("Unexpected error: %s", err)
+		}
+	})
+	t.Run("Nil", func(t *testing.T) {
+		var r *Replication
+		if err := r.Err(); err != nil {
+			t.Errorf("Unexpected error: %s", err)
 		}
 	})
 }

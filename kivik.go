@@ -97,6 +97,7 @@ func (c *Client) DB(ctx context.Context, dbName string, options ...Options) (*DB
 	db, err := c.driverClient.DB(ctx, dbName, opts)
 	return &DB{
 		client:   c,
+		name:     dbName,
 		driverDB: db,
 	}, err
 }

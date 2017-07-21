@@ -21,6 +21,15 @@ func TestClient(t *testing.T) {
 	}
 }
 
+func TestName(t *testing.T) {
+	dbName := "foo"
+	db := &DB{name: dbName}
+	result := db.Name()
+	if result != dbName {
+		t.Errorf("Unexpected result. Expected %s, got %s", dbName, result)
+	}
+}
+
 type dummyDB struct {
 	driver.DB
 }

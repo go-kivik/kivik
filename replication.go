@@ -110,6 +110,9 @@ func (r *Replication) Err() error {
 // IsActive returns true if the replication has not yet completed or
 // errored.
 func (r *Replication) IsActive() bool {
+	if r == nil {
+		return false
+	}
 	return r.State() != ReplicationError && r.State() != ReplicationComplete
 }
 

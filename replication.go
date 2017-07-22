@@ -34,7 +34,7 @@ type Replication struct {
 
 // DocsWritten returns the number of documents written, if known.
 func (r *Replication) DocsWritten() int64 {
-	if r.info != nil {
+	if r != nil && r.info != nil {
 		r.infoMU.RLock()
 		defer r.infoMU.RUnlock()
 		return r.info.DocsWritten
@@ -104,12 +104,18 @@ func (r *Replication) State() ReplicationState {
 
 // Err returns the error, if any, that caused the replication to abort.
 func (r *Replication) Err() error {
+	if r == nil {
+		return nil
+	}
 	return r.irep.Err()
 }
 
 // IsActive returns true if the replication has not yet completed or
 // errored.
 func (r *Replication) IsActive() bool {
+	if r == nil {
+		return false
+	}
 	return r.State() != ReplicationError && r.State() != ReplicationComplete
 }
 

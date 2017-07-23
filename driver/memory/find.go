@@ -6,11 +6,12 @@ import (
 	"errors"
 
 	"github.com/flimzy/kivik/driver"
+	"github.com/flimzy/kivik/driver/util"
 )
 
 var errFindNotImplemented = errors.New("find feature not yet implemented")
 
-type query struct {
+type findQuery struct {
 	Selector map[string]interface{} `json:"selector"`
 	Limit    int64                  `json:"limit"`
 	Skip     int64                  `json:"skip"`
@@ -42,10 +43,6 @@ func (i *indexSpec) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (d *db) Find(_ context.Context, query interface{}) (driver.Rows, error) {
-	return nil, nil
-}
-
 func (d *db) CreateIndex(_ context.Context, ddoc, name string, index interface{}) error {
 	return errFindNotImplemented
 }
@@ -56,4 +53,31 @@ func (d *db) GetIndexes(_ context.Context) ([]driver.Index, error) {
 
 func (d *db) DeleteIndex(_ context.Context, ddoc, name string) error {
 	return errFindNotImplemented
+}
+
+func (d *db) Find(_ context.Context, query interface{}) (driver.Rows, error) {
+	queryJSON, err := util.ToJSON(query)
+	if err != nil {
+		return nil, err
+	}
+	fq := &findQuery{}
+	if err := json.NewDecoder(queryJSON).Decode(&fq); err != nil {
+		return nil, err
+	}
+	if fq == nil || fq.Selector == nil {
+		return nil, errors.New("Missing required key: selector")
+	}
+	rows := &resultSet{
+		docIDs: make([]string, 0),
+		revs:   make([]*revision, 0),
+	}
+	for docID := range d.db.docs {
+		if doc, found := d.db.latestRevision(docID); found {
+			rows.docIDs = append(rows.docIDs, docID)
+			rows.revs = append(rows.revs, doc)
+		}
+	}
+	rows.offset = 0
+	rows.totalRows = int64(len(rows.docIDs))
+	return rows, nil
 }

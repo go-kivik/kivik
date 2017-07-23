@@ -22,6 +22,7 @@ func (d *db) AllDocs(ctx context.Context, opts map[string]interface{}) (driver.R
 	}
 	rows.offset = 0
 	rows.totalRows = int64(len(rows.docIDs))
+	if limit := opts["limit"]
 	return rows, nil
 }
 

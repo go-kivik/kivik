@@ -9,6 +9,7 @@ import (
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/driver/couchdb/chttp"
+	"github.com/flimzy/kivik/driver/util"
 	"github.com/flimzy/kivik/errors"
 )
 
@@ -79,7 +80,7 @@ func (d *db) Find(ctx context.Context, query interface{}) (driver.Rows, error) {
 	if d.client.Compat == CompatCouch16 {
 		return nil, findNotImplemented
 	}
-	body, err := jsonify(query)
+	body, err := util.ToJSON(query)
 	if err != nil {
 		return nil, err
 	}

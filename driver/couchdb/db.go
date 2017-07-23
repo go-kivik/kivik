@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -68,23 +67,6 @@ func (d *db) rowsQuery(ctx context.Context, path string, opts map[string]interfa
 		return nil, err
 	}
 	return newRows(resp.Body), nil
-}
-
-// jsonify converts a string, []byte, json.RawMessage, or an arbitrary type into
-// an io.Reader of JSON marshaled data.
-func jsonify(i interface{}) (io.Reader, error) {
-	switch t := i.(type) {
-	case string:
-		return strings.NewReader(t), nil
-	case []byte:
-		return bytes.NewReader(t), nil
-	case json.RawMessage:
-		return bytes.NewReader(t), nil
-	default:
-		buf := &bytes.Buffer{}
-		err := json.NewEncoder(buf).Encode(i)
-		return buf, err
-	}
 }
 
 // AllDocs returns all of the documents in the database.

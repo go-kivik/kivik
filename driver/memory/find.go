@@ -7,17 +7,18 @@ import (
 
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/driver/util"
+	"github.com/go-kivik/mango"
 )
 
 var errFindNotImplemented = errors.New("find feature not yet implemented")
 
 type findQuery struct {
-	Selector map[string]interface{} `json:"selector"`
-	Limit    int64                  `json:"limit"`
-	Skip     int64                  `json:"skip"`
-	Sort     []string               `json:"sort"`
-	Fields   []string               `json:"fields"`
-	UseIndex indexSpec              `json:"use_index"`
+	Selector *mango.Selector `json:"selector"`
+	Limit    int64           `json:"limit"`
+	Skip     int64           `json:"skip"`
+	Sort     []string        `json:"sort"`
+	Fields   []string        `json:"fields"`
+	UseIndex indexSpec       `json:"use_index"`
 }
 
 type indexSpec struct {
@@ -73,8 +74,18 @@ func (d *db) Find(_ context.Context, query interface{}) (driver.Rows, error) {
 	}
 	for docID := range d.db.docs {
 		if doc, found := d.db.latestRevision(docID); found {
-			rows.docIDs = append(rows.docIDs, docID)
-			rows.revs = append(rows.revs, doc)
+			cd, err := toCouchDoc(doc)
+			if err != nil {
+				panic(err)
+			}
+			match, err := fq.Selector.Matches(map[string]interface{}(cd))
+			if err != nil {
+				return nil, err
+			}
+			if match {
+				rows.docIDs = append(rows.docIDs, docID)
+				rows.revs = append(rows.revs, doc)
+			}
 		}
 	}
 	rows.offset = 0

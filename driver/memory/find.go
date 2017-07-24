@@ -77,8 +77,8 @@ func (d *db) Find(_ context.Context, query interface{}) (driver.Rows, error) {
 	}
 	for docID := range d.db.docs {
 		if doc, found := d.db.latestRevision(docID); found {
-			cd, err := toCouchDoc(doc)
-			if err != nil {
+			var cd couchDoc
+			if err := json.Unmarshal(doc.data, &cd); err != nil {
 				panic(err)
 			}
 			match, err := fq.Selector.Matches(map[string]interface{}(cd))

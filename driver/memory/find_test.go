@@ -2,9 +2,12 @@ package memory
 
 import (
 	"context"
+	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/flimzy/diff"
+	"github.com/flimzy/kivik/driver"
 )
 
 func TestIndexSpecUnmarshalJSON(t *testing.T) {
@@ -91,6 +94,7 @@ func TestDeleteIndex(t *testing.T) {
 	}
 }
 
+// TestFind tests selectors, to see that the proper doc IDs are returned.
 func TestFind(t *testing.T) {
 	type findTest struct {
 		name        string
@@ -129,6 +133,20 @@ func TestFind(t *testing.T) {
 			}(),
 			expectedIDs: []string{"a", "c", "chicken", "q", "z"},
 		},
+		{
+			name:  "simple selector",
+			query: `{"selector":{"value":"chicken"}}`,
+			db: func() *db {
+				db := setupDB(t, nil)
+				for _, id := range []string{"a", "c", "z", "q", "chicken"} {
+					if _, err := db.Put(context.Background(), id, map[string]string{"value": id}); err != nil {
+						t.Fatal(err)
+					}
+				}
+				return db
+			}(),
+			expectedIDs: []string{"chicken"},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -148,6 +166,62 @@ func TestFind(t *testing.T) {
 				return
 			}
 			checkRows(t, rows, test.expectedIDs, test.rowsErr)
+		})
+	}
+}
+
+// TestFindDoc is the same as Testfind, but assumes only a single result
+// (ignores any others), and compares the entire document.
+func TestFindDoc(t *testing.T) {
+	type fdTest struct {
+		name     string
+		db       *db
+		query    interface{}
+		expected interface{}
+	}
+	tests := []fdTest{
+		{
+			name:  "simple selector",
+			query: `{"selector":{}}`,
+			db: func() *db {
+				db := setupDB(t, nil)
+				id := "chicken"
+				if _, err := db.Put(context.Background(), id, map[string]string{"value": id}); err != nil {
+					t.Fatal(err)
+				}
+				return db
+			}(),
+			expected: map[string]interface{}{
+				"_id":   "chicken",
+				"_rev":  "1-xxx",
+				"value": "chicken",
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			db := test.db
+			if db == nil {
+				db = setupDB(t, nil)
+			}
+			rows, err := db.Find(context.Background(), test.query)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var row driver.Row
+			if e := rows.Next(&row); e != nil {
+				t.Fatal(e)
+			}
+			_ = rows.Close()
+			var result map[string]interface{}
+			if e := json.Unmarshal(row.Doc, &result); e != nil {
+				t.Fatal(e)
+			}
+			parts := strings.Split(result["_rev"].(string), "-")
+			result["_rev"] = parts[0] + "-xxx"
+			if d := diff.AsJSON(test.expected, result); d != "" {
+				t.Error(d)
+			}
 		})
 	}
 }

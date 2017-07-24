@@ -11,9 +11,11 @@ import (
 )
 
 func TestAllDocsClose(t *testing.T) {
-	rs := &resultSet{
-		revs:   []*revision{{}, {}}, // Two nil revisions
-		docIDs: []string{"a", "b"},
+	rs := &alldocsResults{
+		resultSet{
+			revs:   []*revision{{}, {}}, // Two nil revisions
+			docIDs: []string{"a", "b"},
+		},
 	}
 	row := driver.Row{}
 	if err := rs.Next(&row); err != nil {
@@ -113,7 +115,7 @@ func checkRows(t *testing.T, rows driver.Rows, expectedIDs []string, rowsErr str
 
 func TestAllDocsUpdateSeq(t *testing.T) {
 	expected := "12345"
-	rs := &resultSet{updateSeq: expected}
+	rs := &alldocsResults{resultSet{updateSeq: expected}}
 	if result := rs.UpdateSeq(); result != expected {
 		t.Errorf("Unexpected upste seq: %s", result)
 	}
@@ -121,7 +123,7 @@ func TestAllDocsUpdateSeq(t *testing.T) {
 
 func TestAllDocsTotalRows(t *testing.T) {
 	expected := int64(123)
-	rs := &resultSet{totalRows: expected}
+	rs := &alldocsResults{resultSet{totalRows: expected}}
 	if result := rs.TotalRows(); result != expected {
 		t.Errorf("Unexpected upste seq: %d", result)
 	}
@@ -129,7 +131,7 @@ func TestAllDocsTotalRows(t *testing.T) {
 
 func TestAllDocsOffset(t *testing.T) {
 	expected := int64(123)
-	rs := &resultSet{offset: expected}
+	rs := &alldocsResults{resultSet{offset: expected}}
 	if result := rs.Offset(); result != expected {
 		t.Errorf("Unexpected upste seq: %d", result)
 	}

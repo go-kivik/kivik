@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/driver/util"
@@ -68,9 +69,11 @@ func (d *db) Find(_ context.Context, query interface{}) (driver.Rows, error) {
 	if fq == nil || fq.Selector == nil {
 		return nil, errors.New("Missing required key: selector")
 	}
-	rows := &resultSet{
-		docIDs: make([]string, 0),
-		revs:   make([]*revision, 0),
+	rows := &findResults{
+		resultSet{
+			docIDs: make([]string, 0),
+			revs:   make([]*revision, 0),
+		},
 	}
 	for docID := range d.db.docs {
 		if doc, found := d.db.latestRevision(docID); found {
@@ -91,4 +94,20 @@ func (d *db) Find(_ context.Context, query interface{}) (driver.Rows, error) {
 	rows.offset = 0
 	rows.totalRows = int64(len(rows.docIDs))
 	return rows, nil
+}
+
+type findResults struct {
+	resultSet
+}
+
+var _ driver.Rows = &findResults{}
+
+func (r *findResults) Next(row *driver.Row) error {
+	if r.revs == nil || len(r.revs) == 0 {
+		return io.EOF
+	}
+	row.ID, r.docIDs = r.docIDs[0], r.docIDs[1:]
+	row.Doc = r.revs[0].data
+	r.revs = r.revs[1:]
+	return nil
 }

@@ -118,24 +118,27 @@ func (r *findResults) Next(row *driver.Row) error {
 		return io.EOF
 	}
 	row.ID, r.docIDs = r.docIDs[0], r.docIDs[1:]
-	if len(r.fields) > 0 {
-		var intermediateDoc map[string]interface{}
-		if err := json.Unmarshal(r.revs[0].data, &intermediateDoc); err != nil {
-			return err
-		}
-		for field := range intermediateDoc {
-			if _, ok := r.fields[field]; !ok {
-				delete(intermediateDoc, field)
-			}
-		}
-		var err error
-		row.Doc, err = json.Marshal(intermediateDoc)
-		if err != nil {
-			return err
-		}
-	} else {
-		row.Doc = r.revs[0].data
+	doc, err := r.filterDoc(r.revs[0].data)
+	if err != nil {
+		return err
 	}
+	row.Doc = doc
 	r.revs = r.revs[1:]
 	return nil
+}
+
+func (r *findResults) filterDoc(data []byte) ([]byte, error) {
+	if len(r.fields) == 0 {
+		return data, nil
+	}
+	var intermediateDoc map[string]interface{}
+	if err := json.Unmarshal(data, &intermediateDoc); err != nil {
+		return nil, err
+	}
+	for field := range intermediateDoc {
+		if _, ok := r.fields[field]; !ok {
+			delete(intermediateDoc, field)
+		}
+	}
+	return json.Marshal(intermediateDoc)
 }

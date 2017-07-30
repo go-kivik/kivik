@@ -197,6 +197,21 @@ func TestFindDoc(t *testing.T) {
 				"value": "chicken",
 			},
 		},
+		{
+			name:  "fields",
+			query: `{"selector":{}, "fields":["value","_rev"]}`,
+			db: func() *db {
+				db := setupDB(t, nil)
+				if _, _, err := db.CreateDoc(context.Background(), map[string]string{"value": "foo"}); err != nil {
+					t.Fatal(err)
+				}
+				return db
+			}(),
+			expected: map[string]interface{}{
+				"value": "foo",
+				"_rev":  "1-xxx",
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

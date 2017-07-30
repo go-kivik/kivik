@@ -69,11 +69,16 @@ func (d *db) Find(_ context.Context, query interface{}) (driver.Rows, error) {
 	if fq == nil || fq.Selector == nil {
 		return nil, errors.New("Missing required key: selector")
 	}
+	fields := make(map[string]struct{}, len(fq.Fields))
+	for _, field := range fq.Fields {
+		fields[field] = struct{}{}
+	}
 	rows := &findResults{
-		resultSet{
+		resultSet: resultSet{
 			docIDs: make([]string, 0),
 			revs:   make([]*revision, 0),
 		},
+		fields: fields,
 	}
 	for docID := range d.db.docs {
 		if doc, found := d.db.latestRevision(docID); found {
@@ -98,6 +103,7 @@ func (d *db) Find(_ context.Context, query interface{}) (driver.Rows, error) {
 
 type findResults struct {
 	resultSet
+	fields map[string]struct{}
 }
 
 var _ driver.Rows = &findResults{}
@@ -112,7 +118,24 @@ func (r *findResults) Next(row *driver.Row) error {
 		return io.EOF
 	}
 	row.ID, r.docIDs = r.docIDs[0], r.docIDs[1:]
-	row.Doc = r.revs[0].data
+	if len(r.fields) > 0 {
+		var intermediateDoc map[string]interface{}
+		if err := json.Unmarshal(r.revs[0].data, &intermediateDoc); err != nil {
+			return err
+		}
+		for field := range intermediateDoc {
+			if _, ok := r.fields[field]; !ok {
+				delete(intermediateDoc, field)
+			}
+		}
+		var err error
+		row.Doc, err = json.Marshal(intermediateDoc)
+		if err != nil {
+			return err
+		}
+	} else {
+		row.Doc = r.revs[0].data
+	}
 	r.revs = r.revs[1:]
 	return nil
 }

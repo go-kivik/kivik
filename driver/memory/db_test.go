@@ -59,19 +59,19 @@ func TestStats(t *testing.T) {
 	}
 }
 
-func setupDB(t *testing.T, s func(driver.DB)) driver.DB {
+func setupDB(t *testing.T, s func(driver.DB)) *db {
 	c := setup(t, nil)
 	if err := c.CreateDB(context.Background(), "foo", nil); err != nil {
 		t.Fatal(err)
 	}
-	db, err := c.DB(context.Background(), "foo", nil)
+	d, err := c.DB(context.Background(), "foo", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if s != nil {
-		s(db)
+		s(d)
 	}
-	return db
+	return d.(*db)
 }
 
 func TestPut(t *testing.T) {

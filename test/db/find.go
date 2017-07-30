@@ -112,6 +112,7 @@ func doFindTest(ctx *kt.Context, client *kivik.Client, dbName string, expOffset 
 	if rows.Err() != nil {
 		ctx.Fatalf("Failed to fetch row: %s", rows.Err())
 	}
+	sort.Strings(docIDs) // normalize order
 	if d := diff.TextSlices(expected, docIDs); d != "" {
 		ctx.Errorf("Unexpected document IDs returned:\n%s\n", d)
 	}

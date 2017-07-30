@@ -10,9 +10,11 @@ import (
 )
 
 func (d *db) AllDocs(ctx context.Context, opts map[string]interface{}) (driver.Rows, error) {
-	rows := &resultSet{
-		docIDs: make([]string, 0),
-		revs:   make([]*revision, 0),
+	rows := &alldocsResults{
+		resultSet{
+			docIDs: make([]string, 0),
+			revs:   make([]*revision, 0),
+		},
 	}
 	for docID := range d.db.docs {
 		if doc, found := d.db.latestRevision(docID); found {
@@ -32,14 +34,22 @@ type resultSet struct {
 	updateSeq         string
 }
 
-var _ driver.Rows = &resultSet{}
-
 func (r *resultSet) Close() error {
 	r.revs = nil
 	return nil
 }
 
-func (r *resultSet) Next(row *driver.Row) error {
+func (r *resultSet) UpdateSeq() string { return r.updateSeq }
+func (r *resultSet) TotalRows() int64  { return r.totalRows }
+func (r *resultSet) Offset() int64     { return r.offset }
+
+type alldocsResults struct {
+	resultSet
+}
+
+var _ driver.Rows = &alldocsResults{}
+
+func (r *alldocsResults) Next(row *driver.Row) error {
 	if r.revs == nil || len(r.revs) == 0 {
 		return io.EOF
 	}
@@ -57,7 +67,3 @@ func (r *resultSet) Next(row *driver.Row) error {
 	}
 	return nil
 }
-
-func (r *resultSet) UpdateSeq() string { return r.updateSeq }
-func (r *resultSet) TotalRows() int64  { return r.totalRows }
-func (r *resultSet) Offset() int64     { return r.offset }

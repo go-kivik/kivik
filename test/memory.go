@@ -54,6 +54,14 @@ func init() {
 		"BulkDocs/RW/NoAuth/group/Mix/Conflict.status": kivik.StatusConflict,
 		"BulkDocs/RW/Admin/group/Mix/Conflict.status":  kivik.StatusConflict,
 
+		"Find.databases":                       []string{"chicken", "_duck"},
+		"Find/Admin/chicken.status":            kivik.StatusNotFound,
+		"Find/Admin/_duck.status":              kivik.StatusNotFound,
+		"Find/NoAuth/chicken.status":           kivik.StatusNotFound,
+		"Find/NoAuth/_duck.status":             kivik.StatusUnauthorized,
+		"Find/RW/group/Admin/Warning.warning":  "no matching index found, create an index to optimize query time",
+		"Find/RW/group/NoAuth/Warning.warning": "no matching index found, create an index to optimize query time",
+
 		"Stats.skip":             true,                       // FIXME: Unimplemented
 		"Compact.skip":           true,                       // FIXME: Unimplemented
 		"DBUpdates.status":       kivik.StatusNotImplemented, // FIXME: Unimplemented
@@ -64,7 +72,6 @@ func init() {
 		"PutAttachment.skip":     true,                       // FIXME: Unimplemented
 		"DeleteAttachment.skip":  true,                       // FIXME: Unimplemented
 		"Query.skip":             true,                       // FIXME: Unimplemented
-		"Find.skip":              true,                       // FIXME: Unimplemented
 		"CreateIndex.skip":       true,                       // FIXME: Unimplemented
 		"GetIndexes.skip":        true,                       // FIXME: Unimplemented
 		"DeleteIndex.skip":       true,                       // FIXME: Unimplemented

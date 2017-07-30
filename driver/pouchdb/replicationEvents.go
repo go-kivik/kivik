@@ -8,16 +8,52 @@ import (
 
 	"github.com/flimzy/kivik/driver/pouchdb/bindings"
 	"github.com/gopherjs/gopherjs/js"
+	"github.com/gopherjs/jsbuiltin"
 )
 
 type replicationState struct {
 	*js.Object
-	StartTime        time.Time `js:"start_time"`
-	EndTime          time.Time `js:"end_time"`
+	startTime        time.Time `js:"start_time"`
+	endTime          time.Time `js:"end_time"`
 	DocsRead         int64     `js:"docs_read"`
 	DocsWritten      int64     `js:"docs_written"`
 	DocWriteFailures int64     `js:"doc_write_failures"`
 	LastSeq          string    `js:"last_seq"`
+}
+
+func (rs *replicationState) StartTime() time.Time {
+	value := rs.Get("start_time")
+	if jsbuiltin.InstanceOf(value, js.Global.Get("Date")) {
+		return rs.startTime
+	}
+	t, err := convertTime(value)
+	if err != nil {
+		panic("start time: " + err.Error())
+	}
+	return t
+}
+
+func (rs *replicationState) EndTime() time.Time {
+	value := rs.Get("end_time")
+	if jsbuiltin.InstanceOf(value, js.Global.Get("Date")) {
+		return rs.endTime
+	}
+	t, err := convertTime(value)
+	if err != nil {
+		panic("end time: " + err.Error())
+	}
+	return t
+}
+
+func convertTime(value *js.Object) (time.Time, error) {
+	if value == js.Undefined {
+		return time.Time{}, nil
+	}
+	switch jsbuiltin.TypeOf(value) {
+	case jsbuiltin.TypeString:
+		return time.Parse(time.RFC3339, value.String())
+	}
+	return time.Time{}, fmt.Errorf("unsupported type")
 }
 
 type replicationHandler struct {

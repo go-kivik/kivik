@@ -101,6 +101,11 @@ type findResults struct {
 }
 
 var _ driver.Rows = &findResults{}
+var _ driver.RowsWarner = &findResults{}
+
+func (r *findResults) Warning() string {
+	return "no matching index found, create an index to optimize query time"
+}
 
 func (r *findResults) Next(row *driver.Row) error {
 	if r.revs == nil || len(r.revs) == 0 {

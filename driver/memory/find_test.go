@@ -197,6 +197,21 @@ func TestFindDoc(t *testing.T) {
 				"value": "chicken",
 			},
 		},
+		{
+			name:  "fields",
+			query: `{"selector":{}, "fields":["value","_rev"]}`,
+			db: func() *db {
+				db := setupDB(t, nil)
+				if _, _, err := db.CreateDoc(context.Background(), map[string]string{"value": "foo"}); err != nil {
+					t.Fatal(err)
+				}
+				return db
+			}(),
+			expected: map[string]interface{}{
+				"value": "foo",
+				"_rev":  "1-xxx",
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -220,6 +235,62 @@ func TestFindDoc(t *testing.T) {
 			parts := strings.Split(result["_rev"].(string), "-")
 			result["_rev"] = parts[0] + "-xxx"
 			if d := diff.AsJSON(test.expected, result); d != "" {
+				t.Error(d)
+			}
+		})
+	}
+}
+
+func TestResultWarning(t *testing.T) {
+	rows := &findResults{}
+	expected := "no matching index found, create an index to optimize query time"
+	if w := rows.Warning(); w != expected {
+		t.Errorf("Unexpected warning: %s", w)
+	}
+}
+
+func TestFilterDoc(t *testing.T) {
+	type fdTest struct {
+		name     string
+		rows     *findResults
+		data     string
+		expected string
+		err      string
+	}
+	tests := []fdTest{
+		{
+			name:     "no filter",
+			rows:     &findResults{},
+			data:     `{"foo":"bar"}`,
+			expected: `{"foo":"bar"}`,
+		},
+		{
+			name:     "with filter",
+			rows:     &findResults{fields: map[string]struct{}{"foo": struct{}{}}},
+			data:     `{"foo":"bar", "baz":"qux"}`,
+			expected: `{"foo":"bar"}`,
+		},
+		{
+			name: "invalid json",
+			rows: &findResults{fields: map[string]struct{}{"foo": struct{}{}}},
+			data: `{"foo":"bar", "baz":"qux}`,
+			err:  "unexpected end of JSON input",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result, err := test.rows.filterDoc([]byte(test.data))
+			var msg string
+			if err != nil {
+				msg = err.Error()
+			}
+			if msg != test.err {
+				t.Errorf("Unexpected error: %s", msg)
+			}
+			if err != nil {
+				return
+			}
+			if d := diff.JSON([]byte(test.expected), result); d != "" {
 				t.Error(d)
 			}
 		})

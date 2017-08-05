@@ -111,6 +111,34 @@ do this with the `kivik serve` command, in the near future.
 of CouchDB to handle custom authentication or other logic that CouchDB cannot
 support natively. Kivik aims to accomplish this in the future.
 
+## What are Kivik's requirements?
+
+Kivik's test suite is automatically run on Linux and OSX for every pull request,
+but should work on all supported Go platforms.
+
+Below are the compatibility targets for specific runtime and database versions.
+If you discover a bug affecting any of these supported environments, please let
+me know by submitting a bug report via GitHub.
+
+### Go compatibility
+
+Kivik 1.x aims for full compatibility with all stable releases of Go from 1.7.
+
+### CouchDB compatibility
+
+The Kivik 1.x CouchDB driver aims for compatibility with all stable releases of
+CouchDB from 1.6.1.
+
+### GopherJS compatibility
+
+GopherJS always requires the latest stable version of Go, so building Kivik with
+GopherJS has this same requirement.
+
+### PouchDB compatibility
+
+The Kivik 1.x PouchDB driver aims for compatibility with all stable releases of
+PouchDB from 6.0.0.
+
 ## What is the development status?
 
 Kivik comes with a complete client API client and backend drivers for CouchDB

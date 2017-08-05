@@ -3,6 +3,7 @@ package bindings
 import (
 	"testing"
 
+	_ "github.com/flimzy/kivik/driver/pouchdb/bindings/poucherr"
 	"github.com/gopherjs/gopherjs/js"
 )
 

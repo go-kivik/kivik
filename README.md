@@ -120,23 +120,12 @@ Below are the compatibility targets for specific runtime and database versions.
 If you discover a bug affecting any of these supported environments, please let
 me know by submitting a bug report via GitHub.
 
-### Go compatibility
-
-Kivik 1.x aims for full compatibility with all stable releases of Go from 1.7.
-
-### CouchDB compatibility
-
-The Kivik 1.x CouchDB driver aims for compatibility with all stable releases of
+- **Go** Kivik 1.x aims for full compatibility with all stable releases of Go from 1.7.
+- **CouchDB** The Kivik 1.x CouchDB driver aims for compatibility with all stable releases of
 CouchDB from 1.6.1.
-
-### GopherJS compatibility
-
-GopherJS always requires the latest stable version of Go, so building Kivik with
+- **GopherJS** GopherJS always requires the latest stable version of Go, so building Kivik with
 GopherJS has this same requirement.
-
-### PouchDB compatibility
-
-The Kivik 1.x PouchDB driver aims for compatibility with all stable releases of
+- **PouchDB** The Kivik 1.x PouchDB driver aims for compatibility with all stable releases of
 PouchDB from 6.0.0.
 
 ## What is the development status?

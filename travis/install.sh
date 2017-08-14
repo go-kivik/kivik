@@ -8,7 +8,7 @@ else
     curl https://glide.sh/get | sh
 fi
 
-glide update
+glide install
 
 function generate {
     go get -u github.com/jteeuwen/go-bindata/...

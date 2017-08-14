@@ -23,7 +23,7 @@ func TestAllDBs(t *testing.T) {
 	resp := w.Result()
 	defer resp.Body.Close()
 	expected := []string{}
-	if d := diff.AsJSON(expected, resp.Body); d != "" {
+	if d := diff.AsJSON(expected, resp.Body); d != nil {
 		t.Error(d)
 	}
 }

@@ -120,7 +120,7 @@ func testGetSecurity(ctx *kt.Context, client *kivik.Client, dbname string, expec
 		return
 	}
 	if expected != nil {
-		if d := diff.AsJSON(expected, sec); d != "" {
+		if d := diff.AsJSON(expected, sec); d != nil {
 			ctx.Errorf("Security document differs from expected:\n%s\n", d)
 		}
 	}

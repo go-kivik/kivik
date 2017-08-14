@@ -100,7 +100,7 @@ func TestDocsInterfaceSlice(t *testing.T) {
 				if msg != test.error {
 					t.Errorf("Unexpected error: %s", err)
 				}
-				if d := diff.AsJSON(test.expected, result); d != "" {
+				if d := diff.AsJSON(test.expected, result); d != nil {
 					t.Errorf("%s", d)
 				}
 			})
@@ -223,13 +223,13 @@ func TestEmulatedBulkResults(t *testing.T) {
 	if err := br.Next(result); err != nil {
 		t.Errorf("Unexpected error: %s", err)
 	}
-	if d := diff.Interface(&results[0], result); d != "" {
+	if d := diff.Interface(&results[0], result); d != nil {
 		t.Error(d)
 	}
 	if err := br.Next(result); err != nil {
 		t.Errorf("Unexpected error: %s", err)
 	}
-	if d := diff.Interface(&results[1], result); d != "" {
+	if d := diff.Interface(&results[1], result); d != nil {
 		t.Error(d)
 	}
 	if err := br.Close(); err != nil {

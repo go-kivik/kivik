@@ -95,7 +95,7 @@ func TestOptionsToParams(t *testing.T) {
 				if msg != test.Error {
 					t.Errorf("Error\n\tExpected: %s\n\t  Actual: %s\n", test.Error, msg)
 				}
-				if d := diff.Interface(test.Expected, params); d != "" {
+				if d := diff.Interface(test.Expected, params); d != nil {
 					t.Errorf("Params not as expected:\n%s\n", d)
 				}
 			})

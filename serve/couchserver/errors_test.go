@@ -54,7 +54,7 @@ func TestHandleError(t *testing.T) {
 				h.HandleError(w, test.Err)
 				resp := w.Result()
 				defer resp.Body.Close()
-				if d := diff.AsJSON(test.Expected, resp.Body); d != "" {
+				if d := diff.AsJSON(test.Expected, resp.Body); d != nil {
 					t.Error(d)
 				}
 			})

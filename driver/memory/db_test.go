@@ -51,7 +51,7 @@ func TestStats(t *testing.T) {
 				if err != nil {
 					return
 				}
-				if d := diff.Interface(test.Expected, result); d != "" {
+				if d := diff.Interface(test.Expected, result); d != nil {
 					t.Error(d)
 				}
 			})
@@ -250,7 +250,7 @@ func TestPut(t *testing.T) {
 						result["_rev"] = parts[0] + "-xxx"
 					}
 				}
-				if d := diff.AsJSON(test.Expected, result); d != "" {
+				if d := diff.AsJSON(test.Expected, result); d != nil {
 					t.Error(d)
 				}
 			})
@@ -389,7 +389,7 @@ func TestGet(t *testing.T) {
 				if result != nil {
 					delete(result, "_rev")
 				}
-				if d := diff.AsJSON(test.Expected, result); d != "" {
+				if d := diff.AsJSON(test.Expected, result); d != nil {
 					t.Error(d)
 				}
 			})
@@ -496,7 +496,7 @@ func TestDeleteDoc(t *testing.T) {
 					"_rev":     rev,
 					"_deleted": true,
 				}
-				if d := diff.AsJSON(expected, doc); d != "" {
+				if d := diff.AsJSON(expected, doc); d != nil {
 					t.Error(d)
 				}
 
@@ -555,7 +555,7 @@ func TestCreateDoc(t *testing.T) {
 					parts := strings.SplitN(rev, "-", 2)
 					result["_rev"] = parts[0] + "-xxx"
 				}
-				if d := diff.Interface(test.Expected, result); d != "" {
+				if d := diff.Interface(test.Expected, result); d != nil {
 					t.Error(d)
 				}
 			})

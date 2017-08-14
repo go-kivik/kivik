@@ -200,7 +200,7 @@ func TestSetHeaders(t *testing.T) {
 					panic(err)
 				}
 				setHeaders(req, test.Options)
-				if d := diff.Interface(test.Expected, req.Header); d != "" {
+				if d := diff.Interface(test.Expected, req.Header); d != nil {
 					t.Errorf("Headers:\n%s\n", d)
 				}
 			})

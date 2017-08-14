@@ -27,7 +27,7 @@ func TestGetRoot(t *testing.T) {
 			"name":    "Acme",
 		},
 	}
-	if d := diff.AsJSON(expected, resp.Body); d != "" {
+	if d := diff.AsJSON(expected, resp.Body); d != nil {
 		t.Error(d)
 	}
 }

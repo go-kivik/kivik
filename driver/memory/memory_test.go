@@ -171,7 +171,7 @@ func TestAllDBs(t *testing.T) {
 				}
 				sort.Strings(test.Expected)
 				sort.Strings(result)
-				if d := diff.Interface(test.Expected, result); d != "" {
+				if d := diff.Interface(test.Expected, result); d != nil {
 					t.Error(d)
 				}
 			})

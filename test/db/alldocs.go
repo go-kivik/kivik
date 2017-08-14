@@ -185,7 +185,7 @@ func doTestWithDocs(ctx *kt.Context, client *kivik.Client, dbName string, expOff
 
 func testExpectedDocs(ctx *kt.Context, expected, actual []string, exact bool) {
 	if exact {
-		if d := diff.TextSlices(expected, actual); d != "" {
+		if d := diff.TextSlices(expected, actual); d != nil {
 			ctx.Errorf("Unexpected document IDs returned:\n%s\n", d)
 		}
 		return

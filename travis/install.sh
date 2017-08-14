@@ -42,7 +42,7 @@ function setup_couch20 {
         return
     fi
     docker pull klaemo/couchdb:latest
-    docker run -d -p 6001:5984 -e COUCHDB_USER=admin -e COUCHDB_PASSWORD=abc123 --name couchdb20 klaemo/couchdb:latest
+    docker run -d -p 6001:5984 -e COUCHDB_USER=admin -e COUCHDB_PASSWORD=abc123 --name couchdb20 klaemo/couchdb:2.0.0
     wait_for_server http://localhost:6001/
     curl --silent --fail -o /dev/null -X PUT http://admin:abc123@localhost:6001/_users
     curl --silent --fail -o /dev/null -X PUT http://admin:abc123@localhost:6001/_replicator

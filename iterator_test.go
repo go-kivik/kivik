@@ -45,7 +45,7 @@ func TestIterator(t *testing.T) {
 	if err := iter.Err(); err != nil {
 		t.Errorf("Unexpected error: %s", err)
 	}
-	if d := diff.AsJSON(expected, result); d != "" {
+	if d := diff.AsJSON(expected, result); d != nil {
 		t.Errorf("Unexpected result:\n%s\n", d)
 	}
 }

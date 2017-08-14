@@ -74,7 +74,7 @@ func testGetReplications(ctx *kt.Context, client *kivik.Client, expected interfa
 	if !ctx.IsExpectedSuccess(err) {
 		return
 	}
-	if d := diff.AsJSON(expected, reps); d != "" {
+	if d := diff.AsJSON(expected, reps); d != nil {
 		ctx.Errorf("GetReplications results differ:\n%s\n", d)
 	}
 }

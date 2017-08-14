@@ -118,7 +118,7 @@ func TestLogger(t *testing.T) {
 				buf := &bytes.Buffer{}
 				l := New(buf)
 				test.Func(l)
-				if d := diff.Text(test.Expected, buf.String()); d != "" {
+				if d := diff.Text(test.Expected, buf.String()); d != nil {
 					t.Error(d)
 				}
 			})

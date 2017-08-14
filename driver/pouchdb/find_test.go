@@ -27,7 +27,7 @@ func TestBuildIndex(t *testing.T) {
 				t.Errorf("Build Index failed: %s", err)
 			}
 			r := js.Global.Get("JSON").Call("stringify", result).String()
-			if d := diff.JSON([]byte(test.Expected), []byte(r)); d != "" {
+			if d := diff.JSON([]byte(test.Expected), []byte(r)); d != nil {
 				t.Errorf("BuildIndex result differs:\n%s\n", d)
 			}
 		})

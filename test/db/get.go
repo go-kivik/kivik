@@ -97,7 +97,7 @@ func testGet(ctx *kt.Context, db *kivik.DB, expectedDoc *testDoc) {
 		if err = row.ScanDoc(&doc); err != nil {
 			ctx.Fatalf("Failed to scan doc: %s", err)
 		}
-		if d := diff.AsJSON(expectedDoc, doc); d != "" {
+		if d := diff.AsJSON(expectedDoc, doc); d != nil {
 			ctx.Errorf("Fetched document not as expected:\n%s\n", d)
 		}
 	})

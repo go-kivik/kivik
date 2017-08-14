@@ -122,7 +122,7 @@ func TestNormalizeFromJSON(t *testing.T) {
 				if err != nil {
 					return
 				}
-				if d := diff.Interface(test.Expected, result); d != "" {
+				if d := diff.Interface(test.Expected, result); d != nil {
 					t.Error(d)
 				}
 			})
@@ -190,7 +190,7 @@ func TestPutJSON(t *testing.T) {
 				if err != nil {
 					return
 				}
-				if d := diff.Interface(test.Expected, grabber.lastPut); d != "" {
+				if d := diff.Interface(test.Expected, grabber.lastPut); d != nil {
 					t.Error(d)
 				}
 			})

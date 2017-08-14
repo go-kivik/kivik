@@ -46,7 +46,7 @@ func TestGetSession(t *testing.T) {
 	}
 	resp := w.Result()
 	defer resp.Body.Close()
-	if d := diff.AsJSON(expected, resp.Body); d != "" {
+	if d := diff.AsJSON(expected, resp.Body); d != nil {
 		t.Error(d)
 	}
 }

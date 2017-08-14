@@ -39,7 +39,7 @@ func TestPutDB(t *testing.T) {
 		expected := map[string]interface{}{
 			"ok": true,
 		}
-		if d := diff.AsJSON(expected, resp.Body); d != "" {
+		if d := diff.AsJSON(expected, resp.Body); d != nil {
 			t.Error(d)
 		}
 	})
@@ -191,7 +191,7 @@ func TestGetDB(t *testing.T) {
 			t.Errorf("JSON error, %s", err)
 		}
 		expected := testStats
-		if difftext := diff.AsJSON(expected, body); difftext != "" {
+		if difftext := diff.AsJSON(expected, body); difftext != nil {
 			t.Error(difftext)
 		}
 	})

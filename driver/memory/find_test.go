@@ -63,8 +63,8 @@ func TestIndexSpecUnmarshalJSON(t *testing.T) {
 			if err != nil {
 				return
 			}
-			if d := diff.Interface(test.expected, result); d != "" {
-				t.Errorf(d)
+			if d := diff.Interface(test.expected, result); d != nil {
+				t.Error(d)
 			}
 		})
 	}
@@ -234,7 +234,7 @@ func TestFindDoc(t *testing.T) {
 			}
 			parts := strings.Split(result["_rev"].(string), "-")
 			result["_rev"] = parts[0] + "-xxx"
-			if d := diff.AsJSON(test.expected, result); d != "" {
+			if d := diff.AsJSON(test.expected, result); d != nil {
 				t.Error(d)
 			}
 		})
@@ -290,7 +290,7 @@ func TestFilterDoc(t *testing.T) {
 			if err != nil {
 				return
 			}
-			if d := diff.JSON([]byte(test.expected), result); d != "" {
+			if d := diff.JSON([]byte(test.expected), result); d != nil {
 				t.Error(d)
 			}
 		})

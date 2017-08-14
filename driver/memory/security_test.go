@@ -88,7 +88,7 @@ func TestGetSecurity(t *testing.T) {
 				if err != nil {
 					return
 				}
-				if d := diff.AsJSON(test.Expected, sec); d != "" {
+				if d := diff.AsJSON(test.Expected, sec); d != nil {
 					t.Error(d)
 				}
 			})
@@ -170,7 +170,7 @@ func TestSetSecurity(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				if d := diff.AsJSON(test.Expected, sec); d != "" {
+				if d := diff.AsJSON(test.Expected, sec); d != nil {
 					t.Error(d)
 				}
 			})

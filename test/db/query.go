@@ -126,7 +126,7 @@ func doQueryTestWithoutDocs(ctx *kt.Context, client *kivik.Client, dbName string
 	if rows.Err() != nil {
 		ctx.Fatalf("Failed to fetch row: %s", rows.Err())
 	}
-	if d := diff.TextSlices(expected, docIDs); d != "" {
+	if d := diff.TextSlices(expected, docIDs); d != nil {
 		ctx.Errorf("Unexpected document IDs returned:\n%s\n", d)
 	}
 	if expOffset != rows.Offset() {
@@ -179,7 +179,7 @@ func doQueryTestWithDocs(ctx *kt.Context, client *kivik.Client, dbName string, e
 	if rows.Err() != nil {
 		ctx.Fatalf("Failed to fetch row: %s", rows.Err())
 	}
-	if d := diff.TextSlices(expected, docIDs); d != "" {
+	if d := diff.TextSlices(expected, docIDs); d != nil {
 		ctx.Errorf("Unexpected document IDs returned:\n%s\n", d)
 	}
 	if expOffset != rows.Offset() {

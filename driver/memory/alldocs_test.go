@@ -108,7 +108,7 @@ func checkRows(t *testing.T, rows driver.Rows, expectedIDs []string, rowsErr str
 		t.Errorf("Unexpected rows error: %s", msg)
 	}
 	sort.Strings(ids)
-	if d := diff.TextSlices(expectedIDs, ids); d != "" {
+	if d := diff.TextSlices(expectedIDs, ids); d != nil {
 		t.Error(d)
 	}
 }

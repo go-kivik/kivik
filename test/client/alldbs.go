@@ -50,7 +50,7 @@ func testAllDBs(ctx *kt.Context, client *kivik.Client, expected []string) {
 	}
 	sort.Strings(expected)
 	sort.Strings(allDBs)
-	if d := diff.TextSlices(expected, allDBs); d != "" {
+	if d := diff.TextSlices(expected, allDBs); d != nil {
 		ctx.Errorf("AllDBs() returned unexpected list:\n%s\n", d)
 	}
 }

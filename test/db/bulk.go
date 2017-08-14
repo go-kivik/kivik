@@ -210,7 +210,7 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) {
 					"the_age": 32,
 					"_rev":    result["_rev"],
 				}
-				if d := diff.AsJSON(expected, result); d != "" {
+				if d := diff.AsJSON(expected, result); d != nil {
 					ctx.Errorf("Retrieved document differs:\n%s\n", d)
 				}
 			})

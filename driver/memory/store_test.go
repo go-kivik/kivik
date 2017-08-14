@@ -54,7 +54,7 @@ func TestToCouchDoc(t *testing.T) {
 				if msg != test.Error {
 					t.Errorf("Unexpected error: %s", msg)
 				}
-				if d := diff.Interface(test.Expected, result); d != "" {
+				if d := diff.Interface(test.Expected, result); d != nil {
 					t.Error(d)
 				}
 			})
@@ -141,7 +141,7 @@ func TestGetRevisionFound(t *testing.T) {
 		t.Errorf("Should have found revision")
 	}
 	expected := map[string]interface{}{"_id": "foo", "a": 1, "_rev": r}
-	if d := diff.AsJSON(expected, result.data); d != "" {
+	if d := diff.AsJSON(expected, result.data); d != nil {
 		t.Error(d)
 	}
 }

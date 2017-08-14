@@ -10,6 +10,7 @@ import:
 - package: github.com/pressly/chi
   version: ~2.1.0
 - package: github.com/flimzy/diff
+  version: ^0.1.1
 - package: github.com/justinas/alice
   version: ~1.0.0
 - package: github.com/pborman/uuid

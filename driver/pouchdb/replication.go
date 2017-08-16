@@ -81,6 +81,11 @@ func (r *replication) Update(ctx context.Context, state *driver.ReplicationInfo)
 			r.endTime = endTime
 		}
 	}
+	if r.rh.state != nil {
+		state.DocWriteFailures = r.rh.state.DocWriteFailures
+		state.DocsRead = r.rh.state.DocsRead
+		state.DocsWritten = r.rh.state.DocsWritten
+	}
 	return nil
 }
 

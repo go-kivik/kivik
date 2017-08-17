@@ -1,8 +1,12 @@
 package errors
 
 import (
+	"encoding/json"
 	"errors"
+	"net/http"
 	"testing"
+
+	"github.com/flimzy/diff"
 )
 
 func TestErrors(t *testing.T) {
@@ -38,5 +42,45 @@ func TestErrors(t *testing.T) {
 				}
 			})
 		}(test)
+	}
+}
+
+func TestErrorJSON(t *testing.T) {
+	tests := []struct {
+		name     string
+		err      error
+		expected string
+	}{
+		{
+			name:     "StatusError not found",
+			err:      &StatusError{statusCode: http.StatusNotFound, message: "no_db_file"},
+			expected: `{"error":"not_found", "reason":"no_db_file"}`,
+		},
+		{
+			name:     "StatusError unknown code",
+			err:      &StatusError{statusCode: 999, message: "somethin' bad happened"},
+			expected: `{"error":"unknown", "reason": "somethin' bad happened"}`,
+		},
+		{
+			name:     "StatusError unauthorized",
+			err:      &StatusError{statusCode: http.StatusUnauthorized, message: "You are not a server admin."},
+			expected: `{"error":"unauthorized", "reason":"You are not a server admin."}`,
+		},
+		{
+			name:     "StatusError precondition failed",
+			err:      &StatusError{statusCode: http.StatusPreconditionFailed, message: "The database could not be created, the file already exists."},
+			expected: `{"error":"precondition_failed", "reason":"The database could not be created, the file already exists."}`,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result, err := json.Marshal(test.err)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if d := diff.JSON([]byte(test.expected), result); d != nil {
+				t.Error(d)
+			}
+		})
 	}
 }

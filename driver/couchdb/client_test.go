@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/flimzy/kivik/test/kt"
+	"github.com/go-kivik/kiviktest/kt"
 )
 
 func TestAllDBs(t *testing.T) {

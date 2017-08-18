@@ -2,11 +2,12 @@ package test
 
 import (
 	"github.com/flimzy/kivik"
-	"github.com/flimzy/kivik/test/kt"
+	"github.com/go-kivik/kiviktest"
+	"github.com/go-kivik/kiviktest/kt"
 )
 
 func init() {
-	RegisterSuite(SuiteKivikFS, kt.SuiteConfig{
+	kiviktest.RegisterSuite(kiviktest.SuiteKivikFS, kt.SuiteConfig{
 		"AllDBs.expected": []string{},
 
 		"CreateDB/RW/NoAuth.status":         kivik.StatusUnauthorized,

@@ -1,6 +1,6 @@
 package test
 
-import "github.com/flimzy/kivik/test/kt"
+import "github.com/go-kivik/kiviktest/kt"
 
 var suites = make(map[string]kt.SuiteConfig)
 

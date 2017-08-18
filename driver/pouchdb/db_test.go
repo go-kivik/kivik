@@ -4,10 +4,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/gopherjs/gopherjs/js"
+
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/errors"
-	"github.com/flimzy/kivik/test/kt"
-	"github.com/gopherjs/gopherjs/js"
+	"github.com/go-kivik/kiviktest/kt"
 )
 
 func init() {

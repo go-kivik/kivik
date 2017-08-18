@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/flimzy/kivik/test/kt"
+	"github.com/go-kivik/kiviktest/kt"
 )
 
 func connect(dsn string, t *testing.T) *client {

@@ -12,7 +12,7 @@ import (
 	_ "github.com/flimzy/kivik/driver/couchdb"
 	_ "github.com/flimzy/kivik/driver/memory"
 	"github.com/flimzy/kivik/serve"
-	"github.com/flimzy/kivik/test"
+	"github.com/go-kivik/kiviktest"
 )
 
 func main() {
@@ -66,14 +66,14 @@ func main() {
 	cmdTest.Flags().BoolVarP(&cleanup, "cleanup", "c", false, "Clean up after previous test run, then exit")
 	cmdTest.Run = func(cmd *cobra.Command, args []string) {
 		if listTests {
-			test.ListTests()
+			kiviktest.ListTests()
 			os.Exit(0)
 		}
 		if len(args) != 1 {
 			cmd.Usage()
 			os.Exit(1)
 		}
-		test.RunTests(test.Options{
+		kiviktest.RunTests(kiviktest.Options{
 			Driver:  "couch",
 			DSN:     args[0],
 			Verbose: verbose,

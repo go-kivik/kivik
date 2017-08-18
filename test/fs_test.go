@@ -10,7 +10,8 @@ import (
 
 	"github.com/flimzy/kivik"
 	_ "github.com/flimzy/kivik/driver/fs"
-	"github.com/flimzy/kivik/test/kt"
+	"github.com/go-kivik/kiviktest"
+	"github.com/go-kivik/kiviktest/kt"
 )
 
 func TestFS(t *testing.T) {
@@ -30,5 +31,5 @@ func TestFS(t *testing.T) {
 		RW:    true,
 		Admin: client,
 	}
-	runTests(clients, SuiteKivikFS, t)
+	kiviktest.RunTestsInternal(clients, kiviktest.SuiteKivikFS, t)
 }

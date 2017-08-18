@@ -2,11 +2,12 @@ package test
 
 import (
 	"github.com/flimzy/kivik"
-	"github.com/flimzy/kivik/test/kt"
+	"github.com/go-kivik/kiviktest"
+	"github.com/go-kivik/kiviktest/kt"
 )
 
 func init() {
-	RegisterSuite(SuiteKivikMemory, kt.SuiteConfig{
+	kiviktest.RegisterSuite(kiviktest.SuiteKivikMemory, kt.SuiteConfig{
 		// Unsupported features
 		"Flush.skip": true,
 

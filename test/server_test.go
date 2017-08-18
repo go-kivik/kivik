@@ -8,6 +8,9 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/go-kivik/kiviktest"
+	"github.com/spf13/viper"
+
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/auth"
 	"github.com/flimzy/kivik/auth/basic"
@@ -17,7 +20,6 @@ import (
 	"github.com/flimzy/kivik/driver/proxy"
 	"github.com/flimzy/kivik/serve"
 	"github.com/flimzy/kivik/serve/conf"
-	"github.com/spf13/viper"
 )
 
 type customDriver struct {
@@ -55,10 +57,10 @@ func TestServer(t *testing.T) {
 
 	dsn, _ := url.Parse(server.URL)
 	dsn.User = url.UserPassword("admin", "abc123")
-	clients, err := connectClients("couch", dsn.String(), t)
+	clients, err := kiviktest.ConnectClients("couch", dsn.String(), t)
 	if err != nil {
 		t.Fatalf("Failed to initialize client: %s", err)
 	}
 	clients.RW = true
-	runTests(clients, SuiteKivikServer, t)
+	kiviktest.RunTestsInternal(clients, kiviktest.SuiteKivikServer, t)
 }

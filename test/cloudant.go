@@ -2,11 +2,12 @@ package test
 
 import (
 	"github.com/flimzy/kivik"
-	"github.com/flimzy/kivik/test/kt"
+	"github.com/go-kivik/kiviktest"
+	"github.com/go-kivik/kiviktest/kt"
 )
 
 func init() {
-	RegisterSuite(SuiteCloudant, kt.SuiteConfig{
+	kiviktest.RegisterSuite(kiviktest.SuiteCloudant, kt.SuiteConfig{
 		"AllDBs.expected":               []string{"_replicator", "_users"},
 		"AllDBs/NoAuth.status":          kivik.StatusUnauthorized,
 		"AllDBs/RW/group/NoAuth.status": kivik.StatusUnauthorized,

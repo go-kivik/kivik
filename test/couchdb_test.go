@@ -8,16 +8,17 @@ import (
 	_ "github.com/flimzy/kivik/driver/couchdb"
 	_ "github.com/flimzy/kivik/driver/fs"
 	_ "github.com/flimzy/kivik/driver/memory"
+	"github.com/go-kivik/kiviktest"
 )
 
 func TestCouch16(t *testing.T) {
-	doTest(SuiteCouch16, "KIVIK_TEST_DSN_COUCH16", t)
+	kiviktest.DoTest(kiviktest.SuiteCouch16, "KIVIK_TEST_DSN_COUCH16", t)
 }
 
 func TestCloudant(t *testing.T) {
-	doTest(SuiteCloudant, "KIVIK_TEST_DSN_CLOUDANT", t)
+	kiviktest.DoTest(kiviktest.SuiteCloudant, "KIVIK_TEST_DSN_CLOUDANT", t)
 }
 
 func TestCouch20(t *testing.T) {
-	doTest(SuiteCouch20, "KIVIK_TEST_DSN_COUCH20", t)
+	kiviktest.DoTest(kiviktest.SuiteCouch20, "KIVIK_TEST_DSN_COUCH20", t)
 }

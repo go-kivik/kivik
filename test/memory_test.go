@@ -6,7 +6,8 @@ import (
 
 	"github.com/flimzy/kivik"
 	_ "github.com/flimzy/kivik/driver/memory"
-	"github.com/flimzy/kivik/test/kt"
+	"github.com/go-kivik/kiviktest"
+	"github.com/go-kivik/kiviktest/kt"
 )
 
 func TestMemory(t *testing.T) {
@@ -22,5 +23,5 @@ func TestMemory(t *testing.T) {
 	if err := client.CreateDB(context.Background(), "_users"); err != nil {
 		t.Fatal(err)
 	}
-	runTests(clients, SuiteKivikMemory, t)
+	kiviktest.RunTestsInternal(clients, kiviktest.SuiteKivikMemory, t)
 }

@@ -27,3 +27,6 @@ import:
   - context
   - publicsuffix
 - package: github.com/go-kivik/mango
+- package: github.com/go-kivik/kiviktest
+  subpackages:
+  - kt

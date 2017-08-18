@@ -7,7 +7,7 @@ import (
 	"github.com/flimzy/kivik"
 	_ "github.com/flimzy/kivik/driver/couchdb"
 	"github.com/flimzy/kivik/errors"
-	"github.com/flimzy/kivik/test/kt"
+	"github.com/go-kivik/kiviktest/kt"
 )
 
 type tuser struct {

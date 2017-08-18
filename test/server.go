@@ -4,11 +4,12 @@ import (
 	"net/http"
 
 	"github.com/flimzy/kivik"
-	"github.com/flimzy/kivik/test/kt"
+	"github.com/go-kivik/kiviktest"
+	"github.com/go-kivik/kiviktest/kt"
 )
 
 func init() {
-	RegisterSuite(SuiteKivikServer, kt.SuiteConfig{
+	kiviktest.RegisterSuite(kiviktest.SuiteKivikServer, kt.SuiteConfig{
 		"AllDBs.expected": []string{},
 		"AllDBs/RW.skip":  true, // FIXME: Enable this when it's possible to delete DB from the server
 

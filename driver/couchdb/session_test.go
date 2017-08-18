@@ -16,11 +16,11 @@ import (
 
 func TestSession(t *testing.T) {
 	tests := []struct {
-		name     string
-		status   int
-		body     string
-		expected interface{}
-		err      string
+		name      string
+		status    int
+		body      string
+		expected  interface{}
+		errStatus int
 	}{
 		{
 			name:   "valid",
@@ -35,9 +35,9 @@ func TestSession(t *testing.T) {
 			},
 		},
 		{
-			name: "invalid response",
-			body: `{"userCtx":"asdf"}`,
-			err:  "json: cannot unmarshal string into Go struct field alias.userCtx of type couchdb.userContext",
+			name:      "invalid response",
+			body:      `{"userCtx":"asdf"}`,
+			errStatus: kivik.StatusInternalServerError,
 		},
 	}
 	for _, test := range tests {
@@ -49,12 +49,8 @@ func TestSession(t *testing.T) {
 			}))
 			client, err := kivik.New(context.Background(), "couch", s.URL)
 			session, err := client.Session(context.Background())
-			var errMsg string
-			if err != nil {
-				errMsg = err.Error()
-			}
-			if errMsg != test.err {
-				t.Errorf("Unexpected error: %s", errMsg)
+			if status := kivik.StatusCode(err); status != test.errStatus {
+				t.Errorf("Unexpected error: %s", err)
 			}
 			if err != nil {
 				return

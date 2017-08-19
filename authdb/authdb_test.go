@@ -1,6 +1,10 @@
 package authdb
 
-import "testing"
+import (
+	"encoding/base64"
+	"testing"
+	"time"
+)
 
 func TestCreateAuthToken(t *testing.T) {
 	type catTest struct {
@@ -45,6 +49,56 @@ func TestCreateAuthToken(t *testing.T) {
 			}()
 			if recovery != test.recovery {
 				t.Errorf("Unexpected panic recovery: %s", recovery)
+			}
+		})
+	}
+}
+
+func TestDecodeAuthToken(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		username string
+		created  time.Time
+		err      string
+	}{
+		{
+			name:  "invalid base64",
+			input: "ée",
+			err:   "illegal base64 data at input byte 0",
+		},
+		{
+			name:  "invalid payload",
+			input: base64.RawURLEncoding.EncodeToString([]byte("foo bar baz")),
+			err:   "invalid payload",
+		},
+		{
+			name:  "invalid timestamp",
+			input: base64.RawURLEncoding.EncodeToString([]byte("foo:asdf:asdf")),
+			err:   "invalid timestamp 'asdf'",
+		},
+		{
+			name:     "valid",
+			input:    base64.RawURLEncoding.EncodeToString([]byte("foo:12345:asdf")),
+			username: "foo",
+			created:  time.Unix(12345, 0),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			username, created, err := DecodeAuthToken(test.input)
+			var errMsg string
+			if err != nil {
+				errMsg = err.Error()
+			}
+			if errMsg != test.err {
+				t.Errorf("Unexpected error: %s", errMsg)
+			}
+			if err != nil {
+				return
+			}
+			if test.username != username || !test.created.Equal(created) {
+				t.Errorf("Unexpected results: %s / %v\n", username, created)
 			}
 		})
 	}

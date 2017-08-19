@@ -9,10 +9,10 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/flimzy/kivik"
-	_ "github.com/flimzy/kivik/driver/couchdb"
-	_ "github.com/flimzy/kivik/driver/memory"
+	_ "github.com/flimzy/kivik/driver/couchdb" // The CouchDB driver
 	"github.com/flimzy/kivik/serve"
 	"github.com/go-kivik/kiviktest"
+	_ "github.com/go-kivik/memorydb" // The Memory driver
 )
 
 func main() {

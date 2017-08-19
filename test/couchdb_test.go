@@ -6,8 +6,6 @@ import (
 	"testing"
 
 	_ "github.com/flimzy/kivik/driver/couchdb"
-	_ "github.com/flimzy/kivik/driver/fs"
-	_ "github.com/flimzy/kivik/driver/memory"
 	"github.com/go-kivik/kiviktest"
 )
 

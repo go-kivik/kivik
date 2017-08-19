@@ -4,8 +4,6 @@ set -o xtrace
 
 if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     brew install glide
-else
-    curl https://glide.sh/get | sh
 fi
 
 glide install

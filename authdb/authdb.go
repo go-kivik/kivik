@@ -3,12 +3,16 @@
 package authdb
 
 import (
+	"bytes"
 	"context"
 	"crypto/hmac"
 	"crypto/sha1"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"strconv"
+	"time"
 
 	"golang.org/x/crypto/pbkdf2"
 )
@@ -81,4 +85,23 @@ func (c *UserContext) MarshalJSON() ([]byte, error) {
 		output["name"] = nil
 	}
 	return json.Marshal(output)
+}
+
+// DecodeAuthToken decodes an auth token, extracting the username and token
+// token creation time. To validate the authenticity of the token, use
+// ValidatePBKDF2().
+func DecodeAuthToken(token string) (username string, created time.Time, err error) {
+	payload, err := base64.RawURLEncoding.DecodeString(token)
+	if err != nil {
+		return username, created, err
+	}
+	parts := bytes.SplitN(payload, []byte(":"), 3)
+	if len(parts) < 3 {
+		return username, created, errors.New("invalid payload")
+	}
+	seconds, err := strconv.ParseInt(string(parts[1]), 10, 64)
+	if err != nil {
+		return username, created, fmt.Errorf("invalid timestamp '%s'", string(parts[1]))
+	}
+	return string(parts[0]), time.Unix(seconds, 0), nil
 }

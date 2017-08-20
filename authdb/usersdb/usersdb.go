@@ -13,8 +13,6 @@ import (
 	"github.com/flimzy/kivik/errors"
 )
 
-const userPrefix = "org.couchdb.user:"
-
 type db struct {
 	*kivik.DB
 }
@@ -36,7 +34,7 @@ type user struct {
 }
 
 func (db *db) getUser(ctx context.Context, username string) (*user, error) {
-	row, err := db.Get(ctx, userPrefix+username, nil)
+	row, err := db.Get(ctx, kivik.UserPrefix+username, nil)
 	if err != nil {
 		return nil, err
 	}

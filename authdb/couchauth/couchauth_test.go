@@ -35,7 +35,7 @@ func TestCouchAuth(t *testing.T) {
 	}
 	name := kt.TestDBName(t)
 	user := &tuser{
-		ID:       "org.couchdb.user:" + name,
+		ID:       kivik.UserPrefix + name,
 		Name:     name,
 		Type:     "user",
 		Roles:    []string{"coolguy"},

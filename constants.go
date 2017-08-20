@@ -10,6 +10,10 @@ const (
 // SessionCookieName is the name of the CouchDB session cookie.
 const SessionCookieName = "AuthSession"
 
+// UserPrefix is the mandatory CouchDB user prefix.
+// See http://docs.couchdb.org/en/2.0.0/intro/security.html#org-couchdb-user
+const UserPrefix = "org.couchdb.user:"
+
 // HTTP methods supported by CouchDB. This is almost an exact copy of the
 // methods in the standard http package, with the addition of MethodCopy, and
 // a few methods left out which are not used by CouchDB.

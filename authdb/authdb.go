@@ -99,7 +99,7 @@ func DecodeAuthToken(token string) (username string, created time.Time, err erro
 	if len(parts) < 3 {
 		return username, created, errors.New("invalid payload")
 	}
-	seconds, err := strconv.ParseInt(string(parts[1]), 10, 64)
+	seconds, err := strconv.ParseInt(string(parts[1]), 16, 64)
 	if err != nil {
 		return username, created, fmt.Errorf("invalid timestamp '%s'", string(parts[1]))
 	}

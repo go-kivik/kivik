@@ -7,7 +7,7 @@ import (
 
 	"github.com/flimzy/diff"
 	"github.com/flimzy/kivik"
-	_ "github.com/flimzy/kivik/driver/memory"
+	_ "github.com/go-kivik/memorydb"
 )
 
 func TestAllDBs(t *testing.T) {

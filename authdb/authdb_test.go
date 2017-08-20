@@ -81,7 +81,13 @@ func TestDecodeAuthToken(t *testing.T) {
 			name:     "valid",
 			input:    base64.RawURLEncoding.EncodeToString([]byte("foo:12345:asdf")),
 			username: "foo",
-			created:  time.Unix(12345, 0),
+			created:  time.Unix(74565, 0),
+		},
+		{
+			name:     "real world token",
+			input:    "MzBkMzRmODktMGUyMC00YzZhLTgyZjQtN2FhOWEyMmZkYThmOjU5OTlBNDI0OlGqCaGA69un9MHg2_Cyd95h4zkH",
+			username: "30d34f89-0e20-4c6a-82f4-7aa9a22fda8f",
+			created:  time.Unix(1503241252, 0),
 		},
 	}
 	for _, test := range tests {

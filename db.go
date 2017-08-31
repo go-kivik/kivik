@@ -153,11 +153,11 @@ func extractDocID(i interface{}) (string, bool) {
 //
 // doc may be one of:
 //
-// - An object to be marshaled to JSON. The resulting JSON structure must
-//   conform to CouchDB standards.
-// - A []byte value, containing a valid JSON document
-// - A json.RawMessage value containing a valid JSON document
-// - An io.Reader, from which a valid JSON document may be read.
+//  - An object to be marshaled to JSON. The resulting JSON structure must
+//    conform to CouchDB standards.
+//  - A []byte value, containing a valid JSON document
+//  - A json.RawMessage value containing a valid JSON document
+//  - An io.Reader, from which a valid JSON document may be read.
 func (db *DB) Put(ctx context.Context, docID string, doc interface{}) (rev string, err error) {
 	i, err := normalizeFromJSON(doc)
 	if err != nil {

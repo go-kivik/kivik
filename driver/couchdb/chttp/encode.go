@@ -13,8 +13,9 @@ const (
 // EncodeDocID encodes a document ID according to CouchDB's path encoding rules.
 //
 // In particular:
-// -  '_design/' and '_local/' prefixes are unaltered.
-// - The rest of the docID is Query-URL encoded (despite being part of the path)
+//
+//  -  '_design/' and '_local/' prefixes are unaltered.
+//  - The rest of the docID is Query-URL encoded (despite being part of the path)
 func EncodeDocID(docID string) string {
 	for _, prefix := range []string{prefixDesign, prefixLocal} {
 		if strings.HasPrefix(docID, prefix) {

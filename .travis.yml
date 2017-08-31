@@ -23,6 +23,7 @@ os:
 go:
     - 1.7.x
     - 1.8.x
+    - 1.9.x
     - master
 env:
     global:
@@ -35,14 +36,14 @@ matrix:
     allow_failures:
         - go: master
     include:
-        - go: 1.8.x
+        - go: 1.9.x
           env: MODE=gopherjs
-        - go: 1.8.x
+        - go: 1.9.x
           env: MODE=gopherjs
           os: osx
-        - go: 1.8.x
+        - go: 1.9.x
           env: MODE=linter
-        - go: 1.8.x
+        - go: 1.9.x
           env: MODE=coverage
 
 install:

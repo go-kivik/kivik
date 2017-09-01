@@ -9,8 +9,8 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/flimzy/kivik"
-	_ "github.com/flimzy/kivik/driver/couchdb" // The CouchDB driver
 	"github.com/flimzy/kivik/serve"
+	_ "github.com/go-kivik/couchdb" // The CouchDB driver
 	"github.com/go-kivik/kiviktest"
 	_ "github.com/go-kivik/memorydb" // The Memory driver
 )

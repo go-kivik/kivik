@@ -8,8 +8,8 @@ import (
 
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/authdb"
-	"github.com/flimzy/kivik/driver/couchdb/chttp"
 	"github.com/flimzy/kivik/errors"
+	"github.com/go-kivik/couchdb/chttp"
 )
 
 type client struct {

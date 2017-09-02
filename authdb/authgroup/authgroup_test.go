@@ -10,9 +10,9 @@ import (
 	"github.com/flimzy/kivik/authdb"
 	"github.com/flimzy/kivik/authdb/confadmin"
 	"github.com/flimzy/kivik/authdb/usersdb"
-	_ "github.com/flimzy/kivik/driver/couchdb"
 	"github.com/flimzy/kivik/errors"
 	"github.com/flimzy/kivik/serve/conf"
+	_ "github.com/go-kivik/couchdb"
 	"github.com/go-kivik/kiviktest/kt"
 )
 

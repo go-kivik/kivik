@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/flimzy/kivik"
-	_ "github.com/flimzy/kivik/driver/couchdb"
 	"github.com/flimzy/kivik/errors"
+	_ "github.com/go-kivik/couchdb"
 	"github.com/go-kivik/kiviktest/kt"
 )
 

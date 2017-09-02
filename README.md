@@ -35,7 +35,7 @@ import (
     "fmt"
 
     "github.com/flimzy/kivik"
-    _ "github.com/flimzy/kivik/driver/couchdb" // The CouchDB driver
+    _ "github.com/go-kivik/couchdb" // The CouchDB driver
 )
 
 func main() {

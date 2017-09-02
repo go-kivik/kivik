@@ -5,7 +5,7 @@ package test
 import (
 	"testing"
 
-	_ "github.com/flimzy/kivik/driver/couchdb"
+	_ "github.com/go-kivik/couchdb"
 	"github.com/go-kivik/kiviktest"
 )
 

@@ -9,9 +9,9 @@ import (
 	"github.com/flimzy/kivik"
 
 	"github.com/flimzy/kivik/authdb"
-	_ "github.com/flimzy/kivik/driver/couchdb"
 	"github.com/flimzy/kivik/errors"
 	"github.com/flimzy/kivik/serve/conf"
+	_ "github.com/go-kivik/couchdb"
 	"github.com/spf13/viper"
 )
 

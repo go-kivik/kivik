@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/pressly/chi"
+	"github.com/go-chi/chi"
 
 	"github.com/flimzy/kivik"
 )
@@ -90,10 +90,10 @@ func (h *Handler) Main() http.Handler {
 	r.Get("/", h.GetRoot())
 	r.Get("/favicon.ico", h.GetFavicon())
 	r.Get("/_all_dbs", h.GetAllDBs())
-	r.Get("/:db", h.GetDB())
-	r.Put("/:db", h.PutDB())
-	r.Head("/:db", h.HeadDB())
-	r.Post("/:db/_ensure_full_commit", h.Flush())
+	r.Get("/{db}", h.GetDB())
+	r.Put("/{db}", h.PutDB())
+	r.Head("/{db}", h.HeadDB())
+	r.Post("/{db}/_ensure_full_commit", h.Flush())
 	r.Get("/_session", h.GetSession())
 	return r
 }

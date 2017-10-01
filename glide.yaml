@@ -3,12 +3,10 @@ ignore:
 - github.com/gopherjs/gopherjs
 - github.com/gopherjs/jsbuiltin
 import:
-- package: github.com/NYTimes/gziphandler
-  version: d8206bba2a6097c0d75f4ac204a4814e47125cdd
 - package: github.com/ajg/form
   version: ~1.5.0
-- package: github.com/pressly/chi
-  version: ~2.1.0
+- package: github.com/go-chi/chi
+  version: ~3.1.0
 - package: github.com/flimzy/diff
   version: ^0.1.2
 - package: github.com/justinas/alice

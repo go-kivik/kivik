@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/NYTimes/gziphandler"
+	"github.com/go-chi/chi/middleware"
 	"github.com/justinas/alice"
 
 	"github.com/flimzy/kivik/serve/couchserver"
@@ -38,13 +38,6 @@ func gzipHandler(s *Service) func(http.Handler) http.Handler {
 	if level == 0 {
 		level = 8
 	}
-	gzipHandler, err := gziphandler.NewGzipLevelHandler(int(level))
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "invalid httpd.compression_level %d\n", level)
-		return func(h http.Handler) http.Handler {
-			return h
-		}
-	}
 	fmt.Fprintf(os.Stderr, "Enabling gzip compression, level %d\n", level)
-	return gzipHandler
+	return middleware.Compress(level, "text/plain", "text/html", "application/json")
 }

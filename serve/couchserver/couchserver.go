@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/pressly/chi"
+	"github.com/go-chi/chi"
 
 	"github.com/flimzy/kivik"
 )

@@ -3,7 +3,7 @@ package couchserver
 import (
 	"net/http"
 
-	"github.com/pressly/chi"
+	"github.com/go-chi/chi"
 )
 
 // DB returns the db name in this request, or "" if none.

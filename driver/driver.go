@@ -196,8 +196,11 @@ type QueryPlan struct {
 	Options  map[string]interface{} `json:"opts"`
 	Limit    int64                  `json:"limit"`
 	Skip     int64                  `json:"skip"`
-	Fields   []interface{}          `json:"fields"`
-	Range    map[string]interface{} `json:"range"`
+
+	// Fields is the list of fields to be returned in the result set, or
+	// an empty list if all fields are to be returned.
+	Fields []interface{}          `json:"fields"`
+	Range  map[string]interface{} `json:"range"`
 }
 
 // The Explainer is an optional interface which provides access to the query

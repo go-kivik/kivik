@@ -62,3 +62,33 @@ func (db *DB) GetIndexes(ctx context.Context) ([]Index, error) {
 	}
 	return nil, findNotImplemented
 }
+
+// QueryPlan is the query execution plan for a query, as returned by the Explain
+// function.
+type QueryPlan struct {
+	DBName   string                 `json:"dbname"`
+	Index    map[string]interface{} `json:"index"`
+	Selector map[string]interface{} `json:"selector"`
+	Options  map[string]interface{} `json:"opts"`
+	Limit    int64                  `json:"limit"`
+	Skip     int64                  `json:"skip"`
+
+	// Fields is the list of fields to be returned in the result set, or
+	// an empty list if all fields are to be returned.
+	Fields []interface{}          `json:"fields"`
+	Range  map[string]interface{} `json:"range"`
+}
+
+// Explain returns the query plan for a given query. Explain takes the same
+// arguments as Find.
+func (db *DB) Explain(ctx context.Context, query interface{}) (*QueryPlan, error) {
+	if explainer, ok := db.driverDB.(driver.Explainer); ok {
+		plan, err := explainer.Explain(ctx, query)
+		if err != nil {
+			return nil, err
+		}
+		qp := QueryPlan(*plan)
+		return &qp, nil
+	}
+	return nil, errors.Status(StatusNotImplemented, "kivik: driver does not support explain")
+}

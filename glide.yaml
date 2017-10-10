@@ -27,3 +27,6 @@ import:
 - package: github.com/go-kivik/kiviktest
   subpackages:
   - kt
+testimport:
+- package: github.com/flimzy/testy
+  version: ~0.0.1

@@ -168,7 +168,7 @@ type BulkDocer interface {
 	BulkDocs(ctx context.Context, docs []interface{}) (BulkResults, error)
 }
 
-// Finder is an optional interface which may be implemented by a database. The
+// The Finder is an optional interface which may be implemented by a database. The
 // Finder interface provides access to the new (in CouchDB 2.0) MongoDB-style
 // query interface.
 type Finder interface {
@@ -186,6 +186,28 @@ type Finder interface {
 	GetIndexes(ctx context.Context) ([]Index, error)
 	// Delete deletes the requested index.
 	DeleteIndex(ctx context.Context, ddoc, name string) error
+}
+
+// QueryPlan is the response of an Explain query.
+type QueryPlan struct {
+	DBName   string                 `json:"dbname"`
+	Index    map[string]interface{} `json:"index"`
+	Selector map[string]interface{} `json:"selector"`
+	Options  map[string]interface{} `json:"opts"`
+	Limit    int64                  `json:"limit"`
+	Skip     int64                  `json:"skip"`
+
+	// Fields is the list of fields to be returned in the result set, or
+	// an empty list if all fields are to be returned.
+	Fields []interface{}          `json:"fields"`
+	Range  map[string]interface{} `json:"range"`
+}
+
+// The Explainer is an optional interface which provides access to the query
+// explanation API supported by CouchDB 2.0 and newer, and PouchDB 6.3.4 and
+// newer.
+type Explainer interface {
+	Explain(ctx context.Context, query interface{}) (*QueryPlan, error)
 }
 
 // Index is a MonboDB-style index definition.

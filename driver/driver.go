@@ -165,7 +165,7 @@ type DB interface {
 type BulkDocer interface {
 	// BulkDocs alls bulk create, update and/or delete operations. It returns an
 	// iterator over the results.
-	BulkDocs(ctx context.Context, docs []interface{}) (BulkResults, error)
+	BulkDocs(ctx context.Context, docs []interface{}, options map[string]interface{}) (BulkResults, error)
 }
 
 // The Finder is an optional interface which may be implemented by a database. The

@@ -5,9 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/imdario/mergo"
+
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/errors"
-	"github.com/imdario/mergo"
 )
 
 // Client is a client connection handle to a CouchDB-like server.

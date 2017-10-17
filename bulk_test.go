@@ -3,7 +3,9 @@ package kivik
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
+	"reflect"
 	"testing"
 
 	"github.com/flimzy/diff"
@@ -131,12 +133,18 @@ func TestBulkDocsNotSlice(t *testing.T) {
 
 type bdDB struct {
 	driver.DB
-	err error
+	err     error
+	options map[string]interface{}
 }
 
 var _ driver.DB = &bdDB{}
 
-func (db *bdDB) BulkDocs(_ context.Context, docs []interface{}) (driver.BulkResults, error) {
+func (db *bdDB) BulkDocs(_ context.Context, docs []interface{}, options map[string]interface{}) (driver.BulkResults, error) {
+	if db.options != nil {
+		if !reflect.DeepEqual(db.options, options) {
+			return nil, fmt.Errorf("Unexpected options. Got: %v, Expected: %v", options, db.options)
+		}
+	}
 	return nil, db.err
 }
 
@@ -156,6 +164,7 @@ func TestBulkDocs(t *testing.T) {
 		name     string
 		dbDriver driver.DB
 		docs     interface{}
+		options  Options
 		err      string
 	}
 	tests := []bdTest{
@@ -184,11 +193,20 @@ func TestBulkDocs(t *testing.T) {
 				123,
 			},
 		},
+		{
+			name:     "new_edits",
+			dbDriver: &bdDB{options: map[string]interface{}{"new_edits": true}},
+			docs: []interface{}{
+				map[string]string{"_id": "foo"},
+				123,
+			},
+			options: Options{"new_edits": true},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			db := &DB{driverDB: test.dbDriver}
-			_, err := db.BulkDocs(context.Background(), test.docs)
+			_, err := db.BulkDocs(context.Background(), test.docs, test.options)
 			var msg string
 			if err != nil {
 				msg = err.Error()

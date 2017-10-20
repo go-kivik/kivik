@@ -88,7 +88,11 @@ func (r *BulkResults) UpdateErr() error {
 //
 // As with Put, each individual document may be a JSON-marshable object, or a
 // raw JSON string in a []byte, json.RawMessage, or io.Reader.
-func (db *DB) BulkDocs(ctx context.Context, docs interface{}) (*BulkResults, error) {
+func (db *DB) BulkDocs(ctx context.Context, docs interface{}, options ...Options) (*BulkResults, error) {
+	opts, err := mergeOptions(options...)
+	if err != nil {
+		return nil, err
+	}
 	docsi, err := docsInterfaceSlice(docs)
 	if err != nil {
 		if _, ok := err.(errNotSlice); ok {
@@ -96,8 +100,15 @@ func (db *DB) BulkDocs(ctx context.Context, docs interface{}) (*BulkResults, err
 		}
 		return nil, err
 	}
+	if oldBulkDocer, ok := db.driverDB.(driver.OldBulkDocer); ok {
+		bulki, err := oldBulkDocer.BulkDocs(ctx, docsi)
+		if err != nil {
+			return nil, err
+		}
+		return newBulkResults(ctx, bulki), nil
+	}
 	if bulkDocer, ok := db.driverDB.(driver.BulkDocer); ok {
-		bulki, err := bulkDocer.BulkDocs(ctx, docsi)
+		bulki, err := bulkDocer.BulkDocs(ctx, docsi, opts)
 		if err != nil {
 			return nil, err
 		}

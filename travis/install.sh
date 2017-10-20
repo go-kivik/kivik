@@ -39,7 +39,7 @@ function setup_couch20 {
     if [ "$TRAVIS_OS_NAME" == "osx" ]; then
         return
     fi
-    docker pull klaemo/couchdb:latest
+    docker pull klaemo/couchdb:2.0.0
     docker run -d -p 6001:5984 -e COUCHDB_USER=admin -e COUCHDB_PASSWORD=abc123 --name couchdb20 klaemo/couchdb:2.0.0
     wait_for_server http://localhost:6001/
     curl --silent --fail -o /dev/null -X PUT http://admin:abc123@localhost:6001/_users

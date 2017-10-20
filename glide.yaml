@@ -9,7 +9,6 @@ import:
   version: ~3.1.0
 - package: github.com/flimzy/diff
   version: ^0.1.2
-- package: github.com/justinas/alice
 - package: github.com/pborman/uuid
   version: ~1.0.0
 - package: github.com/pkg/errors

@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
-	"github.com/justinas/alice"
 
 	"github.com/flimzy/kivik/serve/couchserver"
 	"github.com/flimzy/kivik/serve/logger"
@@ -24,13 +24,13 @@ func (s *Service) setupRoutes() (http.Handler, error) {
 		rlog = logger.DefaultLogger
 	}
 
-	return alice.New(
+	return chi.Chain(
 		setContext(s),
 		setSession(),
 		loggerMiddleware(rlog),
 		gzipHandler(s),
 		authHandler,
-	).Then(h.Main()), nil
+	).Handler(h.Main()), nil
 }
 
 func gzipHandler(s *Service) func(http.Handler) http.Handler {

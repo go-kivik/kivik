@@ -57,6 +57,7 @@ function setup_couch21 {
     curl --silent --fail -o /dev/null -X PUT http://admin:abc123@localhost:6002/_users
     curl --silent --fail -o /dev/null -X PUT http://admin:abc123@localhost:6002/_replicator
     curl --silent --fail -o /dev/null -X PUT http://admin:abc123@localhost:6002/_global_changes
+    curl --silent --fail -o /dev/null -X PUT http://admin:abc123@localhost:6002/_node/nonode@nohost/_config/replicator/update_docs -H 'Content-Type: application/json' -d '"true"' # FIXME: https://github.com/flimzy/kivik/issues/215
 }
 
 case "$1" in

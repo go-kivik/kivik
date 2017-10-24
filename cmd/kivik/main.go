@@ -9,8 +9,8 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/flimzy/kivik"
-	"github.com/flimzy/kivik/serve"
 	_ "github.com/go-kivik/couchdb" // The CouchDB driver
+	"github.com/go-kivik/kivikd"
 	"github.com/go-kivik/kiviktest"
 	_ "github.com/go-kivik/memorydb" // The Memory driver
 )
@@ -32,7 +32,7 @@ func main() {
 	var dsn string
 	cmdServe.Flags().StringVarP(&dsn, "dsn", "", "", "Data source name")
 	cmdServe.Run = func(cmd *cobra.Command, args []string) {
-		service := &serve.Service{}
+		service := &kivikd.Service{}
 
 		client, err := kivik.New(context.Background(), driverName, dsn)
 		if err != nil {

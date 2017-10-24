@@ -11,8 +11,8 @@ import (
 	"github.com/flimzy/kivik/authdb/confadmin"
 	"github.com/flimzy/kivik/authdb/usersdb"
 	"github.com/flimzy/kivik/errors"
-	"github.com/flimzy/kivik/serve/conf"
 	_ "github.com/go-kivik/couchdb"
+	"github.com/go-kivik/kivikd/conf"
 	"github.com/go-kivik/kiviktest/kt"
 )
 

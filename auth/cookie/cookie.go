@@ -14,8 +14,8 @@ import (
 	"github.com/flimzy/kivik/auth"
 	"github.com/flimzy/kivik/authdb"
 	"github.com/flimzy/kivik/errors"
-	"github.com/flimzy/kivik/serve"
-	"github.com/flimzy/kivik/serve/cookies"
+	"github.com/go-kivik/kivikd"
+	"github.com/go-kivik/kivikd/cookies"
 )
 
 const typeJSON = "application/json"
@@ -44,7 +44,7 @@ func (a *Auth) Authenticate(w http.ResponseWriter, r *http.Request) (*authdb.Use
 }
 
 func (a *Auth) validateCookie(w http.ResponseWriter, r *http.Request) (*authdb.UserContext, error) {
-	store := serve.GetService(r).UserStore
+	store := kivikd.GetService(r).UserStore
 	cookie, err := r.Cookie(kivik.SessionCookieName)
 	if err != nil {
 		return nil, nil
@@ -58,7 +58,7 @@ func (a *Auth) validateCookie(w http.ResponseWriter, r *http.Request) (*authdb.U
 		// Failed to look up the user
 		return nil, nil
 	}
-	s := serve.GetService(r)
+	s := kivikd.GetService(r)
 	valid, err := s.ValidateCookie(user, cookie.Value)
 	if err != nil || !valid {
 		return nil, nil
@@ -71,13 +71,13 @@ func postSession(w http.ResponseWriter, r *http.Request) error {
 		Name     *string `form:"name" json:"name"`
 		Password string  `form:"password" json:"password"`
 	}{}
-	if err := serve.BindParams(r, &authData); err != nil {
+	if err := kivikd.BindParams(r, &authData); err != nil {
 		return errors.Status(kivik.StatusBadRequest, "unable to parse request data")
 	}
 	if authData.Name == nil {
 		return errors.Status(kivik.StatusBadRequest, "request body must contain a username")
 	}
-	s := serve.GetService(r)
+	s := kivikd.GetService(r)
 	user, err := s.UserStore.Validate(r.Context(), *authData.Name, authData.Password)
 	if err != nil {
 		return err
@@ -113,7 +113,7 @@ func postSession(w http.ResponseWriter, r *http.Request) error {
 }
 
 func redirectURL(r *http.Request) (string, error) {
-	next, ok := serve.StringQueryParam(r, "next")
+	next, ok := kivikd.StringQueryParam(r, "next")
 	if !ok {
 		return "", nil
 	}
@@ -146,9 +146,9 @@ func deleteSession(w http.ResponseWriter, r *http.Request) error {
 	})
 }
 
-func getSessionTimeout(ctx context.Context, s *serve.Service) int {
+func getSessionTimeout(ctx context.Context, s *kivikd.Service) int {
 	if s.Conf().IsSet("couch_httpd_auth.timeout") {
 		return s.Conf().GetInt("couch_httpd_auth.timeout")
 	}
-	return serve.DefaultSessionTimeout
+	return kivikd.DefaultSessionTimeout
 }

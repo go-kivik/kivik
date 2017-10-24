@@ -1,2 +1,8 @@
 ignore:
     - test/**/*
+    - driver/common/**/*
+    - driver/couchdb/**/*
+    - driver/pouchdb/**/*
+    - driver/memory/**/*
+    - driver/util/**/*
+    - driver/proxy/**/*

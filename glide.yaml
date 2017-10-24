@@ -18,7 +18,6 @@ import:
   - pbkdf2
 - package: golang.org/x/net
   subpackages:
-  - context
   - publicsuffix
 - package: github.com/go-kivik/mango
 - package: github.com/go-kivik/kiviktest

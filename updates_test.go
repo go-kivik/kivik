@@ -1,9 +1,8 @@
 package kivik
 
 import (
+	"context"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"github.com/flimzy/kivik/driver"
 )

@@ -40,9 +40,6 @@ matrix:
         - go: 1.9.x
           env: MODE=gopherjs
         - go: 1.9.x
-          env: MODE=gopherjs
-          os: osx
-        - go: 1.9.x
           env: MODE=linter
         - go: 1.9.x
           env: MODE=coverage

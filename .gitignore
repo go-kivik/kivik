@@ -1,5 +1,4 @@
 test/pouch__all_dbs__/
-serve/couchserver/files.go
 vendor
 test.*
 glide.lock

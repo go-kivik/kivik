@@ -20,6 +20,9 @@ type Version struct {
 	Version string
 	// Vendor is the vendor string reported by the server or backend.
 	Vendor string
+	// Features is a list of enabled, optional features.  This was added in
+	// CouchDB 2.1.0, and can be expected to be empty for older versions.
+	Features []string
 	// RawResponse is the raw response body as returned by the server.
 	RawResponse json.RawMessage
 }

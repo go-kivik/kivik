@@ -69,7 +69,7 @@ func TestNew(t *testing.T) {
 }
 
 func serverDSN(t *testing.T) string {
-	for _, env := range []string{"KIVIK_TEST_DSN_COUCH16", "KIVIK_TEST_DSN_COUCH20"} {
+	for _, env := range []string{"KIVIK_TEST_DSN_COUCH21", "KIVIK_TEST_DSN_COUCH20", "KIVIK_TEST_DSN_COUCH16"} {
 		if dsn := os.Getenv(env); dsn != "" {
 			parsed, err := url.Parse(dsn)
 			if err != nil {

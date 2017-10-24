@@ -5,6 +5,7 @@ if [ "${TRAVIS_OS_NAME:-}" == "osx" ]; then
     # We don't have docker in OSX, so skip these tests
     unset KIVIK_TEST_DSN_COUCH16
     unset KIVIK_TEST_DSN_COUCH20
+    unset KIVIK_TEST_DSN_COUCH21
 fi
 
 function join_list {
@@ -18,6 +19,7 @@ case "$1" in
     ;;
     "gopherjs")
         unset KIVIK_TEST_DSN_COUCH16
+        unset KIVIK_TESt_DSN_COUCH20
         gopherjs test $(go list ./... | grep -v /vendor/ | grep -Ev 'kivik/(serve|auth|proxy)')
     ;;
     "linter")
@@ -45,9 +47,10 @@ case "$1" in
             --exclude="Errors unhandled\..*\(gas\)"  # This is an annoying duplicate of errcheck
     ;;
     "coverage")
-        # Use only CouchDB 2.0 for the coverage tests, primarily because CouchDB
+        # Use only CouchDB 2.1 for the coverage tests, primarily because CouchDB
         # 1.6 is sporadic with failures, and leads to fluctuating coverage stats.
         unset KIVIK_TEST_DSN_COUCH16
+        unset KIVIK_TEST_DSN_COUCH20
         echo "" > coverage.txt
 
         TEST_PKGS=$(find -name "*_test.go" | grep -v /vendor/ | grep -v /pouchdb | xargs dirname | sort -u | sed -e "s#^\.#github.com/flimzy/kivik#" )

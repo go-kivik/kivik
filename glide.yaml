@@ -7,8 +7,6 @@ import:
   version: ~1.5.0
 - package: github.com/go-chi/chi
   version: ~3.1.0
-- package: github.com/flimzy/diff
-  version: ^0.1.2
 - package: github.com/pborman/uuid
   version: ~1.0.0
 - package: github.com/pkg/errors
@@ -29,3 +27,5 @@ import:
 testimport:
 - package: github.com/flimzy/testy
   version: ~0.0.1
+- package: github.com/flimzy/diff
+  version: ~0.1.2

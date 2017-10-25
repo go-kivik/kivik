@@ -24,8 +24,8 @@ import:
 - package: github.com/go-kivik/kiviktest
   subpackages:
   - kt
+- package: github.com/flimzy/diff
+  version: ~0.1.2
 testimport:
 - package: github.com/flimzy/testy
   version: ~0.0.1
-- package: github.com/flimzy/diff
-  version: ~0.1.2

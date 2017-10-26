@@ -3,6 +3,7 @@ package driver
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"time"
 )
@@ -230,6 +231,11 @@ type Index struct {
 
 // MD5sum is a 128-bit MD5 checksum.
 type MD5sum [16]byte
+
+func (s MD5sum) String() string {
+	x := [16]byte(s)
+	return fmt.Sprintf("%0x", x)
+}
 
 // AttachmentMetaer is an optional interface which may be satisfied by a
 // DB. If satisfied, it may be used to fetch meta data about an attachment. If

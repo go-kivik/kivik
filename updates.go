@@ -1,9 +1,10 @@
 package kivik
 
 import (
+	"context"
+
 	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/kivik/errors"
-	"golang.org/x/net/context"
 )
 
 // DBUpdates provides access to database updates.

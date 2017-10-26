@@ -10,7 +10,7 @@ import (
 	"github.com/flimzy/kivik"
 	"github.com/flimzy/kivik/authdb"
 	"github.com/flimzy/kivik/errors"
-	"github.com/flimzy/kivik/serve/conf"
+	"github.com/go-kivik/kivikd/conf"
 )
 
 type confadmin struct {

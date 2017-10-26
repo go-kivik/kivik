@@ -1,8 +1,9 @@
 package kivik
 
 import (
+	"context"
+
 	"github.com/flimzy/kivik/driver"
-	"golang.org/x/net/context"
 )
 
 // Changes is an iterator over the database changes feed.

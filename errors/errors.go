@@ -51,9 +51,9 @@ func (se *StatusError) Reason() string {
 	return se.message
 }
 
-// StatusCoder is an optional error interface, which returns the error's
+// statusCoder is an optional error interface, which returns the error's
 // embedded HTTP status code.
-type StatusCoder interface {
+type statusCoder interface {
 	StatusCode() int
 }
 
@@ -62,7 +62,7 @@ func StatusCode(err error) int {
 	if err == nil {
 		return statusNoError
 	}
-	if scErr, ok := err.(StatusCoder); ok {
+	if scErr, ok := err.(statusCoder); ok {
 		return scErr.StatusCode()
 	}
 	return statusInternalServerError

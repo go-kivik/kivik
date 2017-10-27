@@ -9,7 +9,6 @@ import (
 	"github.com/flimzy/kivik"
 
 	"github.com/flimzy/kivik/authdb"
-	"github.com/flimzy/kivik/errors"
 	_ "github.com/go-kivik/couchdb"
 	"github.com/go-kivik/kivikd/conf"
 	"github.com/spf13/viper"
@@ -52,7 +51,7 @@ func TestConfAdminAuth(t *testing.T) {
 			t.Run("WrongPassword", func(t *testing.T) {
 				t.Parallel()
 				uCtx, err := auth.Validate(context.Background(), "test", "foobar")
-				if errors.StatusCode(err) != kivik.StatusUnauthorized {
+				if kivik.StatusCode(err) != kivik.StatusUnauthorized {
 					t.Errorf("Expected Unauthorized for bad password, got %s", err)
 				}
 				if uCtx != nil {
@@ -62,7 +61,7 @@ func TestConfAdminAuth(t *testing.T) {
 			t.Run("MissingUser", func(t *testing.T) {
 				t.Parallel()
 				uCtx, err := auth.Validate(context.Background(), "nobody", "foo")
-				if errors.StatusCode(err) != kivik.StatusUnauthorized {
+				if kivik.StatusCode(err) != kivik.StatusUnauthorized {
 					t.Errorf("Expected Unauthorized for bad username, got %s", err)
 				}
 				if uCtx != nil {
@@ -84,7 +83,7 @@ func TestConfAdminAuth(t *testing.T) {
 			})
 			t.Run("MissingUser", func(t *testing.T) {
 				_, err := auth.UserCtx(context.Background(), "nobody")
-				if errors.StatusCode(err) != kivik.StatusNotFound {
+				if kivik.StatusCode(err) != kivik.StatusNotFound {
 					var msg string
 					if err != nil {
 						msg = fmt.Sprintf(" Got: %s", err)

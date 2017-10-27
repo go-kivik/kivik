@@ -48,7 +48,7 @@ func (db *db) getUser(ctx context.Context, username string) (*user, error) {
 func (db *db) Validate(ctx context.Context, username, password string) (*authdb.UserContext, error) {
 	u, err := db.getUser(ctx, username)
 	if err != nil {
-		if errors.StatusCode(err) == kivik.StatusNotFound {
+		if kivik.StatusCode(err) == kivik.StatusNotFound {
 			err = errors.Status(kivik.StatusUnauthorized, "unauthorized")
 		}
 		return nil, err

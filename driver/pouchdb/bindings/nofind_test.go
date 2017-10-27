@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/flimzy/kivik"
-	"github.com/flimzy/kivik/errors"
 	"github.com/gopherjs/gopherjs/js"
+
+	"github.com/flimzy/kivik"
 )
 
 func init() {
@@ -22,7 +22,7 @@ func TestNoFindPlugin(t *testing.T) {
 	t.Run("FindLoaded", func(t *testing.T) {
 		db := GlobalPouchDB().New("foo", nil)
 		_, err := db.Find(context.Background(), "")
-		if errors.StatusCode(err) == kivik.StatusNotImplemented {
+		if kivik.StatusCode(err) == kivik.StatusNotImplemented {
 			t.Errorf("Got StatusNotImplemented when pouchdb-find should be loaded")
 		}
 	})
@@ -30,7 +30,7 @@ func TestNoFindPlugin(t *testing.T) {
 		db := GlobalPouchDB().New("foo", nil)
 		db.Object.Set("find", nil) // Fake it
 		_, err := db.Find(context.Background(), "")
-		if code := errors.StatusCode(err); code != kivik.StatusNotImplemented {
+		if code := kivik.StatusCode(err); code != kivik.StatusNotImplemented {
 			t.Errorf("Expected %d error, got %d/%s\n", kivik.StatusNotImplemented, code, err)
 		}
 	})

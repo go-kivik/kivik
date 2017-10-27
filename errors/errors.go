@@ -18,15 +18,15 @@ const (
 	statusInternalServerError = 500
 )
 
-// StatusError is an error message bundled with an HTTP status code.
-type StatusError struct {
+// statusError is an error message bundled with an HTTP status code.
+type statusError struct {
 	statusCode int
 	message    string
 }
 
-// MarshalJSON satisifies the json.Marshaler interface for the StatusError
+// MarshalJSON satisifies the json.Marshaler interface for the statusError
 // type.
-func (se *StatusError) MarshalJSON() ([]byte, error) {
+func (se *statusError) MarshalJSON() ([]byte, error) {
 	errText := strings.Replace(strings.ToLower(http.StatusText(se.statusCode)), " ", "_", -1)
 	if errText == "" {
 		errText = "unknown"
@@ -37,23 +37,23 @@ func (se *StatusError) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (se *StatusError) Error() string {
+func (se *statusError) Error() string {
 	return se.message
 }
 
-// StatusCode returns the StatusError's embedded HTTP status code.
-func (se *StatusError) StatusCode() int {
+// StatusCode returns the statusError's embedded HTTP status code.
+func (se *statusError) StatusCode() int {
 	return se.statusCode
 }
 
 // Reason returns the error's underlying reason.
-func (se *StatusError) Reason() string {
+func (se *statusError) Reason() string {
 	return se.message
 }
 
-// StatusCoder is an optional error interface, which returns the error's
+// statusCoder is an optional error interface, which returns the error's
 // embedded HTTP status code.
-type StatusCoder interface {
+type statusCoder interface {
 	StatusCode() int
 }
 
@@ -62,7 +62,7 @@ func StatusCode(err error) int {
 	if err == nil {
 		return statusNoError
 	}
-	if scErr, ok := err.(StatusCoder); ok {
+	if scErr, ok := err.(statusCoder); ok {
 		return scErr.StatusCode()
 	}
 	return statusInternalServerError
@@ -92,7 +92,7 @@ func New(msg string) error {
 
 // Status returns a new error with the designated HTTP status.
 func Status(status int, msg string) error {
-	return &StatusError{
+	return &statusError{
 		statusCode: status,
 		message:    msg,
 	}
@@ -100,7 +100,7 @@ func Status(status int, msg string) error {
 
 // Statusf returns a new error with the designated HTTP status.
 func Statusf(status int, format string, args ...interface{}) error {
-	return &StatusError{
+	return &statusError{
 		statusCode: status,
 		message:    fmt.Sprintf(format, args...),
 	}

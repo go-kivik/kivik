@@ -137,7 +137,7 @@ func (c *client) DBExists(ctx context.Context, dbName string, options map[string
 	if err == nil {
 		return true, nil
 	}
-	if errors.StatusCode(err) == http.StatusNotFound {
+	if kivik.StatusCode(err) == http.StatusNotFound {
 		return false, nil
 	}
 	return false, err

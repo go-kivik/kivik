@@ -9,39 +9,27 @@ import (
 	"github.com/flimzy/diff"
 )
 
-func TestErrors(t *testing.T) {
-	type errTest struct {
-		Name           string
-		Func           func() error
-		ExpectedStatus int
-		ExpectedMsg    string
+func TestStatusf(t *testing.T) {
+	e := Statusf(400, "foo %d", 123)
+	result := e.(*statusError)
+	expected := &statusError{
+		message:    "foo 123",
+		statusCode: 400,
 	}
-	tests := []errTest{
-		{
-			Name:           "Statusf",
-			Func:           func() error { return Statusf(500, "Testing %d", 123) },
-			ExpectedStatus: 500,
-			ExpectedMsg:    "Testing 123",
-		},
-		{
-			Name:           "WrapStatus",
-			Func:           func() error { return WrapStatus(500, errors.New("original error")) },
-			ExpectedStatus: 500,
-			ExpectedMsg:    "original error",
-		},
+	if d := diff.Interface(expected, result); d != nil {
+		t.Error(d)
 	}
-	for _, test := range tests {
-		func(test errTest) {
-			t.Run(test.Name, func(t *testing.T) {
-				err := test.Func()
-				if status := StatusCode(err); status != test.ExpectedStatus {
-					t.Errorf("Status. Expected %d, Actual %d", test.ExpectedStatus, status)
-				}
-				if msg := err.Error(); msg != test.ExpectedMsg {
-					t.Errorf("Error. Expected '%s', Actual '%s'", test.ExpectedMsg, msg)
-				}
-			})
-		}(test)
+}
+
+func TestWrapStatus(t *testing.T) {
+	e := WrapStatus(400, errors.New("foo"))
+	expected := &wrappedError{
+		err:        errors.New("foo"),
+		statusCode: 400,
+	}
+	result := e.(*wrappedError)
+	if d := diff.Interface(expected, result); d != nil {
+		t.Error(d)
 	}
 }
 
@@ -52,23 +40,23 @@ func TestErrorJSON(t *testing.T) {
 		expected string
 	}{
 		{
-			name:     "StatusError not found",
-			err:      &StatusError{statusCode: http.StatusNotFound, message: "no_db_file"},
+			name:     "statusError not found",
+			err:      &statusError{statusCode: http.StatusNotFound, message: "no_db_file"},
 			expected: `{"error":"not_found", "reason":"no_db_file"}`,
 		},
 		{
-			name:     "StatusError unknown code",
-			err:      &StatusError{statusCode: 999, message: "somethin' bad happened"},
+			name:     "statusError unknown code",
+			err:      &statusError{statusCode: 999, message: "somethin' bad happened"},
 			expected: `{"error":"unknown", "reason": "somethin' bad happened"}`,
 		},
 		{
-			name:     "StatusError unauthorized",
-			err:      &StatusError{statusCode: http.StatusUnauthorized, message: "You are not a server admin."},
+			name:     "statusError unauthorized",
+			err:      &statusError{statusCode: http.StatusUnauthorized, message: "You are not a server admin."},
 			expected: `{"error":"unauthorized", "reason":"You are not a server admin."}`,
 		},
 		{
-			name:     "StatusError precondition failed",
-			err:      &StatusError{statusCode: http.StatusPreconditionFailed, message: "The database could not be created, the file already exists."},
+			name:     "statusError precondition failed",
+			err:      &statusError{statusCode: http.StatusPreconditionFailed, message: "The database could not be created, the file already exists."},
 			expected: `{"error":"precondition_failed", "reason":"The database could not be created, the file already exists."}`,
 		},
 	}

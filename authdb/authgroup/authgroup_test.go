@@ -10,7 +10,6 @@ import (
 	"github.com/flimzy/kivik/authdb"
 	"github.com/flimzy/kivik/authdb/confadmin"
 	"github.com/flimzy/kivik/authdb/usersdb"
-	"github.com/flimzy/kivik/errors"
 	_ "github.com/go-kivik/couchdb"
 	"github.com/go-kivik/kivikd/conf"
 	"github.com/go-kivik/kiviktest/kt"
@@ -48,7 +47,7 @@ func TestConfAdminAuth(t *testing.T) {
 	if e != nil {
 		t.Fatalf("Failed to create user: %s", e)
 	}
-	defer db.Delete(context.Background(), user.ID, rev)
+	defer db.Delete(context.Background(), user.ID, rev) // nolint: errcheck
 	auth2 := usersdb.New(db)
 
 	auth := New(auth1, auth2)
@@ -69,7 +68,7 @@ func TestConfAdminAuth(t *testing.T) {
 			t.Run("BobInvalid", func(t *testing.T) {
 				t.Parallel()
 				uCtx, err := auth.Validate(context.Background(), "bob", "foobar")
-				if errors.StatusCode(err) != kivik.StatusUnauthorized {
+				if kivik.StatusCode(err) != kivik.StatusUnauthorized {
 					t.Errorf("Expected Unauthorized for bad password, got %s", err)
 				}
 				if uCtx != nil {
@@ -89,7 +88,7 @@ func TestConfAdminAuth(t *testing.T) {
 			t.Run("TestUserInvalid", func(t *testing.T) {
 				t.Parallel()
 				uCtx, err := auth.Validate(context.Background(), user.Name, "foobar")
-				if errors.StatusCode(err) != kivik.StatusUnauthorized {
+				if kivik.StatusCode(err) != kivik.StatusUnauthorized {
 					t.Errorf("Expected Unauthorized for bad password, got %s", err)
 				}
 				if uCtx != nil {
@@ -99,7 +98,7 @@ func TestConfAdminAuth(t *testing.T) {
 			t.Run("MissingUser", func(t *testing.T) {
 				t.Parallel()
 				uCtx, err := auth.Validate(context.Background(), "nobody", "foo")
-				if errors.StatusCode(err) != kivik.StatusUnauthorized {
+				if kivik.StatusCode(err) != kivik.StatusUnauthorized {
 					t.Errorf("Expected Unauthorized for bad username, got %s", err)
 				}
 				if uCtx != nil {
@@ -131,7 +130,7 @@ func TestConfAdminAuth(t *testing.T) {
 			})
 			t.Run("MissingUser", func(t *testing.T) {
 				_, err := auth.UserCtx(context.Background(), "nobody")
-				if errors.StatusCode(err) != kivik.StatusNotFound {
+				if kivik.StatusCode(err) != kivik.StatusNotFound {
 					var msg string
 					if err != nil {
 						msg = fmt.Sprintf(" Got: %s", err)

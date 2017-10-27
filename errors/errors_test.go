@@ -72,3 +72,35 @@ func TestErrorJSON(t *testing.T) {
 		})
 	}
 }
+
+func TestReason(t *testing.T) {
+	tests := []struct {
+		name   string
+		err    error
+		reason string
+	}{
+		{
+			name:   "nil error",
+			err:    nil,
+			reason: "",
+		},
+		{
+			name:   "standard error",
+			err:    errors.New("foo"),
+			reason: "",
+		},
+		{
+			name:   "StatusError",
+			err:    &statusError{statusCode: 400, message: "foo"},
+			reason: "foo",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			reason := Reason(test.err)
+			if reason != test.reason {
+				t.Errorf("Unexpected reason: %s", reason)
+			}
+		})
+	}
+}

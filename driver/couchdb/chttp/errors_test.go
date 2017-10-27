@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/flimzy/kivik/errors"
+	"github.com/flimzy/kivik"
 )
 
 func TestErrors(t *testing.T) {
@@ -94,7 +94,7 @@ func TestErrors(t *testing.T) {
 					}
 					t.Errorf("Got an error when none expected: %s", err)
 				}
-				if status := errors.StatusCode(err); status != test.ExpectedStatus {
+				if status := kivik.StatusCode(err); status != test.ExpectedStatus {
 					t.Errorf("Status. Expected %d, Actual %d", test.ExpectedStatus, status)
 				}
 				if msg := err.Error(); msg != test.ExpectedMsg {

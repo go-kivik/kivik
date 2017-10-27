@@ -291,7 +291,7 @@ func (db *DB) Copy(ctx context.Context, targetID, sourceID string, options ...Op
 	}
 	if copier, ok := db.driverDB.(driver.Copier); ok {
 		targetRev, err = copier.Copy(ctx, targetID, sourceID, opts)
-		if errors.StatusCode(err) != StatusNotImplemented {
+		if StatusCode(err) != StatusNotImplemented {
 			return targetRev, err
 		}
 	}

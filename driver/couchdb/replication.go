@@ -112,7 +112,7 @@ func (r *replication) Update(ctx context.Context, state *driver.ReplicationInfo)
 	}
 	info, err := r.updateActiveTasks(ctx)
 	if err != nil {
-		if errors.StatusCode(err) == kivik.StatusNotFound {
+		if kivik.StatusCode(err) == kivik.StatusNotFound {
 			// not listed in _active_tasks (because the replication is done, or
 			// hasn't yet started), but this isn't an error
 			return nil

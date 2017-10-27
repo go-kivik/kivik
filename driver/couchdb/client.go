@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/flimzy/kivik"
-	"github.com/flimzy/kivik/errors"
 )
 
 func (c *client) AllDBs(ctx context.Context, _ map[string]interface{}) ([]string, error) {
@@ -15,7 +14,7 @@ func (c *client) AllDBs(ctx context.Context, _ map[string]interface{}) ([]string
 
 func (c *client) DBExists(ctx context.Context, dbName string, _ map[string]interface{}) (bool, error) {
 	_, err := c.DoError(ctx, kivik.MethodHead, dbName, nil)
-	if errors.StatusCode(err) == kivik.StatusNotFound {
+	if kivik.StatusCode(err) == kivik.StatusNotFound {
 		return false, nil
 	}
 	return err == nil, err

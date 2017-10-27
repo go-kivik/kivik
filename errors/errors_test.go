@@ -9,39 +9,27 @@ import (
 	"github.com/flimzy/diff"
 )
 
-func TestErrors(t *testing.T) {
-	type errTest struct {
-		Name           string
-		Func           func() error
-		ExpectedStatus int
-		ExpectedMsg    string
+func TestStatusf(t *testing.T) {
+	e := Statusf(400, "foo %d", 123)
+	result := e.(*StatusError)
+	expected := &StatusError{
+		message:    "foo 123",
+		statusCode: 400,
 	}
-	tests := []errTest{
-		{
-			Name:           "Statusf",
-			Func:           func() error { return Statusf(500, "Testing %d", 123) },
-			ExpectedStatus: 500,
-			ExpectedMsg:    "Testing 123",
-		},
-		{
-			Name:           "WrapStatus",
-			Func:           func() error { return WrapStatus(500, errors.New("original error")) },
-			ExpectedStatus: 500,
-			ExpectedMsg:    "original error",
-		},
+	if d := diff.Interface(expected, result); d != nil {
+		t.Error(d)
 	}
-	for _, test := range tests {
-		func(test errTest) {
-			t.Run(test.Name, func(t *testing.T) {
-				err := test.Func()
-				if status := StatusCode(err); status != test.ExpectedStatus {
-					t.Errorf("Status. Expected %d, Actual %d", test.ExpectedStatus, status)
-				}
-				if msg := err.Error(); msg != test.ExpectedMsg {
-					t.Errorf("Error. Expected '%s', Actual '%s'", test.ExpectedMsg, msg)
-				}
-			})
-		}(test)
+}
+
+func TestWrapStatus(t *testing.T) {
+	e := WrapStatus(400, errors.New("foo"))
+	expected := &wrappedError{
+		err:        errors.New("foo"),
+		statusCode: 400,
+	}
+	result := e.(*wrappedError)
+	if d := diff.Interface(expected, result); d != nil {
+		t.Error(d)
 	}
 }
 

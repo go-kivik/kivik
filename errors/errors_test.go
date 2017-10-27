@@ -11,8 +11,8 @@ import (
 
 func TestStatusf(t *testing.T) {
 	e := Statusf(400, "foo %d", 123)
-	result := e.(*StatusError)
-	expected := &StatusError{
+	result := e.(*statusError)
+	expected := &statusError{
 		message:    "foo 123",
 		statusCode: 400,
 	}
@@ -40,23 +40,23 @@ func TestErrorJSON(t *testing.T) {
 		expected string
 	}{
 		{
-			name:     "StatusError not found",
-			err:      &StatusError{statusCode: http.StatusNotFound, message: "no_db_file"},
+			name:     "statusError not found",
+			err:      &statusError{statusCode: http.StatusNotFound, message: "no_db_file"},
 			expected: `{"error":"not_found", "reason":"no_db_file"}`,
 		},
 		{
-			name:     "StatusError unknown code",
-			err:      &StatusError{statusCode: 999, message: "somethin' bad happened"},
+			name:     "statusError unknown code",
+			err:      &statusError{statusCode: 999, message: "somethin' bad happened"},
 			expected: `{"error":"unknown", "reason": "somethin' bad happened"}`,
 		},
 		{
-			name:     "StatusError unauthorized",
-			err:      &StatusError{statusCode: http.StatusUnauthorized, message: "You are not a server admin."},
+			name:     "statusError unauthorized",
+			err:      &statusError{statusCode: http.StatusUnauthorized, message: "You are not a server admin."},
 			expected: `{"error":"unauthorized", "reason":"You are not a server admin."}`,
 		},
 		{
-			name:     "StatusError precondition failed",
-			err:      &StatusError{statusCode: http.StatusPreconditionFailed, message: "The database could not be created, the file already exists."},
+			name:     "statusError precondition failed",
+			err:      &statusError{statusCode: http.StatusPreconditionFailed, message: "The database could not be created, the file already exists."},
 			expected: `{"error":"precondition_failed", "reason":"The database could not be created, the file already exists."}`,
 		},
 	}

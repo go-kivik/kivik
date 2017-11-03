@@ -32,6 +32,7 @@ func TestAllDocsClose(t *testing.T) {
 func TestAllDocs(t *testing.T) {
 	type adTest struct {
 		Name        string
+		Options     map[string]interface{}
 		ExpectedIDs []string
 		Error       string
 		DB          *db
@@ -65,6 +66,20 @@ func TestAllDocs(t *testing.T) {
 			}(),
 			ExpectedIDs: []string{"a", "c", "chicken", "q", "z"},
 		},
+		{
+			Name: "Limit",
+			DB: func() driver.DB {
+				db := setupDB(t, nil)
+				for _, id := range []string{"a", "c", "z", "q", "chicken"} {
+					if _, err := db.Put(context.Background(), id, map[string]string{"value": id}); err != nil {
+						t.Fatal(err)
+					}
+				}
+				return db
+			}(),
+			Options:     map[string]interface{}{"limit": 2},
+			ExpectedIDs: []string{"a", "c"},
+		},
 	}
 	for _, test := range tests {
 		func(test adTest) {
@@ -73,7 +88,7 @@ func TestAllDocs(t *testing.T) {
 				if db == nil {
 					db = setupDB(t, nil)
 				}
-				rows, err := db.AllDocs(context.Background(), nil)
+				rows, err := db.AllDocs(context.Background(), test.Options)
 				var msg string
 				if err != nil {
 					msg = err.Error()

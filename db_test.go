@@ -127,30 +127,35 @@ type putGrabber struct {
 	*dummyDB
 	lastPut  interface{}
 	lastOpts map[string]interface{}
+
+	newRev string
+	err    error
 }
 
 func (db *putGrabber) Put(_ context.Context, _ string, i interface{}, opts map[string]interface{}) (string, error) {
 	db.lastPut = i
 	db.lastOpts = opts
-	return "", nil
+	return db.newRev, db.err
 }
 
 func TestPut(t *testing.T) {
-	grabber := &putGrabber{}
-	db := &DB{driverDB: grabber}
 	type putTest struct {
 		name     string
+		db       *DB
 		input    interface{}
 		options  Options
 		expected interface{}
 		status   int
 		err      string
+		newRev   string
 	}
 	tests := []putTest{
 		{
 			name:     "Interface",
+			db:       &DB{driverDB: &putGrabber{newRev: "1-xxx"}},
 			input:    map[string]string{"foo": "bar"},
 			expected: map[string]string{"foo": "bar"},
+			newRev:   "1-xxx",
 		},
 		{
 			name:   "InvalidJSON",
@@ -160,18 +165,24 @@ func TestPut(t *testing.T) {
 		},
 		{
 			name:     "Bytes",
+			db:       &DB{driverDB: &putGrabber{newRev: "1-xxx"}},
 			input:    []byte(`{"foo":"bar"}`),
 			expected: map[string]interface{}{"foo": "bar"},
+			newRev:   "1-xxx",
 		},
 		{
 			name:     "RawMessage",
+			db:       &DB{driverDB: &putGrabber{newRev: "1-xxx"}},
 			input:    json.RawMessage(`{"foo":"bar"}`),
 			expected: map[string]interface{}{"foo": "bar"},
+			newRev:   "1-xxx",
 		},
 		{
 			name:     "Reader",
+			db:       &DB{driverDB: &putGrabber{newRev: "1-xxx"}},
 			input:    strings.NewReader(`{"foo":"bar"}`),
 			expected: map[string]interface{}{"foo": "bar"},
+			newRev:   "1-xxx",
 		},
 		{
 			name:   "ErrorReader",
@@ -181,21 +192,28 @@ func TestPut(t *testing.T) {
 		},
 		{
 			name:     "valid",
+			db:       &DB{driverDB: &putGrabber{newRev: "1-xxx"}},
 			input:    map[string]string{"foo": "bar"},
 			options:  Options{"foo": "bar"},
 			expected: map[string]string{"foo": "bar"},
+			newRev:   "1-xxx",
 		},
 	}
 	for _, test := range tests {
 		func(test putTest) {
 			t.Run(test.name, func(t *testing.T) {
-				_, err := db.Put(context.Background(), "foo", test.input, test.options)
+				newRev, err := test.db.Put(context.Background(), "foo", test.input, test.options)
 				testy.StatusError(t, test.err, test.status, err)
-				if d := diff.Interface(test.expected, grabber.lastPut); d != nil {
-					t.Error(d)
+				if newRev != test.newRev {
+					t.Errorf("Unexpected new rev: %s", newRev)
 				}
-				if d := diff.Interface(map[string]interface{}(test.options), grabber.lastOpts); d != nil {
-					t.Error(d)
+				if rec, ok := test.db.driverDB.(*putGrabber); ok {
+					if d := diff.Interface(test.expected, rec.lastPut); d != nil {
+						t.Error(d)
+					}
+					if d := diff.Interface(map[string]interface{}(test.options), rec.lastOpts); d != nil {
+						t.Error(d)
+					}
 				}
 			})
 		}(test)

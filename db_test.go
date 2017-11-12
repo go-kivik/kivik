@@ -315,3 +315,63 @@ func TestCreateDoc(t *testing.T) {
 		})
 	}
 }
+
+type deleteRecorder struct {
+	*dummyDB
+	lastID, lastRev string
+	lastOpts        map[string]interface{}
+
+	newRev string
+	err    error
+}
+
+func (db *deleteRecorder) Delete(_ context.Context, docID, rev string, opts map[string]interface{}) (string, error) {
+	db.lastID, db.lastRev = docID, rev
+	return db.newRev, db.err
+}
+
+func TestDelete(t *testing.T) {
+	tests := []struct {
+		name       string
+		db         *DB
+		docID, rev string
+		options    Options
+		newRev     string
+		status     int
+		err        string
+	}{
+		{
+			name:   "error",
+			db:     &DB{driverDB: &deleteRecorder{err: errors.Status(StatusBadRequest, "delete error")}},
+			status: StatusBadRequest,
+			err:    "delete error",
+		},
+		{
+			name:   "success",
+			db:     &DB{driverDB: &deleteRecorder{newRev: "2-xxx"}},
+			docID:  "foo",
+			rev:    "1-xxx",
+			newRev: "2-xxx",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			newRev, err := test.db.Delete(context.Background(), test.docID, test.rev, test.options)
+			testy.StatusError(t, test.err, test.status, err)
+			if newRev != test.newRev {
+				t.Errorf("Unexpected newRev: %s", newRev)
+			}
+			if rec, ok := test.db.driverDB.(*deleteRecorder); ok {
+				if rec.lastID != test.docID {
+					t.Errorf("Unexpected docID: %s", rec.lastID)
+				}
+				if rec.lastRev != test.rev {
+					t.Errorf("Unexpected rev: %s", rec.lastRev)
+				}
+				if d := diff.Interface(map[string]interface{}(test.options), rec.lastOpts); d != nil {
+					t.Error(d)
+				}
+			}
+		})
+	}
+}

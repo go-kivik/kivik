@@ -142,6 +142,7 @@ func TestPut(t *testing.T) {
 	type putTest struct {
 		name     string
 		db       *DB
+		docID    string
 		input    interface{}
 		options  Options
 		expected interface{}
@@ -151,14 +152,28 @@ func TestPut(t *testing.T) {
 	}
 	tests := []putTest{
 		{
+			name:   "no docID",
+			status: StatusBadRequest,
+			err:    "kivik: docID required",
+		},
+		{
+			name:   "db error",
+			db:     &DB{driverDB: &putGrabber{err: errors.Status(StatusBadRequest, "db error")}},
+			docID:  "foo",
+			status: StatusBadRequest,
+			err:    "db error",
+		},
+		{
 			name:     "Interface",
 			db:       &DB{driverDB: &putGrabber{newRev: "1-xxx"}},
+			docID:    "foo",
 			input:    map[string]string{"foo": "bar"},
 			expected: map[string]string{"foo": "bar"},
 			newRev:   "1-xxx",
 		},
 		{
 			name:   "InvalidJSON",
+			docID:  "foo",
 			input:  []byte("Something bogus"),
 			status: StatusBadRequest,
 			err:    "invalid character 'S' looking for beginning of value",
@@ -166,6 +181,7 @@ func TestPut(t *testing.T) {
 		{
 			name:     "Bytes",
 			db:       &DB{driverDB: &putGrabber{newRev: "1-xxx"}},
+			docID:    "foo",
 			input:    []byte(`{"foo":"bar"}`),
 			expected: map[string]interface{}{"foo": "bar"},
 			newRev:   "1-xxx",
@@ -173,6 +189,7 @@ func TestPut(t *testing.T) {
 		{
 			name:     "RawMessage",
 			db:       &DB{driverDB: &putGrabber{newRev: "1-xxx"}},
+			docID:    "foo",
 			input:    json.RawMessage(`{"foo":"bar"}`),
 			expected: map[string]interface{}{"foo": "bar"},
 			newRev:   "1-xxx",
@@ -180,12 +197,14 @@ func TestPut(t *testing.T) {
 		{
 			name:     "Reader",
 			db:       &DB{driverDB: &putGrabber{newRev: "1-xxx"}},
+			docID:    "foo",
 			input:    strings.NewReader(`{"foo":"bar"}`),
 			expected: map[string]interface{}{"foo": "bar"},
 			newRev:   "1-xxx",
 		},
 		{
 			name:   "ErrorReader",
+			docID:  "foo",
 			input:  &errorReader{},
 			status: StatusUnknownError,
 			err:    "errorReader",
@@ -193,6 +212,7 @@ func TestPut(t *testing.T) {
 		{
 			name:     "valid",
 			db:       &DB{driverDB: &putGrabber{newRev: "1-xxx"}},
+			docID:    "foo",
 			input:    map[string]string{"foo": "bar"},
 			options:  Options{"foo": "bar"},
 			expected: map[string]string{"foo": "bar"},
@@ -202,7 +222,7 @@ func TestPut(t *testing.T) {
 	for _, test := range tests {
 		func(test putTest) {
 			t.Run(test.name, func(t *testing.T) {
-				newRev, err := test.db.Put(context.Background(), "foo", test.input, test.options)
+				newRev, err := test.db.Put(context.Background(), test.docID, test.input, test.options)
 				testy.StatusError(t, test.err, test.status, err)
 				if newRev != test.newRev {
 					t.Errorf("Unexpected new rev: %s", newRev)

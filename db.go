@@ -163,6 +163,9 @@ func extractDocID(i interface{}) (string, bool) {
 //  - A json.RawMessage value containing a valid JSON document
 //  - An io.Reader, from which a valid JSON document may be read.
 func (db *DB) Put(ctx context.Context, docID string, doc interface{}, options ...Options) (rev string, err error) {
+	if docID == "" {
+		return "", missingArg("docID")
+	}
 	i, err := normalizeFromJSON(doc)
 	if err != nil {
 		return "", err

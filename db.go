@@ -109,7 +109,7 @@ func normalizeFromJSON(i interface{}) (interface{}, error) {
 		var err error
 		body, err = ioutil.ReadAll(r)
 		if err != nil {
-			return nil, err
+			return nil, errors.WrapStatus(StatusUnknownError, err)
 		}
 	}
 	var x map[string]interface{}

@@ -83,7 +83,7 @@ func TestNormalizeFromJSON(t *testing.T) {
 		{
 			Name:   "InvalidJSON",
 			Input:  []byte(`invalid`),
-			Status: 400,
+			Status: StatusBadRequest,
 			Error:  "invalid character 'i' looking for beginning of value",
 		},
 		{
@@ -104,7 +104,7 @@ func TestNormalizeFromJSON(t *testing.T) {
 		{
 			Name:   "ErrorReader",
 			Input:  &errorReader{},
-			Status: 500,
+			Status: StatusUnknownError,
 			Error:  "errorReader",
 		},
 	}
@@ -132,67 +132,56 @@ func TestNormalizeFromJSON(t *testing.T) {
 	}
 }
 
-func TestPutJSON(t *testing.T) {
+func TestPut(t *testing.T) {
 	grabber := &putGrabber{}
 	db := &DB{driverDB: grabber}
 	type putTest struct {
-		Name     string
-		Input    interface{}
-		Status   int
-		Expected interface{}
-		Error    string
+		name     string
+		input    interface{}
+		expected interface{}
+		status   int
+		err      string
 	}
 	tests := []putTest{
 		{
-			Name:     "Interface",
-			Input:    map[string]string{"foo": "bar"},
-			Expected: map[string]string{"foo": "bar"},
+			name:     "Interface",
+			input:    map[string]string{"foo": "bar"},
+			expected: map[string]string{"foo": "bar"},
 		},
 		{
-			Name:   "InvalidJSON",
-			Input:  []byte("Something bogus"),
-			Status: 400,
-			Error:  "invalid character 'S' looking for beginning of value",
+			name:   "InvalidJSON",
+			input:  []byte("Something bogus"),
+			status: StatusBadRequest,
+			err:    "invalid character 'S' looking for beginning of value",
 		},
 		{
-			Name:     "Bytes",
-			Input:    []byte(`{"foo":"bar"}`),
-			Expected: map[string]interface{}{"foo": "bar"},
+			name:     "Bytes",
+			input:    []byte(`{"foo":"bar"}`),
+			expected: map[string]interface{}{"foo": "bar"},
 		},
 		{
-			Name:     "RawMessage",
-			Input:    json.RawMessage(`{"foo":"bar"}`),
-			Expected: map[string]interface{}{"foo": "bar"},
+			name:     "RawMessage",
+			input:    json.RawMessage(`{"foo":"bar"}`),
+			expected: map[string]interface{}{"foo": "bar"},
 		},
 		{
-			Name:     "Reader",
-			Input:    strings.NewReader(`{"foo":"bar"}`),
-			Expected: map[string]interface{}{"foo": "bar"},
+			name:     "Reader",
+			input:    strings.NewReader(`{"foo":"bar"}`),
+			expected: map[string]interface{}{"foo": "bar"},
 		},
 		{
-			Name:   "ErrorReader",
-			Input:  &errorReader{},
-			Status: 500,
-			Error:  "errorReader",
+			name:   "ErrorReader",
+			input:  &errorReader{},
+			status: StatusUnknownError,
+			err:    "errorReader",
 		},
 	}
 	for _, test := range tests {
 		func(test putTest) {
-			t.Run(test.Name, func(t *testing.T) {
-				_, err := db.Put(context.Background(), "foo", test.Input)
-				var msg string
-				var status int
-				if err != nil {
-					msg = err.Error()
-					status = StatusCode(err)
-				}
-				if msg != test.Error || status != test.Status {
-					t.Errorf("Unexpected error: %d %s", status, msg)
-				}
-				if err != nil {
-					return
-				}
-				if d := diff.Interface(test.Expected, grabber.lastPut); d != nil {
+			t.Run(test.name, func(t *testing.T) {
+				_, err := db.Put(context.Background(), "foo", test.input)
+				testy.StatusError(t, test.err, test.status, err)
+				if d := diff.Interface(test.expected, grabber.lastPut); d != nil {
 					t.Error(d)
 				}
 			})

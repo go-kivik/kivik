@@ -48,16 +48,6 @@ func TestFlushNotSupported(t *testing.T) {
 	}
 }
 
-type putGrabber struct {
-	*dummyDB
-	lastPut interface{}
-}
-
-func (db *putGrabber) Put(_ context.Context, _ string, i interface{}, _ map[string]interface{}) (string, error) {
-	db.lastPut = i
-	return "", nil
-}
-
 type errorReader struct{}
 
 var _ io.Reader = &errorReader{}
@@ -132,12 +122,25 @@ func TestNormalizeFromJSON(t *testing.T) {
 	}
 }
 
+type putGrabber struct {
+	*dummyDB
+	lastPut  interface{}
+	lastOpts map[string]interface{}
+}
+
+func (db *putGrabber) Put(_ context.Context, _ string, i interface{}, opts map[string]interface{}) (string, error) {
+	db.lastPut = i
+	db.lastOpts = opts
+	return "", nil
+}
+
 func TestPut(t *testing.T) {
 	grabber := &putGrabber{}
 	db := &DB{driverDB: grabber}
 	type putTest struct {
 		name     string
 		input    interface{}
+		options  Options
 		expected interface{}
 		status   int
 		err      string
@@ -175,13 +178,22 @@ func TestPut(t *testing.T) {
 			status: StatusUnknownError,
 			err:    "errorReader",
 		},
+		{
+			name:     "valid",
+			input:    map[string]string{"foo": "bar"},
+			options:  Options{"foo": "bar"},
+			expected: map[string]string{"foo": "bar"},
+		},
 	}
 	for _, test := range tests {
 		func(test putTest) {
 			t.Run(test.name, func(t *testing.T) {
-				_, err := db.Put(context.Background(), "foo", test.input)
+				_, err := db.Put(context.Background(), "foo", test.input, test.options)
 				testy.StatusError(t, test.err, test.status, err)
 				if d := diff.Interface(test.expected, grabber.lastPut); d != nil {
+					t.Error(d)
+				}
+				if d := diff.Interface(map[string]interface{}(test.options), grabber.lastOpts); d != nil {
 					t.Error(d)
 				}
 			})

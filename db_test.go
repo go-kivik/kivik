@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"strings"
 	"testing"
 
@@ -370,6 +371,104 @@ func TestDelete(t *testing.T) {
 				}
 				if d := diff.Interface(map[string]interface{}(test.options), rec.lastOpts); d != nil {
 					t.Error(d)
+				}
+			}
+		})
+	}
+}
+
+type putAttRecorder struct {
+	*dummyDB
+	lastID, lastRev, lastFilename, lastType string
+	lastBody                                []byte
+	lastOpts                                map[string]interface{}
+
+	newRev string
+	err    error
+}
+
+var _ driver.DB = &putAttRecorder{}
+
+func (db *putAttRecorder) PutAttachment(_ context.Context, docID, rev, filename, contentType string, body io.Reader, opts map[string]interface{}) (string, error) {
+	db.lastID, db.lastRev, db.lastFilename, db.lastType = docID, rev, filename, contentType
+	var err error
+	db.lastBody, err = ioutil.ReadAll(body)
+	if err != nil {
+		panic(err)
+	}
+	db.lastOpts = opts
+
+	return db.newRev, db.err
+}
+
+func TestPutAttachment(t *testing.T) {
+	tests := []struct {
+		name       string
+		db         *DB
+		docID, rev string
+		att        *Attachment
+		options    Options
+		newRev     string
+		status     int
+		err        string
+
+		body string
+	}{
+		{
+			name:  "db error",
+			docID: "foo",
+			db:    &DB{driverDB: &putAttRecorder{err: errors.Status(StatusBadRequest, "db error")}},
+			att: &Attachment{
+				Filename:   "foo.txt",
+				ReadCloser: ioutil.NopCloser(strings.NewReader("")),
+			},
+			status: StatusBadRequest,
+			err:    "db error",
+		},
+		{
+			name:   "no doc id",
+			status: StatusBadRequest,
+			err:    "kivik: docID required",
+		},
+		{
+			name:   "no filename",
+			docID:  "foo",
+			att:    &Attachment{},
+			status: StatusBadRequest,
+			err:    "kivik: filename required",
+		},
+		{
+			name:  "success",
+			docID: "foo",
+			db:    &DB{driverDB: &putAttRecorder{newRev: "2-xxx"}},
+			att: &Attachment{
+				Filename:    "foo.txt",
+				ContentType: "text/plain",
+				ReadCloser:  ioutil.NopCloser(strings.NewReader("Test file")),
+			},
+			newRev: "2-xxx",
+			body:   "Test file",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			newRev, err := test.db.PutAttachment(context.Background(), test.docID, test.rev, test.att, test.options)
+			testy.StatusError(t, test.err, test.status, err)
+			if newRev != test.newRev {
+				t.Errorf("Unexpected newRev: %s", newRev)
+			}
+			if rec, ok := test.db.driverDB.(*putAttRecorder); ok {
+				if rec.lastID != test.docID {
+					t.Errorf("Unexpected docID: %s", rec.lastID)
+				}
+				if rec.lastFilename != test.att.Filename {
+					t.Errorf("Unexpected filename: %s", rec.lastFilename)
+				}
+				if rec.lastType != test.att.ContentType {
+					t.Errorf("Unexpected content type: %s", rec.lastType)
+				}
+				if d := diff.Text(test.body, string(rec.lastBody)); d != nil {
+					t.Errorf("Unexpected body:\n%s\n", d)
 				}
 			}
 		})

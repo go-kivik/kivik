@@ -148,3 +148,7 @@ func (c *Client) Authenticate(ctx context.Context, a interface{}) error {
 	}
 	return errors.Status(StatusNotImplemented, "kivik: driver does not support authentication")
 }
+
+func missingArg(arg string) error {
+	return errors.Statusf(StatusBadRequest, "kivik: %s required", arg)
+}

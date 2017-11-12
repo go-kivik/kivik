@@ -323,6 +323,12 @@ func (db *DB) Copy(ctx context.Context, targetID, sourceID string, options ...Op
 // PutAttachment uploads the supplied content as an attachment to the specified
 // document.
 func (db *DB) PutAttachment(ctx context.Context, docID, rev string, att *Attachment, options ...Options) (newRev string, err error) {
+	if docID == "" {
+		return "", missingArg("docID")
+	}
+	if e := att.validate(); e != nil {
+		return "", e
+	}
 	opts, err := mergeOptions(options...)
 	if err != nil {
 		return "", err

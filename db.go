@@ -179,6 +179,9 @@ func (db *DB) Put(ctx context.Context, docID string, doc interface{}, options ..
 
 // Delete marks the specified document as deleted.
 func (db *DB) Delete(ctx context.Context, docID, rev string, options ...Options) (newRev string, err error) {
+	if docID == "" {
+		return "", missingArg("docID")
+	}
 	opts, err := mergeOptions(options...)
 	if err != nil {
 		return "", err

@@ -380,8 +380,14 @@ func TestDelete(t *testing.T) {
 		err        string
 	}{
 		{
+			name:   "no doc ID",
+			status: StatusBadRequest,
+			err:    "kivik: docID required",
+		},
+		{
 			name:   "error",
 			db:     &DB{driverDB: &deleteRecorder{err: errors.Status(StatusBadRequest, "delete error")}},
+			docID:  "foo",
 			status: StatusBadRequest,
 			err:    "delete error",
 		},

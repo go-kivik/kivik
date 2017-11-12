@@ -3,13 +3,15 @@ package kivik
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"io"
 	"strings"
 	"testing"
 
 	"github.com/flimzy/diff"
+	"github.com/flimzy/testy"
+
 	"github.com/flimzy/kivik/driver"
+	"github.com/flimzy/kivik/errors"
 )
 
 func TestClient(t *testing.T) {
@@ -249,6 +251,65 @@ func TestExtractDocID(t *testing.T) {
 			id, ok := extractDocID(test.i)
 			if ok != test.expected || test.id != id {
 				t.Errorf("Expected %t/%s, got %t/%s", test.expected, test.id, ok, id)
+			}
+		})
+	}
+}
+
+type createDocGrabber struct {
+	*dummyDB
+	lastDoc  interface{}
+	lastOpts map[string]interface{}
+
+	id, rev string
+	err     error
+}
+
+func (db *createDocGrabber) CreateDoc(_ context.Context, doc interface{}, opts map[string]interface{}) (string, string, error) {
+	db.lastDoc = doc
+	db.lastOpts = opts
+	return db.id, db.rev, db.err
+}
+
+func TestCreateDoc(t *testing.T) {
+	tests := []struct {
+		name       string
+		db         *DB
+		doc        interface{}
+		options    Options
+		docID, rev string
+		status     int
+		err        string
+	}{
+		{
+			name:   "error",
+			db:     &DB{driverDB: &createDocGrabber{err: errors.Status(StatusBadRequest, "create error")}},
+			status: StatusBadRequest,
+			err:    "create error",
+		},
+		{
+			name:    "success",
+			db:      &DB{driverDB: &createDocGrabber{id: "foo", rev: "1-xxx"}},
+			doc:     map[string]string{"type": "test"},
+			options: Options{"foo": "bar"},
+			docID:   "foo",
+			rev:     "1-xxx",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			docID, rev, err := test.db.CreateDoc(context.Background(), test.doc, test.options)
+			testy.StatusError(t, test.err, test.status, err)
+			if docID != test.docID || test.rev != test.rev {
+				t.Errorf("Unexpected result: %s / %s", docID, rev)
+			}
+			if grabber, ok := test.db.driverDB.(*createDocGrabber); ok {
+				if d := diff.Interface(test.doc, grabber.lastDoc); d != nil {
+					t.Error(d)
+				}
+				if d := diff.Interface(map[string]interface{}(test.options), grabber.lastOpts); d != nil {
+					t.Error(d)
+				}
 			}
 		})
 	}

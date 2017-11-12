@@ -518,3 +518,61 @@ func TestPutAttachment(t *testing.T) {
 		})
 	}
 }
+
+type mockDelAtt struct {
+	*dummyDB
+	docID, rev, filename string
+	options              map[string]interface{}
+
+	newRev string
+	err    error
+}
+
+func (db *mockDelAtt) DeleteAttachment(_ context.Context, docID, rev, filename string, options map[string]interface{}) (string, error) {
+	return db.newRev, db.err
+}
+
+func TestDeleteAttachment(t *testing.T) {
+	tests := []struct {
+		name                 string
+		db                   *DB
+		docID, rev, filename string
+		options              Options
+
+		newRev string
+		status int
+		err    string
+	}{
+		{
+			name:     "db error",
+			docID:    "foo",
+			filename: "foo.txt",
+			db:       &DB{driverDB: &mockDelAtt{err: errors.Status(StatusBadRequest, "db error")}},
+			status:   StatusBadRequest,
+			err:      "db error",
+		},
+		{
+			name: "success",
+			db: &DB{driverDB: &mockDelAtt{
+				docID:    "foo",
+				rev:      "1-xxx",
+				filename: "foo.txt",
+
+				newRev: "2-xxx",
+			}},
+			docID:    "foo",
+			rev:      "1-xxx",
+			filename: "foo.txt",
+			newRev:   "2-xxx",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			newRev, err := test.db.DeleteAttachment(context.Background(), test.docID, test.rev, test.filename, test.options)
+			testy.StatusError(t, test.err, test.status, err)
+			if newRev != test.newRev {
+				t.Errorf("Unexpected new rev: %s", newRev)
+			}
+		})
+	}
+}

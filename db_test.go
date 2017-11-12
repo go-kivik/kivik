@@ -544,6 +544,17 @@ func TestDeleteAttachment(t *testing.T) {
 		err    string
 	}{
 		{
+			name:   "missing doc id",
+			status: StatusBadRequest,
+			err:    "kivik: docID required",
+		},
+		{
+			name:   "missing filename",
+			docID:  "foo",
+			status: StatusBadRequest,
+			err:    "kivik: filename required",
+		},
+		{
 			name:     "db error",
 			docID:    "foo",
 			filename: "foo.txt",

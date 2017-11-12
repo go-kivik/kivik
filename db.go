@@ -84,8 +84,12 @@ func (db *DB) Get(ctx context.Context, docID string, options ...Options) (*Row, 
 
 // CreateDoc creates a new doc with an auto-generated unique ID. The generated
 // docID and new rev are returned.
-func (db *DB) CreateDoc(ctx context.Context, doc interface{}) (docID, rev string, err error) {
-	return db.driverDB.CreateDoc(ctx, doc)
+func (db *DB) CreateDoc(ctx context.Context, doc interface{}, options ...Options) (docID, rev string, err error) {
+	opts, err := mergeOptions(options...)
+	if err != nil {
+		return "", "", err
+	}
+	return db.driverDB.CreateDoc(ctx, doc, opts)
 }
 
 // normalizeFromJSON unmarshals a []byte, json.RawMessage or io.Reader to a
@@ -158,17 +162,25 @@ func extractDocID(i interface{}) (string, bool) {
 //  - A []byte value, containing a valid JSON document
 //  - A json.RawMessage value containing a valid JSON document
 //  - An io.Reader, from which a valid JSON document may be read.
-func (db *DB) Put(ctx context.Context, docID string, doc interface{}) (rev string, err error) {
+func (db *DB) Put(ctx context.Context, docID string, doc interface{}, options ...Options) (rev string, err error) {
 	i, err := normalizeFromJSON(doc)
 	if err != nil {
 		return "", err
 	}
-	return db.driverDB.Put(ctx, docID, i)
+	opts, err := mergeOptions(options...)
+	if err != nil {
+		return "", err
+	}
+	return db.driverDB.Put(ctx, docID, i, opts)
 }
 
 // Delete marks the specified document as deleted.
-func (db *DB) Delete(ctx context.Context, docID, rev string) (newRev string, err error) {
-	return db.driverDB.Delete(ctx, docID, rev)
+func (db *DB) Delete(ctx context.Context, docID, rev string, options ...Options) (newRev string, err error) {
+	opts, err := mergeOptions(options...)
+	if err != nil {
+		return "", err
+	}
+	return db.driverDB.Delete(ctx, docID, rev, opts)
 }
 
 // Flush requests a flush of disk cache to disk or other permanent storage.
@@ -310,8 +322,12 @@ func (db *DB) Copy(ctx context.Context, targetID, sourceID string, options ...Op
 
 // PutAttachment uploads the supplied content as an attachment to the specified
 // document.
-func (db *DB) PutAttachment(ctx context.Context, docID, rev string, att *Attachment) (newRev string, err error) {
-	return db.driverDB.PutAttachment(ctx, docID, rev, att.Filename, att.ContentType, att)
+func (db *DB) PutAttachment(ctx context.Context, docID, rev string, att *Attachment, options ...Options) (newRev string, err error) {
+	opts, err := mergeOptions(options...)
+	if err != nil {
+		return "", err
+	}
+	return db.driverDB.PutAttachment(ctx, docID, rev, att.Filename, att.ContentType, att, opts)
 }
 
 // GetAttachment returns a file attachment associated with the document.
@@ -356,6 +372,10 @@ func (db *DB) GetAttachmentMeta(ctx context.Context, docID, rev, filename string
 
 // DeleteAttachment delets an attachment from a document, returning the
 // document's new revision.
-func (db *DB) DeleteAttachment(ctx context.Context, docID, rev, filename string) (newRev string, err error) {
-	return db.driverDB.DeleteAttachment(ctx, docID, rev, filename)
+func (db *DB) DeleteAttachment(ctx context.Context, docID, rev, filename string, options ...Options) (newRev string, err error) {
+	opts, err := mergeOptions(options...)
+	if err != nil {
+		return "", err
+	}
+	return db.driverDB.DeleteAttachment(ctx, docID, rev, filename, opts)
 }

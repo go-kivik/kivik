@@ -51,7 +51,7 @@ type putGrabber struct {
 	lastPut interface{}
 }
 
-func (db *putGrabber) Put(_ context.Context, _ string, i interface{}) (string, error) {
+func (db *putGrabber) Put(_ context.Context, _ string, i interface{}, _ map[string]interface{}) (string, error) {
 	db.lastPut = i
 	return "", nil
 }

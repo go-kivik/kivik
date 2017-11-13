@@ -25,26 +25,8 @@ case "$1" in
     "linter")
         diff -u <(echo -n) <(gofmt -e -d $(find . -type f -name '*.go' -not -path "./vendor/*"))
         go install # to make gotype (run by gometalinter) happy
-        gometalinter.v1 --deadline=30s --vendor --disable-all \
-            --enable=vet \
-            --enable=vetshadow \
-            --enable=gotype \
-            --enable=deadcode \
-            --enable=gocyclo \
-            --enable=golint \
-            --enable=varcheck \
-            --enable=structcheck \
-            --enable=aligncheck \
-            --enable=errcheck \
-            --enable=ineffassign \
-            --enable=unconvert \
-            --enable=goconst \
-            --enable=gosimple \
-            --enable=staticcheck \
-            --enable=gas \
-            --enable=misspell \
-            --enable=gofmt \
-            --exclude="Errors unhandled\..*\(gas\)"  # This is an annoying duplicate of errcheck
+        go test -i
+        gometalinter.v1 --config=.linter.json
     ;;
     "coverage")
         # Use only CouchDB 2.1 for the coverage tests, primarily because CouchDB

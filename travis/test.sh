@@ -4,6 +4,7 @@ set -euC
 if [ "${TRAVIS_OS_NAME:-}" == "osx" ]; then
     # We don't have docker in OSX, so skip these tests
     unset KIVIK_TEST_DSN_COUCH16
+    unset KIVIK_TEST_DSN_COUCH17
     unset KIVIK_TEST_DSN_COUCH20
     unset KIVIK_TEST_DSN_COUCH21
 fi

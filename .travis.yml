@@ -17,8 +17,6 @@ language: go
 
 os:
     - linux
-    - osx
-
 go:
     - 1.7.x
     - 1.8.x
@@ -38,6 +36,18 @@ matrix:
     allow_failures:
         - go: master
     include:
+        - os: osx
+          go: 1.7.x
+          env: MODE=standard
+        - os: osx
+          go: 1.8.x
+          env: MODE=standard
+        - os: osx
+          go: 1.9.x
+          env: MODE=standard
+        - os: osx
+          go: master
+          env: MODE=standard
         - go: 1.9.x
           env: MODE=gopherjs
         - go: 1.9.x

@@ -15,7 +15,10 @@ function join_list {
 
 case "$1" in
     "standard")
-        go test -race $(go list ./... | grep -v /vendor/ | grep -v /pouchdb)
+        go test -race $(go list ./... | grep -v /vendor/ | grep -v /pouchdb | grep -v /test/)
+    ;;
+    "docker")
+        go test -race ./test
     ;;
     "gopherjs")
         unset KIVIK_TEST_DSN_COUCH16

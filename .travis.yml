@@ -24,12 +24,13 @@ go:
     - master
 env:
     global:
-        - KIVIK_TEST_DSN_COUCH16="http://admin:abc123@localhost:6000/"
-        - KIVIK_TEST_DSN_COUCH20="http://admin:abc123@localhost:6001/"
-        - KIVIK_TEST_DSN_COUCH21="http://admin:abc123@localhost:6002/"
+        - KIVIK_TEST_DSN="http://admin:abc123@localhost:6000/"
         - HOMEBREW_NO_AUTO_UPDATE=1
     matrix:
         - MODE=standard
+        - MODE=docker DOCKER_IMAGE=couchdb:1.6.1
+        - MODE=docker DOCKER_IMAGE=klaemo/couchdb:2.0.0
+        - MODE=docker DOCKER_IMAGE=apache/couchdb:2.1.0
 
 matrix:
     fast_finish: true
@@ -49,7 +50,7 @@ matrix:
           go: master
           env: MODE=standard
         - go: 1.9.x
-          env: MODE=gopherjs
+          env: MODE=gopherjs DOCKER_IMAGE=apache/couchdb:2.1.0
         - go: 1.9.x
           env: MODE=linter
         - go: 1.9.x

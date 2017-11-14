@@ -25,46 +25,35 @@ function wait_for_server {
     printf "ready!\n"
 }
 
-function setup_couch16 {
-    if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-        return
-    fi
-    docker pull couchdb:1.6.1
-    docker run -d -p 6000:5984 -e COUCHDB_USER=admin -e COUCHDB_PASSWORD=abc123 --name couchdb16 couchdb:1.6.1
+function setup_docker {
+    docker pull ${DOCKER_IMAGE}
+    docker run -d -p 6000:5984 -e COUCHDB_USER=admin -e COUCHDB_PASSWORD=abc123 --name couchdb ${DOCKER_IMAGE}
     wait_for_server http://localhost:6000/
-    curl --silent --fail -o /dev/null -X PUT http://admin:abc123@localhost:6000/_config/replicator/connection_timeout -d '"5000"'
-}
-
-function setup_couch20 {
-    if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-        return
-    fi
-    docker pull klaemo/couchdb:2.0.0
-    docker run -d -p 6001:5984 -e COUCHDB_USER=admin -e COUCHDB_PASSWORD=abc123 --name couchdb20 klaemo/couchdb:2.0.0
-    wait_for_server http://localhost:6001/
-    curl --silent --fail -o /dev/null -X PUT http://admin:abc123@localhost:6001/_users
-    curl --silent --fail -o /dev/null -X PUT http://admin:abc123@localhost:6001/_replicator
-    curl --silent --fail -o /dev/null -X PUT http://admin:abc123@localhost:6001/_global_changes
-}
-
-function setup_couch21 {
-    if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-        return
-    fi
-    docker pull apache/couchdb:2.1.0
-    docker run -d -p 6002:5984 -e COUCHDB_USER=admin -e COUCHDB_PASSWORD=abc123 --name couchdb21 apache/couchdb:2.1.0
-    wait_for_server http://localhost:6002/
-    curl --silent --fail -o /dev/null -X PUT http://admin:abc123@localhost:6002/_users
-    curl --silent --fail -o /dev/null -X PUT http://admin:abc123@localhost:6002/_replicator
-    curl --silent --fail -o /dev/null -X PUT http://admin:abc123@localhost:6002/_global_changes
-    curl --silent --fail -o /dev/null -X PUT http://admin:abc123@localhost:6002/_node/nonode@nohost/_config/replicator/update_docs -H 'Content-Type: application/json' -d '"true"' # FIXME: https://github.com/flimzy/kivik/issues/215
+    url=http://admin:abc123@localhost:6000
+    case "${DOCKER_IMAGE}" in
+        *:1.6.1)
+        curl --silent --fail -o /dev/null -X PUT ${url}/_config/replicator/connection_timeout -d '"5000"'
+        ;;
+        *:2.0.0)
+        curl --silent --fail -o /dev/null -X PUT ${url}/_users
+        curl --silent --fail -o /dev/null -X PUT ${url}/_replicator
+        curl --silent --fail -o /dev/null -X PUT ${url}/_global_changes
+        ;;
+        *:2.1.0)
+        curl --silent --fail -o /dev/null -X PUT ${url}/_users
+        curl --silent --fail -o /dev/null -X PUT ${url}/_replicator
+        curl --silent --fail -o /dev/null -X PUT ${url}/_global_changes
+        curl --silent --fail -o /dev/null -X PUT ${url}/_node/nonode@nohost/_config/replicator/update_docs -H 'Content-Type: application/json' -d '"true"' # FIXME: https://github.com/flimzy/kivik/issues/215
+        ;;
+    esac
 }
 
 case "$1" in
     "standard")
-        setup_couch16
-        setup_couch20
-        setup_couch21
+        generate
+    ;;
+    "docker")
+        setup_docker
         generate
     ;;
     "gopherjs")
@@ -94,7 +83,7 @@ case "$1" in
         )
 
         go get -u -d -tags=js github.com/gopherjs/jsbuiltin
-        setup_couch21
+        setup_docker
         generate
     ;;
     "linter")
@@ -102,9 +91,6 @@ case "$1" in
         gometalinter.v1 --install
     ;;
     "coverage")
-        setup_couch16
-        setup_couch20
-        setup_couch21
         generate
     ;;
 esac

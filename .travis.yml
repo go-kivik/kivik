@@ -34,6 +34,7 @@ env:
         - MODE=standard
 
 matrix:
+    fast_finish: true
     allow_failures:
         - go: master
     include:

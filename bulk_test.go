@@ -10,7 +10,65 @@ import (
 
 	"github.com/flimzy/diff"
 	"github.com/flimzy/kivik/driver"
+	"github.com/flimzy/testy"
 )
+
+func TestBulkNext(t *testing.T) {
+	tests := []struct {
+		name     string
+		r        *BulkResults
+		expected bool
+	}{
+		{
+			name: "true",
+			r: &BulkResults{
+				iter: &iter{
+					feed:   &TestFeed{max: 1},
+					curVal: new(int64),
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "false",
+			r: &BulkResults{
+				iter: &iter{
+					feed:   &TestFeed{max: 0},
+					curVal: new(int64),
+				},
+			},
+			expected: false,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := test.r.Next()
+			if result != test.expected {
+				t.Errorf("Unexpected result: %v", result)
+			}
+		})
+	}
+}
+
+func TestBulkErr(t *testing.T) {
+	expected := "bulk error"
+	r := &BulkResults{
+		iter: &iter{lasterr: errors.New(expected)},
+	}
+	err := r.Err()
+	testy.Error(t, expected, err)
+}
+
+func TestBulkClose(t *testing.T) {
+	expected := "close error"
+	r := &BulkResults{
+		iter: &iter{
+			feed: &TestFeed{closeErr: errors.New(expected)},
+		},
+	}
+	err := r.Close()
+	testy.Error(t, expected, err)
+}
 
 func TestDocsInterfaceSlice(t *testing.T) {
 	type diTest struct {

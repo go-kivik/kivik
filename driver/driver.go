@@ -126,11 +126,11 @@ type DB interface {
 	// into doc.
 	Get(ctx context.Context, docID string, options map[string]interface{}) (json.RawMessage, error)
 	// CreateDoc creates a new doc, with a server-generated ID.
-	CreateDoc(ctx context.Context, doc interface{}, options map[string]interface{}) (docID, rev string, err error)
+	CreateDoc(ctx context.Context, doc interface{}) (docID, rev string, err error)
 	// Put writes the document in the database.
-	Put(ctx context.Context, docID string, doc interface{}, options map[string]interface{}) (rev string, err error)
+	Put(ctx context.Context, docID string, doc interface{}) (rev string, err error)
 	// Delete marks the specified document as deleted.
-	Delete(ctx context.Context, docID, rev string, options map[string]interface{}) (newRev string, err error)
+	Delete(ctx context.Context, docID, rev string) (newRev string, err error)
 	// Stats returns database statistics.
 	Stats(ctx context.Context) (*DBStats, error)
 	// Compact initiates compaction of the database.
@@ -148,17 +148,39 @@ type DB interface {
 	Changes(ctx context.Context, options map[string]interface{}) (Changes, error)
 	// PutAttachment uploads an attachment to the specified document, returning
 	// the new revision.
-	PutAttachment(ctx context.Context, docID, rev, filename, contentType string, body io.Reader, options map[string]interface{}) (newRev string, err error)
+	PutAttachment(ctx context.Context, docID, rev, filename, contentType string, body io.Reader) (newRev string, err error)
 	// GetAttachment fetches an attachment for the associated document ID. rev
 	// may be an empty string to fetch the most recent document version.
 	GetAttachment(ctx context.Context, docID, rev, filename string) (contentType string, md5sum MD5sum, body io.ReadCloser, err error)
 	// DeleteAttachment deletes an attachment from a document, returning the
 	// document's new revision.
-	DeleteAttachment(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (newRev string, err error)
+	DeleteAttachment(ctx context.Context, docID, rev, filename string) (newRev string, err error)
 	// Query performs a query against a view, subject to the options provided.
 	// ddoc will be the design doc name without the '_design/' previx.
 	// view will be the view name without the '_view/' prefix.
 	Query(ctx context.Context, ddoc, view string, options map[string]interface{}) (Rows, error)
+}
+
+// DBOpts will be merged with DB in Kivik 2.0. It wraps functions that take
+// additional options arguments.
+type DBOpts interface {
+	CreateDocOpts(ctx context.Context, doc interface{}, options map[string]interface{}) (docID, rev string, err error)
+	// Put writes the document in the database.
+	PutOpts(ctx context.Context, docID string, doc interface{}, options map[string]interface{}) (rev string, err error)
+	// Delete marks the specified document as deleted.
+	DeleteOpts(ctx context.Context, docID, rev string, options map[string]interface{}) (newRev string, err error)
+	// Stats returns database statistics.
+	PutAttachmentOpts(ctx context.Context, docID, rev, filename, contentType string, body io.Reader, options map[string]interface{}) (newRev string, err error)
+	// DeleteAttachment deletes an attachment from a document, returning the
+	// document's new revision.
+	DeleteAttachmentOpts(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (newRev string, err error)
+}
+
+// OldBulkDocer is deprecated and will be removed in Kivik 2.0. Use BulkDocer instead.
+type OldBulkDocer interface {
+	// BulkDocs alls bulk create, update and/or delete operations. It returns an
+	// iterator over the results.
+	BulkDocs(ctx context.Context, docs []interface{}) (BulkResults, error)
 }
 
 // BulkDocer is an optional interface which may be implemented by a driver to

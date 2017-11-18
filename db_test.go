@@ -125,14 +125,23 @@ func TestNormalizeFromJSON(t *testing.T) {
 
 type putGrabber struct {
 	*dummyDB
-	doc  interface{}
-	opts map[string]interface{}
+	driver.DBOpts
+	docID string
+	doc   interface{}
+	opts  map[string]interface{}
 
 	newRev string
 	err    error
 }
 
-func (db *putGrabber) Put(_ context.Context, _ string, i interface{}, opts map[string]interface{}) (string, error) {
+func (db *putGrabber) Put(ctx context.Context, docID string, i interface{}) (string, error) {
+	return db.PutOpts(ctx, docID, i, nil)
+}
+
+func (db *putGrabber) PutOpts(_ context.Context, docID string, i interface{}, opts map[string]interface{}) (string, error) {
+	if db.docID != docID {
+		return "", errors.Errorf("Unexpected docID: %s", docID)
+	}
 	if d := diff.Interface(db.doc, i); d != nil {
 		return "", errors.Errorf("Unexpected doc: %s", d)
 	}
@@ -160,8 +169,11 @@ func TestPut(t *testing.T) {
 			err:    "kivik: docID required",
 		},
 		{
-			name:   "db error",
-			db:     &DB{driverDB: &putGrabber{err: errors.Status(StatusBadRequest, "db error")}},
+			name: "db error",
+			db: &DB{driverDB: &putGrabber{
+				docID: "foo",
+				err:   errors.Status(StatusBadRequest, "db error"),
+			}},
 			docID:  "foo",
 			status: StatusBadRequest,
 			err:    "db error",
@@ -169,6 +181,7 @@ func TestPut(t *testing.T) {
 		{
 			name: "Interface",
 			db: &DB{driverDB: &putGrabber{
+				docID:  "foo",
 				newRev: "1-xxx",
 				doc:    map[string]string{"foo": "bar"},
 			}},
@@ -186,6 +199,7 @@ func TestPut(t *testing.T) {
 		{
 			name: "Bytes",
 			db: &DB{driverDB: &putGrabber{
+				docID:  "foo",
 				newRev: "1-xxx",
 				doc:    map[string]interface{}{"foo": "bar"},
 			}},
@@ -196,6 +210,7 @@ func TestPut(t *testing.T) {
 		{
 			name: "RawMessage",
 			db: &DB{driverDB: &putGrabber{
+				docID:  "foo",
 				newRev: "1-xxx",
 				doc:    map[string]interface{}{"foo": "bar"},
 			}},
@@ -206,6 +221,7 @@ func TestPut(t *testing.T) {
 		{
 			name: "Reader",
 			db: &DB{driverDB: &putGrabber{
+				docID:  "foo",
 				newRev: "1-xxx",
 				doc:    map[string]interface{}{"foo": "bar"},
 			}},
@@ -223,6 +239,7 @@ func TestPut(t *testing.T) {
 		{
 			name: "valid",
 			db: &DB{driverDB: &putGrabber{
+				docID:  "foo",
 				newRev: "1-xxx",
 				doc:    map[string]string{"foo": "bar"},
 				opts:   map[string]interface{}{"opt": "opt"},
@@ -304,6 +321,7 @@ func TestExtractDocID(t *testing.T) {
 
 type createDocGrabber struct {
 	*dummyDB
+	driver.DBOpts
 	doc  interface{}
 	opts map[string]interface{}
 
@@ -311,7 +329,11 @@ type createDocGrabber struct {
 	err     error
 }
 
-func (db *createDocGrabber) CreateDoc(_ context.Context, doc interface{}, opts map[string]interface{}) (string, string, error) {
+func (db *createDocGrabber) CreateDoc(ctx context.Context, doc interface{}) (string, string, error) {
+	return db.CreateDocOpts(ctx, doc, nil)
+}
+
+func (db *createDocGrabber) CreateDocOpts(_ context.Context, doc interface{}, opts map[string]interface{}) (string, string, error) {
 	if d := diff.Interface(db.doc, doc); d != nil {
 		return "", "", errors.Errorf("Unexpected doc: %s", d)
 	}
@@ -364,6 +386,7 @@ func TestCreateDoc(t *testing.T) {
 
 type deleteRecorder struct {
 	*dummyDB
+	driver.DBOpts
 	docID, rev string
 	opts       map[string]interface{}
 
@@ -371,7 +394,11 @@ type deleteRecorder struct {
 	err    error
 }
 
-func (db *deleteRecorder) Delete(_ context.Context, docID, rev string, opts map[string]interface{}) (string, error) {
+func (db *deleteRecorder) Delete(ctx context.Context, docID, rev string) (string, error) {
+	return db.DeleteOpts(ctx, docID, rev, nil)
+}
+
+func (db *deleteRecorder) DeleteOpts(_ context.Context, docID, rev string, opts map[string]interface{}) (string, error) {
 	if db.docID != docID || db.rev != rev {
 		return "", errors.Errorf("Unexpected docID/rev: %s/%s", docID, rev)
 	}
@@ -433,6 +460,7 @@ func TestDelete(t *testing.T) {
 
 type putAttRecorder struct {
 	*dummyDB
+	driver.DBOpts
 	docID, rev, filename, cType string
 	body                        string
 	opts                        map[string]interface{}
@@ -443,7 +471,11 @@ type putAttRecorder struct {
 
 var _ driver.DB = &putAttRecorder{}
 
-func (db *putAttRecorder) PutAttachment(_ context.Context, docID, rev, filename, contentType string, body io.Reader, opts map[string]interface{}) (string, error) {
+func (db *putAttRecorder) PutAttachment(ctx context.Context, docID, rev, filename, contentType string, body io.Reader) (string, error) {
+	return db.PutAttachmentOpts(ctx, docID, rev, filename, contentType, body, nil)
+}
+
+func (db *putAttRecorder) PutAttachmentOpts(_ context.Context, docID, rev, filename, contentType string, body io.Reader, opts map[string]interface{}) (string, error) {
 	if db.docID != docID || db.rev != rev {
 		return "", errors.Errorf("Unexpected id/rev: %s/%s", docID, rev)
 	}
@@ -540,6 +572,7 @@ func TestPutAttachment(t *testing.T) {
 
 type mockDelAtt struct {
 	*dummyDB
+	driver.DBOpts
 	docID, rev, filename string
 	opts                 map[string]interface{}
 
@@ -547,7 +580,11 @@ type mockDelAtt struct {
 	err    error
 }
 
-func (db *mockDelAtt) DeleteAttachment(_ context.Context, docID, rev, filename string, opts map[string]interface{}) (string, error) {
+func (db *mockDelAtt) DeleteAttachment(ctx context.Context, docID, rev, filename string) (string, error) {
+	return db.DeleteAttachmentOpts(ctx, docID, rev, filename, nil)
+}
+
+func (db *mockDelAtt) DeleteAttachmentOpts(_ context.Context, docID, rev, filename string, opts map[string]interface{}) (string, error) {
 	if db.docID != docID || db.rev != rev {
 		return "", errors.Errorf("Unexpected id/rev: %s/%s", docID, rev)
 	}

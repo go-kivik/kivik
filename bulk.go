@@ -39,7 +39,9 @@ type bulkIterator struct{ driver.BulkResults }
 
 var _ iterator = &bulkIterator{}
 
-func (r *bulkIterator) Next(i interface{}) error { return r.BulkResults.Next(i.(*driver.BulkResult)) }
+func (r *bulkIterator) Next(i interface{}) error {
+	return r.BulkResults.Next(i.(*driver.BulkResult))
+}
 
 func newBulkResults(ctx context.Context, bulki driver.BulkResults) *BulkResults {
 	return &BulkResults{

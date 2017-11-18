@@ -10,7 +10,130 @@ import (
 
 	"github.com/flimzy/diff"
 	"github.com/flimzy/kivik/driver"
+	"github.com/flimzy/testy"
 )
+
+func TestBulkNext(t *testing.T) {
+	tests := []struct {
+		name     string
+		r        *BulkResults
+		expected bool
+	}{
+		{
+			name: "true",
+			r: &BulkResults{
+				iter: &iter{
+					feed:   &TestFeed{max: 1},
+					curVal: new(int64),
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "false",
+			r: &BulkResults{
+				iter: &iter{
+					feed:   &TestFeed{max: 0},
+					curVal: new(int64),
+				},
+			},
+			expected: false,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := test.r.Next()
+			if result != test.expected {
+				t.Errorf("Unexpected result: %v", result)
+			}
+		})
+	}
+}
+
+func TestBulkErr(t *testing.T) {
+	expected := "bulk error"
+	r := &BulkResults{
+		iter: &iter{lasterr: errors.New(expected)},
+	}
+	err := r.Err()
+	testy.Error(t, expected, err)
+}
+
+func TestBulkClose(t *testing.T) {
+	expected := "close error"
+	r := &BulkResults{
+		iter: &iter{
+			feed: &TestFeed{closeErr: errors.New(expected)},
+		},
+	}
+	err := r.Close()
+	testy.Error(t, expected, err)
+}
+
+func TestBulkIteratorNext(t *testing.T) {
+	tests := []struct {
+		name     string
+		r        *bulkIterator
+		err      string
+		expected *driver.BulkResult
+	}{
+		{
+			name: "error",
+			r:    &bulkIterator{&mockBulkResults{err: errors.New("iter error")}},
+			err:  "iter error",
+		},
+		{
+			name: "success",
+			r: &bulkIterator{&mockBulkResults{
+				result: &driver.BulkResult{ID: "foo"},
+			}},
+			expected: &driver.BulkResult{ID: "foo"},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := new(driver.BulkResult)
+			err := test.r.Next(result)
+			testy.Error(t, test.err, err)
+			if d := diff.Interface(test.expected, result); d != nil {
+				t.Error(d)
+			}
+		})
+	}
+}
+
+func TestRLOCK(t *testing.T) {
+	tests := []struct {
+		name string
+		iter *iter
+		err  string
+	}{
+		{
+			name: "not ready",
+			iter: &iter{},
+			err:  "kivik: Iterator access before calling Next",
+		},
+		{
+			name: "closed",
+			iter: &iter{closed: true},
+			err:  "kivik: Iterator is closed",
+		},
+		{
+			name: "success",
+			iter: &iter{ready: true},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			close, err := test.iter.rlock()
+			testy.Error(t, test.err, err)
+			if close == nil {
+				t.Fatal("close is nil")
+			}
+			close()
+		})
+	}
+}
 
 func TestDocsInterfaceSlice(t *testing.T) {
 	type diTest struct {

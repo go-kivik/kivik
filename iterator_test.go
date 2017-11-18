@@ -2,6 +2,7 @@ package kivik
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"testing"
 	"time"
@@ -10,13 +11,14 @@ import (
 )
 
 type TestFeed struct {
-	max int64
-	i   int64
+	max      int64
+	i        int64
+	closeErr error
 }
 
 var _ iterator = &TestFeed{}
 
-func (f *TestFeed) Close() error { return nil }
+func (f *TestFeed) Close() error { return f.closeErr }
 func (f *TestFeed) Next(ifce interface{}) error {
 	i, ok := ifce.(*int64)
 	if ok {
@@ -28,7 +30,7 @@ func (f *TestFeed) Next(ifce interface{}) error {
 		time.Sleep(5 * time.Millisecond)
 		return nil
 	}
-	panic("unknown type")
+	panic(fmt.Sprintf("unknown type: %T", ifce))
 }
 
 func TestIterator(t *testing.T) {

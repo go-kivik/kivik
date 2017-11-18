@@ -70,6 +70,38 @@ func TestBulkClose(t *testing.T) {
 	testy.Error(t, expected, err)
 }
 
+func TestBulkIteratorNext(t *testing.T) {
+	tests := []struct {
+		name     string
+		r        *bulkIterator
+		err      string
+		expected *driver.BulkResult
+	}{
+		{
+			name: "error",
+			r:    &bulkIterator{&mockBulkResults{err: errors.New("iter error")}},
+			err:  "iter error",
+		},
+		{
+			name: "success",
+			r: &bulkIterator{&mockBulkResults{
+				result: &driver.BulkResult{ID: "foo"},
+			}},
+			expected: &driver.BulkResult{ID: "foo"},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := new(driver.BulkResult)
+			err := test.r.Next(result)
+			testy.Error(t, test.err, err)
+			if d := diff.Interface(test.expected, result); d != nil {
+				t.Error(d)
+			}
+		})
+	}
+}
+
 func TestDocsInterfaceSlice(t *testing.T) {
 	type diTest struct {
 		name     string

@@ -37,3 +37,19 @@ func (r errReader) Close() error {
 func (r errReader) Read(_ []byte) (int, error) {
 	return 0, errors.New(string(r))
 }
+
+type mockBulkResults struct {
+	result *driver.BulkResult
+	err    error
+}
+
+var _ driver.BulkResults = &mockBulkResults{}
+
+func (r *mockBulkResults) Next(i *driver.BulkResult) error {
+	if r.result != nil {
+		*i = *r.result
+	}
+	return r.err
+}
+
+func (r *mockBulkResults) Close() error { return nil }

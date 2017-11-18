@@ -151,3 +151,14 @@ func (r *Rows) Warning() string {
 	}
 	return ""
 }
+
+// Bookmark returns the paging bookmark, if one was provided with the result
+// set. This is intended for use with the Mango /_find interface, with CouchDB
+// 2.1.1 and later. Consult the official CouchDB documentation for detailed
+// usage instructions. http://docs.couchdb.org/en/2.1.1/api/database/find.html#pagination
+func (r *Rows) Bookmark() string {
+	if b, ok := r.rowsi.(driver.Bookmarker); ok {
+		return b.Bookmark()
+	}
+	return ""
+}

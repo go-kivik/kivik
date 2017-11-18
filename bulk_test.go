@@ -102,6 +102,39 @@ func TestBulkIteratorNext(t *testing.T) {
 	}
 }
 
+func TestRLOCK(t *testing.T) {
+	tests := []struct {
+		name string
+		iter *iter
+		err  string
+	}{
+		{
+			name: "not ready",
+			iter: &iter{},
+			err:  "kivik: Iterator access before calling Next",
+		},
+		{
+			name: "closed",
+			iter: &iter{closed: true},
+			err:  "kivik: Iterator is closed",
+		},
+		{
+			name: "success",
+			iter: &iter{ready: true},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			close, err := test.iter.rlock()
+			testy.Error(t, test.err, err)
+			if close == nil {
+				t.Fatal("close is nil")
+			}
+			close()
+		})
+	}
+}
+
 func TestDocsInterfaceSlice(t *testing.T) {
 	type diTest struct {
 		name     string

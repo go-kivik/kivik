@@ -41,3 +41,28 @@ func TestWarning(t *testing.T) {
 		}
 	})
 }
+
+type brows struct {
+	*rows
+}
+
+var _ driver.Bookmarker = &brows{}
+
+func (r *brows) Bookmark() string { return "test bookmark" }
+
+func TestBookmark(t *testing.T) {
+	t.Run("Bookmarker", func(t *testing.T) {
+		r := newRows(context.Background(), &brows{})
+		expected := "test bookmark"
+		if w := r.Bookmark(); w != expected {
+			t.Errorf("Warning\nExpected: %s\n  Actual: %s", expected, w)
+		}
+	})
+	t.Run("Non Bookmarker", func(t *testing.T) {
+		r := newRows(context.Background(), &rows{})
+		expected := ""
+		if w := r.Bookmark(); w != expected {
+			t.Errorf("Warning\nExpected: %s\n  Actual: %s", expected, w)
+		}
+	})
+}

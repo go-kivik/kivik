@@ -4,6 +4,9 @@ import (
 	"io/ioutil"
 	"strings"
 	"testing"
+
+	"github.com/flimzy/diff"
+	"github.com/flimzy/testy"
 )
 
 func TestAttachmentBytes(t *testing.T) {

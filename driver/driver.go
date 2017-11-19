@@ -161,6 +161,21 @@ type DB interface {
 	Query(ctx context.Context, ddoc, view string, options map[string]interface{}) (Rows, error)
 }
 
+// DBOpts will be merged with DB in Kivik 2.0. It wraps functions that take
+// additional options arguments.
+type DBOpts interface {
+	CreateDocOpts(ctx context.Context, doc interface{}, options map[string]interface{}) (docID, rev string, err error)
+	// Put writes the document in the database.
+	PutOpts(ctx context.Context, docID string, doc interface{}, options map[string]interface{}) (rev string, err error)
+	// Delete marks the specified document as deleted.
+	DeleteOpts(ctx context.Context, docID, rev string, options map[string]interface{}) (newRev string, err error)
+	// Stats returns database statistics.
+	PutAttachmentOpts(ctx context.Context, docID, rev, filename, contentType string, body io.Reader, options map[string]interface{}) (newRev string, err error)
+	// DeleteAttachment deletes an attachment from a document, returning the
+	// document's new revision.
+	DeleteAttachmentOpts(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (newRev string, err error)
+}
+
 // OldBulkDocer is deprecated and will be removed in Kivik 2.0. Use BulkDocer instead.
 type OldBulkDocer interface {
 	// BulkDocs alls bulk create, update and/or delete operations. It returns an

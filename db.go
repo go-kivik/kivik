@@ -84,7 +84,14 @@ func (db *DB) Get(ctx context.Context, docID string, options ...Options) (*Row, 
 
 // CreateDoc creates a new doc with an auto-generated unique ID. The generated
 // docID and new rev are returned.
-func (db *DB) CreateDoc(ctx context.Context, doc interface{}) (docID, rev string, err error) {
+func (db *DB) CreateDoc(ctx context.Context, doc interface{}, options ...Options) (docID, rev string, err error) {
+	if dbopt, ok := db.driverDB.(driver.DBOpts); ok {
+		opts, err := mergeOptions(options...)
+		if err != nil {
+			return "", "", err
+		}
+		return dbopt.CreateDocOpts(ctx, doc, opts)
+	}
 	return db.driverDB.CreateDoc(ctx, doc)
 }
 
@@ -105,7 +112,7 @@ func normalizeFromJSON(i interface{}) (interface{}, error) {
 		var err error
 		body, err = ioutil.ReadAll(r)
 		if err != nil {
-			return nil, err
+			return nil, errors.WrapStatus(StatusUnknownError, err)
 		}
 	}
 	var x map[string]interface{}
@@ -158,16 +165,36 @@ func extractDocID(i interface{}) (string, bool) {
 //  - A []byte value, containing a valid JSON document
 //  - A json.RawMessage value containing a valid JSON document
 //  - An io.Reader, from which a valid JSON document may be read.
-func (db *DB) Put(ctx context.Context, docID string, doc interface{}) (rev string, err error) {
+func (db *DB) Put(ctx context.Context, docID string, doc interface{}, options ...Options) (rev string, err error) {
+	if docID == "" {
+		return "", missingArg("docID")
+	}
 	i, err := normalizeFromJSON(doc)
 	if err != nil {
 		return "", err
+	}
+	if dbopt, ok := db.driverDB.(driver.DBOpts); ok {
+		opts, err := mergeOptions(options...)
+		if err != nil {
+			return "", err
+		}
+		return dbopt.PutOpts(ctx, docID, i, opts)
 	}
 	return db.driverDB.Put(ctx, docID, i)
 }
 
 // Delete marks the specified document as deleted.
-func (db *DB) Delete(ctx context.Context, docID, rev string) (newRev string, err error) {
+func (db *DB) Delete(ctx context.Context, docID, rev string, options ...Options) (newRev string, err error) {
+	if docID == "" {
+		return "", missingArg("docID")
+	}
+	if dbopt, ok := db.driverDB.(driver.DBOpts); ok {
+		opts, err := mergeOptions(options...)
+		if err != nil {
+			return "", err
+		}
+		return dbopt.DeleteOpts(ctx, docID, rev, opts)
+	}
 	return db.driverDB.Delete(ctx, docID, rev)
 }
 
@@ -310,7 +337,20 @@ func (db *DB) Copy(ctx context.Context, targetID, sourceID string, options ...Op
 
 // PutAttachment uploads the supplied content as an attachment to the specified
 // document.
-func (db *DB) PutAttachment(ctx context.Context, docID, rev string, att *Attachment) (newRev string, err error) {
+func (db *DB) PutAttachment(ctx context.Context, docID, rev string, att *Attachment, options ...Options) (newRev string, err error) {
+	if docID == "" {
+		return "", missingArg("docID")
+	}
+	if e := att.validate(); e != nil {
+		return "", e
+	}
+	if dbopt, ok := db.driverDB.(driver.DBOpts); ok {
+		opts, err := mergeOptions(options...)
+		if err != nil {
+			return "", err
+		}
+		return dbopt.PutAttachmentOpts(ctx, docID, rev, att.Filename, att.ContentType, att, opts)
+	}
 	return db.driverDB.PutAttachment(ctx, docID, rev, att.Filename, att.ContentType, att)
 }
 
@@ -356,6 +396,19 @@ func (db *DB) GetAttachmentMeta(ctx context.Context, docID, rev, filename string
 
 // DeleteAttachment delets an attachment from a document, returning the
 // document's new revision.
-func (db *DB) DeleteAttachment(ctx context.Context, docID, rev, filename string) (newRev string, err error) {
+func (db *DB) DeleteAttachment(ctx context.Context, docID, rev, filename string, options ...Options) (newRev string, err error) {
+	if docID == "" {
+		return "", missingArg("docID")
+	}
+	if filename == "" {
+		return "", missingArg("filename")
+	}
+	if dbopt, ok := db.driverDB.(driver.DBOpts); ok {
+		opts, err := mergeOptions(options...)
+		if err != nil {
+			return "", err
+		}
+		return dbopt.DeleteAttachmentOpts(ctx, docID, rev, filename, opts)
+	}
 	return db.driverDB.DeleteAttachment(ctx, docID, rev, filename)
 }

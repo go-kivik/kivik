@@ -47,3 +47,11 @@ func NewAttachment(filename, contentType string, body io.ReadCloser) *Attachment
 		ContentType: contentType,
 	}
 }
+
+// validate returns an error if the attachment is invalid.
+func (a *Attachment) validate() error {
+	if a.Filename == "" {
+		return missingArg("filename")
+	}
+	return nil
+}

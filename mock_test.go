@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"io"
+	"io/ioutil"
+	"strings"
 
 	"github.com/flimzy/kivik/driver"
 )
@@ -53,3 +55,7 @@ func (r *mockBulkResults) Next(i *driver.BulkResult) error {
 }
 
 func (r *mockBulkResults) Close() error { return nil }
+
+func body(s string) io.ReadCloser {
+	return ioutil.NopCloser(strings.NewReader(s))
+}

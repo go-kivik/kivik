@@ -842,6 +842,66 @@ func (db *mockAttGetter) GetAttachment(_ context.Context, docID, rev, filename s
 	return db.cType, db.md5, db.content, db.err
 }
 
+func TestGetAttachment(t *testing.T) {
+	tests := []struct {
+		name                 string
+		db                   *DB
+		docID, rev, filename string
+		options              Options
+
+		content  string
+		expected *Attachment
+		status   int
+		err      string
+	}{
+		{
+			name: "legacy, error",
+			db: &DB{driverDB: &mockAttGetter{
+				err: errors.New("fail"),
+			}},
+			status: 500,
+			err:    "fail",
+		},
+		{
+			name: "legacy, success",
+			db: &DB{driverDB: &mockAttGetter{
+				docID:    "foo",
+				rev:      "1-xxx",
+				filename: "foo.txt",
+				cType:    "text/plain",
+				md5:      driver.MD5sum{0x01},
+				content:  body("Test"),
+			}},
+			docID:    "foo",
+			rev:      "1-xxx",
+			filename: "foo.txt",
+			content:  "Test",
+			expected: &Attachment{
+				Filename:    "foo.txt",
+				ContentType: "text/plain",
+				MD5:         driver.MD5sum{0x01},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result, err := test.db.GetAttachment(context.Background(), test.docID, test.rev, test.filename, test.options)
+			testy.StatusError(t, test.err, test.status, err)
+			content, err := ioutil.ReadAll(result)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if d := diff.Text(test.content, string(content)); d != nil {
+				t.Errorf("Unexpected content:\n%s", d)
+			}
+			result.ReadCloser = nil
+			if d := diff.Interface(test.expected, result); d != nil {
+				t.Error(d)
+			}
+		})
+	}
+}
+
 type mockOldAttMetaer struct {
 	driver.DB
 	docID, rev, filename string
@@ -894,6 +954,7 @@ func (db *mockAttMetaer) GetAttachmentMeta(_ context.Context, docID, rev, filena
 	return db.cType, db.md5, db.err
 }
 
+/*
 func TestGetAttachmentMeta(t *testing.T) {
 	tests := []struct {
 		name                 string
@@ -1020,3 +1081,4 @@ func TestGetAttachmentMeta(t *testing.T) {
 		})
 	}
 }
+*/

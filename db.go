@@ -355,7 +355,7 @@ func (db *DB) PutAttachment(ctx context.Context, docID, rev string, att *Attachm
 }
 
 // GetAttachment returns a file attachment associated with the document.
-func (db *DB) GetAttachment(ctx context.Context, docID, rev, filename string) (*Attachment, error) {
+func (db *DB) GetAttachment(ctx context.Context, docID, rev, filename string, options ...Options) (*Attachment, error) {
 	cType, md5sum, body, err := db.driverDB.GetAttachment(ctx, docID, rev, filename)
 	if err != nil {
 		return nil, err
@@ -403,7 +403,7 @@ func (db *DB) GetAttachmentMeta(ctx context.Context, docID, rev, filename string
 			MD5:         MD5sum(md5sum),
 		}, nil
 	}
-	att, err := db.GetAttachment(ctx, docID, rev, filename)
+	att, err := db.GetAttachment(ctx, docID, rev, filename, options...)
 	if err != nil {
 		return nil, err
 	}

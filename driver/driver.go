@@ -165,13 +165,16 @@ type DB interface {
 // additional options arguments.
 type DBOpts interface {
 	CreateDocOpts(ctx context.Context, doc interface{}, options map[string]interface{}) (docID, rev string, err error)
-	// Put writes the document in the database.
+	// PutOpts writes the document in the database.
 	PutOpts(ctx context.Context, docID string, doc interface{}, options map[string]interface{}) (rev string, err error)
-	// Delete marks the specified document as deleted.
+	// DeleteOpts marks the specified document as deleted.
 	DeleteOpts(ctx context.Context, docID, rev string, options map[string]interface{}) (newRev string, err error)
-	// Stats returns database statistics.
+	// StatsOpts returns database statistics.
 	PutAttachmentOpts(ctx context.Context, docID, rev, filename, contentType string, body io.Reader, options map[string]interface{}) (newRev string, err error)
-	// DeleteAttachment deletes an attachment from a document, returning the
+	// GetAttachmentOpts fetches an attachment for the associated document ID. rev
+	// may be an empty string to fetch the most recent document version.
+	GetAttachmentOpts(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (contentType string, md5sum MD5sum, body io.ReadCloser, err error)
+	// DeleteAttachmentOpts deletes an attachment from a document, returning the
 	// document's new revision.
 	DeleteAttachmentOpts(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (newRev string, err error)
 }
@@ -246,12 +249,18 @@ type Index struct {
 // MD5sum is a 128-bit MD5 checksum.
 type MD5sum [16]byte
 
+// OldAttachmentMetaer is deprected. Use AttachmentMetaer instead.
+type OldAttachmentMetaer interface {
+	// GetAttachmentMeta returns meta information about an attachment.
+	GetAttachmentMeta(ctx context.Context, docID, rev, filename string) (contentType string, md5sum MD5sum, err error)
+}
+
 // AttachmentMetaer is an optional interface which may be satisfied by a
 // DB. If satisfied, it may be used to fetch meta data about an attachment. If
 // not satisfied, GetAttachment will be used instead.
 type AttachmentMetaer interface {
-	// GetAttachmentMeta returns meta information about an attachment.
-	GetAttachmentMeta(ctx context.Context, docID, rev, filename string) (contentType string, md5sum MD5sum, err error)
+	// GetAttachmentMetaOpts returns meta information about an attachment.
+	GetAttachmentMeta(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (contentType string, md5sum MD5sum, err error)
 }
 
 // BulkResult is the result of a single doc update in a BulkDocs request.

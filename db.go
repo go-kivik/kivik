@@ -355,8 +355,26 @@ func (db *DB) PutAttachment(ctx context.Context, docID, rev string, att *Attachm
 }
 
 // GetAttachment returns a file attachment associated with the document.
-func (db *DB) GetAttachment(ctx context.Context, docID, rev, filename string) (*Attachment, error) {
-	cType, md5sum, body, err := db.driverDB.GetAttachment(ctx, docID, rev, filename)
+func (db *DB) GetAttachment(ctx context.Context, docID, rev, filename string, options ...Options) (*Attachment, error) {
+	if docID == "" {
+		return nil, missingArg("docID")
+	}
+	if filename == "" {
+		return nil, missingArg("filename")
+	}
+	var cType string
+	var md5sum driver.MD5sum
+	var body io.ReadCloser
+	var err error
+	if dbopt, ok := db.driverDB.(driver.DBOpts); ok {
+		opts, e := mergeOptions(options...)
+		if e != nil {
+			return nil, e
+		}
+		cType, md5sum, body, err = dbopt.GetAttachmentOpts(ctx, docID, rev, filename, opts)
+	} else {
+		cType, md5sum, body, err = db.driverDB.GetAttachment(ctx, docID, rev, filename)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -370,8 +388,29 @@ func (db *DB) GetAttachment(ctx context.Context, docID, rev, filename string) (*
 
 // GetAttachmentMeta returns meta data about an attachment. The attachment
 // content returned will be empty.
-func (db *DB) GetAttachmentMeta(ctx context.Context, docID, rev, filename string) (*Attachment, error) {
+func (db *DB) GetAttachmentMeta(ctx context.Context, docID, rev, filename string, options ...Options) (*Attachment, error) {
+	if docID == "" {
+		return nil, missingArg("docID")
+	}
+	if filename == "" {
+		return nil, missingArg("filename")
+	}
 	if metaer, ok := db.driverDB.(driver.AttachmentMetaer); ok {
+		opts, err := mergeOptions(options...)
+		if err != nil {
+			return nil, err
+		}
+		cType, md5sum, err := metaer.GetAttachmentMeta(ctx, docID, rev, filename, opts)
+		if err != nil {
+			return nil, err
+		}
+		return &Attachment{
+			Filename:    filename,
+			ContentType: cType,
+			MD5:         MD5sum(md5sum),
+		}, nil
+	}
+	if metaer, ok := db.driverDB.(driver.OldAttachmentMetaer); ok {
 		cType, md5sum, err := metaer.GetAttachmentMeta(ctx, docID, rev, filename)
 		if err != nil {
 			return nil, err
@@ -382,7 +421,7 @@ func (db *DB) GetAttachmentMeta(ctx context.Context, docID, rev, filename string
 			MD5:         MD5sum(md5sum),
 		}, nil
 	}
-	att, err := db.GetAttachment(ctx, docID, rev, filename)
+	att, err := db.GetAttachment(ctx, docID, rev, filename, options...)
 	if err != nil {
 		return nil, err
 	}

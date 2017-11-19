@@ -370,8 +370,29 @@ func (db *DB) GetAttachment(ctx context.Context, docID, rev, filename string) (*
 
 // GetAttachmentMeta returns meta data about an attachment. The attachment
 // content returned will be empty.
-func (db *DB) GetAttachmentMeta(ctx context.Context, docID, rev, filename string) (*Attachment, error) {
+func (db *DB) GetAttachmentMeta(ctx context.Context, docID, rev, filename string, options ...Options) (*Attachment, error) {
+	if docID == "" {
+		return nil, missingArg("docID")
+	}
+	if filename == "" {
+		return nil, missingArg("filename")
+	}
 	if metaer, ok := db.driverDB.(driver.AttachmentMetaer); ok {
+		opts, err := mergeOptions(options...)
+		if err != nil {
+			return nil, err
+		}
+		cType, md5sum, err := metaer.GetAttachmentMeta(ctx, docID, rev, filename, opts)
+		if err != nil {
+			return nil, err
+		}
+		return &Attachment{
+			Filename:    filename,
+			ContentType: cType,
+			MD5:         MD5sum(md5sum),
+		}, nil
+	}
+	if metaer, ok := db.driverDB.(driver.OldAttachmentMetaer); ok {
 		cType, md5sum, err := metaer.GetAttachmentMeta(ctx, docID, rev, filename)
 		if err != nil {
 			return nil, err

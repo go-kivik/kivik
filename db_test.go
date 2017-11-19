@@ -816,3 +816,207 @@ func TestDeleteAttachment(t *testing.T) {
 		})
 	}
 }
+
+type mockAttGetter struct {
+	driver.DB
+	docID, rev, filename string
+
+	cType   string
+	md5     driver.MD5sum
+	content io.ReadCloser
+	err     error
+}
+
+var _ driver.DB = &mockAttGetter{}
+
+func (db *mockAttGetter) GetAttachment(_ context.Context, docID, rev, filename string) (string, driver.MD5sum, io.ReadCloser, error) {
+	if docID != db.docID {
+		return "", driver.MD5sum{}, nil, errors.Errorf("Unexpected docID: %s", docID)
+	}
+	if rev != db.rev {
+		return "", driver.MD5sum{}, nil, errors.Errorf("Unexpected rev: %s", rev)
+	}
+	if filename != db.filename {
+		return "", driver.MD5sum{}, nil, errors.Errorf("Unexpected filename: %s", filename)
+	}
+	return db.cType, db.md5, db.content, db.err
+}
+
+type mockOldAttMetaer struct {
+	driver.DB
+	docID, rev, filename string
+
+	cType string
+	md5   driver.MD5sum
+	err   error
+}
+
+var _ driver.OldAttachmentMetaer = &mockOldAttMetaer{}
+
+func (db *mockOldAttMetaer) GetAttachmentMeta(_ context.Context, docID, rev, filename string) (string, driver.MD5sum, error) {
+	if docID != db.docID {
+		return "", driver.MD5sum{}, errors.Errorf("Unexpected docID: %s", docID)
+	}
+	if rev != db.rev {
+		return "", driver.MD5sum{}, errors.Errorf("Unexpected rev: %s", rev)
+	}
+	if filename != db.filename {
+		return "", driver.MD5sum{}, errors.Errorf("Unexpected filename: %s", filename)
+	}
+	return db.cType, db.md5, db.err
+}
+
+type mockAttMetaer struct {
+	driver.DB
+	docID, rev, filename string
+	opts                 map[string]interface{}
+
+	cType string
+	md5   driver.MD5sum
+	err   error
+}
+
+var _ driver.AttachmentMetaer = &mockAttMetaer{}
+
+func (db *mockAttMetaer) GetAttachmentMeta(_ context.Context, docID, rev, filename string, opts map[string]interface{}) (string, driver.MD5sum, error) {
+	if docID != db.docID {
+		return "", driver.MD5sum{}, errors.Errorf("Unexpected docID: %s", docID)
+	}
+	if rev != db.rev {
+		return "", driver.MD5sum{}, errors.Errorf("Unexpected rev: %s", rev)
+	}
+	if filename != db.filename {
+		return "", driver.MD5sum{}, errors.Errorf("Unexpected filename: %s", filename)
+	}
+	if d := diff.Interface(db.opts, opts); d != nil {
+		return "", driver.MD5sum{}, errors.Errorf("Unexpected options: %s", d)
+	}
+	return db.cType, db.md5, db.err
+}
+
+func TestGetAttachmentMeta(t *testing.T) {
+	tests := []struct {
+		name                 string
+		db                   *DB
+		docID, rev, filename string
+		options              Options
+
+		expected *Attachment
+		status   int
+		err      string
+	}{
+		{
+			name: "plain db, error",
+			db: &DB{driverDB: &mockAttGetter{
+				docID:    "foo",
+				filename: "foo.txt",
+				err:      errors.New("fail"),
+			}},
+			docID:    "foo",
+			filename: "foo.txt",
+			status:   500,
+			err:      "fail",
+		},
+		{
+			name: "plain db, success",
+			db: &DB{driverDB: &mockAttGetter{
+				docID:    "foo",
+				rev:      "1-xxx",
+				filename: "foo.txt",
+				cType:    "text/plain",
+				md5:      driver.MD5sum{0x01},
+				content:  body("Test"),
+			}},
+			docID:    "foo",
+			rev:      "1-xxx",
+			filename: "foo.txt",
+			expected: &Attachment{
+				Filename:    "foo.txt",
+				ContentType: "text/plain",
+				MD5:         driver.MD5sum{0x01},
+			},
+		},
+		{
+			name: "legacy metaer, error",
+			db: &DB{driverDB: &mockOldAttMetaer{
+				docID:    "foo",
+				filename: "foo.txt",
+				err:      errors.New("fail"),
+			}},
+			docID:    "foo",
+			filename: "foo.txt",
+			status:   500,
+			err:      "fail",
+		},
+		{
+			name: "legacy metaer, success",
+			db: &DB{driverDB: &mockOldAttMetaer{
+				docID:    "foo",
+				rev:      "1-xxx",
+				filename: "foo.txt",
+				cType:    "text/plain",
+				md5:      driver.MD5sum{0x01},
+			}},
+			docID:    "foo",
+			rev:      "1-xxx",
+			filename: "foo.txt",
+			expected: &Attachment{
+				Filename:    "foo.txt",
+				ContentType: "text/plain",
+				MD5:         driver.MD5sum{0x01},
+			},
+		},
+		{
+			name: "new metaer, error",
+			db: &DB{driverDB: &mockAttMetaer{
+				docID:    "foo",
+				filename: "foo.txt",
+				err:      errors.New("fail"),
+			}},
+			docID:    "foo",
+			filename: "foo.txt",
+			status:   500,
+			err:      "fail",
+		},
+		{
+			name: "new metaer, success",
+			db: &DB{driverDB: &mockAttMetaer{
+				docID:    "foo",
+				rev:      "1-xxx",
+				filename: "foo.txt",
+				cType:    "text/plain",
+				md5:      driver.MD5sum{0x01},
+				opts:     map[string]interface{}{"foo": "bar"},
+			}},
+			docID:    "foo",
+			rev:      "1-xxx",
+			filename: "foo.txt",
+			options:  map[string]interface{}{"foo": "bar"},
+			expected: &Attachment{
+				Filename:    "foo.txt",
+				ContentType: "text/plain",
+				MD5:         driver.MD5sum{0x01},
+			},
+		},
+		{
+			name:   "no doc id",
+			status: StatusBadRequest,
+			err:    "kivik: docID required",
+		},
+		{
+			name:   "no filename",
+			docID:  "foo",
+			status: StatusBadRequest,
+			err:    "kivik: filename required",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result, err := test.db.GetAttachmentMeta(context.Background(), test.docID, test.rev, test.filename, test.options)
+			testy.StatusError(t, test.err, test.status, err)
+			if d := diff.Interface(test.expected, result); d != nil {
+				t.Error(d)
+			}
+		})
+	}
+}

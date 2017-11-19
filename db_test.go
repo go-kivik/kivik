@@ -123,8 +123,27 @@ func TestNormalizeFromJSON(t *testing.T) {
 	}
 }
 
+type legacyPutGrabber struct {
+	driver.DB
+	docID string
+	doc   interface{}
+
+	newRev string
+	err    error
+}
+
+func (db *legacyPutGrabber) Put(_ context.Context, docID string, i interface{}) (string, error) {
+	if db.docID != docID {
+		return "", errors.Errorf("Unexpected docID: %s", docID)
+	}
+	if d := diff.Interface(db.doc, i); d != nil {
+		return "", errors.Errorf("Unexpected doc: %s", d)
+	}
+	return db.newRev, db.err
+}
+
 type putGrabber struct {
-	*dummyDB
+	driver.DB
 	driver.DBOpts
 	docID string
 	doc   interface{}
@@ -134,8 +153,8 @@ type putGrabber struct {
 	err    error
 }
 
-func (db *putGrabber) Put(ctx context.Context, docID string, i interface{}) (string, error) {
-	return db.PutOpts(ctx, docID, i, nil)
+func (db *putGrabber) Put(_ context.Context, _ string, _ interface{}) (string, error) {
+	panic("Put called")
 }
 
 func (db *putGrabber) PutOpts(_ context.Context, docID string, i interface{}, opts map[string]interface{}) (string, error) {
@@ -249,6 +268,17 @@ func TestPut(t *testing.T) {
 			options: Options{"opt": "opt"},
 			newRev:  "1-xxx",
 		},
+		{
+			name: "legacy",
+			db: &DB{driverDB: &legacyPutGrabber{
+				docID:  "foo",
+				newRev: "1-xxx",
+				doc:    map[string]string{"foo": "bar"},
+			}},
+			docID:  "foo",
+			input:  map[string]string{"foo": "bar"},
+			newRev: "1-xxx",
+		},
 	}
 	for _, test := range tests {
 		func(test putTest) {
@@ -319,8 +349,23 @@ func TestExtractDocID(t *testing.T) {
 	}
 }
 
+type legacyCreateDocGrabber struct {
+	driver.DB
+	doc interface{}
+
+	id, rev string
+	err     error
+}
+
+func (db *legacyCreateDocGrabber) CreateDoc(_ context.Context, doc interface{}) (string, string, error) {
+	if d := diff.Interface(db.doc, doc); d != nil {
+		return "", "", errors.Errorf("Unexpected doc: %s", d)
+	}
+	return db.id, db.rev, db.err
+}
+
 type createDocGrabber struct {
-	*dummyDB
+	driver.DB
 	driver.DBOpts
 	doc  interface{}
 	opts map[string]interface{}
@@ -329,8 +374,8 @@ type createDocGrabber struct {
 	err     error
 }
 
-func (db *createDocGrabber) CreateDoc(ctx context.Context, doc interface{}) (string, string, error) {
-	return db.CreateDocOpts(ctx, doc, nil)
+func (db *createDocGrabber) CreateDoc(_ context.Context, _ interface{}) (string, string, error) {
+	panic("CreateDoc called")
 }
 
 func (db *createDocGrabber) CreateDocOpts(_ context.Context, doc interface{}, opts map[string]interface{}) (string, string, error) {
@@ -372,6 +417,17 @@ func TestCreateDoc(t *testing.T) {
 			docID:   "foo",
 			rev:     "1-xxx",
 		},
+		{
+			name: "legacy",
+			db: &DB{driverDB: &legacyCreateDocGrabber{
+				id:  "foo",
+				rev: "1-xxx",
+				doc: map[string]string{"type": "test"},
+			}},
+			doc:   map[string]string{"type": "test"},
+			docID: "foo",
+			rev:   "1-xxx",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -384,8 +440,23 @@ func TestCreateDoc(t *testing.T) {
 	}
 }
 
+type legacyDeleteRecorder struct {
+	driver.DB
+	docID, rev string
+
+	newRev string
+	err    error
+}
+
+func (db *legacyDeleteRecorder) Delete(_ context.Context, docID, rev string) (string, error) {
+	if db.docID != docID || db.rev != rev {
+		return "", errors.Errorf("Unexpected docID/rev: %s/%s", docID, rev)
+	}
+	return db.newRev, db.err
+}
+
 type deleteRecorder struct {
-	*dummyDB
+	driver.DB
 	driver.DBOpts
 	docID, rev string
 	opts       map[string]interface{}
@@ -394,8 +465,8 @@ type deleteRecorder struct {
 	err    error
 }
 
-func (db *deleteRecorder) Delete(ctx context.Context, docID, rev string) (string, error) {
-	return db.DeleteOpts(ctx, docID, rev, nil)
+func (db *deleteRecorder) Delete(_ context.Context, _, _ string) (string, error) {
+	panic("Delete called")
 }
 
 func (db *deleteRecorder) DeleteOpts(_ context.Context, docID, rev string, opts map[string]interface{}) (string, error) {
@@ -446,6 +517,17 @@ func TestDelete(t *testing.T) {
 			options: Options{"opt": 1},
 			newRev:  "2-xxx",
 		},
+		{
+			name: "legacy",
+			db: &DB{driverDB: &legacyDeleteRecorder{
+				docID:  "foo",
+				rev:    "1-xxx",
+				newRev: "2-xxx",
+			}},
+			docID:  "foo",
+			rev:    "1-xxx",
+			newRev: "2-xxx",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -458,8 +540,34 @@ func TestDelete(t *testing.T) {
 	}
 }
 
+type legacyPutAttRecorder struct {
+	driver.DB
+	docID, rev, filename, cType string
+	body                        string
+
+	newRev string
+	err    error
+}
+
+func (db *legacyPutAttRecorder) PutAttachment(_ context.Context, docID, rev, filename, contentType string, body io.Reader) (string, error) {
+	if db.docID != docID || db.rev != rev {
+		return "", errors.Errorf("Unexpected id/rev: %s/%s", docID, rev)
+	}
+	if db.filename != filename || db.cType != contentType {
+		return "", errors.Errorf("Unexpected file data: %s / %s", filename, contentType)
+	}
+	content, err := ioutil.ReadAll(body)
+	if err != nil {
+		panic(err)
+	}
+	if d := diff.Text(db.body, string(content)); d != nil {
+		return "", errors.Errorf("Unexpected content: %s", d)
+	}
+	return db.newRev, db.err
+}
+
 type putAttRecorder struct {
-	*dummyDB
+	driver.DB
 	driver.DBOpts
 	docID, rev, filename, cType string
 	body                        string
@@ -469,10 +577,8 @@ type putAttRecorder struct {
 	err    error
 }
 
-var _ driver.DB = &putAttRecorder{}
-
-func (db *putAttRecorder) PutAttachment(ctx context.Context, docID, rev, filename, contentType string, body io.Reader) (string, error) {
-	return db.PutAttachmentOpts(ctx, docID, rev, filename, contentType, body, nil)
+func (db *putAttRecorder) PutAttachment(_ context.Context, _, _, _, _ string, _ io.Reader) (string, error) {
+	panic("PutAttachment called")
 }
 
 func (db *putAttRecorder) PutAttachmentOpts(_ context.Context, docID, rev, filename, contentType string, body io.Reader, opts map[string]interface{}) (string, error) {
@@ -558,6 +664,26 @@ func TestPutAttachment(t *testing.T) {
 			newRev:  "2-xxx",
 			body:    "Test file",
 		},
+		{
+			name:  "legacy",
+			docID: "foo",
+			rev:   "1-xxx",
+			db: &DB{driverDB: &legacyPutAttRecorder{
+				docID:    "foo",
+				rev:      "1-xxx",
+				filename: "foo.txt",
+				cType:    "text/plain",
+				body:     "Test file",
+				newRev:   "2-xxx",
+			}},
+			att: &Attachment{
+				Filename:    "foo.txt",
+				ContentType: "text/plain",
+				ReadCloser:  ioutil.NopCloser(strings.NewReader("Test file")),
+			},
+			newRev: "2-xxx",
+			body:   "Test file",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -570,8 +696,26 @@ func TestPutAttachment(t *testing.T) {
 	}
 }
 
+type legacyMockDelAtt struct {
+	driver.DB
+	docID, rev, filename string
+
+	newRev string
+	err    error
+}
+
+func (db *legacyMockDelAtt) DeleteAttachment(ctx context.Context, docID, rev, filename string) (string, error) {
+	if db.docID != docID || db.rev != rev {
+		return "", errors.Errorf("Unexpected id/rev: %s/%s", docID, rev)
+	}
+	if db.filename != filename {
+		return "", errors.Errorf("Unexpected filename: %s", filename)
+	}
+	return db.newRev, db.err
+}
+
 type mockDelAtt struct {
-	*dummyDB
+	driver.DB
 	driver.DBOpts
 	docID, rev, filename string
 	opts                 map[string]interface{}
@@ -580,8 +724,8 @@ type mockDelAtt struct {
 	err    error
 }
 
-func (db *mockDelAtt) DeleteAttachment(ctx context.Context, docID, rev, filename string) (string, error) {
-	return db.DeleteAttachmentOpts(ctx, docID, rev, filename, nil)
+func (db *mockDelAtt) DeleteAttachment(_ context.Context, _, _, _ string) (string, error) {
+	panic("DeleteAttachment called")
 }
 
 func (db *mockDelAtt) DeleteAttachmentOpts(_ context.Context, docID, rev, filename string, opts map[string]interface{}) (string, error) {
@@ -645,6 +789,20 @@ func TestDeleteAttachment(t *testing.T) {
 			rev:      "1-xxx",
 			filename: "foo.txt",
 			options:  Options{"opt": 1},
+			newRev:   "2-xxx",
+		},
+		{
+			name: "legacy",
+			db: &DB{driverDB: &legacyMockDelAtt{
+				docID:    "foo",
+				rev:      "1-xxx",
+				filename: "foo.txt",
+
+				newRev: "2-xxx",
+			}},
+			docID:    "foo",
+			rev:      "1-xxx",
+			filename: "foo.txt",
 			newRev:   "2-xxx",
 		},
 	}

@@ -356,6 +356,12 @@ func (db *DB) PutAttachment(ctx context.Context, docID, rev string, att *Attachm
 
 // GetAttachment returns a file attachment associated with the document.
 func (db *DB) GetAttachment(ctx context.Context, docID, rev, filename string, options ...Options) (*Attachment, error) {
+	if docID == "" {
+		return nil, missingArg("docID")
+	}
+	if filename == "" {
+		return nil, missingArg("filename")
+	}
 	var cType string
 	var md5sum driver.MD5sum
 	var body io.ReadCloser

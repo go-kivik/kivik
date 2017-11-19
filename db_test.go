@@ -883,10 +883,14 @@ func TestGetAttachment(t *testing.T) {
 		{
 			name: "legacy, error",
 			db: &DB{driverDB: &mockOldAttGetter{
-				err: errors.New("fail"),
+				docID:    "foo",
+				filename: "foo.txt",
+				err:      errors.New("fail"),
 			}},
-			status: 500,
-			err:    "fail",
+			docID:    "foo",
+			filename: "foo.txt",
+			status:   500,
+			err:      "fail",
 		},
 		{
 			name: "legacy, success",
@@ -911,10 +915,14 @@ func TestGetAttachment(t *testing.T) {
 		{
 			name: "new, error",
 			db: &DB{driverDB: &mockAttGetter{
-				err: errors.New("fail"),
+				docID:    "foo",
+				filename: "foo.txt",
+				err:      errors.New("fail"),
 			}},
-			status: 500,
-			err:    "fail",
+			docID:    "foo",
+			filename: "foo.txt",
+			status:   500,
+			err:      "fail",
 		},
 		{
 			name: "new, success",
@@ -937,6 +945,17 @@ func TestGetAttachment(t *testing.T) {
 				ContentType: "text/plain",
 				MD5:         driver.MD5sum{0x01},
 			},
+		},
+		{
+			name:   "no docID",
+			status: StatusBadRequest,
+			err:    "kivik: docID required",
+		},
+		{
+			name:   "no filename",
+			docID:  "foo",
+			status: StatusBadRequest,
+			err:    "kivik: filename required",
 		},
 	}
 	for _, test := range tests {

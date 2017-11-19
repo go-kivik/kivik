@@ -356,7 +356,19 @@ func (db *DB) PutAttachment(ctx context.Context, docID, rev string, att *Attachm
 
 // GetAttachment returns a file attachment associated with the document.
 func (db *DB) GetAttachment(ctx context.Context, docID, rev, filename string, options ...Options) (*Attachment, error) {
-	cType, md5sum, body, err := db.driverDB.GetAttachment(ctx, docID, rev, filename)
+	var cType string
+	var md5sum driver.MD5sum
+	var body io.ReadCloser
+	var err error
+	if dbopt, ok := db.driverDB.(driver.DBOpts); ok {
+		opts, e := mergeOptions(options...)
+		if e != nil {
+			return nil, e
+		}
+		cType, md5sum, body, err = dbopt.GetAttachmentOpts(ctx, docID, rev, filename, opts)
+	} else {
+		cType, md5sum, body, err = db.driverDB.GetAttachment(ctx, docID, rev, filename)
+	}
 	if err != nil {
 		return nil, err
 	}

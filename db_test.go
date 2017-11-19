@@ -817,7 +817,7 @@ func TestDeleteAttachment(t *testing.T) {
 	}
 }
 
-type mockAttGetter struct {
+type mockOldAttGetter struct {
 	driver.DB
 	docID, rev, filename string
 
@@ -827,9 +827,7 @@ type mockAttGetter struct {
 	err     error
 }
 
-var _ driver.DB = &mockAttGetter{}
-
-func (db *mockAttGetter) GetAttachment(_ context.Context, docID, rev, filename string) (string, driver.MD5sum, io.ReadCloser, error) {
+func (db *mockOldAttGetter) GetAttachment(_ context.Context, docID, rev, filename string) (string, driver.MD5sum, io.ReadCloser, error) {
 	if docID != db.docID {
 		return "", driver.MD5sum{}, nil, errors.Errorf("Unexpected docID: %s", docID)
 	}
@@ -838,6 +836,34 @@ func (db *mockAttGetter) GetAttachment(_ context.Context, docID, rev, filename s
 	}
 	if filename != db.filename {
 		return "", driver.MD5sum{}, nil, errors.Errorf("Unexpected filename: %s", filename)
+	}
+	return db.cType, db.md5, db.content, db.err
+}
+
+type mockAttGetter struct {
+	driver.DB
+	driver.DBOpts
+	docID, rev, filename string
+	opts                 map[string]interface{}
+
+	cType   string
+	md5     driver.MD5sum
+	content io.ReadCloser
+	err     error
+}
+
+func (db *mockAttGetter) GetAttachmentOpts(_ context.Context, docID, rev, filename string, opts map[string]interface{}) (string, driver.MD5sum, io.ReadCloser, error) {
+	if docID != db.docID {
+		return "", driver.MD5sum{}, nil, errors.Errorf("Unexpected docID: %s", docID)
+	}
+	if rev != db.rev {
+		return "", driver.MD5sum{}, nil, errors.Errorf("Unexpected rev: %s", rev)
+	}
+	if filename != db.filename {
+		return "", driver.MD5sum{}, nil, errors.Errorf("Unexpected filename: %s", filename)
+	}
+	if d := diff.Interface(db.opts, opts); d != nil {
+		return "", driver.MD5sum{}, nil, errors.Errorf("Unexpected options: %s", d)
 	}
 	return db.cType, db.md5, db.content, db.err
 }
@@ -856,7 +882,7 @@ func TestGetAttachment(t *testing.T) {
 	}{
 		{
 			name: "legacy, error",
-			db: &DB{driverDB: &mockAttGetter{
+			db: &DB{driverDB: &mockOldAttGetter{
 				err: errors.New("fail"),
 			}},
 			status: 500,
@@ -864,7 +890,7 @@ func TestGetAttachment(t *testing.T) {
 		},
 		{
 			name: "legacy, success",
-			db: &DB{driverDB: &mockAttGetter{
+			db: &DB{driverDB: &mockOldAttGetter{
 				docID:    "foo",
 				rev:      "1-xxx",
 				filename: "foo.txt",
@@ -875,6 +901,36 @@ func TestGetAttachment(t *testing.T) {
 			docID:    "foo",
 			rev:      "1-xxx",
 			filename: "foo.txt",
+			content:  "Test",
+			expected: &Attachment{
+				Filename:    "foo.txt",
+				ContentType: "text/plain",
+				MD5:         driver.MD5sum{0x01},
+			},
+		},
+		{
+			name: "new, error",
+			db: &DB{driverDB: &mockAttGetter{
+				err: errors.New("fail"),
+			}},
+			status: 500,
+			err:    "fail",
+		},
+		{
+			name: "new, success",
+			db: &DB{driverDB: &mockAttGetter{
+				docID:    "foo",
+				rev:      "1-xxx",
+				filename: "foo.txt",
+				opts:     map[string]interface{}{"foo": "bar"},
+				cType:    "text/plain",
+				md5:      driver.MD5sum{0x01},
+				content:  body("Test"),
+			}},
+			docID:    "foo",
+			rev:      "1-xxx",
+			filename: "foo.txt",
+			options:  Options{"foo": "bar"},
 			content:  "Test",
 			expected: &Attachment{
 				Filename:    "foo.txt",
@@ -954,7 +1010,6 @@ func (db *mockAttMetaer) GetAttachmentMeta(_ context.Context, docID, rev, filena
 	return db.cType, db.md5, db.err
 }
 
-/*
 func TestGetAttachmentMeta(t *testing.T) {
 	tests := []struct {
 		name                 string
@@ -1052,7 +1107,7 @@ func TestGetAttachmentMeta(t *testing.T) {
 			docID:    "foo",
 			rev:      "1-xxx",
 			filename: "foo.txt",
-			options:  map[string]interface{}{"foo": "bar"},
+			options:  Options{"foo": "bar"},
 			expected: &Attachment{
 				Filename:    "foo.txt",
 				ContentType: "text/plain",
@@ -1081,4 +1136,3 @@ func TestGetAttachmentMeta(t *testing.T) {
 		})
 	}
 }
-*/

@@ -120,6 +120,10 @@ func (e *wrappedError) StatusCode() int {
 	return e.statusCode
 }
 
+func (e *wrappedError) Cause() error {
+	return e.err
+}
+
 // WrapStatus bundles an existing error with a status code.
 func WrapStatus(status int, err error) error {
 	if err == nil {

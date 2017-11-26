@@ -104,3 +104,74 @@ func TestReason(t *testing.T) {
 		})
 	}
 }
+
+func TestStatusCode(t *testing.T) {
+	tests := []struct {
+		name         string
+		input        error
+		expectedCode int
+	}{
+		{
+			name:         "nil",
+			input:        nil,
+			expectedCode: 0,
+		},
+		{
+			name:         "status coder",
+			input:        Status(400, "foo"),
+			expectedCode: 400,
+		},
+		{
+			name:         "non status coder",
+			input:        New("foo"),
+			expectedCode: 500,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			code := StatusCode(test.input)
+			if test.expectedCode != code {
+				t.Errorf("Unexpected code: %d", code)
+			}
+		})
+	}
+}
+
+func TestStatusCodeOK(t *testing.T) {
+	tests := []struct {
+		name         string
+		input        error
+		expectedCode int
+		expectedOK   bool
+	}{
+		{
+			name:         "nil",
+			input:        nil,
+			expectedCode: 0,
+			expectedOK:   false,
+		},
+		{
+			name:         "status coder",
+			input:        Status(400, "foo"),
+			expectedCode: 400,
+			expectedOK:   true,
+		},
+		{
+			name:         "non status coder",
+			input:        New("foo"),
+			expectedCode: 0,
+			expectedOK:   false,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			code, ok := StatusCodeOK(test.input)
+			if test.expectedCode != code {
+				t.Errorf("Unexpected code: %d", code)
+			}
+			if test.expectedOK != ok {
+				t.Errorf("Unexpected ok: %t", ok)
+			}
+		})
+	}
+}

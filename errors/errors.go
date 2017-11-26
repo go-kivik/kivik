@@ -63,10 +63,22 @@ func StatusCode(err error) int {
 	if err == nil {
 		return statusNoError
 	}
-	if scErr, ok := err.(statusCoder); ok {
-		return scErr.StatusCode()
+	if sc, ok := StatusCodeOK(err); ok {
+		return sc
 	}
 	return statusInternalServerError
+}
+
+// StatusCodeOK extracts an embedded HTTP status code from an error and returns
+// it. ok will be false if the error does not embed a status code.
+func StatusCodeOK(err error) (code int, ok bool) {
+	if err == nil {
+		return statusNoError, false
+	}
+	if scErr, ok := err.(statusCoder); ok {
+		return scErr.StatusCode(), true
+	}
+	return statusNoError, false
 }
 
 // Reasoner is an interface for an error that contains a reason.

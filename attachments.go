@@ -3,6 +3,8 @@ package kivik
 import (
 	"bytes"
 	"io"
+
+	"github.com/flimzy/kivik/errors"
 )
 
 // MD5sum is a 128-bit MD5 checksum.
@@ -14,6 +16,24 @@ type Attachment struct {
 	Filename    string
 	ContentType string
 	MD5         [16]byte
+}
+
+var _ io.ReadCloser = Attachment{}
+
+func (a Attachment) Read(p []byte) (int, error) {
+	if a.ReadCloser == nil {
+		// TODO: Consider an alternative error code for this case
+		return 0, errors.Status(StatusUnknownError, "kivik: attachment content not read")
+	}
+	return a.ReadCloser.Read(p)
+}
+
+// Close calls the underlying close method.
+func (a Attachment) Close() error {
+	if a.ReadCloser == nil {
+		return nil
+	}
+	return a.ReadCloser.Close()
 }
 
 // bufCloser wraps a *bytes.Buffer to create an io.ReadCloser

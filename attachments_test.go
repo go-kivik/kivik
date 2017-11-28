@@ -46,3 +46,35 @@ func TestAttachmentBytes(t *testing.T) {
 		})
 	}
 }
+
+func TestAttachmentRead(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    Attachment
+		expected string
+		status   int
+		err      string
+	}{
+		{
+			name:   "nil reader",
+			input:  Attachment{},
+			status: StatusUnknownError,
+			err:    "kivik: attachment content not read",
+		},
+		{
+			name:     "reader set",
+			input:    Attachment{ReadCloser: ioutil.NopCloser(strings.NewReader("foo"))},
+			expected: "foo",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			defer test.input.Close() // nolint: errcheck
+			result, err := ioutil.ReadAll(test.input)
+			testy.StatusError(t, test.err, test.status, err)
+			if d := diff.Text(test.expected, string(result)); d != nil {
+				t.Error(d)
+			}
+		})
+	}
+}

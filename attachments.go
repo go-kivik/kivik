@@ -18,16 +18,16 @@ type MD5sum [16]byte
 
 // Attachment represents a file attachment on a CouchDB document.
 type Attachment struct {
-	io.ReadCloser
-	Filename        string
-	ContentType     string
-	ContentEncoding string
-	ContentLength   int64
-	EncodingLength  int64
-	RevPos          int64
-	Digest          string
-	Stub            bool
-	MD5             [16]byte
+	io.ReadCloser   `json:"-"`
+	Filename        string   `json:"-"`
+	ContentType     string   `json:"content_type"`
+	ContentEncoding string   `json:"encoding"`
+	ContentLength   int64    `json:"length"`
+	EncodedLength   int64    `json:"encoded_length"`
+	RevPos          int64    `json:"revpos"`
+	Digest          string   `json:"digest"`
+	Stub            bool     `json:"stub"`
+	MD5             [16]byte `json:"-"`
 }
 
 var _ io.ReadCloser = Attachment{}
@@ -116,4 +116,36 @@ func (a *Attachment) MarshalJSON() ([]byte, error) {
 		Data:        string(data),
 	}
 	return json.Marshal(att)
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface for an Attachment.
+func (a *Attachment) UnmarshalJSON(data []byte) error {
+	type clone Attachment
+	type jsonAtt struct {
+		clone
+		Data []byte `json:"data"`
+	}
+	var att jsonAtt
+	if err := json.Unmarshal(data, &att); err != nil {
+		return err
+	}
+	*a = Attachment(att.clone)
+	if att.Data != nil {
+		a.ReadCloser = ioutil.NopCloser(bytes.NewReader(att.Data))
+	}
+	return nil
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface for a collection of
+// Attachments.
+func (a *Attachments) UnmarshalJSON(data []byte) error {
+	atts := make(map[string]*Attachment)
+	if err := json.Unmarshal(data, &atts); err != nil {
+		return err
+	}
+	for filename, att := range atts {
+		att.Filename = filename
+	}
+	*a = atts
+	return nil
 }

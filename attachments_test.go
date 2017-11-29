@@ -1,6 +1,7 @@
 package kivik
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"strings"
 	"testing"
@@ -76,5 +77,43 @@ func TestAttachmentRead(t *testing.T) {
 				t.Error(d)
 			}
 		})
+	}
+}
+
+func TestAttachmentMarshalJSON(t *testing.T) {
+	tests := []struct {
+		name     string
+		att      *Attachment
+		expected string
+		err      string
+	}{
+		{
+			name: "foo.txt",
+			att: &Attachment{
+				ReadCloser:  ioutil.NopCloser(strings.NewReader("test attachment\n")),
+				Filename:    "foo.txt",
+				ContentType: "text/plain",
+			},
+			expected: `{
+				"content_type": "text/plain",
+				"data": "dGVzdCBhdHRhY2htZW50Cg=="
+			}`,
+		},
+		{
+			name: "read error",
+			att: &Attachment{
+				ReadCloser:  ioutil.NopCloser(&errorReader{}),
+				Filename:    "foo.txt",
+				ContentType: "text/plain",
+			},
+			err: "json: error calling MarshalJSON for type *kivik.Attachment: errorReader",
+		},
+	}
+	for _, test := range tests {
+		result, err := json.Marshal(test.att)
+		testy.Error(t, test.err, err)
+		if d := diff.JSON([]byte(test.expected), result); d != nil {
+			t.Error(d)
+		}
 	}
 }

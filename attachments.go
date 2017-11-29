@@ -2,10 +2,16 @@ package kivik
 
 import (
 	"bytes"
+	"encoding/base64"
+	"encoding/json"
 	"io"
+	"io/ioutil"
 
 	"github.com/flimzy/kivik/errors"
 )
+
+// Attachments is a collection of one or more file attachments.
+type Attachments map[string]*Attachment
 
 // MD5sum is a 128-bit MD5 checksum.
 type MD5sum [16]byte
@@ -13,9 +19,15 @@ type MD5sum [16]byte
 // Attachment represents a file attachment on a CouchDB document.
 type Attachment struct {
 	io.ReadCloser
-	Filename    string
-	ContentType string
-	MD5         [16]byte
+	Filename        string
+	ContentType     string
+	ContentEncoding string
+	ContentLength   int64
+	EncodingLength  int64
+	RevPos          int64
+	Digest          string
+	Stub            bool
+	MD5             [16]byte
 }
 
 var _ io.ReadCloser = Attachment{}
@@ -74,4 +86,34 @@ func (a *Attachment) validate() error {
 		return missingArg("filename")
 	}
 	return nil
+}
+
+type jsonAttachment struct {
+	ContentType string `json:"content_type"`
+	Data        string `json:"data"`
+}
+
+func readEncoder(in io.ReadCloser) io.ReadCloser {
+	r, w := io.Pipe()
+	enc := base64.NewEncoder(base64.StdEncoding, w)
+	go func() {
+		_, err := io.Copy(enc, in)
+		_ = enc.Close()
+		_ = w.CloseWithError(err)
+	}()
+	return r
+}
+
+// MarshalJSON satisfis the json.Marshaler interface.
+func (a *Attachment) MarshalJSON() ([]byte, error) {
+	r := readEncoder(a)
+	data, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+	att := &jsonAttachment{
+		ContentType: a.ContentType,
+		Data:        string(data),
+	}
+	return json.Marshal(att)
 }

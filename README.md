@@ -16,9 +16,10 @@ implemented by SQL and NoSQL databases such as CouchDB.
 Install Kivik as you normally would for any Go package:
 
     go get -u github.com/flimzy/kivik
+    go get -u github.com/go-kivik/couchdb
 
-This will install the main Kivik package, as well as the CouchDB and PouchDB
-drivers. See the [list of Kivik database drivers](https://github.com/flimzy/kivik/wiki/Kivik-database-drivers)
+This will install the main Kivik package and the CouchDB database driver. See
+the [list of Kivik database drivers](https://github.com/flimzy/kivik/wiki/Kivik-database-drivers)
 for a complete list of available drivers.
 
 # Example Usage

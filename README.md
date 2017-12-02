@@ -2,7 +2,7 @@
 
 # Kivik
 
-Package kivik provides a generic interface to CouchDB or CouchDB-like databases.
+Package kivik provides a common interface to CouchDB or CouchDB-like databases.
 
 The kivik package must be used in conjunction with a database driver.
 
@@ -10,6 +10,52 @@ The kivik driver system is modeled after the standard library's [sql](https://go
 and [sql/driver](https://golang.org/pkg/database/sql/driver/) packages, although
 the client API is completely different due to the different database models
 implemented by SQL and NoSQL databases such as CouchDB.
+
+# Versions
+
+You are browsing the _development_ branch of Kivik, which will eventually become
+the Kivik 2.0.0 release. The API is subject to rapid and unannounced changes at
+this stage of development. For production work, you are encouraged to use the
+latest 1.x release of Kivik, which is stable.
+
+To use the stable version of Kivik, please use a dependency manager to ensure
+you're using version 1.x of Kivik and the Kivik driver.
+
+Example configs for common dependency managers follow.
+
+## [dep](https://github.com/golang/dep)
+
+Update your `Gopkg.toml` file:
+
+```toml
+[[constraint]]
+  name = "github.com/flimzy/kivik"
+  version = "^1.6.0"
+
+[[constraint]]
+  name = "github.com/go-kivik/couchdb"
+  version = "^1.6.0"
+```
+
+## [Glide](https://github.com/Masterminds/glide)
+
+Update your `glide.yaml` file:
+
+```yaml
+import:
+- package: github.com/flimzy/kivik
+  version: ^1.6.0
+- package: github.com/go-kivik/couchdb
+  version: ^1.6.0
+```
+
+## [govendor](https://github.com/kardianos/govendor)
+
+Fetch the latest stable version of Kivik and the CouchDB driver with the
+following command:
+
+    govendor fetch github.com/flimzy/kivik@v1
+    govendor fetch github.com/go-kivik/couchdb@v1
 
 # Installation
 

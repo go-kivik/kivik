@@ -1,6 +1,6 @@
 // Package bindings provides minimal GopherJS bindings around the PouchDB
 // library. (https://pouchdb.com/api.html)
-package bindings
+package bindings // import "github.com/flimzy/kivik/driver/pouchdb/bindings"
 
 import (
 	"bytes"

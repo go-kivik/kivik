@@ -1,4 +1,4 @@
-package auth
+package auth // import "github.com/flimzy/kivik/auth"
 
 import (
 	"encoding/json"

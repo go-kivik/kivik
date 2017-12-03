@@ -24,4 +24,4 @@
 //
 // For example:
 //  client, err := kivik.New(context.TODO(), "couch", "http://localhost:5984/")
-package kivik
+package kivik // import "github.com/flimzy/kivik"

@@ -1,6 +1,6 @@
 // Package authdb provides a standard interface to an authentication user store
 // to be used by AuthHandlers.
-package authdb
+package authdb // import "github.com/flimzy/kivik/authdb"
 
 import (
 	"bytes"

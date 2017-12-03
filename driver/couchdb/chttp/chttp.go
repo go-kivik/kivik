@@ -1,6 +1,6 @@
 // Package chttp provides a minimal HTTP driver backend for communicating with
 // CouchDB servers.
-package chttp
+package chttp // import "github.com/flimzy/kivik/driver/couchdb/chttp"
 
 import (
 	"context"

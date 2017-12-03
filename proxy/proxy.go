@@ -1,5 +1,5 @@
 // Package proxy provides a simple proxy for a CouchDB server
-package proxy
+package proxy // import "github.com/flimzy/kivik/proxy"
 
 import (
 	"errors"

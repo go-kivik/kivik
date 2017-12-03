@@ -1,6 +1,6 @@
 // Package confadmin provides an authentication service for admins configured
 // in server configuration.
-package confadmin
+package confadmin // import "github.com/flimzy/kivik/authdb/confadmin"
 
 import (
 	"context"

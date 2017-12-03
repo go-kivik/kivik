@@ -1,7 +1,7 @@
 // Package couchdb is a driver for connecting with a CouchDB server over HTTP.
 // This version of the package is deprecated, and no longer receiving updates.
 // Please use github.com/go-kivik/couchdb instead.
-package couchdb
+package couchdb // import "github.com/flimzy/kivik/driver/couchdb"
 
 import (
 	"context"

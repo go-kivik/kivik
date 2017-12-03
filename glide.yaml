@@ -5,8 +5,6 @@ ignore:
 import:
 - package: github.com/pkg/errors
   version: ~0.8.0
-- package: github.com/spf13/cobra
-- package: github.com/spf13/pflag
 - package: golang.org/x/crypto
   subpackages:
   - pbkdf2
@@ -17,8 +15,6 @@ import:
 - package: github.com/go-kivik/kiviktest
   subpackages:
   - kt
-- package: github.com/flimzy/diff
-  version: ~0.1.2
 testimport:
 - package: github.com/flimzy/testy
   version: ~0.0.1

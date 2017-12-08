@@ -6,8 +6,6 @@ package errors
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
-	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -28,12 +26,8 @@ type statusError struct {
 // MarshalJSON satisifies the json.Marshaler interface for the statusError
 // type.
 func (se *statusError) MarshalJSON() ([]byte, error) {
-	errText := strings.Replace(strings.ToLower(http.StatusText(se.statusCode)), " ", "_", -1)
-	if errText == "" {
-		errText = "unknown"
-	}
 	return json.Marshal(map[string]string{
-		"error":  errText,
+		"error":  statusText(se.statusCode),
 		"reason": se.message,
 	})
 }

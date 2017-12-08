@@ -41,15 +41,18 @@ const (
 // HTTP response codes permitted by the CouchDB API.
 // See http://docs.couchdb.org/en/1.6.1/api/basics.html#http-status-codes
 const (
-	StatusOK                          = 200
-	StatusCreated                     = 201
-	StatusAccepted                    = 202
-	StatusFound                       = 302
-	StatusNotModified                 = 304
-	StatusBadRequest                  = 400
-	StatusUnauthorized                = 401
-	StatusForbidden                   = 403
-	StatusNotFound                    = 404
+	StatusOK               = 200
+	StatusCreated          = 201
+	StatusAccepted         = 202
+	StatusFound            = 302
+	StatusNotModified      = 304
+	StatusBadRequest       = 400
+	StatusUnauthorized     = 401
+	StatusForbidden        = 403
+	StatusNotFound         = 404
+	StatusMethodNotAllowed = 405
+
+	// StatusResourceNotAllowed is a misspelling of StatusMethodNotAllowed
 	StatusResourceNotAllowed          = 405
 	StatusRequestTimeout              = 408
 	StatusConflict                    = 409

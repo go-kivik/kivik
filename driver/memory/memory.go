@@ -1,7 +1,7 @@
 // Package memory provides a memory-backed Kivik driver, intended for testing.
 // This version of the package is deprecated, and no longer receiving updates.
 // Please use github.com/go-kivik/memorydb instead.
-package memory
+package memory // import "github.com/flimzy/kivik/driver/memory"
 
 import (
 	"context"

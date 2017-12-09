@@ -1,6 +1,6 @@
 // Package authgroup groups two or more authentication backends together, trying
 // one, then falling through to the others.
-package authgroup
+package authgroup // import "github.com/flimzy/kivik/authdb/authgroup"
 
 import (
 	"context"

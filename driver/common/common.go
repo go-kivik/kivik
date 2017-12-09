@@ -1,6 +1,6 @@
 // Package common contains logic and data structures shared by various kivik
 // backends. It is not meant to be used directly.
-package common
+package common // import "github.com/flimzy/kivik/driver/common"
 
 import (
 	"context"

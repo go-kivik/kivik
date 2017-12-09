@@ -2,4 +2,4 @@
 // used by package kivik.
 //
 // Most code should use package kivik.
-package driver
+package driver // import "github.com/flimzy/kivik/driver"

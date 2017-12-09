@@ -1,7 +1,7 @@
 // Package pouchdb provides a PouchDB driver for Kivik. This version of the
 // package is deprecated, and no longer receiving updates. Please use
 // github.com/go-kivik/pouchdb instead.
-package pouchdb
+package pouchdb // import "github.com/flimzy/kivik/driver/pouchdb"
 
 import (
 	"context"

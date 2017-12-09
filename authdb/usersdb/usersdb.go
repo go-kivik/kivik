@@ -1,5 +1,5 @@
 // Package usersdb provides auth facilities from a CouchDB _users database.
-package usersdb
+package usersdb // import "github.com/flimzy/kivik/authdb/usersdb"
 
 import (
 	"context"

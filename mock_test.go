@@ -11,7 +11,18 @@ import (
 	"github.com/flimzy/kivik/driver"
 )
 
+type mockDriver struct {
+	NewClientFunc func(context.Context, string) (driver.Client, error)
+}
+
+var _ driver.Driver = &mockDriver{}
+
+func (d *mockDriver) NewClient(ctx context.Context, dsn string) (driver.Client, error) {
+	return d.NewClientFunc(ctx, dsn)
+}
+
 type mockDB struct {
+	id string
 	driver.DB
 	ChangesFunc func(context.Context, map[string]interface{}) (driver.Changes, error)
 }
@@ -199,6 +210,7 @@ func (r *mockReplication) Update(ctx context.Context, rep *driver.ReplicationInf
 }
 
 type mockClient struct {
+	id            string
 	AllDBsFunc    func(context.Context, map[string]interface{}) ([]string, error)
 	CreateDBFunc  func(context.Context, string, map[string]interface{}) error
 	DBFunc        func(context.Context, string, map[string]interface{}) (driver.DB, error)
@@ -247,4 +259,15 @@ func (c *mockClientReplicator) GetReplications(ctx context.Context, opts map[str
 
 func (c *mockClientReplicator) Replicate(ctx context.Context, target, source string, opts map[string]interface{}) (driver.Replication, error) {
 	return c.ReplicateFunc(ctx, target, source, opts)
+}
+
+type mockAuthenticator struct {
+	*mockClient
+	AuthenticateFunc func(context.Context, interface{}) error
+}
+
+var _ driver.Authenticator = &mockAuthenticator{}
+
+func (c *mockAuthenticator) Authenticate(ctx context.Context, a interface{}) error {
+	return c.AuthenticateFunc(ctx, a)
 }

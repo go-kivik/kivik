@@ -59,7 +59,7 @@ func (c *Changes) Deleted() bool {
 
 // ID returns the ID of the current result.
 func (c *Changes) ID() string {
-	return c.curVal.(*driver.Row).ID
+	return c.curVal.(*driver.Change).ID
 }
 
 // ScanDoc works the same as ScanValue, but on the doc field of the result. It

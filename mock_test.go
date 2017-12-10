@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"strings"
+	"time"
 
 	"github.com/flimzy/kivik/driver"
 )
@@ -145,4 +146,105 @@ func (r *mockRowsWarner) Warning() string {
 
 func (r *mockBookmarker) Bookmark() string {
 	return r.BookmarkFunc()
+}
+
+type mockReplication struct {
+	DeleteFunc        func(context.Context) error
+	StartTimeFunc     func() time.Time
+	EndTimeFunc       func() time.Time
+	ErrFunc           func() error
+	ReplicationIDFunc func() string
+	SourceFunc        func() string
+	TargetFunc        func() string
+	StateFunc         func() string
+	UpdateFunc        func(context.Context, *driver.ReplicationInfo) error
+}
+
+var _ driver.Replication = &mockReplication{}
+
+func (r *mockReplication) Delete(ctx context.Context) error {
+	return r.DeleteFunc(ctx)
+}
+
+func (r *mockReplication) StartTime() time.Time {
+	return r.StartTimeFunc()
+}
+
+func (r *mockReplication) EndTime() time.Time {
+	return r.EndTimeFunc()
+}
+
+func (r *mockReplication) Err() error {
+	return r.ErrFunc()
+}
+
+func (r *mockReplication) ReplicationID() string {
+	return r.ReplicationIDFunc()
+}
+
+func (r *mockReplication) Source() string {
+	return r.SourceFunc()
+}
+
+func (r *mockReplication) Target() string {
+	return r.TargetFunc()
+}
+
+func (r *mockReplication) State() string {
+	return r.StateFunc()
+}
+
+func (r *mockReplication) Update(ctx context.Context, rep *driver.ReplicationInfo) error {
+	return r.UpdateFunc(ctx, rep)
+}
+
+type mockClient struct {
+	AllDBsFunc    func(context.Context, map[string]interface{}) ([]string, error)
+	CreateDBFunc  func(context.Context, string, map[string]interface{}) error
+	DBFunc        func(context.Context, string, map[string]interface{}) (driver.DB, error)
+	DBExistsFunc  func(context.Context, string, map[string]interface{}) (bool, error)
+	DestroyDBFunc func(context.Context, string, map[string]interface{}) error
+	VersionFunc   func(context.Context) (*driver.Version, error)
+}
+
+var _ driver.Client = &mockClient{}
+
+func (c *mockClient) AllDBs(ctx context.Context, opts map[string]interface{}) ([]string, error) {
+	return c.AllDBsFunc(ctx, opts)
+}
+
+func (c *mockClient) CreateDB(ctx context.Context, dbname string, opts map[string]interface{}) error {
+	return c.CreateDBFunc(ctx, dbname, opts)
+}
+
+func (c *mockClient) DB(ctx context.Context, dbname string, opts map[string]interface{}) (driver.DB, error) {
+	return c.DBFunc(ctx, dbname, opts)
+}
+
+func (c *mockClient) DBExists(ctx context.Context, dbname string, opts map[string]interface{}) (bool, error) {
+	return c.DBExistsFunc(ctx, dbname, opts)
+}
+
+func (c *mockClient) DestroyDB(ctx context.Context, dbname string, opts map[string]interface{}) error {
+	return c.DestroyDBFunc(ctx, dbname, opts)
+}
+
+func (c *mockClient) Version(ctx context.Context) (*driver.Version, error) {
+	return c.VersionFunc(ctx)
+}
+
+type mockClientReplicator struct {
+	*mockClient
+	GetReplicationsFunc func(context.Context, map[string]interface{}) ([]driver.Replication, error)
+	ReplicateFunc       func(context.Context, string, string, map[string]interface{}) (driver.Replication, error)
+}
+
+var _ driver.ClientReplicator = &mockClientReplicator{}
+
+func (c *mockClientReplicator) GetReplications(ctx context.Context, opts map[string]interface{}) ([]driver.Replication, error) {
+	return c.GetReplicationsFunc(ctx, opts)
+}
+
+func (c *mockClientReplicator) Replicate(ctx context.Context, target, source string, opts map[string]interface{}) (driver.Replication, error) {
+	return c.ReplicateFunc(ctx, target, source, opts)
 }

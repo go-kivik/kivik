@@ -44,7 +44,7 @@ func (r *Replication) DocsWritten() int64 {
 
 // DocsRead returns the number of documents read, if known.
 func (r *Replication) DocsRead() int64 {
-	if r.info != nil {
+	if r != nil && r.info != nil {
 		r.infoMU.RLock()
 		defer r.infoMU.RUnlock()
 		return r.info.DocsRead
@@ -54,7 +54,7 @@ func (r *Replication) DocsRead() int64 {
 
 // DocWriteFailures returns the number of doc write failures, if known.
 func (r *Replication) DocWriteFailures() int64 {
-	if r.info != nil {
+	if r != nil && r.info != nil {
 		r.infoMU.RLock()
 		defer r.infoMU.RUnlock()
 		return r.info.DocWriteFailures
@@ -64,7 +64,7 @@ func (r *Replication) DocWriteFailures() int64 {
 
 // Progress returns the current replication progress, if known.
 func (r *Replication) Progress() float64 {
-	if r.info != nil {
+	if r != nil && r.info != nil {
 		r.infoMU.RLock()
 		defer r.infoMU.RUnlock()
 		return r.info.Progress
@@ -73,12 +73,11 @@ func (r *Replication) Progress() float64 {
 }
 
 func newReplication(rep driver.Replication) *Replication {
-	r := &Replication{
+	return &Replication{
 		Source: rep.Source(),
 		Target: rep.Target(),
 		irep:   rep,
 	}
-	return r
 }
 
 // ReplicationID returns the _replication_id field of the replicator document.

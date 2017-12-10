@@ -22,16 +22,41 @@ func (db *mockDB) Changes(ctx context.Context, opts map[string]interface{}) (dri
 	return db.ChangesFunc(ctx, opts)
 }
 
+type mockFinder struct {
+	*mockDB
+	CreateIndexFunc func(context.Context, string, string, interface{}) error
+	DeleteIndexFunc func(context.Context, string, string) error
+	FindFunc        func(context.Context, interface{}) (driver.Rows, error)
+	GetIndexesFunc  func(context.Context) ([]driver.Index, error)
+}
+
+var _ driver.Finder = &mockFinder{}
+
+func (db *mockFinder) CreateIndex(ctx context.Context, ddoc, name string, index interface{}) error {
+	return db.CreateIndexFunc(ctx, ddoc, name, index)
+}
+
+func (db *mockFinder) DeleteIndex(ctx context.Context, ddoc, name string) error {
+	return db.DeleteIndexFunc(ctx, ddoc, name)
+}
+
+func (db *mockFinder) Find(ctx context.Context, query interface{}) (driver.Rows, error) {
+	return db.FindFunc(ctx, query)
+}
+
+func (db *mockFinder) GetIndexes(ctx context.Context) ([]driver.Index, error) {
+	return db.GetIndexesFunc(ctx)
+}
+
 type mockExplainer struct {
-	driver.DB
-	plan *driver.QueryPlan
-	err  error
+	*mockDB
+	ExplainFunc func(context.Context, interface{}) (*driver.QueryPlan, error)
 }
 
 var _ driver.Explainer = &mockExplainer{}
 
-func (db *mockExplainer) Explain(_ context.Context, query interface{}) (*driver.QueryPlan, error) {
-	return db.plan, db.err
+func (db *mockExplainer) Explain(ctx context.Context, query interface{}) (*driver.QueryPlan, error) {
+	return db.ExplainFunc(ctx, query)
 }
 
 type errReader string
@@ -97,6 +122,7 @@ func (c *mockChanges) Close() error {
 }
 
 type mockRows struct {
+	id            string
 	CloseFunc     func() error
 	NextFunc      func(*driver.Row) error
 	OffsetFunc    func() int64

@@ -11,6 +11,16 @@ import (
 	"github.com/flimzy/kivik/driver"
 )
 
+type mockDriver struct {
+	NewClientFunc func(context.Context, string) (driver.Client, error)
+}
+
+var _ driver.Driver = &mockDriver{}
+
+func (d *mockDriver) NewClient(ctx context.Context, dsn string) (driver.Client, error) {
+	return d.NewClientFunc(ctx, dsn)
+}
+
 type mockDB struct {
 	driver.DB
 	ChangesFunc func(context.Context, map[string]interface{}) (driver.Changes, error)
@@ -199,6 +209,7 @@ func (r *mockReplication) Update(ctx context.Context, rep *driver.ReplicationInf
 }
 
 type mockClient struct {
+	id            string
 	AllDBsFunc    func(context.Context, map[string]interface{}) ([]string, error)
 	CreateDBFunc  func(context.Context, string, map[string]interface{}) error
 	DBFunc        func(context.Context, string, map[string]interface{}) (driver.DB, error)

@@ -112,9 +112,6 @@ case "$1" in
         gometalinter.v1 --install
     ;;
     "coverage")
-        setup_couch16
-        setup_couch20
-        setup_couch21
         generate
     ;;
 esac

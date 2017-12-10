@@ -85,4 +85,8 @@ const (
 	// StatusBadResponse indicates that the server responded with unrecognized
 	// data.
 	StatusBadResponse = 602
+
+	// StatusIteratorUnusable indicates an improper use of an iterator, such as
+	// calling an iterator prematurely, or after it was closed.
+	StatusIteratorUnusable = 603
 )

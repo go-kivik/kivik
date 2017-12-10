@@ -3,6 +3,7 @@ package kivik
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/flimzy/diff"
@@ -166,6 +167,64 @@ func TestChangesScanDoc(t *testing.T) {
 			var result interface{}
 			err := test.changes.ScanDoc(&result)
 			testy.StatusError(t, test.err, test.status, err)
+			if d := diff.Interface(test.expected, result); d != nil {
+				t.Error(d)
+			}
+		})
+	}
+}
+
+func TestChanges(t *testing.T) {
+	tests := []struct {
+		name     string
+		db       *DB
+		opts     Options
+		expected *Changes
+		status   int
+		err      string
+	}{
+		{
+			name: "db error",
+			db: &DB{
+				driverDB: &mockDB{
+					ChangesFunc: func(_ context.Context, _ map[string]interface{}) (driver.Changes, error) {
+						return nil, errors.New("db error")
+					},
+				},
+			},
+			status: 500,
+			err:    "db error",
+		},
+		{
+			name: "success",
+			db: &DB{
+				driverDB: &mockDB{
+					ChangesFunc: func(_ context.Context, opts map[string]interface{}) (driver.Changes, error) {
+						expectedOpts := map[string]interface{}{"foo": 123.4}
+						if d := diff.Interface(expectedOpts, opts); d != nil {
+							return nil, fmt.Errorf("Unexpected options:\n%s", d)
+						}
+						return &mockChanges{}, nil
+					},
+				},
+			},
+			opts: map[string]interface{}{"foo": 123.4},
+			expected: &Changes{
+				iter: &iter{
+					feed: &changesIterator{
+						Changes: &mockChanges{},
+					},
+					curVal: &driver.Change{},
+				},
+				changesi: &mockChanges{},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result, err := test.db.Changes(context.Background(), test.opts)
+			testy.StatusError(t, test.err, test.status, err)
+			result.cancel = nil // Determinism
 			if d := diff.Interface(test.expected, result); d != nil {
 				t.Error(d)
 			}

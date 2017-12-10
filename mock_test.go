@@ -22,6 +22,7 @@ func (d *mockDriver) NewClient(ctx context.Context, dsn string) (driver.Client, 
 }
 
 type mockDB struct {
+	id string
 	driver.DB
 	ChangesFunc func(context.Context, map[string]interface{}) (driver.Changes, error)
 }
@@ -258,4 +259,15 @@ func (c *mockClientReplicator) GetReplications(ctx context.Context, opts map[str
 
 func (c *mockClientReplicator) Replicate(ctx context.Context, target, source string, opts map[string]interface{}) (driver.Replication, error) {
 	return c.ReplicateFunc(ctx, target, source, opts)
+}
+
+type mockAuthenticator struct {
+	*mockClient
+	AuthenticateFunc func(context.Context, interface{}) error
+}
+
+var _ driver.Authenticator = &mockAuthenticator{}
+
+func (c *mockAuthenticator) Authenticate(ctx context.Context, a interface{}) error {
+	return c.AuthenticateFunc(ctx, a)
 }

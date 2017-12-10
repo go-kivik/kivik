@@ -4,8 +4,8 @@ import "encoding/json"
 
 // Changes is an iterator of the database changes feed.
 type Changes interface {
-	// Next is called to populate *Change with the values of the next value in
-	// the changes feed.
+	// Next is called to populate *Change with the next value in the changes
+	// feed.
 	//
 	// Next should return io.EOF when the changes feed is closed by request.
 	Next(*Change) error

@@ -5,9 +5,6 @@ ignore:
 import:
 - package: github.com/pkg/errors
   version: ~0.8.0
-- package: golang.org/x/crypto
-  subpackages:
-  - pbkdf2
 - package: golang.org/x/net
   subpackages:
   - publicsuffix

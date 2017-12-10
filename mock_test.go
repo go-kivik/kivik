@@ -271,3 +271,30 @@ var _ driver.Authenticator = &mockAuthenticator{}
 func (c *mockAuthenticator) Authenticate(ctx context.Context, a interface{}) error {
 	return c.AuthenticateFunc(ctx, a)
 }
+
+type mockDBUpdater struct {
+	*mockClient
+	DBUpdatesFunc func() (driver.DBUpdates, error)
+}
+
+var _ driver.DBUpdater = &mockDBUpdater{}
+
+func (c *mockDBUpdater) DBUpdates() (driver.DBUpdates, error) {
+	return c.DBUpdatesFunc()
+}
+
+type mockDBUpdates struct {
+	id        string
+	NextFunc  func(*driver.DBUpdate) error
+	CloseFunc func() error
+}
+
+var _ driver.DBUpdates = &mockDBUpdates{}
+
+func (u *mockDBUpdates) Close() error {
+	return u.CloseFunc()
+}
+
+func (u *mockDBUpdates) Next(dbupdate *driver.DBUpdate) error {
+	return u.NextFunc(dbupdate)
+}

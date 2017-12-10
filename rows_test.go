@@ -274,33 +274,23 @@ func TestRowsGetters(t *testing.T) {
 			t.Errorf("Unexpected result: %v", result)
 		}
 	})
-}
 
-func TestRowsGettersNotReady(t *testing.T) {
-	id := "foo"
-	key := []byte("[1234]")
-	r := &Rows{
-		iter: &iter{
-			ready: false,
-			curVal: &driver.Row{
-				ID:  id,
-				Key: key,
-			},
-		},
-	}
+	t.Run("Not Ready", func(t *testing.T) {
+		r.ready = false
 
-	t.Run("ID", func(t *testing.T) {
-		result := r.ID()
-		if result != "" {
-			t.Errorf("Unexpected result: %v", result)
-		}
-	})
+		t.Run("ID", func(t *testing.T) {
+			result := r.ID()
+			if result != "" {
+				t.Errorf("Unexpected result: %v", result)
+			}
+		})
 
-	t.Run("Key", func(t *testing.T) {
-		result := r.Key()
-		if result != "" {
-			t.Errorf("Unexpected result: %v", result)
-		}
+		t.Run("Key", func(t *testing.T) {
+			result := r.Key()
+			if result != "" {
+				t.Errorf("Unexpected result: %v", result)
+			}
+		})
 	})
 }
 

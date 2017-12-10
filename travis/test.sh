@@ -20,7 +20,8 @@ case "$1" in
     ;;
     "gopherjs")
         unset KIVIK_TEST_DSN_COUCH16
-        unset KIVIK_TESt_DSN_COUCH20
+        unset KIVIK_TEST_DSN_COUCH17
+        unset KIVIK_TEST_DSN_COUCH20
         gopherjs test $(go list ./... | grep -v /vendor/ | grep -Ev 'kivik/(serve|auth|proxy)')
     ;;
     "linter")
@@ -33,6 +34,7 @@ case "$1" in
         # Use only CouchDB 2.1 for the coverage tests, primarily because CouchDB
         # 1.6 is sporadic with failures, and leads to fluctuating coverage stats.
         unset KIVIK_TEST_DSN_COUCH16
+        unset KIVIK_TEST_DSN_COUCH17
         unset KIVIK_TEST_DSN_COUCH20
         echo "" > coverage.txt
 

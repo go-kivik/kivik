@@ -16,13 +16,13 @@ function join_list {
 
 case "$1" in
     "standard")
-        go test -race $(go list ./... | grep -v /vendor/ | grep -v /pouchdb)
+        go test -race $(go list ./... | grep -v /vendor/)
     ;;
     "gopherjs")
         unset KIVIK_TEST_DSN_COUCH16
         unset KIVIK_TEST_DSN_COUCH17
         unset KIVIK_TEST_DSN_COUCH20
-        gopherjs test $(go list ./... | grep -v /vendor/ | grep -Ev 'kivik/(serve|auth|proxy)')
+        gopherjs test $(go list ./...)
     ;;
     "linter")
         diff -u <(echo -n) <(gofmt -e -d $(find . -type f -name '*.go' -not -path "./vendor/*"))
@@ -31,19 +31,13 @@ case "$1" in
         gometalinter.v1 --config=.linter.json
     ;;
     "coverage")
-        # Use only CouchDB 2.1 for the coverage tests, primarily because CouchDB
-        # 1.6 is sporadic with failures, and leads to fluctuating coverage stats.
-        unset KIVIK_TEST_DSN_COUCH16
-        unset KIVIK_TEST_DSN_COUCH17
-        unset KIVIK_TEST_DSN_COUCH20
         echo "" > coverage.txt
 
-        TEST_PKGS=$(find -name "*_test.go" | grep -v /vendor/ | xargs dirname | sort -u | sed -e "s#^\.#github.com/flimzy/kivik#" )
+        TEST_PKGS=$(go list ./... | grep -v /test)
 
         for d in $TEST_PKGS; do
             go test -i $d
-            DEPS=$((go list -f $'{{range $f := .TestImports}}{{$f}}\n{{end}}{{range $f := .Imports}}{{$f}}\n{{end}}' $d && echo $d) | sort -u | grep -v /vendor/ | grep -v /kivik/test | grep ^github.com/flimzy/kivik | tr '\n' ' ')
-            go test -coverprofile=profile.out -covermode=set -coverpkg=$(join_list $DEPS) $d
+            go test -coverprofile=profile.out -covermode=set "$d"
             if [ -f profile.out ]; then
                 cat profile.out >> coverage.txt
                 rm profile.out

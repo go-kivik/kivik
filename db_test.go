@@ -3,6 +3,7 @@ package kivik
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"strings"
@@ -33,15 +34,134 @@ func TestName(t *testing.T) {
 	}
 }
 
-type dummyDB struct {
-	driver.DB
+func TestAllDocs(t *testing.T) {
+	tests := []struct {
+		name     string
+		db       *DB
+		options  Options
+		expected *Rows
+		status   int
+		err      string
+	}{
+		{
+			name: "db error",
+			db: &DB{
+				driverDB: &mockDB{
+					AllDocsFunc: func(_ context.Context, _ map[string]interface{}) (driver.Rows, error) {
+						return nil, errors.New("db error")
+					},
+				},
+			},
+			status: StatusInternalServerError,
+			err:    "db error",
+		},
+		{
+			name: "success",
+			db: &DB{
+				driverDB: &mockDB{
+					AllDocsFunc: func(_ context.Context, opts map[string]interface{}) (driver.Rows, error) {
+						if d := diff.Interface(testOptions, opts); d != nil {
+							return nil, fmt.Errorf("Unexpected options: %s", d)
+						}
+						return &mockRows{id: "a"}, nil
+					},
+				},
+			},
+			options: testOptions,
+			expected: &Rows{
+				iter: &iter{
+					feed: &rowsIterator{
+						Rows: &mockRows{id: "a"},
+					},
+					curVal: &driver.Row{},
+				},
+				rowsi: &mockRows{id: "a"},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result, err := test.db.AllDocs(context.Background(), test.options)
+			testy.StatusError(t, test.err, test.status, err)
+			result.cancel = nil // Determinism
+			if d := diff.Interface(test.expected, result); d != nil {
+				t.Error(d)
+			}
+		})
+	}
 }
 
-var _ driver.DB = &dummyDB{}
+func TestQuery(t *testing.T) {
+	tests := []struct {
+		name       string
+		db         *DB
+		ddoc, view string
+		options    Options
+		expected   *Rows
+		status     int
+		err        string
+	}{
+		{
+			name: "db error",
+			db: &DB{
+				driverDB: &mockDB{
+					QueryFunc: func(_ context.Context, ddoc, view string, opts map[string]interface{}) (driver.Rows, error) {
+						return nil, errors.New("db error")
+					},
+				},
+			},
+			status: StatusInternalServerError,
+			err:    "db error",
+		},
+		{
+			name: "success",
+			db: &DB{
+				driverDB: &mockDB{
+					QueryFunc: func(_ context.Context, ddoc, view string, opts map[string]interface{}) (driver.Rows, error) {
+						expectedDdoc := "foo"
+						expectedView := "bar"
+						if ddoc != expectedDdoc {
+							return nil, fmt.Errorf("Unexpected ddoc: %s", ddoc)
+						}
+						if view != expectedView {
+							return nil, fmt.Errorf("Unexpected view: %s", view)
+						}
+						if d := diff.Interface(testOptions, opts); d != nil {
+							return nil, fmt.Errorf("Unexpected options: %s", d)
+						}
+						return &mockRows{id: "a"}, nil
+					},
+				},
+			},
+			ddoc:    "foo",
+			view:    "bar",
+			options: testOptions,
+			expected: &Rows{
+				iter: &iter{
+					feed: &rowsIterator{
+						Rows: &mockRows{id: "a"},
+					},
+					curVal: &driver.Row{},
+				},
+				rowsi: &mockRows{id: "a"},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result, err := test.db.Query(context.Background(), test.ddoc, test.view, test.options)
+			testy.StatusError(t, test.err, test.status, err)
+			result.cancel = nil // Determinism
+			if d := diff.Interface(test.expected, result); d != nil {
+				t.Error(d)
+			}
+		})
+	}
+}
 
 func TestFlushNotSupported(t *testing.T) {
 	db := &DB{
-		driverDB: &dummyDB{},
+		driverDB: &mockDB{},
 	}
 	err := db.Flush(context.Background())
 	if StatusCode(err) != StatusNotImplemented {

@@ -24,10 +24,20 @@ func (d *mockDriver) NewClient(ctx context.Context, dsn string) (driver.Client, 
 type mockDB struct {
 	id string
 	driver.DB
+	AllDocsFunc func(context.Context, map[string]interface{}) (driver.Rows, error)
+	QueryFunc   func(context.Context, string, string, map[string]interface{}) (driver.Rows, error)
 	ChangesFunc func(context.Context, map[string]interface{}) (driver.Changes, error)
 }
 
 var _ driver.DB = &mockDB{}
+
+func (db *mockDB) AllDocs(ctx context.Context, opts map[string]interface{}) (driver.Rows, error) {
+	return db.AllDocsFunc(ctx, opts)
+}
+
+func (db *mockDB) Query(ctx context.Context, ddoc, view string, opts map[string]interface{}) (driver.Rows, error) {
+	return db.QueryFunc(ctx, ddoc, view, opts)
+}
 
 func (db *mockDB) Changes(ctx context.Context, opts map[string]interface{}) (driver.Changes, error) {
 	return db.ChangesFunc(ctx, opts)

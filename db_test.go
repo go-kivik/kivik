@@ -568,6 +568,151 @@ func TestRev(t *testing.T) {
 	}
 }
 
+func TestCopy(t *testing.T) {
+	tests := []struct {
+		name           string
+		db             *DB
+		target, source string
+		options        Options
+		expected       string
+		status         int
+		err            string
+	}{
+		{
+			name:   "missing target",
+			status: StatusBadRequest,
+			err:    "kivik: targetID required",
+		},
+		{
+			name:   "missing source",
+			target: "foo",
+			status: StatusBadRequest,
+			err:    "kivik: sourceID required",
+		},
+		{
+			name: "copier error",
+			db: &DB{
+				driverDB: &mockCopier{
+					CopyFunc: func(_ context.Context, _, _ string, _ map[string]interface{}) (string, error) {
+						return "", errors.Status(StatusBadRequest, "copy error")
+					},
+				},
+			},
+			target: "foo",
+			source: "bar",
+			status: StatusBadRequest,
+			err:    "copy error",
+		},
+		{
+			name: "copier success",
+			db: &DB{
+				driverDB: &mockCopier{
+					CopyFunc: func(_ context.Context, target, source string, options map[string]interface{}) (string, error) {
+						expectedTarget := "foo"
+						expectedSource := "bar"
+						if target != expectedTarget {
+							return "", fmt.Errorf("Unexpected target: %s", target)
+						}
+						if source != expectedSource {
+							return "", fmt.Errorf("Unexpected source: %s", source)
+						}
+						if d := diff.Interface(testOptions, options); d != nil {
+							return "", fmt.Errorf("Unexpected options:\n%s", d)
+						}
+						return "1-xxx", nil
+					},
+				},
+			},
+			target:   "foo",
+			source:   "bar",
+			options:  testOptions,
+			expected: "1-xxx",
+		},
+		{
+			name: "non-copier get error",
+			db: &DB{
+				driverDB: &mockDB{
+					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (json.RawMessage, error) {
+						return nil, errors.Status(StatusBadResponse, "get error")
+					},
+				},
+			},
+			target: "foo",
+			source: "bar",
+			status: StatusBadResponse,
+			err:    "get error",
+		},
+		{
+			name: "non-copier invalid JSON",
+			db: &DB{
+				driverDB: &mockDB{
+					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (json.RawMessage, error) {
+						return []byte("invalid json"), nil
+					},
+				},
+			},
+			target: "foo",
+			source: "bar",
+			status: StatusBadResponse,
+			err:    "invalid character 'i' looking for beginning of value",
+		},
+		{
+			name: "non-copier put error",
+			db: &DB{
+				driverDB: &mockDB{
+					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (json.RawMessage, error) {
+						return []byte(`{"_id":"foo","_rev":"1-xxx"}`), nil
+					},
+					PutFunc: func(_ context.Context, _ string, _ interface{}) (string, error) {
+						return "", errors.Status(StatusBadResponse, "put error")
+					},
+				},
+			},
+			target: "foo",
+			source: "bar",
+			status: StatusBadResponse,
+			err:    "put error",
+		},
+		{
+			name: "success",
+			db: &DB{
+				driverDB: &mockDB{
+					GetFunc: func(_ context.Context, docID string, options map[string]interface{}) (json.RawMessage, error) {
+						expectedDocID := "bar"
+						if docID != expectedDocID {
+							return nil, fmt.Errorf("Unexpected get docID: %s", docID)
+						}
+						return []byte(`{"_id":"bar","_rev":"1-xxx","foo":123.4}`), nil
+					},
+					PutFunc: func(_ context.Context, docID string, doc interface{}) (string, error) {
+						expectedDocID := "foo"
+						expectedDoc := map[string]interface{}{"_id": "foo", "foo": 123.4}
+						if docID != expectedDocID {
+							return "", fmt.Errorf("Unexpected put docID: %s", docID)
+						}
+						if d := diff.Interface(expectedDoc, doc); d != nil {
+							return "", fmt.Errorf("Unexpected doc:\n%s", doc)
+						}
+						return "1-xxx", nil
+					},
+				},
+			},
+			target:   "foo",
+			source:   "bar",
+			expected: "1-xxx",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result, err := test.db.Copy(context.Background(), test.target, test.source, test.options)
+			testy.StatusError(t, test.err, test.status, err)
+			if result != test.expected {
+				t.Errorf("Unexpected result: %s", result)
+			}
+		})
+	}
+}
+
 type errorReader struct{}
 
 var _ io.Reader = &errorReader{}

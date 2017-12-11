@@ -203,6 +203,17 @@ func (db *mockRever) Rev(ctx context.Context, docID string) (string, error) {
 	return db.RevFunc(ctx, docID)
 }
 
+type mockCopier struct {
+	*mockDB
+	CopyFunc func(context.Context, string, string, map[string]interface{}) (string, error)
+}
+
+var _ driver.Copier = &mockCopier{}
+
+func (db *mockCopier) Copy(ctx context.Context, target, source string, options map[string]interface{}) (string, error) {
+	return db.CopyFunc(ctx, target, source, options)
+}
+
 type errReader string
 
 var _ io.ReadCloser = errReader("")

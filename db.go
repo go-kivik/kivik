@@ -318,6 +318,12 @@ func (db *DB) Rev(ctx context.Context, docID string) (rev string, err error) {
 //
 // See http://docs.couchdb.org/en/2.0.0/api/document/common.html#copy--db-docid
 func (db *DB) Copy(ctx context.Context, targetID, sourceID string, options ...Options) (targetRev string, err error) {
+	if targetID == "" {
+		return "", missingArg("targetID")
+	}
+	if sourceID == "" {
+		return "", missingArg("sourceID")
+	}
 	opts, err := mergeOptions(options...)
 	if err != nil {
 		return "", err

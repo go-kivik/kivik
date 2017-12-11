@@ -235,8 +235,11 @@ type DBStats struct {
 // Stats returns database statistics.
 func (db *DB) Stats(ctx context.Context) (*DBStats, error) {
 	i, err := db.driverDB.Stats(ctx)
+	if err != nil {
+		return nil, err
+	}
 	stats := DBStats(*i)
-	return &stats, err
+	return &stats, nil
 }
 
 // Compact begins compaction of the database. Check the CompactRunning field
@@ -276,6 +279,9 @@ func (db *DB) Security(ctx context.Context) (*Security, error) {
 // SetSecurity sets the database's security document.
 // See http://couchdb.readthedocs.io/en/latest/api/database/security.html#put--db-_security
 func (db *DB) SetSecurity(ctx context.Context, security *Security) error {
+	if security == nil {
+		return missingArg("security")
+	}
 	sec := &driver.Security{
 		Admins:  driver.Members(security.Admins),
 		Members: driver.Members(security.Members),
@@ -290,8 +296,6 @@ func (db *DB) Rev(ctx context.Context, docID string) (rev string, err error) {
 	if r, ok := db.driverDB.(driver.Rever); ok {
 		return r.Rev(ctx, docID)
 	}
-	// These last two lines cannot be combined for GopherJS due to a bug.
-	// See https://github.com/gopherjs/gopherjs/issues/608
 	row, err := db.Get(ctx, docID, nil)
 	if err != nil {
 		return "", err
@@ -299,6 +303,8 @@ func (db *DB) Rev(ctx context.Context, docID string) (rev string, err error) {
 	var doc struct {
 		Rev string `json:"_rev"`
 	}
+	// These last two lines cannot be combined for GopherJS due to a bug.
+	// See https://github.com/gopherjs/gopherjs/issues/608
 	if err = row.ScanDoc(&doc); err != nil {
 		return "", err
 	}

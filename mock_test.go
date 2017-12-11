@@ -181,6 +181,28 @@ func (db *mockExplainer) Explain(ctx context.Context, query interface{}) (*drive
 	return db.ExplainFunc(ctx, query)
 }
 
+type mockDBFlusher struct {
+	*mockDB
+	FlushFunc func(context.Context) error
+}
+
+var _ driver.DBFlusher = &mockDBFlusher{}
+
+func (db *mockDBFlusher) Flush(ctx context.Context) error {
+	return db.FlushFunc(ctx)
+}
+
+type mockRever struct {
+	*mockDB
+	RevFunc func(context.Context, string) (string, error)
+}
+
+var _ driver.Rever = &mockRever{}
+
+func (db *mockRever) Rev(ctx context.Context, docID string) (string, error) {
+	return db.RevFunc(ctx, docID)
+}
+
 type errReader string
 
 var _ io.ReadCloser = errReader("")

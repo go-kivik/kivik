@@ -215,13 +215,356 @@ func TestGet(t *testing.T) {
 	}
 }
 
-func TestFlushNotSupported(t *testing.T) {
-	db := &DB{
-		driverDB: &mockDB{},
+func TestFlush(t *testing.T) {
+	tests := []struct {
+		name   string
+		db     *DB
+		status int
+		err    string
+	}{
+		{
+			name: "non-Flusher",
+			db: &DB{
+				driverDB: &mockDB{},
+			},
+			status: StatusNotImplemented,
+			err:    "kivik: flush not supported by driver",
+		},
+		{
+			name: "db error",
+			db: &DB{
+				driverDB: &mockDBFlusher{
+					FlushFunc: func(_ context.Context) error {
+						return errors.Status(StatusBadResponse, "flush error")
+					},
+				},
+			},
+			status: StatusBadResponse,
+			err:    "flush error",
+		},
+		{
+			name: "success",
+			db: &DB{
+				driverDB: &mockDBFlusher{
+					FlushFunc: func(_ context.Context) error {
+						return nil
+					},
+				},
+			},
+		},
 	}
-	err := db.Flush(context.Background())
-	if StatusCode(err) != StatusNotImplemented {
-		t.Errorf("Expected NotImplemented, got %s", err)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := test.db.Flush(context.Background())
+			testy.StatusError(t, test.err, test.status, err)
+		})
+	}
+}
+
+func TestStats(t *testing.T) {
+	tests := []struct {
+		name     string
+		db       *DB
+		expected *DBStats
+		status   int
+		err      string
+	}{
+		{
+			name: "stats error",
+			db: &DB{
+				driverDB: &mockDB{
+					StatsFunc: func(_ context.Context) (*driver.DBStats, error) {
+						return nil, errors.Status(StatusBadResponse, "stats error")
+					},
+				},
+			},
+			status: StatusBadResponse,
+			err:    "stats error",
+		},
+		{
+			name: "success",
+			db: &DB{
+				driverDB: &mockDB{
+					StatsFunc: func(_ context.Context) (*driver.DBStats, error) {
+						return &driver.DBStats{Name: "foo"}, nil
+					},
+				},
+			},
+			expected: &DBStats{Name: "foo"},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result, err := test.db.Stats(context.Background())
+			testy.StatusError(t, test.err, test.status, err)
+			if d := diff.Interface(test.expected, result); d != nil {
+				t.Error(d)
+			}
+		})
+	}
+}
+
+func TestCompact(t *testing.T) {
+	expected := "compact error"
+	db := &DB{
+		driverDB: &mockDB{
+			CompactFunc: func(_ context.Context) error {
+				return errors.Status(StatusBadRequest, expected)
+			},
+		},
+	}
+	err := db.Compact(context.Background())
+	testy.StatusError(t, expected, StatusBadRequest, err)
+}
+
+func TestCompactView(t *testing.T) {
+	expectedDDocID := "foo"
+	expected := "compact view error"
+	db := &DB{
+		driverDB: &mockDB{
+			CompactViewFunc: func(_ context.Context, ddocID string) error {
+				if ddocID != expectedDDocID {
+					return fmt.Errorf("Unexpected ddocID: %s", ddocID)
+				}
+				return errors.Status(StatusBadRequest, expected)
+			},
+		},
+	}
+	err := db.CompactView(context.Background(), expectedDDocID)
+	testy.StatusError(t, expected, StatusBadRequest, err)
+}
+
+func TestViewCleanup(t *testing.T) {
+	expected := "compact error"
+	db := &DB{
+		driverDB: &mockDB{
+			ViewCleanupFunc: func(_ context.Context) error {
+				return errors.Status(StatusBadRequest, expected)
+			},
+		},
+	}
+	err := db.ViewCleanup(context.Background())
+	testy.StatusError(t, expected, StatusBadRequest, err)
+}
+
+func TestSecurity(t *testing.T) {
+	tests := []struct {
+		name     string
+		db       *DB
+		expected *Security
+		status   int
+		err      string
+	}{
+		{
+			name: "security error",
+			db: &DB{
+				driverDB: &mockDB{
+					SecurityFunc: func(_ context.Context) (*driver.Security, error) {
+						return nil, errors.Status(StatusBadResponse, "security error")
+					},
+				},
+			},
+			status: StatusBadResponse,
+			err:    "security error",
+		},
+		{
+			name: "success",
+			db: &DB{
+				driverDB: &mockDB{
+					SecurityFunc: func(_ context.Context) (*driver.Security, error) {
+						return &driver.Security{
+							Admins: driver.Members{
+								Names: []string{"a"},
+								Roles: []string{"b"},
+							},
+							Members: driver.Members{
+								Names: []string{"c"},
+								Roles: []string{"d"},
+							},
+						}, nil
+					},
+				},
+			},
+			expected: &Security{
+				Admins: Members{
+					Names: []string{"a"},
+					Roles: []string{"b"},
+				},
+				Members: Members{
+					Names: []string{"c"},
+					Roles: []string{"d"},
+				},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result, err := test.db.Security(context.Background())
+			testy.StatusError(t, test.err, test.status, err)
+			if d := diff.Interface(test.expected, result); d != nil {
+				t.Error(d)
+			}
+		})
+	}
+}
+
+func TestSetSecurity(t *testing.T) {
+	tests := []struct {
+		name     string
+		db       *DB
+		security *Security
+		status   int
+		err      string
+	}{
+		{
+			name:   "nil security",
+			status: StatusBadRequest,
+			err:    "kivik: security required",
+		},
+		{
+			name: "set error",
+			db: &DB{
+				driverDB: &mockDB{
+					SetSecurityFunc: func(_ context.Context, _ *driver.Security) error {
+						return errors.Status(StatusBadResponse, "set security error")
+					},
+				},
+			},
+			security: &Security{},
+			status:   StatusBadResponse,
+			err:      "set security error",
+		},
+		{
+			name: "success",
+			db: &DB{
+				driverDB: &mockDB{
+					SetSecurityFunc: func(_ context.Context, security *driver.Security) error {
+						expectedSecurity := &driver.Security{
+							Admins: driver.Members{
+								Names: []string{"a"},
+								Roles: []string{"b"},
+							},
+							Members: driver.Members{
+								Names: []string{"c"},
+								Roles: []string{"d"},
+							},
+						}
+						if d := diff.Interface(expectedSecurity, security); d != nil {
+							return fmt.Errorf("Unexpected security:\n%s", d)
+						}
+						return nil
+					},
+				},
+			},
+			security: &Security{
+				Admins: Members{
+					Names: []string{"a"},
+					Roles: []string{"b"},
+				},
+				Members: Members{
+					Names: []string{"c"},
+					Roles: []string{"d"},
+				},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := test.db.SetSecurity(context.Background(), test.security)
+			testy.StatusError(t, test.err, test.status, err)
+		})
+	}
+}
+
+func TestRev(t *testing.T) {
+	tests := []struct {
+		name     string
+		db       *DB
+		docID    string
+		expected string
+		status   int
+		err      string
+	}{
+		{
+			name: "rever error",
+			db: &DB{
+				driverDB: &mockRever{
+					RevFunc: func(_ context.Context, _ string) (string, error) {
+						return "", errors.Status(StatusBadResponse, "rever error")
+					},
+				},
+			},
+			status: StatusBadResponse,
+			err:    "rever error",
+		},
+		{
+			name: "rever success",
+			db: &DB{
+				driverDB: &mockRever{
+					RevFunc: func(_ context.Context, docID string) (string, error) {
+						expectedDocID := "foo"
+						if docID != expectedDocID {
+							return "", fmt.Errorf("Unexpected docID: %s", docID)
+						}
+						return "1-xxx", nil
+					},
+				},
+			},
+			docID:    "foo",
+			expected: "1-xxx",
+		},
+		{
+			name: "non-rever error",
+			db: &DB{
+				driverDB: &mockDB{
+					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (json.RawMessage, error) {
+						return nil, errors.Status(StatusBadResponse, "get error")
+					},
+				},
+			},
+			status: StatusBadResponse,
+			err:    "get error",
+		},
+		{
+			name: "non-rever invalid json",
+			db: &DB{
+				driverDB: &mockDB{
+					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (json.RawMessage, error) {
+						return []byte("invalid json"), nil
+					},
+				},
+			},
+			status: StatusBadResponse,
+			err:    "invalid character 'i' looking for beginning of value",
+		},
+		{
+			name: "non-rever success",
+			db: &DB{
+				driverDB: &mockDB{
+					GetFunc: func(_ context.Context, docID string, opts map[string]interface{}) (json.RawMessage, error) {
+						expectedDocID := "foo"
+						if docID != expectedDocID {
+							return nil, fmt.Errorf("Unexpected docID: %s", docID)
+						}
+						if opts != nil {
+							return nil, errors.New("opts should be nil")
+						}
+						return []byte(`{"_rev":"1-xxx"}`), nil
+					},
+				},
+			},
+			docID:    "foo",
+			expected: "1-xxx",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result, err := test.db.Rev(context.Background(), test.docID)
+			testy.StatusError(t, test.err, test.status, err)
+			if result != test.expected {
+				t.Errorf("Unexpected result: %s", result)
+			}
+		})
 	}
 }
 

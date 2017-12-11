@@ -159,6 +159,62 @@ func TestQuery(t *testing.T) {
 	}
 }
 
+func TestGet(t *testing.T) {
+	tests := []struct {
+		name     string
+		db       *DB
+		docID    string
+		options  Options
+		expected *Row
+		status   int
+		err      string
+	}{
+		{
+			name: "db error",
+			db: &DB{
+				driverDB: &mockDB{
+					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (json.RawMessage, error) {
+						return nil, errors.New("db error")
+					},
+				},
+			},
+			status: StatusInternalServerError,
+			err:    "db error",
+		},
+		{
+			name: "success",
+			db: &DB{
+				driverDB: &mockDB{
+					GetFunc: func(_ context.Context, docID string, options map[string]interface{}) (json.RawMessage, error) {
+						expectedDocID := "foo"
+						if docID != expectedDocID {
+							return nil, fmt.Errorf("Unexpected docID: %s", docID)
+						}
+						if d := diff.Interface(testOptions, options); d != nil {
+							return nil, fmt.Errorf("Unexpected options:\n%s", d)
+						}
+						return []byte(`{"_id":"foo"}`), nil
+					},
+				},
+			},
+			docID:   "foo",
+			options: testOptions,
+			expected: &Row{
+				doc: []byte(`{"_id":"foo"}`),
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result, err := test.db.Get(context.Background(), test.docID, test.options)
+			testy.StatusError(t, test.err, test.status, err)
+			if d := diff.Interface(test.expected, result); d != nil {
+				t.Error(d)
+			}
+		})
+	}
+}
+
 func TestFlushNotSupported(t *testing.T) {
 	db := &DB{
 		driverDB: &mockDB{},
@@ -469,45 +525,6 @@ func TestExtractDocID(t *testing.T) {
 	}
 }
 
-type legacyCreateDocGrabber struct {
-	driver.DB
-	doc interface{}
-
-	id, rev string
-	err     error
-}
-
-func (db *legacyCreateDocGrabber) CreateDoc(_ context.Context, doc interface{}) (string, string, error) {
-	if d := diff.Interface(db.doc, doc); d != nil {
-		return "", "", errors.Errorf("Unexpected doc: %s", d)
-	}
-	return db.id, db.rev, db.err
-}
-
-type createDocGrabber struct {
-	driver.DB
-	driver.DBOpts
-	doc  interface{}
-	opts map[string]interface{}
-
-	id, rev string
-	err     error
-}
-
-func (db *createDocGrabber) CreateDoc(_ context.Context, _ interface{}) (string, string, error) {
-	panic("CreateDoc called")
-}
-
-func (db *createDocGrabber) CreateDocOpts(_ context.Context, doc interface{}, opts map[string]interface{}) (string, string, error) {
-	if d := diff.Interface(db.doc, doc); d != nil {
-		return "", "", errors.Errorf("Unexpected doc: %s", d)
-	}
-	if d := diff.Interface(db.opts, opts); d != nil {
-		return "", "", errors.Errorf("Unexpected opts: %s", d)
-	}
-	return db.id, db.rev, db.err
-}
-
 func TestCreateDoc(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -519,31 +536,51 @@ func TestCreateDoc(t *testing.T) {
 		err        string
 	}{
 		{
-			name:   "error",
-			db:     &DB{driverDB: &createDocGrabber{err: errors.Status(StatusBadRequest, "create error")}},
+			name: "error",
+			db: &DB{
+				driverDB: &mockDBOpts{
+					CreateDocOptsFunc: func(_ context.Context, _ interface{}, _ map[string]interface{}) (string, string, error) {
+						return "", "", errors.Status(StatusBadRequest, "create error")
+					},
+				},
+			},
 			status: StatusBadRequest,
 			err:    "create error",
 		},
 		{
 			name: "success",
-			db: &DB{driverDB: &createDocGrabber{
-				id:   "foo",
-				rev:  "1-xxx",
-				doc:  map[string]string{"type": "test"},
-				opts: map[string]interface{}{"opt": 1},
-			}},
+			db: &DB{
+				driverDB: &mockDBOpts{
+					CreateDocOptsFunc: func(_ context.Context, doc interface{}, opts map[string]interface{}) (string, string, error) {
+						expectedDoc := map[string]string{"type": "test"}
+						if d := diff.Interface(expectedDoc, doc); d != nil {
+							return "", "", fmt.Errorf("Unexpected doc:\n%s", d)
+						}
+						if d := diff.Interface(testOptions, opts); d != nil {
+							return "", "", fmt.Errorf("Unexpected options:\n%s", d)
+						}
+						return "foo", "1-xxx", nil
+					},
+				},
+			},
 			doc:     map[string]string{"type": "test"},
-			options: Options{"opt": 1},
+			options: testOptions,
 			docID:   "foo",
 			rev:     "1-xxx",
 		},
 		{
 			name: "legacy",
-			db: &DB{driverDB: &legacyCreateDocGrabber{
-				id:  "foo",
-				rev: "1-xxx",
-				doc: map[string]string{"type": "test"},
-			}},
+			db: &DB{
+				driverDB: &mockDB{
+					CreateDocFunc: func(_ context.Context, doc interface{}) (string, string, error) {
+						expectedDoc := map[string]string{"type": "test"}
+						if d := diff.Interface(expectedDoc, doc); d != nil {
+							return "", "", fmt.Errorf("Unexpected doc:\n%s", d)
+						}
+						return "foo", "1-xxx", nil
+					},
+				},
+			},
 			doc:   map[string]string{"type": "test"},
 			docID: "foo",
 			rev:   "1-xxx",

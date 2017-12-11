@@ -2,6 +2,7 @@ package kivik
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"io/ioutil"
@@ -24,9 +25,11 @@ func (d *mockDriver) NewClient(ctx context.Context, dsn string) (driver.Client, 
 type mockDB struct {
 	id string
 	driver.DB
-	AllDocsFunc func(context.Context, map[string]interface{}) (driver.Rows, error)
-	QueryFunc   func(context.Context, string, string, map[string]interface{}) (driver.Rows, error)
-	ChangesFunc func(context.Context, map[string]interface{}) (driver.Changes, error)
+	AllDocsFunc   func(context.Context, map[string]interface{}) (driver.Rows, error)
+	QueryFunc     func(context.Context, string, string, map[string]interface{}) (driver.Rows, error)
+	GetFunc       func(context.Context, string, map[string]interface{}) (json.RawMessage, error)
+	CreateDocFunc func(context.Context, interface{}) (string, string, error)
+	ChangesFunc   func(context.Context, map[string]interface{}) (driver.Changes, error)
 }
 
 var _ driver.DB = &mockDB{}
@@ -39,8 +42,52 @@ func (db *mockDB) Query(ctx context.Context, ddoc, view string, opts map[string]
 	return db.QueryFunc(ctx, ddoc, view, opts)
 }
 
+func (db *mockDB) Get(ctx context.Context, docID string, opts map[string]interface{}) (json.RawMessage, error) {
+	return db.GetFunc(ctx, docID, opts)
+}
+
+func (db *mockDB) CreateDoc(ctx context.Context, doc interface{}) (string, string, error) {
+	return db.CreateDocFunc(ctx, doc)
+}
+
 func (db *mockDB) Changes(ctx context.Context, opts map[string]interface{}) (driver.Changes, error) {
 	return db.ChangesFunc(ctx, opts)
+}
+
+type mockDBOpts struct {
+	*mockDB
+	CreateDocOptsFunc        func(context.Context, interface{}, map[string]interface{}) (string, string, error)
+	PutOptsFunc              func(context.Context, string, interface{}, map[string]interface{}) (string, error)
+	DeleteOptsFunc           func(context.Context, string, string, map[string]interface{}) (string, error)
+	PutAttachmentOptsFunc    func(context.Context, string, string, string, string, io.Reader, map[string]interface{}) (string, error)
+	GetAttachmentOptsFunc    func(context.Context, string, string, string, map[string]interface{}) (string, driver.MD5sum, io.ReadCloser, error)
+	DeleteAttachmentOptsFunc func(context.Context, string, string, string, map[string]interface{}) (string, error)
+}
+
+var _ driver.DBOpts = &mockDBOpts{}
+
+func (db *mockDBOpts) CreateDocOpts(ctx context.Context, doc interface{}, opts map[string]interface{}) (string, string, error) {
+	return db.CreateDocOptsFunc(ctx, doc, opts)
+}
+
+func (db *mockDBOpts) PutOpts(ctx context.Context, docID string, doc interface{}, options map[string]interface{}) (string, error) {
+	return db.PutOptsFunc(ctx, docID, doc, options)
+}
+
+func (db *mockDBOpts) DeleteAttachmentOpts(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (string, error) {
+	return db.DeleteAttachmentOptsFunc(ctx, docID, rev, filename, options)
+}
+
+func (db *mockDBOpts) DeleteOpts(ctx context.Context, docID, rev string, options map[string]interface{}) (string, error) {
+	return db.DeleteOptsFunc(ctx, docID, rev, options)
+}
+
+func (db *mockDBOpts) PutAttachmentOpts(ctx context.Context, docID, rev, filename, cType string, body io.Reader, options map[string]interface{}) (string, error) {
+	return db.PutAttachmentOptsFunc(ctx, docID, rev, filename, cType, body, options)
+}
+
+func (db *mockDBOpts) GetAttachmentOpts(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (string, driver.MD5sum, io.ReadCloser, error) {
+	return db.GetAttachmentOptsFunc(ctx, docID, rev, filename, options)
 }
 
 type mockFinder struct {

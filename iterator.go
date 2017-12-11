@@ -144,5 +144,5 @@ func scan(dest interface{}, val json.RawMessage) error {
 		*d = val
 		return nil
 	}
-	return json.Unmarshal(val, dest)
+	return errors.WrapStatus(StatusBadResponse, json.Unmarshal(val, dest))
 }

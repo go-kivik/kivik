@@ -23,23 +23,29 @@ func (d *mockDriver) NewClient(ctx context.Context, dsn string) (driver.Client, 
 }
 
 type mockDB struct {
-	id string
-	driver.DB
-	AllDocsFunc   func(context.Context, map[string]interface{}) (driver.Rows, error)
-	QueryFunc     func(context.Context, string, string, map[string]interface{}) (driver.Rows, error)
-	GetFunc       func(context.Context, string, map[string]interface{}) (json.RawMessage, error)
-	CreateDocFunc func(context.Context, interface{}) (string, string, error)
-	ChangesFunc   func(context.Context, map[string]interface{}) (driver.Changes, error)
+	id                   string
+	AllDocsFunc          func(context.Context, map[string]interface{}) (driver.Rows, error)
+	GetFunc              func(context.Context, string, map[string]interface{}) (json.RawMessage, error)
+	CreateDocFunc        func(context.Context, interface{}) (string, string, error)
+	PutFunc              func(context.Context, string, interface{}) (string, error)
+	DeleteFunc           func(context.Context, string, string) (string, error)
+	StatsFunc            func(context.Context) (*driver.DBStats, error)
+	CompactFunc          func(context.Context) error
+	CompactViewFunc      func(context.Context, string) error
+	ViewCleanupFunc      func(context.Context) error
+	SecurityFunc         func(context.Context) (*driver.Security, error)
+	SetSecurityFunc      func(context.Context, *driver.Security) error
+	ChangesFunc          func(context.Context, map[string]interface{}) (driver.Changes, error)
+	PutAttachmentFunc    func(context.Context, string, string, string, string, io.Reader) (string, error)
+	GetAttachmentFunc    func(context.Context, string, string, string) (string, driver.MD5sum, io.ReadCloser, error)
+	DeleteAttachmentFunc func(context.Context, string, string, string) (string, error)
+	QueryFunc            func(context.Context, string, string, map[string]interface{}) (driver.Rows, error)
 }
 
 var _ driver.DB = &mockDB{}
 
 func (db *mockDB) AllDocs(ctx context.Context, opts map[string]interface{}) (driver.Rows, error) {
 	return db.AllDocsFunc(ctx, opts)
-}
-
-func (db *mockDB) Query(ctx context.Context, ddoc, view string, opts map[string]interface{}) (driver.Rows, error) {
-	return db.QueryFunc(ctx, ddoc, view, opts)
 }
 
 func (db *mockDB) Get(ctx context.Context, docID string, opts map[string]interface{}) (json.RawMessage, error) {
@@ -50,8 +56,56 @@ func (db *mockDB) CreateDoc(ctx context.Context, doc interface{}) (string, strin
 	return db.CreateDocFunc(ctx, doc)
 }
 
+func (db *mockDB) Put(ctx context.Context, docID string, doc interface{}) (string, error) {
+	return db.PutFunc(ctx, docID, doc)
+}
+
+func (db *mockDB) Delete(ctx context.Context, docID, rev string) (string, error) {
+	return db.DeleteFunc(ctx, docID, rev)
+}
+
+func (db *mockDB) Stats(ctx context.Context) (*driver.DBStats, error) {
+	return db.StatsFunc(ctx)
+}
+
+func (db *mockDB) Compact(ctx context.Context) error {
+	return db.CompactFunc(ctx)
+}
+
+func (db *mockDB) CompactView(ctx context.Context, docID string) error {
+	return db.CompactViewFunc(ctx, docID)
+}
+
+func (db *mockDB) ViewCleanup(ctx context.Context) error {
+	return db.ViewCleanupFunc(ctx)
+}
+
+func (db *mockDB) Security(ctx context.Context) (*driver.Security, error) {
+	return db.SecurityFunc(ctx)
+}
+
+func (db *mockDB) SetSecurity(ctx context.Context, security *driver.Security) error {
+	return db.SetSecurityFunc(ctx, security)
+}
+
 func (db *mockDB) Changes(ctx context.Context, opts map[string]interface{}) (driver.Changes, error) {
 	return db.ChangesFunc(ctx, opts)
+}
+
+func (db *mockDB) PutAttachment(ctx context.Context, docID, rev, filename, cType string, body io.Reader) (string, error) {
+	return db.PutAttachmentFunc(ctx, docID, rev, filename, cType, body)
+}
+
+func (db *mockDB) GetAttachment(ctx context.Context, docID, rev, filename string) (string, driver.MD5sum, io.ReadCloser, error) {
+	return db.GetAttachmentFunc(ctx, docID, rev, filename)
+}
+
+func (db *mockDB) DeleteAttachment(ctx context.Context, docID, rev, filename string) (string, error) {
+	return db.DeleteAttachmentFunc(ctx, docID, rev, filename)
+}
+
+func (db *mockDB) Query(ctx context.Context, ddoc, view string, opts map[string]interface{}) (driver.Rows, error) {
+	return db.QueryFunc(ctx, ddoc, view, opts)
 }
 
 type mockDBOpts struct {

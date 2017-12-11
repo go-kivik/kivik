@@ -299,54 +299,21 @@ func TestNormalizeFromJSON(t *testing.T) {
 	}
 }
 
-type legacyPutGrabber struct {
-	driver.DB
-	docID string
-	doc   interface{}
-
-	newRev string
-	err    error
-}
-
-func (db *legacyPutGrabber) Put(_ context.Context, docID string, i interface{}) (string, error) {
-	if db.docID != docID {
-		return "", errors.Errorf("Unexpected docID: %s", docID)
-	}
-	if d := diff.Interface(db.doc, i); d != nil {
-		return "", errors.Errorf("Unexpected doc: %s", d)
-	}
-	return db.newRev, db.err
-}
-
-type putGrabber struct {
-	driver.DB
-	driver.DBOpts
-	docID string
-	doc   interface{}
-	opts  map[string]interface{}
-
-	newRev string
-	err    error
-}
-
-func (db *putGrabber) Put(_ context.Context, _ string, _ interface{}) (string, error) {
-	panic("Put called")
-}
-
-func (db *putGrabber) PutOpts(_ context.Context, docID string, i interface{}, opts map[string]interface{}) (string, error) {
-	if db.docID != docID {
-		return "", errors.Errorf("Unexpected docID: %s", docID)
-	}
-	if d := diff.Interface(db.doc, i); d != nil {
-		return "", errors.Errorf("Unexpected doc: %s", d)
-	}
-	if d := diff.Interface(db.opts, opts); d != nil {
-		return "", errors.Errorf("Unexpected opts: %s", d)
-	}
-	return db.newRev, db.err
-}
-
 func TestPut(t *testing.T) {
+	putOptsFunc := func(_ context.Context, docID string, doc interface{}, opts map[string]interface{}) (string, error) {
+		expectedDocID := "foo"
+		expectedDoc := map[string]interface{}{"foo": "bar"}
+		if expectedDocID != docID {
+			return "", errors.Errorf("Unexpected docID: %s", docID)
+		}
+		if d := diff.Interface(expectedDoc, doc); d != nil {
+			return "", errors.Errorf("Unexpected doc: %s", d)
+		}
+		if d := diff.Interface(testOptions, opts); d != nil {
+			return "", errors.Errorf("Unexpected opts: %s", d)
+		}
+		return "1-xxx", nil
+	}
 	type putTest struct {
 		name    string
 		db      *DB
@@ -365,24 +332,28 @@ func TestPut(t *testing.T) {
 		},
 		{
 			name: "db error",
-			db: &DB{driverDB: &putGrabber{
-				docID: "foo",
-				err:   errors.Status(StatusBadRequest, "db error"),
-			}},
+			db: &DB{
+				driverDB: &mockDBOpts{
+					PutOptsFunc: func(_ context.Context, _ string, _ interface{}, _ map[string]interface{}) (string, error) {
+						return "", errors.Status(StatusBadRequest, "db error")
+					},
+				},
+			},
 			docID:  "foo",
 			status: StatusBadRequest,
 			err:    "db error",
 		},
 		{
 			name: "Interface",
-			db: &DB{driverDB: &putGrabber{
-				docID:  "foo",
-				newRev: "1-xxx",
-				doc:    map[string]string{"foo": "bar"},
-			}},
-			docID:  "foo",
-			input:  map[string]string{"foo": "bar"},
-			newRev: "1-xxx",
+			db: &DB{
+				driverDB: &mockDBOpts{
+					PutOptsFunc: putOptsFunc,
+				},
+			},
+			docID:   "foo",
+			input:   map[string]interface{}{"foo": "bar"},
+			options: testOptions,
+			newRev:  "1-xxx",
 		},
 		{
 			name:   "InvalidJSON",
@@ -393,36 +364,39 @@ func TestPut(t *testing.T) {
 		},
 		{
 			name: "Bytes",
-			db: &DB{driverDB: &putGrabber{
-				docID:  "foo",
-				newRev: "1-xxx",
-				doc:    map[string]interface{}{"foo": "bar"},
-			}},
-			docID:  "foo",
-			input:  []byte(`{"foo":"bar"}`),
-			newRev: "1-xxx",
+			db: &DB{
+				driverDB: &mockDBOpts{
+					PutOptsFunc: putOptsFunc,
+				},
+			},
+			docID:   "foo",
+			input:   []byte(`{"foo":"bar"}`),
+			options: testOptions,
+			newRev:  "1-xxx",
 		},
 		{
 			name: "RawMessage",
-			db: &DB{driverDB: &putGrabber{
-				docID:  "foo",
-				newRev: "1-xxx",
-				doc:    map[string]interface{}{"foo": "bar"},
-			}},
-			docID:  "foo",
-			input:  json.RawMessage(`{"foo":"bar"}`),
-			newRev: "1-xxx",
+			db: &DB{
+				driverDB: &mockDBOpts{
+					PutOptsFunc: putOptsFunc,
+				},
+			},
+			docID:   "foo",
+			input:   json.RawMessage(`{"foo":"bar"}`),
+			options: testOptions,
+			newRev:  "1-xxx",
 		},
 		{
 			name: "Reader",
-			db: &DB{driverDB: &putGrabber{
-				docID:  "foo",
-				newRev: "1-xxx",
-				doc:    map[string]interface{}{"foo": "bar"},
-			}},
-			docID:  "foo",
-			input:  strings.NewReader(`{"foo":"bar"}`),
-			newRev: "1-xxx",
+			db: &DB{
+				driverDB: &mockDBOpts{
+					PutOptsFunc: putOptsFunc,
+				},
+			},
+			docID:   "foo",
+			input:   strings.NewReader(`{"foo":"bar"}`),
+			options: testOptions,
+			newRev:  "1-xxx",
 		},
 		{
 			name:   "ErrorReader",
@@ -432,25 +406,22 @@ func TestPut(t *testing.T) {
 			err:    "errorReader",
 		},
 		{
-			name: "valid",
-			db: &DB{driverDB: &putGrabber{
-				docID:  "foo",
-				newRev: "1-xxx",
-				doc:    map[string]string{"foo": "bar"},
-				opts:   map[string]interface{}{"opt": "opt"},
-			}},
-			docID:   "foo",
-			input:   map[string]string{"foo": "bar"},
-			options: Options{"opt": "opt"},
-			newRev:  "1-xxx",
-		},
-		{
 			name: "legacy",
-			db: &DB{driverDB: &legacyPutGrabber{
-				docID:  "foo",
-				newRev: "1-xxx",
-				doc:    map[string]string{"foo": "bar"},
-			}},
+			db: &DB{
+				driverDB: &mockDB{
+					PutFunc: func(_ context.Context, docID string, doc interface{}) (string, error) {
+						expectedDocID := "foo"
+						expectedDoc := map[string]string{"foo": "bar"}
+						if docID != expectedDocID {
+							return "", fmt.Errorf("Unexpected docID: %s", docID)
+						}
+						if d := diff.Interface(expectedDoc, doc); d != nil {
+							return "", fmt.Errorf("Unexpected doc:\n%s", d)
+						}
+						return "1-xxx", nil
+					},
+				},
+			},
 			docID:  "foo",
 			input:  map[string]string{"foo": "bar"},
 			newRev: "1-xxx",
@@ -520,6 +491,38 @@ func TestExtractDocID(t *testing.T) {
 			id, ok := extractDocID(test.i)
 			if ok != test.expected || test.id != id {
 				t.Errorf("Expected %t/%s, got %t/%s", test.expected, test.id, ok, id)
+			}
+		})
+	}
+}
+
+func TestRowScanDoc(t *testing.T) {
+	tests := []struct {
+		name     string
+		row      *Row
+		expected interface{}
+		status   int
+		err      string
+	}{
+		{
+			name:   "invalid json",
+			row:    &Row{doc: []byte("invalid json")},
+			status: StatusBadResponse,
+			err:    "invalid character 'i' looking for beginning of value",
+		},
+		{
+			name:     "success",
+			row:      &Row{doc: []byte(`{"foo":123.4}`)},
+			expected: map[string]interface{}{"foo": 123.4},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var result interface{}
+			err := test.row.ScanDoc(&result)
+			testy.StatusError(t, test.err, test.status, err)
+			if d := diff.Interface(test.expected, result); d != nil {
+				t.Error(d)
 			}
 		})
 	}

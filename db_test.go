@@ -600,45 +600,6 @@ func TestCreateDoc(t *testing.T) {
 	}
 }
 
-type legacyDeleteRecorder struct {
-	driver.DB
-	docID, rev string
-
-	newRev string
-	err    error
-}
-
-func (db *legacyDeleteRecorder) Delete(_ context.Context, docID, rev string) (string, error) {
-	if db.docID != docID || db.rev != rev {
-		return "", errors.Errorf("Unexpected docID/rev: %s/%s", docID, rev)
-	}
-	return db.newRev, db.err
-}
-
-type deleteRecorder struct {
-	driver.DB
-	driver.DBOpts
-	docID, rev string
-	opts       map[string]interface{}
-
-	newRev string
-	err    error
-}
-
-func (db *deleteRecorder) Delete(_ context.Context, _, _ string) (string, error) {
-	panic("Delete called")
-}
-
-func (db *deleteRecorder) DeleteOpts(_ context.Context, docID, rev string, opts map[string]interface{}) (string, error) {
-	if db.docID != docID || db.rev != rev {
-		return "", errors.Errorf("Unexpected docID/rev: %s/%s", docID, rev)
-	}
-	if d := diff.Interface(db.opts, opts); d != nil {
-		return "", errors.Errorf("Unexpected opts: %s", d)
-	}
-	return db.newRev, db.err
-}
-
 func TestDelete(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -656,34 +617,59 @@ func TestDelete(t *testing.T) {
 		},
 		{
 			name: "error",
-			db: &DB{driverDB: &deleteRecorder{
-				docID: "foo",
-				err:   errors.Status(StatusBadRequest, "delete error"),
-			}},
+			db: &DB{
+				driverDB: &mockDBOpts{
+					DeleteOptsFunc: func(_ context.Context, _, _ string, _ map[string]interface{}) (string, error) {
+						return "", errors.Status(StatusBadRequest, "delete error")
+					},
+				},
+			},
 			docID:  "foo",
 			status: StatusBadRequest,
 			err:    "delete error",
 		},
 		{
 			name: "success",
-			db: &DB{driverDB: &deleteRecorder{
-				docID:  "foo",
-				rev:    "1-xxx",
-				opts:   map[string]interface{}{"opt": 1},
-				newRev: "2-xxx",
-			}},
+			db: &DB{
+				driverDB: &mockDBOpts{
+					DeleteOptsFunc: func(_ context.Context, docID, rev string, opts map[string]interface{}) (string, error) {
+						expectedDocID := "foo"
+						expectedRev := "1-xxx"
+						if docID != expectedDocID {
+							return "", fmt.Errorf("Unexpected docID: %s", docID)
+						}
+						if rev != expectedRev {
+							return "", fmt.Errorf("Unexpected rev: %s", rev)
+						}
+						if d := diff.Interface(testOptions, opts); d != nil {
+							return "", fmt.Errorf("Unexpected options:\n%s", d)
+						}
+						return "2-xxx", nil
+					},
+				},
+			},
 			docID:   "foo",
 			rev:     "1-xxx",
-			options: Options{"opt": 1},
+			options: testOptions,
 			newRev:  "2-xxx",
 		},
 		{
 			name: "legacy",
-			db: &DB{driverDB: &legacyDeleteRecorder{
-				docID:  "foo",
-				rev:    "1-xxx",
-				newRev: "2-xxx",
-			}},
+			db: &DB{
+				driverDB: &mockDB{
+					DeleteFunc: func(_ context.Context, docID, rev string) (string, error) {
+						expectedDocID := "foo"
+						expectedRev := "1-xxx"
+						if docID != expectedDocID {
+							return "", fmt.Errorf("Unexpected docID: %s", docID)
+						}
+						if rev != expectedRev {
+							return "", fmt.Errorf("Unexpected rev: %s", rev)
+						}
+						return "2-xxx", nil
+					},
+				},
+			},
 			docID:  "foo",
 			rev:    "1-xxx",
 			newRev: "2-xxx",

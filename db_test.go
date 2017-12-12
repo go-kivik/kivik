@@ -1330,51 +1330,6 @@ func TestPutAttachment(t *testing.T) {
 	}
 }
 
-type legacyMockDelAtt struct {
-	driver.DB
-	docID, rev, filename string
-
-	newRev string
-	err    error
-}
-
-func (db *legacyMockDelAtt) DeleteAttachment(ctx context.Context, docID, rev, filename string) (string, error) {
-	if db.docID != docID || db.rev != rev {
-		return "", errors.Errorf("Unexpected id/rev: %s/%s", docID, rev)
-	}
-	if db.filename != filename {
-		return "", errors.Errorf("Unexpected filename: %s", filename)
-	}
-	return db.newRev, db.err
-}
-
-type mockDelAtt struct {
-	driver.DB
-	driver.DBOpts
-	docID, rev, filename string
-	opts                 map[string]interface{}
-
-	newRev string
-	err    error
-}
-
-func (db *mockDelAtt) DeleteAttachment(_ context.Context, _, _, _ string) (string, error) {
-	panic("DeleteAttachment called")
-}
-
-func (db *mockDelAtt) DeleteAttachmentOpts(_ context.Context, docID, rev, filename string, opts map[string]interface{}) (string, error) {
-	if db.docID != docID || db.rev != rev {
-		return "", errors.Errorf("Unexpected id/rev: %s/%s", docID, rev)
-	}
-	if db.filename != filename {
-		return "", errors.Errorf("Unexpected filename: %s", filename)
-	}
-	if d := diff.Interface(db.opts, opts); d != nil {
-		return "", errors.Errorf("Unexpected options: %s", d)
-	}
-	return db.newRev, db.err
-}
-
 func TestDeleteAttachment(t *testing.T) {
 	tests := []struct {
 		name                 string
@@ -1401,39 +1356,63 @@ func TestDeleteAttachment(t *testing.T) {
 			name:     "db error",
 			docID:    "foo",
 			filename: "foo.txt",
-			db: &DB{driverDB: &mockDelAtt{
-				docID:    "foo",
-				filename: "foo.txt",
-				err:      errors.Status(StatusBadRequest, "db error"),
-			}},
+			db: &DB{
+				driverDB: &mockDBOpts{
+					DeleteAttachmentOptsFunc: func(_ context.Context, _, _, _ string, _ map[string]interface{}) (string, error) {
+						return "", errors.Status(StatusBadRequest, "db error")
+					},
+				},
+			},
 			status: StatusBadRequest,
 			err:    "db error",
 		},
 		{
 			name: "success",
-			db: &DB{driverDB: &mockDelAtt{
-				docID:    "foo",
-				rev:      "1-xxx",
-				filename: "foo.txt",
-				opts:     map[string]interface{}{"opt": 1},
-
-				newRev: "2-xxx",
-			}},
+			db: &DB{
+				driverDB: &mockDBOpts{
+					DeleteAttachmentOptsFunc: func(_ context.Context, docID, rev, filename string, opts map[string]interface{}) (string, error) {
+						expectedDocID, expectedRev, expectedFilename := "foo", "1-xxx", "foo.txt"
+						if docID != expectedDocID {
+							return "", fmt.Errorf("Unexpected docID: %s", docID)
+						}
+						if rev != expectedRev {
+							return "", fmt.Errorf("Unexpected rev: %s", rev)
+						}
+						if filename != expectedFilename {
+							return "", fmt.Errorf("Unexpected filename: %s", filename)
+						}
+						if d := diff.Interface(testOptions, opts); d != nil {
+							return "", fmt.Errorf("Unexpected options:\n%s", d)
+						}
+						return "2-xxx", nil
+					},
+				},
+			},
 			docID:    "foo",
 			rev:      "1-xxx",
 			filename: "foo.txt",
-			options:  Options{"opt": 1},
+			options:  testOptions,
 			newRev:   "2-xxx",
 		},
 		{
 			name: "legacy",
-			db: &DB{driverDB: &legacyMockDelAtt{
-				docID:    "foo",
-				rev:      "1-xxx",
-				filename: "foo.txt",
-
-				newRev: "2-xxx",
-			}},
+			db: &DB{
+				driverDB: &mockDB{
+					DeleteAttachmentFunc: func(_ context.Context, docID, rev, filename string) (string, error) {
+						expectedDocID, expectedRev, expectedFilename := "foo", "1-xxx", "foo.txt"
+						if docID != expectedDocID {
+							return "", fmt.Errorf("Unexpected docID: %s", docID)
+						}
+						if rev != expectedRev {
+							return "", fmt.Errorf("Unexpected rev: %s", rev)
+						}
+						if filename != expectedFilename {
+							return "", fmt.Errorf("Unexpected filename: %s", filename)
+						}
+						return "2-xxx", nil
+					},
+				},
+			},
 			docID:    "foo",
 			rev:      "1-xxx",
 			filename: "foo.txt",

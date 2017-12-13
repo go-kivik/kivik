@@ -49,7 +49,7 @@ func newRows(ctx context.Context, rowsi driver.Rows) *Rows {
 	}
 }
 
-var errNilPtr = errors.New("kivik: destination pointer is nil")
+var errNilPtr = errors.Status(StatusBadRequest, "kivik: destination pointer is nil")
 
 // ScanValue copies the data from the result value into the value pointed at by
 // dest. Think of this as a json.Unmarshal into dest.

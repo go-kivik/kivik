@@ -407,3 +407,62 @@ func TestEmulatedBulkResults(t *testing.T) {
 		t.Error("Expected EOF")
 	}
 }
+
+func TestBulkResultsGetters(t *testing.T) {
+	id := "foo"
+	rev := "3-xxx"
+	err := "update error"
+	r := &BulkResults{
+		iter: &iter{
+			ready: true,
+			curVal: &driver.BulkResult{
+				ID:    id,
+				Rev:   rev,
+				Error: errors.New(err),
+			},
+		},
+	}
+
+	t.Run("ID", func(t *testing.T) {
+		result := r.ID()
+		if result != id {
+			t.Errorf("Unexpected ID: %v", result)
+		}
+	})
+
+	t.Run("Rev", func(t *testing.T) {
+		result := r.Rev()
+		if result != rev {
+			t.Errorf("Unexpected Rev: %v", result)
+		}
+	})
+
+	t.Run("UpdateErr", func(t *testing.T) {
+		result := r.UpdateErr()
+		testy.Error(t, err, result)
+	})
+
+	t.Run("Not ready", func(t *testing.T) {
+		r.ready = false
+
+		t.Run("ID", func(t *testing.T) {
+			result := r.ID()
+			if result != "" {
+				t.Errorf("Unexpected ID: %v", result)
+			}
+		})
+
+		t.Run("Rev", func(t *testing.T) {
+			result := r.Rev()
+			if result != "" {
+				t.Errorf("Unexpected Rev: %v", result)
+			}
+		})
+
+		t.Run("UpdateErr", func(t *testing.T) {
+			result := r.UpdateErr()
+			testy.Error(t, "", result)
+		})
+
+	})
+}

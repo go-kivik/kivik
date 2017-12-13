@@ -2,12 +2,14 @@ package kivik
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"testing"
 	"time"
 
 	"github.com/flimzy/diff"
+	"github.com/flimzy/testy"
 )
 
 type TestFeed struct {
@@ -60,5 +62,87 @@ func TestCancelledIterator(t *testing.T) {
 	}
 	if err := iter.Err(); err.Error() != "context deadline exceeded" {
 		t.Errorf("Unexpected error: %s", err)
+	}
+}
+
+func TestIteratorScan(t *testing.T) {
+	type Test struct {
+		name     string
+		dst      interface{}
+		input    json.RawMessage
+		expected interface{}
+		status   int
+		err      string
+	}
+	tests := []Test{
+		func() Test {
+			dst := map[string]interface{}{}
+			expected := map[string]interface{}{"foo": 123.4}
+			return Test{
+				name:     "standard unmarshal",
+				dst:      &dst,
+				input:    []byte(`{"foo":123.4}`),
+				expected: &expected,
+			}
+		}(),
+		func() Test {
+			dst := map[string]interface{}{}
+			return Test{
+				name:   "invalid JSON",
+				dst:    &dst,
+				input:  []byte(`invalid JSON`),
+				status: StatusBadResponse,
+				err:    "invalid character 'i' looking for beginning of value",
+			}
+		}(),
+		func() Test {
+			var dst *json.RawMessage
+			return Test{
+				name:   "nil *json.RawMessage",
+				dst:    dst,
+				input:  []byte(`{"foo":123.4}`),
+				status: StatusBadRequest,
+				err:    "kivik: destination pointer is nil",
+			}
+		}(),
+		func() Test {
+			var dst *[]byte
+			return Test{
+				name:   "nil *[]byte",
+				dst:    dst,
+				input:  []byte(`{"foo":123.4}`),
+				status: StatusBadRequest,
+				err:    "kivik: destination pointer is nil",
+			}
+		}(),
+		func() Test {
+			dst := []byte{}
+			expected := []byte(`{"foo":123.4}`)
+			return Test{
+				name:     "[]byte",
+				dst:      &dst,
+				input:    []byte(`{"foo":123.4}`),
+				expected: &expected,
+			}
+		}(),
+		func() Test {
+			dst := json.RawMessage{}
+			expected := json.RawMessage(`{"foo":123.4}`)
+			return Test{
+				name:     "json.RawMessage",
+				dst:      &dst,
+				input:    []byte(`{"foo":123.4}`),
+				expected: &expected,
+			}
+		}(),
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := scan(test.dst, test.input)
+			testy.StatusError(t, test.err, test.status, err)
+			if d := diff.Interface(test.expected, test.dst); d != nil {
+				t.Error(d)
+			}
+		})
 	}
 }

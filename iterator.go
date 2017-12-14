@@ -6,7 +6,7 @@ import (
 	"io"
 	"sync"
 
-	"github.com/flimzy/kivik/errors"
+	"github.com/go-kivik/kivik/errors"
 )
 
 type iterator interface {

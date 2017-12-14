@@ -1,4 +1,4 @@
-package: github.com/flimzy/kivik
+package: github.com/go-kivik/kivik
 ignore:
 - github.com/gopherjs/gopherjs
 import:

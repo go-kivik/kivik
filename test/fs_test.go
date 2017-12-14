@@ -8,8 +8,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/flimzy/kivik"
 	_ "github.com/go-kivik/fsdb"
+	"github.com/go-kivik/kivik"
 	"github.com/go-kivik/kiviktest"
 	"github.com/go-kivik/kiviktest/kt"
 )

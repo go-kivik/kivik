@@ -3,7 +3,7 @@ package kivik
 import (
 	"context"
 
-	"github.com/flimzy/kivik/driver"
+	"github.com/go-kivik/kivik/driver"
 )
 
 // Changes is an iterator over the database changes feed.

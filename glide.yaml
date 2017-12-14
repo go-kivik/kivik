@@ -1,4 +1,4 @@
-package: github.com/flimzy/kivik
+package: github.com/go-kivik/kivik
 ignore:
 - github.com/gopherjs/gopherjs
 - github.com/gopherjs/jsbuiltin
@@ -6,7 +6,7 @@ import:
 - package: github.com/pkg/errors
   version: ~0.8.0
 - package: github.com/go-kivik/kiviktest
-  version: ~1.1.0
+  version: master
   subpackages:
   - kt
 testimport:

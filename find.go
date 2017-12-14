@@ -3,8 +3,8 @@ package kivik
 import (
 	"context"
 
-	"github.com/flimzy/kivik/driver"
-	"github.com/flimzy/kivik/errors"
+	"github.com/go-kivik/kivik/driver"
+	"github.com/go-kivik/kivik/errors"
 )
 
 var findNotImplemented = errors.Status(StatusNotImplemented, "kivik: driver does not support Find interface")

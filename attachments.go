@@ -7,7 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 
-	"github.com/flimzy/kivik/errors"
+	"github.com/go-kivik/kivik/errors"
 )
 
 // Attachments is a collection of one or more file attachments.

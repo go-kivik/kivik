@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/flimzy/diff"
-	"github.com/flimzy/kivik/driver"
 	"github.com/flimzy/testy"
+	"github.com/go-kivik/kivik/driver"
 )
 
 func TestFind(t *testing.T) {

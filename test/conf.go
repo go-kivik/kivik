@@ -1,4 +1,4 @@
-package test // import "github.com/flimzy/kivik/test"
+package test // import "github.com/go-kivik/kivik/test"
 
 import "github.com/go-kivik/kiviktest/kt"
 

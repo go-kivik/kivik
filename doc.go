@@ -1,7 +1,7 @@
 // Package kivik provides a generic interface to CouchDB or CouchDB-like databases.
 //
 // The kivik package must be used in conjunction with a database driver. See
-// https://github.com/flimzy/kivik/wiki/Kivik-database-drivers for a list.
+// https://github.com/go-kivik/kivik/wiki/Kivik-database-drivers for a list.
 //
 // The kivik driver system is modeled after the standard library's sql and
 // sql/driver packages, although the client API is completely different due to
@@ -24,4 +24,4 @@
 //
 // For example:
 //  client, err := kivik.New(context.TODO(), "couch", "http://localhost:5984/")
-package kivik // import "github.com/flimzy/kivik"
+package kivik // import "github.com/go-kivik/kivik"

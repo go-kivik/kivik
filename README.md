@@ -13,10 +13,13 @@ implemented by SQL and NoSQL databases such as CouchDB.
 
 # Versions
 
-You are browsing the _development_ branch of Kivik, which will eventually become
-the Kivik 2.0.0 release. The API is subject to rapid and unannounced changes at
-this stage of development. For production work, you are encouraged to use the
-latest 1.x release of Kivik, which is stable.
+You are browsing the _development_ branch of Kivik. The stable version is
+available [here](https://github.com/go-kivik/kivik/tree/stable1.x).
+
+This branch which will eventually become the Kivik 2.0.0 release. The API is
+subject to rapid and unannounced changes at this stage of development. For
+production work, you are encouraged to use the latest 1.x release of Kivik,
+which is stable.
 
 To use the stable version of Kivik, please use a dependency manager to ensure
 you're using version 1.x of Kivik and the Kivik driver.

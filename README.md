@@ -1,8 +1,8 @@
-[![Build Status](https://travis-ci.org/flimzy/kivik.svg?branch=master)](https://travis-ci.org/flimzy/kivik) [![Codecov](https://img.shields.io/codecov/c/github/flimzy/kivik.svg?style=flat)](https://codecov.io/gh/flimzy/kivik) [![Go Report Card](https://goreportcard.com/badge/github.com/flimzy/kivik)](https://goreportcard.com/report/github.com/flimzy/kivik) [![GoDoc](https://godoc.org/github.com/flimzy/kivik?status.svg)](http://godoc.org/github.com/flimzy/kivik) [![Website](https://img.shields.io/website-up-down-green-red/http/shields.io.svg?label=website&colorB=007fff)](http://kivik.io)
+[![Build Status](https://travis-ci.org/go-kivik/kivik.svg?branch=master)](https://travis-ci.org/go-kivik/kivik) [![Codecov](https://img.shields.io/codecov/c/github/go-kivik/kivik.svg?style=flat)](https://codecov.io/gh/go-kivik/kivik) [![Go Report Card](https://goreportcard.com/badge/github.com/go-kivik/kivik)](https://goreportcard.com/report/github.com/go-kivik/kivik) [![GoDoc](https://godoc.org/github.com/go-kivik/kivik?status.svg)](http://godoc.org/github.com/go-kivik/kivik) [![Website](https://img.shields.io/website-up-down-green-red/http/shields.io.svg?label=website&colorB=007fff)](http://kivik.io)
 
 # Kivik
 
-Package kivik provides a generic interface to CouchDB or CouchDB-like databases.
+Package kivik provides a common interface to CouchDB or CouchDB-like databases.
 
 The kivik package must be used in conjunction with a database driver.
 
@@ -11,22 +11,71 @@ and [sql/driver](https://golang.org/pkg/database/sql/driver/) packages, although
 the client API is completely different due to the different database models
 implemented by SQL and NoSQL databases such as CouchDB.
 
+# Versions
+
+You are browsing the _development_ branch of Kivik. The stable version is
+available [here](https://github.com/go-kivik/kivik/tree/stable1.x).
+
+This branch which will eventually become the Kivik 2.0.0 release. The API is
+subject to rapid and unannounced changes at this stage of development. For
+production work, you are encouraged to use the latest 1.x release of Kivik,
+which is stable.
+
+To use the stable version of Kivik, please use a dependency manager to ensure
+you're using version 1.x of Kivik and the Kivik driver.
+
+Example configs for common dependency managers follow.
+
+## [dep](https://github.com/golang/dep)
+
+Update your `Gopkg.toml` file:
+
+```toml
+[[constraint]]
+  name = "github.com/flimzy/kivik"
+  version = "^1.6.0"
+
+[[constraint]]
+  name = "github.com/go-kivik/couchdb"
+  version = "^1.6.0"
+```
+
+## [Glide](https://github.com/Masterminds/glide)
+
+Update your `glide.yaml` file:
+
+```yaml
+import:
+- package: github.com/flimzy/kivik
+  version: ^1.6.0
+- package: github.com/go-kivik/couchdb
+  version: ^1.6.0
+```
+
+## [govendor](https://github.com/kardianos/govendor)
+
+Fetch the latest stable version of Kivik and the CouchDB driver with the
+following command:
+
+    govendor fetch github.com/flimzy/kivik@v1
+    govendor fetch github.com/go-kivik/couchdb@v1
+
 # Installation
 
 Install Kivik as you normally would for any Go package:
 
-    go get -u github.com/flimzy/kivik
+    go get -u github.com/go-kivik/kivik
     go get -u github.com/go-kivik/couchdb
 
 This will install the main Kivik package and the CouchDB database driver. See
-the [list of Kivik database drivers](https://github.com/flimzy/kivik/wiki/Kivik-database-drivers)
+the [list of Kivik database drivers](https://github.com/go-kivik/kivik/wiki/Kivik-database-drivers)
 for a complete list of available drivers.
 
 # Example Usage
 
-Please consult the the [package documentation](https://godoc.org/github.com/flimzy/kivik)
+Please consult the the [package documentation](https://godoc.org/github.com/go-kivik/kivik)
 for all available API methods, and a complete usage documentation.  And for
-additional usage examples, [consult the wiki](https://github.com/flimzy/kivik/wiki/Usage-Examples).
+additional usage examples, [consult the wiki](https://github.com/go-kivik/kivik/wiki/Usage-Examples).
 
 ```go
 package main
@@ -35,7 +84,8 @@ import (
     "context"
     "fmt"
 
-    "github.com/flimzy/kivik"
+    // "github.com/flimzy/kivik" // Stable version of Kivik
+    "github.com/go-kivik/kivik" // Development version of Kivik
     _ "github.com/go-kivik/couchdb" // The CouchDB driver
 )
 
@@ -71,7 +121,7 @@ Nobody has ever asked me any of these questions, so they're probably better call
 
 ## Why another CouchDB client API?
 
-Read the [design goals](https://github.com/flimzy/kivik/wiki/Design-goals) for
+Read the [design goals](https://github.com/go-kivik/kivik/wiki/Design-goals) for
 the general design goals.
 
 Specifically, I was motivated to write Kivik for a few reasons:
@@ -139,7 +189,7 @@ make automated testing without a real CouchDB server easier. Then I will work
 on completing the 'serve' mode.
 
 You can see a complete overview of the current status on the
-[Compatibility chart](https://github.com/flimzy/kivik/blob/master/doc/COMPATIBILITY.md)
+[Compatibility chart](https://github.com/go-kivik/kivik/blob/master/doc/COMPATIBILITY.md)
 
 ## Why the name "Kivik"?
 

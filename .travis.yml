@@ -47,7 +47,8 @@ matrix:
           env: MODE=coverage
 
 install:
-    - ./travis/install.sh $MODE
+    - mkdir -p $GOPATH/src/github.com/flimzy && ln -s $GOPATH/src/github.com/go-kivik/kivik $GOPATH/src/github.com/flimzy/kivik
+    - ( cd $GOPATH/src/github.com/flimzy/kivik ; ./travis/install.sh $MODE )
 
 script:
-    - ./travis/test.sh $MODE
+    - ( cd $GOPATH/src/github.com/flimzy/kivik ; ./travis/test.sh $MODE )

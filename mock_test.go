@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/flimzy/kivik/driver"
+	"github.com/go-kivik/kivik/driver"
 )
 
 type mockDriver struct {

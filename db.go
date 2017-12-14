@@ -7,8 +7,8 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/flimzy/kivik/driver"
-	"github.com/flimzy/kivik/errors"
+	"github.com/go-kivik/kivik/driver"
+	"github.com/go-kivik/kivik/errors"
 )
 
 // DB is a handle to a specific database.

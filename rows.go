@@ -4,8 +4,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/flimzy/kivik/driver"
-	"github.com/flimzy/kivik/errors"
+	"github.com/go-kivik/kivik/driver"
+	"github.com/go-kivik/kivik/errors"
 )
 
 // Rows is an iterator over a a multi-value query.

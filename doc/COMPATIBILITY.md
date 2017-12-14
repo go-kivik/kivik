@@ -157,7 +157,7 @@
 18. <a name="pouchViews"> Only queries against defined design documents are
     supported. That is to say, providing raw JS functions is not supported. If
     you need this, please create an issue to make your case.
-19. <a name="memstatus"> See [Issue #142](https://github.com/flimzy/kivik/issues/142)
+19. <a name="memstatus"> See [Issue #142](https://github.com/go-kivik/kivik/issues/142)
     for the current status of the memory driver.
 
 ## HTTP Status Codes

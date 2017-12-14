@@ -6,8 +6,8 @@ import (
 
 	"github.com/imdario/mergo"
 
-	"github.com/flimzy/kivik/driver"
-	"github.com/flimzy/kivik/errors"
+	"github.com/go-kivik/kivik/driver"
+	"github.com/go-kivik/kivik/errors"
 )
 
 // Client is a client connection handle to a CouchDB-like server.

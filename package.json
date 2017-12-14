@@ -5,7 +5,7 @@
     "author": "Jonathan Hall <flimzy@flimzy.com>",
     "repository": {
         "type": "git",
-        "url": "https://github.com/flimzy/kivik"
+        "url": "https://github.com/go-kivik/kivik"
     },
     "devDependencies": {
         "pouchdb": "*",

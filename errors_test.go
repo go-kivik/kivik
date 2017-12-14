@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	kerrors "github.com/flimzy/kivik/errors"
+	kerrors "github.com/go-kivik/kivik/errors"
 )
 
 func TestStatusCoder(t *testing.T) {

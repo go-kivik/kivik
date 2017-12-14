@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/flimzy/kivik.svg?branch=master)](https://travis-ci.org/flimzy/kivik) [![Codecov](https://img.shields.io/codecov/c/github/flimzy/kivik.svg?style=flat)](https://codecov.io/gh/flimzy/kivik) [![Go Report Card](https://goreportcard.com/badge/github.com/flimzy/kivik)](https://goreportcard.com/report/github.com/flimzy/kivik) [![GoDoc](https://godoc.org/github.com/flimzy/kivik?status.svg)](http://godoc.org/github.com/flimzy/kivik) [![Website](https://img.shields.io/website-up-down-green-red/http/shields.io.svg?label=website&colorB=007fff)](http://kivik.io)
+[![Build Status](https://travis-ci.org/flimzy/kivik.svg?branch=stable1.x)](https://travis-ci.org/flimzy/kivik) [![Codecov](https://img.shields.io/codecov/c/github/flimzy/kivik/stable1.x.svg?style=flat)](https://codecov.io/gh/go-kivik/kivik/branch/stable1.x) [![Website](https://img.shields.io/website-up-down-green-red/http/shields.io.svg?label=website&colorB=007fff)](http://kivik.io)
 
 # Kivik
 

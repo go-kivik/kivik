@@ -1150,7 +1150,6 @@ func TestDelete(t *testing.T) {
 
 type putAttRecorder struct {
 	driver.DB
-	driver.DBOpts
 	docID, rev, filename, cType string
 	body                        string
 	opts                        map[string]interface{}
@@ -1332,7 +1331,6 @@ func TestDeleteAttachment(t *testing.T) {
 
 type mockAttGetter struct {
 	driver.DB
-	driver.DBOpts
 	docID, rev, filename string
 	opts                 map[string]interface{}
 

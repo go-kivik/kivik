@@ -107,12 +107,6 @@ func (db *mockDB) Query(ctx context.Context, ddoc, view string, opts map[string]
 	return db.QueryFunc(ctx, ddoc, view, opts)
 }
 
-type mockDBOpts struct {
-	*mockDB
-}
-
-var _ driver.DBOpts = &mockDBOpts{}
-
 type mockFinder struct {
 	*mockDB
 	CreateIndexFunc func(context.Context, string, string, interface{}) error

@@ -162,13 +162,6 @@ type DB interface {
 	Query(ctx context.Context, ddoc, view string, options map[string]interface{}) (Rows, error)
 }
 
-// DBOpts will be merged with DB in Kivik 2.0. It wraps functions that take
-// additional options arguments.
-type DBOpts interface {
-	// DeleteAttachmentOpts deletes an attachment from a document, returning the
-	// document's new revision.
-}
-
 // BulkDocer is an optional interface which may be implemented by a driver to
 // support bulk insert/update operations. For any driver that does not support
 // the BulkDocer interface, the Put or CreateDoc methods will be called for each

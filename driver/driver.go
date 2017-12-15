@@ -152,7 +152,7 @@ type DB interface {
 	PutAttachment(ctx context.Context, docID, rev, filename, contentType string, body io.Reader, options map[string]interface{}) (newRev string, err error)
 	// GetAttachment fetches an attachment for the associated document ID. rev
 	// may be an empty string to fetch the most recent document version.
-	GetAttachment(ctx context.Context, docID, rev, filename string) (contentType string, md5sum MD5sum, body io.ReadCloser, err error)
+	GetAttachment(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (contentType string, md5sum MD5sum, body io.ReadCloser, err error)
 	// DeleteAttachment deletes an attachment from a document, returning the
 	// document's new revision.
 	DeleteAttachment(ctx context.Context, docID, rev, filename string) (newRev string, err error)
@@ -165,9 +165,6 @@ type DB interface {
 // DBOpts will be merged with DB in Kivik 2.0. It wraps functions that take
 // additional options arguments.
 type DBOpts interface {
-	// GetAttachmentOpts fetches an attachment for the associated document ID. rev
-	// may be an empty string to fetch the most recent document version.
-	GetAttachmentOpts(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (contentType string, md5sum MD5sum, body io.ReadCloser, err error)
 	// DeleteAttachmentOpts deletes an attachment from a document, returning the
 	// document's new revision.
 	DeleteAttachmentOpts(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (newRev string, err error)

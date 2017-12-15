@@ -166,20 +166,19 @@ func TestGet(t *testing.T) {
 		docID    string
 		options  Options
 		expected *Row
-		status   int
-		err      string
 	}{
 		{
 			name: "db error",
 			db: &DB{
 				driverDB: &mockDB{
 					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (json.RawMessage, error) {
-						return nil, errors.New("db error")
+						return nil, fmt.Errorf("db error")
 					},
 				},
 			},
-			status: StatusInternalServerError,
-			err:    "db error",
+			expected: &Row{
+				err: fmt.Errorf("db error"),
+			},
 		},
 		{
 			name: "success",
@@ -206,8 +205,7 @@ func TestGet(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.db.Get(context.Background(), test.docID, test.options)
-			testy.StatusError(t, test.err, test.status, err)
+			result := test.db.Get(context.Background(), test.docID, test.options)
 			if d := diff.Interface(test.expected, result); d != nil {
 				t.Error(d)
 			}

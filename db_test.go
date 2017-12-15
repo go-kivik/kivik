@@ -1618,30 +1618,6 @@ func TestGetAttachment(t *testing.T) {
 	}
 }
 
-type mockOldAttMetaer struct {
-	driver.DB
-	docID, rev, filename string
-
-	cType string
-	md5   driver.MD5sum
-	err   error
-}
-
-var _ driver.OldAttachmentMetaer = &mockOldAttMetaer{}
-
-func (db *mockOldAttMetaer) GetAttachmentMeta(_ context.Context, docID, rev, filename string) (string, driver.MD5sum, error) {
-	if docID != db.docID {
-		return "", driver.MD5sum{}, errors.Errorf("Unexpected docID: %s", docID)
-	}
-	if rev != db.rev {
-		return "", driver.MD5sum{}, errors.Errorf("Unexpected rev: %s", rev)
-	}
-	if filename != db.filename {
-		return "", driver.MD5sum{}, errors.Errorf("Unexpected filename: %s", filename)
-	}
-	return db.cType, db.md5, db.err
-}
-
 type mockAttMetaer struct {
 	driver.DB
 	docID, rev, filename string
@@ -1713,37 +1689,7 @@ func TestGetAttachmentMeta(t *testing.T) {
 			},
 		},
 		{
-			name: "legacy metaer, error",
-			db: &DB{driverDB: &mockOldAttMetaer{
-				docID:    "foo",
-				filename: "foo.txt",
-				err:      errors.New("fail"),
-			}},
-			docID:    "foo",
-			filename: "foo.txt",
-			status:   500,
-			err:      "fail",
-		},
-		{
-			name: "legacy metaer, success",
-			db: &DB{driverDB: &mockOldAttMetaer{
-				docID:    "foo",
-				rev:      "1-xxx",
-				filename: "foo.txt",
-				cType:    "text/plain",
-				md5:      driver.MD5sum{0x01},
-			}},
-			docID:    "foo",
-			rev:      "1-xxx",
-			filename: "foo.txt",
-			expected: &Attachment{
-				Filename:    "foo.txt",
-				ContentType: "text/plain",
-				MD5:         driver.MD5sum{0x01},
-			},
-		},
-		{
-			name: "new metaer, error",
+			name: "error",
 			db: &DB{driverDB: &mockAttMetaer{
 				docID:    "foo",
 				filename: "foo.txt",
@@ -1755,7 +1701,7 @@ func TestGetAttachmentMeta(t *testing.T) {
 			err:      "fail",
 		},
 		{
-			name: "new metaer, success",
+			name: "success",
 			db: &DB{driverDB: &mockAttMetaer{
 				docID:    "foo",
 				rev:      "1-xxx",

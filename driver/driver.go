@@ -239,12 +239,6 @@ type Index struct {
 // MD5sum is a 128-bit MD5 checksum.
 type MD5sum [16]byte
 
-// OldAttachmentMetaer is deprected. Use AttachmentMetaer instead.
-type OldAttachmentMetaer interface {
-	// GetAttachmentMeta returns meta information about an attachment.
-	GetAttachmentMeta(ctx context.Context, docID, rev, filename string) (contentType string, md5sum MD5sum, err error)
-}
-
 // AttachmentMetaer is an optional interface which may be satisfied by a
 // DB. If satisfied, it may be used to fetch meta data about an attachment. If
 // not satisfied, GetAttachment will be used instead.

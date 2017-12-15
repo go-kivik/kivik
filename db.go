@@ -433,17 +433,6 @@ func (db *DB) GetAttachmentMeta(ctx context.Context, docID, rev, filename string
 			MD5:         MD5sum(md5sum),
 		}, nil
 	}
-	if metaer, ok := db.driverDB.(driver.OldAttachmentMetaer); ok {
-		cType, md5sum, err := metaer.GetAttachmentMeta(ctx, docID, rev, filename)
-		if err != nil {
-			return nil, err
-		}
-		return &Attachment{
-			Filename:    filename,
-			ContentType: cType,
-			MD5:         MD5sum(md5sum),
-		}, nil
-	}
 	att, err := db.GetAttachment(ctx, docID, rev, filename, options...)
 	if err != nil {
 		return nil, err

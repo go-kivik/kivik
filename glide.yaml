@@ -5,10 +5,6 @@ ignore:
 import:
 - package: github.com/pkg/errors
   version: ~0.8.0
-- package: github.com/go-kivik/kiviktest
-  version: master
-  subpackages:
-  - kt
 testimport:
 - package: github.com/flimzy/testy
   version: ~0.0.1

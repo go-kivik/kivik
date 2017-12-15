@@ -1057,8 +1057,8 @@ func TestCreateDoc(t *testing.T) {
 		{
 			name: "error",
 			db: &DB{
-				driverDB: &mockDBOpts{
-					CreateDocOptsFunc: func(_ context.Context, _ interface{}, _ map[string]interface{}) (string, string, error) {
+				driverDB: &mockDB{
+					CreateDocFunc: func(_ context.Context, _ interface{}, _ map[string]interface{}) (string, string, error) {
 						return "", "", errors.Status(StatusBadRequest, "create error")
 					},
 				},
@@ -1069,8 +1069,8 @@ func TestCreateDoc(t *testing.T) {
 		{
 			name: "success",
 			db: &DB{
-				driverDB: &mockDBOpts{
-					CreateDocOptsFunc: func(_ context.Context, doc interface{}, opts map[string]interface{}) (string, string, error) {
+				driverDB: &mockDB{
+					CreateDocFunc: func(_ context.Context, doc interface{}, opts map[string]interface{}) (string, string, error) {
 						expectedDoc := map[string]string{"type": "test"}
 						if d := diff.Interface(expectedDoc, doc); d != nil {
 							return "", "", fmt.Errorf("Unexpected doc:\n%s", d)
@@ -1086,23 +1086,6 @@ func TestCreateDoc(t *testing.T) {
 			options: testOptions,
 			docID:   "foo",
 			rev:     "1-xxx",
-		},
-		{
-			name: "legacy",
-			db: &DB{
-				driverDB: &mockDB{
-					CreateDocFunc: func(_ context.Context, doc interface{}) (string, string, error) {
-						expectedDoc := map[string]string{"type": "test"}
-						if d := diff.Interface(expectedDoc, doc); d != nil {
-							return "", "", fmt.Errorf("Unexpected doc:\n%s", d)
-						}
-						return "foo", "1-xxx", nil
-					},
-				},
-			},
-			doc:   map[string]string{"type": "test"},
-			docID: "foo",
-			rev:   "1-xxx",
 		},
 	}
 	for _, test := range tests {

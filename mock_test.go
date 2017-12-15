@@ -25,7 +25,7 @@ type mockDB struct {
 	id                   string
 	AllDocsFunc          func(context.Context, map[string]interface{}) (driver.Rows, error)
 	GetFunc              func(context.Context, string, map[string]interface{}) (int64, io.ReadCloser, error)
-	CreateDocFunc        func(context.Context, interface{}) (string, string, error)
+	CreateDocFunc        func(context.Context, interface{}, map[string]interface{}) (string, string, error)
 	PutFunc              func(context.Context, string, interface{}) (string, error)
 	DeleteFunc           func(context.Context, string, string) (string, error)
 	StatsFunc            func(context.Context) (*driver.DBStats, error)
@@ -51,8 +51,8 @@ func (db *mockDB) Get(ctx context.Context, docID string, opts map[string]interfa
 	return db.GetFunc(ctx, docID, opts)
 }
 
-func (db *mockDB) CreateDoc(ctx context.Context, doc interface{}) (string, string, error) {
-	return db.CreateDocFunc(ctx, doc)
+func (db *mockDB) CreateDoc(ctx context.Context, doc interface{}, opts map[string]interface{}) (string, string, error) {
+	return db.CreateDocFunc(ctx, doc, opts)
 }
 
 func (db *mockDB) Put(ctx context.Context, docID string, doc interface{}) (string, error) {
@@ -109,7 +109,6 @@ func (db *mockDB) Query(ctx context.Context, ddoc, view string, opts map[string]
 
 type mockDBOpts struct {
 	*mockDB
-	CreateDocOptsFunc        func(context.Context, interface{}, map[string]interface{}) (string, string, error)
 	PutOptsFunc              func(context.Context, string, interface{}, map[string]interface{}) (string, error)
 	DeleteOptsFunc           func(context.Context, string, string, map[string]interface{}) (string, error)
 	PutAttachmentOptsFunc    func(context.Context, string, string, string, string, io.Reader, map[string]interface{}) (string, error)
@@ -118,10 +117,6 @@ type mockDBOpts struct {
 }
 
 var _ driver.DBOpts = &mockDBOpts{}
-
-func (db *mockDBOpts) CreateDocOpts(ctx context.Context, doc interface{}, opts map[string]interface{}) (string, string, error) {
-	return db.CreateDocOptsFunc(ctx, doc, opts)
-}
 
 func (db *mockDBOpts) PutOpts(ctx context.Context, docID string, doc interface{}, options map[string]interface{}) (string, error) {
 	return db.PutOptsFunc(ctx, docID, doc, options)

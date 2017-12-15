@@ -280,7 +280,7 @@ var _ driver.DB = &nonbdDB{}
 func (db *nonbdDB) Put(_ context.Context, _ string, _ interface{}) (string, error) {
 	return "", nil
 }
-func (db *nonbdDB) CreateDoc(_ context.Context, _ interface{}) (string, string, error) {
+func (db *nonbdDB) CreateDoc(_ context.Context, _ interface{}, _ map[string]interface{}) (string, string, error) {
 	return "", "", nil
 }
 

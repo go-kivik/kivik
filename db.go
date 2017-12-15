@@ -122,14 +122,11 @@ func (db *DB) GetMeta(ctx context.Context, docID string, options ...Options) (si
 // CreateDoc creates a new doc with an auto-generated unique ID. The generated
 // docID and new rev are returned.
 func (db *DB) CreateDoc(ctx context.Context, doc interface{}, options ...Options) (docID, rev string, err error) {
-	if dbopt, ok := db.driverDB.(driver.DBOpts); ok {
-		opts, err := mergeOptions(options...)
-		if err != nil {
-			return "", "", err
-		}
-		return dbopt.CreateDocOpts(ctx, doc, opts)
+	opts, err := mergeOptions(options...)
+	if err != nil {
+		return "", "", err
 	}
-	return db.driverDB.CreateDoc(ctx, doc)
+	return db.driverDB.CreateDoc(ctx, doc, opts)
 }
 
 // normalizeFromJSON unmarshals a []byte, json.RawMessage or io.Reader to a

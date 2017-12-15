@@ -13,12 +13,6 @@ import:
   version: ^1.7.1
 - package: github.com/go-kivik/pouchdb
   version: ^1.3.4
-- package: github.com/go-kivik/fsdb
-  version: ~0.0.0
-- package: github.com/go-kivik/memorydb
-  version: ~0.0.2
-- package: github.com/go-kivik/mango
-  version: ~0.0.2
 testimport:
 - package: github.com/flimzy/testy
   version: ~0.0.1

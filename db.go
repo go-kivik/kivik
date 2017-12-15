@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
+	"reflect"
 	"strings"
 
 	"github.com/go-kivik/kivik/driver"
@@ -58,19 +59,31 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) 
 	return newRows(ctx, rowsi), nil
 }
 
-// Row is the result of calling Get for a single document.
+// Row contains the result of calling Get for a single document.
 type Row struct {
-	err error
-	doc json.RawMessage
+	io.ReadCloser
+	err    error
+	length int64
 }
 
-// ScanDoc unmarshals the data from the fetched row into dest. See documentation
-// on Rows.ScanDoc for details.
+// Length returns the size of the document, such as reported by the
+// Content-Length header, if known, or -1 if unknown.
+func (r *Row) Length() int64 {
+	return r.length
+}
+
+// ScanDoc unmarshals the data from the fetched row into dest. It is a thin
+// wrapper around json.Unmarshal(dest), which closes the underlying reader when
+// done.
 func (r *Row) ScanDoc(dest interface{}) error {
 	if r.err != nil {
 		return r.err
 	}
-	return scan(dest, r.doc)
+	if reflect.TypeOf(dest).Kind() != reflect.Ptr {
+		return errNonPtr
+	}
+	defer r.Close() // nolint: errcheck
+	return errors.WrapStatus(StatusBadResponse, json.NewDecoder(r).Decode(dest))
 }
 
 // Get fetches the requested document. Any errors are deferred until the
@@ -80,8 +93,8 @@ func (db *DB) Get(ctx context.Context, docID string, options ...Options) *Row {
 	if err != nil {
 		return &Row{err: err}
 	}
-	row, err := db.driverDB.Get(ctx, docID, opts)
-	return &Row{err: err, doc: row}
+	length, doc, err := db.driverDB.Get(ctx, docID, opts)
+	return &Row{ReadCloser: doc, length: length, err: err}
 }
 
 // CreateDoc creates a new doc with an auto-generated unique ID. The generated

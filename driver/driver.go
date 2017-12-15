@@ -122,9 +122,10 @@ type DB interface {
 	// AllDocs returns all of the documents in the database, subject to the
 	// options provided.
 	AllDocs(ctx context.Context, options map[string]interface{}) (Rows, error)
-	// Get fetches the requested document from the database, and unmarshals it
-	// into doc.
-	Get(ctx context.Context, docID string, options map[string]interface{}) (json.RawMessage, error)
+	// Get fetches the requested document from the database, and returns the
+	// content length (or -1 if unknown), and an io.ReadCloser to access the
+	// raw JSON content.
+	Get(ctx context.Context, docID string, options map[string]interface{}) (length int64, doc io.ReadCloser, err error)
 	// CreateDoc creates a new doc, with a server-generated ID.
 	CreateDoc(ctx context.Context, doc interface{}) (docID, rev string, err error)
 	// Put writes the document in the database.

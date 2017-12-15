@@ -186,15 +186,15 @@ func (db *mockDBFlusher) Flush(ctx context.Context) error {
 	return db.FlushFunc(ctx)
 }
 
-type mockRever struct {
+type mockMetaGetter struct {
 	*mockDB
-	RevFunc func(context.Context, string) (string, error)
+	GetMetaFunc func(context.Context, string, map[string]interface{}) (int64, string, error)
 }
 
-var _ driver.Rever = &mockRever{}
+var _ driver.MetaGetter = &mockMetaGetter{}
 
-func (db *mockRever) Rev(ctx context.Context, docID string) (string, error) {
-	return db.RevFunc(ctx, docID)
+func (db *mockMetaGetter) GetMeta(ctx context.Context, docID string, opts map[string]interface{}) (int64, string, error) {
+	return db.GetMetaFunc(ctx, docID, opts)
 }
 
 type mockCopier struct {

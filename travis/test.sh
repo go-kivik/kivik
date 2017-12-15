@@ -19,9 +19,6 @@ case "$1" in
         go test -race $(go list ./... | grep -v /vendor/)
     ;;
     "gopherjs")
-        unset KIVIK_TEST_DSN_COUCH16
-        unset KIVIK_TEST_DSN_COUCH17
-        unset KIVIK_TEST_DSN_COUCH20
         gopherjs test $(go list ./...)
     ;;
     "linter")

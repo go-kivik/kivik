@@ -82,7 +82,7 @@ type QueryPlan struct {
 // Explain returns the query plan for a given query. Explain takes the same
 // arguments as Find.
 func (db *DB) Explain(ctx context.Context, query interface{}) (*QueryPlan, error) {
-	if explainer, ok := db.driverDB.(driver.Explainer); ok {
+	if explainer, ok := db.driverDB.(driver.Finder); ok {
 		plan, err := explainer.Explain(ctx, query)
 		if err != nil {
 			return nil, err
@@ -90,5 +90,5 @@ func (db *DB) Explain(ctx context.Context, query interface{}) (*QueryPlan, error
 		qp := QueryPlan(*plan)
 		return &qp, nil
 	}
-	return nil, errors.Status(StatusNotImplemented, "kivik: driver does not support explain")
+	return nil, findNotImplemented
 }

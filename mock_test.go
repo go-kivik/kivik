@@ -37,7 +37,7 @@ type mockDB struct {
 	ChangesFunc          func(context.Context, map[string]interface{}) (driver.Changes, error)
 	PutAttachmentFunc    func(context.Context, string, string, string, string, io.Reader, map[string]interface{}) (string, error)
 	GetAttachmentFunc    func(context.Context, string, string, string, map[string]interface{}) (string, driver.MD5sum, io.ReadCloser, error)
-	DeleteAttachmentFunc func(context.Context, string, string, string) (string, error)
+	DeleteAttachmentFunc func(context.Context, string, string, string, map[string]interface{}) (string, error)
 	QueryFunc            func(context.Context, string, string, map[string]interface{}) (driver.Rows, error)
 }
 
@@ -99,8 +99,8 @@ func (db *mockDB) GetAttachment(ctx context.Context, docID, rev, filename string
 	return db.GetAttachmentFunc(ctx, docID, rev, filename, opts)
 }
 
-func (db *mockDB) DeleteAttachment(ctx context.Context, docID, rev, filename string) (string, error) {
-	return db.DeleteAttachmentFunc(ctx, docID, rev, filename)
+func (db *mockDB) DeleteAttachment(ctx context.Context, docID, rev, filename string, opts map[string]interface{}) (string, error) {
+	return db.DeleteAttachmentFunc(ctx, docID, rev, filename, opts)
 }
 
 func (db *mockDB) Query(ctx context.Context, ddoc, view string, opts map[string]interface{}) (driver.Rows, error) {
@@ -109,14 +109,9 @@ func (db *mockDB) Query(ctx context.Context, ddoc, view string, opts map[string]
 
 type mockDBOpts struct {
 	*mockDB
-	DeleteAttachmentOptsFunc func(context.Context, string, string, string, map[string]interface{}) (string, error)
 }
 
 var _ driver.DBOpts = &mockDBOpts{}
-
-func (db *mockDBOpts) DeleteAttachmentOpts(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (string, error) {
-	return db.DeleteAttachmentOptsFunc(ctx, docID, rev, filename, options)
-}
 
 type mockFinder struct {
 	*mockDB

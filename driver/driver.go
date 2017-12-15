@@ -155,7 +155,7 @@ type DB interface {
 	GetAttachment(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (contentType string, md5sum MD5sum, body io.ReadCloser, err error)
 	// DeleteAttachment deletes an attachment from a document, returning the
 	// document's new revision.
-	DeleteAttachment(ctx context.Context, docID, rev, filename string) (newRev string, err error)
+	DeleteAttachment(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (newRev string, err error)
 	// Query performs a query against a view, subject to the options provided.
 	// ddoc will be the design doc name without the '_design/' previx.
 	// view will be the view name without the '_view/' prefix.
@@ -167,7 +167,6 @@ type DB interface {
 type DBOpts interface {
 	// DeleteAttachmentOpts deletes an attachment from a document, returning the
 	// document's new revision.
-	DeleteAttachmentOpts(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (newRev string, err error)
 }
 
 // BulkDocer is an optional interface which may be implemented by a driver to

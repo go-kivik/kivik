@@ -435,12 +435,9 @@ func (db *DB) DeleteAttachment(ctx context.Context, docID, rev, filename string,
 	if filename == "" {
 		return "", missingArg("filename")
 	}
-	if dbopt, ok := db.driverDB.(driver.DBOpts); ok {
-		opts, err := mergeOptions(options...)
-		if err != nil {
-			return "", err
-		}
-		return dbopt.DeleteAttachmentOpts(ctx, docID, rev, filename, opts)
+	opts, err := mergeOptions(options...)
+	if err != nil {
+		return "", err
 	}
-	return db.driverDB.DeleteAttachment(ctx, docID, rev, filename)
+	return db.driverDB.DeleteAttachment(ctx, docID, rev, filename, opts)
 }

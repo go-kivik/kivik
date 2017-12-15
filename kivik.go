@@ -121,12 +121,15 @@ func (c *Client) DBExists(ctx context.Context, dbName string, options ...Options
 }
 
 // CreateDB creates a DB of the requested name.
-func (c *Client) CreateDB(ctx context.Context, dbName string, options ...Options) error {
+func (c *Client) CreateDB(ctx context.Context, dbName string, options ...Options) (*DB, error) {
 	opts, err := mergeOptions(options...)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return c.driverClient.CreateDB(ctx, dbName, opts)
+	if e := c.driverClient.CreateDB(ctx, dbName, opts); e != nil {
+		return nil, e
+	}
+	return c.DB(ctx, dbName, nil)
 }
 
 // DestroyDB deletes the requested DB.

@@ -312,12 +312,13 @@ func TestDBExists(t *testing.T) {
 
 func TestCreateDB(t *testing.T) {
 	tests := []struct {
-		name   string
-		client *Client
-		dbName string
-		opts   Options
-		status int
-		err    string
+		name     string
+		client   *Client
+		dbName   string
+		opts     Options
+		expected *DB
+		status   int
+		err      string
 	}{
 		{
 			name: "db error",
@@ -346,16 +347,27 @@ func TestCreateDB(t *testing.T) {
 						}
 						return nil
 					},
+					DBFunc: func(_ context.Context, dbName string, _ map[string]interface{}) (driver.DB, error) {
+						return &mockDB{id: "abc"}, nil
+					},
 				},
 			},
 			dbName: "foo",
 			opts:   map[string]interface{}{"foo": 123},
+			expected: &DB{
+				name:     "foo",
+				driverDB: &mockDB{id: "abc"},
+			},
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := test.client.CreateDB(context.Background(), test.dbName, test.opts)
+			db, err := test.client.CreateDB(context.Background(), test.dbName, test.opts)
 			testy.StatusError(t, test.err, test.status, err)
+			db.client = nil // Determinism
+			if d := diff.Interface(test.expected, db); d != nil {
+				t.Error(d)
+			}
 		})
 	}
 }

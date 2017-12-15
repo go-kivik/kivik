@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"reflect"
 	"sync"
 
 	"github.com/go-kivik/kivik/errors"
@@ -128,6 +129,9 @@ func (i *iter) Err() error {
 }
 
 func scan(dest interface{}, val json.RawMessage) error {
+	if reflect.TypeOf(dest).Kind() != reflect.Ptr {
+		return errNonPtr
+	}
 	switch d := dest.(type) {
 	case *[]byte:
 		if d == nil {

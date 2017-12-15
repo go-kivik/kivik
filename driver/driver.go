@@ -180,13 +180,6 @@ type DBOpts interface {
 	DeleteAttachmentOpts(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (newRev string, err error)
 }
 
-// OldBulkDocer is deprecated and will be removed in Kivik 2.0. Use BulkDocer instead.
-type OldBulkDocer interface {
-	// BulkDocs alls bulk create, update and/or delete operations. It returns an
-	// iterator over the results.
-	BulkDocs(ctx context.Context, docs []interface{}) (BulkResults, error)
-}
-
 // BulkDocer is an optional interface which may be implemented by a driver to
 // support bulk insert/update operations. For any driver that does not support
 // the BulkDocer interface, the Put or CreateDoc methods will be called for each

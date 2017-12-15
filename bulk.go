@@ -102,13 +102,6 @@ func (db *DB) BulkDocs(ctx context.Context, docs interface{}, options ...Options
 		}
 		return nil, err
 	}
-	if oldBulkDocer, ok := db.driverDB.(driver.OldBulkDocer); ok {
-		bulki, err := oldBulkDocer.BulkDocs(ctx, docsi)
-		if err != nil {
-			return nil, err
-		}
-		return newBulkResults(ctx, bulki), nil
-	}
 	if bulkDocer, ok := db.driverDB.(driver.BulkDocer); ok {
 		bulki, err := bulkDocer.BulkDocs(ctx, docsi, opts)
 		if err != nil {

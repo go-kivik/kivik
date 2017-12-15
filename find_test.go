@@ -271,11 +271,11 @@ func TestExplain(t *testing.T) {
 			name:   "non-finder",
 			db:     &mockDB{},
 			status: StatusNotImplemented,
-			err:    "kivik: driver does not support explain",
+			err:    "kivik: driver does not support Find interface",
 		},
 		{
 			name: "explain error",
-			db: &mockExplainer{
+			db: &mockFinder{
 				ExplainFunc: func(_ context.Context, _ interface{}) (*driver.QueryPlan, error) {
 					return nil, errors.New("explain error")
 				},
@@ -285,7 +285,7 @@ func TestExplain(t *testing.T) {
 		},
 		{
 			name: "success",
-			db: &mockExplainer{
+			db: &mockFinder{
 				ExplainFunc: func(_ context.Context, query interface{}) (*driver.QueryPlan, error) {
 					expectedQuery := int(3)
 					if d := diff.Interface(expectedQuery, query); d != nil {

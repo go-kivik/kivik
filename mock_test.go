@@ -150,6 +150,7 @@ type mockFinder struct {
 	DeleteIndexFunc func(context.Context, string, string) error
 	FindFunc        func(context.Context, interface{}) (driver.Rows, error)
 	GetIndexesFunc  func(context.Context) ([]driver.Index, error)
+	ExplainFunc     func(context.Context, interface{}) (*driver.QueryPlan, error)
 }
 
 var _ driver.Finder = &mockFinder{}
@@ -170,14 +171,7 @@ func (db *mockFinder) GetIndexes(ctx context.Context) ([]driver.Index, error) {
 	return db.GetIndexesFunc(ctx)
 }
 
-type mockExplainer struct {
-	*mockDB
-	ExplainFunc func(context.Context, interface{}) (*driver.QueryPlan, error)
-}
-
-var _ driver.Explainer = &mockExplainer{}
-
-func (db *mockExplainer) Explain(ctx context.Context, query interface{}) (*driver.QueryPlan, error) {
+func (db *mockFinder) Explain(ctx context.Context, query interface{}) (*driver.QueryPlan, error) {
 	return db.ExplainFunc(ctx, query)
 }
 

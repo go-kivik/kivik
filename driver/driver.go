@@ -214,6 +214,9 @@ type Finder interface {
 	GetIndexes(ctx context.Context) ([]Index, error)
 	// Delete deletes the requested index.
 	DeleteIndex(ctx context.Context, ddoc, name string) error
+	// Explain returns the query plan for a given query. Explain takes the same
+	// arguments as Find.
+	Explain(ctx context.Context, query interface{}) (*QueryPlan, error)
 }
 
 // QueryPlan is the response of an Explain query.
@@ -229,13 +232,6 @@ type QueryPlan struct {
 	// an empty list if all fields are to be returned.
 	Fields []interface{}          `json:"fields"`
 	Range  map[string]interface{} `json:"range"`
-}
-
-// The Explainer is an optional interface which provides access to the query
-// explanation API supported by CouchDB 2.0 and newer, and PouchDB 6.3.4 and
-// newer.
-type Explainer interface {
-	Explain(ctx context.Context, query interface{}) (*QueryPlan, error)
 }
 
 // Index is a MonboDB-style index definition.

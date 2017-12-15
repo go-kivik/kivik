@@ -207,14 +207,11 @@ func (db *DB) Put(ctx context.Context, docID string, doc interface{}, options ..
 	if err != nil {
 		return "", err
 	}
-	if dbopt, ok := db.driverDB.(driver.DBOpts); ok {
-		opts, err := mergeOptions(options...)
-		if err != nil {
-			return "", err
-		}
-		return dbopt.PutOpts(ctx, docID, i, opts)
+	opts, err := mergeOptions(options...)
+	if err != nil {
+		return "", err
 	}
-	return db.driverDB.Put(ctx, docID, i)
+	return db.driverDB.Put(ctx, docID, i, opts)
 }
 
 // Delete marks the specified document as deleted.
@@ -352,7 +349,8 @@ func (db *DB) Copy(ctx context.Context, targetID, sourceID string, options ...Op
 	}
 	delete(doc, "_rev")
 	doc["_id"] = targetID
-	return db.Put(ctx, targetID, doc)
+	delete(opts, "rev") // rev has a completely different meaning for Copy and Put
+	return db.Put(ctx, targetID, doc, opts)
 }
 
 // PutAttachment uploads the supplied content as an attachment to the specified

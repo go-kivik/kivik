@@ -673,7 +673,7 @@ func TestCopy(t *testing.T) {
 					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (int64, io.ReadCloser, error) {
 						return 28, body(`{"_id":"foo","_rev":"1-xxx"}`), nil
 					},
-					PutFunc: func(_ context.Context, _ string, _ interface{}) (string, error) {
+					PutFunc: func(_ context.Context, _ string, _ interface{}, _ map[string]interface{}) (string, error) {
 						return "", errors.Status(StatusBadResponse, "put error")
 					},
 				},
@@ -694,14 +694,18 @@ func TestCopy(t *testing.T) {
 						}
 						return 40, body(`{"_id":"bar","_rev":"1-xxx","foo":123.4}`), nil
 					},
-					PutFunc: func(_ context.Context, docID string, doc interface{}) (string, error) {
+					PutFunc: func(_ context.Context, docID string, doc interface{}, opts map[string]interface{}) (string, error) {
 						expectedDocID := "foo"
 						expectedDoc := map[string]interface{}{"_id": "foo", "foo": 123.4}
+						expectedOpts := map[string]interface{}{"batch": true}
 						if docID != expectedDocID {
 							return "", fmt.Errorf("Unexpected put docID: %s", docID)
 						}
 						if d := diff.Interface(expectedDoc, doc); d != nil {
 							return "", fmt.Errorf("Unexpected doc:\n%s", doc)
+						}
+						if d := diff.Interface(expectedOpts, opts); d != nil {
+							return "", fmt.Errorf("Unexpected opts:\n%s", opts)
 						}
 						return "1-xxx", nil
 					},
@@ -709,6 +713,7 @@ func TestCopy(t *testing.T) {
 			},
 			target:   "foo",
 			source:   "bar",
+			options:  Options{"rev": "1-xxx", "batch": true},
 			expected: "1-xxx",
 		},
 	}
@@ -798,7 +803,7 @@ func TestNormalizeFromJSON(t *testing.T) {
 }
 
 func TestPut(t *testing.T) {
-	putOptsFunc := func(_ context.Context, docID string, doc interface{}, opts map[string]interface{}) (string, error) {
+	putFunc := func(_ context.Context, docID string, doc interface{}, opts map[string]interface{}) (string, error) {
 		expectedDocID := "foo"
 		expectedDoc := map[string]interface{}{"foo": "bar"}
 		if expectedDocID != docID {
@@ -831,8 +836,8 @@ func TestPut(t *testing.T) {
 		{
 			name: "db error",
 			db: &DB{
-				driverDB: &mockDBOpts{
-					PutOptsFunc: func(_ context.Context, _ string, _ interface{}, _ map[string]interface{}) (string, error) {
+				driverDB: &mockDB{
+					PutFunc: func(_ context.Context, _ string, _ interface{}, _ map[string]interface{}) (string, error) {
 						return "", errors.Status(StatusBadRequest, "db error")
 					},
 				},
@@ -844,8 +849,8 @@ func TestPut(t *testing.T) {
 		{
 			name: "Interface",
 			db: &DB{
-				driverDB: &mockDBOpts{
-					PutOptsFunc: putOptsFunc,
+				driverDB: &mockDB{
+					PutFunc: putFunc,
 				},
 			},
 			docID:   "foo",
@@ -863,8 +868,8 @@ func TestPut(t *testing.T) {
 		{
 			name: "Bytes",
 			db: &DB{
-				driverDB: &mockDBOpts{
-					PutOptsFunc: putOptsFunc,
+				driverDB: &mockDB{
+					PutFunc: putFunc,
 				},
 			},
 			docID:   "foo",
@@ -875,8 +880,8 @@ func TestPut(t *testing.T) {
 		{
 			name: "RawMessage",
 			db: &DB{
-				driverDB: &mockDBOpts{
-					PutOptsFunc: putOptsFunc,
+				driverDB: &mockDB{
+					PutFunc: putFunc,
 				},
 			},
 			docID:   "foo",
@@ -887,8 +892,8 @@ func TestPut(t *testing.T) {
 		{
 			name: "Reader",
 			db: &DB{
-				driverDB: &mockDBOpts{
-					PutOptsFunc: putOptsFunc,
+				driverDB: &mockDB{
+					PutFunc: putFunc,
 				},
 			},
 			docID:   "foo",
@@ -902,27 +907,6 @@ func TestPut(t *testing.T) {
 			input:  &errorReader{},
 			status: StatusUnknownError,
 			err:    "errorReader",
-		},
-		{
-			name: "legacy",
-			db: &DB{
-				driverDB: &mockDB{
-					PutFunc: func(_ context.Context, docID string, doc interface{}) (string, error) {
-						expectedDocID := "foo"
-						expectedDoc := map[string]string{"foo": "bar"}
-						if docID != expectedDocID {
-							return "", fmt.Errorf("Unexpected docID: %s", docID)
-						}
-						if d := diff.Interface(expectedDoc, doc); d != nil {
-							return "", fmt.Errorf("Unexpected doc:\n%s", d)
-						}
-						return "1-xxx", nil
-					},
-				},
-			},
-			docID:  "foo",
-			input:  map[string]string{"foo": "bar"},
-			newRev: "1-xxx",
 		},
 	}
 	for _, test := range tests {

@@ -129,7 +129,7 @@ type DB interface {
 	// CreateDoc creates a new doc, with a server-generated ID.
 	CreateDoc(ctx context.Context, doc interface{}, options map[string]interface{}) (docID, rev string, err error)
 	// Put writes the document in the database.
-	Put(ctx context.Context, docID string, doc interface{}) (rev string, err error)
+	Put(ctx context.Context, docID string, doc interface{}, options map[string]interface{}) (rev string, err error)
 	// Delete marks the specified document as deleted.
 	Delete(ctx context.Context, docID, rev string) (newRev string, err error)
 	// Stats returns database statistics.
@@ -165,8 +165,6 @@ type DB interface {
 // DBOpts will be merged with DB in Kivik 2.0. It wraps functions that take
 // additional options arguments.
 type DBOpts interface {
-	// PutOpts writes the document in the database.
-	PutOpts(ctx context.Context, docID string, doc interface{}, options map[string]interface{}) (rev string, err error)
 	// DeleteOpts marks the specified document as deleted.
 	DeleteOpts(ctx context.Context, docID, rev string, options map[string]interface{}) (newRev string, err error)
 	// StatsOpts returns database statistics.

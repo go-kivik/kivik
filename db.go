@@ -60,26 +60,28 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) 
 
 // Row is the result of calling Get for a single document.
 type Row struct {
+	err error
 	doc json.RawMessage
 }
 
 // ScanDoc unmarshals the data from the fetched row into dest. See documentation
 // on Rows.ScanDoc for details.
 func (r *Row) ScanDoc(dest interface{}) error {
+	if r.err != nil {
+		return r.err
+	}
 	return scan(dest, r.doc)
 }
 
-// Get fetches the requested document.
-func (db *DB) Get(ctx context.Context, docID string, options ...Options) (*Row, error) {
+// Get fetches the requested document. Any errors are deferred until the
+// row.ScanDoc call.
+func (db *DB) Get(ctx context.Context, docID string, options ...Options) *Row {
 	opts, err := mergeOptions(options...)
 	if err != nil {
-		return nil, err
+		return &Row{err: err}
 	}
 	row, err := db.driverDB.Get(ctx, docID, opts)
-	if err != nil {
-		return nil, err
-	}
-	return &Row{doc: row}, nil
+	return &Row{err: err, doc: row}
 }
 
 // CreateDoc creates a new doc with an auto-generated unique ID. The generated
@@ -296,16 +298,12 @@ func (db *DB) Rev(ctx context.Context, docID string) (rev string, err error) {
 	if r, ok := db.driverDB.(driver.Rever); ok {
 		return r.Rev(ctx, docID)
 	}
-	row, err := db.Get(ctx, docID, nil)
-	if err != nil {
-		return "", err
-	}
 	var doc struct {
 		Rev string `json:"_rev"`
 	}
 	// These last two lines cannot be combined for GopherJS due to a bug.
 	// See https://github.com/gopherjs/gopherjs/issues/608
-	if err = row.ScanDoc(&doc); err != nil {
+	if err = db.Get(ctx, docID, nil).ScanDoc(&doc); err != nil {
 		return "", err
 	}
 	return doc.Rev, nil
@@ -334,12 +332,8 @@ func (db *DB) Copy(ctx context.Context, targetID, sourceID string, options ...Op
 			return targetRev, err
 		}
 	}
-	row, err := db.Get(ctx, sourceID, opts)
-	if err != nil {
-		return "", err
-	}
 	var doc map[string]interface{}
-	if err = row.ScanDoc(&doc); err != nil {
+	if err = db.Get(ctx, sourceID, opts).ScanDoc(&doc); err != nil {
 		return "", err
 	}
 	delete(doc, "_rev")

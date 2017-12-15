@@ -359,14 +359,11 @@ func (db *DB) PutAttachment(ctx context.Context, docID, rev string, att *Attachm
 	if e := att.validate(); e != nil {
 		return "", e
 	}
-	if dbopt, ok := db.driverDB.(driver.DBOpts); ok {
-		opts, err := mergeOptions(options...)
-		if err != nil {
-			return "", err
-		}
-		return dbopt.PutAttachmentOpts(ctx, docID, rev, att.Filename, att.ContentType, att, opts)
+	opts, err := mergeOptions(options...)
+	if err != nil {
+		return "", err
 	}
-	return db.driverDB.PutAttachment(ctx, docID, rev, att.Filename, att.ContentType, att)
+	return db.driverDB.PutAttachment(ctx, docID, rev, att.Filename, att.ContentType, att, opts)
 }
 
 // GetAttachment returns a file attachment associated with the document.

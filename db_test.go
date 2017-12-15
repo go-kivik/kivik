@@ -1148,32 +1148,6 @@ func TestDelete(t *testing.T) {
 	}
 }
 
-type legacyPutAttRecorder struct {
-	driver.DB
-	docID, rev, filename, cType string
-	body                        string
-
-	newRev string
-	err    error
-}
-
-func (db *legacyPutAttRecorder) PutAttachment(_ context.Context, docID, rev, filename, contentType string, body io.Reader) (string, error) {
-	if db.docID != docID || db.rev != rev {
-		return "", errors.Errorf("Unexpected id/rev: %s/%s", docID, rev)
-	}
-	if db.filename != filename || db.cType != contentType {
-		return "", errors.Errorf("Unexpected file data: %s / %s", filename, contentType)
-	}
-	content, err := ioutil.ReadAll(body)
-	if err != nil {
-		panic(err)
-	}
-	if d := diff.Text(db.body, string(content)); d != nil {
-		return "", errors.Errorf("Unexpected content: %s", d)
-	}
-	return db.newRev, db.err
-}
-
 type putAttRecorder struct {
 	driver.DB
 	driver.DBOpts
@@ -1185,11 +1159,7 @@ type putAttRecorder struct {
 	err    error
 }
 
-func (db *putAttRecorder) PutAttachment(_ context.Context, _, _, _, _ string, _ io.Reader) (string, error) {
-	panic("PutAttachment called")
-}
-
-func (db *putAttRecorder) PutAttachmentOpts(_ context.Context, docID, rev, filename, contentType string, body io.Reader, opts map[string]interface{}) (string, error) {
+func (db *putAttRecorder) PutAttachment(_ context.Context, docID, rev, filename, contentType string, body io.Reader, opts map[string]interface{}) (string, error) {
 	if db.docID != docID || db.rev != rev {
 		return "", errors.Errorf("Unexpected id/rev: %s/%s", docID, rev)
 	}
@@ -1271,26 +1241,6 @@ func TestPutAttachment(t *testing.T) {
 			options: Options{"opt": 1},
 			newRev:  "2-xxx",
 			body:    "Test file",
-		},
-		{
-			name:  "legacy",
-			docID: "foo",
-			rev:   "1-xxx",
-			db: &DB{driverDB: &legacyPutAttRecorder{
-				docID:    "foo",
-				rev:      "1-xxx",
-				filename: "foo.txt",
-				cType:    "text/plain",
-				body:     "Test file",
-				newRev:   "2-xxx",
-			}},
-			att: &Attachment{
-				Filename:    "foo.txt",
-				ContentType: "text/plain",
-				ReadCloser:  ioutil.NopCloser(strings.NewReader("Test file")),
-			},
-			newRev: "2-xxx",
-			body:   "Test file",
 		},
 	}
 	for _, test := range tests {

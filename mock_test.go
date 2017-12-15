@@ -35,7 +35,7 @@ type mockDB struct {
 	SecurityFunc         func(context.Context) (*driver.Security, error)
 	SetSecurityFunc      func(context.Context, *driver.Security) error
 	ChangesFunc          func(context.Context, map[string]interface{}) (driver.Changes, error)
-	PutAttachmentFunc    func(context.Context, string, string, string, string, io.Reader) (string, error)
+	PutAttachmentFunc    func(context.Context, string, string, string, string, io.Reader, map[string]interface{}) (string, error)
 	GetAttachmentFunc    func(context.Context, string, string, string) (string, driver.MD5sum, io.ReadCloser, error)
 	DeleteAttachmentFunc func(context.Context, string, string, string) (string, error)
 	QueryFunc            func(context.Context, string, string, map[string]interface{}) (driver.Rows, error)
@@ -91,8 +91,8 @@ func (db *mockDB) Changes(ctx context.Context, opts map[string]interface{}) (dri
 	return db.ChangesFunc(ctx, opts)
 }
 
-func (db *mockDB) PutAttachment(ctx context.Context, docID, rev, filename, cType string, body io.Reader) (string, error) {
-	return db.PutAttachmentFunc(ctx, docID, rev, filename, cType, body)
+func (db *mockDB) PutAttachment(ctx context.Context, docID, rev, filename, cType string, body io.Reader, opts map[string]interface{}) (string, error) {
+	return db.PutAttachmentFunc(ctx, docID, rev, filename, cType, body, opts)
 }
 
 func (db *mockDB) GetAttachment(ctx context.Context, docID, rev, filename string) (string, driver.MD5sum, io.ReadCloser, error) {
@@ -109,7 +109,6 @@ func (db *mockDB) Query(ctx context.Context, ddoc, view string, opts map[string]
 
 type mockDBOpts struct {
 	*mockDB
-	PutAttachmentOptsFunc    func(context.Context, string, string, string, string, io.Reader, map[string]interface{}) (string, error)
 	GetAttachmentOptsFunc    func(context.Context, string, string, string, map[string]interface{}) (string, driver.MD5sum, io.ReadCloser, error)
 	DeleteAttachmentOptsFunc func(context.Context, string, string, string, map[string]interface{}) (string, error)
 }
@@ -118,10 +117,6 @@ var _ driver.DBOpts = &mockDBOpts{}
 
 func (db *mockDBOpts) DeleteAttachmentOpts(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (string, error) {
 	return db.DeleteAttachmentOptsFunc(ctx, docID, rev, filename, options)
-}
-
-func (db *mockDBOpts) PutAttachmentOpts(ctx context.Context, docID, rev, filename, cType string, body io.Reader, options map[string]interface{}) (string, error) {
-	return db.PutAttachmentOptsFunc(ctx, docID, rev, filename, cType, body, options)
 }
 
 func (db *mockDBOpts) GetAttachmentOpts(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (string, driver.MD5sum, io.ReadCloser, error) {

@@ -219,14 +219,11 @@ func (db *DB) Delete(ctx context.Context, docID, rev string, options ...Options)
 	if docID == "" {
 		return "", missingArg("docID")
 	}
-	if dbopt, ok := db.driverDB.(driver.DBOpts); ok {
-		opts, err := mergeOptions(options...)
-		if err != nil {
-			return "", err
-		}
-		return dbopt.DeleteOpts(ctx, docID, rev, opts)
+	opts, err := mergeOptions(options...)
+	if err != nil {
+		return "", err
 	}
-	return db.driverDB.Delete(ctx, docID, rev)
+	return db.driverDB.Delete(ctx, docID, rev, opts)
 }
 
 // Flush requests a flush of disk cache to disk or other permanent storage.

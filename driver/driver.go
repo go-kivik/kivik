@@ -131,7 +131,7 @@ type DB interface {
 	// Put writes the document in the database.
 	Put(ctx context.Context, docID string, doc interface{}, options map[string]interface{}) (rev string, err error)
 	// Delete marks the specified document as deleted.
-	Delete(ctx context.Context, docID, rev string) (newRev string, err error)
+	Delete(ctx context.Context, docID, rev string, options map[string]interface{}) (newRev string, err error)
 	// Stats returns database statistics.
 	Stats(ctx context.Context) (*DBStats, error)
 	// Compact initiates compaction of the database.
@@ -165,8 +165,6 @@ type DB interface {
 // DBOpts will be merged with DB in Kivik 2.0. It wraps functions that take
 // additional options arguments.
 type DBOpts interface {
-	// DeleteOpts marks the specified document as deleted.
-	DeleteOpts(ctx context.Context, docID, rev string, options map[string]interface{}) (newRev string, err error)
 	// StatsOpts returns database statistics.
 	PutAttachmentOpts(ctx context.Context, docID, rev, filename, contentType string, body io.Reader, options map[string]interface{}) (newRev string, err error)
 	// GetAttachmentOpts fetches an attachment for the associated document ID. rev

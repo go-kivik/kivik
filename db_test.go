@@ -1101,8 +1101,8 @@ func TestDelete(t *testing.T) {
 		{
 			name: "error",
 			db: &DB{
-				driverDB: &mockDBOpts{
-					DeleteOptsFunc: func(_ context.Context, _, _ string, _ map[string]interface{}) (string, error) {
+				driverDB: &mockDB{
+					DeleteFunc: func(_ context.Context, _, _ string, _ map[string]interface{}) (string, error) {
 						return "", errors.Status(StatusBadRequest, "delete error")
 					},
 				},
@@ -1114,8 +1114,8 @@ func TestDelete(t *testing.T) {
 		{
 			name: "success",
 			db: &DB{
-				driverDB: &mockDBOpts{
-					DeleteOptsFunc: func(_ context.Context, docID, rev string, opts map[string]interface{}) (string, error) {
+				driverDB: &mockDB{
+					DeleteFunc: func(_ context.Context, docID, rev string, opts map[string]interface{}) (string, error) {
 						expectedDocID := "foo"
 						expectedRev := "1-xxx"
 						if docID != expectedDocID {
@@ -1135,27 +1135,6 @@ func TestDelete(t *testing.T) {
 			rev:     "1-xxx",
 			options: testOptions,
 			newRev:  "2-xxx",
-		},
-		{
-			name: "legacy",
-			db: &DB{
-				driverDB: &mockDB{
-					DeleteFunc: func(_ context.Context, docID, rev string) (string, error) {
-						expectedDocID := "foo"
-						expectedRev := "1-xxx"
-						if docID != expectedDocID {
-							return "", fmt.Errorf("Unexpected docID: %s", docID)
-						}
-						if rev != expectedRev {
-							return "", fmt.Errorf("Unexpected rev: %s", rev)
-						}
-						return "2-xxx", nil
-					},
-				},
-			},
-			docID:  "foo",
-			rev:    "1-xxx",
-			newRev: "2-xxx",
 		},
 	}
 	for _, test := range tests {

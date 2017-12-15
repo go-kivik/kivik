@@ -27,7 +27,7 @@ type mockDB struct {
 	GetFunc              func(context.Context, string, map[string]interface{}) (int64, io.ReadCloser, error)
 	CreateDocFunc        func(context.Context, interface{}, map[string]interface{}) (string, string, error)
 	PutFunc              func(context.Context, string, interface{}, map[string]interface{}) (string, error)
-	DeleteFunc           func(context.Context, string, string) (string, error)
+	DeleteFunc           func(context.Context, string, string, map[string]interface{}) (string, error)
 	StatsFunc            func(context.Context) (*driver.DBStats, error)
 	CompactFunc          func(context.Context) error
 	CompactViewFunc      func(context.Context, string) error
@@ -59,8 +59,8 @@ func (db *mockDB) Put(ctx context.Context, docID string, doc interface{}, opts m
 	return db.PutFunc(ctx, docID, doc, opts)
 }
 
-func (db *mockDB) Delete(ctx context.Context, docID, rev string) (string, error) {
-	return db.DeleteFunc(ctx, docID, rev)
+func (db *mockDB) Delete(ctx context.Context, docID, rev string, opts map[string]interface{}) (string, error) {
+	return db.DeleteFunc(ctx, docID, rev, opts)
 }
 
 func (db *mockDB) Stats(ctx context.Context) (*driver.DBStats, error) {
@@ -109,7 +109,6 @@ func (db *mockDB) Query(ctx context.Context, ddoc, view string, opts map[string]
 
 type mockDBOpts struct {
 	*mockDB
-	DeleteOptsFunc           func(context.Context, string, string, map[string]interface{}) (string, error)
 	PutAttachmentOptsFunc    func(context.Context, string, string, string, string, io.Reader, map[string]interface{}) (string, error)
 	GetAttachmentOptsFunc    func(context.Context, string, string, string, map[string]interface{}) (string, driver.MD5sum, io.ReadCloser, error)
 	DeleteAttachmentOptsFunc func(context.Context, string, string, string, map[string]interface{}) (string, error)
@@ -119,10 +118,6 @@ var _ driver.DBOpts = &mockDBOpts{}
 
 func (db *mockDBOpts) DeleteAttachmentOpts(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (string, error) {
 	return db.DeleteAttachmentOptsFunc(ctx, docID, rev, filename, options)
-}
-
-func (db *mockDBOpts) DeleteOpts(ctx context.Context, docID, rev string, options map[string]interface{}) (string, error) {
-	return db.DeleteOptsFunc(ctx, docID, rev, options)
 }
 
 func (db *mockDBOpts) PutAttachmentOpts(ctx context.Context, docID, rev, filename, cType string, body io.Reader, options map[string]interface{}) (string, error) {

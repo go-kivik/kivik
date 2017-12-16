@@ -10,21 +10,8 @@ import (
 	"github.com/flimzy/diff"
 	"github.com/flimzy/testy"
 	"github.com/go-kivik/kivik/driver"
+	"github.com/go-kivik/kivik/mock"
 )
-
-type fakeRep struct {
-	driver.Replication
-	state string
-	err   error
-}
-
-func (r *fakeRep) State() string {
-	return r.state
-}
-
-func (r *fakeRep) Err() error {
-	return r.err
-}
 
 func TestReplicationDocsWritten(t *testing.T) {
 	t.Run("No Info", func(t *testing.T) {
@@ -141,7 +128,7 @@ func TestProgress(t *testing.T) {
 func TestNewReplication(t *testing.T) {
 	source := "foo"
 	target := "bar"
-	rep := &mockReplication{
+	rep := &mock.Replication{
 		SourceFunc: func() string { return source },
 		TargetFunc: func() string { return target },
 	}
@@ -162,7 +149,7 @@ func TestReplicationGetters(t *testing.T) {
 	end := parseTime(t, "2019-01-01T00:00:00Z")
 	state := "confusion"
 	r := &Replication{
-		irep: &mockReplication{
+		irep: &mock.Replication{
 			ReplicationIDFunc: func() string { return repID },
 			StartTimeFunc:     func() time.Time { return start },
 			EndTimeFunc:       func() time.Time { return end },
@@ -202,7 +189,9 @@ func TestReplicationGetters(t *testing.T) {
 func TestReplicationErr(t *testing.T) {
 	t.Run("No error", func(t *testing.T) {
 		r := &Replication{
-			irep: &fakeRep{},
+			irep: &mock.Replication{
+				ErrFunc: func() error { return nil },
+			},
 		}
 		if err := r.Err(); err != nil {
 			t.Errorf("Unexpected error: %s", err)
@@ -210,7 +199,11 @@ func TestReplicationErr(t *testing.T) {
 	})
 	t.Run("Error", func(t *testing.T) {
 		r := &Replication{
-			irep: &fakeRep{err: errors.New("rep error")},
+			irep: &mock.Replication{
+				ErrFunc: func() error {
+					return errors.New("rep error")
+				},
+			},
 		}
 		if err := r.Err(); err == nil || err.Error() != "rep error" {
 			t.Errorf("Unexpected error: %s", err)
@@ -227,7 +220,11 @@ func TestReplicationErr(t *testing.T) {
 func TestReplicationIsActive(t *testing.T) {
 	t.Run("Active", func(t *testing.T) {
 		r := &Replication{
-			irep: &fakeRep{state: "active"},
+			irep: &mock.Replication{
+				StateFunc: func() string {
+					return "active"
+				},
+			},
 		}
 		if !r.IsActive() {
 			t.Errorf("Expected active")
@@ -235,7 +232,11 @@ func TestReplicationIsActive(t *testing.T) {
 	})
 	t.Run("Complete", func(t *testing.T) {
 		r := &Replication{
-			irep: &fakeRep{state: string(ReplicationComplete)},
+			irep: &mock.Replication{
+				StateFunc: func() string {
+					return string(ReplicationComplete)
+				},
+			},
 		}
 		if r.IsActive() {
 			t.Errorf("Expected not active")
@@ -252,7 +253,7 @@ func TestReplicationIsActive(t *testing.T) {
 func TestReplicationDelete(t *testing.T) {
 	expected := "delete error"
 	r := &Replication{
-		irep: &mockReplication{
+		irep: &mock.Replication{
 			DeleteFunc: func(_ context.Context) error { return errors.New(expected) },
 		},
 	}
@@ -264,7 +265,7 @@ func TestReplicationUpdate(t *testing.T) {
 	t.Run("update error", func(t *testing.T) {
 		expected := "rep error"
 		r := &Replication{
-			irep: &mockReplication{
+			irep: &mock.Replication{
 				UpdateFunc: func(_ context.Context, _ *driver.ReplicationInfo) error {
 					return errors.New(expected)
 				},
@@ -279,7 +280,7 @@ func TestReplicationUpdate(t *testing.T) {
 			DocsRead: 123,
 		}
 		r := &Replication{
-			irep: &mockReplication{
+			irep: &mock.Replication{
 				UpdateFunc: func(_ context.Context, i *driver.ReplicationInfo) error {
 					*i = driver.ReplicationInfo{
 						DocsRead: 123,
@@ -294,19 +295,6 @@ func TestReplicationUpdate(t *testing.T) {
 			t.Error(d)
 		}
 	})
-}
-
-type minimalRep struct {
-	driver.Replication
-	id string
-}
-
-func (r *minimalRep) Source() string {
-	return r.id + "-source"
-}
-
-func (r *minimalRep) Target() string {
-	return r.id + "-target"
 }
 
 func TestGetReplications(t *testing.T) {
@@ -348,8 +336,8 @@ func TestGetReplications(t *testing.T) {
 							return nil, fmt.Errorf("Unexpected options:\n%v", d)
 						}
 						return []driver.Replication{
-							&minimalRep{id: "1"},
-							&minimalRep{id: "2"},
+							&mock.Replication{ID: "1"},
+							&mock.Replication{ID: "2"},
 						}, nil
 					},
 				},
@@ -359,12 +347,12 @@ func TestGetReplications(t *testing.T) {
 				{
 					Source: "1-source",
 					Target: "1-target",
-					irep:   &minimalRep{id: "1"},
+					irep:   &mock.Replication{ID: "1"},
 				},
 				{
 					Source: "2-source",
 					Target: "2-target",
-					irep:   &minimalRep{id: "2"},
+					irep:   &mock.Replication{ID: "2"},
 				},
 			},
 		},
@@ -427,7 +415,7 @@ func TestReplicate(t *testing.T) {
 						if d := diff.Interface(expectedOpts, opts); d != nil {
 							return nil, fmt.Errorf("Unexpected options:\n%v", d)
 						}
-						return &minimalRep{id: "a"}, nil
+						return &mock.Replication{ID: "a"}, nil
 					},
 				},
 			},
@@ -437,7 +425,7 @@ func TestReplicate(t *testing.T) {
 			expected: &Replication{
 				Source: "a-source",
 				Target: "a-target",
-				irep:   &minimalRep{id: "a"},
+				irep:   &mock.Replication{ID: "a"},
 			},
 		},
 	}

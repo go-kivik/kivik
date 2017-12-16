@@ -6,7 +6,6 @@ import (
 	"io"
 	"io/ioutil"
 	"strings"
-	"time"
 
 	"github.com/go-kivik/kivik/driver"
 )
@@ -40,56 +39,6 @@ func (i *mockIterator) Next(ifce interface{}) error {
 
 func (i *mockIterator) Close() error {
 	return i.CloseFunc()
-}
-
-type mockReplication struct {
-	DeleteFunc        func(context.Context) error
-	StartTimeFunc     func() time.Time
-	EndTimeFunc       func() time.Time
-	ErrFunc           func() error
-	ReplicationIDFunc func() string
-	SourceFunc        func() string
-	TargetFunc        func() string
-	StateFunc         func() string
-	UpdateFunc        func(context.Context, *driver.ReplicationInfo) error
-}
-
-var _ driver.Replication = &mockReplication{}
-
-func (r *mockReplication) Delete(ctx context.Context) error {
-	return r.DeleteFunc(ctx)
-}
-
-func (r *mockReplication) StartTime() time.Time {
-	return r.StartTimeFunc()
-}
-
-func (r *mockReplication) EndTime() time.Time {
-	return r.EndTimeFunc()
-}
-
-func (r *mockReplication) Err() error {
-	return r.ErrFunc()
-}
-
-func (r *mockReplication) ReplicationID() string {
-	return r.ReplicationIDFunc()
-}
-
-func (r *mockReplication) Source() string {
-	return r.SourceFunc()
-}
-
-func (r *mockReplication) Target() string {
-	return r.TargetFunc()
-}
-
-func (r *mockReplication) State() string {
-	return r.StateFunc()
-}
-
-func (r *mockReplication) Update(ctx context.Context, rep *driver.ReplicationInfo) error {
-	return r.UpdateFunc(ctx, rep)
 }
 
 type mockClient struct {

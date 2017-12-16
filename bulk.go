@@ -102,6 +102,9 @@ func (db *DB) BulkDocs(ctx context.Context, docs interface{}, options ...Options
 		}
 		return nil, err
 	}
+	if len(docsi) == 0 {
+		return nil, errors.Status(StatusBadRequest, "kivik: no documents provided")
+	}
 	if bulkDocer, ok := db.driverDB.(driver.BulkDocer); ok {
 		bulki, err := bulkDocer.BulkDocs(ctx, docsi, opts)
 		if err != nil {
@@ -115,9 +118,9 @@ func (db *DB) BulkDocs(ctx context.Context, docs interface{}, options ...Options
 		var id, rev string
 		if docID, ok := extractDocID(doc); ok {
 			id = docID
-			_, err = db.Put(ctx, id, doc)
+			rev, err = db.Put(ctx, id, doc, opts)
 		} else {
-			_, _, err = db.CreateDoc(ctx, doc)
+			id, rev, err = db.CreateDoc(ctx, doc, opts)
 		}
 		results = append(results, driver.BulkResult{
 			ID:    id,

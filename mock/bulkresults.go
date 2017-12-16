@@ -4,6 +4,8 @@ import "github.com/go-kivik/kivik/driver"
 
 // BulkResults mocks driver.BulkResults
 type BulkResults struct {
+	// ID identifies a specific BulkResults instance
+	ID        string
 	NextFunc  func(*driver.BulkResult) error
 	CloseFunc func() error
 }

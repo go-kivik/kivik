@@ -11,6 +11,7 @@ import (
 	"github.com/flimzy/diff"
 	"github.com/flimzy/testy"
 	"github.com/go-kivik/kivik/driver"
+	"github.com/go-kivik/kivik/mock"
 )
 
 func TestBulkNext(t *testing.T) {
@@ -79,13 +80,20 @@ func TestBulkIteratorNext(t *testing.T) {
 	}{
 		{
 			name: "error",
-			r:    &bulkIterator{&mockBulkResults{err: errors.New("iter error")}},
-			err:  "iter error",
+			r: &bulkIterator{&mock.BulkResults{
+				NextFunc: func(_ *driver.BulkResult) error {
+					return errors.New("iter error")
+				},
+			}},
+			err: "iter error",
 		},
 		{
 			name: "success",
-			r: &bulkIterator{&mockBulkResults{
-				result: &driver.BulkResult{ID: "foo"},
+			r: &bulkIterator{&mock.BulkResults{
+				NextFunc: func(result *driver.BulkResult) error {
+					*result = driver.BulkResult{ID: "foo"}
+					return nil
+				},
 			}},
 			expected: &driver.BulkResult{ID: "foo"},
 		},

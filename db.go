@@ -116,7 +116,7 @@ func (db *DB) GetMeta(ctx context.Context, docID string, options ...Options) (si
 	if err = row.ScanDoc(&doc); err != nil {
 		return 0, "", err
 	}
-	return int64(len(row.doc)), doc.Rev, nil
+	return row.length, doc.Rev, nil
 }
 
 // CreateDoc creates a new doc with an auto-generated unique ID. The generated

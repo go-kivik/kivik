@@ -256,9 +256,9 @@ type MetaGetter interface {
 	GetMeta(ctx context.Context, docID string, options map[string]interface{}) (size int64, rev string, err error)
 }
 
-// Flusher is an optional interface that may be implemented by a database
-// that can force a flush of the database backend file(s) to disk or other
-// permanent storage.
+// Flusher is an optional interface that may be implemented by a database that
+// can force a flush of the database backend file(s) to disk or other permanent
+// storage.
 type Flusher interface {
 	// Flush requests a flush of disk cache to disk or other permanent storage.
 	//

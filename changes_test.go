@@ -9,6 +9,7 @@ import (
 	"github.com/flimzy/diff"
 	"github.com/flimzy/testy"
 	"github.com/go-kivik/kivik/driver"
+	"github.com/go-kivik/kivik/mock"
 )
 
 func TestChangesNext(t *testing.T) {
@@ -186,7 +187,7 @@ func TestChanges(t *testing.T) {
 		{
 			name: "db error",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					ChangesFunc: func(_ context.Context, _ map[string]interface{}) (driver.Changes, error) {
 						return nil, errors.New("db error")
 					},
@@ -198,7 +199,7 @@ func TestChanges(t *testing.T) {
 		{
 			name: "success",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					ChangesFunc: func(_ context.Context, opts map[string]interface{}) (driver.Changes, error) {
 						expectedOpts := map[string]interface{}{"foo": 123.4}
 						if d := diff.Interface(expectedOpts, opts); d != nil {

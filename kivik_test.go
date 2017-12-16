@@ -9,6 +9,7 @@ import (
 	"github.com/flimzy/diff"
 	"github.com/flimzy/testy"
 	"github.com/go-kivik/kivik/driver"
+	"github.com/go-kivik/kivik/mock"
 )
 
 func TestNew(t *testing.T) {
@@ -32,7 +33,7 @@ func TestNew(t *testing.T) {
 		},
 		{
 			name: "connection error",
-			driver: &mockDriver{
+			driver: &mock.Driver{
 				NewClientFunc: func(_ context.Context, _ string) (driver.Client, error) {
 					return nil, errors.New("connection error")
 				},
@@ -43,7 +44,7 @@ func TestNew(t *testing.T) {
 		},
 		{
 			name: "success",
-			driver: &mockDriver{
+			driver: &mock.Driver{
 				NewClientFunc: func(_ context.Context, dsn string) (driver.Client, error) {
 					if dsn != "oink" {
 						return nil, fmt.Errorf("Unexpected DSN: %s", dsn)
@@ -178,7 +179,7 @@ func TestDB(t *testing.T) {
 						if d := diff.Interface(expectedOpts, opts); d != nil {
 							return nil, fmt.Errorf("Unexpected options:\n%s", d)
 						}
-						return &mockDB{id: "abc"}, nil
+						return &mock.DB{ID: "abc"}, nil
 					},
 				},
 			}
@@ -190,7 +191,7 @@ func TestDB(t *testing.T) {
 				expected: &DB{
 					client:   client,
 					name:     "foo",
-					driverDB: &mockDB{id: "abc"},
+					driverDB: &mock.DB{ID: "abc"},
 				},
 			}
 		}(),
@@ -348,7 +349,7 @@ func TestCreateDB(t *testing.T) {
 						return nil
 					},
 					DBFunc: func(_ context.Context, dbName string, _ map[string]interface{}) (driver.DB, error) {
-						return &mockDB{id: "abc"}, nil
+						return &mock.DB{ID: "abc"}, nil
 					},
 				},
 			},
@@ -356,7 +357,7 @@ func TestCreateDB(t *testing.T) {
 			opts:   map[string]interface{}{"foo": 123},
 			expected: &DB{
 				name:     "foo",
-				driverDB: &mockDB{id: "abc"},
+				driverDB: &mock.DB{ID: "abc"},
 			},
 		},
 	}

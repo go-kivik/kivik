@@ -5,8 +5,6 @@ import (
 	"io"
 	"io/ioutil"
 	"strings"
-
-	"github.com/go-kivik/kivik/driver"
 )
 
 type errReader string
@@ -38,20 +36,4 @@ func (i *mockIterator) Next(ifce interface{}) error {
 
 func (i *mockIterator) Close() error {
 	return i.CloseFunc()
-}
-
-type mockDBUpdates struct {
-	id        string
-	NextFunc  func(*driver.DBUpdate) error
-	CloseFunc func() error
-}
-
-var _ driver.DBUpdates = &mockDBUpdates{}
-
-func (u *mockDBUpdates) Close() error {
-	return u.CloseFunc()
-}
-
-func (u *mockDBUpdates) Next(dbupdate *driver.DBUpdate) error {
-	return u.NextFunc(dbupdate)
 }

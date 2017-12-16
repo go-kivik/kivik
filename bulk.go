@@ -122,9 +122,9 @@ func (db *DB) BulkDocs(ctx context.Context, docs interface{}, options ...Options
 		var id, rev string
 		if docID, ok := extractDocID(doc); ok {
 			id = docID
-			_, err = db.Put(ctx, id, doc)
+			rev, err = db.Put(ctx, id, doc)
 		} else {
-			_, _, err = db.CreateDoc(ctx, doc)
+			id, rev, err = db.CreateDoc(ctx, doc)
 		}
 		results = append(results, driver.BulkResult{
 			ID:    id,

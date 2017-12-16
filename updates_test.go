@@ -8,6 +8,7 @@ import (
 	"github.com/flimzy/diff"
 	"github.com/flimzy/testy"
 	"github.com/go-kivik/kivik/driver"
+	"github.com/go-kivik/kivik/mock"
 )
 
 func TestDBUpdatesNext(t *testing.T) {
@@ -167,7 +168,7 @@ func TestDBUpdates(t *testing.T) {
 		{
 			name: "non-DBUpdater",
 			client: &Client{
-				driverClient: &mockClient{},
+				driverClient: &mock.Client{},
 			},
 			status: StatusNotImplemented,
 			err:    "kivik: driver does not implement DBUpdater",
@@ -175,7 +176,7 @@ func TestDBUpdates(t *testing.T) {
 		{
 			name: "db error",
 			client: &Client{
-				driverClient: &mockDBUpdater{
+				driverClient: &mock.DBUpdater{
 					DBUpdatesFunc: func() (driver.DBUpdates, error) {
 						return nil, errors.New("db error")
 					},
@@ -187,7 +188,7 @@ func TestDBUpdates(t *testing.T) {
 		{
 			name: "success",
 			client: &Client{
-				driverClient: &mockDBUpdater{
+				driverClient: &mock.DBUpdater{
 					DBUpdatesFunc: func() (driver.DBUpdates, error) {
 						return &mockDBUpdates{id: "a"}, nil
 					},

@@ -309,7 +309,7 @@ func TestGetReplications(t *testing.T) {
 		{
 			name: "non-replicator",
 			client: &Client{
-				driverClient: &mockClient{},
+				driverClient: &mock.Client{},
 			},
 			status: StatusNotImplemented,
 			err:    "kivik: driver does not support replication",
@@ -317,7 +317,7 @@ func TestGetReplications(t *testing.T) {
 		{
 			name: "db error",
 			client: &Client{
-				driverClient: &mockClientReplicator{
+				driverClient: &mock.ClientReplicator{
 					GetReplicationsFunc: func(_ context.Context, _ map[string]interface{}) ([]driver.Replication, error) {
 						return nil, errors.New("db error")
 					},
@@ -329,7 +329,7 @@ func TestGetReplications(t *testing.T) {
 		{
 			name: "success",
 			client: &Client{
-				driverClient: &mockClientReplicator{
+				driverClient: &mock.ClientReplicator{
 					GetReplicationsFunc: func(_ context.Context, opts map[string]interface{}) ([]driver.Replication, error) {
 						expectedOpts := map[string]interface{}{"foo": 123}
 						if d := diff.Interface(expectedOpts, opts); d != nil {
@@ -381,7 +381,7 @@ func TestReplicate(t *testing.T) {
 		{
 			name: "non-replicator",
 			client: &Client{
-				driverClient: &mockClient{},
+				driverClient: &mock.Client{},
 			},
 			status: StatusNotImplemented,
 			err:    "kivik: driver does not support replication",
@@ -389,7 +389,7 @@ func TestReplicate(t *testing.T) {
 		{
 			name: "db error",
 			client: &Client{
-				driverClient: &mockClientReplicator{
+				driverClient: &mock.ClientReplicator{
 					ReplicateFunc: func(_ context.Context, _, _ string, _ map[string]interface{}) (driver.Replication, error) {
 						return nil, errors.New("db error")
 					},
@@ -401,7 +401,7 @@ func TestReplicate(t *testing.T) {
 		{
 			name: "success",
 			client: &Client{
-				driverClient: &mockClientReplicator{
+				driverClient: &mock.ClientReplicator{
 					ReplicateFunc: func(_ context.Context, target, source string, opts map[string]interface{}) (driver.Replication, error) {
 						expectedTarget := "foo"
 						expectedSource := "bar"

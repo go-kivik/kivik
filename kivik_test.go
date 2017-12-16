@@ -49,7 +49,7 @@ func TestNew(t *testing.T) {
 					if dsn != "oink" {
 						return nil, fmt.Errorf("Unexpected DSN: %s", dsn)
 					}
-					return &mockClient{id: "foo"}, nil
+					return &mock.Client{ID: "foo"}, nil
 				},
 			},
 			driverName: "bar",
@@ -57,7 +57,7 @@ func TestNew(t *testing.T) {
 			expected: &Client{
 				dsn:          "oink",
 				driverName:   "bar",
-				driverClient: &mockClient{id: "foo"},
+				driverClient: &mock.Client{ID: "foo"},
 			},
 		},
 	}
@@ -112,7 +112,7 @@ func TestVersion(t *testing.T) {
 		{
 			name: "db error",
 			client: &Client{
-				driverClient: &mockClient{
+				driverClient: &mock.Client{
 					VersionFunc: func(_ context.Context) (*driver.Version, error) {
 						return nil, errors.New("db error")
 					},
@@ -124,7 +124,7 @@ func TestVersion(t *testing.T) {
 		{
 			name: "success",
 			client: &Client{
-				driverClient: &mockClient{
+				driverClient: &mock.Client{
 					VersionFunc: func(_ context.Context) (*driver.Version, error) {
 						return &driver.Version{Version: "foo"}, nil
 					},
@@ -158,7 +158,7 @@ func TestDB(t *testing.T) {
 		{
 			name: "db error",
 			client: &Client{
-				driverClient: &mockClient{
+				driverClient: &mock.Client{
 					DBFunc: func(_ context.Context, _ string, _ map[string]interface{}) (driver.DB, error) {
 						return nil, errors.New("db error")
 					},
@@ -169,7 +169,7 @@ func TestDB(t *testing.T) {
 		},
 		func() Test {
 			client := &Client{
-				driverClient: &mockClient{
+				driverClient: &mock.Client{
 					DBFunc: func(_ context.Context, dbName string, opts map[string]interface{}) (driver.DB, error) {
 						expectedDBName := "foo"
 						expectedOpts := map[string]interface{}{"foo": 123}
@@ -219,7 +219,7 @@ func TestAllDBs(t *testing.T) {
 		{
 			name: "db error",
 			client: &Client{
-				driverClient: &mockClient{
+				driverClient: &mock.Client{
 					AllDBsFunc: func(_ context.Context, _ map[string]interface{}) ([]string, error) {
 						return nil, errors.New("db error")
 					},
@@ -231,7 +231,7 @@ func TestAllDBs(t *testing.T) {
 		{
 			name: "success",
 			client: &Client{
-				driverClient: &mockClient{
+				driverClient: &mock.Client{
 					AllDBsFunc: func(_ context.Context, options map[string]interface{}) ([]string, error) {
 						expectedOptions := map[string]interface{}{"foo": 123}
 						if d := diff.Interface(expectedOptions, options); d != nil {
@@ -269,7 +269,7 @@ func TestDBExists(t *testing.T) {
 		{
 			name: "db error",
 			client: &Client{
-				driverClient: &mockClient{
+				driverClient: &mock.Client{
 					DBExistsFunc: func(_ context.Context, _ string, _ map[string]interface{}) (bool, error) {
 						return false, errors.New("db error")
 					},
@@ -281,7 +281,7 @@ func TestDBExists(t *testing.T) {
 		{
 			name: "success",
 			client: &Client{
-				driverClient: &mockClient{
+				driverClient: &mock.Client{
 					DBExistsFunc: func(_ context.Context, dbName string, opts map[string]interface{}) (bool, error) {
 						expectedDBName := "foo"
 						expectedOpts := map[string]interface{}{"foo": 123}
@@ -324,7 +324,7 @@ func TestCreateDB(t *testing.T) {
 		{
 			name: "db error",
 			client: &Client{
-				driverClient: &mockClient{
+				driverClient: &mock.Client{
 					CreateDBFunc: func(_ context.Context, _ string, _ map[string]interface{}) error {
 						return errors.New("db error")
 					},
@@ -336,7 +336,7 @@ func TestCreateDB(t *testing.T) {
 		{
 			name: "success",
 			client: &Client{
-				driverClient: &mockClient{
+				driverClient: &mock.Client{
 					CreateDBFunc: func(_ context.Context, dbName string, opts map[string]interface{}) error {
 						expectedDBName := "foo"
 						expectedOpts := map[string]interface{}{"foo": 123}
@@ -385,7 +385,7 @@ func TestDestroyDB(t *testing.T) {
 		{
 			name: "db error",
 			client: &Client{
-				driverClient: &mockClient{
+				driverClient: &mock.Client{
 					DestroyDBFunc: func(_ context.Context, _ string, _ map[string]interface{}) error {
 						return errors.New("db error")
 					},
@@ -397,7 +397,7 @@ func TestDestroyDB(t *testing.T) {
 		{
 			name: "success",
 			client: &Client{
-				driverClient: &mockClient{
+				driverClient: &mock.Client{
 					DestroyDBFunc: func(_ context.Context, dbName string, opts map[string]interface{}) error {
 						expectedDBName := "foo"
 						expectedOpts := map[string]interface{}{"foo": 123}
@@ -434,7 +434,7 @@ func TestAuthenticate(t *testing.T) {
 		{
 			name: "non-authenticator",
 			client: &Client{
-				driverClient: &mockClient{},
+				driverClient: &mock.Client{},
 			},
 			status: StatusNotImplemented,
 			err:    "kivik: driver does not support authentication",
@@ -442,7 +442,7 @@ func TestAuthenticate(t *testing.T) {
 		{
 			name: "auth error",
 			client: &Client{
-				driverClient: &mockAuthenticator{
+				driverClient: &mock.Authenticator{
 					AuthenticateFunc: func(_ context.Context, _ interface{}) error {
 						return errors.New("auth error")
 					},
@@ -454,7 +454,7 @@ func TestAuthenticate(t *testing.T) {
 		{
 			name: "success",
 			client: &Client{
-				driverClient: &mockAuthenticator{
+				driverClient: &mock.Authenticator{
 					AuthenticateFunc: func(_ context.Context, a interface{}) error {
 						expected := int(3)
 						if d := diff.Interface(expected, a); d != nil {

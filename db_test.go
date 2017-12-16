@@ -1329,33 +1329,6 @@ func TestDeleteAttachment(t *testing.T) {
 	}
 }
 
-type mockAttGetter struct {
-	driver.DB
-	docID, rev, filename string
-	opts                 map[string]interface{}
-
-	cType   string
-	md5     driver.MD5sum
-	content io.ReadCloser
-	err     error
-}
-
-func (db *mockAttGetter) GetAttachment(_ context.Context, docID, rev, filename string, opts map[string]interface{}) (string, driver.MD5sum, io.ReadCloser, error) {
-	if docID != db.docID {
-		return "", driver.MD5sum{}, nil, errors.Errorf("Unexpected docID: %s", docID)
-	}
-	if rev != db.rev {
-		return "", driver.MD5sum{}, nil, errors.Errorf("Unexpected rev: %s", rev)
-	}
-	if filename != db.filename {
-		return "", driver.MD5sum{}, nil, errors.Errorf("Unexpected filename: %s", filename)
-	}
-	if d := diff.Interface(db.opts, opts); d != nil {
-		return "", driver.MD5sum{}, nil, errors.Errorf("Unexpected options: %s", d)
-	}
-	return db.cType, db.md5, db.content, db.err
-}
-
 func TestGetAttachment(t *testing.T) {
 	tests := []struct {
 		name                 string
@@ -1370,11 +1343,13 @@ func TestGetAttachment(t *testing.T) {
 	}{
 		{
 			name: "error",
-			db: &DB{driverDB: &mockAttGetter{
-				docID:    "foo",
-				filename: "foo.txt",
-				err:      errors.New("fail"),
-			}},
+			db: &DB{
+				driverDB: &mockDB{
+					GetAttachmentFunc: func(_ context.Context, _, _, _ string, _ map[string]interface{}) (string, driver.MD5sum, io.ReadCloser, error) {
+						return "", driver.MD5sum{}, nil, errors.New("fail")
+					},
+				},
+			},
 			docID:    "foo",
 			filename: "foo.txt",
 			status:   500,
@@ -1382,19 +1357,30 @@ func TestGetAttachment(t *testing.T) {
 		},
 		{
 			name: "success",
-			db: &DB{driverDB: &mockAttGetter{
-				docID:    "foo",
-				rev:      "1-xxx",
-				filename: "foo.txt",
-				opts:     map[string]interface{}{"foo": "bar"},
-				cType:    "text/plain",
-				md5:      driver.MD5sum{0x01},
-				content:  body("Test"),
-			}},
+			db: &DB{
+				driverDB: &mockDB{
+					GetAttachmentFunc: func(_ context.Context, docID, rev, filename string, opts map[string]interface{}) (string, driver.MD5sum, io.ReadCloser, error) {
+						expectedDocID, expectedRev, expectedFilename := "foo", "1-xxx", "foo.txt"
+						if docID != expectedDocID {
+							return "", driver.MD5sum{}, nil, fmt.Errorf("Unexpected docID: %s", docID)
+						}
+						if rev != expectedRev {
+							return "", driver.MD5sum{}, nil, fmt.Errorf("Unexpected rev: %s", rev)
+						}
+						if filename != expectedFilename {
+							return "", driver.MD5sum{}, nil, fmt.Errorf("Unexpected filename: %s", filename)
+						}
+						if d := diff.Interface(testOptions, opts); d != nil {
+							return "", driver.MD5sum{}, nil, fmt.Errorf("Unexpected options:\n%s", d)
+						}
+						return "text/plain", driver.MD5sum{0x01}, body("Test"), nil
+					},
+				},
+			},
 			docID:    "foo",
 			rev:      "1-xxx",
 			filename: "foo.txt",
-			options:  Options{"foo": "bar"},
+			options:  testOptions,
 			content:  "Test",
 			expected: &Attachment{
 				Filename:    "foo.txt",
@@ -1474,11 +1460,13 @@ func TestGetAttachmentMeta(t *testing.T) {
 	}{
 		{
 			name: "plain db, error",
-			db: &DB{driverDB: &mockAttGetter{
-				docID:    "foo",
-				filename: "foo.txt",
-				err:      errors.New("fail"),
-			}},
+			db: &DB{
+				driverDB: &mockDB{
+					GetAttachmentFunc: func(_ context.Context, _, _, _ string, _ map[string]interface{}) (string, driver.MD5sum, io.ReadCloser, error) {
+						return "", driver.MD5sum{}, nil, errors.New("fail")
+					},
+				},
+			},
 			docID:    "foo",
 			filename: "foo.txt",
 			status:   500,
@@ -1486,17 +1474,30 @@ func TestGetAttachmentMeta(t *testing.T) {
 		},
 		{
 			name: "plain db, success",
-			db: &DB{driverDB: &mockAttGetter{
-				docID:    "foo",
-				rev:      "1-xxx",
-				filename: "foo.txt",
-				cType:    "text/plain",
-				md5:      driver.MD5sum{0x01},
-				content:  body("Test"),
-			}},
+			db: &DB{
+				driverDB: &mockDB{
+					GetAttachmentFunc: func(_ context.Context, docID, rev, filename string, opts map[string]interface{}) (string, driver.MD5sum, io.ReadCloser, error) {
+						expectedDocID, expectedRev, expectedFilename := "foo", "1-xxx", "foo.txt"
+						if docID != expectedDocID {
+							return "", driver.MD5sum{}, nil, fmt.Errorf("Unexpected docID: %s", docID)
+						}
+						if rev != expectedRev {
+							return "", driver.MD5sum{}, nil, fmt.Errorf("Unexpected rev: %s", rev)
+						}
+						if filename != expectedFilename {
+							return "", driver.MD5sum{}, nil, fmt.Errorf("Unexpected filename: %s", filename)
+						}
+						if d := diff.Interface(testOptions, opts); d != nil {
+							return "", driver.MD5sum{}, nil, fmt.Errorf("Unexpected options:\n%s", d)
+						}
+						return "text/plain", driver.MD5sum{0x01}, body("Test"), nil
+					},
+				},
+			},
 			docID:    "foo",
 			rev:      "1-xxx",
 			filename: "foo.txt",
+			options:  testOptions,
 			expected: &Attachment{
 				Filename:    "foo.txt",
 				ContentType: "text/plain",

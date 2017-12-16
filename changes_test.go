@@ -70,7 +70,7 @@ func TestChangesClose(t *testing.T) {
 func TestChangesIteratorNext(t *testing.T) {
 	expected := "foo error"
 	c := &changesIterator{
-		Changes: &mockChanges{
+		Changes: &mock.Changes{
 			NextFunc: func(_ *driver.Change) error { return errors.New(expected) },
 		},
 	}
@@ -80,15 +80,15 @@ func TestChangesIteratorNext(t *testing.T) {
 }
 
 func TestChangesIteratorNew(t *testing.T) {
-	ch := newChanges(context.Background(), &mockChanges{})
+	ch := newChanges(context.Background(), &mock.Changes{})
 	expected := &Changes{
 		iter: &iter{
 			feed: &changesIterator{
-				Changes: &mockChanges{},
+				Changes: &mock.Changes{},
 			},
 			curVal: &driver.Change{},
 		},
-		changesi: &mockChanges{},
+		changesi: &mock.Changes{},
 	}
 	ch.cancel = nil // determinism
 	if d := diff.Interface(expected, ch); d != nil {
@@ -205,7 +205,7 @@ func TestChanges(t *testing.T) {
 						if d := diff.Interface(expectedOpts, opts); d != nil {
 							return nil, fmt.Errorf("Unexpected options:\n%s", d)
 						}
-						return &mockChanges{}, nil
+						return &mock.Changes{}, nil
 					},
 				},
 			},
@@ -213,11 +213,11 @@ func TestChanges(t *testing.T) {
 			expected: &Changes{
 				iter: &iter{
 					feed: &changesIterator{
-						Changes: &mockChanges{},
+						Changes: &mock.Changes{},
 					},
 					curVal: &driver.Change{},
 				},
-				changesi: &mockChanges{},
+				changesi: &mock.Changes{},
 			},
 		},
 	}

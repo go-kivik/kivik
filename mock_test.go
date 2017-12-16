@@ -42,21 +42,6 @@ func (i *mockIterator) Close() error {
 	return i.CloseFunc()
 }
 
-type mockChanges struct {
-	NextFunc  func(*driver.Change) error
-	CloseFunc func() error
-}
-
-var _ driver.Changes = &mockChanges{}
-
-func (c *mockChanges) Next(ch *driver.Change) error {
-	return c.NextFunc(ch)
-}
-
-func (c *mockChanges) Close() error {
-	return c.CloseFunc()
-}
-
 type mockRows struct {
 	id            string
 	CloseFunc     func() error

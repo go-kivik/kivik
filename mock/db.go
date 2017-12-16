@@ -23,8 +23,8 @@ type DB struct {
 	SecurityFunc         func(ctx context.Context) (*driver.Security, error)
 	SetSecurityFunc      func(ctx context.Context, security *driver.Security) error
 	ChangesFunc          func(ctx context.Context, options map[string]interface{}) (driver.Changes, error)
-	PutAttachmentFunc    func(ctx context.Context, docID, rev, filename, contentType string, body io.Reader, options map[string]interface{}) (newRev string, err error)
-	GetAttachmentFunc    func(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (contentType string, md5sum driver.MD5sum, body io.ReadCloser, err error)
+	PutAttachmentFunc    func(ctx context.Context, docID, rev string, att *driver.Attachment, options map[string]interface{}) (newRev string, err error)
+	GetAttachmentFunc    func(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (*driver.Attachment, error)
 	DeleteAttachmentFunc func(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (newRev string, err error)
 	QueryFunc            func(context.Context, string, string, map[string]interface{}) (driver.Rows, error)
 }
@@ -92,12 +92,12 @@ func (db *DB) Changes(ctx context.Context, opts map[string]interface{}) (driver.
 }
 
 // PutAttachment calls db.PutAttachmentFunc
-func (db *DB) PutAttachment(ctx context.Context, docID, rev, filename, cType string, body io.Reader, opts map[string]interface{}) (string, error) {
-	return db.PutAttachmentFunc(ctx, docID, rev, filename, cType, body, opts)
+func (db *DB) PutAttachment(ctx context.Context, docID, rev string, att *driver.Attachment, opts map[string]interface{}) (string, error) {
+	return db.PutAttachmentFunc(ctx, docID, rev, att, opts)
 }
 
 // GetAttachment calls db.GetAttachmentFunc
-func (db *DB) GetAttachment(ctx context.Context, docID, rev, filename string, opts map[string]interface{}) (string, driver.MD5sum, io.ReadCloser, error) {
+func (db *DB) GetAttachment(ctx context.Context, docID, rev, filename string, opts map[string]interface{}) (*driver.Attachment, error) {
 	return db.GetAttachmentFunc(ctx, docID, rev, filename, opts)
 }
 
@@ -190,12 +190,12 @@ func (db *Copier) Copy(ctx context.Context, target, source string, options map[s
 // AttachmentMetaGetter mocks a driver.DB and driver.AttachmentMetaGetter
 type AttachmentMetaGetter struct {
 	*DB
-	GetAttachmentMetaFunc func(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (cType string, md5sum driver.MD5sum, err error)
+	GetAttachmentMetaFunc func(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (*driver.Attachment, error)
 }
 
 var _ driver.AttachmentMetaGetter = &AttachmentMetaGetter{}
 
 // GetAttachmentMeta calls db.GetAttachmentMetaFunc
-func (db *AttachmentMetaGetter) GetAttachmentMeta(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (string, driver.MD5sum, error) {
+func (db *AttachmentMetaGetter) GetAttachmentMeta(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (*driver.Attachment, error) {
 	return db.GetAttachmentMetaFunc(ctx, docID, rev, filename, options)
 }

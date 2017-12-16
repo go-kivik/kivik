@@ -278,12 +278,13 @@ type BulkResults interface {
 	Close() error
 }
 
-// Rever is an optional interface that may be implemented by a database. If not
-// implemented by the driver, the Get method will be used to emulate the
+// MetaGetter is an optional interface that may be implemented by a database. If
+// not implemented by the driver, Get method will be used to emulate the
 // functionality.
-type Rever interface {
-	// Rev returns the most current revision of the requested document.
-	Rev(ctx context.Context, docID string) (rev string, err error)
+type MetaGetter interface {
+	// GetMeta returns the document size and revision of the requested document.
+	// GetMeta should accept the same options as the Get method.
+	GetMeta(ctx context.Context, docID string, options map[string]interface{}) (size int64, rev string, err error)
 }
 
 // DBFlusher is an optional interface that may be implemented by a database

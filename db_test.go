@@ -475,45 +475,52 @@ func TestSetSecurity(t *testing.T) {
 	}
 }
 
-func TestRev(t *testing.T) {
+func TestGetMeta(t *testing.T) {
 	tests := []struct {
-		name     string
-		db       *DB
-		docID    string
-		expected string
-		status   int
-		err      string
+		name    string
+		db      *DB
+		docID   string
+		size    int64
+		rev     string
+		options Options
+		status  int
+		err     string
 	}{
 		{
-			name: "rever error",
+			name: "meta getter error",
 			db: &DB{
-				driverDB: &mockRever{
-					RevFunc: func(_ context.Context, _ string) (string, error) {
-						return "", errors.Status(StatusBadResponse, "rever error")
+				driverDB: &mockMetaGetter{
+					GetMetaFunc: func(_ context.Context, _ string, _ map[string]interface{}) (int64, string, error) {
+						return 0, "", errors.Status(StatusBadResponse, "get meta error")
 					},
 				},
 			},
 			status: StatusBadResponse,
-			err:    "rever error",
+			err:    "get meta error",
 		},
 		{
-			name: "rever success",
+			name: "meta getter success",
 			db: &DB{
-				driverDB: &mockRever{
-					RevFunc: func(_ context.Context, docID string) (string, error) {
+				driverDB: &mockMetaGetter{
+					GetMetaFunc: func(_ context.Context, docID string, opts map[string]interface{}) (int64, string, error) {
 						expectedDocID := "foo"
 						if docID != expectedDocID {
-							return "", fmt.Errorf("Unexpected docID: %s", docID)
+							return 0, "", fmt.Errorf("Unexpected docID: %s", docID)
 						}
-						return "1-xxx", nil
+						if d := diff.Interface(testOptions, opts); d != nil {
+							return 0, "", fmt.Errorf("Unexpected options:\n%s", d)
+						}
+						return 123, "1-xxx", nil
 					},
 				},
 			},
-			docID:    "foo",
-			expected: "1-xxx",
+			docID:   "foo",
+			options: testOptions,
+			size:    123,
+			rev:     "1-xxx",
 		},
 		{
-			name: "non-rever error",
+			name: "non-meta getter error",
 			db: &DB{
 				driverDB: &mockDB{
 					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (int64, io.ReadCloser, error) {
@@ -525,7 +532,7 @@ func TestRev(t *testing.T) {
 			err:    "get error",
 		},
 		{
-			name: "non-rever invalid json",
+			name: "non-meta getter invalid json",
 			db: &DB{
 				driverDB: &mockDB{
 					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (int64, io.ReadCloser, error) {
@@ -537,7 +544,7 @@ func TestRev(t *testing.T) {
 			err:    "invalid character 'i' looking for beginning of value",
 		},
 		{
-			name: "non-rever success",
+			name: "non-meta getter success",
 			db: &DB{
 				driverDB: &mockDB{
 					GetFunc: func(_ context.Context, docID string, opts map[string]interface{}) (int64, io.ReadCloser, error) {
@@ -552,16 +559,20 @@ func TestRev(t *testing.T) {
 					},
 				},
 			},
-			docID:    "foo",
-			expected: "1-xxx",
+			docID: "foo",
+			size:  16,
+			rev:   "1-xxx",
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.db.Rev(context.Background(), test.docID)
+			size, rev, err := test.db.GetMeta(context.Background(), test.docID, test.options)
 			testy.StatusError(t, test.err, test.status, err)
-			if result != test.expected {
-				t.Errorf("Unexpected result: %s", result)
+			if size != test.size {
+				t.Errorf("Unexpected size: %v", size)
+			}
+			if rev != test.rev {
+				t.Errorf("Unexpected rev: %v", rev)
 			}
 		})
 	}

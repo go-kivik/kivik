@@ -97,6 +97,28 @@ func (db *DB) Get(ctx context.Context, docID string, options ...Options) *Row {
 	return &Row{ReadCloser: doc, length: length, err: err}
 }
 
+// GetMeta returns the size and rev of the specified document. GetMeta accepts
+// the same options as the Get method.
+func (db *DB) GetMeta(ctx context.Context, docID string, options ...Options) (size int64, rev string, err error) {
+	opts, err := mergeOptions(options...)
+	if err != nil {
+		return 0, "", err
+	}
+	if r, ok := db.driverDB.(driver.MetaGetter); ok {
+		return r.GetMeta(ctx, docID, opts)
+	}
+	row := db.Get(ctx, docID, nil)
+	var doc struct {
+		Rev string `json:"_rev"`
+	}
+	// These last two lines cannot be combined for GopherJS due to a bug.
+	// See https://github.com/gopherjs/gopherjs/issues/608
+	if err = row.ScanDoc(&doc); err != nil {
+		return 0, "", err
+	}
+	return int64(len(row.doc)), doc.Rev, nil
+}
+
 // CreateDoc creates a new doc with an auto-generated unique ID. The generated
 // docID and new rev are returned.
 func (db *DB) CreateDoc(ctx context.Context, doc interface{}, options ...Options) (docID, rev string, err error) {
@@ -302,24 +324,6 @@ func (db *DB) SetSecurity(ctx context.Context, security *Security) error {
 		Members: driver.Members(security.Members),
 	}
 	return db.driverDB.SetSecurity(ctx, sec)
-}
-
-// Rev returns the most current rev of the requested document. This can
-// be more efficient than a full document fetch, because only the rev is
-// fetched from the server.
-func (db *DB) Rev(ctx context.Context, docID string) (rev string, err error) {
-	if r, ok := db.driverDB.(driver.Rever); ok {
-		return r.Rev(ctx, docID)
-	}
-	var doc struct {
-		Rev string `json:"_rev"`
-	}
-	// These last two lines cannot be combined for GopherJS due to a bug.
-	// See https://github.com/gopherjs/gopherjs/issues/608
-	if err = db.Get(ctx, docID, nil).ScanDoc(&doc); err != nil {
-		return "", err
-	}
-	return doc.Rev, nil
 }
 
 // Copy copies the source document to a new document with an ID of targetID. If

@@ -2,7 +2,6 @@ package kivik
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"io"
 	"io/ioutil"
@@ -25,7 +24,7 @@ func (d *mockDriver) NewClient(ctx context.Context, dsn string) (driver.Client, 
 type mockDB struct {
 	id                   string
 	AllDocsFunc          func(context.Context, map[string]interface{}) (driver.Rows, error)
-	GetFunc              func(context.Context, string, map[string]interface{}) (json.RawMessage, error)
+	GetFunc              func(context.Context, string, map[string]interface{}) (int64, io.ReadCloser, error)
 	CreateDocFunc        func(context.Context, interface{}) (string, string, error)
 	PutFunc              func(context.Context, string, interface{}) (string, error)
 	DeleteFunc           func(context.Context, string, string) (string, error)
@@ -48,7 +47,7 @@ func (db *mockDB) AllDocs(ctx context.Context, opts map[string]interface{}) (dri
 	return db.AllDocsFunc(ctx, opts)
 }
 
-func (db *mockDB) Get(ctx context.Context, docID string, opts map[string]interface{}) (json.RawMessage, error) {
+func (db *mockDB) Get(ctx context.Context, docID string, opts map[string]interface{}) (int64, io.ReadCloser, error) {
 	return db.GetFunc(ctx, docID, opts)
 }
 

@@ -75,6 +75,13 @@ func TestIteratorScan(t *testing.T) {
 		err      string
 	}
 	tests := []Test{
+		{
+			name:   "non-pointer",
+			dst:    map[string]string{},
+			input:  []byte(`{"foo":123.4}`),
+			status: StatusBadRequest,
+			err:    "kivik: destination is not a pointer",
+		},
 		func() Test {
 			dst := map[string]interface{}{}
 			expected := map[string]interface{}{"foo": 123.4}

@@ -171,8 +171,8 @@ func TestGet(t *testing.T) {
 			name: "db error",
 			db: &DB{
 				driverDB: &mockDB{
-					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (json.RawMessage, error) {
-						return nil, fmt.Errorf("db error")
+					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (int64, io.ReadCloser, error) {
+						return 0, nil, fmt.Errorf("db error")
 					},
 				},
 			},
@@ -184,22 +184,23 @@ func TestGet(t *testing.T) {
 			name: "success",
 			db: &DB{
 				driverDB: &mockDB{
-					GetFunc: func(_ context.Context, docID string, options map[string]interface{}) (json.RawMessage, error) {
+					GetFunc: func(_ context.Context, docID string, options map[string]interface{}) (int64, io.ReadCloser, error) {
 						expectedDocID := "foo"
 						if docID != expectedDocID {
-							return nil, fmt.Errorf("Unexpected docID: %s", docID)
+							return 0, nil, fmt.Errorf("Unexpected docID: %s", docID)
 						}
 						if d := diff.Interface(testOptions, options); d != nil {
-							return nil, fmt.Errorf("Unexpected options:\n%s", d)
+							return 0, nil, fmt.Errorf("Unexpected options:\n%s", d)
 						}
-						return []byte(`{"_id":"foo"}`), nil
+						return 13, body(`{"_id":"foo"}`), nil
 					},
 				},
 			},
 			docID:   "foo",
 			options: testOptions,
 			expected: &Row{
-				doc: []byte(`{"_id":"foo"}`),
+				length:     13,
+				ReadCloser: body(`{"_id":"foo"}`),
 			},
 		},
 	}
@@ -515,8 +516,8 @@ func TestRev(t *testing.T) {
 			name: "non-rever error",
 			db: &DB{
 				driverDB: &mockDB{
-					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (json.RawMessage, error) {
-						return nil, errors.Status(StatusBadResponse, "get error")
+					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (int64, io.ReadCloser, error) {
+						return 0, nil, errors.Status(StatusBadResponse, "get error")
 					},
 				},
 			},
@@ -527,8 +528,8 @@ func TestRev(t *testing.T) {
 			name: "non-rever invalid json",
 			db: &DB{
 				driverDB: &mockDB{
-					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (json.RawMessage, error) {
-						return []byte("invalid json"), nil
+					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (int64, io.ReadCloser, error) {
+						return 12, body("invalid json"), nil
 					},
 				},
 			},
@@ -539,15 +540,15 @@ func TestRev(t *testing.T) {
 			name: "non-rever success",
 			db: &DB{
 				driverDB: &mockDB{
-					GetFunc: func(_ context.Context, docID string, opts map[string]interface{}) (json.RawMessage, error) {
+					GetFunc: func(_ context.Context, docID string, opts map[string]interface{}) (int64, io.ReadCloser, error) {
 						expectedDocID := "foo"
 						if docID != expectedDocID {
-							return nil, fmt.Errorf("Unexpected docID: %s", docID)
+							return 0, nil, fmt.Errorf("Unexpected docID: %s", docID)
 						}
 						if opts != nil {
-							return nil, errors.New("opts should be nil")
+							return 0, nil, errors.New("opts should be nil")
 						}
-						return []byte(`{"_rev":"1-xxx"}`), nil
+						return 16, body(`{"_rev":"1-xxx"}`), nil
 					},
 				},
 			},
@@ -630,8 +631,8 @@ func TestCopy(t *testing.T) {
 			name: "non-copier get error",
 			db: &DB{
 				driverDB: &mockDB{
-					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (json.RawMessage, error) {
-						return nil, errors.Status(StatusBadResponse, "get error")
+					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (int64, io.ReadCloser, error) {
+						return 0, nil, errors.Status(StatusBadResponse, "get error")
 					},
 				},
 			},
@@ -644,8 +645,8 @@ func TestCopy(t *testing.T) {
 			name: "non-copier invalid JSON",
 			db: &DB{
 				driverDB: &mockDB{
-					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (json.RawMessage, error) {
-						return []byte("invalid json"), nil
+					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (int64, io.ReadCloser, error) {
+						return 12, body("invalid json"), nil
 					},
 				},
 			},
@@ -658,8 +659,8 @@ func TestCopy(t *testing.T) {
 			name: "non-copier put error",
 			db: &DB{
 				driverDB: &mockDB{
-					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (json.RawMessage, error) {
-						return []byte(`{"_id":"foo","_rev":"1-xxx"}`), nil
+					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (int64, io.ReadCloser, error) {
+						return 28, body(`{"_id":"foo","_rev":"1-xxx"}`), nil
 					},
 					PutFunc: func(_ context.Context, _ string, _ interface{}) (string, error) {
 						return "", errors.Status(StatusBadResponse, "put error")
@@ -675,12 +676,12 @@ func TestCopy(t *testing.T) {
 			name: "success",
 			db: &DB{
 				driverDB: &mockDB{
-					GetFunc: func(_ context.Context, docID string, options map[string]interface{}) (json.RawMessage, error) {
+					GetFunc: func(_ context.Context, docID string, options map[string]interface{}) (int64, io.ReadCloser, error) {
 						expectedDocID := "bar"
 						if docID != expectedDocID {
-							return nil, fmt.Errorf("Unexpected get docID: %s", docID)
+							return 0, nil, fmt.Errorf("Unexpected get docID: %s", docID)
 						}
-						return []byte(`{"_id":"bar","_rev":"1-xxx","foo":123.4}`), nil
+						return 40, body(`{"_id":"bar","_rev":"1-xxx","foo":123.4}`), nil
 					},
 					PutFunc: func(_ context.Context, docID string, doc interface{}) (string, error) {
 						expectedDocID := "foo"
@@ -982,32 +983,50 @@ func TestExtractDocID(t *testing.T) {
 	}
 }
 
+func TestRowLength(t *testing.T) {
+	length := int64(123)
+	r := &Row{length: length}
+	result := r.Length()
+	if length != result {
+		t.Errorf("Unexpected length: %v", result)
+	}
+}
+
 func TestRowScanDoc(t *testing.T) {
 	tests := []struct {
 		name     string
 		row      *Row
+		dst      interface{}
 		expected interface{}
 		status   int
 		err      string
 	}{
 		{
+			name:   "non pointer dst",
+			row:    &Row{ReadCloser: body(`{"foo":123.4}`)},
+			dst:    map[string]interface{}{},
+			status: StatusBadRequest,
+			err:    "kivik: destination is not a pointer",
+		},
+		{
 			name:   "invalid json",
-			row:    &Row{doc: []byte("invalid json")},
+			row:    &Row{ReadCloser: body("invalid json")},
+			dst:    new(map[string]interface{}),
 			status: StatusBadResponse,
 			err:    "invalid character 'i' looking for beginning of value",
 		},
 		{
 			name:     "success",
-			row:      &Row{doc: []byte(`{"foo":123.4}`)},
-			expected: map[string]interface{}{"foo": 123.4},
+			row:      &Row{ReadCloser: body(`{"foo":123.4}`)},
+			dst:      new(map[string]interface{}),
+			expected: &map[string]interface{}{"foo": 123.4},
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			var result interface{}
-			err := test.row.ScanDoc(&result)
+			err := test.row.ScanDoc(test.dst)
 			testy.StatusError(t, test.err, test.status, err)
-			if d := diff.Interface(test.expected, result); d != nil {
+			if d := diff.Interface(test.expected, test.dst); d != nil {
 				t.Error(d)
 			}
 		})

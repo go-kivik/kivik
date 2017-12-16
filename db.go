@@ -122,14 +122,11 @@ func (db *DB) GetMeta(ctx context.Context, docID string, options ...Options) (si
 // CreateDoc creates a new doc with an auto-generated unique ID. The generated
 // docID and new rev are returned.
 func (db *DB) CreateDoc(ctx context.Context, doc interface{}, options ...Options) (docID, rev string, err error) {
-	if dbopt, ok := db.driverDB.(driver.DBOpts); ok {
-		opts, err := mergeOptions(options...)
-		if err != nil {
-			return "", "", err
-		}
-		return dbopt.CreateDocOpts(ctx, doc, opts)
+	opts, err := mergeOptions(options...)
+	if err != nil {
+		return "", "", err
 	}
-	return db.driverDB.CreateDoc(ctx, doc)
+	return db.driverDB.CreateDoc(ctx, doc, opts)
 }
 
 // normalizeFromJSON unmarshals a []byte, json.RawMessage or io.Reader to a
@@ -210,14 +207,11 @@ func (db *DB) Put(ctx context.Context, docID string, doc interface{}, options ..
 	if err != nil {
 		return "", err
 	}
-	if dbopt, ok := db.driverDB.(driver.DBOpts); ok {
-		opts, err := mergeOptions(options...)
-		if err != nil {
-			return "", err
-		}
-		return dbopt.PutOpts(ctx, docID, i, opts)
+	opts, err := mergeOptions(options...)
+	if err != nil {
+		return "", err
 	}
-	return db.driverDB.Put(ctx, docID, i)
+	return db.driverDB.Put(ctx, docID, i, opts)
 }
 
 // Delete marks the specified document as deleted.
@@ -225,14 +219,11 @@ func (db *DB) Delete(ctx context.Context, docID, rev string, options ...Options)
 	if docID == "" {
 		return "", missingArg("docID")
 	}
-	if dbopt, ok := db.driverDB.(driver.DBOpts); ok {
-		opts, err := mergeOptions(options...)
-		if err != nil {
-			return "", err
-		}
-		return dbopt.DeleteOpts(ctx, docID, rev, opts)
+	opts, err := mergeOptions(options...)
+	if err != nil {
+		return "", err
 	}
-	return db.driverDB.Delete(ctx, docID, rev)
+	return db.driverDB.Delete(ctx, docID, rev, opts)
 }
 
 // Flush requests a flush of disk cache to disk or other permanent storage.
@@ -355,7 +346,8 @@ func (db *DB) Copy(ctx context.Context, targetID, sourceID string, options ...Op
 	}
 	delete(doc, "_rev")
 	doc["_id"] = targetID
-	return db.Put(ctx, targetID, doc)
+	delete(opts, "rev") // rev has a completely different meaning for Copy and Put
+	return db.Put(ctx, targetID, doc, opts)
 }
 
 // PutAttachment uploads the supplied content as an attachment to the specified
@@ -367,14 +359,11 @@ func (db *DB) PutAttachment(ctx context.Context, docID, rev string, att *Attachm
 	if e := att.validate(); e != nil {
 		return "", e
 	}
-	if dbopt, ok := db.driverDB.(driver.DBOpts); ok {
-		opts, err := mergeOptions(options...)
-		if err != nil {
-			return "", err
-		}
-		return dbopt.PutAttachmentOpts(ctx, docID, rev, att.Filename, att.ContentType, att, opts)
+	opts, err := mergeOptions(options...)
+	if err != nil {
+		return "", err
 	}
-	return db.driverDB.PutAttachment(ctx, docID, rev, att.Filename, att.ContentType, att)
+	return db.driverDB.PutAttachment(ctx, docID, rev, att.Filename, att.ContentType, att, opts)
 }
 
 // GetAttachment returns a file attachment associated with the document.
@@ -385,19 +374,11 @@ func (db *DB) GetAttachment(ctx context.Context, docID, rev, filename string, op
 	if filename == "" {
 		return nil, missingArg("filename")
 	}
-	var cType string
-	var md5sum driver.MD5sum
-	var body io.ReadCloser
-	var err error
-	if dbopt, ok := db.driverDB.(driver.DBOpts); ok {
-		opts, e := mergeOptions(options...)
-		if e != nil {
-			return nil, e
-		}
-		cType, md5sum, body, err = dbopt.GetAttachmentOpts(ctx, docID, rev, filename, opts)
-	} else {
-		cType, md5sum, body, err = db.driverDB.GetAttachment(ctx, docID, rev, filename)
+	opts, e := mergeOptions(options...)
+	if e != nil {
+		return nil, e
 	}
+	cType, md5sum, body, err := db.driverDB.GetAttachment(ctx, docID, rev, filename, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -433,17 +414,6 @@ func (db *DB) GetAttachmentMeta(ctx context.Context, docID, rev, filename string
 			MD5:         MD5sum(md5sum),
 		}, nil
 	}
-	if metaer, ok := db.driverDB.(driver.OldAttachmentMetaer); ok {
-		cType, md5sum, err := metaer.GetAttachmentMeta(ctx, docID, rev, filename)
-		if err != nil {
-			return nil, err
-		}
-		return &Attachment{
-			Filename:    filename,
-			ContentType: cType,
-			MD5:         MD5sum(md5sum),
-		}, nil
-	}
 	att, err := db.GetAttachment(ctx, docID, rev, filename, options...)
 	if err != nil {
 		return nil, err
@@ -465,12 +435,9 @@ func (db *DB) DeleteAttachment(ctx context.Context, docID, rev, filename string,
 	if filename == "" {
 		return "", missingArg("filename")
 	}
-	if dbopt, ok := db.driverDB.(driver.DBOpts); ok {
-		opts, err := mergeOptions(options...)
-		if err != nil {
-			return "", err
-		}
-		return dbopt.DeleteAttachmentOpts(ctx, docID, rev, filename, opts)
+	opts, err := mergeOptions(options...)
+	if err != nil {
+		return "", err
 	}
-	return db.driverDB.DeleteAttachment(ctx, docID, rev, filename)
+	return db.driverDB.DeleteAttachment(ctx, docID, rev, filename, opts)
 }

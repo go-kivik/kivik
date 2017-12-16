@@ -271,27 +271,16 @@ func (db *bdDB) BulkDocs(_ context.Context, docs []interface{}, options map[stri
 	return nil, db.err
 }
 
-type legacyDB struct {
-	driver.DB
-	err error
-}
-
-var _ driver.OldBulkDocer = &legacyDB{}
-
-func (db *legacyDB) BulkDocs(_ context.Context, docs []interface{}) (driver.BulkResults, error) {
-	return nil, db.err
-}
-
 type nonbdDB struct {
 	driver.DB
 }
 
 var _ driver.DB = &nonbdDB{}
 
-func (db *nonbdDB) Put(_ context.Context, _ string, _ interface{}) (string, error) {
+func (db *nonbdDB) Put(_ context.Context, _ string, _ interface{}, _ map[string]interface{}) (string, error) {
 	return "", nil
 }
-func (db *nonbdDB) CreateDoc(_ context.Context, _ interface{}) (string, string, error) {
+func (db *nonbdDB) CreateDoc(_ context.Context, _ interface{}, _ map[string]interface{}) (string, string, error) {
 	return "", "", nil
 }
 
@@ -337,20 +326,6 @@ func TestBulkDocs(t *testing.T) {
 				123,
 			},
 			options: Options{"new_edits": true},
-		},
-		{
-			name:     "legacy bulkDocer",
-			dbDriver: &legacyDB{},
-			docs: []interface{}{
-				map[string]string{"_id": "foo"},
-				123,
-			},
-		},
-		{
-			name:     "legacy failure",
-			dbDriver: &legacyDB{err: errors.New("fail")},
-			docs:     []interface{}{1, 2, 3},
-			err:      "fail",
 		},
 	}
 	for _, test := range tests {

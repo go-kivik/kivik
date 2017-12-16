@@ -14,6 +14,7 @@ import (
 
 	"github.com/go-kivik/kivik/driver"
 	"github.com/go-kivik/kivik/errors"
+	"github.com/go-kivik/kivik/mock"
 )
 
 func TestClient(t *testing.T) {
@@ -46,7 +47,7 @@ func TestAllDocs(t *testing.T) {
 		{
 			name: "db error",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					AllDocsFunc: func(_ context.Context, _ map[string]interface{}) (driver.Rows, error) {
 						return nil, errors.New("db error")
 					},
@@ -58,12 +59,12 @@ func TestAllDocs(t *testing.T) {
 		{
 			name: "success",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					AllDocsFunc: func(_ context.Context, opts map[string]interface{}) (driver.Rows, error) {
 						if d := diff.Interface(testOptions, opts); d != nil {
 							return nil, fmt.Errorf("Unexpected options: %s", d)
 						}
-						return &mockRows{id: "a"}, nil
+						return &mock.Rows{ID: "a"}, nil
 					},
 				},
 			},
@@ -71,11 +72,11 @@ func TestAllDocs(t *testing.T) {
 			expected: &Rows{
 				iter: &iter{
 					feed: &rowsIterator{
-						Rows: &mockRows{id: "a"},
+						Rows: &mock.Rows{ID: "a"},
 					},
 					curVal: &driver.Row{},
 				},
-				rowsi: &mockRows{id: "a"},
+				rowsi: &mock.Rows{ID: "a"},
 			},
 		},
 	}
@@ -104,7 +105,7 @@ func TestQuery(t *testing.T) {
 		{
 			name: "db error",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					QueryFunc: func(_ context.Context, ddoc, view string, opts map[string]interface{}) (driver.Rows, error) {
 						return nil, errors.New("db error")
 					},
@@ -116,7 +117,7 @@ func TestQuery(t *testing.T) {
 		{
 			name: "success",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					QueryFunc: func(_ context.Context, ddoc, view string, opts map[string]interface{}) (driver.Rows, error) {
 						expectedDdoc := "foo"
 						expectedView := "bar"
@@ -129,7 +130,7 @@ func TestQuery(t *testing.T) {
 						if d := diff.Interface(testOptions, opts); d != nil {
 							return nil, fmt.Errorf("Unexpected options: %s", d)
 						}
-						return &mockRows{id: "a"}, nil
+						return &mock.Rows{ID: "a"}, nil
 					},
 				},
 			},
@@ -139,11 +140,11 @@ func TestQuery(t *testing.T) {
 			expected: &Rows{
 				iter: &iter{
 					feed: &rowsIterator{
-						Rows: &mockRows{id: "a"},
+						Rows: &mock.Rows{ID: "a"},
 					},
 					curVal: &driver.Row{},
 				},
-				rowsi: &mockRows{id: "a"},
+				rowsi: &mock.Rows{ID: "a"},
 			},
 		},
 	}
@@ -170,7 +171,7 @@ func TestGet(t *testing.T) {
 		{
 			name: "db error",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (int64, io.ReadCloser, error) {
 						return 0, nil, fmt.Errorf("db error")
 					},
@@ -183,7 +184,7 @@ func TestGet(t *testing.T) {
 		{
 			name: "success",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					GetFunc: func(_ context.Context, docID string, options map[string]interface{}) (int64, io.ReadCloser, error) {
 						expectedDocID := "foo"
 						if docID != expectedDocID {
@@ -224,7 +225,7 @@ func TestFlush(t *testing.T) {
 		{
 			name: "non-Flusher",
 			db: &DB{
-				driverDB: &mockDB{},
+				driverDB: &mock.DB{},
 			},
 			status: StatusNotImplemented,
 			err:    "kivik: flush not supported by driver",
@@ -232,7 +233,7 @@ func TestFlush(t *testing.T) {
 		{
 			name: "db error",
 			db: &DB{
-				driverDB: &mockFlusher{
+				driverDB: &mock.Flusher{
 					FlushFunc: func(_ context.Context) error {
 						return errors.Status(StatusBadResponse, "flush error")
 					},
@@ -244,7 +245,7 @@ func TestFlush(t *testing.T) {
 		{
 			name: "success",
 			db: &DB{
-				driverDB: &mockFlusher{
+				driverDB: &mock.Flusher{
 					FlushFunc: func(_ context.Context) error {
 						return nil
 					},
@@ -271,7 +272,7 @@ func TestStats(t *testing.T) {
 		{
 			name: "stats error",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					StatsFunc: func(_ context.Context) (*driver.DBStats, error) {
 						return nil, errors.Status(StatusBadResponse, "stats error")
 					},
@@ -283,7 +284,7 @@ func TestStats(t *testing.T) {
 		{
 			name: "success",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					StatsFunc: func(_ context.Context) (*driver.DBStats, error) {
 						return &driver.DBStats{Name: "foo"}, nil
 					},
@@ -306,7 +307,7 @@ func TestStats(t *testing.T) {
 func TestCompact(t *testing.T) {
 	expected := "compact error"
 	db := &DB{
-		driverDB: &mockDB{
+		driverDB: &mock.DB{
 			CompactFunc: func(_ context.Context) error {
 				return errors.Status(StatusBadRequest, expected)
 			},
@@ -320,7 +321,7 @@ func TestCompactView(t *testing.T) {
 	expectedDDocID := "foo"
 	expected := "compact view error"
 	db := &DB{
-		driverDB: &mockDB{
+		driverDB: &mock.DB{
 			CompactViewFunc: func(_ context.Context, ddocID string) error {
 				if ddocID != expectedDDocID {
 					return fmt.Errorf("Unexpected ddocID: %s", ddocID)
@@ -336,7 +337,7 @@ func TestCompactView(t *testing.T) {
 func TestViewCleanup(t *testing.T) {
 	expected := "compact error"
 	db := &DB{
-		driverDB: &mockDB{
+		driverDB: &mock.DB{
 			ViewCleanupFunc: func(_ context.Context) error {
 				return errors.Status(StatusBadRequest, expected)
 			},
@@ -357,7 +358,7 @@ func TestSecurity(t *testing.T) {
 		{
 			name: "security error",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					SecurityFunc: func(_ context.Context) (*driver.Security, error) {
 						return nil, errors.Status(StatusBadResponse, "security error")
 					},
@@ -369,7 +370,7 @@ func TestSecurity(t *testing.T) {
 		{
 			name: "success",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					SecurityFunc: func(_ context.Context) (*driver.Security, error) {
 						return &driver.Security{
 							Admins: driver.Members{
@@ -423,7 +424,7 @@ func TestSetSecurity(t *testing.T) {
 		{
 			name: "set error",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					SetSecurityFunc: func(_ context.Context, _ *driver.Security) error {
 						return errors.Status(StatusBadResponse, "set security error")
 					},
@@ -436,7 +437,7 @@ func TestSetSecurity(t *testing.T) {
 		{
 			name: "success",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					SetSecurityFunc: func(_ context.Context, security *driver.Security) error {
 						expectedSecurity := &driver.Security{
 							Admins: driver.Members{
@@ -489,7 +490,7 @@ func TestGetMeta(t *testing.T) {
 		{
 			name: "meta getter error",
 			db: &DB{
-				driverDB: &mockMetaGetter{
+				driverDB: &mock.MetaGetter{
 					GetMetaFunc: func(_ context.Context, _ string, _ map[string]interface{}) (int64, string, error) {
 						return 0, "", errors.Status(StatusBadResponse, "get meta error")
 					},
@@ -501,7 +502,7 @@ func TestGetMeta(t *testing.T) {
 		{
 			name: "meta getter success",
 			db: &DB{
-				driverDB: &mockMetaGetter{
+				driverDB: &mock.MetaGetter{
 					GetMetaFunc: func(_ context.Context, docID string, opts map[string]interface{}) (int64, string, error) {
 						expectedDocID := "foo"
 						if docID != expectedDocID {
@@ -522,7 +523,7 @@ func TestGetMeta(t *testing.T) {
 		{
 			name: "non-meta getter error",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (int64, io.ReadCloser, error) {
 						return 0, nil, errors.Status(StatusBadResponse, "get error")
 					},
@@ -534,7 +535,7 @@ func TestGetMeta(t *testing.T) {
 		{
 			name: "non-meta getter invalid json",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (int64, io.ReadCloser, error) {
 						return 12, body("invalid json"), nil
 					},
@@ -546,7 +547,7 @@ func TestGetMeta(t *testing.T) {
 		{
 			name: "non-meta getter success",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					GetFunc: func(_ context.Context, docID string, opts map[string]interface{}) (int64, io.ReadCloser, error) {
 						expectedDocID := "foo"
 						if docID != expectedDocID {
@@ -602,7 +603,7 @@ func TestCopy(t *testing.T) {
 		{
 			name: "copier error",
 			db: &DB{
-				driverDB: &mockCopier{
+				driverDB: &mock.Copier{
 					CopyFunc: func(_ context.Context, _, _ string, _ map[string]interface{}) (string, error) {
 						return "", errors.Status(StatusBadRequest, "copy error")
 					},
@@ -616,7 +617,7 @@ func TestCopy(t *testing.T) {
 		{
 			name: "copier success",
 			db: &DB{
-				driverDB: &mockCopier{
+				driverDB: &mock.Copier{
 					CopyFunc: func(_ context.Context, target, source string, options map[string]interface{}) (string, error) {
 						expectedTarget := "foo"
 						expectedSource := "bar"
@@ -641,7 +642,7 @@ func TestCopy(t *testing.T) {
 		{
 			name: "non-copier get error",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (int64, io.ReadCloser, error) {
 						return 0, nil, errors.Status(StatusBadResponse, "get error")
 					},
@@ -655,7 +656,7 @@ func TestCopy(t *testing.T) {
 		{
 			name: "non-copier invalid JSON",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (int64, io.ReadCloser, error) {
 						return 12, body("invalid json"), nil
 					},
@@ -669,7 +670,7 @@ func TestCopy(t *testing.T) {
 		{
 			name: "non-copier put error",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (int64, io.ReadCloser, error) {
 						return 28, body(`{"_id":"foo","_rev":"1-xxx"}`), nil
 					},
@@ -686,7 +687,7 @@ func TestCopy(t *testing.T) {
 		{
 			name: "success",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					GetFunc: func(_ context.Context, docID string, options map[string]interface{}) (int64, io.ReadCloser, error) {
 						expectedDocID := "bar"
 						if docID != expectedDocID {
@@ -836,7 +837,7 @@ func TestPut(t *testing.T) {
 		{
 			name: "db error",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					PutFunc: func(_ context.Context, _ string, _ interface{}, _ map[string]interface{}) (string, error) {
 						return "", errors.Status(StatusBadRequest, "db error")
 					},
@@ -849,7 +850,7 @@ func TestPut(t *testing.T) {
 		{
 			name: "Interface",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					PutFunc: putFunc,
 				},
 			},
@@ -868,7 +869,7 @@ func TestPut(t *testing.T) {
 		{
 			name: "Bytes",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					PutFunc: putFunc,
 				},
 			},
@@ -880,7 +881,7 @@ func TestPut(t *testing.T) {
 		{
 			name: "RawMessage",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					PutFunc: putFunc,
 				},
 			},
@@ -892,7 +893,7 @@ func TestPut(t *testing.T) {
 		{
 			name: "Reader",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					PutFunc: putFunc,
 				},
 			},
@@ -1041,7 +1042,7 @@ func TestCreateDoc(t *testing.T) {
 		{
 			name: "error",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					CreateDocFunc: func(_ context.Context, _ interface{}, _ map[string]interface{}) (string, string, error) {
 						return "", "", errors.Status(StatusBadRequest, "create error")
 					},
@@ -1053,7 +1054,7 @@ func TestCreateDoc(t *testing.T) {
 		{
 			name: "success",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					CreateDocFunc: func(_ context.Context, doc interface{}, opts map[string]interface{}) (string, string, error) {
 						expectedDoc := map[string]string{"type": "test"}
 						if d := diff.Interface(expectedDoc, doc); d != nil {
@@ -1101,7 +1102,7 @@ func TestDelete(t *testing.T) {
 		{
 			name: "error",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					DeleteFunc: func(_ context.Context, _, _ string, _ map[string]interface{}) (string, error) {
 						return "", errors.Status(StatusBadRequest, "delete error")
 					},
@@ -1114,7 +1115,7 @@ func TestDelete(t *testing.T) {
 		{
 			name: "success",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					DeleteFunc: func(_ context.Context, docID, rev string, opts map[string]interface{}) (string, error) {
 						expectedDocID := "foo"
 						expectedRev := "1-xxx"
@@ -1280,7 +1281,7 @@ func TestDeleteAttachment(t *testing.T) {
 			docID:    "foo",
 			filename: "foo.txt",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					DeleteAttachmentFunc: func(_ context.Context, _, _, _ string, _ map[string]interface{}) (string, error) {
 						return "", errors.Status(StatusBadRequest, "db error")
 					},
@@ -1292,7 +1293,7 @@ func TestDeleteAttachment(t *testing.T) {
 		{
 			name: "success",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					DeleteAttachmentFunc: func(_ context.Context, docID, rev, filename string, opts map[string]interface{}) (string, error) {
 						expectedDocID, expectedRev, expectedFilename := "foo", "1-xxx", "foo.txt"
 						if docID != expectedDocID {
@@ -1344,7 +1345,7 @@ func TestGetAttachment(t *testing.T) {
 		{
 			name: "error",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					GetAttachmentFunc: func(_ context.Context, _, _, _ string, _ map[string]interface{}) (string, driver.MD5sum, io.ReadCloser, error) {
 						return "", driver.MD5sum{}, nil, errors.New("fail")
 					},
@@ -1358,7 +1359,7 @@ func TestGetAttachment(t *testing.T) {
 		{
 			name: "success",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					GetAttachmentFunc: func(_ context.Context, docID, rev, filename string, opts map[string]interface{}) (string, driver.MD5sum, io.ReadCloser, error) {
 						expectedDocID, expectedRev, expectedFilename := "foo", "1-xxx", "foo.txt"
 						if docID != expectedDocID {
@@ -1461,7 +1462,7 @@ func TestGetAttachmentMeta(t *testing.T) {
 		{
 			name: "plain db, error",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					GetAttachmentFunc: func(_ context.Context, _, _, _ string, _ map[string]interface{}) (string, driver.MD5sum, io.ReadCloser, error) {
 						return "", driver.MD5sum{}, nil, errors.New("fail")
 					},
@@ -1475,7 +1476,7 @@ func TestGetAttachmentMeta(t *testing.T) {
 		{
 			name: "plain db, success",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					GetAttachmentFunc: func(_ context.Context, docID, rev, filename string, opts map[string]interface{}) (string, driver.MD5sum, io.ReadCloser, error) {
 						expectedDocID, expectedRev, expectedFilename := "foo", "1-xxx", "foo.txt"
 						if docID != expectedDocID {

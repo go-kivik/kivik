@@ -8,6 +8,7 @@ import (
 	"github.com/flimzy/diff"
 	"github.com/flimzy/testy"
 	"github.com/go-kivik/kivik/driver"
+	"github.com/go-kivik/kivik/mock"
 )
 
 func TestDBUpdatesNext(t *testing.T) {
@@ -68,7 +69,7 @@ func TestDBUpdatesErr(t *testing.T) {
 func TestDBUpdatesIteratorNext(t *testing.T) {
 	expected := "foo error"
 	u := &updatesIterator{
-		DBUpdates: &mockDBUpdates{
+		DBUpdates: &mock.DBUpdates{
 			NextFunc: func(_ *driver.DBUpdate) error { return errors.New(expected) },
 		},
 	}
@@ -78,15 +79,15 @@ func TestDBUpdatesIteratorNext(t *testing.T) {
 }
 
 func TestDBUpdatesIteratorNew(t *testing.T) {
-	u := newDBUpdates(context.Background(), &mockDBUpdates{})
+	u := newDBUpdates(context.Background(), &mock.DBUpdates{})
 	expected := &DBUpdates{
 		iter: &iter{
 			feed: &updatesIterator{
-				DBUpdates: &mockDBUpdates{},
+				DBUpdates: &mock.DBUpdates{},
 			},
 			curVal: &driver.DBUpdate{},
 		},
-		updatesi: &mockDBUpdates{},
+		updatesi: &mock.DBUpdates{},
 	}
 	u.cancel = nil // determinism
 	if d := diff.Interface(expected, u); d != nil {
@@ -167,7 +168,7 @@ func TestDBUpdates(t *testing.T) {
 		{
 			name: "non-DBUpdater",
 			client: &Client{
-				driverClient: &mockClient{},
+				driverClient: &mock.Client{},
 			},
 			status: StatusNotImplemented,
 			err:    "kivik: driver does not implement DBUpdater",
@@ -175,7 +176,7 @@ func TestDBUpdates(t *testing.T) {
 		{
 			name: "db error",
 			client: &Client{
-				driverClient: &mockDBUpdater{
+				driverClient: &mock.DBUpdater{
 					DBUpdatesFunc: func() (driver.DBUpdates, error) {
 						return nil, errors.New("db error")
 					},
@@ -187,20 +188,20 @@ func TestDBUpdates(t *testing.T) {
 		{
 			name: "success",
 			client: &Client{
-				driverClient: &mockDBUpdater{
+				driverClient: &mock.DBUpdater{
 					DBUpdatesFunc: func() (driver.DBUpdates, error) {
-						return &mockDBUpdates{id: "a"}, nil
+						return &mock.DBUpdates{ID: "a"}, nil
 					},
 				},
 			},
 			expected: &DBUpdates{
 				iter: &iter{
 					feed: &updatesIterator{
-						DBUpdates: &mockDBUpdates{id: "a"},
+						DBUpdates: &mock.DBUpdates{ID: "a"},
 					},
 					curVal: &driver.DBUpdate{},
 				},
-				updatesi: &mockDBUpdates{id: "a"},
+				updatesi: &mock.DBUpdates{ID: "a"},
 			},
 		},
 	}

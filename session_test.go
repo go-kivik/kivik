@@ -7,21 +7,8 @@ import (
 
 	"github.com/flimzy/diff"
 	"github.com/go-kivik/kivik/driver"
+	"github.com/go-kivik/kivik/mock"
 )
-
-type nonSessioner struct {
-	driver.Client
-}
-
-type sessioner struct {
-	driver.Client
-	session *driver.Session
-	err     error
-}
-
-func (s *sessioner) Session(_ context.Context) (*driver.Session, error) {
-	return s.session, s.err
-}
 
 func TestSession(t *testing.T) {
 	tests := []struct {
@@ -33,22 +20,30 @@ func TestSession(t *testing.T) {
 	}{
 		{
 			name:   "driver doesn't implement Sessioner",
-			client: &nonSessioner{},
+			client: &mock.Client{},
 			status: StatusNotImplemented,
 			err:    "kivik: driver does not support sessions",
 		},
 		{
-			name:   "driver returns error",
-			client: &sessioner{err: errors.New("session error")},
+			name: "driver returns error",
+			client: &mock.Sessioner{
+				SessionFunc: func(_ context.Context) (*driver.Session, error) {
+					return nil, errors.New("session error")
+				},
+			},
 			status: StatusInternalServerError,
 			err:    "session error",
 		},
 		{
 			name: "good response",
-			client: &sessioner{session: &driver.Session{
-				Name:  "curly",
-				Roles: []string{"stooges"},
-			}},
+			client: &mock.Sessioner{
+				SessionFunc: func(_ context.Context) (*driver.Session, error) {
+					return &driver.Session{
+						Name:  "curly",
+						Roles: []string{"stooges"},
+					}, nil
+				},
+			},
 			expected: &Session{
 				Name:  "curly",
 				Roles: []string{"stooges"},

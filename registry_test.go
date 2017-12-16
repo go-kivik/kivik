@@ -6,6 +6,7 @@ import (
 
 	"github.com/flimzy/diff"
 	"github.com/go-kivik/kivik/driver"
+	"github.com/go-kivik/kivik/mock"
 )
 
 // to protect the registry from concurrent tests
@@ -38,8 +39,8 @@ func TestRegister(t *testing.T) {
 			defer func() {
 				p = recover()
 			}()
-			Register("foo", &mockDriver{})
-			Register("foo", &mockDriver{})
+			Register("foo", &mock.Driver{})
+			Register("foo", &mock.Driver{})
 			return ""
 		}()
 		if p.(string) != "kivk: Register called twice for driver foo" {
@@ -55,14 +56,14 @@ func TestRegister(t *testing.T) {
 			defer func() {
 				p = recover()
 			}()
-			Register("foo", &mockDriver{})
+			Register("foo", &mock.Driver{})
 			return ""
 		}()
 		if p != nil {
 			t.Errorf("Unexpected panic: %v", p)
 		}
 		expected := map[string]driver.Driver{
-			"foo": &mockDriver{},
+			"foo": &mock.Driver{},
 		}
 		if d := diff.Interface(expected, drivers); d != nil {
 			t.Error(d)

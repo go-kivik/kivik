@@ -9,6 +9,7 @@ import (
 	"github.com/flimzy/diff"
 	"github.com/flimzy/testy"
 	"github.com/go-kivik/kivik/driver"
+	"github.com/go-kivik/kivik/mock"
 )
 
 func TestFind(t *testing.T) {
@@ -23,7 +24,7 @@ func TestFind(t *testing.T) {
 		{
 			name: "non-finder",
 			db: &DB{
-				driverDB: &mockDB{},
+				driverDB: &mock.DB{},
 			},
 			status: StatusNotImplemented,
 			err:    "kivik: driver does not support Find interface",
@@ -31,7 +32,7 @@ func TestFind(t *testing.T) {
 		{
 			name: "db error",
 			db: &DB{
-				driverDB: &mockFinder{
+				driverDB: &mock.Finder{
 					FindFunc: func(_ context.Context, _ interface{}) (driver.Rows, error) {
 						return nil, errors.New("db error")
 					},
@@ -43,13 +44,13 @@ func TestFind(t *testing.T) {
 		{
 			name: "success",
 			db: &DB{
-				driverDB: &mockFinder{
+				driverDB: &mock.Finder{
 					FindFunc: func(_ context.Context, query interface{}) (driver.Rows, error) {
 						expectedQuery := int(3)
 						if d := diff.Interface(expectedQuery, query); d != nil {
 							return nil, fmt.Errorf("Unexpected query:\n%s", d)
 						}
-						return &mockRows{id: "a"}, nil
+						return &mock.Rows{ID: "a"}, nil
 					},
 				},
 			},
@@ -57,11 +58,11 @@ func TestFind(t *testing.T) {
 			expected: &Rows{
 				iter: &iter{
 					feed: &rowsIterator{
-						Rows: &mockRows{id: "a"},
+						Rows: &mock.Rows{ID: "a"},
 					},
 					curVal: &driver.Row{},
 				},
-				rowsi: &mockRows{id: "a"},
+				rowsi: &mock.Rows{ID: "a"},
 			},
 		},
 	}
@@ -89,7 +90,7 @@ func TestCreateIndex(t *testing.T) {
 		{
 			testName: "non-finder",
 			db: &DB{
-				driverDB: &mockDB{},
+				driverDB: &mock.DB{},
 			},
 			status: StatusNotImplemented,
 			err:    "kivik: driver does not support Find interface",
@@ -97,7 +98,7 @@ func TestCreateIndex(t *testing.T) {
 		{
 			testName: "db error",
 			db: &DB{
-				driverDB: &mockFinder{
+				driverDB: &mock.Finder{
 					CreateIndexFunc: func(_ context.Context, _, _ string, _ interface{}) error {
 						return errors.New("db error")
 					},
@@ -109,7 +110,7 @@ func TestCreateIndex(t *testing.T) {
 		{
 			testName: "success",
 			db: &DB{
-				driverDB: &mockFinder{
+				driverDB: &mock.Finder{
 					CreateIndexFunc: func(_ context.Context, ddoc, name string, index interface{}) error {
 						expectedDdoc := "foo"
 						expectedName := "bar"
@@ -151,7 +152,7 @@ func TestDeleteIndex(t *testing.T) {
 		{
 			testName: "non-finder",
 			db: &DB{
-				driverDB: &mockDB{},
+				driverDB: &mock.DB{},
 			},
 			status: StatusNotImplemented,
 			err:    "kivik: driver does not support Find interface",
@@ -159,7 +160,7 @@ func TestDeleteIndex(t *testing.T) {
 		{
 			testName: "db error",
 			db: &DB{
-				driverDB: &mockFinder{
+				driverDB: &mock.Finder{
 					DeleteIndexFunc: func(_ context.Context, _, _ string) error {
 						return errors.New("db error")
 					},
@@ -171,7 +172,7 @@ func TestDeleteIndex(t *testing.T) {
 		{
 			testName: "success",
 			db: &DB{
-				driverDB: &mockFinder{
+				driverDB: &mock.Finder{
 					DeleteIndexFunc: func(_ context.Context, ddoc, name string) error {
 						expectedDdoc := "foo"
 						expectedName := "bar"
@@ -208,7 +209,7 @@ func TestGetIndexes(t *testing.T) {
 		{
 			testName: "non-finder",
 			db: &DB{
-				driverDB: &mockDB{},
+				driverDB: &mock.DB{},
 			},
 			status: StatusNotImplemented,
 			err:    "kivik: driver does not support Find interface",
@@ -216,7 +217,7 @@ func TestGetIndexes(t *testing.T) {
 		{
 			testName: "db error",
 			db: &DB{
-				driverDB: &mockFinder{
+				driverDB: &mock.Finder{
 					GetIndexesFunc: func(_ context.Context) ([]driver.Index, error) {
 						return nil, errors.New("db error")
 					},
@@ -228,7 +229,7 @@ func TestGetIndexes(t *testing.T) {
 		{
 			testName: "success",
 			db: &DB{
-				driverDB: &mockFinder{
+				driverDB: &mock.Finder{
 					GetIndexesFunc: func(_ context.Context) ([]driver.Index, error) {
 						return []driver.Index{
 							{Name: "a"},
@@ -269,13 +270,13 @@ func TestExplain(t *testing.T) {
 	}{
 		{
 			name:   "non-finder",
-			db:     &mockDB{},
+			db:     &mock.DB{},
 			status: StatusNotImplemented,
 			err:    "kivik: driver does not support Find interface",
 		},
 		{
 			name: "explain error",
-			db: &mockFinder{
+			db: &mock.Finder{
 				ExplainFunc: func(_ context.Context, _ interface{}) (*driver.QueryPlan, error) {
 					return nil, errors.New("explain error")
 				},
@@ -285,7 +286,7 @@ func TestExplain(t *testing.T) {
 		},
 		{
 			name: "success",
-			db: &mockFinder{
+			db: &mock.Finder{
 				ExplainFunc: func(_ context.Context, query interface{}) (*driver.QueryPlan, error) {
 					expectedQuery := int(3)
 					if d := diff.Interface(expectedQuery, query); d != nil {

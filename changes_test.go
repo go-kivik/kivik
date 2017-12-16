@@ -9,6 +9,7 @@ import (
 	"github.com/flimzy/diff"
 	"github.com/flimzy/testy"
 	"github.com/go-kivik/kivik/driver"
+	"github.com/go-kivik/kivik/mock"
 )
 
 func TestChangesNext(t *testing.T) {
@@ -69,7 +70,7 @@ func TestChangesClose(t *testing.T) {
 func TestChangesIteratorNext(t *testing.T) {
 	expected := "foo error"
 	c := &changesIterator{
-		Changes: &mockChanges{
+		Changes: &mock.Changes{
 			NextFunc: func(_ *driver.Change) error { return errors.New(expected) },
 		},
 	}
@@ -79,15 +80,15 @@ func TestChangesIteratorNext(t *testing.T) {
 }
 
 func TestChangesIteratorNew(t *testing.T) {
-	ch := newChanges(context.Background(), &mockChanges{})
+	ch := newChanges(context.Background(), &mock.Changes{})
 	expected := &Changes{
 		iter: &iter{
 			feed: &changesIterator{
-				Changes: &mockChanges{},
+				Changes: &mock.Changes{},
 			},
 			curVal: &driver.Change{},
 		},
-		changesi: &mockChanges{},
+		changesi: &mock.Changes{},
 	}
 	ch.cancel = nil // determinism
 	if d := diff.Interface(expected, ch); d != nil {
@@ -186,7 +187,7 @@ func TestChanges(t *testing.T) {
 		{
 			name: "db error",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					ChangesFunc: func(_ context.Context, _ map[string]interface{}) (driver.Changes, error) {
 						return nil, errors.New("db error")
 					},
@@ -198,13 +199,13 @@ func TestChanges(t *testing.T) {
 		{
 			name: "success",
 			db: &DB{
-				driverDB: &mockDB{
+				driverDB: &mock.DB{
 					ChangesFunc: func(_ context.Context, opts map[string]interface{}) (driver.Changes, error) {
 						expectedOpts := map[string]interface{}{"foo": 123.4}
 						if d := diff.Interface(expectedOpts, opts); d != nil {
 							return nil, fmt.Errorf("Unexpected options:\n%s", d)
 						}
-						return &mockChanges{}, nil
+						return &mock.Changes{}, nil
 					},
 				},
 			},
@@ -212,11 +213,11 @@ func TestChanges(t *testing.T) {
 			expected: &Changes{
 				iter: &iter{
 					feed: &changesIterator{
-						Changes: &mockChanges{},
+						Changes: &mock.Changes{},
 					},
 					curVal: &driver.Change{},
 				},
-				changesi: &mockChanges{},
+				changesi: &mock.Changes{},
 			},
 		},
 	}

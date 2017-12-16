@@ -5,12 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"reflect"
 	"testing"
 
 	"github.com/flimzy/diff"
 	"github.com/flimzy/testy"
 	"github.com/go-kivik/kivik/driver"
+	"github.com/go-kivik/kivik/mock"
 )
 
 func TestBulkNext(t *testing.T) {
@@ -79,13 +79,20 @@ func TestBulkIteratorNext(t *testing.T) {
 	}{
 		{
 			name: "error",
-			r:    &bulkIterator{&mockBulkResults{err: errors.New("iter error")}},
-			err:  "iter error",
+			r: &bulkIterator{&mock.BulkResults{
+				NextFunc: func(_ *driver.BulkResult) error {
+					return errors.New("iter error")
+				},
+			}},
+			err: "iter error",
 		},
 		{
 			name: "success",
-			r: &bulkIterator{&mockBulkResults{
-				result: &driver.BulkResult{ID: "foo"},
+			r: &bulkIterator{&mock.BulkResults{
+				NextFunc: func(result *driver.BulkResult) error {
+					*result = driver.BulkResult{ID: "foo"}
+					return nil
+				},
 			}},
 			expected: &driver.BulkResult{ID: "foo"},
 		},
@@ -254,90 +261,139 @@ func TestBulkDocsNotSlice(t *testing.T) {
 	}
 }
 
-type bdDB struct {
-	driver.DB
-	err     error
-	options map[string]interface{}
-}
-
-var _ driver.DB = &bdDB{}
-
-func (db *bdDB) BulkDocs(_ context.Context, docs []interface{}, options map[string]interface{}) (driver.BulkResults, error) {
-	if db.options != nil {
-		if !reflect.DeepEqual(db.options, options) {
-			return nil, fmt.Errorf("Unexpected options. Got: %v, Expected: %v", options, db.options)
-		}
-	}
-	return nil, db.err
-}
-
-type nonbdDB struct {
-	driver.DB
-}
-
-var _ driver.DB = &nonbdDB{}
-
-func (db *nonbdDB) Put(_ context.Context, _ string, _ interface{}, _ map[string]interface{}) (string, error) {
-	return "", nil
-}
-func (db *nonbdDB) CreateDoc(_ context.Context, _ interface{}, _ map[string]interface{}) (string, string, error) {
-	return "", "", nil
-}
-
-func TestBulkDocs(t *testing.T) {
+func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 	type bdTest struct {
 		name     string
 		dbDriver driver.DB
 		docs     interface{}
 		options  Options
+		expected *BulkResults
+		status   int
 		err      string
 	}
 	tests := []bdTest{
 		{
 			name:     "no docs",
-			dbDriver: &bdDB{},
+			dbDriver: &mock.BulkDocer{},
 			docs:     []int{},
+			status:   StatusBadRequest,
+			err:      "kivik: no documents provided",
 		},
 		{
 			name:     "invalid JSON",
-			dbDriver: &bdDB{},
+			dbDriver: &mock.BulkDocer{},
 			docs:     []interface{}{[]byte("invalid json")},
+			status:   StatusBadRequest,
 			err:      "invalid character 'i' looking for beginning of value",
 		},
 		{
-			name:     "query fails",
-			dbDriver: &bdDB{err: errors.New("bulkdocs failed")},
-			docs:     []int{1, 2, 3},
-			err:      "bulkdocs failed",
+			name: "query fails",
+			dbDriver: &mock.BulkDocer{
+				BulkDocsFunc: func(_ context.Context, _ []interface{}, _ map[string]interface{}) (driver.BulkResults, error) {
+					return nil, errors.New("bulkdocs failed")
+				},
+			},
+			docs:   []int{1, 2, 3},
+			status: StatusInternalServerError,
+			err:    "bulkdocs failed",
 		},
 		{
-			name:     "emulated BulkDocs support",
-			dbDriver: &nonbdDB{},
+			name: "emulated BulkDocs support",
+			dbDriver: &mock.DB{
+				PutFunc: func(_ context.Context, docID string, doc interface{}, opts map[string]interface{}) (string, error) {
+					if docID == "error" {
+						return "", errors.New("error")
+					}
+					if docID != "foo" {
+						return "", fmt.Errorf("Unexpected docID: %s", docID)
+					}
+					expectedDoc := map[string]string{"_id": "foo"}
+					if d := diff.Interface(expectedDoc, doc); d != nil {
+						return "", fmt.Errorf("Unexpected doc:\n%s", d)
+					}
+					if d := diff.Interface(testOptions, opts); d != nil {
+						return "", fmt.Errorf("Unexpected opts:\n%s", d)
+					}
+					return "2-xxx", nil
+				},
+				CreateDocFunc: func(_ context.Context, doc interface{}, opts map[string]interface{}) (string, string, error) {
+					expectedDoc := int(123)
+					if d := diff.Interface(expectedDoc, doc); d != nil {
+						return "", "", fmt.Errorf("Unexpected doc:\n%s", d)
+					}
+					if d := diff.Interface(testOptions, opts); d != nil {
+						return "", "", fmt.Errorf("Unexpected opts:\n%s", d)
+					}
+					return "newDocID", "1-xxx", nil
+				},
+			},
 			docs: []interface{}{
 				map[string]string{"_id": "foo"},
 				123,
+				map[string]string{"_id": "error"},
+			},
+			options: testOptions,
+			expected: &BulkResults{
+				iter: &iter{
+					feed: &bulkIterator{
+						BulkResults: &emulatedBulkResults{
+							results: []driver.BulkResult{
+								{ID: "foo", Rev: "2-xxx"},
+								{ID: "newDocID", Rev: "1-xxx"},
+								{ID: "error", Error: errors.New("error")},
+							},
+						},
+					},
+					curVal: &driver.BulkResult{},
+				},
+				bulki: &emulatedBulkResults{
+					results: []driver.BulkResult{
+						{ID: "foo", Rev: "2-xxx"},
+						{ID: "newDocID", Rev: "1-xxx"},
+						{ID: "error", Error: errors.New("error")},
+					},
+				},
 			},
 		},
 		{
-			name:     "new_edits",
-			dbDriver: &bdDB{options: map[string]interface{}{"new_edits": true}},
+			name: "new_edits",
+			dbDriver: &mock.BulkDocer{
+				BulkDocsFunc: func(_ context.Context, docs []interface{}, opts map[string]interface{}) (driver.BulkResults, error) {
+					expectedDocs := []interface{}{map[string]string{"_id": "foo"}, 123}
+					expectedOpts := map[string]interface{}{"new_edits": true}
+					if d := diff.Interface(expectedDocs, docs); d != nil {
+						return nil, fmt.Errorf("Unexpected docs:\n%s", d)
+					}
+					if d := diff.Interface(expectedOpts, opts); d != nil {
+						return nil, fmt.Errorf("Unexpected opts:\n%s", d)
+					}
+					return &mock.BulkResults{ID: "foo"}, nil
+				},
+			},
 			docs: []interface{}{
 				map[string]string{"_id": "foo"},
 				123,
 			},
 			options: Options{"new_edits": true},
+			expected: &BulkResults{
+				iter: &iter{
+					feed: &bulkIterator{
+						BulkResults: &mock.BulkResults{ID: "foo"},
+					},
+					curVal: &driver.BulkResult{},
+				},
+				bulki: &mock.BulkResults{ID: "foo"},
+			},
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			db := &DB{driverDB: test.dbDriver}
-			_, err := db.BulkDocs(context.Background(), test.docs, test.options)
-			var msg string
-			if err != nil {
-				msg = err.Error()
-			}
-			if msg != test.err {
-				t.Errorf("Unexpected error: %s", msg)
+			result, err := db.BulkDocs(context.Background(), test.docs, test.options)
+			testy.StatusError(t, test.err, test.status, err)
+			result.cancel = nil // Determinism
+			if d := diff.Interface(test.expected, result); d != nil {
+				t.Error(d)
 			}
 		})
 	}

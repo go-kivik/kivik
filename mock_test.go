@@ -42,59 +42,6 @@ func (i *mockIterator) Close() error {
 	return i.CloseFunc()
 }
 
-type mockRows struct {
-	id            string
-	CloseFunc     func() error
-	NextFunc      func(*driver.Row) error
-	OffsetFunc    func() int64
-	TotalRowsFunc func() int64
-	UpdateSeqFunc func() string
-}
-
-var _ driver.Rows = &mockRows{}
-
-type mockRowsWarner struct {
-	*mockRows
-	WarningFunc func() string
-}
-
-var _ driver.RowsWarner = &mockRowsWarner{}
-
-type mockBookmarker struct {
-	*mockRows
-	BookmarkFunc func() string
-}
-
-var _ driver.Bookmarker = &mockBookmarker{}
-
-func (r *mockRows) Close() error {
-	return r.CloseFunc()
-}
-
-func (r *mockRows) Next(row *driver.Row) error {
-	return r.NextFunc(row)
-}
-
-func (r *mockRows) Offset() int64 {
-	return r.OffsetFunc()
-}
-
-func (r *mockRows) TotalRows() int64 {
-	return r.TotalRowsFunc()
-}
-
-func (r *mockRows) UpdateSeq() string {
-	return r.UpdateSeqFunc()
-}
-
-func (r *mockRowsWarner) Warning() string {
-	return r.WarningFunc()
-}
-
-func (r *mockBookmarker) Bookmark() string {
-	return r.BookmarkFunc()
-}
-
 type mockReplication struct {
 	DeleteFunc        func(context.Context) error
 	StartTimeFunc     func() time.Time

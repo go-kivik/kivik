@@ -8,6 +8,7 @@ import (
 	"github.com/flimzy/diff"
 	"github.com/flimzy/testy"
 	"github.com/go-kivik/kivik/driver"
+	"github.com/go-kivik/kivik/mock"
 )
 
 func TestRowsNext(t *testing.T) {
@@ -68,7 +69,7 @@ func TestRowsClose(t *testing.T) {
 func TestRowsIteratorNext(t *testing.T) {
 	expected := "foo error"
 	r := &rowsIterator{
-		Rows: &mockRows{
+		Rows: &mock.Rows{
 			NextFunc: func(_ *driver.Row) error { return errors.New(expected) },
 		},
 	}
@@ -233,7 +234,7 @@ func TestRowsGetters(t *testing.T) {
 				Key: key,
 			},
 		},
-		rowsi: &mockRows{
+		rowsi: &mock.Rows{
 			OffsetFunc:    func() int64 { return offset },
 			TotalRowsFunc: func() int64 { return totalrows },
 			UpdateSeqFunc: func() string { return updateseq },
@@ -297,7 +298,7 @@ func TestRowsGetters(t *testing.T) {
 func TestWarning(t *testing.T) {
 	t.Run("Warner", func(t *testing.T) {
 		expected := "test warning"
-		r := newRows(context.Background(), &mockRowsWarner{
+		r := newRows(context.Background(), &mock.RowsWarner{
 			WarningFunc: func() string { return expected },
 		})
 		if w := r.Warning(); w != expected {
@@ -305,7 +306,7 @@ func TestWarning(t *testing.T) {
 		}
 	})
 	t.Run("NonWarner", func(t *testing.T) {
-		r := newRows(context.Background(), &mockRows{})
+		r := newRows(context.Background(), &mock.Rows{})
 		expected := ""
 		if w := r.Warning(); w != expected {
 			t.Errorf("Warning\nExpected: %s\n  Actual: %s", expected, w)
@@ -316,7 +317,7 @@ func TestWarning(t *testing.T) {
 func TestBookmark(t *testing.T) {
 	t.Run("Bookmarker", func(t *testing.T) {
 		expected := "test bookmark"
-		r := newRows(context.Background(), &mockBookmarker{
+		r := newRows(context.Background(), &mock.Bookmarker{
 			BookmarkFunc: func() string { return expected },
 		})
 		if w := r.Bookmark(); w != expected {
@@ -324,7 +325,7 @@ func TestBookmark(t *testing.T) {
 		}
 	})
 	t.Run("Non Bookmarker", func(t *testing.T) {
-		r := newRows(context.Background(), &mockRows{})
+		r := newRows(context.Background(), &mock.Rows{})
 		expected := ""
 		if w := r.Bookmark(); w != expected {
 			t.Errorf("Warning\nExpected: %s\n  Actual: %s", expected, w)

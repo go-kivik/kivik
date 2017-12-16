@@ -50,7 +50,7 @@ func TestFind(t *testing.T) {
 						if d := diff.Interface(expectedQuery, query); d != nil {
 							return nil, fmt.Errorf("Unexpected query:\n%s", d)
 						}
-						return &mockRows{id: "a"}, nil
+						return &mock.Rows{ID: "a"}, nil
 					},
 				},
 			},
@@ -58,11 +58,11 @@ func TestFind(t *testing.T) {
 			expected: &Rows{
 				iter: &iter{
 					feed: &rowsIterator{
-						Rows: &mockRows{id: "a"},
+						Rows: &mock.Rows{ID: "a"},
 					},
 					curVal: &driver.Row{},
 				},
-				rowsi: &mockRows{id: "a"},
+				rowsi: &mock.Rows{ID: "a"},
 			},
 		},
 	}

@@ -64,7 +64,7 @@ func TestAllDocs(t *testing.T) {
 						if d := diff.Interface(testOptions, opts); d != nil {
 							return nil, fmt.Errorf("Unexpected options: %s", d)
 						}
-						return &mockRows{id: "a"}, nil
+						return &mock.Rows{ID: "a"}, nil
 					},
 				},
 			},
@@ -72,11 +72,11 @@ func TestAllDocs(t *testing.T) {
 			expected: &Rows{
 				iter: &iter{
 					feed: &rowsIterator{
-						Rows: &mockRows{id: "a"},
+						Rows: &mock.Rows{ID: "a"},
 					},
 					curVal: &driver.Row{},
 				},
-				rowsi: &mockRows{id: "a"},
+				rowsi: &mock.Rows{ID: "a"},
 			},
 		},
 	}
@@ -130,7 +130,7 @@ func TestQuery(t *testing.T) {
 						if d := diff.Interface(testOptions, opts); d != nil {
 							return nil, fmt.Errorf("Unexpected options: %s", d)
 						}
-						return &mockRows{id: "a"}, nil
+						return &mock.Rows{ID: "a"}, nil
 					},
 				},
 			},
@@ -140,11 +140,11 @@ func TestQuery(t *testing.T) {
 			expected: &Rows{
 				iter: &iter{
 					feed: &rowsIterator{
-						Rows: &mockRows{id: "a"},
+						Rows: &mock.Rows{ID: "a"},
 					},
 					curVal: &driver.Row{},
 				},
-				rowsi: &mockRows{id: "a"},
+				rowsi: &mock.Rows{ID: "a"},
 			},
 		},
 	}

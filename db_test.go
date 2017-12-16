@@ -232,7 +232,7 @@ func TestFlush(t *testing.T) {
 		{
 			name: "db error",
 			db: &DB{
-				driverDB: &mockDBFlusher{
+				driverDB: &mockFlusher{
 					FlushFunc: func(_ context.Context) error {
 						return errors.Status(StatusBadResponse, "flush error")
 					},
@@ -244,7 +244,7 @@ func TestFlush(t *testing.T) {
 		{
 			name: "success",
 			db: &DB{
-				driverDB: &mockDBFlusher{
+				driverDB: &mockFlusher{
 					FlushFunc: func(_ context.Context) error {
 						return nil
 					},

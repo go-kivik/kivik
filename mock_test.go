@@ -138,14 +138,14 @@ func (db *mockFinder) Explain(ctx context.Context, query interface{}) (*driver.Q
 	return db.ExplainFunc(ctx, query)
 }
 
-type mockDBFlusher struct {
+type mockFlusher struct {
 	*mockDB
 	FlushFunc func(context.Context) error
 }
 
-var _ driver.DBFlusher = &mockDBFlusher{}
+var _ driver.Flusher = &mockFlusher{}
 
-func (db *mockDBFlusher) Flush(ctx context.Context) error {
+func (db *mockFlusher) Flush(ctx context.Context) error {
 	return db.FlushFunc(ctx)
 }
 

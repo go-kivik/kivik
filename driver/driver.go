@@ -256,10 +256,10 @@ type MetaGetter interface {
 	GetMeta(ctx context.Context, docID string, options map[string]interface{}) (size int64, rev string, err error)
 }
 
-// DBFlusher is an optional interface that may be implemented by a database
+// Flusher is an optional interface that may be implemented by a database
 // that can force a flush of the database backend file(s) to disk or other
 // permanent storage.
-type DBFlusher interface {
+type Flusher interface {
 	// Flush requests a flush of disk cache to disk or other permanent storage.
 	//
 	// See http://docs.couchdb.org/en/2.0.0/api/database/compact.html#db-ensure-full-commit

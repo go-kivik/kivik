@@ -261,7 +261,7 @@ func TestBulkDocsNotSlice(t *testing.T) {
 	}
 }
 
-func TestBulkDocs(t *testing.T) {
+func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 	type bdTest struct {
 		name     string
 		dbDriver driver.DB

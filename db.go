@@ -230,7 +230,7 @@ func (db *DB) Delete(ctx context.Context, docID, rev string, options ...Options)
 //
 // See http://docs.couchdb.org/en/2.0.0/api/database/compact.html#db-ensure-full-commit
 func (db *DB) Flush(ctx context.Context) error {
-	if flusher, ok := db.driverDB.(driver.DBFlusher); ok {
+	if flusher, ok := db.driverDB.(driver.Flusher); ok {
 		return flusher.Flush(ctx)
 	}
 	return errors.Status(StatusNotImplemented, "kivik: flush not supported by driver")

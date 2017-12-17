@@ -93,8 +93,11 @@ func (db *DB) Get(ctx context.Context, docID string, options ...Options) *Row {
 	if err != nil {
 		return &Row{err: err}
 	}
-	length, doc, err := db.driverDB.Get(ctx, docID, opts)
-	return &Row{ReadCloser: doc, length: length, err: err}
+	doc, err := db.driverDB.Get(ctx, docID, opts)
+	if err != nil {
+		return &Row{err: err}
+	}
+	return &Row{ReadCloser: doc.Body, length: doc.ContentLength}
 }
 
 // GetMeta returns the size and rev of the specified document. GetMeta accepts

@@ -172,8 +172,8 @@ func TestGet(t *testing.T) {
 			name: "db error",
 			db: &DB{
 				driverDB: &mock.DB{
-					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (int64, io.ReadCloser, error) {
-						return 0, nil, fmt.Errorf("db error")
+					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (*driver.Document, error) {
+						return nil, fmt.Errorf("db error")
 					},
 				},
 			},
@@ -185,15 +185,18 @@ func TestGet(t *testing.T) {
 			name: "success",
 			db: &DB{
 				driverDB: &mock.DB{
-					GetFunc: func(_ context.Context, docID string, options map[string]interface{}) (int64, io.ReadCloser, error) {
+					GetFunc: func(_ context.Context, docID string, options map[string]interface{}) (*driver.Document, error) {
 						expectedDocID := "foo"
 						if docID != expectedDocID {
-							return 0, nil, fmt.Errorf("Unexpected docID: %s", docID)
+							return nil, fmt.Errorf("Unexpected docID: %s", docID)
 						}
 						if d := diff.Interface(testOptions, options); d != nil {
-							return 0, nil, fmt.Errorf("Unexpected options:\n%s", d)
+							return nil, fmt.Errorf("Unexpected options:\n%s", d)
 						}
-						return 13, body(`{"_id":"foo"}`), nil
+						return &driver.Document{
+							ContentLength: 13,
+							Body:          body(`{"_id":"foo"}`),
+						}, nil
 					},
 				},
 			},
@@ -524,8 +527,8 @@ func TestGetMeta(t *testing.T) {
 			name: "non-meta getter error",
 			db: &DB{
 				driverDB: &mock.DB{
-					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (int64, io.ReadCloser, error) {
-						return 0, nil, errors.Status(StatusBadResponse, "get error")
+					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (*driver.Document, error) {
+						return nil, errors.Status(StatusBadResponse, "get error")
 					},
 				},
 			},
@@ -536,8 +539,11 @@ func TestGetMeta(t *testing.T) {
 			name: "non-meta getter invalid json",
 			db: &DB{
 				driverDB: &mock.DB{
-					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (int64, io.ReadCloser, error) {
-						return 12, body("invalid json"), nil
+					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (*driver.Document, error) {
+						return &driver.Document{
+							ContentLength: 12,
+							Body:          body("invalid json"),
+						}, nil
 					},
 				},
 			},
@@ -548,15 +554,18 @@ func TestGetMeta(t *testing.T) {
 			name: "non-meta getter success",
 			db: &DB{
 				driverDB: &mock.DB{
-					GetFunc: func(_ context.Context, docID string, opts map[string]interface{}) (int64, io.ReadCloser, error) {
+					GetFunc: func(_ context.Context, docID string, opts map[string]interface{}) (*driver.Document, error) {
 						expectedDocID := "foo"
 						if docID != expectedDocID {
-							return 0, nil, fmt.Errorf("Unexpected docID: %s", docID)
+							return nil, fmt.Errorf("Unexpected docID: %s", docID)
 						}
 						if opts != nil {
-							return 0, nil, errors.New("opts should be nil")
+							return nil, errors.New("opts should be nil")
 						}
-						return 16, body(`{"_rev":"1-xxx"}`), nil
+						return &driver.Document{
+							ContentLength: 16,
+							Body:          body(`{"_rev":"1-xxx"}`),
+						}, nil
 					},
 				},
 			},
@@ -643,8 +652,8 @@ func TestCopy(t *testing.T) {
 			name: "non-copier get error",
 			db: &DB{
 				driverDB: &mock.DB{
-					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (int64, io.ReadCloser, error) {
-						return 0, nil, errors.Status(StatusBadResponse, "get error")
+					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (*driver.Document, error) {
+						return nil, errors.Status(StatusBadResponse, "get error")
 					},
 				},
 			},
@@ -657,8 +666,11 @@ func TestCopy(t *testing.T) {
 			name: "non-copier invalid JSON",
 			db: &DB{
 				driverDB: &mock.DB{
-					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (int64, io.ReadCloser, error) {
-						return 12, body("invalid json"), nil
+					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (*driver.Document, error) {
+						return &driver.Document{
+							ContentLength: 12,
+							Body:          body("invalid json"),
+						}, nil
 					},
 				},
 			},
@@ -671,8 +683,11 @@ func TestCopy(t *testing.T) {
 			name: "non-copier put error",
 			db: &DB{
 				driverDB: &mock.DB{
-					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (int64, io.ReadCloser, error) {
-						return 28, body(`{"_id":"foo","_rev":"1-xxx"}`), nil
+					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (*driver.Document, error) {
+						return &driver.Document{
+							ContentLength: 28,
+							Body:          body(`{"_id":"foo","_rev":"1-xxx"}`),
+						}, nil
 					},
 					PutFunc: func(_ context.Context, _ string, _ interface{}, _ map[string]interface{}) (string, error) {
 						return "", errors.Status(StatusBadResponse, "put error")
@@ -688,12 +703,15 @@ func TestCopy(t *testing.T) {
 			name: "success",
 			db: &DB{
 				driverDB: &mock.DB{
-					GetFunc: func(_ context.Context, docID string, options map[string]interface{}) (int64, io.ReadCloser, error) {
+					GetFunc: func(_ context.Context, docID string, options map[string]interface{}) (*driver.Document, error) {
 						expectedDocID := "bar"
 						if docID != expectedDocID {
-							return 0, nil, fmt.Errorf("Unexpected get docID: %s", docID)
+							return nil, fmt.Errorf("Unexpected get docID: %s", docID)
 						}
-						return 40, body(`{"_id":"bar","_rev":"1-xxx","foo":123.4}`), nil
+						return &driver.Document{
+							ContentLength: 40,
+							Body:          body(`{"_id":"bar","_rev":"1-xxx","foo":123.4}`),
+						}, nil
 					},
 					PutFunc: func(_ context.Context, docID string, doc interface{}, opts map[string]interface{}) (string, error) {
 						expectedDocID := "foo"

@@ -125,7 +125,7 @@ type DB interface {
 	// Get fetches the requested document from the database, and returns the
 	// content length (or -1 if unknown), and an io.ReadCloser to access the
 	// raw JSON content.
-	Get(ctx context.Context, docID string, options map[string]interface{}) (length int64, doc io.ReadCloser, err error)
+	Get(ctx context.Context, docID string, options map[string]interface{}) (*Document, error)
 	// CreateDoc creates a new doc, with a server-generated ID.
 	CreateDoc(ctx context.Context, doc interface{}, options map[string]interface{}) (docID, rev string, err error)
 	// Put writes the document in the database.
@@ -160,6 +160,19 @@ type DB interface {
 	// ddoc will be the design doc name without the '_design/' previx.
 	// view will be the view name without the '_view/' prefix.
 	Query(ctx context.Context, ddoc, view string, options map[string]interface{}) (Rows, error)
+}
+
+// Document represents a single document returned by Get
+type Document struct {
+	// ContentLength is the size of the document response in bytes.
+	ContentLength int64
+
+	// Rev is the revision number returned
+	Rev string
+
+	// Body contains the respons body, either in raw JSON or multipart/related
+	// format.
+	Body io.ReadCloser
 }
 
 // BulkDocer is an optional interface which may be implemented by a DB to

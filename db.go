@@ -61,20 +61,37 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) 
 
 // Row contains the result of calling Get for a single document.
 type Row struct {
-	io.ReadCloser
-	err    error
-	length int64
+	doc *driver.Document
+	err error
 }
 
 // Length returns the size of the document, such as reported by the
 // Content-Length header, if known, or -1 if unknown.
 func (r *Row) Length() int64 {
-	return r.length
+	if r.doc == nil {
+		return 0
+	}
+	return r.doc.ContentLength
 }
 
-// ScanDoc unmarshals the data from the fetched row into dest. It is a thin
-// wrapper around json.Unmarshal(dest), which closes the underlying reader when
-// done.
+// Rev returns the revision of the document fetched.
+func (r *Row) Rev() string {
+	if r.doc == nil {
+		return ""
+	}
+	return r.doc.Rev
+}
+
+// Err returns any error that occurred while fetching the document. Normally
+// this error is returned when ScanDoc is called, but this method may be used
+// if there is no desire to call ScanDoc.
+func (r *Row) Err() error {
+	return r.err
+}
+
+// ScanDoc unmarshals the data from the fetched row into dest. It is an
+// intelligent wrapper around json.Unmarshal which also handles
+// multipart/related responses. When done, the underlying reader is closed.
 func (r *Row) ScanDoc(dest interface{}) error {
 	if r.err != nil {
 		return r.err
@@ -83,7 +100,16 @@ func (r *Row) ScanDoc(dest interface{}) error {
 		return errNonPtr
 	}
 	defer r.Close() // nolint: errcheck
-	return errors.WrapStatus(StatusBadResponse, json.NewDecoder(r).Decode(dest))
+	return errors.WrapStatus(StatusBadResponse, json.NewDecoder(r.doc.Body).Decode(dest))
+}
+
+// Close closes the row. Normally this is done automatically by ScanDoc. This
+// method is only necessary if ScanDoc is not used.
+func (r *Row) Close() error {
+	if r.doc == nil {
+		return nil
+	}
+	return r.doc.Body.Close()
 }
 
 // Get fetches the requested document. Any errors are deferred until the
@@ -93,8 +119,8 @@ func (db *DB) Get(ctx context.Context, docID string, options ...Options) *Row {
 	if err != nil {
 		return &Row{err: err}
 	}
-	length, doc, err := db.driverDB.Get(ctx, docID, opts)
-	return &Row{ReadCloser: doc, length: length, err: err}
+	doc, err := db.driverDB.Get(ctx, docID, opts)
+	return &Row{doc: doc, err: err}
 }
 
 // GetMeta returns the size and rev of the specified document. GetMeta accepts
@@ -108,15 +134,20 @@ func (db *DB) GetMeta(ctx context.Context, docID string, options ...Options) (si
 		return r.GetMeta(ctx, docID, opts)
 	}
 	row := db.Get(ctx, docID, nil)
+	if e := row.Err(); e != nil {
+		return 0, "", e
+	}
+	if rev := row.Rev(); rev != "" {
+		_ = row.Close()
+		return row.Length(), rev, nil
+	}
 	var doc struct {
 		Rev string `json:"_rev"`
 	}
 	// These last two lines cannot be combined for GopherJS due to a bug.
 	// See https://github.com/gopherjs/gopherjs/issues/608
-	if err = row.ScanDoc(&doc); err != nil {
-		return 0, "", err
-	}
-	return row.length, doc.Rev, nil
+	err = row.ScanDoc(&doc)
+	return row.Length(), doc.Rev, err
 }
 
 // CreateDoc creates a new doc with an auto-generated unique ID. The generated

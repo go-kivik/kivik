@@ -2,7 +2,6 @@ package mock
 
 import (
 	"context"
-	"io"
 
 	"github.com/go-kivik/kivik/driver"
 )
@@ -12,7 +11,7 @@ type DB struct {
 	// ID is a unique identifier for the DB instance.
 	ID                   string
 	AllDocsFunc          func(ctx context.Context, options map[string]interface{}) (driver.Rows, error)
-	GetFunc              func(ctx context.Context, docID string, options map[string]interface{}) (length int64, doc io.ReadCloser, err error)
+	GetFunc              func(ctx context.Context, docID string, options map[string]interface{}) (*driver.Document, error)
 	CreateDocFunc        func(ctx context.Context, doc interface{}, options map[string]interface{}) (docID, rev string, err error)
 	PutFunc              func(ctx context.Context, docID string, doc interface{}, options map[string]interface{}) (rev string, err error)
 	DeleteFunc           func(ctx context.Context, docID, rev string, options map[string]interface{}) (newRev string, err error)
@@ -37,7 +36,7 @@ func (db *DB) AllDocs(ctx context.Context, options map[string]interface{}) (driv
 }
 
 // Get calls db.GetFunc
-func (db *DB) Get(ctx context.Context, docID string, opts map[string]interface{}) (int64, io.ReadCloser, error) {
+func (db *DB) Get(ctx context.Context, docID string, opts map[string]interface{}) (*driver.Document, error) {
 	return db.GetFunc(ctx, docID, opts)
 }
 

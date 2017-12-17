@@ -173,9 +173,9 @@ type BulkDocer interface {
 	BulkDocs(ctx context.Context, docs []interface{}, options map[string]interface{}) (BulkResults, error)
 }
 
-// The Finder is an optional interface which may be implemented by a database. The
-// Finder interface provides access to the new (in CouchDB 2.0) MongoDB-style
-// query interface.
+// Finder is an optional interface which may be implemented by a DB. The Finder
+// interface provides access to the new (in CouchDB 2.0) MongoDB-style query
+// interface.
 type Finder interface {
 	// Find executes a query using the new /_find interface. If query is a
 	// string, []byte, or json.RawMessage, it should be treated as a raw JSON
@@ -267,8 +267,8 @@ type MetaGetter interface {
 	GetMeta(ctx context.Context, docID string, options map[string]interface{}) (size int64, rev string, err error)
 }
 
-// Flusher is an optional interface that may be implemented by a database that
-// can force a flush of the database backend file(s) to disk or other permanent
+// Flusher is an optional interface that may be implemented by a DB that can
+// force a flush of the database backend file(s) to disk or other permanent
 // storage.
 type Flusher interface {
 	// Flush requests a flush of disk cache to disk or other permanent storage.

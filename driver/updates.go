@@ -18,7 +18,7 @@ type DBUpdates interface {
 	Close() error
 }
 
-// DBUpdater is an optional interface that may be implemented by a client to
+// DBUpdater is an optional interface that may be implemented by a Client to
 // provide access to the DB Updates feed.
 type DBUpdater interface {
 	// DBUpdates must return a channel on which *DBUpdate events are sent,

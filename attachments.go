@@ -64,16 +64,6 @@ var _ io.ReadCloser = &bufCloser{}
 
 func (b *bufCloser) Close() error { return nil }
 
-// NewAttachment returns a new CouchDB attachment.
-func NewAttachment(filename, contentType string, body io.ReadCloser) *Attachment {
-	return &Attachment{
-		Content:     body,
-		Size:        -1,
-		Filename:    filename,
-		ContentType: contentType,
-	}
-}
-
 // validate returns an error if the attachment is invalid.
 func (a *Attachment) validate() error {
 	if a.Filename == "" {

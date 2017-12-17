@@ -10,76 +10,6 @@ import (
 	"github.com/flimzy/testy"
 )
 
-func TestAttachmentBytes(t *testing.T) {
-	tests := []struct {
-		name     string
-		att      *Attachment
-		expected string
-		err      string
-	}{
-		{
-			name:     "read success",
-			att:      NewAttachment("test.txt", "text/plain", ioutil.NopCloser(strings.NewReader("test content"))),
-			expected: "test content",
-		},
-		{
-			name: "buffered read",
-			att: func() *Attachment {
-				att := NewAttachment("test.txt", "text/plain", ioutil.NopCloser(strings.NewReader("test content")))
-				_, _ = att.Bytes()
-				return att
-			}(),
-			expected: "test content",
-		},
-		{
-			name: "read error",
-			att:  NewAttachment("test.txt", "text/plain", errReader("read error")),
-			err:  "read error",
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			result, err := test.att.Bytes()
-			testy.Error(t, test.err, err)
-			if d := diff.Text(test.expected, string(result)); d != nil {
-				t.Error(d)
-			}
-		})
-	}
-}
-
-func TestAttachmentRead(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    Attachment
-		expected string
-		status   int
-		err      string
-	}{
-		{
-			name:   "nil reader",
-			input:  Attachment{},
-			status: StatusUnknownError,
-			err:    "kivik: attachment content not read",
-		},
-		{
-			name:     "reader set",
-			input:    Attachment{ReadCloser: ioutil.NopCloser(strings.NewReader("foo"))},
-			expected: "foo",
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			defer test.input.Close() // nolint: errcheck
-			result, err := ioutil.ReadAll(test.input)
-			testy.StatusError(t, test.err, test.status, err)
-			if d := diff.Text(test.expected, string(result)); d != nil {
-				t.Error(d)
-			}
-		})
-	}
-}
-
 func TestAttachmentMarshalJSON(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -90,7 +20,7 @@ func TestAttachmentMarshalJSON(t *testing.T) {
 		{
 			name: "foo.txt",
 			att: &Attachment{
-				ReadCloser:  ioutil.NopCloser(strings.NewReader("test attachment\n")),
+				Content:     ioutil.NopCloser(strings.NewReader("test attachment\n")),
 				Filename:    "foo.txt",
 				ContentType: "text/plain",
 			},
@@ -102,7 +32,7 @@ func TestAttachmentMarshalJSON(t *testing.T) {
 		{
 			name: "read error",
 			att: &Attachment{
-				ReadCloser:  ioutil.NopCloser(&errorReader{}),
+				Content:     ioutil.NopCloser(&errorReader{}),
 				Filename:    "foo.txt",
 				ContentType: "text/plain",
 			},
@@ -156,13 +86,12 @@ func TestAttachmentUnmarshalJSON(t *testing.T) {
 			err := json.Unmarshal([]byte(test.input), result)
 			testy.Error(t, test.err, err)
 			var body []byte
-			if result.ReadCloser != nil {
-				body, err = ioutil.ReadAll(result)
-				if err != nil {
-					t.Fatal(err)
-				}
-				result.ReadCloser = nil
+			defer result.Content.Close() // nolint: errcheck
+			body, err = ioutil.ReadAll(result.Content)
+			if err != nil {
+				t.Fatal(err)
 			}
+			result.Content = nil
 			if d := diff.Text(test.body, string(body)); d != nil {
 				t.Errorf("Unexpected body:\n%s", d)
 			}
@@ -208,7 +137,8 @@ func TestAttachmentsUnmarshalJSON(t *testing.T) {
 			err := json.Unmarshal([]byte(test.input), &att)
 			testy.Error(t, test.err, err)
 			for _, v := range att {
-				v.ReadCloser = nil
+				_ = v.Content.Close()
+				v.Content = nil
 			}
 			if d := diff.Interface(test.expected, att); d != nil {
 				t.Error(d)

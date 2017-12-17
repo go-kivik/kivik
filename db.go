@@ -360,7 +360,8 @@ func (db *DB) PutAttachment(ctx context.Context, docID, rev string, att *Attachm
 	if err != nil {
 		return "", err
 	}
-	return db.driverDB.PutAttachment(ctx, docID, rev, att.Filename, att.ContentType, att, opts)
+	a := driver.Attachment(*att)
+	return db.driverDB.PutAttachment(ctx, docID, rev, &a, opts)
 }
 
 // GetAttachment returns a file attachment associated with the document.
@@ -375,17 +376,22 @@ func (db *DB) GetAttachment(ctx context.Context, docID, rev, filename string, op
 	if e != nil {
 		return nil, e
 	}
-	cType, md5sum, body, err := db.driverDB.GetAttachment(ctx, docID, rev, filename, opts)
+	att, err := db.driverDB.GetAttachment(ctx, docID, rev, filename, opts)
 	if err != nil {
 		return nil, err
 	}
-	return &Attachment{
-		ReadCloser:  body,
-		Filename:    filename,
-		ContentType: cType,
-		MD5:         MD5sum(md5sum),
-	}, nil
+	a := Attachment(*att)
+	return &a, nil
 }
+
+type nilContentReader struct{}
+
+var _ io.ReadCloser = &nilContentReader{}
+
+func (c nilContentReader) Read(_ []byte) (int, error) { return 0, io.EOF }
+func (c nilContentReader) Close() error               { return nil }
+
+var nilContent = nilContentReader{}
 
 // GetAttachmentMeta returns meta data about an attachment. The attachment
 // content returned will be empty.
@@ -396,31 +402,30 @@ func (db *DB) GetAttachmentMeta(ctx context.Context, docID, rev, filename string
 	if filename == "" {
 		return nil, missingArg("filename")
 	}
+	var att *Attachment
 	if metaer, ok := db.driverDB.(driver.AttachmentMetaGetter); ok {
 		opts, err := mergeOptions(options...)
 		if err != nil {
 			return nil, err
 		}
-		cType, md5sum, err := metaer.GetAttachmentMeta(ctx, docID, rev, filename, opts)
+		a, err := metaer.GetAttachmentMeta(ctx, docID, rev, filename, opts)
 		if err != nil {
 			return nil, err
 		}
-		return &Attachment{
-			Filename:    filename,
-			ContentType: cType,
-			MD5:         MD5sum(md5sum),
-		}, nil
+		att = new(Attachment)
+		*att = Attachment(*a)
+	} else {
+		var err error
+		att, err = db.GetAttachment(ctx, docID, rev, filename, options...)
+		if err != nil {
+			return nil, err
+		}
 	}
-	att, err := db.GetAttachment(ctx, docID, rev, filename, options...)
-	if err != nil {
-		return nil, err
+	if att.Content != nil {
+		_ = att.Content.Close() // Ensure this is closed
 	}
-	_ = att.Close()
-	return &Attachment{
-		Filename:    att.Filename,
-		ContentType: att.ContentType,
-		MD5:         att.MD5,
-	}, nil
+	att.Content = nilContent
+	return att, nil
 }
 
 // DeleteAttachment delets an attachment from a document, returning the

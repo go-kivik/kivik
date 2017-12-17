@@ -1167,14 +1167,14 @@ func TestPutAttachment(t *testing.T) {
 			docID: "foo",
 			db: &DB{
 				driverDB: &mock.DB{
-					PutAttachmentFunc: func(_ context.Context, _, _, _, _ string, _ io.Reader, _ map[string]interface{}) (string, error) {
+					PutAttachmentFunc: func(_ context.Context, _, _ string, _ *driver.Attachment, _ map[string]interface{}) (string, error) {
 						return "", errors.Status(StatusBadRequest, "db error")
 					},
 				},
 			},
 			att: &Attachment{
-				Filename:   "foo.txt",
-				ReadCloser: ioutil.NopCloser(strings.NewReader("")),
+				Filename: "foo.txt",
+				Content:  ioutil.NopCloser(strings.NewReader("")),
 			},
 			status: StatusBadRequest,
 			err:    "db error",
@@ -1197,19 +1197,29 @@ func TestPutAttachment(t *testing.T) {
 			rev:   "1-xxx",
 			db: &DB{
 				driverDB: &mock.DB{
-					PutAttachmentFunc: func(_ context.Context, docID, rev, filename, cType string, body io.Reader, opts map[string]interface{}) (string, error) {
-						expectedDocID, expectedRev, expectedFilename, expectedCType := "foo", "1-xxx", "foo.txt", "text/plain"
+					PutAttachmentFunc: func(_ context.Context, docID, rev string, att *driver.Attachment, opts map[string]interface{}) (string, error) {
+						expectedDocID, expectedRev := "foo", "1-xxx"
+						expectedContent := "Test file"
+						expectedAtt := &driver.Attachment{
+							Filename:    "foo.txt",
+							ContentType: "text/plain",
+						}
 						if docID != expectedDocID {
 							return "", fmt.Errorf("Unexpected docID: %s", docID)
 						}
 						if rev != expectedRev {
 							return "", fmt.Errorf("Unexpected rev: %s", rev)
 						}
-						if filename != expectedFilename {
-							return "", fmt.Errorf("Unexpected filename: %s", filename)
+						content, err := ioutil.ReadAll(att.Content)
+						if err != nil {
+							t.Fatal(err)
 						}
-						if cType != expectedCType {
-							return "", fmt.Errorf("Unexpected content type: %s", cType)
+						if d := diff.Text(expectedContent, string(content)); d != nil {
+							return "", fmt.Errorf("Unexpected content:\n%s", string(content))
+						}
+						att.Content = nil
+						if d := diff.Interface(expectedAtt, att); d != nil {
+							return "", fmt.Errorf("Unexpected attachment:\n%s", d)
 						}
 						if d := diff.Interface(testOptions, opts); d != nil {
 							return "", fmt.Errorf("Unexpected options:\n%s", d)
@@ -1221,7 +1231,7 @@ func TestPutAttachment(t *testing.T) {
 			att: &Attachment{
 				Filename:    "foo.txt",
 				ContentType: "text/plain",
-				ReadCloser:  ioutil.NopCloser(strings.NewReader("Test file")),
+				Content:     ioutil.NopCloser(strings.NewReader("Test file")),
 			},
 			options: testOptions,
 			newRev:  "2-xxx",
@@ -1331,8 +1341,8 @@ func TestGetAttachment(t *testing.T) {
 			name: "error",
 			db: &DB{
 				driverDB: &mock.DB{
-					GetAttachmentFunc: func(_ context.Context, _, _, _ string, _ map[string]interface{}) (string, driver.MD5sum, io.ReadCloser, error) {
-						return "", driver.MD5sum{}, nil, errors.New("fail")
+					GetAttachmentFunc: func(_ context.Context, _, _, _ string, _ map[string]interface{}) (*driver.Attachment, error) {
+						return nil, errors.New("fail")
 					},
 				},
 			},
@@ -1345,21 +1355,27 @@ func TestGetAttachment(t *testing.T) {
 			name: "success",
 			db: &DB{
 				driverDB: &mock.DB{
-					GetAttachmentFunc: func(_ context.Context, docID, rev, filename string, opts map[string]interface{}) (string, driver.MD5sum, io.ReadCloser, error) {
+					GetAttachmentFunc: func(_ context.Context, docID, rev, filename string, opts map[string]interface{}) (*driver.Attachment, error) {
 						expectedDocID, expectedRev, expectedFilename := "foo", "1-xxx", "foo.txt"
 						if docID != expectedDocID {
-							return "", driver.MD5sum{}, nil, fmt.Errorf("Unexpected docID: %s", docID)
+							return nil, fmt.Errorf("Unexpected docID: %s", docID)
 						}
 						if rev != expectedRev {
-							return "", driver.MD5sum{}, nil, fmt.Errorf("Unexpected rev: %s", rev)
+							return nil, fmt.Errorf("Unexpected rev: %s", rev)
 						}
 						if filename != expectedFilename {
-							return "", driver.MD5sum{}, nil, fmt.Errorf("Unexpected filename: %s", filename)
+							return nil, fmt.Errorf("Unexpected filename: %s", filename)
 						}
 						if d := diff.Interface(testOptions, opts); d != nil {
-							return "", driver.MD5sum{}, nil, fmt.Errorf("Unexpected options:\n%s", d)
+							return nil, fmt.Errorf("Unexpected options:\n%s", d)
 						}
-						return "text/plain", driver.MD5sum{0x01}, body("Test"), nil
+						return &driver.Attachment{
+							Filename:    "foo.txt",
+							ContentType: "text/plain",
+							Digest:      "md5-foo",
+							Size:        4,
+							Content:     body("Test"),
+						}, nil
 					},
 				},
 			},
@@ -1371,7 +1387,8 @@ func TestGetAttachment(t *testing.T) {
 			expected: &Attachment{
 				Filename:    "foo.txt",
 				ContentType: "text/plain",
-				MD5:         driver.MD5sum{0x01},
+				Size:        4,
+				Digest:      "md5-foo",
 			},
 		},
 		{
@@ -1390,14 +1407,15 @@ func TestGetAttachment(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := test.db.GetAttachment(context.Background(), test.docID, test.rev, test.filename, test.options)
 			testy.StatusError(t, test.err, test.status, err)
-			content, err := ioutil.ReadAll(result)
+			content, err := ioutil.ReadAll(result.Content)
 			if err != nil {
 				t.Fatal(err)
 			}
 			if d := diff.Text(test.content, string(content)); d != nil {
 				t.Errorf("Unexpected content:\n%s", d)
 			}
-			result.ReadCloser = nil
+			_ = result.Content.Close()
+			result.Content = nil
 			if d := diff.Interface(test.expected, result); d != nil {
 				t.Error(d)
 			}
@@ -1420,8 +1438,8 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 			name: "plain db, error",
 			db: &DB{
 				driverDB: &mock.DB{
-					GetAttachmentFunc: func(_ context.Context, _, _, _ string, _ map[string]interface{}) (string, driver.MD5sum, io.ReadCloser, error) {
-						return "", driver.MD5sum{}, nil, errors.New("fail")
+					GetAttachmentFunc: func(_ context.Context, _, _, _ string, _ map[string]interface{}) (*driver.Attachment, error) {
+						return nil, errors.New("fail")
 					},
 				},
 			},
@@ -1434,21 +1452,27 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 			name: "plain db, success",
 			db: &DB{
 				driverDB: &mock.DB{
-					GetAttachmentFunc: func(_ context.Context, docID, rev, filename string, opts map[string]interface{}) (string, driver.MD5sum, io.ReadCloser, error) {
+					GetAttachmentFunc: func(_ context.Context, docID, rev, filename string, opts map[string]interface{}) (*driver.Attachment, error) {
 						expectedDocID, expectedRev, expectedFilename := "foo", "1-xxx", "foo.txt"
 						if docID != expectedDocID {
-							return "", driver.MD5sum{}, nil, fmt.Errorf("Unexpected docID: %s", docID)
+							return nil, fmt.Errorf("Unexpected docID: %s", docID)
 						}
 						if rev != expectedRev {
-							return "", driver.MD5sum{}, nil, fmt.Errorf("Unexpected rev: %s", rev)
+							return nil, fmt.Errorf("Unexpected rev: %s", rev)
 						}
 						if filename != expectedFilename {
-							return "", driver.MD5sum{}, nil, fmt.Errorf("Unexpected filename: %s", filename)
+							return nil, fmt.Errorf("Unexpected filename: %s", filename)
 						}
 						if d := diff.Interface(testOptions, opts); d != nil {
-							return "", driver.MD5sum{}, nil, fmt.Errorf("Unexpected options:\n%s", d)
+							return nil, fmt.Errorf("Unexpected options:\n%s", d)
 						}
-						return "text/plain", driver.MD5sum{0x01}, body("Test"), nil
+						return &driver.Attachment{
+							Filename:    "foo.txt",
+							ContentType: "text/plain",
+							Digest:      "md5-foo",
+							Size:        4,
+							Content:     body("Test"),
+						}, nil
 					},
 				},
 			},
@@ -1459,15 +1483,17 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 			expected: &Attachment{
 				Filename:    "foo.txt",
 				ContentType: "text/plain",
-				MD5:         driver.MD5sum{0x01},
+				Digest:      "md5-foo",
+				Size:        4,
+				Content:     nilContent,
 			},
 		},
 		{
 			name: "error",
 			db: &DB{
 				driverDB: &mock.AttachmentMetaGetter{
-					GetAttachmentMetaFunc: func(_ context.Context, _, _, _ string, _ map[string]interface{}) (string, driver.MD5sum, error) {
-						return "", driver.MD5sum{}, errors.New("fail")
+					GetAttachmentMetaFunc: func(_ context.Context, _, _, _ string, _ map[string]interface{}) (*driver.Attachment, error) {
+						return nil, errors.New("fail")
 					},
 				},
 			},
@@ -1480,21 +1506,26 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 			name: "success",
 			db: &DB{
 				driverDB: &mock.AttachmentMetaGetter{
-					GetAttachmentMetaFunc: func(_ context.Context, docID, rev, filename string, opts map[string]interface{}) (string, driver.MD5sum, error) {
+					GetAttachmentMetaFunc: func(_ context.Context, docID, rev, filename string, opts map[string]interface{}) (*driver.Attachment, error) {
 						expectedDocID, expectedRev, expectedFilename := "foo", "1-xxx", "foo.txt"
 						if docID != expectedDocID {
-							return "", driver.MD5sum{}, fmt.Errorf("Unexpected docID: %s", docID)
+							return nil, fmt.Errorf("Unexpected docID: %s", docID)
 						}
 						if rev != expectedRev {
-							return "", driver.MD5sum{}, fmt.Errorf("Unexpected rev: %s", rev)
+							return nil, fmt.Errorf("Unexpected rev: %s", rev)
 						}
 						if filename != expectedFilename {
-							return "", driver.MD5sum{}, fmt.Errorf("Unexpected filename: %s", filename)
+							return nil, fmt.Errorf("Unexpected filename: %s", filename)
 						}
 						if d := diff.Interface(testOptions, opts); d != nil {
-							return "", driver.MD5sum{}, fmt.Errorf("Unexpected options:\n%s", d)
+							return nil, fmt.Errorf("Unexpected options:\n%s", d)
 						}
-						return "text/plain", driver.MD5sum{0x01}, nil
+						return &driver.Attachment{
+							Filename:    "foo.txt",
+							ContentType: "text/plain",
+							Digest:      "md5-foo",
+							Size:        4,
+						}, nil
 					},
 				},
 			},
@@ -1505,7 +1536,9 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 			expected: &Attachment{
 				Filename:    "foo.txt",
 				ContentType: "text/plain",
-				MD5:         driver.MD5sum{0x01},
+				Digest:      "md5-foo",
+				Size:        4,
+				Content:     nilContent,
 			},
 		},
 		{

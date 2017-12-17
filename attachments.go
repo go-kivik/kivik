@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
-
-	"github.com/go-kivik/kivik/errors"
 )
 
 // Attachments is a collection of one or more file attachments.
@@ -18,34 +16,43 @@ type MD5sum [16]byte
 
 // Attachment represents a file attachment on a CouchDB document.
 type Attachment struct {
-	io.ReadCloser   `json:"-"`
-	Filename        string   `json:"-"`
-	ContentType     string   `json:"content_type"`
-	ContentEncoding string   `json:"encoding"`
-	ContentLength   int64    `json:"length"`
-	EncodedLength   int64    `json:"encoded_length"`
-	RevPos          int64    `json:"revpos"`
-	Digest          string   `json:"digest"`
-	Stub            bool     `json:"stub"`
-	MD5             [16]byte `json:"-"`
-}
+	// Filiename is the name of the attachment.
+	Filename string `json:"-"`
 
-var _ io.ReadCloser = Attachment{}
+	// ContentType is the MIME type of the attachment contents.
+	ContentType string `json:"content_type"`
 
-func (a Attachment) Read(p []byte) (int, error) {
-	if a.ReadCloser == nil {
-		// TODO: Consider an alternative error code for this case
-		return 0, errors.Status(StatusUnknownError, "kivik: attachment content not read")
-	}
-	return a.ReadCloser.Read(p)
-}
+	// Stub will be true if the data structure only represents file metadata,
+	// and contains no actual content. Stub will be true when returned by the
+	// GetAttachmentMeta function, or when included in a document without the
+	// 'include_docs' option
+	Stub bool `json:"stub"`
 
-// Close calls the underlying close method.
-func (a Attachment) Close() error {
-	if a.ReadCloser == nil {
-		return nil
-	}
-	return a.ReadCloser.Close()
+	// Content represents the attachment's content.
+	//
+	// Kivik will always return a non-nil Content, even for 0-byte attachments
+	// or when Stub is true. It is the caller's responsibility to close
+	// Content.
+	Content io.ReadCloser `json:"-"`
+
+	// Size records the uncompressed size of the attachment. The value -1
+	// indicates that the length is unknown. Unless Stub is true, values >= 0
+	// indicate that the given number of bytes may be read from Content.
+	Size int64 `json:"length"`
+
+	// Used compression codec, if any. Will be the empty string if the
+	// attachment is uncompressed.
+	ContentEncoding string `json:"encoding"`
+
+	// EncodedLength records the compressed attachment size in bytes. Only
+	// meaningful when ContentEncoding is defined.
+	EncodedLength int64 `json:"encoded_length"`
+
+	// RevPos is the revision number when attachment was added.
+	RevPos int64 `json:"revpos"`
+
+	// Digest is the content hash digest.
+	Digest string `json:"digest"`
 }
 
 // bufCloser wraps a *bytes.Buffer to create an io.ReadCloser
@@ -56,29 +63,6 @@ type bufCloser struct {
 var _ io.ReadCloser = &bufCloser{}
 
 func (b *bufCloser) Close() error { return nil }
-
-// Bytes returns the attachment's body as a byte slice.
-func (a *Attachment) Bytes() ([]byte, error) {
-	if buf, ok := a.ReadCloser.(*bufCloser); ok {
-		// Simple optimization
-		return buf.Bytes(), nil
-	}
-	buf := &bytes.Buffer{}
-	if _, err := io.Copy(buf, a); err != nil {
-		return nil, err
-	}
-	a.ReadCloser = &bufCloser{buf}
-	return buf.Bytes(), nil
-}
-
-// NewAttachment returns a new CouchDB attachment.
-func NewAttachment(filename, contentType string, body io.ReadCloser) *Attachment {
-	return &Attachment{
-		ReadCloser:  body,
-		Filename:    filename,
-		ContentType: contentType,
-	}
-}
 
 // validate returns an error if the attachment is invalid.
 func (a *Attachment) validate() error {
@@ -104,9 +88,9 @@ func readEncoder(in io.ReadCloser) io.ReadCloser {
 	return r
 }
 
-// MarshalJSON satisfis the json.Marshaler interface.
+// MarshalJSON satisfies the json.Marshaler interface.
 func (a *Attachment) MarshalJSON() ([]byte, error) {
-	r := readEncoder(a)
+	r := readEncoder(a.Content)
 	data, err := ioutil.ReadAll(r)
 	if err != nil {
 		return nil, err
@@ -131,7 +115,9 @@ func (a *Attachment) UnmarshalJSON(data []byte) error {
 	}
 	*a = Attachment(att.clone)
 	if att.Data != nil {
-		a.ReadCloser = ioutil.NopCloser(bytes.NewReader(att.Data))
+		a.Content = ioutil.NopCloser(bytes.NewReader(att.Data))
+	} else {
+		a.Content = nilContent
 	}
 	return nil
 }

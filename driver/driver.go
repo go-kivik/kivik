@@ -149,10 +149,10 @@ type DB interface {
 	Changes(ctx context.Context, options map[string]interface{}) (Changes, error)
 	// PutAttachment uploads an attachment to the specified document, returning
 	// the new revision.
-	PutAttachment(ctx context.Context, docID, rev, filename, contentType string, body io.Reader, options map[string]interface{}) (newRev string, err error)
+	PutAttachment(ctx context.Context, docID, rev string, att *Attachment, options map[string]interface{}) (newRev string, err error)
 	// GetAttachment fetches an attachment for the associated document ID. rev
 	// may be an empty string to fetch the most recent document version.
-	GetAttachment(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (contentType string, md5sum MD5sum, body io.ReadCloser, err error)
+	GetAttachment(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (*Attachment, error)
 	// DeleteAttachment deletes an attachment from a document, returning the
 	// document's new revision.
 	DeleteAttachment(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (newRev string, err error)
@@ -219,15 +219,25 @@ type Index struct {
 	Definition interface{} `json:"def"`
 }
 
-// MD5sum is a 128-bit MD5 checksum.
-type MD5sum [16]byte
+// Attachment represents a file attachment to a document.
+type Attachment struct {
+	Filename        string        `json:"-"`
+	ContentType     string        `json:"content_type"`
+	Stub            bool          `json:"stub"`
+	Content         io.ReadCloser `json:"-"`
+	Size            int64         `json:"length"`
+	ContentEncoding string        `json:"encoding"`
+	EncodedLength   int64         `json:"encoded_length"`
+	RevPos          int64         `json:"revpos"`
+	Digest          string        `json:"digest"`
+}
 
 // AttachmentMetaGetter is an optional interface which may be satisfied by a
 // DB. If satisfied, it may be used to fetch meta data about an attachment. If
 // not satisfied, GetAttachment will be used instead.
 type AttachmentMetaGetter interface {
 	// GetAttachmentMetaOpts returns meta information about an attachment.
-	GetAttachmentMeta(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (contentType string, md5sum MD5sum, err error)
+	GetAttachmentMeta(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (*Attachment, error)
 }
 
 // BulkResult is the result of a single doc update in a BulkDocs request.

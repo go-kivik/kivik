@@ -335,10 +335,7 @@ func (db *DB) Copy(ctx context.Context, targetID, sourceID string, options ...Op
 		return "", err
 	}
 	if copier, ok := db.driverDB.(driver.Copier); ok {
-		targetRev, err = copier.Copy(ctx, targetID, sourceID, opts)
-		if StatusCode(err) != StatusNotImplemented {
-			return targetRev, err
-		}
+		return copier.Copy(ctx, targetID, sourceID, opts)
 	}
 	var doc map[string]interface{}
 	if err = db.Get(ctx, sourceID, opts).ScanDoc(&doc); err != nil {

@@ -162,10 +162,11 @@ type DB interface {
 	Query(ctx context.Context, ddoc, view string, options map[string]interface{}) (Rows, error)
 }
 
-// BulkDocer is an optional interface which may be implemented by a driver to
+// BulkDocer is an optional interface which may be implemented by a DB to
 // support bulk insert/update operations. For any driver that does not support
 // the BulkDocer interface, the Put or CreateDoc methods will be called for each
-// document to emulate the same functionality.
+// document to emulate the same functionality, with options passed through
+// unaltered.
 type BulkDocer interface {
 	// BulkDocs alls bulk create, update and/or delete operations. It returns an
 	// iterator over the results.
@@ -247,9 +248,9 @@ type BulkResults interface {
 	Close() error
 }
 
-// MetaGetter is an optional interface that may be implemented by a database. If
-// not implemented by the driver, Get method will be used to emulate the
-// functionality.
+// MetaGetter is an optional interface that may be implemented by a DB. If not
+// implemented, the Get method will be used to emulate the functionality, with
+// options passed through unaltered.
 type MetaGetter interface {
 	// GetMeta returns the document size and revision of the requested document.
 	// GetMeta should accept the same options as the Get method.
@@ -268,10 +269,10 @@ type Flusher interface {
 
 // Copier is an optional interface that may be implemented by a DB.
 //
-// If a DB does implement Copier, Copy() functions will use it.  If a DB does
-// not implement the Copier interface, or if a call to Copy() returns an
-// http.StatusUnimplemented, the driver will emulate a copy by doing
-// a GET followed by PUT.
+// If a DB does implement Copier, Copy() functions will use it. If a DB does
+// not implement the Copier interface, the functionality will be emulated by
+// calling Get followed by Put, with options passed through unaltered, except
+// that the 'rev' option will be removed for the Put call.
 type Copier interface {
 	Copy(ctx context.Context, targetID, sourceID string, options map[string]interface{}) (targetRev string, err error)
 }

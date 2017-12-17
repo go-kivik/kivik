@@ -203,8 +203,10 @@ func TestGet(t *testing.T) {
 			docID:   "foo",
 			options: testOptions,
 			expected: &Row{
-				length:     13,
-				ReadCloser: body(`{"_id":"foo"}`),
+				doc: &driver.Document{
+					ContentLength: 13,
+					Body:          body(`{"_id":"foo"}`),
+				},
 			},
 		},
 	}
@@ -999,7 +1001,11 @@ func TestExtractDocID(t *testing.T) {
 
 func TestRowLength(t *testing.T) {
 	length := int64(123)
-	r := &Row{length: length}
+	r := &Row{
+		doc: &driver.Document{
+			ContentLength: length,
+		},
+	}
 	result := r.Length()
 	if length != result {
 		t.Errorf("Unexpected length: %v", result)
@@ -1017,21 +1023,21 @@ func TestRowScanDoc(t *testing.T) {
 	}{
 		{
 			name:   "non pointer dst",
-			row:    &Row{ReadCloser: body(`{"foo":123.4}`)},
+			row:    &Row{doc: &driver.Document{Body: body(`{"foo":123.4}`)}},
 			dst:    map[string]interface{}{},
 			status: StatusBadRequest,
 			err:    "kivik: destination is not a pointer",
 		},
 		{
 			name:   "invalid json",
-			row:    &Row{ReadCloser: body("invalid json")},
+			row:    &Row{doc: &driver.Document{Body: body("invalid json")}},
 			dst:    new(map[string]interface{}),
 			status: StatusBadResponse,
 			err:    "invalid character 'i' looking for beginning of value",
 		},
 		{
 			name:     "success",
-			row:      &Row{ReadCloser: body(`{"foo":123.4}`)},
+			row:      &Row{doc: &driver.Document{Body: body(`{"foo":123.4}`)}},
 			dst:      new(map[string]interface{}),
 			expected: &map[string]interface{}{"foo": 123.4},
 		},

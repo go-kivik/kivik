@@ -61,20 +61,19 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) 
 
 // Row contains the result of calling Get for a single document.
 type Row struct {
-	io.ReadCloser
-	err    error
-	length int64
+	doc *driver.Document
+	err error
 }
 
 // Length returns the size of the document, such as reported by the
 // Content-Length header, if known, or -1 if unknown.
 func (r *Row) Length() int64 {
-	return r.length
+	return r.doc.ContentLength
 }
 
-// ScanDoc unmarshals the data from the fetched row into dest. It is a thin
-// wrapper around json.Unmarshal(dest), which closes the underlying reader when
-// done.
+// ScanDoc unmarshals the data from the fetched row into dest. It is an
+// intelligent wrapper around json.Unmarshal which also handles
+// multipart/related responses. When done, the underlying reader is closed.
 func (r *Row) ScanDoc(dest interface{}) error {
 	if r.err != nil {
 		return r.err
@@ -82,8 +81,8 @@ func (r *Row) ScanDoc(dest interface{}) error {
 	if reflect.TypeOf(dest).Kind() != reflect.Ptr {
 		return errNonPtr
 	}
-	defer r.Close() // nolint: errcheck
-	return errors.WrapStatus(StatusBadResponse, json.NewDecoder(r).Decode(dest))
+	defer r.doc.Body.Close() // nolint: errcheck
+	return errors.WrapStatus(StatusBadResponse, json.NewDecoder(r.doc.Body).Decode(dest))
 }
 
 // Get fetches the requested document. Any errors are deferred until the
@@ -94,10 +93,7 @@ func (db *DB) Get(ctx context.Context, docID string, options ...Options) *Row {
 		return &Row{err: err}
 	}
 	doc, err := db.driverDB.Get(ctx, docID, opts)
-	if err != nil {
-		return &Row{err: err}
-	}
-	return &Row{ReadCloser: doc.Body, length: doc.ContentLength}
+	return &Row{doc: doc, err: err}
 }
 
 // GetMeta returns the size and rev of the specified document. GetMeta accepts
@@ -119,7 +115,7 @@ func (db *DB) GetMeta(ctx context.Context, docID string, options ...Options) (si
 	if err = row.ScanDoc(&doc); err != nil {
 		return 0, "", err
 	}
-	return row.length, doc.Rev, nil
+	return row.Length(), doc.Rev, nil
 }
 
 // CreateDoc creates a new doc with an auto-generated unique ID. The generated

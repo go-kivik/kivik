@@ -1149,37 +1149,6 @@ func TestDelete(t *testing.T) {
 	}
 }
 
-type putAttRecorder struct {
-	driver.DB
-	docID, rev, filename, cType string
-	body                        string
-	opts                        map[string]interface{}
-
-	newRev string
-	err    error
-}
-
-func (db *putAttRecorder) PutAttachment(_ context.Context, docID, rev, filename, contentType string, body io.Reader, opts map[string]interface{}) (string, error) {
-	if db.docID != docID || db.rev != rev {
-		return "", errors.Errorf("Unexpected id/rev: %s/%s", docID, rev)
-	}
-	if db.filename != filename || db.cType != contentType {
-		return "", errors.Errorf("Unexpected file data: %s / %s", filename, contentType)
-	}
-	content, err := ioutil.ReadAll(body)
-	if err != nil {
-		panic(err)
-	}
-	if d := diff.Text(db.body, string(content)); d != nil {
-		return "", errors.Errorf("Unexpected content: %s", d)
-	}
-	if d := diff.Interface(db.opts, opts); d != nil {
-		return "", errors.Errorf("Unexpected options: %s", d)
-	}
-
-	return db.newRev, db.err
-}
-
 func TestPutAttachment(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -1196,11 +1165,13 @@ func TestPutAttachment(t *testing.T) {
 		{
 			name:  "db error",
 			docID: "foo",
-			db: &DB{driverDB: &putAttRecorder{
-				docID:    "foo",
-				filename: "foo.txt",
-				err:      errors.Status(StatusBadRequest, "db error"),
-			}},
+			db: &DB{
+				driverDB: &mock.DB{
+					PutAttachmentFunc: func(_ context.Context, _, _, _, _ string, _ io.Reader, _ map[string]interface{}) (string, error) {
+						return "", errors.Status(StatusBadRequest, "db error")
+					},
+				},
+			},
 			att: &Attachment{
 				Filename:   "foo.txt",
 				ReadCloser: ioutil.NopCloser(strings.NewReader("")),
@@ -1224,21 +1195,35 @@ func TestPutAttachment(t *testing.T) {
 			name:  "success",
 			docID: "foo",
 			rev:   "1-xxx",
-			db: &DB{driverDB: &putAttRecorder{
-				docID:    "foo",
-				rev:      "1-xxx",
-				filename: "foo.txt",
-				cType:    "text/plain",
-				body:     "Test file",
-				opts:     map[string]interface{}{"opt": 1},
-				newRev:   "2-xxx",
-			}},
+			db: &DB{
+				driverDB: &mock.DB{
+					PutAttachmentFunc: func(_ context.Context, docID, rev, filename, cType string, body io.Reader, opts map[string]interface{}) (string, error) {
+						expectedDocID, expectedRev, expectedFilename, expectedCType := "foo", "1-xxx", "foo.txt", "text/plain"
+						if docID != expectedDocID {
+							return "", fmt.Errorf("Unexpected docID: %s", docID)
+						}
+						if rev != expectedRev {
+							return "", fmt.Errorf("Unexpected rev: %s", rev)
+						}
+						if filename != expectedFilename {
+							return "", fmt.Errorf("Unexpected filename: %s", filename)
+						}
+						if cType != expectedCType {
+							return "", fmt.Errorf("Unexpected content type: %s", cType)
+						}
+						if d := diff.Interface(testOptions, opts); d != nil {
+							return "", fmt.Errorf("Unexpected options:\n%s", d)
+						}
+						return "2-xxx", nil
+					},
+				},
+			},
 			att: &Attachment{
 				Filename:    "foo.txt",
 				ContentType: "text/plain",
 				ReadCloser:  ioutil.NopCloser(strings.NewReader("Test file")),
 			},
-			options: Options{"opt": 1},
+			options: testOptions,
 			newRev:  "2-xxx",
 			body:    "Test file",
 		},

@@ -1420,35 +1420,7 @@ func TestGetAttachment(t *testing.T) {
 	}
 }
 
-type mockAttMetaer struct {
-	driver.DB
-	docID, rev, filename string
-	opts                 map[string]interface{}
-
-	cType string
-	md5   driver.MD5sum
-	err   error
-}
-
-var _ driver.AttachmentMetaer = &mockAttMetaer{}
-
-func (db *mockAttMetaer) GetAttachmentMeta(_ context.Context, docID, rev, filename string, opts map[string]interface{}) (string, driver.MD5sum, error) {
-	if docID != db.docID {
-		return "", driver.MD5sum{}, errors.Errorf("Unexpected docID: %s", docID)
-	}
-	if rev != db.rev {
-		return "", driver.MD5sum{}, errors.Errorf("Unexpected rev: %s", rev)
-	}
-	if filename != db.filename {
-		return "", driver.MD5sum{}, errors.Errorf("Unexpected filename: %s", filename)
-	}
-	if d := diff.Interface(db.opts, opts); d != nil {
-		return "", driver.MD5sum{}, errors.Errorf("Unexpected options: %s", d)
-	}
-	return db.cType, db.md5, db.err
-}
-
-func TestGetAttachmentMeta(t *testing.T) {
+func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 	tests := []struct {
 		name                 string
 		db                   *DB
@@ -1507,11 +1479,13 @@ func TestGetAttachmentMeta(t *testing.T) {
 		},
 		{
 			name: "error",
-			db: &DB{driverDB: &mockAttMetaer{
-				docID:    "foo",
-				filename: "foo.txt",
-				err:      errors.New("fail"),
-			}},
+			db: &DB{
+				driverDB: &mock.AttachmentMetaGetter{
+					GetAttachmentMetaFunc: func(_ context.Context, _, _, _ string, _ map[string]interface{}) (string, driver.MD5sum, error) {
+						return "", driver.MD5sum{}, errors.New("fail")
+					},
+				},
+			},
 			docID:    "foo",
 			filename: "foo.txt",
 			status:   500,
@@ -1519,18 +1493,30 @@ func TestGetAttachmentMeta(t *testing.T) {
 		},
 		{
 			name: "success",
-			db: &DB{driverDB: &mockAttMetaer{
-				docID:    "foo",
-				rev:      "1-xxx",
-				filename: "foo.txt",
-				cType:    "text/plain",
-				md5:      driver.MD5sum{0x01},
-				opts:     map[string]interface{}{"foo": "bar"},
-			}},
+			db: &DB{
+				driverDB: &mock.AttachmentMetaGetter{
+					GetAttachmentMetaFunc: func(_ context.Context, docID, rev, filename string, opts map[string]interface{}) (string, driver.MD5sum, error) {
+						expectedDocID, expectedRev, expectedFilename := "foo", "1-xxx", "foo.txt"
+						if docID != expectedDocID {
+							return "", driver.MD5sum{}, fmt.Errorf("Unexpected docID: %s", docID)
+						}
+						if rev != expectedRev {
+							return "", driver.MD5sum{}, fmt.Errorf("Unexpected rev: %s", rev)
+						}
+						if filename != expectedFilename {
+							return "", driver.MD5sum{}, fmt.Errorf("Unexpected filename: %s", filename)
+						}
+						if d := diff.Interface(testOptions, opts); d != nil {
+							return "", driver.MD5sum{}, fmt.Errorf("Unexpected options:\n%s", d)
+						}
+						return "text/plain", driver.MD5sum{0x01}, nil
+					},
+				},
+			},
 			docID:    "foo",
 			rev:      "1-xxx",
 			filename: "foo.txt",
-			options:  Options{"foo": "bar"},
+			options:  testOptions,
 			expected: &Attachment{
 				Filename:    "foo.txt",
 				ContentType: "text/plain",

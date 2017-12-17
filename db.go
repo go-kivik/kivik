@@ -399,7 +399,7 @@ func (db *DB) GetAttachmentMeta(ctx context.Context, docID, rev, filename string
 	if filename == "" {
 		return nil, missingArg("filename")
 	}
-	if metaer, ok := db.driverDB.(driver.AttachmentMetaer); ok {
+	if metaer, ok := db.driverDB.(driver.AttachmentMetaGetter); ok {
 		opts, err := mergeOptions(options...)
 		if err != nil {
 			return nil, err

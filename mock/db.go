@@ -186,3 +186,16 @@ var _ driver.Copier = &Copier{}
 func (db *Copier) Copy(ctx context.Context, target, source string, options map[string]interface{}) (string, error) {
 	return db.CopyFunc(ctx, target, source, options)
 }
+
+// AttachmentMetaGetter mocks a driver.DB and driver.AttachmentMetaGetter
+type AttachmentMetaGetter struct {
+	*DB
+	GetAttachmentMetaFunc func(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (cType string, md5sum driver.MD5sum, err error)
+}
+
+var _ driver.AttachmentMetaGetter = &AttachmentMetaGetter{}
+
+// GetAttachmentMeta calls db.GetAttachmentMetaFunc
+func (db *AttachmentMetaGetter) GetAttachmentMeta(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (string, driver.MD5sum, error) {
+	return db.GetAttachmentMetaFunc(ctx, docID, rev, filename, options)
+}

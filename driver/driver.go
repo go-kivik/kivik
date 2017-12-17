@@ -222,10 +222,10 @@ type Index struct {
 // MD5sum is a 128-bit MD5 checksum.
 type MD5sum [16]byte
 
-// AttachmentMetaer is an optional interface which may be satisfied by a
+// AttachmentMetaGetter is an optional interface which may be satisfied by a
 // DB. If satisfied, it may be used to fetch meta data about an attachment. If
 // not satisfied, GetAttachment will be used instead.
-type AttachmentMetaer interface {
+type AttachmentMetaGetter interface {
 	// GetAttachmentMetaOpts returns meta information about an attachment.
 	GetAttachmentMeta(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (contentType string, md5sum MD5sum, err error)
 }

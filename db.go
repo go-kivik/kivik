@@ -68,7 +68,25 @@ type Row struct {
 // Length returns the size of the document, such as reported by the
 // Content-Length header, if known, or -1 if unknown.
 func (r *Row) Length() int64 {
+	if r.doc == nil {
+		return 0
+	}
 	return r.doc.ContentLength
+}
+
+// Rev returns the revision of the document fetched.
+func (r *Row) Rev() string {
+	if r.doc == nil {
+		return ""
+	}
+	return r.doc.Rev
+}
+
+// Err returns any error that occurred while fetching the document. Normally
+// this error is returned when ScanDoc is called, but this method may be used
+// if there is no desire to call ScanDoc.
+func (r *Row) Err() error {
+	return r.err
 }
 
 // ScanDoc unmarshals the data from the fetched row into dest. It is an
@@ -81,8 +99,17 @@ func (r *Row) ScanDoc(dest interface{}) error {
 	if reflect.TypeOf(dest).Kind() != reflect.Ptr {
 		return errNonPtr
 	}
-	defer r.doc.Body.Close() // nolint: errcheck
+	defer r.Close() // nolint: errcheck
 	return errors.WrapStatus(StatusBadResponse, json.NewDecoder(r.doc.Body).Decode(dest))
+}
+
+// Close closes the row. Normally this is done automatically by ScanDoc. This
+// method is only necessary if ScanDoc is not used.
+func (r *Row) Close() error {
+	if r.doc == nil {
+		return nil
+	}
+	return r.doc.Body.Close()
 }
 
 // Get fetches the requested document. Any errors are deferred until the

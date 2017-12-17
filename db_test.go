@@ -483,7 +483,7 @@ func TestSetSecurity(t *testing.T) {
 	}
 }
 
-func TestGetMeta(t *testing.T) {
+func TestGetMeta(t *testing.T) { // nolint: gocyclo
 	tests := []struct {
 		name    string
 		db      *DB

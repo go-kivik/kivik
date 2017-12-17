@@ -134,15 +134,20 @@ func (db *DB) GetMeta(ctx context.Context, docID string, options ...Options) (si
 		return r.GetMeta(ctx, docID, opts)
 	}
 	row := db.Get(ctx, docID, nil)
+	if e := row.Err(); e != nil {
+		return 0, "", e
+	}
+	if rev := row.Rev(); rev != "" {
+		_ = row.Close()
+		return row.Length(), rev, nil
+	}
 	var doc struct {
 		Rev string `json:"_rev"`
 	}
 	// These last two lines cannot be combined for GopherJS due to a bug.
 	// See https://github.com/gopherjs/gopherjs/issues/608
-	if err = row.ScanDoc(&doc); err != nil {
-		return 0, "", err
-	}
-	return row.Length(), doc.Rev, nil
+	err = row.ScanDoc(&doc)
+	return row.Length(), doc.Rev, err
 }
 
 // CreateDoc creates a new doc with an auto-generated unique ID. The generated

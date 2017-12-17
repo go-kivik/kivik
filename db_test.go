@@ -540,22 +540,31 @@ func TestGetMeta(t *testing.T) {
 			err:    "get error",
 		},
 		{
-			name: "non-meta getter invalid json",
+			name: "non-meta getter success with rev",
 			db: &DB{
 				driverDB: &mock.DB{
-					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (*driver.Document, error) {
+					GetFunc: func(_ context.Context, docID string, opts map[string]interface{}) (*driver.Document, error) {
+						expectedDocID := "foo"
+						if docID != expectedDocID {
+							return nil, fmt.Errorf("Unexpected docID: %s", docID)
+						}
+						if opts != nil {
+							return nil, errors.New("opts should be nil")
+						}
 						return &driver.Document{
-							ContentLength: 12,
-							Body:          body("invalid json"),
+							ContentLength: 16,
+							Rev:           "1-xxx",
+							Body:          body(`{"_rev":"1-xxx"}`),
 						}, nil
 					},
 				},
 			},
-			status: StatusBadResponse,
-			err:    "invalid character 'i' looking for beginning of value",
+			docID: "foo",
+			size:  16,
+			rev:   "1-xxx",
 		},
 		{
-			name: "non-meta getter success",
+			name: "non-meta getter success without rev",
 			db: &DB{
 				driverDB: &mock.DB{
 					GetFunc: func(_ context.Context, docID string, opts map[string]interface{}) (*driver.Document, error) {
@@ -576,6 +585,29 @@ func TestGetMeta(t *testing.T) {
 			docID: "foo",
 			size:  16,
 			rev:   "1-xxx",
+		},
+		{
+			name: "non-meta getter success without rev, invalid json",
+			db: &DB{
+				driverDB: &mock.DB{
+					GetFunc: func(_ context.Context, docID string, opts map[string]interface{}) (*driver.Document, error) {
+						expectedDocID := "foo"
+						if docID != expectedDocID {
+							return nil, fmt.Errorf("Unexpected docID: %s", docID)
+						}
+						if opts != nil {
+							return nil, errors.New("opts should be nil")
+						}
+						return &driver.Document{
+							ContentLength: 16,
+							Body:          body(`invalid json`),
+						}, nil
+					},
+				},
+			},
+			docID:  "foo",
+			status: StatusBadResponse,
+			err:    "invalid character 'i' looking for beginning of value",
 		},
 	}
 	for _, test := range tests {

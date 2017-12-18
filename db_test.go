@@ -178,7 +178,7 @@ func TestGet(t *testing.T) {
 				},
 			},
 			expected: &Row{
-				err: fmt.Errorf("db error"),
+				Err: fmt.Errorf("db error"),
 			},
 		},
 		{
@@ -204,11 +204,9 @@ func TestGet(t *testing.T) {
 			docID:   "foo",
 			options: testOptions,
 			expected: &Row{
-				doc: &driver.Document{
-					ContentLength: 13,
-					Rev:           "1-xxx",
-					Body:          body(`{"_id":"foo"}`),
-				},
+				ContentLength: 13,
+				Rev:           "1-xxx",
+				Body:          body(`{"_id":"foo"}`),
 			},
 		},
 	}
@@ -1033,55 +1031,6 @@ func TestExtractDocID(t *testing.T) {
 	}
 }
 
-func TestRowGetters(t *testing.T) {
-	length := int64(123)
-	rev := "10-xxx"
-	err := "foo error"
-	r := &Row{
-		doc: &driver.Document{
-			ContentLength: length,
-			Rev:           rev,
-		},
-		err: errors.New(err),
-	}
-
-	t.Run("Err", func(t *testing.T) {
-		testy.Error(t, err, r.Err())
-	})
-
-	t.Run("Length", func(t *testing.T) {
-		result := r.Length()
-		if result != length {
-			t.Errorf("Unexpected result: %v", result)
-		}
-	})
-
-	t.Run("Rev", func(t *testing.T) {
-		result := r.Rev()
-		if result != rev {
-			t.Errorf("Unexpected result: %v", result)
-		}
-	})
-
-	t.Run("nil doc", func(t *testing.T) {
-		r.doc = nil
-
-		t.Run("Length", func(t *testing.T) {
-			result := r.Length()
-			if result != 0 {
-				t.Errorf("Unexpected result: %v", result)
-			}
-		})
-
-		t.Run("Rev", func(t *testing.T) {
-			result := r.Rev()
-			if result != "" {
-				t.Errorf("Unexpected result: %v", result)
-			}
-		})
-	})
-}
-
 func TestRowScanDoc(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -1093,21 +1042,21 @@ func TestRowScanDoc(t *testing.T) {
 	}{
 		{
 			name:   "non pointer dst",
-			row:    &Row{doc: &driver.Document{Body: body(`{"foo":123.4}`)}},
+			row:    &Row{Body: body(`{"foo":123.4}`)},
 			dst:    map[string]interface{}{},
 			status: StatusBadRequest,
 			err:    "kivik: destination is not a pointer",
 		},
 		{
 			name:   "invalid json",
-			row:    &Row{doc: &driver.Document{Body: body("invalid json")}},
+			row:    &Row{Body: body("invalid json")},
 			dst:    new(map[string]interface{}),
 			status: StatusBadResponse,
 			err:    "invalid character 'i' looking for beginning of value",
 		},
 		{
 			name:     "success",
-			row:      &Row{doc: &driver.Document{Body: body(`{"foo":123.4}`)}},
+			row:      &Row{Body: body(`{"foo":123.4}`)},
 			dst:      new(map[string]interface{}),
 			expected: &map[string]interface{}{"foo": 123.4},
 		},
@@ -1121,28 +1070,6 @@ func TestRowScanDoc(t *testing.T) {
 			}
 		})
 	}
-}
-
-type errCloser struct{ error }
-
-var _ io.ReadCloser = &errCloser{}
-
-func (c *errCloser) Read(_ []byte) (int, error) { return 0, io.EOF }
-func (c *errCloser) Close() error               { return c.error }
-
-func TestRowClose(t *testing.T) {
-	t.Run("nil", func(t *testing.T) {
-		r := &Row{}
-		testy.Error(t, "", r.Close())
-	})
-
-	t.Run("non-nil", func(t *testing.T) {
-		err := "foo"
-		r := &Row{doc: &driver.Document{
-			Body: &errCloser{errors.New(err)},
-		}}
-		testy.Error(t, err, r.Close())
-	})
 }
 
 func TestCreateDoc(t *testing.T) {

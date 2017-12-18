@@ -81,6 +81,9 @@ type Row struct {
 	// Err contains any error that occurred while fetching the document. It is
 	// typically returned by ScanDoc.
 	Err error
+
+	// Attachments is experimental
+	Attachments *AttachmentsIterator
 }
 
 // ScanDoc unmarshals the data from the fetched row into dest. It is an
@@ -108,11 +111,15 @@ func (db *DB) Get(ctx context.Context, docID string, options ...Options) *Row {
 	if err != nil {
 		return &Row{Err: err}
 	}
-	return &Row{
+	row := &Row{
 		ContentLength: doc.ContentLength,
 		Rev:           doc.Rev,
 		Body:          doc.Body,
 	}
+	if doc.Attachments != nil {
+		row.Attachments = &AttachmentsIterator{atti: doc.Attachments}
+	}
+	return row
 }
 
 // GetMeta returns the size and rev of the specified document. GetMeta accepts

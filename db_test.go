@@ -209,6 +209,39 @@ func TestGet(t *testing.T) {
 				Body:          body(`{"_id":"foo"}`),
 			},
 		},
+		{
+			name: "streaming attachments",
+			db: &DB{
+				driverDB: &mock.DB{
+					GetFunc: func(_ context.Context, docID string, options map[string]interface{}) (*driver.Document, error) {
+						expectedDocID := "foo"
+						expectedOptions := map[string]interface{}{"include_docs": true}
+						if docID != expectedDocID {
+							return nil, fmt.Errorf("Unexpected docID: %s", docID)
+						}
+						if d := diff.Interface(expectedOptions, options); d != nil {
+							return nil, fmt.Errorf("Unexpected options:\n%s", d)
+						}
+						return &driver.Document{
+							ContentLength: 13,
+							Rev:           "1-xxx",
+							Body:          body(`{"_id":"foo"}`),
+							Attachments:   &mock.Attachments{ID: "asdf"},
+						}, nil
+					},
+				},
+			},
+			docID:   "foo",
+			options: map[string]interface{}{"include_docs": true},
+			expected: &Row{
+				ContentLength: 13,
+				Rev:           "1-xxx",
+				Body:          body(`{"_id":"foo"}`),
+				Attachments: &AttachmentsIterator{
+					atti: &mock.Attachments{ID: "asdf"},
+				},
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

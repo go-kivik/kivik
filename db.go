@@ -59,57 +59,42 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) 
 	return newRows(ctx, rowsi), nil
 }
 
-// Row contains the result of calling Get for a single document.
+// Row contains the result of calling Get for a single document. For most uses,
+// it is sufficient just to call the ScanDoc method. For more advanced uses, the
+// fields may be accessed directly.
 type Row struct {
-	doc *driver.Document
-	err error
-}
+	// ContentLength records the size of the JSON representation of the document
+	// as requestd. The value -1 indicates that the length is unknown. Values
+	// >= 0 indicate that the given number of bytes may be read from Body.
+	ContentLength int64
 
-// Length returns the size of the document, such as reported by the
-// Content-Length header, if known, or -1 if unknown.
-func (r *Row) Length() int64 {
-	if r.doc == nil {
-		return 0
-	}
-	return r.doc.ContentLength
-}
+	// Rev is the revision ID of the returned document.
+	Rev string
 
-// Rev returns the revision of the document fetched.
-func (r *Row) Rev() string {
-	if r.doc == nil {
-		return ""
-	}
-	return r.doc.Rev
-}
+	// Body represents the document's content.
+	//
+	// Kivik will always return a non-nil Body, except when Err is non-nil. The
+	// ScanDoc method will close Body. When not using ScanDoc, it is the
+	// caller's responsibility to close Body
+	Body io.ReadCloser
 
-// Err returns any error that occurred while fetching the document. Normally
-// this error is returned when ScanDoc is called, but this method may be used
-// if there is no desire to call ScanDoc.
-func (r *Row) Err() error {
-	return r.err
+	// Err contains any error that occurred while fetching the document. It is
+	// typically returned by ScanDoc.
+	Err error
 }
 
 // ScanDoc unmarshals the data from the fetched row into dest. It is an
 // intelligent wrapper around json.Unmarshal which also handles
 // multipart/related responses. When done, the underlying reader is closed.
 func (r *Row) ScanDoc(dest interface{}) error {
-	if r.err != nil {
-		return r.err
+	if r.Err != nil {
+		return r.Err
 	}
 	if reflect.TypeOf(dest).Kind() != reflect.Ptr {
 		return errNonPtr
 	}
-	defer r.Close() // nolint: errcheck
-	return errors.WrapStatus(StatusBadResponse, json.NewDecoder(r.doc.Body).Decode(dest))
-}
-
-// Close closes the row. Normally this is done automatically by ScanDoc. This
-// method is only necessary if ScanDoc is not used.
-func (r *Row) Close() error {
-	if r.doc == nil {
-		return nil
-	}
-	return r.doc.Body.Close()
+	defer r.Body.Close() // nolint: errcheck
+	return errors.WrapStatus(StatusBadResponse, json.NewDecoder(r.Body).Decode(dest))
 }
 
 // Get fetches the requested document. Any errors are deferred until the
@@ -117,10 +102,17 @@ func (r *Row) Close() error {
 func (db *DB) Get(ctx context.Context, docID string, options ...Options) *Row {
 	opts, err := mergeOptions(options...)
 	if err != nil {
-		return &Row{err: err}
+		return &Row{Err: err}
 	}
 	doc, err := db.driverDB.Get(ctx, docID, opts)
-	return &Row{doc: doc, err: err}
+	if err != nil {
+		return &Row{Err: err}
+	}
+	return &Row{
+		ContentLength: doc.ContentLength,
+		Rev:           doc.Rev,
+		Body:          doc.Body,
+	}
 }
 
 // GetMeta returns the size and rev of the specified document. GetMeta accepts
@@ -134,12 +126,12 @@ func (db *DB) GetMeta(ctx context.Context, docID string, options ...Options) (si
 		return r.GetMeta(ctx, docID, opts)
 	}
 	row := db.Get(ctx, docID, nil)
-	if e := row.Err(); e != nil {
-		return 0, "", e
+	if row.Err != nil {
+		return 0, "", row.Err
 	}
-	if rev := row.Rev(); rev != "" {
-		_ = row.Close()
-		return row.Length(), rev, nil
+	if row.Rev != "" {
+		_ = row.Body.Close()
+		return row.ContentLength, row.Rev, nil
 	}
 	var doc struct {
 		Rev string `json:"_rev"`
@@ -147,7 +139,7 @@ func (db *DB) GetMeta(ctx context.Context, docID string, options ...Options) (si
 	// These last two lines cannot be combined for GopherJS due to a bug.
 	// See https://github.com/gopherjs/gopherjs/issues/608
 	err = row.ScanDoc(&doc)
-	return row.Length(), doc.Rev, err
+	return row.ContentLength, doc.Rev, err
 }
 
 // CreateDoc creates a new doc with an auto-generated unique ID. The generated

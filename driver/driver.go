@@ -173,6 +173,23 @@ type Document struct {
 	// Body contains the respons body, either in raw JSON or multipart/related
 	// format.
 	Body io.ReadCloser
+
+	// Attachments will be nil except when include_docs=true.
+	Attachments Attachments
+}
+
+// Attachments is an iterator over the attachments included in a document when
+// Get is called with `include_docs=true`.
+type Attachments interface {
+	// Next is called to pupulate att with the next attachment in the result
+	// set.
+	//
+	//
+	// Next should return io.EOF when there are no more attachments.
+	Next(att *Attachment) error
+
+	// Close closes the Attachments iterator
+	Close() error
 }
 
 // BulkDocer is an optional interface which may be implemented by a DB to

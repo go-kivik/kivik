@@ -34,11 +34,10 @@ func (id *SequenceID) UnmarshalJSON(data []byte) error {
 
 // Rows is an iterator over a view's results.
 type Rows interface {
-	// Next is called to populate *Row with the values of the next row in a
-	// result set.
+	// Next is called to populate row with the next row in the result set.
 	//
 	// Next should return io.EOF when there are no more rows.
-	Next(*Row) error
+	Next(row *Row) error
 	// Close closes the rows iterator.
 	Close() error
 	// UpdateSeq is the update sequence of the database, if requested in the

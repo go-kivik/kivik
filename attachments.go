@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
+
+	"github.com/go-kivik/kivik/driver"
 )
 
 // Attachments is a collection of one or more file attachments.
@@ -134,4 +136,25 @@ func (a *Attachments) UnmarshalJSON(data []byte) error {
 	}
 	*a = atts
 	return nil
+}
+
+// AttachmentsIterator is an experimental way to read streamed attachments from
+// a multi-part Get request.
+type AttachmentsIterator struct {
+	atti driver.Attachments
+}
+
+// Next returns the next attachment in the stream. io.EOF will be
+// returned when there are no more attachments.
+func (i *AttachmentsIterator) Next() (*Attachment, error) {
+	att := new(driver.Attachment)
+	if err := i.atti.Next(att); err != nil {
+		return nil, err
+	}
+	return &Attachment{
+		Filename:    att.Filename,
+		ContentType: att.ContentType,
+		Content:     att.Content,
+		Size:        att.Size,
+	}, nil
 }

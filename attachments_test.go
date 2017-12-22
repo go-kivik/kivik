@@ -8,6 +8,10 @@ import (
 
 	"github.com/flimzy/diff"
 	"github.com/flimzy/testy"
+
+	"github.com/go-kivik/kivik/driver"
+	"github.com/go-kivik/kivik/errors"
+	"github.com/go-kivik/kivik/mock"
 )
 
 func TestAttachmentMarshalJSON(t *testing.T) {
@@ -141,6 +145,54 @@ func TestAttachmentsUnmarshalJSON(t *testing.T) {
 				v.Content = nil
 			}
 			if d := diff.Interface(test.expected, att); d != nil {
+				t.Error(d)
+			}
+		})
+	}
+}
+
+func TestAttachmentsIteratorNext(t *testing.T) {
+	tests := []struct {
+		name     string
+		iter     *AttachmentsIterator
+		expected *Attachment
+		status   int
+		err      string
+	}{
+		{
+			name: "error",
+			iter: &AttachmentsIterator{
+				atti: &mock.Attachments{
+					NextFunc: func(_ *driver.Attachment) error {
+						return errors.Status(StatusBadResponse, "error")
+					},
+				},
+			},
+			status: StatusBadResponse,
+			err:    "error",
+		},
+		{
+			name: "success",
+			iter: &AttachmentsIterator{
+				atti: &mock.Attachments{
+					NextFunc: func(att *driver.Attachment) error {
+						*att = driver.Attachment{
+							Filename: "foo.txt",
+						}
+						return nil
+					},
+				},
+			},
+			expected: &Attachment{
+				Filename: "foo.txt",
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result, err := test.iter.Next()
+			testy.StatusError(t, test.err, test.status, err)
+			if d := diff.Interface(test.expected, result); d != nil {
 				t.Error(d)
 			}
 		})

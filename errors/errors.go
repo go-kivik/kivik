@@ -10,13 +10,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Duplicates of statuses in the kivik package, put here to avoid an import
-// cycle.
-const (
-	statusNoError             = 0
-	statusInternalServerError = 500
-)
-
 // statusError is an error message bundled with an HTTP status code.
 type statusError struct {
 	statusCode int
@@ -44,51 +37,6 @@ func (se *statusError) StatusCode() int {
 // Reason returns the error's underlying reason.
 func (se *statusError) Reason() string {
 	return se.message
-}
-
-// statusCoder is an optional error interface, which returns the error's
-// embedded HTTP status code.
-type statusCoder interface {
-	StatusCode() int
-}
-
-// StatusCode extracts an embedded HTTP status code from an error.
-func StatusCode(err error) int {
-	if err == nil {
-		return statusNoError
-	}
-	if sc, ok := StatusCodeOK(err); ok {
-		return sc
-	}
-	return statusInternalServerError
-}
-
-// StatusCodeOK extracts an embedded HTTP status code from an error and returns
-// it. ok will be false if the error does not embed a status code.
-func StatusCodeOK(err error) (code int, ok bool) {
-	if err == nil {
-		return statusNoError, false
-	}
-	if scErr, ok := err.(statusCoder); ok {
-		return scErr.StatusCode(), true
-	}
-	return statusNoError, false
-}
-
-// Reasoner is an interface for an error that contains a reason.
-type Reasoner interface {
-	Reason() string
-}
-
-// Reason returns the error's reason if there is one.
-func Reason(err error) string {
-	if err == nil {
-		return ""
-	}
-	if reasoner, ok := err.(Reasoner); ok {
-		return reasoner.Reason()
-	}
-	return ""
 }
 
 // New is a wrapper around the standard errors.New, to avoid the need for
@@ -149,11 +97,6 @@ func Wrap(err error, msg string) error {
 // Wrapf is a wrapper around pkg/errors.Wrapf()
 func Wrapf(err error, format string, args ...interface{}) error {
 	return errors.Wrapf(err, format, args...)
-}
-
-// Cause is a wrapper around pkg/errors.Cause()
-func Cause(err error) error {
-	return errors.Cause(err)
 }
 
 // Errorf is a wrapper around pkg/errors.Errorf()

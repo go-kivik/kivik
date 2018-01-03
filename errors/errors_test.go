@@ -3,10 +3,12 @@ package errors
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"testing"
 
 	"github.com/flimzy/diff"
+	pkgErrors "github.com/pkg/errors"
 )
 
 func TestStatusf(t *testing.T) {
@@ -31,6 +33,13 @@ func TestWrapStatus(t *testing.T) {
 	if d := diff.Interface(expected, result); d != nil {
 		t.Error(d)
 	}
+
+	t.Run("nil", func(t *testing.T) {
+		result := WrapStatus(400, nil)
+		if result != nil {
+			t.Errorf("Expected nil result")
+		}
+	})
 }
 
 func TestErrorJSON(t *testing.T) {
@@ -73,105 +82,118 @@ func TestErrorJSON(t *testing.T) {
 	}
 }
 
-func TestReason(t *testing.T) {
-	tests := []struct {
-		name   string
-		err    error
-		reason string
-	}{
-		{
-			name:   "nil error",
-			err:    nil,
-			reason: "",
-		},
-		{
-			name:   "standard error",
-			err:    errors.New("foo"),
-			reason: "",
-		},
-		{
-			name:   "StatusError",
-			err:    &statusError{statusCode: 400, message: "foo"},
-			reason: "foo",
-		},
+func TestStatusError(t *testing.T) {
+	msg := "foo"
+	status := 400
+	err := &statusError{statusCode: status, message: msg}
+
+	t.Run("Error", func(t *testing.T) {
+		if result := err.Error(); result != msg {
+			t.Errorf("Unexpected Error: %v", result)
+		}
+	})
+
+	t.Run("StatusCode", func(t *testing.T) {
+		if result := err.StatusCode(); result != status {
+			t.Errorf("Unexpected StatusCode: %v", result)
+		}
+	})
+
+	t.Run("Reason", func(t *testing.T) {
+		if result := err.Reason(); result != msg {
+			t.Errorf("Unexpected Reason: %v", result)
+		}
+	})
+}
+
+func TestNew(t *testing.T) {
+	expected := "foo"
+	expectedType := fmt.Sprintf("%T", pkgErrors.New(expected))
+	err := New(expected)
+	if tp := fmt.Sprintf("%T", err); tp != expectedType {
+		t.Errorf("Unexpected type: %s", tp)
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			reason := Reason(test.err)
-			if reason != test.reason {
-				t.Errorf("Unexpected reason: %s", reason)
-			}
-		})
+	if e := err.Error(); e != expected {
+		t.Errorf("Unexpected Error: %s", e)
 	}
 }
 
-func TestStatusCode(t *testing.T) {
-	tests := []struct {
-		name         string
-		input        error
-		expectedCode int
-	}{
-		{
-			name:         "nil",
-			input:        nil,
-			expectedCode: 0,
-		},
-		{
-			name:         "status coder",
-			input:        Status(400, "foo"),
-			expectedCode: 400,
-		},
-		{
-			name:         "non status coder",
-			input:        New("foo"),
-			expectedCode: 500,
-		},
+func TestStatus(t *testing.T) {
+	status := 400
+	msg := "foo"
+	expected := &statusError{
+		statusCode: status,
+		message:    msg,
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			code := StatusCode(test.input)
-			if test.expectedCode != code {
-				t.Errorf("Unexpected code: %d", code)
-			}
-		})
+	err := Status(status, msg)
+	if d := diff.Interface(expected, err); d != nil {
+		t.Error(d)
 	}
 }
 
-func TestStatusCodeOK(t *testing.T) {
-	tests := []struct {
-		name         string
-		input        error
-		expectedCode int
-		expectedOK   bool
-	}{
-		{
-			name:         "nil",
-			input:        nil,
-			expectedCode: 0,
-			expectedOK:   false,
-		},
-		{
-			name:         "status coder",
-			input:        Status(400, "foo"),
-			expectedCode: 400,
-			expectedOK:   true,
-		},
-		{
-			name:         "non status coder",
-			input:        New("foo"),
-			expectedCode: 0,
-			expectedOK:   false,
-		},
+func TestWrappedError(t *testing.T) {
+	msg := "foo"
+	status := 400
+	e := errors.New(msg)
+	err := &wrappedError{
+		err:        e,
+		statusCode: status,
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			code, ok := StatusCodeOK(test.input)
-			if test.expectedCode != code {
-				t.Errorf("Unexpected code: %d", code)
-			}
-			if test.expectedOK != ok {
-				t.Errorf("Unexpected ok: %t", ok)
-			}
-		})
+
+	t.Run("Error", func(t *testing.T) {
+		if result := err.Error(); result != msg {
+			t.Errorf("Unexpected Error: %v", result)
+		}
+	})
+
+	t.Run("StatusCode", func(t *testing.T) {
+		if result := err.StatusCode(); result != status {
+			t.Errorf("Unexpected StatusCode: %v", result)
+		}
+	})
+
+	t.Run("Cause", func(t *testing.T) {
+		result := err.Cause()
+		if d := diff.Interface(e, result); d != nil {
+			t.Errorf("Unexpected Cause:\n%s", d)
+		}
+	})
+}
+
+func TestWrap(t *testing.T) {
+	expected := "bar: foo"
+	e := errors.New("foo")
+	expectedType := fmt.Sprintf("%T", pkgErrors.Wrap(e, ""))
+	err := Wrap(e, "bar")
+	if tp := fmt.Sprintf("%T", err); tp != expectedType {
+		t.Errorf("Unexpected type: %s", tp)
+	}
+	if e := err.Error(); e != expected {
+		t.Errorf("Unexpected Error: %s", e)
+	}
+}
+
+func TestWrapf(t *testing.T) {
+	expected := "bar: foo"
+	e := errors.New("foo")
+	expectedType := fmt.Sprintf("%T", pkgErrors.Wrap(e, ""))
+	err := Wrapf(e, "bar")
+	if tp := fmt.Sprintf("%T", err); tp != expectedType {
+		t.Errorf("Unexpected type: %s", tp)
+	}
+	if e := err.Error(); e != expected {
+		t.Errorf("Unexpected Error: %s", e)
+	}
+}
+
+func TestErrorf(t *testing.T) {
+	expected := "foo"
+	expectedType := fmt.Sprintf("%T", pkgErrors.New(expected))
+	err := Errorf(expected)
+	if tp := fmt.Sprintf("%T", err); tp != expectedType {
+		t.Errorf("Unexpected type: %s", tp)
+	}
+	if e := err.Error(); e != expected {
+		t.Errorf("Unexpected Error: %s", e)
 	}
 }

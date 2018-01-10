@@ -10,6 +10,14 @@ import (
 	"github.com/pkg/errors"
 )
 
+const statusNoError = 0
+
+// statusCoder is an optional error interface, which returns the error's
+// embedded HTTP status code.
+type statusCoder interface {
+	StatusCode() int
+}
+
 // statusError is an error message bundled with an HTTP status code.
 type statusError struct {
 	statusCode int
@@ -102,4 +110,16 @@ func Wrapf(err error, format string, args ...interface{}) error {
 // Errorf is a wrapper around pkg/errors.Errorf()
 func Errorf(format string, args ...interface{}) error {
 	return errors.Errorf(format, args...)
+}
+
+// StatusCodeOK extracts an embedded HTTP status code from an error and returns
+// it. ok will be false if the error does not embed a status code.
+func StatusCodeOK(err error) (code int, ok bool) {
+	if err == nil {
+		return statusNoError, false
+	}
+	if scErr, ok := err.(statusCoder); ok {
+		return scErr.StatusCode(), true
+	}
+	return statusNoError, false
 }

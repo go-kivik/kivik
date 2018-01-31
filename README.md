@@ -182,12 +182,14 @@ me know by submitting a bug report via GitHub.
 
 ## What is the development status?
 
-Kivik comes with a complete client API client and backend drivers for CouchDB
-and PouchDB.
+Kivik 1.x is considered production-ready and comes with a complete client API
+client and backend drivers for CouchDB and PouchDB.
 
-My next priorities are to work on fleshing out the Memory driver, which will
-make automated testing without a real CouchDB server easier. Then I will work
-on completing the 'serve' mode.
+Kivik 2.x is under development, and adds new features and a streamlined API.
+
+Future goals are to flesh out the Memory driver, which will make automated
+testing without a real CouchDB server easier. Then I will work on completing
+the 'serve' mode.
 
 You can see a complete overview of the current status on the
 [Compatibility chart](https://github.com/go-kivik/kivik/blob/master/doc/COMPATIBILITY.md)
@@ -203,3 +205,11 @@ and proxy applications.
 
 This software is released under the terms of the Apache 2.0 license. See
 LICENCE.md, or read the [full license](http://www.apache.org/licenses/LICENSE-2.0).
+
+## What projects currently use Kivik?
+
+If your project uses Kivik, and you'd like to be added to this list, create an
+issue or submit a pull request.
+
+- [Cayley](https://github.com/cayleygraph/cayley) is an open-source graph
+  database. It uses Kivik for the CouchDB and PouchDB storage backends.

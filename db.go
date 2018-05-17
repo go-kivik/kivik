@@ -30,7 +30,7 @@ func (db *DB) Name() string {
 }
 
 // AllDocs returns a list of all documents in the database.
-func (db *DB) AllDocs(ctx context.Context, options ...Options) (*Rows, error) {
+func (db *DB) AllDocs(ctx context.Context, options ...Options) (*RowsWrapper, error) {
 	opts, err := mergeOptions(options...)
 	if err != nil {
 		return nil, err

@@ -56,7 +56,7 @@ var _ iterator = &rowsIterator{}
 
 func (r *rowsIterator) Next(i interface{}) error { return r.Rows.Next(i.(*driver.Row)) }
 
-func newRows(ctx context.Context, rowsi driver.Rows) *Rows {
+func newRows(ctx context.Context, rowsi driver.Rows) RowsWrapper {
 	return &Rows{
 		iter:  newIterator(ctx, &rowsIterator{rowsi}, &driver.Row{}),
 		rowsi: rowsi,

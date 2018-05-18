@@ -8,7 +8,21 @@ import (
 	"github.com/go-kivik/kivik/errors"
 )
 
-// Rows is an iterator over a a multi-value query.
+type RowsWrapper interface {
+	Next() bool
+	Err() error
+	Close() error
+	ScanDoc(interface{}) error
+	ScanValue(interface{}) error
+	ID() string
+	Key() string
+	Offset() int64
+	TotalRows() int64
+	UpdateSeq() string
+	Warning() string
+	Bookmark() string
+}
+
 type Rows struct {
 	*iter
 	rowsi driver.Rows
@@ -42,7 +56,7 @@ var _ iterator = &rowsIterator{}
 
 func (r *rowsIterator) Next(i interface{}) error { return r.Rows.Next(i.(*driver.Row)) }
 
-func newRows(ctx context.Context, rowsi driver.Rows) *Rows {
+func newRows(ctx context.Context, rowsi driver.Rows) RowsWrapper {
 	return &Rows{
 		iter:  newIterator(ctx, &rowsIterator{rowsi}, &driver.Row{}),
 		rowsi: rowsi,

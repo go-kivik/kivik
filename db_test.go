@@ -83,9 +83,13 @@ func TestAllDocs(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := test.db.AllDocs(context.Background(), test.options)
+			var resultTypeCast *Rows
+			if result != nil {
+				resultTypeCast = result.(*Rows)
+				resultTypeCast.cancel = nil // Determinism
+			}
 			testy.StatusError(t, test.err, test.status, err)
-			result.cancel = nil // Determinism
-			if d := diff.Interface(test.expected, result); d != nil {
+			if d := diff.Interface(test.expected, resultTypeCast); d != nil {
 				t.Error(d)
 			}
 		})
@@ -152,8 +156,9 @@ func TestQuery(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := test.db.Query(context.Background(), test.ddoc, test.view, test.options)
 			testy.StatusError(t, test.err, test.status, err)
-			result.cancel = nil // Determinism
-			if d := diff.Interface(test.expected, result); d != nil {
+			resultTypeCast := result.(*Rows)
+			resultTypeCast.cancel = nil // Determinism
+			if d := diff.Interface(test.expected, resultTypeCast); d != nil {
 				t.Error(d)
 			}
 		})

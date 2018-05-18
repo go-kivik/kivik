@@ -30,7 +30,7 @@ func (db *DB) Name() string {
 }
 
 // AllDocs returns a list of all documents in the database.
-func (db *DB) AllDocs(ctx context.Context, options ...Options) (*Rows, error) {
+func (db *DB) AllDocs(ctx context.Context, options ...Options) (RowsWrapper, error) {
 	opts, err := mergeOptions(options...)
 	if err != nil {
 		return nil, err
@@ -45,7 +45,7 @@ func (db *DB) AllDocs(ctx context.Context, options ...Options) (*Rows, error) {
 // Query executes the specified view function from the specified design
 // document. ddoc and view may or may not be be prefixed with '_design/'
 // and '_view/' respectively. No other
-func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) (*Rows, error) {
+func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) (RowsWrapper, error) {
 	opts, err := mergeOptions(options...)
 	if err != nil {
 		return nil, err

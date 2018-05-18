@@ -12,7 +12,7 @@ var findNotImplemented = errors.Status(StatusNotImplemented, "kivik: driver does
 // Find executes a query using the new /_find interface. The query must be
 // JSON-marshalable to a valid query.
 // See http://docs.couchdb.org/en/2.0.0/api/database/find.html#db-find
-func (db *DB) Find(ctx context.Context, query interface{}) (*Rows, error) {
+func (db *DB) Find(ctx context.Context, query interface{}) (RowsWrapper, error) {
 	if finder, ok := db.driverDB.(driver.Finder); ok {
 		rowsi, err := finder.Find(ctx, query)
 		if err != nil {

@@ -93,16 +93,26 @@ type Authenticator interface {
 	Authenticate(ctx context.Context, authenticator interface{}) error
 }
 
-// DBStats contains database statistics..
+// DBStats contains database statistics.
 type DBStats struct {
-	Name           string `json:"db_name"`
-	CompactRunning bool   `json:"compact_running"`
-	DocCount       int64  `json:"doc_count"`
-	DeletedCount   int64  `json:"doc_del_count"`
-	UpdateSeq      string `json:"update_seq"`
-	DiskSize       int64  `json:"disk_size"`
-	ActiveSize     int64  `json:"data_size"`
-	ExternalSize   int64  `json:"-"`
+	Name           string          `json:"db_name"`
+	CompactRunning bool            `json:"compact_running"`
+	DocCount       int64           `json:"doc_count"`
+	DeletedCount   int64           `json:"doc_del_count"`
+	UpdateSeq      string          `json:"update_seq"`
+	DiskSize       int64           `json:"disk_size"`
+	ActiveSize     int64           `json:"data_size"`
+	ExternalSize   int64           `json:"-"`
+	Cluster        *ClusterStats   `json:"cluster,omitempty"`
+	RawResponse    json.RawMessage `json:"-"`
+}
+
+// ClusterStats contains the cluster configuration for the database.
+type ClusterStats struct {
+	Replicas    int `json:"n"`
+	Shards      int `json:"q"`
+	ReadQuorum  int `json:"r"`
+	WriteQuorum int `json:"w"`
 }
 
 // Members represents the members of a database security document.

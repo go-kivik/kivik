@@ -324,11 +324,43 @@ func TestStats(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.DB{
 					StatsFunc: func(_ context.Context) (*driver.DBStats, error) {
-						return &driver.DBStats{Name: "foo"}, nil
+						return &driver.DBStats{
+							Name:           "foo",
+							CompactRunning: true,
+							DocCount:       1,
+							DeletedCount:   2,
+							UpdateSeq:      "abc",
+							DiskSize:       3,
+							ActiveSize:     4,
+							ExternalSize:   5,
+							Cluster: &driver.ClusterStats{
+								Replicas:    6,
+								Shards:      7,
+								ReadQuorum:  8,
+								WriteQuorum: 9,
+							},
+							RawResponse: []byte("foo"),
+						}, nil
 					},
 				},
 			},
-			expected: &DBStats{Name: "foo"},
+			expected: &DBStats{
+				Name:           "foo",
+				CompactRunning: true,
+				DocCount:       1,
+				DeletedCount:   2,
+				UpdateSeq:      "abc",
+				DiskSize:       3,
+				ActiveSize:     4,
+				ExternalSize:   5,
+				Cluster: &ClusterConfig{
+					Replicas:    6,
+					Shards:      7,
+					ReadQuorum:  8,
+					WriteQuorum: 9,
+				},
+				RawResponse: []byte("foo"),
+			},
 		},
 	}
 	for _, test := range tests {

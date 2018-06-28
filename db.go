@@ -230,6 +230,22 @@ type DBStats struct {
 	// ExternalSize is the size of the documents in the database, as represented
 	// as JSON, before compression.
 	ExternalSize int64 `json:"-"`
+	// Cluster reports the cluster replication configuration variables.
+	Cluster *ClusterConfig `json:"cluster,omitempty"`
+	// RawResponse is the raw response body returned by the server, useful if
+	// you need additional backend-specific information.
+	//
+	// For the format of this document, see
+	// http://docs.couchdb.org/en/2.1.1/api/database/common.html#get--db
+	RawResponse json.RawMessage `json:"-"`
+}
+
+// ClusterConfig contains the cluster configuration for the database.
+type ClusterConfig struct {
+	Replicas    int `json:"n"`
+	Shards      int `json:"q"`
+	ReadQuorum  int `json:"r"`
+	WriteQuorum int `json:"w"`
 }
 
 // Stats returns database statistics.
@@ -238,8 +254,23 @@ func (db *DB) Stats(ctx context.Context) (*DBStats, error) {
 	if err != nil {
 		return nil, err
 	}
-	stats := DBStats(*i)
-	return &stats, nil
+	var cluster *ClusterConfig
+	if i.Cluster != nil {
+		c := ClusterConfig(*i.Cluster)
+		cluster = &c
+	}
+	return &DBStats{
+		Name:           i.Name,
+		CompactRunning: i.CompactRunning,
+		DocCount:       i.DocCount,
+		DeletedCount:   i.DeletedCount,
+		UpdateSeq:      i.UpdateSeq,
+		DiskSize:       i.DiskSize,
+		ActiveSize:     i.ActiveSize,
+		ExternalSize:   i.ExternalSize,
+		Cluster:        cluster,
+		RawResponse:    i.RawResponse,
+	}, nil
 }
 
 // Compact begins compaction of the database. Check the CompactRunning field

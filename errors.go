@@ -37,6 +37,23 @@ func StatusCode(err error) int {
 	return StatusInternalServerError
 }
 
+type exitStatuser interface {
+	ExitStatus() int
+}
+
+// ExitStatus returns the curl exit status embedded in the error, or 1 (unknown
+// error), if there was no specified exit status.  If err is nil, ExitStatus
+// returns 0.
+func ExitStatus(err error) int {
+	if err == nil {
+		return 0
+	}
+	if statuser, ok := err.(exitStatuser); ok {
+		return statuser.ExitStatus()
+	}
+	return ExitUnknownFailure
+}
+
 type reasoner interface {
 	Reason() string
 }

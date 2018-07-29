@@ -41,6 +41,40 @@ func TestStatusCoder(t *testing.T) {
 	}
 }
 
+func TestExitStatuser(t *testing.T) {
+	type esTest struct {
+		Name     string
+		Err      error
+		Expected int
+	}
+	tests := []esTest{
+		{
+			Name:     "nil",
+			Expected: 0,
+		},
+		{
+			Name:     "Standard error",
+			Err:      errors.New("foo"),
+			Expected: ExitUnknownFailure,
+		},
+		{
+			Name:     "StatusCoder",
+			Err:      kerrors.ExitStatus(ExitFailedToInitialize, "bad request"),
+			Expected: ExitFailedToInitialize,
+		},
+	}
+	for _, test := range tests {
+		func(test esTest) {
+			t.Run(test.Name, func(t *testing.T) {
+				result := ExitStatus(test.Err)
+				if result != test.Expected {
+					t.Errorf("Unexpected result. Expected %d, got %d", test.Expected, result)
+				}
+			})
+		}(test)
+	}
+}
+
 type testReasoner int
 
 func (tr testReasoner) Reason() string { return "reason" }

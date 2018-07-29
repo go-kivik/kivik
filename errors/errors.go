@@ -13,6 +13,7 @@ import (
 // statusError is an error message bundled with an HTTP status code.
 type statusError struct {
 	statusCode int
+	exitStatus int
 	message    string
 }
 
@@ -34,6 +35,10 @@ func (se *statusError) StatusCode() int {
 	return se.statusCode
 }
 
+func (se *statusError) ExitStatus() int {
+	return se.exitStatus
+}
+
 // Reason returns the error's underlying reason.
 func (se *statusError) Reason() string {
 	return se.message
@@ -49,6 +54,14 @@ func New(msg string) error {
 func Status(status int, msg string) error {
 	return &statusError{
 		statusCode: status,
+		message:    msg,
+	}
+}
+
+// ExitStatus returns a new error with the designated exit status.
+func ExitStatus(exitStatus int, msg string) error {
+	return &statusError{
+		exitStatus: exitStatus,
 		message:    msg,
 	}
 }

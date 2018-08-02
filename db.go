@@ -181,7 +181,7 @@ func normalizeFromJSON(i interface{}) (interface{}, error) {
 	}
 	var x map[string]interface{}
 	if err := json.Unmarshal(body, &x); err != nil {
-		return nil, errors.WrapStatus(StatusBadRequest, err)
+		return nil, errors.WrapStatus(StatusBadAPICall, err)
 	}
 	return x, nil
 }

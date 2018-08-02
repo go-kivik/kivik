@@ -871,7 +871,7 @@ func TestNormalizeFromJSON(t *testing.T) {
 		{
 			Name:   "InvalidJSON",
 			Input:  []byte(`invalid`),
-			Status: StatusBadRequest,
+			Status: StatusBadAPICall,
 			Error:  "invalid character 'i' looking for beginning of value",
 		},
 		{
@@ -980,7 +980,7 @@ func TestPut(t *testing.T) {
 			name:   "InvalidJSON",
 			docID:  "foo",
 			input:  []byte("Something bogus"),
-			status: StatusBadRequest,
+			status: StatusBadAPICall,
 			err:    "invalid character 'S' looking for beginning of value",
 		},
 		{
@@ -1106,10 +1106,10 @@ func TestRowScanDoc(t *testing.T) {
 		err      string
 	}{
 		{
-			name:   "non pointer dst",
+			name:   "non-pointer dst",
 			row:    &Row{Body: body(`{"foo":123.4}`)},
 			dst:    map[string]interface{}{},
-			status: StatusBadRequest,
+			status: StatusBadAPICall,
 			err:    "kivik: destination is not a pointer",
 		},
 		{

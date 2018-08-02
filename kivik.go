@@ -37,7 +37,7 @@ func New(ctx context.Context, driverName, dataSourceName string) (*Client, error
 	driveri, ok := drivers[driverName]
 	driversMu.RUnlock()
 	if !ok {
-		return nil, errors.Statusf(StatusBadRequest, "kivik: unknown driver %q (forgotten import?)", driverName)
+		return nil, errors.Statusf(StatusBadAPICall, "kivik: unknown driver %q (forgotten import?)", driverName)
 	}
 	client, err := driveri.NewClient(ctx, dataSourceName)
 	if err != nil {

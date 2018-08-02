@@ -147,7 +147,8 @@ func TestDocsInterfaceSlice(t *testing.T) {
 		name     string
 		input    interface{}
 		expected interface{}
-		error    string
+		status   int
+		err      string
 	}
 	str := "foo"
 	intSlice := []int{1, 2, 3}
@@ -156,7 +157,8 @@ func TestDocsInterfaceSlice(t *testing.T) {
 			name:     "Nil",
 			input:    nil,
 			expected: nil,
-			error:    "must be slice or array, got <nil>",
+			status:   StatusBadAPICall,
+			err:      "must be slice or array, got <nil>",
 		},
 		{
 			name:     "InterfaceSlice",
@@ -164,9 +166,10 @@ func TestDocsInterfaceSlice(t *testing.T) {
 			expected: []interface{}{map[string]string{"foo": "bar"}},
 		},
 		{
-			name:  "String",
-			input: "foo",
-			error: "must be slice or array, got string",
+			name:   "String",
+			input:  "foo",
+			status: StatusBadAPICall,
+			err:    "must be slice or array, got string",
 		},
 		{
 			name:     "IntSlice",
@@ -179,9 +182,10 @@ func TestDocsInterfaceSlice(t *testing.T) {
 			expected: []interface{}{1, 2, 3},
 		},
 		{
-			name:  "StringPointer",
-			input: &str,
-			error: "must be slice or array, got *string",
+			name:   "StringPointer",
+			input:  &str,
+			status: StatusBadAPICall,
+			err:    "must be slice or array, got *string",
 		},
 		{
 			name:     "SlicePointer",
@@ -211,27 +215,30 @@ func TestDocsInterfaceSlice(t *testing.T) {
 			},
 		},
 		{
-			name:  "InvalidJSON",
-			input: []interface{}{[]byte(`invalid`)},
-			error: "invalid character 'i' looking for beginning of value",
+			name:   "InvalidJSON",
+			input:  []interface{}{[]byte(`invalid`)},
+			status: StatusBadAPICall,
+			err:    "invalid character 'i' looking for beginning of value",
 		},
 		{
-			name:  "BytesInvalidJSON",
-			input: [][]byte{[]byte(`invalid`)},
-			error: "invalid character 'i' looking for beginning of value",
+			name:   "BytesInvalidJSON",
+			input:  [][]byte{[]byte(`invalid`)},
+			status: StatusBadAPICall,
+			err:    "invalid character 'i' looking for beginning of value",
 		},
 	}
 	for _, test := range tests {
 		func(test diTest) {
 			t.Run(test.name, func(t *testing.T) {
 				result, err := docsInterfaceSlice(test.input)
-				var msg string
-				if err != nil {
-					msg = err.Error()
-				}
-				if msg != test.error {
-					t.Errorf("Unexpected error: %s", err)
-				}
+				testy.StatusError(t, test.err, test.status, err)
+				// var msg string
+				// if err != nil {
+				// 	msg = err.Error()
+				// }
+				// if msg != test.error {
+				// 	t.Errorf("Unexpected error: %s", err)
+				// }
 				if d := diff.AsJSON(test.expected, result); d != nil {
 					t.Errorf("%s", d)
 				}
@@ -276,14 +283,14 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 			name:     "no docs",
 			dbDriver: &mock.BulkDocer{},
 			docs:     []int{},
-			status:   StatusBadRequest,
+			status:   StatusBadAPICall,
 			err:      "kivik: no documents provided",
 		},
 		{
 			name:     "invalid JSON",
 			dbDriver: &mock.BulkDocer{},
 			docs:     []interface{}{[]byte("invalid json")},
-			status:   StatusBadRequest,
+			status:   StatusBadAPICall,
 			err:      "invalid character 'i' looking for beginning of value",
 		},
 		{

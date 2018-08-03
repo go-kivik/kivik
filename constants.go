@@ -39,7 +39,7 @@ const (
 )
 
 // HTTP response codes permitted by the CouchDB API.
-// See http://docs.couchdb.org/en/1.6.1/api/basics.html#http-status-codes
+// See http://docs.couchdb.org/en/2.1.2/api/basics.html#http-status-codes
 const (
 	StatusOK                           = 200
 	StatusCreated                      = 201

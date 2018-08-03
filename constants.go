@@ -54,7 +54,7 @@ const (
 	StatusRequestTimeout               = 408
 	StatusConflict                     = 409
 	StatusPreconditionFailed           = 412
-	StatusStatusRequestEntityTooLarge  = 413
+	StatusRequestEntityTooLarge        = 413
 	StatusUnsupportedMediaType         = 415
 	StatusRequestedRangeNotSatisfiable = 416
 	StatusExpectationFailed            = 417

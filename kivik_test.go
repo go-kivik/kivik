@@ -28,7 +28,7 @@ func TestNew(t *testing.T) {
 			name:       "Unregistered driver",
 			driverName: "unregistered",
 			dsn:        "unf",
-			status:     StatusBadRequest,
+			status:     StatusBadAPICall,
 			err:        `kivik: unknown driver "unregistered" (forgotten import?)`,
 		},
 		{

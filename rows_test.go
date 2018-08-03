@@ -161,7 +161,7 @@ func TestRowsScanDoc(t *testing.T) {
 					},
 				},
 			},
-			status: StatusBadRequest,
+			status: StatusBadAPICall,
 			err:    "kivik: doc is nil; does the query include docs?",
 		},
 	}

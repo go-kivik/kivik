@@ -103,7 +103,7 @@ func (db *DB) BulkDocs(ctx context.Context, docs interface{}, options ...Options
 		return nil, err
 	}
 	if len(docsi) == 0 {
-		return nil, errors.Status(StatusBadRequest, "kivik: no documents provided")
+		return nil, errors.Status(StatusBadAPICall, "kivik: no documents provided")
 	}
 	if bulkDocer, ok := db.driverDB.(driver.BulkDocer); ok {
 		bulki, err := bulkDocer.BulkDocs(ctx, docsi, opts)
@@ -159,14 +159,14 @@ func (e errNotSlice) Error() string {
 	return fmt.Sprintf("must be slice or array, got %T", e.i)
 }
 
-func (e errNotSlice) StatusCode() int { return StatusBadRequest }
+func (e errNotSlice) StatusCode() int { return StatusBadAPICall }
 
 func docsInterfaceSlice(docs interface{}) ([]interface{}, error) {
 	if docsi, ok := docs.([]interface{}); ok {
 		for i, doc := range docsi {
 			x, err := normalizeFromJSON(doc)
 			if err != nil {
-				return nil, errors.WrapStatus(StatusBadRequest, err)
+				return nil, errors.WrapStatus(StatusBadAPICall, err)
 			}
 			docsi[i] = x
 		}
@@ -183,7 +183,7 @@ func docsInterfaceSlice(docs interface{}) ([]interface{}, error) {
 	for i := 0; i < s.Len(); i++ {
 		x, err := normalizeFromJSON(s.Index(i).Interface())
 		if err != nil {
-			return nil, errors.WrapStatus(StatusBadRequest, err)
+			return nil, errors.WrapStatus(StatusBadAPICall, err)
 		}
 		docsi[i] = x
 	}

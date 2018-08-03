@@ -18,6 +18,11 @@ func TestStatusText(t *testing.T) {
 			code:     999,
 			expected: "unknown",
 		},
+		{
+			name:     "Bad API Call",
+			code:     604,
+			expected: "bad_api_call",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

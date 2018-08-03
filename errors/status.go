@@ -9,6 +9,7 @@ var statusTextStrings = map[int]string{
 	408: "request_timeout",
 	409: "conflict",
 	412: "precondition_failed",
+	413: "request_entity_too_large",
 	415: "unsupported_media_type",
 	416: "requested_range_not_satisfiable",
 	417: "expectation_failed",
@@ -19,10 +20,11 @@ var statusTextStrings = map[int]string{
 	600: "unknown",
 	601: "network_error",
 	602: "bad_response",
+	604: "bad_api_call",
 }
 
-// statusText returns a text for the HTTP status code. It returns the empty
-// string if the code is unknown to Kivik.
+// statusText returns a text for the HTTP status code. It returns the string
+// "unknown" if the code is unknown to Kivik.
 func statusText(code int) string {
 	if text, ok := statusTextStrings[code]; ok {
 		return text

@@ -27,7 +27,7 @@ go:
     - master
 env:
     global:
-        - KIVIK_TEST_DSN_COUCH21="http://admin:abc123@localhost:6002/"
+        - KIVIK_TEST_DSN_COUCH22="http://admin:abc123@localhost:6004/"
         # - HOMEBREW_NO_AUTO_UPDATE=1
     matrix:
         - MODE=standard

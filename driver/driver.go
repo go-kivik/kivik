@@ -46,10 +46,14 @@ type Client interface {
 }
 
 // DBsStatser is an optional interface, added to support CouchDB 2.2.0's
-// /_dbs_info endpoint. If this is not supported, or if calling this
-// method returns a 404, Kivik will fall back to calling the method of
-// issuing a GET /{db} for each databasae requested.
+// /_dbs_info endpoint. If this is not supported, or if this method returns
+// status 404, Kivik will fall back to calling the method of issuing a
+// GET /{db} for each database requested.
 type DBsStatser interface {
+	// DBsStats returns database statistical information for each database
+	// named in dbNames. The returned values should be in the same order as
+	// the requested database names, and any missing databases should return
+	// a nil *DBStats value.
 	DBsStats(ctx context.Context, dbNames []string) ([]*DBStats, error)
 }
 

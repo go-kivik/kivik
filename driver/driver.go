@@ -45,6 +45,14 @@ type Client interface {
 	DB(ctx context.Context, dbName string, options map[string]interface{}) (DB, error)
 }
 
+// DBsStatser is an optional interface, added to support CouchDB 2.2.0's
+// /_dbs_info endpoint. If this is not supported, or if calling this
+// method returns a 404, Kivik will fall back to calling the method of
+// issuing a GET /{db} for each databasae requested.
+type DBsStatser interface {
+	DBsStats(ctx context.Context, dbNames []string) ([]*DBStats, error)
+}
+
 // Replication represents a _replicator document.
 type Replication interface {
 	// The following methods are called just once, when the Replication is first

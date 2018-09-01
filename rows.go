@@ -72,6 +72,9 @@ func (r *Rows) ScanValue(dest interface{}) error {
 		return err
 	}
 	defer runlock()
+	if err := r.curVal.(*driver.Row).Error; err != nil {
+		return err
+	}
 	return scan(dest, r.curVal.(*driver.Row).Value)
 }
 
@@ -83,6 +86,9 @@ func (r *Rows) ScanDoc(dest interface{}) error {
 		return err
 	}
 	defer runlock()
+	if err := r.curVal.(*driver.Row).Error; err != nil {
+		return err
+	}
 	doc := r.curVal.(*driver.Row).Doc
 	if doc == nil {
 		return errors.Status(StatusBadAPICall, "kivik: doc is nil; does the query include docs?")
@@ -95,6 +101,9 @@ func (r *Rows) ScanDoc(dest interface{}) error {
 func (r *Rows) ScanKey(dest interface{}) error {
 	runlock, err := r.rlock()
 	if err != nil {
+		return err
+	}
+	if err := r.curVal.(*driver.Row).Error; err != nil {
 		return err
 	}
 	defer runlock()

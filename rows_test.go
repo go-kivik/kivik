@@ -108,6 +108,19 @@ func TestRowsScanValue(t *testing.T) {
 			status: StatusIteratorUnusable,
 			err:    "kivik: Iterator is closed",
 		},
+		{
+			name: "row error",
+			rows: &Rows{
+				iter: &iter{
+					ready: true,
+					curVal: &driver.Row{
+						Error: errors.New("row error"),
+					},
+				},
+			},
+			status: 500,
+			err:    "row error",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -164,6 +177,19 @@ func TestRowsScanDoc(t *testing.T) {
 			status: StatusBadAPICall,
 			err:    "kivik: doc is nil; does the query include docs?",
 		},
+		{
+			name: "row error",
+			rows: &Rows{
+				iter: &iter{
+					ready: true,
+					curVal: &driver.Row{
+						Error: errors.New("row error"),
+					},
+				},
+			},
+			status: 500,
+			err:    "row error",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -206,6 +232,19 @@ func TestRowsScanKey(t *testing.T) {
 			},
 			status: StatusIteratorUnusable,
 			err:    "kivik: Iterator is closed",
+		},
+		{
+			name: "row error",
+			rows: &Rows{
+				iter: &iter{
+					ready: true,
+					curVal: &driver.Row{
+						Error: errors.New("row error"),
+					},
+				},
+			},
+			status: 500,
+			err:    "row error",
 		},
 	}
 	for _, test := range tests {

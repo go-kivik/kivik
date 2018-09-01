@@ -312,6 +312,10 @@ func (db *DB) Stats(ctx context.Context) (*DBStats, error) {
 	if err != nil {
 		return nil, err
 	}
+	return driverStats2kivikStats(i), nil
+}
+
+func driverStats2kivikStats(i *driver.DBStats) *DBStats {
 	var cluster *ClusterConfig
 	if i.Cluster != nil {
 		c := ClusterConfig(*i.Cluster)
@@ -328,7 +332,7 @@ func (db *DB) Stats(ctx context.Context) (*DBStats, error) {
 		ExternalSize:   i.ExternalSize,
 		Cluster:        cluster,
 		RawResponse:    i.RawResponse,
-	}, nil
+	}
 }
 
 // Compact begins compaction of the database. Check the CompactRunning field

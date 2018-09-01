@@ -474,3 +474,145 @@ func TestAuthenticate(t *testing.T) {
 		})
 	}
 }
+
+func TestDBsStats(t *testing.T) {
+	tests := []struct {
+		name     string
+		client   *Client
+		dbnames  []string
+		expected []*DBStats
+		err      string
+		status   int
+	}{
+		{
+			name: "fallback to old driver",
+			client: &Client{
+				driverClient: &mock.Client{
+					DBFunc: func(_ context.Context, name string, _ map[string]interface{}) (driver.DB, error) {
+						switch name {
+						case "foo":
+							return &mock.DB{
+								StatsFunc: func(_ context.Context) (*driver.DBStats, error) {
+									return &driver.DBStats{Name: "foo", DiskSize: 123}, nil
+								},
+							}, nil
+						case "bar":
+							return &mock.DB{
+								StatsFunc: func(_ context.Context) (*driver.DBStats, error) {
+									return &driver.DBStats{Name: "bar", DiskSize: 321}, nil
+								},
+							}, nil
+						default:
+							return nil, errors.New("not found")
+						}
+					},
+				},
+			},
+			dbnames: []string{"foo", "bar"},
+			expected: []*DBStats{
+				{Name: "foo", DiskSize: 123},
+				{Name: "bar", DiskSize: 321},
+			},
+		},
+		{
+			name: "fallback due to old server",
+			client: &Client{
+				driverClient: &mock.Client{
+					DBFunc: func(_ context.Context, name string, _ map[string]interface{}) (driver.DB, error) {
+						switch name {
+						case "foo":
+							return &mock.DB{
+								StatsFunc: func(_ context.Context) (*driver.DBStats, error) {
+									return &driver.DBStats{Name: "foo", DiskSize: 123}, nil
+								},
+							}, nil
+						case "bar":
+							return &mock.DB{
+								StatsFunc: func(_ context.Context) (*driver.DBStats, error) {
+									return &driver.DBStats{Name: "bar", DiskSize: 321}, nil
+								},
+							}, nil
+						default:
+							return nil, errors.New("not found")
+						}
+					},
+				},
+			},
+			dbnames: []string{"foo", "bar"},
+			expected: []*DBStats{
+				{Name: "foo", DiskSize: 123},
+				{Name: "bar", DiskSize: 321},
+			},
+		},
+		{
+			name: "native success",
+			client: &Client{
+				driverClient: &mock.DBsStatser{
+					DBsStatsFunc: func(_ context.Context, names []string) ([]*driver.DBStats, error) {
+						return []*driver.DBStats{
+							{Name: "foo", DiskSize: 123},
+							{Name: "bar", DiskSize: 321},
+						}, nil
+					},
+				},
+			},
+			dbnames: []string{"foo", "bar"},
+			expected: []*DBStats{
+				{Name: "foo", DiskSize: 123},
+				{Name: "bar", DiskSize: 321},
+			},
+		},
+		{
+			name: "native error",
+			client: &Client{
+				driverClient: &mock.DBsStatser{
+					DBsStatsFunc: func(_ context.Context, names []string) ([]*driver.DBStats, error) {
+						return nil, errors.New("native failure")
+					},
+				},
+			},
+			dbnames: []string{"foo", "bar"},
+			err:     "native failure",
+			status:  500,
+		},
+		{
+			name: "fallback error",
+			client: &Client{
+				driverClient: &mock.Client{
+					DBFunc: func(_ context.Context, _ string, _ map[string]interface{}) (driver.DB, error) {
+						return &mock.DB{
+							StatsFunc: func(_ context.Context) (*driver.DBStats, error) {
+								return nil, errors.New("fallback failure")
+							},
+						}, nil
+					},
+				},
+			},
+			dbnames: []string{"foo", "bar"},
+			err:     "fallback failure",
+			status:  500,
+		},
+		{
+			name: "fallback db connect error",
+			client: &Client{
+				driverClient: &mock.Client{
+					DBFunc: func(_ context.Context, _ string, _ map[string]interface{}) (driver.DB, error) {
+						return nil, errors.New("db conn failure")
+					},
+				},
+			},
+			dbnames: []string{"foo", "bar"},
+			err:     "db conn failure",
+			status:  500,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			stats, err := test.client.DBsStats(context.Background(), test.dbnames)
+			testy.StatusError(t, test.err, test.status, err)
+			if d := diff.Interface(test.expected, stats); d != nil {
+				t.Error(d)
+			}
+		})
+	}
+}

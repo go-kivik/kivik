@@ -94,3 +94,16 @@ var _ driver.DBUpdater = &DBUpdater{}
 func (c *DBUpdater) DBUpdates() (driver.DBUpdates, error) {
 	return c.DBUpdatesFunc()
 }
+
+// DBsStatser mocks driver.Client and driver.DBsStatser
+type DBsStatser struct {
+	*Client
+	DBsStatsFunc func(context.Context, []string) ([]*driver.DBStats, error)
+}
+
+var _ driver.DBsStatser = &DBsStatser{}
+
+// DBsStats calls c.DBsStatsFunc
+func (c *DBsStatser) DBsStats(ctx context.Context, dbnames []string) ([]*driver.DBStats, error) {
+	return c.DBsStatsFunc(ctx, dbnames)
+}

@@ -9,9 +9,9 @@ import (
 
 // Driver is the interface that must be implemented by a database driver.
 type Driver interface {
-	// NewClient returns a connection handle to the database. The name is in a
+	// NewClient returns a connection handle to the database. The dsn is in a
 	// driver-specific format.
-	NewClient(ctx context.Context, name string) (Client, error)
+	NewClient(dsn string) (Client, error)
 }
 
 // Version represents a server version response.

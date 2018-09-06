@@ -42,6 +42,40 @@ func (db *DB) AllDocs(ctx context.Context, options ...Options) (*Rows, error) {
 	return newRows(ctx, rowsi), nil
 }
 
+// DesignDocs returns a list of all documents in the database.
+func (db *DB) DesignDocs(ctx context.Context, options ...Options) (*Rows, error) {
+	ddocer, ok := db.driverDB.(driver.DesignDocer)
+	if !ok {
+		return nil, errors.Status(StatusNotImplemented, "kivik: design doc view not supported by driver")
+	}
+	opts, err := mergeOptions(options...)
+	if err != nil {
+		return nil, err
+	}
+	rowsi, err := ddocer.DesignDocs(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	return newRows(ctx, rowsi), nil
+}
+
+// LocalDocs returns a list of all documents in the database.
+func (db *DB) LocalDocs(ctx context.Context, options ...Options) (*Rows, error) {
+	ldocer, ok := db.driverDB.(driver.LocalDocer)
+	if !ok {
+		return nil, errors.Status(StatusNotImplemented, "kivik: local doc view not supported by driver")
+	}
+	opts, err := mergeOptions(options...)
+	if err != nil {
+		return nil, err
+	}
+	rowsi, err := ldocer.LocalDocs(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	return newRows(ctx, rowsi), nil
+}
+
 // Query executes the specified view function from the specified design
 // document. ddoc and view may or may not be be prefixed with '_design/'
 // and '_view/' respectively. No other

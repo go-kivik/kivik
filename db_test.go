@@ -92,6 +92,131 @@ func TestAllDocs(t *testing.T) {
 	}
 }
 
+func TestDesignDocs(t *testing.T) {
+	tests := []struct {
+		name     string
+		db       *DB
+		options  Options
+		expected *Rows
+		status   int
+		err      string
+	}{
+		{
+			name: "db error",
+			db: &DB{
+				driverDB: &mock.DesignDocer{
+					DesignDocsFunc: func(_ context.Context, _ map[string]interface{}) (driver.Rows, error) {
+						return nil, errors.New("db error")
+					},
+				},
+			},
+			status: StatusInternalServerError,
+			err:    "db error",
+		},
+		{
+			name: "success",
+			db: &DB{
+				driverDB: &mock.DesignDocer{
+					DesignDocsFunc: func(_ context.Context, opts map[string]interface{}) (driver.Rows, error) {
+						if d := diff.Interface(testOptions, opts); d != nil {
+							return nil, fmt.Errorf("Unexpected options: %s", d)
+						}
+						return &mock.Rows{ID: "a"}, nil
+					},
+				},
+			},
+			options: testOptions,
+			expected: &Rows{
+				iter: &iter{
+					feed: &rowsIterator{
+						Rows: &mock.Rows{ID: "a"},
+					},
+					curVal: &driver.Row{},
+				},
+				rowsi: &mock.Rows{ID: "a"},
+			},
+		},
+		{
+			name:   "not supported",
+			db:     &DB{driverDB: &mock.DB{}},
+			status: StatusNotImplemented,
+			err:    "kivik: design doc view not supported by driver",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result, err := test.db.DesignDocs(context.Background(), test.options)
+			testy.StatusError(t, test.err, test.status, err)
+			result.cancel = nil // Determinism
+			if d := diff.Interface(test.expected, result); d != nil {
+				t.Error(d)
+			}
+		})
+	}
+}
+func TestLocalDocs(t *testing.T) {
+	tests := []struct {
+		name     string
+		db       *DB
+		options  Options
+		expected *Rows
+		status   int
+		err      string
+	}{
+		{
+			name: "db error",
+			db: &DB{
+				driverDB: &mock.LocalDocer{
+					LocalDocsFunc: func(_ context.Context, _ map[string]interface{}) (driver.Rows, error) {
+						return nil, errors.New("db error")
+					},
+				},
+			},
+			status: StatusInternalServerError,
+			err:    "db error",
+		},
+		{
+			name: "success",
+			db: &DB{
+				driverDB: &mock.LocalDocer{
+					LocalDocsFunc: func(_ context.Context, opts map[string]interface{}) (driver.Rows, error) {
+						if d := diff.Interface(testOptions, opts); d != nil {
+							return nil, fmt.Errorf("Unexpected options: %s", d)
+						}
+						return &mock.Rows{ID: "a"}, nil
+					},
+				},
+			},
+			options: testOptions,
+			expected: &Rows{
+				iter: &iter{
+					feed: &rowsIterator{
+						Rows: &mock.Rows{ID: "a"},
+					},
+					curVal: &driver.Row{},
+				},
+				rowsi: &mock.Rows{ID: "a"},
+			},
+		},
+		{
+			name:   "not supported",
+			db:     &DB{driverDB: &mock.DB{}},
+			status: StatusNotImplemented,
+			err:    "kivik: local doc view not supported by driver",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result, err := test.db.LocalDocs(context.Background(), test.options)
+			testy.StatusError(t, test.err, test.status, err)
+			result.cancel = nil // Determinism
+			if d := diff.Interface(test.expected, result); d != nil {
+				t.Error(d)
+			}
+		})
+	}
+}
+
 func TestQuery(t *testing.T) {
 	tests := []struct {
 		name       string

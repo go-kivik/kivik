@@ -542,3 +542,33 @@ func (db *DB) DeleteAttachment(ctx context.Context, docID, rev, filename string,
 	}
 	return db.driverDB.DeleteAttachment(ctx, docID, rev, filename, opts)
 }
+
+// PurgeResult is the result of a purge request.
+type PurgeResult struct {
+	// Seq is the purge sequence number.
+	Seq int64 `json:"purge_seq"`
+	// Purged is a map of document ids to revisions, indicated the
+	// document/revision pairs that were successfully purged.
+	Purged map[string][]string `json:"purged"`
+}
+
+// Purge permanently removes the reference to deleted documents from the
+// database. Normal deletion only marks the document with the key/value pair
+// `_deleted=true`, to ensure proper replication of deleted documents. By
+// using Purge, the document can be completely removed. But note that this
+// operation is not replication safe, so great care must be taken when using
+// Purge, and this should only be used as a last resort.
+//
+// Purge expects as input a map with document ID as key, and slice of
+// revisions as value.
+func (db *DB) Purge(ctx context.Context, docRevMap map[string][]string) (*PurgeResult, error) {
+	if purger, ok := db.driverDB.(driver.Purger); ok {
+		res, err := purger.Purge(ctx, docRevMap)
+		if err != nil {
+			return nil, err
+		}
+		r := PurgeResult(*res)
+		return &r, nil
+	}
+	return nil, errors.Status(StatusNotImplemented, "kivik: purge not supported by driver")
+}

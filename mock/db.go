@@ -224,3 +224,16 @@ var _ driver.LocalDocer = &LocalDocer{}
 func (db *LocalDocer) LocalDocs(ctx context.Context, options map[string]interface{}) (driver.Rows, error) {
 	return db.LocalDocsFunc(ctx, options)
 }
+
+// Purger mocks a driver.DB and driver.Purger
+type Purger struct {
+	*DB
+	PurgeFunc func(context.Context, map[string][]string) (*driver.PurgeResult, error)
+}
+
+var _ driver.Purger = &Purger{}
+
+// Purge calls db.PurgeFunc
+func (db *Purger) Purge(ctx context.Context, docMap map[string][]string) (*driver.PurgeResult, error) {
+	return db.PurgeFunc(ctx, docMap)
+}

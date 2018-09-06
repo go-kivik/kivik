@@ -219,12 +219,12 @@ type Attachments interface {
 type Purger interface {
 	// Purge permanently removes the references to deleted documents from the
 	// database.
-	Purge(ctx context.Context, docid string, revs []string) (*PurgeResult, error)
+	Purge(ctx context.Context, docRevMap map[string][]string) (*PurgeResult, error)
 }
 
 // PurgeResult is the result of a purge request.
 type PurgeResult struct {
-	Seq    int                 `json:"purge_seq"`
+	Seq    int64               `json:"purge_seq"`
 	Purged map[string][]string `json:"purged"`
 }
 

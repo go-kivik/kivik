@@ -1796,3 +1796,84 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 		})
 	}
 }
+
+func TestPurge(t *testing.T) {
+	type purgeTest struct {
+		name   string
+		db     *DB
+		docMap map[string][]string
+
+		expected *PurgeResult
+		status   int
+		err      string
+	}
+
+	docMap := map[string][]string{
+		"foo": {"1-abc", "2-xyz"},
+	}
+
+	tests := []purgeTest{
+		{
+			name: "success, nothing purged",
+			db: &DB{
+				driverDB: &mock.Purger{
+					PurgeFunc: func(_ context.Context, dm map[string][]string) (*driver.PurgeResult, error) {
+						if d := diff.Interface(docMap, dm); d != nil {
+							return nil, errors.Errorf("Unexpected docmap: %s", d)
+						}
+						return &driver.PurgeResult{Seq: 2}, nil
+					},
+				},
+			},
+			docMap: docMap,
+			expected: &PurgeResult{
+				Seq: 2,
+			},
+		},
+		{
+			name: "success, all purged",
+			db: &DB{
+				driverDB: &mock.Purger{
+					PurgeFunc: func(_ context.Context, dm map[string][]string) (*driver.PurgeResult, error) {
+						if d := diff.Interface(docMap, dm); d != nil {
+							return nil, errors.Errorf("Unexpected docmap: %s", d)
+						}
+						return &driver.PurgeResult{Seq: 2, Purged: docMap}, nil
+					},
+				},
+			},
+			docMap: docMap,
+			expected: &PurgeResult{
+				Seq:    2,
+				Purged: docMap,
+			},
+		},
+		{
+			name:   "non-purger",
+			db:     &DB{driverDB: &mock.DB{}},
+			status: StatusNotImplemented,
+			err:    "kivik: purge not supported by driver",
+		},
+		{
+			name: "couch 2.0-2.1 example",
+			db: &DB{
+				driverDB: &mock.Purger{
+					PurgeFunc: func(_ context.Context, _ map[string][]string) (*driver.PurgeResult, error) {
+						return nil, errors.Status(StatusNotImplemented, "this feature is not yet implemented")
+					},
+				},
+			},
+			status: StatusNotImplemented,
+			err:    "this feature is not yet implemented",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result, err := test.db.Purge(context.Background(), test.docMap)
+			testy.StatusError(t, test.err, test.status, err)
+			if d := diff.Interface(test.expected, result); d != nil {
+				t.Error(d)
+			}
+		})
+	}
+}

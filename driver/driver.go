@@ -214,6 +214,20 @@ type Attachments interface {
 	Close() error
 }
 
+// Purger is an optional interface which may be implemented by a DB to support
+// document purging.
+type Purger interface {
+	// Purge permanently removes the references to deleted documents from the
+	// database.
+	Purge(ctx context.Context, docRevMap map[string][]string) (*PurgeResult, error)
+}
+
+// PurgeResult is the result of a purge request.
+type PurgeResult struct {
+	Seq    int64               `json:"purge_seq"`
+	Purged map[string][]string `json:"purged"`
+}
+
 // BulkDocer is an optional interface which may be implemented by a DB to
 // support bulk insert/update operations. For any driver that does not support
 // the BulkDocer interface, the Put or CreateDoc methods will be called for each

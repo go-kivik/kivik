@@ -23,5 +23,5 @@
 // a Context parameter.
 //
 // For example:
-//  client, err := kivik.New(context.TODO(), "couch", "http://localhost:5984/")
+//  doc, err := db.Get(context.TODO(), "chicken_soup")
 package kivik // import "github.com/go-kivik/kivik"

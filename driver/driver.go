@@ -11,7 +11,7 @@ import (
 type Driver interface {
 	// NewClient returns a connection handle to the database. The name is in a
 	// driver-specific format.
-	NewClient(ctx context.Context, name string) (Client, error)
+	NewClient(name string) (Client, error)
 }
 
 // Version represents a server version response.

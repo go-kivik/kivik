@@ -34,7 +34,7 @@ func TestNew(t *testing.T) {
 		{
 			name: "connection error",
 			driver: &mock.Driver{
-				NewClientFunc: func(_ context.Context, _ string) (driver.Client, error) {
+				NewClientFunc: func(_ string) (driver.Client, error) {
 					return nil, errors.New("connection error")
 				},
 			},
@@ -45,7 +45,7 @@ func TestNew(t *testing.T) {
 		{
 			name: "success",
 			driver: &mock.Driver{
-				NewClientFunc: func(_ context.Context, dsn string) (driver.Client, error) {
+				NewClientFunc: func(dsn string) (driver.Client, error) {
 					if dsn != "oink" {
 						return nil, fmt.Errorf("Unexpected DSN: %s", dsn)
 					}
@@ -69,7 +69,7 @@ func TestNew(t *testing.T) {
 			if test.driver != nil {
 				Register(test.driverName, test.driver)
 			}
-			result, err := New(context.Background(), test.driverName, test.dsn)
+			result, err := New(test.driverName, test.dsn)
 			testy.StatusError(t, test.err, test.status, err)
 			if d := diff.Interface(test.expected, result); d != nil {
 				t.Error(d)

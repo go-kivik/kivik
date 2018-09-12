@@ -32,14 +32,14 @@ func mergeOptions(otherOpts ...Options) (Options, error) {
 
 // New creates a new client object specified by its database driver name
 // and a driver-specific data source name.
-func New(ctx context.Context, driverName, dataSourceName string) (*Client, error) {
+func New(driverName, dataSourceName string) (*Client, error) {
 	driversMu.RLock()
 	driveri, ok := drivers[driverName]
 	driversMu.RUnlock()
 	if !ok {
 		return nil, errors.Statusf(StatusBadAPICall, "kivik: unknown driver %q (forgotten import?)", driverName)
 	}
-	client, err := driveri.NewClient(ctx, dataSourceName)
+	client, err := driveri.NewClient(dataSourceName)
 	if err != nil {
 		return nil, err
 	}

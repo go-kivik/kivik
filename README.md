@@ -90,7 +90,7 @@ import (
 )
 
 func main() {
-    client, err := kivik.New(context.TODO(), "couch", "http://localhost:5984/")
+    client, err := kivik.New("couch", "http://localhost:5984/")
     if err != nil {
         panic(err)
     }

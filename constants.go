@@ -2,7 +2,7 @@ package kivik
 
 const (
 	// KivikVersion is the version of the Kivik library.
-	KivikVersion = "1.0.0-beta"
+	KivikVersion = "2.0.0-prerelease"
 	// KivikVendor is the vendor string reported by this library.
 	KivikVendor = "Kivik"
 )

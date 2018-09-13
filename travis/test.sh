@@ -16,6 +16,7 @@ function join_list {
 
 case "$1" in
     "standard")
+        ./travis/test_version.sh
         go test -race $(go list ./... | grep -v /vendor/)
     ;;
     "gopherjs")

@@ -23,5 +23,5 @@
 // a Context parameter.
 //
 // For example:
-//  doc, err := db.Get(context.TODO(), "chicken_soup")
+//  row := db.Get(context.TODO(), "chicken_soup")
 package kivik // import "github.com/go-kivik/kivik"

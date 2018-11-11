@@ -11,7 +11,7 @@ type statusCoder interface {
 //
 // For example, to panic for all but NotFound errors:
 //
-//  row, err := db.Get(context.TODO(), "docID")
+//  err := db.Get(context.TODO(), "docID").ScanDoc(&doc)
 //  if kivik.StatusCode(err) == kivik.StatusNotFound {
 //      return
 //  }

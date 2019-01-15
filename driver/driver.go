@@ -127,6 +127,12 @@ type Security struct {
 	Members Members `json:"members"`
 }
 
+// BulkDocReference is a reference document givin in a BulkGet query.
+type BulkDocReference struct {
+	ID  string `json:"id"`
+	Rev string `json:"rev,omitempty"`
+}
+
 // DB is a database handle.
 type DB interface {
 	// AllDocs returns all of the documents in the database, subject to the
@@ -204,6 +210,13 @@ type BulkDocer interface {
 	// BulkDocs alls bulk create, update and/or delete operations. It returns an
 	// iterator over the results.
 	BulkDocs(ctx context.Context, docs []interface{}, options map[string]interface{}) (BulkResults, error)
+}
+
+// BulkGetter is an optional interface which may be implemented by a driver to
+// support bulk get operations.
+type BulkGetter interface {
+	// BulkGet use the _bulk_get interface to fetch multiple documents in a single query.
+	BulkGet(ctx context.Context, docs []BulkDocReference, options map[string]interface{}) (Rows, error)
 }
 
 // The Finder is an optional interface which may be implemented by a database. The

@@ -135,6 +135,27 @@ func (db *DB) BulkDocs(ctx context.Context, docs interface{}, options ...Options
 	return newBulkResults(ctx, &emulatedBulkResults{results}), nil
 }
 
+var bulkGetNotImplemented = errors.Status(StatusNotImplemented, "kivik: driver does not support BulkGet interface")
+
+// BulkGet allows you to fetch multiple documents at the same time within a single request.
+// This function returns an iterator over the results of the bulk operation. docs must be a
+// slice of BulkDocReference.
+// See http://docs.couchdb.org/en/stable/api/database/bulk-api.html#db-bulk-get
+func (db *DB) BulkGet(ctx context.Context, docs []driver.BulkDocReference, options ...Options) (*Rows, error) {
+	opts, err := mergeOptions(options...)
+	if err != nil {
+		return nil, err
+	}
+	if bulkGetter, ok := db.driverDB.(driver.BulkGetter); ok {
+		rowsi, err := bulkGetter.BulkGet(ctx, docs, opts)
+		if err != nil {
+			return nil, err
+		}
+		return newRows(ctx, rowsi), nil
+	}
+	return nil, bulkGetNotImplemented
+}
+
 type emulatedBulkResults struct {
 	results []driver.BulkResult
 }

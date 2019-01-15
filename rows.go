@@ -2,6 +2,7 @@ package kivik
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 
 	"github.com/flimzy/kivik/driver"
@@ -88,6 +89,60 @@ func (r *Rows) ScanDoc(dest interface{}) error {
 		return errors.Status(StatusBadRequest, "kivik: doc is nil; does the query include docs?")
 	}
 	return scan(dest, doc)
+}
+
+type resultRow struct {
+	ID   string         `json:"id"`
+	Docs []resultRowDoc `json:"docs"`
+}
+
+type resultRowDoc struct {
+	Error *resultRowDocError `json:"error"`
+	OK    *json.RawMessage   `json:"ok"`
+}
+
+type resultRowDocError struct {
+	ID     string `json:"id"`
+	Rev    string `json:"rev"`
+	Error  string `json:"error"`
+	Reason string `json:"reason"`
+}
+
+// ScanResult works the same as ScanValue, but on the result field of the result. It
+// is only valid for results that include documents, such as the _bulk_get method.
+func (r *Rows) ScanResult(dest interface{}) error {
+	runlock, err := r.rlock()
+	if err != nil {
+		return err
+	}
+	defer runlock()
+	result := r.curVal.(*driver.Row).Result
+	if result == nil {
+		return errors.Status(StatusBadRequest, "kivik: result is nil; does the query include results?")
+	}
+	var parsedResultRow resultRow
+	err = json.Unmarshal(result, &parsedResultRow)
+	if err != nil {
+		return err
+	}
+	if parsedResultRow.Docs == nil || len(parsedResultRow.Docs) == 0 {
+		return errors.Status(StatusBadRequest, "kivik: the result doesn't include docs")
+	}
+	if len(parsedResultRow.Docs) > 1 {
+		return errors.Status(StatusBadRequest, "kivik: the result includes more than one document")
+	}
+	doc := parsedResultRow.Docs[0]
+	if doc.Error != nil {
+		switch doc.Error.Error {
+		case "not_found":
+			return errors.Status(StatusNotFound, doc.Error.Reason)
+		case "illegal_docid":
+			return errors.Status(StatusBadRequest, doc.Error.Reason)
+		default:
+			return errors.Status(StatusInternalServerError, doc.Error.Reason)
+		}
+	}
+	return scan(dest, *doc.OK)
 }
 
 // ScanKey works the same as ScanValue, but on the key field of the result. For

@@ -18,6 +18,9 @@ type Row struct {
 	// Doc is the raw, un-decoded JSON document. This is only populated by views
 	// which return docs, such as /_all_docs?include_docs=true.
 	Doc json.RawMessage `json:"doc"`
+	// Result is the raw, un-decoded JSON document. This is populated by
+	// the view _bulk_get
+	Result json.RawMessage `json:"result"`
 }
 
 // SequenceID is a CouchDB update sequence ID. This is just a string, but has

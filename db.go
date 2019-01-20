@@ -572,3 +572,24 @@ func (db *DB) Purge(ctx context.Context, docRevMap map[string][]string) (*PurgeR
 	}
 	return nil, errors.Status(StatusNotImplemented, "kivik: purge not supported by driver")
 }
+
+// BulkGet can be called to query several documents in bulk. It is well suited
+// for fetching a specific revision of documents, as replicators do for example,
+// or for getting revision history.
+//
+// See http://docs.couchdb.org/en/stable/api/database/bulk-api.html#db-bulk-get
+func (db *DB) BulkGet(ctx context.Context, docs []driver.BulkDocReference, options ...Options) (*Rows, error) {
+	bulkGetter, ok := db.driverDB.(driver.BulkGetter)
+	if !ok {
+		return nil, errors.Status(StatusNotImplemented, "kivik: bulk get not supported by driver")
+	}
+	opts, err := mergeOptions(options...)
+	if err != nil {
+		return nil, err
+	}
+	rowsi, err := bulkGetter.BulkGet(ctx, docs, opts)
+	if err != nil {
+		return nil, err
+	}
+	return newRows(ctx, rowsi), nil
+}

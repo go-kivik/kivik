@@ -1877,3 +1877,63 @@ func TestPurge(t *testing.T) {
 		})
 	}
 }
+
+func TestBulkGet(t *testing.T) {
+	type bulkGetTest struct {
+		name    string
+		db      *DB
+		docs    []driver.BulkDocReference
+		options Options
+
+		expected *Rows
+		status   int
+		err      string
+	}
+
+	tests := []bulkGetTest{
+		{
+			name:   "non-bulkGetter",
+			db:     &DB{driverDB: &mock.DB{}},
+			status: StatusNotImplemented,
+			err:    "kivik: bulk get not supported by driver",
+		},
+		{
+			name: "query error",
+			db: &DB{driverDB: &mock.BulkGetter{
+				BulkGetFunc: func(_ context.Context, docs []driver.BulkDocReference, opts map[string]interface{}) (driver.Rows, error) {
+					return nil, errors.New("query error")
+				},
+			}},
+			status: StatusInternalServerError,
+			err:    "query error",
+		},
+		{
+			name: "success",
+			db: &DB{driverDB: &mock.BulkGetter{
+				BulkGetFunc: func(_ context.Context, docs []driver.BulkDocReference, opts map[string]interface{}) (driver.Rows, error) {
+					return &mock.Rows{ID: "bulkGet1"}, nil
+				},
+			}},
+			expected: &Rows{
+				iter: &iter{
+					feed: &rowsIterator{
+						Rows: &mock.Rows{ID: "bulkGet1"},
+					},
+					curVal: &driver.Row{},
+				},
+				rowsi: &mock.Rows{ID: "bulkGet1"},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result, err := test.db.BulkGet(context.Background(), test.docs, test.options)
+			testy.StatusError(t, test.err, test.status, err)
+			result.cancel = nil // Determinism
+			if d := diff.Interface(test.expected, result); d != nil {
+				t.Error(d)
+			}
+		})
+	}
+}

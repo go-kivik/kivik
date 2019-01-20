@@ -616,3 +616,44 @@ func TestDBsStats(t *testing.T) {
 		})
 	}
 }
+
+func TestPing(t *testing.T) {
+	type pingTest struct {
+		name     string
+		client   *Client
+		expected bool
+	}
+	tests := []pingTest{
+		{
+			name: "non-pinger",
+			client: &Client{
+				driverClient: &mock.Client{
+					VersionFunc: func(_ context.Context) (*driver.Version, error) {
+						return &driver.Version{}, nil
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "pinger",
+			client: &Client{
+				driverClient: &mock.Pinger{
+					PingFunc: func(_ context.Context) bool {
+						return true
+					},
+				},
+			},
+			expected: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := test.client.Ping(context.Background())
+			if result != test.expected {
+				t.Errorf("Unexpected result: %t", result)
+			}
+		})
+	}
+}

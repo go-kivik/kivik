@@ -196,3 +196,15 @@ func (c *Client) nativeDBsStats(ctx context.Context, dbnames []string) ([]*DBSta
 	}
 	return dbstats, nil
 }
+
+// Ping returns true if the database is online and available for requests,
+// for instance by querying the /_up endpoint. If the underlying driver
+// supports the Pinger interface, it will be used. Otherwise, a fallback is
+// made to calling Version.
+func (c *Client) Ping(ctx context.Context) bool {
+	if pinger, ok := c.driverClient.(driver.Pinger); ok {
+		return pinger.Ping(ctx)
+	}
+	_, err := c.driverClient.Version(ctx)
+	return err == nil
+}

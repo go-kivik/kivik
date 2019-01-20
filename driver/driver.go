@@ -366,3 +366,11 @@ type LocalDocer interface {
 	// the options provided.
 	LocalDocs(ctx context.Context, options map[string]interface{}) (Rows, error)
 }
+
+// Pinger is an optional interface that may be implemented by a Client. When
+// not implemented, Kivik will call Version instead, to determine if the
+// database is usable.
+type Pinger interface {
+	// Ping returns true if the database is online and available for requests.
+	Ping(ctx context.Context) bool
+}

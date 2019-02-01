@@ -1025,18 +1025,7 @@ func TestNormalizeFromJSON(t *testing.T) {
 		func(test njTest) {
 			t.Run(test.Name, func(t *testing.T) {
 				result, err := normalizeFromJSON(test.Input)
-				var msg string
-				var status int
-				if err != nil {
-					msg = err.Error()
-					status = StatusCode(err)
-				}
-				if msg != test.Error || status != test.Status {
-					t.Errorf("Unexpected error: %d %s", status, msg)
-				}
-				if err != nil {
-					return
-				}
+				testy.StatusError(t, test.Error, test.Status, err)
 				if d := diff.Interface(test.Expected, result); d != nil {
 					t.Error(d)
 				}

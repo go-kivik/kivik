@@ -2,7 +2,9 @@ package kivik
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
+	"net/http"
 	"strings"
 	"testing"
 
@@ -10,7 +12,6 @@ import (
 	"github.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/driver"
-	"github.com/go-kivik/kivik/errors"
 	"github.com/go-kivik/kivik/mock"
 )
 
@@ -164,7 +165,7 @@ func TestAttachmentsIteratorNext(t *testing.T) {
 			iter: &AttachmentsIterator{
 				atti: &mock.Attachments{
 					NextFunc: func(_ *driver.Attachment) error {
-						return errors.Status(StatusBadResponse, "error")
+						return &Error{HTTPStatus: http.StatusBadGateway, Err: errors.New("error")}
 					},
 				},
 			},

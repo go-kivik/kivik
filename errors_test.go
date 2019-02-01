@@ -3,8 +3,6 @@ package kivik
 import (
 	"errors"
 	"testing"
-
-	kerrors "github.com/go-kivik/kivik/errors"
 )
 
 func TestStatusCoder(t *testing.T) {
@@ -25,7 +23,7 @@ func TestStatusCoder(t *testing.T) {
 		},
 		{
 			Name:     "StatusCoder",
-			Err:      kerrors.Status(400, "bad request"),
+			Err:      &Error{HTTPStatus: 400, Err: errors.New("bad request")},
 			Expected: 400,
 		},
 	}

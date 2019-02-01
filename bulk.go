@@ -2,12 +2,13 @@ package kivik
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"reflect"
 
 	"github.com/go-kivik/kivik/driver"
-	"github.com/go-kivik/kivik/errors"
 )
 
 // BulkResults is an iterator over the results of a BulkDocs query.
@@ -103,7 +104,7 @@ func (db *DB) BulkDocs(ctx context.Context, docs interface{}, options ...Options
 		return nil, err
 	}
 	if len(docsi) == 0 {
-		return nil, errors.Status(StatusBadAPICall, "kivik: no documents provided")
+		return nil, &Error{HTTPStatus: http.StatusBadRequest, Err: errors.New("kivik: no documents provided")}
 	}
 	if bulkDocer, ok := db.driverDB.(driver.BulkDocer); ok {
 		bulki, err := bulkDocer.BulkDocs(ctx, docsi, opts)
@@ -166,7 +167,7 @@ func docsInterfaceSlice(docs interface{}) ([]interface{}, error) {
 		for i, doc := range docsi {
 			x, err := normalizeFromJSON(doc)
 			if err != nil {
-				return nil, errors.WrapStatus(StatusBadAPICall, err)
+				return nil, &Error{HTTPStatus: http.StatusBadRequest, Err: err}
 			}
 			docsi[i] = x
 		}
@@ -183,7 +184,7 @@ func docsInterfaceSlice(docs interface{}) ([]interface{}, error) {
 	for i := 0; i < s.Len(); i++ {
 		x, err := normalizeFromJSON(s.Index(i).Interface())
 		if err != nil {
-			return nil, errors.WrapStatus(StatusBadAPICall, err)
+			return nil, &Error{HTTPStatus: http.StatusBadRequest, Err: err}
 		}
 		docsi[i] = x
 	}

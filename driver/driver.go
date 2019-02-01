@@ -374,3 +374,12 @@ type Pinger interface {
 	// Ping returns true if the database is online and available for requests.
 	Ping(ctx context.Context) bool
 }
+
+// Cluster is an optional interface that may be implemented by a Client to
+// support CouchDB cluster configuration operations.
+type Cluster interface {
+	// ClusterStatus returns the current cluster status.
+	ClusterStatus(ctx context.Context, options map[string]interface{}) (string, error)
+	// ClusterSetup performs the action specified by action.
+	ClusterSetup(ctx context.Context, action interface{}) error
+}

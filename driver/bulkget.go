@@ -2,7 +2,7 @@ package driver
 
 import "context"
 
-// BulkDocReference is a reference document given in a BulkGet query.
+// BulkDocReference is a reference to a document given in a BulkGet query.
 type BulkDocReference struct {
 	ID        string `json:"id"`
 	Rev       string `json:"rev,omitempty"`

@@ -1882,7 +1882,7 @@ func TestBulkGet(t *testing.T) {
 	type bulkGetTest struct {
 		name    string
 		db      *DB
-		docs    []driver.BulkDocReference
+		docs    []BulkDocReference
 		options Options
 
 		expected *Rows

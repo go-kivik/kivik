@@ -28,6 +28,7 @@ go:
 env:
     global:
         - KIVIK_TEST_DSN_COUCH22="http://admin:abc123@localhost:6004/"
+        - KIVIK_TEST_DSN_COUCH23="http://admin:abc123@localhost:6005/"
         # - HOMEBREW_NO_AUTO_UPDATE=1
     matrix:
         - MODE=standard

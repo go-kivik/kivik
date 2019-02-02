@@ -2,10 +2,11 @@ package kivik
 
 import (
 	"context"
+	"errors"
+	"net/http"
 	"strings"
 
 	"github.com/go-kivik/kivik/driver"
-	"github.com/go-kivik/kivik/errors"
 )
 
 // Rows is an iterator over a a multi-value query.
@@ -50,8 +51,8 @@ func newRows(ctx context.Context, rowsi driver.Rows) *Rows {
 }
 
 var (
-	errNilPtr = errors.Status(StatusBadAPICall, "kivik: destination pointer is nil")
-	errNonPtr = errors.Status(StatusBadAPICall, "kivik: destination is not a pointer")
+	errNilPtr = &Error{HTTPStatus: http.StatusBadRequest, Err: errors.New("kivik: destination pointer is nil")}
+	errNonPtr = &Error{HTTPStatus: http.StatusBadRequest, Err: errors.New("kivik: destination is not a pointer")}
 )
 
 // ScanValue copies the data from the result value into the value pointed at by
@@ -91,7 +92,7 @@ func (r *Rows) ScanDoc(dest interface{}) error {
 	}
 	doc := r.curVal.(*driver.Row).Doc
 	if doc == nil {
-		return errors.Status(StatusBadAPICall, "kivik: doc is nil; does the query include docs?")
+		return &Error{HTTPStatus: http.StatusBadRequest, Err: errors.New("kivik: doc is nil; does the query include docs?")}
 	}
 	return scan(dest, doc)
 }

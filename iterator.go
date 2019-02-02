@@ -3,11 +3,11 @@ package kivik
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
+	"net/http"
 	"reflect"
 	"sync"
-
-	"github.com/go-kivik/kivik/errors"
 )
 
 type iterator interface {
@@ -32,11 +32,11 @@ func (i *iter) rlock() (unlock func(), err error) {
 	i.mu.RLock()
 	if i.closed {
 		i.mu.RUnlock()
-		return nil, errors.Status(StatusIteratorUnusable, "kivik: Iterator is closed")
+		return nil, &Error{HTTPStatus: http.StatusBadRequest, Err: errors.New("kivik: Iterator is closed")}
 	}
 	if !i.ready {
 		i.mu.RUnlock()
-		return nil, errors.Status(StatusIteratorUnusable, "kivik: Iterator access before calling Next")
+		return nil, &Error{HTTPStatus: http.StatusBadRequest, Err: errors.New("kivik: Iterator access before calling Next")}
 	}
 	return func() { i.mu.RUnlock() }, nil
 }
@@ -148,5 +148,8 @@ func scan(dest interface{}, val json.RawMessage) error {
 		*d = val
 		return nil
 	}
-	return errors.WrapStatus(StatusBadResponse, json.Unmarshal(val, dest))
+	if err := json.Unmarshal(val, dest); err != nil {
+		return &Error{HTTPStatus: http.StatusBadGateway, Err: err}
+	}
+	return nil
 }

@@ -2,11 +2,12 @@ package kivik
 
 import (
 	"context"
+	"errors"
+	"net/http"
 	"sync"
 	"time"
 
 	"github.com/go-kivik/kivik/driver"
-	"github.com/go-kivik/kivik/errors"
 )
 
 // ReplicationState represents a replication's state
@@ -139,42 +140,46 @@ func (r *Replication) Update(ctx context.Context) error {
 	return nil
 }
 
+var replicationNotImplemented = &Error{HTTPStatus: http.StatusNotImplemented, Err: errors.New("kivik: driver does not support replication")}
+
 // GetReplications returns a list of defined replications in the _replicator
 // database. Options are in the same format as to AllDocs(), except that
 // "conflicts" and "update_seq" are ignored.
 func (c *Client) GetReplications(ctx context.Context, options ...Options) ([]*Replication, error) {
-	if replicator, ok := c.driverClient.(driver.ClientReplicator); ok {
-		opts, err := mergeOptions(options...)
-		if err != nil {
-			return nil, err
-		}
-		reps, err := replicator.GetReplications(ctx, opts)
-		if err != nil {
-			return nil, err
-		}
-		replications := make([]*Replication, len(reps))
-		for i, rep := range reps {
-			replications[i] = newReplication(rep)
-		}
-		return replications, nil
+	replicator, ok := c.driverClient.(driver.ClientReplicator)
+	if !ok {
+		return nil, replicationNotImplemented
 	}
-	return nil, errors.Status(StatusNotImplemented, "kivik: driver does not support replication")
+	opts, err := mergeOptions(options...)
+	if err != nil {
+		return nil, err
+	}
+	reps, err := replicator.GetReplications(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	replications := make([]*Replication, len(reps))
+	for i, rep := range reps {
+		replications[i] = newReplication(rep)
+	}
+	return replications, nil
 }
 
 // Replicate initiates a replication from source to target.
 func (c *Client) Replicate(ctx context.Context, targetDSN, sourceDSN string, options ...Options) (*Replication, error) {
-	if replicator, ok := c.driverClient.(driver.ClientReplicator); ok {
-		opts, err := mergeOptions(options...)
-		if err != nil {
-			return nil, err
-		}
-		rep, err := replicator.Replicate(ctx, targetDSN, sourceDSN, opts)
-		if err != nil {
-			return nil, err
-		}
-		return newReplication(rep), nil
+	replicator, ok := c.driverClient.(driver.ClientReplicator)
+	if !ok {
+		return nil, replicationNotImplemented
 	}
-	return nil, errors.Status(StatusNotImplemented, "kivik: driver does not support replication")
+	opts, err := mergeOptions(options...)
+	if err != nil {
+		return nil, err
+	}
+	rep, err := replicator.Replicate(ctx, targetDSN, sourceDSN, opts)
+	if err != nil {
+		return nil, err
+	}
+	return newReplication(rep), nil
 }
 
 // ReplicationInfo represents a snapshot of the status of a replication.

@@ -3,9 +3,11 @@ package kivik
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"strings"
 	"testing"
 
@@ -13,7 +15,6 @@ import (
 	"github.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/driver"
-	"github.com/go-kivik/kivik/errors"
 	"github.com/go-kivik/kivik/mock"
 )
 
@@ -398,7 +399,7 @@ func TestFlush(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.Flusher{
 					FlushFunc: func(_ context.Context) error {
-						return errors.Status(StatusBadResponse, "flush error")
+						return &Error{HTTPStatus: http.StatusBadGateway, Err: errors.New("flush error")}
 					},
 				},
 			},
@@ -437,7 +438,7 @@ func TestStats(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.DB{
 					StatsFunc: func(_ context.Context) (*driver.DBStats, error) {
-						return nil, errors.Status(StatusBadResponse, "stats error")
+						return nil, &Error{HTTPStatus: http.StatusBadGateway, Err: errors.New("stats error")}
 					},
 				},
 			},
@@ -504,7 +505,7 @@ func TestCompact(t *testing.T) {
 	db := &DB{
 		driverDB: &mock.DB{
 			CompactFunc: func(_ context.Context) error {
-				return errors.Status(StatusBadRequest, expected)
+				return &Error{HTTPStatus: http.StatusBadRequest, Err: errors.New(expected)}
 			},
 		},
 	}
@@ -521,7 +522,7 @@ func TestCompactView(t *testing.T) {
 				if ddocID != expectedDDocID {
 					return fmt.Errorf("Unexpected ddocID: %s", ddocID)
 				}
-				return errors.Status(StatusBadRequest, expected)
+				return &Error{HTTPStatus: http.StatusBadRequest, Err: errors.New(expected)}
 			},
 		},
 	}
@@ -534,7 +535,7 @@ func TestViewCleanup(t *testing.T) {
 	db := &DB{
 		driverDB: &mock.DB{
 			ViewCleanupFunc: func(_ context.Context) error {
-				return errors.Status(StatusBadRequest, expected)
+				return &Error{HTTPStatus: http.StatusBadRequest, Err: errors.New(expected)}
 			},
 		},
 	}
@@ -555,7 +556,7 @@ func TestSecurity(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.DB{
 					SecurityFunc: func(_ context.Context) (*driver.Security, error) {
-						return nil, errors.Status(StatusBadResponse, "security error")
+						return nil, &Error{HTTPStatus: http.StatusBadGateway, Err: errors.New("security error")}
 					},
 				},
 			},
@@ -621,7 +622,7 @@ func TestSetSecurity(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.DB{
 					SetSecurityFunc: func(_ context.Context, _ *driver.Security) error {
-						return errors.Status(StatusBadResponse, "set security error")
+						return &Error{HTTPStatus: http.StatusBadGateway, Err: errors.New("set security error")}
 					},
 				},
 			},
@@ -687,7 +688,7 @@ func TestGetMeta(t *testing.T) { // nolint: gocyclo
 			db: &DB{
 				driverDB: &mock.MetaGetter{
 					GetMetaFunc: func(_ context.Context, _ string, _ map[string]interface{}) (int64, string, error) {
-						return 0, "", errors.Status(StatusBadResponse, "get meta error")
+						return 0, "", &Error{HTTPStatus: http.StatusBadGateway, Err: errors.New("get meta error")}
 					},
 				},
 			},
@@ -720,7 +721,7 @@ func TestGetMeta(t *testing.T) { // nolint: gocyclo
 			db: &DB{
 				driverDB: &mock.DB{
 					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (*driver.Document, error) {
-						return nil, errors.Status(StatusBadResponse, "get error")
+						return nil, &Error{HTTPStatus: http.StatusBadGateway, Err: errors.New("get error")}
 					},
 				},
 			},
@@ -838,7 +839,7 @@ func TestCopy(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.Copier{
 					CopyFunc: func(_ context.Context, _, _ string, _ map[string]interface{}) (string, error) {
-						return "", errors.Status(StatusBadRequest, "copy error")
+						return "", &Error{HTTPStatus: http.StatusBadRequest, Err: errors.New("copy error")}
 					},
 				},
 			},
@@ -877,7 +878,7 @@ func TestCopy(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.DB{
 					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (*driver.Document, error) {
-						return nil, errors.Status(StatusBadResponse, "get error")
+						return nil, &Error{HTTPStatus: http.StatusBadGateway, Err: errors.New("get error")}
 					},
 				},
 			},
@@ -914,7 +915,7 @@ func TestCopy(t *testing.T) {
 						}, nil
 					},
 					PutFunc: func(_ context.Context, _ string, _ interface{}, _ map[string]interface{}) (string, error) {
-						return "", errors.Status(StatusBadResponse, "put error")
+						return "", &Error{HTTPStatus: http.StatusBadGateway, Err: errors.New("put error")}
 					},
 				},
 			},
@@ -1017,7 +1018,7 @@ func TestNormalizeFromJSON(t *testing.T) {
 		{
 			Name:   "ErrorReader",
 			Input:  &errorReader{},
-			Status: StatusUnknownError,
+			Status: http.StatusBadRequest,
 			Error:  "errorReader",
 		},
 	}
@@ -1025,18 +1026,7 @@ func TestNormalizeFromJSON(t *testing.T) {
 		func(test njTest) {
 			t.Run(test.Name, func(t *testing.T) {
 				result, err := normalizeFromJSON(test.Input)
-				var msg string
-				var status int
-				if err != nil {
-					msg = err.Error()
-					status = StatusCode(err)
-				}
-				if msg != test.Error || status != test.Status {
-					t.Errorf("Unexpected error: %d %s", status, msg)
-				}
-				if err != nil {
-					return
-				}
+				testy.StatusError(t, test.Error, test.Status, err)
 				if d := diff.Interface(test.Expected, result); d != nil {
 					t.Error(d)
 				}
@@ -1050,13 +1040,13 @@ func TestPut(t *testing.T) {
 		expectedDocID := "foo"
 		expectedDoc := map[string]interface{}{"foo": "bar"}
 		if expectedDocID != docID {
-			return "", errors.Errorf("Unexpected docID: %s", docID)
+			return "", fmt.Errorf("Unexpected docID: %s", docID)
 		}
 		if d := diff.Interface(expectedDoc, doc); d != nil {
-			return "", errors.Errorf("Unexpected doc: %s", d)
+			return "", fmt.Errorf("Unexpected doc: %s", d)
 		}
 		if d := diff.Interface(testOptions, opts); d != nil {
-			return "", errors.Errorf("Unexpected opts: %s", d)
+			return "", fmt.Errorf("Unexpected opts: %s", d)
 		}
 		return "1-xxx", nil
 	}
@@ -1081,7 +1071,7 @@ func TestPut(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.DB{
 					PutFunc: func(_ context.Context, _ string, _ interface{}, _ map[string]interface{}) (string, error) {
-						return "", errors.Status(StatusBadRequest, "db error")
+						return "", &Error{HTTPStatus: http.StatusBadRequest, Err: errors.New("db error")}
 					},
 				},
 			},
@@ -1148,7 +1138,7 @@ func TestPut(t *testing.T) {
 			name:   "ErrorReader",
 			docID:  "foo",
 			input:  &errorReader{},
-			status: StatusUnknownError,
+			status: http.StatusBadRequest,
 			err:    "errorReader",
 		},
 	}
@@ -1277,7 +1267,7 @@ func TestCreateDoc(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.DB{
 					CreateDocFunc: func(_ context.Context, _ interface{}, _ map[string]interface{}) (string, string, error) {
-						return "", "", errors.Status(StatusBadRequest, "create error")
+						return "", "", &Error{HTTPStatus: http.StatusBadRequest, Err: errors.New("create error")}
 					},
 				},
 			},
@@ -1337,7 +1327,7 @@ func TestDelete(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.DB{
 					DeleteFunc: func(_ context.Context, _, _ string, _ map[string]interface{}) (string, error) {
-						return "", errors.Status(StatusBadRequest, "delete error")
+						return "", &Error{HTTPStatus: http.StatusBadRequest, Err: errors.New("delete error")}
 					},
 				},
 			},
@@ -1401,7 +1391,7 @@ func TestPutAttachment(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.DB{
 					PutAttachmentFunc: func(_ context.Context, _, _ string, _ *driver.Attachment, _ map[string]interface{}) (string, error) {
-						return "", errors.Status(StatusBadRequest, "db error")
+						return "", &Error{HTTPStatus: http.StatusBadRequest, Err: errors.New("db error")}
 					},
 				},
 			},
@@ -1511,7 +1501,7 @@ func TestDeleteAttachment(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.DB{
 					DeleteAttachmentFunc: func(_ context.Context, _, _, _ string, _ map[string]interface{}) (string, error) {
-						return "", errors.Status(StatusBadRequest, "db error")
+						return "", &Error{HTTPStatus: http.StatusBadRequest, Err: errors.New("db error")}
 					},
 				},
 			},
@@ -1819,7 +1809,7 @@ func TestPurge(t *testing.T) {
 				driverDB: &mock.Purger{
 					PurgeFunc: func(_ context.Context, dm map[string][]string) (*driver.PurgeResult, error) {
 						if d := diff.Interface(docMap, dm); d != nil {
-							return nil, errors.Errorf("Unexpected docmap: %s", d)
+							return nil, fmt.Errorf("Unexpected docmap: %s", d)
 						}
 						return &driver.PurgeResult{Seq: 2}, nil
 					},
@@ -1836,7 +1826,7 @@ func TestPurge(t *testing.T) {
 				driverDB: &mock.Purger{
 					PurgeFunc: func(_ context.Context, dm map[string][]string) (*driver.PurgeResult, error) {
 						if d := diff.Interface(docMap, dm); d != nil {
-							return nil, errors.Errorf("Unexpected docmap: %s", d)
+							return nil, fmt.Errorf("Unexpected docmap: %s", d)
 						}
 						return &driver.PurgeResult{Seq: 2, Purged: docMap}, nil
 					},
@@ -1859,7 +1849,7 @@ func TestPurge(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.Purger{
 					PurgeFunc: func(_ context.Context, _ map[string][]string) (*driver.PurgeResult, error) {
-						return nil, errors.Status(StatusNotImplemented, "this feature is not yet implemented")
+						return nil, &Error{HTTPStatus: http.StatusNotImplemented, Err: errors.New("this feature is not yet implemented")}
 					},
 				},
 			},

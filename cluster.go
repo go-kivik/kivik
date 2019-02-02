@@ -2,12 +2,13 @@ package kivik
 
 import (
 	"context"
+	"errors"
+	"net/http"
 
 	"github.com/go-kivik/kivik/driver"
-	"github.com/go-kivik/kivik/errors"
 )
 
-var clusterNotImplemented = errors.Status(StatusNotImplemented, "kivik: driver does not support cluster operations")
+var clusterNotImplemented = &Error{HTTPStatus: http.StatusNotImplemented, Err: errors.New("kivik: driver does not support cluster operations")}
 
 // ClusterStatus returns the current cluster status.
 //

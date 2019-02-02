@@ -3,11 +3,13 @@ package kivik
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http"
 
 	"github.com/imdario/mergo"
 
 	"github.com/go-kivik/kivik/driver"
-	"github.com/go-kivik/kivik/errors"
 )
 
 // Client is a client connection handle to a CouchDB-like server.
@@ -37,7 +39,7 @@ func New(driverName, dataSourceName string) (*Client, error) {
 	driveri, ok := drivers[driverName]
 	driversMu.RUnlock()
 	if !ok {
-		return nil, errors.Statusf(StatusBadAPICall, "kivik: unknown driver %q (forgotten import?)", driverName)
+		return nil, &Error{HTTPStatus: http.StatusBadRequest, Err: fmt.Errorf("kivik: unknown driver %q (forgotten import?)", driverName)}
 	}
 	client, err := driveri.NewClient(dataSourceName)
 	if err != nil {
@@ -148,11 +150,11 @@ func (c *Client) Authenticate(ctx context.Context, a interface{}) error {
 	if auth, ok := c.driverClient.(driver.Authenticator); ok {
 		return auth.Authenticate(ctx, a)
 	}
-	return errors.Status(StatusNotImplemented, "kivik: driver does not support authentication")
+	return &Error{HTTPStatus: http.StatusNotImplemented, Err: errors.New("kivik: driver does not support authentication")}
 }
 
 func missingArg(arg string) error {
-	return errors.Statusf(StatusBadRequest, "kivik: %s required", arg)
+	return &Error{HTTPStatus: http.StatusBadRequest, Err: fmt.Errorf("kivik: %s required", arg)}
 }
 
 // DBsStats returns database statistics about one or more databases.
@@ -184,7 +186,7 @@ func (c *Client) fallbackDBsStats(ctx context.Context, dbnames []string) ([]*DBS
 func (c *Client) nativeDBsStats(ctx context.Context, dbnames []string) ([]*DBStats, error) {
 	statser, ok := c.driverClient.(driver.DBsStatser)
 	if !ok {
-		return nil, errors.Status(StatusNotImplemented, "kivik: not supported by driver")
+		return nil, &Error{HTTPStatus: http.StatusNotImplemented, Err: errors.New("kivik: not supported by driver")}
 	}
 	stats, err := statser.DBsStats(ctx, dbnames)
 	if err != nil {

@@ -3,13 +3,14 @@ package kivik
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"reflect"
 	"strings"
 
 	"github.com/go-kivik/kivik/driver"
-	"github.com/go-kivik/kivik/errors"
 )
 
 // DB is a handle to a specific database.
@@ -46,7 +47,7 @@ func (db *DB) AllDocs(ctx context.Context, options ...Options) (*Rows, error) {
 func (db *DB) DesignDocs(ctx context.Context, options ...Options) (*Rows, error) {
 	ddocer, ok := db.driverDB.(driver.DesignDocer)
 	if !ok {
-		return nil, errors.Status(StatusNotImplemented, "kivik: design doc view not supported by driver")
+		return nil, &Error{HTTPStatus: http.StatusNotImplemented, Err: errors.New("kivik: design doc view not supported by driver")}
 	}
 	opts, err := mergeOptions(options...)
 	if err != nil {
@@ -63,7 +64,7 @@ func (db *DB) DesignDocs(ctx context.Context, options ...Options) (*Rows, error)
 func (db *DB) LocalDocs(ctx context.Context, options ...Options) (*Rows, error) {
 	ldocer, ok := db.driverDB.(driver.LocalDocer)
 	if !ok {
-		return nil, errors.Status(StatusNotImplemented, "kivik: local doc view not supported by driver")
+		return nil, &Error{HTTPStatus: http.StatusNotImplemented, Err: errors.New("kivik: local doc view not supported by driver")}
 	}
 	opts, err := mergeOptions(options...)
 	if err != nil {
@@ -131,7 +132,10 @@ func (r *Row) ScanDoc(dest interface{}) error {
 		return errNonPtr
 	}
 	defer r.Body.Close() // nolint: errcheck
-	return errors.WrapStatus(StatusBadResponse, json.NewDecoder(r.Body).Decode(dest))
+	if err := json.NewDecoder(r.Body).Decode(dest); err != nil {
+		return &Error{HTTPStatus: http.StatusBadGateway, Err: err}
+	}
+	return nil
 }
 
 // Get fetches the requested document. Any errors are deferred until the
@@ -210,12 +214,12 @@ func normalizeFromJSON(i interface{}) (interface{}, error) {
 		var err error
 		body, err = ioutil.ReadAll(r)
 		if err != nil {
-			return nil, errors.WrapStatus(StatusUnknownError, err)
+			return nil, &Error{HTTPStatus: http.StatusBadRequest, Err: err}
 		}
 	}
 	var x map[string]interface{}
 	if err := json.Unmarshal(body, &x); err != nil {
-		return nil, errors.WrapStatus(StatusBadAPICall, err)
+		return nil, &Error{HTTPStatus: http.StatusBadRequest, Err: err}
 	}
 	return x, nil
 }
@@ -297,7 +301,7 @@ func (db *DB) Flush(ctx context.Context) error {
 	if flusher, ok := db.driverDB.(driver.Flusher); ok {
 		return flusher.Flush(ctx)
 	}
-	return errors.Status(StatusNotImplemented, "kivik: flush not supported by driver")
+	return &Error{HTTPStatus: http.StatusNotImplemented, Err: errors.New("kivik: flush not supported by driver")}
 }
 
 // DBStats contains database statistics..
@@ -570,7 +574,7 @@ func (db *DB) Purge(ctx context.Context, docRevMap map[string][]string) (*PurgeR
 		r := PurgeResult(*res)
 		return &r, nil
 	}
-	return nil, errors.Status(StatusNotImplemented, "kivik: purge not supported by driver")
+	return nil, &Error{HTTPStatus: http.StatusNotImplemented, Err: errors.New("kivik: purge not supported by driver")}
 }
 
 // BulkDocReference is a reference to a document given in a BulkGet query.
@@ -588,7 +592,7 @@ type BulkDocReference struct {
 func (db *DB) BulkGet(ctx context.Context, docs []BulkDocReference, options ...Options) (*Rows, error) {
 	bulkGetter, ok := db.driverDB.(driver.BulkGetter)
 	if !ok {
-		return nil, errors.Status(StatusNotImplemented, "kivik: bulk get not supported by driver")
+		return nil, &Error{HTTPStatus: http.StatusNotImplemented, Err: errors.New("kivik: bulk get not supported by driver")}
 	}
 	opts, err := mergeOptions(options...)
 	if err != nil {

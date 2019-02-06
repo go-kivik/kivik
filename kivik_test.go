@@ -199,7 +199,8 @@ func TestDB(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.client.DB(context.Background(), test.dbName, test.options)
+			result := test.client.DB(context.Background(), test.dbName, test.options)
+			err := result.Err()
 			testy.StatusError(t, test.err, test.status, err)
 			if d := diff.Interface(test.expected, result); d != nil {
 				t.Error(d)
@@ -364,7 +365,8 @@ func TestCreateDB(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			db, err := test.client.CreateDB(context.Background(), test.dbName, test.opts)
+			db := test.client.CreateDB(context.Background(), test.dbName, test.opts)
+			err := db.Err()
 			testy.StatusError(t, test.err, test.status, err)
 			db.client = nil // Determinism
 			if d := diff.Interface(test.expected, db); d != nil {

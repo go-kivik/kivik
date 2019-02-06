@@ -94,14 +94,16 @@ func (c *Client) Version(ctx context.Context) (*Version, error) {
 }
 
 // DB returns a handle to the requested database. Any options parameters
-// passed are merged, with later values taking precidence.
-func (c *Client) DB(ctx context.Context, dbName string, options ...Options) (*DB, error) {
+// passed are merged, with later values taking precidence. If any errors occur
+// at this stage, they are deferred, or may be checked directly with Err()
+func (c *Client) DB(ctx context.Context, dbName string, options ...Options) *DB {
 	db, err := c.driverClient.DB(ctx, dbName, mergeOptions(options...))
 	return &DB{
 		client:   c,
 		name:     dbName,
 		driverDB: db,
-	}, err
+		err:      err,
+	}
 }
 
 // AllDBs returns a list of all databases.
@@ -114,10 +116,16 @@ func (c *Client) DBExists(ctx context.Context, dbName string, options ...Options
 	return c.driverClient.DBExists(ctx, dbName, mergeOptions(options...))
 }
 
-// CreateDB creates a DB of the requested name.
-func (c *Client) CreateDB(ctx context.Context, dbName string, options ...Options) (*DB, error) {
-	if e := c.driverClient.CreateDB(ctx, dbName, mergeOptions(options...)); e != nil {
-		return nil, e
+// CreateDB creates a DB of the requested name. Any errors are deferred, or may
+// be checked with Err().
+func (c *Client) CreateDB(ctx context.Context, dbName string, options ...Options) *DB {
+	if err := c.driverClient.CreateDB(ctx, dbName, mergeOptions(options...)); err != nil {
+		return &DB{
+			err: err,
+			// These are populated so that Name() and Client() will work.
+			client: c,
+			name:   dbName,
+		}
 	}
 	return c.DB(ctx, dbName, nil)
 }
@@ -154,10 +162,7 @@ func (c *Client) DBsStats(ctx context.Context, dbnames []string) ([]*DBStats, er
 func (c *Client) fallbackDBsStats(ctx context.Context, dbnames []string) ([]*DBStats, error) {
 	dbstats := make([]*DBStats, len(dbnames))
 	for i, dbname := range dbnames {
-		db, err := c.DB(ctx, dbname)
-		if err != nil {
-			return nil, err
-		}
+		db := c.DB(ctx, dbname)
 		stat, err := db.Stats(ctx)
 		if err != nil {
 			return nil, err

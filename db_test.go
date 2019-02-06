@@ -614,6 +614,7 @@ func TestSetSecurity(t *testing.T) {
 	}{
 		{
 			name:   "nil security",
+			db:     &DB{},
 			status: StatusBadRequest,
 			err:    "kivik: security required",
 		},
@@ -825,11 +826,13 @@ func TestCopy(t *testing.T) {
 	}{
 		{
 			name:   "missing target",
+			db:     &DB{},
 			status: StatusBadRequest,
 			err:    "kivik: targetID required",
 		},
 		{
 			name:   "missing source",
+			db:     &DB{},
 			target: "foo",
 			status: StatusBadRequest,
 			err:    "kivik: sourceID required",
@@ -1063,6 +1066,7 @@ func TestPut(t *testing.T) {
 	tests := []putTest{
 		{
 			name:   "no docID",
+			db:     &DB{},
 			status: StatusBadRequest,
 			err:    "kivik: docID required",
 		},
@@ -1093,6 +1097,7 @@ func TestPut(t *testing.T) {
 		},
 		{
 			name:   "InvalidJSON",
+			db:     &DB{},
 			docID:  "foo",
 			input:  []byte("Something bogus"),
 			status: StatusBadAPICall,
@@ -1136,6 +1141,7 @@ func TestPut(t *testing.T) {
 		},
 		{
 			name:   "ErrorReader",
+			db:     &DB{},
 			docID:  "foo",
 			input:  &errorReader{},
 			status: http.StatusBadRequest,
@@ -1319,6 +1325,7 @@ func TestDelete(t *testing.T) {
 	}{
 		{
 			name:   "no doc ID",
+			db:     &DB{},
 			status: StatusBadRequest,
 			err:    "kivik: docID required",
 		},
@@ -1404,11 +1411,13 @@ func TestPutAttachment(t *testing.T) {
 		},
 		{
 			name:   "no doc id",
+			db:     &DB{},
 			status: StatusBadRequest,
 			err:    "kivik: docID required",
 		},
 		{
 			name:   "no filename",
+			db:     &DB{},
 			docID:  "foo",
 			att:    &Attachment{},
 			status: StatusBadRequest,
@@ -1485,11 +1494,13 @@ func TestDeleteAttachment(t *testing.T) {
 	}{
 		{
 			name:   "missing doc id",
+			db:     &DB{},
 			status: StatusBadRequest,
 			err:    "kivik: docID required",
 		},
 		{
 			name:   "missing filename",
+			db:     &DB{},
 			docID:  "foo",
 			status: StatusBadRequest,
 			err:    "kivik: filename required",
@@ -1616,11 +1627,13 @@ func TestGetAttachment(t *testing.T) {
 		},
 		{
 			name:   "no docID",
+			db:     &DB{},
 			status: StatusBadRequest,
 			err:    "kivik: docID required",
 		},
 		{
 			name:   "no filename",
+			db:     &DB{},
 			docID:  "foo",
 			status: StatusBadRequest,
 			err:    "kivik: filename required",
@@ -1766,11 +1779,13 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 		},
 		{
 			name:   "no doc id",
+			db:     &DB{},
 			status: StatusBadRequest,
 			err:    "kivik: docID required",
 		},
 		{
 			name:   "no filename",
+			db:     &DB{},
 			docID:  "foo",
 			status: StatusBadRequest,
 			err:    "kivik: filename required",

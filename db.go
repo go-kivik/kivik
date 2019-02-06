@@ -18,6 +18,7 @@ type DB struct {
 	client   *Client
 	name     string
 	driverDB driver.DB
+	err      error
 }
 
 // Client returns the Client used to connect to the database.
@@ -30,8 +31,19 @@ func (db *DB) Name() string {
 	return db.name
 }
 
+// Err returns the error, if any, that occurred while connecting to or creating
+// the database. This error will be deferred until the next call, normally, so
+// using this method is only ever necessary if you need to directly check the
+// error status, and intend to do nothing else with the DB object.
+func (db *DB) Err() error {
+	return db.err
+}
+
 // AllDocs returns a list of all documents in the database.
 func (db *DB) AllDocs(ctx context.Context, options ...Options) (*Rows, error) {
+	if db.err != nil {
+		return nil, db.err
+	}
 	rowsi, err := db.driverDB.AllDocs(ctx, mergeOptions(options...))
 	if err != nil {
 		return nil, err
@@ -41,6 +53,9 @@ func (db *DB) AllDocs(ctx context.Context, options ...Options) (*Rows, error) {
 
 // DesignDocs returns a list of all documents in the database.
 func (db *DB) DesignDocs(ctx context.Context, options ...Options) (*Rows, error) {
+	if db.err != nil {
+		return nil, db.err
+	}
 	ddocer, ok := db.driverDB.(driver.DesignDocer)
 	if !ok {
 		return nil, &Error{HTTPStatus: http.StatusNotImplemented, Err: errors.New("kivik: design doc view not supported by driver")}
@@ -54,6 +69,9 @@ func (db *DB) DesignDocs(ctx context.Context, options ...Options) (*Rows, error)
 
 // LocalDocs returns a list of all documents in the database.
 func (db *DB) LocalDocs(ctx context.Context, options ...Options) (*Rows, error) {
+	if db.err != nil {
+		return nil, db.err
+	}
 	ldocer, ok := db.driverDB.(driver.LocalDocer)
 	if !ok {
 		return nil, &Error{HTTPStatus: http.StatusNotImplemented, Err: errors.New("kivik: local doc view not supported by driver")}
@@ -69,6 +87,9 @@ func (db *DB) LocalDocs(ctx context.Context, options ...Options) (*Rows, error) 
 // document. ddoc and view may or may not be be prefixed with '_design/'
 // and '_view/' respectively. No other
 func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) (*Rows, error) {
+	if db.err != nil {
+		return nil, db.err
+	}
 	ddoc = strings.TrimPrefix(ddoc, "_design/")
 	view = strings.TrimPrefix(view, "_view/")
 	rowsi, err := db.driverDB.Query(ctx, ddoc, view, mergeOptions(options...))
@@ -125,6 +146,9 @@ func (r *Row) ScanDoc(dest interface{}) error {
 // Get fetches the requested document. Any errors are deferred until the
 // row.ScanDoc call.
 func (db *DB) Get(ctx context.Context, docID string, options ...Options) *Row {
+	if db.err != nil {
+		return &Row{Err: db.err}
+	}
 	doc, err := db.driverDB.Get(ctx, docID, mergeOptions(options...))
 	if err != nil {
 		return &Row{Err: err}
@@ -143,6 +167,9 @@ func (db *DB) Get(ctx context.Context, docID string, options ...Options) *Row {
 // GetMeta returns the size and rev of the specified document. GetMeta accepts
 // the same options as the Get method.
 func (db *DB) GetMeta(ctx context.Context, docID string, options ...Options) (size int64, rev string, err error) {
+	if db.err != nil {
+		return 0, "", db.err
+	}
 	opts := mergeOptions(options...)
 	if r, ok := db.driverDB.(driver.MetaGetter); ok {
 		return r.GetMeta(ctx, docID, opts)
@@ -167,6 +194,9 @@ func (db *DB) GetMeta(ctx context.Context, docID string, options ...Options) (si
 // CreateDoc creates a new doc with an auto-generated unique ID. The generated
 // docID and new rev are returned.
 func (db *DB) CreateDoc(ctx context.Context, doc interface{}, options ...Options) (docID, rev string, err error) {
+	if db.err != nil {
+		return "", "", db.err
+	}
 	return db.driverDB.CreateDoc(ctx, doc, mergeOptions(options...))
 }
 
@@ -241,6 +271,9 @@ func extractDocID(i interface{}) (string, bool) {
 //  - A json.RawMessage value containing a valid JSON document
 //  - An io.Reader, from which a valid JSON document may be read.
 func (db *DB) Put(ctx context.Context, docID string, doc interface{}, options ...Options) (rev string, err error) {
+	if db.err != nil {
+		return "", db.err
+	}
 	if docID == "" {
 		return "", missingArg("docID")
 	}
@@ -253,6 +286,9 @@ func (db *DB) Put(ctx context.Context, docID string, doc interface{}, options ..
 
 // Delete marks the specified document as deleted.
 func (db *DB) Delete(ctx context.Context, docID, rev string, options ...Options) (newRev string, err error) {
+	if db.err != nil {
+		return "", db.err
+	}
 	if docID == "" {
 		return "", missingArg("docID")
 	}
@@ -263,6 +299,9 @@ func (db *DB) Delete(ctx context.Context, docID, rev string, options ...Options)
 //
 // See http://docs.couchdb.org/en/2.0.0/api/database/compact.html#db-ensure-full-commit
 func (db *DB) Flush(ctx context.Context) error {
+	if db.err != nil {
+		return db.err
+	}
 	if flusher, ok := db.driverDB.(driver.Flusher); ok {
 		return flusher.Flush(ctx)
 	}
@@ -311,6 +350,9 @@ type ClusterConfig struct {
 
 // Stats returns database statistics.
 func (db *DB) Stats(ctx context.Context) (*DBStats, error) {
+	if db.err != nil {
+		return nil, db.err
+	}
 	i, err := db.driverDB.Stats(ctx)
 	if err != nil {
 		return nil, err
@@ -342,6 +384,9 @@ func driverStats2kivikStats(i *driver.DBStats) *DBStats {
 // returned by Info() to see if the compaction has completed.
 // See http://docs.couchdb.org/en/2.0.0/api/database/compact.html#db-compact
 func (db *DB) Compact(ctx context.Context) error {
+	if db.err != nil {
+		return db.err
+	}
 	return db.driverDB.Compact(ctx)
 }
 
@@ -356,12 +401,18 @@ func (db *DB) CompactView(ctx context.Context, ddocID string) error {
 // of changed views within design documents.
 // See http://docs.couchdb.org/en/2.0.0/api/database/compact.html#db-view-cleanup
 func (db *DB) ViewCleanup(ctx context.Context) error {
+	if db.err != nil {
+		return db.err
+	}
 	return db.driverDB.ViewCleanup(ctx)
 }
 
 // Security returns the database's security document.
 // See http://couchdb.readthedocs.io/en/latest/api/database/security.html#get--db-_security
 func (db *DB) Security(ctx context.Context) (*Security, error) {
+	if db.err != nil {
+		return nil, db.err
+	}
 	s, err := db.driverDB.Security(ctx)
 	if err != nil {
 		return nil, err
@@ -375,6 +426,9 @@ func (db *DB) Security(ctx context.Context) (*Security, error) {
 // SetSecurity sets the database's security document.
 // See http://couchdb.readthedocs.io/en/latest/api/database/security.html#put--db-_security
 func (db *DB) SetSecurity(ctx context.Context, security *Security) error {
+	if db.err != nil {
+		return db.err
+	}
 	if security == nil {
 		return missingArg("security")
 	}
@@ -392,6 +446,9 @@ func (db *DB) SetSecurity(ctx context.Context, security *Security) error {
 //
 // See http://docs.couchdb.org/en/2.0.0/api/document/common.html#copy--db-docid
 func (db *DB) Copy(ctx context.Context, targetID, sourceID string, options ...Options) (targetRev string, err error) {
+	if db.err != nil {
+		return "", db.err
+	}
 	if targetID == "" {
 		return "", missingArg("targetID")
 	}
@@ -415,6 +472,9 @@ func (db *DB) Copy(ctx context.Context, targetID, sourceID string, options ...Op
 // PutAttachment uploads the supplied content as an attachment to the specified
 // document.
 func (db *DB) PutAttachment(ctx context.Context, docID, rev string, att *Attachment, options ...Options) (newRev string, err error) {
+	if db.err != nil {
+		return "", db.err
+	}
 	if docID == "" {
 		return "", missingArg("docID")
 	}
@@ -427,6 +487,9 @@ func (db *DB) PutAttachment(ctx context.Context, docID, rev string, att *Attachm
 
 // GetAttachment returns a file attachment associated with the document.
 func (db *DB) GetAttachment(ctx context.Context, docID, rev, filename string, options ...Options) (*Attachment, error) {
+	if db.err != nil {
+		return nil, db.err
+	}
 	if docID == "" {
 		return nil, missingArg("docID")
 	}
@@ -453,6 +516,9 @@ var nilContent = nilContentReader{}
 // GetAttachmentMeta returns meta data about an attachment. The attachment
 // content returned will be empty.
 func (db *DB) GetAttachmentMeta(ctx context.Context, docID, rev, filename string, options ...Options) (*Attachment, error) {
+	if db.err != nil {
+		return nil, db.err
+	}
 	if docID == "" {
 		return nil, missingArg("docID")
 	}
@@ -484,6 +550,9 @@ func (db *DB) GetAttachmentMeta(ctx context.Context, docID, rev, filename string
 // DeleteAttachment delets an attachment from a document, returning the
 // document's new revision.
 func (db *DB) DeleteAttachment(ctx context.Context, docID, rev, filename string, options ...Options) (newRev string, err error) {
+	if db.err != nil {
+		return "", db.err
+	}
 	if docID == "" {
 		return "", missingArg("docID")
 	}
@@ -512,6 +581,9 @@ type PurgeResult struct {
 // Purge expects as input a map with document ID as key, and slice of
 // revisions as value.
 func (db *DB) Purge(ctx context.Context, docRevMap map[string][]string) (*PurgeResult, error) {
+	if db.err != nil {
+		return nil, db.err
+	}
 	if purger, ok := db.driverDB.(driver.Purger); ok {
 		res, err := purger.Purge(ctx, docRevMap)
 		if err != nil {
@@ -536,6 +608,9 @@ type BulkDocReference struct {
 //
 // See http://docs.couchdb.org/en/stable/api/database/bulk-api.html#db-bulk-get
 func (db *DB) BulkGet(ctx context.Context, docs []BulkDocReference, options ...Options) (*Rows, error) {
+	if db.err != nil {
+		return nil, db.err
+	}
 	bulkGetter, ok := db.driverDB.(driver.BulkGetter)
 	if !ok {
 		return nil, &Error{HTTPStatus: http.StatusNotImplemented, Err: errors.New("kivik: bulk get not supported by driver")}

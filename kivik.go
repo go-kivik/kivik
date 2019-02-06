@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/imdario/mergo"
-
 	"github.com/go-kivik/kivik/driver"
 )
 
@@ -23,11 +21,14 @@ type Client struct {
 type Options map[string]interface{}
 
 func mergeOptions(otherOpts ...Options) (Options, error) {
-	var options Options
+	options := make(Options)
 	for _, opts := range otherOpts {
-		if err := mergo.MergeWithOverwrite(&options, opts); err != nil {
-			return nil, err
+		for k, v := range opts {
+			options[k] = v
 		}
+	}
+	if len(options) == 0 {
+		return nil, nil
 	}
 	return options, nil
 }

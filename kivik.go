@@ -20,7 +20,10 @@ type Client struct {
 // Options is a collection of options. The keys and values are backend specific.
 type Options map[string]interface{}
 
-func mergeOptions(otherOpts ...Options) (Options, error) {
+func mergeOptions(otherOpts ...Options) Options {
+	if len(otherOpts) == 0 {
+		return nil
+	}
 	options := make(Options)
 	for _, opts := range otherOpts {
 		for k, v := range opts {
@@ -28,9 +31,9 @@ func mergeOptions(otherOpts ...Options) (Options, error) {
 		}
 	}
 	if len(options) == 0 {
-		return nil, nil
+		return nil
 	}
-	return options, nil
+	return options
 }
 
 // New creates a new client object specified by its database driver name
@@ -93,11 +96,7 @@ func (c *Client) Version(ctx context.Context) (*Version, error) {
 // DB returns a handle to the requested database. Any options parameters
 // passed are merged, with later values taking precidence.
 func (c *Client) DB(ctx context.Context, dbName string, options ...Options) (*DB, error) {
-	opts, err := mergeOptions(options...)
-	if err != nil {
-		return nil, err
-	}
-	db, err := c.driverClient.DB(ctx, dbName, opts)
+	db, err := c.driverClient.DB(ctx, dbName, mergeOptions(options...))
 	return &DB{
 		client:   c,
 		name:     dbName,
@@ -107,29 +106,17 @@ func (c *Client) DB(ctx context.Context, dbName string, options ...Options) (*DB
 
 // AllDBs returns a list of all databases.
 func (c *Client) AllDBs(ctx context.Context, options ...Options) ([]string, error) {
-	opts, err := mergeOptions(options...)
-	if err != nil {
-		return nil, err
-	}
-	return c.driverClient.AllDBs(ctx, opts)
+	return c.driverClient.AllDBs(ctx, mergeOptions(options...))
 }
 
 // DBExists returns true if the specified database exists.
 func (c *Client) DBExists(ctx context.Context, dbName string, options ...Options) (bool, error) {
-	opts, err := mergeOptions(options...)
-	if err != nil {
-		return false, err
-	}
-	return c.driverClient.DBExists(ctx, dbName, opts)
+	return c.driverClient.DBExists(ctx, dbName, mergeOptions(options...))
 }
 
 // CreateDB creates a DB of the requested name.
 func (c *Client) CreateDB(ctx context.Context, dbName string, options ...Options) (*DB, error) {
-	opts, err := mergeOptions(options...)
-	if err != nil {
-		return nil, err
-	}
-	if e := c.driverClient.CreateDB(ctx, dbName, opts); e != nil {
+	if e := c.driverClient.CreateDB(ctx, dbName, mergeOptions(options...)); e != nil {
 		return nil, e
 	}
 	return c.DB(ctx, dbName, nil)
@@ -137,11 +124,7 @@ func (c *Client) CreateDB(ctx context.Context, dbName string, options ...Options
 
 // DestroyDB deletes the requested DB.
 func (c *Client) DestroyDB(ctx context.Context, dbName string, options ...Options) error {
-	opts, err := mergeOptions(options...)
-	if err != nil {
-		return err
-	}
-	return c.driverClient.DestroyDB(ctx, dbName, opts)
+	return c.driverClient.DestroyDB(ctx, dbName, mergeOptions(options...))
 }
 
 // Authenticate authenticates the client with the passed authenticator, which

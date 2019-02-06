@@ -663,7 +663,6 @@ func TestMergeOptions(t *testing.T) {
 	type tst struct {
 		options  []Options
 		expected Options
-		err      string
 	}
 	tests := testy.NewTable()
 	tests.Add("No options", tst{})
@@ -705,8 +704,7 @@ func TestMergeOptions(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, test tst) {
-		result, err := mergeOptions(test.options...)
-		testy.Error(t, test.err, err)
+		result := mergeOptions(test.options...)
 		if d := diff.Interface(test.expected, result); d != nil {
 			t.Error(d)
 		}

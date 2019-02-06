@@ -92,10 +92,6 @@ func (r *BulkResults) UpdateErr() error {
 // As with Put, each individual document may be a JSON-marshable object, or a
 // raw JSON string in a []byte, json.RawMessage, or io.Reader.
 func (db *DB) BulkDocs(ctx context.Context, docs interface{}, options ...Options) (*BulkResults, error) {
-	opts, err := mergeOptions(options...)
-	if err != nil {
-		return nil, err
-	}
 	docsi, err := docsInterfaceSlice(docs)
 	if err != nil {
 		if _, ok := err.(errNotSlice); ok {
@@ -106,6 +102,7 @@ func (db *DB) BulkDocs(ctx context.Context, docs interface{}, options ...Options
 	if len(docsi) == 0 {
 		return nil, &Error{HTTPStatus: http.StatusBadRequest, Err: errors.New("kivik: no documents provided")}
 	}
+	opts := mergeOptions(options...)
 	if bulkDocer, ok := db.driverDB.(driver.BulkDocer); ok {
 		bulki, err := bulkDocer.BulkDocs(ctx, docsi, opts)
 		if err != nil {

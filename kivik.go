@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/imdario/mergo"
-
 	"github.com/go-kivik/kivik/driver"
 )
 
@@ -22,14 +20,20 @@ type Client struct {
 // Options is a collection of options. The keys and values are backend specific.
 type Options map[string]interface{}
 
-func mergeOptions(otherOpts ...Options) (Options, error) {
-	var options Options
+func mergeOptions(otherOpts ...Options) Options {
+	if len(otherOpts) == 0 {
+		return nil
+	}
+	options := make(Options)
 	for _, opts := range otherOpts {
-		if err := mergo.MergeWithOverwrite(&options, opts); err != nil {
-			return nil, err
+		for k, v := range opts {
+			options[k] = v
 		}
 	}
-	return options, nil
+	if len(options) == 0 {
+		return nil
+	}
+	return options
 }
 
 // New creates a new client object specified by its database driver name
@@ -90,57 +94,45 @@ func (c *Client) Version(ctx context.Context) (*Version, error) {
 }
 
 // DB returns a handle to the requested database. Any options parameters
-// passed are merged, with later values taking precidence.
-func (c *Client) DB(ctx context.Context, dbName string, options ...Options) (*DB, error) {
-	opts, err := mergeOptions(options...)
-	if err != nil {
-		return nil, err
-	}
-	db, err := c.driverClient.DB(ctx, dbName, opts)
+// passed are merged, with later values taking precidence. If any errors occur
+// at this stage, they are deferred, or may be checked directly with Err()
+func (c *Client) DB(ctx context.Context, dbName string, options ...Options) *DB {
+	db, err := c.driverClient.DB(ctx, dbName, mergeOptions(options...))
 	return &DB{
 		client:   c,
 		name:     dbName,
 		driverDB: db,
-	}, err
+		err:      err,
+	}
 }
 
 // AllDBs returns a list of all databases.
 func (c *Client) AllDBs(ctx context.Context, options ...Options) ([]string, error) {
-	opts, err := mergeOptions(options...)
-	if err != nil {
-		return nil, err
-	}
-	return c.driverClient.AllDBs(ctx, opts)
+	return c.driverClient.AllDBs(ctx, mergeOptions(options...))
 }
 
 // DBExists returns true if the specified database exists.
 func (c *Client) DBExists(ctx context.Context, dbName string, options ...Options) (bool, error) {
-	opts, err := mergeOptions(options...)
-	if err != nil {
-		return false, err
-	}
-	return c.driverClient.DBExists(ctx, dbName, opts)
+	return c.driverClient.DBExists(ctx, dbName, mergeOptions(options...))
 }
 
-// CreateDB creates a DB of the requested name.
-func (c *Client) CreateDB(ctx context.Context, dbName string, options ...Options) (*DB, error) {
-	opts, err := mergeOptions(options...)
-	if err != nil {
-		return nil, err
-	}
-	if e := c.driverClient.CreateDB(ctx, dbName, opts); e != nil {
-		return nil, e
+// CreateDB creates a DB of the requested name. Any errors are deferred, or may
+// be checked with Err().
+func (c *Client) CreateDB(ctx context.Context, dbName string, options ...Options) *DB {
+	if err := c.driverClient.CreateDB(ctx, dbName, mergeOptions(options...)); err != nil {
+		return &DB{
+			err: err,
+			// These are populated so that Name() and Client() will work.
+			client: c,
+			name:   dbName,
+		}
 	}
 	return c.DB(ctx, dbName, nil)
 }
 
 // DestroyDB deletes the requested DB.
 func (c *Client) DestroyDB(ctx context.Context, dbName string, options ...Options) error {
-	opts, err := mergeOptions(options...)
-	if err != nil {
-		return err
-	}
-	return c.driverClient.DestroyDB(ctx, dbName, opts)
+	return c.driverClient.DestroyDB(ctx, dbName, mergeOptions(options...))
 }
 
 // Authenticate authenticates the client with the passed authenticator, which
@@ -170,10 +162,7 @@ func (c *Client) DBsStats(ctx context.Context, dbnames []string) ([]*DBStats, er
 func (c *Client) fallbackDBsStats(ctx context.Context, dbnames []string) ([]*DBStats, error) {
 	dbstats := make([]*DBStats, len(dbnames))
 	for i, dbname := range dbnames {
-		db, err := c.DB(ctx, dbname)
-		if err != nil {
-			return nil, err
-		}
+		db := c.DB(ctx, dbname)
 		stat, err := db.Stats(ctx)
 		if err != nil {
 			return nil, err

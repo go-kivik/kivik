@@ -8,6 +8,7 @@ import (
 
 	"github.com/flimzy/diff"
 	"github.com/flimzy/testy"
+
 	"github.com/go-kivik/kivik/driver"
 	"github.com/go-kivik/kivik/mock"
 )
@@ -198,7 +199,8 @@ func TestDB(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.client.DB(context.Background(), test.dbName, test.options)
+			result := test.client.DB(context.Background(), test.dbName, test.options)
+			err := result.Err()
 			testy.StatusError(t, test.err, test.status, err)
 			if d := diff.Interface(test.expected, result); d != nil {
 				t.Error(d)
@@ -363,7 +365,8 @@ func TestCreateDB(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			db, err := test.client.CreateDB(context.Background(), test.dbName, test.opts)
+			db := test.client.CreateDB(context.Background(), test.dbName, test.opts)
+			err := db.Err()
 			testy.StatusError(t, test.err, test.status, err)
 			db.client = nil // Determinism
 			if d := diff.Interface(test.expected, db); d != nil {
@@ -656,4 +659,56 @@ func TestPing(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestMergeOptions(t *testing.T) {
+	type tst struct {
+		options  []Options
+		expected Options
+	}
+	tests := testy.NewTable()
+	tests.Add("No options", tst{})
+	tests.Add("One set", tst{
+		options: []Options{
+			{"foo": 123},
+		},
+		expected: Options{"foo": 123},
+	})
+	tests.Add("merged", tst{
+		options: []Options{
+			{"foo": 123},
+			{"bar": 321},
+		},
+		expected: Options{
+			"foo": 123,
+			"bar": 321,
+		},
+	})
+	tests.Add("overwrite", tst{
+		options: []Options{
+			{"foo": 123, "bar": 321},
+			{"foo": 111},
+		},
+		expected: Options{
+			"foo": 111,
+			"bar": 321,
+		},
+	})
+	tests.Add("nil option", tst{
+		options: []Options{nil},
+	})
+	tests.Add("different types", tst{
+		options: []Options{
+			{"foo": 123},
+			{"foo": "bar"},
+		},
+		expected: Options{"foo": "bar"},
+	})
+
+	tests.Run(t, func(t *testing.T, test tst) {
+		result := mergeOptions(test.options...)
+		if d := diff.Interface(test.expected, result); d != nil {
+			t.Error(d)
+		}
+	})
 }

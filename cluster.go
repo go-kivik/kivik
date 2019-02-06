@@ -18,11 +18,7 @@ func (c *Client) ClusterStatus(ctx context.Context, options ...Options) (string,
 	if !ok {
 		return "", clusterNotImplemented
 	}
-	opts, err := mergeOptions(options...)
-	if err != nil {
-		return "", err
-	}
-	return cluster.ClusterStatus(ctx, opts)
+	return cluster.ClusterStatus(ctx, mergeOptions(options...))
 }
 
 // ClusterSetup performs the requested cluster action. action should be

@@ -625,3 +625,12 @@ func (db *DB) BulkGet(ctx context.Context, docs []BulkDocReference, options ...O
 	}
 	return newRows(ctx, rowsi), nil
 }
+
+// Close cleans up any resources used by the DB. The default CouchDB driver
+// does not use this, the default PouchDB driver does.
+func (db *DB) Close(ctx context.Context) error {
+	if closer, ok := db.driverDB.(driver.DBCloser); ok {
+		return closer.Close(ctx)
+	}
+	return nil
+}

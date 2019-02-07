@@ -712,3 +712,34 @@ func TestMergeOptions(t *testing.T) {
 		}
 	})
 }
+
+func TestDBClose(t *testing.T) {
+	type tst struct {
+		client *Client
+		err    string
+	}
+	tests := testy.NewTable()
+	tests.Add("non-closer", tst{
+		client: &Client{driverClient: &mock.Client{}},
+	})
+	tests.Add("error", tst{
+		client: &Client{driverClient: &mock.ClientCloser{
+			CloseFunc: func(_ context.Context) error {
+				return errors.New("close err")
+			},
+		}},
+		err: "close err",
+	})
+	tests.Add("success", tst{
+		client: &Client{driverClient: &mock.ClientCloser{
+			CloseFunc: func(_ context.Context) error {
+				return nil
+			},
+		}},
+	})
+
+	tests.Run(t, func(t *testing.T, test tst) {
+		err := test.client.Close(context.Background())
+		testy.Error(t, test.err, err)
+	})
+}

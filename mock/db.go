@@ -250,3 +250,16 @@ var _ driver.BulkGetter = &BulkGetter{}
 func (db *BulkGetter) BulkGet(ctx context.Context, docs []driver.BulkDocReference, opts map[string]interface{}) (driver.Rows, error) {
 	return db.BulkGetFunc(ctx, docs, opts)
 }
+
+// DBCloser mocks driver.DB and driver.DBCloser
+type DBCloser struct {
+	*DB
+	CloseFunc func(context.Context) error
+}
+
+var _ driver.DBCloser = &DBCloser{}
+
+// Close calls c.CloseFunc
+func (db *DBCloser) Close(ctx context.Context) error {
+	return db.CloseFunc(ctx)
+}

@@ -139,3 +139,16 @@ func (c *Cluster) ClusterStatus(ctx context.Context, options map[string]interfac
 func (c *Cluster) ClusterSetup(ctx context.Context, action interface{}) error {
 	return c.ClusterSetupFunc(ctx, action)
 }
+
+// ClientCloser mocks driver.Client and driver.ClientCloser
+type ClientCloser struct {
+	*Client
+	CloseFunc func(context.Context) error
+}
+
+var _ driver.ClientCloser = &ClientCloser{}
+
+// Close calls c.CloseFunc
+func (c *ClientCloser) Close(ctx context.Context) error {
+	return c.CloseFunc(ctx)
+}

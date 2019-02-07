@@ -199,3 +199,11 @@ func (c *Client) Ping(ctx context.Context) bool {
 	_, err := c.driverClient.Version(ctx)
 	return err == nil
 }
+
+// Close cleans up any resources used by Client.
+func (c *Client) Close(ctx context.Context) error {
+	if closer, ok := c.driverClient.(driver.ClientCloser); ok {
+		return closer.Close(ctx)
+	}
+	return nil
+}

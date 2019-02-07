@@ -1942,3 +1942,34 @@ func TestBulkGet(t *testing.T) {
 		})
 	}
 }
+
+func TestClientClose(t *testing.T) {
+	type tst struct {
+		db  *DB
+		err string
+	}
+	tests := testy.NewTable()
+	tests.Add("non-closer", tst{
+		db: &DB{driverDB: &mock.DB{}},
+	})
+	tests.Add("error", tst{
+		db: &DB{driverDB: &mock.DBCloser{
+			CloseFunc: func(_ context.Context) error {
+				return errors.New("close err")
+			},
+		}},
+		err: "close err",
+	})
+	tests.Add("success", tst{
+		db: &DB{driverDB: &mock.DBCloser{
+			CloseFunc: func(_ context.Context) error {
+				return nil
+			},
+		}},
+	})
+
+	tests.Run(t, func(t *testing.T, test tst) {
+		err := test.db.Close(context.Background())
+		testy.Error(t, test.err, err)
+	})
+}

@@ -72,6 +72,9 @@ type Version struct {
 	Version string
 	// Vendor is the vendor string reported by the server or backend.
 	Vendor string
+	// Features is a list of enabled, optional features.  This was added in
+	// CouchDB 2.1.0, and can be expected to be empty for older versions.
+	Features []string
 	// RawResponse is the raw response body returned by the server, useful if
 	// you need additional backend-specific information.
 	//
@@ -86,11 +89,9 @@ func (c *Client) Version(ctx context.Context) (*Version, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Version{
-		Version:     ver.Version,
-		Vendor:      ver.Vendor,
-		RawResponse: ver.RawResponse,
-	}, nil
+	v := &Version{}
+	*v = Version(*ver)
+	return v, nil
 }
 
 // DB returns a handle to the requested database. Any options parameters

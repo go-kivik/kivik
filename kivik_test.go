@@ -625,6 +625,7 @@ func TestPing(t *testing.T) {
 		name     string
 		client   *Client
 		expected bool
+		err      string
 	}
 	tests := []pingTest{
 		{
@@ -642,8 +643,8 @@ func TestPing(t *testing.T) {
 			name: "pinger",
 			client: &Client{
 				driverClient: &mock.Pinger{
-					PingFunc: func(_ context.Context) bool {
-						return true
+					PingFunc: func(_ context.Context) (bool, error) {
+						return true, nil
 					},
 				},
 			},
@@ -653,7 +654,8 @@ func TestPing(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result := test.client.Ping(context.Background())
+			result, err := test.client.Ping(context.Background())
+			testy.Error(t, test.err, err)
 			if result != test.expected {
 				t.Errorf("Unexpected result: %t", result)
 			}

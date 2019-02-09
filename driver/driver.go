@@ -372,7 +372,7 @@ type LocalDocer interface {
 // database is usable.
 type Pinger interface {
 	// Ping returns true if the database is online and available for requests.
-	Ping(ctx context.Context) bool
+	Ping(ctx context.Context) (bool, error)
 }
 
 // Cluster is an optional interface that may be implemented by a Client to

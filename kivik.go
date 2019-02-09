@@ -192,12 +192,12 @@ func (c *Client) nativeDBsStats(ctx context.Context, dbnames []string) ([]*DBSta
 // for instance by querying the /_up endpoint. If the underlying driver
 // supports the Pinger interface, it will be used. Otherwise, a fallback is
 // made to calling Version.
-func (c *Client) Ping(ctx context.Context) bool {
+func (c *Client) Ping(ctx context.Context) (bool, error) {
 	if pinger, ok := c.driverClient.(driver.Pinger); ok {
 		return pinger.Ping(ctx)
 	}
 	_, err := c.driverClient.Version(ctx)
-	return err == nil
+	return err == nil, err
 }
 
 // Close cleans up any resources used by Client.

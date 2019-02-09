@@ -111,13 +111,13 @@ func (c *DBsStatser) DBsStats(ctx context.Context, dbnames []string) ([]*driver.
 // Pinger mocks driver.Client and driver.Pinger
 type Pinger struct {
 	*Client
-	PingFunc func(context.Context) bool
+	PingFunc func(context.Context) (bool, error)
 }
 
 var _ driver.Pinger = &Pinger{}
 
 // Ping calls c.PingFunc
-func (c *Pinger) Ping(ctx context.Context) bool {
+func (c *Pinger) Ping(ctx context.Context) (bool, error) {
 	return c.PingFunc(ctx)
 }
 

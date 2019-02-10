@@ -595,8 +595,8 @@ func (db *DB) Purge(ctx context.Context, docRevMap map[string][]string) (*PurgeR
 	return nil, &Error{HTTPStatus: http.StatusNotImplemented, Err: errors.New("kivik: purge not supported by driver")}
 }
 
-// BulkDocReference is a reference to a document given in a BulkGet query.
-type BulkDocReference struct {
+// BulkGetReference is a reference to a document given in a BulkGet query.
+type BulkGetReference struct {
 	ID        string `json:"id"`
 	Rev       string `json:"rev,omitempty"`
 	AttsSince string `json:"atts_since,omitempty"`
@@ -607,7 +607,7 @@ type BulkDocReference struct {
 // or for getting revision history.
 //
 // See http://docs.couchdb.org/en/stable/api/database/bulk-api.html#db-bulk-get
-func (db *DB) BulkGet(ctx context.Context, docs []BulkDocReference, options ...Options) (*Rows, error) {
+func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...Options) (*Rows, error) {
 	if db.err != nil {
 		return nil, db.err
 	}
@@ -615,9 +615,9 @@ func (db *DB) BulkGet(ctx context.Context, docs []BulkDocReference, options ...O
 	if !ok {
 		return nil, &Error{HTTPStatus: http.StatusNotImplemented, Err: errors.New("kivik: bulk get not supported by driver")}
 	}
-	refs := make([]driver.BulkDocReference, len(docs))
+	refs := make([]driver.BulkGetReference, len(docs))
 	for i, ref := range docs {
-		refs[i] = driver.BulkDocReference(ref)
+		refs[i] = driver.BulkGetReference(ref)
 	}
 	rowsi, err := bulkGetter.BulkGet(ctx, refs, mergeOptions(options...))
 	if err != nil {

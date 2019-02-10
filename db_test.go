@@ -1887,7 +1887,7 @@ func TestBulkGet(t *testing.T) {
 	type bulkGetTest struct {
 		name    string
 		db      *DB
-		docs    []BulkDocReference
+		docs    []BulkGetReference
 		options Options
 
 		expected *Rows
@@ -1905,7 +1905,7 @@ func TestBulkGet(t *testing.T) {
 		{
 			name: "query error",
 			db: &DB{driverDB: &mock.BulkGetter{
-				BulkGetFunc: func(_ context.Context, docs []driver.BulkDocReference, opts map[string]interface{}) (driver.Rows, error) {
+				BulkGetFunc: func(_ context.Context, docs []driver.BulkGetReference, opts map[string]interface{}) (driver.Rows, error) {
 					return nil, errors.New("query error")
 				},
 			}},
@@ -1915,7 +1915,7 @@ func TestBulkGet(t *testing.T) {
 		{
 			name: "success",
 			db: &DB{driverDB: &mock.BulkGetter{
-				BulkGetFunc: func(_ context.Context, docs []driver.BulkDocReference, opts map[string]interface{}) (driver.Rows, error) {
+				BulkGetFunc: func(_ context.Context, docs []driver.BulkGetReference, opts map[string]interface{}) (driver.Rows, error) {
 					return &mock.Rows{ID: "bulkGet1"}, nil
 				},
 			}},

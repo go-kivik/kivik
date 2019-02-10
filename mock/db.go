@@ -241,13 +241,13 @@ func (db *Purger) Purge(ctx context.Context, docMap map[string][]string) (*drive
 // BulkGetter mocks a driver.DB and driver.BulkGetter
 type BulkGetter struct {
 	*DB
-	BulkGetFunc func(context.Context, []driver.BulkDocReference, map[string]interface{}) (driver.Rows, error)
+	BulkGetFunc func(context.Context, []driver.BulkGetReference, map[string]interface{}) (driver.Rows, error)
 }
 
 var _ driver.BulkGetter = &BulkGetter{}
 
 // BulkGet calls db.BulkGetFunc
-func (db *BulkGetter) BulkGet(ctx context.Context, docs []driver.BulkDocReference, opts map[string]interface{}) (driver.Rows, error) {
+func (db *BulkGetter) BulkGet(ctx context.Context, docs []driver.BulkGetReference, opts map[string]interface{}) (driver.Rows, error) {
 	return db.BulkGetFunc(ctx, docs, opts)
 }
 

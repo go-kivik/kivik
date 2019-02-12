@@ -559,7 +559,7 @@ func (db *DB) DeleteAttachment(ctx context.Context, docID, rev, filename string,
 	if filename == "" {
 		return "", missingArg("filename")
 	}
-	return db.driverDB.DeleteAttachment(ctx, docID, filename, mergeOptions(options...))
+	return db.driverDB.DeleteAttachment(ctx, docID, rev, filename, mergeOptions(options...))
 }
 
 // PurgeResult is the result of a purge request.

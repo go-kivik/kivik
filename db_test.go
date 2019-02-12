@@ -1511,7 +1511,7 @@ func TestDeleteAttachment(t *testing.T) {
 			filename: "foo.txt",
 			db: &DB{
 				driverDB: &mock.DB{
-					DeleteAttachmentFunc: func(_ context.Context, _, _ string, _ map[string]interface{}) (string, error) {
+					DeleteAttachmentFunc: func(_ context.Context, _, _, _ string, _ map[string]interface{}) (string, error) {
 						return "", &Error{HTTPStatus: http.StatusBadRequest, Err: errors.New("db error")}
 					},
 				},
@@ -1523,10 +1523,13 @@ func TestDeleteAttachment(t *testing.T) {
 			name: "success",
 			db: &DB{
 				driverDB: &mock.DB{
-					DeleteAttachmentFunc: func(_ context.Context, docID, filename string, opts map[string]interface{}) (string, error) {
-						expectedDocID, expectedFilename := "foo", "foo.txt"
+					DeleteAttachmentFunc: func(_ context.Context, docID, rev, filename string, opts map[string]interface{}) (string, error) {
+						expectedDocID, expectedRev, expectedFilename := "foo", "1-xxx", "foo.txt"
 						if docID != expectedDocID {
 							return "", fmt.Errorf("Unexpected docID: %s", docID)
+						}
+						if rev != expectedRev {
+							return "", fmt.Errorf("Unexpected rev: %s", rev)
 						}
 						if filename != expectedFilename {
 							return "", fmt.Errorf("Unexpected filename: %s", filename)

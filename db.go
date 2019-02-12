@@ -486,7 +486,7 @@ func (db *DB) PutAttachment(ctx context.Context, docID, rev string, att *Attachm
 }
 
 // GetAttachment returns a file attachment associated with the document.
-func (db *DB) GetAttachment(ctx context.Context, docID, rev, filename string, options ...Options) (*Attachment, error) {
+func (db *DB) GetAttachment(ctx context.Context, docID, filename string, options ...Options) (*Attachment, error) {
 	if db.err != nil {
 		return nil, db.err
 	}
@@ -496,7 +496,7 @@ func (db *DB) GetAttachment(ctx context.Context, docID, rev, filename string, op
 	if filename == "" {
 		return nil, missingArg("filename")
 	}
-	att, err := db.driverDB.GetAttachment(ctx, docID, rev, filename, mergeOptions(options...))
+	att, err := db.driverDB.GetAttachment(ctx, docID, filename, mergeOptions(options...))
 	if err != nil {
 		return nil, err
 	}
@@ -527,7 +527,7 @@ func (db *DB) GetAttachmentMeta(ctx context.Context, docID, rev, filename string
 	}
 	var att *Attachment
 	if metaer, ok := db.driverDB.(driver.AttachmentMetaGetter); ok {
-		a, err := metaer.GetAttachmentMeta(ctx, docID, rev, filename, mergeOptions(options...))
+		a, err := metaer.GetAttachmentMeta(ctx, docID, filename, mergeOptions(options...))
 		if err != nil {
 			return nil, err
 		}
@@ -535,7 +535,7 @@ func (db *DB) GetAttachmentMeta(ctx context.Context, docID, rev, filename string
 		*att = Attachment(*a)
 	} else {
 		var err error
-		att, err = db.GetAttachment(ctx, docID, rev, filename, options...)
+		att, err = db.GetAttachment(ctx, docID, filename, options...)
 		if err != nil {
 			return nil, err
 		}
@@ -559,7 +559,7 @@ func (db *DB) DeleteAttachment(ctx context.Context, docID, rev, filename string,
 	if filename == "" {
 		return "", missingArg("filename")
 	}
-	return db.driverDB.DeleteAttachment(ctx, docID, rev, filename, mergeOptions(options...))
+	return db.driverDB.DeleteAttachment(ctx, docID, filename, mergeOptions(options...))
 }
 
 // PurgeResult is the result of a purge request.

@@ -172,12 +172,11 @@ type DB interface {
 	// PutAttachment uploads an attachment to the specified document, returning
 	// the new revision.
 	PutAttachment(ctx context.Context, docID, rev string, att *Attachment, options map[string]interface{}) (newRev string, err error)
-	// GetAttachment fetches an attachment for the associated document ID. rev
-	// may be an empty string to fetch the most recent document version.
-	GetAttachment(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (*Attachment, error)
+	// GetAttachment fetches an attachment for the associated document ID.
+	GetAttachment(ctx context.Context, docID, filename string, options map[string]interface{}) (*Attachment, error)
 	// DeleteAttachment deletes an attachment from a document, returning the
 	// document's new revision.
-	DeleteAttachment(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (newRev string, err error)
+	DeleteAttachment(ctx context.Context, docID, filename string, options map[string]interface{}) (newRev string, err error)
 	// Query performs a query against a view, subject to the options provided.
 	// ddoc will be the design doc name without the '_design/' previx.
 	// view will be the view name without the '_view/' prefix.
@@ -303,7 +302,7 @@ type Attachment struct {
 // not satisfied, GetAttachment will be used instead.
 type AttachmentMetaGetter interface {
 	// GetAttachmentMetaOpts returns meta information about an attachment.
-	GetAttachmentMeta(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (*Attachment, error)
+	GetAttachmentMeta(ctx context.Context, docID, filename string, options map[string]interface{}) (*Attachment, error)
 }
 
 // BulkResult is the result of a single doc update in a BulkDocs request.

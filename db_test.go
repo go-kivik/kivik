@@ -1657,10 +1657,10 @@ func TestGetAttachment(t *testing.T) {
 
 func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 	tests := []struct {
-		name                 string
-		db                   *DB
-		docID, rev, filename string
-		options              Options
+		name            string
+		db              *DB
+		docID, filename string
+		options         Options
 
 		expected *Attachment
 		status   int
@@ -1706,7 +1706,6 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 				},
 			},
 			docID:    "foo",
-			rev:      "1-xxx",
 			filename: "foo.txt",
 			options:  testOptions,
 			expected: &Attachment{
@@ -1756,7 +1755,6 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 				},
 			},
 			docID:    "foo",
-			rev:      "1-xxx",
 			filename: "foo.txt",
 			options:  testOptions,
 			expected: &Attachment{
@@ -1783,7 +1781,7 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.db.GetAttachmentMeta(context.Background(), test.docID, test.rev, test.filename, test.options)
+			result, err := test.db.GetAttachmentMeta(context.Background(), test.docID, test.filename, test.options)
 			testy.StatusError(t, test.err, test.status, err)
 			if d := diff.Interface(test.expected, result); d != nil {
 				t.Error(d)

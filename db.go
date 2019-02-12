@@ -515,7 +515,7 @@ var nilContent = nilContentReader{}
 
 // GetAttachmentMeta returns meta data about an attachment. The attachment
 // content returned will be empty.
-func (db *DB) GetAttachmentMeta(ctx context.Context, docID, rev, filename string, options ...Options) (*Attachment, error) {
+func (db *DB) GetAttachmentMeta(ctx context.Context, docID, filename string, options ...Options) (*Attachment, error) {
 	if db.err != nil {
 		return nil, db.err
 	}

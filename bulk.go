@@ -3,10 +3,8 @@ package kivik
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
-	"reflect"
 
 	"github.com/go-kivik/kivik/driver"
 )
@@ -85,18 +83,14 @@ func (r *BulkResults) UpdateErr() error {
 
 // BulkDocs allows you to create and update multiple documents at the same time
 // within a single request. This function returns an iterator over the results
-// of the bulk operation. docs must be a slice, array, or pointer to a slice
-// or array, or the function will panic.
+// of the bulk operation.
 // See http://docs.couchdb.org/en/2.0.0/api/database/bulk-api.html#db-bulk-docs
 //
 // As with Put, each individual document may be a JSON-marshable object, or a
 // raw JSON string in a []byte, json.RawMessage, or io.Reader.
-func (db *DB) BulkDocs(ctx context.Context, docs interface{}, options ...Options) (*BulkResults, error) {
+func (db *DB) BulkDocs(ctx context.Context, docs []interface{}, options ...Options) (*BulkResults, error) {
 	docsi, err := docsInterfaceSlice(docs)
 	if err != nil {
-		if _, ok := err.(errNotSlice); ok {
-			panic(err)
-		}
 		return nil, err
 	}
 	if len(docsi) == 0 {
@@ -149,37 +143,9 @@ func (r *emulatedBulkResults) Next(res *driver.BulkResult) error {
 	return nil
 }
 
-type errNotSlice struct {
-	i interface{}
-}
-
-func (e errNotSlice) Error() string {
-	return fmt.Sprintf("must be slice or array, got %T", e.i)
-}
-
-func (e errNotSlice) StatusCode() int { return StatusBadAPICall }
-
-func docsInterfaceSlice(docs interface{}) ([]interface{}, error) {
-	if docsi, ok := docs.([]interface{}); ok {
-		for i, doc := range docsi {
-			x, err := normalizeFromJSON(doc)
-			if err != nil {
-				return nil, &Error{HTTPStatus: http.StatusBadRequest, Err: err}
-			}
-			docsi[i] = x
-		}
-		return docsi, nil
-	}
-	s := reflect.ValueOf(docs)
-	if s.Kind() == reflect.Ptr {
-		s = s.Elem()
-	}
-	if s.Kind() != reflect.Slice && s.Kind() != reflect.Array {
-		return nil, errNotSlice{docs}
-	}
-	docsi := make([]interface{}, s.Len())
-	for i := 0; i < s.Len(); i++ {
-		x, err := normalizeFromJSON(s.Index(i).Interface())
+func docsInterfaceSlice(docsi []interface{}) ([]interface{}, error) {
+	for i, doc := range docsi {
+		x, err := normalizeFromJSON(doc)
 		if err != nil {
 			return nil, &Error{HTTPStatus: http.StatusBadRequest, Err: err}
 		}

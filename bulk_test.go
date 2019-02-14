@@ -145,52 +145,16 @@ func TestRLOCK(t *testing.T) {
 func TestDocsInterfaceSlice(t *testing.T) {
 	type diTest struct {
 		name     string
-		input    interface{}
+		input    []interface{}
 		expected interface{}
 		status   int
 		err      string
 	}
-	str := "foo"
-	intSlice := []int{1, 2, 3}
 	tests := []diTest{
-		{
-			name:     "Nil",
-			input:    nil,
-			expected: nil,
-			status:   StatusBadAPICall,
-			err:      "must be slice or array, got <nil>",
-		},
 		{
 			name:     "InterfaceSlice",
 			input:    []interface{}{map[string]string{"foo": "bar"}},
 			expected: []interface{}{map[string]string{"foo": "bar"}},
-		},
-		{
-			name:   "String",
-			input:  "foo",
-			status: StatusBadAPICall,
-			err:    "must be slice or array, got string",
-		},
-		{
-			name:     "IntSlice",
-			input:    []int{1, 2, 3},
-			expected: []interface{}{1, 2, 3},
-		},
-		{
-			name:     "IntArray",
-			input:    [3]int{1, 2, 3},
-			expected: []interface{}{1, 2, 3},
-		},
-		{
-			name:   "StringPointer",
-			input:  &str,
-			status: StatusBadAPICall,
-			err:    "must be slice or array, got *string",
-		},
-		{
-			name:     "SlicePointer",
-			input:    &intSlice,
-			expected: []interface{}{1, 2, 3},
 		},
 		{
 			name: "JSONDoc",
@@ -204,25 +168,8 @@ func TestDocsInterfaceSlice(t *testing.T) {
 			},
 		},
 		{
-			name: "BytesArrays",
-			input: [][]byte{
-				[]byte(`{"foo":"bar"}`),
-				[]byte(`{"foo":"bar"}`),
-			},
-			expected: []interface{}{
-				map[string]string{"foo": "bar"},
-				map[string]string{"foo": "bar"},
-			},
-		},
-		{
 			name:   "InvalidJSON",
 			input:  []interface{}{[]byte(`invalid`)},
-			status: StatusBadAPICall,
-			err:    "invalid character 'i' looking for beginning of value",
-		},
-		{
-			name:   "BytesInvalidJSON",
-			input:  [][]byte{[]byte(`invalid`)},
 			status: StatusBadAPICall,
 			err:    "invalid character 'i' looking for beginning of value",
 		},
@@ -232,13 +179,6 @@ func TestDocsInterfaceSlice(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				result, err := docsInterfaceSlice(test.input)
 				testy.StatusError(t, test.err, test.status, err)
-				// var msg string
-				// if err != nil {
-				// 	msg = err.Error()
-				// }
-				// if msg != test.error {
-				// 	t.Errorf("Unexpected error: %s", err)
-				// }
 				if d := diff.AsJSON(test.expected, result); d != nil {
 					t.Errorf("%s", d)
 				}
@@ -247,32 +187,11 @@ func TestDocsInterfaceSlice(t *testing.T) {
 	}
 }
 
-func TestBulkDocsNotSlice(t *testing.T) {
-	err := func() (err error) {
-		defer func() {
-			if r := recover(); r != nil {
-				err = r.(error)
-			}
-		}()
-		db := &DB{}
-		_, _ = db.BulkDocs(context.Background(), nil)
-		return nil
-	}()
-	var msg string
-	if err != nil {
-		msg = err.Error()
-	}
-	expected := "must be slice or array, got <nil>"
-	if msg != expected {
-		t.Errorf("Unexpected error: %s", msg)
-	}
-}
-
 func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 	type bdTest struct {
 		name     string
 		dbDriver driver.DB
-		docs     interface{}
+		docs     []interface{}
 		options  Options
 		expected *BulkResults
 		status   int
@@ -280,29 +199,11 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 	}
 	tests := []bdTest{
 		{
-			name:     "no docs",
-			dbDriver: &mock.BulkDocer{},
-			docs:     []int{},
-			status:   StatusBadAPICall,
-			err:      "kivik: no documents provided",
-		},
-		{
 			name:     "invalid JSON",
 			dbDriver: &mock.BulkDocer{},
 			docs:     []interface{}{[]byte("invalid json")},
 			status:   StatusBadAPICall,
 			err:      "invalid character 'i' looking for beginning of value",
-		},
-		{
-			name: "query fails",
-			dbDriver: &mock.BulkDocer{
-				BulkDocsFunc: func(_ context.Context, _ []interface{}, _ map[string]interface{}) (driver.BulkResults, error) {
-					return nil, errors.New("bulkdocs failed")
-				},
-			},
-			docs:   []int{1, 2, 3},
-			status: StatusInternalServerError,
-			err:    "bulkdocs failed",
 		},
 		{
 			name: "emulated BulkDocs support",

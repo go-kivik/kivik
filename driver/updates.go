@@ -1,5 +1,7 @@
 package driver
 
+import "context"
+
 // DBUpdate represents a database update event.
 type DBUpdate struct {
 	DBName string `json:"db_name"`
@@ -21,7 +23,7 @@ type DBUpdates interface {
 // DBUpdater is an optional interface that may be implemented by a Client to
 // provide access to the DB Updates feed.
 type DBUpdater interface {
-	// DBUpdates must return a channel on which *DBUpdate events are sent,
-	// and a function to close the connection.
-	DBUpdates() (DBUpdates, error)
+	// DBUpdates must return a DBUpdate iterator. The context, or the iterator's
+	// Close method, may be used to close the iterator.
+	DBUpdates(context.Context) (DBUpdates, error)
 }

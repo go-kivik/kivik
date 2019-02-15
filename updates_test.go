@@ -177,7 +177,7 @@ func TestDBUpdates(t *testing.T) {
 			name: "db error",
 			client: &Client{
 				driverClient: &mock.DBUpdater{
-					DBUpdatesFunc: func() (driver.DBUpdates, error) {
+					DBUpdatesFunc: func(_ context.Context) (driver.DBUpdates, error) {
 						return nil, errors.New("db error")
 					},
 				},
@@ -189,7 +189,7 @@ func TestDBUpdates(t *testing.T) {
 			name: "success",
 			client: &Client{
 				driverClient: &mock.DBUpdater{
-					DBUpdatesFunc: func() (driver.DBUpdates, error) {
+					DBUpdatesFunc: func(_ context.Context) (driver.DBUpdates, error) {
 						return &mock.DBUpdates{ID: "a"}, nil
 					},
 				},
@@ -207,7 +207,7 @@ func TestDBUpdates(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.client.DBUpdates()
+			result, err := test.client.DBUpdates(context.TODO())
 			testy.StatusError(t, test.err, test.status, err)
 			result.cancel = nil // Determinism
 			if d := diff.Interface(test.expected, result); d != nil {

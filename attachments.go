@@ -18,7 +18,7 @@ type MD5sum [16]byte
 
 // Attachment represents a file attachment on a CouchDB document.
 type Attachment struct {
-	// Filiename is the name of the attachment.
+	// Filename is the name of the attachment.
 	Filename string `json:"-"`
 
 	// ContentType is the MIME type of the attachment contents.

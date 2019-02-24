@@ -547,7 +547,7 @@ func (db *DB) GetAttachmentMeta(ctx context.Context, docID, filename string, opt
 	return att, nil
 }
 
-// DeleteAttachment delets an attachment from a document, returning the
+// DeleteAttachment deletes an attachment from a document, returning the
 // document's new revision.
 func (db *DB) DeleteAttachment(ctx context.Context, docID, rev, filename string, options ...Options) (newRev string, err error) {
 	if db.err != nil {

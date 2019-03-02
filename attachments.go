@@ -13,9 +13,6 @@ import (
 // Attachments is a collection of one or more file attachments.
 type Attachments map[string]*Attachment
 
-// MD5sum is a 128-bit MD5 checksum.
-type MD5sum [16]byte
-
 // Attachment represents a file attachment on a CouchDB document.
 type Attachment struct {
 	// Filename is the name of the attachment.

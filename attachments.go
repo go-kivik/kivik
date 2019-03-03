@@ -13,6 +13,23 @@ import (
 // Attachments is a collection of one or more file attachments.
 type Attachments map[string]*Attachment
 
+// Get fetches the requested attachment, or returns nil if it does not exist.
+func (a *Attachments) Get(filename string) *Attachment {
+	att, _ := map[string]*Attachment(*a)[filename]
+	return att
+}
+
+// Set sets the attachment associated with filename in the collection,
+// replacing it if it already existed.
+func (a *Attachments) Set(filename string, att *Attachment) {
+	map[string]*Attachment(*a)[filename] = att
+}
+
+// Delete removes the specified file from the collection.
+func (a *Attachments) Delete(filename string) {
+	delete(map[string]*Attachment(*a), filename)
+}
+
 // Attachment represents a file attachment on a CouchDB document.
 type Attachment struct {
 	// Filename is the name of the attachment.

@@ -7,6 +7,6 @@ import:
   version: ~0.8.0
 testimport:
 - package: github.com/flimzy/testy
-  version: ~0.0.1
+  version: ~0.1.15
 - package: github.com/flimzy/diff
   version: ~0.1.2

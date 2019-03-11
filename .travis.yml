@@ -23,6 +23,7 @@ go:
     - 1.9.x
     - 1.10.x
     - 1.11.x
+    - 1.12.x
     - master
 env:
     global:
@@ -38,9 +39,9 @@ matrix:
     include:
         - go: 1.11.x
           env: MODE=gopherjs
-        - go: 1.11.x
+        - go: 1.12.x
           env: MODE=linter
-        - go: 1.11.x
+        - go: 1.12.x
           env: MODE=coverage
 
 install:

@@ -119,16 +119,8 @@ func (c *Client) DBExists(ctx context.Context, dbName string, options ...Options
 
 // CreateDB creates a DB of the requested name. Any errors are deferred, or may
 // be checked with Err().
-func (c *Client) CreateDB(ctx context.Context, dbName string, options ...Options) *DB {
-	if err := c.driverClient.CreateDB(ctx, dbName, mergeOptions(options...)); err != nil {
-		return &DB{
-			err: err,
-			// These are populated so that Name() and Client() will work.
-			client: c,
-			name:   dbName,
-		}
-	}
-	return c.DB(ctx, dbName, nil)
+func (c *Client) CreateDB(ctx context.Context, dbName string, options ...Options) error {
+	return c.driverClient.CreateDB(ctx, dbName, mergeOptions(options...))
 }
 
 // DestroyDB deletes the requested DB.

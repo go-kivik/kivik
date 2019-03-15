@@ -106,6 +106,9 @@ func readEncoder(in io.ReadCloser) io.ReadCloser {
 
 // MarshalJSON satisfies the json.Marshaler interface.
 func (a *Attachment) MarshalJSON() ([]byte, error) {
+	if a.Stub {
+		return []byte(`{"stub":true}`), nil
+	}
 	r := readEncoder(a.Content)
 	data, err := ioutil.ReadAll(r)
 	if err != nil {

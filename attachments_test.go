@@ -16,41 +16,51 @@ import (
 )
 
 func TestAttachmentMarshalJSON(t *testing.T) {
-	tests := []struct {
-		name     string
+	type tst struct {
 		att      *Attachment
 		expected string
 		err      string
-	}{
-		{
-			name: "foo.txt",
-			att: &Attachment{
-				Content:     ioutil.NopCloser(strings.NewReader("test attachment\n")),
-				Filename:    "foo.txt",
-				ContentType: "text/plain",
-			},
-			expected: `{
-				"content_type": "text/plain",
-				"data": "dGVzdCBhdHRhY2htZW50Cg=="
-			}`,
-		},
-		{
-			name: "read error",
-			att: &Attachment{
-				Content:     ioutil.NopCloser(&errorReader{}),
-				Filename:    "foo.txt",
-				ContentType: "text/plain",
-			},
-			err: "json: error calling MarshalJSON for type *kivik.Attachment: errorReader",
-		},
 	}
-	for _, test := range tests {
+	tests := testy.NewTable()
+	tests.Add("foo.txt", tst{
+		att: &Attachment{
+			Content:     ioutil.NopCloser(strings.NewReader("test attachment\n")),
+			Filename:    "foo.txt",
+			ContentType: "text/plain",
+		},
+		expected: `{
+			"content_type": "text/plain",
+			"data": "dGVzdCBhdHRhY2htZW50Cg=="
+		}`,
+	})
+	tests.Add("read error", tst{
+		att: &Attachment{
+			Content:     ioutil.NopCloser(&errorReader{}),
+			Filename:    "foo.txt",
+			ContentType: "text/plain",
+		},
+		err: "json: error calling MarshalJSON for type *kivik.Attachment: errorReader",
+	})
+	tests.Add("stub", tst{
+		att: &Attachment{
+			Content:     ioutil.NopCloser(strings.NewReader("content")),
+			Stub:        true,
+			Filename:    "foo.txt",
+			ContentType: "text/plain",
+			Size:        7,
+		},
+		expected: `{
+			"stub": true
+		}`,
+	})
+
+	tests.Run(t, func(t *testing.T, test tst) {
 		result, err := json.Marshal(test.att)
 		testy.Error(t, test.err, err)
 		if d := diff.JSON([]byte(test.expected), result); d != nil {
 			t.Error(d)
 		}
-	}
+	})
 }
 
 func TestAttachmentUnmarshalJSON(t *testing.T) {

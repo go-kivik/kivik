@@ -63,7 +63,7 @@ func (c *Changes) ID() string {
 }
 
 // Seq returns the Seq of the current result.
-func (c *Changes) Seq() SequenceID {
+func (c *Changes) Seq() driver.SequenceID {
 	return c.curVal.(*driver.Change).Seq
 }
 

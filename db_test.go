@@ -1306,7 +1306,7 @@ func TestCreateDoc(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			docID, rev, err := test.db.CreateDoc(context.Background(), test.doc, test.options)
 			testy.StatusError(t, test.err, test.status, err)
-			if docID != test.docID || test.rev != test.rev {
+			if docID != test.docID || rev != test.rev {
 				t.Errorf("Unexpected result: %s / %s", docID, rev)
 			}
 		})

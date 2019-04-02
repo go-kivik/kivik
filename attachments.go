@@ -98,6 +98,9 @@ func readEncoder(in io.ReadCloser) io.ReadCloser {
 	enc := base64.NewEncoder(base64.StdEncoding, w)
 	go func() {
 		_, err := io.Copy(enc, in)
+		if e := in.Close(); e != nil && err == nil {
+			err = e
+		}
 		_ = enc.Close()
 		_ = w.CloseWithError(err)
 	}()

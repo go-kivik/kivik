@@ -15,8 +15,7 @@ type Attachments map[string]*Attachment
 
 // Get fetches the requested attachment, or returns nil if it does not exist.
 func (a *Attachments) Get(filename string) *Attachment {
-	att, _ := map[string]*Attachment(*a)[filename]
-	return att
+	return map[string]*Attachment(*a)[filename]
 }
 
 // Set sets the attachment associated with filename in the collection,

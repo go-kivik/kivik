@@ -36,7 +36,7 @@ func (c *Client) Session(ctx context.Context) (*Session, error) {
 		if err != nil {
 			return nil, err
 		}
-		var ses Session = Session(*session)
+		ses := Session(*session)
 		return &ses, nil
 	}
 	return nil, &Error{HTTPStatus: http.StatusNotImplemented, Err: errors.New("kivik: driver does not support sessions")}

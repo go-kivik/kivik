@@ -246,7 +246,7 @@ func TestQuery(t *testing.T) {
 				driverDB: &mock.DB{
 					QueryFunc: func(_ context.Context, ddoc, view string, opts map[string]interface{}) (driver.Rows, error) {
 						expectedDdoc := "foo"
-						expectedView := "bar"
+						expectedView := "bar" // nolint: goconst
 						if ddoc != expectedDdoc {
 							return nil, fmt.Errorf("Unexpected ddoc: %s", ddoc)
 						}
@@ -1306,7 +1306,7 @@ func TestCreateDoc(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			docID, rev, err := test.db.CreateDoc(context.Background(), test.doc, test.options)
 			testy.StatusError(t, test.err, test.status, err)
-			if docID != test.docID || test.rev != test.rev {
+			if docID != test.docID || rev != test.rev {
 				t.Errorf("Unexpected result: %s / %s", docID, rev)
 			}
 		})
@@ -1524,7 +1524,7 @@ func TestDeleteAttachment(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.DB{
 					DeleteAttachmentFunc: func(_ context.Context, docID, rev, filename string, opts map[string]interface{}) (string, error) {
-						expectedDocID, expectedRev, expectedFilename := "foo", "1-xxx", "foo.txt"
+						expectedDocID, expectedRev, expectedFilename := "foo", "1-xxx", "foo.txt" // nolint: goconst
 						if docID != expectedDocID {
 							return "", fmt.Errorf("Unexpected docID: %s", docID)
 						}

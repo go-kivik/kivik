@@ -73,8 +73,7 @@ case "$1" in
         generate
     ;;
     "linter")
-        go get -u gopkg.in/alecthomas/gometalinter.v1
-        gometalinter.v1 --install
+        curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.16.0
     ;;
     "coverage")
         generate

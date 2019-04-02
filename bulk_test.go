@@ -60,7 +60,7 @@ func TestBulkErr(t *testing.T) {
 }
 
 func TestBulkClose(t *testing.T) {
-	expected := "close error"
+	expected := "close error" // nolint: goconst
 	r := &BulkResults{
 		iter: &iter{
 			feed: &TestFeed{closeErr: errors.New(expected)},
@@ -212,7 +212,7 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 					if docID == "error" {
 						return "", errors.New("error")
 					}
-					if docID != "foo" {
+					if docID != "foo" { // nolint: goconst
 						return "", fmt.Errorf("Unexpected docID: %s", docID)
 					}
 					expectedDoc := map[string]string{"_id": "foo"}
@@ -222,7 +222,7 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 					if d := diff.Interface(testOptions, opts); d != nil {
 						return "", fmt.Errorf("Unexpected opts:\n%s", d)
 					}
-					return "2-xxx", nil
+					return "2-xxx", nil // nolint: goconst
 				},
 				CreateDocFunc: func(_ context.Context, doc interface{}, opts map[string]interface{}) (string, string, error) {
 					expectedDoc := int(123)
@@ -232,7 +232,7 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 					if d := diff.Interface(testOptions, opts); d != nil {
 						return "", "", fmt.Errorf("Unexpected opts:\n%s", d)
 					}
-					return "newDocID", "1-xxx", nil
+					return "newDocID", "1-xxx", nil // nolint: goconst
 				},
 			},
 			docs: []interface{}{

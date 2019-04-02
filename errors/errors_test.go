@@ -83,7 +83,7 @@ func TestErrorJSON(t *testing.T) {
 }
 
 func TestStatusError(t *testing.T) {
-	msg := "foo"
+	msg := "foo" // nolint: goconst
 	status := 400
 	err := &statusError{statusCode: status, message: msg}
 

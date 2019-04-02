@@ -15,8 +15,7 @@ type Attachments map[string]*Attachment
 
 // Get fetches the requested attachment, or returns nil if it does not exist.
 func (a *Attachments) Get(filename string) *Attachment {
-	att, _ := map[string]*Attachment(*a)[filename]
-	return att
+	return map[string]*Attachment(*a)[filename]
 }
 
 // Set sets the attachment associated with filename in the collection,
@@ -98,6 +97,9 @@ func readEncoder(in io.ReadCloser) io.ReadCloser {
 	enc := base64.NewEncoder(base64.StdEncoding, w)
 	go func() {
 		_, err := io.Copy(enc, in)
+		if e := in.Close(); e != nil && err == nil {
+			err = e
+		}
 		_ = enc.Close()
 		_ = w.CloseWithError(err)
 	}()

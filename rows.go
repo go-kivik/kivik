@@ -62,8 +62,8 @@ var (
 // The copy is owned by the caller and can be modified and held indefinitely.
 //
 // The copy can be avoided by using an argument of type *json.RawMessage
-// instead. After a Scaninto a json.RawMessage, the slice is only valid until
-// the next call to Next, Scan, or Close.
+// instead. After a ScanValue into a json.RawMessage, the slice is only valid
+// until the next call to Next or Close.
 //
 // For all other types, refer to the documentation for json.Unmarshal for type
 // conversion rules.
@@ -80,7 +80,7 @@ func (r *Rows) ScanValue(dest interface{}) error {
 }
 
 // ScanDoc works the same as ScanValue, but on the doc field of the result. It
-// is only valid for results that include documents.
+// will panic if the query does not include documents.
 func (r *Rows) ScanDoc(dest interface{}) error {
 	runlock, err := r.rlock()
 	if err != nil {

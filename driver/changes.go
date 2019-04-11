@@ -11,6 +11,10 @@ type Changes interface {
 	Next(*Change) error
 	// Close closes the rows iterator.
 	Close() error
+	// LastSeq is the last sequence of the change set.
+	LastSeq() string
+	// Pending is the count of remaining items in the feed.
+	Pending() int64
 }
 
 // Change represents the changes to a single document.

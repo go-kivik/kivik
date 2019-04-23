@@ -27,7 +27,7 @@ func (db *DB) Find(ctx context.Context, query interface{}) (*Rows, error) {
 // CreateIndex creates an index if it doesn't already exist. ddoc and name may
 // be empty, in which case they will be auto-generated.  index must be a valid
 // index object, as described here:
-// http://docs.couchdb.org/en/2.0.0/api/database/find.html#find-sort
+// http://docs.couchdb.org/en/stable/api/database/find.html#db-index
 func (db *DB) CreateIndex(ctx context.Context, ddoc, name string, index interface{}) error {
 	if finder, ok := db.driverDB.(driver.Finder); ok {
 		return finder.CreateIndex(ctx, ddoc, name, index)

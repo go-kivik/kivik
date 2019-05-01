@@ -19,3 +19,8 @@ func (c *Changes) Next(change *driver.Change) error {
 func (c *Changes) Close() error {
 	return c.CloseFunc()
 }
+
+// LastSeq returns the Last Seq of the current result.
+func (c *Changes) LastSeq() driver.SequenceID {
+	return ""
+}

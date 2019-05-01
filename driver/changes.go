@@ -12,7 +12,7 @@ type Changes interface {
 	// Close closes the rows iterator.
 	Close() error
 	// LastSeq is the last sequence of the change set.
-	LastSeq() string
+	LastSeq() SequenceID
 	// Pending is the count of remaining items in the feed.
 	Pending() int64
 }

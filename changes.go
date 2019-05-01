@@ -67,6 +67,11 @@ func (c *Changes) Seq() driver.SequenceID {
 	return c.curVal.(*driver.Change).Seq
 }
 
+// LastSeq returns the Last Seq of the current result.
+func (c *Changes) LastSeq() driver.SequenceID {
+	return c.changesi.LastSeq()
+}
+
 // ScanDoc works the same as ScanValue, but on the doc field of the result. It
 // is only valid for results that include documents.
 func (c *Changes) ScanDoc(dest interface{}) error {

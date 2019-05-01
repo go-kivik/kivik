@@ -72,6 +72,11 @@ func (c *Changes) LastSeq() driver.SequenceID {
 	return c.changesi.LastSeq()
 }
 
+// Pending returns the Pending rows of the current changes.
+func (c *Changes) Pending() int64 {
+	return c.changesi.Pending()
+}
+
 // ScanDoc works the same as ScanValue, but on the doc field of the result. It
 // is only valid for results that include documents.
 func (c *Changes) ScanDoc(dest interface{}) error {

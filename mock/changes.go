@@ -24,3 +24,8 @@ func (c *Changes) Close() error {
 func (c *Changes) LastSeq() driver.SequenceID {
 	return ""
 }
+
+// Pending returns the Pending rows of the current changes.
+func (c *Changes) Pending() int64 {
+	return 0
+}

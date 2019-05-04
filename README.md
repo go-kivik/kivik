@@ -13,18 +13,17 @@ implemented by SQL and NoSQL databases such as CouchDB.
 
 # Versions
 
-You are browsing the _development_ branch of Kivik. The stable version is
-available [here](https://github.com/go-kivik/kivik/tree/stable1.x).
+You are browsing the **development** branch of Kivik. The stable version is
+available [here](https://github.com/go-kivik/kivik/tree/stable1.x). Please
+consult the documentation on that page for proper installation of the stable
+branch.
 
 This branch which will eventually become the Kivik 2.0.0 release. The API is
 subject to rapid and unannounced changes at this stage of development. For
 production work, you are encouraged to use the latest 1.x release of Kivik,
 which is stable.
 
-To use the stable version of Kivik, please use a dependency manager to ensure
-you're using version 1.x of Kivik and the Kivik driver.
-
-Example configs for common dependency managers follow.
+Example configuration for common dependency managers follow.
 
 ## [dep](https://github.com/golang/dep)
 
@@ -32,12 +31,12 @@ Update your `Gopkg.toml` file:
 
 ```toml
 [[constraint]]
-  name = "github.com/flimzy/kivik"
-  version = "^1.6.0"
+  name = "github.com/go-kivik/kivik"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/go-kivik/couchdb"
-  version = "^1.6.0"
+  branch = "master"
 ```
 
 ## [Glide](https://github.com/Masterminds/glide)
@@ -46,19 +45,19 @@ Update your `glide.yaml` file:
 
 ```yaml
 import:
-- package: github.com/flimzy/kivik
-  version: ^1.6.0
+- package: github.com/go-kivik/kivik
+  version: master
 - package: github.com/go-kivik/couchdb
-  version: ^1.6.0
+  version: master
 ```
 
 ## [govendor](https://github.com/kardianos/govendor)
 
-Fetch the latest stable version of Kivik and the CouchDB driver with the
+Fetch the latest development version of Kivik and the CouchDB driver with the
 following command:
 
-    govendor fetch github.com/flimzy/kivik@v1
-    govendor fetch github.com/go-kivik/couchdb@v1
+        govendor fetch github.com/go-kivik/kivik
+        govendor fetch github.com/go-kivik/couchdb
 
 # Installation
 

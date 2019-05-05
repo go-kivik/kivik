@@ -29,8 +29,8 @@ function setup_couch22 {
     if [ "$TRAVIS_OS_NAME" == "osx" ]; then
         return
     fi
-    docker pull apache/couchdb:2.2.0
-    docker run -d -p 6004:5984 -e COUCHDB_USER=admin -e COUCHDB_PASSWORD=abc123 --name couchdb22 apache/couchdb:2.2.0
+    docker pull couchdb:2.2.0
+    docker run -d -p 6004:5984 -e COUCHDB_USER=admin -e COUCHDB_PASSWORD=abc123 --name couchdb22 couchdb:2.2.0
     wait_for_server http://localhost:6004/
     curl --silent --fail -o /dev/null -X PUT http://admin:abc123@localhost:6004/_users
     curl --silent --fail -o /dev/null -X PUT http://admin:abc123@localhost:6004/_replicator

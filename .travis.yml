@@ -43,8 +43,6 @@ matrix:
           env: MODE=gopherjs
         - go: 1.12.x
           env: MODE=linter
-        - go: 1.12.x
-          env: MODE=coverage
 
 install:
     - mkdir -p $GOPATH/src/github.com/flimzy && ln -s $GOPATH/src/github.com/go-kivik/kivik $GOPATH/src/github.com/flimzy/kivik

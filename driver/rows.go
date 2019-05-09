@@ -1,7 +1,6 @@
 package driver
 
 import (
-	"bytes"
 	"encoding/json"
 )
 
@@ -21,18 +20,6 @@ type Row struct {
 	// Error represents the error for any row not fetched. Usually just
 	// 'not_found'.
 	Error error `json:"-"`
-}
-
-// SequenceID is a CouchDB update sequence ID. This is just a string, but has
-// a special JSON unmarshaler to work with both CouchDB 2.0.0 (which uses
-// normal) strings for sequence IDs, and earlier versions (which use integers)
-type SequenceID string
-
-// UnmarshalJSON satisfies the json.Unmarshaler interface.
-func (id *SequenceID) UnmarshalJSON(data []byte) error {
-	sid := SequenceID(bytes.Trim(data, `""`))
-	*id = sid
-	return nil
 }
 
 // Rows is an iterator over a view's results.

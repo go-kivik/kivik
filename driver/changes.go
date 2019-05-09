@@ -9,8 +9,12 @@ type Changes interface {
 	//
 	// Next should return io.EOF when the changes feed is closed by request.
 	Next(*Change) error
-	// Close closes the rows iterator.
+	// Close closes the changes feed iterator.
 	Close() error
+	// LastSeq returns the last change update sequence.
+	LastSeq() string
+	// Pending returns the count of remaining items in the feed
+	Pending() int64
 }
 
 // Change represents the changes to a single document.

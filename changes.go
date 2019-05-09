@@ -83,3 +83,26 @@ func (db *DB) Changes(ctx context.Context, options ...Options) (*Changes, error)
 	}
 	return newChanges(ctx, changesi), nil
 }
+
+// Seq returns the Seq of the current result.
+func (c *Changes) Seq() string {
+	return c.curVal.(*driver.Change).Seq
+}
+
+// LastSeq returns the last update sequence id present in the change set,
+// if returned by the server. This value is only guaranteed to be set after
+// all changes have been enumerated through by Next, thus should only be
+// read after processing all changes in a change set. Calling Close before
+// enumerating will render this value unreliable.
+func (c *Changes) LastSeq() string {
+	return c.changesi.LastSeq()
+}
+
+// Pending returns the count of remaining items in the change feed. This
+// value is only guaranteed to be set after/ all changes have been
+// enumerated through by Next, thus should only be read after processing all
+// changes in a change set. Calling Close before enumerating will render
+// this value unreliable.
+func (c *Changes) Pending() int64 {
+	return c.changesi.Pending()
+}

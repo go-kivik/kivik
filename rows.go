@@ -150,7 +150,10 @@ func (r *Rows) TotalRows() int64 {
 }
 
 // UpdateSeq returns the sequence id of the underlying database the view
-// reflects, if requested in the query.
+// reflects, if requested in the query. This value is only guaranteed to be set
+// after all result rows have been enumerated through by Next, and thus should
+// only be read after processing all rows in a result set. Calling Close before
+// enumerating will render this value unreliable.
 func (r *Rows) UpdateSeq() string {
 	return r.rowsi.UpdateSeq()
 }

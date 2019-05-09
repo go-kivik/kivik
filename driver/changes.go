@@ -18,7 +18,7 @@ type Change struct {
 	// ID is the document ID to which the change relates.
 	ID string `json:"id"`
 	// Seq is the update sequence for the changes feed.
-	Seq SequenceID `json:"seq"`
+	Seq string `json:"seq"`
 	// Deleted is set to true for the changes feed, if the document has been
 	// deleted.
 	Deleted bool `json:"deleted"`

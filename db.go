@@ -383,6 +383,11 @@ func driverStats2kivikStats(i *driver.DBStats) *DBStats {
 // Compact begins compaction of the database. Check the CompactRunning field
 // returned by Info() to see if the compaction has completed.
 // See http://docs.couchdb.org/en/2.0.0/api/database/compact.html#db-compact
+//
+// This method may return immediately, or may wait for the compaction to
+// complete before returning, depending on the backend implementation. In
+// particular, CouchDB triggers the compaction and returns immediately, whereas
+// PouchDB waits until compaction has completed, before returning.
 func (db *DB) Compact(ctx context.Context) error {
 	if db.err != nil {
 		return db.err
@@ -393,6 +398,11 @@ func (db *DB) Compact(ctx context.Context) error {
 // CompactView compats the view indexes associated with the specified design
 // document.
 // See http://docs.couchdb.org/en/2.0.0/api/database/compact.html#db-compact-design-doc
+//
+// This method may return immediately, or may wait for the compaction to
+// complete before returning, depending on the backend implementation. In
+// particular, CouchDB triggers the compaction and returns immediately, whereas
+// PouchDB waits until compaction has completed, before returning.
 func (db *DB) CompactView(ctx context.Context, ddocID string) error {
 	return db.driverDB.CompactView(ctx, ddocID)
 }

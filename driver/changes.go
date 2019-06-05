@@ -15,6 +15,8 @@ type Changes interface {
 	LastSeq() string
 	// Pending returns the count of remaining items in the feed
 	Pending() int64
+	// ETag returns the unquoted ETag header, if present.
+	ETag() string
 }
 
 // Change represents the changes to a single document.

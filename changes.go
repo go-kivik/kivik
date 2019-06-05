@@ -106,3 +106,10 @@ func (c *Changes) LastSeq() string {
 func (c *Changes) Pending() int64 {
 	return c.changesi.Pending()
 }
+
+// ETag returns the unquoted ETag header, if any. Unlike LastSeq and Pending,
+// because this value is returned in the response header (for standarc CouchDB
+// operation) anyway, it can be read immediately, before iteration even begins.
+func (c *Changes) ETag() string {
+	return c.changesi.ETag()
+}

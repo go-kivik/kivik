@@ -37,6 +37,12 @@ func (e *Error) Cause() error {
 	return e.Err
 }
 
+// Unwrap satisfies the Go 1.13 errors.Wrapper interface
+// (golang.org/x/xerrors.Unwrap for older versions of Go).
+func (e *Error) Unwrap() error {
+	return e.Err
+}
+
 type statusCoder interface {
 	StatusCode() int
 }

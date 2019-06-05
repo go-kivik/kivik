@@ -2,7 +2,12 @@ package kivik
 
 import (
 	"errors"
+	"fmt"
+	"net/http"
 	"testing"
+
+	"github.com/flimzy/diff"
+	"github.com/flimzy/testy"
 )
 
 func TestStatusCoder(t *testing.T) {
@@ -37,4 +42,40 @@ func TestStatusCoder(t *testing.T) {
 			})
 		}(test)
 	}
+}
+
+func TestFormatError(t *testing.T) {
+	type tst struct {
+		err  error
+		std  string
+		full string
+	}
+	tests := testy.NewTable()
+	tests.Add("standard error", tst{
+		err:  errors.New("foo"),
+		std:  "foo",
+		full: "foo",
+	})
+	tests.Add("not from server", tst{
+		err: &Error{HTTPStatus: http.StatusNotFound, Err: errors.New("not found")},
+		std: "not found: not found",
+		full: `not found:
+    kivik generated 404 / Not Found
+  - not found`,
+	})
+	tests.Add("from server", tst{
+		err: &Error{HTTPStatus: http.StatusNotFound, FromServer: true, Err: errors.New("not found")},
+		std: "not found: not found",
+		full: `not found:
+    server responded with 404 / Not Found
+  - not found`,
+	})
+	tests.Run(t, func(t *testing.T, test tst) {
+		if d := diff.Text(test.std, fmt.Sprintf("%v", test.err)); d != nil {
+			t.Errorf("Standard:\n%s", d)
+		}
+		if d := diff.Text(test.full, fmt.Sprintf("%+v", test.err)); d != nil {
+			t.Errorf("Full:\n%s", d)
+		}
+	})
 }

@@ -1,5 +1,10 @@
 package kivik
 
+import (
+	"fmt"
+	"net/http"
+)
+
 // Error represents an error returned by Kivik.
 type Error struct {
 	// HTTPStatus is the HTTP status code associated with this error. Normally
@@ -40,6 +45,25 @@ func (e *Error) Cause() error {
 // Unwrap satisfies the Go 1.13 errors.Wrapper interface
 // (golang.org/x/xerrors.Unwrap for older versions of Go).
 func (e *Error) Unwrap() error {
+	return e.Err
+}
+
+// Format implements fmt.Formatter
+func (e *Error) Format(f fmt.State, c rune) {
+	formatError(e, f, c)
+}
+
+// FormatError satisfies the Go 1.13 errors.Formatter interface
+// (golang.org/x/xerrors.Formatter for older versions of Go).
+func (e *Error) FormatError(p printer) error {
+	p.Print(e.Error())
+	if p.Detail() {
+		if e.FromServer {
+			p.Printf("server responded with %d / %s", e.HTTPStatus, http.StatusText(e.HTTPStatus))
+		} else {
+			p.Printf("kivik generated %d / %s", e.HTTPStatus, http.StatusText(e.HTTPStatus))
+		}
+	}
 	return e.Err
 }
 

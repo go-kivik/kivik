@@ -109,6 +109,7 @@ func TestChangesGetters(t *testing.T) {
 		changesi: &mock.Changes{
 			PendingFunc: func() int64 { return 123 },
 			LastSeqFunc: func() string { return "3-bar" },
+			ETagFunc:    func() string { return "etag-foo" },
 		},
 	}
 
@@ -152,6 +153,13 @@ func TestChangesGetters(t *testing.T) {
 	t.Run("Pending", func(t *testing.T) {
 		expected := int64(123)
 		result := c.Pending()
+		if expected != result {
+			t.Errorf("Unexpected result: %v", result)
+		}
+	})
+	t.Run("ETag", func(t *testing.T) {
+		expected := "etag-foo"
+		result := c.ETag()
 		if expected != result {
 			t.Errorf("Unexpected result: %v", result)
 		}

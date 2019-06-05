@@ -8,6 +8,7 @@ type Changes struct {
 	CloseFunc   func() error
 	LastSeqFunc func() string
 	PendingFunc func() int64
+	ETagFunc    func() string
 }
 
 var _ driver.Changes = &Changes{}
@@ -30,4 +31,9 @@ func (c *Changes) LastSeq() string {
 // Pending calls c.PendingFunc
 func (c *Changes) Pending() int64 {
 	return c.PendingFunc()
+}
+
+// ETag calls c.ETagFunc
+func (c *Changes) ETag() string {
+	return c.ETagFunc()
 }

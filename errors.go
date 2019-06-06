@@ -6,6 +6,11 @@ import (
 )
 
 // Error represents an error returned by Kivik.
+//
+// This type definition is not guaranteed to remain stable, or even exported.
+// When examining errors programatically, you should rely instead on the
+// StatusCode() function in this package, rather than on directly observing
+// the fields of this type.
 type Error struct {
 	// HTTPStatus is the HTTP status code associated with this error. Normally
 	// this is the actual HTTP status returned by the server, but in some cases
@@ -14,6 +19,7 @@ type Error struct {
 	HTTPStatus int
 
 	// FromServer is set to true if the error was returned by the server.
+	// This field is deprecated and will soon be removed.
 	FromServer bool
 
 	// Message is the error message.

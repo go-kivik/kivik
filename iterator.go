@@ -3,7 +3,6 @@ package kivik
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 	"reflect"
@@ -32,11 +31,11 @@ func (i *iter) rlock() (unlock func(), err error) {
 	i.mu.RLock()
 	if i.closed {
 		i.mu.RUnlock()
-		return nil, &Error{HTTPStatus: http.StatusBadRequest, Err: errors.New("kivik: Iterator is closed")}
+		return nil, &Error{HTTPStatus: http.StatusBadRequest, Message: "kivik: Iterator is closed"}
 	}
 	if !i.ready {
 		i.mu.RUnlock()
-		return nil, &Error{HTTPStatus: http.StatusBadRequest, Err: errors.New("kivik: Iterator access before calling Next")}
+		return nil, &Error{HTTPStatus: http.StatusBadRequest, Message: "kivik: Iterator access before calling Next"}
 	}
 	return func() { i.mu.RUnlock() }, nil
 }

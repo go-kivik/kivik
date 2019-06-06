@@ -47,30 +47,46 @@ func TestStatusCoder(t *testing.T) {
 func TestFormatError(t *testing.T) {
 	type tst struct {
 		err  error
+		str  string
 		std  string
 		full string
 	}
 	tests := testy.NewTable()
 	tests.Add("standard error", tst{
 		err:  errors.New("foo"),
+		str:  "foo",
 		std:  "foo",
 		full: "foo",
 	})
 	tests.Add("not from server", tst{
 		err: &Error{HTTPStatus: http.StatusNotFound, Err: errors.New("not found")},
-		std: "not found: not found",
-		full: `not found:
+		str: "not found",
+		std: "Not Found: not found",
+		full: `Not Found:
     kivik generated 404 / Not Found
   - not found`,
 	})
 	tests.Add("from server", tst{
 		err: &Error{HTTPStatus: http.StatusNotFound, FromServer: true, Err: errors.New("not found")},
-		std: "not found: not found",
-		full: `not found:
+		str: "not found",
+		std: "Not Found: not found",
+		full: `Not Found:
     server responded with 404 / Not Found
   - not found`,
 	})
+	tests.Add("with message", tst{
+		err: &Error{HTTPStatus: http.StatusNotFound, Message: "It's missing", Err: errors.New("not found")},
+		str: "It's missing: not found",
+		std: "It's missing: not found",
+		full: `It's missing:
+    kivik generated 404 / Not Found
+  - not found`,
+	})
+
 	tests.Run(t, func(t *testing.T, test tst) {
+		if d := diff.Text(test.str, test.err.Error()); d != nil {
+			t.Errorf("Error():\n%s", d)
+		}
 		if d := diff.Text(test.std, fmt.Sprintf("%v", test.err)); d != nil {
 			t.Errorf("Standard:\n%s", d)
 		}

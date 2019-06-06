@@ -16,7 +16,10 @@ type Error struct {
 	// FromServer is set to true if the error was returned by the server.
 	FromServer bool
 
-	// Err is the originating error.
+	// Message is the error message.
+	Message string
+
+	// Err is the originating error, if any.
 	Err error
 }
 
@@ -25,7 +28,13 @@ var _ statusCoder = &Error{}
 var _ causer = &Error{}
 
 func (e *Error) Error() string {
-	return e.Err.Error()
+	if e.Err == nil {
+		return e.msg()
+	}
+	if e.Message == "" {
+		return e.Err.Error()
+	}
+	return e.Message + ": " + e.Err.Error()
 }
 
 // StatusCode returns the HTTP status code associated with the error, or 500
@@ -53,10 +62,19 @@ func (e *Error) Format(f fmt.State, c rune) {
 	formatError(e, f, c)
 }
 
+func (e *Error) msg() string {
+	switch e.Message {
+	case "":
+		return http.StatusText(e.StatusCode())
+	default:
+		return e.Message
+	}
+}
+
 // FormatError satisfies the Go 1.13 errors.Formatter interface
 // (golang.org/x/xerrors.Formatter for older versions of Go).
 func (e *Error) FormatError(p printer) error {
-	p.Print(e.Error())
+	p.Print(e.msg())
 	if p.Detail() {
 		if e.FromServer {
 			p.Printf("server responded with %d / %s", e.HTTPStatus, http.StatusText(e.HTTPStatus))

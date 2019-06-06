@@ -1852,7 +1852,7 @@ func TestPurge(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.Purger{
 					PurgeFunc: func(_ context.Context, _ map[string][]string) (*driver.PurgeResult, error) {
-						return nil, &Error{HTTPStatus: http.StatusNotImplemented, Err: errors.New("this feature is not yet implemented")}
+						return nil, &Error{HTTPStatus: http.StatusNotImplemented, Message: "this feature is not yet implemented"}
 					},
 				},
 			},

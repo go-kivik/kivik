@@ -1,6 +1,16 @@
 package kivik
 
+import (
+	"fmt"
+	"net/http"
+)
+
 // Error represents an error returned by Kivik.
+//
+// This type definition is not guaranteed to remain stable, or even exported.
+// When examining errors programatically, you should rely instead on the
+// StatusCode() function in this package, rather than on directly observing
+// the fields of this type.
 type Error struct {
 	// HTTPStatus is the HTTP status code associated with this error. Normally
 	// this is the actual HTTP status returned by the server, but in some cases
@@ -9,9 +19,13 @@ type Error struct {
 	HTTPStatus int
 
 	// FromServer is set to true if the error was returned by the server.
+	// This field is deprecated and will soon be removed.
 	FromServer bool
 
-	// Err is the originating error.
+	// Message is the error message.
+	Message string
+
+	// Err is the originating error, if any.
 	Err error
 }
 
@@ -20,7 +34,13 @@ var _ statusCoder = &Error{}
 var _ causer = &Error{}
 
 func (e *Error) Error() string {
-	return e.Err.Error()
+	if e.Err == nil {
+		return e.msg()
+	}
+	if e.Message == "" {
+		return e.Err.Error()
+	}
+	return e.Message + ": " + e.Err.Error()
 }
 
 // StatusCode returns the HTTP status code associated with the error, or 500
@@ -34,6 +54,40 @@ func (e *Error) StatusCode() int {
 
 // Cause satisfies the github.com/pkg/errors.causer interface by returning e.Err.
 func (e *Error) Cause() error {
+	return e.Err
+}
+
+// Unwrap satisfies the Go 1.13 errors.Wrapper interface
+// (golang.org/x/xerrors.Unwrap for older versions of Go).
+func (e *Error) Unwrap() error {
+	return e.Err
+}
+
+// Format implements fmt.Formatter
+func (e *Error) Format(f fmt.State, c rune) {
+	formatError(e, f, c)
+}
+
+func (e *Error) msg() string {
+	switch e.Message {
+	case "":
+		return http.StatusText(e.StatusCode())
+	default:
+		return e.Message
+	}
+}
+
+// FormatError satisfies the Go 1.13 errors.Formatter interface
+// (golang.org/x/xerrors.Formatter for older versions of Go).
+func (e *Error) FormatError(p printer) error {
+	p.Print(e.msg())
+	if p.Detail() {
+		if e.FromServer {
+			p.Printf("server responded with %d / %s", e.HTTPStatus, http.StatusText(e.HTTPStatus))
+		} else {
+			p.Printf("kivik generated %d / %s", e.HTTPStatus, http.StatusText(e.HTTPStatus))
+		}
+	}
 	return e.Err
 }
 

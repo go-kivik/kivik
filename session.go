@@ -3,7 +3,6 @@ package kivik
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 
 	"github.com/go-kivik/kivik/driver"
@@ -39,5 +38,5 @@ func (c *Client) Session(ctx context.Context) (*Session, error) {
 		ses := Session(*session)
 		return &ses, nil
 	}
-	return nil, &Error{HTTPStatus: http.StatusNotImplemented, Err: errors.New("kivik: driver does not support sessions")}
+	return nil, &Error{HTTPStatus: http.StatusNotImplemented, Message: "kivik: driver does not support sessions"}
 }

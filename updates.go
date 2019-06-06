@@ -2,7 +2,6 @@ package kivik
 
 import (
 	"context"
-	"errors"
 	"net/http"
 
 	"github.com/go-kivik/kivik/driver"
@@ -81,7 +80,7 @@ func (f *DBUpdates) Seq() string {
 func (c *Client) DBUpdates(ctx context.Context) (*DBUpdates, error) {
 	updater, ok := c.driverClient.(driver.DBUpdater)
 	if !ok {
-		return nil, &Error{HTTPStatus: http.StatusNotImplemented, Err: errors.New("kivik: driver does not implement DBUpdater")}
+		return nil, &Error{HTTPStatus: http.StatusNotImplemented, Message: "kivik: driver does not implement DBUpdater"}
 	}
 	updatesi, err := updater.DBUpdates(ctx)
 	if err != nil {

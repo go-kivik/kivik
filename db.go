@@ -592,7 +592,7 @@ func (db *DB) Purge(ctx context.Context, docRevMap map[string][]string) (*PurgeR
 		r := PurgeResult(*res)
 		return &r, nil
 	}
-	return nil, &Error{HTTPStatus: http.StatusNotImplemented, Err: errors.New("kivik: purge not supported by driver")}
+	return nil, &Error{HTTPStatus: http.StatusNotImplemented, Message: "kivik: purge not supported by driver"}
 }
 
 // BulkGetReference is a reference to a document given in a BulkGet query.
@@ -613,7 +613,7 @@ func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...O
 	}
 	bulkGetter, ok := db.driverDB.(driver.BulkGetter)
 	if !ok {
-		return nil, &Error{HTTPStatus: http.StatusNotImplemented, Err: errors.New("kivik: bulk get not supported by driver")}
+		return nil, &Error{HTTPStatus: http.StatusNotImplemented, Message: "kivik: bulk get not supported by driver"}
 	}
 	refs := make([]driver.BulkGetReference, len(docs))
 	for i, ref := range docs {

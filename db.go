@@ -138,7 +138,7 @@ func (r *Row) ScanDoc(dest interface{}) error {
 	}
 	defer r.Body.Close() // nolint: errcheck
 	if err := json.NewDecoder(r.Body).Decode(dest); err != nil {
-		return &Error{HTTPStatus: http.StatusBadGateway, Err: err}
+		return err
 	}
 	return nil
 }

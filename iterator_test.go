@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"testing"
 	"time"
 
@@ -98,7 +99,7 @@ func TestIteratorScan(t *testing.T) {
 				name:   "invalid JSON",
 				dst:    &dst,
 				input:  []byte(`invalid JSON`),
-				status: StatusBadResponse,
+				status: http.StatusInternalServerError,
 				err:    "invalid character 'i' looking for beginning of value",
 			}
 		}(),

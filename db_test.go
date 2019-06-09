@@ -796,7 +796,7 @@ func TestGetMeta(t *testing.T) { // nolint: gocyclo
 				},
 			},
 			docID:  "foo",
-			status: StatusBadResponse,
+			status: http.StatusInternalServerError,
 			err:    "invalid character 'i' looking for beginning of value",
 		},
 	}
@@ -904,7 +904,7 @@ func TestCopy(t *testing.T) {
 			},
 			target: "foo",
 			source: "bar",
-			status: StatusBadResponse,
+			status: http.StatusInternalServerError,
 			err:    "invalid character 'i' looking for beginning of value",
 		},
 		{
@@ -1230,14 +1230,14 @@ func TestRowScanDoc(t *testing.T) {
 			name:   "non-pointer dst",
 			row:    &Row{Body: body(`{"foo":123.4}`)},
 			dst:    map[string]interface{}{},
-			status: StatusBadAPICall,
+			status: http.StatusBadRequest,
 			err:    "kivik: destination is not a pointer",
 		},
 		{
 			name:   "invalid json",
 			row:    &Row{Body: body("invalid json")},
 			dst:    new(map[string]interface{}),
-			status: StatusBadResponse,
+			status: http.StatusInternalServerError,
 			err:    "invalid character 'i' looking for beginning of value",
 		},
 		{

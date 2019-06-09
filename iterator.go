@@ -148,7 +148,7 @@ func scan(dest interface{}, val json.RawMessage) error {
 		return nil
 	}
 	if err := json.Unmarshal(val, dest); err != nil {
-		return &Error{HTTPStatus: http.StatusBadGateway, Err: err}
+		return err
 	}
 	return nil
 }

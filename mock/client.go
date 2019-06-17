@@ -152,3 +152,39 @@ var _ driver.ClientCloser = &ClientCloser{}
 func (c *ClientCloser) Close(ctx context.Context) error {
 	return c.CloseFunc(ctx)
 }
+
+type Configer struct {
+	*Client
+	ConfigFunc          func(context.Context, string) (driver.Config, error)
+	ConfigSectionFunc   func(context.Context, string, string) (driver.ConfigSection, error)
+	ConfigValueFunc     func(context.Context, string, string, string) (string, error)
+	SetConfigValueFunc  func(context.Context, string, string, string, string) error
+	DeleteConfigKeyFunc func(context.Context, string, string, string) error
+}
+
+var _ driver.Configer = &Configer{}
+
+// Config calls c.ConfigFunc
+func (c *Configer) Config(ctx context.Context, node string) (driver.Config, error) {
+	return c.ConfigFunc(ctx, node)
+}
+
+// ConfigSection calls c.ConfSectionFunc
+func (c *Configer) ConfigSection(ctx context.Context, node, section string) (driver.ConfigSection, error) {
+	return c.ConfigSectionFunc(ctx, node, section)
+}
+
+// ConfigValue calls c.ConfigValueFunc
+func (c *Configer) ConfigValue(ctx context.Context, node, section, key string) (string, error) {
+	return c.ConfigValueFunc(ctx, node, section, key)
+}
+
+// SetConfigValue calls c.SetConfigValueFunc
+func (c *Configer) SetConfigValue(ctx context.Context, node, section, key, value string) error {
+	return c.SetConfigValueFunc(ctx, node, section, key, value)
+}
+
+// DeleteConfigKey calls c.DeleteConfigKeyFunc
+func (c *Configer) DeleteConfigKey(ctx context.Context, node, section, key string) error {
+	return c.DeleteConfigKeyFunc(ctx, node, section, key)
+}

@@ -42,13 +42,13 @@ func TestConfig(t *testing.T) {
 					return nil, errors.Errorf("Unexpected node: %s", node)
 				}
 				return driver.Config{
-					"foo": driver.ConfigSection{"bar": "baz"},
+					"foo": driver.ConfigSection{"asd": "rew"},
 				}, nil
 			},
 		}},
 		node: "foo",
 		expected: Config{
-			"foo": ConfigSection{"bar": "baz"},
+			"foo": ConfigSection{"asd": "rew"},
 		},
 	})
 
@@ -93,12 +93,12 @@ func TestConfigSection(t *testing.T) {
 				if section != "foo" {
 					return nil, errors.Errorf("Unexpected section: %s", section)
 				}
-				return driver.ConfigSection{"bar": "baz"}, nil
+				return driver.ConfigSection{"lkj": "ghj"}, nil
 			},
 		}},
 		node:     "foo",
 		section:  "foo",
-		expected: ConfigSection{"bar": "baz"},
+		expected: ConfigSection{"lkj": "ghj"},
 	})
 
 	tests.Run(t, func(t *testing.T, test tst) {
@@ -142,16 +142,16 @@ func TestConfigValue(t *testing.T) {
 				if section != "foo" {
 					return "", errors.Errorf("Unexpected section: %s", section)
 				}
-				if key != "bar" {
+				if key != "asd" {
 					return "", errors.Errorf("Unexpected key: %s", key)
 				}
-				return "baz", nil
+				return "jkl", nil
 			},
 		}},
 		node:     "foo",
 		section:  "foo",
-		key:      "bar",
-		expected: "baz",
+		key:      "asd",
+		expected: "jkl",
 	})
 
 	tests.Run(t, func(t *testing.T, test tst) {
@@ -195,7 +195,7 @@ func TestSetConfigValue(t *testing.T) {
 				if section != "foo" {
 					return "", errors.Errorf("Unexpected section: %s", section)
 				}
-				if key != "bar" {
+				if key != "vbn" {
 					return "", errors.Errorf("Unexpected key: %s", key)
 				}
 				if value != "baz" {
@@ -206,7 +206,7 @@ func TestSetConfigValue(t *testing.T) {
 		}},
 		node:     "foo",
 		section:  "foo",
-		key:      "bar",
+		key:      "vbn",
 		value:    "baz",
 		expected: "old",
 	})

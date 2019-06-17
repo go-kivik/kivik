@@ -12,6 +12,6 @@ type Configer interface {
 	Config(ctx context.Context, node string) (Config, error)
 	ConfigSection(ctx context.Context, node, section string) (ConfigSection, error)
 	ConfigValue(ctx context.Context, node, section, key string) (string, error)
-	SetConfigValue(ctx context.Context, node, section, key, value string) error
+	SetConfigValue(ctx context.Context, node, section, key, value string) (string, error)
 	DeleteConfigKey(ctx context.Context, node, section, key string) error
 }

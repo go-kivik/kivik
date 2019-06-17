@@ -59,14 +59,14 @@ func (c *Client) ConfigValue(ctx context.Context, node, section, key string) (st
 }
 
 // SetConfigValue sets the server's config value on the specified node, creating
-// the key if it doesn't exist.
+// the key if it doesn't exist. It returns the old value.
 //
 // See http://docs.couchdb.org/en/stable/api/server/configuration.html#put--_node-node-name-_config-section-key
-func (c *Client) SetConfigValue(ctx context.Context, node, section, key, value string) error {
+func (c *Client) SetConfigValue(ctx context.Context, node, section, key, value string) (string, error) {
 	if configer, ok := c.driverClient.(driver.Configer); ok {
 		return configer.SetConfigValue(ctx, node, section, key, value)
 	}
-	return configNotImplemented
+	return "", configNotImplemented
 }
 
 // DeleteConfigKey deletes the configuration key and associated value from the

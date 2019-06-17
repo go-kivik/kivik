@@ -158,7 +158,7 @@ type Configer struct {
 	ConfigFunc          func(context.Context, string) (driver.Config, error)
 	ConfigSectionFunc   func(context.Context, string, string) (driver.ConfigSection, error)
 	ConfigValueFunc     func(context.Context, string, string, string) (string, error)
-	SetConfigValueFunc  func(context.Context, string, string, string, string) error
+	SetConfigValueFunc  func(context.Context, string, string, string, string) (string, error)
 	DeleteConfigKeyFunc func(context.Context, string, string, string) error
 }
 
@@ -180,7 +180,7 @@ func (c *Configer) ConfigValue(ctx context.Context, node, section, key string) (
 }
 
 // SetConfigValue calls c.SetConfigValueFunc
-func (c *Configer) SetConfigValue(ctx context.Context, node, section, key, value string) error {
+func (c *Configer) SetConfigValue(ctx context.Context, node, section, key, value string) (string, error) {
 	return c.SetConfigValueFunc(ctx, node, section, key, value)
 }
 

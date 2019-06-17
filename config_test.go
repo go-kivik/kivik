@@ -167,6 +167,7 @@ func TestSetConfigValue(t *testing.T) {
 	type tst struct {
 		client                    *Client
 		node, section, key, value string
+		expected                  string
 		status                    int
 		err                       string
 	}
@@ -178,8 +179,8 @@ func TestSetConfigValue(t *testing.T) {
 	})
 	tests.Add("error", tst{
 		client: &Client{driverClient: &mock.Configer{
-			SetConfigValueFunc: func(_ context.Context, _, _, _, _ string) error {
-				return errors.New("conf error")
+			SetConfigValueFunc: func(_ context.Context, _, _, _, _ string) (string, error) {
+				return "", errors.New("conf error")
 			},
 		}},
 		status: http.StatusInternalServerError,
@@ -187,31 +188,35 @@ func TestSetConfigValue(t *testing.T) {
 	})
 	tests.Add("success", tst{
 		client: &Client{driverClient: &mock.Configer{
-			SetConfigValueFunc: func(_ context.Context, node, section, key, value string) error {
+			SetConfigValueFunc: func(_ context.Context, node, section, key, value string) (string, error) {
 				if node != "foo" {
-					return errors.Errorf("Unexpected node: %s", node)
+					return "", errors.Errorf("Unexpected node: %s", node)
 				}
 				if section != "foo" {
-					return errors.Errorf("Unexpected section: %s", section)
+					return "", errors.Errorf("Unexpected section: %s", section)
 				}
 				if key != "bar" {
-					return errors.Errorf("Unexpected key: %s", key)
+					return "", errors.Errorf("Unexpected key: %s", key)
 				}
 				if value != "baz" {
-					return errors.Errorf("Unexpected value: %s", value)
+					return "", errors.Errorf("Unexpected value: %s", value)
 				}
-				return nil
+				return "old", nil
 			},
 		}},
-		node:    "foo",
-		section: "foo",
-		key:     "bar",
-		value:   "baz",
+		node:     "foo",
+		section:  "foo",
+		key:      "bar",
+		value:    "baz",
+		expected: "old",
 	})
 
 	tests.Run(t, func(t *testing.T, test tst) {
-		err := test.client.SetConfigValue(context.Background(), test.node, test.section, test.key, test.value)
+		result, err := test.client.SetConfigValue(context.Background(), test.node, test.section, test.key, test.value)
 		testy.StatusError(t, test.err, test.status, err)
+		if d := diff.Interface(test.expected, result); d != nil {
+			t.Error(d)
+		}
 	})
 }
 

@@ -70,12 +70,12 @@ func (c *Client) SetConfigValue(ctx context.Context, node, section, key, value s
 }
 
 // DeleteConfigKey deletes the configuration key and associated value from the
-// specified node.
+// specified node. It returns the old value.
 //
 // See http://docs.couchdb.org/en/stable/api/server/configuration.html#delete--_node-node-name-_config-section-key
-func (c *Client) DeleteConfigKey(ctx context.Context, node, section, key string) error {
+func (c *Client) DeleteConfigKey(ctx context.Context, node, section, key string) (string, error) {
 	if configer, ok := c.driverClient.(driver.Configer); ok {
 		return configer.DeleteConfigKey(ctx, node, section, key)
 	}
-	return configNotImplemented
+	return "", configNotImplemented
 }

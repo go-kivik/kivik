@@ -159,7 +159,7 @@ type Configer struct {
 	ConfigSectionFunc   func(context.Context, string, string) (driver.ConfigSection, error)
 	ConfigValueFunc     func(context.Context, string, string, string) (string, error)
 	SetConfigValueFunc  func(context.Context, string, string, string, string) (string, error)
-	DeleteConfigKeyFunc func(context.Context, string, string, string) error
+	DeleteConfigKeyFunc func(context.Context, string, string, string) (string, error)
 }
 
 var _ driver.Configer = &Configer{}
@@ -185,6 +185,6 @@ func (c *Configer) SetConfigValue(ctx context.Context, node, section, key, value
 }
 
 // DeleteConfigKey calls c.DeleteConfigKeyFunc
-func (c *Configer) DeleteConfigKey(ctx context.Context, node, section, key string) error {
+func (c *Configer) DeleteConfigKey(ctx context.Context, node, section, key string) (string, error) {
 	return c.DeleteConfigKeyFunc(ctx, node, section, key)
 }

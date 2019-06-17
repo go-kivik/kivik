@@ -224,6 +224,7 @@ func TestDeleteConfigKey(t *testing.T) {
 	type tst struct {
 		client             *Client
 		node, section, key string
+		expected           string
 		status             int
 		err                string
 	}
@@ -235,8 +236,8 @@ func TestDeleteConfigKey(t *testing.T) {
 	})
 	tests.Add("error", tst{
 		client: &Client{driverClient: &mock.Configer{
-			DeleteConfigKeyFunc: func(_ context.Context, _, _, _ string) error {
-				return errors.New("conf error")
+			DeleteConfigKeyFunc: func(_ context.Context, _, _, _ string) (string, error) {
+				return "", errors.New("conf error")
 			},
 		}},
 		status: http.StatusInternalServerError,
@@ -244,26 +245,30 @@ func TestDeleteConfigKey(t *testing.T) {
 	})
 	tests.Add("success", tst{
 		client: &Client{driverClient: &mock.Configer{
-			DeleteConfigKeyFunc: func(_ context.Context, node, section, key string) error {
+			DeleteConfigKeyFunc: func(_ context.Context, node, section, key string) (string, error) {
 				if node != "foo" {
-					return errors.Errorf("Unexpected node: %s", node)
+					return "", errors.Errorf("Unexpected node: %s", node)
 				}
 				if section != "foo" {
-					return errors.Errorf("Unexpected section: %s", section)
+					return "", errors.Errorf("Unexpected section: %s", section)
 				}
 				if key != "baz" {
-					return errors.Errorf("Unexpected key: %s", key)
+					return "", errors.Errorf("Unexpected key: %s", key)
 				}
-				return nil
+				return "old", nil
 			},
 		}},
-		node:    "foo",
-		section: "foo",
-		key:     "baz",
+		node:     "foo",
+		section:  "foo",
+		key:      "baz",
+		expected: "old",
 	})
 
 	tests.Run(t, func(t *testing.T, test tst) {
-		err := test.client.DeleteConfigKey(context.Background(), test.node, test.section, test.key)
+		result, err := test.client.DeleteConfigKey(context.Background(), test.node, test.section, test.key)
 		testy.StatusError(t, test.err, test.status, err)
+		if d := diff.Interface(test.expected, result); d != nil {
+			t.Error(d)
+		}
 	})
 }

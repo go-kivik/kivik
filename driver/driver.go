@@ -195,7 +195,7 @@ type Document struct {
 	// format.
 	Body io.ReadCloser
 
-	// Attachments will be nil except when include_docs=true.
+	// Attachments will be nil except when attachments=true.
 	Attachments Attachments
 }
 
@@ -204,7 +204,6 @@ type Document struct {
 type Attachments interface {
 	// Next is called to pupulate att with the next attachment in the result
 	// set.
-	//
 	//
 	// Next should return io.EOF when there are no more attachments.
 	Next(att *Attachment) error

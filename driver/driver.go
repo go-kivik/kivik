@@ -404,5 +404,6 @@ type RevDiff struct {
 // DBReplicator is an optional interface that may be implemented by a DB to
 // allow kivik-controlled replications.
 type DBReplicator interface {
+	BulkDocer
 	RevsDiff(ctx context.Context, revMap map[string][]string) (map[string]RevDiff, error)
 }

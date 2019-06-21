@@ -650,6 +650,11 @@ type RevDiff struct {
 // the document ID.
 type Diffs map[string]RevDiff
 
+// RevsDiff the subset of document/revision IDs that do not correspond to
+// revisions stored in the database. This is used by the replication protocol,
+// and is normally never needed otherwise.
+//
+// See http://docs.couchdb.org/en/stable/api/database/misc.html#db-revs-diff
 func (db *DB) RevsDiff(ctx context.Context, revMap RevLookup) (Diffs, error) {
 	if rep, ok := db.driverDB.(driver.DBReplicator); ok {
 		result, err := rep.RevsDiff(ctx, revMap)

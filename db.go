@@ -634,3 +634,33 @@ func (db *DB) Close(ctx context.Context) error {
 	}
 	return nil
 }
+
+// RevLookup represents a rev lookup request, as sent to RevsDiff. The map
+// key is the document id, and the value is a slice of revisions.
+type RevLookup map[string][]string
+
+// RevDiff represents a rev diff for a single document, as returned by the
+// RevsDiff method.
+type RevDiff struct {
+	Missing           []string `json:"missing,omitempty"`
+	PossibleAncestors []string `json:"possible_ancestors,omitempty"`
+}
+
+// Diffs is a collection of RevDiffs as returned by RevsDiff. The map key is
+// the document ID.
+type Diffs map[string]RevDiff
+
+func (db *DB) RevsDiff(ctx context.Context, revMap RevLookup) (Diffs, error) {
+	if rep, ok := db.driverDB.(driver.DBReplicator); ok {
+		result, err := rep.RevsDiff(ctx, revMap)
+		if err != nil {
+			return nil, err
+		}
+		diffs := make(Diffs, len(result))
+		for k, v := range result {
+			diffs[k] = RevDiff(v)
+		}
+		return diffs, nil
+	}
+	return nil, &Error{HTTPStatus: http.StatusNotImplemented, Message: "kivik: _revs_diff not supported by driver"}
+}

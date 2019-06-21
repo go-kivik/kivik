@@ -393,3 +393,16 @@ type ClientCloser interface {
 type DBCloser interface {
 	Close(ctx context.Context) error
 }
+
+// RevDiff represents a rev diff for a single document, as returned by the
+// RevsDiff method.
+type RevDiff struct {
+	Missing           []string `json:"missing,omitempty"`
+	PossibleAncestors []string `json:"possible_ancestors,omitempty"`
+}
+
+// DBReplicator is an optional interface that may be implemented by a DB to
+// allow kivik-controlled replications.
+type DBReplicator interface {
+	RevsDiff(ctx context.Context, revMap map[string][]string) (map[string]RevDiff, error)
+}

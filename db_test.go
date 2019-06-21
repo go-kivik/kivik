@@ -1961,3 +1961,45 @@ func TestClientClose(t *testing.T) {
 		testy.Error(t, test.err, err)
 	})
 }
+
+func TestRevsDiff(t *testing.T) {
+	type tt struct {
+		db     *DB
+		revMap RevLookup
+		status int
+		err    string
+	}
+	tests := testy.NewTable()
+	tests.Add("non-DBReplicator", tt{
+		db:     &DB{driverDB: &mock.DB{}},
+		status: http.StatusNotImplemented,
+		err:    "kivik: _revs_diff not supported by driver",
+	})
+	tests.Add("network error", tt{
+		db: &DB{driverDB: &mock.DBReplicator{
+			RevsDiffFunc: func(_ context.Context, revMap map[string][]string) (map[string]driver.RevDiff, error) {
+				return nil, errors.New("net error")
+			},
+		}},
+		status: http.StatusInternalServerError,
+		err:    "net error",
+	})
+	tests.Add("success", tt{
+		db: &DB{driverDB: &mock.DBReplicator{
+			RevsDiffFunc: func(_ context.Context, revMap map[string][]string) (map[string]driver.RevDiff, error) {
+				return map[string]driver.RevDiff{
+					"foo": {Missing: []string{"1", "2"}},
+					"bar": {PossibleAncestors: []string{"3", "4"}},
+				}, nil
+			},
+		}},
+	})
+
+	tests.Run(t, func(t *testing.T, tt tt) {
+		result, err := tt.db.RevsDiff(context.Background(), tt.revMap)
+		testy.StatusError(t, tt.err, tt.status, err)
+		if d := diff.AsJSON(&diff.File{Path: "testdata/" + testy.Stub(t)}, result); d != nil {
+			t.Error(d)
+		}
+	})
+}

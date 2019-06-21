@@ -259,7 +259,20 @@ type DBCloser struct {
 
 var _ driver.DBCloser = &DBCloser{}
 
-// Close calls c.CloseFunc
+// Close calls db.CloseFunc
 func (db *DBCloser) Close(ctx context.Context) error {
 	return db.CloseFunc(ctx)
+}
+
+// DBReplicator mocks a driver.DB and a driver.DBReplicator
+type DBReplicator struct {
+	*DB
+	RevsDiffFunc func(context.Context, map[string][]string) (map[string]driver.RevDiff, error)
+}
+
+var _ driver.DBReplicator = &DBReplicator{}
+
+// RevsDiff calls db.RevsDiffFunc
+func (db *DBReplicator) RevsDiff(ctx context.Context, revMap map[string][]string) (map[string]driver.RevDiff, error) {
+	return db.RevsDiffFunc(ctx, revMap)
 }

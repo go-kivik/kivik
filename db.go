@@ -645,10 +645,6 @@ func (db *DB) Close(ctx context.Context) error {
 	return nil
 }
 
-// RevLookup represents a rev lookup request, as sent to RevsDiff. The map
-// key is the document id, and the value is a slice of revisions.
-type RevLookup map[string][]string
-
 // RevDiff represents a rev diff for a single document, as returned by the
 // RevsDiff method.
 type RevDiff struct {
@@ -662,10 +658,11 @@ type Diffs map[string]RevDiff
 
 // RevsDiff the subset of document/revision IDs that do not correspond to
 // revisions stored in the database. This is used by the replication protocol,
-// and is normally never needed otherwise.
+// and is normally never needed otherwise.  revMap must marshal to the expected
+// format.
 //
 // See http://docs.couchdb.org/en/stable/api/database/misc.html#db-revs-diff
-func (db *DB) RevsDiff(ctx context.Context, revMap RevLookup) (Diffs, error) {
+func (db *DB) RevsDiff(ctx context.Context, revMap interface{}) (Diffs, error) {
 	if rd, ok := db.driverDB.(driver.RevsDiffer); ok {
 		result, err := rd.RevsDiff(ctx, revMap)
 		if err != nil {

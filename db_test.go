@@ -1965,7 +1965,7 @@ func TestClientClose(t *testing.T) {
 func TestRevsDiff(t *testing.T) {
 	type tt struct {
 		db     *DB
-		revMap RevLookup
+		revMap interface{}
 		status int
 		err    string
 	}
@@ -1977,7 +1977,7 @@ func TestRevsDiff(t *testing.T) {
 	})
 	tests.Add("network error", tt{
 		db: &DB{driverDB: &mock.RevsDiffer{
-			RevsDiffFunc: func(_ context.Context, revMap map[string][]string) (map[string]driver.RevDiff, error) {
+			RevsDiffFunc: func(_ context.Context, revMap interface{}) (map[string]driver.RevDiff, error) {
 				return nil, errors.New("net error")
 			},
 		}},
@@ -1986,7 +1986,7 @@ func TestRevsDiff(t *testing.T) {
 	})
 	tests.Add("success", tt{
 		db: &DB{driverDB: &mock.RevsDiffer{
-			RevsDiffFunc: func(_ context.Context, revMap map[string][]string) (map[string]driver.RevDiff, error) {
+			RevsDiffFunc: func(_ context.Context, revMap interface{}) (map[string]driver.RevDiff, error) {
 				return map[string]driver.RevDiff{
 					"foo": {Missing: []string{"1", "2"}},
 					"bar": {PossibleAncestors: []string{"3", "4"}},

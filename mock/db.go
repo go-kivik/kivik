@@ -264,15 +264,15 @@ func (db *DBCloser) Close(ctx context.Context) error {
 	return db.CloseFunc(ctx)
 }
 
-// DBReplicator mocks a driver.BulkDocer and a driver.DBReplicator
-type DBReplicator struct {
+// RevsDiffer mocks a driver.DB and driver.RevsDiffer.
+type RevsDiffer struct {
 	*BulkDocer
 	RevsDiffFunc func(context.Context, map[string][]string) (map[string]driver.RevDiff, error)
 }
 
-var _ driver.DBReplicator = &DBReplicator{}
+var _ driver.RevsDiffer = &RevsDiffer{}
 
 // RevsDiff calls db.RevsDiffFunc
-func (db *DBReplicator) RevsDiff(ctx context.Context, revMap map[string][]string) (map[string]driver.RevDiff, error) {
+func (db *RevsDiffer) RevsDiff(ctx context.Context, revMap map[string][]string) (map[string]driver.RevDiff, error) {
 	return db.RevsDiffFunc(ctx, revMap)
 }

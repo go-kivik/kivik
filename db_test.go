@@ -1976,7 +1976,7 @@ func TestRevsDiff(t *testing.T) {
 		err:    "kivik: _revs_diff not supported by driver",
 	})
 	tests.Add("network error", tt{
-		db: &DB{driverDB: &mock.DBReplicator{
+		db: &DB{driverDB: &mock.RevsDiffer{
 			RevsDiffFunc: func(_ context.Context, revMap map[string][]string) (map[string]driver.RevDiff, error) {
 				return nil, errors.New("net error")
 			},
@@ -1985,7 +1985,7 @@ func TestRevsDiff(t *testing.T) {
 		err:    "net error",
 	})
 	tests.Add("success", tt{
-		db: &DB{driverDB: &mock.DBReplicator{
+		db: &DB{driverDB: &mock.RevsDiffer{
 			RevsDiffFunc: func(_ context.Context, revMap map[string][]string) (map[string]driver.RevDiff, error) {
 				return map[string]driver.RevDiff{
 					"foo": {Missing: []string{"1", "2"}},

@@ -401,9 +401,7 @@ type RevDiff struct {
 	PossibleAncestors []string `json:"possible_ancestors,omitempty"`
 }
 
-// DBReplicator is an optional interface that may be implemented by a DB to
-// allow kivik-controlled replications.
-type DBReplicator interface {
-	BulkDocer
+// RevsDiffer is an optional interface that may be implemented by a DB.
+type RevsDiffer interface {
 	RevsDiff(ctx context.Context, revMap map[string][]string) (map[string]RevDiff, error)
 }

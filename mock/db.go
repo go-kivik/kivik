@@ -267,12 +267,12 @@ func (db *DBCloser) Close(ctx context.Context) error {
 // RevsDiffer mocks a driver.DB and driver.RevsDiffer.
 type RevsDiffer struct {
 	*BulkDocer
-	RevsDiffFunc func(context.Context, interface{}) (map[string]driver.RevDiff, error)
+	RevsDiffFunc func(context.Context, interface{}) (driver.Rows, error)
 }
 
 var _ driver.RevsDiffer = &RevsDiffer{}
 
 // RevsDiff calls db.RevsDiffFunc
-func (db *RevsDiffer) RevsDiff(ctx context.Context, revMap interface{}) (map[string]driver.RevDiff, error) {
+func (db *RevsDiffer) RevsDiff(ctx context.Context, revMap interface{}) (driver.Rows, error) {
 	return db.RevsDiffFunc(ctx, revMap)
 }

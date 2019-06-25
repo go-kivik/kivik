@@ -661,14 +661,12 @@ type Diffs map[string]RevDiff
 // and is normally never needed otherwise.  revMap must marshal to the expected
 // format.
 //
-// Uses Rows.ScanValue to access each element in the returned list. The
-// value will be of the JSON format:
+// Use ID() to return the current document ID, and ScanValue to access the full
+// JSON value, which should be of the JSON format:
 //
 //     {
-//         "{doc_id}": {
-//             "missing": ["rev1",...],
-//             "possible_ancestors": ["revA",...]
-//         }
+//         "missing": ["rev1",...],
+//         "possible_ancestors": ["revA",...]
 //     }
 //
 // See http://docs.couchdb.org/en/stable/api/database/misc.html#db-revs-diff

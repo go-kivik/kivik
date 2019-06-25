@@ -661,18 +661,24 @@ type Diffs map[string]RevDiff
 // and is normally never needed otherwise.  revMap must marshal to the expected
 // format.
 //
+// Uses Rows.ScanValue to access each element in the returned list. The
+// value will be of the JSON format:
+//
+//     {
+//         "{doc_id}": {
+//             "missing": ["rev1",...],
+//             "possible_ancestors": ["revA",...]
+//         }
+//     }
+//
 // See http://docs.couchdb.org/en/stable/api/database/misc.html#db-revs-diff
-func (db *DB) RevsDiff(ctx context.Context, revMap interface{}) (Diffs, error) {
+func (db *DB) RevsDiff(ctx context.Context, revMap interface{}) (*Rows, error) {
 	if rd, ok := db.driverDB.(driver.RevsDiffer); ok {
-		result, err := rd.RevsDiff(ctx, revMap)
+		rowsi, err := rd.RevsDiff(ctx, revMap)
 		if err != nil {
 			return nil, err
 		}
-		diffs := make(Diffs, len(result))
-		for k, v := range result {
-			diffs[k] = RevDiff(v)
-		}
-		return diffs, nil
+		return newRows(ctx, rowsi), nil
 	}
 	return nil, &Error{HTTPStatus: http.StatusNotImplemented, Message: "kivik: _revs_diff not supported by driver"}
 }

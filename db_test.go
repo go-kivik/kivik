@@ -1964,10 +1964,11 @@ func TestClientClose(t *testing.T) {
 
 func TestRevsDiff(t *testing.T) {
 	type tt struct {
-		db     *DB
-		revMap interface{}
-		status int
-		err    string
+		db       *DB
+		revMap   interface{}
+		status   int
+		err      string
+		expected interface{}
 	}
 	tests := testy.NewTable()
 	tests.Add("non-DBReplicator", tt{
@@ -1977,7 +1978,7 @@ func TestRevsDiff(t *testing.T) {
 	})
 	tests.Add("network error", tt{
 		db: &DB{driverDB: &mock.RevsDiffer{
-			RevsDiffFunc: func(_ context.Context, revMap interface{}) (map[string]driver.RevDiff, error) {
+			RevsDiffFunc: func(_ context.Context, revMap interface{}) (driver.Rows, error) {
 				return nil, errors.New("net error")
 			},
 		}},
@@ -1986,19 +1987,26 @@ func TestRevsDiff(t *testing.T) {
 	})
 	tests.Add("success", tt{
 		db: &DB{driverDB: &mock.RevsDiffer{
-			RevsDiffFunc: func(_ context.Context, revMap interface{}) (map[string]driver.RevDiff, error) {
-				return map[string]driver.RevDiff{
-					"foo": {Missing: []string{"1", "2"}},
-					"bar": {PossibleAncestors: []string{"3", "4"}},
-				}, nil
+			RevsDiffFunc: func(_ context.Context, revMap interface{}) (driver.Rows, error) {
+				return &mock.Rows{ID: "a"}, nil
 			},
 		}},
+		expected: &Rows{
+			iter: &iter{
+				feed: &rowsIterator{
+					Rows: &mock.Rows{ID: "a"},
+				},
+				curVal: &driver.Row{},
+			},
+			rowsi: &mock.Rows{ID: "a"},
+		},
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
-		result, err := tt.db.RevsDiff(context.Background(), tt.revMap)
+		rows, err := tt.db.RevsDiff(context.Background(), tt.revMap)
 		testy.StatusError(t, tt.err, tt.status, err)
-		if d := diff.AsJSON(&diff.File{Path: "testdata/" + testy.Stub(t)}, result); d != nil {
+		rows.cancel = nil // Determinism
+		if d := diff.Interface(tt.expected, rows); d != nil {
 			t.Error(d)
 		}
 	})

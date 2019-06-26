@@ -403,7 +403,7 @@ type RevDiff struct {
 
 // RevsDiffer is an optional interface that may be implemented by a DB.
 type RevsDiffer interface {
-	// RevsDiff returns a Rows iterator, which should populate the Value
-	// field, and nothing else.
+	// RevsDiff returns a Rows iterator, which should populate the ID and Value
+	// fields, and nothing else.
 	RevsDiff(ctx context.Context, revMap interface{}) (Rows, error)
 }

@@ -1,5 +1,3 @@
-// +build !1.13
-
 package kivik
 
 import (

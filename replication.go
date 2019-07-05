@@ -21,6 +21,15 @@ const (
 	ReplicationComplete   ReplicationState = "completed"
 )
 
+// The additional possible values for the state field in the _scheduler docs.
+const (
+	ReplicationInitializing ReplicationState = "initializing"
+	ReplicationRunning      ReplicationState = "running"
+	ReplicationPending      ReplicationState = "pending"
+	ReplicationCrashing     ReplicationState = "crashing"
+	ReplicationFailed       ReplicationState = "failed"
+)
+
 // Replication represents a CouchDB replication process.
 type Replication struct {
 	Source string
@@ -115,7 +124,12 @@ func (r *Replication) IsActive() bool {
 	if r == nil {
 		return false
 	}
-	return r.State() != ReplicationError && r.State() != ReplicationComplete
+	switch r.State() {
+	case ReplicationError, ReplicationComplete, ReplicationCrashing, ReplicationFailed:
+		return false
+	default:
+		return true
+	}
 }
 
 // Delete deletes a replication. If it is currently running, it will be

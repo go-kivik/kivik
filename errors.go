@@ -129,8 +129,18 @@ func StatusCode(err error) int {
 		return 0
 	}
 	var coder statusCoder
-	if xerrors.As(err, &coder) {
-		return coder.StatusCode()
+	for {
+		if xerrors.As(err, &coder) {
+			return coder.StatusCode()
+		}
+		if uw := xerrors.Unwrap(err); uw != nil {
+			err = uw
+			continue
+		}
+		if c, ok := err.(causer); ok {
+			err = c.Cause()
+			continue
+		}
+		return StatusInternalServerError
 	}
-	return StatusInternalServerError
 }

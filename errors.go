@@ -3,6 +3,8 @@ package kivik
 import (
 	"fmt"
 	"net/http"
+
+	"golang.org/x/xerrors"
 )
 
 // Error represents an error returned by Kivik.
@@ -120,14 +122,25 @@ type causer interface {
 // interface.
 //
 //  type statusCoder interface {
-//      StatusCode() int
+//      StatusCode() (httpStatusCode int)
 //  }
 func StatusCode(err error) int {
 	if err == nil {
 		return 0
 	}
-	if coder, ok := err.(statusCoder); ok {
-		return coder.StatusCode()
+	var coder statusCoder
+	for {
+		if xerrors.As(err, &coder) {
+			return coder.StatusCode()
+		}
+		if uw := xerrors.Unwrap(err); uw != nil {
+			err = uw
+			continue
+		}
+		if c, ok := err.(causer); ok {
+			err = c.Cause()
+			continue
+		}
+		return StatusInternalServerError
 	}
-	return StatusInternalServerError
 }

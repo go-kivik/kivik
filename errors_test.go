@@ -8,6 +8,7 @@ import (
 
 	"github.com/flimzy/diff"
 	"github.com/flimzy/testy"
+	"golang.org/x/xerrors"
 )
 
 func TestStatusCoder(t *testing.T) {
@@ -29,6 +30,11 @@ func TestStatusCoder(t *testing.T) {
 		{
 			Name:     "StatusCoder",
 			Err:      &Error{HTTPStatus: 400, Err: errors.New("bad request")},
+			Expected: 400,
+		},
+		{
+			Name:     "buried StatusCoder",
+			Err:      xerrors.Errorf("foo: %w", &Error{HTTPStatus: 400, Err: errors.New("bad request")}),
 			Expected: 400,
 		},
 	}

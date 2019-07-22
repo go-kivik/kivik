@@ -107,27 +107,33 @@ func readEncoder(in io.ReadCloser) io.ReadCloser {
 
 // MarshalJSON satisfies the json.Marshaler interface.
 func (a *Attachment) MarshalJSON() ([]byte, error) {
-	if a.Stub {
-		return []byte(`{"stub":true}`), nil
-	}
-	r := readEncoder(a.Content)
-	data, err := ioutil.ReadAll(r)
-	if err != nil {
-		return nil, err
-	}
 	type jsonAttachment struct {
 		ContentType string `json:"content_type"`
-		Data        string `json:"data"`
-		RevPos      *int64 `json:"revpos,omitempty"`
+		Stub        *bool  `json:"stub,omitempty"`
+		Follows     *bool  `json:"follows,omitempty"`
+		Size        int64  `json:"length,omitempty"`
+		RevPos      int64  `json:"revpos,omitempty"`
+		Data        []byte `json:"data,omitempty"`
 		Digest      string `json:"digest,omitempty"`
 	}
 	att := &jsonAttachment{
 		ContentType: a.ContentType,
-		Data:        string(data),
+		Size:        a.Size,
+		RevPos:      a.RevPos,
 		Digest:      a.Digest,
 	}
-	if a.RevPos != 0 {
-		att.RevPos = &a.RevPos
+	switch {
+	case a.Stub:
+		att.Stub = &a.Stub
+	case a.Follows:
+		att.Follows = &a.Follows
+	default:
+		defer a.Content.Close() // nolint: errcheck
+		data, err := ioutil.ReadAll(a.Content)
+		if err != nil {
+			return nil, err
+		}
+		att.Data = data
 	}
 	return json.Marshal(att)
 }

@@ -46,6 +46,20 @@ func TestAttachmentMarshalJSON(t *testing.T) {
 			"revpos": 3
 		}`,
 	})
+	tests.Add("follows", tst{
+		att: &Attachment{
+			Content:     ioutil.NopCloser(strings.NewReader("test attachment\n")),
+			Filename:    "foo.txt",
+			Follows:     true,
+			ContentType: "text/plain",
+			RevPos:      3,
+		},
+		expected: `{
+			"content_type": "text/plain",
+			"follows": true,
+			"revpos": 3
+		}`,
+	})
 	tests.Add("read error", tst{
 		att: &Attachment{
 			Content:     ioutil.NopCloser(&errorReader{}),
@@ -63,6 +77,8 @@ func TestAttachmentMarshalJSON(t *testing.T) {
 			Size:        7,
 		},
 		expected: `{
+			"content_type": "text/plain",
+			"length": 7,
 			"stub": true
 		}`,
 	})

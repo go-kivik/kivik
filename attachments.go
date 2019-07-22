@@ -174,10 +174,6 @@ func (i *AttachmentsIterator) Next() (*Attachment, error) {
 	if err := i.atti.Next(att); err != nil {
 		return nil, err
 	}
-	return &Attachment{
-		Filename:    att.Filename,
-		ContentType: att.ContentType,
-		Content:     att.Content,
-		Size:        att.Size,
-	}, nil
+	katt := Attachment(*att)
+	return &katt, nil
 }

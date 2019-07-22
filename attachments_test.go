@@ -33,6 +33,19 @@ func TestAttachmentMarshalJSON(t *testing.T) {
 			"data": "dGVzdCBhdHRhY2htZW50Cg=="
 		}`,
 	})
+	tests.Add("revpos", tst{
+		att: &Attachment{
+			Content:     ioutil.NopCloser(strings.NewReader("test attachment\n")),
+			Filename:    "foo.txt",
+			ContentType: "text/plain",
+			RevPos:      3,
+		},
+		expected: `{
+			"content_type": "text/plain",
+			"data": "dGVzdCBhdHRhY2htZW50Cg==",
+			"revpos": 3
+		}`,
+	})
 	tests.Add("read error", tst{
 		att: &Attachment{
 			Content:     ioutil.NopCloser(&errorReader{}),

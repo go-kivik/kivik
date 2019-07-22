@@ -91,11 +91,6 @@ func (a *Attachment) validate() error {
 	return nil
 }
 
-type jsonAttachment struct {
-	ContentType string `json:"content_type"`
-	Data        string `json:"data"`
-}
-
 func readEncoder(in io.ReadCloser) io.ReadCloser {
 	r, w := io.Pipe()
 	enc := base64.NewEncoder(base64.StdEncoding, w)
@@ -120,9 +115,19 @@ func (a *Attachment) MarshalJSON() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	type jsonAttachment struct {
+		ContentType string `json:"content_type"`
+		Data        string `json:"data"`
+		RevPos      *int64 `json:"revpos,omitempty"`
+		Digest      string `json:"digest,omitempty"`
+	}
 	att := &jsonAttachment{
 		ContentType: a.ContentType,
 		Data:        string(data),
+		Digest:      a.Digest,
+	}
+	if a.RevPos != 0 {
+		att.RevPos = &a.RevPos
 	}
 	return json.Marshal(att)
 }

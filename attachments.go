@@ -40,8 +40,12 @@ type Attachment struct {
 	// Stub will be true if the data structure only represents file metadata,
 	// and contains no actual content. Stub will be true when returned by the
 	// GetAttachmentMeta function, or when included in a document without the
-	// 'include_docs' option
+	// 'include_docs' option.
 	Stub bool `json:"stub"`
+
+	// Follows will be true when reading attachments in multipart/related
+	// format.
+	Follows bool `json:"follows"`
 
 	// Content represents the attachment's content.
 	//

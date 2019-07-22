@@ -639,6 +639,9 @@ func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...O
 // Close cleans up any resources used by the DB. The default CouchDB driver
 // does not use this, the default PouchDB driver does.
 func (db *DB) Close(ctx context.Context) error {
+	if db.err != nil {
+		return db.err
+	}
 	if closer, ok := db.driverDB.(driver.DBCloser); ok {
 		return closer.Close(ctx)
 	}
@@ -671,6 +674,9 @@ type Diffs map[string]RevDiff
 //
 // See http://docs.couchdb.org/en/stable/api/database/misc.html#db-revs-diff
 func (db *DB) RevsDiff(ctx context.Context, revMap interface{}) (*Rows, error) {
+	if db.err != nil {
+		return nil, db.err
+	}
 	if rd, ok := db.driverDB.(driver.RevsDiffer); ok {
 		rowsi, err := rd.RevsDiff(ctx, revMap)
 		if err != nil {

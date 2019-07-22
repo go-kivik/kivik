@@ -2,7 +2,6 @@ package kivik
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"io"
 	"io/ioutil"
@@ -91,38 +90,35 @@ func (a *Attachment) validate() error {
 	return nil
 }
 
-type jsonAttachment struct {
-	ContentType string `json:"content_type"`
-	Data        string `json:"data"`
-}
-
-func readEncoder(in io.ReadCloser) io.ReadCloser {
-	r, w := io.Pipe()
-	enc := base64.NewEncoder(base64.StdEncoding, w)
-	go func() {
-		_, err := io.Copy(enc, in)
-		if e := in.Close(); e != nil && err == nil {
-			err = e
-		}
-		_ = enc.Close()
-		_ = w.CloseWithError(err)
-	}()
-	return r
-}
-
 // MarshalJSON satisfies the json.Marshaler interface.
 func (a *Attachment) MarshalJSON() ([]byte, error) {
-	if a.Stub {
-		return []byte(`{"stub":true}`), nil
-	}
-	r := readEncoder(a.Content)
-	data, err := ioutil.ReadAll(r)
-	if err != nil {
-		return nil, err
+	type jsonAttachment struct {
+		ContentType string `json:"content_type"`
+		Stub        *bool  `json:"stub,omitempty"`
+		Follows     *bool  `json:"follows,omitempty"`
+		Size        int64  `json:"length,omitempty"`
+		RevPos      int64  `json:"revpos,omitempty"`
+		Data        []byte `json:"data,omitempty"`
+		Digest      string `json:"digest,omitempty"`
 	}
 	att := &jsonAttachment{
 		ContentType: a.ContentType,
-		Data:        string(data),
+		Size:        a.Size,
+		RevPos:      a.RevPos,
+		Digest:      a.Digest,
+	}
+	switch {
+	case a.Stub:
+		att.Stub = &a.Stub
+	case a.Follows:
+		att.Follows = &a.Follows
+	default:
+		defer a.Content.Close() // nolint: errcheck
+		data, err := ioutil.ReadAll(a.Content)
+		if err != nil {
+			return nil, err
+		}
+		att.Data = data
 	}
 	return json.Marshal(att)
 }

@@ -288,6 +288,7 @@ type Attachment struct {
 	Filename        string        `json:"-"`
 	ContentType     string        `json:"content_type"`
 	Stub            bool          `json:"stub"`
+	Follows         bool          `json:"follows"`
 	Content         io.ReadCloser `json:"-"`
 	Size            int64         `json:"length"`
 	ContentEncoding string        `json:"encoding"`

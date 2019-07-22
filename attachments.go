@@ -2,7 +2,6 @@ package kivik
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"io"
 	"io/ioutil"
@@ -89,20 +88,6 @@ func (a *Attachment) validate() error {
 		return missingArg("filename")
 	}
 	return nil
-}
-
-func readEncoder(in io.ReadCloser) io.ReadCloser {
-	r, w := io.Pipe()
-	enc := base64.NewEncoder(base64.StdEncoding, w)
-	go func() {
-		_, err := io.Copy(enc, in)
-		if e := in.Close(); e != nil && err == nil {
-			err = e
-		}
-		_ = enc.Close()
-		_ = w.CloseWithError(err)
-	}()
-	return r
 }
 
 // MarshalJSON satisfies the json.Marshaler interface.

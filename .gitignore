@@ -1,6 +1,6 @@
 test/pouch__all_dbs__/
 vendor
 test.*
-glide.lock
+Gopkg.lock
 node_modules
 coverage.txt

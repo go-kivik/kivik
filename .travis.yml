@@ -2,12 +2,6 @@ dist: trusty
 sudo: required
 services:
     - docker
-addons:
-  apt:
-    sources:
-      - sourceline: 'ppa:masterminds/glide'
-    packages:
-      - glide
 cache:
     directories:
         - node_modules

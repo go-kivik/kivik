@@ -49,7 +49,7 @@ func (e *Error) Error() string {
 // (internal server error), if none.
 func (e *Error) StatusCode() int {
 	if e.HTTPStatus == 0 {
-		return StatusInternalServerError
+		return http.StatusInternalServerError
 	}
 	return e.HTTPStatus
 }
@@ -141,6 +141,6 @@ func StatusCode(err error) int {
 			err = c.Cause()
 			continue
 		}
-		return StatusInternalServerError
+		return http.StatusInternalServerError
 	}
 }

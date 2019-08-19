@@ -54,7 +54,7 @@ func TestAllDocs(t *testing.T) {
 					},
 				},
 			},
-			status: StatusInternalServerError,
+			status: http.StatusInternalServerError,
 			err:    "db error",
 		},
 		{
@@ -111,7 +111,7 @@ func TestDesignDocs(t *testing.T) {
 					},
 				},
 			},
-			status: StatusInternalServerError,
+			status: http.StatusInternalServerError,
 			err:    "db error",
 		},
 		{
@@ -140,7 +140,7 @@ func TestDesignDocs(t *testing.T) {
 		{
 			name:   "not supported",
 			db:     &DB{driverDB: &mock.DB{}},
-			status: StatusNotImplemented,
+			status: http.StatusNotImplemented,
 			err:    "kivik: design doc view not supported by driver",
 		},
 	}
@@ -173,7 +173,7 @@ func TestLocalDocs(t *testing.T) {
 					},
 				},
 			},
-			status: StatusInternalServerError,
+			status: http.StatusInternalServerError,
 			err:    "db error",
 		},
 		{
@@ -202,7 +202,7 @@ func TestLocalDocs(t *testing.T) {
 		{
 			name:   "not supported",
 			db:     &DB{driverDB: &mock.DB{}},
-			status: StatusNotImplemented,
+			status: http.StatusNotImplemented,
 			err:    "kivik: local doc view not supported by driver",
 		},
 	}
@@ -237,7 +237,7 @@ func TestQuery(t *testing.T) {
 					},
 				},
 			},
-			status: StatusInternalServerError,
+			status: http.StatusInternalServerError,
 			err:    "db error",
 		},
 		{
@@ -391,7 +391,7 @@ func TestFlush(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.DB{},
 			},
-			status: StatusNotImplemented,
+			status: http.StatusNotImplemented,
 			err:    "kivik: flush not supported by driver",
 		},
 		{
@@ -403,7 +403,7 @@ func TestFlush(t *testing.T) {
 					},
 				},
 			},
-			status: StatusBadResponse,
+			status: http.StatusBadGateway,
 			err:    "flush error",
 		},
 		{
@@ -442,7 +442,7 @@ func TestStats(t *testing.T) {
 					},
 				},
 			},
-			status: StatusBadResponse,
+			status: http.StatusBadGateway,
 			err:    "stats error",
 		},
 		{
@@ -510,7 +510,7 @@ func TestCompact(t *testing.T) {
 		},
 	}
 	err := db.Compact(context.Background())
-	testy.StatusError(t, expected, StatusBadRequest, err)
+	testy.StatusError(t, expected, http.StatusBadRequest, err)
 }
 
 func TestCompactView(t *testing.T) {
@@ -527,7 +527,7 @@ func TestCompactView(t *testing.T) {
 		},
 	}
 	err := db.CompactView(context.Background(), expectedDDocID)
-	testy.StatusError(t, expected, StatusBadRequest, err)
+	testy.StatusError(t, expected, http.StatusBadRequest, err)
 }
 
 func TestViewCleanup(t *testing.T) {
@@ -540,7 +540,7 @@ func TestViewCleanup(t *testing.T) {
 		},
 	}
 	err := db.ViewCleanup(context.Background())
-	testy.StatusError(t, expected, StatusBadRequest, err)
+	testy.StatusError(t, expected, http.StatusBadRequest, err)
 }
 
 func TestSecurity(t *testing.T) {
@@ -560,7 +560,7 @@ func TestSecurity(t *testing.T) {
 					},
 				},
 			},
-			status: StatusBadResponse,
+			status: http.StatusBadGateway,
 			err:    "security error",
 		},
 		{
@@ -615,7 +615,7 @@ func TestSetSecurity(t *testing.T) {
 		{
 			name:   "nil security",
 			db:     &DB{},
-			status: StatusBadRequest,
+			status: http.StatusBadRequest,
 			err:    "kivik: security required",
 		},
 		{
@@ -628,7 +628,7 @@ func TestSetSecurity(t *testing.T) {
 				},
 			},
 			security: &Security{},
-			status:   StatusBadResponse,
+			status:   http.StatusBadGateway,
 			err:      "set security error",
 		},
 		{
@@ -693,7 +693,7 @@ func TestGetMeta(t *testing.T) { // nolint: gocyclo
 					},
 				},
 			},
-			status: StatusBadResponse,
+			status: http.StatusBadGateway,
 			err:    "get meta error",
 		},
 		{
@@ -726,7 +726,7 @@ func TestGetMeta(t *testing.T) { // nolint: gocyclo
 					},
 				},
 			},
-			status: StatusBadResponse,
+			status: http.StatusBadGateway,
 			err:    "get error",
 		},
 		{
@@ -827,14 +827,14 @@ func TestCopy(t *testing.T) {
 		{
 			name:   "missing target",
 			db:     &DB{},
-			status: StatusBadRequest,
+			status: http.StatusBadRequest,
 			err:    "kivik: targetID required",
 		},
 		{
 			name:   "missing source",
 			db:     &DB{},
 			target: "foo",
-			status: StatusBadRequest,
+			status: http.StatusBadRequest,
 			err:    "kivik: sourceID required",
 		},
 		{
@@ -848,7 +848,7 @@ func TestCopy(t *testing.T) {
 			},
 			target: "foo",
 			source: "bar",
-			status: StatusBadRequest,
+			status: http.StatusBadRequest,
 			err:    "copy error",
 		},
 		{
@@ -887,7 +887,7 @@ func TestCopy(t *testing.T) {
 			},
 			target: "foo",
 			source: "bar",
-			status: StatusBadResponse,
+			status: http.StatusBadGateway,
 			err:    "get error",
 		},
 		{
@@ -924,7 +924,7 @@ func TestCopy(t *testing.T) {
 			},
 			target: "foo",
 			source: "bar",
-			status: StatusBadResponse,
+			status: http.StatusBadGateway,
 			err:    "put error",
 		},
 		{
@@ -1000,7 +1000,7 @@ func TestNormalizeFromJSON(t *testing.T) {
 		{
 			Name:   "InvalidJSON",
 			Input:  []byte(`invalid`),
-			Status: StatusBadAPICall,
+			Status: http.StatusBadRequest,
 			Error:  "invalid character 'i' looking for beginning of value",
 		},
 		{
@@ -1067,7 +1067,7 @@ func TestPut(t *testing.T) {
 		{
 			name:   "no docID",
 			db:     &DB{},
-			status: StatusBadRequest,
+			status: http.StatusBadRequest,
 			err:    "kivik: docID required",
 		},
 		{
@@ -1080,7 +1080,7 @@ func TestPut(t *testing.T) {
 				},
 			},
 			docID:  "foo",
-			status: StatusBadRequest,
+			status: http.StatusBadRequest,
 			err:    "db error",
 		},
 		{
@@ -1100,7 +1100,7 @@ func TestPut(t *testing.T) {
 			db:     &DB{},
 			docID:  "foo",
 			input:  []byte("Something bogus"),
-			status: StatusBadAPICall,
+			status: http.StatusBadRequest,
 			err:    "invalid character 'S' looking for beginning of value",
 		},
 		{
@@ -1277,7 +1277,7 @@ func TestCreateDoc(t *testing.T) {
 					},
 				},
 			},
-			status: StatusBadRequest,
+			status: http.StatusBadRequest,
 			err:    "create error",
 		},
 		{
@@ -1326,7 +1326,7 @@ func TestDelete(t *testing.T) {
 		{
 			name:   "no doc ID",
 			db:     &DB{},
-			status: StatusBadRequest,
+			status: http.StatusBadRequest,
 			err:    "kivik: docID required",
 		},
 		{
@@ -1339,7 +1339,7 @@ func TestDelete(t *testing.T) {
 				},
 			},
 			docID:  "foo",
-			status: StatusBadRequest,
+			status: http.StatusBadRequest,
 			err:    "delete error",
 		},
 		{
@@ -1406,13 +1406,13 @@ func TestPutAttachment(t *testing.T) {
 				Filename: "foo.txt",
 				Content:  ioutil.NopCloser(strings.NewReader("")),
 			},
-			status: StatusBadRequest,
+			status: http.StatusBadRequest,
 			err:    "db error",
 		},
 		{
 			name:   "no doc id",
 			db:     &DB{},
-			status: StatusBadRequest,
+			status: http.StatusBadRequest,
 			err:    "kivik: docID required",
 		},
 		{
@@ -1420,7 +1420,7 @@ func TestPutAttachment(t *testing.T) {
 			db:     &DB{},
 			docID:  "foo",
 			att:    &Attachment{},
-			status: StatusBadRequest,
+			status: http.StatusBadRequest,
 			err:    "kivik: filename required",
 		},
 		{
@@ -1495,14 +1495,14 @@ func TestDeleteAttachment(t *testing.T) {
 		{
 			name:   "missing doc id",
 			db:     &DB{},
-			status: StatusBadRequest,
+			status: http.StatusBadRequest,
 			err:    "kivik: docID required",
 		},
 		{
 			name:   "missing filename",
 			db:     &DB{},
 			docID:  "foo",
-			status: StatusBadRequest,
+			status: http.StatusBadRequest,
 			err:    "kivik: filename required",
 		},
 		{
@@ -1516,7 +1516,7 @@ func TestDeleteAttachment(t *testing.T) {
 					},
 				},
 			},
-			status: StatusBadRequest,
+			status: http.StatusBadRequest,
 			err:    "db error",
 		},
 		{
@@ -1624,14 +1624,14 @@ func TestGetAttachment(t *testing.T) {
 		{
 			name:   "no docID",
 			db:     &DB{},
-			status: StatusBadRequest,
+			status: http.StatusBadRequest,
 			err:    "kivik: docID required",
 		},
 		{
 			name:   "no filename",
 			db:     &DB{},
 			docID:  "foo",
-			status: StatusBadRequest,
+			status: http.StatusBadRequest,
 			err:    "kivik: filename required",
 		},
 	}
@@ -1768,14 +1768,14 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 		{
 			name:   "no doc id",
 			db:     &DB{},
-			status: StatusBadRequest,
+			status: http.StatusBadRequest,
 			err:    "kivik: docID required",
 		},
 		{
 			name:   "no filename",
 			db:     &DB{},
 			docID:  "foo",
-			status: StatusBadRequest,
+			status: http.StatusBadRequest,
 			err:    "kivik: filename required",
 		},
 	}
@@ -1844,7 +1844,7 @@ func TestPurge(t *testing.T) {
 		{
 			name:   "non-purger",
 			db:     &DB{driverDB: &mock.DB{}},
-			status: StatusNotImplemented,
+			status: http.StatusNotImplemented,
 			err:    "kivik: purge not supported by driver",
 		},
 		{
@@ -1856,7 +1856,7 @@ func TestPurge(t *testing.T) {
 					},
 				},
 			},
-			status: StatusNotImplemented,
+			status: http.StatusNotImplemented,
 			err:    "this feature is not yet implemented",
 		},
 	}
@@ -1887,7 +1887,7 @@ func TestBulkGet(t *testing.T) {
 		{
 			name:   "non-bulkGetter",
 			db:     &DB{driverDB: &mock.DB{}},
-			status: StatusNotImplemented,
+			status: http.StatusNotImplemented,
 			err:    "kivik: bulk get not supported by driver",
 		},
 		{
@@ -1897,7 +1897,7 @@ func TestBulkGet(t *testing.T) {
 					return nil, errors.New("query error")
 				},
 			}},
-			status: StatusInternalServerError,
+			status: http.StatusInternalServerError,
 			err:    "query error",
 		},
 		{

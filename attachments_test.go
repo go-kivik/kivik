@@ -208,7 +208,7 @@ func TestAttachmentsIteratorNext(t *testing.T) {
 					},
 				},
 			},
-			status: StatusBadResponse,
+			status: http.StatusBadGateway,
 			err:    "error",
 		},
 		{

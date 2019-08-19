@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"testing"
 
 	"github.com/flimzy/diff"
@@ -29,7 +30,7 @@ func TestNew(t *testing.T) {
 			name:       "Unregistered driver",
 			driverName: "unregistered",
 			dsn:        "unf",
-			status:     StatusBadAPICall,
+			status:     http.StatusBadRequest,
 			err:        `kivik: unknown driver "unregistered" (forgotten import?)`,
 		},
 		{
@@ -40,7 +41,7 @@ func TestNew(t *testing.T) {
 				},
 			},
 			driverName: "foo",
-			status:     StatusInternalServerError,
+			status:     http.StatusInternalServerError,
 			err:        "connection error",
 		},
 		{
@@ -119,7 +120,7 @@ func TestVersion(t *testing.T) {
 					},
 				},
 			},
-			status: StatusInternalServerError,
+			status: http.StatusInternalServerError,
 			err:    "db error",
 		},
 		{
@@ -165,7 +166,7 @@ func TestDB(t *testing.T) {
 					},
 				},
 			},
-			status: StatusInternalServerError,
+			status: http.StatusInternalServerError,
 			err:    "db error",
 		},
 		func() Test {
@@ -227,7 +228,7 @@ func TestAllDBs(t *testing.T) {
 					},
 				},
 			},
-			status: StatusInternalServerError,
+			status: http.StatusInternalServerError,
 			err:    "db error",
 		},
 		{
@@ -277,7 +278,7 @@ func TestDBExists(t *testing.T) {
 					},
 				},
 			},
-			status: StatusInternalServerError,
+			status: http.StatusInternalServerError,
 			err:    "db error",
 		},
 		{
@@ -331,7 +332,7 @@ func TestCreateDB(t *testing.T) {
 					},
 				},
 			},
-			status: StatusInternalServerError,
+			status: http.StatusInternalServerError,
 			err:    "db error",
 		},
 		{
@@ -384,7 +385,7 @@ func TestDestroyDB(t *testing.T) {
 					},
 				},
 			},
-			status: StatusInternalServerError,
+			status: http.StatusInternalServerError,
 			err:    "db error",
 		},
 		{
@@ -429,7 +430,7 @@ func TestAuthenticate(t *testing.T) {
 			client: &Client{
 				driverClient: &mock.Client{},
 			},
-			status: StatusNotImplemented,
+			status: http.StatusNotImplemented,
 			err:    "kivik: driver does not support authentication",
 		},
 		{
@@ -441,7 +442,7 @@ func TestAuthenticate(t *testing.T) {
 					},
 				},
 			},
-			status: StatusInternalServerError,
+			status: http.StatusInternalServerError,
 			err:    "auth error",
 		},
 		{

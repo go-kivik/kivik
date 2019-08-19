@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"testing"
 
 	"github.com/flimzy/diff"
@@ -193,7 +194,7 @@ func TestChangesScanDoc(t *testing.T) {
 					closed: true,
 				},
 			},
-			status: StatusIteratorUnusable,
+			status: http.StatusBadRequest,
 			err:    "kivik: Iterator is closed",
 		},
 	}

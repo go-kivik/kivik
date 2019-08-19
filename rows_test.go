@@ -3,6 +3,7 @@ package kivik
 import (
 	"context"
 	"errors"
+	"net/http"
 	"testing"
 
 	"github.com/flimzy/diff"
@@ -105,7 +106,7 @@ func TestRowsScanValue(t *testing.T) {
 					closed: true,
 				},
 			},
-			status: StatusIteratorUnusable,
+			status: http.StatusBadRequest,
 			err:    "kivik: Iterator is closed",
 		},
 		{
@@ -161,7 +162,7 @@ func TestRowsScanDoc(t *testing.T) {
 					closed: true,
 				},
 			},
-			status: StatusIteratorUnusable,
+			status: http.StatusBadRequest,
 			err:    "kivik: Iterator is closed",
 		},
 		{
@@ -174,7 +175,7 @@ func TestRowsScanDoc(t *testing.T) {
 					},
 				},
 			},
-			status: StatusBadAPICall,
+			status: http.StatusBadRequest,
 			err:    "kivik: doc is nil; does the query include docs?",
 		},
 		{
@@ -230,7 +231,7 @@ func TestRowsScanKey(t *testing.T) {
 					closed: true,
 				},
 			},
-			status: StatusIteratorUnusable,
+			status: http.StatusBadRequest,
 			err:    "kivik: Iterator is closed",
 		},
 		{

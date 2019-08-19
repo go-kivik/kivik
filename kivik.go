@@ -145,7 +145,7 @@ func missingArg(arg string) error {
 func (c *Client) DBsStats(ctx context.Context, dbnames []string) ([]*DBStats, error) {
 	dbstats, err := c.nativeDBsStats(ctx, dbnames)
 	switch StatusCode(err) {
-	case StatusNotFound, StatusNotImplemented:
+	case http.StatusNotFound, http.StatusNotImplemented:
 		return c.fallbackDBsStats(ctx, dbnames)
 	}
 	return dbstats, err

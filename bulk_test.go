@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"testing"
 
 	"github.com/flimzy/diff"
@@ -170,7 +171,7 @@ func TestDocsInterfaceSlice(t *testing.T) {
 		{
 			name:   "InvalidJSON",
 			input:  []interface{}{[]byte(`invalid`)},
-			status: StatusBadAPICall,
+			status: http.StatusBadRequest,
 			err:    "invalid character 'i' looking for beginning of value",
 		},
 	}
@@ -202,7 +203,7 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 			name:     "invalid JSON",
 			dbDriver: &mock.BulkDocer{},
 			docs:     []interface{}{[]byte("invalid json")},
-			status:   StatusBadAPICall,
+			status:   http.StatusBadRequest,
 			err:      "invalid character 'i' looking for beginning of value",
 		},
 		{

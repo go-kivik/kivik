@@ -3,6 +3,7 @@ package kivik
 import (
 	"context"
 	"errors"
+	"net/http"
 	"testing"
 
 	"github.com/flimzy/diff"
@@ -170,7 +171,7 @@ func TestDBUpdates(t *testing.T) {
 			client: &Client{
 				driverClient: &mock.Client{},
 			},
-			status: StatusNotImplemented,
+			status: http.StatusNotImplemented,
 			err:    "kivik: driver does not implement DBUpdater",
 		},
 		{
@@ -182,7 +183,7 @@ func TestDBUpdates(t *testing.T) {
 					},
 				},
 			},
-			status: StatusInternalServerError,
+			status: http.StatusInternalServerError,
 			err:    "db error",
 		},
 		{

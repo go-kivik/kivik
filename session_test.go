@@ -3,6 +3,7 @@ package kivik
 import (
 	"context"
 	"errors"
+	"net/http"
 	"testing"
 
 	"github.com/flimzy/diff"
@@ -21,7 +22,7 @@ func TestSession(t *testing.T) {
 		{
 			name:   "driver doesn't implement Sessioner",
 			client: &mock.Client{},
-			status: StatusNotImplemented,
+			status: http.StatusNotImplemented,
 			err:    "kivik: driver does not support sessions",
 		},
 		{
@@ -31,7 +32,7 @@ func TestSession(t *testing.T) {
 					return nil, errors.New("session error")
 				},
 			},
-			status: StatusInternalServerError,
+			status: http.StatusInternalServerError,
 			err:    "session error",
 		},
 		{

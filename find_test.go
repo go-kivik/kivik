@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"testing"
 
 	"github.com/flimzy/diff"
@@ -26,7 +27,7 @@ func TestFind(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.DB{},
 			},
-			status: StatusNotImplemented,
+			status: http.StatusNotImplemented,
 			err:    "kivik: driver does not support Find interface",
 		},
 		{
@@ -38,7 +39,7 @@ func TestFind(t *testing.T) {
 					},
 				},
 			},
-			status: StatusInternalServerError,
+			status: http.StatusInternalServerError,
 			err:    "db error",
 		},
 		{
@@ -92,7 +93,7 @@ func TestCreateIndex(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.DB{},
 			},
-			status: StatusNotImplemented,
+			status: http.StatusNotImplemented,
 			err:    "kivik: driver does not support Find interface",
 		},
 		{
@@ -104,7 +105,7 @@ func TestCreateIndex(t *testing.T) {
 					},
 				},
 			},
-			status: StatusInternalServerError,
+			status: http.StatusInternalServerError,
 			err:    "db error",
 		},
 		{
@@ -154,7 +155,7 @@ func TestDeleteIndex(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.DB{},
 			},
-			status: StatusNotImplemented,
+			status: http.StatusNotImplemented,
 			err:    "kivik: driver does not support Find interface",
 		},
 		{
@@ -166,7 +167,7 @@ func TestDeleteIndex(t *testing.T) {
 					},
 				},
 			},
-			status: StatusInternalServerError,
+			status: http.StatusInternalServerError,
 			err:    "db error",
 		},
 		{
@@ -211,7 +212,7 @@ func TestGetIndexes(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.DB{},
 			},
-			status: StatusNotImplemented,
+			status: http.StatusNotImplemented,
 			err:    "kivik: driver does not support Find interface",
 		},
 		{
@@ -223,7 +224,7 @@ func TestGetIndexes(t *testing.T) {
 					},
 				},
 			},
-			status: StatusInternalServerError,
+			status: http.StatusInternalServerError,
 			err:    "db error",
 		},
 		{
@@ -271,7 +272,7 @@ func TestExplain(t *testing.T) {
 		{
 			name:   "non-finder",
 			db:     &mock.DB{},
-			status: StatusNotImplemented,
+			status: http.StatusNotImplemented,
 			err:    "kivik: driver does not support Find interface",
 		},
 		{
@@ -281,7 +282,7 @@ func TestExplain(t *testing.T) {
 					return nil, errors.New("explain error")
 				},
 			},
-			status: StatusInternalServerError,
+			status: http.StatusInternalServerError,
 			err:    "explain error",
 		},
 		{

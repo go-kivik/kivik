@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"testing"
 	"time"
 
@@ -311,7 +312,7 @@ func TestGetReplications(t *testing.T) {
 			client: &Client{
 				driverClient: &mock.Client{},
 			},
-			status: StatusNotImplemented,
+			status: http.StatusNotImplemented,
 			err:    "kivik: driver does not support replication",
 		},
 		{
@@ -323,7 +324,7 @@ func TestGetReplications(t *testing.T) {
 					},
 				},
 			},
-			status: StatusInternalServerError,
+			status: http.StatusInternalServerError,
 			err:    "db error",
 		},
 		{
@@ -383,7 +384,7 @@ func TestReplicate(t *testing.T) {
 			client: &Client{
 				driverClient: &mock.Client{},
 			},
-			status: StatusNotImplemented,
+			status: http.StatusNotImplemented,
 			err:    "kivik: driver does not support replication",
 		},
 		{
@@ -395,7 +396,7 @@ func TestReplicate(t *testing.T) {
 					},
 				},
 			},
-			status: StatusInternalServerError,
+			status: http.StatusInternalServerError,
 			err:    "db error",
 		},
 		{

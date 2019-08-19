@@ -3,6 +3,7 @@ package kivik
 import (
 	"context"
 	"errors"
+	"net/http"
 	"testing"
 
 	"github.com/flimzy/testy"
@@ -22,7 +23,7 @@ func TestClusterStatus(t *testing.T) {
 	tests := testy.NewTable()
 	tests.Add("driver doesn't implement Cluster interface", tst{
 		client: &mock.Client{},
-		status: StatusNotImplemented,
+		status: http.StatusNotImplemented,
 		err:    "kivik: driver does not support cluster operations",
 	})
 	tests.Add("client error", tst{
@@ -31,7 +32,7 @@ func TestClusterStatus(t *testing.T) {
 				return "", errors.New("client error")
 			},
 		},
-		status: StatusInternalServerError,
+		status: http.StatusInternalServerError,
 		err:    "client error",
 	})
 	tests.Add("success", tst{
@@ -65,7 +66,7 @@ func TestClusterSetup(t *testing.T) {
 	tests := testy.NewTable()
 	tests.Add("driver doesn't implement Cluster interface", tst{
 		client: &mock.Client{},
-		status: StatusNotImplemented,
+		status: http.StatusNotImplemented,
 		err:    "kivik: driver does not support cluster operations",
 	})
 	tests.Add("client error", tst{
@@ -74,7 +75,7 @@ func TestClusterSetup(t *testing.T) {
 				return errors.New("client error")
 			},
 		},
-		status: StatusInternalServerError,
+		status: http.StatusInternalServerError,
 		err:    "client error",
 	})
 	tests.Add("success", tst{

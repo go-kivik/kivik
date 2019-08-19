@@ -26,18 +26,6 @@ const UserPrefix = "org.couchdb.user:"
 //    })
 const EndKeySuffix = string(0xfff0)
 
-// HTTP methods supported by CouchDB. This is almost an exact copy of the
-// methods in the standard http package, with the addition of MethodCopy, and
-// a few methods left out which are not used by CouchDB.
-const (
-	MethodGet    = "GET"
-	MethodHead   = "HEAD"
-	MethodPost   = "POST"
-	MethodPut    = "PUT"
-	MethodDelete = "DELETE"
-	MethodCopy   = "COPY"
-)
-
 // HTTP response codes permitted by the CouchDB API.
 // See http://docs.couchdb.org/en/2.1.2/api/basics.html#http-status-codes
 const (

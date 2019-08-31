@@ -21,7 +21,7 @@ const UserPrefix = "org.couchdb.user:"
 // Example, to return all results with keys beginning with "foo":
 //
 //    rows, err := db.Query(context.TODO(), "ddoc", "view", map[string]interface{}{
-//        "startkey": `"foo"`,                           // Quotes are necessary so the key is
-//        "endkey":   `"foo` + kivik.EndKeySuffix + `"`, // a valid JSON object
+//        "startkey": "foo",
+//        "endkey":   "foo" + kivik.EndKeySuffix,
 //    })
 const EndKeySuffix = string(0xfff0)

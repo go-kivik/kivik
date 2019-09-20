@@ -10,7 +10,7 @@ import (
 	"github.com/flimzy/diff"
 	"github.com/flimzy/testy"
 	"github.com/go-kivik/kivik/driver"
-	"github.com/go-kivik/kivik/mock"
+	"github.com/go-kivik/kivik/internal/mock"
 )
 
 func TestFind(t *testing.T) {

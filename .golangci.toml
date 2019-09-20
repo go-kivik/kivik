@@ -7,3 +7,6 @@ enable = [
     "vetshadow", "misspell", "nakedret", "errcheck", "golint", "ineffassign",
     "deadcode", "goconst", "vet", "unparam", "gofmt"
 ]
+
+[issues]
+exclude-use-default = false

@@ -12,7 +12,7 @@ import (
 	"github.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/driver"
-	"github.com/go-kivik/kivik/mock"
+	"github.com/go-kivik/kivik/internal/mock"
 )
 
 func TestAttachmentMarshalJSON(t *testing.T) {

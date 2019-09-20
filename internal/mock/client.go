@@ -153,6 +153,7 @@ func (c *ClientCloser) Close(ctx context.Context) error {
 	return c.CloseFunc(ctx)
 }
 
+// Configer mocks driver.Client and driver.Configer
 type Configer struct {
 	*Client
 	ConfigFunc          func(context.Context, string) (driver.Config, error)

@@ -26,7 +26,7 @@ variables:
 
 lint:
     stage: test
-    image: golang:1.12
+    image: golang:1.13
     services: []
     before_script:
         - ''
@@ -41,7 +41,7 @@ lint:
 
 coverage:
     stage: test
-    image: golang:1.12
+    image: golang:1.13
     services: []
     before_script:
         - ''
@@ -72,6 +72,11 @@ go-1.12:
     <<: *test_template
     stage: test
     image: golang:1.12
+
+go-1.13:
+    <<: *test_template
+    stage: test
+    image: golang:1.13
 
 gopherjs-1.12:
     <<: *test_template

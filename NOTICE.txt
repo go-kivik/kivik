@@ -1,0 +1,15 @@
+Kivik
+Copyright 2017-2019 Kivik Contributors
+
+This product includes software developed by
+Kivik Contributors (http://kivik.io/).
+
+This product also includes the following third-party components:
+
+* CouchDB logo (http://couchdb.apache.org/)
+
+  Copyright 2009-2019 The Apache Software Foundation
+
+* PouchDB logo (https://pouchdb.com/)
+
+  Copyright 2012, Dale Harvey et al

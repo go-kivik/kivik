@@ -79,6 +79,8 @@ func (i *iter) next() (doClose, ok bool) {
 		return false, false
 	}
 	i.ready = true
+	v := reflect.ValueOf(i.curVal).Elem()
+	v.Set(reflect.Zero(v.Type()))
 	i.lasterr = i.feed.Next(i.curVal)
 	if i.lasterr != nil {
 		return true, false

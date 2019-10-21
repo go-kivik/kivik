@@ -3,7 +3,6 @@ package kivik
 import (
 	"context"
 	"net/http"
-	"strings"
 
 	"github.com/go-kivik/kivik/driver"
 )
@@ -120,7 +119,7 @@ func (r *Rows) ID() string {
 	return r.curVal.(*driver.Row).ID
 }
 
-// Key returns the Key of the current result as a de-quoted JSON object. For
+// Key returns the Key of the current result as a raw JSON string. For
 // compound keys, the ScanKey() method may be more convenient.
 func (r *Rows) Key() string {
 	runlock, err := r.rlock()
@@ -128,7 +127,7 @@ func (r *Rows) Key() string {
 		return ""
 	}
 	defer runlock()
-	return strings.Trim(string(r.curVal.(*driver.Row).Key), `"`)
+	return string(r.curVal.(*driver.Row).Key)
 }
 
 // Offset returns the starting offset where the result set started. It is

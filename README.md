@@ -163,8 +163,9 @@ support natively. Kivik aims to accomplish this in the future.
 
 ## What are Kivik's requirements?
 
-Kivik's test suite is automatically run on Linux and OSX for every pull request,
-but should work on all supported Go platforms.
+Kivik's test suite is automatically run on Linux for every pull request, but
+should work on all supported Go architectures. If you find it not working for
+your OS/architecture, please submit a bug report.
 
 Below are the compatibility targets for specific runtime and database versions.
 If you discover a bug affecting any of these supported environments, please let

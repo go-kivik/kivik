@@ -99,7 +99,7 @@ func (c *Changes) LastSeq() string {
 }
 
 // Pending returns the count of remaining items in the change feed. This
-// value is only guaranteed to be set after/ all changes have been
+// value is only guaranteed to be set after all changes have been
 // enumerated through by Next, thus should only be read after processing all
 // changes in a change set. Calling Close before enumerating will render
 // this value unreliable.

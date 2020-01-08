@@ -36,7 +36,7 @@ lint:
         - cd ${SRCDIR}
         - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
         - dep ensure && dep status
-        - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.18.0
+        - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.22.2
         - golangci-lint run ./...
 
 coverage:

@@ -25,6 +25,20 @@ which is stable.
 
 Example configuration for common dependency managers follow.
 
+## Go Modules
+
+Kivik 3.x and later supports Go modules, which is the recommended way to use it
+for Go version 1.11 or newer. If your project is already using Go modules,
+simply fetch the desired version:
+
+```shell
+go get github.com/go-kivik/kivik/v3 # Stable release
+go get github.com/go-kivik/kivik    # Development release
+```
+
+For Go version 1.10 or earlier, and for GopherJS, legacy vendoring tools are
+still supported, as described below.
+
 ## [dep](https://github.com/golang/dep)
 
 Update your `Gopkg.toml` file:

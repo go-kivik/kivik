@@ -2,6 +2,8 @@ stages:
     - test
 
 variables:
+    # SRCDIR is still used for module-unaware building, for Go 1.9, 1.10, and GopherJS
+    SRCDIR: /go/src/github.com/go-kivik/kivik
     GO111MODULE: "on"
 
 .test: &test_template
@@ -17,6 +19,17 @@ variables:
         - ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH23}
     script:
         - go mod download
+        - ./script/test_version.sh
+        - go test -race -tags=livetest ./...
+
+.nomod: &nomod_template
+    <<: *test_template
+    script:
+        - mkdir -p /go/src
+        - ln -s /builds /go/src/github.com
+        - cd ${SRCDIR}
+        - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+        - dep ensure && dep status
         - ./script/test_version.sh
         - go test -race -tags=livetest ./...
 
@@ -41,6 +54,17 @@ coverage:
         - go mod download
         - ./script/coverage.sh
 
+
+go-1.9:
+    <<: *nomod_template
+    stage: test
+    image: golang:1.9
+
+go-1.10:
+    <<: *nomod_template
+    stage: test
+    image: golang:1.10
+
 go-1.11:
     <<: *test_template
     stage: test
@@ -57,11 +81,15 @@ go-1.13:
     image: golang:1.13
 
 gopherjs-1.12:
-    <<: *test_template
+    <<: *nomod_template
     stage: test
     image: golang:1.12
     script:
-        - ( cd $GOPATH && GO111MODULE=off go get -u github.com/gopherjs/gopherjs )
+        - mkdir -p /go/src
+        - ln -s /builds /go/src/github.com
+        - cd ${SRCDIR}
+        - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+        - dep ensure && dep status
         - curl -sL https://deb.nodesource.com/setup_6.x | bash -
         - apt-get update -qq && apt-get install -y nodejs npm
         - npm install
@@ -75,7 +103,6 @@ gopherjs-1.12:
                 mkdir -p ~/.node_libraries/
                 cp build/Release/syscall.node ~/.node_libraries/syscall.node
             )
-        - go mod download
         - gopherjs test ./...
 
 go-rc:

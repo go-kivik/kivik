@@ -5,8 +5,9 @@ import (
 	"testing"
 
 	"github.com/flimzy/diff"
-	"github.com/go-kivik/kivik/driver"
-	"github.com/go-kivik/kivik/internal/mock"
+
+	"github.com/go-kivik/kivik/v3/driver"
+	"github.com/go-kivik/kivik/v3/internal/mock"
 )
 
 // to protect the registry from concurrent tests

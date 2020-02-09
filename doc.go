@@ -7,4 +7,4 @@
 // sql/driver packages, although the client API is completely different due to
 // the different  database models implemented by SQL and NoSQL databases such as
 // CouchDB.
-package kivik // import "github.com/go-kivik/kivik"
+package kivik // import "github.com/go-kivik/kivik/v3"

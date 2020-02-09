@@ -10,7 +10,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/go-kivik/kivik/driver"
+	"github.com/go-kivik/kivik/v3/driver"
 )
 
 // DB is a handle to a specific database.

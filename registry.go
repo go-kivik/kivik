@@ -3,7 +3,7 @@ package kivik
 import (
 	"sync"
 
-	"github.com/go-kivik/kivik/driver"
+	"github.com/go-kivik/kivik/v3/driver"
 )
 
 var (

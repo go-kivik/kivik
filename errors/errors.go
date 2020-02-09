@@ -1,7 +1,7 @@
 // Package errors provides convenience functions for Kivik drivers to report
 // meaningful errors. This package is not conisidered part of the kivik public
 // API and is subject to change without notice.
-package errors // import "github.com/go-kivik/kivik/errors"
+package errors // import "github.com/go-kivik/kivik/v3/errors"
 
 import (
 	"encoding/json"

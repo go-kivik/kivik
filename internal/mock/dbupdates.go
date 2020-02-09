@@ -1,6 +1,6 @@
 package mock
 
-import "github.com/go-kivik/kivik/driver"
+import "github.com/go-kivik/kivik/v3/driver"
 
 // DBUpdates mocks driver.DBUpdates
 type DBUpdates struct {

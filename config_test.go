@@ -6,10 +6,11 @@ import (
 	"testing"
 
 	"github.com/flimzy/diff"
-	"github.com/flimzy/testy"
-	"github.com/go-kivik/kivik/driver"
-	"github.com/go-kivik/kivik/internal/mock"
 	"github.com/pkg/errors"
+	"github.com/flimzy/testy"
+
+	"github.com/go-kivik/kivik/v3/driver"
+	"github.com/go-kivik/kivik/v3/internal/mock"
 )
 
 func TestConfig(t *testing.T) {

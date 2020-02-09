@@ -93,7 +93,7 @@ gopherjs-1.12:
         - curl -sL https://deb.nodesource.com/setup_6.x | bash -
         - apt-get update -qq && apt-get install -y nodejs npm
         - npm install
-        - go get -u github.com/gopherjs/gopherjs
+        - GO111MODULE=off go get -u github.com/gopherjs/gopherjs
         - npm install source-map-support
         - |
             (

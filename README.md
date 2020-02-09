@@ -13,15 +13,8 @@ implemented by SQL and NoSQL databases such as CouchDB.
 
 # Versions
 
-You are browsing the **development** branch of Kivik. The stable version is
-available [here](https://github.com/go-kivik/kivik/tree/stable1.x). Please
-consult the documentation on that page for proper installation of the stable
-branch.
-
-This branch which will eventually become the Kivik 2.0.0 release. The API is
-subject to rapid and unannounced changes at this stage of development. For
-production work, you are encouraged to use the latest 1.x release of Kivik,
-which is stable.
+You are browsing the **stable v2** branch of Kivik. For the latest changes,
+you may be interested in the [development branch](https://github.com/go-kivik/kivik/).
 
 Example configuration for common dependency managers follow.
 
@@ -83,8 +76,7 @@ import (
     "context"
     "fmt"
 
-    // "github.com/flimzy/kivik" // Stable version of Kivik
-    "github.com/go-kivik/kivik" // Development version of Kivik
+    "github.com/go-kivik/kivik"
     _ "github.com/go-kivik/couchdb" // The CouchDB driver
 )
 
@@ -172,20 +164,18 @@ If you discover a bug affecting any of these supported environments, please let
 me know by submitting a bug report via GitHub.
 
 - **Go** Kivik 2.x aims for full compatibility with all stable releases of Go
-  from 1.9. For Go 1.7 or 1.8 you can use [Kivik 1.x](https://github.com/go-kivik/kivik/tree/stable1.x)
-- **CouchDB** The Kivik 1.x CouchDB driver aims for compatibility with all
+  from 1.9. For Go 1.7 or 1.8 you can use [Kivik 1.x](https://github.com/go-kivik/kivik/tree/v1)
+- **CouchDB** The Kivik 2.x CouchDB driver aims for compatibility with all
   stable releases of CouchDB from 1.6.1.
 - **GopherJS** GopherJS always requires the latest stable version of Go, so
   building Kivik with GopherJS has this same requirement.
-- **PouchDB** The Kivik 1.x PouchDB driver aims for compatibility with all
+- **PouchDB** The Kivik 2.x PouchDB driver aims for compatibility with all
   stable releases of PouchDB from 6.0.0.
 
 ## What is the development status?
 
-Kivik 1.x is considered production-ready and comes with a complete client API
+Kivik 2.x is considered production-ready and comes with a complete client API
 client and backend drivers for CouchDB and PouchDB.
-
-Kivik 2.x is under development, and adds new features and a streamlined API.
 
 Future goals are to flesh out the Memory driver, which will make automated
 testing without a real CouchDB server easier. Then I will work on completing

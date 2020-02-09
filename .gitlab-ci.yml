@@ -2,7 +2,7 @@ stages:
     - test
 
 variables:
-    SRCDIR: /go/src/github.com/go-kivik/kivik
+    GO111MODULE: "on"
 
 .test: &test_template
     stage: test
@@ -16,11 +16,7 @@ variables:
     before_script:
         - ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH23}
     script:
-        - mkdir -p /go/src
-        - ln -s /builds /go/src/github.com
-        - cd ${SRCDIR}
-        - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-        - dep ensure && dep status
+        - go mod download
         - ./script/test_version.sh
         - go test -race -tags=livetest ./...
 
@@ -31,11 +27,7 @@ lint:
     before_script:
         - ''
     script:
-        - mkdir -p /go/src
-        - ln -s /builds /go/src/github.com
-        - cd ${SRCDIR}
-        - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-        - dep ensure && dep status
+        - go mod download
         - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.22.2
         - golangci-lint run ./...
 
@@ -46,22 +38,8 @@ coverage:
     before_script:
         - ''
     script:
-        - mkdir -p /go/src
-        - ln -s /builds /go/src/github.com
-        - cd ${SRCDIR}
-        - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-        - dep ensure && dep status
+        - go mod download
         - ./script/coverage.sh
-
-go-1.9:
-    <<: *test_template
-    stage: test
-    image: golang:1.9
-
-go-1.10:
-    <<: *test_template
-    stage: test
-    image: golang:1.10
 
 go-1.11:
     <<: *test_template
@@ -83,11 +61,7 @@ gopherjs-1.12:
     stage: test
     image: golang:1.12
     script:
-        - mkdir -p /go/src
-        - ln -s /builds /go/src/github.com
-        - cd ${SRCDIR}
-        - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-        - dep ensure && dep status
+        - ( cd $GOPATH && GO111MODULE=off go get -u github.com/gopherjs/gopherjs )
         - curl -sL https://deb.nodesource.com/setup_6.x | bash -
         - apt-get update -qq && apt-get install -y nodejs npm
         - npm install
@@ -101,6 +75,7 @@ gopherjs-1.12:
                 mkdir -p ~/.node_libraries/
                 cp build/Release/syscall.node ~/.node_libraries/syscall.node
             )
+        - go mod download
         - gopherjs test ./...
 
 go-rc:

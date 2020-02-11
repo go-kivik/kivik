@@ -55,32 +55,26 @@ coverage:
 
 go-1.9:
     <<: *test_template
-    stage: test
     image: golang:1.9
 
 go-1.10:
     <<: *test_template
-    stage: test
     image: golang:1.10
 
 go-1.11:
     <<: *test_template
-    stage: test
     image: golang:1.11
 
 go-1.12:
     <<: *test_template
-    stage: test
     image: golang:1.12
 
 go-1.13:
     <<: *test_template
-    stage: test
     image: golang:1.13
 
 gopherjs-1.12:
     <<: *test_template
-    stage: test
     image: golang:1.13
     script:
         - go get golang.org/dl/go1.12.16
@@ -107,6 +101,5 @@ gopherjs-1.12:
 
 go-rc:
     <<: *test_template
-    stage: test
     image: golang:rc
     allow_failure: true

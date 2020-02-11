@@ -78,7 +78,7 @@ func (r *Rows) ScanValue(dest interface{}) error {
 }
 
 // ScanDoc works the same as ScanValue, but on the doc field of the result. It
-// will panic if the query does not include documents.
+// will return an error if the query does not include documents.
 func (r *Rows) ScanDoc(dest interface{}) error {
 	runlock, err := r.rlock()
 	if err != nil {

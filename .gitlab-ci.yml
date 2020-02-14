@@ -1,10 +1,21 @@
 stages:
+    - vendor
     - test
 
 variables:
     # SRCDIR is still used for module-unaware building, for Go 1.9, 1.10, and GopherJS
     SRCDIR: /go/src/github.com/go-kivik/kivik
     GO111MODULE: "on"
+
+vendor:
+    stage: vendor
+    image: golang:1.13
+    script:
+        - go mod vendor
+    artifacts:
+        paths:
+            - vendor
+        expire_in: 1 hour
 
 .test: &test_template
     stage: test

@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/flimzy/diff"
-	"github.com/pkg/errors"
 	"github.com/flimzy/testy"
+	"github.com/pkg/errors"
 
 	"github.com/go-kivik/kivik/v3/driver"
 	"github.com/go-kivik/kivik/v3/internal/mock"

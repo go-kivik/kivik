@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/go-kivik/kivik/driver"
+	"github.com/go-kivik/kivik/v4/driver"
 )
 
 // Replication mocks driver.Replication

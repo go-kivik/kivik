@@ -18,7 +18,7 @@ is available [here](https://github.com/go-kivik/kivik/tree/v2). Please
 consult the documentation on that page for proper installation of the stable
 branch.
 
-This branch which will eventually become the Kivik 3.0.0 release. The API is
+This branch which will eventually become the Kivik 4.0.0 release. The API is
 subject to rapid and unannounced changes at this stage of development. For
 production work, you are encouraged to use the latest 2.x release of Kivik,
 which is stable.
@@ -28,57 +28,21 @@ Example configuration for common dependency managers follow.
 ## Go Modules
 
 Kivik 3.x and later supports Go modules, which is the recommended way to use it
-for Go version 1.11 or newer. If your project is already using Go modules,
-simply fetch the desired version:
+for Go version 1.11 or newer. Kivik 4.x only supports Go 1.11 and later. If your
+project is already using Go modules, simply fetch the desired version:
 
 ```shell
 go get github.com/go-kivik/kivik/v3 # Stable release
-go get github.com/go-kivik/kivik    # Development release
+go get github.com/go-kivik/kivik/v4 # Development release
 ```
 
-For Go version 1.10 or earlier, and for GopherJS, legacy vendoring tools are
-still supported, as described below.
-
-## [dep](https://github.com/golang/dep)
-
-Update your `Gopkg.toml` file:
-
-```toml
-[[constraint]]
-  name = "github.com/go-kivik/kivik"
-  branch = "master"
-
-[[constraint]]
-  name = "github.com/go-kivik/couchdb"
-  branch = "master"
-```
-
-## [Glide](https://github.com/Masterminds/glide)
-
-Update your `glide.yaml` file:
-
-```yaml
-import:
-- package: github.com/go-kivik/kivik
-  version: master
-- package: github.com/go-kivik/couchdb
-  version: master
-```
-
-## [govendor](https://github.com/kardianos/govendor)
-
-Fetch the latest development version of Kivik and the CouchDB driver with the
-following command:
-
-        govendor fetch github.com/go-kivik/kivik
-        govendor fetch github.com/go-kivik/couchdb
 
 # Installation
 
 Install Kivik as you normally would for any Go package:
 
-    go get -u github.com/go-kivik/kivik
-    go get -u github.com/go-kivik/couchdb
+    go get -u github.com/go-kivik/kivik/v4
+    go get -u github.com/go-kivik/couchdb/v4
 
 This will install the main Kivik package and the CouchDB database driver. See
 the [list of Kivik database drivers](https://github.com/go-kivik/kivik/wiki/Kivik-database-drivers)
@@ -97,8 +61,8 @@ import (
     "context"
     "fmt"
 
-    "github.com/go-kivik/kivik"
-    _ "github.com/go-kivik/couchdb" // The CouchDB driver
+    kivik "github.com/go-kivik/kivik/v4"
+    _ "github.com/go-kivik/couchdb/v4" // The CouchDB driver
 )
 
 func main() {
@@ -184,19 +148,20 @@ Below are the compatibility targets for specific runtime and database versions.
 If you discover a bug affecting any of these supported environments, please let
 me know by submitting a bug report via GitHub.
 
-- **Go** Kivik 2.x aims for full compatibility with all stable releases of Go
-  from 1.9. For Go 1.7 or 1.8 you can use [Kivik 1.x](https://github.com/go-kivik/kivik/tree/v1)
-- **CouchDB** The Kivik 2.x CouchDB driver aims for compatibility with all
+- **Go** Kivik 4.x aims for full compatibility with all stable releases of Go
+  from 1.11. For Go 1.7 or 1.8 you can use [Kivik 1.x](https://github.com/go-kivik/kivik/tree/v1).
+  For Go 1.9 or 1.10, you can use [Kivik 2.x](https://github.com/go-kivik/kivik/tree/v2).
+- **CouchDB** The Kivik 4.x CouchDB driver aims for compatibility with all
   stable releases of CouchDB from 1.6.1.
 - **GopherJS** GopherJS always requires the latest stable version of Go, so
   building Kivik with GopherJS has this same requirement.
-- **PouchDB** The Kivik 2.x PouchDB driver aims for compatibility with all
+- **PouchDB** The Kivik 4.x PouchDB driver aims for compatibility with all
   stable releases of PouchDB from 6.0.0.
 
 ## What is the development status?
 
-Kivik 2.x is considered production-ready and comes with a complete client API
-client and backend drivers for CouchDB and PouchDB.
+Kivik 4.x is under active development, and subject to radical, and unannounced
+API changes. For production use, please use [Kivik 3.x](https://github.com/go-kivik/kivik/tree/v3).
 
 Future goals are to flesh out the Memory driver, which will make automated
 testing without a real CouchDB server easier. Then I will work on completing

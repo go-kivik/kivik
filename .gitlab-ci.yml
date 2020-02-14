@@ -83,8 +83,10 @@ go-1.13:
 gopherjs-1.12:
     <<: *nomod_template
     stage: test
-    image: golang:1.12
+    image: golang:1.13
     script:
+        - go get golang.org/dl/go1.12.16
+        - go1.12.16 download
         - mkdir -p /go/src
         - ln -s /builds /go/src/github.com
         - cd ${SRCDIR}
@@ -103,7 +105,7 @@ gopherjs-1.12:
                 mkdir -p ~/.node_libraries/
                 cp build/Release/syscall.node ~/.node_libraries/syscall.node
             )
-        - gopherjs test ./...
+        - GOPHERJS_GOROOT="$(go1.12.16 env GOROOT)" gopherjs test ./...
 
 go-rc:
     <<: *test_template

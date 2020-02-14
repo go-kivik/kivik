@@ -55,41 +55,37 @@ coverage:
 
 go-1.9:
     <<: *test_template
-    stage: test
     image: golang:1.9
 
 go-1.10:
     <<: *test_template
-    stage: test
     image: golang:1.10
 
 go-1.11:
     <<: *test_template
-    stage: test
     image: golang:1.11
 
 go-1.12:
     <<: *test_template
-    stage: test
     image: golang:1.12
 
 go-1.13:
     <<: *test_template
-    stage: test
     image: golang:1.13
 
 gopherjs-1.12:
     <<: *test_template
-    stage: test
-    image: golang:1.12
+    image: golang:1.13
     script:
+        - go get golang.org/dl/go1.12.16
+        - go1.12.16 download
         - mkdir -p /go/src
         - ln -s /builds /go/src/github.com
         - cd ${SRCDIR}
         - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
         - dep ensure && dep status
-        - curl -sL https://deb.nodesource.com/setup_6.x | bash -
-        - apt-get update -qq && apt-get install -y nodejs npm
+        - curl -sL https://deb.nodesource.com/setup_12.x | bash -
+        - apt-get update -qq && apt-get install -y nodejs
         - npm install
         - go get -u github.com/gopherjs/gopherjs
         - npm install source-map-support
@@ -101,10 +97,9 @@ gopherjs-1.12:
                 mkdir -p ~/.node_libraries/
                 cp build/Release/syscall.node ~/.node_libraries/syscall.node
             )
-        - gopherjs test ./...
+        - GOPHERJS_GOROOT="$(go1.12.16 env GOROOT)" gopherjs test ./...
 
 go-rc:
     <<: *test_template
-    stage: test
     image: golang:rc
     allow_failure: true

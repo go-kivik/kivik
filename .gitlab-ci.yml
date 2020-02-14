@@ -6,6 +6,13 @@ variables:
     SRCDIR: /go/src/github.com/go-kivik/kivik
     GO111MODULE: "on"
 
+vendor:
+    image: golang:1.13
+    script:
+        - go mod vendor
+    artifacts:
+        - vendor
+
 .test: &test_template
     stage: test
     services:

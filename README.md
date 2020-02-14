@@ -20,50 +20,9 @@ Example configuration for common dependency managers follow.
 
 ## Go Modules
 
-Kivik 3.x and later supports Go modules, which is the recommended way to use it
-for Go version 1.11 or newer. If your project is already using Go modules,
-simply fetch the desired version:
-
-```shell
-go get github.com/go-kivik/kivik/v3
-```
-
-For Go version 1.10 or earlier, and for GopherJS, legacy vendoring tools are
-still supported, as described below.
-
-## [dep](https://github.com/golang/dep)
-
-Update your `Gopkg.toml` file:
-
-```toml
-[[constraint]]
-  name = "github.com/go-kivik/kivik"
-  version = "3.0.0"
-
-[[constraint]]
-  name = "github.com/go-kivik/couchdb"
-  version = "3.0.0"
-```
-
-## [Glide](https://github.com/Masterminds/glide)
-
-Update your `glide.yaml` file:
-
-```yaml
-import:
-- package: github.com/go-kivik/kivik
-  version: 3.0.0
-- package: github.com/go-kivik/couchdb
-  version: 3.0.0
-```
-
-## [govendor](https://github.com/kardianos/govendor)
-
-Fetch the latest development version of Kivik and the CouchDB driver with the
-following command:
-
-        govendor fetch github.com/go-kivik/kivik
-        govendor fetch github.com/go-kivik/couchdb
+Kivik 3.x and later depends on Go modules, which requires Go 1.11 or later. If
+your project does not use modules, and you are unable to switch, you may use
+[Kivik 2.x](https://github.com/go-kivik/kivik/tree/v2).
 
 # Installation
 

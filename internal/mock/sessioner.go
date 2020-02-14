@@ -3,7 +3,7 @@ package mock
 import (
 	"context"
 
-	"github.com/go-kivik/kivik/driver"
+	"github.com/go-kivik/kivik/v4/driver"
 )
 
 // Sessioner mocks driver.Client and driver.Sessioner

@@ -3,7 +3,7 @@ package mock
 import (
 	"context"
 
-	"github.com/go-kivik/kivik/driver"
+	"github.com/go-kivik/kivik/v4/driver"
 )
 
 // BulkDocer mocks a driver.DB and driver.BulkDocer

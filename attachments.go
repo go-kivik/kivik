@@ -6,7 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 
-	"github.com/go-kivik/kivik/driver"
+	"github.com/go-kivik/kivik/v4/driver"
 )
 
 // Attachments is a collection of one or more file attachments.

@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/go-kivik/kivik/driver"
+	"github.com/go-kivik/kivik/v4/driver"
 )
 
 // DBUpdates provides access to database updates.

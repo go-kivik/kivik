@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-kivik/kivik/driver"
+	"github.com/go-kivik/kivik/v4/driver"
 )
 
 // ReplicationState represents a replication's state

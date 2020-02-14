@@ -1,7 +1,7 @@
 package mock
 
 import (
-	"github.com/go-kivik/kivik/driver"
+	"github.com/go-kivik/kivik/v4/driver"
 )
 
 // Driver mocks a Kivik Driver.

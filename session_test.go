@@ -7,8 +7,9 @@ import (
 	"testing"
 
 	"github.com/flimzy/diff"
-	"github.com/go-kivik/kivik/driver"
-	"github.com/go-kivik/kivik/internal/mock"
+
+	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
 func TestSession(t *testing.T) {

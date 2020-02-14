@@ -1,6 +1,6 @@
 package mock
 
-import "github.com/go-kivik/kivik/driver"
+import "github.com/go-kivik/kivik/v4/driver"
 
 // Rows mocks driver.Rows
 type Rows struct {

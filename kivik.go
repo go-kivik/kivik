@@ -116,8 +116,7 @@ func (c *Client) DBExists(ctx context.Context, dbName string, options ...Options
 	return c.driverClient.DBExists(ctx, dbName, mergeOptions(options...))
 }
 
-// CreateDB creates a DB of the requested name. Any errors are deferred, or may
-// be checked with Err().
+// CreateDB creates a DB of the requested name.
 func (c *Client) CreateDB(ctx context.Context, dbName string, options ...Options) error {
 	return c.driverClient.CreateDB(ctx, dbName, mergeOptions(options...))
 }

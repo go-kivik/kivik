@@ -60,12 +60,10 @@ gopherjs-1.12:
     script:
         - go get golang.org/dl/go1.12.16
         - go1.12.16 download
-        - mkdir -p $(dirname ${SRCDIR})
-        - ln -s ${CI_PROJECT_DIR} ${SRCDIR}
+        - mkdir -p ${SRCDIR}
+        - mv ${CI_PROJECT_DIR}/* ${SRCDIR}
         - cd ${SRCDIR}
         - go mod vendor
-        - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-        - dep ensure && dep status
         - curl -sL https://deb.nodesource.com/setup_12.x | bash -
         - apt-get update -qq && apt-get install -y nodejs
         - npm install

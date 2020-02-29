@@ -25,18 +25,18 @@ variables:
 
 lint:
     stage: test
-    image: golang:1.13
+    image: golang:1.14
     services: []
     before_script:
         - ''
     script:
         - go mod download
-        - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.22.2
+        - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.23.7
         - golangci-lint run ./...
 
 coverage:
     stage: test
-    image: golang:1.13
+    image: golang:1.14
     services: []
     before_script:
         - ''
@@ -56,9 +56,13 @@ go-1.13:
     <<: *test_template
     image: golang:1.13
 
+go-1.14:
+    <<: *test_template
+    image: golang:1.14
+
 gopherjs-1.12:
     <<: *test_template
-    image: golang:1.13
+    image: golang:1.14
     variables:
       SRCDIR: /go/src/github.com/go-kivik/kivik/v4
     script:

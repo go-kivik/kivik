@@ -6,14 +6,18 @@ variables:
     COUCHDB_USER: admin
     COUCHDB_PASSWORD: abc123
     KIVIK_TEST_DSN_COUCH23: http://admin:abc123@couch23:5984/
+    KIVIK_TEST_DSN_COUCH30: http://admin:abc123@couch30:5984/
 
 .test: &test_template
     stage: test
     services:
         - name: apache/couchdb:2.3.1
           alias: couch23
+        - name: apache/couchdb:3.0.0
+          alias: couch30
     before_script:
         - ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH23}
+        - ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH30}
     script:
         - go mod download
         - ./script/test_version.sh
@@ -21,18 +25,18 @@ variables:
 
 lint:
     stage: test
-    image: golang:1.13
+    image: golang:1.14
     services: []
     before_script:
         - ''
     script:
         - go mod download
-        - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.22.2
+        - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.23.7
         - golangci-lint run ./...
 
 coverage:
     stage: test
-    image: golang:1.13
+    image: golang:1.14
     services: []
     before_script:
         - ''
@@ -52,9 +56,13 @@ go-1.13:
     <<: *test_template
     image: golang:1.13
 
+go-1.14:
+    <<: *test_template
+    image: golang:1.14
+
 gopherjs-1.12:
     <<: *test_template
-    image: golang:1.13
+    image: golang:1.14
     variables:
       SRCDIR: /go/src/github.com/go-kivik/kivik/v3
     script:

@@ -7,8 +7,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/flimzy/diff"
-	"github.com/flimzy/testy"
+	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v3/driver"
 	"github.com/go-kivik/kivik/v3/internal/mock"
@@ -49,7 +48,7 @@ func TestFind(t *testing.T) {
 				driverDB: &mock.Finder{
 					FindFunc: func(_ context.Context, query interface{}) (driver.Rows, error) {
 						expectedQuery := int(3)
-						if d := diff.Interface(expectedQuery, query); d != nil {
+						if d := testy.DiffInterface(expectedQuery, query); d != nil {
 							return nil, fmt.Errorf("Unexpected query:\n%s", d)
 						}
 						return &mock.Rows{ID: "a"}, nil
@@ -73,7 +72,7 @@ func TestFind(t *testing.T) {
 			result, err := test.db.Find(context.Background(), test.query)
 			testy.StatusError(t, test.err, test.status, err)
 			result.cancel = nil // Determinism
-			if d := diff.Interface(test.expected, result); d != nil {
+			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
 		})
@@ -123,7 +122,7 @@ func TestCreateIndex(t *testing.T) {
 						if expectedName != name {
 							return fmt.Errorf("Unexpected name: %s", name)
 						}
-						if d := diff.Interface(expectedIndex, index); d != nil {
+						if d := testy.DiffInterface(expectedIndex, index); d != nil {
 							return fmt.Errorf("Unexpected index:\n%s", d)
 						}
 						return nil
@@ -254,7 +253,7 @@ func TestGetIndexes(t *testing.T) {
 		t.Run(test.testName, func(t *testing.T) {
 			result, err := test.db.GetIndexes(context.Background())
 			testy.StatusError(t, test.err, test.status, err)
-			if d := diff.Interface(test.expected, result); d != nil {
+			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
 		})
@@ -291,7 +290,7 @@ func TestExplain(t *testing.T) {
 			db: &mock.Finder{
 				ExplainFunc: func(_ context.Context, query interface{}) (*driver.QueryPlan, error) {
 					expectedQuery := int(3)
-					if d := diff.Interface(expectedQuery, query); d != nil {
+					if d := testy.DiffInterface(expectedQuery, query); d != nil {
 						return nil, fmt.Errorf("Unexpected query:\n%s", d)
 					}
 					return &driver.QueryPlan{DBName: "foo"}, nil
@@ -306,7 +305,7 @@ func TestExplain(t *testing.T) {
 			db := &DB{driverDB: test.db}
 			result, err := db.Explain(context.Background(), test.query)
 			testy.StatusError(t, test.err, test.status, err)
-			if d := diff.Interface(test.expected, result); d != nil {
+			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
 		})

@@ -4,8 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/flimzy/diff"
-	"github.com/flimzy/testy"
+	"gitlab.com/flimzy/testy"
 )
 
 func TestChangesUnmarshal(t *testing.T) {
@@ -34,7 +33,7 @@ func TestChangesUnmarshal(t *testing.T) {
 			var result ChangedRevs
 			err := json.Unmarshal([]byte(test.input), &result)
 			testy.Error(t, test.err, err)
-			if d := diff.Interface(test.expected, result); d != nil {
+			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
 		})

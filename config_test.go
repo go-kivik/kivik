@@ -5,9 +5,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/flimzy/diff"
-	"github.com/flimzy/testy"
 	"github.com/pkg/errors"
+	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v3/driver"
 	"github.com/go-kivik/kivik/v3/internal/mock"
@@ -56,7 +55,7 @@ func TestConfig(t *testing.T) {
 	tests.Run(t, func(t *testing.T, test tst) {
 		result, err := test.client.Config(context.Background(), test.node)
 		testy.StatusError(t, test.err, test.status, err)
-		if d := diff.Interface(test.expected, result); d != nil {
+		if d := testy.DiffInterface(test.expected, result); d != nil {
 			t.Error(d)
 		}
 	})
@@ -105,7 +104,7 @@ func TestConfigSection(t *testing.T) {
 	tests.Run(t, func(t *testing.T, test tst) {
 		result, err := test.client.ConfigSection(context.Background(), test.node, test.section)
 		testy.StatusError(t, test.err, test.status, err)
-		if d := diff.Interface(test.expected, result); d != nil {
+		if d := testy.DiffInterface(test.expected, result); d != nil {
 			t.Error(d)
 		}
 	})
@@ -158,7 +157,7 @@ func TestConfigValue(t *testing.T) {
 	tests.Run(t, func(t *testing.T, test tst) {
 		result, err := test.client.ConfigValue(context.Background(), test.node, test.section, test.key)
 		testy.StatusError(t, test.err, test.status, err)
-		if d := diff.Interface(test.expected, result); d != nil {
+		if d := testy.DiffInterface(test.expected, result); d != nil {
 			t.Error(d)
 		}
 	})
@@ -215,7 +214,7 @@ func TestSetConfigValue(t *testing.T) {
 	tests.Run(t, func(t *testing.T, test tst) {
 		result, err := test.client.SetConfigValue(context.Background(), test.node, test.section, test.key, test.value)
 		testy.StatusError(t, test.err, test.status, err)
-		if d := diff.Interface(test.expected, result); d != nil {
+		if d := testy.DiffInterface(test.expected, result); d != nil {
 			t.Error(d)
 		}
 	})
@@ -268,7 +267,7 @@ func TestDeleteConfigKey(t *testing.T) {
 	tests.Run(t, func(t *testing.T, test tst) {
 		result, err := test.client.DeleteConfigKey(context.Background(), test.node, test.section, test.key)
 		testy.StatusError(t, test.err, test.status, err)
-		if d := diff.Interface(test.expected, result); d != nil {
+		if d := testy.DiffInterface(test.expected, result); d != nil {
 			t.Error(d)
 		}
 	})

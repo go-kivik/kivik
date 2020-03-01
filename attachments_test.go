@@ -8,8 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/flimzy/diff"
-	"github.com/flimzy/testy"
+	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v3/driver"
 	"github.com/go-kivik/kivik/v3/internal/mock"
@@ -86,7 +85,7 @@ func TestAttachmentMarshalJSON(t *testing.T) {
 	tests.Run(t, func(t *testing.T, test tst) {
 		result, err := json.Marshal(test.att)
 		testy.Error(t, test.err, err)
-		if d := diff.JSON([]byte(test.expected), result); d != nil {
+		if d := testy.DiffJSON([]byte(test.expected), result); d != nil {
 			t.Error(d)
 		}
 	})
@@ -136,10 +135,10 @@ func TestAttachmentUnmarshalJSON(t *testing.T) {
 				t.Fatal(err)
 			}
 			result.Content = nil
-			if d := diff.Text(test.body, string(body)); d != nil {
+			if d := testy.DiffText(test.body, string(body)); d != nil {
 				t.Errorf("Unexpected body:\n%s", d)
 			}
-			if d := diff.Interface(test.expected, result); d != nil {
+			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Errorf("Unexpected result:\n%s", d)
 			}
 		})
@@ -184,7 +183,7 @@ func TestAttachmentsUnmarshalJSON(t *testing.T) {
 				_ = v.Content.Close()
 				v.Content = nil
 			}
-			if d := diff.Interface(test.expected, att); d != nil {
+			if d := testy.DiffInterface(test.expected, att); d != nil {
 				t.Error(d)
 			}
 		})
@@ -232,7 +231,7 @@ func TestAttachmentsIteratorNext(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := test.iter.Next()
 			testy.StatusError(t, test.err, test.status, err)
-			if d := diff.Interface(test.expected, result); d != nil {
+			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
 		})

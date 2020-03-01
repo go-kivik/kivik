@@ -1,6 +1,7 @@
 package kivik
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -107,6 +108,31 @@ func TestFormatError(t *testing.T) {
 		full: `It's missing:
     kivik generated 404 / Not Found
   - not found`,
+	})
+	tests.Add("embedded error", func() interface{} {
+		_, err := json.Marshal(func() {})
+		return tst{
+			err: &Error{HTTPStatus: http.StatusBadRequest, Err: err},
+			str: "json: unsupported type: func()",
+			std: "Bad Request: json: unsupported type: func()",
+			full: `Bad Request:
+    kivik generated 400 / Bad Request
+  - json: unsupported type: func()`,
+		}
+	})
+	tests.Add("embedded network error", func() interface{} {
+		client := testy.HTTPClient(func(_ *http.Request) (*http.Response, error) {
+			_, err := json.Marshal(func() {})
+			return nil, &Error{HTTPStatus: http.StatusBadRequest, Err: err}
+		})
+		req, _ := http.NewRequest(http.MethodGet, "/", nil)
+		_, err := client.Do(req)
+		return tst{
+			err:  err,
+			str:  "Get /: json: unsupported type: func()",
+			std:  "Get /: json: unsupported type: func()",
+			full: "Get /: json: unsupported type: func()",
+		}
 	})
 
 	tests.Run(t, func(t *testing.T, test tst) {

@@ -4,7 +4,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/flimzy/diff"
+	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/internal/mock"
@@ -66,7 +66,7 @@ func TestRegister(t *testing.T) {
 		expected := map[string]driver.Driver{
 			"foo": &mock.Driver{},
 		}
-		if d := diff.Interface(expected, drivers); d != nil {
+		if d := testy.DiffInterface(expected, drivers); d != nil {
 			t.Error(d)
 		}
 	})

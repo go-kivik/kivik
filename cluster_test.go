@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/flimzy/testy"
+	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/internal/mock"

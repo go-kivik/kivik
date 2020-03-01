@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
 	"testing"
 
 	pkgerrs "github.com/pkg/errors"
@@ -134,14 +135,19 @@ func TestFormatError(t *testing.T) {
 		}
 	})
 
+	re := testy.Replacement{
+		Regexp:      regexp.MustCompile(`"/"`),
+		Replacement: "/",
+	}
+
 	tests.Run(t, func(t *testing.T, test tst) {
-		if d := testy.DiffText(test.str, test.err.Error()); d != nil {
+		if d := testy.DiffText(test.str, test.err.Error(), re); d != nil {
 			t.Errorf("Error():\n%s", d)
 		}
-		if d := testy.DiffText(test.std, fmt.Sprintf("%v", test.err)); d != nil {
+		if d := testy.DiffText(test.std, fmt.Sprintf("%v", test.err), re); d != nil {
 			t.Errorf("Standard:\n%s", d)
 		}
-		if d := testy.DiffText(test.full, fmt.Sprintf("%+v", test.err)); d != nil {
+		if d := testy.DiffText(test.full, fmt.Sprintf("%+v", test.err), re); d != nil {
 			t.Errorf("Full:\n%s", d)
 		}
 	})

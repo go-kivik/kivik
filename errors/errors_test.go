@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/flimzy/diff"
 	pkgErrors "github.com/pkg/errors"
+	"gitlab.com/flimzy/testy"
 )
 
 func TestStatusf(t *testing.T) {
@@ -18,7 +18,7 @@ func TestStatusf(t *testing.T) {
 		message:    "foo 123",
 		statusCode: 400,
 	}
-	if d := diff.Interface(expected, result); d != nil {
+	if d := testy.DiffInterface(expected, result); d != nil {
 		t.Error(d)
 	}
 }
@@ -30,7 +30,7 @@ func TestWrapStatus(t *testing.T) {
 		statusCode: 400,
 	}
 	result := e.(*wrappedError)
-	if d := diff.Interface(expected, result); d != nil {
+	if d := testy.DiffInterface(expected, result); d != nil {
 		t.Error(d)
 	}
 
@@ -75,7 +75,7 @@ func TestErrorJSON(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if d := diff.JSON([]byte(test.expected), result); d != nil {
+			if d := testy.DiffJSON([]byte(test.expected), result); d != nil {
 				t.Error(d)
 			}
 		})
@@ -126,7 +126,7 @@ func TestStatus(t *testing.T) {
 		message:    msg,
 	}
 	err := Status(status, msg)
-	if d := diff.Interface(expected, err); d != nil {
+	if d := testy.DiffInterface(expected, err); d != nil {
 		t.Error(d)
 	}
 }
@@ -154,7 +154,7 @@ func TestWrappedError(t *testing.T) {
 
 	t.Run("Cause", func(t *testing.T) {
 		result := err.Cause()
-		if d := diff.Interface(e, result); d != nil {
+		if d := testy.DiffInterface(e, result); d != nil {
 			t.Errorf("Unexpected Cause:\n%s", d)
 		}
 	})

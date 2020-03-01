@@ -6,8 +6,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/flimzy/diff"
-	"github.com/flimzy/testy"
+	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v3/driver"
 	"github.com/go-kivik/kivik/v3/internal/mock"
@@ -92,7 +91,7 @@ func TestDBUpdatesIteratorNew(t *testing.T) {
 		updatesi: &mock.DBUpdates{},
 	}
 	u.cancel = nil // determinism
-	if d := diff.Interface(expected, u); d != nil {
+	if d := testy.DiffInterface(expected, u); d != nil {
 		t.Error(d)
 	}
 }
@@ -212,7 +211,7 @@ func TestDBUpdates(t *testing.T) {
 			result, err := test.client.DBUpdates(context.TODO())
 			testy.StatusError(t, test.err, test.status, err)
 			result.cancel = nil // Determinism
-			if d := diff.Interface(test.expected, result); d != nil {
+			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
 		})

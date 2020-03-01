@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/flimzy/diff"
+	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v3/driver"
 	"github.com/go-kivik/kivik/v3/internal/mock"
@@ -66,7 +66,7 @@ func TestSession(t *testing.T) {
 			if err != nil {
 				return
 			}
-			if d := diff.Interface(test.expected, session); d != nil {
+			if d := testy.DiffInterface(test.expected, session); d != nil {
 				t.Error(d)
 			}
 		})

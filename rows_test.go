@@ -6,8 +6,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/flimzy/diff"
-	"github.com/flimzy/testy"
+	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v3/driver"
 	"github.com/go-kivik/kivik/v3/internal/mock"
@@ -129,7 +128,7 @@ func TestRowsScanValue(t *testing.T) {
 			var result interface{}
 			err := test.rows.ScanValue(&result)
 			testy.StatusError(t, test.err, test.status, err)
-			if d := diff.Interface(test.expected, result); d != nil {
+			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
 		})
@@ -198,7 +197,7 @@ func TestRowsScanDoc(t *testing.T) {
 			var result interface{}
 			err := test.rows.ScanDoc(&result)
 			testy.StatusError(t, test.err, test.status, err)
-			if d := diff.Interface(test.expected, result); d != nil {
+			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
 		})
@@ -254,7 +253,7 @@ func TestRowsScanKey(t *testing.T) {
 			var result interface{}
 			err := test.rows.ScanKey(&result)
 			testy.StatusError(t, test.err, test.status, err)
-			if d := diff.Interface(test.expected, result); d != nil {
+			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
 		})

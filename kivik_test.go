@@ -7,8 +7,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/flimzy/diff"
-	"github.com/flimzy/testy"
+	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v3/driver"
 	"github.com/go-kivik/kivik/v3/internal/mock"
@@ -73,7 +72,7 @@ func TestNew(t *testing.T) {
 			}
 			result, err := New(test.driverName, test.dsn)
 			testy.StatusError(t, test.err, test.status, err)
-			if d := diff.Interface(test.expected, result); d != nil {
+			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
 		})
@@ -139,7 +138,7 @@ func TestVersion(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := test.client.Version(context.Background())
 			testy.StatusError(t, test.err, test.status, err)
-			if d := diff.Interface(test.expected, result); d != nil {
+			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
 		})
@@ -178,7 +177,7 @@ func TestDB(t *testing.T) {
 						if dbName != expectedDBName {
 							return nil, fmt.Errorf("Unexpected dbname: %s", dbName)
 						}
-						if d := diff.Interface(expectedOpts, opts); d != nil {
+						if d := testy.DiffInterface(expectedOpts, opts); d != nil {
 							return nil, fmt.Errorf("Unexpected options:\n%s", d)
 						}
 						return &mock.DB{ID: "abc"}, nil
@@ -203,7 +202,7 @@ func TestDB(t *testing.T) {
 			result := test.client.DB(context.Background(), test.dbName, test.options)
 			err := result.Err()
 			testy.StatusError(t, test.err, test.status, err)
-			if d := diff.Interface(test.expected, result); d != nil {
+			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
 		})
@@ -237,7 +236,7 @@ func TestAllDBs(t *testing.T) {
 				driverClient: &mock.Client{
 					AllDBsFunc: func(_ context.Context, options map[string]interface{}) ([]string, error) {
 						expectedOptions := map[string]interface{}{"foo": 123}
-						if d := diff.Interface(expectedOptions, options); d != nil {
+						if d := testy.DiffInterface(expectedOptions, options); d != nil {
 							return nil, fmt.Errorf("Unexpected options:\n%s", d)
 						}
 						return []string{"a", "b", "c"}, nil
@@ -252,7 +251,7 @@ func TestAllDBs(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := test.client.AllDBs(context.Background(), test.options)
 			testy.StatusError(t, test.err, test.status, err)
-			if d := diff.Interface(test.expected, result); d != nil {
+			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
 		})
@@ -291,7 +290,7 @@ func TestDBExists(t *testing.T) {
 						if dbName != expectedDBName {
 							return false, fmt.Errorf("Unexpected db name: %s", dbName)
 						}
-						if d := diff.Interface(expectedOpts, opts); d != nil {
+						if d := testy.DiffInterface(expectedOpts, opts); d != nil {
 							return false, fmt.Errorf("Unexpected opts:\n%s", d)
 						}
 						return true, nil
@@ -345,7 +344,7 @@ func TestCreateDB(t *testing.T) {
 						if dbName != expectedDBName {
 							return fmt.Errorf("Unexpected dbname: %s", dbName)
 						}
-						if d := diff.Interface(expectedOpts, opts); d != nil {
+						if d := testy.DiffInterface(expectedOpts, opts); d != nil {
 							return fmt.Errorf("Unexpected opts:\n%s", d)
 						}
 						return nil
@@ -398,7 +397,7 @@ func TestDestroyDB(t *testing.T) {
 						if dbName != expectedDBName {
 							return fmt.Errorf("Unexpected dbname: %s", dbName)
 						}
-						if d := diff.Interface(expectedOpts, opts); d != nil {
+						if d := testy.DiffInterface(expectedOpts, opts); d != nil {
 							return fmt.Errorf("Unexpected opts:\n%s", d)
 						}
 						return nil
@@ -451,7 +450,7 @@ func TestAuthenticate(t *testing.T) {
 				driverClient: &mock.Authenticator{
 					AuthenticateFunc: func(_ context.Context, a interface{}) error {
 						expected := int(3)
-						if d := diff.Interface(expected, a); d != nil {
+						if d := testy.DiffInterface(expected, a); d != nil {
 							return fmt.Errorf("Unexpected authenticator:\n%s", d)
 						}
 						return nil
@@ -604,7 +603,7 @@ func TestDBsStats(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			stats, err := test.client.DBsStats(context.Background(), test.dbnames)
 			testy.StatusError(t, test.err, test.status, err)
-			if d := diff.Interface(test.expected, stats); d != nil {
+			if d := testy.DiffInterface(test.expected, stats); d != nil {
 				t.Error(d)
 			}
 		})
@@ -700,7 +699,7 @@ func TestMergeOptions(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, test tst) {
 		result := mergeOptions(test.options...)
-		if d := diff.Interface(test.expected, result); d != nil {
+		if d := testy.DiffInterface(test.expected, result); d != nil {
 			t.Error(d)
 		}
 	})

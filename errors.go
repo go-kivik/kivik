@@ -3,6 +3,7 @@ package kivik
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"golang.org/x/xerrors"
 )
@@ -67,7 +68,26 @@ func (e *Error) Unwrap() error {
 
 // Format implements fmt.Formatter
 func (e *Error) Format(f fmt.State, c rune) {
-	formatError(e, f, c)
+	parts := make([]string, 0, 3)
+	if e.Message != "" {
+		parts = append(parts, e.Message)
+	}
+	switch c {
+	case 'v':
+		if f.Flag('+') {
+			var prefix string
+			if e.FromServer {
+				prefix = "server responded with"
+			} else {
+				prefix = "kivik generated"
+			}
+			parts = append(parts, fmt.Sprintf("%s %d / %s", prefix, e.HTTPStatus, http.StatusText(e.HTTPStatus)))
+		}
+	}
+	if e.Err != nil {
+		parts = append(parts, e.Err.Error())
+	}
+	_, _ = fmt.Fprint(f, strings.Join(parts, ": "))
 }
 
 func (e *Error) msg() string {
@@ -77,20 +97,6 @@ func (e *Error) msg() string {
 	default:
 		return e.Message
 	}
-}
-
-// FormatError satisfies the Go 1.13 errors.Formatter interface
-// (golang.org/x/xerrors.Formatter for older versions of Go).
-func (e *Error) FormatError(p printer) error {
-	p.Print(e.msg())
-	if p.Detail() {
-		if e.FromServer {
-			p.Printf("server responded with %d / %s", e.HTTPStatus, http.StatusText(e.HTTPStatus))
-		} else {
-			p.Printf("kivik generated %d / %s", e.HTTPStatus, http.StatusText(e.HTTPStatus))
-		}
-	}
-	return e.Err
 }
 
 type statusCoder interface {

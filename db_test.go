@@ -11,8 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/flimzy/diff"
-	"github.com/flimzy/testy"
+	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/internal/mock"
@@ -62,7 +61,7 @@ func TestAllDocs(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.DB{
 					AllDocsFunc: func(_ context.Context, opts map[string]interface{}) (driver.Rows, error) {
-						if d := diff.Interface(testOptions, opts); d != nil {
+						if d := testy.DiffInterface(testOptions, opts); d != nil {
 							return nil, fmt.Errorf("Unexpected options: %s", d)
 						}
 						return &mock.Rows{ID: "a"}, nil
@@ -86,7 +85,7 @@ func TestAllDocs(t *testing.T) {
 			result, err := test.db.AllDocs(context.Background(), test.options)
 			testy.StatusError(t, test.err, test.status, err)
 			result.cancel = nil // Determinism
-			if d := diff.Interface(test.expected, result); d != nil {
+			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
 		})
@@ -119,7 +118,7 @@ func TestDesignDocs(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.DesignDocer{
 					DesignDocsFunc: func(_ context.Context, opts map[string]interface{}) (driver.Rows, error) {
-						if d := diff.Interface(testOptions, opts); d != nil {
+						if d := testy.DiffInterface(testOptions, opts); d != nil {
 							return nil, fmt.Errorf("Unexpected options: %s", d)
 						}
 						return &mock.Rows{ID: "a"}, nil
@@ -149,7 +148,7 @@ func TestDesignDocs(t *testing.T) {
 			result, err := test.db.DesignDocs(context.Background(), test.options)
 			testy.StatusError(t, test.err, test.status, err)
 			result.cancel = nil // Determinism
-			if d := diff.Interface(test.expected, result); d != nil {
+			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
 		})
@@ -181,7 +180,7 @@ func TestLocalDocs(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.LocalDocer{
 					LocalDocsFunc: func(_ context.Context, opts map[string]interface{}) (driver.Rows, error) {
-						if d := diff.Interface(testOptions, opts); d != nil {
+						if d := testy.DiffInterface(testOptions, opts); d != nil {
 							return nil, fmt.Errorf("Unexpected options: %s", d)
 						}
 						return &mock.Rows{ID: "a"}, nil
@@ -211,7 +210,7 @@ func TestLocalDocs(t *testing.T) {
 			result, err := test.db.LocalDocs(context.Background(), test.options)
 			testy.StatusError(t, test.err, test.status, err)
 			result.cancel = nil // Determinism
-			if d := diff.Interface(test.expected, result); d != nil {
+			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
 		})
@@ -253,7 +252,7 @@ func TestQuery(t *testing.T) {
 						if view != expectedView {
 							return nil, fmt.Errorf("Unexpected view: %s", view)
 						}
-						if d := diff.Interface(testOptions, opts); d != nil {
+						if d := testy.DiffInterface(testOptions, opts); d != nil {
 							return nil, fmt.Errorf("Unexpected options: %s", d)
 						}
 						return &mock.Rows{ID: "a"}, nil
@@ -279,7 +278,7 @@ func TestQuery(t *testing.T) {
 			result, err := test.db.Query(context.Background(), test.ddoc, test.view, test.options)
 			testy.StatusError(t, test.err, test.status, err)
 			result.cancel = nil // Determinism
-			if d := diff.Interface(test.expected, result); d != nil {
+			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
 		})
@@ -316,7 +315,7 @@ func TestGet(t *testing.T) {
 						if docID != expectedDocID {
 							return nil, fmt.Errorf("Unexpected docID: %s", docID)
 						}
-						if d := diff.Interface(testOptions, options); d != nil {
+						if d := testy.DiffInterface(testOptions, options); d != nil {
 							return nil, fmt.Errorf("Unexpected options:\n%s", d)
 						}
 						return &driver.Document{
@@ -345,7 +344,7 @@ func TestGet(t *testing.T) {
 						if docID != expectedDocID {
 							return nil, fmt.Errorf("Unexpected docID: %s", docID)
 						}
-						if d := diff.Interface(expectedOptions, options); d != nil {
+						if d := testy.DiffInterface(expectedOptions, options); d != nil {
 							return nil, fmt.Errorf("Unexpected options:\n%s", d)
 						}
 						return &driver.Document{
@@ -372,7 +371,7 @@ func TestGet(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result := test.db.Get(context.Background(), test.docID, test.options)
-			if d := diff.Interface(test.expected, result); d != nil {
+			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
 		})
@@ -493,7 +492,7 @@ func TestStats(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := test.db.Stats(context.Background())
 			testy.StatusError(t, test.err, test.status, err)
-			if d := diff.Interface(test.expected, result); d != nil {
+			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
 		})
@@ -597,7 +596,7 @@ func TestSecurity(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := test.db.Security(context.Background())
 			testy.StatusError(t, test.err, test.status, err)
-			if d := diff.Interface(test.expected, result); d != nil {
+			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
 		})
@@ -646,7 +645,7 @@ func TestSetSecurity(t *testing.T) {
 								Roles: []string{"d"},
 							},
 						}
-						if d := diff.Interface(expectedSecurity, security); d != nil {
+						if d := testy.DiffInterface(expectedSecurity, security); d != nil {
 							return fmt.Errorf("Unexpected security:\n%s", d)
 						}
 						return nil
@@ -705,7 +704,7 @@ func TestGetMeta(t *testing.T) { // nolint: gocyclo
 						if docID != expectedDocID {
 							return 0, "", fmt.Errorf("Unexpected docID: %s", docID)
 						}
-						if d := diff.Interface(testOptions, opts); d != nil {
+						if d := testy.DiffInterface(testOptions, opts); d != nil {
 							return 0, "", fmt.Errorf("Unexpected options:\n%s", d)
 						}
 						return 123, "1-xxx", nil
@@ -864,7 +863,7 @@ func TestCopy(t *testing.T) {
 						if source != expectedSource {
 							return "", fmt.Errorf("Unexpected source: %s", source)
 						}
-						if d := diff.Interface(testOptions, options); d != nil {
+						if d := testy.DiffInterface(testOptions, options); d != nil {
 							return "", fmt.Errorf("Unexpected options:\n%s", d)
 						}
 						return "1-xxx", nil
@@ -948,10 +947,10 @@ func TestCopy(t *testing.T) {
 						if docID != expectedDocID {
 							return "", fmt.Errorf("Unexpected put docID: %s", docID)
 						}
-						if d := diff.Interface(expectedDoc, doc); d != nil {
+						if d := testy.DiffInterface(expectedDoc, doc); d != nil {
 							return "", fmt.Errorf("Unexpected doc:\n%s", doc)
 						}
-						if d := diff.Interface(expectedOpts, opts); d != nil {
+						if d := testy.DiffInterface(expectedOpts, opts); d != nil {
 							return "", fmt.Errorf("Unexpected opts:\n%s", opts)
 						}
 						return "1-xxx", nil
@@ -1030,7 +1029,7 @@ func TestNormalizeFromJSON(t *testing.T) {
 			t.Run(test.Name, func(t *testing.T) {
 				result, err := normalizeFromJSON(test.Input)
 				testy.StatusError(t, test.Error, test.Status, err)
-				if d := diff.Interface(test.Expected, result); d != nil {
+				if d := testy.DiffInterface(test.Expected, result); d != nil {
 					t.Error(d)
 				}
 			})
@@ -1045,10 +1044,10 @@ func TestPut(t *testing.T) {
 		if expectedDocID != docID {
 			return "", fmt.Errorf("Unexpected docID: %s", docID)
 		}
-		if d := diff.Interface(expectedDoc, doc); d != nil {
+		if d := testy.DiffInterface(expectedDoc, doc); d != nil {
 			return "", fmt.Errorf("Unexpected doc: %s", d)
 		}
-		if d := diff.Interface(testOptions, opts); d != nil {
+		if d := testy.DiffInterface(testOptions, opts); d != nil {
 			return "", fmt.Errorf("Unexpected opts: %s", d)
 		}
 		return "1-xxx", nil
@@ -1251,7 +1250,7 @@ func TestRowScanDoc(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			err := test.row.ScanDoc(test.dst)
 			testy.StatusError(t, test.err, test.status, err)
-			if d := diff.Interface(test.expected, test.dst); d != nil {
+			if d := testy.DiffInterface(test.expected, test.dst); d != nil {
 				t.Error(d)
 			}
 		})
@@ -1286,10 +1285,10 @@ func TestCreateDoc(t *testing.T) {
 				driverDB: &mock.DB{
 					CreateDocFunc: func(_ context.Context, doc interface{}, opts map[string]interface{}) (string, string, error) {
 						expectedDoc := map[string]string{"type": "test"}
-						if d := diff.Interface(expectedDoc, doc); d != nil {
+						if d := testy.DiffInterface(expectedDoc, doc); d != nil {
 							return "", "", fmt.Errorf("Unexpected doc:\n%s", d)
 						}
-						if d := diff.Interface(testOptions, opts); d != nil {
+						if d := testy.DiffInterface(testOptions, opts); d != nil {
 							return "", "", fmt.Errorf("Unexpected options:\n%s", d)
 						}
 						return "foo", "1-xxx", nil
@@ -1355,7 +1354,7 @@ func TestDelete(t *testing.T) {
 						if rev != expectedRev {
 							return "", fmt.Errorf("Unexpected rev: %s", rev)
 						}
-						if d := diff.Interface(testOptions, opts); d != nil {
+						if d := testy.DiffInterface(testOptions, opts); d != nil {
 							return "", fmt.Errorf("Unexpected options:\n%s", d)
 						}
 						return "2-xxx", nil
@@ -1446,14 +1445,14 @@ func TestPutAttachment(t *testing.T) {
 						if err != nil {
 							t.Fatal(err)
 						}
-						if d := diff.Text(expectedContent, string(content)); d != nil {
+						if d := testy.DiffText(expectedContent, string(content)); d != nil {
 							return "", fmt.Errorf("Unexpected content:\n%s", string(content))
 						}
 						att.Content = nil
-						if d := diff.Interface(expectedAtt, att); d != nil {
+						if d := testy.DiffInterface(expectedAtt, att); d != nil {
 							return "", fmt.Errorf("Unexpected attachment:\n%s", d)
 						}
-						if d := diff.Interface(testOptions, opts); d != nil {
+						if d := testy.DiffInterface(testOptions, opts); d != nil {
 							return "", fmt.Errorf("Unexpected options:\n%s", d)
 						}
 						return "2-xxx", nil
@@ -1534,7 +1533,7 @@ func TestDeleteAttachment(t *testing.T) {
 						if filename != expectedFilename {
 							return "", fmt.Errorf("Unexpected filename: %s", filename)
 						}
-						if d := diff.Interface(testOptions, opts); d != nil {
+						if d := testy.DiffInterface(testOptions, opts); d != nil {
 							return "", fmt.Errorf("Unexpected options:\n%s", d)
 						}
 						return "2-xxx", nil
@@ -1597,7 +1596,7 @@ func TestGetAttachment(t *testing.T) {
 						if filename != expectedFilename {
 							return nil, fmt.Errorf("Unexpected filename: %s", filename)
 						}
-						if d := diff.Interface(testOptions, opts); d != nil {
+						if d := testy.DiffInterface(testOptions, opts); d != nil {
 							return nil, fmt.Errorf("Unexpected options:\n%s", d)
 						}
 						return &driver.Attachment{
@@ -1643,12 +1642,12 @@ func TestGetAttachment(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if d := diff.Text(test.content, string(content)); d != nil {
+			if d := testy.DiffText(test.content, string(content)); d != nil {
 				t.Errorf("Unexpected content:\n%s", d)
 			}
 			_ = result.Content.Close()
 			result.Content = nil
-			if d := diff.Interface(test.expected, result); d != nil {
+			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
 		})
@@ -1692,7 +1691,7 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 						if filename != expectedFilename {
 							return nil, fmt.Errorf("Unexpected filename: %s", filename)
 						}
-						if d := diff.Interface(testOptions, opts); d != nil {
+						if d := testy.DiffInterface(testOptions, opts); d != nil {
 							return nil, fmt.Errorf("Unexpected options:\n%s", d)
 						}
 						return &driver.Attachment{
@@ -1742,7 +1741,7 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 						if filename != expectedFilename {
 							return nil, fmt.Errorf("Unexpected filename: %s", filename)
 						}
-						if d := diff.Interface(testOptions, opts); d != nil {
+						if d := testy.DiffInterface(testOptions, opts); d != nil {
 							return nil, fmt.Errorf("Unexpected options:\n%s", d)
 						}
 						return &driver.Attachment{
@@ -1783,7 +1782,7 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 		t.Run(test.name, func(t *testing.T) {
 			result, err := test.db.GetAttachmentMeta(context.Background(), test.docID, test.filename, test.options)
 			testy.StatusError(t, test.err, test.status, err)
-			if d := diff.Interface(test.expected, result); d != nil {
+			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
 		})
@@ -1811,7 +1810,7 @@ func TestPurge(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.Purger{
 					PurgeFunc: func(_ context.Context, dm map[string][]string) (*driver.PurgeResult, error) {
-						if d := diff.Interface(docMap, dm); d != nil {
+						if d := testy.DiffInterface(docMap, dm); d != nil {
 							return nil, fmt.Errorf("Unexpected docmap: %s", d)
 						}
 						return &driver.PurgeResult{Seq: 2}, nil
@@ -1828,7 +1827,7 @@ func TestPurge(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.Purger{
 					PurgeFunc: func(_ context.Context, dm map[string][]string) (*driver.PurgeResult, error) {
-						if d := diff.Interface(docMap, dm); d != nil {
+						if d := testy.DiffInterface(docMap, dm); d != nil {
 							return nil, fmt.Errorf("Unexpected docmap: %s", d)
 						}
 						return &driver.PurgeResult{Seq: 2, Purged: docMap}, nil
@@ -1864,7 +1863,7 @@ func TestPurge(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := test.db.Purge(context.Background(), test.docMap)
 			testy.StatusError(t, test.err, test.status, err)
-			if d := diff.Interface(test.expected, result); d != nil {
+			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
 		})
@@ -1924,7 +1923,7 @@ func TestBulkGet(t *testing.T) {
 			result, err := test.db.BulkGet(context.Background(), test.docs, test.options)
 			testy.StatusError(t, test.err, test.status, err)
 			result.cancel = nil // Determinism
-			if d := diff.Interface(test.expected, result); d != nil {
+			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
 		})
@@ -2006,7 +2005,7 @@ func TestRevsDiff(t *testing.T) {
 		rows, err := tt.db.RevsDiff(context.Background(), tt.revMap)
 		testy.StatusError(t, tt.err, tt.status, err)
 		rows.cancel = nil // Determinism
-		if d := diff.Interface(tt.expected, rows); d != nil {
+		if d := testy.DiffInterface(tt.expected, rows); d != nil {
 			t.Error(d)
 		}
 	})

@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/flimzy/diff"
-	"github.com/flimzy/testy"
+	"gitlab.com/flimzy/testy"
+
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/internal/mock"
 )
@@ -103,7 +103,7 @@ func TestBulkIteratorNext(t *testing.T) {
 			result := new(driver.BulkResult)
 			err := test.r.Next(result)
 			testy.Error(t, test.err, err)
-			if d := diff.Interface(test.expected, result); d != nil {
+			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
 		})
@@ -180,7 +180,7 @@ func TestDocsInterfaceSlice(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				result, err := docsInterfaceSlice(test.input)
 				testy.StatusError(t, test.err, test.status, err)
-				if d := diff.AsJSON(test.expected, result); d != nil {
+				if d := testy.DiffAsJSON(test.expected, result); d != nil {
 					t.Errorf("%s", d)
 				}
 			})
@@ -217,20 +217,20 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 						return "", fmt.Errorf("Unexpected docID: %s", docID)
 					}
 					expectedDoc := map[string]string{"_id": "foo"}
-					if d := diff.Interface(expectedDoc, doc); d != nil {
+					if d := testy.DiffInterface(expectedDoc, doc); d != nil {
 						return "", fmt.Errorf("Unexpected doc:\n%s", d)
 					}
-					if d := diff.Interface(testOptions, opts); d != nil {
+					if d := testy.DiffInterface(testOptions, opts); d != nil {
 						return "", fmt.Errorf("Unexpected opts:\n%s", d)
 					}
 					return "2-xxx", nil // nolint: goconst
 				},
 				CreateDocFunc: func(_ context.Context, doc interface{}, opts map[string]interface{}) (string, string, error) {
 					expectedDoc := int(123)
-					if d := diff.Interface(expectedDoc, doc); d != nil {
+					if d := testy.DiffInterface(expectedDoc, doc); d != nil {
 						return "", "", fmt.Errorf("Unexpected doc:\n%s", d)
 					}
-					if d := diff.Interface(testOptions, opts); d != nil {
+					if d := testy.DiffInterface(testOptions, opts); d != nil {
 						return "", "", fmt.Errorf("Unexpected opts:\n%s", d)
 					}
 					return "newDocID", "1-xxx", nil // nolint: goconst
@@ -270,10 +270,10 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 				BulkDocsFunc: func(_ context.Context, docs []interface{}, opts map[string]interface{}) (driver.BulkResults, error) {
 					expectedDocs := []interface{}{map[string]string{"_id": "foo"}, 123}
 					expectedOpts := map[string]interface{}{"new_edits": true}
-					if d := diff.Interface(expectedDocs, docs); d != nil {
+					if d := testy.DiffInterface(expectedDocs, docs); d != nil {
 						return nil, fmt.Errorf("Unexpected docs:\n%s", d)
 					}
-					if d := diff.Interface(expectedOpts, opts); d != nil {
+					if d := testy.DiffInterface(expectedOpts, opts); d != nil {
 						return nil, fmt.Errorf("Unexpected opts:\n%s", d)
 					}
 					return &mock.BulkResults{ID: "foo"}, nil
@@ -301,7 +301,7 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 			result, err := db.BulkDocs(context.Background(), test.docs, test.options)
 			testy.StatusError(t, test.err, test.status, err)
 			result.cancel = nil // Determinism
-			if d := diff.Interface(test.expected, result); d != nil {
+			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
 		})
@@ -331,13 +331,13 @@ func TestEmulatedBulkResults(t *testing.T) {
 	if err := br.Next(result); err != nil {
 		t.Errorf("Unexpected error: %s", err)
 	}
-	if d := diff.Interface(&results[0], result); d != nil {
+	if d := testy.DiffInterface(&results[0], result); d != nil {
 		t.Error(d)
 	}
 	if err := br.Next(result); err != nil {
 		t.Errorf("Unexpected error: %s", err)
 	}
-	if d := diff.Interface(&results[1], result); d != nil {
+	if d := testy.DiffInterface(&results[1], result); d != nil {
 		t.Error(d)
 	}
 	if err := br.Close(); err != nil {

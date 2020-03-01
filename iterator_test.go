@@ -9,8 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/flimzy/diff"
-	"github.com/flimzy/testy"
+	"gitlab.com/flimzy/testy"
 )
 
 type TestFeed struct {
@@ -50,7 +49,7 @@ func TestIterator(t *testing.T) {
 	if err := iter.Err(); err != nil {
 		t.Errorf("Unexpected error: %s", err)
 	}
-	if d := diff.AsJSON(expected, result); d != nil {
+	if d := testy.DiffAsJSON(expected, result); d != nil {
 		t.Errorf("Unexpected result:\n%s\n", d)
 	}
 }
@@ -148,7 +147,7 @@ func TestIteratorScan(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			err := scan(test.dst, test.input)
 			testy.StatusError(t, test.err, test.status, err)
-			if d := diff.Interface(test.expected, test.dst); d != nil {
+			if d := testy.DiffInterface(test.expected, test.dst); d != nil {
 				t.Error(d)
 			}
 		})

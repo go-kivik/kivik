@@ -7,9 +7,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/flimzy/diff"
-	"github.com/flimzy/testy"
 	pkgerrs "github.com/pkg/errors"
+	"gitlab.com/flimzy/testy"
 	"golang.org/x/xerrors"
 )
 
@@ -136,13 +135,13 @@ func TestFormatError(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, test tst) {
-		if d := diff.Text(test.str, test.err.Error()); d != nil {
+		if d := testy.DiffText(test.str, test.err.Error()); d != nil {
 			t.Errorf("Error():\n%s", d)
 		}
-		if d := diff.Text(test.std, fmt.Sprintf("%v", test.err)); d != nil {
+		if d := testy.DiffText(test.std, fmt.Sprintf("%v", test.err)); d != nil {
 			t.Errorf("Standard:\n%s", d)
 		}
-		if d := diff.Text(test.full, fmt.Sprintf("%+v", test.err)); d != nil {
+		if d := testy.DiffText(test.full, fmt.Sprintf("%+v", test.err)); d != nil {
 			t.Errorf("Full:\n%s", d)
 		}
 	})

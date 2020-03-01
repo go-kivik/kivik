@@ -8,8 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/flimzy/diff"
-	"github.com/flimzy/testy"
+	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/internal/mock"
@@ -140,7 +139,7 @@ func TestNewReplication(t *testing.T) {
 		irep:   rep,
 	}
 	result := newReplication(rep)
-	if d := diff.Interface(expected, result); d != nil {
+	if d := testy.DiffInterface(expected, result); d != nil {
 		t.Error(d)
 	}
 }
@@ -293,7 +292,7 @@ func TestReplicationUpdate(t *testing.T) {
 		}
 		err := r.Update(context.Background())
 		testy.Error(t, "", err)
-		if d := diff.Interface(&expected, r.info); d != nil {
+		if d := testy.DiffInterface(&expected, r.info); d != nil {
 			t.Error(d)
 		}
 	})
@@ -334,7 +333,7 @@ func TestGetReplications(t *testing.T) {
 				driverClient: &mock.ClientReplicator{
 					GetReplicationsFunc: func(_ context.Context, opts map[string]interface{}) ([]driver.Replication, error) {
 						expectedOpts := map[string]interface{}{"foo": 123}
-						if d := diff.Interface(expectedOpts, opts); d != nil {
+						if d := testy.DiffInterface(expectedOpts, opts); d != nil {
 							return nil, fmt.Errorf("Unexpected options:\n%v", d)
 						}
 						return []driver.Replication{
@@ -363,7 +362,7 @@ func TestGetReplications(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := test.client.GetReplications(context.Background(), test.options)
 			testy.StatusError(t, test.err, test.status, err)
-			if d := diff.Interface(test.expected, result); d != nil {
+			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
 		})
@@ -414,7 +413,7 @@ func TestReplicate(t *testing.T) {
 						if source != expectedSource {
 							return nil, fmt.Errorf("Unexpected source: %s", source)
 						}
-						if d := diff.Interface(expectedOpts, opts); d != nil {
+						if d := testy.DiffInterface(expectedOpts, opts); d != nil {
 							return nil, fmt.Errorf("Unexpected options:\n%v", d)
 						}
 						return &mock.Replication{ID: "a"}, nil
@@ -435,7 +434,7 @@ func TestReplicate(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := test.client.Replicate(context.Background(), test.target, test.source, test.options)
 			testy.StatusError(t, test.err, test.status, err)
-			if d := diff.Interface(test.expected, result); d != nil {
+			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
 		})

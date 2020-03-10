@@ -175,6 +175,9 @@ func (c *Client) GetReplications(ctx context.Context, options ...Options) ([]*Re
 }
 
 // Replicate initiates a replication from source to target.
+//
+// To use an object for either "source" or "target", pass the desired object
+// in options. This will override targetDSN and sourceDSN function parameters.
 func (c *Client) Replicate(ctx context.Context, targetDSN, sourceDSN string, options ...Options) (*Replication, error) {
 	replicator, ok := c.driverClient.(driver.ClientReplicator)
 	if !ok {

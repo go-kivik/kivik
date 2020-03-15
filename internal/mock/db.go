@@ -276,3 +276,14 @@ var _ driver.RevsDiffer = &RevsDiffer{}
 func (db *RevsDiffer) RevsDiff(ctx context.Context, revMap interface{}) (driver.Rows, error) {
 	return db.RevsDiffFunc(ctx, revMap)
 }
+
+// PartitionedDB mocks a driver.DB and a driver.PartitionedDB.
+type PartitionedDB struct {
+	*DB
+	PartitionStatsFunc func(context.Context, string) (*driver.PartitionStats, error)
+}
+
+// PartitionStats calls db.PartitionStatsFunc.
+func (db *PartitionedDB) PartitionStats(ctx context.Context, name string) (*driver.PartitionStats, error) {
+	return db.PartitionStatsFunc(ctx, name)
+}

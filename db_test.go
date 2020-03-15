@@ -2010,3 +2010,56 @@ func TestRevsDiff(t *testing.T) {
 		}
 	})
 }
+
+func TestPartitionStats(t *testing.T) {
+	type tt struct {
+		db     *DB
+		name   string
+		status int
+		err    string
+	}
+	tests := testy.NewTable()
+	tests.Add("non-PartitionedDB", tt{
+		db: &DB{
+			driverDB: &mock.DB{},
+		},
+		status: http.StatusNotImplemented,
+		err:    "kivik: partitions not supported by driver",
+	})
+	tests.Add("error", tt{
+		db: &DB{
+			driverDB: &mock.PartitionedDB{
+				PartitionStatsFunc: func(_ context.Context, _ string) (*driver.PartitionStats, error) {
+					return nil, &Error{HTTPStatus: http.StatusBadGateway, Err: errors.New("stats error")}
+				},
+			},
+		},
+		status: http.StatusBadGateway,
+		err:    "stats error",
+	})
+	tests.Add("success", tt{
+		db: &DB{
+			driverDB: &mock.PartitionedDB{
+				PartitionStatsFunc: func(_ context.Context, name string) (*driver.PartitionStats, error) {
+					if name != "partXX" {
+						return nil, fmt.Errorf("Unexpected name: %s", name)
+					}
+					return &driver.PartitionStats{
+						DBName:    "dbXX",
+						Partition: name,
+						DocCount:  123,
+					}, nil
+				},
+			},
+		},
+		name: "partXX",
+	})
+
+	tests.Run(t, func(t *testing.T, tt tt) {
+		result, err := tt.db.PartitionStats(context.Background(), tt.name)
+		testy.StatusError(t, tt.err, tt.status, err)
+		if d := testy.DiffInterface(testy.Snapshot(t), result); d != nil {
+			t.Error(d)
+		}
+	})
+}

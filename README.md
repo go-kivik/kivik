@@ -58,10 +58,7 @@ func main() {
         panic(err)
     }
 
-    db, err := client.DB(context.TODO(), "animals")
-    if err != nil {
-        panic(err)
-    }
+    db := client.DB(context.TODO(), "animals")
 
     doc := map[string]interface{}{
         "_id":      "cow",

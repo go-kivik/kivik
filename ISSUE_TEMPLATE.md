@@ -1,8 +1,8 @@
 ## Bug Report Checklist (remove this template if submitting a feature request)
 
-1. Which version of Kivik are you using?
+1. Which version of Kivik are you using? Please state a version number, or `master`.
 
-2. Which version of Go are you using? (Output of `go version`) -- Kivik 1.x aims to support all versions of Go from 1.7. The master branch aims to support Go 1.8 and later.
+2. Which version of Go are you using? (Output of `go version`) -- Kivik 2.x supports Go 1.9 and later. Kivik 3.x requires Go 1.11 or later, with module support. The Kivik 4/master aims to support Go 1.11 and later, with module support.
 
 3. What did you do? (Include your code if possible)
 

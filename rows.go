@@ -166,6 +166,16 @@ func (r *Rows) Warning() string {
 	return ""
 }
 
+// QueryIndex returns the 0-based index of the query. For standard queries,
+// this is always 0. When multiple queries are passed to the view, this will
+// represent the query currently being iterated
+func (r *Rows) QueryIndex() int {
+	if qi, ok := r.rowsi.(driver.QueryIndexer); ok {
+		return qi.QueryIndex()
+	}
+	return 0
+}
+
 // Bookmark returns the paging bookmark, if one was provided with the result
 // set. This is intended for use with the Mango /_find interface, with CouchDB
 // 2.1.1 and later. Consult the official CouchDB documentation for detailed

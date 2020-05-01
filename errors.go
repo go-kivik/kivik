@@ -8,23 +8,6 @@ import (
 	"golang.org/x/xerrors"
 )
 
-type err string
-
-func (e err) Error() string {
-	return string(e)
-}
-
-// EOQ is the error returned by an iterator's Next() method when there are no
-// more results in the current query. This error will only ever be returned for
-// multiple-query queries (See
-// https://docs.couchdb.org/en/stable/api/ddoc/views.html#sending-multiple-queries-to-a-view).
-// And it will only happen between queries. An io.EOF will be returned after
-// the end of the final resultset.
-//
-// It is often safe to simply skip over an EOQ error, except when it is
-// necessary to read the metadata about a query, such as TotalRows or Offset.
-const EOQ = err("End of query")
-
 // Error represents an error returned by Kivik.
 //
 // This type definition is not guaranteed to remain stable, or even exported.

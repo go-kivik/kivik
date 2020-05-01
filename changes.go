@@ -95,6 +95,9 @@ func (c *Changes) Seq() string {
 // read after processing all changes in a change set. Calling Close before
 // enumerating will render this value unreliable.
 func (c *Changes) LastSeq() string {
+	if c.changesi == nil {
+		return ""
+	}
 	return c.changesi.LastSeq()
 }
 
@@ -104,6 +107,9 @@ func (c *Changes) LastSeq() string {
 // changes in a change set. Calling Close before enumerating will render
 // this value unreliable.
 func (c *Changes) Pending() int64 {
+	if c.changesi == nil {
+		return 0
+	}
 	return c.changesi.Pending()
 }
 
@@ -111,5 +117,8 @@ func (c *Changes) Pending() int64 {
 // because this value is returned in the response header (for standard CouchDB
 // operation) anyway, it can be read immediately, before iteration even begins.
 func (c *Changes) ETag() string {
+	if c.changesi == nil {
+		return ""
+	}
 	return c.changesi.ETag()
 }

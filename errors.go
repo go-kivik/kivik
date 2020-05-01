@@ -18,8 +18,8 @@ func (e err) Error() string {
 // more results in the current query. This error will only ever be returned for
 // multiple-query queries (See
 // https://docs.couchdb.org/en/stable/api/ddoc/views.html#sending-multiple-queries-to-a-view).
-// And it will only happen between queries. The end of the final query will
-// return an io.EOF instead.
+// And it will only happen between queries. An io.EOF will be returned after
+// the end of the final resultset.
 //
 // It is often safe to simply skip over an EOQ error, except when it is
 // necessary to read the metadata about a query, such as TotalRows or Offset.

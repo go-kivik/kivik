@@ -267,3 +267,12 @@ func TestChanges(t *testing.T) {
 		})
 	}
 }
+
+func TestChanges_uninitialized_should_not_panic(t *testing.T) {
+	// These must not panic, because they can be called before iterating
+	// begins.
+	c := &Changes{}
+	_ = c.LastSeq()
+	_ = c.Pending()
+	_ = c.ETag()
+}

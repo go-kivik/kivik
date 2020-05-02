@@ -1229,8 +1229,8 @@ func TestRowScanDoc(t *testing.T) {
 			name:   "non-pointer dst",
 			row:    &Row{Body: body(`{"foo":123.4}`)},
 			dst:    map[string]interface{}{},
-			status: http.StatusBadRequest,
-			err:    "kivik: destination is not a pointer",
+			status: http.StatusInternalServerError,
+			err:    "json: Unmarshal(non-pointer map[string]interface {})",
 		},
 		{
 			name:   "invalid json",

@@ -2,6 +2,7 @@ package kivik
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
@@ -48,11 +49,6 @@ func newRows(ctx context.Context, rowsi driver.Rows) *Rows {
 	}
 }
 
-var (
-	errNilPtr = &Error{HTTPStatus: http.StatusBadRequest, Message: "kivik: destination pointer is nil"}
-	errNonPtr = &Error{HTTPStatus: http.StatusBadRequest, Message: "kivik: destination is not a pointer"}
-)
-
 // ScanValue copies the data from the result value into the value pointed at by
 // dest. Think of this as a json.Unmarshal into dest.
 //
@@ -74,7 +70,7 @@ func (r *Rows) ScanValue(dest interface{}) error {
 	if err := r.curVal.(*driver.Row).Error; err != nil {
 		return err
 	}
-	return scan(dest, r.curVal.(*driver.Row).Value)
+	return json.Unmarshal(r.curVal.(*driver.Row).Value, dest)
 }
 
 // ScanDoc works the same as ScanValue, but on the doc field of the result. It
@@ -92,7 +88,7 @@ func (r *Rows) ScanDoc(dest interface{}) error {
 	if doc == nil {
 		return &Error{HTTPStatus: http.StatusBadRequest, Message: "kivik: doc is nil; does the query include docs?"}
 	}
-	return scan(dest, doc)
+	return json.Unmarshal(doc, dest)
 }
 
 // ScanKey works the same as ScanValue, but on the key field of the result. For
@@ -106,7 +102,7 @@ func (r *Rows) ScanKey(dest interface{}) error {
 		return err
 	}
 	defer runlock()
-	return scan(dest, r.curVal.(*driver.Row).Key)
+	return json.Unmarshal(r.curVal.(*driver.Row).Key, dest)
 }
 
 // ID returns the ID of the current result.

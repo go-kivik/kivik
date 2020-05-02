@@ -154,7 +154,7 @@ func TestIteratorScan(t *testing.T) {
 	}
 }
 
-func ExampleRows_EOQ() {
+func ExampleRows_eOQ() {
 	client, err := New("couch", "http://example.com:5984/")
 	if err != nil {
 		panic(err)

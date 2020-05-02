@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v3"
 )
 
 func ExampleStatusCode() {

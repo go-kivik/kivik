@@ -14,8 +14,6 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	registryMU.Lock()
-	defer registryMU.Unlock()
 	tests := []struct {
 		name       string
 		driver     driver.Driver
@@ -64,9 +62,6 @@ func TestNew(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			defer func() {
-				drivers = make(map[string]driver.Driver)
-			}()
 			if test.driver != nil {
 				Register(test.driverName, test.driver)
 			}

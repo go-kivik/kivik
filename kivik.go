@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal/registry"
 )
 
 // Client is a client connection handle to a CouchDB-like server.
@@ -35,13 +36,17 @@ func mergeOptions(otherOpts ...Options) Options {
 	return options
 }
 
+// Register makes a database driver available by the provided name. If Register
+// is called twice with the same name or if driver is nil, it panics.
+func Register(name string, driver driver.Driver) {
+	registry.Register(name, driver)
+}
+
 // New creates a new client object specified by its database driver name
 // and a driver-specific data source name.
 func New(driverName, dataSourceName string) (*Client, error) {
-	driversMu.RLock()
-	driveri, ok := drivers[driverName]
-	driversMu.RUnlock()
-	if !ok {
+	driveri := registry.Driver(driverName)
+	if driveri == nil {
 		return nil, &Error{HTTPStatus: http.StatusBadRequest, Message: fmt.Sprintf("kivik: unknown driver %q (forgotten import?)", driverName)}
 	}
 	client, err := driveri.NewClient(dataSourceName)

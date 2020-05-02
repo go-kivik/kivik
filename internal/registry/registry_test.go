@@ -1,4 +1,4 @@
-package kivik
+package registry
 
 import (
 	"sync"
@@ -44,7 +44,7 @@ func TestRegister(t *testing.T) {
 			Register("foo", &mock.Driver{})
 			return ""
 		}()
-		if p.(string) != "kivk: Register called twice for driver foo" {
+		if p.(string) != "kivik: Register called twice for driver foo" {
 			t.Errorf("Unexpected panic: %v", p)
 		}
 	})

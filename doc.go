@@ -1,13 +1,51 @@
 /*
 Package kivik provides a generic interface to CouchDB or CouchDB-like databases.
 
-The kivik package must be used in conjunction with a database driver. See
-https://github.com/go-kivik/kivik/wiki/Kivik-database-drivers for a list.
+The kivik package must be used in conjunction with a database driver. The
+officially supported drivers are:
 
-The kivik driver system is modeled after the standard library's sql and
-sql/driver packages, although the client API is completely different due to
-the different  database models implemented by SQL and NoSQL databases such as
+ - CouchDB: https://github.com/go-kivik/couchdb
+ - PouchDB: https://github.com/go-kivik/pouchdb (requires GopherJS)
+ - KivikMock: https://github.com/go-kivik/kivikmock
+
+The Filesystem and Memory drivers are also available, but in early stages of
+development, and so many features do not yet work:
+
+ - Filesystem: https://github.com/go-kivik/fsdb
+ - MemroyDB: https://github.com/go-kivik/memorydb
+
+The kivik driver system is modeled after the standard library's `sql` and
+`sql/driver` packages, although the client API is completely different due to
+the different database models implemented by SQL and NoSQL databases such as
 CouchDB.
+
+Working with JSON
+
+couchDB stores JSON, so Kivik translates Go data structures to and from JSON as
+necessary. The conversion between Go data types and JSON, and vice versa, is
+handled automatically according to the rules and behavior described in the
+documentationf or the standard library's `encoding/json` package
+(https://golang.org/pkg/encoding/json).
+
+One would be well-advised to become familiar with using `json` struct field
+tags (https://golang.org/pkg/encoding/json/#Marshal) when working with JSON
+documents.
+
+Using contexts
+
+Most Kivik methods take `context.Context` as their first argument. This allows
+the cancellation of blocking operations in the case that the result is no
+longer needed. A typical use case for a web application would be to cancel a
+Kivik request if the remote HTTP client ahs disconnected, rednering the results
+of the query irrelevant.
+
+To learn more about Go's contexts, read the `context` package documentation
+(https://golang.org/pkg/context/) and read the Go blog post "Go Concurrency
+Patterns: Context" (https://blog.golang.org/context) for example code.
+
+If in doubt, you can pass `context.TODO()` as the context variable. Example:
+
+    row := db.Get(context.TODO(), "some_doc_id")
 
 Error Handling
 
@@ -22,5 +60,6 @@ accessed easily using the StatusCode() method, or with a type assertion to
 
 Any error that does not conform to this interface will be assumed to represent
 a http.StatusInternalServerError status code.
+
 */
 package kivik // import "github.com/go-kivik/kivik/v4"

@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v3/driver"
 )
 
 type iterator interface {

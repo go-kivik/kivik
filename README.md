@@ -160,13 +160,6 @@ me know by submitting a bug report via GitHub.
 Kivik 4.x is under active development, and subject to radical, and unannounced
 API changes. For production use, please use [Kivik 3.x](https://github.com/go-kivik/kivik/tree/v3).
 
-Future goals are to flesh out the Memory driver, which will make automated
-testing without a real CouchDB server easier. Then I will work on completing
-the 'serve' mode.
-
-You can see a complete overview of the current status on the
-[Compatibility chart](https://github.com/go-kivik/kivik/blob/master/doc/COMPATIBILITY.md)
-
 ## Why the name "Kivik"?
 
 [Kivik](http://www.ikea.com/us/en/catalog/categories/series/18329/) is a line

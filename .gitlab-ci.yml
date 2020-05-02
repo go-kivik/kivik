@@ -23,15 +23,11 @@ variables:
         - ./script/test_version.sh
         - go test -race -tags=livetest ./...
 
-lint:
+linter:
     stage: test
-    image: golang:1.14
-    services: []
-    before_script:
-        - ''
+    image: golangci/golangci-lint:v1.26
     script:
         - go mod download
-        - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.23.7
         - golangci-lint run ./...
 
 coverage:

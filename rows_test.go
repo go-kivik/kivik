@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 	"testing"
 
 	"gitlab.com/flimzy/testy"
@@ -93,7 +94,7 @@ func TestRowsScanValue(t *testing.T) {
 				iter: &iter{
 					ready: true,
 					curVal: &driver.Row{
-						Value: []byte(`{"foo":123.4}`),
+						ValueReader: strings.NewReader(`{"foo":123.4}`),
 					},
 				},
 			},
@@ -144,12 +145,24 @@ func TestRowsScanDoc(t *testing.T) {
 		err      string
 	}{
 		{
-			name: "success",
+			name: "old row",
 			rows: &Rows{
 				iter: &iter{
 					ready: true,
 					curVal: &driver.Row{
 						Doc: []byte(`{"foo":123.4}`),
+					},
+				},
+			},
+			expected: map[string]interface{}{"foo": 123.4},
+		},
+		{
+			name: "success",
+			rows: &Rows{
+				iter: &iter{
+					ready: true,
+					curVal: &driver.Row{
+						DocReader: strings.NewReader(`{"foo":123.4}`),
 					},
 				},
 			},

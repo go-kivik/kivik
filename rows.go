@@ -67,10 +67,14 @@ func (r *Rows) ScanValue(dest interface{}) error {
 		return err
 	}
 	defer runlock()
-	if err := r.curVal.(*driver.Row).Error; err != nil {
-		return err
+	row := r.curVal.(*driver.Row)
+	if row.Error != nil {
+		return row.Error
 	}
-	return json.Unmarshal(r.curVal.(*driver.Row).Value, dest)
+	if row.ValueReader != nil {
+		return json.NewDecoder(row.ValueReader).Decode(dest)
+	}
+	return json.Unmarshal(row.Value, dest)
 }
 
 // ScanDoc works the same as ScanValue, but on the doc field of the result. It
@@ -81,14 +85,19 @@ func (r *Rows) ScanDoc(dest interface{}) error {
 		return err
 	}
 	defer runlock()
-	if err := r.curVal.(*driver.Row).Error; err != nil {
+	row := r.curVal.(*driver.Row)
+	if err := row.Error; err != nil {
 		return err
 	}
-	doc := r.curVal.(*driver.Row).Doc
-	if doc == nil {
-		return &Error{HTTPStatus: http.StatusBadRequest, Message: "kivik: doc is nil; does the query include docs?"}
+	doc := row.Doc
+	if row.DocReader != nil {
+		return json.NewDecoder(row.DocReader).Decode(dest)
 	}
-	return json.Unmarshal(doc, dest)
+	if doc != nil {
+		return json.Unmarshal(doc, dest)
+
+	}
+	return &Error{HTTPStatus: http.StatusBadRequest, Message: "kivik: doc is nil; does the query include docs?"}
 }
 
 // ScanKey works the same as ScanValue, but on the key field of the result. For
@@ -98,11 +107,12 @@ func (r *Rows) ScanKey(dest interface{}) error {
 	if err != nil {
 		return err
 	}
-	if err := r.curVal.(*driver.Row).Error; err != nil {
+	defer runlock()
+	row := r.curVal.(*driver.Row)
+	if err := row.Error; err != nil {
 		return err
 	}
-	defer runlock()
-	return json.Unmarshal(r.curVal.(*driver.Row).Key, dest)
+	return json.Unmarshal(row.Key, dest)
 }
 
 // ID returns the ID of the current result.

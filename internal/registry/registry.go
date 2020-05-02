@@ -1,4 +1,6 @@
-package kivik
+// Package registry handles driver registrations. It's in a separate package
+// to facilitate testing.
+package registry
 
 import (
 	"sync"
@@ -20,7 +22,15 @@ func Register(name string, driver driver.Driver) {
 		panic("kivik: Register driver is nil")
 	}
 	if _, dup := drivers[name]; dup {
-		panic("kivk: Register called twice for driver " + name)
+		panic("kivik: Register called twice for driver " + name)
 	}
 	drivers[name] = driver
+}
+
+// Driver returns the driver registered with the requested name, or nil if
+// it has not been registered.
+func Driver(name string) driver.Driver {
+	driversMu.RLock()
+	defer driversMu.RUnlock()
+	return drivers[name]
 }

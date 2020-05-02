@@ -61,5 +61,20 @@ accessed easily using the StatusCode() method, or with a type assertion to
 Any error that does not conform to this interface will be assumed to represent
 a http.StatusInternalServerError status code.
 
+Authentication
+
+For common usage, authentication should be as simple as including the authentication credentials in the connection DSN. For example:
+
+    client, err := kivik.New("couch", "http://admin:abc123@localhost:5984/")
+
+This will connect to `localhost` on port 5984, using the username `admin` and
+the password `abc123`. When connecting to CouchDB (as in the above example),
+this will use cookie auth (https://docs.couchdb.org/en/stable/api/server/authn.html?highlight=cookie%20auth#cookie-authentication).
+
+Depending on which driver you use, there may be other ways to authenticate, as
+well. At the moment, the CouchDB driver is the only official driver which offers
+additional authentication methods. Please refer to the CouchDB package
+documentation for details (https://pkg.go.dev/github.com/go-kivik/couchdb/v4).
+
 */
 package kivik // import "github.com/go-kivik/kivik/v4"

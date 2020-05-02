@@ -349,6 +349,8 @@ type ClusterConfig struct {
 }
 
 // Stats returns database statistics.
+//
+// See https://docs.couchdb.org/en/stable/api/database/common.html#get--db
 func (db *DB) Stats(ctx context.Context) (*DBStats, error) {
 	if db.err != nil {
 		return nil, db.err
@@ -685,4 +687,34 @@ func (db *DB) RevsDiff(ctx context.Context, revMap interface{}) (*Rows, error) {
 		return newRows(ctx, rowsi), nil
 	}
 	return nil, &Error{HTTPStatus: http.StatusNotImplemented, Message: "kivik: _revs_diff not supported by driver"}
+}
+
+// PartitionStats contains partition statistics.
+type PartitionStats struct {
+	DBName          string
+	DocCount        int64
+	DeletedDocCount int64
+	Partition       string
+	ActiveSize      int64
+	ExternalSize    int64
+	RawResponse     json.RawMessage
+}
+
+// PartitionStats returns statistics about the named partition.
+//
+// See https://docs.couchdb.org/en/stable/api/partitioned-dbs.html#db-partition-partition
+func (db *DB) PartitionStats(ctx context.Context, name string) (*PartitionStats, error) {
+	if db.err != nil {
+		return nil, db.err
+	}
+	if pdb, ok := db.driverDB.(driver.PartitionedDB); ok {
+		stats, err := pdb.PartitionStats(ctx, name)
+		if err != nil {
+			return nil, err
+		}
+		s := PartitionStats(*stats)
+		return &s, nil
+	}
+	return nil, &Error{HTTPStatus: http.StatusNotImplemented, Message: "kivik: partitions not supported by driver"}
+
 }

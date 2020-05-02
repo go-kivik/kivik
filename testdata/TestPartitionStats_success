@@ -1,0 +1,9 @@
+(*kivik.PartitionStats)({
+  DBName: (string) (len=4) "dbXX",
+  DocCount: (int64) 123,
+  DeletedDocCount: (int64) 0,
+  Partition: (string) (len=6) "partXX",
+  ActiveSize: (int64) 0,
+  ExternalSize: (int64) 0,
+  RawResponse: (json.RawMessage) <nil>
+})

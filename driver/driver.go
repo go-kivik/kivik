@@ -237,27 +237,39 @@ type BulkDocer interface {
 	BulkDocs(ctx context.Context, docs []interface{}, options map[string]interface{}) (BulkResults, error)
 }
 
-// Finder is an optional interface which may be implemented by a DB. The Finder
-// interface provides access to the new (in CouchDB 2.0) MongoDB-style query
-// interface.
+// Finder is the old Finder interface, which does not accept options. It
+// remains for compatibility with older backends.
+//
+// Deprecated: Use OptsFinder instead.
 type Finder interface {
+	Find(ctx context.Context, query interface{}) (Rows, error)
+	CreateIndex(ctx context.Context, ddoc, name string, index interface{}) error
+	GetIndexes(ctx context.Context) ([]Index, error)
+	DeleteIndex(ctx context.Context, ddoc, name string) error
+	Explain(ctx context.Context, query interface{}) (*QueryPlan, error)
+}
+
+// OptsFinder is an optional interface which may be implemented by a DB. The
+// Finder interface provides access to the new (in CouchDB 2.0) MongoDB-style
+// query interface.
+type OptsFinder interface {
 	// Find executes a query using the new /_find interface. If query is a
 	// string, []byte, or json.RawMessage, it should be treated as a raw JSON
 	// payload. Any other type should be marshaled to JSON.
-	Find(ctx context.Context, query interface{}) (Rows, error)
+	Find(ctx context.Context, query interface{}, options map[string]interface{}) (Rows, error)
 	// CreateIndex creates an index if it doesn't already exist. If the index
 	// already exists, it should do nothing. ddoc and name may be empty, in
 	// which case they should be provided by the backend. If index is a string,
 	// []byte, or json.RawMessage, it should be treated as a raw JSON payload.
 	// Any other type should be marshaled to JSON.
-	CreateIndex(ctx context.Context, ddoc, name string, index interface{}) error
+	CreateIndex(ctx context.Context, ddoc, name string, index interface{}, options map[string]interface{}) error
 	// GetIndexes returns a list of all indexes in the database.
-	GetIndexes(ctx context.Context) ([]Index, error)
+	GetIndexes(ctx context.Context, options map[string]interface{}) ([]Index, error)
 	// Delete deletes the requested index.
-	DeleteIndex(ctx context.Context, ddoc, name string) error
+	DeleteIndex(ctx context.Context, ddoc, name string, options map[string]interface{}) error
 	// Explain returns the query plan for a given query. Explain takes the same
 	// arguments as Find.
-	Explain(ctx context.Context, query interface{}) (*QueryPlan, error)
+	Explain(ctx context.Context, query interface{}, options map[string]interface{}) (*QueryPlan, error)
 }
 
 // QueryPlan is the response of an Explain query.

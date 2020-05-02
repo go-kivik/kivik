@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"reflect"
 	"sync"
+
+	"github.com/go-kivik/kivik/v4/driver"
 )
 
 type iterator interface {
@@ -21,6 +23,7 @@ type iter struct {
 	ready   bool // Set to true once Next() has been called
 	closed  bool
 	lasterr error // non-nil only if closed is true
+	eoq     bool
 
 	cancel func() // cancel function to exit context goroutine when iterator is closed
 
@@ -79,11 +82,25 @@ func (i *iter) next() (doClose, ok bool) {
 		return false, false
 	}
 	i.ready = true
-	i.lasterr = i.feed.Next(i.curVal)
+	i.eoq = false
+	err := i.feed.Next(i.curVal)
+	if err == driver.EOQ {
+		i.eoq = true
+		err = nil
+	}
+	i.lasterr = err
 	if i.lasterr != nil {
 		return true, false
 	}
 	return false, true
+}
+
+// EOQ returns true if the iterator has reached the end of a query in a
+// multi-query query. When EOQ is true, the row data will not have been
+// updated. It is common to simply `continue` in case of EOQ, unless you care
+// about the per-query metadata, such as offset, total rows, etc.
+func (i *iter) EOQ() bool {
+	return i.eoq
 }
 
 // Close closes the Iterator, preventing further enumeration, and freeing any

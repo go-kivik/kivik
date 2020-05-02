@@ -20,7 +20,7 @@ func Register(name string, driver driver.Driver) {
 		panic("kivik: Register driver is nil")
 	}
 	if _, dup := drivers[name]; dup {
-		panic("kivk: Register called twice for driver " + name)
+		panic("kivik: Register called twice for driver " + name)
 	}
 	drivers[name] = driver
 }

@@ -2,10 +2,8 @@ package kivik
 
 import (
 	"context"
-	"encoding/json"
 	"io"
 	"net/http"
-	"reflect"
 	"sync"
 
 	"github.com/go-kivik/kivik/v4/driver"
@@ -142,30 +140,4 @@ func (i *iter) Err() error {
 		return nil
 	}
 	return i.lasterr
-}
-
-func scan(dest interface{}, val json.RawMessage) error {
-	if reflect.TypeOf(dest).Kind() != reflect.Ptr {
-		return errNonPtr
-	}
-	switch d := dest.(type) {
-	case *[]byte:
-		if d == nil {
-			return errNilPtr
-		}
-		tgt := make([]byte, len(val))
-		copy(tgt, val)
-		*d = tgt
-		return nil
-	case *json.RawMessage:
-		if d == nil {
-			return errNilPtr
-		}
-		*d = val
-		return nil
-	}
-	if err := json.Unmarshal(val, dest); err != nil {
-		return err
-	}
-	return nil
 }

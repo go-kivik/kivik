@@ -2,6 +2,7 @@ package kivik
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/go-kivik/kivik/v4/driver"
 )
@@ -70,7 +71,7 @@ func (c *Changes) ScanDoc(dest interface{}) error {
 		return err
 	}
 	defer runlock()
-	return scan(dest, c.curVal.(*driver.Change).Doc)
+	return json.Unmarshal(c.curVal.(*driver.Change).Doc, dest)
 }
 
 // Changes returns an iterator over the real-time changes feed. The feed remains

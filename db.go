@@ -7,7 +7,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"reflect"
 	"strings"
 
 	"github.com/go-kivik/kivik/v4/driver"
@@ -133,14 +132,8 @@ func (r *Row) ScanDoc(dest interface{}) error {
 	if r.Err != nil {
 		return r.Err
 	}
-	if reflect.TypeOf(dest).Kind() != reflect.Ptr {
-		return errNonPtr
-	}
 	defer r.Body.Close() // nolint: errcheck
-	if err := json.NewDecoder(r.Body).Decode(dest); err != nil {
-		return err
-	}
-	return nil
+	return json.NewDecoder(r.Body).Decode(dest)
 }
 
 // Get fetches the requested document. Any errors are deferred until the

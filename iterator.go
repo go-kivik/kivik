@@ -86,7 +86,7 @@ func (i *iter) next() (doClose, ok bool) {
 	err := i.feed.Next(i.curVal)
 	if err == driver.EOQ {
 		i.eoq = true
-		return false, true
+		err = nil
 	}
 	i.lasterr = err
 	if i.lasterr != nil {

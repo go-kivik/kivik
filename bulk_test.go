@@ -403,6 +403,5 @@ func TestBulkResultsGetters(t *testing.T) {
 			result := r.UpdateErr()
 			testy.Error(t, "", result)
 		})
-
 	})
 }

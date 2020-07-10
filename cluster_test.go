@@ -63,6 +63,7 @@ func TestClusterSetup(t *testing.T) {
 		status int
 		err    string
 	}
+
 	tests := testy.NewTable()
 	tests.Add("driver doesn't implement Cluster interface", tst{
 		client: &mock.Client{},
@@ -92,5 +93,55 @@ func TestClusterSetup(t *testing.T) {
 		}
 		err := c.ClusterSetup(context.Background(), test.action)
 		testy.StatusError(t, test.err, test.status, err)
+	})
+}
+
+func TestMembership(t *testing.T) {
+	type tt struct {
+		client driver.Client
+		want   *ClusterMembership
+		status int
+		err    string
+	}
+
+	tests := testy.NewTable()
+	tests.Add("driver doesn't implement Cluster interface", tt{
+		client: &mock.Client{},
+		status: http.StatusNotImplemented,
+		err:    "kivik: driver does not support cluster operations",
+	})
+	tests.Add("client error", tt{
+		client: &mock.Cluster{
+			MembershipFunc: func(_ context.Context) (*driver.ClusterMembership, error) {
+				return nil, errors.New("client error")
+			},
+		},
+		status: http.StatusInternalServerError,
+		err:    "client error",
+	})
+	tests.Add("success", tt{
+		client: &mock.Cluster{
+			MembershipFunc: func(_ context.Context) (*driver.ClusterMembership, error) {
+				return &driver.ClusterMembership{
+					AllNodes:     []string{"one", "two", "three"},
+					ClusterNodes: []string{"one", "two"},
+				}, nil
+			},
+		},
+		want: &ClusterMembership{
+			AllNodes:     []string{"one", "two", "three"},
+			ClusterNodes: []string{"one", "two"},
+		},
+	})
+
+	tests.Run(t, func(t *testing.T, tt tt) {
+		c := &Client{
+			driverClient: tt.client,
+		}
+		got, err := c.Membership(context.Background())
+		testy.StatusError(t, tt.err, tt.status, err)
+		if d := testy.DiffInterface(tt.want, got); d != nil {
+			t.Error(d)
+		}
 	})
 }

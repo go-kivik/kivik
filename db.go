@@ -709,5 +709,4 @@ func (db *DB) PartitionStats(ctx context.Context, name string) (*PartitionStats,
 		return &s, nil
 	}
 	return nil, &Error{HTTPStatus: http.StatusNotImplemented, Message: "kivik: partitions not supported by driver"}
-
 }

@@ -95,7 +95,6 @@ func (r *Rows) ScanDoc(dest interface{}) error {
 	}
 	if doc != nil {
 		return json.Unmarshal(doc, dest)
-
 	}
 	return &Error{HTTPStatus: http.StatusBadRequest, Message: "kivik: doc is nil; does the query include docs?"}
 }

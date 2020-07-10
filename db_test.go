@@ -154,6 +154,7 @@ func TestDesignDocs(t *testing.T) {
 		})
 	}
 }
+
 func TestLocalDocs(t *testing.T) {
 	tests := []struct {
 		name     string

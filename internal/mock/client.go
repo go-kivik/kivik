@@ -140,6 +140,19 @@ func (c *Cluster) ClusterSetup(ctx context.Context, action interface{}) error {
 	return c.ClusterSetupFunc(ctx, action)
 }
 
+// Cluster2 mocks driver.Client and driver.Cluster2
+type Cluster2 struct {
+	*Client
+	MembershipFunc func(context.Context) (*driver.ClusterMembership, error)
+}
+
+var _ driver.Cluster2 = &Cluster2{}
+
+// Membership calls c.MembershipFunc
+func (c *Cluster2) Membership(ctx context.Context) (*driver.ClusterMembership, error) {
+	return c.MembershipFunc(ctx)
+}
+
 // ClientCloser mocks driver.Client and driver.ClientCloser
 type ClientCloser struct {
 	*Client

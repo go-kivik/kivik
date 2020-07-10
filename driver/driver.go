@@ -386,6 +386,14 @@ type Pinger interface {
 	Ping(ctx context.Context) (bool, error)
 }
 
+// ClusterMembership contains the list of known nodes, and cluster nodes, as returned
+// by the /_membership endpoint.
+// See https://docs.couchdb.org/en/latest/api/server/common.html#get--_membership
+type ClusterMembership struct {
+	AllNodes     []string `json:"all_nodes"`
+	ClusterNodes []string `json:"cluster_nodes"`
+}
+
 // Cluster is an optional interface that may be implemented by a Client to
 // support CouchDB cluster configuration operations.
 type Cluster interface {
@@ -393,6 +401,9 @@ type Cluster interface {
 	ClusterStatus(ctx context.Context, options map[string]interface{}) (string, error)
 	// ClusterSetup performs the action specified by action.
 	ClusterSetup(ctx context.Context, action interface{}) error
+	// Membership returns a list of all known nodes, and all nodes configured as
+	// part of the cluster.
+	Membership(ctx context.Context) (*ClusterMembership, error)
 }
 
 // ClientCloser is an optional interface that may be implemented by a Client

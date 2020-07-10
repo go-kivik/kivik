@@ -32,3 +32,22 @@ func (c *Client) ClusterSetup(ctx context.Context, action interface{}) error {
 	}
 	return cluster.ClusterSetup(ctx, action)
 }
+
+// ClusterMembership contains the list of known nodes, and cluster nodes, as returned
+// by the /_membership endpoint.
+// See https://docs.couchdb.org/en/latest/api/server/common.html#get--_membership
+type ClusterMembership struct {
+	AllNodes     []string `json:"all_nodes"`
+	ClusterNodes []string `json:"cluster_nodes"`
+}
+
+// Membership returns a list of known CouchDB nodes.
+// See https://docs.couchdb.org/en/latest/api/server/common.html#get--_membership
+func (c *Client) Membership(ctx context.Context) (*ClusterMembership, error) {
+	cluster, ok := c.driverClient.(driver.Cluster)
+	if !ok {
+		return nil, clusterNotImplemented
+	}
+	nodes, err := cluster.Membership(ctx)
+	return (*ClusterMembership)(nodes), err
+}

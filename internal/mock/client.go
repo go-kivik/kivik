@@ -126,6 +126,7 @@ type Cluster struct {
 	*Client
 	ClusterStatusFunc func(context.Context, map[string]interface{}) (string, error)
 	ClusterSetupFunc  func(context.Context, interface{}) error
+	MembershipFunc    func(context.Context) (*driver.ClusterMembership, error)
 }
 
 var _ driver.Cluster = &Cluster{}
@@ -138,6 +139,11 @@ func (c *Cluster) ClusterStatus(ctx context.Context, options map[string]interfac
 // ClusterSetup calls c.ClusterSetupFunc
 func (c *Cluster) ClusterSetup(ctx context.Context, action interface{}) error {
 	return c.ClusterSetupFunc(ctx, action)
+}
+
+// Membership calls c.MembershipFunc
+func (c *Cluster) Membership(ctx context.Context) (*driver.ClusterMembership, error) {
+	return c.MembershipFunc(ctx)
 }
 
 // ClientCloser mocks driver.Client and driver.ClientCloser

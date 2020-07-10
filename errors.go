@@ -32,9 +32,11 @@ type Error struct {
 	Err error
 }
 
-var _ error = &Error{}
-var _ statusCoder = &Error{}
-var _ causer = &Error{}
+var (
+	_ error       = &Error{}
+	_ statusCoder = &Error{}
+	_ causer      = &Error{}
+)
 
 func (e *Error) Error() string {
 	if e.Err == nil {

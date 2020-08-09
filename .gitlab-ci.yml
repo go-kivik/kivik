@@ -29,6 +29,7 @@ linter:
     script:
         - go mod download
         - golangci-lint run ./...
+        - ./script/check-license.sh
 
 coverage:
     stage: test

@@ -169,8 +169,9 @@ and proxy applications.
 
 ## What license is Kivik released under?
 
-This software is released under the terms of the Apache 2.0 license. See
-LICENCE.md, or read the [full license](http://www.apache.org/licenses/LICENSE-2.0).
+Kivik is Copyright 2020 by the Kivik contributors, and is released under the
+terms of the Apache 2.0 license. See [LICENCE](LICENSE) for the full text of the
+license.
 
 ## What projects currently use Kivik?
 

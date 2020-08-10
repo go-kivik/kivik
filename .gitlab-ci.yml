@@ -25,10 +25,11 @@ variables:
 
 linter:
     stage: test
-    image: golangci/golangci-lint:v1.28
+    image: golangci/golangci-lint:v1.30
     script:
         - go mod download
         - golangci-lint run ./...
+        - ./script/check-license.sh
 
 coverage:
     stage: test

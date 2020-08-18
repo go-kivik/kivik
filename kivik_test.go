@@ -167,7 +167,7 @@ func TestDB(t *testing.T) {
 			name: "db error",
 			client: &Client{
 				driverClient: &mock.Client{
-					DBFunc: func(_ context.Context, _ string, _ map[string]interface{}) (driver.DB, error) {
+					DBFunc: func(_ string, _ map[string]interface{}) (driver.DB, error) {
 						return nil, errors.New("db error")
 					},
 				},
@@ -178,7 +178,7 @@ func TestDB(t *testing.T) {
 		func() Test {
 			client := &Client{
 				driverClient: &mock.Client{
-					DBFunc: func(_ context.Context, dbName string, opts map[string]interface{}) (driver.DB, error) {
+					DBFunc: func(dbName string, opts map[string]interface{}) (driver.DB, error) {
 						expectedDBName := "foo"
 						expectedOpts := map[string]interface{}{"foo": 123}
 						if dbName != expectedDBName {
@@ -206,7 +206,7 @@ func TestDB(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result := test.client.DB(context.Background(), test.dbName, test.options)
+			result := test.client.DB(test.dbName, test.options)
 			err := result.Err()
 			testy.StatusError(t, test.err, test.status, err)
 			if d := testy.DiffInterface(test.expected, result); d != nil {
@@ -356,7 +356,7 @@ func TestCreateDB(t *testing.T) {
 						}
 						return nil
 					},
-					DBFunc: func(_ context.Context, dbName string, _ map[string]interface{}) (driver.DB, error) {
+					DBFunc: func(dbName string, _ map[string]interface{}) (driver.DB, error) {
 						return &mock.DB{ID: "abc"}, nil
 					},
 				},
@@ -488,7 +488,7 @@ func TestDBsStats(t *testing.T) {
 			name: "fallback to old driver",
 			client: &Client{
 				driverClient: &mock.Client{
-					DBFunc: func(_ context.Context, name string, _ map[string]interface{}) (driver.DB, error) {
+					DBFunc: func(name string, _ map[string]interface{}) (driver.DB, error) {
 						switch name {
 						case "foo":
 							return &mock.DB{
@@ -518,7 +518,7 @@ func TestDBsStats(t *testing.T) {
 			name: "fallback due to old server",
 			client: &Client{
 				driverClient: &mock.Client{
-					DBFunc: func(_ context.Context, name string, _ map[string]interface{}) (driver.DB, error) {
+					DBFunc: func(name string, _ map[string]interface{}) (driver.DB, error) {
 						switch name {
 						case "foo":
 							return &mock.DB{
@@ -579,7 +579,7 @@ func TestDBsStats(t *testing.T) {
 			name: "fallback error",
 			client: &Client{
 				driverClient: &mock.Client{
-					DBFunc: func(_ context.Context, _ string, _ map[string]interface{}) (driver.DB, error) {
+					DBFunc: func(_ string, _ map[string]interface{}) (driver.DB, error) {
 						return &mock.DB{
 							StatsFunc: func(_ context.Context) (*driver.DBStats, error) {
 								return nil, errors.New("fallback failure")
@@ -596,7 +596,7 @@ func TestDBsStats(t *testing.T) {
 			name: "fallback db connect error",
 			client: &Client{
 				driverClient: &mock.Client{
-					DBFunc: func(_ context.Context, _ string, _ map[string]interface{}) (driver.DB, error) {
+					DBFunc: func(_ string, _ map[string]interface{}) (driver.DB, error) {
 						return nil, errors.New("db conn failure")
 					},
 				},

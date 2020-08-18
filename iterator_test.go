@@ -82,7 +82,7 @@ func ExampleRows_eOQ() {
 	}
 	ctx := context.TODO()
 	// Kivik adaptation of example found at https://docs.couchdb.org/en/stable/api/ddoc/views.html#sending-multiple-queries-to-a-view
-	rows, err := client.DB(ctx, "foo").Query(ctx, "recipes", "by_title", Options{
+	rows, err := client.DB("foo").Query(ctx, "recipes", "by_title", Options{
 		"queries": []map[string]interface{}{
 			{
 				"keys": []string{"meatballs", "spaghetti"},

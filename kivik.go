@@ -113,8 +113,8 @@ func (c *Client) Version(ctx context.Context) (*Version, error) {
 // DB returns a handle to the requested database. Any options parameters
 // passed are merged, with later values taking precidence. If any errors occur
 // at this stage, they are deferred, or may be checked directly with Err()
-func (c *Client) DB(ctx context.Context, dbName string, options ...Options) *DB {
-	db, err := c.driverClient.DB(ctx, dbName, mergeOptions(options...))
+func (c *Client) DB(dbName string, options ...Options) *DB {
+	db, err := c.driverClient.DB(dbName, mergeOptions(options...))
 	return &DB{
 		client:   c,
 		name:     dbName,
@@ -170,8 +170,7 @@ func (c *Client) DBsStats(ctx context.Context, dbnames []string) ([]*DBStats, er
 func (c *Client) fallbackDBsStats(ctx context.Context, dbnames []string) ([]*DBStats, error) {
 	dbstats := make([]*DBStats, len(dbnames))
 	for i, dbname := range dbnames {
-		db := c.DB(ctx, dbname)
-		stat, err := db.Stats(ctx)
+		stat, err := c.DB(dbname).Stats(ctx)
 		if err != nil {
 			return nil, err
 		}

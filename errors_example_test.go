@@ -24,8 +24,7 @@ func ExampleStatusCode() {
 	if err != nil {
 		panic(err)
 	}
-	ctx := context.Background()
-	row := client.DB(ctx, "foo").Get(ctx, "my_doc_id")
+	row := client.DB("foo").Get(context.Background(), "my_doc_id")
 	switch kivik.StatusCode(row.Err) {
 	case http.StatusNotFound:
 		return

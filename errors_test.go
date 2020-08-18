@@ -101,19 +101,13 @@ func TestFormatError(t *testing.T) {
 		err:  &Error{HTTPStatus: http.StatusNotFound, Err: errors.New("not found")},
 		str:  "not found",
 		std:  "not found",
-		full: `kivik generated 404 / Not Found: not found`,
-	})
-	tests.Add("from server", tst{
-		err:  &Error{HTTPStatus: http.StatusNotFound, FromServer: true, Err: errors.New("not found")},
-		str:  "not found",
-		std:  "not found",
-		full: `server responded with 404 / Not Found: not found`,
+		full: `404 / Not Found: not found`,
 	})
 	tests.Add("with message", tst{
 		err:  &Error{HTTPStatus: http.StatusNotFound, Message: "It's missing", Err: errors.New("not found")},
 		str:  "It's missing: not found",
 		std:  "It's missing: not found",
-		full: `It's missing: kivik generated 404 / Not Found: not found`,
+		full: `It's missing: 404 / Not Found: not found`,
 	})
 	tests.Add("embedded error", func() interface{} {
 		_, err := json.Marshal(func() {})
@@ -121,7 +115,7 @@ func TestFormatError(t *testing.T) {
 			err:  &Error{HTTPStatus: http.StatusBadRequest, Err: err},
 			str:  "json: unsupported type: func()",
 			std:  "json: unsupported type: func()",
-			full: `kivik generated 400 / Bad Request: json: unsupported type: func()`,
+			full: `400 / Bad Request: json: unsupported type: func()`,
 		}
 	})
 	tests.Add("embedded network error", func() interface{} {

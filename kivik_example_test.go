@@ -13,7 +13,6 @@
 package kivik_test
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/go-kivik/kivik/v4"
@@ -25,7 +24,7 @@ func init() {
 	kivik.Register("couch", &mock.Driver{
 		NewClientFunc: func(_ string) (driver.Client, error) {
 			return &mock.Client{
-				DBFunc: func(_ context.Context, _ string, _ map[string]interface{}) (driver.DB, error) {
+				DBFunc: func(_ string, _ map[string]interface{}) (driver.DB, error) {
 					return nil, nil
 				},
 			}, nil
@@ -52,7 +51,7 @@ func Example_connecting() {
 	if err != nil {
 		panic(err)
 	}
-	db := client.DB(context.TODO(), "_users")
+	db := client.DB("_users")
 	fmt.Println("Database handle for " + db.Name())
 	// Output: Database handle for _users
 }

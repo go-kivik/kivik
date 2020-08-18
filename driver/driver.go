@@ -53,8 +53,8 @@ type Client interface {
 	CreateDB(ctx context.Context, dbName string, options map[string]interface{}) error
 	// DestroyDB deletes the requested DB.
 	DestroyDB(ctx context.Context, dbName string, options map[string]interface{}) error
-	// DB returns a handleto the requested database
-	DB(ctx context.Context, dbName string, options map[string]interface{}) (DB, error)
+	// DB returns a handle to the requested database
+	DB(dbName string, options map[string]interface{}) (DB, error)
 }
 
 // DBsStatser is an optional interface, added to support CouchDB 2.2.0's

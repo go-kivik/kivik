@@ -33,10 +33,6 @@ type Error struct {
 	// the distinction matters to you.
 	HTTPStatus int
 
-	// FromServer is set to true if the error was returned by the server.
-	// This field is deprecated and will soon be removed.
-	FromServer bool
-
 	// Message is the error message.
 	Message string
 
@@ -89,13 +85,7 @@ func (e *Error) Format(f fmt.State, c rune) {
 	switch c {
 	case 'v':
 		if f.Flag('+') {
-			var prefix string
-			if e.FromServer {
-				prefix = "server responded with"
-			} else {
-				prefix = "kivik generated"
-			}
-			parts = append(parts, fmt.Sprintf("%s %d / %s", prefix, e.HTTPStatus, http.StatusText(e.HTTPStatus)))
+			parts = append(parts, fmt.Sprintf("%d / %s", e.HTTPStatus, http.StatusText(e.HTTPStatus)))
 		}
 	}
 	if e.Err != nil {

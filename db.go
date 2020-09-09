@@ -96,7 +96,7 @@ func (db *DB) LocalDocs(ctx context.Context, options ...Options) (*Rows, error) 
 
 // Query executes the specified view function from the specified design
 // document. ddoc and view may or may not be be prefixed with '_design/'
-// and '_view/' respectively. No other
+// and '_view/' respectively.
 func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) (*Rows, error) {
 	if db.err != nil {
 		return nil, db.err

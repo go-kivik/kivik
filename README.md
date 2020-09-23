@@ -146,8 +146,8 @@ If you discover a bug affecting any of these supported environments, please let
 me know by submitting a bug report via GitHub.
 
 - **Go** Kivik 4.x aims for full compatibility with all stable releases of Go
-  from 1.11. For Go 1.7 or 1.8 you can use [Kivik 1.x](https://github.com/go-kivik/kivik/tree/v1).
-  For Go 1.9 or 1.10, you can use [Kivik 2.x](https://github.com/go-kivik/kivik/tree/v2).
+  from 1.13. For Go 1.7 or 1.8 you can use [Kivik 1.x](https://github.com/go-kivik/kivik/tree/v1).
+  For Go 1.9 through 1.12, you can use [Kivik 3.x](https://github.com/go-kivik/kivik/tree/v3).
 - **CouchDB** The Kivik 4.x CouchDB driver aims for compatibility with all
   stable releases of CouchDB from 1.6.1.
 - **GopherJS** GopherJS always requires the latest stable version of Go, so

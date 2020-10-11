@@ -25,32 +25,13 @@ var (
 	drivers   = make(map[string]driver.Driver)
 )
 
-type legacyWrapper struct {
-	driver.LegacyDriver
-}
-
-var _ driver.Driver = &legacyWrapper{}
-
-func (l *legacyWrapper) NewClient(name string, _ map[string]interface{}) (driver.Client, error) {
-	return l.LegacyDriver.NewClient(name)
-}
-
 // Register makes a database driver available by the provided name. If Register
 // is called twice with the same name or if driver is nil, it panics.
 //
 // driver must be a driver.Driver or driver.LegacyDriver.
-func Register(name string, d interface{}) {
-	if d == nil {
+func Register(name string, drv driver.Driver) {
+	if drv == nil {
 		panic("kivik: Register driver is nil")
-	}
-	var drv driver.Driver
-	switch dt := d.(type) {
-	case driver.LegacyDriver: // nolint:staticcheck
-		drv = &legacyWrapper{dt}
-	case driver.Driver:
-		drv = dt
-	default:
-		panic("invalid driver")
 	}
 	driversMu.Lock()
 	defer driversMu.Unlock()

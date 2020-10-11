@@ -26,13 +26,6 @@ type Driver interface {
 	NewClient(name string, options map[string]interface{}) (Client, error)
 }
 
-// LegacyDriver supports the old NewClient interface.
-//
-// Deprecated: use Driver instead.
-type LegacyDriver interface {
-	NewClient(name string) (Client, error)
-}
-
 // Version represents a server version response.
 type Version struct {
 	// Version is the version number reported by the server or backend.

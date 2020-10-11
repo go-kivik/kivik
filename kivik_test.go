@@ -45,7 +45,7 @@ func TestNew(t *testing.T) {
 		{
 			name: "connection error",
 			driver: &mock.Driver{
-				NewClientFunc: func(_ string) (driver.Client, error) {
+				NewClientFunc: func(_ string, _ map[string]interface{}) (driver.Client, error) {
 					return nil, errors.New("connection error")
 				},
 			},
@@ -56,7 +56,7 @@ func TestNew(t *testing.T) {
 		{
 			name: "success",
 			driver: &mock.Driver{
-				NewClientFunc: func(dsn string) (driver.Client, error) {
+				NewClientFunc: func(dsn string, _ map[string]interface{}) (driver.Client, error) {
 					if dsn != "oink" {
 						return nil, fmt.Errorf("Unexpected DSN: %s", dsn)
 					}

@@ -23,6 +23,13 @@ import (
 type Driver interface {
 	// NewClient returns a connection handle to the database. The name is in a
 	// driver-specific format.
+	NewClient(name string, options map[string]interface{}) (Client, error)
+}
+
+// LegacyDriver supports the old NewClient interface.
+//
+// Deprecated: use Driver instead.
+type LegacyDriver interface {
 	NewClient(name string) (Client, error)
 }
 

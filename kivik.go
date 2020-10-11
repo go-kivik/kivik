@@ -56,6 +56,9 @@ func Register(name string, driver driver.Driver) {
 
 // New creates a new client object specified by its database driver name
 // and a driver-specific data source name.
+//
+// The use of options is driver-specific, so consult with the documentation for
+// your driver for supported options.
 func New(driverName, dataSourceName string, options ...Options) (*Client, error) {
 	driveri := registry.Driver(driverName)
 	if driveri == nil {

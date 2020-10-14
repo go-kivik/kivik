@@ -210,10 +210,10 @@ func (db *DB) CreateDoc(ctx context.Context, doc interface{}, options ...Options
 func normalizeFromJSON(i interface{}) (interface{}, error) {
 	var body []byte
 	switch t := i.(type) {
+	case json.Marshaler:
+		return t, nil
 	case []byte:
 		body = t
-	case json.RawMessage:
-		return t, nil
 	default:
 		r, ok := i.(io.Reader)
 		if !ok {

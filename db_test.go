@@ -1010,17 +1010,6 @@ func TestNormalizeFromJSON(t *testing.T) {
 			Expected: int(5),
 		},
 		{
-			Name:   "InvalidJSON",
-			Input:  []byte(`invalid`),
-			Status: http.StatusBadRequest,
-			Error:  "invalid character 'i' looking for beginning of value",
-		},
-		{
-			Name:     "Bytes",
-			Input:    []byte(`{"foo":"bar"}`),
-			Expected: map[string]interface{}{"foo": "bar"},
-		},
-		{
 			Name:     "RawMessage",
 			Input:    json.RawMessage(`{"foo":"bar"}`),
 			Expected: map[string]interface{}{"foo": "bar"},
@@ -1108,12 +1097,16 @@ func TestPut(t *testing.T) {
 			newRev:  "1-xxx",
 		},
 		{
-			name:   "InvalidJSON",
-			db:     &DB{},
+			name: "InvalidJSON",
+			db: &DB{
+				driverDB: &mock.DB{
+					PutFunc: putFunc,
+				},
+			},
 			docID:  "foo",
-			input:  []byte("Something bogus"),
-			status: http.StatusBadRequest,
-			err:    "invalid character 'S' looking for beginning of value",
+			input:  json.RawMessage("Something bogus"),
+			status: http.StatusInternalServerError,
+			err:    "Unexpected doc: failed to marshal actual value: invalid character 'S' looking for beginning of value",
 		},
 		{
 			name: "Bytes",

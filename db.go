@@ -208,12 +208,9 @@ func (db *DB) CreateDoc(ctx context.Context, doc interface{}, options ...Options
 // normalizeFromJSON unmarshals a []byte, json.RawMessage or io.Reader to a
 // map[string]interface{}, or passed through any other types.
 func normalizeFromJSON(i interface{}) (interface{}, error) {
-	var body []byte
 	switch t := i.(type) {
 	case json.Marshaler:
 		return t, nil
-	case []byte:
-		body = t
 	case io.Reader:
 		body, err := ioutil.ReadAll(t)
 		if err != nil {
@@ -223,11 +220,6 @@ func normalizeFromJSON(i interface{}) (interface{}, error) {
 	default:
 		return i, nil
 	}
-	var x map[string]interface{}
-	if err := json.Unmarshal(body, &x); err != nil {
-		return nil, &Error{HTTPStatus: http.StatusBadRequest, Err: err}
-	}
-	return x, nil
 }
 
 func extractDocID(i interface{}) (string, bool) {

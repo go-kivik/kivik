@@ -1042,7 +1042,7 @@ func TestNormalizeFromJSON(t *testing.T) {
 			t.Run(test.Name, func(t *testing.T) {
 				result, err := normalizeFromJSON(test.Input)
 				testy.StatusError(t, test.Error, test.Status, err)
-				if d := testy.DiffInterface(test.Expected, result); d != nil {
+				if d := testy.DiffAsJSON(test.Expected, result); d != nil {
 					t.Error(d)
 				}
 			})
@@ -1057,7 +1057,7 @@ func TestPut(t *testing.T) {
 		if expectedDocID != docID {
 			return "", fmt.Errorf("Unexpected docID: %s", docID)
 		}
-		if d := testy.DiffInterface(expectedDoc, doc); d != nil {
+		if d := testy.DiffAsJSON(expectedDoc, doc); d != nil {
 			return "", fmt.Errorf("Unexpected doc: %s", d)
 		}
 		if d := testy.DiffInterface(testOptions, opts); d != nil {

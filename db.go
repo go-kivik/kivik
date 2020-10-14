@@ -213,7 +213,7 @@ func normalizeFromJSON(i interface{}) (interface{}, error) {
 	case []byte:
 		body = t
 	case json.RawMessage:
-		body = t
+		return t, nil
 	default:
 		r, ok := i.(io.Reader)
 		if !ok {

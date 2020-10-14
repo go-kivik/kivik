@@ -214,16 +214,14 @@ func normalizeFromJSON(i interface{}) (interface{}, error) {
 		return t, nil
 	case []byte:
 		body = t
-	default:
-		r, ok := i.(io.Reader)
-		if !ok {
-			return i, nil
-		}
-		var err error
-		body, err = ioutil.ReadAll(r)
+	case io.Reader:
+		body, err := ioutil.ReadAll(t)
 		if err != nil {
 			return nil, &Error{HTTPStatus: http.StatusBadRequest, Err: err}
 		}
+		return json.RawMessage(body), nil
+	default:
+		return i, nil
 	}
 	var x map[string]interface{}
 	if err := json.Unmarshal(body, &x); err != nil {

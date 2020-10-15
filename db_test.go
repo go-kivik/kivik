@@ -1010,17 +1010,6 @@ func TestNormalizeFromJSON(t *testing.T) {
 			Expected: int(5),
 		},
 		{
-			Name:   "InvalidJSON",
-			Input:  []byte(`invalid`),
-			Status: http.StatusBadRequest,
-			Error:  "invalid character 'i' looking for beginning of value",
-		},
-		{
-			Name:     "Bytes",
-			Input:    []byte(`{"foo":"bar"}`),
-			Expected: map[string]interface{}{"foo": "bar"},
-		},
-		{
 			Name:     "RawMessage",
 			Input:    json.RawMessage(`{"foo":"bar"}`),
 			Expected: map[string]interface{}{"foo": "bar"},
@@ -1042,7 +1031,7 @@ func TestNormalizeFromJSON(t *testing.T) {
 			t.Run(test.Name, func(t *testing.T) {
 				result, err := normalizeFromJSON(test.Input)
 				testy.StatusError(t, test.Error, test.Status, err)
-				if d := testy.DiffInterface(test.Expected, result); d != nil {
+				if d := testy.DiffAsJSON(test.Expected, result); d != nil {
 					t.Error(d)
 				}
 			})
@@ -1057,7 +1046,7 @@ func TestPut(t *testing.T) {
 		if expectedDocID != docID {
 			return "", fmt.Errorf("Unexpected docID: %s", docID)
 		}
-		if d := testy.DiffInterface(expectedDoc, doc); d != nil {
+		if d := testy.DiffAsJSON(expectedDoc, doc); d != nil {
 			return "", fmt.Errorf("Unexpected doc: %s", d)
 		}
 		if d := testy.DiffInterface(testOptions, opts); d != nil {
@@ -1108,12 +1097,16 @@ func TestPut(t *testing.T) {
 			newRev:  "1-xxx",
 		},
 		{
-			name:   "InvalidJSON",
-			db:     &DB{},
+			name: "InvalidJSON",
+			db: &DB{
+				driverDB: &mock.DB{
+					PutFunc: putFunc,
+				},
+			},
 			docID:  "foo",
-			input:  []byte("Something bogus"),
-			status: http.StatusBadRequest,
-			err:    "invalid character 'S' looking for beginning of value",
+			input:  json.RawMessage("Something bogus"),
+			status: http.StatusInternalServerError,
+			err:    "Unexpected doc: failed to marshal actual value: invalid character 'S' looking for beginning of value",
 		},
 		{
 			name: "Bytes",

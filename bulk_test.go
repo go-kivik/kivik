@@ -14,6 +14,7 @@ package kivik
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -173,18 +174,12 @@ func TestDocsInterfaceSlice(t *testing.T) {
 			name: "JSONDoc",
 			input: []interface{}{
 				map[string]string{"foo": "bar"},
-				[]byte(`{"foo":"bar"}`),
+				json.RawMessage(`{"foo":"bar"}`),
 			},
 			expected: []interface{}{
 				map[string]string{"foo": "bar"},
 				map[string]string{"foo": "bar"},
 			},
-		},
-		{
-			name:   "InvalidJSON",
-			input:  []interface{}{[]byte(`invalid`)},
-			status: http.StatusBadRequest,
-			err:    "invalid character 'i' looking for beginning of value",
 		},
 	}
 	for _, test := range tests {
@@ -212,11 +207,16 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 	}
 	tests := []bdTest{
 		{
-			name:     "invalid JSON",
-			dbDriver: &mock.BulkDocer{},
-			docs:     []interface{}{[]byte("invalid json")},
-			status:   http.StatusBadRequest,
-			err:      "invalid character 'i' looking for beginning of value",
+			name: "invalid JSON",
+			dbDriver: &mock.BulkDocer{
+				BulkDocsFunc: func(_ context.Context, docs []interface{}, _ map[string]interface{}) (driver.BulkResults, error) {
+					_, err := json.Marshal(docs)
+					return nil, err
+				},
+			},
+			docs:   []interface{}{json.RawMessage("invalid json")},
+			status: http.StatusInternalServerError,
+			err:    "json: error calling MarshalJSON for type json.RawMessage: invalid character 'i' looking for beginning of value",
 		},
 		{
 			name: "emulated BulkDocs support",

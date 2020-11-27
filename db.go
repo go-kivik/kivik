@@ -279,7 +279,8 @@ func (db *DB) Put(ctx context.Context, docID string, doc interface{}, options ..
 	return db.driverDB.Put(ctx, docID, i, mergeOptions(options...))
 }
 
-// Delete marks the specified document as deleted.
+// Delete marks the specified document as deleted. The revision may be provided
+// via options, which takes priority over the rev argument.
 func (db *DB) Delete(ctx context.Context, docID, rev string, options ...Options) (newRev string, err error) {
 	if db.err != nil {
 		return "", db.err
@@ -287,7 +288,11 @@ func (db *DB) Delete(ctx context.Context, docID, rev string, options ...Options)
 	if docID == "" {
 		return "", missingArg("docID")
 	}
-	return db.driverDB.Delete(ctx, docID, rev, mergeOptions(options...))
+	opts := mergeOptions(options...)
+	if rv, ok := opts["rev"].(string); ok && rv != "" {
+		rev = rv
+	}
+	return db.driverDB.Delete(ctx, docID, rev, opts)
 }
 
 // Flush requests a flush of disk cache to disk or other permanent storage.

@@ -1343,6 +1343,30 @@ func TestDelete(t *testing.T) {
 			err:    "delete error",
 		},
 		{
+			name: "rev in opts",
+			db: &DB{
+				driverDB: &mock.DB{
+					DeleteFunc: func(_ context.Context, docID, rev string, opts map[string]interface{}) (string, error) {
+						expectedDocID := "foo"
+						expectedRev := "1-xxx"
+						if docID != expectedDocID {
+							return "", fmt.Errorf("Unexpected docID: %s", docID)
+						}
+						if rev != expectedRev {
+							return "", fmt.Errorf("Unexpected rev: %s", rev)
+						}
+						if d := testy.DiffInterface(map[string]interface{}{"rev": "1-xxx"}, opts); d != nil {
+							return "", fmt.Errorf("Unexpected options:\n%s", d)
+						}
+						return "2-xxx", nil
+					},
+				},
+			},
+			docID:   "foo",
+			options: map[string]interface{}{"rev": "1-xxx"},
+			newRev:  "2-xxx",
+		},
+		{
 			name: "success",
 			db: &DB{
 				driverDB: &mock.DB{
@@ -1368,6 +1392,7 @@ func TestDelete(t *testing.T) {
 			newRev:  "2-xxx",
 		},
 	}
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			newRev, err := test.db.Delete(context.Background(), test.docID, test.rev, test.options)

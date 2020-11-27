@@ -24,4 +24,4 @@ const UserPrefix = "org.couchdb.user:"
 //        "startkey": "foo",
 //        "endkey":   "foo" + kivik.EndKeySuffix,
 //    })
-const EndKeySuffix = string(0xfff0)
+const EndKeySuffix = string(rune(0xfff0))

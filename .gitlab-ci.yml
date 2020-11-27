@@ -30,16 +30,6 @@ linter:
         - go mod download
         - golangci-lint run ./...
 
-coverage:
-    stage: test
-    image: golang:1.14
-    services: []
-    before_script:
-        - ''
-    script:
-        - go mod download
-        - ./script/coverage.sh
-
 go-1.11:
     <<: *test_template
     image: golang:1.11

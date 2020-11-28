@@ -1550,6 +1550,35 @@ func TestDeleteAttachment(t *testing.T) {
 			err:    "db error",
 		},
 		{
+			name:     "rev in options",
+			docID:    "foo",
+			filename: "foo.txt",
+			options:  map[string]interface{}{"rev": "1-xxx"},
+			db: &DB{
+				driverDB: &mock.DB{
+					DeleteAttachmentFunc: func(_ context.Context, docID, rev, filename string, opts map[string]interface{}) (string, error) {
+						expectedDocID := "foo"
+						expectedRev := "1-xxx"
+						expectedFilename := "foo.txt"
+						if docID != expectedDocID {
+							return "", fmt.Errorf("Unexpected docID: %s", docID)
+						}
+						if rev != expectedRev {
+							return "", fmt.Errorf("Unexpected rev: %s", rev)
+						}
+						if filename != expectedFilename {
+							return "", fmt.Errorf("Unexpected filename: %s", filename)
+						}
+						if d := testy.DiffInterface(map[string]interface{}{"rev": "1-xxx"}, opts); d != nil {
+							return "", fmt.Errorf("Unexpected options:\n%s", d)
+						}
+						return "2-xxx", nil
+					},
+				},
+			},
+			newRev: "2-xxx",
+		},
+		{
 			name: "success",
 			db: &DB{
 				driverDB: &mock.DB{

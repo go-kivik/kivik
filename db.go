@@ -565,7 +565,8 @@ func (db *DB) GetAttachmentMeta(ctx context.Context, docID, filename string, opt
 }
 
 // DeleteAttachment deletes an attachment from a document, returning the
-// document's new revision.
+// document's new revision. The revision may be provided via options, which
+// takes priority over the rev argument.
 func (db *DB) DeleteAttachment(ctx context.Context, docID, rev, filename string, options ...Options) (newRev string, err error) {
 	if db.err != nil {
 		return "", db.err
@@ -576,7 +577,11 @@ func (db *DB) DeleteAttachment(ctx context.Context, docID, rev, filename string,
 	if filename == "" {
 		return "", missingArg("filename")
 	}
-	return db.driverDB.DeleteAttachment(ctx, docID, rev, filename, mergeOptions(options...))
+	opts := mergeOptions(options...)
+	if rv, ok := opts["rev"].(string); ok && rv != "" {
+		rev = rv
+	}
+	return db.driverDB.DeleteAttachment(ctx, docID, rev, filename, opts)
 }
 
 // PurgeResult is the result of a purge request.

@@ -25,7 +25,7 @@ variables:
 
 linter:
     stage: test
-    image: golangci/golangci-lint:v1.30
+    image: golangci/golangci-lint:v1.33
     script:
         - go mod download
         - golangci-lint run ./...
@@ -49,7 +49,7 @@ go-1.14:
     <<: *test_template
     image: golang:1.14
 
-go-1.14:
+go-1.15:
     <<: *test_template
     image: golang:1.15
 

@@ -1512,8 +1512,13 @@ func TestPutAttachment(t *testing.T) {
 }
 
 func TestDeleteAttachment(t *testing.T) {
-	tests := []struct {
-		name                 string
+	const (
+		expectedDocID    = "foo"
+		expectedRev      = "1-xxx"
+		expectedFilename = "foo.txt"
+	)
+
+	type tt struct {
 		db                   *DB
 		docID, rev, filename string
 		options              Options
@@ -1521,106 +1526,101 @@ func TestDeleteAttachment(t *testing.T) {
 		newRev string
 		status int
 		err    string
-	}{
-		{
-			name:   "missing doc id",
-			db:     &DB{},
-			status: http.StatusBadRequest,
-			err:    "kivik: docID required",
-		},
-		{
-			name:   "missing filename",
-			db:     &DB{},
-			docID:  "foo",
-			status: http.StatusBadRequest,
-			err:    "kivik: filename required",
-		},
-		{
-			name:     "db error",
-			docID:    "foo",
-			filename: "foo.txt",
-			db: &DB{
-				driverDB: &mock.DB{
-					DeleteAttachmentFunc: func(_ context.Context, _, _, _ string, _ map[string]interface{}) (string, error) {
-						return "", &Error{HTTPStatus: http.StatusBadRequest, Err: errors.New("db error")}
-					},
+	}
+
+	tests := testy.NewTable()
+	tests.Add("missing doc id", tt{
+		db:     &DB{},
+		status: http.StatusBadRequest,
+		err:    "kivik: docID required",
+	})
+	tests.Add("missing filename", tt{
+		db:     &DB{},
+		docID:  "foo",
+		status: http.StatusBadRequest,
+		err:    "kivik: filename required",
+	})
+	tests.Add("db error", tt{
+		docID:    "foo",
+		filename: expectedFilename,
+		db: &DB{
+			driverDB: &mock.DB{
+				DeleteAttachmentFunc: func(_ context.Context, _, _, _ string, _ map[string]interface{}) (string, error) {
+					return "", &Error{HTTPStatus: http.StatusBadRequest, Err: errors.New("db error")}
 				},
 			},
-			status: http.StatusBadRequest,
-			err:    "db error",
 		},
-		{
-			name:     "rev in options",
-			docID:    "foo",
-			filename: "foo.txt",
-			options:  map[string]interface{}{"rev": "1-xxx"},
+		status: http.StatusBadRequest,
+		err:    "db error",
+	})
+	tests.Add("rev in options", func(t *testing.T) interface{} {
+		return tt{
+			docID:    expectedDocID,
+			filename: expectedFilename,
+			options:  map[string]interface{}{"rev": expectedRev},
 			db: &DB{
 				driverDB: &mock.DB{
 					DeleteAttachmentFunc: func(_ context.Context, docID, rev, filename string, opts map[string]interface{}) (string, error) {
-						expectedDocID := "foo"
-						expectedRev := "1-xxx"
-						expectedFilename := "foo.txt"
 						if docID != expectedDocID {
-							return "", fmt.Errorf("Unexpected docID: %s", docID)
+							t.Errorf("Unexpected docID: %s", docID)
 						}
 						if rev != expectedRev {
-							return "", fmt.Errorf("Unexpected rev: %s", rev)
+							t.Errorf("Unexpected rev: %s", rev)
 						}
 						if filename != expectedFilename {
-							return "", fmt.Errorf("Unexpected filename: %s", filename)
+							t.Errorf("Unexpected filename: %s", filename)
 						}
-						if d := testy.DiffInterface(map[string]interface{}{"rev": "1-xxx"}, opts); d != nil {
-							return "", fmt.Errorf("Unexpected options:\n%s", d)
+						if d := testy.DiffInterface(map[string]interface{}{"rev": expectedRev}, opts); d != nil {
+							t.Errorf("Unexpected options:\n%s", d)
 						}
 						return "2-xxx", nil
 					},
 				},
 			},
 			newRev: "2-xxx",
-		},
-		{
-			name: "success",
+		}
+	})
+	tests.Add("success", func(t *testing.T) interface{} {
+		return tt{
+			docID:    expectedDocID,
+			rev:      expectedRev,
+			filename: expectedFilename,
+			options:  testOptions,
+			newRev:   "2-xxx",
 			db: &DB{
 				driverDB: &mock.DB{
 					DeleteAttachmentFunc: func(_ context.Context, docID, rev, filename string, opts map[string]interface{}) (string, error) {
-						expectedDocID, expectedRev, expectedFilename := "foo", "1-xxx", "foo.txt" // nolint: goconst
 						if docID != expectedDocID {
-							return "", fmt.Errorf("Unexpected docID: %s", docID)
+							t.Errorf("Unexpected docID: %s", docID)
 						}
 						if rev != expectedRev {
-							return "", fmt.Errorf("Unexpected rev: %s", rev)
+							t.Errorf("Unexpected rev: %s", rev)
 						}
 						if filename != expectedFilename {
-							return "", fmt.Errorf("Unexpected filename: %s", filename)
+							t.Errorf("Unexpected filename: %s", filename)
 						}
 						if d := testy.DiffInterface(testOptions, opts); d != nil {
-							return "", fmt.Errorf("Unexpected options:\n%s", d)
+							t.Errorf("Unexpected options:\n%s", d)
 						}
 						return "2-xxx", nil
 					},
 				},
 			},
-			docID:    "foo",
-			rev:      "1-xxx",
-			filename: "foo.txt",
-			options:  testOptions,
-			newRev:   "2-xxx",
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			newRev, err := test.db.DeleteAttachment(context.Background(), test.docID, test.rev, test.filename, test.options)
-			testy.StatusError(t, test.err, test.status, err)
-			if newRev != test.newRev {
-				t.Errorf("Unexpected new rev: %s", newRev)
-			}
-		})
-	}
+		}
+	})
+
+	tests.Run(t, func(t *testing.T, tt tt) {
+		newRev, err := tt.db.DeleteAttachment(context.Background(), tt.docID, tt.rev, tt.filename, tt.options)
+		testy.StatusError(t, tt.err, tt.status, err)
+		if newRev != tt.newRev {
+			t.Errorf("Unexpected new rev: %s", newRev)
+		}
+	})
 }
 
 func TestGetAttachment(t *testing.T) {
-	tests := []struct {
-		name            string
+	expectedDocID, expectedFilename := "foo", "foo.txt"
+	type tt struct {
 		db              *DB
 		docID, filename string
 		options         Options
@@ -1629,38 +1629,48 @@ func TestGetAttachment(t *testing.T) {
 		expected *Attachment
 		status   int
 		err      string
-	}{
-		{
-			name: "error",
-			db: &DB{
-				driverDB: &mock.DB{
-					GetAttachmentFunc: func(_ context.Context, _, _ string, _ map[string]interface{}) (*driver.Attachment, error) {
-						return nil, errors.New("fail")
-					},
+	}
+
+	tests := testy.NewTable()
+	tests.Add("error", tt{
+		db: &DB{
+			driverDB: &mock.DB{
+				GetAttachmentFunc: func(_ context.Context, _, _ string, _ map[string]interface{}) (*driver.Attachment, error) {
+					return nil, errors.New("fail")
 				},
 			},
-			docID:    "foo",
-			filename: "foo.txt",
-			status:   500,
-			err:      "fail",
 		},
-		{
-			name: "success",
+		docID:    expectedDocID,
+		filename: expectedFilename,
+		status:   500,
+		err:      "fail",
+	})
+	tests.Add("success", func(t *testing.T) interface{} {
+		return tt{
+			docID:    expectedDocID,
+			filename: expectedFilename,
+			options:  testOptions,
+			content:  "Test",
+			expected: &Attachment{
+				Filename:    expectedFilename,
+				ContentType: "text/plain",
+				Size:        4,
+				Digest:      "md5-foo",
+			},
 			db: &DB{
 				driverDB: &mock.DB{
 					GetAttachmentFunc: func(_ context.Context, docID, filename string, opts map[string]interface{}) (*driver.Attachment, error) {
-						expectedDocID, expectedFilename := "foo", "foo.txt"
 						if docID != expectedDocID {
-							return nil, fmt.Errorf("Unexpected docID: %s", docID)
+							t.Errorf("Unexpected docID: %s", docID)
 						}
 						if filename != expectedFilename {
-							return nil, fmt.Errorf("Unexpected filename: %s", filename)
+							t.Errorf("Unexpected filename: %s", filename)
 						}
 						if d := testy.DiffInterface(testOptions, opts); d != nil {
-							return nil, fmt.Errorf("Unexpected options:\n%s", d)
+							t.Errorf("Unexpected options:\n%s", d)
 						}
 						return &driver.Attachment{
-							Filename:    "foo.txt",
+							Filename:    expectedFilename,
 							ContentType: "text/plain",
 							Digest:      "md5-foo",
 							Size:        4,
@@ -1669,52 +1679,40 @@ func TestGetAttachment(t *testing.T) {
 					},
 				},
 			},
-			docID:    "foo",
-			filename: "foo.txt",
-			options:  testOptions,
-			content:  "Test",
-			expected: &Attachment{
-				Filename:    "foo.txt",
-				ContentType: "text/plain",
-				Size:        4,
-				Digest:      "md5-foo",
-			},
-		},
-		{
-			name:   "no docID",
-			db:     &DB{},
-			status: http.StatusBadRequest,
-			err:    "kivik: docID required",
-		},
-		{
-			name:   "no filename",
-			db:     &DB{},
-			docID:  "foo",
-			status: http.StatusBadRequest,
-			err:    "kivik: filename required",
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			result, err := test.db.GetAttachment(context.Background(), test.docID, test.filename, test.options)
-			testy.StatusError(t, test.err, test.status, err)
-			content, err := ioutil.ReadAll(result.Content)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if d := testy.DiffText(test.content, string(content)); d != nil {
-				t.Errorf("Unexpected content:\n%s", d)
-			}
-			_ = result.Content.Close()
-			result.Content = nil
-			if d := testy.DiffInterface(test.expected, result); d != nil {
-				t.Error(d)
-			}
-		})
-	}
+		}
+	})
+	tests.Add("no docID", tt{
+		db:     &DB{},
+		status: http.StatusBadRequest,
+		err:    "kivik: docID required",
+	})
+	tests.Add("no filename", tt{
+		db:     &DB{},
+		docID:  "foo",
+		status: http.StatusBadRequest,
+		err:    "kivik: filename required",
+	})
+
+	tests.Run(t, func(t *testing.T, tt tt) {
+		result, err := tt.db.GetAttachment(context.Background(), tt.docID, tt.filename, tt.options)
+		testy.StatusError(t, tt.err, tt.status, err)
+		content, err := ioutil.ReadAll(result.Content)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if d := testy.DiffText(tt.content, string(content)); d != nil {
+			t.Errorf("Unexpected content:\n%s", d)
+		}
+		_ = result.Content.Close()
+		result.Content = nil
+		if d := testy.DiffInterface(tt.expected, result); d != nil {
+			t.Error(d)
+		}
+	})
 }
 
 func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
+	const expectedDocID, expectedFilename = "foo", "foo.txt"
 	tests := []struct {
 		name            string
 		db              *DB
@@ -1735,7 +1733,7 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 				},
 			},
 			docID:    "foo",
-			filename: "foo.txt",
+			filename: expectedFilename,
 			status:   500,
 			err:      "fail",
 		},
@@ -1744,7 +1742,6 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 			db: &DB{
 				driverDB: &mock.DB{
 					GetAttachmentFunc: func(_ context.Context, docID, filename string, opts map[string]interface{}) (*driver.Attachment, error) {
-						expectedDocID, expectedFilename := "foo", "foo.txt"
 						if docID != expectedDocID {
 							return nil, fmt.Errorf("Unexpected docID: %s", docID)
 						}

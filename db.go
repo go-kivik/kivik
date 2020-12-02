@@ -483,7 +483,7 @@ func (db *DB) Copy(ctx context.Context, targetID, sourceID string, options ...Op
 
 // PutAttachment uploads the supplied content as an attachment to the specified
 // document.
-func (db *DB) PutAttachment(ctx context.Context, docID, rev string, att *Attachment, options ...Options) (newRev string, err error) {
+func (db *DB) PutAttachment(ctx context.Context, docID string, att *Attachment, options ...Options) (newRev string, err error) {
 	if db.err != nil {
 		return "", db.err
 	}
@@ -494,6 +494,11 @@ func (db *DB) PutAttachment(ctx context.Context, docID, rev string, att *Attachm
 		return "", e
 	}
 	a := driver.Attachment(*att)
+	var rev string
+	opts := mergeOptions(options...)
+	if rv, ok := opts["rev"].(string); ok && rv != "" {
+		rev = rv
+	}
 	return db.driverDB.PutAttachment(ctx, docID, rev, &a, mergeOptions(options...))
 }
 

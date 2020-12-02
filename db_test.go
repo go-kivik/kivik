@@ -1411,14 +1411,14 @@ func TestDelete(t *testing.T) {
 
 func TestPutAttachment(t *testing.T) {
 	tests := []struct {
-		name       string
-		db         *DB
-		docID, rev string
-		att        *Attachment
-		options    Options
-		newRev     string
-		status     int
-		err        string
+		name    string
+		db      *DB
+		docID   string
+		att     *Attachment
+		options Options
+		newRev  string
+		status  int
+		err     string
 
 		body string
 	}{
@@ -1456,7 +1456,6 @@ func TestPutAttachment(t *testing.T) {
 		{
 			name:  "success",
 			docID: "foo",
-			rev:   "1-xxx",
 			db: &DB{
 				driverDB: &mock.DB{
 					PutAttachmentFunc: func(_ context.Context, docID, rev string, att *driver.Attachment, opts map[string]interface{}) (string, error) {
@@ -1483,7 +1482,7 @@ func TestPutAttachment(t *testing.T) {
 						if d := testy.DiffInterface(expectedAtt, att); d != nil {
 							return "", fmt.Errorf("Unexpected attachment:\n%s", d)
 						}
-						if d := testy.DiffInterface(testOptions, opts); d != nil {
+						if d := testy.DiffInterface(map[string]interface{}{"rev": "1-xxx"}, opts); d != nil {
 							return "", fmt.Errorf("Unexpected options:\n%s", d)
 						}
 						return "2-xxx", nil
@@ -1495,14 +1494,16 @@ func TestPutAttachment(t *testing.T) {
 				ContentType: "text/plain",
 				Content:     ioutil.NopCloser(strings.NewReader("Test file")),
 			},
-			options: testOptions,
-			newRev:  "2-xxx",
-			body:    "Test file",
+			options: map[string]interface{}{
+				"rev": "1-xxx",
+			},
+			newRev: "2-xxx",
+			body:   "Test file",
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			newRev, err := test.db.PutAttachment(context.Background(), test.docID, test.rev, test.att, test.options)
+			newRev, err := test.db.PutAttachment(context.Background(), test.docID, test.att, test.options)
 			testy.StatusError(t, test.err, test.status, err)
 			if newRev != test.newRev {
 				t.Errorf("Unexpected newRev: %s", newRev)

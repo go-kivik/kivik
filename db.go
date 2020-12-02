@@ -499,6 +499,10 @@ func (db *DB) PutAttachment(ctx context.Context, docID, rev string, att *Attachm
 		return "", e
 	}
 	a := driver.Attachment(*att)
+	opts := mergeOptions(options...)
+	if rv, ok := opts["rev"].(string); ok && rv != "" {
+		rev = rv
+	}
 	return db.driverDB.PutAttachment(ctx, docID, rev, &a, mergeOptions(options...))
 }
 

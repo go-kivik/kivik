@@ -1494,6 +1494,53 @@ func TestPutAttachment(t *testing.T) {
 			newRev:  "2-xxx",
 			body:    "Test file",
 		},
+		{
+			name:  "rev in options",
+			docID: "foo",
+			db: &DB{
+				driverDB: &mock.DB{
+					PutAttachmentFunc: func(_ context.Context, docID, rev string, att *driver.Attachment, opts map[string]interface{}) (string, error) {
+						expectedDocID, expectedRev := "foo", "1-xxx"
+						expectedContent := "Test file"
+						expectedAtt := &driver.Attachment{
+							Filename:    "foo.txt",
+							ContentType: "text/plain",
+						}
+						if docID != expectedDocID {
+							return "", fmt.Errorf("Unexpected docID: %s", docID)
+						}
+						if rev != expectedRev {
+							return "", fmt.Errorf("Unexpected rev: %s", rev)
+						}
+						content, err := ioutil.ReadAll(att.Content)
+						if err != nil {
+							t.Fatal(err)
+						}
+						if d := testy.DiffText(expectedContent, string(content)); d != nil {
+							return "", fmt.Errorf("Unexpected content:\n%s", string(content))
+						}
+						att.Content = nil
+						if d := testy.DiffInterface(expectedAtt, att); d != nil {
+							return "", fmt.Errorf("Unexpected attachment:\n%s", d)
+						}
+						if d := testy.DiffInterface(map[string]interface{}{"rev": "1-xxx"}, opts); d != nil {
+							return "", fmt.Errorf("Unexpected options:\n%s", d)
+						}
+						return "2-xxx", nil
+					},
+				},
+			},
+			att: &Attachment{
+				Filename:    "foo.txt",
+				ContentType: "text/plain",
+				Content:     ioutil.NopCloser(strings.NewReader("Test file")),
+			},
+			options: map[string]interface{}{
+				"rev": "1-xxx",
+			},
+			newRev: "2-xxx",
+			body:   "Test file",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

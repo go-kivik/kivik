@@ -99,7 +99,7 @@ func (r *BulkResults) UpdateErr() error {
 // See http://docs.couchdb.org/en/2.0.0/api/database/bulk-api.html#db-bulk-docs
 //
 // As with Put, each individual document may be a JSON-marshable object, or a
-// raw JSON string in a []byte, json.RawMessage, or io.Reader.
+// raw JSON string in a json.RawMessage, or io.Reader.
 func (db *DB) BulkDocs(ctx context.Context, docs []interface{}, options ...Options) (*BulkResults, error) {
 	docsi, err := docsInterfaceSlice(docs)
 	if err != nil {

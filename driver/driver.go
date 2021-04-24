@@ -151,6 +151,21 @@ type Security struct {
 	Members Members `json:"members"`
 }
 
+// MarshalJSON satisfies the json.Marshaler interface.
+func (s Security) MarshalJSON() ([]byte, error) {
+	var v struct {
+		Admins  *Members `json:"admins,omitempty"`
+		Members *Members `json:"members,omitempty"`
+	}
+	if len(s.Admins.Names) > 0 || len(s.Admins.Roles) > 0 {
+		v.Admins = &s.Admins
+	}
+	if len(s.Members.Names) > 0 || len(s.Admins.Roles) > 0 {
+		v.Members = &s.Members
+	}
+	return json.Marshal(v)
+}
+
 // DB is a database handle.
 type DB interface {
 	// AllDocs returns all of the documents in the database, subject to the

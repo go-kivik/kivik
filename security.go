@@ -12,8 +12,6 @@
 
 package kivik
 
-import "encoding/json"
-
 // Members represents the members of a database security document.
 type Members struct {
 	Names []string `json:"names,omitempty"`
@@ -24,19 +22,4 @@ type Members struct {
 type Security struct {
 	Admins  Members `json:"admins"`
 	Members Members `json:"members"`
-}
-
-// MarshalJSON satisfies the json.Marshaler interface.
-func (s Security) MarshalJSON() ([]byte, error) {
-	var v struct {
-		Admins  *Members `json:"admins,omitempty"`
-		Members *Members `json:"members,omitempty"`
-	}
-	if len(s.Admins.Names) > 0 || len(s.Admins.Roles) > 0 {
-		v.Admins = &s.Admins
-	}
-	if len(s.Members.Names) > 0 || len(s.Admins.Roles) > 0 {
-		v.Members = &s.Members
-	}
-	return json.Marshal(v)
 }

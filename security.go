@@ -27,7 +27,7 @@ type Security struct {
 }
 
 // MarshalJSON satisfies the json.Marshaler interface.
-func (s *Security) MarshalJSON() ([]byte, error) {
+func (s Security) MarshalJSON() ([]byte, error) {
 	var v struct {
 		Admins  *Members `json:"admins,omitempty"`
 		Members *Members `json:"members,omitempty"`

@@ -53,21 +53,20 @@ go-1.15:
     <<: *test_template
     image: golang:1.15
 
-gopherjs-1.12:
+gopherjs-1.16:
     <<: *test_template
-    image: golang:1.14
+    image: golang:1.16
     variables:
       SRCDIR: /go/src/github.com/go-kivik/kivik/v4
+    before_script:
+        - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+        - curl -sL https://deb.nodesource.com/setup_12.x | bash -
+        - apt-get update -qq && apt-get install -y nodejs
     script:
-        - go get golang.org/dl/go1.12.16
-        - go1.12.16 download
         - mkdir -p ${SRCDIR}
         - mv ${CI_PROJECT_DIR}/* ${SRCDIR}
         - cd ${SRCDIR}
         - go mod vendor
-        - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-        - curl -sL https://deb.nodesource.com/setup_12.x | bash -
-        - apt-get update -qq && apt-get install -y nodejs
         - npm install
         - GO111MODULE=off go get -u github.com/gopherjs/gopherjs
         - npm install source-map-support
@@ -80,7 +79,7 @@ gopherjs-1.12:
                 cp build/Release/syscall.node ~/.node_libraries/syscall.node
             )
         - go mod vendor
-        - GOPHERJS_GOROOT="$(go1.12.16 env GOROOT)" gopherjs test ./...
+        - gopherjs test ./...
 
 go-rc:
     <<: *test_template

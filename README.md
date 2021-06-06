@@ -14,13 +14,13 @@ implemented by SQL and NoSQL databases such as CouchDB.
 # Versions
 
 You are browsing the **development** branch of Kivik. The latest stable version
-is available [here](https://github.com/go-kivik/kivik/tree/v2). Please
+is available [here](https://github.com/go-kivik/kivik/tree/v3). Please
 consult the documentation on that page for proper installation of the stable
 branch.
 
 This branch which will eventually become the Kivik 4.0.0 release. The API is
 subject to rapid and unannounced changes at this stage of development. For
-production work, you are encouraged to use the latest 2.x release of Kivik,
+production work, you are encouraged to use the latest 3.x release of Kivik,
 which is stable.
 
 Example configuration for common dependency managers follow.
@@ -28,7 +28,7 @@ Example configuration for common dependency managers follow.
 ## Go Modules
 
 Kivik 3.x and later supports Go modules, which is the recommended way to use it
-for Go version 1.11 or newer. Kivik 4.x only supports Go 1.11 and later. If your
+for Go version 1.11 or newer. Kivik 4.x only supports Go 1.13 and later. If your
 project is already using Go modules, simply fetch the desired version:
 
 ```shell

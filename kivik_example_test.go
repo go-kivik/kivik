@@ -15,7 +15,7 @@ package kivik_test
 import (
 	"fmt"
 
-	"github.com/go-kivik/kivik/v4"
+	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/internal/mock"
 )

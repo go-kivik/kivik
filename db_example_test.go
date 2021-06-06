@@ -16,7 +16,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-kivik/kivik/v4"
+	kivik "github.com/go-kivik/kivik/v4"
 )
 
 var db = &kivik.DB{}

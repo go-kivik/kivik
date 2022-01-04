@@ -1,91 +1,131 @@
 stages:
-    - test
+- test
 
 variables:
-    GO111MODULE: "on"
-    COUCHDB_USER: admin
-    COUCHDB_PASSWORD: abc123
-    KIVIK_TEST_DSN_COUCH23: http://admin:abc123@couch23:5984/
-    KIVIK_TEST_DSN_COUCH30: http://admin:abc123@couch30:5984/
+  GO111MODULE: "on"
+  COUCHDB_USER: admin
+  COUCHDB_PASSWORD: abc123
+  KIVIK_TEST_DSN_COUCH23: http://admin:abc123@couch23:5984/
+  KIVIK_TEST_DSN_COUCH30: http://admin:abc123@couch30:5984/
 
 .test: &test_template
-    stage: test
-    services:
-        - name: apache/couchdb:2.3.1
-          alias: couch23
-        - name: couchdb:3.0.0
-          alias: couch30
-    before_script:
-        - ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH23}
-        - ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH30}
-    script:
-        - go mod download
-        - ./script/test_version.sh
-        - go test -race -tags=livetest ./...
+  stage: test
+  services:
+  - name: apache/couchdb:2.3.1
+    alias: couch23
+  - name: couchdb:3.0.0
+    alias: couch30
+  before_script:
+  - ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH23}
+  - ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH30}
+  script:
+  - go mod download
+  - ./script/test_version.sh
+  - go test -race -tags=livetest ./...
 
 linter:
-    stage: test
-    image: golangci/golangci-lint:v1.33
-    script:
-        - go mod download
-        - golangci-lint run ./...
-        - ./script/check-license.sh
+  stage: test
+  image: golangci/golangci-lint:v1.33
+  script:
+  - go mod download
+  - golangci-lint run ./...
+  - ./script/check-license.sh
 
 coverage:
-    stage: test
-    image: golang:1.15
-    services: []
-    before_script:
-        - ''
-    script:
-        - go mod download
-        - ./script/coverage.sh
+  stage: test
+  image: golang:1.17
+  services: []
+  before_script:
+  - ''
+  script:
+  - go mod download
+  - ./script/coverage.sh
 
 go-1.13:
-    <<: *test_template
-    image: golang:1.13
+  <<: *test_template
+  image: golang:1.13
 
 go-1.14:
-    <<: *test_template
-    image: golang:1.14
+  <<: *test_template
+  image: golang:1.14
 
 go-1.15:
-    <<: *test_template
-    image: golang:1.15
+  <<: *test_template
+  image: golang:1.15
+
+go-1.16:
+  <<: *test_template
+  image: golang:1.16
+
+go-1.17:
+  <<: *test_template
+  image: golang:1.17
 
 gopherjs-1.16:
-    <<: *test_template
-    image: golang:1.16
-    variables:
-      SRCDIR: /go/src/github.com/go-kivik/kivik/v4
-    before_script:
-        - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-        - curl -sL https://deb.nodesource.com/setup_12.x | bash -
-        - apt-get update -qq && apt-get install -y nodejs
-    script:
-        - mkdir -p ${SRCDIR}
-        - mv ${CI_PROJECT_DIR}/* ${SRCDIR}
-        - cd ${SRCDIR}
-        - go mod vendor
-        - npm install
-        - |
-            (
-              mkdir -p $GOPATH/src/github.com/gopherjs
-              cd $GOPATH/src/github.com/gopherjs
-              git clone --depth 1 --branch 1.16.4+go1.16.7 https://github.com/gopherjs/gopherjs.git
-              cd gopherjs
-              go install
-              npm install source-map-support
-              cd $GOPATH/src/github.com/gopherjs/gopherjs/node-syscall/
-              npm install --global node-gyp
-              node-gyp rebuild
-              mkdir -p ~/.node_libraries/
-              cp build/Release/syscall.node ~/.node_libraries/syscall.node
-            )
-        - go mod vendor
-        - gopherjs test ./...
+  <<: *test_template
+  image: golang:1.16
+  variables:
+    SRCDIR: /go/src/github.com/go-kivik/kivik/v4
+  before_script:
+  - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+  - curl -sL https://deb.nodesource.com/setup_12.x | bash -
+  - apt-get update -qq && apt-get install -y nodejs
+  script:
+  - mkdir -p ${SRCDIR}
+  - mv ${CI_PROJECT_DIR}/* ${SRCDIR}
+  - cd ${SRCDIR}
+  - go mod vendor
+  - npm install
+  - |
+    (
+      mkdir -p $GOPATH/src/github.com/gopherjs
+      cd $GOPATH/src/github.com/gopherjs
+      git clone --depth 1 --branch 1.16.4+go1.16.7 https://github.com/gopherjs/gopherjs.git
+      cd gopherjs
+      go install
+      npm install source-map-support
+      cd $GOPATH/src/github.com/gopherjs/gopherjs/node-syscall/
+      npm install --global node-gyp
+      node-gyp rebuild
+      mkdir -p ~/.node_libraries/
+      cp build/Release/syscall.node ~/.node_libraries/syscall.node
+    )
+  - go mod vendor
+  - gopherjs test ./...
+
+gopherjs-1.17:
+  <<: *test_template
+  image: golang:1.17
+  variables:
+    SRCDIR: /go/src/github.com/go-kivik/kivik/v4
+  before_script:
+  - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+  - curl -sL https://deb.nodesource.com/setup_12.x | bash -
+  - apt-get update -qq && apt-get install -y nodejs
+  script:
+  - mkdir -p ${SRCDIR}
+  - mv ${CI_PROJECT_DIR}/* ${SRCDIR}
+  - cd ${SRCDIR}
+  - go mod vendor
+  - npm install
+  - |
+    (
+      mkdir -p $GOPATH/src/github.com/gopherjs
+      cd $GOPATH/src/github.com/gopherjs
+      git clone --depth 1 --branch 1.17.1+go1.17.3 https://github.com/gopherjs/gopherjs.git
+      cd gopherjs
+      go install
+      npm install source-map-support
+      cd $GOPATH/src/github.com/gopherjs/gopherjs/node-syscall/
+      npm install --global node-gyp
+      node-gyp rebuild
+      mkdir -p ~/.node_libraries/
+      cp build/Release/syscall.node ~/.node_libraries/syscall.node
+    )
+  - go mod vendor
+  - gopherjs test ./...
 
 go-rc:
-    <<: *test_template
-    image: golang:rc
-    allow_failure: true
+  <<: *test_template
+  image: golang:rc
+  allow_failure: true

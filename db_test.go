@@ -2060,8 +2060,8 @@ func TestRevsDiff(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
-		rows, err := tt.db.RevsDiff(context.Background(), tt.revMap)
-		testy.StatusError(t, tt.err, tt.status, err)
+		rows := tt.db.RevsDiff(context.Background(), tt.revMap)
+		testy.StatusError(t, tt.err, tt.status, rows.Err())
 		rows.cancel = nil // Determinism
 		if d := testy.DiffInterface(tt.expected, rows); d != nil {
 			t.Error(d)

@@ -684,18 +684,18 @@ type Diffs map[string]RevDiff
 //     }
 //
 // See http://docs.couchdb.org/en/stable/api/database/misc.html#db-revs-diff
-func (db *DB) RevsDiff(ctx context.Context, revMap interface{}) (*Rows, error) {
+func (db *DB) RevsDiff(ctx context.Context, revMap interface{}) *Rows {
 	if db.err != nil {
-		return nil, db.err
+		return &Rows{err: db.err}
 	}
 	if rd, ok := db.driverDB.(driver.RevsDiffer); ok {
 		rowsi, err := rd.RevsDiff(ctx, revMap)
 		if err != nil {
-			return nil, err
+			return &Rows{err: err}
 		}
-		return newRows(ctx, rowsi), nil
+		return newRows(ctx, rowsi)
 	}
-	return nil, &Error{HTTPStatus: http.StatusNotImplemented, Message: "kivik: _revs_diff not supported by driver"}
+	return &Rows{err: &Error{HTTPStatus: http.StatusNotImplemented, Message: "kivik: _revs_diff not supported by driver"}}
 }
 
 // PartitionStats contains partition statistics.

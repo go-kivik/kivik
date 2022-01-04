@@ -220,10 +220,10 @@ func TestLocalDocs(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.db.LocalDocs(context.Background(), test.options)
-			testy.StatusError(t, test.err, test.status, err)
-			result.cancel = nil // Determinism
-			if d := testy.DiffInterface(test.expected, result); d != nil {
+			rows := test.db.LocalDocs(context.Background(), test.options)
+			testy.StatusError(t, test.err, test.status, rows.Err())
+			rows.cancel = nil // Determinism
+			if d := testy.DiffInterface(test.expected, rows); d != nil {
 				t.Error(d)
 			}
 		})

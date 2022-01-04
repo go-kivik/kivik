@@ -63,19 +63,19 @@ func (db *DB) AllDocs(ctx context.Context, options ...Options) *Rows {
 }
 
 // DesignDocs returns a list of all documents in the database.
-func (db *DB) DesignDocs(ctx context.Context, options ...Options) (*Rows, error) {
+func (db *DB) DesignDocs(ctx context.Context, options ...Options) *Rows {
 	if db.err != nil {
-		return nil, db.err
+		return &Rows{err: db.err}
 	}
 	ddocer, ok := db.driverDB.(driver.DesignDocer)
 	if !ok {
-		return nil, &Error{HTTPStatus: http.StatusNotImplemented, Err: errors.New("kivik: design doc view not supported by driver")}
+		return &Rows{err: &Error{HTTPStatus: http.StatusNotImplemented, Err: errors.New("kivik: design doc view not supported by driver")}}
 	}
 	rowsi, err := ddocer.DesignDocs(ctx, mergeOptions(options...))
 	if err != nil {
-		return nil, err
+		return &Rows{err: err}
 	}
-	return newRows(ctx, rowsi), nil
+	return newRows(ctx, rowsi)
 }
 
 // LocalDocs returns a list of all documents in the database.

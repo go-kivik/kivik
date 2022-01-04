@@ -68,15 +68,19 @@ gopherjs-1.16:
         - cd ${SRCDIR}
         - go mod vendor
         - npm install
-        - GO111MODULE=off go get -u github.com/gopherjs/gopherjs@1.16.4+go1.16.7
-        - npm install source-map-support
         - |
             (
-                cd $GOPATH/src/github.com/gopherjs/gopherjs/node-syscall/
-                npm install --global node-gyp
-                node-gyp rebuild
-                mkdir -p ~/.node_libraries/
-                cp build/Release/syscall.node ~/.node_libraries/syscall.node
+              mkdir -p $GOPATH/src/github.com/gopherjs
+              cd $GOPATH/src/github.com/gopherjs
+              git clone --depth 1 --branch 1.16.4+go1.16.7 https://github.com/gopherjs/gopherjs.git
+              cd gopherjs
+              go install
+              npm install source-map-support
+              cd $GOPATH/src/github.com/gopherjs/gopherjs/node-syscall/
+              npm install --global node-gyp
+              node-gyp rebuild
+              mkdir -p ~/.node_libraries/
+              cp build/Release/syscall.node ~/.node_libraries/syscall.node
             )
         - go mod vendor
         - gopherjs test ./...

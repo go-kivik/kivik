@@ -628,13 +628,13 @@ type BulkGetReference struct {
 // or for getting revision history.
 //
 // See http://docs.couchdb.org/en/stable/api/database/bulk-api.html#db-bulk-get
-func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...Options) (*Rows, error) {
+func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...Options) *Rows {
 	if db.err != nil {
-		return nil, db.err
+		return &Rows{err: db.err}
 	}
 	bulkGetter, ok := db.driverDB.(driver.BulkGetter)
 	if !ok {
-		return nil, &Error{HTTPStatus: http.StatusNotImplemented, Message: "kivik: bulk get not supported by driver"}
+		return &Rows{err: &Error{HTTPStatus: http.StatusNotImplemented, Message: "kivik: bulk get not supported by driver"}}
 	}
 	refs := make([]driver.BulkGetReference, len(docs))
 	for i, ref := range docs {
@@ -642,9 +642,9 @@ func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...O
 	}
 	rowsi, err := bulkGetter.BulkGet(ctx, refs, mergeOptions(options...))
 	if err != nil {
-		return nil, err
+		return &Rows{err: err}
 	}
-	return newRows(ctx, rowsi), nil
+	return newRows(ctx, rowsi)
 }
 
 // Close cleans up any resources used by the DB. The default CouchDB driver

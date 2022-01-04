@@ -25,6 +25,9 @@ var findNotImplemented = &Error{HTTPStatus: http.StatusNotImplemented, Message: 
 // JSON-marshalable to a valid query.
 // See http://docs.couchdb.org/en/2.0.0/api/database/find.html#db-find
 func (db *DB) Find(ctx context.Context, query interface{}, options ...Options) *Rows {
+	if db.err != nil {
+		return &Rows{err: db.err}
+	}
 	if finder, ok := db.driverDB.(driver.OptsFinder); ok {
 		rowsi, err := finder.Find(ctx, query, mergeOptions(options...))
 		if err != nil {

@@ -51,15 +51,15 @@ func (db *DB) Err() error {
 }
 
 // AllDocs returns a list of all documents in the database.
-func (db *DB) AllDocs(ctx context.Context, options ...Options) (*Rows, error) {
+func (db *DB) AllDocs(ctx context.Context, options ...Options) *Rows {
 	if db.err != nil {
-		return nil, db.err
+		return &Rows{err: db.err}
 	}
 	rowsi, err := db.driverDB.AllDocs(ctx, mergeOptions(options...))
 	if err != nil {
-		return nil, err
+		return &Rows{err: err}
 	}
-	return newRows(ctx, rowsi), nil
+	return newRows(ctx, rowsi)
 }
 
 // DesignDocs returns a list of all documents in the database.

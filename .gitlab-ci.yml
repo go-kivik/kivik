@@ -68,7 +68,7 @@ gopherjs-1.16:
         - cd ${SRCDIR}
         - go mod vendor
         - npm install
-        - GO111MODULE=off go get -u github.com/gopherjs/gopherjs
+        - GO111MODULE=off go get -u github.com/gopherjs/gopherjs@1.16.4+go1.16.7
         - npm install source-map-support
         - |
             (

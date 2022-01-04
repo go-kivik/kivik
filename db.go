@@ -97,17 +97,17 @@ func (db *DB) LocalDocs(ctx context.Context, options ...Options) (*Rows, error) 
 // Query executes the specified view function from the specified design
 // document. ddoc and view may or may not be be prefixed with '_design/'
 // and '_view/' respectively.
-func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) (*Rows, error) {
+func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) *Rows {
 	if db.err != nil {
-		return nil, db.err
+		return &Rows{err: db.err}
 	}
 	ddoc = strings.TrimPrefix(ddoc, "_design/")
 	view = strings.TrimPrefix(view, "_view/")
 	rowsi, err := db.driverDB.Query(ctx, ddoc, view, mergeOptions(options...))
 	if err != nil {
-		return nil, err
+		return &Rows{err: err}
 	}
-	return newRows(ctx, rowsi), nil
+	return newRows(ctx, rowsi)
 }
 
 // Row contains the result of calling Get for a single document. For most uses,

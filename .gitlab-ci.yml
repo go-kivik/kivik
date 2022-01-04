@@ -33,7 +33,7 @@ linter:
 
 coverage:
   stage: test
-  image: golang:1.15
+  image: golang:1.17
   services: []
   before_script:
   - ''
@@ -52,6 +52,14 @@ go-1.14:
 go-1.15:
   <<: *test_template
   image: golang:1.15
+
+go-1.16:
+  <<: *test_template
+  image: golang:1.16
+
+go-1.17:
+  <<: *test_template
+  image: golang:1.17
 
 gopherjs-1.16:
   <<: *test_template
@@ -73,6 +81,38 @@ gopherjs-1.16:
       mkdir -p $GOPATH/src/github.com/gopherjs
       cd $GOPATH/src/github.com/gopherjs
       git clone --depth 1 --branch 1.16.4+go1.16.7 https://github.com/gopherjs/gopherjs.git
+      cd gopherjs
+      go install
+      npm install source-map-support
+      cd $GOPATH/src/github.com/gopherjs/gopherjs/node-syscall/
+      npm install --global node-gyp
+      node-gyp rebuild
+      mkdir -p ~/.node_libraries/
+      cp build/Release/syscall.node ~/.node_libraries/syscall.node
+    )
+  - go mod vendor
+  - gopherjs test ./...
+
+gopherjs-1.17:
+  <<: *test_template
+  image: golang:1.17
+  variables:
+    SRCDIR: /go/src/github.com/go-kivik/kivik/v4
+  before_script:
+  - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+  - curl -sL https://deb.nodesource.com/setup_12.x | bash -
+  - apt-get update -qq && apt-get install -y nodejs
+  script:
+  - mkdir -p ${SRCDIR}
+  - mv ${CI_PROJECT_DIR}/* ${SRCDIR}
+  - cd ${SRCDIR}
+  - go mod vendor
+  - npm install
+  - |
+    (
+      mkdir -p $GOPATH/src/github.com/gopherjs
+      cd $GOPATH/src/github.com/gopherjs
+      git clone --depth 1 --branch 1.17.1+go1.17.3 https://github.com/gopherjs/gopherjs.git
       cd gopherjs
       go install
       npm install source-map-support

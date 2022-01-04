@@ -12,7 +12,11 @@
 
 package mock
 
-import "github.com/go-kivik/kivik/v4/driver"
+import (
+	"io"
+
+	"github.com/go-kivik/kivik/v4/driver"
+)
 
 // Rows mocks driver.Rows
 type Rows struct {
@@ -29,11 +33,17 @@ var _ driver.Rows = &Rows{}
 
 // Close calls r.CloseFunc
 func (r *Rows) Close() error {
+	if r.CloseFunc == nil {
+		return nil
+	}
 	return r.CloseFunc()
 }
 
 // Next calls r.NextFunc
 func (r *Rows) Next(row *driver.Row) error {
+	if r.NextFunc == nil {
+		return io.EOF
+	}
 	return r.NextFunc(row)
 }
 

@@ -15,7 +15,9 @@ package kivik
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
+	"reflect"
 
 	"github.com/go-kivik/kivik/v4/driver"
 )
@@ -27,7 +29,7 @@ type Rows struct {
 }
 
 // Next prepares the next result value for reading. It returns true on success
-// or false if there are no more results or an error  occurs while preparing it.
+// or false if there are no more results or an error occurs while preparing it.
 // Err should be consulted to distinguish between the two.
 func (r *Rows) Next() bool {
 	return r.iter.Next()
@@ -109,6 +111,63 @@ func (r *Rows) ScanDoc(dest interface{}) error {
 		return json.Unmarshal(doc, dest)
 	}
 	return &Error{HTTPStatus: http.StatusBadRequest, Message: "kivik: doc is nil; does the query include docs?"}
+}
+
+// ScanAllDocs loops through remaining documents in the iterator, and scans
+// them into dest. Dest is expected to be a pointer to a slice or an array, any
+// other type will return an error. If dest is an array, scanning will stop
+// once the array is filled.  The iterator is closed by this method.  It is
+// possible that an error will be returned, and that one or more documents
+// were successfully scanned.
+func (r *Rows) ScanAllDocs(dest interface{}) (err error) {
+	defer func() {
+		closeErr := r.Close()
+		if err == nil {
+			err = closeErr
+		}
+	}()
+
+	value := reflect.ValueOf(dest)
+	if value.Kind() != reflect.Ptr {
+		return errors.New("must pass a pointer to ScanAllDocs")
+	}
+	if value.IsNil() {
+		return errors.New("nil pointer passed to ScanAllDocs")
+	}
+
+	direct := reflect.Indirect(value)
+	var limit int
+
+	switch direct.Kind() {
+	case reflect.Array:
+		limit = direct.Len()
+		if limit == 0 {
+			return errors.New("0-length array passed to ScanAllDocs")
+		}
+	case reflect.Slice:
+	default:
+		return errors.New("dest must be a pointer to a slice or array")
+	}
+
+	base := value.Type()
+	if base.Kind() == reflect.Ptr {
+		base = base.Elem()
+	}
+	base = base.Elem()
+
+	for i := 0; r.Next(); i++ {
+		if limit > 0 && i >= limit {
+			return nil
+		}
+		vp := reflect.New(base)
+		err = r.ScanDoc(vp.Interface())
+		if limit > 0 { // means this is an array
+			direct.Index(i).Set(reflect.Indirect(vp))
+		} else {
+			direct.Set(reflect.Append(direct, reflect.Indirect(vp)))
+		}
+	}
+	return nil
 }
 
 // ScanKey works the same as ScanValue, but on the key field of the result. For

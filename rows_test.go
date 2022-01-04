@@ -14,7 +14,9 @@ package kivik
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -415,6 +417,122 @@ func TestBookmark(t *testing.T) {
 		expected := ""
 		if w := r.Bookmark(); w != expected {
 			t.Errorf("Warning\nExpected: %s\n  Actual: %s", expected, w)
+		}
+	})
+}
+
+func TestScanAllDocs(t *testing.T) {
+	type tt struct {
+		rows *Rows
+		dest interface{}
+		err  string
+	}
+
+	tests := testy.NewTable()
+	tests.Add("non-pointer dest", tt{
+		dest: "string",
+		err:  "must pass a pointer to ScanAllDocs",
+	})
+	tests.Add("nil pointer dest", tt{
+		dest: (*string)(nil),
+		err:  "nil pointer passed to ScanAllDocs",
+	})
+	tests.Add("not a slice or array", tt{
+		dest: &Rows{},
+		err:  "dest must be a pointer to a slice or array",
+	})
+	tests.Add("0-length array", tt{
+		dest: func() *[0]string { var x [0]string; return &x }(),
+		err:  "0-length array passed to ScanAllDocs",
+	})
+	tests.Add("No docs to read", tt{
+		rows: newRows(context.Background(), &mock.Rows{}),
+		dest: func() *[]string { return &[]string{} }(),
+	})
+	tests.Add("Success", func() interface{} {
+		rows := []*driver.Row{
+			{Doc: json.RawMessage(`{"foo":"bar"}`)},
+		}
+		return tt{
+			rows: newRows(context.Background(), &mock.Rows{
+				NextFunc: func(r *driver.Row) error {
+					if len(rows) == 0 {
+						return io.EOF
+					}
+					*r = *rows[0]
+					rows = rows[1:]
+					return nil
+				},
+			}),
+			dest: func() *[]json.RawMessage { return &[]json.RawMessage{} }(),
+		}
+	})
+	tests.Add("Success, slice of pointers", func() interface{} {
+		rows := []*driver.Row{
+			{Doc: json.RawMessage(`{"foo":"bar"}`)},
+		}
+		return tt{
+			rows: newRows(context.Background(), &mock.Rows{
+				NextFunc: func(r *driver.Row) error {
+					if len(rows) == 0 {
+						return io.EOF
+					}
+					*r = *rows[0]
+					rows = rows[1:]
+					return nil
+				},
+			}),
+			dest: func() *[]*json.RawMessage { return &[]*json.RawMessage{} }(),
+		}
+	})
+	tests.Add("Success, long array", func() interface{} {
+		rows := []*driver.Row{
+			{Doc: json.RawMessage(`{"foo":"bar"}`)},
+		}
+		return tt{
+			rows: newRows(context.Background(), &mock.Rows{
+				NextFunc: func(r *driver.Row) error {
+					if len(rows) == 0 {
+						return io.EOF
+					}
+					*r = *rows[0]
+					rows = rows[1:]
+					return nil
+				},
+			}),
+			dest: func() *[5]*json.RawMessage { return &[5]*json.RawMessage{} }(),
+		}
+	})
+	tests.Add("Success, short array", func() interface{} {
+		rows := []*driver.Row{
+			{Doc: json.RawMessage(`{"foo":"bar"}`)},
+			{Doc: json.RawMessage(`{"foo":"bar"}`)},
+			{Doc: json.RawMessage(`{"foo":"bar"}`)},
+		}
+		return tt{
+			rows: newRows(context.Background(), &mock.Rows{
+				NextFunc: func(r *driver.Row) error {
+					if len(rows) == 0 {
+						return io.EOF
+					}
+					*r = *rows[0]
+					rows = rows[1:]
+					return nil
+				},
+			}),
+			dest: func() *[1]*json.RawMessage { return &[1]*json.RawMessage{} }(),
+		}
+	})
+	tests.Run(t, func(t *testing.T, tt tt) {
+		if tt.rows == nil {
+			tt.rows = newRows(context.Background(), &mock.Rows{})
+		}
+		err := tt.rows.ScanAllDocs(tt.dest)
+		if !testy.ErrorMatches(tt.err, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
+		if d := testy.DiffAsJSON(testy.Snapshot(t), tt.dest); d != nil {
+			t.Error(d)
 		}
 	})
 }

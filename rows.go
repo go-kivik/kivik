@@ -136,6 +136,9 @@ func (r *Rows) ScanAllDocs(dest interface{}) (err error) {
 			err = closeErr
 		}
 	}()
+	if r.err != nil {
+		return r.err
+	}
 
 	value := reflect.ValueOf(dest)
 	if value.Kind() != reflect.Ptr {

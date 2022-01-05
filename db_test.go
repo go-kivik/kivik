@@ -94,7 +94,7 @@ func TestAllDocs(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rows := test.db.AllDocs(context.Background(), test.options)
+			rows := test.db.AllDocs(context.Background(), test.options).(*rows)
 			testy.StatusError(t, test.err, test.status, rows.Err())
 			rows.cancel = nil // Determinism
 			if d := testy.DiffInterface(test.expected, rows); d != nil {
@@ -157,7 +157,7 @@ func TestDesignDocs(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rows := test.db.DesignDocs(context.Background(), test.options)
+			rows := test.db.DesignDocs(context.Background(), test.options).(*rows)
 			testy.StatusError(t, test.err, test.status, rows.Err())
 			rows.cancel = nil // Determinism
 			if d := testy.DiffInterface(test.expected, rows); d != nil {
@@ -220,7 +220,7 @@ func TestLocalDocs(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rows := test.db.LocalDocs(context.Background(), test.options)
+			rows := test.db.LocalDocs(context.Background(), test.options).(*rows)
 			testy.StatusError(t, test.err, test.status, rows.Err())
 			rows.cancel = nil // Determinism
 			if d := testy.DiffInterface(test.expected, rows); d != nil {
@@ -288,7 +288,7 @@ func TestQuery(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rows := test.db.Query(context.Background(), test.ddoc, test.view, test.options)
+			rows := test.db.Query(context.Background(), test.ddoc, test.view, test.options).(*rows)
 			testy.StatusError(t, test.err, test.status, rows.Err())
 			rows.cancel = nil // Determinism
 			if d := testy.DiffInterface(test.expected, rows); d != nil {
@@ -1978,7 +1978,7 @@ func TestBulkGet(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rows := test.db.BulkGet(context.Background(), test.docs, test.options)
+			rows := test.db.BulkGet(context.Background(), test.docs, test.options).(*rows)
 			testy.StatusError(t, test.err, test.status, rows.Err())
 			rows.cancel = nil // Determinism
 			if d := testy.DiffInterface(test.expected, rows); d != nil {
@@ -2060,7 +2060,7 @@ func TestRevsDiff(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
-		rows := tt.db.RevsDiff(context.Background(), tt.revMap)
+		rows := tt.db.RevsDiff(context.Background(), tt.revMap).(*rows)
 		testy.StatusError(t, tt.err, tt.status, rows.Err())
 		rows.cancel = nil // Determinism
 		if d := testy.DiffInterface(tt.expected, rows); d != nil {

@@ -51,7 +51,7 @@ func (db *DB) Err() error {
 }
 
 // AllDocs returns a list of all documents in the database.
-func (db *DB) AllDocs(ctx context.Context, options ...Options) *rows {
+func (db *DB) AllDocs(ctx context.Context, options ...Options) Rows {
 	if db.err != nil {
 		return &rows{err: db.err}
 	}
@@ -63,7 +63,7 @@ func (db *DB) AllDocs(ctx context.Context, options ...Options) *rows {
 }
 
 // DesignDocs returns a list of all documents in the database.
-func (db *DB) DesignDocs(ctx context.Context, options ...Options) *rows {
+func (db *DB) DesignDocs(ctx context.Context, options ...Options) Rows {
 	if db.err != nil {
 		return &rows{err: db.err}
 	}
@@ -79,7 +79,7 @@ func (db *DB) DesignDocs(ctx context.Context, options ...Options) *rows {
 }
 
 // LocalDocs returns a list of all documents in the database.
-func (db *DB) LocalDocs(ctx context.Context, options ...Options) *rows {
+func (db *DB) LocalDocs(ctx context.Context, options ...Options) Rows {
 	if db.err != nil {
 		return &rows{err: db.err}
 	}
@@ -97,7 +97,7 @@ func (db *DB) LocalDocs(ctx context.Context, options ...Options) *rows {
 // Query executes the specified view function from the specified design
 // document. ddoc and view may or may not be be prefixed with '_design/'
 // and '_view/' respectively.
-func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) *rows {
+func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) Rows {
 	if db.err != nil {
 		return &rows{err: db.err}
 	}
@@ -628,7 +628,7 @@ type BulkGetReference struct {
 // or for getting revision history.
 //
 // See http://docs.couchdb.org/en/stable/api/database/bulk-api.html#db-bulk-get
-func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...Options) *rows {
+func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...Options) Rows {
 	if db.err != nil {
 		return &rows{err: db.err}
 	}
@@ -684,7 +684,7 @@ type Diffs map[string]RevDiff
 //     }
 //
 // See http://docs.couchdb.org/en/stable/api/database/misc.html#db-revs-diff
-func (db *DB) RevsDiff(ctx context.Context, revMap interface{}) *rows {
+func (db *DB) RevsDiff(ctx context.Context, revMap interface{}) Rows {
 	if db.err != nil {
 		return &rows{err: db.err}
 	}

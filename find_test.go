@@ -30,7 +30,7 @@ func TestFind(t *testing.T) {
 		name     string
 		db       *DB
 		query    interface{}
-		expected *Rows
+		expected *rows
 		status   int
 		err      string
 	}{
@@ -68,7 +68,7 @@ func TestFind(t *testing.T) {
 				},
 			},
 			query: int(3),
-			expected: &Rows{
+			expected: &rows{
 				iter: &iter{
 					feed: &rowsIterator{
 						Rows: &mock.Rows{ID: "a"},
@@ -104,7 +104,7 @@ func TestFind(t *testing.T) {
 				},
 			},
 			query: int(3),
-			expected: &Rows{
+			expected: &rows{
 				iter: &iter{
 					feed: &rowsIterator{
 						Rows: &mock.Rows{ID: "a"},

@@ -52,7 +52,7 @@ func TestAllDocs(t *testing.T) {
 		name     string
 		db       *DB
 		options  Options
-		expected *Rows
+		expected *rows
 		status   int
 		err      string
 	}{
@@ -81,7 +81,7 @@ func TestAllDocs(t *testing.T) {
 				},
 			},
 			options: testOptions,
-			expected: &Rows{
+			expected: &rows{
 				iter: &iter{
 					feed: &rowsIterator{
 						Rows: &mock.Rows{ID: "a"},
@@ -109,7 +109,7 @@ func TestDesignDocs(t *testing.T) {
 		name     string
 		db       *DB
 		options  Options
-		expected *Rows
+		expected *rows
 		status   int
 		err      string
 	}{
@@ -138,7 +138,7 @@ func TestDesignDocs(t *testing.T) {
 				},
 			},
 			options: testOptions,
-			expected: &Rows{
+			expected: &rows{
 				iter: &iter{
 					feed: &rowsIterator{
 						Rows: &mock.Rows{ID: "a"},
@@ -172,7 +172,7 @@ func TestLocalDocs(t *testing.T) {
 		name     string
 		db       *DB
 		options  Options
-		expected *Rows
+		expected *rows
 		status   int
 		err      string
 	}{
@@ -201,7 +201,7 @@ func TestLocalDocs(t *testing.T) {
 				},
 			},
 			options: testOptions,
-			expected: &Rows{
+			expected: &rows{
 				iter: &iter{
 					feed: &rowsIterator{
 						Rows: &mock.Rows{ID: "a"},
@@ -236,7 +236,7 @@ func TestQuery(t *testing.T) {
 		db         *DB
 		ddoc, view string
 		options    Options
-		expected   *Rows
+		expected   *rows
 		status     int
 		err        string
 	}{
@@ -275,7 +275,7 @@ func TestQuery(t *testing.T) {
 			ddoc:    "foo",
 			view:    "bar",
 			options: testOptions,
-			expected: &Rows{
+			expected: &rows{
 				iter: &iter{
 					feed: &rowsIterator{
 						Rows: &mock.Rows{ID: "a"},
@@ -1935,7 +1935,7 @@ func TestBulkGet(t *testing.T) {
 		docs    []BulkGetReference
 		options Options
 
-		expected *Rows
+		expected *rows
 		status   int
 		err      string
 	}
@@ -1964,7 +1964,7 @@ func TestBulkGet(t *testing.T) {
 					return &mock.Rows{ID: "bulkGet1"}, nil
 				},
 			}},
-			expected: &Rows{
+			expected: &rows{
 				iter: &iter{
 					feed: &rowsIterator{
 						Rows: &mock.Rows{ID: "bulkGet1"},
@@ -2048,7 +2048,7 @@ func TestRevsDiff(t *testing.T) {
 				return &mock.Rows{ID: "a"}, nil
 			},
 		}},
-		expected: &Rows{
+		expected: &rows{
 			iter: &iter{
 				feed: &rowsIterator{
 					Rows: &mock.Rows{ID: "a"},

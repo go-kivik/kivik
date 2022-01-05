@@ -52,7 +52,7 @@ func TestAllDocs(t *testing.T) {
 		name     string
 		db       *DB
 		options  Options
-		expected *Rows
+		expected *rows
 		status   int
 		err      string
 	}{
@@ -81,7 +81,7 @@ func TestAllDocs(t *testing.T) {
 				},
 			},
 			options: testOptions,
-			expected: &Rows{
+			expected: &rows{
 				iter: &iter{
 					feed: &rowsIterator{
 						Rows: &mock.Rows{ID: "a"},
@@ -94,7 +94,7 @@ func TestAllDocs(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rows := test.db.AllDocs(context.Background(), test.options)
+			rows := test.db.AllDocs(context.Background(), test.options).(*rows)
 			testy.StatusError(t, test.err, test.status, rows.Err())
 			rows.cancel = nil // Determinism
 			if d := testy.DiffInterface(test.expected, rows); d != nil {
@@ -109,7 +109,7 @@ func TestDesignDocs(t *testing.T) {
 		name     string
 		db       *DB
 		options  Options
-		expected *Rows
+		expected *rows
 		status   int
 		err      string
 	}{
@@ -138,7 +138,7 @@ func TestDesignDocs(t *testing.T) {
 				},
 			},
 			options: testOptions,
-			expected: &Rows{
+			expected: &rows{
 				iter: &iter{
 					feed: &rowsIterator{
 						Rows: &mock.Rows{ID: "a"},
@@ -157,7 +157,7 @@ func TestDesignDocs(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rows := test.db.DesignDocs(context.Background(), test.options)
+			rows := test.db.DesignDocs(context.Background(), test.options).(*rows)
 			testy.StatusError(t, test.err, test.status, rows.Err())
 			rows.cancel = nil // Determinism
 			if d := testy.DiffInterface(test.expected, rows); d != nil {
@@ -172,7 +172,7 @@ func TestLocalDocs(t *testing.T) {
 		name     string
 		db       *DB
 		options  Options
-		expected *Rows
+		expected *rows
 		status   int
 		err      string
 	}{
@@ -201,7 +201,7 @@ func TestLocalDocs(t *testing.T) {
 				},
 			},
 			options: testOptions,
-			expected: &Rows{
+			expected: &rows{
 				iter: &iter{
 					feed: &rowsIterator{
 						Rows: &mock.Rows{ID: "a"},
@@ -220,7 +220,7 @@ func TestLocalDocs(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rows := test.db.LocalDocs(context.Background(), test.options)
+			rows := test.db.LocalDocs(context.Background(), test.options).(*rows)
 			testy.StatusError(t, test.err, test.status, rows.Err())
 			rows.cancel = nil // Determinism
 			if d := testy.DiffInterface(test.expected, rows); d != nil {
@@ -236,7 +236,7 @@ func TestQuery(t *testing.T) {
 		db         *DB
 		ddoc, view string
 		options    Options
-		expected   *Rows
+		expected   *rows
 		status     int
 		err        string
 	}{
@@ -275,7 +275,7 @@ func TestQuery(t *testing.T) {
 			ddoc:    "foo",
 			view:    "bar",
 			options: testOptions,
-			expected: &Rows{
+			expected: &rows{
 				iter: &iter{
 					feed: &rowsIterator{
 						Rows: &mock.Rows{ID: "a"},
@@ -288,7 +288,7 @@ func TestQuery(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rows := test.db.Query(context.Background(), test.ddoc, test.view, test.options)
+			rows := test.db.Query(context.Background(), test.ddoc, test.view, test.options).(*rows)
 			testy.StatusError(t, test.err, test.status, rows.Err())
 			rows.cancel = nil // Determinism
 			if d := testy.DiffInterface(test.expected, rows); d != nil {
@@ -1935,7 +1935,7 @@ func TestBulkGet(t *testing.T) {
 		docs    []BulkGetReference
 		options Options
 
-		expected *Rows
+		expected *rows
 		status   int
 		err      string
 	}
@@ -1964,7 +1964,7 @@ func TestBulkGet(t *testing.T) {
 					return &mock.Rows{ID: "bulkGet1"}, nil
 				},
 			}},
-			expected: &Rows{
+			expected: &rows{
 				iter: &iter{
 					feed: &rowsIterator{
 						Rows: &mock.Rows{ID: "bulkGet1"},
@@ -1978,7 +1978,7 @@ func TestBulkGet(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rows := test.db.BulkGet(context.Background(), test.docs, test.options)
+			rows := test.db.BulkGet(context.Background(), test.docs, test.options).(*rows)
 			testy.StatusError(t, test.err, test.status, rows.Err())
 			rows.cancel = nil // Determinism
 			if d := testy.DiffInterface(test.expected, rows); d != nil {
@@ -2048,7 +2048,7 @@ func TestRevsDiff(t *testing.T) {
 				return &mock.Rows{ID: "a"}, nil
 			},
 		}},
-		expected: &Rows{
+		expected: &rows{
 			iter: &iter{
 				feed: &rowsIterator{
 					Rows: &mock.Rows{ID: "a"},
@@ -2060,7 +2060,7 @@ func TestRevsDiff(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
-		rows := tt.db.RevsDiff(context.Background(), tt.revMap)
+		rows := tt.db.RevsDiff(context.Background(), tt.revMap).(*rows)
 		testy.StatusError(t, tt.err, tt.status, rows.Err())
 		rows.cancel = nil // Determinism
 		if d := testy.DiffInterface(tt.expected, rows); d != nil {

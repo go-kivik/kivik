@@ -24,14 +24,14 @@ var findNotImplemented = &Error{HTTPStatus: http.StatusNotImplemented, Message: 
 // Find executes a query using the new /_find interface. The query must be
 // JSON-marshalable to a valid query.
 // See http://docs.couchdb.org/en/2.0.0/api/database/find.html#db-find
-func (db *DB) Find(ctx context.Context, query interface{}, options ...Options) *Rows {
+func (db *DB) Find(ctx context.Context, query interface{}, options ...Options) Rows {
 	if db.err != nil {
-		return &Rows{err: db.err}
+		return &rows{err: db.err}
 	}
 	if finder, ok := db.driverDB.(driver.OptsFinder); ok {
 		rowsi, err := finder.Find(ctx, query, mergeOptions(options...))
 		if err != nil {
-			return &Rows{err: err}
+			return &rows{err: err}
 		}
 		return newRows(ctx, rowsi)
 	}
@@ -39,11 +39,11 @@ func (db *DB) Find(ctx context.Context, query interface{}, options ...Options) *
 	if finder, ok := db.driverDB.(driver.Finder); ok {
 		rowsi, err := finder.Find(ctx, query)
 		if err != nil {
-			return &Rows{err: err}
+			return &rows{err: err}
 		}
 		return newRows(ctx, rowsi)
 	}
-	return &Rows{err: findNotImplemented}
+	return &rows{err: findNotImplemented}
 }
 
 // CreateIndex creates an index if it doesn't already exist. ddoc and name may

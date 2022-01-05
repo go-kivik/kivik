@@ -30,7 +30,7 @@ func TestFind(t *testing.T) {
 		name     string
 		db       *DB
 		query    interface{}
-		expected *Rows
+		expected *rows
 		status   int
 		err      string
 	}{
@@ -68,7 +68,7 @@ func TestFind(t *testing.T) {
 				},
 			},
 			query: int(3),
-			expected: &Rows{
+			expected: &rows{
 				iter: &iter{
 					feed: &rowsIterator{
 						Rows: &mock.Rows{ID: "a"},
@@ -104,7 +104,7 @@ func TestFind(t *testing.T) {
 				},
 			},
 			query: int(3),
-			expected: &Rows{
+			expected: &rows{
 				iter: &iter{
 					feed: &rowsIterator{
 						Rows: &mock.Rows{ID: "a"},
@@ -118,7 +118,7 @@ func TestFind(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rows := test.db.Find(context.Background(), test.query)
+			rows := test.db.Find(context.Background(), test.query).(*rows)
 			testy.StatusError(t, test.err, test.status, rows.Err())
 			rows.cancel = nil // Determinism
 			if d := testy.DiffInterface(test.expected, rows); d != nil {

@@ -30,19 +30,19 @@ import (
 func TestRowsNext(t *testing.T) {
 	tests := []struct {
 		name     string
-		rows     *Rows
+		rows     *rows
 		expected bool
 	}{
 		{
 			name: "nothing more",
-			rows: &Rows{
+			rows: &rows{
 				iter: &iter{closed: true},
 			},
 			expected: false,
 		},
 		{
 			name: "more",
-			rows: &Rows{
+			rows: &rows{
 				iter: &iter{
 					feed: &mockIterator{
 						NextFunc: func(_ interface{}) error { return nil },
@@ -64,7 +64,7 @@ func TestRowsNext(t *testing.T) {
 
 func TestRowsErr(t *testing.T) {
 	expected := "foo error"
-	r := &Rows{
+	r := &rows{
 		iter: &iter{lasterr: errors.New(expected)},
 	}
 	err := r.Err()
@@ -73,7 +73,7 @@ func TestRowsErr(t *testing.T) {
 
 func TestRowsClose(t *testing.T) {
 	expected := "close error"
-	r := &Rows{
+	r := &rows{
 		iter: &iter{
 			feed: &mockIterator{CloseFunc: func() error { return errors.New(expected) }},
 		},
@@ -97,14 +97,14 @@ func TestRowsIteratorNext(t *testing.T) {
 func TestRowsScanValue(t *testing.T) {
 	tests := []struct {
 		name     string
-		rows     *Rows
+		rows     *rows
 		expected interface{}
 		status   int
 		err      string
 	}{
 		{
 			name: "success",
-			rows: &Rows{
+			rows: &rows{
 				iter: &iter{
 					ready: true,
 					curVal: &driver.Row{
@@ -116,7 +116,7 @@ func TestRowsScanValue(t *testing.T) {
 		},
 		{
 			name: "closed",
-			rows: &Rows{
+			rows: &rows{
 				iter: &iter{
 					closed: true,
 				},
@@ -126,7 +126,7 @@ func TestRowsScanValue(t *testing.T) {
 		},
 		{
 			name: "row error",
-			rows: &Rows{
+			rows: &rows{
 				iter: &iter{
 					ready: true,
 					curVal: &driver.Row{
@@ -153,14 +153,14 @@ func TestRowsScanValue(t *testing.T) {
 func TestRowsScanDoc(t *testing.T) {
 	tests := []struct {
 		name     string
-		rows     *Rows
+		rows     *rows
 		expected interface{}
 		status   int
 		err      string
 	}{
 		{
 			name: "old row",
-			rows: &Rows{
+			rows: &rows{
 				iter: &iter{
 					ready: true,
 					curVal: &driver.Row{
@@ -172,7 +172,7 @@ func TestRowsScanDoc(t *testing.T) {
 		},
 		{
 			name: "success",
-			rows: &Rows{
+			rows: &rows{
 				iter: &iter{
 					ready: true,
 					curVal: &driver.Row{
@@ -184,7 +184,7 @@ func TestRowsScanDoc(t *testing.T) {
 		},
 		{
 			name: "closed",
-			rows: &Rows{
+			rows: &rows{
 				iter: &iter{
 					closed: true,
 				},
@@ -194,7 +194,7 @@ func TestRowsScanDoc(t *testing.T) {
 		},
 		{
 			name: "nil doc",
-			rows: &Rows{
+			rows: &rows{
 				iter: &iter{
 					ready: true,
 					curVal: &driver.Row{
@@ -207,7 +207,7 @@ func TestRowsScanDoc(t *testing.T) {
 		},
 		{
 			name: "row error",
-			rows: &Rows{
+			rows: &rows{
 				iter: &iter{
 					ready: true,
 					curVal: &driver.Row{
@@ -234,14 +234,14 @@ func TestRowsScanDoc(t *testing.T) {
 func TestRowsScanKey(t *testing.T) {
 	tests := []struct {
 		name     string
-		rows     *Rows
+		rows     *rows
 		expected interface{}
 		status   int
 		err      string
 	}{
 		{
 			name: "success",
-			rows: &Rows{
+			rows: &rows{
 				iter: &iter{
 					ready: true,
 					curVal: &driver.Row{
@@ -253,7 +253,7 @@ func TestRowsScanKey(t *testing.T) {
 		},
 		{
 			name: "closed",
-			rows: &Rows{
+			rows: &rows{
 				iter: &iter{
 					closed: true,
 				},
@@ -263,7 +263,7 @@ func TestRowsScanKey(t *testing.T) {
 		},
 		{
 			name: "row error",
-			rows: &Rows{
+			rows: &rows{
 				iter: &iter{
 					ready: true,
 					curVal: &driver.Row{
@@ -293,7 +293,7 @@ func TestRowsGetters(t *testing.T) {
 	offset := int64(2)
 	totalrows := int64(3)
 	updateseq := "asdfasdf"
-	r := &Rows{
+	r := &rows{
 		iter: &iter{
 			ready: true,
 			curVal: &driver.Row{
@@ -423,7 +423,7 @@ func TestBookmark(t *testing.T) {
 
 func TestScanAllDocs(t *testing.T) {
 	type tt struct {
-		rows *Rows
+		rows *rows
 		dest interface{}
 		err  string
 	}
@@ -438,7 +438,7 @@ func TestScanAllDocs(t *testing.T) {
 		err:  "nil pointer passed to ScanAllDocs",
 	})
 	tests.Add("not a slice or array", tt{
-		dest: &Rows{},
+		dest: &rows{},
 		err:  "dest must be a pointer to a slice or array",
 	})
 	tests.Add("0-length array", tt{

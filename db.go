@@ -51,63 +51,63 @@ func (db *DB) Err() error {
 }
 
 // AllDocs returns a list of all documents in the database.
-func (db *DB) AllDocs(ctx context.Context, options ...Options) (*Rows, error) {
+func (db *DB) AllDocs(ctx context.Context, options ...Options) *Rows {
 	if db.err != nil {
-		return nil, db.err
+		return &Rows{err: db.err}
 	}
 	rowsi, err := db.driverDB.AllDocs(ctx, mergeOptions(options...))
 	if err != nil {
-		return nil, err
+		return &Rows{err: err}
 	}
-	return newRows(ctx, rowsi), nil
+	return newRows(ctx, rowsi)
 }
 
 // DesignDocs returns a list of all documents in the database.
-func (db *DB) DesignDocs(ctx context.Context, options ...Options) (*Rows, error) {
+func (db *DB) DesignDocs(ctx context.Context, options ...Options) *Rows {
 	if db.err != nil {
-		return nil, db.err
+		return &Rows{err: db.err}
 	}
 	ddocer, ok := db.driverDB.(driver.DesignDocer)
 	if !ok {
-		return nil, &Error{HTTPStatus: http.StatusNotImplemented, Err: errors.New("kivik: design doc view not supported by driver")}
+		return &Rows{err: &Error{HTTPStatus: http.StatusNotImplemented, Err: errors.New("kivik: design doc view not supported by driver")}}
 	}
 	rowsi, err := ddocer.DesignDocs(ctx, mergeOptions(options...))
 	if err != nil {
-		return nil, err
+		return &Rows{err: err}
 	}
-	return newRows(ctx, rowsi), nil
+	return newRows(ctx, rowsi)
 }
 
 // LocalDocs returns a list of all documents in the database.
-func (db *DB) LocalDocs(ctx context.Context, options ...Options) (*Rows, error) {
+func (db *DB) LocalDocs(ctx context.Context, options ...Options) *Rows {
 	if db.err != nil {
-		return nil, db.err
+		return &Rows{err: db.err}
 	}
 	ldocer, ok := db.driverDB.(driver.LocalDocer)
 	if !ok {
-		return nil, &Error{HTTPStatus: http.StatusNotImplemented, Err: errors.New("kivik: local doc view not supported by driver")}
+		return &Rows{err: &Error{HTTPStatus: http.StatusNotImplemented, Err: errors.New("kivik: local doc view not supported by driver")}}
 	}
 	rowsi, err := ldocer.LocalDocs(ctx, mergeOptions(options...))
 	if err != nil {
-		return nil, err
+		return &Rows{err: err}
 	}
-	return newRows(ctx, rowsi), nil
+	return newRows(ctx, rowsi)
 }
 
 // Query executes the specified view function from the specified design
 // document. ddoc and view may or may not be be prefixed with '_design/'
 // and '_view/' respectively.
-func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) (*Rows, error) {
+func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) *Rows {
 	if db.err != nil {
-		return nil, db.err
+		return &Rows{err: db.err}
 	}
 	ddoc = strings.TrimPrefix(ddoc, "_design/")
 	view = strings.TrimPrefix(view, "_view/")
 	rowsi, err := db.driverDB.Query(ctx, ddoc, view, mergeOptions(options...))
 	if err != nil {
-		return nil, err
+		return &Rows{err: err}
 	}
-	return newRows(ctx, rowsi), nil
+	return newRows(ctx, rowsi)
 }
 
 // Row contains the result of calling Get for a single document. For most uses,
@@ -628,13 +628,13 @@ type BulkGetReference struct {
 // or for getting revision history.
 //
 // See http://docs.couchdb.org/en/stable/api/database/bulk-api.html#db-bulk-get
-func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...Options) (*Rows, error) {
+func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...Options) *Rows {
 	if db.err != nil {
-		return nil, db.err
+		return &Rows{err: db.err}
 	}
 	bulkGetter, ok := db.driverDB.(driver.BulkGetter)
 	if !ok {
-		return nil, &Error{HTTPStatus: http.StatusNotImplemented, Message: "kivik: bulk get not supported by driver"}
+		return &Rows{err: &Error{HTTPStatus: http.StatusNotImplemented, Message: "kivik: bulk get not supported by driver"}}
 	}
 	refs := make([]driver.BulkGetReference, len(docs))
 	for i, ref := range docs {
@@ -642,9 +642,9 @@ func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...O
 	}
 	rowsi, err := bulkGetter.BulkGet(ctx, refs, mergeOptions(options...))
 	if err != nil {
-		return nil, err
+		return &Rows{err: err}
 	}
-	return newRows(ctx, rowsi), nil
+	return newRows(ctx, rowsi)
 }
 
 // Close cleans up any resources used by the DB. The default CouchDB driver
@@ -684,18 +684,18 @@ type Diffs map[string]RevDiff
 //     }
 //
 // See http://docs.couchdb.org/en/stable/api/database/misc.html#db-revs-diff
-func (db *DB) RevsDiff(ctx context.Context, revMap interface{}) (*Rows, error) {
+func (db *DB) RevsDiff(ctx context.Context, revMap interface{}) *Rows {
 	if db.err != nil {
-		return nil, db.err
+		return &Rows{err: db.err}
 	}
 	if rd, ok := db.driverDB.(driver.RevsDiffer); ok {
 		rowsi, err := rd.RevsDiff(ctx, revMap)
 		if err != nil {
-			return nil, err
+			return &Rows{err: err}
 		}
-		return newRows(ctx, rowsi), nil
+		return newRows(ctx, rowsi)
 	}
-	return nil, &Error{HTTPStatus: http.StatusNotImplemented, Message: "kivik: _revs_diff not supported by driver"}
+	return &Rows{err: &Error{HTTPStatus: http.StatusNotImplemented, Message: "kivik: _revs_diff not supported by driver"}}
 }
 
 // PartitionStats contains partition statistics.

@@ -26,6 +26,7 @@ import (
 type Rows struct {
 	*iter
 	rowsi driver.Rows
+	err   error
 }
 
 // Next prepares the next result value for reading. It returns true on success
@@ -38,6 +39,9 @@ func (r *Rows) Next() bool {
 // Err returns the error, if any, that was encountered during iteration. Err may
 // be called after an explicit or implicit Close.
 func (r *Rows) Err() error {
+	if r.err != nil {
+		return r.err
+	}
 	return r.iter.Err()
 }
 
@@ -76,6 +80,9 @@ func newRows(ctx context.Context, rowsi driver.Rows) *Rows {
 // For all other types, refer to the documentation for json.Unmarshal for type
 // conversion rules.
 func (r *Rows) ScanValue(dest interface{}) error {
+	if r.err != nil {
+		return r.err
+	}
 	runlock, err := r.rlock()
 	if err != nil {
 		return err
@@ -94,6 +101,9 @@ func (r *Rows) ScanValue(dest interface{}) error {
 // ScanDoc works the same as ScanValue, but on the doc field of the result. It
 // will return an error if the query does not include documents.
 func (r *Rows) ScanDoc(dest interface{}) error {
+	if r.err != nil {
+		return r.err
+	}
 	runlock, err := r.rlock()
 	if err != nil {
 		return err
@@ -126,6 +136,9 @@ func (r *Rows) ScanAllDocs(dest interface{}) (err error) {
 			err = closeErr
 		}
 	}()
+	if r.err != nil {
+		return r.err
+	}
 
 	value := reflect.ValueOf(dest)
 	if value.Kind() != reflect.Ptr {
@@ -173,6 +186,9 @@ func (r *Rows) ScanAllDocs(dest interface{}) (err error) {
 // ScanKey works the same as ScanValue, but on the key field of the result. For
 // simple keys, which are just strings, the Key() method may be easier to use.
 func (r *Rows) ScanKey(dest interface{}) error {
+	if r.err != nil {
+		return r.err
+	}
 	runlock, err := r.rlock()
 	if err != nil {
 		return err

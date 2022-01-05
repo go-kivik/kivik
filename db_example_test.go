@@ -103,11 +103,11 @@ func ExampleDB_updateView() {
 }
 
 func ExampleDB_query() {
-	rows, err := db.Query(context.TODO(), "_design/foo", "_view/bar", kivik.Options{
+	rows := db.Query(context.TODO(), "_design/foo", "_view/bar", kivik.Options{
 		"startkey": `"foo"`,                           // Quotes are necessary so the
 		"endkey":   `"foo` + kivik.EndKeySuffix + `"`, // key is a valid JSON object
 	})
-	if err != nil {
+	if err := rows.Err(); err != nil {
 		panic(err)
 	}
 	for rows.Next() {
@@ -126,8 +126,8 @@ func ExampleDB_mapReduce() {
 	opts := kivik.Options{
 		"group": true,
 	}
-	rows, err := db.Query(context.TODO(), "_design/foo", "_view/bar", opts)
-	if err != nil {
+	rows := db.Query(context.TODO(), "_design/foo", "_view/bar", opts)
+	if err := rows.Err(); err != nil {
 		panic(err)
 	}
 	for rows.Next() {

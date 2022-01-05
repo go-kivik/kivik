@@ -94,10 +94,10 @@ func TestAllDocs(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.db.AllDocs(context.Background(), test.options)
-			testy.StatusError(t, test.err, test.status, err)
-			result.cancel = nil // Determinism
-			if d := testy.DiffInterface(test.expected, result); d != nil {
+			rows := test.db.AllDocs(context.Background(), test.options)
+			testy.StatusError(t, test.err, test.status, rows.Err())
+			rows.cancel = nil // Determinism
+			if d := testy.DiffInterface(test.expected, rows); d != nil {
 				t.Error(d)
 			}
 		})
@@ -157,10 +157,10 @@ func TestDesignDocs(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.db.DesignDocs(context.Background(), test.options)
-			testy.StatusError(t, test.err, test.status, err)
-			result.cancel = nil // Determinism
-			if d := testy.DiffInterface(test.expected, result); d != nil {
+			rows := test.db.DesignDocs(context.Background(), test.options)
+			testy.StatusError(t, test.err, test.status, rows.Err())
+			rows.cancel = nil // Determinism
+			if d := testy.DiffInterface(test.expected, rows); d != nil {
 				t.Error(d)
 			}
 		})
@@ -220,10 +220,10 @@ func TestLocalDocs(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.db.LocalDocs(context.Background(), test.options)
-			testy.StatusError(t, test.err, test.status, err)
-			result.cancel = nil // Determinism
-			if d := testy.DiffInterface(test.expected, result); d != nil {
+			rows := test.db.LocalDocs(context.Background(), test.options)
+			testy.StatusError(t, test.err, test.status, rows.Err())
+			rows.cancel = nil // Determinism
+			if d := testy.DiffInterface(test.expected, rows); d != nil {
 				t.Error(d)
 			}
 		})
@@ -288,10 +288,10 @@ func TestQuery(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.db.Query(context.Background(), test.ddoc, test.view, test.options)
-			testy.StatusError(t, test.err, test.status, err)
-			result.cancel = nil // Determinism
-			if d := testy.DiffInterface(test.expected, result); d != nil {
+			rows := test.db.Query(context.Background(), test.ddoc, test.view, test.options)
+			testy.StatusError(t, test.err, test.status, rows.Err())
+			rows.cancel = nil // Determinism
+			if d := testy.DiffInterface(test.expected, rows); d != nil {
 				t.Error(d)
 			}
 		})
@@ -1978,10 +1978,10 @@ func TestBulkGet(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.db.BulkGet(context.Background(), test.docs, test.options)
-			testy.StatusError(t, test.err, test.status, err)
-			result.cancel = nil // Determinism
-			if d := testy.DiffInterface(test.expected, result); d != nil {
+			rows := test.db.BulkGet(context.Background(), test.docs, test.options)
+			testy.StatusError(t, test.err, test.status, rows.Err())
+			rows.cancel = nil // Determinism
+			if d := testy.DiffInterface(test.expected, rows); d != nil {
 				t.Error(d)
 			}
 		})
@@ -2060,8 +2060,8 @@ func TestRevsDiff(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
-		rows, err := tt.db.RevsDiff(context.Background(), tt.revMap)
-		testy.StatusError(t, tt.err, tt.status, err)
+		rows := tt.db.RevsDiff(context.Background(), tt.revMap)
+		testy.StatusError(t, tt.err, tt.status, rows.Err())
 		rows.cancel = nil // Determinism
 		if d := testy.DiffInterface(tt.expected, rows); d != nil {
 			t.Error(d)

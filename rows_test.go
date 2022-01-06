@@ -439,34 +439,6 @@ func TestRowsGetters(t *testing.T) {
 	})
 }
 
-func TestWarning(t *testing.T) {
-	t.Run("Warner", func(t *testing.T) {
-		expected := "test warning"
-		r := newRows(context.Background(), &mock.RowsWarner{
-			WarningFunc: func() string { return expected },
-		})
-		meta, err := r.Finish()
-		if err != nil {
-			t.Fatal(err)
-		}
-		if w := meta.Warning; w != expected {
-			t.Errorf("Warning\nExpected: %s\n  Actual: %s", expected, w)
-		}
-	})
-
-	t.Run("NonWarner", func(t *testing.T) {
-		r := newRows(context.Background(), &mock.Rows{})
-		meta, err := r.Finish()
-		if err != nil {
-			t.Fatal(err)
-		}
-		expected := ""
-		if w := meta.Warning; w != expected {
-			t.Errorf("Warning\nExpected: %s\n  Actual: %s", expected, w)
-		}
-	})
-}
-
 func TestQueryIndex(t *testing.T) {
 	t.Run("QueryIndexer", func(t *testing.T) {
 		expected := 100
@@ -487,30 +459,39 @@ func TestQueryIndex(t *testing.T) {
 	})
 }
 
-func TestBookmark(t *testing.T) {
+func TestFinish(t *testing.T) {
+	check := func(t *testing.T, r Rows) {
+		t.Helper()
+		meta, err := r.Finish()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if d := testy.DiffInterface(testy.Snapshot(t), meta); d != nil {
+			t.Error(d)
+		}
+	}
+
+	t.Run("Standard", func(t *testing.T) {
+		r := newRows(context.Background(), &mock.Rows{
+			OffsetFunc:    func() int64 { return 123 },
+			TotalRowsFunc: func() int64 { return 234 },
+			UpdateSeqFunc: func() string { return "seq" },
+		})
+		check(t, r)
+	})
 	t.Run("Bookmarker", func(t *testing.T) {
 		expected := "test bookmark"
 		r := newRows(context.Background(), &mock.Bookmarker{
 			BookmarkFunc: func() string { return expected },
 		})
-		meta, err := r.Finish()
-		if err != nil {
-			t.Fatal(err)
-		}
-		if w := meta.Bookmark; w != expected {
-			t.Errorf("Warning\nExpected: %s\n  Actual: %s", expected, w)
-		}
+		check(t, r)
 	})
-	t.Run("Non Bookmarker", func(t *testing.T) {
-		r := newRows(context.Background(), &mock.Rows{})
-		meta, err := r.Finish()
-		if err != nil {
-			t.Fatal(err)
-		}
-		expected := ""
-		if w := meta.Bookmark; w != expected {
-			t.Errorf("Warning\nExpected: %s\n  Actual: %s", expected, w)
-		}
+	t.Run("Warner", func(t *testing.T) {
+		expected := "test warning"
+		r := newRows(context.Background(), &mock.RowsWarner{
+			WarningFunc: func() string { return expected },
+		})
+		check(t, r)
 	})
 }
 

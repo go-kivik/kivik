@@ -53,13 +53,21 @@ func (i *iter) rlock() (unlock func(), err error) {
 	return i.mu.RUnlock, nil
 }
 
-func (i *iter) isReady() (unlock func(), err error) {
+// makeReady ensures that the iterator is ready to be read from. In the case
+// that Next() has not been called on the iterator, the returned unlock
+// function will also close the iterator, and set e if Close() errors.
+func (i *iter) makeReady(e *error) (unlock func()) {
 	i.mu.RLock()
 	if !i.ready {
-		i.mu.RUnlock()
-		return nil, &Error{HTTPStatus: http.StatusBadRequest, Message: "kivik: Iterator access before calling Next"}
+		i.Next()
+		return func() {
+			i.mu.RUnlock()
+			if err := i.Close(); err != nil && e != nil {
+				*e = err
+			}
+		}
 	}
-	return i.mu.RUnlock, nil
+	return i.mu.RUnlock
 }
 
 // newIterator instantiates a new iterator.

@@ -53,6 +53,11 @@ type ResultMetadata struct {
 // The Scan* methods are expected to be called only once per iteration, as
 // they may consume data from the network, rendering them unusable a second
 // time.
+//
+// Calling ScanDoc, ScanKey, ScanValue, ID, or Key before calling Next will
+// operate on the first item in the resultset, then close the iterator
+// immediately. This is for convenience in cases where only a single item is
+// expected, so the extra effort of iterating is otherwise wasted.
 type ResultSet interface {
 	// Next prepares the next result value for reading. It returns true on
 	// success or false if there are no more results or an error occurs while
@@ -192,14 +197,11 @@ func newRows(ctx context.Context, rowsi driver.Rows) *rows {
 	}
 }
 
-func (r *rows) ScanValue(dest interface{}) error {
+func (r *rows) ScanValue(dest interface{}) (err error) {
 	if r.err != nil {
 		return r.err
 	}
-	runlock, err := r.isReady()
-	if err != nil {
-		return err
-	}
+	runlock := r.makeReady(&err)
 	defer runlock()
 	row := r.curVal.(*driver.Row)
 	if row.Error != nil {
@@ -211,14 +213,11 @@ func (r *rows) ScanValue(dest interface{}) error {
 	return json.Unmarshal(row.Value, dest)
 }
 
-func (r *rows) ScanDoc(dest interface{}) error {
+func (r *rows) ScanDoc(dest interface{}) (err error) {
 	if r.err != nil {
 		return r.err
 	}
-	runlock, err := r.isReady()
-	if err != nil {
-		return err
-	}
+	runlock := r.makeReady(&err)
 	defer runlock()
 	row := r.curVal.(*driver.Row)
 	if err := row.Error; err != nil {
@@ -292,14 +291,11 @@ func scanAllDocs(r ResultSet, dest interface{}) (err error) {
 	return nil
 }
 
-func (r *rows) ScanKey(dest interface{}) error {
+func (r *rows) ScanKey(dest interface{}) (err error) {
 	if r.err != nil {
 		return r.err
 	}
-	runlock, err := r.isReady()
-	if err != nil {
-		return err
-	}
+	runlock := r.makeReady(&err)
 	defer runlock()
 	row := r.curVal.(*driver.Row)
 	if err := row.Error; err != nil {
@@ -309,19 +305,13 @@ func (r *rows) ScanKey(dest interface{}) error {
 }
 
 func (r *rows) ID() string {
-	runlock, err := r.isReady()
-	if err != nil {
-		return ""
-	}
+	runlock := r.makeReady(nil)
 	defer runlock()
 	return r.curVal.(*driver.Row).ID
 }
 
 func (r *rows) Key() string {
-	runlock, err := r.isReady()
-	if err != nil {
-		return ""
-	}
+	runlock := r.makeReady(nil)
 	defer runlock()
 	return string(r.curVal.(*driver.Row).Key)
 }

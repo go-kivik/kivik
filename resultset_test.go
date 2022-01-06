@@ -95,205 +95,267 @@ func TestRowsIteratorNext(t *testing.T) {
 }
 
 func TestRowsScanValue(t *testing.T) {
-	tests := []struct {
-		name     string
+	type tt struct {
 		rows     *rows
 		expected interface{}
+		closed   bool
 		status   int
 		err      string
-	}{
-		{
-			name: "success",
-			rows: &rows{
-				iter: &iter{
-					ready: true,
-					curVal: &driver.Row{
-						ValueReader: strings.NewReader(`{"foo":123.4}`),
-					},
-				},
-			},
-			expected: map[string]interface{}{"foo": 123.4},
-		},
-		{
-			name: "closed",
-			rows: &rows{
-				iter: &iter{
-					closed: true,
-					ready:  true,
-					curVal: &driver.Row{
-						ValueReader: strings.NewReader(`{"foo":123.4}`),
-					},
-				},
-			},
-			expected: map[string]interface{}{"foo": 123.4},
-		},
-		{
-			name: "row error",
-			rows: &rows{
-				iter: &iter{
-					ready: true,
-					curVal: &driver.Row{
-						Error: errors.New("row error"),
-					},
-				},
-			},
-			status: 500,
-			err:    "row error",
-		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			var result interface{}
-			err := test.rows.ScanValue(&result)
-			testy.StatusError(t, test.err, test.status, err)
-			if d := testy.DiffInterface(test.expected, result); d != nil {
-				t.Error(d)
-			}
-		})
-	}
+
+	tests := testy.NewTable()
+	tests.Add("prior error", tt{
+		rows: &rows{
+			err: errors.New("prev"),
+		},
+		status: http.StatusInternalServerError,
+		err:    "prev",
+	})
+	tests.Add("success", tt{
+		rows: &rows{
+			iter: &iter{
+				ready: true,
+				curVal: &driver.Row{
+					ValueReader: strings.NewReader(`{"foo":123.4}`),
+				},
+			},
+		},
+		expected: map[string]interface{}{"foo": 123.4},
+	})
+	tests.Add("one item", func() interface{} {
+		rowsi := &mock.Rows{
+			NextFunc: func(r *driver.Row) error {
+				r.Value = []byte(`"foo"`)
+				return nil
+			},
+		}
+		return tt{
+			rows:     newRows(context.Background(), rowsi),
+			expected: "foo",
+			closed:   true,
+		}
+	})
+	tests.Add("closed", tt{
+		rows: &rows{
+			iter: &iter{
+				closed: true,
+				ready:  true,
+				curVal: &driver.Row{
+					ValueReader: strings.NewReader(`{"foo":123.4}`),
+				},
+			},
+		},
+		expected: map[string]interface{}{"foo": 123.4},
+		closed:   true,
+	})
+	tests.Add("row error", tt{
+		rows: &rows{
+			iter: &iter{
+				ready: true,
+				curVal: &driver.Row{
+					Error: errors.New("row error"),
+				},
+			},
+		},
+		status: 500,
+		err:    "row error",
+	})
+
+	tests.Run(t, func(t *testing.T, tt tt) {
+		var result interface{}
+		err := tt.rows.ScanValue(&result)
+		testy.StatusError(t, tt.err, tt.status, err)
+		if d := testy.DiffInterface(tt.expected, result); d != nil {
+			t.Error(d)
+		}
+		if tt.closed != tt.rows.closed {
+			t.Errorf("Unexpected closed value: %v", tt.rows.closed)
+		}
+	})
 }
 
 func TestRowsScanDoc(t *testing.T) {
-	tests := []struct {
-		name     string
+	type tt struct {
 		rows     *rows
 		expected interface{}
+		closed   bool
 		status   int
 		err      string
-	}{
-		{
-			name: "old row",
-			rows: &rows{
-				iter: &iter{
-					ready: true,
-					curVal: &driver.Row{
-						Doc: []byte(`{"foo":123.4}`),
-					},
-				},
-			},
-			expected: map[string]interface{}{"foo": 123.4},
-		},
-		{
-			name: "success",
-			rows: &rows{
-				iter: &iter{
-					ready: true,
-					curVal: &driver.Row{
-						DocReader: strings.NewReader(`{"foo":123.4}`),
-					},
-				},
-			},
-			expected: map[string]interface{}{"foo": 123.4},
-		},
-		{
-			name: "closed",
-			rows: &rows{
-				iter: &iter{
-					closed: true,
-					ready:  true,
-					curVal: &driver.Row{
-						DocReader: strings.NewReader(`{"foo":123.4}`),
-					},
-				},
-			},
-			expected: map[string]interface{}{"foo": 123.4},
-		},
-		{
-			name: "nil doc",
-			rows: &rows{
-				iter: &iter{
-					ready: true,
-					curVal: &driver.Row{
-						Doc: nil,
-					},
-				},
-			},
-			status: http.StatusBadRequest,
-			err:    "kivik: doc is nil; does the query include docs?",
-		},
-		{
-			name: "row error",
-			rows: &rows{
-				iter: &iter{
-					ready: true,
-					curVal: &driver.Row{
-						Error: errors.New("row error"),
-					},
-				},
-			},
-			status: 500,
-			err:    "row error",
-		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			var result interface{}
-			err := test.rows.ScanDoc(&result)
-			testy.StatusError(t, test.err, test.status, err)
-			if d := testy.DiffInterface(test.expected, result); d != nil {
-				t.Error(d)
-			}
-		})
-	}
+
+	tests := testy.NewTable()
+
+	tests.Add("old row", tt{
+		rows: &rows{
+			iter: &iter{
+				ready: true,
+				curVal: &driver.Row{
+					Doc: []byte(`{"foo":123.4}`),
+				},
+			},
+		},
+		expected: map[string]interface{}{"foo": 123.4},
+	})
+	tests.Add("prev error", tt{
+		rows: &rows{
+			err: errors.New("flah"),
+		},
+		status: http.StatusInternalServerError,
+		err:    "flah",
+	})
+	tests.Add("success", tt{
+		rows: &rows{
+			iter: &iter{
+				ready: true,
+				curVal: &driver.Row{
+					DocReader: strings.NewReader(`{"foo":123.4}`),
+				},
+			},
+		},
+		expected: map[string]interface{}{"foo": 123.4},
+	})
+	tests.Add("one item", func() interface{} {
+		rowsi := &mock.Rows{
+			NextFunc: func(r *driver.Row) error {
+				r.Doc = []byte(`{"foo":"bar"}`)
+				return nil
+			},
+		}
+		return tt{
+			rows:     newRows(context.Background(), rowsi),
+			expected: map[string]interface{}{"foo": "bar"},
+			closed:   true,
+		}
+	})
+	tests.Add("closed", tt{
+		rows: &rows{
+			iter: &iter{
+				closed: true,
+				ready:  true,
+				curVal: &driver.Row{
+					DocReader: strings.NewReader(`{"foo":123.4}`),
+				},
+			},
+		},
+		closed:   true,
+		expected: map[string]interface{}{"foo": 123.4},
+	})
+	tests.Add("nil doc", tt{
+		rows: &rows{
+			iter: &iter{
+				ready: true,
+				curVal: &driver.Row{
+					Doc: nil,
+				},
+			},
+		},
+		status: http.StatusBadRequest,
+		err:    "kivik: doc is nil; does the query include docs?",
+	})
+	tests.Add("row error", tt{
+		rows: &rows{
+			iter: &iter{
+				ready: true,
+				curVal: &driver.Row{
+					Error: errors.New("row error"),
+				},
+			},
+		},
+		status: 500,
+		err:    "row error",
+	})
+
+	tests.Run(t, func(t *testing.T, tt tt) {
+		var result interface{}
+		err := tt.rows.ScanDoc(&result)
+		testy.StatusError(t, tt.err, tt.status, err)
+		if d := testy.DiffInterface(tt.expected, result); d != nil {
+			t.Error(d)
+		}
+		if tt.closed != tt.rows.closed {
+			t.Errorf("Unexpected closed status: %v", tt.rows.closed)
+		}
+	})
 }
 
 func TestRowsScanKey(t *testing.T) {
-	tests := []struct {
-		name     string
+	type tt struct {
 		rows     *rows
 		expected interface{}
+		closed   bool
 		status   int
 		err      string
-	}{
-		{
-			name: "success",
-			rows: &rows{
-				iter: &iter{
-					ready: true,
-					curVal: &driver.Row{
-						Key: []byte(`{"foo":123.4}`),
-					},
-				},
-			},
-			expected: map[string]interface{}{"foo": 123.4},
+	}
+
+	tests := testy.NewTable()
+	tests.Add("prior error", tt{
+		rows: &rows{
+			err: errors.New("blahblah"),
 		},
-		{
-			name: "closed",
-			rows: &rows{
-				iter: &iter{
-					closed: true,
-					ready:  true,
-					curVal: &driver.Row{
-						Key: []byte(`"foo"`),
-					},
+		status: http.StatusInternalServerError,
+		err:    "blahblah",
+	})
+	tests.Add("success", tt{
+		rows: &rows{
+			iter: &iter{
+				ready: true,
+				curVal: &driver.Row{
+					Key: []byte(`{"foo":123.4}`),
 				},
 			},
+		},
+		expected: map[string]interface{}{"foo": 123.4},
+	})
+	tests.Add("one item", func() interface{} {
+		rowsi := &mock.Rows{
+			NextFunc: func(r *driver.Row) error {
+				r.Key = []byte(`"foo"`)
+				return nil
+			},
+		}
+		return tt{
+			rows:     newRows(context.Background(), rowsi),
 			expected: "foo",
-		},
-		{
-			name: "row error",
-			rows: &rows{
-				iter: &iter{
-					ready: true,
-					curVal: &driver.Row{
-						Error: errors.New("row error"),
-					},
+			closed:   true,
+		}
+	})
+	tests.Add("closed", tt{
+		rows: &rows{
+			iter: &iter{
+				closed: true,
+				ready:  true,
+				curVal: &driver.Row{
+					Key: []byte(`"foo"`),
 				},
 			},
-			status: 500,
-			err:    "row error",
 		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			var result interface{}
-			err := test.rows.ScanKey(&result)
-			testy.StatusError(t, test.err, test.status, err)
-			if d := testy.DiffInterface(test.expected, result); d != nil {
-				t.Error(d)
-			}
-		})
-	}
+		closed:   true,
+		expected: "foo",
+	})
+	tests.Add("row error", tt{
+		rows: &rows{
+			iter: &iter{
+				ready: true,
+				curVal: &driver.Row{
+					Error: errors.New("row error"),
+				},
+			},
+		},
+		status: 500,
+		err:    "row error",
+	})
+
+	tests.Run(t, func(t *testing.T, tt tt) {
+		var result interface{}
+		err := tt.rows.ScanKey(&result)
+		testy.StatusError(t, tt.err, tt.status, err)
+		if d := testy.DiffInterface(tt.expected, result); d != nil {
+			t.Error(d)
+		}
+		if tt.closed != tt.rows.closed {
+			t.Errorf("Unexpected closed status: %v", tt.rows.closed)
+		}
+	})
 }
 
 func TestRowsGetters(t *testing.T) {
@@ -332,31 +394,32 @@ func TestRowsGetters(t *testing.T) {
 	})
 
 	t.Run("Not Ready", func(t *testing.T) {
-		r := &rows{
-			iter: &iter{
-				ready: false,
-				curVal: &driver.Row{
-					ID:  id,
-					Key: key,
-				},
-			},
-			rowsi: &mock.Rows{
-				OffsetFunc:    func() int64 { return offset },
-				TotalRowsFunc: func() int64 { return totalrows },
-				UpdateSeqFunc: func() string { return updateseq },
-			},
-		}
-
 		t.Run("ID", func(t *testing.T) {
+			rowsi := &mock.Rows{
+				NextFunc: func(r *driver.Row) error {
+					r.ID = id
+					return nil
+				},
+			}
+			r := newRows(context.Background(), rowsi)
+
 			result := r.ID()
-			if result != "" {
+			if result != id {
 				t.Errorf("Unexpected result: %v", result)
 			}
 		})
 
 		t.Run("Key", func(t *testing.T) {
+			rowsi := &mock.Rows{
+				NextFunc: func(r *driver.Row) error {
+					r.Key = key
+					return nil
+				},
+			}
+			r := newRows(context.Background(), rowsi)
+
 			result := r.Key()
-			if result != "" {
+			if result != string(key) {
 				t.Errorf("Unexpected result: %v", result)
 			}
 		})

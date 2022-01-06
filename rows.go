@@ -123,13 +123,6 @@ type Rows interface {
 	// unreliable.
 	Offset() int64
 
-	// TotalRows returns the total number of rows in the view which would have
-	// been returned if no limiting were used. This value is only guaranteed to
-	// be set after all result rows have been enumerated through by Next, and
-	// thus should only be read after processing all rows in a result set.
-	// Calling Close before enumerating will render this value unreliable.
-	TotalRows() int64
-
 	// UpdateSeq returns the sequence id of the underlying database the view
 	// reflects, if requested in the query. This value is only guaranteed to be
 	// set after all result rows have been enumerated through by Next, and thus
@@ -156,7 +149,6 @@ type baseRows struct{}
 
 func (baseRows) EOQ() bool         { return false }
 func (baseRows) Offset() int64     { return 0 }
-func (baseRows) TotalRows() int64  { return 0 }
 func (baseRows) QueryIndex() int   { return 0 }
 func (baseRows) UpdateSeq() string { return "" }
 
@@ -351,10 +343,6 @@ func (r *rows) Key() string {
 
 func (r *rows) Offset() int64 {
 	return r.rowsi.Offset()
-}
-
-func (r *rows) TotalRows() int64 {
-	return r.rowsi.TotalRows()
 }
 
 func (r *rows) UpdateSeq() string {

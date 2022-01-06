@@ -46,14 +46,14 @@ type ResultMetadata struct {
 	Bookmark string
 }
 
-// Rows is an iterator over a a multi-value query.
+// ResultSet is an iterator over a multi-value query result set.
 //
 // Call Next() to advance the iterator to the next item in the result set.
 //
 // The Scan* methods are expected to be called only once per iteration, as
 // they may consume data from the network, rendering them unusable a second
 // time.
-type Rows interface {
+type ResultSet interface {
 	// Next prepares the next result value for reading. It returns true on
 	// success or false if there are no more results or an error occurs while
 	// preparing it. Err should be consulted to distinguish between the two.
@@ -143,7 +143,7 @@ type rows struct {
 	err   error
 }
 
-var _ Rows = &rows{}
+var _ ResultSet = &rows{}
 
 func (r *rows) Next() bool {
 	return r.iter.Next()
@@ -238,7 +238,7 @@ func (r *rows) ScanAllDocs(dest interface{}) error {
 	return scanAllDocs(r, dest)
 }
 
-func scanAllDocs(r Rows, dest interface{}) (err error) {
+func scanAllDocs(r ResultSet, dest interface{}) (err error) {
 	defer func() {
 		closeErr := r.Close()
 		if err == nil {

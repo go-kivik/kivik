@@ -24,7 +24,7 @@ var findNotImplemented = &Error{HTTPStatus: http.StatusNotImplemented, Message: 
 // Find executes a query using the new /_find interface. The query must be
 // JSON-marshalable to a valid query.
 // See http://docs.couchdb.org/en/2.0.0/api/database/find.html#db-find
-func (db *DB) Find(ctx context.Context, query interface{}, options ...Options) Rows {
+func (db *DB) Find(ctx context.Context, query interface{}, options ...Options) ResultSet {
 	if db.err != nil {
 		return &rows{err: db.err}
 	}

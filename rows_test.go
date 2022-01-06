@@ -459,15 +459,23 @@ func TestWarning(t *testing.T) {
 		r := newRows(context.Background(), &mock.RowsWarner{
 			WarningFunc: func() string { return expected },
 		})
-		if w := r.Warning(); w != expected {
+		meta, err := r.Finish()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if w := meta.Warning; w != expected {
 			t.Errorf("Warning\nExpected: %s\n  Actual: %s", expected, w)
 		}
 	})
 
 	t.Run("NonWarner", func(t *testing.T) {
 		r := newRows(context.Background(), &mock.Rows{})
+		meta, err := r.Finish()
+		if err != nil {
+			t.Fatal(err)
+		}
 		expected := ""
-		if w := r.Warning(); w != expected {
+		if w := meta.Warning; w != expected {
 			t.Errorf("Warning\nExpected: %s\n  Actual: %s", expected, w)
 		}
 	})

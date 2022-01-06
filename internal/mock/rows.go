@@ -33,7 +33,7 @@ var _ driver.Rows = &Rows{}
 
 // Close calls r.CloseFunc
 func (r *Rows) Close() error {
-	if r.CloseFunc == nil {
+	if r == nil || r.CloseFunc == nil {
 		return nil
 	}
 	return r.CloseFunc()
@@ -41,7 +41,7 @@ func (r *Rows) Close() error {
 
 // Next calls r.NextFunc
 func (r *Rows) Next(row *driver.Row) error {
-	if r.NextFunc == nil {
+	if r == nil || r.NextFunc == nil {
 		return io.EOF
 	}
 	return r.NextFunc(row)
@@ -49,16 +49,25 @@ func (r *Rows) Next(row *driver.Row) error {
 
 // Offset calls r.OffsetFunc
 func (r *Rows) Offset() int64 {
+	if r == nil || r.OffsetFunc == nil {
+		return 0
+	}
 	return r.OffsetFunc()
 }
 
 // TotalRows calls r.TotalRowsFunc
 func (r *Rows) TotalRows() int64 {
+	if r == nil || r.TotalRowsFunc == nil {
+		return 0
+	}
 	return r.TotalRowsFunc()
 }
 
 // UpdateSeq calls r.UpdateSeqFunc
 func (r *Rows) UpdateSeq() string {
+	if r == nil || r.UpdateSeqFunc == nil {
+		return ""
+	}
 	return r.UpdateSeqFunc()
 }
 

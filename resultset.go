@@ -286,14 +286,11 @@ func scanAllDocs(r ResultSet, dest interface{}) (err error) {
 	return nil
 }
 
-func (r *rows) ScanKey(dest interface{}) error {
+func (r *rows) ScanKey(dest interface{}) (err error) {
 	if r.err != nil {
 		return r.err
 	}
-	runlock, err := r.isReady()
-	if err != nil {
-		return err
-	}
+	runlock := r.makeReady(&err)
 	defer runlock()
 	row := r.curVal.(*driver.Row)
 	if err := row.Error; err != nil {

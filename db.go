@@ -110,17 +110,6 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) 
 	return newRows(ctx, rowsi)
 }
 
-// ScanDoc unmarshals the data from the fetched row into dest. It is an
-// intelligent wrapper around json.Unmarshal which also handles
-// multipart/related responses. When done, the underlying reader is closed.
-func (r *Row) ScanDoc(dest interface{}) error {
-	if r.Err != nil {
-		return r.Err
-	}
-	defer r.Body.Close() // nolint: errcheck
-	return json.NewDecoder(r.Body).Decode(dest)
-}
-
 // Get fetches the requested document. Any errors are deferred until the
 // row.ScanDoc call.
 func (db *DB) Get(ctx context.Context, docID string, options ...Options) *Row {

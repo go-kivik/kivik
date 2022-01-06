@@ -110,33 +110,6 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) 
 	return newRows(ctx, rowsi)
 }
 
-// Row contains the result of calling Get for a single document. For most uses,
-// it is sufficient just to call the ScanDoc method. For more advanced uses, the
-// fields may be accessed directly.
-type Row struct {
-	// ContentLength records the size of the JSON representation of the document
-	// as requestd. The value -1 indicates that the length is unknown. Values
-	// >= 0 indicate that the given number of bytes may be read from Body.
-	ContentLength int64
-
-	// Rev is the revision ID of the returned document.
-	Rev string
-
-	// Body represents the document's content.
-	//
-	// Kivik will always return a non-nil Body, except when Err is non-nil. The
-	// ScanDoc method will close Body. When not using ScanDoc, it is the
-	// caller's responsibility to close Body
-	Body io.ReadCloser
-
-	// Err contains any error that occurred while fetching the document. It is
-	// typically returned by ScanDoc.
-	Err error
-
-	// Attachments is experimental
-	Attachments *AttachmentsIterator
-}
-
 // ScanDoc unmarshals the data from the fetched row into dest. It is an
 // intelligent wrapper around json.Unmarshal which also handles
 // multipart/related responses. When done, the underlying reader is closed.

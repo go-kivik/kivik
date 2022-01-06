@@ -208,14 +208,11 @@ func (r *rows) ScanValue(dest interface{}) (err error) {
 	return json.Unmarshal(row.Value, dest)
 }
 
-func (r *rows) ScanDoc(dest interface{}) error {
+func (r *rows) ScanDoc(dest interface{}) (err error) {
 	if r.err != nil {
 		return r.err
 	}
-	runlock, err := r.isReady()
-	if err != nil {
-		return err
-	}
+	runlock := r.makeReady(&err)
 	defer runlock()
 	row := r.curVal.(*driver.Row)
 	if err := row.Error; err != nil {

@@ -178,6 +178,7 @@ func TestRowsScanDoc(t *testing.T) {
 	type tt struct {
 		rows     *rows
 		expected interface{}
+		closed   bool
 		status   int
 		err      string
 	}
@@ -195,6 +196,13 @@ func TestRowsScanDoc(t *testing.T) {
 		},
 		expected: map[string]interface{}{"foo": 123.4},
 	})
+	tests.Add("prev error", tt{
+		rows: &rows{
+			err: errors.New("flah"),
+		},
+		status: http.StatusInternalServerError,
+		err:    "flah",
+	})
 	tests.Add("success", tt{
 		rows: &rows{
 			iter: &iter{
@@ -206,6 +214,19 @@ func TestRowsScanDoc(t *testing.T) {
 		},
 		expected: map[string]interface{}{"foo": 123.4},
 	})
+	tests.Add("one item", func() interface{} {
+		rowsi := &mock.Rows{
+			NextFunc: func(r *driver.Row) error {
+				r.Doc = []byte(`{"foo":"bar"}`)
+				return nil
+			},
+		}
+		return tt{
+			rows:     newRows(context.Background(), rowsi),
+			expected: map[string]interface{}{"foo": "bar"},
+			closed:   true,
+		}
+	})
 	tests.Add("closed", tt{
 		rows: &rows{
 			iter: &iter{
@@ -216,6 +237,7 @@ func TestRowsScanDoc(t *testing.T) {
 				},
 			},
 		},
+		closed:   true,
 		expected: map[string]interface{}{"foo": 123.4},
 	})
 	tests.Add("nil doc", tt{
@@ -249,6 +271,9 @@ func TestRowsScanDoc(t *testing.T) {
 		testy.StatusError(t, tt.err, tt.status, err)
 		if d := testy.DiffInterface(tt.expected, result); d != nil {
 			t.Error(d)
+		}
+		if tt.closed != tt.rows.closed {
+			t.Errorf("Unexpected closed status: %v", tt.rows.closed)
 		}
 	})
 }

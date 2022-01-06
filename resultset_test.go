@@ -95,62 +95,58 @@ func TestRowsIteratorNext(t *testing.T) {
 }
 
 func TestRowsScanValue(t *testing.T) {
-	tests := []struct {
-		name     string
+	type tt struct {
 		rows     *rows
 		expected interface{}
 		status   int
 		err      string
-	}{
-		{
-			name: "success",
-			rows: &rows{
-				iter: &iter{
-					ready: true,
-					curVal: &driver.Row{
-						ValueReader: strings.NewReader(`{"foo":123.4}`),
-					},
-				},
-			},
-			expected: map[string]interface{}{"foo": 123.4},
-		},
-		{
-			name: "closed",
-			rows: &rows{
-				iter: &iter{
-					closed: true,
-					ready:  true,
-					curVal: &driver.Row{
-						ValueReader: strings.NewReader(`{"foo":123.4}`),
-					},
-				},
-			},
-			expected: map[string]interface{}{"foo": 123.4},
-		},
-		{
-			name: "row error",
-			rows: &rows{
-				iter: &iter{
-					ready: true,
-					curVal: &driver.Row{
-						Error: errors.New("row error"),
-					},
-				},
-			},
-			status: 500,
-			err:    "row error",
-		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			var result interface{}
-			err := test.rows.ScanValue(&result)
-			testy.StatusError(t, test.err, test.status, err)
-			if d := testy.DiffInterface(test.expected, result); d != nil {
-				t.Error(d)
-			}
-		})
-	}
+
+	tests := testy.NewTable()
+	tests.Add("success", tt{
+		rows: &rows{
+			iter: &iter{
+				ready: true,
+				curVal: &driver.Row{
+					ValueReader: strings.NewReader(`{"foo":123.4}`),
+				},
+			},
+		},
+		expected: map[string]interface{}{"foo": 123.4},
+	})
+	tests.Add("closed", tt{
+		rows: &rows{
+			iter: &iter{
+				closed: true,
+				ready:  true,
+				curVal: &driver.Row{
+					ValueReader: strings.NewReader(`{"foo":123.4}`),
+				},
+			},
+		},
+		expected: map[string]interface{}{"foo": 123.4},
+	})
+	tests.Add("row error", tt{
+		rows: &rows{
+			iter: &iter{
+				ready: true,
+				curVal: &driver.Row{
+					Error: errors.New("row error"),
+				},
+			},
+		},
+		status: 500,
+		err:    "row error",
+	})
+
+	tests.Run(t, func(t *testing.T, tt tt) {
+		var result interface{}
+		err := tt.rows.ScanValue(&result)
+		testy.StatusError(t, tt.err, tt.status, err)
+		if d := testy.DiffInterface(tt.expected, result); d != nil {
+			t.Error(d)
+		}
+	})
 }
 
 func TestRowsScanDoc(t *testing.T) {

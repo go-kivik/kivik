@@ -142,13 +142,6 @@ type Rows interface {
 	// represent the query currently being iterated
 	QueryIndex() int
 
-	// Bookmark returns the paging bookmark, if one was provided with the result
-	// set. This is intended for use with the Mango /_find interface, with
-	// CouchDB 2.1.1 and later. Consult the official CouchDB documentation for
-	// detailed usage instructions:
-	// http://docs.couchdb.org/en/2.1.1/api/database/find.html#pagination
-	Bookmark() string
-
 	// EOQ returns true if the iterator has reached the end of a query in a
 	// multi-query query. When EOQ is true, the row data will not have been
 	// updated. It is common to simply `continue` in case of EOQ, unless you
@@ -161,7 +154,6 @@ type Rows interface {
 // implementations
 type baseRows struct{}
 
-func (baseRows) Bookmark() string  { return "" }
 func (baseRows) EOQ() bool         { return false }
 func (baseRows) Offset() int64     { return 0 }
 func (baseRows) TotalRows() int64  { return 0 }
@@ -374,11 +366,4 @@ func (r *rows) QueryIndex() int {
 		return qi.QueryIndex()
 	}
 	return 0
-}
-
-func (r *rows) Bookmark() string {
-	if b, ok := r.rowsi.(driver.Bookmarker); ok {
-		return b.Bookmark()
-	}
-	return ""
 }

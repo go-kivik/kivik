@@ -507,14 +507,22 @@ func TestBookmark(t *testing.T) {
 		r := newRows(context.Background(), &mock.Bookmarker{
 			BookmarkFunc: func() string { return expected },
 		})
-		if w := r.Bookmark(); w != expected {
+		meta, err := r.Finish()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if w := meta.Bookmark; w != expected {
 			t.Errorf("Warning\nExpected: %s\n  Actual: %s", expected, w)
 		}
 	})
 	t.Run("Non Bookmarker", func(t *testing.T) {
 		r := newRows(context.Background(), &mock.Rows{})
+		meta, err := r.Finish()
+		if err != nil {
+			t.Fatal(err)
+		}
 		expected := ""
-		if w := r.Bookmark(); w != expected {
+		if w := meta.Bookmark; w != expected {
 			t.Errorf("Warning\nExpected: %s\n  Actual: %s", expected, w)
 		}
 	})

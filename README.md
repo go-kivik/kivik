@@ -180,6 +180,7 @@ This is a partial list of breaking changes between 3.x and 4.x
   - In 3.x, queries returned a `*Rows` struct. Now they return the `ResultSet` interface.
   - The `Offset()`, `TotalRows()`, `UpdateSeq()`, `Warning()` and `Bookmark()` methods have been removed, and replaced with the `ResultMetadata` type which is accessed via the `Finish()` method. See #552
   - Calling most methods on `Rows` will now work after closing the iterator.
+  - Calling `ScanDoc`, `ScanKey`, `ScanValue`, `Key`, or `ID` before calling `Next` will make the iterator operate in single-item mode, meaning that only the first item in the iterator will be processed, then the iterator will be closed immediately.
 
 ## What projects currently use Kivik?
 

@@ -53,6 +53,11 @@ type ResultMetadata struct {
 // The Scan* methods are expected to be called only once per iteration, as
 // they may consume data from the network, rendering them unusable a second
 // time.
+//
+// Calling ScanDoc, ScanKey, ScanValue, ID, or Key before calling Next will
+// operate on the first item in the resultset, then close the iterator
+// immediately. This is for convenience in cases where only a single item is
+// expected, so the extra effort of iterating is otherwise wasted.
 type ResultSet interface {
 	// Next prepares the next result value for reading. It returns true on
 	// success or false if there are no more results or an error occurs while

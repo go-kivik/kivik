@@ -331,13 +331,6 @@ func TestRowsGetters(t *testing.T) {
 		}
 	})
 
-	t.Run("Offset", func(t *testing.T) {
-		result := r.Offset()
-		if offset != result {
-			t.Errorf("Unexpected result: %v", result)
-		}
-	})
-
 	t.Run("UpdateSeq", func(t *testing.T) {
 		result := r.UpdateSeq()
 		if updateseq != result {
@@ -419,13 +412,6 @@ func TestRowsGetters(t *testing.T) {
 				t.Fatal(err)
 			}
 			if string(result) != string(key) {
-				t.Errorf("Unexpected result: %v", result)
-			}
-		})
-
-		t.Run("Offset", func(t *testing.T) {
-			result := r.Offset()
-			if offset != result {
 				t.Errorf("Unexpected result: %v", result)
 			}
 		})

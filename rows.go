@@ -116,13 +116,6 @@ type Rows interface {
 	// compound keys, the ScanKey() method may be more convenient.
 	Key() string
 
-	// Offset returns the starting offset where the result set started. It is
-	// only guaranteed to be set after all result rows have been enumerated
-	// through by Next, and thus should only be read after processing all rows
-	// in a result set. Calling Close before enumerating will render this value
-	// unreliable.
-	Offset() int64
-
 	// UpdateSeq returns the sequence id of the underlying database the view
 	// reflects, if requested in the query. This value is only guaranteed to be
 	// set after all result rows have been enumerated through by Next, and thus
@@ -148,7 +141,6 @@ type Rows interface {
 type baseRows struct{}
 
 func (baseRows) EOQ() bool         { return false }
-func (baseRows) Offset() int64     { return 0 }
 func (baseRows) QueryIndex() int   { return 0 }
 func (baseRows) UpdateSeq() string { return "" }
 
@@ -339,10 +331,6 @@ func (r *rows) Key() string {
 	}
 	defer runlock()
 	return string(r.curVal.(*driver.Row).Key)
-}
-
-func (r *rows) Offset() int64 {
-	return r.rowsi.Offset()
 }
 
 func (r *rows) UpdateSeq() string {

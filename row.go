@@ -72,6 +72,11 @@ func (r *row) Close() error {
 	atomic.StoreInt32(&r.closed, 1)
 	return nil
 }
+
+func (r *row) Finish() (ResultMetadata, error) {
+	return ResultMetadata{}, r.Close()
+}
+
 func (r *row) Err() error  { return r.Row.Err }
 func (r *row) ID() string  { return r.id }
 func (r *row) Key() string { return "" }

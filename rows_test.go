@@ -331,27 +331,6 @@ func TestRowsGetters(t *testing.T) {
 		}
 	})
 
-	t.Run("Offset", func(t *testing.T) {
-		result := r.Offset()
-		if offset != result {
-			t.Errorf("Unexpected result: %v", result)
-		}
-	})
-
-	t.Run("TotalRows", func(t *testing.T) {
-		result := r.TotalRows()
-		if totalrows != result {
-			t.Errorf("Unexpected result: %v", result)
-		}
-	})
-
-	t.Run("UpdateSeq", func(t *testing.T) {
-		result := r.UpdateSeq()
-		if updateseq != result {
-			t.Errorf("Unexpected result: %v", result)
-		}
-	})
-
 	t.Run("Not Ready", func(t *testing.T) {
 		r := &rows{
 			iter: &iter{
@@ -429,47 +408,6 @@ func TestRowsGetters(t *testing.T) {
 				t.Errorf("Unexpected result: %v", result)
 			}
 		})
-
-		t.Run("Offset", func(t *testing.T) {
-			result := r.Offset()
-			if offset != result {
-				t.Errorf("Unexpected result: %v", result)
-			}
-		})
-
-		t.Run("TotalRows", func(t *testing.T) {
-			result := r.TotalRows()
-			if totalrows != result {
-				t.Errorf("Unexpected result: %v", result)
-			}
-		})
-
-		t.Run("UpdateSeq", func(t *testing.T) {
-			result := r.UpdateSeq()
-			if updateseq != result {
-				t.Errorf("Unexpected result: %v", result)
-			}
-		})
-	})
-}
-
-func TestWarning(t *testing.T) {
-	t.Run("Warner", func(t *testing.T) {
-		expected := "test warning"
-		r := newRows(context.Background(), &mock.RowsWarner{
-			WarningFunc: func() string { return expected },
-		})
-		if w := r.Warning(); w != expected {
-			t.Errorf("Warning\nExpected: %s\n  Actual: %s", expected, w)
-		}
-	})
-
-	t.Run("NonWarner", func(t *testing.T) {
-		r := newRows(context.Background(), &mock.Rows{})
-		expected := ""
-		if w := r.Warning(); w != expected {
-			t.Errorf("Warning\nExpected: %s\n  Actual: %s", expected, w)
-		}
 	})
 }
 
@@ -493,22 +431,39 @@ func TestQueryIndex(t *testing.T) {
 	})
 }
 
-func TestBookmark(t *testing.T) {
+func TestFinish(t *testing.T) {
+	check := func(t *testing.T, r Rows) {
+		t.Helper()
+		meta, err := r.Finish()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if d := testy.DiffInterface(testy.Snapshot(t), meta); d != nil {
+			t.Error(d)
+		}
+	}
+
+	t.Run("Standard", func(t *testing.T) {
+		r := newRows(context.Background(), &mock.Rows{
+			OffsetFunc:    func() int64 { return 123 },
+			TotalRowsFunc: func() int64 { return 234 },
+			UpdateSeqFunc: func() string { return "seq" },
+		})
+		check(t, r)
+	})
 	t.Run("Bookmarker", func(t *testing.T) {
 		expected := "test bookmark"
 		r := newRows(context.Background(), &mock.Bookmarker{
 			BookmarkFunc: func() string { return expected },
 		})
-		if w := r.Bookmark(); w != expected {
-			t.Errorf("Warning\nExpected: %s\n  Actual: %s", expected, w)
-		}
+		check(t, r)
 	})
-	t.Run("Non Bookmarker", func(t *testing.T) {
-		r := newRows(context.Background(), &mock.Rows{})
-		expected := ""
-		if w := r.Bookmark(); w != expected {
-			t.Errorf("Warning\nExpected: %s\n  Actual: %s", expected, w)
-		}
+	t.Run("Warner", func(t *testing.T) {
+		expected := "test warning"
+		r := newRows(context.Background(), &mock.RowsWarner{
+			WarningFunc: func() string { return expected },
+		})
+		check(t, r)
 	})
 }
 

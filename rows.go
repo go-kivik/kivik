@@ -116,13 +116,6 @@ type Rows interface {
 	// compound keys, the ScanKey() method may be more convenient.
 	Key() string
 
-	// UpdateSeq returns the sequence id of the underlying database the view
-	// reflects, if requested in the query. This value is only guaranteed to be
-	// set after all result rows have been enumerated through by Next, and thus
-	// should only be read after processing all rows in a result set. Calling
-	// Close before enumerating will render this value unreliable.
-	UpdateSeq() string
-
 	// QueryIndex returns the 0-based index of the query. For standard queries,
 	// this is always 0. When multiple queries are passed to the view, this will
 	// represent the query currently being iterated
@@ -331,10 +324,6 @@ func (r *rows) Key() string {
 	}
 	defer runlock()
 	return string(r.curVal.(*driver.Row).Key)
-}
-
-func (r *rows) UpdateSeq() string {
-	return r.rowsi.UpdateSeq()
 }
 
 func (r *rows) QueryIndex() int {

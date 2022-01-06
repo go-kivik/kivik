@@ -331,13 +331,6 @@ func TestRowsGetters(t *testing.T) {
 		}
 	})
 
-	t.Run("UpdateSeq", func(t *testing.T) {
-		result := r.UpdateSeq()
-		if updateseq != result {
-			t.Errorf("Unexpected result: %v", result)
-		}
-	})
-
 	t.Run("Not Ready", func(t *testing.T) {
 		r := &rows{
 			iter: &iter{
@@ -412,13 +405,6 @@ func TestRowsGetters(t *testing.T) {
 				t.Fatal(err)
 			}
 			if string(result) != string(key) {
-				t.Errorf("Unexpected result: %v", result)
-			}
-		})
-
-		t.Run("UpdateSeq", func(t *testing.T) {
-			result := r.UpdateSeq()
-			if updateseq != result {
 				t.Errorf("Unexpected result: %v", result)
 			}
 		})

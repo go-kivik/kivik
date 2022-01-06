@@ -404,7 +404,7 @@ func TestRowsGetters(t *testing.T) {
 			r := newRows(context.Background(), rowsi)
 
 			result := r.ID()
-			if result != "" {
+			if result != id {
 				t.Errorf("Unexpected result: %v", result)
 			}
 		})
@@ -419,7 +419,7 @@ func TestRowsGetters(t *testing.T) {
 			r := newRows(context.Background(), rowsi)
 
 			result := r.Key()
-			if result != "" {
+			if result != string(key) {
 				t.Errorf("Unexpected result: %v", result)
 			}
 		})

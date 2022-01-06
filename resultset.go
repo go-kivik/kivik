@@ -300,19 +300,13 @@ func (r *rows) ScanKey(dest interface{}) (err error) {
 }
 
 func (r *rows) ID() string {
-	runlock, err := r.isReady()
-	if err != nil {
-		return ""
-	}
+	runlock := r.makeReady(nil)
 	defer runlock()
 	return r.curVal.(*driver.Row).ID
 }
 
 func (r *rows) Key() string {
-	runlock, err := r.isReady()
-	if err != nil {
-		return ""
-	}
+	runlock := r.makeReady(nil)
 	defer runlock()
 	return string(r.curVal.(*driver.Row).Key)
 }

@@ -21,7 +21,7 @@ branch.
 This branch which will eventually become the Kivik 4.0.0 release. The API is
 subject to rapid and unannounced changes at this stage of development. For
 production work, you are encouraged to use the latest 3.x release of Kivik,
-which is stable.
+which is stable. [Read a partial list of breaking changes](#changes-from-3x-to-4x).
 
 Example configuration for common dependency managers follow.
 
@@ -35,7 +35,6 @@ project is already using Go modules, simply fetch the desired version:
 go get github.com/go-kivik/kivik/v3 # Stable release
 go get github.com/go-kivik/kivik/v4 # Development release
 ```
-
 
 # Installation
 
@@ -169,9 +168,18 @@ and proxy applications.
 
 ## What license is Kivik released under?
 
-Kivik is Copyright 2020 by the Kivik contributors, and is released under the
+Kivik is Copyright 2022 by the Kivik contributors, and is released under the
 terms of the Apache 2.0 license. See [LICENCE](LICENSE) for the full text of the
 license.
+
+### Changes from 3.x to 4.x
+
+This is a partial list of breaking changes between 3.x and 4.x
+
+- The return type for queries has been significantly changed.
+  - In 3.x, kivik returned a `*Rows` struct. Now `Rows` is an interface
+  - The `Offset()`, `TotalRows()`, `UpdateSeq()`, `Warning()` and `Bookmark()` methods have been removed, and replaced with the `ResultMetadata` type which is accessed via the `Finish()` method. See #552
+  - Calling most methods on `Rows` will now work after closing the iterator.
 
 ## What projects currently use Kivik?
 

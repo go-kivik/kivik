@@ -432,7 +432,7 @@ func TestQueryIndex(t *testing.T) {
 }
 
 func TestFinish(t *testing.T) {
-	check := func(t *testing.T, r Rows) {
+	check := func(t *testing.T, r ResultSet) {
 		t.Helper()
 		meta, err := r.Finish()
 		if err != nil {

@@ -177,7 +177,7 @@ license.
 This is a partial list of breaking changes between 3.x and 4.x
 
 - The return type for queries has been significantly changed.
-  - In 3.x, kivik returned a `*Rows` struct. Now `Rows` is an interface
+  - In 3.x, queries returned a `*Rows` struct. Now they return the `ResultSet` interface.
   - The `Offset()`, `TotalRows()`, `UpdateSeq()`, `Warning()` and `Bookmark()` methods have been removed, and replaced with the `ResultMetadata` type which is accessed via the `Finish()` method. See #552
   - Calling most methods on `Rows` will now work after closing the iterator.
 

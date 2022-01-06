@@ -66,7 +66,7 @@ type row struct {
 	*Row
 }
 
-var _ Rows = &row{}
+var _ ResultSet = &row{}
 
 func (r *row) Close() error {
 	atomic.StoreInt32(&r.closed, 1)

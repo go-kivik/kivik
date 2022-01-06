@@ -394,22 +394,15 @@ func TestRowsGetters(t *testing.T) {
 	})
 
 	t.Run("Not Ready", func(t *testing.T) {
-		r := &rows{
-			iter: &iter{
-				ready: false,
-				curVal: &driver.Row{
-					ID:  id,
-					Key: key,
-				},
-			},
-			rowsi: &mock.Rows{
-				OffsetFunc:    func() int64 { return offset },
-				TotalRowsFunc: func() int64 { return totalrows },
-				UpdateSeqFunc: func() string { return updateseq },
-			},
-		}
-
 		t.Run("ID", func(t *testing.T) {
+			rowsi := &mock.Rows{
+				NextFunc: func(r *driver.Row) error {
+					r.ID = id
+					return nil
+				},
+			}
+			r := newRows(context.Background(), rowsi)
+
 			result := r.ID()
 			if result != "" {
 				t.Errorf("Unexpected result: %v", result)
@@ -417,6 +410,14 @@ func TestRowsGetters(t *testing.T) {
 		})
 
 		t.Run("Key", func(t *testing.T) {
+			rowsi := &mock.Rows{
+				NextFunc: func(r *driver.Row) error {
+					r.Key = key
+					return nil
+				},
+			}
+			r := newRows(context.Background(), rowsi)
+
 			result := r.Key()
 			if result != "" {
 				t.Errorf("Unexpected result: %v", result)

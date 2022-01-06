@@ -50,7 +50,16 @@ func (i *iter) rlock() (unlock func(), err error) {
 		i.mu.RUnlock()
 		return nil, &Error{HTTPStatus: http.StatusBadRequest, Message: "kivik: Iterator access before calling Next"}
 	}
-	return func() { i.mu.RUnlock() }, nil
+	return i.mu.RUnlock, nil
+}
+
+func (i *iter) isReady() (unlock func(), err error) {
+	i.mu.RLock()
+	if !i.ready {
+		i.mu.RUnlock()
+		return nil, &Error{HTTPStatus: http.StatusBadRequest, Message: "kivik: Iterator access before calling Next"}
+	}
+	return i.mu.RUnlock, nil
 }
 
 // newIterator instantiates a new iterator.

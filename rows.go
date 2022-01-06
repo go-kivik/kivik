@@ -23,6 +23,12 @@ import (
 )
 
 // Rows is an iterator over a a multi-value query.
+//
+// Call Next() to advance the iterator to the next item in the result set.
+//
+// The Scan* methods are expected to be called only once per iteration, as
+// they may consume data from the network, rendering them unusable a second
+// time.
 type Rows interface {
 	// Next prepares the next result value for reading. It returns true on
 	// success or false if there are no more results or an error occurs while
@@ -72,10 +78,10 @@ type Rows interface {
 	// to use.
 	ScanKey(dest interface{}) error
 
-	// ID returns the ID of the current result.
+	// ID returns the ID of the most recent result.
 	ID() string
 
-	// Key returns the Key of the current result as a raw JSON string. For
+	// Key returns the Key of the most recent result as a raw JSON string. For
 	// compound keys, the ScanKey() method may be more convenient.
 	Key() string
 
@@ -124,6 +130,19 @@ type Rows interface {
 	EOQ() bool
 }
 
+// baseRows provides no-op versions of common rows functions that aren't
+// needed by every implementation, so that it can be embedded in other
+// implementations
+type baseRows struct{}
+
+func (baseRows) Bookmark() string  { return "" }
+func (baseRows) EOQ() bool         { return false }
+func (baseRows) Offset() int64     { return 0 }
+func (baseRows) TotalRows() int64  { return 0 }
+func (baseRows) QueryIndex() int   { return 0 }
+func (baseRows) UpdateSeq() string { return "" }
+func (baseRows) Warning() string   { return "" }
+
 type rows struct {
 	*iter
 	rowsi driver.Rows
@@ -164,7 +183,7 @@ func (r *rows) ScanValue(dest interface{}) error {
 	if r.err != nil {
 		return r.err
 	}
-	runlock, err := r.rlock()
+	runlock, err := r.isReady()
 	if err != nil {
 		return err
 	}
@@ -183,7 +202,7 @@ func (r *rows) ScanDoc(dest interface{}) error {
 	if r.err != nil {
 		return r.err
 	}
-	runlock, err := r.rlock()
+	runlock, err := r.isReady()
 	if err != nil {
 		return err
 	}
@@ -202,15 +221,19 @@ func (r *rows) ScanDoc(dest interface{}) error {
 	return &Error{HTTPStatus: http.StatusBadRequest, Message: "kivik: doc is nil; does the query include docs?"}
 }
 
-func (r *rows) ScanAllDocs(dest interface{}) (err error) {
+func (r *rows) ScanAllDocs(dest interface{}) error {
+	return scanAllDocs(r, dest)
+}
+
+func scanAllDocs(r Rows, dest interface{}) (err error) {
 	defer func() {
 		closeErr := r.Close()
 		if err == nil {
 			err = closeErr
 		}
 	}()
-	if r.err != nil {
-		return r.err
+	if err := r.Err(); err != nil {
+		return err
 	}
 
 	value := reflect.ValueOf(dest)
@@ -260,7 +283,7 @@ func (r *rows) ScanKey(dest interface{}) error {
 	if r.err != nil {
 		return r.err
 	}
-	runlock, err := r.rlock()
+	runlock, err := r.isReady()
 	if err != nil {
 		return err
 	}
@@ -273,7 +296,7 @@ func (r *rows) ScanKey(dest interface{}) error {
 }
 
 func (r *rows) ID() string {
-	runlock, err := r.rlock()
+	runlock, err := r.isReady()
 	if err != nil {
 		return ""
 	}
@@ -282,7 +305,7 @@ func (r *rows) ID() string {
 }
 
 func (r *rows) Key() string {
-	runlock, err := r.rlock()
+	runlock, err := r.isReady()
 	if err != nil {
 		return ""
 	}

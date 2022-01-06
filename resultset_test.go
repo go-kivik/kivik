@@ -98,11 +98,19 @@ func TestRowsScanValue(t *testing.T) {
 	type tt struct {
 		rows     *rows
 		expected interface{}
+		closed   bool
 		status   int
 		err      string
 	}
 
 	tests := testy.NewTable()
+	tests.Add("prior error", tt{
+		rows: &rows{
+			err: errors.New("prev"),
+		},
+		status: http.StatusInternalServerError,
+		err:    "prev",
+	})
 	tests.Add("success", tt{
 		rows: &rows{
 			iter: &iter{
@@ -113,6 +121,19 @@ func TestRowsScanValue(t *testing.T) {
 			},
 		},
 		expected: map[string]interface{}{"foo": 123.4},
+	})
+	tests.Add("one item", func() interface{} {
+		rowsi := &mock.Rows{
+			NextFunc: func(r *driver.Row) error {
+				r.Value = []byte(`"foo"`)
+				return nil
+			},
+		}
+		return tt{
+			rows:     newRows(context.Background(), rowsi),
+			expected: "foo",
+			closed:   true,
+		}
 	})
 	tests.Add("closed", tt{
 		rows: &rows{
@@ -125,6 +146,7 @@ func TestRowsScanValue(t *testing.T) {
 			},
 		},
 		expected: map[string]interface{}{"foo": 123.4},
+		closed:   true,
 	})
 	tests.Add("row error", tt{
 		rows: &rows{
@@ -145,6 +167,9 @@ func TestRowsScanValue(t *testing.T) {
 		testy.StatusError(t, tt.err, tt.status, err)
 		if d := testy.DiffInterface(tt.expected, result); d != nil {
 			t.Error(d)
+		}
+		if tt.closed != tt.rows.closed {
+			t.Errorf("Unexpected closed value: %v", tt.rows.closed)
 		}
 	})
 }

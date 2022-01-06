@@ -192,14 +192,11 @@ func newRows(ctx context.Context, rowsi driver.Rows) *rows {
 	}
 }
 
-func (r *rows) ScanValue(dest interface{}) error {
+func (r *rows) ScanValue(dest interface{}) (err error) {
 	if r.err != nil {
 		return r.err
 	}
-	runlock, err := r.isReady()
-	if err != nil {
-		return err
-	}
+	runlock := r.makeReady(&err)
 	defer runlock()
 	row := r.curVal.(*driver.Row)
 	if row.Error != nil {

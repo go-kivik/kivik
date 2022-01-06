@@ -62,6 +62,23 @@ func (i *iter) isReady() (unlock func(), err error) {
 	return i.mu.RUnlock, nil
 }
 
+// makeReady ensures that the iterator is ready to be read from. In the case
+// that Next() has not been called on the iterator, the returned unlock
+// function will also close the iterator, and set e if Close() errors.
+func (i *iter) makeReady(e *error) (unlock func()) {
+	i.mu.RLock()
+	if !i.ready {
+		i.Next()
+		return func() {
+			i.mu.RUnlock()
+			if err := i.Close(); err != nil {
+				*e = err
+			}
+		}
+	}
+	return i.mu.RUnlock
+}
+
 // newIterator instantiates a new iterator.
 //
 // ctx is a possibly-cancellable context

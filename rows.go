@@ -23,6 +23,12 @@ import (
 )
 
 // Rows is an iterator over a a multi-value query.
+//
+// Call Next() to advance the iterator to the next item in the result set.
+//
+// The Scan* methods are expected to be called only once per iteration, as
+// they may consume data from the network, rendering them unusable a second
+// time.
 type Rows interface {
 	// Next prepares the next result value for reading. It returns true on
 	// success or false if there are no more results or an error occurs while
@@ -72,10 +78,10 @@ type Rows interface {
 	// to use.
 	ScanKey(dest interface{}) error
 
-	// ID returns the ID of the current result.
+	// ID returns the ID of the most recent result.
 	ID() string
 
-	// Key returns the Key of the current result as a raw JSON string. For
+	// Key returns the Key of the most recent result as a raw JSON string. For
 	// compound keys, the ScanKey() method may be more convenient.
 	Key() string
 
@@ -177,7 +183,7 @@ func (r *rows) ScanValue(dest interface{}) error {
 	if r.err != nil {
 		return r.err
 	}
-	runlock, err := r.rlock()
+	runlock, err := r.isReady()
 	if err != nil {
 		return err
 	}
@@ -196,7 +202,7 @@ func (r *rows) ScanDoc(dest interface{}) error {
 	if r.err != nil {
 		return r.err
 	}
-	runlock, err := r.rlock()
+	runlock, err := r.isReady()
 	if err != nil {
 		return err
 	}
@@ -277,7 +283,7 @@ func (r *rows) ScanKey(dest interface{}) error {
 	if r.err != nil {
 		return r.err
 	}
-	runlock, err := r.rlock()
+	runlock, err := r.isReady()
 	if err != nil {
 		return err
 	}
@@ -290,7 +296,7 @@ func (r *rows) ScanKey(dest interface{}) error {
 }
 
 func (r *rows) ID() string {
-	runlock, err := r.rlock()
+	runlock, err := r.isReady()
 	if err != nil {
 		return ""
 	}
@@ -299,7 +305,7 @@ func (r *rows) ID() string {
 }
 
 func (r *rows) Key() string {
-	runlock, err := r.rlock()
+	runlock, err := r.isReady()
 	if err != nil {
 		return ""
 	}

@@ -119,10 +119,13 @@ func TestRowsScanValue(t *testing.T) {
 			rows: &rows{
 				iter: &iter{
 					closed: true,
+					ready:  true,
+					curVal: &driver.Row{
+						ValueReader: strings.NewReader(`{"foo":123.4}`),
+					},
 				},
 			},
-			status: http.StatusBadRequest,
-			err:    "kivik: Iterator is closed",
+			expected: map[string]interface{}{"foo": 123.4},
 		},
 		{
 			name: "row error",
@@ -187,10 +190,13 @@ func TestRowsScanDoc(t *testing.T) {
 			rows: &rows{
 				iter: &iter{
 					closed: true,
+					ready:  true,
+					curVal: &driver.Row{
+						DocReader: strings.NewReader(`{"foo":123.4}`),
+					},
 				},
 			},
-			status: http.StatusBadRequest,
-			err:    "kivik: Iterator is closed",
+			expected: map[string]interface{}{"foo": 123.4},
 		},
 		{
 			name: "nil doc",
@@ -256,10 +262,13 @@ func TestRowsScanKey(t *testing.T) {
 			rows: &rows{
 				iter: &iter{
 					closed: true,
+					ready:  true,
+					curVal: &driver.Row{
+						Key: []byte(`"foo"`),
+					},
 				},
 			},
-			status: http.StatusBadRequest,
-			err:    "kivik: Iterator is closed",
+			expected: "foo",
 		},
 		{
 			name: "row error",
@@ -344,7 +353,20 @@ func TestRowsGetters(t *testing.T) {
 	})
 
 	t.Run("Not Ready", func(t *testing.T) {
-		r.ready = false
+		r := &rows{
+			iter: &iter{
+				ready: false,
+				curVal: &driver.Row{
+					ID:  id,
+					Key: key,
+				},
+			},
+			rowsi: &mock.Rows{
+				OffsetFunc:    func() int64 { return offset },
+				TotalRowsFunc: func() int64 { return totalrows },
+				UpdateSeqFunc: func() string { return updateseq },
+			},
+		}
 
 		t.Run("ID", func(t *testing.T) {
 			result := r.ID()
@@ -356,6 +378,75 @@ func TestRowsGetters(t *testing.T) {
 		t.Run("Key", func(t *testing.T) {
 			result := r.Key()
 			if result != "" {
+				t.Errorf("Unexpected result: %v", result)
+			}
+		})
+	})
+
+	t.Run("after close", func(t *testing.T) {
+		rowsi := &mock.Rows{
+			OffsetFunc:    func() int64 { return offset },
+			TotalRowsFunc: func() int64 { return totalrows },
+			UpdateSeqFunc: func() string { return updateseq },
+		}
+		r := &rows{
+			iter: &iter{
+				ready: true,
+				curVal: &driver.Row{
+					ID:  id,
+					Key: key,
+				},
+				feed: &rowsIterator{rowsi},
+			},
+			rowsi: rowsi,
+		}
+
+		if err := r.Close(); err != nil {
+			t.Fatal(err)
+		}
+
+		t.Run("ID", func(t *testing.T) {
+			result := r.ID()
+			if id != result {
+				t.Errorf("Unexpected result: %v", result)
+			}
+		})
+
+		t.Run("Key", func(t *testing.T) {
+			result := r.Key()
+			if string(key) != result {
+				t.Errorf("Unexpected result: %v", result)
+			}
+		})
+
+		t.Run("ScanKey", func(t *testing.T) {
+			var result json.RawMessage
+			err := r.ScanKey(&result)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if string(result) != string(key) {
+				t.Errorf("Unexpected result: %v", result)
+			}
+		})
+
+		t.Run("Offset", func(t *testing.T) {
+			result := r.Offset()
+			if offset != result {
+				t.Errorf("Unexpected result: %v", result)
+			}
+		})
+
+		t.Run("TotalRows", func(t *testing.T) {
+			result := r.TotalRows()
+			if totalrows != result {
+				t.Errorf("Unexpected result: %v", result)
+			}
+		})
+
+		t.Run("UpdateSeq", func(t *testing.T) {
+			result := r.UpdateSeq()
+			if updateseq != result {
 				t.Errorf("Unexpected result: %v", result)
 			}
 		})

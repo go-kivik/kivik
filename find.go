@@ -26,12 +26,12 @@ var findNotImplemented = &Error{HTTPStatus: http.StatusNotImplemented, Message: 
 // See http://docs.couchdb.org/en/2.0.0/api/database/find.html#db-find
 func (db *DB) Find(ctx context.Context, query interface{}, options ...Options) ResultSet {
 	if db.err != nil {
-		return &rows{err: db.err}
+		return &errRS{err: db.err}
 	}
 	if finder, ok := db.driverDB.(driver.OptsFinder); ok {
 		rowsi, err := finder.Find(ctx, query, mergeOptions(options...))
 		if err != nil {
-			return &rows{err: err}
+			return &errRS{err: err}
 		}
 		return newRows(ctx, rowsi)
 	}
@@ -39,7 +39,7 @@ func (db *DB) Find(ctx context.Context, query interface{}, options ...Options) R
 	if finder, ok := db.driverDB.(driver.Finder); ok {
 		rowsi, err := finder.Find(ctx, query)
 		if err != nil {
-			return &rows{err: err}
+			return &errRS{err: err}
 		}
 		return newRows(ctx, rowsi)
 	}

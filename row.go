@@ -22,7 +22,6 @@ import (
 // intelligent wrapper around json.Unmarshal which also handles
 // multipart/related responses. When done, the underlying reader is closed.
 func (r *row) ScanDoc(dest interface{}) error {
-	atomic.StoreInt32(&r.closed, 1)
 	defer r.body.Close() // nolint:errcheck
 	return json.NewDecoder(r.body).Decode(dest)
 }
@@ -35,30 +34,38 @@ type row struct {
 
 	// prepared is set to true by the first call to Next()
 	prepared int32
-	closed   int32
-	baseRS
+	errRS
 }
 
 var _ ResultSet = &row{}
 
 func (r *row) Close() error {
-	atomic.StoreInt32(&r.closed, 1)
-	return nil
+	r.err = r.body.Close()
+	return r.err
 }
 
 func (r *row) Finish() (ResultMetadata, error) {
+	if r.err != nil {
+		return ResultMetadata{}, r.err
+	}
 	return ResultMetadata{}, r.Close()
 }
 
-func (r *row) Err() error  { return nil }
+func (r *row) Err() error  { return r.err }
 func (r *row) ID() string  { return r.id }
 func (r *row) Rev() string { return r.rev }
 
 func (r *row) Next() bool {
+	if r.err != nil {
+		return false
+	}
 	return atomic.SwapInt32(&r.prepared, 1) != 1
 }
 
 func (r *row) ScanAllDocs(dest interface{}) error {
+	if r.err != nil {
+		return r.err
+	}
 	return scanAllDocs(r, dest)
 }
 

@@ -94,10 +94,12 @@ func TestAllDocs(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rows := test.db.AllDocs(context.Background(), test.options).(*rows)
-			testy.StatusError(t, test.err, test.status, rows.Err())
-			rows.cancel = nil // Determinism
-			if d := testy.DiffInterface(test.expected, rows); d != nil {
+			rs := test.db.AllDocs(context.Background(), test.options)
+			testy.StatusError(t, test.err, test.status, rs.Err())
+			if r, ok := rs.(*rows); ok {
+				r.cancel = nil // Determinism
+			}
+			if d := testy.DiffInterface(test.expected, rs); d != nil {
 				t.Error(d)
 			}
 		})
@@ -157,10 +159,12 @@ func TestDesignDocs(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rows := test.db.DesignDocs(context.Background(), test.options).(*rows)
-			testy.StatusError(t, test.err, test.status, rows.Err())
-			rows.cancel = nil // Determinism
-			if d := testy.DiffInterface(test.expected, rows); d != nil {
+			rs := test.db.DesignDocs(context.Background(), test.options)
+			testy.StatusError(t, test.err, test.status, rs.Err())
+			if r, ok := rs.(*rows); ok {
+				r.cancel = nil // Determinism
+			}
+			if d := testy.DiffInterface(test.expected, rs); d != nil {
 				t.Error(d)
 			}
 		})
@@ -220,10 +224,12 @@ func TestLocalDocs(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rows := test.db.LocalDocs(context.Background(), test.options).(*rows)
-			testy.StatusError(t, test.err, test.status, rows.Err())
-			rows.cancel = nil // Determinism
-			if d := testy.DiffInterface(test.expected, rows); d != nil {
+			rs := test.db.LocalDocs(context.Background(), test.options)
+			testy.StatusError(t, test.err, test.status, rs.Err())
+			if r, ok := rs.(*rows); ok {
+				r.cancel = nil // Determinism
+			}
+			if d := testy.DiffInterface(test.expected, rs); d != nil {
 				t.Error(d)
 			}
 		})
@@ -288,10 +294,12 @@ func TestQuery(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rows := test.db.Query(context.Background(), test.ddoc, test.view, test.options).(*rows)
-			testy.StatusError(t, test.err, test.status, rows.Err())
-			rows.cancel = nil // Determinism
-			if d := testy.DiffInterface(test.expected, rows); d != nil {
+			rs := test.db.Query(context.Background(), test.ddoc, test.view, test.options)
+			testy.StatusError(t, test.err, test.status, rs.Err())
+			if r, ok := rs.(*rows); ok {
+				r.cancel = nil // Determinism
+			}
+			if d := testy.DiffInterface(test.expected, rs); d != nil {
 				t.Error(d)
 			}
 		})
@@ -304,7 +312,7 @@ func TestGet(t *testing.T) {
 		db       *DB
 		docID    string
 		options  Options
-		expected *row
+		expected ResultSet
 	}{
 		{
 			name: "db error",
@@ -315,9 +323,9 @@ func TestGet(t *testing.T) {
 					},
 				},
 			},
-			expected: &row{Row: &Row{
-				Err: fmt.Errorf("db error"),
-			}},
+			expected: &errRS{
+				err: fmt.Errorf("db error"),
+			},
 		},
 		{
 			name: "success",
@@ -341,10 +349,11 @@ func TestGet(t *testing.T) {
 			},
 			docID:   "foo",
 			options: testOptions,
-			expected: &row{Row: &Row{
-				Rev:  "1-xxx",
-				Body: body(`{"_id":"foo"}`),
-			}},
+			expected: &row{
+				id:   "foo",
+				rev:  "1-xxx",
+				body: body(`{"_id":"foo"}`),
+			},
 		},
 		{
 			name: "streaming attachments",
@@ -370,13 +379,14 @@ func TestGet(t *testing.T) {
 			},
 			docID:   "foo",
 			options: map[string]interface{}{"include_docs": true},
-			expected: &row{Row: &Row{
-				Rev:  "1-xxx",
-				Body: body(`{"_id":"foo"}`),
-				Attachments: &AttachmentsIterator{
+			expected: &row{
+				id:   "foo",
+				rev:  "1-xxx",
+				body: body(`{"_id":"foo"}`),
+				atts: &AttachmentsIterator{
 					atti: &mock.Attachments{ID: "asdf"},
 				},
-			}},
+			},
 		},
 	}
 	for _, test := range tests {
@@ -1216,7 +1226,7 @@ func TestExtractDocID(t *testing.T) {
 func TestRowScanDoc(t *testing.T) {
 	tests := []struct {
 		name     string
-		row      *Row
+		row      *row
 		dst      interface{}
 		expected interface{}
 		status   int
@@ -1224,21 +1234,21 @@ func TestRowScanDoc(t *testing.T) {
 	}{
 		{
 			name:   "non-pointer dst",
-			row:    &Row{Body: body(`{"foo":123.4}`)},
+			row:    &row{body: body(`{"foo":123.4}`)},
 			dst:    map[string]interface{}{},
 			status: http.StatusInternalServerError,
 			err:    "json: Unmarshal(non-pointer map[string]interface {})",
 		},
 		{
 			name:   "invalid json",
-			row:    &Row{Body: body("invalid json")},
+			row:    &row{body: body("invalid json")},
 			dst:    new(map[string]interface{}),
 			status: http.StatusInternalServerError,
 			err:    "invalid character 'i' looking for beginning of value",
 		},
 		{
 			name:     "success",
-			row:      &Row{Body: body(`{"foo":123.4}`)},
+			row:      &row{body: body(`{"foo":123.4}`)},
 			dst:      new(map[string]interface{}),
 			expected: &map[string]interface{}{"foo": 123.4},
 		},
@@ -1969,10 +1979,12 @@ func TestBulkGet(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rows := test.db.BulkGet(context.Background(), test.docs, test.options).(*rows)
-			testy.StatusError(t, test.err, test.status, rows.Err())
-			rows.cancel = nil // Determinism
-			if d := testy.DiffInterface(test.expected, rows); d != nil {
+			rs := test.db.BulkGet(context.Background(), test.docs, test.options)
+			testy.StatusError(t, test.err, test.status, rs.Err())
+			if r, ok := rs.(*rows); ok {
+				r.cancel = nil // Determinism
+			}
+			if d := testy.DiffInterface(test.expected, rs); d != nil {
 				t.Error(d)
 			}
 		})
@@ -2051,10 +2063,12 @@ func TestRevsDiff(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
-		rows := tt.db.RevsDiff(context.Background(), tt.revMap).(*rows)
-		testy.StatusError(t, tt.err, tt.status, rows.Err())
-		rows.cancel = nil // Determinism
-		if d := testy.DiffInterface(tt.expected, rows); d != nil {
+		rs := tt.db.RevsDiff(context.Background(), tt.revMap)
+		testy.StatusError(t, tt.err, tt.status, rs.Err())
+		if r, ok := rs.(*rows); ok {
+			r.cancel = nil // Determinism
+		}
+		if d := testy.DiffInterface(tt.expected, rs); d != nil {
 			t.Error(d)
 		}
 	})

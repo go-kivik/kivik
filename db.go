@@ -120,14 +120,15 @@ func (db *DB) Get(ctx context.Context, docID string, options ...Options) ResultS
 	if err != nil {
 		return &errRS{err: err}
 	}
-	r := &Row{
-		Rev:  doc.Rev,
-		Body: doc.Body,
+	r := &row{
+		id:   docID,
+		rev:  doc.Rev,
+		body: doc.Body,
 	}
 	if doc.Attachments != nil {
-		r.Attachments = &AttachmentsIterator{atti: doc.Attachments}
+		r.atts = &AttachmentsIterator{atti: doc.Attachments}
 	}
-	return &row{Row: r}
+	return r
 }
 
 // GetRev returns the active rev of the specified document. GetRev accepts

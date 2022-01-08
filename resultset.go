@@ -131,6 +131,12 @@ type ResultSet interface {
 	// updated. It is common to simply `continue` in case of EOQ, unless you
 	// care about the per-query metadata, such as offset, total rows, etc.
 	EOQ() bool
+
+	// Attachments returns an attachments iterator. At present, it is only set
+	// by the Get() method when doing a multi-part get from CouchDB (which is
+	// the default where supported). This may be extended to other cases in
+	// the future.
+	Attachments() *AttachmentsIterator
 }
 
 // baseRows provides no-op versions of common rows functions that aren't
@@ -138,11 +144,13 @@ type ResultSet interface {
 // implementations
 type baseRows struct{}
 
-func (baseRows) EOQ() bool         { return false }
-func (baseRows) QueryIndex() int   { return 0 }
-func (baseRows) UpdateSeq() string { return "" }
+func (baseRows) EOQ() bool                         { return false }
+func (baseRows) QueryIndex() int                   { return 0 }
+func (baseRows) UpdateSeq() string                 { return "" }
+func (baseRows) Attachments() *AttachmentsIterator { return nil }
 
 type rows struct {
+	baseRows
 	*iter
 	rowsi driver.Rows
 	err   error
@@ -152,6 +160,10 @@ var _ ResultSet = &rows{}
 
 func (r *rows) Next() bool {
 	return r.iter.Next()
+}
+
+func (r *rows) EOQ() bool {
+	return r.iter.EOQ()
 }
 
 func (r *rows) Err() error {

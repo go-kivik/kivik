@@ -181,6 +181,7 @@ This is a partial list of breaking changes between 3.x and 4.x
   - The `Offset()`, `TotalRows()`, `UpdateSeq()`, `Warning()` and `Bookmark()` methods have been removed, and replaced with the `ResultMetadata` type which is accessed via the `Finish()` method. See #552
   - Calling most methods on `Rows` will now work after closing the iterator.
   - Calling `ScanDoc`, `ScanKey`, `ScanValue`, `Key`, or `ID` before calling `Next` will make the iterator operate in single-item mode, meaning that only the first item in the iterator will be processed, then the iterator will be closed immediately.
+- `GetMeta()` has been replaced with `GetRev()`, and no longer claims to return the document size. The document size was never _really_ the document size, rather it is the Content-Length field of the HTTP response, which can vary depending on query parameters, making its use for determining document size dubious at best.
 
 ## What projects currently use Kivik?
 

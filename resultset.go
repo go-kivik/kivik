@@ -144,19 +144,19 @@ type ResultSet interface {
 	Attachments() *AttachmentsIterator
 }
 
-// baseRows provides no-op versions of common rows functions that aren't
+// baseRS provides no-op versions of common rows functions that aren't
 // needed by every implementation, so that it can be embedded in other
 // implementations
-type baseRows struct{}
+type baseRS struct{}
 
-func (baseRows) Rev() string                       { return "" }
-func (baseRows) EOQ() bool                         { return false }
-func (baseRows) QueryIndex() int                   { return 0 }
-func (baseRows) UpdateSeq() string                 { return "" }
-func (baseRows) Attachments() *AttachmentsIterator { return nil }
+func (baseRS) Rev() string                       { return "" }
+func (baseRS) EOQ() bool                         { return false }
+func (baseRS) QueryIndex() int                   { return 0 }
+func (baseRS) UpdateSeq() string                 { return "" }
+func (baseRS) Attachments() *AttachmentsIterator { return nil }
 
 type rows struct {
-	baseRows
+	baseRS
 	*iter
 	rowsi driver.Rows
 	err   error
@@ -340,3 +340,22 @@ func (r *rows) QueryIndex() int {
 	}
 	return 0
 }
+
+// errRS is a resultset that has errored.
+type errRS struct {
+	baseRS
+	err error
+}
+
+var _ ResultSet = &errRS{}
+
+func (e *errRS) Err() error                      { return e.err }
+func (e *errRS) Close() error                    { return e.err }
+func (e *errRS) Finish() (ResultMetadata, error) { return ResultMetadata{}, e.err }
+func (e *errRS) ID() string                      { return "" }
+func (e *errRS) Key() string                     { return "" }
+func (e *errRS) Next() bool                      { return false }
+func (e *errRS) ScanAllDocs(interface{}) error   { return e.err }
+func (e *errRS) ScanDoc(interface{}) error       { return e.err }
+func (e *errRS) ScanKey(interface{}) error       { return e.err }
+func (e *errRS) ScanValue(interface{}) error     { return e.err }

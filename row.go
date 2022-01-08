@@ -56,7 +56,7 @@ type row struct {
 	// prepared is set to true by the first call to Next()
 	prepared int32
 	closed   int32
-	baseRows
+	baseRS
 	id string // TODO
 	*Row
 }

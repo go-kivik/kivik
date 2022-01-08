@@ -131,9 +131,9 @@ func (db *DB) Get(ctx context.Context, docID string, options ...Options) *Row {
 	return row
 }
 
-// GetMeta returns the active rev of the specified document. GetMeta accepts
+// GetRev returns the active rev of the specified document. GetRev accepts
 // the same options as the Get method.
-func (db *DB) GetMeta(ctx context.Context, docID string, options ...Options) (rev string, err error) {
+func (db *DB) GetRev(ctx context.Context, docID string, options ...Options) (rev string, err error) {
 	if db.err != nil {
 		return "", db.err
 	}

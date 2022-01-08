@@ -685,7 +685,7 @@ func TestSetSecurity(t *testing.T) {
 	}
 }
 
-func TestGetMeta(t *testing.T) { // nolint: gocyclo
+func TestGetRev(t *testing.T) { // nolint: gocyclo
 	tests := []struct {
 		name    string
 		db      *DB
@@ -810,7 +810,7 @@ func TestGetMeta(t *testing.T) { // nolint: gocyclo
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rev, err := test.db.GetMeta(context.Background(), test.docID, test.options)
+			rev, err := test.db.GetRev(context.Background(), test.docID, test.options)
 			testy.StatusError(t, test.err, test.status, err)
 			if rev != test.rev {
 				t.Errorf("Unexpected rev: %v", rev)

@@ -112,22 +112,22 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) 
 
 // Get fetches the requested document. Any errors are deferred until the
 // row.ScanDoc call.
-func (db *DB) Get(ctx context.Context, docID string, options ...Options) *Row {
+func (db *DB) Get(ctx context.Context, docID string, options ...Options) ResultSet {
 	if db.err != nil {
-		return &Row{Err: db.err}
+		return &row{Row: &Row{Err: db.err}}
 	}
 	doc, err := db.driverDB.Get(ctx, docID, mergeOptions(options...))
 	if err != nil {
-		return &Row{Err: err}
+		return &row{Row: &Row{Err: err}}
 	}
-	row := &Row{
+	r := &Row{
 		Rev:  doc.Rev,
 		Body: doc.Body,
 	}
 	if doc.Attachments != nil {
-		row.Attachments = &AttachmentsIterator{atti: doc.Attachments}
+		r.Attachments = &AttachmentsIterator{atti: doc.Attachments}
 	}
-	return row
+	return &row{Row: r}
 }
 
 // GetRev returns the active rev of the specified document. GetRev accepts
@@ -142,13 +142,6 @@ func (db *DB) GetRev(ctx context.Context, docID string, options ...Options) (rev
 		return rev, err
 	}
 	row := db.Get(ctx, docID, opts)
-	if row.Err != nil {
-		return "", row.Err
-	}
-	if row.Rev != "" {
-		_ = row.Body.Close()
-		return row.Rev, nil
-	}
 	var doc struct {
 		Rev string `json:"_rev"`
 	}

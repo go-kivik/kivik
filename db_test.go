@@ -342,9 +342,8 @@ func TestGet(t *testing.T) {
 			docID:   "foo",
 			options: testOptions,
 			expected: &Row{
-				ContentLength: 13,
-				Rev:           "1-xxx",
-				Body:          body(`{"_id":"foo"}`),
+				Rev:  "1-xxx",
+				Body: body(`{"_id":"foo"}`),
 			},
 		},
 		{
@@ -372,9 +371,8 @@ func TestGet(t *testing.T) {
 			docID:   "foo",
 			options: map[string]interface{}{"include_docs": true},
 			expected: &Row{
-				ContentLength: 13,
-				Rev:           "1-xxx",
-				Body:          body(`{"_id":"foo"}`),
+				Rev:  "1-xxx",
+				Body: body(`{"_id":"foo"}`),
 				Attachments: &AttachmentsIterator{
 					atti: &mock.Attachments{ID: "asdf"},
 				},

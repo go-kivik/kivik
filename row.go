@@ -23,11 +23,6 @@ import (
 // it is sufficient just to call the ScanDoc method. For more advanced uses, the
 // fields may be accessed directly.
 type Row struct {
-	// ContentLength records the size of the JSON representation of the document
-	// as requestd. The value -1 indicates that the length is unknown. Values
-	// >= 0 indicate that the given number of bytes may be read from Body.
-	ContentLength int64
-
 	// Rev is the revision ID of the returned document.
 	Rev string
 

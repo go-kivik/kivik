@@ -213,6 +213,8 @@ type DB interface {
 // Document represents a single document returned by Get
 type Document struct {
 	// ContentLength is the size of the document response in bytes.
+	//
+	// Deprecate: This field is no longer read.
 	ContentLength int64
 
 	// Rev is the revision number returned

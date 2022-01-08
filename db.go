@@ -121,9 +121,8 @@ func (db *DB) Get(ctx context.Context, docID string, options ...Options) *Row {
 		return &Row{Err: err}
 	}
 	row := &Row{
-		ContentLength: doc.ContentLength,
-		Rev:           doc.Rev,
-		Body:          doc.Body,
+		Rev:  doc.Rev,
+		Body: doc.Body,
 	}
 	if doc.Attachments != nil {
 		row.Attachments = &AttachmentsIterator{atti: doc.Attachments}

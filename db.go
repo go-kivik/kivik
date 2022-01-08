@@ -131,23 +131,24 @@ func (db *DB) Get(ctx context.Context, docID string, options ...Options) *Row {
 	return row
 }
 
-// GetMeta returns the size and rev of the specified document. GetMeta accepts
+// GetMeta returns the active rev of the specified document. GetMeta accepts
 // the same options as the Get method.
-func (db *DB) GetMeta(ctx context.Context, docID string, options ...Options) (size int64, rev string, err error) {
+func (db *DB) GetMeta(ctx context.Context, docID string, options ...Options) (rev string, err error) {
 	if db.err != nil {
-		return 0, "", db.err
+		return "", db.err
 	}
 	opts := mergeOptions(options...)
 	if r, ok := db.driverDB.(driver.MetaGetter); ok {
-		return r.GetMeta(ctx, docID, opts)
+		_, rev, err := r.GetMeta(ctx, docID, opts)
+		return rev, err
 	}
 	row := db.Get(ctx, docID, opts)
 	if row.Err != nil {
-		return 0, "", row.Err
+		return "", row.Err
 	}
 	if row.Rev != "" {
 		_ = row.Body.Close()
-		return row.ContentLength, row.Rev, nil
+		return row.Rev, nil
 	}
 	var doc struct {
 		Rev string `json:"_rev"`
@@ -155,7 +156,7 @@ func (db *DB) GetMeta(ctx context.Context, docID string, options ...Options) (si
 	// These last two lines cannot be combined for GopherJS due to a bug.
 	// See https://github.com/gopherjs/gopherjs/issues/608
 	err = row.ScanDoc(&doc)
-	return row.ContentLength, doc.Rev, err
+	return doc.Rev, err
 }
 
 // CreateDoc creates a new doc with an auto-generated unique ID. The generated

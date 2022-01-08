@@ -118,10 +118,12 @@ func TestFind(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rows := test.db.Find(context.Background(), test.query).(*rows)
-			testy.StatusError(t, test.err, test.status, rows.Err())
-			rows.cancel = nil // Determinism
-			if d := testy.DiffInterface(test.expected, rows); d != nil {
+			rs := test.db.Find(context.Background(), test.query)
+			testy.StatusError(t, test.err, test.status, rs.Err())
+			if r, ok := rs.(*rows); ok {
+				r.cancel = nil // Determinism
+			}
+			if d := testy.DiffInterface(test.expected, rs); d != nil {
 				t.Error(d)
 			}
 		})

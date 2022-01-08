@@ -342,9 +342,8 @@ func TestGet(t *testing.T) {
 			docID:   "foo",
 			options: testOptions,
 			expected: &Row{
-				ContentLength: 13,
-				Rev:           "1-xxx",
-				Body:          body(`{"_id":"foo"}`),
+				Rev:  "1-xxx",
+				Body: body(`{"_id":"foo"}`),
 			},
 		},
 		{
@@ -372,9 +371,8 @@ func TestGet(t *testing.T) {
 			docID:   "foo",
 			options: map[string]interface{}{"include_docs": true},
 			expected: &Row{
-				ContentLength: 13,
-				Rev:           "1-xxx",
-				Body:          body(`{"_id":"foo"}`),
+				Rev:  "1-xxx",
+				Body: body(`{"_id":"foo"}`),
 				Attachments: &AttachmentsIterator{
 					atti: &mock.Attachments{ID: "asdf"},
 				},
@@ -685,12 +683,11 @@ func TestSetSecurity(t *testing.T) {
 	}
 }
 
-func TestGetMeta(t *testing.T) { // nolint: gocyclo
+func TestGetRev(t *testing.T) { // nolint: gocyclo
 	tests := []struct {
 		name    string
 		db      *DB
 		docID   string
-		size    int64
 		rev     string
 		options Options
 		status  int
@@ -726,7 +723,6 @@ func TestGetMeta(t *testing.T) { // nolint: gocyclo
 			},
 			docID:   "foo",
 			options: testOptions,
-			size:    123,
 			rev:     "1-xxx",
 		},
 		{
@@ -762,7 +758,6 @@ func TestGetMeta(t *testing.T) { // nolint: gocyclo
 				},
 			},
 			docID: "foo",
-			size:  16,
 			rev:   "1-xxx",
 		},
 		{
@@ -785,7 +780,6 @@ func TestGetMeta(t *testing.T) { // nolint: gocyclo
 				},
 			},
 			docID: "foo",
-			size:  16,
 			rev:   "1-xxx",
 		},
 		{
@@ -814,11 +808,8 @@ func TestGetMeta(t *testing.T) { // nolint: gocyclo
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			size, rev, err := test.db.GetMeta(context.Background(), test.docID, test.options)
+			rev, err := test.db.GetRev(context.Background(), test.docID, test.options)
 			testy.StatusError(t, test.err, test.status, err)
-			if size != test.size {
-				t.Errorf("Unexpected size: %v", size)
-			}
 			if rev != test.rev {
 				t.Errorf("Unexpected rev: %v", rev)
 			}

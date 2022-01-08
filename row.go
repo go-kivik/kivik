@@ -119,3 +119,7 @@ func (r *row) ScanDoc(dest interface{}) error {
 	atomic.StoreInt32(&r.closed, 1)
 	return r.Row.ScanDoc(dest)
 }
+
+func (r *row) Attachments() *AttachmentsIterator {
+	return r.Row.Attachments
+}

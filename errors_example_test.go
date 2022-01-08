@@ -16,7 +16,7 @@ import (
 	"context"
 	"net/http"
 
-	kivik "github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4"
 )
 
 func ExampleStatusCode() {
@@ -25,7 +25,7 @@ func ExampleStatusCode() {
 		panic(err)
 	}
 	row := client.DB("foo").Get(context.Background(), "my_doc_id")
-	switch kivik.StatusCode(row.Err) {
+	switch kivik.StatusCode(row.Err()) {
 	case http.StatusNotFound:
 		return
 	case http.StatusUnauthorized:

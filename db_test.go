@@ -304,7 +304,7 @@ func TestGet(t *testing.T) {
 		db       *DB
 		docID    string
 		options  Options
-		expected *Row
+		expected *row
 	}{
 		{
 			name: "db error",
@@ -315,9 +315,9 @@ func TestGet(t *testing.T) {
 					},
 				},
 			},
-			expected: &Row{
+			expected: &row{Row: &Row{
 				Err: fmt.Errorf("db error"),
-			},
+			}},
 		},
 		{
 			name: "success",
@@ -341,10 +341,10 @@ func TestGet(t *testing.T) {
 			},
 			docID:   "foo",
 			options: testOptions,
-			expected: &Row{
+			expected: &row{Row: &Row{
 				Rev:  "1-xxx",
 				Body: body(`{"_id":"foo"}`),
-			},
+			}},
 		},
 		{
 			name: "streaming attachments",
@@ -370,13 +370,13 @@ func TestGet(t *testing.T) {
 			},
 			docID:   "foo",
 			options: map[string]interface{}{"include_docs": true},
-			expected: &Row{
+			expected: &row{Row: &Row{
 				Rev:  "1-xxx",
 				Body: body(`{"_id":"foo"}`),
 				Attachments: &AttachmentsIterator{
 					atti: &mock.Attachments{ID: "asdf"},
 				},
-			},
+			}},
 		},
 	}
 	for _, test := range tests {

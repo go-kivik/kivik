@@ -79,6 +79,7 @@ func (r *row) Finish() (ResultMetadata, error) {
 
 func (r *row) Err() error  { return r.Row.Err }
 func (r *row) ID() string  { return r.id }
+func (r *row) Rev() string { return r.Row.Rev }
 func (r *row) Key() string { return "" }
 func (r *row) ScanKey(interface{}) error {
 	if atomic.LoadInt32(&r.closed) == 1 {

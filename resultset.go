@@ -117,6 +117,11 @@ type ResultSet interface {
 	// ID returns the ID of the most recent result.
 	ID() string
 
+	// Rev returns the document revision, when known. Not all resultsets (such
+	// as those from views) include revision IDs, so this will be blank in such
+	// cases.
+	Rev() string
+
 	// Key returns the Key of the most recent result as a raw JSON string. For
 	// compound keys, the ScanKey() method may be more convenient.
 	Key() string
@@ -144,6 +149,7 @@ type ResultSet interface {
 // implementations
 type baseRows struct{}
 
+func (baseRows) Rev() string                       { return "" }
 func (baseRows) EOQ() bool                         { return false }
 func (baseRows) QueryIndex() int                   { return 0 }
 func (baseRows) UpdateSeq() string                 { return "" }

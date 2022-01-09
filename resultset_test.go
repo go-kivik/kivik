@@ -645,3 +645,58 @@ func TestScanAllDocs(t *testing.T) {
 		}
 	})
 }
+
+func TestResultSet_multi_query(t *testing.T) {
+	var offset, total int64
+	responses := []struct {
+		row  *driver.Row
+		meta ResultMetadata
+	}{
+		{row: &driver.Row{Doc: []byte(`{"_id":"foo"}`)}},
+		{meta: ResultMetadata{Offset: 1, TotalRows: 2}},
+		{row: &driver.Row{Doc: []byte(`{"_id":"bar"}`)}},
+		{meta: ResultMetadata{Offset: 3, TotalRows: 4}},
+		{row: &driver.Row{Doc: []byte(`{"_id":"baz"}`)}},
+		{meta: ResultMetadata{Offset: 5, TotalRows: 6}},
+	}
+	rows := &mock.Rows{
+		NextFunc: func(row *driver.Row) error {
+			if len(responses) == 0 {
+				return io.EOF
+			}
+			response := responses[0]
+			responses = responses[1:]
+			if response.row == nil {
+				offset = response.meta.Offset
+				total = response.meta.TotalRows
+				return driver.EOQ
+			}
+			*row = *response.row
+			return nil
+		},
+		OffsetFunc:    func() int64 { return offset },
+		TotalRowsFunc: func() int64 { return total },
+	}
+	rs := newRows(context.Background(), rows)
+	want := []interface{}{}
+	got := []interface{}{}
+
+	for rs.Next() {
+		if rs.EOQ() {
+			got = append(got, ResultMetadata{
+				Offset:    0,
+				TotalRows: 0,
+			})
+			continue
+		}
+		var doc interface{}
+		if err := rs.ScanDoc(&doc); err != nil {
+			t.Fatal(err)
+		}
+		got = append(got, doc)
+	}
+
+	if d := testy.DiffInterface(want, got); d != nil {
+		t.Error(d)
+	}
+}

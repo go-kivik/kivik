@@ -253,6 +253,10 @@ func (r *rows) ScanDoc(dest interface{}) (err error) {
 // possible that an error will be returned, and that one or more documents were
 // successfully scanned.
 func ScanAllDocs(r ResultSet, dest interface{}) (err error) {
+	return scanAll(r, dest, r.ScanDoc)
+}
+
+func scanAll(r ResultSet, dest interface{}, scan func(interface{}) error) (err error) {
 	defer func() {
 		closeErr := r.Close()
 		if err == nil {
@@ -296,7 +300,7 @@ func ScanAllDocs(r ResultSet, dest interface{}) (err error) {
 			return nil
 		}
 		vp := reflect.New(base)
-		err = r.ScanDoc(vp.Interface())
+		err = scan(vp.Interface())
 		if limit > 0 { // means this is an array
 			direct.Index(i).Set(reflect.Indirect(vp))
 		} else {

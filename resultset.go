@@ -164,7 +164,7 @@ func (r *rows) Next() bool {
 }
 
 func (r *rows) EOQ() bool {
-	return r.iter.EOQ()
+	return r.iter.eoq
 }
 
 func (r *rows) Err() error {

@@ -252,8 +252,13 @@ func (r *rows) ScanDoc(dest interface{}) (err error) {
 // once the array is filled.  The iterator is closed by this method. It is
 // possible that an error will be returned, and that one or more documents were
 // successfully scanned.
-func ScanAllDocs(r ResultSet, dest interface{}) (err error) {
+func ScanAllDocs(r ResultSet, dest interface{}) error {
 	return scanAll(r, dest, r.ScanDoc)
+}
+
+// ScanAllValues works like ScanAllDocs, but scans the values rather than docs.
+func ScanAllValues(r ResultSet, dest interface{}) error {
+	return scanAll(r, dest, r.ScanValue)
 }
 
 func scanAll(r ResultSet, dest interface{}, scan func(interface{}) error) (err error) {

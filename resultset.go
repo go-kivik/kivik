@@ -101,14 +101,6 @@ type ResultSet interface {
 	// It will return an error if the query does not include documents.
 	ScanDoc(dest interface{}) error
 
-	// ScanAllDocs loops through remaining documents in the iterator, and scans
-	// them into dest. Dest is expected to be a pointer to a slice or an array,
-	// any other type will return an error. If dest is an array, scanning will
-	// stop once the array is filled.  The iterator is closed by this method.
-	// It is possible that an error will be returned, and that one or more
-	// documents were successfully scanned.
-	ScanAllDocs(dest interface{}) error
-
 	// ScanKey works the same as ScanValue, but on the key field of the result.
 	// For simple keys, which are just strings, the Key() method may be easier
 	// to use.
@@ -254,11 +246,22 @@ func (r *rows) ScanDoc(dest interface{}) (err error) {
 	return &Error{HTTPStatus: http.StatusBadRequest, Message: "kivik: doc is nil; does the query include docs?"}
 }
 
-func (r *rows) ScanAllDocs(dest interface{}) error {
-	return scanAllDocs(r, dest)
+// ScanAllDocs loops through remaining documents in the resultset, and scans
+// them into dest. Dest is expected to be a pointer to a slice or an array, any
+// other type will return an error. If dest is an array, scanning will stop
+// once the array is filled.  The iterator is closed by this method. It is
+// possible that an error will be returned, and that one or more documents were
+// successfully scanned.
+func ScanAllDocs(r ResultSet, dest interface{}) error {
+	return scanAll(r, dest, r.ScanDoc)
 }
 
-func scanAllDocs(r ResultSet, dest interface{}) (err error) {
+// ScanAllValues works like ScanAllDocs, but scans the values rather than docs.
+func ScanAllValues(r ResultSet, dest interface{}) error {
+	return scanAll(r, dest, r.ScanValue)
+}
+
+func scanAll(r ResultSet, dest interface{}, scan func(interface{}) error) (err error) {
 	defer func() {
 		closeErr := r.Close()
 		if err == nil {
@@ -302,7 +305,7 @@ func scanAllDocs(r ResultSet, dest interface{}) (err error) {
 			return nil
 		}
 		vp := reflect.New(base)
-		err = r.ScanDoc(vp.Interface())
+		err = scan(vp.Interface())
 		if limit > 0 { // means this is an array
 			direct.Index(i).Set(reflect.Indirect(vp))
 		} else {

@@ -62,13 +62,6 @@ func (r *row) Next() bool {
 	return atomic.SwapInt32(&r.prepared, 1) != 1
 }
 
-func (r *row) ScanAllDocs(dest interface{}) error {
-	if r.err != nil {
-		return r.err
-	}
-	return scanAllDocs(r, dest)
-}
-
 func (r *row) Attachments() *AttachmentsIterator {
 	return r.atts
 }

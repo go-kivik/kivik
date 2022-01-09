@@ -636,7 +636,7 @@ func TestScanAllDocs(t *testing.T) {
 		if tt.rows == nil {
 			tt.rows = newRows(context.Background(), &mock.Rows{})
 		}
-		err := tt.rows.ScanAllDocs(tt.dest)
+		err := ScanAllDocs(tt.rows, tt.dest)
 		if !testy.ErrorMatches(tt.err, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}

@@ -122,10 +122,6 @@ func (i *iter) next() (doClose, ok bool) {
 	return false, true
 }
 
-func (i *iter) EOQ() bool {
-	return i.eoq
-}
-
 // Close closes the Iterator, preventing further enumeration, and freeing any
 // resources (such as the http request body) of the underlying feed. If Next is
 // called and there are no further results, Iterator is closed automatically and

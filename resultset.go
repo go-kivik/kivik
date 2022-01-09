@@ -101,14 +101,6 @@ type ResultSet interface {
 	// It will return an error if the query does not include documents.
 	ScanDoc(dest interface{}) error
 
-	// ScanAllDocs loops through remaining documents in the iterator, and scans
-	// them into dest. Dest is expected to be a pointer to a slice or an array,
-	// any other type will return an error. If dest is an array, scanning will
-	// stop once the array is filled.  The iterator is closed by this method.
-	// It is possible that an error will be returned, and that one or more
-	// documents were successfully scanned.
-	ScanAllDocs(dest interface{}) error
-
 	// ScanKey works the same as ScanValue, but on the key field of the result.
 	// For simple keys, which are just strings, the Key() method may be easier
 	// to use.
@@ -254,11 +246,13 @@ func (r *rows) ScanDoc(dest interface{}) (err error) {
 	return &Error{HTTPStatus: http.StatusBadRequest, Message: "kivik: doc is nil; does the query include docs?"}
 }
 
-func (r *rows) ScanAllDocs(dest interface{}) error {
-	return scanAllDocs(r, dest)
-}
-
-func scanAllDocs(r ResultSet, dest interface{}) (err error) {
+// ScanAllDocs loops through remaining documents in the resultset, and scans
+// them into dest. Dest is expected to be a pointer to a slice or an array, any
+// other type will return an error. If dest is an array, scanning will stop
+// once the array is filled.  The iterator is closed by this method. It is
+// possible that an error will be returned, and that one or more documents were
+// successfully scanned.
+func ScanAllDocs(r ResultSet, dest interface{}) (err error) {
 	defer func() {
 		closeErr := r.Close()
 		if err == nil {

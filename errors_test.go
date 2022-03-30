@@ -110,7 +110,7 @@ func TestFormatError(t *testing.T) {
 		full: `It's missing: 404 / Not Found: not found`,
 	})
 	tests.Add("embedded error", func() interface{} {
-		_, err := json.Marshal(func() {})
+		_, err := json.Marshal(func() {}) //nolint:staticcheck
 		return tst{
 			err:  &Error{HTTPStatus: http.StatusBadRequest, Err: err},
 			str:  "json: unsupported type: func()",
@@ -120,7 +120,7 @@ func TestFormatError(t *testing.T) {
 	})
 	tests.Add("embedded network error", func() interface{} {
 		client := testy.HTTPClient(func(_ *http.Request) (*http.Response, error) {
-			_, err := json.Marshal(func() {})
+			_, err := json.Marshal(func() {}) //nolint:staticcheck
 			return nil, &Error{HTTPStatus: http.StatusBadRequest, Err: err}
 		})
 		req, _ := http.NewRequest(http.MethodGet, "/", nil)

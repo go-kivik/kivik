@@ -25,7 +25,7 @@ variables:
 
 linter:
   stage: test
-  image: golangci/golangci-lint:v1.43
+  image: golangci/golangci-lint:v1.45.2
   script:
   - go mod download
   - golangci-lint run ./...
@@ -33,7 +33,7 @@ linter:
 
 coverage:
   stage: test
-  image: golang:1.17
+  image: golang:1.18
   services: []
   before_script:
   - ''
@@ -60,6 +60,10 @@ go-1.16:
 go-1.17:
   <<: *test_template
   image: golang:1.17
+
+go-1.18:
+  <<: *test_template
+  image: golang:1.18
 
 gopherjs-1.16:
   <<: *test_template

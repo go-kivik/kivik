@@ -119,7 +119,7 @@ type causer interface {
 // For example, to panic for all but NotFound errors:
 //
 //  err := db.Get(context.TODO(), "docID").ScanDoc(&doc)
-//  if kivik.StatusCode(err) == kivik.StatusNotFound {
+//  if kivik.StatusCode(err) == http.StatusNotFound {
 //      return
 //  }
 //  if err != nil {

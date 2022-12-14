@@ -23,7 +23,7 @@ var findNotImplemented = &Error{HTTPStatus: http.StatusNotImplemented, Message: 
 
 // Find executes a query using the new /_find interface. The query must be
 // JSON-marshalable to a valid query.
-// See http://docs.couchdb.org/en/2.0.0/api/database/find.html#db-find
+// See https://docs.couchdb.org/en/stable/api/database/find.html
 func (db *DB) Find(ctx context.Context, query interface{}, options ...Options) ResultSet {
 	if db.err != nil {
 		return &errRS{err: db.err}

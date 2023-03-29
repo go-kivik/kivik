@@ -56,7 +56,6 @@ gopherjs-1.16:
   variables:
     SRCDIR: /go/src/github.com/go-kivik/kivik/v3
   before_script:
-    - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
     - curl -sL https://deb.nodesource.com/setup_12.x | bash -
     - apt-get update -qq && apt-get install -y nodejs
   script:

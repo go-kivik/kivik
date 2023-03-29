@@ -13,7 +13,7 @@ variables:
   services:
     - name: apache/couchdb:2.3.1
       alias: couch23
-    - name: apache/couchdb:3.0.0
+    - name: couchdb:3.0.0
       alias: couch30
   before_script:
     - ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH23}

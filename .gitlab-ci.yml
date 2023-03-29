@@ -78,8 +78,48 @@ gopherjs-1.16:
     - npm install
     - npm install source-map-support
     - mkdir -p /tmp/src
-    - ( cd /tmp && go get github.com/gopherjs/gopherjs@1.16.4+go1.16.7 )
+    - ( cd /tmp && go install github.com/gopherjs/gopherjs@1.16.4+go1.16.7 )
     - npm install -S https://github.com/gopherjs/gopherjs#1.16.4+go1.16.7 && node -r syscall
+    - gopherjs test ./...
+
+gopherjs-1.17:
+  <<: *test_template
+  image: golang:1.17
+  variables:
+    SRCDIR: /go/src/github.com/go-kivik/kivik/v3
+  before_script:
+    - curl -sL https://deb.nodesource.com/setup_12.x | bash -
+    - apt-get update -qq && apt-get install -y nodejs
+  script:
+    - mkdir -p ${SRCDIR}
+    - mv ${CI_PROJECT_DIR}/* ${SRCDIR}
+    - cd ${SRCDIR}
+    - npm install -g npm@7.5.2 && npm update
+    - npm install
+    - npm install source-map-support
+    - mkdir -p /tmp/src
+    - ( cd /tmp && go install github.com/gopherjs/gopherjs@v1.17.2+go1.17.9 )
+    - npm install -S https://github.com/gopherjs/gopherjs#v1.17.2+go1.17.9 && node -r syscall
+    - gopherjs test ./...
+
+gopherjs-1.18:
+  <<: *test_template
+  image: golang:1.18
+  variables:
+    SRCDIR: /go/src/github.com/go-kivik/kivik/v3
+  before_script:
+    - curl -sL https://deb.nodesource.com/setup_12.x | bash -
+    - apt-get update -qq && apt-get install -y nodejs
+  script:
+    - mkdir -p ${SRCDIR}
+    - mv ${CI_PROJECT_DIR}/* ${SRCDIR}
+    - cd ${SRCDIR}
+    - npm install -g npm@7.5.2 && npm update
+    - npm install
+    - npm install source-map-support
+    - mkdir -p /tmp/src
+    - ( cd /tmp && go install github.com/gopherjs/gopherjs@v1.18.0-beta2+go1.18.5 )
+    - npm install -S https://github.com/gopherjs/gopherjs#v1.18.0-beta2+go1.18.5 && node -r syscall
     - gopherjs test ./...
 
 go-rc:

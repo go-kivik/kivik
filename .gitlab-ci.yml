@@ -30,14 +30,6 @@ linter:
     - go mod download
     - golangci-lint run ./...
 
-go-1.11:
-  <<: *test_template
-  image: golang:1.11
-
-go-1.12:
-  <<: *test_template
-  image: golang:1.12
-
 go-1.13:
   <<: *test_template
   image: golang:1.13

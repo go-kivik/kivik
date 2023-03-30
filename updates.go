@@ -99,7 +99,7 @@ func (c *Client) DBUpdates(ctx context.Context, options ...Options) (*DBUpdates,
 			return t.DBUpdates(ctx)
 		}
 	default:
-		return nil, &Error{HTTPStatus: http.StatusNotImplemented, Message: "kivik: driver does not implement DBUpdater"}
+		return nil, &Error{Status: http.StatusNotImplemented, Message: "kivik: driver does not implement DBUpdater"}
 	}
 
 	updatesi, err := updaterFunc(ctx, mergeOptions(options...))

@@ -419,7 +419,7 @@ func TestFlush(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.Flusher{
 					FlushFunc: func(_ context.Context) error {
-						return &Error{HTTPStatus: http.StatusBadGateway, Err: errors.New("flush error")}
+						return &Error{Status: http.StatusBadGateway, Err: errors.New("flush error")}
 					},
 				},
 			},
@@ -458,7 +458,7 @@ func TestStats(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.DB{
 					StatsFunc: func(_ context.Context) (*driver.DBStats, error) {
-						return nil, &Error{HTTPStatus: http.StatusBadGateway, Err: errors.New("stats error")}
+						return nil, &Error{Status: http.StatusBadGateway, Err: errors.New("stats error")}
 					},
 				},
 			},
@@ -525,7 +525,7 @@ func TestCompact(t *testing.T) {
 	db := &DB{
 		driverDB: &mock.DB{
 			CompactFunc: func(_ context.Context) error {
-				return &Error{HTTPStatus: http.StatusBadRequest, Err: errors.New(expected)}
+				return &Error{Status: http.StatusBadRequest, Err: errors.New(expected)}
 			},
 		},
 	}
@@ -542,7 +542,7 @@ func TestCompactView(t *testing.T) {
 				if ddocID != expectedDDocID {
 					return fmt.Errorf("Unexpected ddocID: %s", ddocID)
 				}
-				return &Error{HTTPStatus: http.StatusBadRequest, Err: errors.New(expected)}
+				return &Error{Status: http.StatusBadRequest, Err: errors.New(expected)}
 			},
 		},
 	}
@@ -555,7 +555,7 @@ func TestViewCleanup(t *testing.T) {
 	db := &DB{
 		driverDB: &mock.DB{
 			ViewCleanupFunc: func(_ context.Context) error {
-				return &Error{HTTPStatus: http.StatusBadRequest, Err: errors.New(expected)}
+				return &Error{Status: http.StatusBadRequest, Err: errors.New(expected)}
 			},
 		},
 	}
@@ -576,7 +576,7 @@ func TestSecurity(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.DB{
 					SecurityFunc: func(_ context.Context) (*driver.Security, error) {
-						return nil, &Error{HTTPStatus: http.StatusBadGateway, Err: errors.New("security error")}
+						return nil, &Error{Status: http.StatusBadGateway, Err: errors.New("security error")}
 					},
 				},
 			},
@@ -643,7 +643,7 @@ func TestSetSecurity(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.DB{
 					SetSecurityFunc: func(_ context.Context, _ *driver.Security) error {
-						return &Error{HTTPStatus: http.StatusBadGateway, Err: errors.New("set security error")}
+						return &Error{Status: http.StatusBadGateway, Err: errors.New("set security error")}
 					},
 				},
 			},
@@ -708,7 +708,7 @@ func TestGetRev(t *testing.T) { // nolint: gocyclo
 			db: &DB{
 				driverDB: &mock.MetaGetter{
 					GetMetaFunc: func(_ context.Context, _ string, _ map[string]interface{}) (int64, string, error) {
-						return 0, "", &Error{HTTPStatus: http.StatusBadGateway, Err: errors.New("get meta error")}
+						return 0, "", &Error{Status: http.StatusBadGateway, Err: errors.New("get meta error")}
 					},
 				},
 			},
@@ -740,7 +740,7 @@ func TestGetRev(t *testing.T) { // nolint: gocyclo
 			db: &DB{
 				driverDB: &mock.DB{
 					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (*driver.Document, error) {
-						return nil, &Error{HTTPStatus: http.StatusBadGateway, Err: errors.New("get error")}
+						return nil, &Error{Status: http.StatusBadGateway, Err: errors.New("get error")}
 					},
 				},
 			},
@@ -855,7 +855,7 @@ func TestCopy(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.Copier{
 					CopyFunc: func(_ context.Context, _, _ string, _ map[string]interface{}) (string, error) {
-						return "", &Error{HTTPStatus: http.StatusBadRequest, Err: errors.New("copy error")}
+						return "", &Error{Status: http.StatusBadRequest, Err: errors.New("copy error")}
 					},
 				},
 			},
@@ -894,7 +894,7 @@ func TestCopy(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.DB{
 					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (*driver.Document, error) {
-						return nil, &Error{HTTPStatus: http.StatusBadGateway, Err: errors.New("get error")}
+						return nil, &Error{Status: http.StatusBadGateway, Err: errors.New("get error")}
 					},
 				},
 			},
@@ -931,7 +931,7 @@ func TestCopy(t *testing.T) {
 						}, nil
 					},
 					PutFunc: func(_ context.Context, _ string, _ interface{}, _ map[string]interface{}) (string, error) {
-						return "", &Error{HTTPStatus: http.StatusBadGateway, Err: errors.New("put error")}
+						return "", &Error{Status: http.StatusBadGateway, Err: errors.New("put error")}
 					},
 				},
 			},
@@ -1077,7 +1077,7 @@ func TestPut(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.DB{
 					PutFunc: func(_ context.Context, _ string, _ interface{}, _ map[string]interface{}) (string, error) {
-						return "", &Error{HTTPStatus: http.StatusBadRequest, Err: errors.New("db error")}
+						return "", &Error{Status: http.StatusBadRequest, Err: errors.New("db error")}
 					},
 				},
 			},
@@ -1279,7 +1279,7 @@ func TestCreateDoc(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.DB{
 					CreateDocFunc: func(_ context.Context, _ interface{}, _ map[string]interface{}) (string, string, error) {
-						return "", "", &Error{HTTPStatus: http.StatusBadRequest, Err: errors.New("create error")}
+						return "", "", &Error{Status: http.StatusBadRequest, Err: errors.New("create error")}
 					},
 				},
 			},
@@ -1340,7 +1340,7 @@ func TestDelete(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.DB{
 					DeleteFunc: func(_ context.Context, _, _ string, _ map[string]interface{}) (string, error) {
-						return "", &Error{HTTPStatus: http.StatusBadRequest, Err: errors.New("delete error")}
+						return "", &Error{Status: http.StatusBadRequest, Err: errors.New("delete error")}
 					},
 				},
 			},
@@ -1429,7 +1429,7 @@ func TestPutAttachment(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.DB{
 					PutAttachmentFunc: func(_ context.Context, _, _ string, _ *driver.Attachment, _ map[string]interface{}) (string, error) {
-						return "", &Error{HTTPStatus: http.StatusBadRequest, Err: errors.New("db error")}
+						return "", &Error{Status: http.StatusBadRequest, Err: errors.New("db error")}
 					},
 				},
 			},
@@ -1548,7 +1548,7 @@ func TestDeleteAttachment(t *testing.T) {
 		db: &DB{
 			driverDB: &mock.DB{
 				DeleteAttachmentFunc: func(_ context.Context, _, _, _ string, _ map[string]interface{}) (string, error) {
-					return "", &Error{HTTPStatus: http.StatusBadRequest, Err: errors.New("db error")}
+					return "", &Error{Status: http.StatusBadRequest, Err: errors.New("db error")}
 				},
 			},
 		},
@@ -1910,7 +1910,7 @@ func TestPurge(t *testing.T) {
 			db: &DB{
 				driverDB: &mock.Purger{
 					PurgeFunc: func(_ context.Context, _ map[string][]string) (*driver.PurgeResult, error) {
-						return nil, &Error{HTTPStatus: http.StatusNotImplemented, Message: "this feature is not yet implemented"}
+						return nil, &Error{Status: http.StatusNotImplemented, Message: "this feature is not yet implemented"}
 					},
 				},
 			},
@@ -2093,7 +2093,7 @@ func TestPartitionStats(t *testing.T) {
 		db: &DB{
 			driverDB: &mock.PartitionedDB{
 				PartitionStatsFunc: func(_ context.Context, _ string) (*driver.PartitionStats, error) {
-					return nil, &Error{HTTPStatus: http.StatusBadGateway, Err: errors.New("stats error")}
+					return nil, &Error{Status: http.StatusBadGateway, Err: errors.New("stats error")}
 				},
 			},
 		},

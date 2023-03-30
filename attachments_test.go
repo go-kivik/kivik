@@ -215,7 +215,7 @@ func TestAttachmentsIteratorNext(t *testing.T) {
 			iter: &AttachmentsIterator{
 				atti: &mock.Attachments{
 					NextFunc: func(_ *driver.Attachment) error {
-						return &Error{HTTPStatus: http.StatusBadGateway, Err: errors.New("error")}
+						return &Error{Status: http.StatusBadGateway, Err: errors.New("error")}
 					},
 				},
 			},

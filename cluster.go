@@ -19,7 +19,7 @@ import (
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
-var clusterNotImplemented = &Error{HTTPStatus: http.StatusNotImplemented, Message: "kivik: driver does not support cluster operations"}
+var clusterNotImplemented = &Error{Status: http.StatusNotImplemented, Message: "kivik: driver does not support cluster operations"}
 
 // ClusterStatus returns the current cluster status.
 //

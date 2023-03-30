@@ -28,7 +28,7 @@ type Config map[string]ConfigSection
 // ConfigSection represents all key/value pairs for a section of configuration.
 type ConfigSection map[string]string
 
-var configNotImplemented = &Error{HTTPStatus: http.StatusNotImplemented, Message: "kivik: driver does not support Config interface"}
+var configNotImplemented = &Error{Status: http.StatusNotImplemented, Message: "kivik: driver does not support Config interface"}
 
 // Config returns the entire server config, for the specified node.
 //

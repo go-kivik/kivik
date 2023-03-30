@@ -247,7 +247,7 @@ func (r *rows) ScanDoc(dest interface{}) (err error) {
 	if doc != nil {
 		return json.Unmarshal(doc, dest)
 	}
-	return &Error{HTTPStatus: http.StatusBadRequest, Message: "kivik: doc is nil; does the query include docs?"}
+	return &Error{Status: http.StatusBadRequest, Message: "kivik: doc is nil; does the query include docs?"}
 }
 
 // ScanAllDocs loops through remaining documents in the resultset, and scans

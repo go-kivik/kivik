@@ -165,7 +165,7 @@ func (r *Replication) Update(ctx context.Context) error {
 	return nil
 }
 
-var replicationNotImplemented = &Error{HTTPStatus: http.StatusNotImplemented, Message: "kivik: driver does not support replication"}
+var replicationNotImplemented = &Error{Status: http.StatusNotImplemented, Message: "kivik: driver does not support replication"}
 
 // GetReplications returns a list of defined replications in the _replicator
 // database. Options are in the same format as to AllDocs(), except that

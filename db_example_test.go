@@ -122,6 +122,7 @@ func ExampleDB_query() {
 	}
 }
 
+//nolint:revive // allow empty block in example
 func ExampleDB_mapReduce() {
 	opts := kivik.Options{
 		"group": true,

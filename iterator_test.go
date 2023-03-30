@@ -68,7 +68,7 @@ func TestCancelledIterator(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 	defer cancel()
 	iter := newIterator(ctx, &TestFeed{max: 10000}, func() interface{} { var i int64; return &i }())
-	for iter.Next() {
+	for iter.Next() { //nolint:revive // empty block necessary for loop
 	}
 	if err := iter.Err(); err.Error() != "context deadline exceeded" {
 		t.Errorf("Unexpected error: %s", err)

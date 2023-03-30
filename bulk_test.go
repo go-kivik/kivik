@@ -146,12 +146,12 @@ func TestRLOCK(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			close, err := test.iter.rlock()
+			closeFn, err := test.iter.rlock()
 			testy.Error(t, test.err, err)
-			if close == nil {
+			if closeFn == nil {
 				t.Fatal("close is nil")
 			}
-			close()
+			closeFn()
 		})
 	}
 }

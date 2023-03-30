@@ -97,6 +97,14 @@ func (db *DB) LocalDocs(ctx context.Context, options ...Options) ResultSet {
 // Query executes the specified view function from the specified design
 // document. ddoc and view may or may not be be prefixed with '_design/'
 // and '_view/' respectively.
+//
+// See https://docs.couchdb.org/en/stable/api/ddoc/views.html#
+//
+// If supported by the backend and database (i.e. CouchDB 2.2+), you may pass
+// multiple queries to a single view by passing an option called `queries` with
+// a multi-query object as a value.
+//
+// See https://docs.couchdb.org/en/stable/api/ddoc/views.html#sending-multiple-queries-to-a-view
 func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) ResultSet {
 	if db.err != nil {
 		return &errRS{err: db.err}

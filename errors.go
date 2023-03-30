@@ -13,11 +13,10 @@
 package kivik
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
-
-	"golang.org/x/xerrors"
 )
 
 // Error represents an error returned by Kivik.
@@ -70,8 +69,7 @@ func (e *Error) Cause() error {
 	return e.Err
 }
 
-// Unwrap satisfies the Go 1.13 errors.Wrapper interface
-// (golang.org/x/xerrors.Unwrap for older versions of Go).
+// Unwrap satisfies the errors.Wrapper interface.
 func (e *Error) Unwrap() error {
 	return e.Err
 }
@@ -140,10 +138,10 @@ func StatusCode(err error) int {
 	}
 	var coder statusCoder
 	for {
-		if xerrors.As(err, &coder) {
+		if errors.As(err, &coder) {
 			return coder.StatusCode()
 		}
-		if uw := xerrors.Unwrap(err); uw != nil {
+		if uw := errors.Unwrap(err); uw != nil {
 			err = uw
 			continue
 		}

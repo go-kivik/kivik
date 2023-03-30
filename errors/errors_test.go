@@ -105,9 +105,9 @@ func TestStatusError(t *testing.T) {
 		}
 	})
 
-	t.Run("StatusCode", func(t *testing.T) {
-		if result := err.StatusCode(); result != status {
-			t.Errorf("Unexpected StatusCode: %v", result)
+	t.Run("HTTPStatus", func(t *testing.T) {
+		if result := err.HTTPStatus(); result != status {
+			t.Errorf("Unexpected HTTPStatus: %v", result)
 		}
 	})
 
@@ -158,9 +158,9 @@ func TestWrappedError(t *testing.T) {
 		}
 	})
 
-	t.Run("StatusCode", func(t *testing.T) {
-		if result := err.StatusCode(); result != status {
-			t.Errorf("Unexpected StatusCode: %v", result)
+	t.Run("HTTPStatus", func(t *testing.T) {
+		if result := err.HTTPStatus(); result != status {
+			t.Errorf("Unexpected HTTPStatus: %v", result)
 		}
 	})
 

@@ -24,7 +24,7 @@ import (
 	"gitlab.com/flimzy/testy"
 )
 
-func TestStatusCoder(t *testing.T) {
+func TestHTTPStatus(t *testing.T) {
 	type scTest struct {
 		Name     string
 		Err      error
@@ -41,12 +41,12 @@ func TestStatusCoder(t *testing.T) {
 			Expected: 500,
 		},
 		{
-			Name:     "StatusCoder",
+			Name:     "HTTPStatus",
 			Err:      &Error{Status: 400, Err: errors.New("bad request")},
 			Expected: 400,
 		},
 		{
-			Name:     "buried pkg/errors StatusCoder",
+			Name:     "buried pkg/errors HTTPStatus",
 			Err:      pkgerrs.Wrap(&Error{Status: 400, Err: errors.New("bad request")}, "foo"),
 			Expected: 400,
 		},
@@ -68,7 +68,7 @@ func TestStatusCoder(t *testing.T) {
 	for _, test := range tests {
 		func(test scTest) {
 			t.Run(test.Name, func(t *testing.T) {
-				result := StatusCode(test.Err)
+				result := HTTPStatus(test.Err)
 				if result != test.Expected {
 					t.Errorf("Unexpected result. Expected %d, got %d", test.Expected, result)
 				}

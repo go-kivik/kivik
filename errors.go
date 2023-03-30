@@ -23,7 +23,7 @@ import (
 //
 // This type definition is not guaranteed to remain stable, or even exported.
 // When examining errors programatically, you should rely instead on the
-// StatusCode() function in this package, rather than on directly observing
+// HTTPStatus() function in this package, rather than on directly observing
 // the fields of this type.
 type Error struct {
 	// Status is the HTTP status code associated with this error. Normally
@@ -54,9 +54,9 @@ func (e *Error) Error() string {
 	return e.Message + ": " + e.Err.Error()
 }
 
-// StatusCode returns the HTTP status code associated with the error, or 500
+// HTTPStatus returns the HTTP status code associated with the error, or 500
 // (internal server error), if none.
-func (e *Error) StatusCode() int {
+func (e *Error) HTTPStatus() int {
 	if e.Status == 0 {
 		return http.StatusInternalServerError
 	}
@@ -94,29 +94,29 @@ func (e *Error) Format(f fmt.State, c rune) {
 func (e *Error) msg() string {
 	switch e.Message {
 	case "":
-		return http.StatusText(e.StatusCode())
+		return http.StatusText(e.HTTPStatus())
 	default:
 		return e.Message
 	}
 }
 
 type statusCoder interface {
-	StatusCode() int
+	HTTPStatus() int
 }
 
 type causer interface {
 	Cause() error
 }
 
-// StatusCode returns the HTTP status code embedded in the error, or 500
+// HTTPStatus returns the HTTP status code embedded in the error, or 500
 // (internal server error), if there was no specified status code.  If err is
-// nil, StatusCode returns 0. This provides a convenient way to determine the
+// nil, HTTPStatus returns 0. This provides a convenient way to determine the
 // precise nature of a Kivik-returned error.
 //
 // For example, to panic for all but NotFound errors:
 //
 //	err := db.Get(context.TODO(), "docID").ScanDoc(&doc)
-//	if kivik.StatusCode(err) == http.StatusNotFound {
+//	if kivik.HTTPStatus(err) == http.StatusNotFound {
 //	    return
 //	}
 //	if err != nil {
@@ -129,16 +129,16 @@ type causer interface {
 // interface.
 //
 //	type statusCoder interface {
-//	    StatusCode() (httpStatusCode int)
+//	    HTTPStatus() int
 //	}
-func StatusCode(err error) int {
+func HTTPStatus(err error) int {
 	if err == nil {
 		return 0
 	}
 	var coder statusCoder
 	for {
 		if errors.As(err, &coder) {
-			return coder.StatusCode()
+			return coder.HTTPStatus()
 		}
 		if uw := errors.Unwrap(err); uw != nil {
 			err = uw

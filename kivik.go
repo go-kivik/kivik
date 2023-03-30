@@ -163,7 +163,7 @@ func missingArg(arg string) error {
 // DBsStats returns database statistics about one or more databases.
 func (c *Client) DBsStats(ctx context.Context, dbnames []string) ([]*DBStats, error) {
 	dbstats, err := c.nativeDBsStats(ctx, dbnames)
-	switch StatusCode(err) {
+	switch HTTPStatus(err) {
 	case http.StatusNotFound, http.StatusNotImplemented:
 		return c.fallbackDBsStats(ctx, dbnames)
 	}

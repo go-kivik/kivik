@@ -60,11 +60,11 @@ If in doubt, you can pass [context.TODO] as the context variable. Example:
 
 Kivik returns errors that embed an HTTP status code. In most cases, this is the
 HTTP status code returned by the server. The embedded HTTP status code may be
-accessed easily using the StatusCode() method, or with a type assertion to
-`interface { StatusCode() int }`. Example:
+accessed easily using the HTTPStatus() method, or with a type assertion to
+`interface { HTTPStatus() int }`. Example:
 
-	if statusErr, ok := err.(interface{ StatusCode() int }); ok {
-		status = statusErr.StatusCode()
+	if statusErr, ok := err.(interface{ HTTPStatus() int }); ok {
+		status = statusErr.HTTPStatus()
 	}
 
 Any error that does not conform to this interface will be assumed to represent

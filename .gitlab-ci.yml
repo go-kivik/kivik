@@ -8,7 +8,7 @@ variables:
   KIVIK_TEST_DSN_COUCH23: http://admin:abc123@couch23:5984/
   KIVIK_TEST_DSN_COUCH30: http://admin:abc123@couch30:5984/
 
-.test: &go_test_template
+.go_test: &go_test_template
   stage: test
   services:
     - name: apache/couchdb:2.3.1
@@ -62,65 +62,37 @@ go-1.20:
   <<: *go_test_template
   image: golang:1.20
 
-gopherjs-1.16:
+.gopherjs_test: &gopherjs_test_template
   <<: *go_test_template
-  image: golang:1.16
-  variables:
-    SRCDIR: /go/src/github.com/go-kivik/kivik/v3
   before_script:
     - curl -sL https://deb.nodesource.com/setup_12.x | bash -
     - apt-get update -qq && apt-get install -y nodejs
   script:
-    - mkdir -p ${SRCDIR}
-    - mv ${CI_PROJECT_DIR}/* ${SRCDIR}
-    - cd ${SRCDIR}
     - npm install -g npm@7.5.2 && npm update
     - npm install
     - npm install source-map-support
     - mkdir -p /tmp/src
-    - ( cd /tmp && go install github.com/gopherjs/gopherjs@1.16.4+go1.16.7 )
-    - npm install -S https://github.com/gopherjs/gopherjs#1.16.4+go1.16.7 && node -r syscall
+    - ( cd /tmp && go install github.com/gopherjs/gopherjs@${GOPHERJS_TAG} )
+    - npm install -S https://github.com/gopherjs/gopherjs#${GOPHERJS_TAG} && node -r syscall
     - gopherjs test ./...
 
+gopherjs-1.16:
+  <<: *gopherjs_test_template
+  image: golang:1.16
+  variables:
+    GOPHERJS_TAG: 1.16.4+go1.16.7
+
 gopherjs-1.17:
-  <<: *go_test_template
+  <<: *gopherjs_test_template
   image: golang:1.17
   variables:
-    SRCDIR: /go/src/github.com/go-kivik/kivik/v3
-  before_script:
-    - curl -sL https://deb.nodesource.com/setup_12.x | bash -
-    - apt-get update -qq && apt-get install -y nodejs
-  script:
-    - mkdir -p ${SRCDIR}
-    - mv ${CI_PROJECT_DIR}/* ${SRCDIR}
-    - cd ${SRCDIR}
-    - npm install -g npm@7.5.2 && npm update
-    - npm install
-    - npm install source-map-support
-    - mkdir -p /tmp/src
-    - ( cd /tmp && go install github.com/gopherjs/gopherjs@v1.17.2+go1.17.9 )
-    - npm install -S https://github.com/gopherjs/gopherjs#v1.17.2+go1.17.9 && node -r syscall
-    - gopherjs test ./...
+    GOPHERJS_TAG: v1.17.2+go1.17.9
 
 gopherjs-1.18:
   <<: *go_test_template
   image: golang:1.18
   variables:
-    SRCDIR: /go/src/github.com/go-kivik/kivik/v3
-  before_script:
-    - curl -sL https://deb.nodesource.com/setup_12.x | bash -
-    - apt-get update -qq && apt-get install -y nodejs
-  script:
-    - mkdir -p ${SRCDIR}
-    - mv ${CI_PROJECT_DIR}/* ${SRCDIR}
-    - cd ${SRCDIR}
-    - npm install -g npm@7.5.2 && npm update
-    - npm install
-    - npm install source-map-support
-    - mkdir -p /tmp/src
-    - ( cd /tmp && go install github.com/gopherjs/gopherjs@v1.18.0-beta2+go1.18.5 )
-    - npm install -S https://github.com/gopherjs/gopherjs#v1.18.0-beta2+go1.18.5 && node -r syscall
-    - gopherjs test ./...
+    GOPHERJS_TAG: v1.18.0-beta2+go1.18.5
 
 go-rc:
   <<: *go_test_template

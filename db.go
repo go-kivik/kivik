@@ -146,9 +146,8 @@ func (db *DB) GetRev(ctx context.Context, docID string, options ...Options) (rev
 		return "", db.err
 	}
 	opts := mergeOptions(options...)
-	if r, ok := db.driverDB.(driver.MetaGetter); ok {
-		_, rev, err := r.GetMeta(ctx, docID, opts)
-		return rev, err
+	if r, ok := db.driverDB.(driver.RevGetter); ok {
+		return r.GetRev(ctx, docID, opts)
 	}
 	row := db.Get(ctx, docID, opts)
 	var doc struct {

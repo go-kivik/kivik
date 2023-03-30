@@ -33,15 +33,13 @@ CouchDB.
 
 # Working with JSON
 
-couchDB stores JSON, so Kivik translates Go data structures to and from JSON as
-necessary. The conversion between Go data types and JSON, and vice versa, is
+CouchDB stores JSON, so Kivik translates Go data structures to and from JSON as
+necessary. The conversion from Go data types to JSON, and vice versa, is
 handled automatically according to the rules and behavior described in the
-documentationf or the standard library's `encoding/json` package
-(https://golang.org/pkg/encoding/json).
+documentation for the standard library's [encoding/json] package.
 
 One would be well-advised to become familiar with using `json` struct field
-tags (https://golang.org/pkg/encoding/json/#Marshal) when working with JSON
-documents.
+tags [encoding/json.Marshal] when working with JSON documents.
 
 # Using contexts
 
@@ -51,11 +49,10 @@ longer needed. A typical use case for a web application would be to cancel a
 Kivik request if the remote HTTP client ahs disconnected, rednering the results
 of the query irrelevant.
 
-To learn more about Go's contexts, read the `context` package documentation
-(https://golang.org/pkg/context/) and read the Go blog post "Go Concurrency
-Patterns: Context" (https://blog.golang.org/context) for example code.
+To learn more about Go's contexts, read the [context] package documentation
+and read the Go blog post [Go Concurrency Patterns: Context] for example code.
 
-If in doubt, you can pass `context.TODO()` as the context variable. Example:
+If in doubt, you can pass [context.TODO] as the context variable. Example:
 
 	row := db.Get(context.TODO(), "some_doc_id")
 
@@ -66,9 +63,9 @@ HTTP status code returned by the server. The embedded HTTP status code may be
 accessed easily using the StatusCode() method, or with a type assertion to
 `interface { StatusCode() int }`. Example:
 
-	    if statusErr, ok := err.(interface{ StatusCode() int }); ok {
-			status = statusErr.StatusCode()
-		}
+	if statusErr, ok := err.(interface{ StatusCode() int }); ok {
+		status = statusErr.StatusCode()
+	}
 
 Any error that does not conform to this interface will be assumed to represent
 a http.StatusInternalServerError status code.
@@ -86,6 +83,8 @@ this will use cookie auth (https://docs.couchdb.org/en/stable/api/server/authn.h
 Depending on which driver you use, there may be other ways to authenticate, as
 well. At the moment, the CouchDB driver is the only official driver which offers
 additional authentication methods. Please refer to the CouchDB package
-documentation for details (https://pkg.go.dev/github.com/go-kivik/couchdb/v4).
+documentation for details [github.com/go-kivik/couchdb/v4].
+
+[Go Concurrency Patterns: Context]: https://blog.golang.org/context
 */
 package kivik // import "github.com/go-kivik/kivik/v4"

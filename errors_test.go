@@ -10,7 +10,6 @@ import (
 
 	pkgerrs "github.com/pkg/errors"
 	"gitlab.com/flimzy/testy"
-	"golang.org/x/xerrors"
 )
 
 func TestStatusCoder(t *testing.T) {
@@ -35,11 +34,6 @@ func TestStatusCoder(t *testing.T) {
 			Expected: 400,
 		},
 		{
-			Name:     "buried xerrors StatusCoder",
-			Err:      xerrors.Errorf("foo: %w", &Error{HTTPStatus: 400, Err: errors.New("bad request")}),
-			Expected: 400,
-		},
-		{
 			Name:     "buried pkg/errors StatusCoder",
 			Err:      pkgerrs.Wrap(&Error{HTTPStatus: 400, Err: errors.New("bad request")}, "foo"),
 			Expected: 400,
@@ -49,11 +43,11 @@ func TestStatusCoder(t *testing.T) {
 			Err: func() error {
 				err := error(&Error{HTTPStatus: 400, Err: errors.New("bad request")})
 				err = pkgerrs.Wrap(err, "foo")
-				err = xerrors.Errorf("bar: %w", err)
+				err = fmt.Errorf("bar: %w", err)
 				err = pkgerrs.Wrap(err, "foo")
-				err = xerrors.Errorf("bar: %w", err)
+				err = fmt.Errorf("bar: %w", err)
 				err = pkgerrs.Wrap(err, "foo")
-				err = xerrors.Errorf("bar: %w", err)
+				err = fmt.Errorf("bar: %w", err)
 				return err
 			}(),
 			Expected: 400,

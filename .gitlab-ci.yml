@@ -30,6 +30,7 @@ linter:
     - go mod download
     - golangci-lint run ./...
     - ./script/check-license.sh
+    - go mod tidy && git diff --exit-code
 
 coverage:
   stage: test

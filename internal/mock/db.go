@@ -210,17 +210,17 @@ func (db *Flusher) Flush(ctx context.Context) error {
 	return db.FlushFunc(ctx)
 }
 
-// MetaGetter mocks a driver.DB and driver.MetaGetter
-type MetaGetter struct {
+// RevGetter mocks a driver.DB and driver.RevGetter
+type RevGetter struct {
 	*DB
-	GetMetaFunc func(context.Context, string, map[string]interface{}) (int64, string, error)
+	GetRevFunc func(context.Context, string, map[string]interface{}) (string, error)
 }
 
-var _ driver.MetaGetter = &MetaGetter{}
+var _ driver.RevGetter = &RevGetter{}
 
-// GetMeta calls db.GetMetaFunc
-func (db *MetaGetter) GetMeta(ctx context.Context, docID string, opts map[string]interface{}) (int64, string, error) {
-	return db.GetMetaFunc(ctx, docID, opts)
+// GetRev calls db.GetRevFunc
+func (db *RevGetter) GetRev(ctx context.Context, docID string, opts map[string]interface{}) (string, error) {
+	return db.GetRevFunc(ctx, docID, opts)
 }
 
 // Copier mocks a driver.DB and driver.Copier.

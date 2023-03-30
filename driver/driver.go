@@ -364,13 +364,13 @@ type BulkResults interface {
 	Close() error
 }
 
-// MetaGetter is an optional interface that may be implemented by a DB. If not
+// RevGetter is an optional interface that may be implemented by a DB. If not
 // implemented, the Get method will be used to emulate the functionality, with
 // options passed through unaltered.
-type MetaGetter interface {
-	// GetMeta returns the document size and revision of the requested document.
-	// GetMeta should accept the same options as the Get method.
-	GetMeta(ctx context.Context, docID string, options map[string]interface{}) (size int64, rev string, err error)
+type RevGetter interface {
+	// GetRev returns the document revision of the requested document. GetRev
+	// should accept the same options as the Get method.
+	GetRev(ctx context.Context, docID string, options map[string]interface{}) (rev string, err error)
 }
 
 // Flusher is an optional interface that may be implemented by a DB that can

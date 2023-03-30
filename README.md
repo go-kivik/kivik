@@ -167,7 +167,7 @@ and proxy applications.
 
 ## What license is Kivik released under?
 
-Kivik is Copyright 2022 by the Kivik contributors, and is released under the
+Kivik is Copyright 2017-2023 by the Kivik contributors, and is released under the
 terms of the Apache 2.0 license. See [LICENCE](LICENSE) for the full text of the
 license.
 

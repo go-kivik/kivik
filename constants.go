@@ -23,7 +23,7 @@ const (
 const SessionCookieName = "AuthSession"
 
 // UserPrefix is the mandatory CouchDB user prefix.
-// See http://docs.couchdb.org/en/2.0.0/intro/security.html#org-couchdb-user
+// See https://docs.couchdb.org/en/latest/intro/security.html#org-couchdb-user
 const UserPrefix = "org.couchdb.user:"
 
 // EndKeySuffix is a high Unicode character (0xfff0) useful for appending to an

@@ -78,13 +78,15 @@ For common usage, authentication should be as simple as including the authentica
 
 This will connect to `localhost` on port 5984, using the username `admin` and
 the password `abc123`. When connecting to CouchDB (as in the above example),
-this will use cookie auth (https://docs.couchdb.org/en/stable/api/server/authn.html?highlight=cookie%20auth#cookie-authentication).
+this will use [cookie auth].
 
 Depending on which driver you use, there may be other ways to authenticate, as
 well. At the moment, the CouchDB driver is the only official driver which offers
-additional authentication methods. Please refer to the CouchDB package
-documentation for details [github.com/go-kivik/couchdb/v4].
+additional authentication methods. Please refer to the [CouchDB package
+documentation] for details.
 
 [Go Concurrency Patterns: Context]: https://blog.golang.org/context
+[cookie auth]: https://docs.couchdb.org/en/stable/api/server/authn.html?highlight=cookie%20auth#cookie-authentication
+[CouchDB package documentation]: github.com/go-kivik/couchdb/v4
 */
 package kivik // import "github.com/go-kivik/kivik/v4"

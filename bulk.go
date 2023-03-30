@@ -27,21 +27,20 @@ type BulkResults struct {
 	bulki driver.BulkResults
 }
 
-// Next returns the next BulkResult from the feed. If an error occurs, it will
-// be returned and the feed closed. io.EOF will be returned when there are no
-// more results.
+// Next returns the next BulkResult from the feed. If an error occurs, this
+// method will return false. Check [BulkResults.Err] to check the error.
 func (r *BulkResults) Next() bool {
 	return r.iter.Next()
 }
 
 // Err returns the error, if any, that was encountered during iteration. Err
-// may be called after an explicit or implicit Close.
+// may be called after an explicit or implicit [BulkResults.Close].
 func (r *BulkResults) Err() error {
 	return r.iter.Err()
 }
 
 // Close closes the feed. Any unread updates will still be accessible via
-// Next().
+// [BulkResults.Next].
 func (r *BulkResults) Close() error {
 	return r.iter.Close()
 }
@@ -82,8 +81,8 @@ func (r *BulkResults) Rev() string {
 }
 
 // UpdateErr returns the error associated with the current result, or nil
-// if none. Do not confuse this with Err, which returns an error for the
-// iterator itself.
+// if none. Do not confuse this with [BulkResults.Err], which returns an error
+// for the iterator itself.
 func (r *BulkResults) UpdateErr() error {
 	runlock, err := r.rlock()
 	if err != nil {
@@ -96,10 +95,11 @@ func (r *BulkResults) UpdateErr() error {
 // BulkDocs allows you to create and update multiple documents at the same time
 // within a single request. This function returns an iterator over the results
 // of the bulk operation.
+//
 // See http://docs.couchdb.org/en/2.0.0/api/database/bulk-api.html#db-bulk-docs
 //
-// As with Put, each individual document may be a JSON-marshable object, or a
-// raw JSON string in a json.RawMessage, or io.Reader.
+// As with [DB.Put], each individual document may be a JSON-marshable object, or
+// a raw JSON string in a [encoding/json.RawMessage], or [io.Reader].
 func (db *DB) BulkDocs(ctx context.Context, docs []interface{}, options ...Options) (*BulkResults, error) {
 	docsi, err := docsInterfaceSlice(docs)
 	if err != nil {

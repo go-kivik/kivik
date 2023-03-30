@@ -119,7 +119,7 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) 
 }
 
 // Get fetches the requested document. Any errors are deferred until the
-// row.ScanDoc call.
+// [ResultSet.ScanDoc] call.
 func (db *DB) Get(ctx context.Context, docID string, options ...Options) ResultSet {
 	if db.err != nil {
 		return &errRS{err: db.err}
@@ -140,7 +140,7 @@ func (db *DB) Get(ctx context.Context, docID string, options ...Options) ResultS
 }
 
 // GetRev returns the active rev of the specified document. GetRev accepts
-// the same options as the Get method.
+// the same options as [DB.Get].
 func (db *DB) GetRev(ctx context.Context, docID string, options ...Options) (rev string, err error) {
 	if db.err != nil {
 		return "", db.err
@@ -224,10 +224,10 @@ func extractDocID(i interface{}) (string, bool) {
 //
 // doc may be one of:
 //
-//   - An object to be marshaled to JSON. The resulting JSON structure must
+//   - A value to be marshaled to JSON. The resulting JSON structure must
 //     conform to CouchDB standards.
-//   - A json.RawMessage value containing a valid JSON document
-//   - An io.Reader, from which a valid JSON document may be read.
+//   - An [encoding/json.RawMessage] value containing a valid JSON document
+//   - An [io.Reader], from which a valid JSON document may be read.
 func (db *DB) Put(ctx context.Context, docID string, doc interface{}, options ...Options) (rev string, err error) {
 	if db.err != nil {
 		return "", db.err
@@ -287,8 +287,8 @@ type DBStats struct {
 	// DiskSize is the number of bytes used on-disk to store the database.
 	DiskSize int64 `json:"disk_size"`
 	// ActiveSize is the number of bytes used on-disk to store active documents.
-	// If this number is lower than DiskSize, then compaction would free disk
-	// space.
+	// If this number is lower than [DBStats.DiskSize], then compaction would
+	// free disk space.
 	ActiveSize int64 `json:"data_size"`
 	// ExternalSize is the size of the documents in the database, as represented
 	// as JSON, before compression.
@@ -346,7 +346,8 @@ func driverStats2kivikStats(i *driver.DBStats) *DBStats {
 }
 
 // Compact begins compaction of the database. Check the CompactRunning field
-// returned by Info() to see if the compaction has completed.
+// returned by [DB.Info] to see if the compaction has completed.
+//
 // See http://docs.couchdb.org/en/2.0.0/api/database/compact.html#db-compact
 //
 // This method may return immediately, or may wait for the compaction to
@@ -362,6 +363,7 @@ func (db *DB) Compact(ctx context.Context) error {
 
 // CompactView compats the view indexes associated with the specified design
 // document.
+//
 // See http://docs.couchdb.org/en/2.0.0/api/database/compact.html#db-compact-design-doc
 //
 // This method may return immediately, or may wait for the compaction to
@@ -374,6 +376,7 @@ func (db *DB) CompactView(ctx context.Context, ddocID string) error {
 
 // ViewCleanup removes view index files that are no longer required as a result
 // of changed views within design documents.
+//
 // See http://docs.couchdb.org/en/2.0.0/api/database/compact.html#db-view-cleanup
 func (db *DB) ViewCleanup(ctx context.Context) error {
 	if db.err != nil {
@@ -383,6 +386,7 @@ func (db *DB) ViewCleanup(ctx context.Context) error {
 }
 
 // Security returns the database's security document.
+//
 // See http://couchdb.readthedocs.io/en/latest/api/database/security.html#get--db-_security
 func (db *DB) Security(ctx context.Context) (*Security, error) {
 	if db.err != nil {
@@ -399,6 +403,7 @@ func (db *DB) Security(ctx context.Context) (*Security, error) {
 }
 
 // SetSecurity sets the database's security document.
+//
 // See http://couchdb.readthedocs.io/en/latest/api/database/security.html#put--db-_security
 func (db *DB) SetSecurity(ctx context.Context, security *Security) error {
 	if db.err != nil {
@@ -580,7 +585,7 @@ func (db *DB) Purge(ctx context.Context, docRevMap map[string][]string) (*PurgeR
 	return nil, &Error{HTTPStatus: http.StatusNotImplemented, Message: "kivik: purge not supported by driver"}
 }
 
-// BulkGetReference is a reference to a document given in a BulkGet query.
+// BulkGetReference is a reference to a document given to pass to [DB.BulkGet].
 type BulkGetReference struct {
 	ID        string `json:"id"`
 	Rev       string `json:"rev,omitempty"`
@@ -639,8 +644,8 @@ type Diffs map[string]RevDiff
 // and is normally never needed otherwise.  revMap must marshal to the expected
 // format.
 //
-// Use ID() to return the current document ID, and ScanValue to access the full
-// JSON value, which should be of the JSON format:
+// Use [ResultSet.ID] to return the current document ID, and ScanValue to access
+// the full JSON value, which should be of the JSON format:
 //
 //	{
 //	    "missing": ["rev1",...],

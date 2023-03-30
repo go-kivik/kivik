@@ -48,13 +48,15 @@ type ResultMetadata struct {
 
 // ResultSet is an iterator over a multi-value query result set.
 //
-// Call Next() to advance the iterator to the next item in the result set.
+// Call [ResultSet.Next] to advance the iterator to the next item in the result
+// set.
 //
 // The Scan* methods are expected to be called only once per iteration, as
 // they may consume data from the network, rendering them unusable a second
 // time.
 //
-// Calling ScanDoc, ScanKey, ScanValue, ID, or Key before calling Next will
+// Calling [ResultSet.ScanDoc], [ResultSet.ScanKey], [ResultSet.ScanValue],
+// [ResultSet.ID], or [ResultSet.Key] before calling [ResultSet.Next] will
 // operate on the first item in the resultset, then close the iterator
 // immediately. This is for convenience in cases where only a single item is
 // expected, so the extra effort of iterating is otherwise wasted.
@@ -68,18 +70,19 @@ type ResultSet interface {
 	// Err may be called after an explicit or implicit Close.
 	Err() error
 
-	// Close closes the Rows, preventing further enumeration, and freeing any
-	// resources (such as the http request body) of the underlying query. If
-	// Next is called and there are no further results, Rows is closed
-	// automatically and it will suffice to check the result of Err. Close is
-	// idempotent and does not affect the result of Err.
+	// Close closes the result set, preventing further enumeration, and freeing
+	// any resources (such as the HTTP request body) of the underlying query. If
+	// [ResultSet.Next] is called and there are no further results, the result
+	// set is closed automatically and it will suffice to check the result of
+	// [ResultSet.Err]. Close is idempotent and does not affect the result of
+	// [ResultSet.Err].
 	Close() error
 
 	// Finish will consume any remaining results in the result set, then close
 	// the iterator, and return any available query metadata.  Use this in
-	// place of Close() if the result metadata is needed, otherwise Close()
-	// may be more efficient, as Close() does not read any more data from the
-	// network.
+	// place of [ResultSet.Close] if the result metadata is needed, otherwise
+	// [ResultSet.Close] may be more efficient, as [ResultSet.Close] does not
+	// read any more data from the network.
 	Finish() (ResultMetadata, error)
 
 	// ScanValue copies the data from the result value into the value pointed
@@ -93,34 +96,35 @@ type ResultSet interface {
 	// instead. After a ScanValue into a json.RawMessage, the slice is only
 	// valid until the next call to Next or Close.
 	//
-	// For all other types, refer to the documentation for json.Unmarshal for
-	// type conversion rules.
+	// For all other types, refer to the documentation for
+	// [encoding/json.Unmarshal] for type conversion rules.
 	ScanValue(dest interface{}) error
 
-	// ScanDoc works the same as ScanValue, but on the doc field of the result.
-	// It will return an error if the query does not include documents.
+	// ScanDoc works the same as [ResultSet.ScanValue], but on the doc field of
+	// the result. It will return an error if the query does not include
+	// documents.
 	ScanDoc(dest interface{}) error
 
-	// ScanKey works the same as ScanValue, but on the key field of the result.
-	// For simple keys, which are just strings, the Key() method may be easier
-	// to use.
+	// ScanKey works the same as [ResultSet.ScanValue], but on the key field of
+	// the result. For simple keys, which are just strings, [ResultSet.Key]
+	// may be easier to use.
 	ScanKey(dest interface{}) error
 
 	// ID returns the ID of the most recent result.
 	ID() string
 
-	// Rev returns the document revision, when known. Not all resultsets (such
+	// Rev returns the document revision, when known. Not all result sets (such
 	// as those from views) include revision IDs, so this will be blank in such
 	// cases.
 	Rev() string
 
 	// Key returns the Key of the most recent result as a raw JSON string. For
-	// compound keys, the ScanKey() method may be more convenient.
+	// compound keys, the [ResultSet.ScanKey] method may be more convenient.
 	Key() string
 
 	// QueryIndex returns the 0-based index of the query. For standard queries,
 	// this is always 0. When multiple queries are passed to the view, this will
-	// represent the query currently being iterated
+	// represent the query currently being iterated.
 	QueryIndex() int
 
 	// EOQ returns true if the iterator has reached the end of a query in a
@@ -130,9 +134,9 @@ type ResultSet interface {
 	EOQ() bool
 
 	// Attachments returns an attachments iterator. At present, it is only set
-	// by the Get() method when doing a multi-part get from CouchDB (which is
-	// the default where supported). This may be extended to other cases in
-	// the future.
+	// by [DB.Get] when doing a multi-part get from CouchDB (which is the
+	// default where supported). This may be extended to other cases in the
+	// future.
 	Attachments() *AttachmentsIterator
 }
 

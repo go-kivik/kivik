@@ -115,7 +115,7 @@ func (c *Client) Version(ctx context.Context) (*Version, error) {
 
 // DB returns a handle to the requested database. Any options parameters
 // passed are merged, with later values taking precidence. If any errors occur
-// at this stage, they are deferred, or may be checked directly with Err()
+// at this stage, they are deferred, or may be checked directly with [DB.Err].
 func (c *Client) DB(dbName string, options ...Options) *DB {
 	db, err := c.driverClient.DB(dbName, mergeOptions(options...))
 	return &DB{

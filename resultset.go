@@ -179,7 +179,7 @@ func (r *rows) Close() error {
 }
 
 func (r *rows) Finish() (ResultMetadata, error) {
-	for r.Next() {
+	for r.Next() { //nolint:revive // empty loop necessary for loop
 	}
 	var warning, bookmark string
 	if w, ok := r.rowsi.(driver.RowsWarner); ok {

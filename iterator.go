@@ -44,11 +44,11 @@ func (i *iter) rlock() (unlock func(), err error) {
 	i.mu.RLock()
 	if i.closed {
 		i.mu.RUnlock()
-		return nil, &Error{HTTPStatus: http.StatusBadRequest, Message: "kivik: Iterator is closed"}
+		return nil, &Error{Status: http.StatusBadRequest, Message: "kivik: Iterator is closed"}
 	}
 	if !i.ready {
 		i.mu.RUnlock()
-		return nil, &Error{HTTPStatus: http.StatusBadRequest, Message: "kivik: Iterator access before calling Next"}
+		return nil, &Error{Status: http.StatusBadRequest, Message: "kivik: Iterator access before calling Next"}
 	}
 	return i.mu.RUnlock, nil
 }

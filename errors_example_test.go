@@ -19,13 +19,13 @@ import (
 	"github.com/go-kivik/kivik/v4"
 )
 
-func ExampleStatusCode() {
+func ExampleHTTPStatus() {
 	client, err := kivik.New("couch", "http://example.com:5984/")
 	if err != nil {
 		panic(err)
 	}
 	row := client.DB("foo").Get(context.Background(), "my_doc_id")
-	switch kivik.StatusCode(row.Err()) {
+	switch kivik.HTTPStatus(row.Err()) {
 	case http.StatusNotFound:
 		return
 	case http.StatusUnauthorized:

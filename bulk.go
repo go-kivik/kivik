@@ -106,7 +106,7 @@ func (db *DB) BulkDocs(ctx context.Context, docs []interface{}, options ...Optio
 		return nil, err
 	}
 	if len(docsi) == 0 {
-		return nil, &Error{HTTPStatus: http.StatusBadRequest, Err: errors.New("kivik: no documents provided")}
+		return nil, &Error{Status: http.StatusBadRequest, Err: errors.New("kivik: no documents provided")}
 	}
 	opts := mergeOptions(options...)
 	if bulkDocer, ok := db.driverDB.(driver.BulkDocer); ok {
@@ -159,7 +159,7 @@ func docsInterfaceSlice(docsi []interface{}) ([]interface{}, error) {
 	for i, doc := range docsi {
 		x, err := normalizeFromJSON(doc)
 		if err != nil {
-			return nil, &Error{HTTPStatus: http.StatusBadRequest, Err: err}
+			return nil, &Error{Status: http.StatusBadRequest, Err: err}
 		}
 		docsi[i] = x
 	}

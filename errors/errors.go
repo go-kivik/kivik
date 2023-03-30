@@ -41,8 +41,8 @@ func (se *statusError) Error() string {
 	return se.message
 }
 
-// StatusCode returns the statusError's embedded HTTP status code.
-func (se *statusError) StatusCode() int {
+// HTTPStatus returns the statusError's embedded HTTP status code.
+func (se *statusError) HTTPStatus() int {
 	return se.statusCode
 }
 
@@ -82,7 +82,7 @@ func (e *wrappedError) Error() string {
 	return e.err.Error()
 }
 
-func (e *wrappedError) StatusCode() int {
+func (e *wrappedError) HTTPStatus() int {
 	return e.statusCode
 }
 

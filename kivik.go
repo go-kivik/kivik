@@ -62,7 +62,7 @@ func Register(name string, driver driver.Driver) {
 func New(driverName, dataSourceName string, options ...Options) (*Client, error) {
 	driveri := registry.Driver(driverName)
 	if driveri == nil {
-		return nil, &Error{HTTPStatus: http.StatusBadRequest, Message: fmt.Sprintf("kivik: unknown driver %q (forgotten import?)", driverName)}
+		return nil, &Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("kivik: unknown driver %q (forgotten import?)", driverName)}
 	}
 	client, err := driveri.NewClient(dataSourceName, mergeOptions(options...))
 	if err != nil {
@@ -153,17 +153,17 @@ func (c *Client) Authenticate(ctx context.Context, a interface{}) error {
 	if auth, ok := c.driverClient.(driver.Authenticator); ok {
 		return auth.Authenticate(ctx, a)
 	}
-	return &Error{HTTPStatus: http.StatusNotImplemented, Message: "kivik: driver does not support authentication"}
+	return &Error{Status: http.StatusNotImplemented, Message: "kivik: driver does not support authentication"}
 }
 
 func missingArg(arg string) error {
-	return &Error{HTTPStatus: http.StatusBadRequest, Message: fmt.Sprintf("kivik: %s required", arg)}
+	return &Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("kivik: %s required", arg)}
 }
 
 // DBsStats returns database statistics about one or more databases.
 func (c *Client) DBsStats(ctx context.Context, dbnames []string) ([]*DBStats, error) {
 	dbstats, err := c.nativeDBsStats(ctx, dbnames)
-	switch StatusCode(err) {
+	switch HTTPStatus(err) {
 	case http.StatusNotFound, http.StatusNotImplemented:
 		return c.fallbackDBsStats(ctx, dbnames)
 	}
@@ -185,7 +185,7 @@ func (c *Client) fallbackDBsStats(ctx context.Context, dbnames []string) ([]*DBS
 func (c *Client) nativeDBsStats(ctx context.Context, dbnames []string) ([]*DBStats, error) {
 	statser, ok := c.driverClient.(driver.DBsStatser)
 	if !ok {
-		return nil, &Error{HTTPStatus: http.StatusNotImplemented, Message: "kivik: not supported by driver"}
+		return nil, &Error{Status: http.StatusNotImplemented, Message: "kivik: not supported by driver"}
 	}
 	stats, err := statser.DBsStats(ctx, dbnames)
 	if err != nil {

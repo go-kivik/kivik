@@ -8,7 +8,7 @@ variables:
   KIVIK_TEST_DSN_COUCH23: http://admin:abc123@couch23:5984/
   KIVIK_TEST_DSN_COUCH30: http://admin:abc123@couch30:5984/
 
-.test: &test_template
+.test: &go_test_template
   stage: test
   services:
     - name: apache/couchdb:2.3.1
@@ -42,28 +42,33 @@ coverage:
     - ./script/coverage.sh
 
 go-1.13:
-  <<: *test_template
+  <<: *go_test_template
   image: golang:1.13
 
 go-1.14:
-  <<: *test_template
+  <<: *go_test_template
   image: golang:1.14
 
 go-1.15:
-  <<: *test_template
+  <<: *go_test_template
   image: golang:1.15
 
 go-1.16:
-  <<: *test_template
+  <<: *go_test_template
   image: golang:1.16
 
 go-1.17:
-  <<: *test_template
+  <<: *go_test_template
   image: golang:1.17
 
 go-1.18:
-  <<: *test_template
+  <<: *go_test_template
   image: golang:1.18
+
+go-rc:
+  <<: *go_test_template
+  image: golang:rc
+  allow_failure: true
 
 .gopherjs_test: &gopherjs_test_template
   <<: *go_test_template
@@ -96,8 +101,3 @@ gopherjs-1.18:
   image: golang:1.18
   variables:
     GOPHERJS_TAG: v1.18.0-beta2+go1.18.5
-
-go-rc:
-  <<: *test_template
-  image: golang:rc
-  allow_failure: true

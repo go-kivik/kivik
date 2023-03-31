@@ -34,4 +34,19 @@ func TestSecurityMarshalJSON(t *testing.T) {
 			t.Errorf("Unexpected output: %s", string(got))
 		}
 	})
+	t.Run("admin name, one member role", func(t *testing.T) {
+		sec := Security{
+			Admins: Members{
+				Names: []string{"bob"},
+			},
+			Members: Members{
+				Roles: []string{"users"},
+			},
+		}
+		want := `{"admins":{"names":["bob"]},"members":{"roles":["users"]}}`
+		got, _ := json.Marshal(sec)
+		if string(got) != want {
+			t.Errorf("Unexpected output: %s", string(got))
+		}
+	})
 }

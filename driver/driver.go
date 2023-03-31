@@ -160,7 +160,7 @@ func (s Security) MarshalJSON() ([]byte, error) {
 	if len(s.Admins.Names) > 0 || len(s.Admins.Roles) > 0 {
 		v.Admins = &s.Admins
 	}
-	if len(s.Members.Names) > 0 || len(s.Admins.Roles) > 0 {
+	if len(s.Members.Names) > 0 || len(s.Members.Roles) > 0 {
 		v.Members = &s.Members
 	}
 	return json.Marshal(v)

@@ -63,51 +63,47 @@ type ResultMetadata struct {
 type ResultSet interface {
 	// Next prepares the next result value for reading. It returns true on
 	// success or false if there are no more results or an error occurs while
-	// preparing it. Err should be consulted to distinguish between the two.
+	// preparing it. [Err] should be consulted to distinguish between the two.
 	Next() bool
 
 	// Err returns the error, if any, that was encountered during iteration.
-	// Err may be called after an explicit or implicit Close.
+	// Err may be called after an explicit or implicit [Close].
 	Err() error
 
 	// Close closes the result set, preventing further enumeration, and freeing
 	// any resources (such as the HTTP request body) of the underlying query. If
-	// [ResultSet.Next] is called and there are no further results, the result
-	// set is closed automatically and it will suffice to check the result of
-	// [ResultSet.Err]. Close is idempotent and does not affect the result of
-	// [ResultSet.Err].
+	// Next is called and there are no further results, the result set is closed
+	// automatically and it will suffice to check the result of Err. Close is
+	// idempotent and does not affect the result of [Err].
 	Close() error
 
-	// Finish will consume any remaining results in the result set, then close
-	// the iterator, and return any available query metadata.  Use this in
-	// place of [ResultSet.Close] if the result metadata is needed, otherwise
-	// [ResultSet.Close] may be more efficient, as [ResultSet.Close] does not
-	// read any more data from the network.
+	// Finish returns the result metadata for the current query, discarding
+	// any unconsumed results.
 	Finish() (ResultMetadata, error)
 
 	// ScanValue copies the data from the result value into the value pointed
-	// at by dest. Think of this as a json.Unmarshal into dest.
+	// at by dest. Think of this as calling [encoding/json.Unmarshal] into dest.
 	//
-	// If the dest argument has type *[]byte, Scan stores a copy of the input
-	// data. The copy is owned by the caller and can be modified and held
+	// If the dest argument has type *[]byte, ScanValue stores a copy of the
+	// input data. The copy is owned by the caller and can be modified and held
 	// indefinitely.
 	//
-	// The copy can be avoided by using an argument of type *json.RawMessage
-	// instead. After a ScanValue into a json.RawMessage, the slice is only
-	// valid until the next call to Next or Close.
+	// The copy can be avoided by using an argument of type
+	// [*encoding/json.RawMessage] instead, after which the value is only
+	// valid until the next call to [Next] or [Close].
 	//
 	// For all other types, refer to the documentation for
 	// [encoding/json.Unmarshal] for type conversion rules.
 	ScanValue(dest interface{}) error
 
-	// ScanDoc works the same as [ResultSet.ScanValue], but on the doc field of
+	// ScanDoc works the same as [ScanValue], but on the doc field of
 	// the result. It will return an error if the query does not include
 	// documents.
 	ScanDoc(dest interface{}) error
 
-	// ScanKey works the same as [ResultSet.ScanValue], but on the key field of
-	// the result. For simple keys, which are just strings, [ResultSet.Key]
-	// may be easier to use.
+	// ScanKey works the same as [ScanValue], but on the key field of the
+	// result. For simple keys, which are just strings, [Key] may be easier to
+	// use.
 	ScanKey(dest interface{}) error
 
 	// ID returns the ID of the most recent result.
@@ -119,7 +115,7 @@ type ResultSet interface {
 	Rev() string
 
 	// Key returns the Key of the most recent result as a raw JSON string. For
-	// compound keys, the [ResultSet.ScanKey] method may be more convenient.
+	// compound keys, [ScanKey] may be more convenient.
 	Key() string
 
 	// QueryIndex returns the 0-based index of the query. For standard queries,

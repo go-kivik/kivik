@@ -494,10 +494,10 @@ func TestQueryIndex(t *testing.T) {
 	})
 }
 
-func TestFinish(t *testing.T) {
+func TestFinishQuery(t *testing.T) {
 	check := func(t *testing.T, r ResultSet) {
 		t.Helper()
-		meta, err := r.Finish()
+		meta, err := r.FinishQuery()
 		if err != nil {
 			t.Fatal(err)
 		}

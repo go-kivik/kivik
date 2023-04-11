@@ -77,9 +77,9 @@ type ResultSet interface {
 	// idempotent and does not affect the result of [Err].
 	Close() error
 
-	// Finish returns the result metadata for the current query, discarding
+	// FinishQuery returns the result metadata for the current query, discarding
 	// any unconsumed results.
-	Finish() (ResultMetadata, error)
+	FinishQuery() (ResultMetadata, error)
 
 	// ScanValue copies the data from the result value into the value pointed
 	// at by dest. Think of this as calling [encoding/json.Unmarshal] into dest.
@@ -174,7 +174,7 @@ func (r *rows) Close() error {
 	return r.iter.Close()
 }
 
-func (r *rows) Finish() (ResultMetadata, error) {
+func (r *rows) FinishQuery() (ResultMetadata, error) {
 	for r.Next() { //nolint:revive // empty loop necessary for loop
 	}
 	var warning, bookmark string
@@ -351,13 +351,13 @@ type errRS struct {
 
 var _ ResultSet = &errRS{}
 
-func (e *errRS) Err() error                      { return e.err }
-func (e *errRS) Close() error                    { return e.err }
-func (e *errRS) Finish() (ResultMetadata, error) { return ResultMetadata{}, e.err }
-func (e *errRS) ID() string                      { return "" }
-func (e *errRS) Key() string                     { return "" }
-func (e *errRS) Next() bool                      { return false }
-func (e *errRS) ScanAllDocs(interface{}) error   { return e.err }
-func (e *errRS) ScanDoc(interface{}) error       { return e.err }
-func (e *errRS) ScanKey(interface{}) error       { return e.err }
-func (e *errRS) ScanValue(interface{}) error     { return e.err }
+func (e *errRS) Err() error                           { return e.err }
+func (e *errRS) Close() error                         { return e.err }
+func (e *errRS) FinishQuery() (ResultMetadata, error) { return ResultMetadata{}, e.err }
+func (e *errRS) ID() string                           { return "" }
+func (e *errRS) Key() string                          { return "" }
+func (e *errRS) Next() bool                           { return false }
+func (e *errRS) ScanAllDocs(interface{}) error        { return e.err }
+func (e *errRS) ScanDoc(interface{}) error            { return e.err }
+func (e *errRS) ScanKey(interface{}) error            { return e.err }
+func (e *errRS) ScanValue(interface{}) error          { return e.err }

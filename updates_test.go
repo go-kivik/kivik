@@ -218,7 +218,7 @@ func TestDBUpdates(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.client.DBUpdates(context.TODO())
+			result, err := test.client.DBUpdates(context.Background())
 			testy.StatusError(t, test.err, test.status, err)
 			result.cancel = nil // Determinism
 			if d := testy.DiffInterface(test.expected, result); d != nil {

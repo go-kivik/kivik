@@ -175,7 +175,10 @@ func (r *rows) Close() error {
 }
 
 func (r *rows) FinishQuery() (ResultMetadata, error) {
-	for r.Next() { //nolint:revive // empty loop necessary for loop
+	for !r.EOQ() {
+		if !r.Next() {
+			break
+		}
 	}
 	var warning, bookmark string
 	if w, ok := r.rowsi.(driver.RowsWarner); ok {

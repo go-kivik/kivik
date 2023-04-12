@@ -528,6 +528,75 @@ func TestFinishQuery(t *testing.T) {
 		})
 		check(t, r)
 	})
+	t.Run("query in progress", func(t *testing.T) {
+		rows := []interface{}{
+			&driver.Row{Doc: json.RawMessage(`{"foo":"bar"}`)},
+			&driver.Row{Doc: json.RawMessage(`{"foo":"bar"}`)},
+			&driver.Row{Doc: json.RawMessage(`{"foo":"bar"}`)},
+			int64(5),
+		}
+
+		r := newRows(context.Background(), &mock.Rows{
+			NextFunc: func(r *driver.Row) error {
+				if len(rows) == 0 {
+					return io.EOF
+				}
+				if dr, ok := rows[0].(*driver.Row); ok {
+					rows = rows[1:]
+					*r = *dr
+					return nil
+				}
+				return driver.EOQ
+			},
+			OffsetFunc: func() int64 {
+				for {
+					row := rows[0]
+					rows = rows[1:]
+					if offset, ok := row.(int64); ok {
+						return offset
+					}
+				}
+			},
+		})
+		for r.Next() {
+			if r.EOQ() {
+				break
+			}
+		}
+		check(t, r)
+	})
+	t.Run("no query in progress", func(t *testing.T) {
+		rows := []interface{}{
+			&driver.Row{Doc: json.RawMessage(`{"foo":"bar"}`)},
+			&driver.Row{Doc: json.RawMessage(`{"foo":"bar"}`)},
+			&driver.Row{Doc: json.RawMessage(`{"foo":"bar"}`)},
+			int64(5),
+		}
+
+		r := newRows(context.Background(), &mock.Rows{
+			NextFunc: func(r *driver.Row) error {
+				if len(rows) == 0 {
+					return io.EOF
+				}
+				if dr, ok := rows[0].(*driver.Row); ok {
+					rows = rows[1:]
+					*r = *dr
+					return nil
+				}
+				return driver.EOQ
+			},
+			OffsetFunc: func() int64 {
+				for {
+					row := rows[0]
+					rows = rows[1:]
+					if offset, ok := row.(int64); ok {
+						return offset
+					}
+				}
+			},
+		})
+		check(t, r)
+	})
 }
 
 func TestScanAllDocs(t *testing.T) {

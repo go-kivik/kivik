@@ -533,7 +533,6 @@ func TestFinishQuery(t *testing.T) {
 			&driver.Row{Doc: json.RawMessage(`{"foo":"bar"}`)},
 			&driver.Row{Doc: json.RawMessage(`{"foo":"bar"}`)},
 			&driver.Row{Doc: json.RawMessage(`{"foo":"bar"}`)},
-			int64(5),
 		}
 
 		r := newRows(context.Background(), &mock.Rows{
@@ -549,18 +548,14 @@ func TestFinishQuery(t *testing.T) {
 				return driver.EOQ
 			},
 			OffsetFunc: func() int64 {
-				for {
-					row := rows[0]
-					rows = rows[1:]
-					if offset, ok := row.(int64); ok {
-						return offset
-					}
-				}
+				return 5
 			},
 		})
+		var i int
 		for r.Next() {
-			if r.EOQ() {
-				break
+			i++
+			if i > 10 {
+				panic(i)
 			}
 		}
 		check(t, r)
@@ -570,7 +565,6 @@ func TestFinishQuery(t *testing.T) {
 			&driver.Row{Doc: json.RawMessage(`{"foo":"bar"}`)},
 			&driver.Row{Doc: json.RawMessage(`{"foo":"bar"}`)},
 			&driver.Row{Doc: json.RawMessage(`{"foo":"bar"}`)},
-			int64(5),
 		}
 
 		r := newRows(context.Background(), &mock.Rows{
@@ -586,13 +580,7 @@ func TestFinishQuery(t *testing.T) {
 				return driver.EOQ
 			},
 			OffsetFunc: func() int64 {
-				for {
-					row := rows[0]
-					rows = rows[1:]
-					if offset, ok := row.(int64); ok {
-						return offset
-					}
-				}
+				return 5
 			},
 		})
 		check(t, r)
@@ -607,35 +595,33 @@ func TestFinishQuery(t *testing.T) {
 			&driver.Row{ID: "y", Doc: json.RawMessage(`{"foo":"bar"}`)},
 			int64(2),
 		}
+		var offset int64
 
 		r := newRows(context.Background(), &mock.Rows{
 			NextFunc: func(r *driver.Row) error {
 				if len(rows) == 0 {
 					return io.EOF
 				}
-				if dr, ok := rows[0].(*driver.Row); ok {
-					rows = rows[1:]
-					*r = *dr
+				row := rows[0]
+				rows = rows[1:]
+				switch t := row.(type) {
+				case *driver.Row:
+					*r = *t
 					return nil
+				case int64:
+					offset = t
+					return driver.EOQ
+				default:
+					panic("unknown type")
 				}
-				return driver.EOQ
 			},
 			OffsetFunc: func() int64 {
-				for {
-					row := rows[0]
-					rows = rows[1:]
-					if offset, ok := row.(int64); ok {
-						return offset
-					}
-				}
+				return offset
 			},
 		})
 		check(t, r)
 		ids := []string{}
 		for r.Next() {
-			if r.EOQ() {
-				break
-			}
 			ids = append(ids, r.ID())
 		}
 		want := []string{"x", "y"}

@@ -597,6 +597,55 @@ func TestFinishQuery(t *testing.T) {
 		})
 		check(t, r)
 	})
+	t.Run("followed by other query", func(t *testing.T) {
+		rows := []interface{}{
+			&driver.Row{Doc: json.RawMessage(`{"foo":"bar"}`)},
+			&driver.Row{Doc: json.RawMessage(`{"foo":"bar"}`)},
+			&driver.Row{Doc: json.RawMessage(`{"foo":"bar"}`)},
+			int64(5),
+			&driver.Row{ID: "x", Doc: json.RawMessage(`{"foo":"bar"}`)},
+			&driver.Row{ID: "y", Doc: json.RawMessage(`{"foo":"bar"}`)},
+			int64(2),
+		}
+
+		r := newRows(context.Background(), &mock.Rows{
+			NextFunc: func(r *driver.Row) error {
+				if len(rows) == 0 {
+					return io.EOF
+				}
+				if dr, ok := rows[0].(*driver.Row); ok {
+					rows = rows[1:]
+					*r = *dr
+					return nil
+				}
+				return driver.EOQ
+			},
+			OffsetFunc: func() int64 {
+				for {
+					row := rows[0]
+					rows = rows[1:]
+					if offset, ok := row.(int64); ok {
+						return offset
+					}
+				}
+			},
+		})
+		check(t, r)
+		ids := []string{}
+		for r.Next() {
+			if r.EOQ() {
+				break
+			}
+			ids = append(ids, r.ID())
+		}
+		want := []string{"x", "y"}
+		if d := testy.DiffInterface(want, ids); d != nil {
+			t.Error(d)
+		}
+		t.Run("second query", func(t *testing.T) {
+			check(t, r)
+		})
+	})
 }
 
 func TestScanAllDocs(t *testing.T) {

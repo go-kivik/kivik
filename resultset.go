@@ -193,7 +193,7 @@ func (r *rows) FinishQuery() (ResultMetadata, error) {
 		UpdateSeq: r.rowsi.UpdateSeq(),
 		Warning:   warning,
 		Bookmark:  bookmark,
-	}, r.Close()
+	}, nil
 }
 
 type rowsIterator struct{ driver.Rows }

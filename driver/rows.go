@@ -46,7 +46,9 @@ type Row struct {
 type Rows interface {
 	// Next is called to populate row with the next row in the result set.
 	//
-	// Next should return [io.EOF] when there are no more rows.
+	// Next should return [io.EOF] when there are no more rows, or [EOQ] after
+	// having reached the end of a query in a multi-query resultset. row should
+	// not be updated when an error is returned.
 	Next(row *Row) error
 	// Close closes the rows iterator.
 	Close() error

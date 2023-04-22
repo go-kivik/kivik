@@ -749,3 +749,52 @@ func TestScanAllDocs(t *testing.T) {
 		}
 	})
 }
+
+func TestNextResultSet(t *testing.T) {
+	t.Run("two resultsets", func(t *testing.T) {
+		rows := []interface{}{
+			&driver.Row{ID: "1", Doc: json.RawMessage(`{"foo":"bar"}`)},
+			&driver.Row{ID: "2", Doc: json.RawMessage(`{"foo":"bar"}`)},
+			&driver.Row{ID: "3", Doc: json.RawMessage(`{"foo":"bar"}`)},
+			int64(5),
+			&driver.Row{ID: "x", Doc: json.RawMessage(`{"foo":"bar"}`)},
+			&driver.Row{ID: "y", Doc: json.RawMessage(`{"foo":"bar"}`)},
+			int64(2),
+		}
+		var offset int64
+
+		r := newRows(context.Background(), &mock.Rows{
+			NextFunc: func(r *driver.Row) error {
+				if len(rows) == 0 {
+					return io.EOF
+				}
+				row := rows[0]
+				rows = rows[1:]
+				switch t := row.(type) {
+				case *driver.Row:
+					*r = *t
+					return nil
+				case int64:
+					offset = t
+					return driver.EOQ
+				default:
+					panic("unknown type")
+				}
+			},
+			OffsetFunc: func() int64 {
+				return offset
+			},
+		})
+
+		ids := []string{}
+		for r.NextResultSet() {
+			for r.Next() {
+				ids = append(ids, r.ID())
+			}
+		}
+		want := []string{"1", "2", "3", "x", "y"}
+		if d := testy.DiffInterface(want, ids); d != nil {
+			t.Error(d)
+		}
+	})
+}

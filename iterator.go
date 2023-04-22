@@ -92,6 +92,19 @@ func (i *iter) awaitDone(ctx context.Context) {
 	_ = i.close(ctx.Err())
 }
 
+// NextResultSet prepares the iterator to read the next result set. It returns
+// ture on success, or false if there are no more result sets to read, or if
+// an error occurs while preparing it. [iter.Err] should be consulted to
+// distinguish between the two.
+func (i *iter) NextResultSet() bool {
+	i.mu.RLock()
+	defer i.mu.RUnlock()
+	if i.lasterr != nil {
+		return false
+	}
+	return true
+}
+
 // Next prepares the next iterator result value for reading. It returns true on
 // success, or false if there is no next result or an error occurs while
 // preparing it. [iter.Err] should be consulted to distinguish between the two.

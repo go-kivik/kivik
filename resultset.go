@@ -66,6 +66,16 @@ type ResultSet interface {
 	// preparing it. [Err] should be consulted to distinguish between the two.
 	Next() bool
 
+	// NextResultSet prepares the next result set for reading. It reports
+	// whether there is further result sets, or false if there is no further
+	// result set or if there is an error advancing to it. [ResultSet.Err]
+	// should be consulted to distinguish between the two cases.
+	//
+	// After calling NextResultSet, [ResultSet.Next] should always be called
+	// before scanning. If there are further result sets they may not have rows
+	// in the result set.
+	NextResultSet() bool
+
 	// Err returns the error, if any, that was encountered during iteration.
 	// Err may be called after an explicit or implicit [Close].
 	Err() error
@@ -364,3 +374,4 @@ func (e *errRS) ScanAllDocs(interface{}) error        { return e.err }
 func (e *errRS) ScanDoc(interface{}) error            { return e.err }
 func (e *errRS) ScanKey(interface{}) error            { return e.err }
 func (e *errRS) ScanValue(interface{}) error          { return e.err }
+func (e *errRS) NextResultSet() bool                  { return false }

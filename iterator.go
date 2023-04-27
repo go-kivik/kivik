@@ -42,18 +42,17 @@ const (
 	// stateRowReady is the state when not iterating resultsets, after
 	// [ResultSet.Next] has been called.
 	stateRowReady
-	// stateEOF means the last row has been retrieved. The iterator is no longer
-	// usable.
-	stateEOF
+	// stateClosed means the last row has been retrieved. The iterator is no
+	// longer usable.
+	stateClosed
 )
 
 type iter struct {
 	feed iterator
 
 	mu      sync.RWMutex
-	state   int // Set to true once Next() has been called
-	closed  bool
-	lasterr error // non-nil only if closed is true
+	state   int   // Set to true once Next() has been called
+	lasterr error // non-nil only if state == stateClosed
 	eoq     bool
 
 	cancel func() // cancel function to exit context goroutine when iterator is closed
@@ -63,7 +62,7 @@ type iter struct {
 
 func (i *iter) rlock() (unlock func(), err error) {
 	i.mu.RLock()
-	if i.closed {
+	if i.state == stateClosed {
 		i.mu.RUnlock()
 		return nil, &Error{Status: http.StatusBadRequest, Message: "kivik: Iterator is closed"}
 	}
@@ -140,7 +139,7 @@ func (i *iter) Next() bool {
 func (i *iter) next() (doClose, ok bool) {
 	i.mu.RLock()
 	defer i.mu.RUnlock()
-	if i.closed {
+	if i.state == stateClosed {
 		return false, false
 	}
 	i.state = stateRowReady
@@ -169,10 +168,10 @@ func (i *iter) Close() error {
 func (i *iter) close(err error) error {
 	i.mu.Lock()
 	defer i.mu.Unlock()
-	if i.closed {
+	if i.state == stateClosed {
 		return nil
 	}
-	i.closed = true
+	i.state = stateClosed
 
 	if i.lasterr == nil {
 		i.lasterr = err

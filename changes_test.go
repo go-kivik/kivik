@@ -34,7 +34,7 @@ func TestChangesNext(t *testing.T) {
 		{
 			name: "nothing more",
 			changes: &Changes{
-				iter: &iter{closed: true},
+				iter: &iter{state: stateClosed},
 			},
 			expected: false,
 		},
@@ -203,7 +203,7 @@ func TestChangesScanDoc(t *testing.T) {
 			name: "closed",
 			changes: &Changes{
 				iter: &iter{
-					closed: true,
+					state: stateClosed,
 				},
 			},
 			status: http.StatusBadRequest,

@@ -33,7 +33,7 @@ func TestDBUpdatesNext(t *testing.T) {
 		{
 			name: "nothing more",
 			updates: &DBUpdates{
-				iter: &iter{closed: true},
+				iter: &iter{state: stateClosed},
 			},
 			expected: false,
 		},

@@ -136,7 +136,7 @@ func TestRLOCK(t *testing.T) {
 		},
 		{
 			name: "closed",
-			iter: &iter{closed: true},
+			iter: &iter{state: stateClosed},
 			err:  "kivik: Iterator is closed",
 		},
 		{

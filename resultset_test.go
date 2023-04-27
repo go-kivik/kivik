@@ -36,7 +36,7 @@ func TestRowsNext(t *testing.T) {
 		{
 			name: "nothing more",
 			rows: &rows{
-				iter: &iter{closed: true},
+				iter: &iter{state: stateClosed},
 			},
 			expected: false,
 		},
@@ -98,7 +98,7 @@ func TestRowsScanValue(t *testing.T) {
 	type tt struct {
 		rows     *rows
 		expected interface{}
-		closed   bool
+		state    int
 		status   int
 		err      string
 	}
@@ -120,6 +120,7 @@ func TestRowsScanValue(t *testing.T) {
 				},
 			},
 		},
+		state:    stateRowReady,
 		expected: map[string]interface{}{"foo": 123.4},
 	})
 	tests.Add("one item", func() interface{} {
@@ -132,21 +133,20 @@ func TestRowsScanValue(t *testing.T) {
 		return tt{
 			rows:     newRows(context.Background(), rowsi),
 			expected: "foo",
-			closed:   true,
+			state:    stateClosed,
 		}
 	})
 	tests.Add("closed", tt{
 		rows: &rows{
 			iter: &iter{
-				closed: true,
-				state:  stateRowReady,
+				state: stateClosed,
 				curVal: &driver.Row{
 					ValueReader: strings.NewReader(`{"foo":123.4}`),
 				},
 			},
 		},
 		expected: map[string]interface{}{"foo": 123.4},
-		closed:   true,
+		state:    stateClosed,
 	})
 	tests.Add("row error", tt{
 		rows: &rows{
@@ -168,8 +168,8 @@ func TestRowsScanValue(t *testing.T) {
 		if d := testy.DiffInterface(tt.expected, result); d != nil {
 			t.Error(d)
 		}
-		if tt.closed != tt.rows.closed {
-			t.Errorf("Unexpected closed value: %v", tt.rows.closed)
+		if tt.state != tt.rows.state {
+			t.Errorf("Unexpected state: %v", tt.rows.state)
 		}
 	})
 }
@@ -178,7 +178,7 @@ func TestRowsScanDoc(t *testing.T) {
 	type tt struct {
 		rows     *rows
 		expected interface{}
-		closed   bool
+		state    int
 		status   int
 		err      string
 	}
@@ -194,6 +194,7 @@ func TestRowsScanDoc(t *testing.T) {
 				},
 			},
 		},
+		state:    stateRowReady,
 		expected: map[string]interface{}{"foo": 123.4},
 	})
 	tests.Add("prev error", tt{
@@ -212,6 +213,7 @@ func TestRowsScanDoc(t *testing.T) {
 				},
 			},
 		},
+		state:    stateRowReady,
 		expected: map[string]interface{}{"foo": 123.4},
 	})
 	tests.Add("one item", func() interface{} {
@@ -224,20 +226,19 @@ func TestRowsScanDoc(t *testing.T) {
 		return tt{
 			rows:     newRows(context.Background(), rowsi),
 			expected: map[string]interface{}{"foo": "bar"},
-			closed:   true,
+			state:    stateClosed,
 		}
 	})
 	tests.Add("closed", tt{
 		rows: &rows{
 			iter: &iter{
-				closed: true,
-				state:  stateRowReady,
+				state: stateClosed,
 				curVal: &driver.Row{
 					DocReader: strings.NewReader(`{"foo":123.4}`),
 				},
 			},
 		},
-		closed:   true,
+		state:    stateClosed,
 		expected: map[string]interface{}{"foo": 123.4},
 	})
 	tests.Add("nil doc", tt{
@@ -272,8 +273,8 @@ func TestRowsScanDoc(t *testing.T) {
 		if d := testy.DiffInterface(tt.expected, result); d != nil {
 			t.Error(d)
 		}
-		if tt.closed != tt.rows.closed {
-			t.Errorf("Unexpected closed status: %v", tt.rows.closed)
+		if tt.state != tt.rows.state {
+			t.Errorf("Unexpected state: %v", tt.rows.state)
 		}
 	})
 }
@@ -282,7 +283,7 @@ func TestRowsScanKey(t *testing.T) {
 	type tt struct {
 		rows     *rows
 		expected interface{}
-		closed   bool
+		state    int
 		status   int
 		err      string
 	}
@@ -304,6 +305,7 @@ func TestRowsScanKey(t *testing.T) {
 				},
 			},
 		},
+		state:    stateRowReady,
 		expected: map[string]interface{}{"foo": 123.4},
 	})
 	tests.Add("one item", func() interface{} {
@@ -316,20 +318,19 @@ func TestRowsScanKey(t *testing.T) {
 		return tt{
 			rows:     newRows(context.Background(), rowsi),
 			expected: "foo",
-			closed:   true,
+			state:    stateClosed,
 		}
 	})
 	tests.Add("closed", tt{
 		rows: &rows{
 			iter: &iter{
-				closed: true,
-				state:  stateRowReady,
+				state: stateClosed,
 				curVal: &driver.Row{
 					Key: []byte(`"foo"`),
 				},
 			},
 		},
-		closed:   true,
+		state:    stateClosed,
 		expected: "foo",
 	})
 	tests.Add("row error", tt{
@@ -352,8 +353,8 @@ func TestRowsScanKey(t *testing.T) {
 		if d := testy.DiffInterface(tt.expected, result); d != nil {
 			t.Error(d)
 		}
-		if tt.closed != tt.rows.closed {
-			t.Errorf("Unexpected closed status: %v", tt.rows.closed)
+		if tt.state != tt.rows.state {
+			t.Errorf("Unexpected state: %v", tt.rows.state)
 		}
 	})
 }

@@ -753,7 +753,6 @@ func TestScanAllDocs(t *testing.T) {
 }
 
 func TestNextResultSet(t *testing.T) {
-	t.Skip()
 	t.Run("two resultsets", func(t *testing.T) {
 		rows := []interface{}{
 			&driver.Row{ID: "1", Doc: json.RawMessage(`{"foo":"bar"}`)},
@@ -794,6 +793,9 @@ func TestNextResultSet(t *testing.T) {
 			for r.Next() {
 				ids = append(ids, r.ID())
 			}
+		}
+		if err := r.Err(); err != nil {
+			t.Error(err)
 		}
 		want := []string{"1", "2", "3", "x", "y"}
 		if d := testy.DiffInterface(want, ids); d != nil {

@@ -14,6 +14,7 @@ package kivik
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"sync"
@@ -121,6 +122,14 @@ func (i *iter) NextResultSet() bool {
 	if i.lasterr != nil {
 		return false
 	}
+	if i.state == stateClosed {
+		return false
+	}
+	if i.state == stateRowReady {
+		i.lasterr = errors.New("must call NextResultSet before Next")
+		return false
+	}
+	i.state = stateResultSetReady
 	return true
 }
 
@@ -145,7 +154,8 @@ func (i *iter) next() (doClose, ok bool) {
 	err := i.feed.Next(i.curVal)
 	if err == driver.EOQ {
 		i.state = stateEOQ
-		err = nil
+		i.lasterr = nil
+		return false, false
 	}
 	i.lasterr = err
 	if i.lasterr != nil {

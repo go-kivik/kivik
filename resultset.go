@@ -170,7 +170,7 @@ func (r *rows) Next() bool {
 }
 
 func (r *rows) EOQ() bool {
-	return r.iter.eoq
+	return r.iter.state == stateEOQ
 }
 
 func (r *rows) Err() error {

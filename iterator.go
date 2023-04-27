@@ -53,7 +53,6 @@ type iter struct {
 	mu      sync.RWMutex
 	state   int   // Set to true once Next() has been called
 	lasterr error // non-nil only if state == stateClosed
-	eoq     bool
 
 	cancel func() // cancel function to exit context goroutine when iterator is closed
 
@@ -143,10 +142,9 @@ func (i *iter) next() (doClose, ok bool) {
 		return false, false
 	}
 	i.state = stateRowReady
-	i.eoq = false
 	err := i.feed.Next(i.curVal)
 	if err == driver.EOQ {
-		i.eoq = true
+		i.state = stateEOQ
 		err = nil
 	}
 	i.lasterr = err

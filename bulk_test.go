@@ -141,7 +141,7 @@ func TestRLOCK(t *testing.T) {
 		},
 		{
 			name: "success",
-			iter: &iter{ready: true},
+			iter: &iter{state: stateRowReady},
 		},
 	}
 	for _, test := range tests {
@@ -358,7 +358,7 @@ func TestBulkResultsGetters(t *testing.T) {
 	err := "update error"
 	r := &BulkResults{
 		iter: &iter{
-			ready: true,
+			state: stateRowReady,
 			curVal: &driver.BulkResult{
 				ID:    id,
 				Rev:   rev,
@@ -387,7 +387,7 @@ func TestBulkResultsGetters(t *testing.T) {
 	})
 
 	t.Run("Not ready", func(t *testing.T) {
-		r.ready = false
+		r.state = stateReady
 
 		t.Run("ID", func(t *testing.T) {
 			result := r.ID()

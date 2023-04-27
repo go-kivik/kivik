@@ -26,11 +26,32 @@ type iterator interface {
 	Close() error
 }
 
+// possible states of the result set iterator
+const (
+	// stateReady is the initial state before [ResultSet.Next] or
+	// [ResultSet.NextResultSet] is called.
+	stateReady = iota
+	// stateResultSetReady is the state after calling [ResultSet.NextResultSet]
+	stateResultSetReady
+	// stateResultSetRowReady is the state after calling [ResultSet.Next] within
+	// a result set.
+	stateResultSetRowReady
+	// stateEOQ is the state after having reached the final row in a result set.
+	// [ResultSet.ResultSetNext] should be called next.
+	stateEOQ
+	// stateRowReady is the state when not iterating resultsets, after
+	// [ResultSet.Next] has been called.
+	stateRowReady
+	// stateEOF means the last row has been retrieved. The iterator is no longer
+	// usable.
+	stateEOF
+)
+
 type iter struct {
 	feed iterator
 
 	mu      sync.RWMutex
-	ready   bool // Set to true once Next() has been called
+	state   int // Set to true once Next() has been called
 	closed  bool
 	lasterr error // non-nil only if closed is true
 	eoq     bool
@@ -46,7 +67,7 @@ func (i *iter) rlock() (unlock func(), err error) {
 		i.mu.RUnlock()
 		return nil, &Error{Status: http.StatusBadRequest, Message: "kivik: Iterator is closed"}
 	}
-	if !i.ready {
+	if i.state != stateRowReady {
 		i.mu.RUnlock()
 		return nil, &Error{Status: http.StatusBadRequest, Message: "kivik: Iterator access before calling Next"}
 	}
@@ -58,7 +79,7 @@ func (i *iter) rlock() (unlock func(), err error) {
 // close the iterator, and set e if [iter.Close] errors and e != nil.
 func (i *iter) makeReady(e *error) (unlock func()) {
 	i.mu.RLock()
-	if !i.ready {
+	if i.state != stateRowReady {
 		i.Next()
 		return func() {
 			i.mu.RUnlock()
@@ -122,7 +143,7 @@ func (i *iter) next() (doClose, ok bool) {
 	if i.closed {
 		return false, false
 	}
-	i.ready = true
+	i.state = stateRowReady
 	i.eoq = false
 	err := i.feed.Next(i.curVal)
 	if err == driver.EOQ {

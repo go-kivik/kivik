@@ -114,7 +114,7 @@ func TestRowsScanValue(t *testing.T) {
 	tests.Add("success", tt{
 		rows: &rows{
 			iter: &iter{
-				ready: true,
+				state: stateRowReady,
 				curVal: &driver.Row{
 					ValueReader: strings.NewReader(`{"foo":123.4}`),
 				},
@@ -139,7 +139,7 @@ func TestRowsScanValue(t *testing.T) {
 		rows: &rows{
 			iter: &iter{
 				closed: true,
-				ready:  true,
+				state:  stateRowReady,
 				curVal: &driver.Row{
 					ValueReader: strings.NewReader(`{"foo":123.4}`),
 				},
@@ -151,7 +151,7 @@ func TestRowsScanValue(t *testing.T) {
 	tests.Add("row error", tt{
 		rows: &rows{
 			iter: &iter{
-				ready: true,
+				state: stateRowReady,
 				curVal: &driver.Row{
 					Error: errors.New("row error"),
 				},
@@ -188,7 +188,7 @@ func TestRowsScanDoc(t *testing.T) {
 	tests.Add("old row", tt{
 		rows: &rows{
 			iter: &iter{
-				ready: true,
+				state: stateRowReady,
 				curVal: &driver.Row{
 					Doc: []byte(`{"foo":123.4}`),
 				},
@@ -206,7 +206,7 @@ func TestRowsScanDoc(t *testing.T) {
 	tests.Add("success", tt{
 		rows: &rows{
 			iter: &iter{
-				ready: true,
+				state: stateRowReady,
 				curVal: &driver.Row{
 					DocReader: strings.NewReader(`{"foo":123.4}`),
 				},
@@ -231,7 +231,7 @@ func TestRowsScanDoc(t *testing.T) {
 		rows: &rows{
 			iter: &iter{
 				closed: true,
-				ready:  true,
+				state:  stateRowReady,
 				curVal: &driver.Row{
 					DocReader: strings.NewReader(`{"foo":123.4}`),
 				},
@@ -243,7 +243,7 @@ func TestRowsScanDoc(t *testing.T) {
 	tests.Add("nil doc", tt{
 		rows: &rows{
 			iter: &iter{
-				ready: true,
+				state: stateRowReady,
 				curVal: &driver.Row{
 					Doc: nil,
 				},
@@ -255,7 +255,7 @@ func TestRowsScanDoc(t *testing.T) {
 	tests.Add("row error", tt{
 		rows: &rows{
 			iter: &iter{
-				ready: true,
+				state: stateRowReady,
 				curVal: &driver.Row{
 					Error: errors.New("row error"),
 				},
@@ -298,7 +298,7 @@ func TestRowsScanKey(t *testing.T) {
 	tests.Add("success", tt{
 		rows: &rows{
 			iter: &iter{
-				ready: true,
+				state: stateRowReady,
 				curVal: &driver.Row{
 					Key: []byte(`{"foo":123.4}`),
 				},
@@ -323,7 +323,7 @@ func TestRowsScanKey(t *testing.T) {
 		rows: &rows{
 			iter: &iter{
 				closed: true,
-				ready:  true,
+				state:  stateRowReady,
 				curVal: &driver.Row{
 					Key: []byte(`"foo"`),
 				},
@@ -335,7 +335,7 @@ func TestRowsScanKey(t *testing.T) {
 	tests.Add("row error", tt{
 		rows: &rows{
 			iter: &iter{
-				ready: true,
+				state: stateRowReady,
 				curVal: &driver.Row{
 					Error: errors.New("row error"),
 				},
@@ -366,7 +366,7 @@ func TestRowsGetters(t *testing.T) {
 	updateseq := "asdfasdf"
 	r := &rows{
 		iter: &iter{
-			ready: true,
+			state: stateRowReady,
 			curVal: &driver.Row{
 				ID:  id,
 				Key: key,
@@ -433,7 +433,7 @@ func TestRowsGetters(t *testing.T) {
 		}
 		r := &rows{
 			iter: &iter{
-				ready: true,
+				state: stateRowReady,
 				curVal: &driver.Row{
 					ID:  id,
 					Key: key,

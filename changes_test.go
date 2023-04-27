@@ -191,7 +191,7 @@ func TestChangesScanDoc(t *testing.T) {
 			name: "success",
 			changes: &Changes{
 				iter: &iter{
-					ready: true,
+					state: stateRowReady,
 					curVal: &driver.Change{
 						Doc: []byte(`{"foo":123.4}`),
 					},

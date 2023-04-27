@@ -113,7 +113,7 @@ func TestDBUpdateGetters(t *testing.T) {
 	seq := "abc123"
 	u := &DBUpdates{
 		iter: &iter{
-			ready: true,
+			state: stateRowReady,
 			curVal: &driver.DBUpdate{
 				DBName: dbname,
 				Type:   updateType,
@@ -144,7 +144,7 @@ func TestDBUpdateGetters(t *testing.T) {
 	})
 
 	t.Run("Not Ready", func(t *testing.T) {
-		u.ready = false
+		u.state = stateReady
 
 		t.Run("DBName", func(t *testing.T) {
 			result := u.DBName()

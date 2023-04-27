@@ -66,11 +66,15 @@ func (i *iter) rlock() (unlock func(), err error) {
 		i.mu.RUnlock()
 		return nil, &Error{Status: http.StatusBadRequest, Message: "kivik: Iterator is closed"}
 	}
-	if i.state != stateRowReady {
+	if !i.ready() {
 		i.mu.RUnlock()
 		return nil, &Error{Status: http.StatusBadRequest, Message: "kivik: Iterator access before calling Next"}
 	}
 	return i.mu.RUnlock, nil
+}
+
+func (i *iter) ready() bool {
+	return i.state == stateRowReady || i.state == stateResultSetReady || i.state == stateResultSetRowReady
 }
 
 // makeReady ensures that the iterator is ready to be read from. In the case
@@ -78,7 +82,7 @@ func (i *iter) rlock() (unlock func(), err error) {
 // close the iterator, and set e if [iter.Close] errors and e != nil.
 func (i *iter) makeReady(e *error) (unlock func()) {
 	i.mu.RLock()
-	if i.state != stateRowReady {
+	if !i.ready() {
 		i.Next()
 		return func() {
 			i.mu.RUnlock()
@@ -150,12 +154,20 @@ func (i *iter) next() (doClose, ok bool) {
 	if i.state == stateClosed {
 		return false, false
 	}
-	i.state = stateRowReady
 	err := i.feed.Next(i.curVal)
 	if err == driver.EOQ {
-		i.state = stateEOQ
-		i.lasterr = nil
-		return false, false
+		if i.state == stateResultSetReady || i.state == stateResultSetRowReady {
+			i.state = stateEOQ
+			i.lasterr = nil
+			return false, false
+		}
+		return i.next()
+	}
+	switch i.state {
+	case stateResultSetReady, stateResultSetRowReady:
+		i.state = stateResultSetRowReady
+	default:
+		i.state = stateRowReady
 	}
 	i.lasterr = err
 	if i.lasterr != nil {

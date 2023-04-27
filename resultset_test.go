@@ -754,39 +754,7 @@ func TestScanAllDocs(t *testing.T) {
 
 func TestNextResultSet(t *testing.T) {
 	t.Run("two resultsets", func(t *testing.T) {
-		rows := []interface{}{
-			&driver.Row{ID: "1", Doc: json.RawMessage(`{"foo":"bar"}`)},
-			&driver.Row{ID: "2", Doc: json.RawMessage(`{"foo":"bar"}`)},
-			&driver.Row{ID: "3", Doc: json.RawMessage(`{"foo":"bar"}`)},
-			int64(5),
-			&driver.Row{ID: "x", Doc: json.RawMessage(`{"foo":"bar"}`)},
-			&driver.Row{ID: "y", Doc: json.RawMessage(`{"foo":"bar"}`)},
-			int64(2),
-		}
-		var offset int64
-
-		r := newRows(context.Background(), &mock.Rows{
-			NextFunc: func(r *driver.Row) error {
-				if len(rows) == 0 {
-					return io.EOF
-				}
-				row := rows[0]
-				rows = rows[1:]
-				switch t := row.(type) {
-				case *driver.Row:
-					*r = *t
-					return nil
-				case int64:
-					offset = t
-					return driver.EOQ
-				default:
-					panic("unknown type")
-				}
-			},
-			OffsetFunc: func() int64 {
-				return offset
-			},
-		})
+		r := multiResultSet()
 
 		ids := []string{}
 		for r.NextResultSet() {
@@ -801,5 +769,92 @@ func TestNextResultSet(t *testing.T) {
 		if d := testy.DiffInterface(want, ids); d != nil {
 			t.Error(d)
 		}
+	})
+	t.Run("called out of order", func(t *testing.T) {
+		r := multiResultSet()
+
+		if !r.Next() {
+			t.Fatal("expected next to return true")
+		}
+		if r.NextResultSet() {
+			t.Fatal("expected NextResultSet to return false")
+		}
+
+		wantErr := "must call NextResultSet before Next"
+		err := r.Err()
+		if !testy.ErrorMatches(wantErr, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
+	})
+	t.Run("next only", func(t *testing.T) {
+		r := multiResultSet()
+
+		ids := []string{}
+		for r.Next() {
+			ids = append(ids, r.ID())
+		}
+		if err := r.Err(); err != nil {
+			t.Error(err)
+		}
+		want := []string{"1", "2", "3", "x", "y"}
+		if d := testy.DiffInterface(want, ids); d != nil {
+			t.Error(d)
+		}
+	})
+	t.Run("don't call NextResultSet in loop", func(t *testing.T) {
+		r := multiResultSet()
+
+		ids := []string{}
+		r.NextResultSet()
+		for r.Next() {
+			ids = append(ids, r.ID())
+		}
+		_ = r.Next() // once more to ensure it doesn't error past the end of the first RS
+		if err := r.Err(); err != nil {
+			t.Error(err)
+		}
+
+		// Only the first result set is processed, since NextResultSet is never
+		// called a second time.
+		want := []string{"1", "2", "3"}
+		if d := testy.DiffInterface(want, ids); d != nil {
+			t.Error(d)
+		}
+	})
+}
+
+func multiResultSet() ResultSet {
+	rows := []interface{}{
+		&driver.Row{ID: "1", Doc: json.RawMessage(`{"foo":"bar"}`)},
+		&driver.Row{ID: "2", Doc: json.RawMessage(`{"foo":"bar"}`)},
+		&driver.Row{ID: "3", Doc: json.RawMessage(`{"foo":"bar"}`)},
+		int64(5),
+		&driver.Row{ID: "x", Doc: json.RawMessage(`{"foo":"bar"}`)},
+		&driver.Row{ID: "y", Doc: json.RawMessage(`{"foo":"bar"}`)},
+		int64(2),
+	}
+	var offset int64
+
+	return newRows(context.Background(), &mock.Rows{
+		NextFunc: func(r *driver.Row) error {
+			if len(rows) == 0 {
+				return io.EOF
+			}
+			row := rows[0]
+			rows = rows[1:]
+			switch t := row.(type) {
+			case *driver.Row:
+				*r = *t
+				return nil
+			case int64:
+				offset = t
+				return driver.EOQ
+			default:
+				panic("unknown type")
+			}
+		},
+		OffsetFunc: func() int64 {
+			return offset
+		},
 	})
 }

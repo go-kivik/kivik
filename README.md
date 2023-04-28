@@ -177,7 +177,7 @@ This is a partial list of breaking changes between 3.x and 4.x
 
 - The return type for queries has been significantly changed.
   - In 3.x, queries returned a `*Rows` struct. Now they return the `ResultSet` interface.
-  - The `Offset()`, `TotalRows()`, `UpdateSeq()`, `Warning()` and `Bookmark()` methods have been removed, and replaced with the `ResultMetadata` type which is accessed via the `Finish()` method. See [issue #552](https://github.com/go-kivik/kivik/issues/552).
+  - The `Offset()`, `TotalRows()`, `UpdateSeq()`, `Warning()` and `Bookmark()` methods have been removed, and replaced with the `ResultMetadata` type which is accessed via the `Metadata()` method. See [issue #552](https://github.com/go-kivik/kivik/issues/552).
   - Calling most methods on `Rows` will now work after closing the iterator.
   - Calling `ScanDoc`, `ScanKey`, `ScanValue`, `Key`, or `ID` before calling `Next` will make the iterator operate in single-item mode, meaning that only the first item in the iterator will be processed, then the iterator will be closed immediately.
 - `Get()` now returns a `ResultSet`, rather than a `*Row`. Semantics work roughly the same for standard use cases where `Get()` returns a single document: Just call `ScanDoc()` as before. However, this allows `Get()` to also return multiple docs, as it does when called with the `open_revs` flag. See the [CouchDB docs](https://docs.couchdb.org/en/stable/api/document/common.html#get--db-docid).

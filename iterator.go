@@ -54,8 +54,8 @@ func (i *iter) rlock() (unlock func(), err error) {
 }
 
 // makeReady ensures that the iterator is ready to be read from. In the case
-// that Next() has not been called on the iterator, the returned unlock
-// function will also close the iterator, and set e if Close() errors.
+// that [iter.Next] has not been called, the returned unlock function will also
+// close the iterator, and set e if [iter.Close] errors and e != nil.
 func (i *iter) makeReady(e *error) (unlock func()) {
 	i.mu.RLock()
 	if !i.ready {
@@ -72,9 +72,9 @@ func (i *iter) makeReady(e *error) (unlock func()) {
 
 // newIterator instantiates a new iterator.
 //
-// ctx is a possibly-cancellable context
-// zeroValue is an empty instance of the data type this iterator iterates over
-// feed is the iterator interface, which typically wraps a driver.X iterator
+// ctx is a possibly-cancellable context.  zeroValue is an empty instance of
+// the data type this iterator iterates over feed is the iterator interface,
+// which typically wraps a driver.X iterator
 func newIterator(ctx context.Context, feed iterator, zeroValue interface{}) *iter {
 	i := &iter{
 		feed:   feed,
@@ -85,7 +85,8 @@ func newIterator(ctx context.Context, feed iterator, zeroValue interface{}) *ite
 	return i
 }
 
-// awaitDone blocks until the rows are closed or the context is cancelled, then closes the iterator if it's still open.
+// awaitDone blocks until the rows are closed or the context is cancelled, then
+// closes the iterator if it's still open.
 func (i *iter) awaitDone(ctx context.Context) {
 	<-ctx.Done()
 	_ = i.close(ctx.Err())
@@ -93,7 +94,7 @@ func (i *iter) awaitDone(ctx context.Context) {
 
 // Next prepares the next iterator result value for reading. It returns true on
 // success, or false if there is no next result or an error occurs while
-// preparing it. Err should be consulted to distinguish between the two.
+// preparing it. [iter.Err] should be consulted to distinguish between the two.
 func (i *iter) Next() bool {
 	doClose, ok := i.next()
 	if doClose {
@@ -125,8 +126,8 @@ func (i *iter) next() (doClose, ok bool) {
 // Close closes the Iterator, preventing further enumeration, and freeing any
 // resources (such as the http request body) of the underlying feed. If Next is
 // called and there are no further results, Iterator is closed automatically and
-// it will suffice to check the result of Err. Close is idempotent and does not
-// affect the result of Err.
+// it will suffice to check the result of [iter.Err]. Close is idempotent and
+// does not affect the result of [iter.Err].
 func (i *iter) Close() error {
 	return i.close(nil)
 }

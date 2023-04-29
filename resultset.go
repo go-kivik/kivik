@@ -90,7 +90,7 @@ type ResultSet interface {
 	// Metadata returns the result metadata for the current query. It should be
 	// called after Next() returns false, as any unconsumed rows in the current
 	// result set will be discarded.
-	Metadata() (ResultMetadata, error)
+	Metadata() (*ResultMetadata, error)
 
 	// ScanValue copies the data from the result value into the value pointed
 	// at by dest. Think of this as calling [encoding/json.Unmarshal] into dest.
@@ -185,7 +185,7 @@ func (r *rows) Close() error {
 	return r.iter.Close()
 }
 
-func (r *rows) Metadata() (ResultMetadata, error) {
+func (r *rows) Metadata() (*ResultMetadata, error) {
 	for !r.EOQ() {
 		if !r.Next() {
 			break
@@ -198,7 +198,7 @@ func (r *rows) Metadata() (ResultMetadata, error) {
 	if b, ok := r.rowsi.(driver.Bookmarker); ok {
 		bookmark = b.Bookmark()
 	}
-	return ResultMetadata{
+	return &ResultMetadata{
 		Offset:    r.rowsi.Offset(),
 		TotalRows: r.rowsi.TotalRows(),
 		UpdateSeq: r.rowsi.UpdateSeq(),
@@ -365,14 +365,14 @@ type errRS struct {
 
 var _ ResultSet = &errRS{}
 
-func (e *errRS) Err() error                        { return e.err }
-func (e *errRS) Close() error                      { return e.err }
-func (e *errRS) Metadata() (ResultMetadata, error) { return ResultMetadata{}, e.err }
-func (e *errRS) ID() string                        { return "" }
-func (e *errRS) Key() string                       { return "" }
-func (e *errRS) Next() bool                        { return false }
-func (e *errRS) ScanAllDocs(interface{}) error     { return e.err }
-func (e *errRS) ScanDoc(interface{}) error         { return e.err }
-func (e *errRS) ScanKey(interface{}) error         { return e.err }
-func (e *errRS) ScanValue(interface{}) error       { return e.err }
-func (e *errRS) NextResultSet() bool               { return false }
+func (e *errRS) Err() error                         { return e.err }
+func (e *errRS) Close() error                       { return e.err }
+func (e *errRS) Metadata() (*ResultMetadata, error) { return nil, e.err }
+func (e *errRS) ID() string                         { return "" }
+func (e *errRS) Key() string                        { return "" }
+func (e *errRS) Next() bool                         { return false }
+func (e *errRS) ScanAllDocs(interface{}) error      { return e.err }
+func (e *errRS) ScanDoc(interface{}) error          { return e.err }
+func (e *errRS) ScanKey(interface{}) error          { return e.err }
+func (e *errRS) ScanValue(interface{}) error        { return e.err }
+func (e *errRS) NextResultSet() bool                { return false }

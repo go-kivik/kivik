@@ -1,7 +1,7 @@
-(kivik.ResultMetadata) {
+(*kivik.ResultMetadata)({
   Offset: (int64) 0,
   TotalRows: (int64) 0,
   UpdateSeq: (string) "",
   Warning: (string) (len=12) "test warning",
   Bookmark: (string) ""
-}
+})

@@ -267,13 +267,6 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 					},
 					curVal: &driver.BulkResult{},
 				},
-				bulki: &emulatedBulkResults{
-					results: []driver.BulkResult{
-						{ID: "foo", Rev: "2-xxx"},
-						{ID: "newDocID", Rev: "1-xxx"},
-						{ID: "error", Error: errors.New("error")},
-					},
-				},
 			},
 		},
 		{
@@ -303,7 +296,6 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 					},
 					curVal: &driver.BulkResult{},
 				},
-				bulki: &mock.BulkResults{ID: "foo"},
 			},
 		},
 	}

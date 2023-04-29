@@ -100,7 +100,6 @@ func TestDBUpdatesIteratorNew(t *testing.T) {
 			},
 			curVal: &driver.DBUpdate{},
 		},
-		updatesi: &mock.DBUpdates{},
 	}
 	u.cancel = nil // determinism
 	if d := testy.DiffInterface(expected, u); d != nil {
@@ -214,7 +213,6 @@ func TestDBUpdates(t *testing.T) {
 					},
 					curVal: &driver.DBUpdate{},
 				},
-				updatesi: &mock.DBUpdates{ID: "a"},
 			},
 		},
 	}

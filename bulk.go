@@ -24,7 +24,6 @@ import (
 // BulkResults is an iterator over the results of a BulkDocs query.
 type BulkResults struct {
 	*iter
-	bulki driver.BulkResults
 }
 
 // Next returns the next BulkResult from the feed. If an error occurs, this
@@ -55,8 +54,7 @@ func (r *bulkIterator) Next(i interface{}) error {
 
 func newBulkResults(ctx context.Context, bulki driver.BulkResults) *BulkResults {
 	return &BulkResults{
-		iter:  newIterator(ctx, &bulkIterator{bulki}, &driver.BulkResult{}),
-		bulki: bulki,
+		iter: newIterator(ctx, &bulkIterator{bulki}, &driver.BulkResult{}),
 	}
 }
 

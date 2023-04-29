@@ -22,7 +22,6 @@ import (
 // DBUpdates provides access to database updates.
 type DBUpdates struct {
 	*iter
-	updatesi driver.DBUpdates
 }
 
 // Next returns the next DBUpdate from the feed. This function will block
@@ -53,8 +52,7 @@ func (r *updatesIterator) Next(i interface{}) error { return r.DBUpdates.Next(i.
 
 func newDBUpdates(ctx context.Context, updatesi driver.DBUpdates) *DBUpdates {
 	return &DBUpdates{
-		iter:     newIterator(ctx, &updatesIterator{updatesi}, &driver.DBUpdate{}),
-		updatesi: updatesi,
+		iter: newIterator(ctx, &updatesIterator{updatesi}, &driver.DBUpdate{}),
 	}
 }
 

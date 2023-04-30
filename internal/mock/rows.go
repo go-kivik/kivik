@@ -96,16 +96,3 @@ var _ driver.Bookmarker = &Bookmarker{}
 func (r *Bookmarker) Bookmark() string {
 	return r.BookmarkFunc()
 }
-
-// QueryIndexer provides driver.QueryIndexer.
-type QueryIndexer struct {
-	*Rows
-	QueryIndexFunc func() int
-}
-
-var _ driver.QueryIndexer = &QueryIndexer{}
-
-// QueryIndex calls r.QueryIndexFunc
-func (r *QueryIndexer) QueryIndex() int {
-	return r.QueryIndexFunc()
-}

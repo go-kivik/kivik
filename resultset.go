@@ -130,11 +130,6 @@ type ResultSet interface {
 	// compound keys, [ScanKey] may be more convenient.
 	Key() string
 
-	// QueryIndex returns the 0-based index of the query. For standard queries,
-	// this is always 0. When multiple queries are passed to the view, this will
-	// represent the query currently being iterated.
-	QueryIndex() int
-
 	// Attachments returns an attachments iterator. At present, it is only set
 	// by [DB.Get] when doing a multi-part get from CouchDB (which is the
 	// default where supported). This may be extended to other cases in the
@@ -148,7 +143,6 @@ type ResultSet interface {
 type baseRS struct{}
 
 func (baseRS) Rev() string                       { return "" }
-func (baseRS) QueryIndex() int                   { return 0 }
 func (baseRS) Attachments() *AttachmentsIterator { return nil }
 
 type rows struct {
@@ -347,13 +341,6 @@ func (r *rows) Key() string {
 	runlock := r.makeReady(nil)
 	defer runlock()
 	return string(r.curVal.(*driver.Row).Key)
-}
-
-func (r *rows) QueryIndex() int {
-	if qi, ok := r.rowsi.(driver.QueryIndexer); ok {
-		return qi.QueryIndex()
-	}
-	return 0
 }
 
 // errRS is a resultset that has errored.

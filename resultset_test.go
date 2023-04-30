@@ -475,26 +475,6 @@ func TestRowsGetters(t *testing.T) {
 	})
 }
 
-func TestQueryIndex(t *testing.T) {
-	t.Run("QueryIndexer", func(t *testing.T) {
-		expected := 100
-		r := newRows(context.Background(), &mock.QueryIndexer{
-			QueryIndexFunc: func() int { return expected },
-		})
-		if i := r.QueryIndex(); i != expected {
-			t.Errorf("QueryIndex\nExpected %v\n  Actual: %v", expected, i)
-		}
-	})
-
-	t.Run("Non QueryIndexer", func(t *testing.T) {
-		r := newRows(context.Background(), &mock.Rows{})
-		expected := 0
-		if i := r.QueryIndex(); i != expected {
-			t.Errorf("QueryIndex\nExpected: %v\n  Actual: %v", expected, i)
-		}
-	})
-}
-
 func TestMetadata(t *testing.T) {
 	check := func(t *testing.T, r ResultSet) {
 		t.Helper()

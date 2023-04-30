@@ -78,10 +78,3 @@ type Bookmarker interface {
 	// usage: http://docs.couchdb.org/en/2.1.1/api/database/find.html#pagination
 	Bookmark() string
 }
-
-// QueryIndexer is an optional interface that may be implemented by a [Rows],
-// which allows a rows iterator to return a query index value. This is intended
-// for use by multi-query queries to views.
-type QueryIndexer interface {
-	QueryIndex() int
-}

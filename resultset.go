@@ -135,12 +135,6 @@ type ResultSet interface {
 	// represent the query currently being iterated.
 	QueryIndex() int
 
-	// EOQ returns true if the iterator has reached the end of a query in a
-	// multi-query query. When EOQ is true, the row data will not have been
-	// updated. It is common to simply `continue` in case of EOQ, unless you
-	// care about the per-query metadata, such as offset, total rows, etc.
-	EOQ() bool
-
 	// Attachments returns an attachments iterator. At present, it is only set
 	// by [DB.Get] when doing a multi-part get from CouchDB (which is the
 	// default where supported). This may be extended to other cases in the
@@ -154,7 +148,6 @@ type ResultSet interface {
 type baseRS struct{}
 
 func (baseRS) Rev() string                       { return "" }
-func (baseRS) EOQ() bool                         { return false }
 func (baseRS) QueryIndex() int                   { return 0 }
 func (baseRS) Attachments() *AttachmentsIterator { return nil }
 
@@ -169,10 +162,6 @@ var _ ResultSet = &rows{}
 
 func (r *rows) Next() bool {
 	return r.iter.Next()
-}
-
-func (r *rows) EOQ() bool {
-	return r.iter.state == stateEOQ
 }
 
 func (r *rows) Err() error {

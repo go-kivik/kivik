@@ -16,6 +16,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"reflect"
 
@@ -186,36 +187,45 @@ func (r *rows) Close() error {
 }
 
 func (r *rows) Metadata() (*ResultMetadata, error) {
-	for !r.EOQ() {
+	for r.state != stateEOQ && r.state != stateClosed {
 		if !r.Next() {
 			break
 		}
 	}
-	var warning, bookmark string
-	if w, ok := r.rowsi.(driver.RowsWarner); ok {
-		warning = w.Warning()
-	}
-	if b, ok := r.rowsi.(driver.Bookmarker); ok {
-		bookmark = b.Bookmark()
-	}
-	return &ResultMetadata{
-		Offset:    r.rowsi.Offset(),
-		TotalRows: r.rowsi.TotalRows(),
-		UpdateSeq: r.rowsi.UpdateSeq(),
-		Warning:   warning,
-		Bookmark:  bookmark,
-	}, nil
+	return r.feed.(*rowsIterator).ResultMetadata, nil
 }
 
-type rowsIterator struct{ driver.Rows }
+type rowsIterator struct {
+	driver.Rows
+	*ResultMetadata
+}
 
 var _ iterator = &rowsIterator{}
 
-func (r *rowsIterator) Next(i interface{}) error { return r.Rows.Next(i.(*driver.Row)) }
+func (r *rowsIterator) Next(i interface{}) error {
+	err := r.Rows.Next(i.(*driver.Row))
+	if err == io.EOF || err == driver.EOQ {
+		var warning, bookmark string
+		if w, ok := r.Rows.(driver.RowsWarner); ok {
+			warning = w.Warning()
+		}
+		if b, ok := r.Rows.(driver.Bookmarker); ok {
+			bookmark = b.Bookmark()
+		}
+		r.ResultMetadata = &ResultMetadata{
+			Offset:    r.Rows.Offset(),
+			TotalRows: r.Rows.TotalRows(),
+			UpdateSeq: r.Rows.UpdateSeq(),
+			Warning:   warning,
+			Bookmark:  bookmark,
+		}
+	}
+	return err
+}
 
 func newRows(ctx context.Context, rowsi driver.Rows) *rows {
 	return &rows{
-		iter:  newIterator(ctx, &rowsIterator{rowsi}, &driver.Row{}),
+		iter:  newIterator(ctx, &rowsIterator{Rows: rowsi}, &driver.Row{}),
 		rowsi: rowsi,
 	}
 }

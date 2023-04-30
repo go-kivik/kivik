@@ -439,7 +439,7 @@ func TestRowsGetters(t *testing.T) {
 					ID:  id,
 					Key: key,
 				},
-				feed: &rowsIterator{rowsi},
+				feed: &rowsIterator{Rows: rowsi},
 			},
 			rowsi: rowsi,
 		}
@@ -586,47 +586,32 @@ func TestMetadata(t *testing.T) {
 		})
 		check(t, r)
 	})
-	t.Run("followed by other query", func(t *testing.T) {
-		t.Skip()
-		rows := []interface{}{
-			&driver.Row{Doc: json.RawMessage(`{"foo":"bar"}`)},
-			&driver.Row{Doc: json.RawMessage(`{"foo":"bar"}`)},
-			&driver.Row{Doc: json.RawMessage(`{"foo":"bar"}`)},
-			int64(5),
-			&driver.Row{ID: "x", Doc: json.RawMessage(`{"foo":"bar"}`)},
-			&driver.Row{ID: "y", Doc: json.RawMessage(`{"foo":"bar"}`)},
-			int64(2),
-		}
-		var offset int64
+	t.Run("followed by other query in resultset mode", func(t *testing.T) {
+		r := multiResultSet()
 
-		r := newRows(context.Background(), &mock.Rows{
-			NextFunc: func(r *driver.Row) error {
-				if len(rows) == 0 {
-					return io.EOF
-				}
-				row := rows[0]
-				rows = rows[1:]
-				switch t := row.(type) {
-				case *driver.Row:
-					*r = *t
-					return nil
-				case int64:
-					offset = t
-					return driver.EOQ
-				default:
-					panic("unknown type")
-				}
-			},
-			OffsetFunc: func() int64 {
-				return offset
-			},
-		})
+		_ = r.NextResultSet()
 		check(t, r)
 		ids := []string{}
 		for r.Next() {
 			ids = append(ids, r.ID())
 		}
 		want := []string{"x", "y"}
+		if d := testy.DiffInterface(want, ids); d != nil {
+			t.Error(d)
+		}
+		t.Run("second query", func(t *testing.T) {
+			check(t, r)
+		})
+	})
+	t.Run("followed by other query in row mode", func(t *testing.T) {
+		r := multiResultSet()
+
+		check(t, r)
+		ids := []string{}
+		for r.Next() {
+			ids = append(ids, r.ID())
+		}
+		want := []string{}
 		if d := testy.DiffInterface(want, ids); d != nil {
 			t.Error(d)
 		}

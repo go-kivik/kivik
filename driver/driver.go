@@ -72,7 +72,7 @@ type DBsStatser interface {
 // Replication represents a _replicator document.
 type Replication interface {
 	// The following methods are called just once, when the Replication is first
-	// returned from Replicate() or GetReplications().
+	// returned from [Replicate] or [GetReplications].
 	ReplicationID() string
 	Source() string
 	Target() string
@@ -108,7 +108,7 @@ type ClientReplicator interface {
 	GetReplications(ctx context.Context, options map[string]interface{}) ([]Replication, error)
 }
 
-// Authenticator is an optional interface that may be implemented by a Client
+// Authenticator is an optional interface that may be implemented by a [Client]
 // that supports authenitcated connections.
 type Authenticator interface {
 	// Authenticate attempts to authenticate the client using an authenticator.
@@ -193,8 +193,8 @@ type DB interface {
 	Security(ctx context.Context) (*Security, error)
 	// SetSecurity sets the database's security document.
 	SetSecurity(ctx context.Context, security *Security) error
-	// Changes returns a Rows iterator for the changes feed. In continuous mode,
-	// the iterator will continue indefinitely, until Close is called.
+	// Changes returns an iterator for the changes feed. In continuous mode,
+	// the iterator will continue indefinitely, until [Changes.Close] is called.
 	Changes(ctx context.Context, options map[string]interface{}) (Changes, error)
 	// PutAttachment uploads an attachment to the specified document, returning
 	// the new revision.
@@ -234,10 +234,10 @@ type Attachments interface {
 	// Next is called to pupulate att with the next attachment in the result
 	// set.
 	//
-	// Next should return io.EOF when there are no more attachments.
+	// Next should return [io.EOF] when there are no more attachments.
 	Next(att *Attachment) error
 
-	// Close closes the Attachments iterator
+	// Close closes the Attachments iterator.
 	Close() error
 }
 
@@ -257,19 +257,19 @@ type PurgeResult struct {
 
 // BulkDocer is an optional interface which may be implemented by a DB to
 // support bulk insert/update operations. For any driver that does not support
-// the BulkDocer interface, the Put or CreateDoc methods will be called for each
-// document to emulate the same functionality, with options passed through
-// unaltered.
+// the BulkDocer interface, the [DB.Put] or [DB.CreateDoc] methods will be
+// called for each document to emulate the same functionality, with options
+// passed through unaltered.
 type BulkDocer interface {
 	// BulkDocs alls bulk create, update and/or delete operations. It returns an
 	// iterator over the results.
 	BulkDocs(ctx context.Context, docs []interface{}, options map[string]interface{}) (BulkResults, error)
 }
 
-// Finder is the old Finder interface, which does not accept options. It
+// Finder is the old version of [OptsFinder], which does not accept options. It
 // remains for compatibility with older backends.
 //
-// Deprecated: Use OptsFinder instead.
+// Deprecated: Use [OptsFinder] instead.
 type Finder interface {
 	Find(ctx context.Context, query interface{}) (Rows, error)
 	CreateIndex(ctx context.Context, ddoc, name string, index interface{}) error
@@ -278,13 +278,12 @@ type Finder interface {
 	Explain(ctx context.Context, query interface{}) (*QueryPlan, error)
 }
 
-// OptsFinder is an optional interface which may be implemented by a DB. The
-// Finder interface provides access to the new (in CouchDB 2.0) MongoDB-style
-// query interface.
+// OptsFinder is an optional interface which may be implemented by a DB. It
+// provides access to the new (in CouchDB 2.0) MongoDB-style query interface.
 type OptsFinder interface {
 	// Find executes a query using the new /_find interface. If query is a
-	// string, []byte, or json.RawMessage, it should be treated as a raw JSON
-	// payload. Any other type should be marshaled to JSON.
+	// string, []byte, or [encoding/json.RawMessage], it should be treated as a
+	// raw JSON payload. Any other type should be marshaled to JSON.
 	Find(ctx context.Context, query interface{}, options map[string]interface{}) (Rows, error)
 	// CreateIndex creates an index if it doesn't already exist. If the index
 	// already exists, it should do nothing. ddoc and name may be empty, in
@@ -297,7 +296,7 @@ type OptsFinder interface {
 	// Delete deletes the requested index.
 	DeleteIndex(ctx context.Context, ddoc, name string, options map[string]interface{}) error
 	// Explain returns the query plan for a given query. Explain takes the same
-	// arguments as Find.
+	// arguments as [OptsFinder.Find].
 	Explain(ctx context.Context, query interface{}, options map[string]interface{}) (*QueryPlan, error)
 }
 
@@ -355,25 +354,25 @@ type BulkResult struct {
 
 // BulkResults is an iterator over the results for a BulkDocs call.
 type BulkResults interface {
-	// Next is called to populate *BulkResult with the values of the next bulk
-	// result in the set.
+	// Next is called to populate r with the values of the next bulk result in
+	// the set.
 	//
-	// Next should return io.EOF when there are no more results.
-	Next(*BulkResult) error
+	// Next should return [io.EOF] when there are no more results.
+	Next(r *BulkResult) error
 	// Close closes the bulk results iterator.
 	Close() error
 }
 
-// RevGetter is an optional interface that may be implemented by a DB. If not
-// implemented, the Get method will be used to emulate the functionality, with
-// options passed through unaltered.
+// RevGetter is an optional interface that may be implemented by a [DB]. If not
+// implemented, [DB.Get] will be used to emulate the functionality, with options
+// passed through unaltered.
 type RevGetter interface {
 	// GetRev returns the document revision of the requested document. GetRev
-	// should accept the same options as the Get method.
+	// should accept the same options as [DB.Get].
 	GetRev(ctx context.Context, docID string, options map[string]interface{}) (rev string, err error)
 }
 
-// Flusher is an optional interface that may be implemented by a DB that can
+// Flusher is an optional interface that may be implemented by a [DB] that can
 // force a flush of the database backend file(s) to disk or other permanent
 // storage.
 type Flusher interface {
@@ -383,47 +382,46 @@ type Flusher interface {
 	Flush(ctx context.Context) error
 }
 
-// Copier is an optional interface that may be implemented by a DB.
+// Copier is an optional interface that may be implemented by a [DB].
 //
-// If a DB does implement Copier, Copy() functions will use it. If a DB does
-// not implement the Copier interface, the functionality will be emulated by
-// calling Get followed by Put, with options passed through unaltered, except
-// that the 'rev' option will be removed for the Put call.
+// If a DB does not implement Copier, the functionality will be emulated by
+// calling [DB.Get] followed by [DB.Put], with options passed through unaltered,
+// except that the 'rev' option will be removed for the [DB.Put] call.
 type Copier interface {
 	Copy(ctx context.Context, targetID, sourceID string, options map[string]interface{}) (targetRev string, err error)
 }
 
-// DesignDocer is an optional interface that may be implemented by a DB.
+// DesignDocer is an optional interface that may be implemented by a [DB].
 type DesignDocer interface {
 	// DesignDocs returns all of the design documents in the database, subject
 	// to the options provided.
 	DesignDocs(ctx context.Context, options map[string]interface{}) (Rows, error)
 }
 
-// LocalDocer is an optional interface that may be implemented by a DB.
+// LocalDocer is an optional interface that may be implemented by a [DB].
 type LocalDocer interface {
 	// LocalDocs returns all of the local documents in the database, subject to
 	// the options provided.
 	LocalDocs(ctx context.Context, options map[string]interface{}) (Rows, error)
 }
 
-// Pinger is an optional interface that may be implemented by a Client. When
-// not implemented, Kivik will call Version instead, to determine if the
-// database is usable.
+// Pinger is an optional interface that may be implemented by a [Client]. When
+// not implemented, Kivik will call [Client.Version] instead, to determine if
+// the database is usable.
 type Pinger interface {
 	// Ping returns true if the database is online and available for requests.
 	Ping(ctx context.Context) (bool, error)
 }
 
-// ClusterMembership contains the list of known nodes, and cluster nodes, as returned
-// by the /_membership endpoint.
+// ClusterMembership contains the list of known nodes, and cluster nodes, as
+// returned by the /_membership endpoint.
 // See https://docs.couchdb.org/en/latest/api/server/common.html#get--_membership
 type ClusterMembership struct {
 	AllNodes     []string `json:"all_nodes"`
 	ClusterNodes []string `json:"cluster_nodes"`
 }
 
-// Cluster is an optional interface that may be implemented by a Client to
+// Cluster is an optional interface that may be implemented by a [Client] to
 // support CouchDB cluster configuration operations.
 type Cluster interface {
 	// ClusterStatus returns the current cluster status.
@@ -435,20 +433,20 @@ type Cluster interface {
 	Membership(ctx context.Context) (*ClusterMembership, error)
 }
 
-// ClientCloser is an optional interface that may be implemented by a Client
-// to clean up resources when a Client is no longer needed.
+// ClientCloser is an optional interface that may be implemented by a [Client]
+// to clean up resources when a client is no longer needed.
 type ClientCloser interface {
 	Close(ctx context.Context) error
 }
 
-// DBCloser is an optional interface that may be implemented by a DB to clean
-// up resources when a DB is no longer needed.
+// DBCloser is an optional interface that may be implemented by a [DB] to clean
+// up resources when a database is no longer needed.
 type DBCloser interface {
 	Close(ctx context.Context) error
 }
 
-// RevDiff represents a rev diff for a single document, as returned by the
-// RevsDiff method.
+// RevDiff represents a rev diff for a single document, as returned by
+// [RevsDiffer.RevsDiff].
 type RevDiff struct {
 	Missing           []string `json:"missing,omitempty"`
 	PossibleAncestors []string `json:"possible_ancestors,omitempty"`

@@ -36,7 +36,7 @@ func TestRowsNext(t *testing.T) {
 		{
 			name: "nothing more",
 			rows: &rows{
-				iter: &iter{closed: true},
+				iter: &iter{state: stateClosed},
 			},
 			expected: false,
 		},
@@ -98,7 +98,7 @@ func TestRowsScanValue(t *testing.T) {
 	type tt struct {
 		rows     *rows
 		expected interface{}
-		closed   bool
+		state    int
 		status   int
 		err      string
 	}
@@ -114,12 +114,13 @@ func TestRowsScanValue(t *testing.T) {
 	tests.Add("success", tt{
 		rows: &rows{
 			iter: &iter{
-				ready: true,
+				state: stateRowReady,
 				curVal: &driver.Row{
 					ValueReader: strings.NewReader(`{"foo":123.4}`),
 				},
 			},
 		},
+		state:    stateRowReady,
 		expected: map[string]interface{}{"foo": 123.4},
 	})
 	tests.Add("one item", func() interface{} {
@@ -132,26 +133,25 @@ func TestRowsScanValue(t *testing.T) {
 		return tt{
 			rows:     newRows(context.Background(), rowsi),
 			expected: "foo",
-			closed:   true,
+			state:    stateClosed,
 		}
 	})
 	tests.Add("closed", tt{
 		rows: &rows{
 			iter: &iter{
-				closed: true,
-				ready:  true,
+				state: stateClosed,
 				curVal: &driver.Row{
 					ValueReader: strings.NewReader(`{"foo":123.4}`),
 				},
 			},
 		},
 		expected: map[string]interface{}{"foo": 123.4},
-		closed:   true,
+		state:    stateClosed,
 	})
 	tests.Add("row error", tt{
 		rows: &rows{
 			iter: &iter{
-				ready: true,
+				state: stateRowReady,
 				curVal: &driver.Row{
 					Error: errors.New("row error"),
 				},
@@ -168,8 +168,8 @@ func TestRowsScanValue(t *testing.T) {
 		if d := testy.DiffInterface(tt.expected, result); d != nil {
 			t.Error(d)
 		}
-		if tt.closed != tt.rows.closed {
-			t.Errorf("Unexpected closed value: %v", tt.rows.closed)
+		if tt.state != tt.rows.state {
+			t.Errorf("Unexpected state: %v", tt.rows.state)
 		}
 	})
 }
@@ -178,7 +178,7 @@ func TestRowsScanDoc(t *testing.T) {
 	type tt struct {
 		rows     *rows
 		expected interface{}
-		closed   bool
+		state    int
 		status   int
 		err      string
 	}
@@ -188,12 +188,13 @@ func TestRowsScanDoc(t *testing.T) {
 	tests.Add("old row", tt{
 		rows: &rows{
 			iter: &iter{
-				ready: true,
+				state: stateRowReady,
 				curVal: &driver.Row{
 					Doc: []byte(`{"foo":123.4}`),
 				},
 			},
 		},
+		state:    stateRowReady,
 		expected: map[string]interface{}{"foo": 123.4},
 	})
 	tests.Add("prev error", tt{
@@ -206,12 +207,13 @@ func TestRowsScanDoc(t *testing.T) {
 	tests.Add("success", tt{
 		rows: &rows{
 			iter: &iter{
-				ready: true,
+				state: stateRowReady,
 				curVal: &driver.Row{
 					DocReader: strings.NewReader(`{"foo":123.4}`),
 				},
 			},
 		},
+		state:    stateRowReady,
 		expected: map[string]interface{}{"foo": 123.4},
 	})
 	tests.Add("one item", func() interface{} {
@@ -224,26 +226,25 @@ func TestRowsScanDoc(t *testing.T) {
 		return tt{
 			rows:     newRows(context.Background(), rowsi),
 			expected: map[string]interface{}{"foo": "bar"},
-			closed:   true,
+			state:    stateClosed,
 		}
 	})
 	tests.Add("closed", tt{
 		rows: &rows{
 			iter: &iter{
-				closed: true,
-				ready:  true,
+				state: stateClosed,
 				curVal: &driver.Row{
 					DocReader: strings.NewReader(`{"foo":123.4}`),
 				},
 			},
 		},
-		closed:   true,
+		state:    stateClosed,
 		expected: map[string]interface{}{"foo": 123.4},
 	})
 	tests.Add("nil doc", tt{
 		rows: &rows{
 			iter: &iter{
-				ready: true,
+				state: stateRowReady,
 				curVal: &driver.Row{
 					Doc: nil,
 				},
@@ -255,7 +256,7 @@ func TestRowsScanDoc(t *testing.T) {
 	tests.Add("row error", tt{
 		rows: &rows{
 			iter: &iter{
-				ready: true,
+				state: stateRowReady,
 				curVal: &driver.Row{
 					Error: errors.New("row error"),
 				},
@@ -272,8 +273,8 @@ func TestRowsScanDoc(t *testing.T) {
 		if d := testy.DiffInterface(tt.expected, result); d != nil {
 			t.Error(d)
 		}
-		if tt.closed != tt.rows.closed {
-			t.Errorf("Unexpected closed status: %v", tt.rows.closed)
+		if tt.state != tt.rows.state {
+			t.Errorf("Unexpected state: %v", tt.rows.state)
 		}
 	})
 }
@@ -282,7 +283,7 @@ func TestRowsScanKey(t *testing.T) {
 	type tt struct {
 		rows     *rows
 		expected interface{}
-		closed   bool
+		state    int
 		status   int
 		err      string
 	}
@@ -298,12 +299,13 @@ func TestRowsScanKey(t *testing.T) {
 	tests.Add("success", tt{
 		rows: &rows{
 			iter: &iter{
-				ready: true,
+				state: stateRowReady,
 				curVal: &driver.Row{
 					Key: []byte(`{"foo":123.4}`),
 				},
 			},
 		},
+		state:    stateRowReady,
 		expected: map[string]interface{}{"foo": 123.4},
 	})
 	tests.Add("one item", func() interface{} {
@@ -316,26 +318,25 @@ func TestRowsScanKey(t *testing.T) {
 		return tt{
 			rows:     newRows(context.Background(), rowsi),
 			expected: "foo",
-			closed:   true,
+			state:    stateClosed,
 		}
 	})
 	tests.Add("closed", tt{
 		rows: &rows{
 			iter: &iter{
-				closed: true,
-				ready:  true,
+				state: stateClosed,
 				curVal: &driver.Row{
 					Key: []byte(`"foo"`),
 				},
 			},
 		},
-		closed:   true,
+		state:    stateClosed,
 		expected: "foo",
 	})
 	tests.Add("row error", tt{
 		rows: &rows{
 			iter: &iter{
-				ready: true,
+				state: stateRowReady,
 				curVal: &driver.Row{
 					Error: errors.New("row error"),
 				},
@@ -352,8 +353,8 @@ func TestRowsScanKey(t *testing.T) {
 		if d := testy.DiffInterface(tt.expected, result); d != nil {
 			t.Error(d)
 		}
-		if tt.closed != tt.rows.closed {
-			t.Errorf("Unexpected closed status: %v", tt.rows.closed)
+		if tt.state != tt.rows.state {
+			t.Errorf("Unexpected state: %v", tt.rows.state)
 		}
 	})
 }
@@ -366,7 +367,7 @@ func TestRowsGetters(t *testing.T) {
 	updateseq := "asdfasdf"
 	r := &rows{
 		iter: &iter{
-			ready: true,
+			state: stateRowReady,
 			curVal: &driver.Row{
 				ID:  id,
 				Key: key,
@@ -433,12 +434,12 @@ func TestRowsGetters(t *testing.T) {
 		}
 		r := &rows{
 			iter: &iter{
-				ready: true,
+				state: stateRowReady,
 				curVal: &driver.Row{
 					ID:  id,
 					Key: key,
 				},
-				feed: &rowsIterator{rowsi},
+				feed: &rowsIterator{Rows: rowsi},
 			},
 			rowsi: rowsi,
 		}
@@ -474,30 +475,10 @@ func TestRowsGetters(t *testing.T) {
 	})
 }
 
-func TestQueryIndex(t *testing.T) {
-	t.Run("QueryIndexer", func(t *testing.T) {
-		expected := 100
-		r := newRows(context.Background(), &mock.QueryIndexer{
-			QueryIndexFunc: func() int { return expected },
-		})
-		if i := r.QueryIndex(); i != expected {
-			t.Errorf("QueryIndex\nExpected %v\n  Actual: %v", expected, i)
-		}
-	})
-
-	t.Run("Non QueryIndexer", func(t *testing.T) {
-		r := newRows(context.Background(), &mock.Rows{})
-		expected := 0
-		if i := r.QueryIndex(); i != expected {
-			t.Errorf("QueryIndex\nExpected: %v\n  Actual: %v", expected, i)
-		}
-	})
-}
-
-func TestFinish(t *testing.T) {
+func TestMetadata(t *testing.T) {
 	check := func(t *testing.T, r ResultSet) {
 		t.Helper()
-		meta, err := r.Finish()
+		meta, err := r.Metadata()
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -527,6 +508,96 @@ func TestFinish(t *testing.T) {
 			WarningFunc: func() string { return expected },
 		})
 		check(t, r)
+	})
+	t.Run("query in progress", func(t *testing.T) {
+		rows := []interface{}{
+			&driver.Row{Doc: json.RawMessage(`{"foo":"bar"}`)},
+			&driver.Row{Doc: json.RawMessage(`{"foo":"bar"}`)},
+			&driver.Row{Doc: json.RawMessage(`{"foo":"bar"}`)},
+		}
+
+		r := newRows(context.Background(), &mock.Rows{
+			NextFunc: func(r *driver.Row) error {
+				if len(rows) == 0 {
+					return io.EOF
+				}
+				if dr, ok := rows[0].(*driver.Row); ok {
+					rows = rows[1:]
+					*r = *dr
+					return nil
+				}
+				return driver.EOQ
+			},
+			OffsetFunc: func() int64 {
+				return 5
+			},
+		})
+		var i int
+		for r.Next() {
+			i++
+			if i > 10 {
+				panic(i)
+			}
+		}
+		check(t, r)
+	})
+	t.Run("no query in progress", func(t *testing.T) {
+		rows := []interface{}{
+			&driver.Row{Doc: json.RawMessage(`{"foo":"bar"}`)},
+			&driver.Row{Doc: json.RawMessage(`{"foo":"bar"}`)},
+			&driver.Row{Doc: json.RawMessage(`{"foo":"bar"}`)},
+		}
+
+		r := newRows(context.Background(), &mock.Rows{
+			NextFunc: func(r *driver.Row) error {
+				if len(rows) == 0 {
+					return io.EOF
+				}
+				if dr, ok := rows[0].(*driver.Row); ok {
+					rows = rows[1:]
+					*r = *dr
+					return nil
+				}
+				return driver.EOQ
+			},
+			OffsetFunc: func() int64 {
+				return 5
+			},
+		})
+		check(t, r)
+	})
+	t.Run("followed by other query in resultset mode", func(t *testing.T) {
+		r := multiResultSet()
+
+		_ = r.NextResultSet()
+		check(t, r)
+		ids := []string{}
+		for r.Next() {
+			ids = append(ids, r.ID())
+		}
+		want := []string{"x", "y"}
+		if d := testy.DiffInterface(want, ids); d != nil {
+			t.Error(d)
+		}
+		t.Run("second query", func(t *testing.T) {
+			check(t, r)
+		})
+	})
+	t.Run("followed by other query in row mode", func(t *testing.T) {
+		r := multiResultSet()
+
+		check(t, r)
+		ids := []string{}
+		for r.Next() {
+			ids = append(ids, r.ID())
+		}
+		want := []string{}
+		if d := testy.DiffInterface(want, ids); d != nil {
+			t.Error(d)
+		}
+		t.Run("second query", func(t *testing.T) {
+			check(t, r)
+		})
 	})
 }
 
@@ -643,5 +714,112 @@ func TestScanAllDocs(t *testing.T) {
 		if d := testy.DiffAsJSON(testy.Snapshot(t), tt.dest); d != nil {
 			t.Error(d)
 		}
+	})
+}
+
+func TestNextResultSet(t *testing.T) {
+	t.Run("two resultsets", func(t *testing.T) {
+		r := multiResultSet()
+
+		ids := []string{}
+		for r.NextResultSet() {
+			for r.Next() {
+				ids = append(ids, r.ID())
+			}
+		}
+		if err := r.Err(); err != nil {
+			t.Error(err)
+		}
+		want := []string{"1", "2", "3", "x", "y"}
+		if d := testy.DiffInterface(want, ids); d != nil {
+			t.Error(d)
+		}
+	})
+	t.Run("called out of order", func(t *testing.T) {
+		r := multiResultSet()
+
+		if !r.Next() {
+			t.Fatal("expected next to return true")
+		}
+		if r.NextResultSet() {
+			t.Fatal("expected NextResultSet to return false")
+		}
+
+		wantErr := "must call NextResultSet before Next"
+		err := r.Err()
+		if !testy.ErrorMatches(wantErr, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
+	})
+	t.Run("next only", func(t *testing.T) {
+		r := multiResultSet()
+
+		ids := []string{}
+		for r.Next() {
+			ids = append(ids, r.ID())
+		}
+		if err := r.Err(); err != nil {
+			t.Error(err)
+		}
+		want := []string{"1", "2", "3", "x", "y"}
+		if d := testy.DiffInterface(want, ids); d != nil {
+			t.Error(d)
+		}
+	})
+	t.Run("don't call NextResultSet in loop", func(t *testing.T) {
+		r := multiResultSet()
+
+		ids := []string{}
+		r.NextResultSet()
+		for r.Next() {
+			ids = append(ids, r.ID())
+		}
+		_ = r.Next() // once more to ensure it doesn't error past the end of the first RS
+		if err := r.Err(); err != nil {
+			t.Error(err)
+		}
+
+		// Only the first result set is processed, since NextResultSet is never
+		// called a second time.
+		want := []string{"1", "2", "3"}
+		if d := testy.DiffInterface(want, ids); d != nil {
+			t.Error(d)
+		}
+	})
+}
+
+func multiResultSet() ResultSet {
+	rows := []interface{}{
+		&driver.Row{ID: "1", Doc: json.RawMessage(`{"foo":"bar"}`)},
+		&driver.Row{ID: "2", Doc: json.RawMessage(`{"foo":"bar"}`)},
+		&driver.Row{ID: "3", Doc: json.RawMessage(`{"foo":"bar"}`)},
+		int64(5),
+		&driver.Row{ID: "x", Doc: json.RawMessage(`{"foo":"bar"}`)},
+		&driver.Row{ID: "y", Doc: json.RawMessage(`{"foo":"bar"}`)},
+		int64(2),
+	}
+	var offset int64
+
+	return newRows(context.Background(), &mock.Rows{
+		NextFunc: func(r *driver.Row) error {
+			if len(rows) == 0 {
+				return io.EOF
+			}
+			row := rows[0]
+			rows = rows[1:]
+			switch t := row.(type) {
+			case *driver.Row:
+				*r = *t
+				return nil
+			case int64:
+				offset = t
+				return driver.EOQ
+			default:
+				panic("unknown type")
+			}
+		},
+		OffsetFunc: func() int64 {
+			return offset
+		},
 	})
 }

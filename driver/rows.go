@@ -46,7 +46,9 @@ type Row struct {
 type Rows interface {
 	// Next is called to populate row with the next row in the result set.
 	//
-	// Next should return [io.EOF] when there are no more rows.
+	// Next should return [io.EOF] when there are no more rows, or [EOQ] after
+	// having reached the end of a query in a multi-query resultset. row should
+	// not be updated when an error is returned.
 	Next(row *Row) error
 	// Close closes the rows iterator.
 	Close() error
@@ -75,11 +77,4 @@ type Bookmarker interface {
 	// the /_find endpoint in CouchDB 2.1.1.  See the CouchDB documentation for
 	// usage: http://docs.couchdb.org/en/2.1.1/api/database/find.html#pagination
 	Bookmark() string
-}
-
-// QueryIndexer is an optional interface that may be implemented by a [Rows],
-// which allows a rows iterator to return a query index value. This is intended
-// for use by multi-query queries to views.
-type QueryIndexer interface {
-	QueryIndex() int
 }

@@ -34,7 +34,7 @@ func TestChangesNext(t *testing.T) {
 		{
 			name: "nothing more",
 			changes: &Changes{
-				iter: &iter{closed: true},
+				iter: &iter{state: stateClosed},
 			},
 			expected: false,
 		},
@@ -191,7 +191,7 @@ func TestChangesScanDoc(t *testing.T) {
 			name: "success",
 			changes: &Changes{
 				iter: &iter{
-					ready: true,
+					state: stateRowReady,
 					curVal: &driver.Change{
 						Doc: []byte(`{"foo":123.4}`),
 					},
@@ -203,7 +203,7 @@ func TestChangesScanDoc(t *testing.T) {
 			name: "closed",
 			changes: &Changes{
 				iter: &iter{
-					closed: true,
+					state: stateClosed,
 				},
 			},
 			status: http.StatusBadRequest,

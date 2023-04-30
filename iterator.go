@@ -14,6 +14,7 @@ package kivik
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"sync"
@@ -26,14 +27,33 @@ type iterator interface {
 	Close() error
 }
 
+// possible states of the result set iterator
+const (
+	// stateReady is the initial state before [ResultSet.Next] or
+	// [ResultSet.NextResultSet] is called.
+	stateReady = iota
+	// stateResultSetReady is the state after calling [ResultSet.NextResultSet]
+	stateResultSetReady
+	// stateResultSetRowReady is the state after calling [ResultSet.Next] within
+	// a result set.
+	stateResultSetRowReady
+	// stateEOQ is the state after having reached the final row in a result set.
+	// [ResultSet.ResultSetNext] should be called next.
+	stateEOQ
+	// stateRowReady is the state when not iterating resultsets, after
+	// [ResultSet.Next] has been called.
+	stateRowReady
+	// stateClosed means the last row has been retrieved. The iterator is no
+	// longer usable.
+	stateClosed
+)
+
 type iter struct {
 	feed iterator
 
 	mu      sync.RWMutex
-	ready   bool // Set to true once Next() has been called
-	closed  bool
-	lasterr error // non-nil only if closed is true
-	eoq     bool
+	state   int   // Set to true once Next() has been called
+	lasterr error // non-nil only if state == stateClosed
 
 	cancel func() // cancel function to exit context goroutine when iterator is closed
 
@@ -42,15 +62,19 @@ type iter struct {
 
 func (i *iter) rlock() (unlock func(), err error) {
 	i.mu.RLock()
-	if i.closed {
+	if i.state == stateClosed {
 		i.mu.RUnlock()
 		return nil, &Error{Status: http.StatusBadRequest, Message: "kivik: Iterator is closed"}
 	}
-	if !i.ready {
+	if !i.ready() {
 		i.mu.RUnlock()
 		return nil, &Error{Status: http.StatusBadRequest, Message: "kivik: Iterator access before calling Next"}
 	}
 	return i.mu.RUnlock, nil
+}
+
+func (i *iter) ready() bool {
+	return i.state == stateRowReady || i.state == stateResultSetReady || i.state == stateResultSetRowReady
 }
 
 // makeReady ensures that the iterator is ready to be read from. In the case
@@ -58,7 +82,7 @@ func (i *iter) rlock() (unlock func(), err error) {
 // close the iterator, and set e if [iter.Close] errors and e != nil.
 func (i *iter) makeReady(e *error) (unlock func()) {
 	i.mu.RLock()
-	if !i.ready {
+	if !i.ready() {
 		i.Next()
 		return func() {
 			i.mu.RUnlock()
@@ -92,6 +116,27 @@ func (i *iter) awaitDone(ctx context.Context) {
 	_ = i.close(ctx.Err())
 }
 
+// NextResultSet prepares the iterator to read the next result set. It returns
+// ture on success, or false if there are no more result sets to read, or if
+// an error occurs while preparing it. [iter.Err] should be consulted to
+// distinguish between the two.
+func (i *iter) NextResultSet() bool {
+	i.mu.RLock()
+	defer i.mu.RUnlock()
+	if i.lasterr != nil {
+		return false
+	}
+	if i.state == stateClosed {
+		return false
+	}
+	if i.state == stateRowReady {
+		i.lasterr = errors.New("must call NextResultSet before Next")
+		return false
+	}
+	i.state = stateResultSetReady
+	return true
+}
+
 // Next prepares the next iterator result value for reading. It returns true on
 // success, or false if there is no next result or an error occurs while
 // preparing it. [iter.Err] should be consulted to distinguish between the two.
@@ -106,15 +151,23 @@ func (i *iter) Next() bool {
 func (i *iter) next() (doClose, ok bool) {
 	i.mu.RLock()
 	defer i.mu.RUnlock()
-	if i.closed {
+	if i.state == stateClosed {
 		return false, false
 	}
-	i.ready = true
-	i.eoq = false
 	err := i.feed.Next(i.curVal)
 	if err == driver.EOQ {
-		i.eoq = true
-		err = nil
+		if i.state == stateResultSetReady || i.state == stateResultSetRowReady {
+			i.state = stateEOQ
+			i.lasterr = nil
+			return false, false
+		}
+		return i.next()
+	}
+	switch i.state {
+	case stateResultSetReady, stateResultSetRowReady:
+		i.state = stateResultSetRowReady
+	default:
+		i.state = stateRowReady
 	}
 	i.lasterr = err
 	if i.lasterr != nil {
@@ -135,10 +188,10 @@ func (i *iter) Close() error {
 func (i *iter) close(err error) error {
 	i.mu.Lock()
 	defer i.mu.Unlock()
-	if i.closed {
+	if i.state == stateClosed {
 		return nil
 	}
-	i.closed = true
+	i.state = stateClosed
 
 	if i.lasterr == nil {
 		i.lasterr = err

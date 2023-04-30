@@ -16,6 +16,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"reflect"
 
@@ -66,6 +67,16 @@ type ResultSet interface {
 	// preparing it. [Err] should be consulted to distinguish between the two.
 	Next() bool
 
+	// NextResultSet prepares the next result set for reading. It reports
+	// whether there is further result sets, or false if there is no further
+	// result set or if there is an error advancing to it. [ResultSet.Err]
+	// should be consulted to distinguish between the two cases.
+	//
+	// After calling NextResultSet, [ResultSet.Next] should always be called
+	// before scanning. If there are further result sets they may not have rows
+	// in the result set.
+	NextResultSet() bool
+
 	// Err returns the error, if any, that was encountered during iteration.
 	// Err may be called after an explicit or implicit [Close].
 	Err() error
@@ -77,9 +88,10 @@ type ResultSet interface {
 	// idempotent and does not affect the result of [Err].
 	Close() error
 
-	// Finish returns the result metadata for the current query, discarding
-	// any unconsumed results.
-	Finish() (ResultMetadata, error)
+	// Metadata returns the result metadata for the current query. It should be
+	// called after Next() returns false, as any unconsumed rows in the current
+	// result set will be discarded.
+	Metadata() (*ResultMetadata, error)
 
 	// ScanValue copies the data from the result value into the value pointed
 	// at by dest. Think of this as calling [encoding/json.Unmarshal] into dest.
@@ -118,17 +130,6 @@ type ResultSet interface {
 	// compound keys, [ScanKey] may be more convenient.
 	Key() string
 
-	// QueryIndex returns the 0-based index of the query. For standard queries,
-	// this is always 0. When multiple queries are passed to the view, this will
-	// represent the query currently being iterated.
-	QueryIndex() int
-
-	// EOQ returns true if the iterator has reached the end of a query in a
-	// multi-query query. When EOQ is true, the row data will not have been
-	// updated. It is common to simply `continue` in case of EOQ, unless you
-	// care about the per-query metadata, such as offset, total rows, etc.
-	EOQ() bool
-
 	// Attachments returns an attachments iterator. At present, it is only set
 	// by [DB.Get] when doing a multi-part get from CouchDB (which is the
 	// default where supported). This may be extended to other cases in the
@@ -142,8 +143,6 @@ type ResultSet interface {
 type baseRS struct{}
 
 func (baseRS) Rev() string                       { return "" }
-func (baseRS) EOQ() bool                         { return false }
-func (baseRS) QueryIndex() int                   { return 0 }
 func (baseRS) Attachments() *AttachmentsIterator { return nil }
 
 type rows struct {
@@ -159,10 +158,6 @@ func (r *rows) Next() bool {
 	return r.iter.Next()
 }
 
-func (r *rows) EOQ() bool {
-	return r.iter.eoq
-}
-
 func (r *rows) Err() error {
 	if r.err != nil {
 		return r.err
@@ -174,34 +169,46 @@ func (r *rows) Close() error {
 	return r.iter.Close()
 }
 
-func (r *rows) Finish() (ResultMetadata, error) {
-	for r.Next() { //nolint:revive // empty loop necessary for loop
+func (r *rows) Metadata() (*ResultMetadata, error) {
+	for r.state != stateEOQ && r.state != stateClosed {
+		if !r.Next() {
+			break
+		}
 	}
-	var warning, bookmark string
-	if w, ok := r.rowsi.(driver.RowsWarner); ok {
-		warning = w.Warning()
-	}
-	if b, ok := r.rowsi.(driver.Bookmarker); ok {
-		bookmark = b.Bookmark()
-	}
-	return ResultMetadata{
-		Offset:    r.rowsi.Offset(),
-		TotalRows: r.rowsi.TotalRows(),
-		UpdateSeq: r.rowsi.UpdateSeq(),
-		Warning:   warning,
-		Bookmark:  bookmark,
-	}, r.Close()
+	return r.feed.(*rowsIterator).ResultMetadata, nil
 }
 
-type rowsIterator struct{ driver.Rows }
+type rowsIterator struct {
+	driver.Rows
+	*ResultMetadata
+}
 
 var _ iterator = &rowsIterator{}
 
-func (r *rowsIterator) Next(i interface{}) error { return r.Rows.Next(i.(*driver.Row)) }
+func (r *rowsIterator) Next(i interface{}) error {
+	err := r.Rows.Next(i.(*driver.Row))
+	if err == io.EOF || err == driver.EOQ {
+		var warning, bookmark string
+		if w, ok := r.Rows.(driver.RowsWarner); ok {
+			warning = w.Warning()
+		}
+		if b, ok := r.Rows.(driver.Bookmarker); ok {
+			bookmark = b.Bookmark()
+		}
+		r.ResultMetadata = &ResultMetadata{
+			Offset:    r.Rows.Offset(),
+			TotalRows: r.Rows.TotalRows(),
+			UpdateSeq: r.Rows.UpdateSeq(),
+			Warning:   warning,
+			Bookmark:  bookmark,
+		}
+	}
+	return err
+}
 
 func newRows(ctx context.Context, rowsi driver.Rows) *rows {
 	return &rows{
-		iter:  newIterator(ctx, &rowsIterator{rowsi}, &driver.Row{}),
+		iter:  newIterator(ctx, &rowsIterator{Rows: rowsi}, &driver.Row{}),
 		rowsi: rowsi,
 	}
 }
@@ -336,13 +343,6 @@ func (r *rows) Key() string {
 	return string(r.curVal.(*driver.Row).Key)
 }
 
-func (r *rows) QueryIndex() int {
-	if qi, ok := r.rowsi.(driver.QueryIndexer); ok {
-		return qi.QueryIndex()
-	}
-	return 0
-}
-
 // errRS is a resultset that has errored.
 type errRS struct {
 	baseRS
@@ -351,13 +351,14 @@ type errRS struct {
 
 var _ ResultSet = &errRS{}
 
-func (e *errRS) Err() error                      { return e.err }
-func (e *errRS) Close() error                    { return e.err }
-func (e *errRS) Finish() (ResultMetadata, error) { return ResultMetadata{}, e.err }
-func (e *errRS) ID() string                      { return "" }
-func (e *errRS) Key() string                     { return "" }
-func (e *errRS) Next() bool                      { return false }
-func (e *errRS) ScanAllDocs(interface{}) error   { return e.err }
-func (e *errRS) ScanDoc(interface{}) error       { return e.err }
-func (e *errRS) ScanKey(interface{}) error       { return e.err }
-func (e *errRS) ScanValue(interface{}) error     { return e.err }
+func (e *errRS) Err() error                         { return e.err }
+func (e *errRS) Close() error                       { return e.err }
+func (e *errRS) Metadata() (*ResultMetadata, error) { return nil, e.err }
+func (e *errRS) ID() string                         { return "" }
+func (e *errRS) Key() string                        { return "" }
+func (e *errRS) Next() bool                         { return false }
+func (e *errRS) ScanAllDocs(interface{}) error      { return e.err }
+func (e *errRS) ScanDoc(interface{}) error          { return e.err }
+func (e *errRS) ScanKey(interface{}) error          { return e.err }
+func (e *errRS) ScanValue(interface{}) error        { return e.err }
+func (e *errRS) NextResultSet() bool                { return false }

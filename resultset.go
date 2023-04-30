@@ -144,11 +144,7 @@ type baseRS struct{}
 func (baseRS) Rev() string                       { return "" }
 func (baseRS) EOQ() bool                         { return false }
 func (baseRS) QueryIndex() int                   { return 0 }
-func (baseRS) UpdateSeq() string                 { return "" }
 func (baseRS) Attachments() *AttachmentsIterator { return nil }
-func (baseRS) ScanKey(interface{}) error         { return nil }
-func (baseRS) ScanValue(interface{}) error       { return nil }
-func (baseRS) Key() string                       { return "" }
 
 type rows struct {
 	baseRS

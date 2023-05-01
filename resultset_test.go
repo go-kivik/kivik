@@ -126,7 +126,7 @@ func TestRowsScanValue(t *testing.T) {
 	tests.Add("one item", func() interface{} {
 		rowsi := &mock.Rows{
 			NextFunc: func(r *driver.Row) error {
-				r.Value = []byte(`"foo"`)
+				r.ValueReader = strings.NewReader(`"foo"`)
 				return nil
 			},
 		}
@@ -190,7 +190,7 @@ func TestRowsScanDoc(t *testing.T) {
 			iter: &iter{
 				state: stateRowReady,
 				curVal: &driver.Row{
-					Doc: []byte(`{"foo":123.4}`),
+					DocReader: strings.NewReader(`{"foo":123.4}`),
 				},
 			},
 		},
@@ -219,7 +219,7 @@ func TestRowsScanDoc(t *testing.T) {
 	tests.Add("one item", func() interface{} {
 		rowsi := &mock.Rows{
 			NextFunc: func(r *driver.Row) error {
-				r.Doc = []byte(`{"foo":"bar"}`)
+				r.DocReader = strings.NewReader(`{"foo":"bar"}`)
 				return nil
 			},
 		}
@@ -246,7 +246,7 @@ func TestRowsScanDoc(t *testing.T) {
 			iter: &iter{
 				state: stateRowReady,
 				curVal: &driver.Row{
-					Doc: nil,
+					DocReader: nil,
 				},
 			},
 		},
@@ -526,9 +526,9 @@ func TestMetadata(t *testing.T) {
 	})
 	t.Run("query in progress", func(t *testing.T) {
 		rows := []interface{}{
-			&driver.Row{Doc: json.RawMessage(`{"foo":"bar"}`)},
-			&driver.Row{Doc: json.RawMessage(`{"foo":"bar"}`)},
-			&driver.Row{Doc: json.RawMessage(`{"foo":"bar"}`)},
+			&driver.Row{DocReader: strings.NewReader(`{"foo":"bar"}`)},
+			&driver.Row{DocReader: strings.NewReader(`{"foo":"bar"}`)},
+			&driver.Row{DocReader: strings.NewReader(`{"foo":"bar"}`)},
 		}
 
 		r := newRows(context.Background(), &mock.Rows{
@@ -558,9 +558,9 @@ func TestMetadata(t *testing.T) {
 	})
 	t.Run("no query in progress", func(t *testing.T) {
 		rows := []interface{}{
-			&driver.Row{Doc: json.RawMessage(`{"foo":"bar"}`)},
-			&driver.Row{Doc: json.RawMessage(`{"foo":"bar"}`)},
-			&driver.Row{Doc: json.RawMessage(`{"foo":"bar"}`)},
+			&driver.Row{DocReader: strings.NewReader(`{"foo":"bar"}`)},
+			&driver.Row{DocReader: strings.NewReader(`{"foo":"bar"}`)},
+			&driver.Row{DocReader: strings.NewReader(`{"foo":"bar"}`)},
 		}
 
 		r := newRows(context.Background(), &mock.Rows{
@@ -646,7 +646,7 @@ func TestScanAllDocs(t *testing.T) {
 	})
 	tests.Add("Success", func() interface{} {
 		rows := []*driver.Row{
-			{Doc: json.RawMessage(`{"foo":"bar"}`)},
+			{DocReader: strings.NewReader(`{"foo":"bar"}`)},
 		}
 		return tt{
 			rows: newRows(context.Background(), &mock.Rows{
@@ -664,7 +664,7 @@ func TestScanAllDocs(t *testing.T) {
 	})
 	tests.Add("Success, slice of pointers", func() interface{} {
 		rows := []*driver.Row{
-			{Doc: json.RawMessage(`{"foo":"bar"}`)},
+			{DocReader: strings.NewReader(`{"foo":"bar"}`)},
 		}
 		return tt{
 			rows: newRows(context.Background(), &mock.Rows{
@@ -682,7 +682,7 @@ func TestScanAllDocs(t *testing.T) {
 	})
 	tests.Add("Success, long array", func() interface{} {
 		rows := []*driver.Row{
-			{Doc: json.RawMessage(`{"foo":"bar"}`)},
+			{DocReader: strings.NewReader(`{"foo":"bar"}`)},
 		}
 		return tt{
 			rows: newRows(context.Background(), &mock.Rows{
@@ -700,9 +700,9 @@ func TestScanAllDocs(t *testing.T) {
 	})
 	tests.Add("Success, short array", func() interface{} {
 		rows := []*driver.Row{
-			{Doc: json.RawMessage(`{"foo":"bar"}`)},
-			{Doc: json.RawMessage(`{"foo":"bar"}`)},
-			{Doc: json.RawMessage(`{"foo":"bar"}`)},
+			{DocReader: strings.NewReader(`{"foo":"bar"}`)},
+			{DocReader: strings.NewReader(`{"foo":"bar"}`)},
+			{DocReader: strings.NewReader(`{"foo":"bar"}`)},
 		}
 		return tt{
 			rows: newRows(context.Background(), &mock.Rows{
@@ -805,12 +805,12 @@ func TestNextResultSet(t *testing.T) {
 
 func multiResultSet() ResultSet {
 	rows := []interface{}{
-		&driver.Row{ID: "1", Doc: json.RawMessage(`{"foo":"bar"}`)},
-		&driver.Row{ID: "2", Doc: json.RawMessage(`{"foo":"bar"}`)},
-		&driver.Row{ID: "3", Doc: json.RawMessage(`{"foo":"bar"}`)},
+		&driver.Row{ID: "1", DocReader: strings.NewReader(`{"foo":"bar"}`)},
+		&driver.Row{ID: "2", DocReader: strings.NewReader(`{"foo":"bar"}`)},
+		&driver.Row{ID: "3", DocReader: strings.NewReader(`{"foo":"bar"}`)},
 		int64(5),
-		&driver.Row{ID: "x", Doc: json.RawMessage(`{"foo":"bar"}`)},
-		&driver.Row{ID: "y", Doc: json.RawMessage(`{"foo":"bar"}`)},
+		&driver.Row{ID: "x", DocReader: strings.NewReader(`{"foo":"bar"}`)},
+		&driver.Row{ID: "y", DocReader: strings.NewReader(`{"foo":"bar"}`)},
 		int64(2),
 	}
 	var offset int64

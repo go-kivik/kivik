@@ -220,8 +220,8 @@ func (r *rows) ScanValue(dest interface{}) (err error) {
 	if row.Error != nil {
 		return row.Error
 	}
-	if row.ValueReader != nil {
-		return json.NewDecoder(row.ValueReader).Decode(dest)
+	if row.Value != nil {
+		return json.NewDecoder(row.Value).Decode(dest)
 	}
 	return nil
 }
@@ -236,8 +236,8 @@ func (r *rows) ScanDoc(dest interface{}) (err error) {
 	if err := row.Error; err != nil {
 		return err
 	}
-	if row.DocReader != nil {
-		return json.NewDecoder(row.DocReader).Decode(dest)
+	if row.Doc != nil {
+		return json.NewDecoder(row.Doc).Decode(dest)
 	}
 	return &Error{Status: http.StatusBadRequest, Message: "kivik: doc is nil; does the query include docs?"}
 }

@@ -24,19 +24,13 @@ type Row struct {
 	// Key is the view key of the result. For built-in views, this is the same
 	// as [ID].
 	Key json.RawMessage `json:"key"`
-	// ValueReader is an io.Reader to access the raw, un-decoded JSON value.
+	// Value is an [io.Reader] to access the raw, un-decoded JSON value.
 	// For most built-in views, such as /_all_docs, this is `{"rev":"X-xxx"}`.
-	// Takes priority over [Value].
-	ValueReader io.Reader `json:"-"`
-	// Value is the raw, un-decoded JSON value.
-	Value json.RawMessage `json:"value"`
-	// DocReader is an [io.Reader] to access the raw, un-decoded JSON document.
+	Value io.Reader `json:"-"`
+	// Doc is an [io.Reader] to access the raw, un-decoded JSON document.
 	// This is only populated by views which return docs, such as
 	// /_all_docs?include_docs=true.
-	// Takes priority over [Doc].
-	DocReader io.Reader `json:"-"`
-	// Doc is the raw, un-decoded JSON document.
-	Doc json.RawMessage `json:"doc"`
+	Doc io.Reader `json:"-"`
 	// Error represents the error for any row not fetched. Usually just
 	// 'not_found'.
 	Error error `json:"-"`

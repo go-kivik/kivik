@@ -88,9 +88,8 @@ type ResultSet interface {
 	// idempotent and does not affect the result of [Err].
 	Close() error
 
-	// Metadata returns the result metadata for the current query. It should be
-	// called after Next() returns false, as any unconsumed rows in the current
-	// result set will be discarded.
+	// Metadata returns the result metadata for the current query. It must be
+	// called after Next() returns false. Otherwise it will return an error.
 	Metadata() (*ResultMetadata, error)
 
 	// ScanValue copies the data from the result value into the value pointed
@@ -171,9 +170,7 @@ func (r *rows) Close() error {
 
 func (r *rows) Metadata() (*ResultMetadata, error) {
 	for r.state != stateEOQ && r.state != stateClosed {
-		if !r.Next() {
-			break
-		}
+		return nil, &Error{Status: http.StatusBadRequest, Err: errors.New("Metadata must not be called until result set iteration is complete")}
 	}
 	return r.feed.(*rowsIterator).ResultMetadata, nil
 }

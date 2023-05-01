@@ -476,8 +476,23 @@ func TestRowsGetters(t *testing.T) {
 }
 
 func TestMetadata(t *testing.T) {
+	t.Run("iteration incomplete", func(t *testing.T) {
+		r := newRows(context.Background(), &mock.Rows{
+			OffsetFunc:    func() int64 { return 123 },
+			TotalRowsFunc: func() int64 { return 234 },
+			UpdateSeqFunc: func() string { return "seq" },
+		})
+		_, err := r.Metadata()
+		wantErr := "Metadata must not be called until result set iteration is complete"
+		if !testy.ErrorMatches(wantErr, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
+	})
+
 	check := func(t *testing.T, r ResultSet) {
 		t.Helper()
+		for r.Next() { //nolint:revive // Consume all rows
+		}
 		meta, err := r.Metadata()
 		if err != nil {
 			t.Fatal(err)

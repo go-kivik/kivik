@@ -15,6 +15,9 @@ package kivik
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"io"
+	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
 )
@@ -47,15 +50,27 @@ func (c *Changes) Close() error {
 	return c.iter.Close()
 }
 
-type changesIterator struct{ driver.Changes }
+type changesIterator struct {
+	driver.Changes
+	*ChangesMetadata
+}
 
 var _ iterator = &changesIterator{}
 
-func (c *changesIterator) Next(i interface{}) error { return c.Changes.Next(i.(*driver.Change)) }
+func (c *changesIterator) Next(i interface{}) error {
+	err := c.Changes.Next(i.(*driver.Change))
+	if err == io.EOF || err == driver.EOQ {
+		c.ChangesMetadata = &ChangesMetadata{
+			LastSeq: c.Changes.LastSeq(),
+			Pending: c.Changes.Pending(),
+		}
+	}
+	return err
+}
 
 func newChanges(ctx context.Context, changesi driver.Changes) *Changes {
 	return &Changes{
-		iter:     newIterator(ctx, &changesIterator{changesi}, &driver.Change{}),
+		iter:     newIterator(ctx, &changesIterator{Changes: changesi}, &driver.Change{}),
 		changesi: changesi,
 	}
 }
@@ -103,34 +118,25 @@ func (c *Changes) Seq() string {
 	return c.curVal.(*driver.Change).Seq
 }
 
-// LastSeq returns the last update sequence id present in the change set,
-// if returned by the server. This value is only guaranteed to be set after
-// all changes have been enumerated through by [Changes.Next], thus should only
-// be read after processing all changes in a change set. Calling [Changes.Close]
-// before enumerating will render this value unreliable.
-func (c *Changes) LastSeq() string {
-	if c.changesi == nil {
-		return ""
-	}
-	return c.changesi.LastSeq()
+// ChangesMetadata contains metadata about a changes feed.
+type ChangesMetadata struct {
+	// LastSeq is the last update sequence id present in the change set, if
+	// returned by the server.
+	LastSeq string
+	// Pending is the count of remaining items in the change feed.
+	Pending int64
 }
 
-// Pending returns the count of remaining items in the change feed. This
-// value is only guaranteed to be set after all changes have been
-// enumerated through by [Changes.Next], thus should only be read after
-// processing all changes in a change set. Calling [Changes.Close] before
-// enumerating will render this value unreliable.
-func (c *Changes) Pending() int64 {
-	if c.changesi == nil {
-		return 0
+// Metadata returns the result metadata for the changes feed. It must be called
+// after [Next] returns false. Otherwise it will return an error.
+func (c *Changes) Metadata() (*ChangesMetadata, error) {
+	if c.iter == nil || (c.state != stateEOQ && c.state != stateClosed) {
+		return nil, &Error{Status: http.StatusBadRequest, Err: errors.New("Metadata must not be called until result set iteration is complete")}
 	}
-	return c.changesi.Pending()
+	return c.feed.(*changesIterator).ChangesMetadata, nil
 }
 
-// ETag returns the unquoted ETag header, if any. Unlike [Changes.LastSeq] and
-// [Changes.Pending], because this value is returned in the response header
-// (for standard CouchDB operation) anyway, it can be read immediately, before
-// iteration even begins.
+// ETag returns the unquoted ETag header, if any.
 func (c *Changes) ETag() string {
 	if c.changesi == nil {
 		return ""

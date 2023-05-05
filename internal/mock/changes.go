@@ -12,7 +12,11 @@
 
 package mock
 
-import "github.com/go-kivik/kivik/v4/driver"
+import (
+	"io"
+
+	"github.com/go-kivik/kivik/v4/driver"
+)
 
 // Changes mocks driver.Changes
 type Changes struct {
@@ -27,11 +31,17 @@ var _ driver.Changes = &Changes{}
 
 // Next calls c.NextFunc
 func (c *Changes) Next(change *driver.Change) error {
+	if c.NextFunc == nil {
+		return io.EOF
+	}
 	return c.NextFunc(change)
 }
 
 // Close calls c.CloseFunc
 func (c *Changes) Close() error {
+	if c.CloseFunc == nil {
+		return nil
+	}
 	return c.CloseFunc()
 }
 

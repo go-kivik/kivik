@@ -66,7 +66,7 @@ func (i *iter) awaitDone(ctx context.Context) {
 
 // Next prepares the next iterator result value for reading. It returns true on
 // success, or false if there is no next result or an error occurs while
-// preparing it. Err should be consulted to distinguish between the two.
+// preparing it. [Err] should be consulted to distinguish between the two.
 func (i *iter) Next() bool {
 	doClose, ok := i.next()
 	if doClose {
@@ -95,19 +95,11 @@ func (i *iter) next() (doClose, ok bool) {
 	return false, true
 }
 
-// EOQ returns true if the iterator has reached the end of a query in a
-// multi-query query. When EOQ is true, the row data will not have been
-// updated. It is common to simply `continue` in case of EOQ, unless you care
-// about the per-query metadata, such as offset, total rows, etc.
-func (i *iter) EOQ() bool {
-	return i.eoq
-}
-
-// Close closes the Iterator, preventing further enumeration, and freeing any
-// resources (such as the http request body) of the underlying feed. If Next is
-// called and there are no further results, Iterator is closed automatically and
-// it will suffice to check the result of Err. Close is idempotent and does not
-// affect the result of Err.
+// Close closes the iterator, preventing further enumeration, and freeing any
+// resources (such as the HTTP request body) of the underlying feed. If [Next]
+// is called and there are no further results, the iterator is closed
+// automatically and it will suffice to check the result of [Err]. Close is
+// idempotent and does not affect the result of [Err].
 func (i *iter) Close() error {
 	return i.close(nil)
 }
@@ -134,7 +126,7 @@ func (i *iter) close(err error) error {
 }
 
 // Err returns the error, if any, that was encountered during iteration. Err
-// may be called after an explicit or implicit Close.
+// may be called after an explicit or implicit [Close].
 func (i *iter) Err() error {
 	i.mu.RLock()
 	defer i.mu.RUnlock()

@@ -13,26 +13,12 @@ type Rows struct {
 	rowsi driver.Rows
 }
 
-// Next prepares the next result value for reading. It returns true on success
-// or false if there are no more results or an error  occurs while preparing it.
-// Err should be consulted to distinguish between the two.
-func (r *Rows) Next() bool {
-	return r.iter.Next()
-}
-
-// Err returns the error, if any, that was encountered during iteration. Err may
-// be called after an explicit or implicit Close.
-func (r *Rows) Err() error {
-	return r.iter.Err()
-}
-
-// Close closes the Rows, preventing further enumeration, and freeing any
-// resources (such as the http request body) of the underlying query. If Next is
-// called and there are no further results, Rows is closed automatically and it
-// will suffice to check the result of Err. Close is idempotent and does not
-// affect the result of Err.
-func (r *Rows) Close() error {
-	return r.iter.Close()
+// EOQ returns true if the iterator has reached the end of a query in a
+// multi-query query. When EOQ is true, the row data will not have been
+// updated. It is common to simply `continue` in case of EOQ, unless you care
+// about the per-query metadata, such as offset, total rows, etc.
+func (r *Rows) EOQ() bool {
+	return r.eoq
 }
 
 type rowsIterator struct{ driver.Rows }

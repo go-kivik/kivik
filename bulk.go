@@ -15,25 +15,6 @@ type BulkResults struct {
 	bulki driver.BulkResults
 }
 
-// Next returns the next BulkResult from the feed. If an error occurs, it will
-// be returned and the feed closed. io.EOF will be returned when there are no
-// more results.
-func (r *BulkResults) Next() bool {
-	return r.iter.Next()
-}
-
-// Err returns the error, if any, that was encountered during iteration. Err
-// may be called after an explicit or implicit Close.
-func (r *BulkResults) Err() error {
-	return r.iter.Err()
-}
-
-// Close closes the feed. Any unread updates will still be accessible via
-// Next().
-func (r *BulkResults) Close() error {
-	return r.iter.Close()
-}
-
 type bulkIterator struct{ driver.BulkResults }
 
 var _ iterator = &bulkIterator{}

@@ -148,7 +148,6 @@ type rows struct {
 	baseRS
 	*iter
 	rowsi driver.Rows
-	err   error
 }
 
 var _ ResultSet = &rows{}
@@ -175,9 +174,6 @@ func (r *rows) NextResultSet() bool {
 }
 
 func (r *rows) Err() error {
-	if r.err != nil {
-		return r.err
-	}
 	return r.iter.Err()
 }
 
@@ -228,9 +224,6 @@ func newRows(ctx context.Context, rowsi driver.Rows) *rows {
 }
 
 func (r *rows) ScanValue(dest interface{}) (err error) {
-	if r.err != nil {
-		return r.err
-	}
 	runlock := r.makeReady(&err)
 	defer runlock()
 	row := r.curVal.(*driver.Row)
@@ -244,9 +237,6 @@ func (r *rows) ScanValue(dest interface{}) (err error) {
 }
 
 func (r *rows) ScanDoc(dest interface{}) (err error) {
-	if r.err != nil {
-		return r.err
-	}
 	runlock := r.makeReady(&err)
 	defer runlock()
 	row := r.curVal.(*driver.Row)
@@ -329,9 +319,6 @@ func scanAll(r ResultSet, dest interface{}, scan func(interface{}) error) (err e
 }
 
 func (r *rows) ScanKey(dest interface{}) (err error) {
-	if r.err != nil {
-		return r.err
-	}
 	runlock := r.makeReady(&err)
 	defer runlock()
 	row := r.curVal.(*driver.Row)

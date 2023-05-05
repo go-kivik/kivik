@@ -602,7 +602,7 @@ func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...O
 	}
 	bulkGetter, ok := db.driverDB.(driver.BulkGetter)
 	if !ok {
-		return &rows{err: &Error{Status: http.StatusNotImplemented, Message: "kivik: bulk get not supported by driver"}}
+		return &errRS{err: &Error{Status: http.StatusNotImplemented, Message: "kivik: bulk get not supported by driver"}}
 	}
 	refs := make([]driver.BulkGetReference, len(docs))
 	for i, ref := range docs {

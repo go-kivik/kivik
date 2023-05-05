@@ -13,13 +13,6 @@ type Rows struct {
 	rowsi driver.Rows
 }
 
-// Next prepares the next result value for reading. It returns true on success
-// or false if there are no more results or an error  occurs while preparing it.
-// Err should be consulted to distinguish between the two.
-func (r *Rows) Next() bool {
-	return r.iter.Next()
-}
-
 // EOQ returns true if the iterator has reached the end of a query in a
 // multi-query query. When EOQ is true, the row data will not have been
 // updated. It is common to simply `continue` in case of EOQ, unless you care

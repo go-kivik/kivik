@@ -13,14 +13,6 @@ type DBUpdates struct {
 	updatesi driver.DBUpdates
 }
 
-// Next returns the next DBUpdate from the feed. This function will block
-// until an event is received. If an error occurs, it will be returned and
-// the feed closed. If the feed was closed normally, io.EOF will be returned
-// when there are no more events in the buffer.
-func (f *DBUpdates) Next() bool {
-	return f.iter.Next()
-}
-
 type updatesIterator struct{ driver.DBUpdates }
 
 var _ iterator = &updatesIterator{}

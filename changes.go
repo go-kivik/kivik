@@ -12,13 +12,6 @@ type Changes struct {
 	changesi driver.Changes
 }
 
-// Next prepares the next result value for reading. It returns true on success
-// or false if there are no more results, due to an error or the changes feed
-// having been closed. Err should be consulted to determine any error.
-func (c *Changes) Next() bool {
-	return c.iter.Next()
-}
-
 type changesIterator struct{ driver.Changes }
 
 var _ iterator = &changesIterator{}

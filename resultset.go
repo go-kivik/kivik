@@ -148,24 +148,29 @@ type rows struct {
 	baseRS
 	*iter
 	rowsi driver.Rows
-	err   error
 }
 
 var _ ResultSet = &rows{}
 
-func (r *rows) Next() bool {
-	return r.iter.Next()
-}
-
-func (r *rows) Err() error {
-	if r.err != nil {
-		return r.err
+// NextResultSet prepares the iterator to read the next result set. It returns
+// true on success, or false if there are no more result sets to read, or if
+// an error occurs while preparing it. [Err] should be consulted to
+// distinguish between the two.
+func (r *rows) NextResultSet() bool {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	if r.lasterr != nil {
+		return false
 	}
-	return r.iter.Err()
-}
-
-func (r *rows) Close() error {
-	return r.iter.Close()
+	if r.state == stateClosed {
+		return false
+	}
+	if r.state == stateRowReady {
+		r.lasterr = errors.New("must call NextResultSet before Next")
+		return false
+	}
+	r.state = stateResultSetReady
+	return true
 }
 
 func (r *rows) Metadata() (*ResultMetadata, error) {
@@ -211,9 +216,6 @@ func newRows(ctx context.Context, rowsi driver.Rows) *rows {
 }
 
 func (r *rows) ScanValue(dest interface{}) (err error) {
-	if r.err != nil {
-		return r.err
-	}
 	runlock := r.makeReady(&err)
 	defer runlock()
 	row := r.curVal.(*driver.Row)
@@ -227,9 +229,6 @@ func (r *rows) ScanValue(dest interface{}) (err error) {
 }
 
 func (r *rows) ScanDoc(dest interface{}) (err error) {
-	if r.err != nil {
-		return r.err
-	}
 	runlock := r.makeReady(&err)
 	defer runlock()
 	row := r.curVal.(*driver.Row)
@@ -312,9 +311,6 @@ func scanAll(r ResultSet, dest interface{}, scan func(interface{}) error) (err e
 }
 
 func (r *rows) ScanKey(dest interface{}) (err error) {
-	if r.err != nil {
-		return r.err
-	}
 	runlock := r.makeReady(&err)
 	defer runlock()
 	row := r.curVal.(*driver.Row)

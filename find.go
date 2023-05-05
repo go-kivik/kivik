@@ -43,7 +43,7 @@ func (db *DB) Find(ctx context.Context, query interface{}, options ...Options) R
 		}
 		return newRows(ctx, rowsi)
 	}
-	return &rows{err: findNotImplemented}
+	return &errRS{err: findNotImplemented}
 }
 
 // CreateIndex creates an index if it doesn't already exist. ddoc and name may

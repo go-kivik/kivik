@@ -104,13 +104,6 @@ func TestRowsScanValue(t *testing.T) {
 	}
 
 	tests := testy.NewTable()
-	tests.Add("prior error", tt{
-		rows: &rows{
-			err: errors.New("prev"),
-		},
-		status: http.StatusInternalServerError,
-		err:    "prev",
-	})
 	tests.Add("success", tt{
 		rows: &rows{
 			iter: &iter{
@@ -197,13 +190,6 @@ func TestRowsScanDoc(t *testing.T) {
 		state:    stateRowReady,
 		expected: map[string]interface{}{"foo": 123.4},
 	})
-	tests.Add("prev error", tt{
-		rows: &rows{
-			err: errors.New("flah"),
-		},
-		status: http.StatusInternalServerError,
-		err:    "flah",
-	})
 	tests.Add("success", tt{
 		rows: &rows{
 			iter: &iter{
@@ -289,13 +275,6 @@ func TestRowsScanKey(t *testing.T) {
 	}
 
 	tests := testy.NewTable()
-	tests.Add("prior error", tt{
-		rows: &rows{
-			err: errors.New("blahblah"),
-		},
-		status: http.StatusInternalServerError,
-		err:    "blahblah",
-	})
 	tests.Add("success", tt{
 		rows: &rows{
 			iter: &iter{

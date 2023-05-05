@@ -14,7 +14,6 @@ package kivik
 
 import (
 	"context"
-	"errors"
 	"io"
 	"net/http"
 	"sync"
@@ -116,30 +115,9 @@ func (i *iter) awaitDone(ctx context.Context) {
 	_ = i.close(ctx.Err())
 }
 
-// NextResultSet prepares the iterator to read the next result set. It returns
-// ture on success, or false if there are no more result sets to read, or if
-// an error occurs while preparing it. [iter.Err] should be consulted to
-// distinguish between the two.
-func (i *iter) NextResultSet() bool {
-	i.mu.RLock()
-	defer i.mu.RUnlock()
-	if i.lasterr != nil {
-		return false
-	}
-	if i.state == stateClosed {
-		return false
-	}
-	if i.state == stateRowReady {
-		i.lasterr = errors.New("must call NextResultSet before Next")
-		return false
-	}
-	i.state = stateResultSetReady
-	return true
-}
-
 // Next prepares the next iterator result value for reading. It returns true on
 // success, or false if there is no next result or an error occurs while
-// preparing it. [iter.Err] should be consulted to distinguish between the two.
+// preparing it. [Err] should be consulted to distinguish between the two.
 func (i *iter) Next() bool {
 	doClose, ok := i.next()
 	if doClose {
@@ -176,11 +154,11 @@ func (i *iter) next() (doClose, ok bool) {
 	return false, true
 }
 
-// Close closes the Iterator, preventing further enumeration, and freeing any
-// resources (such as the http request body) of the underlying feed. If Next is
-// called and there are no further results, Iterator is closed automatically and
-// it will suffice to check the result of [iter.Err]. Close is idempotent and
-// does not affect the result of [iter.Err].
+// Close closes the iterator, preventing further enumeration, and freeing any
+// resources (such as the http request body) of the underlying feed. If [Next]
+// is called and there are no further results, the iterator is closed
+// automatically and it will suffice to check the result of [Err]. Close is
+// idempotent and does not affect the result of [Err].
 func (i *iter) Close() error {
 	return i.close(nil)
 }
@@ -207,7 +185,7 @@ func (i *iter) close(err error) error {
 }
 
 // Err returns the error, if any, that was encountered during iteration. Err
-// may be called after an explicit or implicit Close.
+// may be called after an explicit or implicit [Close].
 func (i *iter) Err() error {
 	i.mu.RLock()
 	defer i.mu.RUnlock()

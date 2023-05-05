@@ -26,24 +26,6 @@ type BulkResults struct {
 	*iter
 }
 
-// Next returns the next BulkResult from the feed. If an error occurs, this
-// method will return false. Check [BulkResults.Err] to check the error.
-func (r *BulkResults) Next() bool {
-	return r.iter.Next()
-}
-
-// Err returns the error, if any, that was encountered during iteration. Err
-// may be called after an explicit or implicit [BulkResults.Close].
-func (r *BulkResults) Err() error {
-	return r.iter.Err()
-}
-
-// Close closes the feed. Any unread updates will still be accessible via
-// [BulkResults.Next].
-func (r *BulkResults) Close() error {
-	return r.iter.Close()
-}
-
 type bulkIterator struct{ driver.BulkResults }
 
 var _ iterator = &bulkIterator{}

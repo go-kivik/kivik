@@ -24,26 +24,6 @@ type DBUpdates struct {
 	*iter
 }
 
-// Next returns the next DBUpdate from the feed. This function will block
-// until an event is received. If an error occurs, it will be returned and
-// the feed closed. If the feed was closed normally, io.EOF will be returned
-// when there are no more events in the buffer.
-func (f *DBUpdates) Next() bool {
-	return f.iter.Next()
-}
-
-// Close closes the feed. Any unread updates will still be accessible via
-// Next().
-func (f *DBUpdates) Close() error {
-	return f.iter.Close()
-}
-
-// Err returns the error, if any, that was encountered during iteration. Err
-// may be called after an explicit or implicit Close.
-func (f *DBUpdates) Err() error {
-	return f.iter.Err()
-}
-
 type updatesIterator struct{ driver.DBUpdates }
 
 var _ iterator = &updatesIterator{}

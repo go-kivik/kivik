@@ -22,12 +22,6 @@ func (r *BulkResults) Next() bool {
 	return r.iter.Next()
 }
 
-// Err returns the error, if any, that was encountered during iteration. Err
-// may be called after an explicit or implicit Close.
-func (r *BulkResults) Err() error {
-	return r.iter.Err()
-}
-
 type bulkIterator struct{ driver.BulkResults }
 
 var _ iterator = &bulkIterator{}

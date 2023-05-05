@@ -19,12 +19,6 @@ func (c *Changes) Next() bool {
 	return c.iter.Next()
 }
 
-// Err returns the error, if any, that was encountered during iteration. Err may
-// be called after an explicit or implicit Close.
-func (c *Changes) Err() error {
-	return c.iter.Err()
-}
-
 type changesIterator struct{ driver.Changes }
 
 var _ iterator = &changesIterator{}

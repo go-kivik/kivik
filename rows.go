@@ -20,12 +20,6 @@ func (r *Rows) Next() bool {
 	return r.iter.Next()
 }
 
-// Err returns the error, if any, that was encountered during iteration. Err may
-// be called after an explicit or implicit Close.
-func (r *Rows) Err() error {
-	return r.iter.Err()
-}
-
 // EOQ returns true if the iterator has reached the end of a query in a
 // multi-query query. When EOQ is true, the row data will not have been
 // updated. It is common to simply `continue` in case of EOQ, unless you care

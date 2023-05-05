@@ -153,10 +153,6 @@ type rows struct {
 
 var _ ResultSet = &rows{}
 
-func (r *rows) Next() bool {
-	return r.iter.Next()
-}
-
 // NextResultSet prepares the iterator to read the next result set. It returns
 // true on success, or false if there are no more result sets to read, or if
 // an error occurs while preparing it. [Err] should be consulted to

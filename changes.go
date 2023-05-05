@@ -28,13 +28,6 @@ type Changes struct {
 	changesi driver.Changes
 }
 
-// Next prepares the next result value for reading. It returns true on success
-// or false if there are no more results, due to an error or the changes feed
-// having been closed. [Changes.Err] should be consulted to determine any error.
-func (c *Changes) Next() bool {
-	return c.iter.Next()
-}
-
 // Err returns the error, if any, that was encountered during iteration. Err may
 // be called after an explicit or implicit [Changes.Close].
 func (c *Changes) Err() error {

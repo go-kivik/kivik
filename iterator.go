@@ -117,7 +117,7 @@ func (i *iter) awaitDone(ctx context.Context) {
 
 // Next prepares the next iterator result value for reading. It returns true on
 // success, or false if there is no next result or an error occurs while
-// preparing it. [iter.Err] should be consulted to distinguish between the two.
+// preparing it. [Err] should be consulted to distinguish between the two.
 func (i *iter) Next() bool {
 	doClose, ok := i.next()
 	if doClose {

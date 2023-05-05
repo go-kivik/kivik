@@ -157,6 +157,27 @@ func (r *rows) Next() bool {
 	return r.iter.Next()
 }
 
+// NextResultSet prepares the iterator to read the next result set. It returns
+// true on success, or false if there are no more result sets to read, or if
+// an error occurs while preparing it. [Err] should be consulted to
+// distinguish between the two.
+func (r *rows) NextResultSet() bool {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	if r.lasterr != nil {
+		return false
+	}
+	if r.state == stateClosed {
+		return false
+	}
+	if r.state == stateRowReady {
+		r.lasterr = errors.New("must call NextResultSet before Next")
+		return false
+	}
+	r.state = stateResultSetReady
+	return true
+}
+
 func (r *rows) Err() error {
 	if r.err != nil {
 		return r.err

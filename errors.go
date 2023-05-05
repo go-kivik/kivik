@@ -114,22 +114,22 @@ type causer interface {
 //
 // For example, to panic for all but NotFound errors:
 //
-//  err := db.Get(context.TODO(), "docID").ScanDoc(&doc)
-//  if kivik.StatusCode(err) == kivik.StatusNotFound {
-//      return
-//  }
-//  if err != nil {
-//      panic(err)
-//  }
+//	err := db.Get(context.TODO(), "docID").ScanDoc(&doc)
+//	if kivik.StatusCode(err) == kivik.StatusNotFound {
+//	    return
+//	}
+//	if err != nil {
+//	    panic(err)
+//	}
 //
 // This method uses the statusCoder interface, which is not exported by this
 // package, but is considered part of the stable public API.  Driver
 // implementations are expected to return errors which conform to this
 // interface.
 //
-//  type statusCoder interface {
-//      StatusCode() (httpStatusCode int)
-//  }
+//	type statusCoder interface {
+//	    StatusCode() (httpStatusCode int)
+//	}
 func StatusCode(err error) int {
 	if err == nil {
 		return 0

@@ -265,11 +265,11 @@ func extractDocID(i interface{}) (string, bool) {
 //
 // doc may be one of:
 //
-//  - An object to be marshaled to JSON. The resulting JSON structure must
-//    conform to CouchDB standards.
-//  - A []byte value, containing a valid JSON document
-//  - A json.RawMessage value containing a valid JSON document
-//  - An io.Reader, from which a valid JSON document may be read.
+//   - An object to be marshaled to JSON. The resulting JSON structure must
+//     conform to CouchDB standards.
+//   - A []byte value, containing a valid JSON document
+//   - A json.RawMessage value containing a valid JSON document
+//   - An io.Reader, from which a valid JSON document may be read.
 func (db *DB) Put(ctx context.Context, docID string, doc interface{}, options ...Options) (rev string, err error) {
 	if db.err != nil {
 		return "", db.err
@@ -683,10 +683,10 @@ type Diffs map[string]RevDiff
 // Use ID() to return the current document ID, and ScanValue to access the full
 // JSON value, which should be of the JSON format:
 //
-//     {
-//         "missing": ["rev1",...],
-//         "possible_ancestors": ["revA",...]
-//     }
+//	{
+//	    "missing": ["rev1",...],
+//	    "possible_ancestors": ["revA",...]
+//	}
 //
 // See http://docs.couchdb.org/en/stable/api/database/misc.html#db-revs-diff
 func (db *DB) RevsDiff(ctx context.Context, revMap interface{}) (*Rows, error) {

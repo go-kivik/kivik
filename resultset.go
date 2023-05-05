@@ -173,10 +173,6 @@ func (r *rows) NextResultSet() bool {
 	return true
 }
 
-func (r *rows) Err() error {
-	return r.iter.Err()
-}
-
 func (r *rows) Close() error {
 	return r.iter.Close()
 }

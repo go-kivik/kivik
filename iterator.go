@@ -185,7 +185,7 @@ func (i *iter) close(err error) error {
 }
 
 // Err returns the error, if any, that was encountered during iteration. Err
-// may be called after an explicit or implicit Close.
+// may be called after an explicit or implicit [Close].
 func (i *iter) Err() error {
 	i.mu.RLock()
 	defer i.mu.RUnlock()

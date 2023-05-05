@@ -26,12 +26,6 @@ type BulkResults struct {
 	*iter
 }
 
-// Err returns the error, if any, that was encountered during iteration. Err
-// may be called after an explicit or implicit [BulkResults.Close].
-func (r *BulkResults) Err() error {
-	return r.iter.Err()
-}
-
 // Close closes the feed. Any unread updates will still be accessible via
 // [BulkResults.Next].
 func (r *BulkResults) Close() error {

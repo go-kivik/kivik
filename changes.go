@@ -28,12 +28,6 @@ type Changes struct {
 	changesi driver.Changes
 }
 
-// Err returns the error, if any, that was encountered during iteration. Err may
-// be called after an explicit or implicit [Changes.Close].
-func (c *Changes) Err() error {
-	return c.iter.Err()
-}
-
 // Close closes the Changes feed, preventing further enumeration, and freeing
 // any resources (such as the HTTP request body) of the underlying query. If
 // [Changes.Next] is called and there are no further results, Changes is closed

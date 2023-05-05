@@ -30,12 +30,6 @@ func (f *DBUpdates) Close() error {
 	return f.iter.Close()
 }
 
-// Err returns the error, if any, that was encountered during iteration. Err
-// may be called after an explicit or implicit Close.
-func (f *DBUpdates) Err() error {
-	return f.iter.Err()
-}
-
 type updatesIterator struct{ driver.DBUpdates }
 
 var _ iterator = &updatesIterator{}

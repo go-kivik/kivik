@@ -95,11 +95,11 @@ func (i *iter) next() (doClose, ok bool) {
 	return false, true
 }
 
-// Close closes the Iterator, preventing further enumeration, and freeing any
-// resources (such as the http request body) of the underlying feed. If Next is
-// called and there are no further results, Iterator is closed automatically and
-// it will suffice to check the result of Err. Close is idempotent and does not
-// affect the result of Err.
+// Close closes the iterator, preventing further enumeration, and freeing any
+// resources (such as the HTTP request body) of the underlying feed. If [Next]
+// is called and there are no further results, the iterator is closed
+// automatically and it will suffice to check the result of [Err]. Close is
+// idempotent and does not affect the result of [Err].
 func (i *iter) Close() error {
 	return i.close(nil)
 }

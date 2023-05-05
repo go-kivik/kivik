@@ -25,15 +25,6 @@ func (c *Changes) Err() error {
 	return c.iter.Err()
 }
 
-// Close closes the Changes feed, preventing further enumeration, and freeing
-// any resources (such as the http request body) of the underlying query. If
-// Next is called and there are no further results, Changes is closed
-// automatically and it will suffice to check the result of Err. Close is
-// idempotent and does not affect the result of Err.
-func (c *Changes) Close() error {
-	return c.iter.Close()
-}
-
 type changesIterator struct{ driver.Changes }
 
 var _ iterator = &changesIterator{}

@@ -21,12 +21,6 @@ func (f *DBUpdates) Next() bool {
 	return f.iter.Next()
 }
 
-// Close closes the feed. Any unread updates will still be accessible via
-// Next().
-func (f *DBUpdates) Close() error {
-	return f.iter.Close()
-}
-
 // Err returns the error, if any, that was encountered during iteration. Err
 // may be called after an explicit or implicit Close.
 func (f *DBUpdates) Err() error {

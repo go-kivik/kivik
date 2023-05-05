@@ -26,15 +26,6 @@ func (r *Rows) Err() error {
 	return r.iter.Err()
 }
 
-// Close closes the Rows, preventing further enumeration, and freeing any
-// resources (such as the http request body) of the underlying query. If Next is
-// called and there are no further results, Rows is closed automatically and it
-// will suffice to check the result of Err. Close is idempotent and does not
-// affect the result of Err.
-func (r *Rows) Close() error {
-	return r.iter.Close()
-}
-
 // EOQ returns true if the iterator has reached the end of a query in a
 // multi-query query. When EOQ is true, the row data will not have been
 // updated. It is common to simply `continue` in case of EOQ, unless you care

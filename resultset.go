@@ -83,13 +83,13 @@ type ResultSet interface {
 
 	// Close closes the result set, preventing further enumeration, and freeing
 	// any resources (such as the HTTP request body) of the underlying query. If
-	// Next is called and there are no further results, the result set is closed
+	// [Next] is called and there are no further results, the result set is closed
 	// automatically and it will suffice to check the result of Err. Close is
 	// idempotent and does not affect the result of [Err].
 	Close() error
 
 	// Metadata returns the result metadata for the current query. It must be
-	// called after Next() returns false. Otherwise it will return an error.
+	// called after [Next] returns false. Otherwise it will return an error.
 	Metadata() (*ResultMetadata, error)
 
 	// ScanValue copies the data from the result value into the value pointed
@@ -169,7 +169,7 @@ func (r *rows) Close() error {
 }
 
 func (r *rows) Metadata() (*ResultMetadata, error) {
-	for r.state != stateEOQ && r.state != stateClosed {
+	for r.iter == nil || (r.state != stateEOQ && r.state != stateClosed) {
 		return nil, &Error{Status: http.StatusBadRequest, Err: errors.New("Metadata must not be called until result set iteration is complete")}
 	}
 	return r.feed.(*rowsIterator).ResultMetadata, nil

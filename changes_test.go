@@ -16,6 +16,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"testing"
 
@@ -110,21 +111,29 @@ func TestChangesIteratorNew(t *testing.T) {
 }
 
 func TestChangesGetters(t *testing.T) {
-	c := &Changes{
-		iter: &iter{
-			curVal: &driver.Change{
-				ID:      "foo",
-				Deleted: true,
-				Changes: []string{"1", "2", "3"},
-				Seq:     "2-foo",
-			},
-		},
-		changesi: &mock.Changes{
-			PendingFunc: func() int64 { return 123 },
-			LastSeqFunc: func() string { return "3-bar" },
-			ETagFunc:    func() string { return "etag-foo" },
+	changes := []*driver.Change{
+		{
+			ID:      "foo",
+			Deleted: true,
+			Changes: []string{"1", "2", "3"},
+			Seq:     "2-foo",
 		},
 	}
+	c := newChanges(context.Background(), &mock.Changes{
+		NextFunc: func(c *driver.Change) error {
+			if len(changes) == 0 {
+				return io.EOF
+			}
+			change := changes[0]
+			changes = changes[1:]
+			*c = *change
+			return nil
+		},
+		PendingFunc: func() int64 { return 123 },
+		LastSeqFunc: func() string { return "3-bar" },
+		ETagFunc:    func() string { return "etag-foo" },
+	})
+	_ = c.Next()
 
 	t.Run("Changes", func(t *testing.T) {
 		expected := []string{"1", "2", "3"}
@@ -156,26 +165,35 @@ func TestChangesGetters(t *testing.T) {
 			t.Errorf("Unexpected result: %v", result)
 		}
 	})
-	t.Run("LastSeq", func(t *testing.T) {
-		expected := "3-bar"
-		result := c.LastSeq()
-		if expected != result {
-			t.Errorf("Unexpected result: %v", result)
-		}
-	})
-	t.Run("Pending", func(t *testing.T) {
-		expected := int64(123)
-		result := c.Pending()
-		if expected != result {
-			t.Errorf("Unexpected result: %v", result)
-		}
-	})
 	t.Run("ETag", func(t *testing.T) {
 		expected := "etag-foo"
 		result := c.ETag()
 		if expected != result {
 			t.Errorf("Unexpected result: %v", result)
 		}
+	})
+	t.Run("Metadata", func(t *testing.T) {
+		_ = c.Next()
+		t.Run("LastSeq", func(t *testing.T) {
+			expected := "3-bar"
+			meta, err := c.Metadata()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if expected != meta.LastSeq {
+				t.Errorf("Unexpected LastSeq: %v", meta.LastSeq)
+			}
+		})
+		t.Run("Pending", func(t *testing.T) {
+			expected := int64(123)
+			meta, err := c.Metadata()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if expected != meta.Pending {
+				t.Errorf("Unexpected Pending: %v", meta.Pending)
+			}
+		})
 	})
 }
 
@@ -284,7 +302,6 @@ func TestChanges_uninitialized_should_not_panic(*testing.T) {
 	// These must not panic, because they can be called before iterating
 	// begins.
 	c := &Changes{}
-	_ = c.LastSeq()
-	_ = c.Pending()
+	_, _ = c.Metadata()
 	_ = c.ETag()
 }

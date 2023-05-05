@@ -173,10 +173,6 @@ func (r *rows) NextResultSet() bool {
 	return true
 }
 
-func (r *rows) Close() error {
-	return r.iter.Close()
-}
-
 func (r *rows) Metadata() (*ResultMetadata, error) {
 	for r.iter == nil || (r.state != stateEOQ && r.state != stateClosed) {
 		return nil, &Error{Status: http.StatusBadRequest, Err: errors.New("Metadata must not be called until result set iteration is complete")}

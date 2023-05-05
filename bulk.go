@@ -26,12 +26,6 @@ type BulkResults struct {
 	*iter
 }
 
-// Close closes the feed. Any unread updates will still be accessible via
-// [BulkResults.Next].
-func (r *BulkResults) Close() error {
-	return r.iter.Close()
-}
-
 type bulkIterator struct{ driver.BulkResults }
 
 var _ iterator = &bulkIterator{}

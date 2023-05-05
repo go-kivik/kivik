@@ -24,12 +24,6 @@ type DBUpdates struct {
 	*iter
 }
 
-// Close closes the feed. Any unread updates will still be accessible via
-// Next().
-func (f *DBUpdates) Close() error {
-	return f.iter.Close()
-}
-
 type updatesIterator struct{ driver.DBUpdates }
 
 var _ iterator = &updatesIterator{}

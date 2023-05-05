@@ -28,15 +28,6 @@ type Changes struct {
 	changesi driver.Changes
 }
 
-// Close closes the Changes feed, preventing further enumeration, and freeing
-// any resources (such as the HTTP request body) of the underlying query. If
-// [Changes.Next] is called and there are no further results, Changes is closed
-// automatically and it will suffice to check the result of [Changes.Err]. Close
-// is idempotent and does not affect the result of [Changes.Err].
-func (c *Changes) Close() error {
-	return c.iter.Close()
-}
-
 type changesIterator struct {
 	driver.Changes
 	*ChangesMetadata

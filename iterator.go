@@ -95,14 +95,6 @@ func (i *iter) next() (doClose, ok bool) {
 	return false, true
 }
 
-// EOQ returns true if the iterator has reached the end of a query in a
-// multi-query query. When EOQ is true, the row data will not have been
-// updated. It is common to simply `continue` in case of EOQ, unless you care
-// about the per-query metadata, such as offset, total rows, etc.
-func (i *iter) EOQ() bool {
-	return i.eoq
-}
-
 // Close closes the Iterator, preventing further enumeration, and freeing any
 // resources (such as the http request body) of the underlying feed. If Next is
 // called and there are no further results, Iterator is closed automatically and

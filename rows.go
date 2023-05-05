@@ -35,6 +35,14 @@ func (r *Rows) Close() error {
 	return r.iter.Close()
 }
 
+// EOQ returns true if the iterator has reached the end of a query in a
+// multi-query query. When EOQ is true, the row data will not have been
+// updated. It is common to simply `continue` in case of EOQ, unless you care
+// about the per-query metadata, such as offset, total rows, etc.
+func (r *Rows) EOQ() bool {
+	return r.eoq
+}
+
 type rowsIterator struct{ driver.Rows }
 
 var _ iterator = &rowsIterator{}

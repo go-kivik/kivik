@@ -100,7 +100,7 @@ type DBUpdater struct {
 	DBUpdatesFunc func(context.Context, map[string]interface{}) (driver.DBUpdates, error)
 }
 
-var _ driver.DBUpdaterWithOptions = &DBUpdater{}
+var _ driver.DBUpdater = &DBUpdater{}
 
 // DBUpdates calls c.DBUpdatesFunc
 func (c *DBUpdater) DBUpdates(ctx context.Context, opts map[string]interface{}) (driver.DBUpdates, error) {

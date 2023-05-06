@@ -324,7 +324,7 @@ type Attachment struct {
 // DB. If satisfied, it may be used to fetch meta data about an attachment. If
 // not satisfied, GetAttachment will be used instead.
 type AttachmentMetaGetter interface {
-	// GetAttachmentMetaOpts returns meta information about an attachment.
+	// GetAttachmentMeta returns meta information about an attachment.
 	GetAttachmentMeta(ctx context.Context, docID, filename string, options map[string]interface{}) (*Attachment, error)
 }
 

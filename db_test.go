@@ -422,9 +422,8 @@ func TestGet(t *testing.T) {
 							return nil, fmt.Errorf("Unexpected options:\n%s", d)
 						}
 						return &driver.Document{
-							ContentLength: 13,
-							Rev:           "1-xxx",
-							Body:          body(`{"_id":"foo"}`),
+							Rev:  "1-xxx",
+							Body: body(`{"_id":"foo"}`),
 						}, nil
 					},
 				},
@@ -451,10 +450,9 @@ func TestGet(t *testing.T) {
 							return nil, fmt.Errorf("Unexpected options:\n%s", d)
 						}
 						return &driver.Document{
-							ContentLength: 13,
-							Rev:           "1-xxx",
-							Body:          body(`{"_id":"foo"}`),
-							Attachments:   &mock.Attachments{ID: "asdf"},
+							Rev:         "1-xxx",
+							Body:        body(`{"_id":"foo"}`),
+							Attachments: &mock.Attachments{ID: "asdf"},
 						}, nil
 					},
 				},
@@ -842,9 +840,8 @@ func TestGetRev(t *testing.T) { // nolint: gocyclo
 							return nil, errors.New("opts should be nil")
 						}
 						return &driver.Document{
-							ContentLength: 16,
-							Rev:           "1-xxx",
-							Body:          body(`{"_rev":"1-xxx"}`),
+							Rev:  "1-xxx",
+							Body: body(`{"_rev":"1-xxx"}`),
 						}, nil
 					},
 				},
@@ -865,8 +862,7 @@ func TestGetRev(t *testing.T) { // nolint: gocyclo
 							return nil, errors.New("opts should be nil")
 						}
 						return &driver.Document{
-							ContentLength: 16,
-							Body:          body(`{"_rev":"1-xxx"}`),
+							Body: body(`{"_rev":"1-xxx"}`),
 						}, nil
 					},
 				},
@@ -887,8 +883,7 @@ func TestGetRev(t *testing.T) { // nolint: gocyclo
 							return nil, errors.New("opts should be nil")
 						}
 						return &driver.Document{
-							ContentLength: 16,
-							Body:          body(`invalid json`),
+							Body: body(`invalid json`),
 						}, nil
 					},
 				},
@@ -991,8 +986,7 @@ func TestCopy(t *testing.T) {
 				driverDB: &mock.DB{
 					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (*driver.Document, error) {
 						return &driver.Document{
-							ContentLength: 12,
-							Body:          body("invalid json"),
+							Body: body("invalid json"),
 						}, nil
 					},
 				},
@@ -1008,8 +1002,7 @@ func TestCopy(t *testing.T) {
 				driverDB: &mock.DB{
 					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (*driver.Document, error) {
 						return &driver.Document{
-							ContentLength: 28,
-							Body:          body(`{"_id":"foo","_rev":"1-xxx"}`),
+							Body: body(`{"_id":"foo","_rev":"1-xxx"}`),
 						}, nil
 					},
 					PutFunc: func(_ context.Context, _ string, _ interface{}, _ map[string]interface{}) (string, error) {
@@ -1032,8 +1025,7 @@ func TestCopy(t *testing.T) {
 							return nil, fmt.Errorf("Unexpected get docID: %s", docID)
 						}
 						return &driver.Document{
-							ContentLength: 40,
-							Body:          body(`{"_id":"bar","_rev":"1-xxx","foo":123.4}`),
+							Body: body(`{"_id":"bar","_rev":"1-xxx","foo":123.4}`),
 						}, nil
 					},
 					PutFunc: func(_ context.Context, docID string, doc interface{}, opts map[string]interface{}) (string, error) {

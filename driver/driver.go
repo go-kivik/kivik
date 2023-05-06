@@ -261,9 +261,9 @@ type BulkDocer interface {
 	BulkDocs(ctx context.Context, docs []interface{}, options map[string]interface{}) (BulkResults, error)
 }
 
-// OptsFinder is an optional interface which may be implemented by a DB. It
-// provides access to the new (in CouchDB 2.0) MongoDB-style query interface.
-type OptsFinder interface {
+// Finder is an optional interface which may be implemented by a DB. It provides
+// access to the new (in CouchDB 2.0) MongoDB-style query interface.
+type Finder interface {
 	// Find executes a query using the new /_find interface. If query is a
 	// string, []byte, or [encoding/json.RawMessage], it should be treated as a
 	// raw JSON payload. Any other type should be marshaled to JSON.
@@ -279,7 +279,7 @@ type OptsFinder interface {
 	// Delete deletes the requested index.
 	DeleteIndex(ctx context.Context, ddoc, name string, options map[string]interface{}) error
 	// Explain returns the query plan for a given query. Explain takes the same
-	// arguments as [OptsFinder.Find].
+	// arguments as [Finder.Find].
 	Explain(ctx context.Context, query interface{}, options map[string]interface{}) (*QueryPlan, error)
 }
 

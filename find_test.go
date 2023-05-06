@@ -45,7 +45,7 @@ func TestFind(t *testing.T) {
 		{
 			name: "db error",
 			db: &DB{
-				driverDB: &mock.OptsFinder{
+				driverDB: &mock.Finder{
 					FindFunc: func(_ context.Context, _ interface{}, _ map[string]interface{}) (driver.Rows, error) {
 						return nil, errors.New("db error")
 					},
@@ -57,7 +57,7 @@ func TestFind(t *testing.T) {
 		{
 			name: "success",
 			db: &DB{
-				driverDB: &mock.OptsFinder{
+				driverDB: &mock.Finder{
 					FindFunc: func(_ context.Context, query interface{}, _ map[string]interface{}) (driver.Rows, error) {
 						expectedQuery := int(3)
 						if d := testy.DiffInterface(expectedQuery, query); d != nil {
@@ -114,7 +114,7 @@ func TestCreateIndex(t *testing.T) {
 		{
 			testName: "db error",
 			db: &DB{
-				driverDB: &mock.OptsFinder{
+				driverDB: &mock.Finder{
 					CreateIndexFunc: func(_ context.Context, _, _ string, _ interface{}, _ map[string]interface{}) error {
 						return errors.New("db error")
 					},
@@ -126,7 +126,7 @@ func TestCreateIndex(t *testing.T) {
 		{
 			testName: "success",
 			db: &DB{
-				driverDB: &mock.OptsFinder{
+				driverDB: &mock.Finder{
 					CreateIndexFunc: func(_ context.Context, ddoc, name string, index interface{}, _ map[string]interface{}) error {
 						expectedDdoc := "foo"
 						expectedName := "bar"
@@ -177,7 +177,7 @@ func TestDeleteIndex(t *testing.T) {
 		{
 			testName: "db error",
 			db: &DB{
-				driverDB: &mock.OptsFinder{
+				driverDB: &mock.Finder{
 					DeleteIndexFunc: func(_ context.Context, _, _ string, _ map[string]interface{}) error {
 						return errors.New("db error")
 					},
@@ -189,7 +189,7 @@ func TestDeleteIndex(t *testing.T) {
 		{
 			testName: "success",
 			db: &DB{
-				driverDB: &mock.OptsFinder{
+				driverDB: &mock.Finder{
 					DeleteIndexFunc: func(_ context.Context, ddoc, name string, _ map[string]interface{}) error {
 						expectedDdoc := "foo"
 						expectedName := "bar"
@@ -235,7 +235,7 @@ func TestGetIndexes(t *testing.T) {
 		{
 			testName: "db error",
 			db: &DB{
-				driverDB: &mock.OptsFinder{
+				driverDB: &mock.Finder{
 					GetIndexesFunc: func(_ context.Context, _ map[string]interface{}) ([]driver.Index, error) {
 						return nil, errors.New("db error")
 					},
@@ -247,7 +247,7 @@ func TestGetIndexes(t *testing.T) {
 		{
 			testName: "success",
 			db: &DB{
-				driverDB: &mock.OptsFinder{
+				driverDB: &mock.Finder{
 					GetIndexesFunc: func(_ context.Context, _ map[string]interface{}) ([]driver.Index, error) {
 						return []driver.Index{
 							{Name: "a"},
@@ -295,7 +295,7 @@ func TestExplain(t *testing.T) {
 		},
 		{
 			name: "explain error",
-			db: &mock.OptsFinder{
+			db: &mock.Finder{
 				ExplainFunc: func(_ context.Context, _ interface{}, _ map[string]interface{}) (*driver.QueryPlan, error) {
 					return nil, errors.New("explain error")
 				},
@@ -305,7 +305,7 @@ func TestExplain(t *testing.T) {
 		},
 		{
 			name: "success",
-			db: &mock.OptsFinder{
+			db: &mock.Finder{
 				ExplainFunc: func(_ context.Context, query interface{}, _ map[string]interface{}) (*driver.QueryPlan, error) {
 					expectedQuery := int(3)
 					if d := testy.DiffInterface(expectedQuery, query); d != nil {

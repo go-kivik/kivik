@@ -215,7 +215,7 @@ type Document struct {
 	// Rev is the revision number returned
 	Rev string
 
-	// Body contains the respons body, either in raw JSON or multipart/related
+	// Body contains the response body, either in raw JSON or multipart/related
 	// format.
 	Body io.ReadCloser
 
@@ -259,18 +259,6 @@ type BulkDocer interface {
 	// BulkDocs alls bulk create, update and/or delete operations. It returns an
 	// iterator over the results.
 	BulkDocs(ctx context.Context, docs []interface{}, options map[string]interface{}) (BulkResults, error)
-}
-
-// Finder is the old version of [OptsFinder], which does not accept options. It
-// remains for compatibility with older backends.
-//
-// Deprecated: Use [OptsFinder] instead.
-type Finder interface {
-	Find(ctx context.Context, query interface{}) (Rows, error)
-	CreateIndex(ctx context.Context, ddoc, name string, index interface{}) error
-	GetIndexes(ctx context.Context) ([]Index, error)
-	DeleteIndex(ctx context.Context, ddoc, name string) error
-	Explain(ctx context.Context, query interface{}) (*QueryPlan, error)
 }
 
 // OptsFinder is an optional interface which may be implemented by a DB. It

@@ -35,14 +35,6 @@ func (db *DB) Find(ctx context.Context, query interface{}, options ...Options) R
 		}
 		return newRows(ctx, rowsi)
 	}
-	// nolint:staticcheck
-	if finder, ok := db.driverDB.(driver.Finder); ok {
-		rowsi, err := finder.Find(ctx, query)
-		if err != nil {
-			return &errRS{err: err}
-		}
-		return newRows(ctx, rowsi)
-	}
 	return &errRS{err: findNotImplemented}
 }
 
@@ -54,10 +46,6 @@ func (db *DB) CreateIndex(ctx context.Context, ddoc, name string, index interfac
 	if finder, ok := db.driverDB.(driver.OptsFinder); ok {
 		return finder.CreateIndex(ctx, ddoc, name, index, mergeOptions(options...))
 	}
-	// nolint:staticcheck
-	if finder, ok := db.driverDB.(driver.Finder); ok {
-		return finder.CreateIndex(ctx, ddoc, name, index)
-	}
 	return findNotImplemented
 }
 
@@ -65,10 +53,6 @@ func (db *DB) CreateIndex(ctx context.Context, ddoc, name string, index interfac
 func (db *DB) DeleteIndex(ctx context.Context, ddoc, name string, options ...Options) error {
 	if finder, ok := db.driverDB.(driver.OptsFinder); ok {
 		return finder.DeleteIndex(ctx, ddoc, name, mergeOptions(options...))
-	}
-	// nolint:staticcheck
-	if finder, ok := db.driverDB.(driver.Finder); ok {
-		return finder.DeleteIndex(ctx, ddoc, name)
 	}
 	return findNotImplemented
 }
@@ -85,15 +69,6 @@ type Index struct {
 func (db *DB) GetIndexes(ctx context.Context, options ...Options) ([]Index, error) {
 	if finder, ok := db.driverDB.(driver.OptsFinder); ok {
 		dIndexes, err := finder.GetIndexes(ctx, mergeOptions(options...))
-		indexes := make([]Index, len(dIndexes))
-		for i, index := range dIndexes {
-			indexes[i] = Index(index)
-		}
-		return indexes, err
-	}
-	// nolint:staticcheck
-	if finder, ok := db.driverDB.(driver.Finder); ok {
-		dIndexes, err := finder.GetIndexes(ctx)
 		indexes := make([]Index, len(dIndexes))
 		for i, index := range dIndexes {
 			indexes[i] = Index(index)
@@ -124,15 +99,6 @@ type QueryPlan struct {
 func (db *DB) Explain(ctx context.Context, query interface{}, options ...Options) (*QueryPlan, error) {
 	if explainer, ok := db.driverDB.(driver.OptsFinder); ok {
 		plan, err := explainer.Explain(ctx, query, mergeOptions(options...))
-		if err != nil {
-			return nil, err
-		}
-		qp := QueryPlan(*plan)
-		return &qp, nil
-	}
-	// nolint:staticcheck
-	if explainer, ok := db.driverDB.(driver.Finder); ok {
-		plan, err := explainer.Explain(ctx, query)
 		if err != nil {
 			return nil, err
 		}

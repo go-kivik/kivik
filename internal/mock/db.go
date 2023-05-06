@@ -122,44 +122,6 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, opts map[string]inte
 	return db.QueryFunc(ctx, ddoc, view, opts)
 }
 
-// Finder mocks a driver.DB and driver.Finder
-type Finder struct {
-	*DB
-	CreateIndexFunc func(context.Context, string, string, interface{}) error
-	DeleteIndexFunc func(context.Context, string, string) error
-	FindFunc        func(context.Context, interface{}) (driver.Rows, error)
-	GetIndexesFunc  func(context.Context) ([]driver.Index, error)
-	ExplainFunc     func(context.Context, interface{}) (*driver.QueryPlan, error)
-}
-
-// nolint:staticcheck
-var _ driver.Finder = &Finder{}
-
-// CreateIndex calls db.CreateIndexFunc
-func (db *Finder) CreateIndex(ctx context.Context, ddoc, name string, index interface{}) error {
-	return db.CreateIndexFunc(ctx, ddoc, name, index)
-}
-
-// DeleteIndex calls db.DeleteIndexFunc
-func (db *Finder) DeleteIndex(ctx context.Context, ddoc, name string) error {
-	return db.DeleteIndexFunc(ctx, ddoc, name)
-}
-
-// Find calls db.FindFunc
-func (db *Finder) Find(ctx context.Context, query interface{}) (driver.Rows, error) {
-	return db.FindFunc(ctx, query)
-}
-
-// GetIndexes calls db.GetIndexesFunc
-func (db *Finder) GetIndexes(ctx context.Context) ([]driver.Index, error) {
-	return db.GetIndexesFunc(ctx)
-}
-
-// Explain calls db.ExplainFunc
-func (db *Finder) Explain(ctx context.Context, query interface{}) (*driver.QueryPlan, error) {
-	return db.ExplainFunc(ctx, query)
-}
-
 // OptsFinder mocks a driver.DB and driver.Finder
 type OptsFinder struct {
 	*DB

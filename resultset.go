@@ -136,16 +136,7 @@ type ResultSet interface {
 	Attachments() *AttachmentsIterator
 }
 
-// baseRS provides no-op versions of common rows functions that aren't
-// needed by every implementation, so that it can be embedded in other
-// implementations
-type baseRS struct{}
-
-func (baseRS) Rev() string                       { return "" }
-func (baseRS) Attachments() *AttachmentsIterator { return nil }
-
 type rows struct {
-	baseRS
 	*iter
 	rowsi driver.Rows
 }
@@ -332,9 +323,16 @@ func (r *rows) Key() string {
 	return string(r.curVal.(*driver.Row).Key)
 }
 
+func (r *rows) Attachments() *AttachmentsIterator {
+	return nil
+}
+
+func (r *rows) Rev() string {
+	return ""
+}
+
 // errRS is a resultset that has errored.
 type errRS struct {
-	baseRS
 	err error
 }
 
@@ -351,3 +349,5 @@ func (e *errRS) ScanDoc(interface{}) error          { return e.err }
 func (e *errRS) ScanKey(interface{}) error          { return e.err }
 func (e *errRS) ScanValue(interface{}) error        { return e.err }
 func (e *errRS) NextResultSet() bool                { return false }
+func (e *errRS) Attachments() *AttachmentsIterator  { return nil }
+func (e *errRS) Rev() string                        { return "" }

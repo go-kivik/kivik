@@ -51,9 +51,9 @@ func (r *row) Finish() (ResultMetadata, error) {
 	return ResultMetadata{}, r.Close()
 }
 
-func (r *row) Err() error  { return r.err }
-func (r *row) ID() string  { return r.id }
-func (r *row) Rev() string { return r.rev }
+func (r *row) Err() error           { return r.err }
+func (r *row) ID() (string, error)  { return r.id, r.err }
+func (r *row) Rev() (string, error) { return r.rev, r.err }
 
 func (r *row) Next() bool {
 	if r.err != nil {
@@ -62,6 +62,6 @@ func (r *row) Next() bool {
 	return atomic.SwapInt32(&r.prepared, 1) != 1
 }
 
-func (r *row) Attachments() *AttachmentsIterator {
-	return r.atts
+func (r *row) Attachments() (*AttachmentsIterator, error) {
+	return r.atts, r.err
 }

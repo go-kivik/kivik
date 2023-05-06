@@ -317,18 +317,26 @@ func TestRowsScanKey(t *testing.T) {
 			iter: &iter{
 				state: stateRowReady,
 				curVal: &driver.Row{
+					Key:   json.RawMessage(`"id"`),
 					Error: errors.New("row error"),
 				},
 			},
 		},
-		status: 500,
-		err:    "row error",
+		expected: "id",
+		state:    stateRowReady,
+		status:   http.StatusInternalServerError,
+		err:      "row error",
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
 		var result interface{}
 		err := tt.rows.ScanKey(&result)
-		testy.StatusError(t, tt.err, tt.status, err)
+		if !testy.ErrorMatches(tt.err, err) {
+			t.Errorf("unexpected error: %s", err)
+		}
+		if status := HTTPStatus(err); status != tt.status {
+			t.Errorf("Unexpected error status: %v", status)
+		}
 		if d := testy.DiffInterface(tt.expected, result); d != nil {
 			t.Error(d)
 		}
@@ -360,14 +368,14 @@ func TestRowsGetters(t *testing.T) {
 	}
 
 	t.Run("ID", func(t *testing.T) {
-		result := r.ID()
+		result, _ := r.ID()
 		if id != result {
 			t.Errorf("Unexpected result: %v", result)
 		}
 	})
 
 	t.Run("Key", func(t *testing.T) {
-		result := r.Key()
+		result, _ := r.Key()
 		if string(key) != result {
 			t.Errorf("Unexpected result: %v", result)
 		}
@@ -383,7 +391,7 @@ func TestRowsGetters(t *testing.T) {
 			}
 			r := newRows(context.Background(), rowsi)
 
-			result := r.ID()
+			result, _ := r.ID()
 			if result != id {
 				t.Errorf("Unexpected result: %v", result)
 			}
@@ -398,7 +406,7 @@ func TestRowsGetters(t *testing.T) {
 			}
 			r := newRows(context.Background(), rowsi)
 
-			result := r.Key()
+			result, _ := r.Key()
 			if result != string(key) {
 				t.Errorf("Unexpected result: %v", result)
 			}
@@ -428,14 +436,14 @@ func TestRowsGetters(t *testing.T) {
 		}
 
 		t.Run("ID", func(t *testing.T) {
-			result := r.ID()
+			result, _ := r.ID()
 			if id != result {
 				t.Errorf("Unexpected result: %v", result)
 			}
 		})
 
 		t.Run("Key", func(t *testing.T) {
-			result := r.Key()
+			result, _ := r.Key()
 			if string(key) != result {
 				t.Errorf("Unexpected result: %v", result)
 			}
@@ -567,7 +575,8 @@ func TestMetadata(t *testing.T) {
 		check(t, r)
 		ids := []string{}
 		for r.Next() {
-			ids = append(ids, r.ID())
+			id, _ := r.ID()
+			ids = append(ids, id)
 		}
 		want := []string{"x", "y"}
 		if d := testy.DiffInterface(want, ids); d != nil {
@@ -583,7 +592,8 @@ func TestMetadata(t *testing.T) {
 		check(t, r)
 		ids := []string{}
 		for r.Next() {
-			ids = append(ids, r.ID())
+			id, _ := r.ID()
+			ids = append(ids, id)
 		}
 		want := []string{}
 		if d := testy.DiffInterface(want, ids); d != nil {
@@ -718,7 +728,8 @@ func TestNextResultSet(t *testing.T) {
 		ids := []string{}
 		for r.NextResultSet() {
 			for r.Next() {
-				ids = append(ids, r.ID())
+				id, _ := r.ID()
+				ids = append(ids, id)
 			}
 		}
 		if err := r.Err(); err != nil {
@@ -750,7 +761,8 @@ func TestNextResultSet(t *testing.T) {
 
 		ids := []string{}
 		for r.Next() {
-			ids = append(ids, r.ID())
+			id, _ := r.ID()
+			ids = append(ids, id)
 		}
 		if err := r.Err(); err != nil {
 			t.Error(err)
@@ -766,7 +778,8 @@ func TestNextResultSet(t *testing.T) {
 		ids := []string{}
 		r.NextResultSet()
 		for r.Next() {
-			ids = append(ids, r.ID())
+			id, _ := r.ID()
+			ids = append(ids, id)
 		}
 		_ = r.Next() // once more to ensure it doesn't error past the end of the first RS
 		if err := r.Err(); err != nil {

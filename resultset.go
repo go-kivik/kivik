@@ -95,6 +95,9 @@ type ResultSet interface {
 	// ScanValue copies the data from the result value into the value pointed
 	// at by dest. Think of this as calling [encoding/json.Unmarshal] into dest.
 	//
+	// If the row returned an error, it will be returned rather than
+	// unmarshaling the value, as error rows do not include values.
+	//
 	// If the dest argument has type *[]byte, ScanValue stores a copy of the
 	// input data. The copy is owned by the caller and can be modified and held
 	// indefinitely.
@@ -110,30 +113,36 @@ type ResultSet interface {
 	// ScanDoc works the same as [ScanValue], but on the doc field of
 	// the result. It will return an error if the query does not include
 	// documents.
+	//
+	// If the row returned an error, it will be returned rather than
+	// unmarshaling the doc, as error rows do not include docs.
 	ScanDoc(dest interface{}) error
 
 	// ScanKey works the same as [ScanValue], but on the key field of the
 	// result. For simple keys, which are just strings, [Key] may be easier to
 	// use.
+	//
+	// Unlike [ScanValue] and [ScanDoc], this may successfully scan the key,
+	// and also return an error, if the row itself represents an error.
 	ScanKey(dest interface{}) error
 
 	// ID returns the ID of the most recent result.
-	ID() string
+	ID() (string, error)
 
 	// Rev returns the document revision, when known. Not all result sets (such
 	// as those from views) include revision IDs, so this will be blank in such
 	// cases.
-	Rev() string
+	Rev() (string, error)
 
 	// Key returns the Key of the most recent result as a raw JSON string. For
 	// compound keys, [ScanKey] may be more convenient.
-	Key() string
+	Key() (string, error)
 
 	// Attachments returns an attachments iterator. At present, it is only set
 	// by [DB.Get] when doing a multi-part get from CouchDB (which is the
 	// default where supported). This may be extended to other cases in the
 	// future.
-	Attachments() *AttachmentsIterator
+	Attachments() (*AttachmentsIterator, error)
 }
 
 type rows struct {
@@ -305,30 +314,32 @@ func (r *rows) ScanKey(dest interface{}) (err error) {
 	runlock := r.makeReady(&err)
 	defer runlock()
 	row := r.curVal.(*driver.Row)
-	if err := row.Error; err != nil {
+	if err := json.Unmarshal(row.Key, dest); err != nil {
 		return err
 	}
-	return json.Unmarshal(row.Key, dest)
+	return row.Error
 }
 
-func (r *rows) ID() string {
+func (r *rows) ID() (string, error) {
 	runlock := r.makeReady(nil)
 	defer runlock()
-	return r.curVal.(*driver.Row).ID
+	row := r.curVal.(*driver.Row)
+	return row.ID, row.Error
 }
 
-func (r *rows) Key() string {
+func (r *rows) Key() (string, error) {
 	runlock := r.makeReady(nil)
 	defer runlock()
-	return string(r.curVal.(*driver.Row).Key)
+	row := r.curVal.(*driver.Row)
+	return string(row.Key), row.Error
 }
 
-func (r *rows) Attachments() *AttachmentsIterator {
-	return nil
+func (r *rows) Attachments() (*AttachmentsIterator, error) {
+	return nil, r.curVal.(*driver.Row).Error
 }
 
-func (r *rows) Rev() string {
-	return ""
+func (r *rows) Rev() (string, error) {
+	return "", r.curVal.(*driver.Row).Error
 }
 
 // errRS is a resultset that has errored.
@@ -338,16 +349,16 @@ type errRS struct {
 
 var _ ResultSet = &errRS{}
 
-func (e *errRS) Err() error                         { return e.err }
-func (e *errRS) Close() error                       { return e.err }
-func (e *errRS) Metadata() (*ResultMetadata, error) { return nil, e.err }
-func (e *errRS) ID() string                         { return "" }
-func (e *errRS) Key() string                        { return "" }
-func (e *errRS) Next() bool                         { return false }
-func (e *errRS) ScanAllDocs(interface{}) error      { return e.err }
-func (e *errRS) ScanDoc(interface{}) error          { return e.err }
-func (e *errRS) ScanKey(interface{}) error          { return e.err }
-func (e *errRS) ScanValue(interface{}) error        { return e.err }
-func (e *errRS) NextResultSet() bool                { return false }
-func (e *errRS) Attachments() *AttachmentsIterator  { return nil }
-func (e *errRS) Rev() string                        { return "" }
+func (e *errRS) Err() error                                 { return e.err }
+func (e *errRS) Close() error                               { return e.err }
+func (e *errRS) Metadata() (*ResultMetadata, error)         { return nil, e.err }
+func (e *errRS) ID() (string, error)                        { return "", e.err }
+func (e *errRS) Key() (string, error)                       { return "", e.err }
+func (e *errRS) Next() bool                                 { return false }
+func (e *errRS) ScanAllDocs(interface{}) error              { return e.err }
+func (e *errRS) ScanDoc(interface{}) error                  { return e.err }
+func (e *errRS) ScanKey(interface{}) error                  { return e.err }
+func (e *errRS) ScanValue(interface{}) error                { return e.err }
+func (e *errRS) NextResultSet() bool                        { return false }
+func (e *errRS) Attachments() (*AttachmentsIterator, error) { return nil, e.err }
+func (e *errRS) Rev() (string, error)                       { return "", e.err }

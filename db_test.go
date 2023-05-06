@@ -27,6 +27,7 @@ import (
 
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/internal/mock"
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestClient(t *testing.T) {
@@ -104,6 +105,87 @@ func TestAllDocs(t *testing.T) {
 			}
 		})
 	}
+	t.Run("standalone", func(t *testing.T) {
+		t.Run("missing ids", func(t *testing.T) {
+			rows := []*driver.Row{
+				{
+					ID:    "i-exist",
+					Key:   json.RawMessage("i-exist"),
+					Value: strings.NewReader(`{"rev":"1-967a00dff5e02add41819138abb3284d"}`),
+				},
+				{
+					Key:   json.RawMessage("i-dont"),
+					Error: errors.New("not found"),
+				},
+			}
+			db := &DB{
+				driverDB: &mock.DB{
+					AllDocsFunc: func(_ context.Context, opts map[string]interface{}) (driver.Rows, error) {
+						return &mock.Rows{
+							NextFunc: func(r *driver.Row) error {
+								if len(rows) == 0 {
+									return io.EOF
+								}
+								row := rows[0]
+								rows = rows[1:]
+								*r = *row
+								return nil
+							},
+						}, nil
+					},
+				},
+			}
+			rs := db.AllDocs(context.Background(), map[string]interface{}{
+				"include_docs": true,
+				"keys":         []string{"i-exist", "i-dont"},
+			})
+			type row struct {
+				ID    string
+				Key   string
+				Value string
+				Doc   string
+				Error string
+			}
+			want := []row{
+				{
+					ID:    "i-exist",
+					Key:   "i-exist",
+					Value: `{"rev":"1-967a00dff5e02add41819138abb3284d"}`,
+				},
+				{
+					Key:   "i-dont",
+					Error: "not found",
+				},
+			}
+			var got []row
+			for rs.Next() {
+				var doc, value json.RawMessage
+				_ = rs.ScanDoc(&doc)
+				_ = rs.ScanValue(&value)
+				var errStr string
+				id, err := rs.ID()
+				key, _ := rs.Key()
+				if err != nil {
+					errStr = err.Error()
+				}
+				got = append(got, row{
+					ID:    id,
+					Key:   key,
+					Doc:   string(doc),
+					Value: string(value),
+					Error: errStr,
+				})
+			}
+			if d := cmp.Diff(want, got, cmp.Transformer("Error", func(t error) string {
+				if t == nil {
+					return ""
+				}
+				return t.Error()
+			})); d != "" {
+				t.Error(d)
+			}
+		})
+	})
 }
 
 func TestDesignDocs(t *testing.T) {

@@ -32,14 +32,6 @@ type DBUpdates interface {
 	Close() error
 }
 
-// DBUpdater is an optional interface that may be implemented by a Client to
-// provide access to the DB Updates feed.
-type DBUpdater interface {
-	// DBUpdates must return a DBUpdate iterator. The context, or the iterator's
-	// Close method, may be used to close the iterator.
-	DBUpdates(context.Context) (DBUpdates, error)
-}
-
 // DBUpdaterWithOptions is an optional interface that may be implemented by a
 // Client to provide access to the DB Updates feed.
 type DBUpdaterWithOptions interface {

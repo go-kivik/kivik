@@ -70,12 +70,8 @@ func (f *DBUpdates) Seq() string {
 func (c *Client) DBUpdates(ctx context.Context, options ...Options) (*DBUpdates, error) {
 	var updaterFunc func(context.Context, map[string]interface{}) (driver.DBUpdates, error)
 	switch t := c.driverClient.(type) {
-	case driver.DBUpdaterWithOptions:
-		updaterFunc = t.DBUpdates
 	case driver.DBUpdater:
-		updaterFunc = func(ctx context.Context, _ map[string]interface{}) (driver.DBUpdates, error) {
-			return t.DBUpdates(ctx)
-		}
+		updaterFunc = t.DBUpdates
 	default:
 		return nil, &Error{Status: http.StatusNotImplemented, Message: "kivik: driver does not implement DBUpdater"}
 	}

@@ -212,15 +212,10 @@ type DB interface {
 
 // Document represents a single document returned by Get
 type Document struct {
-	// ContentLength is the size of the document response in bytes.
-	//
-	// Deprecate: This field is no longer read.
-	ContentLength int64
-
 	// Rev is the revision number returned
 	Rev string
 
-	// Body contains the respons body, either in raw JSON or multipart/related
+	// Body contains the response body, either in raw JSON or multipart/related
 	// format.
 	Body io.ReadCloser
 
@@ -266,21 +261,9 @@ type BulkDocer interface {
 	BulkDocs(ctx context.Context, docs []interface{}, options map[string]interface{}) (BulkResults, error)
 }
 
-// Finder is the old version of [OptsFinder], which does not accept options. It
-// remains for compatibility with older backends.
-//
-// Deprecated: Use [OptsFinder] instead.
+// Finder is an optional interface which may be implemented by a DB. It provides
+// access to the new (in CouchDB 2.0) MongoDB-style query interface.
 type Finder interface {
-	Find(ctx context.Context, query interface{}) (Rows, error)
-	CreateIndex(ctx context.Context, ddoc, name string, index interface{}) error
-	GetIndexes(ctx context.Context) ([]Index, error)
-	DeleteIndex(ctx context.Context, ddoc, name string) error
-	Explain(ctx context.Context, query interface{}) (*QueryPlan, error)
-}
-
-// OptsFinder is an optional interface which may be implemented by a DB. It
-// provides access to the new (in CouchDB 2.0) MongoDB-style query interface.
-type OptsFinder interface {
 	// Find executes a query using the new /_find interface. If query is a
 	// string, []byte, or [encoding/json.RawMessage], it should be treated as a
 	// raw JSON payload. Any other type should be marshaled to JSON.
@@ -296,7 +279,7 @@ type OptsFinder interface {
 	// Delete deletes the requested index.
 	DeleteIndex(ctx context.Context, ddoc, name string, options map[string]interface{}) error
 	// Explain returns the query plan for a given query. Explain takes the same
-	// arguments as [OptsFinder.Find].
+	// arguments as [Finder.Find].
 	Explain(ctx context.Context, query interface{}, options map[string]interface{}) (*QueryPlan, error)
 }
 
@@ -341,7 +324,7 @@ type Attachment struct {
 // DB. If satisfied, it may be used to fetch meta data about an attachment. If
 // not satisfied, GetAttachment will be used instead.
 type AttachmentMetaGetter interface {
-	// GetAttachmentMetaOpts returns meta information about an attachment.
+	// GetAttachmentMeta returns meta information about an attachment.
 	GetAttachmentMeta(ctx context.Context, docID, filename string, options map[string]interface{}) (*Attachment, error)
 }
 

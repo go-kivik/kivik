@@ -125,44 +125,6 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, opts map[string]inte
 // Finder mocks a driver.DB and driver.Finder
 type Finder struct {
 	*DB
-	CreateIndexFunc func(context.Context, string, string, interface{}) error
-	DeleteIndexFunc func(context.Context, string, string) error
-	FindFunc        func(context.Context, interface{}) (driver.Rows, error)
-	GetIndexesFunc  func(context.Context) ([]driver.Index, error)
-	ExplainFunc     func(context.Context, interface{}) (*driver.QueryPlan, error)
-}
-
-// nolint:staticcheck
-var _ driver.Finder = &Finder{}
-
-// CreateIndex calls db.CreateIndexFunc
-func (db *Finder) CreateIndex(ctx context.Context, ddoc, name string, index interface{}) error {
-	return db.CreateIndexFunc(ctx, ddoc, name, index)
-}
-
-// DeleteIndex calls db.DeleteIndexFunc
-func (db *Finder) DeleteIndex(ctx context.Context, ddoc, name string) error {
-	return db.DeleteIndexFunc(ctx, ddoc, name)
-}
-
-// Find calls db.FindFunc
-func (db *Finder) Find(ctx context.Context, query interface{}) (driver.Rows, error) {
-	return db.FindFunc(ctx, query)
-}
-
-// GetIndexes calls db.GetIndexesFunc
-func (db *Finder) GetIndexes(ctx context.Context) ([]driver.Index, error) {
-	return db.GetIndexesFunc(ctx)
-}
-
-// Explain calls db.ExplainFunc
-func (db *Finder) Explain(ctx context.Context, query interface{}) (*driver.QueryPlan, error) {
-	return db.ExplainFunc(ctx, query)
-}
-
-// OptsFinder mocks a driver.DB and driver.Finder
-type OptsFinder struct {
-	*DB
 	CreateIndexFunc func(context.Context, string, string, interface{}, map[string]interface{}) error
 	DeleteIndexFunc func(context.Context, string, string, map[string]interface{}) error
 	FindFunc        func(context.Context, interface{}, map[string]interface{}) (driver.Rows, error)
@@ -170,30 +132,30 @@ type OptsFinder struct {
 	ExplainFunc     func(context.Context, interface{}, map[string]interface{}) (*driver.QueryPlan, error)
 }
 
-var _ driver.OptsFinder = &OptsFinder{}
+var _ driver.Finder = &Finder{}
 
 // CreateIndex calls db.CreateIndexFunc
-func (db *OptsFinder) CreateIndex(ctx context.Context, ddoc, name string, index interface{}, opts map[string]interface{}) error {
+func (db *Finder) CreateIndex(ctx context.Context, ddoc, name string, index interface{}, opts map[string]interface{}) error {
 	return db.CreateIndexFunc(ctx, ddoc, name, index, opts)
 }
 
 // DeleteIndex calls db.DeleteIndexFunc
-func (db *OptsFinder) DeleteIndex(ctx context.Context, ddoc, name string, opts map[string]interface{}) error {
+func (db *Finder) DeleteIndex(ctx context.Context, ddoc, name string, opts map[string]interface{}) error {
 	return db.DeleteIndexFunc(ctx, ddoc, name, opts)
 }
 
 // Find calls db.FindFunc
-func (db *OptsFinder) Find(ctx context.Context, query interface{}, opts map[string]interface{}) (driver.Rows, error) {
+func (db *Finder) Find(ctx context.Context, query interface{}, opts map[string]interface{}) (driver.Rows, error) {
 	return db.FindFunc(ctx, query, opts)
 }
 
 // GetIndexes calls db.GetIndexesFunc
-func (db *OptsFinder) GetIndexes(ctx context.Context, opts map[string]interface{}) ([]driver.Index, error) {
+func (db *Finder) GetIndexes(ctx context.Context, opts map[string]interface{}) ([]driver.Index, error) {
 	return db.GetIndexesFunc(ctx, opts)
 }
 
 // Explain calls db.ExplainFunc
-func (db *OptsFinder) Explain(ctx context.Context, query interface{}, opts map[string]interface{}) (*driver.QueryPlan, error) {
+func (db *Finder) Explain(ctx context.Context, query interface{}, opts map[string]interface{}) (*driver.QueryPlan, error) {
 	return db.ExplainFunc(ctx, query, opts)
 }
 

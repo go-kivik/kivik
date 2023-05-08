@@ -45,7 +45,7 @@ func TestFind(t *testing.T) {
 		{
 			name: "db error",
 			db: &DB{
-				driverDB: &mock.OptsFinder{
+				driverDB: &mock.Finder{
 					FindFunc: func(_ context.Context, _ interface{}, _ map[string]interface{}) (driver.Rows, error) {
 						return nil, errors.New("db error")
 					},
@@ -57,44 +57,8 @@ func TestFind(t *testing.T) {
 		{
 			name: "success",
 			db: &DB{
-				driverDB: &mock.OptsFinder{
+				driverDB: &mock.Finder{
 					FindFunc: func(_ context.Context, query interface{}, _ map[string]interface{}) (driver.Rows, error) {
-						expectedQuery := int(3)
-						if d := testy.DiffInterface(expectedQuery, query); d != nil {
-							return nil, fmt.Errorf("Unexpected query:\n%s", d)
-						}
-						return &mock.Rows{ID: "a"}, nil
-					},
-				},
-			},
-			query: int(3),
-			expected: &rows{
-				iter: &iter{
-					feed: &rowsIterator{
-						Rows: &mock.Rows{ID: "a"},
-					},
-					curVal: &driver.Row{},
-				},
-				rowsi: &mock.Rows{ID: "a"},
-			},
-		},
-		{
-			name: "old finder db error",
-			db: &DB{
-				driverDB: &mock.Finder{
-					FindFunc: func(_ context.Context, _ interface{}) (driver.Rows, error) {
-						return nil, errors.New("db error")
-					},
-				},
-			},
-			status: http.StatusInternalServerError,
-			err:    "db error",
-		},
-		{
-			name: "old finder success",
-			db: &DB{
-				driverDB: &mock.Finder{
-					FindFunc: func(_ context.Context, query interface{}) (driver.Rows, error) {
 						expectedQuery := int(3)
 						if d := testy.DiffInterface(expectedQuery, query); d != nil {
 							return nil, fmt.Errorf("Unexpected query:\n%s", d)
@@ -150,7 +114,7 @@ func TestCreateIndex(t *testing.T) {
 		{
 			testName: "db error",
 			db: &DB{
-				driverDB: &mock.OptsFinder{
+				driverDB: &mock.Finder{
 					CreateIndexFunc: func(_ context.Context, _, _ string, _ interface{}, _ map[string]interface{}) error {
 						return errors.New("db error")
 					},
@@ -162,45 +126,8 @@ func TestCreateIndex(t *testing.T) {
 		{
 			testName: "success",
 			db: &DB{
-				driverDB: &mock.OptsFinder{
+				driverDB: &mock.Finder{
 					CreateIndexFunc: func(_ context.Context, ddoc, name string, index interface{}, _ map[string]interface{}) error {
-						expectedDdoc := "foo"
-						expectedName := "bar"
-						expectedIndex := int(3)
-						if expectedDdoc != ddoc {
-							return fmt.Errorf("Unexpected ddoc: %s", ddoc)
-						}
-						if expectedName != name {
-							return fmt.Errorf("Unexpected name: %s", name)
-						}
-						if d := testy.DiffInterface(expectedIndex, index); d != nil {
-							return fmt.Errorf("Unexpected index:\n%s", d)
-						}
-						return nil
-					},
-				},
-			},
-			ddoc:  "foo",
-			name:  "bar",
-			index: int(3),
-		},
-		{
-			testName: "old finder db error",
-			db: &DB{
-				driverDB: &mock.Finder{
-					CreateIndexFunc: func(_ context.Context, _, _ string, _ interface{}) error {
-						return errors.New("db error")
-					},
-				},
-			},
-			status: http.StatusInternalServerError,
-			err:    "db error",
-		},
-		{
-			testName: "old finder success",
-			db: &DB{
-				driverDB: &mock.Finder{
-					CreateIndexFunc: func(_ context.Context, ddoc, name string, index interface{}) error {
 						expectedDdoc := "foo"
 						expectedName := "bar"
 						expectedIndex := int(3)
@@ -250,7 +177,7 @@ func TestDeleteIndex(t *testing.T) {
 		{
 			testName: "db error",
 			db: &DB{
-				driverDB: &mock.OptsFinder{
+				driverDB: &mock.Finder{
 					DeleteIndexFunc: func(_ context.Context, _, _ string, _ map[string]interface{}) error {
 						return errors.New("db error")
 					},
@@ -262,40 +189,8 @@ func TestDeleteIndex(t *testing.T) {
 		{
 			testName: "success",
 			db: &DB{
-				driverDB: &mock.OptsFinder{
+				driverDB: &mock.Finder{
 					DeleteIndexFunc: func(_ context.Context, ddoc, name string, _ map[string]interface{}) error {
-						expectedDdoc := "foo"
-						expectedName := "bar"
-						if expectedDdoc != ddoc {
-							return fmt.Errorf("Unexpected ddoc: %s", ddoc)
-						}
-						if expectedName != name {
-							return fmt.Errorf("Unexpected name: %s", name)
-						}
-						return nil
-					},
-				},
-			},
-			ddoc: "foo",
-			name: "bar",
-		},
-		{
-			testName: "old finder db error",
-			db: &DB{
-				driverDB: &mock.Finder{
-					DeleteIndexFunc: func(_ context.Context, _, _ string) error {
-						return errors.New("db error")
-					},
-				},
-			},
-			status: http.StatusInternalServerError,
-			err:    "db error",
-		},
-		{
-			testName: "old finder success",
-			db: &DB{
-				driverDB: &mock.Finder{
-					DeleteIndexFunc: func(_ context.Context, ddoc, name string) error {
 						expectedDdoc := "foo"
 						expectedName := "bar"
 						if expectedDdoc != ddoc {
@@ -340,7 +235,7 @@ func TestGetIndexes(t *testing.T) {
 		{
 			testName: "db error",
 			db: &DB{
-				driverDB: &mock.OptsFinder{
+				driverDB: &mock.Finder{
 					GetIndexesFunc: func(_ context.Context, _ map[string]interface{}) ([]driver.Index, error) {
 						return nil, errors.New("db error")
 					},
@@ -352,41 +247,8 @@ func TestGetIndexes(t *testing.T) {
 		{
 			testName: "success",
 			db: &DB{
-				driverDB: &mock.OptsFinder{
+				driverDB: &mock.Finder{
 					GetIndexesFunc: func(_ context.Context, _ map[string]interface{}) ([]driver.Index, error) {
-						return []driver.Index{
-							{Name: "a"},
-							{Name: "b"},
-						}, nil
-					},
-				},
-			},
-			expected: []Index{
-				{
-					Name: "a",
-				},
-				{
-					Name: "b",
-				},
-			},
-		},
-		{
-			testName: "old finder db error",
-			db: &DB{
-				driverDB: &mock.Finder{
-					GetIndexesFunc: func(_ context.Context) ([]driver.Index, error) {
-						return nil, errors.New("db error")
-					},
-				},
-			},
-			status: http.StatusInternalServerError,
-			err:    "db error",
-		},
-		{
-			testName: "old finder success",
-			db: &DB{
-				driverDB: &mock.Finder{
-					GetIndexesFunc: func(_ context.Context) ([]driver.Index, error) {
 						return []driver.Index{
 							{Name: "a"},
 							{Name: "b"},
@@ -433,7 +295,7 @@ func TestExplain(t *testing.T) {
 		},
 		{
 			name: "explain error",
-			db: &mock.OptsFinder{
+			db: &mock.Finder{
 				ExplainFunc: func(_ context.Context, _ interface{}, _ map[string]interface{}) (*driver.QueryPlan, error) {
 					return nil, errors.New("explain error")
 				},
@@ -443,32 +305,8 @@ func TestExplain(t *testing.T) {
 		},
 		{
 			name: "success",
-			db: &mock.OptsFinder{
+			db: &mock.Finder{
 				ExplainFunc: func(_ context.Context, query interface{}, _ map[string]interface{}) (*driver.QueryPlan, error) {
-					expectedQuery := int(3)
-					if d := testy.DiffInterface(expectedQuery, query); d != nil {
-						return nil, fmt.Errorf("Unexpected query:\n%s", d)
-					}
-					return &driver.QueryPlan{DBName: "foo"}, nil
-				},
-			},
-			query:    int(3),
-			expected: &QueryPlan{DBName: "foo"},
-		},
-		{
-			name: "old finder explain error",
-			db: &mock.Finder{
-				ExplainFunc: func(_ context.Context, _ interface{}) (*driver.QueryPlan, error) {
-					return nil, errors.New("explain error")
-				},
-			},
-			status: http.StatusInternalServerError,
-			err:    "explain error",
-		},
-		{
-			name: "old finder success",
-			db: &mock.Finder{
-				ExplainFunc: func(_ context.Context, query interface{}) (*driver.QueryPlan, error) {
 					expectedQuery := int(3)
 					if d := testy.DiffInterface(expectedQuery, query); d != nil {
 						return nil, fmt.Errorf("Unexpected query:\n%s", d)

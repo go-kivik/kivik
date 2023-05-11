@@ -830,3 +830,17 @@ func multiResultSet() ResultSet {
 		},
 	})
 }
+
+func Test_bug576(t *testing.T) {
+	rows := newRows(context.Background(), &mock.Rows{
+		NextFunc: func(*driver.Row) error {
+			return io.EOF
+		},
+	})
+
+	var result interface{}
+	err := rows.ScanDoc(&result)
+	if err != nil {
+		t.Fatal(err)
+	}
+}

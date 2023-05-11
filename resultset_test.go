@@ -830,3 +830,22 @@ func multiResultSet() ResultSet {
 		},
 	})
 }
+
+func Test_bug576(t *testing.T) {
+	rows := newRows(context.Background(), &mock.Rows{
+		NextFunc: func(*driver.Row) error {
+			return io.EOF
+		},
+	})
+
+	var result interface{}
+	err := rows.ScanDoc(&result)
+	wantErr := "no results"
+	wantStatus := http.StatusNotFound
+	if !testy.ErrorMatches(wantErr, err) {
+		t.Errorf("unexpected error: %s", err)
+	}
+	if status := HTTPStatus(err); status != wantStatus {
+		t.Errorf("Unexpected error status: %v", status)
+	}
+}

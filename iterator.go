@@ -73,24 +73,30 @@ func (i *iter) rlock() (unlock func(), err error) {
 }
 
 func (i *iter) ready() bool {
-	return i.state == stateRowReady || i.state == stateResultSetReady || i.state == stateResultSetRowReady
+	switch i.state {
+	case stateRowReady, stateResultSetReady, stateResultSetRowReady, stateClosed:
+		return true
+	}
+	return false
 }
 
 // makeReady ensures that the iterator is ready to be read from. In the case
 // that [iter.Next] has not been called, the returned unlock function will also
 // close the iterator, and set e if [iter.Close] errors and e != nil.
-func (i *iter) makeReady(e *error) (unlock func()) {
+func (i *iter) makeReady(e *error) (unlock func(), err error) {
 	i.mu.RLock()
 	if !i.ready() {
 		i.mu.RUnlock()
-		i.Next()
+		if !i.Next() {
+			return nil, &Error{Status: http.StatusNotFound, Message: "no results"}
+		}
 		return func() {
 			if err := i.Close(); err != nil && e != nil {
 				*e = err
 			}
-		}
+		}, nil
 	}
-	return i.mu.RUnlock
+	return i.mu.RUnlock, nil
 }
 
 // newIterator instantiates a new iterator.

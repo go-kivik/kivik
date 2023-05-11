@@ -840,7 +840,12 @@ func Test_bug576(t *testing.T) {
 
 	var result interface{}
 	err := rows.ScanDoc(&result)
-	if err != nil {
-		t.Fatal(err)
+	wantErr := "no results"
+	wantStatus := http.StatusNotFound
+	if !testy.ErrorMatches(wantErr, err) {
+		t.Errorf("unexpected error: %s", err)
+	}
+	if status := HTTPStatus(err); status != wantStatus {
+		t.Errorf("Unexpected error status: %v", status)
 	}
 }

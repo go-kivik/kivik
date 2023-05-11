@@ -82,9 +82,9 @@ func (i *iter) ready() bool {
 func (i *iter) makeReady(e *error) (unlock func()) {
 	i.mu.RLock()
 	if !i.ready() {
+		i.mu.RUnlock()
 		i.Next()
 		return func() {
-			i.mu.RUnlock()
 			if err := i.Close(); err != nil && e != nil {
 				*e = err
 			}

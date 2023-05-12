@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
+	"time"
 
 	"gitlab.com/flimzy/testy"
 
@@ -740,5 +741,27 @@ func TestClientClose(t *testing.T) {
 	tests.Run(t, func(t *testing.T, test tst) {
 		err := test.client.Close(context.Background())
 		testy.Error(t, test.err, err)
+	})
+
+	t.Run("blocks for open DB", func(t *testing.T) {
+		client := &Client{driverClient: &mock.Client{
+			DBFunc: func(string, map[string]interface{}) (driver.DB, error) {
+				return &mock.DB{}, nil
+			},
+		}}
+
+		db := client.DB("foo")
+
+		delay := 100 * time.Millisecond
+		start := time.Now()
+		go func() {
+			time.Sleep(delay)
+			db.Close(context.TODO())
+		}()
+
+		client.Close(context.TODO())
+		if elapsed := time.Since(start); elapsed < delay {
+			t.Errorf("client.Close() didn't block long enough")
+		}
 	})
 }

@@ -712,7 +712,7 @@ func TestMergeOptions(t *testing.T) {
 	})
 }
 
-func TestDBClose(t *testing.T) {
+func TestClientClose(t *testing.T) {
 	type tst struct {
 		client *Client
 		err    string

@@ -17,6 +17,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sync"
+	"sync/atomic"
 
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/internal/registry"
@@ -27,6 +29,10 @@ type Client struct {
 	dsn          string
 	driverName   string
 	driverClient driver.Client
+
+	// closed will be non-0 when the client has been closed
+	closed int32
+	wg     sync.WaitGroup
 }
 
 // Options is a collection of options. The keys and values are backend specific.
@@ -104,6 +110,8 @@ type Version struct {
 
 // Version returns version and vendor info about the backend.
 func (c *Client) Version(ctx context.Context) (*Version, error) {
+	c.wg.Add(1)
+	defer c.wg.Done()
 	ver, err := c.driverClient.Version(ctx)
 	if err != nil {
 		return nil, err
@@ -117,6 +125,7 @@ func (c *Client) Version(ctx context.Context) (*Version, error) {
 // passed are merged, with later values taking precidence. If any errors occur
 // at this stage, they are deferred, or may be checked directly with [DB.Err].
 func (c *Client) DB(dbName string, options ...Options) *DB {
+	c.wg.Add(1)
 	db, err := c.driverClient.DB(dbName, mergeOptions(options...))
 	return &DB{
 		client:   c,
@@ -128,21 +137,29 @@ func (c *Client) DB(dbName string, options ...Options) *DB {
 
 // AllDBs returns a list of all databases.
 func (c *Client) AllDBs(ctx context.Context, options ...Options) ([]string, error) {
+	c.wg.Add(1)
+	defer c.wg.Done()
 	return c.driverClient.AllDBs(ctx, mergeOptions(options...))
 }
 
 // DBExists returns true if the specified database exists.
 func (c *Client) DBExists(ctx context.Context, dbName string, options ...Options) (bool, error) {
+	c.wg.Add(1)
+	defer c.wg.Done()
 	return c.driverClient.DBExists(ctx, dbName, mergeOptions(options...))
 }
 
 // CreateDB creates a DB of the requested name.
 func (c *Client) CreateDB(ctx context.Context, dbName string, options ...Options) error {
+	c.wg.Add(1)
+	defer c.wg.Done()
 	return c.driverClient.CreateDB(ctx, dbName, mergeOptions(options...))
 }
 
 // DestroyDB deletes the requested DB.
 func (c *Client) DestroyDB(ctx context.Context, dbName string, options ...Options) error {
+	c.wg.Add(1)
+	defer c.wg.Done()
 	return c.driverClient.DestroyDB(ctx, dbName, mergeOptions(options...))
 }
 
@@ -162,6 +179,8 @@ func missingArg(arg string) error {
 
 // DBsStats returns database statistics about one or more databases.
 func (c *Client) DBsStats(ctx context.Context, dbnames []string) ([]*DBStats, error) {
+	c.wg.Add(1)
+	defer c.wg.Done()
 	dbstats, err := c.nativeDBsStats(ctx, dbnames)
 	switch HTTPStatus(err) {
 	case http.StatusNotFound, http.StatusNotImplemented:
@@ -203,6 +222,8 @@ func (c *Client) nativeDBsStats(ctx context.Context, dbnames []string) ([]*DBSta
 // supports the Pinger interface, it will be used. Otherwise, a fallback is
 // made to calling Version.
 func (c *Client) Ping(ctx context.Context) (bool, error) {
+	c.wg.Add(1)
+	defer c.wg.Done()
 	if pinger, ok := c.driverClient.(driver.Pinger); ok {
 		return pinger.Ping(ctx)
 	}
@@ -212,6 +233,8 @@ func (c *Client) Ping(ctx context.Context) (bool, error) {
 
 // Close cleans up any resources used by Client.
 func (c *Client) Close(ctx context.Context) error {
+	atomic.StoreInt32(&c.closed, 1)
+	c.wg.Wait()
 	if closer, ok := c.driverClient.(driver.ClientCloser); ok {
 		return closer.Close(ctx)
 	}

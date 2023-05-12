@@ -2058,6 +2058,15 @@ func TestBulkGet(t *testing.T) {
 	}
 }
 
+func newDB(db driver.DB) *DB {
+	client := &Client{}
+	client.wg.Add(1)
+	return &DB{
+		client:   client,
+		driverDB: db,
+	}
+}
+
 func TestDBClose(t *testing.T) {
 	type tst struct {
 		db  *DB
@@ -2065,22 +2074,22 @@ func TestDBClose(t *testing.T) {
 	}
 	tests := testy.NewTable()
 	tests.Add("non-closer", tst{
-		db: &DB{driverDB: &mock.DB{}},
+		db: newDB(&mock.DB{}),
 	})
 	tests.Add("error", tst{
-		db: &DB{driverDB: &mock.DBCloser{
+		db: newDB(&mock.DBCloser{
 			CloseFunc: func(_ context.Context) error {
 				return errors.New("close err")
 			},
-		}},
+		}),
 		err: "close err",
 	})
 	tests.Add("success", tst{
-		db: &DB{driverDB: &mock.DBCloser{
+		db: newDB(&mock.DBCloser{
 			CloseFunc: func(_ context.Context) error {
 				return nil
 			},
-		}},
+		}),
 	})
 
 	tests.Run(t, func(t *testing.T, test tst) {

@@ -714,6 +714,8 @@ func TestMergeOptions(t *testing.T) {
 }
 
 func TestClientClose(t *testing.T) {
+	t.Parallel()
+
 	type tst struct {
 		client *Client
 		err    string
@@ -739,29 +741,126 @@ func TestClientClose(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, test tst) {
+		t.Parallel()
 		err := test.client.Close(context.Background())
 		testy.Error(t, test.err, err)
 	})
 
-	t.Run("blocks for open DB", func(t *testing.T) {
-		client := &Client{driverClient: &mock.Client{
-			DBFunc: func(string, map[string]interface{}) (driver.DB, error) {
-				return &mock.DB{}, nil
-			},
-		}}
+	t.Run("blocks", func(t *testing.T) {
+		t.Parallel()
 
-		db := client.DB("foo")
+		const delay = 100 * time.Millisecond
 
-		delay := 100 * time.Millisecond
-		start := time.Now()
-		go func() {
-			time.Sleep(delay)
-			db.Close(context.TODO())
-		}()
-
-		client.Close(context.TODO())
-		if elapsed := time.Since(start); elapsed < delay {
-			t.Errorf("client.Close() didn't block long enough")
+		type tt struct {
+			client driver.Client
+			work   func(*Client)
 		}
+
+		tests := testy.NewTable()
+		tests.Add("open DB", tt{
+			client: &mock.Client{
+				DBFunc: func(string, map[string]interface{}) (driver.DB, error) {
+					return &mock.DB{}, nil
+				},
+			},
+			work: func(c *Client) {
+				db := c.DB("foo")
+				time.Sleep(delay)
+				_ = db.Close(context.TODO())
+			},
+		})
+		tests.Add("AllDBs", tt{
+			client: &mock.Client{
+				AllDBsFunc: func(context.Context, map[string]interface{}) ([]string, error) {
+					time.Sleep(delay)
+					return nil, nil
+				},
+			},
+			work: func(c *Client) {
+				_, _ = c.AllDBs(context.Background())
+			},
+		})
+		tests.Add("DBExists", tt{
+			client: &mock.Client{
+				DBExistsFunc: func(context.Context, string, map[string]interface{}) (bool, error) {
+					time.Sleep(delay)
+					return true, nil
+				},
+			},
+			work: func(c *Client) {
+				_, _ = c.DBExists(context.Background(), "x")
+			},
+		})
+		tests.Add("CreateDB", tt{
+			client: &mock.Client{
+				CreateDBFunc: func(context.Context, string, map[string]interface{}) error {
+					time.Sleep(delay)
+					return nil
+				},
+			},
+			work: func(c *Client) {
+				_ = c.CreateDB(context.Background(), "x")
+			},
+		})
+		tests.Add("DestroyDB", tt{
+			client: &mock.Client{
+				DestroyDBFunc: func(context.Context, string, map[string]interface{}) error {
+					time.Sleep(delay)
+					return nil
+				},
+			},
+			work: func(c *Client) {
+				_ = c.DestroyDB(context.Background(), "x")
+			},
+		})
+		tests.Add("DBsStats", tt{
+			client: &mock.DBsStatser{
+				DBsStatsFunc: func(context.Context, []string) ([]*driver.DBStats, error) {
+					time.Sleep(delay)
+					return nil, nil
+				},
+			},
+			work: func(c *Client) {
+				_, _ = c.DBsStats(context.Background(), nil)
+			},
+		})
+		tests.Add("Ping", tt{
+			client: &mock.Pinger{
+				PingFunc: func(context.Context) (bool, error) {
+					time.Sleep(delay)
+					return true, nil
+				},
+			},
+			work: func(c *Client) {
+				_, _ = c.Ping(context.Background())
+			},
+		})
+		tests.Add("Version", tt{
+			client: &mock.Client{
+				VersionFunc: func(context.Context) (*driver.Version, error) {
+					time.Sleep(delay)
+					return &driver.Version{}, nil
+				},
+			},
+			work: func(c *Client) {
+				_, _ = c.Version(context.Background())
+			},
+		})
+
+		tests.Run(t, func(t *testing.T, tt tt) {
+			t.Parallel()
+
+			c := &Client{
+				driverClient: tt.client,
+			}
+
+			start := time.Now()
+			go tt.work(c)
+			time.Sleep(delay / 2)
+			_ = c.Close(context.TODO())
+			if elapsed := time.Since(start); elapsed < delay {
+				t.Errorf("client.Close() didn't block long enough (%v < %v)", elapsed, delay)
+			}
+		})
 	})
 }

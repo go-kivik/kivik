@@ -110,6 +110,9 @@ type Version struct {
 
 // Version returns version and vendor info about the backend.
 func (c *Client) Version(ctx context.Context) (*Version, error) {
+	if atomic.LoadInt32(&c.closed) > 0 {
+		return nil, ErrClientClosed
+	}
 	c.wg.Add(1)
 	defer c.wg.Done()
 	ver, err := c.driverClient.Version(ctx)
@@ -125,6 +128,11 @@ func (c *Client) Version(ctx context.Context) (*Version, error) {
 // passed are merged, with later values taking precidence. If any errors occur
 // at this stage, they are deferred, or may be checked directly with [DB.Err].
 func (c *Client) DB(dbName string, options ...Options) *DB {
+	if atomic.LoadInt32(&c.closed) > 0 {
+		return &DB{
+			err: ErrClientClosed,
+		}
+	}
 	c.wg.Add(1)
 	db, err := c.driverClient.DB(dbName, mergeOptions(options...))
 	return &DB{
@@ -137,6 +145,9 @@ func (c *Client) DB(dbName string, options ...Options) *DB {
 
 // AllDBs returns a list of all databases.
 func (c *Client) AllDBs(ctx context.Context, options ...Options) ([]string, error) {
+	if atomic.LoadInt32(&c.closed) > 0 {
+		return nil, ErrClientClosed
+	}
 	c.wg.Add(1)
 	defer c.wg.Done()
 	return c.driverClient.AllDBs(ctx, mergeOptions(options...))
@@ -144,6 +155,9 @@ func (c *Client) AllDBs(ctx context.Context, options ...Options) ([]string, erro
 
 // DBExists returns true if the specified database exists.
 func (c *Client) DBExists(ctx context.Context, dbName string, options ...Options) (bool, error) {
+	if atomic.LoadInt32(&c.closed) > 0 {
+		return false, ErrClientClosed
+	}
 	c.wg.Add(1)
 	defer c.wg.Done()
 	return c.driverClient.DBExists(ctx, dbName, mergeOptions(options...))
@@ -151,6 +165,9 @@ func (c *Client) DBExists(ctx context.Context, dbName string, options ...Options
 
 // CreateDB creates a DB of the requested name.
 func (c *Client) CreateDB(ctx context.Context, dbName string, options ...Options) error {
+	if atomic.LoadInt32(&c.closed) > 0 {
+		return ErrClientClosed
+	}
 	c.wg.Add(1)
 	defer c.wg.Done()
 	return c.driverClient.CreateDB(ctx, dbName, mergeOptions(options...))
@@ -158,6 +175,9 @@ func (c *Client) CreateDB(ctx context.Context, dbName string, options ...Options
 
 // DestroyDB deletes the requested DB.
 func (c *Client) DestroyDB(ctx context.Context, dbName string, options ...Options) error {
+	if atomic.LoadInt32(&c.closed) > 0 {
+		return ErrClientClosed
+	}
 	c.wg.Add(1)
 	defer c.wg.Done()
 	return c.driverClient.DestroyDB(ctx, dbName, mergeOptions(options...))
@@ -179,6 +199,9 @@ func missingArg(arg string) error {
 
 // DBsStats returns database statistics about one or more databases.
 func (c *Client) DBsStats(ctx context.Context, dbnames []string) ([]*DBStats, error) {
+	if atomic.LoadInt32(&c.closed) > 0 {
+		return nil, ErrClientClosed
+	}
 	c.wg.Add(1)
 	defer c.wg.Done()
 	dbstats, err := c.nativeDBsStats(ctx, dbnames)
@@ -222,6 +245,9 @@ func (c *Client) nativeDBsStats(ctx context.Context, dbnames []string) ([]*DBSta
 // supports the Pinger interface, it will be used. Otherwise, a fallback is
 // made to calling Version.
 func (c *Client) Ping(ctx context.Context) (bool, error) {
+	if atomic.LoadInt32(&c.closed) > 0 {
+		return false, ErrClientClosed
+	}
 	c.wg.Add(1)
 	defer c.wg.Done()
 	if pinger, ok := c.driverClient.(driver.Pinger); ok {
@@ -231,7 +257,10 @@ func (c *Client) Ping(ctx context.Context) (bool, error) {
 	return err == nil, err
 }
 
-// Close cleans up any resources used by Client.
+// Close cleans up any resources used by Client. Close is safe to call
+// concurrently with other operations and will block until all other operations
+// finish. After calling Close, any other client operations will return
+// ErrClientClosed.
 func (c *Client) Close(ctx context.Context) error {
 	atomic.StoreInt32(&c.closed, 1)
 	c.wg.Wait()

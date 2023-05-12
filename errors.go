@@ -19,6 +19,35 @@ import (
 	"strings"
 )
 
+type err int
+
+var (
+	_ error       = err(0)
+	_ statusCoder = err(0)
+)
+
+const (
+	// ErrClientClosed is returned by any client operations after [Client.Close]
+	// has been called.
+	ErrClientClosed err = iota
+)
+
+func (e err) Error() string {
+	switch e {
+	case ErrClientClosed:
+		return "client closed"
+	}
+	return "unknown error"
+}
+
+func (e err) HTTPStatus() int {
+	switch e {
+	case ErrClientClosed:
+		return http.StatusServiceUnavailable
+	}
+	return http.StatusInternalServerError
+}
+
 // Error represents an error returned by Kivik.
 //
 // This type definition is not guaranteed to remain stable, or even exported.

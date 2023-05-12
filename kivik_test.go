@@ -141,6 +141,14 @@ func TestVersion(t *testing.T) {
 			},
 			expected: &Version{Version: "foo"},
 		},
+		{
+			name: "closed",
+			client: &Client{
+				closed: 1,
+			},
+			status: http.StatusServiceUnavailable,
+			err:    "client closed",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -204,6 +212,14 @@ func TestDB(t *testing.T) {
 				},
 			}
 		}(),
+		{
+			name: "closed",
+			client: &Client{
+				closed: 1,
+			},
+			status: http.StatusServiceUnavailable,
+			err:    "client closed",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -253,6 +269,14 @@ func TestAllDBs(t *testing.T) {
 			},
 			options:  map[string]interface{}{"foo": 123},
 			expected: []string{"a", "b", "c"},
+		},
+		{
+			name: "closed",
+			client: &Client{
+				closed: 1,
+			},
+			status: http.StatusServiceUnavailable,
+			err:    "client closed",
 		},
 	}
 	for _, test := range tests {
@@ -308,6 +332,14 @@ func TestDBExists(t *testing.T) {
 			dbName:   "foo",
 			options:  map[string]interface{}{"foo": 123},
 			expected: true,
+		},
+		{
+			name: "closed",
+			client: &Client{
+				closed: 1,
+			},
+			status: http.StatusServiceUnavailable,
+			err:    "client closed",
 		},
 	}
 	for _, test := range tests {
@@ -365,6 +397,14 @@ func TestCreateDB(t *testing.T) {
 			dbName: "foo",
 			opts:   map[string]interface{}{"foo": 123},
 		},
+		{
+			name: "closed",
+			client: &Client{
+				closed: 1,
+			},
+			status: http.StatusServiceUnavailable,
+			err:    "client closed",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -414,6 +454,14 @@ func TestDestroyDB(t *testing.T) {
 			},
 			dbName: "foo",
 			opts:   map[string]interface{}{"foo": 123},
+		},
+		{
+			name: "closed",
+			client: &Client{
+				closed: 1,
+			},
+			status: http.StatusServiceUnavailable,
+			err:    "client closed",
 		},
 	}
 	for _, test := range tests {
@@ -591,7 +639,7 @@ func TestDBsStats(t *testing.T) {
 			},
 			dbnames: []string{"foo", "bar"},
 			err:     "fallback failure",
-			status:  500,
+			status:  http.StatusInternalServerError,
 		},
 		{
 			name: "fallback db connect error",
@@ -604,7 +652,15 @@ func TestDBsStats(t *testing.T) {
 			},
 			dbnames: []string{"foo", "bar"},
 			err:     "db conn failure",
-			status:  500,
+			status:  http.StatusInternalServerError,
+		},
+		{
+			name: "closed",
+			client: &Client{
+				closed: 1,
+			},
+			status: http.StatusServiceUnavailable,
+			err:    "client closed",
 		},
 	}
 	for _, test := range tests {
@@ -647,6 +703,13 @@ func TestPing(t *testing.T) {
 				},
 			},
 			expected: true,
+		},
+		{
+			name: "closed",
+			client: &Client{
+				closed: 1,
+			},
+			err: "client closed",
 		},
 	}
 

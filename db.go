@@ -147,6 +147,10 @@ func (db *DB) GetRev(ctx context.Context, docID string, options ...Options) (rev
 	}
 	opts := mergeOptions(options...)
 	if r, ok := db.driverDB.(driver.RevGetter); ok {
+		if err := db.client.startQuery(); err != nil {
+			return "", err
+		}
+		defer db.client.endQuery()
 		return r.GetRev(ctx, docID, opts)
 	}
 	row := db.Get(ctx, docID, opts)
@@ -165,6 +169,10 @@ func (db *DB) CreateDoc(ctx context.Context, doc interface{}, options ...Options
 	if db.err != nil {
 		return "", "", db.err
 	}
+	if err := db.client.startQuery(); err != nil {
+		return "", "", err
+	}
+	defer db.client.endQuery()
 	return db.driverDB.CreateDoc(ctx, doc, mergeOptions(options...))
 }
 
@@ -234,6 +242,10 @@ func (db *DB) Put(ctx context.Context, docID string, doc interface{}, options ..
 	if docID == "" {
 		return "", missingArg("docID")
 	}
+	if err := db.client.startQuery(); err != nil {
+		return "", err
+	}
+	defer db.client.endQuery()
 	i, err := normalizeFromJSON(doc)
 	if err != nil {
 		return "", err
@@ -247,6 +259,10 @@ func (db *DB) Delete(ctx context.Context, docID, rev string, options ...Options)
 	if db.err != nil {
 		return "", db.err
 	}
+	if err := db.client.startQuery(); err != nil {
+		return "", err
+	}
+	defer db.client.endQuery()
 	if docID == "" {
 		return "", missingArg("docID")
 	}
@@ -264,6 +280,10 @@ func (db *DB) Flush(ctx context.Context) error {
 	if db.err != nil {
 		return db.err
 	}
+	if err := db.client.startQuery(); err != nil {
+		return err
+	}
+	defer db.client.endQuery()
 	if flusher, ok := db.driverDB.(driver.Flusher); ok {
 		return flusher.Flush(ctx)
 	}
@@ -317,6 +337,10 @@ func (db *DB) Stats(ctx context.Context) (*DBStats, error) {
 	if db.err != nil {
 		return nil, db.err
 	}
+	if err := db.client.startQuery(); err != nil {
+		return nil, err
+	}
+	defer db.client.endQuery()
 	i, err := db.driverDB.Stats(ctx)
 	if err != nil {
 		return nil, err
@@ -357,6 +381,10 @@ func (db *DB) Compact(ctx context.Context) error {
 	if db.err != nil {
 		return db.err
 	}
+	if err := db.client.startQuery(); err != nil {
+		return err
+	}
+	defer db.client.endQuery()
 	return db.driverDB.Compact(ctx)
 }
 
@@ -370,6 +398,13 @@ func (db *DB) Compact(ctx context.Context) error {
 // particular, CouchDB triggers the compaction and returns immediately, whereas
 // PouchDB waits until compaction has completed, before returning.
 func (db *DB) CompactView(ctx context.Context, ddocID string) error {
+	if db.err != nil {
+		return db.err
+	}
+	if err := db.client.startQuery(); err != nil {
+		return err
+	}
+	defer db.client.endQuery()
 	return db.driverDB.CompactView(ctx, ddocID)
 }
 
@@ -381,6 +416,10 @@ func (db *DB) ViewCleanup(ctx context.Context) error {
 	if db.err != nil {
 		return db.err
 	}
+	if err := db.client.startQuery(); err != nil {
+		return err
+	}
+	defer db.client.endQuery()
 	return db.driverDB.ViewCleanup(ctx)
 }
 
@@ -391,6 +430,10 @@ func (db *DB) Security(ctx context.Context) (*Security, error) {
 	if db.err != nil {
 		return nil, db.err
 	}
+	if err := db.client.startQuery(); err != nil {
+		return nil, err
+	}
+	defer db.client.endQuery()
 	s, err := db.driverDB.Security(ctx)
 	if err != nil {
 		return nil, err
@@ -411,6 +454,10 @@ func (db *DB) SetSecurity(ctx context.Context, security *Security) error {
 	if security == nil {
 		return missingArg("security")
 	}
+	if err := db.client.startQuery(); err != nil {
+		return err
+	}
+	defer db.client.endQuery()
 	sec := &driver.Security{
 		Admins:  driver.Members(security.Admins),
 		Members: driver.Members(security.Members),
@@ -434,6 +481,10 @@ func (db *DB) Copy(ctx context.Context, targetID, sourceID string, options ...Op
 	if sourceID == "" {
 		return "", missingArg("sourceID")
 	}
+	if err := db.client.startQuery(); err != nil {
+		return "", err
+	}
+	defer db.client.endQuery()
 	opts := mergeOptions(options...)
 	if copier, ok := db.driverDB.(driver.Copier); ok {
 		return copier.Copy(ctx, targetID, sourceID, opts)
@@ -460,6 +511,10 @@ func (db *DB) PutAttachment(ctx context.Context, docID string, att *Attachment, 
 	if e := att.validate(); e != nil {
 		return "", e
 	}
+	if err := db.client.startQuery(); err != nil {
+		return "", err
+	}
+	defer db.client.endQuery()
 	a := driver.Attachment(*att)
 	var rev string
 	opts := mergeOptions(options...)
@@ -474,6 +529,10 @@ func (db *DB) GetAttachment(ctx context.Context, docID, filename string, options
 	if db.err != nil {
 		return nil, db.err
 	}
+	if err := db.client.startQuery(); err != nil {
+		return nil, err
+	}
+	defer db.client.endQuery()
 	if docID == "" {
 		return nil, missingArg("docID")
 	}
@@ -511,6 +570,10 @@ func (db *DB) GetAttachmentMeta(ctx context.Context, docID, filename string, opt
 	}
 	var att *Attachment
 	if metaer, ok := db.driverDB.(driver.AttachmentMetaGetter); ok {
+		if err := db.client.startQuery(); err != nil {
+			return nil, err
+		}
+		defer db.client.endQuery()
 		a, err := metaer.GetAttachmentMeta(ctx, docID, filename, mergeOptions(options...))
 		if err != nil {
 			return nil, err
@@ -538,6 +601,10 @@ func (db *DB) DeleteAttachment(ctx context.Context, docID, rev, filename string,
 	if db.err != nil {
 		return "", db.err
 	}
+	if err := db.client.startQuery(); err != nil {
+		return "", err
+	}
+	defer db.client.endQuery()
 	if docID == "" {
 		return "", missingArg("docID")
 	}
@@ -573,6 +640,10 @@ func (db *DB) Purge(ctx context.Context, docRevMap map[string][]string) (*PurgeR
 	if db.err != nil {
 		return nil, db.err
 	}
+	if err := db.client.startQuery(); err != nil {
+		return nil, err
+	}
+	defer db.client.endQuery()
 	if purger, ok := db.driverDB.(driver.Purger); ok {
 		res, err := purger.Purge(ctx, docRevMap)
 		if err != nil {
@@ -684,6 +755,10 @@ func (db *DB) PartitionStats(ctx context.Context, name string) (*PartitionStats,
 	if db.err != nil {
 		return nil, db.err
 	}
+	if err := db.client.startQuery(); err != nil {
+		return nil, err
+	}
+	defer db.client.endQuery()
 	if pdb, ok := db.driverDB.(driver.PartitionedDB); ok {
 		stats, err := pdb.PartitionStats(ctx, name)
 		if err != nil {

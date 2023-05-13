@@ -208,6 +208,7 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 	tests := testy.NewTable()
 	tests.Add("invalid JSON", tt{
 		db: &DB{
+			client: &Client{},
 			driverDB: &mock.BulkDocer{
 				BulkDocsFunc: func(_ context.Context, docs []interface{}, _ map[string]interface{}) (driver.BulkResults, error) {
 					_, err := json.Marshal(docs)
@@ -221,6 +222,7 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 	})
 	tests.Add("emulated BulkDocs support", tt{
 		db: &DB{
+			client: &Client{},
 			driverDB: &mock.DB{
 				PutFunc: func(_ context.Context, docID string, doc interface{}, opts map[string]interface{}) (string, error) {
 					if docID == "error" {
@@ -273,6 +275,7 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 	})
 	tests.Add("new_edits", tt{
 		db: &DB{
+			client: &Client{},
 			driverDB: &mock.BulkDocer{
 				BulkDocsFunc: func(_ context.Context, docs []interface{}, opts map[string]interface{}) (driver.BulkResults, error) {
 					expectedDocs := []interface{}{map[string]string{"_id": "foo"}, 123}

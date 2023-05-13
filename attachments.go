@@ -96,6 +96,9 @@ func (b *bufCloser) Close() error { return nil }
 
 // validate returns an error if the attachment is invalid.
 func (a *Attachment) validate() error {
+	if a == nil {
+		return missingArg("attachment")
+	}
 	if a.Filename == "" {
 		return missingArg("filename")
 	}

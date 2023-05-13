@@ -32,10 +32,14 @@ const (
 	ErrClientClosed err = iota
 )
 
+const (
+	errClientClosed = "client closed"
+)
+
 func (e err) Error() string {
 	switch e {
 	case ErrClientClosed:
-		return "client closed"
+		return errClientClosed
 	}
 	return "unknown error"
 }

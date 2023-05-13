@@ -106,6 +106,7 @@ func TestCreateIndex(t *testing.T) {
 		{
 			testName: "non-finder",
 			db: &DB{
+				client:   &Client{},
 				driverDB: &mock.DB{},
 			},
 			status: http.StatusNotImplemented,
@@ -114,6 +115,7 @@ func TestCreateIndex(t *testing.T) {
 		{
 			testName: "db error",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.Finder{
 					CreateIndexFunc: func(_ context.Context, _, _ string, _ interface{}, _ map[string]interface{}) error {
 						return errors.New("db error")
@@ -126,6 +128,7 @@ func TestCreateIndex(t *testing.T) {
 		{
 			testName: "success",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.Finder{
 					CreateIndexFunc: func(_ context.Context, ddoc, name string, index interface{}, _ map[string]interface{}) error {
 						expectedDdoc := "foo"
@@ -148,6 +151,25 @@ func TestCreateIndex(t *testing.T) {
 			name:  "bar",
 			index: int(3),
 		},
+		{
+			name: "closed",
+			db: &DB{
+				client: &Client{
+					closed: 1,
+				},
+			},
+			status: http.StatusServiceUnavailable,
+			err:    errClientClosed,
+		},
+		{
+			name: "db error",
+			db: &DB{
+				client: &Client{},
+				err:    errors.New("db error"),
+			},
+			status: http.StatusInternalServerError,
+			err:    "db error",
+		},
 	}
 
 	for _, test := range tests {
@@ -169,6 +191,7 @@ func TestDeleteIndex(t *testing.T) {
 		{
 			testName: "non-finder",
 			db: &DB{
+				client:   &Client{},
 				driverDB: &mock.DB{},
 			},
 			status: http.StatusNotImplemented,
@@ -177,6 +200,7 @@ func TestDeleteIndex(t *testing.T) {
 		{
 			testName: "db error",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.Finder{
 					DeleteIndexFunc: func(_ context.Context, _, _ string, _ map[string]interface{}) error {
 						return errors.New("db error")
@@ -189,6 +213,7 @@ func TestDeleteIndex(t *testing.T) {
 		{
 			testName: "success",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.Finder{
 					DeleteIndexFunc: func(_ context.Context, ddoc, name string, _ map[string]interface{}) error {
 						expectedDdoc := "foo"
@@ -205,6 +230,24 @@ func TestDeleteIndex(t *testing.T) {
 			},
 			ddoc: "foo",
 			name: "bar",
+		},
+		{
+			testName: errClientClosed,
+			db: &DB{
+				client: &Client{
+					closed: 1,
+				},
+			},
+			status: http.StatusServiceUnavailable,
+			err:    errClientClosed,
+		},
+		{
+			testName: "db error",
+			db: &DB{
+				err: errors.New("db error"),
+			},
+			status: http.StatusInternalServerError,
+			err:    "db error",
 		},
 	}
 
@@ -227,6 +270,7 @@ func TestGetIndexes(t *testing.T) {
 		{
 			testName: "non-finder",
 			db: &DB{
+				client:   &Client{},
 				driverDB: &mock.DB{},
 			},
 			status: http.StatusNotImplemented,
@@ -235,6 +279,7 @@ func TestGetIndexes(t *testing.T) {
 		{
 			testName: "db error",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.Finder{
 					GetIndexesFunc: func(_ context.Context, _ map[string]interface{}) ([]driver.Index, error) {
 						return nil, errors.New("db error")
@@ -247,6 +292,7 @@ func TestGetIndexes(t *testing.T) {
 		{
 			testName: "success",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.Finder{
 					GetIndexesFunc: func(_ context.Context, _ map[string]interface{}) ([]driver.Index, error) {
 						return []driver.Index{
@@ -264,6 +310,24 @@ func TestGetIndexes(t *testing.T) {
 					Name: "b",
 				},
 			},
+		},
+		{
+			testName: errClientClosed,
+			db: &DB{
+				client: &Client{
+					closed: 1,
+				},
+			},
+			status: http.StatusServiceUnavailable,
+			err:    errClientClosed,
+		},
+		{
+			testName: "db error",
+			db: &DB{
+				err: errors.New("db error"),
+			},
+			status: http.StatusInternalServerError,
+			err:    "db error",
 		},
 	}
 
@@ -290,6 +354,7 @@ func TestExplain(t *testing.T) {
 	tests := testy.NewTable()
 	tests.Add("non-finder", tt{
 		db: &DB{
+			client:   &Client{},
 			driverDB: &mock.DB{},
 		},
 		status: http.StatusNotImplemented,
@@ -297,6 +362,7 @@ func TestExplain(t *testing.T) {
 	})
 	tests.Add("explain error", tt{
 		db: &DB{
+			client: &Client{},
 			driverDB: &mock.Finder{
 				ExplainFunc: func(_ context.Context, _ interface{}, _ map[string]interface{}) (*driver.QueryPlan, error) {
 					return nil, errors.New("explain error")
@@ -308,6 +374,7 @@ func TestExplain(t *testing.T) {
 	})
 	tests.Add("success", tt{
 		db: &DB{
+			client: &Client{},
 			driverDB: &mock.Finder{
 				ExplainFunc: func(_ context.Context, query interface{}, _ map[string]interface{}) (*driver.QueryPlan, error) {
 					expectedQuery := int(3)
@@ -320,6 +387,22 @@ func TestExplain(t *testing.T) {
 		},
 		query:    int(3),
 		expected: &QueryPlan{DBName: "foo"},
+	})
+	tests.Add(errClientClosed, tt{
+		db: &DB{
+			client: &Client{
+				closed: 1,
+			},
+		},
+		status: http.StatusServiceUnavailable,
+		err:    errClientClosed,
+	})
+	tests.Add("db error", tt{
+		db: &DB{
+			err: errors.New("db error"),
+		},
+		status: http.StatusInternalServerError,
+		err:    "db error",
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {

@@ -147,7 +147,7 @@ func TestVersion(t *testing.T) {
 				closed: 1,
 			},
 			status: http.StatusServiceUnavailable,
-			err:    "client closed",
+			err:    errClientClosed,
 		},
 	}
 	for _, test := range tests {
@@ -268,7 +268,7 @@ func TestAllDBs(t *testing.T) {
 				closed: 1,
 			},
 			status: http.StatusServiceUnavailable,
-			err:    "client closed",
+			err:    errClientClosed,
 		},
 	}
 	for _, test := range tests {
@@ -331,7 +331,7 @@ func TestDBExists(t *testing.T) {
 				closed: 1,
 			},
 			status: http.StatusServiceUnavailable,
-			err:    "client closed",
+			err:    errClientClosed,
 		},
 	}
 	for _, test := range tests {
@@ -395,7 +395,7 @@ func TestCreateDB(t *testing.T) {
 				closed: 1,
 			},
 			status: http.StatusServiceUnavailable,
-			err:    "client closed",
+			err:    errClientClosed,
 		},
 	}
 	for _, test := range tests {
@@ -453,7 +453,7 @@ func TestDestroyDB(t *testing.T) {
 				closed: 1,
 			},
 			status: http.StatusServiceUnavailable,
-			err:    "client closed",
+			err:    errClientClosed,
 		},
 	}
 	for _, test := range tests {
@@ -514,7 +514,7 @@ func TestAuthenticate(t *testing.T) {
 				closed:       1,
 			},
 			status: http.StatusServiceUnavailable,
-			err:    "client closed",
+			err:    errClientClosed,
 		},
 	}
 	for _, test := range tests {
@@ -661,7 +661,7 @@ func TestDBsStats(t *testing.T) {
 				closed: 1,
 			},
 			status: http.StatusServiceUnavailable,
-			err:    "client closed",
+			err:    errClientClosed,
 		},
 	}
 	for _, test := range tests {
@@ -710,7 +710,7 @@ func TestPing(t *testing.T) {
 			client: &Client{
 				closed: 1,
 			},
-			err: "client closed",
+			err: errClientClosed,
 		},
 	}
 

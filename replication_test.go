@@ -369,6 +369,14 @@ func TestGetReplications(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "closed",
+			client: &Client{
+				closed: 1,
+			},
+			status: http.StatusServiceUnavailable,
+			err:    "client closed",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -440,6 +448,14 @@ func TestReplicate(t *testing.T) {
 				Target: "a-target",
 				irep:   &mock.Replication{ID: "a"},
 			},
+		},
+		{
+			name: "closed",
+			client: &Client{
+				closed: 1,
+			},
+			status: http.StatusServiceUnavailable,
+			err:    "client closed",
 		},
 	}
 	for _, test := range tests {

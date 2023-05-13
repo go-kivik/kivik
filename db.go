@@ -618,7 +618,6 @@ func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...O
 // Close cleans up any resources used by the DB. The default CouchDB driver
 // does not use this, the default PouchDB driver does.
 func (db *DB) Close(ctx context.Context) error {
-	defer db.client.endQuery()
 	if db.err != nil {
 		return db.err
 	}

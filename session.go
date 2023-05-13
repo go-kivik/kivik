@@ -42,6 +42,10 @@ type Session struct {
 
 // Session returns information about the currently authenticated user.
 func (c *Client) Session(ctx context.Context) (*Session, error) {
+	if err := c.startQuery(); err != nil {
+		return nil, err
+	}
+	defer c.endQuery()
 	if sessioner, ok := c.driverClient.(driver.Sessioner); ok {
 		session, err := sessioner.Session(ctx)
 		if err != nil {

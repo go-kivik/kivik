@@ -212,14 +212,6 @@ func TestDB(t *testing.T) {
 				},
 			}
 		}(),
-		{
-			name: "closed",
-			client: &Client{
-				closed: 1,
-			},
-			status: http.StatusServiceUnavailable,
-			err:    "client closed",
-		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -514,6 +506,15 @@ func TestAuthenticate(t *testing.T) {
 				},
 			},
 			auth: int(3),
+		},
+		{
+			name: "closed",
+			client: &Client{
+				driverClient: &mock.Authenticator{},
+				closed:       1,
+			},
+			status: http.StatusServiceUnavailable,
+			err:    "client closed",
 		},
 	}
 	for _, test := range tests {
@@ -820,18 +821,6 @@ func TestClientClose(t *testing.T) {
 		}
 
 		tests := testy.NewTable()
-		tests.Add("open DB", tt{
-			client: &mock.Client{
-				DBFunc: func(string, map[string]interface{}) (driver.DB, error) {
-					return &mock.DB{}, nil
-				},
-			},
-			work: func(c *Client) {
-				db := c.DB("foo")
-				time.Sleep(delay)
-				_ = db.Close(context.TODO())
-			},
-		})
 		tests.Add("AllDBs", tt{
 			client: &mock.Client{
 				AllDBsFunc: func(context.Context, map[string]interface{}) ([]string, error) {

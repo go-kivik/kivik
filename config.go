@@ -34,6 +34,10 @@ var configNotImplemented = &Error{Status: http.StatusNotImplemented, Message: "k
 //
 // See http://docs.couchdb.org/en/stable/api/server/configuration.html#get--_node-node-name-_config
 func (c *Client) Config(ctx context.Context, node string) (Config, error) {
+	if err := c.startQuery(); err != nil {
+		return nil, err
+	}
+	defer c.endQuery()
 	if configer, ok := c.driverClient.(driver.Configer); ok {
 		driverCf, err := configer.Config(ctx, node)
 		if err != nil {
@@ -53,6 +57,10 @@ func (c *Client) Config(ctx context.Context, node string) (Config, error) {
 //
 // See http://docs.couchdb.org/en/stable/api/server/configuration.html#node-node-name-config-section
 func (c *Client) ConfigSection(ctx context.Context, node, section string) (ConfigSection, error) {
+	if err := c.startQuery(); err != nil {
+		return nil, err
+	}
+	defer c.endQuery()
 	if configer, ok := c.driverClient.(driver.Configer); ok {
 		sec, err := configer.ConfigSection(ctx, node, section)
 		return ConfigSection(sec), err
@@ -64,6 +72,10 @@ func (c *Client) ConfigSection(ctx context.Context, node, section string) (Confi
 //
 // See http://docs.couchdb.org/en/stable/api/server/configuration.html#get--_node-node-name-_config-section-key
 func (c *Client) ConfigValue(ctx context.Context, node, section, key string) (string, error) {
+	if err := c.startQuery(); err != nil {
+		return "", err
+	}
+	defer c.endQuery()
 	if configer, ok := c.driverClient.(driver.Configer); ok {
 		return configer.ConfigValue(ctx, node, section, key)
 	}
@@ -75,6 +87,10 @@ func (c *Client) ConfigValue(ctx context.Context, node, section, key string) (st
 //
 // See http://docs.couchdb.org/en/stable/api/server/configuration.html#put--_node-node-name-_config-section-key
 func (c *Client) SetConfigValue(ctx context.Context, node, section, key, value string) (string, error) {
+	if err := c.startQuery(); err != nil {
+		return "", err
+	}
+	defer c.endQuery()
 	if configer, ok := c.driverClient.(driver.Configer); ok {
 		return configer.SetConfigValue(ctx, node, section, key, value)
 	}
@@ -86,6 +102,10 @@ func (c *Client) SetConfigValue(ctx context.Context, node, section, key, value s
 //
 // See http://docs.couchdb.org/en/stable/api/server/configuration.html#delete--_node-node-name-_config-section-key
 func (c *Client) DeleteConfigKey(ctx context.Context, node, section, key string) (string, error) {
+	if err := c.startQuery(); err != nil {
+		return "", err
+	}
+	defer c.endQuery()
 	if configer, ok := c.driverClient.(driver.Configer); ok {
 		return configer.DeleteConfigKey(ctx, node, section, key)
 	}

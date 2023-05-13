@@ -144,9 +144,6 @@ func (c *Client) Version(ctx context.Context) (*Version, error) {
 // passed are merged, with later values taking precidence. If any errors occur
 // at this stage, they are deferred, or may be checked directly with [DB.Err].
 func (c *Client) DB(dbName string, options ...Options) *DB {
-	if err := c.startQuery(); err != nil {
-		return &DB{err: err}
-	}
 	db, err := c.driverClient.DB(dbName, mergeOptions(options...))
 	return &DB{
 		client:   c,
@@ -196,6 +193,10 @@ func (c *Client) DestroyDB(ctx context.Context, dbName string, options ...Option
 // is driver-specific. If the driver does not understand the authenticator, an
 // error will be returned.
 func (c *Client) Authenticate(ctx context.Context, a interface{}) error {
+	if err := c.startQuery(); err != nil {
+		return err
+	}
+	defer c.endQuery()
 	if auth, ok := c.driverClient.(driver.Authenticator); ok {
 		return auth.Authenticate(ctx, a)
 	}

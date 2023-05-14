@@ -728,13 +728,15 @@ type RevDiff struct {
 // the document ID.
 type Diffs map[string]RevDiff
 
-// RevsDiff the subset of document/revision IDs that do not correspond to
-// revisions stored in the database. This is used by the replication protocol,
-// and is normally never needed otherwise.  revMap must marshal to the expected
-// format.
+// RevsDiff returns the subset of document/revision IDs that do not correspond
+// to revisions stored in the database. This is used by the replication
+// protocol, and is normally never needed otherwise.  revMap must marshal to the
+// expected format.
 //
-// Use [ResultSet.ID] to return the current document ID, and ScanValue to access
-// the full JSON value, which should be of the JSON format:
+// Use [ResultSet.ID] to return the current document ID, and
+// [ResultSet.ScanValue] to access the full JSON value, which should be of the
+// JSON format. The [RevsDiff] type matches this format and is provided as a
+// convenience for unmarshaling.
 //
 //	{
 //	    "missing": ["rev1",...],

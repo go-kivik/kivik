@@ -196,31 +196,32 @@ func TestDocsInterfaceSlice(t *testing.T) {
 }
 
 func TestBulkDocs(t *testing.T) { // nolint: gocyclo
-	type bdTest struct {
-		name     string
-		dbDriver driver.DB
+	type tt struct {
+		db       *DB
 		docs     []interface{}
 		options  Options
 		expected *BulkResults
 		status   int
 		err      string
 	}
-	tests := []bdTest{
-		{
-			name: "invalid JSON",
-			dbDriver: &mock.BulkDocer{
+
+	tests := testy.NewTable()
+	tests.Add("invalid JSON", tt{
+		db: &DB{
+			driverDB: &mock.BulkDocer{
 				BulkDocsFunc: func(_ context.Context, docs []interface{}, _ map[string]interface{}) (driver.BulkResults, error) {
 					_, err := json.Marshal(docs)
 					return nil, err
 				},
 			},
-			docs:   []interface{}{json.RawMessage("invalid json")},
-			status: http.StatusInternalServerError,
-			err:    "json: error calling MarshalJSON for type json.RawMessage: invalid character 'i' looking for beginning of value",
 		},
-		{
-			name: "emulated BulkDocs support",
-			dbDriver: &mock.DB{
+		docs:   []interface{}{json.RawMessage("invalid json")},
+		status: http.StatusInternalServerError,
+		err:    "json: error calling MarshalJSON for type json.RawMessage: invalid character 'i' looking for beginning of value",
+	})
+	tests.Add("emulated BulkDocs support", tt{
+		db: &DB{
+			driverDB: &mock.DB{
 				PutFunc: func(_ context.Context, docID string, doc interface{}, opts map[string]interface{}) (string, error) {
 					if docID == "error" {
 						return "", errors.New("error")
@@ -248,30 +249,31 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 					return "newDocID", "1-xxx", nil // nolint: goconst
 				},
 			},
-			docs: []interface{}{
-				map[string]string{"_id": "foo"},
-				123,
-				map[string]string{"_id": "error"},
-			},
-			options: testOptions,
-			expected: &BulkResults{
-				iter: &iter{
-					feed: &bulkIterator{
-						BulkResults: &emulatedBulkResults{
-							results: []driver.BulkResult{
-								{ID: "foo", Rev: "2-xxx"},
-								{ID: "newDocID", Rev: "1-xxx"},
-								{ID: "error", Error: errors.New("error")},
-							},
+		},
+		docs: []interface{}{
+			map[string]string{"_id": "foo"},
+			123,
+			map[string]string{"_id": "error"},
+		},
+		options: testOptions,
+		expected: &BulkResults{
+			iter: &iter{
+				feed: &bulkIterator{
+					BulkResults: &emulatedBulkResults{
+						results: []driver.BulkResult{
+							{ID: "foo", Rev: "2-xxx"},
+							{ID: "newDocID", Rev: "1-xxx"},
+							{ID: "error", Error: errors.New("error")},
 						},
 					},
-					curVal: &driver.BulkResult{},
 				},
+				curVal: &driver.BulkResult{},
 			},
 		},
-		{
-			name: "new_edits",
-			dbDriver: &mock.BulkDocer{
+	})
+	tests.Add("new_edits", tt{
+		db: &DB{
+			driverDB: &mock.BulkDocer{
 				BulkDocsFunc: func(_ context.Context, docs []interface{}, opts map[string]interface{}) (driver.BulkResults, error) {
 					expectedDocs := []interface{}{map[string]string{"_id": "foo"}, 123}
 					expectedOpts := map[string]interface{}{"new_edits": true}
@@ -284,32 +286,30 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 					return &mock.BulkResults{ID: "foo"}, nil
 				},
 			},
-			docs: []interface{}{
-				map[string]string{"_id": "foo"},
-				123,
-			},
-			options: Options{"new_edits": true},
-			expected: &BulkResults{
-				iter: &iter{
-					feed: &bulkIterator{
-						BulkResults: &mock.BulkResults{ID: "foo"},
-					},
-					curVal: &driver.BulkResult{},
+		},
+		docs: []interface{}{
+			map[string]string{"_id": "foo"},
+			123,
+		},
+		options: Options{"new_edits": true},
+		expected: &BulkResults{
+			iter: &iter{
+				feed: &bulkIterator{
+					BulkResults: &mock.BulkResults{ID: "foo"},
 				},
+				curVal: &driver.BulkResult{},
 			},
 		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			db := &DB{driverDB: test.dbDriver}
-			result, err := db.BulkDocs(context.Background(), test.docs, test.options)
-			testy.StatusError(t, test.err, test.status, err)
-			result.cancel = nil // Determinism
-			if d := testy.DiffInterface(test.expected, result); d != nil {
-				t.Error(d)
-			}
-		})
-	}
+	})
+
+	tests.Run(t, func(t *testing.T, tt tt) {
+		result, err := tt.db.BulkDocs(context.Background(), tt.docs, tt.options)
+		testy.StatusError(t, tt.err, tt.status, err)
+		result.cancel = nil // Determinism
+		if d := testy.DiffInterface(tt.expected, result); d != nil {
+			t.Error(d)
+		}
+	})
 }
 
 func TestEmulatedBulkResults(t *testing.T) {

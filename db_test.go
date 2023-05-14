@@ -2065,7 +2065,7 @@ func TestBulkGet(t *testing.T) {
 	}
 }
 
-func TestClientClose(t *testing.T) {
+func TestDBClose(t *testing.T) {
 	type tst struct {
 		db  *DB
 		err string

@@ -279,33 +279,36 @@ func TestGetIndexes(t *testing.T) {
 }
 
 func TestExplain(t *testing.T) {
-	tests := []struct {
-		name     string
-		db       driver.DB
+	type tt struct {
+		db       *DB
 		query    interface{}
 		expected *QueryPlan
 		status   int
 		err      string
-	}{
-		{
-			name:   "non-finder",
-			db:     &mock.DB{},
-			status: http.StatusNotImplemented,
-			err:    "kivik: driver does not support Find interface",
+	}
+
+	tests := testy.NewTable()
+	tests.Add("non-finder", tt{
+		db: &DB{
+			driverDB: &mock.DB{},
 		},
-		{
-			name: "explain error",
-			db: &mock.Finder{
+		status: http.StatusNotImplemented,
+		err:    "kivik: driver does not support Find interface",
+	})
+	tests.Add("explain error", tt{
+		db: &DB{
+			driverDB: &mock.Finder{
 				ExplainFunc: func(_ context.Context, _ interface{}, _ map[string]interface{}) (*driver.QueryPlan, error) {
 					return nil, errors.New("explain error")
 				},
 			},
-			status: http.StatusInternalServerError,
-			err:    "explain error",
 		},
-		{
-			name: "success",
-			db: &mock.Finder{
+		status: http.StatusInternalServerError,
+		err:    "explain error",
+	})
+	tests.Add("success", tt{
+		db: &DB{
+			driverDB: &mock.Finder{
 				ExplainFunc: func(_ context.Context, query interface{}, _ map[string]interface{}) (*driver.QueryPlan, error) {
 					expectedQuery := int(3)
 					if d := testy.DiffInterface(expectedQuery, query); d != nil {
@@ -314,19 +317,16 @@ func TestExplain(t *testing.T) {
 					return &driver.QueryPlan{DBName: "foo"}, nil
 				},
 			},
-			query:    int(3),
-			expected: &QueryPlan{DBName: "foo"},
 		},
-	}
+		query:    int(3),
+		expected: &QueryPlan{DBName: "foo"},
+	})
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			db := &DB{driverDB: test.db}
-			result, err := db.Explain(context.Background(), test.query)
-			testy.StatusError(t, test.err, test.status, err)
-			if d := testy.DiffInterface(test.expected, result); d != nil {
-				t.Error(d)
-			}
-		})
-	}
+	tests.Run(t, func(t *testing.T, tt tt) {
+		result, err := tt.db.Explain(context.Background(), tt.query)
+		testy.StatusError(t, tt.err, tt.status, err)
+		if d := testy.DiffInterface(tt.expected, result); d != nil {
+			t.Error(d)
+		}
+	})
 }

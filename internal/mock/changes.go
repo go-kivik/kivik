@@ -47,12 +47,18 @@ func (c *Changes) Close() error {
 
 // LastSeq calls c.LastSeqFunc
 func (c *Changes) LastSeq() string {
-	return c.LastSeqFunc()
+	if c.LastSeqFunc != nil {
+		return c.LastSeqFunc()
+	}
+	return ""
 }
 
 // Pending calls c.PendingFunc
 func (c *Changes) Pending() int64 {
-	return c.PendingFunc()
+	if c.PendingFunc != nil {
+		return c.PendingFunc()
+	}
+	return 0
 }
 
 // ETag calls c.ETagFunc

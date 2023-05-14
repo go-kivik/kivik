@@ -16,6 +16,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"testing"
 	"time"
@@ -817,7 +818,7 @@ func TestClientClose(t *testing.T) {
 
 		type tt struct {
 			client driver.Client
-			work   func(*Client)
+			work   func(*testing.T, *Client)
 		}
 
 		tests := testy.NewTable()
@@ -828,7 +829,7 @@ func TestClientClose(t *testing.T) {
 					return nil, nil
 				},
 			},
-			work: func(c *Client) {
+			work: func(_ *testing.T, c *Client) {
 				_, _ = c.AllDBs(context.Background())
 			},
 		})
@@ -839,7 +840,7 @@ func TestClientClose(t *testing.T) {
 					return true, nil
 				},
 			},
-			work: func(c *Client) {
+			work: func(_ *testing.T, c *Client) {
 				_, _ = c.DBExists(context.Background(), "x")
 			},
 		})
@@ -850,7 +851,7 @@ func TestClientClose(t *testing.T) {
 					return nil
 				},
 			},
-			work: func(c *Client) {
+			work: func(_ *testing.T, c *Client) {
 				_ = c.CreateDB(context.Background(), "x")
 			},
 		})
@@ -861,7 +862,7 @@ func TestClientClose(t *testing.T) {
 					return nil
 				},
 			},
-			work: func(c *Client) {
+			work: func(_ *testing.T, c *Client) {
 				_ = c.DestroyDB(context.Background(), "x")
 			},
 		})
@@ -872,7 +873,7 @@ func TestClientClose(t *testing.T) {
 					return nil, nil
 				},
 			},
-			work: func(c *Client) {
+			work: func(_ *testing.T, c *Client) {
 				_, _ = c.DBsStats(context.Background(), nil)
 			},
 		})
@@ -883,7 +884,7 @@ func TestClientClose(t *testing.T) {
 					return true, nil
 				},
 			},
-			work: func(c *Client) {
+			work: func(_ *testing.T, c *Client) {
 				_, _ = c.Ping(context.Background())
 			},
 		})
@@ -894,8 +895,275 @@ func TestClientClose(t *testing.T) {
 					return &driver.Version{}, nil
 				},
 			},
-			work: func(c *Client) {
+			work: func(_ *testing.T, c *Client) {
 				_, _ = c.Version(context.Background())
+			},
+		})
+		tests.Add("DBUpdates", tt{
+			client: &mock.DBUpdater{
+				DBUpdatesFunc: func(context.Context, map[string]interface{}) (driver.DBUpdates, error) {
+					return &mock.DBUpdates{
+						NextFunc: func(*driver.DBUpdate) error {
+							time.Sleep(delay)
+							return io.EOF
+						},
+					}, nil
+				},
+			},
+			work: func(t *testing.T, c *Client) {
+				u, err := c.DBUpdates(context.Background())
+				if err != nil {
+					t.Fatal(err)
+				}
+				for u.Next() { //nolint:revive // intentional empty block
+				}
+				if u.Err() != nil {
+					t.Fatal(u.Err())
+				}
+			},
+		})
+		tests.Add("AllDocs", tt{
+			client: &mock.Client{
+				DBFunc: func(string, map[string]interface{}) (driver.DB, error) {
+					return &mock.DB{
+						AllDocsFunc: func(context.Context, map[string]interface{}) (driver.Rows, error) {
+							return &mock.Rows{
+								NextFunc: func(*driver.Row) error {
+									time.Sleep(delay)
+									return io.EOF
+								},
+							}, nil
+						},
+					}, nil
+				},
+			},
+			work: func(t *testing.T, c *Client) {
+				u := c.DB("foo").AllDocs(context.Background())
+				for u.Next() { //nolint:revive // intentional empty block
+				}
+				if u.Err() != nil {
+					t.Fatal(u.Err())
+				}
+			},
+		})
+		tests.Add("BulkDocs", tt{
+			client: &mock.Client{
+				DBFunc: func(string, map[string]interface{}) (driver.DB, error) {
+					return &mock.BulkDocer{
+						BulkDocsFunc: func(context.Context, []interface{}, map[string]interface{}) (driver.BulkResults, error) {
+							return &mock.BulkResults{
+								NextFunc: func(*driver.BulkResult) error {
+									time.Sleep(delay)
+									return io.EOF
+								},
+							}, nil
+						},
+					}, nil
+				},
+			},
+			work: func(t *testing.T, c *Client) {
+				u, err := c.DB("foo").BulkDocs(context.Background(), []interface{}{
+					map[string]string{"_id": "foo"},
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				for u.Next() { //nolint:revive // intentional empty block
+				}
+				if u.Err() != nil {
+					t.Fatal(u.Err())
+				}
+			},
+		})
+		tests.Add("BulkGet", tt{
+			client: &mock.Client{
+				DBFunc: func(string, map[string]interface{}) (driver.DB, error) {
+					return &mock.BulkGetter{
+						BulkGetFunc: func(context.Context, []driver.BulkGetReference, map[string]interface{}) (driver.Rows, error) {
+							return &mock.Rows{
+								NextFunc: func(*driver.Row) error {
+									time.Sleep(delay)
+									return io.EOF
+								},
+							}, nil
+						},
+					}, nil
+				},
+			},
+			work: func(t *testing.T, c *Client) {
+				u := c.DB("foo").BulkGet(context.Background(), []BulkGetReference{})
+				for u.Next() { //nolint:revive // intentional empty block
+				}
+				if u.Err() != nil {
+					t.Fatal(u.Err())
+				}
+			},
+		})
+		tests.Add("Changes", tt{
+			client: &mock.Client{
+				DBFunc: func(string, map[string]interface{}) (driver.DB, error) {
+					return &mock.DB{
+						ChangesFunc: func(context.Context, map[string]interface{}) (driver.Changes, error) {
+							return &mock.Changes{
+								NextFunc: func(*driver.Change) error {
+									time.Sleep(delay)
+									return io.EOF
+								},
+							}, nil
+						},
+					}, nil
+				},
+			},
+			work: func(t *testing.T, c *Client) {
+				u, err := c.DB("foo").Changes(context.Background())
+				if err != nil {
+					t.Fatal(err)
+				}
+				for u.Next() { //nolint:revive // intentional empty block
+				}
+				if u.Err() != nil {
+					t.Fatal(u.Err())
+				}
+			},
+		})
+		tests.Add("DesignDocs", tt{
+			client: &mock.Client{
+				DBFunc: func(string, map[string]interface{}) (driver.DB, error) {
+					return &mock.DesignDocer{
+						DesignDocsFunc: func(context.Context, map[string]interface{}) (driver.Rows, error) {
+							return &mock.Rows{
+								NextFunc: func(*driver.Row) error {
+									time.Sleep(delay)
+									return io.EOF
+								},
+							}, nil
+						},
+					}, nil
+				},
+			},
+			work: func(t *testing.T, c *Client) {
+				u := c.DB("foo").DesignDocs(context.Background())
+				for u.Next() { //nolint:revive // intentional empty block
+				}
+				if u.Err() != nil {
+					t.Fatal(u.Err())
+				}
+			},
+		})
+		tests.Add("LocalDocs", tt{
+			client: &mock.Client{
+				DBFunc: func(string, map[string]interface{}) (driver.DB, error) {
+					return &mock.LocalDocer{
+						LocalDocsFunc: func(context.Context, map[string]interface{}) (driver.Rows, error) {
+							return &mock.Rows{
+								NextFunc: func(*driver.Row) error {
+									time.Sleep(delay)
+									return io.EOF
+								},
+							}, nil
+						},
+					}, nil
+				},
+			},
+			work: func(t *testing.T, c *Client) {
+				u := c.DB("foo").LocalDocs(context.Background())
+				for u.Next() { //nolint:revive // intentional empty block
+				}
+				if u.Err() != nil {
+					t.Fatal(u.Err())
+				}
+			},
+		})
+		tests.Add("Query", tt{
+			client: &mock.Client{
+				DBFunc: func(string, map[string]interface{}) (driver.DB, error) {
+					return &mock.DB{
+						QueryFunc: func(context.Context, string, string, map[string]interface{}) (driver.Rows, error) {
+							return &mock.Rows{
+								NextFunc: func(*driver.Row) error {
+									time.Sleep(delay)
+									return io.EOF
+								},
+							}, nil
+						},
+					}, nil
+				},
+			},
+			work: func(t *testing.T, c *Client) {
+				u := c.DB("foo").Query(context.Background(), "", "")
+				for u.Next() { //nolint:revive // intentional empty block
+				}
+				if u.Err() != nil {
+					t.Fatal(u.Err())
+				}
+			},
+		})
+		tests.Add("Find", tt{
+			client: &mock.Client{
+				DBFunc: func(string, map[string]interface{}) (driver.DB, error) {
+					return &mock.Finder{
+						FindFunc: func(context.Context, interface{}, map[string]interface{}) (driver.Rows, error) {
+							return &mock.Rows{
+								NextFunc: func(*driver.Row) error {
+									time.Sleep(delay)
+									return io.EOF
+								},
+							}, nil
+						},
+					}, nil
+				},
+			},
+			work: func(t *testing.T, c *Client) {
+				u := c.DB("foo").Find(context.Background(), nil)
+				for u.Next() { //nolint:revive // intentional empty block
+				}
+				if u.Err() != nil {
+					t.Fatal(u.Err())
+				}
+			},
+		})
+		tests.Add("Get", tt{
+			client: &mock.Client{
+				DBFunc: func(string, map[string]interface{}) (driver.DB, error) {
+					return &mock.DB{
+						GetFunc: func(context.Context, string, map[string]interface{}) (*driver.Document, error) {
+							time.Sleep(delay)
+							return &driver.Document{}, nil
+						},
+					}, nil
+				},
+			},
+			work: func(t *testing.T, c *Client) {
+				u := c.DB("foo").Get(context.Background(), "")
+				for u.Next() { //nolint:revive // intentional empty block
+				}
+				if u.Err() != nil {
+					t.Fatal(u.Err())
+				}
+			},
+		})
+		tests.Add("RevsDiff", tt{
+			client: &mock.Client{
+				DBFunc: func(string, map[string]interface{}) (driver.DB, error) {
+					return &mock.RevsDiffer{
+						RevsDiffFunc: func(context.Context, interface{}) (driver.Rows, error) {
+							return &mock.Rows{
+								NextFunc: func(*driver.Row) error {
+									time.Sleep(delay)
+									return io.EOF
+								},
+							}, nil
+						},
+					}, nil
+				},
+			},
+			work: func(t *testing.T, c *Client) {
+				u := c.DB("foo").RevsDiff(context.Background(), "")
+				for u.Next() { //nolint:revive // intentional empty block
+				}
+				if u.Err() != nil {
+					t.Fatal(u.Err())
+				}
 			},
 		})
 
@@ -907,7 +1175,7 @@ func TestClientClose(t *testing.T) {
 			}
 
 			start := time.Now()
-			go tt.work(c)
+			go tt.work(t, c)
 			time.Sleep(delay / 2)
 			_ = c.Close(context.TODO())
 			if elapsed := time.Since(start); elapsed < delay {

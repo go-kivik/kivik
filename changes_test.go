@@ -94,7 +94,7 @@ func TestChangesIteratorNext(t *testing.T) {
 }
 
 func TestChangesIteratorNew(t *testing.T) {
-	ch := newChanges(context.Background(), &mock.Changes{})
+	ch := newChanges(context.Background(), nil, &mock.Changes{})
 	expected := &Changes{
 		iter: &iter{
 			feed: &changesIterator{
@@ -119,7 +119,7 @@ func TestChangesGetters(t *testing.T) {
 			Seq:     "2-foo",
 		},
 	}
-	c := newChanges(context.Background(), &mock.Changes{
+	c := newChanges(context.Background(), nil, &mock.Changes{
 		NextFunc: func(c *driver.Change) error {
 			if len(changes) == 0 {
 				return io.EOF
@@ -252,6 +252,7 @@ func TestChanges(t *testing.T) {
 		{
 			name: "db error",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					ChangesFunc: func(_ context.Context, _ map[string]interface{}) (driver.Changes, error) {
 						return nil, errors.New("db error")
@@ -264,6 +265,7 @@ func TestChanges(t *testing.T) {
 		{
 			name: "success",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					ChangesFunc: func(_ context.Context, opts map[string]interface{}) (driver.Changes, error) {
 						expectedOpts := map[string]interface{}{"foo": 123.4}
@@ -285,12 +287,31 @@ func TestChanges(t *testing.T) {
 				changesi: &mock.Changes{},
 			},
 		},
+		{
+			name: errClientClosed,
+			db: &DB{
+				client: &Client{
+					closed: 1,
+				},
+			},
+			status: http.StatusServiceUnavailable,
+			err:    errClientClosed,
+		},
+		{
+			name: "db error",
+			db: &DB{
+				err: errors.New("db error"),
+			},
+			status: http.StatusInternalServerError,
+			err:    "db error",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := test.db.Changes(context.Background(), test.opts)
 			testy.StatusError(t, test.err, test.status, err)
-			result.cancel = nil // Determinism
+			result.cancel = nil  // Determinism
+			result.onClose = nil // Determinism
 			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}

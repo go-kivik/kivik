@@ -46,9 +46,9 @@ func (c *changesIterator) Next(i interface{}) error {
 	return err
 }
 
-func newChanges(ctx context.Context, changesi driver.Changes) *Changes {
+func newChanges(ctx context.Context, onClose func(), changesi driver.Changes) *Changes {
 	return &Changes{
-		iter:     newIterator(ctx, &changesIterator{Changes: changesi}, &driver.Change{}),
+		iter:     newIterator(ctx, onClose, &changesIterator{Changes: changesi}, &driver.Change{}),
 		changesi: changesi,
 	}
 }
@@ -84,11 +84,17 @@ func (c *Changes) ScanDoc(dest interface{}) error {
 //
 // See http://couchdb.readthedocs.io/en/latest/api/database/changes.html#get--db-_changes
 func (db *DB) Changes(ctx context.Context, options ...Options) (*Changes, error) {
+	if db.err != nil {
+		return nil, db.err
+	}
+	if err := db.client.startQuery(); err != nil {
+		return nil, err
+	}
 	changesi, err := db.driverDB.Changes(ctx, mergeOptions(options...))
 	if err != nil {
 		return nil, err
 	}
-	return newChanges(ctx, changesi), nil
+	return newChanges(ctx, db.client.endQuery, changesi), nil
 }
 
 // Seq returns the Seq of the current result.

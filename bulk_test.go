@@ -304,11 +304,24 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 			},
 		},
 	})
+	tests.Add(errClientClosed, tt{
+		db: &DB{
+			client: &Client{
+				closed: 1,
+			},
+		},
+		docs: []interface{}{
+			map[string]string{"_id": "foo"},
+		},
+		status: http.StatusServiceUnavailable,
+		err:    errClientClosed,
+	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
 		result, err := tt.db.BulkDocs(context.Background(), tt.docs, tt.options)
 		testy.StatusError(t, tt.err, tt.status, err)
-		result.cancel = nil // Determinism
+		result.cancel = nil  // Determinism
+		result.onClose = nil // Determinism
 		if d := testy.DiffInterface(tt.expected, result); d != nil {
 			t.Error(d)
 		}

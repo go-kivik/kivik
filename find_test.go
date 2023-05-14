@@ -37,6 +37,7 @@ func TestFind(t *testing.T) {
 		{
 			name: "non-finder",
 			db: &DB{
+				client:   &Client{},
 				driverDB: &mock.DB{},
 			},
 			status: http.StatusNotImplemented,
@@ -45,6 +46,7 @@ func TestFind(t *testing.T) {
 		{
 			name: "db error",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.Finder{
 					FindFunc: func(_ context.Context, _ interface{}, _ map[string]interface{}) (driver.Rows, error) {
 						return nil, errors.New("db error")
@@ -57,6 +59,7 @@ func TestFind(t *testing.T) {
 		{
 			name: "success",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.Finder{
 					FindFunc: func(_ context.Context, query interface{}, _ map[string]interface{}) (driver.Rows, error) {
 						expectedQuery := int(3)
@@ -78,6 +81,24 @@ func TestFind(t *testing.T) {
 				rowsi: &mock.Rows{ID: "a"},
 			},
 		},
+		{
+			name: "db error",
+			db: &DB{
+				err: errors.New("db error"),
+			},
+			status: http.StatusInternalServerError,
+			err:    "db error",
+		},
+		{
+			name: errClientClosed,
+			db: &DB{
+				client: &Client{
+					closed: 1,
+				},
+			},
+			status: http.StatusServiceUnavailable,
+			err:    errClientClosed,
+		},
 	}
 
 	for _, test := range tests {
@@ -85,7 +106,8 @@ func TestFind(t *testing.T) {
 			rs := test.db.Find(context.Background(), test.query)
 			testy.StatusError(t, test.err, test.status, rs.Err())
 			if r, ok := rs.(*rows); ok {
-				r.cancel = nil // Determinism
+				r.cancel = nil  // Determinism
+				r.onClose = nil // Determinism
 			}
 			if d := testy.DiffInterface(test.expected, rs); d != nil {
 				t.Error(d)

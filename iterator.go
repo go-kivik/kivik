@@ -48,7 +48,8 @@ const (
 )
 
 type iter struct {
-	feed iterator
+	feed    iterator
+	onClose func()
 
 	mu      sync.RWMutex
 	state   int   // Set to true once Next() has been called
@@ -104,10 +105,11 @@ func (i *iter) makeReady(e *error) (unlock func(), err error) {
 // ctx is a possibly-cancellable context.  zeroValue is an empty instance of
 // the data type this iterator iterates over feed is the iterator interface,
 // which typically wraps a driver.X iterator
-func newIterator(ctx context.Context, feed iterator, zeroValue interface{}) *iter {
+func newIterator(ctx context.Context, onClose func(), feed iterator, zeroValue interface{}) *iter {
 	i := &iter{
-		feed:   feed,
-		curVal: zeroValue,
+		onClose: onClose,
+		feed:    feed,
+		curVal:  zeroValue,
 	}
 	ctx, i.cancel = context.WithCancel(ctx)
 	go i.awaitDone(ctx)
@@ -185,6 +187,10 @@ func (i *iter) close(err error) error {
 
 	if i.cancel != nil {
 		i.cancel()
+	}
+
+	if i.onClose != nil {
+		i.onClose()
 	}
 
 	return err

@@ -30,9 +30,9 @@ var _ iterator = &updatesIterator{}
 
 func (r *updatesIterator) Next(i interface{}) error { return r.DBUpdates.Next(i.(*driver.DBUpdate)) }
 
-func newDBUpdates(ctx context.Context, updatesi driver.DBUpdates) *DBUpdates {
+func newDBUpdates(ctx context.Context, onClose func(), updatesi driver.DBUpdates) *DBUpdates {
 	return &DBUpdates{
-		iter: newIterator(ctx, &updatesIterator{updatesi}, &driver.DBUpdate{}),
+		iter: newIterator(ctx, onClose, &updatesIterator{updatesi}, &driver.DBUpdate{}),
 	}
 }
 
@@ -68,6 +68,9 @@ func (f *DBUpdates) Seq() string {
 
 // DBUpdates begins polling for database updates.
 func (c *Client) DBUpdates(ctx context.Context, options ...Options) (*DBUpdates, error) {
+	if err := c.startQuery(); err != nil {
+		return nil, err
+	}
 	updater, ok := c.driverClient.(driver.DBUpdater)
 	if !ok {
 		return nil, &Error{Status: http.StatusNotImplemented, Message: "kivik: driver does not implement DBUpdater"}
@@ -77,5 +80,5 @@ func (c *Client) DBUpdates(ctx context.Context, options ...Options) (*DBUpdates,
 	if err != nil {
 		return nil, err
 	}
-	return newDBUpdates(context.Background(), updatesi), nil
+	return newDBUpdates(context.Background(), c.endQuery, updatesi), nil
 }

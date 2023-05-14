@@ -92,7 +92,7 @@ func TestDBUpdatesIteratorNext(t *testing.T) {
 }
 
 func TestDBUpdatesIteratorNew(t *testing.T) {
-	u := newDBUpdates(context.Background(), &mock.DBUpdates{})
+	u := newDBUpdates(context.Background(), nil, &mock.DBUpdates{})
 	expected := &DBUpdates{
 		iter: &iter{
 			feed: &updatesIterator{
@@ -215,12 +215,21 @@ func TestDBUpdates(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: errClientClosed,
+			client: &Client{
+				closed: 1,
+			},
+			status: http.StatusServiceUnavailable,
+			err:    errClientClosed,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := test.client.DBUpdates(context.Background())
 			testy.StatusError(t, test.err, test.status, err)
-			result.cancel = nil // Determinism
+			result.cancel = nil  // Determinism
+			result.onClose = nil // Determinism
 			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}

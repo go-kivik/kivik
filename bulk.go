@@ -34,9 +34,9 @@ func (r *bulkIterator) Next(i interface{}) error {
 	return r.BulkResults.Next(i.(*driver.BulkResult))
 }
 
-func newBulkResults(ctx context.Context, bulki driver.BulkResults) *BulkResults {
+func newBulkResults(ctx context.Context, onClose func(), bulki driver.BulkResults) *BulkResults {
 	return &BulkResults{
-		iter: newIterator(ctx, &bulkIterator{bulki}, &driver.BulkResult{}),
+		iter: newIterator(ctx, onClose, &bulkIterator{bulki}, &driver.BulkResult{}),
 	}
 }
 
@@ -88,13 +88,16 @@ func (db *DB) BulkDocs(ctx context.Context, docs []interface{}, options ...Optio
 	if len(docsi) == 0 {
 		return nil, &Error{Status: http.StatusBadRequest, Err: errors.New("kivik: no documents provided")}
 	}
+	if err := db.client.startQuery(); err != nil {
+		return nil, err
+	}
 	opts := mergeOptions(options...)
 	if bulkDocer, ok := db.driverDB.(driver.BulkDocer); ok {
 		bulki, err := bulkDocer.BulkDocs(ctx, docsi, opts)
 		if err != nil {
 			return nil, err
 		}
-		return newBulkResults(ctx, bulki), nil
+		return newBulkResults(ctx, db.client.endQuery, bulki), nil
 	}
 	var results []driver.BulkResult
 	for _, doc := range docsi {
@@ -112,7 +115,7 @@ func (db *DB) BulkDocs(ctx context.Context, docs []interface{}, options ...Optio
 			Error: err,
 		})
 	}
-	return newBulkResults(ctx, &emulatedBulkResults{results}), nil
+	return newBulkResults(ctx, db.client.endQuery, &emulatedBulkResults{results}), nil
 }
 
 type emulatedBulkResults struct {

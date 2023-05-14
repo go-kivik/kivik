@@ -55,17 +55,23 @@ func (db *DB) AllDocs(ctx context.Context, options ...Options) ResultSet {
 	if db.err != nil {
 		return &errRS{err: db.err}
 	}
+	if err := db.client.startQuery(); err != nil {
+		return &errRS{err: err}
+	}
 	rowsi, err := db.driverDB.AllDocs(ctx, mergeOptions(options...))
 	if err != nil {
 		return &errRS{err: err}
 	}
-	return newRows(ctx, rowsi)
+	return newRows(ctx, db.client.endQuery, rowsi)
 }
 
 // DesignDocs returns a list of all documents in the database.
 func (db *DB) DesignDocs(ctx context.Context, options ...Options) ResultSet {
 	if db.err != nil {
 		return &errRS{err: db.err}
+	}
+	if err := db.client.startQuery(); err != nil {
+		return &errRS{err: err}
 	}
 	ddocer, ok := db.driverDB.(driver.DesignDocer)
 	if !ok {
@@ -75,13 +81,16 @@ func (db *DB) DesignDocs(ctx context.Context, options ...Options) ResultSet {
 	if err != nil {
 		return &errRS{err: err}
 	}
-	return newRows(ctx, rowsi)
+	return newRows(ctx, db.client.endQuery, rowsi)
 }
 
 // LocalDocs returns a list of all documents in the database.
 func (db *DB) LocalDocs(ctx context.Context, options ...Options) ResultSet {
 	if db.err != nil {
 		return &errRS{err: db.err}
+	}
+	if err := db.client.startQuery(); err != nil {
+		return &errRS{err: err}
 	}
 	ldocer, ok := db.driverDB.(driver.LocalDocer)
 	if !ok {
@@ -91,7 +100,7 @@ func (db *DB) LocalDocs(ctx context.Context, options ...Options) ResultSet {
 	if err != nil {
 		return &errRS{err: err}
 	}
-	return newRows(ctx, rowsi)
+	return newRows(ctx, db.client.endQuery, rowsi)
 }
 
 // Query executes the specified view function from the specified design
@@ -109,13 +118,16 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) 
 	if db.err != nil {
 		return &errRS{err: db.err}
 	}
+	if err := db.client.startQuery(); err != nil {
+		return &errRS{err: err}
+	}
 	ddoc = strings.TrimPrefix(ddoc, "_design/")
 	view = strings.TrimPrefix(view, "_view/")
 	rowsi, err := db.driverDB.Query(ctx, ddoc, view, mergeOptions(options...))
 	if err != nil {
 		return &errRS{err: err}
 	}
-	return newRows(ctx, rowsi)
+	return newRows(ctx, db.client.endQuery, rowsi)
 }
 
 // Get fetches the requested document. Any errors are deferred until the
@@ -124,6 +136,10 @@ func (db *DB) Get(ctx context.Context, docID string, options ...Options) ResultS
 	if db.err != nil {
 		return &errRS{err: db.err}
 	}
+	if err := db.client.startQuery(); err != nil {
+		return &errRS{err: err}
+	}
+	defer db.client.endQuery()
 	doc, err := db.driverDB.Get(ctx, docID, mergeOptions(options...))
 	if err != nil {
 		return &errRS{err: err}
@@ -671,6 +687,9 @@ func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...O
 	if db.err != nil {
 		return &errRS{err: db.err}
 	}
+	if err := db.client.startQuery(); err != nil {
+		return &errRS{err: err}
+	}
 	bulkGetter, ok := db.driverDB.(driver.BulkGetter)
 	if !ok {
 		return &errRS{err: &Error{Status: http.StatusNotImplemented, Message: "kivik: bulk get not supported by driver"}}
@@ -683,7 +702,7 @@ func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...O
 	if err != nil {
 		return &errRS{err: err}
 	}
-	return newRows(ctx, rowsi)
+	return newRows(ctx, db.client.endQuery, rowsi)
 }
 
 // Close cleans up any resources used by the DB. The default CouchDB driver
@@ -727,12 +746,15 @@ func (db *DB) RevsDiff(ctx context.Context, revMap interface{}) ResultSet {
 	if db.err != nil {
 		return &errRS{err: db.err}
 	}
+	if err := db.client.startQuery(); err != nil {
+		return &errRS{err: err}
+	}
 	if rd, ok := db.driverDB.(driver.RevsDiffer); ok {
 		rowsi, err := rd.RevsDiff(ctx, revMap)
 		if err != nil {
 			return &errRS{err: err}
 		}
-		return newRows(ctx, rowsi)
+		return newRows(ctx, db.client.endQuery, rowsi)
 	}
 	return &errRS{err: &Error{Status: http.StatusNotImplemented, Message: "kivik: _revs_diff not supported by driver"}}
 }

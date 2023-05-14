@@ -389,94 +389,87 @@ func TestQuery(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	tests := []struct {
-		name     string
+	type tt struct {
 		db       *DB
 		docID    string
 		options  Options
-		expected ResultSet
-	}{
-		{
-			name: "db error",
-			db: &DB{
-				driverDB: &mock.DB{
-					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (*driver.Document, error) {
-						return nil, fmt.Errorf("db error")
-					},
-				},
-			},
-			expected: &errRS{
-				err: fmt.Errorf("db error"),
-			},
-		},
-		{
-			name: "success",
-			db: &DB{
-				driverDB: &mock.DB{
-					GetFunc: func(_ context.Context, docID string, options map[string]interface{}) (*driver.Document, error) {
-						expectedDocID := "foo"
-						if docID != expectedDocID {
-							return nil, fmt.Errorf("Unexpected docID: %s", docID)
-						}
-						if d := testy.DiffInterface(testOptions, options); d != nil {
-							return nil, fmt.Errorf("Unexpected options:\n%s", d)
-						}
-						return &driver.Document{
-							Rev:  "1-xxx",
-							Body: body(`{"_id":"foo"}`),
-						}, nil
-					},
-				},
-			},
-			docID:   "foo",
-			options: testOptions,
-			expected: &row{
-				id:   "foo",
-				rev:  "1-xxx",
-				body: body(`{"_id":"foo"}`),
-			},
-		},
-		{
-			name: "streaming attachments",
-			db: &DB{
-				driverDB: &mock.DB{
-					GetFunc: func(_ context.Context, docID string, options map[string]interface{}) (*driver.Document, error) {
-						expectedDocID := "foo"
-						expectedOptions := map[string]interface{}{"include_docs": true}
-						if docID != expectedDocID {
-							return nil, fmt.Errorf("Unexpected docID: %s", docID)
-						}
-						if d := testy.DiffInterface(expectedOptions, options); d != nil {
-							return nil, fmt.Errorf("Unexpected options:\n%s", d)
-						}
-						return &driver.Document{
-							Rev:         "1-xxx",
-							Body:        body(`{"_id":"foo"}`),
-							Attachments: &mock.Attachments{ID: "asdf"},
-						}, nil
-					},
-				},
-			},
-			docID:   "foo",
-			options: map[string]interface{}{"include_docs": true},
-			expected: &row{
-				id:   "foo",
-				rev:  "1-xxx",
-				body: body(`{"_id":"foo"}`),
-				atts: &AttachmentsIterator{
-					atti: &mock.Attachments{ID: "asdf"},
-				},
-			},
-		},
+		expected string
+		status   int
+		err      string
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			result := test.db.Get(context.Background(), test.docID, test.options)
-			if d := testy.DiffInterface(test.expected, result); d != nil {
-				t.Error(d)
-			}
-		})
-	}
+
+	tests := testy.NewTable()
+	tests.Add("db error", tt{
+		db: &DB{
+			driverDB: &mock.DB{
+				GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (*driver.Document, error) {
+					return nil, fmt.Errorf("db error")
+				},
+			},
+		},
+		status: http.StatusInternalServerError,
+		err:    "db error",
+	})
+	tests.Add("success", tt{
+		db: &DB{
+			driverDB: &mock.DB{
+				GetFunc: func(_ context.Context, docID string, options map[string]interface{}) (*driver.Document, error) {
+					expectedDocID := "foo"
+					if docID != expectedDocID {
+						return nil, fmt.Errorf("Unexpected docID: %s", docID)
+					}
+					if d := testy.DiffInterface(testOptions, options); d != nil {
+						return nil, fmt.Errorf("Unexpected options:\n%s", d)
+					}
+					return &driver.Document{
+						Rev:  "1-xxx",
+						Body: body(`{"_id":"foo"}`),
+					}, nil
+				},
+			},
+		},
+		docID:    "foo",
+		options:  testOptions,
+		expected: `{"_id":"foo"}`,
+	})
+	tests.Add("streaming attachments", tt{
+		db: &DB{
+			driverDB: &mock.DB{
+				GetFunc: func(_ context.Context, docID string, options map[string]interface{}) (*driver.Document, error) {
+					expectedDocID := "foo"
+					expectedOptions := map[string]interface{}{"include_docs": true}
+					if docID != expectedDocID {
+						return nil, fmt.Errorf("Unexpected docID: %s", docID)
+					}
+					if d := testy.DiffInterface(expectedOptions, options); d != nil {
+						return nil, fmt.Errorf("Unexpected options:\n%s", d)
+					}
+					return &driver.Document{
+						Rev:         "1-xxx",
+						Body:        body(`{"_id":"foo"}`),
+						Attachments: &mock.Attachments{ID: "asdf"},
+					}, nil
+				},
+			},
+		},
+		docID:    "foo",
+		options:  map[string]interface{}{"include_docs": true},
+		expected: `{"_id":"foo"}`,
+	})
+
+	tests.Run(t, func(t *testing.T, tt tt) {
+		var doc json.RawMessage
+		err := tt.db.Get(context.Background(), tt.docID, tt.options).ScanDoc(&doc)
+		if !testy.ErrorMatches(tt.err, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
+		if status := HTTPStatus(err); status != tt.status {
+			t.Errorf("Unexpected error status: %v", status)
+		}
+		if d := testy.DiffJSON([]byte(tt.expected), []byte(doc)); d != nil {
+			t.Error(d)
+		}
+	})
 }
 
 func TestFlush(t *testing.T) {

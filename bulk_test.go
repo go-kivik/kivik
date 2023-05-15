@@ -208,6 +208,7 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 	tests := testy.NewTable()
 	tests.Add("invalid JSON", tt{
 		db: &DB{
+			client: &Client{},
 			driverDB: &mock.BulkDocer{
 				BulkDocsFunc: func(_ context.Context, docs []interface{}, _ map[string]interface{}) (driver.BulkResults, error) {
 					_, err := json.Marshal(docs)
@@ -221,6 +222,7 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 	})
 	tests.Add("emulated BulkDocs support", tt{
 		db: &DB{
+			client: &Client{},
 			driverDB: &mock.DB{
 				PutFunc: func(_ context.Context, docID string, doc interface{}, opts map[string]interface{}) (string, error) {
 					if docID == "error" {
@@ -273,6 +275,7 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 	})
 	tests.Add("new_edits", tt{
 		db: &DB{
+			client: &Client{},
 			driverDB: &mock.BulkDocer{
 				BulkDocsFunc: func(_ context.Context, docs []interface{}, opts map[string]interface{}) (driver.BulkResults, error) {
 					expectedDocs := []interface{}{map[string]string{"_id": "foo"}, 123}
@@ -301,11 +304,24 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 			},
 		},
 	})
+	tests.Add(errClientClosed, tt{
+		db: &DB{
+			client: &Client{
+				closed: 1,
+			},
+		},
+		docs: []interface{}{
+			map[string]string{"_id": "foo"},
+		},
+		status: http.StatusServiceUnavailable,
+		err:    errClientClosed,
+	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
 		result, err := tt.db.BulkDocs(context.Background(), tt.docs, tt.options)
 		testy.StatusError(t, tt.err, tt.status, err)
-		result.cancel = nil // Determinism
+		result.cancel = nil  // Determinism
+		result.onClose = nil // Determinism
 		if d := testy.DiffInterface(tt.expected, result); d != nil {
 			t.Error(d)
 		}

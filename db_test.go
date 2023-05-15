@@ -60,6 +60,7 @@ func TestAllDocs(t *testing.T) {
 		{
 			name: "db error",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					AllDocsFunc: func(_ context.Context, _ map[string]interface{}) (driver.Rows, error) {
 						return nil, errors.New("db error")
@@ -72,6 +73,7 @@ func TestAllDocs(t *testing.T) {
 		{
 			name: "success",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					AllDocsFunc: func(_ context.Context, opts map[string]interface{}) (driver.Rows, error) {
 						if d := testy.DiffInterface(testOptions, opts); d != nil {
@@ -92,13 +94,32 @@ func TestAllDocs(t *testing.T) {
 				rowsi: &mock.Rows{ID: "a"},
 			},
 		},
+		{
+			name: errClientClosed,
+			db: &DB{
+				client: &Client{
+					closed: 1,
+				},
+			},
+			status: http.StatusServiceUnavailable,
+			err:    errClientClosed,
+		},
+		{
+			name: "db error",
+			db: &DB{
+				err: errors.New("db error"),
+			},
+			status: http.StatusInternalServerError,
+			err:    "db error",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			rs := test.db.AllDocs(context.Background(), test.options)
 			testy.StatusError(t, test.err, test.status, rs.Err())
 			if r, ok := rs.(*rows); ok {
-				r.cancel = nil // Determinism
+				r.cancel = nil  // Determinism
+				r.onClose = nil // Determinism
 			}
 			if d := testy.DiffInterface(test.expected, rs); d != nil {
 				t.Error(d)
@@ -119,6 +140,7 @@ func TestAllDocs(t *testing.T) {
 				},
 			}
 			db := &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					AllDocsFunc: func(_ context.Context, opts map[string]interface{}) (driver.Rows, error) {
 						return &mock.Rows{
@@ -200,6 +222,7 @@ func TestDesignDocs(t *testing.T) {
 		{
 			name: "db error",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DesignDocer{
 					DesignDocsFunc: func(_ context.Context, _ map[string]interface{}) (driver.Rows, error) {
 						return nil, errors.New("db error")
@@ -212,6 +235,7 @@ func TestDesignDocs(t *testing.T) {
 		{
 			name: "success",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DesignDocer{
 					DesignDocsFunc: func(_ context.Context, opts map[string]interface{}) (driver.Rows, error) {
 						if d := testy.DiffInterface(testOptions, opts); d != nil {
@@ -233,10 +257,31 @@ func TestDesignDocs(t *testing.T) {
 			},
 		},
 		{
-			name:   "not supported",
-			db:     &DB{driverDB: &mock.DB{}},
+			name: "not supported",
+			db: &DB{
+				client:   &Client{},
+				driverDB: &mock.DB{},
+			},
 			status: http.StatusNotImplemented,
 			err:    "kivik: design doc view not supported by driver",
+		},
+		{
+			name: "db error",
+			db: &DB{
+				err: errors.New("db error"),
+			},
+			status: http.StatusInternalServerError,
+			err:    "db error",
+		},
+		{
+			name: errClientClosed,
+			db: &DB{
+				client: &Client{
+					closed: 1,
+				},
+			},
+			status: http.StatusServiceUnavailable,
+			err:    errClientClosed,
 		},
 	}
 	for _, test := range tests {
@@ -244,7 +289,8 @@ func TestDesignDocs(t *testing.T) {
 			rs := test.db.DesignDocs(context.Background(), test.options)
 			testy.StatusError(t, test.err, test.status, rs.Err())
 			if r, ok := rs.(*rows); ok {
-				r.cancel = nil // Determinism
+				r.cancel = nil  // Determinism
+				r.onClose = nil // Determinism
 			}
 			if d := testy.DiffInterface(test.expected, rs); d != nil {
 				t.Error(d)
@@ -263,8 +309,9 @@ func TestLocalDocs(t *testing.T) {
 		err      string
 	}{
 		{
-			name: "db error",
+			name: "error",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.LocalDocer{
 					LocalDocsFunc: func(_ context.Context, _ map[string]interface{}) (driver.Rows, error) {
 						return nil, errors.New("db error")
@@ -277,6 +324,7 @@ func TestLocalDocs(t *testing.T) {
 		{
 			name: "success",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.LocalDocer{
 					LocalDocsFunc: func(_ context.Context, opts map[string]interface{}) (driver.Rows, error) {
 						if d := testy.DiffInterface(testOptions, opts); d != nil {
@@ -298,10 +346,31 @@ func TestLocalDocs(t *testing.T) {
 			},
 		},
 		{
-			name:   "not supported",
-			db:     &DB{driverDB: &mock.DB{}},
+			name: "not supported",
+			db: &DB{
+				client:   &Client{},
+				driverDB: &mock.DB{},
+			},
 			status: http.StatusNotImplemented,
 			err:    "kivik: local doc view not supported by driver",
+		},
+		{
+			name: "db error",
+			db: &DB{
+				err: errors.New("db error"),
+			},
+			status: http.StatusInternalServerError,
+			err:    "db error",
+		},
+		{
+			name: errClientClosed,
+			db: &DB{
+				client: &Client{
+					closed: 1,
+				},
+			},
+			status: http.StatusServiceUnavailable,
+			err:    errClientClosed,
 		},
 	}
 	for _, test := range tests {
@@ -309,7 +378,8 @@ func TestLocalDocs(t *testing.T) {
 			rs := test.db.LocalDocs(context.Background(), test.options)
 			testy.StatusError(t, test.err, test.status, rs.Err())
 			if r, ok := rs.(*rows); ok {
-				r.cancel = nil // Determinism
+				r.cancel = nil  // Determinism
+				r.onClose = nil // Determinism
 			}
 			if d := testy.DiffInterface(test.expected, rs); d != nil {
 				t.Error(d)
@@ -331,6 +401,7 @@ func TestQuery(t *testing.T) {
 		{
 			name: "db error",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					QueryFunc: func(_ context.Context, ddoc, view string, opts map[string]interface{}) (driver.Rows, error) {
 						return nil, errors.New("db error")
@@ -343,6 +414,7 @@ func TestQuery(t *testing.T) {
 		{
 			name: "success",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					QueryFunc: func(_ context.Context, ddoc, view string, opts map[string]interface{}) (driver.Rows, error) {
 						expectedDdoc := "foo"
@@ -373,13 +445,33 @@ func TestQuery(t *testing.T) {
 				rowsi: &mock.Rows{ID: "a"},
 			},
 		},
+		{
+			name: "db error",
+			db: &DB{
+				err: errors.New("db error"),
+			},
+			status: http.StatusInternalServerError,
+			err:    "db error",
+		},
+		{
+			name: errClientClosed,
+			db: &DB{
+				client: &Client{
+					closed: 1,
+				},
+			},
+			status: http.StatusServiceUnavailable,
+			err:    errClientClosed,
+		},
 	}
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			rs := test.db.Query(context.Background(), test.ddoc, test.view, test.options)
 			testy.StatusError(t, test.err, test.status, rs.Err())
 			if r, ok := rs.(*rows); ok {
-				r.cancel = nil // Determinism
+				r.cancel = nil  // Determinism
+				r.onClose = nil // Determinism
 			}
 			if d := testy.DiffInterface(test.expected, rs); d != nil {
 				t.Error(d)
@@ -401,6 +493,7 @@ func TestGet(t *testing.T) {
 	tests := testy.NewTable()
 	tests.Add("db error", tt{
 		db: &DB{
+			client: &Client{},
 			driverDB: &mock.DB{
 				GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (*driver.Document, error) {
 					return nil, fmt.Errorf("db error")
@@ -412,6 +505,7 @@ func TestGet(t *testing.T) {
 	})
 	tests.Add("success", tt{
 		db: &DB{
+			client: &Client{},
 			driverDB: &mock.DB{
 				GetFunc: func(_ context.Context, docID string, options map[string]interface{}) (*driver.Document, error) {
 					expectedDocID := "foo"
@@ -434,6 +528,7 @@ func TestGet(t *testing.T) {
 	})
 	tests.Add("streaming attachments", tt{
 		db: &DB{
+			client: &Client{},
 			driverDB: &mock.DB{
 				GetFunc: func(_ context.Context, docID string, options map[string]interface{}) (*driver.Document, error) {
 					expectedDocID := "foo"
@@ -455,6 +550,15 @@ func TestGet(t *testing.T) {
 		docID:    "foo",
 		options:  map[string]interface{}{"include_docs": true},
 		expected: `{"_id":"foo"}`,
+	})
+	tests.Add(errClientClosed, tt{
+		db: &DB{
+			client: &Client{
+				closed: 1,
+			},
+		},
+		status: http.StatusServiceUnavailable,
+		err:    errClientClosed,
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
@@ -482,6 +586,7 @@ func TestFlush(t *testing.T) {
 		{
 			name: "non-Flusher",
 			db: &DB{
+				client:   &Client{},
 				driverDB: &mock.DB{},
 			},
 			status: http.StatusNotImplemented,
@@ -490,6 +595,7 @@ func TestFlush(t *testing.T) {
 		{
 			name: "db error",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.Flusher{
 					FlushFunc: func(_ context.Context) error {
 						return &Error{Status: http.StatusBadGateway, Err: errors.New("flush error")}
@@ -502,12 +608,31 @@ func TestFlush(t *testing.T) {
 		{
 			name: "success",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.Flusher{
 					FlushFunc: func(_ context.Context) error {
 						return nil
 					},
 				},
 			},
+		},
+		{
+			name: errClientClosed,
+			db: &DB{
+				client: &Client{
+					closed: 1,
+				},
+			},
+			status: http.StatusServiceUnavailable,
+			err:    errClientClosed,
+		},
+		{
+			name: "db error",
+			db: &DB{
+				err: errors.New("db error"),
+			},
+			status: http.StatusInternalServerError,
+			err:    "db error",
 		},
 	}
 	for _, test := range tests {
@@ -529,6 +654,7 @@ func TestStats(t *testing.T) {
 		{
 			name: "stats error",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					StatsFunc: func(_ context.Context) (*driver.DBStats, error) {
 						return nil, &Error{Status: http.StatusBadGateway, Err: errors.New("stats error")}
@@ -541,6 +667,7 @@ func TestStats(t *testing.T) {
 		{
 			name: "success",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					StatsFunc: func(_ context.Context) (*driver.DBStats, error) {
 						return &driver.DBStats{
@@ -581,6 +708,16 @@ func TestStats(t *testing.T) {
 				RawResponse: []byte("foo"),
 			},
 		},
+		{
+			name: errClientClosed,
+			db: &DB{
+				client: &Client{
+					closed: 1,
+				},
+			},
+			status: http.StatusServiceUnavailable,
+			err:    errClientClosed,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -594,46 +731,113 @@ func TestStats(t *testing.T) {
 }
 
 func TestCompact(t *testing.T) {
-	expected := "compact error"
-	db := &DB{
-		driverDB: &mock.DB{
-			CompactFunc: func(_ context.Context) error {
-				return &Error{Status: http.StatusBadRequest, Err: errors.New(expected)}
+	t.Run("error", func(t *testing.T) {
+		expected := "compact error"
+		db := &DB{
+			client: &Client{},
+			driverDB: &mock.DB{
+				CompactFunc: func(_ context.Context) error {
+					return &Error{Status: http.StatusBadRequest, Err: errors.New(expected)}
+				},
 			},
-		},
-	}
-	err := db.Compact(context.Background())
-	testy.StatusError(t, expected, http.StatusBadRequest, err)
+		}
+		err := db.Compact(context.Background())
+		testy.StatusError(t, expected, http.StatusBadRequest, err)
+	})
+	t.Run("closed", func(t *testing.T) {
+		expected := errClientClosed
+		db := &DB{
+			client: &Client{
+				closed: 1,
+			},
+		}
+		err := db.Compact(context.Background())
+		testy.StatusError(t, expected, http.StatusServiceUnavailable, err)
+	})
+	t.Run("db error", func(t *testing.T) {
+		db := &DB{
+			client: &Client{},
+			err:    errors.New("db error"),
+		}
+		err := db.Compact(context.Background())
+		if !testy.ErrorMatches("db error", err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
+	})
 }
 
 func TestCompactView(t *testing.T) {
-	expectedDDocID := "foo"
-	expected := "compact view error"
-	db := &DB{
-		driverDB: &mock.DB{
-			CompactViewFunc: func(_ context.Context, ddocID string) error {
-				if ddocID != expectedDDocID {
-					return fmt.Errorf("Unexpected ddocID: %s", ddocID)
-				}
-				return &Error{Status: http.StatusBadRequest, Err: errors.New(expected)}
+	t.Run("error", func(t *testing.T) {
+		expectedDDocID := "foo"
+		expected := "compact view error"
+		db := &DB{
+			client: &Client{},
+			driverDB: &mock.DB{
+				CompactViewFunc: func(_ context.Context, ddocID string) error {
+					if ddocID != expectedDDocID {
+						return fmt.Errorf("Unexpected ddocID: %s", ddocID)
+					}
+					return &Error{Status: http.StatusBadRequest, Err: errors.New(expected)}
+				},
 			},
-		},
-	}
-	err := db.CompactView(context.Background(), expectedDDocID)
-	testy.StatusError(t, expected, http.StatusBadRequest, err)
+		}
+		err := db.CompactView(context.Background(), expectedDDocID)
+		testy.StatusError(t, expected, http.StatusBadRequest, err)
+	})
+	t.Run("closed", func(t *testing.T) {
+		expected := errClientClosed
+		db := &DB{
+			client: &Client{
+				closed: 1,
+			},
+		}
+		err := db.CompactView(context.Background(), "")
+		testy.StatusError(t, expected, http.StatusServiceUnavailable, err)
+	})
+	t.Run("db error", func(t *testing.T) {
+		db := &DB{
+			client: &Client{},
+			err:    errors.New("db error"),
+		}
+		err := db.CompactView(context.Background(), "")
+		if !testy.ErrorMatches("db error", err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
+	})
 }
 
 func TestViewCleanup(t *testing.T) {
-	expected := "compact error"
-	db := &DB{
-		driverDB: &mock.DB{
-			ViewCleanupFunc: func(_ context.Context) error {
-				return &Error{Status: http.StatusBadRequest, Err: errors.New(expected)}
+	t.Run("compact error", func(t *testing.T) {
+		expected := "compact error"
+		db := &DB{
+			client: &Client{},
+			driverDB: &mock.DB{
+				ViewCleanupFunc: func(_ context.Context) error {
+					return &Error{Status: http.StatusBadRequest, Err: errors.New(expected)}
+				},
 			},
-		},
-	}
-	err := db.ViewCleanup(context.Background())
-	testy.StatusError(t, expected, http.StatusBadRequest, err)
+		}
+		err := db.ViewCleanup(context.Background())
+		testy.StatusError(t, expected, http.StatusBadRequest, err)
+	})
+	t.Run(errClientClosed, func(t *testing.T) {
+		expected := errClientClosed
+		db := &DB{
+			client: &Client{
+				closed: 1,
+			},
+		}
+		err := db.ViewCleanup(context.Background())
+		testy.StatusError(t, expected, http.StatusServiceUnavailable, err)
+	})
+	t.Run("db error", func(t *testing.T) {
+		expected := "db error"
+		db := &DB{
+			err: errors.New(expected),
+		}
+		err := db.ViewCleanup(context.Background())
+		testy.StatusError(t, expected, http.StatusInternalServerError, err)
+	})
 }
 
 func TestSecurity(t *testing.T) {
@@ -647,6 +851,7 @@ func TestSecurity(t *testing.T) {
 		{
 			name: "security error",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					SecurityFunc: func(_ context.Context) (*driver.Security, error) {
 						return nil, &Error{Status: http.StatusBadGateway, Err: errors.New("security error")}
@@ -659,6 +864,7 @@ func TestSecurity(t *testing.T) {
 		{
 			name: "success",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					SecurityFunc: func(_ context.Context) (*driver.Security, error) {
 						return &driver.Security{
@@ -685,6 +891,24 @@ func TestSecurity(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: errClientClosed,
+			db: &DB{
+				client: &Client{
+					closed: 1,
+				},
+			},
+			status: http.StatusServiceUnavailable,
+			err:    errClientClosed,
+		},
+		{
+			name: "db error",
+			db: &DB{
+				err: errors.New("db error"),
+			},
+			status: http.StatusInternalServerError,
+			err:    "db error",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -706,14 +930,17 @@ func TestSetSecurity(t *testing.T) {
 		err      string
 	}{
 		{
-			name:   "nil security",
-			db:     &DB{},
+			name: "nil security",
+			db: &DB{
+				client: &Client{},
+			},
 			status: http.StatusBadRequest,
 			err:    "kivik: security required",
 		},
 		{
 			name: "set error",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					SetSecurityFunc: func(_ context.Context, _ *driver.Security) error {
 						return &Error{Status: http.StatusBadGateway, Err: errors.New("set security error")}
@@ -727,6 +954,7 @@ func TestSetSecurity(t *testing.T) {
 		{
 			name: "success",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					SetSecurityFunc: func(_ context.Context, security *driver.Security) error {
 						expectedSecurity := &driver.Security{
@@ -757,6 +985,25 @@ func TestSetSecurity(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: errClientClosed,
+			db: &DB{
+				client: &Client{
+					closed: 1,
+				},
+			},
+			security: &Security{},
+			status:   http.StatusServiceUnavailable,
+			err:      errClientClosed,
+		},
+		{
+			name: "db error",
+			db: &DB{
+				err: errors.New("db error"),
+			},
+			status: http.StatusInternalServerError,
+			err:    "db error",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -779,6 +1026,7 @@ func TestGetRev(t *testing.T) { // nolint: gocyclo
 		{
 			name: "meta getter error",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.RevGetter{
 					GetRevFunc: func(_ context.Context, _ string, _ map[string]interface{}) (string, error) {
 						return "", &Error{Status: http.StatusBadGateway, Err: errors.New("get meta error")}
@@ -791,6 +1039,7 @@ func TestGetRev(t *testing.T) { // nolint: gocyclo
 		{
 			name: "meta getter success",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.RevGetter{
 					GetRevFunc: func(_ context.Context, docID string, opts map[string]interface{}) (string, error) {
 						expectedDocID := "foo"
@@ -811,6 +1060,7 @@ func TestGetRev(t *testing.T) { // nolint: gocyclo
 		{
 			name: "non-meta getter error",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (*driver.Document, error) {
 						return nil, &Error{Status: http.StatusBadGateway, Err: errors.New("get error")}
@@ -823,6 +1073,7 @@ func TestGetRev(t *testing.T) { // nolint: gocyclo
 		{
 			name: "non-meta getter success with rev",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					GetFunc: func(_ context.Context, docID string, opts map[string]interface{}) (*driver.Document, error) {
 						expectedDocID := "foo"
@@ -845,6 +1096,7 @@ func TestGetRev(t *testing.T) { // nolint: gocyclo
 		{
 			name: "non-meta getter success without rev",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					GetFunc: func(_ context.Context, docID string, opts map[string]interface{}) (*driver.Document, error) {
 						expectedDocID := "foo"
@@ -866,6 +1118,7 @@ func TestGetRev(t *testing.T) { // nolint: gocyclo
 		{
 			name: "non-meta getter success without rev, invalid json",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					GetFunc: func(_ context.Context, docID string, opts map[string]interface{}) (*driver.Document, error) {
 						expectedDocID := "foo"
@@ -884,6 +1137,25 @@ func TestGetRev(t *testing.T) { // nolint: gocyclo
 			docID:  "foo",
 			status: http.StatusInternalServerError,
 			err:    "invalid character 'i' looking for beginning of value",
+		},
+		{
+			name: errClientClosed,
+			db: &DB{
+				client: &Client{
+					closed: 1,
+				},
+				driverDB: &mock.RevGetter{},
+			},
+			status: http.StatusServiceUnavailable,
+			err:    errClientClosed,
+		},
+		{
+			name: "db error",
+			db: &DB{
+				err: errors.New("db error"),
+			},
+			status: http.StatusInternalServerError,
+			err:    "db error",
 		},
 	}
 	for _, test := range tests {
@@ -908,14 +1180,18 @@ func TestCopy(t *testing.T) {
 		err            string
 	}{
 		{
-			name:   "missing target",
-			db:     &DB{},
+			name: "missing target",
+			db: &DB{
+				client: &Client{},
+			},
 			status: http.StatusBadRequest,
 			err:    "kivik: targetID required",
 		},
 		{
-			name:   "missing source",
-			db:     &DB{},
+			name: "missing source",
+			db: &DB{
+				client: &Client{},
+			},
 			target: "foo",
 			status: http.StatusBadRequest,
 			err:    "kivik: sourceID required",
@@ -923,6 +1199,7 @@ func TestCopy(t *testing.T) {
 		{
 			name: "copier error",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.Copier{
 					CopyFunc: func(_ context.Context, _, _ string, _ map[string]interface{}) (string, error) {
 						return "", &Error{Status: http.StatusBadRequest, Err: errors.New("copy error")}
@@ -937,6 +1214,7 @@ func TestCopy(t *testing.T) {
 		{
 			name: "copier success",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.Copier{
 					CopyFunc: func(_ context.Context, target, source string, options map[string]interface{}) (string, error) {
 						expectedTarget := "foo"
@@ -962,6 +1240,7 @@ func TestCopy(t *testing.T) {
 		{
 			name: "non-copier get error",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (*driver.Document, error) {
 						return nil, &Error{Status: http.StatusBadGateway, Err: errors.New("get error")}
@@ -976,6 +1255,7 @@ func TestCopy(t *testing.T) {
 		{
 			name: "non-copier invalid JSON",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (*driver.Document, error) {
 						return &driver.Document{
@@ -992,6 +1272,7 @@ func TestCopy(t *testing.T) {
 		{
 			name: "non-copier put error",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (*driver.Document, error) {
 						return &driver.Document{
@@ -1011,6 +1292,7 @@ func TestCopy(t *testing.T) {
 		{
 			name: "success",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					GetFunc: func(_ context.Context, docID string, options map[string]interface{}) (*driver.Document, error) {
 						expectedDocID := "bar"
@@ -1042,6 +1324,18 @@ func TestCopy(t *testing.T) {
 			source:   "bar",
 			options:  Options{"rev": "1-xxx", "batch": true},
 			expected: "1-xxx",
+		},
+		{
+			name: "closed",
+			db: &DB{
+				client: &Client{
+					closed: 1,
+				},
+			},
+			target: "x",
+			source: "y",
+			status: http.StatusServiceUnavailable,
+			err:    errClientClosed,
 		},
 	}
 	for _, test := range tests {
@@ -1134,14 +1428,17 @@ func TestPut(t *testing.T) {
 	}
 	tests := []putTest{
 		{
-			name:   "no docID",
-			db:     &DB{},
+			name: "no docID",
+			db: &DB{
+				client: &Client{},
+			},
 			status: http.StatusBadRequest,
 			err:    "kivik: docID required",
 		},
 		{
-			name: "db error",
+			name: "error",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					PutFunc: func(_ context.Context, _ string, _ interface{}, _ map[string]interface{}) (string, error) {
 						return "", &Error{Status: http.StatusBadRequest, Err: errors.New("db error")}
@@ -1155,6 +1452,7 @@ func TestPut(t *testing.T) {
 		{
 			name: "Interface",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					PutFunc: putFunc,
 				},
@@ -1167,6 +1465,7 @@ func TestPut(t *testing.T) {
 		{
 			name: "InvalidJSON",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					PutFunc: putFunc,
 				},
@@ -1179,6 +1478,7 @@ func TestPut(t *testing.T) {
 		{
 			name: "Bytes",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					PutFunc: putFunc,
 				},
@@ -1191,6 +1491,7 @@ func TestPut(t *testing.T) {
 		{
 			name: "RawMessage",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					PutFunc: putFunc,
 				},
@@ -1203,6 +1504,7 @@ func TestPut(t *testing.T) {
 		{
 			name: "Reader",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					PutFunc: putFunc,
 				},
@@ -1213,12 +1515,33 @@ func TestPut(t *testing.T) {
 			newRev:  "1-xxx",
 		},
 		{
-			name:   "ErrorReader",
-			db:     &DB{},
+			name: "ErrorReader",
+			db: &DB{
+				client: &Client{},
+			},
 			docID:  "foo",
 			input:  &errorReader{},
 			status: http.StatusBadRequest,
 			err:    "errorReader",
+		},
+		{
+			name: errClientClosed,
+			db: &DB{
+				client: &Client{
+					closed: 1,
+				},
+			},
+			docID:  "foo",
+			status: http.StatusServiceUnavailable,
+			err:    errClientClosed,
+		},
+		{
+			name: "db error",
+			db: &DB{
+				err: errors.New("db error"),
+			},
+			status: http.StatusInternalServerError,
+			err:    "db error",
 		},
 	}
 	for _, test := range tests {
@@ -1344,6 +1667,7 @@ func TestCreateDoc(t *testing.T) {
 		{
 			name: "error",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					CreateDocFunc: func(_ context.Context, _ interface{}, _ map[string]interface{}) (string, string, error) {
 						return "", "", &Error{Status: http.StatusBadRequest, Err: errors.New("create error")}
@@ -1356,6 +1680,7 @@ func TestCreateDoc(t *testing.T) {
 		{
 			name: "success",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					CreateDocFunc: func(_ context.Context, doc interface{}, opts map[string]interface{}) (string, string, error) {
 						expectedDoc := map[string]string{"type": "test"}
@@ -1373,6 +1698,16 @@ func TestCreateDoc(t *testing.T) {
 			options: testOptions,
 			docID:   "foo",
 			rev:     "1-xxx",
+		},
+		{
+			name: "closed",
+			db: &DB{
+				client: &Client{
+					closed: 1,
+				},
+			},
+			status: http.StatusServiceUnavailable,
+			err:    errClientClosed,
 		},
 	}
 	for _, test := range tests {
@@ -1397,14 +1732,17 @@ func TestDelete(t *testing.T) {
 		err        string
 	}{
 		{
-			name:   "no doc ID",
-			db:     &DB{},
+			name: "no doc ID",
+			db: &DB{
+				client: &Client{},
+			},
 			status: http.StatusBadRequest,
 			err:    "kivik: docID required",
 		},
 		{
 			name: "error",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					DeleteFunc: func(_ context.Context, _, _ string, _ map[string]interface{}) (string, error) {
 						return "", &Error{Status: http.StatusBadRequest, Err: errors.New("delete error")}
@@ -1418,6 +1756,7 @@ func TestDelete(t *testing.T) {
 		{
 			name: "rev in opts",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					DeleteFunc: func(_ context.Context, docID, rev string, opts map[string]interface{}) (string, error) {
 						expectedDocID := "foo"
@@ -1442,6 +1781,7 @@ func TestDelete(t *testing.T) {
 		{
 			name: "success",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					DeleteFunc: func(_ context.Context, docID, rev string, opts map[string]interface{}) (string, error) {
 						expectedDocID := "foo"
@@ -1463,6 +1803,24 @@ func TestDelete(t *testing.T) {
 			rev:     "1-xxx",
 			options: testOptions,
 			newRev:  "2-xxx",
+		},
+		{
+			name: "closed",
+			db: &DB{
+				client: &Client{
+					closed: 1,
+				},
+			},
+			status: http.StatusServiceUnavailable,
+			err:    errClientClosed,
+		},
+		{
+			name: "db error",
+			db: &DB{
+				err: errors.New("db error"),
+			},
+			status: http.StatusInternalServerError,
+			err:    "db error",
 		},
 	}
 
@@ -1494,6 +1852,7 @@ func TestPutAttachment(t *testing.T) {
 			name:  "db error",
 			docID: "foo",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					PutAttachmentFunc: func(_ context.Context, _, _ string, _ *driver.Attachment, _ map[string]interface{}) (string, error) {
 						return "", &Error{Status: http.StatusBadRequest, Err: errors.New("db error")}
@@ -1508,14 +1867,18 @@ func TestPutAttachment(t *testing.T) {
 			err:    "db error",
 		},
 		{
-			name:   "no doc id",
-			db:     &DB{},
+			name: "no doc id",
+			db: &DB{
+				client: &Client{},
+			},
 			status: http.StatusBadRequest,
 			err:    "kivik: docID required",
 		},
 		{
-			name:   "no filename",
-			db:     &DB{},
+			name: "no filename",
+			db: &DB{
+				client: &Client{},
+			},
 			docID:  "foo",
 			att:    &Attachment{},
 			status: http.StatusBadRequest,
@@ -1525,6 +1888,7 @@ func TestPutAttachment(t *testing.T) {
 			name:  "success",
 			docID: "foo",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					PutAttachmentFunc: func(_ context.Context, docID, rev string, att *driver.Attachment, opts map[string]interface{}) (string, error) {
 						expectedDocID, expectedRev := "foo", "1-xxx"
@@ -1568,6 +1932,29 @@ func TestPutAttachment(t *testing.T) {
 			newRev: "2-xxx",
 			body:   "Test file",
 		},
+		{
+			name: "nil attachment",
+			db: &DB{
+				client: &Client{},
+			},
+			docID:  "foo",
+			status: http.StatusBadRequest,
+			err:    "kivik: attachment required",
+		},
+		{
+			name: errClientClosed,
+			db: &DB{
+				client: &Client{
+					closed: 1,
+				},
+			},
+			docID: "foo",
+			att: &Attachment{
+				Filename: "foo.txt",
+			},
+			status: http.StatusServiceUnavailable,
+			err:    errClientClosed,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -1599,20 +1986,25 @@ func TestDeleteAttachment(t *testing.T) {
 
 	tests := testy.NewTable()
 	tests.Add("missing doc id", tt{
-		db:     &DB{},
+		db: &DB{
+			client: &Client{},
+		},
 		status: http.StatusBadRequest,
 		err:    "kivik: docID required",
 	})
 	tests.Add("missing filename", tt{
-		db:     &DB{},
+		db: &DB{
+			client: &Client{},
+		},
 		docID:  "foo",
 		status: http.StatusBadRequest,
 		err:    "kivik: filename required",
 	})
-	tests.Add("db error", tt{
+	tests.Add("error", tt{
 		docID:    "foo",
 		filename: expectedFilename,
 		db: &DB{
+			client: &Client{},
 			driverDB: &mock.DB{
 				DeleteAttachmentFunc: func(_ context.Context, _, _, _ string, _ map[string]interface{}) (string, error) {
 					return "", &Error{Status: http.StatusBadRequest, Err: errors.New("db error")}
@@ -1628,6 +2020,7 @@ func TestDeleteAttachment(t *testing.T) {
 			filename: expectedFilename,
 			options:  map[string]interface{}{"rev": expectedRev},
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					DeleteAttachmentFunc: func(_ context.Context, docID, rev, filename string, opts map[string]interface{}) (string, error) {
 						if docID != expectedDocID {
@@ -1657,6 +2050,7 @@ func TestDeleteAttachment(t *testing.T) {
 			options:  testOptions,
 			newRev:   "2-xxx",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					DeleteAttachmentFunc: func(_ context.Context, docID, rev, filename string, opts map[string]interface{}) (string, error) {
 						if docID != expectedDocID {
@@ -1676,6 +2070,22 @@ func TestDeleteAttachment(t *testing.T) {
 				},
 			},
 		}
+	})
+	tests.Add("closed", tt{
+		db: &DB{
+			client: &Client{
+				closed: 1,
+			},
+		},
+		status: http.StatusServiceUnavailable,
+		err:    errClientClosed,
+	})
+	tests.Add("db error", tt{
+		db: &DB{
+			err: errors.New("db error"),
+		},
+		status: http.StatusInternalServerError,
+		err:    "db error",
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
@@ -1703,6 +2113,7 @@ func TestGetAttachment(t *testing.T) {
 	tests := testy.NewTable()
 	tests.Add("error", tt{
 		db: &DB{
+			client: &Client{},
 			driverDB: &mock.DB{
 				GetAttachmentFunc: func(_ context.Context, _, _ string, _ map[string]interface{}) (*driver.Attachment, error) {
 					return nil, errors.New("fail")
@@ -1727,6 +2138,7 @@ func TestGetAttachment(t *testing.T) {
 				Digest:      "md5-foo",
 			},
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					GetAttachmentFunc: func(_ context.Context, docID, filename string, opts map[string]interface{}) (*driver.Attachment, error) {
 						if docID != expectedDocID {
@@ -1751,15 +2163,35 @@ func TestGetAttachment(t *testing.T) {
 		}
 	})
 	tests.Add("no docID", tt{
-		db:     &DB{},
+		db: &DB{
+			client: &Client{},
+		},
 		status: http.StatusBadRequest,
 		err:    "kivik: docID required",
 	})
 	tests.Add("no filename", tt{
-		db:     &DB{},
+		db: &DB{
+			client: &Client{},
+		},
 		docID:  "foo",
 		status: http.StatusBadRequest,
 		err:    "kivik: filename required",
+	})
+	tests.Add(errClientClosed, tt{
+		db: &DB{
+			client: &Client{
+				closed: 1,
+			},
+		},
+		status: http.StatusServiceUnavailable,
+		err:    errClientClosed,
+	})
+	tests.Add("db error", tt{
+		db: &DB{
+			err: errors.New("db error"),
+		},
+		status: http.StatusInternalServerError,
+		err:    "db error",
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
@@ -1795,6 +2227,7 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 		{
 			name: "plain db, error",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					GetAttachmentFunc: func(_ context.Context, _, _ string, _ map[string]interface{}) (*driver.Attachment, error) {
 						return nil, errors.New("fail")
@@ -1809,6 +2242,7 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 		{
 			name: "plain db, success",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.DB{
 					GetAttachmentFunc: func(_ context.Context, docID, filename string, opts map[string]interface{}) (*driver.Attachment, error) {
 						if docID != expectedDocID {
@@ -1844,6 +2278,7 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 		{
 			name: "error",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.AttachmentMetaGetter{
 					GetAttachmentMetaFunc: func(_ context.Context, _, _ string, _ map[string]interface{}) (*driver.Attachment, error) {
 						return nil, errors.New("fail")
@@ -1858,6 +2293,7 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 		{
 			name: "success",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.AttachmentMetaGetter{
 					GetAttachmentMetaFunc: func(_ context.Context, docID, filename string, opts map[string]interface{}) (*driver.Attachment, error) {
 						expectedDocID, expectedFilename := "foo", "foo.txt"
@@ -1891,17 +2327,41 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 			},
 		},
 		{
-			name:   "no doc id",
-			db:     &DB{},
+			name: "no doc id",
+			db: &DB{
+				client: &Client{},
+			},
 			status: http.StatusBadRequest,
 			err:    "kivik: docID required",
 		},
 		{
-			name:   "no filename",
-			db:     &DB{},
+			name: "no filename",
+			db: &DB{
+				client: &Client{},
+			},
 			docID:  "foo",
 			status: http.StatusBadRequest,
 			err:    "kivik: filename required",
+		},
+		{
+			name: errClientClosed,
+			db: &DB{
+				client: &Client{
+					closed: 1,
+				},
+			},
+			docID:    "foo",
+			filename: "bar.txt",
+			status:   http.StatusServiceUnavailable,
+			err:      errClientClosed,
+		},
+		{
+			name: "db eror",
+			db: &DB{
+				err: errors.New("db error"),
+			},
+			status: http.StatusInternalServerError,
+			err:    "db error",
 		},
 	}
 	for _, test := range tests {
@@ -1934,6 +2394,7 @@ func TestPurge(t *testing.T) {
 		{
 			name: "success, nothing purged",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.Purger{
 					PurgeFunc: func(_ context.Context, dm map[string][]string) (*driver.PurgeResult, error) {
 						if d := testy.DiffInterface(docMap, dm); d != nil {
@@ -1951,6 +2412,7 @@ func TestPurge(t *testing.T) {
 		{
 			name: "success, all purged",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.Purger{
 					PurgeFunc: func(_ context.Context, dm map[string][]string) (*driver.PurgeResult, error) {
 						if d := testy.DiffInterface(docMap, dm); d != nil {
@@ -1967,14 +2429,18 @@ func TestPurge(t *testing.T) {
 			},
 		},
 		{
-			name:   "non-purger",
-			db:     &DB{driverDB: &mock.DB{}},
+			name: "non-purger",
+			db: &DB{
+				client:   &Client{},
+				driverDB: &mock.DB{},
+			},
 			status: http.StatusNotImplemented,
 			err:    "kivik: purge not supported by driver",
 		},
 		{
 			name: "couch 2.0-2.1 example",
 			db: &DB{
+				client: &Client{},
 				driverDB: &mock.Purger{
 					PurgeFunc: func(_ context.Context, _ map[string][]string) (*driver.PurgeResult, error) {
 						return nil, &Error{Status: http.StatusNotImplemented, Message: "this feature is not yet implemented"}
@@ -1983,6 +2449,24 @@ func TestPurge(t *testing.T) {
 			},
 			status: http.StatusNotImplemented,
 			err:    "this feature is not yet implemented",
+		},
+		{
+			name: errClientClosed,
+			db: &DB{
+				client: &Client{
+					closed: 1,
+				},
+			},
+			status: http.StatusServiceUnavailable,
+			err:    errClientClosed,
+		},
+		{
+			name: "db error",
+			db: &DB{
+				err: errors.New("db error"),
+			},
+			status: http.StatusInternalServerError,
+			err:    "db error",
 		},
 	}
 	for _, test := range tests {
@@ -2010,28 +2494,37 @@ func TestBulkGet(t *testing.T) {
 
 	tests := []bulkGetTest{
 		{
-			name:   "non-bulkGetter",
-			db:     &DB{driverDB: &mock.DB{}},
+			name: "non-bulkGetter",
+			db: &DB{
+				client:   &Client{},
+				driverDB: &mock.DB{},
+			},
 			status: http.StatusNotImplemented,
 			err:    "kivik: bulk get not supported by driver",
 		},
 		{
 			name: "query error",
-			db: &DB{driverDB: &mock.BulkGetter{
-				BulkGetFunc: func(_ context.Context, docs []driver.BulkGetReference, opts map[string]interface{}) (driver.Rows, error) {
-					return nil, errors.New("query error")
+			db: &DB{
+				client: &Client{},
+				driverDB: &mock.BulkGetter{
+					BulkGetFunc: func(_ context.Context, docs []driver.BulkGetReference, opts map[string]interface{}) (driver.Rows, error) {
+						return nil, errors.New("query error")
+					},
 				},
-			}},
+			},
 			status: http.StatusInternalServerError,
 			err:    "query error",
 		},
 		{
 			name: "success",
-			db: &DB{driverDB: &mock.BulkGetter{
-				BulkGetFunc: func(_ context.Context, docs []driver.BulkGetReference, opts map[string]interface{}) (driver.Rows, error) {
-					return &mock.Rows{ID: "bulkGet1"}, nil
+			db: &DB{
+				client: &Client{},
+				driverDB: &mock.BulkGetter{
+					BulkGetFunc: func(_ context.Context, docs []driver.BulkGetReference, opts map[string]interface{}) (driver.Rows, error) {
+						return &mock.Rows{ID: "bulkGet1"}, nil
+					},
 				},
-			}},
+			},
 			expected: &rows{
 				iter: &iter{
 					feed: &rowsIterator{
@@ -2042,6 +2535,16 @@ func TestBulkGet(t *testing.T) {
 				rowsi: &mock.Rows{ID: "bulkGet1"},
 			},
 		},
+		{
+			name: errClientClosed,
+			db: &DB{
+				client: &Client{
+					closed: 1,
+				},
+			},
+			status: http.StatusServiceUnavailable,
+			err:    errClientClosed,
+		},
 	}
 
 	for _, test := range tests {
@@ -2049,12 +2552,22 @@ func TestBulkGet(t *testing.T) {
 			rs := test.db.BulkGet(context.Background(), test.docs, test.options)
 			testy.StatusError(t, test.err, test.status, rs.Err())
 			if r, ok := rs.(*rows); ok {
-				r.cancel = nil // Determinism
+				r.cancel = nil  // Determinism
+				r.onClose = nil // Determinism
 			}
 			if d := testy.DiffInterface(test.expected, rs); d != nil {
 				t.Error(d)
 			}
 		})
+	}
+}
+
+func newDB(db driver.DB) *DB {
+	client := &Client{}
+	client.wg.Add(1)
+	return &DB{
+		client:   client,
+		driverDB: db,
 	}
 }
 
@@ -2065,22 +2578,22 @@ func TestDBClose(t *testing.T) {
 	}
 	tests := testy.NewTable()
 	tests.Add("non-closer", tst{
-		db: &DB{driverDB: &mock.DB{}},
+		db: newDB(&mock.DB{}),
 	})
 	tests.Add("error", tst{
-		db: &DB{driverDB: &mock.DBCloser{
+		db: newDB(&mock.DBCloser{
 			CloseFunc: func(_ context.Context) error {
 				return errors.New("close err")
 			},
-		}},
+		}),
 		err: "close err",
 	})
 	tests.Add("success", tst{
-		db: &DB{driverDB: &mock.DBCloser{
+		db: newDB(&mock.DBCloser{
 			CloseFunc: func(_ context.Context) error {
 				return nil
 			},
-		}},
+		}),
 	})
 
 	tests.Run(t, func(t *testing.T, test tst) {
@@ -2099,25 +2612,34 @@ func TestRevsDiff(t *testing.T) {
 	}
 	tests := testy.NewTable()
 	tests.Add("non-DBReplicator", tt{
-		db:     &DB{driverDB: &mock.DB{}},
+		db: &DB{
+			client:   &Client{},
+			driverDB: &mock.DB{},
+		},
 		status: http.StatusNotImplemented,
 		err:    "kivik: _revs_diff not supported by driver",
 	})
 	tests.Add("network error", tt{
-		db: &DB{driverDB: &mock.RevsDiffer{
-			RevsDiffFunc: func(_ context.Context, revMap interface{}) (driver.Rows, error) {
-				return nil, errors.New("net error")
+		db: &DB{
+			client: &Client{},
+			driverDB: &mock.RevsDiffer{
+				RevsDiffFunc: func(_ context.Context, revMap interface{}) (driver.Rows, error) {
+					return nil, errors.New("net error")
+				},
 			},
-		}},
+		},
 		status: http.StatusInternalServerError,
 		err:    "net error",
 	})
 	tests.Add("success", tt{
-		db: &DB{driverDB: &mock.RevsDiffer{
-			RevsDiffFunc: func(_ context.Context, revMap interface{}) (driver.Rows, error) {
-				return &mock.Rows{ID: "a"}, nil
+		db: &DB{
+			client: &Client{},
+			driverDB: &mock.RevsDiffer{
+				RevsDiffFunc: func(_ context.Context, revMap interface{}) (driver.Rows, error) {
+					return &mock.Rows{ID: "a"}, nil
+				},
 			},
-		}},
+		},
 		expected: &rows{
 			iter: &iter{
 				feed: &rowsIterator{
@@ -2128,12 +2650,29 @@ func TestRevsDiff(t *testing.T) {
 			rowsi: &mock.Rows{ID: "a"},
 		},
 	})
+	tests.Add(errClientClosed, tt{
+		db: &DB{
+			client: &Client{
+				closed: 1,
+			},
+		},
+		status: http.StatusServiceUnavailable,
+		err:    errClientClosed,
+	})
+	tests.Add("db error", tt{
+		db: &DB{
+			err: errors.New("db error"),
+		},
+		status: http.StatusInternalServerError,
+		err:    "db error",
+	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
 		rs := tt.db.RevsDiff(context.Background(), tt.revMap)
 		testy.StatusError(t, tt.err, tt.status, rs.Err())
 		if r, ok := rs.(*rows); ok {
-			r.cancel = nil // Determinism
+			r.cancel = nil  // Determinism
+			r.onClose = nil // Determinism
 		}
 		if d := testy.DiffInterface(tt.expected, rs); d != nil {
 			t.Error(d)
@@ -2151,6 +2690,7 @@ func TestPartitionStats(t *testing.T) {
 	tests := testy.NewTable()
 	tests.Add("non-PartitionedDB", tt{
 		db: &DB{
+			client:   &Client{},
 			driverDB: &mock.DB{},
 		},
 		status: http.StatusNotImplemented,
@@ -2158,6 +2698,7 @@ func TestPartitionStats(t *testing.T) {
 	})
 	tests.Add("error", tt{
 		db: &DB{
+			client: &Client{},
 			driverDB: &mock.PartitionedDB{
 				PartitionStatsFunc: func(_ context.Context, _ string) (*driver.PartitionStats, error) {
 					return nil, &Error{Status: http.StatusBadGateway, Err: errors.New("stats error")}
@@ -2169,6 +2710,7 @@ func TestPartitionStats(t *testing.T) {
 	})
 	tests.Add("success", tt{
 		db: &DB{
+			client: &Client{},
 			driverDB: &mock.PartitionedDB{
 				PartitionStatsFunc: func(_ context.Context, name string) (*driver.PartitionStats, error) {
 					if name != "partXX" {
@@ -2183,6 +2725,22 @@ func TestPartitionStats(t *testing.T) {
 			},
 		},
 		name: "partXX",
+	})
+	tests.Add(errClientClosed, tt{
+		db: &DB{
+			client: &Client{
+				closed: 1,
+			},
+		},
+		status: http.StatusServiceUnavailable,
+		err:    errClientClosed,
+	})
+	tests.Add("db error", tt{
+		db: &DB{
+			err: errors.New("db error"),
+		},
+		status: http.StatusInternalServerError,
+		err:    "db error",
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {

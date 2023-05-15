@@ -63,6 +63,13 @@ func TestConfig(t *testing.T) {
 			"foo": ConfigSection{"asd": "rew"},
 		},
 	})
+	tests.Add("closed", tst{
+		client: &Client{
+			closed: 1,
+		},
+		status: http.StatusServiceUnavailable,
+		err:    "client closed",
+	})
 
 	tests.Run(t, func(t *testing.T, test tst) {
 		result, err := test.client.Config(context.Background(), test.node)
@@ -111,6 +118,13 @@ func TestConfigSection(t *testing.T) {
 		node:     "foo",
 		section:  "foo",
 		expected: ConfigSection{"lkj": "ghj"},
+	})
+	tests.Add("closed", tst{
+		client: &Client{
+			closed: 1,
+		},
+		status: http.StatusServiceUnavailable,
+		err:    "client closed",
 	})
 
 	tests.Run(t, func(t *testing.T, test tst) {
@@ -164,6 +178,13 @@ func TestConfigValue(t *testing.T) {
 		section:  "foo",
 		key:      "asd",
 		expected: "jkl",
+	})
+	tests.Add("closed", tst{
+		client: &Client{
+			closed: 1,
+		},
+		status: http.StatusServiceUnavailable,
+		err:    "client closed",
 	})
 
 	tests.Run(t, func(t *testing.T, test tst) {
@@ -222,6 +243,13 @@ func TestSetConfigValue(t *testing.T) {
 		value:    "baz",
 		expected: "old",
 	})
+	tests.Add("closed", tst{
+		client: &Client{
+			closed: 1,
+		},
+		status: http.StatusServiceUnavailable,
+		err:    "client closed",
+	})
 
 	tests.Run(t, func(t *testing.T, test tst) {
 		result, err := test.client.SetConfigValue(context.Background(), test.node, test.section, test.key, test.value)
@@ -274,6 +302,13 @@ func TestDeleteConfigKey(t *testing.T) {
 		section:  "foo",
 		key:      "baz",
 		expected: "old",
+	})
+	tests.Add("closed", tst{
+		client: &Client{
+			closed: 1,
+		},
+		status: http.StatusServiceUnavailable,
+		err:    "client closed",
 	})
 
 	tests.Run(t, func(t *testing.T, test tst) {

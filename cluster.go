@@ -25,6 +25,10 @@ var clusterNotImplemented = &Error{Status: http.StatusNotImplemented, Message: "
 //
 // See http://docs.couchdb.org/en/stable/api/server/common.html#cluster-setup
 func (c *Client) ClusterStatus(ctx context.Context, options ...Options) (string, error) {
+	if err := c.startQuery(); err != nil {
+		return "", err
+	}
+	defer c.endQuery()
 	cluster, ok := c.driverClient.(driver.Cluster)
 	if !ok {
 		return "", clusterNotImplemented
@@ -38,6 +42,10 @@ func (c *Client) ClusterStatus(ctx context.Context, options ...Options) (string,
 //
 // See http://docs.couchdb.org/en/stable/api/server/common.html#post--_cluster_setup
 func (c *Client) ClusterSetup(ctx context.Context, action interface{}) error {
+	if err := c.startQuery(); err != nil {
+		return err
+	}
+	defer c.endQuery()
 	cluster, ok := c.driverClient.(driver.Cluster)
 	if !ok {
 		return clusterNotImplemented
@@ -58,6 +66,10 @@ type ClusterMembership struct {
 //
 // See https://docs.couchdb.org/en/latest/api/server/common.html#get--_membership
 func (c *Client) Membership(ctx context.Context) (*ClusterMembership, error) {
+	if err := c.startQuery(); err != nil {
+		return nil, err
+	}
+	defer c.endQuery()
 	cluster, ok := c.driverClient.(driver.Cluster)
 	if !ok {
 		return nil, clusterNotImplemented

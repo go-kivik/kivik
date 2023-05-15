@@ -210,9 +210,9 @@ func (r *rowsIterator) Next(i interface{}) error {
 	return err
 }
 
-func newRows(ctx context.Context, rowsi driver.Rows) *rows {
+func newRows(ctx context.Context, onClose func(), rowsi driver.Rows) *rows {
 	return &rows{
-		iter:  newIterator(ctx, &rowsIterator{Rows: rowsi}, &driver.Row{}),
+		iter:  newIterator(ctx, onClose, &rowsIterator{Rows: rowsi}, &driver.Row{}),
 		rowsi: rowsi,
 	}
 }

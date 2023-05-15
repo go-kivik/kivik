@@ -28,6 +28,7 @@ func TestSession(t *testing.T) {
 	tests := []struct {
 		name     string
 		client   driver.Client
+		closed   int32
 		expected interface{}
 		status   int
 		err      string
@@ -63,10 +64,19 @@ func TestSession(t *testing.T) {
 				Roles: []string{"stooges"},
 			},
 		},
+		{
+			name:   "closed",
+			closed: 1,
+			status: http.StatusServiceUnavailable,
+			err:    "client closed",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			client := &Client{driverClient: test.client}
+			client := &Client{
+				driverClient: test.client,
+				closed:       test.closed,
+			}
 			session, err := client.Session(context.Background())
 			var errMsg string
 			if err != nil {

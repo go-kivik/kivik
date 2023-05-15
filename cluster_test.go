@@ -27,6 +27,7 @@ import (
 func TestClusterStatus(t *testing.T) {
 	type tst struct {
 		client   driver.Client
+		closed   int32
 		options  Options
 		expected string
 		status   int
@@ -55,10 +56,17 @@ func TestClusterStatus(t *testing.T) {
 		},
 		expected: "cluster_finished",
 	})
+	tests.Add("closed", tst{
+		client: &mock.Cluster{},
+		closed: 1,
+		status: http.StatusServiceUnavailable,
+		err:    errClientClosed,
+	})
 
 	tests.Run(t, func(t *testing.T, test tst) {
 		c := &Client{
 			driverClient: test.client,
+			closed:       test.closed,
 		}
 		result, err := c.ClusterStatus(context.Background(), test.options)
 		testy.StatusError(t, test.err, test.status, err)
@@ -71,6 +79,7 @@ func TestClusterStatus(t *testing.T) {
 func TestClusterSetup(t *testing.T) {
 	type tst struct {
 		client driver.Client
+		closed int32
 		action interface{}
 		status int
 		err    string
@@ -98,10 +107,17 @@ func TestClusterSetup(t *testing.T) {
 			},
 		},
 	})
+	tests.Add("closed", tst{
+		client: &mock.Cluster{},
+		closed: 1,
+		status: http.StatusServiceUnavailable,
+		err:    errClientClosed,
+	})
 
 	tests.Run(t, func(t *testing.T, test tst) {
 		c := &Client{
 			driverClient: test.client,
+			closed:       test.closed,
 		}
 		err := c.ClusterSetup(context.Background(), test.action)
 		testy.StatusError(t, test.err, test.status, err)
@@ -111,6 +127,7 @@ func TestClusterSetup(t *testing.T) {
 func TestMembership(t *testing.T) {
 	type tt struct {
 		client driver.Client
+		closed int32
 		want   *ClusterMembership
 		status int
 		err    string
@@ -145,10 +162,17 @@ func TestMembership(t *testing.T) {
 			ClusterNodes: []string{"one", "two"},
 		},
 	})
+	tests.Add("closed", tt{
+		client: &mock.Cluster{},
+		closed: 1,
+		status: http.StatusServiceUnavailable,
+		err:    errClientClosed,
+	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
 		c := &Client{
 			driverClient: tt.client,
+			closed:       tt.closed,
 		}
 		got, err := c.Membership(context.Background())
 		testy.StatusError(t, tt.err, tt.status, err)

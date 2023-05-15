@@ -31,5 +31,8 @@ func (u *DBUpdates) Next(dbupdate *driver.DBUpdate) error {
 
 // Close calls u.CloseFunc
 func (u *DBUpdates) Close() error {
-	return u.CloseFunc()
+	if u.CloseFunc != nil {
+		return u.CloseFunc()
+	}
+	return nil
 }

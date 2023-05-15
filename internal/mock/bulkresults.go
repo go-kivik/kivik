@@ -31,5 +31,8 @@ func (r *BulkResults) Next(result *driver.BulkResult) error {
 
 // Close calls r.CloseFunc
 func (r *BulkResults) Close() error {
-	return r.CloseFunc()
+	if r.CloseFunc != nil {
+		return r.CloseFunc()
+	}
+	return nil
 }

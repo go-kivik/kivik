@@ -17,6 +17,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sync"
+	"sync/atomic"
 
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/internal/registry"
@@ -27,6 +29,11 @@ type Client struct {
 	dsn          string
 	driverName   string
 	driverClient driver.Client
+
+	// closed will be non-0 when the client has been closed
+	closed int32
+	mu     sync.Mutex
+	wg     sync.WaitGroup
 }
 
 // Options is a collection of options. The keys and values are backend specific.
@@ -102,8 +109,28 @@ type Version struct {
 	RawResponse json.RawMessage
 }
 
+func (c *Client) startQuery() error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if atomic.LoadInt32(&c.closed) > 0 {
+		return ErrClientClosed
+	}
+	c.wg.Add(1)
+	return nil
+}
+
+func (c *Client) endQuery() {
+	c.mu.Lock()
+	c.wg.Done()
+	c.mu.Unlock()
+}
+
 // Version returns version and vendor info about the backend.
 func (c *Client) Version(ctx context.Context) (*Version, error) {
+	if err := c.startQuery(); err != nil {
+		return nil, err
+	}
+	defer c.endQuery()
 	ver, err := c.driverClient.Version(ctx)
 	if err != nil {
 		return nil, err
@@ -128,21 +155,37 @@ func (c *Client) DB(dbName string, options ...Options) *DB {
 
 // AllDBs returns a list of all databases.
 func (c *Client) AllDBs(ctx context.Context, options ...Options) ([]string, error) {
+	if err := c.startQuery(); err != nil {
+		return nil, err
+	}
+	defer c.endQuery()
 	return c.driverClient.AllDBs(ctx, mergeOptions(options...))
 }
 
 // DBExists returns true if the specified database exists.
 func (c *Client) DBExists(ctx context.Context, dbName string, options ...Options) (bool, error) {
+	if err := c.startQuery(); err != nil {
+		return false, err
+	}
+	defer c.endQuery()
 	return c.driverClient.DBExists(ctx, dbName, mergeOptions(options...))
 }
 
 // CreateDB creates a DB of the requested name.
 func (c *Client) CreateDB(ctx context.Context, dbName string, options ...Options) error {
+	if err := c.startQuery(); err != nil {
+		return err
+	}
+	defer c.endQuery()
 	return c.driverClient.CreateDB(ctx, dbName, mergeOptions(options...))
 }
 
 // DestroyDB deletes the requested DB.
 func (c *Client) DestroyDB(ctx context.Context, dbName string, options ...Options) error {
+	if err := c.startQuery(); err != nil {
+		return err
+	}
+	defer c.endQuery()
 	return c.driverClient.DestroyDB(ctx, dbName, mergeOptions(options...))
 }
 
@@ -150,6 +193,10 @@ func (c *Client) DestroyDB(ctx context.Context, dbName string, options ...Option
 // is driver-specific. If the driver does not understand the authenticator, an
 // error will be returned.
 func (c *Client) Authenticate(ctx context.Context, a interface{}) error {
+	if err := c.startQuery(); err != nil {
+		return err
+	}
+	defer c.endQuery()
 	if auth, ok := c.driverClient.(driver.Authenticator); ok {
 		return auth.Authenticate(ctx, a)
 	}
@@ -162,6 +209,10 @@ func missingArg(arg string) error {
 
 // DBsStats returns database statistics about one or more databases.
 func (c *Client) DBsStats(ctx context.Context, dbnames []string) ([]*DBStats, error) {
+	if err := c.startQuery(); err != nil {
+		return nil, err
+	}
+	defer c.endQuery()
 	dbstats, err := c.nativeDBsStats(ctx, dbnames)
 	switch HTTPStatus(err) {
 	case http.StatusNotFound, http.StatusNotImplemented:
@@ -203,6 +254,10 @@ func (c *Client) nativeDBsStats(ctx context.Context, dbnames []string) ([]*DBSta
 // supports the Pinger interface, it will be used. Otherwise, a fallback is
 // made to calling Version.
 func (c *Client) Ping(ctx context.Context) (bool, error) {
+	if err := c.startQuery(); err != nil {
+		return false, err
+	}
+	defer c.endQuery()
 	if pinger, ok := c.driverClient.(driver.Pinger); ok {
 		return pinger.Ping(ctx)
 	}
@@ -210,8 +265,15 @@ func (c *Client) Ping(ctx context.Context) (bool, error) {
 	return err == nil, err
 }
 
-// Close cleans up any resources used by Client.
+// Close cleans up any resources used by Client. Close is safe to call
+// concurrently with other operations and will block until all other operations
+// finish. After calling Close, any other client operations will return
+// ErrClientClosed.
 func (c *Client) Close(ctx context.Context) error {
+	c.mu.Lock()
+	atomic.StoreInt32(&c.closed, 1)
+	c.mu.Unlock()
+	c.wg.Wait()
 	if closer, ok := c.driverClient.(driver.ClientCloser); ok {
 		return closer.Close(ctx)
 	}

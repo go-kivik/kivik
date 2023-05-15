@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"gitlab.com/flimzy/testy"
 
@@ -633,6 +634,17 @@ func TestFlush(t *testing.T) {
 			},
 			status: http.StatusInternalServerError,
 			err:    "db error",
+		},
+		{
+			name: errDatabaseClosed,
+			db: &DB{
+				closed: 1,
+				client: &Client{
+					closed: 1,
+				},
+			},
+			status: http.StatusServiceUnavailable,
+			err:    errDatabaseClosed,
 		},
 	}
 	for _, test := range tests {
@@ -2572,6 +2584,8 @@ func newDB(db driver.DB) *DB {
 }
 
 func TestDBClose(t *testing.T) {
+	t.Parallel()
+
 	type tst struct {
 		db  *DB
 		err string
@@ -2599,6 +2613,92 @@ func TestDBClose(t *testing.T) {
 	tests.Run(t, func(t *testing.T, test tst) {
 		err := test.db.Close()
 		testy.Error(t, test.err, err)
+	})
+
+	t.Run("blocks", func(t *testing.T) {
+		t.Parallel()
+
+		const delay = 100 * time.Millisecond
+
+		type tt struct {
+			db   driver.DB
+			work func(*testing.T, *DB)
+		}
+
+		tests := testy.NewTable()
+		tests.Add("Flush", tt{
+			db: &mock.Flusher{
+				FlushFunc: func(context.Context) error {
+					time.Sleep(delay)
+					return nil
+				},
+			},
+			work: func(_ *testing.T, db *DB) {
+				_ = db.Flush(context.Background())
+			},
+		})
+		tests.Add("AllDocs", tt{
+			db: &mock.DB{
+				AllDocsFunc: func(context.Context, map[string]interface{}) (driver.Rows, error) {
+					return &mock.Rows{
+						NextFunc: func(*driver.Row) error {
+							time.Sleep(delay)
+							return io.EOF
+						},
+					}, nil
+				},
+			},
+			work: func(t *testing.T, db *DB) {
+				u := db.AllDocs(context.Background())
+				for u.Next() { //nolint:revive // intentional empty block
+				}
+				if u.Err() != nil {
+					t.Fatal(u.Err())
+				}
+			},
+		})
+		tests.Add("BulkDocs", tt{
+			db: &mock.BulkDocer{
+				BulkDocsFunc: func(context.Context, []interface{}, map[string]interface{}) (driver.BulkResults, error) {
+					return &mock.BulkResults{
+						NextFunc: func(*driver.BulkResult) error {
+							time.Sleep(delay)
+							return io.EOF
+						},
+					}, nil
+				},
+			},
+			work: func(t *testing.T, db *DB) {
+				u, err := db.BulkDocs(context.Background(), []interface{}{
+					map[string]string{"_id": "foo"},
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				for u.Next() { //nolint:revive // intentional empty block
+				}
+				if u.Err() != nil {
+					t.Fatal(u.Err())
+				}
+			},
+		})
+
+		tests.Run(t, func(t *testing.T, tt tt) {
+			t.Parallel()
+
+			db := &DB{
+				client:   &Client{},
+				driverDB: tt.db,
+			}
+
+			start := time.Now()
+			go tt.work(t, db)
+			time.Sleep(delay / 2)
+			_ = db.Close()
+			if elapsed := time.Since(start); elapsed < delay {
+				t.Errorf("db.Close() didn't block long enough (%v < %v)", elapsed, delay)
+			}
+		})
 	})
 }
 

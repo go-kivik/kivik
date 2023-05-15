@@ -30,23 +30,29 @@ const (
 	// ErrClientClosed is returned by any client operations after [Client.Close]
 	// has been called.
 	ErrClientClosed err = iota
+	// ErrDatabaseClosed is returned by any database operations after [DB.Close]
+	// has been called.
+	ErrDatabaseClosed
 )
 
 const (
-	errClientClosed = "client closed"
+	errClientClosed   = "client closed"
+	errDatabaseClosed = "database closed"
 )
 
 func (e err) Error() string {
 	switch e {
 	case ErrClientClosed:
 		return errClientClosed
+	case ErrDatabaseClosed:
+		return errDatabaseClosed
 	}
 	return "unknown error"
 }
 
 func (e err) HTTPStatus() int {
 	switch e {
-	case ErrClientClosed:
+	case ErrClientClosed, ErrDatabaseClosed:
 		return http.StatusServiceUnavailable
 	}
 	return http.StatusInternalServerError

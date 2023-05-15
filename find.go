@@ -28,7 +28,7 @@ func (db *DB) Find(ctx context.Context, query interface{}, options ...Options) R
 	if db.err != nil {
 		return &errRS{err: db.err}
 	}
-	if err := db.client.startQuery(); err != nil {
+	if err := db.startQuery(); err != nil {
 		return &errRS{err: err}
 	}
 	if finder, ok := db.driverDB.(driver.Finder); ok {
@@ -36,7 +36,7 @@ func (db *DB) Find(ctx context.Context, query interface{}, options ...Options) R
 		if err != nil {
 			return &errRS{err: err}
 		}
-		return newRows(ctx, db.client.endQuery, rowsi)
+		return newRows(ctx, db.endQuery, rowsi)
 	}
 	return &errRS{err: findNotImplemented}
 }
@@ -49,10 +49,10 @@ func (db *DB) CreateIndex(ctx context.Context, ddoc, name string, index interfac
 	if db.err != nil {
 		return db.err
 	}
-	if err := db.client.startQuery(); err != nil {
+	if err := db.startQuery(); err != nil {
 		return err
 	}
-	defer db.client.endQuery()
+	defer db.endQuery()
 	if finder, ok := db.driverDB.(driver.Finder); ok {
 		return finder.CreateIndex(ctx, ddoc, name, index, mergeOptions(options...))
 	}
@@ -64,10 +64,10 @@ func (db *DB) DeleteIndex(ctx context.Context, ddoc, name string, options ...Opt
 	if db.err != nil {
 		return db.err
 	}
-	if err := db.client.startQuery(); err != nil {
+	if err := db.startQuery(); err != nil {
 		return err
 	}
-	defer db.client.endQuery()
+	defer db.endQuery()
 	if finder, ok := db.driverDB.(driver.Finder); ok {
 		return finder.DeleteIndex(ctx, ddoc, name, mergeOptions(options...))
 	}
@@ -87,10 +87,10 @@ func (db *DB) GetIndexes(ctx context.Context, options ...Options) ([]Index, erro
 	if db.err != nil {
 		return nil, db.err
 	}
-	if err := db.client.startQuery(); err != nil {
+	if err := db.startQuery(); err != nil {
 		return nil, err
 	}
-	defer db.client.endQuery()
+	defer db.endQuery()
 	if finder, ok := db.driverDB.(driver.Finder); ok {
 		dIndexes, err := finder.GetIndexes(ctx, mergeOptions(options...))
 		indexes := make([]Index, len(dIndexes))
@@ -124,10 +124,10 @@ func (db *DB) Explain(ctx context.Context, query interface{}, options ...Options
 	if db.err != nil {
 		return nil, db.err
 	}
-	if err := db.client.startQuery(); err != nil {
+	if err := db.startQuery(); err != nil {
 		return nil, err
 	}
-	defer db.client.endQuery()
+	defer db.endQuery()
 	if explainer, ok := db.driverDB.(driver.Finder); ok {
 		plan, err := explainer.Explain(ctx, query, mergeOptions(options...))
 		if err != nil {

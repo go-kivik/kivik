@@ -88,7 +88,7 @@ func (db *DB) BulkDocs(ctx context.Context, docs []interface{}, options ...Optio
 	if len(docsi) == 0 {
 		return nil, &Error{Status: http.StatusBadRequest, Err: errors.New("kivik: no documents provided")}
 	}
-	if err := db.client.startQuery(); err != nil {
+	if err := db.startQuery(); err != nil {
 		return nil, err
 	}
 	opts := mergeOptions(options...)
@@ -97,7 +97,7 @@ func (db *DB) BulkDocs(ctx context.Context, docs []interface{}, options ...Optio
 		if err != nil {
 			return nil, err
 		}
-		return newBulkResults(ctx, db.client.endQuery, bulki), nil
+		return newBulkResults(ctx, db.endQuery, bulki), nil
 	}
 	var results []driver.BulkResult
 	for _, doc := range docsi {
@@ -115,7 +115,7 @@ func (db *DB) BulkDocs(ctx context.Context, docs []interface{}, options ...Optio
 			Error: err,
 		})
 	}
-	return newBulkResults(ctx, db.client.endQuery, &emulatedBulkResults{results}), nil
+	return newBulkResults(ctx, db.endQuery, &emulatedBulkResults{results}), nil
 }
 
 type emulatedBulkResults struct {

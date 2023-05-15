@@ -266,14 +266,17 @@ func (db *BulkGetter) BulkGet(ctx context.Context, docs []driver.BulkGetReferenc
 // DBCloser mocks driver.DB and driver.DBCloser
 type DBCloser struct {
 	*DB
-	CloseFunc func(context.Context) error
+	CloseFunc func() error
 }
 
 var _ driver.DBCloser = &DBCloser{}
 
 // Close calls db.CloseFunc
-func (db *DBCloser) Close(ctx context.Context) error {
-	return db.CloseFunc(ctx)
+func (db *DBCloser) Close() error {
+	if db.CloseFunc != nil {
+		return db.CloseFunc()
+	}
+	return nil
 }
 
 // RevsDiffer mocks a driver.DB and driver.RevsDiffer.

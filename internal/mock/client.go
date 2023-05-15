@@ -161,14 +161,14 @@ func (c *Cluster) Membership(ctx context.Context) (*driver.ClusterMembership, er
 // ClientCloser mocks driver.Client and driver.ClientCloser
 type ClientCloser struct {
 	*Client
-	CloseFunc func(context.Context) error
+	CloseFunc func() error
 }
 
 var _ driver.ClientCloser = &ClientCloser{}
 
 // Close calls c.CloseFunc
-func (c *ClientCloser) Close(ctx context.Context) error {
-	return c.CloseFunc(ctx)
+func (c *ClientCloser) Close() error {
+	return c.CloseFunc()
 }
 
 // Configer mocks driver.Client and driver.Configer

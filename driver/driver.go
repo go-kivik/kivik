@@ -419,13 +419,13 @@ type Cluster interface {
 // ClientCloser is an optional interface that may be implemented by a [Client]
 // to clean up resources when a client is no longer needed.
 type ClientCloser interface {
-	Close(ctx context.Context) error
+	Close() error
 }
 
 // DBCloser is an optional interface that may be implemented by a [DB] to clean
 // up resources when a database is no longer needed.
 type DBCloser interface {
-	Close(ctx context.Context) error
+	Close() error
 }
 
 // RevDiff represents a rev diff for a single document, as returned by

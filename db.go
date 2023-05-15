@@ -707,12 +707,12 @@ func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...O
 
 // Close cleans up any resources used by the DB. The default CouchDB driver
 // does not use this, the default PouchDB driver does.
-func (db *DB) Close(ctx context.Context) error {
+func (db *DB) Close() error {
 	if db.err != nil {
 		return db.err
 	}
 	if closer, ok := db.driverDB.(driver.DBCloser); ok {
-		return closer.Close(ctx)
+		return closer.Close()
 	}
 	return nil
 }

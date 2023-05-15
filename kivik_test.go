@@ -791,7 +791,7 @@ func TestClientClose(t *testing.T) {
 	})
 	tests.Add("error", tst{
 		client: &Client{driverClient: &mock.ClientCloser{
-			CloseFunc: func(_ context.Context) error {
+			CloseFunc: func() error {
 				return errors.New("close err")
 			},
 		}},
@@ -799,7 +799,7 @@ func TestClientClose(t *testing.T) {
 	})
 	tests.Add("success", tst{
 		client: &Client{driverClient: &mock.ClientCloser{
-			CloseFunc: func(_ context.Context) error {
+			CloseFunc: func() error {
 				return nil
 			},
 		}},
@@ -807,7 +807,7 @@ func TestClientClose(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, test tst) {
 		t.Parallel()
-		err := test.client.Close(context.Background())
+		err := test.client.Close()
 		testy.Error(t, test.err, err)
 	})
 
@@ -1177,7 +1177,7 @@ func TestClientClose(t *testing.T) {
 			start := time.Now()
 			go tt.work(t, c)
 			time.Sleep(delay / 2)
-			_ = c.Close(context.TODO())
+			_ = c.Close()
 			if elapsed := time.Since(start); elapsed < delay {
 				t.Errorf("client.Close() didn't block long enough (%v < %v)", elapsed, delay)
 			}

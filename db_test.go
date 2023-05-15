@@ -2582,7 +2582,7 @@ func TestDBClose(t *testing.T) {
 	})
 	tests.Add("error", tst{
 		db: newDB(&mock.DBCloser{
-			CloseFunc: func(_ context.Context) error {
+			CloseFunc: func() error {
 				return errors.New("close err")
 			},
 		}),
@@ -2590,14 +2590,14 @@ func TestDBClose(t *testing.T) {
 	})
 	tests.Add("success", tst{
 		db: newDB(&mock.DBCloser{
-			CloseFunc: func(_ context.Context) error {
+			CloseFunc: func() error {
 				return nil
 			},
 		}),
 	})
 
 	tests.Run(t, func(t *testing.T, test tst) {
-		err := test.db.Close(context.Background())
+		err := test.db.Close()
 		testy.Error(t, test.err, err)
 	})
 }

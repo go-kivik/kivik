@@ -269,13 +269,13 @@ func (c *Client) Ping(ctx context.Context) (bool, error) {
 // concurrently with other operations and will block until all other operations
 // finish. After calling Close, any other client operations will return
 // ErrClientClosed.
-func (c *Client) Close(ctx context.Context) error {
+func (c *Client) Close() error {
 	c.mu.Lock()
 	atomic.StoreInt32(&c.closed, 1)
 	c.mu.Unlock()
 	c.wg.Wait()
 	if closer, ok := c.driverClient.(driver.ClientCloser); ok {
-		return closer.Close(ctx)
+		return closer.Close()
 	}
 	return nil
 }

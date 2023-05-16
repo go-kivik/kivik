@@ -318,8 +318,8 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
-		result, err := tt.db.BulkDocs(context.Background(), tt.docs, tt.options)
-		testy.StatusError(t, tt.err, tt.status, err)
+		result := tt.db.BulkDocs(context.Background(), tt.docs, tt.options)
+		testy.StatusError(t, tt.err, tt.status, result.Err())
 		result.cancel = nil  // Determinism
 		result.onClose = nil // Determinism
 		if d := testy.DiffInterface(tt.expected, result); d != nil {

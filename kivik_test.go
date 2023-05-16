@@ -911,8 +911,8 @@ func TestClientClose(t *testing.T) {
 				},
 			},
 			work: func(t *testing.T, c *Client) {
-				u, err := c.DBUpdates(context.Background())
-				if err != nil {
+				u := c.DBUpdates(context.Background())
+				if err := u.Err(); err != nil {
 					t.Fatal(err)
 				}
 				for u.Next() { //nolint:revive // intentional empty block

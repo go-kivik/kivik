@@ -116,6 +116,15 @@ func newIterator(ctx context.Context, onClose func(), feed iterator, zeroValue i
 	return i
 }
 
+// errIterator instantiates a new iteratore that is already closed, and only
+// returns an error.
+func errIterator(err error) *iter {
+	return &iter{
+		state:   stateClosed,
+		lasterr: err,
+	}
+}
+
 // awaitDone blocks until the rows are closed or the context is cancelled, then
 // closes the iterator if it's still open.
 func (i *iter) awaitDone(ctx context.Context) {

@@ -83,18 +83,18 @@ func (c *Changes) ScanDoc(dest interface{}) error {
 // open until explicitly closed, or an error is encountered.
 //
 // See http://couchdb.readthedocs.io/en/latest/api/database/changes.html#get--db-_changes
-func (db *DB) Changes(ctx context.Context, options ...Options) (*Changes, error) {
+func (db *DB) Changes(ctx context.Context, options ...Options) *Changes {
 	if db.err != nil {
-		return nil, db.err
+		return &Changes{iter: errIterator(db.err)}
 	}
 	if err := db.startQuery(); err != nil {
-		return nil, err
+		return &Changes{iter: errIterator(err)}
 	}
 	changesi, err := db.driverDB.Changes(ctx, mergeOptions(options...))
 	if err != nil {
-		return nil, err
+		return &Changes{iter: errIterator(err)}
 	}
-	return newChanges(ctx, db.endQuery, changesi), nil
+	return newChanges(ctx, db.endQuery, changesi)
 }
 
 // Seq returns the Seq of the current result.

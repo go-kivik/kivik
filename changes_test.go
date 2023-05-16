@@ -308,8 +308,8 @@ func TestChanges(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.db.Changes(context.Background(), test.opts)
-			testy.StatusError(t, test.err, test.status, err)
+			result := test.db.Changes(context.Background(), test.opts)
+			testy.StatusError(t, test.err, test.status, result.Err())
 			result.cancel = nil  // Determinism
 			result.onClose = nil // Determinism
 			if d := testy.DiffInterface(test.expected, result); d != nil {

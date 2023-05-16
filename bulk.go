@@ -76,7 +76,7 @@ func (r *BulkResults) UpdateErr() error {
 // within a single request. This function returns an iterator over the results
 // of the bulk operation.
 //
-// See http://docs.couchdb.org/en/2.0.0/api/database/bulk-api.html#db-bulk-docs
+// See https://docs.couchdb.org/en/stable/api/database/bulk-api.html#db-bulk-docs
 //
 // As with [DB.Put], each individual document may be a JSON-marshable object, or
 // a raw JSON string in a [encoding/json.RawMessage], or [io.Reader].

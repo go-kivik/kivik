@@ -323,7 +323,20 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 		status: http.StatusInternalServerError,
 		err:    "db error",
 	})
-
+	tests.Add("unreadable doc", tt{
+		db: &DB{
+			client: &Client{},
+			driverDB: &mock.BulkDocer{
+				BulkDocsFunc: func(_ context.Context, docs []interface{}, _ map[string]interface{}) (driver.BulkResults, error) {
+					_, err := json.Marshal(docs)
+					return nil, err
+				},
+			},
+		},
+		docs:   []interface{}{testy.ErrorReader("", errors.New("read error"))},
+		status: http.StatusBadRequest,
+		err:    "read error",
+	})
 	tests.Run(t, func(t *testing.T, tt tt) {
 		result := tt.db.BulkDocs(context.Background(), tt.docs, tt.options)
 		testy.StatusError(t, tt.err, tt.status, result.Err())

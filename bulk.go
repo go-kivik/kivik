@@ -81,6 +81,9 @@ func (r *BulkResults) UpdateErr() error {
 // As with [DB.Put], each individual document may be a JSON-marshable object, or
 // a raw JSON string in a [encoding/json.RawMessage], or [io.Reader].
 func (db *DB) BulkDocs(ctx context.Context, docs []interface{}, options ...Options) *BulkResults {
+	if db.err != nil {
+		return &BulkResults{errIterator(db.err)}
+	}
 	docsi, err := docsInterfaceSlice(docs)
 	if err != nil {
 		return &BulkResults{errIterator(err)}

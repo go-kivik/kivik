@@ -316,6 +316,13 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 		status: http.StatusServiceUnavailable,
 		err:    errClientClosed,
 	})
+	tests.Add("db error", tt{
+		db: &DB{
+			err: errors.New("db error"),
+		},
+		status: http.StatusInternalServerError,
+		err:    "db error",
+	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
 		result := tt.db.BulkDocs(context.Background(), tt.docs, tt.options)

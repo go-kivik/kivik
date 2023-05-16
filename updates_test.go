@@ -73,7 +73,7 @@ func TestDBUpdatesClose(t *testing.T) {
 func TestDBUpdatesErr(t *testing.T) {
 	expected := "foo error"
 	u := &DBUpdates{
-		iter: &iter{lasterr: errors.New(expected)},
+		iter: &iter{err: errors.New(expected)},
 	}
 	err := u.Err()
 	testy.Error(t, expected, err)

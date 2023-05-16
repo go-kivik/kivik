@@ -67,7 +67,7 @@ func TestBulkNext(t *testing.T) {
 func TestBulkErr(t *testing.T) {
 	expected := "bulk error"
 	r := &BulkResults{
-		iter: &iter{lasterr: errors.New(expected)},
+		iter: &iter{err: errors.New(expected)},
 	}
 	err := r.Err()
 	testy.Error(t, expected, err)

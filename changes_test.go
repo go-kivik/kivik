@@ -64,7 +64,7 @@ func TestChangesNext(t *testing.T) {
 func TestChangesErr(t *testing.T) {
 	expected := "foo error" // nolint: goconst
 	c := &Changes{
-		iter: &iter{lasterr: errors.New(expected)},
+		iter: &iter{err: errors.New(expected)},
 	}
 	err := c.Err()
 	testy.Error(t, expected, err)

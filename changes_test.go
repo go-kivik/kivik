@@ -64,7 +64,7 @@ func TestChangesNext(t *testing.T) {
 func TestChangesErr(t *testing.T) {
 	expected := "foo error" // nolint: goconst
 	c := &Changes{
-		iter: &iter{lasterr: errors.New(expected)},
+		iter: &iter{err: errors.New(expected)},
 	}
 	err := c.Err()
 	testy.Error(t, expected, err)
@@ -308,8 +308,8 @@ func TestChanges(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.db.Changes(context.Background(), test.opts)
-			testy.StatusError(t, test.err, test.status, err)
+			result := test.db.Changes(context.Background(), test.opts)
+			testy.StatusError(t, test.err, test.status, result.Err())
 			result.cancel = nil  // Determinism
 			result.onClose = nil // Determinism
 			if d := testy.DiffInterface(test.expected, result); d != nil {

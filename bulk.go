@@ -80,24 +80,27 @@ func (r *BulkResults) UpdateErr() error {
 //
 // As with [DB.Put], each individual document may be a JSON-marshable object, or
 // a raw JSON string in a [encoding/json.RawMessage], or [io.Reader].
-func (db *DB) BulkDocs(ctx context.Context, docs []interface{}, options ...Options) (*BulkResults, error) {
+func (db *DB) BulkDocs(ctx context.Context, docs []interface{}, options ...Options) *BulkResults {
+	if db.err != nil {
+		return &BulkResults{errIterator(db.err)}
+	}
 	docsi, err := docsInterfaceSlice(docs)
 	if err != nil {
-		return nil, err
+		return &BulkResults{errIterator(err)}
 	}
 	if len(docsi) == 0 {
-		return nil, &Error{Status: http.StatusBadRequest, Err: errors.New("kivik: no documents provided")}
+		return &BulkResults{errIterator(&Error{Status: http.StatusBadRequest, Err: errors.New("kivik: no documents provided")})}
 	}
 	if err := db.startQuery(); err != nil {
-		return nil, err
+		return &BulkResults{errIterator(err)}
 	}
 	opts := mergeOptions(options...)
 	if bulkDocer, ok := db.driverDB.(driver.BulkDocer); ok {
 		bulki, err := bulkDocer.BulkDocs(ctx, docsi, opts)
 		if err != nil {
-			return nil, err
+			return &BulkResults{errIterator(err)}
 		}
-		return newBulkResults(ctx, db.endQuery, bulki), nil
+		return newBulkResults(ctx, db.endQuery, bulki)
 	}
 	var results []driver.BulkResult
 	for _, doc := range docsi {
@@ -115,7 +118,7 @@ func (db *DB) BulkDocs(ctx context.Context, docs []interface{}, options ...Optio
 			Error: err,
 		})
 	}
-	return newBulkResults(ctx, db.endQuery, &emulatedBulkResults{results}), nil
+	return newBulkResults(ctx, db.endQuery, &emulatedBulkResults{results})
 }
 
 type emulatedBulkResults struct {

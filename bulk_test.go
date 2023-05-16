@@ -67,7 +67,7 @@ func TestBulkNext(t *testing.T) {
 func TestBulkErr(t *testing.T) {
 	expected := "bulk error"
 	r := &BulkResults{
-		iter: &iter{lasterr: errors.New(expected)},
+		iter: &iter{err: errors.New(expected)},
 	}
 	err := r.Err()
 	testy.Error(t, expected, err)
@@ -316,10 +316,30 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 		status: http.StatusServiceUnavailable,
 		err:    errClientClosed,
 	})
-
+	tests.Add("db error", tt{
+		db: &DB{
+			err: errors.New("db error"),
+		},
+		status: http.StatusInternalServerError,
+		err:    "db error",
+	})
+	tests.Add("unreadable doc", tt{
+		db: &DB{
+			client: &Client{},
+			driverDB: &mock.BulkDocer{
+				BulkDocsFunc: func(_ context.Context, docs []interface{}, _ map[string]interface{}) (driver.BulkResults, error) {
+					_, err := json.Marshal(docs)
+					return nil, err
+				},
+			},
+		},
+		docs:   []interface{}{testy.ErrorReader("", errors.New("read error"))},
+		status: http.StatusBadRequest,
+		err:    "read error",
+	})
 	tests.Run(t, func(t *testing.T, tt tt) {
-		result, err := tt.db.BulkDocs(context.Background(), tt.docs, tt.options)
-		testy.StatusError(t, tt.err, tt.status, err)
+		result := tt.db.BulkDocs(context.Background(), tt.docs, tt.options)
+		testy.StatusError(t, tt.err, tt.status, result.Err())
 		result.cancel = nil  // Determinism
 		result.onClose = nil // Determinism
 		if d := testy.DiffInterface(tt.expected, result); d != nil {

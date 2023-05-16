@@ -65,7 +65,7 @@ func TestRowsNext(t *testing.T) {
 func TestRowsErr(t *testing.T) {
 	expected := "foo error"
 	r := &rows{
-		iter: &iter{lasterr: errors.New(expected)},
+		iter: &iter{err: errors.New(expected)},
 	}
 	err := r.Err()
 	testy.Error(t, expected, err)

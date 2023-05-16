@@ -51,9 +51,9 @@ type iter struct {
 	feed    iterator
 	onClose func()
 
-	mu      sync.RWMutex
-	state   int   // Set to true once Next() has been called
-	lasterr error // non-nil only if state == stateClosed
+	mu    sync.RWMutex
+	state int   // Set to true once Next() has been called
+	err   error // non-nil only if state == stateClosed
 
 	cancel func() // cancel function to exit context goroutine when iterator is closed
 
@@ -116,6 +116,15 @@ func newIterator(ctx context.Context, onClose func(), feed iterator, zeroValue i
 	return i
 }
 
+// errIterator instantiates a new iteratore that is already closed, and only
+// returns an error.
+func errIterator(err error) *iter {
+	return &iter{
+		state: stateClosed,
+		err:   err,
+	}
+}
+
 // awaitDone blocks until the rows are closed or the context is cancelled, then
 // closes the iterator if it's still open.
 func (i *iter) awaitDone(ctx context.Context) {
@@ -144,7 +153,7 @@ func (i *iter) next() (doClose, ok bool) {
 	if err == driver.EOQ {
 		if i.state == stateResultSetReady || i.state == stateResultSetRowReady {
 			i.state = stateEOQ
-			i.lasterr = nil
+			i.err = nil
 			return false, false
 		}
 		return i.next()
@@ -155,8 +164,8 @@ func (i *iter) next() (doClose, ok bool) {
 	default:
 		i.state = stateRowReady
 	}
-	i.lasterr = err
-	if i.lasterr != nil {
+	i.err = err
+	if i.err != nil {
 		return true, false
 	}
 	return false, true
@@ -179,8 +188,8 @@ func (i *iter) close(err error) error {
 	}
 	i.state = stateClosed
 
-	if i.lasterr == nil {
-		i.lasterr = err
+	if i.err == nil {
+		i.err = err
 	}
 
 	err = i.feed.Close()
@@ -201,8 +210,8 @@ func (i *iter) close(err error) error {
 func (i *iter) Err() error {
 	i.mu.RLock()
 	defer i.mu.RUnlock()
-	if i.lasterr == io.EOF {
+	if i.err == io.EOF {
 		return nil
 	}
-	return i.lasterr
+	return i.err
 }

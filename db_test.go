@@ -2669,10 +2669,10 @@ func TestDBClose(t *testing.T) {
 				},
 			},
 			work: func(t *testing.T, db *DB) {
-				u, err := db.BulkDocs(context.Background(), []interface{}{
+				u := db.BulkDocs(context.Background(), []interface{}{
 					map[string]string{"_id": "foo"},
 				})
-				if err != nil {
+				if err := u.Err(); err != nil {
 					t.Fatal(err)
 				}
 				for u.Next() { //nolint:revive // intentional empty block

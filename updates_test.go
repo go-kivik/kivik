@@ -73,7 +73,7 @@ func TestDBUpdatesClose(t *testing.T) {
 func TestDBUpdatesErr(t *testing.T) {
 	expected := "foo error"
 	u := &DBUpdates{
-		iter: &iter{lasterr: errors.New(expected)},
+		iter: &iter{err: errors.New(expected)},
 	}
 	err := u.Err()
 	testy.Error(t, expected, err)
@@ -226,8 +226,8 @@ func TestDBUpdates(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.client.DBUpdates(context.Background())
-			testy.StatusError(t, test.err, test.status, err)
+			result := test.client.DBUpdates(context.Background())
+			testy.StatusError(t, test.err, test.status, result.Err())
 			result.cancel = nil  // Determinism
 			result.onClose = nil // Determinism
 			if d := testy.DiffInterface(test.expected, result); d != nil {

@@ -161,14 +161,14 @@ var _ ResultSet = &rows{}
 func (r *rows) NextResultSet() bool {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	if r.lasterr != nil {
+	if r.err != nil {
 		return false
 	}
 	if r.state == stateClosed {
 		return false
 	}
 	if r.state == stateRowReady {
-		r.lasterr = errors.New("must call NextResultSet before Next")
+		r.err = errors.New("must call NextResultSet before Next")
 		return false
 	}
 	r.state = stateResultSetReady

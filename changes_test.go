@@ -62,7 +62,7 @@ func TestChangesNext(t *testing.T) {
 }
 
 func TestChangesErr(t *testing.T) {
-	expected := "foo error" // nolint: goconst
+	const expected = "foo error"
 	c := &Changes{
 		iter: &iter{err: errors.New(expected)},
 	}
@@ -71,7 +71,7 @@ func TestChangesErr(t *testing.T) {
 }
 
 func TestChangesClose(t *testing.T) {
-	expected := "close error"
+	const expected = "close error"
 	c := &Changes{
 		iter: &iter{
 			feed: &mockIterator{CloseFunc: func() error { return errors.New(expected) }},
@@ -82,7 +82,7 @@ func TestChangesClose(t *testing.T) {
 }
 
 func TestChangesIteratorNext(t *testing.T) {
-	expected := "foo error"
+	const expected = "foo error"
 	c := &changesIterator{
 		Changes: &mock.Changes{
 			NextFunc: func(_ *driver.Change) error { return errors.New(expected) },

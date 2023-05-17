@@ -17,7 +17,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"testing"
 
@@ -26,102 +25,6 @@ import (
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/internal/mock"
 )
-
-func TestBulkNext(t *testing.T) {
-	tests := []struct {
-		name     string
-		r        *BulkResults
-		expected bool
-	}{
-		{
-			name: "true",
-			r: &BulkResults{
-				iter: &iter{
-					feed:   &TestFeed{max: 1},
-					curVal: new(int64),
-				},
-			},
-			expected: true,
-		},
-		{
-			name: "false",
-			r: &BulkResults{
-				iter: &iter{
-					feed:   &TestFeed{max: 0},
-					curVal: new(int64),
-				},
-			},
-			expected: false,
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			result := test.r.Next()
-			if result != test.expected {
-				t.Errorf("Unexpected result: %v", result)
-			}
-		})
-	}
-}
-
-func TestBulkErr(t *testing.T) {
-	expected := "bulk error"
-	r := &BulkResults{
-		iter: &iter{err: errors.New(expected)},
-	}
-	err := r.Err()
-	testy.Error(t, expected, err)
-}
-
-func TestBulkClose(t *testing.T) {
-	expected := "close error" // nolint: goconst
-	r := &BulkResults{
-		iter: &iter{
-			feed: &TestFeed{closeErr: errors.New(expected)},
-		},
-	}
-	err := r.Close()
-	testy.Error(t, expected, err)
-}
-
-func TestBulkIteratorNext(t *testing.T) {
-	tests := []struct {
-		name     string
-		r        *bulkIterator
-		err      string
-		expected *driver.BulkResult
-	}{
-		{
-			name: "error",
-			r: &bulkIterator{&mock.BulkResults{
-				NextFunc: func(_ *driver.BulkResult) error {
-					return errors.New("iter error")
-				},
-			}},
-			err: "iter error",
-		},
-		{
-			name: "success",
-			r: &bulkIterator{&mock.BulkResults{
-				NextFunc: func(result *driver.BulkResult) error {
-					*result = driver.BulkResult{ID: "foo"}
-					return nil
-				},
-			}},
-			expected: &driver.BulkResult{ID: "foo"},
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			result := new(driver.BulkResult)
-			err := test.r.Next(result)
-			testy.Error(t, test.err, err)
-			if d := testy.DiffInterface(test.expected, result); d != nil {
-				t.Error(d)
-			}
-		})
-	}
-}
 
 func TestRLOCK(t *testing.T) {
 	tests := []struct {
@@ -200,7 +103,7 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 		db       *DB
 		docs     []interface{}
 		options  Options
-		expected *BulkResults
+		expected []BulkResult
 		status   int
 		err      string
 	}
@@ -210,7 +113,7 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 		db: &DB{
 			client: &Client{},
 			driverDB: &mock.BulkDocer{
-				BulkDocsFunc: func(_ context.Context, docs []interface{}, _ map[string]interface{}) (driver.BulkResults, error) {
+				BulkDocsFunc: func(_ context.Context, docs []interface{}, _ map[string]interface{}) ([]driver.BulkResult, error) {
 					_, err := json.Marshal(docs)
 					return nil, err
 				},
@@ -258,26 +161,17 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 			map[string]string{"_id": "error"},
 		},
 		options: testOptions,
-		expected: &BulkResults{
-			iter: &iter{
-				feed: &bulkIterator{
-					BulkResults: &emulatedBulkResults{
-						results: []driver.BulkResult{
-							{ID: "foo", Rev: "2-xxx"},
-							{ID: "newDocID", Rev: "1-xxx"},
-							{ID: "error", Error: errors.New("error")},
-						},
-					},
-				},
-				curVal: &driver.BulkResult{},
-			},
+		expected: []BulkResult{
+			{ID: "foo", Rev: "2-xxx"},
+			{ID: "newDocID", Rev: "1-xxx"},
+			{ID: "error", Error: errors.New("error")},
 		},
 	})
 	tests.Add("new_edits", tt{
 		db: &DB{
 			client: &Client{},
 			driverDB: &mock.BulkDocer{
-				BulkDocsFunc: func(_ context.Context, docs []interface{}, opts map[string]interface{}) (driver.BulkResults, error) {
+				BulkDocsFunc: func(_ context.Context, docs []interface{}, opts map[string]interface{}) ([]driver.BulkResult, error) {
 					expectedDocs := []interface{}{map[string]string{"_id": "foo"}, 123}
 					expectedOpts := map[string]interface{}{"new_edits": true}
 					if d := testy.DiffInterface(expectedDocs, docs); d != nil {
@@ -286,7 +180,9 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 					if d := testy.DiffInterface(expectedOpts, opts); d != nil {
 						return nil, fmt.Errorf("Unexpected opts:\n%s", d)
 					}
-					return &mock.BulkResults{ID: "foo"}, nil
+					return []driver.BulkResult{
+						{ID: "foo"},
+					}, nil
 				},
 			},
 		},
@@ -295,13 +191,8 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 			123,
 		},
 		options: Options{"new_edits": true},
-		expected: &BulkResults{
-			iter: &iter{
-				feed: &bulkIterator{
-					BulkResults: &mock.BulkResults{ID: "foo"},
-				},
-				curVal: &driver.BulkResult{},
-			},
+		expected: []BulkResult{
+			{ID: "foo"},
 		},
 	})
 	tests.Add(errClientClosed, tt{
@@ -327,7 +218,7 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 		db: &DB{
 			client: &Client{},
 			driverDB: &mock.BulkDocer{
-				BulkDocsFunc: func(_ context.Context, docs []interface{}, _ map[string]interface{}) (driver.BulkResults, error) {
+				BulkDocsFunc: func(_ context.Context, docs []interface{}, _ map[string]interface{}) ([]driver.BulkResult, error) {
 					_, err := json.Marshal(docs)
 					return nil, err
 				},
@@ -338,110 +229,10 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 		err:    "read error",
 	})
 	tests.Run(t, func(t *testing.T, tt tt) {
-		result := tt.db.BulkDocs(context.Background(), tt.docs, tt.options)
-		testy.StatusError(t, tt.err, tt.status, result.Err())
-		result.cancel = nil  // Determinism
-		result.onClose = nil // Determinism
+		result, err := tt.db.BulkDocs(context.Background(), tt.docs, tt.options)
+		testy.StatusError(t, tt.err, tt.status, err)
 		if d := testy.DiffInterface(tt.expected, result); d != nil {
 			t.Error(d)
 		}
-	})
-}
-
-func TestEmulatedBulkResults(t *testing.T) {
-	results := []driver.BulkResult{
-		{
-			ID:    "chicken",
-			Rev:   "foo",
-			Error: nil,
-		},
-		{
-			ID:    "duck",
-			Rev:   "bar",
-			Error: errors.New("fail"),
-		},
-		{
-			ID:    "dog",
-			Rev:   "baz",
-			Error: nil,
-		},
-	}
-	br := &emulatedBulkResults{results}
-	result := &driver.BulkResult{}
-	if err := br.Next(result); err != nil {
-		t.Errorf("Unexpected error: %s", err)
-	}
-	if d := testy.DiffInterface(&results[0], result); d != nil {
-		t.Error(d)
-	}
-	if err := br.Next(result); err != nil {
-		t.Errorf("Unexpected error: %s", err)
-	}
-	if d := testy.DiffInterface(&results[1], result); d != nil {
-		t.Error(d)
-	}
-	if err := br.Close(); err != nil {
-		t.Errorf("Unexpected error: %s", err)
-	}
-	if err := br.Next(result); err != io.EOF {
-		t.Error("Expected EOF")
-	}
-}
-
-func TestBulkResultsGetters(t *testing.T) {
-	id := "foo"
-	rev := "3-xxx"
-	err := "update error"
-	r := &BulkResults{
-		iter: &iter{
-			state: stateRowReady,
-			curVal: &driver.BulkResult{
-				ID:    id,
-				Rev:   rev,
-				Error: errors.New(err),
-			},
-		},
-	}
-
-	t.Run("ID", func(t *testing.T) {
-		result := r.ID()
-		if result != id {
-			t.Errorf("Unexpected ID: %v", result)
-		}
-	})
-
-	t.Run("Rev", func(t *testing.T) {
-		result := r.Rev()
-		if result != rev {
-			t.Errorf("Unexpected Rev: %v", result)
-		}
-	})
-
-	t.Run("UpdateErr", func(t *testing.T) {
-		result := r.UpdateErr()
-		testy.Error(t, err, result)
-	})
-
-	t.Run("Not ready", func(t *testing.T) {
-		r.state = stateReady
-
-		t.Run("ID", func(t *testing.T) {
-			result := r.ID()
-			if result != "" {
-				t.Errorf("Unexpected ID: %v", result)
-			}
-		})
-
-		t.Run("Rev", func(t *testing.T) {
-			result := r.Rev()
-			if result != "" {
-				t.Errorf("Unexpected Rev: %v", result)
-			}
-		})
-
-		t.Run("UpdateErr", func(t *testing.T) {
-			result := r.UpdateErr()
-			testy.Error(t, "", result)
-		})
 	})
 }

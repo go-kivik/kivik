@@ -15,61 +15,16 @@ package kivik
 import (
 	"context"
 	"errors"
-	"io"
 	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
-// BulkResults is an iterator over the results of a BulkDocs query.
-type BulkResults struct {
-	*iter
-}
-
-type bulkIterator struct{ driver.BulkResults }
-
-var _ iterator = &bulkIterator{}
-
-func (r *bulkIterator) Next(i interface{}) error {
-	return r.BulkResults.Next(i.(*driver.BulkResult))
-}
-
-func newBulkResults(ctx context.Context, onClose func(), bulki driver.BulkResults) *BulkResults {
-	return &BulkResults{
-		iter: newIterator(ctx, onClose, &bulkIterator{bulki}, &driver.BulkResult{}),
-	}
-}
-
-// ID returns the document ID name for the current result.
-func (r *BulkResults) ID() string {
-	runlock, err := r.rlock()
-	if err != nil {
-		return ""
-	}
-	defer runlock()
-	return r.curVal.(*driver.BulkResult).ID
-}
-
-// Rev returns the revision of the current curResult.
-func (r *BulkResults) Rev() string {
-	runlock, err := r.rlock()
-	if err != nil {
-		return ""
-	}
-	defer runlock()
-	return r.curVal.(*driver.BulkResult).Rev
-}
-
-// UpdateErr returns the error associated with the current result, or nil
-// if none. Do not confuse this with [BulkResults.Err], which returns an error
-// for the iterator itself.
-func (r *BulkResults) UpdateErr() error {
-	runlock, err := r.rlock()
-	if err != nil {
-		return nil
-	}
-	defer runlock()
-	return r.curVal.(*driver.BulkResult).Error
+// BulkResult is the result of a single BulkDoc update.
+type BulkResult struct {
+	ID    string `json:"id"`
+	Rev   string `json:"rev"`
+	Error error
 }
 
 // BulkDocs allows you to create and update multiple documents at the same time
@@ -80,29 +35,34 @@ func (r *BulkResults) UpdateErr() error {
 //
 // As with [DB.Put], each individual document may be a JSON-marshable object, or
 // a raw JSON string in a [encoding/json.RawMessage], or [io.Reader].
-func (db *DB) BulkDocs(ctx context.Context, docs []interface{}, options ...Options) *BulkResults {
+func (db *DB) BulkDocs(ctx context.Context, docs []interface{}, options ...Options) ([]BulkResult, error) {
 	if db.err != nil {
-		return &BulkResults{errIterator(db.err)}
+		return nil, db.err
 	}
 	docsi, err := docsInterfaceSlice(docs)
 	if err != nil {
-		return &BulkResults{errIterator(err)}
+		return nil, err
 	}
 	if len(docsi) == 0 {
-		return &BulkResults{errIterator(&Error{Status: http.StatusBadRequest, Err: errors.New("kivik: no documents provided")})}
+		return nil, &Error{Status: http.StatusBadRequest, Err: errors.New("kivik: no documents provided")}
 	}
 	if err := db.startQuery(); err != nil {
-		return &BulkResults{errIterator(err)}
+		return nil, err
 	}
+	defer db.endQuery()
 	opts := mergeOptions(options...)
 	if bulkDocer, ok := db.driverDB.(driver.BulkDocer); ok {
 		bulki, err := bulkDocer.BulkDocs(ctx, docsi, opts)
 		if err != nil {
-			return &BulkResults{errIterator(err)}
+			return nil, err
 		}
-		return newBulkResults(ctx, db.endQuery, bulki)
+		results := make([]BulkResult, len(bulki))
+		for i, result := range bulki {
+			results[i] = BulkResult(result)
+		}
+		return results, nil
 	}
-	var results []driver.BulkResult
+	results := make([]BulkResult, 0, len(docsi))
 	for _, doc := range docsi {
 		var err error
 		var id, rev string
@@ -112,33 +72,13 @@ func (db *DB) BulkDocs(ctx context.Context, docs []interface{}, options ...Optio
 		} else {
 			id, rev, err = db.CreateDoc(ctx, doc, opts)
 		}
-		results = append(results, driver.BulkResult{
+		results = append(results, BulkResult{
 			ID:    id,
 			Rev:   rev,
 			Error: err,
 		})
 	}
-	return newBulkResults(ctx, db.endQuery, &emulatedBulkResults{results})
-}
-
-type emulatedBulkResults struct {
-	results []driver.BulkResult
-}
-
-var _ driver.BulkResults = &emulatedBulkResults{}
-
-func (r *emulatedBulkResults) Close() error {
-	r.results = nil
-	return nil
-}
-
-func (r *emulatedBulkResults) Next(res *driver.BulkResult) error {
-	if len(r.results) == 0 {
-		return io.EOF
-	}
-	*res = r.results[0]
-	r.results = r.results[1:]
-	return nil
+	return results, nil
 }
 
 func docsInterfaceSlice(docsi []interface{}) ([]interface{}, error) {

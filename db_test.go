@@ -2659,26 +2659,17 @@ func TestDBClose(t *testing.T) {
 		})
 		tests.Add("BulkDocs", tt{
 			db: &mock.BulkDocer{
-				BulkDocsFunc: func(context.Context, []interface{}, map[string]interface{}) (driver.BulkResults, error) {
-					return &mock.BulkResults{
-						NextFunc: func(*driver.BulkResult) error {
-							time.Sleep(delay)
-							return io.EOF
-						},
-					}, nil
+				BulkDocsFunc: func(context.Context, []interface{}, map[string]interface{}) ([]driver.BulkResult, error) {
+					time.Sleep(delay)
+					return []driver.BulkResult{}, nil
 				},
 			},
 			work: func(t *testing.T, db *DB) {
-				u := db.BulkDocs(context.Background(), []interface{}{
+				_, err := db.BulkDocs(context.Background(), []interface{}{
 					map[string]string{"_id": "foo"},
 				})
-				if err := u.Err(); err != nil {
+				if err != nil {
 					t.Fatal(err)
-				}
-				for u.Next() { //nolint:revive // intentional empty block
-				}
-				if u.Err() != nil {
-					t.Fatal(u.Err())
 				}
 			},
 		})

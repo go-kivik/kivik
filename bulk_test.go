@@ -228,6 +228,21 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 		status: http.StatusBadRequest,
 		err:    "read error",
 	})
+	tests.Add("no docs", tt{
+		db: &DB{
+			client: &Client{},
+			driverDB: &mock.BulkDocer{
+				BulkDocsFunc: func(_ context.Context, docs []interface{}, _ map[string]interface{}) ([]driver.BulkResult, error) {
+					_, err := json.Marshal(docs)
+					return nil, err
+				},
+			},
+		},
+		docs:   []interface{}{},
+		status: http.StatusBadRequest,
+		err:    "kivik: no documents provided",
+	})
+
 	tests.Run(t, func(t *testing.T, tt tt) {
 		result, err := tt.db.BulkDocs(context.Background(), tt.docs, tt.options)
 		testy.StatusError(t, tt.err, tt.status, err)

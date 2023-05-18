@@ -63,7 +63,7 @@ func TestRowsNext(t *testing.T) {
 }
 
 func TestRowsErr(t *testing.T) {
-	expected := "foo error"
+	const expected = "foo error"
 	r := &rows{
 		iter: &iter{err: errors.New(expected)},
 	}
@@ -72,7 +72,7 @@ func TestRowsErr(t *testing.T) {
 }
 
 func TestRowsClose(t *testing.T) {
-	expected := "close error"
+	const expected = "close error"
 	r := &rows{
 		iter: &iter{
 			feed: &mockIterator{CloseFunc: func() error { return errors.New(expected) }},
@@ -83,7 +83,7 @@ func TestRowsClose(t *testing.T) {
 }
 
 func TestRowsIteratorNext(t *testing.T) {
-	expected := "foo error"
+	const expected = "foo error"
 	r := &rowsIterator{
 		Rows: &mock.Rows{
 			NextFunc: func(_ *driver.Row) error { return errors.New(expected) },

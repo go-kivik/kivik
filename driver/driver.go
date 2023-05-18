@@ -258,7 +258,7 @@ type PurgeResult struct {
 type BulkDocer interface {
 	// BulkDocs alls bulk create, update and/or delete operations. It returns an
 	// iterator over the results.
-	BulkDocs(ctx context.Context, docs []interface{}, options map[string]interface{}) (BulkResults, error)
+	BulkDocs(ctx context.Context, docs []interface{}, options map[string]interface{}) ([]BulkResult, error)
 }
 
 // Finder is an optional interface which may be implemented by a DB. It provides
@@ -333,17 +333,6 @@ type BulkResult struct {
 	ID    string `json:"id"`
 	Rev   string `json:"rev"`
 	Error error
-}
-
-// BulkResults is an iterator over the results for a BulkDocs call.
-type BulkResults interface {
-	// Next is called to populate r with the values of the next bulk result in
-	// the set.
-	//
-	// Next should return [io.EOF] when there are no more results.
-	Next(r *BulkResult) error
-	// Close closes the bulk results iterator.
-	Close() error
 }
 
 // RevGetter is an optional interface that may be implemented by a [DB]. If not

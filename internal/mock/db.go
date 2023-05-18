@@ -26,7 +26,7 @@ type DB struct {
 	GetFunc              func(ctx context.Context, docID string, options map[string]interface{}) (*driver.Document, error)
 	CreateDocFunc        func(ctx context.Context, doc interface{}, options map[string]interface{}) (docID, rev string, err error)
 	PutFunc              func(ctx context.Context, docID string, doc interface{}, options map[string]interface{}) (rev string, err error)
-	DeleteFunc           func(ctx context.Context, docID, rev string, options map[string]interface{}) (newRev string, err error)
+	DeleteFunc           func(ctx context.Context, docID string, options map[string]interface{}) (newRev string, err error)
 	StatsFunc            func(ctx context.Context) (*driver.DBStats, error)
 	CompactFunc          func(ctx context.Context) error
 	CompactViewFunc      func(ctx context.Context, ddocID string) error
@@ -34,9 +34,9 @@ type DB struct {
 	SecurityFunc         func(ctx context.Context) (*driver.Security, error)
 	SetSecurityFunc      func(ctx context.Context, security *driver.Security) error
 	ChangesFunc          func(ctx context.Context, options map[string]interface{}) (driver.Changes, error)
-	PutAttachmentFunc    func(ctx context.Context, docID, rev string, att *driver.Attachment, options map[string]interface{}) (newRev string, err error)
+	PutAttachmentFunc    func(ctx context.Context, docID string, att *driver.Attachment, options map[string]interface{}) (newRev string, err error)
 	GetAttachmentFunc    func(ctx context.Context, docID, filename string, options map[string]interface{}) (*driver.Attachment, error)
-	DeleteAttachmentFunc func(ctx context.Context, docID, rev, filename string, options map[string]interface{}) (newRev string, err error)
+	DeleteAttachmentFunc func(ctx context.Context, docID, filename string, options map[string]interface{}) (newRev string, err error)
 	QueryFunc            func(context.Context, string, string, map[string]interface{}) (driver.Rows, error)
 }
 
@@ -63,8 +63,8 @@ func (db *DB) Put(ctx context.Context, docID string, doc interface{}, opts map[s
 }
 
 // Delete calls db.DeleteFunc
-func (db *DB) Delete(ctx context.Context, docID, rev string, opts map[string]interface{}) (string, error) {
-	return db.DeleteFunc(ctx, docID, rev, opts)
+func (db *DB) Delete(ctx context.Context, docID string, opts map[string]interface{}) (string, error) {
+	return db.DeleteFunc(ctx, docID, opts)
 }
 
 // Stats calls db.StatsFunc
@@ -103,8 +103,8 @@ func (db *DB) Changes(ctx context.Context, opts map[string]interface{}) (driver.
 }
 
 // PutAttachment calls db.PutAttachmentFunc
-func (db *DB) PutAttachment(ctx context.Context, docID, rev string, att *driver.Attachment, opts map[string]interface{}) (string, error) {
-	return db.PutAttachmentFunc(ctx, docID, rev, att, opts)
+func (db *DB) PutAttachment(ctx context.Context, docID string, att *driver.Attachment, opts map[string]interface{}) (string, error) {
+	return db.PutAttachmentFunc(ctx, docID, att, opts)
 }
 
 // GetAttachment calls db.GetAttachmentFunc
@@ -113,8 +113,8 @@ func (db *DB) GetAttachment(ctx context.Context, docID, filename string, opts ma
 }
 
 // DeleteAttachment calls db.DeleteAttachmentFunc
-func (db *DB) DeleteAttachment(ctx context.Context, docID, rev, filename string, opts map[string]interface{}) (string, error) {
-	return db.DeleteAttachmentFunc(ctx, docID, rev, filename, opts)
+func (db *DB) DeleteAttachment(ctx context.Context, docID, filename string, opts map[string]interface{}) (string, error) {
+	return db.DeleteAttachmentFunc(ctx, docID, filename, opts)
 }
 
 // Query calls db.QueryFunc

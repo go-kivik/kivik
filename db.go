@@ -310,10 +310,10 @@ func (db *DB) Delete(ctx context.Context, docID, rev string, options ...Options)
 		return "", missingArg("docID")
 	}
 	opts := mergeOptions(options...)
-	if rv, ok := opts["rev"].(string); ok && rv != "" {
-		rev = rv
+	if rev != "" {
+		opts["rev"] = rev
 	}
-	return db.driverDB.Delete(ctx, docID, rev, opts)
+	return db.driverDB.Delete(ctx, docID, opts)
 }
 
 // Flush requests a flush of disk cache to disk or other permanent storage.
@@ -559,12 +559,7 @@ func (db *DB) PutAttachment(ctx context.Context, docID string, att *Attachment, 
 	}
 	defer db.endQuery()
 	a := driver.Attachment(*att)
-	var rev string
-	opts := mergeOptions(options...)
-	if rv, ok := opts["rev"].(string); ok && rv != "" {
-		rev = rv
-	}
-	return db.driverDB.PutAttachment(ctx, docID, rev, &a, mergeOptions(options...))
+	return db.driverDB.PutAttachment(ctx, docID, &a, mergeOptions(options...))
 }
 
 // GetAttachment returns a file attachment associated with the document.
@@ -655,10 +650,10 @@ func (db *DB) DeleteAttachment(ctx context.Context, docID, rev, filename string,
 		return "", missingArg("filename")
 	}
 	opts := mergeOptions(options...)
-	if rv, ok := opts["rev"].(string); ok && rv != "" {
-		rev = rv
+	if rev != "" {
+		opts["rev"] = rev
 	}
-	return db.driverDB.DeleteAttachment(ctx, docID, rev, filename, opts)
+	return db.driverDB.DeleteAttachment(ctx, docID, filename, opts)
 }
 
 // PurgeResult is the result of a purge request.

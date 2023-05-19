@@ -1167,7 +1167,7 @@ func TestClientClose(t *testing.T) {
 
 			start := time.Now()
 			go tt.work(t, c)
-			time.Sleep(delay / 2)
+			time.Sleep(delay / 3)
 			_ = c.Close()
 			if elapsed := time.Since(start); elapsed < delay {
 				t.Errorf("client.Close() didn't block long enough (%v < %v)", elapsed, delay)

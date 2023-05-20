@@ -1812,6 +1812,29 @@ func TestDelete(t *testing.T) {
 			newRev:  "2-xxx",
 		},
 		{
+			name: "success, no opts",
+			db: &DB{
+				client: &Client{},
+				driverDB: &mock.DB{
+					DeleteFunc: func(_ context.Context, docID string, opts map[string]interface{}) (string, error) {
+						const expectedDocID = "foo"
+						if docID != expectedDocID {
+							return "", fmt.Errorf("Unexpected docID: %s", docID)
+						}
+						if d := testy.DiffInterface(map[string]interface{}{
+							"rev": "1-xxx",
+						}, opts); d != nil {
+							return "", fmt.Errorf("Unexpected options:\n%s", d)
+						}
+						return "2-xxx", nil
+					},
+				},
+			},
+			docID:  "foo",
+			rev:    "1-xxx",
+			newRev: "2-xxx",
+		},
+		{
 			name: "closed",
 			db: &DB{
 				client: &Client{

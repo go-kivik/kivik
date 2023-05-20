@@ -82,9 +82,3 @@ gopherjs-1.17:
   image: golang:1.17
   variables:
     GOPHERJS_TAG: v1.17.2+go1.17.9
-
-gopherjs-1.18:
-  <<: *go_test_template
-  image: golang:1.18
-  variables:
-    GOPHERJS_TAG: v1.18.0-beta2+go1.18.5

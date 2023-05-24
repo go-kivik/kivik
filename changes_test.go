@@ -317,6 +317,23 @@ func TestChanges(t *testing.T) {
 			}
 		})
 	}
+	t.Run("standalone", func(t *testing.T) {
+		t.Run("after err, close doesn't block", func(t *testing.T) {
+			db := &DB{
+				client: &Client{},
+				driverDB: &mock.DB{
+					ChangesFunc: func(context.Context, map[string]interface{}) (driver.Changes, error) {
+						return nil, errors.New("unf")
+					},
+				},
+			}
+			rows := db.Changes(context.Background())
+			if err := rows.Err(); err == nil {
+				t.Fatal("expected an error, got none")
+			}
+			_ = db.Close() // Should not block
+		})
+	})
 }
 
 func TestChanges_uninitialized_should_not_panic(*testing.T) {

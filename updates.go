@@ -68,16 +68,18 @@ func (f *DBUpdates) Seq() string {
 
 // DBUpdates begins polling for database updates.
 func (c *Client) DBUpdates(ctx context.Context, options ...Options) *DBUpdates {
-	if err := c.startQuery(); err != nil {
-		return &DBUpdates{errIterator(err)}
-	}
 	updater, ok := c.driverClient.(driver.DBUpdater)
 	if !ok {
 		return &DBUpdates{errIterator(&Error{Status: http.StatusNotImplemented, Message: "kivik: driver does not implement DBUpdater"})}
 	}
 
+	if err := c.startQuery(); err != nil {
+		return &DBUpdates{errIterator(err)}
+	}
+
 	updatesi, err := updater.DBUpdates(ctx, mergeOptions(options...))
 	if err != nil {
+		c.endQuery()
 		return &DBUpdates{errIterator(err)}
 	}
 	return newDBUpdates(context.Background(), c.endQuery, updatesi)

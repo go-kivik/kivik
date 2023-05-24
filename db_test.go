@@ -63,7 +63,7 @@ func TestAllDocs(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					AllDocsFunc: func(_ context.Context, _ map[string]interface{}) (driver.Rows, error) {
+					AllDocsFunc: func(context.Context, map[string]interface{}) (driver.Rows, error) {
 						return nil, errors.New("db error")
 					},
 				},
@@ -128,6 +128,21 @@ func TestAllDocs(t *testing.T) {
 		})
 	}
 	t.Run("standalone", func(t *testing.T) {
+		t.Run("after err, close doesn't block", func(t *testing.T) {
+			db := &DB{
+				client: &Client{},
+				driverDB: &mock.DB{
+					AllDocsFunc: func(context.Context, map[string]interface{}) (driver.Rows, error) {
+						return nil, errors.New("unf")
+					},
+				},
+			}
+			rows := db.AllDocs(context.Background())
+			if err := rows.Err(); err == nil {
+				t.Fatal("expected an error, got none")
+			}
+			_ = db.Close() // Should not block
+		})
 		t.Run("missing ids", func(t *testing.T) {
 			rows := []*driver.Row{
 				{
@@ -280,6 +295,7 @@ func TestDesignDocs(t *testing.T) {
 				client: &Client{
 					closed: 1,
 				},
+				driverDB: &mock.DesignDocer{},
 			},
 			status: http.StatusServiceUnavailable,
 			err:    errClientClosed,
@@ -298,6 +314,23 @@ func TestDesignDocs(t *testing.T) {
 			}
 		})
 	}
+	t.Run("standalone", func(t *testing.T) {
+		t.Run("after err, close doesn't block", func(t *testing.T) {
+			db := &DB{
+				client: &Client{},
+				driverDB: &mock.DesignDocer{
+					DesignDocsFunc: func(context.Context, map[string]interface{}) (driver.Rows, error) {
+						return nil, errors.New("unf")
+					},
+				},
+			}
+			rows := db.DesignDocs(context.Background())
+			if err := rows.Err(); err == nil {
+				t.Fatal("expected an error, got none")
+			}
+			_ = db.Close() // Should not block
+		})
+	})
 }
 
 func TestLocalDocs(t *testing.T) {
@@ -369,6 +402,7 @@ func TestLocalDocs(t *testing.T) {
 				client: &Client{
 					closed: 1,
 				},
+				driverDB: &mock.LocalDocer{},
 			},
 			status: http.StatusServiceUnavailable,
 			err:    errClientClosed,
@@ -387,6 +421,23 @@ func TestLocalDocs(t *testing.T) {
 			}
 		})
 	}
+	t.Run("standalone", func(t *testing.T) {
+		t.Run("after err, close doesn't block", func(t *testing.T) {
+			db := &DB{
+				client: &Client{},
+				driverDB: &mock.LocalDocer{
+					LocalDocsFunc: func(context.Context, map[string]interface{}) (driver.Rows, error) {
+						return nil, errors.New("unf")
+					},
+				},
+			}
+			rows := db.LocalDocs(context.Background())
+			if err := rows.Err(); err == nil {
+				t.Fatal("expected an error, got none")
+			}
+			_ = db.Close() // Should not block
+		})
+	})
 }
 
 func TestQuery(t *testing.T) {

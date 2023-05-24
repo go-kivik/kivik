@@ -95,6 +95,7 @@ func TestFind(t *testing.T) {
 				client: &Client{
 					closed: 1,
 				},
+				driverDB: &mock.Finder{},
 			},
 			status: http.StatusServiceUnavailable,
 			err:    errClientClosed,
@@ -114,6 +115,34 @@ func TestFind(t *testing.T) {
 			}
 		})
 	}
+	t.Run("standalone", func(t *testing.T) {
+		t.Run("after err, close doesn't block", func(t *testing.T) {
+			db := &DB{
+				client: &Client{},
+				driverDB: &mock.Finder{
+					FindFunc: func(context.Context, interface{}, map[string]interface{}) (driver.Rows, error) {
+						return nil, errors.New("sdfsdf")
+					},
+				},
+			}
+			rows := db.Find(context.Background(), nil)
+			if err := rows.Err(); err == nil {
+				t.Fatal("expected an error, got none")
+			}
+			_ = db.Close() // Should not block
+		})
+		t.Run("not finder, close doesn't block", func(t *testing.T) {
+			db := &DB{
+				client:   &Client{},
+				driverDB: &mock.DB{},
+			}
+			rows := db.Find(context.Background(), nil)
+			if err := rows.Err(); err == nil {
+				t.Fatal("expected an error, got none")
+			}
+			_ = db.Close() // Should not block
+		})
+	})
 }
 
 func TestCreateIndex(t *testing.T) {

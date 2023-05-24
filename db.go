@@ -707,12 +707,13 @@ func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...O
 	if db.err != nil {
 		return &errRS{err: db.err}
 	}
-	if err := db.startQuery(); err != nil {
-		return &errRS{err: err}
-	}
 	bulkGetter, ok := db.driverDB.(driver.BulkGetter)
 	if !ok {
 		return &errRS{err: &Error{Status: http.StatusNotImplemented, Message: "kivik: bulk get not supported by driver"}}
+	}
+
+	if err := db.startQuery(); err != nil {
+		return &errRS{err: err}
 	}
 	refs := make([]driver.BulkGetReference, len(docs))
 	for i, ref := range docs {
@@ -720,6 +721,7 @@ func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...O
 	}
 	rowsi, err := bulkGetter.BulkGet(ctx, refs, mergeOptions(options...))
 	if err != nil {
+		db.endQuery()
 		return &errRS{err: err}
 	}
 	return newRows(ctx, db.endQuery, rowsi)

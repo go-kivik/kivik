@@ -2616,6 +2616,7 @@ func TestBulkGet(t *testing.T) {
 				client: &Client{
 					closed: 1,
 				},
+				driverDB: &mock.BulkGetter{},
 			},
 			status: http.StatusServiceUnavailable,
 			err:    errClientClosed,
@@ -2635,6 +2636,23 @@ func TestBulkGet(t *testing.T) {
 			}
 		})
 	}
+	t.Run("standalone", func(t *testing.T) {
+		t.Run("after err, close doesn't block", func(t *testing.T) {
+			db := &DB{
+				client: &Client{},
+				driverDB: &mock.BulkGetter{
+					BulkGetFunc: func(context.Context, []driver.BulkGetReference, map[string]interface{}) (driver.Rows, error) {
+						return nil, errors.New("unf")
+					},
+				},
+			}
+			rows := db.BulkGet(context.Background(), nil)
+			if err := rows.Err(); err == nil {
+				t.Fatal("expected an error, got none")
+			}
+			_ = db.Close() // Should not block
+		})
+	})
 }
 
 func newDB(db driver.DB) *DB {

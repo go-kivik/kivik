@@ -218,7 +218,8 @@ func TestDBUpdates(t *testing.T) {
 		{
 			name: errClientClosed,
 			client: &Client{
-				closed: 1,
+				closed:       1,
+				driverClient: &mock.DBUpdater{},
 			},
 			status: http.StatusServiceUnavailable,
 			err:    errClientClosed,
@@ -235,4 +236,30 @@ func TestDBUpdates(t *testing.T) {
 			}
 		})
 	}
+	t.Run("standalone", func(t *testing.T) {
+		t.Run("after err, close doesn't block", func(t *testing.T) {
+			client := &Client{
+				driverClient: &mock.DBUpdater{
+					DBUpdatesFunc: func(context.Context, map[string]interface{}) (driver.DBUpdates, error) {
+						return nil, errors.New("asdfsad")
+					},
+				},
+			}
+			rows := client.DBUpdates(context.Background())
+			if err := rows.Err(); err == nil {
+				t.Fatal("expected an error, got none")
+			}
+			_ = client.Close() // Should not block
+		})
+		t.Run("not updater, close doesn't block", func(t *testing.T) {
+			client := &Client{
+				driverClient: &mock.Client{},
+			}
+			rows := client.DBUpdates(context.Background())
+			if err := rows.Err(); err == nil {
+				t.Fatal("expected an error, got none")
+			}
+			_ = client.Close() // Should not block
+		})
+	})
 }

@@ -28,12 +28,13 @@ func (db *DB) Find(ctx context.Context, query interface{}, options ...Options) R
 	if db.err != nil {
 		return &errRS{err: db.err}
 	}
-	if err := db.startQuery(); err != nil {
-		return &errRS{err: err}
-	}
 	if finder, ok := db.driverDB.(driver.Finder); ok {
+		if err := db.startQuery(); err != nil {
+			return &errRS{err: err}
+		}
 		rowsi, err := finder.Find(ctx, query, mergeOptions(options...))
 		if err != nil {
+			db.endQuery()
 			return &errRS{err: err}
 		}
 		return newRows(ctx, db.endQuery, rowsi)

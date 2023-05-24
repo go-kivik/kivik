@@ -87,6 +87,7 @@ func (db *DB) AllDocs(ctx context.Context, options ...Options) ResultSet {
 	}
 	rowsi, err := db.driverDB.AllDocs(ctx, mergeOptions(options...))
 	if err != nil {
+		db.endQuery()
 		return &errRS{err: err}
 	}
 	return newRows(ctx, db.endQuery, rowsi)
@@ -97,15 +98,17 @@ func (db *DB) DesignDocs(ctx context.Context, options ...Options) ResultSet {
 	if db.err != nil {
 		return &errRS{err: db.err}
 	}
-	if err := db.startQuery(); err != nil {
-		return &errRS{err: err}
-	}
 	ddocer, ok := db.driverDB.(driver.DesignDocer)
 	if !ok {
 		return &errRS{err: &Error{Status: http.StatusNotImplemented, Err: errors.New("kivik: design doc view not supported by driver")}}
 	}
+
+	if err := db.startQuery(); err != nil {
+		return &errRS{err: err}
+	}
 	rowsi, err := ddocer.DesignDocs(ctx, mergeOptions(options...))
 	if err != nil {
+		db.endQuery()
 		return &errRS{err: err}
 	}
 	return newRows(ctx, db.endQuery, rowsi)
@@ -116,15 +119,16 @@ func (db *DB) LocalDocs(ctx context.Context, options ...Options) ResultSet {
 	if db.err != nil {
 		return &errRS{err: db.err}
 	}
-	if err := db.startQuery(); err != nil {
-		return &errRS{err: err}
-	}
 	ldocer, ok := db.driverDB.(driver.LocalDocer)
 	if !ok {
 		return &errRS{err: &Error{Status: http.StatusNotImplemented, Err: errors.New("kivik: local doc view not supported by driver")}}
 	}
+	if err := db.startQuery(); err != nil {
+		return &errRS{err: err}
+	}
 	rowsi, err := ldocer.LocalDocs(ctx, mergeOptions(options...))
 	if err != nil {
+		db.endQuery()
 		return &errRS{err: err}
 	}
 	return newRows(ctx, db.endQuery, rowsi)

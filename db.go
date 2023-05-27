@@ -775,12 +775,13 @@ func (db *DB) RevsDiff(ctx context.Context, revMap interface{}) ResultSet {
 	if db.err != nil {
 		return &errRS{err: db.err}
 	}
-	if err := db.startQuery(); err != nil {
-		return &errRS{err: err}
-	}
 	if rd, ok := db.driverDB.(driver.RevsDiffer); ok {
+		if err := db.startQuery(); err != nil {
+			return &errRS{err: err}
+		}
 		rowsi, err := rd.RevsDiff(ctx, revMap)
 		if err != nil {
+			db.endQuery()
 			return &errRS{err: err}
 		}
 		return newRows(ctx, db.endQuery, rowsi)

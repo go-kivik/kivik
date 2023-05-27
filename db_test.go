@@ -2827,6 +2827,7 @@ func TestRevsDiff(t *testing.T) {
 			client: &Client{
 				closed: 1,
 			},
+			driverDB: &mock.RevsDiffer{},
 		},
 		status: http.StatusServiceUnavailable,
 		err:    errClientClosed,

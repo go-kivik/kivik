@@ -156,6 +156,7 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) 
 	view = strings.TrimPrefix(view, "_view/")
 	rowsi, err := db.driverDB.Query(ctx, ddoc, view, mergeOptions(options...))
 	if err != nil {
+		db.endQuery()
 		return &errRS{err: err}
 	}
 	return newRows(ctx, db.endQuery, rowsi)

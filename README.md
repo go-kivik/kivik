@@ -69,7 +69,7 @@ func main() {
         panic(err)
     }
 
-    db := client.DB(context.TODO(), "animals")
+    db := client.DB("animals")
 
     doc := map[string]interface{}{
         "_id":      "cow",

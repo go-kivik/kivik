@@ -40,6 +40,9 @@ type row struct {
 var _ ResultSet = &row{}
 
 func (r *row) Close() error {
+	if _, err := io.Copy(io.Discard, r.body); err != nil {
+		return err
+	}
 	r.err = r.body.Close()
 	return r.err
 }

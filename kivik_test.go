@@ -1165,10 +1165,15 @@ func TestClientClose(t *testing.T) {
 				driverClient: tt.client,
 			}
 
+			fmt.Println("prestart", time.Now())
 			start := time.Now()
+			fmt.Println("poststart", time.Now(), "start", start)
 			go tt.work(t, c)
+			fmt.Println("post work", time.Now())
 			time.Sleep(delay / 3)
+			fmt.Println("post sleep", time.Now())
 			_ = c.Close()
+			fmt.Println("post close", time.Now())
 			if elapsed := time.Since(start); elapsed < delay {
 				t.Errorf("client.Close() didn't block long enough (%v < %v)", elapsed, delay)
 			}

@@ -145,21 +145,21 @@ func (db *DB) LocalDocs(ctx context.Context, options ...Options) *ResultSet {
 // a multi-query object as a value.
 //
 // See https://docs.couchdb.org/en/stable/api/ddoc/views.html#sending-multiple-queries-to-a-view
-func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) ResultSetX {
+func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) *ResultSet {
 	if db.err != nil {
-		return &errRS{err: db.err}
+		return &ResultSet{ResultSetX: &errRS{err: db.err}}
 	}
 	if err := db.startQuery(); err != nil {
-		return &errRS{err: err}
+		return &ResultSet{ResultSetX: &errRS{err: err}}
 	}
 	ddoc = strings.TrimPrefix(ddoc, "_design/")
 	view = strings.TrimPrefix(view, "_view/")
 	rowsi, err := db.driverDB.Query(ctx, ddoc, view, mergeOptions(options...))
 	if err != nil {
 		db.endQuery()
-		return &errRS{err: err}
+		return &ResultSet{ResultSetX: &errRS{err: err}}
 	}
-	return newRows(ctx, db.endQuery, rowsi)
+	return &ResultSet{ResultSetX: newRows(ctx, db.endQuery, rowsi)}
 }
 
 // Get fetches the requested document. Any errors are deferred until the

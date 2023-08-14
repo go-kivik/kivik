@@ -66,8 +66,8 @@ type ResultMetadata struct {
 type ResultSet struct {
 	// When ResultSet is invalid, due to an error, err is set, and should be
 	// returned by all methods.
-	err error
-	fullResultSet
+	err           error
+	fullResultSet fullResultSet
 }
 
 // Next prepares the next result value for reading. It returns true on

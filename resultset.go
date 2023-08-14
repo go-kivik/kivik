@@ -66,8 +66,8 @@ type ResultMetadata struct {
 type ResultSet struct {
 	// When ResultSet is invalid, due to an error, err is set, and should be
 	// returned by all methods.
-	err           error
-	fullResultSet fullResultSet
+	err        error
+	underlying fullResultSet
 }
 
 // Next prepares the next result value for reading. It returns true on
@@ -77,7 +77,7 @@ func (rs *ResultSet) Next() bool {
 	if rs.err != nil {
 		return false
 	}
-	return rs.fullResultSet.Next()
+	return rs.underlying.Next()
 }
 
 // NextResultSet prepares the next result set for reading. It reports
@@ -92,7 +92,7 @@ func (rs *ResultSet) NextResultSet() bool {
 	if rs.err != nil {
 		return false
 	}
-	return rs.fullResultSet.NextResultSet()
+	return rs.underlying.NextResultSet()
 }
 
 // Err returns the error, if any, that was encountered during iteration.
@@ -101,7 +101,7 @@ func (rs *ResultSet) Err() error {
 	if rs.err != nil {
 		return rs.err
 	}
-	return rs.fullResultSet.Err()
+	return rs.underlying.Err()
 }
 
 // Close closes the result set, preventing further enumeration, and freeing
@@ -113,7 +113,7 @@ func (rs *ResultSet) Close() error {
 	if rs.err != nil {
 		return rs.err
 	}
-	return rs.fullResultSet.Close()
+	return rs.underlying.Close()
 }
 
 // Metadata returns the result metadata for the current query. It must be
@@ -122,7 +122,7 @@ func (rs *ResultSet) Metadata() (*ResultMetadata, error) {
 	if rs.err != nil {
 		return nil, rs.err
 	}
-	return rs.fullResultSet.Metadata()
+	return rs.underlying.Metadata()
 }
 
 // ScanValue copies the data from the result value into the value pointed
@@ -145,7 +145,7 @@ func (rs *ResultSet) ScanValue(dest interface{}) error {
 	if rs.err != nil {
 		return rs.err
 	}
-	return rs.fullResultSet.ScanValue(dest)
+	return rs.underlying.ScanValue(dest)
 }
 
 // ScanDoc works the same as [ScanValue], but on the doc field of
@@ -158,7 +158,7 @@ func (rs *ResultSet) ScanDoc(dest interface{}) error {
 	if rs.err != nil {
 		return rs.err
 	}
-	return rs.fullResultSet.ScanDoc(dest)
+	return rs.underlying.ScanDoc(dest)
 }
 
 // ScanKey works the same as [ScanValue], but on the key field of the
@@ -171,7 +171,7 @@ func (rs *ResultSet) ScanKey(dest interface{}) error {
 	if rs.err != nil {
 		return rs.err
 	}
-	return rs.fullResultSet.ScanKey(dest)
+	return rs.underlying.ScanKey(dest)
 }
 
 // ID returns the ID of the most recent result.
@@ -179,7 +179,7 @@ func (rs *ResultSet) ID() (string, error) {
 	if rs.err != nil {
 		return "", rs.err
 	}
-	return rs.fullResultSet.ID()
+	return rs.underlying.ID()
 }
 
 // Rev returns the document revision, when known. Not all result sets (such
@@ -189,7 +189,7 @@ func (rs *ResultSet) Rev() (string, error) {
 	if rs.err != nil {
 		return "", rs.err
 	}
-	return rs.fullResultSet.Rev()
+	return rs.underlying.Rev()
 }
 
 // Key returns the Key of the most recent result as a raw JSON string. For
@@ -198,7 +198,7 @@ func (rs *ResultSet) Key() (string, error) {
 	if rs.err != nil {
 		return "", rs.err
 	}
-	return rs.fullResultSet.Key()
+	return rs.underlying.Key()
 }
 
 // Attachments returns an attachments iterator. At present, it is only set
@@ -209,7 +209,7 @@ func (rs *ResultSet) Attachments() (*AttachmentsIterator, error) {
 	if rs.err != nil {
 		return nil, rs.err
 	}
-	return rs.fullResultSet.Attachments()
+	return rs.underlying.Attachments()
 }
 
 type basicResultSet interface {

@@ -90,7 +90,7 @@ func (db *DB) AllDocs(ctx context.Context, options ...Options) *ResultSet {
 		db.endQuery()
 		return &ResultSet{err: err}
 	}
-	return &ResultSet{fullResultSet: newRows(ctx, db.endQuery, rowsi)}
+	return &ResultSet{underlying: newRows(ctx, db.endQuery, rowsi)}
 }
 
 // DesignDocs returns a list of all documents in the database.
@@ -111,7 +111,7 @@ func (db *DB) DesignDocs(ctx context.Context, options ...Options) *ResultSet {
 		db.endQuery()
 		return &ResultSet{err: err}
 	}
-	return &ResultSet{fullResultSet: newRows(ctx, db.endQuery, rowsi)}
+	return &ResultSet{underlying: newRows(ctx, db.endQuery, rowsi)}
 }
 
 // LocalDocs returns a list of all documents in the database.
@@ -131,7 +131,7 @@ func (db *DB) LocalDocs(ctx context.Context, options ...Options) *ResultSet {
 		db.endQuery()
 		return &ResultSet{err: err}
 	}
-	return &ResultSet{fullResultSet: newRows(ctx, db.endQuery, rowsi)}
+	return &ResultSet{underlying: newRows(ctx, db.endQuery, rowsi)}
 }
 
 // Query executes the specified view function from the specified design
@@ -159,7 +159,7 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) 
 		db.endQuery()
 		return &ResultSet{err: err}
 	}
-	return &ResultSet{fullResultSet: newRows(ctx, db.endQuery, rowsi)}
+	return &ResultSet{underlying: newRows(ctx, db.endQuery, rowsi)}
 }
 
 // Get fetches the requested document. Any errors are deferred until the
@@ -184,7 +184,7 @@ func (db *DB) Get(ctx context.Context, docID string, options ...Options) *Result
 	if doc.Attachments != nil {
 		r.atts = &AttachmentsIterator{atti: doc.Attachments}
 	}
-	return &ResultSet{fullResultSet: r}
+	return &ResultSet{underlying: r}
 }
 
 // GetRev returns the active rev of the specified document. GetRev accepts
@@ -725,7 +725,7 @@ func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...O
 		db.endQuery()
 		return &ResultSet{err: err}
 	}
-	return &ResultSet{fullResultSet: newRows(ctx, db.endQuery, rowsi)}
+	return &ResultSet{underlying: newRows(ctx, db.endQuery, rowsi)}
 }
 
 // Close cleans up any resources used by the DB. The default CouchDB driver
@@ -784,7 +784,7 @@ func (db *DB) RevsDiff(ctx context.Context, revMap interface{}) *ResultSet {
 			db.endQuery()
 			return &ResultSet{err: err}
 		}
-		return &ResultSet{fullResultSet: newRows(ctx, db.endQuery, rowsi)}
+		return &ResultSet{underlying: newRows(ctx, db.endQuery, rowsi)}
 	}
 	return &ResultSet{err: &Error{Status: http.StatusNotImplemented, Message: "kivik: _revs_diff not supported by driver"}}
 }

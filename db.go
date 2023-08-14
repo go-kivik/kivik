@@ -94,24 +94,24 @@ func (db *DB) AllDocs(ctx context.Context, options ...Options) *ResultSet {
 }
 
 // DesignDocs returns a list of all documents in the database.
-func (db *DB) DesignDocs(ctx context.Context, options ...Options) ResultSetX {
+func (db *DB) DesignDocs(ctx context.Context, options ...Options) *ResultSet {
 	if db.err != nil {
-		return &errRS{err: db.err}
+		return &ResultSet{ResultSetX: &errRS{err: db.err}}
 	}
 	ddocer, ok := db.driverDB.(driver.DesignDocer)
 	if !ok {
-		return &errRS{err: &Error{Status: http.StatusNotImplemented, Err: errors.New("kivik: design doc view not supported by driver")}}
+		return &ResultSet{ResultSetX: &errRS{err: &Error{Status: http.StatusNotImplemented, Err: errors.New("kivik: design doc view not supported by driver")}}}
 	}
 
 	if err := db.startQuery(); err != nil {
-		return &errRS{err: err}
+		return &ResultSet{ResultSetX: &errRS{err: err}}
 	}
 	rowsi, err := ddocer.DesignDocs(ctx, mergeOptions(options...))
 	if err != nil {
 		db.endQuery()
-		return &errRS{err: err}
+		return &ResultSet{ResultSetX: &errRS{err: err}}
 	}
-	return newRows(ctx, db.endQuery, rowsi)
+	return &ResultSet{ResultSetX: newRows(ctx, db.endQuery, rowsi)}
 }
 
 // LocalDocs returns a list of all documents in the database.

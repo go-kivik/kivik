@@ -444,8 +444,6 @@ type errRS struct {
 	err error
 }
 
-var _ resultSetX = &errRS{}
-
 func (e *errRS) Err() error                                 { return e.err }
 func (e *errRS) Close() error                               { return e.err }
 func (e *errRS) Metadata() (*ResultMetadata, error)         { return nil, e.err }

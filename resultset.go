@@ -47,6 +47,26 @@ type ResultMetadata struct {
 	Bookmark string
 }
 
+// ResultSet is an iterator over a multi-value query result set.
+//
+// Call [ResultSet.Next] to advance the iterator to the next item in the result
+// set.
+//
+// The Scan* methods are expected to be called only once per iteration, as
+// they may consume data from the network, rendering them unusable a second
+// time.
+//
+// Calling [ResultSet.ScanDoc], [ResultSet.ScanKey], [ResultSet.ScanValue],
+// [ResultSet.ID], or [ResultSet.Key] before calling [ResultSet.Next] will
+// operate on the first item in the resultset, then close the iterator
+// immediately. This is for convenience in cases where only a single item is
+// expected, so the extra effort of iterating is otherwise wasted. In this case,
+// if the result set is empty, as when a view returns no results, an error of
+// "no results" will be returned.
+type ResultSet struct {
+	ResultSetX
+}
+
 // ResultSetX is an iterator over a multi-value query result set.
 //
 // Call [ResultSetX.Next] to advance the iterator to the next item in the result

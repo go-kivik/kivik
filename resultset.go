@@ -212,19 +212,23 @@ func (rs *ResultSet) Attachments() (*AttachmentsIterator, error) {
 	return rs.fullResultSet.Attachments()
 }
 
-type fullResultSet interface {
+type basicResultSet interface {
 	Next() bool
-	NextResultSet() bool
 	Err() error
 	Close() error
-	Metadata() (*ResultMetadata, error)
-	ScanValue(dest interface{}) error
 	ScanDoc(dest interface{}) error
-	ScanKey(dest interface{}) error
 	ID() (string, error)
 	Rev() (string, error)
-	Key() (string, error)
 	Attachments() (*AttachmentsIterator, error)
+}
+
+type fullResultSet interface {
+	basicResultSet
+	NextResultSet() bool
+	Metadata() (*ResultMetadata, error)
+	ScanValue(dest interface{}) error
+	ScanKey(dest interface{}) error
+	Key() (string, error)
 }
 
 type rows struct {

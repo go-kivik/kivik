@@ -78,19 +78,19 @@ func (db *DB) Err() error {
 }
 
 // AllDocs returns a list of all documents in the database.
-func (db *DB) AllDocs(ctx context.Context, options ...Options) ResultSetX {
+func (db *DB) AllDocs(ctx context.Context, options ...Options) *ResultSet {
 	if db.err != nil {
-		return &errRS{err: db.err}
+		return &ResultSet{ResultSetX: &errRS{err: db.err}}
 	}
 	if err := db.startQuery(); err != nil {
-		return &errRS{err: err}
+		return &ResultSet{ResultSetX: &errRS{err: err}}
 	}
 	rowsi, err := db.driverDB.AllDocs(ctx, mergeOptions(options...))
 	if err != nil {
 		db.endQuery()
-		return &errRS{err: err}
+		return &ResultSet{ResultSetX: &errRS{err: err}}
 	}
-	return newRows(ctx, db.endQuery, rowsi)
+	return &ResultSet{ResultSetX: newRows(ctx, db.endQuery, rowsi)}
 }
 
 // DesignDocs returns a list of all documents in the database.

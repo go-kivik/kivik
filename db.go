@@ -164,17 +164,17 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) 
 
 // Get fetches the requested document. Any errors are deferred until the
 // [ResultSet.ScanDoc] call.
-func (db *DB) Get(ctx context.Context, docID string, options ...Options) ResultSetX {
+func (db *DB) Get(ctx context.Context, docID string, options ...Options) *ResultSet {
 	if db.err != nil {
-		return &errRS{err: db.err}
+		return &ResultSet{ResultSetX: &errRS{err: db.err}}
 	}
 	if err := db.startQuery(); err != nil {
-		return &errRS{err: err}
+		return &ResultSet{ResultSetX: &errRS{err: err}}
 	}
 	defer db.endQuery()
 	doc, err := db.driverDB.Get(ctx, docID, mergeOptions(options...))
 	if err != nil {
-		return &errRS{err: err}
+		return &ResultSet{ResultSetX: &errRS{err: err}}
 	}
 	r := &row{
 		id:   docID,
@@ -184,7 +184,7 @@ func (db *DB) Get(ctx context.Context, docID string, options ...Options) ResultS
 	if doc.Attachments != nil {
 		r.atts = &AttachmentsIterator{atti: doc.Attachments}
 	}
-	return r
+	return &ResultSet{ResultSetX: r}
 }
 
 // GetRev returns the active rev of the specified document. GetRev accepts

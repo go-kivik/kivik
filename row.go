@@ -34,10 +34,16 @@ type row struct {
 
 	// prepared is set to true by the first call to Next()
 	prepared int32
-	errRS
+	err      error
 }
 
 var _ resultSetX = &row{}
+
+func (r *row) Key() (string, error)               { return "", r.err }
+func (r *row) Metadata() (*ResultMetadata, error) { return nil, r.err }
+func (r *row) NextResultSet() bool                { return false }
+func (r *row) ScanKey(interface{}) error          { return r.err }
+func (r *row) ScanValue(interface{}) error        { return r.err }
 
 func (r *row) Close() error {
 	if _, err := io.Copy(io.Discard, r.body); err != nil {

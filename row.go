@@ -47,13 +47,6 @@ func (r *row) Close() error {
 	return r.err
 }
 
-func (r *row) Finish() (ResultMetadata, error) {
-	if r.err != nil {
-		return ResultMetadata{}, r.err
-	}
-	return ResultMetadata{}, r.Close()
-}
-
 func (r *row) Err() error           { return r.err }
 func (r *row) ID() (string, error)  { return r.id, r.err }
 func (r *row) Rev() (string, error) { return r.rev, r.err }

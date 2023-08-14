@@ -704,17 +704,17 @@ type BulkGetReference struct {
 // or for getting revision history.
 //
 // See http://docs.couchdb.org/en/stable/api/database/bulk-api.html#db-bulk-get
-func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...Options) ResultSetX {
+func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...Options) *ResultSet {
 	if db.err != nil {
-		return &errRS{err: db.err}
+		return &ResultSet{ResultSetX: &errRS{err: db.err}}
 	}
 	bulkGetter, ok := db.driverDB.(driver.BulkGetter)
 	if !ok {
-		return &errRS{err: &Error{Status: http.StatusNotImplemented, Message: "kivik: bulk get not supported by driver"}}
+		return &ResultSet{ResultSetX: &errRS{err: &Error{Status: http.StatusNotImplemented, Message: "kivik: bulk get not supported by driver"}}}
 	}
 
 	if err := db.startQuery(); err != nil {
-		return &errRS{err: err}
+		return &ResultSet{ResultSetX: &errRS{err: err}}
 	}
 	refs := make([]driver.BulkGetReference, len(docs))
 	for i, ref := range docs {
@@ -723,9 +723,9 @@ func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...O
 	rowsi, err := bulkGetter.BulkGet(ctx, refs, mergeOptions(options...))
 	if err != nil {
 		db.endQuery()
-		return &errRS{err: err}
+		return &ResultSet{ResultSetX: &errRS{err: err}}
 	}
-	return newRows(ctx, db.endQuery, rowsi)
+	return &ResultSet{ResultSetX: newRows(ctx, db.endQuery, rowsi)}
 }
 
 // Close cleans up any resources used by the DB. The default CouchDB driver

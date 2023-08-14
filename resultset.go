@@ -438,22 +438,3 @@ func (r *rows) Attachments() (*AttachmentsIterator, error) {
 func (r *rows) Rev() (string, error) {
 	return "", r.curVal.(*driver.Row).Error
 }
-
-// errRS is a resultset that has errored.
-type errRS struct {
-	err error
-}
-
-func (e *errRS) Err() error                                 { return e.err }
-func (e *errRS) Close() error                               { return e.err }
-func (e *errRS) Metadata() (*ResultMetadata, error)         { return nil, e.err }
-func (e *errRS) ID() (string, error)                        { return "", e.err }
-func (e *errRS) Key() (string, error)                       { return "", e.err }
-func (e *errRS) Next() bool                                 { return false }
-func (e *errRS) ScanAllDocs(interface{}) error              { return e.err }
-func (e *errRS) ScanDoc(interface{}) error                  { return e.err }
-func (e *errRS) ScanKey(interface{}) error                  { return e.err }
-func (e *errRS) ScanValue(interface{}) error                { return e.err }
-func (e *errRS) NextResultSet() bool                        { return false }
-func (e *errRS) Attachments() (*AttachmentsIterator, error) { return nil, e.err }
-func (e *errRS) Rev() (string, error)                       { return "", e.err }

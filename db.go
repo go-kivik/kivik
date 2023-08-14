@@ -78,7 +78,7 @@ func (db *DB) Err() error {
 }
 
 // AllDocs returns a list of all documents in the database.
-func (db *DB) AllDocs(ctx context.Context, options ...Options) ResultSet {
+func (db *DB) AllDocs(ctx context.Context, options ...Options) ResultSetX {
 	if db.err != nil {
 		return &errRS{err: db.err}
 	}
@@ -94,7 +94,7 @@ func (db *DB) AllDocs(ctx context.Context, options ...Options) ResultSet {
 }
 
 // DesignDocs returns a list of all documents in the database.
-func (db *DB) DesignDocs(ctx context.Context, options ...Options) ResultSet {
+func (db *DB) DesignDocs(ctx context.Context, options ...Options) ResultSetX {
 	if db.err != nil {
 		return &errRS{err: db.err}
 	}
@@ -115,7 +115,7 @@ func (db *DB) DesignDocs(ctx context.Context, options ...Options) ResultSet {
 }
 
 // LocalDocs returns a list of all documents in the database.
-func (db *DB) LocalDocs(ctx context.Context, options ...Options) ResultSet {
+func (db *DB) LocalDocs(ctx context.Context, options ...Options) ResultSetX {
 	if db.err != nil {
 		return &errRS{err: db.err}
 	}
@@ -145,7 +145,7 @@ func (db *DB) LocalDocs(ctx context.Context, options ...Options) ResultSet {
 // a multi-query object as a value.
 //
 // See https://docs.couchdb.org/en/stable/api/ddoc/views.html#sending-multiple-queries-to-a-view
-func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) ResultSet {
+func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) ResultSetX {
 	if db.err != nil {
 		return &errRS{err: db.err}
 	}
@@ -164,7 +164,7 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) 
 
 // Get fetches the requested document. Any errors are deferred until the
 // [ResultSet.ScanDoc] call.
-func (db *DB) Get(ctx context.Context, docID string, options ...Options) ResultSet {
+func (db *DB) Get(ctx context.Context, docID string, options ...Options) ResultSetX {
 	if db.err != nil {
 		return &errRS{err: db.err}
 	}
@@ -704,7 +704,7 @@ type BulkGetReference struct {
 // or for getting revision history.
 //
 // See http://docs.couchdb.org/en/stable/api/database/bulk-api.html#db-bulk-get
-func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...Options) ResultSet {
+func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...Options) ResultSetX {
 	if db.err != nil {
 		return &errRS{err: db.err}
 	}
@@ -771,7 +771,7 @@ type Diffs map[string]RevDiff
 //	}
 //
 // See http://docs.couchdb.org/en/stable/api/database/misc.html#db-revs-diff
-func (db *DB) RevsDiff(ctx context.Context, revMap interface{}) ResultSet {
+func (db *DB) RevsDiff(ctx context.Context, revMap interface{}) ResultSetX {
 	if db.err != nil {
 		return &errRS{err: db.err}
 	}

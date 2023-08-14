@@ -47,23 +47,23 @@ type ResultMetadata struct {
 	Bookmark string
 }
 
-// ResultSet is an iterator over a multi-value query result set.
+// ResultSetX is an iterator over a multi-value query result set.
 //
-// Call [ResultSet.Next] to advance the iterator to the next item in the result
+// Call [ResultSetX.Next] to advance the iterator to the next item in the result
 // set.
 //
 // The Scan* methods are expected to be called only once per iteration, as
 // they may consume data from the network, rendering them unusable a second
 // time.
 //
-// Calling [ResultSet.ScanDoc], [ResultSet.ScanKey], [ResultSet.ScanValue],
-// [ResultSet.ID], or [ResultSet.Key] before calling [ResultSet.Next] will
+// Calling [ResultSetX.ScanDoc], [ResultSetX.ScanKey], [ResultSetX.ScanValue],
+// [ResultSetX.ID], or [ResultSetX.Key] before calling [ResultSetX.Next] will
 // operate on the first item in the resultset, then close the iterator
 // immediately. This is for convenience in cases where only a single item is
 // expected, so the extra effort of iterating is otherwise wasted. In this case,
 // if the result set is empty, as when a view returns no results, an error of
 // "no results" will be returned.
-type ResultSet interface {
+type ResultSetX interface {
 	// Next prepares the next result value for reading. It returns true on
 	// success or false if there are no more results or an error occurs while
 	// preparing it. [Err] should be consulted to distinguish between the two.
@@ -152,7 +152,7 @@ type rows struct {
 	rowsi driver.Rows
 }
 
-var _ ResultSet = &rows{}
+var _ ResultSetX = &rows{}
 
 // NextResultSet prepares the iterator to read the next result set. It returns
 // true on success, or false if there are no more result sets to read, or if
@@ -255,16 +255,16 @@ func (r *rows) ScanDoc(dest interface{}) (err error) {
 // once the array is filled.  The iterator is closed by this method. It is
 // possible that an error will be returned, and that one or more documents were
 // successfully scanned.
-func ScanAllDocs(r ResultSet, dest interface{}) error {
+func ScanAllDocs(r ResultSetX, dest interface{}) error {
 	return scanAll(r, dest, r.ScanDoc)
 }
 
 // ScanAllValues works like ScanAllDocs, but scans the values rather than docs.
-func ScanAllValues(r ResultSet, dest interface{}) error {
+func ScanAllValues(r ResultSetX, dest interface{}) error {
 	return scanAll(r, dest, r.ScanValue)
 }
 
-func scanAll(r ResultSet, dest interface{}, scan func(interface{}) error) (err error) {
+func scanAll(r ResultSetX, dest interface{}, scan func(interface{}) error) (err error) {
 	defer func() {
 		closeErr := r.Close()
 		if err == nil {
@@ -364,7 +364,7 @@ type errRS struct {
 	err error
 }
 
-var _ ResultSet = &errRS{}
+var _ ResultSetX = &errRS{}
 
 func (e *errRS) Err() error                                 { return e.err }
 func (e *errRS) Close() error                               { return e.err }

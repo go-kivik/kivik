@@ -37,7 +37,7 @@ type row struct {
 	errRS
 }
 
-var _ ResultSet = &row{}
+var _ ResultSetX = &row{}
 
 func (r *row) Close() error {
 	if _, err := io.Copy(io.Discard, r.body); err != nil {

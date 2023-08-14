@@ -24,7 +24,7 @@ var findNotImplemented = &Error{Status: http.StatusNotImplemented, Message: "kiv
 // Find executes a query using the new /_find interface. The query must be
 // JSON-marshalable to a valid query.
 // See https://docs.couchdb.org/en/stable/api/database/find.html
-func (db *DB) Find(ctx context.Context, query interface{}, options ...Options) ResultSet {
+func (db *DB) Find(ctx context.Context, query interface{}, options ...Options) ResultSetX {
 	if db.err != nil {
 		return &errRS{err: db.err}
 	}

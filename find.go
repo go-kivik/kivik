@@ -37,7 +37,7 @@ func (db *DB) Find(ctx context.Context, query interface{}, options ...Options) *
 			db.endQuery()
 			return &ResultSet{err: err}
 		}
-		return &ResultSet{resultSetX: newRows(ctx, db.endQuery, rowsi)}
+		return &ResultSet{underlying: newRows(ctx, db.endQuery, rowsi)}
 	}
 	return &ResultSet{err: findNotImplemented}
 }

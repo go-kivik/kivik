@@ -66,18 +66,18 @@ type ResultMetadata struct {
 type ResultSet struct {
 	// When ResultSet is invalid, due to an error, err is set, and should be
 	// returned by all methods.
-	err error
-	resultSetX
+	err        error
+	underlying basicResultSet
 }
 
 // Next prepares the next result value for reading. It returns true on
 // success or false if there are no more results or an error occurs while
-// preparing it. [Err] should be consulted to distinguish between the two.
+// preparing it. [ResultSet.Err] should be consulted to distinguish between the two.
 func (rs *ResultSet) Next() bool {
 	if rs.err != nil {
 		return false
 	}
-	return rs.resultSetX.Next()
+	return rs.underlying.Next()
 }
 
 // NextResultSet prepares the next result set for reading. It reports
@@ -92,28 +92,32 @@ func (rs *ResultSet) NextResultSet() bool {
 	if rs.err != nil {
 		return false
 	}
-	return rs.resultSetX.NextResultSet()
+	if full, ok := rs.underlying.(fullResultSet); ok {
+		full.NextResultSet()
+	}
+	return false
 }
 
 // Err returns the error, if any, that was encountered during iteration.
-// Err may be called after an explicit or implicit [Close].
+// [ResultSet.Err] may be called after an explicit or implicit [ResultSet.Close].
 func (rs *ResultSet) Err() error {
 	if rs.err != nil {
 		return rs.err
 	}
-	return rs.resultSetX.Err()
+	return rs.underlying.Err()
 }
 
 // Close closes the result set, preventing further enumeration, and freeing
 // any resources (such as the HTTP request body) of the underlying query. If
-// [Next] is called and there are no further results, the result set is closed
-// automatically and it will suffice to check the result of Err. Close is
-// idempotent and does not affect the result of [Err].
+// [ResultSet.Next] is called and there are no further results, the result set
+// is closed automatically and it will suffice to check the result of
+// [ResultSet.Err]. Close is idempotent and does not affect the result of
+// [ResultSet.Err].
 func (rs *ResultSet) Close() error {
 	if rs.err != nil {
 		return rs.err
 	}
-	return rs.resultSetX.Close()
+	return rs.underlying.Close()
 }
 
 // Metadata returns the result metadata for the current query. It must be
@@ -122,7 +126,10 @@ func (rs *ResultSet) Metadata() (*ResultMetadata, error) {
 	if rs.err != nil {
 		return nil, rs.err
 	}
-	return rs.resultSetX.Metadata()
+	if full, ok := rs.underlying.(fullResultSet); ok {
+		return full.Metadata()
+	}
+	return &ResultMetadata{}, nil
 }
 
 // ScanValue copies the data from the result value into the value pointed
@@ -137,7 +144,7 @@ func (rs *ResultSet) Metadata() (*ResultMetadata, error) {
 //
 // The copy can be avoided by using an argument of type
 // [*encoding/json.RawMessage] instead, after which the value is only
-// valid until the next call to [Next] or [Close].
+// valid until the next call to [ResultSet.Next] or [ResultSet.Close].
 //
 // For all other types, refer to the documentation for
 // [encoding/json.Unmarshal] for type conversion rules.
@@ -145,10 +152,13 @@ func (rs *ResultSet) ScanValue(dest interface{}) error {
 	if rs.err != nil {
 		return rs.err
 	}
-	return rs.resultSetX.ScanValue(dest)
+	if full, ok := rs.underlying.(fullResultSet); ok {
+		return full.ScanValue(dest)
+	}
+	return nil
 }
 
-// ScanDoc works the same as [ScanValue], but on the doc field of
+// ScanDoc works the same as [ResultSEt.ScanValue], but on the doc field of
 // the result. It will return an error if the query does not include
 // documents.
 //
@@ -158,20 +168,23 @@ func (rs *ResultSet) ScanDoc(dest interface{}) error {
 	if rs.err != nil {
 		return rs.err
 	}
-	return rs.resultSetX.ScanDoc(dest)
+	return rs.underlying.ScanDoc(dest)
 }
 
-// ScanKey works the same as [ScanValue], but on the key field of the
-// result. For simple keys, which are just strings, [Key] may be easier to
-// use.
+// ScanKey works the same as [ResultSet.ScanValue], but on the key field of the
+// result. For simple keys, which are just strings, [ResultSEt.Key] may be
+// easier to use.
 //
-// Unlike [ScanValue] and [ScanDoc], this may successfully scan the key,
-// and also return an error, if the row itself represents an error.
+// Unlike [ResultSet.ScanValue] and [ResultSet.ScanDoc], this may successfully
+// scan the key, and also return an error, if the row itself represents an error.
 func (rs *ResultSet) ScanKey(dest interface{}) error {
 	if rs.err != nil {
 		return rs.err
 	}
-	return rs.resultSetX.ScanKey(dest)
+	if full, ok := rs.underlying.(fullResultSet); ok {
+		return full.ScanKey(dest)
+	}
+	return nil
 }
 
 // ID returns the ID of the most recent result.
@@ -179,7 +192,7 @@ func (rs *ResultSet) ID() (string, error) {
 	if rs.err != nil {
 		return "", rs.err
 	}
-	return rs.resultSetX.ID()
+	return rs.underlying.ID()
 }
 
 // Rev returns the document revision, when known. Not all result sets (such
@@ -189,16 +202,19 @@ func (rs *ResultSet) Rev() (string, error) {
 	if rs.err != nil {
 		return "", rs.err
 	}
-	return rs.resultSetX.Rev()
+	return rs.underlying.Rev()
 }
 
 // Key returns the Key of the most recent result as a raw JSON string. For
-// compound keys, [ScanKey] may be more convenient.
+// compound keys, [ResultSet.ScanKey] may be more convenient.
 func (rs *ResultSet) Key() (string, error) {
 	if rs.err != nil {
 		return "", rs.err
 	}
-	return rs.resultSetX.Key()
+	if full, ok := rs.underlying.(fullResultSet); ok {
+		return full.Key()
+	}
+	return "", nil
 }
 
 // Attachments returns an attachments iterator. At present, it is only set
@@ -209,22 +225,26 @@ func (rs *ResultSet) Attachments() (*AttachmentsIterator, error) {
 	if rs.err != nil {
 		return nil, rs.err
 	}
-	return rs.resultSetX.Attachments()
+	return rs.underlying.Attachments()
 }
 
-type resultSetX interface {
+type basicResultSet interface {
 	Next() bool
-	NextResultSet() bool
 	Err() error
 	Close() error
-	Metadata() (*ResultMetadata, error)
-	ScanValue(dest interface{}) error
 	ScanDoc(dest interface{}) error
-	ScanKey(dest interface{}) error
 	ID() (string, error)
 	Rev() (string, error)
-	Key() (string, error)
 	Attachments() (*AttachmentsIterator, error)
+}
+
+type fullResultSet interface {
+	basicResultSet
+	NextResultSet() bool
+	Metadata() (*ResultMetadata, error)
+	ScanValue(dest interface{}) error
+	ScanKey(dest interface{}) error
+	Key() (string, error)
 }
 
 type rows struct {
@@ -232,7 +252,7 @@ type rows struct {
 	rowsi driver.Rows
 }
 
-var _ resultSetX = &rows{}
+var _ fullResultSet = &rows{}
 
 // NextResultSet prepares the iterator to read the next result set. It returns
 // true on success, or false if there are no more result sets to read, or if
@@ -335,16 +355,16 @@ func (r *rows) ScanDoc(dest interface{}) (err error) {
 // once the array is filled.  The iterator is closed by this method. It is
 // possible that an error will be returned, and that one or more documents were
 // successfully scanned.
-func ScanAllDocs(r resultSetX, dest interface{}) error {
+func ScanAllDocs(r fullResultSet, dest interface{}) error {
 	return scanAll(r, dest, r.ScanDoc)
 }
 
-// ScanAllValues works like ScanAllDocs, but scans the values rather than docs.
-func ScanAllValues(r resultSetX, dest interface{}) error {
+// ScanAllValues works like [ScanAllDocs], but scans the values rather than docs.
+func ScanAllValues(r fullResultSet, dest interface{}) error {
 	return scanAll(r, dest, r.ScanValue)
 }
 
-func scanAll(r resultSetX, dest interface{}, scan func(interface{}) error) (err error) {
+func scanAll(r fullResultSet, dest interface{}, scan func(interface{}) error) (err error) {
 	defer func() {
 		closeErr := r.Close()
 		if err == nil {

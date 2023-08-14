@@ -37,13 +37,7 @@ type row struct {
 	err      error
 }
 
-var _ resultSetX = &row{}
-
-func (r *row) Key() (string, error)               { return "", r.err }
-func (r *row) Metadata() (*ResultMetadata, error) { return nil, r.err }
-func (r *row) NextResultSet() bool                { return false }
-func (r *row) ScanKey(interface{}) error          { return r.err }
-func (r *row) ScanValue(interface{}) error        { return r.err }
+var _ basicResultSet = &row{}
 
 func (r *row) Close() error {
 	if _, err := io.Copy(io.Discard, r.body); err != nil {
@@ -51,13 +45,6 @@ func (r *row) Close() error {
 	}
 	r.err = r.body.Close()
 	return r.err
-}
-
-func (r *row) Finish() (ResultMetadata, error) {
-	if r.err != nil {
-		return ResultMetadata{}, r.err
-	}
-	return ResultMetadata{}, r.Close()
 }
 
 func (r *row) Err() error           { return r.err }

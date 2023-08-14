@@ -771,22 +771,22 @@ type Diffs map[string]RevDiff
 //	}
 //
 // See http://docs.couchdb.org/en/stable/api/database/misc.html#db-revs-diff
-func (db *DB) RevsDiff(ctx context.Context, revMap interface{}) ResultSetX {
+func (db *DB) RevsDiff(ctx context.Context, revMap interface{}) *ResultSet {
 	if db.err != nil {
-		return &errRS{err: db.err}
+		return &ResultSet{ResultSetX: &errRS{err: db.err}}
 	}
 	if rd, ok := db.driverDB.(driver.RevsDiffer); ok {
 		if err := db.startQuery(); err != nil {
-			return &errRS{err: err}
+			return &ResultSet{ResultSetX: &errRS{err: err}}
 		}
 		rowsi, err := rd.RevsDiff(ctx, revMap)
 		if err != nil {
 			db.endQuery()
-			return &errRS{err: err}
+			return &ResultSet{ResultSetX: &errRS{err: err}}
 		}
-		return newRows(ctx, db.endQuery, rowsi)
+		return &ResultSet{ResultSetX: newRows(ctx, db.endQuery, rowsi)}
 	}
-	return &errRS{err: &Error{Status: http.StatusNotImplemented, Message: "kivik: _revs_diff not supported by driver"}}
+	return &ResultSet{ResultSetX: &errRS{err: &Error{Status: http.StatusNotImplemented, Message: "kivik: _revs_diff not supported by driver"}}}
 }
 
 // PartitionStats contains partition statistics.

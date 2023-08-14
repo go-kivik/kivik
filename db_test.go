@@ -2780,7 +2780,7 @@ func TestRevsDiff(t *testing.T) {
 		revMap   interface{}
 		status   int
 		err      string
-		expected interface{}
+		expected *rows
 	}
 	tests := testy.NewTable()
 	tests.Add("non-DBReplicator", tt{
@@ -2843,11 +2843,11 @@ func TestRevsDiff(t *testing.T) {
 	tests.Run(t, func(t *testing.T, tt tt) {
 		rs := tt.db.RevsDiff(context.Background(), tt.revMap)
 		testy.StatusError(t, tt.err, tt.status, rs.Err())
-		if r, ok := rs.(*rows); ok {
+		if r, ok := rs.ResultSetX.(*rows); ok {
 			r.cancel = nil  // Determinism
 			r.onClose = nil // Determinism
 		}
-		if d := testy.DiffInterface(tt.expected, rs); d != nil {
+		if d := testy.DiffInterface(&ResultSet{ResultSetX: tt.expected}, rs); d != nil {
 			t.Error(d)
 		}
 	})

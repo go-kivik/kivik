@@ -64,14 +64,14 @@ type ResultMetadata struct {
 // if the result set is empty, as when a view returns no results, an error of
 // "no results" will be returned.
 type ResultSet struct {
-	ResultSetX
+	resultSetX
 }
 
 // Next prepares the next result value for reading. It returns true on
 // success or false if there are no more results or an error occurs while
 // preparing it. [Err] should be consulted to distinguish between the two.
 func (rs *ResultSet) Next() bool {
-	return rs.ResultSetX.Next()
+	return rs.resultSetX.Next()
 }
 
 // NextResultSet prepares the next result set for reading. It reports
@@ -83,13 +83,13 @@ func (rs *ResultSet) Next() bool {
 // before scanning. If there are further result sets they may not have rows
 // in the result set.
 func (rs *ResultSet) NextResultSet() bool {
-	return rs.ResultSetX.NextResultSet()
+	return rs.resultSetX.NextResultSet()
 }
 
 // Err returns the error, if any, that was encountered during iteration.
 // Err may be called after an explicit or implicit [Close].
 func (rs *ResultSet) Err() error {
-	return rs.ResultSetX.Err()
+	return rs.resultSetX.Err()
 }
 
 // Close closes the result set, preventing further enumeration, and freeing
@@ -98,13 +98,13 @@ func (rs *ResultSet) Err() error {
 // automatically and it will suffice to check the result of Err. Close is
 // idempotent and does not affect the result of [Err].
 func (rs *ResultSet) Close() error {
-	return rs.ResultSetX.Close()
+	return rs.resultSetX.Close()
 }
 
 // Metadata returns the result metadata for the current query. It must be
 // called after [Next] returns false. Otherwise it will return an error.
 func (rs *ResultSet) Metadata() (*ResultMetadata, error) {
-	return rs.ResultSetX.Metadata()
+	return rs.resultSetX.Metadata()
 }
 
 // ScanValue copies the data from the result value into the value pointed
@@ -124,7 +124,7 @@ func (rs *ResultSet) Metadata() (*ResultMetadata, error) {
 // For all other types, refer to the documentation for
 // [encoding/json.Unmarshal] for type conversion rules.
 func (rs *ResultSet) ScanValue(dest interface{}) error {
-	return rs.ResultSetX.ScanValue(dest)
+	return rs.resultSetX.ScanValue(dest)
 }
 
 // ScanDoc works the same as [ScanValue], but on the doc field of
@@ -134,7 +134,7 @@ func (rs *ResultSet) ScanValue(dest interface{}) error {
 // If the row returned an error, it will be returned rather than
 // unmarshaling the doc, as error rows do not include docs.
 func (rs *ResultSet) ScanDoc(dest interface{}) error {
-	return rs.ResultSetX.ScanDoc(dest)
+	return rs.resultSetX.ScanDoc(dest)
 }
 
 // ScanKey works the same as [ScanValue], but on the key field of the
@@ -144,25 +144,25 @@ func (rs *ResultSet) ScanDoc(dest interface{}) error {
 // Unlike [ScanValue] and [ScanDoc], this may successfully scan the key,
 // and also return an error, if the row itself represents an error.
 func (rs *ResultSet) ScanKey(dest interface{}) error {
-	return rs.ResultSetX.ScanKey(dest)
+	return rs.resultSetX.ScanKey(dest)
 }
 
 // ID returns the ID of the most recent result.
 func (rs *ResultSet) ID() (string, error) {
-	return rs.ResultSetX.ID()
+	return rs.resultSetX.ID()
 }
 
 // Rev returns the document revision, when known. Not all result sets (such
 // as those from views) include revision IDs, so this will be blank in such
 // cases.
 func (rs *ResultSet) Rev() (string, error) {
-	return rs.ResultSetX.Rev()
+	return rs.resultSetX.Rev()
 }
 
 // Key returns the Key of the most recent result as a raw JSON string. For
 // compound keys, [ScanKey] may be more convenient.
 func (rs *ResultSet) Key() (string, error) {
-	return rs.ResultSetX.Key()
+	return rs.resultSetX.Key()
 }
 
 // Attachments returns an attachments iterator. At present, it is only set
@@ -170,26 +170,26 @@ func (rs *ResultSet) Key() (string, error) {
 // default where supported). This may be extended to other cases in the
 // future.
 func (rs *ResultSet) Attachments() (*AttachmentsIterator, error) {
-	return rs.ResultSetX.Attachments()
+	return rs.resultSetX.Attachments()
 }
 
-// ResultSetX is an iterator over a multi-value query result set.
+// resultSetX is an iterator over a multi-value query result set.
 //
-// Call [ResultSetX.Next] to advance the iterator to the next item in the result
+// Call [resultSetX.Next] to advance the iterator to the next item in the result
 // set.
 //
 // The Scan* methods are expected to be called only once per iteration, as
 // they may consume data from the network, rendering them unusable a second
 // time.
 //
-// Calling [ResultSetX.ScanDoc], [ResultSetX.ScanKey], [ResultSetX.ScanValue],
-// [ResultSetX.ID], or [ResultSetX.Key] before calling [ResultSetX.Next] will
+// Calling [resultSetX.ScanDoc], [resultSetX.ScanKey], [resultSetX.ScanValue],
+// [resultSetX.ID], or [resultSetX.Key] before calling [resultSetX.Next] will
 // operate on the first item in the resultset, then close the iterator
 // immediately. This is for convenience in cases where only a single item is
 // expected, so the extra effort of iterating is otherwise wasted. In this case,
 // if the result set is empty, as when a view returns no results, an error of
 // "no results" will be returned.
-type ResultSetX interface {
+type resultSetX interface {
 	// Next prepares the next result value for reading. It returns true on
 	// success or false if there are no more results or an error occurs while
 	// preparing it. [Err] should be consulted to distinguish between the two.
@@ -278,7 +278,7 @@ type rows struct {
 	rowsi driver.Rows
 }
 
-var _ ResultSetX = &rows{}
+var _ resultSetX = &rows{}
 
 // NextResultSet prepares the iterator to read the next result set. It returns
 // true on success, or false if there are no more result sets to read, or if
@@ -381,16 +381,16 @@ func (r *rows) ScanDoc(dest interface{}) (err error) {
 // once the array is filled.  The iterator is closed by this method. It is
 // possible that an error will be returned, and that one or more documents were
 // successfully scanned.
-func ScanAllDocs(r ResultSetX, dest interface{}) error {
+func ScanAllDocs(r resultSetX, dest interface{}) error {
 	return scanAll(r, dest, r.ScanDoc)
 }
 
 // ScanAllValues works like ScanAllDocs, but scans the values rather than docs.
-func ScanAllValues(r ResultSetX, dest interface{}) error {
+func ScanAllValues(r resultSetX, dest interface{}) error {
 	return scanAll(r, dest, r.ScanValue)
 }
 
-func scanAll(r ResultSetX, dest interface{}, scan func(interface{}) error) (err error) {
+func scanAll(r resultSetX, dest interface{}, scan func(interface{}) error) (err error) {
 	defer func() {
 		closeErr := r.Close()
 		if err == nil {
@@ -490,7 +490,7 @@ type errRS struct {
 	err error
 }
 
-var _ ResultSetX = &errRS{}
+var _ resultSetX = &errRS{}
 
 func (e *errRS) Err() error                                 { return e.err }
 func (e *errRS) Close() error                               { return e.err }

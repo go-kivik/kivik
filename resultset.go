@@ -72,7 +72,7 @@ type ResultSet struct {
 
 // Next prepares the next result value for reading. It returns true on
 // success or false if there are no more results or an error occurs while
-// preparing it. [Err] should be consulted to distinguish between the two.
+// preparing it. [ResultSet.Err] should be consulted to distinguish between the two.
 func (rs *ResultSet) Next() bool {
 	if rs.err != nil {
 		return false
@@ -99,7 +99,7 @@ func (rs *ResultSet) NextResultSet() bool {
 }
 
 // Err returns the error, if any, that was encountered during iteration.
-// Err may be called after an explicit or implicit [Close].
+// [ResultSet.Err] may be called after an explicit or implicit [ResultSet.Close].
 func (rs *ResultSet) Err() error {
 	if rs.err != nil {
 		return rs.err
@@ -109,9 +109,10 @@ func (rs *ResultSet) Err() error {
 
 // Close closes the result set, preventing further enumeration, and freeing
 // any resources (such as the HTTP request body) of the underlying query. If
-// [Next] is called and there are no further results, the result set is closed
-// automatically and it will suffice to check the result of Err. Close is
-// idempotent and does not affect the result of [Err].
+// [ResultSet.Next] is called and there are no further results, the result set
+// is closed automatically and it will suffice to check the result of
+// [ResultSet.Err]. Close is idempotent and does not affect the result of
+// [ResultSet.Err].
 func (rs *ResultSet) Close() error {
 	if rs.err != nil {
 		return rs.err
@@ -143,7 +144,7 @@ func (rs *ResultSet) Metadata() (*ResultMetadata, error) {
 //
 // The copy can be avoided by using an argument of type
 // [*encoding/json.RawMessage] instead, after which the value is only
-// valid until the next call to [Next] or [Close].
+// valid until the next call to [ResultSet.Next] or [ResultSet.Close].
 //
 // For all other types, refer to the documentation for
 // [encoding/json.Unmarshal] for type conversion rules.
@@ -157,7 +158,7 @@ func (rs *ResultSet) ScanValue(dest interface{}) error {
 	return nil
 }
 
-// ScanDoc works the same as [ScanValue], but on the doc field of
+// ScanDoc works the same as [ResultSEt.ScanValue], but on the doc field of
 // the result. It will return an error if the query does not include
 // documents.
 //
@@ -170,12 +171,12 @@ func (rs *ResultSet) ScanDoc(dest interface{}) error {
 	return rs.underlying.ScanDoc(dest)
 }
 
-// ScanKey works the same as [ScanValue], but on the key field of the
-// result. For simple keys, which are just strings, [Key] may be easier to
-// use.
+// ScanKey works the same as [ResultSet.ScanValue], but on the key field of the
+// result. For simple keys, which are just strings, [ResultSEt.Key] may be
+// easier to use.
 //
-// Unlike [ScanValue] and [ScanDoc], this may successfully scan the key,
-// and also return an error, if the row itself represents an error.
+// Unlike [ResultSet.ScanValue] and [ResultSet.ScanDoc], this may successfully
+// scan the key, and also return an error, if the row itself represents an error.
 func (rs *ResultSet) ScanKey(dest interface{}) error {
 	if rs.err != nil {
 		return rs.err
@@ -205,7 +206,7 @@ func (rs *ResultSet) Rev() (string, error) {
 }
 
 // Key returns the Key of the most recent result as a raw JSON string. For
-// compound keys, [ScanKey] may be more convenient.
+// compound keys, [ResultSet.ScanKey] may be more convenient.
 func (rs *ResultSet) Key() (string, error) {
 	if rs.err != nil {
 		return "", rs.err
@@ -358,7 +359,7 @@ func ScanAllDocs(r fullResultSet, dest interface{}) error {
 	return scanAll(r, dest, r.ScanDoc)
 }
 
-// ScanAllValues works like ScanAllDocs, but scans the values rather than docs.
+// ScanAllValues works like [ScanAllDocs], but scans the values rather than docs.
 func ScanAllValues(r fullResultSet, dest interface{}) error {
 	return scanAll(r, dest, r.ScanValue)
 }

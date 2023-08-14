@@ -64,6 +64,9 @@ type ResultMetadata struct {
 // if the result set is empty, as when a view returns no results, an error of
 // "no results" will be returned.
 type ResultSet struct {
+	// When ResultSet is invalid, due to an error, err is set, and should be
+	// returned by all methods.
+	err error
 	resultSetX
 }
 
@@ -71,6 +74,9 @@ type ResultSet struct {
 // success or false if there are no more results or an error occurs while
 // preparing it. [Err] should be consulted to distinguish between the two.
 func (rs *ResultSet) Next() bool {
+	if rs.err != nil {
+		return false
+	}
 	return rs.resultSetX.Next()
 }
 
@@ -83,12 +89,18 @@ func (rs *ResultSet) Next() bool {
 // before scanning. If there are further result sets they may not have rows
 // in the result set.
 func (rs *ResultSet) NextResultSet() bool {
+	if rs.err != nil {
+		return false
+	}
 	return rs.resultSetX.NextResultSet()
 }
 
 // Err returns the error, if any, that was encountered during iteration.
 // Err may be called after an explicit or implicit [Close].
 func (rs *ResultSet) Err() error {
+	if rs.err != nil {
+		return rs.err
+	}
 	return rs.resultSetX.Err()
 }
 
@@ -98,12 +110,18 @@ func (rs *ResultSet) Err() error {
 // automatically and it will suffice to check the result of Err. Close is
 // idempotent and does not affect the result of [Err].
 func (rs *ResultSet) Close() error {
+	if rs.err != nil {
+		return rs.err
+	}
 	return rs.resultSetX.Close()
 }
 
 // Metadata returns the result metadata for the current query. It must be
 // called after [Next] returns false. Otherwise it will return an error.
 func (rs *ResultSet) Metadata() (*ResultMetadata, error) {
+	if rs.err != nil {
+		return nil, rs.err
+	}
 	return rs.resultSetX.Metadata()
 }
 
@@ -124,6 +142,9 @@ func (rs *ResultSet) Metadata() (*ResultMetadata, error) {
 // For all other types, refer to the documentation for
 // [encoding/json.Unmarshal] for type conversion rules.
 func (rs *ResultSet) ScanValue(dest interface{}) error {
+	if rs.err != nil {
+		return rs.err
+	}
 	return rs.resultSetX.ScanValue(dest)
 }
 
@@ -134,6 +155,9 @@ func (rs *ResultSet) ScanValue(dest interface{}) error {
 // If the row returned an error, it will be returned rather than
 // unmarshaling the doc, as error rows do not include docs.
 func (rs *ResultSet) ScanDoc(dest interface{}) error {
+	if rs.err != nil {
+		return rs.err
+	}
 	return rs.resultSetX.ScanDoc(dest)
 }
 
@@ -144,11 +168,17 @@ func (rs *ResultSet) ScanDoc(dest interface{}) error {
 // Unlike [ScanValue] and [ScanDoc], this may successfully scan the key,
 // and also return an error, if the row itself represents an error.
 func (rs *ResultSet) ScanKey(dest interface{}) error {
+	if rs.err != nil {
+		return rs.err
+	}
 	return rs.resultSetX.ScanKey(dest)
 }
 
 // ID returns the ID of the most recent result.
 func (rs *ResultSet) ID() (string, error) {
+	if rs.err != nil {
+		return "", rs.err
+	}
 	return rs.resultSetX.ID()
 }
 
@@ -156,12 +186,18 @@ func (rs *ResultSet) ID() (string, error) {
 // as those from views) include revision IDs, so this will be blank in such
 // cases.
 func (rs *ResultSet) Rev() (string, error) {
+	if rs.err != nil {
+		return "", rs.err
+	}
 	return rs.resultSetX.Rev()
 }
 
 // Key returns the Key of the most recent result as a raw JSON string. For
 // compound keys, [ScanKey] may be more convenient.
 func (rs *ResultSet) Key() (string, error) {
+	if rs.err != nil {
+		return "", rs.err
+	}
 	return rs.resultSetX.Key()
 }
 
@@ -170,6 +206,9 @@ func (rs *ResultSet) Key() (string, error) {
 // default where supported). This may be extended to other cases in the
 // future.
 func (rs *ResultSet) Attachments() (*AttachmentsIterator, error) {
+	if rs.err != nil {
+		return nil, rs.err
+	}
 	return rs.resultSetX.Attachments()
 }
 
@@ -399,24 +438,3 @@ func (r *rows) Attachments() (*AttachmentsIterator, error) {
 func (r *rows) Rev() (string, error) {
 	return "", r.curVal.(*driver.Row).Error
 }
-
-// errRS is a resultset that has errored.
-type errRS struct {
-	err error
-}
-
-var _ resultSetX = &errRS{}
-
-func (e *errRS) Err() error                                 { return e.err }
-func (e *errRS) Close() error                               { return e.err }
-func (e *errRS) Metadata() (*ResultMetadata, error)         { return nil, e.err }
-func (e *errRS) ID() (string, error)                        { return "", e.err }
-func (e *errRS) Key() (string, error)                       { return "", e.err }
-func (e *errRS) Next() bool                                 { return false }
-func (e *errRS) ScanAllDocs(interface{}) error              { return e.err }
-func (e *errRS) ScanDoc(interface{}) error                  { return e.err }
-func (e *errRS) ScanKey(interface{}) error                  { return e.err }
-func (e *errRS) ScanValue(interface{}) error                { return e.err }
-func (e *errRS) NextResultSet() bool                        { return false }
-func (e *errRS) Attachments() (*AttachmentsIterator, error) { return nil, e.err }
-func (e *errRS) Rev() (string, error)                       { return "", e.err }

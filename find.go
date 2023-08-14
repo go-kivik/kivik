@@ -26,20 +26,20 @@ var findNotImplemented = &Error{Status: http.StatusNotImplemented, Message: "kiv
 // See https://docs.couchdb.org/en/stable/api/database/find.html
 func (db *DB) Find(ctx context.Context, query interface{}, options ...Options) *ResultSet {
 	if db.err != nil {
-		return &ResultSet{resultSetX: &errRS{err: db.err}}
+		return &ResultSet{err: db.err}
 	}
 	if finder, ok := db.driverDB.(driver.Finder); ok {
 		if err := db.startQuery(); err != nil {
-			return &ResultSet{resultSetX: &errRS{err: err}}
+			return &ResultSet{err: err}
 		}
 		rowsi, err := finder.Find(ctx, query, mergeOptions(options...))
 		if err != nil {
 			db.endQuery()
-			return &ResultSet{resultSetX: &errRS{err: err}}
+			return &ResultSet{err: err}
 		}
 		return &ResultSet{resultSetX: newRows(ctx, db.endQuery, rowsi)}
 	}
-	return &ResultSet{resultSetX: &errRS{err: findNotImplemented}}
+	return &ResultSet{err: findNotImplemented}
 }
 
 // CreateIndex creates an index if it doesn't already exist. ddoc and name may

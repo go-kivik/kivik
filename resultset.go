@@ -67,6 +67,112 @@ type ResultSet struct {
 	ResultSetX
 }
 
+// Next prepares the next result value for reading. It returns true on
+// success or false if there are no more results or an error occurs while
+// preparing it. [Err] should be consulted to distinguish between the two.
+func (rs *ResultSet) Next() bool {
+	return rs.ResultSetX.Next()
+}
+
+// NextResultSet prepares the next result set for reading. It reports
+// whether there is further result sets, or false if there is no further
+// result set or if there is an error advancing to it. [ResultSet.Err]
+// should be consulted to distinguish between the two cases.
+//
+// After calling NextResultSet, [ResultSet.Next] should always be called
+// before scanning. If there are further result sets they may not have rows
+// in the result set.
+func (rs *ResultSet) NextResultSet() bool {
+	return rs.ResultSetX.NextResultSet()
+}
+
+// Err returns the error, if any, that was encountered during iteration.
+// Err may be called after an explicit or implicit [Close].
+func (rs *ResultSet) Err() error {
+	return rs.ResultSetX.Err()
+}
+
+// Close closes the result set, preventing further enumeration, and freeing
+// any resources (such as the HTTP request body) of the underlying query. If
+// [Next] is called and there are no further results, the result set is closed
+// automatically and it will suffice to check the result of Err. Close is
+// idempotent and does not affect the result of [Err].
+func (rs *ResultSet) Close() error {
+	return rs.ResultSetX.Close()
+}
+
+// Metadata returns the result metadata for the current query. It must be
+// called after [Next] returns false. Otherwise it will return an error.
+func (rs *ResultSet) Metadata() (*ResultMetadata, error) {
+	return rs.ResultSetX.Metadata()
+}
+
+// ScanValue copies the data from the result value into the value pointed
+// at by dest. Think of this as calling [encoding/json.Unmarshal] into dest.
+//
+// If the row returned an error, it will be returned rather than
+// unmarshaling the value, as error rows do not include values.
+//
+// If the dest argument has type *[]byte, ScanValue stores a copy of the
+// input data. The copy is owned by the caller and can be modified and held
+// indefinitely.
+//
+// The copy can be avoided by using an argument of type
+// [*encoding/json.RawMessage] instead, after which the value is only
+// valid until the next call to [Next] or [Close].
+//
+// For all other types, refer to the documentation for
+// [encoding/json.Unmarshal] for type conversion rules.
+func (rs *ResultSet) ScanValue(dest interface{}) error {
+	return rs.ResultSetX.ScanValue(dest)
+}
+
+// ScanDoc works the same as [ScanValue], but on the doc field of
+// the result. It will return an error if the query does not include
+// documents.
+//
+// If the row returned an error, it will be returned rather than
+// unmarshaling the doc, as error rows do not include docs.
+func (rs *ResultSet) ScanDoc(dest interface{}) error {
+	return rs.ResultSetX.ScanDoc(dest)
+}
+
+// ScanKey works the same as [ScanValue], but on the key field of the
+// result. For simple keys, which are just strings, [Key] may be easier to
+// use.
+//
+// Unlike [ScanValue] and [ScanDoc], this may successfully scan the key,
+// and also return an error, if the row itself represents an error.
+func (rs *ResultSet) ScanKey(dest interface{}) error {
+	return rs.ResultSetX.ScanKey(dest)
+}
+
+// ID returns the ID of the most recent result.
+func (rs *ResultSet) ID() (string, error) {
+	return rs.ResultSetX.ID()
+}
+
+// Rev returns the document revision, when known. Not all result sets (such
+// as those from views) include revision IDs, so this will be blank in such
+// cases.
+func (rs *ResultSet) Rev() (string, error) {
+	return rs.ResultSetX.Rev()
+}
+
+// Key returns the Key of the most recent result as a raw JSON string. For
+// compound keys, [ScanKey] may be more convenient.
+func (rs *ResultSet) Key() (string, error) {
+	return rs.ResultSetX.Key()
+}
+
+// Attachments returns an attachments iterator. At present, it is only set
+// by [DB.Get] when doing a multi-part get from CouchDB (which is the
+// default where supported). This may be extended to other cases in the
+// future.
+func (rs *ResultSet) Attachments() (*AttachmentsIterator, error) {
+	return rs.ResultSetX.Attachments()
+}
+
 // ResultSetX is an iterator over a multi-value query result set.
 //
 // Call [ResultSetX.Next] to advance the iterator to the next item in the result

@@ -37,7 +37,7 @@ type row struct {
 	err      error
 }
 
-var _ resultSetX = &row{}
+var _ fullResultSet = &row{}
 
 func (r *row) Key() (string, error)               { return "", r.err }
 func (r *row) Metadata() (*ResultMetadata, error) { return nil, r.err }

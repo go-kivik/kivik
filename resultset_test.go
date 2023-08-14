@@ -476,7 +476,7 @@ func TestMetadata(t *testing.T) {
 		}
 	})
 
-	check := func(t *testing.T, r resultSetX) {
+	check := func(t *testing.T, r fullResultSet) {
 		t.Helper()
 		for r.Next() { //nolint:revive // Consume all rows
 		}
@@ -795,7 +795,7 @@ func TestNextResultSet(t *testing.T) {
 	})
 }
 
-func multiResultSet() resultSetX {
+func multiResultSet() fullResultSet {
 	rows := []interface{}{
 		&driver.Row{ID: "1", Doc: strings.NewReader(`{"foo":"bar"}`)},
 		&driver.Row{ID: "2", Doc: strings.NewReader(`{"foo":"bar"}`)},

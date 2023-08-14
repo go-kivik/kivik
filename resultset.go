@@ -67,7 +67,7 @@ type ResultSet struct {
 	// When ResultSet is invalid, due to an error, err is set, and should be
 	// returned by all methods.
 	err error
-	resultSetX
+	fullResultSet
 }
 
 // Next prepares the next result value for reading. It returns true on
@@ -77,7 +77,7 @@ func (rs *ResultSet) Next() bool {
 	if rs.err != nil {
 		return false
 	}
-	return rs.resultSetX.Next()
+	return rs.fullResultSet.Next()
 }
 
 // NextResultSet prepares the next result set for reading. It reports
@@ -92,7 +92,7 @@ func (rs *ResultSet) NextResultSet() bool {
 	if rs.err != nil {
 		return false
 	}
-	return rs.resultSetX.NextResultSet()
+	return rs.fullResultSet.NextResultSet()
 }
 
 // Err returns the error, if any, that was encountered during iteration.
@@ -101,7 +101,7 @@ func (rs *ResultSet) Err() error {
 	if rs.err != nil {
 		return rs.err
 	}
-	return rs.resultSetX.Err()
+	return rs.fullResultSet.Err()
 }
 
 // Close closes the result set, preventing further enumeration, and freeing
@@ -113,7 +113,7 @@ func (rs *ResultSet) Close() error {
 	if rs.err != nil {
 		return rs.err
 	}
-	return rs.resultSetX.Close()
+	return rs.fullResultSet.Close()
 }
 
 // Metadata returns the result metadata for the current query. It must be
@@ -122,7 +122,7 @@ func (rs *ResultSet) Metadata() (*ResultMetadata, error) {
 	if rs.err != nil {
 		return nil, rs.err
 	}
-	return rs.resultSetX.Metadata()
+	return rs.fullResultSet.Metadata()
 }
 
 // ScanValue copies the data from the result value into the value pointed
@@ -145,7 +145,7 @@ func (rs *ResultSet) ScanValue(dest interface{}) error {
 	if rs.err != nil {
 		return rs.err
 	}
-	return rs.resultSetX.ScanValue(dest)
+	return rs.fullResultSet.ScanValue(dest)
 }
 
 // ScanDoc works the same as [ScanValue], but on the doc field of
@@ -158,7 +158,7 @@ func (rs *ResultSet) ScanDoc(dest interface{}) error {
 	if rs.err != nil {
 		return rs.err
 	}
-	return rs.resultSetX.ScanDoc(dest)
+	return rs.fullResultSet.ScanDoc(dest)
 }
 
 // ScanKey works the same as [ScanValue], but on the key field of the
@@ -171,7 +171,7 @@ func (rs *ResultSet) ScanKey(dest interface{}) error {
 	if rs.err != nil {
 		return rs.err
 	}
-	return rs.resultSetX.ScanKey(dest)
+	return rs.fullResultSet.ScanKey(dest)
 }
 
 // ID returns the ID of the most recent result.
@@ -179,7 +179,7 @@ func (rs *ResultSet) ID() (string, error) {
 	if rs.err != nil {
 		return "", rs.err
 	}
-	return rs.resultSetX.ID()
+	return rs.fullResultSet.ID()
 }
 
 // Rev returns the document revision, when known. Not all result sets (such
@@ -189,7 +189,7 @@ func (rs *ResultSet) Rev() (string, error) {
 	if rs.err != nil {
 		return "", rs.err
 	}
-	return rs.resultSetX.Rev()
+	return rs.fullResultSet.Rev()
 }
 
 // Key returns the Key of the most recent result as a raw JSON string. For
@@ -198,7 +198,7 @@ func (rs *ResultSet) Key() (string, error) {
 	if rs.err != nil {
 		return "", rs.err
 	}
-	return rs.resultSetX.Key()
+	return rs.fullResultSet.Key()
 }
 
 // Attachments returns an attachments iterator. At present, it is only set
@@ -209,10 +209,10 @@ func (rs *ResultSet) Attachments() (*AttachmentsIterator, error) {
 	if rs.err != nil {
 		return nil, rs.err
 	}
-	return rs.resultSetX.Attachments()
+	return rs.fullResultSet.Attachments()
 }
 
-type resultSetX interface {
+type fullResultSet interface {
 	Next() bool
 	NextResultSet() bool
 	Err() error
@@ -232,7 +232,7 @@ type rows struct {
 	rowsi driver.Rows
 }
 
-var _ resultSetX = &rows{}
+var _ fullResultSet = &rows{}
 
 // NextResultSet prepares the iterator to read the next result set. It returns
 // true on success, or false if there are no more result sets to read, or if
@@ -335,16 +335,16 @@ func (r *rows) ScanDoc(dest interface{}) (err error) {
 // once the array is filled.  The iterator is closed by this method. It is
 // possible that an error will be returned, and that one or more documents were
 // successfully scanned.
-func ScanAllDocs(r resultSetX, dest interface{}) error {
+func ScanAllDocs(r fullResultSet, dest interface{}) error {
 	return scanAll(r, dest, r.ScanDoc)
 }
 
 // ScanAllValues works like ScanAllDocs, but scans the values rather than docs.
-func ScanAllValues(r resultSetX, dest interface{}) error {
+func ScanAllValues(r fullResultSet, dest interface{}) error {
 	return scanAll(r, dest, r.ScanValue)
 }
 
-func scanAll(r resultSetX, dest interface{}, scan func(interface{}) error) (err error) {
+func scanAll(r fullResultSet, dest interface{}, scan func(interface{}) error) (err error) {
 	defer func() {
 		closeErr := r.Close()
 		if err == nil {

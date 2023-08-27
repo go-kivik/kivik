@@ -10,6 +10,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+// Package kiviktest provides integration tests for kivik.
 package kiviktest
 
 import "github.com/go-kivik/kivik/v4/kiviktest/kt"

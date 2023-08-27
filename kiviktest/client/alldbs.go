@@ -10,6 +10,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+// Package client provides integration tests for the kivik client.
 package client
 
 import (

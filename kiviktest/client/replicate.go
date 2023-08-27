@@ -121,13 +121,14 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 			cx, cancel := context.WithTimeout(context.Background(), timeout)
 			defer cancel()
 			ctx.CheckError(rep.Delete(context.Background()))
+		loop:
 			for rep.IsActive() {
 				if rep.State() == kivik.ReplicationStarted {
 					return
 				}
 				select {
 				case <-cx.Done():
-					break
+					break loop
 				default:
 				}
 				if err := rep.Update(cx); err != nil {

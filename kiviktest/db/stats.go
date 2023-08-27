@@ -59,13 +59,15 @@ func rwTests(ctx *kt.Context, client *kivik.Client) {
 		if err != nil {
 			ctx.Fatalf("Failed to create document ID %s: %s", id, err)
 		}
-		if i > 5 {
+		const deleteThreshold = 5
+		if i > deleteThreshold {
 			if _, err = db.Delete(context.Background(), id, rev); err != nil {
 				ctx.Fatalf("Failed to delete document ID %s: %s", id, err)
 			}
 		}
 	}
-	testDBInfo(ctx, client, dbname, 6)
+	const docCount = 6
+	testDBInfo(ctx, client, dbname, docCount)
 }
 
 func roTests(ctx *kt.Context, client *kivik.Client) {

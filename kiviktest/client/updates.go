@@ -47,7 +47,8 @@ func testUpdates(ctx *kt.Context, client *kivik.Client) {
 	// It seems that DBUpdates doesn't always start responding immediately,
 	// so introduce a small delay to ensure we're reporting updates before we
 	// actually do the updates.
-	time.Sleep(10 * time.Millisecond)
+	const delay = 10 * time.Millisecond
+	time.Sleep(delay)
 	dbname := ctx.TestDBName()
 	eventErrors := make(chan error)
 	go func() {

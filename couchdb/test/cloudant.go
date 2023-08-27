@@ -10,6 +10,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+// Package test provides a test suite against the Cloudant service.
 package test
 
 import (

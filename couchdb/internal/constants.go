@@ -10,6 +10,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+// Package internal contains some internal constants.
 package internal
 
 // Common constants, placed here to allow importing in chttp and root package

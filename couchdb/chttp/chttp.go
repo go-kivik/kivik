@@ -258,7 +258,7 @@ func (c *Client) compressBody(path string, body io.Reader, opts *Options) (bool,
 		}
 		gz := gzip.NewWriter(w)
 		_, err := io.Copy(gz, body)
-		gz.Close()
+		_ = gz.Close()
 		w.CloseWithError(err)
 	}()
 	return true, r

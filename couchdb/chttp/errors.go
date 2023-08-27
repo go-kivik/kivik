@@ -40,7 +40,7 @@ func (e *HTTPError) Error() string {
 	return e.Reason
 }
 
-// StatusCode returns the embedded status code.
+// HTTPStatus returns the embedded status code.
 func (e *HTTPError) HTTPStatus() int {
 	return e.Response.StatusCode
 }

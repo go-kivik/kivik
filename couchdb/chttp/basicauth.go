@@ -52,11 +52,13 @@ type JWTAuth struct {
 	transport http.RoundTripper
 }
 
+// RoundTrip satisfies the http.RoundTripper interface.
 func (a *JWTAuth) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Header.Set("Authorization", "Bearer "+a.Token)
 	return a.transport.RoundTrip(req)
 }
 
+// Authenticate performs authentication against CouchDB.
 func (a *JWTAuth) Authenticate(c *Client) error {
 	a.transport = c.Transport
 	if a.transport == nil {

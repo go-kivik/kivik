@@ -44,12 +44,13 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 	}
 	ctx.Run("group", func(ctx *kt.Context) {
 		ctx.Run("Create", func(ctx *kt.Context) {
+			const age = 32
 			ctx.Parallel()
 
 			doc := &testDoc{
 				ID:   ctx.TestDBName(),
 				Name: "Alberto",
-				Age:  32,
+				Age:  age,
 			}
 			var rev string
 			err := kt.Retry(func() error {

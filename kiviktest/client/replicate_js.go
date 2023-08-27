@@ -10,6 +10,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+//go:build js
 // +build js
 
 package client
@@ -18,7 +19,7 @@ import (
 	"github.com/gopherjs/gopherjs/js"
 
 	kivik "github.com/go-kivik/kivik/v4"
-	"github.com/go-kivik/kiviktest/v4/kt"
+	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 )
 
 func replicationOptions(ctx *kt.Context, client *kivik.Client, target, source, repID string, in map[string]interface{}) map[string]interface{} {

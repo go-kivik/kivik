@@ -12,7 +12,7 @@
 
 package kiviktest
 
-import "github.com/go-kivik/kiviktest/v4/kt"
+import "github.com/go-kivik/kivik/v4/kiviktest/kt"
 
 var suites = make(map[string]kt.SuiteConfig)
 

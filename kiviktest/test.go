@@ -26,11 +26,11 @@ import (
 	"testing"
 
 	"github.com/go-kivik/kivik/v4"
-	"github.com/go-kivik/kiviktest/v4/kt"
+	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 
 	// Tests
-	_ "github.com/go-kivik/kiviktest/v4/client"
-	_ "github.com/go-kivik/kiviktest/v4/db"
+	_ "github.com/go-kivik/kivik/v4/kiviktest/client"
+	_ "github.com/go-kivik/kivik/v4/kiviktest/db"
 )
 
 // The available test suites

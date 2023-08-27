@@ -1,0 +1,59 @@
+stages:
+    - test
+
+variables:
+    GO111MODULE: "on"
+
+.test: &test_template
+    stage: test
+    script:
+        - go mod download
+        - ./script/test_version.sh
+        - go test -race -tags=livetest ./...
+
+.nomod: &nomod_template
+    stage: test
+    script:
+        - mkdir -p /go/src
+        - ln -s /builds /go/src/github.com
+        - cd ${SRCDIR}
+        - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+        - dep ensure && dep status
+        - ./script/test_version.sh
+        - go test -race -tags=livetest ./...
+
+lint:
+    stage: test
+    image: golangci/golangci-lint:v1.54.0
+    services: []
+    before_script:
+        - ""
+    script:
+        - go mod download
+        - golangci-lint run ./...
+        - ./script/check-license.sh
+
+go-1.17:
+    <<: *test_template
+    image: golang:1.17
+
+go-1.18:
+    <<: *test_template
+    image: golang:1.18
+
+go-1.19:
+    <<: *test_template
+    image: golang:1.19
+
+go-1.20:
+    <<: *test_template
+    image: golang:1.20
+
+go-1.21:
+    <<: *test_template
+    image: golang:1.21
+
+go-rc:
+    <<: *test_template
+    image: golang:rc
+    allow_failure: true

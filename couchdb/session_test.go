@@ -20,12 +20,12 @@ package couchdb
 import (
 	"context"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"gitlab.com/flimzy/testy"
 
 	kivik "github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/internal/nettest"
 )
 
 func TestSession(t *testing.T) {
@@ -59,7 +59,7 @@ func TestSession(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			s := nettest.NewHTTPTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(test.status)
 				_, _ = w.Write([]byte(test.body))

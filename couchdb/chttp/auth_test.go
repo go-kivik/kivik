@@ -17,7 +17,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/cookiejar"
-	"net/http/httptest"
 	"net/url"
 	"testing"
 
@@ -25,6 +24,7 @@ import (
 	"golang.org/x/net/publicsuffix"
 
 	kivik "github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/internal/nettest"
 )
 
 type mockRT struct {
@@ -39,7 +39,7 @@ func (rt *mockRT) RoundTrip(_ *http.Request) (*http.Response, error) {
 }
 
 func TestAuthenticate(t *testing.T) {
-	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	s := nettest.NewHTTPTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close() // nolint: errcheck
 		var authed bool
 		switch r.Header.Get("Authorization") {
@@ -98,7 +98,7 @@ func TestAuthenticate(t *testing.T) {
 		auther: &BasicAuth{Username: "admin", Password: "abc123"}, // nolint: misspell
 	})
 	tests.Add("cookie auth success", func(t *testing.T) interface{} {
-		sv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		sv := nettest.NewHTTPTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			h := w.Header()
 			h.Set("Content-Type", "application/json")
 			h.Set("Date", "Sat, 08 Sep 2018 15:49:29 GMT")

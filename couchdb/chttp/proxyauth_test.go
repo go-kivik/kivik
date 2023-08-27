@@ -18,6 +18,8 @@ import (
 	"testing"
 
 	"gitlab.com/flimzy/testy"
+
+	"github.com/go-kivik/kivik/v4/internal/nettest"
 )
 
 const (
@@ -135,7 +137,7 @@ func TestProxyAuthRoundTrip(t *testing.T) {
 				w.Header().Set("Date", "Wed, 01 Nov 2017 19:32:41 GMT")
 				w.Header().Set("Content-Type", "application/json")
 			}
-			s := httptest.NewServer(http.HandlerFunc(h))
+			s := nettest.NewHTTPTestServer(t, http.HandlerFunc(h))
 			return rtTest{
 				name: "default transport",
 				auth: &ProxyAuth{

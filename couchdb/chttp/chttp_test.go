@@ -32,6 +32,7 @@ import (
 	"golang.org/x/net/publicsuffix"
 
 	kivik "github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/internal/nettest"
 )
 
 var defaultUA = func() string {
@@ -75,7 +76,7 @@ func TestNew(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 			fmt.Fprintf(w, `{"userCtx":{"name":"user"}}`) // nolint: errcheck
 		}
-		s := httptest.NewServer(http.HandlerFunc(h))
+		s := nettest.NewHTTPTestServer(t, http.HandlerFunc(h))
 		authDSN, _ := url.Parse(s.URL)
 		dsn, _ := url.Parse(s.URL + "/")
 		authDSN.User = url.UserPassword("user", "password")
@@ -904,7 +905,7 @@ func TestNetError(t *testing.T) {
 		{
 			name: "timeout",
 			input: func() error {
-				s := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+				s := nettest.NewHTTPTestServer(t, http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 					time.Sleep(1 * time.Second)
 				}))
 				ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
@@ -952,7 +953,7 @@ func TestNetError(t *testing.T) {
 				redirHandler := func(w http.ResponseWriter, r *http.Request) {
 					http.Redirect(w, r, s.URL, 302)
 				}
-				s = httptest.NewServer(http.HandlerFunc(redirHandler))
+				s = nettest.NewHTTPTestServer(t, http.HandlerFunc(redirHandler))
 				_, err := http.Get(s.URL)
 				return err
 			}(),

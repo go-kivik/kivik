@@ -17,13 +17,13 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"gitlab.com/flimzy/testy"
 
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/couchdb/chttp"
+	"github.com/go-kivik/kivik/v4/internal/nettest"
 )
 
 type mockAuther struct {
@@ -225,7 +225,7 @@ func TestAuthentication(t *testing.T) {
 	})
 	driver := &couch{}
 	tests.Run(t, func(t *testing.T, test tst) {
-		s := httptest.NewServer(test.handler(t))
+		s := nettest.NewHTTPTestServer(t, test.handler(t))
 		defer s.Close()
 		driverClient, err := driver.NewClient(s.URL, nil)
 		if err != nil {

@@ -26,6 +26,7 @@ import (
 	"golang.org/x/net/publicsuffix"
 
 	kivik "github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/internal/nettest"
 )
 
 func TestCookieAuthAuthenticate(t *testing.T) {
@@ -40,7 +41,7 @@ func TestCookieAuthAuthenticate(t *testing.T) {
 	tests := testy.NewTable()
 	tests.Add("success", func(t *testing.T) interface{} {
 		var sessCounter int
-		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		s := nettest.NewHTTPTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			h := w.Header()
 			h.Set("Content-Type", "application/json")
 			h.Set("Date", "Sat, 08 Sep 2018 15:49:29 GMT")
@@ -71,7 +72,7 @@ func TestCookieAuthAuthenticate(t *testing.T) {
 		}
 	})
 	tests.Add("cookie not set", func(t *testing.T) interface{} {
-		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		s := nettest.NewHTTPTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			h := w.Header()
 			h.Set("Content-Type", "application/json")
 			h.Set("Date", "Sat, 08 Sep 2018 15:49:29 GMT")
@@ -265,7 +266,7 @@ func Test_shouldAuth(t *testing.T) {
 
 func Test401Response(t *testing.T) {
 	var sessCounter, getCounter int
-	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	s := nettest.NewHTTPTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		h := w.Header()
 		h.Set("Content-Type", "application/json")
 		h.Set("Date", "Sat, 08 Sep 2018 15:49:29 GMT")

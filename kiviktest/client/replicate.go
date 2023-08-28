@@ -177,7 +177,8 @@ func doReplicationTest(ctx *kt.Context, client *kivik.Client, dbtarget, dbsource
 			// db could be created), so this short-circuits.
 			break
 		}
-		time.Sleep(100 * time.Millisecond)
+		const delay = 100 * time.Millisecond
+		time.Sleep(delay)
 	}
 	if updateErr != nil {
 		ctx.Fatalf("Replication update failed: %s", updateErr)
@@ -207,7 +208,11 @@ func doReplicationTest(ctx *kt.Context, client *kivik.Client, dbtarget, dbsource
 		if rep.State() != kivik.ReplicationComplete {
 			ctx.Errorf("Replication failed to complete. Final state: %s\n", rep.State())
 		}
-		if (rep.Progress() - float64(100)) > 0.0001 {
+		const (
+			pct100  = float64(100)
+			minProg = 0.0001
+		)
+		if (rep.Progress() - pct100) > minProg {
 			ctx.Errorf("Expected 100%% completion, got %%%02.2f", rep.Progress())
 		}
 	})

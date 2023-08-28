@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
+	"net/http"
 	"net/url"
 	"regexp"
 	"strings"
@@ -229,7 +230,7 @@ func TestDBName(t *testing.T) string {
 	id := strings.ToLower(t.Name())
 	id = invalidDBCharsRE.ReplaceAllString(id, "_")
 	id = id[strings.Index(id, "/")+1:]
-	id = strings.Replace(id, "/", "_", -1) + "$"
+	id = strings.ReplaceAll(id, "/", "_") + "$"
 	rndMU.Lock()
 	defer rndMU.Unlock()
 	dbname := fmt.Sprintf("%s%s%016x", TestDBPrefix, id, rnd.Int63())
@@ -290,7 +291,6 @@ func Retry(fn func() error) error {
 		if err != nil {
 			if shouldRetry(err) {
 				fmt.Printf("Retrying after error: %s\n", err)
-				time.Sleep(500 * time.Millisecond)
 				i++
 				return fmt.Errorf("attempt #%d failed: %w", i, err)
 			}
@@ -309,7 +309,7 @@ func shouldRetry(err error) bool {
 		HTTPStatus() int
 	}
 	if errors.As(err, &statusErr) {
-		if status := statusErr.HTTPStatus(); status < 500 {
+		if status := statusErr.HTTPStatus(); status < http.StatusInternalServerError {
 			return false
 		}
 	}

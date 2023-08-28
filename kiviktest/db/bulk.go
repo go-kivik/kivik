@@ -203,6 +203,7 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) { // nolint: gocyclo
 			}
 		})
 		ctx.Run("NonJSON", func(ctx *kt.Context) {
+			const age = 32
 			ctx.Parallel()
 			id1 := ctx.TestDBName()
 			id2 := ctx.TestDBName()
@@ -215,7 +216,7 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) { // nolint: gocyclo
 					ID   string `json:"_id"`
 					Name string `json:"name"`
 					Age  int    `json:"the_age"`
-				}{ID: id2, Name: "Alice", Age: 32},
+				}{ID: id2, Name: "Alice", Age: age},
 			}
 			var updates []kivik.BulkResult
 			err := kt.Retry(func() error {
@@ -242,7 +243,7 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) { // nolint: gocyclo
 				expected := map[string]interface{}{
 					"_id":     id2,
 					"name":    "Alice",
-					"the_age": 32,
+					"the_age": age,
 					"_rev":    result["_rev"],
 				}
 				if d := testy.DiffAsJSON(expected, result); d != nil {

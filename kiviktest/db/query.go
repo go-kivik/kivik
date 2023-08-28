@@ -76,7 +76,8 @@ func setUpQueryTest(ctx *kt.Context) (dbName string, docIDs []string, err error)
 	if _, err := db.Put(context.Background(), ddoc["_id"].(string), ddoc); err != nil {
 		return dbName, nil, errors.Wrap(err, "failed to create design doc")
 	}
-	docIDs = make([]string, 10)
+	const maxDocs = 10
+	docIDs = make([]string, maxDocs)
 	for i := range docIDs {
 		id := ctx.TestDBName()
 		doc := struct {

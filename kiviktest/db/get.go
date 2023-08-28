@@ -34,6 +34,7 @@ type testDoc struct {
 
 func get(ctx *kt.Context) {
 	ctx.RunRW(func(ctx *kt.Context) {
+		const age = 32
 		dbName := ctx.TestDB()
 		defer ctx.DestroyDB(dbName)
 		db := ctx.Admin.DB(dbName, ctx.Options("db"))
@@ -44,7 +45,7 @@ func get(ctx *kt.Context) {
 		doc := &testDoc{
 			ID:   "bob",
 			Name: "Robert",
-			Age:  32,
+			Age:  age,
 		}
 		rev, err := db.Put(context.Background(), doc.ID, doc)
 		if err != nil {

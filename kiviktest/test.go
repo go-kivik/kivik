@@ -128,7 +128,8 @@ func CleanupTests(driver, dsn string, verbose bool) error {
 func doCleanup(client *kivik.Client, verbose bool) (int, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	errCh := make(chan error, 3)
+	const chanCap = 3
+	errCh := make(chan error, chanCap)
 	var count int32
 	var wg sync.WaitGroup
 

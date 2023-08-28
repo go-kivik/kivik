@@ -66,7 +66,8 @@ func setUpAllDocsTest(ctx *kt.Context) (dbName string, docIDs []string, err erro
 	if err := db.Err(); err != nil {
 		return dbName, nil, errors.Wrap(err, "failed to connect to db")
 	}
-	docIDs = make([]string, 10)
+	const maxDocs = 10
+	docIDs = make([]string, maxDocs)
 	for i := range docIDs {
 		id := ctx.TestDBName()
 		doc := struct {

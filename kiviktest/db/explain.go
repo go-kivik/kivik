@@ -69,6 +69,7 @@ func testExplain(ctx *kt.Context, client *kivik.Client) {
 }
 
 func doExplainTest(ctx *kt.Context, client *kivik.Client, dbName string) {
+	const limit = 25
 	ctx.Parallel()
 	db := client.DB(dbName, ctx.Options("db"))
 	// Errors may be deferred here, so only return if we actually get
@@ -102,13 +103,13 @@ func doExplainTest(ctx *kt.Context, client *kivik.Client, dbName string) {
 				"bookmark":  "nil",
 				"conflicts": false,
 				"fields":    "all_fields",
-				"limit":     25,
+				"limit":     limit,
 				"r":         []int{49},
 				"skip":      0,
 				"sort":      map[string]interface{}{},
 				"use_index": []interface{}{},
 			},
-			Limit: 25,
+			Limit: limit,
 			Range: map[string]interface{}{
 				"start_key": nil,
 				"end_key":   "\xef\xbf\xbd",

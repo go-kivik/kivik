@@ -40,7 +40,6 @@ go get github.com/go-kivik/kivik/v4 # Development release
 Install Kivik as you normally would for any Go package:
 
     go get -u github.com/go-kivik/kivik/v4
-    go get -u github.com/go-kivik/couchdb/v4
 
 This will install the main Kivik package and the CouchDB database driver. See
 the [list of Kivik database drivers](https://github.com/go-kivik/kivik/wiki/Kivik-database-drivers)
@@ -60,7 +59,7 @@ import (
     "fmt"
 
     kivik "github.com/go-kivik/kivik/v4"
-    _ "github.com/go-kivik/couchdb/v4" // The CouchDB driver
+    _ "github.com/go-kivik/kivik/v4/couchdb" // The CouchDB driver
 )
 
 func main() {

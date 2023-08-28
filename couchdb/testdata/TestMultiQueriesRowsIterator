@@ -1,0 +1,51 @@
+([]interface {}) (len=9) {
+  (map[string]interface {}) (len=1) {
+    (string) (len=3) "key": (json.RawMessage) (len=11) {
+      00000000  22 6d 65 61 74 62 61 6c  6c 73 22                 |"meatballs"|
+    }
+  },
+  (map[string]interface {}) (len=1) {
+    (string) (len=3) "key": (json.RawMessage) (len=11) {
+      00000000  22 73 70 61 67 68 65 74  74 69 22                 |"spaghetti"|
+    }
+  },
+  (map[string]interface {}) (len=1) {
+    (string) (len=3) "key": (json.RawMessage) (len=14) {
+      00000000  22 74 6f 6d 61 74 6f 20  73 61 75 63 65 22        |"tomato sauce"|
+    }
+  },
+  (map[string]interface {}) (len=3) {
+    (string) (len=3) "EOQ": (bool) true,
+    (string) (len=6) "offset": (int64) 0,
+    (string) (len=10) "total_rows": (int64) 3
+  },
+  (map[string]interface {}) (len=1) {
+    (string) (len=3) "key": (json.RawMessage) (len=40) {
+      00000000  22 41 64 75 6b 69 20 61  6e 64 20 6f 72 61 6e 67  |"Aduki and orang|
+      00000010  65 20 63 61 73 73 65 72  6f 6c 65 20 2d 20 6d 69  |e casserole - mi|
+      00000020  63 72 6f 77 61 76 65 22                           |crowave"|
+    }
+  },
+  (map[string]interface {}) (len=1) {
+    (string) (len=3) "key": (json.RawMessage) (len=27) {
+      00000000  22 41 69 6f 6c 69 20 2d  20 67 61 72 6c 69 63 20  |"Aioli - garlic |
+      00000010  6d 61 79 6f 6e 6e 61 69  73 65 22                 |mayonnaise"|
+    }
+  },
+  (map[string]interface {}) (len=1) {
+    (string) (len=3) "key": (json.RawMessage) (len=24) {
+      00000000  22 41 6c 61 62 61 6d 61  20 70 65 61 6e 75 74 20  |"Alabama peanut |
+      00000010  63 68 69 63 6b 65 6e 22                           |chicken"|
+    }
+  },
+  (map[string]interface {}) (len=3) {
+    (string) (len=3) "EOQ": (bool) true,
+    (string) (len=6) "offset": (int64) 2,
+    (string) (len=10) "total_rows": (int64) 2667
+  },
+  (map[string]interface {}) (len=3) {
+    (string) (len=3) "EOF": (bool) true,
+    (string) (len=6) "offset": (int64) 2,
+    (string) (len=10) "total_rows": (int64) 2667
+  }
+}

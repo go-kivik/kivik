@@ -74,7 +74,8 @@ func testContinuousChanges(ctx *kt.Context, client *kivik.Client) {
 	if !ctx.IsExpectedSuccess(changes.Err()) {
 		return
 	}
-	expected := make([]string, 0, 3)
+	const maxChanges = 3
+	expected := make([]string, 0, maxChanges)
 	doc := cDoc{
 		ID:    ctx.TestDBName(),
 		Value: "foo",
@@ -92,13 +93,15 @@ func testContinuousChanges(ctx *kt.Context, client *kivik.Client) {
 	}
 	expected = append(expected, rev)
 	doc.Rev = rev
-	time.Sleep(10 * time.Millisecond) // Pause to ensure that the update counts as a separate rev; especially problematic on PouchDB
+	const delay = 10 * time.Millisecond
+	time.Sleep(delay) // Pause to ensure that the update counts as a separate rev; especially problematic on PouchDB
 	rev, err = db.Delete(context.Background(), doc.ID, doc.Rev)
 	if err != nil {
 		ctx.Fatalf("Failed to delete doc: %s", err)
 	}
 	expected = append(expected, rev)
-	revs := make([]string, 0, 3)
+	const maxRevs = 3
+	revs := make([]string, 0, maxRevs)
 	errChan := make(chan error)
 	go func() {
 		for changes.Next() {
@@ -151,7 +154,8 @@ func testNormalChanges(ctx *kt.Context, client *kivik.Client) {
 		ctx.Fatalf("failed to connect to db: %s", err)
 	}
 	adb := ctx.Admin.DB(dbname)
-	expected := make([]string, 0, 3)
+	const maxChanges = 3
+	expected := make([]string, 0, maxChanges)
 
 	// Doc: foo
 	doc := cDoc{
@@ -202,7 +206,8 @@ func testNormalChanges(ctx *kt.Context, client *kivik.Client) {
 		return
 	}
 
-	revs := make([]string, 0, 3)
+	const maxRevs = 3
+	revs := make([]string, 0, maxRevs)
 	for changes.Next() {
 		revs = append(revs, changes.Changes()...)
 		if len(revs) >= len(expected) {

@@ -114,12 +114,12 @@ func (e *Error) Unwrap() error {
 
 // Format implements fmt.Formatter
 func (e *Error) Format(f fmt.State, c rune) {
-	parts := make([]string, 0, 3)
+	const partsLen = 3
+	parts := make([]string, 0, partsLen)
 	if e.Message != "" {
 		parts = append(parts, e.Message)
 	}
-	switch c {
-	case 'v':
+	if c == 'v' {
 		if f.Flag('+') {
 			parts = append(parts, fmt.Sprintf("%d / %s", e.Status, http.StatusText(e.Status)))
 		}

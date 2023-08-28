@@ -8,6 +8,7 @@ require (
 	github.com/gopherjs/gopherjs v1.17.2
 	github.com/pkg/errors v0.9.1
 	gitlab.com/flimzy/testy v0.12.4
+	golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f
 )
 
 require (

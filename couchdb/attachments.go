@@ -17,8 +17,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/go-kivik/couchdb/v4/chttp"
 	kivik "github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/couchdb/chttp"
 	"github.com/go-kivik/kivik/v4/driver"
 )
 

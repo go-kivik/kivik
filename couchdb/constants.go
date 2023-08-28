@@ -12,7 +12,7 @@
 
 package couchdb
 
-import "github.com/go-kivik/couchdb/v4/internal"
+import "github.com/go-kivik/kivik/v4/couchdb/internal"
 
 // Version is the current version of this package.
 const Version = "4.0.0-prerelease"

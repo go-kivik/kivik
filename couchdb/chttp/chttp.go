@@ -28,8 +28,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/go-kivik/couchdb/v4/internal"
 	"github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/couchdb/internal"
 )
 
 const typeJSON = "application/json"

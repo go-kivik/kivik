@@ -28,12 +28,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"gitlab.com/flimzy/testy"
 
-	"github.com/go-kivik/couchdb/v4/chttp"
 	kivik "github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/couchdb/chttp"
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/google/go-cmp/cmp"
 )
 
 func TestAllDocs(t *testing.T) {

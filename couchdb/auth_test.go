@@ -22,8 +22,8 @@ import (
 
 	"gitlab.com/flimzy/testy"
 
-	"github.com/go-kivik/couchdb/v4/chttp"
 	kivik "github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/couchdb/chttp"
 )
 
 type mockAuther struct {

@@ -20,7 +20,7 @@ import (
     "context"
 
     kivik "github.com/go-kivik/kivik/v4"
-    _ "github.com/go-kivik/couchdb/v4" // The CouchDB driver
+    _ "github.com/go-kivik/kivik/v4/couchdb" // The CouchDB driver
 )
 
 func main() {

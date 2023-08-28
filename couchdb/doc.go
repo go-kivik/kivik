@@ -20,7 +20,7 @@ URL, likely with login credentials:
 
 	import (
 	    kivik "github.com/go-kivik/kivik/v4"
-	    _ "github.com/go-kivik/couchdb/v4" // The CouchDB driver
+	    _ "github.com/go-kivik/kivik/v4/couchdb" // The CouchDB driver
 	)
 
 	client, err := kivik.New("couch", "http://username:password@127.0.0.1:5984/")

@@ -18,7 +18,7 @@ import (
 
 	"gitlab.com/flimzy/testy"
 
-	"github.com/go-kivik/couchdb/v4/internal"
+	"github.com/go-kivik/kivik/v4/couchdb/internal"
 )
 
 func TestFullCommit(t *testing.T) {

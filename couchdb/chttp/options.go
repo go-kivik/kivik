@@ -18,8 +18,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/go-kivik/couchdb/v4/internal"
 	"github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/couchdb/internal"
 )
 
 // Options are optional parameters which may be sent with a request.

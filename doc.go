@@ -87,6 +87,6 @@ documentation] for details.
 
 [Go Concurrency Patterns: Context]: https://blog.golang.org/context
 [cookie auth]: https://docs.couchdb.org/en/stable/api/server/authn.html?highlight=cookie%20auth#cookie-authentication
-[CouchDB package documentation]: github.com/go-kivik/couchdb/v4
+[CouchDB package documentation]: github.com/go-kivik/kivik/v4/couchdb
 */
 package kivik // import "github.com/go-kivik/kivik/v4"

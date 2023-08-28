@@ -40,6 +40,17 @@ type DB struct {
 	QueryFunc            func(context.Context, string, string, map[string]interface{}) (driver.Rows, error)
 }
 
+// RowsGetter serves as a test double for the driver.DB + driver.RowsGetter type.
+type RowsGetter struct {
+	DB
+	GetFunc func(ctx context.Context, docID string, options map[string]interface{}) (driver.Rows, error)
+}
+
+// Get calls db.GetFunc
+func (db *RowsGetter) Get(ctx context.Context, docID string, opts map[string]interface{}) (driver.Rows, error) {
+	return db.GetFunc(ctx, docID, opts)
+}
+
 var _ driver.DB = &DB{}
 
 // AllDocs calls db.AllDocsFunc

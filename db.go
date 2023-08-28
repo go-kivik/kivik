@@ -171,11 +171,16 @@ func (db *DB) Get(ctx context.Context, docID string, options ...Options) *Result
 	if err := db.startQuery(); err != nil {
 		return &ResultSet{err: err}
 	}
-	defer db.endQuery()
 	switch getter := db.driverDB.(type) {
 	case driver.RowsGetter:
-		panic("RowsGetter not yet implemented")
+		rowsi, err := getter.Get(ctx, docID, mergeOptions(options...))
+		if err != nil {
+			db.endQuery()
+			return &ResultSet{err: err}
+		}
+		return &ResultSet{underlying: newRows(ctx, db.endQuery, rowsi)}
 	case driver.OldGetter:
+		defer db.endQuery()
 		doc, err := getter.Get(ctx, docID, mergeOptions(options...))
 		if err != nil {
 			return &ResultSet{err: err}

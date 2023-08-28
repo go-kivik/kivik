@@ -612,7 +612,41 @@ func TestGet(t *testing.T) {
 		status: http.StatusServiceUnavailable,
 		err:    errClientClosed,
 	})
-
+	tests.Add("open_revs", tt{
+		db: &DB{
+			client: &Client{},
+			driverDB: &mock.RowsGetter{
+				GetFunc: func(_ context.Context, docID string, options map[string]interface{}) (driver.Rows, error) {
+					expectedDocID := "foo"
+					if docID != expectedDocID {
+						return nil, fmt.Errorf("Unexpected docID: %s", docID)
+					}
+					if d := testy.DiffInterface(testOptions, options); d != nil {
+						return nil, fmt.Errorf("Unexpected options:\n%s", d)
+					}
+					return &mock.Rows{ID: "foo"}, nil
+				},
+			},
+		},
+		docID:   "foo",
+		options: testOptions,
+		status:  http.StatusNotFound,
+		err:     "no results",
+	})
+	tests.Add("open_revs failure", tt{
+		db: &DB{
+			client: &Client{},
+			driverDB: &mock.RowsGetter{
+				GetFunc: func(_ context.Context, docID string, options map[string]interface{}) (driver.Rows, error) {
+					return nil, errors.New("random error")
+				},
+			},
+		},
+		docID:   "foo",
+		options: testOptions,
+		status:  http.StatusInternalServerError,
+		err:     "random error",
+	})
 	tests.Run(t, func(t *testing.T, tt tt) {
 		var doc json.RawMessage
 		err := tt.db.Get(context.Background(), tt.docID, tt.options).ScanDoc(&doc)

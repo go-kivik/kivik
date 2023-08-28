@@ -166,15 +166,29 @@ func (s Security) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v)
 }
 
+// RowsGetter is an optional interface that a DB may implement, to return a
+// multi-row resultset from Get(). DB must implement either OldGetter or RowsGetter.
+type RowsGetter interface {
+	// Get fetches the requested document from the database, and returns the
+	// content length (or -1 if unknown), and an io.ReadCloser to access the
+	// raw JSON content.
+	Get(ctx context.Context, docID string, options map[string]interface{}) (Rows, error)
+}
+
+// OldGetter is an optional interface that a DB may implement, to return a single
+// document from the Get() method. DB must implement either OldGetter or RowsGetter.
+type OldGetter interface {
+	// Get fetches the requested document from the database, and returns the
+	// content length (or -1 if unknown), and an io.ReadCloser to access the
+	// raw JSON content.
+	Get(ctx context.Context, docID string, options map[string]interface{}) (*Document, error)
+}
+
 // DB is a database handle.
 type DB interface {
 	// AllDocs returns all of the documents in the database, subject to the
 	// options provided.
 	AllDocs(ctx context.Context, options map[string]interface{}) (Rows, error)
-	// Get fetches the requested document from the database, and returns the
-	// content length (or -1 if unknown), and an io.ReadCloser to access the
-	// raw JSON content.
-	Get(ctx context.Context, docID string, options map[string]interface{}) (*Document, error)
 	// CreateDoc creates a new doc, with a server-generated ID.
 	CreateDoc(ctx context.Context, doc interface{}, options map[string]interface{}) (docID, rev string, err error)
 	// Put writes the document in the database.

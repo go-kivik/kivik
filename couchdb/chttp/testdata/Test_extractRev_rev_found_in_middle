@@ -1,0 +1,6 @@
+{
+				"_id":"foo",
+				"_rev":"1-xyz",
+				"asdf":"qwerty",
+				"number":12345
+			}

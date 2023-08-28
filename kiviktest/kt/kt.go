@@ -290,7 +290,6 @@ func Retry(fn func() error) error {
 		if err != nil {
 			if shouldRetry(err) {
 				fmt.Printf("Retrying after error: %s\n", err)
-				time.Sleep(500 * time.Millisecond)
 				i++
 				return fmt.Errorf("attempt #%d failed: %w", i, err)
 			}

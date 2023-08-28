@@ -21,6 +21,9 @@ import (
 type Row struct {
 	// ID is the document ID of the result.
 	ID string `json:"id"`
+	// Rev is the document revision. Typically only set when fetching a single
+	// document.
+	Rev string `json:"_rev"`
 	// Key is the view key of the result. For built-in views, this is the same
 	// as [ID].
 	Key json.RawMessage `json:"key"`
@@ -31,6 +34,9 @@ type Row struct {
 	// This is only populated by views which return docs, such as
 	// /_all_docs?include_docs=true.
 	Doc io.Reader `json:"-"`
+	// Attachments is an attachments iterator. Typically only set when fetching
+	// a single document.
+	Attachments Attachments `json:"-"`
 	// Error represents the error for any row not fetched. Usually just
 	// 'not_found'.
 	Error error `json:"-"`

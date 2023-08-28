@@ -23,8 +23,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/go-kivik/couchdb/v4/chttp"
-	"github.com/go-kivik/couchdb/v4/internal"
+	"github.com/go-kivik/kivik/v4/couchdb/chttp"
+	"github.com/go-kivik/kivik/v4/couchdb/internal"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 )
 

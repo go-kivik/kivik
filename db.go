@@ -172,19 +172,26 @@ func (db *DB) Get(ctx context.Context, docID string, options ...Options) *Result
 		return &ResultSet{err: err}
 	}
 	defer db.endQuery()
-	doc, err := db.driverDB.Get(ctx, docID, mergeOptions(options...))
-	if err != nil {
-		return &ResultSet{err: err}
+	switch getter := db.driverDB.(type) {
+	case driver.RowsGetter:
+		panic("RowsGetter not yet implemented")
+	case driver.OldGetter:
+		doc, err := getter.Get(ctx, docID, mergeOptions(options...))
+		if err != nil {
+			return &ResultSet{err: err}
+		}
+		r := &row{
+			id:   docID,
+			rev:  doc.Rev,
+			body: doc.Body,
+		}
+		if doc.Attachments != nil {
+			r.atts = &AttachmentsIterator{atti: doc.Attachments}
+		}
+		return &ResultSet{underlying: r}
+	default:
+		panic("driver is neither a driver.RowsGetter nor driver.OldGetter")
 	}
-	r := &row{
-		id:   docID,
-		rev:  doc.Rev,
-		body: doc.Body,
-	}
-	if doc.Attachments != nil {
-		r.atts = &AttachmentsIterator{atti: doc.Attachments}
-	}
-	return &ResultSet{underlying: r}
 }
 
 // GetRev returns the active rev of the specified document. GetRev accepts

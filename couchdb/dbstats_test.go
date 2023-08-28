@@ -17,6 +17,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -280,6 +281,9 @@ func TestDbsStats(t *testing.T) {
 }
 
 func TestPartitionStats(t *testing.T) {
+	if runtime.GOARCH == "js" {
+		t.Skip("https://github.com/gopherjs/gopherjs/issues/1228")
+	}
 	type tt struct {
 		db     *db
 		name   string

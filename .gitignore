@@ -1,6 +1,3 @@
 test/pouch__all_dbs__/
-vendor
-test.*
-Gopkg.lock
 node_modules
 coverage.txt

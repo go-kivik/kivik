@@ -633,7 +633,20 @@ func TestGet(t *testing.T) {
 		status:  http.StatusNotFound,
 		err:     "no results",
 	})
-
+	tests.Add("open_revs failure", tt{
+		db: &DB{
+			client: &Client{},
+			driverDB: &mock.RowsGetter{
+				GetFunc: func(_ context.Context, docID string, options map[string]interface{}) (driver.Rows, error) {
+					return nil, errors.New("random error")
+				},
+			},
+		},
+		docID:   "foo",
+		options: testOptions,
+		status:  http.StatusInternalServerError,
+		err:     "random error",
+	})
 	tests.Run(t, func(t *testing.T, tt tt) {
 		var doc json.RawMessage
 		err := tt.db.Get(context.Background(), tt.docID, tt.options).ScanDoc(&doc)

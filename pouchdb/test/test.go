@@ -10,6 +10,9 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+//go:build js
+// +build js
+
 // Package test provides PouchDB integration tests.
 package test
 

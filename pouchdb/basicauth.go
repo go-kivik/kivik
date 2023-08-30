@@ -10,6 +10,9 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+//go:build js
+// +build js
+
 package pouchdb
 
 // BasicAuth handles HTTP Basic Auth for remote PouchDB connections. This

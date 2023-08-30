@@ -10,6 +10,9 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+//go:build js
+// +build js
+
 // Package bindings provides minimal GopherJS bindings around the PouchDB
 // library. (https://pouchdb.com/api.html)
 package bindings

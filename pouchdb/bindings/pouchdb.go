@@ -97,7 +97,7 @@ func setTimeout(ctx context.Context, options map[string]interface{}) map[string]
 		options["ajax"] = make(map[string]interface{})
 	}
 	ajax := options["ajax"].(map[string]interface{})
-	timeout := int(time.Until(deadline) * 1000)
+	timeout := int(time.Until(deadline) * 1000) //nolint:gomnd
 	// Used by ajax calls
 	ajax["timeout"] = timeout
 	// Used by changes and replications
@@ -478,6 +478,7 @@ func (db *DB) Explain(ctx context.Context, query interface{}) (*js.Object, error
 	return callBack(ctx, db, "explain", queryObj)
 }
 
+// Close closes the underlying db object.
 func (db *DB) Close() error {
 	// I'm not sure when DB.close() was added to PouchDB, so guard against
 	// it missing, just in case.

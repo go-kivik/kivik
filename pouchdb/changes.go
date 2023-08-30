@@ -37,7 +37,8 @@ type changesFeed struct {
 var _ driver.Changes = &changesFeed{}
 
 func newChangesFeed(ctx context.Context, changes *js.Object) *changesFeed {
-	feed := make(chan *driver.Change, 32)
+	const chanLen = 32
+	feed := make(chan *driver.Change, chanLen)
 	c := &changesFeed{
 		ctx:     ctx,
 		changes: changes,

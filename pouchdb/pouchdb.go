@@ -105,7 +105,7 @@ func (c *client) dbURL(db string) string {
 		return db
 	}
 	myURL := *c.dsn // Make a copy
-	myURL.Path = myURL.Path + strings.TrimLeft(db, "/")
+	myURL.Path += strings.TrimLeft(db, "/")
 	return myURL.String()
 }
 

@@ -62,8 +62,7 @@ func convertTime(value fmt.Stringer) (time.Time, error) {
 	if value == js.Undefined {
 		return time.Time{}, nil
 	}
-	switch jsbuiltin.TypeOf(value) {
-	case jsbuiltin.TypeString:
+	if jsbuiltin.TypeOf(value) == jsbuiltin.TypeString {
 		return time.Parse(time.RFC3339, value.String())
 	}
 	return time.Time{}, fmt.Errorf("unsupported type")

@@ -68,7 +68,7 @@ func (r *replication) EndTime() time.Time    { defer r.readLock()(); return r.en
 func (r *replication) State() string         { defer r.readLock()(); return string(r.state) }
 func (r *replication) Err() error            { defer r.readLock()(); return r.err }
 
-func (r *replication) Update(ctx context.Context, state *driver.ReplicationInfo) (err error) {
+func (r *replication) Update(_ context.Context, state *driver.ReplicationInfo) (err error) {
 	defer bindings.RecoverError(&err)
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -102,7 +102,7 @@ func (r *replication) Update(ctx context.Context, state *driver.ReplicationInfo)
 	return nil
 }
 
-func (r *replication) Delete(ctx context.Context) (err error) {
+func (r *replication) Delete(_ context.Context) (err error) {
 	defer bindings.RecoverError(&err)
 	r.rh.Cancel()
 	r.client.replicationsMU.Lock()

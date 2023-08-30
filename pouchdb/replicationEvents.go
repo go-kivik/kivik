@@ -21,7 +21,7 @@ import (
 	"github.com/gopherjs/gopherjs/js"
 	"github.com/gopherjs/jsbuiltin"
 
-	"github.com/go-kivik/pouchdb/v4/bindings"
+	"github.com/go-kivik/kivik/v4/pouchdb/bindings"
 )
 
 type replicationState struct {

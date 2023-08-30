@@ -23,7 +23,7 @@ import (
 	"github.com/gopherjs/jsbuiltin"
 
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/pouchdb/v4/bindings"
+	"github.com/go-kivik/kivik/v4/pouchdb/bindings"
 )
 
 func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attachment, options map[string]interface{}) (newRev string, err error) {

@@ -22,7 +22,7 @@
 //	    "context"
 //
 //	    kivik "github.com/go-kivik/kivik/v4"
-//	    _ "github.com/go-kivik/pouchdb/v4" // PouchDB driver
+//	    _ "github.com/go-kivik/kivik/v4/pouchdb" // PouchDB driver
 //	)
 //
 //	func main() {

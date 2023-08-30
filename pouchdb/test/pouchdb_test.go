@@ -10,6 +10,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+//go:build js
 // +build js
 
 package test
@@ -17,7 +18,7 @@ package test
 import (
 	"testing"
 
-	_ "github.com/go-kivik/pouchdb/v4"
+	_ "github.com/go-kivik/kivik/v4/pouchdb"
 )
 
 func init() {

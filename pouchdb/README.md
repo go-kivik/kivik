@@ -32,7 +32,7 @@ import (
     "context"
 
     kivik "github.com/go-kivik/kivik/v4"
-    _ "github.com/go-kivik/pouchdb/v4" // The PouchDB driver
+    _ "github.com/go-kivik/kivik/v4/pouchdb" // The PouchDB driver
 )
 
 func main() {

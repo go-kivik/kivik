@@ -22,7 +22,7 @@ import (
 	"github.com/gopherjs/gopherjs/js"
 
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/pouchdb/v4/bindings"
+	"github.com/go-kivik/kivik/v4/pouchdb/bindings"
 )
 
 type changesFeed struct {

@@ -23,7 +23,7 @@ import (
 
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/pouchdb/v4/bindings"
+	"github.com/go-kivik/kivik/v4/pouchdb/bindings"
 )
 
 var _ driver.Finder = &db{}

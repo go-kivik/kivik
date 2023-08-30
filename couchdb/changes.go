@@ -35,14 +35,20 @@ func (d *db) Changes(ctx context.Context, opts map[string]interface{}) (driver.C
 			key = ""
 		}
 	}
-	query, err := optionsToParams(opts)
+	options := new(chttp.Options)
+	if ids := opts["doc_ids"]; ids != nil {
+		delete(opts, "doc_ids")
+		options.GetBody = chttp.BodyEncoder(map[string]interface{}{
+			"doc_ids": ids,
+		})
+	}
+	var err error
+	options.Query, err = optionsToParams(opts)
 	if err != nil {
 		return nil, err
 	}
-	options := &chttp.Options{
-		Query: query,
-	}
-	resp, err := d.Client.DoReq(ctx, http.MethodGet, d.path("_changes"), options)
+
+	resp, err := d.Client.DoReq(ctx, http.MethodPost, d.path("_changes"), options)
 	if err != nil {
 		return nil, err
 	}

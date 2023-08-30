@@ -15,6 +15,7 @@ package couchdb
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"testing"
@@ -66,7 +67,11 @@ func TestChanges(t *testing.T) {
 		etag    string
 	}{
 		{
-			name:    "invalid options",
+			name: "invalid options",
+			db: newTestDB(&http.Response{
+				StatusCode: http.StatusBadRequest,
+				Body:       Body(""),
+			}, nil),
 			options: map[string]interface{}{"foo": make(chan int)},
 			status:  http.StatusBadRequest,
 			err:     "kivik: invalid type chan int for options",
@@ -81,14 +86,14 @@ func TestChanges(t *testing.T) {
 			name:   "network error",
 			db:     newTestDB(nil, errors.New("net error")),
 			status: http.StatusBadGateway,
-			err:    `Get "?http://example.com/testdb/_changes"?: net error`,
+			err:    `Post "?http://example.com/testdb/_changes"?: net error`,
 		},
 		{
 			name:    "continuous",
 			db:      newTestDB(nil, errors.New("net error")),
 			options: map[string]interface{}{"feed": "continuous"},
 			status:  http.StatusBadGateway,
-			err:     `Get "?http://example.com/testdb/_changes\?feed=continuous"?: net error`,
+			err:     `Post "?http://example.com/testdb/_changes\?feed=continuous"?: net error`,
 		},
 		{
 			name: "error response",
@@ -111,12 +116,97 @@ func TestChanges(t *testing.T) {
 					"Cache-Control":     {"must-revalidate"},
 					"ETag":              {`"etag-foo"`},
 				},
-				Body: Body(`{"seq":3,"id":"43734cf3ce6d5a37050c050bb600006b","changes":[{"rev":"2-185ccf92154a9f24a4f4fd12233bf463"}],"deleted":true}
-                    `),
+				Body: Body(`{"seq":3,"id":"43734cf3ce6d5a37050c050bb600006b","changes":[{"rev":"2-185ccf92154a9f24a4f4fd12233bf463"}],"deleted":true}`),
 			}, nil),
 			etag: "etag-foo",
 		},
+		{
+			name: "method post",
+			db: newCustomDB(func(req *http.Request) (*http.Response, error) {
+				wantMethod := http.MethodPost
+				if req.Method != wantMethod {
+					return nil, fmt.Errorf("Unexpected method %v", req.Method)
+				}
+				if len(req.URL.Query()) > 0 {
+					return nil, fmt.Errorf("Unexpected query parameters: %v", req.URL.Query())
+				}
+				wantCT := typeJSON
+				ct := req.Header.Get("Content-Type")
+				if wantCT != ct {
+					return nil, fmt.Errorf("Unexpected Content-Type: %s", ct)
+				}
+				wantBody := `null`
+				var body []byte
+				if req.Body != nil {
+					defer req.Body.Close()
+					var err error
+					body, err = io.ReadAll(req.Body)
+					if err != nil {
+						t.Fatal(err)
+					}
+				}
+				if d := testy.DiffJSON(wantBody, body); d != nil {
+					return nil, fmt.Errorf("Unexpected request body: %s", d)
+				}
+				return &http.Response{
+					StatusCode: 200,
+					Header: http.Header{
+						"Transfer-Encoding": {"chunked"},
+						"Server":            {"CouchDB/1.6.1 (Erlang OTP/17)"},
+						"Date":              {"Fri, 27 Oct 2017 14:43:57 GMT"},
+						"Content-Type":      {"text/plain; charset=utf-8"},
+						"Cache-Control":     {"must-revalidate"},
+						"ETag":              {`"etag-foo"`},
+					},
+					Body: Body(`{"seq":3,"id":"43734cf3ce6d5a37050c050bb600006b","changes":[{"rev":"2-185ccf92154a9f24a4f4fd12233bf463"}],"deleted":true}`),
+				}, nil
+			}),
+			etag: "etag-foo",
+		},
+		{
+			name: "doc_ids",
+			db: newCustomDB(func(req *http.Request) (*http.Response, error) {
+				wantMethod := http.MethodPost
+				if req.Method != wantMethod {
+					return nil, fmt.Errorf("Unexpected method %v", req.Method)
+				}
+				if len(req.URL.Query()) > 0 {
+					return nil, fmt.Errorf("Unexpected query parameters: %v", req.URL.Query())
+				}
+				wantCT := typeJSON
+				ct := req.Header.Get("Content-Type")
+				if wantCT != ct {
+					return nil, fmt.Errorf("Unexpected Content-Type: %s", ct)
+				}
+				wantBody := `{"doc_ids":["a","b","c"]}`
+				defer req.Body.Close()
+				body, err := io.ReadAll(req.Body)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if d := testy.DiffJSON(wantBody, body); d != nil {
+					return nil, fmt.Errorf("Unexpected request body: %s", d)
+				}
+				return &http.Response{
+					StatusCode: 200,
+					Header: http.Header{
+						"Transfer-Encoding": {"chunked"},
+						"Server":            {"CouchDB/1.6.1 (Erlang OTP/17)"},
+						"Date":              {"Fri, 27 Oct 2017 14:43:57 GMT"},
+						"Content-Type":      {"text/plain; charset=utf-8"},
+						"Cache-Control":     {"must-revalidate"},
+						"ETag":              {`"etag-foo"`},
+					},
+					Body: Body(`{"seq":3,"id":"43734cf3ce6d5a37050c050bb600006b","changes":[{"rev":"2-185ccf92154a9f24a4f4fd12233bf463"}],"deleted":true}`),
+				}, nil
+			}),
+			options: map[string]interface{}{
+				"doc_ids": []string{"a", "b", "c"},
+			},
+			etag: "etag-foo",
+		},
 	}
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			ch, err := test.db.Changes(context.Background(), test.options)

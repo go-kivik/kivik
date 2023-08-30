@@ -1,0 +1,9 @@
+pouch__all_dbs__
+/vendor
+/node_modules
+package-lock.json
+test.*
+*~
+glide.lock
+build/
+package.json

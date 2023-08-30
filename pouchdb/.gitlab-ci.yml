@@ -1,0 +1,52 @@
+stages:
+- test
+
+variables:
+  SRCDIR: /go/src/github.com/go-kivik/pouchdb/v4
+  COUCHDB_USER: admin
+  COUCHDB_PASSWORD: abc123
+  KIVIK_TEST_DSN_COUCH23: http://admin:abc123@couch23:5984/
+
+.test: &test_template
+  image: golang:1.16
+  stage: test
+  services:
+  - name: apache/couchdb:2.3.1
+    alias: couch23
+  before_script:
+  - ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH23}
+  - curl -sL https://deb.nodesource.com/setup_${NODE_VER}.x | bash -
+  - apt-get update -qq && apt-get install -y nodejs
+  script:
+  - cp "$NPM_PROFILE" package.json
+  - npm install -g npm@7.5.2 && npm update
+  - npm install
+  - npm install source-map-support
+  - mkdir -p /tmp/src
+  - ( cd /tmp && go install github.com/gopherjs/gopherjs@${GOPHERJS_TAG} )
+  - npm install -S https://github.com/gopherjs/gopherjs#${GOPHERJS_TAG} && node -r syscall
+  - gopherjs test ./...
+
+gopherjs1.18-pouchdb7:
+  <<: *test_template
+  image: golang:1.18
+  variables:
+    NODE_VER: 12
+    NPM_PROFILE: pouchdb7-package.json
+    GOPHERJS_TAG: v1.18.0-beta3
+
+gopherjs1.18-pouchdb8:
+  <<: *test_template
+  image: golang:1.18
+  variables:
+    NODE_VER: 12
+    NPM_PROFILE: pouchdb8-package.json
+    GOPHERJS_TAG: v1.18.0-beta3
+
+linter:
+  stage: test
+  image: golangci/golangci-lint:v1.53.2
+  script:
+  - go mod download
+  - golangci-lint run ./...
+  - ./script/check-license.sh

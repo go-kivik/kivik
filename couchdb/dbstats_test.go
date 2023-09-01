@@ -281,7 +281,7 @@ func TestDbsStats(t *testing.T) {
 }
 
 func TestPartitionStats(t *testing.T) {
-	if runtime.GOARCH == "js" {
+	if runtime.GOOS == "js" {
 		t.Skip("https://github.com/gopherjs/gopherjs/issues/1228")
 	}
 	type tt struct {

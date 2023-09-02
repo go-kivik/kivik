@@ -31,13 +31,18 @@ type DB struct {
 	CompactFunc          func(ctx context.Context) error
 	CompactViewFunc      func(ctx context.Context, ddocID string) error
 	ViewCleanupFunc      func(ctx context.Context) error
-	SecurityFunc         func(ctx context.Context) (*driver.Security, error)
-	SetSecurityFunc      func(ctx context.Context, security *driver.Security) error
 	ChangesFunc          func(ctx context.Context, options map[string]interface{}) (driver.Changes, error)
 	PutAttachmentFunc    func(ctx context.Context, docID string, att *driver.Attachment, options map[string]interface{}) (newRev string, err error)
 	GetAttachmentFunc    func(ctx context.Context, docID, filename string, options map[string]interface{}) (*driver.Attachment, error)
 	DeleteAttachmentFunc func(ctx context.Context, docID, filename string, options map[string]interface{}) (newRev string, err error)
 	QueryFunc            func(context.Context, string, string, map[string]interface{}) (driver.Rows, error)
+}
+
+// SecurityDB is a stub for a driver.SecurityDB.
+type SecurityDB struct {
+	DB
+	SecurityFunc    func(ctx context.Context) (*driver.Security, error)
+	SetSecurityFunc func(ctx context.Context, security *driver.Security) error
 }
 
 // RowsGetter serves as a test double for the driver.DB + driver.RowsGetter type.
@@ -99,12 +104,12 @@ func (db *DB) ViewCleanup(ctx context.Context) error {
 }
 
 // Security calls db.SecurityFunc
-func (db *DB) Security(ctx context.Context) (*driver.Security, error) {
+func (db *SecurityDB) Security(ctx context.Context) (*driver.Security, error) {
 	return db.SecurityFunc(ctx)
 }
 
 // SetSecurity calls db.SetSecurityFunc
-func (db *DB) SetSecurity(ctx context.Context, security *driver.Security) error {
+func (db *SecurityDB) SetSecurity(ctx context.Context, security *driver.Security) error {
 	return db.SetSecurityFunc(ctx, security)
 }
 

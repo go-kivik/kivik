@@ -480,6 +480,8 @@ func (db *DB) ViewCleanup(ctx context.Context) error {
 	return db.driverDB.ViewCleanup(ctx)
 }
 
+var securityNotImplemented = &Error{Status: http.StatusNotImplemented, Message: "kivik: driver does not support Security interface"}
+
 // Security returns the database's security document.
 //
 // See http://couchdb.readthedocs.io/en/latest/api/database/security.html#get--db-_security
@@ -487,11 +489,15 @@ func (db *DB) Security(ctx context.Context) (*Security, error) {
 	if db.err != nil {
 		return nil, db.err
 	}
+	secDB, ok := db.driverDB.(driver.SecurityDB)
+	if !ok {
+		return nil, securityNotImplemented
+	}
 	if err := db.startQuery(); err != nil {
 		return nil, err
 	}
 	defer db.endQuery()
-	s, err := db.driverDB.Security(ctx)
+	s, err := secDB.Security(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -508,6 +514,10 @@ func (db *DB) SetSecurity(ctx context.Context, security *Security) error {
 	if db.err != nil {
 		return db.err
 	}
+	secDB, ok := db.driverDB.(driver.SecurityDB)
+	if !ok {
+		return securityNotImplemented
+	}
 	if security == nil {
 		return missingArg("security")
 	}
@@ -519,7 +529,7 @@ func (db *DB) SetSecurity(ctx context.Context, security *Security) error {
 		Admins:  driver.Members(security.Admins),
 		Members: driver.Members(security.Members),
 	}
-	return db.driverDB.SetSecurity(ctx, sec)
+	return secDB.SetSecurity(ctx, sec)
 }
 
 // Copy copies the source document to a new document with an ID of targetID. If

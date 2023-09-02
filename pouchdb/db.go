@@ -139,16 +139,6 @@ func (d *db) ViewCleanup(context.Context) error {
 	return d.db.ViewCleanup()
 }
 
-var securityNotImplemented = &kivik.Error{Status: http.StatusNotImplemented, Message: "kivik: security interface not supported by PouchDB"}
-
-func (d *db) Security(context.Context) (*driver.Security, error) {
-	return nil, securityNotImplemented
-}
-
-func (d *db) SetSecurity(context.Context, *driver.Security) error {
-	return securityNotImplemented
-}
-
 func (d *db) Close() error {
 	return d.db.Close()
 }

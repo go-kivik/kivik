@@ -81,10 +81,6 @@ func fullError(httpStatus int, err error) error {
 	}
 }
 
-func (e *curlError) Cause() error {
-	return e.error
-}
-
 func (e *curlError) Unwrap() error {
 	return e.error
 }

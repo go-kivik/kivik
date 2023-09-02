@@ -949,7 +949,7 @@ func TestSecurity(t *testing.T) {
 			name: "security error",
 			db: &DB{
 				client: &Client{},
-				driverDB: &mock.DB{
+				driverDB: &mock.SecurityDB{
 					SecurityFunc: func(_ context.Context) (*driver.Security, error) {
 						return nil, &Error{Status: http.StatusBadGateway, Err: errors.New("security error")}
 					},
@@ -962,7 +962,7 @@ func TestSecurity(t *testing.T) {
 			name: "success",
 			db: &DB{
 				client: &Client{},
-				driverDB: &mock.DB{
+				driverDB: &mock.SecurityDB{
 					SecurityFunc: func(_ context.Context) (*driver.Security, error) {
 						return &driver.Security{
 							Admins: driver.Members{
@@ -994,6 +994,7 @@ func TestSecurity(t *testing.T) {
 				client: &Client{
 					closed: 1,
 				},
+				driverDB: &mock.SecurityDB{},
 			},
 			status: http.StatusServiceUnavailable,
 			err:    errClientClosed,
@@ -1029,7 +1030,8 @@ func TestSetSecurity(t *testing.T) {
 		{
 			name: "nil security",
 			db: &DB{
-				client: &Client{},
+				client:   &Client{},
+				driverDB: &mock.SecurityDB{},
 			},
 			status: http.StatusBadRequest,
 			err:    "kivik: security required",
@@ -1038,7 +1040,7 @@ func TestSetSecurity(t *testing.T) {
 			name: "set error",
 			db: &DB{
 				client: &Client{},
-				driverDB: &mock.DB{
+				driverDB: &mock.SecurityDB{
 					SetSecurityFunc: func(_ context.Context, _ *driver.Security) error {
 						return &Error{Status: http.StatusBadGateway, Err: errors.New("set security error")}
 					},
@@ -1052,7 +1054,7 @@ func TestSetSecurity(t *testing.T) {
 			name: "success",
 			db: &DB{
 				client: &Client{},
-				driverDB: &mock.DB{
+				driverDB: &mock.SecurityDB{
 					SetSecurityFunc: func(_ context.Context, security *driver.Security) error {
 						expectedSecurity := &driver.Security{
 							Admins: driver.Members{
@@ -1088,6 +1090,7 @@ func TestSetSecurity(t *testing.T) {
 				client: &Client{
 					closed: 1,
 				},
+				driverDB: &mock.SecurityDB{},
 			},
 			security: &Security{},
 			status:   http.StatusServiceUnavailable,

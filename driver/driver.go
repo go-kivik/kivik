@@ -203,10 +203,6 @@ type DB interface {
 	CompactView(ctx context.Context, ddocID string) error
 	// ViewCleanup cleans up stale view files.
 	ViewCleanup(ctx context.Context) error
-	// Security returns the database's security document.
-	Security(ctx context.Context) (*Security, error)
-	// SetSecurity sets the database's security document.
-	SetSecurity(ctx context.Context, security *Security) error
 	// Changes returns an iterator for the changes feed. In continuous mode,
 	// the iterator will continue indefinitely, until [Changes.Close] is called.
 	Changes(ctx context.Context, options map[string]interface{}) (Changes, error)
@@ -222,6 +218,15 @@ type DB interface {
 	// ddoc will be the design doc name without the '_design/' previx.
 	// view will be the view name without the '_view/' prefix.
 	Query(ctx context.Context, ddoc, view string, options map[string]interface{}) (Rows, error)
+}
+
+// SecurityDB is an optional interface that extends a DB, for backends which
+// support security documents.
+type SecurityDB interface {
+	// Security returns the database's security document.
+	Security(ctx context.Context) (*Security, error)
+	// SetSecurity sets the database's security document.
+	SetSecurity(ctx context.Context, security *Security) error
 }
 
 // Document represents a single document returned by Get

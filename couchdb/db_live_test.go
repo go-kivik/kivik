@@ -15,6 +15,7 @@ package couchdb_test
 import (
 	"context"
 	"os"
+	"runtime"
 	"testing"
 
 	"gitlab.com/flimzy/testy"
@@ -23,6 +24,9 @@ import (
 )
 
 func TestQueries_2_x(t *testing.T) {
+	if runtime.GOOS == "js" {
+		t.Skip("Network tests skipped for GopherJS")
+	}
 	dsn := os.Getenv("KIVIK_TEST_DSN_COUCH23")
 	if dsn == "" {
 		dsn = os.Getenv("KIVIK_TEST_DSN_COUCH22")
@@ -121,6 +125,9 @@ func TestQueries_3_x(t *testing.T) {
 
 // https://github.com/go-kivik/kivik/issues/509
 func Test_bug509(t *testing.T) {
+	if runtime.GOOS == "js" {
+		t.Skip("Network tests skipped for GopherJS")
+	}
 	dsn := os.Getenv("KIVIK_TEST_DSN_COUCH23")
 	if dsn == "" {
 		t.Skip("KIVIK_TEST_DSN_COUCH23 not configured")

@@ -1,6 +1,10 @@
 stages:
   - test
 
+variables:
+  COUCHDB_USER: admin
+  COUCHDB_PASSWORD: abc123
+
 .test: &go_test_template
   stage: test
   services:
@@ -17,8 +21,6 @@ stages:
     - name: couchdb:3.3.2
       alias: couch33
   variables:
-    COUCHDB_USER: admin
-    COUCHDB_PASSWORD: abc123
     KIVIK_TEST_DSN_COUCH22: http://admin:abc123@couch22:5984/
     KIVIK_TEST_DSN_COUCH23: http://admin:abc123@couch23:5984/
     KIVIK_TEST_DSN_COUCH30: http://admin:abc123@couch30:5984/
@@ -84,10 +86,15 @@ go-rc:
 .gopherjs_test: &gopherjs_test_template
   <<: *go_test_template
   image: golang:1.18
+  services:
+    - name: apache/couchdb:2.3.1
+      alias: couch23
   before_script:
-    - curl -sL https://deb.nodesource.com/setup_12.x | bash -
+    - ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH23}
+    - curl -sL https://deb.nodesource.com/setup_${NODE_VER}.x | bash -
     - apt-get update -qq && apt-get install -y nodejs
   script:
+    - cp "$NPM_PROFILE" package.json
     - npm install -g npm@7.5.2 && npm update
     - npm install
     - npm install source-map-support
@@ -96,7 +103,18 @@ go-rc:
     - npm install -S https://github.com/gopherjs/gopherjs#${GOPHERJS_TAG} && node -r syscall
     - gopherjs test ./...
 
-gopherjs-1.18:
+gopherjs1.18-pouchdb7:
   <<: *gopherjs_test_template
   variables:
+    NODE_VER: 12
+    NPM_PROFILE: pouchdb/pouchdb7-package.json
+    KIVIK_TEST_DSN_COUCH23: http://admin:abc123@couch23:5984/
+    GOPHERJS_TAG: v1.18.0-beta3
+
+gopherjs1.18-pouchdb8:
+  <<: *gopherjs_test_template
+  variables:
+    NODE_VER: 12
+    NPM_PROFILE: pouchdb/pouchdb8-package.json
+    KIVIK_TEST_DSN_COUCH23: http://admin:abc123@couch23:5984/
     GOPHERJS_TAG: v1.18.0-beta3

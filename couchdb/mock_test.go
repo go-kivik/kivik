@@ -17,6 +17,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -115,6 +116,10 @@ func (rc *mockReadCloser) Close() error {
 }
 
 func realDB(t *testing.T) *db {
+	t.Helper()
+	if runtime.GOOS == "js" {
+		t.Skip("Network tests skipped for GopherJS")
+	}
 	db, err := realDBConnect(t)
 	if err != nil {
 		if _, ok := errors.Cause(err).(*url.Error); ok {

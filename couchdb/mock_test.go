@@ -122,7 +122,7 @@ func realDB(t *testing.T) *db {
 	}
 	db, err := realDBConnect(t)
 	if err != nil {
-		if _, ok := errors.Cause(err).(*url.Error); ok {
+		if errors.Is(err, &url.Error{}) {
 			t.Skip("Cannot connect to CouchDB")
 		}
 		if strings.HasSuffix(err.Error(), "connect: connection refused") {

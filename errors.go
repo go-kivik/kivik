@@ -80,7 +80,6 @@ type Error struct {
 var (
 	_ error       = &Error{}
 	_ statusCoder = &Error{}
-	_ causer      = &Error{}
 )
 
 func (e *Error) Error() string {
@@ -100,11 +99,6 @@ func (e *Error) HTTPStatus() int {
 		return http.StatusInternalServerError
 	}
 	return e.Status
-}
-
-// Cause satisfies the github.com/pkg/errors.causer interface by returning e.Err.
-func (e *Error) Cause() error {
-	return e.Err
 }
 
 // Unwrap satisfies the errors.Wrapper interface.
@@ -143,10 +137,6 @@ type statusCoder interface {
 	HTTPStatus() int
 }
 
-type causer interface {
-	Cause() error
-}
-
 // HTTPStatus returns the HTTP status code embedded in the error, or 500
 // (internal server error), if there was no specified status code.  If err is
 // nil, HTTPStatus returns 0. This provides a convenient way to determine the
@@ -181,10 +171,6 @@ func HTTPStatus(err error) int {
 		}
 		if uw := errors.Unwrap(err); uw != nil {
 			err = uw
-			continue
-		}
-		if c, ok := err.(causer); ok {
-			err = c.Cause()
 			continue
 		}
 		return http.StatusInternalServerError

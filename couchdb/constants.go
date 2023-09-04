@@ -68,4 +68,5 @@ const (
 const (
 	typeJSON      = "application/json"
 	typeMPRelated = "multipart/related"
+	typeMPMixed   = "multipart/mixed"
 )

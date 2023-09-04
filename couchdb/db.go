@@ -205,6 +205,8 @@ func (d *db) Get(ctx context.Context, docID string, options map[string]interface
 				meta:     metaDoc.Attachments,
 			},
 		}, nil
+	case typeMPMixed:
+		// TODO : pick up here
 	default:
 		return nil, &kivik.Error{Status: http.StatusBadGateway, Err: fmt.Errorf("kivik: invalid content type in response: %s", ct)}
 	}
@@ -300,7 +302,7 @@ func (d *db) get(ctx context.Context, method, docID string, options map[string]i
 		return nil, "", err
 	}
 
-	opts.Accept = typeMPRelated + "," + typeJSON
+	opts.Accept = strings.Join([]string{typeMPMixed, typeMPRelated, typeJSON}, ",")
 	opts.Query, err = optionsToParams(options)
 	if err != nil {
 		return nil, "", err

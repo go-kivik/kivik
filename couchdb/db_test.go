@@ -392,6 +392,31 @@ Content-Length: 86
 			err:    `^Get "?http://example.com/testdb/2020-01-30T13%3A33%3A00\.00%2B05%3A30%7Ckl"?: success$`,
 		}
 	})
+	tests.Add("open_revs", func(t *testing.T) interface{} {
+		return tt{
+			db: newCustomDB(func(req *http.Request) (*http.Response, error) {
+				want := "multipart/mixed,multipart/related,application/json"
+				if got := req.Header.Get("Accept"); got != want {
+					return nil, fmt.Errorf("Unexpected Accept header %q", got)
+				}
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Header: http.Header{
+						"Content-Type": []string{`multipart/mixed; boundary="ea68bec945fd9dece3e826462c5604e8"`},
+					},
+					Body: Body(`--ea68bec945fd9dece3e826462c5604e8
+Content-Type: application/json
+
+{"_id":"bar","_rev":"2-e2a6df12e36615e8def0bb38bb17b48d","foo":123}
+* Connection #0 to host localhost left intact
+--ea68bec945fd9dece3e826462c5604e8--
+`),
+				}, nil
+			}),
+			id:       "bar",
+			expected: `{"todo":"thanks"}`,
+		}
+	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
 		doc, err := tt.db.Get(context.Background(), tt.id, tt.options)

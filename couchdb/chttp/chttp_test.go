@@ -232,6 +232,14 @@ func TestEncodeBody(t *testing.T) {
 			input:    `{"foo":"bar"}`,
 			expected: `{"foo":"bar"}`,
 		},
+		{
+			name: "options map",
+			input: map[interface{}]interface{}{
+				"string": "value",
+				int(123): "non-string",
+			},
+			expected: `{"string":"value"}`,
+		},
 	}
 	for _, test := range tests {
 		func(test encodeTest) {

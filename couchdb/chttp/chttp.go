@@ -347,7 +347,19 @@ func BodyEncoder(i interface{}) func() (io.ReadCloser, error) {
 
 // EncodeBody JSON encodes i to an io.ReadCloser. If an encoding error
 // occurs, it will be returned on the next read.
+//
+// This function converts a map[interface{}]interface{} to map[string]interface{}
+// by dropping any keys that aren't strings.
 func EncodeBody(i interface{}) io.ReadCloser {
+	if m, ok := i.(map[interface{}]interface{}); ok {
+		newMap := make(map[string]interface{}, len(m))
+		for k, v := range m {
+			if str, ok := k.(string); ok {
+				newMap[str] = v
+			}
+		}
+		i = newMap
+	}
 	done := make(chan struct{})
 	r, w := io.Pipe()
 	go func() {

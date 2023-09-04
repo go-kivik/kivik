@@ -461,44 +461,44 @@ func ETag(resp *http.Response) (string, bool) {
 }
 
 // GetRev extracts the revision from the response's Etag header
-func GetRev(resp *http.Response) (rev string, err error) {
-	if err = ResponseError(resp); err != nil {
-		return "", err
-	}
+func GetRev(resp *http.Response) (string, error) {
 	rev, ok := ETag(resp)
 	if ok {
 		return rev, nil
 	}
-	return extractRev(resp)
+	if resp == nil || resp.Request == nil || resp.Request.Method == http.MethodHead {
+		return "", errors.New("unable to determine document revision")
+	}
+	reassembled, rev, err := ExtractRev(resp.Body)
+	resp.Body = reassembled
+	return rev, err
 }
 
+// ExtractRev extracts the _rev field from r, while reading into a buffer,
+// then returns a re-assembled ReadCloser, containing the buffer plus any unread
+// bytes still on the network, along with the document revision.
+//
 // When the ETag header is missing, which can happen, for example, when doing
 // a request with revs_info=true.  This means we need to look through the
 // body of the request for the revision. Fortunately, CouchDB tends to send
 // the _id and _rev fields first, so we shouldn't need to parse the entire
 // body. The important thing is that resp.Body must be restored, so that the
 // normal document scanning can take place as usual.
-func extractRev(resp *http.Response) (string, error) {
-	if resp == nil || resp.Request == nil || resp.Request.Method == http.MethodHead {
-		return "", errors.New("unable to determine document revision")
-	}
+func ExtractRev(rc io.ReadCloser) (io.ReadCloser, string, error) {
 	buf := &bytes.Buffer{}
-	r := io.TeeReader(resp.Body, buf)
-	defer func() {
-		// Restore the original resp.Body
-		resp.Body = struct {
-			io.Reader
-			io.Closer
-		}{
-			Reader: io.MultiReader(buf, resp.Body),
-			Closer: resp.Body,
-		}
-	}()
-	rev, err := readRev(r)
-	if err != nil {
-		return "", fmt.Errorf("unable to determine document revision: %w", err)
+	tr := io.TeeReader(rc, buf)
+	rev, err := readRev(tr)
+	reassembled := struct {
+		io.Reader
+		io.Closer
+	}{
+		Reader: io.MultiReader(buf, rc),
+		Closer: rc,
 	}
-	return rev, nil
+	if err != nil {
+		return reassembled, "", fmt.Errorf("unable to determine document revision: %w", err)
+	}
+	return reassembled, rev, nil
 }
 
 // readRev searches r for a `_rev` field, and returns its value without reading

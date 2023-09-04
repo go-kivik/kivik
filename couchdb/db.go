@@ -788,6 +788,9 @@ func (d *db) Delete(ctx context.Context, docID string, options map[string]interf
 		return "", err
 	}
 	defer chttp.CloseBody(resp.Body)
+	if err := chttp.ResponseError(resp); err != nil {
+		return "", err
+	}
 	return chttp.GetRev(resp)
 }
 
@@ -891,6 +894,9 @@ func (d *db) Copy(ctx context.Context, targetID, sourceID string, options map[st
 		return "", err
 	}
 	defer chttp.CloseBody(resp.Body)
+	if err := chttp.ResponseError(resp); err != nil {
+		return "", err
+	}
 	return chttp.GetRev(resp)
 }
 

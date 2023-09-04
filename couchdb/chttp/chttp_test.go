@@ -437,15 +437,6 @@ func TestGetRev(t *testing.T) {
 		expected, err string
 	}{
 		{
-			name: "error response",
-			resp: &http.Response{
-				StatusCode: 400,
-				Request:    &http.Request{Method: "POST"},
-				Body:       io.NopCloser(strings.NewReader("")),
-			},
-			err: "Bad Request",
-		},
-		{
 			name: "no ETag header",
 			resp: &http.Response{
 				StatusCode: 200,

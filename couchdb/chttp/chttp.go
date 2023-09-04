@@ -462,9 +462,6 @@ func ETag(resp *http.Response) (string, bool) {
 
 // GetRev extracts the revision from the response's Etag header
 func GetRev(resp *http.Response) (rev string, err error) {
-	if err = ResponseError(resp); err != nil {
-		return "", err
-	}
 	rev, ok := ETag(resp)
 	if ok {
 		return rev, nil

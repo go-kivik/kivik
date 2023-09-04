@@ -28,7 +28,7 @@ func OptionUserAgent(ua string) kivik.Options {
 }
 
 // OptionHTTPClient may be passed as an option when creating a client object,
-// to specify an [http.Client].
+// to specify a non-default [http.Client].
 func OptionHTTPClient(client *http.Client) kivik.Options {
 	return kivik.Options{
 		internal.OptionHTTPClient: client,
@@ -37,10 +37,6 @@ func OptionHTTPClient(client *http.Client) kivik.Options {
 
 // OptionFullCommit is the used to set the `X-Couch-Full-Commit` header in the
 // request.
-//
-// Example:
-//
-//	db.Put(ctx, "doc_id", doc, couchdb.OptionFullCommit())
 func OptionFullCommit() kivik.Options {
 	return kivik.Options{
 		internal.OptionFullCommit: true,
@@ -49,10 +45,6 @@ func OptionFullCommit() kivik.Options {
 
 // OptionIfNoneMatch is an option key to set the `If-None-Match header` on
 // the request.
-//
-// Example:
-//
-//	row, err := db.Get(ctx, "doc_id", couchdb.OptionIfNoneMatch("1-xxx"))
 func OptionIfNoneMatch(rev string) kivik.Options {
 	return kivik.Options{
 		internal.OptionIfNoneMatch: rev,
@@ -60,8 +52,12 @@ func OptionIfNoneMatch(rev string) kivik.Options {
 }
 
 // OptionPartition instructs supporting methods to limit the query to the
-// specified partition. Supported methods are: [Query], [AllDocs], [Find],
-// and [Explain]. Only supported by CouchDB 3.0.0 and newer.
+// specified partition. Supported methods are:
+// [github.com/go-kivik/kivik/v4.DB.Query],
+// [github.com/go-kivik/kivik/v4.DB.AllDocs],
+// [github.com/go-kivik/kivik/v4.DB.Find], and
+// [github.com/go-kivik/kivik/v4.DB.Explain]. Only supported by CouchDB 3.0.0
+// and newer.
 //
 // See https://docs.couchdb.org/en/stable/api/partitioned-dbs.html
 func OptionPartition(partition string) kivik.Options {

@@ -52,7 +52,7 @@ var (
 	_ driver.DBUpdater = &client{}
 )
 
-func (d *couch) NewClient(dsn string, options map[string]interface{}) (driver.Client, error) {
+func (d *couch) NewClient(dsn string, options map[interface{}]interface{}) (driver.Client, error) {
 	var httpClient *http.Client
 	if c, ok := options[OptionHTTPClient]; ok {
 		if httpClient, ok = c.(*http.Client); !ok {
@@ -71,7 +71,7 @@ func (d *couch) NewClient(dsn string, options map[string]interface{}) (driver.Cl
 	}, nil
 }
 
-func (c *client) DB(dbName string, _ map[string]interface{}) (driver.DB, error) {
+func (c *client) DB(dbName string, _ map[interface{}]interface{}) (driver.DB, error) {
 	if dbName == "" {
 		return nil, missingArg("dbName")
 	}

@@ -25,7 +25,7 @@ import (
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
-func (c *client) AllDBs(ctx context.Context, opts map[string]interface{}) ([]string, error) {
+func (c *client) AllDBs(ctx context.Context, opts map[interface{}]interface{}) ([]string, error) {
 	query, err := optionsToParams(opts)
 	if err != nil {
 		return nil, err
@@ -35,7 +35,7 @@ func (c *client) AllDBs(ctx context.Context, opts map[string]interface{}) ([]str
 	return allDBs, err
 }
 
-func (c *client) DBExists(ctx context.Context, dbName string, _ map[string]interface{}) (bool, error) {
+func (c *client) DBExists(ctx context.Context, dbName string, _ map[interface{}]interface{}) (bool, error) {
 	if dbName == "" {
 		return false, missingArg("dbName")
 	}
@@ -46,7 +46,7 @@ func (c *client) DBExists(ctx context.Context, dbName string, _ map[string]inter
 	return err == nil, err
 }
 
-func (c *client) CreateDB(ctx context.Context, dbName string, opts map[string]interface{}) error {
+func (c *client) CreateDB(ctx context.Context, dbName string, opts map[interface{}]interface{}) error {
 	if dbName == "" {
 		return missingArg("dbName")
 	}
@@ -58,7 +58,7 @@ func (c *client) CreateDB(ctx context.Context, dbName string, opts map[string]in
 	return err
 }
 
-func (c *client) DestroyDB(ctx context.Context, dbName string, _ map[string]interface{}) error {
+func (c *client) DestroyDB(ctx context.Context, dbName string, _ map[interface{}]interface{}) error {
 	if dbName == "" {
 		return missingArg("dbName")
 	}
@@ -66,7 +66,7 @@ func (c *client) DestroyDB(ctx context.Context, dbName string, _ map[string]inte
 	return err
 }
 
-func (c *client) DBUpdates(ctx context.Context, _ map[string]interface{}) (updates driver.DBUpdates, err error) {
+func (c *client) DBUpdates(ctx context.Context, _ map[interface{}]interface{}) (updates driver.DBUpdates, err error) {
 	resp, err := c.DoReq(ctx, http.MethodGet, "/_db_updates?feed=continuous&since=now", nil)
 	if err != nil {
 		return nil, err

@@ -37,7 +37,7 @@ type Client struct {
 }
 
 // Options is a collection of options. The keys and values are backend specific.
-type Options map[string]interface{}
+type Options map[interface{}]interface{}
 
 func mergeOptions(otherOpts ...Options) Options {
 	if len(otherOpts) == 0 {

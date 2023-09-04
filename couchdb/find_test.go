@@ -32,7 +32,7 @@ func TestExplain(t *testing.T) {
 		name     string
 		db       *db
 		query    interface{}
-		opts     map[string]interface{}
+		opts     map[interface{}]interface{}
 		expected *driver.QueryPlan
 		status   int
 		err      string
@@ -88,7 +88,7 @@ func TestExplain(t *testing.T) {
 		{
 			name: "partitioned request",
 			db:   newTestDB(nil, errors.New("expected")),
-			opts: map[string]interface{}{
+			opts: map[interface{}]interface{}{
 				OptionPartition: "x1",
 			},
 			status: http.StatusBadGateway,
@@ -162,7 +162,7 @@ func TestCreateIndex(t *testing.T) {
 		name            string
 		ddoc, indexName string
 		index           interface{}
-		options         map[string]interface{}
+		options         map[interface{}]interface{}
 		db              *db
 		status          int
 		err             string
@@ -206,7 +206,7 @@ func TestCreateIndex(t *testing.T) {
 		{
 			name: "partitioned query",
 			db:   newTestDB(nil, errors.New("expected")),
-			options: map[string]interface{}{
+			options: map[interface{}]interface{}{
 				OptionPartition: "xxy",
 			},
 			status: http.StatusBadGateway,
@@ -224,7 +224,7 @@ func TestCreateIndex(t *testing.T) {
 func TestGetIndexes(t *testing.T) {
 	tests := []struct {
 		name     string
-		options  map[string]interface{}
+		options  map[interface{}]interface{}
 		db       *db
 		expected []driver.Index
 		status   int
@@ -276,7 +276,7 @@ func TestGetIndexes(t *testing.T) {
 		{
 			name: "partitioned query",
 			db:   newTestDB(nil, errors.New("expected")),
-			options: map[string]interface{}{
+			options: map[interface{}]interface{}{
 				OptionPartition: "yyz",
 			},
 			status: http.StatusBadGateway,
@@ -298,7 +298,7 @@ func TestDeleteIndex(t *testing.T) {
 	tests := []struct {
 		name            string
 		ddoc, indexName string
-		options         map[string]interface{}
+		options         map[interface{}]interface{}
 		db              *db
 		status          int
 		err             string
@@ -347,7 +347,7 @@ func TestDeleteIndex(t *testing.T) {
 			ddoc:      "_design/foo",
 			indexName: "bar",
 			db:        newTestDB(nil, errors.New("expected")),
-			options: map[string]interface{}{
+			options: map[interface{}]interface{}{
 				OptionPartition: "qqz",
 			},
 			status: http.StatusBadGateway,
@@ -367,7 +367,7 @@ func TestFind(t *testing.T) {
 		name   string
 		db     *db
 		query  interface{}
-		opts   map[string]interface{}
+		opts   map[interface{}]interface{}
 		status int
 		err    string
 	}{
@@ -427,7 +427,7 @@ func TestFind(t *testing.T) {
 		{
 			name: "partitioned request",
 			db:   newTestDB(nil, errors.New("expected")),
-			opts: map[string]interface{}{
+			opts: map[interface{}]interface{}{
 				OptionPartition: "x2",
 			},
 			status: http.StatusBadGateway,

@@ -62,7 +62,7 @@ type Client struct {
 // included in the URL, requests will be authenticated using Cookie Auth. To
 // use HTTP BasicAuth or some other authentication mechanism, do not specify
 // credentials in the URL, and instead call the Auth() method later.
-func New(client *http.Client, dsn string, options map[string]interface{}) (*Client, error) {
+func New(client *http.Client, dsn string, options map[interface{}]interface{}) (*Client, error) {
 	dsnURL, err := parseDSN(dsn)
 	if err != nil {
 		return nil, err
@@ -97,7 +97,7 @@ func New(client *http.Client, dsn string, options map[string]interface{}) (*Clie
 	return c, nil
 }
 
-func (c *Client) setUserAgent(options map[string]interface{}) error {
+func (c *Client) setUserAgent(options map[interface{}]interface{}) error {
 	c.UserAgents = []string{
 		fmt.Sprintf("Kivik/%s", kivik.KivikVersion),
 		fmt.Sprintf("Kivik CouchDB driver/%s", Version),

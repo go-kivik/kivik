@@ -189,7 +189,7 @@ func (r *schedulerReplication) Delete(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	_, err = r.db.Delete(ctx, r.docID, map[string]interface{}{"rev": rev})
+	_, err = r.db.Delete(ctx, r.docID, map[interface{}]interface{}{"rev": rev})
 	return err
 }
 
@@ -223,7 +223,7 @@ func (r *schedulerReplication) update(ctx context.Context) error {
 	return nil
 }
 
-func (c *client) getReplicationsFromScheduler(ctx context.Context, options map[string]interface{}) ([]driver.Replication, error) {
+func (c *client) getReplicationsFromScheduler(ctx context.Context, options map[interface{}]interface{}) ([]driver.Replication, error) {
 	params, err := optionsToParams(options)
 	if err != nil {
 		return nil, err

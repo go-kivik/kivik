@@ -63,7 +63,7 @@ func TestAllDocs(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					AllDocsFunc: func(context.Context, map[string]interface{}) (driver.Rows, error) {
+					AllDocsFunc: func(context.Context, map[interface{}]interface{}) (driver.Rows, error) {
 						return nil, errors.New("db error")
 					},
 				},
@@ -76,7 +76,7 @@ func TestAllDocs(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					AllDocsFunc: func(_ context.Context, opts map[string]interface{}) (driver.Rows, error) {
+					AllDocsFunc: func(_ context.Context, opts map[interface{}]interface{}) (driver.Rows, error) {
 						if d := testy.DiffInterface(testOptions, opts); d != nil {
 							return nil, fmt.Errorf("Unexpected options: %s", d)
 						}
@@ -132,7 +132,7 @@ func TestAllDocs(t *testing.T) {
 			db := &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					AllDocsFunc: func(context.Context, map[string]interface{}) (driver.Rows, error) {
+					AllDocsFunc: func(context.Context, map[interface{}]interface{}) (driver.Rows, error) {
 						return nil, errors.New("unf")
 					},
 				},
@@ -158,7 +158,7 @@ func TestAllDocs(t *testing.T) {
 			db := &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					AllDocsFunc: func(_ context.Context, opts map[string]interface{}) (driver.Rows, error) {
+					AllDocsFunc: func(_ context.Context, opts map[interface{}]interface{}) (driver.Rows, error) {
 						return &mock.Rows{
 							NextFunc: func(r *driver.Row) error {
 								if len(rows) == 0 {
@@ -173,7 +173,7 @@ func TestAllDocs(t *testing.T) {
 					},
 				},
 			}
-			rs := db.AllDocs(context.Background(), map[string]interface{}{
+			rs := db.AllDocs(context.Background(), map[interface{}]interface{}{
 				"include_docs": true,
 				"keys":         []string{"i-exist", "i-dont"},
 			})
@@ -240,7 +240,7 @@ func TestDesignDocs(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DesignDocer{
-					DesignDocsFunc: func(_ context.Context, _ map[string]interface{}) (driver.Rows, error) {
+					DesignDocsFunc: func(_ context.Context, _ map[interface{}]interface{}) (driver.Rows, error) {
 						return nil, errors.New("db error")
 					},
 				},
@@ -253,7 +253,7 @@ func TestDesignDocs(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DesignDocer{
-					DesignDocsFunc: func(_ context.Context, opts map[string]interface{}) (driver.Rows, error) {
+					DesignDocsFunc: func(_ context.Context, opts map[interface{}]interface{}) (driver.Rows, error) {
 						if d := testy.DiffInterface(testOptions, opts); d != nil {
 							return nil, fmt.Errorf("Unexpected options: %s", d)
 						}
@@ -319,7 +319,7 @@ func TestDesignDocs(t *testing.T) {
 			db := &DB{
 				client: &Client{},
 				driverDB: &mock.DesignDocer{
-					DesignDocsFunc: func(context.Context, map[string]interface{}) (driver.Rows, error) {
+					DesignDocsFunc: func(context.Context, map[interface{}]interface{}) (driver.Rows, error) {
 						return nil, errors.New("unf")
 					},
 				},
@@ -347,7 +347,7 @@ func TestLocalDocs(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.LocalDocer{
-					LocalDocsFunc: func(_ context.Context, _ map[string]interface{}) (driver.Rows, error) {
+					LocalDocsFunc: func(_ context.Context, _ map[interface{}]interface{}) (driver.Rows, error) {
 						return nil, errors.New("db error")
 					},
 				},
@@ -360,7 +360,7 @@ func TestLocalDocs(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.LocalDocer{
-					LocalDocsFunc: func(_ context.Context, opts map[string]interface{}) (driver.Rows, error) {
+					LocalDocsFunc: func(_ context.Context, opts map[interface{}]interface{}) (driver.Rows, error) {
 						if d := testy.DiffInterface(testOptions, opts); d != nil {
 							return nil, fmt.Errorf("Unexpected options: %s", d)
 						}
@@ -426,7 +426,7 @@ func TestLocalDocs(t *testing.T) {
 			db := &DB{
 				client: &Client{},
 				driverDB: &mock.LocalDocer{
-					LocalDocsFunc: func(context.Context, map[string]interface{}) (driver.Rows, error) {
+					LocalDocsFunc: func(context.Context, map[interface{}]interface{}) (driver.Rows, error) {
 						return nil, errors.New("unf")
 					},
 				},
@@ -455,7 +455,7 @@ func TestQuery(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					QueryFunc: func(_ context.Context, ddoc, view string, opts map[string]interface{}) (driver.Rows, error) {
+					QueryFunc: func(_ context.Context, ddoc, view string, opts map[interface{}]interface{}) (driver.Rows, error) {
 						return nil, errors.New("db error")
 					},
 				},
@@ -468,7 +468,7 @@ func TestQuery(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					QueryFunc: func(_ context.Context, ddoc, view string, opts map[string]interface{}) (driver.Rows, error) {
+					QueryFunc: func(_ context.Context, ddoc, view string, opts map[interface{}]interface{}) (driver.Rows, error) {
 						expectedDdoc := "foo"
 						expectedView := "bar" // nolint: goconst
 						if ddoc != expectedDdoc {
@@ -547,7 +547,7 @@ func TestGet(t *testing.T) {
 		db: &DB{
 			client: &Client{},
 			driverDB: &mock.DB{
-				GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (*driver.Document, error) {
+				GetFunc: func(_ context.Context, _ string, _ map[interface{}]interface{}) (*driver.Document, error) {
 					return nil, fmt.Errorf("db error")
 				},
 			},
@@ -559,7 +559,7 @@ func TestGet(t *testing.T) {
 		db: &DB{
 			client: &Client{},
 			driverDB: &mock.DB{
-				GetFunc: func(_ context.Context, docID string, options map[string]interface{}) (*driver.Document, error) {
+				GetFunc: func(_ context.Context, docID string, options map[interface{}]interface{}) (*driver.Document, error) {
 					expectedDocID := "foo"
 					if docID != expectedDocID {
 						return nil, fmt.Errorf("Unexpected docID: %s", docID)
@@ -582,9 +582,9 @@ func TestGet(t *testing.T) {
 		db: &DB{
 			client: &Client{},
 			driverDB: &mock.DB{
-				GetFunc: func(_ context.Context, docID string, options map[string]interface{}) (*driver.Document, error) {
+				GetFunc: func(_ context.Context, docID string, options map[interface{}]interface{}) (*driver.Document, error) {
 					expectedDocID := "foo"
-					expectedOptions := map[string]interface{}{"include_docs": true}
+					expectedOptions := map[interface{}]interface{}{"include_docs": true}
 					if docID != expectedDocID {
 						return nil, fmt.Errorf("Unexpected docID: %s", docID)
 					}
@@ -600,7 +600,7 @@ func TestGet(t *testing.T) {
 			},
 		},
 		docID:    "foo",
-		options:  map[string]interface{}{"include_docs": true},
+		options:  map[interface{}]interface{}{"include_docs": true},
 		expected: `{"_id":"foo"}`,
 	})
 	tests.Add(errClientClosed, tt{
@@ -616,7 +616,7 @@ func TestGet(t *testing.T) {
 		db: &DB{
 			client: &Client{},
 			driverDB: &mock.RowsGetter{
-				GetFunc: func(_ context.Context, docID string, options map[string]interface{}) (driver.Rows, error) {
+				GetFunc: func(_ context.Context, docID string, options map[interface{}]interface{}) (driver.Rows, error) {
 					expectedDocID := "foo"
 					if docID != expectedDocID {
 						return nil, fmt.Errorf("Unexpected docID: %s", docID)
@@ -637,7 +637,7 @@ func TestGet(t *testing.T) {
 		db: &DB{
 			client: &Client{},
 			driverDB: &mock.RowsGetter{
-				GetFunc: func(_ context.Context, docID string, options map[string]interface{}) (driver.Rows, error) {
+				GetFunc: func(_ context.Context, docID string, options map[interface{}]interface{}) (driver.Rows, error) {
 					return nil, errors.New("random error")
 				},
 			},
@@ -1128,7 +1128,7 @@ func TestGetRev(t *testing.T) { // nolint: gocyclo
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.RevGetter{
-					GetRevFunc: func(_ context.Context, _ string, _ map[string]interface{}) (string, error) {
+					GetRevFunc: func(_ context.Context, _ string, _ map[interface{}]interface{}) (string, error) {
 						return "", &Error{Status: http.StatusBadGateway, Err: errors.New("get meta error")}
 					},
 				},
@@ -1141,7 +1141,7 @@ func TestGetRev(t *testing.T) { // nolint: gocyclo
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.RevGetter{
-					GetRevFunc: func(_ context.Context, docID string, opts map[string]interface{}) (string, error) {
+					GetRevFunc: func(_ context.Context, docID string, opts map[interface{}]interface{}) (string, error) {
 						expectedDocID := "foo"
 						if docID != expectedDocID {
 							return "", fmt.Errorf("Unexpected docID: %s", docID)
@@ -1162,7 +1162,7 @@ func TestGetRev(t *testing.T) { // nolint: gocyclo
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (*driver.Document, error) {
+					GetFunc: func(_ context.Context, _ string, _ map[interface{}]interface{}) (*driver.Document, error) {
 						return nil, &Error{Status: http.StatusBadGateway, Err: errors.New("get error")}
 					},
 				},
@@ -1175,7 +1175,7 @@ func TestGetRev(t *testing.T) { // nolint: gocyclo
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					GetFunc: func(_ context.Context, docID string, opts map[string]interface{}) (*driver.Document, error) {
+					GetFunc: func(_ context.Context, docID string, opts map[interface{}]interface{}) (*driver.Document, error) {
 						expectedDocID := "foo"
 						if docID != expectedDocID {
 							return nil, fmt.Errorf("Unexpected docID: %s", docID)
@@ -1198,7 +1198,7 @@ func TestGetRev(t *testing.T) { // nolint: gocyclo
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					GetFunc: func(_ context.Context, docID string, opts map[string]interface{}) (*driver.Document, error) {
+					GetFunc: func(_ context.Context, docID string, opts map[interface{}]interface{}) (*driver.Document, error) {
 						expectedDocID := "foo"
 						if docID != expectedDocID {
 							return nil, fmt.Errorf("Unexpected docID: %s", docID)
@@ -1220,7 +1220,7 @@ func TestGetRev(t *testing.T) { // nolint: gocyclo
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					GetFunc: func(_ context.Context, docID string, opts map[string]interface{}) (*driver.Document, error) {
+					GetFunc: func(_ context.Context, docID string, opts map[interface{}]interface{}) (*driver.Document, error) {
 						expectedDocID := "foo"
 						if docID != expectedDocID {
 							return nil, fmt.Errorf("Unexpected docID: %s", docID)
@@ -1301,7 +1301,7 @@ func TestCopy(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.Copier{
-					CopyFunc: func(_ context.Context, _, _ string, _ map[string]interface{}) (string, error) {
+					CopyFunc: func(_ context.Context, _, _ string, _ map[interface{}]interface{}) (string, error) {
 						return "", &Error{Status: http.StatusBadRequest, Err: errors.New("copy error")}
 					},
 				},
@@ -1316,7 +1316,7 @@ func TestCopy(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.Copier{
-					CopyFunc: func(_ context.Context, target, source string, options map[string]interface{}) (string, error) {
+					CopyFunc: func(_ context.Context, target, source string, options map[interface{}]interface{}) (string, error) {
 						expectedTarget := "foo"
 						expectedSource := "bar"
 						if target != expectedTarget {
@@ -1342,7 +1342,7 @@ func TestCopy(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (*driver.Document, error) {
+					GetFunc: func(_ context.Context, _ string, _ map[interface{}]interface{}) (*driver.Document, error) {
 						return nil, &Error{Status: http.StatusBadGateway, Err: errors.New("get error")}
 					},
 				},
@@ -1357,7 +1357,7 @@ func TestCopy(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (*driver.Document, error) {
+					GetFunc: func(_ context.Context, _ string, _ map[interface{}]interface{}) (*driver.Document, error) {
 						return &driver.Document{
 							Body: body("invalid json"),
 						}, nil
@@ -1374,12 +1374,12 @@ func TestCopy(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					GetFunc: func(_ context.Context, _ string, _ map[string]interface{}) (*driver.Document, error) {
+					GetFunc: func(_ context.Context, _ string, _ map[interface{}]interface{}) (*driver.Document, error) {
 						return &driver.Document{
 							Body: body(`{"_id":"foo","_rev":"1-xxx"}`),
 						}, nil
 					},
-					PutFunc: func(_ context.Context, _ string, _ interface{}, _ map[string]interface{}) (string, error) {
+					PutFunc: func(_ context.Context, _ string, _ interface{}, _ map[interface{}]interface{}) (string, error) {
 						return "", &Error{Status: http.StatusBadGateway, Err: errors.New("put error")}
 					},
 				},
@@ -1394,7 +1394,7 @@ func TestCopy(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					GetFunc: func(_ context.Context, docID string, options map[string]interface{}) (*driver.Document, error) {
+					GetFunc: func(_ context.Context, docID string, options map[interface{}]interface{}) (*driver.Document, error) {
 						expectedDocID := "bar"
 						if docID != expectedDocID {
 							return nil, fmt.Errorf("Unexpected get docID: %s", docID)
@@ -1403,10 +1403,10 @@ func TestCopy(t *testing.T) {
 							Body: body(`{"_id":"bar","_rev":"1-xxx","foo":123.4}`),
 						}, nil
 					},
-					PutFunc: func(_ context.Context, docID string, doc interface{}, opts map[string]interface{}) (string, error) {
+					PutFunc: func(_ context.Context, docID string, doc interface{}, opts map[interface{}]interface{}) (string, error) {
 						expectedDocID := "foo"
 						expectedDoc := map[string]interface{}{"_id": "foo", "foo": 123.4}
-						expectedOpts := map[string]interface{}{"batch": true}
+						expectedOpts := map[interface{}]interface{}{"batch": true}
 						if docID != expectedDocID {
 							return "", fmt.Errorf("Unexpected put docID: %s", docID)
 						}
@@ -1502,7 +1502,7 @@ func TestNormalizeFromJSON(t *testing.T) {
 }
 
 func TestPut(t *testing.T) {
-	putFunc := func(_ context.Context, docID string, doc interface{}, opts map[string]interface{}) (string, error) {
+	putFunc := func(_ context.Context, docID string, doc interface{}, opts map[interface{}]interface{}) (string, error) {
 		expectedDocID := "foo"
 		expectedDoc := map[string]interface{}{"foo": "bar"}
 		if expectedDocID != docID {
@@ -1540,7 +1540,7 @@ func TestPut(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					PutFunc: func(_ context.Context, _ string, _ interface{}, _ map[string]interface{}) (string, error) {
+					PutFunc: func(_ context.Context, _ string, _ interface{}, _ map[interface{}]interface{}) (string, error) {
 						return "", &Error{Status: http.StatusBadRequest, Err: errors.New("db error")}
 					},
 				},
@@ -1769,7 +1769,7 @@ func TestCreateDoc(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					CreateDocFunc: func(_ context.Context, _ interface{}, _ map[string]interface{}) (string, string, error) {
+					CreateDocFunc: func(_ context.Context, _ interface{}, _ map[interface{}]interface{}) (string, string, error) {
 						return "", "", &Error{Status: http.StatusBadRequest, Err: errors.New("create error")}
 					},
 				},
@@ -1782,7 +1782,7 @@ func TestCreateDoc(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					CreateDocFunc: func(_ context.Context, doc interface{}, opts map[string]interface{}) (string, string, error) {
+					CreateDocFunc: func(_ context.Context, doc interface{}, opts map[interface{}]interface{}) (string, string, error) {
 						expectedDoc := map[string]string{"type": "test"}
 						if d := testy.DiffInterface(expectedDoc, doc); d != nil {
 							return "", "", fmt.Errorf("Unexpected doc:\n%s", d)
@@ -1844,7 +1844,7 @@ func TestDelete(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					DeleteFunc: func(_ context.Context, _ string, _ map[string]interface{}) (string, error) {
+					DeleteFunc: func(_ context.Context, _ string, _ map[interface{}]interface{}) (string, error) {
 						return "", &Error{Status: http.StatusBadRequest, Err: errors.New("delete error")}
 					},
 				},
@@ -1858,12 +1858,12 @@ func TestDelete(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					DeleteFunc: func(_ context.Context, docID string, opts map[string]interface{}) (string, error) {
+					DeleteFunc: func(_ context.Context, docID string, opts map[interface{}]interface{}) (string, error) {
 						const expectedDocID = "foo"
 						if docID != expectedDocID {
 							return "", fmt.Errorf("Unexpected docID: %s", docID)
 						}
-						if d := testy.DiffInterface(map[string]interface{}{"rev": "1-xxx"}, opts); d != nil {
+						if d := testy.DiffInterface(map[interface{}]interface{}{"rev": "1-xxx"}, opts); d != nil {
 							return "", fmt.Errorf("Unexpected options:\n%s", d)
 						}
 						return "2-xxx", nil
@@ -1871,7 +1871,7 @@ func TestDelete(t *testing.T) {
 				},
 			},
 			docID:   "foo",
-			options: map[string]interface{}{"rev": "1-xxx"},
+			options: map[interface{}]interface{}{"rev": "1-xxx"},
 			newRev:  "2-xxx",
 		},
 		{
@@ -1879,12 +1879,12 @@ func TestDelete(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					DeleteFunc: func(_ context.Context, docID string, opts map[string]interface{}) (string, error) {
+					DeleteFunc: func(_ context.Context, docID string, opts map[interface{}]interface{}) (string, error) {
 						const expectedDocID = "foo"
 						if docID != expectedDocID {
 							return "", fmt.Errorf("Unexpected docID: %s", docID)
 						}
-						if d := testy.DiffInterface(map[string]interface{}{
+						if d := testy.DiffInterface(map[interface{}]interface{}{
 							"foo": 123,
 							"rev": "1-xxx",
 						}, opts); d != nil {
@@ -1904,12 +1904,12 @@ func TestDelete(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					DeleteFunc: func(_ context.Context, docID string, opts map[string]interface{}) (string, error) {
+					DeleteFunc: func(_ context.Context, docID string, opts map[interface{}]interface{}) (string, error) {
 						const expectedDocID = "foo"
 						if docID != expectedDocID {
 							return "", fmt.Errorf("Unexpected docID: %s", docID)
 						}
-						if d := testy.DiffInterface(map[string]interface{}{
+						if d := testy.DiffInterface(map[interface{}]interface{}{
 							"rev": "1-xxx",
 						}, opts); d != nil {
 							return "", fmt.Errorf("Unexpected options:\n%s", d)
@@ -1972,7 +1972,7 @@ func TestPutAttachment(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					PutAttachmentFunc: func(_ context.Context, _ string, _ *driver.Attachment, _ map[string]interface{}) (string, error) {
+					PutAttachmentFunc: func(_ context.Context, _ string, _ *driver.Attachment, _ map[interface{}]interface{}) (string, error) {
 						return "", &Error{Status: http.StatusBadRequest, Err: errors.New("db error")}
 					},
 				},
@@ -2008,7 +2008,7 @@ func TestPutAttachment(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					PutAttachmentFunc: func(_ context.Context, docID string, att *driver.Attachment, opts map[string]interface{}) (string, error) {
+					PutAttachmentFunc: func(_ context.Context, docID string, att *driver.Attachment, opts map[interface{}]interface{}) (string, error) {
 						const expectedDocID = "foo"
 						const expectedContent = "Test file"
 						expectedAtt := &driver.Attachment{
@@ -2029,7 +2029,7 @@ func TestPutAttachment(t *testing.T) {
 						if d := testy.DiffInterface(expectedAtt, att); d != nil {
 							return "", fmt.Errorf("Unexpected attachment:\n%s", d)
 						}
-						if d := testy.DiffInterface(map[string]interface{}{"rev": "1-xxx"}, opts); d != nil {
+						if d := testy.DiffInterface(map[interface{}]interface{}{"rev": "1-xxx"}, opts); d != nil {
 							return "", fmt.Errorf("Unexpected options:\n%s", d)
 						}
 						return "2-xxx", nil
@@ -2041,7 +2041,7 @@ func TestPutAttachment(t *testing.T) {
 				ContentType: "text/plain",
 				Content:     ioutil.NopCloser(strings.NewReader("Test file")),
 			},
-			options: map[string]interface{}{
+			options: map[interface{}]interface{}{
 				"rev": "1-xxx",
 			},
 			newRev: "2-xxx",
@@ -2121,7 +2121,7 @@ func TestDeleteAttachment(t *testing.T) {
 		db: &DB{
 			client: &Client{},
 			driverDB: &mock.DB{
-				DeleteAttachmentFunc: func(_ context.Context, _, _ string, _ map[string]interface{}) (string, error) {
+				DeleteAttachmentFunc: func(_ context.Context, _, _ string, _ map[interface{}]interface{}) (string, error) {
 					return "", &Error{Status: http.StatusBadRequest, Err: errors.New("db error")}
 				},
 			},
@@ -2133,18 +2133,18 @@ func TestDeleteAttachment(t *testing.T) {
 		return tt{
 			docID:    expectedDocID,
 			filename: expectedFilename,
-			options:  map[string]interface{}{"rev": expectedRev},
+			options:  map[interface{}]interface{}{"rev": expectedRev},
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					DeleteAttachmentFunc: func(_ context.Context, docID, filename string, opts map[string]interface{}) (string, error) {
+					DeleteAttachmentFunc: func(_ context.Context, docID, filename string, opts map[interface{}]interface{}) (string, error) {
 						if docID != expectedDocID {
 							t.Errorf("Unexpected docID: %s", docID)
 						}
 						if filename != expectedFilename {
 							t.Errorf("Unexpected filename: %s", filename)
 						}
-						if d := testy.DiffInterface(map[string]interface{}{"rev": expectedRev}, opts); d != nil {
+						if d := testy.DiffInterface(map[interface{}]interface{}{"rev": expectedRev}, opts); d != nil {
 							t.Errorf("Unexpected options:\n%s", d)
 						}
 						return "2-xxx", nil
@@ -2164,14 +2164,14 @@ func TestDeleteAttachment(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					DeleteAttachmentFunc: func(_ context.Context, docID, filename string, opts map[string]interface{}) (string, error) {
+					DeleteAttachmentFunc: func(_ context.Context, docID, filename string, opts map[interface{}]interface{}) (string, error) {
 						if docID != expectedDocID {
 							t.Errorf("Unexpected docID: %s", docID)
 						}
 						if filename != expectedFilename {
 							t.Errorf("Unexpected filename: %s", filename)
 						}
-						if d := testy.DiffInterface(map[string]interface{}{
+						if d := testy.DiffInterface(map[interface{}]interface{}{
 							"foo": 123,
 							"rev": "1-xxx",
 						}, opts); d != nil {
@@ -2227,7 +2227,7 @@ func TestGetAttachment(t *testing.T) {
 		db: &DB{
 			client: &Client{},
 			driverDB: &mock.DB{
-				GetAttachmentFunc: func(_ context.Context, _, _ string, _ map[string]interface{}) (*driver.Attachment, error) {
+				GetAttachmentFunc: func(_ context.Context, _, _ string, _ map[interface{}]interface{}) (*driver.Attachment, error) {
 					return nil, errors.New("fail")
 				},
 			},
@@ -2252,7 +2252,7 @@ func TestGetAttachment(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					GetAttachmentFunc: func(_ context.Context, docID, filename string, opts map[string]interface{}) (*driver.Attachment, error) {
+					GetAttachmentFunc: func(_ context.Context, docID, filename string, opts map[interface{}]interface{}) (*driver.Attachment, error) {
 						if docID != expectedDocID {
 							t.Errorf("Unexpected docID: %s", docID)
 						}
@@ -2341,7 +2341,7 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					GetAttachmentFunc: func(_ context.Context, _, _ string, _ map[string]interface{}) (*driver.Attachment, error) {
+					GetAttachmentFunc: func(_ context.Context, _, _ string, _ map[interface{}]interface{}) (*driver.Attachment, error) {
 						return nil, errors.New("fail")
 					},
 				},
@@ -2356,7 +2356,7 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					GetAttachmentFunc: func(_ context.Context, docID, filename string, opts map[string]interface{}) (*driver.Attachment, error) {
+					GetAttachmentFunc: func(_ context.Context, docID, filename string, opts map[interface{}]interface{}) (*driver.Attachment, error) {
 						if docID != expectedDocID {
 							return nil, fmt.Errorf("Unexpected docID: %s", docID)
 						}
@@ -2392,7 +2392,7 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.AttachmentMetaGetter{
-					GetAttachmentMetaFunc: func(_ context.Context, _, _ string, _ map[string]interface{}) (*driver.Attachment, error) {
+					GetAttachmentMetaFunc: func(_ context.Context, _, _ string, _ map[interface{}]interface{}) (*driver.Attachment, error) {
 						return nil, errors.New("fail")
 					},
 				},
@@ -2407,7 +2407,7 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.AttachmentMetaGetter{
-					GetAttachmentMetaFunc: func(_ context.Context, docID, filename string, opts map[string]interface{}) (*driver.Attachment, error) {
+					GetAttachmentMetaFunc: func(_ context.Context, docID, filename string, opts map[interface{}]interface{}) (*driver.Attachment, error) {
 						expectedDocID, expectedFilename := "foo", "foo.txt"
 						if docID != expectedDocID {
 							return nil, fmt.Errorf("Unexpected docID: %s", docID)
@@ -2619,7 +2619,7 @@ func TestBulkGet(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.BulkGetter{
-					BulkGetFunc: func(_ context.Context, docs []driver.BulkGetReference, opts map[string]interface{}) (driver.Rows, error) {
+					BulkGetFunc: func(_ context.Context, docs []driver.BulkGetReference, opts map[interface{}]interface{}) (driver.Rows, error) {
 						return nil, errors.New("query error")
 					},
 				},
@@ -2632,7 +2632,7 @@ func TestBulkGet(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.BulkGetter{
-					BulkGetFunc: func(_ context.Context, docs []driver.BulkGetReference, opts map[string]interface{}) (driver.Rows, error) {
+					BulkGetFunc: func(_ context.Context, docs []driver.BulkGetReference, opts map[interface{}]interface{}) (driver.Rows, error) {
 						return &mock.Rows{ID: "bulkGet1"}, nil
 					},
 				},
@@ -2678,7 +2678,7 @@ func TestBulkGet(t *testing.T) {
 			db := &DB{
 				client: &Client{},
 				driverDB: &mock.BulkGetter{
-					BulkGetFunc: func(context.Context, []driver.BulkGetReference, map[string]interface{}) (driver.Rows, error) {
+					BulkGetFunc: func(context.Context, []driver.BulkGetReference, map[interface{}]interface{}) (driver.Rows, error) {
 						return nil, errors.New("unf")
 					},
 				},
@@ -2757,7 +2757,7 @@ func TestDBClose(t *testing.T) {
 		})
 		tests.Add("AllDocs", tt{
 			db: &mock.DB{
-				AllDocsFunc: func(context.Context, map[string]interface{}) (driver.Rows, error) {
+				AllDocsFunc: func(context.Context, map[interface{}]interface{}) (driver.Rows, error) {
 					return &mock.Rows{
 						NextFunc: func(*driver.Row) error {
 							time.Sleep(delay)
@@ -2777,7 +2777,7 @@ func TestDBClose(t *testing.T) {
 		})
 		tests.Add("BulkDocs", tt{
 			db: &mock.BulkDocer{
-				BulkDocsFunc: func(context.Context, []interface{}, map[string]interface{}) ([]driver.BulkResult, error) {
+				BulkDocsFunc: func(context.Context, []interface{}, map[interface{}]interface{}) ([]driver.BulkResult, error) {
 					time.Sleep(delay)
 					return []driver.BulkResult{}, nil
 				},

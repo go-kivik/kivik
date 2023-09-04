@@ -50,14 +50,14 @@ func GlobalPouchDB() *PouchDB {
 
 // Defaults returns a new PouchDB constructor with the specified default options.
 // See https://pouchdb.com/api.html#defaults
-func Defaults(options map[string]interface{}) *PouchDB {
+func Defaults(options map[interface{}]interface{}) *PouchDB {
 	return &PouchDB{Object: js.Global.Get("PouchDB").Call("defaults", options)}
 }
 
 // New creates a database or opens an existing one.
 //
 // See https://pouchdb.com/api.html#create_database
-func (p *PouchDB) New(dbName string, options map[string]interface{}) *DB {
+func (p *PouchDB) New(dbName string, options map[interface{}]interface{}) *DB {
 	db := &DB{Object: p.Object.New(dbName, options)}
 	if db.indexeddb() {
 		/* Without blocking here, we get the following error. This may be related
@@ -85,7 +85,7 @@ func (p *PouchDB) Version() string {
 	return p.Get("version").String()
 }
 
-func setTimeout(ctx context.Context, options map[string]interface{}) map[string]interface{} {
+func setTimeout(ctx context.Context, options map[interface{}]interface{}) map[interface{}]interface{} {
 	if ctx == nil { // Just to be safe
 		return options
 	}
@@ -94,12 +94,12 @@ func setTimeout(ctx context.Context, options map[string]interface{}) map[string]
 		return options
 	}
 	if options == nil {
-		options = make(map[string]interface{})
+		options = make(map[interface{}]interface{})
 	}
 	if _, ok := options["ajax"]; !ok {
-		options["ajax"] = make(map[string]interface{})
+		options["ajax"] = make(map[interface{}]interface{})
 	}
-	ajax := options["ajax"].(map[string]interface{})
+	ajax := options["ajax"].(map[interface{}]interface{})
 	timeout := int(time.Until(deadline) * 1000) //nolint:gomnd
 	// Used by ajax calls
 	ajax["timeout"] = timeout
@@ -199,7 +199,7 @@ func (db *DB) Info(ctx context.Context) (*DBInfo, error) {
 
 // Put creates a new document or update an existing document.
 // See https://pouchdb.com/api.html#create_document
-func (db *DB) Put(ctx context.Context, doc interface{}, opts map[string]interface{}) (rev string, err error) {
+func (db *DB) Put(ctx context.Context, doc interface{}, opts map[interface{}]interface{}) (rev string, err error) {
 	result, err := callBack(ctx, db, "put", doc, setTimeout(ctx, opts))
 	if err != nil {
 		return "", err
@@ -209,7 +209,7 @@ func (db *DB) Put(ctx context.Context, doc interface{}, opts map[string]interfac
 
 // Post creates a new document and lets PouchDB auto-generate the ID.
 // See https://pouchdb.com/api.html#using-dbpost
-func (db *DB) Post(ctx context.Context, doc interface{}, opts map[string]interface{}) (docID, rev string, err error) {
+func (db *DB) Post(ctx context.Context, doc interface{}, opts map[interface{}]interface{}) (docID, rev string, err error) {
 	result, err := callBack(ctx, db, "post", doc, setTimeout(ctx, opts))
 	if err != nil {
 		return "", "", err
@@ -219,7 +219,7 @@ func (db *DB) Post(ctx context.Context, doc interface{}, opts map[string]interfa
 
 // Get fetches the requested document from the database.
 // See https://pouchdb.com/api.html#fetch_document
-func (db *DB) Get(ctx context.Context, docID string, opts map[string]interface{}) (doc []byte, rev string, err error) {
+func (db *DB) Get(ctx context.Context, docID string, opts map[interface{}]interface{}) (doc []byte, rev string, err error) {
 	result, err := callBack(ctx, db, "get", docID, setTimeout(ctx, opts))
 	if err != nil {
 		return nil, "", err
@@ -230,7 +230,7 @@ func (db *DB) Get(ctx context.Context, docID string, opts map[string]interface{}
 
 // Delete marks a document as deleted.
 // See https://pouchdb.com/api.html#delete_document
-func (db *DB) Delete(ctx context.Context, docID, rev string, opts map[string]interface{}) (newRev string, err error) {
+func (db *DB) Delete(ctx context.Context, docID, rev string, opts map[interface{}]interface{}) (newRev string, err error) {
 	result, err := callBack(ctx, db, "remove", docID, rev, setTimeout(ctx, opts))
 	if err != nil {
 		return "", err
@@ -265,18 +265,18 @@ func (db *DB) Purge(ctx context.Context, docID, rev string) ([]string, error) {
 }
 
 // Destroy destroys the database.
-func (db *DB) Destroy(ctx context.Context, options map[string]interface{}) error {
+func (db *DB) Destroy(ctx context.Context, options map[interface{}]interface{}) error {
 	_, err := callBack(ctx, db, "destroy", setTimeout(ctx, options))
 	return err
 }
 
 // AllDocs returns a list of all documents in the database.
-func (db *DB) AllDocs(ctx context.Context, options map[string]interface{}) (*js.Object, error) {
+func (db *DB) AllDocs(ctx context.Context, options map[interface{}]interface{}) (*js.Object, error) {
 	return callBack(ctx, db, "allDocs", setTimeout(ctx, options))
 }
 
 // Query queries a map/reduce function.
-func (db *DB) Query(ctx context.Context, ddoc, view string, options map[string]interface{}) (*js.Object, error) {
+func (db *DB) Query(ctx context.Context, ddoc, view string, options map[interface{}]interface{}) (*js.Object, error) {
 	o := setTimeout(ctx, options)
 	return callBack(ctx, db, "query", ddoc+"/"+view, o)
 }
@@ -339,7 +339,7 @@ var jsJSON = js.Global.Get("JSON")
 
 // BulkDocs creates, updates, or deletes docs in bulk.
 // See https://pouchdb.com/api.html#batch_create
-func (db *DB) BulkDocs(ctx context.Context, docs []interface{}, options map[string]interface{}) (result *js.Object, err error) {
+func (db *DB) BulkDocs(ctx context.Context, docs []interface{}, options map[interface{}]interface{}) (result *js.Object, err error) {
 	defer RecoverError(&err)
 	jsDocs := make([]*js.Object, len(docs))
 	for i, doc := range docs {
@@ -358,7 +358,7 @@ func (db *DB) BulkDocs(ctx context.Context, docs []interface{}, options map[stri
 // Changes returns an event emitter object.
 //
 // See https://pouchdb.com/api.html#changes
-func (db *DB) Changes(ctx context.Context, options map[string]interface{}) (changes *js.Object, e error) {
+func (db *DB) Changes(ctx context.Context, options map[interface{}]interface{}) (changes *js.Object, e error) {
 	defer RecoverError(&e)
 	return db.Call("changes", setTimeout(ctx, options)), nil
 }
@@ -405,7 +405,7 @@ func attachmentObject(contentType string, content io.Reader) (att *js.Object, er
 // GetAttachment returns attachment data.
 //
 // See https://pouchdb.com/api.html#get_attachment
-func (db *DB) GetAttachment(ctx context.Context, docID, filename string, options map[string]interface{}) (*js.Object, error) {
+func (db *DB) GetAttachment(ctx context.Context, docID, filename string, options map[interface{}]interface{}) (*js.Object, error) {
 	return callBack(ctx, db, "getAttachment", docID, filename, setTimeout(ctx, options))
 }
 
@@ -462,7 +462,7 @@ const (
 
 // Replicate initiates a replication.
 // See https://pouchdb.com/api.html#replication
-func (p *PouchDB) Replicate(source, target interface{}, options map[string]interface{}) (result *js.Object, err error) {
+func (p *PouchDB) Replicate(source, target interface{}, options map[interface{}]interface{}) (result *js.Object, err error) {
 	defer RecoverError(&err)
 	return p.Call("replicate", source, target, options), nil
 }

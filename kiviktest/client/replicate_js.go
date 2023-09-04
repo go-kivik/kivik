@@ -22,9 +22,9 @@ import (
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 )
 
-func replicationOptions(ctx *kt.Context, client *kivik.Client, target, source, repID string, in map[string]interface{}) map[string]interface{} {
+func replicationOptions(ctx *kt.Context, client *kivik.Client, target, source, repID string, in map[interface{}]interface{}) map[interface{}]interface{} {
 	if in == nil {
-		in = make(map[string]interface{})
+		in = make(map[interface{}]interface{})
 	}
 	if ctx.String("mode") != "pouchdb" {
 		in["_id"] = repID

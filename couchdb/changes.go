@@ -25,7 +25,7 @@ import (
 )
 
 // Changes returns the changes stream for the database.
-func (d *db) Changes(ctx context.Context, opts map[string]interface{}) (driver.Changes, error) {
+func (d *db) Changes(ctx context.Context, opts map[interface{}]interface{}) (driver.Changes, error) {
 	key := "results"
 	if f, ok := opts["feed"]; ok {
 		if f == "eventsource" {

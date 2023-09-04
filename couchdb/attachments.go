@@ -22,7 +22,7 @@ import (
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
-func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attachment, options map[string]interface{}) (newRev string, err error) {
+func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attachment, options map[interface{}]interface{}) (newRev string, err error) {
 	if docID == "" {
 		return "", missingArg("docID")
 	}
@@ -58,7 +58,7 @@ func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attach
 	return response.Rev, nil
 }
 
-func (d *db) GetAttachmentMeta(ctx context.Context, docID, filename string, options map[string]interface{}) (*driver.Attachment, error) {
+func (d *db) GetAttachmentMeta(ctx context.Context, docID, filename string, options map[interface{}]interface{}) (*driver.Attachment, error) {
 	resp, err := d.fetchAttachment(ctx, http.MethodHead, docID, filename, options)
 	if err != nil {
 		return nil, err
@@ -67,7 +67,7 @@ func (d *db) GetAttachmentMeta(ctx context.Context, docID, filename string, opti
 	return att, err
 }
 
-func (d *db) GetAttachment(ctx context.Context, docID, filename string, options map[string]interface{}) (*driver.Attachment, error) {
+func (d *db) GetAttachment(ctx context.Context, docID, filename string, options map[interface{}]interface{}) (*driver.Attachment, error) {
 	resp, err := d.fetchAttachment(ctx, http.MethodGet, docID, filename, options)
 	if err != nil {
 		return nil, err
@@ -75,7 +75,7 @@ func (d *db) GetAttachment(ctx context.Context, docID, filename string, options 
 	return decodeAttachment(resp)
 }
 
-func (d *db) fetchAttachment(ctx context.Context, method, docID, filename string, options map[string]interface{}) (*http.Response, error) {
+func (d *db) fetchAttachment(ctx context.Context, method, docID, filename string, options map[interface{}]interface{}) (*http.Response, error) {
 	if method == "" {
 		return nil, errors.New("method required")
 	}
@@ -135,7 +135,7 @@ func getDigest(resp *http.Response) (string, error) {
 	return etag, nil
 }
 
-func (d *db) DeleteAttachment(ctx context.Context, docID, filename string, options map[string]interface{}) (newRev string, err error) {
+func (d *db) DeleteAttachment(ctx context.Context, docID, filename string, options map[interface{}]interface{}) (newRev string, err error) {
 	if docID == "" {
 		return "", missingArg("docID")
 	}

@@ -23,9 +23,9 @@ import (
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
-func (d *db) BulkDocs(ctx context.Context, docs []interface{}, options map[string]interface{}) ([]driver.BulkResult, error) {
+func (d *db) BulkDocs(ctx context.Context, docs []interface{}, options map[interface{}]interface{}) ([]driver.BulkResult, error) {
 	if options == nil {
-		options = make(map[string]interface{})
+		options = make(map[interface{}]interface{})
 	}
 	opts, err := chttp.NewOptions(options)
 	if err != nil {

@@ -45,7 +45,7 @@ func TestAllDocs(t *testing.T) {
 
 	t.Run("partitioned", func(t *testing.T) {
 		db := newTestDB(nil, errors.New("test error"))
-		_, err := db.AllDocs(context.Background(), map[string]interface{}{
+		_, err := db.AllDocs(context.Background(), map[interface{}]interface{}{
 			OptionPartition: "a1",
 		})
 		testy.ErrorRE(t, `Get "?http://example.com/testdb/_partition/a1/_all_docs"?: test error`, err)
@@ -72,7 +72,7 @@ func TestQuery(t *testing.T) {
 	})
 	t.Run("partitioned", func(t *testing.T) {
 		db := newTestDB(nil, errors.New("test error"))
-		_, err := db.Query(context.Background(), "ddoc", "view", map[string]interface{}{
+		_, err := db.Query(context.Background(), "ddoc", "view", map[interface{}]interface{}{
 			OptionPartition: "a2",
 		})
 		testy.ErrorRE(t, `Get "?http://example.com/testdb/_partition/a2/_design/ddoc/_view/view"?: test error`, err)
@@ -90,7 +90,7 @@ func TestGet(t *testing.T) {
 	type tt struct {
 		db          *db
 		id          string
-		options     map[string]interface{}
+		options     map[interface{}]interface{}
 		doc         *driver.Row
 		expected    string
 		attachments []*Attachment
@@ -105,7 +105,7 @@ func TestGet(t *testing.T) {
 	})
 	tests.Add("invalid options", tt{
 		id:      "foo",
-		options: map[string]interface{}{"foo": make(chan int)},
+		options: map[interface{}]interface{}{"foo": make(chan int)},
 		status:  http.StatusBadRequest,
 		err:     "kivik: invalid type chan int for options",
 	})
@@ -152,13 +152,13 @@ func TestGet(t *testing.T) {
 			return nil, errors.New("success")
 		}),
 		id:      "foo",
-		options: map[string]interface{}{OptionIfNoneMatch: "foo"},
+		options: map[interface{}]interface{}{OptionIfNoneMatch: "foo"},
 		status:  http.StatusBadGateway,
 		err:     `Get "?http://example.com/testdb/foo"?: success`,
 	})
 	tests.Add("invalid If-None-Match value", tt{
 		id:      "foo",
-		options: map[string]interface{}{OptionIfNoneMatch: 123},
+		options: map[interface{}]interface{}{OptionIfNoneMatch: 123},
 		status:  http.StatusBadRequest,
 		err:     "kivik: option 'If-None-Match' must be string, not int",
 	})
@@ -218,7 +218,7 @@ func TestGet(t *testing.T) {
 			Body:          Body(`bogus data`),
 		}, nil),
 		id:      "foo",
-		options: map[string]interface{}{"include_docs": true},
+		options: map[interface{}]interface{}{"include_docs": true},
 		status:  http.StatusBadGateway,
 		err:     "multipart: NextPart: EOF",
 	})
@@ -237,7 +237,7 @@ func TestGet(t *testing.T) {
 				bogus data`),
 		}, nil),
 		id:      "foo",
-		options: map[string]interface{}{"include_docs": true},
+		options: map[interface{}]interface{}{"include_docs": true},
 		status:  http.StatusBadGateway,
 		err:     "malformed MIME header (initial )?line:.*bogus data",
 	})
@@ -261,7 +261,7 @@ func TestGet(t *testing.T) {
 			}
 			return nil, errors.New("not an error")
 		}),
-		options: map[string]interface{}{OptionNoMultipartGet: true},
+		options: map[interface{}]interface{}{OptionNoMultipartGet: true},
 		id:      "foo",
 		status:  http.StatusBadGateway,
 		err:     "not an error",
@@ -296,7 +296,7 @@ Content-Length: 86
 --e89b3e29388aef23453450d10e5aaed0--`),
 		}, nil),
 		id:      "foo",
-		options: map[string]interface{}{"include_docs": true},
+		options: map[interface{}]interface{}{"include_docs": true},
 		doc: &driver.Row{
 			ID:  "foo",
 			Rev: "2-c1c6c44c4bc3c9344b037c8690468605",
@@ -351,7 +351,7 @@ Content-Length: 86
 --e89b3e29388aef23453450d10e5aaed0--`),
 		}, nil),
 		id:      "foo",
-		options: map[string]interface{}{"include_docs": true},
+		options: map[interface{}]interface{}{"include_docs": true},
 		doc: &driver.Row{
 			ID:  "foo",
 			Rev: "2-c1c6c44c4bc3c9344b037c8690468605",
@@ -454,7 +454,7 @@ func TestCreateDoc(t *testing.T) {
 		name    string
 		db      *db
 		doc     interface{}
-		options map[string]interface{}
+		options map[interface{}]interface{}
 		id, rev string
 		status  int
 		err     string
@@ -516,7 +516,7 @@ func TestCreateDoc(t *testing.T) {
 			name:    "batch mode",
 			db:      newTestDB(nil, errors.New("success")),
 			doc:     map[string]string{"foo": "bar"},
-			options: map[string]interface{}{"batch": "ok"},
+			options: map[interface{}]interface{}{"batch": "ok"},
 			status:  http.StatusBadGateway,
 			err:     `^Post "?http://example.com/testdb\?batch=ok"?: success$`,
 		},
@@ -531,21 +531,21 @@ func TestCreateDoc(t *testing.T) {
 				}
 				return nil, errors.New("success")
 			}),
-			options: map[string]interface{}{OptionFullCommit: true},
+			options: map[interface{}]interface{}{OptionFullCommit: true},
 			status:  http.StatusBadGateway,
 			err:     `Post "?http://example.com/testdb"?: success`,
 		},
 		{
 			name:    "invalid options",
 			db:      &db{},
-			options: map[string]interface{}{"foo": make(chan int)},
+			options: map[interface{}]interface{}{"foo": make(chan int)},
 			status:  http.StatusBadRequest,
 			err:     "kivik: invalid type chan int for options",
 		},
 		{
 			name:    "invalid full commit type",
 			db:      &db{},
-			options: map[string]interface{}{OptionFullCommit: 123},
+			options: map[interface{}]interface{}{OptionFullCommit: 123},
 			status:  http.StatusBadRequest,
 			err:     "kivik: option 'X-Couch-Full-Commit' must be bool, not int",
 		},
@@ -564,39 +564,39 @@ func TestCreateDoc(t *testing.T) {
 func TestOptionsToParams(t *testing.T) {
 	type otpTest struct {
 		Name     string
-		Input    map[string]interface{}
+		Input    map[interface{}]interface{}
 		Expected url.Values
 		Error    string
 	}
 	tests := []otpTest{
 		{
 			Name:  "Unmarshalable key",
-			Input: map[string]interface{}{"key": make(chan int)},
+			Input: map[interface{}]interface{}{"key": make(chan int)},
 			Error: "json: unsupported type: chan int",
 		},
 		{
 			Name:     "String",
-			Input:    map[string]interface{}{"foo": "bar"},
+			Input:    map[interface{}]interface{}{"foo": "bar"},
 			Expected: map[string][]string{"foo": {"bar"}},
 		},
 		{
 			Name:     "StringSlice",
-			Input:    map[string]interface{}{"foo": []string{"bar", "baz"}},
+			Input:    map[interface{}]interface{}{"foo": []string{"bar", "baz"}},
 			Expected: map[string][]string{"foo": {"bar", "baz"}},
 		},
 		{
 			Name:     "Bool",
-			Input:    map[string]interface{}{"foo": true},
+			Input:    map[interface{}]interface{}{"foo": true},
 			Expected: map[string][]string{"foo": {"true"}},
 		},
 		{
 			Name:     "Int",
-			Input:    map[string]interface{}{"foo": 123},
+			Input:    map[interface{}]interface{}{"foo": 123},
 			Expected: map[string][]string{"foo": {"123"}},
 		},
 		{
 			Name:  "Error",
-			Input: map[string]interface{}{"foo": []byte("foo")},
+			Input: map[interface{}]interface{}{"foo": []byte("foo")},
 			Error: "kivik: invalid type []uint8 for options",
 		},
 	}
@@ -756,7 +756,7 @@ func TestPut(t *testing.T) {
 		db      *db
 		id      string
 		doc     interface{}
-		options map[string]interface{}
+		options map[interface{}]interface{}
 		rev     string
 		status  int
 		err     string
@@ -838,7 +838,7 @@ func TestPut(t *testing.T) {
 			}),
 			id:      "foo",
 			doc:     map[string]string{"foo": "bar"},
-			options: map[string]interface{}{OptionFullCommit: true},
+			options: map[interface{}]interface{}{OptionFullCommit: true},
 			status:  http.StatusBadGateway,
 			err:     `Put "?http://example.com/testdb/foo"?: success`,
 		},
@@ -847,7 +847,7 @@ func TestPut(t *testing.T) {
 			db:      &db{},
 			id:      "foo",
 			doc:     map[string]string{"foo": "bar"},
-			options: map[string]interface{}{OptionFullCommit: 123},
+			options: map[interface{}]interface{}{OptionFullCommit: 123},
 			status:  http.StatusBadRequest,
 			err:     "kivik: option 'X-Couch-Full-Commit' must be bool, not int",
 		},
@@ -909,7 +909,7 @@ func TestDelete(t *testing.T) {
 	type tt struct {
 		db      *db
 		id      string
-		options map[string]interface{}
+		options map[interface{}]interface{}
 		newrev  string
 		status  int
 		err     string
@@ -927,14 +927,14 @@ func TestDelete(t *testing.T) {
 	})
 	tests.Add("network error", tt{
 		id:      "foo",
-		options: map[string]interface{}{"rev": "1-xxx"},
+		options: map[interface{}]interface{}{"rev": "1-xxx"},
 		db:      newTestDB(nil, errors.New("net error")),
 		status:  http.StatusBadGateway,
 		err:     `(Delete "?http://example.com/testdb/foo\?rev="?: )?net error`,
 	})
 	tests.Add("1.6.1 conflict", tt{
 		id:      "43734cf3ce6d5a37050c050bb600006b",
-		options: map[string]interface{}{"rev": "1-xxx"},
+		options: map[interface{}]interface{}{"rev": "1-xxx"},
 		db: newTestDB(&http.Response{
 			StatusCode: 409,
 			Header: http.Header{
@@ -951,7 +951,7 @@ func TestDelete(t *testing.T) {
 	})
 	tests.Add("1.6.1 success", tt{
 		id:      "43734cf3ce6d5a37050c050bb600006b",
-		options: map[string]interface{}{"rev": "1-4c6114c65e295552ab1019e2b046b10e"},
+		options: map[interface{}]interface{}{"rev": "1-4c6114c65e295552ab1019e2b046b10e"},
 		db: newTestDB(&http.Response{
 			StatusCode: 200,
 			Header: http.Header{
@@ -977,7 +977,7 @@ func TestDelete(t *testing.T) {
 			return nil, errors.New("success")
 		}),
 		id: "foo",
-		options: map[string]interface{}{
+		options: map[interface{}]interface{}{
 			"batch": "ok",
 			"rev":   "1-xxx",
 		},
@@ -987,7 +987,7 @@ func TestDelete(t *testing.T) {
 	tests.Add("invalid options", tt{
 		db: &db{},
 		id: "foo",
-		options: map[string]interface{}{
+		options: map[interface{}]interface{}{
 			"foo": make(chan int),
 			"rev": "1-xxx",
 		},
@@ -1005,7 +1005,7 @@ func TestDelete(t *testing.T) {
 			return nil, errors.New("success")
 		}),
 		id: "foo",
-		options: map[string]interface{}{
+		options: map[interface{}]interface{}{
 			OptionFullCommit: true,
 			"rev":            "1-xxx",
 		},
@@ -1015,7 +1015,7 @@ func TestDelete(t *testing.T) {
 	tests.Add("invalid full commit type", tt{
 		db: &db{},
 		id: "foo",
-		options: map[string]interface{}{
+		options: map[interface{}]interface{}{
 			OptionFullCommit: 123,
 			"rev":            "1-xxx",
 		},
@@ -1143,7 +1143,7 @@ func TestRowsQuery(t *testing.T) {
 		name     string
 		db       *db
 		path     string
-		options  map[string]interface{}
+		options  map[interface{}]interface{}
 		expected queryResult
 		status   int
 		err      string
@@ -1151,7 +1151,7 @@ func TestRowsQuery(t *testing.T) {
 		{
 			name:    "invalid options",
 			path:    "_all_docs",
-			options: map[string]interface{}{"foo": make(chan int)},
+			options: map[interface{}]interface{}{"foo": make(chan int)},
 			status:  http.StatusBadRequest,
 			err:     "kivik: invalid type chan int for options",
 		},
@@ -1278,7 +1278,7 @@ func TestRowsQuery(t *testing.T) {
 		{
 			name: "all docs with keys",
 			path: "/_all_docs",
-			options: map[string]interface{}{
+			options: map[interface{}]interface{}{
 				"keys": []string{"_design/_auth", "foo"},
 			},
 			db: newCustomDB(func(r *http.Request) (*http.Response, error) {
@@ -1323,7 +1323,7 @@ func TestRowsQuery(t *testing.T) {
 		{
 			name: "all docs with endkey",
 			path: "/_all_docs",
-			options: map[string]interface{}{
+			options: map[interface{}]interface{}{
 				"endkey": []string{"foo", "bar"},
 			},
 			db: newCustomDB(func(r *http.Request) (*http.Response, error) {
@@ -1361,7 +1361,7 @@ func TestRowsQuery(t *testing.T) {
 		{
 			name: "all docs with object keys",
 			path: "/_all_docs",
-			options: map[string]interface{}{
+			options: map[interface{}]interface{}{
 				"keys": []interface{}{"_design/_auth", "foo", []string{"bar", "baz"}},
 			},
 			db: newCustomDB(func(r *http.Request) (*http.Response, error) {
@@ -1406,7 +1406,7 @@ func TestRowsQuery(t *testing.T) {
 		{
 			name: "all docs with docs",
 			path: "/_all_docs",
-			options: map[string]interface{}{
+			options: map[interface{}]interface{}{
 				"keys": []string{"_design/_auth", "foo"},
 			},
 			db: newCustomDB(func(r *http.Request) (*http.Response, error) {
@@ -1664,7 +1664,7 @@ func TestGetMeta(t *testing.T) {
 func TestCopy(t *testing.T) {
 	type tt struct {
 		target, source string
-		options        map[string]interface{}
+		options        map[interface{}]interface{}
 		db             *db
 		rev            string
 		status         int
@@ -1692,7 +1692,7 @@ func TestCopy(t *testing.T) {
 		db:      &db{},
 		source:  "foo",
 		target:  "bar",
-		options: map[string]interface{}{"foo": make(chan int)},
+		options: map[interface{}]interface{}{"foo": make(chan int)},
 		status:  http.StatusBadRequest,
 		err:     "kivik: invalid type chan int for options",
 	})
@@ -1700,7 +1700,7 @@ func TestCopy(t *testing.T) {
 		db:      &db{},
 		source:  "foo",
 		target:  "bar",
-		options: map[string]interface{}{OptionFullCommit: 123},
+		options: map[interface{}]interface{}{OptionFullCommit: 123},
 		status:  http.StatusBadRequest,
 		err:     "kivik: option 'X-Couch-Full-Commit' must be bool, not int",
 	})
@@ -1730,7 +1730,7 @@ func TestCopy(t *testing.T) {
 	tests.Add("full commit 1.6.1", tt{
 		source: "foo",
 		target: "bar",
-		options: map[string]interface{}{
+		options: map[interface{}]interface{}{
 			OptionFullCommit: true,
 		},
 		db: newCustomDB(func(req *http.Request) (*http.Response, error) {
@@ -1759,7 +1759,7 @@ func TestCopy(t *testing.T) {
 	tests.Add("target rev", tt{
 		source: "foo",
 		target: "bar?rev=1-xxx",
-		options: map[string]interface{}{
+		options: map[interface{}]interface{}{
 			OptionFullCommit: true,
 		},
 		db: newCustomDB(func(req *http.Request) (*http.Response, error) {

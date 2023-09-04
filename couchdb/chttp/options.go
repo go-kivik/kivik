@@ -69,7 +69,7 @@ type Options struct {
 }
 
 // NewOptions converts a kivik options map into
-func NewOptions(opts map[string]interface{}) (*Options, error) {
+func NewOptions(opts map[interface{}]interface{}) (*Options, error) {
 	fullCommit, err := fullCommit(opts)
 	if err != nil {
 		return nil, err
@@ -84,7 +84,7 @@ func NewOptions(opts map[string]interface{}) (*Options, error) {
 	}, nil
 }
 
-func fullCommit(opts map[string]interface{}) (bool, error) {
+func fullCommit(opts map[interface{}]interface{}) (bool, error) {
 	fc, ok := opts[internal.OptionFullCommit]
 	if !ok {
 		return false, nil
@@ -97,7 +97,7 @@ func fullCommit(opts map[string]interface{}) (bool, error) {
 	return fcBool, nil
 }
 
-func ifNoneMatch(opts map[string]interface{}) (string, error) {
+func ifNoneMatch(opts map[interface{}]interface{}) (string, error) {
 	inm, ok := opts[internal.OptionIfNoneMatch]
 	if !ok {
 		return "", nil

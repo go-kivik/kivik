@@ -27,7 +27,7 @@ func TestAllDBs(t *testing.T) {
 	tests := []struct {
 		name     string
 		client   *client
-		options  map[string]interface{}
+		options  map[interface{}]interface{}
 		expected []string
 		status   int
 		err      string
@@ -57,7 +57,7 @@ func TestAllDBs(t *testing.T) {
 		},
 		{
 			name:    "bad options",
-			options: map[string]interface{}{"foo": func() {}},
+			options: map[interface{}]interface{}{"foo": func() {}},
 			status:  http.StatusBadRequest,
 			err:     `kivik: invalid type func\(\) for options`,
 		},
@@ -142,7 +142,7 @@ func TestCreateDB(t *testing.T) {
 	tests := []struct {
 		name    string
 		dbName  string
-		options map[string]interface{}
+		options map[interface{}]interface{}
 		client  *client
 		status  int
 		err     string
@@ -180,7 +180,7 @@ func TestCreateDB(t *testing.T) {
 		{
 			name:    "bad options",
 			dbName:  "foo",
-			options: map[string]interface{}{"foo": func() {}},
+			options: map[interface{}]interface{}{"foo": func() {}},
 			status:  http.StatusBadRequest,
 			err:     `^kivik: invalid type func\(\) for options$`,
 		},

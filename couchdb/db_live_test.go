@@ -41,7 +41,7 @@ func TestQueries_2_x(t *testing.T) {
 	}
 
 	db := client.DB("_users")
-	rows := db.AllDocs(context.Background(), map[string]interface{}{
+	rows := db.AllDocs(context.Background(), map[interface{}]interface{}{
 		"queries": []map[string]interface{}{
 			{},
 			{},
@@ -88,7 +88,7 @@ func TestQueries_3_x(t *testing.T) {
 	}
 
 	db := client.DB("_users")
-	rows := db.AllDocs(context.Background(), map[string]interface{}{
+	rows := db.AllDocs(context.Background(), map[interface{}]interface{}{
 		"queries": []map[string]interface{}{
 			{},
 			{},

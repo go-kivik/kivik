@@ -148,9 +148,9 @@ func (c *Context) Interface(key string) interface{} {
 }
 
 // Options returns an options map value.
-func (c *Context) Options(key string) map[string]interface{} {
+func (c *Context) Options(key string) map[interface{}]interface{} {
 	i := c.Config.get(name(c.T), key)
-	o, _ := i.(map[string]interface{})
+	o, _ := i.(map[interface{}]interface{})
 	return o
 }
 

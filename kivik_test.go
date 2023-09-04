@@ -47,7 +47,7 @@ func TestNew(t *testing.T) {
 		{
 			name: "connection error",
 			driver: &mock.Driver{
-				NewClientFunc: func(_ string, _ map[string]interface{}) (driver.Client, error) {
+				NewClientFunc: func(_ string, _ map[interface{}]interface{}) (driver.Client, error) {
 					return nil, errors.New("connection error")
 				},
 			},
@@ -58,7 +58,7 @@ func TestNew(t *testing.T) {
 		{
 			name: "success",
 			driver: &mock.Driver{
-				NewClientFunc: func(dsn string, _ map[string]interface{}) (driver.Client, error) {
+				NewClientFunc: func(dsn string, _ map[interface{}]interface{}) (driver.Client, error) {
 					if dsn != "oink" {
 						return nil, fmt.Errorf("Unexpected DSN: %s", dsn)
 					}
@@ -177,7 +177,7 @@ func TestDB(t *testing.T) {
 			name: "db error",
 			client: &Client{
 				driverClient: &mock.Client{
-					DBFunc: func(_ string, _ map[string]interface{}) (driver.DB, error) {
+					DBFunc: func(_ string, _ map[interface{}]interface{}) (driver.DB, error) {
 						return nil, errors.New("db error")
 					},
 				},
@@ -188,9 +188,9 @@ func TestDB(t *testing.T) {
 		func() Test {
 			client := &Client{
 				driverClient: &mock.Client{
-					DBFunc: func(dbName string, opts map[string]interface{}) (driver.DB, error) {
+					DBFunc: func(dbName string, opts map[interface{}]interface{}) (driver.DB, error) {
 						expectedDBName := "foo"
-						expectedOpts := map[string]interface{}{"foo": 123}
+						expectedOpts := map[interface{}]interface{}{"foo": 123}
 						if dbName != expectedDBName {
 							return nil, fmt.Errorf("Unexpected dbname: %s", dbName)
 						}
@@ -205,7 +205,7 @@ func TestDB(t *testing.T) {
 				name:    "success",
 				client:  client,
 				dbName:  "foo",
-				options: map[string]interface{}{"foo": 123},
+				options: map[interface{}]interface{}{"foo": 123},
 				expected: &DB{
 					client:   client,
 					name:     "foo",
@@ -239,7 +239,7 @@ func TestAllDBs(t *testing.T) {
 			name: "db error",
 			client: &Client{
 				driverClient: &mock.Client{
-					AllDBsFunc: func(_ context.Context, _ map[string]interface{}) ([]string, error) {
+					AllDBsFunc: func(_ context.Context, _ map[interface{}]interface{}) ([]string, error) {
 						return nil, errors.New("db error")
 					},
 				},
@@ -251,8 +251,8 @@ func TestAllDBs(t *testing.T) {
 			name: "success",
 			client: &Client{
 				driverClient: &mock.Client{
-					AllDBsFunc: func(_ context.Context, options map[string]interface{}) ([]string, error) {
-						expectedOptions := map[string]interface{}{"foo": 123}
+					AllDBsFunc: func(_ context.Context, options map[interface{}]interface{}) ([]string, error) {
+						expectedOptions := map[interface{}]interface{}{"foo": 123}
 						if d := testy.DiffInterface(expectedOptions, options); d != nil {
 							return nil, fmt.Errorf("Unexpected options:\n%s", d)
 						}
@@ -260,7 +260,7 @@ func TestAllDBs(t *testing.T) {
 					},
 				},
 			},
-			options:  map[string]interface{}{"foo": 123},
+			options:  map[interface{}]interface{}{"foo": 123},
 			expected: []string{"a", "b", "c"},
 		},
 		{
@@ -297,7 +297,7 @@ func TestDBExists(t *testing.T) {
 			name: "db error",
 			client: &Client{
 				driverClient: &mock.Client{
-					DBExistsFunc: func(_ context.Context, _ string, _ map[string]interface{}) (bool, error) {
+					DBExistsFunc: func(_ context.Context, _ string, _ map[interface{}]interface{}) (bool, error) {
 						return false, errors.New("db error")
 					},
 				},
@@ -309,9 +309,9 @@ func TestDBExists(t *testing.T) {
 			name: "success",
 			client: &Client{
 				driverClient: &mock.Client{
-					DBExistsFunc: func(_ context.Context, dbName string, opts map[string]interface{}) (bool, error) {
+					DBExistsFunc: func(_ context.Context, dbName string, opts map[interface{}]interface{}) (bool, error) {
 						expectedDBName := "foo"
-						expectedOpts := map[string]interface{}{"foo": 123}
+						expectedOpts := map[interface{}]interface{}{"foo": 123}
 						if dbName != expectedDBName {
 							return false, fmt.Errorf("Unexpected db name: %s", dbName)
 						}
@@ -323,7 +323,7 @@ func TestDBExists(t *testing.T) {
 				},
 			},
 			dbName:   "foo",
-			options:  map[string]interface{}{"foo": 123},
+			options:  map[interface{}]interface{}{"foo": 123},
 			expected: true,
 		},
 		{
@@ -359,7 +359,7 @@ func TestCreateDB(t *testing.T) {
 			name: "db error",
 			client: &Client{
 				driverClient: &mock.Client{
-					CreateDBFunc: func(_ context.Context, _ string, _ map[string]interface{}) error {
+					CreateDBFunc: func(_ context.Context, _ string, _ map[interface{}]interface{}) error {
 						return errors.New("db error")
 					},
 				},
@@ -371,9 +371,9 @@ func TestCreateDB(t *testing.T) {
 			name: "success",
 			client: &Client{
 				driverClient: &mock.Client{
-					CreateDBFunc: func(_ context.Context, dbName string, opts map[string]interface{}) error {
+					CreateDBFunc: func(_ context.Context, dbName string, opts map[interface{}]interface{}) error {
 						expectedDBName := "foo"
-						expectedOpts := map[string]interface{}{"foo": 123}
+						expectedOpts := map[interface{}]interface{}{"foo": 123}
 						if dbName != expectedDBName {
 							return fmt.Errorf("Unexpected dbname: %s", dbName)
 						}
@@ -382,13 +382,13 @@ func TestCreateDB(t *testing.T) {
 						}
 						return nil
 					},
-					DBFunc: func(dbName string, _ map[string]interface{}) (driver.DB, error) {
+					DBFunc: func(dbName string, _ map[interface{}]interface{}) (driver.DB, error) {
 						return &mock.DB{ID: "abc"}, nil
 					},
 				},
 			},
 			dbName: "foo",
-			opts:   map[string]interface{}{"foo": 123},
+			opts:   map[interface{}]interface{}{"foo": 123},
 		},
 		{
 			name: "closed",
@@ -420,7 +420,7 @@ func TestDestroyDB(t *testing.T) {
 			name: "db error",
 			client: &Client{
 				driverClient: &mock.Client{
-					DestroyDBFunc: func(_ context.Context, _ string, _ map[string]interface{}) error {
+					DestroyDBFunc: func(_ context.Context, _ string, _ map[interface{}]interface{}) error {
 						return errors.New("db error")
 					},
 				},
@@ -432,9 +432,9 @@ func TestDestroyDB(t *testing.T) {
 			name: "success",
 			client: &Client{
 				driverClient: &mock.Client{
-					DestroyDBFunc: func(_ context.Context, dbName string, opts map[string]interface{}) error {
+					DestroyDBFunc: func(_ context.Context, dbName string, opts map[interface{}]interface{}) error {
 						expectedDBName := "foo"
-						expectedOpts := map[string]interface{}{"foo": 123}
+						expectedOpts := map[interface{}]interface{}{"foo": 123}
 						if dbName != expectedDBName {
 							return fmt.Errorf("Unexpected dbname: %s", dbName)
 						}
@@ -446,7 +446,7 @@ func TestDestroyDB(t *testing.T) {
 				},
 			},
 			dbName: "foo",
-			opts:   map[string]interface{}{"foo": 123},
+			opts:   map[interface{}]interface{}{"foo": 123},
 		},
 		{
 			name: "closed",
@@ -539,7 +539,7 @@ func TestDBsStats(t *testing.T) {
 			name: "fallback to old driver",
 			client: &Client{
 				driverClient: &mock.Client{
-					DBFunc: func(name string, _ map[string]interface{}) (driver.DB, error) {
+					DBFunc: func(name string, _ map[interface{}]interface{}) (driver.DB, error) {
 						switch name {
 						case "foo":
 							return &mock.DB{
@@ -569,7 +569,7 @@ func TestDBsStats(t *testing.T) {
 			name: "fallback due to old server",
 			client: &Client{
 				driverClient: &mock.Client{
-					DBFunc: func(name string, _ map[string]interface{}) (driver.DB, error) {
+					DBFunc: func(name string, _ map[interface{}]interface{}) (driver.DB, error) {
 						switch name {
 						case "foo":
 							return &mock.DB{
@@ -630,7 +630,7 @@ func TestDBsStats(t *testing.T) {
 			name: "fallback error",
 			client: &Client{
 				driverClient: &mock.Client{
-					DBFunc: func(_ string, _ map[string]interface{}) (driver.DB, error) {
+					DBFunc: func(_ string, _ map[interface{}]interface{}) (driver.DB, error) {
 						return &mock.DB{
 							StatsFunc: func(_ context.Context) (*driver.DBStats, error) {
 								return nil, errors.New("fallback failure")
@@ -647,7 +647,7 @@ func TestDBsStats(t *testing.T) {
 			name: "fallback db connect error",
 			client: &Client{
 				driverClient: &mock.Client{
-					DBFunc: func(_ string, _ map[string]interface{}) (driver.DB, error) {
+					DBFunc: func(_ string, _ map[interface{}]interface{}) (driver.DB, error) {
 						return nil, errors.New("db conn failure")
 					},
 				},
@@ -824,7 +824,7 @@ func TestClientClose(t *testing.T) {
 		tests := testy.NewTable()
 		tests.Add("AllDBs", tt{
 			client: &mock.Client{
-				AllDBsFunc: func(context.Context, map[string]interface{}) ([]string, error) {
+				AllDBsFunc: func(context.Context, map[interface{}]interface{}) ([]string, error) {
 					time.Sleep(delay)
 					return nil, nil
 				},
@@ -835,7 +835,7 @@ func TestClientClose(t *testing.T) {
 		})
 		tests.Add("DBExists", tt{
 			client: &mock.Client{
-				DBExistsFunc: func(context.Context, string, map[string]interface{}) (bool, error) {
+				DBExistsFunc: func(context.Context, string, map[interface{}]interface{}) (bool, error) {
 					time.Sleep(delay)
 					return true, nil
 				},
@@ -846,7 +846,7 @@ func TestClientClose(t *testing.T) {
 		})
 		tests.Add("CreateDB", tt{
 			client: &mock.Client{
-				CreateDBFunc: func(context.Context, string, map[string]interface{}) error {
+				CreateDBFunc: func(context.Context, string, map[interface{}]interface{}) error {
 					time.Sleep(delay)
 					return nil
 				},
@@ -857,7 +857,7 @@ func TestClientClose(t *testing.T) {
 		})
 		tests.Add("DestroyDB", tt{
 			client: &mock.Client{
-				DestroyDBFunc: func(context.Context, string, map[string]interface{}) error {
+				DestroyDBFunc: func(context.Context, string, map[interface{}]interface{}) error {
 					time.Sleep(delay)
 					return nil
 				},
@@ -901,7 +901,7 @@ func TestClientClose(t *testing.T) {
 		})
 		tests.Add("DBUpdates", tt{
 			client: &mock.DBUpdater{
-				DBUpdatesFunc: func(context.Context, map[string]interface{}) (driver.DBUpdates, error) {
+				DBUpdatesFunc: func(context.Context, map[interface{}]interface{}) (driver.DBUpdates, error) {
 					return &mock.DBUpdates{
 						NextFunc: func(*driver.DBUpdate) error {
 							time.Sleep(delay)
@@ -924,9 +924,9 @@ func TestClientClose(t *testing.T) {
 		})
 		tests.Add("AllDocs", tt{
 			client: &mock.Client{
-				DBFunc: func(string, map[string]interface{}) (driver.DB, error) {
+				DBFunc: func(string, map[interface{}]interface{}) (driver.DB, error) {
 					return &mock.DB{
-						AllDocsFunc: func(context.Context, map[string]interface{}) (driver.Rows, error) {
+						AllDocsFunc: func(context.Context, map[interface{}]interface{}) (driver.Rows, error) {
 							return &mock.Rows{
 								NextFunc: func(*driver.Row) error {
 									time.Sleep(delay)
@@ -948,9 +948,9 @@ func TestClientClose(t *testing.T) {
 		})
 		tests.Add("BulkDocs", tt{
 			client: &mock.Client{
-				DBFunc: func(string, map[string]interface{}) (driver.DB, error) {
+				DBFunc: func(string, map[interface{}]interface{}) (driver.DB, error) {
 					return &mock.BulkDocer{
-						BulkDocsFunc: func(context.Context, []interface{}, map[string]interface{}) ([]driver.BulkResult, error) {
+						BulkDocsFunc: func(context.Context, []interface{}, map[interface{}]interface{}) ([]driver.BulkResult, error) {
 							time.Sleep(delay)
 							return nil, nil
 						},
@@ -968,9 +968,9 @@ func TestClientClose(t *testing.T) {
 		})
 		tests.Add("BulkGet", tt{
 			client: &mock.Client{
-				DBFunc: func(string, map[string]interface{}) (driver.DB, error) {
+				DBFunc: func(string, map[interface{}]interface{}) (driver.DB, error) {
 					return &mock.BulkGetter{
-						BulkGetFunc: func(context.Context, []driver.BulkGetReference, map[string]interface{}) (driver.Rows, error) {
+						BulkGetFunc: func(context.Context, []driver.BulkGetReference, map[interface{}]interface{}) (driver.Rows, error) {
 							return &mock.Rows{
 								NextFunc: func(*driver.Row) error {
 									time.Sleep(delay)
@@ -992,9 +992,9 @@ func TestClientClose(t *testing.T) {
 		})
 		tests.Add("Changes", tt{
 			client: &mock.Client{
-				DBFunc: func(string, map[string]interface{}) (driver.DB, error) {
+				DBFunc: func(string, map[interface{}]interface{}) (driver.DB, error) {
 					return &mock.DB{
-						ChangesFunc: func(context.Context, map[string]interface{}) (driver.Changes, error) {
+						ChangesFunc: func(context.Context, map[interface{}]interface{}) (driver.Changes, error) {
 							return &mock.Changes{
 								NextFunc: func(*driver.Change) error {
 									time.Sleep(delay)
@@ -1019,9 +1019,9 @@ func TestClientClose(t *testing.T) {
 		})
 		tests.Add("DesignDocs", tt{
 			client: &mock.Client{
-				DBFunc: func(string, map[string]interface{}) (driver.DB, error) {
+				DBFunc: func(string, map[interface{}]interface{}) (driver.DB, error) {
 					return &mock.DesignDocer{
-						DesignDocsFunc: func(context.Context, map[string]interface{}) (driver.Rows, error) {
+						DesignDocsFunc: func(context.Context, map[interface{}]interface{}) (driver.Rows, error) {
 							return &mock.Rows{
 								NextFunc: func(*driver.Row) error {
 									time.Sleep(delay)
@@ -1043,9 +1043,9 @@ func TestClientClose(t *testing.T) {
 		})
 		tests.Add("LocalDocs", tt{
 			client: &mock.Client{
-				DBFunc: func(string, map[string]interface{}) (driver.DB, error) {
+				DBFunc: func(string, map[interface{}]interface{}) (driver.DB, error) {
 					return &mock.LocalDocer{
-						LocalDocsFunc: func(context.Context, map[string]interface{}) (driver.Rows, error) {
+						LocalDocsFunc: func(context.Context, map[interface{}]interface{}) (driver.Rows, error) {
 							return &mock.Rows{
 								NextFunc: func(*driver.Row) error {
 									time.Sleep(delay)
@@ -1067,9 +1067,9 @@ func TestClientClose(t *testing.T) {
 		})
 		tests.Add("Query", tt{
 			client: &mock.Client{
-				DBFunc: func(string, map[string]interface{}) (driver.DB, error) {
+				DBFunc: func(string, map[interface{}]interface{}) (driver.DB, error) {
 					return &mock.DB{
-						QueryFunc: func(context.Context, string, string, map[string]interface{}) (driver.Rows, error) {
+						QueryFunc: func(context.Context, string, string, map[interface{}]interface{}) (driver.Rows, error) {
 							return &mock.Rows{
 								NextFunc: func(*driver.Row) error {
 									time.Sleep(delay)
@@ -1091,9 +1091,9 @@ func TestClientClose(t *testing.T) {
 		})
 		tests.Add("Find", tt{
 			client: &mock.Client{
-				DBFunc: func(string, map[string]interface{}) (driver.DB, error) {
+				DBFunc: func(string, map[interface{}]interface{}) (driver.DB, error) {
 					return &mock.Finder{
-						FindFunc: func(context.Context, interface{}, map[string]interface{}) (driver.Rows, error) {
+						FindFunc: func(context.Context, interface{}, map[interface{}]interface{}) (driver.Rows, error) {
 							return &mock.Rows{
 								NextFunc: func(*driver.Row) error {
 									time.Sleep(delay)
@@ -1115,9 +1115,9 @@ func TestClientClose(t *testing.T) {
 		})
 		tests.Add("Get", tt{
 			client: &mock.Client{
-				DBFunc: func(string, map[string]interface{}) (driver.DB, error) {
+				DBFunc: func(string, map[interface{}]interface{}) (driver.DB, error) {
 					return &mock.DB{
-						GetFunc: func(context.Context, string, map[string]interface{}) (*driver.Document, error) {
+						GetFunc: func(context.Context, string, map[interface{}]interface{}) (*driver.Document, error) {
 							time.Sleep(delay)
 							return &driver.Document{}, nil
 						},
@@ -1135,7 +1135,7 @@ func TestClientClose(t *testing.T) {
 		})
 		tests.Add("RevsDiff", tt{
 			client: &mock.Client{
-				DBFunc: func(string, map[string]interface{}) (driver.DB, error) {
+				DBFunc: func(string, map[interface{}]interface{}) (driver.DB, error) {
 					return &mock.RevsDiffer{
 						RevsDiffFunc: func(context.Context, interface{}) (driver.Rows, error) {
 							return &mock.Rows{

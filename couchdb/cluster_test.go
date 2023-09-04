@@ -32,7 +32,7 @@ const optionEnsureDBsExist = "ensure_dbs_exist"
 func TestClusterStatus(t *testing.T) {
 	type tst struct {
 		client   *client
-		options  map[string]interface{}
+		options  map[interface{}]interface{}
 		expected string
 		status   int
 		err      string
@@ -59,7 +59,7 @@ func TestClusterStatus(t *testing.T) {
 		client: newCustomClient(func(r *http.Request) (*http.Response, error) {
 			return nil, nil
 		}),
-		options: map[string]interface{}{
+		options: map[interface{}]interface{}{
 			optionEnsureDBsExist: 1.0,
 		},
 		status: http.StatusBadRequest,
@@ -71,7 +71,7 @@ func TestClusterStatus(t *testing.T) {
 			err := json.Unmarshal([]byte(r.URL.Query().Get(optionEnsureDBsExist)), &result)
 			return nil, &kivik.Error{Status: http.StatusBadRequest, Err: err}
 		}),
-		options: map[string]interface{}{
+		options: map[interface{}]interface{}{
 			optionEnsureDBsExist: "foo,bar,baz",
 		},
 		status: http.StatusBadRequest,
@@ -100,7 +100,7 @@ func TestClusterStatus(t *testing.T) {
 					Body: io.NopCloser(strings.NewReader(`{"state":"cluster_finished"}`)),
 				}, nil
 			}),
-			options: map[string]interface{}{
+			options: map[interface{}]interface{}{
 				optionEnsureDBsExist: `["foo","bar","baz"]`,
 			},
 			expected: "cluster_finished",

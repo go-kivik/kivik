@@ -33,7 +33,7 @@ func encodeKey(i interface{}) (string, error) {
 
 var jsonKeys = []string{"endkey", "end_key", "key", "startkey", "start_key", "keys", "doc_ids"}
 
-func encodeKeys(opts map[string]interface{}) error {
+func encodeKeys(opts map[interface{}]interface{}) error {
 	for _, key := range jsonKeys {
 		if v, ok := opts[key]; ok {
 			value, err := encodeKey(v)

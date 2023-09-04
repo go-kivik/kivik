@@ -140,7 +140,7 @@ func replicationEndpoint(dsn string, object interface{}) (name string, obj inter
 	return "<unknown>", obj, nil
 }
 
-func (c *client) Replicate(_ context.Context, targetDSN, sourceDSN string, options map[string]interface{}) (driver.Replication, error) {
+func (c *client) Replicate(_ context.Context, targetDSN, sourceDSN string, options map[interface{}]interface{}) (driver.Replication, error) {
 	opts := c.options(options)
 	// Allow overriding source and target with options, i.e. for PouchDB objects
 	sourceName, sourceObj, err := replicationEndpoint(sourceDSN, opts["source"])
@@ -160,7 +160,7 @@ func (c *client) Replicate(_ context.Context, targetDSN, sourceDSN string, optio
 	return c.newReplication(targetName, sourceName, rep), nil
 }
 
-func (c *client) GetReplications(_ context.Context, options map[string]interface{}) ([]driver.Replication, error) {
+func (c *client) GetReplications(_ context.Context, options map[interface{}]interface{}) ([]driver.Replication, error) {
 	for range options {
 		return nil, &kivik.Error{Status: http.StatusBadRequest, Message: "options not yet supported"}
 	}

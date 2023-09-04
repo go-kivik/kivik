@@ -27,7 +27,7 @@ import (
 
 func TestChanges(t *testing.T) {
 	type tst struct {
-		opts            map[string]interface{}
+		opts            map[interface{}]interface{}
 		status          int
 		err             string
 		changesErr      string

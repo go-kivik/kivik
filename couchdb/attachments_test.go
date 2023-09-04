@@ -45,7 +45,7 @@ func TestPutAttachment(t *testing.T) {
 		db      *db
 		id      string
 		att     *driver.Attachment
-		options map[string]interface{}
+		options map[interface{}]interface{}
 
 		newRev string
 		status int
@@ -61,14 +61,14 @@ func TestPutAttachment(t *testing.T) {
 		{
 			name:    "nil attachment",
 			id:      "foo",
-			options: map[string]interface{}{"rev": "1-xxx"},
+			options: map[interface{}]interface{}{"rev": "1-xxx"},
 			status:  http.StatusBadRequest,
 			err:     "kivik: att required",
 		},
 		{
 			name:    "missing filename",
 			id:      "foo",
-			options: map[string]interface{}{"rev": "1-xxx"},
+			options: map[interface{}]interface{}{"rev": "1-xxx"},
 			att:     &driver.Attachment{},
 			status:  http.StatusBadRequest,
 			err:     "kivik: att.Filename required",
@@ -76,7 +76,7 @@ func TestPutAttachment(t *testing.T) {
 		{
 			name:    "no body",
 			id:      "foo",
-			options: map[string]interface{}{"rev": "1-xxx"},
+			options: map[interface{}]interface{}{"rev": "1-xxx"},
 			att: &driver.Attachment{
 				Filename:    "x.jpg",
 				ContentType: "image/jpeg",
@@ -88,7 +88,7 @@ func TestPutAttachment(t *testing.T) {
 			name:    "network error",
 			db:      newTestDB(nil, errors.New("net error")),
 			id:      "foo",
-			options: map[string]interface{}{"rev": "1-xxx"},
+			options: map[interface{}]interface{}{"rev": "1-xxx"},
 			att: &driver.Attachment{
 				Filename:    "x.jpg",
 				ContentType: "image/jpeg",
@@ -100,7 +100,7 @@ func TestPutAttachment(t *testing.T) {
 		{
 			name:    "1.6.1",
 			id:      "foo",
-			options: map[string]interface{}{"rev": "1-4c6114c65e295552ab1019e2b046b10e"},
+			options: map[interface{}]interface{}{"rev": "1-4c6114c65e295552ab1019e2b046b10e"},
 			att: &driver.Attachment{
 				Filename:    "foo.txt",
 				ContentType: "text/plain",
@@ -165,7 +165,7 @@ func TestPutAttachment(t *testing.T) {
 				ContentType: "text/plain",
 				Content:     Body("x"),
 			},
-			options: map[string]interface{}{
+			options: map[interface{}]interface{}{
 				"foo": "oink",
 				"rev": "1-xxx",
 			},
@@ -181,7 +181,7 @@ func TestPutAttachment(t *testing.T) {
 				ContentType: "text/plain",
 				Content:     Body("x"),
 			},
-			options: map[string]interface{}{"foo": make(chan int)},
+			options: map[interface{}]interface{}{"foo": make(chan int)},
 			status:  http.StatusBadRequest,
 			err:     "kivik: invalid type chan int for options",
 		},
@@ -202,7 +202,7 @@ func TestPutAttachment(t *testing.T) {
 				ContentType: "text/plain",
 				Content:     Body("x"),
 			},
-			options: map[string]interface{}{
+			options: map[interface{}]interface{}{
 				OptionFullCommit: true,
 				"rev":            "1-xxx",
 			},
@@ -218,7 +218,7 @@ func TestPutAttachment(t *testing.T) {
 				ContentType: "text/plain",
 				Content:     Body("x"),
 			},
-			options: map[string]interface{}{
+			options: map[interface{}]interface{}{
 				"rev":            "1-xxx",
 				OptionFullCommit: 123,
 			},
@@ -244,7 +244,7 @@ func TestPutAttachment(t *testing.T) {
 					ContentType: "text/plain",
 					Content:     Body("x"),
 				},
-				options: map[string]interface{}{
+				options: map[interface{}]interface{}{
 					"rev":            "1-xxx",
 					OptionFullCommit: true,
 				},
@@ -277,7 +277,6 @@ func TestGetAttachmentMeta(t *testing.T) {
 		name         string
 		db           *db
 		id, filename string
-		options      map[string]interface{}
 
 		expected *driver.Attachment
 		status   int
@@ -317,7 +316,7 @@ func TestGetAttachmentMeta(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			att, err := test.db.GetAttachmentMeta(context.Background(), test.id, test.filename, test.options)
+			att, err := test.db.GetAttachmentMeta(context.Background(), test.id, test.filename, nil)
 			testy.StatusErrorRE(t, test.err, test.status, err)
 			if d := testy.DiffInterface(test.expected, att); d != nil {
 				t.Errorf("Unexpected attachment:\n%s", d)
@@ -371,7 +370,6 @@ func TestGetAttachment(t *testing.T) {
 		name         string
 		db           *db
 		id, filename string
-		options      map[string]interface{}
 
 		expected *driver.Attachment
 		content  string
@@ -414,7 +412,7 @@ func TestGetAttachment(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			att, err := test.db.GetAttachment(context.Background(), test.id, test.filename, test.options)
+			att, err := test.db.GetAttachment(context.Background(), test.id, test.filename, nil)
 			testy.StatusErrorRE(t, test.err, test.status, err)
 			fileContent, err := io.ReadAll(att.Content)
 			if err != nil {
@@ -437,7 +435,7 @@ func TestFetchAttachment(t *testing.T) {
 		name                 string
 		db                   *db
 		method, id, filename string
-		options              map[string]interface{}
+		options              map[interface{}]interface{}
 
 		resp   *http.Response
 		status int
@@ -488,7 +486,7 @@ func TestFetchAttachment(t *testing.T) {
 			method:   "GET",
 			id:       "foo",
 			filename: "foo.txt",
-			options:  map[string]interface{}{"foo": "bar"},
+			options:  map[interface{}]interface{}{"foo": "bar"},
 			status:   http.StatusBadGateway,
 			err:      "foo=bar",
 		},
@@ -498,7 +496,7 @@ func TestFetchAttachment(t *testing.T) {
 			method:   "GET",
 			id:       "foo",
 			filename: "foo.txt",
-			options:  map[string]interface{}{"foo": make(chan int)},
+			options:  map[interface{}]interface{}{"foo": make(chan int)},
 			status:   http.StatusBadRequest,
 			err:      "kivik: invalid type chan int for options",
 		},
@@ -516,7 +514,7 @@ func TestFetchAttachment(t *testing.T) {
 			method:   "GET",
 			id:       "foo",
 			filename: "foo.txt",
-			options:  map[string]interface{}{OptionIfNoneMatch: "foo"},
+			options:  map[interface{}]interface{}{OptionIfNoneMatch: "foo"},
 			status:   http.StatusBadGateway,
 			err:      "success",
 		},
@@ -526,7 +524,7 @@ func TestFetchAttachment(t *testing.T) {
 			method:   "GET",
 			id:       "foo",
 			filename: "foo.txt",
-			options:  map[string]interface{}{OptionIfNoneMatch: 123},
+			options:  map[interface{}]interface{}{OptionIfNoneMatch: 123},
 			status:   http.StatusBadRequest,
 			err:      "kivik: option 'If-None-Match' must be string, not int",
 		},
@@ -615,7 +613,7 @@ func TestDeleteAttachment(t *testing.T) {
 		name         string
 		db           *db
 		id, filename string
-		options      map[string]interface{}
+		options      map[interface{}]interface{}
 
 		newRev string
 		status int
@@ -635,14 +633,14 @@ func TestDeleteAttachment(t *testing.T) {
 		{
 			name:    "no filename",
 			id:      "foo",
-			options: map[string]interface{}{"rev": "1-xxx"},
+			options: map[interface{}]interface{}{"rev": "1-xxx"},
 			status:  http.StatusBadRequest,
 			err:     "kivik: filename required",
 		},
 		{
 			name:     "network error",
 			id:       "foo",
-			options:  map[string]interface{}{"rev": "1-xxx"},
+			options:  map[interface{}]interface{}{"rev": "1-xxx"},
 			filename: "foo.txt",
 			db:       newTestDB(nil, errors.New("net error")),
 			status:   http.StatusBadGateway,
@@ -651,7 +649,7 @@ func TestDeleteAttachment(t *testing.T) {
 		{
 			name:     "success 1.6.1",
 			id:       "foo",
-			options:  map[string]interface{}{"rev": "2-8ee3381d24ee4ac3e9f8c1f6c7395641"},
+			options:  map[interface{}]interface{}{"rev": "2-8ee3381d24ee4ac3e9f8c1f6c7395641"},
 			filename: "foo.txt",
 			db: newTestDB(&http.Response{
 				StatusCode: 200,
@@ -680,7 +678,7 @@ func TestDeleteAttachment(t *testing.T) {
 			}),
 			id:       "foo",
 			filename: "foo.txt",
-			options: map[string]interface{}{
+			options: map[interface{}]interface{}{
 				"rev": "1-xxx",
 				"foo": "oink",
 			},
@@ -692,7 +690,7 @@ func TestDeleteAttachment(t *testing.T) {
 			db:       &db{},
 			id:       "foo",
 			filename: "foo.txt",
-			options: map[string]interface{}{
+			options: map[interface{}]interface{}{
 				"rev": "1-xxx",
 				"foo": make(chan int),
 			},
@@ -712,7 +710,7 @@ func TestDeleteAttachment(t *testing.T) {
 			}),
 			id:       "foo",
 			filename: "foo.txt",
-			options: map[string]interface{}{
+			options: map[interface{}]interface{}{
 				"rev":            "1-xxx",
 				OptionFullCommit: true,
 			},
@@ -724,7 +722,7 @@ func TestDeleteAttachment(t *testing.T) {
 			db:       &db{},
 			id:       "foo",
 			filename: "foo.txt",
-			options: map[string]interface{}{
+			options: map[interface{}]interface{}{
 				"rev":            "1-xxx",
 				OptionFullCommit: 123,
 			},

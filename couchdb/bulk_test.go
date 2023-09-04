@@ -29,7 +29,7 @@ func TestBulkDocs(t *testing.T) {
 		name    string
 		db      *db
 		docs    []interface{}
-		options map[string]interface{}
+		options map[interface{}]interface{}
 		status  int
 		err     string
 	}{
@@ -89,7 +89,7 @@ func TestBulkDocs(t *testing.T) {
 		},
 		{
 			name:    "new_edits",
-			options: map[string]interface{}{"new_edits": true},
+			options: map[interface{}]interface{}{"new_edits": true},
 			db: newCustomDB(func(req *http.Request) (*http.Response, error) {
 				defer req.Body.Close() // nolint: errcheck
 				var body struct {
@@ -109,7 +109,7 @@ func TestBulkDocs(t *testing.T) {
 		},
 		{
 			name:    "full commit",
-			options: map[string]interface{}{OptionFullCommit: true},
+			options: map[interface{}]interface{}{OptionFullCommit: true},
 			db: newCustomDB(func(req *http.Request) (*http.Response, error) {
 				defer req.Body.Close() // nolint: errcheck
 				var body map[string]interface{}
@@ -131,7 +131,7 @@ func TestBulkDocs(t *testing.T) {
 		{
 			name:    "invalid full commit type",
 			db:      &db{},
-			options: map[string]interface{}{OptionFullCommit: 123},
+			options: map[interface{}]interface{}{OptionFullCommit: 123},
 			status:  http.StatusBadRequest,
 			err:     "kivik: option 'X-Couch-Full-Commit' must be bool, not int",
 		},

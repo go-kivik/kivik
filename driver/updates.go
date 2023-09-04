@@ -37,5 +37,5 @@ type DBUpdates interface {
 type DBUpdater interface {
 	// DBUpdates must return a DBUpdate iterator. The context, or the iterator's
 	// Close method, may be used to close the iterator.
-	DBUpdates(context.Context, map[string]interface{}) (DBUpdates, error)
+	DBUpdates(context.Context, map[interface{}]interface{}) (DBUpdates, error)
 }

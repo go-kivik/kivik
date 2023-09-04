@@ -60,13 +60,17 @@ func (d *db) path(path string) string {
 	return url.String()
 }
 
-func optionsToParams(opts ...map[string]interface{}) (url.Values, error) {
+func optionsToParams(opts ...map[interface{}]interface{}) (url.Values, error) {
 	params := url.Values{}
 	for _, optsSet := range opts {
 		if err := encodeKeys(optsSet); err != nil {
 			return nil, err
 		}
-		for key, i := range optsSet {
+		for k, i := range optsSet {
+			key, ok := k.(string)
+			if !ok {
+				continue
+			}
 			var values []string
 			switch v := i.(type) {
 			case string:
@@ -89,7 +93,7 @@ func optionsToParams(opts ...map[string]interface{}) (url.Values, error) {
 }
 
 // rowsQuery performs a query that returns a rows iterator.
-func (d *db) rowsQuery(ctx context.Context, path string, opts map[string]interface{}) (driver.Rows, error) {
+func (d *db) rowsQuery(ctx context.Context, path string, opts map[interface{}]interface{}) (driver.Rows, error) {
 	payload := make(map[string]interface{})
 	if keys := opts["keys"]; keys != nil {
 		delete(opts, "keys")
@@ -129,7 +133,7 @@ func (d *db) rowsQuery(ctx context.Context, path string, opts map[string]interfa
 }
 
 // AllDocs returns all of the documents in the database.
-func (d *db) AllDocs(ctx context.Context, opts map[string]interface{}) (driver.Rows, error) {
+func (d *db) AllDocs(ctx context.Context, opts map[interface{}]interface{}) (driver.Rows, error) {
 	reqPath := "_all_docs"
 	if part, ok := opts[OptionPartition].(string); ok {
 		delete(opts, OptionPartition)
@@ -139,17 +143,17 @@ func (d *db) AllDocs(ctx context.Context, opts map[string]interface{}) (driver.R
 }
 
 // DesignDocs returns all of the documents in the database.
-func (d *db) DesignDocs(ctx context.Context, opts map[string]interface{}) (driver.Rows, error) {
+func (d *db) DesignDocs(ctx context.Context, opts map[interface{}]interface{}) (driver.Rows, error) {
 	return d.rowsQuery(ctx, "_design_docs", opts)
 }
 
 // LocalDocs returns all of the documents in the database.
-func (d *db) LocalDocs(ctx context.Context, opts map[string]interface{}) (driver.Rows, error) {
+func (d *db) LocalDocs(ctx context.Context, opts map[interface{}]interface{}) (driver.Rows, error) {
 	return d.rowsQuery(ctx, "_local_docs", opts)
 }
 
 // Query queries a view.
-func (d *db) Query(ctx context.Context, ddoc, view string, opts map[string]interface{}) (driver.Rows, error) {
+func (d *db) Query(ctx context.Context, ddoc, view string, opts map[interface{}]interface{}) (driver.Rows, error) {
 	reqPath := fmt.Sprintf("_design/%s/_view/%s", chttp.EncodeDocID(ddoc), chttp.EncodeDocID(view))
 	if part, ok := opts[OptionPartition].(string); ok {
 		delete(opts, OptionPartition)
@@ -190,7 +194,7 @@ func (*document) Offset() int64     { return 0 }
 func (*document) TotalRows() int64  { return 0 }
 
 // Get fetches the requested document.
-func (d *db) Get(ctx context.Context, docID string, options map[string]interface{}) (driver.Rows, error) {
+func (d *db) Get(ctx context.Context, docID string, options map[interface{}]interface{}) (driver.Rows, error) {
 	resp, err := d.get(ctx, http.MethodGet, docID, options)
 	if err != nil {
 		return nil, err
@@ -326,7 +330,7 @@ func (a *multipartAttachments) Close() error {
 }
 
 // Rev returns the most current rev of the requested document.
-func (d *db) GetRev(ctx context.Context, docID string, options map[string]interface{}) (string, error) {
+func (d *db) GetRev(ctx context.Context, docID string, options map[interface{}]interface{}) (string, error) {
 	resp, err := d.get(ctx, http.MethodHead, docID, options)
 	if err != nil {
 		return "", err
@@ -339,7 +343,7 @@ func (d *db) GetRev(ctx context.Context, docID string, options map[string]interf
 	return rev, err
 }
 
-func (d *db) get(ctx context.Context, method, docID string, options map[string]interface{}) (*http.Response, error) {
+func (d *db) get(ctx context.Context, method, docID string, options map[interface{}]interface{}) (*http.Response, error) {
 	if docID == "" {
 		return nil, missingArg("docID")
 	}
@@ -365,7 +369,7 @@ func (d *db) get(ctx context.Context, method, docID string, options map[string]i
 	return resp, err
 }
 
-func (d *db) CreateDoc(ctx context.Context, doc interface{}, options map[string]interface{}) (docID, rev string, err error) {
+func (d *db) CreateDoc(ctx context.Context, doc interface{}, options map[interface{}]interface{}) (docID, rev string, err error) {
 	result := struct {
 		ID  string `json:"id"`
 		Rev string `json:"rev"`
@@ -391,7 +395,7 @@ func (d *db) CreateDoc(ctx context.Context, doc interface{}, options map[string]
 	return result.ID, result.Rev, err
 }
 
-func putOpts(doc interface{}, options map[string]interface{}) (*chttp.Options, error) {
+func putOpts(doc interface{}, options map[interface{}]interface{}) (*chttp.Options, error) {
 	opts, err := chttp.NewOptions(options)
 	if err != nil {
 		return nil, err
@@ -416,7 +420,7 @@ func putOpts(doc interface{}, options map[string]interface{}) (*chttp.Options, e
 	return opts, nil
 }
 
-func (d *db) Put(ctx context.Context, docID string, doc interface{}, options map[string]interface{}) (rev string, err error) {
+func (d *db) Put(ctx context.Context, docID string, doc interface{}, options map[interface{}]interface{}) (rev string, err error) {
 	if docID == "" {
 		return "", missingArg("docID")
 	}
@@ -765,7 +769,7 @@ func copyWithAttachmentStubs(w io.Writer, r io.Reader, atts map[string]*stub) er
 	return nil
 }
 
-func (d *db) Delete(ctx context.Context, docID string, options map[string]interface{}) (string, error) {
+func (d *db) Delete(ctx context.Context, docID string, options map[interface{}]interface{}) (string, error) {
 	if docID == "" {
 		return "", missingArg("docID")
 	}
@@ -870,7 +874,7 @@ func (d *db) SetSecurity(ctx context.Context, security *driver.Security) error {
 	return chttp.ResponseError(res)
 }
 
-func (d *db) Copy(ctx context.Context, targetID, sourceID string, options map[string]interface{}) (targetRev string, err error) {
+func (d *db) Copy(ctx context.Context, targetID, sourceID string, options map[interface{}]interface{}) (targetRev string, err error) {
 	if sourceID == "" {
 		return "", missingArg("sourceID")
 	}

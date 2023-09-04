@@ -40,7 +40,7 @@ func init() {
 
 // NewClient returns a PouchDB client handle. Provide a dsn only for remote
 // databases. Otherwise specify ""
-func (d *pouchDriver) NewClient(dsn string, _ map[string]interface{}) (driver.Client, error) {
+func (d *pouchDriver) NewClient(dsn string, _ map[interface{}]interface{}) (driver.Client, error) {
 	var u *url.URL
 	var auth authenticator
 	var user *url.Userinfo
@@ -57,7 +57,7 @@ func (d *pouchDriver) NewClient(dsn string, _ map[string]interface{}) (driver.Cl
 	client := &client{
 		dsn:   u,
 		pouch: pouch,
-		opts:  make(map[string]Options),
+		opts:  make(map[interface{}]Options),
 	}
 	if user != nil {
 		pass, _ := user.Password()
@@ -74,7 +74,7 @@ func (d *pouchDriver) NewClient(dsn string, _ map[string]interface{}) (driver.Cl
 
 type client struct {
 	dsn   *url.URL
-	opts  map[string]Options
+	opts  map[interface{}]Options
 	pouch *bindings.PouchDB
 
 	// This mantains a list of running replications
@@ -86,7 +86,7 @@ var _ driver.Client = &client{}
 
 // AllDBs returns the list of all existing databases. This function depends on
 // the pouchdb-all-dbs plugin being loaded.
-func (c *client) AllDBs(ctx context.Context, _ map[string]interface{}) ([]string, error) {
+func (c *client) AllDBs(ctx context.Context, _ map[interface{}]interface{}) ([]string, error) {
 	if c.dsn == nil {
 		return c.pouch.AllDBs(ctx)
 	}
@@ -113,7 +113,7 @@ func (c *client) dbURL(db string) string {
 }
 
 // Options is a struct of options, as documented in the PouchDB API.
-type Options map[string]interface{}
+type Options map[interface{}]interface{}
 
 func (c *client) options(options ...Options) Options {
 	o := Options{}
@@ -137,7 +137,7 @@ func (c *client) isRemote() bool {
 // DBExists returns true if the requested DB exists. This function only works
 // for remote databases. For local databases, it creates the database.
 // Silly PouchDB.
-func (c *client) DBExists(ctx context.Context, dbName string, options map[string]interface{}) (bool, error) {
+func (c *client) DBExists(ctx context.Context, dbName string, options map[interface{}]interface{}) (bool, error) {
 	opts := c.options(options, Options{"skip_setup": true})
 	_, err := c.pouch.New(c.dbURL(dbName), opts).Info(ctx)
 	if err == nil {
@@ -149,7 +149,7 @@ func (c *client) DBExists(ctx context.Context, dbName string, options map[string
 	return false, err
 }
 
-func (c *client) CreateDB(ctx context.Context, dbName string, options map[string]interface{}) error {
+func (c *client) CreateDB(ctx context.Context, dbName string, options map[interface{}]interface{}) error {
 	if c.isRemote() {
 		if exists, _ := c.DBExists(ctx, dbName, options); exists {
 			return &kivik.Error{Status: http.StatusPreconditionFailed, Message: "database exists"}
@@ -160,7 +160,7 @@ func (c *client) CreateDB(ctx context.Context, dbName string, options map[string
 	return err
 }
 
-func (c *client) DestroyDB(ctx context.Context, dbName string, options map[string]interface{}) error {
+func (c *client) DestroyDB(ctx context.Context, dbName string, options map[interface{}]interface{}) error {
 	opts := c.options(options)
 	exists, err := c.DBExists(ctx, dbName, opts)
 	if err != nil {
@@ -173,7 +173,7 @@ func (c *client) DestroyDB(ctx context.Context, dbName string, options map[strin
 	return c.pouch.New(c.dbURL(dbName), opts).Destroy(ctx, nil)
 }
 
-func (c *client) DB(dbName string, options map[string]interface{}) (driver.DB, error) {
+func (c *client) DB(dbName string, options map[interface{}]interface{}) (driver.DB, error) {
 	opts := c.options(options)
 	return &db{
 		// TODO: #68 Consider deferring this pouch.New call until the first use,

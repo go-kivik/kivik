@@ -205,7 +205,7 @@ func registerSuiteCouch20() {
 		"Query/RW/group/Admin/WithoutDocs/ScanDoc.status":  http.StatusBadRequest,
 		"Query/RW/group/NoAuth/WithoutDocs/ScanDoc.status": http.StatusBadRequest,
 
-		"Changes/Continuous.options": map[string]interface{}{
+		"Changes/Continuous.options": map[interface{}]interface{}{
 			"feed":      "continuous",
 			"since":     "now",
 			"heartbeat": 6000,

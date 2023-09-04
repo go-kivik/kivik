@@ -33,7 +33,7 @@ func TestBulkGet(t *testing.T) {
 	type tst struct {
 		db      *db
 		docs    []driver.BulkGetReference
-		options map[string]interface{}
+		options map[interface{}]interface{}
 		status  int
 		err     string
 
@@ -139,7 +139,7 @@ func TestBulkGet(t *testing.T) {
 			}),
 			dbName: "xxx",
 		},
-		options: map[string]interface{}{
+		options: map[interface{}]interface{}{
 			"revs": true,
 		},
 		expected: &driver.Row{

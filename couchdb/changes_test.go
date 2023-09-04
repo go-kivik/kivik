@@ -60,7 +60,7 @@ func TestChanges_metadata(t *testing.T) {
 func TestChanges(t *testing.T) {
 	tests := []struct {
 		name    string
-		options map[string]interface{}
+		options map[interface{}]interface{}
 		db      *db
 		status  int
 		err     string
@@ -72,13 +72,13 @@ func TestChanges(t *testing.T) {
 				StatusCode: http.StatusBadRequest,
 				Body:       Body(""),
 			}, nil),
-			options: map[string]interface{}{"foo": make(chan int)},
+			options: map[interface{}]interface{}{"foo": make(chan int)},
 			status:  http.StatusBadRequest,
 			err:     "kivik: invalid type chan int for options",
 		},
 		{
 			name:    "eventsource",
-			options: map[string]interface{}{"feed": "eventsource"},
+			options: map[interface{}]interface{}{"feed": "eventsource"},
 			status:  http.StatusBadRequest,
 			err:     "kivik: eventsource feed not supported, use 'continuous'",
 		},
@@ -91,7 +91,7 @@ func TestChanges(t *testing.T) {
 		{
 			name:    "continuous",
 			db:      newTestDB(nil, errors.New("net error")),
-			options: map[string]interface{}{"feed": "continuous"},
+			options: map[interface{}]interface{}{"feed": "continuous"},
 			status:  http.StatusBadGateway,
 			err:     `Post "?http://example.com/testdb/_changes\?feed=continuous"?: net error`,
 		},
@@ -200,7 +200,7 @@ func TestChanges(t *testing.T) {
 					Body: Body(`{"seq":3,"id":"43734cf3ce6d5a37050c050bb600006b","changes":[{"rev":"2-185ccf92154a9f24a4f4fd12233bf463"}],"deleted":true}`),
 				}, nil
 			}),
-			options: map[string]interface{}{
+			options: map[interface{}]interface{}{
 				"doc_ids": []string{"a", "b", "c"},
 			},
 			etag: "etag-foo",

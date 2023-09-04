@@ -250,7 +250,7 @@ func registerSuiteCouch23() {
 
 		"ViewCleanup/RW/NoAuth.status": http.StatusUnauthorized,
 
-		"Changes/Continuous.options": map[string]interface{}{
+		"Changes/Continuous.options": map[interface{}]interface{}{
 			"feed":      "continuous",
 			"since":     "now",
 			"heartbeat": 6000,

@@ -39,7 +39,7 @@ type SearchIndex struct {
 type Searcher interface {
 	// Search performs a full-text search against the specified ddoc and index,
 	// with the specified Lucene query.
-	Search(ctx context.Context, ddoc, index, query string, options map[string]interface{}) (Rows, error)
+	Search(ctx context.Context, ddoc, index, query string, options map[interface{}]interface{}) (Rows, error)
 	// SearchInfo returns statistics about the specified search index.
 	SearchInfo(ctx context.Context, ddoc, index string) (*SearchInfo, error)
 	// SerachAnalyze tests the results of Lucene analyzer tokenization on sample text.

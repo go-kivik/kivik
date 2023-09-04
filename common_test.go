@@ -21,7 +21,7 @@ import (
 	"time"
 )
 
-var testOptions = map[string]interface{}{"foo": 123}
+var testOptions = map[interface{}]interface{}{"foo": 123}
 
 func parseTime(t *testing.T, str string) time.Time {
 	ts, err := time.Parse(time.RFC3339, str)

@@ -41,7 +41,7 @@ func TestClusterStatus(t *testing.T) {
 	})
 	tests.Add("client error", tst{
 		client: &mock.Cluster{
-			ClusterStatusFunc: func(_ context.Context, _ map[string]interface{}) (string, error) {
+			ClusterStatusFunc: func(_ context.Context, _ map[interface{}]interface{}) (string, error) {
 				return "", errors.New("client error")
 			},
 		},
@@ -50,7 +50,7 @@ func TestClusterStatus(t *testing.T) {
 	})
 	tests.Add("success", tst{
 		client: &mock.Cluster{
-			ClusterStatusFunc: func(_ context.Context, _ map[string]interface{}) (string, error) {
+			ClusterStatusFunc: func(_ context.Context, _ map[interface{}]interface{}) (string, error) {
 				return "cluster_finished", nil
 			},
 		},

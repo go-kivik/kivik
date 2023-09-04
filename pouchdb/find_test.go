@@ -32,7 +32,7 @@ import (
 )
 
 func init() {
-	memPouch := js.Global.Get("PouchDB").Call("defaults", map[string]interface{}{
+	memPouch := js.Global.Get("PouchDB").Call("defaults", map[interface{}]interface{}{
 		"db": js.Global.Call("require", "memdown"),
 	})
 	js.Global.Set("PouchDB", memPouch)

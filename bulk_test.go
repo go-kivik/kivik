@@ -113,7 +113,7 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 		db: &DB{
 			client: &Client{},
 			driverDB: &mock.BulkDocer{
-				BulkDocsFunc: func(_ context.Context, docs []interface{}, _ map[string]interface{}) ([]driver.BulkResult, error) {
+				BulkDocsFunc: func(_ context.Context, docs []interface{}, _ map[interface{}]interface{}) ([]driver.BulkResult, error) {
 					_, err := json.Marshal(docs)
 					return nil, err
 				},
@@ -127,7 +127,7 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 		db: &DB{
 			client: &Client{},
 			driverDB: &mock.DB{
-				PutFunc: func(_ context.Context, docID string, doc interface{}, opts map[string]interface{}) (string, error) {
+				PutFunc: func(_ context.Context, docID string, doc interface{}, opts map[interface{}]interface{}) (string, error) {
 					if docID == "error" {
 						return "", errors.New("error")
 					}
@@ -143,7 +143,7 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 					}
 					return "2-xxx", nil // nolint: goconst
 				},
-				CreateDocFunc: func(_ context.Context, doc interface{}, opts map[string]interface{}) (string, string, error) {
+				CreateDocFunc: func(_ context.Context, doc interface{}, opts map[interface{}]interface{}) (string, string, error) {
 					expectedDoc := int(123)
 					if d := testy.DiffInterface(expectedDoc, doc); d != nil {
 						return "", "", fmt.Errorf("Unexpected doc:\n%s", d)
@@ -171,9 +171,9 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 		db: &DB{
 			client: &Client{},
 			driverDB: &mock.BulkDocer{
-				BulkDocsFunc: func(_ context.Context, docs []interface{}, opts map[string]interface{}) ([]driver.BulkResult, error) {
+				BulkDocsFunc: func(_ context.Context, docs []interface{}, opts map[interface{}]interface{}) ([]driver.BulkResult, error) {
 					expectedDocs := []interface{}{map[string]string{"_id": "foo"}, 123}
-					expectedOpts := map[string]interface{}{"new_edits": true}
+					expectedOpts := map[interface{}]interface{}{"new_edits": true}
 					if d := testy.DiffInterface(expectedDocs, docs); d != nil {
 						return nil, fmt.Errorf("Unexpected docs:\n%s", d)
 					}
@@ -218,7 +218,7 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 		db: &DB{
 			client: &Client{},
 			driverDB: &mock.BulkDocer{
-				BulkDocsFunc: func(_ context.Context, docs []interface{}, _ map[string]interface{}) ([]driver.BulkResult, error) {
+				BulkDocsFunc: func(_ context.Context, docs []interface{}, _ map[interface{}]interface{}) ([]driver.BulkResult, error) {
 					_, err := json.Marshal(docs)
 					return nil, err
 				},
@@ -232,7 +232,7 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 		db: &DB{
 			client: &Client{},
 			driverDB: &mock.BulkDocer{
-				BulkDocsFunc: func(_ context.Context, docs []interface{}, _ map[string]interface{}) ([]driver.BulkResult, error) {
+				BulkDocsFunc: func(_ context.Context, docs []interface{}, _ map[interface{}]interface{}) ([]driver.BulkResult, error) {
 					_, err := json.Marshal(docs)
 					return nil, err
 				},

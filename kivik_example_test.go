@@ -22,9 +22,9 @@ import (
 
 func init() {
 	kivik.Register("couch", &mock.Driver{
-		NewClientFunc: func(_ string, _ map[string]interface{}) (driver.Client, error) {
+		NewClientFunc: func(_ string, _ map[interface{}]interface{}) (driver.Client, error) {
 			return &mock.Client{
-				DBFunc: func(_ string, _ map[string]interface{}) (driver.DB, error) {
+				DBFunc: func(_ string, _ map[interface{}]interface{}) (driver.DB, error) {
 					return nil, nil
 				},
 			}, nil

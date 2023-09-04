@@ -27,7 +27,7 @@ const (
 	pathIndex = "_index"
 )
 
-func (d *db) CreateIndex(ctx context.Context, ddoc, name string, index interface{}, opts map[string]interface{}) error {
+func (d *db) CreateIndex(ctx context.Context, ddoc, name string, index interface{}, opts map[interface{}]interface{}) error {
 	reqPath := pathIndex
 	if part, ok := opts[OptionPartition].(string); ok {
 		delete(opts, OptionPartition)
@@ -53,7 +53,7 @@ func (d *db) CreateIndex(ctx context.Context, ddoc, name string, index interface
 	return err
 }
 
-func (d *db) GetIndexes(ctx context.Context, opts map[string]interface{}) ([]driver.Index, error) {
+func (d *db) GetIndexes(ctx context.Context, opts map[interface{}]interface{}) ([]driver.Index, error) {
 	reqPath := pathIndex
 	if part, ok := opts[OptionPartition].(string); ok {
 		delete(opts, OptionPartition)
@@ -66,7 +66,7 @@ func (d *db) GetIndexes(ctx context.Context, opts map[string]interface{}) ([]dri
 	return result.Indexes, err
 }
 
-func (d *db) DeleteIndex(ctx context.Context, ddoc, name string, opts map[string]interface{}) error {
+func (d *db) DeleteIndex(ctx context.Context, ddoc, name string, opts map[interface{}]interface{}) error {
 	if ddoc == "" {
 		return missingArg("ddoc")
 	}
@@ -83,7 +83,7 @@ func (d *db) DeleteIndex(ctx context.Context, ddoc, name string, opts map[string
 	return err
 }
 
-func (d *db) Find(ctx context.Context, query interface{}, opts map[string]interface{}) (driver.Rows, error) {
+func (d *db) Find(ctx context.Context, query interface{}, opts map[interface{}]interface{}) (driver.Rows, error) {
 	reqPath := "_find"
 	if part, ok := opts[OptionPartition].(string); ok {
 		delete(opts, OptionPartition)
@@ -132,7 +132,7 @@ func (f *fields) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (d *db) Explain(ctx context.Context, query interface{}, opts map[string]interface{}) (*driver.QueryPlan, error) {
+func (d *db) Explain(ctx context.Context, query interface{}, opts map[interface{}]interface{}) (*driver.QueryPlan, error) {
 	reqPath := "_explain"
 	if part, ok := opts[OptionPartition].(string); ok {
 		delete(opts, OptionPartition)

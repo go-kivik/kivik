@@ -26,7 +26,7 @@ func TestNewClient(t *testing.T) {
 	type ncTest struct {
 		name       string
 		dsn        string
-		options    map[string]interface{}
+		options    map[interface{}]interface{}
 		expectedUA []string
 		status     int
 		err        string
@@ -49,7 +49,7 @@ func TestNewClient(t *testing.T) {
 		{
 			name: "User Agent",
 			dsn:  "http://foo.com/",
-			options: map[string]interface{}{
+			options: map[interface{}]interface{}{
 				OptionUserAgent: "test/foo",
 			},
 			expectedUA: []string{
@@ -61,7 +61,7 @@ func TestNewClient(t *testing.T) {
 		{
 			name: "invalid HTTP client",
 			dsn:  "http://foo.com/",
-			options: map[string]interface{}{
+			options: map[interface{}]interface{}{
 				OptionHTTPClient: "string",
 			},
 			status: http.StatusBadRequest,
@@ -70,7 +70,7 @@ func TestNewClient(t *testing.T) {
 		{
 			name: "invalid UserAgent",
 			dsn:  "http://foo.com/",
-			options: map[string]interface{}{
+			options: map[interface{}]interface{}{
 				OptionUserAgent: 123,
 			},
 			status: http.StatusBadRequest,
@@ -93,7 +93,7 @@ func TestNewClient(t *testing.T) {
 		})
 	}
 	t.Run("custom HTTP client", func(t *testing.T) {
-		opts := map[string]interface{}{
+		opts := map[interface{}]interface{}{
 			OptionHTTPClient: &http.Client{Timeout: time.Millisecond},
 		}
 		driver := &couch{}
@@ -112,7 +112,7 @@ func TestDB(t *testing.T) {
 		name     string
 		client   *client
 		dbName   string
-		options  map[string]interface{}
+		options  map[interface{}]interface{}
 		expected *db
 		status   int
 		err      string

@@ -33,7 +33,7 @@ import (
 
 func init() {
 	if pouchDB := js.Global.Get("PouchDB"); pouchDB != js.Undefined {
-		memPouch := js.Global.Get("PouchDB").Call("defaults", map[string]interface{}{
+		memPouch := js.Global.Get("PouchDB").Call("defaults", map[interface{}]interface{}{
 			"db": js.Global.Call("require", "memdown"),
 		})
 		js.Global.Set("PouchDB", memPouch)
@@ -144,7 +144,7 @@ func RegisterPouchDBSuites() {
 
 		"Query/RW/group/Admin/WithoutDocs/ScanDoc.status": http.StatusBadRequest,
 
-		"Changes/Continuous.options": map[string]interface{}{
+		"Changes/Continuous.options": map[interface{}]interface{}{
 			"live":    true,
 			"timeout": false,
 		},
@@ -359,7 +359,7 @@ func RegisterPouchDBSuites() {
 
 		// "ViewCleanup/RW/NoAuth.status": http.StatusUnauthorized, # FIXME: #14
 
-		"Changes/Continuous.options": map[string]interface{}{
+		"Changes/Continuous.options": map[interface{}]interface{}{
 			"live":    true,
 			"timeout": false,
 		},

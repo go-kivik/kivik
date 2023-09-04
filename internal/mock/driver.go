@@ -18,12 +18,12 @@ import (
 
 // Driver mocks a Kivik Driver.
 type Driver struct {
-	NewClientFunc func(name string, options map[string]interface{}) (driver.Client, error)
+	NewClientFunc func(name string, options map[interface{}]interface{}) (driver.Client, error)
 }
 
 var _ driver.Driver = &Driver{}
 
 // NewClient calls d.NewClientFunc
-func (d *Driver) NewClient(name string, options map[string]interface{}) (driver.Client, error) {
+func (d *Driver) NewClient(name string, options map[interface{}]interface{}) (driver.Client, error) {
 	return d.NewClientFunc(name, options)
 }

@@ -239,7 +239,7 @@ func (r *replication) Delete(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	_, err = r.db.Delete(ctx, r.docID, map[string]interface{}{"rev": rev})
+	_, err = r.db.Delete(ctx, r.docID, map[interface{}]interface{}{"rev": rev})
 	return err
 }
 
@@ -253,7 +253,7 @@ type replicatorDoc struct {
 	Error         *replicationError    `json:"_replication_state_reason,omitempty"`
 }
 
-func (c *client) GetReplications(ctx context.Context, options map[string]interface{}) ([]driver.Replication, error) {
+func (c *client) GetReplications(ctx context.Context, options map[interface{}]interface{}) ([]driver.Replication, error) {
 	scheduler, err := c.schedulerSupported(ctx)
 	if err != nil {
 		return nil, err
@@ -264,9 +264,9 @@ func (c *client) GetReplications(ctx context.Context, options map[string]interfa
 	return c.legacyGetReplications(ctx, options)
 }
 
-func (c *client) legacyGetReplications(ctx context.Context, options map[string]interface{}) ([]driver.Replication, error) {
+func (c *client) legacyGetReplications(ctx context.Context, options map[interface{}]interface{}) ([]driver.Replication, error) {
 	if options == nil {
-		options = map[string]interface{}{}
+		options = map[interface{}]interface{}{}
 	}
 	delete(options, "conflicts")
 	delete(options, "update_seq")
@@ -296,9 +296,9 @@ func (c *client) legacyGetReplications(ctx context.Context, options map[string]i
 	return reps, nil
 }
 
-func (c *client) Replicate(ctx context.Context, targetDSN, sourceDSN string, options map[string]interface{}) (driver.Replication, error) {
+func (c *client) Replicate(ctx context.Context, targetDSN, sourceDSN string, options map[interface{}]interface{}) (driver.Replication, error) {
 	if options == nil {
-		options = make(map[string]interface{})
+		options = make(map[interface{}]interface{})
 	}
 	// Allow overriding source and target with options, i.e. for auth options
 	if _, ok := options["source"]; !ok {

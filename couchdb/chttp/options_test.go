@@ -24,19 +24,19 @@ import (
 func TestFullCommit(t *testing.T) {
 	tests := []struct {
 		name     string
-		input    map[string]interface{}
+		input    map[interface{}]interface{}
 		expected bool
 		status   int
 		err      string
 	}{
 		{
 			name:     "new",
-			input:    map[string]interface{}{internal.OptionFullCommit: true},
+			input:    map[interface{}]interface{}{internal.OptionFullCommit: true},
 			expected: true,
 		},
 		{
 			name:   "new error",
-			input:  map[string]interface{}{internal.OptionFullCommit: 123},
+			input:  map[interface{}]interface{}{internal.OptionFullCommit: 123},
 			status: http.StatusBadRequest,
 			err:    "kivik: option 'X-Couch-Full-Commit' must be bool, not int",
 		},
@@ -63,7 +63,7 @@ func TestFullCommit(t *testing.T) {
 func TestIfNoneMatch(t *testing.T) {
 	tests := []struct {
 		name     string
-		opts     map[string]interface{}
+		opts     map[interface{}]interface{}
 		expected string
 		status   int
 		err      string
@@ -75,23 +75,23 @@ func TestIfNoneMatch(t *testing.T) {
 		},
 		{
 			name:     "inm not set",
-			opts:     map[string]interface{}{"foo": "bar"},
+			opts:     map[interface{}]interface{}{"foo": "bar"},
 			expected: "",
 		},
 		{
 			name:   "wrong type",
-			opts:   map[string]interface{}{internal.OptionIfNoneMatch: 123},
+			opts:   map[interface{}]interface{}{internal.OptionIfNoneMatch: 123},
 			status: http.StatusBadRequest,
 			err:    "kivik: option 'If-None-Match' must be string, not int",
 		},
 		{
 			name:     "valid",
-			opts:     map[string]interface{}{internal.OptionIfNoneMatch: "foo"},
+			opts:     map[interface{}]interface{}{internal.OptionIfNoneMatch: "foo"},
 			expected: `"foo"`,
 		},
 		{
 			name:     "valid, pre-quoted",
-			opts:     map[string]interface{}{internal.OptionIfNoneMatch: `"foo"`},
+			opts:     map[interface{}]interface{}{internal.OptionIfNoneMatch: `"foo"`},
 			expected: `"foo"`,
 		},
 	}

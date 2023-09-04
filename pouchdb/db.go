@@ -46,7 +46,7 @@ var (
 	_ driver.DBCloser = &db{}
 )
 
-func (d *db) AllDocs(ctx context.Context, options map[string]interface{}) (driver.Rows, error) {
+func (d *db) AllDocs(ctx context.Context, options map[interface{}]interface{}) (driver.Rows, error) {
 	result, err := d.db.AllDocs(ctx, options)
 	if err != nil {
 		return nil, err
@@ -56,7 +56,7 @@ func (d *db) AllDocs(ctx context.Context, options map[string]interface{}) (drive
 	}, nil
 }
 
-func (d *db) Query(ctx context.Context, ddoc, view string, options map[string]interface{}) (driver.Rows, error) {
+func (d *db) Query(ctx context.Context, ddoc, view string, options map[interface{}]interface{}) (driver.Rows, error) {
 	result, err := d.db.Query(ctx, ddoc, view, options)
 	if err != nil {
 		return nil, err
@@ -66,7 +66,7 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options map[string]in
 	}, nil
 }
 
-func (d *db) Get(ctx context.Context, docID string, options map[string]interface{}) (*driver.Document, error) {
+func (d *db) Get(ctx context.Context, docID string, options map[interface{}]interface{}) (*driver.Document, error) {
 	doc, rev, err := d.db.Get(ctx, docID, options)
 	if err != nil {
 		return nil, err
@@ -77,7 +77,7 @@ func (d *db) Get(ctx context.Context, docID string, options map[string]interface
 	}, nil
 }
 
-func (d *db) CreateDoc(ctx context.Context, doc interface{}, options map[string]interface{}) (docID, rev string, err error) {
+func (d *db) CreateDoc(ctx context.Context, doc interface{}, options map[interface{}]interface{}) (docID, rev string, err error) {
 	jsonDoc, err := json.Marshal(doc)
 	if err != nil {
 		return "", "", err
@@ -86,7 +86,7 @@ func (d *db) CreateDoc(ctx context.Context, doc interface{}, options map[string]
 	return d.db.Post(ctx, jsDoc, options)
 }
 
-func (d *db) Put(ctx context.Context, docID string, doc interface{}, options map[string]interface{}) (rev string, err error) {
+func (d *db) Put(ctx context.Context, docID string, doc interface{}, options map[interface{}]interface{}) (rev string, err error) {
 	jsonDoc, err := json.Marshal(doc)
 	if err != nil {
 		return "", err
@@ -101,7 +101,7 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options map
 	return d.db.Put(ctx, jsDoc, options)
 }
 
-func (d *db) Delete(ctx context.Context, docID string, options map[string]interface{}) (newRev string, err error) {
+func (d *db) Delete(ctx context.Context, docID string, options map[interface{}]interface{}) (newRev string, err error) {
 	rev, _ := options["rev"].(string)
 	return d.db.Delete(ctx, docID, rev, options)
 }

@@ -145,7 +145,7 @@ func TestRepInfoUnmarshalJSON(t *testing.T) {
 func TestGetReplicationsFromScheduler(t *testing.T) {
 	tests := []struct {
 		name     string
-		options  map[string]interface{}
+		options  map[interface{}]interface{}
 		client   *client
 		expected []*schedulerReplication
 		status   int
@@ -159,7 +159,7 @@ func TestGetReplicationsFromScheduler(t *testing.T) {
 		},
 		{
 			name:    "invalid options",
-			options: map[string]interface{}{"foo": make(chan int)},
+			options: map[interface{}]interface{}{"foo": make(chan int)},
 			status:  http.StatusBadRequest,
 			err:     "kivik: invalid type chan int for options",
 		},

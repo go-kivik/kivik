@@ -136,6 +136,7 @@ func TestGet(t *testing.T) {
 			Body:          Body("some response"),
 		}, nil),
 		doc: &driver.Row{
+			ID:  "foo",
 			Rev: "12-xxx",
 		},
 		expected: "some response\n",
@@ -297,6 +298,7 @@ Content-Length: 86
 		id:      "foo",
 		options: map[string]interface{}{"include_docs": true},
 		doc: &driver.Row{
+			ID:  "foo",
 			Rev: "2-c1c6c44c4bc3c9344b037c8690468605",
 			Attachments: &multipartAttachments{
 				meta: map[string]attMeta{
@@ -351,6 +353,7 @@ Content-Length: 86
 		id:      "foo",
 		options: map[string]interface{}{"include_docs": true},
 		doc: &driver.Row{
+			ID:  "foo",
 			Rev: "2-c1c6c44c4bc3c9344b037c8690468605",
 			Attachments: &multipartAttachments{
 				meta: map[string]attMeta{

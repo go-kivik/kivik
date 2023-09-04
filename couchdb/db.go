@@ -160,6 +160,7 @@ func (d *db) Query(ctx context.Context, ddoc, view string, opts map[string]inter
 
 // document represents a single document returned by Get
 type document struct {
+	id          string
 	rev         string
 	body        io.ReadCloser
 	attachments driver.Attachments
@@ -172,6 +173,7 @@ func (d *document) Next(row *driver.Row) error {
 	if atomic.SwapInt32(&d.read, 1) > 0 {
 		return io.EOF
 	}
+	row.ID = d.id
 	row.Rev = d.rev
 	row.Doc = d.body
 	row.Attachments = d.attachments
@@ -200,6 +202,7 @@ func (d *db) Get(ctx context.Context, docID string, options map[string]interface
 	switch ct {
 	case typeJSON:
 		return &document{
+			id:   docID,
 			rev:  rev,
 			body: resp.Body,
 		}, nil
@@ -227,6 +230,7 @@ func (d *db) Get(ctx context.Context, docID string, options map[string]interface
 		}
 
 		return &document{
+			id:   docID,
 			rev:  rev,
 			body: io.NopCloser(bytes.NewBuffer(content)),
 			attachments: &multipartAttachments{

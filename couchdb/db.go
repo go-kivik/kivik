@@ -157,8 +157,42 @@ func (d *db) Query(ctx context.Context, ddoc, view string, opts map[string]inter
 	return d.rowsQuery(ctx, reqPath, opts)
 }
 
+// document represents a single document returned by Get
+type document struct {
+	// Rev is the revision number returned
+	Rev string
+
+	// Body contains the response body, either in raw JSON or multipart/related
+	// format.
+	Body io.ReadCloser
+
+	// Attachments will be nil except when attachments=true.
+	Attachments driver.Attachments
+}
+
+var _ driver.Rows = (*document)(nil)
+
+func (d *document) Next(row *driver.Row) error {
+	if d == nil {
+		return io.EOF
+	}
+	row.Rev = d.Rev
+	row.Doc = d.Body
+	row.Attachments = d.Attachments
+	return d.Close()
+}
+
+func (d *document) Close() error {
+	*d = document{}
+	return nil
+}
+
+func (document) UpdateSeq() string { return "" }
+func (document) Offset() int64     { return 0 }
+func (document) TotalRows() int64  { return 0 }
+
 // Get fetches the requested document.
-func (d *db) Get(ctx context.Context, docID string, options map[string]interface{}) (*driver.Document, error) {
+func (d *db) Get(ctx context.Context, docID string, options map[string]interface{}) (driver.Rows, error) {
 	resp, rev, err := d.get(ctx, http.MethodGet, docID, options)
 	if err != nil {
 		return nil, err

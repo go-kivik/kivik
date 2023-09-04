@@ -191,7 +191,11 @@ func (*document) TotalRows() int64  { return 0 }
 
 // Get fetches the requested document.
 func (d *db) Get(ctx context.Context, docID string, options map[string]interface{}) (driver.Rows, error) {
-	resp, rev, err := d.get(ctx, http.MethodGet, docID, options)
+	resp, err := d.get(ctx, http.MethodGet, docID, options)
+	if err != nil {
+		return nil, err
+	}
+	rev, err := chttp.GetRev(resp)
 	if err != nil {
 		return nil, err
 	}
@@ -315,42 +319,43 @@ func (a *multipartAttachments) Close() error {
 }
 
 // Rev returns the most current rev of the requested document.
-func (d *db) GetRev(ctx context.Context, docID string, options map[string]interface{}) (rev string, err error) {
-	resp, rev, err := d.get(ctx, http.MethodHead, docID, options)
+func (d *db) GetRev(ctx context.Context, docID string, options map[string]interface{}) (string, error) {
+	resp, err := d.get(ctx, http.MethodHead, docID, options)
 	if err != nil {
 		return "", err
 	}
 	_ = resp.Body.Close()
+	rev, err := chttp.GetRev(resp)
+	if err != nil {
+		return "", err
+	}
 	return rev, err
 }
 
-func (d *db) get(ctx context.Context, method, docID string, options map[string]interface{}) (*http.Response, string, error) {
+func (d *db) get(ctx context.Context, method, docID string, options map[string]interface{}) (*http.Response, error) {
 	if docID == "" {
-		return nil, "", missingArg("docID")
+		return nil, missingArg("docID")
 	}
 
 	opts, err := chttp.NewOptions(options)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	opts.Accept = typeMPRelated + "," + typeJSON
 	opts.Query, err = optionsToParams(options)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 	if _, ok := options[OptionNoMultipartGet]; ok {
 		opts.Accept = typeJSON
 	}
 	resp, err := d.Client.DoReq(ctx, method, d.path(chttp.EncodeDocID(docID)), opts)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
-	if respErr := chttp.ResponseError(resp); respErr != nil {
-		return nil, "", respErr
-	}
-	rev, err := chttp.GetRev(resp)
-	return resp, rev, err
+	err = chttp.ResponseError(resp)
+	return resp, err
 }
 
 func (d *db) CreateDoc(ctx context.Context, doc interface{}, options map[string]interface{}) (docID, rev string, err error) {

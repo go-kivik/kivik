@@ -195,12 +195,16 @@ func (r *replication) updateMain(ctx context.Context) error {
 }
 
 func (r *replication) getReplicatorDoc(ctx context.Context) (*replicatorDoc, error) {
-	row, err := r.db.Get(ctx, r.docID, nil)
+	rows, err := r.db.Get(ctx, r.docID, nil)
 	if err != nil {
 		return nil, err
 	}
+	row := new(driver.Row)
+	if err := rows.Next(row); err != nil {
+		return nil, err
+	}
 	var doc replicatorDoc
-	err = json.NewDecoder(row.Body).Decode(&doc)
+	err = json.NewDecoder(row.Doc).Decode(&doc)
 	return &doc, err
 }
 

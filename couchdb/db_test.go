@@ -91,7 +91,7 @@ func TestGet(t *testing.T) {
 		db          *db
 		id          string
 		options     map[string]interface{}
-		doc         *driver.Document
+		doc         *driver.Row
 		expected    string
 		attachments []*Attachment
 		status      int
@@ -135,7 +135,7 @@ func TestGet(t *testing.T) {
 			ContentLength: 13,
 			Body:          Body("some response"),
 		}, nil),
-		doc: &driver.Document{
+		doc: &driver.Row{
 			Rev: "12-xxx",
 		},
 		expected: "some response\n",
@@ -296,7 +296,7 @@ Content-Length: 86
 		}, nil),
 		id:      "foo",
 		options: map[string]interface{}{"include_docs": true},
-		doc: &driver.Document{
+		doc: &driver.Row{
 			Rev: "2-c1c6c44c4bc3c9344b037c8690468605",
 			Attachments: &multipartAttachments{
 				meta: map[string]attMeta{
@@ -350,7 +350,7 @@ Content-Length: 86
 		}, nil),
 		id:      "foo",
 		options: map[string]interface{}{"include_docs": true},
-		doc: &driver.Document{
+		doc: &driver.Row{
 			Rev: "2-c1c6c44c4bc3c9344b037c8690468605",
 			Attachments: &multipartAttachments{
 				meta: map[string]attMeta{
@@ -394,14 +394,18 @@ Content-Length: 86
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
-		doc, err := tt.db.Get(context.Background(), tt.id, tt.options)
+		rows, err := tt.db.Get(context.Background(), tt.id, tt.options)
 		if !testy.ErrorMatchesRE(tt.err, err) {
 			t.Errorf("Unexpected error: \n Got: %s\nWant: /%s/", err, tt.err)
 		}
 		if err != nil {
 			return
 		}
-		result, err := io.ReadAll(doc.Body)
+		row := new(driver.Row)
+		if err := rows.Next(row); err != nil {
+			t.Fatal(err)
+		}
+		result, err := io.ReadAll(row.Doc)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -409,10 +413,10 @@ Content-Length: 86
 			t.Errorf("Unexpected result: %s", string(result))
 		}
 		var attachments []*Attachment
-		if doc.Attachments != nil {
+		if row.Attachments != nil {
 			att := new(driver.Attachment)
 			for {
-				if err := doc.Attachments.Next(att); err != nil {
+				if err := row.Attachments.Next(att); err != nil {
 					if err != io.EOF {
 						t.Fatal(err)
 					}
@@ -429,11 +433,11 @@ Content-Length: 86
 					Content:     string(content),
 				})
 			}
-			doc.Attachments.(*multipartAttachments).content = nil // Determinism
-			doc.Attachments.(*multipartAttachments).mpReader = nil
+			row.Attachments.(*multipartAttachments).content = nil // Determinism
+			row.Attachments.(*multipartAttachments).mpReader = nil
 		}
-		doc.Body = nil // Determinism
-		if d := testy.DiffInterface(tt.doc, doc); d != nil {
+		row.Doc = nil // Determinism
+		if d := testy.DiffInterface(tt.doc, row); d != nil {
 			t.Errorf("Unexpected doc:\n%s", d)
 		}
 		if d := testy.DiffInterface(tt.attachments, attachments); d != nil {

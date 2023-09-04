@@ -32,6 +32,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/couchdb/chttp"
@@ -157,8 +158,43 @@ func (d *db) Query(ctx context.Context, ddoc, view string, opts map[string]inter
 	return d.rowsQuery(ctx, reqPath, opts)
 }
 
+// document represents a single document returned by Get
+type document struct {
+	// Rev is the revision number returned
+	Rev string
+
+	// Body contains the response body, either in raw JSON or multipart/related
+	// format.
+	Body io.ReadCloser
+
+	// Attachments will be nil except when attachments=true.
+	Attachments driver.Attachments
+
+	// read will be non-zero once the document has been read.
+	read int32
+}
+
+func (d *document) Next(row *driver.Row) error {
+	if atomic.SwapInt32(&d.read, 1) > 0 {
+		return io.EOF
+	}
+	row.Rev = d.Rev
+	row.Doc = d.Body
+	row.Attachments = d.Attachments
+	return nil
+}
+
+func (d *document) Close() error {
+	atomic.StoreInt32(&d.read, 1)
+	return d.Body.Close()
+}
+
+func (*document) UpdateSeq() string { return "" }
+func (*document) Offset() int64     { return 0 }
+func (*document) TotalRows() int64  { return 0 }
+
 // Get fetches the requested document.
-func (d *db) Get(ctx context.Context, docID string, options map[string]interface{}) (*driver.Document, error) {
+func (d *db) Get(ctx context.Context, docID string, options map[string]interface{}) (driver.Rows, error) {
 	resp, rev, err := d.get(ctx, http.MethodGet, docID, options)
 	if err != nil {
 		return nil, err
@@ -169,7 +205,7 @@ func (d *db) Get(ctx context.Context, docID string, options map[string]interface
 	}
 	switch ct {
 	case typeJSON:
-		return &driver.Document{
+		return &document{
 			Rev:  rev,
 			Body: resp.Body,
 		}, nil
@@ -196,7 +232,7 @@ func (d *db) Get(ctx context.Context, docID string, options map[string]interface
 			return nil, &kivik.Error{Status: http.StatusBadGateway, Err: err}
 		}
 
-		return &driver.Document{
+		return &document{
 			Rev:  rev,
 			Body: io.NopCloser(bytes.NewBuffer(content)),
 			Attachments: &multipartAttachments{

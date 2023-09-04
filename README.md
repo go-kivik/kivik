@@ -174,6 +174,7 @@ license.
 
 This is a partial list of breaking changes between 3.x and 4.x
 
+- The CouchDB and PouchDB drivers have been merged with this repo, rather than behing hosted in separate repos. For v3 you would have imported `github.com/go-kivik/couchdb/v3` or `github.com/go-kivik/pouchdb/v3` respectively. With v4, you instead use `github.com/go-kivik/v4/couchdb` annd `github.com/go-kivik/v4/pouchdb` respectively.
 - The return type for queries has been significantly changed.
   - In 3.x, queries returned a `*Rows` struct. Now they return a `*ResultSet`.
   - The `Offset()`, `TotalRows()`, `UpdateSeq()`, `Warning()` and `Bookmark()` methods have been removed, and replaced with the `ResultMetadata` type which is accessed via the `Metadata()` method. See [issue #552](https://github.com/go-kivik/kivik/issues/552).

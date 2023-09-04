@@ -67,7 +67,7 @@ func newTestClient(response *http.Response, err error) *client {
 
 func newCustomClient(fn func(*http.Request) (*http.Response, error)) *client {
 	chttpClient, _ := chttp.New(&http.Client{}, "http://example.com/", map[string]interface{}{
-		internal.OptionNoCompressedRequests: true,
+		internal.OptionNoCompressedResponses: true,
 	})
 	chttpClient.Client.Transport = customTransport(fn)
 	return &client{
@@ -136,7 +136,7 @@ func realDB(t *testing.T) *db {
 func realDBConnect(t *testing.T) (*db, error) {
 	driver := &couch{}
 	c, err := driver.NewClient(kt.DSN(t), map[string]interface{}{
-		OptionNoCompressedRequests: true,
+		OptionNoCompressedResponses: true,
 	})
 	if err != nil {
 		return nil, err

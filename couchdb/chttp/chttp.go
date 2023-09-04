@@ -85,7 +85,7 @@ func New(client *http.Client, dsn string, options map[string]interface{}) (*Clie
 			return nil, err
 		}
 	}
-	if gzip, ok := options[internal.OptionNoCompressedRequests]; ok {
+	if gzip, ok := options[internal.OptionNoCompressedResponses]; ok {
 		c.noGzip, ok = gzip.(bool)
 		if !ok {
 			return nil, &kivik.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("OptionNoCompressedRequests is %T, must be bool", gzip)}

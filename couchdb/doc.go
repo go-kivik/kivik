@@ -49,7 +49,7 @@ The only exceptions to the above rule are:
     disable multipart/related PUT uploads of attachments.
   - the [NoMultipartGet] option is interpreted by the Kivik CouchDB driver to
     disable multipart/related GET downloads of attachments.
-  - the [OptionNoCompressedRequests] option disables gzip-compressed responses
+  - the [OptionNoCompressedResponses] option disables gzip-compressed responses
     from the server.
   - the [OptionPartition] option specifies the partition to query for certain
     endpoints.

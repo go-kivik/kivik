@@ -135,9 +135,7 @@ func realDB(t *testing.T) *db {
 
 func realDBConnect(t *testing.T) (*db, error) {
 	driver := &couch{}
-	c, err := driver.NewClient(kt.DSN(t), map[interface{}]interface{}{
-		OptionNoCompressedResponses: true,
-	})
+	c, err := driver.NewClient(kt.DSN(t), OptionNoCompressedResponses())
 	if err != nil {
 		return nil, err
 	}

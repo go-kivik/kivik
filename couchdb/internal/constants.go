@@ -10,18 +10,20 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-// Package internal contains some internal constants.
+// Package internal contains some shared variables.
 package internal
 
-// Common constants, placed here to allow importing in chttp and root package
+type optionKey struct{ name string }
+
+// Common variables, placed here to allow importing in chttp and root package
 // without import cycles.
-const (
-	OptionUserAgent             = "User-Agent"
-	OptionHTTPClient            = "kivik:httpClient"
-	OptionFullCommit            = "X-Couch-Full-Commit"
-	OptionIfNoneMatch           = "If-None-Match"
-	OptionPartition             = "kivik:partition"
-	OptionNoMultipartPut        = "kivik:no-multipart-put"
-	OptionNoMultipartGet        = "kivik:no-multipart-get"
-	OptionNoCompressedResponses = "kivik:no-compressed-responses"
+var (
+	OptionUserAgent             = &optionKey{"user agent"}
+	OptionHTTPClient            = &optionKey{"http client"}
+	OptionFullCommit            = &optionKey{"X-Couch-Full-Commit"}
+	OptionIfNoneMatch           = &optionKey{"If-None-Match"}
+	OptionPartition             = &optionKey{"partition"}
+	OptionNoMultipartPut        = &optionKey{"no-multipart-put"}
+	OptionNoMultipartGet        = &optionKey{"no-multipart-get"}
+	OptionNoCompressedResponses = &optionKey{"no-compressed-responses"}
 )

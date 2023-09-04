@@ -160,15 +160,9 @@ func (d *db) Query(ctx context.Context, ddoc, view string, opts map[string]inter
 
 // document represents a single document returned by Get
 type document struct {
-	// Rev is the revision number returned
-	Rev string
-
-	// Body contains the response body, either in raw JSON or multipart/related
-	// format.
-	Body io.ReadCloser
-
-	// Attachments will be nil except when attachments=true.
-	Attachments driver.Attachments
+	rev         string
+	body        io.ReadCloser
+	attachments driver.Attachments
 
 	// read will be non-zero once the document has been read.
 	read int32
@@ -178,15 +172,15 @@ func (d *document) Next(row *driver.Row) error {
 	if atomic.SwapInt32(&d.read, 1) > 0 {
 		return io.EOF
 	}
-	row.Rev = d.Rev
-	row.Doc = d.Body
-	row.Attachments = d.Attachments
+	row.Rev = d.rev
+	row.Doc = d.body
+	row.Attachments = d.attachments
 	return nil
 }
 
 func (d *document) Close() error {
 	atomic.StoreInt32(&d.read, 1)
-	return d.Body.Close()
+	return d.body.Close()
 }
 
 func (*document) UpdateSeq() string { return "" }
@@ -206,8 +200,8 @@ func (d *db) Get(ctx context.Context, docID string, options map[string]interface
 	switch ct {
 	case typeJSON:
 		return &document{
-			Rev:  rev,
-			Body: resp.Body,
+			rev:  rev,
+			body: resp.Body,
 		}, nil
 	case typeMPRelated:
 		boundary := strings.Trim(params["boundary"], "\"")
@@ -233,9 +227,9 @@ func (d *db) Get(ctx context.Context, docID string, options map[string]interface
 		}
 
 		return &document{
-			Rev:  rev,
-			Body: io.NopCloser(bytes.NewBuffer(content)),
-			Attachments: &multipartAttachments{
+			rev:  rev,
+			body: io.NopCloser(bytes.NewBuffer(content)),
+			attachments: &multipartAttachments{
 				content:  resp.Body,
 				mpReader: mpReader,
 				meta:     metaDoc.Attachments,

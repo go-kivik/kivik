@@ -20,6 +20,7 @@ import (
 	"path"
 
 	"github.com/go-kivik/kivik/v4/couchdb/chttp"
+	"github.com/go-kivik/kivik/v4/couchdb/internal"
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
@@ -29,8 +30,8 @@ const (
 
 func (d *db) CreateIndex(ctx context.Context, ddoc, name string, index interface{}, opts map[interface{}]interface{}) error {
 	reqPath := pathIndex
-	if part, ok := opts[OptionPartition].(string); ok {
-		delete(opts, OptionPartition)
+	if part, ok := opts[internal.OptionPartition].(string); ok {
+		delete(opts, internal.OptionPartition)
 		reqPath = path.Join("_partition", part, reqPath)
 	}
 	indexObj, err := deJSONify(index)
@@ -55,8 +56,8 @@ func (d *db) CreateIndex(ctx context.Context, ddoc, name string, index interface
 
 func (d *db) GetIndexes(ctx context.Context, opts map[interface{}]interface{}) ([]driver.Index, error) {
 	reqPath := pathIndex
-	if part, ok := opts[OptionPartition].(string); ok {
-		delete(opts, OptionPartition)
+	if part, ok := opts[internal.OptionPartition].(string); ok {
+		delete(opts, internal.OptionPartition)
 		reqPath = path.Join("_partition", part, reqPath)
 	}
 	var result struct {
@@ -74,8 +75,8 @@ func (d *db) DeleteIndex(ctx context.Context, ddoc, name string, opts map[interf
 		return missingArg("name")
 	}
 	reqPath := pathIndex
-	if part, ok := opts[OptionPartition].(string); ok {
-		delete(opts, OptionPartition)
+	if part, ok := opts[internal.OptionPartition].(string); ok {
+		delete(opts, internal.OptionPartition)
 		reqPath = path.Join("_partition", part, reqPath)
 	}
 	path := fmt.Sprintf("%s/%s/json/%s", reqPath, ddoc, name)
@@ -85,8 +86,8 @@ func (d *db) DeleteIndex(ctx context.Context, ddoc, name string, opts map[interf
 
 func (d *db) Find(ctx context.Context, query interface{}, opts map[interface{}]interface{}) (driver.Rows, error) {
 	reqPath := "_find"
-	if part, ok := opts[OptionPartition].(string); ok {
-		delete(opts, OptionPartition)
+	if part, ok := opts[internal.OptionPartition].(string); ok {
+		delete(opts, internal.OptionPartition)
 		reqPath = path.Join("_partition", part, reqPath)
 	}
 	options := &chttp.Options{
@@ -134,8 +135,8 @@ func (f *fields) UnmarshalJSON(data []byte) error {
 
 func (d *db) Explain(ctx context.Context, query interface{}, opts map[interface{}]interface{}) (*driver.QueryPlan, error) {
 	reqPath := "_explain"
-	if part, ok := opts[OptionPartition].(string); ok {
-		delete(opts, OptionPartition)
+	if part, ok := opts[internal.OptionPartition].(string); ok {
+		delete(opts, internal.OptionPartition)
 		reqPath = path.Join("_partition", part, reqPath)
 	}
 	options := &chttp.Options{

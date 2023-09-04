@@ -109,7 +109,7 @@ func TestBulkDocs(t *testing.T) {
 		},
 		{
 			name:    "full commit",
-			options: map[interface{}]interface{}{OptionFullCommit: true},
+			options: OptionFullCommit(),
 			db: newCustomDB(func(req *http.Request) (*http.Response, error) {
 				defer req.Body.Close() // nolint: errcheck
 				if value := req.Header.Get("X-Couch-Full-Commit"); value != "true" {
@@ -120,13 +120,6 @@ func TestBulkDocs(t *testing.T) {
 					Body:       io.NopCloser(strings.NewReader("[]")),
 				}, nil
 			}),
-		},
-		{
-			name:    "invalid full commit type",
-			db:      &db{},
-			options: map[interface{}]interface{}{OptionFullCommit: 123},
-			status:  http.StatusBadRequest,
-			err:     "kivik: option 'X-Couch-Full-Commit' must be bool, not int",
 		},
 	}
 	for _, test := range tests {

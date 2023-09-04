@@ -47,34 +47,14 @@ func TestNewClient(t *testing.T) {
 			},
 		},
 		{
-			name: "User Agent",
-			dsn:  "http://foo.com/",
-			options: map[interface{}]interface{}{
-				OptionUserAgent: "test/foo",
-			},
+			name:    "User Agent",
+			dsn:     "http://foo.com/",
+			options: OptionUserAgent("test/foo"),
 			expectedUA: []string{
 				"Kivik/" + kivik.KivikVersion,
 				"Kivik CouchDB driver/" + Version,
 				"test/foo",
 			},
-		},
-		{
-			name: "invalid HTTP client",
-			dsn:  "http://foo.com/",
-			options: map[interface{}]interface{}{
-				OptionHTTPClient: "string",
-			},
-			status: http.StatusBadRequest,
-			err:    `OptionHTTPClient is string, must be \*http.Client`,
-		},
-		{
-			name: "invalid UserAgent",
-			dsn:  "http://foo.com/",
-			options: map[interface{}]interface{}{
-				OptionUserAgent: 123,
-			},
-			status: http.StatusBadRequest,
-			err:    "OptionUserAgent is int, must be string",
 		},
 	}
 
@@ -93,9 +73,7 @@ func TestNewClient(t *testing.T) {
 		})
 	}
 	t.Run("custom HTTP client", func(t *testing.T) {
-		opts := map[interface{}]interface{}{
-			OptionHTTPClient: &http.Client{Timeout: time.Millisecond},
-		}
+		opts := OptionHTTPClient(&http.Client{Timeout: time.Millisecond})
 		driver := &couch{}
 		c, err := driver.NewClient("http://example.com/", opts)
 		if err != nil {

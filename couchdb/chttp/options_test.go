@@ -13,7 +13,6 @@
 package chttp
 
 import (
-	"net/http"
 	"testing"
 
 	"gitlab.com/flimzy/testy"
@@ -33,12 +32,6 @@ func TestFullCommit(t *testing.T) {
 			name:     "new",
 			input:    map[interface{}]interface{}{internal.OptionFullCommit: true},
 			expected: true,
-		},
-		{
-			name:   "new error",
-			input:  map[interface{}]interface{}{internal.OptionFullCommit: 123},
-			status: http.StatusBadRequest,
-			err:    "kivik: option 'X-Couch-Full-Commit' must be bool, not int",
 		},
 		{
 			name:     "none",
@@ -77,12 +70,6 @@ func TestIfNoneMatch(t *testing.T) {
 			name:     "inm not set",
 			opts:     map[interface{}]interface{}{"foo": "bar"},
 			expected: "",
-		},
-		{
-			name:   "wrong type",
-			opts:   map[interface{}]interface{}{internal.OptionIfNoneMatch: 123},
-			status: http.StatusBadRequest,
-			err:    "kivik: option 'If-None-Match' must be string, not int",
 		},
 		{
 			name:     "valid",

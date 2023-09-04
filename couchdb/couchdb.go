@@ -20,6 +20,7 @@ import (
 
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/couchdb/chttp"
+	"github.com/go-kivik/kivik/v4/couchdb/internal"
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
@@ -54,9 +55,9 @@ var (
 
 func (d *couch) NewClient(dsn string, options map[interface{}]interface{}) (driver.Client, error) {
 	var httpClient *http.Client
-	if c, ok := options[OptionHTTPClient]; ok {
+	if c, ok := options[internal.OptionHTTPClient]; ok {
 		if httpClient, ok = c.(*http.Client); !ok {
-			return nil, &kivik.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("OptionHTTPClient is %T, must be *http.Client", c)}
+			panic(fmt.Sprintf("OptionHTTPClient is %T, must be *http.Client", c))
 		}
 	}
 	if httpClient == nil {

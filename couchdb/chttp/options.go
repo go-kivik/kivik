@@ -18,7 +18,6 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/couchdb/internal"
 )
 
@@ -91,7 +90,7 @@ func fullCommit(opts map[interface{}]interface{}) (bool, error) {
 	}
 	fcBool, ok := fc.(bool)
 	if !ok {
-		return false, &kivik.Error{Status: http.StatusBadRequest, Err: fmt.Errorf("kivik: option '%s' must be bool, not %T", internal.OptionFullCommit, fc)}
+		panic(fmt.Sprintf("kivik: option '%s' must be bool, not %T", internal.OptionFullCommit, fc))
 	}
 	delete(opts, internal.OptionFullCommit)
 	return fcBool, nil
@@ -104,7 +103,7 @@ func ifNoneMatch(opts map[interface{}]interface{}) (string, error) {
 	}
 	inmString, ok := inm.(string)
 	if !ok {
-		return "", &kivik.Error{Status: http.StatusBadRequest, Err: fmt.Errorf("kivik: option '%s' must be string, not %T", internal.OptionIfNoneMatch, inm)}
+		panic(fmt.Sprintf("kivik: option '%s' must be string, not %T", internal.OptionIfNoneMatch, inm))
 	}
 	delete(opts, internal.OptionIfNoneMatch)
 	if inmString[0] != '"' {

@@ -24,6 +24,7 @@ import (
 
 	"gitlab.com/flimzy/testy"
 
+	"github.com/go-kivik/kivik/v4/couchdb/internal"
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
@@ -203,27 +204,11 @@ func TestPutAttachment(t *testing.T) {
 				Content:     Body("x"),
 			},
 			options: map[interface{}]interface{}{
-				OptionFullCommit: true,
-				"rev":            "1-xxx",
+				internal.OptionFullCommit: true,
+				"rev":                     "1-xxx",
 			},
 			status: http.StatusBadGateway,
 			err:    "success",
-		},
-		{
-			name: "invalid full commit type",
-			db:   &db{},
-			id:   "foo",
-			att: &driver.Attachment{
-				Filename:    "foo.txt",
-				ContentType: "text/plain",
-				Content:     Body("x"),
-			},
-			options: map[interface{}]interface{}{
-				"rev":            "1-xxx",
-				OptionFullCommit: 123,
-			},
-			status: http.StatusBadRequest,
-			err:    "kivik: option 'X-Couch-Full-Commit' must be bool, not int",
 		},
 		func() paoTest {
 			body := &closer{Reader: strings.NewReader("x")}
@@ -245,8 +230,8 @@ func TestPutAttachment(t *testing.T) {
 					Content:     Body("x"),
 				},
 				options: map[interface{}]interface{}{
-					"rev":            "1-xxx",
-					OptionFullCommit: true,
+					"rev":                     "1-xxx",
+					internal.OptionFullCommit: true,
 				},
 				status: http.StatusBadGateway,
 				err:    "success",
@@ -514,19 +499,9 @@ func TestFetchAttachment(t *testing.T) {
 			method:   "GET",
 			id:       "foo",
 			filename: "foo.txt",
-			options:  map[interface{}]interface{}{OptionIfNoneMatch: "foo"},
+			options:  OptionIfNoneMatch("foo"),
 			status:   http.StatusBadGateway,
 			err:      "success",
-		},
-		{
-			name:     "invalid if-none-match type",
-			db:       &db{},
-			method:   "GET",
-			id:       "foo",
-			filename: "foo.txt",
-			options:  map[interface{}]interface{}{OptionIfNoneMatch: 123},
-			status:   http.StatusBadRequest,
-			err:      "kivik: option 'If-None-Match' must be string, not int",
 		},
 	}
 	for _, test := range tests {
@@ -711,23 +686,11 @@ func TestDeleteAttachment(t *testing.T) {
 			id:       "foo",
 			filename: "foo.txt",
 			options: map[interface{}]interface{}{
-				"rev":            "1-xxx",
-				OptionFullCommit: true,
+				"rev":                     "1-xxx",
+				internal.OptionFullCommit: true,
 			},
 			status: http.StatusBadGateway,
 			err:    "success",
-		},
-		{
-			name:     "invalid full commit type",
-			db:       &db{},
-			id:       "foo",
-			filename: "foo.txt",
-			options: map[interface{}]interface{}{
-				"rev":            "1-xxx",
-				OptionFullCommit: 123,
-			},
-			status: http.StatusBadRequest,
-			err:    "kivik: option 'X-Couch-Full-Commit' must be bool, not int",
 		},
 	}
 	for _, test := range tests {

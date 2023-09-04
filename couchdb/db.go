@@ -36,6 +36,7 @@ import (
 
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/couchdb/chttp"
+	"github.com/go-kivik/kivik/v4/couchdb/internal"
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
@@ -135,8 +136,8 @@ func (d *db) rowsQuery(ctx context.Context, path string, opts map[interface{}]in
 // AllDocs returns all of the documents in the database.
 func (d *db) AllDocs(ctx context.Context, opts map[interface{}]interface{}) (driver.Rows, error) {
 	reqPath := "_all_docs"
-	if part, ok := opts[OptionPartition].(string); ok {
-		delete(opts, OptionPartition)
+	if part, ok := opts[internal.OptionPartition].(string); ok {
+		delete(opts, internal.OptionPartition)
 		reqPath = path.Join("_partition", part, reqPath)
 	}
 	return d.rowsQuery(ctx, reqPath, opts)
@@ -155,8 +156,8 @@ func (d *db) LocalDocs(ctx context.Context, opts map[interface{}]interface{}) (d
 // Query queries a view.
 func (d *db) Query(ctx context.Context, ddoc, view string, opts map[interface{}]interface{}) (driver.Rows, error) {
 	reqPath := fmt.Sprintf("_design/%s/_view/%s", chttp.EncodeDocID(ddoc), chttp.EncodeDocID(view))
-	if part, ok := opts[OptionPartition].(string); ok {
-		delete(opts, OptionPartition)
+	if part, ok := opts[internal.OptionPartition].(string); ok {
+		delete(opts, internal.OptionPartition)
 		reqPath = path.Join("_partition", part, reqPath)
 	}
 	return d.rowsQuery(ctx, reqPath, opts)
@@ -358,7 +359,7 @@ func (d *db) get(ctx context.Context, method, docID string, options map[interfac
 	if err != nil {
 		return nil, err
 	}
-	if _, ok := options[OptionNoMultipartGet]; ok {
+	if _, ok := options[internal.OptionNoMultipartGet]; ok {
 		opts.Accept = typeJSON
 	}
 	resp, err := d.Client.DoReq(ctx, method, d.path(chttp.EncodeDocID(docID)), opts)
@@ -404,7 +405,7 @@ func putOpts(doc interface{}, options map[interface{}]interface{}) (*chttp.Optio
 	if err != nil {
 		return nil, err
 	}
-	if _, ok := options[OptionNoMultipartPut]; !ok {
+	if _, ok := options[internal.OptionNoMultipartPut]; !ok {
 		if atts, ok := extractAttachments(doc); ok {
 			boundary, size, multipartBody, err := newMultipartAttachments(chttp.EncodeBody(doc), atts)
 			if err != nil {

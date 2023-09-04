@@ -86,11 +86,9 @@ func TestExplain(t *testing.T) {
 			err:    `Post "?http://example.com/testdb/_explain"?: success`,
 		},
 		{
-			name: "partitioned request",
-			db:   newTestDB(nil, errors.New("expected")),
-			opts: map[interface{}]interface{}{
-				OptionPartition: "x1",
-			},
+			name:   "partitioned request",
+			db:     newTestDB(nil, errors.New("expected")),
+			opts:   OptionPartition("x1"),
 			status: http.StatusBadGateway,
 			err:    `Post "?http://example.com/testdb/_partition/x1/_explain"?: expected`,
 		},
@@ -204,13 +202,11 @@ func TestCreateIndex(t *testing.T) {
 			}, nil),
 		},
 		{
-			name: "partitioned query",
-			db:   newTestDB(nil, errors.New("expected")),
-			options: map[interface{}]interface{}{
-				OptionPartition: "xxy",
-			},
-			status: http.StatusBadGateway,
-			err:    `Post "?http://example.com/testdb/_partition/xxy/_index"?: expected`,
+			name:    "partitioned query",
+			db:      newTestDB(nil, errors.New("expected")),
+			options: OptionPartition("xxy"),
+			status:  http.StatusBadGateway,
+			err:     `Post "?http://example.com/testdb/_partition/xxy/_index"?: expected`,
 		},
 	}
 	for _, test := range tests {
@@ -274,13 +270,11 @@ func TestGetIndexes(t *testing.T) {
 			},
 		},
 		{
-			name: "partitioned query",
-			db:   newTestDB(nil, errors.New("expected")),
-			options: map[interface{}]interface{}{
-				OptionPartition: "yyz",
-			},
-			status: http.StatusBadGateway,
-			err:    `Get "?http://example.com/testdb/_partition/yyz/_index"?: expected`,
+			name:    "partitioned query",
+			db:      newTestDB(nil, errors.New("expected")),
+			options: OptionPartition("yyz"),
+			status:  http.StatusBadGateway,
+			err:     `Get "?http://example.com/testdb/_partition/yyz/_index"?: expected`,
 		},
 	}
 	for _, test := range tests {
@@ -347,11 +341,9 @@ func TestDeleteIndex(t *testing.T) {
 			ddoc:      "_design/foo",
 			indexName: "bar",
 			db:        newTestDB(nil, errors.New("expected")),
-			options: map[interface{}]interface{}{
-				OptionPartition: "qqz",
-			},
-			status: http.StatusBadGateway,
-			err:    `Delete "?http://example.com/testdb/_partition/qqz/_index/_design/foo/json/bar"?: expected`,
+			options:   OptionPartition("qqz"),
+			status:    http.StatusBadGateway,
+			err:       `Delete "?http://example.com/testdb/_partition/qqz/_index/_design/foo/json/bar"?: expected`,
 		},
 	}
 	for _, test := range tests {
@@ -425,11 +417,9 @@ func TestFind(t *testing.T) {
 			}, nil),
 		},
 		{
-			name: "partitioned request",
-			db:   newTestDB(nil, errors.New("expected")),
-			opts: map[interface{}]interface{}{
-				OptionPartition: "x2",
-			},
+			name:   "partitioned request",
+			db:     newTestDB(nil, errors.New("expected")),
+			opts:   OptionPartition("x2"),
 			status: http.StatusBadGateway,
 			err:    `Post "?http://example.com/testdb/_partition/x2/_find"?: expected`,
 		},

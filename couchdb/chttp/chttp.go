@@ -88,7 +88,7 @@ func New(client *http.Client, dsn string, options map[interface{}]interface{}) (
 	if gzip, ok := options[internal.OptionNoCompressedResponses]; ok {
 		c.noGzip, ok = gzip.(bool)
 		if !ok {
-			return nil, &kivik.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("OptionNoCompressedRequests is %T, must be bool", gzip)}
+			panic(fmt.Sprintf("OptionNoCompressedRequests is %T, must be bool", gzip))
 		}
 	}
 	if err := c.setUserAgent(options); err != nil {
@@ -108,7 +108,7 @@ func (c *Client) setUserAgent(options map[interface{}]interface{}) error {
 	}
 	userAgent, ok := ua.(string)
 	if !ok {
-		return &kivik.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("OptionUserAgent is %T, must be string", ua)}
+		panic(fmt.Sprintf("OptionUserAgent is %T, must be string", ua))
 	}
 	c.UserAgents = append(c.UserAgents, userAgent)
 	return nil

@@ -23,7 +23,7 @@ const (
 	OptionUserAgent = internal.OptionUserAgent
 
 	// OptionHTTPClient may be passed as an option when creating a client object,
-	// to specify an *http.Client.
+	// to specify an [http.Client].
 	OptionHTTPClient = internal.OptionHTTPClient
 
 	// OptionFullCommit is the option key used to set the `X-Couch-Full-Commit`
@@ -43,8 +43,8 @@ const (
 	OptionIfNoneMatch = internal.OptionIfNoneMatch
 
 	// OptionPartition instructs supporting methods to limit the query to the
-	// specified partition. Supported methods are: Query, AllDocs, Find, and
-	// Explain. Only supported by CouchDB 3.0.0 and newer.
+	// specified partition. Supported methods are: [Query], [AllDocs], [Find],
+	// and [Explain]. Only supported by CouchDB 3.0.0 and newer.
 	//
 	// See https://docs.couchdb.org/en/stable/api/partitioned-dbs.html
 	OptionPartition = internal.OptionPartition

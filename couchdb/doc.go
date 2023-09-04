@@ -40,15 +40,19 @@ Passing any other type will return an error.
 
 The only exceptions to the above rule are:
 
-  - the special option keys defined by the package constants `OptionFullCommit`
-    and `OptionIfNoneMatch`. These options set the appropriate HTTP request
-    headers rather than setting a URL parameter.
-  - the `keys` key, when passed to a view query, will result in a POST query
-    being done, rather than a GET, to accommodate an arbitrary number of keys.
-  - the 'NoMultipartPut' option is interpreted by the Kivik CouchDB driver to
+  - the special option keys defined by the package constants [OptionFullCommit],
+    [OptionIfNoneMatch], and [OptionUserAgent]. These options sets the
+    appropriate HTTP request headers rather than setting a URL parameter.
+  - when passed to [kivik.New], [OptionHTTPClient] specifies the [http.Client]
+    to use.
+  - the [NoMultipartPut] option is interpreted by the Kivik CouchDB driver to
     disable multipart/related PUT uploads of attachments.
-  - the 'NoMultipartGet' option is interpreted by the Kivik CouchDB driver to
+  - the [NoMultipartGet] option is interpreted by the Kivik CouchDB driver to
     disable multipart/related GET downloads of attachments.
+  - the [OptionNoCompressedRequests] option disables gzip-compressed responses
+    from the server.
+  - the [OptionPartition] option specifies the partition to query for certain
+    endpoints.
 
 # Authentication
 

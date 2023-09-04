@@ -32,6 +32,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/couchdb/chttp"
@@ -157,8 +158,39 @@ func (d *db) Query(ctx context.Context, ddoc, view string, opts map[string]inter
 	return d.rowsQuery(ctx, reqPath, opts)
 }
 
+// document represents a single document returned by Get
+type document struct {
+	id          string
+	rev         string
+	body        io.ReadCloser
+	attachments driver.Attachments
+
+	// read will be non-zero once the document has been read.
+	read int32
+}
+
+func (d *document) Next(row *driver.Row) error {
+	if atomic.SwapInt32(&d.read, 1) > 0 {
+		return io.EOF
+	}
+	row.ID = d.id
+	row.Rev = d.rev
+	row.Doc = d.body
+	row.Attachments = d.attachments
+	return nil
+}
+
+func (d *document) Close() error {
+	atomic.StoreInt32(&d.read, 1)
+	return d.body.Close()
+}
+
+func (*document) UpdateSeq() string { return "" }
+func (*document) Offset() int64     { return 0 }
+func (*document) TotalRows() int64  { return 0 }
+
 // Get fetches the requested document.
-func (d *db) Get(ctx context.Context, docID string, options map[string]interface{}) (*driver.Document, error) {
+func (d *db) Get(ctx context.Context, docID string, options map[string]interface{}) (driver.Rows, error) {
 	resp, rev, err := d.get(ctx, http.MethodGet, docID, options)
 	if err != nil {
 		return nil, err
@@ -169,9 +201,10 @@ func (d *db) Get(ctx context.Context, docID string, options map[string]interface
 	}
 	switch ct {
 	case typeJSON:
-		return &driver.Document{
-			Rev:  rev,
-			Body: resp.Body,
+		return &document{
+			id:   docID,
+			rev:  rev,
+			body: resp.Body,
 		}, nil
 	case typeMPRelated:
 		boundary := strings.Trim(params["boundary"], "\"")
@@ -196,10 +229,11 @@ func (d *db) Get(ctx context.Context, docID string, options map[string]interface
 			return nil, &kivik.Error{Status: http.StatusBadGateway, Err: err}
 		}
 
-		return &driver.Document{
-			Rev:  rev,
-			Body: io.NopCloser(bytes.NewBuffer(content)),
-			Attachments: &multipartAttachments{
+		return &document{
+			id:   docID,
+			rev:  rev,
+			body: io.NopCloser(bytes.NewBuffer(content)),
+			attachments: &multipartAttachments{
 				content:  resp.Body,
 				mpReader: mpReader,
 				meta:     metaDoc.Attachments,

@@ -69,37 +69,29 @@ type Options struct {
 
 // NewOptions converts a kivik options map into
 func NewOptions(opts map[interface{}]interface{}) (*Options, error) {
-	fullCommit, err := fullCommit(opts)
-	if err != nil {
-		return nil, err
-	}
-	ifNoneMatch, err := ifNoneMatch(opts)
-	if err != nil {
-		return nil, err
-	}
 	return &Options{
-		FullCommit:  fullCommit,
-		IfNoneMatch: ifNoneMatch,
+		FullCommit:  fullCommit(opts),
+		IfNoneMatch: ifNoneMatch(opts),
 	}, nil
 }
 
-func fullCommit(opts map[interface{}]interface{}) (bool, error) {
+func fullCommit(opts map[interface{}]interface{}) bool {
 	fc, ok := opts[internal.OptionFullCommit]
 	if !ok {
-		return false, nil
+		return false
 	}
 	fcBool, ok := fc.(bool)
 	if !ok {
 		panic(fmt.Sprintf("kivik: option '%s' must be bool, not %T", internal.OptionFullCommit, fc))
 	}
 	delete(opts, internal.OptionFullCommit)
-	return fcBool, nil
+	return fcBool
 }
 
-func ifNoneMatch(opts map[interface{}]interface{}) (string, error) {
+func ifNoneMatch(opts map[interface{}]interface{}) string {
 	inm, ok := opts[internal.OptionIfNoneMatch]
 	if !ok {
-		return "", nil
+		return ""
 	}
 	inmString, ok := inm.(string)
 	if !ok {
@@ -107,7 +99,7 @@ func ifNoneMatch(opts map[interface{}]interface{}) (string, error) {
 	}
 	delete(opts, internal.OptionIfNoneMatch)
 	if inmString[0] != '"' {
-		return `"` + inmString + `"`, nil
+		return `"` + inmString + `"`
 	}
-	return inmString, nil
+	return inmString
 }

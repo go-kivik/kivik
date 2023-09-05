@@ -15,8 +15,6 @@ package chttp
 import (
 	"testing"
 
-	"gitlab.com/flimzy/testy"
-
 	"github.com/go-kivik/kivik/v4/couchdb/internal"
 )
 
@@ -41,8 +39,7 @@ func TestFullCommit(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := fullCommit(test.input)
-			testy.StatusError(t, test.err, test.status, err)
+			result := fullCommit(test.input)
 			if result != test.expected {
 				t.Errorf("Unexpected result: %v", result)
 			}
@@ -84,8 +81,7 @@ func TestIfNoneMatch(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := ifNoneMatch(test.opts)
-			testy.StatusError(t, test.err, test.status, err)
+			result := ifNoneMatch(test.opts)
 			if result != test.expected {
 				t.Errorf("Unexpected result: %s", result)
 			}

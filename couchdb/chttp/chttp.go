@@ -91,27 +91,24 @@ func New(client *http.Client, dsn string, options map[interface{}]interface{}) (
 			panic(fmt.Sprintf("OptionNoCompressedRequests is %T, must be bool", gzip))
 		}
 	}
-	if err := c.setUserAgent(options); err != nil {
-		return nil, err
-	}
+	c.setUserAgent(options)
 	return c, nil
 }
 
-func (c *Client) setUserAgent(options map[interface{}]interface{}) error {
+func (c *Client) setUserAgent(options map[interface{}]interface{}) {
 	c.UserAgents = []string{
 		fmt.Sprintf("Kivik/%s", kivik.KivikVersion),
 		fmt.Sprintf("Kivik CouchDB driver/%s", Version),
 	}
 	ua, ok := options[internal.OptionUserAgent]
 	if !ok {
-		return nil
+		return
 	}
 	userAgent, ok := ua.(string)
 	if !ok {
 		panic(fmt.Sprintf("OptionUserAgent is %T, must be string", ua))
 	}
 	c.UserAgents = append(c.UserAgents, userAgent)
-	return nil
 }
 
 func parseDSN(dsn string) (*url.URL, error) {

@@ -33,7 +33,7 @@ func (c *client) AllDBs(ctx context.Context, opts driver.Options) ([]string, err
 	return allDBs, err
 }
 
-func (c *client) DBExists(ctx context.Context, dbName string, _ map[string]interface{}) (bool, error) {
+func (c *client) DBExists(ctx context.Context, dbName string, _ driver.Options) (bool, error) {
 	if dbName == "" {
 		return false, missingArg("dbName")
 	}

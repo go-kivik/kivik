@@ -165,7 +165,7 @@ func (c *Client) DBExists(ctx context.Context, dbName string, options ...Option)
 		return false, err
 	}
 	defer c.endQuery()
-	return c.driverClient.DBExists(ctx, dbName, mergeOptions(options...))
+	return c.driverClient.DBExists(ctx, dbName, allOptions(options))
 }
 
 // CreateDB creates a DB of the requested name.

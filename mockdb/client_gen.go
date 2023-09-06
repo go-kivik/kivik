@@ -167,11 +167,11 @@ func (c *driverClient) DB(arg0 string, options map[string]interface{}) (driver.D
 	return &driverDB{DB: expected.ret0}, expected.err
 }
 
-func (c *driverClient) DBExists(ctx context.Context, arg0 string, options map[string]interface{}) (bool, error) {
+func (c *driverClient) DBExists(ctx context.Context, arg0 string, options driver.Options) (bool, error) {
 	expected := &ExpectedDBExists{
 		arg0: arg0,
 		commonExpectation: commonExpectation{
-			options: options,
+			options: toLegacyOptions(options),
 		},
 	}
 	if err := c.nextExpectation(expected); err != nil {

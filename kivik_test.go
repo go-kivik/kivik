@@ -290,7 +290,7 @@ func TestDBExists(t *testing.T) {
 		name     string
 		client   *Client
 		dbName   string
-		options  Options
+		options  Option
 		expected bool
 		status   int
 		err      string
@@ -299,7 +299,7 @@ func TestDBExists(t *testing.T) {
 			name: "db error",
 			client: &Client{
 				driverClient: &mock.Client{
-					DBExistsFunc: func(context.Context, string, map[string]interface{}) (bool, error) {
+					DBExistsFunc: func(context.Context, string, driver.Options) (bool, error) {
 						return false, errors.New("db error")
 					},
 				},
@@ -311,13 +311,15 @@ func TestDBExists(t *testing.T) {
 			name: "success",
 			client: &Client{
 				driverClient: &mock.Client{
-					DBExistsFunc: func(_ context.Context, dbName string, opts map[string]interface{}) (bool, error) {
+					DBExistsFunc: func(_ context.Context, dbName string, opts driver.Options) (bool, error) {
 						expectedDBName := "foo"
+						gotOpts := map[string]interface{}{}
+						opts.Apply(gotOpts)
 						expectedOpts := map[string]interface{}{"foo": 123}
 						if dbName != expectedDBName {
 							return false, fmt.Errorf("Unexpected db name: %s", dbName)
 						}
-						if d := testy.DiffInterface(expectedOpts, opts); d != nil {
+						if d := testy.DiffInterface(expectedOpts, gotOpts); d != nil {
 							return false, fmt.Errorf("Unexpected opts:\n%s", d)
 						}
 						return true, nil
@@ -325,7 +327,7 @@ func TestDBExists(t *testing.T) {
 				},
 			},
 			dbName:   "foo",
-			options:  map[string]interface{}{"foo": 123},
+			options:  Options{"foo": 123},
 			expected: true,
 		},
 		{
@@ -837,7 +839,7 @@ func TestClientClose(t *testing.T) {
 		})
 		tests.Add("DBExists", tt{
 			client: &mock.Client{
-				DBExistsFunc: func(context.Context, string, map[string]interface{}) (bool, error) {
+				DBExistsFunc: func(context.Context, string, driver.Options) (bool, error) {
 					time.Sleep(delay)
 					return true, nil
 				},

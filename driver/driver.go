@@ -53,7 +53,7 @@ type Client interface {
 	// AllDBs returns a list of all existing database names.
 	AllDBs(ctx context.Context, options Options) ([]string, error)
 	// DBExists returns true if the database exists.
-	DBExists(ctx context.Context, dbName string, options map[string]interface{}) (bool, error)
+	DBExists(ctx context.Context, dbName string, options Options) (bool, error)
 	// CreateDB creates the requested DB. The dbName is validated as a valid
 	// CouchDB database name prior to calling this function, so the driver can
 	// assume a valid name.

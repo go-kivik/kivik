@@ -337,7 +337,7 @@ func TestDBExists(t *testing.T) {
 	})
 	tests.Add("options", mockTest{
 		setup: func(m *Client) {
-			m.ExpectDBExists().WithOptions(map[string]interface{}{"foo": 123})
+			m.ExpectDBExists().WithOptions(kivik.Options{"foo": 123})
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DBExists(context.TODO(), "foo")

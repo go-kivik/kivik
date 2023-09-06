@@ -137,8 +137,9 @@ func (c *client) isRemote() bool {
 // DBExists returns true if the requested DB exists. This function only works
 // for remote databases. For local databases, it creates the database.
 // Silly PouchDB.
-func (c *client) DBExists(ctx context.Context, dbName string, opts map[string]interface{}) (bool, error) {
-	pouchOpts := c.options(opts, Options{"skip_setup": true})
+func (c *client) DBExists(ctx context.Context, dbName string, options driver.Options) (bool, error) {
+	pouchOpts := map[string]interface{}{"skip_setup": true}
+	options.Apply(pouchOpts)
 	_, err := c.pouch.New(c.dbURL(dbName), pouchOpts).Info(ctx)
 	if err == nil {
 		return true, nil

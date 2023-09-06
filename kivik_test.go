@@ -352,18 +352,18 @@ func TestDBExists(t *testing.T) {
 
 func TestCreateDB(t *testing.T) {
 	tests := []struct {
-		name   string
-		client *Client
-		dbName string
-		opts   Options
-		status int
-		err    string
+		name    string
+		client  *Client
+		dbName  string
+		options Option
+		status  int
+		err     string
 	}{
 		{
 			name: "db error",
 			client: &Client{
 				driverClient: &mock.Client{
-					CreateDBFunc: func(context.Context, string, map[string]interface{}) error {
+					CreateDBFunc: func(context.Context, string, Option) error {
 						return errors.New("db error")
 					},
 				},
@@ -375,13 +375,15 @@ func TestCreateDB(t *testing.T) {
 			name: "success",
 			client: &Client{
 				driverClient: &mock.Client{
-					CreateDBFunc: func(_ context.Context, dbName string, opts map[string]interface{}) error {
+					CreateDBFunc: func(_ context.Context, dbName string, options Option) error {
 						expectedDBName := "foo"
-						expectedOpts := map[string]interface{}{"foo": 123}
+						wantOpts := map[string]interface{}{"foo": 123}
+						gotOpts := map[string]interface{}{}
+						options.Apply(gotOpts)
 						if dbName != expectedDBName {
 							return fmt.Errorf("Unexpected dbname: %s", dbName)
 						}
-						if d := testy.DiffInterface(expectedOpts, opts); d != nil {
+						if d := testy.DiffInterface(wantOpts, gotOpts); d != nil {
 							return fmt.Errorf("Unexpected opts:\n%s", d)
 						}
 						return nil
@@ -391,8 +393,8 @@ func TestCreateDB(t *testing.T) {
 					},
 				},
 			},
-			dbName: "foo",
-			opts:   map[string]interface{}{"foo": 123},
+			dbName:  "foo",
+			options: Options{"foo": 123},
 		},
 		{
 			name: "closed",
@@ -405,7 +407,11 @@ func TestCreateDB(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := test.client.CreateDB(context.Background(), test.dbName, test.opts)
+			opts := test.options
+			if opts == nil {
+				opts = mock.NilOption
+			}
+			err := test.client.CreateDB(context.Background(), test.dbName, opts)
 			testy.StatusError(t, test.err, test.status, err)
 		})
 	}
@@ -850,7 +856,7 @@ func TestClientClose(t *testing.T) {
 		})
 		tests.Add("CreateDB", tt{
 			client: &mock.Client{
-				CreateDBFunc: func(context.Context, string, map[string]interface{}) error {
+				CreateDBFunc: func(context.Context, string, Option) error {
 					time.Sleep(delay)
 					return nil
 				},

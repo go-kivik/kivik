@@ -25,6 +25,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/go-kivik/kivik/v4/couchdb/chttp"
+	"github.com/go-kivik/kivik/v4/internal/mock"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 )
 
@@ -140,7 +141,7 @@ func realDBConnect(t *testing.T) (*db, error) {
 	}
 	dbname := kt.TestDBName(t)
 
-	err = c.CreateDB(context.Background(), dbname, nil)
+	err = c.CreateDB(context.Background(), dbname, mock.NilOption)
 	return &db{
 		client: c.(*client),
 		dbName: dbname,

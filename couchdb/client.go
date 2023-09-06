@@ -44,15 +44,13 @@ func (c *client) DBExists(ctx context.Context, dbName string, _ driver.Options) 
 	return err == nil, err
 }
 
-func (c *client) CreateDB(ctx context.Context, dbName string, opts map[string]interface{}) error {
+func (c *client) CreateDB(ctx context.Context, dbName string, opts driver.Options) error {
 	if dbName == "" {
 		return missingArg("dbName")
 	}
-	query, err := optionsToParams(opts)
-	if err != nil {
-		return err
-	}
-	_, err = c.DoError(ctx, http.MethodPut, url.PathEscape(dbName), &chttp.Options{Query: query})
+	var query url.Values
+	opts.Apply(&query)
+	_, err := c.DoError(ctx, http.MethodPut, url.PathEscape(dbName), &chttp.Options{Query: query})
 	return err
 }
 

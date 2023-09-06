@@ -31,7 +31,7 @@ type expectation interface {
 }
 
 func toLegacyOptions(options driver.Options) kivik.Options {
-	var result map[string]interface{}
+	result := map[string]interface{}{}
 	options.Apply(result)
 	return result
 }

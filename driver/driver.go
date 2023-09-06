@@ -57,7 +57,7 @@ type Client interface {
 	// CreateDB creates the requested DB. The dbName is validated as a valid
 	// CouchDB database name prior to calling this function, so the driver can
 	// assume a valid name.
-	CreateDB(ctx context.Context, dbName string, options map[string]interface{}) error
+	CreateDB(ctx context.Context, dbName string, options Options) error
 	// DestroyDB deletes the requested DB.
 	DestroyDB(ctx context.Context, dbName string, options map[string]interface{}) error
 	// DB returns a handle to the requested database

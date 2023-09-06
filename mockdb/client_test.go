@@ -715,7 +715,7 @@ func TestCreateDB(t *testing.T) {
 	})
 	tests.Add("callback", mockTest{
 		setup: func(m *Client) {
-			m.ExpectCreateDB().WillExecute(func(context.Context, string, map[string]interface{}) error {
+			m.ExpectCreateDB().WillExecute(func(context.Context, string, driver.Options) error {
 				return errors.New("custom error")
 			})
 		},

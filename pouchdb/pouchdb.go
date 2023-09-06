@@ -150,13 +150,14 @@ func (c *client) DBExists(ctx context.Context, dbName string, options driver.Opt
 	return false, err
 }
 
-func (c *client) CreateDB(ctx context.Context, dbName string, opts map[string]interface{}) error {
+func (c *client) CreateDB(ctx context.Context, dbName string, options driver.Options) error {
 	if c.isRemote() {
-		if exists, _ := c.DBExists(ctx, dbName, opts); exists {
+		if exists, _ := c.DBExists(ctx, dbName, options); exists {
 			return &kivik.Error{Status: http.StatusPreconditionFailed, Message: "database exists"}
 		}
 	}
-	pouchOpts := c.options(opts)
+	pouchOpts := map[string]interface{}{}
+	options.Apply(pouchOpts)
 	_, err := c.pouch.New(c.dbURL(dbName), pouchOpts).Info(ctx)
 	return err
 }

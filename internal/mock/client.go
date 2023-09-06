@@ -23,7 +23,7 @@ type Client struct {
 	// ID identifies a specific Client instance
 	ID            string
 	AllDBsFunc    func(context.Context, driver.Options) ([]string, error)
-	CreateDBFunc  func(context.Context, string, map[string]interface{}) error
+	CreateDBFunc  func(context.Context, string, driver.Options) error
 	DBFunc        func(string, map[string]interface{}) (driver.DB, error)
 	DBExistsFunc  func(context.Context, string, driver.Options) (bool, error)
 	DestroyDBFunc func(context.Context, string, map[string]interface{}) error
@@ -38,7 +38,7 @@ func (c *Client) AllDBs(ctx context.Context, opts driver.Options) ([]string, err
 }
 
 // CreateDB calls c.CreateDBFunc
-func (c *Client) CreateDB(ctx context.Context, dbname string, opts map[string]interface{}) error {
+func (c *Client) CreateDB(ctx context.Context, dbname string, opts driver.Options) error {
 	return c.CreateDBFunc(ctx, dbname, opts)
 }
 

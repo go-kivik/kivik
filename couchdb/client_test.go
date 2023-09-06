@@ -142,7 +142,7 @@ func TestCreateDB(t *testing.T) {
 	tests := []struct {
 		name    string
 		dbName  string
-		options map[string]interface{}
+		options kivik.Option
 		client  *client
 		status  int
 		err     string
@@ -177,17 +177,14 @@ func TestCreateDB(t *testing.T) {
 			status: http.StatusPreconditionFailed,
 			err:    "Precondition Failed: The database could not be created, the file already exists.",
 		},
-		{
-			name:    "bad options",
-			dbName:  "foo",
-			options: map[string]interface{}{"foo": func() {}},
-			status:  http.StatusBadRequest,
-			err:     `^kivik: invalid type func\(\) for options$`,
-		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := test.client.CreateDB(context.Background(), test.dbName, test.options)
+			opts := test.options
+			if opts == nil {
+				opts = mock.NilOption
+			}
+			err := test.client.CreateDB(context.Background(), test.dbName, opts)
 			testy.StatusErrorRE(t, test.err, test.status, err)
 		})
 	}

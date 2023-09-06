@@ -21,6 +21,7 @@ enable = [
     "prealloc",
     "gomnd",
     "gocritic",
+    "staticcheck",
 ]
 
 [issues]

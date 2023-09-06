@@ -20,13 +20,15 @@ import (
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
 func TestNewClient(t *testing.T) {
 	type ncTest struct {
 		name       string
 		dsn        string
-		options    map[string]interface{}
+		options    driver.Options
 		expectedUA []string
 		status     int
 		err        string
@@ -49,7 +51,7 @@ func TestNewClient(t *testing.T) {
 		{
 			name: "User Agent",
 			dsn:  "http://foo.com/",
-			options: map[string]interface{}{
+			options: kivik.Options{
 				OptionUserAgent: "test/foo",
 			},
 			expectedUA: []string{
@@ -59,18 +61,9 @@ func TestNewClient(t *testing.T) {
 			},
 		},
 		{
-			name: "invalid HTTP client",
-			dsn:  "http://foo.com/",
-			options: map[string]interface{}{
-				OptionHTTPClient: "string",
-			},
-			status: http.StatusBadRequest,
-			err:    `OptionHTTPClient is string, must be \*http.Client`,
-		},
-		{
 			name: "invalid UserAgent",
 			dsn:  "http://foo.com/",
-			options: map[string]interface{}{
+			options: kivik.Options{
 				OptionUserAgent: 123,
 			},
 			status: http.StatusBadRequest,
@@ -81,7 +74,11 @@ func TestNewClient(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			driver := &couch{}
-			result, err := driver.NewClient(test.dsn, test.options)
+			opts := test.options
+			if opts == nil {
+				opts = mock.NilOption
+			}
+			result, err := driver.NewClient(test.dsn, opts)
 			testy.StatusErrorRE(t, test.err, test.status, err)
 			client, ok := result.(*client)
 			if !ok {
@@ -93,9 +90,7 @@ func TestNewClient(t *testing.T) {
 		})
 	}
 	t.Run("custom HTTP client", func(t *testing.T) {
-		opts := map[string]interface{}{
-			OptionHTTPClient: &http.Client{Timeout: time.Millisecond},
-		}
+		opts := OptionHTTPClient(&http.Client{Timeout: time.Millisecond})
 		driver := &couch{}
 		c, err := driver.NewClient("http://example.com/", opts)
 		if err != nil {

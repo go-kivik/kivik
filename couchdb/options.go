@@ -10,17 +10,26 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-// Package internal contains some internal constants.
-package internal
+package couchdb
 
-// Common constants, placed here to allow importing in chttp and root package
-// without import cycles.
-const (
-	OptionUserAgent            = "User-Agent"
-	OptionFullCommit           = "X-Couch-Full-Commit"
-	OptionIfNoneMatch          = "If-None-Match"
-	OptionPartition            = "kivik:partition"
-	OptionNoMultipartPut       = "kivik:no-multipart-put"
-	OptionNoMultipartGet       = "kivik:no-multipart-get"
-	OptionNoCompressedRequests = "kivik:no-compressed-requests"
+import (
+	"net/http"
+
+	kivik "github.com/go-kivik/kivik/v4"
 )
+
+type optionHTTPClient struct {
+	*http.Client
+}
+
+func (c optionHTTPClient) Apply(target interface{}) {
+	if client, ok := target.(*http.Client); ok {
+		*client = *c.Client
+	}
+}
+
+// OptionHTTPClient may be passed as an option when creating a CouchDB client
+// to specify an custom *http.Client to be used when making all API calls.
+func OptionHTTPClient(client *http.Client) kivik.Option {
+	return optionHTTPClient{Client: client}
+}

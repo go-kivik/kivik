@@ -24,6 +24,7 @@ import (
 	"golang.org/x/net/publicsuffix"
 
 	kivik "github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/internal/mock"
 	"github.com/go-kivik/kivik/v4/internal/nettest"
 )
 
@@ -159,7 +160,7 @@ func TestAuthenticate(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, test authTest) {
 		ctx := context.Background()
-		c, err := New(&http.Client{}, test.addr, nil)
+		c, err := New(&http.Client{}, test.addr, mock.NilOption)
 		if err != nil {
 			t.Fatal(err)
 		}

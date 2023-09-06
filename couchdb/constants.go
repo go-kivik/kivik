@@ -22,10 +22,6 @@ const (
 	// to override the default User-Agent header sent on all requests.
 	OptionUserAgent = internal.OptionUserAgent
 
-	// OptionHTTPClient may be passed as an option when creating a client object,
-	// to specify an *http.Client.
-	OptionHTTPClient = internal.OptionHTTPClient
-
 	// OptionFullCommit is the option key used to set the `X-Couch-Full-Commit`
 	// header in the request when set to true.
 	//

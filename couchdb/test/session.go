@@ -24,6 +24,7 @@ import (
 
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/couchdb/chttp"
+	"github.com/go-kivik/kivik/v4/internal/mock"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 )
 
@@ -32,11 +33,11 @@ func init() {
 }
 
 func session(ctx *kt.Context) {
-	chttpAdmin, err := chttp.New(&http.Client{}, ctx.Admin.DSN(), nil)
+	chttpAdmin, err := chttp.New(&http.Client{}, ctx.Admin.DSN(), mock.NilOption)
 	if err != nil {
 		ctx.Fatalf("chttp.Admin failed: %s", err)
 	}
-	chttpNoAuth, err := chttp.New(&http.Client{}, ctx.NoAuth.DSN(), nil)
+	chttpNoAuth, err := chttp.New(&http.Client{}, ctx.NoAuth.DSN(), mock.NilOption)
 	if err != nil {
 		ctx.Fatalf("chttp.NoAuth failed: %s", err)
 	}
@@ -114,7 +115,7 @@ func testCreateSession(ctx *kt.Context, client *chttp.Client) {
 		ctx.Skipf("No CHTTP client")
 	}
 	// Re-create client, so we can override defaults
-	client, _ = chttp.New(&http.Client{}, client.DSN(), nil)
+	client, _ = chttp.New(&http.Client{}, client.DSN(), mock.NilOption)
 	// Don't follow redirect
 	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		return http.ErrUseLastResponse
@@ -308,7 +309,7 @@ func testDeleteSession(ctx *kt.Context, client *chttp.Client) {
 		ctx.Skipf("No CHTTP client")
 	}
 	// Re-create client, so we can override defaults
-	client, _ = chttp.New(&http.Client{}, client.DSN(), nil)
+	client, _ = chttp.New(&http.Client{}, client.DSN(), mock.NilOption)
 	// Don't save sessions
 	client.Jar = nil
 	var cookie *http.Cookie

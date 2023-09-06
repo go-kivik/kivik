@@ -10,17 +10,15 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-// Package internal contains some internal constants.
-package internal
+package mock
 
-// Common constants, placed here to allow importing in chttp and root package
-// without import cycles.
-const (
-	OptionUserAgent            = "User-Agent"
-	OptionFullCommit           = "X-Couch-Full-Commit"
-	OptionIfNoneMatch          = "If-None-Match"
-	OptionPartition            = "kivik:partition"
-	OptionNoMultipartPut       = "kivik:no-multipart-put"
-	OptionNoMultipartGet       = "kivik:no-multipart-get"
-	OptionNoCompressedRequests = "kivik:no-compressed-requests"
-)
+import "github.com/go-kivik/kivik/v4/driver"
+
+type nilOption bool
+
+var _ driver.Options = nilOption(false)
+
+func (nilOption) Apply(interface{}) {}
+
+// NilOption is a nil option.
+const NilOption nilOption = false

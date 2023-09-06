@@ -24,6 +24,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/couchdb/chttp"
 	"github.com/go-kivik/kivik/v4/couchdb/internal"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
@@ -68,7 +69,7 @@ func newTestClient(response *http.Response, err error) *client {
 }
 
 func newCustomClient(fn func(*http.Request) (*http.Response, error)) *client {
-	chttpClient, _ := chttp.New(&http.Client{}, "http://example.com/", map[string]interface{}{
+	chttpClient, _ := chttp.New(&http.Client{}, "http://example.com/", kivik.Options{
 		internal.OptionNoCompressedRequests: true,
 	})
 	chttpClient.Client.Transport = customTransport(fn)
@@ -137,7 +138,7 @@ func realDB(t *testing.T) *db {
 
 func realDBConnect(t *testing.T) (*db, error) {
 	driver := &couch{}
-	c, err := driver.NewClient(kt.DSN(t), map[string]interface{}{
+	c, err := driver.NewClient(kt.DSN(t), kivik.Options{
 		OptionNoCompressedRequests: true,
 	})
 	if err != nil {

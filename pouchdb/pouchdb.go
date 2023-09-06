@@ -40,7 +40,7 @@ func init() {
 
 // NewClient returns a PouchDB client handle. Provide a dsn only for remote
 // databases. Otherwise specify ""
-func (d *pouchDriver) NewClient(dsn string, _ map[string]interface{}) (driver.Client, error) {
+func (d *pouchDriver) NewClient(dsn string, _ driver.Options) (driver.Client, error) {
 	var u *url.URL
 	var auth authenticator
 	var user *url.Userinfo

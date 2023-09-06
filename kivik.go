@@ -58,6 +58,16 @@ func Register(name string, driver driver.Driver) {
 	registry.Register(name, driver)
 }
 
+type allOptions []Option
+
+var _ Option = (allOptions)(nil)
+
+func (o allOptions) Apply(t interface{}) {
+	for _, opt := range o {
+		opt.Apply(t)
+	}
+}
+
 // New creates a new client object specified by its database driver name
 // and a driver-specific data source name.
 //
@@ -68,7 +78,7 @@ func New(driverName, dataSourceName string, options ...Option) (*Client, error) 
 	if driveri == nil {
 		return nil, &Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("kivik: unknown driver %q (forgotten import?)", driverName)}
 	}
-	client, err := driveri.NewClient(dataSourceName, mergeOptions(options...))
+	client, err := driveri.NewClient(dataSourceName, allOptions(options))
 	if err != nil {
 		return nil, err
 	}

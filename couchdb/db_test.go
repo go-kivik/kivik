@@ -34,6 +34,7 @@ import (
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/couchdb/chttp"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
 func TestAllDocs(t *testing.T) {
@@ -854,7 +855,7 @@ func TestPut(t *testing.T) {
 		{
 			name: "connection refused",
 			db: func() *db {
-				c, err := chttp.New(&http.Client{}, "http://127.0.0.1:1/", nil)
+				c, err := chttp.New(&http.Client{}, "http://127.0.0.1:1/", mock.NilOption)
 				if err != nil {
 					t.Fatal(err)
 				}

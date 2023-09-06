@@ -30,7 +30,7 @@ type Options interface {
 type Driver interface {
 	// NewClient returns a connection handle to the database. The name is in a
 	// driver-specific format.
-	NewClient(name string, options map[string]interface{}) (Client, error)
+	NewClient(name string, options Options) (Client, error)
 }
 
 // Version represents a server version response.

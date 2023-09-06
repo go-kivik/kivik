@@ -27,7 +27,7 @@ type mockDriver struct {
 
 var _ driver.Driver = &mockDriver{}
 
-func (d *mockDriver) NewClient(dsn string, _ map[string]interface{}) (driver.Client, error) {
+func (d *mockDriver) NewClient(dsn string, _ driver.Options) (driver.Client, error) {
 	d.Lock()
 	defer d.Unlock()
 

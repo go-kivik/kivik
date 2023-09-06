@@ -1,0 +1,15 @@
+func (c *driverClient) NoCtx(options map[string]interface{}) error {
+	expected := &ExpectedNoCtx{
+		commonExpectation: commonExpectation{
+			options: options,
+		},
+
+	}
+	if err := c.nextExpectation(expected); err != nil {
+		return err
+	}
+    if expected.callback != nil {
+		return expected.callback(options)
+	}
+	return expected.err
+}

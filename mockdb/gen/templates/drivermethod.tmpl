@@ -1,0 +1,17 @@
+func ({{if .DBMethod}}db *driverDB{{else}}c *driverClient{{end}}) {{ .Name }}({{ .DriverArgs }}) {{ .ReturnArgs }} {
+	expected := &Expected{{ .Name }}{
+{{ .InputVariables }}
+	}
+	if err := {{if .DBMethod}}db.client{{else}}c{{end}}.nextExpectation(expected); err != nil {
+		return {{ .ZeroReturns }}
+	}
+{{- if eq .Name "DB" }}
+expected.ret0.mu.Lock()
+expected.ret0.name = arg0
+expected.ret0.mu.Unlock()
+{{- end }}
+    if expected.callback != nil {
+		return expected.callback({{.CallbackArgs}})
+	}
+	return {{ .ExpectedReturns }}
+}

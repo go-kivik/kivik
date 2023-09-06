@@ -1,0 +1,72 @@
+stages:
+    - test
+
+.test: &go_test_template
+    stage: test
+    script:
+        - go mod download
+        - go test -race -tags=livetest ./...
+
+linter:
+    stage: test
+    image: golangci/golangci-lint:v1.54.2
+    script:
+        - go mod download
+        - golangci-lint run ./...
+
+coverage:
+    stage: test
+    image: golang:1.21
+    services: []
+    before_script:
+        - ""
+    script:
+        - go mod download
+        - ./script/coverage.sh
+
+go-1.17:
+    <<: *go_test_template
+    image: golang:1.17
+
+go-1.18:
+    <<: *go_test_template
+    image: golang:1.18
+
+go-1.19:
+    <<: *go_test_template
+    image: golang:1.19
+
+go-1.20:
+    <<: *go_test_template
+    image: golang:1.20
+
+go-1.21:
+    <<: *go_test_template
+    image: golang:1.21
+
+go-rc:
+    <<: *go_test_template
+    stage: test
+    image: golang:rc
+    allow_failure: true
+
+.gopherjs_test: &gopherjs_test_template
+    <<: *go_test_template
+    before_script:
+        - curl -sL https://deb.nodesource.com/setup_${NODE_VER}.x | bash -
+        - apt-get update -qq && apt-get install -y nodejs
+    script:
+        - npm install -g npm@7.5.2 && npm update
+        - npm install
+        - npm install source-map-support
+        - mkdir -p /tmp/src
+        - ( cd /tmp && go install github.com/gopherjs/gopherjs@${GOPHERJS_TAG} )
+        - npm install -S https://github.com/gopherjs/gopherjs#${GOPHERJS_TAG} && node -r syscall
+        - gopherjs test ./...
+
+gopherjs1.18:
+    <<: *gopherjs_test_template
+    image: golang:1.18
+    variables:
+        NODE_VER: 12
+        GOPHERJS_TAG: v1.18.0-beta3

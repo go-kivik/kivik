@@ -1,0 +1,16 @@
+func (c *driverClient) CreateDB(ctx context.Context, arg0 string, options map[string]interface{}) error {
+	expected := &ExpectedCreateDB{
+		arg0: arg0,
+		commonExpectation: commonExpectation{
+			options: options,
+		},
+
+	}
+	if err := c.nextExpectation(expected); err != nil {
+		return err
+	}
+    if expected.callback != nil {
+		return expected.callback(ctx, arg0, options)
+	}
+	return expected.wait(ctx)
+}

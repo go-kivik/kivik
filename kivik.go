@@ -183,7 +183,7 @@ func (c *Client) DestroyDB(ctx context.Context, dbName string, options ...Option
 		return err
 	}
 	defer c.endQuery()
-	return c.driverClient.DestroyDB(ctx, dbName, mergeOptions(options...))
+	return c.driverClient.DestroyDB(ctx, dbName, allOptions(options))
 }
 
 // Authenticate authenticates the client with the passed authenticator, which

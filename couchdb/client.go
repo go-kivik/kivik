@@ -54,7 +54,7 @@ func (c *client) CreateDB(ctx context.Context, dbName string, opts driver.Option
 	return err
 }
 
-func (c *client) DestroyDB(ctx context.Context, dbName string, _ map[string]interface{}) error {
+func (c *client) DestroyDB(ctx context.Context, dbName string, _ driver.Options) error {
 	if dbName == "" {
 		return missingArg("dbName")
 	}

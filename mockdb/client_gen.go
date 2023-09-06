@@ -211,11 +211,11 @@ func (c *driverClient) DBsStats(ctx context.Context, arg0 []string) ([]*driver.D
 	return expected.ret0, expected.wait(ctx)
 }
 
-func (c *driverClient) DestroyDB(ctx context.Context, arg0 string, options map[string]interface{}) error {
+func (c *driverClient) DestroyDB(ctx context.Context, arg0 string, options driver.Options) error {
 	expected := &ExpectedDestroyDB{
 		arg0: arg0,
 		commonExpectation: commonExpectation{
-			options: options,
+			options: toLegacyOptions(options),
 		},
 	}
 	if err := c.nextExpectation(expected); err != nil {

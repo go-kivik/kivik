@@ -59,7 +59,7 @@ type Client interface {
 	// assume a valid name.
 	CreateDB(ctx context.Context, dbName string, options Options) error
 	// DestroyDB deletes the requested DB.
-	DestroyDB(ctx context.Context, dbName string, options map[string]interface{}) error
+	DestroyDB(ctx context.Context, dbName string, options Options) error
 	// DB returns a handle to the requested database
 	DB(dbName string, options map[string]interface{}) (DB, error)
 }

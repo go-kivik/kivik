@@ -63,7 +63,7 @@ func (d *couch) NewClient(dsn string, options driver.Options) (driver.Client, er
 	}, nil
 }
 
-func (c *client) DB(dbName string, _ map[string]interface{}) (driver.DB, error) {
+func (c *client) DB(dbName string, _ driver.Options) (driver.DB, error) {
 	if dbName == "" {
 		return nil, missingArg("dbName")
 	}

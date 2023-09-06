@@ -141,7 +141,7 @@ func (c *Client) Version(ctx context.Context) (*Version, error) {
 // passed are merged, with later values taking precidence. If any errors occur
 // at this stage, they are deferred, or may be checked directly with [DB.Err].
 func (c *Client) DB(dbName string, options ...Option) *DB {
-	db, err := c.driverClient.DB(dbName, mergeOptions(options...))
+	db, err := c.driverClient.DB(dbName, allOptions(options))
 	return &DB{
 		client:   c,
 		name:     dbName,

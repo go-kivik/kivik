@@ -107,7 +107,6 @@ func TestDB(t *testing.T) {
 		name     string
 		client   *client
 		dbName   string
-		options  map[string]interface{}
 		expected *db
 		status   int
 		err      string
@@ -127,7 +126,7 @@ func TestDB(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.client.DB(test.dbName, test.options)
+			result, err := test.client.DB(test.dbName, mock.NilOption)
 			testy.StatusError(t, test.err, test.status, err)
 			if _, ok := result.(*db); !ok {
 				t.Errorf("Unexpected result type: %T", result)

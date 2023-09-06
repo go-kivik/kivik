@@ -176,8 +176,9 @@ func (c *client) DestroyDB(ctx context.Context, dbName string, options driver.Op
 	return c.pouch.New(c.dbURL(dbName), pouchOpts).Destroy(ctx, nil)
 }
 
-func (c *client) DB(dbName string, opts map[string]interface{}) (driver.DB, error) {
-	pouchOpts := c.options(opts)
+func (c *client) DB(dbName string, options driver.Options) (driver.DB, error) {
+	pouchOpts := map[string]interface{}{}
+	options.Apply(pouchOpts)
 	return &db{
 		// TODO: #68 Consider deferring this pouch.New call until the first use,
 		// so ctx can be used.

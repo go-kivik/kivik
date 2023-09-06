@@ -626,7 +626,7 @@ func TestDB(t *testing.T) {
 	})
 	tests.Add("options", mockTest{
 		setup: func(m *Client) {
-			m.ExpectDB().WithOptions(map[string]interface{}{"foo": 123})
+			m.ExpectDB().WithOptions(kivik.Options{"foo": 123})
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			err := c.DB("foo", kivik.Options{"foo": 123}).Err()

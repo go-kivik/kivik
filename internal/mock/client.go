@@ -24,7 +24,7 @@ type Client struct {
 	ID            string
 	AllDBsFunc    func(context.Context, driver.Options) ([]string, error)
 	CreateDBFunc  func(context.Context, string, driver.Options) error
-	DBFunc        func(string, map[string]interface{}) (driver.DB, error)
+	DBFunc        func(string, driver.Options) (driver.DB, error)
 	DBExistsFunc  func(context.Context, string, driver.Options) (bool, error)
 	DestroyDBFunc func(context.Context, string, driver.Options) error
 	VersionFunc   func(context.Context) (*driver.Version, error)
@@ -43,7 +43,7 @@ func (c *Client) CreateDB(ctx context.Context, dbname string, opts driver.Option
 }
 
 // DB calls c.DBFunc
-func (c *Client) DB(dbname string, opts map[string]interface{}) (driver.DB, error) {
+func (c *Client) DB(dbname string, opts driver.Options) (driver.DB, error) {
 	return c.DBFunc(dbname, opts)
 }
 

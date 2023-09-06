@@ -148,11 +148,11 @@ func (c *driverClient) ConfigSection(ctx context.Context, arg0 string, arg1 stri
 	return expected.ret0, expected.wait(ctx)
 }
 
-func (c *driverClient) DB(arg0 string, options map[string]interface{}) (driver.DB, error) {
+func (c *driverClient) DB(arg0 string, options driver.Options) (driver.DB, error) {
 	expected := &ExpectedDB{
 		arg0: arg0,
 		commonExpectation: commonExpectation{
-			options: options,
+			options: toLegacyOptions(options),
 		},
 	}
 	if err := c.nextExpectation(expected); err != nil {

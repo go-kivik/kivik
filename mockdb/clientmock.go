@@ -157,6 +157,7 @@ func (c *Client) NewReplication() *Replication {
 	return &Replication{}
 }
 
+// MarshalJSON satisfies the json.Marshaler interface.
 func (r *Replication) MarshalJSON() ([]byte, error) {
 	type rep struct {
 		ID        string     `json:"replication_id,omitempty"`
@@ -185,36 +186,43 @@ func (r *Replication) MarshalJSON() ([]byte, error) {
 	return json.Marshal(doc)
 }
 
+// ID sets the replication ID.
 func (r *Replication) ID(id string) *Replication {
 	r.id = id
 	return r
 }
 
+// Source sets the replication source.
 func (r *Replication) Source(s string) *Replication {
 	r.source = s
 	return r
 }
 
+// Target sets the replication target.
 func (r *Replication) Target(t string) *Replication {
 	r.target = t
 	return r
 }
 
+// StartTime sets the replication start time.
 func (r *Replication) StartTime(t time.Time) *Replication {
 	r.startTime = t
 	return r
 }
 
+// EndTime sets the replication end time.
 func (r *Replication) EndTime(t time.Time) *Replication {
 	r.endTime = t
 	return r
 }
 
+// State sets the replication state.
 func (r *Replication) State(s kivik.ReplicationState) *Replication {
 	r.state = string(s)
 	return r
 }
 
+// Err sets the replication error.
 func (r *Replication) Err(e error) *Replication {
 	r.err = e
 	return r

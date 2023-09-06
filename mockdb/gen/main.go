@@ -1,3 +1,4 @@
+// Package main generates the bulk of the mockdb driver.
 package main
 
 import (

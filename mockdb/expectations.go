@@ -333,6 +333,7 @@ func (e *ExpectedConfig) String() string {
 	return msg
 }
 
+// WithNode sets the expected node.
 func (e *ExpectedConfig) WithNode(node string) *ExpectedConfig {
 	e.arg0 = node
 	return e
@@ -350,11 +351,13 @@ func (e *ExpectedConfigSection) String() string {
 	return msg
 }
 
+// WithNode sets the expected node.
 func (e *ExpectedConfigSection) WithNode(node string) *ExpectedConfigSection {
 	e.arg0 = node
 	return e
 }
 
+// WithSection sets the expected section.
 func (e *ExpectedConfigSection) WithSection(section string) *ExpectedConfigSection {
 	e.arg1 = section
 	return e
@@ -373,16 +376,19 @@ func (e *ExpectedConfigValue) String() string {
 	return msg
 }
 
+// WithNode sets the expected node.
 func (e *ExpectedConfigValue) WithNode(node string) *ExpectedConfigValue {
 	e.arg0 = node
 	return e
 }
 
+// WithSection sets the expected section.
 func (e *ExpectedConfigValue) WithSection(section string) *ExpectedConfigValue {
 	e.arg1 = section
 	return e
 }
 
+// WithKey sets the expected key.
 func (e *ExpectedConfigValue) WithKey(key string) *ExpectedConfigValue {
 	e.arg2 = key
 	return e
@@ -402,21 +408,25 @@ func (e *ExpectedSetConfigValue) String() string {
 	return msg
 }
 
+// WithNode sets the expected node.
 func (e *ExpectedSetConfigValue) WithNode(node string) *ExpectedSetConfigValue {
 	e.arg0 = node
 	return e
 }
 
+// WithSection sets the expected section.
 func (e *ExpectedSetConfigValue) WithSection(section string) *ExpectedSetConfigValue {
 	e.arg1 = section
 	return e
 }
 
+// WithKey sets the expected key.
 func (e *ExpectedSetConfigValue) WithKey(key string) *ExpectedSetConfigValue {
 	e.arg2 = key
 	return e
 }
 
+// WithValue sets the expected value.
 func (e *ExpectedSetConfigValue) WithValue(value string) *ExpectedSetConfigValue {
 	e.arg3 = value
 	return e
@@ -435,16 +445,19 @@ func (e *ExpectedDeleteConfigKey) String() string {
 	return msg
 }
 
+// WithNode sets the expected node.
 func (e *ExpectedDeleteConfigKey) WithNode(node string) *ExpectedDeleteConfigKey {
 	e.arg0 = node
 	return e
 }
 
+// WithSection sets the expected section.
 func (e *ExpectedDeleteConfigKey) WithSection(section string) *ExpectedDeleteConfigKey {
 	e.arg1 = section
 	return e
 }
 
+// WithKey sets the expected key.
 func (e *ExpectedDeleteConfigKey) WithKey(key string) *ExpectedDeleteConfigKey {
 	e.arg2 = key
 	return e
@@ -463,11 +476,13 @@ func (e *ExpectedReplicate) String() string {
 		errorString(e.err)
 }
 
+// WithSource sets the expected source.
 func (e *ExpectedReplicate) WithSource(source string) *ExpectedReplicate {
 	e.arg1 = source
 	return e
 }
 
+// WithTarget sets the expected target.
 func (e *ExpectedReplicate) WithTarget(target string) *ExpectedReplicate {
 	e.arg0 = target
 	return e

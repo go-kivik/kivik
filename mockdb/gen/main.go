@@ -70,10 +70,7 @@ func client() error {
 	if err := RenderClientGo("client_gen.go", append(same, dm...)); err != nil {
 		return err
 	}
-	if err := RenderMockGo("clientmock_gen.go", append(same, cm...)); err != nil {
-		return err
-	}
-	return nil
+	return RenderMockGo("clientmock_gen.go", append(same, cm...))
 }
 
 type fullDB interface {
@@ -123,10 +120,7 @@ func db() error {
 	if err := RenderClientGo("db_gen.go", append(same, dm...)); err != nil {
 		return err
 	}
-	if err := RenderMockGo("dbmock_gen.go", append(same, cm...)); err != nil {
-		return err
-	}
-	return nil
+	return RenderMockGo("dbmock_gen.go", append(same, cm...))
 }
 
 func compareMethods(client, driver []*Method) (same []*Method, differentClient []*Method, differentDriver []*Method) {

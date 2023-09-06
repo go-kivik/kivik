@@ -21,7 +21,7 @@ func (e *ExpectedDBClose) method(v bool) string {
 	return "DB.Close()"
 }
 
-func (e *ExpectedDBClose) met(ex expectation) bool {
+func (e *ExpectedDBClose) met(expectation) bool {
 	return true
 }
 

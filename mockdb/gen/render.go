@@ -177,8 +177,7 @@ func zeroValue(t reflect.Type) string {
 	if strings.HasSuffix(z, "(nil)") {
 		return "nil"
 	}
-	switch z {
-	case "<nil>":
+	if z == "<nil>" {
 		return "nil"
 	}
 	return z

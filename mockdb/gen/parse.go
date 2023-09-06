@@ -48,10 +48,8 @@ func parseMethods(input interface{}, isClient bool, skip map[string]struct{}) ([
 			return nil, errors.New("field X must be of type pointer to struct")
 		}
 		hasReceiver = true
-	} else {
-		if fType.Kind() != reflect.Interface {
-			return nil, errors.New("field X must be of type interface")
-		}
+	} else if fType.Kind() != reflect.Interface {
+		return nil, errors.New("field X must be of type interface")
 	}
 	result := make([]*Method, 0, fType.NumMethod())
 	for i := 0; i < fType.NumMethod(); i++ {

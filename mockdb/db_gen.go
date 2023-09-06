@@ -71,11 +71,11 @@ func (db *driverDB) ViewCleanup(ctx context.Context) error {
 	return expected.wait(ctx)
 }
 
-func (db *driverDB) AllDocs(ctx context.Context, options map[string]interface{}) (driver.Rows, error) {
+func (db *driverDB) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
 	expected := &ExpectedAllDocs{
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: options,
+			options: toLegacyOptions(options),
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {

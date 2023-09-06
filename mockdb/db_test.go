@@ -237,7 +237,7 @@ func TestAllDocs(t *testing.T) {
 		setup: func(m *Client) {
 			db := m.NewDB()
 			m.ExpectDB().WillReturn(db)
-			db.ExpectAllDocs().WithOptions(map[string]interface{}{"foo": 123})
+			db.ExpectAllDocs().WithOptions(kivik.Options{"foo": 123})
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")

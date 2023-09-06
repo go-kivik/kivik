@@ -22,7 +22,7 @@ import (
 type DB struct {
 	// ID is a unique identifier for the DB instance.
 	ID                   string
-	AllDocsFunc          func(ctx context.Context, options map[string]interface{}) (driver.Rows, error)
+	AllDocsFunc          func(ctx context.Context, options driver.Options) (driver.Rows, error)
 	GetFunc              func(ctx context.Context, docID string, options driver.Options) (*driver.Document, error)
 	CreateDocFunc        func(ctx context.Context, doc interface{}, options map[string]interface{}) (docID, rev string, err error)
 	PutFunc              func(ctx context.Context, docID string, doc interface{}, options map[string]interface{}) (rev string, err error)
@@ -59,7 +59,7 @@ func (db *RowsGetter) Get(ctx context.Context, docID string, opts driver.Options
 var _ driver.DB = &DB{}
 
 // AllDocs calls db.AllDocsFunc
-func (db *DB) AllDocs(ctx context.Context, options map[string]interface{}) (driver.Rows, error) {
+func (db *DB) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
 	return db.AllDocsFunc(ctx, options)
 }
 

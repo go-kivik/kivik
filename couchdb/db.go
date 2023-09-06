@@ -129,7 +129,9 @@ func (d *db) rowsQuery(ctx context.Context, path string, opts map[string]interfa
 }
 
 // AllDocs returns all of the documents in the database.
-func (d *db) AllDocs(ctx context.Context, opts map[string]interface{}) (driver.Rows, error) {
+func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	reqPath := "_all_docs"
 	if part, ok := opts[OptionPartition].(string); ok {
 		delete(opts, OptionPartition)

@@ -52,7 +52,7 @@ func TestAllDocs(t *testing.T) {
 	tests := []struct {
 		name     string
 		db       *DB
-		options  Options
+		options  Option
 		expected *rows
 		status   int
 		err      string
@@ -62,7 +62,7 @@ func TestAllDocs(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					AllDocsFunc: func(context.Context, map[string]interface{}) (driver.Rows, error) {
+					AllDocsFunc: func(context.Context, driver.Options) (driver.Rows, error) {
 						return nil, errors.New("db error")
 					},
 				},
@@ -75,15 +75,17 @@ func TestAllDocs(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					AllDocsFunc: func(_ context.Context, opts map[string]interface{}) (driver.Rows, error) {
-						if d := testy.DiffInterface(testOptions, opts); d != nil {
+					AllDocsFunc: func(_ context.Context, options driver.Options) (driver.Rows, error) {
+						gotOpts := map[string]interface{}{}
+						options.Apply(gotOpts)
+						if d := testy.DiffInterface(testOptions, gotOpts); d != nil {
 							return nil, fmt.Errorf("Unexpected options: %s", d)
 						}
 						return &mock.Rows{ID: "a"}, nil
 					},
 				},
 			},
-			options: testOptions,
+			options: Options(testOptions),
 			expected: &rows{
 				iter: &iter{
 					feed: &rowsIterator{
@@ -131,7 +133,7 @@ func TestAllDocs(t *testing.T) {
 			db := &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					AllDocsFunc: func(context.Context, map[string]interface{}) (driver.Rows, error) {
+					AllDocsFunc: func(context.Context, driver.Options) (driver.Rows, error) {
 						return nil, errors.New("unf")
 					},
 				},
@@ -157,7 +159,7 @@ func TestAllDocs(t *testing.T) {
 			db := &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					AllDocsFunc: func(_ context.Context, opts map[string]interface{}) (driver.Rows, error) {
+					AllDocsFunc: func(context.Context, driver.Options) (driver.Rows, error) {
 						return &mock.Rows{
 							NextFunc: func(r *driver.Row) error {
 								if len(rows) == 0 {
@@ -2753,7 +2755,7 @@ func TestDBClose(t *testing.T) {
 		})
 		tests.Add("AllDocs", tt{
 			db: &mock.DB{
-				AllDocsFunc: func(context.Context, map[string]interface{}) (driver.Rows, error) {
+				AllDocsFunc: func(context.Context, driver.Options) (driver.Rows, error) {
 					return &mock.Rows{
 						NextFunc: func(*driver.Row) error {
 							time.Sleep(delay)

@@ -46,7 +46,9 @@ var (
 	_ driver.DBCloser = &db{}
 )
 
-func (d *db) AllDocs(ctx context.Context, opts map[string]interface{}) (driver.Rows, error) {
+func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	result, err := d.db.AllDocs(ctx, opts)
 	if err != nil {
 		return nil, err

@@ -195,7 +195,7 @@ type OldGetter interface {
 type DB interface {
 	// AllDocs returns all of the documents in the database, subject to the
 	// options provided.
-	AllDocs(ctx context.Context, options map[string]interface{}) (Rows, error)
+	AllDocs(ctx context.Context, options Options) (Rows, error)
 	// CreateDoc creates a new doc, with a server-generated ID.
 	CreateDoc(ctx context.Context, doc interface{}, options map[string]interface{}) (docID, rev string, err error)
 	// Put writes the document in the database.

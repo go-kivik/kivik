@@ -40,13 +40,13 @@ import (
 func TestAllDocs(t *testing.T) {
 	t.Run("standard", func(t *testing.T) {
 		db := newTestDB(nil, errors.New("test error"))
-		_, err := db.AllDocs(context.Background(), nil)
+		_, err := db.AllDocs(context.Background(), mock.NilOption)
 		testy.ErrorRE(t, `Get "?http://example.com/testdb/_all_docs"?: test error`, err)
 	})
 
 	t.Run("partitioned", func(t *testing.T) {
 		db := newTestDB(nil, errors.New("test error"))
-		_, err := db.AllDocs(context.Background(), map[string]interface{}{
+		_, err := db.AllDocs(context.Background(), kivik.Options{
 			OptionPartition: "a1",
 		})
 		testy.ErrorRE(t, `Get "?http://example.com/testdb/_partition/a1/_all_docs"?: test error`, err)

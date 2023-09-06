@@ -294,12 +294,12 @@ func (db *driverDB) Find(ctx context.Context, arg0 interface{}, options map[stri
 	return &driverRows{Context: ctx, Rows: coalesceRows(expected.ret0)}, expected.wait(ctx)
 }
 
-func (db *driverDB) Get(ctx context.Context, arg0 string, options map[string]interface{}) (*driver.Document, error) {
+func (db *driverDB) Get(ctx context.Context, arg0 string, options driver.Options) (*driver.Document, error) {
 	expected := &ExpectedGet{
 		arg0: arg0,
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: options,
+			options: toLegacyOptions(options),
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {

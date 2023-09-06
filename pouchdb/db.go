@@ -66,7 +66,9 @@ func (d *db) Query(ctx context.Context, ddoc, view string, opts map[string]inter
 	}, nil
 }
 
-func (d *db) Get(ctx context.Context, docID string, opts map[string]interface{}) (*driver.Document, error) {
+func (d *db) Get(ctx context.Context, docID string, options driver.Options) (*driver.Document, error) {
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	doc, rev, err := d.db.Get(ctx, docID, opts)
 	if err != nil {
 		return nil, err

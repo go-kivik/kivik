@@ -23,7 +23,7 @@ type DB struct {
 	// ID is a unique identifier for the DB instance.
 	ID                   string
 	AllDocsFunc          func(ctx context.Context, options map[string]interface{}) (driver.Rows, error)
-	GetFunc              func(ctx context.Context, docID string, options map[string]interface{}) (*driver.Document, error)
+	GetFunc              func(ctx context.Context, docID string, options driver.Options) (*driver.Document, error)
 	CreateDocFunc        func(ctx context.Context, doc interface{}, options map[string]interface{}) (docID, rev string, err error)
 	PutFunc              func(ctx context.Context, docID string, doc interface{}, options map[string]interface{}) (rev string, err error)
 	DeleteFunc           func(ctx context.Context, docID string, options map[string]interface{}) (newRev string, err error)
@@ -48,11 +48,11 @@ type SecurityDB struct {
 // RowsGetter serves as a test double for the driver.DB + driver.RowsGetter type.
 type RowsGetter struct {
 	DB
-	GetFunc func(ctx context.Context, docID string, options map[string]interface{}) (driver.Rows, error)
+	GetFunc func(ctx context.Context, docID string, options driver.Options) (driver.Rows, error)
 }
 
 // Get calls db.GetFunc
-func (db *RowsGetter) Get(ctx context.Context, docID string, opts map[string]interface{}) (driver.Rows, error) {
+func (db *RowsGetter) Get(ctx context.Context, docID string, opts driver.Options) (driver.Rows, error) {
 	return db.GetFunc(ctx, docID, opts)
 }
 
@@ -64,7 +64,7 @@ func (db *DB) AllDocs(ctx context.Context, options map[string]interface{}) (driv
 }
 
 // Get calls db.GetFunc
-func (db *DB) Get(ctx context.Context, docID string, opts map[string]interface{}) (*driver.Document, error) {
+func (db *DB) Get(ctx context.Context, docID string, opts driver.Options) (*driver.Document, error) {
 	return db.GetFunc(ctx, docID, opts)
 }
 

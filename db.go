@@ -16,6 +16,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -172,7 +173,7 @@ func (db *DB) Get(ctx context.Context, docID string, options ...Option) *ResultS
 	}
 	switch getter := db.driverDB.(type) {
 	case driver.RowsGetter:
-		rowsi, err := getter.Get(ctx, docID, mergeOptions(options...))
+		rowsi, err := getter.Get(ctx, docID, allOptions(options))
 		if err != nil {
 			db.endQuery()
 			return &ResultSet{err: err}
@@ -180,7 +181,7 @@ func (db *DB) Get(ctx context.Context, docID string, options ...Option) *ResultS
 		return &ResultSet{underlying: newRows(ctx, db.endQuery, rowsi)}
 	case driver.OldGetter:
 		defer db.endQuery()
-		doc, err := getter.Get(ctx, docID, mergeOptions(options...))
+		doc, err := getter.Get(ctx, docID, allOptions(options))
 		if err != nil {
 			return &ResultSet{err: err}
 		}
@@ -194,7 +195,7 @@ func (db *DB) Get(ctx context.Context, docID string, options ...Option) *ResultS
 		}
 		return &ResultSet{underlying: r}
 	default:
-		panic("driver is neither a driver.RowsGetter nor driver.OldGetter")
+		panic(fmt.Sprintf("driver of type %T is neither a driver.RowsGetter nor driver.OldGetter", db.driverDB))
 	}
 }
 
@@ -556,7 +557,7 @@ func (db *DB) Copy(ctx context.Context, targetID, sourceID string, options ...Op
 		return copier.Copy(ctx, targetID, sourceID, opts)
 	}
 	var doc map[string]interface{}
-	if err = db.Get(ctx, sourceID, opts).ScanDoc(&doc); err != nil {
+	if err = db.Get(ctx, sourceID, options...).ScanDoc(&doc); err != nil {
 		return "", err
 	}
 	delete(doc, "_rev")

@@ -195,7 +195,7 @@ func (r *replication) updateMain(ctx context.Context) error {
 }
 
 func (r *replication) getReplicatorDoc(ctx context.Context) (*replicatorDoc, error) {
-	rows, err := r.db.Get(ctx, r.docID, nil)
+	rows, err := r.db.Get(ctx, r.docID, kivik.Options{})
 	if err != nil {
 		return nil, err
 	}

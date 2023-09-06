@@ -91,7 +91,7 @@ func TestGet(t *testing.T) {
 	type tt struct {
 		db          *db
 		id          string
-		options     map[string]interface{}
+		options     kivik.Option
 		doc         *driver.Row
 		expected    string
 		attachments []*Attachment
@@ -106,7 +106,7 @@ func TestGet(t *testing.T) {
 	})
 	tests.Add("invalid options", tt{
 		id:      "foo",
-		options: map[string]interface{}{"foo": make(chan int)},
+		options: kivik.Options{"foo": make(chan int)},
 		status:  http.StatusBadRequest,
 		err:     "kivik: invalid type chan int for options",
 	})
@@ -153,13 +153,13 @@ func TestGet(t *testing.T) {
 			return nil, errors.New("success")
 		}),
 		id:      "foo",
-		options: map[string]interface{}{OptionIfNoneMatch: "foo"},
+		options: kivik.Options{OptionIfNoneMatch: "foo"},
 		status:  http.StatusBadGateway,
 		err:     `Get "?http://example.com/testdb/foo"?: success`,
 	})
 	tests.Add("invalid If-None-Match value", tt{
 		id:      "foo",
-		options: map[string]interface{}{OptionIfNoneMatch: 123},
+		options: kivik.Options{OptionIfNoneMatch: 123},
 		status:  http.StatusBadRequest,
 		err:     "kivik: option 'If-None-Match' must be string, not int",
 	})
@@ -219,7 +219,7 @@ func TestGet(t *testing.T) {
 			Body:          Body(`bogus data`),
 		}, nil),
 		id:      "foo",
-		options: map[string]interface{}{"include_docs": true},
+		options: kivik.Options{"include_docs": true},
 		status:  http.StatusBadGateway,
 		err:     "multipart: NextPart: EOF",
 	})
@@ -238,7 +238,7 @@ func TestGet(t *testing.T) {
 				bogus data`),
 		}, nil),
 		id:      "foo",
-		options: map[string]interface{}{"include_docs": true},
+		options: kivik.Options{"include_docs": true},
 		status:  http.StatusBadGateway,
 		err:     "malformed MIME header (initial )?line:.*bogus data",
 	})
@@ -262,7 +262,7 @@ func TestGet(t *testing.T) {
 			}
 			return nil, errors.New("not an error")
 		}),
-		options: map[string]interface{}{OptionNoMultipartGet: true},
+		options: kivik.Options{OptionNoMultipartGet: true},
 		id:      "foo",
 		status:  http.StatusBadGateway,
 		err:     "not an error",
@@ -297,7 +297,7 @@ Content-Length: 86
 --e89b3e29388aef23453450d10e5aaed0--`),
 		}, nil),
 		id:      "foo",
-		options: map[string]interface{}{"include_docs": true},
+		options: kivik.Options{"include_docs": true},
 		doc: &driver.Row{
 			ID:  "foo",
 			Rev: "2-c1c6c44c4bc3c9344b037c8690468605",
@@ -352,7 +352,7 @@ Content-Length: 86
 --e89b3e29388aef23453450d10e5aaed0--`),
 		}, nil),
 		id:      "foo",
-		options: map[string]interface{}{"include_docs": true},
+		options: kivik.Options{"include_docs": true},
 		doc: &driver.Row{
 			ID:  "foo",
 			Rev: "2-c1c6c44c4bc3c9344b037c8690468605",
@@ -398,7 +398,11 @@ Content-Length: 86
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
-		rows, err := tt.db.Get(context.Background(), tt.id, tt.options)
+		opts := tt.options
+		if opts == nil {
+			opts = mock.NilOption
+		}
+		rows, err := tt.db.Get(context.Background(), tt.id, opts)
 		if !testy.ErrorMatchesRE(tt.err, err) {
 			t.Errorf("Unexpected error: \n Got: %s\nWant: /%s/", err, tt.err)
 		}

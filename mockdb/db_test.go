@@ -1599,7 +1599,7 @@ func TestGet(t *testing.T) {
 		setup: func(m *Client) {
 			db := m.NewDB()
 			m.ExpectDB().WillReturn(db)
-			db.ExpectGet().WithOptions(map[string]interface{}{"foo": "baz"})
+			db.ExpectGet().WithOptions(kivik.Options{"foo": "baz"})
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			err := c.DB("foo").Get(context.TODO(), "foo").Err()

@@ -179,7 +179,7 @@ type RowsGetter interface {
 	// Get fetches the requested document from the database, and returns the
 	// content length (or -1 if unknown), and an io.ReadCloser to access the
 	// raw JSON content.
-	Get(ctx context.Context, docID string, options map[string]interface{}) (Rows, error)
+	Get(ctx context.Context, docID string, options Options) (Rows, error)
 }
 
 // OldGetter is an optional interface that a DB may implement, to return a single
@@ -188,7 +188,7 @@ type OldGetter interface {
 	// Get fetches the requested document from the database, and returns the
 	// content length (or -1 if unknown), and an io.ReadCloser to access the
 	// raw JSON content.
-	Get(ctx context.Context, docID string, options map[string]interface{}) (*Document, error)
+	Get(ctx context.Context, docID string, options Options) (*Document, error)
 }
 
 // DB is a database handle.

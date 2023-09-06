@@ -86,7 +86,7 @@ var _ driver.Client = &client{}
 
 // AllDBs returns the list of all existing databases. This function depends on
 // the pouchdb-all-dbs plugin being loaded.
-func (c *client) AllDBs(ctx context.Context, _ map[string]interface{}) ([]string, error) {
+func (c *client) AllDBs(ctx context.Context, _ driver.Options) ([]string, error) {
 	if c.dsn == nil {
 		return c.pouch.AllDBs(ctx)
 	}

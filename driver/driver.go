@@ -51,7 +51,7 @@ type Client interface {
 	// Version returns the server implementation's details.
 	Version(ctx context.Context) (*Version, error)
 	// AllDBs returns a list of all existing database names.
-	AllDBs(ctx context.Context, options map[string]interface{}) ([]string, error)
+	AllDBs(ctx context.Context, options Options) ([]string, error)
 	// DBExists returns true if the database exists.
 	DBExists(ctx context.Context, dbName string, options map[string]interface{}) (bool, error)
 	// CreateDB creates the requested DB. The dbName is validated as a valid

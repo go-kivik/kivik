@@ -22,7 +22,7 @@ import (
 type Client struct {
 	// ID identifies a specific Client instance
 	ID            string
-	AllDBsFunc    func(context.Context, map[string]interface{}) ([]string, error)
+	AllDBsFunc    func(context.Context, driver.Options) ([]string, error)
 	CreateDBFunc  func(context.Context, string, map[string]interface{}) error
 	DBFunc        func(string, map[string]interface{}) (driver.DB, error)
 	DBExistsFunc  func(context.Context, string, map[string]interface{}) (bool, error)
@@ -33,7 +33,7 @@ type Client struct {
 var _ driver.Client = &Client{}
 
 // AllDBs calls c.AllDBsFunc
-func (c *Client) AllDBs(ctx context.Context, opts map[string]interface{}) ([]string, error) {
+func (c *Client) AllDBs(ctx context.Context, opts driver.Options) ([]string, error) {
 	return c.AllDBsFunc(ctx, opts)
 }
 

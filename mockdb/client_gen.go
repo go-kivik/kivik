@@ -91,10 +91,10 @@ func (c *driverClient) SetConfigValue(ctx context.Context, arg0 string, arg1 str
 	return expected.ret0, expected.wait(ctx)
 }
 
-func (c *driverClient) AllDBs(ctx context.Context, options map[string]interface{}) ([]string, error) {
+func (c *driverClient) AllDBs(ctx context.Context, options driver.Options) ([]string, error) {
 	expected := &ExpectedAllDBs{
 		commonExpectation: commonExpectation{
-			options: options,
+			options: toLegacyOptions(options),
 		},
 	}
 	if err := c.nextExpectation(expected); err != nil {

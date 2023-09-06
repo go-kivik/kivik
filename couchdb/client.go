@@ -25,13 +25,11 @@ import (
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
-func (c *client) AllDBs(ctx context.Context, opts map[string]interface{}) ([]string, error) {
-	query, err := optionsToParams(opts)
-	if err != nil {
-		return nil, err
-	}
+func (c *client) AllDBs(ctx context.Context, opts driver.Options) ([]string, error) {
+	var query url.Values
+	opts.Apply(&query)
 	var allDBs []string
-	err = c.DoJSON(ctx, http.MethodGet, "/_all_dbs", &chttp.Options{Query: query}, &allDBs)
+	err := c.DoJSON(ctx, http.MethodGet, "/_all_dbs", &chttp.Options{Query: query}, &allDBs)
 	return allDBs, err
 }
 

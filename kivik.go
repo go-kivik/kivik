@@ -58,16 +58,6 @@ func Register(name string, driver driver.Driver) {
 	registry.Register(name, driver)
 }
 
-type allOptions []Option
-
-var _ Option = (allOptions)(nil)
-
-func (o allOptions) Apply(t interface{}) {
-	for _, opt := range o {
-		opt.Apply(t)
-	}
-}
-
 // New creates a new client object specified by its database driver name
 // and a driver-specific data source name.
 //
@@ -166,7 +156,7 @@ func (c *Client) AllDBs(ctx context.Context, options ...Option) ([]string, error
 		return nil, err
 	}
 	defer c.endQuery()
-	return c.driverClient.AllDBs(ctx, mergeOptions(options...))
+	return c.driverClient.AllDBs(ctx, allOptions(options))
 }
 
 // DBExists returns true if the specified database exists.

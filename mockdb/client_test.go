@@ -114,7 +114,7 @@ func TestAllDBs(t *testing.T) {
 	})
 	tests.Add("options", mockTest{
 		setup: func(m *Client) {
-			m.ExpectAllDBs().WithOptions(map[string]interface{}{"foo": 123})
+			m.ExpectAllDBs().WithOptions(kivik.Options{"foo": 123})
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.AllDBs(context.TODO(), kivik.Options{"foo": 123})
@@ -123,7 +123,7 @@ func TestAllDBs(t *testing.T) {
 	})
 	tests.Add("callback", mockTest{
 		setup: func(m *Client) {
-			m.ExpectAllDBs().WillExecute(func(context.Context, map[string]interface{}) ([]string, error) {
+			m.ExpectAllDBs().WillExecute(func(context.Context, driver.Options) ([]string, error) {
 				return nil, errors.New("custom error")
 			})
 		},

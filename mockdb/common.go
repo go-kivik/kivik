@@ -7,6 +7,7 @@ import (
 	"time"
 
 	kivik "github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/driver"
 )
 
 type expectation interface {
@@ -27,6 +28,12 @@ type expectation interface {
 	// for DB methods, this returns the associated *DB object
 	dbo() *DB
 	opts() kivik.Options
+}
+
+func toLegacyOptions(options driver.Options) kivik.Options {
+	var result map[string]interface{}
+	options.Apply(result)
+	return result
 }
 
 // commonExpectation satisfies the expectation interface, except the String()

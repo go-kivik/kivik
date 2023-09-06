@@ -230,7 +230,7 @@ func TestAllDBs(t *testing.T) {
 	tests := []struct {
 		name     string
 		client   *Client
-		options  Options
+		options  Option
 		expected []string
 		status   int
 		err      string
@@ -239,7 +239,7 @@ func TestAllDBs(t *testing.T) {
 			name: "db error",
 			client: &Client{
 				driverClient: &mock.Client{
-					AllDBsFunc: func(context.Context, map[string]interface{}) ([]string, error) {
+					AllDBsFunc: func(context.Context, driver.Options) ([]string, error) {
 						return nil, errors.New("db error")
 					},
 				},
@@ -251,16 +251,18 @@ func TestAllDBs(t *testing.T) {
 			name: "success",
 			client: &Client{
 				driverClient: &mock.Client{
-					AllDBsFunc: func(_ context.Context, options map[string]interface{}) ([]string, error) {
+					AllDBsFunc: func(_ context.Context, options driver.Options) ([]string, error) {
+						gotOptions := map[string]interface{}{}
+						options.Apply(gotOptions)
 						expectedOptions := map[string]interface{}{"foo": 123}
-						if d := testy.DiffInterface(expectedOptions, options); d != nil {
+						if d := testy.DiffInterface(expectedOptions, gotOptions); d != nil {
 							return nil, fmt.Errorf("Unexpected options:\n%s", d)
 						}
 						return []string{"a", "b", "c"}, nil
 					},
 				},
 			},
-			options:  map[string]interface{}{"foo": 123},
+			options:  Options{"foo": 123},
 			expected: []string{"a", "b", "c"},
 		},
 		{
@@ -824,7 +826,7 @@ func TestClientClose(t *testing.T) {
 		tests := testy.NewTable()
 		tests.Add("AllDBs", tt{
 			client: &mock.Client{
-				AllDBsFunc: func(context.Context, map[string]interface{}) ([]string, error) {
+				AllDBsFunc: func(context.Context, driver.Options) ([]string, error) {
 					time.Sleep(delay)
 					return nil, nil
 				},

@@ -56,9 +56,9 @@ func TestMethods(t *testing.T) {
 				ReturnsError:   true,
 			},
 			{
-				Name:           "WithOptions",
-				AcceptsOptions: true,
-				Accepts:        []reflect.Type{typeString},
+				Name:                 "WithOptions",
+				AcceptsLegacyOptions: true,
+				Accepts:              []reflect.Type{typeString},
 			},
 		},
 	})
@@ -87,9 +87,9 @@ func TestMethods(t *testing.T) {
 				ReturnsError:   true,
 			},
 			{
-				Name:           "WithOptions",
-				AcceptsOptions: true,
-				Accepts:        []reflect.Type{typeString},
+				Name:                 "WithOptions",
+				AcceptsLegacyOptions: true,
+				Accepts:              []reflect.Type{typeString},
 			},
 		},
 	})

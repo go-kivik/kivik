@@ -117,7 +117,7 @@ func TestAllDBs(t *testing.T) {
 			m.ExpectAllDBs().WithOptions(map[string]interface{}{"foo": 123})
 		},
 		test: func(t *testing.T, c *kivik.Client) {
-			_, err := c.AllDBs(context.TODO(), map[string]interface{}{"foo": 123})
+			_, err := c.AllDBs(context.TODO(), kivik.Options{"foo": 123})
 			testy.Error(t, "", err)
 		},
 	})

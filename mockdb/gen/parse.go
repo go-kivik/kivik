@@ -23,11 +23,12 @@ type method struct {
 }
 
 var (
-	typeContext       = reflect.TypeOf((*context.Context)(nil)).Elem()
-	typeDriverOptions = reflect.TypeOf(map[string]interface{}{})
-	typeClientOptions = reflect.TypeOf([]kivik.Options{})
-	typeError         = reflect.TypeOf((*error)(nil)).Elem()
-	typeString        = reflect.TypeOf("")
+	typeContext             = reflect.TypeOf((*context.Context)(nil)).Elem()
+	typeLegacyDriverOptions = reflect.TypeOf(map[string]interface{}{})
+	typeDriverOptions       = reflect.TypeOf(kivik.Options{})
+	typeClientOptions       = reflect.TypeOf([]kivik.Options{})
+	typeError               = reflect.TypeOf((*error)(nil)).Elem()
+	typeString              = reflect.TypeOf("")
 )
 
 func parseMethods(input interface{}, isClient bool, skip map[string]struct{}) ([]*method, error) {
@@ -72,7 +73,8 @@ func parseMethods(input interface{}, isClient bool, skip map[string]struct{}) ([
 			dm.AcceptsContext = true
 			accepts = accepts[1:]
 		}
-		if !isClient && len(accepts) > 0 && accepts[len(accepts)-1] == typeDriverOptions {
+		if !isClient && len(accepts) > 0 &&
+			(accepts[len(accepts)-1] == typeLegacyDriverOptions || accepts[len(accepts)-1] == typeDriverOptions) {
 			dm.AcceptsOptions = true
 			accepts = accepts[:len(accepts)-1]
 		}

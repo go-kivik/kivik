@@ -8,7 +8,7 @@ import (
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
-var _ = &driver.Attachment{}
+var _ = (*driver.Attachment)(nil)
 
 {{ range $method := . -}}
 {{ template "drivermethod.tmpl" $method }}

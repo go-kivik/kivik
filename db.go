@@ -77,7 +77,7 @@ func (db *DB) Err() error {
 }
 
 // AllDocs returns a list of all documents in the database.
-func (db *DB) AllDocs(ctx context.Context, options ...Options) *ResultSet {
+func (db *DB) AllDocs(ctx context.Context, options ...Option) *ResultSet {
 	if db.err != nil {
 		return &ResultSet{err: db.err}
 	}
@@ -93,7 +93,7 @@ func (db *DB) AllDocs(ctx context.Context, options ...Options) *ResultSet {
 }
 
 // DesignDocs returns a list of all documents in the database.
-func (db *DB) DesignDocs(ctx context.Context, options ...Options) *ResultSet {
+func (db *DB) DesignDocs(ctx context.Context, options ...Option) *ResultSet {
 	if db.err != nil {
 		return &ResultSet{err: db.err}
 	}
@@ -114,7 +114,7 @@ func (db *DB) DesignDocs(ctx context.Context, options ...Options) *ResultSet {
 }
 
 // LocalDocs returns a list of all documents in the database.
-func (db *DB) LocalDocs(ctx context.Context, options ...Options) *ResultSet {
+func (db *DB) LocalDocs(ctx context.Context, options ...Option) *ResultSet {
 	if db.err != nil {
 		return &ResultSet{err: db.err}
 	}
@@ -144,7 +144,7 @@ func (db *DB) LocalDocs(ctx context.Context, options ...Options) *ResultSet {
 // a multi-query object as a value.
 //
 // See https://docs.couchdb.org/en/stable/api/ddoc/views.html#sending-multiple-queries-to-a-view
-func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) *ResultSet {
+func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Option) *ResultSet {
 	if db.err != nil {
 		return &ResultSet{err: db.err}
 	}
@@ -163,7 +163,7 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) 
 
 // Get fetches the requested document. Any errors are deferred until the
 // [ResultSet.ScanDoc] call.
-func (db *DB) Get(ctx context.Context, docID string, options ...Options) *ResultSet {
+func (db *DB) Get(ctx context.Context, docID string, options ...Option) *ResultSet {
 	if db.err != nil {
 		return &ResultSet{err: db.err}
 	}
@@ -200,7 +200,7 @@ func (db *DB) Get(ctx context.Context, docID string, options ...Options) *Result
 
 // GetRev returns the active rev of the specified document. GetRev accepts
 // the same options as [DB.Get].
-func (db *DB) GetRev(ctx context.Context, docID string, options ...Options) (rev string, err error) {
+func (db *DB) GetRev(ctx context.Context, docID string, options ...Option) (rev string, err error) {
 	if db.err != nil {
 		return "", db.err
 	}
@@ -224,7 +224,7 @@ func (db *DB) GetRev(ctx context.Context, docID string, options ...Options) (rev
 
 // CreateDoc creates a new doc with an auto-generated unique ID. The generated
 // docID and new rev are returned.
-func (db *DB) CreateDoc(ctx context.Context, doc interface{}, options ...Options) (docID, rev string, err error) {
+func (db *DB) CreateDoc(ctx context.Context, doc interface{}, options ...Option) (docID, rev string, err error) {
 	if db.err != nil {
 		return "", "", db.err
 	}
@@ -294,7 +294,7 @@ func extractDocID(i interface{}) (string, bool) {
 //     conform to CouchDB standards.
 //   - An [encoding/json.RawMessage] value containing a valid JSON document
 //   - An [io.Reader], from which a valid JSON document may be read.
-func (db *DB) Put(ctx context.Context, docID string, doc interface{}, options ...Options) (rev string, err error) {
+func (db *DB) Put(ctx context.Context, docID string, doc interface{}, options ...Option) (rev string, err error) {
 	if db.err != nil {
 		return "", db.err
 	}
@@ -314,7 +314,7 @@ func (db *DB) Put(ctx context.Context, docID string, doc interface{}, options ..
 
 // Delete marks the specified document as deleted. The revision may be provided
 // via options, which takes priority over the rev argument.
-func (db *DB) Delete(ctx context.Context, docID, rev string, options ...Options) (newRev string, err error) {
+func (db *DB) Delete(ctx context.Context, docID, rev string, options ...Option) (newRev string, err error) {
 	if db.err != nil {
 		return "", db.err
 	}
@@ -537,7 +537,7 @@ func (db *DB) SetSecurity(ctx context.Context, security *Security) error {
 // source, with only the ID and revision changed.
 //
 // See http://docs.couchdb.org/en/2.0.0/api/document/common.html#copy--db-docid
-func (db *DB) Copy(ctx context.Context, targetID, sourceID string, options ...Options) (targetRev string, err error) {
+func (db *DB) Copy(ctx context.Context, targetID, sourceID string, options ...Option) (targetRev string, err error) {
 	if db.err != nil {
 		return "", db.err
 	}
@@ -567,7 +567,7 @@ func (db *DB) Copy(ctx context.Context, targetID, sourceID string, options ...Op
 
 // PutAttachment uploads the supplied content as an attachment to the specified
 // document.
-func (db *DB) PutAttachment(ctx context.Context, docID string, att *Attachment, options ...Options) (newRev string, err error) {
+func (db *DB) PutAttachment(ctx context.Context, docID string, att *Attachment, options ...Option) (newRev string, err error) {
 	if db.err != nil {
 		return "", db.err
 	}
@@ -586,7 +586,7 @@ func (db *DB) PutAttachment(ctx context.Context, docID string, att *Attachment, 
 }
 
 // GetAttachment returns a file attachment associated with the document.
-func (db *DB) GetAttachment(ctx context.Context, docID, filename string, options ...Options) (*Attachment, error) {
+func (db *DB) GetAttachment(ctx context.Context, docID, filename string, options ...Option) (*Attachment, error) {
 	if db.err != nil {
 		return nil, db.err
 	}
@@ -619,7 +619,7 @@ var nilContent = nilContentReader{}
 
 // GetAttachmentMeta returns meta data about an attachment. The attachment
 // content returned will be empty.
-func (db *DB) GetAttachmentMeta(ctx context.Context, docID, filename string, options ...Options) (*Attachment, error) {
+func (db *DB) GetAttachmentMeta(ctx context.Context, docID, filename string, options ...Option) (*Attachment, error) {
 	if db.err != nil {
 		return nil, db.err
 	}
@@ -658,7 +658,7 @@ func (db *DB) GetAttachmentMeta(ctx context.Context, docID, filename string, opt
 // DeleteAttachment deletes an attachment from a document, returning the
 // document's new revision. The revision may be provided via options, which
 // takes priority over the rev argument.
-func (db *DB) DeleteAttachment(ctx context.Context, docID, rev, filename string, options ...Options) (newRev string, err error) {
+func (db *DB) DeleteAttachment(ctx context.Context, docID, rev, filename string, options ...Option) (newRev string, err error) {
 	if db.err != nil {
 		return "", db.err
 	}
@@ -725,7 +725,7 @@ type BulkGetReference struct {
 // or for getting revision history.
 //
 // See http://docs.couchdb.org/en/stable/api/database/bulk-api.html#db-bulk-get
-func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...Options) *ResultSet {
+func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...Option) *ResultSet {
 	if db.err != nil {
 		return &ResultSet{err: db.err}
 	}

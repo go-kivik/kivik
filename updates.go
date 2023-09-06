@@ -67,7 +67,7 @@ func (f *DBUpdates) Seq() string {
 }
 
 // DBUpdates begins polling for database updates.
-func (c *Client) DBUpdates(ctx context.Context, options ...Options) *DBUpdates {
+func (c *Client) DBUpdates(ctx context.Context, options ...Option) *DBUpdates {
 	updater, ok := c.driverClient.(driver.DBUpdater)
 	if !ok {
 		return &DBUpdates{errIterator(&Error{Status: http.StatusNotImplemented, Message: "kivik: driver does not implement DBUpdater"})}

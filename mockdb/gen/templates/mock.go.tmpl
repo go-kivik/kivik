@@ -8,7 +8,7 @@ import (
 )
 
 var _ = kivik.EndKeySuffix // To ensure a reference to kivik package
-var _ = &driver.Attachment{}
+var _ = (*driver.Attachment)(nil)
 
 {{ range $method := . -}}
 {{ template "mockmethod.tmpl" $method -}}

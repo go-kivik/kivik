@@ -6,7 +6,7 @@ type Expected{{ .Name }} struct {
 }
 {{ if .AcceptsOptions }}
 // WithOptions sets the expected options for the call to {{if .DBMethod}}DB.{{end}}{{.Name}}().
-func (e *Expected{{.Name}}) WithOptions(options map[string]interface{}) *Expected{{.Name}} {
+func (e *Expected{{.Name}}) WithOptions(options kivik.Options) *Expected{{.Name}} {
 	e.options = options
 	return e
 }

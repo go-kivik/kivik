@@ -9,7 +9,7 @@ type ExpectedCreateDoc struct {
 }
 
 // WithOptions sets the expected options for the call to DB.CreateDoc().
-func (e *ExpectedCreateDoc) WithOptions(options map[string]interface{}) *ExpectedCreateDoc {
+func (e *ExpectedCreateDoc) WithOptions(options kivik.Options) *ExpectedCreateDoc {
 	e.options = options
 	return e
 }

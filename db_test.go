@@ -172,7 +172,7 @@ func TestAllDocs(t *testing.T) {
 					},
 				},
 			}
-			rs := db.AllDocs(context.Background(), map[string]interface{}{
+			rs := db.AllDocs(context.Background(), Options{
 				"include_docs": true,
 				"keys":         []string{"i-exist", "i-dont"},
 			})

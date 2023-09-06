@@ -83,7 +83,7 @@ func (c *Changes) ScanDoc(dest interface{}) error {
 // open until explicitly closed, or an error is encountered.
 //
 // See http://couchdb.readthedocs.io/en/latest/api/database/changes.html#get--db-_changes
-func (db *DB) Changes(ctx context.Context, options ...Options) *Changes {
+func (db *DB) Changes(ctx context.Context, options ...Option) *Changes {
 	if db.err != nil {
 		return &Changes{iter: errIterator(db.err)}
 	}

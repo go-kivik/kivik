@@ -728,21 +728,21 @@ func TestPing(t *testing.T) {
 
 func TestMergeOptions(t *testing.T) {
 	type tst struct {
-		options  []Options
+		options  []Option
 		expected Options
 	}
 	tests := testy.NewTable()
 	tests.Add("No options", tst{})
 	tests.Add("One set", tst{
-		options: []Options{
-			{"foo": 123},
+		options: []Option{
+			Options{"foo": 123},
 		},
 		expected: Options{"foo": 123},
 	})
 	tests.Add("merged", tst{
-		options: []Options{
-			{"foo": 123},
-			{"bar": 321},
+		options: []Option{
+			Options{"foo": 123},
+			Options{"bar": 321},
 		},
 		expected: Options{
 			"foo": 123,
@@ -750,9 +750,9 @@ func TestMergeOptions(t *testing.T) {
 		},
 	})
 	tests.Add("overwrite", tst{
-		options: []Options{
-			{"foo": 123, "bar": 321},
-			{"foo": 111},
+		options: []Option{
+			Options{"foo": 123, "bar": 321},
+			Options{"foo": 111},
 		},
 		expected: Options{
 			"foo": 111,
@@ -760,12 +760,12 @@ func TestMergeOptions(t *testing.T) {
 		},
 	})
 	tests.Add("nil option", tst{
-		options: []Options{nil},
+		options: []Option{nil},
 	})
 	tests.Add("different types", tst{
-		options: []Options{
-			{"foo": 123},
-			{"foo": "bar"},
+		options: []Option{
+			Options{"foo": 123},
+			Options{"foo": "bar"},
 		},
 		expected: Options{"foo": "bar"},
 	})

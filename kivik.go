@@ -36,17 +36,14 @@ type Client struct {
 	wg     sync.WaitGroup
 }
 
-// Options is a collection of options. The keys and values are backend specific.
-type Options map[string]interface{}
-
-func mergeOptions(otherOpts ...Options) Options {
-	if len(otherOpts) == 0 {
+func mergeOptions(opts ...Option) Options {
+	if len(opts) == 0 {
 		return nil
 	}
-	options := make(Options)
-	for _, opts := range otherOpts {
-		for k, v := range opts {
-			options[k] = v
+	options := make(map[string]interface{})
+	for _, opt := range opts {
+		if opt != nil {
+			opt.Apply(options)
 		}
 	}
 	if len(options) == 0 {
@@ -66,7 +63,7 @@ func Register(name string, driver driver.Driver) {
 //
 // The use of options is driver-specific, so consult with the documentation for
 // your driver for supported options.
-func New(driverName, dataSourceName string, options ...Options) (*Client, error) {
+func New(driverName, dataSourceName string, options ...Option) (*Client, error) {
 	driveri := registry.Driver(driverName)
 	if driveri == nil {
 		return nil, &Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("kivik: unknown driver %q (forgotten import?)", driverName)}
@@ -143,7 +140,7 @@ func (c *Client) Version(ctx context.Context) (*Version, error) {
 // DB returns a handle to the requested database. Any options parameters
 // passed are merged, with later values taking precidence. If any errors occur
 // at this stage, they are deferred, or may be checked directly with [DB.Err].
-func (c *Client) DB(dbName string, options ...Options) *DB {
+func (c *Client) DB(dbName string, options ...Option) *DB {
 	db, err := c.driverClient.DB(dbName, mergeOptions(options...))
 	return &DB{
 		client:   c,
@@ -154,7 +151,7 @@ func (c *Client) DB(dbName string, options ...Options) *DB {
 }
 
 // AllDBs returns a list of all databases.
-func (c *Client) AllDBs(ctx context.Context, options ...Options) ([]string, error) {
+func (c *Client) AllDBs(ctx context.Context, options ...Option) ([]string, error) {
 	if err := c.startQuery(); err != nil {
 		return nil, err
 	}
@@ -163,7 +160,7 @@ func (c *Client) AllDBs(ctx context.Context, options ...Options) ([]string, erro
 }
 
 // DBExists returns true if the specified database exists.
-func (c *Client) DBExists(ctx context.Context, dbName string, options ...Options) (bool, error) {
+func (c *Client) DBExists(ctx context.Context, dbName string, options ...Option) (bool, error) {
 	if err := c.startQuery(); err != nil {
 		return false, err
 	}
@@ -172,7 +169,7 @@ func (c *Client) DBExists(ctx context.Context, dbName string, options ...Options
 }
 
 // CreateDB creates a DB of the requested name.
-func (c *Client) CreateDB(ctx context.Context, dbName string, options ...Options) error {
+func (c *Client) CreateDB(ctx context.Context, dbName string, options ...Option) error {
 	if err := c.startQuery(); err != nil {
 		return err
 	}
@@ -181,7 +178,7 @@ func (c *Client) CreateDB(ctx context.Context, dbName string, options ...Options
 }
 
 // DestroyDB deletes the requested DB.
-func (c *Client) DestroyDB(ctx context.Context, dbName string, options ...Options) error {
+func (c *Client) DestroyDB(ctx context.Context, dbName string, options ...Option) error {
 	if err := c.startQuery(); err != nil {
 		return err
 	}

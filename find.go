@@ -24,7 +24,7 @@ var findNotImplemented = &Error{Status: http.StatusNotImplemented, Message: "kiv
 // Find executes a query using the new /_find interface. The query must be
 // JSON-marshalable to a valid query.
 // See https://docs.couchdb.org/en/stable/api/database/find.html
-func (db *DB) Find(ctx context.Context, query interface{}, options ...Options) *ResultSet {
+func (db *DB) Find(ctx context.Context, query interface{}, options ...Option) *ResultSet {
 	if db.err != nil {
 		return &ResultSet{err: db.err}
 	}
@@ -46,7 +46,7 @@ func (db *DB) Find(ctx context.Context, query interface{}, options ...Options) *
 // be empty, in which case they will be auto-generated.  index must be a valid
 // index object, as described here:
 // http://docs.couchdb.org/en/stable/api/database/find.html#db-index
-func (db *DB) CreateIndex(ctx context.Context, ddoc, name string, index interface{}, options ...Options) error {
+func (db *DB) CreateIndex(ctx context.Context, ddoc, name string, index interface{}, options ...Option) error {
 	if db.err != nil {
 		return db.err
 	}
@@ -61,7 +61,7 @@ func (db *DB) CreateIndex(ctx context.Context, ddoc, name string, index interfac
 }
 
 // DeleteIndex deletes the requested index.
-func (db *DB) DeleteIndex(ctx context.Context, ddoc, name string, options ...Options) error {
+func (db *DB) DeleteIndex(ctx context.Context, ddoc, name string, options ...Option) error {
 	if db.err != nil {
 		return db.err
 	}
@@ -84,7 +84,7 @@ type Index struct {
 }
 
 // GetIndexes returns the indexes defined on the current database.
-func (db *DB) GetIndexes(ctx context.Context, options ...Options) ([]Index, error) {
+func (db *DB) GetIndexes(ctx context.Context, options ...Option) ([]Index, error) {
 	if db.err != nil {
 		return nil, db.err
 	}
@@ -121,7 +121,7 @@ type QueryPlan struct {
 
 // Explain returns the query plan for a given query. Explain takes the same
 // arguments as Find.
-func (db *DB) Explain(ctx context.Context, query interface{}, options ...Options) (*QueryPlan, error) {
+func (db *DB) Explain(ctx context.Context, query interface{}, options ...Option) (*QueryPlan, error) {
 	if db.err != nil {
 		return nil, db.err
 	}

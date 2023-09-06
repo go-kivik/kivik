@@ -19,6 +19,13 @@ import (
 	"time"
 )
 
+// Options represents a collection of arbitrary client or query options.
+type Options interface {
+	// Apply applies the option to target, if target is of the expected type.
+	// Unexpected/recognized target types should be ignored.
+	Apply(target interface{})
+}
+
 // Driver is the interface that must be implemented by a database driver.
 type Driver interface {
 	// NewClient returns a connection handle to the database. The name is in a

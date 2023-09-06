@@ -24,7 +24,7 @@ var clusterNotImplemented = &Error{Status: http.StatusNotImplemented, Message: "
 // ClusterStatus returns the current cluster status.
 //
 // See http://docs.couchdb.org/en/stable/api/server/common.html#cluster-setup
-func (c *Client) ClusterStatus(ctx context.Context, options ...Options) (string, error) {
+func (c *Client) ClusterStatus(ctx context.Context, options ...Option) (string, error) {
 	if err := c.startQuery(); err != nil {
 		return "", err
 	}

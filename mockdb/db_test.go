@@ -849,7 +849,7 @@ func TestCreateDoc(t *testing.T) {
 			db.ExpectCreateDoc().WithOptions(map[string]interface{}{"foo": "bar"})
 		},
 		test: func(t *testing.T, c *kivik.Client) {
-			_, _, err := c.DB("foo").CreateDoc(context.TODO(), "bar", map[string]interface{}{})
+			_, _, err := c.DB("foo").CreateDoc(context.TODO(), "bar", kivik.Options{})
 			testy.ErrorRE(t, `has options: map\[foo:bar]`, err)
 		},
 	})
@@ -1104,7 +1104,7 @@ func TestPut(t *testing.T) {
 			db.ExpectPut().WithOptions(map[string]interface{}{"foo": "bar"})
 		},
 		test: func(t *testing.T, c *kivik.Client) {
-			_, err := c.DB("foo").Put(context.TODO(), "foo", 123, map[string]interface{}{"foo": 123})
+			_, err := c.DB("foo").Put(context.TODO(), "foo", 123, kivik.Options{"foo": 123})
 			testy.ErrorRE(t, "has docID: foo", err)
 		},
 	})
@@ -1194,7 +1194,7 @@ func TestGetRev(t *testing.T) {
 			db.ExpectGetRev().WithOptions(map[string]interface{}{"foo": "bar"})
 		},
 		test: func(t *testing.T, c *kivik.Client) {
-			_, err := c.DB("foo").GetRev(context.TODO(), "foo", map[string]interface{}{"foo": 123})
+			_, err := c.DB("foo").GetRev(context.TODO(), "foo", kivik.Options{"foo": 123})
 			testy.ErrorRE(t, "has docID: foo", err)
 		},
 	})
@@ -1938,7 +1938,7 @@ func TestPutAttachment(t *testing.T) {
 			db.ExpectPutAttachment().WithOptions(map[string]interface{}{"foo": "bar"})
 		},
 		test: func(t *testing.T, c *kivik.Client) {
-			_, err := c.DB("foo").PutAttachment(context.TODO(), "foo", &kivik.Attachment{Filename: "foo.txt"}, map[string]interface{}{"foo": 123})
+			_, err := c.DB("foo").PutAttachment(context.TODO(), "foo", &kivik.Attachment{Filename: "foo.txt"}, kivik.Options{"foo": 123})
 			testy.ErrorRE(t, "has docID: foo", err)
 		},
 	})

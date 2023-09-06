@@ -179,7 +179,7 @@ func (c *Client) GetReplications(ctx context.Context, options ...Option) ([]*Rep
 	if !ok {
 		return nil, replicationNotImplemented
 	}
-	reps, err := replicator.GetReplications(ctx, mergeOptions(options...))
+	reps, err := replicator.GetReplications(ctx, allOptions(options))
 	if err != nil {
 		return nil, err
 	}

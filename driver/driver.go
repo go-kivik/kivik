@@ -112,7 +112,7 @@ type ClientReplicator interface {
 	Replicate(ctx context.Context, targetDSN, sourceDSN string, options Options) (Replication, error)
 	// GetReplications returns a list of replicatoins (i.e. all docs in the
 	// _replicator database)
-	GetReplications(ctx context.Context, options map[string]interface{}) ([]Replication, error)
+	GetReplications(ctx context.Context, options Options) ([]Replication, error)
 }
 
 // Authenticator is an optional interface that may be implemented by a [Client]

@@ -227,10 +227,10 @@ func (c *driverClient) DestroyDB(ctx context.Context, arg0 string, options drive
 	return expected.wait(ctx)
 }
 
-func (c *driverClient) GetReplications(ctx context.Context, options map[string]interface{}) ([]driver.Replication, error) {
+func (c *driverClient) GetReplications(ctx context.Context, options driver.Options) ([]driver.Replication, error) {
 	expected := &ExpectedGetReplications{
 		commonExpectation: commonExpectation{
-			options: options,
+			options: toLegacyOptions(options),
 		},
 	}
 	if err := c.nextExpectation(expected); err != nil {

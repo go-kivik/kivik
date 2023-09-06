@@ -25,6 +25,7 @@ import (
 
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
 func TestReplicationError(t *testing.T) {
@@ -396,7 +397,7 @@ func TestGetReplications(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			_, err := test.client.GetReplications(context.Background(), nil)
+			_, err := test.client.GetReplications(context.Background(), mock.NilOption)
 			testy.StatusErrorRE(t, test.err, test.status, err)
 		})
 	}

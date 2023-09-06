@@ -65,14 +65,14 @@ func (c *Client) Version(ctx context.Context) (*driver.Version, error) {
 // ClientReplicator mocks driver.Client and driver.ClientReplicator
 type ClientReplicator struct {
 	*Client
-	GetReplicationsFunc func(context.Context, map[string]interface{}) ([]driver.Replication, error)
+	GetReplicationsFunc func(context.Context, driver.Options) ([]driver.Replication, error)
 	ReplicateFunc       func(context.Context, string, string, driver.Options) (driver.Replication, error)
 }
 
 var _ driver.ClientReplicator = &ClientReplicator{}
 
 // GetReplications calls c.GetReplicationsFunc
-func (c *ClientReplicator) GetReplications(ctx context.Context, opts map[string]interface{}) ([]driver.Replication, error) {
+func (c *ClientReplicator) GetReplications(ctx context.Context, opts driver.Options) ([]driver.Replication, error) {
 	return c.GetReplicationsFunc(ctx, opts)
 }
 

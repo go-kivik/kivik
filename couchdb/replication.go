@@ -253,11 +253,13 @@ type replicatorDoc struct {
 	Error         *replicationError    `json:"_replication_state_reason,omitempty"`
 }
 
-func (c *client) GetReplications(ctx context.Context, opts map[string]interface{}) ([]driver.Replication, error) {
+func (c *client) GetReplications(ctx context.Context, options driver.Options) ([]driver.Replication, error) {
 	scheduler, err := c.schedulerSupported(ctx)
 	if err != nil {
 		return nil, err
 	}
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	if scheduler {
 		return c.getReplicationsFromScheduler(ctx, opts)
 	}

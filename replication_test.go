@@ -314,7 +314,7 @@ func TestGetReplications(t *testing.T) {
 	tests := []struct {
 		name     string
 		client   *Client
-		options  Options
+		options  Option
 		expected []*Replication
 		status   int
 		err      string
@@ -331,7 +331,7 @@ func TestGetReplications(t *testing.T) {
 			name: "db error",
 			client: &Client{
 				driverClient: &mock.ClientReplicator{
-					GetReplicationsFunc: func(context.Context, map[string]interface{}) ([]driver.Replication, error) {
+					GetReplicationsFunc: func(context.Context, driver.Options) ([]driver.Replication, error) {
 						return nil, errors.New("db error")
 					},
 				},
@@ -343,9 +343,11 @@ func TestGetReplications(t *testing.T) {
 			name: "success",
 			client: &Client{
 				driverClient: &mock.ClientReplicator{
-					GetReplicationsFunc: func(_ context.Context, opts map[string]interface{}) ([]driver.Replication, error) {
-						expectedOpts := map[string]interface{}{"foo": 123}
-						if d := testy.DiffInterface(expectedOpts, opts); d != nil {
+					GetReplicationsFunc: func(_ context.Context, options driver.Options) ([]driver.Replication, error) {
+						gotOpts := map[string]interface{}{}
+						options.Apply(gotOpts)
+						wantOpts := map[string]interface{}{"foo": 123}
+						if d := testy.DiffInterface(wantOpts, gotOpts); d != nil {
 							return nil, fmt.Errorf("Unexpected options:\n%v", d)
 						}
 						return []driver.Replication{
@@ -355,7 +357,7 @@ func TestGetReplications(t *testing.T) {
 					},
 				},
 			},
-			options: map[string]interface{}{"foo": 123},
+			options: Options{"foo": 123},
 			expected: []*Replication{
 				{
 					Source: "1-source",

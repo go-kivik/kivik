@@ -394,7 +394,7 @@ func TestReplicate(t *testing.T) {
 		name           string
 		client         *Client
 		target, source string
-		options        Options
+		options        Option
 		expected       *Replication
 		status         int
 		err            string
@@ -411,7 +411,7 @@ func TestReplicate(t *testing.T) {
 			name: "db error",
 			client: &Client{
 				driverClient: &mock.ClientReplicator{
-					ReplicateFunc: func(context.Context, string, string, map[string]interface{}) (driver.Replication, error) {
+					ReplicateFunc: func(context.Context, string, string, driver.Options) (driver.Replication, error) {
 						return nil, errors.New("db error")
 					},
 				},
@@ -423,17 +423,19 @@ func TestReplicate(t *testing.T) {
 			name: "success",
 			client: &Client{
 				driverClient: &mock.ClientReplicator{
-					ReplicateFunc: func(_ context.Context, target, source string, opts map[string]interface{}) (driver.Replication, error) {
+					ReplicateFunc: func(_ context.Context, target, source string, options driver.Options) (driver.Replication, error) {
 						expectedTarget := "foo"
 						expectedSource := "bar"
-						expectedOpts := map[string]interface{}{"foo": 123}
+						gotOpts := map[string]interface{}{}
+						options.Apply(gotOpts)
+						wantOpts := map[string]interface{}{"foo": 123}
 						if target != expectedTarget {
 							return nil, fmt.Errorf("Unexpected target: %s", target)
 						}
 						if source != expectedSource {
 							return nil, fmt.Errorf("Unexpected source: %s", source)
 						}
-						if d := testy.DiffInterface(expectedOpts, opts); d != nil {
+						if d := testy.DiffInterface(wantOpts, gotOpts); d != nil {
 							return nil, fmt.Errorf("Unexpected options:\n%v", d)
 						}
 						return &mock.Replication{ID: "a"}, nil
@@ -442,7 +444,7 @@ func TestReplicate(t *testing.T) {
 			},
 			target:  "foo",
 			source:  "bar",
-			options: map[string]interface{}{"foo": 123},
+			options: Options{"foo": 123},
 			expected: &Replication{
 				Source: "a-source",
 				Target: "a-target",

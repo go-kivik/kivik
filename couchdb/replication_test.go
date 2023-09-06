@@ -139,7 +139,7 @@ func TestReplicate(t *testing.T) {
 	tests := []struct {
 		name           string
 		target, source string
-		options        map[string]interface{}
+		options        kivik.Option
 		client         *client
 		status         int
 		err            string
@@ -164,7 +164,7 @@ func TestReplicate(t *testing.T) {
 				return client
 			}(),
 			target: "foo", source: "bar",
-			options: map[string]interface{}{"foo": make(chan int)},
+			options: kivik.Options{"foo": make(chan int)},
 			status:  http.StatusBadRequest,
 			err:     `^Post "?http://example.com/_replicator"?: json: unsupported type: chan int$`,
 		},
@@ -256,7 +256,11 @@ func TestReplicate(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			resp, err := test.client.Replicate(context.Background(), test.target, test.source, test.options)
+			opts := test.options
+			if opts == nil {
+				opts = mock.NilOption
+			}
+			resp, err := test.client.Replicate(context.Background(), test.target, test.source, opts)
 			testy.StatusErrorRE(t, test.err, test.status, err)
 			if _, ok := resp.(*replication); ok {
 				return

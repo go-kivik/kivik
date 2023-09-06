@@ -296,10 +296,9 @@ func (c *client) legacyGetReplications(ctx context.Context, opts map[string]inte
 	return reps, nil
 }
 
-func (c *client) Replicate(ctx context.Context, targetDSN, sourceDSN string, opts map[string]interface{}) (driver.Replication, error) {
-	if opts == nil {
-		opts = make(map[string]interface{})
-	}
+func (c *client) Replicate(ctx context.Context, targetDSN, sourceDSN string, options driver.Options) (driver.Replication, error) {
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	// Allow overriding source and target with options, i.e. for auth options
 	if _, ok := opts["source"]; !ok {
 		opts["source"] = sourceDSN

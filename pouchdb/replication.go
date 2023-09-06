@@ -140,8 +140,9 @@ func replicationEndpoint(dsn string, object interface{}) (name string, obj inter
 	return "<unknown>", obj, nil
 }
 
-func (c *client) Replicate(_ context.Context, targetDSN, sourceDSN string, opts map[string]interface{}) (driver.Replication, error) {
-	pouchOpts := c.options(opts)
+func (c *client) Replicate(_ context.Context, targetDSN, sourceDSN string, options driver.Options) (driver.Replication, error) {
+	pouchOpts := map[string]interface{}{}
+	options.Apply(pouchOpts)
 	// Allow overriding source and target with options, i.e. for PouchDB objects
 	sourceName, sourceObj, err := replicationEndpoint(sourceDSN, pouchOpts["source"])
 	if err != nil {

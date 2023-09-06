@@ -66,7 +66,7 @@ func (c *Client) Version(ctx context.Context) (*driver.Version, error) {
 type ClientReplicator struct {
 	*Client
 	GetReplicationsFunc func(context.Context, map[string]interface{}) ([]driver.Replication, error)
-	ReplicateFunc       func(context.Context, string, string, map[string]interface{}) (driver.Replication, error)
+	ReplicateFunc       func(context.Context, string, string, driver.Options) (driver.Replication, error)
 }
 
 var _ driver.ClientReplicator = &ClientReplicator{}
@@ -77,7 +77,7 @@ func (c *ClientReplicator) GetReplications(ctx context.Context, opts map[string]
 }
 
 // Replicate calls c.ReplicateFunc
-func (c *ClientReplicator) Replicate(ctx context.Context, target, source string, opts map[string]interface{}) (driver.Replication, error) {
+func (c *ClientReplicator) Replicate(ctx context.Context, target, source string, opts driver.Options) (driver.Replication, error) {
 	return c.ReplicateFunc(ctx, target, source, opts)
 }
 

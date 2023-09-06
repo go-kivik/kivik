@@ -203,7 +203,7 @@ func (c *Client) Replicate(ctx context.Context, targetDSN, sourceDSN string, opt
 	if !ok {
 		return nil, replicationNotImplemented
 	}
-	rep, err := replicator.Replicate(ctx, targetDSN, sourceDSN, mergeOptions(options...))
+	rep, err := replicator.Replicate(ctx, targetDSN, sourceDSN, allOptions(options))
 	if err != nil {
 		return nil, err
 	}

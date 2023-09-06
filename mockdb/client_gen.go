@@ -253,12 +253,12 @@ func (c *driverClient) Membership(ctx context.Context) (*driver.ClusterMembershi
 	return expected.ret0, expected.wait(ctx)
 }
 
-func (c *driverClient) Replicate(ctx context.Context, arg0 string, arg1 string, options map[string]interface{}) (driver.Replication, error) {
+func (c *driverClient) Replicate(ctx context.Context, arg0 string, arg1 string, options driver.Options) (driver.Replication, error) {
 	expected := &ExpectedReplicate{
 		arg0: arg0,
 		arg1: arg1,
 		commonExpectation: commonExpectation{
-			options: options,
+			options: toLegacyOptions(options),
 		},
 	}
 	if err := c.nextExpectation(expected); err != nil {

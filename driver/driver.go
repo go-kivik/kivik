@@ -109,7 +109,7 @@ type ReplicationInfo struct {
 // that supports replication between two database.
 type ClientReplicator interface {
 	// Replicate initiates a replication.
-	Replicate(ctx context.Context, targetDSN, sourceDSN string, options map[string]interface{}) (Replication, error)
+	Replicate(ctx context.Context, targetDSN, sourceDSN string, options Options) (Replication, error)
 	// GetReplications returns a list of replicatoins (i.e. all docs in the
 	// _replicator database)
 	GetReplications(ctx context.Context, options map[string]interface{}) ([]Replication, error)

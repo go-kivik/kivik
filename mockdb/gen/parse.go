@@ -8,8 +8,8 @@ import (
 	kivik "github.com/go-kivik/kivik/v4"
 )
 
-// Method contains the relevant information for a driver method.
-type Method struct {
+// method contains the relevant information for a driver method.
+type method struct {
 	// The method name
 	Name string
 	// Accepted values, except for context and options
@@ -30,7 +30,7 @@ var (
 	typeString        = reflect.TypeOf("")
 )
 
-func parseMethods(input interface{}, isClient bool, skip map[string]struct{}) ([]*Method, error) {
+func parseMethods(input interface{}, isClient bool, skip map[string]struct{}) ([]*method, error) {
 	var hasReceiver bool
 	t := reflect.TypeOf(input)
 	if t.Kind() != reflect.Struct {
@@ -51,13 +51,13 @@ func parseMethods(input interface{}, isClient bool, skip map[string]struct{}) ([
 	} else if fType.Kind() != reflect.Interface {
 		return nil, errors.New("field X must be of type interface")
 	}
-	result := make([]*Method, 0, fType.NumMethod())
+	result := make([]*method, 0, fType.NumMethod())
 	for i := 0; i < fType.NumMethod(); i++ {
 		m := fType.Method(i)
 		if _, ok := skip[m.Name]; ok {
 			continue
 		}
-		dm := &Method{
+		dm := &method{
 			Name: m.Name,
 		}
 		result = append(result, dm)

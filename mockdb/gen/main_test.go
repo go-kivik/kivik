@@ -8,38 +8,38 @@ import (
 
 func TestCompareMethods(t *testing.T) {
 	type tst struct {
-		client    []*Method
-		driver    []*Method
-		expSame   []*Method
-		expClient []*Method
-		expDriver []*Method
+		client    []*method
+		driver    []*method
+		expSame   []*method
+		expClient []*method
+		expDriver []*method
 	}
 	tests := testy.NewTable()
 	tests.Add("one identical", tst{
-		client: []*Method{
+		client: []*method{
 			{Name: "Foo"},
 		},
-		driver: []*Method{
+		driver: []*method{
 			{Name: "Foo"},
 		},
-		expSame: []*Method{
+		expSame: []*method{
 			{Name: "Foo"},
 		},
-		expClient: []*Method{},
-		expDriver: []*Method{},
+		expClient: []*method{},
+		expDriver: []*method{},
 	})
 	tests.Add("same name", tst{
-		client: []*Method{
+		client: []*method{
 			{Name: "Foo", ReturnsError: true},
 		},
-		driver: []*Method{
+		driver: []*method{
 			{Name: "Foo"},
 		},
-		expSame: []*Method{},
-		expClient: []*Method{
+		expSame: []*method{},
+		expClient: []*method{
 			{Name: "Foo", ReturnsError: true},
 		},
-		expDriver: []*Method{
+		expDriver: []*method{
 			{Name: "Foo"},
 		},
 	})

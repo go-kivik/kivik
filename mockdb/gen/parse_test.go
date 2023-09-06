@@ -26,7 +26,7 @@ func TestMethods(t *testing.T) {
 	type tst struct {
 		input    interface{}
 		isClient bool
-		expected []*Method
+		expected []*method
 		err      string
 	}
 	tests := testy.NewTable()
@@ -44,7 +44,7 @@ func TestMethods(t *testing.T) {
 	})
 	tests.Add("testDriver", tst{
 		input: struct{ X testDriver }{}, // nolint: unused
-		expected: []*Method{
+		expected: []*method{
 			{
 				Name:         "NoCtx",
 				ReturnsError: true,
@@ -75,7 +75,7 @@ func TestMethods(t *testing.T) {
 	tests.Add("*testClient", tst{
 		input:    struct{ X *testClient }{}, // nolint: unused
 		isClient: true,
-		expected: []*Method{
+		expected: []*method{
 			{
 				Name:         "NoCtx",
 				ReturnsError: true,

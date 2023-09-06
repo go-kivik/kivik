@@ -19,7 +19,7 @@ func initTemplates(root string) {
 	}
 }
 
-func RenderExpectationsGo(filename string, methods []*Method) error {
+func renderExpectationsGo(filename string, methods []*method) error {
 	file, err := os.Create(filename)
 	if err != nil {
 		return err
@@ -27,7 +27,7 @@ func RenderExpectationsGo(filename string, methods []*Method) error {
 	return tmpl.ExecuteTemplate(file, "expectations.go.tmpl", methods)
 }
 
-func RenderClientGo(filename string, methods []*Method) error {
+func renderClientGo(filename string, methods []*method) error {
 	file, err := os.Create(filename)
 	if err != nil {
 		return err
@@ -35,7 +35,7 @@ func RenderClientGo(filename string, methods []*Method) error {
 	return tmpl.ExecuteTemplate(file, "client.go.tmpl", methods)
 }
 
-func RenderMockGo(filename string, methods []*Method) error {
+func renderMockGo(filename string, methods []*method) error {
 	file, err := os.Create(filename)
 	if err != nil {
 		return err
@@ -43,19 +43,19 @@ func RenderMockGo(filename string, methods []*Method) error {
 	return tmpl.ExecuteTemplate(file, "mock.go.tmpl", methods)
 }
 
-func RenderDriverMethod(m *Method) (string, error) {
+func renderDriverMethod(m *method) (string, error) {
 	buf := &bytes.Buffer{}
 	err := tmpl.ExecuteTemplate(buf, "drivermethod.tmpl", m)
 	return buf.String(), err
 }
 
-func RenderExpectedType(m *Method) (string, error) {
+func renderExpectedType(m *method) (string, error) {
 	buf := &bytes.Buffer{}
 	err := tmpl.ExecuteTemplate(buf, "expectedtype.tmpl", m)
 	return buf.String(), err
 }
 
-func (m *Method) DriverArgs() string {
+func (m *method) DriverArgs() string {
 	args := make([]string, 0, len(m.Accepts)+2)
 	if m.AcceptsContext {
 		args = append(args, "ctx context.Context")
@@ -69,7 +69,7 @@ func (m *Method) DriverArgs() string {
 	return strings.Join(args, ", ")
 }
 
-func (m *Method) ReturnArgs() string {
+func (m *method) ReturnArgs() string {
 	args := make([]string, 0, len(m.Returns)+1)
 	for _, arg := range m.Returns {
 		args = append(args, arg.String())
@@ -83,7 +83,7 @@ func (m *Method) ReturnArgs() string {
 	return args[0]
 }
 
-func (m *Method) VariableDefinitions() string {
+func (m *method) VariableDefinitions() string {
 	var result []string
 	for i, arg := range m.Accepts {
 		result = append(result, fmt.Sprintf("\targ%d %s\n", i, typeName(arg)))
@@ -103,7 +103,7 @@ func (m *Method) VariableDefinitions() string {
 	return strings.Join(result, "")
 }
 
-func (m *Method) inputVars() []string {
+func (m *method) inputVars() []string {
 	args := make([]string, 0, len(m.Accepts)+1)
 	for i := range m.Accepts {
 		args = append(args, fmt.Sprintf("arg%d", i))
@@ -114,7 +114,7 @@ func (m *Method) inputVars() []string {
 	return args
 }
 
-func (m *Method) ExpectedVariables() string {
+func (m *method) ExpectedVariables() string {
 	args := []string{}
 	if m.DBMethod {
 		args = append(args, "db")
@@ -123,7 +123,7 @@ func (m *Method) ExpectedVariables() string {
 	return alignVars(0, args)
 }
 
-func (m *Method) InputVariables() string {
+func (m *method) InputVariables() string {
 	var result, common []string
 	if m.DBMethod {
 		common = append(common, "\t\t\tdb: db.DB,\n")
@@ -141,7 +141,7 @@ func (m *Method) InputVariables() string {
 	return strings.Join(result, "")
 }
 
-func (m *Method) Variables(indent int) string {
+func (m *method) Variables(indent int) string {
 	args := m.inputVars()
 	for i := range m.Returns {
 		args = append(args, fmt.Sprintf("ret%d", i))
@@ -163,7 +163,7 @@ func alignVars(indent int, args []string) string {
 	return strings.Join(final, "\n")
 }
 
-func (m *Method) ZeroReturns() string {
+func (m *method) ZeroReturns() string {
 	args := make([]string, 0, len(m.Returns))
 	for _, arg := range m.Returns {
 		args = append(args, zeroValue(arg))
@@ -183,7 +183,7 @@ func zeroValue(t reflect.Type) string {
 	return z
 }
 
-func (m *Method) ExpectedReturns() string {
+func (m *method) ExpectedReturns() string {
 	args := make([]string, 0, len(m.Returns))
 	for i, arg := range m.Returns {
 		switch arg.String() {
@@ -211,7 +211,7 @@ func (m *Method) ExpectedReturns() string {
 	return strings.Join(args, ", ")
 }
 
-func (m *Method) ReturnTypes() string {
+func (m *method) ReturnTypes() string {
 	args := make([]string, len(m.Returns))
 	for i, ret := range m.Returns {
 		name := typeName(ret)
@@ -243,7 +243,7 @@ func typeName(t reflect.Type) string {
 	return name
 }
 
-func (m *Method) SetExpectations() string {
+func (m *method) SetExpectations() string {
 	var args []string
 	if m.DBMethod {
 		args = append(args, "commonExpectation: commonExpectation{db: db},\n")
@@ -270,7 +270,7 @@ func (m *Method) SetExpectations() string {
 	return strings.Join(args, "")
 }
 
-func (m *Method) MetExpectations() string {
+func (m *method) MetExpectations() string {
 	if len(m.Accepts) == 0 {
 		return ""
 	}
@@ -293,7 +293,7 @@ func (m *Method) MetExpectations() string {
 	return strings.Join(args, "\n")
 }
 
-func (m *Method) MethodArgs() string {
+func (m *method) MethodArgs() string {
 	var args, vars, str, def, mid []string
 	prefix := ""
 	if m.DBMethod {
@@ -332,7 +332,7 @@ func (m *Method) MethodArgs() string {
 }
 
 // CallbackType returns the type definition for a callback for this method.
-func (m *Method) CallbackTypes() string {
+func (m *method) CallbackTypes() string {
 	inputs := make([]string, 0, len(m.Accepts)+2)
 	if m.AcceptsContext {
 		inputs = append(inputs, "context.Context")
@@ -347,7 +347,7 @@ func (m *Method) CallbackTypes() string {
 }
 
 // CallbackArgs returns the list of arguments to be passed to the callback
-func (m *Method) CallbackArgs() string {
+func (m *method) CallbackArgs() string {
 	args := make([]string, 0, len(m.Accepts)+2)
 	if m.AcceptsContext {
 		args = append(args, "ctx")
@@ -361,7 +361,7 @@ func (m *Method) CallbackArgs() string {
 	return strings.Join(args, ", ")
 }
 
-func (m *Method) CallbackReturns() string {
+func (m *method) CallbackReturns() string {
 	args := make([]string, 0, len(m.Returns)+1)
 	for _, ret := range m.Returns {
 		args = append(args, ret.String())

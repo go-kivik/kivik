@@ -65,13 +65,13 @@ func client() error {
 	}
 	same, cm, dm := compareMethods(client, dMethods)
 
-	if err := RenderExpectationsGo("clientexpectations_gen.go", append(same, dm...)); err != nil {
+	if err := renderExpectationsGo("clientexpectations_gen.go", append(same, dm...)); err != nil {
 		return err
 	}
-	if err := RenderClientGo("client_gen.go", append(same, dm...)); err != nil {
+	if err := renderClientGo("client_gen.go", append(same, dm...)); err != nil {
 		return err
 	}
-	return RenderMockGo("clientmock_gen.go", append(same, cm...))
+	return renderMockGo("clientmock_gen.go", append(same, cm...))
 }
 
 type fullDB interface {
@@ -115,19 +115,19 @@ func db() error {
 		method.DBMethod = true
 	}
 
-	if err := RenderExpectationsGo("dbexpectations_gen.go", append(same, dm...)); err != nil {
+	if err := renderExpectationsGo("dbexpectations_gen.go", append(same, dm...)); err != nil {
 		return err
 	}
-	if err := RenderClientGo("db_gen.go", append(same, dm...)); err != nil {
+	if err := renderClientGo("db_gen.go", append(same, dm...)); err != nil {
 		return err
 	}
-	return RenderMockGo("dbmock_gen.go", append(same, cm...))
+	return renderMockGo("dbmock_gen.go", append(same, cm...))
 }
 
-func compareMethods(client, driver []*Method) (same []*Method, differentClient []*Method, differentDriver []*Method) {
+func compareMethods(client, driver []*method) (same []*method, differentClient []*method, differentDriver []*method) {
 	dMethods := toMap(driver)
 	cMethods := toMap(client)
-	sameMethods := make(map[string]*Method)
+	sameMethods := make(map[string]*method)
 	for name, method := range dMethods {
 		if cMethod, ok := cMethods[name]; ok {
 			if reflect.DeepEqual(cMethod, method) {
@@ -143,8 +143,8 @@ func compareMethods(client, driver []*Method) (same []*Method, differentClient [
 	return toSlice(sameMethods), toSlice(cMethods), toSlice(dMethods)
 }
 
-func toSlice(methods map[string]*Method) []*Method {
-	result := make([]*Method, 0, len(methods))
+func toSlice(methods map[string]*method) []*method {
+	result := make([]*method, 0, len(methods))
 	for _, method := range methods {
 		result = append(result, method)
 	}
@@ -154,8 +154,8 @@ func toSlice(methods map[string]*Method) []*Method {
 	return result
 }
 
-func toMap(methods []*Method) map[string]*Method {
-	result := make(map[string]*Method, len(methods))
+func toMap(methods []*method) map[string]*method {
+	result := make(map[string]*method, len(methods))
 	for _, method := range methods {
 		result[method.Name] = method
 	}

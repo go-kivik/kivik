@@ -13,7 +13,7 @@ func init() {
 
 func TestRenderExpectedType(t *testing.T) {
 	tests := testy.NewTable()
-	tests.Add("CreateDoc", &Method{
+	tests.Add("CreateDoc", &method{
 		Name:           "CreateDoc",
 		DBMethod:       true,
 		AcceptsContext: true,
@@ -23,8 +23,8 @@ func TestRenderExpectedType(t *testing.T) {
 		Returns:        []reflect.Type{typeString, typeString},
 	})
 
-	tests.Run(t, func(t *testing.T, m *Method) {
-		result, err := RenderExpectedType(m)
+	tests.Run(t, func(t *testing.T, m *method) {
+		result, err := renderExpectedType(m)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -36,12 +36,12 @@ func TestRenderExpectedType(t *testing.T) {
 
 func TestRenderDriverMethod(t *testing.T) {
 	type tst struct {
-		method *Method
+		method *method
 		err    string
 	}
 	tests := testy.NewTable()
 	tests.Add("CreateDB", tst{
-		method: &Method{
+		method: &method{
 			Name:           "CreateDB",
 			Accepts:        []reflect.Type{typeString},
 			AcceptsContext: true,
@@ -50,14 +50,14 @@ func TestRenderDriverMethod(t *testing.T) {
 		},
 	})
 	tests.Add("No context", tst{
-		method: &Method{
+		method: &method{
 			Name:           "NoCtx",
 			AcceptsOptions: true,
 			ReturnsError:   true,
 		},
 	})
 	tests.Run(t, func(t *testing.T, test tst) {
-		result, err := RenderDriverMethod(test.method)
+		result, err := renderDriverMethod(test.method)
 		testy.Error(t, test.err, err)
 		if d := testy.DiffText(testy.Snapshot(t), result); d != nil {
 			t.Error(d)
@@ -67,26 +67,26 @@ func TestRenderDriverMethod(t *testing.T) {
 
 func TestVariables(t *testing.T) {
 	type tst struct {
-		method   *Method
+		method   *method
 		indent   int
 		expected string
 	}
 	tests := testy.NewTable()
 	tests.Add("no args", tst{
-		method:   &Method{},
+		method:   &method{},
 		expected: "",
 	})
 	tests.Add("one arg", tst{
-		method:   &Method{Accepts: []reflect.Type{typeString}},
+		method:   &method{Accepts: []reflect.Type{typeString}},
 		expected: "arg0: arg0,",
 	})
 	tests.Add("one arg + options", tst{
-		method: &Method{Accepts: []reflect.Type{typeString}, AcceptsOptions: true},
+		method: &method{Accepts: []reflect.Type{typeString}, AcceptsOptions: true},
 		expected: `arg0:    arg0,
 options: options,`,
 	})
 	tests.Add("indent", tst{
-		method: &Method{Accepts: []reflect.Type{typeString, typeString}, AcceptsOptions: true},
+		method: &method{Accepts: []reflect.Type{typeString, typeString}, AcceptsOptions: true},
 		indent: 2,
 		expected: `		arg0:    arg0,
 		arg1:    arg1,

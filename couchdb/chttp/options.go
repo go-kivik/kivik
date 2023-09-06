@@ -112,3 +112,20 @@ func ifNoneMatch(opts map[string]interface{}) (string, error) {
 	}
 	return inmString, nil
 }
+
+type optionNoRequestCompression struct{}
+
+var _ kivik.Option = optionNoRequestCompression{}
+
+func (optionNoRequestCompression) Apply(target interface{}) {
+	if client, ok := target.(*Client); ok {
+		client.noGzip = true
+	}
+}
+
+// OptionNoRequestCompression instructs the CouchDB client not to use gzip
+// compression for request bodies sent to the server. Only honored when passed
+// to [github.com/go-kivik/kivik/v4.New] or [New].
+func OptionNoRequestCompression() kivik.Option {
+	return optionNoRequestCompression{}
+}

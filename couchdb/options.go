@@ -16,6 +16,7 @@ import (
 	"net/http"
 
 	kivik "github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/couchdb/chttp"
 )
 
 type optionHTTPClient struct {
@@ -32,4 +33,11 @@ func (c optionHTTPClient) Apply(target interface{}) {
 // to specify an custom *http.Client to be used when making all API calls.
 func OptionHTTPClient(client *http.Client) kivik.Option {
 	return optionHTTPClient{Client: client}
+}
+
+// OptionNoRequestCompression instructs the CouchDB client not to use gzip
+// compression for request bodies sent to the server. Only honored when passed
+// to [github.com/go-kivik/kivik/v4.New].
+func OptionNoRequestCompression() kivik.Option {
+	return chttp.OptionNoRequestCompression()
 }

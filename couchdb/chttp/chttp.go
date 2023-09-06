@@ -90,12 +90,7 @@ func New(client *http.Client, dsn string, options driver.Options) (*Client, erro
 	}
 	opts := map[string]interface{}{}
 	options.Apply(opts)
-	if gzip, ok := opts[internal.OptionNoCompressedRequests]; ok {
-		c.noGzip, ok = gzip.(bool)
-		if !ok {
-			return nil, &kivik.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("OptionNoCompressedRequests is %T, must be bool", gzip)}
-		}
-	}
+	options.Apply(c)
 	if err := c.setUserAgent(opts); err != nil {
 		return nil, err
 	}

@@ -55,10 +55,6 @@ const (
 	// multipart/related media type. This only affects GET requests that request
 	// attachments.
 	OptionNoMultipartGet = internal.OptionNoMultipartGet
-
-	// OptionNoCompressedRequests disables gzip content encoding for request
-	// bodies. Only valid as an option to [github.com/go-kivik/kivik/v4.New].
-	OptionNoCompressedRequests = internal.OptionNoCompressedRequests
 )
 
 const (

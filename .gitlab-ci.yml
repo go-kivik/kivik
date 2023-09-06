@@ -47,6 +47,8 @@ linter:
     - golangci-lint run ./...
     - ./script/check-license.sh
     - go mod tidy -compat=1.17 && git diff --exit-code
+    - go generate ./...
+    - git diff --exit-code
 
 coverage:
   stage: test

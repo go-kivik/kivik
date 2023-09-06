@@ -1,0 +1,15 @@
+/* This file is auto-generated. Do not edit it! */
+
+package mockdb
+
+import (
+	kivik "github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/driver"
+)
+
+var _ = kivik.EndKeySuffix // To ensure a reference to kivik package
+var _ = &driver.Attachment{}
+
+{{ range $method := . -}}
+{{ template "mockmethod.tmpl" $method -}}
+{{- end -}}

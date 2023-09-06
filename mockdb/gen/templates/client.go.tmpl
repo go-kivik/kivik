@@ -1,0 +1,15 @@
+/* This file is auto-generated. Do not edit it! */
+
+package mockdb
+
+import (
+	"context"
+
+	"github.com/go-kivik/kivik/v4/driver"
+)
+
+var _ = &driver.Attachment{}
+
+{{ range $method := . -}}
+{{ template "drivermethod.tmpl" $method }}
+{{ end -}}

@@ -1,0 +1,9 @@
+{
+    "DBName": "foo",
+    "DocCount": 0,
+    "DeletedDocCount": 0,
+    "Partition": "foo",
+    "ActiveSize": 0,
+    "ExternalSize": 0,
+    "RawResponse": null
+}

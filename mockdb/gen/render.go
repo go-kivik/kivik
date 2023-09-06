@@ -56,7 +56,8 @@ func renderExpectedType(m *method) (string, error) {
 }
 
 func (m *method) DriverArgs() string {
-	args := make([]string, 0, len(m.Accepts)+2)
+	const extraCount = 2
+	args := make([]string, 0, len(m.Accepts)+extraCount)
 	if m.AcceptsContext {
 		args = append(args, "ctx context.Context")
 	}
@@ -333,7 +334,8 @@ func (m *method) MethodArgs() string {
 
 // CallbackType returns the type definition for a callback for this method.
 func (m *method) CallbackTypes() string {
-	inputs := make([]string, 0, len(m.Accepts)+2)
+	const extraCount = 2
+	inputs := make([]string, 0, len(m.Accepts)+extraCount)
 	if m.AcceptsContext {
 		inputs = append(inputs, "context.Context")
 	}
@@ -348,7 +350,8 @@ func (m *method) CallbackTypes() string {
 
 // CallbackArgs returns the list of arguments to be passed to the callback
 func (m *method) CallbackArgs() string {
-	args := make([]string, 0, len(m.Accepts)+2)
+	const extraCount = 2
+	args := make([]string, 0, len(m.Accepts)+extraCount)
 	if m.AcceptsContext {
 		args = append(args, "ctx")
 	}

@@ -29,7 +29,8 @@ var dbSkips = map[string]struct{}{
 
 func main() {
 	initTemplates(os.Args[1])
-	if err := os.Mkdir("./other", 0o777); err != nil && !os.IsExist(err) {
+	const openPerms = 0o777
+	if err := os.Mkdir("./other", openPerms); err != nil && !os.IsExist(err) {
 		panic(err)
 	}
 	if err := client(); err != nil {

@@ -1,4 +1,4 @@
-package kivikmock
+package mockdb
 
 import (
 	"errors"
@@ -16,7 +16,7 @@ func init() {
 	pool = &mockDriver{
 		clients: make(map[string]*Client),
 	}
-	kivik.Register("kivikmock", pool)
+	kivik.Register("mock", pool)
 }
 
 type mockDriver struct {
@@ -33,7 +33,7 @@ func (d *mockDriver) NewClient(dsn string, _ map[string]interface{}) (driver.Cli
 
 	c, ok := d.clients[dsn]
 	if !ok {
-		return nil, errors.New("kivikmock: no available connection found")
+		return nil, errors.New("mockdb: no available connection found")
 	}
 	c.opened++
 	return &driverClient{Client: c}, nil
@@ -42,7 +42,7 @@ func (d *mockDriver) NewClient(dsn string, _ map[string]interface{}) (driver.Cli
 // New creates a kivik client connection and a mock to manage expectations.
 func New() (*kivik.Client, *Client, error) {
 	pool.Lock()
-	dsn := fmt.Sprintf("kivikmock_%d", pool.counter)
+	dsn := fmt.Sprintf("mockdb_%d", pool.counter)
 	pool.counter++
 
 	kmock := &Client{dsn: dsn, drv: pool, ordered: true}

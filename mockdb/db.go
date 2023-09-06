@@ -1,4 +1,4 @@
-package kivikmock
+package mockdb
 
 import (
 	"github.com/go-kivik/kivik/v4/driver"

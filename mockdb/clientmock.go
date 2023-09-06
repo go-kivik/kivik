@@ -1,4 +1,4 @@
-package kivikmock
+package mockdb
 
 import (
 	"encoding/json"
@@ -72,7 +72,7 @@ func (c *Client) nextExpectation(actual expectation) error {
 }
 
 func (c *Client) open() (*kivik.Client, *Client, error) {
-	client, err := kivik.New("kivikmock", c.dsn)
+	client, err := kivik.New("mockdb", c.dsn)
 	return client, c, err
 }
 

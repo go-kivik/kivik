@@ -1,6 +1,6 @@
 /* This file is auto-generated. Do not edit it! */
 
-package kivikmock
+package mockdb
 
 import (
 	kivik "github.com/go-kivik/kivik/v4"

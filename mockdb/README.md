@@ -1,8 +1,6 @@
-[![Build Status](https://travis-ci.org/go-kivik/kivikmock.svg?branch=master)](https://travis-ci.org/go-kivik/kivikmock) [![Codecov](https://img.shields.io/codecov/c/github/go-kivik/kivikmock.svg?style=flat)](https://codecov.io/gh/go-kivik/kivikmock) [![Go Report Card](https://goreportcard.com/badge/github.com/go-kivik/kivikmock)](https://goreportcard.com/report/github.com/go-kivik/kivikmock) [![GoDoc](https://godoc.org/github.com/go-kivik/kivikmock?status.svg)](http://godoc.org/github.com/go-kivik/kivikmock) [![Website](https://img.shields.io/website-up-down-green-red/http/shields.io.svg?label=website&colorB=007fff)](http://kivik.io)
+# MockDB
 
-# Kivikmock
-
-Package **kivikmock** is a mock library implementing a Kivik driver.
+Package **mockdb** is a mock library implementing a Kivik driver.
 
 This package is heavily influenced by [github.com/DATA-DOG/go-sqlmock](https://github.com/DATA-DOG/go-sqlmock), the SQL mock driver from [Datadog](https://www.datadoghq.com/).
 
@@ -10,7 +8,7 @@ This package is heavily influenced by [github.com/DATA-DOG/go-sqlmock](https://g
 
 To use this package, in your `*_test.go` file, create a mock Kivik connection:
 
-    client, mock, err := kivikmock.New()
+    client, mock, err := mockdb.New()
     if err != nil {
         panic(err)
     }
@@ -21,14 +19,14 @@ driver, by setting expectations.  To test a function which fetches a user,
 for example, you might do something like this:
 
     func TestGetUser(t *testing.T) {
-        client, mock, err := kivikmock.New()
+        client, mock, err := mockdb.New()
         if err != nil {
             t.Fatal(err)
         }
 
         mock.ExpectDB().WithName("_users").WillReturn(mock.NewDB().
             ExpectGet().WithDocID("bob").
-                WillReturn(kivikmock.DocumentT(t, `{"_id":"org.couchdb.user:bob"}`)),
+                WillReturn(mockdb.DocumentT(t, `{"_id":"org.couchdb.user:bob"}`)),
         )
         user, err := GetUser(client, "bob")
         if err != nil {

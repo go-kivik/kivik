@@ -1,4 +1,4 @@
-package kivikmock
+package mockdb
 
 import (
 	"bytes"

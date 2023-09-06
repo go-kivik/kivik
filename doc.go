@@ -16,9 +16,9 @@ Package kivik provides a generic interface to CouchDB or CouchDB-like databases.
 The kivik package must be used in conjunction with a database driver. The
 officially supported drivers are:
 
-  - CouchDB: https://github.com/go-kivik/couchdb
-  - PouchDB: https://github.com/go-kivik/pouchdb (requires GopherJS)
-  - KivikMock: https://github.com/go-kivik/kivikmock
+  - CouchDB: https://github.com/go-kivik/kivik/v4/couchdb
+  - PouchDB: https://github.com/go-kivik/kivik/v4/pouchdb (requires GopherJS)
+  - MockDB: https://github.com/go-kivik/kivik/v4/mockdb
 
 The Filesystem and Memory drivers are also available, but in early stages of
 development, and so many features do not yet work:

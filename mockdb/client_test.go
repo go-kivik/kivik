@@ -24,7 +24,7 @@ func testMock(t *testing.T, test mockTest) {
 	t.Helper()
 	client, mock, err := New()
 	if err != nil {
-		t.Fatal("error creating mock database")
+		t.Fatalf("error creating mock database: %s", err)
 	}
 	t.Cleanup(func() {
 		_ = client.Close()

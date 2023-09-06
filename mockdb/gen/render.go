@@ -85,7 +85,7 @@ func (m *method) ReturnArgs() string {
 }
 
 func (m *method) VariableDefinitions() string {
-	var result []string
+	result := make([]string, 0, len(m.Accepts)+len(m.Returns))
 	for i, arg := range m.Accepts {
 		result = append(result, fmt.Sprintf("\targ%d %s\n", i, typeName(arg)))
 	}
@@ -125,7 +125,8 @@ func (m *method) ExpectedVariables() string {
 }
 
 func (m *method) InputVariables() string {
-	var result, common []string
+	result := make([]string, len(m.Accepts)+1)
+	var common []string
 	if m.DBMethod {
 		common = append(common, "\t\t\tdb: db.DB,\n")
 	}
@@ -295,7 +296,11 @@ func (m *method) MetExpectations() string {
 }
 
 func (m *method) MethodArgs() string {
-	var args, vars, str, def, mid []string
+	str := make([]string, 0, len(m.Accepts)+1)
+	def := make([]string, 0, len(m.Accepts)+1)
+	const maxVarLen = 3
+	vars := make([]string, 0, maxVarLen)
+	var args, mid []string
 	prefix := ""
 	if m.DBMethod {
 		prefix = "DB(%s)."

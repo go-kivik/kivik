@@ -15,7 +15,6 @@ package db
 import (
 	"context"
 	"io"
-	"io/ioutil"
 	"strings"
 
 	"github.com/go-kivik/kivik/v4"
@@ -153,5 +152,5 @@ func testPutAttachment(ctx *kt.Context, client *kivik.Client, dbname string) {
 }
 
 func stringReadCloser() io.ReadCloser {
-	return ioutil.NopCloser(strings.NewReader("test content"))
+	return io.NopCloser(strings.NewReader("test content"))
 }

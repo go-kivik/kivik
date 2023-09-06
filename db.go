@@ -17,7 +17,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"sync"
@@ -243,7 +242,7 @@ func normalizeFromJSON(i interface{}) (interface{}, error) {
 	case json.Marshaler:
 		return t, nil
 	case io.Reader:
-		body, err := ioutil.ReadAll(t)
+		body, err := io.ReadAll(t)
 		if err != nil {
 			return nil, &Error{Status: http.StatusBadRequest, Err: err}
 		}

@@ -16,7 +16,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 
 	"github.com/go-kivik/kivik/v4/driver"
 )
@@ -129,7 +128,7 @@ func (a *Attachment) MarshalJSON() ([]byte, error) {
 		att.Follows = &a.Follows
 	default:
 		defer a.Content.Close() // nolint: errcheck
-		data, err := ioutil.ReadAll(a.Content)
+		data, err := io.ReadAll(a.Content)
 		if err != nil {
 			return nil, err
 		}
@@ -151,7 +150,7 @@ func (a *Attachment) UnmarshalJSON(data []byte) error {
 	}
 	*a = Attachment(att.clone)
 	if att.Data != nil {
-		a.Content = ioutil.NopCloser(bytes.NewReader(att.Data))
+		a.Content = io.NopCloser(bytes.NewReader(att.Data))
 	} else {
 		a.Content = nilContent
 	}

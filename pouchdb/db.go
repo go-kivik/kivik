@@ -19,7 +19,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"sync/atomic"
 
@@ -73,7 +73,7 @@ func (d *db) Get(ctx context.Context, docID string, options map[string]interface
 	}
 	return &driver.Document{
 		Rev:  rev,
-		Body: ioutil.NopCloser(bytes.NewReader(doc)),
+		Body: io.NopCloser(bytes.NewReader(doc)),
 	}, nil
 }
 

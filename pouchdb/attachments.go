@@ -18,7 +18,6 @@ package pouchdb
 import (
 	"context"
 	"io"
-	"io/ioutil"
 	"strings"
 	"sync"
 
@@ -55,7 +54,7 @@ func parseAttachment(obj *js.Object) (att *driver.Attachment, err error) {
 		// but since this is only for testing, I'm taking the lazy way out, even
 		// though it means slurping an extra copy into memory.
 		return &driver.Attachment{
-			Content: ioutil.NopCloser(strings.NewReader(body)),
+			Content: io.NopCloser(strings.NewReader(body)),
 		}, nil
 	}
 	// We're in the browser

@@ -18,7 +18,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
@@ -1979,7 +1978,7 @@ func TestPutAttachment(t *testing.T) {
 			},
 			att: &Attachment{
 				Filename: "foo.txt",
-				Content:  ioutil.NopCloser(strings.NewReader("")),
+				Content:  io.NopCloser(strings.NewReader("")),
 			},
 			status: http.StatusBadRequest,
 			err:    "db error",
@@ -2018,7 +2017,7 @@ func TestPutAttachment(t *testing.T) {
 						if docID != expectedDocID {
 							return "", fmt.Errorf("Unexpected docID: %s", docID)
 						}
-						content, err := ioutil.ReadAll(att.Content)
+						content, err := io.ReadAll(att.Content)
 						if err != nil {
 							t.Fatal(err)
 						}
@@ -2039,7 +2038,7 @@ func TestPutAttachment(t *testing.T) {
 			att: &Attachment{
 				Filename:    "foo.txt",
 				ContentType: "text/plain",
-				Content:     ioutil.NopCloser(strings.NewReader("Test file")),
+				Content:     io.NopCloser(strings.NewReader("Test file")),
 			},
 			options: map[string]interface{}{
 				"rev": "1-xxx",
@@ -2309,7 +2308,7 @@ func TestGetAttachment(t *testing.T) {
 	tests.Run(t, func(t *testing.T, tt tt) {
 		result, err := tt.db.GetAttachment(context.Background(), tt.docID, tt.filename, tt.options)
 		testy.StatusError(t, tt.err, tt.status, err)
-		content, err := ioutil.ReadAll(result.Content)
+		content, err := io.ReadAll(result.Content)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -15,7 +15,6 @@ package kivik
 import (
 	"errors"
 	"io"
-	"io/ioutil"
 	"strings"
 	"testing"
 	"time"
@@ -44,7 +43,7 @@ func (r errReader) Read(_ []byte) (int, error) {
 }
 
 func body(s string) io.ReadCloser {
-	return ioutil.NopCloser(strings.NewReader(s))
+	return io.NopCloser(strings.NewReader(s))
 }
 
 type mockIterator struct {

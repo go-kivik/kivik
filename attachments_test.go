@@ -15,7 +15,7 @@ package kivik
 import (
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -35,7 +35,7 @@ func TestAttachmentMarshalJSON(t *testing.T) {
 	tests := testy.NewTable()
 	tests.Add("foo.txt", tst{
 		att: &Attachment{
-			Content:     ioutil.NopCloser(strings.NewReader("test attachment\n")),
+			Content:     io.NopCloser(strings.NewReader("test attachment\n")),
 			Filename:    "foo.txt",
 			ContentType: "text/plain",
 		},
@@ -46,7 +46,7 @@ func TestAttachmentMarshalJSON(t *testing.T) {
 	})
 	tests.Add("revpos", tst{
 		att: &Attachment{
-			Content:     ioutil.NopCloser(strings.NewReader("test attachment\n")),
+			Content:     io.NopCloser(strings.NewReader("test attachment\n")),
 			Filename:    "foo.txt",
 			ContentType: "text/plain",
 			RevPos:      3,
@@ -59,7 +59,7 @@ func TestAttachmentMarshalJSON(t *testing.T) {
 	})
 	tests.Add("follows", tst{
 		att: &Attachment{
-			Content:     ioutil.NopCloser(strings.NewReader("test attachment\n")),
+			Content:     io.NopCloser(strings.NewReader("test attachment\n")),
 			Filename:    "foo.txt",
 			Follows:     true,
 			ContentType: "text/plain",
@@ -73,7 +73,7 @@ func TestAttachmentMarshalJSON(t *testing.T) {
 	})
 	tests.Add("read error", tst{
 		att: &Attachment{
-			Content:     ioutil.NopCloser(&errorReader{}),
+			Content:     io.NopCloser(&errorReader{}),
 			Filename:    "foo.txt",
 			ContentType: "text/plain",
 		},
@@ -81,7 +81,7 @@ func TestAttachmentMarshalJSON(t *testing.T) {
 	})
 	tests.Add("stub", tst{
 		att: &Attachment{
-			Content:     ioutil.NopCloser(strings.NewReader("content")),
+			Content:     io.NopCloser(strings.NewReader("content")),
 			Stub:        true,
 			Filename:    "foo.txt",
 			ContentType: "text/plain",
@@ -142,7 +142,7 @@ func TestAttachmentUnmarshalJSON(t *testing.T) {
 			testy.Error(t, test.err, err)
 			var body []byte
 			defer result.Content.Close() // nolint: errcheck
-			body, err = ioutil.ReadAll(result.Content)
+			body, err = io.ReadAll(result.Content)
 			if err != nil {
 				t.Fatal(err)
 			}

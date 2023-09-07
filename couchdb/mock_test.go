@@ -29,6 +29,8 @@ import (
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 )
 
+const isGopherJS = runtime.GOOS == "js" || runtime.GOARCH == "js"
+
 type customTransport func(*http.Request) (*http.Response, error)
 
 var _ http.RoundTripper = customTransport(nil)
@@ -117,7 +119,7 @@ func (rc *mockReadCloser) Close() error {
 
 func realDB(t *testing.T) *db {
 	t.Helper()
-	if runtime.GOOS == "js" {
+	if isGopherJS {
 		t.Skip("Network tests skipped for GopherJS")
 	}
 	db, err := realDBConnect(t)

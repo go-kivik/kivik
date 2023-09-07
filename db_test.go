@@ -1757,7 +1757,7 @@ func TestCreateDoc(t *testing.T) {
 		name       string
 		db         *DB
 		doc        interface{}
-		options    Options
+		options    Option
 		docID, rev string
 		status     int
 		err        string
@@ -1767,7 +1767,7 @@ func TestCreateDoc(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					CreateDocFunc: func(context.Context, interface{}, map[string]interface{}) (string, string, error) {
+					CreateDocFunc: func(context.Context, interface{}, driver.Options) (string, string, error) {
 						return "", "", &Error{Status: http.StatusBadRequest, Err: errors.New("create error")}
 					},
 				},
@@ -1780,12 +1780,14 @@ func TestCreateDoc(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					CreateDocFunc: func(_ context.Context, doc interface{}, opts map[string]interface{}) (string, string, error) {
+					CreateDocFunc: func(_ context.Context, doc interface{}, options driver.Options) (string, string, error) {
+						gotOpts := map[string]interface{}{}
+						options.Apply(gotOpts)
 						expectedDoc := map[string]string{"type": "test"}
 						if d := testy.DiffInterface(expectedDoc, doc); d != nil {
 							return "", "", fmt.Errorf("Unexpected doc:\n%s", d)
 						}
-						if d := testy.DiffInterface(testOptions, opts); d != nil {
+						if d := testy.DiffInterface(testOptions, gotOpts); d != nil {
 							return "", "", fmt.Errorf("Unexpected options:\n%s", d)
 						}
 						return "foo", "1-xxx", nil
@@ -1793,7 +1795,7 @@ func TestCreateDoc(t *testing.T) {
 				},
 			},
 			doc:     map[string]string{"type": "test"},
-			options: testOptions,
+			options: Options(testOptions),
 			docID:   "foo",
 			rev:     "1-xxx",
 		},

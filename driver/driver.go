@@ -197,7 +197,7 @@ type DB interface {
 	// options provided.
 	AllDocs(ctx context.Context, options Options) (Rows, error)
 	// CreateDoc creates a new doc, with a server-generated ID.
-	CreateDoc(ctx context.Context, doc interface{}, options map[string]interface{}) (docID, rev string, err error)
+	CreateDoc(ctx context.Context, doc interface{}, options Options) (docID, rev string, err error)
 	// Put writes the document in the database.
 	Put(ctx context.Context, docID string, doc interface{}, options map[string]interface{}) (rev string, err error)
 	// Delete marks the specified document as deleted.

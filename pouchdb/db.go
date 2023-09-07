@@ -81,12 +81,14 @@ func (d *db) Get(ctx context.Context, docID string, options driver.Options) (*dr
 	}, nil
 }
 
-func (d *db) CreateDoc(ctx context.Context, doc interface{}, opts map[string]interface{}) (docID, rev string, err error) {
+func (d *db) CreateDoc(ctx context.Context, doc interface{}, options driver.Options) (docID, rev string, err error) {
 	jsonDoc, err := json.Marshal(doc)
 	if err != nil {
 		return "", "", err
 	}
 	jsDoc := js.Global.Get("JSON").Call("parse", string(jsonDoc))
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	return d.db.Post(ctx, jsDoc, opts)
 }
 

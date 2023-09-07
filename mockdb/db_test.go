@@ -846,7 +846,7 @@ func TestCreateDoc(t *testing.T) {
 		setup: func(m *Client) {
 			db := m.NewDB()
 			m.ExpectDB().WillReturn(db)
-			db.ExpectCreateDoc().WithOptions(map[string]interface{}{"foo": "bar"})
+			db.ExpectCreateDoc().WithOptions(kivik.Options{"foo": "bar"})
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, _, err := c.DB("foo").CreateDoc(context.TODO(), "bar", kivik.Options{})

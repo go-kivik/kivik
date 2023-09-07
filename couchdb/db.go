@@ -373,11 +373,13 @@ func (d *db) get(ctx context.Context, method, docID string, opts map[string]inte
 	return resp, err
 }
 
-func (d *db) CreateDoc(ctx context.Context, doc interface{}, opts map[string]interface{}) (docID, rev string, err error) {
+func (d *db) CreateDoc(ctx context.Context, doc interface{}, options driver.Options) (docID, rev string, err error) {
 	result := struct {
 		ID  string `json:"id"`
 		Rev string `json:"rev"`
 	}{}
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 
 	chttpOpts, err := chttp.NewOptions(opts)
 	if err != nil {

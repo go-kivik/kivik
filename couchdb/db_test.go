@@ -459,7 +459,7 @@ func TestCreateDoc(t *testing.T) {
 		name    string
 		db      *db
 		doc     interface{}
-		options map[string]interface{}
+		options kivik.Option
 		id, rev string
 		status  int
 		err     string
@@ -521,7 +521,7 @@ func TestCreateDoc(t *testing.T) {
 			name:    "batch mode",
 			db:      newTestDB(nil, errors.New("success")),
 			doc:     map[string]string{"foo": "bar"},
-			options: map[string]interface{}{"batch": "ok"},
+			options: kivik.Options{"batch": "ok"},
 			status:  http.StatusBadGateway,
 			err:     `^Post "?http://example.com/testdb\?batch=ok"?: success$`,
 		},
@@ -536,28 +536,32 @@ func TestCreateDoc(t *testing.T) {
 				}
 				return nil, errors.New("success")
 			}),
-			options: map[string]interface{}{OptionFullCommit: true},
+			options: kivik.Options{OptionFullCommit: true},
 			status:  http.StatusBadGateway,
 			err:     `Post "?http://example.com/testdb"?: success`,
 		},
 		{
 			name:    "invalid options",
 			db:      &db{},
-			options: map[string]interface{}{"foo": make(chan int)},
+			options: kivik.Options{"foo": make(chan int)},
 			status:  http.StatusBadRequest,
 			err:     "kivik: invalid type chan int for options",
 		},
 		{
 			name:    "invalid full commit type",
 			db:      &db{},
-			options: map[string]interface{}{OptionFullCommit: 123},
+			options: kivik.Options{OptionFullCommit: 123},
 			status:  http.StatusBadRequest,
 			err:     "kivik: option 'X-Couch-Full-Commit' must be bool, not int",
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			id, rev, err := test.db.CreateDoc(context.Background(), test.doc, test.options)
+			opts := test.options
+			if opts == nil {
+				opts = mock.NilOption
+			}
+			id, rev, err := test.db.CreateDoc(context.Background(), test.doc, opts)
 			testy.StatusErrorRE(t, test.err, test.status, err)
 			if test.id != id || test.rev != rev {
 				t.Errorf("Unexpected results: ID=%s rev=%s", id, rev)

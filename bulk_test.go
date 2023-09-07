@@ -143,12 +143,14 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 					}
 					return "2-xxx", nil // nolint: goconst
 				},
-				CreateDocFunc: func(_ context.Context, doc interface{}, opts map[string]interface{}) (string, string, error) {
+				CreateDocFunc: func(_ context.Context, doc interface{}, options driver.Options) (string, string, error) {
+					gotOpts := map[string]interface{}{}
+					options.Apply(gotOpts)
 					expectedDoc := int(123)
 					if d := testy.DiffInterface(expectedDoc, doc); d != nil {
 						return "", "", fmt.Errorf("Unexpected doc:\n%s", d)
 					}
-					if d := testy.DiffInterface(testOptions, opts); d != nil {
+					if d := testy.DiffInterface(testOptions, gotOpts); d != nil {
 						return "", "", fmt.Errorf("Unexpected opts:\n%s", d)
 					}
 					return "newDocID", "1-xxx", nil // nolint: goconst

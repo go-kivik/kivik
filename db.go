@@ -233,7 +233,7 @@ func (db *DB) CreateDoc(ctx context.Context, doc interface{}, options ...Option)
 		return "", "", err
 	}
 	defer db.endQuery()
-	return db.driverDB.CreateDoc(ctx, doc, mergeOptions(options...))
+	return db.driverDB.CreateDoc(ctx, doc, allOptions(options))
 }
 
 // normalizeFromJSON unmarshals a []byte, json.RawMessage or io.Reader to a

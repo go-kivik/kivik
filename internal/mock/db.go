@@ -34,7 +34,7 @@ type DB struct {
 	ChangesFunc          func(ctx context.Context, options driver.Options) (driver.Changes, error)
 	PutAttachmentFunc    func(ctx context.Context, docID string, att *driver.Attachment, options driver.Options) (newRev string, err error)
 	GetAttachmentFunc    func(ctx context.Context, docID, filename string, options driver.Options) (*driver.Attachment, error)
-	DeleteAttachmentFunc func(ctx context.Context, docID, filename string, options map[string]interface{}) (newRev string, err error)
+	DeleteAttachmentFunc func(ctx context.Context, docID, filename string, options driver.Options) (newRev string, err error)
 	QueryFunc            func(context.Context, string, string, map[string]interface{}) (driver.Rows, error)
 }
 
@@ -129,7 +129,7 @@ func (db *DB) GetAttachment(ctx context.Context, docID, filename string, opts dr
 }
 
 // DeleteAttachment calls db.DeleteAttachmentFunc
-func (db *DB) DeleteAttachment(ctx context.Context, docID, filename string, opts map[string]interface{}) (string, error) {
+func (db *DB) DeleteAttachment(ctx context.Context, docID, filename string, opts driver.Options) (string, error) {
 	return db.DeleteAttachmentFunc(ctx, docID, filename, opts)
 }
 

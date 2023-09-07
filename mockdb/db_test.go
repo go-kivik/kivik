@@ -1337,7 +1337,7 @@ func TestDeleteAttachment(t *testing.T) {
 		setup: func(m *Client) {
 			db := m.NewDB()
 			m.ExpectDB().WillReturn(db)
-			db.ExpectDeleteAttachment().WithOptions(map[string]interface{}{"foo": "baz"})
+			db.ExpectDeleteAttachment().WithOptions(kivik.Options{"foo": "baz"})
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").DeleteAttachment(context.TODO(), "foo", "1-foo", "foo.txt")

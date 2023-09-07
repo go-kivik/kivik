@@ -106,7 +106,9 @@ func (b *blobReader) Close() (err error) {
 	return nil
 }
 
-func (d *db) DeleteAttachment(ctx context.Context, docID, filename string, opts map[string]interface{}) (newRev string, err error) {
+func (d *db) DeleteAttachment(ctx context.Context, docID, filename string, options driver.Options) (newRev string, err error) {
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	rev, _ := opts["rev"].(string)
 	result, err := d.db.RemoveAttachment(ctx, docID, filename, rev)
 	if err != nil {

@@ -625,7 +625,7 @@ func TestDeleteAttachment(t *testing.T) {
 		name         string
 		db           *db
 		id, filename string
-		options      map[string]interface{}
+		options      kivik.Option
 
 		newRev string
 		status int
@@ -645,14 +645,14 @@ func TestDeleteAttachment(t *testing.T) {
 		{
 			name:    "no filename",
 			id:      "foo",
-			options: map[string]interface{}{"rev": "1-xxx"},
+			options: kivik.Options{"rev": "1-xxx"},
 			status:  http.StatusBadRequest,
 			err:     "kivik: filename required",
 		},
 		{
 			name:     "network error",
 			id:       "foo",
-			options:  map[string]interface{}{"rev": "1-xxx"},
+			options:  kivik.Options{"rev": "1-xxx"},
 			filename: "foo.txt",
 			db:       newTestDB(nil, errors.New("net error")),
 			status:   http.StatusBadGateway,
@@ -661,7 +661,7 @@ func TestDeleteAttachment(t *testing.T) {
 		{
 			name:     "success 1.6.1",
 			id:       "foo",
-			options:  map[string]interface{}{"rev": "2-8ee3381d24ee4ac3e9f8c1f6c7395641"},
+			options:  kivik.Options{"rev": "2-8ee3381d24ee4ac3e9f8c1f6c7395641"},
 			filename: "foo.txt",
 			db: newTestDB(&http.Response{
 				StatusCode: 200,
@@ -690,7 +690,7 @@ func TestDeleteAttachment(t *testing.T) {
 			}),
 			id:       "foo",
 			filename: "foo.txt",
-			options: map[string]interface{}{
+			options: kivik.Options{
 				"rev": "1-xxx",
 				"foo": "oink",
 			},
@@ -702,7 +702,7 @@ func TestDeleteAttachment(t *testing.T) {
 			db:       &db{},
 			id:       "foo",
 			filename: "foo.txt",
-			options: map[string]interface{}{
+			options: kivik.Options{
 				"rev": "1-xxx",
 				"foo": make(chan int),
 			},
@@ -722,7 +722,7 @@ func TestDeleteAttachment(t *testing.T) {
 			}),
 			id:       "foo",
 			filename: "foo.txt",
-			options: map[string]interface{}{
+			options: kivik.Options{
 				"rev":            "1-xxx",
 				OptionFullCommit: true,
 			},
@@ -734,7 +734,7 @@ func TestDeleteAttachment(t *testing.T) {
 			db:       &db{},
 			id:       "foo",
 			filename: "foo.txt",
-			options: map[string]interface{}{
+			options: kivik.Options{
 				"rev":            "1-xxx",
 				OptionFullCommit: 123,
 			},
@@ -744,7 +744,11 @@ func TestDeleteAttachment(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			newRev, err := test.db.DeleteAttachment(context.Background(), test.id, test.filename, test.options)
+			opts := test.options
+			if opts == nil {
+				opts = mock.NilOption
+			}
+			newRev, err := test.db.DeleteAttachment(context.Background(), test.id, test.filename, opts)
 			testy.StatusErrorRE(t, test.err, test.status, err)
 			if newRev != test.newRev {
 				t.Errorf("Unexpected new rev: %s", newRev)

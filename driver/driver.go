@@ -220,7 +220,7 @@ type DB interface {
 	GetAttachment(ctx context.Context, docID, filename string, options Options) (*Attachment, error)
 	// DeleteAttachment deletes an attachment from a document, returning the
 	// document's new revision.
-	DeleteAttachment(ctx context.Context, docID, filename string, options map[string]interface{}) (newRev string, err error)
+	DeleteAttachment(ctx context.Context, docID, filename string, options Options) (newRev string, err error)
 	// Query performs a query against a view, subject to the options provided.
 	// ddoc will be the design doc name without the '_design/' previx.
 	// view will be the view name without the '_view/' prefix.

@@ -2108,7 +2108,7 @@ func TestDeleteAttachment(t *testing.T) {
 	type tt struct {
 		db                   *DB
 		docID, rev, filename string
-		options              Options
+		options              Option
 
 		newRev string
 		status int
@@ -2137,7 +2137,7 @@ func TestDeleteAttachment(t *testing.T) {
 		db: &DB{
 			client: &Client{},
 			driverDB: &mock.DB{
-				DeleteAttachmentFunc: func(context.Context, string, string, map[string]interface{}) (string, error) {
+				DeleteAttachmentFunc: func(context.Context, string, string, driver.Options) (string, error) {
 					return "", &Error{Status: http.StatusBadRequest, Err: errors.New("db error")}
 				},
 			},
@@ -2149,18 +2149,21 @@ func TestDeleteAttachment(t *testing.T) {
 		return tt{
 			docID:    expectedDocID,
 			filename: expectedFilename,
-			options:  map[string]interface{}{"rev": expectedRev},
+			options:  Options{"rev": expectedRev},
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					DeleteAttachmentFunc: func(_ context.Context, docID, filename string, opts map[string]interface{}) (string, error) {
+					DeleteAttachmentFunc: func(_ context.Context, docID, filename string, options driver.Options) (string, error) {
 						if docID != expectedDocID {
 							t.Errorf("Unexpected docID: %s", docID)
 						}
 						if filename != expectedFilename {
 							t.Errorf("Unexpected filename: %s", filename)
 						}
-						if d := testy.DiffInterface(map[string]interface{}{"rev": expectedRev}, opts); d != nil {
+						wantOpts := map[string]interface{}{"rev": expectedRev}
+						gotOpts := map[string]interface{}{}
+						options.Apply(gotOpts)
+						if d := testy.DiffInterface(wantOpts, gotOpts); d != nil {
 							t.Errorf("Unexpected options:\n%s", d)
 						}
 						return "2-xxx", nil
@@ -2175,22 +2178,25 @@ func TestDeleteAttachment(t *testing.T) {
 			docID:    expectedDocID,
 			rev:      expectedRev,
 			filename: expectedFilename,
-			options:  testOptions,
+			options:  Options(testOptions),
 			newRev:   "2-xxx",
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					DeleteAttachmentFunc: func(_ context.Context, docID, filename string, opts map[string]interface{}) (string, error) {
+					DeleteAttachmentFunc: func(_ context.Context, docID, filename string, options driver.Options) (string, error) {
 						if docID != expectedDocID {
 							t.Errorf("Unexpected docID: %s", docID)
 						}
 						if filename != expectedFilename {
 							t.Errorf("Unexpected filename: %s", filename)
 						}
-						if d := testy.DiffInterface(map[string]interface{}{
+						wantOpts := map[string]interface{}{
 							"foo": 123,
 							"rev": "1-xxx",
-						}, opts); d != nil {
+						}
+						gotOpts := map[string]interface{}{}
+						options.Apply(gotOpts)
+						if d := testy.DiffInterface(wantOpts, gotOpts); d != nil {
 							t.Errorf("Unexpected options:\n%s", d)
 						}
 						return "2-xxx", nil

@@ -673,7 +673,7 @@ func (db *DB) DeleteAttachment(ctx context.Context, docID, rev, filename string,
 	if filename == "" {
 		return "", missingArg("filename")
 	}
-	opts := mergeOptions(Options{"rev": rev}, mergeOptions(options...))
+	opts := append(allOptions{Options{"rev": rev}}, options...)
 	return db.driverDB.DeleteAttachment(ctx, docID, filename, opts)
 }
 

@@ -139,10 +139,12 @@ func getDigest(resp *http.Response) (string, error) {
 	return etag, nil
 }
 
-func (d *db) DeleteAttachment(ctx context.Context, docID, filename string, opts map[string]interface{}) (newRev string, err error) {
+func (d *db) DeleteAttachment(ctx context.Context, docID, filename string, options driver.Options) (newRev string, err error) {
 	if docID == "" {
 		return "", missingArg("docID")
 	}
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	if rev, _ := opts["rev"].(string); rev == "" {
 		return "", missingArg("rev")
 	}

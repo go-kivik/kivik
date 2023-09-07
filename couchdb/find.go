@@ -140,20 +140,22 @@ func (f *fields) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (d *db) Explain(ctx context.Context, query interface{}, opts map[string]interface{}) (*driver.QueryPlan, error) {
+func (d *db) Explain(ctx context.Context, query interface{}, options driver.Options) (*driver.QueryPlan, error) {
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	reqPath := "_explain"
 	if part, ok := opts[OptionPartition].(string); ok {
 		delete(opts, OptionPartition)
 		reqPath = path.Join("_partition", part, reqPath)
 	}
-	options := &chttp.Options{
+	chttpOpts := &chttp.Options{
 		GetBody: chttp.BodyEncoder(query),
 		Header: http.Header{
 			chttp.HeaderIdempotencyKey: []string{},
 		},
 	}
 	var plan queryPlan
-	if err := d.Client.DoJSON(ctx, http.MethodPost, d.path(reqPath), options, &plan); err != nil {
+	if err := d.Client.DoJSON(ctx, http.MethodPost, d.path(reqPath), chttpOpts, &plan); err != nil {
 		return nil, err
 	}
 	return &driver.QueryPlan{

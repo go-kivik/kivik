@@ -260,12 +260,12 @@ func (db *driverDB) DesignDocs(ctx context.Context, options map[string]interface
 	return &driverRows{Context: ctx, Rows: coalesceRows(expected.ret0)}, expected.wait(ctx)
 }
 
-func (db *driverDB) Explain(ctx context.Context, arg0 interface{}, options map[string]interface{}) (*driver.QueryPlan, error) {
+func (db *driverDB) Explain(ctx context.Context, arg0 interface{}, options driver.Options) (*driver.QueryPlan, error) {
 	expected := &ExpectedExplain{
 		arg0: arg0,
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: options,
+			options: toLegacyOptions(options),
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {

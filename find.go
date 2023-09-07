@@ -130,7 +130,7 @@ func (db *DB) Explain(ctx context.Context, query interface{}, options ...Option)
 	}
 	defer db.endQuery()
 	if explainer, ok := db.driverDB.(driver.Finder); ok {
-		plan, err := explainer.Explain(ctx, query, mergeOptions(options...))
+		plan, err := explainer.Explain(ctx, query, allOptions(options))
 		if err != nil {
 			return nil, err
 		}

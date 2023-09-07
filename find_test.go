@@ -415,7 +415,7 @@ func TestExplain(t *testing.T) {
 		db: &DB{
 			client: &Client{},
 			driverDB: &mock.Finder{
-				ExplainFunc: func(context.Context, interface{}, map[string]interface{}) (*driver.QueryPlan, error) {
+				ExplainFunc: func(context.Context, interface{}, driver.Options) (*driver.QueryPlan, error) {
 					return nil, errors.New("explain error")
 				},
 			},
@@ -427,7 +427,7 @@ func TestExplain(t *testing.T) {
 		db: &DB{
 			client: &Client{},
 			driverDB: &mock.Finder{
-				ExplainFunc: func(_ context.Context, query interface{}, _ map[string]interface{}) (*driver.QueryPlan, error) {
+				ExplainFunc: func(_ context.Context, query interface{}, _ driver.Options) (*driver.QueryPlan, error) {
 					expectedQuery := int(3)
 					if d := testy.DiffInterface(expectedQuery, query); d != nil {
 						return nil, fmt.Errorf("Unexpected query:\n%s", d)

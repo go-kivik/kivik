@@ -306,7 +306,7 @@ type Finder interface {
 	DeleteIndex(ctx context.Context, ddoc, name string, options Options) error
 	// Explain returns the query plan for a given query. Explain takes the same
 	// arguments as [Finder.Find].
-	Explain(ctx context.Context, query interface{}, options map[string]interface{}) (*QueryPlan, error)
+	Explain(ctx context.Context, query interface{}, options Options) (*QueryPlan, error)
 }
 
 // QueryPlan is the response of an Explain query.

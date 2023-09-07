@@ -171,7 +171,7 @@ func (f *fields) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (d *db) Explain(ctx context.Context, query interface{}, _ map[string]interface{}) (*driver.QueryPlan, error) {
+func (d *db) Explain(ctx context.Context, query interface{}, _ driver.Options) (*driver.QueryPlan, error) {
 	result, err := d.db.Explain(ctx, query)
 	if err != nil {
 		return nil, err

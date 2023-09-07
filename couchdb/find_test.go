@@ -34,7 +34,7 @@ func TestExplain(t *testing.T) {
 		name     string
 		db       *db
 		query    interface{}
-		opts     map[string]interface{}
+		options  kivik.Option
 		expected *driver.QueryPlan
 		status   int
 		err      string
@@ -90,7 +90,7 @@ func TestExplain(t *testing.T) {
 		{
 			name: "partitioned request",
 			db:   newTestDB(nil, errors.New("expected")),
-			opts: map[string]interface{}{
+			options: kivik.Options{
 				OptionPartition: "x1",
 			},
 			status: http.StatusBadGateway,
@@ -99,7 +99,11 @@ func TestExplain(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.db.Explain(context.Background(), test.query, test.opts)
+			opts := test.options
+			if opts == nil {
+				opts = mock.NilOption
+			}
+			result, err := test.db.Explain(context.Background(), test.query, opts)
 			testy.StatusErrorRE(t, test.err, test.status, err)
 			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)

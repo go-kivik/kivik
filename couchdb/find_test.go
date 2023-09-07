@@ -24,7 +24,9 @@ import (
 
 	"gitlab.com/flimzy/testy"
 
+	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
 func TestExplain(t *testing.T) {
@@ -364,12 +366,12 @@ func TestDeleteIndex(t *testing.T) {
 
 func TestFind(t *testing.T) {
 	tests := []struct {
-		name   string
-		db     *db
-		query  interface{}
-		opts   map[string]interface{}
-		status int
-		err    string
+		name    string
+		db      *db
+		query   interface{}
+		options kivik.Option
+		status  int
+		err     string
 	}{
 		{
 			name:   "invalid query json",
@@ -427,7 +429,7 @@ func TestFind(t *testing.T) {
 		{
 			name: "partitioned request",
 			db:   newTestDB(nil, errors.New("expected")),
-			opts: map[string]interface{}{
+			options: kivik.Options{
 				OptionPartition: "x2",
 			},
 			status: http.StatusBadGateway,
@@ -436,7 +438,11 @@ func TestFind(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.db.Find(context.Background(), test.query, test.opts)
+			opts := test.options
+			if opts == nil {
+				opts = mock.NilOption
+			}
+			result, err := test.db.Find(context.Background(), test.query, opts)
 			testy.StatusErrorRE(t, test.err, test.status, err)
 			if _, ok := result.(*rows); !ok {
 				t.Errorf("Unexpected type returned: %t", result)

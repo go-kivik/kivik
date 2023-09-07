@@ -32,7 +32,7 @@ func (db *DB) Find(ctx context.Context, query interface{}, options ...Option) *R
 		if err := db.startQuery(); err != nil {
 			return &ResultSet{err: err}
 		}
-		rowsi, err := finder.Find(ctx, query, mergeOptions(options...))
+		rowsi, err := finder.Find(ctx, query, allOptions(options))
 		if err != nil {
 			db.endQuery()
 			return &ResultSet{err: err}

@@ -103,7 +103,7 @@ func (d *db) DeleteIndex(ctx context.Context, ddoc, name string, _ map[string]in
 	return err
 }
 
-func (d *db) Find(ctx context.Context, query interface{}, _ map[string]interface{}) (driver.Rows, error) {
+func (d *db) Find(ctx context.Context, query interface{}, _ driver.Options) (driver.Rows, error) {
 	result, err := d.db.Find(ctx, query)
 	if err != nil {
 		return nil, err

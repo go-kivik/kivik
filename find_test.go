@@ -48,7 +48,7 @@ func TestFind(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.Finder{
-					FindFunc: func(context.Context, interface{}, map[string]interface{}) (driver.Rows, error) {
+					FindFunc: func(context.Context, interface{}, driver.Options) (driver.Rows, error) {
 						return nil, errors.New("db error")
 					},
 				},
@@ -61,7 +61,7 @@ func TestFind(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.Finder{
-					FindFunc: func(_ context.Context, query interface{}, _ map[string]interface{}) (driver.Rows, error) {
+					FindFunc: func(_ context.Context, query interface{}, _ driver.Options) (driver.Rows, error) {
 						expectedQuery := int(3)
 						if d := testy.DiffInterface(expectedQuery, query); d != nil {
 							return nil, fmt.Errorf("Unexpected query:\n%s", d)
@@ -120,7 +120,7 @@ func TestFind(t *testing.T) {
 			db := &DB{
 				client: &Client{},
 				driverDB: &mock.Finder{
-					FindFunc: func(context.Context, interface{}, map[string]interface{}) (driver.Rows, error) {
+					FindFunc: func(context.Context, interface{}, driver.Options) (driver.Rows, error) {
 						return nil, errors.New("sdfsdf")
 					},
 				},

@@ -83,19 +83,21 @@ func (d *db) DeleteIndex(ctx context.Context, ddoc, name string, opts map[string
 	return err
 }
 
-func (d *db) Find(ctx context.Context, query interface{}, opts map[string]interface{}) (driver.Rows, error) {
+func (d *db) Find(ctx context.Context, query interface{}, options driver.Options) (driver.Rows, error) {
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	reqPath := "_find"
 	if part, ok := opts[OptionPartition].(string); ok {
 		delete(opts, OptionPartition)
 		reqPath = path.Join("_partition", part, reqPath)
 	}
-	options := &chttp.Options{
+	chttpOpts := &chttp.Options{
 		GetBody: chttp.BodyEncoder(query),
 		Header: http.Header{
 			chttp.HeaderIdempotencyKey: []string{},
 		},
 	}
-	resp, err := d.Client.DoReq(ctx, http.MethodPost, d.path(reqPath), options)
+	resp, err := d.Client.DoReq(ctx, http.MethodPost, d.path(reqPath), chttpOpts)
 	if err != nil {
 		return nil, err
 	}

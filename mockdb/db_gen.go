@@ -277,12 +277,12 @@ func (db *driverDB) Explain(ctx context.Context, arg0 interface{}, options map[s
 	return expected.ret0, expected.wait(ctx)
 }
 
-func (db *driverDB) Find(ctx context.Context, arg0 interface{}, options map[string]interface{}) (driver.Rows, error) {
+func (db *driverDB) Find(ctx context.Context, arg0 interface{}, options driver.Options) (driver.Rows, error) {
 	expected := &ExpectedFind{
 		arg0: arg0,
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: options,
+			options: toLegacyOptions(options),
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {

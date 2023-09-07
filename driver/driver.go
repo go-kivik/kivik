@@ -293,7 +293,7 @@ type Finder interface {
 	// Find executes a query using the new /_find interface. If query is a
 	// string, []byte, or [encoding/json.RawMessage], it should be treated as a
 	// raw JSON payload. Any other type should be marshaled to JSON.
-	Find(ctx context.Context, query interface{}, options map[string]interface{}) (Rows, error)
+	Find(ctx context.Context, query interface{}, options Options) (Rows, error)
 	// CreateIndex creates an index if it doesn't already exist. If the index
 	// already exists, it should do nothing. ddoc and name may be empty, in
 	// which case they should be provided by the backend. If index is a string,

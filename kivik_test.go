@@ -1111,7 +1111,7 @@ func TestClientClose(t *testing.T) {
 			client: &mock.Client{
 				DBFunc: func(string, driver.Options) (driver.DB, error) {
 					return &mock.Finder{
-						FindFunc: func(context.Context, interface{}, map[string]interface{}) (driver.Rows, error) {
+						FindFunc: func(context.Context, interface{}, driver.Options) (driver.Rows, error) {
 							return &mock.Rows{
 								NextFunc: func(*driver.Row) error {
 									time.Sleep(delay)

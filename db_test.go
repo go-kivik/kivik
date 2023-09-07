@@ -2408,7 +2408,7 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 			},
 			docID:    "foo",
 			filename: "foo.txt",
-			options:  testOptions,
+			options:  Options(testOptions),
 			expected: &Attachment{
 				Filename:    "foo.txt",
 				ContentType: "text/plain",
@@ -2422,7 +2422,7 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.AttachmentMetaGetter{
-					GetAttachmentMetaFunc: func(context.Context, string, string, map[string]interface{}) (*driver.Attachment, error) {
+					GetAttachmentMetaFunc: func(context.Context, string, string, driver.Options) (*driver.Attachment, error) {
 						return nil, errors.New("fail")
 					},
 				},
@@ -2437,7 +2437,7 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.AttachmentMetaGetter{
-					GetAttachmentMetaFunc: func(_ context.Context, docID, filename string, opts map[string]interface{}) (*driver.Attachment, error) {
+					GetAttachmentMetaFunc: func(_ context.Context, docID, filename string, options driver.Options) (*driver.Attachment, error) {
 						expectedDocID, expectedFilename := "foo", "foo.txt"
 						if docID != expectedDocID {
 							return nil, fmt.Errorf("Unexpected docID: %s", docID)
@@ -2445,7 +2445,9 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 						if filename != expectedFilename {
 							return nil, fmt.Errorf("Unexpected filename: %s", filename)
 						}
-						if d := testy.DiffInterface(testOptions, opts); d != nil {
+						gotOpts := map[string]interface{}{}
+						options.Apply(gotOpts)
+						if d := testy.DiffInterface(testOptions, gotOpts); d != nil {
 							return nil, fmt.Errorf("Unexpected options:\n%s", d)
 						}
 						return &driver.Attachment{
@@ -2459,7 +2461,7 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 			},
 			docID:    "foo",
 			filename: "foo.txt",
-			options:  testOptions,
+			options:  Options(testOptions),
 			expected: &Attachment{
 				Filename:    "foo.txt",
 				ContentType: "text/plain",

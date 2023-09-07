@@ -217,13 +217,13 @@ func (db *Copier) Copy(ctx context.Context, target, source string, options drive
 // AttachmentMetaGetter mocks a driver.DB and driver.AttachmentMetaGetter
 type AttachmentMetaGetter struct {
 	*DB
-	GetAttachmentMetaFunc func(ctx context.Context, docID, filename string, options map[string]interface{}) (*driver.Attachment, error)
+	GetAttachmentMetaFunc func(ctx context.Context, docID, filename string, options driver.Options) (*driver.Attachment, error)
 }
 
 var _ driver.AttachmentMetaGetter = &AttachmentMetaGetter{}
 
 // GetAttachmentMeta calls db.GetAttachmentMetaFunc
-func (db *AttachmentMetaGetter) GetAttachmentMeta(ctx context.Context, docID, filename string, options map[string]interface{}) (*driver.Attachment, error) {
+func (db *AttachmentMetaGetter) GetAttachmentMeta(ctx context.Context, docID, filename string, options driver.Options) (*driver.Attachment, error) {
 	return db.GetAttachmentMetaFunc(ctx, docID, filename, options)
 }
 

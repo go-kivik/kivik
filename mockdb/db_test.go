@@ -1690,7 +1690,7 @@ func TestGetAttachmentMeta(t *testing.T) {
 		setup: func(m *Client) {
 			db := m.NewDB()
 			m.ExpectDB().WillReturn(db)
-			db.ExpectGetAttachmentMeta().WithOptions(map[string]interface{}{"foo": "baz"})
+			db.ExpectGetAttachmentMeta().WithOptions(kivik.Options{"foo": "baz"})
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").GetAttachmentMeta(context.TODO(), "foo", "foo.txt")

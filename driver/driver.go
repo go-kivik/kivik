@@ -351,7 +351,7 @@ type Attachment struct {
 // not satisfied, GetAttachment will be used instead.
 type AttachmentMetaGetter interface {
 	// GetAttachmentMeta returns meta information about an attachment.
-	GetAttachmentMeta(ctx context.Context, docID, filename string, options map[string]interface{}) (*Attachment, error)
+	GetAttachmentMeta(ctx context.Context, docID, filename string, options Options) (*Attachment, error)
 }
 
 // BulkResult is the result of a single doc update in a BulkDocs request.

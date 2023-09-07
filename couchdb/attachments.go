@@ -60,7 +60,9 @@ func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attach
 	return response.Rev, nil
 }
 
-func (d *db) GetAttachmentMeta(ctx context.Context, docID, filename string, opts map[string]interface{}) (*driver.Attachment, error) {
+func (d *db) GetAttachmentMeta(ctx context.Context, docID, filename string, options driver.Options) (*driver.Attachment, error) {
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	resp, err := d.fetchAttachment(ctx, http.MethodHead, docID, filename, opts)
 	if err != nil {
 		return nil, err

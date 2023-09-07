@@ -638,7 +638,7 @@ func (db *DB) GetAttachmentMeta(ctx context.Context, docID, filename string, opt
 			return nil, err
 		}
 		defer db.endQuery()
-		a, err := metaer.GetAttachmentMeta(ctx, docID, filename, mergeOptions(options...))
+		a, err := metaer.GetAttachmentMeta(ctx, docID, filename, allOptions(options))
 		if err != nil {
 			return nil, err
 		}

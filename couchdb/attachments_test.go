@@ -283,7 +283,6 @@ func TestGetAttachmentMeta(t *testing.T) {
 		name         string
 		db           *db
 		id, filename string
-		options      map[string]interface{}
 
 		expected *driver.Attachment
 		status   int
@@ -323,7 +322,7 @@ func TestGetAttachmentMeta(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			att, err := test.db.GetAttachmentMeta(context.Background(), test.id, test.filename, test.options)
+			att, err := test.db.GetAttachmentMeta(context.Background(), test.id, test.filename, mock.NilOption)
 			testy.StatusErrorRE(t, test.err, test.status, err)
 			if d := testy.DiffInterface(test.expected, att); d != nil {
 				t.Errorf("Unexpected attachment:\n%s", d)

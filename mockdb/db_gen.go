@@ -172,14 +172,14 @@ func (db *driverDB) CreateDoc(ctx context.Context, arg0 interface{}, options dri
 	return expected.ret0, expected.ret1, expected.wait(ctx)
 }
 
-func (db *driverDB) CreateIndex(ctx context.Context, arg0 string, arg1 string, arg2 interface{}, options map[string]interface{}) error {
+func (db *driverDB) CreateIndex(ctx context.Context, arg0 string, arg1 string, arg2 interface{}, options driver.Options) error {
 	expected := &ExpectedCreateIndex{
 		arg0: arg0,
 		arg1: arg1,
 		arg2: arg2,
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: options,
+			options: toLegacyOptions(options),
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {

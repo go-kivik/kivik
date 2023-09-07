@@ -27,7 +27,9 @@ const (
 	pathIndex = "_index"
 )
 
-func (d *db) CreateIndex(ctx context.Context, ddoc, name string, index interface{}, opts map[string]interface{}) error {
+func (d *db) CreateIndex(ctx context.Context, ddoc, name string, index interface{}, options driver.Options) error {
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	reqPath := pathIndex
 	if part, ok := opts[OptionPartition].(string); ok {
 		delete(opts, OptionPartition)
@@ -46,10 +48,10 @@ func (d *db) CreateIndex(ctx context.Context, ddoc, name string, index interface
 		Ddoc:  ddoc,
 		Name:  name,
 	}
-	options := &chttp.Options{
+	chttpOpts := &chttp.Options{
 		Body: chttp.EncodeBody(parameters),
 	}
-	_, err = d.Client.DoError(ctx, http.MethodPost, d.path(reqPath), options)
+	_, err = d.Client.DoError(ctx, http.MethodPost, d.path(reqPath), chttpOpts)
 	return err
 }
 

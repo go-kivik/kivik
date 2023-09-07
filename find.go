@@ -55,7 +55,7 @@ func (db *DB) CreateIndex(ctx context.Context, ddoc, name string, index interfac
 	}
 	defer db.endQuery()
 	if finder, ok := db.driverDB.(driver.Finder); ok {
-		return finder.CreateIndex(ctx, ddoc, name, index, mergeOptions(options...))
+		return finder.CreateIndex(ctx, ddoc, name, index, allOptions(options))
 	}
 	return findNotImplemented
 }

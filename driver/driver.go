@@ -299,7 +299,7 @@ type Finder interface {
 	// which case they should be provided by the backend. If index is a string,
 	// []byte, or json.RawMessage, it should be treated as a raw JSON payload.
 	// Any other type should be marshaled to JSON.
-	CreateIndex(ctx context.Context, ddoc, name string, index interface{}, options map[string]interface{}) error
+	CreateIndex(ctx context.Context, ddoc, name string, index interface{}, options Options) error
 	// GetIndexes returns a list of all indexes in the database.
 	GetIndexes(ctx context.Context, options Options) ([]Index, error)
 	// Delete deletes the requested index.

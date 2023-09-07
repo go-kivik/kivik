@@ -168,7 +168,7 @@ func TestCreateIndex(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.Finder{
-					CreateIndexFunc: func(context.Context, string, string, interface{}, map[string]interface{}) error {
+					CreateIndexFunc: func(context.Context, string, string, interface{}, driver.Options) error {
 						return errors.New("db error")
 					},
 				},
@@ -181,7 +181,7 @@ func TestCreateIndex(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.Finder{
-					CreateIndexFunc: func(_ context.Context, ddoc, name string, index interface{}, _ map[string]interface{}) error {
+					CreateIndexFunc: func(_ context.Context, ddoc, name string, index interface{}, _ driver.Options) error {
 						expectedDdoc := "foo"
 						expectedName := "bar"
 						expectedIndex := int(3)

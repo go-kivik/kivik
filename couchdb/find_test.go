@@ -164,7 +164,7 @@ func TestCreateIndex(t *testing.T) {
 		name            string
 		ddoc, indexName string
 		index           interface{}
-		options         map[string]interface{}
+		options         kivik.Option
 		db              *db
 		status          int
 		err             string
@@ -208,7 +208,7 @@ func TestCreateIndex(t *testing.T) {
 		{
 			name: "partitioned query",
 			db:   newTestDB(nil, errors.New("expected")),
-			options: map[string]interface{}{
+			options: kivik.Options{
 				OptionPartition: "xxy",
 			},
 			status: http.StatusBadGateway,
@@ -217,7 +217,11 @@ func TestCreateIndex(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := test.db.CreateIndex(context.Background(), test.ddoc, test.indexName, test.index, test.options)
+			opts := test.options
+			if opts == nil {
+				opts = mock.NilOption
+			}
+			err := test.db.CreateIndex(context.Background(), test.ddoc, test.indexName, test.index, opts)
 			testy.StatusErrorRE(t, test.err, test.status, err)
 		})
 	}

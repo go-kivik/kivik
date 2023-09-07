@@ -141,7 +141,7 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, opts driver.Options)
 // Finder mocks a driver.DB and driver.Finder
 type Finder struct {
 	*DB
-	CreateIndexFunc func(context.Context, string, string, interface{}, map[string]interface{}) error
+	CreateIndexFunc func(context.Context, string, string, interface{}, driver.Options) error
 	DeleteIndexFunc func(context.Context, string, string, map[string]interface{}) error
 	FindFunc        func(context.Context, interface{}, driver.Options) (driver.Rows, error)
 	GetIndexesFunc  func(context.Context, driver.Options) ([]driver.Index, error)
@@ -151,8 +151,8 @@ type Finder struct {
 var _ driver.Finder = &Finder{}
 
 // CreateIndex calls db.CreateIndexFunc
-func (db *Finder) CreateIndex(ctx context.Context, ddoc, name string, index interface{}, opts map[string]interface{}) error {
-	return db.CreateIndexFunc(ctx, ddoc, name, index, opts)
+func (db *Finder) CreateIndex(ctx context.Context, ddoc, name string, index interface{}, options driver.Options) error {
+	return db.CreateIndexFunc(ctx, ddoc, name, index, options)
 }
 
 // DeleteIndex calls db.DeleteIndexFunc

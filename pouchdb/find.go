@@ -48,7 +48,7 @@ func buildIndex(ddoc, name string, index interface{}) (*js.Object, error) {
 	return o, nil
 }
 
-func (d *db) CreateIndex(ctx context.Context, ddoc, name string, index interface{}, _ map[string]interface{}) error {
+func (d *db) CreateIndex(ctx context.Context, ddoc, name string, index interface{}, _ driver.Options) error {
 	indexObj, err := buildIndex(ddoc, name, index)
 	if err != nil {
 		return err

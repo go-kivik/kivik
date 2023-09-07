@@ -367,7 +367,7 @@ type BulkResult struct {
 type RevGetter interface {
 	// GetRev returns the document revision of the requested document. GetRev
 	// should accept the same options as [DB.Get].
-	GetRev(ctx context.Context, docID string, options map[string]interface{}) (rev string, err error)
+	GetRev(ctx context.Context, docID string, options Options) (rev string, err error)
 }
 
 // Flusher is an optional interface that may be implemented by a [DB] that can

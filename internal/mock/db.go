@@ -191,13 +191,13 @@ func (db *Flusher) Flush(ctx context.Context) error {
 // RevGetter mocks a driver.DB and driver.RevGetter
 type RevGetter struct {
 	*DB
-	GetRevFunc func(context.Context, string, map[string]interface{}) (string, error)
+	GetRevFunc func(context.Context, string, driver.Options) (string, error)
 }
 
 var _ driver.RevGetter = &RevGetter{}
 
 // GetRev calls db.GetRevFunc
-func (db *RevGetter) GetRev(ctx context.Context, docID string, opts map[string]interface{}) (string, error) {
+func (db *RevGetter) GetRev(ctx context.Context, docID string, opts driver.Options) (string, error) {
 	return db.GetRevFunc(ctx, docID, opts)
 }
 

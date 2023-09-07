@@ -363,12 +363,12 @@ func (db *driverDB) GetIndexes(ctx context.Context, options driver.Options) ([]d
 	return expected.ret0, expected.wait(ctx)
 }
 
-func (db *driverDB) GetRev(ctx context.Context, arg0 string, options map[string]interface{}) (string, error) {
+func (db *driverDB) GetRev(ctx context.Context, arg0 string, options driver.Options) (string, error) {
 	expected := &ExpectedGetRev{
 		arg0: arg0,
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: options,
+			options: toLegacyOptions(options),
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {

@@ -1128,7 +1128,7 @@ func TestGetRev(t *testing.T) { // nolint: gocyclo
 		db      *DB
 		docID   string
 		rev     string
-		options Options
+		options Option
 		status  int
 		err     string
 	}{
@@ -1137,7 +1137,7 @@ func TestGetRev(t *testing.T) { // nolint: gocyclo
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.RevGetter{
-					GetRevFunc: func(context.Context, string, map[string]interface{}) (string, error) {
+					GetRevFunc: func(context.Context, string, driver.Options) (string, error) {
 						return "", &Error{Status: http.StatusBadGateway, Err: errors.New("get meta error")}
 					},
 				},
@@ -1150,12 +1150,14 @@ func TestGetRev(t *testing.T) { // nolint: gocyclo
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.RevGetter{
-					GetRevFunc: func(_ context.Context, docID string, opts map[string]interface{}) (string, error) {
+					GetRevFunc: func(_ context.Context, docID string, options driver.Options) (string, error) {
 						expectedDocID := "foo"
 						if docID != expectedDocID {
 							return "", fmt.Errorf("Unexpected docID: %s", docID)
 						}
-						if d := testy.DiffInterface(testOptions, opts); d != nil {
+						gotOpts := map[string]interface{}{}
+						options.Apply(gotOpts)
+						if d := testy.DiffInterface(testOptions, gotOpts); d != nil {
 							return "", fmt.Errorf("Unexpected options:\n%s", d)
 						}
 						return "1-xxx", nil
@@ -1163,7 +1165,7 @@ func TestGetRev(t *testing.T) { // nolint: gocyclo
 				},
 			},
 			docID:   "foo",
-			options: testOptions,
+			options: Options(testOptions),
 			rev:     "1-xxx",
 		},
 		{

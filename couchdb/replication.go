@@ -235,7 +235,7 @@ func (r *replication) setFromReplicatorDoc(doc *replicatorDoc) {
 }
 
 func (r *replication) Delete(ctx context.Context) error {
-	rev, err := r.GetRev(ctx, r.docID, nil)
+	rev, err := r.GetRev(ctx, r.docID, kivik.Options{})
 	if err != nil {
 		return err
 	}

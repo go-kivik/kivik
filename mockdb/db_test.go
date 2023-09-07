@@ -1191,7 +1191,7 @@ func TestGetRev(t *testing.T) {
 		setup: func(m *Client) {
 			db := m.NewDB()
 			m.ExpectDB().WillReturn(db)
-			db.ExpectGetRev().WithOptions(map[string]interface{}{"foo": "bar"})
+			db.ExpectGetRev().WithOptions(kivik.Options{"foo": "bar"})
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").GetRev(context.TODO(), "foo", kivik.Options{"foo": 123})

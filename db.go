@@ -205,7 +205,7 @@ func (db *DB) GetRev(ctx context.Context, docID string, options ...Option) (rev 
 	if db.err != nil {
 		return "", db.err
 	}
-	opts := mergeOptions(options...)
+	opts := allOptions(options)
 	if r, ok := db.driverDB.(driver.RevGetter); ok {
 		if err := db.startQuery(); err != nil {
 			return "", err

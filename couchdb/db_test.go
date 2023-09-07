@@ -1623,7 +1623,7 @@ func TestSetSecurity(t *testing.T) {
 	})
 }
 
-func TestGetMeta(t *testing.T) {
+func TestGetRev(t *testing.T) {
 	tests := []struct {
 		name    string
 		db      *db

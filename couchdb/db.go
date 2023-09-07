@@ -195,9 +195,7 @@ func (*document) TotalRows() int64  { return 0 }
 
 // Get fetches the requested document.
 func (d *db) Get(ctx context.Context, docID string, options driver.Options) (driver.Rows, error) {
-	opts := map[string]interface{}{}
-	options.Apply(opts)
-	resp, err := d.get(ctx, http.MethodGet, docID, opts)
+	resp, err := d.get(ctx, http.MethodGet, docID, options)
 	if err != nil {
 		return nil, err
 	}
@@ -336,8 +334,8 @@ func (a *multipartAttachments) Close() error {
 }
 
 // Rev returns the most current rev of the requested document.
-func (d *db) GetRev(ctx context.Context, docID string, opts map[string]interface{}) (string, error) {
-	resp, err := d.get(ctx, http.MethodHead, docID, opts)
+func (d *db) GetRev(ctx context.Context, docID string, options driver.Options) (string, error) {
+	resp, err := d.get(ctx, http.MethodHead, docID, options)
 	if err != nil {
 		return "", err
 	}
@@ -349,10 +347,13 @@ func (d *db) GetRev(ctx context.Context, docID string, opts map[string]interface
 	return rev, err
 }
 
-func (d *db) get(ctx context.Context, method, docID string, opts map[string]interface{}) (*http.Response, error) {
+func (d *db) get(ctx context.Context, method, docID string, options driver.Options) (*http.Response, error) {
 	if docID == "" {
 		return nil, missingArg("docID")
 	}
+
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 
 	chttpOpts, err := chttp.NewOptions(opts)
 	if err != nil {

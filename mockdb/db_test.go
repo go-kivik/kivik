@@ -1519,7 +1519,7 @@ func TestCopy(t *testing.T) {
 		setup: func(m *Client) {
 			db := m.NewDB()
 			m.ExpectDB().WillReturn(db)
-			db.ExpectCopy().WithOptions(map[string]interface{}{"foo": "baz"})
+			db.ExpectCopy().WithOptions(kivik.Options{"foo": "baz"})
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").Copy(context.TODO(), "foo", "bar")

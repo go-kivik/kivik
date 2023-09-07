@@ -386,7 +386,7 @@ type Flusher interface {
 // calling [DB.Get] followed by [DB.Put], with options passed through unaltered,
 // except that the 'rev' option will be removed for the [DB.Put] call.
 type Copier interface {
-	Copy(ctx context.Context, targetID, sourceID string, options map[string]interface{}) (targetRev string, err error)
+	Copy(ctx context.Context, targetID, sourceID string, options Options) (targetRev string, err error)
 }
 
 // DesignDocer is an optional interface that may be implemented by a [DB].

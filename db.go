@@ -548,7 +548,7 @@ func (db *DB) Copy(ctx context.Context, targetID, sourceID string, options ...Op
 	if sourceID == "" {
 		return "", missingArg("sourceID")
 	}
-	opts := mergeOptions(options...)
+	opts := allOptions(options)
 	if copier, ok := db.driverDB.(driver.Copier); ok {
 		if err := db.startQuery(); err != nil {
 			return "", err
@@ -562,8 +562,10 @@ func (db *DB) Copy(ctx context.Context, targetID, sourceID string, options ...Op
 	}
 	delete(doc, "_rev")
 	doc["_id"] = targetID
-	delete(opts, "rev") // rev has a completely different meaning for Copy and Put
-	return db.Put(ctx, targetID, doc, opts)
+	opts2 := map[string]interface{}{}
+	opts.Apply(opts2)
+	delete(opts2, "rev") // rev has a completely different meaning for Copy and Put
+	return db.Put(ctx, targetID, doc, Options(opts2))
 }
 
 // PutAttachment uploads the supplied content as an attachment to the specified

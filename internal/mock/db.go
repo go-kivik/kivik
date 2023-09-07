@@ -204,13 +204,13 @@ func (db *RevGetter) GetRev(ctx context.Context, docID string, opts map[string]i
 // Copier mocks a driver.DB and driver.Copier.
 type Copier struct {
 	*DB
-	CopyFunc func(context.Context, string, string, map[string]interface{}) (string, error)
+	CopyFunc func(context.Context, string, string, driver.Options) (string, error)
 }
 
 var _ driver.Copier = &Copier{}
 
 // Copy calls db.CopyFunc
-func (db *Copier) Copy(ctx context.Context, target, source string, options map[string]interface{}) (string, error) {
+func (db *Copier) Copy(ctx context.Context, target, source string, options driver.Options) (string, error) {
 	return db.CopyFunc(ctx, target, source, options)
 }
 

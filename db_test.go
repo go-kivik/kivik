@@ -1274,7 +1274,7 @@ func TestCopy(t *testing.T) {
 		name           string
 		db             *DB
 		target, source string
-		options        Options
+		options        Option
 		expected       string
 		status         int
 		err            string
@@ -1301,7 +1301,7 @@ func TestCopy(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.Copier{
-					CopyFunc: func(context.Context, string, string, map[string]interface{}) (string, error) {
+					CopyFunc: func(context.Context, string, string, driver.Options) (string, error) {
 						return "", &Error{Status: http.StatusBadRequest, Err: errors.New("copy error")}
 					},
 				},
@@ -1316,7 +1316,7 @@ func TestCopy(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.Copier{
-					CopyFunc: func(_ context.Context, target, source string, options map[string]interface{}) (string, error) {
+					CopyFunc: func(_ context.Context, target, source string, options driver.Options) (string, error) {
 						expectedTarget := "foo"
 						expectedSource := "bar"
 						if target != expectedTarget {
@@ -1325,7 +1325,9 @@ func TestCopy(t *testing.T) {
 						if source != expectedSource {
 							return "", fmt.Errorf("Unexpected source: %s", source)
 						}
-						if d := testy.DiffInterface(testOptions, options); d != nil {
+						gotOpts := map[string]interface{}{}
+						options.Apply(gotOpts)
+						if d := testy.DiffInterface(testOptions, gotOpts); d != nil {
 							return "", fmt.Errorf("Unexpected options:\n%s", d)
 						}
 						return "1-xxx", nil
@@ -1334,7 +1336,7 @@ func TestCopy(t *testing.T) {
 			},
 			target:   "foo",
 			source:   "bar",
-			options:  testOptions,
+			options:  Options(testOptions),
 			expected: "1-xxx",
 		},
 		{

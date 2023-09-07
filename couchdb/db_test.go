@@ -1681,7 +1681,7 @@ func TestGetMeta(t *testing.T) {
 func TestCopy(t *testing.T) {
 	type tt struct {
 		target, source string
-		options        map[string]interface{}
+		options        kivik.Option
 		db             *db
 		rev            string
 		status         int
@@ -1709,7 +1709,7 @@ func TestCopy(t *testing.T) {
 		db:      &db{},
 		source:  "foo",
 		target:  "bar",
-		options: map[string]interface{}{"foo": make(chan int)},
+		options: kivik.Options{"foo": make(chan int)},
 		status:  http.StatusBadRequest,
 		err:     "kivik: invalid type chan int for options",
 	})
@@ -1717,7 +1717,7 @@ func TestCopy(t *testing.T) {
 		db:      &db{},
 		source:  "foo",
 		target:  "bar",
-		options: map[string]interface{}{OptionFullCommit: 123},
+		options: kivik.Options{OptionFullCommit: 123},
 		status:  http.StatusBadRequest,
 		err:     "kivik: option 'X-Couch-Full-Commit' must be bool, not int",
 	})
@@ -1747,7 +1747,7 @@ func TestCopy(t *testing.T) {
 	tests.Add("full commit 1.6.1", tt{
 		source: "foo",
 		target: "bar",
-		options: map[string]interface{}{
+		options: kivik.Options{
 			OptionFullCommit: true,
 		},
 		db: newCustomDB(func(req *http.Request) (*http.Response, error) {
@@ -1776,7 +1776,7 @@ func TestCopy(t *testing.T) {
 	tests.Add("target rev", tt{
 		source: "foo",
 		target: "bar?rev=1-xxx",
-		options: map[string]interface{}{
+		options: kivik.Options{
 			OptionFullCommit: true,
 		},
 		db: newCustomDB(func(req *http.Request) (*http.Response, error) {
@@ -1804,7 +1804,11 @@ func TestCopy(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
-		rev, err := tt.db.Copy(context.Background(), tt.target, tt.source, tt.options)
+		opts := tt.options
+		if opts == nil {
+			opts = mock.NilOption
+		}
+		rev, err := tt.db.Copy(context.Background(), tt.target, tt.source, opts)
 		testy.StatusErrorRE(t, tt.err, tt.status, err)
 		if rev != tt.rev {
 			t.Errorf("Got %s, expected %s", rev, tt.rev)

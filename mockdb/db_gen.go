@@ -137,13 +137,13 @@ func (db *driverDB) Changes(ctx context.Context, options driver.Options) (driver
 	return &driverChanges{Context: ctx, Changes: coalesceChanges(expected.ret0)}, expected.wait(ctx)
 }
 
-func (db *driverDB) Copy(ctx context.Context, arg0 string, arg1 string, options map[string]interface{}) (string, error) {
+func (db *driverDB) Copy(ctx context.Context, arg0 string, arg1 string, options driver.Options) (string, error) {
 	expected := &ExpectedCopy{
 		arg0: arg0,
 		arg1: arg1,
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: options,
+			options: toLegacyOptions(options),
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {

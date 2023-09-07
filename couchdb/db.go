@@ -886,13 +886,15 @@ func (d *db) SetSecurity(ctx context.Context, security *driver.Security) error {
 	return chttp.ResponseError(res)
 }
 
-func (d *db) Copy(ctx context.Context, targetID, sourceID string, opts map[string]interface{}) (targetRev string, err error) {
+func (d *db) Copy(ctx context.Context, targetID, sourceID string, options driver.Options) (targetRev string, err error) {
 	if sourceID == "" {
 		return "", missingArg("sourceID")
 	}
 	if targetID == "" {
 		return "", missingArg("targetID")
 	}
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	chttpOpts, err := chttp.NewOptions(opts)
 	if err != nil {
 		return "", err

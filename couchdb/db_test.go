@@ -765,7 +765,7 @@ func TestPut(t *testing.T) {
 		db      *db
 		id      string
 		doc     interface{}
-		options map[string]interface{}
+		options kivik.Option
 		rev     string
 		status  int
 		err     string
@@ -847,7 +847,7 @@ func TestPut(t *testing.T) {
 			}),
 			id:      "foo",
 			doc:     map[string]string{"foo": "bar"},
-			options: map[string]interface{}{OptionFullCommit: true},
+			options: kivik.Options{OptionFullCommit: true},
 			status:  http.StatusBadGateway,
 			err:     `Put "?http://example.com/testdb/foo"?: success`,
 		},
@@ -856,7 +856,7 @@ func TestPut(t *testing.T) {
 			db:      &db{},
 			id:      "foo",
 			doc:     map[string]string{"foo": "bar"},
-			options: map[string]interface{}{OptionFullCommit: 123},
+			options: kivik.Options{OptionFullCommit: 123},
 			status:  http.StatusBadRequest,
 			err:     "kivik: option 'X-Couch-Full-Commit' must be bool, not int",
 		},
@@ -905,7 +905,11 @@ func TestPut(t *testing.T) {
 			}
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
-			rev, err := test.db.Put(ctx, test.id, test.doc, test.options)
+			opts := test.options
+			if opts == nil {
+				opts = mock.NilOption
+			}
+			rev, err := test.db.Put(ctx, test.id, test.doc, opts)
 			testy.StatusErrorRE(t, test.err, test.status, err)
 			if rev != test.rev {
 				t.Errorf("Unexpected rev: %s", rev)

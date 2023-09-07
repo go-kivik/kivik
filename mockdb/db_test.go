@@ -1101,7 +1101,7 @@ func TestPut(t *testing.T) {
 		setup: func(m *Client) {
 			db := m.NewDB()
 			m.ExpectDB().WillReturn(db)
-			db.ExpectPut().WithOptions(map[string]interface{}{"foo": "bar"})
+			db.ExpectPut().WithOptions(kivik.Options{"foo": "bar"})
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").Put(context.TODO(), "foo", 123, kivik.Options{"foo": 123})

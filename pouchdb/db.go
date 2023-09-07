@@ -92,7 +92,7 @@ func (d *db) CreateDoc(ctx context.Context, doc interface{}, options driver.Opti
 	return d.db.Post(ctx, jsDoc, opts)
 }
 
-func (d *db) Put(ctx context.Context, docID string, doc interface{}, opts map[string]interface{}) (rev string, err error) {
+func (d *db) Put(ctx context.Context, docID string, doc interface{}, options driver.Options) (rev string, err error) {
 	jsonDoc, err := json.Marshal(doc)
 	if err != nil {
 		return "", err
@@ -103,6 +103,8 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, opts map[st
 			return "", &kivik.Error{Status: http.StatusBadRequest, Message: "id argument must match _id field in document"}
 		}
 	}
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	jsDoc.Set("_id", docID)
 	return d.db.Put(ctx, jsDoc, opts)
 }

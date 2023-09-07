@@ -199,7 +199,7 @@ type DB interface {
 	// CreateDoc creates a new doc, with a server-generated ID.
 	CreateDoc(ctx context.Context, doc interface{}, options Options) (docID, rev string, err error)
 	// Put writes the document in the database.
-	Put(ctx context.Context, docID string, doc interface{}, options map[string]interface{}) (rev string, err error)
+	Put(ctx context.Context, docID string, doc interface{}, options Options) (rev string, err error)
 	// Delete marks the specified document as deleted.
 	Delete(ctx context.Context, docID string, options map[string]interface{}) (newRev string, err error)
 	// Stats returns database statistics.

@@ -428,13 +428,13 @@ func (db *driverDB) Purge(ctx context.Context, arg0 map[string][]string) (*drive
 	return expected.ret0, expected.wait(ctx)
 }
 
-func (db *driverDB) Put(ctx context.Context, arg0 string, arg1 interface{}, options map[string]interface{}) (string, error) {
+func (db *driverDB) Put(ctx context.Context, arg0 string, arg1 interface{}, options driver.Options) (string, error) {
 	expected := &ExpectedPut{
 		arg0: arg0,
 		arg1: arg1,
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: options,
+			options: toLegacyOptions(options),
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {

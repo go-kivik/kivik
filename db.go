@@ -310,7 +310,7 @@ func (db *DB) Put(ctx context.Context, docID string, doc interface{}, options ..
 	if err != nil {
 		return "", err
 	}
-	return db.driverDB.Put(ctx, docID, i, mergeOptions(options...))
+	return db.driverDB.Put(ctx, docID, i, allOptions(options))
 }
 
 // Delete marks the specified document as deleted. The revision may be provided

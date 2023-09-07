@@ -25,7 +25,7 @@ type DB struct {
 	AllDocsFunc          func(ctx context.Context, options driver.Options) (driver.Rows, error)
 	GetFunc              func(ctx context.Context, docID string, options driver.Options) (*driver.Document, error)
 	CreateDocFunc        func(ctx context.Context, doc interface{}, options driver.Options) (docID, rev string, err error)
-	PutFunc              func(ctx context.Context, docID string, doc interface{}, options map[string]interface{}) (rev string, err error)
+	PutFunc              func(ctx context.Context, docID string, doc interface{}, options driver.Options) (rev string, err error)
 	DeleteFunc           func(ctx context.Context, docID string, options map[string]interface{}) (newRev string, err error)
 	StatsFunc            func(ctx context.Context) (*driver.DBStats, error)
 	CompactFunc          func(ctx context.Context) error
@@ -74,7 +74,7 @@ func (db *DB) CreateDoc(ctx context.Context, doc interface{}, opts driver.Option
 }
 
 // Put calls db.PutFunc
-func (db *DB) Put(ctx context.Context, docID string, doc interface{}, opts map[string]interface{}) (string, error) {
+func (db *DB) Put(ctx context.Context, docID string, doc interface{}, opts driver.Options) (string, error) {
 	return db.PutFunc(ctx, docID, doc, opts)
 }
 

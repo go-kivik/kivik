@@ -426,10 +426,12 @@ func putOpts(doc interface{}, opts map[string]interface{}) (*chttp.Options, erro
 	return chttpOpts, nil
 }
 
-func (d *db) Put(ctx context.Context, docID string, doc interface{}, opts map[string]interface{}) (rev string, err error) {
+func (d *db) Put(ctx context.Context, docID string, doc interface{}, options driver.Options) (rev string, err error) {
 	if docID == "" {
 		return "", missingArg("docID")
 	}
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	opts2, err := putOpts(doc, opts)
 	if err != nil {
 		return "", err

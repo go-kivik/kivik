@@ -1377,7 +1377,7 @@ func TestCopy(t *testing.T) {
 							Body: body(`{"_id":"foo","_rev":"1-xxx"}`),
 						}, nil
 					},
-					PutFunc: func(context.Context, string, interface{}, map[string]interface{}) (string, error) {
+					PutFunc: func(context.Context, string, interface{}, driver.Options) (string, error) {
 						return "", &Error{Status: http.StatusBadGateway, Err: errors.New("put error")}
 					},
 				},
@@ -1401,7 +1401,7 @@ func TestCopy(t *testing.T) {
 							Body: body(`{"_id":"bar","_rev":"1-xxx","foo":123.4}`),
 						}, nil
 					},
-					PutFunc: func(_ context.Context, docID string, doc interface{}, opts map[string]interface{}) (string, error) {
+					PutFunc: func(_ context.Context, docID string, doc interface{}, options driver.Options) (string, error) {
 						expectedDocID := "foo"
 						expectedDoc := map[string]interface{}{"_id": "foo", "foo": 123.4}
 						expectedOpts := map[string]interface{}{"batch": true}
@@ -1411,8 +1411,10 @@ func TestCopy(t *testing.T) {
 						if d := testy.DiffInterface(expectedDoc, doc); d != nil {
 							return "", fmt.Errorf("Unexpected doc:\n%s", doc)
 						}
-						if d := testy.DiffInterface(expectedOpts, opts); d != nil {
-							return "", fmt.Errorf("Unexpected opts:\n%s", opts)
+						gotOpts := map[string]interface{}{}
+						options.Apply(gotOpts)
+						if d := testy.DiffInterface(expectedOpts, gotOpts); d != nil {
+							return "", fmt.Errorf("Unexpected opts:\n%s", d)
 						}
 						return "1-xxx", nil
 					},
@@ -1500,7 +1502,7 @@ func TestNormalizeFromJSON(t *testing.T) {
 }
 
 func TestPut(t *testing.T) {
-	putFunc := func(_ context.Context, docID string, doc interface{}, opts map[string]interface{}) (string, error) {
+	putFunc := func(_ context.Context, docID string, doc interface{}, options driver.Options) (string, error) {
 		expectedDocID := "foo"
 		expectedDoc := map[string]interface{}{"foo": "bar"}
 		if expectedDocID != docID {
@@ -1509,7 +1511,9 @@ func TestPut(t *testing.T) {
 		if d := testy.DiffAsJSON(expectedDoc, doc); d != nil {
 			return "", fmt.Errorf("Unexpected doc: %s", d)
 		}
-		if d := testy.DiffInterface(testOptions, opts); d != nil {
+		gotOpts := map[string]interface{}{}
+		options.Apply(gotOpts)
+		if d := testy.DiffInterface(testOptions, gotOpts); d != nil {
 			return "", fmt.Errorf("Unexpected opts: %s", d)
 		}
 		return "1-xxx", nil
@@ -1519,7 +1523,7 @@ func TestPut(t *testing.T) {
 		db      *DB
 		docID   string
 		input   interface{}
-		options Options
+		options Option
 		status  int
 		err     string
 		newRev  string
@@ -1538,7 +1542,7 @@ func TestPut(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					PutFunc: func(context.Context, string, interface{}, map[string]interface{}) (string, error) {
+					PutFunc: func(context.Context, string, interface{}, driver.Options) (string, error) {
 						return "", &Error{Status: http.StatusBadRequest, Err: errors.New("db error")}
 					},
 				},
@@ -1557,7 +1561,7 @@ func TestPut(t *testing.T) {
 			},
 			docID:   "foo",
 			input:   map[string]interface{}{"foo": "bar"},
-			options: testOptions,
+			options: Options(testOptions),
 			newRev:  "1-xxx",
 		},
 		{
@@ -1583,7 +1587,7 @@ func TestPut(t *testing.T) {
 			},
 			docID:   "foo",
 			input:   []byte(`{"foo":"bar"}`),
-			options: testOptions,
+			options: Options(testOptions),
 			newRev:  "1-xxx",
 		},
 		{
@@ -1596,7 +1600,7 @@ func TestPut(t *testing.T) {
 			},
 			docID:   "foo",
 			input:   json.RawMessage(`{"foo":"bar"}`),
-			options: testOptions,
+			options: Options(testOptions),
 			newRev:  "1-xxx",
 		},
 		{
@@ -1609,7 +1613,7 @@ func TestPut(t *testing.T) {
 			},
 			docID:   "foo",
 			input:   strings.NewReader(`{"foo":"bar"}`),
-			options: testOptions,
+			options: Options(testOptions),
 			newRev:  "1-xxx",
 		},
 		{

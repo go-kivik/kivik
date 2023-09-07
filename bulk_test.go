@@ -127,7 +127,7 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 		db: &DB{
 			client: &Client{},
 			driverDB: &mock.DB{
-				PutFunc: func(_ context.Context, docID string, doc interface{}, opts map[string]interface{}) (string, error) {
+				PutFunc: func(_ context.Context, docID string, doc interface{}, options driver.Options) (string, error) {
 					if docID == "error" {
 						return "", errors.New("error")
 					}
@@ -138,7 +138,9 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 					if d := testy.DiffInterface(expectedDoc, doc); d != nil {
 						return "", fmt.Errorf("Unexpected doc:\n%s", d)
 					}
-					if d := testy.DiffInterface(testOptions, opts); d != nil {
+					gotOpts := map[string]interface{}{}
+					options.Apply(gotOpts)
+					if d := testy.DiffInterface(testOptions, gotOpts); d != nil {
 						return "", fmt.Errorf("Unexpected opts:\n%s", d)
 					}
 					return "2-xxx", nil // nolint: goconst

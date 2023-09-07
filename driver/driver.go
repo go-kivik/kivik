@@ -212,7 +212,7 @@ type DB interface {
 	ViewCleanup(ctx context.Context) error
 	// Changes returns an iterator for the changes feed. In continuous mode,
 	// the iterator will continue indefinitely, until [Changes.Close] is called.
-	Changes(ctx context.Context, options map[string]interface{}) (Changes, error)
+	Changes(ctx context.Context, options Options) (Changes, error)
 	// PutAttachment uploads an attachment to the specified document, returning
 	// the new revision.
 	PutAttachment(ctx context.Context, docID string, att *Attachment, options map[string]interface{}) (newRev string, err error)

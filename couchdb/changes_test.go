@@ -23,7 +23,9 @@ import (
 
 	"gitlab.com/flimzy/testy"
 
+	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
 func TestChanges_metadata(t *testing.T) {
@@ -41,7 +43,7 @@ func TestChanges_metadata(t *testing.T) {
 		`),
 	}, nil)
 
-	changes, err := db.Changes(context.Background(), nil)
+	changes, err := db.Changes(context.Background(), mock.NilOption)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,7 +62,7 @@ func TestChanges_metadata(t *testing.T) {
 func TestChanges(t *testing.T) {
 	tests := []struct {
 		name    string
-		options map[string]interface{}
+		options kivik.Option
 		db      *db
 		status  int
 		err     string
@@ -72,13 +74,13 @@ func TestChanges(t *testing.T) {
 				StatusCode: http.StatusBadRequest,
 				Body:       Body(""),
 			}, nil),
-			options: map[string]interface{}{"foo": make(chan int)},
+			options: kivik.Options{"foo": make(chan int)},
 			status:  http.StatusBadRequest,
 			err:     "kivik: invalid type chan int for options",
 		},
 		{
 			name:    "eventsource",
-			options: map[string]interface{}{"feed": "eventsource"},
+			options: kivik.Options{"feed": "eventsource"},
 			status:  http.StatusBadRequest,
 			err:     "kivik: eventsource feed not supported, use 'continuous'",
 		},
@@ -91,7 +93,7 @@ func TestChanges(t *testing.T) {
 		{
 			name:    "continuous",
 			db:      newTestDB(nil, errors.New("net error")),
-			options: map[string]interface{}{"feed": "continuous"},
+			options: kivik.Options{"feed": "continuous"},
 			status:  http.StatusBadGateway,
 			err:     `Post "?http://example.com/testdb/_changes\?feed=continuous"?: net error`,
 		},
@@ -200,7 +202,7 @@ func TestChanges(t *testing.T) {
 					Body: Body(`{"seq":3,"id":"43734cf3ce6d5a37050c050bb600006b","changes":[{"rev":"2-185ccf92154a9f24a4f4fd12233bf463"}],"deleted":true}`),
 				}, nil
 			}),
-			options: map[string]interface{}{
+			options: kivik.Options{
 				"doc_ids": []string{"a", "b", "c"},
 			},
 			etag: "etag-foo",
@@ -209,7 +211,11 @@ func TestChanges(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			ch, err := test.db.Changes(context.Background(), test.options)
+			opts := test.options
+			if opts == nil {
+				opts = mock.NilOption
+			}
+			ch, err := test.db.Changes(context.Background(), opts)
 			if ch != nil {
 				defer ch.Close() // nolint:errcheck
 			}

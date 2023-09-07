@@ -2590,7 +2590,7 @@ func TestChanges(t *testing.T) {
 		setup: func(m *Client) {
 			db := m.NewDB()
 			m.ExpectDB().WillReturn(db)
-			db.ExpectChanges().WithOptions(map[string]interface{}{"foo": 123})
+			db.ExpectChanges().WithOptions(kivik.Options{"foo": 123})
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")

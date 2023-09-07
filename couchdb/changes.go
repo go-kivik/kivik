@@ -25,7 +25,9 @@ import (
 )
 
 // Changes returns the changes stream for the database.
-func (d *db) Changes(ctx context.Context, opts map[string]interface{}) (driver.Changes, error) {
+func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Changes, error) {
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	key := "results"
 	if f, ok := opts["feed"]; ok {
 		if f == "eventsource" {
@@ -35,20 +37,20 @@ func (d *db) Changes(ctx context.Context, opts map[string]interface{}) (driver.C
 			key = ""
 		}
 	}
-	options := new(chttp.Options)
+	chttpOpts := new(chttp.Options)
 	if ids := opts["doc_ids"]; ids != nil {
 		delete(opts, "doc_ids")
-		options.GetBody = chttp.BodyEncoder(map[string]interface{}{
+		chttpOpts.GetBody = chttp.BodyEncoder(map[string]interface{}{
 			"doc_ids": ids,
 		})
 	}
 	var err error
-	options.Query, err = optionsToParams(opts)
+	chttpOpts.Query, err = optionsToParams(opts)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := d.Client.DoReq(ctx, http.MethodPost, d.path("_changes"), options)
+	resp, err := d.Client.DoReq(ctx, http.MethodPost, d.path("_changes"), chttpOpts)
 	if err != nil {
 		return nil, err
 	}

@@ -31,7 +31,7 @@ type DB struct {
 	CompactFunc          func(ctx context.Context) error
 	CompactViewFunc      func(ctx context.Context, ddocID string) error
 	ViewCleanupFunc      func(ctx context.Context) error
-	ChangesFunc          func(ctx context.Context, options map[string]interface{}) (driver.Changes, error)
+	ChangesFunc          func(ctx context.Context, options driver.Options) (driver.Changes, error)
 	PutAttachmentFunc    func(ctx context.Context, docID string, att *driver.Attachment, options map[string]interface{}) (newRev string, err error)
 	GetAttachmentFunc    func(ctx context.Context, docID, filename string, options map[string]interface{}) (*driver.Attachment, error)
 	DeleteAttachmentFunc func(ctx context.Context, docID, filename string, options map[string]interface{}) (newRev string, err error)
@@ -114,7 +114,7 @@ func (db *SecurityDB) SetSecurity(ctx context.Context, security *driver.Security
 }
 
 // Changes calls db.ChangesFunc
-func (db *DB) Changes(ctx context.Context, opts map[string]interface{}) (driver.Changes, error) {
+func (db *DB) Changes(ctx context.Context, opts driver.Options) (driver.Changes, error) {
 	return db.ChangesFunc(ctx, opts)
 }
 

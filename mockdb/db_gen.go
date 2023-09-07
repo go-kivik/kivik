@@ -121,11 +121,11 @@ func (db *driverDB) BulkGet(ctx context.Context, arg0 []driver.BulkGetReference,
 	return &driverRows{Context: ctx, Rows: coalesceRows(expected.ret0)}, expected.wait(ctx)
 }
 
-func (db *driverDB) Changes(ctx context.Context, options map[string]interface{}) (driver.Changes, error) {
+func (db *driverDB) Changes(ctx context.Context, options driver.Options) (driver.Changes, error) {
 	expected := &ExpectedChanges{
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: options,
+			options: toLegacyOptions(options),
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {

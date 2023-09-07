@@ -36,22 +36,6 @@ type Client struct {
 	wg     sync.WaitGroup
 }
 
-func mergeOptions(opts ...Option) Options {
-	if len(opts) == 0 {
-		return nil
-	}
-	options := make(map[string]interface{})
-	for _, opt := range opts {
-		if opt != nil {
-			opt.Apply(options)
-		}
-	}
-	if len(options) == 0 {
-		return nil
-	}
-	return options
-}
-
 // Register makes a database driver available by the provided name. If Register
 // is called twice with the same name or if driver is nil, it panics.
 func Register(name string, driver driver.Driver) {

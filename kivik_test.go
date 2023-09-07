@@ -744,58 +744,6 @@ func TestPing(t *testing.T) {
 	}
 }
 
-func TestMergeOptions(t *testing.T) {
-	type tst struct {
-		options  []Option
-		expected Options
-	}
-	tests := testy.NewTable()
-	tests.Add("No options", tst{})
-	tests.Add("One set", tst{
-		options: []Option{
-			Options{"foo": 123},
-		},
-		expected: Options{"foo": 123},
-	})
-	tests.Add("merged", tst{
-		options: []Option{
-			Options{"foo": 123},
-			Options{"bar": 321},
-		},
-		expected: Options{
-			"foo": 123,
-			"bar": 321,
-		},
-	})
-	tests.Add("overwrite", tst{
-		options: []Option{
-			Options{"foo": 123, "bar": 321},
-			Options{"foo": 111},
-		},
-		expected: Options{
-			"foo": 111,
-			"bar": 321,
-		},
-	})
-	tests.Add("nil option", tst{
-		options: []Option{nil},
-	})
-	tests.Add("different types", tst{
-		options: []Option{
-			Options{"foo": 123},
-			Options{"foo": "bar"},
-		},
-		expected: Options{"foo": "bar"},
-	})
-
-	tests.Run(t, func(t *testing.T, test tst) {
-		result := mergeOptions(test.options...)
-		if d := testy.DiffInterface(test.expected, result); d != nil {
-			t.Error(d)
-		}
-	})
-}
-
 func TestClientClose(t *testing.T) {
 	t.Parallel()
 

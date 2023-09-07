@@ -42,12 +42,6 @@ func init() {
 
 // RegisterPouchDBSuites registers the PouchDB test suites.
 func RegisterPouchDBSuites() {
-	// TODO: Fix this and uncomment https://github.com/go-kivik/kivik/issues/588
-	// 	indexWarning := "No matching index found, create an index to optimize query time."
-	// if os.Getenv("NPM_PROFILE") == "pouchdb6-package.json" {
-	// 	indexWarning = "no matching index found, create an index to optimize query time"
-	// }
-
 	kiviktest.RegisterSuite(kiviktest.SuitePouchLocal, kt.SuiteConfig{
 		"PreCleanup.skip": true,
 

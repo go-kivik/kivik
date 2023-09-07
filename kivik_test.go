@@ -919,7 +919,7 @@ func TestClientClose(t *testing.T) {
 		})
 		tests.Add("DBUpdates", tt{
 			client: &mock.DBUpdater{
-				DBUpdatesFunc: func(context.Context, map[string]interface{}) (driver.DBUpdates, error) {
+				DBUpdatesFunc: func(context.Context, driver.Options) (driver.DBUpdates, error) {
 					return &mock.DBUpdates{
 						NextFunc: func(*driver.DBUpdate) error {
 							time.Sleep(delay)

@@ -8,13 +8,15 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/go-kivik/kivik/v4/driver"
+{{ if eq .filename "dbexpectations_gen.go" }}
 	kivik "github.com/go-kivik/kivik/v4"
+{{- end }}
+	"github.com/go-kivik/kivik/v4/driver"
 )
 
 var _ = &driver.Attachment{}
 var _ = reflect.Int
 
-{{ range $method := . -}}
+{{ range $method := .methods -}}
 {{ template "expectedtype.tmpl" $method -}}
 {{- end -}}

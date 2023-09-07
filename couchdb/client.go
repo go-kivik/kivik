@@ -62,7 +62,7 @@ func (c *client) DestroyDB(ctx context.Context, dbName string, _ driver.Options)
 	return err
 }
 
-func (c *client) DBUpdates(ctx context.Context, _ map[string]interface{}) (updates driver.DBUpdates, err error) {
+func (c *client) DBUpdates(ctx context.Context, _ driver.Options) (updates driver.DBUpdates, err error) {
 	resp, err := c.DoReq(ctx, http.MethodGet, "/_db_updates?feed=continuous&since=now", nil)
 	if err != nil {
 		return nil, err

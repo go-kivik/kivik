@@ -77,7 +77,7 @@ func (c *Client) DBUpdates(ctx context.Context, options ...Option) *DBUpdates {
 		return &DBUpdates{errIterator(err)}
 	}
 
-	updatesi, err := updater.DBUpdates(ctx, mergeOptions(options...))
+	updatesi, err := updater.DBUpdates(ctx, allOptions(options))
 	if err != nil {
 		c.endQuery()
 		return &DBUpdates{errIterator(err)}

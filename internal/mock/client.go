@@ -97,14 +97,14 @@ func (c *Authenticator) Authenticate(ctx context.Context, a interface{}) error {
 // DBUpdater mocks driver.Client and driver.DBUpdater
 type DBUpdater struct {
 	*Client
-	DBUpdatesFunc func(context.Context, map[string]interface{}) (driver.DBUpdates, error)
+	DBUpdatesFunc func(context.Context, driver.Options) (driver.DBUpdates, error)
 }
 
 var _ driver.DBUpdater = &DBUpdater{}
 
 // DBUpdates calls c.DBUpdatesFunc
-func (c *DBUpdater) DBUpdates(ctx context.Context, opts map[string]interface{}) (driver.DBUpdates, error) {
-	return c.DBUpdatesFunc(ctx, opts)
+func (c *DBUpdater) DBUpdates(ctx context.Context, options driver.Options) (driver.DBUpdates, error) {
+	return c.DBUpdatesFunc(ctx, options)
 }
 
 // DBsStatser mocks driver.Client and driver.DBsStatser

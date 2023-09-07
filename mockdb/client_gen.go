@@ -183,10 +183,10 @@ func (c *driverClient) DBExists(ctx context.Context, arg0 string, options driver
 	return expected.ret0, expected.wait(ctx)
 }
 
-func (c *driverClient) DBUpdates(ctx context.Context, options map[string]interface{}) (driver.DBUpdates, error) {
+func (c *driverClient) DBUpdates(ctx context.Context, options driver.Options) (driver.DBUpdates, error) {
 	expected := &ExpectedDBUpdates{
 		commonExpectation: commonExpectation{
-			options: options,
+			options: toLegacyOptions(options),
 		},
 	}
 	if err := c.nextExpectation(expected); err != nil {

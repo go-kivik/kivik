@@ -243,13 +243,13 @@ func (db *DesignDocer) DesignDocs(ctx context.Context, options driver.Options) (
 // LocalDocer mocks a driver.DB and driver.DesignDocer
 type LocalDocer struct {
 	*DB
-	LocalDocsFunc func(context.Context, map[string]interface{}) (driver.Rows, error)
+	LocalDocsFunc func(context.Context, driver.Options) (driver.Rows, error)
 }
 
 var _ driver.LocalDocer = &LocalDocer{}
 
 // LocalDocs calls db.LocalDocsFunc
-func (db *LocalDocer) LocalDocs(ctx context.Context, options map[string]interface{}) (driver.Rows, error) {
+func (db *LocalDocer) LocalDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
 	return db.LocalDocsFunc(ctx, options)
 }
 

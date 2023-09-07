@@ -400,7 +400,7 @@ type DesignDocer interface {
 type LocalDocer interface {
 	// LocalDocs returns all of the local documents in the database, subject to
 	// the options provided.
-	LocalDocs(ctx context.Context, options map[string]interface{}) (Rows, error)
+	LocalDocs(ctx context.Context, options Options) (Rows, error)
 }
 
 // Pinger is an optional interface that may be implemented by a [Client]. When

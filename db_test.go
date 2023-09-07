@@ -340,7 +340,7 @@ func TestLocalDocs(t *testing.T) {
 	tests := []struct {
 		name     string
 		db       *DB
-		options  Options
+		options  Option
 		expected *rows
 		status   int
 		err      string
@@ -350,7 +350,7 @@ func TestLocalDocs(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.LocalDocer{
-					LocalDocsFunc: func(context.Context, map[string]interface{}) (driver.Rows, error) {
+					LocalDocsFunc: func(context.Context, driver.Options) (driver.Rows, error) {
 						return nil, errors.New("db error")
 					},
 				},
@@ -363,7 +363,9 @@ func TestLocalDocs(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.LocalDocer{
-					LocalDocsFunc: func(_ context.Context, opts map[string]interface{}) (driver.Rows, error) {
+					LocalDocsFunc: func(_ context.Context, options driver.Options) (driver.Rows, error) {
+						opts := map[string]interface{}{}
+						options.Apply(opts)
 						if d := testy.DiffInterface(testOptions, opts); d != nil {
 							return nil, fmt.Errorf("Unexpected options: %s", d)
 						}
@@ -371,7 +373,7 @@ func TestLocalDocs(t *testing.T) {
 					},
 				},
 			},
-			options: testOptions,
+			options: Options(testOptions),
 			expected: &rows{
 				iter: &iter{
 					feed: &rowsIterator{
@@ -429,7 +431,7 @@ func TestLocalDocs(t *testing.T) {
 			db := &DB{
 				client: &Client{},
 				driverDB: &mock.LocalDocer{
-					LocalDocsFunc: func(context.Context, map[string]interface{}) (driver.Rows, error) {
+					LocalDocsFunc: func(context.Context, driver.Options) (driver.Rows, error) {
 						return nil, errors.New("unf")
 					},
 				},

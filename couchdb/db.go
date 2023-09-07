@@ -89,7 +89,9 @@ func optionsToParams(opts ...map[string]interface{}) (url.Values, error) {
 }
 
 // rowsQuery performs a query that returns a rows iterator.
-func (d *db) rowsQuery(ctx context.Context, path string, opts map[string]interface{}) (driver.Rows, error) {
+func (d *db) rowsQuery(ctx context.Context, path string, options driver.Options) (driver.Rows, error) {
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	payload := make(map[string]interface{})
 	if keys := opts["keys"]; keys != nil {
 		delete(opts, "keys")
@@ -109,16 +111,16 @@ func (d *db) rowsQuery(ctx context.Context, path string, opts map[string]interfa
 	if err != nil {
 		return nil, err
 	}
-	options := &chttp.Options{Query: query}
+	chttpOpts := &chttp.Options{Query: query}
 	method := http.MethodGet
 	if len(payload) > 0 {
 		method = http.MethodPost
-		options.GetBody = chttp.BodyEncoder(payload)
-		options.Header = http.Header{
+		chttpOpts.GetBody = chttp.BodyEncoder(payload)
+		chttpOpts.Header = http.Header{
 			chttp.HeaderIdempotencyKey: []string{},
 		}
 	}
-	resp, err := d.Client.DoReq(ctx, method, d.path(path), options)
+	resp, err := d.Client.DoReq(ctx, method, d.path(path), chttpOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -137,19 +139,17 @@ func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, 
 		delete(opts, OptionPartition)
 		reqPath = path.Join("_partition", part, reqPath)
 	}
-	return d.rowsQuery(ctx, reqPath, opts)
+	return d.rowsQuery(ctx, reqPath, kivik.Options(opts))
 }
 
 // DesignDocs returns all of the documents in the database.
 func (d *db) DesignDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
-	opts := map[string]interface{}{}
-	options.Apply(opts)
-	return d.rowsQuery(ctx, "_design_docs", opts)
+	return d.rowsQuery(ctx, "_design_docs", options)
 }
 
 // LocalDocs returns all of the documents in the database.
-func (d *db) LocalDocs(ctx context.Context, opts map[string]interface{}) (driver.Rows, error) {
-	return d.rowsQuery(ctx, "_local_docs", opts)
+func (d *db) LocalDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
+	return d.rowsQuery(ctx, "_local_docs", options)
 }
 
 // Query queries a view.
@@ -161,7 +161,7 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 		delete(opts, OptionPartition)
 		reqPath = path.Join("_partition", part, reqPath)
 	}
-	return d.rowsQuery(ctx, reqPath, opts)
+	return d.rowsQuery(ctx, reqPath, kivik.Options(opts))
 }
 
 // document represents a single document returned by Get

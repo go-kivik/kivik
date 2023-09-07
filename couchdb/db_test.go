@@ -61,7 +61,7 @@ func TestDesignDocs(t *testing.T) {
 
 func TestLocalDocs(t *testing.T) {
 	db := newTestDB(nil, errors.New("test error"))
-	_, err := db.LocalDocs(context.Background(), nil)
+	_, err := db.LocalDocs(context.Background(), mock.NilOption)
 	testy.ErrorRE(t, `Get "?http://example.com/testdb/_local_docs"?: test error`, err)
 }
 
@@ -1160,7 +1160,7 @@ func TestRowsQuery(t *testing.T) {
 		name     string
 		db       *db
 		path     string
-		options  map[string]interface{}
+		options  kivik.Option
 		expected queryResult
 		status   int
 		err      string
@@ -1168,7 +1168,7 @@ func TestRowsQuery(t *testing.T) {
 		{
 			name:    "invalid options",
 			path:    "_all_docs",
-			options: map[string]interface{}{"foo": make(chan int)},
+			options: kivik.Options{"foo": make(chan int)},
 			status:  http.StatusBadRequest,
 			err:     "kivik: invalid type chan int for options",
 		},
@@ -1295,7 +1295,7 @@ func TestRowsQuery(t *testing.T) {
 		{
 			name: "all docs with keys",
 			path: "/_all_docs",
-			options: map[string]interface{}{
+			options: kivik.Options{
 				"keys": []string{"_design/_auth", "foo"},
 			},
 			db: newCustomDB(func(r *http.Request) (*http.Response, error) {
@@ -1340,7 +1340,7 @@ func TestRowsQuery(t *testing.T) {
 		{
 			name: "all docs with endkey",
 			path: "/_all_docs",
-			options: map[string]interface{}{
+			options: kivik.Options{
 				"endkey": []string{"foo", "bar"},
 			},
 			db: newCustomDB(func(r *http.Request) (*http.Response, error) {
@@ -1378,7 +1378,7 @@ func TestRowsQuery(t *testing.T) {
 		{
 			name: "all docs with object keys",
 			path: "/_all_docs",
-			options: map[string]interface{}{
+			options: kivik.Options{
 				"keys": []interface{}{"_design/_auth", "foo", []string{"bar", "baz"}},
 			},
 			db: newCustomDB(func(r *http.Request) (*http.Response, error) {
@@ -1423,7 +1423,7 @@ func TestRowsQuery(t *testing.T) {
 		{
 			name: "all docs with docs",
 			path: "/_all_docs",
-			options: map[string]interface{}{
+			options: kivik.Options{
 				"keys": []string{"_design/_auth", "foo"},
 			},
 			db: newCustomDB(func(r *http.Request) (*http.Response, error) {
@@ -1467,7 +1467,11 @@ func TestRowsQuery(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rows, err := test.db.rowsQuery(context.Background(), test.path, test.options)
+			opts := test.options
+			if opts == nil {
+				opts = mock.NilOption
+			}
+			rows, err := test.db.rowsQuery(context.Background(), test.path, opts)
 			testy.StatusErrorRE(t, test.err, test.status, err)
 			result := queryResult{
 				Rows: []*driver.Row{},

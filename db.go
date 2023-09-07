@@ -85,7 +85,7 @@ func (db *DB) AllDocs(ctx context.Context, options ...Option) *ResultSet {
 	if err := db.startQuery(); err != nil {
 		return &ResultSet{err: err}
 	}
-	rowsi, err := db.driverDB.AllDocs(ctx, mergeOptions(options...))
+	rowsi, err := db.driverDB.AllDocs(ctx, allOptions(options))
 	if err != nil {
 		db.endQuery()
 		return &ResultSet{err: err}
@@ -126,7 +126,7 @@ func (db *DB) LocalDocs(ctx context.Context, options ...Option) *ResultSet {
 	if err := db.startQuery(); err != nil {
 		return &ResultSet{err: err}
 	}
-	rowsi, err := ldocer.LocalDocs(ctx, mergeOptions(options...))
+	rowsi, err := ldocer.LocalDocs(ctx, allOptions(options))
 	if err != nil {
 		db.endQuery()
 		return &ResultSet{err: err}

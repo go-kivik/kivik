@@ -53,8 +53,7 @@ func (e *ExpectedCreateDoc) method(v bool) string {
 	if !v {
 		return "DB.CreateDoc()"
 	}
-	arg0, options := "?", defaultOptionPlaceholder
+	arg0, options := "?", formatOptions(e.options)
 	if e.arg0 != nil { arg0 = fmt.Sprintf("%v", e.arg0) }
-	if e.options != nil { options = fmt.Sprintf("%v", e.options) }
 	return fmt.Sprintf("DB(%s).CreateDoc(ctx, %s, %s)", e.dbo().name, arg0, options)
 }

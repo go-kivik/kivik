@@ -219,10 +219,7 @@ func (e *ExpectedAllDocs) method(v bool) string {
 	if !v {
 		return "DB.AllDocs()"
 	}
-	options := defaultOptionPlaceholder
-	if e.options != nil {
-		options = fmt.Sprintf("%v", e.options)
-	}
+	options := formatOptions(e.options)
 	return fmt.Sprintf("DB(%s).AllDocs(ctx, %s)", e.dbo().name, options)
 }
 
@@ -278,12 +275,9 @@ func (e *ExpectedBulkDocs) method(v bool) string {
 	if !v {
 		return "DB.BulkDocs()"
 	}
-	arg0, options := "?", defaultOptionPlaceholder
+	arg0, options := "?", formatOptions(e.options)
 	if e.arg0 != nil {
 		arg0 = fmt.Sprintf("%v", e.arg0)
-	}
-	if e.options != nil {
-		options = fmt.Sprintf("%v", e.options)
 	}
 	return fmt.Sprintf("DB(%s).BulkDocs(ctx, %s, %s)", e.dbo().name, arg0, options)
 }
@@ -340,12 +334,9 @@ func (e *ExpectedBulkGet) method(v bool) string {
 	if !v {
 		return "DB.BulkGet()"
 	}
-	arg0, options := "?", defaultOptionPlaceholder
+	arg0, options := "?", formatOptions(e.options)
 	if e.arg0 != nil {
 		arg0 = fmt.Sprintf("%v", e.arg0)
-	}
-	if e.options != nil {
-		options = fmt.Sprintf("%v", e.options)
 	}
 	return fmt.Sprintf("DB(%s).BulkGet(ctx, %s, %s)", e.dbo().name, arg0, options)
 }
@@ -397,10 +388,7 @@ func (e *ExpectedChanges) method(v bool) string {
 	if !v {
 		return "DB.Changes()"
 	}
-	options := defaultOptionPlaceholder
-	if e.options != nil {
-		options = fmt.Sprintf("%v", e.options)
-	}
+	options := formatOptions(e.options)
 	return fmt.Sprintf("DB(%s).Changes(ctx, %s)", e.dbo().name, options)
 }
 
@@ -460,15 +448,12 @@ func (e *ExpectedCopy) method(v bool) string {
 	if !v {
 		return "DB.Copy()"
 	}
-	arg0, arg1, options := "?", "?", defaultOptionPlaceholder
+	arg0, arg1, options := "?", "?", formatOptions(e.options)
 	if e.arg0 != "" {
 		arg0 = fmt.Sprintf("%q", e.arg0)
 	}
 	if e.arg1 != "" {
 		arg1 = fmt.Sprintf("%q", e.arg1)
-	}
-	if e.options != nil {
-		options = fmt.Sprintf("%v", e.options)
 	}
 	return fmt.Sprintf("DB(%s).Copy(ctx, %s, %s, %s)", e.dbo().name, arg0, arg1, options)
 }
@@ -527,12 +512,9 @@ func (e *ExpectedCreateDoc) method(v bool) string {
 	if !v {
 		return "DB.CreateDoc()"
 	}
-	arg0, options := "?", defaultOptionPlaceholder
+	arg0, options := "?", formatOptions(e.options)
 	if e.arg0 != nil {
 		arg0 = fmt.Sprintf("%v", e.arg0)
-	}
-	if e.options != nil {
-		options = fmt.Sprintf("%v", e.options)
 	}
 	return fmt.Sprintf("DB(%s).CreateDoc(ctx, %s, %s)", e.dbo().name, arg0, options)
 }
@@ -590,7 +572,7 @@ func (e *ExpectedCreateIndex) method(v bool) string {
 	if !v {
 		return "DB.CreateIndex()"
 	}
-	arg0, arg1, arg2, options := "?", "?", "?", defaultOptionPlaceholder
+	arg0, arg1, arg2, options := "?", "?", "?", formatOptions(e.options)
 	if e.arg0 != "" {
 		arg0 = fmt.Sprintf("%q", e.arg0)
 	}
@@ -599,9 +581,6 @@ func (e *ExpectedCreateIndex) method(v bool) string {
 	}
 	if e.arg2 != nil {
 		arg2 = fmt.Sprintf("%v", e.arg2)
-	}
-	if e.options != nil {
-		options = fmt.Sprintf("%v", e.options)
 	}
 	return fmt.Sprintf("DB(%s).CreateIndex(ctx, %s, %s, %s, %s)", e.dbo().name, arg0, arg1, arg2, options)
 }
@@ -658,12 +637,9 @@ func (e *ExpectedDelete) method(v bool) string {
 	if !v {
 		return "DB.Delete()"
 	}
-	arg0, options := "?", defaultOptionPlaceholder
+	arg0, options := "?", formatOptions(e.options)
 	if e.arg0 != "" {
 		arg0 = fmt.Sprintf("%q", e.arg0)
-	}
-	if e.options != nil {
-		options = fmt.Sprintf("%v", e.options)
 	}
 	return fmt.Sprintf("DB(%s).Delete(ctx, %s, %s)", e.dbo().name, arg0, options)
 }
@@ -724,15 +700,12 @@ func (e *ExpectedDeleteAttachment) method(v bool) string {
 	if !v {
 		return "DB.DeleteAttachment()"
 	}
-	arg0, arg1, options := "?", "?", defaultOptionPlaceholder
+	arg0, arg1, options := "?", "?", formatOptions(e.options)
 	if e.arg0 != "" {
 		arg0 = fmt.Sprintf("%q", e.arg0)
 	}
 	if e.arg1 != "" {
 		arg1 = fmt.Sprintf("%q", e.arg1)
-	}
-	if e.options != nil {
-		options = fmt.Sprintf("%v", e.options)
 	}
 	return fmt.Sprintf("DB(%s).DeleteAttachment(ctx, %s, %s, %s)", e.dbo().name, arg0, arg1, options)
 }
@@ -786,15 +759,12 @@ func (e *ExpectedDeleteIndex) method(v bool) string {
 	if !v {
 		return "DB.DeleteIndex()"
 	}
-	arg0, arg1, options := "?", "?", defaultOptionPlaceholder
+	arg0, arg1, options := "?", "?", formatOptions(e.options)
 	if e.arg0 != "" {
 		arg0 = fmt.Sprintf("%q", e.arg0)
 	}
 	if e.arg1 != "" {
 		arg1 = fmt.Sprintf("%q", e.arg1)
-	}
-	if e.options != nil {
-		options = fmt.Sprintf("%v", e.options)
 	}
 	return fmt.Sprintf("DB(%s).DeleteIndex(ctx, %s, %s, %s)", e.dbo().name, arg0, arg1, options)
 }
@@ -846,10 +816,7 @@ func (e *ExpectedDesignDocs) method(v bool) string {
 	if !v {
 		return "DB.DesignDocs()"
 	}
-	options := defaultOptionPlaceholder
-	if e.options != nil {
-		options = fmt.Sprintf("%v", e.options)
-	}
+	options := formatOptions(e.options)
 	return fmt.Sprintf("DB(%s).DesignDocs(ctx, %s)", e.dbo().name, options)
 }
 
@@ -905,12 +872,9 @@ func (e *ExpectedExplain) method(v bool) string {
 	if !v {
 		return "DB.Explain()"
 	}
-	arg0, options := "?", defaultOptionPlaceholder
+	arg0, options := "?", formatOptions(e.options)
 	if e.arg0 != nil {
 		arg0 = fmt.Sprintf("%v", e.arg0)
-	}
-	if e.options != nil {
-		options = fmt.Sprintf("%v", e.options)
 	}
 	return fmt.Sprintf("DB(%s).Explain(ctx, %s, %s)", e.dbo().name, arg0, options)
 }
@@ -967,12 +931,9 @@ func (e *ExpectedFind) method(v bool) string {
 	if !v {
 		return "DB.Find()"
 	}
-	arg0, options := "?", defaultOptionPlaceholder
+	arg0, options := "?", formatOptions(e.options)
 	if e.arg0 != nil {
 		arg0 = fmt.Sprintf("%v", e.arg0)
-	}
-	if e.options != nil {
-		options = fmt.Sprintf("%v", e.options)
 	}
 	return fmt.Sprintf("DB(%s).Find(ctx, %s, %s)", e.dbo().name, arg0, options)
 }
@@ -1029,12 +990,9 @@ func (e *ExpectedGet) method(v bool) string {
 	if !v {
 		return "DB.Get()"
 	}
-	arg0, options := "?", defaultOptionPlaceholder
+	arg0, options := "?", formatOptions(e.options)
 	if e.arg0 != "" {
 		arg0 = fmt.Sprintf("%q", e.arg0)
-	}
-	if e.options != nil {
-		options = fmt.Sprintf("%v", e.options)
 	}
 	return fmt.Sprintf("DB(%s).Get(ctx, %s, %s)", e.dbo().name, arg0, options)
 }
@@ -1095,15 +1053,12 @@ func (e *ExpectedGetAttachment) method(v bool) string {
 	if !v {
 		return "DB.GetAttachment()"
 	}
-	arg0, arg1, options := "?", "?", defaultOptionPlaceholder
+	arg0, arg1, options := "?", "?", formatOptions(e.options)
 	if e.arg0 != "" {
 		arg0 = fmt.Sprintf("%q", e.arg0)
 	}
 	if e.arg1 != "" {
 		arg1 = fmt.Sprintf("%q", e.arg1)
-	}
-	if e.options != nil {
-		options = fmt.Sprintf("%v", e.options)
 	}
 	return fmt.Sprintf("DB(%s).GetAttachment(ctx, %s, %s, %s)", e.dbo().name, arg0, arg1, options)
 }
@@ -1164,15 +1119,12 @@ func (e *ExpectedGetAttachmentMeta) method(v bool) string {
 	if !v {
 		return "DB.GetAttachmentMeta()"
 	}
-	arg0, arg1, options := "?", "?", defaultOptionPlaceholder
+	arg0, arg1, options := "?", "?", formatOptions(e.options)
 	if e.arg0 != "" {
 		arg0 = fmt.Sprintf("%q", e.arg0)
 	}
 	if e.arg1 != "" {
 		arg1 = fmt.Sprintf("%q", e.arg1)
-	}
-	if e.options != nil {
-		options = fmt.Sprintf("%v", e.options)
 	}
 	return fmt.Sprintf("DB(%s).GetAttachmentMeta(ctx, %s, %s, %s)", e.dbo().name, arg0, arg1, options)
 }
@@ -1224,10 +1176,7 @@ func (e *ExpectedGetIndexes) method(v bool) string {
 	if !v {
 		return "DB.GetIndexes()"
 	}
-	options := defaultOptionPlaceholder
-	if e.options != nil {
-		options = fmt.Sprintf("%v", e.options)
-	}
+	options := formatOptions(e.options)
 	return fmt.Sprintf("DB(%s).GetIndexes(ctx, %s)", e.dbo().name, options)
 }
 
@@ -1283,12 +1232,9 @@ func (e *ExpectedGetRev) method(v bool) string {
 	if !v {
 		return "DB.GetRev()"
 	}
-	arg0, options := "?", defaultOptionPlaceholder
+	arg0, options := "?", formatOptions(e.options)
 	if e.arg0 != "" {
 		arg0 = fmt.Sprintf("%q", e.arg0)
-	}
-	if e.options != nil {
-		options = fmt.Sprintf("%v", e.options)
 	}
 	return fmt.Sprintf("DB(%s).GetRev(ctx, %s, %s)", e.dbo().name, arg0, options)
 }
@@ -1340,10 +1286,7 @@ func (e *ExpectedLocalDocs) method(v bool) string {
 	if !v {
 		return "DB.LocalDocs()"
 	}
-	options := defaultOptionPlaceholder
-	if e.options != nil {
-		options = fmt.Sprintf("%v", e.options)
-	}
+	options := formatOptions(e.options)
 	return fmt.Sprintf("DB(%s).LocalDocs(ctx, %s)", e.dbo().name, options)
 }
 
@@ -1509,15 +1452,12 @@ func (e *ExpectedPut) method(v bool) string {
 	if !v {
 		return "DB.Put()"
 	}
-	arg0, arg1, options := "?", "?", defaultOptionPlaceholder
+	arg0, arg1, options := "?", "?", formatOptions(e.options)
 	if e.arg0 != "" {
 		arg0 = fmt.Sprintf("%q", e.arg0)
 	}
 	if e.arg1 != nil {
 		arg1 = fmt.Sprintf("%v", e.arg1)
-	}
-	if e.options != nil {
-		options = fmt.Sprintf("%v", e.options)
 	}
 	return fmt.Sprintf("DB(%s).Put(ctx, %s, %s, %s)", e.dbo().name, arg0, arg1, options)
 }
@@ -1578,15 +1518,12 @@ func (e *ExpectedPutAttachment) method(v bool) string {
 	if !v {
 		return "DB.PutAttachment()"
 	}
-	arg0, arg1, options := "?", "?", defaultOptionPlaceholder
+	arg0, arg1, options := "?", "?", formatOptions(e.options)
 	if e.arg0 != "" {
 		arg0 = fmt.Sprintf("%q", e.arg0)
 	}
 	if e.arg1 != nil {
 		arg1 = fmt.Sprintf("%v", e.arg1)
-	}
-	if e.options != nil {
-		options = fmt.Sprintf("%v", e.options)
 	}
 	return fmt.Sprintf("DB(%s).PutAttachment(ctx, %s, %s, %s)", e.dbo().name, arg0, arg1, options)
 }
@@ -1647,15 +1584,12 @@ func (e *ExpectedQuery) method(v bool) string {
 	if !v {
 		return "DB.Query()"
 	}
-	arg0, arg1, options := "?", "?", defaultOptionPlaceholder
+	arg0, arg1, options := "?", "?", formatOptions(e.options)
 	if e.arg0 != "" {
 		arg0 = fmt.Sprintf("%q", e.arg0)
 	}
 	if e.arg1 != "" {
 		arg1 = fmt.Sprintf("%q", e.arg1)
-	}
-	if e.options != nil {
-		options = fmt.Sprintf("%v", e.options)
 	}
 	return fmt.Sprintf("DB(%s).Query(ctx, %s, %s, %s)", e.dbo().name, arg0, arg1, options)
 }

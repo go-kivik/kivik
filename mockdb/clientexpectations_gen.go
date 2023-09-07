@@ -390,10 +390,7 @@ func (e *ExpectedAllDBs) method(v bool) string {
 	if !v {
 		return "AllDBs()"
 	}
-	options := defaultOptionPlaceholder
-	if e.options != nil {
-		options = fmt.Sprintf("%v", e.options)
-	}
+	options := formatOptions(e.options)
 	return fmt.Sprintf("AllDBs(ctx, %s)", options)
 }
 
@@ -444,10 +441,7 @@ func (e *ExpectedClusterStatus) method(v bool) string {
 	if !v {
 		return "ClusterStatus()"
 	}
-	options := defaultOptionPlaceholder
-	if e.options != nil {
-		options = fmt.Sprintf("%v", e.options)
-	}
+	options := formatOptions(e.options)
 	return fmt.Sprintf("ClusterStatus(ctx, %s)", options)
 }
 
@@ -610,12 +604,9 @@ func (e *ExpectedDB) method(v bool) string {
 	if !v {
 		return "DB()"
 	}
-	arg0, options := "?", defaultOptionPlaceholder
+	arg0, options := "?", formatOptions(e.options)
 	if e.arg0 != "" {
 		arg0 = fmt.Sprintf("%q", e.arg0)
-	}
-	if e.options != nil {
-		options = fmt.Sprintf("%v", e.options)
 	}
 	return fmt.Sprintf("DB(%s, %s)", arg0, options)
 }
@@ -672,12 +663,9 @@ func (e *ExpectedDBExists) method(v bool) string {
 	if !v {
 		return "DBExists()"
 	}
-	arg0, options := "?", defaultOptionPlaceholder
+	arg0, options := "?", formatOptions(e.options)
 	if e.arg0 != "" {
 		arg0 = fmt.Sprintf("%q", e.arg0)
-	}
-	if e.options != nil {
-		options = fmt.Sprintf("%v", e.options)
 	}
 	return fmt.Sprintf("DBExists(ctx, %s, %s)", arg0, options)
 }
@@ -729,10 +717,7 @@ func (e *ExpectedDBUpdates) method(v bool) string {
 	if !v {
 		return "DBUpdates()"
 	}
-	options := defaultOptionPlaceholder
-	if e.options != nil {
-		options = fmt.Sprintf("%v", e.options)
-	}
+	options := formatOptions(e.options)
 	return fmt.Sprintf("DBUpdates(ctx, %s)", options)
 }
 
@@ -834,12 +819,9 @@ func (e *ExpectedDestroyDB) method(v bool) string {
 	if !v {
 		return "DestroyDB()"
 	}
-	arg0, options := "?", defaultOptionPlaceholder
+	arg0, options := "?", formatOptions(e.options)
 	if e.arg0 != "" {
 		arg0 = fmt.Sprintf("%q", e.arg0)
-	}
-	if e.options != nil {
-		options = fmt.Sprintf("%v", e.options)
 	}
 	return fmt.Sprintf("DestroyDB(ctx, %s, %s)", arg0, options)
 }
@@ -891,10 +873,7 @@ func (e *ExpectedGetReplications) method(v bool) string {
 	if !v {
 		return "GetReplications()"
 	}
-	options := defaultOptionPlaceholder
-	if e.options != nil {
-		options = fmt.Sprintf("%v", e.options)
-	}
+	options := formatOptions(e.options)
 	return fmt.Sprintf("GetReplications(ctx, %s)", options)
 }
 
@@ -998,15 +977,12 @@ func (e *ExpectedReplicate) method(v bool) string {
 	if !v {
 		return "Replicate()"
 	}
-	arg0, arg1, options := "?", "?", defaultOptionPlaceholder
+	arg0, arg1, options := "?", "?", formatOptions(e.options)
 	if e.arg0 != "" {
 		arg0 = fmt.Sprintf("%q", e.arg0)
 	}
 	if e.arg1 != "" {
 		arg1 = fmt.Sprintf("%q", e.arg1)
-	}
-	if e.options != nil {
-		options = fmt.Sprintf("%v", e.options)
 	}
 	return fmt.Sprintf("Replicate(ctx, %s, %s, %s)", arg0, arg1, options)
 }

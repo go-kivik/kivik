@@ -123,6 +123,8 @@ func (optionNoRequestCompression) Apply(target interface{}) {
 	}
 }
 
+func (optionNoRequestCompression) String() string { return "NoRequestCompression" }
+
 // OptionNoRequestCompression instructs the CouchDB client not to use gzip
 // compression for request bodies sent to the server. Only honored when passed
 // to [github.com/go-kivik/kivik/v4.New] or [New].

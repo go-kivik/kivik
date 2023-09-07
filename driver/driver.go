@@ -20,6 +20,9 @@ import (
 )
 
 // Options represents a collection of arbitrary client or query options.
+//
+// An implementation should also implement the [fmt.Stringer] interface for the
+// sake of display when mocked.
 type Options interface {
 	// Apply applies the option to target, if target is of the expected type.
 	// Unexpected/recognized target types should be ignored.

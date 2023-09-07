@@ -19,6 +19,7 @@ type nilOption bool
 var _ driver.Options = nilOption(false)
 
 func (nilOption) Apply(interface{}) {}
+func (nilOption) String() string    { return "NilOption" }
 
 // NilOption is a nil option.
 const NilOption nilOption = false

@@ -29,6 +29,8 @@ func (c optionHTTPClient) Apply(target interface{}) {
 	}
 }
 
+func (optionHTTPClient) String() string { return "custom *http.Client" }
+
 // OptionHTTPClient may be passed as an option when creating a CouchDB client
 // to specify an custom *http.Client to be used when making all API calls.
 func OptionHTTPClient(client *http.Client) kivik.Option {

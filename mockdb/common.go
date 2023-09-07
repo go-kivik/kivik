@@ -96,3 +96,12 @@ func pause(ctx context.Context, delay time.Duration) error {
 const (
 	defaultOptionPlaceholder = "[?]"
 )
+
+func formatOptions(o driver.Options) string {
+	if o != nil {
+		if str := fmt.Sprintf("%v", o); str != "" {
+			return str
+		}
+	}
+	return defaultOptionPlaceholder
+}

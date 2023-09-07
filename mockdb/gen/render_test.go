@@ -100,26 +100,3 @@ options: options,`,
 		}
 	})
 }
-
-// func TestQuotedZero(t *testing.T) {
-// 	type tst struct {
-// 		input    reflect.Type
-// 		expected string
-// 	}
-// 	tests := testy.NewTable()
-// 	tests.Add("string", tst{
-// 		input:    reflect.TypeOf(""),
-// 		expected: `""`,
-// 	})
-// 	tests.Add("[]string", tst{
-// 		input:    reflect.TypeOf([]string{}),
-// 		expected: `[]string(nil)`,
-// 	})
-//
-// 	tests.Run(t, func(t *testing.T, test tst) {
-// 		result := quotedZero(test.input)
-// 		if result != test.expected {
-// 			t.Errorf("Unexpected return: %s", result)
-// 		}
-// 	})
-// }

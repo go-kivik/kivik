@@ -15,15 +15,13 @@ package kivik
 import (
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
 // Option wraps a Kivik or backend option.
 type Option = driver.Options
-
-// Options is a collection of options. The keys and values are backend specific.
-type Options map[string]interface{}
 
 type allOptions []Option
 
@@ -36,6 +34,19 @@ func (o allOptions) Apply(t interface{}) {
 		}
 	}
 }
+
+func (o allOptions) String() string {
+	parts := make([]string, 0, len(o))
+	for _, opt := range o {
+		if part := fmt.Sprintf("%s", opt); part != "" {
+			parts = append(parts, part)
+		}
+	}
+	return strings.Join(parts, ",")
+}
+
+// Options is a collection of options. The keys and values are backend specific.
+type Options map[string]interface{}
 
 // Apply applies o to target. The following target types are supported:
 //
@@ -65,4 +76,11 @@ func (o Options) Apply(target interface{}) {
 			}
 		}
 	}
+}
+
+func (o Options) String() string {
+	if len(o) == 0 {
+		return ""
+	}
+	return fmt.Sprintf("%v", map[string]interface{}(o))
 }

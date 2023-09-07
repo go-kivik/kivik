@@ -333,9 +333,8 @@ func (m *method) MethodArgs() string {
 	}
 	if m.AcceptsLegacyOptions || m.AcceptsOptions {
 		str = append(str, "options")
-		def = append(def, `defaultOptionPlaceholder`)
+		def = append(def, `formatOptions(e.options)`)
 		vars = append(vars, "%s")
-		mid = append(mid, `	if e.options != nil { options = fmt.Sprintf("%v", e.options) }`)
 	}
 	if len(str) > 0 {
 		lines = append(lines, fmt.Sprintf("\t%s := %s", strings.Join(str, ", "), strings.Join(def, ", ")))

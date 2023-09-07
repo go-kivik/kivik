@@ -24,10 +24,7 @@ func renderExpectationsGo(filename string, methods []*method) error {
 	if err != nil {
 		return err
 	}
-	return tmpl.ExecuteTemplate(file, "expectations.go.tmpl", map[string]interface{}{
-		"filename": filename,
-		"methods":  methods,
-	})
+	return tmpl.ExecuteTemplate(file, "expectations.go.tmpl", methods)
 }
 
 func renderClientGo(filename string, methods []*method) error {

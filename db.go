@@ -744,7 +744,7 @@ func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...O
 	for i, ref := range docs {
 		refs[i] = driver.BulkGetReference(ref)
 	}
-	rowsi, err := bulkGetter.BulkGet(ctx, refs, mergeOptions(options...))
+	rowsi, err := bulkGetter.BulkGet(ctx, refs, allOptions(options))
 	if err != nil {
 		db.endQuery()
 		return &ResultSet{err: err}

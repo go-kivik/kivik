@@ -104,12 +104,12 @@ func (db *driverDB) BulkDocs(ctx context.Context, arg0 []interface{}, options dr
 	return expected.ret0, expected.wait(ctx)
 }
 
-func (db *driverDB) BulkGet(ctx context.Context, arg0 []driver.BulkGetReference, options map[string]interface{}) (driver.Rows, error) {
+func (db *driverDB) BulkGet(ctx context.Context, arg0 []driver.BulkGetReference, options driver.Options) (driver.Rows, error) {
 	expected := &ExpectedBulkGet{
 		arg0: arg0,
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: options,
+			options: toLegacyOptions(options),
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {

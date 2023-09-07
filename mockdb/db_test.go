@@ -357,7 +357,7 @@ func TestBulkGet(t *testing.T) { // nolint: gocyclo
 		setup: func(m *Client) {
 			db := m.NewDB()
 			m.ExpectDB().WillReturn(db)
-			db.ExpectBulkGet().WithOptions(map[string]interface{}{"foo": 123})
+			db.ExpectBulkGet().WithOptions(kivik.Options{"foo": 123})
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")

@@ -988,7 +988,7 @@ func TestClientClose(t *testing.T) {
 			client: &mock.Client{
 				DBFunc: func(string, driver.Options) (driver.DB, error) {
 					return &mock.BulkGetter{
-						BulkGetFunc: func(context.Context, []driver.BulkGetReference, map[string]interface{}) (driver.Rows, error) {
+						BulkGetFunc: func(context.Context, []driver.BulkGetReference, driver.Options) (driver.Rows, error) {
 							return &mock.Rows{
 								NextFunc: func(*driver.Row) error {
 									time.Sleep(delay)

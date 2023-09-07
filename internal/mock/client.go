@@ -136,7 +136,7 @@ func (c *Pinger) Ping(ctx context.Context) (bool, error) {
 // Cluster mocks driver.Client and driver.Cluster
 type Cluster struct {
 	*Client
-	ClusterStatusFunc func(context.Context, map[string]interface{}) (string, error)
+	ClusterStatusFunc func(context.Context, driver.Options) (string, error)
 	ClusterSetupFunc  func(context.Context, interface{}) error
 	MembershipFunc    func(context.Context) (*driver.ClusterMembership, error)
 }
@@ -144,7 +144,7 @@ type Cluster struct {
 var _ driver.Cluster = &Cluster{}
 
 // ClusterStatus calls c.ClusterStatusFunc
-func (c *Cluster) ClusterStatus(ctx context.Context, options map[string]interface{}) (string, error) {
+func (c *Cluster) ClusterStatus(ctx context.Context, options driver.Options) (string, error) {
 	return c.ClusterStatusFunc(ctx, options)
 }
 

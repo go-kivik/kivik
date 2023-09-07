@@ -25,6 +25,7 @@ import (
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
 const optionEnsureDBsExist = "ensure_dbs_exist"
@@ -32,7 +33,7 @@ const optionEnsureDBsExist = "ensure_dbs_exist"
 func TestClusterStatus(t *testing.T) {
 	type tst struct {
 		client   *client
-		options  map[string]interface{}
+		options  kivik.Option
 		expected string
 		status   int
 		err      string
@@ -59,7 +60,7 @@ func TestClusterStatus(t *testing.T) {
 		client: newCustomClient(func(r *http.Request) (*http.Response, error) {
 			return nil, nil
 		}),
-		options: map[string]interface{}{
+		options: kivik.Options{
 			optionEnsureDBsExist: 1.0,
 		},
 		status: http.StatusBadRequest,
@@ -71,7 +72,7 @@ func TestClusterStatus(t *testing.T) {
 			err := json.Unmarshal([]byte(r.URL.Query().Get(optionEnsureDBsExist)), &result)
 			return nil, &kivik.Error{Status: http.StatusBadRequest, Err: err}
 		}),
-		options: map[string]interface{}{
+		options: kivik.Options{
 			optionEnsureDBsExist: "foo,bar,baz",
 		},
 		status: http.StatusBadRequest,
@@ -100,7 +101,7 @@ func TestClusterStatus(t *testing.T) {
 					Body: io.NopCloser(strings.NewReader(`{"state":"cluster_finished"}`)),
 				}, nil
 			}),
-			options: map[string]interface{}{
+			options: kivik.Options{
 				optionEnsureDBsExist: `["foo","bar","baz"]`,
 			},
 			expected: "cluster_finished",
@@ -108,7 +109,11 @@ func TestClusterStatus(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, test tst) {
-		result, err := test.client.ClusterStatus(context.Background(), test.options)
+		opts := test.options
+		if opts == nil {
+			opts = mock.NilOption
+		}
+		result, err := test.client.ClusterStatus(context.Background(), opts)
 		testy.StatusErrorRE(t, test.err, test.status, err)
 		if result != test.expected {
 			t.Errorf("Unexpected result:\nExpected: %s\n  Actual: %s\n", test.expected, result)

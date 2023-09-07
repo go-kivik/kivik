@@ -245,7 +245,7 @@ func TestClusterStatus(t *testing.T) {
 	})
 	tests.Add("options", mockTest{
 		setup: func(m *Client) {
-			m.ExpectClusterStatus().WithOptions(map[string]interface{}{"foo": 123})
+			m.ExpectClusterStatus().WithOptions(kivik.Options{"foo": 123})
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.ClusterStatus(context.TODO())
@@ -300,7 +300,7 @@ func TestClusterStatus(t *testing.T) {
 	})
 	tests.Add("callback", mockTest{
 		setup: func(m *Client) {
-			m.ExpectClusterStatus().WillExecute(func(context.Context, map[string]interface{}) (string, error) {
+			m.ExpectClusterStatus().WillExecute(func(context.Context, driver.Options) (string, error) {
 				return "", errors.New("custom error")
 			})
 		},

@@ -106,10 +106,10 @@ func (c *driverClient) AllDBs(ctx context.Context, options driver.Options) ([]st
 	return expected.ret0, expected.wait(ctx)
 }
 
-func (c *driverClient) ClusterStatus(ctx context.Context, options map[string]interface{}) (string, error) {
+func (c *driverClient) ClusterStatus(ctx context.Context, options driver.Options) (string, error) {
 	expected := &ExpectedClusterStatus{
 		commonExpectation: commonExpectation{
-			options: options,
+			options: toLegacyOptions(options),
 		},
 	}
 	if err := c.nextExpectation(expected); err != nil {

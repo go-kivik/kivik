@@ -423,7 +423,7 @@ type ClusterMembership struct {
 // support CouchDB cluster configuration operations.
 type Cluster interface {
 	// ClusterStatus returns the current cluster status.
-	ClusterStatus(ctx context.Context, options map[string]interface{}) (string, error)
+	ClusterStatus(ctx context.Context, options Options) (string, error)
 	// ClusterSetup performs the action specified by action.
 	ClusterSetup(ctx context.Context, action interface{}) error
 	// Membership returns a list of all known nodes, and all nodes configured as

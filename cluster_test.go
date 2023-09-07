@@ -28,7 +28,7 @@ func TestClusterStatus(t *testing.T) {
 	type tst struct {
 		client   driver.Client
 		closed   int32
-		options  Options
+		options  Option
 		expected string
 		status   int
 		err      string
@@ -41,7 +41,7 @@ func TestClusterStatus(t *testing.T) {
 	})
 	tests.Add("client error", tst{
 		client: &mock.Cluster{
-			ClusterStatusFunc: func(context.Context, map[string]interface{}) (string, error) {
+			ClusterStatusFunc: func(context.Context, driver.Options) (string, error) {
 				return "", errors.New("client error")
 			},
 		},
@@ -50,7 +50,7 @@ func TestClusterStatus(t *testing.T) {
 	})
 	tests.Add("success", tst{
 		client: &mock.Cluster{
-			ClusterStatusFunc: func(context.Context, map[string]interface{}) (string, error) {
+			ClusterStatusFunc: func(context.Context, driver.Options) (string, error) {
 				return "cluster_finished", nil
 			},
 		},

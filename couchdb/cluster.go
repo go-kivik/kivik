@@ -20,7 +20,9 @@ import (
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
-func (c *client) ClusterStatus(ctx context.Context, opts map[string]interface{}) (string, error) {
+func (c *client) ClusterStatus(ctx context.Context, options driver.Options) (string, error) {
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	var result struct {
 		State string `json:"state"`
 	}

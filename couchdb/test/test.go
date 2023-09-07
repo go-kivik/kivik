@@ -10,6 +10,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+// Package test manages the integration tests for the CouchDB driver.
 package test
 
 import (
@@ -20,15 +21,12 @@ const maxConnsPerHost = 90 // 100
 
 // RegisterCouchDBSuites registers the CouchDB related integration test suites.
 func RegisterCouchDBSuites() {
-	registerSuiteCouch20()
-	registerSuiteCouch21()
 	registerSuiteCouch22()
 	registerSuiteCouch23()
 	registerSuiteCouch30()
 	registerSuiteCouch31()
 	registerSuiteCouch32()
 	registerSuiteCouch33()
-	registerSuiteCloudant()
 }
 
 func httpClient() *http.Client {

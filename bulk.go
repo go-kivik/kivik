@@ -50,7 +50,7 @@ func (db *DB) BulkDocs(ctx context.Context, docs []interface{}, options ...Optio
 		return nil, err
 	}
 	defer db.endQuery()
-	opts := mergeOptions(options...)
+	opts := allOptions(options)
 	if bulkDocer, ok := db.driverDB.(driver.BulkDocer); ok {
 		bulki, err := bulkDocer.BulkDocs(ctx, docsi, opts)
 		if err != nil {

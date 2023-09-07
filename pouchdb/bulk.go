@@ -36,7 +36,7 @@ type bulkResult struct {
 	IsError    bool   `js:"error"`
 }
 
-func (d *db) BulkDocs(ctx context.Context, docs []interface{}, opts map[string]interface{}) (results []driver.BulkResult, err error) {
+func (d *db) BulkDocs(ctx context.Context, docs []interface{}, options driver.Options) (results []driver.BulkResult, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			if e, ok := r.(error); ok {
@@ -46,6 +46,8 @@ func (d *db) BulkDocs(ctx context.Context, docs []interface{}, opts map[string]i
 			}
 		}
 	}()
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	result, err := d.db.BulkDocs(ctx, docs, opts)
 	if err != nil {
 		return nil, err

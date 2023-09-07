@@ -284,7 +284,7 @@ type PurgeResult struct {
 type BulkDocer interface {
 	// BulkDocs alls bulk create, update and/or delete operations. It returns an
 	// iterator over the results.
-	BulkDocs(ctx context.Context, docs []interface{}, options map[string]interface{}) ([]BulkResult, error)
+	BulkDocs(ctx context.Context, docs []interface{}, options Options) ([]BulkResult, error)
 }
 
 // Finder is an optional interface which may be implemented by a DB. It provides

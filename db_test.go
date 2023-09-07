@@ -2805,7 +2805,7 @@ func TestDBClose(t *testing.T) {
 		})
 		tests.Add("BulkDocs", tt{
 			db: &mock.BulkDocer{
-				BulkDocsFunc: func(context.Context, []interface{}, map[string]interface{}) ([]driver.BulkResult, error) {
+				BulkDocsFunc: func(context.Context, []interface{}, driver.Options) ([]driver.BulkResult, error) {
 					time.Sleep(delay)
 					return []driver.BulkResult{}, nil
 				},

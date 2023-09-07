@@ -87,12 +87,12 @@ func (db *driverDB) AllDocs(ctx context.Context, options driver.Options) (driver
 	return &driverRows{Context: ctx, Rows: coalesceRows(expected.ret0)}, expected.wait(ctx)
 }
 
-func (db *driverDB) BulkDocs(ctx context.Context, arg0 []interface{}, options map[string]interface{}) ([]driver.BulkResult, error) {
+func (db *driverDB) BulkDocs(ctx context.Context, arg0 []interface{}, options driver.Options) ([]driver.BulkResult, error) {
 	expected := &ExpectedBulkDocs{
 		arg0: arg0,
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: options,
+			options: toLegacyOptions(options),
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {

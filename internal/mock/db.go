@@ -230,13 +230,13 @@ func (db *AttachmentMetaGetter) GetAttachmentMeta(ctx context.Context, docID, fi
 // DesignDocer mocks a driver.DB and driver.DesignDocer
 type DesignDocer struct {
 	*DB
-	DesignDocsFunc func(context.Context, map[string]interface{}) (driver.Rows, error)
+	DesignDocsFunc func(context.Context, driver.Options) (driver.Rows, error)
 }
 
 var _ driver.DesignDocer = &DesignDocer{}
 
 // DesignDocs calls db.DesignDocsFunc
-func (db *DesignDocer) DesignDocs(ctx context.Context, options map[string]interface{}) (driver.Rows, error) {
+func (db *DesignDocer) DesignDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
 	return db.DesignDocsFunc(ctx, options)
 }
 

@@ -393,7 +393,7 @@ type Copier interface {
 type DesignDocer interface {
 	// DesignDocs returns all of the design documents in the database, subject
 	// to the options provided.
-	DesignDocs(ctx context.Context, options map[string]interface{}) (Rows, error)
+	DesignDocs(ctx context.Context, options Options) (Rows, error)
 }
 
 // LocalDocer is an optional interface that may be implemented by a [DB].

@@ -244,11 +244,11 @@ func (db *driverDB) DeleteIndex(ctx context.Context, arg0 string, arg1 string, o
 	return expected.wait(ctx)
 }
 
-func (db *driverDB) DesignDocs(ctx context.Context, options map[string]interface{}) (driver.Rows, error) {
+func (db *driverDB) DesignDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
 	expected := &ExpectedDesignDocs{
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: options,
+			options: toLegacyOptions(options),
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {

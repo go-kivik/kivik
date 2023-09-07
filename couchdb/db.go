@@ -141,7 +141,9 @@ func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, 
 }
 
 // DesignDocs returns all of the documents in the database.
-func (d *db) DesignDocs(ctx context.Context, opts map[string]interface{}) (driver.Rows, error) {
+func (d *db) DesignDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	return d.rowsQuery(ctx, "_design_docs", opts)
 }
 

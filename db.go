@@ -106,7 +106,7 @@ func (db *DB) DesignDocs(ctx context.Context, options ...Option) *ResultSet {
 	if err := db.startQuery(); err != nil {
 		return &ResultSet{err: err}
 	}
-	rowsi, err := ddocer.DesignDocs(ctx, mergeOptions(options...))
+	rowsi, err := ddocer.DesignDocs(ctx, allOptions(options))
 	if err != nil {
 		db.endQuery()
 		return &ResultSet{err: err}

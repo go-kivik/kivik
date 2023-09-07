@@ -55,7 +55,7 @@ func TestAllDocs(t *testing.T) {
 
 func TestDesignDocs(t *testing.T) {
 	db := newTestDB(nil, errors.New("test error"))
-	_, err := db.DesignDocs(context.Background(), nil)
+	_, err := db.DesignDocs(context.Background(), mock.NilOption)
 	testy.ErrorRE(t, `Get "?http://example.com/testdb/_design_docs"?: test error`, err)
 }
 

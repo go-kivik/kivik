@@ -70,7 +70,7 @@ func (db *DB) DeleteIndex(ctx context.Context, ddoc, name string, options ...Opt
 	}
 	defer db.endQuery()
 	if finder, ok := db.driverDB.(driver.Finder); ok {
-		return finder.DeleteIndex(ctx, ddoc, name, mergeOptions(options...))
+		return finder.DeleteIndex(ctx, ddoc, name, allOptions(options))
 	}
 	return findNotImplemented
 }

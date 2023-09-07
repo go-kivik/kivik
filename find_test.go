@@ -253,7 +253,7 @@ func TestDeleteIndex(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.Finder{
-					DeleteIndexFunc: func(context.Context, string, string, map[string]interface{}) error {
+					DeleteIndexFunc: func(context.Context, string, string, driver.Options) error {
 						return errors.New("db error")
 					},
 				},
@@ -266,7 +266,7 @@ func TestDeleteIndex(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.Finder{
-					DeleteIndexFunc: func(_ context.Context, ddoc, name string, _ map[string]interface{}) error {
+					DeleteIndexFunc: func(_ context.Context, ddoc, name string, _ driver.Options) error {
 						expectedDdoc := "foo"
 						expectedName := "bar"
 						if expectedDdoc != ddoc {

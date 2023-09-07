@@ -70,7 +70,9 @@ func (d *db) GetIndexes(ctx context.Context, options driver.Options) ([]driver.I
 	return result.Indexes, err
 }
 
-func (d *db) DeleteIndex(ctx context.Context, ddoc, name string, opts map[string]interface{}) error {
+func (d *db) DeleteIndex(ctx context.Context, ddoc, name string, options driver.Options) error {
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	if ddoc == "" {
 		return missingArg("ddoc")
 	}

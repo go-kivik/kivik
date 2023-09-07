@@ -308,7 +308,7 @@ func TestDeleteIndex(t *testing.T) {
 	tests := []struct {
 		name            string
 		ddoc, indexName string
-		options         map[string]interface{}
+		options         kivik.Option
 		db              *db
 		status          int
 		err             string
@@ -357,7 +357,7 @@ func TestDeleteIndex(t *testing.T) {
 			ddoc:      "_design/foo",
 			indexName: "bar",
 			db:        newTestDB(nil, errors.New("expected")),
-			options: map[string]interface{}{
+			options: kivik.Options{
 				OptionPartition: "qqz",
 			},
 			status: http.StatusBadGateway,
@@ -366,7 +366,11 @@ func TestDeleteIndex(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := test.db.DeleteIndex(context.Background(), test.ddoc, test.indexName, test.options)
+			opts := test.options
+			if opts == nil {
+				opts = mock.NilOption
+			}
+			err := test.db.DeleteIndex(context.Background(), test.ddoc, test.indexName, opts)
 			testy.StatusErrorRE(t, test.err, test.status, err)
 		})
 	}

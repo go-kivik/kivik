@@ -303,7 +303,7 @@ type Finder interface {
 	// GetIndexes returns a list of all indexes in the database.
 	GetIndexes(ctx context.Context, options Options) ([]Index, error)
 	// Delete deletes the requested index.
-	DeleteIndex(ctx context.Context, ddoc, name string, options map[string]interface{}) error
+	DeleteIndex(ctx context.Context, ddoc, name string, options Options) error
 	// Explain returns the query plan for a given query. Explain takes the same
 	// arguments as [Finder.Find].
 	Explain(ctx context.Context, query interface{}, options map[string]interface{}) (*QueryPlan, error)

@@ -94,7 +94,7 @@ func (d *db) findIndex(ctx context.Context, ddoc, name string) (interface{}, err
 	return nil, &kivik.Error{Status: http.StatusNotFound, Message: "index does not exist"}
 }
 
-func (d *db) DeleteIndex(ctx context.Context, ddoc, name string, _ map[string]interface{}) error {
+func (d *db) DeleteIndex(ctx context.Context, ddoc, name string, _ driver.Options) error {
 	index, err := d.findIndex(ctx, ddoc, name)
 	if err != nil {
 		return err

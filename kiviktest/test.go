@@ -38,17 +38,12 @@ const (
 	SuiteAuto        = "auto"
 	SuitePouchLocal  = "pouch"
 	SuitePouchRemote = "pouchRemote"
-	SuiteCouch16     = "couch16"
-	SuiteCouch17     = "couch17"
-	SuiteCouch20     = "couch20"
-	SuiteCouch21     = "couch21"
 	SuiteCouch22     = "couch22"
 	SuiteCouch23     = "couch23"
 	SuiteCouch30     = "couch30"
 	SuiteCouch31     = "couch31"
 	SuiteCouch32     = "couch32"
 	SuiteCouch33     = "couch33"
-	SuiteCloudant    = "cloudant"
 	SuiteKivikServer = "kivikServer"
 	SuiteKivikMemory = "kivikMemory"
 	SuiteKivikFS     = "kivikFilesystem"
@@ -58,10 +53,6 @@ const (
 var AllSuites = []string{
 	SuitePouchLocal,
 	SuitePouchRemote,
-	SuiteCouch16,
-	SuiteCouch17,
-	SuiteCouch20,
-	SuiteCouch21,
 	SuiteCouch22,
 	SuiteCouch30,
 	SuiteCouch31,
@@ -69,24 +60,18 @@ var AllSuites = []string{
 	SuiteCouch33,
 	SuiteKivikMemory,
 	SuiteKivikFS,
-	SuiteCloudant,
 	SuiteKivikServer,
 }
 
 var driverMap = map[string]string{
 	SuitePouchLocal:  "pouch",
 	SuitePouchRemote: "pouch",
-	SuiteCouch16:     "couch",
-	SuiteCouch17:     "couch",
-	SuiteCouch20:     "couch",
-	SuiteCouch21:     "couch",
 	SuiteCouch22:     "couch",
 	SuiteCouch23:     "couch",
 	SuiteCouch30:     "couch",
 	SuiteCouch31:     "couch",
 	SuiteCouch32:     "couch",
 	SuiteCouch33:     "couch",
-	SuiteCloudant:    "couch",
 	SuiteKivikServer: "couch",
 	SuiteKivikMemory: "memory",
 	SuiteKivikFS:     "fs",
@@ -405,16 +390,6 @@ func detectCompatibility(client *kivik.Client) ([]string, error) {
 	switch info.Vendor {
 	case "PouchDB":
 		return []string{SuitePouchLocal}, nil
-	case "IBM Cloudant":
-		return []string{SuiteCloudant}, nil
-	case "The Apache Software Foundation":
-		if strings.HasPrefix(info.Version, "2.0") {
-			return []string{SuiteCouch20}, nil
-		}
-		if strings.HasPrefix(info.Version, "2.1") {
-			return []string{SuiteCouch21}, nil
-		}
-		return []string{SuiteCouch16}, nil
 	case "Kivik Memory Adaptor":
 		return []string{SuiteKivikMemory}, nil
 	}

@@ -26,22 +26,6 @@ func init() {
 	RegisterCouchDBSuites()
 }
 
-func TestCouch16(t *testing.T) {
-	kiviktest.DoTest(t, kiviktest.SuiteCouch16, "KIVIK_TEST_DSN_COUCH16")
-}
-
-func TestCouch17(t *testing.T) {
-	kiviktest.DoTest(t, kiviktest.SuiteCouch17, "KIVIK_TEST_DSN_COUCH17")
-}
-
-func TestCouch20(t *testing.T) {
-	kiviktest.DoTest(t, kiviktest.SuiteCouch20, "KIVIK_TEST_DSN_COUCH20")
-}
-
-func TestCouch21(t *testing.T) {
-	kiviktest.DoTest(t, kiviktest.SuiteCouch21, "KIVIK_TEST_DSN_COUCH21")
-}
-
 func TestCouch22(t *testing.T) {
 	kiviktest.DoTest(t, kiviktest.SuiteCouch22, "KIVIK_TEST_DSN_COUCH22")
 }
@@ -64,8 +48,4 @@ func TestCouch32(t *testing.T) {
 
 func TestCouch33(t *testing.T) {
 	kiviktest.DoTest(t, kiviktest.SuiteCouch33, "KIVIK_TEST_DSN_COUCH33")
-}
-
-func TestCloudant(t *testing.T) {
-	kiviktest.DoTest(t, kiviktest.SuiteCloudant, "KIVIK_TEST_DSN_CLOUDANT")
 }

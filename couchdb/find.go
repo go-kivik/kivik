@@ -53,7 +53,9 @@ func (d *db) CreateIndex(ctx context.Context, ddoc, name string, index interface
 	return err
 }
 
-func (d *db) GetIndexes(ctx context.Context, opts map[string]interface{}) ([]driver.Index, error) {
+func (d *db) GetIndexes(ctx context.Context, options driver.Options) ([]driver.Index, error) {
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	reqPath := pathIndex
 	if part, ok := opts[OptionPartition].(string); ok {
 		delete(opts, OptionPartition)

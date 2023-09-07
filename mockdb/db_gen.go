@@ -347,11 +347,11 @@ func (db *driverDB) GetAttachmentMeta(ctx context.Context, arg0 string, arg1 str
 	return expected.ret0, expected.wait(ctx)
 }
 
-func (db *driverDB) GetIndexes(ctx context.Context, options map[string]interface{}) ([]driver.Index, error) {
+func (db *driverDB) GetIndexes(ctx context.Context, options driver.Options) ([]driver.Index, error) {
 	expected := &ExpectedGetIndexes{
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: options,
+			options: toLegacyOptions(options),
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {

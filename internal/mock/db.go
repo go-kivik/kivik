@@ -144,7 +144,7 @@ type Finder struct {
 	CreateIndexFunc func(context.Context, string, string, interface{}, map[string]interface{}) error
 	DeleteIndexFunc func(context.Context, string, string, map[string]interface{}) error
 	FindFunc        func(context.Context, interface{}, driver.Options) (driver.Rows, error)
-	GetIndexesFunc  func(context.Context, map[string]interface{}) ([]driver.Index, error)
+	GetIndexesFunc  func(context.Context, driver.Options) ([]driver.Index, error)
 	ExplainFunc     func(context.Context, interface{}, map[string]interface{}) (*driver.QueryPlan, error)
 }
 
@@ -166,7 +166,7 @@ func (db *Finder) Find(ctx context.Context, query interface{}, opts driver.Optio
 }
 
 // GetIndexes calls db.GetIndexesFunc
-func (db *Finder) GetIndexes(ctx context.Context, opts map[string]interface{}) ([]driver.Index, error) {
+func (db *Finder) GetIndexes(ctx context.Context, opts driver.Options) ([]driver.Index, error) {
 	return db.GetIndexesFunc(ctx, opts)
 }
 

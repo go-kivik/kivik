@@ -93,7 +93,7 @@ func (db *DB) GetIndexes(ctx context.Context, options ...Option) ([]Index, error
 	}
 	defer db.endQuery()
 	if finder, ok := db.driverDB.(driver.Finder); ok {
-		dIndexes, err := finder.GetIndexes(ctx, mergeOptions(options...))
+		dIndexes, err := finder.GetIndexes(ctx, allOptions(options))
 		indexes := make([]Index, len(dIndexes))
 		for i, index := range dIndexes {
 			indexes[i] = Index(index)

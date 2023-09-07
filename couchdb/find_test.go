@@ -226,7 +226,7 @@ func TestCreateIndex(t *testing.T) {
 func TestGetIndexes(t *testing.T) {
 	tests := []struct {
 		name     string
-		options  map[string]interface{}
+		options  kivik.Option
 		db       *db
 		expected []driver.Index
 		status   int
@@ -278,7 +278,7 @@ func TestGetIndexes(t *testing.T) {
 		{
 			name: "partitioned query",
 			db:   newTestDB(nil, errors.New("expected")),
-			options: map[string]interface{}{
+			options: kivik.Options{
 				OptionPartition: "yyz",
 			},
 			status: http.StatusBadGateway,
@@ -287,7 +287,11 @@ func TestGetIndexes(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.db.GetIndexes(context.Background(), test.options)
+			opts := test.options
+			if opts == nil {
+				opts = mock.NilOption
+			}
+			result, err := test.db.GetIndexes(context.Background(), opts)
 			testy.StatusErrorRE(t, test.err, test.status, err)
 			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)

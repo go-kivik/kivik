@@ -57,7 +57,7 @@ func (d *db) CreateIndex(ctx context.Context, ddoc, name string, index interface
 	return err
 }
 
-func (d *db) GetIndexes(ctx context.Context, _ map[string]interface{}) (indexes []driver.Index, err error) {
+func (d *db) GetIndexes(ctx context.Context, _ driver.Options) (indexes []driver.Index, err error) {
 	defer bindings.RecoverError(&err)
 	result, err := d.db.GetIndexes(ctx)
 	if err != nil {

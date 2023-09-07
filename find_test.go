@@ -332,7 +332,7 @@ func TestGetIndexes(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.Finder{
-					GetIndexesFunc: func(context.Context, map[string]interface{}) ([]driver.Index, error) {
+					GetIndexesFunc: func(context.Context, driver.Options) ([]driver.Index, error) {
 						return nil, errors.New("db error")
 					},
 				},
@@ -345,7 +345,7 @@ func TestGetIndexes(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.Finder{
-					GetIndexesFunc: func(context.Context, map[string]interface{}) ([]driver.Index, error) {
+					GetIndexesFunc: func(context.Context, driver.Options) ([]driver.Index, error) {
 						return []driver.Index{
 							{Name: "a"},
 							{Name: "b"},

@@ -301,7 +301,7 @@ type Finder interface {
 	// Any other type should be marshaled to JSON.
 	CreateIndex(ctx context.Context, ddoc, name string, index interface{}, options map[string]interface{}) error
 	// GetIndexes returns a list of all indexes in the database.
-	GetIndexes(ctx context.Context, options map[string]interface{}) ([]Index, error)
+	GetIndexes(ctx context.Context, options Options) ([]Index, error)
 	// Delete deletes the requested index.
 	DeleteIndex(ctx context.Context, ddoc, name string, options map[string]interface{}) error
 	// Explain returns the query plan for a given query. Explain takes the same

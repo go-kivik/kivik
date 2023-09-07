@@ -224,7 +224,7 @@ type DB interface {
 	// Query performs a query against a view, subject to the options provided.
 	// ddoc will be the design doc name without the '_design/' previx.
 	// view will be the view name without the '_view/' prefix.
-	Query(ctx context.Context, ddoc, view string, options map[string]interface{}) (Rows, error)
+	Query(ctx context.Context, ddoc, view string, options Options) (Rows, error)
 }
 
 // SecurityDB is an optional interface that extends a DB, for backends which

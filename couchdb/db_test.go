@@ -68,12 +68,12 @@ func TestLocalDocs(t *testing.T) {
 func TestQuery(t *testing.T) {
 	t.Run("standard", func(t *testing.T) {
 		db := newTestDB(nil, errors.New("test error"))
-		_, err := db.Query(context.Background(), "ddoc", "view", nil)
+		_, err := db.Query(context.Background(), "ddoc", "view", mock.NilOption)
 		testy.ErrorRE(t, `Get "?http://example.com/testdb/_design/ddoc/_view/view"?: test error`, err)
 	})
 	t.Run("partitioned", func(t *testing.T) {
 		db := newTestDB(nil, errors.New("test error"))
-		_, err := db.Query(context.Background(), "ddoc", "view", map[string]interface{}{
+		_, err := db.Query(context.Background(), "ddoc", "view", kivik.Options{
 			OptionPartition: "a2",
 		})
 		testy.ErrorRE(t, `Get "?http://example.com/testdb/_partition/a2/_design/ddoc/_view/view"?: test error`, err)

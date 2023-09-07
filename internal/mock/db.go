@@ -35,7 +35,7 @@ type DB struct {
 	PutAttachmentFunc    func(ctx context.Context, docID string, att *driver.Attachment, options driver.Options) (newRev string, err error)
 	GetAttachmentFunc    func(ctx context.Context, docID, filename string, options driver.Options) (*driver.Attachment, error)
 	DeleteAttachmentFunc func(ctx context.Context, docID, filename string, options driver.Options) (newRev string, err error)
-	QueryFunc            func(context.Context, string, string, map[string]interface{}) (driver.Rows, error)
+	QueryFunc            func(context.Context, string, string, driver.Options) (driver.Rows, error)
 }
 
 // SecurityDB is a stub for a driver.SecurityDB.
@@ -134,7 +134,7 @@ func (db *DB) DeleteAttachment(ctx context.Context, docID, filename string, opts
 }
 
 // Query calls db.QueryFunc
-func (db *DB) Query(ctx context.Context, ddoc, view string, opts map[string]interface{}) (driver.Rows, error) {
+func (db *DB) Query(ctx context.Context, ddoc, view string, opts driver.Options) (driver.Rows, error) {
 	return db.QueryFunc(ctx, ddoc, view, opts)
 }
 

@@ -58,7 +58,9 @@ func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, 
 	}, nil
 }
 
-func (d *db) Query(ctx context.Context, ddoc, view string, opts map[string]interface{}) (driver.Rows, error) {
+func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Options) (driver.Rows, error) {
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	result, err := d.db.Query(ctx, ddoc, view, opts)
 	if err != nil {
 		return nil, err

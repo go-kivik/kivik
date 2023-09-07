@@ -446,7 +446,7 @@ func TestQuery(t *testing.T) {
 		name       string
 		db         *DB
 		ddoc, view string
-		options    Options
+		options    Option
 		expected   *rows
 		status     int
 		err        string
@@ -456,7 +456,7 @@ func TestQuery(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					QueryFunc: func(_ context.Context, ddoc, view string, opts map[string]interface{}) (driver.Rows, error) {
+					QueryFunc: func(context.Context, string, string, driver.Options) (driver.Rows, error) {
 						return nil, errors.New("db error")
 					},
 				},
@@ -469,7 +469,7 @@ func TestQuery(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					QueryFunc: func(_ context.Context, ddoc, view string, opts map[string]interface{}) (driver.Rows, error) {
+					QueryFunc: func(_ context.Context, ddoc, view string, options driver.Options) (driver.Rows, error) {
 						expectedDdoc := "foo"
 						expectedView := "bar" // nolint: goconst
 						if ddoc != expectedDdoc {
@@ -478,7 +478,9 @@ func TestQuery(t *testing.T) {
 						if view != expectedView {
 							return nil, fmt.Errorf("Unexpected view: %s", view)
 						}
-						if d := testy.DiffInterface(testOptions, opts); d != nil {
+						gotOpts := map[string]interface{}{}
+						options.Apply(gotOpts)
+						if d := testy.DiffInterface(testOptions, gotOpts); d != nil {
 							return nil, fmt.Errorf("Unexpected options: %s", d)
 						}
 						return &mock.Rows{ID: "a"}, nil
@@ -487,7 +489,7 @@ func TestQuery(t *testing.T) {
 			},
 			ddoc:    "foo",
 			view:    "bar",
-			options: testOptions,
+			options: Options(testOptions),
 			expected: &rows{
 				iter: &iter{
 					feed: &rowsIterator{

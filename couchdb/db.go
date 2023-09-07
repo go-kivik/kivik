@@ -151,7 +151,9 @@ func (d *db) LocalDocs(ctx context.Context, opts map[string]interface{}) (driver
 }
 
 // Query queries a view.
-func (d *db) Query(ctx context.Context, ddoc, view string, opts map[string]interface{}) (driver.Rows, error) {
+func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Options) (driver.Rows, error) {
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	reqPath := fmt.Sprintf("_design/%s/_view/%s", chttp.EncodeDocID(ddoc), chttp.EncodeDocID(view))
 	if part, ok := opts[OptionPartition].(string); ok {
 		delete(opts, OptionPartition)

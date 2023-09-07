@@ -464,13 +464,13 @@ func (db *driverDB) PutAttachment(ctx context.Context, arg0 string, arg1 *driver
 	return expected.ret0, expected.wait(ctx)
 }
 
-func (db *driverDB) Query(ctx context.Context, arg0 string, arg1 string, options map[string]interface{}) (driver.Rows, error) {
+func (db *driverDB) Query(ctx context.Context, arg0 string, arg1 string, options driver.Options) (driver.Rows, error) {
 	expected := &ExpectedQuery{
 		arg0: arg0,
 		arg1: arg1,
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: options,
+			options: toLegacyOptions(options),
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {

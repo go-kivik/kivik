@@ -154,7 +154,7 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Option) *
 	}
 	ddoc = strings.TrimPrefix(ddoc, "_design/")
 	view = strings.TrimPrefix(view, "_view/")
-	rowsi, err := db.driverDB.Query(ctx, ddoc, view, mergeOptions(options...))
+	rowsi, err := db.driverDB.Query(ctx, ddoc, view, allOptions(options))
 	if err != nil {
 		db.endQuery()
 		return &ResultSet{err: err}

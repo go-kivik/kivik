@@ -109,7 +109,9 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 	return d.db.Put(ctx, jsDoc, opts)
 }
 
-func (d *db) Delete(ctx context.Context, docID string, opts map[string]interface{}) (newRev string, err error) {
+func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (newRev string, err error) {
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	rev, _ := opts["rev"].(string)
 	return d.db.Delete(ctx, docID, rev, opts)
 }

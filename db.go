@@ -326,7 +326,7 @@ func (db *DB) Delete(ctx context.Context, docID, rev string, options ...Option) 
 	if docID == "" {
 		return "", missingArg("docID")
 	}
-	opts := mergeOptions(Options{"rev": rev}, mergeOptions(options...))
+	opts := append(allOptions{Options{"rev": rev}}, options...)
 	return db.driverDB.Delete(ctx, docID, opts)
 }
 

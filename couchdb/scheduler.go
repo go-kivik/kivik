@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"time"
 
+	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/couchdb/chttp"
 	"github.com/go-kivik/kivik/v4/driver"
 )
@@ -189,7 +190,7 @@ func (r *schedulerReplication) Delete(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	_, err = r.db.Delete(ctx, r.docID, map[string]interface{}{"rev": rev})
+	_, err = r.db.Delete(ctx, r.docID, kivik.Options{"rev": rev})
 	return err
 }
 

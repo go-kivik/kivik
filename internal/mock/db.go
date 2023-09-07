@@ -26,7 +26,7 @@ type DB struct {
 	GetFunc              func(ctx context.Context, docID string, options driver.Options) (*driver.Document, error)
 	CreateDocFunc        func(ctx context.Context, doc interface{}, options driver.Options) (docID, rev string, err error)
 	PutFunc              func(ctx context.Context, docID string, doc interface{}, options driver.Options) (rev string, err error)
-	DeleteFunc           func(ctx context.Context, docID string, options map[string]interface{}) (newRev string, err error)
+	DeleteFunc           func(ctx context.Context, docID string, options driver.Options) (newRev string, err error)
 	StatsFunc            func(ctx context.Context) (*driver.DBStats, error)
 	CompactFunc          func(ctx context.Context) error
 	CompactViewFunc      func(ctx context.Context, ddocID string) error
@@ -79,7 +79,7 @@ func (db *DB) Put(ctx context.Context, docID string, doc interface{}, opts drive
 }
 
 // Delete calls db.DeleteFunc
-func (db *DB) Delete(ctx context.Context, docID string, opts map[string]interface{}) (string, error) {
+func (db *DB) Delete(ctx context.Context, docID string, opts driver.Options) (string, error) {
 	return db.DeleteFunc(ctx, docID, opts)
 }
 

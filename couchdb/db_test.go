@@ -922,7 +922,7 @@ func TestDelete(t *testing.T) {
 	type tt struct {
 		db      *db
 		id      string
-		options map[string]interface{}
+		options kivik.Option
 		newrev  string
 		status  int
 		err     string
@@ -940,14 +940,14 @@ func TestDelete(t *testing.T) {
 	})
 	tests.Add("network error", tt{
 		id:      "foo",
-		options: map[string]interface{}{"rev": "1-xxx"},
+		options: kivik.Options{"rev": "1-xxx"},
 		db:      newTestDB(nil, errors.New("net error")),
 		status:  http.StatusBadGateway,
 		err:     `(Delete "?http://example.com/testdb/foo\?rev="?: )?net error`,
 	})
 	tests.Add("1.6.1 conflict", tt{
 		id:      "43734cf3ce6d5a37050c050bb600006b",
-		options: map[string]interface{}{"rev": "1-xxx"},
+		options: kivik.Options{"rev": "1-xxx"},
 		db: newTestDB(&http.Response{
 			StatusCode: 409,
 			Header: http.Header{
@@ -964,7 +964,7 @@ func TestDelete(t *testing.T) {
 	})
 	tests.Add("1.6.1 success", tt{
 		id:      "43734cf3ce6d5a37050c050bb600006b",
-		options: map[string]interface{}{"rev": "1-4c6114c65e295552ab1019e2b046b10e"},
+		options: kivik.Options{"rev": "1-4c6114c65e295552ab1019e2b046b10e"},
 		db: newTestDB(&http.Response{
 			StatusCode: 200,
 			Header: http.Header{
@@ -990,7 +990,7 @@ func TestDelete(t *testing.T) {
 			return nil, errors.New("success")
 		}),
 		id: "foo",
-		options: map[string]interface{}{
+		options: kivik.Options{
 			"batch": "ok",
 			"rev":   "1-xxx",
 		},
@@ -1000,7 +1000,7 @@ func TestDelete(t *testing.T) {
 	tests.Add("invalid options", tt{
 		db: &db{},
 		id: "foo",
-		options: map[string]interface{}{
+		options: kivik.Options{
 			"foo": make(chan int),
 			"rev": "1-xxx",
 		},
@@ -1018,7 +1018,7 @@ func TestDelete(t *testing.T) {
 			return nil, errors.New("success")
 		}),
 		id: "foo",
-		options: map[string]interface{}{
+		options: kivik.Options{
 			OptionFullCommit: true,
 			"rev":            "1-xxx",
 		},
@@ -1028,7 +1028,7 @@ func TestDelete(t *testing.T) {
 	tests.Add("invalid full commit type", tt{
 		db: &db{},
 		id: "foo",
-		options: map[string]interface{}{
+		options: kivik.Options{
 			OptionFullCommit: 123,
 			"rev":            "1-xxx",
 		},
@@ -1037,7 +1037,11 @@ func TestDelete(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
-		newrev, err := tt.db.Delete(context.Background(), tt.id, tt.options)
+		opts := tt.options
+		if opts == nil {
+			opts = mock.NilOption
+		}
+		newrev, err := tt.db.Delete(context.Background(), tt.id, opts)
 		testy.StatusErrorRE(t, tt.err, tt.status, err)
 		if newrev != tt.newrev {
 			t.Errorf("Unexpected new rev: %s", newrev)

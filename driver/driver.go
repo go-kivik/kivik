@@ -201,7 +201,7 @@ type DB interface {
 	// Put writes the document in the database.
 	Put(ctx context.Context, docID string, doc interface{}, options Options) (rev string, err error)
 	// Delete marks the specified document as deleted.
-	Delete(ctx context.Context, docID string, options map[string]interface{}) (newRev string, err error)
+	Delete(ctx context.Context, docID string, options Options) (newRev string, err error)
 	// Stats returns database statistics.
 	Stats(ctx context.Context) (*DBStats, error)
 	// Compact initiates compaction of the database.

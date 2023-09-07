@@ -1428,7 +1428,7 @@ func TestDelete(t *testing.T) {
 		setup: func(m *Client) {
 			db := m.NewDB()
 			m.ExpectDB().WillReturn(db)
-			db.ExpectDelete().WithOptions(map[string]interface{}{"foo": "baz"})
+			db.ExpectDelete().WithOptions(kivik.Options{"foo": "baz"})
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").Delete(context.TODO(), "foo", "1-foo")

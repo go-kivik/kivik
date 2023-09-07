@@ -777,10 +777,12 @@ func copyWithAttachmentStubs(w io.Writer, r io.Reader, atts map[string]*stub) er
 	return nil
 }
 
-func (d *db) Delete(ctx context.Context, docID string, opts map[string]interface{}) (string, error) {
+func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (string, error) {
 	if docID == "" {
 		return "", missingArg("docID")
 	}
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	if rev, _ := opts["rev"].(string); rev == "" {
 		return "", missingArg("rev")
 	}

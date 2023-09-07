@@ -1830,7 +1830,7 @@ func TestDelete(t *testing.T) {
 		name       string
 		db         *DB
 		docID, rev string
-		options    Options
+		options    Option
 		newRev     string
 		status     int
 		err        string
@@ -1848,7 +1848,7 @@ func TestDelete(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					DeleteFunc: func(context.Context, string, map[string]interface{}) (string, error) {
+					DeleteFunc: func(context.Context, string, driver.Options) (string, error) {
 						return "", &Error{Status: http.StatusBadRequest, Err: errors.New("delete error")}
 					},
 				},
@@ -1862,12 +1862,15 @@ func TestDelete(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					DeleteFunc: func(_ context.Context, docID string, opts map[string]interface{}) (string, error) {
+					DeleteFunc: func(_ context.Context, docID string, options driver.Options) (string, error) {
 						const expectedDocID = "foo"
 						if docID != expectedDocID {
 							return "", fmt.Errorf("Unexpected docID: %s", docID)
 						}
-						if d := testy.DiffInterface(map[string]interface{}{"rev": "1-xxx"}, opts); d != nil {
+						gotOpts := map[string]interface{}{}
+						options.Apply(gotOpts)
+						wantOpts := map[string]interface{}{"rev": "1-xxx"}
+						if d := testy.DiffInterface(wantOpts, gotOpts); d != nil {
 							return "", fmt.Errorf("Unexpected options:\n%s", d)
 						}
 						return "2-xxx", nil
@@ -1875,7 +1878,7 @@ func TestDelete(t *testing.T) {
 				},
 			},
 			docID:   "foo",
-			options: map[string]interface{}{"rev": "1-xxx"},
+			options: Options{"rev": "1-xxx"},
 			newRev:  "2-xxx",
 		},
 		{
@@ -1883,15 +1886,18 @@ func TestDelete(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					DeleteFunc: func(_ context.Context, docID string, opts map[string]interface{}) (string, error) {
+					DeleteFunc: func(_ context.Context, docID string, options driver.Options) (string, error) {
 						const expectedDocID = "foo"
 						if docID != expectedDocID {
 							return "", fmt.Errorf("Unexpected docID: %s", docID)
 						}
-						if d := testy.DiffInterface(map[string]interface{}{
+						wantOpts := map[string]interface{}{
 							"foo": 123,
 							"rev": "1-xxx",
-						}, opts); d != nil {
+						}
+						gotOpts := map[string]interface{}{}
+						options.Apply(gotOpts)
+						if d := testy.DiffInterface(wantOpts, gotOpts); d != nil {
 							return "", fmt.Errorf("Unexpected options:\n%s", d)
 						}
 						return "2-xxx", nil
@@ -1900,7 +1906,7 @@ func TestDelete(t *testing.T) {
 			},
 			docID:   "foo",
 			rev:     "1-xxx",
-			options: testOptions,
+			options: Options(testOptions),
 			newRev:  "2-xxx",
 		},
 		{
@@ -1908,14 +1914,17 @@ func TestDelete(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					DeleteFunc: func(_ context.Context, docID string, opts map[string]interface{}) (string, error) {
+					DeleteFunc: func(_ context.Context, docID string, options driver.Options) (string, error) {
 						const expectedDocID = "foo"
 						if docID != expectedDocID {
 							return "", fmt.Errorf("Unexpected docID: %s", docID)
 						}
-						if d := testy.DiffInterface(map[string]interface{}{
+						wantOpts := map[string]interface{}{
 							"rev": "1-xxx",
-						}, opts); d != nil {
+						}
+						gotOpts := map[string]interface{}{}
+						options.Apply(gotOpts)
+						if d := testy.DiffInterface(wantOpts, gotOpts); d != nil {
 							return "", fmt.Errorf("Unexpected options:\n%s", d)
 						}
 						return "2-xxx", nil

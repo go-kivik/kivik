@@ -133,7 +133,7 @@ func omitNil(a interface{}) bool {
 	}
 	v := reflect.ValueOf(a)
 	switch v.Kind() {
-	case reflect.Slice, reflect.Interface, reflect.Map, reflect.Pointer:
+	case reflect.Slice, reflect.Interface, reflect.Map, reflect.Ptr:
 		// nil slices, interfaces, maps, and pointers in our context mean that
 		// we have a nil option that in JS idioms would just be omitted as an
 		// argument, so return true.

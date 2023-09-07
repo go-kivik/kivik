@@ -23,8 +23,10 @@ import (
 	"github.com/go-kivik/kivik/v4"
 )
 
+const isGopherJS = runtime.GOOS == "js" || runtime.GOARCH == "js"
+
 func TestQueries_2_x(t *testing.T) {
-	if runtime.GOOS == "js" {
+	if isGopherJS {
 		t.Skip("Network tests skipped for GopherJS")
 	}
 	dsn := os.Getenv("KIVIK_TEST_DSN_COUCH23")
@@ -125,7 +127,7 @@ func TestQueries_3_x(t *testing.T) {
 
 // https://github.com/go-kivik/kivik/issues/509
 func Test_bug509(t *testing.T) {
-	if runtime.GOOS == "js" {
+	if isGopherJS {
 		t.Skip("Network tests skipped for GopherJS")
 	}
 	dsn := os.Getenv("KIVIK_TEST_DSN_COUCH23")

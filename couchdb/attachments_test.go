@@ -377,7 +377,7 @@ func TestGetAttachment(t *testing.T) {
 		name         string
 		db           *db
 		id, filename string
-		options      map[string]interface{}
+		options      kivik.Option
 
 		expected *driver.Attachment
 		content  string
@@ -420,7 +420,11 @@ func TestGetAttachment(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			att, err := test.db.GetAttachment(context.Background(), test.id, test.filename, test.options)
+			opts := test.options
+			if opts == nil {
+				opts = mock.NilOption
+			}
+			att, err := test.db.GetAttachment(context.Background(), test.id, test.filename, opts)
 			testy.StatusErrorRE(t, test.err, test.status, err)
 			fileContent, err := io.ReadAll(att.Content)
 			if err != nil {

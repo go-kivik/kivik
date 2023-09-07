@@ -39,7 +39,9 @@ func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attach
 	return result.Get("rev").String(), nil
 }
 
-func (d *db) GetAttachment(ctx context.Context, docID, filename string, opts map[string]interface{}) (*driver.Attachment, error) {
+func (d *db) GetAttachment(ctx context.Context, docID, filename string, options driver.Options) (*driver.Attachment, error) {
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	result, err := d.db.GetAttachment(ctx, docID, filename, opts)
 	if err != nil {
 		return nil, err

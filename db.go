@@ -601,7 +601,7 @@ func (db *DB) GetAttachment(ctx context.Context, docID, filename string, options
 	if filename == "" {
 		return nil, missingArg("filename")
 	}
-	att, err := db.driverDB.GetAttachment(ctx, docID, filename, mergeOptions(options...))
+	att, err := db.driverDB.GetAttachment(ctx, docID, filename, allOptions(options))
 	if err != nil {
 		return nil, err
 	}

@@ -33,7 +33,7 @@ type DB struct {
 	ViewCleanupFunc      func(ctx context.Context) error
 	ChangesFunc          func(ctx context.Context, options driver.Options) (driver.Changes, error)
 	PutAttachmentFunc    func(ctx context.Context, docID string, att *driver.Attachment, options driver.Options) (newRev string, err error)
-	GetAttachmentFunc    func(ctx context.Context, docID, filename string, options map[string]interface{}) (*driver.Attachment, error)
+	GetAttachmentFunc    func(ctx context.Context, docID, filename string, options driver.Options) (*driver.Attachment, error)
 	DeleteAttachmentFunc func(ctx context.Context, docID, filename string, options map[string]interface{}) (newRev string, err error)
 	QueryFunc            func(context.Context, string, string, map[string]interface{}) (driver.Rows, error)
 }
@@ -124,7 +124,7 @@ func (db *DB) PutAttachment(ctx context.Context, docID string, att *driver.Attac
 }
 
 // GetAttachment calls db.GetAttachmentFunc
-func (db *DB) GetAttachment(ctx context.Context, docID, filename string, opts map[string]interface{}) (*driver.Attachment, error) {
+func (db *DB) GetAttachment(ctx context.Context, docID, filename string, opts driver.Options) (*driver.Attachment, error) {
 	return db.GetAttachmentFunc(ctx, docID, filename, opts)
 }
 

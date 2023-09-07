@@ -311,13 +311,13 @@ func (db *driverDB) Get(ctx context.Context, arg0 string, options driver.Options
 	return expected.ret0, expected.wait(ctx)
 }
 
-func (db *driverDB) GetAttachment(ctx context.Context, arg0 string, arg1 string, options map[string]interface{}) (*driver.Attachment, error) {
+func (db *driverDB) GetAttachment(ctx context.Context, arg0 string, arg1 string, options driver.Options) (*driver.Attachment, error) {
 	expected := &ExpectedGetAttachment{
 		arg0: arg0,
 		arg1: arg1,
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: options,
+			options: toLegacyOptions(options),
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {

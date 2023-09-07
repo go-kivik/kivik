@@ -2230,7 +2230,7 @@ func TestGetAttachment(t *testing.T) {
 	type tt struct {
 		db              *DB
 		docID, filename string
-		options         Options
+		options         Option
 
 		content  string
 		expected *Attachment
@@ -2243,7 +2243,7 @@ func TestGetAttachment(t *testing.T) {
 		db: &DB{
 			client: &Client{},
 			driverDB: &mock.DB{
-				GetAttachmentFunc: func(context.Context, string, string, map[string]interface{}) (*driver.Attachment, error) {
+				GetAttachmentFunc: func(context.Context, string, string, driver.Options) (*driver.Attachment, error) {
 					return nil, errors.New("fail")
 				},
 			},
@@ -2257,7 +2257,7 @@ func TestGetAttachment(t *testing.T) {
 		return tt{
 			docID:    expectedDocID,
 			filename: expectedFilename,
-			options:  testOptions,
+			options:  Options(testOptions),
 			content:  "Test",
 			expected: &Attachment{
 				Filename:    expectedFilename,
@@ -2268,14 +2268,16 @@ func TestGetAttachment(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					GetAttachmentFunc: func(_ context.Context, docID, filename string, opts map[string]interface{}) (*driver.Attachment, error) {
+					GetAttachmentFunc: func(_ context.Context, docID, filename string, options driver.Options) (*driver.Attachment, error) {
 						if docID != expectedDocID {
 							t.Errorf("Unexpected docID: %s", docID)
 						}
 						if filename != expectedFilename {
 							t.Errorf("Unexpected filename: %s", filename)
 						}
-						if d := testy.DiffInterface(testOptions, opts); d != nil {
+						gotOpts := map[string]interface{}{}
+						options.Apply(gotOpts)
+						if d := testy.DiffInterface(testOptions, gotOpts); d != nil {
 							t.Errorf("Unexpected options:\n%s", d)
 						}
 						return &driver.Attachment{
@@ -2346,7 +2348,7 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 		name            string
 		db              *DB
 		docID, filename string
-		options         Options
+		options         Option
 
 		expected *Attachment
 		status   int
@@ -2357,7 +2359,7 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					GetAttachmentFunc: func(context.Context, string, string, map[string]interface{}) (*driver.Attachment, error) {
+					GetAttachmentFunc: func(context.Context, string, string, driver.Options) (*driver.Attachment, error) {
 						return nil, errors.New("fail")
 					},
 				},
@@ -2372,14 +2374,16 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					GetAttachmentFunc: func(_ context.Context, docID, filename string, opts map[string]interface{}) (*driver.Attachment, error) {
+					GetAttachmentFunc: func(_ context.Context, docID, filename string, options driver.Options) (*driver.Attachment, error) {
 						if docID != expectedDocID {
 							return nil, fmt.Errorf("Unexpected docID: %s", docID)
 						}
 						if filename != expectedFilename {
 							return nil, fmt.Errorf("Unexpected filename: %s", filename)
 						}
-						if d := testy.DiffInterface(testOptions, opts); d != nil {
+						gotOpts := map[string]interface{}{}
+						options.Apply(gotOpts)
+						if d := testy.DiffInterface(testOptions, gotOpts); d != nil {
 							return nil, fmt.Errorf("Unexpected options:\n%s", d)
 						}
 						return &driver.Attachment{

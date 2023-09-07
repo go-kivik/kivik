@@ -69,7 +69,9 @@ func (d *db) GetAttachmentMeta(ctx context.Context, docID, filename string, opts
 	return att, err
 }
 
-func (d *db) GetAttachment(ctx context.Context, docID, filename string, opts map[string]interface{}) (*driver.Attachment, error) {
+func (d *db) GetAttachment(ctx context.Context, docID, filename string, options driver.Options) (*driver.Attachment, error) {
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	resp, err := d.fetchAttachment(ctx, http.MethodGet, docID, filename, opts)
 	if err != nil {
 		return nil, err

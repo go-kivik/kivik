@@ -32,7 +32,7 @@ type DB struct {
 	CompactViewFunc      func(ctx context.Context, ddocID string) error
 	ViewCleanupFunc      func(ctx context.Context) error
 	ChangesFunc          func(ctx context.Context, options driver.Options) (driver.Changes, error)
-	PutAttachmentFunc    func(ctx context.Context, docID string, att *driver.Attachment, options map[string]interface{}) (newRev string, err error)
+	PutAttachmentFunc    func(ctx context.Context, docID string, att *driver.Attachment, options driver.Options) (newRev string, err error)
 	GetAttachmentFunc    func(ctx context.Context, docID, filename string, options map[string]interface{}) (*driver.Attachment, error)
 	DeleteAttachmentFunc func(ctx context.Context, docID, filename string, options map[string]interface{}) (newRev string, err error)
 	QueryFunc            func(context.Context, string, string, map[string]interface{}) (driver.Rows, error)
@@ -119,7 +119,7 @@ func (db *DB) Changes(ctx context.Context, opts driver.Options) (driver.Changes,
 }
 
 // PutAttachment calls db.PutAttachmentFunc
-func (db *DB) PutAttachment(ctx context.Context, docID string, att *driver.Attachment, opts map[string]interface{}) (string, error) {
+func (db *DB) PutAttachment(ctx context.Context, docID string, att *driver.Attachment, opts driver.Options) (string, error) {
 	return db.PutAttachmentFunc(ctx, docID, att, opts)
 }
 

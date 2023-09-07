@@ -22,7 +22,7 @@ import (
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
-func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attachment, opts map[string]interface{}) (newRev string, err error) {
+func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attachment, options driver.Options) (newRev string, err error) {
 	if docID == "" {
 		return "", missingArg("docID")
 	}
@@ -36,6 +36,8 @@ func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attach
 		return "", missingArg("att.Content")
 	}
 
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	chttpOpts, err := chttp.NewOptions(opts)
 	if err != nil {
 		return "", err

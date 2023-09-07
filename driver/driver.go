@@ -215,7 +215,7 @@ type DB interface {
 	Changes(ctx context.Context, options Options) (Changes, error)
 	// PutAttachment uploads an attachment to the specified document, returning
 	// the new revision.
-	PutAttachment(ctx context.Context, docID string, att *Attachment, options map[string]interface{}) (newRev string, err error)
+	PutAttachment(ctx context.Context, docID string, att *Attachment, options Options) (newRev string, err error)
 	// GetAttachment fetches an attachment for the associated document ID.
 	GetAttachment(ctx context.Context, docID, filename string, options map[string]interface{}) (*Attachment, error)
 	// DeleteAttachment deletes an attachment from a document, returning the

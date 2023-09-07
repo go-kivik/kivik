@@ -1972,7 +1972,7 @@ func TestPutAttachment(t *testing.T) {
 		db      *DB
 		docID   string
 		att     *Attachment
-		options Options
+		options Option
 		newRev  string
 		status  int
 		err     string
@@ -1985,7 +1985,7 @@ func TestPutAttachment(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					PutAttachmentFunc: func(context.Context, string, *driver.Attachment, map[string]interface{}) (string, error) {
+					PutAttachmentFunc: func(context.Context, string, *driver.Attachment, driver.Options) (string, error) {
 						return "", &Error{Status: http.StatusBadRequest, Err: errors.New("db error")}
 					},
 				},
@@ -2021,7 +2021,7 @@ func TestPutAttachment(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					PutAttachmentFunc: func(_ context.Context, docID string, att *driver.Attachment, opts map[string]interface{}) (string, error) {
+					PutAttachmentFunc: func(_ context.Context, docID string, att *driver.Attachment, options driver.Options) (string, error) {
 						const expectedDocID = "foo"
 						const expectedContent = "Test file"
 						expectedAtt := &driver.Attachment{
@@ -2042,7 +2042,10 @@ func TestPutAttachment(t *testing.T) {
 						if d := testy.DiffInterface(expectedAtt, att); d != nil {
 							return "", fmt.Errorf("Unexpected attachment:\n%s", d)
 						}
-						if d := testy.DiffInterface(map[string]interface{}{"rev": "1-xxx"}, opts); d != nil {
+						wantOpts := map[string]interface{}{"rev": "1-xxx"}
+						gotOpts := map[string]interface{}{}
+						options.Apply(gotOpts)
+						if d := testy.DiffInterface(wantOpts, gotOpts); d != nil {
 							return "", fmt.Errorf("Unexpected options:\n%s", d)
 						}
 						return "2-xxx", nil
@@ -2054,7 +2057,7 @@ func TestPutAttachment(t *testing.T) {
 				ContentType: "text/plain",
 				Content:     io.NopCloser(strings.NewReader("Test file")),
 			},
-			options: map[string]interface{}{
+			options: Options{
 				"rev": "1-xxx",
 			},
 			newRev: "2-xxx",

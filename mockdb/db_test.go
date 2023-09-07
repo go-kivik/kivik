@@ -1935,7 +1935,7 @@ func TestPutAttachment(t *testing.T) {
 		setup: func(m *Client) {
 			db := m.NewDB()
 			m.ExpectDB().WillReturn(db)
-			db.ExpectPutAttachment().WithOptions(map[string]interface{}{"foo": "bar"})
+			db.ExpectPutAttachment().WithOptions(kivik.Options{"foo": "bar"})
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").PutAttachment(context.TODO(), "foo", &kivik.Attachment{Filename: "foo.txt"}, kivik.Options{"foo": 123})

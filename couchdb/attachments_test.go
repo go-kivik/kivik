@@ -24,7 +24,9 @@ import (
 
 	"gitlab.com/flimzy/testy"
 
+	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
 type closer struct {
@@ -45,7 +47,7 @@ func TestPutAttachment(t *testing.T) {
 		db      *db
 		id      string
 		att     *driver.Attachment
-		options map[string]interface{}
+		options kivik.Option
 
 		newRev string
 		status int
@@ -61,14 +63,14 @@ func TestPutAttachment(t *testing.T) {
 		{
 			name:    "nil attachment",
 			id:      "foo",
-			options: map[string]interface{}{"rev": "1-xxx"},
+			options: kivik.Options{"rev": "1-xxx"},
 			status:  http.StatusBadRequest,
 			err:     "kivik: att required",
 		},
 		{
 			name:    "missing filename",
 			id:      "foo",
-			options: map[string]interface{}{"rev": "1-xxx"},
+			options: kivik.Options{"rev": "1-xxx"},
 			att:     &driver.Attachment{},
 			status:  http.StatusBadRequest,
 			err:     "kivik: att.Filename required",
@@ -76,7 +78,7 @@ func TestPutAttachment(t *testing.T) {
 		{
 			name:    "no body",
 			id:      "foo",
-			options: map[string]interface{}{"rev": "1-xxx"},
+			options: kivik.Options{"rev": "1-xxx"},
 			att: &driver.Attachment{
 				Filename:    "x.jpg",
 				ContentType: "image/jpeg",
@@ -88,7 +90,7 @@ func TestPutAttachment(t *testing.T) {
 			name:    "network error",
 			db:      newTestDB(nil, errors.New("net error")),
 			id:      "foo",
-			options: map[string]interface{}{"rev": "1-xxx"},
+			options: kivik.Options{"rev": "1-xxx"},
 			att: &driver.Attachment{
 				Filename:    "x.jpg",
 				ContentType: "image/jpeg",
@@ -100,7 +102,7 @@ func TestPutAttachment(t *testing.T) {
 		{
 			name:    "1.6.1",
 			id:      "foo",
-			options: map[string]interface{}{"rev": "1-4c6114c65e295552ab1019e2b046b10e"},
+			options: kivik.Options{"rev": "1-4c6114c65e295552ab1019e2b046b10e"},
 			att: &driver.Attachment{
 				Filename:    "foo.txt",
 				ContentType: "text/plain",
@@ -165,7 +167,7 @@ func TestPutAttachment(t *testing.T) {
 				ContentType: "text/plain",
 				Content:     Body("x"),
 			},
-			options: map[string]interface{}{
+			options: kivik.Options{
 				"foo": "oink",
 				"rev": "1-xxx",
 			},
@@ -181,7 +183,7 @@ func TestPutAttachment(t *testing.T) {
 				ContentType: "text/plain",
 				Content:     Body("x"),
 			},
-			options: map[string]interface{}{"foo": make(chan int)},
+			options: kivik.Options{"foo": make(chan int)},
 			status:  http.StatusBadRequest,
 			err:     "kivik: invalid type chan int for options",
 		},
@@ -202,7 +204,7 @@ func TestPutAttachment(t *testing.T) {
 				ContentType: "text/plain",
 				Content:     Body("x"),
 			},
-			options: map[string]interface{}{
+			options: kivik.Options{
 				OptionFullCommit: true,
 				"rev":            "1-xxx",
 			},
@@ -218,7 +220,7 @@ func TestPutAttachment(t *testing.T) {
 				ContentType: "text/plain",
 				Content:     Body("x"),
 			},
-			options: map[string]interface{}{
+			options: kivik.Options{
 				"rev":            "1-xxx",
 				OptionFullCommit: 123,
 			},
@@ -244,7 +246,7 @@ func TestPutAttachment(t *testing.T) {
 					ContentType: "text/plain",
 					Content:     Body("x"),
 				},
-				options: map[string]interface{}{
+				options: kivik.Options{
 					"rev":            "1-xxx",
 					OptionFullCommit: true,
 				},
@@ -260,7 +262,11 @@ func TestPutAttachment(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			newRev, err := test.db.PutAttachment(context.Background(), test.id, test.att, test.options)
+			opts := test.options
+			if opts == nil {
+				opts = mock.NilOption
+			}
+			newRev, err := test.db.PutAttachment(context.Background(), test.id, test.att, opts)
 			testy.StatusErrorRE(t, test.err, test.status, err)
 			if newRev != test.newRev {
 				t.Errorf("Expected %s, got %s\n", test.newRev, newRev)

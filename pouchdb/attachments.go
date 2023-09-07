@@ -28,7 +28,9 @@ import (
 	"github.com/go-kivik/kivik/v4/pouchdb/bindings"
 )
 
-func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attachment, opts map[string]interface{}) (newRev string, err error) {
+func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attachment, options driver.Options) (newRev string, err error) {
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	rev, _ := opts["rev"].(string)
 	result, err := d.db.PutAttachment(ctx, docID, att.Filename, rev, att.Content, att.ContentType)
 	if err != nil {

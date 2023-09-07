@@ -583,7 +583,7 @@ func (db *DB) PutAttachment(ctx context.Context, docID string, att *Attachment, 
 	}
 	defer db.endQuery()
 	a := driver.Attachment(*att)
-	return db.driverDB.PutAttachment(ctx, docID, &a, mergeOptions(options...))
+	return db.driverDB.PutAttachment(ctx, docID, &a, allOptions(options))
 }
 
 // GetAttachment returns a file attachment associated with the document.

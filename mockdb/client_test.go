@@ -123,7 +123,7 @@ func TestAllDBs(t *testing.T) {
 	})
 	tests.Add("callback", mockTest{
 		setup: func(m *Client) {
-			m.ExpectAllDBs().WillExecute(func(_ context.Context, _ map[string]interface{}) ([]string, error) {
+			m.ExpectAllDBs().WillExecute(func(context.Context, map[string]interface{}) ([]string, error) {
 				return nil, errors.New("custom error")
 			})
 		},
@@ -171,7 +171,7 @@ Expected: call to Authenticate() which:
 	})
 	tests.Add("callback", mockTest{
 		setup: func(m *Client) {
-			m.ExpectAuthenticate().WillExecute(func(_ context.Context, _ interface{}) error {
+			m.ExpectAuthenticate().WillExecute(func(context.Context, interface{}) error {
 				return errors.New("custom error")
 			})
 		},
@@ -220,7 +220,7 @@ func TestClusterSetup(t *testing.T) {
 	})
 	tests.Add("callback", mockTest{
 		setup: func(m *Client) {
-			m.ExpectClusterSetup().WillExecute(func(_ context.Context, _ interface{}) error {
+			m.ExpectClusterSetup().WillExecute(func(context.Context, interface{}) error {
 				return errors.New("custom error")
 			})
 		},
@@ -300,7 +300,7 @@ func TestClusterStatus(t *testing.T) {
 	})
 	tests.Add("callback", mockTest{
 		setup: func(m *Client) {
-			m.ExpectClusterStatus().WillExecute(func(_ context.Context, _ map[string]interface{}) (string, error) {
+			m.ExpectClusterStatus().WillExecute(func(context.Context, map[string]interface{}) (string, error) {
 				return "", errors.New("custom error")
 			})
 		},
@@ -715,7 +715,7 @@ func TestCreateDB(t *testing.T) {
 	})
 	tests.Add("callback", mockTest{
 		setup: func(m *Client) {
-			m.ExpectCreateDB().WillExecute(func(_ context.Context, _ string, _ map[string]interface{}) error {
+			m.ExpectCreateDB().WillExecute(func(context.Context, string, map[string]interface{}) error {
 				return errors.New("custom error")
 			})
 		},

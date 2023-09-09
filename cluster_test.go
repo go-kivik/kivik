@@ -41,7 +41,7 @@ func TestClusterStatus(t *testing.T) {
 	})
 	tests.Add("client error", tst{
 		client: &mock.Cluster{
-			ClusterStatusFunc: func(_ context.Context, _ map[string]interface{}) (string, error) {
+			ClusterStatusFunc: func(context.Context, map[string]interface{}) (string, error) {
 				return "", errors.New("client error")
 			},
 		},
@@ -50,7 +50,7 @@ func TestClusterStatus(t *testing.T) {
 	})
 	tests.Add("success", tst{
 		client: &mock.Cluster{
-			ClusterStatusFunc: func(_ context.Context, _ map[string]interface{}) (string, error) {
+			ClusterStatusFunc: func(context.Context, map[string]interface{}) (string, error) {
 				return "cluster_finished", nil
 			},
 		},
@@ -93,7 +93,7 @@ func TestClusterSetup(t *testing.T) {
 	})
 	tests.Add("client error", tst{
 		client: &mock.Cluster{
-			ClusterSetupFunc: func(_ context.Context, _ interface{}) error {
+			ClusterSetupFunc: func(context.Context, interface{}) error {
 				return errors.New("client error")
 			},
 		},
@@ -102,7 +102,7 @@ func TestClusterSetup(t *testing.T) {
 	})
 	tests.Add("success", tst{
 		client: &mock.Cluster{
-			ClusterSetupFunc: func(_ context.Context, _ interface{}) error {
+			ClusterSetupFunc: func(context.Context, interface{}) error {
 				return nil
 			},
 		},
@@ -141,7 +141,7 @@ func TestMembership(t *testing.T) {
 	})
 	tests.Add("client error", tt{
 		client: &mock.Cluster{
-			MembershipFunc: func(_ context.Context) (*driver.ClusterMembership, error) {
+			MembershipFunc: func(context.Context) (*driver.ClusterMembership, error) {
 				return nil, errors.New("client error")
 			},
 		},
@@ -150,7 +150,7 @@ func TestMembership(t *testing.T) {
 	})
 	tests.Add("success", tt{
 		client: &mock.Cluster{
-			MembershipFunc: func(_ context.Context) (*driver.ClusterMembership, error) {
+			MembershipFunc: func(context.Context) (*driver.ClusterMembership, error) {
 				return &driver.ClusterMembership{
 					AllNodes:     []string{"one", "two", "three"},
 					ClusterNodes: []string{"one", "two"},

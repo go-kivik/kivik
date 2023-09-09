@@ -105,7 +105,7 @@ func (r *replication) Update(_ context.Context, state *driver.ReplicationInfo) (
 	return nil
 }
 
-func (r *replication) Delete(_ context.Context) (err error) {
+func (r *replication) Delete(context.Context) (err error) {
 	defer bindings.RecoverError(&err)
 	r.rh.Cancel()
 	r.client.replicationsMU.Lock()

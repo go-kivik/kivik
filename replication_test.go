@@ -267,7 +267,7 @@ func TestReplicationDelete(t *testing.T) {
 	expected := "delete error"
 	r := &Replication{
 		irep: &mock.Replication{
-			DeleteFunc: func(_ context.Context) error { return errors.New(expected) },
+			DeleteFunc: func(context.Context) error { return errors.New(expected) },
 		},
 	}
 	err := r.Delete(context.Background())
@@ -279,7 +279,7 @@ func TestReplicationUpdate(t *testing.T) {
 		expected := "rep error"
 		r := &Replication{
 			irep: &mock.Replication{
-				UpdateFunc: func(_ context.Context, _ *driver.ReplicationInfo) error {
+				UpdateFunc: func(context.Context, *driver.ReplicationInfo) error {
 					return errors.New(expected)
 				},
 			},
@@ -331,7 +331,7 @@ func TestGetReplications(t *testing.T) {
 			name: "db error",
 			client: &Client{
 				driverClient: &mock.ClientReplicator{
-					GetReplicationsFunc: func(_ context.Context, _ map[string]interface{}) ([]driver.Replication, error) {
+					GetReplicationsFunc: func(context.Context, map[string]interface{}) ([]driver.Replication, error) {
 						return nil, errors.New("db error")
 					},
 				},
@@ -411,7 +411,7 @@ func TestReplicate(t *testing.T) {
 			name: "db error",
 			client: &Client{
 				driverClient: &mock.ClientReplicator{
-					ReplicateFunc: func(_ context.Context, _, _ string, _ map[string]interface{}) (driver.Replication, error) {
+					ReplicateFunc: func(context.Context, string, string, map[string]interface{}) (driver.Replication, error) {
 						return nil, errors.New("db error")
 					},
 				},

@@ -116,7 +116,7 @@ func (d *db) Stats(ctx context.Context) (*driver.DBStats, error) {
 	}, err
 }
 
-func (d *db) Compact(_ context.Context) error {
+func (d *db) Compact(context.Context) error {
 	if atomic.LoadUint32(&d.compacting) == 1 {
 		return &kivik.Error{Status: http.StatusTooManyRequests, Message: "kivik: compaction already running"}
 	}

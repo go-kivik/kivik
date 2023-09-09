@@ -40,7 +40,7 @@ func TestConfig(t *testing.T) {
 	})
 	tests.Add("error", tst{
 		client: &Client{driverClient: &mock.Configer{
-			ConfigFunc: func(_ context.Context, _ string) (driver.Config, error) {
+			ConfigFunc: func(context.Context, string) (driver.Config, error) {
 				return nil, errors.New("conf error")
 			},
 		}},
@@ -96,7 +96,7 @@ func TestConfigSection(t *testing.T) {
 	})
 	tests.Add("error", tst{
 		client: &Client{driverClient: &mock.Configer{
-			ConfigSectionFunc: func(_ context.Context, _, _ string) (driver.ConfigSection, error) {
+			ConfigSectionFunc: func(context.Context, string, string) (driver.ConfigSection, error) {
 				return nil, errors.New("conf error")
 			},
 		}},
@@ -152,7 +152,7 @@ func TestConfigValue(t *testing.T) {
 	})
 	tests.Add("error", tst{
 		client: &Client{driverClient: &mock.Configer{
-			ConfigValueFunc: func(_ context.Context, _, _, _ string) (string, error) {
+			ConfigValueFunc: func(context.Context, string, string, string) (string, error) {
 				return "", errors.New("conf error")
 			},
 		}},
@@ -212,7 +212,7 @@ func TestSetConfigValue(t *testing.T) {
 	})
 	tests.Add("error", tst{
 		client: &Client{driverClient: &mock.Configer{
-			SetConfigValueFunc: func(_ context.Context, _, _, _, _ string) (string, error) {
+			SetConfigValueFunc: func(context.Context, string, string, string, string) (string, error) {
 				return "", errors.New("conf error")
 			},
 		}},
@@ -276,7 +276,7 @@ func TestDeleteConfigKey(t *testing.T) {
 	})
 	tests.Add("error", tst{
 		client: &Client{driverClient: &mock.Configer{
-			DeleteConfigKeyFunc: func(_ context.Context, _, _, _ string) (string, error) {
+			DeleteConfigKeyFunc: func(context.Context, string, string, string) (string, error) {
 				return "", errors.New("conf error")
 			},
 		}},

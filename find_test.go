@@ -48,7 +48,7 @@ func TestFind(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.Finder{
-					FindFunc: func(_ context.Context, _ interface{}, _ map[string]interface{}) (driver.Rows, error) {
+					FindFunc: func(context.Context, interface{}, map[string]interface{}) (driver.Rows, error) {
 						return nil, errors.New("db error")
 					},
 				},
@@ -168,7 +168,7 @@ func TestCreateIndex(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.Finder{
-					CreateIndexFunc: func(_ context.Context, _, _ string, _ interface{}, _ map[string]interface{}) error {
+					CreateIndexFunc: func(context.Context, string, string, interface{}, map[string]interface{}) error {
 						return errors.New("db error")
 					},
 				},
@@ -253,7 +253,7 @@ func TestDeleteIndex(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.Finder{
-					DeleteIndexFunc: func(_ context.Context, _, _ string, _ map[string]interface{}) error {
+					DeleteIndexFunc: func(context.Context, string, string, map[string]interface{}) error {
 						return errors.New("db error")
 					},
 				},
@@ -332,7 +332,7 @@ func TestGetIndexes(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.Finder{
-					GetIndexesFunc: func(_ context.Context, _ map[string]interface{}) ([]driver.Index, error) {
+					GetIndexesFunc: func(context.Context, map[string]interface{}) ([]driver.Index, error) {
 						return nil, errors.New("db error")
 					},
 				},
@@ -345,7 +345,7 @@ func TestGetIndexes(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.Finder{
-					GetIndexesFunc: func(_ context.Context, _ map[string]interface{}) ([]driver.Index, error) {
+					GetIndexesFunc: func(context.Context, map[string]interface{}) ([]driver.Index, error) {
 						return []driver.Index{
 							{Name: "a"},
 							{Name: "b"},
@@ -415,7 +415,7 @@ func TestExplain(t *testing.T) {
 		db: &DB{
 			client: &Client{},
 			driverDB: &mock.Finder{
-				ExplainFunc: func(_ context.Context, _ interface{}, _ map[string]interface{}) (*driver.QueryPlan, error) {
+				ExplainFunc: func(context.Context, interface{}, map[string]interface{}) (*driver.QueryPlan, error) {
 					return nil, errors.New("explain error")
 				},
 			},

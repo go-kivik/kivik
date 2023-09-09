@@ -254,7 +254,7 @@ func TestChanges(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					ChangesFunc: func(_ context.Context, _ map[string]interface{}) (driver.Changes, error) {
+					ChangesFunc: func(context.Context, map[string]interface{}) (driver.Changes, error) {
 						return nil, errors.New("db error")
 					},
 				},

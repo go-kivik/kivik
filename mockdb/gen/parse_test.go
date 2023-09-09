@@ -18,9 +18,9 @@ type testDriver interface {
 
 type testClient struct{}
 
-func (c *testClient) WithCtx(_ context.Context) error          { return nil }
-func (c *testClient) NoCtx(_ string) error                     { return nil }
-func (c *testClient) WithOptions(_ string, _ ...kivik.Options) {}
+func (c *testClient) WithCtx(context.Context) error        { return nil }
+func (c *testClient) NoCtx(string) error                   { return nil }
+func (c *testClient) WithOptions(string, ...kivik.Options) {}
 
 func TestMethods(t *testing.T) {
 	type tst struct {

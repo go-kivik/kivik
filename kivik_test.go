@@ -123,7 +123,7 @@ func TestVersion(t *testing.T) {
 			name: "db error",
 			client: &Client{
 				driverClient: &mock.Client{
-					VersionFunc: func(_ context.Context) (*driver.Version, error) {
+					VersionFunc: func(context.Context) (*driver.Version, error) {
 						return nil, errors.New("db error")
 					},
 				},
@@ -135,7 +135,7 @@ func TestVersion(t *testing.T) {
 			name: "success",
 			client: &Client{
 				driverClient: &mock.Client{
-					VersionFunc: func(_ context.Context) (*driver.Version, error) {
+					VersionFunc: func(context.Context) (*driver.Version, error) {
 						return &driver.Version{Version: "foo"}, nil
 					},
 				},
@@ -239,7 +239,7 @@ func TestAllDBs(t *testing.T) {
 			name: "db error",
 			client: &Client{
 				driverClient: &mock.Client{
-					AllDBsFunc: func(_ context.Context, _ map[string]interface{}) ([]string, error) {
+					AllDBsFunc: func(context.Context, map[string]interface{}) ([]string, error) {
 						return nil, errors.New("db error")
 					},
 				},
@@ -297,7 +297,7 @@ func TestDBExists(t *testing.T) {
 			name: "db error",
 			client: &Client{
 				driverClient: &mock.Client{
-					DBExistsFunc: func(_ context.Context, _ string, _ map[string]interface{}) (bool, error) {
+					DBExistsFunc: func(context.Context, string, map[string]interface{}) (bool, error) {
 						return false, errors.New("db error")
 					},
 				},
@@ -359,7 +359,7 @@ func TestCreateDB(t *testing.T) {
 			name: "db error",
 			client: &Client{
 				driverClient: &mock.Client{
-					CreateDBFunc: func(_ context.Context, _ string, _ map[string]interface{}) error {
+					CreateDBFunc: func(context.Context, string, map[string]interface{}) error {
 						return errors.New("db error")
 					},
 				},
@@ -420,7 +420,7 @@ func TestDestroyDB(t *testing.T) {
 			name: "db error",
 			client: &Client{
 				driverClient: &mock.Client{
-					DestroyDBFunc: func(_ context.Context, _ string, _ map[string]interface{}) error {
+					DestroyDBFunc: func(context.Context, string, map[string]interface{}) error {
 						return errors.New("db error")
 					},
 				},
@@ -485,7 +485,7 @@ func TestAuthenticate(t *testing.T) {
 			name: "auth error",
 			client: &Client{
 				driverClient: &mock.Authenticator{
-					AuthenticateFunc: func(_ context.Context, _ interface{}) error {
+					AuthenticateFunc: func(context.Context, interface{}) error {
 						return errors.New("auth error")
 					},
 				},
@@ -543,13 +543,13 @@ func TestDBsStats(t *testing.T) {
 						switch name {
 						case "foo":
 							return &mock.DB{
-								StatsFunc: func(_ context.Context) (*driver.DBStats, error) {
+								StatsFunc: func(context.Context) (*driver.DBStats, error) {
 									return &driver.DBStats{Name: "foo", DiskSize: 123}, nil
 								},
 							}, nil
 						case "bar":
 							return &mock.DB{
-								StatsFunc: func(_ context.Context) (*driver.DBStats, error) {
+								StatsFunc: func(context.Context) (*driver.DBStats, error) {
 									return &driver.DBStats{Name: "bar", DiskSize: 321}, nil
 								},
 							}, nil
@@ -573,13 +573,13 @@ func TestDBsStats(t *testing.T) {
 						switch name {
 						case "foo":
 							return &mock.DB{
-								StatsFunc: func(_ context.Context) (*driver.DBStats, error) {
+								StatsFunc: func(context.Context) (*driver.DBStats, error) {
 									return &driver.DBStats{Name: "foo", DiskSize: 123}, nil
 								},
 							}, nil
 						case "bar":
 							return &mock.DB{
-								StatsFunc: func(_ context.Context) (*driver.DBStats, error) {
+								StatsFunc: func(context.Context) (*driver.DBStats, error) {
 									return &driver.DBStats{Name: "bar", DiskSize: 321}, nil
 								},
 							}, nil
@@ -632,7 +632,7 @@ func TestDBsStats(t *testing.T) {
 				driverClient: &mock.Client{
 					DBFunc: func(_ string, _ map[string]interface{}) (driver.DB, error) {
 						return &mock.DB{
-							StatsFunc: func(_ context.Context) (*driver.DBStats, error) {
+							StatsFunc: func(context.Context) (*driver.DBStats, error) {
 								return nil, errors.New("fallback failure")
 							},
 						}, nil
@@ -688,7 +688,7 @@ func TestPing(t *testing.T) {
 			name: "non-pinger",
 			client: &Client{
 				driverClient: &mock.Client{
-					VersionFunc: func(_ context.Context) (*driver.Version, error) {
+					VersionFunc: func(context.Context) (*driver.Version, error) {
 						return &driver.Version{}, nil
 					},
 				},
@@ -699,7 +699,7 @@ func TestPing(t *testing.T) {
 			name: "pinger",
 			client: &Client{
 				driverClient: &mock.Pinger{
-					PingFunc: func(_ context.Context) (bool, error) {
+					PingFunc: func(context.Context) (bool, error) {
 						return true, nil
 					},
 				},

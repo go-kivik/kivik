@@ -87,11 +87,11 @@ func (r *driverReplication) Err() error {
 	return r.Replication.err
 }
 
-func (r *driverReplication) Delete(_ context.Context) error {
+func (r *driverReplication) Delete(context.Context) error {
 	return errors.New("not implemented")
 }
 
-func (r *driverReplication) Update(_ context.Context, _ *driver.ReplicationInfo) error {
+func (r *driverReplication) Update(context.Context, *driver.ReplicationInfo) error {
 	return errors.New("not implemented")
 }
 

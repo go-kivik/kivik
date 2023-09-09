@@ -42,7 +42,7 @@ func TestSession(t *testing.T) {
 		{
 			name: "driver returns error",
 			client: &mock.Sessioner{
-				SessionFunc: func(_ context.Context) (*driver.Session, error) {
+				SessionFunc: func(context.Context) (*driver.Session, error) {
 					return nil, errors.New("session error")
 				},
 			},
@@ -52,7 +52,7 @@ func TestSession(t *testing.T) {
 		{
 			name: "good response",
 			client: &mock.Sessioner{
-				SessionFunc: func(_ context.Context) (*driver.Session, error) {
+				SessionFunc: func(context.Context) (*driver.Session, error) {
 					return &driver.Session{
 						Name:  "curly",
 						Roles: []string{"stooges"},

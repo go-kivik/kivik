@@ -93,7 +93,7 @@ func (c *client) AllDBs(ctx context.Context, _ map[string]interface{}) ([]string
 	return nil, errors.New("AllDBs() not implemented for remote PouchDB databases")
 }
 
-func (c *client) Version(_ context.Context) (*driver.Version, error) {
+func (c *client) Version(context.Context) (*driver.Version, error) {
 	ver := c.pouch.Version()
 	return &driver.Version{
 		Version:     ver,

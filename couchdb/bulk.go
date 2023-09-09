@@ -27,14 +27,14 @@ func (d *db) BulkDocs(ctx context.Context, docs []interface{}, options map[strin
 	if options == nil {
 		options = make(map[string]interface{})
 	}
-	opts, err := chttp.NewOptions(options)
+	chttpOpts, err := chttp.NewOptions(options)
 	if err != nil {
 		return nil, err
 	}
 	options["docs"] = docs
-	opts.GetBody = chttp.BodyEncoder(options)
+	chttpOpts.GetBody = chttp.BodyEncoder(options)
 
-	resp, err := d.Client.DoReq(ctx, http.MethodPost, d.path("/_bulk_docs"), opts)
+	resp, err := d.Client.DoReq(ctx, http.MethodPost, d.path("/_bulk_docs"), chttpOpts)
 	if err != nil {
 		return nil, err
 	}

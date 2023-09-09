@@ -318,14 +318,14 @@ func (c *client) Replicate(ctx context.Context, targetDSN, sourceDSN string, opt
 	if err != nil {
 		return nil, err
 	}
-	opts := &chttp.Options{
+	chttpOpts := &chttp.Options{
 		Body: chttp.EncodeBody(options),
 	}
 
 	var repStub struct {
 		ID string `json:"id"`
 	}
-	if e := c.Client.DoJSON(ctx, http.MethodPost, "/_replicator", opts, &repStub); e != nil {
+	if e := c.Client.DoJSON(ctx, http.MethodPost, "/_replicator", chttpOpts, &repStub); e != nil {
 		return nil, e
 	}
 	if scheduler {

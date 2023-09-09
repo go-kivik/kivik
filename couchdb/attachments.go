@@ -36,7 +36,7 @@ func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attach
 		return "", missingArg("att.Content")
 	}
 
-	opts, err := chttp.NewOptions(options)
+	chttpOpts, err := chttp.NewOptions(options)
 	if err != nil {
 		return "", err
 	}
@@ -48,10 +48,10 @@ func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attach
 	var response struct {
 		Rev string `json:"rev"`
 	}
-	opts.Body = att.Content
-	opts.ContentType = att.ContentType
-	opts.Query = query
-	err = d.Client.DoJSON(ctx, http.MethodPut, d.path(chttp.EncodeDocID(docID)+"/"+att.Filename), opts, &response)
+	chttpOpts.Body = att.Content
+	chttpOpts.ContentType = att.ContentType
+	chttpOpts.Query = query
+	err = d.Client.DoJSON(ctx, http.MethodPut, d.path(chttp.EncodeDocID(docID)+"/"+att.Filename), chttpOpts, &response)
 	if err != nil {
 		return "", err
 	}
@@ -85,16 +85,16 @@ func (d *db) fetchAttachment(ctx context.Context, method, docID, filename string
 	if filename == "" {
 		return nil, missingArg("filename")
 	}
-	opts, err := chttp.NewOptions(options)
+	chttpOpts, err := chttp.NewOptions(options)
 	if err != nil {
 		return nil, err
 	}
 
-	opts.Query, err = optionsToParams(options)
+	chttpOpts.Query, err = optionsToParams(options)
 	if err != nil {
 		return nil, err
 	}
-	resp, err := d.Client.DoReq(ctx, method, d.path(chttp.EncodeDocID(docID)+"/"+filename), opts)
+	resp, err := d.Client.DoReq(ctx, method, d.path(chttp.EncodeDocID(docID)+"/"+filename), chttpOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -146,12 +146,12 @@ func (d *db) DeleteAttachment(ctx context.Context, docID, filename string, optio
 		return "", missingArg("filename")
 	}
 
-	opts, err := chttp.NewOptions(options)
+	chttpOpts, err := chttp.NewOptions(options)
 	if err != nil {
 		return "", err
 	}
 
-	opts.Query, err = optionsToParams(options)
+	chttpOpts.Query, err = optionsToParams(options)
 	if err != nil {
 		return "", err
 	}
@@ -159,7 +159,7 @@ func (d *db) DeleteAttachment(ctx context.Context, docID, filename string, optio
 		Rev string `json:"rev"`
 	}
 
-	err = d.Client.DoJSON(ctx, http.MethodDelete, d.path(chttp.EncodeDocID(docID)+"/"+filename), opts, &response)
+	err = d.Client.DoJSON(ctx, http.MethodDelete, d.path(chttp.EncodeDocID(docID)+"/"+filename), chttpOpts, &response)
 	if err != nil {
 		return "", err
 	}

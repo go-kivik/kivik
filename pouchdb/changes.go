@@ -160,8 +160,8 @@ func (c *changesFeed) error(e *js.Object) {
 	c.setErr(bindings.NewPouchError(e))
 }
 
-func (d *db) Changes(ctx context.Context, options map[string]interface{}) (driver.Changes, error) {
-	changes, err := d.db.Changes(ctx, options)
+func (d *db) Changes(ctx context.Context, opts map[string]interface{}) (driver.Changes, error) {
+	changes, err := d.db.Changes(ctx, opts)
 	if err != nil {
 		return nil, err
 	}

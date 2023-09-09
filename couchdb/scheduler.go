@@ -223,8 +223,8 @@ func (r *schedulerReplication) update(ctx context.Context) error {
 	return nil
 }
 
-func (c *client) getReplicationsFromScheduler(ctx context.Context, options map[string]interface{}) ([]driver.Replication, error) {
-	params, err := optionsToParams(options)
+func (c *client) getReplicationsFromScheduler(ctx context.Context, opts map[string]interface{}) ([]driver.Replication, error) {
+	params, err := optionsToParams(opts)
 	if err != nil {
 		return nil, err
 	}

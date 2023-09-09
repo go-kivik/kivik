@@ -253,25 +253,25 @@ type replicatorDoc struct {
 	Error         *replicationError    `json:"_replication_state_reason,omitempty"`
 }
 
-func (c *client) GetReplications(ctx context.Context, options map[string]interface{}) ([]driver.Replication, error) {
+func (c *client) GetReplications(ctx context.Context, opts map[string]interface{}) ([]driver.Replication, error) {
 	scheduler, err := c.schedulerSupported(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if scheduler {
-		return c.getReplicationsFromScheduler(ctx, options)
+		return c.getReplicationsFromScheduler(ctx, opts)
 	}
-	return c.legacyGetReplications(ctx, options)
+	return c.legacyGetReplications(ctx, opts)
 }
 
-func (c *client) legacyGetReplications(ctx context.Context, options map[string]interface{}) ([]driver.Replication, error) {
-	if options == nil {
-		options = map[string]interface{}{}
+func (c *client) legacyGetReplications(ctx context.Context, opts map[string]interface{}) ([]driver.Replication, error) {
+	if opts == nil {
+		opts = map[string]interface{}{}
 	}
-	delete(options, "conflicts")
-	delete(options, "update_seq")
-	options["include_docs"] = true
-	params, err := optionsToParams(options)
+	delete(opts, "conflicts")
+	delete(opts, "update_seq")
+	opts["include_docs"] = true
+	params, err := optionsToParams(opts)
 	if err != nil {
 		return nil, err
 	}
@@ -296,21 +296,21 @@ func (c *client) legacyGetReplications(ctx context.Context, options map[string]i
 	return reps, nil
 }
 
-func (c *client) Replicate(ctx context.Context, targetDSN, sourceDSN string, options map[string]interface{}) (driver.Replication, error) {
-	if options == nil {
-		options = make(map[string]interface{})
+func (c *client) Replicate(ctx context.Context, targetDSN, sourceDSN string, opts map[string]interface{}) (driver.Replication, error) {
+	if opts == nil {
+		opts = make(map[string]interface{})
 	}
 	// Allow overriding source and target with options, i.e. for auth options
-	if _, ok := options["source"]; !ok {
-		options["source"] = sourceDSN
+	if _, ok := opts["source"]; !ok {
+		opts["source"] = sourceDSN
 	}
-	if _, ok := options["target"]; !ok {
-		options["target"] = targetDSN
+	if _, ok := opts["target"]; !ok {
+		opts["target"] = targetDSN
 	}
-	if t := options["target"]; t == "" {
+	if t := opts["target"]; t == "" {
 		return nil, missingArg("targetDSN")
 	}
-	if s := options["source"]; s == "" {
+	if s := opts["source"]; s == "" {
 		return nil, missingArg("sourceDSN")
 	}
 
@@ -319,7 +319,7 @@ func (c *client) Replicate(ctx context.Context, targetDSN, sourceDSN string, opt
 		return nil, err
 	}
 	chttpOpts := &chttp.Options{
-		Body: chttp.EncodeBody(options),
+		Body: chttp.EncodeBody(opts),
 	}
 
 	var repStub struct {

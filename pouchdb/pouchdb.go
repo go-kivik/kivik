@@ -137,9 +137,9 @@ func (c *client) isRemote() bool {
 // DBExists returns true if the requested DB exists. This function only works
 // for remote databases. For local databases, it creates the database.
 // Silly PouchDB.
-func (c *client) DBExists(ctx context.Context, dbName string, options map[string]interface{}) (bool, error) {
-	pouchOpts := c.options(options, Options{"skip_setup": true})
-	_, err := c.pouch.New(c.dbURL(dbName), oppouchOptsts).Info(ctx)
+func (c *client) DBExists(ctx context.Context, dbName string, opts map[string]interface{}) (bool, error) {
+	pouchOpts := c.options(opts, Options{"skip_setup": true})
+	_, err := c.pouch.New(c.dbURL(dbName), pouchOpts).Info(ctx)
 	if err == nil {
 		return true, nil
 	}
@@ -149,19 +149,19 @@ func (c *client) DBExists(ctx context.Context, dbName string, options map[string
 	return false, err
 }
 
-func (c *client) CreateDB(ctx context.Context, dbName string, options map[string]interface{}) error {
+func (c *client) CreateDB(ctx context.Context, dbName string, opts map[string]interface{}) error {
 	if c.isRemote() {
-		if exists, _ := c.DBExists(ctx, dbName, options); exists {
+		if exists, _ := c.DBExists(ctx, dbName, opts); exists {
 			return &kivik.Error{Status: http.StatusPreconditionFailed, Message: "database exists"}
 		}
 	}
-	pouchOpts := c.options(options)
+	pouchOpts := c.options(opts)
 	_, err := c.pouch.New(c.dbURL(dbName), pouchOpts).Info(ctx)
 	return err
 }
 
-func (c *client) DestroyDB(ctx context.Context, dbName string, options map[string]interface{}) error {
-	pouchOpts := c.options(options)
+func (c *client) DestroyDB(ctx context.Context, dbName string, opts map[string]interface{}) error {
+	pouchOpts := c.options(opts)
 	exists, err := c.DBExists(ctx, dbName, pouchOpts)
 	if err != nil {
 		return err
@@ -173,8 +173,8 @@ func (c *client) DestroyDB(ctx context.Context, dbName string, options map[strin
 	return c.pouch.New(c.dbURL(dbName), pouchOpts).Destroy(ctx, nil)
 }
 
-func (c *client) DB(dbName string, options map[string]interface{}) (driver.DB, error) {
-	pouchOpts := c.options(options)
+func (c *client) DB(dbName string, opts map[string]interface{}) (driver.DB, error) {
+	pouchOpts := c.options(opts)
 	return &db{
 		// TODO: #68 Consider deferring this pouch.New call until the first use,
 		// so ctx can be used.

@@ -153,15 +153,9 @@ func TestGet(t *testing.T) {
 			return nil, errors.New("success")
 		}),
 		id:      "foo",
-		options: kivik.Options{OptionIfNoneMatch: "foo"},
+		options: OptionIfNoneMatch("foo"),
 		status:  http.StatusBadGateway,
 		err:     `Get "?http://example.com/testdb/foo"?: success`,
-	})
-	tests.Add("invalid If-None-Match value", tt{
-		id:      "foo",
-		options: kivik.Options{OptionIfNoneMatch: 123},
-		status:  http.StatusBadRequest,
-		err:     "kivik: option 'If-None-Match' must be string, not int",
 	})
 	tests.Add("invalid content type in response", tt{
 		id: "foo",

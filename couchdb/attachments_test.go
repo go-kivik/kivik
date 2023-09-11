@@ -513,19 +513,9 @@ func TestFetchAttachment(t *testing.T) {
 			method:   "GET",
 			id:       "foo",
 			filename: "foo.txt",
-			options:  kivik.Options{OptionIfNoneMatch: "foo"},
+			options:  OptionIfNoneMatch("foo"),
 			status:   http.StatusBadGateway,
 			err:      "success",
-		},
-		{
-			name:     "invalid if-none-match type",
-			db:       &db{},
-			method:   "GET",
-			id:       "foo",
-			filename: "foo.txt",
-			options:  kivik.Options{OptionIfNoneMatch: 123},
-			status:   http.StatusBadRequest,
-			err:      "kivik: option 'If-None-Match' must be string, not int",
 		},
 	}
 	for _, test := range tests {

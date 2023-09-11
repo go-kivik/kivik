@@ -24,10 +24,7 @@ import (
 )
 
 func (d *db) BulkDocs(ctx context.Context, docs []interface{}, options driver.Options) ([]driver.BulkResult, error) {
-	chttpOpts, err := chttp.NewOptions(options)
-	if err != nil {
-		return nil, err
-	}
+	chttpOpts := chttp.NewOptions(options)
 	opts := map[string]interface{}{}
 	options.Apply(opts)
 	opts["docs"] = docs

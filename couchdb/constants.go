@@ -18,14 +18,6 @@ import "github.com/go-kivik/kivik/v4/couchdb/internal"
 const Version = "4.0.0-prerelease"
 
 const (
-	// OptionIfNoneMatch is an option key to set the `If-None-Match header` on
-	// the request.
-	//
-	// Example:
-	//
-	//    row, err := db.Get(ctx, "doc_id", kivik.Options{couchdb.OptionIfNoneMatch: "1-xxx"})
-	OptionIfNoneMatch = internal.OptionIfNoneMatch
-
 	// OptionPartition instructs supporting methods to limit the query to the
 	// specified partition. Supported methods are: Query, AllDocs, Find, and
 	// Explain. Only supported by CouchDB 3.0.0 and newer.

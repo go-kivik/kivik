@@ -19,7 +19,6 @@ import (
 	"net/url"
 
 	"github.com/go-kivik/kivik/v4"
-	"github.com/go-kivik/kivik/v4/couchdb/internal"
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
@@ -70,34 +69,10 @@ type Options struct {
 }
 
 // NewOptions converts a kivik options map into
-func NewOptions(options driver.Options) (*Options, error) {
-	opts := map[string]interface{}{}
-	options.Apply(opts)
-	ifNoneMatch, err := ifNoneMatch(opts)
-	if err != nil {
-		return nil, err
-	}
-	o := &Options{
-		IfNoneMatch: ifNoneMatch,
-	}
+func NewOptions(options driver.Options) *Options {
+	o := &Options{}
 	options.Apply(o)
-	return o, nil
-}
-
-func ifNoneMatch(opts map[string]interface{}) (string, error) {
-	inm, ok := opts[internal.OptionIfNoneMatch]
-	if !ok {
-		return "", nil
-	}
-	inmString, ok := inm.(string)
-	if !ok {
-		return "", &kivik.Error{Status: http.StatusBadRequest, Err: fmt.Errorf("kivik: option '%s' must be string, not %T", internal.OptionIfNoneMatch, inm)}
-	}
-	delete(opts, internal.OptionIfNoneMatch)
-	if inmString[0] != '"' {
-		return `"` + inmString + `"`, nil
-	}
-	return inmString, nil
+	return o
 }
 
 type optionNoRequestCompression struct{}
@@ -153,4 +128,22 @@ func (optionFullCommit) String() string {
 // header in the request when set to true.
 func OptionFullCommit() kivik.Option {
 	return optionFullCommit{}
+}
+
+type optionIfNoneMatch string
+
+func (o optionIfNoneMatch) Apply(target interface{}) {
+	if opts, ok := target.(*Options); ok {
+		opts.IfNoneMatch = string(o)
+	}
+}
+
+func (o optionIfNoneMatch) String() string {
+	return fmt.Sprintf("[If-None-Match: %s]", string(o))
+}
+
+// OptionIfNoneMatch is an option key to set the `If-None-Match` header on
+// the request.
+func OptionIfNoneMatch(value string) kivik.Option {
+	return optionIfNoneMatch(value)
 }

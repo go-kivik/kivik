@@ -55,3 +55,9 @@ func OptionUserAgent(ua string) kivik.Option {
 func OptionFullCommit() kivik.Option {
 	return chttp.OptionFullCommit()
 }
+
+// OptionIfNoneMatch is an option key to set the `If-None-Match` header on
+// the request.
+func OptionIfNoneMatch(value string) kivik.Option {
+	return chttp.OptionIfNoneMatch(value)
+}

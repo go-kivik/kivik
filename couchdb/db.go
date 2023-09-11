@@ -357,12 +357,10 @@ func (d *db) get(ctx context.Context, method, docID string, options driver.Optio
 	opts := map[string]interface{}{}
 	options.Apply(opts)
 
-	chttpOpts, err := chttp.NewOptions(options)
-	if err != nil {
-		return nil, err
-	}
+	chttpOpts := chttp.NewOptions(options)
 
 	chttpOpts.Accept = typeMPRelated + "," + typeJSON
+	var err error
 	chttpOpts.Query, err = optionsToParams(opts)
 	if err != nil {
 		return nil, err
@@ -384,10 +382,7 @@ func (d *db) CreateDoc(ctx context.Context, doc interface{}, options driver.Opti
 		Rev string `json:"rev"`
 	}{}
 
-	chttpOpts, err := chttp.NewOptions(options)
-	if err != nil {
-		return "", "", err
-	}
+	chttpOpts := chttp.NewOptions(options)
 
 	opts := map[string]interface{}{}
 	options.Apply(opts)
@@ -408,12 +403,10 @@ func (d *db) CreateDoc(ctx context.Context, doc interface{}, options driver.Opti
 }
 
 func putOpts(doc interface{}, options driver.Options) (*chttp.Options, error) {
-	chttpOpts, err := chttp.NewOptions(options)
-	if err != nil {
-		return nil, err
-	}
+	chttpOpts := chttp.NewOptions(options)
 	opts := map[string]interface{}{}
 	options.Apply(opts)
+	var err error
 	chttpOpts.Query, err = optionsToParams(opts)
 	if err != nil {
 		return nil, err
@@ -793,11 +786,9 @@ func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (
 		return "", missingArg("rev")
 	}
 
-	chttpOpts, err := chttp.NewOptions(options)
-	if err != nil {
-		return "", err
-	}
+	chttpOpts := chttp.NewOptions(options)
 
+	var err error
 	chttpOpts.Query, err = optionsToParams(opts)
 	if err != nil {
 		return "", err
@@ -897,10 +888,7 @@ func (d *db) Copy(ctx context.Context, targetID, sourceID string, options driver
 	if targetID == "" {
 		return "", missingArg("targetID")
 	}
-	chttpOpts, err := chttp.NewOptions(options)
-	if err != nil {
-		return "", err
-	}
+	chttpOpts := chttp.NewOptions(options)
 
 	opts := map[string]interface{}{}
 	options.Apply(opts)

@@ -130,13 +130,13 @@ func TestGet(t *testing.T) {
 				"ETag":         {`"12-xxx"`},
 			},
 			ContentLength: 13,
-			Body:          Body("some response"),
+			Body:          Body(`{"foo":"bar"}`),
 		}, nil),
 		doc: &driver.Row{
 			ID:  "foo",
 			Rev: "12-xxx",
 		},
-		expected: "some response\n",
+		expected: `{"foo":"bar"}`,
 	})
 	tests.Add("If-None-Match", tt{
 		db: newCustomDB(func(req *http.Request) (*http.Response, error) {
@@ -414,7 +414,109 @@ Content-Type: application/json
 			},
 		}
 	})
+	tests.Add("open_revs with multiple revs", func(t *testing.T) interface{} {
+		return tt{
+			db: newCustomDB(func(req *http.Request) (*http.Response, error) {
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Header: http.Header{
+						"Content-Type": []string{`multipart/mixed; boundary="7b1596fc4940bc1be725ad67f11ec1c4"`},
+					},
+					Body: Body(`--7b1596fc4940bc1be725ad67f11ec1c4
+Content-Type: application/json
 
+{
+	"_id": "SpaghettiWithMeatballs",
+	"_rev": "1-917fa23",
+	"_revisions": {
+		"ids": [
+			"917fa23"
+		],
+		"start": 1
+	},
+	"description": "An Italian-American delicious dish",
+	"ingredients": [
+		"spaghetti",
+		"tomato sauce",
+		"meatballs"
+	],
+	"name": "Spaghetti with meatballs"
+}
+--7b1596fc4940bc1be725ad67f11ec1c4
+Content-Type: multipart/related; boundary="a81a77b0ca68389dda3243a43ca946f2"
+
+--a81a77b0ca68389dda3243a43ca946f2
+Content-Type: application/json
+
+{
+	"_attachments": {
+		"recipe.txt": {
+			"content_type": "text/plain",
+			"digest": "md5-R5CrCb6fX10Y46AqtNn0oQ==",
+			"follows": true,
+			"length": 87,
+			"revpos": 7
+		}
+	},
+	"_id": "SpaghettiWithMeatballs",
+	"_rev": "7-474f12e",
+	"_revisions": {
+		"ids": [
+			"474f12e",
+			"5949cfc",
+			"00ecbbc",
+			"fc997b6",
+			"3552c87",
+			"404838b",
+			"5defd9d",
+			"dc1e4be"
+		],
+		"start": 7
+	},
+	"description": "An Italian-American delicious dish",
+	"ingredients": [
+		"spaghetti",
+		"tomato sauce",
+		"meatballs",
+		"love"
+	],
+	"name": "Spaghetti with meatballs"
+}
+--a81a77b0ca68389dda3243a43ca946f2
+Content-Disposition: attachment; filename="recipe.txt"
+Content-Type: text/plain
+Content-Length: 87
+
+1. Cook spaghetti
+2. Cook meetballs
+3. Mix them
+4. Add tomato sauce
+5. ...
+6. PROFIT!
+
+--a81a77b0ca68389dda3243a43ca946f2--
+--7b1596fc4940bc1be725ad67f11ec1c4
+Content-Type: application/json; error="true"
+
+{"missing":"3-6bcedf1"}
+--7b1596fc4940bc1be725ad67f11ec1c4--`),
+				}, nil
+			}),
+			id: "bar",
+			expected: `{
+	"_id": "SpaghettiWithMeatballs",
+	"_rev": "1-917fa23",
+	"_revisions": {"ids":["917fa23"], "start": 1},
+	"description": "An Italian-American delicious dish",
+	"ingredients": ["spaghetti","tomato sauce","meatballs"],
+	"name": "Spaghetti with meatballs"
+			}`,
+			doc: &driver.Row{
+				ID:  "bar",
+				Rev: "1-917fa23",
+			},
+		}
+	})
 	tests.Run(t, func(t *testing.T, tt tt) {
 		opts := tt.options
 		if opts == nil {
@@ -431,11 +533,7 @@ Content-Type: application/json
 		if err := rows.Next(row); err != nil {
 			t.Fatal(err)
 		}
-		result, err := io.ReadAll(row.Doc)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if d := cmp.Diff(tt.expected, string(result)); d != "" {
+		if d := testy.DiffAsJSON([]byte(tt.expected), row.Doc); d != nil {
 			t.Errorf("Unexpected result: %s", d)
 		}
 		var attachments []*Attachment

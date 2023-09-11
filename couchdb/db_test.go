@@ -46,9 +46,7 @@ func TestAllDocs(t *testing.T) {
 
 	t.Run("partitioned", func(t *testing.T) {
 		db := newTestDB(nil, errors.New("test error"))
-		_, err := db.AllDocs(context.Background(), kivik.Options{
-			OptionPartition: "a1",
-		})
+		_, err := db.AllDocs(context.Background(), OptionPartition("a1"))
 		testy.ErrorRE(t, `Get "?http://example.com/testdb/_partition/a1/_all_docs"?: test error`, err)
 	})
 }
@@ -73,9 +71,7 @@ func TestQuery(t *testing.T) {
 	})
 	t.Run("partitioned", func(t *testing.T) {
 		db := newTestDB(nil, errors.New("test error"))
-		_, err := db.Query(context.Background(), "ddoc", "view", kivik.Options{
-			OptionPartition: "a2",
-		})
+		_, err := db.Query(context.Background(), "ddoc", "view", OptionPartition("a2"))
 		testy.ErrorRE(t, `Get "?http://example.com/testdb/_partition/a2/_design/ddoc/_view/view"?: test error`, err)
 	})
 }

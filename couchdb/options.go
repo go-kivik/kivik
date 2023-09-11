@@ -13,7 +13,9 @@
 package couchdb
 
 import (
+	"fmt"
 	"net/http"
+	"path"
 
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/couchdb/chttp"
@@ -60,4 +62,43 @@ func OptionFullCommit() kivik.Option {
 // the request.
 func OptionIfNoneMatch(value string) kivik.Option {
 	return chttp.OptionIfNoneMatch(value)
+}
+
+type partitionedPath struct {
+	path string
+	part string
+}
+
+func partPath(path string) *partitionedPath {
+	return &partitionedPath{
+		path: path,
+	}
+}
+
+func (pp partitionedPath) String() string {
+	if pp.part == "" {
+		return pp.path
+	}
+	return path.Join("_partition", pp.part, pp.path)
+}
+
+type optionPartition string
+
+func (o optionPartition) Apply(target interface{}) {
+	if ppath, ok := target.(*partitionedPath); ok {
+		ppath.part = string(o)
+	}
+}
+
+func (o optionPartition) String() string {
+	return fmt.Sprintf("[partition:%s]", string(o))
+}
+
+// OptionPartition instructs supporting methods to limit the query to the
+// specified partition. Supported methods are: Query, AllDocs, Find, and
+// Explain. Only supported by CouchDB 3.0.0 and newer.
+//
+// See https://docs.couchdb.org/en/stable/api/partitioned-dbs.html
+func OptionPartition(partition string) kivik.Option {
+	return optionPartition(partition)
 }

@@ -25,7 +25,6 @@ import (
 	"net/textproto"
 	"net/url"
 	"os"
-	"path"
 	"path/filepath"
 	"reflect"
 	"sort"
@@ -132,14 +131,9 @@ func (d *db) rowsQuery(ctx context.Context, path string, options driver.Options)
 
 // AllDocs returns all of the documents in the database.
 func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
-	opts := map[string]interface{}{}
-	options.Apply(opts)
-	reqPath := "_all_docs"
-	if part, ok := opts[OptionPartition].(string); ok {
-		delete(opts, OptionPartition)
-		reqPath = path.Join("_partition", part, reqPath)
-	}
-	return d.rowsQuery(ctx, reqPath, kivik.Options(opts))
+	reqPath := partPath("_all_docs")
+	options.Apply(reqPath)
+	return d.rowsQuery(ctx, reqPath.String(), options)
 }
 
 // DesignDocs returns all of the documents in the database.
@@ -154,14 +148,9 @@ func (d *db) LocalDocs(ctx context.Context, options driver.Options) (driver.Rows
 
 // Query queries a view.
 func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Options) (driver.Rows, error) {
-	opts := map[string]interface{}{}
-	options.Apply(opts)
-	reqPath := fmt.Sprintf("_design/%s/_view/%s", chttp.EncodeDocID(ddoc), chttp.EncodeDocID(view))
-	if part, ok := opts[OptionPartition].(string); ok {
-		delete(opts, OptionPartition)
-		reqPath = path.Join("_partition", part, reqPath)
-	}
-	return d.rowsQuery(ctx, reqPath, kivik.Options(opts))
+	reqPath := partPath(fmt.Sprintf("_design/%s/_view/%s", chttp.EncodeDocID(ddoc), chttp.EncodeDocID(view)))
+	options.Apply(reqPath)
+	return d.rowsQuery(ctx, reqPath.String(), options)
 }
 
 // document represents a single document returned by Get

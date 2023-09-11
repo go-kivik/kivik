@@ -16,7 +16,6 @@ package internal
 // Common constants, placed here to allow importing in chttp and root package
 // without import cycles.
 const (
-	OptionPartition      = "kivik:partition"
 	OptionNoMultipartPut = "kivik:no-multipart-put"
 	OptionNoMultipartGet = "kivik:no-multipart-get"
 )

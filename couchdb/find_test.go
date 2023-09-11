@@ -88,13 +88,11 @@ func TestExplain(t *testing.T) {
 			err:    `Post "?http://example.com/testdb/_explain"?: success`,
 		},
 		{
-			name: "partitioned request",
-			db:   newTestDB(nil, errors.New("expected")),
-			options: kivik.Options{
-				OptionPartition: "x1",
-			},
-			status: http.StatusBadGateway,
-			err:    `Post "?http://example.com/testdb/_partition/x1/_explain"?: expected`,
+			name:    "partitioned request",
+			db:      newTestDB(nil, errors.New("expected")),
+			options: OptionPartition("x1"),
+			status:  http.StatusBadGateway,
+			err:     `Post "?http://example.com/testdb/_partition/x1/_explain"?: expected`,
 		},
 	}
 	for _, test := range tests {
@@ -210,13 +208,11 @@ func TestCreateIndex(t *testing.T) {
 			}, nil),
 		},
 		{
-			name: "partitioned query",
-			db:   newTestDB(nil, errors.New("expected")),
-			options: kivik.Options{
-				OptionPartition: "xxy",
-			},
-			status: http.StatusBadGateway,
-			err:    `Post "?http://example.com/testdb/_partition/xxy/_index"?: expected`,
+			name:    "partitioned query",
+			db:      newTestDB(nil, errors.New("expected")),
+			options: OptionPartition("xxy"),
+			status:  http.StatusBadGateway,
+			err:     `Post "?http://example.com/testdb/_partition/xxy/_index"?: expected`,
 		},
 	}
 	for _, test := range tests {
@@ -284,13 +280,11 @@ func TestGetIndexes(t *testing.T) {
 			},
 		},
 		{
-			name: "partitioned query",
-			db:   newTestDB(nil, errors.New("expected")),
-			options: kivik.Options{
-				OptionPartition: "yyz",
-			},
-			status: http.StatusBadGateway,
-			err:    `Get "?http://example.com/testdb/_partition/yyz/_index"?: expected`,
+			name:    "partitioned query",
+			db:      newTestDB(nil, errors.New("expected")),
+			options: OptionPartition("yyz"),
+			status:  http.StatusBadGateway,
+			err:     `Get "?http://example.com/testdb/_partition/yyz/_index"?: expected`,
 		},
 	}
 	for _, test := range tests {
@@ -361,11 +355,9 @@ func TestDeleteIndex(t *testing.T) {
 			ddoc:      "_design/foo",
 			indexName: "bar",
 			db:        newTestDB(nil, errors.New("expected")),
-			options: kivik.Options{
-				OptionPartition: "qqz",
-			},
-			status: http.StatusBadGateway,
-			err:    `Delete "?http://example.com/testdb/_partition/qqz/_index/_design/foo/json/bar"?: expected`,
+			options:   OptionPartition("qqz"),
+			status:    http.StatusBadGateway,
+			err:       `Delete "?http://example.com/testdb/_partition/qqz/_index/_design/foo/json/bar"?: expected`,
 		},
 	}
 	for _, test := range tests {
@@ -443,13 +435,11 @@ func TestFind(t *testing.T) {
 			}, nil),
 		},
 		{
-			name: "partitioned request",
-			db:   newTestDB(nil, errors.New("expected")),
-			options: kivik.Options{
-				OptionPartition: "x2",
-			},
-			status: http.StatusBadGateway,
-			err:    `Post "?http://example.com/testdb/_partition/x2/_find"?: expected`,
+			name:    "partitioned request",
+			db:      newTestDB(nil, errors.New("expected")),
+			options: OptionPartition("x2"),
+			status:  http.StatusBadGateway,
+			err:     `Post "?http://example.com/testdb/_partition/x2/_find"?: expected`,
 		},
 	}
 	for _, test := range tests {

@@ -17,7 +17,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"path"
 
 	"github.com/go-kivik/kivik/v4/couchdb/chttp"
 	"github.com/go-kivik/kivik/v4/driver"
@@ -30,11 +29,8 @@ const (
 func (d *db) CreateIndex(ctx context.Context, ddoc, name string, index interface{}, options driver.Options) error {
 	opts := map[string]interface{}{}
 	options.Apply(opts)
-	reqPath := pathIndex
-	if part, ok := opts[OptionPartition].(string); ok {
-		delete(opts, OptionPartition)
-		reqPath = path.Join("_partition", part, reqPath)
-	}
+	reqPath := partPath(pathIndex)
+	options.Apply(reqPath)
 	indexObj, err := deJSONify(index)
 	if err != nil {
 		return err
@@ -51,22 +47,19 @@ func (d *db) CreateIndex(ctx context.Context, ddoc, name string, index interface
 	chttpOpts := &chttp.Options{
 		Body: chttp.EncodeBody(parameters),
 	}
-	_, err = d.Client.DoError(ctx, http.MethodPost, d.path(reqPath), chttpOpts)
+	_, err = d.Client.DoError(ctx, http.MethodPost, d.path(reqPath.String()), chttpOpts)
 	return err
 }
 
 func (d *db) GetIndexes(ctx context.Context, options driver.Options) ([]driver.Index, error) {
 	opts := map[string]interface{}{}
 	options.Apply(opts)
-	reqPath := pathIndex
-	if part, ok := opts[OptionPartition].(string); ok {
-		delete(opts, OptionPartition)
-		reqPath = path.Join("_partition", part, reqPath)
-	}
+	reqPath := partPath(pathIndex)
+	options.Apply(reqPath)
 	var result struct {
 		Indexes []driver.Index `json:"indexes"`
 	}
-	err := d.Client.DoJSON(ctx, http.MethodGet, d.path(reqPath), nil, &result)
+	err := d.Client.DoJSON(ctx, http.MethodGet, d.path(reqPath.String()), nil, &result)
 	return result.Indexes, err
 }
 
@@ -79,11 +72,8 @@ func (d *db) DeleteIndex(ctx context.Context, ddoc, name string, options driver.
 	if name == "" {
 		return missingArg("name")
 	}
-	reqPath := pathIndex
-	if part, ok := opts[OptionPartition].(string); ok {
-		delete(opts, OptionPartition)
-		reqPath = path.Join("_partition", part, reqPath)
-	}
+	reqPath := partPath(pathIndex)
+	options.Apply(reqPath)
 	path := fmt.Sprintf("%s/%s/json/%s", reqPath, ddoc, name)
 	_, err := d.Client.DoError(ctx, http.MethodDelete, d.path(path), nil)
 	return err
@@ -92,18 +82,15 @@ func (d *db) DeleteIndex(ctx context.Context, ddoc, name string, options driver.
 func (d *db) Find(ctx context.Context, query interface{}, options driver.Options) (driver.Rows, error) {
 	opts := map[string]interface{}{}
 	options.Apply(opts)
-	reqPath := "_find"
-	if part, ok := opts[OptionPartition].(string); ok {
-		delete(opts, OptionPartition)
-		reqPath = path.Join("_partition", part, reqPath)
-	}
+	reqPath := partPath("_find")
+	options.Apply(reqPath)
 	chttpOpts := &chttp.Options{
 		GetBody: chttp.BodyEncoder(query),
 		Header: http.Header{
 			chttp.HeaderIdempotencyKey: []string{},
 		},
 	}
-	resp, err := d.Client.DoReq(ctx, http.MethodPost, d.path(reqPath), chttpOpts)
+	resp, err := d.Client.DoReq(ctx, http.MethodPost, d.path(reqPath.String()), chttpOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -143,11 +130,8 @@ func (f *fields) UnmarshalJSON(data []byte) error {
 func (d *db) Explain(ctx context.Context, query interface{}, options driver.Options) (*driver.QueryPlan, error) {
 	opts := map[string]interface{}{}
 	options.Apply(opts)
-	reqPath := "_explain"
-	if part, ok := opts[OptionPartition].(string); ok {
-		delete(opts, OptionPartition)
-		reqPath = path.Join("_partition", part, reqPath)
-	}
+	reqPath := partPath("_explain")
+	options.Apply(reqPath)
 	chttpOpts := &chttp.Options{
 		GetBody: chttp.BodyEncoder(query),
 		Header: http.Header{
@@ -155,7 +139,7 @@ func (d *db) Explain(ctx context.Context, query interface{}, options driver.Opti
 		},
 	}
 	var plan queryPlan
-	if err := d.Client.DoJSON(ctx, http.MethodPost, d.path(reqPath), chttpOpts, &plan); err != nil {
+	if err := d.Client.DoJSON(ctx, http.MethodPost, d.path(reqPath.String()), chttpOpts, &plan); err != nil {
 		return nil, err
 	}
 	return &driver.QueryPlan{

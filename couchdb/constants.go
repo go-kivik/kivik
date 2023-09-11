@@ -18,13 +18,6 @@ import "github.com/go-kivik/kivik/v4/couchdb/internal"
 const Version = "4.0.0-prerelease"
 
 const (
-	// OptionPartition instructs supporting methods to limit the query to the
-	// specified partition. Supported methods are: Query, AllDocs, Find, and
-	// Explain. Only supported by CouchDB 3.0.0 and newer.
-	//
-	// See https://docs.couchdb.org/en/stable/api/partitioned-dbs.html
-	OptionPartition = internal.OptionPartition
-
 	// OptionNoMultipartPut instructs [github.com/go-kivik/kivik/v4.DB.Put] not
 	// to use CouchDB's multipart/related upload capabilities. This only affects
 	// PUT requests that also include attachments.

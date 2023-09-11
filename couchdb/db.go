@@ -357,7 +357,7 @@ func (d *db) get(ctx context.Context, method, docID string, options driver.Optio
 	opts := map[string]interface{}{}
 	options.Apply(opts)
 
-	chttpOpts, err := chttp.NewOptions(opts)
+	chttpOpts, err := chttp.NewOptions(options)
 	if err != nil {
 		return nil, err
 	}
@@ -383,13 +383,14 @@ func (d *db) CreateDoc(ctx context.Context, doc interface{}, options driver.Opti
 		ID  string `json:"id"`
 		Rev string `json:"rev"`
 	}{}
-	opts := map[string]interface{}{}
-	options.Apply(opts)
 
-	chttpOpts, err := chttp.NewOptions(opts)
+	chttpOpts, err := chttp.NewOptions(options)
 	if err != nil {
 		return "", "", err
 	}
+
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 
 	path := d.dbName
 	if len(opts) > 0 {
@@ -406,11 +407,13 @@ func (d *db) CreateDoc(ctx context.Context, doc interface{}, options driver.Opti
 	return result.ID, result.Rev, err
 }
 
-func putOpts(doc interface{}, opts map[string]interface{}) (*chttp.Options, error) {
-	chttpOpts, err := chttp.NewOptions(opts)
+func putOpts(doc interface{}, options driver.Options) (*chttp.Options, error) {
+	chttpOpts, err := chttp.NewOptions(options)
 	if err != nil {
 		return nil, err
 	}
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	chttpOpts.Query, err = optionsToParams(opts)
 	if err != nil {
 		return nil, err
@@ -435,9 +438,7 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 	if docID == "" {
 		return "", missingArg("docID")
 	}
-	opts := map[string]interface{}{}
-	options.Apply(opts)
-	opts2, err := putOpts(doc, opts)
+	opts2, err := putOpts(doc, options)
 	if err != nil {
 		return "", err
 	}
@@ -792,7 +793,7 @@ func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (
 		return "", missingArg("rev")
 	}
 
-	chttpOpts, err := chttp.NewOptions(opts)
+	chttpOpts, err := chttp.NewOptions(options)
 	if err != nil {
 		return "", err
 	}
@@ -896,12 +897,13 @@ func (d *db) Copy(ctx context.Context, targetID, sourceID string, options driver
 	if targetID == "" {
 		return "", missingArg("targetID")
 	}
-	opts := map[string]interface{}{}
-	options.Apply(opts)
-	chttpOpts, err := chttp.NewOptions(opts)
+	chttpOpts, err := chttp.NewOptions(options)
 	if err != nil {
 		return "", err
 	}
+
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	chttpOpts.Query, err = optionsToParams(opts)
 	if err != nil {
 		return "", err

@@ -21,45 +21,6 @@ import (
 	"github.com/go-kivik/kivik/v4/couchdb/internal"
 )
 
-func TestFullCommit(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    map[string]interface{}
-		expected bool
-		status   int
-		err      string
-	}{
-		{
-			name:     "new",
-			input:    map[string]interface{}{internal.OptionFullCommit: true},
-			expected: true,
-		},
-		{
-			name:   "new error",
-			input:  map[string]interface{}{internal.OptionFullCommit: 123},
-			status: http.StatusBadRequest,
-			err:    "kivik: option 'X-Couch-Full-Commit' must be bool, not int",
-		},
-		{
-			name:     "none",
-			input:    nil,
-			expected: false,
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			result, err := fullCommit(test.input)
-			testy.StatusError(t, test.err, test.status, err)
-			if result != test.expected {
-				t.Errorf("Unexpected result: %v", result)
-			}
-			if _, ok := test.input[internal.OptionFullCommit]; ok {
-				t.Errorf("%s still set in options", internal.OptionFullCommit)
-			}
-		})
-	}
-}
-
 func TestIfNoneMatch(t *testing.T) {
 	tests := []struct {
 		name     string

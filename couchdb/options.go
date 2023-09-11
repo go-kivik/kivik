@@ -49,3 +49,9 @@ func OptionNoRequestCompression() kivik.Option {
 func OptionUserAgent(ua string) kivik.Option {
 	return chttp.OptionUserAgent(ua)
 }
+
+// OptionFullCommit is the option key used to set the `X-Couch-Full-Commit`
+// header in the request when set to true.
+func OptionFullCommit() kivik.Option {
+	return chttp.OptionFullCommit()
+}

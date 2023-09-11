@@ -536,7 +536,7 @@ func TestCreateDoc(t *testing.T) {
 				}
 				return nil, errors.New("success")
 			}),
-			options: kivik.Options{OptionFullCommit: true},
+			options: OptionFullCommit(),
 			status:  http.StatusBadGateway,
 			err:     `Post "?http://example.com/testdb"?: success`,
 		},
@@ -546,13 +546,6 @@ func TestCreateDoc(t *testing.T) {
 			options: kivik.Options{"foo": make(chan int)},
 			status:  http.StatusBadRequest,
 			err:     "kivik: invalid type chan int for options",
-		},
-		{
-			name:    "invalid full commit type",
-			db:      &db{},
-			options: kivik.Options{OptionFullCommit: 123},
-			status:  http.StatusBadRequest,
-			err:     "kivik: option 'X-Couch-Full-Commit' must be bool, not int",
 		},
 	}
 	for _, test := range tests {
@@ -847,18 +840,9 @@ func TestPut(t *testing.T) {
 			}),
 			id:      "foo",
 			doc:     map[string]string{"foo": "bar"},
-			options: kivik.Options{OptionFullCommit: true},
+			options: OptionFullCommit(),
 			status:  http.StatusBadGateway,
 			err:     `Put "?http://example.com/testdb/foo"?: success`,
-		},
-		{
-			name:    "invalid full commit",
-			db:      &db{},
-			id:      "foo",
-			doc:     map[string]string{"foo": "bar"},
-			options: kivik.Options{OptionFullCommit: 123},
-			status:  http.StatusBadRequest,
-			err:     "kivik: option 'X-Couch-Full-Commit' must be bool, not int",
 		},
 		{
 			name: "connection refused",
@@ -1018,22 +1002,14 @@ func TestDelete(t *testing.T) {
 			return nil, errors.New("success")
 		}),
 		id: "foo",
-		options: kivik.Options{
-			OptionFullCommit: true,
-			"rev":            "1-xxx",
+		options: allOptions{
+			OptionFullCommit(),
+			kivik.Options{
+				"rev": "1-xxx",
+			},
 		},
 		status: http.StatusBadGateway,
 		err:    "success",
-	})
-	tests.Add("invalid full commit type", tt{
-		db: &db{},
-		id: "foo",
-		options: kivik.Options{
-			OptionFullCommit: 123,
-			"rev":            "1-xxx",
-		},
-		status: http.StatusBadRequest,
-		err:    "kivik: option 'X-Couch-Full-Commit' must be bool, not int",
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
@@ -1717,14 +1693,6 @@ func TestCopy(t *testing.T) {
 		status:  http.StatusBadRequest,
 		err:     "kivik: invalid type chan int for options",
 	})
-	tests.Add("invalid full commit type", tt{
-		db:      &db{},
-		source:  "foo",
-		target:  "bar",
-		options: kivik.Options{OptionFullCommit: 123},
-		status:  http.StatusBadRequest,
-		err:     "kivik: option 'X-Couch-Full-Commit' must be bool, not int",
-	})
 	tests.Add("create 1.6.1", tt{
 		source: "foo",
 		target: "bar",
@@ -1749,11 +1717,9 @@ func TestCopy(t *testing.T) {
 		rev: "1-f81c8a795b0c6f9e9f699f64c6b82256",
 	})
 	tests.Add("full commit 1.6.1", tt{
-		source: "foo",
-		target: "bar",
-		options: kivik.Options{
-			OptionFullCommit: true,
-		},
+		source:  "foo",
+		target:  "bar",
+		options: OptionFullCommit(),
 		db: newCustomDB(func(req *http.Request) (*http.Response, error) {
 			if dest := req.Header.Get("Destination"); dest != "bar" {
 				return nil, fmt.Errorf("Unexpected destination: %s", dest)
@@ -1778,11 +1744,9 @@ func TestCopy(t *testing.T) {
 		rev: "1-f81c8a795b0c6f9e9f699f64c6b82256",
 	})
 	tests.Add("target rev", tt{
-		source: "foo",
-		target: "bar?rev=1-xxx",
-		options: kivik.Options{
-			OptionFullCommit: true,
-		},
+		source:  "foo",
+		target:  "bar?rev=1-xxx",
+		options: OptionFullCommit(),
 		db: newCustomDB(func(req *http.Request) (*http.Response, error) {
 			if dest := req.Header.Get("Destination"); dest != "bar?rev=1-xxx" {
 				return nil, fmt.Errorf("Unexpected destination: %s", dest)

@@ -20,6 +20,7 @@ import (
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/couchdb/internal"
+	"github.com/go-kivik/kivik/v4/driver"
 )
 
 // Options are optional parameters which may be sent with a request.
@@ -69,32 +70,18 @@ type Options struct {
 }
 
 // NewOptions converts a kivik options map into
-func NewOptions(opts map[string]interface{}) (*Options, error) {
-	fullCommit, err := fullCommit(opts)
-	if err != nil {
-		return nil, err
-	}
+func NewOptions(options driver.Options) (*Options, error) {
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	ifNoneMatch, err := ifNoneMatch(opts)
 	if err != nil {
 		return nil, err
 	}
-	return &Options{
-		FullCommit:  fullCommit,
+	o := &Options{
 		IfNoneMatch: ifNoneMatch,
-	}, nil
-}
-
-func fullCommit(opts map[string]interface{}) (bool, error) {
-	fc, ok := opts[internal.OptionFullCommit]
-	if !ok {
-		return false, nil
 	}
-	fcBool, ok := fc.(bool)
-	if !ok {
-		return false, &kivik.Error{Status: http.StatusBadRequest, Err: fmt.Errorf("kivik: option '%s' must be bool, not %T", internal.OptionFullCommit, fc)}
-	}
-	delete(opts, internal.OptionFullCommit)
-	return fcBool, nil
+	options.Apply(o)
+	return o, nil
 }
 
 func ifNoneMatch(opts map[string]interface{}) (string, error) {
@@ -148,4 +135,22 @@ func (a optionUserAgent) String() string {
 // to append to the default User-Agent header sent on all requests.
 func OptionUserAgent(ua string) kivik.Option {
 	return optionUserAgent(ua)
+}
+
+type optionFullCommit struct{}
+
+func (optionFullCommit) Apply(target interface{}) {
+	if o, ok := target.(*Options); ok {
+		o.FullCommit = true
+	}
+}
+
+func (optionFullCommit) String() string {
+	return "[FullCommit]"
+}
+
+// OptionFullCommit is the option key used to set the `X-Couch-Full-Commit`
+// header in the request when set to true.
+func OptionFullCommit() kivik.Option {
+	return optionFullCommit{}
 }

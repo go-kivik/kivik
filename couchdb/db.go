@@ -195,6 +195,10 @@ func (d *db) Get(ctx context.Context, docID string, options map[string]interface
 	if err != nil {
 		return nil, err
 	}
+	return processDoc(docID, resp)
+}
+
+func processDoc(docID string, resp *http.Response) (*document, error) {
 	ct, params, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
 	if err != nil {
 		return nil, &kivik.Error{Status: http.StatusBadGateway, Err: err}

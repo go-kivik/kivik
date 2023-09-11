@@ -61,9 +61,7 @@ func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attach
 }
 
 func (d *db) GetAttachmentMeta(ctx context.Context, docID, filename string, options driver.Options) (*driver.Attachment, error) {
-	opts := map[string]interface{}{}
-	options.Apply(opts)
-	resp, err := d.fetchAttachment(ctx, http.MethodHead, docID, filename, opts)
+	resp, err := d.fetchAttachment(ctx, http.MethodHead, docID, filename, options)
 	if err != nil {
 		return nil, err
 	}
@@ -72,16 +70,14 @@ func (d *db) GetAttachmentMeta(ctx context.Context, docID, filename string, opti
 }
 
 func (d *db) GetAttachment(ctx context.Context, docID, filename string, options driver.Options) (*driver.Attachment, error) {
-	opts := map[string]interface{}{}
-	options.Apply(opts)
-	resp, err := d.fetchAttachment(ctx, http.MethodGet, docID, filename, opts)
+	resp, err := d.fetchAttachment(ctx, http.MethodGet, docID, filename, options)
 	if err != nil {
 		return nil, err
 	}
 	return decodeAttachment(resp)
 }
 
-func (d *db) fetchAttachment(ctx context.Context, method, docID, filename string, opts map[string]interface{}) (*http.Response, error) {
+func (d *db) fetchAttachment(ctx context.Context, method, docID, filename string, options driver.Options) (*http.Response, error) {
 	if method == "" {
 		return nil, errors.New("method required")
 	}
@@ -91,6 +87,8 @@ func (d *db) fetchAttachment(ctx context.Context, method, docID, filename string
 	if filename == "" {
 		return nil, missingArg("filename")
 	}
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	chttpOpts, err := chttp.NewOptions(opts)
 	if err != nil {
 		return nil, err

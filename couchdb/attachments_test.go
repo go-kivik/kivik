@@ -446,7 +446,7 @@ func TestFetchAttachment(t *testing.T) {
 		name                 string
 		db                   *db
 		method, id, filename string
-		options              map[string]interface{}
+		options              kivik.Option
 
 		resp   *http.Response
 		status int
@@ -497,7 +497,7 @@ func TestFetchAttachment(t *testing.T) {
 			method:   "GET",
 			id:       "foo",
 			filename: "foo.txt",
-			options:  map[string]interface{}{"foo": "bar"},
+			options:  kivik.Options{"foo": "bar"},
 			status:   http.StatusBadGateway,
 			err:      "foo=bar",
 		},
@@ -507,7 +507,7 @@ func TestFetchAttachment(t *testing.T) {
 			method:   "GET",
 			id:       "foo",
 			filename: "foo.txt",
-			options:  map[string]interface{}{"foo": make(chan int)},
+			options:  kivik.Options{"foo": make(chan int)},
 			status:   http.StatusBadRequest,
 			err:      "kivik: invalid type chan int for options",
 		},
@@ -525,7 +525,7 @@ func TestFetchAttachment(t *testing.T) {
 			method:   "GET",
 			id:       "foo",
 			filename: "foo.txt",
-			options:  map[string]interface{}{OptionIfNoneMatch: "foo"},
+			options:  kivik.Options{OptionIfNoneMatch: "foo"},
 			status:   http.StatusBadGateway,
 			err:      "success",
 		},
@@ -535,14 +535,18 @@ func TestFetchAttachment(t *testing.T) {
 			method:   "GET",
 			id:       "foo",
 			filename: "foo.txt",
-			options:  map[string]interface{}{OptionIfNoneMatch: 123},
+			options:  kivik.Options{OptionIfNoneMatch: 123},
 			status:   http.StatusBadRequest,
 			err:      "kivik: option 'If-None-Match' must be string, not int",
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			resp, err := test.db.fetchAttachment(context.Background(), test.method, test.id, test.filename, test.options)
+			opts := test.options
+			if opts == nil {
+				opts = mock.NilOption
+			}
+			resp, err := test.db.fetchAttachment(context.Background(), test.method, test.id, test.filename, opts)
 			testy.StatusErrorRE(t, test.err, test.status, err)
 
 			if d := testy.DiffJSON(test.resp.Body, resp.Body); d != nil {

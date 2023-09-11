@@ -46,8 +46,8 @@ var (
 	_ driver.DBCloser = &db{}
 )
 
-func (d *db) AllDocs(ctx context.Context, options map[string]interface{}) (driver.Rows, error) {
-	result, err := d.db.AllDocs(ctx, options)
+func (d *db) AllDocs(ctx context.Context, opts map[string]interface{}) (driver.Rows, error) {
+	result, err := d.db.AllDocs(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -56,8 +56,8 @@ func (d *db) AllDocs(ctx context.Context, options map[string]interface{}) (drive
 	}, nil
 }
 
-func (d *db) Query(ctx context.Context, ddoc, view string, options map[string]interface{}) (driver.Rows, error) {
-	result, err := d.db.Query(ctx, ddoc, view, options)
+func (d *db) Query(ctx context.Context, ddoc, view string, opts map[string]interface{}) (driver.Rows, error) {
+	result, err := d.db.Query(ctx, ddoc, view, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -66,8 +66,8 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options map[string]in
 	}, nil
 }
 
-func (d *db) Get(ctx context.Context, docID string, options map[string]interface{}) (*driver.Document, error) {
-	doc, rev, err := d.db.Get(ctx, docID, options)
+func (d *db) Get(ctx context.Context, docID string, opts map[string]interface{}) (*driver.Document, error) {
+	doc, rev, err := d.db.Get(ctx, docID, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -77,16 +77,16 @@ func (d *db) Get(ctx context.Context, docID string, options map[string]interface
 	}, nil
 }
 
-func (d *db) CreateDoc(ctx context.Context, doc interface{}, options map[string]interface{}) (docID, rev string, err error) {
+func (d *db) CreateDoc(ctx context.Context, doc interface{}, opts map[string]interface{}) (docID, rev string, err error) {
 	jsonDoc, err := json.Marshal(doc)
 	if err != nil {
 		return "", "", err
 	}
 	jsDoc := js.Global.Get("JSON").Call("parse", string(jsonDoc))
-	return d.db.Post(ctx, jsDoc, options)
+	return d.db.Post(ctx, jsDoc, opts)
 }
 
-func (d *db) Put(ctx context.Context, docID string, doc interface{}, options map[string]interface{}) (rev string, err error) {
+func (d *db) Put(ctx context.Context, docID string, doc interface{}, opts map[string]interface{}) (rev string, err error) {
 	jsonDoc, err := json.Marshal(doc)
 	if err != nil {
 		return "", err
@@ -98,12 +98,12 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options map
 		}
 	}
 	jsDoc.Set("_id", docID)
-	return d.db.Put(ctx, jsDoc, options)
+	return d.db.Put(ctx, jsDoc, opts)
 }
 
-func (d *db) Delete(ctx context.Context, docID string, options map[string]interface{}) (newRev string, err error) {
-	rev, _ := options["rev"].(string)
-	return d.db.Delete(ctx, docID, rev, options)
+func (d *db) Delete(ctx context.Context, docID string, opts map[string]interface{}) (newRev string, err error) {
+	rev, _ := opts["rev"].(string)
+	return d.db.Delete(ctx, docID, rev, opts)
 }
 
 func (d *db) Stats(ctx context.Context) (*driver.DBStats, error) {

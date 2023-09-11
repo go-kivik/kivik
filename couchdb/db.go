@@ -190,8 +190,8 @@ func (*document) Offset() int64     { return 0 }
 func (*document) TotalRows() int64  { return 0 }
 
 // Get fetches the requested document.
-func (d *db) Get(ctx context.Context, docID string, options map[string]interface{}) (driver.Rows, error) {
-	resp, err := d.get(ctx, http.MethodGet, docID, options)
+func (d *db) Get(ctx context.Context, docID string, opts map[string]interface{}) (driver.Rows, error) {
+	resp, err := d.get(ctx, http.MethodGet, docID, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -330,8 +330,8 @@ func (a *multipartAttachments) Close() error {
 }
 
 // Rev returns the most current rev of the requested document.
-func (d *db) GetRev(ctx context.Context, docID string, options map[string]interface{}) (string, error) {
-	resp, err := d.get(ctx, http.MethodHead, docID, options)
+func (d *db) GetRev(ctx context.Context, docID string, opts map[string]interface{}) (string, error) {
+	resp, err := d.get(ctx, http.MethodHead, docID, opts)
 	if err != nil {
 		return "", err
 	}
@@ -343,25 +343,25 @@ func (d *db) GetRev(ctx context.Context, docID string, options map[string]interf
 	return rev, err
 }
 
-func (d *db) get(ctx context.Context, method, docID string, options map[string]interface{}) (*http.Response, error) {
+func (d *db) get(ctx context.Context, method, docID string, opts map[string]interface{}) (*http.Response, error) {
 	if docID == "" {
 		return nil, missingArg("docID")
 	}
 
-	opts, err := chttp.NewOptions(options)
+	chttpOpts, err := chttp.NewOptions(opts)
 	if err != nil {
 		return nil, err
 	}
 
-	opts.Accept = typeMPRelated + "," + typeJSON
-	opts.Query, err = optionsToParams(options)
+	chttpOpts.Accept = typeMPRelated + "," + typeJSON
+	chttpOpts.Query, err = optionsToParams(opts)
 	if err != nil {
 		return nil, err
 	}
-	if _, ok := options[OptionNoMultipartGet]; ok {
-		opts.Accept = typeJSON
+	if _, ok := opts[OptionNoMultipartGet]; ok {
+		chttpOpts.Accept = typeJSON
 	}
-	resp, err := d.Client.DoReq(ctx, method, d.path(chttp.EncodeDocID(docID)), opts)
+	resp, err := d.Client.DoReq(ctx, method, d.path(chttp.EncodeDocID(docID)), chttpOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -369,62 +369,62 @@ func (d *db) get(ctx context.Context, method, docID string, options map[string]i
 	return resp, err
 }
 
-func (d *db) CreateDoc(ctx context.Context, doc interface{}, options map[string]interface{}) (docID, rev string, err error) {
+func (d *db) CreateDoc(ctx context.Context, doc interface{}, opts map[string]interface{}) (docID, rev string, err error) {
 	result := struct {
 		ID  string `json:"id"`
 		Rev string `json:"rev"`
 	}{}
 
-	opts, err := chttp.NewOptions(options)
+	chttpOpts, err := chttp.NewOptions(opts)
 	if err != nil {
 		return "", "", err
 	}
 
 	path := d.dbName
-	if len(options) > 0 {
-		params, e := optionsToParams(options)
+	if len(opts) > 0 {
+		params, e := optionsToParams(opts)
 		if e != nil {
 			return "", "", e
 		}
 		path += "?" + params.Encode()
 	}
 
-	opts.Body = chttp.EncodeBody(doc)
+	chttpOpts.Body = chttp.EncodeBody(doc)
 
-	err = d.Client.DoJSON(ctx, http.MethodPost, path, opts, &result)
+	err = d.Client.DoJSON(ctx, http.MethodPost, path, chttpOpts, &result)
 	return result.ID, result.Rev, err
 }
 
-func putOpts(doc interface{}, options map[string]interface{}) (*chttp.Options, error) {
-	opts, err := chttp.NewOptions(options)
+func putOpts(doc interface{}, opts map[string]interface{}) (*chttp.Options, error) {
+	chttpOpts, err := chttp.NewOptions(opts)
 	if err != nil {
 		return nil, err
 	}
-	opts.Query, err = optionsToParams(options)
+	chttpOpts.Query, err = optionsToParams(opts)
 	if err != nil {
 		return nil, err
 	}
-	if _, ok := options[OptionNoMultipartPut]; !ok {
+	if _, ok := opts[OptionNoMultipartPut]; !ok {
 		if atts, ok := extractAttachments(doc); ok {
 			boundary, size, multipartBody, err := newMultipartAttachments(chttp.EncodeBody(doc), atts)
 			if err != nil {
 				return nil, err
 			}
-			opts.Body = multipartBody
-			opts.ContentLength = size
-			opts.ContentType = fmt.Sprintf(typeMPRelated+"; boundary=%q", boundary)
-			return opts, nil
+			chttpOpts.Body = multipartBody
+			chttpOpts.ContentLength = size
+			chttpOpts.ContentType = fmt.Sprintf(typeMPRelated+"; boundary=%q", boundary)
+			return chttpOpts, nil
 		}
 	}
-	opts.Body = chttp.EncodeBody(doc)
-	return opts, nil
+	chttpOpts.Body = chttp.EncodeBody(doc)
+	return chttpOpts, nil
 }
 
-func (d *db) Put(ctx context.Context, docID string, doc interface{}, options map[string]interface{}) (rev string, err error) {
+func (d *db) Put(ctx context.Context, docID string, doc interface{}, opts map[string]interface{}) (rev string, err error) {
 	if docID == "" {
 		return "", missingArg("docID")
 	}
-	opts, err := putOpts(doc, options)
+	opts2, err := putOpts(doc, opts)
 	if err != nil {
 		return "", err
 	}
@@ -432,7 +432,7 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options map
 		ID  string `json:"id"`
 		Rev string `json:"rev"`
 	}
-	err = d.Client.DoJSON(ctx, http.MethodPut, d.path(chttp.EncodeDocID(docID)), opts, &result)
+	err = d.Client.DoJSON(ctx, http.MethodPut, d.path(chttp.EncodeDocID(docID)), opts2, &result)
 	if err != nil {
 		return "", err
 	}
@@ -769,25 +769,25 @@ func copyWithAttachmentStubs(w io.Writer, r io.Reader, atts map[string]*stub) er
 	return nil
 }
 
-func (d *db) Delete(ctx context.Context, docID string, options map[string]interface{}) (string, error) {
+func (d *db) Delete(ctx context.Context, docID string, opts map[string]interface{}) (string, error) {
 	if docID == "" {
 		return "", missingArg("docID")
 	}
-	if rev, _ := options["rev"].(string); rev == "" {
+	if rev, _ := opts["rev"].(string); rev == "" {
 		return "", missingArg("rev")
 	}
 
-	opts, err := chttp.NewOptions(options)
+	chttpOpts, err := chttp.NewOptions(opts)
 	if err != nil {
 		return "", err
 	}
 
-	opts.Query, err = optionsToParams(options)
+	chttpOpts.Query, err = optionsToParams(opts)
 	if err != nil {
 		return "", err
 	}
 
-	resp, err := d.Client.DoReq(ctx, http.MethodDelete, d.path(chttp.EncodeDocID(docID)), opts)
+	resp, err := d.Client.DoReq(ctx, http.MethodDelete, d.path(chttp.EncodeDocID(docID)), chttpOpts)
 	if err != nil {
 		return "", err
 	}
@@ -874,26 +874,26 @@ func (d *db) SetSecurity(ctx context.Context, security *driver.Security) error {
 	return chttp.ResponseError(res)
 }
 
-func (d *db) Copy(ctx context.Context, targetID, sourceID string, options map[string]interface{}) (targetRev string, err error) {
+func (d *db) Copy(ctx context.Context, targetID, sourceID string, opts map[string]interface{}) (targetRev string, err error) {
 	if sourceID == "" {
 		return "", missingArg("sourceID")
 	}
 	if targetID == "" {
 		return "", missingArg("targetID")
 	}
-	opts, err := chttp.NewOptions(options)
+	chttpOpts, err := chttp.NewOptions(opts)
 	if err != nil {
 		return "", err
 	}
-	opts.Query, err = optionsToParams(options)
+	chttpOpts.Query, err = optionsToParams(opts)
 	if err != nil {
 		return "", err
 	}
-	opts.Header = http.Header{
+	chttpOpts.Header = http.Header{
 		chttp.HeaderDestination: []string{targetID},
 	}
 
-	resp, err := d.Client.DoReq(ctx, "COPY", d.path(chttp.EncodeDocID(sourceID)), opts)
+	resp, err := d.Client.DoReq(ctx, "COPY", d.path(chttp.EncodeDocID(sourceID)), chttpOpts)
 	if err != nil {
 		return "", err
 	}

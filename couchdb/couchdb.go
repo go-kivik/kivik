@@ -52,9 +52,9 @@ var (
 	_ driver.DBUpdater = &client{}
 )
 
-func (d *couch) NewClient(dsn string, options map[string]interface{}) (driver.Client, error) {
+func (d *couch) NewClient(dsn string, opts map[string]interface{}) (driver.Client, error) {
 	var httpClient *http.Client
-	if c, ok := options[OptionHTTPClient]; ok {
+	if c, ok := opts[OptionHTTPClient]; ok {
 		if httpClient, ok = c.(*http.Client); !ok {
 			return nil, &kivik.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("OptionHTTPClient is %T, must be *http.Client", c)}
 		}
@@ -62,7 +62,7 @@ func (d *couch) NewClient(dsn string, options map[string]interface{}) (driver.Cl
 	if httpClient == nil {
 		httpClient = &http.Client{}
 	}
-	chttpClient, err := chttp.New(httpClient, dsn, options)
+	chttpClient, err := chttp.New(httpClient, dsn, opts)
 	if err != nil {
 		return nil, err
 	}

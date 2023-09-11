@@ -199,7 +199,7 @@ func (d *db) Get(ctx context.Context, docID string, options driver.Options) (dri
 	switch ct {
 	case typeJSON, typeMPRelated:
 		etag, _ := chttp.ETag(resp)
-		return processDoc(docID, ct, params["boundary"], etag, resp)
+		return processDoc(docID, ct, params["boundary"], etag, resp.Body)
 	case typeMPMixed:
 		boundary := strings.Trim(params["boundary"], "\"")
 		if boundary == "" {
@@ -216,12 +216,12 @@ func (d *db) Get(ctx context.Context, docID string, options driver.Options) (dri
 	}
 }
 
-func processDoc(docID, ct, boundary, rev string, resp *http.Response) (*document, error) {
+func processDoc(docID, ct, boundary, rev string, body io.ReadCloser) (*document, error) {
 	switch ct {
 	case typeJSON:
 		if rev == "" {
 			var err error
-			resp.Body, rev, err = chttp.ExtractRev(resp.Body)
+			body, rev, err = chttp.ExtractRev(body)
 			if err != nil {
 				return nil, err
 			}
@@ -230,14 +230,14 @@ func processDoc(docID, ct, boundary, rev string, resp *http.Response) (*document
 		return &document{
 			id:   docID,
 			rev:  rev,
-			body: resp.Body,
+			body: body,
 		}, nil
 	case typeMPRelated:
 		boundary := strings.Trim(boundary, "\"")
 		if boundary == "" {
 			return nil, &internal.Error{Status: http.StatusBadGateway, Err: errors.New("kivik: boundary missing for multipart/related response")}
 		}
-		mpReader := multipart.NewReader(resp.Body, boundary)
+		mpReader := multipart.NewReader(body, boundary)
 		body, err := mpReader.NextPart()
 		if err != nil {
 			return nil, &internal.Error{Status: http.StatusBadGateway, Err: err}
@@ -260,7 +260,7 @@ func processDoc(docID, ct, boundary, rev string, resp *http.Response) (*document
 			rev:  rev,
 			body: io.NopCloser(bytes.NewBuffer(content)),
 			attachments: &multipartAttachments{
-				content:  resp.Body,
+				content:  body,
 				mpReader: mpReader,
 				meta:     metaDoc.Attachments,
 			},

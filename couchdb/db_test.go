@@ -234,7 +234,7 @@ func TestGet(t *testing.T) {
 	})
 	tests.Add("multipart accept header", tt{
 		db: newCustomDB(func(r *http.Request) (*http.Response, error) {
-			expected := "multipart/related,application/json"
+			expected := "multipart/mixed, multipart/related, application/json"
 			if accept := r.Header.Get("Accept"); accept != expected {
 				return nil, fmt.Errorf("Unexpected Accept header: %s", accept)
 			}
@@ -386,6 +386,34 @@ Content-Length: 86
 			err:    `^Get "?http://example.com/testdb/2020-01-30T13%3A33%3A00\.00%2B05%3A30%7Ckl"?: success$`,
 		}
 	})
+	tests.Add("open_revs", func(t *testing.T) interface{} {
+		return tt{
+			db: newCustomDB(func(req *http.Request) (*http.Response, error) {
+				want := "multipart/mixed, multipart/related, application/json"
+				if got := req.Header.Get("Accept"); got != want {
+					return nil, fmt.Errorf("Unexpected Accept header %q", got)
+				}
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Header: http.Header{
+						"Content-Type": []string{`multipart/mixed; boundary="ea68bec945fd9dece3e826462c5604e8"`},
+					},
+					Body: Body(`--ea68bec945fd9dece3e826462c5604e8
+Content-Type: application/json
+
+{"_id":"bar","_rev":"2-e2a6df12e36615e8def0bb38bb17b48d","foo":123}
+--ea68bec945fd9dece3e826462c5604e8--
+`),
+				}, nil
+			}),
+			id:       "bar",
+			expected: `{"_id":"bar","_rev":"2-e2a6df12e36615e8def0bb38bb17b48d","foo":123}`,
+			doc: &driver.Row{
+				ID:  "bar",
+				Rev: "2-e2a6df12e36615e8def0bb38bb17b48d",
+			},
+		}
+	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
 		opts := tt.options
@@ -407,8 +435,8 @@ Content-Length: 86
 		if err != nil {
 			t.Fatal(err)
 		}
-		if string(result) != tt.expected {
-			t.Errorf("Unexpected result: %s", string(result))
+		if d := cmp.Diff(tt.expected, string(result)); d != "" {
+			t.Errorf("Unexpected result: %s", d)
 		}
 		var attachments []*Attachment
 		if row.Attachments != nil {

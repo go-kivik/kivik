@@ -191,7 +191,28 @@ func (d *db) Get(ctx context.Context, docID string, options driver.Options) (dri
 	if err != nil {
 		return nil, err
 	}
-	return processDoc(docID, resp)
+	ct, params, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
+	if err != nil {
+		return nil, &internal.Error{Status: http.StatusBadGateway, Err: err}
+	}
+
+	switch ct {
+	case typeJSON, typeMPRelated:
+		return processDoc(docID, resp)
+	case typeMPMixed:
+		boundary := strings.Trim(params["boundary"], "\"")
+		if boundary == "" {
+			return nil, &internal.Error{Status: http.StatusBadGateway, Err: errors.New("kivik: boundary missing for multipart/related response")}
+		}
+		mpReader := multipart.NewReader(resp.Body, boundary)
+		return &multiDocs{
+			id:       docID,
+			respBody: resp.Body,
+			reader:   mpReader,
+		}, nil
+	default:
+		return nil, &internal.Error{Status: http.StatusBadGateway, Err: fmt.Errorf("kivik: invalid content type in response: %s", ct)}
+	}
 }
 
 func processDoc(docID string, resp *http.Response) (*document, error) {
@@ -254,6 +275,53 @@ func processDoc(docID string, resp *http.Response) (*document, error) {
 		return nil, &internal.Error{Status: http.StatusBadGateway, Err: fmt.Errorf("kivik: invalid content type in response: %s", ct)}
 	}
 }
+
+type multiDocs struct {
+	id           string
+	respBody     io.Closer
+	reader       *multipart.Reader
+	readerCloser io.Closer
+}
+
+var _ driver.Rows = (*multiDocs)(nil)
+
+func (d *multiDocs) Next(row *driver.Row) error {
+	if d.readerCloser != nil {
+		if err := d.readerCloser.Close(); err != nil {
+			return err
+		}
+		d.readerCloser = nil
+	}
+	doc, err := d.reader.NextPart()
+	if err != nil {
+		return err
+	}
+	reader, rev, err := chttp.ExtractRev(doc)
+	if err != nil {
+		return err
+	}
+	d.readerCloser = reader
+
+	row.ID = d.id
+	row.Doc = reader
+	row.Rev = rev
+
+	return nil
+}
+
+func (d *multiDocs) Close() error {
+	if d.readerCloser != nil {
+		if err := d.readerCloser.Close(); err != nil {
+			return err
+		}
+		d.readerCloser = nil
+	}
+	return d.respBody.Close()
+}
+
+func (*multiDocs) UpdateSeq() string { return "" }
+func (*multiDocs) Offset() int64     { return 0 }
+func (*multiDocs) TotalRows() int64  { return 0 }
 
 type attMeta struct {
 	ContentType string `json:"content_type"`
@@ -356,7 +424,7 @@ func (d *db) get(ctx context.Context, method, docID string, options driver.Optio
 
 	chttpOpts := chttp.NewOptions(options)
 
-	chttpOpts.Accept = typeMPRelated + "," + typeJSON
+	chttpOpts.Accept = strings.Join([]string{typeMPMixed, typeMPRelated, typeJSON}, ", ")
 	var err error
 	chttpOpts.Query, err = optionsToParams(opts)
 	if err != nil {

@@ -435,7 +435,9 @@ func ETag(resp *http.Response) (string, bool) {
 	return strings.Trim(etag[0], `"`), ok
 }
 
-// GetRev extracts the revision from the response's Etag header
+// GetRev extracts the revision from the response's Etag header, if found. If
+// not, it falls back to reading the revision from the _rev field of the
+// document itself, then restores resp.Body for re-reading.
 func GetRev(resp *http.Response) (string, error) {
 	rev, ok := ETag(resp)
 	if ok {

@@ -248,6 +248,11 @@ func processDoc(docID, ct, boundary, rev string, body io.ReadCloser) (*document,
 		if err != nil {
 			return nil, &internal.Error{Status: http.StatusBadGateway, Err: err}
 		}
+		_, rev, err := chttp.ExtractRev(io.NopCloser(bytes.NewReader(content)))
+		if err != nil {
+			return nil, err
+		}
+
 		var metaDoc struct {
 			Attachments map[string]attMeta `json:"_attachments"`
 		}
@@ -286,19 +291,35 @@ func (d *multiDocs) Next(row *driver.Row) error {
 		}
 		d.readerCloser = nil
 	}
-	doc, err := d.reader.NextPart()
+	part, err := d.reader.NextPart()
 	if err != nil {
 		return err
 	}
-	reader, rev, err := chttp.ExtractRev(doc)
+	ct, params, err := mime.ParseMediaType(part.Header.Get("Content-Type"))
 	if err != nil {
 		return err
 	}
-	d.readerCloser = reader
 
-	row.ID = d.id
-	row.Doc = reader
-	row.Rev = rev
+	if _, ok := params["error"]; ok {
+		var body struct {
+			Rev string `json:"missing"`
+		}
+		err := json.NewDecoder(part).Decode(&body)
+		row.ID = d.id
+		row.Error = &internal.Error{Status: http.StatusNotFound, Err: errors.New("missing")}
+		row.Rev = body.Rev
+		return err
+	}
+
+	doc, err := processDoc(d.id, ct, params["boundary"], "", part)
+	if err != nil {
+		return err
+	}
+
+	row.ID = doc.id
+	row.Doc = doc.body
+	row.Rev = doc.rev
+	row.Attachments = doc.attachments
 
 	return nil
 }

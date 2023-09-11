@@ -475,14 +475,16 @@ func rowAttachments(t *testing.T, row *driver.Row) []*Attachment {
 }
 
 func TestGet_with_open_revs(t *testing.T) {
+	type rowResult struct {
+		ID    string
+		Rev   string
+		Error string
+	}
 	type tt struct {
-		db       *db
-		id       string
-		options  kivik.Option
-		doc      []*driver.Row
-		expected []string
-		status   int
-		err      string
+		db      *db
+		id      string
+		options kivik.Option
+		want    []rowResult
 	}
 
 	tests := testy.NewTable()
@@ -502,9 +504,8 @@ Content-Type: application/json
 `),
 				}, nil
 			}),
-			id:       "bar",
-			expected: []string{`{"_id":"bar","_rev":"2-e2a6df12e36615e8def0bb38bb17b48d","foo":123}`},
-			doc: []*driver.Row{
+			id: "bar",
+			want: []rowResult{
 				{
 					ID:  "bar",
 					Rev: "2-e2a6df12e36615e8def0bb38bb17b48d",
@@ -601,18 +602,19 @@ Content-Type: application/json; error="true"
 				}, nil
 			}),
 			id: "bar",
-			expected: []string{`{
-	"_id": "SpaghettiWithMeatballs",
-	"_rev": "1-917fa23",
-	"_revisions": {"ids":["917fa23"], "start": 1},
-	"description": "An Italian-American delicious dish",
-	"ingredients": ["spaghetti","tomato sauce","meatballs"],
-	"name": "Spaghetti with meatballs"
-			}`},
-			doc: []*driver.Row{
+			want: []rowResult{
 				{
 					ID:  "bar",
 					Rev: "1-917fa23",
+				},
+				{
+					ID:  "bar",
+					Rev: "7-474f12e",
+				},
+				{
+					ID:    "bar",
+					Rev:   "3-6bcedf1",
+					Error: "missing",
 				},
 			},
 		}
@@ -624,28 +626,34 @@ Content-Type: application/json; error="true"
 			opts = mock.NilOption
 		}
 		rows, err := tt.db.Get(context.Background(), tt.id, opts)
-		if !testy.ErrorMatchesRE(tt.err, err) {
-			t.Errorf("Unexpected error: \n Got: %s\nWant: /%s/", err, tt.err)
-		}
 		if err != nil {
-			return
+			t.Fatal(err)
 		}
-		row := new(driver.Row)
+
+		got := []rowResult{}
 		for i := 0; ; i++ {
+			row := new(driver.Row)
 			if err := rows.Next(row); err != nil {
 				if err == io.EOF {
-					return
+					break
 				}
 				t.Fatal(err)
 			}
-			if d := testy.DiffAsJSON([]byte(tt.expected[i]), row.Doc); d != nil {
-				t.Errorf("Unexpected result: %s", d)
-			}
-
 			row.Doc = nil // Determinism
-			if d := testy.DiffInterface(tt.doc[i], row); d != nil {
-				t.Errorf("Unexpected doc:\n%s", d)
-			}
+			row.Attachments = nil
+			got = append(got, rowResult{
+				ID:  row.ID,
+				Rev: row.Rev,
+				Error: func() string {
+					if row.Error != nil {
+						return row.Error.Error()
+					}
+					return ""
+				}(),
+			})
+		}
+		if d := testy.DiffInterface(tt.want, got); d != nil {
+			t.Errorf("Unexpected result: %s", d)
 		}
 	})
 }

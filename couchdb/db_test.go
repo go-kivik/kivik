@@ -252,7 +252,7 @@ func TestGet(t *testing.T) {
 			}
 			return nil, errors.New("not an error")
 		}),
-		options: kivik.Options{OptionNoMultipartGet: true},
+		options: OptionNoMultipartGet(),
 		id:      "foo",
 		status:  http.StatusBadGateway,
 		err:     "not an error",

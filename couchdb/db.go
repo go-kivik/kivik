@@ -338,10 +338,17 @@ func (d *db) GetRev(ctx context.Context, docID string, options driver.Options) (
 	return rev, err
 }
 
+type getOptions struct {
+	noMultipartGet bool
+}
+
 func (d *db) get(ctx context.Context, method, docID string, options driver.Options) (*http.Response, error) {
 	if docID == "" {
 		return nil, missingArg("docID")
 	}
+
+	var getOpts getOptions
+	options.Apply(&getOpts)
 
 	opts := map[string]interface{}{}
 	options.Apply(opts)
@@ -354,7 +361,7 @@ func (d *db) get(ctx context.Context, method, docID string, options driver.Optio
 	if err != nil {
 		return nil, err
 	}
-	if _, ok := opts[OptionNoMultipartGet]; ok {
+	if getOpts.noMultipartGet {
 		chttpOpts.Accept = typeJSON
 	}
 	resp, err := d.Client.DoReq(ctx, method, d.path(chttp.EncodeDocID(docID)), chttpOpts)
@@ -391,6 +398,10 @@ func (d *db) CreateDoc(ctx context.Context, doc interface{}, options driver.Opti
 	return result.ID, result.Rev, err
 }
 
+type putOptions struct {
+	NoMultipartPut bool
+}
+
 func putOpts(doc interface{}, options driver.Options) (*chttp.Options, error) {
 	chttpOpts := chttp.NewOptions(options)
 	opts := map[string]interface{}{}
@@ -400,7 +411,9 @@ func putOpts(doc interface{}, options driver.Options) (*chttp.Options, error) {
 	if err != nil {
 		return nil, err
 	}
-	if _, ok := opts[OptionNoMultipartPut]; !ok {
+	var putOpts putOptions
+	options.Apply(&putOpts)
+	if putOpts.NoMultipartPut {
 		if atts, ok := extractAttachments(doc); ok {
 			boundary, size, multipartBody, err := newMultipartAttachments(chttp.EncodeBody(doc), atts)
 			if err != nil {

@@ -102,3 +102,42 @@ func (o optionPartition) String() string {
 func OptionPartition(partition string) kivik.Option {
 	return optionPartition(partition)
 }
+
+type optionNoMultipartPut struct{}
+
+func (optionNoMultipartPut) Apply(target interface{}) {
+	if putOpts, ok := target.(*putOptions); ok {
+		putOpts.NoMultipartPut = true
+	}
+}
+
+func (optionNoMultipartPut) String() string {
+	return "[NoMultipartPut]"
+}
+
+// OptionNoMultipartPut instructs [github.com/go-kivik/kivik/v4.DB.Put] not
+// to use CouchDB's multipart/related upload capabilities. This only affects
+// PUT requests that also include attachments.
+func OptionNoMultipartPut() kivik.Option {
+	return optionNoMultipartPut{}
+}
+
+type optionNoMultipartGet struct{}
+
+func (optionNoMultipartGet) Apply(target interface{}) {
+	if getOpts, ok := target.(*getOptions); ok {
+		getOpts.noMultipartGet = true
+	}
+}
+
+func (optionNoMultipartGet) String() string {
+	return "[NoMultipartGet]"
+}
+
+// OptionNoMultipartGet instructs [github.com/go-kivik/kivik/v4.DB.Get] not
+// to use CouchDB's ability to download attachments with the
+// multipart/related media type. This only affects GET requests that request
+// attachments.
+func OptionNoMultipartGet() kivik.Option {
+	return optionNoMultipartGet{}
+}

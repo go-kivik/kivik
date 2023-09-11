@@ -198,7 +198,8 @@ func (d *db) Get(ctx context.Context, docID string, options driver.Options) (dri
 
 	switch ct {
 	case typeJSON, typeMPRelated:
-		return processDoc(docID, resp)
+		etag, _ := chttp.ETag(resp)
+		return processDoc(docID, ct, params["boundary"], etag, resp)
 	case typeMPMixed:
 		boundary := strings.Trim(params["boundary"], "\"")
 		if boundary == "" {
@@ -215,16 +216,15 @@ func (d *db) Get(ctx context.Context, docID string, options driver.Options) (dri
 	}
 }
 
-func processDoc(docID string, resp *http.Response) (*document, error) {
-	ct, params, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-	if err != nil {
-		return nil, &internal.Error{Status: http.StatusBadGateway, Err: err}
-	}
+func processDoc(docID, ct, boundary, rev string, resp *http.Response) (*document, error) {
 	switch ct {
 	case typeJSON:
-		rev, err := chttp.GetRev(resp)
-		if err != nil {
-			return nil, err
+		if rev == "" {
+			var err error
+			resp.Body, rev, err = chttp.ExtractRev(resp.Body)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		return &document{
@@ -233,13 +233,7 @@ func processDoc(docID string, resp *http.Response) (*document, error) {
 			body: resp.Body,
 		}, nil
 	case typeMPRelated:
-		// I'm unsure whether it's ever possible to get a multipart/related
-		// response with no ETag. If this is possible, this needs to be improved
-		// to parse the JSON part of the mp/related response to extract the rev,
-		// similar to how chttp.GetRev works.
-		rev, _ := chttp.ETag(resp)
-
-		boundary := strings.Trim(params["boundary"], "\"")
+		boundary := strings.Trim(boundary, "\"")
 		if boundary == "" {
 			return nil, &internal.Error{Status: http.StatusBadGateway, Err: errors.New("kivik: boundary missing for multipart/related response")}
 		}

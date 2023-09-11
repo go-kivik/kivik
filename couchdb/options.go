@@ -43,3 +43,9 @@ func OptionHTTPClient(client *http.Client) kivik.Option {
 func OptionNoRequestCompression() kivik.Option {
 	return chttp.OptionNoRequestCompression()
 }
+
+// OptionUserAgent may be passed as an option when creating a client object,
+// to append to the default User-Agent header sent on all requests.
+func OptionUserAgent(ua string) kivik.Option {
+	return chttp.OptionUserAgent(ua)
+}

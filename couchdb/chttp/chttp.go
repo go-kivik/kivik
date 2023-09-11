@@ -29,7 +29,6 @@ import (
 	"sync"
 
 	"github.com/go-kivik/kivik/v4"
-	"github.com/go-kivik/kivik/v4/couchdb/internal"
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
@@ -73,7 +72,11 @@ func New(client *http.Client, dsn string, options driver.Options) (*Client, erro
 	user := dsnURL.User
 	dsnURL.User = nil
 	c := &Client{
-		Client:   client,
+		Client: client,
+		UserAgents: []string{
+			fmt.Sprintf("Kivik/%s", kivik.KivikVersion),
+			fmt.Sprintf("Kivik CouchDB driver/%s", Version),
+		},
 		dsn:      dsnURL,
 		basePath: strings.TrimSuffix(dsnURL.Path, "/"),
 		rawDSN:   dsn,
@@ -91,27 +94,7 @@ func New(client *http.Client, dsn string, options driver.Options) (*Client, erro
 	opts := map[string]interface{}{}
 	options.Apply(opts)
 	options.Apply(c)
-	if err := c.setUserAgent(opts); err != nil {
-		return nil, err
-	}
 	return c, nil
-}
-
-func (c *Client) setUserAgent(options map[string]interface{}) error {
-	c.UserAgents = []string{
-		fmt.Sprintf("Kivik/%s", kivik.KivikVersion),
-		fmt.Sprintf("Kivik CouchDB driver/%s", Version),
-	}
-	ua, ok := options[internal.OptionUserAgent]
-	if !ok {
-		return nil
-	}
-	userAgent, ok := ua.(string)
-	if !ok {
-		return &kivik.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("OptionUserAgent is %T, must be string", ua)}
-	}
-	c.UserAgents = append(c.UserAgents, userAgent)
-	return nil
 }
 
 func parseDSN(dsn string) (*url.URL, error) {

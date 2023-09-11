@@ -131,3 +131,21 @@ func (optionNoRequestCompression) String() string { return "NoRequestCompression
 func OptionNoRequestCompression() kivik.Option {
 	return optionNoRequestCompression{}
 }
+
+type optionUserAgent string
+
+func (a optionUserAgent) Apply(target interface{}) {
+	if client, ok := target.(*Client); ok {
+		client.UserAgents = append(client.UserAgents, string(a))
+	}
+}
+
+func (a optionUserAgent) String() string {
+	return fmt.Sprintf("[UserAgent:%s]", string(a))
+}
+
+// OptionUserAgent may be passed as an option when creating a client object,
+// to append to the default User-Agent header sent on all requests.
+func OptionUserAgent(ua string) kivik.Option {
+	return optionUserAgent(ua)
+}

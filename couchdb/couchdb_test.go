@@ -49,25 +49,14 @@ func TestNewClient(t *testing.T) {
 			},
 		},
 		{
-			name: "User Agent",
-			dsn:  "http://foo.com/",
-			options: kivik.Options{
-				OptionUserAgent: "test/foo",
-			},
+			name:    "User Agent",
+			dsn:     "http://foo.com/",
+			options: OptionUserAgent("test/foo"),
 			expectedUA: []string{
 				"Kivik/" + kivik.KivikVersion,
 				"Kivik CouchDB driver/" + Version,
 				"test/foo",
 			},
-		},
-		{
-			name: "invalid UserAgent",
-			dsn:  "http://foo.com/",
-			options: kivik.Options{
-				OptionUserAgent: 123,
-			},
-			status: http.StatusBadRequest,
-			err:    "OptionUserAgent is int, must be string",
 		},
 	}
 

@@ -21,7 +21,13 @@ import (
 )
 
 // Option wraps a Kivik or backend option.
-type Option = driver.Options
+type Option interface {
+	// Apply applies the option to target, if target is of the expected type.
+	// Unexpected/recognized target types should be ignored.
+	Apply(target interface{})
+}
+
+var _ Option = (driver.Options)(nil)
 
 type allOptions []Option
 

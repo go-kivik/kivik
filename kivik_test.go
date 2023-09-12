@@ -365,7 +365,7 @@ func TestCreateDB(t *testing.T) {
 			name: "db error",
 			client: &Client{
 				driverClient: &mock.Client{
-					CreateDBFunc: func(context.Context, string, Option) error {
+					CreateDBFunc: func(context.Context, string, driver.Options) error {
 						return errors.New("db error")
 					},
 				},
@@ -377,7 +377,7 @@ func TestCreateDB(t *testing.T) {
 			name: "success",
 			client: &Client{
 				driverClient: &mock.Client{
-					CreateDBFunc: func(_ context.Context, dbName string, options Option) error {
+					CreateDBFunc: func(_ context.Context, dbName string, options driver.Options) error {
 						expectedDBName := "foo"
 						wantOpts := map[string]interface{}{"foo": 123}
 						gotOpts := map[string]interface{}{}
@@ -432,7 +432,7 @@ func TestDestroyDB(t *testing.T) {
 			name: "db error",
 			client: &Client{
 				driverClient: &mock.Client{
-					DestroyDBFunc: func(context.Context, string, Option) error {
+					DestroyDBFunc: func(context.Context, string, driver.Options) error {
 						return errors.New("db error")
 					},
 				},
@@ -444,10 +444,10 @@ func TestDestroyDB(t *testing.T) {
 			name: "success",
 			client: &Client{
 				driverClient: &mock.Client{
-					DestroyDBFunc: func(_ context.Context, dbName string, opts Option) error {
+					DestroyDBFunc: func(_ context.Context, dbName string, options driver.Options) error {
 						expectedDBName := "foo"
 						gotOpts := map[string]interface{}{}
-						opts.Apply(gotOpts)
+						options.Apply(gotOpts)
 						expectedOpts := map[string]interface{}{"foo": 123}
 						if dbName != expectedDBName {
 							return fmt.Errorf("Unexpected dbname: %s", dbName)
@@ -812,7 +812,7 @@ func TestClientClose(t *testing.T) {
 		})
 		tests.Add("CreateDB", tt{
 			client: &mock.Client{
-				CreateDBFunc: func(context.Context, string, Option) error {
+				CreateDBFunc: func(context.Context, string, driver.Options) error {
 					time.Sleep(delay)
 					return nil
 				},
@@ -823,7 +823,7 @@ func TestClientClose(t *testing.T) {
 		})
 		tests.Add("DestroyDB", tt{
 			client: &mock.Client{
-				DestroyDBFunc: func(context.Context, string, Option) error {
+				DestroyDBFunc: func(context.Context, string, driver.Options) error {
 					time.Sleep(delay)
 					return nil
 				},

@@ -41,7 +41,7 @@ func replicate(ctx *kt.Context) {
 	})
 }
 
-func callReplicate(ctx *kt.Context, client *kivik.Client, target, source, repID string, options kivik.Params) (*kivik.Replication, error) {
+func callReplicate(ctx *kt.Context, client *kivik.Client, target, source, repID string, options kivik.Option) (*kivik.Replication, error) {
 	options = replicationOptions(ctx, client, target, source, repID, options)
 	var rep *kivik.Replication
 	err := kt.Retry(func() error {

@@ -22,7 +22,7 @@ import (
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
-func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attachment, opts map[string]interface{}) (newRev string, err error) {
+func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attachment, options driver.Options) (newRev string, err error) {
 	if docID == "" {
 		return "", missingArg("docID")
 	}
@@ -36,11 +36,10 @@ func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attach
 		return "", missingArg("att.Content")
 	}
 
-	chttpOpts, err := chttp.NewOptions(opts)
-	if err != nil {
-		return "", err
-	}
+	chttpOpts := chttp.NewOptions(options)
 
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	query, err := optionsToParams(opts)
 	if err != nil {
 		return "", err
@@ -58,8 +57,8 @@ func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attach
 	return response.Rev, nil
 }
 
-func (d *db) GetAttachmentMeta(ctx context.Context, docID, filename string, opts map[string]interface{}) (*driver.Attachment, error) {
-	resp, err := d.fetchAttachment(ctx, http.MethodHead, docID, filename, opts)
+func (d *db) GetAttachmentMeta(ctx context.Context, docID, filename string, options driver.Options) (*driver.Attachment, error) {
+	resp, err := d.fetchAttachment(ctx, http.MethodHead, docID, filename, options)
 	if err != nil {
 		return nil, err
 	}
@@ -67,15 +66,15 @@ func (d *db) GetAttachmentMeta(ctx context.Context, docID, filename string, opts
 	return att, err
 }
 
-func (d *db) GetAttachment(ctx context.Context, docID, filename string, opts map[string]interface{}) (*driver.Attachment, error) {
-	resp, err := d.fetchAttachment(ctx, http.MethodGet, docID, filename, opts)
+func (d *db) GetAttachment(ctx context.Context, docID, filename string, options driver.Options) (*driver.Attachment, error) {
+	resp, err := d.fetchAttachment(ctx, http.MethodGet, docID, filename, options)
 	if err != nil {
 		return nil, err
 	}
 	return decodeAttachment(resp)
 }
 
-func (d *db) fetchAttachment(ctx context.Context, method, docID, filename string, opts map[string]interface{}) (*http.Response, error) {
+func (d *db) fetchAttachment(ctx context.Context, method, docID, filename string, options driver.Options) (*http.Response, error) {
 	if method == "" {
 		return nil, errors.New("method required")
 	}
@@ -85,11 +84,11 @@ func (d *db) fetchAttachment(ctx context.Context, method, docID, filename string
 	if filename == "" {
 		return nil, missingArg("filename")
 	}
-	chttpOpts, err := chttp.NewOptions(opts)
-	if err != nil {
-		return nil, err
-	}
+	chttpOpts := chttp.NewOptions(options)
 
+	opts := map[string]interface{}{}
+	options.Apply(opts)
+	var err error
 	chttpOpts.Query, err = optionsToParams(opts)
 	if err != nil {
 		return nil, err
@@ -135,10 +134,12 @@ func getDigest(resp *http.Response) (string, error) {
 	return etag, nil
 }
 
-func (d *db) DeleteAttachment(ctx context.Context, docID, filename string, opts map[string]interface{}) (newRev string, err error) {
+func (d *db) DeleteAttachment(ctx context.Context, docID, filename string, options driver.Options) (newRev string, err error) {
 	if docID == "" {
 		return "", missingArg("docID")
 	}
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	if rev, _ := opts["rev"].(string); rev == "" {
 		return "", missingArg("rev")
 	}
@@ -146,10 +147,7 @@ func (d *db) DeleteAttachment(ctx context.Context, docID, filename string, opts 
 		return "", missingArg("filename")
 	}
 
-	chttpOpts, err := chttp.NewOptions(opts)
-	if err != nil {
-		return "", err
-	}
+	chttpOpts := chttp.NewOptions(options)
 
 	chttpOpts.Query, err = optionsToParams(opts)
 	if err != nil {

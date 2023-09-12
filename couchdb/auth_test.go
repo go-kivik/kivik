@@ -23,6 +23,7 @@ import (
 
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/couchdb/chttp"
+	"github.com/go-kivik/kivik/v4/internal/mock"
 	"github.com/go-kivik/kivik/v4/internal/nettest"
 )
 
@@ -227,7 +228,7 @@ func TestAuthentication(t *testing.T) {
 	tests.Run(t, func(t *testing.T, test tst) {
 		s := nettest.NewHTTPTestServer(t, test.handler(t))
 		defer s.Close()
-		driverClient, err := driver.NewClient(s.URL, nil)
+		driverClient, err := driver.NewClient(s.URL, mock.NilOption)
 		if err != nil {
 			t.Fatal(err)
 		}

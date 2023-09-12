@@ -25,7 +25,6 @@ import (
 	"net/textproto"
 	"net/url"
 	"os"
-	"path"
 	"path/filepath"
 	"reflect"
 	"sort"
@@ -89,7 +88,9 @@ func optionsToParams(opts ...map[string]interface{}) (url.Values, error) {
 }
 
 // rowsQuery performs a query that returns a rows iterator.
-func (d *db) rowsQuery(ctx context.Context, path string, opts map[string]interface{}) (driver.Rows, error) {
+func (d *db) rowsQuery(ctx context.Context, path string, options driver.Options) (driver.Rows, error) {
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	payload := make(map[string]interface{})
 	if keys := opts["keys"]; keys != nil {
 		delete(opts, "keys")
@@ -109,16 +110,16 @@ func (d *db) rowsQuery(ctx context.Context, path string, opts map[string]interfa
 	if err != nil {
 		return nil, err
 	}
-	options := &chttp.Options{Query: query}
+	chttpOpts := &chttp.Options{Query: query}
 	method := http.MethodGet
 	if len(payload) > 0 {
 		method = http.MethodPost
-		options.GetBody = chttp.BodyEncoder(payload)
-		options.Header = http.Header{
+		chttpOpts.GetBody = chttp.BodyEncoder(payload)
+		chttpOpts.Header = http.Header{
 			chttp.HeaderIdempotencyKey: []string{},
 		}
 	}
-	resp, err := d.Client.DoReq(ctx, method, d.path(path), options)
+	resp, err := d.Client.DoReq(ctx, method, d.path(path), chttpOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -129,33 +130,27 @@ func (d *db) rowsQuery(ctx context.Context, path string, opts map[string]interfa
 }
 
 // AllDocs returns all of the documents in the database.
-func (d *db) AllDocs(ctx context.Context, opts map[string]interface{}) (driver.Rows, error) {
-	reqPath := "_all_docs"
-	if part, ok := opts[OptionPartition].(string); ok {
-		delete(opts, OptionPartition)
-		reqPath = path.Join("_partition", part, reqPath)
-	}
-	return d.rowsQuery(ctx, reqPath, opts)
+func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
+	reqPath := partPath("_all_docs")
+	options.Apply(reqPath)
+	return d.rowsQuery(ctx, reqPath.String(), options)
 }
 
 // DesignDocs returns all of the documents in the database.
-func (d *db) DesignDocs(ctx context.Context, opts map[string]interface{}) (driver.Rows, error) {
-	return d.rowsQuery(ctx, "_design_docs", opts)
+func (d *db) DesignDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
+	return d.rowsQuery(ctx, "_design_docs", options)
 }
 
 // LocalDocs returns all of the documents in the database.
-func (d *db) LocalDocs(ctx context.Context, opts map[string]interface{}) (driver.Rows, error) {
-	return d.rowsQuery(ctx, "_local_docs", opts)
+func (d *db) LocalDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
+	return d.rowsQuery(ctx, "_local_docs", options)
 }
 
 // Query queries a view.
-func (d *db) Query(ctx context.Context, ddoc, view string, opts map[string]interface{}) (driver.Rows, error) {
-	reqPath := fmt.Sprintf("_design/%s/_view/%s", chttp.EncodeDocID(ddoc), chttp.EncodeDocID(view))
-	if part, ok := opts[OptionPartition].(string); ok {
-		delete(opts, OptionPartition)
-		reqPath = path.Join("_partition", part, reqPath)
-	}
-	return d.rowsQuery(ctx, reqPath, opts)
+func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Options) (driver.Rows, error) {
+	reqPath := partPath(fmt.Sprintf("_design/%s/_view/%s", chttp.EncodeDocID(ddoc), chttp.EncodeDocID(view)))
+	options.Apply(reqPath)
+	return d.rowsQuery(ctx, reqPath.String(), options)
 }
 
 // document represents a single document returned by Get
@@ -190,8 +185,8 @@ func (*document) Offset() int64     { return 0 }
 func (*document) TotalRows() int64  { return 0 }
 
 // Get fetches the requested document.
-func (d *db) Get(ctx context.Context, docID string, opts map[string]interface{}) (driver.Rows, error) {
-	resp, err := d.get(ctx, http.MethodGet, docID, opts)
+func (d *db) Get(ctx context.Context, docID string, options driver.Options) (driver.Rows, error) {
+	resp, err := d.get(ctx, http.MethodGet, docID, options)
 	if err != nil {
 		return nil, err
 	}
@@ -330,8 +325,8 @@ func (a *multipartAttachments) Close() error {
 }
 
 // Rev returns the most current rev of the requested document.
-func (d *db) GetRev(ctx context.Context, docID string, opts map[string]interface{}) (string, error) {
-	resp, err := d.get(ctx, http.MethodHead, docID, opts)
+func (d *db) GetRev(ctx context.Context, docID string, options driver.Options) (string, error) {
+	resp, err := d.get(ctx, http.MethodHead, docID, options)
 	if err != nil {
 		return "", err
 	}
@@ -343,22 +338,30 @@ func (d *db) GetRev(ctx context.Context, docID string, opts map[string]interface
 	return rev, err
 }
 
-func (d *db) get(ctx context.Context, method, docID string, opts map[string]interface{}) (*http.Response, error) {
+type getOptions struct {
+	noMultipartGet bool
+}
+
+func (d *db) get(ctx context.Context, method, docID string, options driver.Options) (*http.Response, error) {
 	if docID == "" {
 		return nil, missingArg("docID")
 	}
 
-	chttpOpts, err := chttp.NewOptions(opts)
-	if err != nil {
-		return nil, err
-	}
+	var getOpts getOptions
+	options.Apply(&getOpts)
+
+	opts := map[string]interface{}{}
+	options.Apply(opts)
+
+	chttpOpts := chttp.NewOptions(options)
 
 	chttpOpts.Accept = typeMPRelated + "," + typeJSON
+	var err error
 	chttpOpts.Query, err = optionsToParams(opts)
 	if err != nil {
 		return nil, err
 	}
-	if _, ok := opts[OptionNoMultipartGet]; ok {
+	if getOpts.noMultipartGet {
 		chttpOpts.Accept = typeJSON
 	}
 	resp, err := d.Client.DoReq(ctx, method, d.path(chttp.EncodeDocID(docID)), chttpOpts)
@@ -369,16 +372,16 @@ func (d *db) get(ctx context.Context, method, docID string, opts map[string]inte
 	return resp, err
 }
 
-func (d *db) CreateDoc(ctx context.Context, doc interface{}, opts map[string]interface{}) (docID, rev string, err error) {
+func (d *db) CreateDoc(ctx context.Context, doc interface{}, options driver.Options) (docID, rev string, err error) {
 	result := struct {
 		ID  string `json:"id"`
 		Rev string `json:"rev"`
 	}{}
 
-	chttpOpts, err := chttp.NewOptions(opts)
-	if err != nil {
-		return "", "", err
-	}
+	chttpOpts := chttp.NewOptions(options)
+
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 
 	path := d.dbName
 	if len(opts) > 0 {
@@ -395,16 +398,22 @@ func (d *db) CreateDoc(ctx context.Context, doc interface{}, opts map[string]int
 	return result.ID, result.Rev, err
 }
 
-func putOpts(doc interface{}, opts map[string]interface{}) (*chttp.Options, error) {
-	chttpOpts, err := chttp.NewOptions(opts)
-	if err != nil {
-		return nil, err
-	}
+type putOptions struct {
+	NoMultipartPut bool
+}
+
+func putOpts(doc interface{}, options driver.Options) (*chttp.Options, error) {
+	chttpOpts := chttp.NewOptions(options)
+	opts := map[string]interface{}{}
+	options.Apply(opts)
+	var err error
 	chttpOpts.Query, err = optionsToParams(opts)
 	if err != nil {
 		return nil, err
 	}
-	if _, ok := opts[OptionNoMultipartPut]; !ok {
+	var putOpts putOptions
+	options.Apply(&putOpts)
+	if putOpts.NoMultipartPut {
 		if atts, ok := extractAttachments(doc); ok {
 			boundary, size, multipartBody, err := newMultipartAttachments(chttp.EncodeBody(doc), atts)
 			if err != nil {
@@ -420,11 +429,11 @@ func putOpts(doc interface{}, opts map[string]interface{}) (*chttp.Options, erro
 	return chttpOpts, nil
 }
 
-func (d *db) Put(ctx context.Context, docID string, doc interface{}, opts map[string]interface{}) (rev string, err error) {
+func (d *db) Put(ctx context.Context, docID string, doc interface{}, options driver.Options) (rev string, err error) {
 	if docID == "" {
 		return "", missingArg("docID")
 	}
-	opts2, err := putOpts(doc, opts)
+	opts2, err := putOpts(doc, options)
 	if err != nil {
 		return "", err
 	}
@@ -769,19 +778,19 @@ func copyWithAttachmentStubs(w io.Writer, r io.Reader, atts map[string]*stub) er
 	return nil
 }
 
-func (d *db) Delete(ctx context.Context, docID string, opts map[string]interface{}) (string, error) {
+func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (string, error) {
 	if docID == "" {
 		return "", missingArg("docID")
 	}
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	if rev, _ := opts["rev"].(string); rev == "" {
 		return "", missingArg("rev")
 	}
 
-	chttpOpts, err := chttp.NewOptions(opts)
-	if err != nil {
-		return "", err
-	}
+	chttpOpts := chttp.NewOptions(options)
 
+	var err error
 	chttpOpts.Query, err = optionsToParams(opts)
 	if err != nil {
 		return "", err
@@ -874,17 +883,17 @@ func (d *db) SetSecurity(ctx context.Context, security *driver.Security) error {
 	return chttp.ResponseError(res)
 }
 
-func (d *db) Copy(ctx context.Context, targetID, sourceID string, opts map[string]interface{}) (targetRev string, err error) {
+func (d *db) Copy(ctx context.Context, targetID, sourceID string, options driver.Options) (targetRev string, err error) {
 	if sourceID == "" {
 		return "", missingArg("sourceID")
 	}
 	if targetID == "" {
 		return "", missingArg("targetID")
 	}
-	chttpOpts, err := chttp.NewOptions(opts)
-	if err != nil {
-		return "", err
-	}
+	chttpOpts := chttp.NewOptions(options)
+
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	chttpOpts.Query, err = optionsToParams(opts)
 	if err != nil {
 		return "", err

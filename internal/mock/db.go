@@ -22,20 +22,20 @@ import (
 type DB struct {
 	// ID is a unique identifier for the DB instance.
 	ID                   string
-	AllDocsFunc          func(ctx context.Context, options map[string]interface{}) (driver.Rows, error)
-	GetFunc              func(ctx context.Context, docID string, options map[string]interface{}) (*driver.Document, error)
-	CreateDocFunc        func(ctx context.Context, doc interface{}, options map[string]interface{}) (docID, rev string, err error)
-	PutFunc              func(ctx context.Context, docID string, doc interface{}, options map[string]interface{}) (rev string, err error)
-	DeleteFunc           func(ctx context.Context, docID string, options map[string]interface{}) (newRev string, err error)
+	AllDocsFunc          func(ctx context.Context, options driver.Options) (driver.Rows, error)
+	GetFunc              func(ctx context.Context, docID string, options driver.Options) (*driver.Document, error)
+	CreateDocFunc        func(ctx context.Context, doc interface{}, options driver.Options) (docID, rev string, err error)
+	PutFunc              func(ctx context.Context, docID string, doc interface{}, options driver.Options) (rev string, err error)
+	DeleteFunc           func(ctx context.Context, docID string, options driver.Options) (newRev string, err error)
 	StatsFunc            func(ctx context.Context) (*driver.DBStats, error)
 	CompactFunc          func(ctx context.Context) error
 	CompactViewFunc      func(ctx context.Context, ddocID string) error
 	ViewCleanupFunc      func(ctx context.Context) error
-	ChangesFunc          func(ctx context.Context, options map[string]interface{}) (driver.Changes, error)
-	PutAttachmentFunc    func(ctx context.Context, docID string, att *driver.Attachment, options map[string]interface{}) (newRev string, err error)
-	GetAttachmentFunc    func(ctx context.Context, docID, filename string, options map[string]interface{}) (*driver.Attachment, error)
-	DeleteAttachmentFunc func(ctx context.Context, docID, filename string, options map[string]interface{}) (newRev string, err error)
-	QueryFunc            func(context.Context, string, string, map[string]interface{}) (driver.Rows, error)
+	ChangesFunc          func(ctx context.Context, options driver.Options) (driver.Changes, error)
+	PutAttachmentFunc    func(ctx context.Context, docID string, att *driver.Attachment, options driver.Options) (newRev string, err error)
+	GetAttachmentFunc    func(ctx context.Context, docID, filename string, options driver.Options) (*driver.Attachment, error)
+	DeleteAttachmentFunc func(ctx context.Context, docID, filename string, options driver.Options) (newRev string, err error)
+	QueryFunc            func(context.Context, string, string, driver.Options) (driver.Rows, error)
 }
 
 // SecurityDB is a stub for a driver.SecurityDB.
@@ -48,38 +48,38 @@ type SecurityDB struct {
 // RowsGetter serves as a test double for the driver.DB + driver.RowsGetter type.
 type RowsGetter struct {
 	DB
-	GetFunc func(ctx context.Context, docID string, options map[string]interface{}) (driver.Rows, error)
+	GetFunc func(ctx context.Context, docID string, options driver.Options) (driver.Rows, error)
 }
 
 // Get calls db.GetFunc
-func (db *RowsGetter) Get(ctx context.Context, docID string, opts map[string]interface{}) (driver.Rows, error) {
+func (db *RowsGetter) Get(ctx context.Context, docID string, opts driver.Options) (driver.Rows, error) {
 	return db.GetFunc(ctx, docID, opts)
 }
 
 var _ driver.DB = &DB{}
 
 // AllDocs calls db.AllDocsFunc
-func (db *DB) AllDocs(ctx context.Context, options map[string]interface{}) (driver.Rows, error) {
+func (db *DB) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
 	return db.AllDocsFunc(ctx, options)
 }
 
 // Get calls db.GetFunc
-func (db *DB) Get(ctx context.Context, docID string, opts map[string]interface{}) (*driver.Document, error) {
+func (db *DB) Get(ctx context.Context, docID string, opts driver.Options) (*driver.Document, error) {
 	return db.GetFunc(ctx, docID, opts)
 }
 
 // CreateDoc calls db.CreateDocFunc
-func (db *DB) CreateDoc(ctx context.Context, doc interface{}, opts map[string]interface{}) (string, string, error) {
+func (db *DB) CreateDoc(ctx context.Context, doc interface{}, opts driver.Options) (string, string, error) {
 	return db.CreateDocFunc(ctx, doc, opts)
 }
 
 // Put calls db.PutFunc
-func (db *DB) Put(ctx context.Context, docID string, doc interface{}, opts map[string]interface{}) (string, error) {
+func (db *DB) Put(ctx context.Context, docID string, doc interface{}, opts driver.Options) (string, error) {
 	return db.PutFunc(ctx, docID, doc, opts)
 }
 
 // Delete calls db.DeleteFunc
-func (db *DB) Delete(ctx context.Context, docID string, opts map[string]interface{}) (string, error) {
+func (db *DB) Delete(ctx context.Context, docID string, opts driver.Options) (string, error) {
 	return db.DeleteFunc(ctx, docID, opts)
 }
 
@@ -114,64 +114,64 @@ func (db *SecurityDB) SetSecurity(ctx context.Context, security *driver.Security
 }
 
 // Changes calls db.ChangesFunc
-func (db *DB) Changes(ctx context.Context, opts map[string]interface{}) (driver.Changes, error) {
+func (db *DB) Changes(ctx context.Context, opts driver.Options) (driver.Changes, error) {
 	return db.ChangesFunc(ctx, opts)
 }
 
 // PutAttachment calls db.PutAttachmentFunc
-func (db *DB) PutAttachment(ctx context.Context, docID string, att *driver.Attachment, opts map[string]interface{}) (string, error) {
+func (db *DB) PutAttachment(ctx context.Context, docID string, att *driver.Attachment, opts driver.Options) (string, error) {
 	return db.PutAttachmentFunc(ctx, docID, att, opts)
 }
 
 // GetAttachment calls db.GetAttachmentFunc
-func (db *DB) GetAttachment(ctx context.Context, docID, filename string, opts map[string]interface{}) (*driver.Attachment, error) {
+func (db *DB) GetAttachment(ctx context.Context, docID, filename string, opts driver.Options) (*driver.Attachment, error) {
 	return db.GetAttachmentFunc(ctx, docID, filename, opts)
 }
 
 // DeleteAttachment calls db.DeleteAttachmentFunc
-func (db *DB) DeleteAttachment(ctx context.Context, docID, filename string, opts map[string]interface{}) (string, error) {
+func (db *DB) DeleteAttachment(ctx context.Context, docID, filename string, opts driver.Options) (string, error) {
 	return db.DeleteAttachmentFunc(ctx, docID, filename, opts)
 }
 
 // Query calls db.QueryFunc
-func (db *DB) Query(ctx context.Context, ddoc, view string, opts map[string]interface{}) (driver.Rows, error) {
+func (db *DB) Query(ctx context.Context, ddoc, view string, opts driver.Options) (driver.Rows, error) {
 	return db.QueryFunc(ctx, ddoc, view, opts)
 }
 
 // Finder mocks a driver.DB and driver.Finder
 type Finder struct {
 	*DB
-	CreateIndexFunc func(context.Context, string, string, interface{}, map[string]interface{}) error
-	DeleteIndexFunc func(context.Context, string, string, map[string]interface{}) error
-	FindFunc        func(context.Context, interface{}, map[string]interface{}) (driver.Rows, error)
-	GetIndexesFunc  func(context.Context, map[string]interface{}) ([]driver.Index, error)
-	ExplainFunc     func(context.Context, interface{}, map[string]interface{}) (*driver.QueryPlan, error)
+	CreateIndexFunc func(context.Context, string, string, interface{}, driver.Options) error
+	DeleteIndexFunc func(context.Context, string, string, driver.Options) error
+	FindFunc        func(context.Context, interface{}, driver.Options) (driver.Rows, error)
+	GetIndexesFunc  func(context.Context, driver.Options) ([]driver.Index, error)
+	ExplainFunc     func(context.Context, interface{}, driver.Options) (*driver.QueryPlan, error)
 }
 
 var _ driver.Finder = &Finder{}
 
 // CreateIndex calls db.CreateIndexFunc
-func (db *Finder) CreateIndex(ctx context.Context, ddoc, name string, index interface{}, opts map[string]interface{}) error {
-	return db.CreateIndexFunc(ctx, ddoc, name, index, opts)
+func (db *Finder) CreateIndex(ctx context.Context, ddoc, name string, index interface{}, options driver.Options) error {
+	return db.CreateIndexFunc(ctx, ddoc, name, index, options)
 }
 
 // DeleteIndex calls db.DeleteIndexFunc
-func (db *Finder) DeleteIndex(ctx context.Context, ddoc, name string, opts map[string]interface{}) error {
+func (db *Finder) DeleteIndex(ctx context.Context, ddoc, name string, opts driver.Options) error {
 	return db.DeleteIndexFunc(ctx, ddoc, name, opts)
 }
 
 // Find calls db.FindFunc
-func (db *Finder) Find(ctx context.Context, query interface{}, opts map[string]interface{}) (driver.Rows, error) {
+func (db *Finder) Find(ctx context.Context, query interface{}, opts driver.Options) (driver.Rows, error) {
 	return db.FindFunc(ctx, query, opts)
 }
 
 // GetIndexes calls db.GetIndexesFunc
-func (db *Finder) GetIndexes(ctx context.Context, opts map[string]interface{}) ([]driver.Index, error) {
+func (db *Finder) GetIndexes(ctx context.Context, opts driver.Options) ([]driver.Index, error) {
 	return db.GetIndexesFunc(ctx, opts)
 }
 
 // Explain calls db.ExplainFunc
-func (db *Finder) Explain(ctx context.Context, query interface{}, opts map[string]interface{}) (*driver.QueryPlan, error) {
+func (db *Finder) Explain(ctx context.Context, query interface{}, opts driver.Options) (*driver.QueryPlan, error) {
 	return db.ExplainFunc(ctx, query, opts)
 }
 
@@ -191,65 +191,65 @@ func (db *Flusher) Flush(ctx context.Context) error {
 // RevGetter mocks a driver.DB and driver.RevGetter
 type RevGetter struct {
 	*DB
-	GetRevFunc func(context.Context, string, map[string]interface{}) (string, error)
+	GetRevFunc func(context.Context, string, driver.Options) (string, error)
 }
 
 var _ driver.RevGetter = &RevGetter{}
 
 // GetRev calls db.GetRevFunc
-func (db *RevGetter) GetRev(ctx context.Context, docID string, opts map[string]interface{}) (string, error) {
+func (db *RevGetter) GetRev(ctx context.Context, docID string, opts driver.Options) (string, error) {
 	return db.GetRevFunc(ctx, docID, opts)
 }
 
 // Copier mocks a driver.DB and driver.Copier.
 type Copier struct {
 	*DB
-	CopyFunc func(context.Context, string, string, map[string]interface{}) (string, error)
+	CopyFunc func(context.Context, string, string, driver.Options) (string, error)
 }
 
 var _ driver.Copier = &Copier{}
 
 // Copy calls db.CopyFunc
-func (db *Copier) Copy(ctx context.Context, target, source string, options map[string]interface{}) (string, error) {
+func (db *Copier) Copy(ctx context.Context, target, source string, options driver.Options) (string, error) {
 	return db.CopyFunc(ctx, target, source, options)
 }
 
 // AttachmentMetaGetter mocks a driver.DB and driver.AttachmentMetaGetter
 type AttachmentMetaGetter struct {
 	*DB
-	GetAttachmentMetaFunc func(ctx context.Context, docID, filename string, options map[string]interface{}) (*driver.Attachment, error)
+	GetAttachmentMetaFunc func(ctx context.Context, docID, filename string, options driver.Options) (*driver.Attachment, error)
 }
 
 var _ driver.AttachmentMetaGetter = &AttachmentMetaGetter{}
 
 // GetAttachmentMeta calls db.GetAttachmentMetaFunc
-func (db *AttachmentMetaGetter) GetAttachmentMeta(ctx context.Context, docID, filename string, options map[string]interface{}) (*driver.Attachment, error) {
+func (db *AttachmentMetaGetter) GetAttachmentMeta(ctx context.Context, docID, filename string, options driver.Options) (*driver.Attachment, error) {
 	return db.GetAttachmentMetaFunc(ctx, docID, filename, options)
 }
 
 // DesignDocer mocks a driver.DB and driver.DesignDocer
 type DesignDocer struct {
 	*DB
-	DesignDocsFunc func(context.Context, map[string]interface{}) (driver.Rows, error)
+	DesignDocsFunc func(context.Context, driver.Options) (driver.Rows, error)
 }
 
 var _ driver.DesignDocer = &DesignDocer{}
 
 // DesignDocs calls db.DesignDocsFunc
-func (db *DesignDocer) DesignDocs(ctx context.Context, options map[string]interface{}) (driver.Rows, error) {
+func (db *DesignDocer) DesignDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
 	return db.DesignDocsFunc(ctx, options)
 }
 
 // LocalDocer mocks a driver.DB and driver.DesignDocer
 type LocalDocer struct {
 	*DB
-	LocalDocsFunc func(context.Context, map[string]interface{}) (driver.Rows, error)
+	LocalDocsFunc func(context.Context, driver.Options) (driver.Rows, error)
 }
 
 var _ driver.LocalDocer = &LocalDocer{}
 
 // LocalDocs calls db.LocalDocsFunc
-func (db *LocalDocer) LocalDocs(ctx context.Context, options map[string]interface{}) (driver.Rows, error) {
+func (db *LocalDocer) LocalDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
 	return db.LocalDocsFunc(ctx, options)
 }
 
@@ -269,13 +269,13 @@ func (db *Purger) Purge(ctx context.Context, docMap map[string][]string) (*drive
 // BulkGetter mocks a driver.DB and driver.BulkGetter
 type BulkGetter struct {
 	*DB
-	BulkGetFunc func(context.Context, []driver.BulkGetReference, map[string]interface{}) (driver.Rows, error)
+	BulkGetFunc func(context.Context, []driver.BulkGetReference, driver.Options) (driver.Rows, error)
 }
 
 var _ driver.BulkGetter = &BulkGetter{}
 
 // BulkGet calls db.BulkGetFunc
-func (db *BulkGetter) BulkGet(ctx context.Context, docs []driver.BulkGetReference, opts map[string]interface{}) (driver.Rows, error) {
+func (db *BulkGetter) BulkGet(ctx context.Context, docs []driver.BulkGetReference, opts driver.Options) (driver.Rows, error) {
 	return db.BulkGetFunc(ctx, docs, opts)
 }
 

@@ -37,11 +37,11 @@ func (c *driverClient) Authenticate(ctx context.Context, authenticator interface
 	return expected.wait(ctx)
 }
 
-func (c *driverClient) CreateDB(ctx context.Context, name string, options map[string]interface{}) error {
+func (c *driverClient) CreateDB(ctx context.Context, name string, options driver.Options) error {
 	expected := &ExpectedCreateDB{
 		arg0: name,
 		commonExpectation: commonExpectation{
-			options: options,
+			options: toLegacyOptions(options),
 		},
 	}
 	if err := c.nextExpectation(expected); err != nil {

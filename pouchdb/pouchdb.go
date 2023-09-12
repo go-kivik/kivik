@@ -40,7 +40,7 @@ func init() {
 
 // NewClient returns a PouchDB client handle. Provide a dsn only for remote
 // databases. Otherwise specify ""
-func (d *pouchDriver) NewClient(dsn string, _ map[string]interface{}) (driver.Client, error) {
+func (d *pouchDriver) NewClient(dsn string, _ driver.Options) (driver.Client, error) {
 	var u *url.URL
 	var auth authenticator
 	var user *url.Userinfo
@@ -86,7 +86,7 @@ var _ driver.Client = &client{}
 
 // AllDBs returns the list of all existing databases. This function depends on
 // the pouchdb-all-dbs plugin being loaded.
-func (c *client) AllDBs(ctx context.Context, _ map[string]interface{}) ([]string, error) {
+func (c *client) AllDBs(ctx context.Context, _ driver.Options) ([]string, error) {
 	if c.dsn == nil {
 		return c.pouch.AllDBs(ctx)
 	}
@@ -137,8 +137,9 @@ func (c *client) isRemote() bool {
 // DBExists returns true if the requested DB exists. This function only works
 // for remote databases. For local databases, it creates the database.
 // Silly PouchDB.
-func (c *client) DBExists(ctx context.Context, dbName string, opts map[string]interface{}) (bool, error) {
-	pouchOpts := c.options(opts, Options{"skip_setup": true})
+func (c *client) DBExists(ctx context.Context, dbName string, options driver.Options) (bool, error) {
+	pouchOpts := map[string]interface{}{"skip_setup": true}
+	options.Apply(pouchOpts)
 	_, err := c.pouch.New(c.dbURL(dbName), pouchOpts).Info(ctx)
 	if err == nil {
 		return true, nil
@@ -149,20 +150,20 @@ func (c *client) DBExists(ctx context.Context, dbName string, opts map[string]in
 	return false, err
 }
 
-func (c *client) CreateDB(ctx context.Context, dbName string, opts map[string]interface{}) error {
+func (c *client) CreateDB(ctx context.Context, dbName string, options driver.Options) error {
 	if c.isRemote() {
-		if exists, _ := c.DBExists(ctx, dbName, opts); exists {
+		if exists, _ := c.DBExists(ctx, dbName, options); exists {
 			return &kivik.Error{Status: http.StatusPreconditionFailed, Message: "database exists"}
 		}
 	}
-	pouchOpts := c.options(opts)
+	pouchOpts := map[string]interface{}{}
+	options.Apply(pouchOpts)
 	_, err := c.pouch.New(c.dbURL(dbName), pouchOpts).Info(ctx)
 	return err
 }
 
-func (c *client) DestroyDB(ctx context.Context, dbName string, opts map[string]interface{}) error {
-	pouchOpts := c.options(opts)
-	exists, err := c.DBExists(ctx, dbName, pouchOpts)
+func (c *client) DestroyDB(ctx context.Context, dbName string, options driver.Options) error {
+	exists, err := c.DBExists(ctx, dbName, options)
 	if err != nil {
 		return err
 	}
@@ -170,11 +171,14 @@ func (c *client) DestroyDB(ctx context.Context, dbName string, opts map[string]i
 		// This will only ever do anything for a remote database
 		return &kivik.Error{Status: http.StatusNotFound, Message: "database does not exist"}
 	}
+	pouchOpts := map[string]interface{}{}
+	options.Apply(pouchOpts)
 	return c.pouch.New(c.dbURL(dbName), pouchOpts).Destroy(ctx, nil)
 }
 
-func (c *client) DB(dbName string, opts map[string]interface{}) (driver.DB, error) {
-	pouchOpts := c.options(opts)
+func (c *client) DB(dbName string, options driver.Options) (driver.DB, error) {
+	pouchOpts := map[string]interface{}{}
+	options.Apply(pouchOpts)
 	return &db{
 		// TODO: #68 Consider deferring this pouch.New call until the first use,
 		// so ctx can be used.

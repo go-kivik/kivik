@@ -170,7 +170,7 @@ var replicationNotImplemented = &Error{Status: http.StatusNotImplemented, Messag
 // GetReplications returns a list of defined replications in the _replicator
 // database. Options are in the same format as to AllDocs(), except that
 // "conflicts" and "update_seq" are ignored.
-func (c *Client) GetReplications(ctx context.Context, options ...Options) ([]*Replication, error) {
+func (c *Client) GetReplications(ctx context.Context, options ...Option) ([]*Replication, error) {
 	if err := c.startQuery(); err != nil {
 		return nil, err
 	}
@@ -179,7 +179,7 @@ func (c *Client) GetReplications(ctx context.Context, options ...Options) ([]*Re
 	if !ok {
 		return nil, replicationNotImplemented
 	}
-	reps, err := replicator.GetReplications(ctx, mergeOptions(options...))
+	reps, err := replicator.GetReplications(ctx, allOptions(options))
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +194,7 @@ func (c *Client) GetReplications(ctx context.Context, options ...Options) ([]*Re
 //
 // To use an object for either "source" or "target", pass the desired object
 // in options. This will override targetDSN and sourceDSN function parameters.
-func (c *Client) Replicate(ctx context.Context, targetDSN, sourceDSN string, options ...Options) (*Replication, error) {
+func (c *Client) Replicate(ctx context.Context, targetDSN, sourceDSN string, options ...Option) (*Replication, error) {
 	if err := c.startQuery(); err != nil {
 		return nil, err
 	}
@@ -203,7 +203,7 @@ func (c *Client) Replicate(ctx context.Context, targetDSN, sourceDSN string, opt
 	if !ok {
 		return nil, replicationNotImplemented
 	}
-	rep, err := replicator.Replicate(ctx, targetDSN, sourceDSN, mergeOptions(options...))
+	rep, err := replicator.Replicate(ctx, targetDSN, sourceDSN, allOptions(options))
 	if err != nil {
 		return nil, err
 	}

@@ -19,7 +19,7 @@ import (
 	"net/url"
 
 	"github.com/go-kivik/kivik/v4"
-	"github.com/go-kivik/kivik/v4/couchdb/internal"
+	"github.com/go-kivik/kivik/v4/driver"
 )
 
 // Options are optional parameters which may be sent with a request.
@@ -69,46 +69,81 @@ type Options struct {
 }
 
 // NewOptions converts a kivik options map into
-func NewOptions(opts map[string]interface{}) (*Options, error) {
-	fullCommit, err := fullCommit(opts)
-	if err != nil {
-		return nil, err
-	}
-	ifNoneMatch, err := ifNoneMatch(opts)
-	if err != nil {
-		return nil, err
-	}
-	return &Options{
-		FullCommit:  fullCommit,
-		IfNoneMatch: ifNoneMatch,
-	}, nil
+func NewOptions(options driver.Options) *Options {
+	o := &Options{}
+	options.Apply(o)
+	return o
 }
 
-func fullCommit(opts map[string]interface{}) (bool, error) {
-	fc, ok := opts[internal.OptionFullCommit]
-	if !ok {
-		return false, nil
+type optionNoRequestCompression struct{}
+
+var _ kivik.Option = optionNoRequestCompression{}
+
+func (optionNoRequestCompression) Apply(target interface{}) {
+	if client, ok := target.(*Client); ok {
+		client.noGzip = true
 	}
-	fcBool, ok := fc.(bool)
-	if !ok {
-		return false, &kivik.Error{Status: http.StatusBadRequest, Err: fmt.Errorf("kivik: option '%s' must be bool, not %T", internal.OptionFullCommit, fc)}
-	}
-	delete(opts, internal.OptionFullCommit)
-	return fcBool, nil
 }
 
-func ifNoneMatch(opts map[string]interface{}) (string, error) {
-	inm, ok := opts[internal.OptionIfNoneMatch]
-	if !ok {
-		return "", nil
+func (optionNoRequestCompression) String() string { return "NoRequestCompression" }
+
+// OptionNoRequestCompression instructs the CouchDB client not to use gzip
+// compression for request bodies sent to the server. Only honored when passed
+// to [github.com/go-kivik/kivik/v4.New] or [New].
+func OptionNoRequestCompression() kivik.Option {
+	return optionNoRequestCompression{}
+}
+
+type optionUserAgent string
+
+func (a optionUserAgent) Apply(target interface{}) {
+	if client, ok := target.(*Client); ok {
+		client.UserAgents = append(client.UserAgents, string(a))
 	}
-	inmString, ok := inm.(string)
-	if !ok {
-		return "", &kivik.Error{Status: http.StatusBadRequest, Err: fmt.Errorf("kivik: option '%s' must be string, not %T", internal.OptionIfNoneMatch, inm)}
+}
+
+func (a optionUserAgent) String() string {
+	return fmt.Sprintf("[UserAgent:%s]", string(a))
+}
+
+// OptionUserAgent may be passed as an option when creating a client object,
+// to append to the default User-Agent header sent on all requests.
+func OptionUserAgent(ua string) kivik.Option {
+	return optionUserAgent(ua)
+}
+
+type optionFullCommit struct{}
+
+func (optionFullCommit) Apply(target interface{}) {
+	if o, ok := target.(*Options); ok {
+		o.FullCommit = true
 	}
-	delete(opts, internal.OptionIfNoneMatch)
-	if inmString[0] != '"' {
-		return `"` + inmString + `"`, nil
+}
+
+func (optionFullCommit) String() string {
+	return "[FullCommit]"
+}
+
+// OptionFullCommit is the option key used to set the `X-Couch-Full-Commit`
+// header in the request when set to true.
+func OptionFullCommit() kivik.Option {
+	return optionFullCommit{}
+}
+
+type optionIfNoneMatch string
+
+func (o optionIfNoneMatch) Apply(target interface{}) {
+	if opts, ok := target.(*Options); ok {
+		opts.IfNoneMatch = string(o)
 	}
-	return inmString, nil
+}
+
+func (o optionIfNoneMatch) String() string {
+	return fmt.Sprintf("[If-None-Match: %s]", string(o))
+}
+
+// OptionIfNoneMatch is an option key to set the `If-None-Match` header on
+// the request.
+func OptionIfNoneMatch(value string) kivik.Option {
+	return optionIfNoneMatch(value)
 }

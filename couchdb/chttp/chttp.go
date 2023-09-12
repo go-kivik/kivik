@@ -29,7 +29,7 @@ import (
 	"sync"
 
 	"github.com/go-kivik/kivik/v4"
-	"github.com/go-kivik/kivik/v4/couchdb/internal"
+	"github.com/go-kivik/kivik/v4/driver"
 )
 
 const typeJSON = "application/json"
@@ -61,8 +61,10 @@ type Client struct {
 // New returns a connection to a remote CouchDB server. If credentials are
 // included in the URL, requests will be authenticated using Cookie Auth. To
 // use HTTP BasicAuth or some other authentication mechanism, do not specify
-// credentials in the URL, and instead call the Auth() method later.
-func New(client *http.Client, dsn string, options map[string]interface{}) (*Client, error) {
+// credentials in the URL, and instead call the [Client.Auth] method later.
+//
+// options must not be nil.
+func New(client *http.Client, dsn string, options driver.Options) (*Client, error) {
 	dsnURL, err := parseDSN(dsn)
 	if err != nil {
 		return nil, err
@@ -70,7 +72,11 @@ func New(client *http.Client, dsn string, options map[string]interface{}) (*Clie
 	user := dsnURL.User
 	dsnURL.User = nil
 	c := &Client{
-		Client:   client,
+		Client: client,
+		UserAgents: []string{
+			fmt.Sprintf("Kivik/%s", kivik.KivikVersion),
+			fmt.Sprintf("Kivik CouchDB driver/%s", Version),
+		},
 		dsn:      dsnURL,
 		basePath: strings.TrimSuffix(dsnURL.Path, "/"),
 		rawDSN:   dsn,
@@ -85,33 +91,10 @@ func New(client *http.Client, dsn string, options map[string]interface{}) (*Clie
 			return nil, err
 		}
 	}
-	if gzip, ok := options[internal.OptionNoCompressedRequests]; ok {
-		c.noGzip, ok = gzip.(bool)
-		if !ok {
-			return nil, &kivik.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("OptionNoCompressedRequests is %T, must be bool", gzip)}
-		}
-	}
-	if err := c.setUserAgent(options); err != nil {
-		return nil, err
-	}
+	opts := map[string]interface{}{}
+	options.Apply(opts)
+	options.Apply(c)
 	return c, nil
-}
-
-func (c *Client) setUserAgent(options map[string]interface{}) error {
-	c.UserAgents = []string{
-		fmt.Sprintf("Kivik/%s", kivik.KivikVersion),
-		fmt.Sprintf("Kivik CouchDB driver/%s", Version),
-	}
-	ua, ok := options[internal.OptionUserAgent]
-	if !ok {
-		return nil
-	}
-	userAgent, ok := ua.(string)
-	if !ok {
-		return &kivik.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("OptionUserAgent is %T, must be string", ua)}
-	}
-	c.UserAgents = append(c.UserAgents, userAgent)
-	return nil
 }
 
 func parseDSN(dsn string) (*url.URL, error) {

@@ -244,7 +244,7 @@ func TestChanges(t *testing.T) {
 	tests := []struct {
 		name     string
 		db       *DB
-		opts     Options
+		opts     Option
 		expected *Changes
 		status   int
 		err      string
@@ -254,7 +254,7 @@ func TestChanges(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					ChangesFunc: func(context.Context, map[string]interface{}) (driver.Changes, error) {
+					ChangesFunc: func(context.Context, driver.Options) (driver.Changes, error) {
 						return nil, errors.New("db error")
 					},
 				},
@@ -267,16 +267,18 @@ func TestChanges(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					ChangesFunc: func(_ context.Context, opts map[string]interface{}) (driver.Changes, error) {
+					ChangesFunc: func(_ context.Context, options driver.Options) (driver.Changes, error) {
 						expectedOpts := map[string]interface{}{"foo": 123.4}
-						if d := testy.DiffInterface(expectedOpts, opts); d != nil {
+						gotOpts := map[string]interface{}{}
+						options.Apply(gotOpts)
+						if d := testy.DiffInterface(expectedOpts, gotOpts); d != nil {
 							return nil, fmt.Errorf("Unexpected options:\n%s", d)
 						}
 						return &mock.Changes{}, nil
 					},
 				},
 			},
-			opts: map[string]interface{}{"foo": 123.4},
+			opts: Options{"foo": 123.4},
 			expected: &Changes{
 				iter: &iter{
 					feed: &changesIterator{
@@ -322,7 +324,7 @@ func TestChanges(t *testing.T) {
 			db := &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					ChangesFunc: func(context.Context, map[string]interface{}) (driver.Changes, error) {
+					ChangesFunc: func(context.Context, driver.Options) (driver.Changes, error) {
 						return nil, errors.New("unf")
 					},
 				},

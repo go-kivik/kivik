@@ -114,16 +114,16 @@ func TestAllDBs(t *testing.T) {
 	})
 	tests.Add("options", mockTest{
 		setup: func(m *Client) {
-			m.ExpectAllDBs().WithOptions(map[string]interface{}{"foo": 123})
+			m.ExpectAllDBs().WithOptions(kivik.Options{"foo": 123})
 		},
 		test: func(t *testing.T, c *kivik.Client) {
-			_, err := c.AllDBs(context.TODO(), map[string]interface{}{"foo": 123})
+			_, err := c.AllDBs(context.TODO(), kivik.Options{"foo": 123})
 			testy.Error(t, "", err)
 		},
 	})
 	tests.Add("callback", mockTest{
 		setup: func(m *Client) {
-			m.ExpectAllDBs().WillExecute(func(context.Context, map[string]interface{}) ([]string, error) {
+			m.ExpectAllDBs().WillExecute(func(context.Context, driver.Options) ([]string, error) {
 				return nil, errors.New("custom error")
 			})
 		},
@@ -245,7 +245,7 @@ func TestClusterStatus(t *testing.T) {
 	})
 	tests.Add("options", mockTest{
 		setup: func(m *Client) {
-			m.ExpectClusterStatus().WithOptions(map[string]interface{}{"foo": 123})
+			m.ExpectClusterStatus().WithOptions(kivik.Options{"foo": 123})
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.ClusterStatus(context.TODO())
@@ -300,7 +300,7 @@ func TestClusterStatus(t *testing.T) {
 	})
 	tests.Add("callback", mockTest{
 		setup: func(m *Client) {
-			m.ExpectClusterStatus().WillExecute(func(context.Context, map[string]interface{}) (string, error) {
+			m.ExpectClusterStatus().WillExecute(func(context.Context, driver.Options) (string, error) {
 				return "", errors.New("custom error")
 			})
 		},
@@ -337,7 +337,7 @@ func TestDBExists(t *testing.T) {
 	})
 	tests.Add("options", mockTest{
 		setup: func(m *Client) {
-			m.ExpectDBExists().WithOptions(map[string]interface{}{"foo": 123})
+			m.ExpectDBExists().WithOptions(kivik.Options{"foo": 123})
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DBExists(context.TODO(), "foo")
@@ -626,7 +626,7 @@ func TestDB(t *testing.T) {
 	})
 	tests.Add("options", mockTest{
 		setup: func(m *Client) {
-			m.ExpectDB().WithOptions(map[string]interface{}{"foo": 123})
+			m.ExpectDB().WithOptions(kivik.Options{"foo": 123})
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			err := c.DB("foo", kivik.Options{"foo": 123}).Err()
@@ -715,7 +715,7 @@ func TestCreateDB(t *testing.T) {
 	})
 	tests.Add("callback", mockTest{
 		setup: func(m *Client) {
-			m.ExpectCreateDB().WillExecute(func(context.Context, string, map[string]interface{}) error {
+			m.ExpectCreateDB().WillExecute(func(context.Context, string, driver.Options) error {
 				return errors.New("custom error")
 			})
 		},

@@ -24,7 +24,7 @@ var findNotImplemented = &Error{Status: http.StatusNotImplemented, Message: "kiv
 // Find executes a query using the new /_find interface. The query must be
 // JSON-marshalable to a valid query.
 // See https://docs.couchdb.org/en/stable/api/database/find.html
-func (db *DB) Find(ctx context.Context, query interface{}, options ...Options) *ResultSet {
+func (db *DB) Find(ctx context.Context, query interface{}, options ...Option) *ResultSet {
 	if db.err != nil {
 		return &ResultSet{err: db.err}
 	}
@@ -32,7 +32,7 @@ func (db *DB) Find(ctx context.Context, query interface{}, options ...Options) *
 		if err := db.startQuery(); err != nil {
 			return &ResultSet{err: err}
 		}
-		rowsi, err := finder.Find(ctx, query, mergeOptions(options...))
+		rowsi, err := finder.Find(ctx, query, allOptions(options))
 		if err != nil {
 			db.endQuery()
 			return &ResultSet{err: err}
@@ -46,7 +46,7 @@ func (db *DB) Find(ctx context.Context, query interface{}, options ...Options) *
 // be empty, in which case they will be auto-generated.  index must be a valid
 // index object, as described here:
 // http://docs.couchdb.org/en/stable/api/database/find.html#db-index
-func (db *DB) CreateIndex(ctx context.Context, ddoc, name string, index interface{}, options ...Options) error {
+func (db *DB) CreateIndex(ctx context.Context, ddoc, name string, index interface{}, options ...Option) error {
 	if db.err != nil {
 		return db.err
 	}
@@ -55,13 +55,13 @@ func (db *DB) CreateIndex(ctx context.Context, ddoc, name string, index interfac
 	}
 	defer db.endQuery()
 	if finder, ok := db.driverDB.(driver.Finder); ok {
-		return finder.CreateIndex(ctx, ddoc, name, index, mergeOptions(options...))
+		return finder.CreateIndex(ctx, ddoc, name, index, allOptions(options))
 	}
 	return findNotImplemented
 }
 
 // DeleteIndex deletes the requested index.
-func (db *DB) DeleteIndex(ctx context.Context, ddoc, name string, options ...Options) error {
+func (db *DB) DeleteIndex(ctx context.Context, ddoc, name string, options ...Option) error {
 	if db.err != nil {
 		return db.err
 	}
@@ -70,7 +70,7 @@ func (db *DB) DeleteIndex(ctx context.Context, ddoc, name string, options ...Opt
 	}
 	defer db.endQuery()
 	if finder, ok := db.driverDB.(driver.Finder); ok {
-		return finder.DeleteIndex(ctx, ddoc, name, mergeOptions(options...))
+		return finder.DeleteIndex(ctx, ddoc, name, allOptions(options))
 	}
 	return findNotImplemented
 }
@@ -84,7 +84,7 @@ type Index struct {
 }
 
 // GetIndexes returns the indexes defined on the current database.
-func (db *DB) GetIndexes(ctx context.Context, options ...Options) ([]Index, error) {
+func (db *DB) GetIndexes(ctx context.Context, options ...Option) ([]Index, error) {
 	if db.err != nil {
 		return nil, db.err
 	}
@@ -93,7 +93,7 @@ func (db *DB) GetIndexes(ctx context.Context, options ...Options) ([]Index, erro
 	}
 	defer db.endQuery()
 	if finder, ok := db.driverDB.(driver.Finder); ok {
-		dIndexes, err := finder.GetIndexes(ctx, mergeOptions(options...))
+		dIndexes, err := finder.GetIndexes(ctx, allOptions(options))
 		indexes := make([]Index, len(dIndexes))
 		for i, index := range dIndexes {
 			indexes[i] = Index(index)
@@ -121,7 +121,7 @@ type QueryPlan struct {
 
 // Explain returns the query plan for a given query. Explain takes the same
 // arguments as Find.
-func (db *DB) Explain(ctx context.Context, query interface{}, options ...Options) (*QueryPlan, error) {
+func (db *DB) Explain(ctx context.Context, query interface{}, options ...Option) (*QueryPlan, error) {
 	if db.err != nil {
 		return nil, db.err
 	}
@@ -130,7 +130,7 @@ func (db *DB) Explain(ctx context.Context, query interface{}, options ...Options
 	}
 	defer db.endQuery()
 	if explainer, ok := db.driverDB.(driver.Finder); ok {
-		plan, err := explainer.Explain(ctx, query, mergeOptions(options...))
+		plan, err := explainer.Explain(ctx, query, allOptions(options))
 		if err != nil {
 			return nil, err
 		}

@@ -22,38 +22,38 @@ import (
 type Client struct {
 	// ID identifies a specific Client instance
 	ID            string
-	AllDBsFunc    func(context.Context, map[string]interface{}) ([]string, error)
-	CreateDBFunc  func(context.Context, string, map[string]interface{}) error
-	DBFunc        func(string, map[string]interface{}) (driver.DB, error)
-	DBExistsFunc  func(context.Context, string, map[string]interface{}) (bool, error)
-	DestroyDBFunc func(context.Context, string, map[string]interface{}) error
+	AllDBsFunc    func(context.Context, driver.Options) ([]string, error)
+	CreateDBFunc  func(context.Context, string, driver.Options) error
+	DBFunc        func(string, driver.Options) (driver.DB, error)
+	DBExistsFunc  func(context.Context, string, driver.Options) (bool, error)
+	DestroyDBFunc func(context.Context, string, driver.Options) error
 	VersionFunc   func(context.Context) (*driver.Version, error)
 }
 
 var _ driver.Client = &Client{}
 
 // AllDBs calls c.AllDBsFunc
-func (c *Client) AllDBs(ctx context.Context, opts map[string]interface{}) ([]string, error) {
+func (c *Client) AllDBs(ctx context.Context, opts driver.Options) ([]string, error) {
 	return c.AllDBsFunc(ctx, opts)
 }
 
 // CreateDB calls c.CreateDBFunc
-func (c *Client) CreateDB(ctx context.Context, dbname string, opts map[string]interface{}) error {
+func (c *Client) CreateDB(ctx context.Context, dbname string, opts driver.Options) error {
 	return c.CreateDBFunc(ctx, dbname, opts)
 }
 
 // DB calls c.DBFunc
-func (c *Client) DB(dbname string, opts map[string]interface{}) (driver.DB, error) {
+func (c *Client) DB(dbname string, opts driver.Options) (driver.DB, error) {
 	return c.DBFunc(dbname, opts)
 }
 
 // DBExists calls c.DBExistsFunc
-func (c *Client) DBExists(ctx context.Context, dbname string, opts map[string]interface{}) (bool, error) {
+func (c *Client) DBExists(ctx context.Context, dbname string, opts driver.Options) (bool, error) {
 	return c.DBExistsFunc(ctx, dbname, opts)
 }
 
 // DestroyDB calls c.DestroyDBFunc
-func (c *Client) DestroyDB(ctx context.Context, dbname string, opts map[string]interface{}) error {
+func (c *Client) DestroyDB(ctx context.Context, dbname string, opts driver.Options) error {
 	return c.DestroyDBFunc(ctx, dbname, opts)
 }
 
@@ -65,19 +65,19 @@ func (c *Client) Version(ctx context.Context) (*driver.Version, error) {
 // ClientReplicator mocks driver.Client and driver.ClientReplicator
 type ClientReplicator struct {
 	*Client
-	GetReplicationsFunc func(context.Context, map[string]interface{}) ([]driver.Replication, error)
-	ReplicateFunc       func(context.Context, string, string, map[string]interface{}) (driver.Replication, error)
+	GetReplicationsFunc func(context.Context, driver.Options) ([]driver.Replication, error)
+	ReplicateFunc       func(context.Context, string, string, driver.Options) (driver.Replication, error)
 }
 
 var _ driver.ClientReplicator = &ClientReplicator{}
 
 // GetReplications calls c.GetReplicationsFunc
-func (c *ClientReplicator) GetReplications(ctx context.Context, opts map[string]interface{}) ([]driver.Replication, error) {
+func (c *ClientReplicator) GetReplications(ctx context.Context, opts driver.Options) ([]driver.Replication, error) {
 	return c.GetReplicationsFunc(ctx, opts)
 }
 
 // Replicate calls c.ReplicateFunc
-func (c *ClientReplicator) Replicate(ctx context.Context, target, source string, opts map[string]interface{}) (driver.Replication, error) {
+func (c *ClientReplicator) Replicate(ctx context.Context, target, source string, opts driver.Options) (driver.Replication, error) {
 	return c.ReplicateFunc(ctx, target, source, opts)
 }
 
@@ -97,14 +97,14 @@ func (c *Authenticator) Authenticate(ctx context.Context, a interface{}) error {
 // DBUpdater mocks driver.Client and driver.DBUpdater
 type DBUpdater struct {
 	*Client
-	DBUpdatesFunc func(context.Context, map[string]interface{}) (driver.DBUpdates, error)
+	DBUpdatesFunc func(context.Context, driver.Options) (driver.DBUpdates, error)
 }
 
 var _ driver.DBUpdater = &DBUpdater{}
 
 // DBUpdates calls c.DBUpdatesFunc
-func (c *DBUpdater) DBUpdates(ctx context.Context, opts map[string]interface{}) (driver.DBUpdates, error) {
-	return c.DBUpdatesFunc(ctx, opts)
+func (c *DBUpdater) DBUpdates(ctx context.Context, options driver.Options) (driver.DBUpdates, error) {
+	return c.DBUpdatesFunc(ctx, options)
 }
 
 // DBsStatser mocks driver.Client and driver.DBsStatser
@@ -136,7 +136,7 @@ func (c *Pinger) Ping(ctx context.Context) (bool, error) {
 // Cluster mocks driver.Client and driver.Cluster
 type Cluster struct {
 	*Client
-	ClusterStatusFunc func(context.Context, map[string]interface{}) (string, error)
+	ClusterStatusFunc func(context.Context, driver.Options) (string, error)
 	ClusterSetupFunc  func(context.Context, interface{}) error
 	MembershipFunc    func(context.Context) (*driver.ClusterMembership, error)
 }
@@ -144,7 +144,7 @@ type Cluster struct {
 var _ driver.Cluster = &Cluster{}
 
 // ClusterStatus calls c.ClusterStatusFunc
-func (c *Cluster) ClusterStatus(ctx context.Context, options map[string]interface{}) (string, error) {
+func (c *Cluster) ClusterStatus(ctx context.Context, options driver.Options) (string, error) {
 	return c.ClusterStatusFunc(ctx, options)
 }
 

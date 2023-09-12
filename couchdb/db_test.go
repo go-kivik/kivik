@@ -34,47 +34,44 @@ import (
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/couchdb/chttp"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
 func TestAllDocs(t *testing.T) {
 	t.Run("standard", func(t *testing.T) {
 		db := newTestDB(nil, errors.New("test error"))
-		_, err := db.AllDocs(context.Background(), nil)
+		_, err := db.AllDocs(context.Background(), mock.NilOption)
 		testy.ErrorRE(t, `Get "?http://example.com/testdb/_all_docs"?: test error`, err)
 	})
 
 	t.Run("partitioned", func(t *testing.T) {
 		db := newTestDB(nil, errors.New("test error"))
-		_, err := db.AllDocs(context.Background(), map[string]interface{}{
-			OptionPartition: "a1",
-		})
+		_, err := db.AllDocs(context.Background(), OptionPartition("a1"))
 		testy.ErrorRE(t, `Get "?http://example.com/testdb/_partition/a1/_all_docs"?: test error`, err)
 	})
 }
 
 func TestDesignDocs(t *testing.T) {
 	db := newTestDB(nil, errors.New("test error"))
-	_, err := db.DesignDocs(context.Background(), nil)
+	_, err := db.DesignDocs(context.Background(), mock.NilOption)
 	testy.ErrorRE(t, `Get "?http://example.com/testdb/_design_docs"?: test error`, err)
 }
 
 func TestLocalDocs(t *testing.T) {
 	db := newTestDB(nil, errors.New("test error"))
-	_, err := db.LocalDocs(context.Background(), nil)
+	_, err := db.LocalDocs(context.Background(), mock.NilOption)
 	testy.ErrorRE(t, `Get "?http://example.com/testdb/_local_docs"?: test error`, err)
 }
 
 func TestQuery(t *testing.T) {
 	t.Run("standard", func(t *testing.T) {
 		db := newTestDB(nil, errors.New("test error"))
-		_, err := db.Query(context.Background(), "ddoc", "view", nil)
+		_, err := db.Query(context.Background(), "ddoc", "view", mock.NilOption)
 		testy.ErrorRE(t, `Get "?http://example.com/testdb/_design/ddoc/_view/view"?: test error`, err)
 	})
 	t.Run("partitioned", func(t *testing.T) {
 		db := newTestDB(nil, errors.New("test error"))
-		_, err := db.Query(context.Background(), "ddoc", "view", map[string]interface{}{
-			OptionPartition: "a2",
-		})
+		_, err := db.Query(context.Background(), "ddoc", "view", OptionPartition("a2"))
 		testy.ErrorRE(t, `Get "?http://example.com/testdb/_partition/a2/_design/ddoc/_view/view"?: test error`, err)
 	})
 }
@@ -90,7 +87,7 @@ func TestGet(t *testing.T) {
 	type tt struct {
 		db          *db
 		id          string
-		options     map[string]interface{}
+		options     kivik.Option
 		doc         *driver.Row
 		expected    string
 		attachments []*Attachment
@@ -105,7 +102,7 @@ func TestGet(t *testing.T) {
 	})
 	tests.Add("invalid options", tt{
 		id:      "foo",
-		options: map[string]interface{}{"foo": make(chan int)},
+		options: kivik.Options{"foo": make(chan int)},
 		status:  http.StatusBadRequest,
 		err:     "kivik: invalid type chan int for options",
 	})
@@ -152,15 +149,9 @@ func TestGet(t *testing.T) {
 			return nil, errors.New("success")
 		}),
 		id:      "foo",
-		options: map[string]interface{}{OptionIfNoneMatch: "foo"},
+		options: OptionIfNoneMatch("foo"),
 		status:  http.StatusBadGateway,
 		err:     `Get "?http://example.com/testdb/foo"?: success`,
-	})
-	tests.Add("invalid If-None-Match value", tt{
-		id:      "foo",
-		options: map[string]interface{}{OptionIfNoneMatch: 123},
-		status:  http.StatusBadRequest,
-		err:     "kivik: option 'If-None-Match' must be string, not int",
 	})
 	tests.Add("invalid content type in response", tt{
 		id: "foo",
@@ -218,7 +209,7 @@ func TestGet(t *testing.T) {
 			Body:          Body(`bogus data`),
 		}, nil),
 		id:      "foo",
-		options: map[string]interface{}{"include_docs": true},
+		options: kivik.Options{"include_docs": true},
 		status:  http.StatusBadGateway,
 		err:     "multipart: NextPart: EOF",
 	})
@@ -237,7 +228,7 @@ func TestGet(t *testing.T) {
 				bogus data`),
 		}, nil),
 		id:      "foo",
-		options: map[string]interface{}{"include_docs": true},
+		options: kivik.Options{"include_docs": true},
 		status:  http.StatusBadGateway,
 		err:     "malformed MIME header (initial )?line:.*bogus data",
 	})
@@ -261,7 +252,7 @@ func TestGet(t *testing.T) {
 			}
 			return nil, errors.New("not an error")
 		}),
-		options: map[string]interface{}{OptionNoMultipartGet: true},
+		options: OptionNoMultipartGet(),
 		id:      "foo",
 		status:  http.StatusBadGateway,
 		err:     "not an error",
@@ -296,7 +287,7 @@ Content-Length: 86
 --e89b3e29388aef23453450d10e5aaed0--`),
 		}, nil),
 		id:      "foo",
-		options: map[string]interface{}{"include_docs": true},
+		options: kivik.Options{"include_docs": true},
 		doc: &driver.Row{
 			ID:  "foo",
 			Rev: "2-c1c6c44c4bc3c9344b037c8690468605",
@@ -351,7 +342,7 @@ Content-Length: 86
 --e89b3e29388aef23453450d10e5aaed0--`),
 		}, nil),
 		id:      "foo",
-		options: map[string]interface{}{"include_docs": true},
+		options: kivik.Options{"include_docs": true},
 		doc: &driver.Row{
 			ID:  "foo",
 			Rev: "2-c1c6c44c4bc3c9344b037c8690468605",
@@ -397,7 +388,11 @@ Content-Length: 86
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
-		rows, err := tt.db.Get(context.Background(), tt.id, tt.options)
+		opts := tt.options
+		if opts == nil {
+			opts = mock.NilOption
+		}
+		rows, err := tt.db.Get(context.Background(), tt.id, opts)
 		if !testy.ErrorMatchesRE(tt.err, err) {
 			t.Errorf("Unexpected error: \n Got: %s\nWant: /%s/", err, tt.err)
 		}
@@ -454,7 +449,7 @@ func TestCreateDoc(t *testing.T) {
 		name    string
 		db      *db
 		doc     interface{}
-		options map[string]interface{}
+		options kivik.Option
 		id, rev string
 		status  int
 		err     string
@@ -516,7 +511,7 @@ func TestCreateDoc(t *testing.T) {
 			name:    "batch mode",
 			db:      newTestDB(nil, errors.New("success")),
 			doc:     map[string]string{"foo": "bar"},
-			options: map[string]interface{}{"batch": "ok"},
+			options: kivik.Options{"batch": "ok"},
 			status:  http.StatusBadGateway,
 			err:     `^Post "?http://example.com/testdb\?batch=ok"?: success$`,
 		},
@@ -531,28 +526,25 @@ func TestCreateDoc(t *testing.T) {
 				}
 				return nil, errors.New("success")
 			}),
-			options: map[string]interface{}{OptionFullCommit: true},
+			options: OptionFullCommit(),
 			status:  http.StatusBadGateway,
 			err:     `Post "?http://example.com/testdb"?: success`,
 		},
 		{
 			name:    "invalid options",
 			db:      &db{},
-			options: map[string]interface{}{"foo": make(chan int)},
+			options: kivik.Options{"foo": make(chan int)},
 			status:  http.StatusBadRequest,
 			err:     "kivik: invalid type chan int for options",
-		},
-		{
-			name:    "invalid full commit type",
-			db:      &db{},
-			options: map[string]interface{}{OptionFullCommit: 123},
-			status:  http.StatusBadRequest,
-			err:     "kivik: option 'X-Couch-Full-Commit' must be bool, not int",
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			id, rev, err := test.db.CreateDoc(context.Background(), test.doc, test.options)
+			opts := test.options
+			if opts == nil {
+				opts = mock.NilOption
+			}
+			id, rev, err := test.db.CreateDoc(context.Background(), test.doc, opts)
 			testy.StatusErrorRE(t, test.err, test.status, err)
 			if test.id != id || test.rev != rev {
 				t.Errorf("Unexpected results: ID=%s rev=%s", id, rev)
@@ -756,7 +748,7 @@ func TestPut(t *testing.T) {
 		db      *db
 		id      string
 		doc     interface{}
-		options map[string]interface{}
+		options kivik.Option
 		rev     string
 		status  int
 		err     string
@@ -838,23 +830,14 @@ func TestPut(t *testing.T) {
 			}),
 			id:      "foo",
 			doc:     map[string]string{"foo": "bar"},
-			options: map[string]interface{}{OptionFullCommit: true},
+			options: OptionFullCommit(),
 			status:  http.StatusBadGateway,
 			err:     `Put "?http://example.com/testdb/foo"?: success`,
 		},
 		{
-			name:    "invalid full commit",
-			db:      &db{},
-			id:      "foo",
-			doc:     map[string]string{"foo": "bar"},
-			options: map[string]interface{}{OptionFullCommit: 123},
-			status:  http.StatusBadRequest,
-			err:     "kivik: option 'X-Couch-Full-Commit' must be bool, not int",
-		},
-		{
 			name: "connection refused",
 			db: func() *db {
-				c, err := chttp.New(&http.Client{}, "http://127.0.0.1:1/", nil)
+				c, err := chttp.New(&http.Client{}, "http://127.0.0.1:1/", mock.NilOption)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -896,7 +879,11 @@ func TestPut(t *testing.T) {
 			}
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
-			rev, err := test.db.Put(ctx, test.id, test.doc, test.options)
+			opts := test.options
+			if opts == nil {
+				opts = mock.NilOption
+			}
+			rev, err := test.db.Put(ctx, test.id, test.doc, opts)
 			testy.StatusErrorRE(t, test.err, test.status, err)
 			if rev != test.rev {
 				t.Errorf("Unexpected rev: %s", rev)
@@ -909,7 +896,7 @@ func TestDelete(t *testing.T) {
 	type tt struct {
 		db      *db
 		id      string
-		options map[string]interface{}
+		options kivik.Option
 		newrev  string
 		status  int
 		err     string
@@ -927,14 +914,14 @@ func TestDelete(t *testing.T) {
 	})
 	tests.Add("network error", tt{
 		id:      "foo",
-		options: map[string]interface{}{"rev": "1-xxx"},
+		options: kivik.Options{"rev": "1-xxx"},
 		db:      newTestDB(nil, errors.New("net error")),
 		status:  http.StatusBadGateway,
 		err:     `(Delete "?http://example.com/testdb/foo\?rev="?: )?net error`,
 	})
 	tests.Add("1.6.1 conflict", tt{
 		id:      "43734cf3ce6d5a37050c050bb600006b",
-		options: map[string]interface{}{"rev": "1-xxx"},
+		options: kivik.Options{"rev": "1-xxx"},
 		db: newTestDB(&http.Response{
 			StatusCode: 409,
 			Header: http.Header{
@@ -951,7 +938,7 @@ func TestDelete(t *testing.T) {
 	})
 	tests.Add("1.6.1 success", tt{
 		id:      "43734cf3ce6d5a37050c050bb600006b",
-		options: map[string]interface{}{"rev": "1-4c6114c65e295552ab1019e2b046b10e"},
+		options: kivik.Options{"rev": "1-4c6114c65e295552ab1019e2b046b10e"},
 		db: newTestDB(&http.Response{
 			StatusCode: 200,
 			Header: http.Header{
@@ -977,7 +964,7 @@ func TestDelete(t *testing.T) {
 			return nil, errors.New("success")
 		}),
 		id: "foo",
-		options: map[string]interface{}{
+		options: kivik.Options{
 			"batch": "ok",
 			"rev":   "1-xxx",
 		},
@@ -987,7 +974,7 @@ func TestDelete(t *testing.T) {
 	tests.Add("invalid options", tt{
 		db: &db{},
 		id: "foo",
-		options: map[string]interface{}{
+		options: kivik.Options{
 			"foo": make(chan int),
 			"rev": "1-xxx",
 		},
@@ -1005,26 +992,22 @@ func TestDelete(t *testing.T) {
 			return nil, errors.New("success")
 		}),
 		id: "foo",
-		options: map[string]interface{}{
-			OptionFullCommit: true,
-			"rev":            "1-xxx",
+		options: allOptions{
+			OptionFullCommit(),
+			kivik.Options{
+				"rev": "1-xxx",
+			},
 		},
 		status: http.StatusBadGateway,
 		err:    "success",
 	})
-	tests.Add("invalid full commit type", tt{
-		db: &db{},
-		id: "foo",
-		options: map[string]interface{}{
-			OptionFullCommit: 123,
-			"rev":            "1-xxx",
-		},
-		status: http.StatusBadRequest,
-		err:    "kivik: option 'X-Couch-Full-Commit' must be bool, not int",
-	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
-		newrev, err := tt.db.Delete(context.Background(), tt.id, tt.options)
+		opts := tt.options
+		if opts == nil {
+			opts = mock.NilOption
+		}
+		newrev, err := tt.db.Delete(context.Background(), tt.id, opts)
 		testy.StatusErrorRE(t, tt.err, tt.status, err)
 		if newrev != tt.newrev {
 			t.Errorf("Unexpected new rev: %s", newrev)
@@ -1143,7 +1126,7 @@ func TestRowsQuery(t *testing.T) {
 		name     string
 		db       *db
 		path     string
-		options  map[string]interface{}
+		options  kivik.Option
 		expected queryResult
 		status   int
 		err      string
@@ -1151,7 +1134,7 @@ func TestRowsQuery(t *testing.T) {
 		{
 			name:    "invalid options",
 			path:    "_all_docs",
-			options: map[string]interface{}{"foo": make(chan int)},
+			options: kivik.Options{"foo": make(chan int)},
 			status:  http.StatusBadRequest,
 			err:     "kivik: invalid type chan int for options",
 		},
@@ -1278,7 +1261,7 @@ func TestRowsQuery(t *testing.T) {
 		{
 			name: "all docs with keys",
 			path: "/_all_docs",
-			options: map[string]interface{}{
+			options: kivik.Options{
 				"keys": []string{"_design/_auth", "foo"},
 			},
 			db: newCustomDB(func(r *http.Request) (*http.Response, error) {
@@ -1323,7 +1306,7 @@ func TestRowsQuery(t *testing.T) {
 		{
 			name: "all docs with endkey",
 			path: "/_all_docs",
-			options: map[string]interface{}{
+			options: kivik.Options{
 				"endkey": []string{"foo", "bar"},
 			},
 			db: newCustomDB(func(r *http.Request) (*http.Response, error) {
@@ -1361,7 +1344,7 @@ func TestRowsQuery(t *testing.T) {
 		{
 			name: "all docs with object keys",
 			path: "/_all_docs",
-			options: map[string]interface{}{
+			options: kivik.Options{
 				"keys": []interface{}{"_design/_auth", "foo", []string{"bar", "baz"}},
 			},
 			db: newCustomDB(func(r *http.Request) (*http.Response, error) {
@@ -1406,7 +1389,7 @@ func TestRowsQuery(t *testing.T) {
 		{
 			name: "all docs with docs",
 			path: "/_all_docs",
-			options: map[string]interface{}{
+			options: kivik.Options{
 				"keys": []string{"_design/_auth", "foo"},
 			},
 			db: newCustomDB(func(r *http.Request) (*http.Response, error) {
@@ -1450,7 +1433,11 @@ func TestRowsQuery(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rows, err := test.db.rowsQuery(context.Background(), test.path, test.options)
+			opts := test.options
+			if opts == nil {
+				opts = mock.NilOption
+			}
+			rows, err := test.db.rowsQuery(context.Background(), test.path, opts)
 			testy.StatusErrorRE(t, test.err, test.status, err)
 			result := queryResult{
 				Rows: []*driver.Row{},
@@ -1606,7 +1593,7 @@ func TestSetSecurity(t *testing.T) {
 	})
 }
 
-func TestGetMeta(t *testing.T) {
+func TestGetRev(t *testing.T) {
 	tests := []struct {
 		name    string
 		db      *db
@@ -1664,7 +1651,7 @@ func TestGetMeta(t *testing.T) {
 func TestCopy(t *testing.T) {
 	type tt struct {
 		target, source string
-		options        map[string]interface{}
+		options        kivik.Option
 		db             *db
 		rev            string
 		status         int
@@ -1692,17 +1679,9 @@ func TestCopy(t *testing.T) {
 		db:      &db{},
 		source:  "foo",
 		target:  "bar",
-		options: map[string]interface{}{"foo": make(chan int)},
+		options: kivik.Options{"foo": make(chan int)},
 		status:  http.StatusBadRequest,
 		err:     "kivik: invalid type chan int for options",
-	})
-	tests.Add("invalid full commit type", tt{
-		db:      &db{},
-		source:  "foo",
-		target:  "bar",
-		options: map[string]interface{}{OptionFullCommit: 123},
-		status:  http.StatusBadRequest,
-		err:     "kivik: option 'X-Couch-Full-Commit' must be bool, not int",
 	})
 	tests.Add("create 1.6.1", tt{
 		source: "foo",
@@ -1728,11 +1707,9 @@ func TestCopy(t *testing.T) {
 		rev: "1-f81c8a795b0c6f9e9f699f64c6b82256",
 	})
 	tests.Add("full commit 1.6.1", tt{
-		source: "foo",
-		target: "bar",
-		options: map[string]interface{}{
-			OptionFullCommit: true,
-		},
+		source:  "foo",
+		target:  "bar",
+		options: OptionFullCommit(),
 		db: newCustomDB(func(req *http.Request) (*http.Response, error) {
 			if dest := req.Header.Get("Destination"); dest != "bar" {
 				return nil, fmt.Errorf("Unexpected destination: %s", dest)
@@ -1757,11 +1734,9 @@ func TestCopy(t *testing.T) {
 		rev: "1-f81c8a795b0c6f9e9f699f64c6b82256",
 	})
 	tests.Add("target rev", tt{
-		source: "foo",
-		target: "bar?rev=1-xxx",
-		options: map[string]interface{}{
-			OptionFullCommit: true,
-		},
+		source:  "foo",
+		target:  "bar?rev=1-xxx",
+		options: OptionFullCommit(),
 		db: newCustomDB(func(req *http.Request) (*http.Response, error) {
 			if dest := req.Header.Get("Destination"); dest != "bar?rev=1-xxx" {
 				return nil, fmt.Errorf("Unexpected destination: %s", dest)
@@ -1787,7 +1762,11 @@ func TestCopy(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
-		rev, err := tt.db.Copy(context.Background(), tt.target, tt.source, tt.options)
+		opts := tt.options
+		if opts == nil {
+			opts = mock.NilOption
+		}
+		rev, err := tt.db.Copy(context.Background(), tt.target, tt.source, opts)
 		testy.StatusErrorRE(t, tt.err, tt.status, err)
 		if rev != tt.rev {
 			t.Errorf("Got %s, expected %s", rev, tt.rev)

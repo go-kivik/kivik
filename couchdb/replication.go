@@ -195,7 +195,7 @@ func (r *replication) updateMain(ctx context.Context) error {
 }
 
 func (r *replication) getReplicatorDoc(ctx context.Context) (*replicatorDoc, error) {
-	rows, err := r.db.Get(ctx, r.docID, nil)
+	rows, err := r.db.Get(ctx, r.docID, kivik.Options{})
 	if err != nil {
 		return nil, err
 	}
@@ -235,11 +235,11 @@ func (r *replication) setFromReplicatorDoc(doc *replicatorDoc) {
 }
 
 func (r *replication) Delete(ctx context.Context) error {
-	rev, err := r.GetRev(ctx, r.docID, nil)
+	rev, err := r.GetRev(ctx, r.docID, kivik.Options{})
 	if err != nil {
 		return err
 	}
-	_, err = r.db.Delete(ctx, r.docID, map[string]interface{}{"rev": rev})
+	_, err = r.db.Delete(ctx, r.docID, kivik.Options{"rev": rev})
 	return err
 }
 
@@ -253,11 +253,13 @@ type replicatorDoc struct {
 	Error         *replicationError    `json:"_replication_state_reason,omitempty"`
 }
 
-func (c *client) GetReplications(ctx context.Context, opts map[string]interface{}) ([]driver.Replication, error) {
+func (c *client) GetReplications(ctx context.Context, options driver.Options) ([]driver.Replication, error) {
 	scheduler, err := c.schedulerSupported(ctx)
 	if err != nil {
 		return nil, err
 	}
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	if scheduler {
 		return c.getReplicationsFromScheduler(ctx, opts)
 	}
@@ -296,10 +298,9 @@ func (c *client) legacyGetReplications(ctx context.Context, opts map[string]inte
 	return reps, nil
 }
 
-func (c *client) Replicate(ctx context.Context, targetDSN, sourceDSN string, opts map[string]interface{}) (driver.Replication, error) {
-	if opts == nil {
-		opts = make(map[string]interface{})
-	}
+func (c *client) Replicate(ctx context.Context, targetDSN, sourceDSN string, options driver.Options) (driver.Replication, error) {
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	// Allow overriding source and target with options, i.e. for auth options
 	if _, ok := opts["source"]; !ok {
 		opts["source"] = sourceDSN

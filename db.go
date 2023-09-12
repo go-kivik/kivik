@@ -16,6 +16,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -77,14 +78,14 @@ func (db *DB) Err() error {
 }
 
 // AllDocs returns a list of all documents in the database.
-func (db *DB) AllDocs(ctx context.Context, options ...Options) *ResultSet {
+func (db *DB) AllDocs(ctx context.Context, options ...Option) *ResultSet {
 	if db.err != nil {
 		return &ResultSet{err: db.err}
 	}
 	if err := db.startQuery(); err != nil {
 		return &ResultSet{err: err}
 	}
-	rowsi, err := db.driverDB.AllDocs(ctx, mergeOptions(options...))
+	rowsi, err := db.driverDB.AllDocs(ctx, allOptions(options))
 	if err != nil {
 		db.endQuery()
 		return &ResultSet{err: err}
@@ -93,7 +94,7 @@ func (db *DB) AllDocs(ctx context.Context, options ...Options) *ResultSet {
 }
 
 // DesignDocs returns a list of all documents in the database.
-func (db *DB) DesignDocs(ctx context.Context, options ...Options) *ResultSet {
+func (db *DB) DesignDocs(ctx context.Context, options ...Option) *ResultSet {
 	if db.err != nil {
 		return &ResultSet{err: db.err}
 	}
@@ -105,7 +106,7 @@ func (db *DB) DesignDocs(ctx context.Context, options ...Options) *ResultSet {
 	if err := db.startQuery(); err != nil {
 		return &ResultSet{err: err}
 	}
-	rowsi, err := ddocer.DesignDocs(ctx, mergeOptions(options...))
+	rowsi, err := ddocer.DesignDocs(ctx, allOptions(options))
 	if err != nil {
 		db.endQuery()
 		return &ResultSet{err: err}
@@ -114,7 +115,7 @@ func (db *DB) DesignDocs(ctx context.Context, options ...Options) *ResultSet {
 }
 
 // LocalDocs returns a list of all documents in the database.
-func (db *DB) LocalDocs(ctx context.Context, options ...Options) *ResultSet {
+func (db *DB) LocalDocs(ctx context.Context, options ...Option) *ResultSet {
 	if db.err != nil {
 		return &ResultSet{err: db.err}
 	}
@@ -125,7 +126,7 @@ func (db *DB) LocalDocs(ctx context.Context, options ...Options) *ResultSet {
 	if err := db.startQuery(); err != nil {
 		return &ResultSet{err: err}
 	}
-	rowsi, err := ldocer.LocalDocs(ctx, mergeOptions(options...))
+	rowsi, err := ldocer.LocalDocs(ctx, allOptions(options))
 	if err != nil {
 		db.endQuery()
 		return &ResultSet{err: err}
@@ -144,7 +145,7 @@ func (db *DB) LocalDocs(ctx context.Context, options ...Options) *ResultSet {
 // a multi-query object as a value.
 //
 // See https://docs.couchdb.org/en/stable/api/ddoc/views.html#sending-multiple-queries-to-a-view
-func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) *ResultSet {
+func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Option) *ResultSet {
 	if db.err != nil {
 		return &ResultSet{err: db.err}
 	}
@@ -153,7 +154,7 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) 
 	}
 	ddoc = strings.TrimPrefix(ddoc, "_design/")
 	view = strings.TrimPrefix(view, "_view/")
-	rowsi, err := db.driverDB.Query(ctx, ddoc, view, mergeOptions(options...))
+	rowsi, err := db.driverDB.Query(ctx, ddoc, view, allOptions(options))
 	if err != nil {
 		db.endQuery()
 		return &ResultSet{err: err}
@@ -163,7 +164,7 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Options) 
 
 // Get fetches the requested document. Any errors are deferred until the
 // [ResultSet.ScanDoc] call.
-func (db *DB) Get(ctx context.Context, docID string, options ...Options) *ResultSet {
+func (db *DB) Get(ctx context.Context, docID string, options ...Option) *ResultSet {
 	if db.err != nil {
 		return &ResultSet{err: db.err}
 	}
@@ -172,7 +173,7 @@ func (db *DB) Get(ctx context.Context, docID string, options ...Options) *Result
 	}
 	switch getter := db.driverDB.(type) {
 	case driver.RowsGetter:
-		rowsi, err := getter.Get(ctx, docID, mergeOptions(options...))
+		rowsi, err := getter.Get(ctx, docID, allOptions(options))
 		if err != nil {
 			db.endQuery()
 			return &ResultSet{err: err}
@@ -180,7 +181,7 @@ func (db *DB) Get(ctx context.Context, docID string, options ...Options) *Result
 		return &ResultSet{underlying: newRows(ctx, db.endQuery, rowsi)}
 	case driver.OldGetter:
 		defer db.endQuery()
-		doc, err := getter.Get(ctx, docID, mergeOptions(options...))
+		doc, err := getter.Get(ctx, docID, allOptions(options))
 		if err != nil {
 			return &ResultSet{err: err}
 		}
@@ -194,17 +195,17 @@ func (db *DB) Get(ctx context.Context, docID string, options ...Options) *Result
 		}
 		return &ResultSet{underlying: r}
 	default:
-		panic("driver is neither a driver.RowsGetter nor driver.OldGetter")
+		panic(fmt.Sprintf("driver of type %T is neither a driver.RowsGetter nor driver.OldGetter", db.driverDB))
 	}
 }
 
 // GetRev returns the active rev of the specified document. GetRev accepts
 // the same options as [DB.Get].
-func (db *DB) GetRev(ctx context.Context, docID string, options ...Options) (rev string, err error) {
+func (db *DB) GetRev(ctx context.Context, docID string, options ...Option) (rev string, err error) {
 	if db.err != nil {
 		return "", db.err
 	}
-	opts := mergeOptions(options...)
+	opts := allOptions(options)
 	if r, ok := db.driverDB.(driver.RevGetter); ok {
 		if err := db.startQuery(); err != nil {
 			return "", err
@@ -224,7 +225,7 @@ func (db *DB) GetRev(ctx context.Context, docID string, options ...Options) (rev
 
 // CreateDoc creates a new doc with an auto-generated unique ID. The generated
 // docID and new rev are returned.
-func (db *DB) CreateDoc(ctx context.Context, doc interface{}, options ...Options) (docID, rev string, err error) {
+func (db *DB) CreateDoc(ctx context.Context, doc interface{}, options ...Option) (docID, rev string, err error) {
 	if db.err != nil {
 		return "", "", db.err
 	}
@@ -232,7 +233,7 @@ func (db *DB) CreateDoc(ctx context.Context, doc interface{}, options ...Options
 		return "", "", err
 	}
 	defer db.endQuery()
-	return db.driverDB.CreateDoc(ctx, doc, mergeOptions(options...))
+	return db.driverDB.CreateDoc(ctx, doc, allOptions(options))
 }
 
 // normalizeFromJSON unmarshals a []byte, json.RawMessage or io.Reader to a
@@ -294,7 +295,7 @@ func extractDocID(i interface{}) (string, bool) {
 //     conform to CouchDB standards.
 //   - An [encoding/json.RawMessage] value containing a valid JSON document
 //   - An [io.Reader], from which a valid JSON document may be read.
-func (db *DB) Put(ctx context.Context, docID string, doc interface{}, options ...Options) (rev string, err error) {
+func (db *DB) Put(ctx context.Context, docID string, doc interface{}, options ...Option) (rev string, err error) {
 	if db.err != nil {
 		return "", db.err
 	}
@@ -309,12 +310,12 @@ func (db *DB) Put(ctx context.Context, docID string, doc interface{}, options ..
 	if err != nil {
 		return "", err
 	}
-	return db.driverDB.Put(ctx, docID, i, mergeOptions(options...))
+	return db.driverDB.Put(ctx, docID, i, allOptions(options))
 }
 
 // Delete marks the specified document as deleted. The revision may be provided
 // via options, which takes priority over the rev argument.
-func (db *DB) Delete(ctx context.Context, docID, rev string, options ...Options) (newRev string, err error) {
+func (db *DB) Delete(ctx context.Context, docID, rev string, options ...Option) (newRev string, err error) {
 	if db.err != nil {
 		return "", db.err
 	}
@@ -325,7 +326,7 @@ func (db *DB) Delete(ctx context.Context, docID, rev string, options ...Options)
 	if docID == "" {
 		return "", missingArg("docID")
 	}
-	opts := mergeOptions(Options{"rev": rev}, mergeOptions(options...))
+	opts := append(allOptions{Options{"rev": rev}}, options...)
 	return db.driverDB.Delete(ctx, docID, opts)
 }
 
@@ -537,7 +538,7 @@ func (db *DB) SetSecurity(ctx context.Context, security *Security) error {
 // source, with only the ID and revision changed.
 //
 // See http://docs.couchdb.org/en/2.0.0/api/document/common.html#copy--db-docid
-func (db *DB) Copy(ctx context.Context, targetID, sourceID string, options ...Options) (targetRev string, err error) {
+func (db *DB) Copy(ctx context.Context, targetID, sourceID string, options ...Option) (targetRev string, err error) {
 	if db.err != nil {
 		return "", db.err
 	}
@@ -547,7 +548,7 @@ func (db *DB) Copy(ctx context.Context, targetID, sourceID string, options ...Op
 	if sourceID == "" {
 		return "", missingArg("sourceID")
 	}
-	opts := mergeOptions(options...)
+	opts := allOptions(options)
 	if copier, ok := db.driverDB.(driver.Copier); ok {
 		if err := db.startQuery(); err != nil {
 			return "", err
@@ -556,18 +557,20 @@ func (db *DB) Copy(ctx context.Context, targetID, sourceID string, options ...Op
 		return copier.Copy(ctx, targetID, sourceID, opts)
 	}
 	var doc map[string]interface{}
-	if err = db.Get(ctx, sourceID, opts).ScanDoc(&doc); err != nil {
+	if err = db.Get(ctx, sourceID, options...).ScanDoc(&doc); err != nil {
 		return "", err
 	}
 	delete(doc, "_rev")
 	doc["_id"] = targetID
-	delete(opts, "rev") // rev has a completely different meaning for Copy and Put
-	return db.Put(ctx, targetID, doc, opts)
+	opts2 := map[string]interface{}{}
+	opts.Apply(opts2)
+	delete(opts2, "rev") // rev has a completely different meaning for Copy and Put
+	return db.Put(ctx, targetID, doc, Options(opts2))
 }
 
 // PutAttachment uploads the supplied content as an attachment to the specified
 // document.
-func (db *DB) PutAttachment(ctx context.Context, docID string, att *Attachment, options ...Options) (newRev string, err error) {
+func (db *DB) PutAttachment(ctx context.Context, docID string, att *Attachment, options ...Option) (newRev string, err error) {
 	if db.err != nil {
 		return "", db.err
 	}
@@ -582,11 +585,11 @@ func (db *DB) PutAttachment(ctx context.Context, docID string, att *Attachment, 
 	}
 	defer db.endQuery()
 	a := driver.Attachment(*att)
-	return db.driverDB.PutAttachment(ctx, docID, &a, mergeOptions(options...))
+	return db.driverDB.PutAttachment(ctx, docID, &a, allOptions(options))
 }
 
 // GetAttachment returns a file attachment associated with the document.
-func (db *DB) GetAttachment(ctx context.Context, docID, filename string, options ...Options) (*Attachment, error) {
+func (db *DB) GetAttachment(ctx context.Context, docID, filename string, options ...Option) (*Attachment, error) {
 	if db.err != nil {
 		return nil, db.err
 	}
@@ -600,7 +603,7 @@ func (db *DB) GetAttachment(ctx context.Context, docID, filename string, options
 	if filename == "" {
 		return nil, missingArg("filename")
 	}
-	att, err := db.driverDB.GetAttachment(ctx, docID, filename, mergeOptions(options...))
+	att, err := db.driverDB.GetAttachment(ctx, docID, filename, allOptions(options))
 	if err != nil {
 		return nil, err
 	}
@@ -619,7 +622,7 @@ var nilContent = nilContentReader{}
 
 // GetAttachmentMeta returns meta data about an attachment. The attachment
 // content returned will be empty.
-func (db *DB) GetAttachmentMeta(ctx context.Context, docID, filename string, options ...Options) (*Attachment, error) {
+func (db *DB) GetAttachmentMeta(ctx context.Context, docID, filename string, options ...Option) (*Attachment, error) {
 	if db.err != nil {
 		return nil, db.err
 	}
@@ -635,7 +638,7 @@ func (db *DB) GetAttachmentMeta(ctx context.Context, docID, filename string, opt
 			return nil, err
 		}
 		defer db.endQuery()
-		a, err := metaer.GetAttachmentMeta(ctx, docID, filename, mergeOptions(options...))
+		a, err := metaer.GetAttachmentMeta(ctx, docID, filename, allOptions(options))
 		if err != nil {
 			return nil, err
 		}
@@ -658,7 +661,7 @@ func (db *DB) GetAttachmentMeta(ctx context.Context, docID, filename string, opt
 // DeleteAttachment deletes an attachment from a document, returning the
 // document's new revision. The revision may be provided via options, which
 // takes priority over the rev argument.
-func (db *DB) DeleteAttachment(ctx context.Context, docID, rev, filename string, options ...Options) (newRev string, err error) {
+func (db *DB) DeleteAttachment(ctx context.Context, docID, rev, filename string, options ...Option) (newRev string, err error) {
 	if db.err != nil {
 		return "", db.err
 	}
@@ -672,7 +675,7 @@ func (db *DB) DeleteAttachment(ctx context.Context, docID, rev, filename string,
 	if filename == "" {
 		return "", missingArg("filename")
 	}
-	opts := mergeOptions(Options{"rev": rev}, mergeOptions(options...))
+	opts := append(allOptions{Options{"rev": rev}}, options...)
 	return db.driverDB.DeleteAttachment(ctx, docID, filename, opts)
 }
 
@@ -725,7 +728,7 @@ type BulkGetReference struct {
 // or for getting revision history.
 //
 // See http://docs.couchdb.org/en/stable/api/database/bulk-api.html#db-bulk-get
-func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...Options) *ResultSet {
+func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...Option) *ResultSet {
 	if db.err != nil {
 		return &ResultSet{err: db.err}
 	}
@@ -741,7 +744,7 @@ func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...O
 	for i, ref := range docs {
 		refs[i] = driver.BulkGetReference(ref)
 	}
-	rowsi, err := bulkGetter.BulkGet(ctx, refs, mergeOptions(options...))
+	rowsi, err := bulkGetter.BulkGet(ctx, refs, allOptions(options))
 	if err != nil {
 		db.endQuery()
 		return &ResultSet{err: err}

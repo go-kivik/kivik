@@ -35,7 +35,7 @@ type BulkResult struct {
 //
 // As with [DB.Put], each individual document may be a JSON-marshable object, or
 // a raw JSON string in a [encoding/json.RawMessage], or [io.Reader].
-func (db *DB) BulkDocs(ctx context.Context, docs []interface{}, options ...Options) ([]BulkResult, error) {
+func (db *DB) BulkDocs(ctx context.Context, docs []interface{}, options ...Option) ([]BulkResult, error) {
 	if db.err != nil {
 		return nil, db.err
 	}
@@ -50,7 +50,7 @@ func (db *DB) BulkDocs(ctx context.Context, docs []interface{}, options ...Optio
 		return nil, err
 	}
 	defer db.endQuery()
-	opts := mergeOptions(options...)
+	opts := allOptions(options)
 	if bulkDocer, ok := db.driverDB.(driver.BulkDocer); ok {
 		bulki, err := bulkDocer.BulkDocs(ctx, docsi, opts)
 		if err != nil {

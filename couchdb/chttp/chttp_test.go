@@ -32,6 +32,7 @@ import (
 	"golang.org/x/net/publicsuffix"
 
 	kivik "github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/internal/mock"
 	"github.com/go-kivik/kivik/v4/internal/nettest"
 )
 
@@ -114,7 +115,7 @@ func TestNew(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
-		result, err := New(&http.Client{}, tt.dsn, nil)
+		result, err := New(&http.Client{}, tt.dsn, mock.NilOption)
 		statusErrorRE(t, tt.err, tt.status, err)
 		result.UserAgents = nil // Determinism
 		if d := testy.DiffInterface(tt.expected, result); d != nil {

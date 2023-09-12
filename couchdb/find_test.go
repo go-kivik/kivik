@@ -24,7 +24,9 @@ import (
 
 	"gitlab.com/flimzy/testy"
 
+	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
 func TestExplain(t *testing.T) {
@@ -32,7 +34,7 @@ func TestExplain(t *testing.T) {
 		name     string
 		db       *db
 		query    interface{}
-		opts     map[string]interface{}
+		options  kivik.Option
 		expected *driver.QueryPlan
 		status   int
 		err      string
@@ -86,18 +88,20 @@ func TestExplain(t *testing.T) {
 			err:    `Post "?http://example.com/testdb/_explain"?: success`,
 		},
 		{
-			name: "partitioned request",
-			db:   newTestDB(nil, errors.New("expected")),
-			opts: map[string]interface{}{
-				OptionPartition: "x1",
-			},
-			status: http.StatusBadGateway,
-			err:    `Post "?http://example.com/testdb/_partition/x1/_explain"?: expected`,
+			name:    "partitioned request",
+			db:      newTestDB(nil, errors.New("expected")),
+			options: OptionPartition("x1"),
+			status:  http.StatusBadGateway,
+			err:     `Post "?http://example.com/testdb/_partition/x1/_explain"?: expected`,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.db.Explain(context.Background(), test.query, test.opts)
+			opts := test.options
+			if opts == nil {
+				opts = mock.NilOption
+			}
+			result, err := test.db.Explain(context.Background(), test.query, opts)
 			testy.StatusErrorRE(t, test.err, test.status, err)
 			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
@@ -162,7 +166,7 @@ func TestCreateIndex(t *testing.T) {
 		name            string
 		ddoc, indexName string
 		index           interface{}
-		options         map[string]interface{}
+		options         kivik.Option
 		db              *db
 		status          int
 		err             string
@@ -204,18 +208,20 @@ func TestCreateIndex(t *testing.T) {
 			}, nil),
 		},
 		{
-			name: "partitioned query",
-			db:   newTestDB(nil, errors.New("expected")),
-			options: map[string]interface{}{
-				OptionPartition: "xxy",
-			},
-			status: http.StatusBadGateway,
-			err:    `Post "?http://example.com/testdb/_partition/xxy/_index"?: expected`,
+			name:    "partitioned query",
+			db:      newTestDB(nil, errors.New("expected")),
+			options: OptionPartition("xxy"),
+			status:  http.StatusBadGateway,
+			err:     `Post "?http://example.com/testdb/_partition/xxy/_index"?: expected`,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := test.db.CreateIndex(context.Background(), test.ddoc, test.indexName, test.index, test.options)
+			opts := test.options
+			if opts == nil {
+				opts = mock.NilOption
+			}
+			err := test.db.CreateIndex(context.Background(), test.ddoc, test.indexName, test.index, opts)
 			testy.StatusErrorRE(t, test.err, test.status, err)
 		})
 	}
@@ -224,7 +230,7 @@ func TestCreateIndex(t *testing.T) {
 func TestGetIndexes(t *testing.T) {
 	tests := []struct {
 		name     string
-		options  map[string]interface{}
+		options  kivik.Option
 		db       *db
 		expected []driver.Index
 		status   int
@@ -274,18 +280,20 @@ func TestGetIndexes(t *testing.T) {
 			},
 		},
 		{
-			name: "partitioned query",
-			db:   newTestDB(nil, errors.New("expected")),
-			options: map[string]interface{}{
-				OptionPartition: "yyz",
-			},
-			status: http.StatusBadGateway,
-			err:    `Get "?http://example.com/testdb/_partition/yyz/_index"?: expected`,
+			name:    "partitioned query",
+			db:      newTestDB(nil, errors.New("expected")),
+			options: OptionPartition("yyz"),
+			status:  http.StatusBadGateway,
+			err:     `Get "?http://example.com/testdb/_partition/yyz/_index"?: expected`,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.db.GetIndexes(context.Background(), test.options)
+			opts := test.options
+			if opts == nil {
+				opts = mock.NilOption
+			}
+			result, err := test.db.GetIndexes(context.Background(), opts)
 			testy.StatusErrorRE(t, test.err, test.status, err)
 			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
@@ -298,7 +306,7 @@ func TestDeleteIndex(t *testing.T) {
 	tests := []struct {
 		name            string
 		ddoc, indexName string
-		options         map[string]interface{}
+		options         kivik.Option
 		db              *db
 		status          int
 		err             string
@@ -347,16 +355,18 @@ func TestDeleteIndex(t *testing.T) {
 			ddoc:      "_design/foo",
 			indexName: "bar",
 			db:        newTestDB(nil, errors.New("expected")),
-			options: map[string]interface{}{
-				OptionPartition: "qqz",
-			},
-			status: http.StatusBadGateway,
-			err:    `Delete "?http://example.com/testdb/_partition/qqz/_index/_design/foo/json/bar"?: expected`,
+			options:   OptionPartition("qqz"),
+			status:    http.StatusBadGateway,
+			err:       `Delete "?http://example.com/testdb/_partition/qqz/_index/_design/foo/json/bar"?: expected`,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := test.db.DeleteIndex(context.Background(), test.ddoc, test.indexName, test.options)
+			opts := test.options
+			if opts == nil {
+				opts = mock.NilOption
+			}
+			err := test.db.DeleteIndex(context.Background(), test.ddoc, test.indexName, opts)
 			testy.StatusErrorRE(t, test.err, test.status, err)
 		})
 	}
@@ -364,12 +374,12 @@ func TestDeleteIndex(t *testing.T) {
 
 func TestFind(t *testing.T) {
 	tests := []struct {
-		name   string
-		db     *db
-		query  interface{}
-		opts   map[string]interface{}
-		status int
-		err    string
+		name    string
+		db      *db
+		query   interface{}
+		options kivik.Option
+		status  int
+		err     string
 	}{
 		{
 			name:   "invalid query json",
@@ -425,18 +435,20 @@ func TestFind(t *testing.T) {
 			}, nil),
 		},
 		{
-			name: "partitioned request",
-			db:   newTestDB(nil, errors.New("expected")),
-			opts: map[string]interface{}{
-				OptionPartition: "x2",
-			},
-			status: http.StatusBadGateway,
-			err:    `Post "?http://example.com/testdb/_partition/x2/_find"?: expected`,
+			name:    "partitioned request",
+			db:      newTestDB(nil, errors.New("expected")),
+			options: OptionPartition("x2"),
+			status:  http.StatusBadGateway,
+			err:     `Post "?http://example.com/testdb/_partition/x2/_find"?: expected`,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.db.Find(context.Background(), test.query, test.opts)
+			opts := test.options
+			if opts == nil {
+				opts = mock.NilOption
+			}
+			result, err := test.db.Find(context.Background(), test.query, opts)
 			testy.StatusErrorRE(t, test.err, test.status, err)
 			if _, ok := result.(*rows); !ok {
 				t.Errorf("Unexpected type returned: %t", result)

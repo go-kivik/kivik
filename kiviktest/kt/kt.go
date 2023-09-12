@@ -148,7 +148,7 @@ func (c *Context) Interface(key string) interface{} {
 }
 
 // Options returns an options map value.
-func (c *Context) Options(key string) map[string]interface{} {
+func (c *Context) Options(key string) kivik.Options {
 	i := c.Config.get(name(c.T), key)
 	o, _ := i.(map[string]interface{})
 	return o

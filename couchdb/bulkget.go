@@ -22,7 +22,9 @@ import (
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
-func (d *db) BulkGet(ctx context.Context, docs []driver.BulkGetReference, opts map[string]interface{}) (driver.Rows, error) {
+func (d *db) BulkGet(ctx context.Context, docs []driver.BulkGetReference, options driver.Options) (driver.Rows, error) {
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	query, err := optionsToParams(opts)
 	if err != nil {
 		return nil, err
@@ -30,14 +32,14 @@ func (d *db) BulkGet(ctx context.Context, docs []driver.BulkGetReference, opts m
 	body := map[string]interface{}{
 		"docs": docs,
 	}
-	options := &chttp.Options{
+	chttpOpts := &chttp.Options{
 		Query:   query,
 		GetBody: chttp.BodyEncoder(body),
 		Header: http.Header{
 			chttp.HeaderIdempotencyKey: []string{},
 		},
 	}
-	resp, err := d.Client.DoReq(ctx, http.MethodPost, d.path("_bulk_get"), options)
+	resp, err := d.Client.DoReq(ctx, http.MethodPost, d.path("_bulk_get"), chttpOpts)
 	if err != nil {
 		return nil, err
 	}

@@ -64,8 +64,11 @@ func (m *method) DriverArgs() string {
 	for i, arg := range m.Accepts {
 		args = append(args, fmt.Sprintf("arg%d %s", i, typeName(arg)))
 	}
-	if m.AcceptsOptions {
+	if m.AcceptsLegacyOptions {
 		args = append(args, "options map[string]interface{}")
+	}
+	if m.AcceptsOptions {
+		args = append(args, "options driver.Options")
 	}
 	return strings.Join(args, ", ")
 }
@@ -109,7 +112,7 @@ func (m *method) inputVars() []string {
 	for i := range m.Accepts {
 		args = append(args, fmt.Sprintf("arg%d", i))
 	}
-	if m.AcceptsOptions {
+	if m.AcceptsLegacyOptions || m.AcceptsOptions {
 		args = append(args, "options")
 	}
 	return args
@@ -133,8 +136,10 @@ func (m *method) InputVariables() string {
 	for i := range m.Accepts {
 		result = append(result, fmt.Sprintf("\t\targ%d: arg%d,\n", i, i))
 	}
-	if m.AcceptsOptions {
+	if m.AcceptsLegacyOptions {
 		common = append(common, "\t\t\toptions: options,\n")
+	} else if m.AcceptsOptions {
+		common = append(common, "\t\t\toptions: toLegacyOptions(options),\n")
 	}
 	if len(common) > 0 {
 		result = append(result, fmt.Sprintf("\t\tcommonExpectation: commonExpectation{\n%s\t\t},\n",
@@ -323,11 +328,10 @@ func (m *method) MethodArgs() string {
 			mid = append(mid, fmt.Sprintf(`	if e.arg%[1]d != nil { arg%[1]d = fmt.Sprintf("%%v", e.arg%[1]d) }`, i))
 		}
 	}
-	if m.AcceptsOptions {
+	if m.AcceptsLegacyOptions || m.AcceptsOptions {
 		str = append(str, "options")
-		def = append(def, `defaultOptionPlaceholder`)
+		def = append(def, `formatOptions(e.options)`)
 		vars = append(vars, "%s")
-		mid = append(mid, `	if e.options != nil { options = fmt.Sprintf("%v", e.options) }`)
 	}
 	if len(str) > 0 {
 		lines = append(lines, fmt.Sprintf("\t%s := %s", strings.Join(str, ", "), strings.Join(def, ", ")))
@@ -347,8 +351,11 @@ func (m *method) CallbackTypes() string {
 	for _, arg := range m.Accepts {
 		inputs = append(inputs, typeName(arg))
 	}
-	if m.AcceptsOptions {
+	if m.AcceptsLegacyOptions {
 		inputs = append(inputs, "map[string]interface{}")
+	}
+	if m.AcceptsOptions {
+		inputs = append(inputs, "driver.Options")
 	}
 	return strings.Join(inputs, ", ")
 }
@@ -363,7 +370,7 @@ func (m *method) CallbackArgs() string {
 	for i := range m.Accepts {
 		args = append(args, fmt.Sprintf("arg%d", i))
 	}
-	if m.AcceptsOptions {
+	if m.AcceptsLegacyOptions || m.AcceptsOptions {
 		args = append(args, "options")
 	}
 	return strings.Join(args, ", ")

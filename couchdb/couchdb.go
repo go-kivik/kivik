@@ -13,7 +13,6 @@
 package couchdb
 
 import (
-	"fmt"
 	"net/http"
 	"net/url"
 	"sync"
@@ -52,17 +51,10 @@ var (
 	_ driver.DBUpdater = &client{}
 )
 
-func (d *couch) NewClient(dsn string, opts map[string]interface{}) (driver.Client, error) {
-	var httpClient *http.Client
-	if c, ok := opts[OptionHTTPClient]; ok {
-		if httpClient, ok = c.(*http.Client); !ok {
-			return nil, &kivik.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("OptionHTTPClient is %T, must be *http.Client", c)}
-		}
-	}
-	if httpClient == nil {
-		httpClient = &http.Client{}
-	}
-	chttpClient, err := chttp.New(httpClient, dsn, opts)
+func (d *couch) NewClient(dsn string, options driver.Options) (driver.Client, error) {
+	httpClient := &http.Client{}
+	options.Apply(httpClient)
+	chttpClient, err := chttp.New(httpClient, dsn, options)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +63,7 @@ func (d *couch) NewClient(dsn string, opts map[string]interface{}) (driver.Clien
 	}, nil
 }
 
-func (c *client) DB(dbName string, _ map[string]interface{}) (driver.DB, error) {
+func (c *client) DB(dbName string, _ driver.Options) (driver.DB, error) {
 	if dbName == "" {
 		return nil, missingArg("dbName")
 	}

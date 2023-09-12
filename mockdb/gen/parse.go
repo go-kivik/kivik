@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	kivik "github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/driver"
 )
 
 // method contains the relevant information for a driver method.
@@ -15,19 +16,21 @@ type method struct {
 	// Accepted values, except for context and options
 	Accepts []reflect.Type
 	// Return values, except for error
-	Returns        []reflect.Type
-	AcceptsContext bool
-	AcceptsOptions bool
-	ReturnsError   bool
-	DBMethod       bool
+	Returns              []reflect.Type
+	AcceptsContext       bool
+	AcceptsLegacyOptions bool
+	AcceptsOptions       bool
+	ReturnsError         bool
+	DBMethod             bool
 }
 
 var (
-	typeContext       = reflect.TypeOf((*context.Context)(nil)).Elem()
-	typeDriverOptions = reflect.TypeOf(map[string]interface{}{})
-	typeClientOptions = reflect.TypeOf([]kivik.Options{})
-	typeError         = reflect.TypeOf((*error)(nil)).Elem()
-	typeString        = reflect.TypeOf("")
+	typeContext             = reflect.TypeOf((*context.Context)(nil)).Elem()
+	typeLegacyDriverOptions = reflect.TypeOf(map[string]interface{}{})
+	typeDriverOptions       = reflect.TypeOf((*driver.Options)(nil)).Elem()
+	typeClientOptions       = reflect.TypeOf([]kivik.Options{})
+	typeError               = reflect.TypeOf((*error)(nil)).Elem()
+	typeString              = reflect.TypeOf("")
 )
 
 func parseMethods(input interface{}, isClient bool, skip map[string]struct{}) ([]*method, error) {
@@ -72,12 +75,16 @@ func parseMethods(input interface{}, isClient bool, skip map[string]struct{}) ([
 			dm.AcceptsContext = true
 			accepts = accepts[1:]
 		}
+		if !isClient && len(accepts) > 0 && accepts[len(accepts)-1] == typeLegacyDriverOptions {
+			dm.AcceptsLegacyOptions = true
+			accepts = accepts[:len(accepts)-1]
+		}
 		if !isClient && len(accepts) > 0 && accepts[len(accepts)-1] == typeDriverOptions {
 			dm.AcceptsOptions = true
 			accepts = accepts[:len(accepts)-1]
 		}
 		if isClient && m.Type.IsVariadic() && len(accepts) > 0 && accepts[len(accepts)-1].String() == typeClientOptions.String() {
-			dm.AcceptsOptions = true
+			dm.AcceptsLegacyOptions = true
 			accepts = accepts[:len(accepts)-1]
 		}
 		if len(accepts) > 0 {

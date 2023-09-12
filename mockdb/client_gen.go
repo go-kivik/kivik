@@ -8,22 +8,7 @@ import (
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
-var _ = &driver.Attachment{}
-
-func (c *driverClient) AllDBs(ctx context.Context, options map[string]interface{}) ([]string, error) {
-	expected := &ExpectedAllDBs{
-		commonExpectation: commonExpectation{
-			options: options,
-		},
-	}
-	if err := c.nextExpectation(expected); err != nil {
-		return nil, err
-	}
-	if expected.callback != nil {
-		return expected.callback(ctx, options)
-	}
-	return expected.ret0, expected.wait(ctx)
-}
+var _ = (*driver.Attachment)(nil)
 
 func (c *driverClient) Close() error {
 	expected := &ExpectedClose{}
@@ -49,21 +34,6 @@ func (c *driverClient) ClusterSetup(ctx context.Context, arg0 interface{}) error
 	return expected.wait(ctx)
 }
 
-func (c *driverClient) ClusterStatus(ctx context.Context, options map[string]interface{}) (string, error) {
-	expected := &ExpectedClusterStatus{
-		commonExpectation: commonExpectation{
-			options: options,
-		},
-	}
-	if err := c.nextExpectation(expected); err != nil {
-		return "", err
-	}
-	if expected.callback != nil {
-		return expected.callback(ctx, options)
-	}
-	return expected.ret0, expected.wait(ctx)
-}
-
 func (c *driverClient) ConfigValue(ctx context.Context, arg0 string, arg1 string, arg2 string) (string, error) {
 	expected := &ExpectedConfigValue{
 		arg0: arg0,
@@ -75,22 +45,6 @@ func (c *driverClient) ConfigValue(ctx context.Context, arg0 string, arg1 string
 	}
 	if expected.callback != nil {
 		return expected.callback(ctx, arg0, arg1, arg2)
-	}
-	return expected.ret0, expected.wait(ctx)
-}
-
-func (c *driverClient) DBExists(ctx context.Context, arg0 string, options map[string]interface{}) (bool, error) {
-	expected := &ExpectedDBExists{
-		arg0: arg0,
-		commonExpectation: commonExpectation{
-			options: options,
-		},
-	}
-	if err := c.nextExpectation(expected); err != nil {
-		return false, err
-	}
-	if expected.callback != nil {
-		return expected.callback(ctx, arg0, options)
 	}
 	return expected.ret0, expected.wait(ctx)
 }
@@ -108,22 +62,6 @@ func (c *driverClient) DeleteConfigKey(ctx context.Context, arg0 string, arg1 st
 		return expected.callback(ctx, arg0, arg1, arg2)
 	}
 	return expected.ret0, expected.wait(ctx)
-}
-
-func (c *driverClient) DestroyDB(ctx context.Context, arg0 string, options map[string]interface{}) error {
-	expected := &ExpectedDestroyDB{
-		arg0: arg0,
-		commonExpectation: commonExpectation{
-			options: options,
-		},
-	}
-	if err := c.nextExpectation(expected); err != nil {
-		return err
-	}
-	if expected.callback != nil {
-		return expected.callback(ctx, arg0, options)
-	}
-	return expected.wait(ctx)
 }
 
 func (c *driverClient) Ping(ctx context.Context) (bool, error) {
@@ -149,6 +87,36 @@ func (c *driverClient) SetConfigValue(ctx context.Context, arg0 string, arg1 str
 	}
 	if expected.callback != nil {
 		return expected.callback(ctx, arg0, arg1, arg2, arg3)
+	}
+	return expected.ret0, expected.wait(ctx)
+}
+
+func (c *driverClient) AllDBs(ctx context.Context, options driver.Options) ([]string, error) {
+	expected := &ExpectedAllDBs{
+		commonExpectation: commonExpectation{
+			options: toLegacyOptions(options),
+		},
+	}
+	if err := c.nextExpectation(expected); err != nil {
+		return nil, err
+	}
+	if expected.callback != nil {
+		return expected.callback(ctx, options)
+	}
+	return expected.ret0, expected.wait(ctx)
+}
+
+func (c *driverClient) ClusterStatus(ctx context.Context, options driver.Options) (string, error) {
+	expected := &ExpectedClusterStatus{
+		commonExpectation: commonExpectation{
+			options: toLegacyOptions(options),
+		},
+	}
+	if err := c.nextExpectation(expected); err != nil {
+		return "", err
+	}
+	if expected.callback != nil {
+		return expected.callback(ctx, options)
 	}
 	return expected.ret0, expected.wait(ctx)
 }
@@ -180,11 +148,11 @@ func (c *driverClient) ConfigSection(ctx context.Context, arg0 string, arg1 stri
 	return expected.ret0, expected.wait(ctx)
 }
 
-func (c *driverClient) DB(arg0 string, options map[string]interface{}) (driver.DB, error) {
+func (c *driverClient) DB(arg0 string, options driver.Options) (driver.DB, error) {
 	expected := &ExpectedDB{
 		arg0: arg0,
 		commonExpectation: commonExpectation{
-			options: options,
+			options: toLegacyOptions(options),
 		},
 	}
 	if err := c.nextExpectation(expected); err != nil {
@@ -199,10 +167,26 @@ func (c *driverClient) DB(arg0 string, options map[string]interface{}) (driver.D
 	return &driverDB{DB: expected.ret0}, expected.err
 }
 
-func (c *driverClient) DBUpdates(ctx context.Context, options map[string]interface{}) (driver.DBUpdates, error) {
+func (c *driverClient) DBExists(ctx context.Context, arg0 string, options driver.Options) (bool, error) {
+	expected := &ExpectedDBExists{
+		arg0: arg0,
+		commonExpectation: commonExpectation{
+			options: toLegacyOptions(options),
+		},
+	}
+	if err := c.nextExpectation(expected); err != nil {
+		return false, err
+	}
+	if expected.callback != nil {
+		return expected.callback(ctx, arg0, options)
+	}
+	return expected.ret0, expected.wait(ctx)
+}
+
+func (c *driverClient) DBUpdates(ctx context.Context, options driver.Options) (driver.DBUpdates, error) {
 	expected := &ExpectedDBUpdates{
 		commonExpectation: commonExpectation{
-			options: options,
+			options: toLegacyOptions(options),
 		},
 	}
 	if err := c.nextExpectation(expected); err != nil {
@@ -227,10 +211,26 @@ func (c *driverClient) DBsStats(ctx context.Context, arg0 []string) ([]*driver.D
 	return expected.ret0, expected.wait(ctx)
 }
 
-func (c *driverClient) GetReplications(ctx context.Context, options map[string]interface{}) ([]driver.Replication, error) {
+func (c *driverClient) DestroyDB(ctx context.Context, arg0 string, options driver.Options) error {
+	expected := &ExpectedDestroyDB{
+		arg0: arg0,
+		commonExpectation: commonExpectation{
+			options: toLegacyOptions(options),
+		},
+	}
+	if err := c.nextExpectation(expected); err != nil {
+		return err
+	}
+	if expected.callback != nil {
+		return expected.callback(ctx, arg0, options)
+	}
+	return expected.wait(ctx)
+}
+
+func (c *driverClient) GetReplications(ctx context.Context, options driver.Options) ([]driver.Replication, error) {
 	expected := &ExpectedGetReplications{
 		commonExpectation: commonExpectation{
-			options: options,
+			options: toLegacyOptions(options),
 		},
 	}
 	if err := c.nextExpectation(expected); err != nil {
@@ -253,12 +253,12 @@ func (c *driverClient) Membership(ctx context.Context) (*driver.ClusterMembershi
 	return expected.ret0, expected.wait(ctx)
 }
 
-func (c *driverClient) Replicate(ctx context.Context, arg0 string, arg1 string, options map[string]interface{}) (driver.Replication, error) {
+func (c *driverClient) Replicate(ctx context.Context, arg0 string, arg1 string, options driver.Options) (driver.Replication, error) {
 	expected := &ExpectedReplicate{
 		arg0: arg0,
 		arg1: arg1,
 		commonExpectation: commonExpectation{
-			options: options,
+			options: toLegacyOptions(options),
 		},
 	}
 	if err := c.nextExpectation(expected); err != nil {

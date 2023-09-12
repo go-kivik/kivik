@@ -19,11 +19,21 @@ import (
 	"time"
 )
 
+// Options represents a collection of arbitrary client or query options.
+//
+// An implementation should also implement the [fmt.Stringer] interface for the
+// sake of display when mocked.
+type Options interface {
+	// Apply applies the option to target, if target is of the expected type.
+	// Unexpected/recognized target types should be ignored.
+	Apply(target interface{})
+}
+
 // Driver is the interface that must be implemented by a database driver.
 type Driver interface {
 	// NewClient returns a connection handle to the database. The name is in a
 	// driver-specific format.
-	NewClient(name string, options map[string]interface{}) (Client, error)
+	NewClient(name string, options Options) (Client, error)
 }
 
 // Version represents a server version response.
@@ -44,17 +54,17 @@ type Client interface {
 	// Version returns the server implementation's details.
 	Version(ctx context.Context) (*Version, error)
 	// AllDBs returns a list of all existing database names.
-	AllDBs(ctx context.Context, options map[string]interface{}) ([]string, error)
+	AllDBs(ctx context.Context, options Options) ([]string, error)
 	// DBExists returns true if the database exists.
-	DBExists(ctx context.Context, dbName string, options map[string]interface{}) (bool, error)
+	DBExists(ctx context.Context, dbName string, options Options) (bool, error)
 	// CreateDB creates the requested DB. The dbName is validated as a valid
 	// CouchDB database name prior to calling this function, so the driver can
 	// assume a valid name.
-	CreateDB(ctx context.Context, dbName string, options map[string]interface{}) error
+	CreateDB(ctx context.Context, dbName string, options Options) error
 	// DestroyDB deletes the requested DB.
-	DestroyDB(ctx context.Context, dbName string, options map[string]interface{}) error
+	DestroyDB(ctx context.Context, dbName string, options Options) error
 	// DB returns a handle to the requested database
-	DB(dbName string, options map[string]interface{}) (DB, error)
+	DB(dbName string, options Options) (DB, error)
 }
 
 // DBsStatser is an optional interface, added to support CouchDB 2.2.0's
@@ -102,10 +112,10 @@ type ReplicationInfo struct {
 // that supports replication between two database.
 type ClientReplicator interface {
 	// Replicate initiates a replication.
-	Replicate(ctx context.Context, targetDSN, sourceDSN string, options map[string]interface{}) (Replication, error)
+	Replicate(ctx context.Context, targetDSN, sourceDSN string, options Options) (Replication, error)
 	// GetReplications returns a list of replicatoins (i.e. all docs in the
 	// _replicator database)
-	GetReplications(ctx context.Context, options map[string]interface{}) ([]Replication, error)
+	GetReplications(ctx context.Context, options Options) ([]Replication, error)
 }
 
 // Authenticator is an optional interface that may be implemented by a [Client]
@@ -172,7 +182,7 @@ type RowsGetter interface {
 	// Get fetches the requested document from the database, and returns the
 	// content length (or -1 if unknown), and an io.ReadCloser to access the
 	// raw JSON content.
-	Get(ctx context.Context, docID string, options map[string]interface{}) (Rows, error)
+	Get(ctx context.Context, docID string, options Options) (Rows, error)
 }
 
 // OldGetter is an optional interface that a DB may implement, to return a single
@@ -181,20 +191,20 @@ type OldGetter interface {
 	// Get fetches the requested document from the database, and returns the
 	// content length (or -1 if unknown), and an io.ReadCloser to access the
 	// raw JSON content.
-	Get(ctx context.Context, docID string, options map[string]interface{}) (*Document, error)
+	Get(ctx context.Context, docID string, options Options) (*Document, error)
 }
 
 // DB is a database handle.
 type DB interface {
 	// AllDocs returns all of the documents in the database, subject to the
 	// options provided.
-	AllDocs(ctx context.Context, options map[string]interface{}) (Rows, error)
+	AllDocs(ctx context.Context, options Options) (Rows, error)
 	// CreateDoc creates a new doc, with a server-generated ID.
-	CreateDoc(ctx context.Context, doc interface{}, options map[string]interface{}) (docID, rev string, err error)
+	CreateDoc(ctx context.Context, doc interface{}, options Options) (docID, rev string, err error)
 	// Put writes the document in the database.
-	Put(ctx context.Context, docID string, doc interface{}, options map[string]interface{}) (rev string, err error)
+	Put(ctx context.Context, docID string, doc interface{}, options Options) (rev string, err error)
 	// Delete marks the specified document as deleted.
-	Delete(ctx context.Context, docID string, options map[string]interface{}) (newRev string, err error)
+	Delete(ctx context.Context, docID string, options Options) (newRev string, err error)
 	// Stats returns database statistics.
 	Stats(ctx context.Context) (*DBStats, error)
 	// Compact initiates compaction of the database.
@@ -205,19 +215,19 @@ type DB interface {
 	ViewCleanup(ctx context.Context) error
 	// Changes returns an iterator for the changes feed. In continuous mode,
 	// the iterator will continue indefinitely, until [Changes.Close] is called.
-	Changes(ctx context.Context, options map[string]interface{}) (Changes, error)
+	Changes(ctx context.Context, options Options) (Changes, error)
 	// PutAttachment uploads an attachment to the specified document, returning
 	// the new revision.
-	PutAttachment(ctx context.Context, docID string, att *Attachment, options map[string]interface{}) (newRev string, err error)
+	PutAttachment(ctx context.Context, docID string, att *Attachment, options Options) (newRev string, err error)
 	// GetAttachment fetches an attachment for the associated document ID.
-	GetAttachment(ctx context.Context, docID, filename string, options map[string]interface{}) (*Attachment, error)
+	GetAttachment(ctx context.Context, docID, filename string, options Options) (*Attachment, error)
 	// DeleteAttachment deletes an attachment from a document, returning the
 	// document's new revision.
-	DeleteAttachment(ctx context.Context, docID, filename string, options map[string]interface{}) (newRev string, err error)
+	DeleteAttachment(ctx context.Context, docID, filename string, options Options) (newRev string, err error)
 	// Query performs a query against a view, subject to the options provided.
 	// ddoc will be the design doc name without the '_design/' previx.
 	// view will be the view name without the '_view/' prefix.
-	Query(ctx context.Context, ddoc, view string, options map[string]interface{}) (Rows, error)
+	Query(ctx context.Context, ddoc, view string, options Options) (Rows, error)
 }
 
 // SecurityDB is an optional interface that extends a DB, for backends which
@@ -277,7 +287,7 @@ type PurgeResult struct {
 type BulkDocer interface {
 	// BulkDocs alls bulk create, update and/or delete operations. It returns an
 	// iterator over the results.
-	BulkDocs(ctx context.Context, docs []interface{}, options map[string]interface{}) ([]BulkResult, error)
+	BulkDocs(ctx context.Context, docs []interface{}, options Options) ([]BulkResult, error)
 }
 
 // Finder is an optional interface which may be implemented by a DB. It provides
@@ -286,20 +296,20 @@ type Finder interface {
 	// Find executes a query using the new /_find interface. If query is a
 	// string, []byte, or [encoding/json.RawMessage], it should be treated as a
 	// raw JSON payload. Any other type should be marshaled to JSON.
-	Find(ctx context.Context, query interface{}, options map[string]interface{}) (Rows, error)
+	Find(ctx context.Context, query interface{}, options Options) (Rows, error)
 	// CreateIndex creates an index if it doesn't already exist. If the index
 	// already exists, it should do nothing. ddoc and name may be empty, in
 	// which case they should be provided by the backend. If index is a string,
 	// []byte, or json.RawMessage, it should be treated as a raw JSON payload.
 	// Any other type should be marshaled to JSON.
-	CreateIndex(ctx context.Context, ddoc, name string, index interface{}, options map[string]interface{}) error
+	CreateIndex(ctx context.Context, ddoc, name string, index interface{}, options Options) error
 	// GetIndexes returns a list of all indexes in the database.
-	GetIndexes(ctx context.Context, options map[string]interface{}) ([]Index, error)
+	GetIndexes(ctx context.Context, options Options) ([]Index, error)
 	// Delete deletes the requested index.
-	DeleteIndex(ctx context.Context, ddoc, name string, options map[string]interface{}) error
+	DeleteIndex(ctx context.Context, ddoc, name string, options Options) error
 	// Explain returns the query plan for a given query. Explain takes the same
 	// arguments as [Finder.Find].
-	Explain(ctx context.Context, query interface{}, options map[string]interface{}) (*QueryPlan, error)
+	Explain(ctx context.Context, query interface{}, options Options) (*QueryPlan, error)
 }
 
 // QueryPlan is the response of an Explain query.
@@ -344,7 +354,7 @@ type Attachment struct {
 // not satisfied, GetAttachment will be used instead.
 type AttachmentMetaGetter interface {
 	// GetAttachmentMeta returns meta information about an attachment.
-	GetAttachmentMeta(ctx context.Context, docID, filename string, options map[string]interface{}) (*Attachment, error)
+	GetAttachmentMeta(ctx context.Context, docID, filename string, options Options) (*Attachment, error)
 }
 
 // BulkResult is the result of a single doc update in a BulkDocs request.
@@ -360,7 +370,7 @@ type BulkResult struct {
 type RevGetter interface {
 	// GetRev returns the document revision of the requested document. GetRev
 	// should accept the same options as [DB.Get].
-	GetRev(ctx context.Context, docID string, options map[string]interface{}) (rev string, err error)
+	GetRev(ctx context.Context, docID string, options Options) (rev string, err error)
 }
 
 // Flusher is an optional interface that may be implemented by a [DB] that can
@@ -379,21 +389,21 @@ type Flusher interface {
 // calling [DB.Get] followed by [DB.Put], with options passed through unaltered,
 // except that the 'rev' option will be removed for the [DB.Put] call.
 type Copier interface {
-	Copy(ctx context.Context, targetID, sourceID string, options map[string]interface{}) (targetRev string, err error)
+	Copy(ctx context.Context, targetID, sourceID string, options Options) (targetRev string, err error)
 }
 
 // DesignDocer is an optional interface that may be implemented by a [DB].
 type DesignDocer interface {
 	// DesignDocs returns all of the design documents in the database, subject
 	// to the options provided.
-	DesignDocs(ctx context.Context, options map[string]interface{}) (Rows, error)
+	DesignDocs(ctx context.Context, options Options) (Rows, error)
 }
 
 // LocalDocer is an optional interface that may be implemented by a [DB].
 type LocalDocer interface {
 	// LocalDocs returns all of the local documents in the database, subject to
 	// the options provided.
-	LocalDocs(ctx context.Context, options map[string]interface{}) (Rows, error)
+	LocalDocs(ctx context.Context, options Options) (Rows, error)
 }
 
 // Pinger is an optional interface that may be implemented by a [Client]. When
@@ -416,7 +426,7 @@ type ClusterMembership struct {
 // support CouchDB cluster configuration operations.
 type Cluster interface {
 	// ClusterStatus returns the current cluster status.
-	ClusterStatus(ctx context.Context, options map[string]interface{}) (string, error)
+	ClusterStatus(ctx context.Context, options Options) (string, error)
 	// ClusterSetup performs the action specified by action.
 	ClusterSetup(ctx context.Context, action interface{}) error
 	// Membership returns a list of all known nodes, and all nodes configured as

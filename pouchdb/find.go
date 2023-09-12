@@ -48,7 +48,7 @@ func buildIndex(ddoc, name string, index interface{}) (*js.Object, error) {
 	return o, nil
 }
 
-func (d *db) CreateIndex(ctx context.Context, ddoc, name string, index interface{}, _ map[string]interface{}) error {
+func (d *db) CreateIndex(ctx context.Context, ddoc, name string, index interface{}, _ driver.Options) error {
 	indexObj, err := buildIndex(ddoc, name, index)
 	if err != nil {
 		return err
@@ -57,7 +57,7 @@ func (d *db) CreateIndex(ctx context.Context, ddoc, name string, index interface
 	return err
 }
 
-func (d *db) GetIndexes(ctx context.Context, _ map[string]interface{}) (indexes []driver.Index, err error) {
+func (d *db) GetIndexes(ctx context.Context, _ driver.Options) (indexes []driver.Index, err error) {
 	defer bindings.RecoverError(&err)
 	result, err := d.db.GetIndexes(ctx)
 	if err != nil {
@@ -94,7 +94,7 @@ func (d *db) findIndex(ctx context.Context, ddoc, name string) (interface{}, err
 	return nil, &kivik.Error{Status: http.StatusNotFound, Message: "index does not exist"}
 }
 
-func (d *db) DeleteIndex(ctx context.Context, ddoc, name string, _ map[string]interface{}) error {
+func (d *db) DeleteIndex(ctx context.Context, ddoc, name string, _ driver.Options) error {
 	index, err := d.findIndex(ctx, ddoc, name)
 	if err != nil {
 		return err
@@ -103,7 +103,7 @@ func (d *db) DeleteIndex(ctx context.Context, ddoc, name string, _ map[string]in
 	return err
 }
 
-func (d *db) Find(ctx context.Context, query interface{}, _ map[string]interface{}) (driver.Rows, error) {
+func (d *db) Find(ctx context.Context, query interface{}, _ driver.Options) (driver.Rows, error) {
 	result, err := d.db.Find(ctx, query)
 	if err != nil {
 		return nil, err
@@ -171,7 +171,7 @@ func (f *fields) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (d *db) Explain(ctx context.Context, query interface{}, _ map[string]interface{}) (*driver.QueryPlan, error) {
+func (d *db) Explain(ctx context.Context, query interface{}, _ driver.Options) (*driver.QueryPlan, error) {
 	result, err := d.db.Explain(ctx, query)
 	if err != nil {
 		return nil, err

@@ -25,5 +25,5 @@ type BulkGetReference struct {
 // support bulk get operations.
 type BulkGetter interface {
 	// BulkGet uses the _bulk_get interface to fetch multiple documents in a single query.
-	BulkGet(ctx context.Context, docs []BulkGetReference, options map[string]interface{}) (Rows, error)
+	BulkGet(ctx context.Context, docs []BulkGetReference, options Options) (Rows, error)
 }

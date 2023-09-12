@@ -26,6 +26,7 @@ import (
 	"golang.org/x/net/publicsuffix"
 
 	kivik "github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/internal/mock"
 	"github.com/go-kivik/kivik/v4/internal/nettest"
 )
 
@@ -86,7 +87,7 @@ func TestCookieAuthAuthenticate(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, test cookieTest) {
-		c, err := New(&http.Client{}, test.dsn, nil)
+		c, err := New(&http.Client{}, test.dsn, mock.NilOption)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -201,7 +202,7 @@ func Test_shouldAuth(t *testing.T) {
 		}
 	})
 	tests.Add("valid session", func() interface{} {
-		c, _ := New(&http.Client{}, "http://example.com/", nil)
+		c, _ := New(&http.Client{}, "http://example.com/", mock.NilOption)
 		c.Jar = &dummyJar{&http.Cookie{
 			Name:    kivik.SessionCookieName,
 			Expires: time.Now().Add(20 * time.Minute),
@@ -215,7 +216,7 @@ func Test_shouldAuth(t *testing.T) {
 		}
 	})
 	tests.Add("expired session", func() interface{} {
-		c, _ := New(&http.Client{}, "http://example.com/", nil)
+		c, _ := New(&http.Client{}, "http://example.com/", mock.NilOption)
 		c.Jar = &dummyJar{&http.Cookie{
 			Name:    kivik.SessionCookieName,
 			Expires: time.Now().Add(-20 * time.Second),
@@ -229,7 +230,7 @@ func Test_shouldAuth(t *testing.T) {
 		}
 	})
 	tests.Add("no expiry time", func() interface{} {
-		c, _ := New(&http.Client{}, "http://example.com/", nil)
+		c, _ := New(&http.Client{}, "http://example.com/", mock.NilOption)
 		c.Jar = &dummyJar{&http.Cookie{
 			Name: kivik.SessionCookieName,
 		}}
@@ -242,7 +243,7 @@ func Test_shouldAuth(t *testing.T) {
 		}
 	})
 	tests.Add("about to expire", func() interface{} {
-		c, _ := New(&http.Client{}, "http://example.com/", nil)
+		c, _ := New(&http.Client{}, "http://example.com/", mock.NilOption)
 		c.Jar = &dummyJar{&http.Cookie{
 			Name:    kivik.SessionCookieName,
 			Expires: time.Now().Add(20 * time.Second),
@@ -309,7 +310,7 @@ func Test401Response(t *testing.T) {
 		}
 	}))
 
-	c, err := New(&http.Client{}, s.URL, nil)
+	c, err := New(&http.Client{}, s.URL, mock.NilOption)
 	if err != nil {
 		t.Fatal(err)
 	}

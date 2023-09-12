@@ -12,21 +12,14 @@
 
 package mock
 
-import (
-	"context"
+import "github.com/go-kivik/kivik/v4/driver"
 
-	"github.com/go-kivik/kivik/v4/driver"
-)
+type nilOption bool
 
-// BulkDocer mocks a driver.DB and driver.BulkDocer
-type BulkDocer struct {
-	*DB
-	BulkDocsFunc func(ctx context.Context, docs []interface{}, options driver.Options) ([]driver.BulkResult, error)
-}
+var _ driver.Options = nilOption(false)
 
-var _ driver.BulkDocer = &BulkDocer{}
+func (nilOption) Apply(interface{}) {}
+func (nilOption) String() string    { return "NilOption" }
 
-// BulkDocs calls db.BulkDocsFunc
-func (db *BulkDocer) BulkDocs(ctx context.Context, docs []interface{}, options driver.Options) ([]driver.BulkResult, error) {
-	return db.BulkDocsFunc(ctx, docs, options)
-}
+// NilOption is a nil option.
+const NilOption nilOption = false

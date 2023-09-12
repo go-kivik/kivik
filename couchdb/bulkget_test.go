@@ -25,7 +25,9 @@ import (
 
 	"gitlab.com/flimzy/testy"
 
+	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal/mock"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -33,7 +35,7 @@ func TestBulkGet(t *testing.T) {
 	type tst struct {
 		db      *db
 		docs    []driver.BulkGetReference
-		options map[string]interface{}
+		options kivik.Option
 		status  int
 		err     string
 
@@ -139,7 +141,7 @@ func TestBulkGet(t *testing.T) {
 			}),
 			dbName: "xxx",
 		},
-		options: map[string]interface{}{
+		options: kivik.Options{
 			"revs": true,
 		},
 		expected: &driver.Row{
@@ -169,7 +171,11 @@ func TestBulkGet(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, test tst) {
-		rows, err := test.db.BulkGet(context.Background(), test.docs, test.options)
+		opts := test.options
+		if opts == nil {
+			opts = mock.NilOption
+		}
+		rows, err := test.db.BulkGet(context.Background(), test.docs, opts)
 		testy.StatusErrorRE(t, test.err, test.status, err)
 
 		row := new(driver.Row)

@@ -60,11 +60,9 @@ func TestClusterStatus(t *testing.T) {
 		client: newCustomClient(func(r *http.Request) (*http.Response, error) {
 			return nil, nil
 		}),
-		options: kivik.Options{
-			optionEnsureDBsExist: 1.0,
-		},
-		status: http.StatusBadRequest,
-		err:    "kivik: invalid type float64 for options",
+		options: kivik.Param(optionEnsureDBsExist, 1.0),
+		status:  http.StatusBadRequest,
+		err:     "kivik: invalid type float64 for options",
 	})
 	tests.Add("invalid param", tst{
 		client: newCustomClient(func(r *http.Request) (*http.Response, error) {
@@ -72,11 +70,9 @@ func TestClusterStatus(t *testing.T) {
 			err := json.Unmarshal([]byte(r.URL.Query().Get(optionEnsureDBsExist)), &result)
 			return nil, &kivik.Error{Status: http.StatusBadRequest, Err: err}
 		}),
-		options: kivik.Options{
-			optionEnsureDBsExist: "foo,bar,baz",
-		},
-		status: http.StatusBadRequest,
-		err:    `Get "?http://example.com/_cluster_setup\?ensure_dbs_exist=foo%2Cbar%2Cbaz"?: invalid character 'o' in literal false \(expecting 'a'\)`,
+		options: kivik.Param(optionEnsureDBsExist, "foo,bar,baz"),
+		status:  http.StatusBadRequest,
+		err:     `Get "?http://example.com/_cluster_setup\?ensure_dbs_exist=foo%2Cbar%2Cbaz"?: invalid character 'o' in literal false \(expecting 'a'\)`,
 	})
 	tests.Add("ensure dbs", func(t *testing.T) interface{} {
 		return tst{
@@ -101,9 +97,7 @@ func TestClusterStatus(t *testing.T) {
 					Body: io.NopCloser(strings.NewReader(`{"state":"cluster_finished"}`)),
 				}, nil
 			}),
-			options: kivik.Options{
-				optionEnsureDBsExist: `["foo","bar","baz"]`,
-			},
+			options:  kivik.Param(optionEnsureDBsExist, `["foo","bar","baz"]`),
 			expected: "cluster_finished",
 		}
 	})

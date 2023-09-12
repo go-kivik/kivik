@@ -165,7 +165,7 @@ func TestReplicate(t *testing.T) {
 				return client
 			}(),
 			target: "foo", source: "bar",
-			options: kivik.Options{"foo": make(chan int)},
+			options: kivik.Param("foo", make(chan int)),
 			status:  http.StatusBadRequest,
 			err:     `^Post "?http://example.com/_replicator"?: json: unsupported type: chan int$`,
 		},

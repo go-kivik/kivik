@@ -27,13 +27,7 @@ type expectation interface {
 	met(expectation) bool
 	// for DB methods, this returns the associated *DB object
 	dbo() *DB
-	opts() kivik.Options
-}
-
-func toLegacyOptions(options driver.Options) kivik.Options {
-	result := map[string]interface{}{}
-	options.Apply(result)
-	return result
+	opts() kivik.Option
 }
 
 // commonExpectation satisfies the expectation interface, except the String()
@@ -43,11 +37,11 @@ type commonExpectation struct {
 	triggered bool
 	err       error // nolint: structcheck
 	delay     time.Duration
-	options   kivik.Options
+	options   kivik.Option
 	db        *DB
 }
 
-func (e *commonExpectation) opts() kivik.Options {
+func (e *commonExpectation) opts() kivik.Option {
 	return e.options
 }
 

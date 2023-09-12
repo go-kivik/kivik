@@ -8,6 +8,7 @@ import (
 
 	"gitlab.com/flimzy/testy"
 
+	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
@@ -75,7 +76,7 @@ func TestReplicateString(t *testing.T) {
 	- should return: {"replication_id":"foo"}`,
 	})
 	tests.Add("options", stringerTest{
-		input: &ExpectedReplicate{commonExpectation: commonExpectation{options: map[string]interface{}{"foo": 123}}},
+		input: &ExpectedReplicate{commonExpectation: commonExpectation{options: kivik.Param("foo", 123)}},
 		expected: `call to Replicate() which:
 	- has any target
 	- has any source
@@ -108,7 +109,7 @@ func TestGetReplicationsString(t *testing.T) {
 	- has any options`,
 	})
 	tests.Add("options", stringerTest{
-		input: &ExpectedGetReplications{commonExpectation: commonExpectation{options: map[string]interface{}{"foo": 123}}},
+		input: &ExpectedGetReplications{commonExpectation: commonExpectation{options: kivik.Param("foo", 123)}},
 		expected: `call to GetReplications() which:
 	- has options: map[foo:123]`,
 	})
@@ -141,7 +142,7 @@ func TestAllDBsString(t *testing.T) {
 	- has any options`,
 	})
 	tests.Add("options", stringerTest{
-		input: &ExpectedAllDBs{commonExpectation: commonExpectation{options: map[string]interface{}{"foo": 123}}},
+		input: &ExpectedAllDBs{commonExpectation: commonExpectation{options: kivik.Param("foo", 123)}},
 		expected: `call to AllDBs() which:
 	- has options: map[foo:123]`,
 	})
@@ -222,7 +223,7 @@ func TestClusterStatusString(t *testing.T) {
 	- has any options`,
 	})
 	tests.Add("options", stringerTest{
-		input: &ExpectedClusterStatus{commonExpectation: commonExpectation{options: map[string]interface{}{"foo": 123}}},
+		input: &ExpectedClusterStatus{commonExpectation: commonExpectation{options: kivik.Param("foo", 123)}},
 		expected: `call to ClusterStatus() which:
 	- has options: map[foo:123]`,
 	})
@@ -270,7 +271,7 @@ func TestDBExistsString(t *testing.T) {
 	- should return: false`,
 	})
 	tests.Add("full", stringerTest{
-		input: &ExpectedDBExists{arg0: "foo", ret0: true, commonExpectation: commonExpectation{options: map[string]interface{}{"foo": 123}}},
+		input: &ExpectedDBExists{arg0: "foo", ret0: true, commonExpectation: commonExpectation{options: kivik.Param("foo", 123)}},
 		expected: `call to DBExists() which:
 	- has name: foo
 	- has options: map[foo:123]
@@ -670,7 +671,7 @@ func TestCreateDocString(t *testing.T) {
 	- has any options`,
 	})
 	tests.Add("options", stringerTest{
-		input: &ExpectedCreateDoc{commonExpectation: commonExpectation{db: &DB{name: "foo"}, options: map[string]interface{}{"foo": "bar"}}},
+		input: &ExpectedCreateDoc{commonExpectation: commonExpectation{db: &DB{name: "foo"}, options: kivik.Param("foo", "bar")}},
 		expected: `call to DB(foo#0).CreateDoc() which:
 	- has any doc
 	- has options: map[foo:bar]`,
@@ -911,7 +912,7 @@ func TestDeleteString(t *testing.T) {
 	- has any options`,
 	})
 	tests.Add("options", stringerTest{
-		input: &ExpectedDelete{commonExpectation: commonExpectation{db: &DB{name: "foo"}, options: map[string]interface{}{"foo": "bar"}}},
+		input: &ExpectedDelete{commonExpectation: commonExpectation{db: &DB{name: "foo"}, options: kivik.Param("foo", "bar")}},
 		expected: `call to DB(foo#0).Delete() which:
 	- has any docID
 	- has options: map[foo:bar]`,

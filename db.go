@@ -326,7 +326,7 @@ func (db *DB) Delete(ctx context.Context, docID, rev string, options ...Option) 
 	if docID == "" {
 		return "", missingArg("docID")
 	}
-	opts := append(allOptions{Options{"rev": rev}}, options...)
+	opts := append(allOptions{Rev(rev)}, options...)
 	return db.driverDB.Delete(ctx, docID, opts)
 }
 
@@ -565,7 +565,7 @@ func (db *DB) Copy(ctx context.Context, targetID, sourceID string, options ...Op
 	opts2 := map[string]interface{}{}
 	opts.Apply(opts2)
 	delete(opts2, "rev") // rev has a completely different meaning for Copy and Put
-	return db.Put(ctx, targetID, doc, Options(opts2))
+	return db.Put(ctx, targetID, doc, Params(opts2))
 }
 
 // PutAttachment uploads the supplied content as an attachment to the specified
@@ -675,7 +675,7 @@ func (db *DB) DeleteAttachment(ctx context.Context, docID, rev, filename string,
 	if filename == "" {
 		return "", missingArg("filename")
 	}
-	opts := append(allOptions{Options{"rev": rev}}, options...)
+	opts := append(allOptions{Rev(rev)}, options...)
 	return db.driverDB.DeleteAttachment(ctx, docID, filename, opts)
 }
 

@@ -180,7 +180,7 @@ type ExpectedAllDocs struct {
 
 // WithOptions sets the expected options for the call to DB.AllDocs().
 func (e *ExpectedAllDocs) WithOptions(options driver.Options) *ExpectedAllDocs {
-	e.options = toLegacyOptions(options)
+	e.options = options
 	return e
 }
 
@@ -232,7 +232,7 @@ type ExpectedBulkDocs struct {
 
 // WithOptions sets the expected options for the call to DB.BulkDocs().
 func (e *ExpectedBulkDocs) WithOptions(options driver.Options) *ExpectedBulkDocs {
-	e.options = toLegacyOptions(options)
+	e.options = options
 	return e
 }
 
@@ -291,7 +291,7 @@ type ExpectedBulkGet struct {
 
 // WithOptions sets the expected options for the call to DB.BulkGet().
 func (e *ExpectedBulkGet) WithOptions(options driver.Options) *ExpectedBulkGet {
-	e.options = toLegacyOptions(options)
+	e.options = options
 	return e
 }
 
@@ -349,7 +349,7 @@ type ExpectedChanges struct {
 
 // WithOptions sets the expected options for the call to DB.Changes().
 func (e *ExpectedChanges) WithOptions(options driver.Options) *ExpectedChanges {
-	e.options = toLegacyOptions(options)
+	e.options = options
 	return e
 }
 
@@ -402,7 +402,7 @@ type ExpectedCopy struct {
 
 // WithOptions sets the expected options for the call to DB.Copy().
 func (e *ExpectedCopy) WithOptions(options driver.Options) *ExpectedCopy {
-	e.options = toLegacyOptions(options)
+	e.options = options
 	return e
 }
 
@@ -468,7 +468,7 @@ type ExpectedCreateDoc struct {
 
 // WithOptions sets the expected options for the call to DB.CreateDoc().
 func (e *ExpectedCreateDoc) WithOptions(options driver.Options) *ExpectedCreateDoc {
-	e.options = toLegacyOptions(options)
+	e.options = options
 	return e
 }
 
@@ -529,7 +529,7 @@ type ExpectedCreateIndex struct {
 
 // WithOptions sets the expected options for the call to DB.CreateIndex().
 func (e *ExpectedCreateIndex) WithOptions(options driver.Options) *ExpectedCreateIndex {
-	e.options = toLegacyOptions(options)
+	e.options = options
 	return e
 }
 
@@ -594,7 +594,7 @@ type ExpectedDelete struct {
 
 // WithOptions sets the expected options for the call to DB.Delete().
 func (e *ExpectedDelete) WithOptions(options driver.Options) *ExpectedDelete {
-	e.options = toLegacyOptions(options)
+	e.options = options
 	return e
 }
 
@@ -654,7 +654,7 @@ type ExpectedDeleteAttachment struct {
 
 // WithOptions sets the expected options for the call to DB.DeleteAttachment().
 func (e *ExpectedDeleteAttachment) WithOptions(options driver.Options) *ExpectedDeleteAttachment {
-	e.options = toLegacyOptions(options)
+	e.options = options
 	return e
 }
 
@@ -719,7 +719,7 @@ type ExpectedDeleteIndex struct {
 
 // WithOptions sets the expected options for the call to DB.DeleteIndex().
 func (e *ExpectedDeleteIndex) WithOptions(options driver.Options) *ExpectedDeleteIndex {
-	e.options = toLegacyOptions(options)
+	e.options = options
 	return e
 }
 
@@ -777,7 +777,7 @@ type ExpectedDesignDocs struct {
 
 // WithOptions sets the expected options for the call to DB.DesignDocs().
 func (e *ExpectedDesignDocs) WithOptions(options driver.Options) *ExpectedDesignDocs {
-	e.options = toLegacyOptions(options)
+	e.options = options
 	return e
 }
 
@@ -829,7 +829,7 @@ type ExpectedExplain struct {
 
 // WithOptions sets the expected options for the call to DB.Explain().
 func (e *ExpectedExplain) WithOptions(options driver.Options) *ExpectedExplain {
-	e.options = toLegacyOptions(options)
+	e.options = options
 	return e
 }
 
@@ -888,7 +888,7 @@ type ExpectedFind struct {
 
 // WithOptions sets the expected options for the call to DB.Find().
 func (e *ExpectedFind) WithOptions(options driver.Options) *ExpectedFind {
-	e.options = toLegacyOptions(options)
+	e.options = options
 	return e
 }
 
@@ -947,7 +947,7 @@ type ExpectedGet struct {
 
 // WithOptions sets the expected options for the call to DB.Get().
 func (e *ExpectedGet) WithOptions(options driver.Options) *ExpectedGet {
-	e.options = toLegacyOptions(options)
+	e.options = options
 	return e
 }
 
@@ -1007,7 +1007,7 @@ type ExpectedGetAttachment struct {
 
 // WithOptions sets the expected options for the call to DB.GetAttachment().
 func (e *ExpectedGetAttachment) WithOptions(options driver.Options) *ExpectedGetAttachment {
-	e.options = toLegacyOptions(options)
+	e.options = options
 	return e
 }
 
@@ -1073,7 +1073,7 @@ type ExpectedGetAttachmentMeta struct {
 
 // WithOptions sets the expected options for the call to DB.GetAttachmentMeta().
 func (e *ExpectedGetAttachmentMeta) WithOptions(options driver.Options) *ExpectedGetAttachmentMeta {
-	e.options = toLegacyOptions(options)
+	e.options = options
 	return e
 }
 
@@ -1137,7 +1137,7 @@ type ExpectedGetIndexes struct {
 
 // WithOptions sets the expected options for the call to DB.GetIndexes().
 func (e *ExpectedGetIndexes) WithOptions(options driver.Options) *ExpectedGetIndexes {
-	e.options = toLegacyOptions(options)
+	e.options = options
 	return e
 }
 
@@ -1189,7 +1189,7 @@ type ExpectedGetRev struct {
 
 // WithOptions sets the expected options for the call to DB.GetRev().
 func (e *ExpectedGetRev) WithOptions(options driver.Options) *ExpectedGetRev {
-	e.options = toLegacyOptions(options)
+	e.options = options
 	return e
 }
 
@@ -1247,7 +1247,7 @@ type ExpectedLocalDocs struct {
 
 // WithOptions sets the expected options for the call to DB.LocalDocs().
 func (e *ExpectedLocalDocs) WithOptions(options driver.Options) *ExpectedLocalDocs {
-	e.options = toLegacyOptions(options)
+	e.options = options
 	return e
 }
 
@@ -1406,7 +1406,7 @@ type ExpectedPut struct {
 
 // WithOptions sets the expected options for the call to DB.Put().
 func (e *ExpectedPut) WithOptions(options driver.Options) *ExpectedPut {
-	e.options = toLegacyOptions(options)
+	e.options = options
 	return e
 }
 
@@ -1472,7 +1472,7 @@ type ExpectedPutAttachment struct {
 
 // WithOptions sets the expected options for the call to DB.PutAttachment().
 func (e *ExpectedPutAttachment) WithOptions(options driver.Options) *ExpectedPutAttachment {
-	e.options = toLegacyOptions(options)
+	e.options = options
 	return e
 }
 
@@ -1538,7 +1538,7 @@ type ExpectedQuery struct {
 
 // WithOptions sets the expected options for the call to DB.Query().
 func (e *ExpectedQuery) WithOptions(options driver.Options) *ExpectedQuery {
-	e.options = toLegacyOptions(options)
+	e.options = options
 	return e
 }
 

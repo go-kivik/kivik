@@ -148,7 +148,7 @@ func doTestWithDocs(ctx *kt.Context, client *kivik.Client, dbName string, expOff
 	if err := db.Err(); err != nil && !ctx.IsExpectedSuccess(err) {
 		return
 	}
-	opts := kivik.Options{
+	opts := kivik.Params{
 		"include_docs": true,
 		"update_seq":   true,
 	}

@@ -22,15 +22,21 @@ import (
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 )
 
-func replicationOptions(ctx *kt.Context, client *kivik.Client, target, source, repID string, in map[string]interface{}) map[string]interface{} {
-	if in == nil {
-		in = make(map[string]interface{})
+type multiOptions []kivik.Option
+
+func (mo multiOptions) Apply(target interface{}) {
+	for _, o := range mo {
+		o.Apply(target)
 	}
+}
+
+func replicationOptions(ctx *kt.Context, client *kivik.Client, target, source, repID string, in kivik.Option) kivik.Option {
 	if ctx.String("mode") != "pouchdb" {
-		in["_id"] = repID
-		return in
+		return multiOptions{kivik.Param("_id", repID), in}
 	}
-	in["source"] = js.Global.Get("PouchDB").New(source)
-	in["target"] = js.Global.Get("PouchDB").New(target)
-	return in
+	return multiOptions{
+		kivik.Param("source", js.Global.Get("PouchDB").New(source)),
+		kivik.Param("target", js.Global.Get("PouchDB").New(target)),
+		in,
+	}
 }

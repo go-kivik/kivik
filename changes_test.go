@@ -278,7 +278,7 @@ func TestChanges(t *testing.T) {
 					},
 				},
 			},
-			opts: Options{"foo": 123.4},
+			opts: Param("foo", 123.4),
 			expected: &Changes{
 				iter: &iter{
 					feed: &changesIterator{

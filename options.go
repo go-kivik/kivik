@@ -20,7 +20,12 @@ import (
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
-// Option wraps a Kivik or backend option.
+// Option is a Kivik or driver option.
+//
+// Most methods/endpoints take query parameters which are passed as part of
+// the query URL, as documented in the official CouchDB documentation. You can
+// use [Params] or [Param] to set arbitrary query parameters. Backend drivers
+// may provide their own special-purpose options as well.
 type Option interface {
 	// Apply applies the option to target, if target is of the expected type.
 	// Unexpected/recognized target types should be ignored.
@@ -51,14 +56,14 @@ func (o allOptions) String() string {
 	return strings.Join(parts, ",")
 }
 
-// Options is a collection of options. The keys and values are backend specific.
-type Options map[string]interface{}
+// Params is a collection of options. The keys and values are backend specific.
+type Params map[string]interface{}
 
 // Apply applies o to target. The following target types are supported:
 //
 //   - map[string]interface{}
 //   - *url.Values
-func (o Options) Apply(target interface{}) {
+func (o Params) Apply(target interface{}) {
 	switch t := target.(type) {
 	case map[string]interface{}:
 		for k, v := range o {
@@ -84,9 +89,26 @@ func (o Options) Apply(target interface{}) {
 	}
 }
 
-func (o Options) String() string {
+func (o Params) String() string {
 	if len(o) == 0 {
 		return ""
 	}
 	return fmt.Sprintf("%v", map[string]interface{}(o))
+}
+
+// Param sets a single key/value pair as a query parameter.
+func Param(key string, value interface{}) Option {
+	return Params{key: value}
+}
+
+// Rev is a convenience function to set the revision. A less verbose alternative
+// to Param("rev", rev).
+func Rev(rev string) Option {
+	return Params{"rev": rev}
+}
+
+// IncludeDocs instructs the query to include documents. A less verbose
+// alternative to Param("include_docs", true).
+func IncludeDocs() Option {
+	return Params{"include_docs": true}
 }

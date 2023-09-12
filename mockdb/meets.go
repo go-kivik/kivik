@@ -34,11 +34,26 @@ func dbMeetsExpectation(a, e *DB) bool {
 	return e.name == a.name && e.id == a.id
 }
 
-func optionsMeetExpectation(a, e kivik.Options) bool {
+func optionsMeetExpectation(a, e kivik.Option) bool {
 	if e == nil {
 		return true
 	}
-	return reflect.DeepEqual(e, a)
+
+	return reflect.DeepEqual(convertOptions(e), convertOptions(a))
+}
+
+// convertOptions converts a to a slice of options, for easier comparison
+func convertOptions(a kivik.Option) []kivik.Option {
+	t := reflect.TypeOf(a)
+	if t.Kind() != reflect.Slice {
+		return []kivik.Option{a}
+	}
+	v := reflect.ValueOf(a)
+	result := make([]kivik.Option, v.Len())
+	for i := range result {
+		result[i] = v.Index(i).Interface().(kivik.Option)
+	}
+	return result
 }
 
 func jsonMeets(e, a interface{}) bool {

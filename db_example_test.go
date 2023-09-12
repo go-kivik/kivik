@@ -103,7 +103,7 @@ func ExampleDB_updateView() {
 }
 
 func ExampleDB_query() {
-	rows := db.Query(context.TODO(), "_design/foo", "_view/bar", kivik.Options{
+	rows := db.Query(context.TODO(), "_design/foo", "_view/bar", kivik.Params{
 		"startkey": `"foo"`,                           // Quotes are necessary so the
 		"endkey":   `"foo` + kivik.EndKeySuffix + `"`, // key is a valid JSON object
 	})
@@ -124,9 +124,7 @@ func ExampleDB_query() {
 
 //nolint:revive // allow empty block in example
 func ExampleDB_mapReduce() {
-	opts := kivik.Options{
-		"group": true,
-	}
+	opts := kivik.Param("group", true)
 	rows := db.Query(context.TODO(), "_design/foo", "_view/bar", opts)
 	if err := rows.Err(); err != nil {
 		panic(err)

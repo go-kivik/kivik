@@ -19,7 +19,7 @@ import (
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
-// DBUpdates provides access to database updates.
+// DBUpdates is an iterator for database updates.
 type DBUpdates struct {
 	*iter
 }

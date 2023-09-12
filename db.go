@@ -59,7 +59,7 @@ func (db *DB) endQuery() {
 	db.mu.Unlock()
 }
 
-// Client returns the Client used to connect to the database.
+// Client returns the client used to connect to the database.
 func (db *DB) Client() *Client {
 	return db.client
 }
@@ -71,8 +71,8 @@ func (db *DB) Name() string {
 
 // Err returns the error, if any, that occurred while connecting to or creating
 // the database. This error will be deferred until the next call, normally, so
-// using this method is only ever necessary if you need to directly check the
-// error status, and intend to do nothing else with the DB object.
+// using this method is only necessary if you need to directly check the error,
+// and intend to do nothing else with the DB object.
 func (db *DB) Err() error {
 	return db.err
 }
@@ -138,13 +138,16 @@ func (db *DB) LocalDocs(ctx context.Context, options ...Option) *ResultSet {
 // document. ddoc and view may or may not be be prefixed with '_design/'
 // and '_view/' respectively.
 //
-// See https://docs.couchdb.org/en/stable/api/ddoc/views.html#
+// See [views] in the CouchDB documentation.
 //
 // If supported by the backend and database (i.e. CouchDB 2.2+), you may pass
 // multiple queries to a single view by passing an option called `queries` with
 // a multi-query object as a value.
 //
-// See https://docs.couchdb.org/en/stable/api/ddoc/views.html#sending-multiple-queries-to-a-view
+// See [multiple queries] in the CouchDB documentation.
+//
+// [views]: https://docs.couchdb.org/en/stable/api/ddoc/views.html#
+// [multiple queries]: https://docs.couchdb.org/en/stable/api/ddoc/views.html#sending-multiple-queries-to-a-view
 func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Option) *ResultSet {
 	if db.err != nil {
 		return &ResultSet{err: db.err}
@@ -162,8 +165,8 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Option) *
 	return &ResultSet{underlying: newRows(ctx, db.endQuery, rowsi)}
 }
 
-// Get fetches the requested document. Any errors are deferred until the
-// [ResultSet.ScanDoc] call.
+// Get fetches the requested document. Any errors are deferred until the first
+// call to [ResultSet.ScanDoc] or any other result set method.
 func (db *DB) Get(ctx context.Context, docID string, options ...Option) *ResultSet {
 	if db.err != nil {
 		return &ResultSet{err: db.err}
@@ -332,7 +335,9 @@ func (db *DB) Delete(ctx context.Context, docID, rev string, options ...Option) 
 
 // Flush requests a flush of disk cache to disk or other permanent storage.
 //
-// See http://docs.couchdb.org/en/2.0.0/api/database/compact.html#db-ensure-full-commit
+// See the [CouchDB documentation].
+//
+// [CouchDB documentation]: http://docs.couchdb.org/en/2.0.0/api/database/compact.html#db-ensure-full-commit
 func (db *DB) Flush(ctx context.Context) error {
 	if db.err != nil {
 		return db.err
@@ -374,8 +379,9 @@ type DBStats struct {
 	// RawResponse is the raw response body returned by the server, useful if
 	// you need additional backend-specific information.
 	//
-	// For the format of this document, see
-	// http://docs.couchdb.org/en/2.1.1/api/database/common.html#get--db
+	// For the format of this document, see the [CouchDB documentation].
+	//
+	// [CouchDB documentation]: http://docs.couchdb.org/en/2.1.1/api/database/common.html#get--db
 	RawResponse json.RawMessage `json:"-"`
 }
 
@@ -387,9 +393,9 @@ type ClusterConfig struct {
 	WriteQuorum int `json:"w"`
 }
 
-// Stats returns database statistics.
+// Stats returns database statistics. See the [CouchDB documentation].
 //
-// See https://docs.couchdb.org/en/stable/api/database/common.html#get--db
+// [CouchDB documentation]: https://docs.couchdb.org/en/stable/api/database/common.html#get--db
 func (db *DB) Stats(ctx context.Context) (*DBStats, error) {
 	if db.err != nil {
 		return nil, db.err
@@ -428,12 +434,14 @@ func driverStats2kivikStats(i *driver.DBStats) *DBStats {
 // Compact begins compaction of the database. Check the CompactRunning field
 // returned by [DB.Info] to see if the compaction has completed.
 //
-// See http://docs.couchdb.org/en/2.0.0/api/database/compact.html#db-compact
+// See the [CouchDB documentation].
 //
 // This method may return immediately, or may wait for the compaction to
 // complete before returning, depending on the backend implementation. In
 // particular, CouchDB triggers the compaction and returns immediately, whereas
 // PouchDB waits until compaction has completed, before returning.
+//
+// [CouchDB documentation]: http://docs.couchdb.org/en/2.0.0/api/database/compact.html#db-compact
 func (db *DB) Compact(ctx context.Context) error {
 	if db.err != nil {
 		return db.err
@@ -448,12 +456,14 @@ func (db *DB) Compact(ctx context.Context) error {
 // CompactView compats the view indexes associated with the specified design
 // document.
 //
-// See http://docs.couchdb.org/en/2.0.0/api/database/compact.html#db-compact-design-doc
+// See the [CouchDB documentation].
 //
 // This method may return immediately, or may wait for the compaction to
 // complete before returning, depending on the backend implementation. In
 // particular, CouchDB triggers the compaction and returns immediately, whereas
 // PouchDB waits until compaction has completed, before returning.
+//
+// [CouchDB documentation]: http://docs.couchdb.org/en/2.0.0/api/database/compact.html#db-compact-design-doc
 func (db *DB) CompactView(ctx context.Context, ddocID string) error {
 	if db.err != nil {
 		return db.err
@@ -468,7 +478,9 @@ func (db *DB) CompactView(ctx context.Context, ddocID string) error {
 // ViewCleanup removes view index files that are no longer required as a result
 // of changed views within design documents.
 //
-// See http://docs.couchdb.org/en/2.0.0/api/database/compact.html#db-view-cleanup
+// See the [CouchDB documentation].
+//
+// [CouchDB documentation]: http://docs.couchdb.org/en/2.0.0/api/database/compact.html#db-view-cleanup
 func (db *DB) ViewCleanup(ctx context.Context) error {
 	if db.err != nil {
 		return db.err
@@ -484,7 +496,9 @@ var securityNotImplemented = &Error{Status: http.StatusNotImplemented, Message: 
 
 // Security returns the database's security document.
 //
-// See http://couchdb.readthedocs.io/en/latest/api/database/security.html#get--db-_security
+// See the [CouchDB documentation].
+//
+// [CouchDB documentation]: http://couchdb.readthedocs.io/en/latest/api/database/security.html#get--db-_security
 func (db *DB) Security(ctx context.Context) (*Security, error) {
 	if db.err != nil {
 		return nil, db.err
@@ -509,7 +523,9 @@ func (db *DB) Security(ctx context.Context) (*Security, error) {
 
 // SetSecurity sets the database's security document.
 //
-// See http://couchdb.readthedocs.io/en/latest/api/database/security.html#put--db-_security
+// See the [CouchDB documentation].
+//
+// [CouchDB documentation]: http://couchdb.readthedocs.io/en/latest/api/database/security.html#put--db-_security
 func (db *DB) SetSecurity(ctx context.Context, security *Security) error {
 	if db.err != nil {
 		return db.err
@@ -537,7 +553,9 @@ func (db *DB) SetSecurity(ctx context.Context, security *Security) error {
 // emulated with a Get followed by Put. The target will be an exact copy of the
 // source, with only the ID and revision changed.
 //
-// See http://docs.couchdb.org/en/2.0.0/api/document/common.html#copy--db-docid
+// See the [CouchDB documentation]:
+//
+// [CouchDB documentation]: http://docs.couchdb.org/en/2.0.0/api/document/common.html#copy--db-docid
 func (db *DB) Copy(ctx context.Context, targetID, sourceID string, options ...Option) (targetRev string, err error) {
 	if db.err != nil {
 		return "", db.err
@@ -727,7 +745,9 @@ type BulkGetReference struct {
 // for fetching a specific revision of documents, as replicators do for example,
 // or for getting revision history.
 //
-// See http://docs.couchdb.org/en/stable/api/database/bulk-api.html#db-bulk-get
+// See the [CouchDB documentation].
+//
+// [CouchDB documentation]: http://docs.couchdb.org/en/stable/api/database/bulk-api.html#db-bulk-get
 func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...Option) *ResultSet {
 	if db.err != nil {
 		return &ResultSet{err: db.err}
@@ -752,8 +772,10 @@ func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...O
 	return &ResultSet{underlying: newRows(ctx, db.endQuery, rowsi)}
 }
 
-// Close cleans up any resources used by the DB. The default CouchDB driver
-// does not use this, the default PouchDB driver does.
+// Close cleans up any resources used by the DB. Close is safe to call
+// concurrently with other operations and will block until all other operations
+// finish. After calling Close, any other DB operations will return
+// [ErrDatabaseClosed].
 func (db *DB) Close() error {
 	if db.err != nil {
 		return db.err
@@ -769,32 +791,31 @@ func (db *DB) Close() error {
 }
 
 // RevDiff represents a rev diff for a single document, as returned by the
-// RevsDiff method.
+// [DB.RevsDiff] method.
 type RevDiff struct {
 	Missing           []string `json:"missing,omitempty"`
 	PossibleAncestors []string `json:"possible_ancestors,omitempty"`
 }
 
-// Diffs is a collection of RevDiffs as returned by RevsDiff. The map key is
-// the document ID.
+// Diffs is a collection of [RevDiff]s as returned by [DB.RevsDiff]. The map
+// key is the document ID.
 type Diffs map[string]RevDiff
 
 // RevsDiff returns the subset of document/revision IDs that do not correspond
 // to revisions stored in the database. This is used by the replication
 // protocol, and is normally never needed otherwise.  revMap must marshal to the
-// expected format.
+// [expected format].
 //
 // Use [ResultSet.ID] to return the current document ID, and
-// [ResultSet.ScanValue] to access the full JSON value, which should be of the
-// JSON format. The [RevsDiff] type matches this format and is provided as a
-// convenience for unmarshaling.
+// [ResultSet.ScanValue] to access the full JSON value. The [RevsDiff] type
+// matches this format and is provided as a convenience for unmarshaling.
 //
 //	{
 //	    "missing": ["rev1",...],
 //	    "possible_ancestors": ["revA",...]
 //	}
 //
-// See http://docs.couchdb.org/en/stable/api/database/misc.html#db-revs-diff
+// [expected format]: http://docs.couchdb.org/en/stable/api/database/misc.html#db-revs-diff
 func (db *DB) RevsDiff(ctx context.Context, revMap interface{}) *ResultSet {
 	if db.err != nil {
 		return &ResultSet{err: db.err}
@@ -826,7 +847,9 @@ type PartitionStats struct {
 
 // PartitionStats returns statistics about the named partition.
 //
-// See https://docs.couchdb.org/en/stable/api/partitioned-dbs.html#db-partition-partition
+// See the [CouchDB documentation].
+//
+// [CouchDB documentation]: https://docs.couchdb.org/en/stable/api/partitioned-dbs.html#db-partition-partition
 func (db *DB) PartitionStats(ctx context.Context, name string) (*PartitionStats, error) {
 	if db.err != nil {
 		return nil, db.err

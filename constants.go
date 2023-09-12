@@ -22,18 +22,20 @@ const (
 // SessionCookieName is the name of the CouchDB session cookie.
 const SessionCookieName = "AuthSession"
 
-// UserPrefix is the mandatory CouchDB user prefix.
-// See https://docs.couchdb.org/en/latest/intro/security.html#org-couchdb-user
+// UserPrefix is the mandatory CouchDB [user prefix].
+//
+// [user prefix]: https://docs.couchdb.org/en/latest/intro/security.html#org-couchdb-user
 const UserPrefix = "org.couchdb.user:"
 
 // EndKeySuffix is a high Unicode character (0xfff0) useful for appending to an
-// endkey argument, when doing a ranged search, as described here:
-// http://couchdb.readthedocs.io/en/latest/ddocs/views/collation.html#string-ranges
+// endkey argument, when doing a ranged search, as described [here].
 //
-// Example, to return all results with keys beginning with "foo":
+// For example, to return all results with keys beginning with "foo":
 //
-//	rows, err := db.Query(context.TODO(), "ddoc", "view", map[string]interface{}{
+//	rows, err := db.Query(context.TODO(), "ddoc", "view", kivik.Params(map[string]interface{}{
 //	    "startkey": "foo",
 //	    "endkey":   "foo" + kivik.EndKeySuffix,
-//	})
+//	}))
+//
+// [here]: http://couchdb.readthedocs.io/en/latest/ddocs/views/collation.html#string-ranges
 const EndKeySuffix = string(rune(0xfff0))

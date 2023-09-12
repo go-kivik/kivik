@@ -20,9 +20,6 @@ import (
 )
 
 // Config represents all the config sections.
-//
-// Note that the Config struct, and all of the config-related methods are
-// considered experimental, and may change in the future.
 type Config map[string]ConfigSection
 
 // ConfigSection represents all key/value pairs for a section of configuration.
@@ -30,9 +27,9 @@ type ConfigSection map[string]string
 
 var configNotImplemented = &Error{Status: http.StatusNotImplemented, Message: "kivik: driver does not support Config interface"}
 
-// Config returns the entire server config, for the specified node.
+// Config returns the entire [server config], for the specified node.
 //
-// See http://docs.couchdb.org/en/stable/api/server/configuration.html#get--_node-node-name-_config
+// [server config]: http://docs.couchdb.org/en/stable/api/server/configuration.html#get--_node-node-name-_config
 func (c *Client) Config(ctx context.Context, node string) (Config, error) {
 	if err := c.startQuery(); err != nil {
 		return nil, err
@@ -52,10 +49,9 @@ func (c *Client) Config(ctx context.Context, node string) (Config, error) {
 	return nil, configNotImplemented
 }
 
-// ConfigSection returns the requested section of the server config for the
-// specified node.
+// ConfigSection returns the requested server [config section] for the specified node.
 //
-// See http://docs.couchdb.org/en/stable/api/server/configuration.html#node-node-name-config-section
+// [section]: http://docs.couchdb.org/en/stable/api/server/configuration.html#node-node-name-config-section
 func (c *Client) ConfigSection(ctx context.Context, node, section string) (ConfigSection, error) {
 	if err := c.startQuery(); err != nil {
 		return nil, err
@@ -68,9 +64,9 @@ func (c *Client) ConfigSection(ctx context.Context, node, section string) (Confi
 	return nil, configNotImplemented
 }
 
-// ConfigValue returns a single config value for the specified node.
+// ConfigValue returns a single [config value] for the specified node.
 //
-// See http://docs.couchdb.org/en/stable/api/server/configuration.html#get--_node-node-name-_config-section-key
+// [config value]: http://docs.couchdb.org/en/stable/api/server/configuration.html#get--_node-node-name-_config-section-key
 func (c *Client) ConfigValue(ctx context.Context, node, section, key string) (string, error) {
 	if err := c.startQuery(); err != nil {
 		return "", err
@@ -82,10 +78,10 @@ func (c *Client) ConfigValue(ctx context.Context, node, section, key string) (st
 	return "", configNotImplemented
 }
 
-// SetConfigValue sets the server's config value on the specified node, creating
+// SetConfigValue sets the server's [config value] on the specified node, creating
 // the key if it doesn't exist. It returns the old value.
 //
-// See http://docs.couchdb.org/en/stable/api/server/configuration.html#put--_node-node-name-_config-section-key
+// [config value]: http://docs.couchdb.org/en/stable/api/server/configuration.html#put--_node-node-name-_config-section-key
 func (c *Client) SetConfigValue(ctx context.Context, node, section, key, value string) (string, error) {
 	if err := c.startQuery(); err != nil {
 		return "", err
@@ -97,10 +93,10 @@ func (c *Client) SetConfigValue(ctx context.Context, node, section, key, value s
 	return "", configNotImplemented
 }
 
-// DeleteConfigKey deletes the configuration key and associated value from the
+// DeleteConfigKey deletes the [configuration key] and associated value from the
 // specified node. It returns the old value.
 //
-// See http://docs.couchdb.org/en/stable/api/server/configuration.html#delete--_node-node-name-_config-section-key
+// [configuration key]: http://docs.couchdb.org/en/stable/api/server/configuration.html#delete--_node-node-name-_config-section-key
 func (c *Client) DeleteConfigKey(ctx context.Context, node, section, key string) (string, error) {
 	if err := c.startQuery(); err != nil {
 		return "", err

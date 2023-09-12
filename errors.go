@@ -101,12 +101,12 @@ func (e *Error) HTTPStatus() int {
 	return e.Status
 }
 
-// Unwrap satisfies the errors.Wrapper interface.
+// Unwrap satisfies the errors wrapper interface.
 func (e *Error) Unwrap() error {
 	return e.Err
 }
 
-// Format implements fmt.Formatter
+// Format implements [fmt.Formatter].
 func (e *Error) Format(f fmt.State, c rune) {
 	const partsLen = 3
 	parts := make([]string, 0, partsLen)

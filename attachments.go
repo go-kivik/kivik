@@ -29,7 +29,7 @@ func (a *Attachments) Get(filename string) *Attachment {
 }
 
 // Set sets the attachment associated with filename in the collection,
-// replacing it if it already existed.
+// replacing it if it already exists.
 func (a *Attachments) Set(filename string, att *Attachment) {
 	map[string]*Attachment(*a)[filename] = att
 }
@@ -44,12 +44,12 @@ type Attachment struct {
 	// Filename is the name of the attachment.
 	Filename string `json:"-"`
 
-	// ContentType is the MIME type of the attachment contents.
+	// ContentType is the Content-Type type of the attachment.
 	ContentType string `json:"content_type"`
 
 	// Stub will be true if the data structure only represents file metadata,
-	// and contains no actual content. Stub will be true when returned by the
-	// GetAttachmentMeta function, or when included in a document without the
+	// and contains no actual content. Stub will be true when returned by
+	// [DB.GetAttachmentMeta], or when included in a document without the
 	// 'include_docs' option.
 	Stub bool `json:"stub"`
 
@@ -65,8 +65,9 @@ type Attachment struct {
 	Content io.ReadCloser `json:"-"`
 
 	// Size records the uncompressed size of the attachment. The value -1
-	// indicates that the length is unknown. Unless Stub is true, values >= 0
-	// indicate that the given number of bytes may be read from Content.
+	// indicates that the length is unknown. Unless [Attachment.Stub] is true,
+	// values >= 0 indicate that the given number of bytes may be read from
+	// [Attachment.Content].
 	Size int64 `json:"length"`
 
 	// Used compression codec, if any. Will be the empty string if the
@@ -74,7 +75,7 @@ type Attachment struct {
 	ContentEncoding string `json:"encoding"`
 
 	// EncodedLength records the compressed attachment size in bytes. Only
-	// meaningful when ContentEncoding is defined.
+	// meaningful when [Attachment.ContentEncoding] is defined.
 	EncodedLength int64 `json:"encoded_length"`
 
 	// RevPos is the revision number when attachment was added.
@@ -104,7 +105,7 @@ func (a *Attachment) validate() error {
 	return nil
 }
 
-// MarshalJSON satisfies the json.Marshaler interface.
+// MarshalJSON satisfies the [encoding/json.Marshaler] interface.
 func (a *Attachment) MarshalJSON() ([]byte, error) {
 	type jsonAttachment struct {
 		ContentType string `json:"content_type"`
@@ -137,7 +138,7 @@ func (a *Attachment) MarshalJSON() ([]byte, error) {
 	return json.Marshal(att)
 }
 
-// UnmarshalJSON implements the json.Unmarshaler interface for an Attachment.
+// UnmarshalJSON implements the [encoding/json.Unmarshaler] interface.
 func (a *Attachment) UnmarshalJSON(data []byte) error {
 	type clone Attachment
 	type jsonAtt struct {
@@ -157,8 +158,7 @@ func (a *Attachment) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// UnmarshalJSON implements the json.Unmarshaler interface for a collection of
-// Attachments.
+// UnmarshalJSON implements the [encoding/json.Unmarshaler] interface.
 func (a *Attachments) UnmarshalJSON(data []byte) error {
 	atts := make(map[string]*Attachment)
 	if err := json.Unmarshal(data, &atts); err != nil {
@@ -171,13 +171,13 @@ func (a *Attachments) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// AttachmentsIterator is an experimental way to read streamed attachments from
-// a multi-part Get request.
+// AttachmentsIterator allows reading streamed attachments from a multi-part
+// [DB.Get] request.
 type AttachmentsIterator struct {
 	atti driver.Attachments
 }
 
-// Next returns the next attachment in the stream. io.EOF will be
+// Next returns the next attachment in the stream. [io.EOF] will be
 // returned when there are no more attachments.
 func (i *AttachmentsIterator) Next() (*Attachment, error) {
 	att := new(driver.Attachment)

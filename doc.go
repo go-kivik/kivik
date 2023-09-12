@@ -56,6 +56,17 @@ If in doubt, you can pass [context.TODO] as the context variable. Example:
 
 	row := db.Get(context.TODO(), "some_doc_id")
 
+# Options
+
+Most client and database methods take optional arguments of the type [Option].
+Multiple options may be passed, and latter options take precidence over earlier
+ones, in case of a conflict.
+
+[Params] and [Param] can be used to set options that are generally converted to
+URL query parameters. Different backend drivers may also provide their own
+unique options with driver-specific effects. Consult your driver's documentation
+for specifics.
+
 # Error Handling
 
 Kivik returns errors that embed an HTTP status code. In most cases, this is the

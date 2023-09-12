@@ -326,7 +326,7 @@ func (db *DB) Delete(ctx context.Context, docID, rev string, options ...Option) 
 	if docID == "" {
 		return "", missingArg("docID")
 	}
-	opts := append(allOptions{Params{"rev": rev}}, options...)
+	opts := append(allOptions{Rev(rev)}, options...)
 	return db.driverDB.Delete(ctx, docID, opts)
 }
 
@@ -675,7 +675,7 @@ func (db *DB) DeleteAttachment(ctx context.Context, docID, rev, filename string,
 	if filename == "" {
 		return "", missingArg("filename")
 	}
-	opts := append(allOptions{Params{"rev": rev}}, options...)
+	opts := append(allOptions{Rev(rev)}, options...)
 	return db.driverDB.DeleteAttachment(ctx, docID, filename, opts)
 }
 

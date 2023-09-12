@@ -92,7 +92,7 @@ func TestBulkDocs(t *testing.T) {
 		},
 		{
 			name:    "new_edits",
-			options: kivik.Params{"new_edits": true},
+			options: kivik.Param("new_edits", true),
 			db: newCustomDB(func(req *http.Request) (*http.Response, error) {
 				defer req.Body.Close() // nolint: errcheck
 				var body struct {

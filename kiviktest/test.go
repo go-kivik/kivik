@@ -188,7 +188,7 @@ func cleanupDatabases(ctx context.Context, client *kivik.Client, verbose bool) (
 		}
 		return count, nil
 	}
-	docs := replicator.AllDocs(context.Background(), kivik.Params{"include_docs": true})
+	docs := replicator.AllDocs(context.Background(), kivik.IncludeDocs())
 	if err := docs.Err(); err != nil {
 		if kivik.HTTPStatus(err) == http.StatusNotImplemented || kivik.HTTPStatus(err) == http.StatusNotFound {
 			return count, nil
@@ -225,7 +225,7 @@ func cleanupUsers(ctx context.Context, client *kivik.Client, verbose bool) (int,
 		}
 		return 0, err
 	}
-	users := db.AllDocs(ctx, kivik.Params{"include_docs": true})
+	users := db.AllDocs(ctx, kivik.IncludeDocs())
 	if err := users.Err(); err != nil {
 		switch kivik.HTTPStatus(err) {
 		case http.StatusNotFound, http.StatusNotImplemented:
@@ -267,7 +267,7 @@ func cleanupReplications(ctx context.Context, client *kivik.Client, verbose bool
 		}
 		return 0, err
 	}
-	reps := db.AllDocs(ctx, kivik.Params{"include_docs": true})
+	reps := db.AllDocs(ctx, kivik.IncludeDocs())
 	if err := reps.Err(); err != nil {
 		switch kivik.HTTPStatus(err) {
 		case http.StatusNotFound, http.StatusNotImplemented:

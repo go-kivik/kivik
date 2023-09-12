@@ -196,7 +196,7 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 			map[string]string{"_id": "foo"},
 			123,
 		},
-		options: Params{"new_edits": true},
+		options: Param("new_edits", true),
 		expected: []BulkResult{
 			{ID: "foo"},
 		},

@@ -611,7 +611,7 @@ func TestGet(t *testing.T) {
 			},
 		},
 		docID:    "foo",
-		options:  Params{"include_docs": true},
+		options:  IncludeDocs(),
 		expected: `{"_id":"foo"}`,
 	})
 	tests.Add(errClientClosed, tt{
@@ -1888,7 +1888,7 @@ func TestDelete(t *testing.T) {
 				},
 			},
 			docID:   "foo",
-			options: Params{"rev": "1-xxx"},
+			options: Rev("1-xxx"),
 			newRev:  "2-xxx",
 		},
 		{
@@ -2067,11 +2067,9 @@ func TestPutAttachment(t *testing.T) {
 				ContentType: "text/plain",
 				Content:     io.NopCloser(strings.NewReader("Test file")),
 			},
-			options: Params{
-				"rev": "1-xxx",
-			},
-			newRev: "2-xxx",
-			body:   "Test file",
+			options: Rev("1-xxx"),
+			newRev:  "2-xxx",
+			body:    "Test file",
 		},
 		{
 			name: "nil attachment",
@@ -2159,7 +2157,7 @@ func TestDeleteAttachment(t *testing.T) {
 		return tt{
 			docID:    expectedDocID,
 			filename: expectedFilename,
-			options:  Params{"rev": expectedRev},
+			options:  Rev(expectedRev),
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{

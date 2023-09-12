@@ -124,9 +124,7 @@ func ExampleDB_query() {
 
 //nolint:revive // allow empty block in example
 func ExampleDB_mapReduce() {
-	opts := kivik.Params{
-		"group": true,
-	}
+	opts := kivik.Param("group", true)
 	rows := db.Query(context.TODO(), "_design/foo", "_view/bar", opts)
 	if err := rows.Err(); err != nil {
 		panic(err)

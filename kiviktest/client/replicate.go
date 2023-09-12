@@ -112,7 +112,7 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 		ctx.Run("Cancel", func(ctx *kt.Context) {
 			ctx.Parallel()
 			replID := ctx.TestDBName()
-			rep, err := callReplicate(ctx, client, dbtarget, "http://foo:foo@192.168.2.254/foo", replID, kivik.Params{"continuous": true})
+			rep, err := callReplicate(ctx, client, dbtarget, "http://foo:foo@192.168.2.254/foo", replID, kivik.Param("continuous", true))
 			if !ctx.IsExpectedSuccess(err) {
 				return
 			}

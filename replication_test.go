@@ -357,7 +357,7 @@ func TestGetReplications(t *testing.T) {
 					},
 				},
 			},
-			options: Params{"foo": 123},
+			options: Param("foo", 123),
 			expected: []*Replication{
 				{
 					Source: "1-source",
@@ -446,7 +446,7 @@ func TestReplicate(t *testing.T) {
 			},
 			target:  "foo",
 			source:  "bar",
-			options: Params{"foo": 123},
+			options: Param("foo", 123),
 			expected: &Replication{
 				Source: "a-source",
 				Target: "a-target",

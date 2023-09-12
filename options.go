@@ -90,3 +90,20 @@ func (o Params) String() string {
 	}
 	return fmt.Sprintf("%v", map[string]interface{}(o))
 }
+
+// Param sets a single key/value pair as a query parameter.
+func Param(key string, value interface{}) Option {
+	return Params{key: value}
+}
+
+// Rev is a convenience function to set the revision. A less verbose alternative
+// to Param("rev", rev).
+func Rev(rev string) Option {
+	return Params{"rev": rev}
+}
+
+// IncludeDocs instructs the query to include documents. A less verbose
+// alternative to Param("include_docs", true).
+func IncludeDocs() Option {
+	return Params{"include_docs": true}
+}

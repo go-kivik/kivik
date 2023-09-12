@@ -68,7 +68,7 @@ func testPutAttachment(ctx *kt.Context, client *kivik.Client, dbname string) {
 				ContentType: "text/plain",
 				Content:     stringReadCloser(),
 			}
-			_, err = db.PutAttachment(context.Background(), docID, att, kivik.Params{"rev": rev})
+			_, err = db.PutAttachment(context.Background(), docID, att, kivik.Rev(rev))
 			return err
 		})
 		ctx.CheckError(err)
@@ -104,7 +104,7 @@ func testPutAttachment(ctx *kt.Context, client *kivik.Client, dbname string) {
 				ContentType: "text/plain",
 				Content:     stringReadCloser(),
 			}
-			_, err := db.PutAttachment(context.Background(), docID, att, kivik.Params{"rev": "5-20bd3c7d7d6b81390c6679d8bae8795b"})
+			_, err := db.PutAttachment(context.Background(), docID, att, kivik.Rev("5-20bd3c7d7d6b81390c6679d8bae8795b"))
 			return err
 		})
 		ctx.CheckError(err)
@@ -130,7 +130,7 @@ func testPutAttachment(ctx *kt.Context, client *kivik.Client, dbname string) {
 				ContentType: "text/plain",
 				Content:     stringReadCloser(),
 			}
-			_, err = db.PutAttachment(context.Background(), docID, att, kivik.Params{"rev": rev})
+			_, err = db.PutAttachment(context.Background(), docID, att, kivik.Rev(rev))
 			return err
 		})
 		ctx.CheckError(err)

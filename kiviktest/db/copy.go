@@ -99,7 +99,7 @@ func copyTest(ctx *kt.Context, client *kivik.Client, dbname string, source map[s
 				ctx.Fatalf("Failed to update copy: %s", e)
 			}
 			targetID2 := ctx.TestDBName()
-			if _, e := db.Copy(context.Background(), targetID2, targetID, kivik.Params{"rev": rev}); e != nil {
+			if _, e := db.Copy(context.Background(), targetID2, targetID, kivik.Rev(rev)); e != nil {
 				ctx.Fatalf("Failed to copy doc with rev option: %s", e)
 			}
 			var readCopy map[string]string

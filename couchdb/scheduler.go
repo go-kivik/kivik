@@ -190,7 +190,7 @@ func (r *schedulerReplication) Delete(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	_, err = r.db.Delete(ctx, r.docID, kivik.Params{"rev": rev})
+	_, err = r.db.Delete(ctx, r.docID, kivik.Rev(rev))
 	return err
 }
 

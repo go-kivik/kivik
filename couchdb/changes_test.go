@@ -74,13 +74,13 @@ func TestChanges(t *testing.T) {
 				StatusCode: http.StatusBadRequest,
 				Body:       Body(""),
 			}, nil),
-			options: kivik.Params{"foo": make(chan int)},
+			options: kivik.Param("foo", make(chan int)),
 			status:  http.StatusBadRequest,
 			err:     "kivik: invalid type chan int for options",
 		},
 		{
 			name:    "eventsource",
-			options: kivik.Params{"feed": "eventsource"},
+			options: kivik.Param("feed", "eventsource"),
 			status:  http.StatusBadRequest,
 			err:     "kivik: eventsource feed not supported, use 'continuous'",
 		},
@@ -93,7 +93,7 @@ func TestChanges(t *testing.T) {
 		{
 			name:    "continuous",
 			db:      newTestDB(nil, errors.New("net error")),
-			options: kivik.Params{"feed": "continuous"},
+			options: kivik.Param("feed", "continuous"),
 			status:  http.StatusBadGateway,
 			err:     `Post "?http://example.com/testdb/_changes\?feed=continuous"?: net error`,
 		},
@@ -202,10 +202,8 @@ func TestChanges(t *testing.T) {
 					Body: Body(`{"seq":3,"id":"43734cf3ce6d5a37050c050bb600006b","changes":[{"rev":"2-185ccf92154a9f24a4f4fd12233bf463"}],"deleted":true}`),
 				}, nil
 			}),
-			options: kivik.Params{
-				"doc_ids": []string{"a", "b", "c"},
-			},
-			etag: "etag-foo",
+			options: kivik.Param("doc_ids", []string{"a", "b", "c"}),
+			etag:    "etag-foo",
 		},
 	}
 

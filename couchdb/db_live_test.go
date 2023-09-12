@@ -151,9 +151,7 @@ func Test_bug509(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	row := db.Get(context.Background(), "x", kivik.Params{
-		"revs_info": true,
-	})
+	row := db.Get(context.Background(), "x", kivik.Param("revs_info", true))
 
 	var doc map[string]interface{}
 	if err := row.ScanDoc(&doc); err != nil {

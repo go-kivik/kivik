@@ -141,9 +141,7 @@ func TestBulkGet(t *testing.T) {
 			}),
 			dbName: "xxx",
 		},
-		options: kivik.Params{
-			"revs": true,
-		},
+		options: kivik.Param("revs", true),
 		expected: &driver.Row{
 			ID:  "test1",
 			Doc: strings.NewReader(`{"_id":"test1","_rev":"4-8158177eb5931358b3ddaadd6377cf00","moo":123,"oink":true,"_revisions":{"start":4,"ids":["8158177eb5931358b3ddaadd6377cf00","1c08032eef899e52f35cbd1cd5f93826","e22bea278e8c9e00f3197cb2edee8bf4","7d6ff0b102072755321aa0abb630865a"]},"_attachments":{"foo.txt":{"content_type":"text/plain","revpos":2,"digest":"md5-WiGw80mG3uQuqTKfUnIZsg==","length":9,"stub":true}}}`),

@@ -207,7 +207,7 @@ func TestDB(t *testing.T) {
 				name:    "success",
 				client:  client,
 				dbName:  "foo",
-				options: Params{"foo": 123},
+				options: Param("foo", 123),
 				expected: &DB{
 					client:   client,
 					name:     "foo",
@@ -264,7 +264,7 @@ func TestAllDBs(t *testing.T) {
 					},
 				},
 			},
-			options:  Params{"foo": 123},
+			options:  Param("foo", 123),
 			expected: []string{"a", "b", "c"},
 		},
 		{
@@ -329,7 +329,7 @@ func TestDBExists(t *testing.T) {
 				},
 			},
 			dbName:   "foo",
-			options:  Params{"foo": 123},
+			options:  Param("foo", 123),
 			expected: true,
 		},
 		{
@@ -396,7 +396,7 @@ func TestCreateDB(t *testing.T) {
 				},
 			},
 			dbName:  "foo",
-			options: Params{"foo": 123},
+			options: Param("foo", 123),
 		},
 		{
 			name: "closed",
@@ -460,7 +460,7 @@ func TestDestroyDB(t *testing.T) {
 				},
 			},
 			dbName:  "foo",
-			options: Params{"foo": 123},
+			options: Param("foo", 123),
 		},
 		{
 			name: "closed",

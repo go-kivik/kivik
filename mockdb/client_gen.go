@@ -94,7 +94,7 @@ func (c *driverClient) SetConfigValue(ctx context.Context, arg0 string, arg1 str
 func (c *driverClient) AllDBs(ctx context.Context, options driver.Options) ([]string, error) {
 	expected := &ExpectedAllDBs{
 		commonExpectation: commonExpectation{
-			options: toLegacyOptions(options),
+			options: options,
 		},
 	}
 	if err := c.nextExpectation(expected); err != nil {
@@ -109,7 +109,7 @@ func (c *driverClient) AllDBs(ctx context.Context, options driver.Options) ([]st
 func (c *driverClient) ClusterStatus(ctx context.Context, options driver.Options) (string, error) {
 	expected := &ExpectedClusterStatus{
 		commonExpectation: commonExpectation{
-			options: toLegacyOptions(options),
+			options: options,
 		},
 	}
 	if err := c.nextExpectation(expected); err != nil {
@@ -152,7 +152,7 @@ func (c *driverClient) DB(arg0 string, options driver.Options) (driver.DB, error
 	expected := &ExpectedDB{
 		arg0: arg0,
 		commonExpectation: commonExpectation{
-			options: toLegacyOptions(options),
+			options: options,
 		},
 	}
 	if err := c.nextExpectation(expected); err != nil {
@@ -171,7 +171,7 @@ func (c *driverClient) DBExists(ctx context.Context, arg0 string, options driver
 	expected := &ExpectedDBExists{
 		arg0: arg0,
 		commonExpectation: commonExpectation{
-			options: toLegacyOptions(options),
+			options: options,
 		},
 	}
 	if err := c.nextExpectation(expected); err != nil {
@@ -186,7 +186,7 @@ func (c *driverClient) DBExists(ctx context.Context, arg0 string, options driver
 func (c *driverClient) DBUpdates(ctx context.Context, options driver.Options) (driver.DBUpdates, error) {
 	expected := &ExpectedDBUpdates{
 		commonExpectation: commonExpectation{
-			options: toLegacyOptions(options),
+			options: options,
 		},
 	}
 	if err := c.nextExpectation(expected); err != nil {
@@ -215,7 +215,7 @@ func (c *driverClient) DestroyDB(ctx context.Context, arg0 string, options drive
 	expected := &ExpectedDestroyDB{
 		arg0: arg0,
 		commonExpectation: commonExpectation{
-			options: toLegacyOptions(options),
+			options: options,
 		},
 	}
 	if err := c.nextExpectation(expected); err != nil {
@@ -230,7 +230,7 @@ func (c *driverClient) DestroyDB(ctx context.Context, arg0 string, options drive
 func (c *driverClient) GetReplications(ctx context.Context, options driver.Options) ([]driver.Replication, error) {
 	expected := &ExpectedGetReplications{
 		commonExpectation: commonExpectation{
-			options: toLegacyOptions(options),
+			options: options,
 		},
 	}
 	if err := c.nextExpectation(expected); err != nil {
@@ -258,7 +258,7 @@ func (c *driverClient) Replicate(ctx context.Context, arg0 string, arg1 string, 
 		arg0: arg0,
 		arg1: arg1,
 		commonExpectation: commonExpectation{
-			options: toLegacyOptions(options),
+			options: options,
 		},
 	}
 	if err := c.nextExpectation(expected); err != nil {

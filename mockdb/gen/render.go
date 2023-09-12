@@ -136,10 +136,8 @@ func (m *method) InputVariables() string {
 	for i := range m.Accepts {
 		result = append(result, fmt.Sprintf("\t\targ%d: arg%d,\n", i, i))
 	}
-	if m.AcceptsLegacyOptions {
+	if m.AcceptsLegacyOptions || m.AcceptsOptions {
 		common = append(common, "\t\t\toptions: options,\n")
-	} else if m.AcceptsOptions {
-		common = append(common, "\t\t\toptions: toLegacyOptions(options),\n")
 	}
 	if len(common) > 0 {
 		result = append(result, fmt.Sprintf("\t\tcommonExpectation: commonExpectation{\n%s\t\t},\n",

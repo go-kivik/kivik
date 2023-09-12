@@ -352,7 +352,7 @@ type ExpectedAllDBs struct {
 
 // WithOptions sets the expected options for the call to AllDBs().
 func (e *ExpectedAllDBs) WithOptions(options driver.Options) *ExpectedAllDBs {
-	e.options = toLegacyOptions(options)
+	e.options = options
 	return e
 }
 
@@ -403,7 +403,7 @@ type ExpectedClusterStatus struct {
 
 // WithOptions sets the expected options for the call to ClusterStatus().
 func (e *ExpectedClusterStatus) WithOptions(options driver.Options) *ExpectedClusterStatus {
-	e.options = toLegacyOptions(options)
+	e.options = options
 	return e
 }
 
@@ -568,7 +568,7 @@ type ExpectedDB struct {
 
 // WithOptions sets the expected options for the call to DB().
 func (e *ExpectedDB) WithOptions(options driver.Options) *ExpectedDB {
-	e.options = toLegacyOptions(options)
+	e.options = options
 	return e
 }
 
@@ -621,7 +621,7 @@ type ExpectedDBExists struct {
 
 // WithOptions sets the expected options for the call to DBExists().
 func (e *ExpectedDBExists) WithOptions(options driver.Options) *ExpectedDBExists {
-	e.options = toLegacyOptions(options)
+	e.options = options
 	return e
 }
 
@@ -679,7 +679,7 @@ type ExpectedDBUpdates struct {
 
 // WithOptions sets the expected options for the call to DBUpdates().
 func (e *ExpectedDBUpdates) WithOptions(options driver.Options) *ExpectedDBUpdates {
-	e.options = toLegacyOptions(options)
+	e.options = options
 	return e
 }
 
@@ -783,7 +783,7 @@ type ExpectedDestroyDB struct {
 
 // WithOptions sets the expected options for the call to DestroyDB().
 func (e *ExpectedDestroyDB) WithOptions(options driver.Options) *ExpectedDestroyDB {
-	e.options = toLegacyOptions(options)
+	e.options = options
 	return e
 }
 
@@ -835,7 +835,7 @@ type ExpectedGetReplications struct {
 
 // WithOptions sets the expected options for the call to GetReplications().
 func (e *ExpectedGetReplications) WithOptions(options driver.Options) *ExpectedGetReplications {
-	e.options = toLegacyOptions(options)
+	e.options = options
 	return e
 }
 
@@ -932,7 +932,7 @@ type ExpectedReplicate struct {
 
 // WithOptions sets the expected options for the call to Replicate().
 func (e *ExpectedReplicate) WithOptions(options driver.Options) *ExpectedReplicate {
-	e.options = toLegacyOptions(options)
+	e.options = options
 	return e
 }
 

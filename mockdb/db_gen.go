@@ -75,7 +75,7 @@ func (db *driverDB) AllDocs(ctx context.Context, options driver.Options) (driver
 	expected := &ExpectedAllDocs{
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: toLegacyOptions(options),
+			options: options,
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {
@@ -92,7 +92,7 @@ func (db *driverDB) BulkDocs(ctx context.Context, arg0 []interface{}, options dr
 		arg0: arg0,
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: toLegacyOptions(options),
+			options: options,
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {
@@ -109,7 +109,7 @@ func (db *driverDB) BulkGet(ctx context.Context, arg0 []driver.BulkGetReference,
 		arg0: arg0,
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: toLegacyOptions(options),
+			options: options,
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {
@@ -125,7 +125,7 @@ func (db *driverDB) Changes(ctx context.Context, options driver.Options) (driver
 	expected := &ExpectedChanges{
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: toLegacyOptions(options),
+			options: options,
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {
@@ -143,7 +143,7 @@ func (db *driverDB) Copy(ctx context.Context, arg0 string, arg1 string, options 
 		arg1: arg1,
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: toLegacyOptions(options),
+			options: options,
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {
@@ -160,7 +160,7 @@ func (db *driverDB) CreateDoc(ctx context.Context, arg0 interface{}, options dri
 		arg0: arg0,
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: toLegacyOptions(options),
+			options: options,
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {
@@ -179,7 +179,7 @@ func (db *driverDB) CreateIndex(ctx context.Context, arg0 string, arg1 string, a
 		arg2: arg2,
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: toLegacyOptions(options),
+			options: options,
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {
@@ -196,7 +196,7 @@ func (db *driverDB) Delete(ctx context.Context, arg0 string, options driver.Opti
 		arg0: arg0,
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: toLegacyOptions(options),
+			options: options,
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {
@@ -214,7 +214,7 @@ func (db *driverDB) DeleteAttachment(ctx context.Context, arg0 string, arg1 stri
 		arg1: arg1,
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: toLegacyOptions(options),
+			options: options,
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {
@@ -232,7 +232,7 @@ func (db *driverDB) DeleteIndex(ctx context.Context, arg0 string, arg1 string, o
 		arg1: arg1,
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: toLegacyOptions(options),
+			options: options,
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {
@@ -248,7 +248,7 @@ func (db *driverDB) DesignDocs(ctx context.Context, options driver.Options) (dri
 	expected := &ExpectedDesignDocs{
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: toLegacyOptions(options),
+			options: options,
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {
@@ -265,7 +265,7 @@ func (db *driverDB) Explain(ctx context.Context, arg0 interface{}, options drive
 		arg0: arg0,
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: toLegacyOptions(options),
+			options: options,
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {
@@ -282,7 +282,7 @@ func (db *driverDB) Find(ctx context.Context, arg0 interface{}, options driver.O
 		arg0: arg0,
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: toLegacyOptions(options),
+			options: options,
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {
@@ -299,7 +299,7 @@ func (db *driverDB) Get(ctx context.Context, arg0 string, options driver.Options
 		arg0: arg0,
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: toLegacyOptions(options),
+			options: options,
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {
@@ -317,7 +317,7 @@ func (db *driverDB) GetAttachment(ctx context.Context, arg0 string, arg1 string,
 		arg1: arg1,
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: toLegacyOptions(options),
+			options: options,
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {
@@ -335,7 +335,7 @@ func (db *driverDB) GetAttachmentMeta(ctx context.Context, arg0 string, arg1 str
 		arg1: arg1,
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: toLegacyOptions(options),
+			options: options,
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {
@@ -351,7 +351,7 @@ func (db *driverDB) GetIndexes(ctx context.Context, options driver.Options) ([]d
 	expected := &ExpectedGetIndexes{
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: toLegacyOptions(options),
+			options: options,
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {
@@ -368,7 +368,7 @@ func (db *driverDB) GetRev(ctx context.Context, arg0 string, options driver.Opti
 		arg0: arg0,
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: toLegacyOptions(options),
+			options: options,
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {
@@ -384,7 +384,7 @@ func (db *driverDB) LocalDocs(ctx context.Context, options driver.Options) (driv
 	expected := &ExpectedLocalDocs{
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: toLegacyOptions(options),
+			options: options,
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {
@@ -434,7 +434,7 @@ func (db *driverDB) Put(ctx context.Context, arg0 string, arg1 interface{}, opti
 		arg1: arg1,
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: toLegacyOptions(options),
+			options: options,
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {
@@ -452,7 +452,7 @@ func (db *driverDB) PutAttachment(ctx context.Context, arg0 string, arg1 *driver
 		arg1: arg1,
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: toLegacyOptions(options),
+			options: options,
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {
@@ -470,7 +470,7 @@ func (db *driverDB) Query(ctx context.Context, arg0 string, arg1 string, options
 		arg1: arg1,
 		commonExpectation: commonExpectation{
 			db:      db.DB,
-			options: toLegacyOptions(options),
+			options: options,
 		},
 	}
 	if err := db.client.nextExpectation(expected); err != nil {

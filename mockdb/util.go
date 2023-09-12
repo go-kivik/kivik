@@ -3,13 +3,15 @@ package mockdb
 import (
 	"fmt"
 	"time"
+
+	kivik "github.com/go-kivik/kivik/v4"
 )
 
-func optionsString(opt map[string]interface{}) string {
+func optionsString(opt kivik.Option) string {
 	if opt == nil {
 		return "\n\t- has any options"
 	}
-	return fmt.Sprintf("\n\t- has options: %v", opt)
+	return fmt.Sprintf("\n\t- has options: %s", opt)
 }
 
 func errorString(err error) string {

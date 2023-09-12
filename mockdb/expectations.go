@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"time"
 
+	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
@@ -279,7 +280,7 @@ func (e *ExpectedCreateDB) met(ex expectation) bool {
 }
 
 // WithOptions set the expectation that DB() will be called with these options.
-func (e *ExpectedCreateDB) WithOptions(options map[string]interface{}) *ExpectedCreateDB {
+func (e *ExpectedCreateDB) WithOptions(options kivik.Option) *ExpectedCreateDB {
 	e.options = options
 	return e
 }

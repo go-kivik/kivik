@@ -41,7 +41,7 @@ func (c *driverClient) CreateDB(ctx context.Context, name string, options driver
 	expected := &ExpectedCreateDB{
 		arg0: name,
 		commonExpectation: commonExpectation{
-			options: toLegacyOptions(options),
+			options: options,
 		},
 	}
 	if err := c.nextExpectation(expected); err != nil {

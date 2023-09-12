@@ -14,7 +14,7 @@ func (e *Expected{{.Name}}) WithOptions(options kivik.Options) *Expected{{.Name}
 {{ if .AcceptsOptions }}
 // WithOptions sets the expected options for the call to {{if .DBMethod}}DB.{{end}}{{.Name}}().
 func (e *Expected{{.Name}}) WithOptions(options driver.Options) *Expected{{.Name}} {
-	e.options = toLegacyOptions(options)
+	e.options = options
 	return e
 }
 {{ end }}// WillExecute sets a callback function to be called with any inputs to the

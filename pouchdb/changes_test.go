@@ -27,7 +27,7 @@ import (
 
 func TestChanges(t *testing.T) {
 	type tst struct {
-		opts            kivik.Options
+		opts            kivik.Option
 		status          int
 		err             string
 		changesErr      string

@@ -27,7 +27,7 @@ URL, likely with login credentials:
 
 # Options
 
-The CouchDB driver generally interprets kivik.Options keys and values as URL
+The CouchDB driver generally interprets kivik.Params keys and values as URL
 query parameters. Values of the following types will be converted to their
 appropriate string representation when URL-encoded:
 
@@ -38,17 +38,7 @@ appropriate string representation when URL-encoded:
 
 Passing any other type will return an error.
 
-The only exceptions to the above rule are:
-
-  - the special option keys defined by the package constants `OptionFullCommit`
-    and `OptionIfNoneMatch`. These options set the appropriate HTTP request
-    headers rather than setting a URL parameter.
-  - the `keys` key, when passed to a view query, will result in a POST query
-    being done, rather than a GET, to accommodate an arbitrary number of keys.
-  - the 'NoMultipartPut' option is interpreted by the Kivik CouchDB driver to
-    disable multipart/related PUT uploads of attachments.
-  - the 'NoMultipartGet' option is interpreted by the Kivik CouchDB driver to
-    disable multipart/related GET downloads of attachments.
+CouchDB also accepts a few special-case options defined in this package.
 
 # Authentication
 
@@ -72,12 +62,12 @@ Authenticate method.  For example:
 Calls to kivik.New may include options.  OptionUserAgent and OptionHTTPClient
 are the only options honored. Example:
 
-	client, _ := kivik.New("couch", "http://localhost:5984/", kivik.Options{
-	    couchdb.OptionUserAgent: "My Custom User Agent String",
-	    couchdb.OptionHTTPClient: &http.Client{
-	        Timeout: 15, // A shorter request timeout
-	    },
-	})
+	client, _ := kivik.New("couch", "http://localhost:5984/",
+		couchdb.OptionUserAgent("My Custom User Agent String"),
+		couchdb.OptionHTTPClient(&http.Client{
+			Timeout: 15, // A shorter request timeout
+		}),
+	)
 
 # Multipart PUT
 
@@ -119,10 +109,10 @@ Example:
 	rev, err := db.Put(ctx, "user123", doc)
 
 To disable the `multipart/related` capabilities entirely, you may pass the
-`NoMultipartPut` option, with any value. This will fallback to the default of
+[OptionNoMultipartPut] option. This will fallback to the default of
 inline base-64 encoding the attachments.  Example:
 
-	rev, err := db.Put(ctx, "user123", doc", kivik.Options{couchdb.NoMultipartPut: "xxx"})
+	rev, err := db.Put(ctx, "user123", doc", couchdb.OptionNoMultipartPut())
 
 If you find yourself wanting to disable this feature, due to bugs or performance,
 please consider filing a bug report against Kivik as well, so we can look for a

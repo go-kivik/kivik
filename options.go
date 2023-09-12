@@ -20,7 +20,12 @@ import (
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
-// Option wraps a Kivik or backend option.
+// Option is a Kivik or driver option.
+//
+// Most methods/endpoints take query parameters which are passed as part of
+// the query URL, as documented in the official CouchDB documentation. You can
+// use [Params] or [Param] to set arbitrary query parameters. Backend drivers
+// may provide their own special-purpose options as well.
 type Option interface {
 	// Apply applies the option to target, if target is of the expected type.
 	// Unexpected/recognized target types should be ignored.

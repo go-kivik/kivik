@@ -114,10 +114,10 @@ func TestAllDBs(t *testing.T) {
 	})
 	tests.Add("options", mockTest{
 		setup: func(m *Client) {
-			m.ExpectAllDBs().WithOptions(kivik.Options{"foo": 123})
+			m.ExpectAllDBs().WithOptions(kivik.Params{"foo": 123})
 		},
 		test: func(t *testing.T, c *kivik.Client) {
-			_, err := c.AllDBs(context.TODO(), kivik.Options{"foo": 123})
+			_, err := c.AllDBs(context.TODO(), kivik.Params{"foo": 123})
 			testy.Error(t, "", err)
 		},
 	})
@@ -245,7 +245,7 @@ func TestClusterStatus(t *testing.T) {
 	})
 	tests.Add("options", mockTest{
 		setup: func(m *Client) {
-			m.ExpectClusterStatus().WithOptions(kivik.Options{"foo": 123})
+			m.ExpectClusterStatus().WithOptions(kivik.Params{"foo": 123})
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.ClusterStatus(context.TODO())
@@ -337,7 +337,7 @@ func TestDBExists(t *testing.T) {
 	})
 	tests.Add("options", mockTest{
 		setup: func(m *Client) {
-			m.ExpectDBExists().WithOptions(kivik.Options{"foo": 123})
+			m.ExpectDBExists().WithOptions(kivik.Params{"foo": 123})
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DBExists(context.TODO(), "foo")
@@ -390,7 +390,7 @@ func TestDestroyDB(t *testing.T) {
 	})
 	tests.Add("options", mockTest{
 		setup: func(m *Client) {
-			m.ExpectDestroyDB().WithOptions(kivik.Options{"foo": 123})
+			m.ExpectDestroyDB().WithOptions(kivik.Params{"foo": 123})
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			err := c.DestroyDB(newCanceledContext(), "foo")
@@ -626,10 +626,10 @@ func TestDB(t *testing.T) {
 	})
 	tests.Add("options", mockTest{
 		setup: func(m *Client) {
-			m.ExpectDB().WithOptions(kivik.Options{"foo": 123})
+			m.ExpectDB().WithOptions(kivik.Params{"foo": 123})
 		},
 		test: func(t *testing.T, c *kivik.Client) {
-			err := c.DB("foo", kivik.Options{"foo": 123}).Err()
+			err := c.DB("foo", kivik.Params{"foo": 123}).Err()
 			testy.Error(t, "", err)
 		},
 	})
@@ -680,7 +680,7 @@ func TestCreateDB(t *testing.T) {
 			m.ExpectCreateDB().WithOptions(map[string]interface{}{"foo": 123})
 		},
 		test: func(t *testing.T, c *kivik.Client) {
-			err := c.CreateDB(context.TODO(), "foo", kivik.Options{"foo": 123})
+			err := c.CreateDB(context.TODO(), "foo", kivik.Params{"foo": 123})
 			testy.Error(t, "", err)
 		},
 	})

@@ -63,14 +63,14 @@ func TestPutAttachment(t *testing.T) {
 		{
 			name:    "nil attachment",
 			id:      "foo",
-			options: kivik.Options{"rev": "1-xxx"},
+			options: kivik.Params{"rev": "1-xxx"},
 			status:  http.StatusBadRequest,
 			err:     "kivik: att required",
 		},
 		{
 			name:    "missing filename",
 			id:      "foo",
-			options: kivik.Options{"rev": "1-xxx"},
+			options: kivik.Params{"rev": "1-xxx"},
 			att:     &driver.Attachment{},
 			status:  http.StatusBadRequest,
 			err:     "kivik: att.Filename required",
@@ -78,7 +78,7 @@ func TestPutAttachment(t *testing.T) {
 		{
 			name:    "no body",
 			id:      "foo",
-			options: kivik.Options{"rev": "1-xxx"},
+			options: kivik.Params{"rev": "1-xxx"},
 			att: &driver.Attachment{
 				Filename:    "x.jpg",
 				ContentType: "image/jpeg",
@@ -90,7 +90,7 @@ func TestPutAttachment(t *testing.T) {
 			name:    "network error",
 			db:      newTestDB(nil, errors.New("net error")),
 			id:      "foo",
-			options: kivik.Options{"rev": "1-xxx"},
+			options: kivik.Params{"rev": "1-xxx"},
 			att: &driver.Attachment{
 				Filename:    "x.jpg",
 				ContentType: "image/jpeg",
@@ -102,7 +102,7 @@ func TestPutAttachment(t *testing.T) {
 		{
 			name:    "1.6.1",
 			id:      "foo",
-			options: kivik.Options{"rev": "1-4c6114c65e295552ab1019e2b046b10e"},
+			options: kivik.Params{"rev": "1-4c6114c65e295552ab1019e2b046b10e"},
 			att: &driver.Attachment{
 				Filename:    "foo.txt",
 				ContentType: "text/plain",
@@ -167,7 +167,7 @@ func TestPutAttachment(t *testing.T) {
 				ContentType: "text/plain",
 				Content:     Body("x"),
 			},
-			options: kivik.Options{
+			options: kivik.Params{
 				"foo": "oink",
 				"rev": "1-xxx",
 			},
@@ -183,7 +183,7 @@ func TestPutAttachment(t *testing.T) {
 				ContentType: "text/plain",
 				Content:     Body("x"),
 			},
-			options: kivik.Options{"foo": make(chan int)},
+			options: kivik.Params{"foo": make(chan int)},
 			status:  http.StatusBadRequest,
 			err:     "kivik: invalid type chan int for options",
 		},
@@ -206,7 +206,7 @@ func TestPutAttachment(t *testing.T) {
 			},
 			options: allOptions{
 				OptionFullCommit(),
-				kivik.Options{
+				kivik.Params{
 					"rev": "1-xxx",
 				},
 			},
@@ -233,7 +233,7 @@ func TestPutAttachment(t *testing.T) {
 					Content:     Body("x"),
 				},
 				options: allOptions{
-					kivik.Options{
+					kivik.Params{
 						"rev": "1-xxx",
 					},
 					OptionFullCommit(),
@@ -485,7 +485,7 @@ func TestFetchAttachment(t *testing.T) {
 			method:   "GET",
 			id:       "foo",
 			filename: "foo.txt",
-			options:  kivik.Options{"foo": "bar"},
+			options:  kivik.Params{"foo": "bar"},
 			status:   http.StatusBadGateway,
 			err:      "foo=bar",
 		},
@@ -495,7 +495,7 @@ func TestFetchAttachment(t *testing.T) {
 			method:   "GET",
 			id:       "foo",
 			filename: "foo.txt",
-			options:  kivik.Options{"foo": make(chan int)},
+			options:  kivik.Params{"foo": make(chan int)},
 			status:   http.StatusBadRequest,
 			err:      "kivik: invalid type chan int for options",
 		},
@@ -626,14 +626,14 @@ func TestDeleteAttachment(t *testing.T) {
 		{
 			name:    "no filename",
 			id:      "foo",
-			options: kivik.Options{"rev": "1-xxx"},
+			options: kivik.Params{"rev": "1-xxx"},
 			status:  http.StatusBadRequest,
 			err:     "kivik: filename required",
 		},
 		{
 			name:     "network error",
 			id:       "foo",
-			options:  kivik.Options{"rev": "1-xxx"},
+			options:  kivik.Params{"rev": "1-xxx"},
 			filename: "foo.txt",
 			db:       newTestDB(nil, errors.New("net error")),
 			status:   http.StatusBadGateway,
@@ -642,7 +642,7 @@ func TestDeleteAttachment(t *testing.T) {
 		{
 			name:     "success 1.6.1",
 			id:       "foo",
-			options:  kivik.Options{"rev": "2-8ee3381d24ee4ac3e9f8c1f6c7395641"},
+			options:  kivik.Params{"rev": "2-8ee3381d24ee4ac3e9f8c1f6c7395641"},
 			filename: "foo.txt",
 			db: newTestDB(&http.Response{
 				StatusCode: 200,
@@ -671,7 +671,7 @@ func TestDeleteAttachment(t *testing.T) {
 			}),
 			id:       "foo",
 			filename: "foo.txt",
-			options: kivik.Options{
+			options: kivik.Params{
 				"rev": "1-xxx",
 				"foo": "oink",
 			},
@@ -683,7 +683,7 @@ func TestDeleteAttachment(t *testing.T) {
 			db:       &db{},
 			id:       "foo",
 			filename: "foo.txt",
-			options: kivik.Options{
+			options: kivik.Params{
 				"rev": "1-xxx",
 				"foo": make(chan int),
 			},
@@ -704,7 +704,7 @@ func TestDeleteAttachment(t *testing.T) {
 			id:       "foo",
 			filename: "foo.txt",
 			options: allOptions{
-				kivik.Options{
+				kivik.Params{
 					"rev": "1-xxx",
 				},
 				OptionFullCommit(),

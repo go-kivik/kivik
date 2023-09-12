@@ -34,7 +34,7 @@ func dbMeetsExpectation(a, e *DB) bool {
 	return e.name == a.name && e.id == a.id
 }
 
-func optionsMeetExpectation(a, e kivik.Options) bool {
+func optionsMeetExpectation(a, e kivik.Params) bool {
 	if e == nil {
 		return true
 	}

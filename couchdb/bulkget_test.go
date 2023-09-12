@@ -141,7 +141,7 @@ func TestBulkGet(t *testing.T) {
 			}),
 			dbName: "xxx",
 		},
-		options: kivik.Options{
+		options: kivik.Params{
 			"revs": true,
 		},
 		expected: &driver.Row{

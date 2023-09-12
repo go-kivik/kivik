@@ -51,14 +51,14 @@ func (o allOptions) String() string {
 	return strings.Join(parts, ",")
 }
 
-// Options is a collection of options. The keys and values are backend specific.
-type Options map[string]interface{}
+// Params is a collection of options. The keys and values are backend specific.
+type Params map[string]interface{}
 
 // Apply applies o to target. The following target types are supported:
 //
 //   - map[string]interface{}
 //   - *url.Values
-func (o Options) Apply(target interface{}) {
+func (o Params) Apply(target interface{}) {
 	switch t := target.(type) {
 	case map[string]interface{}:
 		for k, v := range o {
@@ -84,7 +84,7 @@ func (o Options) Apply(target interface{}) {
 	}
 }
 
-func (o Options) String() string {
+func (o Params) String() string {
 	if len(o) == 0 {
 		return ""
 	}

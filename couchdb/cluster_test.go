@@ -60,7 +60,7 @@ func TestClusterStatus(t *testing.T) {
 		client: newCustomClient(func(r *http.Request) (*http.Response, error) {
 			return nil, nil
 		}),
-		options: kivik.Options{
+		options: kivik.Params{
 			optionEnsureDBsExist: 1.0,
 		},
 		status: http.StatusBadRequest,
@@ -72,7 +72,7 @@ func TestClusterStatus(t *testing.T) {
 			err := json.Unmarshal([]byte(r.URL.Query().Get(optionEnsureDBsExist)), &result)
 			return nil, &kivik.Error{Status: http.StatusBadRequest, Err: err}
 		}),
-		options: kivik.Options{
+		options: kivik.Params{
 			optionEnsureDBsExist: "foo,bar,baz",
 		},
 		status: http.StatusBadRequest,
@@ -101,7 +101,7 @@ func TestClusterStatus(t *testing.T) {
 					Body: io.NopCloser(strings.NewReader(`{"state":"cluster_finished"}`)),
 				}, nil
 			}),
-			options: kivik.Options{
+			options: kivik.Params{
 				optionEnsureDBsExist: `["foo","bar","baz"]`,
 			},
 			expected: "cluster_finished",

@@ -186,11 +186,11 @@ func (r *schedulerReplication) Update(ctx context.Context, rep *driver.Replicati
 }
 
 func (r *schedulerReplication) Delete(ctx context.Context) error {
-	rev, err := r.GetRev(ctx, r.docID, kivik.Options{})
+	rev, err := r.GetRev(ctx, r.docID, kivik.Params{})
 	if err != nil {
 		return err
 	}
-	_, err = r.db.Delete(ctx, r.docID, kivik.Options{"rev": rev})
+	_, err = r.db.Delete(ctx, r.docID, kivik.Params{"rev": rev})
 	return err
 }
 

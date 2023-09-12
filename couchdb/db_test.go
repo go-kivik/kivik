@@ -102,7 +102,7 @@ func TestGet(t *testing.T) {
 	})
 	tests.Add("invalid options", tt{
 		id:      "foo",
-		options: kivik.Options{"foo": make(chan int)},
+		options: kivik.Params{"foo": make(chan int)},
 		status:  http.StatusBadRequest,
 		err:     "kivik: invalid type chan int for options",
 	})
@@ -209,7 +209,7 @@ func TestGet(t *testing.T) {
 			Body:          Body(`bogus data`),
 		}, nil),
 		id:      "foo",
-		options: kivik.Options{"include_docs": true},
+		options: kivik.Params{"include_docs": true},
 		status:  http.StatusBadGateway,
 		err:     "multipart: NextPart: EOF",
 	})
@@ -228,7 +228,7 @@ func TestGet(t *testing.T) {
 				bogus data`),
 		}, nil),
 		id:      "foo",
-		options: kivik.Options{"include_docs": true},
+		options: kivik.Params{"include_docs": true},
 		status:  http.StatusBadGateway,
 		err:     "malformed MIME header (initial )?line:.*bogus data",
 	})
@@ -287,7 +287,7 @@ Content-Length: 86
 --e89b3e29388aef23453450d10e5aaed0--`),
 		}, nil),
 		id:      "foo",
-		options: kivik.Options{"include_docs": true},
+		options: kivik.Params{"include_docs": true},
 		doc: &driver.Row{
 			ID:  "foo",
 			Rev: "2-c1c6c44c4bc3c9344b037c8690468605",
@@ -342,7 +342,7 @@ Content-Length: 86
 --e89b3e29388aef23453450d10e5aaed0--`),
 		}, nil),
 		id:      "foo",
-		options: kivik.Options{"include_docs": true},
+		options: kivik.Params{"include_docs": true},
 		doc: &driver.Row{
 			ID:  "foo",
 			Rev: "2-c1c6c44c4bc3c9344b037c8690468605",
@@ -511,7 +511,7 @@ func TestCreateDoc(t *testing.T) {
 			name:    "batch mode",
 			db:      newTestDB(nil, errors.New("success")),
 			doc:     map[string]string{"foo": "bar"},
-			options: kivik.Options{"batch": "ok"},
+			options: kivik.Params{"batch": "ok"},
 			status:  http.StatusBadGateway,
 			err:     `^Post "?http://example.com/testdb\?batch=ok"?: success$`,
 		},
@@ -533,7 +533,7 @@ func TestCreateDoc(t *testing.T) {
 		{
 			name:    "invalid options",
 			db:      &db{},
-			options: kivik.Options{"foo": make(chan int)},
+			options: kivik.Params{"foo": make(chan int)},
 			status:  http.StatusBadRequest,
 			err:     "kivik: invalid type chan int for options",
 		},
@@ -914,14 +914,14 @@ func TestDelete(t *testing.T) {
 	})
 	tests.Add("network error", tt{
 		id:      "foo",
-		options: kivik.Options{"rev": "1-xxx"},
+		options: kivik.Params{"rev": "1-xxx"},
 		db:      newTestDB(nil, errors.New("net error")),
 		status:  http.StatusBadGateway,
 		err:     `(Delete "?http://example.com/testdb/foo\?rev="?: )?net error`,
 	})
 	tests.Add("1.6.1 conflict", tt{
 		id:      "43734cf3ce6d5a37050c050bb600006b",
-		options: kivik.Options{"rev": "1-xxx"},
+		options: kivik.Params{"rev": "1-xxx"},
 		db: newTestDB(&http.Response{
 			StatusCode: 409,
 			Header: http.Header{
@@ -938,7 +938,7 @@ func TestDelete(t *testing.T) {
 	})
 	tests.Add("1.6.1 success", tt{
 		id:      "43734cf3ce6d5a37050c050bb600006b",
-		options: kivik.Options{"rev": "1-4c6114c65e295552ab1019e2b046b10e"},
+		options: kivik.Params{"rev": "1-4c6114c65e295552ab1019e2b046b10e"},
 		db: newTestDB(&http.Response{
 			StatusCode: 200,
 			Header: http.Header{
@@ -964,7 +964,7 @@ func TestDelete(t *testing.T) {
 			return nil, errors.New("success")
 		}),
 		id: "foo",
-		options: kivik.Options{
+		options: kivik.Params{
 			"batch": "ok",
 			"rev":   "1-xxx",
 		},
@@ -974,7 +974,7 @@ func TestDelete(t *testing.T) {
 	tests.Add("invalid options", tt{
 		db: &db{},
 		id: "foo",
-		options: kivik.Options{
+		options: kivik.Params{
 			"foo": make(chan int),
 			"rev": "1-xxx",
 		},
@@ -994,7 +994,7 @@ func TestDelete(t *testing.T) {
 		id: "foo",
 		options: allOptions{
 			OptionFullCommit(),
-			kivik.Options{
+			kivik.Params{
 				"rev": "1-xxx",
 			},
 		},
@@ -1134,7 +1134,7 @@ func TestRowsQuery(t *testing.T) {
 		{
 			name:    "invalid options",
 			path:    "_all_docs",
-			options: kivik.Options{"foo": make(chan int)},
+			options: kivik.Params{"foo": make(chan int)},
 			status:  http.StatusBadRequest,
 			err:     "kivik: invalid type chan int for options",
 		},
@@ -1261,7 +1261,7 @@ func TestRowsQuery(t *testing.T) {
 		{
 			name: "all docs with keys",
 			path: "/_all_docs",
-			options: kivik.Options{
+			options: kivik.Params{
 				"keys": []string{"_design/_auth", "foo"},
 			},
 			db: newCustomDB(func(r *http.Request) (*http.Response, error) {
@@ -1306,7 +1306,7 @@ func TestRowsQuery(t *testing.T) {
 		{
 			name: "all docs with endkey",
 			path: "/_all_docs",
-			options: kivik.Options{
+			options: kivik.Params{
 				"endkey": []string{"foo", "bar"},
 			},
 			db: newCustomDB(func(r *http.Request) (*http.Response, error) {
@@ -1344,7 +1344,7 @@ func TestRowsQuery(t *testing.T) {
 		{
 			name: "all docs with object keys",
 			path: "/_all_docs",
-			options: kivik.Options{
+			options: kivik.Params{
 				"keys": []interface{}{"_design/_auth", "foo", []string{"bar", "baz"}},
 			},
 			db: newCustomDB(func(r *http.Request) (*http.Response, error) {
@@ -1389,7 +1389,7 @@ func TestRowsQuery(t *testing.T) {
 		{
 			name: "all docs with docs",
 			path: "/_all_docs",
-			options: kivik.Options{
+			options: kivik.Params{
 				"keys": []string{"_design/_auth", "foo"},
 			},
 			db: newCustomDB(func(r *http.Request) (*http.Response, error) {
@@ -1598,7 +1598,7 @@ func TestGetRev(t *testing.T) {
 		name    string
 		db      *db
 		id      string
-		options kivik.Options
+		options kivik.Params
 		rev     string
 		status  int
 		err     string
@@ -1679,7 +1679,7 @@ func TestCopy(t *testing.T) {
 		db:      &db{},
 		source:  "foo",
 		target:  "bar",
-		options: kivik.Options{"foo": make(chan int)},
+		options: kivik.Params{"foo": make(chan int)},
 		status:  http.StatusBadRequest,
 		err:     "kivik: invalid type chan int for options",
 	})

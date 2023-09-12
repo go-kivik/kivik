@@ -85,7 +85,7 @@ func TestAllDocs(t *testing.T) {
 					},
 				},
 			},
-			options: Options(testOptions),
+			options: Params(testOptions),
 			expected: &rows{
 				iter: &iter{
 					feed: &rowsIterator{
@@ -174,7 +174,7 @@ func TestAllDocs(t *testing.T) {
 					},
 				},
 			}
-			rs := db.AllDocs(context.Background(), Options{
+			rs := db.AllDocs(context.Background(), Params{
 				"include_docs": true,
 				"keys":         []string{"i-exist", "i-dont"},
 			})
@@ -264,7 +264,7 @@ func TestDesignDocs(t *testing.T) {
 					},
 				},
 			},
-			options: Options(testOptions),
+			options: Params(testOptions),
 			expected: &rows{
 				iter: &iter{
 					feed: &rowsIterator{
@@ -373,7 +373,7 @@ func TestLocalDocs(t *testing.T) {
 					},
 				},
 			},
-			options: Options(testOptions),
+			options: Params(testOptions),
 			expected: &rows{
 				iter: &iter{
 					feed: &rowsIterator{
@@ -493,7 +493,7 @@ func TestQuery(t *testing.T) {
 			},
 			ddoc:    "foo",
 			view:    "bar",
-			options: Options(testOptions),
+			options: Params(testOptions),
 			expected: &rows{
 				iter: &iter{
 					feed: &rowsIterator{
@@ -584,7 +584,7 @@ func TestGet(t *testing.T) {
 			},
 		},
 		docID:    "foo",
-		options:  Options(testOptions),
+		options:  Params(testOptions),
 		expected: `{"_id":"foo"}`,
 	})
 	tests.Add("streaming attachments", tt{
@@ -611,7 +611,7 @@ func TestGet(t *testing.T) {
 			},
 		},
 		docID:    "foo",
-		options:  Options{"include_docs": true},
+		options:  Params{"include_docs": true},
 		expected: `{"_id":"foo"}`,
 	})
 	tests.Add(errClientClosed, tt{
@@ -642,7 +642,7 @@ func TestGet(t *testing.T) {
 			},
 		},
 		docID:   "foo",
-		options: Options(testOptions),
+		options: Params(testOptions),
 		status:  http.StatusNotFound,
 		err:     "no results",
 	})
@@ -656,7 +656,7 @@ func TestGet(t *testing.T) {
 			},
 		},
 		docID:   "foo",
-		options: Options(testOptions),
+		options: Params(testOptions),
 		status:  http.StatusInternalServerError,
 		err:     "random error",
 	})
@@ -1169,7 +1169,7 @@ func TestGetRev(t *testing.T) { // nolint: gocyclo
 				},
 			},
 			docID:   "foo",
-			options: Options(testOptions),
+			options: Params(testOptions),
 			rev:     "1-xxx",
 		},
 		{
@@ -1342,7 +1342,7 @@ func TestCopy(t *testing.T) {
 			},
 			target:   "foo",
 			source:   "bar",
-			options:  Options(testOptions),
+			options:  Params(testOptions),
 			expected: "1-xxx",
 		},
 		{
@@ -1432,7 +1432,7 @@ func TestCopy(t *testing.T) {
 			},
 			target:   "foo",
 			source:   "bar",
-			options:  Options{"rev": "1-xxx", "batch": true},
+			options:  Params{"rev": "1-xxx", "batch": true},
 			expected: "1-xxx",
 		},
 		{
@@ -1571,7 +1571,7 @@ func TestPut(t *testing.T) {
 			},
 			docID:   "foo",
 			input:   map[string]interface{}{"foo": "bar"},
-			options: Options(testOptions),
+			options: Params(testOptions),
 			newRev:  "1-xxx",
 		},
 		{
@@ -1597,7 +1597,7 @@ func TestPut(t *testing.T) {
 			},
 			docID:   "foo",
 			input:   []byte(`{"foo":"bar"}`),
-			options: Options(testOptions),
+			options: Params(testOptions),
 			newRev:  "1-xxx",
 		},
 		{
@@ -1610,7 +1610,7 @@ func TestPut(t *testing.T) {
 			},
 			docID:   "foo",
 			input:   json.RawMessage(`{"foo":"bar"}`),
-			options: Options(testOptions),
+			options: Params(testOptions),
 			newRev:  "1-xxx",
 		},
 		{
@@ -1623,7 +1623,7 @@ func TestPut(t *testing.T) {
 			},
 			docID:   "foo",
 			input:   strings.NewReader(`{"foo":"bar"}`),
-			options: Options(testOptions),
+			options: Params(testOptions),
 			newRev:  "1-xxx",
 		},
 		{
@@ -1809,7 +1809,7 @@ func TestCreateDoc(t *testing.T) {
 				},
 			},
 			doc:     map[string]string{"type": "test"},
-			options: Options(testOptions),
+			options: Params(testOptions),
 			docID:   "foo",
 			rev:     "1-xxx",
 		},
@@ -1888,7 +1888,7 @@ func TestDelete(t *testing.T) {
 				},
 			},
 			docID:   "foo",
-			options: Options{"rev": "1-xxx"},
+			options: Params{"rev": "1-xxx"},
 			newRev:  "2-xxx",
 		},
 		{
@@ -1916,7 +1916,7 @@ func TestDelete(t *testing.T) {
 			},
 			docID:   "foo",
 			rev:     "1-xxx",
-			options: Options(testOptions),
+			options: Params(testOptions),
 			newRev:  "2-xxx",
 		},
 		{
@@ -2067,7 +2067,7 @@ func TestPutAttachment(t *testing.T) {
 				ContentType: "text/plain",
 				Content:     io.NopCloser(strings.NewReader("Test file")),
 			},
-			options: Options{
+			options: Params{
 				"rev": "1-xxx",
 			},
 			newRev: "2-xxx",
@@ -2159,7 +2159,7 @@ func TestDeleteAttachment(t *testing.T) {
 		return tt{
 			docID:    expectedDocID,
 			filename: expectedFilename,
-			options:  Options{"rev": expectedRev},
+			options:  Params{"rev": expectedRev},
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
@@ -2188,7 +2188,7 @@ func TestDeleteAttachment(t *testing.T) {
 			docID:    expectedDocID,
 			rev:      expectedRev,
 			filename: expectedFilename,
-			options:  Options(testOptions),
+			options:  Params(testOptions),
 			newRev:   "2-xxx",
 			db: &DB{
 				client: &Client{},
@@ -2273,7 +2273,7 @@ func TestGetAttachment(t *testing.T) {
 		return tt{
 			docID:    expectedDocID,
 			filename: expectedFilename,
-			options:  Options(testOptions),
+			options:  Params(testOptions),
 			content:  "Test",
 			expected: &Attachment{
 				Filename:    expectedFilename,
@@ -2414,7 +2414,7 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 			},
 			docID:    "foo",
 			filename: "foo.txt",
-			options:  Options(testOptions),
+			options:  Params(testOptions),
 			expected: &Attachment{
 				Filename:    "foo.txt",
 				ContentType: "text/plain",
@@ -2467,7 +2467,7 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 			},
 			docID:    "foo",
 			filename: "foo.txt",
-			options:  Options(testOptions),
+			options:  Params(testOptions),
 			expected: &Attachment{
 				Filename:    "foo.txt",
 				ContentType: "text/plain",

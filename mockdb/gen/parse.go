@@ -28,7 +28,7 @@ var (
 	typeContext             = reflect.TypeOf((*context.Context)(nil)).Elem()
 	typeLegacyDriverOptions = reflect.TypeOf(map[string]interface{}{})
 	typeDriverOptions       = reflect.TypeOf((*driver.Options)(nil)).Elem()
-	typeClientOptions       = reflect.TypeOf([]kivik.Options{})
+	typeClientOptions       = reflect.TypeOf([]kivik.Params{})
 	typeError               = reflect.TypeOf((*error)(nil)).Elem()
 	typeString              = reflect.TypeOf("")
 )

@@ -15,21 +15,37 @@
 
 package pouchdb
 
+import (
+	"fmt"
+	"strings"
+
+	kivik "github.com/go-kivik/kivik/v4"
+)
+
 // BasicAuth handles HTTP Basic Auth for remote PouchDB connections. This
 // is the only auth support built directly into PouchDB, so this is a very
-// thin wrapper.
-type BasicAuth struct {
-	Name     string
-	Password string
+// thin wrapper. This is the default authentication mechanism when credentials
+// are provided in the connection URL, so this function is rarely ever needed.
+func BasicAuth(username, password string) kivik.Option {
+	return basicAuth{
+		username: username,
+		password: password,
+	}
 }
 
-// authenticate sets the HTTP Basic Auth parameters.
-func (a *BasicAuth) authenticate(c *client) error {
-	c.opts["authenticator"] = Options{
-		"auth": map[string]interface{}{
-			"username": a.Name,
-			"password": a.Password,
-		},
+type basicAuth struct {
+	username string
+	password string
+}
+
+var _ kivik.Option = basicAuth{}
+
+func (a basicAuth) Apply(target interface{}) {
+	if client, ok := target.(*client); ok {
+		client.setAuth(a.username, a.password)
 	}
-	return nil
+}
+
+func (a basicAuth) String() string {
+	return fmt.Sprintf("[BasicAuth{user:%s,pass:%s}]", a.username, strings.Repeat("*", len(a.password)))
 }

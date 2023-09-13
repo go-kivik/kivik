@@ -40,9 +40,8 @@ func init() {
 
 // NewClient returns a PouchDB client handle. Provide a dsn only for remote
 // databases. Otherwise specify ""
-func (d *pouchDriver) NewClient(dsn string, _ driver.Options) (driver.Client, error) {
+func (d *pouchDriver) NewClient(dsn string, options driver.Options) (driver.Client, error) {
 	var u *url.URL
-	var auth authenticator
 	var user *url.Userinfo
 	if dsn != "" {
 		var err error
@@ -61,15 +60,19 @@ func (d *pouchDriver) NewClient(dsn string, _ driver.Options) (driver.Client, er
 	}
 	if user != nil {
 		pass, _ := user.Password()
-		auth = &BasicAuth{
-			Name:     user.Username(),
-			Password: pass,
-		}
-		if err := auth.authenticate(client); err != nil {
-			return nil, err
-		}
+		client.setAuth(user.Username(), pass)
 	}
+	options.Apply(client)
 	return client, nil
+}
+
+func (c *client) setAuth(username, password string) {
+	c.opts["authenticator"] = Options{
+		"auth": map[string]interface{}{
+			"username": username,
+			"password": password,
+		},
+	}
 }
 
 type client struct {

@@ -45,6 +45,6 @@ func testServerInfo(ctx *kt.Context, client *kivik.Client) {
 		ctx.Errorf("Version '%s' does not match /%s/", info.Version, version)
 	}
 	if !vendor.MatchString(info.Vendor) {
-		ctx.Errorf("Vendor '%s' doesnot match /%s/", info.Vendor, vendor)
+		ctx.Errorf("Vendor '%s' does not match /%s/", info.Vendor, vendor)
 	}
 }

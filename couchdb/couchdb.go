@@ -31,12 +31,6 @@ func init() {
 	kivik.Register("couch", &couch{})
 }
 
-// Known vendor strings
-const (
-	VendorCouchDB  = "The Apache Software Foundation"
-	VendorCloudant = "IBM Cloudant"
-)
-
 type client struct {
 	*chttp.Client
 

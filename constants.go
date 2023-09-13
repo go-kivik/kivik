@@ -15,8 +15,6 @@ package kivik
 const (
 	// KivikVersion is the version of the Kivik library.
 	KivikVersion = "4.0.0-prerelease"
-	// KivikVendor is the vendor string reported by this library.
-	KivikVendor = "Kivik"
 )
 
 // SessionCookieName is the name of the CouchDB session cookie.

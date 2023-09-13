@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/go-kivik/kivik/v4/driver"
 )
@@ -111,4 +112,38 @@ func Rev(rev string) Option {
 // alternative to Param("include_docs", true).
 func IncludeDocs() Option {
 	return Params{"include_docs": true}
+}
+
+type durationParam struct {
+	key   string
+	value time.Duration
+}
+
+var _ Option = durationParam{}
+
+// Apply supports map[string]interface{} and *url.Values targets.
+func (p durationParam) Apply(target interface{}) {
+	switch t := target.(type) {
+	case map[string]interface{}:
+		t[p.key] = fmt.Sprintf("%d", p.value/time.Millisecond)
+	case *url.Values:
+		t.Add(p.key, fmt.Sprintf("%d", p.value/time.Millisecond))
+	}
+}
+
+func (p durationParam) String() string {
+	return fmt.Sprintf("[%s=%s]", p.key, p.value)
+}
+
+// Duration is a convenience function for setting query parameters from
+// [time.Duration] values. The duration will be converted to milliseconds when
+// passed as a query parameter.
+//
+// For example, Duration("heartbeat", 15 * time.Second) will result in appending
+// ?heartbeat=15000 to the query.
+func Duration(key string, dur time.Duration) Option {
+	return durationParam{
+		key:   key,
+		value: dur,
+	}
 }

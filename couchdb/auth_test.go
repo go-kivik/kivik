@@ -105,31 +105,7 @@ func TestAuthentication(t *testing.T) {
 		err        string
 	}
 
-	handler200 := func(_ *testing.T) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-			w.WriteHeader(200)
-		})
-	}
 	tests := testy.NewTable()
-	tests.Add("SetTransport", tst{
-		handler: handler200,
-		auther: SetTransport(customTransport(func(r *http.Request) (*http.Response, error) { // nolint: misspell
-			return nil, errors.New("transport error")
-		})),
-		status: http.StatusBadGateway,
-		err:    "transport error",
-	})
-	tests.Add("SetTransport again", tst{
-		handler: handler200,
-		auther: SetTransport(customTransport(func(r *http.Request) (*http.Response, error) { // nolint: misspell
-			return nil, errors.New("transport error")
-		})),
-		setup: func(t *testing.T, c *client) {
-			c.Client.Client.Transport = http.DefaultTransport
-		},
-		authStatus: http.StatusBadRequest,
-		authErr:    "kivik: HTTP client transport already set",
-	})
 	tests.Add("BasicAuth", tst{
 		handler: func(t *testing.T) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -166,6 +166,10 @@ This is a partial list of breaking changes between 3.x and 4.x
 - `Client.Close()` and `DB.Close()` now block until any relevant calls have returned.
 - `Client.Close()` and `DB.Close()` no longer take a `context.Context` value. These operations cannot actually be canceled anyway, by the one driver that uses them (PouchDB); it only stops waiting. It makes more senes to make these functions blocking indefinitely, especially now that they wait for client requests to finish, and let the caller stop waiting if it wants to.
 
+#### CouchDB specific changes
+
+- The `SetTransport` authentication method has been removed, as a duplicate of [couchdb.OptionHTTPClient](https://pkg.go.dev/github.com/go-kivik/kivik/v4/couchdb#OptionHTTPClient).
+
 ## What projects currently use Kivik?
 
 If your project uses Kivik, and you'd like to be added to this list, create an

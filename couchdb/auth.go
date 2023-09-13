@@ -66,11 +66,8 @@ func CookieAuth(username, password string) kivik.Option {
 // no validation on the JWT token; it is passed verbatim to the server.
 //
 // See https://docs.couchdb.org/en/latest/api/server/authn.html#jwt-authentication
-func JWTAuth(token string) Authenticator {
-	auth := chttp.JWTAuth{Token: token}
-	return authFunc(func(ctx context.Context, c *client) error {
-		return auth.Authenticate(c.Client)
-	})
+func JWTAuth(token string) kivik.Option {
+	return chttp.JWTAuth(token)
 }
 
 // ProxyAuth provides support for CouchDB's [proxy authentication].

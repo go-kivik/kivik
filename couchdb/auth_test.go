@@ -131,6 +131,18 @@ func TestAuthenticationOptions(t *testing.T) {
 		},
 		options: CookieAuth("bob", "abc123"),
 	})
+	tests.Add("JWTAuth", test{
+		handler: func(t *testing.T) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if h := r.Header.Get("Authorization"); h != "Bearer tokentoken" {
+					t.Errorf("Unexpected Auth header: %s\n", h)
+				}
+				w.WriteHeader(200)
+				_, _ = w.Write([]byte(`{}`))
+			})
+		},
+		options: JWTAuth("tokentoken"),
+	})
 
 	driver := &couch{}
 	tests.Run(t, func(t *testing.T, tt test) {
@@ -215,18 +227,6 @@ func TestAuthentication(t *testing.T) {
 		},
 		authStatus: http.StatusBadRequest,
 		authErr:    "kivik: HTTP client transport already set",
-	})
-	tests.Add("JWTAuth", tst{
-		handler: func(t *testing.T) http.Handler {
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if h := r.Header.Get("Authorization"); h != "Bearer tokentoken" {
-					t.Errorf("Unexpected Auth header: %s\n", h)
-				}
-				w.WriteHeader(200)
-				_, _ = w.Write([]byte(`{}`))
-			})
-		},
-		auther: JWTAuth("tokentoken"), // nolint:misspell
 	})
 	driver := &couch{}
 	tests.Run(t, func(t *testing.T, test tst) {

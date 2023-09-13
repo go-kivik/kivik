@@ -105,7 +105,7 @@ func TestBasicAuthRoundTrip(t *testing.T) {
 func TestJWTAuthRoundTrip(t *testing.T) {
 	type rtTest struct {
 		name     string
-		auth     *JWTAuth
+		auth     *jwtAuth
 		req      *http.Request
 		expected *http.Response
 		cleanup  func()
@@ -114,7 +114,7 @@ func TestJWTAuthRoundTrip(t *testing.T) {
 		{
 			name: "Provided transport",
 			req:  httptest.NewRequest("GET", "/", nil),
-			auth: &JWTAuth{
+			auth: &jwtAuth{
 				Token: "token",
 				transport: customTransport(func(req *http.Request) (*http.Response, error) {
 					if h := req.Header.Get("Authorization"); h != "Bearer token" {
@@ -136,7 +136,7 @@ func TestJWTAuthRoundTrip(t *testing.T) {
 			s := nettest.NewHTTPTestServer(t, http.HandlerFunc(h))
 			return rtTest{
 				name: "default transport",
-				auth: &JWTAuth{
+				auth: &jwtAuth{
 					Token:     "token",
 					transport: http.DefaultTransport,
 				},

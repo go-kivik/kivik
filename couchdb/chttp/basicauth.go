@@ -67,21 +67,41 @@ func (a *basicAuth) Authenticate(c *Client) error {
 	return nil
 }
 
-// JWTAuth provides JWT based auth for a client.
-type JWTAuth struct {
+type jwtAuth struct {
 	Token string
 
 	transport http.RoundTripper
 }
 
+var _ kivik.Option = (*jwtAuth)(nil)
+
+func (a *jwtAuth) Apply(target interface{}) {
+	if client, ok := target.(*Client); ok {
+		// Clone this so that it's safe to re-use the same option to multiple
+		// client connections. TODO: This can no doubt be refactored.
+		client.auth = &jwtAuth{
+			Token: a.Token,
+		}
+	}
+}
+
+func (a *jwtAuth) String() string {
+	token := a.Token
+	const unmaskedLen = 3
+	if len(token) > unmaskedLen {
+		token = token[:unmaskedLen] + strings.Repeat("*", len(token)-unmaskedLen)
+	}
+	return fmt.Sprintf("[JWTAuth{token:%s}]", token)
+}
+
 // RoundTrip satisfies the http.RoundTripper interface.
-func (a *JWTAuth) RoundTrip(req *http.Request) (*http.Response, error) {
+func (a *jwtAuth) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Header.Set("Authorization", "Bearer "+a.Token)
 	return a.transport.RoundTrip(req)
 }
 
 // Authenticate performs authentication against CouchDB.
-func (a *JWTAuth) Authenticate(c *Client) error {
+func (a *jwtAuth) Authenticate(c *Client) error {
 	a.transport = c.Transport
 	if a.transport == nil {
 		a.transport = http.DefaultTransport

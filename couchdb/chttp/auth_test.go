@@ -149,11 +149,11 @@ func TestAuthenticate(t *testing.T) {
 	})
 	tests.Add("JWT auth", authTest{
 		addr:   s.URL,
-		auther: &JWTAuth{Token: "tokennekot"}, // nolint: misspell
+		auther: &jwtAuth{Token: "tokennekot"}, // nolint: misspell
 	})
 	tests.Add("failed JWT auth", authTest{
 		addr:   s.URL,
-		auther: &JWTAuth{Token: "nekot"}, // nolint: misspell
+		auther: &jwtAuth{Token: "nekot"}, // nolint: misspell
 		err:    "Unauthorized",
 		status: http.StatusUnauthorized,
 	})

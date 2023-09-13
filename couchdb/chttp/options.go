@@ -169,3 +169,11 @@ func BasicAuth(username, password string) kivik.Option {
 		Password: password,
 	}
 }
+
+// JWTAuth provides JWT based auth for a client. Pass this option to [New] to
+// use JWT authentication
+func JWTAuth(token string) kivik.Option {
+	return &jwtAuth{
+		Token: token,
+	}
+}

@@ -41,10 +41,7 @@ type db struct {
 	viewCleanup uint32
 }
 
-var (
-	_ driver.DB       = &db{}
-	_ driver.DBCloser = &db{}
-)
+var _ driver.DB = (*db)(nil)
 
 func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
 	opts := map[string]interface{}{}

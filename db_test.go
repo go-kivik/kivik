@@ -2745,11 +2745,8 @@ func TestDBClose(t *testing.T) {
 		err string
 	}
 	tests := testy.NewTable()
-	tests.Add("non-closer", tst{
-		db: newDB(&mock.DB{}),
-	})
 	tests.Add("error", tst{
-		db: newDB(&mock.DBCloser{
+		db: newDB(&mock.DB{
 			CloseFunc: func() error {
 				return errors.New("close err")
 			},
@@ -2757,7 +2754,7 @@ func TestDBClose(t *testing.T) {
 		err: "close err",
 	})
 	tests.Add("success", tst{
-		db: newDB(&mock.DBCloser{
+		db: newDB(&mock.DB{
 			CloseFunc: func() error {
 				return nil
 			},

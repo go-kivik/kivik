@@ -965,3 +965,6 @@ func newRevsDiffRows(ctx context.Context, in io.ReadCloser) driver.Rows {
 	iter.objMode = true
 	return &rows{iter: iter}
 }
+
+// Close is a no-op for the CouchDB driver.
+func (db) Close() error { return nil }

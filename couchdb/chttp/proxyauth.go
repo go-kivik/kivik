@@ -34,12 +34,12 @@ type proxyAuth struct {
 }
 
 var (
-	_ Authenticator = &proxyAuth{}
+	_ authenticator = &proxyAuth{}
 	_ kivik.Option  = (*proxyAuth)(nil)
 )
 
 func (a *proxyAuth) Apply(target interface{}) {
-	if auth, ok := target.(*Authenticator); ok {
+	if auth, ok := target.(*authenticator); ok {
 		// Clone this so that it's safe to re-use the same option to multiple
 		// client connections. TODO: This can no doubt be refactored.
 		*auth = &proxyAuth{

@@ -12,7 +12,7 @@
 
 package chttp
 
-// Authenticator is an interface that provides authentication to a server.
-type Authenticator interface {
+// authenticator is an interface that provides authentication to a server.
+type authenticator interface {
 	Authenticate(*Client) error
 }

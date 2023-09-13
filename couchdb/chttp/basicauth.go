@@ -31,12 +31,12 @@ type basicAuth struct {
 }
 
 var (
-	_ Authenticator = &basicAuth{}
+	_ authenticator = &basicAuth{}
 	_ kivik.Option  = (*basicAuth)(nil)
 )
 
 func (a *basicAuth) Apply(target interface{}) {
-	if auth, ok := target.(*Authenticator); ok {
+	if auth, ok := target.(*authenticator); ok {
 		// Clone this so that it's safe to re-use the same option to multiple
 		// client connections. TODO: This can no doubt be refactored.
 		*auth = &basicAuth{
@@ -76,7 +76,7 @@ type jwtAuth struct {
 var _ kivik.Option = (*jwtAuth)(nil)
 
 func (a *jwtAuth) Apply(target interface{}) {
-	if auth, ok := target.(*Authenticator); ok {
+	if auth, ok := target.(*authenticator); ok {
 		// Clone this so that it's safe to re-use the same option to multiple
 		// client connections. TODO: This can no doubt be refactored.
 		*auth = &jwtAuth{

@@ -80,7 +80,7 @@ func New(client *http.Client, dsn string, options driver.Options) (*Client, erro
 		basePath: strings.TrimSuffix(dsnURL.Path, "/"),
 		rawDSN:   dsn,
 	}
-	var auth Authenticator
+	var auth authenticator
 	if user != nil {
 		password, _ := user.Password()
 		auth = &cookieAuth{

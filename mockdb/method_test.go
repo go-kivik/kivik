@@ -33,21 +33,6 @@ func TestCloseMethod(t *testing.T) {
 	tests.Run(t, testMethod)
 }
 
-func TestAuthenticateMethod(t *testing.T) {
-	tests := testy.NewTable()
-	tests.Add("empty", methodTest{
-		input:    &ExpectedAuthenticate{},
-		standard: "Authenticate()",
-		verbose:  "Authenticate(ctx, ?)",
-	})
-	tests.Add("authenticator", methodTest{
-		input:    &ExpectedAuthenticate{authType: "foo"},
-		standard: "Authenticate()",
-		verbose:  "Authenticate(ctx, <foo>)",
-	})
-	tests.Run(t, testMethod)
-}
-
 func TestDBCloseMethod(t *testing.T) {
 	tests := testy.NewTable()
 	tests.Add("empty", methodTest{

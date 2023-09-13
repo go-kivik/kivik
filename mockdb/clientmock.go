@@ -99,13 +99,6 @@ func (c *Client) MatchExpectationsInOrder(b bool) {
 	c.ordered = b
 }
 
-// ExpectAuthenticate queues an expectation for an Authenticate() call.
-func (c *Client) ExpectAuthenticate() *ExpectedAuthenticate {
-	e := &ExpectedAuthenticate{}
-	c.expected = append(c.expected, e)
-	return e
-}
-
 // ExpectCreateDB queues an expectation for a CreateDB() call.
 func (c *Client) ExpectCreateDB() *ExpectedCreateDB {
 	e := &ExpectedCreateDB{}

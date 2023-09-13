@@ -74,7 +74,9 @@ type RowsWarner interface {
 // returning a paging bookmark.
 type Bookmarker interface {
 	// Bookmark returns an opaque bookmark string used for paging, added to
-	// the /_find endpoint in CouchDB 2.1.1.  See the CouchDB documentation for
-	// usage: http://docs.couchdb.org/en/2.1.1/api/database/find.html#pagination
+	// the /_find endpoint in CouchDB 2.1.1.  See the [CouchDB documentation] for
+	// usage.
+	//
+	// [CouchDB documentation]: http://docs.couchdb.org/en/2.1.1/api/database/find.html#pagination
 	Bookmark() string
 }

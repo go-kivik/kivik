@@ -17,7 +17,7 @@ import (
 	"encoding/json"
 )
 
-// PartitionedDB is an optional interface that may be satisfied by a DB to
+// PartitionedDB is an optional interface that may be implemented by a [DB] to
 // support querying partitoin-specific information.
 type PartitionedDB interface {
 	// PartitionStats returns information about the named partition.

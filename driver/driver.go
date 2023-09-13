@@ -77,8 +77,12 @@ type DBsStatser interface {
 	DBsStats(ctx context.Context, dbNames []string) ([]*DBStats, error)
 }
 
+// ReplicationMetadata is metadata about a replication.
+type ReplicationMetadata struct{}
+
 // Replication represents a _replicator document.
 type Replication interface {
+	Metadata() ReplicationMetadata
 	// The following methods are called just once, when the Replication is first
 	// returned from [ClientReplicator.Replicate] or
 	// [ClientReplicator.GetReplications].

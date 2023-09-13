@@ -24,6 +24,7 @@ type Replication struct {
 	// ID identifies a specific Replication instance
 	ID                string
 	DeleteFunc        func(context.Context) error
+	MetadataFunc      func() driver.ReplicationMetadata
 	StartTimeFunc     func() time.Time
 	EndTimeFunc       func() time.Time
 	ErrFunc           func() error
@@ -39,6 +40,14 @@ var _ driver.Replication = &Replication{}
 // Delete calls r.DeleteFunc
 func (r *Replication) Delete(ctx context.Context) error {
 	return r.DeleteFunc(ctx)
+}
+
+// Metadata calls r.MetadataFunc if it is not nil.
+func (r *Replication) Metadata() driver.ReplicationMetadata {
+	if r.MetadataFunc != nil {
+		return r.MetadataFunc()
+	}
+	return driver.ReplicationMetadata{}
 }
 
 // StartTime calls r.StartTimeFunc

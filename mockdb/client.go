@@ -44,6 +44,10 @@ type driverReplication struct {
 
 var _ driver.Replication = &driverReplication{}
 
+func (r *driverReplication) Metadata() driver.ReplicationMetadata {
+	return r.Replication.meta
+}
+
 func (r *driverReplication) ReplicationID() string {
 	return r.Replication.id
 }

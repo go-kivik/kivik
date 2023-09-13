@@ -162,6 +162,9 @@ func (c *client) fetchSchedulerReplication(ctx context.Context, docID string) (*
 	return rep, nil
 }
 
+func (r *schedulerReplication) Metadata() driver.ReplicationMetadata {
+	return driver.ReplicationMetadata{}
+}
 func (r *schedulerReplication) StartTime() time.Time { return r.startTime }
 func (r *schedulerReplication) EndTime() time.Time {
 	if r.state == "failed" || r.state == "completed" {

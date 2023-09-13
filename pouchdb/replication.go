@@ -63,13 +63,14 @@ func (r *replication) readLock() func() {
 	return r.mu.RUnlock
 }
 
-func (r *replication) ReplicationID() string { return "" }
-func (r *replication) Source() string        { defer r.readLock()(); return r.source }
-func (r *replication) Target() string        { defer r.readLock()(); return r.target }
-func (r *replication) StartTime() time.Time  { defer r.readLock()(); return r.startTime }
-func (r *replication) EndTime() time.Time    { defer r.readLock()(); return r.endTime }
-func (r *replication) State() string         { defer r.readLock()(); return string(r.state) }
-func (r *replication) Err() error            { defer r.readLock()(); return r.err }
+func (r *replication) Metadata() driver.ReplicationMetadata { return driver.ReplicationMetadata{} }
+func (r *replication) ReplicationID() string                { return "" }
+func (r *replication) Source() string                       { defer r.readLock()(); return r.source }
+func (r *replication) Target() string                       { defer r.readLock()(); return r.target }
+func (r *replication) StartTime() time.Time                 { defer r.readLock()(); return r.startTime }
+func (r *replication) EndTime() time.Time                   { defer r.readLock()(); return r.endTime }
+func (r *replication) State() string                        { defer r.readLock()(); return string(r.state) }
+func (r *replication) Err() error                           { defer r.readLock()(); return r.err }
 
 func (r *replication) Update(_ context.Context, state *driver.ReplicationInfo) (err error) {
 	defer bindings.RecoverError(&err)

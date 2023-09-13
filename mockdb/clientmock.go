@@ -7,6 +7,7 @@ import (
 	"time"
 
 	kivik "github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/driver"
 )
 
 // Client allows configuring the mock kivik client.
@@ -136,6 +137,7 @@ func NewDBUpdates() *Updates {
 
 // Replication is a replication instance.
 type Replication struct {
+	meta      driver.ReplicationMetadata
 	id        string
 	source    string
 	target    string
@@ -150,7 +152,7 @@ func (c *Client) NewReplication() *Replication {
 	return &Replication{}
 }
 
-// MarshalJSON satisfies the json.Marshaler interface.
+// MarshalJSON satisfies the [encoding/json.Marshaler] interface.
 func (r *Replication) MarshalJSON() ([]byte, error) {
 	type rep struct {
 		ID        string     `json:"replication_id,omitempty"`
@@ -177,6 +179,12 @@ func (r *Replication) MarshalJSON() ([]byte, error) {
 		doc.Err = r.err.Error()
 	}
 	return json.Marshal(doc)
+}
+
+// Metadata sets the replication metadata.
+func (r *Replication) Metadata(meta driver.ReplicationMetadata) *Replication {
+	r.meta = meta
+	return r
 }
 
 // ID sets the replication ID.

@@ -49,24 +49,24 @@ func (d *db) BulkGet(ctx context.Context, docs []driver.BulkGetReference, option
 	return newBulkGetRows(ctx, resp.Body), nil
 }
 
-// BulkGetError represents an error for a single document returned by a
+// bulkGetError represents an error for a single document returned by a
 // GetBulk call.
-type BulkGetError struct {
+type bulkGetError struct {
 	ID     string `json:"id"`
 	Rev    string `json:"rev"`
 	Err    string `json:"error"`
 	Reason string `json:"reason"`
 }
 
-var _ error = &BulkGetError{}
+var _ error = &bulkGetError{}
 
-func (e *BulkGetError) Error() string {
+func (e *bulkGetError) Error() string {
 	return fmt.Sprintf("%s: %s", e.Err, e.Reason)
 }
 
 type bulkResultDoc struct {
 	Doc   json.RawMessage `json:"ok,omitempty"`
-	Error *BulkGetError   `json:"error,omitempty"`
+	Error *bulkGetError   `json:"error,omitempty"`
 }
 
 type bulkResult struct {

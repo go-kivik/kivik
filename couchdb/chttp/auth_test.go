@@ -115,7 +115,7 @@ func TestAuthenticate(t *testing.T) {
 		}))
 		return authTest{
 			addr:   sv.URL,
-			auther: &CookieAuth{Username: "foo", Password: "bar"}, // nolint: misspell
+			auther: &cookieAuth{Username: "foo", Password: "bar"}, // nolint: misspell
 		}
 	})
 	tests.Add("failed basic auth", authTest{
@@ -126,7 +126,7 @@ func TestAuthenticate(t *testing.T) {
 	})
 	tests.Add("failed cookie auth", authTest{
 		addr:   s.URL,
-		auther: &CookieAuth{Username: "foo"}, // nolint: misspell
+		auther: &cookieAuth{Username: "foo"}, // nolint: misspell
 		err:    `Get "?` + s.URL + `/foo"?: Unauthorized`,
 		status: http.StatusUnauthorized,
 	})
@@ -168,7 +168,7 @@ func TestAuthenticate(t *testing.T) {
 			c.Client.Jar = test.jar
 		}
 		if test.auther != nil {
-			e := c.Auth(test.auther)
+			e := test.auther.Authenticate(c)
 			testy.StatusError(t, test.authErr, test.authStatus, e)
 		}
 		_, err = c.DoError(ctx, "GET", "/foo", nil)

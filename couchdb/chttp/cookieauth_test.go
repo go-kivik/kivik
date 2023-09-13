@@ -33,7 +33,7 @@ import (
 func TestCookieAuthAuthenticate(t *testing.T) {
 	type cookieTest struct {
 		dsn            string
-		auth           *CookieAuth
+		auth           *cookieAuth
 		err            string
 		status         int
 		expectedCookie *http.Cookie
@@ -65,7 +65,7 @@ func TestCookieAuthAuthenticate(t *testing.T) {
 		}))
 		return cookieTest{
 			dsn:  s.URL,
-			auth: &CookieAuth{Username: "foo", Password: "bar"},
+			auth: &cookieAuth{Username: "foo", Password: "bar"},
 			expectedCookie: &http.Cookie{
 				Name:  kivik.SessionCookieName,
 				Value: "YWRtaW46NUI5M0VGODk6eLUGqXf0HRSEV9PPLaZX86sBYes",
@@ -82,7 +82,7 @@ func TestCookieAuthAuthenticate(t *testing.T) {
 		}))
 		return cookieTest{
 			dsn:  s.URL,
-			auth: &CookieAuth{Username: "foo", Password: "bar"},
+			auth: &cookieAuth{Username: "foo", Password: "bar"},
 		}
 	})
 
@@ -91,7 +91,7 @@ func TestCookieAuthAuthenticate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if e := c.Auth(test.auth); e != nil {
+		if e := test.auth.Authenticate(c); e != nil {
 			t.Fatal(e)
 		}
 		_, err = c.DoError(context.Background(), "GET", "/foo", nil)
@@ -112,27 +112,27 @@ func TestCookieAuthAuthenticate(t *testing.T) {
 func TestCookie(t *testing.T) {
 	tests := []struct {
 		name     string
-		auth     *CookieAuth
+		auth     *cookieAuth
 		expected *http.Cookie
 	}{
 		{
 			name:     "No cookie jar",
-			auth:     &CookieAuth{},
+			auth:     &cookieAuth{},
 			expected: nil,
 		},
 		{
 			name:     "No dsn",
-			auth:     &CookieAuth{},
+			auth:     &cookieAuth{},
 			expected: nil,
 		},
 		{
 			name:     "no cookies",
-			auth:     &CookieAuth{},
+			auth:     &cookieAuth{},
 			expected: nil,
 		},
 		{
 			name: "cookie found",
-			auth: func() *CookieAuth {
+			auth: func() *cookieAuth {
 				dsn, err := url.Parse("http://example.com/")
 				if err != nil {
 					t.Fatal(err)
@@ -145,7 +145,7 @@ func TestCookie(t *testing.T) {
 					{Name: kivik.SessionCookieName, Value: "foo"},
 					{Name: "other", Value: "bar"},
 				})
-				return &CookieAuth{
+				return &cookieAuth{
 					client: &Client{
 						dsn: dsn,
 						Client: &http.Client{
@@ -181,14 +181,14 @@ func (j *dummyJar) SetCookies(_ *url.URL, cookies []*http.Cookie) {
 
 func Test_shouldAuth(t *testing.T) {
 	type tt struct {
-		a    *CookieAuth
+		a    *cookieAuth
 		req  *http.Request
 		want bool
 	}
 
 	tests := testy.NewTable()
 	tests.Add("no session", tt{
-		a:    &CookieAuth{},
+		a:    &cookieAuth{},
 		req:  httptest.NewRequest("GET", "/", nil),
 		want: true,
 	})
@@ -196,7 +196,7 @@ func Test_shouldAuth(t *testing.T) {
 		req := httptest.NewRequest("GET", "/", nil)
 		req.AddCookie(&http.Cookie{Name: kivik.SessionCookieName})
 		return tt{
-			a:    &CookieAuth{},
+			a:    &cookieAuth{},
 			req:  req,
 			want: false,
 		}
@@ -207,7 +207,7 @@ func Test_shouldAuth(t *testing.T) {
 			Name:    kivik.SessionCookieName,
 			Expires: time.Now().Add(20 * time.Minute),
 		}}
-		a := &CookieAuth{client: c}
+		a := &cookieAuth{client: c}
 
 		return tt{
 			a:    a,
@@ -221,7 +221,7 @@ func Test_shouldAuth(t *testing.T) {
 			Name:    kivik.SessionCookieName,
 			Expires: time.Now().Add(-20 * time.Second),
 		}}
-		a := &CookieAuth{client: c}
+		a := &cookieAuth{client: c}
 
 		return tt{
 			a:    a,
@@ -234,7 +234,7 @@ func Test_shouldAuth(t *testing.T) {
 		c.Jar = &dummyJar{&http.Cookie{
 			Name: kivik.SessionCookieName,
 		}}
-		a := &CookieAuth{client: c}
+		a := &cookieAuth{client: c}
 
 		return tt{
 			a:    a,
@@ -248,7 +248,7 @@ func Test_shouldAuth(t *testing.T) {
 			Name:    kivik.SessionCookieName,
 			Expires: time.Now().Add(20 * time.Second),
 		}}
-		a := &CookieAuth{client: c}
+		a := &cookieAuth{client: c}
 
 		return tt{
 			a:    a,
@@ -314,8 +314,8 @@ func Test401Response(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	auth := &CookieAuth{Username: "foo", Password: "bar"}
-	if e := c.Auth(auth); e != nil {
+	auth := &cookieAuth{Username: "foo", Password: "bar"}
+	if e := auth.Authenticate(c); e != nil {
 		t.Fatal(e)
 	}
 

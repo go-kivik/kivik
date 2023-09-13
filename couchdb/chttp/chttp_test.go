@@ -44,6 +44,7 @@ var defaultUA = func() string {
 func TestNew(t *testing.T) {
 	type tt struct {
 		dsn      string
+		options  kivik.Option
 		expected *Client
 		status   int
 		err      string
@@ -75,7 +76,7 @@ func TestNew(t *testing.T) {
 	tests.Add("auth success", func(t *testing.T) interface{} {
 		h := func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusOK)
-			fmt.Fprintf(w, `{"userCtx":{"name":"user"}}`) // nolint: errcheck
+			_, _ = fmt.Fprintf(w, `{"userCtx":{"name":"user"}}`)
 		}
 		s := nettest.NewHTTPTestServer(t, http.HandlerFunc(h))
 		authDSN, _ := url.Parse(s.URL)
@@ -87,7 +88,7 @@ func TestNew(t *testing.T) {
 			rawDSN: authDSN.String(),
 			dsn:    dsn,
 		}
-		auth := &CookieAuth{
+		auth := &cookieAuth{
 			Username:  "user",
 			Password:  "password",
 			client:    c,
@@ -113,9 +114,44 @@ func TestNew(t *testing.T) {
 			},
 		},
 	})
+	tests.Add("auth as option", func(t *testing.T) interface{} {
+		h := func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			_, _ = fmt.Fprintf(w, `{"userCtx":{"name":"user"}}`)
+		}
+		s := nettest.NewHTTPTestServer(t, http.HandlerFunc(h))
+		authDSN, _ := url.Parse(s.URL)
+		dsn, _ := url.Parse(s.URL + "/")
+		jar, _ := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
+		c := &Client{
+			Client: &http.Client{Jar: jar},
+			rawDSN: authDSN.String(),
+			dsn:    dsn,
+		}
+		auth := &cookieAuth{
+			Username:  "user",
+			Password:  "password",
+			client:    c,
+			transport: http.DefaultTransport,
+		}
+		c.auth = auth
+		c.Client.Transport = auth
 
+		return tt{
+			dsn:      authDSN.String(),
+			expected: c,
+			options: &cookieAuth{
+				Username: "user",
+				Password: "password",
+			},
+		}
+	})
 	tests.Run(t, func(t *testing.T, tt tt) {
-		result, err := New(&http.Client{}, tt.dsn, mock.NilOption)
+		opts := tt.options
+		if opts == nil {
+			opts = mock.NilOption
+		}
+		result, err := New(&http.Client{}, tt.dsn, opts)
 		statusErrorRE(t, tt.err, tt.status, err)
 		result.UserAgents = nil // Determinism
 		if d := testy.DiffInterface(tt.expected, result); d != nil {

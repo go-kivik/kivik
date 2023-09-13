@@ -14,17 +14,21 @@ package chttp
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"net/http/cookiejar"
+	"strings"
 	"time"
 
 	kivik "github.com/go-kivik/kivik/v4"
+	"golang.org/x/net/publicsuffix"
 )
 
-// CookieAuth provides CouchDB Cookie auth services as described at
+// cookieAuth provides CouchDB Cookie auth services as described at
 // http://docs.couchdb.org/en/2.0.0/api/server/authn.html#cookie-authentication
 //
 // CookieAuth stores authentication state after use, so should not be re-used.
-type CookieAuth struct {
+type cookieAuth struct {
 	Username string `json:"name"`
 	Password string `json:"password"`
 
@@ -34,10 +38,28 @@ type CookieAuth struct {
 	transport http.RoundTripper
 }
 
-var _ Authenticator = &CookieAuth{}
+var (
+	_ Authenticator = &cookieAuth{}
+	_ kivik.Option  = (*cookieAuth)(nil)
+)
+
+func (a *cookieAuth) Apply(target interface{}) {
+	if client, ok := target.(*Client); ok {
+		// Clone this so that it's safe to re-use the same option to multiple
+		// client connections. TODO: This can no doubt be refactored.
+		client.auth = &cookieAuth{
+			Username: a.Username,
+			Password: a.Password,
+		}
+	}
+}
+
+func (a *cookieAuth) String() string {
+	return fmt.Sprintf("[CookieAuth{user:%s,pass:%s}]", a.Username, strings.Repeat("*", len(a.Password)))
+}
 
 // Authenticate initiates a session with the CouchDB server.
-func (a *CookieAuth) Authenticate(c *Client) error {
+func (a *cookieAuth) Authenticate(c *Client) error {
 	a.client = c
 	a.setCookieJar()
 	a.transport = c.Transport
@@ -49,7 +71,7 @@ func (a *CookieAuth) Authenticate(c *Client) error {
 }
 
 // shouldAuth returns true if there is no cookie set, or if it has expired.
-func (a *CookieAuth) shouldAuth(req *http.Request) bool {
+func (a *cookieAuth) shouldAuth(req *http.Request) bool {
 	if _, err := req.Cookie(kivik.SessionCookieName); err == nil {
 		return false
 	}
@@ -69,7 +91,7 @@ func (a *CookieAuth) shouldAuth(req *http.Request) bool {
 }
 
 // Cookie returns the current session cookie if found, or nil if not.
-func (a *CookieAuth) Cookie() *http.Cookie {
+func (a *cookieAuth) Cookie() *http.Cookie {
 	if a.client == nil {
 		return nil
 	}
@@ -87,7 +109,7 @@ var authInProgress = &struct{ name string }{"in progress"}
 // (re-)authenticates when the cookie has expired or is not yet set.
 // It also drops the auth cookie if we receive a 401 response to ensure
 // that follow up requests can try to authenticate again.
-func (a *CookieAuth) RoundTrip(req *http.Request) (*http.Response, error) {
+func (a *cookieAuth) RoundTrip(req *http.Request) (*http.Response, error) {
 	if err := a.authenticate(req); err != nil {
 		return nil, err
 	}
@@ -107,7 +129,7 @@ func (a *CookieAuth) RoundTrip(req *http.Request) (*http.Response, error) {
 	return res, nil
 }
 
-func (a *CookieAuth) authenticate(req *http.Request) error {
+func (a *cookieAuth) authenticate(req *http.Request) error {
 	ctx := req.Context()
 	if inProg, _ := ctx.Value(authInProgress).(bool); inProg {
 		return nil
@@ -136,4 +158,14 @@ func (a *CookieAuth) authenticate(req *http.Request) error {
 		req.AddCookie(c)
 	}
 	return nil
+}
+
+func (a *cookieAuth) setCookieJar() {
+	// If a jar is already set, just use it
+	if a.client.Jar != nil {
+		return
+	}
+	// cookiejar.New never returns an error
+	jar, _ := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
+	a.client.Jar = jar
 }

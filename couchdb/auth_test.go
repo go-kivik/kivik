@@ -94,6 +94,49 @@ func TestAuthenticate(t *testing.T) {
 	}
 }
 
+func TestAuthenticationOptions(t *testing.T) {
+	type test struct {
+		handler func(*testing.T) http.Handler
+		setup   func(*testing.T, *client)
+		options kivik.Option
+		status  int
+		err     string
+	}
+
+	tests := testy.NewTable()
+	tests.Add("CookieAuth", test{
+		handler: func(t *testing.T) http.Handler {
+			expectedPaths := []string{"/_session", "/"}
+			i := -1
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				i++
+				if p := r.URL.Path; p != expectedPaths[i] {
+					t.Errorf("Unexpected path: %s\n", p)
+				}
+				w.WriteHeader(200)
+				_, _ = w.Write([]byte(`{}`))
+			})
+		},
+		options: CookieAuth("bob", "abc123"),
+	})
+
+	driver := &couch{}
+	tests.Run(t, func(t *testing.T, tt test) {
+		s := nettest.NewHTTPTestServer(t, tt.handler(t))
+		defer s.Close()
+		driverClient, err := driver.NewClient(s.URL, tt.options)
+		if err != nil {
+			t.Fatal(err)
+		}
+		client := driverClient.(*client)
+		if tt.setup != nil {
+			tt.setup(t, client)
+		}
+		_, err = client.Version(context.Background())
+		testy.StatusErrorRE(t, tt.err, tt.status, err)
+	})
+}
+
 func TestAuthentication(t *testing.T) {
 	type tst struct {
 		handler    func(*testing.T) http.Handler
@@ -117,21 +160,6 @@ func TestAuthentication(t *testing.T) {
 			})
 		},
 		auther: BasicAuth("bob", "abc123"), // nolint: misspell
-	})
-	tests.Add("CookieAuth", tst{
-		handler: func(t *testing.T) http.Handler {
-			expectedPaths := []string{"/_session", "/"}
-			i := -1
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				i++
-				if p := r.URL.Path; p != expectedPaths[i] {
-					t.Errorf("Unexpected path: %s\n", p)
-				}
-				w.WriteHeader(200)
-				_, _ = w.Write([]byte(`{}`))
-			})
-		},
-		auther: CookieAuth("bob", "abc123"), // nolint: misspell
 	})
 	tests.Add("ProxyAuth", tst{
 		handler: func(t *testing.T) http.Handler {

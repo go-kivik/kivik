@@ -53,12 +53,15 @@ func BasicAuth(user, password string) Authenticator {
 	})
 }
 
-// CookieAuth provides support for CouchDB cookie-based authentication.
-func CookieAuth(user, password string) Authenticator {
-	auth := chttp.CookieAuth{Username: user, Password: password}
-	return authFunc(func(ctx context.Context, c *client) error {
-		return auth.Authenticate(c.Client)
-	})
+// CookieAuth provides CouchDB [Cookie auth]. Cookie Auth is the default
+// authentication method if credentials are included in the connection URL
+// passed to [github.com/go-kivik/kivik/v4.New]. You may also pass this option
+// as an argument to the same function, if you need to provide your auth
+// credentials outside of the URL.
+//
+// [Cookie auth]: http://docs.couchdb.org/en/2.0.0/api/server/authn.html#cookie-authentication
+func CookieAuth(username, password string) kivik.Option {
+	return chttp.CookieAuth(username, password)
 }
 
 // JWTAuth provides support for CouchDB JWT-based authentication. Kivik does

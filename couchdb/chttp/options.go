@@ -147,3 +147,16 @@ func (o optionIfNoneMatch) String() string {
 func OptionIfNoneMatch(value string) kivik.Option {
 	return optionIfNoneMatch(value)
 }
+
+// CookieAuth provides CouchDB [Cookie auth]. Cookie Auth is the default
+// authentication method if credentials are included in the connection URL
+// passed to [New]. You may also pass this option as an argument to the same
+// function, if you need to provide your auth credentials outside of the URL.
+//
+// [Cookie auth]: http://docs.couchdb.org/en/2.0.0/api/server/authn.html#cookie-authentication
+func CookieAuth(username, password string) kivik.Option {
+	return &cookieAuth{
+		Username: username,
+		Password: password,
+	}
+}

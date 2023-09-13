@@ -83,17 +83,19 @@ func New(client *http.Client, dsn string, options driver.Options) (*Client, erro
 	}
 	if user != nil {
 		password, _ := user.Password()
-		err := c.Auth(&CookieAuth{
+		c.auth = &cookieAuth{
 			Username: user.Username(),
 			Password: password,
-		})
-		if err != nil {
-			return nil, err
 		}
 	}
 	opts := map[string]interface{}{}
 	options.Apply(opts)
 	options.Apply(c)
+	if c.auth != nil {
+		if err := c.auth.Authenticate(c); err != nil {
+			return nil, err
+		}
+	}
 	return c, nil
 }
 
@@ -120,18 +122,6 @@ func parseDSN(dsn string) (*url.URL, error) {
 // DSN returns the unparsed DSN used to connect.
 func (c *Client) DSN() string {
 	return c.rawDSN
-}
-
-// Auth authenticates using the provided Authenticator.
-func (c *Client) Auth(a Authenticator) error {
-	if c.auth != nil {
-		return errors.New("auth already set")
-	}
-	if err := a.Authenticate(c); err != nil {
-		return err
-	}
-	c.auth = a
-	return nil
 }
 
 // Response represents a response from a CouchDB server.

@@ -118,19 +118,24 @@ func (r *replication) readLock() func() {
 	return r.mu.RUnlock
 }
 
-func (r *replication) ReplicationID() string { defer r.readLock()(); return r.replicationID }
-func (r *replication) Source() string        { defer r.readLock()(); return r.source }
-func (r *replication) Target() string        { defer r.readLock()(); return r.target }
-func (r *replication) StartTime() time.Time  { defer r.readLock()(); return r.startTime }
-func (r *replication) EndTime() time.Time    { defer r.readLock()(); return r.endTime }
-func (r *replication) State() string         { defer r.readLock()(); return r.state }
-func (r *replication) Err() error            { defer r.readLock()(); return r.err }
+func (r *replication) Metadata() driver.ReplicationMetadata {
+	defer r.readLock()()
+	return driver.ReplicationMetadata{
+		ID:        r.replicationID,
+		Source:    r.source,
+		Target:    r.target,
+		StartTime: r.startTime,
+		EndTime:   r.endTime,
+		State:     r.state,
+		Error:     r.err,
+	}
+}
 
 func (r *replication) Update(ctx context.Context, state *driver.ReplicationInfo) error {
 	if err := r.updateMain(ctx); err != nil {
 		return err
 	}
-	if r.State() == "complete" {
+	if r.state == "complete" {
 		state.Progress = 100
 		return nil
 	}

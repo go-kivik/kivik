@@ -162,18 +162,22 @@ func (c *client) fetchSchedulerReplication(ctx context.Context, docID string) (*
 	return rep, nil
 }
 
-func (r *schedulerReplication) StartTime() time.Time { return r.startTime }
-func (r *schedulerReplication) EndTime() time.Time {
+func (r *schedulerReplication) Metadata() driver.ReplicationMetadata {
+	var endTime time.Time
 	if r.state == "failed" || r.state == "completed" {
-		return r.lastUpdated
+		endTime = r.lastUpdated
 	}
-	return time.Time{}
+
+	return driver.ReplicationMetadata{
+		ID:        r.replicationID,
+		Source:    r.source,
+		Target:    r.target,
+		StartTime: r.startTime,
+		EndTime:   endTime,
+		State:     r.state,
+		Error:     r.info.Error,
+	}
 }
-func (r *schedulerReplication) Err() error            { return r.info.Error }
-func (r *schedulerReplication) ReplicationID() string { return r.replicationID }
-func (r *schedulerReplication) Source() string        { return r.source }
-func (r *schedulerReplication) Target() string        { return r.target }
-func (r *schedulerReplication) State() string         { return r.state }
 
 func (r *schedulerReplication) Update(ctx context.Context, rep *driver.ReplicationInfo) error {
 	if err := r.update(ctx); err != nil {

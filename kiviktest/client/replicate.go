@@ -203,8 +203,8 @@ func doReplicationTest(ctx *kt.Context, client *kivik.Client, dbtarget, dbsource
 				ctx.Errorf("Expected a replication ID")
 			}
 		}
-		checkReplicationURL(ctx.T, "source", dbsource, rep.Source)
-		checkReplicationURL(ctx.T, "target", dbtarget, rep.Target)
+		checkReplicationURL(ctx.T, "source", dbsource, rep.Source())
+		checkReplicationURL(ctx.T, "target", dbtarget, rep.Target())
 		if rep.State() != kivik.ReplicationComplete {
 			ctx.Errorf("Replication failed to complete. Final state: %s\n", rep.State())
 		}

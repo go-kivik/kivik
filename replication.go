@@ -44,13 +44,21 @@ const (
 
 // Replication represents a CouchDB replication process.
 type Replication struct {
-	Source string
-	Target string
-
+	meta      driver.ReplicationMetadata
 	infoMU    sync.RWMutex
 	info      *driver.ReplicationInfo
 	statusErr error
 	irep      driver.Replication
+}
+
+// Source is the URL to the replication source.
+func (r *Replication) Source() string {
+	return r.meta.Source
+}
+
+// Source is the URL to the replication target.
+func (r *Replication) Target() string {
+	return r.meta.Target
 }
 
 // DocsWritten returns the number of documents written, if known.
@@ -95,31 +103,30 @@ func (r *Replication) Progress() float64 {
 
 func newReplication(rep driver.Replication) *Replication {
 	return &Replication{
-		Source: rep.Source(),
-		Target: rep.Target(),
-		irep:   rep,
+		meta: rep.Metadata(),
+		irep: rep,
 	}
 }
 
 // ReplicationID returns the _replication_id field of the replicator document.
 func (r *Replication) ReplicationID() string {
-	return r.irep.ReplicationID()
+	return r.meta.ID
 }
 
 // StartTime returns the replication start time, once the replication has been
 // triggered.
 func (r *Replication) StartTime() time.Time {
-	return r.irep.StartTime()
+	return r.meta.StartTime
 }
 
 // EndTime returns the replication end time, once the replication has terminated.
 func (r *Replication) EndTime() time.Time {
-	return r.irep.EndTime()
+	return r.meta.EndTime
 }
 
 // State returns the current replication state
 func (r *Replication) State() ReplicationState {
-	return ReplicationState(r.irep.State())
+	return ReplicationState(r.meta.State)
 }
 
 // Err returns the error, if any, that caused the replication to abort.
@@ -127,7 +134,7 @@ func (r *Replication) Err() error {
 	if r == nil {
 		return nil
 	}
-	return r.irep.Err()
+	return r.meta.Error
 }
 
 // IsActive returns true if the replication has not yet completed or

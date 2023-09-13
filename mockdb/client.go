@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"reflect"
-	"time"
 
 	"github.com/go-kivik/kivik/v4/driver"
 )
@@ -59,32 +58,16 @@ type driverReplication struct {
 
 var _ driver.Replication = &driverReplication{}
 
-func (r *driverReplication) ReplicationID() string {
-	return r.Replication.id
-}
-
-func (r *driverReplication) Source() string {
-	return r.Replication.source
-}
-
-func (r *driverReplication) Target() string {
-	return r.Replication.target
-}
-
-func (r *driverReplication) StartTime() time.Time {
-	return r.Replication.startTime
-}
-
-func (r *driverReplication) EndTime() time.Time {
-	return r.Replication.endTime
-}
-
-func (r *driverReplication) State() string {
-	return r.Replication.state
-}
-
-func (r *driverReplication) Err() error {
-	return r.Replication.err
+func (r *driverReplication) Metadata() driver.ReplicationMetadata {
+	return driver.ReplicationMetadata{
+		ID:        r.Replication.id,
+		Source:    r.Replication.source,
+		Target:    r.Replication.target,
+		StartTime: r.Replication.startTime,
+		EndTime:   r.Replication.endTime,
+		State:     r.Replication.state,
+		Error:     r.Replication.err,
+	}
 }
 
 func (r *driverReplication) Delete(context.Context) error {

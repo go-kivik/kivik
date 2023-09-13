@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
-	"time"
 
 	"gitlab.com/flimzy/testy"
 
@@ -139,16 +138,24 @@ func TestProgress(t *testing.T) {
 }
 
 func TestNewReplication(t *testing.T) {
-	source := "foo"
-	target := "bar"
+	const (
+		source = "foo"
+		target = "bar"
+	)
 	rep := &mock.Replication{
-		SourceFunc: func() string { return source },
-		TargetFunc: func() string { return target },
+		MetadataFunc: func() driver.ReplicationMetadata {
+			return driver.ReplicationMetadata{
+				Source: source,
+				Target: target,
+			}
+		},
 	}
 	expected := &Replication{
-		Source: source,
-		Target: target,
-		irep:   rep,
+		meta: driver.ReplicationMetadata{
+			Source: source,
+			Target: target,
+		},
+		irep: rep,
 	}
 	result := newReplication(rep)
 	if d := testy.DiffInterface(expected, result); d != nil {
@@ -157,18 +164,20 @@ func TestNewReplication(t *testing.T) {
 }
 
 func TestReplicationGetters(t *testing.T) {
-	repID := "repID"
+	const repID = "repID"
 	start := parseTime(t, "2018-01-01T00:00:00Z")
 	end := parseTime(t, "2019-01-01T00:00:00Z")
-	state := "confusion"
-	r := &Replication{
-		irep: &mock.Replication{
-			ReplicationIDFunc: func() string { return repID },
-			StartTimeFunc:     func() time.Time { return start },
-			EndTimeFunc:       func() time.Time { return end },
-			StateFunc:         func() string { return state },
+	const state = "confusion"
+	r := newReplication(&mock.Replication{
+		MetadataFunc: func() driver.ReplicationMetadata {
+			return driver.ReplicationMetadata{
+				ID:        repID,
+				StartTime: start,
+				EndTime:   end,
+				State:     state,
+			}
 		},
-	}
+	})
 
 	t.Run("ReplicationID", func(t *testing.T) {
 		result := r.ReplicationID()
@@ -203,7 +212,11 @@ func TestReplicationErr(t *testing.T) {
 	t.Run("No error", func(t *testing.T) {
 		r := &Replication{
 			irep: &mock.Replication{
-				ErrFunc: func() error { return nil },
+				MetadataFunc: func() driver.ReplicationMetadata {
+					return driver.ReplicationMetadata{
+						Error: nil,
+					}
+				},
 			},
 		}
 		if err := r.Err(); err != nil {
@@ -211,13 +224,13 @@ func TestReplicationErr(t *testing.T) {
 		}
 	})
 	t.Run("Error", func(t *testing.T) {
-		r := &Replication{
-			irep: &mock.Replication{
-				ErrFunc: func() error {
-					return errors.New("rep error")
-				},
+		r := newReplication(&mock.Replication{
+			MetadataFunc: func() driver.ReplicationMetadata {
+				return driver.ReplicationMetadata{
+					Error: errors.New("rep error"),
+				}
 			},
-		}
+		})
 		if err := r.Err(); err == nil || err.Error() != "rep error" {
 			t.Errorf("Unexpected error: %s", err)
 		}
@@ -234,8 +247,8 @@ func TestReplicationIsActive(t *testing.T) {
 	t.Run("Active", func(t *testing.T) {
 		r := &Replication{
 			irep: &mock.Replication{
-				StateFunc: func() string {
-					return "active"
+				MetadataFunc: func() driver.ReplicationMetadata {
+					return driver.ReplicationMetadata{State: "active"}
 				},
 			},
 		}
@@ -244,13 +257,13 @@ func TestReplicationIsActive(t *testing.T) {
 		}
 	})
 	t.Run("Complete", func(t *testing.T) {
-		r := &Replication{
-			irep: &mock.Replication{
-				StateFunc: func() string {
-					return string(ReplicationComplete)
-				},
+		r := newReplication(&mock.Replication{
+			MetadataFunc: func() driver.ReplicationMetadata {
+				return driver.ReplicationMetadata{
+					State: string(ReplicationComplete),
+				}
 			},
-		}
+		})
 		if r.IsActive() {
 			t.Errorf("Expected not active")
 		}
@@ -360,14 +373,10 @@ func TestGetReplications(t *testing.T) {
 			options: Param("foo", 123),
 			expected: []*Replication{
 				{
-					Source: "1-source",
-					Target: "1-target",
-					irep:   &mock.Replication{ID: "1"},
+					irep: &mock.Replication{ID: "1"},
 				},
 				{
-					Source: "2-source",
-					Target: "2-target",
-					irep:   &mock.Replication{ID: "2"},
+					irep: &mock.Replication{ID: "2"},
 				},
 			},
 		},
@@ -448,9 +457,7 @@ func TestReplicate(t *testing.T) {
 			source:  "bar",
 			options: Param("foo", 123),
 			expected: &Replication{
-				Source: "a-source",
-				Target: "a-target",
-				irep:   &mock.Replication{ID: "a"},
+				irep: &mock.Replication{ID: "a"},
 			},
 		},
 		{

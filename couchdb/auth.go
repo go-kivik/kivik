@@ -39,12 +39,6 @@ type Authenticator interface {
 	auth(context.Context, *client) error
 }
 
-type authFunc func(context.Context, *client) error
-
-func (a authFunc) auth(ctx context.Context, c *client) error {
-	return a(ctx, c)
-}
-
 // BasicAuth provides support for HTTP Basic authentication.  Pass this option
 // to [github.com/go-kivik/kivik/v4.New] to use Basic Authentication.
 func BasicAuth(username, password string) kivik.Option {
@@ -70,10 +64,12 @@ func JWTAuth(token string) kivik.Option {
 	return chttp.JWTAuth(token)
 }
 
-// ProxyAuth provides support for CouchDB's [proxy authentication].
+// ProxyAuth provides support for CouchDB's [proxy authentication]. Pass this
+// option to [github.com/go-kivik/kivik/v4.New] to use proxy authentication.
 //
 // The `secret` argument represents the [couch_httpd_auth/secret] value
 // configured on the CouchDB server.
+//
 // If `secret` is the empty string, the X-Auth-CouchDB-Token header will not be
 // set, to support disabling the [proxy_use_secret] server setting.
 //
@@ -86,17 +82,8 @@ func JWTAuth(token string) kivik.Option {
 // [proxy authentication]: https://docs.couchdb.org/en/stable/api/server/authn.html?highlight=proxy%20auth#proxy-authentication
 // [couch_httpd_auth/secret]: https://docs.couchdb.org/en/stable/config/auth.html#couch_httpd_auth/secret
 // [proxy_use_secret]: https://docs.couchdb.org/en/stable/config/auth.html#couch_httpd_auth/proxy_use_secret
-func ProxyAuth(user, secret string, roles []string, headers ...map[string]string) Authenticator {
-	headerOverrides := http.Header{}
-	for _, h := range headers {
-		for k, v := range h {
-			headerOverrides.Set(k, v)
-		}
-	}
-	auth := chttp.ProxyAuth{Username: user, Secret: secret, Roles: roles, Headers: headerOverrides}
-	return authFunc(func(ctx context.Context, c *client) error {
-		return auth.Authenticate(c.Client)
-	})
+func ProxyAuth(user, secret string, roles []string, headers ...map[string]string) kivik.Option {
+	return chttp.ProxyAuth(user, secret, roles, headers...)
 }
 
 type rawCookie struct {

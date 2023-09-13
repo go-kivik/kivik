@@ -131,6 +131,29 @@ func TestAuthenticationOptions(t *testing.T) {
 		},
 		options: CookieAuth("bob", "abc123"),
 	})
+	tests.Add("ProxyAuth", test{
+		handler: func(t *testing.T) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if h := r.Header.Get("X-Auth-CouchDB-UserName"); h != "bob" {
+					t.Errorf("Unexpected X-Auth-CouchDB-UserName header: %s", h)
+				}
+				if h := r.Header.Get("X-Auth-CouchDB-Roles"); h != "users,admins" {
+					t.Errorf("Unexpected X-Auth-CouchDB-Roles header: %s", h)
+				}
+				if h := r.Header.Get("Moo"); h != "adedb8d002eb53a52faba80e82cb1fc6d57bca74" {
+					t.Errorf("Token header override failed: %s instead of 'adedb8d002eb53a52faba80e82cb1fc6d57bca74'", h)
+				}
+				w.WriteHeader(200)
+				_, _ = w.Write([]byte(`{}`))
+			})
+		},
+		options: ProxyAuth(
+			"bob",
+			"abc123",
+			[]string{"users", "admins"},
+			map[string]string{"X-Auth-CouchDB-Token": "moo"},
+		),
+	})
 	tests.Add("JWTAuth", test{
 		handler: func(t *testing.T) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -173,24 +196,6 @@ func TestAuthentication(t *testing.T) {
 	}
 
 	tests := testy.NewTable()
-	tests.Add("ProxyAuth", tst{
-		handler: func(t *testing.T) http.Handler {
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if h := r.Header.Get("X-Auth-CouchDB-UserName"); h != "bob" {
-					t.Errorf("Unexpected X-Auth-CouchDB-UserName header: %s", h)
-				}
-				if h := r.Header.Get("X-Auth-CouchDB-Roles"); h != "users,admins" {
-					t.Errorf("Unexpected X-Auth-CouchDB-Roles header: %s", h)
-				}
-				if h := r.Header.Get("Moo"); h != "adedb8d002eb53a52faba80e82cb1fc6d57bca74" {
-					t.Errorf("Token header override failed: %s instead of 'adedb8d002eb53a52faba80e82cb1fc6d57bca74'", h)
-				}
-				w.WriteHeader(200)
-				_, _ = w.Write([]byte(`{}`))
-			})
-		},
-		auther: ProxyAuth("bob", "abc123", []string{"users", "admins"}, map[string]string{"X-Auth-CouchDB-Token": "moo"}), // nolint: misspell
-	})
 	tests.Add("SetCookie", tst{
 		handler: func(t *testing.T) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

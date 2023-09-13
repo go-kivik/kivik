@@ -177,3 +177,20 @@ func JWTAuth(token string) kivik.Option {
 		Token: token,
 	}
 }
+
+// ProxyAuth provides support for CouchDB's [proxy authentication]. Pass this
+// option to [New] to use proxy authentication.
+func ProxyAuth(username, secret string, roles []string, headers ...map[string]string) kivik.Option {
+	httpHeader := http.Header{}
+	for _, h := range headers {
+		for k, v := range h {
+			httpHeader.Set(k, v)
+		}
+	}
+	return &proxyAuth{
+		Username: username,
+		Secret:   secret,
+		Roles:    roles,
+		Headers:  httpHeader,
+	}
+}

@@ -573,10 +573,9 @@ type stater interface {
 	Stat() (os.FileInfo, error)
 }
 
-// attachmentSize determines the size of the `in` stream by reading the entire
-// stream first.  This method is a no-op if att.Size is already > , and sets the Size
-// parameter accordingly. If Size is already set, this function does nothing.
-// It attempts the following methods:
+// attachmentSize determines the size of the `in` stream, possibly by reading
+// the entire stream first. If att.Size is already set, this function does
+// nothing. It attempts the following methods:
 //
 //  1. Calls `Len()`, if implemented by `in` (i.e. `*bytes.Buffer`)
 //  2. Calls `Stat()`, if implemented by `in` (i.e. `*os.File`) then returns
@@ -622,12 +621,12 @@ func readerSize(in io.Reader) (int64, io.Reader, error) {
 
 // NewAttachment is a convenience function, which sets the size of the attachment
 // based on content. This is intended for creating attachments to be uploaded
-// using multipart/related capabilities of Put().  The attachment size will be
-// set to the first of the following found:
+// using multipart/related capabilities of [github.com/go-kivik/kivik/v4.DB.Put].
+// The attachment size will be set to the first of the following found:
 //
-//  1. `size`, if present. Only the first value is considered
-//  2. content.Len(), if implemented (i.e. *bytes.Buffer)
-//  3. content.Stat().Size(), if implemented (i.e. *os.File)
+//  1. `size`, if present. Only the first value is considered.
+//  2. content.Len(), if implemented (i.e. [bytes.Buffer])
+//  3. content.Stat().Size(), if implemented (i.e. [os.File])
 //  4. Read the entire content into memory, to determine the size. This can
 //     use a lot of memory for large attachments. Please use a file, or
 //     specify the size directly instead.
@@ -654,7 +653,7 @@ func NewAttachment(filename, contentType string, content io.Reader, size ...int6
 	}, nil
 }
 
-// replaceAttachments reads a json stream on in, looking for the _attachments
+// replaceAttachments reads a JSON stream on in, looking for the _attachments
 // key, then replaces its value with the marshaled version of att.
 func replaceAttachments(in io.ReadCloser, atts *kivik.Attachments) io.ReadCloser {
 	r, w := io.Pipe()

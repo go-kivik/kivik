@@ -48,7 +48,6 @@ type fullClient interface {
 	driver.Sessioner
 	driver.Cluster
 	driver.ClientCloser
-	driver.Authenticator
 	driver.ClientReplicator
 	driver.DBUpdater
 	driver.Configer

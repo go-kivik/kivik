@@ -116,6 +116,18 @@ inline base-64 encoding the attachments.  Example:
 
 	rev, err := db.Put(ctx, "user123", doc", couchdb.OptionNoMultipartPut())
 
+# Server config for CouchDB 1.x
+
+CouchDB allows querying the server configuration via the /_config endpoint. This
+is supported with the [github.com/go-kivik/kivik/v4.DB.Config],
+[github.com/go-kivik/kivik/v4.DB.ConfigSection],
+[github.com/go-kivik/kivik/v4.DB.ConfigValue],
+[github.com/go-kivik/kivik/v4.DB.SetConfigValue], and
+[github.com/go-kivik/kivik/v4.DB.DeleteConfigKey] methods. Each of these methods
+accepts a node argument, but CouchDB 1.x does not support per-node configuration
+via this endpoint. If you are still using CouchDB 1.x, leave the node argument
+empty, and this driver will revert to CouchDB-compatible operation.
+
 [upload multiple attachments]: http://docs.couchdb.org/en/stable/api/document/common.html#creating-multiple-attachments
 */
 package couchdb

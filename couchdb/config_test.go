@@ -43,7 +43,7 @@ func TestConfig(t *testing.T) {
 	})
 	tests.Add("Couch 1.x path", tst{
 		client: newTestClient(nil, errors.New("net error")),
-		node:   Couch1ConfigNode,
+		node:   couch1ConfigNode,
 		status: http.StatusBadGateway,
 		err:    `^Get "?http://example.com/_config"?: net error$`,
 	})
@@ -85,7 +85,7 @@ func TestConfigSection(t *testing.T) {
 	})
 	tests.Add("Couch 1.x path", tst{
 		client:  newTestClient(nil, errors.New("net error")),
-		node:    Couch1ConfigNode,
+		node:    couch1ConfigNode,
 		section: "foo",
 		status:  http.StatusBadGateway,
 		err:     `^Get "?http://example.com/_config/foo"?: net error$`,
@@ -128,7 +128,7 @@ func TestConfigValue(t *testing.T) {
 	})
 	tests.Add("Couch 1.x path", tst{
 		client:  newTestClient(nil, errors.New("net error")),
-		node:    Couch1ConfigNode,
+		node:    couch1ConfigNode,
 		section: "foo",
 		key:     "bar",
 		status:  http.StatusBadGateway,
@@ -173,7 +173,7 @@ func TestSetConfigValue(t *testing.T) {
 	})
 	tests.Add("Couch 1.x path", tst{
 		client:  newTestClient(nil, errors.New("net error")),
-		node:    Couch1ConfigNode,
+		node:    couch1ConfigNode,
 		section: "foo",
 		key:     "bar",
 		status:  http.StatusBadGateway,
@@ -230,7 +230,7 @@ func TestDeleteConfigKey(t *testing.T) {
 	})
 	tests.Add("Couch 1.x path", tst{
 		client:  newTestClient(nil, errors.New("net error")),
-		node:    Couch1ConfigNode,
+		node:    couch1ConfigNode,
 		section: "foo",
 		key:     "bar",
 		status:  http.StatusBadGateway,

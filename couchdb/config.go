@@ -24,15 +24,15 @@ import (
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
-// Couch1ConfigNode can be passed to any of the Config-related methods as the
+// couch1ConfigNode can be passed to any of the Config-related methods as the
 // node name, to query the /_config endpoint in a CouchDB 1.x-compatible way.
-const Couch1ConfigNode = "<Couch1Config>"
+const couch1ConfigNode = ""
 
 var _ driver.Configer = &client{}
 
 func configURL(node string, parts ...string) string {
 	var components []string
-	if node == Couch1ConfigNode {
+	if node == couch1ConfigNode {
 		components = append(make([]string, 0, len(parts)+1),
 			"_config")
 	} else {

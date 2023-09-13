@@ -149,6 +149,7 @@ license.
 This is a partial list of breaking changes between 3.x and 4.x
 
 - Options are no longer a simple `map[string]interface{}`, but are rather functional parameters. In most cases, you can just use `kivik.Param(key, value)`, or `kivik.Params(map[string]interface{}{key: value})` as a replacement. Some shortcuts for common params now exist, and driver-specific options may work differently. Consult the GoDoc.
+- The `Authenticate` method has been removed. Authentication is now handled via option parameters.
 - The CouchDB, PouchDB, and MockDB drivers have been merged with this repo, rather than behing hosted in separate repos. For v3 you would have imported `github.com/go-kivik/couchdb/v3` or `github.com/go-kivik/pouchdb/v3` respectively. With v4, you instead use `github.com/go-kivik/v4/couchdb` annd `github.com/go-kivik/v4/pouchdb` respectively.
 - The return type for queries has been significantly changed.
   - In 3.x, queries returned a `*Rows` struct. Now they return a `*ResultSet`.

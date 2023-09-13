@@ -13,11 +13,15 @@
 package chttp
 
 import (
+	"fmt"
 	"net/http"
+	"strings"
+
+	"github.com/go-kivik/kivik/v4"
 )
 
 // BasicAuth provides HTTP Basic Auth for a client.
-type BasicAuth struct {
+type basicAuth struct {
 	Username string
 	Password string
 
@@ -26,17 +30,35 @@ type BasicAuth struct {
 	transport http.RoundTripper
 }
 
-var _ Authenticator = &BasicAuth{}
+var (
+	_ Authenticator = &basicAuth{}
+	_ kivik.Option  = (*basicAuth)(nil)
+)
+
+func (a *basicAuth) Apply(target interface{}) {
+	if client, ok := target.(*Client); ok {
+		// Clone this so that it's safe to re-use the same option to multiple
+		// client connections. TODO: This can no doubt be refactored.
+		client.auth = &basicAuth{
+			Username: a.Username,
+			Password: a.Password,
+		}
+	}
+}
+
+func (a *basicAuth) String() string {
+	return fmt.Sprintf("[BasicAuth{user:%s,pass:%s}]", a.Username, strings.Repeat("*", len(a.Password)))
+}
 
 // RoundTrip fulfills the http.RoundTripper interface. It sets HTTP Basic Auth
 // on outbound requests.
-func (a *BasicAuth) RoundTrip(req *http.Request) (*http.Response, error) {
+func (a *basicAuth) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.SetBasicAuth(a.Username, a.Password)
 	return a.transport.RoundTrip(req)
 }
 
 // Authenticate sets HTTP Basic Auth headers for the client.
-func (a *BasicAuth) Authenticate(c *Client) error {
+func (a *basicAuth) Authenticate(c *Client) error {
 	a.transport = c.Transport
 	if a.transport == nil {
 		a.transport = http.DefaultTransport

@@ -25,7 +25,7 @@ import (
 func TestBasicAuthRoundTrip(t *testing.T) {
 	type rtTest struct {
 		name     string
-		auth     *BasicAuth
+		auth     *basicAuth
 		req      *http.Request
 		expected *http.Response
 		cleanup  func()
@@ -34,7 +34,7 @@ func TestBasicAuthRoundTrip(t *testing.T) {
 		{
 			name: "Provided transport",
 			req:  httptest.NewRequest("GET", "/", nil),
-			auth: &BasicAuth{
+			auth: &basicAuth{
 				Username: "foo",
 				Password: "bar",
 				transport: customTransport(func(req *http.Request) (*http.Response, error) {
@@ -65,7 +65,7 @@ func TestBasicAuthRoundTrip(t *testing.T) {
 			s := nettest.NewHTTPTestServer(t, http.HandlerFunc(h))
 			return rtTest{
 				name: "default transport",
-				auth: &BasicAuth{
+				auth: &basicAuth{
 					Username:  "foo",
 					Password:  "bar",
 					transport: http.DefaultTransport,

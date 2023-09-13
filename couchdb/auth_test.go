@@ -104,6 +104,18 @@ func TestAuthenticationOptions(t *testing.T) {
 	}
 
 	tests := testy.NewTable()
+	tests.Add("BasicAuth", test{
+		handler: func(t *testing.T) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if h := r.Header.Get("Authorization"); h != "Basic Ym9iOmFiYzEyMw==" {
+					t.Errorf("Unexpected Auth header: %s\n", h)
+				}
+				w.WriteHeader(200)
+				_, _ = w.Write([]byte(`{}`))
+			})
+		},
+		options: BasicAuth("bob", "abc123"),
+	})
 	tests.Add("CookieAuth", test{
 		handler: func(t *testing.T) http.Handler {
 			expectedPaths := []string{"/_session", "/"}
@@ -149,18 +161,6 @@ func TestAuthentication(t *testing.T) {
 	}
 
 	tests := testy.NewTable()
-	tests.Add("BasicAuth", tst{
-		handler: func(t *testing.T) http.Handler {
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if h := r.Header.Get("Authorization"); h != "Basic Ym9iOmFiYzEyMw==" {
-					t.Errorf("Unexpected Auth header: %s\n", h)
-				}
-				w.WriteHeader(200)
-				_, _ = w.Write([]byte(`{}`))
-			})
-		},
-		auther: BasicAuth("bob", "abc123"), // nolint: misspell
-	})
 	tests.Add("ProxyAuth", tst{
 		handler: func(t *testing.T) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

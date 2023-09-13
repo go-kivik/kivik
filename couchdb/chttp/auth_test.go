@@ -96,7 +96,7 @@ func TestAuthenticate(t *testing.T) {
 	})
 	tests.Add("basic auth", authTest{
 		addr:   s.URL,
-		auther: &BasicAuth{Username: "admin", Password: "abc123"}, // nolint: misspell
+		auther: &basicAuth{Username: "admin", Password: "abc123"}, // nolint: misspell
 	})
 	tests.Add("cookie auth success", func(t *testing.T) interface{} {
 		sv := nettest.NewHTTPTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -120,7 +120,7 @@ func TestAuthenticate(t *testing.T) {
 	})
 	tests.Add("failed basic auth", authTest{
 		addr:   s.URL,
-		auther: &BasicAuth{Username: "foo"}, // nolint: misspell
+		auther: &basicAuth{Username: "foo"}, // nolint: misspell
 		err:    "Unauthorized",
 		status: http.StatusUnauthorized,
 	})

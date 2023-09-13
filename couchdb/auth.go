@@ -45,12 +45,10 @@ func (a authFunc) auth(ctx context.Context, c *client) error {
 	return a(ctx, c)
 }
 
-// BasicAuth provides support for HTTP Basic authentication.
-func BasicAuth(user, password string) Authenticator {
-	auth := chttp.BasicAuth{Username: user, Password: password}
-	return authFunc(func(ctx context.Context, c *client) error {
-		return auth.Authenticate(c.Client)
-	})
+// BasicAuth provides support for HTTP Basic authentication.  Pass this option
+// to [github.com/go-kivik/kivik/v4.New] to use Basic Authentication.
+func BasicAuth(username, password string) kivik.Option {
+	return chttp.BasicAuth(username, password)
 }
 
 // CookieAuth provides CouchDB [Cookie auth]. Cookie Auth is the default

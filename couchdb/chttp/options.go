@@ -160,3 +160,12 @@ func CookieAuth(username, password string) kivik.Option {
 		Password: password,
 	}
 }
+
+// BasicAuth provides HTTP Basic Auth for a client. Pass this option to [New]
+// to use Basic Authentication.
+func BasicAuth(username, password string) kivik.Option {
+	return &basicAuth{
+		Username: username,
+		Password: password,
+	}
+}

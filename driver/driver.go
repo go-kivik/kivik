@@ -229,6 +229,8 @@ type DB interface {
 	// ddoc will be the design doc name without the '_design/' previx.
 	// view will be the view name without the '_view/' prefix.
 	Query(ctx context.Context, ddoc, view string, options Options) (Rows, error)
+	// Close is called to clean up any resources used by the database.
+	Close() error
 }
 
 // SecurityDB is an optional interface that extends a [DB], for backends which
@@ -442,12 +444,6 @@ type Cluster interface {
 // ClientCloser is an optional interface that may be implemented by a [Client]
 // to clean up resources when a client is no longer needed.
 type ClientCloser interface {
-	Close() error
-}
-
-// DBCloser is an optional interface that may be implemented by a [DB] to clean
-// up resources when a database is no longer needed.
-type DBCloser interface {
 	Close() error
 }
 

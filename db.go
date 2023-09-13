@@ -784,10 +784,7 @@ func (db *DB) Close() error {
 	atomic.StoreInt32(&db.closed, 1)
 	db.mu.Unlock()
 	db.wg.Wait()
-	if closer, ok := db.driverDB.(driver.DBCloser); ok {
-		return closer.Close()
-	}
-	return nil
+	return db.driverDB.Close()
 }
 
 // RevDiff represents a rev diff for a single document, as returned by the

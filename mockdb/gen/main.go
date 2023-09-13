@@ -81,7 +81,6 @@ type fullDB interface {
 	driver.BulkDocer
 	driver.BulkGetter
 	driver.Copier
-	driver.DBCloser
 	driver.DesignDocer
 	driver.Finder
 	driver.Flusher

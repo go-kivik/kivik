@@ -36,6 +36,7 @@ type DB struct {
 	GetAttachmentFunc    func(ctx context.Context, docID, filename string, options driver.Options) (*driver.Attachment, error)
 	DeleteAttachmentFunc func(ctx context.Context, docID, filename string, options driver.Options) (newRev string, err error)
 	QueryFunc            func(context.Context, string, string, driver.Options) (driver.Rows, error)
+	CloseFunc            func() error
 }
 
 // SecurityDB is a stub for a driver.SecurityDB.
@@ -279,17 +280,9 @@ func (db *BulkGetter) BulkGet(ctx context.Context, docs []driver.BulkGetReferenc
 	return db.BulkGetFunc(ctx, docs, opts)
 }
 
-// DBCloser mocks driver.DB and driver.DBCloser
-type DBCloser struct {
-	*DB
-	CloseFunc func() error
-}
-
-var _ driver.DBCloser = &DBCloser{}
-
 // Close calls db.CloseFunc
-func (db *DBCloser) Close() error {
-	if db.CloseFunc != nil {
+func (db *DB) Close() error {
+	if db != nil && db.CloseFunc != nil {
 		return db.CloseFunc()
 	}
 	return nil

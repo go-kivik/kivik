@@ -96,7 +96,7 @@ func TestBulkGet(t *testing.T) {
 		},
 		docs: []driver.BulkGetReference{{ID: ""}},
 		expected: &driver.Row{
-			Error: &BulkGetError{
+			Error: &bulkGetError{
 				ID:     "",
 				Rev:    "",
 				Err:    "illegal_docid",
@@ -117,7 +117,7 @@ func TestBulkGet(t *testing.T) {
 		docs: []driver.BulkGetReference{{ID: ""}},
 		expected: &driver.Row{
 			ID: "asdf",
-			Error: &BulkGetError{
+			Error: &bulkGetError{
 				ID:     "asdf",
 				Rev:    "1-xxx",
 				Err:    "not_found",

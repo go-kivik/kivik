@@ -23,8 +23,8 @@ officially supported drivers are:
 The Filesystem and Memory drivers are also available, but in early stages of
 development, and so many features do not yet work:
 
-  - Filesystem: https://github.com/go-kivik/fsdb
-  - MemroyDB: https://github.com/go-kivik/memorydb
+  - FilesystemDB: https://github.com/go-kivik/fsdb
+  - MemoryDB: https://github.com/go-kivik/memorydb
 
 The kivik driver system is modeled after the standard library's `sql` and
 `sql/driver` packages, although the client API is completely different due to

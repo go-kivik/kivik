@@ -44,10 +44,10 @@ var (
 )
 
 func (a *cookieAuth) Apply(target interface{}) {
-	if client, ok := target.(*Client); ok {
+	if auth, ok := target.(*Authenticator); ok {
 		// Clone this so that it's safe to re-use the same option to multiple
 		// client connections. TODO: This can no doubt be refactored.
-		client.auth = &cookieAuth{
+		*auth = &cookieAuth{
 			Username: a.Username,
 			Password: a.Password,
 		}

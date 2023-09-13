@@ -94,7 +94,6 @@ func TestNew(t *testing.T) {
 			client:    c,
 			transport: http.DefaultTransport,
 		}
-		c.auth = auth
 		c.Client.Transport = auth
 
 		return tt{
@@ -134,16 +133,12 @@ func TestNew(t *testing.T) {
 			client:    c,
 			transport: http.DefaultTransport,
 		}
-		c.auth = auth
 		c.Client.Transport = auth
 
 		return tt{
 			dsn:      authDSN.String(),
 			expected: c,
-			options: &cookieAuth{
-				Username: "user",
-				Password: "password",
-			},
+			options:  CookieAuth("user", "password"),
 		}
 	})
 	tests.Run(t, func(t *testing.T, tt tt) {

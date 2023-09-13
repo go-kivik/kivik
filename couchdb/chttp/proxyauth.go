@@ -39,10 +39,10 @@ var (
 )
 
 func (a *proxyAuth) Apply(target interface{}) {
-	if client, ok := target.(*Client); ok {
+	if auth, ok := target.(*Authenticator); ok {
 		// Clone this so that it's safe to re-use the same option to multiple
 		// client connections. TODO: This can no doubt be refactored.
-		client.auth = &proxyAuth{
+		*auth = &proxyAuth{
 			Username: a.Username,
 			Secret:   a.Secret,
 			Roles:    a.Roles,

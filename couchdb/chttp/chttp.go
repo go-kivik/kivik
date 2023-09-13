@@ -51,7 +51,6 @@ type Client struct {
 	rawDSN   string
 	dsn      *url.URL
 	basePath string
-	auth     Authenticator
 	authMU   sync.Mutex
 
 	// noGzip will be set to true if the server fails on gzip-encoded requests.
@@ -81,9 +80,10 @@ func New(client *http.Client, dsn string, options driver.Options) (*Client, erro
 		basePath: strings.TrimSuffix(dsnURL.Path, "/"),
 		rawDSN:   dsn,
 	}
+	var auth Authenticator
 	if user != nil {
 		password, _ := user.Password()
-		c.auth = &cookieAuth{
+		auth = &cookieAuth{
 			Username: user.Username(),
 			Password: password,
 		}
@@ -91,8 +91,9 @@ func New(client *http.Client, dsn string, options driver.Options) (*Client, erro
 	opts := map[string]interface{}{}
 	options.Apply(opts)
 	options.Apply(c)
-	if c.auth != nil {
-		if err := c.auth.Authenticate(c); err != nil {
+	options.Apply(&auth)
+	if auth != nil {
+		if err := auth.Authenticate(c); err != nil {
 			return nil, err
 		}
 	}

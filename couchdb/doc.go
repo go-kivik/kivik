@@ -19,17 +19,17 @@ Use the `couch` driver name when using this driver. The DSN should be a full
 URL, likely with login credentials:
 
 	import (
-	    kivik "github.com/go-kivik/kivik/v4"
-	    _ "github.com/go-kivik/kivik/v4/couchdb" // The CouchDB driver
+		kivik "github.com/go-kivik/kivik/v4"
+		_ "github.com/go-kivik/kivik/v4/couchdb" // The CouchDB driver
 	)
 
 	client, err := kivik.New("couch", "http://username:password@127.0.0.1:5984/")
 
 # Options
 
-The CouchDB driver generally interprets kivik.Params keys and values as URL
-query parameters. Values of the following types will be converted to their
-appropriate string representation when URL-encoded:
+The CouchDB driver generally interprets [github.com/go-kivik/kivik/v4.Params]
+keys and values as URL query parameters. Values of the following types will be
+converted to their ppropriate string representation when URL-encoded:
 
   - bool
   - string
@@ -51,7 +51,7 @@ credentials in your connection DSN:
 This will use Cookie authentication by default (or BasicAuth if compiled with
 GopherJS).
 
-To use one of the explicit authentication mechanisms, you'll need to use kivik's
+To use one of the explicit authentication mechanisms, you'll need to use Kivik's
 Authenticate method.  For example:
 
 	client, _ := kivik.New("couch", "http://localhost:5984/")
@@ -59,8 +59,8 @@ Authenticate method.  For example:
 
 # Connection Options
 
-Calls to kivik.New may include options.  OptionUserAgent and OptionHTTPClient
-are the only options honored. Example:
+Calls to [github.com/go-kivik/kivik/v4.New] may include options.
+[OptionUserAgent] and [OptionHTTPClient] are the only options honored. Example:
 
 	client, _ := kivik.New("couch", "http://localhost:5984/",
 		couchdb.OptionUserAgent("My Custom User Agent String"),
@@ -73,28 +73,30 @@ are the only options honored. Example:
 
 Normally, to include an attachment in a CouchDB document, it must be base-64
 encoded, which leads to increased network traffic and higher CPU load. CouchDB
-also supports the option to upload multiple attachments in a single request
-using the 'multipart/related' content type. See
-http://docs.couchdb.org/en/stable/api/document/common.html#creating-multiple-attachments
+also supports the option to [upload multiple attachments] in a single request
+using the 'multipart/related' content type.
 
-As an experimental feature, this is now supported by the Kivik CouchDB driver as
-well. To take advantage of this capability, the `doc` argument to the Put()
-method must be either:
+This is supported by the Kivik CouchDB driver as well. To take advantage of this
+capability, the `doc` argument to [github.com/go-kivik/kivik/v4.DB.Put] must
+be either:
 
   - a map of type `map[string]interface{}`, with a key called `_attachments',
-    and value of type `kivik.Attachments` or `*kivik.Attachments`
+    and value of type [github.com/go-kivik/kivik/v4.Attachments] or pointer
+    to [github.com/go-kivik/kivik/v4.Attachments]
   - a struct, with a field having the tag `json:"_attachment"`, and the field
-    having the type `kivik.Attachments` or `*kivik.Attachments`.
+    having the type [github.com/go-kivik/kivik/v4.Attachments] or pointer to
+    [github.com/go-kivik/kivik/v4.Attachments].
 
 With this in place, the CouchDB driver will switch to `multipart/related` mode,
 sending each attachment in binary format, rather than base-64 encoding it.
 
-To function properly, each attachment must have an accurate Size value. If the
-Size value is unset, the entirely attachment may be read to determine its size,
-prior to sending it over the network, leading to delays and unnecessary I/O and
-CPU usage. The simplest way to ensure efficiency is to use the NewAttachment()
-method, provided by this package. See the documentation on that method for
-proper usage.
+To function properly, each attachment must have an accurate
+[github.com/go-kivik/kivik/v4.Attachment.Size] value. If
+[github.com/go-kivik/kivik/v4.Attachment.Size] is unset, the entirely attachment
+may be read to determine its size, prior to sending it over the network, leading
+to delays and unnecessary I/O and CPU usage. The simplest way to ensure
+efficiency is to use [NewAttachment]. See the documentation on that function
+for proper usage.
 
 Example:
 
@@ -114,8 +116,6 @@ inline base-64 encoding the attachments.  Example:
 
 	rev, err := db.Put(ctx, "user123", doc", couchdb.OptionNoMultipartPut())
 
-If you find yourself wanting to disable this feature, due to bugs or performance,
-please consider filing a bug report against Kivik as well, so we can look for a
-solution that will allow using this optimization.
+[upload multiple attachments]: http://docs.couchdb.org/en/stable/api/document/common.html#creating-multiple-attachments
 */
 package couchdb

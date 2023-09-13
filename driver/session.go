@@ -17,7 +17,7 @@ import (
 	"encoding/json"
 )
 
-// Session is a copy of kivik.Session
+// Session is a copy of [github.com/go-kivik/kivik/v4.Session].
 type Session struct {
 	// Name is the name of the authenticated user.
 	Name string
@@ -37,7 +37,7 @@ type Session struct {
 	RawResponse json.RawMessage
 }
 
-// Sessioner is an optional interface that a Client may satisfy to provide
+// Sessioner is an optional interface that a [Client] may satisfy to provide
 // access to the authenticated session information.
 type Sessioner interface {
 	// Session returns information about the authenticated user.

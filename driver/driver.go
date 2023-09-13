@@ -22,7 +22,7 @@ import (
 // Options represents a collection of arbitrary client or query options.
 //
 // An implementation should also implement the [fmt.Stringer] interface for the
-// sake of display when mocked.
+// sake of display when used by [github.com/go-kivik/kivik/v4/mockdb].
 type Options interface {
 	// Apply applies the option to target, if target is of the expected type.
 	// Unexpected/recognized target types should be ignored.
@@ -57,20 +57,18 @@ type Client interface {
 	AllDBs(ctx context.Context, options Options) ([]string, error)
 	// DBExists returns true if the database exists.
 	DBExists(ctx context.Context, dbName string, options Options) (bool, error)
-	// CreateDB creates the requested DB. The dbName is validated as a valid
-	// CouchDB database name prior to calling this function, so the driver can
-	// assume a valid name.
+	// CreateDB creates the requested database.
 	CreateDB(ctx context.Context, dbName string, options Options) error
-	// DestroyDB deletes the requested DB.
+	// DestroyDB deletes the requested database.
 	DestroyDB(ctx context.Context, dbName string, options Options) error
-	// DB returns a handle to the requested database
+	// DB returns a handle to the requested database.
 	DB(dbName string, options Options) (DB, error)
 }
 
-// DBsStatser is an optional interface, added to support CouchDB 2.2.0's
-// /_dbs_info endpoint. If this is not supported, or if this method returns
-// status 404, Kivik will fall back to calling the method of issuing a
-// GET /{db} for each database requested.
+// DBsStatser is an optional interface that a [DB] may implement, added to
+// support CouchDB 2.2.0's /_dbs_info endpoint. If this is not supported, or
+// if this method returns status 404, Kivik will fall back to calling the method
+// of issuing a GET /{db} for each database requested.
 type DBsStatser interface {
 	// DBsStats returns database statistical information for each database
 	// named in dbNames. The returned values should be in the same order as
@@ -82,7 +80,8 @@ type DBsStatser interface {
 // Replication represents a _replicator document.
 type Replication interface {
 	// The following methods are called just once, when the Replication is first
-	// returned from [Replicate] or [GetReplications].
+	// returned from [ClientReplicator.Replicate] or
+	// [ClientReplicator.GetReplications].
 	ReplicationID() string
 	Source() string
 	Target() string
@@ -99,7 +98,7 @@ type Replication interface {
 	Update(context.Context, *ReplicationInfo) error
 }
 
-// ReplicationInfo represents a snap-shot state of a replication, as provided
+// ReplicationInfo represents a snapshot state of a replication, as provided
 // by the _active_tasks endpoint.
 type ReplicationInfo struct {
 	DocWriteFailures int64
@@ -108,7 +107,7 @@ type ReplicationInfo struct {
 	Progress         float64
 }
 
-// ClientReplicator is an optional interface that may be implemented by a Client
+// ClientReplicator is an optional interface that may be implemented by a [Client]
 // that supports replication between two database.
 type ClientReplicator interface {
 	// Replicate initiates a replication.
@@ -176,8 +175,9 @@ func (s Security) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v)
 }
 
-// RowsGetter is an optional interface that a DB may implement, to return a
-// multi-row resultset from Get(). DB must implement either OldGetter or RowsGetter.
+// RowsGetter is an optional interface that a [DB] may implement, to return a
+// multi-row resultset from [github.com/go-kivik/kivik/v4.DB.Get]. [DB] must
+// implement either [OldGetter] or RowsGetter.
 type RowsGetter interface {
 	// Get fetches the requested document from the database, and returns the
 	// content length (or -1 if unknown), and an io.ReadCloser to access the
@@ -185,8 +185,9 @@ type RowsGetter interface {
 	Get(ctx context.Context, docID string, options Options) (Rows, error)
 }
 
-// OldGetter is an optional interface that a DB may implement, to return a single
-// document from the Get() method. DB must implement either OldGetter or RowsGetter.
+// OldGetter is an optional interface that a [DB] may implement, to return a
+// single document from [github.com/go-kivik/kivik/v4.DB.Get]. [DB] must
+// implement either OldGetter or [RowsGetter].
 type OldGetter interface {
 	// Get fetches the requested document from the database, and returns the
 	// content length (or -1 if unknown), and an io.ReadCloser to access the
@@ -230,7 +231,7 @@ type DB interface {
 	Query(ctx context.Context, ddoc, view string, options Options) (Rows, error)
 }
 
-// SecurityDB is an optional interface that extends a DB, for backends which
+// SecurityDB is an optional interface that extends a [DB], for backends which
 // support security documents.
 type SecurityDB interface {
 	// Security returns the database's security document.
@@ -239,7 +240,7 @@ type SecurityDB interface {
 	SetSecurity(ctx context.Context, security *Security) error
 }
 
-// Document represents a single document returned by Get
+// Document represents a single document returned by [OldGetter.Get].
 type Document struct {
 	// Rev is the revision number returned
 	Rev string
@@ -253,7 +254,7 @@ type Document struct {
 }
 
 // Attachments is an iterator over the attachments included in a document when
-// Get is called with `include_docs=true`.
+// [RowsGetter.Get] or [OldGetter.Get] is called with `include_docs=true`.
 type Attachments interface {
 	// Next is called to pupulate att with the next attachment in the result
 	// set.
@@ -265,7 +266,7 @@ type Attachments interface {
 	Close() error
 }
 
-// Purger is an optional interface which may be implemented by a DB to support
+// Purger is an optional interface which may be implemented by a [DB] to support
 // document purging.
 type Purger interface {
 	// Purge permanently removes the references to deleted documents from the
@@ -279,7 +280,7 @@ type PurgeResult struct {
 	Purged map[string][]string `json:"purged"`
 }
 
-// BulkDocer is an optional interface which may be implemented by a DB to
+// BulkDocer is an optional interface which may be implemented by a [DB] to
 // support bulk insert/update operations. For any driver that does not support
 // the BulkDocer interface, the [DB.Put] or [DB.CreateDoc] methods will be
 // called for each document to emulate the same functionality, with options
@@ -290,8 +291,8 @@ type BulkDocer interface {
 	BulkDocs(ctx context.Context, docs []interface{}, options Options) ([]BulkResult, error)
 }
 
-// Finder is an optional interface which may be implemented by a DB. It provides
-// access to the new (in CouchDB 2.0) MongoDB-style query interface.
+// Finder is an optional interface which may be implemented by a [DB]. It
+// provides access to the MongoDB-style query interface added in CouchDB 2.
 type Finder interface {
 	// Find executes a query using the new /_find interface. If query is a
 	// string, []byte, or [encoding/json.RawMessage], it should be treated as a
@@ -300,8 +301,8 @@ type Finder interface {
 	// CreateIndex creates an index if it doesn't already exist. If the index
 	// already exists, it should do nothing. ddoc and name may be empty, in
 	// which case they should be provided by the backend. If index is a string,
-	// []byte, or json.RawMessage, it should be treated as a raw JSON payload.
-	// Any other type should be marshaled to JSON.
+	// []byte, or [encoding/json.RawMessage], it should be treated as a raw
+	// JSON payload. Any other type should be marshaled to JSON.
 	CreateIndex(ctx context.Context, ddoc, name string, index interface{}, options Options) error
 	// GetIndexes returns a list of all indexes in the database.
 	GetIndexes(ctx context.Context, options Options) ([]Index, error)
@@ -349,9 +350,9 @@ type Attachment struct {
 	Digest          string        `json:"digest"`
 }
 
-// AttachmentMetaGetter is an optional interface which may be satisfied by a
-// DB. If satisfied, it may be used to fetch meta data about an attachment. If
-// not satisfied, GetAttachment will be used instead.
+// AttachmentMetaGetter is an optional interface which may be implemented by a
+// [DB]. When not implemented, [DB.GetAttachment] will be used to emulate the
+// functionality.
 type AttachmentMetaGetter interface {
 	// GetAttachmentMeta returns meta information about an attachment.
 	GetAttachmentMeta(ctx context.Context, docID, filename string, options Options) (*Attachment, error)
@@ -365,8 +366,8 @@ type BulkResult struct {
 }
 
 // RevGetter is an optional interface that may be implemented by a [DB]. If not
-// implemented, [DB.Get] will be used to emulate the functionality, with options
-// passed through unaltered.
+// implemented, [OldGetter.Get] or [RowsGetter.Get] will be used to emulate the
+// functionality, with options passed through unaltered.
 type RevGetter interface {
 	// GetRev returns the document revision of the requested document. GetRev
 	// should accept the same options as [DB.Get].
@@ -379,15 +380,18 @@ type RevGetter interface {
 type Flusher interface {
 	// Flush requests a flush of disk cache to disk or other permanent storage.
 	//
-	// See http://docs.couchdb.org/en/2.0.0/api/database/compact.html#db-ensure-full-commit
+	// See the [CouchDB documentation].
+	//
+	// [CouchDB documentation]: http://docs.couchdb.org/en/2.0.0/api/database/compact.html#db-ensure-full-commit
 	Flush(ctx context.Context) error
 }
 
 // Copier is an optional interface that may be implemented by a [DB].
 //
-// If a DB does not implement Copier, the functionality will be emulated by
-// calling [DB.Get] followed by [DB.Put], with options passed through unaltered,
-// except that the 'rev' option will be removed for the [DB.Put] call.
+// If a [DB] does not implement Copier, the functionality will be emulated by
+// calling [RowsGetter.Get] or [OldGetter.Get] followed by [DB.Put], with
+// options passed through unaltered, except that the 'rev' option will be
+// removed for the [DB.Put] call.
 type Copier interface {
 	Copy(ctx context.Context, targetID, sourceID string, options Options) (targetRev string, err error)
 }
@@ -407,16 +411,17 @@ type LocalDocer interface {
 }
 
 // Pinger is an optional interface that may be implemented by a [Client]. When
-// not implemented, Kivik will call [Client.Version] instead, to determine if
-// the database is usable.
+// not implemented, Kivik will call [Client.Version] instead to emulate the
+// functionality.
 type Pinger interface {
 	// Ping returns true if the database is online and available for requests.
 	Ping(ctx context.Context) (bool, error)
 }
 
 // ClusterMembership contains the list of known nodes, and cluster nodes, as
-// returned by the /_membership endpoint.
-// See https://docs.couchdb.org/en/latest/api/server/common.html#get--_membership
+// returned by the [_membership endpoint].
+//
+// [_membership endpoint]: https://docs.couchdb.org/en/latest/api/server/common.html#get--_membership
 type ClusterMembership struct {
 	AllNodes     []string `json:"all_nodes"`
 	ClusterNodes []string `json:"cluster_nodes"`
@@ -453,7 +458,7 @@ type RevDiff struct {
 	PossibleAncestors []string `json:"possible_ancestors,omitempty"`
 }
 
-// RevsDiffer is an optional interface that may be implemented by a DB.
+// RevsDiffer is an optional interface that may be implemented by a [DB].
 type RevsDiffer interface {
 	// RevsDiff returns a Rows iterator, which should populate the ID and Value
 	// fields, and nothing else.

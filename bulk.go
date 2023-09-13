@@ -31,10 +31,12 @@ type BulkResult struct {
 // within a single request. This function returns an iterator over the results
 // of the bulk operation.
 //
-// See https://docs.couchdb.org/en/stable/api/database/bulk-api.html#db-bulk-docs
+// See the [CouchDB documentation].
 //
 // As with [DB.Put], each individual document may be a JSON-marshable object, or
 // a raw JSON string in a [encoding/json.RawMessage], or [io.Reader].
+//
+// [CouchDB documentation]: https://docs.couchdb.org/en/stable/api/database/bulk-api.html#db-bulk-docs
 func (db *DB) BulkDocs(ctx context.Context, docs []interface{}, options ...Option) ([]BulkResult, error) {
 	if db.err != nil {
 		return nil, db.err

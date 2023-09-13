@@ -41,9 +41,10 @@ type ResultMetadata struct {
 
 	// Bookmark is the paging bookmark, if one was provided with the result
 	// set. This is intended for use with the Mango /_find interface, with
-	// CouchDB 2.1.1 and later. Consult the official CouchDB documentation for
-	// detailed usage instructions:
-	// http://docs.couchdb.org/en/2.1.1/api/database/find.html#pagination
+	// CouchDB 2.1.1 and later. Consult the [CouchDB documentation] for
+	// detailed usage instructions.
+	//
+	// [CouchDB documentation]: http://docs.couchdb.org/en/2.1.1/api/database/find.html#pagination
 	Bookmark string
 }
 
@@ -70,9 +71,13 @@ type ResultSet struct {
 	underlying basicResultSet
 }
 
-// Next prepares the next result value for reading. It returns true on
-// success or false if there are no more results or an error occurs while
-// preparing it. [ResultSet.Err] should be consulted to distinguish between the two.
+// Next prepares the next result value for reading. It returns true on success
+// or false if there are no more results or an error occurs while preparing it.
+// [ResultSet.Err] should be consulted to distinguish between the two.
+//
+// When Next returns false, and there are no more results/result sets to be
+// read, the [ResultSet.Close] is called implicitly, negating the need to call
+// it explicitly.
 func (rs *ResultSet) Next() bool {
 	if rs.err != nil {
 		return false
@@ -80,14 +85,12 @@ func (rs *ResultSet) Next() bool {
 	return rs.underlying.Next()
 }
 
-// NextResultSet prepares the next result set for reading. It reports
-// whether there is further result sets, or false if there is no further
-// result set or if there is an error advancing to it. [ResultSet.Err]
-// should be consulted to distinguish between the two cases.
+// NextResultSet prepares the next result set for reading. It returns false if
+// there is no further result set or if there is an error advancing to it.
+// [ResultSet.Err] should be consulted to distinguish between the two cases.
 //
-// After calling NextResultSet, [ResultSet.Next] should always be called
-// before scanning. If there are further result sets they may not have rows
-// in the result set.
+// After calling NextResultSet, [ResultSet.Next] must be called to advance to
+// the first result in the resultset before scanning.
 func (rs *ResultSet) NextResultSet() bool {
 	if rs.err != nil {
 		return false
@@ -99,7 +102,8 @@ func (rs *ResultSet) NextResultSet() bool {
 }
 
 // Err returns the error, if any, that was encountered during iteration.
-// [ResultSet.Err] may be called after an explicit or implicit [ResultSet.Close].
+// [ResultSet.Err] may be called after an explicit or implicit call to
+// [ResultSet.Close].
 func (rs *ResultSet) Err() error {
 	if rs.err != nil {
 		return rs.err
@@ -107,11 +111,9 @@ func (rs *ResultSet) Err() error {
 	return rs.underlying.Err()
 }
 
-// Close closes the result set, preventing further enumeration, and freeing
-// any resources (such as the HTTP request body) of the underlying query. If
-// [ResultSet.Next] is called and there are no further results, the result set
-// is closed automatically and it will suffice to check the result of
-// [ResultSet.Err]. Close is idempotent and does not affect the result of
+// Close closes the result set, preventing further iteration, and freeing
+// any resources (such as the HTTP request body) of the underlying query.
+// Close is idempotent and does not affect the result of
 // [ResultSet.Err].
 func (rs *ResultSet) Close() error {
 	if rs.err != nil {
@@ -121,7 +123,8 @@ func (rs *ResultSet) Close() error {
 }
 
 // Metadata returns the result metadata for the current query. It must be
-// called after [Next] returns false. Otherwise it will return an error.
+// called after [ResultSet.Next] returns false. Otherwise it will return an
+// error.
 func (rs *ResultSet) Metadata() (*ResultMetadata, error) {
 	if rs.err != nil {
 		return nil, rs.err
@@ -132,14 +135,14 @@ func (rs *ResultSet) Metadata() (*ResultMetadata, error) {
 	return &ResultMetadata{}, nil
 }
 
-// ScanValue copies the data from the result value into the value pointed
-// at by dest. Think of this as calling [encoding/json.Unmarshal] into dest.
+// ScanValue copies the data from the result value into dest, which must be a
+// pointer. Think of this as passing dest to [encoding/json.Unmarshal].
 //
-// If the row returned an error, it will be returned rather than
-// unmarshaling the value, as error rows do not include values.
+// If the row returned an error, it will be returned rather than unmarshaling
+// the value, as error rows do not include values.
 //
-// If the dest argument has type *[]byte, ScanValue stores a copy of the
-// input data. The copy is owned by the caller and can be modified and held
+// If the dest argument is of type *[]byte, ScanValue stores a copy of the
+// input data. The copy is owned by the caller and may be modified and held
 // indefinitely.
 //
 // The copy can be avoided by using an argument of type
@@ -158,7 +161,7 @@ func (rs *ResultSet) ScanValue(dest interface{}) error {
 	return nil
 }
 
-// ScanDoc works the same as [ResultSEt.ScanValue], but on the doc field of
+// ScanDoc works the same as [ResultSet.ScanValue], but on the doc field of
 // the result. It will return an error if the query does not include
 // documents.
 //
@@ -172,7 +175,7 @@ func (rs *ResultSet) ScanDoc(dest interface{}) error {
 }
 
 // ScanKey works the same as [ResultSet.ScanValue], but on the key field of the
-// result. For simple keys, which are just strings, [ResultSEt.Key] may be
+// result. For simple keys, which are just strings, [ResultSet.Key] may be
 // easier to use.
 //
 // Unlike [ResultSet.ScanValue] and [ResultSet.ScanDoc], this may successfully
@@ -196,8 +199,8 @@ func (rs *ResultSet) ID() (string, error) {
 }
 
 // Rev returns the document revision, when known. Not all result sets (such
-// as those from views) include revision IDs, so this will be blank in such
-// cases.
+// as those from views) include revision IDs, so this will return an empty
+// string in such cases.
 func (rs *ResultSet) Rev() (string, error) {
 	if rs.err != nil {
 		return "", rs.err
@@ -254,10 +257,6 @@ type rows struct {
 
 var _ fullResultSet = &rows{}
 
-// NextResultSet prepares the iterator to read the next result set. It returns
-// true on success, or false if there are no more result sets to read, or if
-// an error occurs while preparing it. [Err] should be consulted to
-// distinguish between the two.
 func (r *rows) NextResultSet() bool {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -349,9 +348,9 @@ func (r *rows) ScanDoc(dest interface{}) (err error) {
 	return &Error{Status: http.StatusBadRequest, Message: "kivik: doc is nil; does the query include docs?"}
 }
 
-// ScanAllDocs loops through remaining documents in the resultset, and scans
-// them into dest. Dest is expected to be a pointer to a slice or an array, any
-// other type will return an error. If dest is an array, scanning will stop
+// ScanAllDocs loops through the remaining documents in the resultset, and scans
+// them into dest which must be a pointer to a slice or an array. Passing any
+// other type will result in an error. If dest is an array, scanning will stop
 // once the array is filled.  The iterator is closed by this method. It is
 // possible that an error will be returned, and that one or more documents were
 // successfully scanned.

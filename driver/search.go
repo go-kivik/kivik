@@ -17,7 +17,7 @@ import (
 	"encoding/json"
 )
 
-// SearchInfo is the result of a SearchInfo request.
+// SearchInfo is the result of a [Searcher.SearchInfo] request.
 type SearchInfo struct {
 	Name        string
 	SearchIndex SearchIndex
@@ -34,7 +34,7 @@ type SearchIndex struct {
 	CommittedSeq int64
 }
 
-// Searcher is an optional interface, which may be satisfied by a DB to support
+// Searcher is an optional interface, which may be satisfied by a [DB] to support
 // full-text lucene searches, as added in CouchDB 3.0.0.
 type Searcher interface {
 	// Search performs a full-text search against the specified ddoc and index,

@@ -79,10 +79,10 @@ func (c *Changes) ScanDoc(dest interface{}) error {
 	return json.Unmarshal(c.curVal.(*driver.Change).Doc, dest)
 }
 
-// Changes returns an iterator over the real-time changes feed. The feed remains
+// Changes returns an iterator over the real-time [changes feed]. The feed remains
 // open until explicitly closed, or an error is encountered.
 //
-// See http://couchdb.readthedocs.io/en/latest/api/database/changes.html#get--db-_changes
+// [changes feed]: http://couchdb.readthedocs.io/en/latest/api/database/changes.html#get--db-_changes
 func (db *DB) Changes(ctx context.Context, options ...Option) *Changes {
 	if db.err != nil {
 		return &Changes{iter: errIterator(db.err)}
@@ -113,7 +113,7 @@ type ChangesMetadata struct {
 }
 
 // Metadata returns the result metadata for the changes feed. It must be called
-// after [Next] returns false. Otherwise it will return an error.
+// after [Changes.Next] returns false. Otherwise it will return an error.
 func (c *Changes) Metadata() (*ChangesMetadata, error) {
 	if c.iter == nil || (c.state != stateEOQ && c.state != stateClosed) {
 		return nil, &Error{Status: http.StatusBadRequest, Err: errors.New("Metadata must not be called until result set iteration is complete")}

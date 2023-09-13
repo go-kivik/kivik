@@ -14,7 +14,8 @@ package driver
 
 import "context"
 
-// BulkGetReference is a reference to a document given in a BulkGet query.
+// BulkGetReference is a reference to a document given in a [BulkGetter.BulkGet]
+// query.
 type BulkGetReference struct {
 	ID        string `json:"id"`
 	Rev       string `json:"rev,omitempty"`

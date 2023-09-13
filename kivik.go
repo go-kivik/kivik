@@ -83,10 +83,10 @@ type Version struct {
 	// CouchDB 2.1.0, and can be expected to be empty for older versions.
 	Features []string
 	// RawResponse is the raw response body returned by the server, useful if
-	// you need additional backend-specific information.
+	// you need additional backend-specific information.  Refer to the
+	// [CouchDB documentation] for format details.
 	//
-	// For the format of this document, see
-	// http://docs.couchdb.org/en/2.0.0/api/server/common.html#get
+	// [CouchDB documentation]: http://docs.couchdb.org/en/2.0.0/api/server/common.html#get
 	RawResponse json.RawMessage
 }
 
@@ -121,9 +121,9 @@ func (c *Client) Version(ctx context.Context) (*Version, error) {
 	return v, nil
 }
 
-// DB returns a handle to the requested database. Any options parameters
-// passed are merged, with later values taking precidence. If any errors occur
-// at this stage, they are deferred, or may be checked directly with [DB.Err].
+// DB returns a handle to the requested database. Any errors encountered during
+// initiation of the DB object is deferred until the first method call, or may
+// be checked directly with [DB.Err].
 func (c *Client) DB(dbName string, options ...Option) *DB {
 	db, err := c.driverClient.DB(dbName, allOptions(options))
 	return &DB{
@@ -230,10 +230,7 @@ func (c *Client) nativeDBsStats(ctx context.Context, dbnames []string) ([]*DBSta
 	return dbstats, nil
 }
 
-// Ping returns true if the database is online and available for requests,
-// for instance by querying the /_up endpoint. If the underlying driver
-// supports the Pinger interface, it will be used. Otherwise, a fallback is
-// made to calling Version.
+// Ping returns true if the database is online and available for requests.
 func (c *Client) Ping(ctx context.Context) (bool, error) {
 	if err := c.startQuery(); err != nil {
 		return false, err
@@ -246,10 +243,10 @@ func (c *Client) Ping(ctx context.Context) (bool, error) {
 	return err == nil, err
 }
 
-// Close cleans up any resources used by Client. Close is safe to call
+// Close cleans up any resources used by the client. Close is safe to call
 // concurrently with other operations and will block until all other operations
 // finish. After calling Close, any other client operations will return
-// ErrClientClosed.
+// [ErrClientClosed].
 func (c *Client) Close() error {
 	c.mu.Lock()
 	atomic.StoreInt32(&c.closed, 1)

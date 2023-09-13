@@ -23,8 +23,8 @@ officially supported drivers are:
 The Filesystem and Memory drivers are also available, but in early stages of
 development, and so many features do not yet work:
 
-  - Filesystem: https://github.com/go-kivik/fsdb
-  - MemroyDB: https://github.com/go-kivik/memorydb
+  - FilesystemDB: https://github.com/go-kivik/fsdb
+  - MemoryDB: https://github.com/go-kivik/memorydb
 
 The kivik driver system is modeled after the standard library's `sql` and
 `sql/driver` packages, although the client API is completely different due to
@@ -55,6 +55,17 @@ and read the Go blog post [Go Concurrency Patterns: Context] for example code.
 If in doubt, you can pass [context.TODO] as the context variable. Example:
 
 	row := db.Get(context.TODO(), "some_doc_id")
+
+# Options
+
+Most client and database methods take optional arguments of the type [Option].
+Multiple options may be passed, and latter options take precidence over earlier
+ones, in case of a conflict.
+
+[Params] and [Param] can be used to set options that are generally converted to
+URL query parameters. Different backend drivers may also provide their own
+unique options with driver-specific effects. Consult your driver's documentation
+for specifics.
 
 # Error Handling
 

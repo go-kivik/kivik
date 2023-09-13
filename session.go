@@ -40,6 +40,9 @@ type Session struct {
 	RawResponse json.RawMessage
 }
 
+// Ensure types are equal.
+var _ = Session(driver.Session{})
+
 // Session returns information about the currently authenticated user.
 func (c *Client) Session(ctx context.Context) (*Session, error) {
 	if err := c.startQuery(); err != nil {

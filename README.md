@@ -41,9 +41,16 @@ Install Kivik as you normally would for any Go package:
 
     go get -u github.com/go-kivik/kivik/v4
 
-This will install the main Kivik package and the CouchDB database driver. See
-the [list of Kivik database drivers](https://github.com/go-kivik/kivik/wiki/Kivik-database-drivers)
-for a complete list of available drivers.
+This will install the main Kivik package and the CouchDB database driver. Three officially supported drivers are shipped with this Go module:
+
+  - CouchDB: https://github.com/go-kivik/kivik/v4/couchdb
+  - PouchDB: https://github.com/go-kivik/kivik/v4/pouchdb (requires GopherJS)
+  - MockDB: https://github.com/go-kivik/kivik/v4/mockdb
+
+In addition, there are two partial/experimental drivers available:
+
+  - FilesystemDB: https://github.com/go-kivik/fsdb
+  - MemoryDB: https://github.com/go-kivik/memorydb
 
 # Example Usage
 
@@ -91,46 +98,13 @@ Nobody has ever asked me any of these questions, so they're probably better call
 
 ## Why another CouchDB client API?
 
-Read the [design goals](https://github.com/go-kivik/kivik/wiki/Design-goals) for
-the general design goals.
+I had a number of specific design goals when creating this package:
 
-Specifically, I was motivated to write Kivik for a few reasons:
-
-1. I was unhappy with any of the existing CouchDB drivers for Go. The [best
-one](https://github.com/fjl/go-couchdb) had a number of shortcomings:
-
-    - It is no longer actively developed.
-    - It [doesn't have an open source license](https://github.com/fjl/go-couchdb/issues/15).
-    - It doesn't support iterating over result sets, forcing one to load all
-      results of a query into memory at once.
-    - It [doesn't support CouchDB 2.0](https://github.com/fjl/go-couchdb/issues/14)
-      sequence IDs or MongoDB-style queries.
-    - It doesn't natively support CookieAuth (it does allow a generic Auth method
-      which could be used to do this, but I think it's appropriate to put directly
-      in the library).
-
-2. I wanted a single client API that worked with both CouchDB and
-[PouchDB](https://pouchdb.com/). I had previously written
-[go-pouchdb](https://github.com/flimzy/go-pouchdb), a GopherJS wrapper around
-the PouchDB library with a public API modeled after `fjl/go-couchdb`, but I
-still wanted a unified driver infrastructure.
-
-3. I want an unambiguous, open source license. This software is released under
-the Apache 2.0 license. See the included LICENSE.md file for details.
-
-4. I wanted the ability to mock CouchDB connections for testing. This is possible
-with the `sql` / `sql/driver` approach by implementing a mock driver, but was
-not possible with any existing CouchDB client libraries. This library makes that
-possible for CouchDB apps, too.
-
-5. I wanted a simple, mock CouchDB server I could use for testing. It doesn't
-need to be efficient, or support all CouchDB servers, but it should be enough
-to test the basic functionality of a PouchDB app, for instance. Kivik aims to
-do this with the `kivik serve` command, in the near future.
-
-6. I wanted a toolkit that would make it easy to build a proxy to sit in front
-of CouchDB to handle custom authentication or other logic that CouchDB cannot
-support natively. Kivik aims to accomplish this in the future.
+- Provide a generic database API for a variety of CouchDB-like databases. The previously existing drivers for CouchDB had patchy support for different versions of CouchDB, and different subsets of functionality.
+- Work equally well with CouchDB 1.6, 2.x, 3.x, and any future versions, as well as PouchDB.
+- Be as Go-idiomatic as possible.
+- Be unambiguously open-source. Kivik is released under the Apache license, same as CouchDB and PouchDB.
+- Separate out the basic implementation of a database driver (implementing the `kivik/driver` interfaces) vs the implementation of all the user-level types and convenience methods. It ought to be reasonably easy to create a new driver, for testing, mocking, implementing a new backend data storage system, or talking to other CouchDB-like databases.
 
 ## What are Kivik's requirements?
 
@@ -146,11 +120,11 @@ me know by submitting a bug report via GitHub.
   from 1.13. For Go 1.7 or 1.8 you can use [Kivik 1.x](https://github.com/go-kivik/kivik/tree/v1).
   For Go 1.9 through 1.12, you can use [Kivik 3.x](https://github.com/go-kivik/kivik/tree/v3).
 - **CouchDB** The Kivik 4.x CouchDB driver aims for compatibility with all
-  stable releases of CouchDB from 1.6.1.
+  stable releases of CouchDB from 2.x.
 - **GopherJS** GopherJS always requires the latest stable version of Go, so
   building Kivik with GopherJS has this same requirement.
 - **PouchDB** The Kivik 4.x PouchDB driver aims for compatibility with all
-  stable releases of PouchDB from 6.0.0.
+  stable releases of PouchDB from 8.0.0.
 
 ## What is the development status?
 

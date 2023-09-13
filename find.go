@@ -23,7 +23,10 @@ var findNotImplemented = &Error{Status: http.StatusNotImplemented, Message: "kiv
 
 // Find executes a query using the new /_find interface. The query must be
 // JSON-marshalable to a valid query.
-// See https://docs.couchdb.org/en/stable/api/database/find.html
+//
+// See the [CouchDB documentation].
+//
+// [CouchDB documentation]: https://docs.couchdb.org/en/stable/api/database/find.html
 func (db *DB) Find(ctx context.Context, query interface{}, options ...Option) *ResultSet {
 	if db.err != nil {
 		return &ResultSet{err: db.err}
@@ -43,9 +46,10 @@ func (db *DB) Find(ctx context.Context, query interface{}, options ...Option) *R
 }
 
 // CreateIndex creates an index if it doesn't already exist. ddoc and name may
-// be empty, in which case they will be auto-generated.  index must be a valid
-// index object, as described here:
-// http://docs.couchdb.org/en/stable/api/database/find.html#db-index
+// be empty, in which case they will be auto-generated.  index must be
+// marshalable to a valid index object, as described in the [CouchDB documentation].
+//
+// [CouchDB documentation]: http://docs.couchdb.org/en/stable/api/database/find.html#db-index
 func (db *DB) CreateIndex(ctx context.Context, ddoc, name string, index interface{}, options ...Option) error {
 	if db.err != nil {
 		return db.err
@@ -103,8 +107,8 @@ func (db *DB) GetIndexes(ctx context.Context, options ...Option) ([]Index, error
 	return nil, findNotImplemented
 }
 
-// QueryPlan is the query execution plan for a query, as returned by the Explain
-// function.
+// QueryPlan is the query execution plan for a query, as returned by
+// [DB.Explain].
 type QueryPlan struct {
 	DBName   string                 `json:"dbname"`
 	Index    map[string]interface{} `json:"index"`
@@ -120,7 +124,7 @@ type QueryPlan struct {
 }
 
 // Explain returns the query plan for a given query. Explain takes the same
-// arguments as Find.
+// arguments as [DB.Find].
 func (db *DB) Explain(ctx context.Context, query interface{}, options ...Option) (*QueryPlan, error) {
 	if db.err != nil {
 		return nil, db.err

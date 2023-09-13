@@ -34,8 +34,7 @@ func (c *client) Authenticate(ctx context.Context, a interface{}) error {
 // Authenticator is a CouchDB authenticator. Direct use of the Authenticator
 // interface is for advanced usage. Typically, it is sufficient to provide
 // a username and password in the connecting DSN to perform authentication.
-// Only use one of these provided authenticators if you have specific, special
-// needs.
+// Only use one of these provided authenticators if you have specific needs.
 type Authenticator interface {
 	auth(context.Context, *client) error
 }
@@ -102,12 +101,12 @@ func JWTAuth(token string) Authenticator {
 	})
 }
 
-// ProxyAuth provides support for Proxy authentication.
+// ProxyAuth provides support for CouchDB's [proxy authentication].
 //
-// The `secret` argument represents the `couch_httpd_auth/secret` value
-// configured on the CouchDB server. See https://docs.couchdb.org/en/stable/config/auth.html#couch_httpd_auth/secret
+// The `secret` argument represents the [couch_httpd_auth/secret] value
+// configured on the CouchDB server.
 // If `secret` is the empty string, the X-Auth-CouchDB-Token header will not be
-// set, to support disabling the `proxy_use_secret` server setting. See https://docs.couchdb.org/en/stable/config/auth.html#couch_httpd_auth/proxy_use_secret
+// set, to support disabling the [proxy_use_secret] server setting.
 //
 // The optional `headers` map may be passed to use non-standard header names.
 // For instance, to use `X-User` in place of the `X-Auth-CouchDB-Username`
@@ -115,7 +114,9 @@ func JWTAuth(token string) Authenticator {
 // The relevant headers are X-Auth-CouchDB-UserName, X-Auth-CouchDB-Roles, and
 // X-Auth-CouchDB-Token.
 //
-// See https://docs.couchdb.org/en/stable/api/server/authn.html?highlight=proxy%20auth#proxy-authentication
+// [proxy authentication]: https://docs.couchdb.org/en/stable/api/server/authn.html?highlight=proxy%20auth#proxy-authentication
+// [couch_httpd_auth/secret]: https://docs.couchdb.org/en/stable/config/auth.html#couch_httpd_auth/secret
+// [proxy_use_secret]: https://docs.couchdb.org/en/stable/config/auth.html#couch_httpd_auth/proxy_use_secret
 func ProxyAuth(user, secret string, roles []string, headers ...map[string]string) Authenticator {
 	headerOverrides := http.Header{}
 	for _, h := range headers {

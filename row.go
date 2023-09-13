@@ -19,7 +19,7 @@ import (
 )
 
 // ScanDoc unmarshals the data from the fetched row into dest. It is an
-// intelligent wrapper around json.Unmarshal which also handles
+// intelligent wrapper around [encoding/json.Unmarshal] which also handles
 // multipart/related responses. When done, the underlying reader is closed.
 func (r *row) ScanDoc(dest interface{}) error {
 	defer r.body.Close() // nolint:errcheck

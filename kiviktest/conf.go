@@ -11,6 +11,10 @@
 // the License.
 
 // Package kiviktest provides integration tests for kivik.
+//
+// This package is considered internal to the Kivik project, and is not subject
+// to semver rules. It may change at any time, without any notice. Use at your
+// own risk. You have been warned!
 package kiviktest
 
 import "github.com/go-kivik/kivik/v4/kiviktest/kt"

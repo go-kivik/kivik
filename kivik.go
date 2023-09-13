@@ -170,20 +170,6 @@ func (c *Client) DestroyDB(ctx context.Context, dbName string, options ...Option
 	return c.driverClient.DestroyDB(ctx, dbName, allOptions(options))
 }
 
-// Authenticate authenticates the client with the passed authenticator, which
-// is driver-specific. If the driver does not understand the authenticator, an
-// error will be returned.
-func (c *Client) Authenticate(ctx context.Context, a interface{}) error {
-	if err := c.startQuery(); err != nil {
-		return err
-	}
-	defer c.endQuery()
-	if auth, ok := c.driverClient.(driver.Authenticator); ok {
-		return auth.Authenticate(ctx, a)
-	}
-	return &Error{Status: http.StatusNotImplemented, Message: "kivik: driver does not support authentication"}
-}
-
 func missingArg(arg string) error {
 	return &Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("kivik: %s required", arg)}
 }

@@ -81,19 +81,6 @@ func (c *ClientReplicator) Replicate(ctx context.Context, target, source string,
 	return c.ReplicateFunc(ctx, target, source, opts)
 }
 
-// Authenticator mocks driver.Client and driver.Authenticator
-type Authenticator struct {
-	*Client
-	AuthenticateFunc func(context.Context, interface{}) error
-}
-
-var _ driver.Authenticator = &Authenticator{}
-
-// Authenticate calls c.AuthenticateFunc
-func (c *Authenticator) Authenticate(ctx context.Context, a interface{}) error {
-	return c.AuthenticateFunc(ctx, a)
-}
-
 // DBUpdater mocks driver.Client and driver.DBUpdater
 type DBUpdater struct {
 	*Client

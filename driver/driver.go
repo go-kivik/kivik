@@ -117,15 +117,6 @@ type ClientReplicator interface {
 	GetReplications(ctx context.Context, options Options) ([]Replication, error)
 }
 
-// Authenticator is an optional interface that may be implemented by a [Client]
-// that supports authenitcated connections.
-type Authenticator interface {
-	// Authenticate attempts to authenticate the client using an authenticator.
-	// If the authenticator is not known to the client, an error should be
-	// returned.
-	Authenticate(ctx context.Context, authenticator interface{}) error
-}
-
 // DBStats contains database statistics.
 type DBStats struct {
 	Name           string          `json:"db_name"`

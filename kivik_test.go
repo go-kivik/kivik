@@ -483,67 +483,6 @@ func TestDestroyDB(t *testing.T) {
 	}
 }
 
-func TestAuthenticate(t *testing.T) {
-	tests := []struct {
-		name   string
-		client *Client
-		auth   interface{}
-		status int
-		err    string
-	}{
-		{
-			name: "non-authenticator",
-			client: &Client{
-				driverClient: &mock.Client{},
-			},
-			status: http.StatusNotImplemented,
-			err:    "kivik: driver does not support authentication",
-		},
-		{
-			name: "auth error",
-			client: &Client{
-				driverClient: &mock.Authenticator{
-					AuthenticateFunc: func(context.Context, interface{}) error {
-						return errors.New("auth error")
-					},
-				},
-			},
-			status: http.StatusInternalServerError,
-			err:    "auth error",
-		},
-		{
-			name: "success",
-			client: &Client{
-				driverClient: &mock.Authenticator{
-					AuthenticateFunc: func(_ context.Context, a interface{}) error {
-						expected := int(3)
-						if d := testy.DiffInterface(expected, a); d != nil {
-							return fmt.Errorf("Unexpected authenticator:\n%s", d)
-						}
-						return nil
-					},
-				},
-			},
-			auth: int(3),
-		},
-		{
-			name: "closed",
-			client: &Client{
-				driverClient: &mock.Authenticator{},
-				closed:       1,
-			},
-			status: http.StatusServiceUnavailable,
-			err:    errClientClosed,
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			err := test.client.Authenticate(context.Background(), test.auth)
-			testy.StatusError(t, test.err, test.status, err)
-		})
-	}
-}
-
 func TestDBsStats(t *testing.T) {
 	tests := []struct {
 		name     string

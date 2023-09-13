@@ -13,31 +13,9 @@
 package couchdb
 
 import (
-	"context"
-	"errors"
-	"net/http"
-
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/couchdb/chttp"
 )
-
-func (c *client) Authenticate(ctx context.Context, a interface{}) error {
-	if auth, ok := a.(chttp.Authenticator); ok {
-		return auth.Authenticate(c.Client)
-	}
-	if auth, ok := a.(Authenticator); ok {
-		return auth.auth(ctx, c)
-	}
-	return &kivik.Error{Status: http.StatusBadRequest, Err: errors.New("kivik: invalid authenticator")}
-}
-
-// Authenticator is a CouchDB authenticator. Direct use of the Authenticator
-// interface is for advanced usage. Typically, it is sufficient to provide
-// a username and password in the connecting DSN to perform authentication.
-// Only use one of these provided authenticators if you have specific needs.
-type Authenticator interface {
-	auth(context.Context, *client) error
-}
 
 // BasicAuth provides support for HTTP Basic authentication.  Pass this option
 // to [github.com/go-kivik/kivik/v4.New] to use Basic Authentication.

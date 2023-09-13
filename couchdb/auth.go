@@ -85,36 +85,3 @@ func JWTAuth(token string) kivik.Option {
 func ProxyAuth(user, secret string, roles []string, headers ...map[string]string) kivik.Option {
 	return chttp.ProxyAuth(user, secret, roles, headers...)
 }
-
-type rawCookie struct {
-	cookie *http.Cookie
-	next   http.RoundTripper
-}
-
-var (
-	_ Authenticator     = &rawCookie{}
-	_ http.RoundTripper = &rawCookie{}
-)
-
-func (a *rawCookie) auth(_ context.Context, c *client) error {
-	if c.Client.Client.Transport != nil {
-		return &kivik.Error{Status: http.StatusBadRequest, Err: errors.New("kivik: HTTP client transport already set")}
-	}
-	a.next = c.Client.Client.Transport
-	if a.next == nil {
-		a.next = http.DefaultTransport
-	}
-	c.Client.Client.Transport = a
-	return nil
-}
-
-func (a *rawCookie) RoundTrip(r *http.Request) (*http.Response, error) {
-	r.AddCookie(a.cookie)
-	return a.next.RoundTrip(r)
-}
-
-// SetCookie adds cookie to all outbound requests. This is useful when using
-// kivik as a proxy.
-func SetCookie(cookie *http.Cookie) Authenticator {
-	return &rawCookie{cookie: cookie}
-}

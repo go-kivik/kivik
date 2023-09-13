@@ -23,7 +23,6 @@ import (
 
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/couchdb/chttp"
-	"github.com/go-kivik/kivik/v4/internal/mock"
 	"github.com/go-kivik/kivik/v4/internal/nettest"
 )
 
@@ -181,73 +180,5 @@ func TestAuthenticationOptions(t *testing.T) {
 		}
 		_, err = client.Version(context.Background())
 		testy.StatusErrorRE(t, tt.err, tt.status, err)
-	})
-}
-
-func TestAuthentication(t *testing.T) {
-	type tst struct {
-		handler    func(*testing.T) http.Handler
-		setup      func(*testing.T, *client)
-		auther     Authenticator // nolint: misspell
-		authStatus int
-		authErr    string
-		status     int
-		err        string
-	}
-
-	tests := testy.NewTable()
-	tests.Add("SetCookie", tst{
-		handler: func(t *testing.T) http.Handler {
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				c, err := r.Cookie("cow")
-				if err != nil {
-					t.Fatal(err)
-				}
-				if c.Value != "moo" {
-					t.Errorf("Unexpected cookie value: %s\n", c.Value)
-				}
-				w.WriteHeader(200)
-				_, _ = w.Write([]byte(`{}`))
-			})
-		},
-		auther: SetCookie(&http.Cookie{Name: "cow", Value: "moo"}), // nolint: misspell
-	})
-	tests.Add("SetCookie again", tst{
-		handler: func(t *testing.T) http.Handler {
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				c, err := r.Cookie("cow")
-				if err != nil {
-					t.Fatal(err)
-				}
-				if c.Value != "moo" {
-					t.Errorf("Unexpected cookie value: %s\n", c.Value)
-				}
-				w.WriteHeader(200)
-				_, _ = w.Write([]byte(`{}`))
-			})
-		},
-		auther: SetCookie(&http.Cookie{Name: "cow", Value: "moo"}), // nolint: misspell
-		setup: func(t *testing.T, c *client) {
-			c.Client.Client.Transport = http.DefaultTransport
-		},
-		authStatus: http.StatusBadRequest,
-		authErr:    "kivik: HTTP client transport already set",
-	})
-	driver := &couch{}
-	tests.Run(t, func(t *testing.T, test tst) {
-		s := nettest.NewHTTPTestServer(t, test.handler(t))
-		defer s.Close()
-		driverClient, err := driver.NewClient(s.URL, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-		client := driverClient.(*client)
-		if test.setup != nil {
-			test.setup(t, client)
-		}
-		err = client.Authenticate(context.Background(), test.auther)
-		testy.StatusError(t, test.authErr, test.authStatus, err)
-		_, err = client.Version(context.Background())
-		testy.StatusErrorRE(t, test.err, test.status, err)
 	})
 }

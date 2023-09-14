@@ -61,7 +61,7 @@ func registerSuiteCouch23() {
 				"def":  map[string]interface{}{"fields": []interface{}{map[string]string{"_id": "asc"}}},
 			},
 			Selector: map[string]interface{}{"_id": map[string]interface{}{"$gt": nil}},
-			Options: map[string]interface{}{
+			Options: kivik.Params{
 				"bookmark":        "nil",
 				"conflicts":       false,
 				"execution_stats": false,
@@ -250,7 +250,7 @@ func registerSuiteCouch23() {
 
 		"ViewCleanup/RW/NoAuth.status": http.StatusUnauthorized,
 
-		"Changes/Continuous.options": map[string]interface{}{
+		"Changes/Continuous.options": kivik.Params{
 			"feed":      "continuous",
 			"since":     "now",
 			"heartbeat": 6000,

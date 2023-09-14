@@ -68,7 +68,7 @@ func registerSuiteCouch31() {
 				"def":  map[string]interface{}{"fields": []interface{}{map[string]string{"_id": "asc"}}},
 			},
 			Selector: map[string]interface{}{"_id": map[string]interface{}{"$gt": nil}},
-			Options: map[string]interface{}{
+			Options: kivik.Params{
 				"bookmark":        "nil",
 				"conflicts":       false,
 				"execution_stats": false,
@@ -294,7 +294,7 @@ func registerSuiteCouch31() {
 
 		"Changes/Continuous/RW/group/NoAuth.status": http.StatusUnauthorized,
 		"Changes/Normal/RW/group/NoAuth.status":     http.StatusUnauthorized,
-		"Changes/Continuous.options": map[string]interface{}{
+		"Changes/Continuous.options": kivik.Params{
 			"feed":      "continuous",
 			"since":     "now",
 			"heartbeat": 6000,

@@ -109,7 +109,7 @@ gopherjs1.17-pouchdb7:
   <<: *gopherjs_test_template
   image: golang:1.17
   variables:
-    NODE_VER: 12
+    NODE_VER: 14
     NPM_PROFILE: pouchdb/pouchdb7-package.json
     KIVIK_TEST_DSN_COUCH23: http://admin:abc123@couch23:5984/
     GOPHERJS_TAG: v1.17.2
@@ -118,7 +118,7 @@ gopherjs1.17-pouchdb8:
   <<: *gopherjs_test_template
   image: golang:1.17
   variables:
-    NODE_VER: 12
+    NODE_VER: 14
     NPM_PROFILE: pouchdb/pouchdb8-package.json
     KIVIK_TEST_DSN_COUCH23: http://admin:abc123@couch23:5984/
     GOPHERJS_TAG: v1.17.2
@@ -126,7 +126,7 @@ gopherjs1.17-pouchdb8:
 gopherjs1.18-pouchdb7:
   <<: *gopherjs_test_template
   variables:
-    NODE_VER: 12
+    NODE_VER: 18
     NPM_PROFILE: pouchdb/pouchdb7-package.json
     KIVIK_TEST_DSN_COUCH23: http://admin:abc123@couch23:5984/
     GOPHERJS_TAG: v1.18.0-beta3
@@ -134,7 +134,7 @@ gopherjs1.18-pouchdb7:
 gopherjs1.18-pouchdb8:
   <<: *gopherjs_test_template
   variables:
-    NODE_VER: 12
+    NODE_VER: 18
     NPM_PROFILE: pouchdb/pouchdb8-package.json
     KIVIK_TEST_DSN_COUCH23: http://admin:abc123@couch23:5984/
     GOPHERJS_TAG: v1.18.0-beta3

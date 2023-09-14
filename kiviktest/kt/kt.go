@@ -148,9 +148,16 @@ func (c *Context) Interface(key string) interface{} {
 }
 
 // Options returns an options map value.
-func (c *Context) Options(key string) kivik.Params {
-	i := c.Config.get(name(c.T), key)
-	o, _ := i.(map[string]interface{})
+func (c *Context) Options(key string) kivik.Option {
+	testName := name(c.T)
+	i := c.Config.get(testName, key)
+	if i == nil {
+		return nil
+	}
+	o, ok := i.(kivik.Option)
+	if !ok {
+		panic(fmt.Sprintf("Options field %s/%s of unsupported type: %T", testName, key, i))
+	}
 	return o
 }
 

@@ -10,6 +10,21 @@ import (
 
 var _ = (*driver.Attachment)(nil)
 
+func (c *driverClient) AllDBs(ctx context.Context, options driver.Options) ([]string, error) {
+	expected := &ExpectedAllDBs{
+		commonExpectation: commonExpectation{
+			options: options,
+		},
+	}
+	if err := c.nextExpectation(expected); err != nil {
+		return nil, err
+	}
+	if expected.callback != nil {
+		return expected.callback(ctx, options)
+	}
+	return expected.ret0, expected.wait(ctx)
+}
+
 func (c *driverClient) Close() error {
 	expected := &ExpectedClose{}
 	if err := c.nextExpectation(expected); err != nil {
@@ -34,6 +49,21 @@ func (c *driverClient) ClusterSetup(ctx context.Context, arg0 interface{}) error
 	return expected.wait(ctx)
 }
 
+func (c *driverClient) ClusterStatus(ctx context.Context, options driver.Options) (string, error) {
+	expected := &ExpectedClusterStatus{
+		commonExpectation: commonExpectation{
+			options: options,
+		},
+	}
+	if err := c.nextExpectation(expected); err != nil {
+		return "", err
+	}
+	if expected.callback != nil {
+		return expected.callback(ctx, options)
+	}
+	return expected.ret0, expected.wait(ctx)
+}
+
 func (c *driverClient) ConfigValue(ctx context.Context, arg0 string, arg1 string, arg2 string) (string, error) {
 	expected := &ExpectedConfigValue{
 		arg0: arg0,
@@ -45,6 +75,22 @@ func (c *driverClient) ConfigValue(ctx context.Context, arg0 string, arg1 string
 	}
 	if expected.callback != nil {
 		return expected.callback(ctx, arg0, arg1, arg2)
+	}
+	return expected.ret0, expected.wait(ctx)
+}
+
+func (c *driverClient) DBExists(ctx context.Context, arg0 string, options driver.Options) (bool, error) {
+	expected := &ExpectedDBExists{
+		arg0: arg0,
+		commonExpectation: commonExpectation{
+			options: options,
+		},
+	}
+	if err := c.nextExpectation(expected); err != nil {
+		return false, err
+	}
+	if expected.callback != nil {
+		return expected.callback(ctx, arg0, options)
 	}
 	return expected.ret0, expected.wait(ctx)
 }
@@ -62,6 +108,22 @@ func (c *driverClient) DeleteConfigKey(ctx context.Context, arg0 string, arg1 st
 		return expected.callback(ctx, arg0, arg1, arg2)
 	}
 	return expected.ret0, expected.wait(ctx)
+}
+
+func (c *driverClient) DestroyDB(ctx context.Context, arg0 string, options driver.Options) error {
+	expected := &ExpectedDestroyDB{
+		arg0: arg0,
+		commonExpectation: commonExpectation{
+			options: options,
+		},
+	}
+	if err := c.nextExpectation(expected); err != nil {
+		return err
+	}
+	if expected.callback != nil {
+		return expected.callback(ctx, arg0, options)
+	}
+	return expected.wait(ctx)
 }
 
 func (c *driverClient) Ping(ctx context.Context) (bool, error) {
@@ -87,36 +149,6 @@ func (c *driverClient) SetConfigValue(ctx context.Context, arg0 string, arg1 str
 	}
 	if expected.callback != nil {
 		return expected.callback(ctx, arg0, arg1, arg2, arg3)
-	}
-	return expected.ret0, expected.wait(ctx)
-}
-
-func (c *driverClient) AllDBs(ctx context.Context, options driver.Options) ([]string, error) {
-	expected := &ExpectedAllDBs{
-		commonExpectation: commonExpectation{
-			options: options,
-		},
-	}
-	if err := c.nextExpectation(expected); err != nil {
-		return nil, err
-	}
-	if expected.callback != nil {
-		return expected.callback(ctx, options)
-	}
-	return expected.ret0, expected.wait(ctx)
-}
-
-func (c *driverClient) ClusterStatus(ctx context.Context, options driver.Options) (string, error) {
-	expected := &ExpectedClusterStatus{
-		commonExpectation: commonExpectation{
-			options: options,
-		},
-	}
-	if err := c.nextExpectation(expected); err != nil {
-		return "", err
-	}
-	if expected.callback != nil {
-		return expected.callback(ctx, options)
 	}
 	return expected.ret0, expected.wait(ctx)
 }
@@ -167,22 +199,6 @@ func (c *driverClient) DB(arg0 string, options driver.Options) (driver.DB, error
 	return &driverDB{DB: expected.ret0}, expected.err
 }
 
-func (c *driverClient) DBExists(ctx context.Context, arg0 string, options driver.Options) (bool, error) {
-	expected := &ExpectedDBExists{
-		arg0: arg0,
-		commonExpectation: commonExpectation{
-			options: options,
-		},
-	}
-	if err := c.nextExpectation(expected); err != nil {
-		return false, err
-	}
-	if expected.callback != nil {
-		return expected.callback(ctx, arg0, options)
-	}
-	return expected.ret0, expected.wait(ctx)
-}
-
 func (c *driverClient) DBUpdates(ctx context.Context, options driver.Options) (driver.DBUpdates, error) {
 	expected := &ExpectedDBUpdates{
 		commonExpectation: commonExpectation{
@@ -209,22 +225,6 @@ func (c *driverClient) DBsStats(ctx context.Context, arg0 []string) ([]*driver.D
 		return expected.callback(ctx, arg0)
 	}
 	return expected.ret0, expected.wait(ctx)
-}
-
-func (c *driverClient) DestroyDB(ctx context.Context, arg0 string, options driver.Options) error {
-	expected := &ExpectedDestroyDB{
-		arg0: arg0,
-		commonExpectation: commonExpectation{
-			options: options,
-		},
-	}
-	if err := c.nextExpectation(expected); err != nil {
-		return err
-	}
-	if expected.callback != nil {
-		return expected.callback(ctx, arg0, options)
-	}
-	return expected.wait(ctx)
 }
 
 func (c *driverClient) GetReplications(ctx context.Context, options driver.Options) ([]driver.Replication, error) {

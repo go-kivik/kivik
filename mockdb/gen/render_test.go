@@ -14,13 +14,13 @@ func init() {
 func TestRenderExpectedType(t *testing.T) {
 	tests := testy.NewTable()
 	tests.Add("CreateDoc", &method{
-		Name:                 "CreateDoc",
-		DBMethod:             true,
-		AcceptsContext:       true,
-		AcceptsLegacyOptions: true,
-		ReturnsError:         true,
-		Accepts:              []reflect.Type{reflect.TypeOf((*interface{})(nil)).Elem()},
-		Returns:              []reflect.Type{typeString, typeString},
+		Name:           "CreateDoc",
+		DBMethod:       true,
+		AcceptsContext: true,
+		AcceptsOptions: true,
+		ReturnsError:   true,
+		Accepts:        []reflect.Type{reflect.TypeOf((*interface{})(nil)).Elem()},
+		Returns:        []reflect.Type{typeString, typeString},
 	})
 
 	tests.Run(t, func(t *testing.T, m *method) {
@@ -42,18 +42,18 @@ func TestRenderDriverMethod(t *testing.T) {
 	tests := testy.NewTable()
 	tests.Add("CreateDB", tst{
 		method: &method{
-			Name:                 "CreateDB",
-			Accepts:              []reflect.Type{typeString},
-			AcceptsContext:       true,
-			AcceptsLegacyOptions: true,
-			ReturnsError:         true,
+			Name:           "CreateDB",
+			Accepts:        []reflect.Type{typeString},
+			AcceptsContext: true,
+			AcceptsOptions: true,
+			ReturnsError:   true,
 		},
 	})
 	tests.Add("No context", tst{
 		method: &method{
-			Name:                 "NoCtx",
-			AcceptsLegacyOptions: true,
-			ReturnsError:         true,
+			Name:           "NoCtx",
+			AcceptsOptions: true,
+			ReturnsError:   true,
 		},
 	})
 	tests.Run(t, func(t *testing.T, test tst) {
@@ -81,12 +81,12 @@ func TestVariables(t *testing.T) {
 		expected: "arg0: arg0,",
 	})
 	tests.Add("one arg + options", tst{
-		method: &method{Accepts: []reflect.Type{typeString}, AcceptsLegacyOptions: true},
+		method: &method{Accepts: []reflect.Type{typeString}, AcceptsOptions: true},
 		expected: `arg0:    arg0,
 options: options,`,
 	})
 	tests.Add("indent", tst{
-		method: &method{Accepts: []reflect.Type{typeString, typeString}, AcceptsLegacyOptions: true},
+		method: &method{Accepts: []reflect.Type{typeString, typeString}, AcceptsOptions: true},
 		indent: 2,
 		expected: `		arg0:    arg0,
 		arg1:    arg1,

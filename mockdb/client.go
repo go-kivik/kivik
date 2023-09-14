@@ -48,10 +48,6 @@ func (r *driverReplication) Metadata() driver.ReplicationMetadata {
 	return r.Replication.meta
 }
 
-func (r *driverReplication) ReplicationID() string {
-	return r.Replication.id
-}
-
 func (r *driverReplication) Source() string {
 	return r.Replication.source
 }

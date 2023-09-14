@@ -161,14 +161,16 @@ func TestReplicationGetters(t *testing.T) {
 	start := parseTime(t, "2018-01-01T00:00:00Z")
 	end := parseTime(t, "2019-01-01T00:00:00Z")
 	state := "confusion"
-	r := &Replication{
-		irep: &mock.Replication{
-			ReplicationIDFunc: func() string { return repID },
-			StartTimeFunc:     func() time.Time { return start },
-			EndTimeFunc:       func() time.Time { return end },
-			StateFunc:         func() string { return state },
+	r := newReplication(&mock.Replication{
+		MetadataFunc: func() driver.ReplicationMetadata {
+			return driver.ReplicationMetadata{
+				ID: repID,
+			}
 		},
-	}
+		StartTimeFunc: func() time.Time { return start },
+		EndTimeFunc:   func() time.Time { return end },
+		StateFunc:     func() string { return state },
+	})
 
 	t.Run("ReplicationID", func(t *testing.T) {
 		result := r.ReplicationID()

@@ -44,6 +44,7 @@ const (
 
 // Replication represents a CouchDB replication process.
 type Replication struct {
+	meta   driver.ReplicationMetadata
 	Source string
 	Target string
 
@@ -95,6 +96,7 @@ func (r *Replication) Progress() float64 {
 
 func newReplication(rep driver.Replication) *Replication {
 	return &Replication{
+		meta:   rep.Metadata(),
 		Source: rep.Source(),
 		Target: rep.Target(),
 		irep:   rep,
@@ -103,7 +105,7 @@ func newReplication(rep driver.Replication) *Replication {
 
 // ReplicationID returns the _replication_id field of the replicator document.
 func (r *Replication) ReplicationID() string {
-	return r.irep.ReplicationID()
+	return r.meta.ID
 }
 
 // StartTime returns the replication start time, once the replication has been

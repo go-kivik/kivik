@@ -78,15 +78,16 @@ type DBsStatser interface {
 }
 
 // ReplicationMetadata is metadata about a replication.
-type ReplicationMetadata struct{}
+type ReplicationMetadata struct {
+	ID string
+}
 
 // Replication represents a _replicator document.
 type Replication interface {
-	Metadata() ReplicationMetadata
 	// The following methods are called just once, when the Replication is first
 	// returned from [ClientReplicator.Replicate] or
 	// [ClientReplicator.GetReplications].
-	ReplicationID() string
+	Metadata() ReplicationMetadata
 	Source() string
 	Target() string
 	StartTime() time.Time

@@ -1055,7 +1055,7 @@ func TestReplicate(t *testing.T) {
 	})
 	tests.Add("return", mockTest{
 		setup: func(m *Client) {
-			r := m.NewReplication().ID("aaa")
+			r := m.NewReplication().Metadata(driver.ReplicationMetadata{ID: "aaa"})
 			m.ExpectReplicate().
 				WillReturn(r)
 		},
@@ -1100,8 +1100,8 @@ func TestGetReplications(t *testing.T) {
 		setup: func(m *Client) {
 			m.ExpectGetReplications().
 				WillReturn([]*Replication{
-					m.NewReplication().ID("bbb"),
-					m.NewReplication().ID("ccc"),
+					m.NewReplication().Metadata(driver.ReplicationMetadata{ID: "bbb"}),
+					m.NewReplication().Metadata(driver.ReplicationMetadata{ID: "ccc"}),
 				})
 		},
 		test: func(t *testing.T, c *kivik.Client) {

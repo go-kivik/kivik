@@ -118,14 +118,18 @@ func (r *replication) readLock() func() {
 	return r.mu.RUnlock
 }
 
-func (r *replication) Metadata() driver.ReplicationMetadata { return driver.ReplicationMetadata{} }
-func (r *replication) ReplicationID() string                { defer r.readLock()(); return r.replicationID }
-func (r *replication) Source() string                       { defer r.readLock()(); return r.source }
-func (r *replication) Target() string                       { defer r.readLock()(); return r.target }
-func (r *replication) StartTime() time.Time                 { defer r.readLock()(); return r.startTime }
-func (r *replication) EndTime() time.Time                   { defer r.readLock()(); return r.endTime }
-func (r *replication) State() string                        { defer r.readLock()(); return r.state }
-func (r *replication) Err() error                           { defer r.readLock()(); return r.err }
+func (r *replication) Metadata() driver.ReplicationMetadata {
+	return driver.ReplicationMetadata{
+		ID: r.replicationID,
+	}
+}
+
+func (r *replication) Source() string       { defer r.readLock()(); return r.source }
+func (r *replication) Target() string       { defer r.readLock()(); return r.target }
+func (r *replication) StartTime() time.Time { defer r.readLock()(); return r.startTime }
+func (r *replication) EndTime() time.Time   { defer r.readLock()(); return r.endTime }
+func (r *replication) State() string        { defer r.readLock()(); return r.state }
+func (r *replication) Err() error           { defer r.readLock()(); return r.err }
 
 func (r *replication) Update(ctx context.Context, state *driver.ReplicationInfo) error {
 	if err := r.updateMain(ctx); err != nil {

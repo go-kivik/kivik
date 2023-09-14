@@ -22,17 +22,16 @@ import (
 // Replication mocks driver.Replication
 type Replication struct {
 	// ID identifies a specific Replication instance
-	ID                string
-	DeleteFunc        func(context.Context) error
-	MetadataFunc      func() driver.ReplicationMetadata
-	StartTimeFunc     func() time.Time
-	EndTimeFunc       func() time.Time
-	ErrFunc           func() error
-	ReplicationIDFunc func() string
-	SourceFunc        func() string
-	TargetFunc        func() string
-	StateFunc         func() string
-	UpdateFunc        func(context.Context, *driver.ReplicationInfo) error
+	ID            string
+	DeleteFunc    func(context.Context) error
+	MetadataFunc  func() driver.ReplicationMetadata
+	StartTimeFunc func() time.Time
+	EndTimeFunc   func() time.Time
+	ErrFunc       func() error
+	SourceFunc    func() string
+	TargetFunc    func() string
+	StateFunc     func() string
+	UpdateFunc    func(context.Context, *driver.ReplicationInfo) error
 }
 
 var _ driver.Replication = &Replication{}
@@ -63,11 +62,6 @@ func (r *Replication) EndTime() time.Time {
 // Err calls r.ErrFunc
 func (r *Replication) Err() error {
 	return r.ErrFunc()
-}
-
-// ReplicationID calls r.ReplicatoinIDFunc
-func (r *Replication) ReplicationID() string {
-	return r.ReplicationIDFunc()
 }
 
 // Source calls r.SourceFunc or returns a default value if SourceFunc is nil

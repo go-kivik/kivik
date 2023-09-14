@@ -5,9 +5,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"gitlab.com/flimzy/testy"
 
 	kivik "github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/driver"
 )
 
 func TestReplication(t *testing.T) {
@@ -24,7 +26,9 @@ func TestReplication(t *testing.T) {
 	eState := kivik.ReplicationComplete
 	eErr := "a5"
 	r := m.NewReplication().
-		ID(eID).
+		Metadata(driver.ReplicationMetadata{
+			ID: eID,
+		}).
 		Source(eSource).
 		Target(eTarget).
 		StartTime(eStartTime).
@@ -32,11 +36,13 @@ func TestReplication(t *testing.T) {
 		State(eState).
 		Err(errors.New(eErr))
 	dr := &driverReplication{r}
-	t.Run("ID", func(t *testing.T) {
-		if id := dr.ReplicationID(); id != eID {
-			t.Errorf("Unexpected ID. Got %s, want %s", id, eID)
-		}
-	})
+	want := driver.ReplicationMetadata{
+		ID: eID,
+	}
+	got := dr.Metadata()
+	if d := cmp.Diff(want, got); d != "" {
+		t.Error(d)
+	}
 	t.Run("Source", func(t *testing.T) {
 		if s := dr.Source(); s != eSource {
 			t.Errorf("Unexpected Source. Got %s, want %s", s, eSource)

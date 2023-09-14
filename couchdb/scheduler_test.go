@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4/driver"
@@ -327,8 +328,12 @@ func TestSchedulerReplicationGetters(t *testing.T) {
 		state:         state,
 		info:          repInfo{Error: errors.New(err)},
 	}
-	if result := rep.ReplicationID(); result != repID {
-		t.Errorf("Unexpected replication ID: %s", result)
+	want := driver.ReplicationMetadata{
+		ID: repID,
+	}
+	got := rep.Metadata()
+	if d := cmp.Diff(want, got); d != "" {
+		t.Error(d)
 	}
 	if result := rep.Source(); result != source {
 		t.Errorf("Unexpected source: %s", result)

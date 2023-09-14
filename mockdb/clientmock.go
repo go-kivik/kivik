@@ -138,7 +138,6 @@ func NewDBUpdates() *Updates {
 // Replication is a replication instance.
 type Replication struct {
 	meta      driver.ReplicationMetadata
-	id        string
 	source    string
 	target    string
 	startTime time.Time
@@ -164,7 +163,7 @@ func (r *Replication) MarshalJSON() ([]byte, error) {
 		Err       string     `json:"error,omitempty"`
 	}
 	doc := &rep{
-		ID:     r.id,
+		ID:     r.meta.ID,
 		Source: r.source,
 		Target: r.target,
 		State:  r.state,
@@ -184,12 +183,6 @@ func (r *Replication) MarshalJSON() ([]byte, error) {
 // Metadata sets the replication metadata.
 func (r *Replication) Metadata(meta driver.ReplicationMetadata) *Replication {
 	r.meta = meta
-	return r
-}
-
-// ID sets the replication ID.
-func (r *Replication) ID(id string) *Replication {
-	r.id = id
 	return r
 }
 

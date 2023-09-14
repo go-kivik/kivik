@@ -68,7 +68,7 @@ func TestReplicateString(t *testing.T) {
 	- has any options`,
 	})
 	tests.Add("return", stringerTest{
-		input: &ExpectedReplicate{ret0: &Replication{id: "foo"}},
+		input: &ExpectedReplicate{ret0: &Replication{meta: driver.ReplicationMetadata{ID: "foo"}}},
 		expected: `call to Replicate() which:
 	- has any target
 	- has any source

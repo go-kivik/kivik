@@ -51,11 +51,10 @@ credentials in your connection DSN:
 This will use Cookie authentication by default (or BasicAuth if compiled with
 GopherJS).
 
-To use one of the explicit authentication mechanisms, you'll need to use Kivik's
-Authenticate method.  For example:
+To use one of the explicit authentication mechanisms, pass one of the
+authentication options to [New]. For example:
 
-	client, _ := kivik.New("couch", "http://localhost:5984/")
-	err := client.Authenticate(ctx, couchdb.BasicAuth("bob", "abc123"))
+	client, _ := kivik.New("couch", "http://localhost:5984/", couchdb.BasicAuth("bob", "secret"))
 
 # Connection Options
 

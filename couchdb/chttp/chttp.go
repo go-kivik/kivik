@@ -51,7 +51,6 @@ type Client struct {
 	rawDSN   string
 	dsn      *url.URL
 	basePath string
-	auth     Authenticator
 	authMU   sync.Mutex
 
 	// noGzip will be set to true if the server fails on gzip-encoded requests.
@@ -81,19 +80,23 @@ func New(client *http.Client, dsn string, options driver.Options) (*Client, erro
 		basePath: strings.TrimSuffix(dsnURL.Path, "/"),
 		rawDSN:   dsn,
 	}
+	var auth authenticator
 	if user != nil {
 		password, _ := user.Password()
-		err := c.Auth(&CookieAuth{
+		auth = &cookieAuth{
 			Username: user.Username(),
 			Password: password,
-		})
-		if err != nil {
-			return nil, err
 		}
 	}
 	opts := map[string]interface{}{}
 	options.Apply(opts)
 	options.Apply(c)
+	options.Apply(&auth)
+	if auth != nil {
+		if err := auth.Authenticate(c); err != nil {
+			return nil, err
+		}
+	}
 	return c, nil
 }
 
@@ -120,18 +123,6 @@ func parseDSN(dsn string) (*url.URL, error) {
 // DSN returns the unparsed DSN used to connect.
 func (c *Client) DSN() string {
 	return c.rawDSN
-}
-
-// Auth authenticates using the provided Authenticator.
-func (c *Client) Auth(a Authenticator) error {
-	if c.auth != nil {
-		return errors.New("auth already set")
-	}
-	if err := a.Authenticate(c); err != nil {
-		return err
-	}
-	c.auth = a
-	return nil
 }
 
 // Response represents a response from a CouchDB server.

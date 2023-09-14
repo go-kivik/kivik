@@ -10,7 +10,6 @@ import (
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4"
-	"github.com/go-kivik/kivik/v4/couchdb"
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
@@ -129,54 +128,6 @@ func TestAllDBs(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.AllDBs(context.TODO())
-			testy.Error(t, "custom error", err)
-		},
-	})
-	tests.Run(t, testMock)
-}
-
-func TestAuthenticate(t *testing.T) {
-	tests := testy.NewTable()
-	tests.Add("error", mockTest{
-		setup: func(m *Client) {
-			m.ExpectAuthenticate().WillReturnError(errors.New("auth error"))
-		},
-		test: func(t *testing.T, c *kivik.Client) {
-			err := c.Authenticate(context.TODO(), couchdb.BasicAuth("foo", "bar"))
-			testy.Error(t, "auth error", err)
-		},
-	})
-	tests.Add("wrong authenticator", mockTest{
-		setup: func(m *Client) {
-			m.ExpectAuthenticate().WithAuthenticator(int(3))
-		},
-		test: func(t *testing.T, c *kivik.Client) {
-			err := c.Authenticate(context.TODO(), couchdb.CookieAuth("foo", "bar"))
-			expected := `Expectation not met:
-Expected: call to Authenticate() which:
-	- has an authenticator of type: int
-  Actual: call to Authenticate() which:
-	- has an authenticator of type: authFunc`
-			testy.Error(t, expected, err)
-		},
-	})
-	tests.Add("delay", mockTest{
-		setup: func(m *Client) {
-			m.ExpectAuthenticate().WillDelay(time.Second)
-		},
-		test: func(t *testing.T, c *kivik.Client) {
-			err := c.Authenticate(newCanceledContext(), int(1))
-			testy.Error(t, "context canceled", err)
-		},
-	})
-	tests.Add("callback", mockTest{
-		setup: func(m *Client) {
-			m.ExpectAuthenticate().WillExecute(func(context.Context, interface{}) error {
-				return errors.New("custom error")
-			})
-		},
-		test: func(t *testing.T, c *kivik.Client) {
-			err := c.Authenticate(context.TODO(), int(1))
 			testy.Error(t, "custom error", err)
 		},
 	})

@@ -3,7 +3,6 @@ package mockdb
 import (
 	"context"
 	"errors"
-	"reflect"
 	"time"
 
 	"github.com/go-kivik/kivik/v4/driver"
@@ -14,28 +13,14 @@ type driverClient struct {
 }
 
 var (
-	_ driver.Client        = &driverClient{}
-	_ driver.ClientCloser  = &driverClient{}
-	_ driver.Authenticator = &driverClient{}
-	_ driver.Cluster       = &driverClient{}
-	_ driver.DBsStatser    = &driverClient{}
-	_ driver.Pinger        = &driverClient{}
-	_ driver.Sessioner     = &driverClient{}
-	_ driver.Configer      = &driverClient{}
+	_ driver.Client       = &driverClient{}
+	_ driver.ClientCloser = &driverClient{}
+	_ driver.Cluster      = &driverClient{}
+	_ driver.DBsStatser   = &driverClient{}
+	_ driver.Pinger       = &driverClient{}
+	_ driver.Sessioner    = &driverClient{}
+	_ driver.Configer     = &driverClient{}
 )
-
-func (c *driverClient) Authenticate(ctx context.Context, authenticator interface{}) error {
-	expected := &ExpectedAuthenticate{
-		authType: reflect.TypeOf(authenticator).Name(),
-	}
-	if err := c.nextExpectation(expected); err != nil {
-		return err
-	}
-	if expected.callback != nil {
-		return expected.callback(ctx, authenticator)
-	}
-	return expected.wait(ctx)
-}
 
 func (c *driverClient) CreateDB(ctx context.Context, name string, options driver.Options) error {
 	expected := &ExpectedCreateDB{

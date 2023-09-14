@@ -14,99 +14,26 @@ package couchdb
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"net/http"
 	"testing"
 
 	"gitlab.com/flimzy/testy"
 
 	kivik "github.com/go-kivik/kivik/v4"
-	"github.com/go-kivik/kivik/v4/couchdb/chttp"
-	"github.com/go-kivik/kivik/v4/internal/mock"
 	"github.com/go-kivik/kivik/v4/internal/nettest"
 )
 
-type mockAuther struct {
-	authCalls int
-	authErr   error
-}
-
-var _ chttp.Authenticator = &mockAuther{}
-
-func (a *mockAuther) Authenticate(*chttp.Client) error {
-	a.authCalls++
-	return a.authErr
-}
-
-func (a *mockAuther) Logout(context.Context, *chttp.Client) error {
-	return nil
-}
-
-func (a *mockAuther) Check() error {
-	if a.authCalls == 1 {
-		return nil
-	}
-	return fmt.Errorf("auth called %d times", a.authCalls)
-}
-
-type checker interface {
-	Check() error
-}
-
-func TestAuthenticate(t *testing.T) {
-	tests := []struct {
-		name          string
-		client        *client
-		authenticator interface{}
-		status        int
-		err           string
-	}{
-		{
-			name:          "invalid authenticator",
-			authenticator: 1,
-			status:        http.StatusBadRequest,
-			err:           "kivik: invalid authenticator",
-		},
-		{
-			name:          "valid authenticator",
-			client:        &client{Client: &chttp.Client{}},
-			authenticator: &mockAuther{},
-		},
-		{
-			name:          "auth failure",
-			client:        &client{Client: &chttp.Client{}},
-			authenticator: &mockAuther{authErr: &kivik.Error{Status: http.StatusUnauthorized, Err: errors.New("auth failed")}},
-			status:        http.StatusUnauthorized,
-			err:           "auth failed",
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			err := test.client.Authenticate(context.Background(), test.authenticator)
-			testy.StatusError(t, test.err, test.status, err)
-			if c, ok := test.authenticator.(checker); ok {
-				if e := c.Check(); e != nil {
-					t.Error(e)
-				}
-			}
-		})
-	}
-}
-
-func TestAuthentication(t *testing.T) {
-	type tst struct {
-		handler    func(*testing.T) http.Handler
-		setup      func(*testing.T, *client)
-		auther     Authenticator // nolint: misspell
-		authStatus int
-		authErr    string
-		status     int
-		err        string
+func TestAuthenticationOptions(t *testing.T) {
+	type test struct {
+		handler func(*testing.T) http.Handler
+		setup   func(*testing.T, *client)
+		options kivik.Option
+		status  int
+		err     string
 	}
 
 	tests := testy.NewTable()
-	tests.Add("BasicAuth", tst{
+	tests.Add("BasicAuth", test{
 		handler: func(t *testing.T) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if h := r.Header.Get("Authorization"); h != "Basic Ym9iOmFiYzEyMw==" {
@@ -116,9 +43,9 @@ func TestAuthentication(t *testing.T) {
 				_, _ = w.Write([]byte(`{}`))
 			})
 		},
-		auther: BasicAuth("bob", "abc123"), // nolint: misspell
+		options: BasicAuth("bob", "abc123"),
 	})
-	tests.Add("CookieAuth", tst{
+	tests.Add("CookieAuth", test{
 		handler: func(t *testing.T) http.Handler {
 			expectedPaths := []string{"/_session", "/"}
 			i := -1
@@ -131,9 +58,9 @@ func TestAuthentication(t *testing.T) {
 				_, _ = w.Write([]byte(`{}`))
 			})
 		},
-		auther: CookieAuth("bob", "abc123"), // nolint: misspell
+		options: CookieAuth("bob", "abc123"),
 	})
-	tests.Add("ProxyAuth", tst{
+	tests.Add("ProxyAuth", test{
 		handler: func(t *testing.T) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if h := r.Header.Get("X-Auth-CouchDB-UserName"); h != "bob" {
@@ -149,46 +76,14 @@ func TestAuthentication(t *testing.T) {
 				_, _ = w.Write([]byte(`{}`))
 			})
 		},
-		auther: ProxyAuth("bob", "abc123", []string{"users", "admins"}, map[string]string{"X-Auth-CouchDB-Token": "moo"}), // nolint: misspell
+		options: ProxyAuth(
+			"bob",
+			"abc123",
+			[]string{"users", "admins"},
+			map[string]string{"X-Auth-CouchDB-Token": "moo"},
+		),
 	})
-	tests.Add("SetCookie", tst{
-		handler: func(t *testing.T) http.Handler {
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				c, err := r.Cookie("cow")
-				if err != nil {
-					t.Fatal(err)
-				}
-				if c.Value != "moo" {
-					t.Errorf("Unexpected cookie value: %s\n", c.Value)
-				}
-				w.WriteHeader(200)
-				_, _ = w.Write([]byte(`{}`))
-			})
-		},
-		auther: SetCookie(&http.Cookie{Name: "cow", Value: "moo"}), // nolint: misspell
-	})
-	tests.Add("SetCookie again", tst{
-		handler: func(t *testing.T) http.Handler {
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				c, err := r.Cookie("cow")
-				if err != nil {
-					t.Fatal(err)
-				}
-				if c.Value != "moo" {
-					t.Errorf("Unexpected cookie value: %s\n", c.Value)
-				}
-				w.WriteHeader(200)
-				_, _ = w.Write([]byte(`{}`))
-			})
-		},
-		auther: SetCookie(&http.Cookie{Name: "cow", Value: "moo"}), // nolint: misspell
-		setup: func(t *testing.T, c *client) {
-			c.Client.Client.Transport = http.DefaultTransport
-		},
-		authStatus: http.StatusBadRequest,
-		authErr:    "kivik: HTTP client transport already set",
-	})
-	tests.Add("JWTAuth", tst{
+	tests.Add("JWTAuth", test{
 		handler: func(t *testing.T) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if h := r.Header.Get("Authorization"); h != "Bearer tokentoken" {
@@ -198,23 +93,22 @@ func TestAuthentication(t *testing.T) {
 				_, _ = w.Write([]byte(`{}`))
 			})
 		},
-		auther: JWTAuth("tokentoken"), // nolint:misspell
+		options: JWTAuth("tokentoken"),
 	})
+
 	driver := &couch{}
-	tests.Run(t, func(t *testing.T, test tst) {
-		s := nettest.NewHTTPTestServer(t, test.handler(t))
+	tests.Run(t, func(t *testing.T, tt test) {
+		s := nettest.NewHTTPTestServer(t, tt.handler(t))
 		defer s.Close()
-		driverClient, err := driver.NewClient(s.URL, mock.NilOption)
+		driverClient, err := driver.NewClient(s.URL, tt.options)
 		if err != nil {
 			t.Fatal(err)
 		}
 		client := driverClient.(*client)
-		if test.setup != nil {
-			test.setup(t, client)
+		if tt.setup != nil {
+			tt.setup(t, client)
 		}
-		err = client.Authenticate(context.Background(), test.auther)
-		testy.StatusError(t, test.authErr, test.authStatus, err)
 		_, err = client.Version(context.Background())
-		testy.StatusErrorRE(t, test.err, test.status, err)
+		testy.StatusErrorRE(t, tt.err, tt.status, err)
 	})
 }

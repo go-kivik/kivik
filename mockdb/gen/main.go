@@ -11,10 +11,9 @@ import (
 )
 
 var clientSkips = map[string]struct{}{
-	"Driver":       {},
-	"DSN":          {},
-	"CreateDB":     {},
-	"Authenticate": {},
+	"Driver":   {},
+	"DSN":      {},
+	"CreateDB": {},
 }
 
 var dbSkips = map[string]struct{}{
@@ -48,7 +47,6 @@ type fullClient interface {
 	driver.Sessioner
 	driver.Cluster
 	driver.ClientCloser
-	driver.Authenticator
 	driver.ClientReplicator
 	driver.DBUpdater
 	driver.Configer

@@ -16,12 +16,14 @@ import (
 	"crypto/hmac"
 	"crypto/sha1"
 	"encoding/hex"
+	"fmt"
 	"net/http"
 	"strings"
+
+	"github.com/go-kivik/kivik/v4"
 )
 
-// ProxyAuth provides support for CouchDB proxy authentication.
-type ProxyAuth struct {
+type proxyAuth struct {
 	Username string
 	Secret   string
 	Roles    []string
@@ -31,16 +33,36 @@ type ProxyAuth struct {
 	token     string
 }
 
-var _ Authenticator = &ProxyAuth{}
+var (
+	_ authenticator = &proxyAuth{}
+	_ kivik.Option  = (*proxyAuth)(nil)
+)
 
-func (a *ProxyAuth) header(header string) string {
+func (a *proxyAuth) Apply(target interface{}) {
+	if auth, ok := target.(*authenticator); ok {
+		// Clone this so that it's safe to re-use the same option to multiple
+		// client connections. TODO: This can no doubt be refactored.
+		*auth = &proxyAuth{
+			Username: a.Username,
+			Secret:   a.Secret,
+			Roles:    a.Roles,
+			Headers:  a.Headers,
+		}
+	}
+}
+
+func (a *proxyAuth) String() string {
+	return fmt.Sprintf("[ProxyAuth{username:%s,secret:%s}]", a.Username, strings.Repeat("*", len(a.Secret)))
+}
+
+func (a *proxyAuth) header(header string) string {
 	if h := a.Headers.Get(header); h != "" {
 		return http.CanonicalHeaderKey(h)
 	}
 	return header
 }
 
-func (a *ProxyAuth) genToken() string {
+func (a *proxyAuth) genToken() string {
 	if a.Secret == "" {
 		return ""
 	}
@@ -56,7 +78,7 @@ func (a *ProxyAuth) genToken() string {
 }
 
 // RoundTrip implements the http.RoundTripper interface.
-func (a *ProxyAuth) RoundTrip(req *http.Request) (*http.Response, error) {
+func (a *proxyAuth) RoundTrip(req *http.Request) (*http.Response, error) {
 	if token := a.genToken(); token != "" {
 		req.Header.Set(a.header("X-Auth-CouchDB-Token"), token)
 	}
@@ -68,7 +90,7 @@ func (a *ProxyAuth) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 // Authenticate allows authentication via ProxyAuth.
-func (a *ProxyAuth) Authenticate(c *Client) error {
+func (a *proxyAuth) Authenticate(c *Client) error {
 	a.transport = c.Transport
 	if a.transport == nil {
 		a.transport = http.DefaultTransport

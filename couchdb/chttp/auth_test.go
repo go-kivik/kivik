@@ -79,13 +79,11 @@ func TestAuthenticate(t *testing.T) {
 	}))
 
 	type authTest struct {
-		addr       string
-		jar        http.CookieJar
-		auther     Authenticator // nolint: misspell
-		authErr    string
-		authStatus int
-		err        string
-		status     int
+		addr    string
+		jar     http.CookieJar
+		options kivik.Option
+		err     string
+		status  int
 	}
 	tests := testy.NewTable()
 	tests.Cleanup(s.Close)
@@ -95,8 +93,8 @@ func TestAuthenticate(t *testing.T) {
 		status: http.StatusUnauthorized,
 	})
 	tests.Add("basic auth", authTest{
-		addr:   s.URL,
-		auther: &BasicAuth{Username: "admin", Password: "abc123"}, // nolint: misspell
+		addr:    s.URL,
+		options: BasicAuth("admin", "abc123"),
 	})
 	tests.Add("cookie auth success", func(t *testing.T) interface{} {
 		sv := nettest.NewHTTPTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -114,21 +112,21 @@ func TestAuthenticate(t *testing.T) {
 			}
 		}))
 		return authTest{
-			addr:   sv.URL,
-			auther: &CookieAuth{Username: "foo", Password: "bar"}, // nolint: misspell
+			addr:    sv.URL,
+			options: CookieAuth("foo", "bar"),
 		}
 	})
 	tests.Add("failed basic auth", authTest{
-		addr:   s.URL,
-		auther: &BasicAuth{Username: "foo"}, // nolint: misspell
-		err:    "Unauthorized",
-		status: http.StatusUnauthorized,
+		addr:    s.URL,
+		options: BasicAuth("foo", ""),
+		err:     "Unauthorized",
+		status:  http.StatusUnauthorized,
 	})
 	tests.Add("failed cookie auth", authTest{
-		addr:   s.URL,
-		auther: &CookieAuth{Username: "foo"}, // nolint: misspell
-		err:    `Get "?` + s.URL + `/foo"?: Unauthorized`,
-		status: http.StatusUnauthorized,
+		addr:    s.URL,
+		options: CookieAuth("foo", ""),
+		err:     `Get "?` + s.URL + `/foo"?: Unauthorized`,
+		status:  http.StatusUnauthorized,
 	})
 	tests.Add("already authenticated with cookie", func() interface{} {
 		jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
@@ -148,28 +146,28 @@ func TestAuthenticate(t *testing.T) {
 		}
 	})
 	tests.Add("JWT auth", authTest{
-		addr:   s.URL,
-		auther: &JWTAuth{Token: "tokennekot"}, // nolint: misspell
+		addr:    s.URL,
+		options: JWTAuth("tokennekot"),
 	})
 	tests.Add("failed JWT auth", authTest{
-		addr:   s.URL,
-		auther: &JWTAuth{Token: "nekot"}, // nolint: misspell
-		err:    "Unauthorized",
-		status: http.StatusUnauthorized,
+		addr:    s.URL,
+		options: JWTAuth("nekot"),
+		err:     "Unauthorized",
+		status:  http.StatusUnauthorized,
 	})
 
 	tests.Run(t, func(t *testing.T, test authTest) {
 		ctx := context.Background()
-		c, err := New(&http.Client{}, test.addr, mock.NilOption)
+		opts := test.options
+		if opts == nil {
+			opts = mock.NilOption
+		}
+		c, err := New(&http.Client{}, test.addr, opts)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if test.jar != nil {
 			c.Client.Jar = test.jar
-		}
-		if test.auther != nil {
-			e := c.Auth(test.auther)
-			testy.StatusError(t, test.authErr, test.authStatus, e)
 		}
 		_, err = c.DoError(ctx, "GET", "/foo", nil)
 		testy.StatusErrorRE(t, test.err, test.status, err)

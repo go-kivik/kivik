@@ -161,33 +161,6 @@ func TestAllDBsString(t *testing.T) {
 	tests.Run(t, testStringer)
 }
 
-func TestAuthenticateString(t *testing.T) {
-	tests := testy.NewTable()
-	tests.Add("empty", stringerTest{
-		input: &ExpectedAuthenticate{},
-		expected: `call to Authenticate() which:
-	- has any authenticator`,
-	})
-	tests.Add("authenticator", stringerTest{
-		input: &ExpectedAuthenticate{authType: "foo"},
-		expected: `call to Authenticate() which:
-	- has an authenticator of type: foo`,
-	})
-	tests.Add("error", stringerTest{
-		input: &ExpectedAuthenticate{commonExpectation: commonExpectation{err: errors.New("foo err")}},
-		expected: `call to Authenticate() which:
-	- has any authenticator
-	- should return error: foo err`,
-	})
-	tests.Add("delay", stringerTest{
-		input: &ExpectedAuthenticate{commonExpectation: commonExpectation{delay: time.Second}},
-		expected: `call to Authenticate() which:
-	- has any authenticator
-	- should delay for: 1s`,
-	})
-	tests.Run(t, testStringer)
-}
-
 func TestClusterSetupString(t *testing.T) {
 	tests := testy.NewTable()
 	tests.Add("empty", stringerTest{

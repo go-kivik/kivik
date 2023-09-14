@@ -32,7 +32,7 @@ const (
 func TestProxyAuthRoundTrip(t *testing.T) {
 	type rtTest struct {
 		name     string
-		auth     *ProxyAuth
+		auth     *proxyAuth
 		req      *http.Request
 		expected *http.Response
 		cleanup  func()
@@ -41,7 +41,7 @@ func TestProxyAuthRoundTrip(t *testing.T) {
 		{
 			name: "Provided transport",
 			req:  httptest.NewRequest("GET", "/", nil),
-			auth: &ProxyAuth{
+			auth: &proxyAuth{
 				Username: usernameTest,
 				Secret:   secretTest,
 				Roles:    []string{"users", "admins"},
@@ -69,7 +69,7 @@ func TestProxyAuthRoundTrip(t *testing.T) {
 		{
 			name: "Secret is an empty string",
 			req:  httptest.NewRequest("GET", "/", nil),
-			auth: &ProxyAuth{
+			auth: &proxyAuth{
 				Username: usernameTest,
 				Secret:   "",
 				Roles:    []string{"users", "admins"},
@@ -87,7 +87,7 @@ func TestProxyAuthRoundTrip(t *testing.T) {
 		{
 			name: "Overridden header names",
 			req:  httptest.NewRequest("GET", "/", nil),
-			auth: &ProxyAuth{
+			auth: &proxyAuth{
 				Username: usernameTest,
 				Secret:   secretTest,
 				Roles:    []string{"users", "admins"},
@@ -140,7 +140,7 @@ func TestProxyAuthRoundTrip(t *testing.T) {
 			s := nettest.NewHTTPTestServer(t, http.HandlerFunc(h))
 			return rtTest{
 				name: "default transport",
-				auth: &ProxyAuth{
+				auth: &proxyAuth{
 					Username:  usernameTest,
 					Secret:    secretTest,
 					Roles:     []string{"users", "admins"},

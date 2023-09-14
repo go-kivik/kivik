@@ -147,3 +147,50 @@ func (o optionIfNoneMatch) String() string {
 func OptionIfNoneMatch(value string) kivik.Option {
 	return optionIfNoneMatch(value)
 }
+
+// CookieAuth provides CouchDB [Cookie auth]. Cookie Auth is the default
+// authentication method if credentials are included in the connection URL
+// passed to [New]. You may also pass this option as an argument to the same
+// function, if you need to provide your auth credentials outside of the URL.
+//
+// [Cookie auth]: http://docs.couchdb.org/en/2.0.0/api/server/authn.html#cookie-authentication
+func CookieAuth(username, password string) kivik.Option {
+	return &cookieAuth{
+		Username: username,
+		Password: password,
+	}
+}
+
+// BasicAuth provides HTTP Basic Auth for a client. Pass this option to [New]
+// to use Basic Authentication.
+func BasicAuth(username, password string) kivik.Option {
+	return &basicAuth{
+		Username: username,
+		Password: password,
+	}
+}
+
+// JWTAuth provides JWT based auth for a client. Pass this option to [New] to
+// use JWT authentication
+func JWTAuth(token string) kivik.Option {
+	return &jwtAuth{
+		Token: token,
+	}
+}
+
+// ProxyAuth provides support for CouchDB's [proxy authentication]. Pass this
+// option to [New] to use proxy authentication.
+func ProxyAuth(username, secret string, roles []string, headers ...map[string]string) kivik.Option {
+	httpHeader := http.Header{}
+	for _, h := range headers {
+		for k, v := range h {
+			httpHeader.Set(k, v)
+		}
+	}
+	return &proxyAuth{
+		Username: username,
+		Secret:   secret,
+		Roles:    roles,
+		Headers:  httpHeader,
+	}
+}

@@ -1585,13 +1585,12 @@ func TestSetSecurity(t *testing.T) {
 
 func TestGetRev(t *testing.T) {
 	tests := []struct {
-		name    string
-		db      *db
-		id      string
-		options kivik.Params
-		rev     string
-		status  int
-		err     string
+		name   string
+		db     *db
+		id     string
+		rev    string
+		status int
+		err    string
 	}{
 		{
 			name:   "no doc id",
@@ -1629,7 +1628,7 @@ func TestGetRev(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rev, err := test.db.GetRev(context.Background(), test.id, test.options)
+			rev, err := test.db.GetRev(context.Background(), test.id, mock.NilOption)
 			testy.StatusErrorRE(t, test.err, test.status, err)
 			if rev != test.rev {
 				t.Errorf("Got rev %s, expected %s", rev, test.rev)

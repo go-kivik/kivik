@@ -1,4 +1,4 @@
-func (c *driverClient) CreateDB(ctx context.Context, arg0 string, options map[string]interface{}) error {
+func (c *driverClient) CreateDB(ctx context.Context, arg0 string, options driver.Options) error {
 	expected := &ExpectedCreateDB{
 		arg0: arg0,
 		commonExpectation: commonExpectation{

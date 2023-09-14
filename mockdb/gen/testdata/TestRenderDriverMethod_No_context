@@ -1,4 +1,4 @@
-func (c *driverClient) NoCtx(options map[string]interface{}) error {
+func (c *driverClient) NoCtx(options driver.Options) error {
 	expected := &ExpectedNoCtx{
 		commonExpectation: commonExpectation{
 			options: options,

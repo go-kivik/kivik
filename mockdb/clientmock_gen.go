@@ -10,6 +10,13 @@ import (
 var _ = kivik.EndKeySuffix // To ensure a reference to kivik package
 var _ = (*driver.Attachment)(nil)
 
+// ExpectAllDBs queues an expectation that AllDBs will be called.
+func (c *Client) ExpectAllDBs() *ExpectedAllDBs {
+	e := &ExpectedAllDBs{}
+	c.expected = append(c.expected, e)
+	return e
+}
+
 // ExpectClose queues an expectation that Close will be called.
 func (c *Client) ExpectClose() *ExpectedClose {
 	e := &ExpectedClose{}
@@ -24,6 +31,13 @@ func (c *Client) ExpectClusterSetup() *ExpectedClusterSetup {
 	return e
 }
 
+// ExpectClusterStatus queues an expectation that ClusterStatus will be called.
+func (c *Client) ExpectClusterStatus() *ExpectedClusterStatus {
+	e := &ExpectedClusterStatus{}
+	c.expected = append(c.expected, e)
+	return e
+}
+
 // ExpectConfigValue queues an expectation that ConfigValue will be called.
 func (c *Client) ExpectConfigValue() *ExpectedConfigValue {
 	e := &ExpectedConfigValue{}
@@ -31,9 +45,23 @@ func (c *Client) ExpectConfigValue() *ExpectedConfigValue {
 	return e
 }
 
+// ExpectDBExists queues an expectation that DBExists will be called.
+func (c *Client) ExpectDBExists() *ExpectedDBExists {
+	e := &ExpectedDBExists{}
+	c.expected = append(c.expected, e)
+	return e
+}
+
 // ExpectDeleteConfigKey queues an expectation that DeleteConfigKey will be called.
 func (c *Client) ExpectDeleteConfigKey() *ExpectedDeleteConfigKey {
 	e := &ExpectedDeleteConfigKey{}
+	c.expected = append(c.expected, e)
+	return e
+}
+
+// ExpectDestroyDB queues an expectation that DestroyDB will be called.
+func (c *Client) ExpectDestroyDB() *ExpectedDestroyDB {
+	e := &ExpectedDestroyDB{}
 	c.expected = append(c.expected, e)
 	return e
 }
@@ -48,20 +76,6 @@ func (c *Client) ExpectPing() *ExpectedPing {
 // ExpectSetConfigValue queues an expectation that SetConfigValue will be called.
 func (c *Client) ExpectSetConfigValue() *ExpectedSetConfigValue {
 	e := &ExpectedSetConfigValue{}
-	c.expected = append(c.expected, e)
-	return e
-}
-
-// ExpectAllDBs queues an expectation that AllDBs will be called.
-func (c *Client) ExpectAllDBs() *ExpectedAllDBs {
-	e := &ExpectedAllDBs{}
-	c.expected = append(c.expected, e)
-	return e
-}
-
-// ExpectClusterStatus queues an expectation that ClusterStatus will be called.
-func (c *Client) ExpectClusterStatus() *ExpectedClusterStatus {
-	e := &ExpectedClusterStatus{}
 	c.expected = append(c.expected, e)
 	return e
 }
@@ -89,13 +103,6 @@ func (c *Client) ExpectDB() *ExpectedDB {
 	return e
 }
 
-// ExpectDBExists queues an expectation that DBExists will be called.
-func (c *Client) ExpectDBExists() *ExpectedDBExists {
-	e := &ExpectedDBExists{}
-	c.expected = append(c.expected, e)
-	return e
-}
-
 // ExpectDBUpdates queues an expectation that DBUpdates will be called.
 func (c *Client) ExpectDBUpdates() *ExpectedDBUpdates {
 	e := &ExpectedDBUpdates{
@@ -108,13 +115,6 @@ func (c *Client) ExpectDBUpdates() *ExpectedDBUpdates {
 // ExpectDBsStats queues an expectation that DBsStats will be called.
 func (c *Client) ExpectDBsStats() *ExpectedDBsStats {
 	e := &ExpectedDBsStats{}
-	c.expected = append(c.expected, e)
-	return e
-}
-
-// ExpectDestroyDB queues an expectation that DestroyDB will be called.
-func (c *Client) ExpectDestroyDB() *ExpectedDestroyDB {
-	e := &ExpectedDestroyDB{}
 	c.expected = append(c.expected, e)
 	return e
 }

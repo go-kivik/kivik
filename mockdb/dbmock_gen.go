@@ -30,9 +30,69 @@ func (db *DB) ExpectCompactView() *ExpectedCompactView {
 	return e
 }
 
+// ExpectCopy queues an expectation that DB.Copy will be called.
+func (db *DB) ExpectCopy() *ExpectedCopy {
+	e := &ExpectedCopy{
+		commonExpectation: commonExpectation{db: db},
+	}
+	db.count++
+	db.client.expected = append(db.client.expected, e)
+	return e
+}
+
+// ExpectCreateDoc queues an expectation that DB.CreateDoc will be called.
+func (db *DB) ExpectCreateDoc() *ExpectedCreateDoc {
+	e := &ExpectedCreateDoc{
+		commonExpectation: commonExpectation{db: db},
+	}
+	db.count++
+	db.client.expected = append(db.client.expected, e)
+	return e
+}
+
+// ExpectCreateIndex queues an expectation that DB.CreateIndex will be called.
+func (db *DB) ExpectCreateIndex() *ExpectedCreateIndex {
+	e := &ExpectedCreateIndex{
+		commonExpectation: commonExpectation{db: db},
+	}
+	db.count++
+	db.client.expected = append(db.client.expected, e)
+	return e
+}
+
+// ExpectDeleteIndex queues an expectation that DB.DeleteIndex will be called.
+func (db *DB) ExpectDeleteIndex() *ExpectedDeleteIndex {
+	e := &ExpectedDeleteIndex{
+		commonExpectation: commonExpectation{db: db},
+	}
+	db.count++
+	db.client.expected = append(db.client.expected, e)
+	return e
+}
+
 // ExpectFlush queues an expectation that DB.Flush will be called.
 func (db *DB) ExpectFlush() *ExpectedFlush {
 	e := &ExpectedFlush{
+		commonExpectation: commonExpectation{db: db},
+	}
+	db.count++
+	db.client.expected = append(db.client.expected, e)
+	return e
+}
+
+// ExpectGetRev queues an expectation that DB.GetRev will be called.
+func (db *DB) ExpectGetRev() *ExpectedGetRev {
+	e := &ExpectedGetRev{
+		commonExpectation: commonExpectation{db: db},
+	}
+	db.count++
+	db.client.expected = append(db.client.expected, e)
+	return e
+}
+
+// ExpectPut queues an expectation that DB.Put will be called.
+func (db *DB) ExpectPut() *ExpectedPut {
+	e := &ExpectedPut{
 		commonExpectation: commonExpectation{db: db},
 	}
 	db.count++
@@ -90,36 +150,6 @@ func (db *DB) ExpectChanges() *ExpectedChanges {
 	return e
 }
 
-// ExpectCopy queues an expectation that DB.Copy will be called.
-func (db *DB) ExpectCopy() *ExpectedCopy {
-	e := &ExpectedCopy{
-		commonExpectation: commonExpectation{db: db},
-	}
-	db.count++
-	db.client.expected = append(db.client.expected, e)
-	return e
-}
-
-// ExpectCreateDoc queues an expectation that DB.CreateDoc will be called.
-func (db *DB) ExpectCreateDoc() *ExpectedCreateDoc {
-	e := &ExpectedCreateDoc{
-		commonExpectation: commonExpectation{db: db},
-	}
-	db.count++
-	db.client.expected = append(db.client.expected, e)
-	return e
-}
-
-// ExpectCreateIndex queues an expectation that DB.CreateIndex will be called.
-func (db *DB) ExpectCreateIndex() *ExpectedCreateIndex {
-	e := &ExpectedCreateIndex{
-		commonExpectation: commonExpectation{db: db},
-	}
-	db.count++
-	db.client.expected = append(db.client.expected, e)
-	return e
-}
-
 // ExpectDelete queues an expectation that DB.Delete will be called.
 func (db *DB) ExpectDelete() *ExpectedDelete {
 	e := &ExpectedDelete{
@@ -133,16 +163,6 @@ func (db *DB) ExpectDelete() *ExpectedDelete {
 // ExpectDeleteAttachment queues an expectation that DB.DeleteAttachment will be called.
 func (db *DB) ExpectDeleteAttachment() *ExpectedDeleteAttachment {
 	e := &ExpectedDeleteAttachment{
-		commonExpectation: commonExpectation{db: db},
-	}
-	db.count++
-	db.client.expected = append(db.client.expected, e)
-	return e
-}
-
-// ExpectDeleteIndex queues an expectation that DB.DeleteIndex will be called.
-func (db *DB) ExpectDeleteIndex() *ExpectedDeleteIndex {
-	e := &ExpectedDeleteIndex{
 		commonExpectation: commonExpectation{db: db},
 	}
 	db.count++
@@ -221,16 +241,6 @@ func (db *DB) ExpectGetIndexes() *ExpectedGetIndexes {
 	return e
 }
 
-// ExpectGetRev queues an expectation that DB.GetRev will be called.
-func (db *DB) ExpectGetRev() *ExpectedGetRev {
-	e := &ExpectedGetRev{
-		commonExpectation: commonExpectation{db: db},
-	}
-	db.count++
-	db.client.expected = append(db.client.expected, e)
-	return e
-}
-
 // ExpectLocalDocs queues an expectation that DB.LocalDocs will be called.
 func (db *DB) ExpectLocalDocs() *ExpectedLocalDocs {
 	e := &ExpectedLocalDocs{
@@ -256,16 +266,6 @@ func (db *DB) ExpectPurge() *ExpectedPurge {
 	e := &ExpectedPurge{
 		commonExpectation: commonExpectation{db: db},
 		ret0:              &driver.PurgeResult{},
-	}
-	db.count++
-	db.client.expected = append(db.client.expected, e)
-	return e
-}
-
-// ExpectPut queues an expectation that DB.Put will be called.
-func (db *DB) ExpectPut() *ExpectedPut {
-	e := &ExpectedPut{
-		commonExpectation: commonExpectation{db: db},
 	}
 	db.count++
 	db.client.expected = append(db.client.expected, e)

@@ -8,19 +8,20 @@ import (
 	"gitlab.com/flimzy/testy"
 
 	kivik "github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/driver"
 )
 
 type testDriver interface {
 	WithCtx(context.Context) error
 	NoCtx(string) error
-	WithOptions(string, map[string]interface{})
+	WithOptions(string, driver.Options)
 }
 
 type testClient struct{}
 
 func (c *testClient) WithCtx(context.Context) error       { return nil }
 func (c *testClient) NoCtx(string) error                  { return nil }
-func (c *testClient) WithOptions(string, ...kivik.Params) {}
+func (c *testClient) WithOptions(string, ...kivik.Option) {}
 
 func TestMethods(t *testing.T) {
 	type tst struct {
@@ -56,9 +57,9 @@ func TestMethods(t *testing.T) {
 				ReturnsError:   true,
 			},
 			{
-				Name:                 "WithOptions",
-				AcceptsLegacyOptions: true,
-				Accepts:              []reflect.Type{typeString},
+				Name:           "WithOptions",
+				AcceptsOptions: true,
+				Accepts:        []reflect.Type{typeString},
 			},
 		},
 	})
@@ -87,9 +88,9 @@ func TestMethods(t *testing.T) {
 				ReturnsError:   true,
 			},
 			{
-				Name:                 "WithOptions",
-				AcceptsLegacyOptions: true,
-				Accepts:              []reflect.Type{typeString},
+				Name:           "WithOptions",
+				AcceptsOptions: true,
+				Accepts:        []reflect.Type{typeString},
 			},
 		},
 	})

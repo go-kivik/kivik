@@ -4,13 +4,6 @@ type Expected{{ .Name }} struct {
 	callback func({{ .DriverArgs }}) {{ .CallbackReturns }}
 {{ .VariableDefinitions }}
 }
-{{ if .AcceptsLegacyOptions }}
-// WithOptions sets the expected options for the call to {{if .DBMethod}}DB.{{end}}{{.Name}}().
-func (e *Expected{{.Name}}) WithOptions(options kivik.Options) *Expected{{.Name}} {
-	e.options = options
-	return e
-}
-{{ end }}
 {{ if .AcceptsOptions }}
 // WithOptions sets the expected options for the call to {{if .DBMethod}}DB.{{end}}{{.Name}}().
 func (e *Expected{{.Name}}) WithOptions(options driver.Options) *Expected{{.Name}} {

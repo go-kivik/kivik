@@ -18,43 +18,37 @@ func TestReplication(t *testing.T) {
 		t.Fatal(err)
 	}
 	ts := time.Now()
-	eID := "a1"
-	eSource := "a2"
-	eTarget := "a3"
+	const (
+		eID     = "a1"
+		eSource = "a2"
+		eTarget = "a3"
+		eErr    = "a5"
+	)
 	eStartTime := ts
 	eEndTime := ts.Add(time.Second)
 	eState := kivik.ReplicationComplete
-	eErr := "a5"
 	r := m.NewReplication().
 		Metadata(driver.ReplicationMetadata{
-			ID:     eID,
-			Source: eSource,
-			Target: eTarget,
+			ID:        eID,
+			Source:    eSource,
+			Target:    eTarget,
+			StartTime: eStartTime,
+			EndTime:   eEndTime,
 		}).
-		StartTime(eStartTime).
-		EndTime(eEndTime).
 		State(eState).
 		Err(errors.New(eErr))
 	dr := &driverReplication{r}
 	want := driver.ReplicationMetadata{
-		ID:     eID,
-		Source: eSource,
-		Target: eTarget,
+		ID:        eID,
+		Source:    eSource,
+		Target:    eTarget,
+		StartTime: eStartTime,
+		EndTime:   eEndTime,
 	}
 	got := dr.Metadata()
 	if d := cmp.Diff(want, got); d != "" {
 		t.Error(d)
 	}
-	t.Run("StartTime", func(t *testing.T) {
-		if ts := dr.StartTime(); !ts.Equal(eStartTime) {
-			t.Errorf("Unexpected StartTime. Got %s, want %s", ts, eStartTime)
-		}
-	})
-	t.Run("EndTime", func(t *testing.T) {
-		if ts := dr.EndTime(); !ts.Equal(eEndTime) {
-			t.Errorf("Unexpected EndTime. Got %s, want %s", ts, eEndTime)
-		}
-	})
 	t.Run("State", func(t *testing.T) {
 		if s := kivik.ReplicationState(dr.State()); s != eState {
 			t.Errorf("Unexpected State. Got %s, want %s", s, eState)

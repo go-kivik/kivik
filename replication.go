@@ -117,12 +117,12 @@ func (r *Replication) Target() string {
 // StartTime returns the replication start time, once the replication has been
 // triggered.
 func (r *Replication) StartTime() time.Time {
-	return r.irep.StartTime()
+	return r.meta.StartTime
 }
 
 // EndTime returns the replication end time, once the replication has terminated.
 func (r *Replication) EndTime() time.Time {
-	return r.irep.EndTime()
+	return r.meta.EndTime
 }
 
 // State returns the current replication state

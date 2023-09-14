@@ -3,7 +3,6 @@ package mockdb
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/go-kivik/kivik/v4/driver"
 )
@@ -46,14 +45,6 @@ var _ driver.Replication = &driverReplication{}
 
 func (r *driverReplication) Metadata() driver.ReplicationMetadata {
 	return r.Replication.meta
-}
-
-func (r *driverReplication) StartTime() time.Time {
-	return r.Replication.startTime
-}
-
-func (r *driverReplication) EndTime() time.Time {
-	return r.Replication.endTime
 }
 
 func (r *driverReplication) State() string {

@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
-	"time"
 
 	"gitlab.com/flimzy/testy"
 
@@ -170,12 +169,12 @@ func TestReplicationGetters(t *testing.T) {
 	r := newReplication(&mock.Replication{
 		MetadataFunc: func() driver.ReplicationMetadata {
 			return driver.ReplicationMetadata{
-				ID: repID,
+				ID:        repID,
+				StartTime: start,
+				EndTime:   end,
 			}
 		},
-		StartTimeFunc: func() time.Time { return start },
-		EndTimeFunc:   func() time.Time { return end },
-		StateFunc:     func() string { return state },
+		StateFunc: func() string { return state },
 	})
 
 	t.Run("ReplicationID", func(t *testing.T) {

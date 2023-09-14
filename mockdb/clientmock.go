@@ -186,18 +186,6 @@ func (r *Replication) Metadata(meta driver.ReplicationMetadata) *Replication {
 	return r
 }
 
-// StartTime sets the replication start time.
-func (r *Replication) StartTime(t time.Time) *Replication {
-	r.startTime = t
-	return r
-}
-
-// EndTime sets the replication end time.
-func (r *Replication) EndTime(t time.Time) *Replication {
-	r.endTime = t
-	return r
-}
-
 // State sets the replication state.
 func (r *Replication) State(s kivik.ReplicationState) *Replication {
 	r.state = string(s)

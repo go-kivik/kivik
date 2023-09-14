@@ -79,9 +79,11 @@ type DBsStatser interface {
 
 // ReplicationMetadata is metadata about a replication.
 type ReplicationMetadata struct {
-	ID     string
-	Source string
-	Target string
+	ID        string
+	Source    string
+	Target    string
+	StartTime time.Time
+	EndTime   time.Time
 }
 
 // Replication represents a _replicator document.
@@ -90,8 +92,6 @@ type Replication interface {
 	// returned from [ClientReplicator.Replicate] or
 	// [ClientReplicator.GetReplications].
 	Metadata() ReplicationMetadata
-	StartTime() time.Time
-	EndTime() time.Time
 	State() string
 	Err() error
 

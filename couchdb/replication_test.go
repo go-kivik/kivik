@@ -742,19 +742,15 @@ func TestReplicationGetters(t *testing.T) {
 		err:           errors.New(err),
 	}
 	want := driver.ReplicationMetadata{
-		ID:     repID,
-		Source: source,
-		Target: target,
+		ID:        repID,
+		Source:    source,
+		Target:    target,
+		StartTime: start,
+		EndTime:   end,
 	}
 	got := rep.Metadata()
 	if d := cmp.Diff(want, got); d != "" {
 		t.Error(d)
-	}
-	if result := rep.StartTime(); !result.Equal(start) {
-		t.Errorf("Unexpected start time: %v", result)
-	}
-	if result := rep.EndTime(); !result.Equal(end) {
-		t.Errorf("Unexpected end time: %v", result)
 	}
 	if result := rep.State(); result != state {
 		t.Errorf("Unexpected state: %s", result)

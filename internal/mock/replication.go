@@ -14,7 +14,6 @@ package mock
 
 import (
 	"context"
-	"time"
 
 	"github.com/go-kivik/kivik/v4/driver"
 )
@@ -22,14 +21,12 @@ import (
 // Replication mocks driver.Replication
 type Replication struct {
 	// ID identifies a specific Replication instance
-	ID            string
-	DeleteFunc    func(context.Context) error
-	MetadataFunc  func() driver.ReplicationMetadata
-	StartTimeFunc func() time.Time
-	EndTimeFunc   func() time.Time
-	ErrFunc       func() error
-	StateFunc     func() string
-	UpdateFunc    func(context.Context, *driver.ReplicationInfo) error
+	ID           string
+	DeleteFunc   func(context.Context) error
+	MetadataFunc func() driver.ReplicationMetadata
+	ErrFunc      func() error
+	StateFunc    func() string
+	UpdateFunc   func(context.Context, *driver.ReplicationInfo) error
 }
 
 var _ driver.Replication = &Replication{}
@@ -48,16 +45,6 @@ func (r *Replication) Metadata() driver.ReplicationMetadata {
 		Source: r.ID + "-source",
 		Target: r.ID + "-target",
 	}
-}
-
-// StartTime calls r.StartTimeFunc
-func (r *Replication) StartTime() time.Time {
-	return r.StartTimeFunc()
-}
-
-// EndTime calls r.EndTimeFunc
-func (r *Replication) EndTime() time.Time {
-	return r.EndTimeFunc()
 }
 
 // Err calls r.ErrFunc

@@ -65,16 +65,16 @@ func (r *replication) readLock() func() {
 
 func (r *replication) Metadata() driver.ReplicationMetadata {
 	return driver.ReplicationMetadata{
-		ID:     "",
-		Source: r.source,
-		Target: r.target,
+		ID:        "",
+		Source:    r.source,
+		Target:    r.target,
+		StartTime: r.startTime,
+		EndTime:   r.endTime,
 	}
 }
 
-func (r *replication) StartTime() time.Time { defer r.readLock()(); return r.startTime }
-func (r *replication) EndTime() time.Time   { defer r.readLock()(); return r.endTime }
-func (r *replication) State() string        { defer r.readLock()(); return string(r.state) }
-func (r *replication) Err() error           { defer r.readLock()(); return r.err }
+func (r *replication) State() string { defer r.readLock()(); return string(r.state) }
+func (r *replication) Err() error    { defer r.readLock()(); return r.err }
 
 func (r *replication) Update(_ context.Context, state *driver.ReplicationInfo) (err error) {
 	defer bindings.RecoverError(&err)

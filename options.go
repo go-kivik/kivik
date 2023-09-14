@@ -50,8 +50,10 @@ func (o allOptions) Apply(t interface{}) {
 func (o allOptions) String() string {
 	parts := make([]string, 0, len(o))
 	for _, opt := range o {
-		if part := fmt.Sprintf("%s", opt); part != "" {
-			parts = append(parts, part)
+		if o != nil {
+			if part := fmt.Sprintf("%s", opt); part != "" {
+				parts = append(parts, part)
+			}
 		}
 	}
 	return strings.Join(parts, ",")

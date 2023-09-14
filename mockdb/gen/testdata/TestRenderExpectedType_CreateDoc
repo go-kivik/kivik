@@ -9,8 +9,8 @@ type ExpectedCreateDoc struct {
 }
 
 // WithOptions sets the expected options for the call to DB.CreateDoc().
-func (e *ExpectedCreateDoc) WithOptions(options driver.Options) *ExpectedCreateDoc {
-	e.options = options
+func (e *ExpectedCreateDoc) WithOptions(options ...kivik.Option) *ExpectedCreateDoc {
+	e.options = multiOptions{e.options, multiOptions(options)}
 	return e
 }
 // WillExecute sets a callback function to be called with any inputs to the

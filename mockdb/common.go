@@ -3,6 +3,7 @@ package mockdb
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -98,4 +99,34 @@ func formatOptions(o driver.Options) string {
 		}
 	}
 	return defaultOptionPlaceholder
+}
+
+type multiOptions []kivik.Option
+
+var _ kivik.Option = (multiOptions)(nil)
+
+func (mo multiOptions) Apply(t interface{}) {
+	if mo == nil {
+		return
+	}
+	for _, opt := range mo {
+		if opt != nil {
+			opt.Apply(t)
+		}
+	}
+}
+
+func (mo multiOptions) String() string {
+	if mo == nil {
+		return ""
+	}
+	parts := make([]string, 0, len(mo))
+	for _, o := range mo {
+		if o != nil {
+			if part := fmt.Sprintf("%s", o); part != "" {
+				parts = append(parts, part)
+			}
+		}
+	}
+	return strings.Join(parts, ",")
 }

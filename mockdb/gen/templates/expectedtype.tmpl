@@ -6,8 +6,8 @@ type Expected{{ .Name }} struct {
 }
 {{ if .AcceptsOptions }}
 // WithOptions sets the expected options for the call to {{if .DBMethod}}DB.{{end}}{{.Name}}().
-func (e *Expected{{.Name}}) WithOptions(options driver.Options) *Expected{{.Name}} {
-	e.options = options
+func (e *Expected{{.Name}}) WithOptions(options ...kivik.Option) *Expected{{.Name}} {
+	e.options = multiOptions{e.options, multiOptions(options)}
 	return e
 }
 {{ end }}// WillExecute sets a callback function to be called with any inputs to the

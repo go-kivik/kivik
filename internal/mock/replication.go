@@ -28,8 +28,6 @@ type Replication struct {
 	StartTimeFunc func() time.Time
 	EndTimeFunc   func() time.Time
 	ErrFunc       func() error
-	SourceFunc    func() string
-	TargetFunc    func() string
 	StateFunc     func() string
 	UpdateFunc    func(context.Context, *driver.ReplicationInfo) error
 }
@@ -41,12 +39,15 @@ func (r *Replication) Delete(ctx context.Context) error {
 	return r.DeleteFunc(ctx)
 }
 
-// Metadata calls r.MetadataFunc if it is not nil.
+// Metadata calls r.MetadataFunc if it is not nil, or returns a default value.
 func (r *Replication) Metadata() driver.ReplicationMetadata {
 	if r.MetadataFunc != nil {
 		return r.MetadataFunc()
 	}
-	return driver.ReplicationMetadata{}
+	return driver.ReplicationMetadata{
+		Source: r.ID + "-source",
+		Target: r.ID + "-target",
+	}
 }
 
 // StartTime calls r.StartTimeFunc
@@ -62,22 +63,6 @@ func (r *Replication) EndTime() time.Time {
 // Err calls r.ErrFunc
 func (r *Replication) Err() error {
 	return r.ErrFunc()
-}
-
-// Source calls r.SourceFunc or returns a default value if SourceFunc is nil
-func (r *Replication) Source() string {
-	if r.SourceFunc == nil {
-		return r.ID + "-source"
-	}
-	return r.SourceFunc()
-}
-
-// Target calls r.TargetFunc or returns a default if TargetFunc is nil
-func (r *Replication) Target() string {
-	if r.TargetFunc == nil {
-		return r.ID + "-target"
-	}
-	return r.TargetFunc()
 }
 
 // State calls r.StateFunc

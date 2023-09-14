@@ -142,13 +142,19 @@ func TestNewReplication(t *testing.T) {
 	source := "foo"
 	target := "bar"
 	rep := &mock.Replication{
-		SourceFunc: func() string { return source },
-		TargetFunc: func() string { return target },
+		MetadataFunc: func() driver.ReplicationMetadata {
+			return driver.ReplicationMetadata{
+				Source: source,
+				Target: target,
+			}
+		},
 	}
 	expected := &Replication{
-		Source: source,
-		Target: target,
-		irep:   rep,
+		meta: driver.ReplicationMetadata{
+			Source: source,
+			Target: target,
+		},
+		irep: rep,
 	}
 	result := newReplication(rep)
 	if d := testy.DiffInterface(expected, result); d != nil {
@@ -362,14 +368,18 @@ func TestGetReplications(t *testing.T) {
 			options: Param("foo", 123),
 			expected: []*Replication{
 				{
-					Source: "1-source",
-					Target: "1-target",
-					irep:   &mock.Replication{ID: "1"},
+					meta: driver.ReplicationMetadata{
+						Source: "1-source",
+						Target: "1-target",
+					},
+					irep: &mock.Replication{ID: "1"},
 				},
 				{
-					Source: "2-source",
-					Target: "2-target",
-					irep:   &mock.Replication{ID: "2"},
+					meta: driver.ReplicationMetadata{
+						Source: "2-source",
+						Target: "2-target",
+					},
+					irep: &mock.Replication{ID: "2"},
 				},
 			},
 		},
@@ -450,9 +460,11 @@ func TestReplicate(t *testing.T) {
 			source:  "bar",
 			options: Param("foo", 123),
 			expected: &Replication{
-				Source: "a-source",
-				Target: "a-target",
-				irep:   &mock.Replication{ID: "a"},
+				meta: driver.ReplicationMetadata{
+					Source: "a-source",
+					Target: "a-target",
+				},
+				irep: &mock.Replication{ID: "a"},
 			},
 		},
 		{

@@ -186,18 +186,6 @@ func (r *Replication) Metadata(meta driver.ReplicationMetadata) *Replication {
 	return r
 }
 
-// Source sets the replication source.
-func (r *Replication) Source(s string) *Replication {
-	r.source = s
-	return r
-}
-
-// Target sets the replication target.
-func (r *Replication) Target(t string) *Replication {
-	r.target = t
-	return r
-}
-
 // StartTime sets the replication start time.
 func (r *Replication) StartTime(t time.Time) *Replication {
 	r.startTime = t

@@ -27,27 +27,24 @@ func TestReplication(t *testing.T) {
 	eErr := "a5"
 	r := m.NewReplication().
 		Metadata(driver.ReplicationMetadata{
-			ID: eID,
+			ID:     eID,
+			Source: eSource,
+			Target: eTarget,
 		}).
-		Source(eSource).
-		Target(eTarget).
 		StartTime(eStartTime).
 		EndTime(eEndTime).
 		State(eState).
 		Err(errors.New(eErr))
 	dr := &driverReplication{r}
 	want := driver.ReplicationMetadata{
-		ID: eID,
+		ID:     eID,
+		Source: eSource,
+		Target: eTarget,
 	}
 	got := dr.Metadata()
 	if d := cmp.Diff(want, got); d != "" {
 		t.Error(d)
 	}
-	t.Run("Source", func(t *testing.T) {
-		if s := dr.Source(); s != eSource {
-			t.Errorf("Unexpected Source. Got %s, want %s", s, eSource)
-		}
-	})
 	t.Run("StartTime", func(t *testing.T) {
 		if ts := dr.StartTime(); !ts.Equal(eStartTime) {
 			t.Errorf("Unexpected StartTime. Got %s, want %s", ts, eStartTime)

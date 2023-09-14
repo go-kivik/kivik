@@ -48,14 +48,6 @@ func (r *driverReplication) Metadata() driver.ReplicationMetadata {
 	return r.Replication.meta
 }
 
-func (r *driverReplication) Source() string {
-	return r.Replication.source
-}
-
-func (r *driverReplication) Target() string {
-	return r.Replication.target
-}
-
 func (r *driverReplication) StartTime() time.Time {
 	return r.Replication.startTime
 }

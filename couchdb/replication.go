@@ -120,12 +120,12 @@ func (r *replication) readLock() func() {
 
 func (r *replication) Metadata() driver.ReplicationMetadata {
 	return driver.ReplicationMetadata{
-		ID: r.replicationID,
+		ID:     r.replicationID,
+		Source: r.source,
+		Target: r.target,
 	}
 }
 
-func (r *replication) Source() string       { defer r.readLock()(); return r.source }
-func (r *replication) Target() string       { defer r.readLock()(); return r.target }
 func (r *replication) StartTime() time.Time { defer r.readLock()(); return r.startTime }
 func (r *replication) EndTime() time.Time   { defer r.readLock()(); return r.endTime }
 func (r *replication) State() string        { defer r.readLock()(); return r.state }

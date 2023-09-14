@@ -723,11 +723,13 @@ func TestSetFromReplicatorDoc(t *testing.T) {
 }
 
 func TestReplicationGetters(t *testing.T) {
-	repID := "a"
-	source := "b"
-	target := "c"
-	state := "d"
-	err := "e"
+	const (
+		repID  = "a"
+		source = "b"
+		target = "c"
+		state  = "d"
+		err    = "e"
+	)
 	start := parseTime(t, "2017-01-01T01:01:01Z")
 	end := parseTime(t, "2017-01-01T01:01:02Z")
 	rep := &replication{
@@ -740,17 +742,13 @@ func TestReplicationGetters(t *testing.T) {
 		err:           errors.New(err),
 	}
 	want := driver.ReplicationMetadata{
-		ID: repID,
+		ID:     repID,
+		Source: source,
+		Target: target,
 	}
 	got := rep.Metadata()
 	if d := cmp.Diff(want, got); d != "" {
 		t.Error(d)
-	}
-	if result := rep.Source(); result != source {
-		t.Errorf("Unexpected source: %s", result)
-	}
-	if result := rep.Target(); result != target {
-		t.Errorf("Unexpected target: %s", result)
 	}
 	if result := rep.StartTime(); !result.Equal(start) {
 		t.Errorf("Unexpected start time: %v", result)

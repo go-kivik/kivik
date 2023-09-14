@@ -42,18 +42,6 @@ func TestDBMeetsExpectation(t *testing.T) {
 	})
 }
 
-type multiOptions []kivik.Option
-
-var _ kivik.Option = (multiOptions)(nil)
-
-func (o multiOptions) Apply(t interface{}) {
-	for _, opt := range o {
-		if opt != nil {
-			opt.Apply(t)
-		}
-	}
-}
-
 func Test_convertOptions(t *testing.T) {
 	tests := []struct {
 		name string

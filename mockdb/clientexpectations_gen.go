@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"time"
 
+	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
@@ -22,8 +23,8 @@ type ExpectedAllDBs struct {
 }
 
 // WithOptions sets the expected options for the call to AllDBs().
-func (e *ExpectedAllDBs) WithOptions(options driver.Options) *ExpectedAllDBs {
-	e.options = options
+func (e *ExpectedAllDBs) WithOptions(options ...kivik.Option) *ExpectedAllDBs {
+	e.options = multiOptions{e.options, multiOptions(options)}
 	return e
 }
 
@@ -150,8 +151,8 @@ type ExpectedClusterStatus struct {
 }
 
 // WithOptions sets the expected options for the call to ClusterStatus().
-func (e *ExpectedClusterStatus) WithOptions(options driver.Options) *ExpectedClusterStatus {
-	e.options = options
+func (e *ExpectedClusterStatus) WithOptions(options ...kivik.Option) *ExpectedClusterStatus {
+	e.options = multiOptions{e.options, multiOptions(options)}
 	return e
 }
 
@@ -269,8 +270,8 @@ type ExpectedDBExists struct {
 }
 
 // WithOptions sets the expected options for the call to DBExists().
-func (e *ExpectedDBExists) WithOptions(options driver.Options) *ExpectedDBExists {
-	e.options = options
+func (e *ExpectedDBExists) WithOptions(options ...kivik.Option) *ExpectedDBExists {
+	e.options = multiOptions{e.options, multiOptions(options)}
 	return e
 }
 
@@ -394,8 +395,8 @@ type ExpectedDestroyDB struct {
 }
 
 // WithOptions sets the expected options for the call to DestroyDB().
-func (e *ExpectedDestroyDB) WithOptions(options driver.Options) *ExpectedDestroyDB {
-	e.options = options
+func (e *ExpectedDestroyDB) WithOptions(options ...kivik.Option) *ExpectedDestroyDB {
+	e.options = multiOptions{e.options, multiOptions(options)}
 	return e
 }
 
@@ -678,8 +679,8 @@ type ExpectedDB struct {
 }
 
 // WithOptions sets the expected options for the call to DB().
-func (e *ExpectedDB) WithOptions(options driver.Options) *ExpectedDB {
-	e.options = options
+func (e *ExpectedDB) WithOptions(options ...kivik.Option) *ExpectedDB {
+	e.options = multiOptions{e.options, multiOptions(options)}
 	return e
 }
 
@@ -730,8 +731,8 @@ type ExpectedDBUpdates struct {
 }
 
 // WithOptions sets the expected options for the call to DBUpdates().
-func (e *ExpectedDBUpdates) WithOptions(options driver.Options) *ExpectedDBUpdates {
-	e.options = options
+func (e *ExpectedDBUpdates) WithOptions(options ...kivik.Option) *ExpectedDBUpdates {
+	e.options = multiOptions{e.options, multiOptions(options)}
 	return e
 }
 
@@ -834,8 +835,8 @@ type ExpectedGetReplications struct {
 }
 
 // WithOptions sets the expected options for the call to GetReplications().
-func (e *ExpectedGetReplications) WithOptions(options driver.Options) *ExpectedGetReplications {
-	e.options = options
+func (e *ExpectedGetReplications) WithOptions(options ...kivik.Option) *ExpectedGetReplications {
+	e.options = multiOptions{e.options, multiOptions(options)}
 	return e
 }
 
@@ -931,8 +932,8 @@ type ExpectedReplicate struct {
 }
 
 // WithOptions sets the expected options for the call to Replicate().
-func (e *ExpectedReplicate) WithOptions(options driver.Options) *ExpectedReplicate {
-	e.options = options
+func (e *ExpectedReplicate) WithOptions(options ...kivik.Option) *ExpectedReplicate {
+	e.options = multiOptions{e.options, multiOptions(options)}
 	return e
 }
 

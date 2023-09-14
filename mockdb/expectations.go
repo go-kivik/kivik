@@ -212,8 +212,8 @@ func (e *ExpectedCreateDB) met(ex expectation) bool {
 }
 
 // WithOptions set the expectation that DB() will be called with these options.
-func (e *ExpectedCreateDB) WithOptions(options kivik.Option) *ExpectedCreateDB {
-	e.options = options
+func (e *ExpectedCreateDB) WithOptions(options ...kivik.Option) *ExpectedCreateDB {
+	e.options = multiOptions{e.options, multiOptions(options)}
 	return e
 }
 

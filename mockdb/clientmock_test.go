@@ -34,6 +34,7 @@ func TestReplication(t *testing.T) {
 			Target:    eTarget,
 			StartTime: eStartTime,
 			EndTime:   eEndTime,
+			State:     string(eState),
 		}).
 		State(eState).
 		Err(errors.New(eErr))
@@ -44,16 +45,12 @@ func TestReplication(t *testing.T) {
 		Target:    eTarget,
 		StartTime: eStartTime,
 		EndTime:   eEndTime,
+		State:     string(eState),
 	}
 	got := dr.Metadata()
 	if d := cmp.Diff(want, got); d != "" {
 		t.Error(d)
 	}
-	t.Run("State", func(t *testing.T) {
-		if s := kivik.ReplicationState(dr.State()); s != eState {
-			t.Errorf("Unexpected State. Got %s, want %s", s, eState)
-		}
-	})
 	t.Run("Err", func(t *testing.T) {
 		err := dr.Err()
 		testy.Error(t, eErr, err)

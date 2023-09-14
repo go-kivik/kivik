@@ -172,9 +172,9 @@ func TestReplicationGetters(t *testing.T) {
 				ID:        repID,
 				StartTime: start,
 				EndTime:   end,
+				State:     state,
 			}
 		},
-		StateFunc: func() string { return state },
 	})
 
 	t.Run("ReplicationID", func(t *testing.T) {
@@ -241,8 +241,10 @@ func TestReplicationIsActive(t *testing.T) {
 	t.Run("Active", func(t *testing.T) {
 		r := &Replication{
 			irep: &mock.Replication{
-				StateFunc: func() string {
-					return "active"
+				MetadataFunc: func() driver.ReplicationMetadata {
+					return driver.ReplicationMetadata{
+						State: "active",
+					}
 				},
 			},
 		}
@@ -251,13 +253,13 @@ func TestReplicationIsActive(t *testing.T) {
 		}
 	})
 	t.Run("Complete", func(t *testing.T) {
-		r := &Replication{
-			irep: &mock.Replication{
-				StateFunc: func() string {
-					return string(ReplicationComplete)
-				},
+		r := newReplication(&mock.Replication{
+			MetadataFunc: func() driver.ReplicationMetadata {
+				return driver.ReplicationMetadata{
+					State: string(ReplicationComplete),
+				}
 			},
-		}
+		})
 		if r.IsActive() {
 			t.Errorf("Expected not active")
 		}

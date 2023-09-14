@@ -175,11 +175,11 @@ func (r *schedulerReplication) Metadata() driver.ReplicationMetadata {
 		Target:    r.target,
 		StartTime: r.startTime,
 		EndTime:   endTime,
+		State:     r.state,
 	}
 }
 
-func (r *schedulerReplication) Err() error    { return r.info.Error }
-func (r *schedulerReplication) State() string { return r.state }
+func (r *schedulerReplication) Err() error { return r.info.Error }
 
 func (r *schedulerReplication) Update(ctx context.Context, rep *driver.ReplicationInfo) error {
 	if err := r.update(ctx); err != nil {

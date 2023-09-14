@@ -25,7 +25,6 @@ type Replication struct {
 	DeleteFunc   func(context.Context) error
 	MetadataFunc func() driver.ReplicationMetadata
 	ErrFunc      func() error
-	StateFunc    func() string
 	UpdateFunc   func(context.Context, *driver.ReplicationInfo) error
 }
 
@@ -50,11 +49,6 @@ func (r *Replication) Metadata() driver.ReplicationMetadata {
 // Err calls r.ErrFunc
 func (r *Replication) Err() error {
 	return r.ErrFunc()
-}
-
-// State calls r.StateFunc
-func (r *Replication) State() string {
-	return r.StateFunc()
 }
 
 // Update calls r.UpdateFunc

@@ -84,6 +84,7 @@ type ReplicationMetadata struct {
 	Target    string
 	StartTime time.Time
 	EndTime   time.Time
+	State     string
 }
 
 // Replication represents a _replicator document.
@@ -92,7 +93,6 @@ type Replication interface {
 	// returned from [ClientReplicator.Replicate] or
 	// [ClientReplicator.GetReplications].
 	Metadata() ReplicationMetadata
-	State() string
 	Err() error
 
 	// These methods may be triggered by user actions.

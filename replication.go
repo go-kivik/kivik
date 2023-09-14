@@ -127,7 +127,7 @@ func (r *Replication) EndTime() time.Time {
 
 // State returns the current replication state
 func (r *Replication) State() ReplicationState {
-	return ReplicationState(r.irep.State())
+	return ReplicationState(r.meta.State)
 }
 
 // Err returns the error, if any, that caused the replication to abort.

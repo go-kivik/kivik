@@ -47,10 +47,6 @@ func (r *driverReplication) Metadata() driver.ReplicationMetadata {
 	return r.Replication.meta
 }
 
-func (r *driverReplication) State() string {
-	return r.Replication.state
-}
-
 func (r *driverReplication) Err() error {
 	return r.Replication.err
 }

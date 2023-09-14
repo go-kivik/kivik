@@ -70,11 +70,11 @@ func (r *replication) Metadata() driver.ReplicationMetadata {
 		Target:    r.target,
 		StartTime: r.startTime,
 		EndTime:   r.endTime,
+		State:     string(r.state),
 	}
 }
 
-func (r *replication) State() string { defer r.readLock()(); return string(r.state) }
-func (r *replication) Err() error    { defer r.readLock()(); return r.err }
+func (r *replication) Err() error { defer r.readLock()(); return r.err }
 
 func (r *replication) Update(_ context.Context, state *driver.ReplicationInfo) (err error) {
 	defer bindings.RecoverError(&err)

@@ -747,13 +747,11 @@ func TestReplicationGetters(t *testing.T) {
 		Target:    target,
 		StartTime: start,
 		EndTime:   end,
+		State:     state,
 	}
 	got := rep.Metadata()
 	if d := cmp.Diff(want, got); d != "" {
 		t.Error(d)
-	}
-	if result := rep.State(); result != state {
-		t.Errorf("Unexpected state: %s", result)
 	}
 	testy.Error(t, err, rep.Err())
 }

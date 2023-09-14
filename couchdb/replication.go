@@ -125,17 +125,17 @@ func (r *replication) Metadata() driver.ReplicationMetadata {
 		Target:    r.target,
 		StartTime: r.startTime,
 		EndTime:   r.endTime,
+		State:     r.state,
 	}
 }
 
-func (r *replication) State() string { defer r.readLock()(); return r.state }
-func (r *replication) Err() error    { defer r.readLock()(); return r.err }
+func (r *replication) Err() error { defer r.readLock()(); return r.err }
 
 func (r *replication) Update(ctx context.Context, state *driver.ReplicationInfo) error {
 	if err := r.updateMain(ctx); err != nil {
 		return err
 	}
-	if r.State() == "complete" {
+	if r.state == "complete" {
 		state.Progress = 100
 		return nil
 	}

@@ -44,14 +44,20 @@ func optionsMeetExpectation(a, e kivik.Option) bool {
 
 // convertOptions converts a to a slice of options, for easier comparison
 func convertOptions(a kivik.Option) []kivik.Option {
+	if a == nil {
+		return nil
+	}
 	t := reflect.TypeOf(a)
 	if t.Kind() != reflect.Slice {
 		return []kivik.Option{a}
 	}
 	v := reflect.ValueOf(a)
-	result := make([]kivik.Option, v.Len())
-	for i := range result {
-		result[i] = v.Index(i).Interface().(kivik.Option)
+	result := make([]kivik.Option, 0, v.Len())
+	for i := 0; i < v.Len(); i++ {
+		opt := v.Index(i)
+		if !opt.IsNil() {
+			result = append(result, convertOptions(opt.Interface().(kivik.Option))...)
+		}
 	}
 	return result
 }

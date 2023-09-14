@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"runtime/debug"
 	"time"
 
 	kivik "github.com/go-kivik/kivik/v4"
@@ -145,6 +146,8 @@ func (r *schedulerReplication) setFromDoc(doc *schedulerDoc) {
 }
 
 func (c *client) fetchSchedulerReplication(ctx context.Context, docID string) (*schedulerReplication, error) {
+	fmt.Println("fetchSchedulerReplication")
+	debug.PrintStack()
 	rep := &schedulerReplication{
 		docID:    docID,
 		database: "_replicator",

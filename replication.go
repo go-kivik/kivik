@@ -14,7 +14,9 @@ package kivik
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"runtime/debug"
 	"sync"
 	"time"
 
@@ -127,6 +129,8 @@ func (r *Replication) EndTime() time.Time {
 
 // State returns the current replication state
 func (r *Replication) State() ReplicationState {
+	fmt.Println("State()", r.meta.State)
+	debug.PrintStack()
 	return ReplicationState(r.meta.State)
 }
 

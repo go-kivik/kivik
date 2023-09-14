@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"embed"
 	"fmt"
 	"os"
 	"reflect"
@@ -11,9 +12,12 @@ import (
 
 var tmpl *template.Template
 
-func initTemplates(root string) {
+//go:embed templates/*
+var tmplFS embed.FS
+
+func init() {
 	var err error
-	tmpl, err = template.ParseGlob(root + "/*")
+	tmpl, err = template.ParseFS(tmplFS, "templates/*")
 	if err != nil {
 		panic(err)
 	}

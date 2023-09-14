@@ -7,10 +7,6 @@ import (
 	"gitlab.com/flimzy/testy"
 )
 
-func init() {
-	initTemplates("templates")
-}
-
 func TestRenderExpectedType(t *testing.T) {
 	tests := testy.NewTable()
 	tests.Add("CreateDoc", &method{

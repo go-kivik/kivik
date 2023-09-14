@@ -20,6 +20,20 @@ type Members struct {
 
 // Security represents a database security document.
 type Security struct {
-	Admins  Members `json:"admins"`
-	Members Members `json:"members"`
+	Admins  Members `json:"admins,omitempty"`
+	Members Members `json:"members,omitempty"`
+
+	// Database permissions for Cloudant users and/or API keys. This field is
+	// only used or populated by IBM Cloudant. See the [Cloudant documentation]
+	// for details.
+	//
+	// [Cloudant documentation]: https://cloud.ibm.com/apidocs/cloudant#getsecurity
+	Cloudant map[string][]string `json:"cloudant,omitempty"`
+
+	// Manage permissions using the `_users` database only. This field is only
+	// used or populated by IBM Cloudant. See the [Cloudant documentation] for
+	// details.
+	//
+	// [Cloudant documentation]: https://cloud.ibm.com/apidocs/cloudant#getsecurity
+	CouchdbAuthOnly *bool `json:"couchdb_auth_only,omitempty"`
 }

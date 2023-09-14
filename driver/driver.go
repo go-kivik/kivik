@@ -147,8 +147,10 @@ type Members struct {
 
 // Security represents a database security document.
 type Security struct {
-	Admins  Members `json:"admins"`
-	Members Members `json:"members"`
+	Admins          Members             `json:"admins,omitempty"`
+	Members         Members             `json:"members,omitempty"`
+	Cloudant        map[string][]string `json:"cloudant,omitempty"`
+	CouchdbAuthOnly *bool               `json:"couchdb_auth_only,omitempty"`
 }
 
 // MarshalJSON satisfies the json.Marshaler interface.

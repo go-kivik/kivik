@@ -25,6 +25,7 @@ import (
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
@@ -68,7 +69,7 @@ func TestClusterStatus(t *testing.T) {
 		client: newCustomClient(func(r *http.Request) (*http.Response, error) {
 			result := []string{}
 			err := json.Unmarshal([]byte(r.URL.Query().Get(optionEnsureDBsExist)), &result)
-			return nil, &kivik.Error{Status: http.StatusBadRequest, Err: err}
+			return nil, &internal.Error{Status: http.StatusBadRequest, Err: err}
 		}),
 		options: kivik.Param(optionEnsureDBsExist, "foo,bar,baz"),
 		status:  http.StatusBadRequest,

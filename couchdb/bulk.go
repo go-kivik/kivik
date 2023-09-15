@@ -18,9 +18,9 @@ import (
 	"errors"
 	"net/http"
 
-	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/couchdb/chttp"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 func (d *db) BulkDocs(ctx context.Context, docs []interface{}, options driver.Options) ([]driver.BulkResult, error) {
@@ -83,9 +83,9 @@ func (r *bulkDocResult) UnmarshalJSON(p []byte) error {
 	case "":
 		// No error
 	case "conflict":
-		r.Error = &kivik.Error{Status: http.StatusConflict, Err: errors.New(target.Reason)}
+		r.Error = &internal.Error{Status: http.StatusConflict, Err: errors.New(target.Reason)}
 	default:
-		r.Error = &kivik.Error{Status: http.StatusInternalServerError, Err: errors.New(target.Reason)}
+		r.Error = &internal.Error{Status: http.StatusInternalServerError, Err: errors.New(target.Reason)}
 	}
 	return nil
 }

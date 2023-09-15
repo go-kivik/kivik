@@ -21,8 +21,8 @@ import (
 
 	"github.com/gopherjs/gopherjs/js"
 
-	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 type bulkResult struct {
@@ -57,7 +57,7 @@ func (d *db) BulkDocs(ctx context.Context, docs []interface{}, options driver.Op
 		r.Object = result.Call("shift")
 		var err error
 		if r.IsError {
-			err = &kivik.Error{Status: r.StatusCode, Message: r.Reason}
+			err = &internal.Error{Status: r.StatusCode, Message: r.Reason}
 		}
 		results = append(results, driver.BulkResult{
 			ID:    r.ID,

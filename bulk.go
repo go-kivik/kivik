@@ -18,6 +18,7 @@ import (
 	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 // BulkResult is the result of a single BulkDoc update.
@@ -46,7 +47,7 @@ func (db *DB) BulkDocs(ctx context.Context, docs []interface{}, options ...Optio
 		return nil, err
 	}
 	if len(docsi) == 0 {
-		return nil, &Error{Status: http.StatusBadRequest, Err: errors.New("kivik: no documents provided")}
+		return nil, &internal.Error{Status: http.StatusBadRequest, Err: errors.New("kivik: no documents provided")}
 	}
 	if err := db.startQuery(); err != nil {
 		return nil, err
@@ -87,7 +88,7 @@ func docsInterfaceSlice(docsi []interface{}) ([]interface{}, error) {
 	for i, doc := range docsi {
 		x, err := normalizeFromJSON(doc)
 		if err != nil {
-			return nil, &Error{Status: http.StatusBadRequest, Err: err}
+			return nil, &internal.Error{Status: http.StatusBadRequest, Err: err}
 		}
 		docsi[i] = x
 	}

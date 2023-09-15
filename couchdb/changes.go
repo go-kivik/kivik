@@ -19,9 +19,9 @@ import (
 	"io"
 	"net/http"
 
-	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/couchdb/chttp"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 // Changes returns the changes stream for the database.
@@ -31,7 +31,7 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 	key := "results"
 	if f, ok := opts["feed"]; ok {
 		if f == "eventsource" {
-			return nil, &kivik.Error{Status: http.StatusBadRequest, Err: errors.New("kivik: eventsource feed not supported, use 'continuous'")}
+			return nil, &internal.Error{Status: http.StatusBadRequest, Err: errors.New("kivik: eventsource feed not supported, use 'continuous'")}
 		}
 		if f == "continuous" {
 			key = ""
@@ -72,7 +72,7 @@ func (p *continuousChangesParser) decodeItem(i interface{}, dec *json.Decoder) e
 	row := i.(*driver.Change)
 	ch := &change{Change: row}
 	if err := dec.Decode(ch); err != nil {
-		return &kivik.Error{Status: http.StatusBadGateway, Err: err}
+		return &internal.Error{Status: http.StatusBadGateway, Err: err}
 	}
 	ch.Change.Seq = string(ch.Seq)
 	return nil

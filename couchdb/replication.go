@@ -27,6 +27,7 @@ import (
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/couchdb/chttp"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 type replicationError struct {
@@ -73,7 +74,7 @@ func (t *replicationStateTime) UnmarshalJSON(data []byte) error {
 		*t = epochTime
 		return nil
 	}
-	return &kivik.Error{Status: http.StatusBadGateway, Err: fmt.Errorf("kivik: '%s' does not appear to be a valid timestamp", string(data))}
+	return &internal.Error{Status: http.StatusBadGateway, Err: fmt.Errorf("kivik: '%s' does not appear to be a valid timestamp", string(data))}
 }
 
 type replication struct {
@@ -169,7 +170,7 @@ func (r *replication) updateActiveTasks(ctx context.Context) (*activeTask, error
 	defer chttp.CloseBody(resp.Body)
 	var tasks []*activeTask
 	if err = json.NewDecoder(resp.Body).Decode(&tasks); err != nil {
-		return nil, &kivik.Error{Status: http.StatusBadGateway, Err: err}
+		return nil, &internal.Error{Status: http.StatusBadGateway, Err: err}
 	}
 	for _, task := range tasks {
 		if task.Type != "replication" {
@@ -181,7 +182,7 @@ func (r *replication) updateActiveTasks(ctx context.Context) (*activeTask, error
 		}
 		return task, nil
 	}
-	return nil, &kivik.Error{Status: http.StatusNotFound, Err: errors.New("task not found")}
+	return nil, &internal.Error{Status: http.StatusNotFound, Err: errors.New("task not found")}
 }
 
 // updateMain updates the "main" fields: those stored directly in r.

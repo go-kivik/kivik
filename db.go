@@ -24,6 +24,7 @@ import (
 	"sync/atomic"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 // DB is a handle to a specific database.
@@ -100,7 +101,7 @@ func (db *DB) DesignDocs(ctx context.Context, options ...Option) *ResultSet {
 	}
 	ddocer, ok := db.driverDB.(driver.DesignDocer)
 	if !ok {
-		return &ResultSet{err: &Error{Status: http.StatusNotImplemented, Err: errors.New("kivik: design doc view not supported by driver")}}
+		return &ResultSet{err: &internal.Error{Status: http.StatusNotImplemented, Err: errors.New("kivik: design doc view not supported by driver")}}
 	}
 
 	if err := db.startQuery(); err != nil {
@@ -121,7 +122,7 @@ func (db *DB) LocalDocs(ctx context.Context, options ...Option) *ResultSet {
 	}
 	ldocer, ok := db.driverDB.(driver.LocalDocer)
 	if !ok {
-		return &ResultSet{err: &Error{Status: http.StatusNotImplemented, Err: errors.New("kivik: local doc view not supported by driver")}}
+		return &ResultSet{err: &internal.Error{Status: http.StatusNotImplemented, Err: errors.New("kivik: local doc view not supported by driver")}}
 	}
 	if err := db.startQuery(); err != nil {
 		return &ResultSet{err: err}
@@ -248,7 +249,7 @@ func normalizeFromJSON(i interface{}) (interface{}, error) {
 	case io.Reader:
 		body, err := io.ReadAll(t)
 		if err != nil {
-			return nil, &Error{Status: http.StatusBadRequest, Err: err}
+			return nil, &internal.Error{Status: http.StatusBadRequest, Err: err}
 		}
 		return json.RawMessage(body), nil
 	default:
@@ -349,7 +350,7 @@ func (db *DB) Flush(ctx context.Context) error {
 	if flusher, ok := db.driverDB.(driver.Flusher); ok {
 		return flusher.Flush(ctx)
 	}
-	return &Error{Status: http.StatusNotImplemented, Err: errors.New("kivik: flush not supported by driver")}
+	return &internal.Error{Status: http.StatusNotImplemented, Err: errors.New("kivik: flush not supported by driver")}
 }
 
 // DBStats contains database statistics..
@@ -492,7 +493,7 @@ func (db *DB) ViewCleanup(ctx context.Context) error {
 	return db.driverDB.ViewCleanup(ctx)
 }
 
-var securityNotImplemented = &Error{Status: http.StatusNotImplemented, Message: "kivik: driver does not support Security interface"}
+var securityNotImplemented = &internal.Error{Status: http.StatusNotImplemented, Message: "kivik: driver does not support Security interface"}
 
 // Security returns the database's security document.
 //
@@ -731,7 +732,7 @@ func (db *DB) Purge(ctx context.Context, docRevMap map[string][]string) (*PurgeR
 		r := PurgeResult(*res)
 		return &r, nil
 	}
-	return nil, &Error{Status: http.StatusNotImplemented, Message: "kivik: purge not supported by driver"}
+	return nil, &internal.Error{Status: http.StatusNotImplemented, Message: "kivik: purge not supported by driver"}
 }
 
 // BulkGetReference is a reference to a document given to pass to [DB.BulkGet].
@@ -754,7 +755,7 @@ func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...O
 	}
 	bulkGetter, ok := db.driverDB.(driver.BulkGetter)
 	if !ok {
-		return &ResultSet{err: &Error{Status: http.StatusNotImplemented, Message: "kivik: bulk get not supported by driver"}}
+		return &ResultSet{err: &internal.Error{Status: http.StatusNotImplemented, Message: "kivik: bulk get not supported by driver"}}
 	}
 
 	if err := db.startQuery(); err != nil {
@@ -828,7 +829,7 @@ func (db *DB) RevsDiff(ctx context.Context, revMap interface{}) *ResultSet {
 		}
 		return &ResultSet{underlying: newRows(ctx, db.endQuery, rowsi)}
 	}
-	return &ResultSet{err: &Error{Status: http.StatusNotImplemented, Message: "kivik: _revs_diff not supported by driver"}}
+	return &ResultSet{err: &internal.Error{Status: http.StatusNotImplemented, Message: "kivik: _revs_diff not supported by driver"}}
 }
 
 // PartitionStats contains partition statistics.
@@ -863,5 +864,5 @@ func (db *DB) PartitionStats(ctx context.Context, name string) (*PartitionStats,
 		s := PartitionStats(*stats)
 		return &s, nil
 	}
-	return nil, &Error{Status: http.StatusNotImplemented, Message: "kivik: partitions not supported by driver"}
+	return nil, &internal.Error{Status: http.StatusNotImplemented, Message: "kivik: partitions not supported by driver"}
 }

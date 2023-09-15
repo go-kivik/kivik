@@ -20,6 +20,7 @@ import (
 	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 // Changes is an iterator over the database changes feed.
@@ -116,7 +117,7 @@ type ChangesMetadata struct {
 // after [Changes.Next] returns false. Otherwise it will return an error.
 func (c *Changes) Metadata() (*ChangesMetadata, error) {
 	if c.iter == nil || (c.state != stateEOQ && c.state != stateClosed) {
-		return nil, &Error{Status: http.StatusBadRequest, Err: errors.New("Metadata must not be called until result set iteration is complete")}
+		return nil, &internal.Error{Status: http.StatusBadRequest, Err: errors.New("Metadata must not be called until result set iteration is complete")}
 	}
 	return c.feed.(*changesIterator).ChangesMetadata, nil
 }

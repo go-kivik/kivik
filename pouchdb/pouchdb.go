@@ -27,6 +27,7 @@ import (
 
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/pouchdb/bindings"
 )
 
@@ -156,7 +157,7 @@ func (c *client) DBExists(ctx context.Context, dbName string, options driver.Opt
 func (c *client) CreateDB(ctx context.Context, dbName string, options driver.Options) error {
 	if c.isRemote() {
 		if exists, _ := c.DBExists(ctx, dbName, options); exists {
-			return &kivik.Error{Status: http.StatusPreconditionFailed, Message: "database exists"}
+			return &internal.Error{Status: http.StatusPreconditionFailed, Message: "database exists"}
 		}
 	}
 	pouchOpts := map[string]interface{}{}
@@ -172,7 +173,7 @@ func (c *client) DestroyDB(ctx context.Context, dbName string, options driver.Op
 	}
 	if !exists {
 		// This will only ever do anything for a remote database
-		return &kivik.Error{Status: http.StatusNotFound, Message: "database does not exist"}
+		return &internal.Error{Status: http.StatusNotFound, Message: "database does not exist"}
 	}
 	pouchOpts := map[string]interface{}{}
 	options.Apply(pouchOpts)

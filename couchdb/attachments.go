@@ -17,9 +17,9 @@ import (
 	"errors"
 	"net/http"
 
-	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/couchdb/chttp"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attachment, options driver.Options) (newRev string, err error) {
@@ -121,7 +121,7 @@ func decodeAttachment(resp *http.Response) (*driver.Attachment, error) {
 func getContentType(resp *http.Response) (string, error) {
 	ctype := resp.Header.Get("Content-Type")
 	if _, ok := resp.Header["Content-Type"]; !ok {
-		return "", &kivik.Error{Status: http.StatusBadGateway, Err: errors.New("no Content-Type in response")}
+		return "", &internal.Error{Status: http.StatusBadGateway, Err: errors.New("no Content-Type in response")}
 	}
 	return ctype, nil
 }
@@ -129,7 +129,7 @@ func getContentType(resp *http.Response) (string, error) {
 func getDigest(resp *http.Response) (string, error) {
 	etag, ok := chttp.ETag(resp)
 	if !ok {
-		return "", &kivik.Error{Status: http.StatusBadGateway, Err: errors.New("ETag header not found")}
+		return "", &internal.Error{Status: http.StatusBadGateway, Err: errors.New("ETag header not found")}
 	}
 	return etag, nil
 }

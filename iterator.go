@@ -19,6 +19,7 @@ import (
 	"sync"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 type iterator interface {
@@ -64,11 +65,11 @@ func (i *iter) rlock() (unlock func(), err error) {
 	i.mu.RLock()
 	if i.state == stateClosed {
 		i.mu.RUnlock()
-		return nil, &Error{Status: http.StatusBadRequest, Message: "kivik: Iterator is closed"}
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "kivik: Iterator is closed"}
 	}
 	if !i.ready() {
 		i.mu.RUnlock()
-		return nil, &Error{Status: http.StatusBadRequest, Message: "kivik: Iterator access before calling Next"}
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "kivik: Iterator access before calling Next"}
 	}
 	return i.mu.RUnlock, nil
 }
@@ -89,7 +90,7 @@ func (i *iter) makeReady(e *error) (unlock func(), err error) {
 	if !i.ready() {
 		i.mu.RUnlock()
 		if !i.Next() {
-			return nil, &Error{Status: http.StatusNotFound, Message: "no results"}
+			return nil, &internal.Error{Status: http.StatusNotFound, Message: "no results"}
 		}
 		return func() {
 			if err := i.Close(); err != nil && e != nil {

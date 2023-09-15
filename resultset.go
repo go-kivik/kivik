@@ -21,6 +21,7 @@ import (
 	"reflect"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 // ResultMetadata contains metadata about certain queries.
@@ -276,7 +277,7 @@ func (r *rows) NextResultSet() bool {
 
 func (r *rows) Metadata() (*ResultMetadata, error) {
 	for r.iter == nil || (r.state != stateEOQ && r.state != stateClosed) {
-		return nil, &Error{Status: http.StatusBadRequest, Err: errors.New("Metadata must not be called until result set iteration is complete")}
+		return nil, &internal.Error{Status: http.StatusBadRequest, Err: errors.New("Metadata must not be called until result set iteration is complete")}
 	}
 	return r.feed.(*rowsIterator).ResultMetadata, nil
 }
@@ -345,7 +346,7 @@ func (r *rows) ScanDoc(dest interface{}) (err error) {
 	if row.Doc != nil {
 		return json.NewDecoder(row.Doc).Decode(dest)
 	}
-	return &Error{Status: http.StatusBadRequest, Message: "kivik: doc is nil; does the query include docs?"}
+	return &internal.Error{Status: http.StatusBadRequest, Message: "kivik: doc is nil; does the query include docs?"}
 }
 
 // ScanAllDocs loops through the remaining documents in the resultset, and scans

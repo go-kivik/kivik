@@ -25,8 +25,8 @@ import (
 
 	"github.com/gopherjs/gopherjs/js"
 
-	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/pouchdb/bindings"
 )
 
@@ -99,7 +99,7 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 	jsDoc := js.Global.Get("JSON").Call("parse", string(jsonDoc))
 	if id := jsDoc.Get("_id"); id != js.Undefined {
 		if id.String() != docID {
-			return "", &kivik.Error{Status: http.StatusBadRequest, Message: "id argument must match _id field in document"}
+			return "", &internal.Error{Status: http.StatusBadRequest, Message: "id argument must match _id field in document"}
 		}
 	}
 	opts := map[string]interface{}{}
@@ -127,7 +127,7 @@ func (d *db) Stats(ctx context.Context) (*driver.DBStats, error) {
 
 func (d *db) Compact(context.Context) error {
 	if atomic.LoadUint32(&d.compacting) == 1 {
-		return &kivik.Error{Status: http.StatusTooManyRequests, Message: "kivik: compaction already running"}
+		return &internal.Error{Status: http.StatusTooManyRequests, Message: "kivik: compaction already running"}
 	}
 	atomic.StoreUint32(&d.compacting, 1)
 	defer atomic.StoreUint32(&d.compacting, 0)
@@ -141,7 +141,7 @@ func (d *db) CompactView(context.Context, string) error {
 
 func (d *db) ViewCleanup(context.Context) error {
 	if atomic.LoadUint32(&d.viewCleanup) == 1 {
-		return &kivik.Error{Status: http.StatusTooManyRequests, Message: "kivik: view cleanup already running"}
+		return &internal.Error{Status: http.StatusTooManyRequests, Message: "kivik: view cleanup already running"}
 	}
 	atomic.StoreUint32(&d.viewCleanup, 1)
 	defer atomic.StoreUint32(&d.viewCleanup, 0)

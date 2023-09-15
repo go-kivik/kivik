@@ -21,6 +21,7 @@ import (
 	"sync/atomic"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/internal/registry"
 )
 
@@ -50,7 +51,7 @@ func Register(name string, driver driver.Driver) {
 func New(driverName, dataSourceName string, options ...Option) (*Client, error) {
 	driveri := registry.Driver(driverName)
 	if driveri == nil {
-		return nil, &Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("kivik: unknown driver %q (forgotten import?)", driverName)}
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("kivik: unknown driver %q (forgotten import?)", driverName)}
 	}
 	client, err := driveri.NewClient(dataSourceName, allOptions(options))
 	if err != nil {
@@ -171,7 +172,7 @@ func (c *Client) DestroyDB(ctx context.Context, dbName string, options ...Option
 }
 
 func missingArg(arg string) error {
-	return &Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("kivik: %s required", arg)}
+	return &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("kivik: %s required", arg)}
 }
 
 // DBsStats returns database statistics about one or more databases.
@@ -203,7 +204,7 @@ func (c *Client) fallbackDBsStats(ctx context.Context, dbnames []string) ([]*DBS
 func (c *Client) nativeDBsStats(ctx context.Context, dbnames []string) ([]*DBStats, error) {
 	statser, ok := c.driverClient.(driver.DBsStatser)
 	if !ok {
-		return nil, &Error{Status: http.StatusNotImplemented, Message: "kivik: not supported by driver"}
+		return nil, &internal.Error{Status: http.StatusNotImplemented, Message: "kivik: not supported by driver"}
 	}
 	stats, err := statser.DBsStats(ctx, dbnames)
 	if err != nil {

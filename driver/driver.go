@@ -85,6 +85,8 @@ type Replication interface {
 	ReplicationID() string
 	Source() string
 	Target() string
+
+	// The following methods return values may be updated by calls to [Update].
 	StartTime() time.Time
 	EndTime() time.Time
 	State() string

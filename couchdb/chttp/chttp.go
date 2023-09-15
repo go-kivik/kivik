@@ -103,9 +103,9 @@ func New(client *http.Client, dsn string, options driver.Options) (*Client, erro
 
 func parseDSN(dsn string) (*url.URL, error) {
 	if dsn == "" {
-		return nil, &curlError{
-			httpStatus: http.StatusBadRequest,
-			error:      errors.New("no URL specified"),
+		return nil, &internal.Error{
+			Status: http.StatusBadRequest,
+			Err:    errors.New("no URL specified"),
 		}
 	}
 	if !strings.HasPrefix(dsn, "http://") && !strings.HasPrefix(dsn, "https://") {
@@ -113,7 +113,7 @@ func parseDSN(dsn string) (*url.URL, error) {
 	}
 	dsnURL, err := url.Parse(dsn)
 	if err != nil {
-		return nil, fullError(http.StatusBadRequest, err)
+		return nil, &internal.Error{Status: http.StatusBadRequest, Err: err}
 	}
 	if dsnURL.Path == "" {
 		dsnURL.Path = "/"
@@ -189,7 +189,7 @@ func (c *Client) NewRequest(ctx context.Context, method, path string, body io.Re
 	fullPath := c.path(path)
 	reqPath, err := url.Parse(fullPath)
 	if err != nil {
-		return nil, fullError(http.StatusBadRequest, err)
+		return nil, &internal.Error{Status: http.StatusBadRequest, Err: err}
 	}
 	u := *c.dsn // Make a copy
 	u.Path = reqPath.Path
@@ -296,12 +296,12 @@ func netError(err error) error {
 		if status == http.StatusInternalServerError {
 			status = http.StatusBadGateway
 		}
-		return fullError(status, err)
+		return &internal.Error{Status: status, Err: err}
 	}
 	if status := kivik.HTTPStatus(err); status != http.StatusInternalServerError {
 		return err
 	}
-	return fullError(http.StatusBadGateway, err)
+	return &internal.Error{Status: http.StatusBadGateway, Err: err}
 }
 
 // fixPath sets the request's URL.RawPath to work with escaped characters in

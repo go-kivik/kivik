@@ -30,6 +30,7 @@ import (
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 const typeJSON = "application/json"
@@ -138,7 +139,7 @@ type Response struct {
 func DecodeJSON(r *http.Response, i interface{}) error {
 	defer CloseBody(r.Body)
 	if err := json.NewDecoder(r.Body).Decode(i); err != nil {
-		return &kivik.Error{Status: http.StatusBadGateway, Err: err}
+		return &internal.Error{Status: http.StatusBadGateway, Err: err}
 	}
 	return nil
 }
@@ -196,7 +197,7 @@ func (c *Client) NewRequest(ctx context.Context, method, path string, body io.Re
 	compress, body := c.compressBody(u.String(), body, opts)
 	req, err := http.NewRequest(method, u.String(), body)
 	if err != nil {
-		return nil, &kivik.Error{Status: http.StatusBadRequest, Err: err}
+		return nil, &internal.Error{Status: http.StatusBadRequest, Err: err}
 	}
 	if compress {
 		req.Header.Add("Content-Encoding", "gzip")
@@ -338,7 +339,7 @@ func EncodeBody(i interface{}) io.ReadCloser {
 			err = json.NewEncoder(w).Encode(i)
 			switch err.(type) {
 			case *json.MarshalerError, *json.UnsupportedTypeError, *json.UnsupportedValueError:
-				err = &kivik.Error{Status: http.StatusBadRequest, Err: err}
+				err = &internal.Error{Status: http.StatusBadRequest, Err: err}
 			}
 		}
 		_ = w.CloseWithError(err)

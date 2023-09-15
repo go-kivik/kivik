@@ -18,6 +18,7 @@ import (
 	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 // Session represents an authentication session.
@@ -57,5 +58,5 @@ func (c *Client) Session(ctx context.Context) (*Session, error) {
 		ses := Session(*session)
 		return &ses, nil
 	}
-	return nil, &Error{Status: http.StatusNotImplemented, Message: "kivik: driver does not support sessions"}
+	return nil, &internal.Error{Status: http.StatusNotImplemented, Message: "kivik: driver does not support sessions"}
 }

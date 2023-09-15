@@ -16,7 +16,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	kivik "github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 // encodeKey encodes a key to a view query, or similar, to be passed to CouchDB.
@@ -26,7 +26,7 @@ func encodeKey(i interface{}) (string, error) {
 	}
 	raw, err := json.Marshal(i)
 	if err != nil {
-		err = &kivik.Error{Status: http.StatusBadRequest, Err: err}
+		err = &internal.Error{Status: http.StatusBadRequest, Err: err}
 	}
 	return string(raw), err
 }

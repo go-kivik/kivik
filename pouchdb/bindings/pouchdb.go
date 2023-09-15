@@ -30,7 +30,7 @@ import (
 	"github.com/gopherjs/gopherjs/js"
 	"github.com/gopherjs/jsbuiltin"
 
-	"github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 // DB is a PouchDB database object.
@@ -247,10 +247,10 @@ func (db *DB) indexeddb() bool {
 // all others return an error.
 func (db *DB) Purge(ctx context.Context, docID, rev string) ([]string, error) {
 	if db.Object.Get("purge") == js.Undefined {
-		return nil, &kivik.Error{Status: http.StatusNotImplemented, Message: "kivik: purge supported by PouchDB 8 or newer"}
+		return nil, &internal.Error{Status: http.StatusNotImplemented, Message: "kivik: purge supported by PouchDB 8 or newer"}
 	}
 	if !db.indexeddb() {
-		return nil, &kivik.Error{Status: http.StatusNotImplemented, Message: "kivik: purge only supported with indexedDB adapter"}
+		return nil, &internal.Error{Status: http.StatusNotImplemented, Message: "kivik: purge only supported with indexedDB adapter"}
 	}
 	result, err := callBack(ctx, db, "purge", docID, rev, setTimeout(ctx, nil))
 	if err != nil {
@@ -281,7 +281,7 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, options map[string]i
 	return callBack(ctx, db, "query", ddoc+"/"+view, o)
 }
 
-var findPluginNotLoaded = &kivik.Error{Status: http.StatusNotImplemented, Message: "kivik: pouchdb-find plugin not loaded"}
+var findPluginNotLoaded = &internal.Error{Status: http.StatusNotImplemented, Message: "kivik: pouchdb-find plugin not loaded"}
 
 // Find executes a MongoDB-style find query with the pouchdb-find plugin, if it
 // is installed. If the plugin is not installed, a NotImplemented error will be
@@ -316,7 +316,7 @@ func Objectify(i interface{}) (interface{}, error) {
 	var x interface{}
 	err := json.Unmarshal(buf, &x)
 	if err != nil {
-		err = &kivik.Error{Status: http.StatusBadRequest, Err: err}
+		err = &internal.Error{Status: http.StatusBadRequest, Err: err}
 	}
 	return x, err
 }

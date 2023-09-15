@@ -17,6 +17,7 @@ import (
 	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 // DBUpdates is an iterator for database updates.
@@ -70,7 +71,7 @@ func (f *DBUpdates) Seq() string {
 func (c *Client) DBUpdates(ctx context.Context, options ...Option) *DBUpdates {
 	updater, ok := c.driverClient.(driver.DBUpdater)
 	if !ok {
-		return &DBUpdates{errIterator(&Error{Status: http.StatusNotImplemented, Message: "kivik: driver does not implement DBUpdater"})}
+		return &DBUpdates{errIterator(&internal.Error{Status: http.StatusNotImplemented, Message: "kivik: driver does not implement DBUpdater"})}
 	}
 
 	if err := c.startQuery(); err != nil {

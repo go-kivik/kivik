@@ -25,6 +25,7 @@ import (
 
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/pouchdb/bindings"
 )
 
@@ -119,7 +120,7 @@ func (r *replication) Delete(context.Context) (err error) {
 			return nil
 		}
 	}
-	return &kivik.Error{Status: http.StatusNotFound, Message: "replication not found"}
+	return &internal.Error{Status: http.StatusNotFound, Message: "replication not found"}
 }
 
 func replicationEndpoint(dsn string, object interface{}) (name string, obj interface{}, err error) {

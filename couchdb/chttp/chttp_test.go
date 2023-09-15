@@ -32,6 +32,7 @@ import (
 	"golang.org/x/net/publicsuffix"
 
 	kivik "github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/internal/mock"
 	"github.com/go-kivik/kivik/v4/internal/nettest"
 )
@@ -703,7 +704,7 @@ func TestDoReq(t *testing.T) {
 	tests.Add("body error", tt{
 		method: "PUT",
 		path:   "foo",
-		client: newTestClient(nil, &kivik.Error{Status: http.StatusBadRequest, Message: "bad request"}),
+		client: newTestClient(nil, &internal.Error{Status: http.StatusBadRequest, Message: "bad request"}),
 		status: http.StatusBadRequest,
 		err:    `Put "?http://example.com/foo"?: bad request`,
 	})
@@ -1007,7 +1008,7 @@ func TestNetError(t *testing.T) {
 			input: &url.Error{
 				Op:  "Get",
 				URL: "http://foo.com/",
-				Err: &kivik.Error{Status: http.StatusBadRequest, Message: "some error"},
+				Err: &internal.Error{Status: http.StatusBadRequest, Message: "some error"},
 			},
 			status: http.StatusBadRequest,
 			err:    `Get "?http://foo.com/"?: some error`,
@@ -1020,7 +1021,7 @@ func TestNetError(t *testing.T) {
 		},
 		{
 			name:   "other error with embedded status",
-			input:  &kivik.Error{Status: http.StatusBadRequest, Message: "bad req"},
+			input:  &internal.Error{Status: http.StatusBadRequest, Message: "bad req"},
 			status: http.StatusBadRequest,
 			err:    "bad req",
 		},

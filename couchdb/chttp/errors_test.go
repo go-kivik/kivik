@@ -18,7 +18,7 @@ import (
 
 	"gitlab.com/flimzy/testy"
 
-	kivik "github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 func TestHTTPErrorError(t *testing.T) {
@@ -83,7 +83,7 @@ func TestResponseError(t *testing.T) {
 			},
 			status: http.StatusNotFound,
 			err:    "Not Found",
-			expected: &kivik.Error{
+			expected: &internal.Error{
 				Status: http.StatusNotFound,
 				Err: &HTTPError{
 					Response: &http.Response{
@@ -111,7 +111,7 @@ func TestResponseError(t *testing.T) {
 			},
 			status: http.StatusBadRequest,
 			err:    "Bad Request: Name: '_foo'. Only lowercase characters (a-z), digits (0-9), and any of the characters _, $, (, ), +, -, and / are allowed. Must begin with a letter.",
-			expected: &kivik.Error{
+			expected: &internal.Error{
 				Status: http.StatusBadRequest,
 				Err: &HTTPError{
 					Response: &http.Response{
@@ -138,7 +138,7 @@ func TestResponseError(t *testing.T) {
 			},
 			status: http.StatusBadRequest,
 			err:    "Bad Request",
-			expected: &kivik.Error{
+			expected: &internal.Error{
 				Status: http.StatusBadRequest,
 				Err: &HTTPError{
 					Response: &http.Response{

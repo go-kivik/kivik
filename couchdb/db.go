@@ -36,6 +36,7 @@ import (
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/couchdb/chttp"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 type db struct {
@@ -77,7 +78,7 @@ func optionsToParams(opts ...map[string]interface{}) (url.Values, error) {
 			case int, uint, uint8, uint16, uint32, uint64, int8, int16, int32, int64:
 				values = []string{fmt.Sprintf("%d", v)}
 			default:
-				return nil, &kivik.Error{Status: http.StatusBadRequest, Err: fmt.Errorf("kivik: invalid type %T for options", i)}
+				return nil, &internal.Error{Status: http.StatusBadRequest, Err: fmt.Errorf("kivik: invalid type %T for options", i)}
 			}
 			for _, value := range values {
 				params.Add(key, value)
@@ -196,7 +197,7 @@ func (d *db) Get(ctx context.Context, docID string, options driver.Options) (dri
 func processDoc(docID string, resp *http.Response) (*document, error) {
 	ct, params, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
 	if err != nil {
-		return nil, &kivik.Error{Status: http.StatusBadGateway, Err: err}
+		return nil, &internal.Error{Status: http.StatusBadGateway, Err: err}
 	}
 	switch ct {
 	case typeJSON:
@@ -219,24 +220,24 @@ func processDoc(docID string, resp *http.Response) (*document, error) {
 
 		boundary := strings.Trim(params["boundary"], "\"")
 		if boundary == "" {
-			return nil, &kivik.Error{Status: http.StatusBadGateway, Err: errors.New("kivik: boundary missing for multipart/related response")}
+			return nil, &internal.Error{Status: http.StatusBadGateway, Err: errors.New("kivik: boundary missing for multipart/related response")}
 		}
 		mpReader := multipart.NewReader(resp.Body, boundary)
 		body, err := mpReader.NextPart()
 		if err != nil {
-			return nil, &kivik.Error{Status: http.StatusBadGateway, Err: err}
+			return nil, &internal.Error{Status: http.StatusBadGateway, Err: err}
 		}
 
 		// TODO: Use a TeeReader here, to avoid slurping the entire body into memory at once
 		content, err := io.ReadAll(body)
 		if err != nil {
-			return nil, &kivik.Error{Status: http.StatusBadGateway, Err: err}
+			return nil, &internal.Error{Status: http.StatusBadGateway, Err: err}
 		}
 		var metaDoc struct {
 			Attachments map[string]attMeta `json:"_attachments"`
 		}
 		if err := json.Unmarshal(content, &metaDoc); err != nil {
-			return nil, &kivik.Error{Status: http.StatusBadGateway, Err: err}
+			return nil, &internal.Error{Status: http.StatusBadGateway, Err: err}
 		}
 
 		return &document{
@@ -250,7 +251,7 @@ func processDoc(docID string, resp *http.Response) (*document, error) {
 			},
 		}, nil
 	default:
-		return nil, &kivik.Error{Status: http.StatusBadGateway, Err: fmt.Errorf("kivik: invalid content type in response: %s", ct)}
+		return nil, &internal.Error{Status: http.StatusBadGateway, Err: fmt.Errorf("kivik: invalid content type in response: %s", ct)}
 	}
 }
 
@@ -276,21 +277,21 @@ func (a *multipartAttachments) Next(att *driver.Attachment) error {
 	case nil:
 		// fall through
 	default:
-		return &kivik.Error{Status: http.StatusBadGateway, Err: err}
+		return &internal.Error{Status: http.StatusBadGateway, Err: err}
 	}
 
 	disp, dispositionParams, err := mime.ParseMediaType(part.Header.Get("Content-Disposition"))
 	if err != nil {
-		return &kivik.Error{Status: http.StatusBadGateway, Err: fmt.Errorf("Content-Disposition: %s", err)}
+		return &internal.Error{Status: http.StatusBadGateway, Err: fmt.Errorf("Content-Disposition: %s", err)}
 	}
 	if disp != "attachment" {
-		return &kivik.Error{Status: http.StatusBadGateway, Err: fmt.Errorf("Unexpected Content-Disposition: %s", disp)}
+		return &internal.Error{Status: http.StatusBadGateway, Err: fmt.Errorf("Unexpected Content-Disposition: %s", disp)}
 	}
 	filename := dispositionParams["filename"]
 
 	meta := a.meta[filename]
 	if !meta.Follows {
-		return &kivik.Error{Status: http.StatusBadGateway, Err: fmt.Errorf("File '%s' not in manifest", filename)}
+		return &internal.Error{Status: http.StatusBadGateway, Err: fmt.Errorf("File '%s' not in manifest", filename)}
 	}
 
 	size := int64(-1)
@@ -304,7 +305,7 @@ func (a *multipartAttachments) Next(att *driver.Attachment) error {
 	if ctHeader, ok := part.Header["Content-Type"]; ok {
 		cType, _, err = mime.ParseMediaType(ctHeader[0])
 		if err != nil {
-			return &kivik.Error{Status: http.StatusBadGateway, Err: err}
+			return &internal.Error{Status: http.StatusBadGateway, Err: err}
 		}
 	} else {
 		cType = meta.ContentType
@@ -715,7 +716,7 @@ func copyWithAttachmentStubs(w io.Writer, r io.Reader, atts map[string]*stub) er
 	t, err := dec.Token()
 	if err == nil {
 		if t != json.Delim('{') {
-			return &kivik.Error{Status: http.StatusBadRequest, Err: fmt.Errorf("expected '{', found '%v'", t)}
+			return &internal.Error{Status: http.StatusBadRequest, Err: fmt.Errorf("expected '{', found '%v'", t)}
 		}
 	}
 	if err != nil {
@@ -733,7 +734,7 @@ func copyWithAttachmentStubs(w io.Writer, r io.Reader, atts map[string]*stub) er
 			break
 		}
 		if err != nil {
-			return &kivik.Error{Status: http.StatusBadRequest, Err: err}
+			return &internal.Error{Status: http.StatusBadRequest, Err: err}
 		}
 		switch tp := t.(type) {
 		case string:

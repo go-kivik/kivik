@@ -64,23 +64,3 @@ func ResponseError(resp *http.Response) error {
 	}
 	return httpErr
 }
-
-type curlError struct {
-	httpStatus int
-	error
-}
-
-func (e *curlError) HTTPStatus() int {
-	return e.httpStatus
-}
-
-func fullError(httpStatus int, err error) error {
-	return &curlError{
-		httpStatus: httpStatus,
-		error:      err,
-	}
-}
-
-func (e *curlError) Unwrap() error {
-	return e.error
-}

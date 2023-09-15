@@ -196,7 +196,7 @@ func (r *replication) updateMain(ctx context.Context) error {
 }
 
 func (r *replication) getReplicatorDoc(ctx context.Context) (*replicatorDoc, error) {
-	rows, err := r.db.Get(ctx, r.docID, kivik.Params{})
+	rows, err := r.db.Get(ctx, r.docID, kivik.Params(nil))
 	if err != nil {
 		return nil, err
 	}
@@ -236,7 +236,7 @@ func (r *replication) setFromReplicatorDoc(doc *replicatorDoc) {
 }
 
 func (r *replication) Delete(ctx context.Context) error {
-	rev, err := r.GetRev(ctx, r.docID, kivik.Params{})
+	rev, err := r.GetRev(ctx, r.docID, kivik.Params(nil))
 	if err != nil {
 		return err
 	}

@@ -103,10 +103,10 @@ func ExampleDB_updateView() {
 }
 
 func ExampleDB_query() {
-	rows := db.Query(context.TODO(), "_design/foo", "_view/bar", kivik.Params{
+	rows := db.Query(context.TODO(), "_design/foo", "_view/bar", kivik.Params(map[string]interface{}{
 		"startkey": `"foo"`,                           // Quotes are necessary so the
 		"endkey":   `"foo` + kivik.EndKeySuffix + `"`, // key is a valid JSON object
-	})
+	}))
 	if err := rows.Err(); err != nil {
 		panic(err)
 	}

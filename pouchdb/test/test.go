@@ -72,7 +72,7 @@ func RegisterPouchDBSuites() {
 				"def":  map[string]interface{}{"fields": []interface{}{map[string]string{"_id": "asc"}}},
 			},
 			Selector: map[string]interface{}{"_id": map[string]interface{}{"$gt": nil}},
-			Options: kivik.Params{
+			Options: map[string]interface{}{
 				"bookmark":  "nil",
 				"conflicts": false,
 				"r":         []int{49},
@@ -138,10 +138,10 @@ func RegisterPouchDBSuites() {
 
 		"Query/RW/group/Admin/WithoutDocs/ScanDoc.status": http.StatusBadRequest,
 
-		"Changes/Continuous.options": kivik.Params{
+		"Changes/Continuous.options": kivik.Params(map[string]interface{}{
 			"live":    true,
 			"timeout": false,
-		},
+		}),
 	})
 	kiviktest.RegisterSuite(kiviktest.SuitePouchRemote, kt.SuiteConfig{
 		// Features which are not supported by PouchDB
@@ -208,7 +208,7 @@ func RegisterPouchDBSuites() {
 				"def":  map[string]interface{}{"fields": []interface{}{map[string]string{"_id": "asc"}}},
 			},
 			Selector: map[string]interface{}{"_id": map[string]interface{}{"$gt": nil}},
-			Options: kivik.Params{
+			Options: map[string]interface{}{
 				"bookmark":        "nil",
 				"conflicts":       false,
 				"execution_stats": false,
@@ -353,10 +353,10 @@ func RegisterPouchDBSuites() {
 
 		// "ViewCleanup/RW/NoAuth.status": http.StatusUnauthorized, # FIXME: #14
 
-		"Changes/Continuous.options": kivik.Params{
+		"Changes/Continuous.options": kivik.Params(map[string]interface{}{
 			"live":    true,
 			"timeout": false,
-		},
+		}),
 	})
 }
 

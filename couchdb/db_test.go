@@ -964,20 +964,20 @@ func TestDelete(t *testing.T) {
 			return nil, errors.New("success")
 		}),
 		id: "foo",
-		options: kivik.Params{
+		options: kivik.Params(map[string]interface{}{
 			"batch": "ok",
 			"rev":   "1-xxx",
-		},
+		}),
 		status: http.StatusBadGateway,
 		err:    "success",
 	})
 	tests.Add("invalid options", tt{
 		db: &db{},
 		id: "foo",
-		options: kivik.Params{
+		options: kivik.Params(map[string]interface{}{
 			"foo": make(chan int),
 			"rev": "1-xxx",
-		},
+		}),
 		status: http.StatusBadRequest,
 		err:    "kivik: invalid type chan int for options",
 	})

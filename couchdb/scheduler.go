@@ -157,7 +157,8 @@ func (c *client) fetchSchedulerReplication(ctx context.Context, docID string) (*
 		if err := rep.update(ctx); err != nil {
 			return rep, err
 		}
-		time.Sleep(100 * time.Millisecond) // nolint:gomnd
+		const delay = 100 * time.Millisecond
+		time.Sleep(delay)
 	}
 	return rep, nil
 }

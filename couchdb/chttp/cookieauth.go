@@ -20,8 +20,9 @@ import (
 	"strings"
 	"time"
 
-	kivik "github.com/go-kivik/kivik/v4"
 	"golang.org/x/net/publicsuffix"
+
+	kivik "github.com/go-kivik/kivik/v4"
 )
 
 // cookieAuth provides CouchDB Cookie auth services as described at

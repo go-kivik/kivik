@@ -59,14 +59,13 @@ func (o allOptions) String() string {
 	return strings.Join(parts, ",")
 }
 
-// Params is a collection of options. The keys and values are backend specific.
-type Params map[string]interface{}
+type params map[string]interface{}
 
 // Apply applies o to target. The following target types are supported:
 //
 //   - map[string]interface{}
 //   - *url.Values
-func (o Params) Apply(target interface{}) {
+func (o params) Apply(target interface{}) {
 	switch t := target.(type) {
 	case map[string]interface{}:
 		for k, v := range o {
@@ -92,28 +91,34 @@ func (o Params) Apply(target interface{}) {
 	}
 }
 
-func (o Params) String() string {
+func (o params) String() string {
 	if len(o) == 0 {
 		return ""
 	}
 	return fmt.Sprintf("%v", map[string]interface{}(o))
 }
 
+// Params allows passing a collection of key/value pairs as query parameter
+// options.
+func Params(p map[string]interface{}) Option {
+	return params(p)
+}
+
 // Param sets a single key/value pair as a query parameter.
 func Param(key string, value interface{}) Option {
-	return Params{key: value}
+	return params{key: value}
 }
 
 // Rev is a convenience function to set the revision. A less verbose alternative
 // to Param("rev", rev).
 func Rev(rev string) Option {
-	return Params{"rev": rev}
+	return params{"rev": rev}
 }
 
 // IncludeDocs instructs the query to include documents. A less verbose
 // alternative to Param("include_docs", true).
 func IncludeDocs() Option {
-	return Params{"include_docs": true}
+	return params{"include_docs": true}
 }
 
 type durationParam struct {

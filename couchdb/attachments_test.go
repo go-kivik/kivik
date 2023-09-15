@@ -167,10 +167,10 @@ func TestPutAttachment(t *testing.T) {
 				ContentType: "text/plain",
 				Content:     Body("x"),
 			},
-			options: kivik.Params{
+			options: kivik.Params(map[string]interface{}{
 				"foo": "oink",
 				"rev": "1-xxx",
-			},
+			}),
 			status: http.StatusBadGateway,
 			err:    "foo=oink",
 		},
@@ -667,10 +667,10 @@ func TestDeleteAttachment(t *testing.T) {
 			}),
 			id:       "foo",
 			filename: "foo.txt",
-			options: kivik.Params{
+			options: kivik.Params(map[string]interface{}{
 				"rev": "1-xxx",
 				"foo": "oink",
-			},
+			}),
 			status: http.StatusBadGateway,
 			err:    "success",
 		},
@@ -679,10 +679,10 @@ func TestDeleteAttachment(t *testing.T) {
 			db:       &db{},
 			id:       "foo",
 			filename: "foo.txt",
-			options: kivik.Params{
+			options: kivik.Params(map[string]interface{}{
 				"rev": "1-xxx",
 				"foo": make(chan int),
-			},
+			}),
 			status: http.StatusBadRequest,
 			err:    "kivik: invalid type chan int for options",
 		},

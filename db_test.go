@@ -174,10 +174,10 @@ func TestAllDocs(t *testing.T) {
 					},
 				},
 			}
-			rs := db.AllDocs(context.Background(), Params{
+			rs := db.AllDocs(context.Background(), Params(map[string]interface{}{
 				"include_docs": true,
 				"keys":         []string{"i-exist", "i-dont"},
-			})
+			}))
 			type row struct {
 				ID    string
 				Key   string
@@ -1432,7 +1432,7 @@ func TestCopy(t *testing.T) {
 			},
 			target:   "foo",
 			source:   "bar",
-			options:  Params{"rev": "1-xxx", "batch": true},
+			options:  Params(map[string]interface{}{"rev": "1-xxx", "batch": true}),
 			expected: "1-xxx",
 		},
 		{

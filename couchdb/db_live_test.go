@@ -43,12 +43,12 @@ func TestQueries_2_x(t *testing.T) {
 	}
 
 	db := client.DB("_users")
-	rows := db.AllDocs(context.Background(), kivik.Params{
+	rows := db.AllDocs(context.Background(), kivik.Params(map[string]interface{}{
 		"queries": []map[string]interface{}{
 			{},
 			{},
 		},
-	})
+	}))
 	if err := rows.Err(); err != nil {
 		t.Fatal(err)
 	}
@@ -90,12 +90,12 @@ func TestQueries_3_x(t *testing.T) {
 	}
 
 	db := client.DB("_users")
-	rows := db.AllDocs(context.Background(), kivik.Params{
+	rows := db.AllDocs(context.Background(), kivik.Params(map[string]interface{}{
 		"queries": []map[string]interface{}{
 			{},
 			{},
 		},
-	})
+	}))
 	if err := rows.Err(); err != nil {
 		t.Fatal(err)
 	}

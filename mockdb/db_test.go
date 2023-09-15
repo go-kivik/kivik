@@ -849,7 +849,7 @@ func TestCreateDoc(t *testing.T) {
 			db.ExpectCreateDoc().WithOptions(kivik.Param("foo", "bar"))
 		},
 		test: func(t *testing.T, c *kivik.Client) {
-			_, _, err := c.DB("foo").CreateDoc(context.TODO(), "bar", kivik.Params{})
+			_, _, err := c.DB("foo").CreateDoc(context.TODO(), "bar", kivik.Params(nil))
 			testy.ErrorRE(t, `has options: map\[foo:bar]`, err)
 		},
 	})

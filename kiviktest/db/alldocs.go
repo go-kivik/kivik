@@ -148,10 +148,10 @@ func doTestWithDocs(ctx *kt.Context, client *kivik.Client, dbName string, expOff
 	if err := db.Err(); err != nil && !ctx.IsExpectedSuccess(err) {
 		return
 	}
-	opts := kivik.Params{
+	opts := kivik.Params(map[string]interface{}{
 		"include_docs": true,
 		"update_seq":   true,
-	}
+	})
 
 	rows := db.AllDocs(context.Background(), opts)
 	if !ctx.IsExpectedSuccess(rows.Err()) {

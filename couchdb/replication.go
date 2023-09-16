@@ -47,7 +47,7 @@ func (re *replicationError) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &re.reason); err != nil {
 		return err
 	}
-	switch (strings.SplitN(re.reason, ":", 2))[0] { // nolint:gomnd
+	switch (strings.SplitN(re.reason, ":", 2))[0] {
 	case "db_not_found":
 		re.status = http.StatusNotFound
 	case "timeout":
@@ -69,7 +69,7 @@ func (t *replicationStateTime) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 	// Fallback for really old versions of CouchDB
-	if seconds, err := strconv.ParseInt(input, 10, 64); err == nil { // nolint:gomnd
+	if seconds, err := strconv.ParseInt(input, 10, 64); err == nil {
 		epochTime := replicationStateTime(time.Unix(seconds, 0).UTC())
 		*t = epochTime
 		return nil
@@ -176,7 +176,7 @@ func (r *replication) updateActiveTasks(ctx context.Context) (*activeTask, error
 		if task.Type != "replication" {
 			continue
 		}
-		repIDparts := strings.SplitN(task.ReplicationID, "+", 2) // nolint:gomnd
+		repIDparts := strings.SplitN(task.ReplicationID, "+", 2)
 		if repIDparts[0] != r.replicationID {
 			continue
 		}

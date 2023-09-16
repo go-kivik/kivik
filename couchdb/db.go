@@ -297,7 +297,7 @@ func (a *multipartAttachments) Next(att *driver.Attachment) error {
 	size := int64(-1)
 	if meta.Size != nil {
 		size = *meta.Size
-	} else if cl, e := strconv.ParseInt(part.Header.Get("Content-Length"), 10, 64); e == nil { // nolint:gomnd
+	} else if cl, e := strconv.ParseInt(part.Header.Get("Content-Length"), 10, 64); e == nil {
 		size = cl
 	}
 

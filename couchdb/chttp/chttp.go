@@ -308,7 +308,7 @@ func netError(err error) error {
 // paths.
 func fixPath(req *http.Request, path string) {
 	// Remove any query parameters
-	parts := strings.SplitN(path, "?", 2) // nolint:gomnd
+	parts := strings.SplitN(path, "?", 2)
 	req.URL.RawPath = "/" + strings.TrimPrefix(parts[0], "/")
 }
 

@@ -20,7 +20,6 @@ enable = [
     "unparam",
     "gofumpt",
     "prealloc",
-    "gomnd",
     "gocritic",
     "staticcheck",
 ]

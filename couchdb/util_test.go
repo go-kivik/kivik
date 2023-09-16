@@ -19,8 +19,9 @@ import (
 	"strings"
 	"testing"
 
-	kivik "github.com/go-kivik/kivik/v4"
 	"gitlab.com/flimzy/testy"
+
+	kivik "github.com/go-kivik/kivik/v4"
 )
 
 func TestDeJSONify(t *testing.T) {

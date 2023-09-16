@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+
 	kivik "github.com/go-kivik/kivik/v4"
 )
 

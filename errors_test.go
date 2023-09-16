@@ -17,8 +17,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/go-kivik/kivik/v4/internal"
 	pkgerrs "github.com/pkg/errors"
+
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 func TestHTTPStatus(t *testing.T) {

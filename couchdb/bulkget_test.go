@@ -23,12 +23,12 @@ import (
 	"testing"
 	"unicode"
 
+	"github.com/google/go-cmp/cmp"
 	"gitlab.com/flimzy/testy"
 
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/internal/mock"
-	"github.com/google/go-cmp/cmp"
 )
 
 func TestBulkGet(t *testing.T) {

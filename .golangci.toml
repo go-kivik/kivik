@@ -4,6 +4,7 @@ format = "colored-line-number"
 [linters]
 enable = [
     "gocyclo",
+    "gci",
     "unconvert",
     "goimports",
     "unused",
@@ -30,3 +31,8 @@ exclude-use-default = false
 [[issues.exclude-rules]]
 source = "defer .*\\.Close\\(\\)$"
 linters = ["errcheck"]
+
+[linters-settings.gci]
+sections = ["standard", "default", "prefix(github.com/go-kivik/kivik)"]
+skip-generated = false
+custom-order = true

@@ -85,7 +85,7 @@ func (i *iter) ready() bool {
 // makeReady ensures that the iterator is ready to be read from. In the case
 // that [iter.Next] has not been called, the returned unlock function will also
 // close the iterator, and set e if [iter.Close] errors and e != nil.
-func (i *iter) makeReady(e *error) (unlock func(), err error) {
+func (i *iter) makeReady(e *error) (unlock func(), err error) { //nolint:gocritic // pointer to interface intentional
 	i.mu.RLock()
 	if !i.ready() {
 		i.mu.RUnlock()

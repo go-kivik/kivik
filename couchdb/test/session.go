@@ -238,7 +238,7 @@ func testCreateSession(ctx *kt.Context, client *chttp.Client) {
 					ctx.Errorf("No Cache-Control set in response.")
 				} else {
 					cc := r.Header.Get("Cache-Control")
-					if strings.ToLower(cc) != "must-revalidate" {
+					if strings.EqualFold(cc, "must-revalidate") {
 						ctx.Errorf("Expected Cache-Control: must-revalidate, but got'%s", cc)
 					}
 				}
@@ -369,7 +369,7 @@ func testDeleteSession(ctx *kt.Context, client *chttp.Client) {
 					ctx.Errorf("No Cache-Control set in response.")
 				} else {
 					cc := r.Header.Get("Cache-Control")
-					if strings.ToLower(cc) != "must-revalidate" {
+					if strings.EqualFold(cc, "must-revalidate") {
 						ctx.Errorf("Expected Cache-Control: must-revalidate, but got'%s", cc)
 					}
 				}

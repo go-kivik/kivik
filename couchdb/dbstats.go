@@ -29,7 +29,7 @@ type dbStats struct {
 		External int64 `json:"external"`
 		Active   int64 `json:"active"`
 	} `json:"sizes"`
-	UpdateSeq json.RawMessage `json:"update_seq"` // nolint: govet
+	UpdateSeq json.RawMessage `json:"update_seq"`
 	rawBody   json.RawMessage
 }
 

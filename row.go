@@ -18,14 +18,6 @@ import (
 	"sync/atomic"
 )
 
-// ScanDoc unmarshals the data from the fetched row into dest. It is an
-// intelligent wrapper around [encoding/json.Unmarshal] which also handles
-// multipart/related responses. When done, the underlying reader is closed.
-func (r *row) ScanDoc(dest interface{}) error {
-	defer r.body.Close()
-	return json.NewDecoder(r.body).Decode(dest)
-}
-
 type row struct {
 	id   string
 	rev  string
@@ -38,6 +30,14 @@ type row struct {
 }
 
 var _ basicResultSet = &row{}
+
+// ScanDoc unmarshals the data from the fetched row into dest. It is an
+// intelligent wrapper around [encoding/json.Unmarshal] which also handles
+// multipart/related responses. When done, the underlying reader is closed.
+func (r *row) ScanDoc(dest interface{}) error {
+	defer r.body.Close()
+	return json.NewDecoder(r.body).Decode(dest)
+}
 
 func (r *row) Close() error {
 	if _, err := io.Copy(io.Discard, r.body); err != nil {

@@ -36,15 +36,15 @@ func TestMethods(t *testing.T) {
 		err:   "input must be struct",
 	})
 	tests.Add("wrong field name", tst{
-		input: struct{ Y int }{}, // nolint: unused
+		input: struct{ Y int }{},
 		err:   "wrapper struct must have a single field: X",
 	})
 	tests.Add("non-interface", tst{
-		input: struct{ X int }{}, // nolint: unused
+		input: struct{ X int }{},
 		err:   "field X must be of type interface",
 	})
 	tests.Add("testDriver", tst{
-		input: struct{ X testDriver }{}, // nolint: unused
+		input: struct{ X testDriver }{},
 		expected: []*method{
 			{
 				Name:         "NoCtx",
@@ -64,17 +64,17 @@ func TestMethods(t *testing.T) {
 		},
 	})
 	tests.Add("invalid client", tst{
-		input:    struct{ X int }{}, // nolint: unused
+		input:    struct{ X int }{},
 		isClient: true,
 		err:      "field X must be of type pointer to struct",
 	})
 	tests.Add("testClient", tst{
-		input:    struct{ X testClient }{}, // nolint: unused
+		input:    struct{ X testClient }{},
 		isClient: true,
 		err:      "field X must be of type pointer to struct",
 	})
 	tests.Add("*testClient", tst{
-		input:    struct{ X *testClient }{}, // nolint: unused
+		input:    struct{ X *testClient }{},
 		isClient: true,
 		expected: []*method{
 			{

@@ -36,7 +36,7 @@ type expectation interface {
 type commonExpectation struct {
 	sync.Mutex
 	triggered bool
-	err       error // nolint: structcheck
+	err       error
 	delay     time.Duration
 	options   kivik.Option
 	db        *DB
@@ -103,7 +103,7 @@ func formatOptions(o driver.Options) string {
 
 type multiOptions []kivik.Option
 
-var _ kivik.Option = (multiOptions)(nil)
+var _ kivik.Option = multiOptions(nil)
 
 func (mo multiOptions) Apply(t interface{}) {
 	if mo == nil {

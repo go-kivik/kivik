@@ -225,7 +225,7 @@ const (
 	withOptions = 1 << iota
 )
 
-func dbStringer(methodName string, e *commonExpectation, flags int, opts []string, rets []string) string {
+func dbStringer(methodName string, e *commonExpectation, flags int, opts, rets []string) string {
 	msg := fmt.Sprintf("call to DB(%s#%d).%s()", e.db.name, e.db.id, methodName)
 	var extra string
 	for _, c := range opts {

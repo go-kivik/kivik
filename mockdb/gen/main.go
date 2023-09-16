@@ -53,12 +53,12 @@ type fullClient interface {
 }
 
 func client() error {
-	dMethods, err := parseMethods(struct{ X fullClient }{}, false, clientSkips) // nolint: unused
+	dMethods, err := parseMethods(struct{ X fullClient }{}, false, clientSkips)
 	if err != nil {
 		return err
 	}
 
-	client, err := parseMethods(struct{ X *kivik.Client }{}, true, clientSkips) // nolint: unused
+	client, err := parseMethods(struct{ X *kivik.Client }{}, true, clientSkips)
 	if err != nil {
 		return err
 	}
@@ -92,12 +92,12 @@ type fullDB interface {
 }
 
 func db() error {
-	dMethods, err := parseMethods(struct{ X fullDB }{}, false, dbSkips) // nolint: unused
+	dMethods, err := parseMethods(struct{ X fullDB }{}, false, dbSkips)
 	if err != nil {
 		return err
 	}
 
-	client, err := parseMethods(struct{ X *kivik.DB }{}, true, dbSkips) // nolint: unused
+	client, err := parseMethods(struct{ X *kivik.DB }{}, true, dbSkips)
 	if err != nil {
 		return err
 	}
@@ -122,7 +122,7 @@ func db() error {
 	return renderMockGo("dbmock_gen.go", append(same, cm...))
 }
 
-func compareMethods(client, driver []*method) (same []*method, differentClient []*method, differentDriver []*method) {
+func compareMethods(client, driver []*method) (same, differentClient, differentDriver []*method) {
 	dMethods := toMap(driver)
 	cMethods := toMap(client)
 	sameMethods := make(map[string]*method)

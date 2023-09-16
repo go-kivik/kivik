@@ -19,7 +19,7 @@ import (
 )
 
 // CheckError compares the error's status code with that expected.
-func (c *Context) CheckError(err error) (match bool, success bool) {
+func (c *Context) CheckError(err error) (match, success bool) {
 	c.T.Helper()
 	status := c.Int("status")
 	if status == 0 && err == nil {

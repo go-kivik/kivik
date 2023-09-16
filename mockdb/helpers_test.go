@@ -55,7 +55,7 @@ func TestDocument(t *testing.T) {
 		if d := testy.DiffAsJSON(test.content, result.Body); d != nil {
 			t.Errorf("Unexpected content:\n%s\n", d)
 		}
-		result.Body.Close() // nolint: errcheck
+		_ = result.Body.Close()
 		result.Body = nil
 		if d := testy.DiffInterface(test.expected, result); d != nil {
 			t.Error(d)

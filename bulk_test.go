@@ -98,7 +98,7 @@ func TestDocsInterfaceSlice(t *testing.T) {
 	}
 }
 
-func TestBulkDocs(t *testing.T) { // nolint: gocyclo
+func TestBulkDocs(t *testing.T) {
 	type tt struct {
 		db       *DB
 		docs     []interface{}

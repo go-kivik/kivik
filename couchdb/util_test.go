@@ -72,7 +72,7 @@ func TestDeJSONify(t *testing.T) {
 
 type allOptions []kivik.Option
 
-var _ kivik.Option = (allOptions)(nil)
+var _ kivik.Option = allOptions(nil)
 
 func (o allOptions) Apply(t interface{}) {
 	for _, opt := range o {

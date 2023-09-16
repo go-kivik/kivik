@@ -401,7 +401,7 @@ func setQuery(req *http.Request, opts *Options) {
 		req.URL.RawQuery = opts.Query.Encode()
 		return
 	}
-	req.URL.RawQuery = strings.Join([]string{req.URL.RawQuery, opts.Query.Encode()}, "&")
+	req.URL.RawQuery = req.URL.RawQuery + "&" + opts.Query.Encode()
 }
 
 // DoError is the same as DoReq(), followed by checking the response error. This
@@ -427,7 +427,7 @@ func ETag(resp *http.Response) (string, bool) {
 	}
 	etag, ok := resp.Header["Etag"]
 	if !ok {
-		etag, ok = resp.Header["ETag"] // nolint: staticcheck
+		etag, ok = resp.Header["ETag"] //nolint:staticcheck // Non-canonical lookup intentional
 	}
 	if !ok {
 		return "", false

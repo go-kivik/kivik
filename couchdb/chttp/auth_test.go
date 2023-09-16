@@ -71,7 +71,7 @@ func TestAuthenticate(t *testing.T) {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		if r.URL.Path == "/_session" { // nolint: goconst
+		if r.URL.Path == "/_session" { //nolint:goconst // I prefer to keep the string literals for clarity
 			_, _ = w.Write([]byte(`{"userCtx":{"name":"admin"}}`))
 			return
 		}

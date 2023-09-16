@@ -304,7 +304,7 @@ func TestAllDocs(t *testing.T) {
 	tests.Run(t, testMock)
 }
 
-func TestBulkGet(t *testing.T) { // nolint: gocyclo
+func TestBulkGet(t *testing.T) {
 	tests := testy.NewTable()
 	tests.Add("error", mockTest{
 		setup: func(m *Client) {

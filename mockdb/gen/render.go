@@ -91,12 +91,13 @@ func (m *method) VariableDefinitions() string {
 	}
 	for i, ret := range m.Returns {
 		name := typeName(ret)
+		//nolint:goconst // Using constants here would be annoying
 		switch name {
-		case "driver.DB": // nolint: goconst
+		case "driver.DB":
 			name = "*DB"
-		case "driver.Replication": // nolint: goconst
+		case "driver.Replication":
 			name = "*Replication"
-		case "[]driver.Replication": // nolint: goconst
+		case "[]driver.Replication":
 			name = "[]*Replication"
 		}
 		result = append(result, fmt.Sprintf("\tret%d %s\n", i, name))

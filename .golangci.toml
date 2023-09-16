@@ -35,3 +35,125 @@ linters = ["errcheck"]
 sections = ["standard", "default", "prefix(github.com/go-kivik/kivik)"]
 skip-generated = false
 custom-order = true
+
+[linters-settings.gocritic]
+enabled-checks = [
+    # To see all available checks, run `GL_DEBUG=gocritic golangci-lint run`
+
+    ## Unused code
+    "commentedOutCode",   # Detects commented-out code inside function bodies
+    "commentedOutImport", # Detects commented-out imports
+    "unlabelStmt",        # Detects redundant statement labels
+
+    ## Code formatting & style
+    "assignOp", # Detects assignments that can be simplified by using assignment operators
+    #"builtinShadowDecl",        # Detects top-level declarations that shadow the predeclared identifiers
+    "captLocal",      # Detects capitalized names for local variables
+    "codegenComment", # Detects malformed ‘code generated’ file comments
+    #"commentFormatting",        # Detects comments with non-idiomatic formatting # functionality provided by gofumpt
+    "defaultCaseOrder",  # Detects when default case in switch isn’t on 1st or last position
+    "deprecatedComment", # Detects malformed ‘deprecated’ doc-comments
+    "docStub",           # Detects comments that silence go lint complaints about doc-comment
+    "dupImport",         # Detects multiple imports of the same package under different aliases
+    "elseif",            # Detects else with nested if statement that can be replaced with else-if
+    "emptyDecl",         # Detects suspicious empty declarations blocks
+    "emptyStringTest",   # Detects empty string checks that can be written more idiomatically
+    "exposedSyncMutex",  # Detects exposed methods from sync.Mutex and sync.RWMutex
+    #"filepathJoin",             # Detects problems in filepath.Join() function calls
+    "hexLiteral", # Detects hex literals that have mixed case letter digits
+    #"httpNoBody",               # Detects nil usages in http.NewRequest calls, suggesting http.NoBody as an alternative
+    "ifElseChain", # Detects repeated if-else statements and suggests to replace them with switch statement
+    #"octalLiteral",             # Detects old-style octal literals # redundant with gofmt/gofumpt
+    "preferFilepathJoin", # Detects concatenation with os.PathSeparator which can be replaced with filepath.Join
+    "ptrToRefParam",      # Detects input and output parameters that have a type of pointer to referential type
+    #"sprintfQuotedString",      # Detects “%s” formatting directives that can be replaced with %q
+    "timeExprSimplify", # Detects manual conversion to milli- or microseconds
+    #"todoCommentWithoutDetail", # Detects TODO comments without detail/assignee
+    #"tooManyResultsChecker",    # Detects function with too many results // duplicate of revive's function-result-limit
+    "typeAssertChain", # Detects repeated type assertions and suggests to replace them with type switch statement.
+    "typeDefFirst",    # Detects method declarations preceding the type definition itself
+    #"unnamedResult",            # Detects unnamed results that may benefit from names, @unnamedResult.checkExported` whether to check exported functions (default false)
+    "whyNoLint",     # Ensures that //nolint comments include an explanation // replaces nolintlint
+    "yodaStyleExpr", # Detects Yoda style expressions and suggests to replace them
+
+    ## Code complexity
+    "appendCombine",    # Detects append chains to the same slice that can be done in a single append call
+    "boolExprSimplify", # Detects bool expressions that can be simplified.
+    "deferUnlambda",    # Detects deferred function literals that can be simplified
+    "sloppyTypeAssert", # Detects redundant type assertions
+    #"syncMapLoadAndDelete", # Detects sync.Map load+delete operations that can be replaced with LoadAndDelete
+    "unnecessaryDefer",     # Detects redundantly deferred calls
+    "emptyFallthrough",     # Detects fallthrough that can be avoided by using multi case values
+    "methodExprCall",       # Detects method expression call that can be replaced with a method call
+    "nestingReduce",        # Finds where nesting level could be reduced
+    "newDeref",             # Detects immediate dereferencing of new expressions
+    "paramTypeCombine",     # Detects if function parameters could be combined by type and suggest the way to do it
+    "preferFprint",         # Detects fmt.Sprint(f/ln) calls which can be replaced with fmt.Fprint(f/ln)
+    "redundantSprint",      # Detects redundant fmt.Sprint calls
+    "regexpSimplify",       # Detects regexp patterns that can be simplified
+    "singleCaseSwitch",     # Detects switch statements that could be better written as if statement
+    "sloppyLen",            # Detects usage of len when result is obvious or doesn’t make sense
+    "stringConcatSimplify", # Detects string concat operations that can be simplified
+    "stringsCompare",       # Detects strings.Compare usage
+    "switchTrue",           # Detects switch-over-bool statements that use explicit true tag value
+    "timeCmpSimplify",      # Detects Before/After call of time.Time that can be simplified
+    "typeSwitchVar",        # Detects type switches that can benefit from type guard clause with variable
+    "typeUnparen",          # Detects unneded parenthesis inside type expressions and suggests to remove them
+    "underef",              # Detects dereference expressions that can be omitted
+    "unlambda",             # Detects function literals that can be simplified
+    "unnecessaryBlock",     # Detects unnecessary braced statement blocks
+    "unslice",              # Detects slice expressions that can be simplified to sliced expression itself
+    "valSwap",              # Detects value swapping code that are not using parallel assignment
+    "wrapperFunc",          # Detects function calls that can be replaced with convenience wrappers
+
+    ## Likely bugs
+    # "appendAssign",          # Detects suspicious append result assignments # only false positives so far
+    "argOrder",              # Detects suspicious arguments order
+    "badCall",               # Detects suspicious function calls
+    "badCond",               # Detects suspicious condition expressions
+    "badLock",               # Detects suspicious mutex lock/unlock operations
+    "badRegexp",             # Detects suspicious regexp patterns
+    "badSorting",            # Detects bad usage of sort package
+    "caseOrder",             # Detects erroneous case order inside switch statements
+    "deferInLoop",           # Detects loops inside functions that use defer
+    "dupArg",                # Detects suspicious duplicated arguments
+    "dupBranchBody",         # Detects duplicated branch bodies inside conditional statements
+    "dupCase",               # Detects duplicated case clauses inside switch or select statements
+    "dupSubExpr",            # Detects suspicious duplicated sub-expressions
+    "dynamicFmtString",      # Detects suspicious formatting strings usage
+    "evalOrder",             # Detects unwanted dependencies on the evaluation order
+    "exitAfterDefer",        # Detects calls to exit/fatal inside functions that use defer
+    "externalErrorReassign", # Detects suspicious reassigment of error from another package
+    "flagDeref",             # Detects immediate dereferencing of flag package pointers
+    "flagName",              # Detects suspicious flag names
+    # "initClause",            # Detects non-assignment statements inside if/switch init clause
+    "mapKey",               # Detects suspicious map literal keys
+    "nilValReturn",         # Detects return statements those results evaluate to nil
+    "offBy1",               # Detects various off-by-one kind of errors
+    "regexpMust",           # Detects regexp.Compile* that can be replaced with regexp.MustCompile*
+    "regexpPattern",        # Detects suspicious regexp patterns
+    "returnAfterHttpError", # Detects suspicious http.Error call without following return
+    #"sloppyReassign",        # Detects suspicious/confusing re-assignments
+    "sortSlice", # Detects suspicious sort.Slice calls
+    # "sqlQuery",              # Detects issue in Query() and Exec() calls
+    "truncateCmp",        # Detects potential truncation issues when comparing ints of different sizes
+    "uncheckedInlineErr", # Detects unchecked errors in if statements
+    "weakCond",           # Detects conditions that are unsafe due to not being exhaustive.
+
+    ## Performance
+    "equalFold", # Detects unoptimal strings/bytes case-insensitive comparison
+    # "hugeParam",          # Detects params that incur excessive amount of copying
+    "indexAlloc",         # Detects strings.Index calls that may cause unwanted allocs
+    "preferDecodeRune",   # Detects expressions like []rune(s)[0] that may cause unwanted rune slice allocation
+    "preferStringWriter", # Detects w.Write or io.WriteString calls which can be replaced with w.WriteString
+    "preferWriteByte",    # Detects WriteRune calls with rune literal argument that is single byte and reports to use WriteByte instead
+    "rangeExprCopy",      # Detects expensive copies of for loop range expressions
+    # "rangeValCopy",       # Detects loops that copy big objects during each iteration
+    "sliceClear",   # Detects slice clear loops, suggests an idiom that is recognized by the Go compiler
+    "stringXbytes", # Detects redundant conversions between string and []byte
+
+    ## Other
+    #"builtinShadow", # Detects when predeclared identifiers are shadowed in assignments // Duplicated by usestdlibvars
+    #"ruleguard",    # Runs user-defined rules using ruleguard linter, see See https://github.com/quasilyte/go-ruleguard
+    #"importShadow", # Detects when imported package names shadowed in the assignments // Duplicated by revive
+]

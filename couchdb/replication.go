@@ -147,7 +147,6 @@ func (r *replication) Update(ctx context.Context, state *driver.ReplicationInfo)
 	state.DocWriteFailures = info.DocWriteFailures
 	state.DocsRead = info.DocsRead
 	state.DocsWritten = info.DocsWritten
-	// state.progress = info.Progress
 	return nil
 }
 

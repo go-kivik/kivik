@@ -107,7 +107,7 @@ func TestHTTPRequest(t *testing.T) {
 						if r.Method != "PUT" {
 							t.Errorf("Unexpected method: %s", r.Method)
 						}
-						r.Method = "unf" // nolint: goconst
+						r.Method = "unf"
 						defer r.Body.Close()
 						if _, err := io.ReadAll(r.Body); err != nil {
 							t.Fatal(err)
@@ -126,7 +126,7 @@ func TestHTTPRequest(t *testing.T) {
 						if r.Method != "PUT" {
 							t.Errorf("Unexpected method: %s", r.Method)
 						}
-						r.Method = "unf"
+						r.Method = "UNF"
 						if r.Body != nil {
 							t.Errorf("non-nil body")
 						}

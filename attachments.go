@@ -128,7 +128,7 @@ func (a *Attachment) MarshalJSON() ([]byte, error) {
 	case a.Follows:
 		att.Follows = &a.Follows
 	default:
-		defer a.Content.Close() // nolint: errcheck
+		defer a.Content.Close()
 		data, err := io.ReadAll(a.Content)
 		if err != nil {
 			return nil, err

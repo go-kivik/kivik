@@ -182,7 +182,7 @@ func TestSetConfigValue(t *testing.T) {
 	tests.Add("success", tst{
 		client: newCustomClient(func(r *http.Request) (*http.Response, error) {
 			var val string
-			defer r.Body.Close() // nolint: errcheck
+			defer r.Body.Close()
 			if err := json.NewDecoder(r.Body).Decode(&val); err != nil {
 				return nil, err
 			}

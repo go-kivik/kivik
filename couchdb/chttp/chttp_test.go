@@ -271,7 +271,9 @@ func TestEncodeBody(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				t.Parallel()
 				r := EncodeBody(test.input)
-				defer r.Close() // nolint: errcheck
+				t.Cleanup(func() {
+					_ = r.Close()
+				})
 				body, err := io.ReadAll(r)
 				testy.StatusError(t, test.err, test.status, err)
 				result := strings.TrimSpace(string(body))

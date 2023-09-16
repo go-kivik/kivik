@@ -109,7 +109,7 @@ func TestPutAttachment(t *testing.T) {
 				Content:     Body("Hello, World!"),
 			},
 			db: newCustomDB(func(req *http.Request) (*http.Response, error) {
-				defer req.Body.Close() // nolint: errcheck
+				defer req.Body.Close()
 				if ct, _, _ := mime.ParseMediaType(req.Header.Get("Content-Type")); ct != "text/plain" {
 					return nil, fmt.Errorf("Unexpected Content-Type: %s", ct)
 				}

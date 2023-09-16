@@ -1267,7 +1267,7 @@ func TestRowsQuery(t *testing.T) {
 				if r.Method != http.MethodPost {
 					t.Errorf("Unexpected method: %s", r.Method)
 				}
-				defer r.Body.Close() // nolint: errcheck
+				defer r.Body.Close()
 				if d := testy.DiffAsJSON(map[string][]string{"keys": {"_design/_auth", "foo"}}, r.Body); d != nil {
 					t.Error(d)
 				}
@@ -1346,7 +1346,7 @@ func TestRowsQuery(t *testing.T) {
 				if r.Method != http.MethodPost {
 					t.Errorf("Unexpected method: %s", r.Method)
 				}
-				defer r.Body.Close() // nolint: errcheck
+				defer r.Body.Close()
 				if d := testy.DiffAsJSON(map[string][]interface{}{"keys": {"_design/_auth", "foo", []string{"bar", "baz"}}}, r.Body); d != nil {
 					t.Error(d)
 				}
@@ -1389,7 +1389,7 @@ func TestRowsQuery(t *testing.T) {
 				if r.Method != http.MethodPost {
 					t.Errorf("Unexpected method: %s", r.Method)
 				}
-				defer r.Body.Close() // nolint: errcheck
+				defer r.Body.Close()
 				if d := testy.DiffAsJSON(map[string][]string{"keys": {"_design/_auth", "foo"}}, r.Body); d != nil {
 					t.Error(d)
 				}
@@ -1546,7 +1546,7 @@ func TestSetSecurity(t *testing.T) {
 				},
 			},
 			db: newCustomDB(func(req *http.Request) (*http.Response, error) {
-				defer req.Body.Close() // nolint: errcheck
+				defer req.Body.Close()
 				if ct, _, _ := mime.ParseMediaType(req.Header.Get("Content-Type")); ct != typeJSON {
 					return nil, fmt.Errorf("Expected Content-Type: application/json, got %s", ct)
 				}
@@ -1953,7 +1953,7 @@ func TestPurge(t *testing.T) {
 				if ct := r.Header.Get("Content-Type"); ct != typeJSON {
 					return nil, fmt.Errorf("Unexpected Content-Type: %s", ct)
 				}
-				defer r.Body.Close() // nolint: errcheck
+				defer r.Body.Close()
 				var result interface{}
 				if err := json.NewDecoder(r.Body).Decode(&result); err != nil {
 					return nil, err
@@ -2445,7 +2445,7 @@ func TestRevsDiff(t *testing.T) {
 					"5-067a00dff5e02add41819138abb3284d"
 				]
 			}`)
-			defer r.Body.Close() // nolint: errcheck
+			defer r.Body.Close()
 			if d := testy.DiffAsJSON(expectedBody, r.Body); d != nil {
 				return nil, fmt.Errorf("Unexpected payload: %s", d)
 			}

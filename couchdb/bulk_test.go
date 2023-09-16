@@ -94,7 +94,7 @@ func TestBulkDocs(t *testing.T) {
 			name:    "new_edits",
 			options: kivik.Param("new_edits", true),
 			db: newCustomDB(func(req *http.Request) (*http.Response, error) {
-				defer req.Body.Close() // nolint: errcheck
+				defer req.Body.Close()
 				var body struct {
 					NewEdits bool `json:"new_edits"`
 				}
@@ -114,7 +114,7 @@ func TestBulkDocs(t *testing.T) {
 			name:    "full commit",
 			options: OptionFullCommit(),
 			db: newCustomDB(func(req *http.Request) (*http.Response, error) {
-				defer req.Body.Close() // nolint: errcheck
+				defer req.Body.Close()
 				var body map[string]interface{}
 				if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
 					return nil, err

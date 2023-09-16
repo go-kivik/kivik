@@ -116,7 +116,9 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 			if !ctx.IsExpectedSuccess(err) {
 				return
 			}
-			defer rep.Delete(context.Background()) // nolint: errcheck
+			ctx.T.Cleanup(func() {
+				_ = rep.Delete(context.Background())
+			})
 			timeout := time.Duration(ctx.MustInt("timeoutSeconds")) * time.Second
 			cx, cancel := context.WithTimeout(context.Background(), timeout)
 			defer cancel()
@@ -157,7 +159,9 @@ func doReplicationTest(ctx *kt.Context, client *kivik.Client, dbtarget, dbsource
 	if !ctx.IsExpectedSuccess(err) {
 		return success
 	}
-	defer rep.Delete(context.Background()) // nolint: errcheck
+	ctx.T.Cleanup(func() {
+		_ = rep.Delete(context.Background())
+	})
 	timeout := time.Duration(ctx.MustInt("timeoutSeconds")) * time.Second
 	cx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()

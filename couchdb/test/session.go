@@ -233,7 +233,7 @@ func testCreateSession(ctx *kt.Context, client *chttp.Client) {
 				if !ctx.IsExpectedSuccess(err) {
 					return
 				}
-				defer r.Body.Close() // nolint: errcheck
+				defer r.Body.Close()
 				if _, ok := r.Header["Cache-Control"]; !ok {
 					ctx.Errorf("No Cache-Control set in response.")
 				} else {
@@ -359,7 +359,7 @@ func testDeleteSession(ctx *kt.Context, client *chttp.Client) {
 					err = chttp.ResponseError(r)
 				}
 				if err == nil {
-					defer r.Body.Close() // nolint: errcheck
+					defer r.Body.Close()
 					err = json.NewDecoder(r.Body).Decode(&response)
 				}
 				if !ctx.IsExpectedSuccess(err) {

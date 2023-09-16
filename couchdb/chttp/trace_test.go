@@ -45,7 +45,7 @@ func TestHTTPResponse(t *testing.T) {
 							t.Errorf("Unexpected status code: %d", r.StatusCode)
 						}
 						r.StatusCode = 0
-						defer r.Body.Close() // nolint: errcheck
+						defer r.Body.Close()
 						if _, err := io.ReadAll(r.Body); err != nil {
 							t.Fatal(err)
 						}
@@ -107,8 +107,8 @@ func TestHTTPRequest(t *testing.T) {
 						if r.Method != "PUT" {
 							t.Errorf("Unexpected method: %s", r.Method)
 						}
-						r.Method = "unf"     // nolint: goconst
-						defer r.Body.Close() // nolint: errcheck
+						r.Method = "unf" // nolint: goconst
+						defer r.Body.Close()
 						if _, err := io.ReadAll(r.Body); err != nil {
 							t.Fatal(err)
 						}

@@ -22,7 +22,7 @@ import (
 // intelligent wrapper around [encoding/json.Unmarshal] which also handles
 // multipart/related responses. When done, the underlying reader is closed.
 func (r *row) ScanDoc(dest interface{}) error {
-	defer r.body.Close() // nolint:errcheck
+	defer r.body.Close()
 	return json.NewDecoder(r.body).Decode(dest)
 }
 

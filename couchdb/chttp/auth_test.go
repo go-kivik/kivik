@@ -41,7 +41,7 @@ func (rt *mockRT) RoundTrip(_ *http.Request) (*http.Response, error) {
 
 func TestAuthenticate(t *testing.T) {
 	s := nettest.NewHTTPTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer r.Body.Close() // nolint: errcheck
+		defer r.Body.Close()
 		var authed bool
 		switch r.Header.Get("Authorization") {
 		case "Basic YWRtaW46YWJjMTIz", "Bearer tokennekot":

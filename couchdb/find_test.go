@@ -72,7 +72,7 @@ func TestExplain(t *testing.T) {
 		{
 			name: "raw query",
 			db: newCustomDB(func(req *http.Request) (*http.Response, error) {
-				defer req.Body.Close() // nolint: errcheck
+				defer req.Body.Close()
 				var result interface{}
 				if err := json.NewDecoder(req.Body).Decode(&result); err != nil {
 					return nil, fmt.Errorf("decode error: %s", err)

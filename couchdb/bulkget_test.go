@@ -151,7 +151,7 @@ func TestBulkGet(t *testing.T) {
 		return tst{
 			db: &db{
 				client: newCustomClient(func(r *http.Request) (*http.Response, error) {
-					defer r.Body.Close() // nolint:errcheck
+					defer r.Body.Close()
 					if d := testy.DiffAsJSON(testy.Snapshot(t), r.Body); d != nil {
 						return nil, fmt.Errorf("Unexpected request: %s", d)
 					}
@@ -178,7 +178,9 @@ func TestBulkGet(t *testing.T) {
 
 		row := new(driver.Row)
 		err = rows.Next(row)
-		defer rows.Close() // nolint: errcheck
+		t.Cleanup(func() {
+			_ = rows.Close()
+		})
 		testy.StatusError(t, test.rowErr, test.rowStatus, err)
 
 		if d := rowsDiff(test.expected, row); d != "" {

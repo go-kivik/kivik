@@ -52,7 +52,7 @@ func TestQueries_2_x(t *testing.T) {
 	if err := rows.Err(); err != nil {
 		t.Fatal(err)
 	}
-	defer rows.Close() // nolint:errcheck
+	defer rows.Close()
 	result := make([]interface{}, 0)
 	for rows.Next() {
 		id, _ := rows.ID()
@@ -99,7 +99,7 @@ func TestQueries_3_x(t *testing.T) {
 	if err := rows.Err(); err != nil {
 		t.Fatal(err)
 	}
-	defer rows.Close() // nolint:errcheck
+	defer rows.Close()
 	result := make([]interface{}, 0)
 	for rows.Next() {
 		id, _ := rows.ID()
@@ -139,8 +139,10 @@ func Test_bug509(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.Close()                                   // nolint:errcheck
-	defer client.DestroyDB(context.Background(), "bug509") // nolint:errcheck
+	t.Cleanup(func() {
+		_ = client.DestroyDB(context.Background(), "bug509")
+		_ = client.Close()
+	})
 	if err := client.CreateDB(context.Background(), "bug509"); err != nil {
 		t.Fatal(err)
 	}

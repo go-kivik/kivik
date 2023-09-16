@@ -18,7 +18,7 @@ import (
 
 // DestroyDB cleans up the specified DB after tests run
 func (c *Context) DestroyDB(name string) {
-	Retry(func() error { // nolint: errcheck
+	_ = Retry(func() error {
 		return c.Admin.DestroyDB(context.Background(), name, c.Options("db"))
 	})
 }

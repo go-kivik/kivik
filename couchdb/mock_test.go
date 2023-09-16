@@ -95,7 +95,7 @@ func consume(r io.ReadCloser) error {
 	if r == nil {
 		return nil
 	}
-	defer r.Close() // nolint: errcheck
+	defer r.Close()
 	_, e := io.ReadAll(r)
 	return e
 }

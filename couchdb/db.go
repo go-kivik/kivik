@@ -581,7 +581,9 @@ type stater interface {
 //  1. Calls `Len()`, if implemented by `in` (i.e. `*bytes.Buffer`)
 //  2. Calls `Stat()`, if implemented by `in` (i.e. `*os.File`) then returns
 //     the file's size
-//  3. Read the entire stream to determine the size, and replace att.Content
+//  3. If `in` is an io.Seeker, copy the entire contents to io.Discard to
+//     determine size, then reset the reader to the beginning.
+//  4. Read the entire stream to determine the size, and replace att.Content
 //     to be replayed.
 func attachmentSize(att *kivik.Attachment) error {
 	if att.Size > 0 {
@@ -611,6 +613,14 @@ func readerSize(in io.Reader) (int64, io.Reader, error) {
 			return 0, nil, err
 		}
 		return info.Size(), in, nil
+	}
+	if sk, ok := in.(io.Seeker); ok {
+		n, err := io.Copy(io.Discard, in)
+		if err != nil {
+			return 0, nil, err
+		}
+		_, err = sk.Seek(0, io.SeekStart)
+		return n, in, err
 	}
 	content, err := io.ReadAll(in)
 	if err != nil {

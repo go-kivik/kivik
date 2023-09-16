@@ -2179,7 +2179,7 @@ func TestStubMarshalJSON(t *testing.T) {
 	}
 }
 
-func TestAttachmentSize(t *testing.T) {
+func Test_attachmentSize(t *testing.T) {
 	type tst struct {
 		att      *kivik.Attachment
 		expected *kivik.Attachment
@@ -2232,7 +2232,7 @@ var _ interface {
 
 func (r *myReader) Close() error { return nil }
 
-func TestReaderSize(t *testing.T) {
+func Test_readerSize(t *testing.T) {
 	type tst struct {
 		in   io.ReadCloser
 		size int64
@@ -2280,6 +2280,11 @@ func TestReaderSize(t *testing.T) {
 		size: 7,
 		body: "foo bar",
 	})
+	tests.Add("seeker", tst{
+		in:   &seeker{strings.NewReader("asdf asdf")},
+		size: 9,
+		body: "asdf asdf",
+	})
 	tests.Run(t, func(t *testing.T, test tst) {
 		size, r, err := readerSize(test.in)
 		testy.Error(t, test.err, err)
@@ -2295,6 +2300,20 @@ func TestReaderSize(t *testing.T) {
 		}
 	})
 }
+
+type seeker struct {
+	r *strings.Reader
+}
+
+func (s *seeker) Read(b []byte) (int, error) {
+	return s.r.Read(b)
+}
+
+func (s *seeker) Seek(offset int64, whence int) (int64, error) {
+	return s.r.Seek(offset, whence)
+}
+
+func (s *seeker) Close() error { return nil }
 
 func TestNewAttachment(t *testing.T) {
 	type tst struct {

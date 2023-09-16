@@ -193,7 +193,8 @@ func TestPutAttachment(t *testing.T) {
 				if err := consume(req.Body); err != nil {
 					return nil, err
 				}
-				if fullCommit := req.Header.Get("X-Couch-Full-Commit"); fullCommit != "true" { // nolint: goconst
+				const wantFullCommit = "true"
+				if fullCommit := req.Header.Get("X-Couch-Full-Commit"); fullCommit != wantFullCommit {
 					return nil, errors.New("X-Couch-Full-Commit not true")
 				}
 				return nil, errors.New("success")
@@ -219,7 +220,8 @@ func TestPutAttachment(t *testing.T) {
 					if err := consume(req.Body); err != nil {
 						return nil, err
 					}
-					if fullCommit := req.Header.Get("X-Couch-Full-Commit"); fullCommit != "true" {
+					const wantFullCommit = "true"
+					if fullCommit := req.Header.Get("X-Couch-Full-Commit"); fullCommit != wantFullCommit {
 						return nil, errors.New("X-Couch-Full-Commit not true")
 					}
 					return nil, errors.New("success")
@@ -692,7 +694,8 @@ func TestDeleteAttachment(t *testing.T) {
 				if err := consume(req.Body); err != nil {
 					return nil, err
 				}
-				if fullCommit := req.Header.Get("X-Couch-Full-Commit"); fullCommit != "true" {
+				const wantFullCommit = "true"
+				if fullCommit := req.Header.Get("X-Couch-Full-Commit"); fullCommit != wantFullCommit {
 					return nil, errors.New("X-Couch-Full-Commit not true")
 				}
 				return nil, errors.New("success")

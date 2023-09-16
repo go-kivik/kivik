@@ -123,53 +123,59 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 		status: http.StatusInternalServerError,
 		err:    "json: error calling MarshalJSON for type json.RawMessage: invalid character 'i' looking for beginning of value",
 	})
-	tests.Add("emulated BulkDocs support", tt{
-		db: &DB{
-			client: &Client{},
-			driverDB: &mock.DB{
-				PutFunc: func(_ context.Context, docID string, doc interface{}, options driver.Options) (string, error) {
-					if docID == "error" {
-						return "", errors.New("error")
-					}
-					if docID != "foo" { // nolint: goconst
-						return "", fmt.Errorf("Unexpected docID: %s", docID)
-					}
-					expectedDoc := map[string]string{"_id": "foo"}
-					if d := testy.DiffInterface(expectedDoc, doc); d != nil {
-						return "", fmt.Errorf("Unexpected doc:\n%s", d)
-					}
-					gotOpts := map[string]interface{}{}
-					options.Apply(gotOpts)
-					if d := testy.DiffInterface(testOptions, gotOpts); d != nil {
-						return "", fmt.Errorf("Unexpected opts:\n%s", d)
-					}
-					return "2-xxx", nil // nolint: goconst
-				},
-				CreateDocFunc: func(_ context.Context, doc interface{}, options driver.Options) (string, string, error) {
-					gotOpts := map[string]interface{}{}
-					options.Apply(gotOpts)
-					expectedDoc := int(123)
-					if d := testy.DiffInterface(expectedDoc, doc); d != nil {
-						return "", "", fmt.Errorf("Unexpected doc:\n%s", d)
-					}
-					if d := testy.DiffInterface(testOptions, gotOpts); d != nil {
-						return "", "", fmt.Errorf("Unexpected opts:\n%s", d)
-					}
-					return "newDocID", "1-xxx", nil // nolint: goconst
+	tests.Add("emulated BulkDocs support", func(t *testing.T) interface{} {
+		const (
+			id1  = "foo"
+			rev1 = "2-xxx"
+		)
+		return tt{
+			db: &DB{
+				client: &Client{},
+				driverDB: &mock.DB{
+					PutFunc: func(_ context.Context, docID string, doc interface{}, options driver.Options) (string, error) {
+						if docID == "error" {
+							return "", errors.New("error")
+						}
+						if docID != id1 {
+							return "", fmt.Errorf("Unexpected docID: %s", docID)
+						}
+						expectedDoc := map[string]string{"_id": id1}
+						if d := testy.DiffInterface(expectedDoc, doc); d != nil {
+							return "", fmt.Errorf("Unexpected doc:\n%s", d)
+						}
+						gotOpts := map[string]interface{}{}
+						options.Apply(gotOpts)
+						if d := testy.DiffInterface(testOptions, gotOpts); d != nil {
+							return "", fmt.Errorf("Unexpected opts:\n%s", d)
+						}
+						return rev1, nil
+					},
+					CreateDocFunc: func(_ context.Context, doc interface{}, options driver.Options) (string, string, error) {
+						gotOpts := map[string]interface{}{}
+						options.Apply(gotOpts)
+						expectedDoc := int(123)
+						if d := testy.DiffInterface(expectedDoc, doc); d != nil {
+							return "", "", fmt.Errorf("Unexpected doc:\n%s", d)
+						}
+						if d := testy.DiffInterface(testOptions, gotOpts); d != nil {
+							return "", "", fmt.Errorf("Unexpected opts:\n%s", d)
+						}
+						return "newDocID", "1-xxx", nil // nolint: goconst
+					},
 				},
 			},
-		},
-		docs: []interface{}{
-			map[string]string{"_id": "foo"},
-			123,
-			map[string]string{"_id": "error"},
-		},
-		options: Params(testOptions),
-		expected: []BulkResult{
-			{ID: "foo", Rev: "2-xxx"},
-			{ID: "newDocID", Rev: "1-xxx"},
-			{ID: "error", Error: errors.New("error")},
-		},
+			docs: []interface{}{
+				map[string]string{"_id": id1},
+				123,
+				map[string]string{"_id": "error"},
+			},
+			options: Params(testOptions),
+			expected: []BulkResult{
+				{ID: id1, Rev: rev1},
+				{ID: "newDocID", Rev: "1-xxx"},
+				{ID: "error", Error: errors.New("error")},
+			},
+		}
 	})
 	tests.Add("new_edits", tt{
 		db: &DB{

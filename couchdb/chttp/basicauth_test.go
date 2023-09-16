@@ -30,19 +30,24 @@ func TestBasicAuthRoundTrip(t *testing.T) {
 		expected *http.Response
 		cleanup  func()
 	}
+
+	const (
+		username = "foo"
+		password = "bar"
+	)
 	tests := []rtTest{
 		{
 			name: "Provided transport",
 			req:  httptest.NewRequest("GET", "/", nil),
 			auth: &basicAuth{
-				Username: "foo",
-				Password: "bar",
+				Username: username,
+				Password: password,
 				transport: customTransport(func(req *http.Request) (*http.Response, error) {
 					u, p, ok := req.BasicAuth()
 					if !ok {
 						t.Error("BasicAuth not set in request")
 					}
-					if u != "foo" || p != "bar" { // nolint: goconst
+					if u != username || p != password {
 						t.Errorf("Unexpected user/password: %s/%s", u, p)
 					}
 					return &http.Response{StatusCode: 200}, nil
@@ -56,7 +61,7 @@ func TestBasicAuthRoundTrip(t *testing.T) {
 				if !ok {
 					t.Error("BasicAuth not set in request")
 				}
-				if u != "foo" || p != "bar" {
+				if u != username || p != password {
 					t.Errorf("Unexpected user/password: %s/%s", u, p)
 				}
 				w.Header().Set("Date", "Wed, 01 Nov 2017 19:32:41 GMT")
@@ -66,8 +71,8 @@ func TestBasicAuthRoundTrip(t *testing.T) {
 			return rtTest{
 				name: "default transport",
 				auth: &basicAuth{
-					Username:  "foo",
-					Password:  "bar",
+					Username:  username,
+					Password:  password,
 					transport: http.DefaultTransport,
 				},
 				req: httptest.NewRequest("GET", s.URL, nil),

@@ -128,8 +128,8 @@ func TestBulkGet(t *testing.T) {
 	tests.Add("revs", tst{
 		db: &db{
 			client: newCustomClient(func(r *http.Request) (*http.Response, error) {
-				revs := r.URL.Query().Get("revs")
-				if revs != "true" {
+				const wantRevs = "true"
+				if revs := r.URL.Query().Get("revs"); revs != wantRevs {
 					return nil, errors.New("Expected revs=true")
 				}
 				return &http.Response{

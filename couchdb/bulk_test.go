@@ -119,7 +119,8 @@ func TestBulkDocs(t *testing.T) {
 				if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
 					return nil, err
 				}
-				if value := req.Header.Get("X-Couch-Full-Commit"); value != "true" {
+				const wantFullCommit = "true"
+				if fullCommit := req.Header.Get("X-Couch-Full-Commit"); fullCommit != wantFullCommit {
 					return nil, errors.New("X-Couch-Full-Commit not set to true")
 				}
 				return &http.Response{

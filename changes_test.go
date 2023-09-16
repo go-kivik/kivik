@@ -144,7 +144,7 @@ func TestChangesGetters(t *testing.T) {
 	})
 
 	t.Run("Deleted", func(t *testing.T) {
-		expected := true
+		const expected = true
 		result := c.Deleted()
 		if expected != result {
 			t.Errorf("Unexpected result: %v", result)
@@ -152,14 +152,14 @@ func TestChangesGetters(t *testing.T) {
 	})
 
 	t.Run("ID", func(t *testing.T) {
-		expected := "foo"
+		const expected = "foo"
 		result := c.ID()
 		if expected != result {
 			t.Errorf("Unexpected result: %v", result)
 		}
 	})
 	t.Run("Seq", func(t *testing.T) {
-		expected := "2-foo"
+		const expected = "2-foo"
 		result := c.Seq()
 		if expected != result {
 			t.Errorf("Unexpected result: %v", result)

@@ -475,8 +475,10 @@ func TestQuery(t *testing.T) {
 				client: &Client{},
 				driverDB: &mock.DB{
 					QueryFunc: func(_ context.Context, ddoc, view string, options driver.Options) (driver.Rows, error) {
-						expectedDdoc := "foo"
-						expectedView := "bar" // nolint: goconst
+						const (
+							expectedDdoc = "foo"
+							expectedView = "bar"
+						)
 						if ddoc != expectedDdoc {
 							return nil, fmt.Errorf("Unexpected ddoc: %s", ddoc)
 						}
@@ -568,7 +570,7 @@ func TestGet(t *testing.T) {
 			client: &Client{},
 			driverDB: &mock.DB{
 				GetFunc: func(_ context.Context, docID string, options driver.Options) (*driver.Document, error) {
-					expectedDocID := "foo"
+					const expectedDocID = "foo"
 					if docID != expectedDocID {
 						return nil, fmt.Errorf("Unexpected docID: %s", docID)
 					}
@@ -593,7 +595,7 @@ func TestGet(t *testing.T) {
 			client: &Client{},
 			driverDB: &mock.DB{
 				GetFunc: func(_ context.Context, docID string, options driver.Options) (*driver.Document, error) {
-					expectedDocID := "foo"
+					const expectedDocID = "foo"
 					gotOpts := map[string]interface{}{}
 					options.Apply(gotOpts)
 					wantOpts := map[string]interface{}{"include_docs": true}
@@ -629,7 +631,7 @@ func TestGet(t *testing.T) {
 			client: &Client{},
 			driverDB: &mock.RowsGetter{
 				GetFunc: func(_ context.Context, docID string, options driver.Options) (driver.Rows, error) {
-					expectedDocID := "foo"
+					const expectedDocID = "foo"
 					if docID != expectedDocID {
 						return nil, fmt.Errorf("Unexpected docID: %s", docID)
 					}
@@ -843,7 +845,7 @@ func TestStats(t *testing.T) {
 
 func TestCompact(t *testing.T) {
 	t.Run("error", func(t *testing.T) {
-		expected := "compact error"
+		const expected = "compact error"
 		db := &DB{
 			client: &Client{},
 			driverDB: &mock.DB{
@@ -856,7 +858,7 @@ func TestCompact(t *testing.T) {
 		testy.StatusError(t, expected, http.StatusBadRequest, err)
 	})
 	t.Run("closed", func(t *testing.T) {
-		expected := errClientClosed
+		const expected = errClientClosed
 		db := &DB{
 			client: &Client{
 				closed: 1,
@@ -879,8 +881,8 @@ func TestCompact(t *testing.T) {
 
 func TestCompactView(t *testing.T) {
 	t.Run("error", func(t *testing.T) {
-		expectedDDocID := "foo"
-		expected := "compact view error"
+		const expectedDDocID = "foo"
+		const expected = "compact view error"
 		db := &DB{
 			client: &Client{},
 			driverDB: &mock.DB{
@@ -896,7 +898,7 @@ func TestCompactView(t *testing.T) {
 		testy.StatusError(t, expected, http.StatusBadRequest, err)
 	})
 	t.Run("closed", func(t *testing.T) {
-		expected := errClientClosed
+		const expected = errClientClosed
 		db := &DB{
 			client: &Client{
 				closed: 1,
@@ -919,7 +921,7 @@ func TestCompactView(t *testing.T) {
 
 func TestViewCleanup(t *testing.T) {
 	t.Run("compact error", func(t *testing.T) {
-		expected := "compact error"
+		const expected = "compact error"
 		db := &DB{
 			client: &Client{},
 			driverDB: &mock.DB{
@@ -932,7 +934,7 @@ func TestViewCleanup(t *testing.T) {
 		testy.StatusError(t, expected, http.StatusBadRequest, err)
 	})
 	t.Run(errClientClosed, func(t *testing.T) {
-		expected := errClientClosed
+		const expected = errClientClosed
 		db := &DB{
 			client: &Client{
 				closed: 1,
@@ -942,7 +944,7 @@ func TestViewCleanup(t *testing.T) {
 		testy.StatusError(t, expected, http.StatusServiceUnavailable, err)
 	})
 	t.Run("db error", func(t *testing.T) {
-		expected := "db error"
+		const expected = "db error"
 		db := &DB{
 			err: errors.New(expected),
 		}
@@ -1156,7 +1158,7 @@ func TestGetRev(t *testing.T) { // nolint: gocyclo
 				client: &Client{},
 				driverDB: &mock.RevGetter{
 					GetRevFunc: func(_ context.Context, docID string, options driver.Options) (string, error) {
-						expectedDocID := "foo"
+						const expectedDocID = "foo"
 						if docID != expectedDocID {
 							return "", fmt.Errorf("Unexpected docID: %s", docID)
 						}
@@ -1192,7 +1194,7 @@ func TestGetRev(t *testing.T) { // nolint: gocyclo
 				client: &Client{},
 				driverDB: &mock.DB{
 					GetFunc: func(_ context.Context, docID string, _ driver.Options) (*driver.Document, error) {
-						expectedDocID := "foo"
+						const expectedDocID = "foo"
 						if docID != expectedDocID {
 							return nil, fmt.Errorf("Unexpected docID: %s", docID)
 						}
@@ -1212,7 +1214,7 @@ func TestGetRev(t *testing.T) { // nolint: gocyclo
 				client: &Client{},
 				driverDB: &mock.DB{
 					GetFunc: func(_ context.Context, docID string, _ driver.Options) (*driver.Document, error) {
-						expectedDocID := "foo"
+						const expectedDocID = "foo"
 						if docID != expectedDocID {
 							return nil, fmt.Errorf("Unexpected docID: %s", docID)
 						}
@@ -1231,7 +1233,7 @@ func TestGetRev(t *testing.T) { // nolint: gocyclo
 				client: &Client{},
 				driverDB: &mock.DB{
 					GetFunc: func(_ context.Context, docID string, _ driver.Options) (*driver.Document, error) {
-						expectedDocID := "foo"
+						const expectedDocID = "foo"
 						if docID != expectedDocID {
 							return nil, fmt.Errorf("Unexpected docID: %s", docID)
 						}
@@ -1324,8 +1326,10 @@ func TestCopy(t *testing.T) {
 				client: &Client{},
 				driverDB: &mock.Copier{
 					CopyFunc: func(_ context.Context, target, source string, options driver.Options) (string, error) {
-						expectedTarget := "foo"
-						expectedSource := "bar"
+						const (
+							expectedTarget = "foo"
+							expectedSource = "bar"
+						)
 						if target != expectedTarget {
 							return "", fmt.Errorf("Unexpected target: %s", target)
 						}
@@ -1404,7 +1408,7 @@ func TestCopy(t *testing.T) {
 				client: &Client{},
 				driverDB: &mock.DB{
 					GetFunc: func(_ context.Context, docID string, _ driver.Options) (*driver.Document, error) {
-						expectedDocID := "bar"
+						const expectedDocID = "bar"
 						if docID != expectedDocID {
 							return nil, fmt.Errorf("Unexpected get docID: %s", docID)
 						}
@@ -1413,7 +1417,7 @@ func TestCopy(t *testing.T) {
 						}, nil
 					},
 					PutFunc: func(_ context.Context, docID string, doc interface{}, options driver.Options) (string, error) {
-						expectedDocID := "foo"
+						const expectedDocID = "foo"
 						expectedDoc := map[string]interface{}{"_id": "foo", "foo": 123.4}
 						expectedOpts := map[string]interface{}{"batch": true}
 						if docID != expectedDocID {
@@ -1514,7 +1518,7 @@ func TestNormalizeFromJSON(t *testing.T) {
 
 func TestPut(t *testing.T) {
 	putFunc := func(_ context.Context, docID string, doc interface{}, options driver.Options) (string, error) {
-		expectedDocID := "foo"
+		const expectedDocID = "foo"
 		expectedDoc := map[string]interface{}{"foo": "bar"}
 		if expectedDocID != docID {
 			return "", fmt.Errorf("Unexpected docID: %s", docID)
@@ -2241,7 +2245,7 @@ func TestDeleteAttachment(t *testing.T) {
 }
 
 func TestGetAttachment(t *testing.T) {
-	expectedDocID, expectedFilename := "foo", "foo.txt"
+	const expectedDocID, expectedFilename = "foo", "foo.txt"
 	type tt struct {
 		db              *DB
 		docID, filename string
@@ -2443,7 +2447,7 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 				client: &Client{},
 				driverDB: &mock.AttachmentMetaGetter{
 					GetAttachmentMetaFunc: func(_ context.Context, docID, filename string, options driver.Options) (*driver.Attachment, error) {
-						expectedDocID, expectedFilename := "foo", "foo.txt"
+						const expectedDocID, expectedFilename = "foo", "foo.txt"
 						if docID != expectedDocID {
 							return nil, fmt.Errorf("Unexpected docID: %s", docID)
 						}

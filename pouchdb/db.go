@@ -67,16 +67,44 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 	}, nil
 }
 
-func (d *db) Get(ctx context.Context, docID string, options driver.Options) (*driver.Document, error) {
+type document struct {
+	id   string
+	rev  string
+	body io.Reader
+	done bool
+}
+
+func (d *document) Next(row *driver.Row) error {
+	if d.done {
+		return io.EOF
+	}
+	d.done = true
+	row.ID = d.id
+	row.Rev = d.rev
+	row.Doc = d.body
+	return nil
+}
+
+func (d *document) Close() error {
+	d.done = true
+	return nil
+}
+
+func (d *document) UpdateSeq() string { return "" }
+func (d *document) Offset() int64     { return 0 }
+func (d *document) TotalRows() int64  { return 0 }
+
+func (d *db) Get(ctx context.Context, docID string, options driver.Options) (driver.Rows, error) {
 	opts := map[string]interface{}{}
 	options.Apply(opts)
 	doc, rev, err := d.db.Get(ctx, docID, opts)
 	if err != nil {
 		return nil, err
 	}
-	return &driver.Document{
-		Rev:  rev,
-		Body: io.NopCloser(bytes.NewReader(doc)),
+	return &document{
+		id:   docID,
+		rev:  rev,
+		body: bytes.NewReader(doc),
 	}, nil
 }
 

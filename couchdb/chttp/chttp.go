@@ -487,6 +487,7 @@ func readRev(r io.Reader) (string, error) {
 	if tk != json.Delim('{') {
 		return "", fmt.Errorf("Expected %q token, found %q", '{', tk)
 	}
+	var val json.RawMessage
 	for dec.More() {
 		tk, err = dec.Token()
 		if err != nil {
@@ -501,6 +502,10 @@ func readRev(r io.Reader) (string, error) {
 				return value, nil
 			}
 			return "", fmt.Errorf("found %q in place of _rev value", tk)
+		}
+		// Discard the value associated with the token
+		if err := dec.Decode(&val); err != nil {
+			return "", err
 		}
 	}
 

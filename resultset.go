@@ -59,12 +59,12 @@ type ResultMetadata struct {
 // time.
 //
 // Calling [ResultSet.ScanDoc], [ResultSet.ScanKey], [ResultSet.ScanValue],
-// [ResultSet.ID], or [ResultSet.Key] before calling [ResultSet.Next] will
-// operate on the first item in the resultset, then close the iterator
-// immediately. This is for convenience in cases where only a single item is
-// expected, so the extra effort of iterating is otherwise wasted. In this case,
-// if the result set is empty, as when a view returns no results, an error of
-// "no results" will be returned.
+// [ResultSet.ID], [ResultSet.Rev], or [ResultSet.Key] before calling
+// [ResultSet.Next] will operate on the first item in the resultset, then close
+// the iterator immediately. This is for convenience in cases where only a
+// single item is expected, so the extra effort of iterating is otherwise
+// wasted. In this case, if the result set is empty, as when a view returns no
+// results, an error of "no results" will be returned.
 type ResultSet struct {
 	// When ResultSet is invalid, due to an error, err is set, and should be
 	// returned by all methods.
@@ -456,5 +456,10 @@ func (r *rows) Attachments() (*AttachmentsIterator, error) {
 }
 
 func (r *rows) Rev() (string, error) {
+	runlock, err := r.makeReady(nil)
+	if err != nil {
+		return "", err
+	}
+	defer runlock()
 	return "", r.curVal.(*driver.Row).Error
 }

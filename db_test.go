@@ -2835,7 +2835,7 @@ func TestDBClose(t *testing.T) {
 			}
 
 			start := time.Now()
-			go tt.work(t, db)
+			tt.work(t, db)
 			time.Sleep(delay / 2)
 			_ = db.Close()
 			if elapsed := time.Since(start); elapsed < delay {

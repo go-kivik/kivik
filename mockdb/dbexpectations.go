@@ -407,7 +407,7 @@ func (e *ExpectedGet) String() string {
 		opts = []string{"has docID: " + e.arg0}
 	}
 	if e.ret0 != nil {
-		rets = []string{fmt.Sprintf("should return document with rev: %s", e.ret0.Rev)}
+		rets = []string{fmt.Sprintf("should return: %d results", e.ret0.count())}
 	}
 	return dbStringer("Get", &e.commonExpectation, withOptions, opts, rets)
 }

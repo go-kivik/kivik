@@ -329,7 +329,7 @@ func (db *driverDB) Find(ctx context.Context, arg0 interface{}, options driver.O
 	return &driverRows{Context: ctx, Rows: coalesceRows(expected.ret0)}, expected.wait(ctx)
 }
 
-func (db *driverDB) Get(ctx context.Context, arg0 string, options driver.Options) (*driver.Document, error) {
+func (db *driverDB) Get(ctx context.Context, arg0 string, options driver.Options) (driver.Rows, error) {
 	expected := &ExpectedGet{
 		arg0: arg0,
 		commonExpectation: commonExpectation{
@@ -343,7 +343,7 @@ func (db *driverDB) Get(ctx context.Context, arg0 string, options driver.Options
 	if expected.callback != nil {
 		return expected.callback(ctx, arg0, options)
 	}
-	return expected.ret0, expected.wait(ctx)
+	return &driverRows{Context: ctx, Rows: coalesceRows(expected.ret0)}, expected.wait(ctx)
 }
 
 func (db *driverDB) GetAttachment(ctx context.Context, arg0 string, arg1 string, options driver.Options) (*driver.Attachment, error) {

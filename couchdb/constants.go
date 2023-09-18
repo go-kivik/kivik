@@ -18,4 +18,5 @@ const Version = "4.0.0-prerelease"
 const (
 	typeJSON      = "application/json"
 	typeMPRelated = "multipart/related"
+	typeMPMixed   = "multipart/mixed"
 )

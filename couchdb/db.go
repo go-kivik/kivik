@@ -191,38 +191,53 @@ func (d *db) Get(ctx context.Context, docID string, options driver.Options) (dri
 	if err != nil {
 		return nil, err
 	}
-	return processDoc(docID, resp)
-}
-
-func processDoc(docID string, resp *http.Response) (*document, error) {
 	ct, params, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
 	if err != nil {
 		return nil, &internal.Error{Status: http.StatusBadGateway, Err: err}
 	}
+
 	switch ct {
-	case typeJSON:
-		rev, err := chttp.GetRev(resp)
-		if err != nil {
-			return nil, err
-		}
-
-		return &document{
-			id:   docID,
-			rev:  rev,
-			body: resp.Body,
-		}, nil
-	case typeMPRelated:
-		// I'm unsure whether it's ever possible to get a multipart/related
-		// response with no ETag. If this is possible, this needs to be improved
-		// to parse the JSON part of the mp/related response to extract the rev,
-		// similar to how chttp.GetRev works.
-		rev, _ := chttp.ETag(resp)
-
+	case typeJSON, typeMPRelated:
+		etag, _ := chttp.ETag(resp)
+		return processDoc(docID, ct, params["boundary"], etag, resp.Body)
+	case typeMPMixed:
 		boundary := strings.Trim(params["boundary"], "\"")
 		if boundary == "" {
 			return nil, &internal.Error{Status: http.StatusBadGateway, Err: errors.New("kivik: boundary missing for multipart/related response")}
 		}
 		mpReader := multipart.NewReader(resp.Body, boundary)
+		return &multiDocs{
+			id:       docID,
+			respBody: resp.Body,
+			reader:   mpReader,
+		}, nil
+	default:
+		return nil, &internal.Error{Status: http.StatusBadGateway, Err: fmt.Errorf("kivik: invalid content type in response: %s", ct)}
+	}
+}
+
+func processDoc(docID, ct, boundary, rev string, body io.ReadCloser) (*document, error) {
+	switch ct {
+	case typeJSON:
+		if rev == "" {
+			var err error
+			body, rev, err = chttp.ExtractRev(body)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		return &document{
+			id:   docID,
+			rev:  rev,
+			body: body,
+		}, nil
+	case typeMPRelated:
+		boundary := strings.Trim(boundary, "\"")
+		if boundary == "" {
+			return nil, &internal.Error{Status: http.StatusBadGateway, Err: errors.New("kivik: boundary missing for multipart/related response")}
+		}
+		mpReader := multipart.NewReader(body, boundary)
 		body, err := mpReader.NextPart()
 		if err != nil {
 			return nil, &internal.Error{Status: http.StatusBadGateway, Err: err}
@@ -233,6 +248,11 @@ func processDoc(docID string, resp *http.Response) (*document, error) {
 		if err != nil {
 			return nil, &internal.Error{Status: http.StatusBadGateway, Err: err}
 		}
+		_, rev, err := chttp.ExtractRev(io.NopCloser(bytes.NewReader(content)))
+		if err != nil {
+			return nil, err
+		}
+
 		var metaDoc struct {
 			Attachments map[string]attMeta `json:"_attachments"`
 		}
@@ -245,7 +265,7 @@ func processDoc(docID string, resp *http.Response) (*document, error) {
 			rev:  rev,
 			body: io.NopCloser(bytes.NewBuffer(content)),
 			attachments: &multipartAttachments{
-				content:  resp.Body,
+				content:  body,
 				mpReader: mpReader,
 				meta:     metaDoc.Attachments,
 			},
@@ -254,6 +274,69 @@ func processDoc(docID string, resp *http.Response) (*document, error) {
 		return nil, &internal.Error{Status: http.StatusBadGateway, Err: fmt.Errorf("kivik: invalid content type in response: %s", ct)}
 	}
 }
+
+type multiDocs struct {
+	id           string
+	respBody     io.Closer
+	reader       *multipart.Reader
+	readerCloser io.Closer
+}
+
+var _ driver.Rows = (*multiDocs)(nil)
+
+func (d *multiDocs) Next(row *driver.Row) error {
+	if d.readerCloser != nil {
+		if err := d.readerCloser.Close(); err != nil {
+			return err
+		}
+		d.readerCloser = nil
+	}
+	part, err := d.reader.NextPart()
+	if err != nil {
+		return err
+	}
+	ct, params, err := mime.ParseMediaType(part.Header.Get("Content-Type"))
+	if err != nil {
+		return err
+	}
+
+	if _, ok := params["error"]; ok {
+		var body struct {
+			Rev string `json:"missing"`
+		}
+		err := json.NewDecoder(part).Decode(&body)
+		row.ID = d.id
+		row.Error = &internal.Error{Status: http.StatusNotFound, Err: errors.New("missing")}
+		row.Rev = body.Rev
+		return err
+	}
+
+	doc, err := processDoc(d.id, ct, params["boundary"], "", part)
+	if err != nil {
+		return err
+	}
+
+	row.ID = doc.id
+	row.Doc = doc.body
+	row.Rev = doc.rev
+	row.Attachments = doc.attachments
+
+	return nil
+}
+
+func (d *multiDocs) Close() error {
+	if d.readerCloser != nil {
+		if err := d.readerCloser.Close(); err != nil {
+			return err
+		}
+		d.readerCloser = nil
+	}
+	return d.respBody.Close()
+}
+
+func (*multiDocs) UpdateSeq() string { return "" }
+func (*multiDocs) Offset() int64     { return 0 }
+func (*multiDocs) TotalRows() int64  { return 0 }
 
 type attMeta struct {
 	ContentType string `json:"content_type"`
@@ -356,7 +439,7 @@ func (d *db) get(ctx context.Context, method, docID string, options driver.Optio
 
 	chttpOpts := chttp.NewOptions(options)
 
-	chttpOpts.Accept = typeMPRelated + "," + typeJSON
+	chttpOpts.Accept = strings.Join([]string{typeMPMixed, typeMPRelated, typeJSON}, ", ")
 	var err error
 	chttpOpts.Query, err = optionsToParams(opts)
 	if err != nil {

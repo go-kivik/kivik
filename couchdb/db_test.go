@@ -130,13 +130,13 @@ func TestGet(t *testing.T) {
 				"ETag":         {`"12-xxx"`},
 			},
 			ContentLength: 13,
-			Body:          Body("some response"),
+			Body:          Body(`{"foo":"bar"}`),
 		}, nil),
 		doc: &driver.Row{
 			ID:  "foo",
 			Rev: "12-xxx",
 		},
-		expected: "some response\n",
+		expected: `{"foo":"bar"}`,
 	})
 	tests.Add("If-None-Match", tt{
 		db: newCustomDB(func(req *http.Request) (*http.Response, error) {
@@ -234,7 +234,7 @@ func TestGet(t *testing.T) {
 	})
 	tests.Add("multipart accept header", tt{
 		db: newCustomDB(func(r *http.Request) (*http.Response, error) {
-			expected := "multipart/related,application/json"
+			expected := "multipart/mixed, multipart/related, application/json"
 			if accept := r.Header.Get("Accept"); accept != expected {
 				return nil, fmt.Errorf("Unexpected Accept header: %s", accept)
 			}
@@ -386,6 +386,34 @@ Content-Length: 86
 			err:    `^Get "?http://example.com/testdb/2020-01-30T13%3A33%3A00\.00%2B05%3A30%7Ckl"?: success$`,
 		}
 	})
+	tests.Add("open_revs", func(t *testing.T) interface{} {
+		return tt{
+			db: newCustomDB(func(req *http.Request) (*http.Response, error) {
+				want := "multipart/mixed, multipart/related, application/json"
+				if got := req.Header.Get("Accept"); got != want {
+					return nil, fmt.Errorf("Unexpected Accept header %q", got)
+				}
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Header: http.Header{
+						"Content-Type": []string{`multipart/mixed; boundary="ea68bec945fd9dece3e826462c5604e8"`},
+					},
+					Body: Body(`--ea68bec945fd9dece3e826462c5604e8
+Content-Type: application/json
+
+{"_id":"bar","_rev":"2-e2a6df12e36615e8def0bb38bb17b48d","foo":123}
+--ea68bec945fd9dece3e826462c5604e8--
+`),
+				}, nil
+			}),
+			id:       "bar",
+			expected: `{"_id":"bar","_rev":"2-e2a6df12e36615e8def0bb38bb17b48d","foo":123}`,
+			doc: &driver.Row{
+				ID:  "bar",
+				Rev: "2-e2a6df12e36615e8def0bb38bb17b48d",
+			},
+		}
+	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
 		opts := tt.options
@@ -403,43 +431,251 @@ Content-Length: 86
 		if err := rows.Next(row); err != nil {
 			t.Fatal(err)
 		}
-		result, err := io.ReadAll(row.Doc)
-		if err != nil {
-			t.Fatal(err)
+		if d := testy.DiffAsJSON([]byte(tt.expected), row.Doc); d != nil {
+			t.Errorf("Unexpected result: %s", d)
 		}
-		if string(result) != tt.expected {
-			t.Errorf("Unexpected result: %s", string(result))
-		}
-		var attachments []*Attachment
-		if row.Attachments != nil {
-			att := new(driver.Attachment)
-			for {
-				if err := row.Attachments.Next(att); err != nil {
-					if err != io.EOF {
-						t.Fatal(err)
-					}
-					break
-				}
-				content, e := io.ReadAll(att.Content)
-				if e != nil {
-					t.Fatal(e)
-				}
-				attachments = append(attachments, &Attachment{
-					Filename:    att.Filename,
-					ContentType: att.ContentType,
-					Size:        att.Size,
-					Content:     string(content),
-				})
-			}
-			row.Attachments.(*multipartAttachments).content = nil // Determinism
-			row.Attachments.(*multipartAttachments).mpReader = nil
-		}
+		attachments := rowAttachments(t, row)
+
 		row.Doc = nil // Determinism
 		if d := testy.DiffInterface(tt.doc, row); d != nil {
 			t.Errorf("Unexpected doc:\n%s", d)
 		}
 		if d := testy.DiffInterface(tt.attachments, attachments); d != nil {
 			t.Errorf("Unexpected attachments:\n%s", d)
+		}
+	})
+}
+
+func rowAttachments(t *testing.T, row *driver.Row) []*Attachment {
+	var attachments []*Attachment
+	if row.Attachments != nil {
+		att := new(driver.Attachment)
+		for {
+			if err := row.Attachments.Next(att); err != nil {
+				if err != io.EOF {
+					t.Fatal(err)
+				}
+				break
+			}
+			content, e := io.ReadAll(att.Content)
+			if e != nil {
+				t.Fatal(e)
+			}
+			attachments = append(attachments, &Attachment{
+				Filename:    att.Filename,
+				ContentType: att.ContentType,
+				Size:        att.Size,
+				Content:     string(content),
+			})
+		}
+		row.Attachments.(*multipartAttachments).content = nil // Determinism
+		row.Attachments.(*multipartAttachments).mpReader = nil
+	}
+	return attachments
+}
+
+func TestGet_with_open_revs(t *testing.T) {
+	type rowResult struct {
+		ID    string
+		Rev   string
+		Error string
+	}
+	type tt struct {
+		db      *db
+		id      string
+		options kivik.Option
+		want    []rowResult
+		err     string
+	}
+
+	tests := testy.NewTable()
+	tests.Add("open_revs", func(t *testing.T) interface{} {
+		return tt{
+			db: newCustomDB(func(req *http.Request) (*http.Response, error) {
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Header: http.Header{
+						"Content-Type": []string{`multipart/mixed; boundary="ea68bec945fd9dece3e826462c5604e8"`},
+					},
+					Body: Body(`--ea68bec945fd9dece3e826462c5604e8
+Content-Type: application/json
+
+{"_id":"bar","_rev":"2-e2a6df12e36615e8def0bb38bb17b48d","foo":123}
+--ea68bec945fd9dece3e826462c5604e8--
+`),
+				}, nil
+			}),
+			id: "bar",
+			want: []rowResult{
+				{
+					ID:  "bar",
+					Rev: "2-e2a6df12e36615e8def0bb38bb17b48d",
+				},
+			},
+		}
+	})
+	tests.Add("open_revs with multiple revs", func(t *testing.T) interface{} {
+		return tt{
+			db: newCustomDB(func(req *http.Request) (*http.Response, error) {
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Header: http.Header{
+						"Content-Type": []string{`multipart/mixed; boundary="7b1596fc4940bc1be725ad67f11ec1c4"`},
+					},
+					Body: Body(`--7b1596fc4940bc1be725ad67f11ec1c4
+Content-Type: application/json
+
+{
+	"_id": "SpaghettiWithMeatballs",
+	"_rev": "1-917fa23",
+	"_revisions": {
+		"ids": [
+			"917fa23"
+		],
+		"start": 1
+	},
+	"description": "An Italian-American delicious dish",
+	"ingredients": [
+		"spaghetti",
+		"tomato sauce",
+		"meatballs"
+	],
+	"name": "Spaghetti with meatballs"
+}
+--7b1596fc4940bc1be725ad67f11ec1c4
+Content-Type: multipart/related; boundary="a81a77b0ca68389dda3243a43ca946f2"
+
+--a81a77b0ca68389dda3243a43ca946f2
+Content-Type: application/json
+
+{
+	"_attachments": {
+		"recipe.txt": {
+			"content_type": "text/plain",
+			"digest": "md5-R5CrCb6fX10Y46AqtNn0oQ==",
+			"follows": true,
+			"length": 87,
+			"revpos": 7
+		}
+	},
+	"_id": "SpaghettiWithMeatballs",
+	"_rev": "7-474f12e",
+	"_revisions": {
+		"ids": [
+			"474f12e",
+			"5949cfc",
+			"00ecbbc",
+			"fc997b6",
+			"3552c87",
+			"404838b",
+			"5defd9d",
+			"dc1e4be"
+		],
+		"start": 7
+	},
+	"description": "An Italian-American delicious dish",
+	"ingredients": [
+		"spaghetti",
+		"tomato sauce",
+		"meatballs",
+		"love"
+	],
+	"name": "Spaghetti with meatballs"
+}
+--a81a77b0ca68389dda3243a43ca946f2
+Content-Disposition: attachment; filename="recipe.txt"
+Content-Type: text/plain
+Content-Length: 87
+
+1. Cook spaghetti
+2. Cook meetballs
+3. Mix them
+4. Add tomato sauce
+5. ...
+6. PROFIT!
+
+--a81a77b0ca68389dda3243a43ca946f2--
+--7b1596fc4940bc1be725ad67f11ec1c4
+Content-Type: application/json; error="true"
+
+{"missing":"3-6bcedf1"}
+--7b1596fc4940bc1be725ad67f11ec1c4--`),
+				}, nil
+			}),
+			id: "bar",
+			want: []rowResult{
+				{
+					ID:  "bar",
+					Rev: "1-917fa23",
+				},
+				{
+					ID:  "bar",
+					Rev: "7-474f12e",
+				},
+				{
+					ID:    "bar",
+					Rev:   "3-6bcedf1",
+					Error: "missing",
+				},
+			},
+		}
+	})
+	tests.Add("not found", func(t *testing.T) interface{} {
+		return tt{
+			db: newCustomDB(func(req *http.Request) (*http.Response, error) {
+				return &http.Response{
+					StatusCode: http.StatusNotFound,
+					Header: http.Header{
+						"Content-Type": []string{`application/json`},
+					},
+					Body: Body(`{"error":"not_found","reason":"missing"}`),
+				}, nil
+			}),
+			id:  "bar",
+			err: "Not Found",
+		}
+	})
+	tests.Run(t, func(t *testing.T, tt tt) {
+		opts := tt.options
+		if opts == nil {
+			opts = mock.NilOption
+		}
+		rows, err := tt.db.Get(context.Background(), tt.id, opts)
+		var errMsg string
+		if err != nil {
+			errMsg = err.Error()
+		}
+		if errMsg != tt.err {
+			t.Errorf("Unexpected error: %s", err)
+		}
+		if errMsg != "" {
+			return
+		}
+
+		got := []rowResult{}
+		for i := 0; ; i++ {
+			row := new(driver.Row)
+			if err := rows.Next(row); err != nil {
+				if err == io.EOF {
+					break
+				}
+				t.Fatal(err)
+			}
+			row.Doc = nil // Determinism
+			row.Attachments = nil
+			got = append(got, rowResult{
+				ID:  row.ID,
+				Rev: row.Rev,
+				Error: func() string {
+					if row.Error != nil {
+						return row.Error.Error()
+					}
+					return ""
+				}(),
+			})
+		}
+		if d := testy.DiffInterface(tt.want, got); d != nil {
+			t.Errorf("Unexpected result: %s", d)
 		}
 	})
 }

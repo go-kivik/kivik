@@ -485,6 +485,7 @@ func TestGet_with_open_revs(t *testing.T) {
 		id      string
 		options kivik.Option
 		want    []rowResult
+		err     string
 	}
 
 	tests := testy.NewTable()
@@ -619,15 +620,36 @@ Content-Type: application/json; error="true"
 			},
 		}
 	})
-
+	tests.Add("not found", func(t *testing.T) interface{} {
+		return tt{
+			db: newCustomDB(func(req *http.Request) (*http.Response, error) {
+				return &http.Response{
+					StatusCode: http.StatusNotFound,
+					Header: http.Header{
+						"Content-Type": []string{`application/json`},
+					},
+					Body: Body(`{"error":"not_found","reason":"missing"}`),
+				}, nil
+			}),
+			id:  "bar",
+			err: "Not Found",
+		}
+	})
 	tests.Run(t, func(t *testing.T, tt tt) {
 		opts := tt.options
 		if opts == nil {
 			opts = mock.NilOption
 		}
 		rows, err := tt.db.Get(context.Background(), tt.id, opts)
+		var errMsg string
 		if err != nil {
-			t.Fatal(err)
+			errMsg = err.Error()
+		}
+		if errMsg != tt.err {
+			t.Errorf("Unexpected error: %s", err)
+		}
+		if errMsg != "" {
+			return
 		}
 
 		got := []rowResult{}

@@ -456,5 +456,6 @@ func (r *rows) Attachments() (*AttachmentsIterator, error) {
 }
 
 func (r *rows) Rev() (string, error) {
-	return "", r.curVal.(*driver.Row).Error
+	row := r.curVal.(*driver.Row)
+	return row.Rev, row.Error
 }

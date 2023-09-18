@@ -88,7 +88,7 @@ type fullDB interface {
 	driver.RevsDiffer
 	driver.PartitionedDB
 	driver.SecurityDB
-	driver.OldGetter
+	driver.RowsGetter
 }
 
 func db() error {

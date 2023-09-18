@@ -85,7 +85,7 @@ func (p *PouchDB) Version() string {
 	return p.Get("version").String()
 }
 
-func setTimeout(ctx context.Context, options map[string]interface{}) map[string]interface{} {
+func setFetchOptions(ctx context.Context, options map[string]interface{}) map[string]interface{} {
 	if ctx == nil { // Just to be safe
 		return options
 	}
@@ -200,7 +200,7 @@ func (db *DB) Info(ctx context.Context) (*DBInfo, error) {
 // Put creates a new document or update an existing document.
 // See https://pouchdb.com/api.html#create_document
 func (db *DB) Put(ctx context.Context, doc interface{}, opts map[string]interface{}) (rev string, err error) {
-	result, err := callBack(ctx, db, "put", doc, setTimeout(ctx, opts))
+	result, err := callBack(ctx, db, "put", doc, setFetchOptions(ctx, opts))
 	if err != nil {
 		return "", err
 	}
@@ -210,7 +210,7 @@ func (db *DB) Put(ctx context.Context, doc interface{}, opts map[string]interfac
 // Post creates a new document and lets PouchDB auto-generate the ID.
 // See https://pouchdb.com/api.html#using-dbpost
 func (db *DB) Post(ctx context.Context, doc interface{}, opts map[string]interface{}) (docID, rev string, err error) {
-	result, err := callBack(ctx, db, "post", doc, setTimeout(ctx, opts))
+	result, err := callBack(ctx, db, "post", doc, setFetchOptions(ctx, opts))
 	if err != nil {
 		return "", "", err
 	}
@@ -220,7 +220,7 @@ func (db *DB) Post(ctx context.Context, doc interface{}, opts map[string]interfa
 // Get fetches the requested document from the database.
 // See https://pouchdb.com/api.html#fetch_document
 func (db *DB) Get(ctx context.Context, docID string, opts map[string]interface{}) (doc []byte, rev string, err error) {
-	result, err := callBack(ctx, db, "get", docID, setTimeout(ctx, opts))
+	result, err := callBack(ctx, db, "get", docID, setFetchOptions(ctx, opts))
 	if err != nil {
 		return nil, "", err
 	}
@@ -231,7 +231,7 @@ func (db *DB) Get(ctx context.Context, docID string, opts map[string]interface{}
 // Delete marks a document as deleted.
 // See https://pouchdb.com/api.html#delete_document
 func (db *DB) Delete(ctx context.Context, docID, rev string, opts map[string]interface{}) (newRev string, err error) {
-	result, err := callBack(ctx, db, "remove", docID, rev, setTimeout(ctx, opts))
+	result, err := callBack(ctx, db, "remove", docID, rev, setFetchOptions(ctx, opts))
 	if err != nil {
 		return "", err
 	}
@@ -252,7 +252,7 @@ func (db *DB) Purge(ctx context.Context, docID, rev string) ([]string, error) {
 	if !db.indexeddb() {
 		return nil, &internal.Error{Status: http.StatusNotImplemented, Message: "kivik: purge only supported with indexedDB adapter"}
 	}
-	result, err := callBack(ctx, db, "purge", docID, rev, setTimeout(ctx, nil))
+	result, err := callBack(ctx, db, "purge", docID, rev, setFetchOptions(ctx, nil))
 	if err != nil {
 		return nil, err
 	}
@@ -266,18 +266,18 @@ func (db *DB) Purge(ctx context.Context, docID, rev string) ([]string, error) {
 
 // Destroy destroys the database.
 func (db *DB) Destroy(ctx context.Context, options map[string]interface{}) error {
-	_, err := callBack(ctx, db, "destroy", setTimeout(ctx, options))
+	_, err := callBack(ctx, db, "destroy", setFetchOptions(ctx, options))
 	return err
 }
 
 // AllDocs returns a list of all documents in the database.
 func (db *DB) AllDocs(ctx context.Context, options map[string]interface{}) (*js.Object, error) {
-	return callBack(ctx, db, "allDocs", setTimeout(ctx, options))
+	return callBack(ctx, db, "allDocs", setFetchOptions(ctx, options))
 }
 
 // Query queries a map/reduce function.
 func (db *DB) Query(ctx context.Context, ddoc, view string, options map[string]interface{}) (*js.Object, error) {
-	o := setTimeout(ctx, options)
+	o := setFetchOptions(ctx, options)
 	return callBack(ctx, db, "query", ddoc+"/"+view, o)
 }
 
@@ -350,9 +350,9 @@ func (db *DB) BulkDocs(ctx context.Context, docs []interface{}, options map[stri
 		jsDocs[i] = jsJSON.Call("parse", string(jsonDoc))
 	}
 	if options == nil {
-		return callBack(ctx, db, "bulkDocs", jsDocs, setTimeout(ctx, nil))
+		return callBack(ctx, db, "bulkDocs", jsDocs, setFetchOptions(ctx, nil))
 	}
-	return callBack(ctx, db, "bulkDocs", jsDocs, options, setTimeout(ctx, nil))
+	return callBack(ctx, db, "bulkDocs", jsDocs, options, setFetchOptions(ctx, nil))
 }
 
 // Changes returns an event emitter object.
@@ -360,7 +360,7 @@ func (db *DB) BulkDocs(ctx context.Context, docs []interface{}, options map[stri
 // See https://pouchdb.com/api.html#changes
 func (db *DB) Changes(ctx context.Context, options map[string]interface{}) (changes *js.Object, e error) {
 	defer RecoverError(&e)
-	return db.Call("changes", setTimeout(ctx, options)), nil
+	return db.Call("changes", setFetchOptions(ctx, options)), nil
 }
 
 // PutAttachment attaches a binary object to a document.
@@ -406,7 +406,7 @@ func attachmentObject(contentType string, content io.Reader) (att *js.Object, er
 //
 // See https://pouchdb.com/api.html#get_attachment
 func (db *DB) GetAttachment(ctx context.Context, docID, filename string, options map[string]interface{}) (*js.Object, error) {
-	return callBack(ctx, db, "getAttachment", docID, filename, setTimeout(ctx, options))
+	return callBack(ctx, db, "getAttachment", docID, filename, setFetchOptions(ctx, options))
 }
 
 // RemoveAttachment deletes an attachment from a document.

@@ -89,22 +89,20 @@ func setFetchOptions(ctx context.Context, options map[string]interface{}) map[st
 	if ctx == nil { // Just to be safe
 		return options
 	}
-	deadline, ok := ctx.Deadline()
-	if !ok {
-		return options
-	}
 	if options == nil {
 		options = make(map[string]interface{})
 	}
-	if _, ok := options["ajax"]; !ok {
-		options["ajax"] = make(map[string]interface{})
-	}
-	ajax := options["ajax"].(map[string]interface{})
-	timeout := int(time.Until(deadline) * 1000) //nolint:gomnd
-	// Used by ajax calls
-	ajax["timeout"] = timeout
-	// Used by changes and replications
-	options["timeout"] = timeout
+	controller := js.Global.Get("AbortController").New()
+	options["fetch"] = js.MakeFunc(func(_ *js.Object, args []*js.Object) interface{} {
+		url := args[0]
+		return js.Global.Call("fetch", url, map[string]interface{}{
+			"signal": controller.Get("signal"),
+		})
+	})
+	go func() {
+		<-ctx.Done()
+		controller.Call("abort")
+	}()
 	return options
 }
 

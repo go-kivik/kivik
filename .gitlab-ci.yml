@@ -37,7 +37,7 @@ variables:
   script:
     - go mod download
     - ./script/test_version.sh
-    - go test -race ./...
+    - go test -race -shuffle=on ./...
 
 linter:
   stage: test

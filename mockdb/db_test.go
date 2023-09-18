@@ -1552,8 +1552,10 @@ func TestGet(t *testing.T) {
 			db.ExpectGet().WillReturnError(errors.New("foo err"))
 		},
 		test: func(t *testing.T, c *kivik.Client) {
-			err := c.DB("foo").Get(context.TODO(), "foo").Err()
+			rows := c.DB("foo").Get(context.TODO(), "foo")
+			err := rows.Err()
 			testy.Error(t, "foo err", err)
+			_ = rows.Close()
 		},
 	})
 	tests.Add("delay", mockTest{
@@ -1563,8 +1565,10 @@ func TestGet(t *testing.T) {
 			db.ExpectGet().WillDelay(time.Second)
 		},
 		test: func(t *testing.T, c *kivik.Client) {
-			err := c.DB("foo").Get(newCanceledContext(), "foo").Err()
+			rows := c.DB("foo").Get(newCanceledContext(), "foo")
+			err := rows.Err()
 			testy.Error(t, "context canceled", err)
+			_ = rows.Close()
 		},
 	})
 	tests.Add("wrong db", mockTest{
@@ -1579,8 +1583,10 @@ func TestGet(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			foo := c.DB("foo")
 			_ = c.DB("bar")
-			err := foo.Get(context.TODO(), "foo").Err()
+			rows := foo.Get(context.TODO(), "foo")
+			err := rows.Err()
 			testy.ErrorRE(t, `Expected: call to DB\(bar`, err)
+			_ = rows.Close()
 		},
 		err: "there is a remaining unmet expectation: call to DB().Close()",
 	})
@@ -1591,8 +1597,10 @@ func TestGet(t *testing.T) {
 			db.ExpectGet().WithDocID("bar")
 		},
 		test: func(t *testing.T, c *kivik.Client) {
-			err := c.DB("foo").Get(context.TODO(), "foo").Err()
+			rows := c.DB("foo").Get(context.TODO(), "foo")
+			err := rows.Err()
 			testy.ErrorRE(t, "has docID: bar", err)
+			_ = rows.Close()
 		},
 	})
 	tests.Add("wrong options", mockTest{
@@ -1602,22 +1610,29 @@ func TestGet(t *testing.T) {
 			db.ExpectGet().WithOptions(kivik.Param("foo", "baz"))
 		},
 		test: func(t *testing.T, c *kivik.Client) {
-			err := c.DB("foo").Get(context.TODO(), "foo").Err()
+			rows := c.DB("foo").Get(context.TODO(), "foo")
+			err := rows.Err()
 			testy.ErrorRE(t, `has options: map\[foo:baz]`, err)
+			_ = rows.Close()
 		},
 	})
 	tests.Add("success", mockTest{
 		setup: func(m *Client) {
 			db := m.NewDB()
 			m.ExpectDB().WillReturn(db)
-			db.ExpectGet().WillReturn(&driver.Document{Rev: "2-bar"})
+			db.ExpectGet().WillReturn(NewRows().AddRow(&driver.Row{Rev: "2-bar"}))
 		},
 		test: func(t *testing.T, c *kivik.Client) {
-			row := c.DB("foo").Get(context.TODO(), "foo")
-			testy.Error(t, "", row.Err())
-			if rev, _ := row.Rev(); rev != "2-bar" {
+			rows := c.DB("foo").Get(context.TODO(), "foo")
+			if !rows.Next() {
+				t.Fatalf("iteration failed")
+			}
+			rev, err := rows.Rev()
+			testy.Error(t, "", err)
+			if rev != "2-bar" {
 				t.Errorf("Unexpected rev: %s", rev)
 			}
+			_ = rows.Close()
 		},
 	})
 	tests.Run(t, testMock)

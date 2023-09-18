@@ -949,11 +949,11 @@ func TestGetString(t *testing.T) {
 	- has any options`,
 	})
 	tests.Add("return value", stringerTest{
-		input: &ExpectedGet{commonExpectation: commonExpectation{db: &DB{name: "foo"}}, ret0: &driver.Document{Rev: "1-foo"}},
+		input: &ExpectedGet{commonExpectation: commonExpectation{db: &DB{name: "foo"}}, ret0: NewRows().AddRow(&driver.Row{Rev: "1-foo"})},
 		expected: `call to DB(foo#0).Get() which:
 	- has any docID
 	- has any options
-	- should return document with rev: 1-foo`,
+	- should return: 1 results`,
 	})
 	tests.Run(t, testStringer)
 }

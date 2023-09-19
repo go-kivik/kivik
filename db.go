@@ -517,8 +517,10 @@ func (db *DB) Security(ctx context.Context) (*Security, error) {
 		return nil, err
 	}
 	return &Security{
-		Admins:  Members(s.Admins),
-		Members: Members(s.Members),
+		Admins:          Members(s.Admins),
+		Members:         Members(s.Members),
+		Cloudant:        s.Cloudant,
+		CouchdbAuthOnly: s.CouchdbAuthOnly,
 	}, err
 }
 

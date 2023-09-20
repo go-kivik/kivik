@@ -524,7 +524,7 @@ func TestVersion(t *testing.T) {
 			test: func(t *testing.T, c *kivik.Client) {
 				session, err := c.Version(context.TODO())
 				testy.Error(t, "", err)
-				expected := &kivik.Version{Version: "1.2"}
+				expected := &kivik.ServerVersion{Version: "1.2"}
 				if d := testy.DiffInterface(expected, session); d != nil {
 					t.Error(d)
 				}

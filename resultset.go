@@ -458,7 +458,13 @@ func (r *rows) Attachments() (*AttachmentsIterator, error) {
 	}
 	defer runlock()
 	row := r.curVal.(*driver.Row)
-	return &AttachmentsIterator{atti: row.Attachments}, row.Error
+	if row.Error != nil {
+		return nil, row.Error
+	}
+	if row.Attachments == nil {
+		return nil, nil // TODO: should this return an error?
+	}
+	return &AttachmentsIterator{atti: row.Attachments}, nil
 }
 
 func (r *rows) Rev() (string, error) {

@@ -115,7 +115,7 @@ func TestVersion(t *testing.T) {
 	tests := []struct {
 		name     string
 		client   *Client
-		expected *Version
+		expected *ServerVersion
 		status   int
 		err      string
 	}{
@@ -140,7 +140,7 @@ func TestVersion(t *testing.T) {
 					},
 				},
 			},
-			expected: &Version{Version: "foo"},
+			expected: &ServerVersion{Version: "foo"},
 		},
 		{
 			name: "closed",

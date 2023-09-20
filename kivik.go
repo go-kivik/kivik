@@ -74,8 +74,8 @@ func (c *Client) DSN() string {
 	return c.dsn
 }
 
-// Version represents a server version response.
-type Version struct {
+// ServerVersion represents a server version response.
+type ServerVersion struct {
 	// Version is the version number reported by the server or backend.
 	Version string
 	// Vendor is the vendor string reported by the server or backend.
@@ -108,7 +108,7 @@ func (c *Client) endQuery() {
 }
 
 // Version returns version and vendor info about the backend.
-func (c *Client) Version(ctx context.Context) (*Version, error) {
+func (c *Client) Version(ctx context.Context) (*ServerVersion, error) {
 	if err := c.startQuery(); err != nil {
 		return nil, err
 	}
@@ -117,8 +117,8 @@ func (c *Client) Version(ctx context.Context) (*Version, error) {
 	if err != nil {
 		return nil, err
 	}
-	v := &Version{}
-	*v = Version(*ver)
+	v := &ServerVersion{}
+	*v = ServerVersion(*ver)
 	return v, nil
 }
 

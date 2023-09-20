@@ -74,7 +74,7 @@ func New(client *http.Client, dsn string, options driver.Options) (*Client, erro
 	c := &Client{
 		Client: client,
 		UserAgents: []string{
-			fmt.Sprintf("Kivik/%s", kivik.KivikVersion),
+			fmt.Sprintf("Kivik/%s", kivik.Version),
 			fmt.Sprintf("Kivik CouchDB driver/%s", Version),
 		},
 		dsn:      dsnURL,

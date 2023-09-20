@@ -44,7 +44,7 @@ func TestNewClient(t *testing.T) {
 			name: "success",
 			dsn:  "http://foo.com/",
 			expectedUA: []string{
-				"Kivik/" + kivik.KivikVersion,
+				"Kivik/" + kivik.Version,
 				"Kivik CouchDB driver/" + Version,
 			},
 		},
@@ -53,7 +53,7 @@ func TestNewClient(t *testing.T) {
 			dsn:     "http://foo.com/",
 			options: OptionUserAgent("test/foo"),
 			expectedUA: []string{
-				"Kivik/" + kivik.KivikVersion,
+				"Kivik/" + kivik.Version,
 				"Kivik CouchDB driver/" + Version,
 				"test/foo",
 			},

@@ -98,7 +98,7 @@ func TestPut(t *testing.T) {
 		}
 	})
 	tests.Add("update conflict, options", func(t *testing.T) interface{} {
-		tmpdir := copyDir(t, "testdata/db_put", 1)
+		tmpdir := testy.CopyTempDir(t, "testdata/db_put", 1)
 		tests.Cleanup(cleanTmpdir(tmpdir))
 
 		return tt{
@@ -112,7 +112,7 @@ func TestPut(t *testing.T) {
 		}
 	})
 	tests.Add("no explicit rev", func(t *testing.T) interface{} {
-		tmpdir := copyDir(t, "testdata/db_put", 1)
+		tmpdir := testy.CopyTempDir(t, "testdata/db_put", 1)
 		tests.Cleanup(cleanTmpdir(tmpdir))
 
 		return tt{
@@ -134,7 +134,7 @@ func TestPut(t *testing.T) {
 		err:     "document rev from request body and query string have different values",
 	})
 	tests.Add("proper update", func(t *testing.T) interface{} {
-		tmpdir := copyDir(t, "testdata/db_put", 1)
+		tmpdir := testy.CopyTempDir(t, "testdata/db_put", 1)
 		tests.Cleanup(cleanTmpdir(tmpdir))
 
 		return tt{

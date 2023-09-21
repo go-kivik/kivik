@@ -145,14 +145,11 @@ func copyAttachments(fs filesystem.Filesystem, leaf, old *Revision) error {
 				return err
 			}
 			if err := fs.Link(att.path, filepath.Join(leafpath, name)); err != nil {
-				lerr := new(os.LinkError)
-				if errors.As(err, &lerr) {
-					if strings.HasSuffix(lerr.Error(), ": file exists") {
-						if err := fs.Remove(att.path); err != nil {
-							return err
-						}
-						continue
+				if os.IsExist(err) {
+					if err := fs.Remove(att.path); err != nil {
+						return err
 					}
+					continue
 				}
 				return err
 			}

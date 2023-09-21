@@ -44,13 +44,13 @@ func TestChanges(t *testing.T) {
 			dbPath: "./testdata/source",
 			dbName: "source",
 		},
-		err:    `open testdata/source: no such file or directory`,
+		err:    `open testdata/source: [Nn]o such file or directory`,
 		status: 500,
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
 		changes, err := tt.db.Changes(context.TODO(), tt.options)
-		testy.StatusError(t, tt.err, tt.status, err)
+		testy.StatusErrorRE(t, tt.err, tt.status, err)
 		defer changes.Close() // nolint: errcheck
 		result := make(map[string]driver.Change)
 		ch := &driver.Change{}

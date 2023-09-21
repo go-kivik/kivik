@@ -43,10 +43,10 @@ func TestAttachmentsIterator(t *testing.T) {
 			},
 		},
 		status: http.StatusInternalServerError,
-		err:    "open /somewhere/notfound.txt: no such file or directory",
+		err:    "open /somewhere/notfound.txt: [Nn]o such file or directory",
 	})
 	tests.Run(t, func(t *testing.T, tt tt) {
 		_, err := tt.r.AttachmentsIterator()
-		testy.StatusError(t, tt.err, tt.status, err)
+		testy.StatusErrorRE(t, tt.err, tt.status, err)
 	})
 }

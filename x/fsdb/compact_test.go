@@ -39,7 +39,7 @@ func TestCompact(t *testing.T) {
 		path:   "testdata",
 		dbname: "notfound",
 		status: http.StatusNotFound,
-		err:    "^open testdata/notfound: no such file or directory$",
+		err:    "^open testdata/notfound: [Nn]o such file or directory$",
 	})
 	tests.Add("empty directory", func(t *testing.T) interface{} {
 		tmpdir := tempDir(t)

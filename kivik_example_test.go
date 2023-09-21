@@ -16,21 +16,7 @@ import (
 	"fmt"
 
 	kivik "github.com/go-kivik/kivik/v4"
-	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/kivik/v4/internal/mock"
 )
-
-func init() {
-	kivik.Register("couch", &mock.Driver{
-		NewClientFunc: func(_ string, _ driver.Options) (driver.Client, error) {
-			return &mock.Client{
-				DBFunc: func(string, driver.Options) (driver.DB, error) {
-					return nil, nil
-				},
-			}, nil
-		},
-	})
-}
 
 // New is used to create a client handle. `driver` specifies the name of the
 // registered database driver and `dataSourceName` specifies the

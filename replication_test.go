@@ -391,7 +391,7 @@ func TestGetReplications(t *testing.T) {
 	}
 }
 
-func TestReplicate(t *testing.T) {
+func TestDB_Replicate(t *testing.T) {
 	tests := []struct {
 		name           string
 		client         *Client

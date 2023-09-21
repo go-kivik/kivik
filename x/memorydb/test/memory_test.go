@@ -3,7 +3,7 @@ package test
 import (
 	"testing"
 
-	_ "github.com/go-kivik/memorydb/v4"
+	_ "github.com/go-kivik/kivik/v4/x/memorydb"
 )
 
 func init() {

@@ -1,8 +1,8 @@
-[![Build Status](https://travis-ci.org/go-kivik/memorydb.svg?branch=master)](https://travis-ci.org/go-kivik/memorydb) [![Codecov](https://img.shields.io/codecov/c/github/go-kivik/memorydb.svg?style=flat)](https://codecov.io/gh/go-kivik/memorydb) [![GoDoc](https://godoc.org/github.com/go-kivik/memorydb?status.svg)](http://godoc.org/github.com/go-kivik/memorydb)
+[![GoDoc](https://godoc.org/github.com/go-kivik/kivik/v4/x/memorydb?status.svg)](http://godoc.org/github.com/go-kivik/kivik/v4/x/memorydb)
 
 # Kivik MemoryDB
 
-Memory driver for [Kivik](https://github.com/go-kivik/memorydb).
+Experimental memory driver for [Kivik](https://github.com/go-kivik/kivik).
 
 This driver stores documents in memory only, and is intended for testing purposes only. Not all Kivik features are or will be supported. This package is still under active development.
 
@@ -21,8 +21,8 @@ package main
 import (
     "context"
 
-    "github.com/go-kivik/kivik"
-    _ "github.com/go-kivik/memorydb" // The Memory driver
+    "github.com/go-kivik/kivik/v4"
+    _ "github.com/go-kivik/kivik/v4/x/memorydb" // The Memory driver
 )
 
 func main() {

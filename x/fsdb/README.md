@@ -1,8 +1,8 @@
-[![GoDoc](https://godoc.org/github.com/go-kivik/kivik/v4/x/fsdb?status.svg)](http://godoc.org/github.com/go-kivik/fsdb)
+[![GoDoc](https://godoc.org/github.com/go-kivik/kivik/v4/x/fsdb?status.svg)](http://godoc.org/github.com/go-kivik/kivik/v4/x/fsdb)
 
 # Kivik FSDB
 
-Experimental file system driver for [Kivik](https://github.com/go-kivik/kivik/v4).
+Experimental file system driver for [Kivik](https://github.com/go-kivik/kivik).
 
 This driver stores documents on a plain filesystem.
 

@@ -1,5 +1,6 @@
 stages:
   - test
+  - release
 
 variables:
   COUCHDB_USER: admin
@@ -137,3 +138,24 @@ gopherjs1.18-pouchdb8:
     NPM_PROFILE: pouchdb/pouchdb8-package.json
     KIVIK_TEST_DSN_COUCH33: http://admin:abc123@couch33:5984/
     GOPHERJS_TAG: v1.18.0-beta3
+
+.releaser: &release_template
+  image:
+    name: goreleaser/goreleaser:v1.18.1
+    entrypoint: [""]
+  variables:
+    GIT_DEPTH: 0
+
+release-test:
+  <<: *release_template
+  stage: test
+  script:
+    - goreleaser check
+
+release:
+  <<: *release_template
+  stage: release
+  script:
+    - goreleaser
+  only:
+    - /^v\d+\.\d+\.\d+/

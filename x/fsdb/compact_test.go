@@ -19,6 +19,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"gitlab.com/flimzy/testy"
@@ -26,7 +27,12 @@ import (
 	"github.com/go-kivik/kivik/v4/x/fsdb/filesystem"
 )
 
+const isGopherJS117 = runtime.GOARCH == "js"
+
 func TestCompact(t *testing.T) {
+	if isGopherJS117 {
+		t.Skip("Tests broken for GopherJS 1.17")
+	}
 	type tt struct {
 		fs     filesystem.Filesystem
 		path   string

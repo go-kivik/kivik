@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"runtime"
 	"testing"
 
 	"gitlab.com/flimzy/testy"
@@ -25,7 +26,12 @@ import (
 	"github.com/go-kivik/kivik/v4/x/fsdb/filesystem"
 )
 
+const isGopherJS117 = runtime.GOARCH == "js"
+
 func TestDocumentPersist(t *testing.T) {
+	if isGopherJS117 {
+		t.Skip("Tests broken for GopherJS 1.17")
+	}
 	type tt struct {
 		path   string
 		doc    *Document
@@ -174,6 +180,10 @@ func tmpdirRE(path string) testy.Replacement {
 }
 
 func TestDocumentAddRevision(t *testing.T) {
+	if isGopherJS117 {
+		t.Skip("Tests broken for GopherJS 1.17")
+	}
+
 	type tt struct {
 		path     string
 		doc      *Document

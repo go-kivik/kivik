@@ -26,6 +26,10 @@ import (
 )
 
 func TestPut(t *testing.T) {
+	if isGopherJS117 {
+		t.Skip("Tests broken for GopherJS 1.17")
+	}
+
 	type tt struct {
 		fs       filesystem.Filesystem
 		path     string

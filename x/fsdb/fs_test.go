@@ -121,6 +121,9 @@ func TestClientdbPath(t *testing.T) {
 }
 
 func TestClientnewDB(t *testing.T) {
+	if isGopherJS117 {
+		t.Skip("Tests broken for GopherJS 1.17")
+	}
 	type tt struct {
 		root   string
 		dbname string

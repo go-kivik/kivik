@@ -1,0 +1,5 @@
+Debug mode enabled
+successfully read config file "./testdata/localhost.yaml"
+Incomplete DSN provided: "/foo/bar", merging with current context: "http://admin:abc123@localhost:5984/_users"
+[get] Will fetch document: http://admin:abc123@localhost:5984/foo/bar
+Error: Get "http://localhost:5984/foo/bar": Post "http://localhost:5984/_session": dial tcp [::1]:5984: connect: connection refused

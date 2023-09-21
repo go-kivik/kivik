@@ -1,0 +1,14 @@
+{
+    "cancel": true,
+    "continuous": true,
+    "create_target": true,
+    "doc_ids": [
+        "foo",
+        "bar"
+    ],
+    "filter": "oink",
+    "source": "http://example.com/foo",
+    "source_proxy": "http://localhost:9999/",
+    "target": "http://example.com/bar",
+    "target_proxy": "http://localhost:1111/"
+}

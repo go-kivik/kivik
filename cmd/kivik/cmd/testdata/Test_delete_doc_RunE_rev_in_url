@@ -1,0 +1,8 @@
+DELETE /db/doc?rev=1-xxx HTTP/1.1
+Host: XXX
+Accept: application/json
+Accept-Encoding: gzip
+Content-Length: 0
+Content-Type: application/json
+User-Agent: Kivik chttp/4.0.0-prerelease (Language=goX.XX.X; Platform=amd64/linux) Kivik/4.0.0-prerelease Kivik CouchDB driver/4.0.0-prerelease
+

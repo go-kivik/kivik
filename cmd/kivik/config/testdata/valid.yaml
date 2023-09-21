@@ -1,0 +1,7 @@
+---
+contexts:
+  foo:
+    dsn: http://admin:abc123@localhost:5984/_users
+  bar:
+    dsn: http://bar.com/_users
+current-context: foo

@@ -1,0 +1,11 @@
+{
+    "_id": "foo",
+    "_rev": "",
+    "_attachments": {
+        "foo.txt": {
+            "content_type": "text/plain",
+            "data": "VGVzdGluZwo="
+        }
+    },
+    "foo": "bar"
+}

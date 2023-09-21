@@ -1,0 +1,31 @@
+(*config.Config)({
+  Contexts: (map[string]*config.Context) (len=2) {
+    (string) (len=3) "bar": (*config.Context)({
+      Scheme: (string) (len=4) "http",
+      Host: (string) (len=7) "bar.com",
+      User: (string) "",
+      Password: (string) "",
+      Database: (string) (len=7) "/_users",
+      DocID: (string) ""
+    }),
+    (string) (len=3) "foo": (*config.Context)({
+      Scheme: (string) (len=4) "http",
+      Host: (string) (len=14) "localhost:5984",
+      User: (string) (len=5) "admin",
+      Password: (string) (len=6) "abc123",
+      Database: (string) (len=7) "/_users",
+      DocID: (string) ""
+    })
+  },
+  CurrentContext: (string) (len=3) "foo",
+  log: (*log.TestLogger)({
+    mu: (sync.Mutex) {
+      state: (int32) 0,
+      sema: (uint32) 0
+    },
+    logs: ([]string) (len=1) {
+      (string) (len=59) "[DEBUG] successfully read config file \"testdata/valid.yaml\""
+    }
+  }),
+  finalizer: (func()) <nil>
+})

@@ -1,0 +1,9 @@
+{
+    "doc_write_failures": 0,
+    "docs_read": 1,
+    "docs_written": 1,
+    "end_time": "0001-01-01T00:00:00Z",
+    "missing_checked": 1,
+    "missing_found": 1,
+    "start_time": "0001-01-01T00:00:00Z"
+}

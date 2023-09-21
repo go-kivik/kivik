@@ -1,0 +1,8 @@
+< HTTP/1.1 200 OK
+< Content-Length: 59
+< Content-Type: application/json
+< Date: XXX
+< Etag: 1-xxx
+<
+      ID: bar
+Revision: 1-xxx

@@ -1,0 +1,6 @@
+{
+	"GOARCH": "amd64",
+	"GOOS": "linux",
+	"goVersion": "goX.XX.X",
+	"version": "4.0.0-pre"
+}

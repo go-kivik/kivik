@@ -1,0 +1,15 @@
+(*config.Config)({
+  Contexts: (map[string]*config.Context) (len=1) {
+    (string) (len=1) "*": (*config.Context)({
+      Scheme: (string) (len=4) "file",
+      Host: (string) "",
+      User: (string) "",
+      Password: (string) "",
+      Database: (string) (len=9) "/tmp/some",
+      DocID: (string) (len=4) "path"
+    })
+  },
+  CurrentContext: (string) (len=1) "*",
+  log: (log.Logger) <nil>,
+  finalizer: (func()) <nil>
+})

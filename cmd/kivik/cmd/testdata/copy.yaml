@@ -1,0 +1,4 @@
+---
+contexts:
+  localhost:
+    dsn: http://localhost:5984/db/doc

@@ -1,0 +1,8 @@
+{
+    "source": {
+        "url": "http://example.com/foo"
+    },
+    "target": {
+        "url": "http://example.com/bar"
+    }
+}

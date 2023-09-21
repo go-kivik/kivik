@@ -1,0 +1,10 @@
+{
+    "_attachments": {
+        "foo.txt": {
+            "content_type": "text/plain",
+            "data": "VGVzdGluZwo="
+        }
+    },
+    "_id": "foo",
+    "_rev": "1-xxx"
+}

@@ -1,0 +1,15 @@
+(*config.Config)({
+  Contexts: (map[string]*config.Context) {
+  },
+  CurrentContext: (string) "",
+  log: (*log.TestLogger)({
+    mu: (sync.Mutex) {
+      state: (int32) 0,
+      sema: (uint32) 0
+    },
+    logs: ([]string) (len=1) {
+      (string) (len=72) "[DEBUG] failed to read config: open not found: no such file or directory"
+    }
+  }),
+  finalizer: (func()) <nil>
+})

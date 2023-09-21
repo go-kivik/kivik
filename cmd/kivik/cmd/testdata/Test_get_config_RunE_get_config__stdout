@@ -1,0 +1,122 @@
+{
+	"attachments": {
+		"compressible_types": "text/*, application/javascript, application/json, application/xml",
+		"compression_level": "8"
+	},
+	"chttpd": {
+		"backlog": "512",
+		"bind_address": "0.0.0.0",
+		"docroot": "./share/www",
+		"max_db_number_for_dbs_info_req": "100",
+		"port": "5984",
+		"prefer_minimal": "Cache-Control, Content-Length, Content-Range, Content-Type, ETag, Server, Transfer-Encoding, Vary",
+		"require_valid_user": "false",
+		"server_options": "[{recbuf, undefined}]",
+		"socket_options": "[{sndbuf, 262144}, {nodelay, true}]"
+	},
+	"cluster": {
+		"n": "1",
+		"q": "8"
+	},
+	"compaction_daemon": {
+		"check_interval": "3600",
+		"min_file_size": "131072"
+	},
+	"compactions": {
+		"_default": "[{db_fragmentation, \"70%\"}, {view_fragmentation, \"60%\"}]"
+	},
+	"cors": {
+		"credentials": "false"
+	},
+	"couch_httpd_auth": {
+		"allow_persistent_cookies": "true",
+		"auth_cache_size": "50",
+		"authentication_db": "_users",
+		"authentication_redirect": "/_utils/session.html",
+		"iterations": "10",
+		"require_valid_user": "false",
+		"timeout": "600"
+	},
+	"couch_peruser": {
+		"database_prefix": "userdb-",
+		"delete_dbs": "false",
+		"enable": "false"
+	},
+	"couchdb": {
+		"attachment_stream_buffer_size": "4096",
+		"changes_doc_ids_optimization_threshold": "100",
+		"database_dir": "./data",
+		"default_engine": "couch",
+		"default_security": "admin_local",
+		"delayed_commits": "false",
+		"file_compression": "snappy",
+		"max_dbs_open": "500",
+		"os_process_timeout": "5000",
+		"uuid": "0ae5d1a72d60e4e1370a444f1cf7ce7c",
+		"view_index_dir": "./data"
+	},
+	"couchdb_engines": {
+		"couch": "couch_bt_engine"
+	},
+	"csp": {
+		"enable": "true"
+	},
+	"database_compaction": {
+		"checkpoint_after": "5242880",
+		"doc_buffer_size": "524288"
+	},
+	"features": {
+		"pluggable-storage-engines": "true",
+		"scheduler": "true"
+	},
+	"httpd": {
+		"allow_jsonp": "false",
+		"authentication_handlers": "{couch_httpd_auth, cookie_authentication_handler}, {couch_httpd_auth, default_authentication_handler}",
+		"bind_address": "127.0.0.1",
+		"enable_cors": "false",
+		"enable_xframe_options": "false",
+		"max_http_request_size": "4294967296",
+		"port": "5986",
+		"secure_rewrites": "true",
+		"socket_options": "[{sndbuf, 262144}]"
+	},
+	"indexers": {
+		"couch_mrview": "true"
+	},
+	"log": {
+		"file": "/var/log/couchdb/couchdb.log",
+		"level": "info",
+		"writer": "file"
+	},
+	"query_server_config": {
+		"os_process_limit": "100",
+		"reduce_limit": "true"
+	},
+	"replicator": {
+		"connection_timeout": "30000",
+		"http_connections": "20",
+		"interval": "60000",
+		"max_churn": "20",
+		"max_jobs": "500",
+		"retries_per_request": "5",
+		"socket_options": "[{keepalive, true}, {nodelay, false}]",
+		"ssl_certificate_max_depth": "3",
+		"startup_jitter": "5000",
+		"verify_ssl_certificates": "false",
+		"worker_batch_size": "500",
+		"worker_processes": "4"
+	},
+	"ssl": {
+		"port": "6984"
+	},
+	"uuids": {
+		"algorithm": "sequential",
+		"max_count": "1000"
+	},
+	"vendor": {
+		"name": "The Apache Software Foundation"
+	},
+	"view_compaction": {
+		"keyvalue_buffer_size": "2097152"
+	}
+}

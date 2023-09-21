@@ -1,0 +1,22 @@
+{
+	"cluster": {
+		"n": 1,
+		"q": 2,
+		"r": 1,
+		"w": 1
+	},
+	"compact_running": false,
+	"db_name": "foo",
+	"disk_format_version": 8,
+	"doc_count": 0,
+	"doc_del_count": 0,
+	"instance_start_time": "0",
+	"props": {},
+	"purge_seq": "0-g1AAAABPeJzLYWBgYMpgTmHgzcvPy09JdcjLz8gvLskBCeexAEmGBiD1HwiyEhlwqEtkSKqHKMgCAIT2GV4",
+	"sizes": {
+		"active": 0,
+		"external": 0,
+		"file": 16692
+	},
+	"update_seq": "0-g1AAAABPeJzLYWBgYMpgTmHgzcvPy09JdcjLz8gvLskBCeexAEmGBiD1HwiyEhlwqEtkSKqHKMgCAIT2GV4"
+}

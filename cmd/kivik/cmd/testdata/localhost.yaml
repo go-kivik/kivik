@@ -1,0 +1,4 @@
+---
+contexts:
+  localhost:
+    dsn: http://admin:abc123@localhost:5984/_users

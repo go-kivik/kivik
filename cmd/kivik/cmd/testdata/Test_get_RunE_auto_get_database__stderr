@@ -1,0 +1,3 @@
+Debug mode enabled
+failed to read config: open ~/.kivik/config: no such file or directory
+[get] Will fetch database: http://127.0.0.1:XXX/foo

@@ -15,7 +15,7 @@ package main
 import (
 	"context"
 
-	"github.com/go-kivik/xkivik/v4/cmd/kivik/cmd"
+	"github.com/go-kivik/kivik/v4/cmd/kivik/cmd"
 )
 
 func main() {

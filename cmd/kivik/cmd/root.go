@@ -26,17 +26,16 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/cmd/kivik/config"
+	"github.com/go-kivik/kivik/v4/cmd/kivik/errors"
+	"github.com/go-kivik/kivik/v4/cmd/kivik/log"
+	"github.com/go-kivik/kivik/v4/cmd/kivik/output"
+	"github.com/go-kivik/kivik/v4/cmd/kivik/output/friendly"
+	"github.com/go-kivik/kivik/v4/cmd/kivik/output/gotmpl"
+	"github.com/go-kivik/kivik/v4/cmd/kivik/output/json"
+	"github.com/go-kivik/kivik/v4/cmd/kivik/output/raw"
+	"github.com/go-kivik/kivik/v4/cmd/kivik/output/yaml"
 	"github.com/go-kivik/kivik/v4/couchdb/chttp"
-
-	"github.com/go-kivik/xkivik/v4/cmd/kivik/config"
-	"github.com/go-kivik/xkivik/v4/cmd/kivik/errors"
-	"github.com/go-kivik/xkivik/v4/cmd/kivik/log"
-	"github.com/go-kivik/xkivik/v4/cmd/kivik/output"
-	"github.com/go-kivik/xkivik/v4/cmd/kivik/output/friendly"
-	"github.com/go-kivik/xkivik/v4/cmd/kivik/output/gotmpl"
-	"github.com/go-kivik/xkivik/v4/cmd/kivik/output/json"
-	"github.com/go-kivik/xkivik/v4/cmd/kivik/output/raw"
-	"github.com/go-kivik/xkivik/v4/cmd/kivik/output/yaml"
 )
 
 type root struct {

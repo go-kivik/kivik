@@ -10,7 +10,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-package xkivik
+package kivik
 
 import (
 	"encoding/json"
@@ -18,8 +18,6 @@ import (
 	"testing"
 
 	"gitlab.com/flimzy/testy"
-
-	"github.com/go-kivik/kivik/v4"
 )
 
 func TestDocumentMarshalJSON(t *testing.T) {
@@ -40,8 +38,8 @@ func TestDocumentMarshalJSON(t *testing.T) {
 		return &Document{
 			ID:  "foo",
 			Rev: "1-xxx",
-			Attachments: &kivik.Attachments{
-				"foo.txt": &kivik.Attachment{
+			Attachments: &Attachments{
+				"foo.txt": &Attachment{
 					ContentType: "text/plain",
 					Content:     f,
 				},

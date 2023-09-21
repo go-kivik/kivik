@@ -16,7 +16,7 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/go-kivik/xkivik/v4/cmd/kivik/output"
+	"github.com/go-kivik/kivik/v4/cmd/kivik/output"
 )
 
 type format struct {

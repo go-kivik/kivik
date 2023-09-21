@@ -10,19 +10,17 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-package xkivik
+package kivik
 
 import (
 	"encoding/json"
-
-	"github.com/go-kivik/kivik/v4"
 )
 
 // Document represents any CouchDB document.
 type Document struct {
 	ID          string                 `json:"_id"`
 	Rev         string                 `json:"_rev"`
-	Attachments *kivik.Attachments     `json:"_attachments,omitempty"`
+	Attachments *Attachments           `json:"_attachments,omitempty"`
 	Data        map[string]interface{} `json:"-"`
 }
 

@@ -10,17 +10,17 @@ This tool aims to satisfy all of these itches.
 
 ## Status
 
-This is still a work in progress. Some features are still completely unimplemented (see the [TODO list](TODO.md)). There are also likely bugs, as well as inconsistencies. [Bug reports](https://github.com/go-kivik/xkivik/issues) are very welcome!
+This is still a work in progress. Some features are still completely unimplemented (see the [TODO list](TODO.md)). There are also likely bugs, as well as inconsistencies. [Bug reports](https://github.com/go-kivik/kivik/issues) are very welcome!
 
 ## Installation
 
 `kivik` is written in Go, and as such can be installed on any system with a working Go 1.14 or newer compiler:
 
 ```shell
-go get github.com/go-kivik/xkivik/cmd/kivik
+go install github.com/go-kivik/kivik/v4/cmd/kivik
 ```
 
-You may also download precompiled binaries for popular architectures from the [releases page](https://github.com/go-kivik/xkivik/releases).
+You may also download precompiled binaries for popular architectures from the [releases page](https://github.com/go-kivik/kivik/releases).
 
 ## Basic usage
 

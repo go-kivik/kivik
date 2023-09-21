@@ -20,7 +20,7 @@ import (
 
 	"gitlab.com/flimzy/testy"
 
-	"github.com/go-kivik/xkivik/v4/cmd/kivik/errors"
+	"github.com/go-kivik/kivik/v4/cmd/kivik/errors"
 )
 
 func Test_get_sec_RunE(t *testing.T) {

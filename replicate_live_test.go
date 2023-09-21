@@ -10,7 +10,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-package xkivik
+package kivik_test
 
 import (
 	"context"
@@ -33,7 +33,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 		options        kivik.Option
 		status         int
 		err            string
-		result         *ReplicationResult
+		result         *kivik.ReplicationResult
 	}
 	tests := testy.NewTable()
 	tests.Add("couch to couch", func(t *testing.T) interface{} {
@@ -67,7 +67,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 		return tt{
 			source: source,
 			target: target,
-			result: &ReplicationResult{
+			result: &kivik.ReplicationResult{
 				DocsRead:       1,
 				DocsWritten:    1,
 				MissingChecked: 1,
@@ -99,7 +99,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 		return tt{
 			source: source,
 			target: target,
-			result: &ReplicationResult{
+			result: &kivik.ReplicationResult{
 				DocsRead:       1,
 				DocsWritten:    1,
 				MissingChecked: 1,
@@ -128,14 +128,14 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 		})
 		target := client.DB(targetName)
 
-		if _, err := Replicate(ctx, target, source); err != nil {
+		if _, err := kivik.Replicate(ctx, target, source); err != nil {
 			t.Fatalf("setup replication failed: %s", err)
 		}
 
 		return tt{
 			source: fsclient.DB("db2"),
 			target: target,
-			result: &ReplicationResult{
+			result: &kivik.ReplicationResult{
 				DocsRead:       1,
 				DocsWritten:    1,
 				MissingChecked: 1,
@@ -183,7 +183,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 			source:  source,
 			target:  target,
 			options: kivik.Param("copy_security", true),
-			result: &ReplicationResult{
+			result: &kivik.ReplicationResult{
 				DocsRead:       1,
 				DocsWritten:    1,
 				MissingChecked: 1,
@@ -214,7 +214,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 		return tt{
 			source: fsclient.DB("db3"),
 			target: target,
-			result: &ReplicationResult{
+			result: &kivik.ReplicationResult{
 				DocsRead:       1,
 				DocsWritten:    1,
 				MissingChecked: 1,
@@ -248,7 +248,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 		return tt{
 			source: source,
 			target: target,
-			result: &ReplicationResult{
+			result: &kivik.ReplicationResult{
 				DocsRead:       1,
 				DocsWritten:    1,
 				MissingChecked: 1,
@@ -303,7 +303,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 		return tt{
 			source: source,
 			target: target,
-			result: &ReplicationResult{
+			result: &kivik.ReplicationResult{
 				DocsRead:       1,
 				DocsWritten:    1,
 				MissingChecked: 1,
@@ -338,7 +338,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 		return tt{
 			source: source,
 			target: target,
-			result: &ReplicationResult{
+			result: &kivik.ReplicationResult{
 				DocsRead:       1,
 				DocsWritten:    1,
 				MissingChecked: 1,
@@ -348,7 +348,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 	})
 	tests.Run(t, func(t *testing.T, tt tt) {
 		ctx := context.TODO()
-		result, err := Replicate(ctx, tt.target, tt.source, tt.options)
+		result, err := kivik.Replicate(ctx, tt.target, tt.source, tt.options)
 		testy.StatusError(t, tt.err, tt.status, err)
 
 		verifyDoc(ctx, t, tt.target, tt.source, "foo")

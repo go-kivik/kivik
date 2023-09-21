@@ -23,12 +23,12 @@ import (
 
 	"gitlab.com/flimzy/testy"
 
-	"github.com/go-kivik/xkivik/v4/cmd/kivik/output"
-	"github.com/go-kivik/xkivik/v4/cmd/kivik/output/friendly"
-	"github.com/go-kivik/xkivik/v4/cmd/kivik/output/gotmpl"
-	"github.com/go-kivik/xkivik/v4/cmd/kivik/output/json"
-	"github.com/go-kivik/xkivik/v4/cmd/kivik/output/raw"
-	"github.com/go-kivik/xkivik/v4/cmd/kivik/output/yaml"
+	"github.com/go-kivik/kivik/v4/cmd/kivik/output"
+	"github.com/go-kivik/kivik/v4/cmd/kivik/output/friendly"
+	"github.com/go-kivik/kivik/v4/cmd/kivik/output/gotmpl"
+	"github.com/go-kivik/kivik/v4/cmd/kivik/output/json"
+	"github.com/go-kivik/kivik/v4/cmd/kivik/output/raw"
+	"github.com/go-kivik/kivik/v4/cmd/kivik/output/yaml"
 )
 
 func testFormatter() *output.Formatter {

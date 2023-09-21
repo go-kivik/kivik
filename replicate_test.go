@@ -10,7 +10,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-package xkivik
+package kivik_test
 
 import (
 	"context"
@@ -34,7 +34,7 @@ func TestReplicateMock(t *testing.T) {
 		options        kivik.Option
 		status         int
 		err            string
-		result         *ReplicationResult
+		result         *kivik.ReplicationResult
 	}
 	tests := testy.NewTable()
 	tests.Add("no changes", func(t *testing.T) interface{} {
@@ -46,7 +46,7 @@ func TestReplicateMock(t *testing.T) {
 		return tt{
 			mockS:  mock,
 			source: source.DB("src"),
-			result: &ReplicationResult{},
+			result: &kivik.ReplicationResult{},
 		}
 	})
 	tests.Add("up to date", func(t *testing.T) interface{} {
@@ -74,7 +74,7 @@ func TestReplicateMock(t *testing.T) {
 			mockT:  tmock,
 			source: source.DB("src"),
 			target: target.DB("tgt"),
-			result: &ReplicationResult{},
+			result: &kivik.ReplicationResult{},
 		}
 	})
 	tests.Add("one update", func(t *testing.T) interface{} {
@@ -120,7 +120,7 @@ func TestReplicateMock(t *testing.T) {
 			mockT:  tmock,
 			source: source.DB("src"),
 			target: target.DB("tgt"),
-			result: &ReplicationResult{
+			result: &kivik.ReplicationResult{
 				DocsRead:       1,
 				DocsWritten:    1,
 				MissingChecked: 1,
@@ -130,7 +130,7 @@ func TestReplicateMock(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
-		result, err := Replicate(context.TODO(), tt.target, tt.source, tt.options)
+		result, err := kivik.Replicate(context.TODO(), tt.target, tt.source, tt.options)
 		testy.StatusError(t, tt.err, tt.status, err)
 		if tt.mockT != nil {
 			testy.Error(t, "", tt.mockT.ExpectationsWereMet())
@@ -177,7 +177,7 @@ func TestReplicate(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
-		result, err := Replicate(context.TODO(), tt.target, tt.source, tt.options)
+		result, err := kivik.Replicate(context.TODO(), tt.target, tt.source, tt.options)
 		testy.StatusError(t, tt.err, tt.status, err)
 		result.StartTime = time.Time{}
 		result.EndTime = time.Time{}

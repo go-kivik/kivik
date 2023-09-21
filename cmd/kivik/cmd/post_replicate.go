@@ -20,7 +20,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/go-kivik/kivik/v4"
-	"github.com/go-kivik/xkivik/v4/cmd/kivik/errors"
+	"github.com/go-kivik/kivik/v4/cmd/kivik/errors"
 )
 
 type postReplicate struct {

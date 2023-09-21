@@ -22,7 +22,7 @@ import (
 	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v3"
 
-	"github.com/go-kivik/xkivik/v4/cmd/kivik/errors"
+	"github.com/go-kivik/kivik/v4/cmd/kivik/errors"
 )
 
 type Input struct {

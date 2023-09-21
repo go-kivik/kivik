@@ -21,7 +21,7 @@ import (
 	"gitlab.com/flimzy/testy"
 	"gopkg.in/yaml.v3"
 
-	"github.com/go-kivik/xkivik/v4/cmd/kivik/log"
+	"github.com/go-kivik/kivik/v4/cmd/kivik/log"
 )
 
 func Test_unmarshalContext(t *testing.T) {

@@ -21,7 +21,7 @@ import (
 )
 
 func init() {
-	kivik.Register("couch", &mock.Driver{
+	kivik.Register("driver", &mock.Driver{
 		NewClientFunc: func(_ string, _ driver.Options) (driver.Client, error) {
 			return &mock.Client{
 				DBFunc: func(string, driver.Options) (driver.DB, error) {
@@ -36,7 +36,7 @@ func init() {
 // registered database driver and `dataSourceName` specifies the
 // database-specific connection information, such as a URL.
 func ExampleNew() {
-	client, err := kivik.New("couch", "http://example.com:5984/")
+	client, err := kivik.New("driver", "http://example.com:5984/")
 	if err != nil {
 		panic(err)
 	}

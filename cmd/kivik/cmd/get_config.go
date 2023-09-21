@@ -18,7 +18,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/go-kivik/xkivik/v4/cmd/kivik/output"
+	"github.com/go-kivik/kivik/v4/cmd/kivik/output"
 )
 
 type getConfig struct {

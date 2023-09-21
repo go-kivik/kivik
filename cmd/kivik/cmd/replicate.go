@@ -19,12 +19,10 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/cmd/kivik/config"
+	"github.com/go-kivik/kivik/v4/cmd/kivik/errors"
+	"github.com/go-kivik/kivik/v4/cmd/kivik/output"
 	_ "github.com/go-kivik/kivik/v4/x/fsdb" // Filesystem driver
-
-	"github.com/go-kivik/xkivik/v4"
-	"github.com/go-kivik/xkivik/v4/cmd/kivik/config"
-	"github.com/go-kivik/xkivik/v4/cmd/kivik/errors"
-	"github.com/go-kivik/xkivik/v4/cmd/kivik/output"
 )
 
 type replicate struct {
@@ -97,7 +95,7 @@ func (c *replicate) RunE(cmd *cobra.Command, args []string) error {
 
 	opts := c.options
 	c.log.Debugf("[replicate] Will replicate %s to %s", opts["source"], opts["target"])
-	result, err := xkivik.Replicate(cmd.Context(), target, source, kivik.Params(opts))
+	result, err := kivik.Replicate(cmd.Context(), target, source, kivik.Params(opts))
 	if err != nil {
 		return err
 	}

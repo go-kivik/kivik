@@ -27,8 +27,8 @@ import (
 
 	"gitlab.com/flimzy/testy"
 
-	"github.com/go-kivik/xkivik/v4/cmd/kivik/errors"
-	"github.com/go-kivik/xkivik/v4/cmd/kivik/log"
+	"github.com/go-kivik/kivik/v4/cmd/kivik/errors"
+	"github.com/go-kivik/kivik/v4/cmd/kivik/log"
 )
 
 func gunzip(next testy.RequestValidator) testy.RequestValidator {

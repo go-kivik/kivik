@@ -15,8 +15,8 @@ package friendly
 import (
 	"io"
 
-	"github.com/go-kivik/xkivik/v4/cmd/kivik/output"
-	"github.com/go-kivik/xkivik/v4/cmd/kivik/output/json"
+	"github.com/go-kivik/kivik/v4/cmd/kivik/output"
+	"github.com/go-kivik/kivik/v4/cmd/kivik/output/json"
 )
 
 type format struct{}

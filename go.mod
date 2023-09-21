@@ -10,16 +10,19 @@ require (
 	github.com/gopherjs/jsbuiltin v0.0.0-20180426082241-50091555e127
 	github.com/icza/dyno v0.0.0-20230330125955-09f820a8d9c0
 	github.com/pkg/errors v0.9.1
+	github.com/spf13/cobra v1.2.1
+	github.com/spf13/pflag v1.0.5
 	gitlab.com/flimzy/testy v0.12.6
 	golang.org/x/net v0.15.0
+	golang.org/x/sync v0.3.0
 	gopkg.in/yaml.v2 v2.4.0
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 )
 
 require (
 	github.com/Masterminds/semver/v3 v3.1.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/kr/pretty v0.1.0 // indirect
+	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 )

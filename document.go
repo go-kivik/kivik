@@ -16,8 +16,8 @@ import (
 	"encoding/json"
 )
 
-// Document represents any CouchDB document.
-type Document struct {
+// document represents any CouchDB document.
+type document struct {
 	ID          string                 `json:"_id"`
 	Rev         string                 `json:"_rev"`
 	Attachments *Attachments           `json:"_attachments,omitempty"`
@@ -25,7 +25,7 @@ type Document struct {
 }
 
 // MarshalJSON satisfies the json.Marshaler interface
-func (d *Document) MarshalJSON() ([]byte, error) {
+func (d *document) MarshalJSON() ([]byte, error) {
 	var data []byte
 	doc, err := json.Marshal(*d)
 	if err != nil {
@@ -43,8 +43,8 @@ func (d *Document) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON satisfies the json.Unmarshaler interface.
-func (d *Document) UnmarshalJSON(p []byte) error {
-	type internalDoc Document
+func (d *document) UnmarshalJSON(p []byte) error {
+	type internalDoc document
 	doc := &internalDoc{}
 	if err := json.Unmarshal(p, &doc); err != nil {
 		return err
@@ -56,7 +56,7 @@ func (d *Document) UnmarshalJSON(p []byte) error {
 	delete(data, "_id")
 	delete(data, "_rev")
 	delete(data, "_attachments")
-	*d = Document(*doc)
+	*d = document(*doc)
 	d.Data = data
 	return nil
 }

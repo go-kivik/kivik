@@ -36,7 +36,8 @@ func (r *RevID) Changed() bool {
 func (r *RevID) UnmarshalText(p []byte) error {
 	r.original = string(p)
 	if bytes.Contains(p, []byte("-")) {
-		parts := bytes.SplitN(p, []byte("-"), 2)
+		const maxParts = 2
+		parts := bytes.SplitN(p, []byte("-"), maxParts)
 		seq, err := strconv.ParseInt(string(parts[0]), 10, 64)
 		if err != nil {
 			return err
@@ -64,7 +65,8 @@ func (r *RevID) UnmarshalJSON(p []byte) error {
 			return e
 		}
 		r.original = str
-		parts := strings.SplitN(str, "-", 2)
+		const maxParts = 2
+		parts := strings.SplitN(str, "-", maxParts)
 		seq, err := strconv.ParseInt(parts[0], 10, 64)
 		if err != nil {
 			return err

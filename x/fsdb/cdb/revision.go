@@ -128,7 +128,8 @@ func (r *Revision) MarshalJSON() ([]byte, error) {
 		att.outputStub = stub
 		att.Follows = follows
 	}
-	parts := make([]json.RawMessage, 0, 2)
+	const maxParts = 2
+	parts := make([]json.RawMessage, 0, maxParts)
 	metaJSON, err := json.Marshal(meta)
 	if err != nil {
 		return nil, err

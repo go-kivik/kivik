@@ -23,7 +23,7 @@ import (
 
 	"gitlab.com/flimzy/testy"
 
-	"github.com/go-kivik/fsdb/v4/filesystem"
+	"github.com/go-kivik/kivik/v4/x/fsdb/filesystem"
 )
 
 func TestCompact(t *testing.T) {

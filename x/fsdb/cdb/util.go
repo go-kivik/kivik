@@ -21,7 +21,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/go-kivik/fsdb/v4/filesystem"
+	"github.com/go-kivik/kivik/v4/x/fsdb/filesystem"
 )
 
 var reservedKeys = map[string]struct{}{

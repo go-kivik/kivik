@@ -21,7 +21,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/go-kivik/fsdb/v4/filesystem"
+	"github.com/go-kivik/kivik/v4/x/fsdb/filesystem"
 )
 
 type decoder interface {

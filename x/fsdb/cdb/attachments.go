@@ -19,8 +19,8 @@ import (
 	"io"
 	"path/filepath"
 
-	"github.com/go-kivik/fsdb/v4/filesystem"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/x/fsdb/filesystem"
 )
 
 /*

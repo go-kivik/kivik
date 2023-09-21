@@ -20,10 +20,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/go-kivik/fsdb/v4/cdb"
-	"github.com/go-kivik/fsdb/v4/cdb/decode"
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/x/fsdb/cdb"
+	"github.com/go-kivik/kivik/v4/x/fsdb/cdb/decode"
 )
 
 func filename2id(filename string) (string, error) {

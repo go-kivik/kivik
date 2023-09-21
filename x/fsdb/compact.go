@@ -16,10 +16,10 @@ import (
 	"context"
 	"strings"
 
-	"github.com/go-kivik/fsdb/v4/cdb"
-	"github.com/go-kivik/fsdb/v4/cdb/decode"
-	"github.com/go-kivik/fsdb/v4/filesystem"
 	"github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/x/fsdb/cdb"
+	"github.com/go-kivik/kivik/v4/x/fsdb/cdb/decode"
+	"github.com/go-kivik/kivik/v4/x/fsdb/filesystem"
 )
 
 type docIndex map[string]*cdb.Document

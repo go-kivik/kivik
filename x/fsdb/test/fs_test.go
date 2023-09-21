@@ -19,10 +19,10 @@ import (
 	"os"
 	"testing"
 
-	_ "github.com/go-kivik/fsdb/v4"
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/kiviktest"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
+	_ "github.com/go-kivik/kivik/v4/x/fsdb" // The filesystem DB driver
 )
 
 func init() {

@@ -20,9 +20,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/go-kivik/fsdb/v4/cdb/decode"
-	"github.com/go-kivik/fsdb/v4/filesystem"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/x/fsdb/cdb/decode"
+	"github.com/go-kivik/kivik/v4/x/fsdb/filesystem"
 )
 
 // FS provides filesystem access to a

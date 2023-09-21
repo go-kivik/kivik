@@ -49,7 +49,7 @@ This will install the main Kivik package and the CouchDB database driver. Three 
 
 In addition, there are two partial/experimental drivers available:
 
-  - FilesystemDB: https://github.com/go-kivik/fsdb
+  - FilesystemDB: https://github.com/go-kivik/kivik/v4/x/fsdb
   - MemoryDB: https://github.com/go-kivik/memorydb
 
 # Example Usage

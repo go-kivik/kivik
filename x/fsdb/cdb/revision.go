@@ -25,7 +25,7 @@ import (
 
 	"github.com/icza/dyno"
 
-	"github.com/go-kivik/fsdb/v4/filesystem"
+	"github.com/go-kivik/kivik/v4/x/fsdb/filesystem"
 )
 
 // RevMeta is the metadata stored in reach revision.

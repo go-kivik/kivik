@@ -11,9 +11,9 @@
 // the License.
 
 /*
-Package fs provides a filesystem-backed Kivik driver. This driver is very
-much a work in progress. Please refer to the GitHub page for current status and
-ongoing changes. https://github.com/go-kivik/fsdb
+Package fs provides an experimental filesystem-backed Kivik driver. This driver
+is very much a work in progress. Please refer to the GitHub page for current
+status and ongoing changes. https://github.com/go-kivik/kivik/x/fsdb
 
 Bug reports, feature requests, and pull requests are always welcome. Current
 development is primarily focused around using fsdb for testing of CouchDB
@@ -26,8 +26,8 @@ directory on the local filesystem. Access control is managed by your filesystem
 permissions.
 
 	import (
-	    "github.com/go-kivik/kivik/v4"
-	    _ "github.com/go-kivik/fsdb/v4" // The Filesystem driver
+		"github.com/go-kivik/kivik/v4"
+		_ "github.com/go-kivik/kivik/v4/x/fsdb" // The Filesystem driver
 	)
 
 	client, err := kivik.New("fs", "/home/user/some/path")

@@ -17,8 +17,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/go-kivik/fsdb/v4/cdb/decode"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/x/fsdb/cdb/decode"
 )
 
 // ReadSecurity reads the _security.{ext} document from path.

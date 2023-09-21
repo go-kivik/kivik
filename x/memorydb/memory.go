@@ -1,3 +1,15 @@
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not
+// use this file except in compliance with the License. You may obtain a copy of
+// the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+// License for the specific language governing permissions and limitations under
+// the License.
+
 // Package memorydb provides a memory-backed Kivik driver, intended for testing.
 package memorydb
 
@@ -36,7 +48,7 @@ const (
 	Vendor  = "Kivik Memory Adaptor"
 )
 
-func (d *memDriver) NewClient(name string, _ driver.Options) (driver.Client, error) {
+func (d *memDriver) NewClient(string, driver.Options) (driver.Client, error) {
 	return &client{
 		version: &driver.Version{
 			Version:     Version,
@@ -102,7 +114,7 @@ func (c *client) DestroyDB(ctx context.Context, dbName string, options driver.Op
 	return nil
 }
 
-func (c *client) DB(dbName string, options driver.Options) (driver.DB, error) {
+func (c *client) DB(dbName string, _ driver.Options) (driver.DB, error) {
 	return &db{
 		client: c,
 		dbName: dbName,

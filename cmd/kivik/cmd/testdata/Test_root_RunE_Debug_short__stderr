@@ -8,7 +8,7 @@ Usage:
 Available Commands:
   compact       Compact the database
   compact-views Compact the database
-  completion    Generate the autocompletion script for the specified shell
+  completion    generate the autocompletion script for the specified shell
   copy          Copy a document
   delete        Delete a resource
   describe      Describe a resource

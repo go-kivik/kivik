@@ -1,0 +1,16 @@
+_rev: 5-xxx
+_revisions:
+    start: 5
+    ids:
+        - xxx
+        - xxx
+        - xxx
+_attachments:
+    foo.txt:
+        content_type: text/plain
+    bar.txt:
+        content_type: text/plain
+        revpos: 4
+    baz.txt:
+        content_type: text/plain
+        revpos: 3

@@ -1,0 +1,10 @@
+{
+    "compact_nowinner_noatt/.foo/1-abc.yaml": {
+        "size": 30,
+        "content": "_id: foo\n_rev: 1-abc\nfoo: abc\n"
+    },
+    "compact_nowinner_noatt/.foo/1-xyz.yaml": {
+        "size": 30,
+        "content": "_id: foo\n_rev: 1-xyz\nfoo: xyz\n"
+    }
+}

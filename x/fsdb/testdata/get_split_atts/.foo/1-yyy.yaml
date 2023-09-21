@@ -1,0 +1,11 @@
+_id: foo
+_rev: 1-yyy
+_revisions:
+    start: 1
+    ids:
+        - yyy
+_attachments:
+    foo.txt:
+        content_type: text/plain
+        revpos: 1
+value: y

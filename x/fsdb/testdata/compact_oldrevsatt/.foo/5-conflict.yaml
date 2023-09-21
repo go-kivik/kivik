@@ -1,0 +1,13 @@
+_rev: 5-conflict
+_revisions:
+    start: 5
+    ids:
+        - conflict
+        - jkl
+        - ghi
+        - def
+        - abc
+_attachments:
+    bar.txt:
+        content_type: text/plain
+        revpos: 3

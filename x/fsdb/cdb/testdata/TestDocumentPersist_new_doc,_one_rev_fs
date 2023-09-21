@@ -1,0 +1,6 @@
+{
+    "foo.json": {
+        "size": 128,
+        "content": "{\"_rev\":\"1-dfa62a1425fc6e708c425f48686f7c78\",\"_revisions\":{\"start\":1,\"ids\":[\"dfa62a1425fc6e708c425f48686f7c78\"]},\"value\":\"bar\"}\n"
+    }
+}

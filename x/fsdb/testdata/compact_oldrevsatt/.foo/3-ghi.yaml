@@ -1,0 +1,14 @@
+_rev: 3-ghi
+_revisions:
+    start: 3
+    ids:
+        - ghi
+        - def
+        - abc
+_attachments:
+    bar.txt:
+        content_type: text/plain
+        revpos: 3
+    qux.txt:
+        content_type: text/plain
+        revpos: 3

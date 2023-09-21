@@ -1,0 +1,21 @@
+{
+    "_attachments": {
+        "bar.txt": {
+            "content_type": "text/plain",
+            "digest": "md5-wVenkDHhxA+FkxgpvF/FUg==",
+            "follows": true,
+            "length": 4,
+            "revpos": 2
+        },
+        "foo.txt": {
+            "content_type": "text/plain",
+            "digest": "md5-07BzhNET7exJ6qYjitX/AA==",
+            "follows": true,
+            "length": 4,
+            "revpos": 1
+        }
+    },
+    "_id": "bar",
+    "_rev": "2-yyy",
+    "value": true
+}

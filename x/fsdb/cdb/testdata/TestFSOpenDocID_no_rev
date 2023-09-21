@@ -1,0 +1,11 @@
+{
+    "_id": "norev",
+    "_rev": "1-",
+    "_revisions": {
+        "start": 1,
+        "ids": [
+            ""
+        ]
+    },
+    "value": "foo"
+}

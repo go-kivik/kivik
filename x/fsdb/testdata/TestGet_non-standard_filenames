@@ -1,0 +1,142 @@
+{
+    "_attachments": {
+        "bean.jpg": {
+            "content_type": "image/jpeg",
+            "digest": "md5-bpJsb7rPxloR0nAvgzKu5g==",
+            "length": 31859,
+            "revpos": 1,
+            "stub": true
+        },
+        "bean.ogg": {
+            "content_type": "audio/ogg",
+            "digest": "md5-KwdWdCxP4DaTQm92Q5XOAw==",
+            "length": 2051,
+            "revpos": 1,
+            "stub": true
+        },
+        "bin.jpg": {
+            "content_type": "image/jpeg",
+            "digest": "md5-Snfk+H25uX/vYgMLYZix4w==",
+            "length": 31877,
+            "revpos": 1,
+            "stub": true
+        },
+        "heat.jpg": {
+            "content_type": "image/jpeg",
+            "digest": "md5-E3SNeVXLxQzH+GvURjFfyg==",
+            "length": 31823,
+            "revpos": 1,
+            "stub": true
+        },
+        "hit.jpg": {
+            "content_type": "image/jpeg",
+            "digest": "md5-zAfKQdU0BNl6ow2pauGujQ==",
+            "length": 31944,
+            "revpos": 1,
+            "stub": true
+        }
+    },
+    "_id": "note-i_ɪ",
+    "_rev": "1-",
+    "crated": "2019-08-27T16:30:25Z",
+    "fieldValues": [
+        {
+            "text": "i"
+        },
+        {
+            "text": "ɪ"
+        },
+        {
+            "text": "bean"
+        },
+        {
+            "text": "bin"
+        },
+        {
+            "files": [
+                "bean.jpg"
+            ]
+        },
+        {},
+        {
+            "files": [
+                "bean.ogg"
+            ]
+        },
+        {
+            "text": "Dvortygirl [\u003ca href=\"http://creativecommons.org/licenses/by-sa/3.0/\"\u003eCC BY-SA 3.0\u003c/a\u003e], \u003ca href=\"https://commons.wikimedia.org/wiki/File:En-us-bean.ogg\"\u003evia Wikimedia Commons\u003c/a\u003e"
+        },
+        {
+            "text": "An type of edibile seed"
+        },
+        {
+            "text": "bin"
+        },
+        {
+            "text": "bɪn"
+        },
+        {
+            "files": [
+                "bin.jpg"
+            ]
+        },
+        {},
+        {
+            "files": [
+                "bin.ogg"
+            ]
+        },
+        {},
+        {
+            "text": "A container for rubbish or waste"
+        },
+        {
+            "text": "heat"
+        },
+        {
+            "text": "hit"
+        },
+        {
+            "files": [
+                "heat.jpg"
+            ]
+        },
+        {},
+        {
+            "files": [
+                "heat.ogg"
+            ]
+        },
+        {
+            "text": "Dvortygirl [\u003ca href=\"http://creativecommons.org/licenses/by-sa/3.0/\"\u003eCC BY-SA 3.0\u003c/a\u003e], \u003ca href=\"https://commons.wikimedia.org/wiki/File:En-us-heat.ogg\"\u003evia Wikimedia Commons\u003c/a\u003e"
+        },
+        {
+            "text": "Thermal energy"
+        },
+        {
+            "text": "hit"
+        },
+        {
+            "text": "hɪt"
+        },
+        {
+            "files": [
+                "hit.jpg"
+            ]
+        },
+        {},
+        {
+            "files": [
+                "hit.ogg"
+            ]
+        },
+        {},
+        {
+            "text": "To strike"
+        }
+    ],
+    "model": 0,
+    "modified": "2019-08-27T16:30:25Z",
+    "theme": "theme-minimalpairs",
+    "type": "note"
+}

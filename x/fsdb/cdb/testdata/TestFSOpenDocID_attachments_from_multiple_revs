@@ -1,0 +1,35 @@
+{
+    "_id": "splitatts",
+    "_rev": "5-xxx",
+    "_attachments": {
+        "bar.txt": {
+            "content_type": "text/plain",
+            "revpos": 4,
+            "data": "VGVzdCBmaWxlIHR3bwo=",
+            "length": 14,
+            "digest": "md5-Fv8t6yZyt6p9sjOlbVIyIw=="
+        },
+        "baz.txt": {
+            "content_type": "text/plain",
+            "revpos": 3,
+            "data": "VGhpcmQgdGVzdCBmaWxlCg==",
+            "length": 16,
+            "digest": "md5-S6fYYgpE5AGls0erMHUGyw=="
+        },
+        "foo.txt": {
+            "content_type": "text/plain",
+            "revpos": 5,
+            "data": "VGVzdCBmaWxlIG9uZQo=",
+            "length": 14,
+            "digest": "md5-Nts3RuGLsYWEJsD3BBskoA=="
+        }
+    },
+    "_revisions": {
+        "start": 5,
+        "ids": [
+            "xxx",
+            "xxx",
+            "xxx"
+        ]
+    }
+}

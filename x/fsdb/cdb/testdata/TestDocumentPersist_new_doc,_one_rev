@@ -1,0 +1,40 @@
+(*cdb.Document)({
+  ID: (string) (len=3) "foo",
+  Revisions: (cdb.Revisions) (len=1) {
+    (*cdb.Revision)({
+      RevMeta: (cdb.RevMeta) {
+        Rev: (cdb.RevID) {
+          Seq: (int64) 1,
+          Sum: (string) (len=32) "dfa62a1425fc6e708c425f48686f7c78",
+          original: (string) ""
+        },
+        Deleted: (*bool)(<nil>),
+        Attachments: (map[string]*cdb.Attachment) <nil>,
+        RevHistory: (*cdb.RevHistory)({
+          Start: (int64) 1,
+          IDs: ([]string) (len=1) {
+            (string) (len=32) "dfa62a1425fc6e708c425f48686f7c78"
+          }
+        }),
+        isMain: (bool) false,
+        path: (string) (len=X) "<tmpdir>/foo.json",
+        fs: (*filesystem.defaultFS)({
+        })
+      },
+      Data: (map[string]interface {}) (len=1) {
+        (string) (len=5) "value": (string) (len=3) "bar"
+      },
+      options: (map[string]interface {}) (len=1) {
+        (string) (len=4) "revs": (bool) true
+      }
+    })
+  },
+  RevsInfo: ([]cdb.RevInfo) <nil>,
+  RevHistory: (*cdb.RevHistory)(<nil>),
+  Options: (map[string]interface {}) <nil>,
+  cdb: (*cdb.FS)({
+    fs: (*filesystem.defaultFS)({
+    }),
+    root: (string) (len=X) "<tmpdir>"
+  })
+})

@@ -1,0 +1,18 @@
+_rev: 4-jkl
+_revisions:
+    start: 4
+    ids:
+        - jkl
+        - ghi
+        - def
+        - abc
+_attachments:
+    baz.txt:
+        content_type: text/plain
+        revpos: 4
+    bar.txt:
+        content_type: text/plain
+        revpos: 3
+    qux.txt:
+        content_type: text/plain
+        revpos: 4

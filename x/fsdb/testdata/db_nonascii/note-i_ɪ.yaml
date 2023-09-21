@@ -1,0 +1,86 @@
+_rev: 1
+_attachments:
+    bean.jpg:
+        content_type: image/jpeg
+    bin.jpg:
+        content_type: image/jpeg
+    heat.jpg:
+        content_type: image/jpeg
+    hit.jpg:
+        content_type: image/jpeg
+    bean.ogg:
+        content_type: audio/ogg
+crated: 2019-08-27T16:30:25Z
+modified: 2019-08-27T16:30:25Z
+model: 0
+theme: theme-minimalpairs
+type: note
+fieldValues:
+    # Sound 1
+    - text: i
+    # Sound 2
+    - text: ɪ
+    # Word 1A
+    - text: bean
+    # IPA 1A
+    - text: bin
+    # Image 1A
+    - files:
+        - bean.jpg
+    # Image Rights 1A:
+    - {}
+    # Audio 1A
+    - files:
+        - bean.ogg
+    # Audio Rights 1A
+    - text: Dvortygirl [<a href="http://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a>], <a href="https://commons.wikimedia.org/wiki/File:En-us-bean.ogg">via Wikimedia Commons</a>
+    # Definition 1A
+    - text: An type of edibile seed
+    # Word 1B
+    - text: bin
+    # IPA 1B
+    - text: bɪn
+    # Image 1B
+    - files:
+        - bin.jpg
+    # Image Rights 1B
+    - {}
+    # Audio 1B
+    - files:
+        - bin.ogg
+    # Audio Rights 1B
+    - {}
+    # Definition 1B
+    - text: A container for rubbish or waste
+    # Word 2A
+    - text: heat
+    # IPA 2A
+    - text: hit
+    # Image 2A
+    - files:
+        - heat.jpg
+    # Image Rights 2A
+    - {}
+    # Audio 2A
+    - files:
+        - heat.ogg
+    # Audio Rights 2A
+    - text: Dvortygirl [<a href="http://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a>], <a href="https://commons.wikimedia.org/wiki/File:En-us-heat.ogg">via Wikimedia Commons</a>
+    # Definition 2A
+    - text: Thermal energy
+    # Word 2B
+    - text: hit
+    # IPA 2B
+    - text: hɪt
+    # Image 2B
+    - files:
+        - hit.jpg
+    # Image Rights 2B
+    - {}
+    # Audio 2B
+    - files:
+        - hit.ogg
+    # Audio Rights 2B
+    - {}
+    # Definition 2B
+    - text: To strike

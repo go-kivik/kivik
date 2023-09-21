@@ -1,0 +1,15 @@
+_id: foo
+_rev: 2-zzz
+_revisions:
+    start: 2
+    ids:
+        - zzz
+        - yyy
+_attachments:
+    foo.txt:
+        content_type: text/plain
+        revpos: 1
+    bar.txt:
+        content_type: text/plain
+        revpos: 2
+value: z

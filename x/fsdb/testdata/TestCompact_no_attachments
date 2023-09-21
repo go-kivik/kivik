@@ -1,0 +1,6 @@
+{
+    "compact_noatt/foo.yaml": {
+        "size": 26,
+        "content": "_id: foo\n_rev: 1\nfoo: bar\n"
+    }
+}

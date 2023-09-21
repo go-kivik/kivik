@@ -1,0 +1,66 @@
+(*cdb.Document)({
+  ID: (string) (len=3) "foo",
+  Revisions: (cdb.Revisions) (len=2) {
+    (*cdb.Revision)({
+      RevMeta: (cdb.RevMeta) {
+        Rev: (cdb.RevID) {
+          Seq: (int64) 2,
+          Sum: (string) (len=32) "4a1ad3451c706a07d491d31a9fc2a593",
+          original: (string) ""
+        },
+        Deleted: (*bool)(<nil>),
+        Attachments: (map[string]*cdb.Attachment) <nil>,
+        RevHistory: (*cdb.RevHistory)({
+          Start: (int64) 2,
+          IDs: ([]string) (len=2) {
+            (string) (len=32) "4a1ad3451c706a07d491d31a9fc2a593",
+            (string) (len=3) "xxx"
+          }
+        }),
+        isMain: (bool) false,
+        path: (string) (len=X) "<tmpdir>/foo.json",
+        fs: (*filesystem.defaultFS)({
+        })
+      },
+      Data: (map[string]interface {}) (len=1) {
+        (string) (len=5) "value": (string) (len=3) "bar"
+      },
+      options: (map[string]interface {}) (len=1) {
+        (string) (len=4) "revs": (bool) true
+      }
+    }),
+    (*cdb.Revision)({
+      RevMeta: (cdb.RevMeta) {
+        Rev: (cdb.RevID) {
+          Seq: (int64) 1,
+          Sum: (string) (len=3) "xxx",
+          original: (string) (len=5) "1-xxx"
+        },
+        Deleted: (*bool)(<nil>),
+        Attachments: (map[string]*cdb.Attachment) <nil>,
+        RevHistory: (*cdb.RevHistory)({
+          Start: (int64) 1,
+          IDs: ([]string) (len=1) {
+            (string) (len=3) "xxx"
+          }
+        }),
+        isMain: (bool) true,
+        path: (string) (len=X) "<tmpdir>/foo.yaml",
+        fs: (*filesystem.defaultFS)({
+        })
+      },
+      Data: (map[string]interface {}) (len=1) {
+        (string) (len=5) "value": (string) (len=3) "foo"
+      },
+      options: (map[string]interface {}) <nil>
+    })
+  },
+  RevsInfo: ([]cdb.RevInfo) <nil>,
+  RevHistory: (*cdb.RevHistory)(<nil>),
+  Options: (map[string]interface {}) <nil>,
+  cdb: (*cdb.FS)({
+    fs: (*filesystem.defaultFS)({
+    }),
+    root: (string) (len=X) "<tmpdir>"
+  })
+})

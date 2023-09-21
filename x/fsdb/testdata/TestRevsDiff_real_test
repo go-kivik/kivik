@@ -1,0 +1,8 @@
+{
+    "yamltest": {
+        "missing": ["1-oink"]
+    },
+    "newdoc": {
+        "missing": ["1-asdf"]
+    }
+}

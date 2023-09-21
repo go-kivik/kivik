@@ -1,0 +1,26 @@
+{
+    "compact_oldrevsatt/.foo/5-conflict.yaml": {
+        "size": 204,
+        "content": "_rev: 5-conflict\n_revisions:\n    start: 5\n    ids:\n        - conflict\n        - jkl\n        - ghi\n        - def\n        - abc\n_attachments:\n    bar.txt:\n        content_type: text/plain\n        revpos: 3\n"
+    },
+    "compact_oldrevsatt/.foo/5-conflict/bar.txt": {
+        "size": 13,
+        "content": "keep me, too\n"
+    },
+    "compact_oldrevsatt/foo.yaml": {
+        "size": 322,
+        "content": "_rev: 5-mno\n_revisions:\n    start: 5\n    ids:\n        - mno\n        - jkl\n        - ghi\n        - def\n        - abc\n_attachments:\n    foo.txt:\n        content_type: text/plain\n        revpos: 5\n    bar.txt:\n        content_type: text/plain\n        revpos: 3\n    qux.txt:\n        content_type: text/plain\n        revpos: 4\n"
+    },
+    "compact_oldrevsatt/foo/bar.txt": {
+        "size": 13,
+        "content": "keep me, too\n"
+    },
+    "compact_oldrevsatt/foo/foo.txt": {
+        "size": 8,
+        "content": "Keep me\n"
+    },
+    "compact_oldrevsatt/foo/qux.txt": {
+        "size": 12,
+        "content": "new content\n"
+    }
+}

@@ -1,0 +1,15 @@
+{
+    "_id": "withrevs",
+    "_rev": "8-asdf",
+    "_revisions": {
+        "start": 8,
+        "ids": [
+            "asdf",
+            "sdfg",
+            "dfgh",
+            "fghj",
+            "ghjk"
+        ]
+    },
+    "foo": "bar"
+}

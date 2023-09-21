@@ -1,0 +1,11 @@
+{
+    "_id": "noattach",
+    "_rev": "1-xxxxxxxxxx",
+    "_revisions": {
+        "ids": [
+            "xxxxxxxxxx"
+        ],
+        "start": 1
+    },
+    "foo": "bar"
+}

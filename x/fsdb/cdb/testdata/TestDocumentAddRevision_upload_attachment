@@ -1,0 +1,52 @@
+(*cdb.Document)({
+  ID: (string) (len=3) "foo",
+  Revisions: (cdb.Revisions) (len=1) {
+    (*cdb.Revision)({
+      RevMeta: (cdb.RevMeta) {
+        Rev: (cdb.RevID) {
+          Seq: (int64) 1,
+          Sum: (string) (len=32) "1472ad25836971f236294ad7b19d9f65",
+          original: (string) ""
+        },
+        Deleted: (*bool)(<nil>),
+        Attachments: (map[string]*cdb.Attachment) (len=1) {
+          (string) (len=8) "!foo.txt": (*cdb.Attachment)({
+            ContentType: (string) (len=10) "text/plain",
+            RevPos: (*int64)(1),
+            Stub: (bool) false,
+            Follows: (bool) false,
+            Content: ([]uint8) <nil>,
+            Size: (int64) 17,
+            Digest: (string) (len=28) "md5-2eNn4v/9o9ZdZp3E8/d4Cw==",
+            path: (string) (len=X) "<tmpdir>/.foo/1-1472ad25836971f236294ad7b19d9f65/!foo.txt",
+            fs: (*filesystem.defaultFS)({
+            }),
+            outputStub: (bool) true
+          })
+        },
+        RevHistory: (*cdb.RevHistory)({
+          Start: (int64) 1,
+          IDs: ([]string) (len=1) {
+            (string) (len=32) "1472ad25836971f236294ad7b19d9f65"
+          }
+        }),
+        isMain: (bool) false,
+        path: (string) "",
+        fs: (*filesystem.defaultFS)({
+        })
+      },
+      Data: (map[string]interface {}) (len=1) {
+        (string) (len=5) "value": (string) (len=3) "bar"
+      },
+      options: (map[string]interface {}) <nil>
+    })
+  },
+  RevsInfo: ([]cdb.RevInfo) <nil>,
+  RevHistory: (*cdb.RevHistory)(<nil>),
+  Options: (map[string]interface {}) <nil>,
+  cdb: (*cdb.FS)({
+    fs: (*filesystem.defaultFS)({
+    }),
+    root: (string) (len=X) "<tmpdir>"
+  })
+})

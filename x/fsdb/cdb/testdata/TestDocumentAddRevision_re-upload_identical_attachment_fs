@@ -1,0 +1,10 @@
+{
+    "bar.yaml": {
+        "size": 72,
+        "content": "_rev: 1-xxx\n_attachments:\n    foo.txt:\n        content_type: text/plain\n"
+    },
+    "bar/foo.txt": {
+        "size": 13,
+        "content": "Test content\n"
+    }
+}

@@ -1,0 +1,13 @@
+{
+    "_id": "noattach",
+    "_rev": "1-xxxxxxxxxx",
+    "_attachments": {
+        "foo.txt": {
+            "content_type": "text/plain",
+            "digest": "md5-yalFnkJm6jWmErkNw2UxEg==",
+            "stub": true,
+            "length": 12
+        }
+    },
+    "foo": "bar"
+}

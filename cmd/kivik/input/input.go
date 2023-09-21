@@ -10,6 +10,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+// Package input provides input configuration.
 package input
 
 import (
@@ -25,16 +26,19 @@ import (
 	"github.com/go-kivik/kivik/v4/cmd/kivik/errors"
 )
 
+// Input describes an input configuration.
 type Input struct {
 	data string
 	file string
 	yaml bool
 }
 
+// New returns a default Input configuration.
 func New() *Input {
 	return &Input{}
 }
 
+// ConfigFlags sets input-related config flags on pf.
 func (i *Input) ConfigFlags(pf *pflag.FlagSet) {
 	pf.StringVarP(&i.data, "data", "d", "", "JSON document data.")
 	pf.StringVarP(&i.file, "data-file", "D", "", "Read document data from the named file. Use - for stdin. Assumed to be JSON, unless the file extension is .yaml or .yml, or the --yaml flag is used.")
@@ -85,6 +89,7 @@ func (i *Input) As(target interface{}) error {
 	return json.Unmarshal(buf, target)
 }
 
+// JSONData converts the input data to JSON (I think).
 func (i *Input) JSONData() (json.Marshaler, error) {
 	if !i.yaml {
 		if i.data != "" {
@@ -133,6 +138,7 @@ func yaml2json(r io.ReadCloser) (json.Marshaler, error) {
 	return &jsonObject{dyno.ConvertMapI2MapS(doc)}, nil
 }
 
+// RawData returns the raw input data (I think).
 func (i *Input) RawData() (io.ReadCloser, error) {
 	if i.data != "" {
 		return io.NopCloser(strings.NewReader(i.data)), nil

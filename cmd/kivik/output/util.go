@@ -42,6 +42,7 @@ type tmplReader struct {
 
 var _ FriendlyOutput = &tmplReader{}
 
+// TemplateReader ...
 func TemplateReader(tmpl string, data interface{}, r io.Reader) FriendlyOutput {
 	return &tmplReader{
 		Reader: r,

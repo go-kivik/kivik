@@ -10,6 +10,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+// Package gotmpl handles go template output.
 package gotmpl
 
 import (

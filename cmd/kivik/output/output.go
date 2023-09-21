@@ -10,6 +10,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+// Package output handles program output.
 package output
 
 import (
@@ -90,6 +91,7 @@ func (f *Formatter) ConfigFlags(fs *pflag.FlagSet) {
 	fs.BoolVarP(&f.overwrite, "overwrite", "F", false, "Overwrite output file")
 }
 
+// Output outputs to r.
 func (f *Formatter) Output(r io.Reader) error {
 	fmt, err := f.formatter()
 	if err != nil {
@@ -143,6 +145,7 @@ func (f *Formatter) createFile(path string) (*os.File, error) {
 	return os.OpenFile(path, os.O_EXCL|os.O_CREATE|os.O_WRONLY, 0o666) //nolint:gomnd
 }
 
+// OK outputs the 'OK' indication.
 func (f *Formatter) OK() error {
 	format := `OK`
 	data := struct {
@@ -154,6 +157,7 @@ func (f *Formatter) OK() error {
 	return f.Output(result)
 }
 
+// UpdateResult outputs the result of an update.
 func (f *Formatter) UpdateResult(id, rev string) error {
 	type result struct {
 		OK  bool   `json:"ok"`

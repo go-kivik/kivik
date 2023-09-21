@@ -16,13 +16,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type delete struct {
+type _delete struct {
 	doc, db, att, cf *cobra.Command
 	*root
 }
 
 func deleteCmd(r *root) *cobra.Command {
-	c := &delete{
+	c := &_delete{
 		root: r,
 		doc:  deleteDocCmd(r),
 		db:   deleteDBCmd(r),
@@ -45,7 +45,7 @@ func deleteCmd(r *root) *cobra.Command {
 	return cmd
 }
 
-func (c *delete) RunE(cmd *cobra.Command, args []string) error {
+func (c *_delete) RunE(cmd *cobra.Command, args []string) error {
 	dsn, err := c.conf.URL()
 	if err != nil {
 		return err

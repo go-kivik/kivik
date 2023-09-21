@@ -10,6 +10,5 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-package version
-
-const Version = "4.0.0-pre"
+// Package cmd provides the CLI interface to CouchDB.
+package cmd

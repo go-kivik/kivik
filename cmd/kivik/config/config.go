@@ -10,6 +10,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+// Package config handles the CLI tool configuration.
 package config
 
 import (
@@ -69,6 +70,7 @@ func (c *Context) dsn() *url.URL {
 	}
 }
 
+// DSN returns the DSN of c.
 func (c *Context) DSN() string {
 	return c.dsn().String()
 }
@@ -80,6 +82,7 @@ func (c *Context) ServerDSN() string {
 	return dsn.String()
 }
 
+// DB returns c's DB.
 func (c *Context) DB() (db string, err error) {
 	_, db, doc, _ := expandDSN(c.dsn())
 	if doc != "" {
@@ -88,6 +91,7 @@ func (c *Context) DB() (db string, err error) {
 	return db, nil
 }
 
+// DBDoc returns c's configured DB and doc ID.
 func (c *Context) DBDoc() (db, doc string, err error) {
 	addr := c.dsn()
 	p := addr.Path
@@ -110,6 +114,7 @@ func (c *Context) DBDoc() (db, doc string, err error) {
 	return db, doc, nil
 }
 
+// DBDocFilename returns c's DB, doc ID, and filename.
 func (c *Context) DBDocFilename() (db, doc, filename string, err error) {
 	_, db, doc, filename = expandDSN(c.dsn())
 	if filename == "" {
@@ -262,6 +267,7 @@ func (c *Config) ClientInfo() (string, string, error) {
 	return cx.ClientInfo()
 }
 
+// URL returns c's URL.
 func (c *Config) URL() (*url.URL, error) {
 	cx, err := c.CurrentCx()
 	if err != nil {
@@ -270,6 +276,7 @@ func (c *Config) URL() (*url.URL, error) {
 	return cx.dsn(), nil
 }
 
+// DSN returns c's DSN.
 func (c *Config) DSN() (string, error) {
 	cx, err := c.CurrentCx()
 	if err != nil {
@@ -285,10 +292,12 @@ func (c *Config) finalize() {
 	}
 }
 
+// Finalize marks c as finalized.
 func (c *Config) Finalize() {
 	c.finalize()
 }
 
+// ServerDSN returns c's ServerDSN.
 func (c *Config) ServerDSN() (string, error) {
 	cx, err := c.CurrentCx()
 	if err != nil {
@@ -302,6 +311,7 @@ func (c *Config) ServerDSN() (string, error) {
 	return dsn, nil
 }
 
+// HasAttachment returns true if the config includes a filename.
 func (c *Config) HasAttachment() bool {
 	cx, err := c.CurrentCx()
 	if err != nil {
@@ -312,6 +322,7 @@ func (c *Config) HasAttachment() bool {
 	return err == nil && filename != ""
 }
 
+// HasDoc returns true if the config includes a doc ID.
 func (c *Config) HasDoc() bool {
 	cx, err := c.CurrentCx()
 	if err != nil {
@@ -322,6 +333,7 @@ func (c *Config) HasDoc() bool {
 	return err == nil && doc != ""
 }
 
+// HasDB returns true if the config includes a DB.
 func (c *Config) HasDB() bool {
 	cx, err := c.CurrentCx()
 	if err != nil {
@@ -332,6 +344,7 @@ func (c *Config) HasDB() bool {
 	return err == nil && db != ""
 }
 
+// DB returns the configured DB name.
 func (c *Config) DB() (db string, err error) {
 	cx, err := c.CurrentCx()
 	if err != nil {
@@ -345,6 +358,7 @@ func (c *Config) DB() (db string, err error) {
 	return db, nil
 }
 
+// DBDoc returns the configured db name and doc id.
 func (c *Config) DBDoc() (db, doc string, err error) {
 	cx, err := c.CurrentCx()
 	if err != nil {
@@ -354,6 +368,7 @@ func (c *Config) DBDoc() (db, doc string, err error) {
 	return cx.DBDoc()
 }
 
+// DBDocFilename returns the configured db name, doc id, and filename.
 func (c *Config) DBDocFilename() (db, doc, filename string, err error) {
 	cx, err := c.CurrentCx()
 	if err != nil {
@@ -363,7 +378,7 @@ func (c *Config) DBDocFilename() (db, doc, filename string, err error) {
 	return cx.DBDocFilename()
 }
 
-// Config sets config from the cobra command.
+// Args sets config from the cobra command.
 func (c *Config) Args(_ *cobra.Command, args []string) error {
 	if len(args) > 0 {
 		if err := c.setDefaultDSN(args[0]); err != nil {

@@ -22,14 +22,14 @@ import (
 	"github.com/go-kivik/kivik/v4/cmd/kivik/errors"
 )
 
-type copy struct {
+type _copy struct {
 	*root
 	target    string
 	targetRev string
 }
 
 func copyCmd(r *root) *cobra.Command {
-	c := &copy{
+	c := &_copy{
 		root: r,
 	}
 	cmd := &cobra.Command{
@@ -46,7 +46,7 @@ func copyCmd(r *root) *cobra.Command {
 	return cmd
 }
 
-func (c *copy) RunE(cmd *cobra.Command, args []string) error {
+func (c *_copy) RunE(cmd *cobra.Command, args []string) error {
 	client, err := c.client()
 	if err != nil {
 		return err

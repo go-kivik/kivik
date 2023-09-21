@@ -17,8 +17,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/cmd/kivik/output"
-	v "github.com/go-kivik/kivik/v4/cmd/kivik/version"
 )
 
 type version struct {
@@ -38,7 +38,7 @@ func versionCmd(r *root) *cobra.Command {
 	}
 }
 
-func (c *version) RunE(cmd *cobra.Command, _ []string) error {
+func (c *version) RunE(*cobra.Command, []string) error {
 	c.conf.Finalize()
 
 	data := struct {
@@ -47,7 +47,7 @@ func (c *version) RunE(cmd *cobra.Command, _ []string) error {
 		GOARCH    string `json:"GOARCH"`
 		GOOS      string `json:"GOOS"`
 	}{
-		Version:   v.Version,
+		Version:   kivik.Version,
 		GoVersion: runtime.Version(),
 		GOOS:      runtime.GOOS,
 		GOARCH:    runtime.GOARCH,

@@ -271,7 +271,7 @@ func (r *root) client() (*kivik.Client, error) {
 	return cx.KivikClient(r.parsedConnectTimeout, r.parsedRequestTimeout)
 }
 
-func (r *root) RunE(cmd *cobra.Command, args []string) error {
+func (r *root) RunE(*cobra.Command, []string) error {
 	if _, err := r.client(); err != nil {
 		return err
 	}

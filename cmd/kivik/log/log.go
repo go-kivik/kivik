@@ -10,6 +10,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+// Package log handles logging.
 package log
 
 import (
@@ -49,6 +50,7 @@ type logger struct {
 
 var _ Logger = &logger{}
 
+// New returns a new logger instance.
 func New() Logger {
 	return &logger{
 		stdout: os.Stdout,

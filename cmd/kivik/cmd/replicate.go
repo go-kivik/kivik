@@ -82,7 +82,7 @@ func (c *replicate) connect(key string) (*kivik.DB, error) {
 	return client.DB(db), nil
 }
 
-func (c *replicate) RunE(cmd *cobra.Command, args []string) error {
+func (c *replicate) RunE(cmd *cobra.Command, _ []string) error {
 	c.conf.Finalize()
 	source, err := c.connect("source")
 	if err != nil {

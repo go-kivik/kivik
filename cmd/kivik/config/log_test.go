@@ -10,7 +10,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-package log
+package config
 
 import (
 	"fmt"
@@ -20,25 +20,27 @@ import (
 	"testing"
 
 	"gitlab.com/flimzy/testy"
+
+	"github.com/go-kivik/kivik/v4/cmd/kivik/log"
 )
 
-// TestLogger is a Logger test double. Use the Check() function in tests to
+// testLogger is a Logger test double. Use the Check() function in tests to
 // validate the logs collected.
-type TestLogger struct {
+type testLogger struct {
 	mu   sync.Mutex
 	logs []string
 }
 
-var _ Logger = &TestLogger{}
+var _ log.Logger = &testLogger{}
 
 // NewTest returns a new test logger.
-func NewTest() *TestLogger {
-	return &TestLogger{
+func newTestLogger() *testLogger {
+	return &testLogger{
 		logs: []string{},
 	}
 }
 
-func (l *TestLogger) log(level, line string) {
+func (l *testLogger) log(level, line string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.logs = append(l.logs, fmt.Sprintf("[%s] %s",
@@ -47,36 +49,36 @@ func (l *TestLogger) log(level, line string) {
 	))
 }
 
-func (*TestLogger) SetOut(io.Writer) {}
-func (*TestLogger) SetErr(io.Writer) {}
-func (*TestLogger) SetDebug(bool)    {}
+func (*testLogger) SetOut(io.Writer) {}
+func (*testLogger) SetErr(io.Writer) {}
+func (*testLogger) SetDebug(bool)    {}
 
-func (l *TestLogger) Debug(args ...interface{}) {
+func (l *testLogger) Debug(args ...interface{}) {
 	l.log("DEBUG", fmt.Sprint(args...))
 }
 
-func (l *TestLogger) Debugf(format string, args ...interface{}) {
+func (l *testLogger) Debugf(format string, args ...interface{}) {
 	l.log("DEBUG", fmt.Sprintf(format, args...))
 }
 
-func (l *TestLogger) Info(args ...interface{}) {
+func (l *testLogger) Info(args ...interface{}) {
 	l.log("INFO", fmt.Sprint(args...))
 }
 
-func (l *TestLogger) Infof(format string, args ...interface{}) {
+func (l *testLogger) Infof(format string, args ...interface{}) {
 	l.log("INFO", fmt.Sprintf(format, args...))
 }
 
-func (l *TestLogger) Error(args ...interface{}) {
+func (l *testLogger) Error(args ...interface{}) {
 	l.log("ERROR", fmt.Sprint(args...))
 }
 
-func (l *TestLogger) Errorf(format string, args ...interface{}) {
+func (l *testLogger) Errorf(format string, args ...interface{}) {
 	l.log("ERROR", fmt.Sprintf(format, args...))
 }
 
 // Check validates the logs received, against an on-disk golden snapshot.
-func (l *TestLogger) Check(t *testing.T) {
+func (l *testLogger) Check(t *testing.T) {
 	t.Helper()
 	t.Run("logs", func(t *testing.T) {
 		l.mu.Lock()

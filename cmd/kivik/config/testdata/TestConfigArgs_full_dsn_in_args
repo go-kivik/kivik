@@ -10,7 +10,7 @@
     })
   },
   CurrentContext: (string) (len=1) "*",
-  log: (*log.TestLogger)({
+  log: (*config.testLogger)({
     mu: (sync.Mutex) {
       state: (int32) 0,
       sema: (uint32) 0

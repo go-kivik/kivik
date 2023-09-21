@@ -10,6 +10,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+// Package errors defines the errors the kivik CLI tool may produce.
 package errors
 
 import (
@@ -100,6 +101,7 @@ func (e *statusErr) ExitStatus() int {
 	return e.code
 }
 
+// WithCode attaches an error code to the provided error.
 func WithCode(err error, code int) error {
 	return &statusErr{
 		error: err,
@@ -112,6 +114,7 @@ func New(text string) error {
 	return errors.New(text)
 }
 
+// InspectErrorCode extracts the error code, if any, from err.
 func InspectErrorCode(err error) int {
 	if err == nil {
 		return 0

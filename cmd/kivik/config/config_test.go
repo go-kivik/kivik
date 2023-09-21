@@ -20,8 +20,6 @@ import (
 	"github.com/spf13/cobra"
 	"gitlab.com/flimzy/testy"
 	"gopkg.in/yaml.v3"
-
-	"github.com/go-kivik/kivik/v4/cmd/kivik/log"
 )
 
 func Test_unmarshalContext(t *testing.T) {
@@ -109,7 +107,7 @@ func TestConfig_Read(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, tt tt) {
 		testEnv(t, tt.env)
-		l := log.NewTest()
+		l := newTestLogger()
 		cf := New(nil)
 		err := cf.Read(tt.filename, l)
 		testy.Error(t, tt.err, err)
@@ -206,7 +204,7 @@ func TestConfigArgs(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
-		lg := log.NewTest()
+		lg := newTestLogger()
 		c := tt.c
 		c.log = lg
 		if c.Contexts == nil {
@@ -299,7 +297,7 @@ func TestConfig_SetURL(t *testing.T) {
 				t.Fatal(err)
 			}
 		}
-		tl := log.NewTest()
+		tl := newTestLogger()
 		tt.cf.log = tl
 		opts, err := tt.cf.SetURL(tt.url)
 		if cwd != "" {

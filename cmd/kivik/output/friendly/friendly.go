@@ -10,6 +10,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+// Package friendly produces friendly-formatted output.
 package friendly
 
 import (

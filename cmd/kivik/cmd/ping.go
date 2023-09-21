@@ -38,7 +38,7 @@ func pingCmd(r *root) *cobra.Command {
 	}
 }
 
-func (c *ping) RunE(cmd *cobra.Command, args []string) error {
+func (c *ping) RunE(cmd *cobra.Command, _ []string) error {
 	client, err := c.client()
 	if err != nil {
 		return err

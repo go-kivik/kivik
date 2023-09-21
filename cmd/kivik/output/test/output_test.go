@@ -20,7 +20,6 @@ import (
 	"testing"
 
 	"github.com/spf13/pflag"
-
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4/cmd/kivik/output"

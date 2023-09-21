@@ -1,14 +1,10 @@
-[![GoDoc](https://godoc.org/github.com/go-kivik/kivik/v4/x/fsdb?status.svg)](http://godoc.org/github.com/go-kivik/kivik/v4/x/fsdb)
+[![GoDoc](https://godoc.org/github.com/go-kivik/kivik/v4/x/memorydb?status.svg)](http://godoc.org/github.com/go-kivik/kivik/v4/x/memorydb)
 
-# Kivik FSDB
+# Kivik MemoryDB
 
-Experimental file system driver for [Kivik](https://github.com/go-kivik/kivik).
+Experimental memory driver for [Kivik](https://github.com/go-kivik/kivik).
 
-This driver stores documents on a plain filesystem.
-
-# Status
-
-This is very much a work in progress. Things are expected to change quickly.
+This driver stores documents in memory only, and is intended for testing purposes only. Not all Kivik features are or will be supported. This package is still under active development.
 
 ## Usage
 
@@ -26,11 +22,11 @@ import (
     "context"
 
     "github.com/go-kivik/kivik/v4"
-    _ "github.com/go-kivik/kivik/v4/x/fsdb" // The File system driver
+    _ "github.com/go-kivik/kivik/v4/x/memorydb" // The Memory driver
 )
 
 func main() {
-    client, err := kivik.New(context.TODO(), "fs", "")
+    client, err := kivik.New(context.TODO(), "memory", "")
     // ...
 }
 ```

@@ -1,0 +1,19 @@
+_rev: 5-mno
+_revisions:
+    start: 5
+    ids:
+        - mno
+        - jkl
+        - ghi
+        - def
+        - abc
+_attachments:
+    foo.txt:
+        content_type: text/plain
+        revpos: 5
+    bar.txt:
+        content_type: text/plain
+        revpos: 3
+    qux.txt:
+        content_type: text/plain
+        revpos: 4

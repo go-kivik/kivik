@@ -1,0 +1,11 @@
+{
+    "_id": "multiplerevs",
+    "_rev": "5-yyy",
+    "_revisions": {
+        "start": 5,
+        "ids": [
+            "yyy"
+        ]
+    },
+    "value": "conflict"
+}

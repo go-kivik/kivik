@@ -1,0 +1,13 @@
+{
+    "_id": "withattach",
+    "_rev": "2-yyyyyyyyy",
+    "_attachments": {
+        "foo.txt": {
+            "content_type": "text/plain",
+            "digest": "md5-7E1ZsnMvLxUyQKj/dGKCpg==",
+            "stub": true,
+            "length": 8
+        }
+    },
+    "foo": "bar"
+}

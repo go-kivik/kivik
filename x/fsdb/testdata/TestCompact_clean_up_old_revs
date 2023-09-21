@@ -1,0 +1,6 @@
+{
+    "compact_oldrevs/foo.yaml": {
+        "size": 116,
+        "content": "_rev: 5-mno\n_revisions:\n    start: 5\n    ids:\n        - mno\n        - jkl\n        - ghi\n        - def\n        - abc\n"
+    }
+}

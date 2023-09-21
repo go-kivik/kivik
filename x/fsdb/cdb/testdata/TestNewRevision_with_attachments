@@ -1,0 +1,18 @@
+{
+    "_rev": "3-asdf",
+    "_attachments": {
+        "foo.txt": {
+            "content_type": "text/plain",
+            "revpos": 3,
+            "data": "VGhpcyBpcyBzb21lIGNvbnRlbnQ=",
+            "length": 20,
+            "digest": "md5-7kKJIFB+OejYnCyr5mQbZw=="
+        }
+    },
+    "_revisions": {
+        "start": 3,
+        "ids": [
+            "asdf"
+        ]
+    }
+}

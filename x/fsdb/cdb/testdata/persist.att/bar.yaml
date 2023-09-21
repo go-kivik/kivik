@@ -1,0 +1,4 @@
+_rev: 1-xxx
+_attachments:
+    foo.txt:
+        content_type: text/plain

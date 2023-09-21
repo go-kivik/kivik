@@ -1,0 +1,18 @@
+{
+    ".bar/1-xxx.yaml": {
+        "size": 72,
+        "content": "_rev: 1-xxx\n_attachments:\n    foo.txt:\n        content_type: text/plain\n"
+    },
+    "bar.json": {
+        "size": 352,
+        "content": "{\"_rev\":\"2-1963dc3c4e4d057b047b7d3675358757\",\"_attachments\":{\"bar.txt\":{\"content_type\":\"text/plain\",\"revpos\":2,\"length\":18,\"digest\":\"md5-gnmB5zRLleRxMgtaAnivSw==\",\"stub\":true},\"foo.txt\":{\"content_type\":\"text/plain\",\"revpos\":1,\"length\":0,\"digest\":\"\",\"stub\":true}},\"_revisions\":{\"start\":2,\"ids\":[\"1963dc3c4e4d057b047b7d3675358757\",\"xxx\"]},\"value\":\"bar\"}\n"
+    },
+    "bar/bar.txt": {
+        "size": 18,
+        "content": "Additional content"
+    },
+    "bar/foo.txt": {
+        "size": 13,
+        "content": "Test content\n"
+    }
+}

@@ -1,0 +1,11 @@
+{
+    "compact.split_atts/.foo/1-xxx/bar.txt": {
+        "content": "Keep me, too\n"
+    },
+    "compact.split_atts/foo.yaml": {
+        "content": "_id: foo\n_rev: 1-xxx\n_attachments:\n    foo.txt:\n        content_type: text/plain\n    bar.txt:\n        content_type: text/plain\nfoo: bar\n"
+    },
+    "compact.split_atts/foo/foo.txt": {
+        "content": "Keep me\n"
+    }
+}

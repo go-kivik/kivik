@@ -1,0 +1,36 @@
+stages:
+    - test
+
+.test: &test_template
+    stage: test
+    script:
+        - go mod download
+        - go test -race -tags=livetest ./...
+
+lint:
+    stage: test
+    image: golangci/golangci-lint:v1.54.2
+    script:
+        - go mod download
+        - golangci-lint run ./...
+        - ./script/check-license.sh
+
+coverage:
+    stage: test
+    image: golang:1.21
+    script:
+        - go mod download
+        - ./script/coverage.sh
+
+go-1.20:
+    <<: *test_template
+    image: golang:1.20
+
+go-1.21:
+    <<: *test_template
+    image: golang:1.21
+
+go-rc:
+    <<: *test_template
+    image: golang:rc
+    allow_failure: true

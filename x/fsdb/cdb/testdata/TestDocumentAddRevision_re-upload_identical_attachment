@@ -1,0 +1,90 @@
+(*cdb.Document)({
+  ID: (string) (len=3) "bar",
+  Revisions: (cdb.Revisions) (len=2) {
+    (*cdb.Revision)({
+      RevMeta: (cdb.RevMeta) {
+        Rev: (cdb.RevID) {
+          Seq: (int64) 2,
+          Sum: (string) (len=32) "61afc657ebc34041a2568f5d5ab9fc71",
+          original: (string) ""
+        },
+        Deleted: (*bool)(<nil>),
+        Attachments: (map[string]*cdb.Attachment) (len=1) {
+          (string) (len=7) "foo.txt": (*cdb.Attachment)({
+            ContentType: (string) (len=10) "text/plain",
+            RevPos: (*int64)(1),
+            Stub: (bool) true,
+            Follows: (bool) false,
+            Content: ([]uint8) <nil>,
+            Size: (int64) 13,
+            Digest: (string) (len=28) "md5-EMUuEXyjHv9UCGbpjbnwxQ==",
+            path: (string) "",
+            fs: (*filesystem.defaultFS)({
+            }),
+            outputStub: (bool) true
+          })
+        },
+        RevHistory: (*cdb.RevHistory)({
+          Start: (int64) 2,
+          IDs: ([]string) (len=2) {
+            (string) (len=32) "61afc657ebc34041a2568f5d5ab9fc71",
+            (string) (len=3) "xxx"
+          }
+        }),
+        isMain: (bool) false,
+        path: (string) "",
+        fs: (*filesystem.defaultFS)({
+        })
+      },
+      Data: (map[string]interface {}) {
+      },
+      options: (map[string]interface {}) <nil>
+    }),
+    (*cdb.Revision)({
+      RevMeta: (cdb.RevMeta) {
+        Rev: (cdb.RevID) {
+          Seq: (int64) 1,
+          Sum: (string) (len=3) "xxx",
+          original: (string) (len=5) "1-xxx"
+        },
+        Deleted: (*bool)(<nil>),
+        Attachments: (map[string]*cdb.Attachment) (len=1) {
+          (string) (len=7) "foo.txt": (*cdb.Attachment)({
+            ContentType: (string) (len=10) "text/plain",
+            RevPos: (*int64)(1),
+            Stub: (bool) false,
+            Follows: (bool) false,
+            Content: ([]uint8) <nil>,
+            Size: (int64) 13,
+            Digest: (string) (len=28) "md5-EMUuEXyjHv9UCGbpjbnwxQ==",
+            path: (string) (len=X) "<tmpdir>/bar/foo.txt",
+            fs: (*filesystem.defaultFS)({
+            }),
+            outputStub: (bool) false
+          })
+        },
+        RevHistory: (*cdb.RevHistory)({
+          Start: (int64) 1,
+          IDs: ([]string) (len=1) {
+            (string) (len=3) "xxx"
+          }
+        }),
+        isMain: (bool) true,
+        path: (string) (len=X) "<tmpdir>/bar.yaml",
+        fs: (*filesystem.defaultFS)({
+        })
+      },
+      Data: (map[string]interface {}) {
+      },
+      options: (map[string]interface {}) <nil>
+    })
+  },
+  RevsInfo: ([]cdb.RevInfo) <nil>,
+  RevHistory: (*cdb.RevHistory)(<nil>),
+  Options: (map[string]interface {}) <nil>,
+  cdb: (*cdb.FS)({
+    fs: (*filesystem.defaultFS)({
+    }),
+    root: (string) (len=X) "<tmpdir>"
+  })
+})

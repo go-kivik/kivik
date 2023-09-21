@@ -1,0 +1,10 @@
+{
+    "db_put/.foo/1-beea34a62a215ab051862d1e5d93162e.json": {
+        "size": 89,
+        "content": "{\n    \"_id\": \"foo\",\n    \"_rev\": \"1-beea34a62a215ab051862d1e5d93162e\",\n    \"foo\": \"bar\"\n}\n"
+    },
+    "db_put/foo.json": {
+        "size": 162,
+        "content": "{\"_rev\":\"2-ff3a4f106331244679a6cac83a74ae48\",\"_revisions\":{\"start\":2,\"ids\":[\"ff3a4f106331244679a6cac83a74ae48\",\"beea34a62a215ab051862d1e5d93162e\"]},\"foo\":\"quxx\"}\n"
+    }
+}

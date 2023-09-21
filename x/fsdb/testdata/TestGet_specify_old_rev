@@ -1,0 +1,14 @@
+{
+    "_attachments": {
+        "foo.txt": {
+            "content_type": "text/plain",
+            "digest": "md5-yalFnkJm6jWmErkNw2UxEg==",
+            "length": 12,
+            "revpos": 1,
+            "stub": true
+        }
+    },
+    "_id": "withattach",
+    "_rev": "1-xxxxxxxxxx",
+    "foo": "bar"
+}

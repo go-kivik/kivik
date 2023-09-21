@@ -1,0 +1,10 @@
+{
+    "foo/foo.json": {
+        "size": 257,
+        "content": "{\"_rev\":\"1-c706e75b505ddddeed04b959cfcb0ace\",\"_attachments\":{\"foo.txt\":{\"content_type\":\"text/plain\",\"revpos\":1,\"length\":7,\"digest\":\"md5-+mpaMiTX2mbZ4L3sJfYs8A==\",\"stub\":true}},\"_revisions\":{\"start\":1,\"ids\":[\"c706e75b505ddddeed04b959cfcb0ace\"]},\"foo\":\"bar\"}\n"
+    },
+    "foo/foo/foo.txt": {
+        "size": 7,
+        "content": "Testing"
+    }
+}

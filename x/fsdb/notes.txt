@@ -1,0 +1,41 @@
+PUT strategy:
+
+new_edits=false?
+	Yes: Does the rev already exist?
+		Yes: return
+		No: Create it as .{docid}/.tmp.{rev}.{ext}
+			Write any attachments as .{docid}/.tmp.{rev}/{filename}
+			Move .{docid}/.tmp
+		Is this the new winning rev?
+			Yes: Swap with existing winner
+			No: return
+	No: Does the rev match a leaf?
+		Yes: Write the new document as .{docid}/.tmp.{rev}.{ext}
+			Write any attachments as .{docid}/.tmp.{rev}/{filename}
+		No: return conflict error
+
+        {db}/.{docid} is authoritative, and contains two types of entries:
+        	- {rev}.{ext} - JSON document
+        	- {rev}/      - Directory containing attachments
+
+        As a user convenience, the winning rev _may_ be moved to {db}/{docid}.{ext}, and the associated attachments to {db}/{docid}/{filename}.
+
+        When reading, the absence of a doc or attachment in {db}/{docid}* should fall back to reading {db}/.{docid}/{rev}*, to allow for a write operation to be aborted mid-way.
+
+        When writing, the winning rev should be stored in {db}/{docid} only as a final step.
+
+        When reading, if a winning rev exists, it can be trusted. If not, and there are more than a single rev in {db}/.{docid}, the winning rev should be calculated (but this should be easy, as revs are in the filenames).
+
+        File locking etc:
+        When writing, write to a tmp file, write attachments to a tmp dir. Move the tmp dir in place first, then move the temp file.
+
+        Abandoned temp dirs can be cleaned up by the compact method.
+
+        When reading, open each attachment (but don't read it) before sending a success. Then even if the files are deleted under our shoes, we can send a valid response (at least on Linux--Windows will probably need to read the files in completely).
+
+
+        File naming strategy:
+        Current rev lives under:     {db}/{docid}.{ext}
+        Conflicting revs live under: {db}/.{docid}/{rev}.{ext}
+        Atts for conflicts:          {db}/.{docid}/{rev}/{filename}
+        Attachments:                 {db}/{docid}/{filename}

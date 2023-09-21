@@ -1,0 +1,8 @@
+_id: foo
+_rev: 1-xxx
+_attachments:
+    foo.txt:
+        content_type: text/plain
+    bar.txt:
+        content_type: text/plain
+foo: bar

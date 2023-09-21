@@ -1,0 +1,9 @@
+{
+    "_id": "_design/users",
+    "_rev": "2-",
+    "views": {
+        "users": {
+            "map": "function (doc) {\n\temit(doc.name, doc._rev);\n}\n"
+        }
+    }
+}

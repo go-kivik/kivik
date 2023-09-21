@@ -1,0 +1,110 @@
+{
+    "_design/users": {
+        "id": "_design/users",
+        "seq": "",
+        "deleted": false,
+        "changes": [
+            "2-"
+        ],
+        "doc": null
+    },
+    "abortedput": {
+        "id": "abortedput",
+        "seq": "",
+        "deleted": false,
+        "changes": [
+            "2-yyyyyyyyy"
+        ],
+        "doc": null
+    },
+    "autorev": {
+        "id": "autorev",
+        "seq": "",
+        "deleted": false,
+        "changes": [
+            "6-"
+        ],
+        "doc": null
+    },
+    "deleted": {
+        "id": "deleted",
+        "seq": "",
+        "deleted": true,
+        "changes": [
+            "3-"
+        ],
+        "doc": null
+    },
+    "intrev": {
+        "id": "intrev",
+        "seq": "",
+        "deleted": false,
+        "changes": [
+            "6-"
+        ],
+        "doc": null
+    },
+    "noattach": {
+        "id": "noattach",
+        "seq": "",
+        "deleted": false,
+        "changes": [
+            "1-xxxxxxxxxx"
+        ],
+        "doc": null
+    },
+    "noid": {
+        "id": "noid",
+        "seq": "",
+        "deleted": false,
+        "changes": [
+            "6-"
+        ],
+        "doc": null
+    },
+    "norev": {
+        "id": "norev",
+        "seq": "",
+        "deleted": false,
+        "changes": [
+            "1-"
+        ],
+        "doc": null
+    },
+    "withattach": {
+        "id": "withattach",
+        "seq": "",
+        "deleted": false,
+        "changes": [
+            "2-yyyyyyyyy"
+        ],
+        "doc": null
+    },
+    "withrevs": {
+        "id": "withrevs",
+        "seq": "",
+        "deleted": false,
+        "changes": [
+            "8-asdf"
+        ],
+        "doc": null
+    },
+    "wrongid": {
+        "id": "wrongid",
+        "seq": "",
+        "deleted": false,
+        "changes": [
+            "6-"
+        ],
+        "doc": null
+    },
+    "yamltest": {
+        "id": "yamltest",
+        "seq": "",
+        "deleted": false,
+        "changes": [
+            "3-"
+        ],
+        "doc": null
+    }
+}

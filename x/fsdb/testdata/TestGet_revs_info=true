@@ -1,0 +1,11 @@
+{
+    "_id": "autorev",
+    "_rev": "6-",
+    "_revs_info": [
+        {
+            "rev": "6-",
+            "status": "available"
+        }
+    ],
+    "foo": "bar"
+}

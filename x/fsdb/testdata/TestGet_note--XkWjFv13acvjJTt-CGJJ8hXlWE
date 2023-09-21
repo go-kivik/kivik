@@ -1,0 +1,68 @@
+{
+    "_attachments": {
+        "es-diestro.ogg": {
+            "content_type": "audio/ogg",
+            "revpos": 1,
+            "digest": "md5-GT6nieBKuxQEBrfC5A5QzQ==",
+            "length": 3533,
+            "stub": true
+        }
+    },
+    "_id": "note--XkWjFv13acvjJTt-CGJJ8hXlWE",
+    "_rev": "1-fbaabe005e0f4e5685a68f857c0777d6",
+    "created": "2015-02-20T00:41:08Z",
+    "fieldValues": [
+        {
+            "files": [],
+            "text": "diestro"
+        },
+        {
+            "files": []
+        },
+        {
+            "files": []
+        },
+        {
+            "files": [
+                "es-diestro.ogg"
+            ],
+            "text": "\u003caudio src=\"es-diestro.ogg\" type=\"audio/ogg\"\u003e\u003c/audio\u003e"
+        },
+        {
+            "files": []
+        },
+        {
+            "files": [],
+            "text": "Hábil, experto en un arte u oficio"
+        },
+        {
+            "files": []
+        },
+        {
+            "files": []
+        },
+        {
+            "files": [],
+            "text": "adjetivo"
+        },
+        {
+            "files": []
+        },
+        {
+            "files": [],
+            "text": "From latin dexter (rel: English Dexterity, ambidextrious)"
+        },
+        {
+            "files": []
+        },
+        {
+            "files": [],
+            "text": "Español"
+        }
+    ],
+    "imported": "2019-03-25T15:44:32Z",
+    "model": 0,
+    "modified": "2017-08-29T15:40:51Z",
+    "theme": "theme-lGvfdJEXZ5utzE31Cx5x-DMbYD4",
+    "type": "note"
+}

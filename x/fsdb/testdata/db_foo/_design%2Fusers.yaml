@@ -1,0 +1,8 @@
+_id: _design/users
+_rev: 2
+views:
+  users:
+    map: |
+        function (doc) {
+        	emit(doc.name, doc._rev);
+        }

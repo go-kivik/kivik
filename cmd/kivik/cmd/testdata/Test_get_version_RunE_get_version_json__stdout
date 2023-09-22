@@ -1,0 +1,13 @@
+{
+	"couchdb": "Welcome",
+	"features": [
+		"pluggable-storage-engines",
+		"scheduler"
+	],
+	"git_sha": "c298091a4",
+	"uuid": "0ae5d1a72d60e4e1370a444f1cf7ce7c",
+	"vendor": {
+		"name": "The Apache Software Foundation"
+	},
+	"version": "2.3.1"
+}

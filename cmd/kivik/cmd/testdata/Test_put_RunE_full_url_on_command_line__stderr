@@ -1,0 +1,4 @@
+Debug mode enabled
+failed to read config: open ~/.kivik/config: no such file or directory
+[put] Will put document: http://localhost:1/foo/bar
+Error: Put "http://localhost:1/foo/bar": dial tcp [::1]:1: connect: connection refused

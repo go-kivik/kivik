@@ -1,0 +1,5 @@
+Debug mode enabled
+failed to read config: open ~/.kivik/config: no such file or directory
+CouchDB options: %vmap[bar:baz foo:bar]
+[ping] Will ping server: "http://localhost:5984"
+Error: Head "http://localhost:5984/_up": dial tcp [::1]:5984: connect: connection refused

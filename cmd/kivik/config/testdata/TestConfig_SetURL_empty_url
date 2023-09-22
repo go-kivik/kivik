@@ -1,0 +1,7 @@
+(*config.Config)({
+  Contexts: (map[string]*config.Context) {
+  },
+  CurrentContext: (string) "",
+  log: (log.Logger) <nil>,
+  finalizer: (func()) <nil>
+})

@@ -1,0 +1,26 @@
+Error: no context specified
+Usage:
+  kivik delete database [dsn]/[database] [flags]
+
+Aliases:
+  database, db
+
+Flags:
+  -h, --help   help for database
+
+Global Flags:
+      --config string                Path to config file to use for CLI requests (default "~/.kivik/config")
+      --connect-timeout string       Limits the time spent establishing a TCP connection.
+      --debug                        Enable debug output
+  -f, --format string                Output format. One of: json[=...]|raw|yaml|go-template=...
+  -H, --header                       Output response header
+  -O, --option stringToString        CouchDB string option, specified as key=value. May be repeated. (default [])
+  -B, --option-bool stringToString   CouchDb bool option, specified as key=value. May be repeated. (default [])
+  -o, --output string                Output file/directory.
+  -F, --overwrite                    Overwrite output file
+      --request-timeout string       The time limit for each request.
+      --retry int                    In case of transient error, retry up to this many times. A negative value retries forever.
+      --retry-delay string           Delay between retry attempts. Disables the default exponential backoff algorithm.
+      --retry-timeout string         When used with --retry, no more retries will be attempted after this timeout.
+  -v, --verbose                      Output bi-directional network traffic
+

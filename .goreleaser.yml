@@ -1,0 +1,32 @@
+before:
+  hooks:
+    - go mod download
+builds:
+  - env:
+      - CGO_ENABLED=0
+    id: kivik
+    goos:
+      - linux
+      - windows
+      - darwin
+    main: ./cmd/kivik
+    binary: kivik
+archives:
+  - format: tar.gz
+    name_template: "kivik_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    wrap_in_directory: true
+checksum:
+  name_template: "checksums.txt"
+snapshot:
+  name_template: "{{ .Tag }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+release:
+  github:
+    owner: go-kivik
+    name: kivik
+  prerelease: auto

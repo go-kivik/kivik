@@ -1,0 +1,22 @@
+{
+    "db4/foo.json": {
+        "md5": "b3defa19f81b52cae042f2659acdcfe9",
+        "size": 1225,
+        "content": "{\n  \"_id\": \"note--XkWjFv13acvjJTt-CGJJ8hXlWE\",\n  \"_rev\": \"1-fbaabe005e0f4e5685a68f857c0777d6\",\n  \"th"
+    },
+    "db4/foo/es-diestro.ogg": {
+        "md5": "193ea789e04abb140406b7c2e40e50cd",
+        "size": 3533,
+        "content": "T2dnUwACAAAAAAAAAADh7WtFAAAAAHaytZsBE09wdXNIZWFkAQE4AYA+AAAAAABPZ2dTAAAAAAAAAAAAAOHta0UBAAAAcmzQxAP/"
+    },
+    "target/foo.json": {
+        "md5": "b1c72bce27293b6951df564436362291",
+        "size": 876,
+        "content": "{\"_rev\":\"1-fbaabe005e0f4e5685a68f857c0777d6\",\"_attachments\":{\"es-diestro.ogg\":{\"content_type\":\"audio"
+    },
+    "target/foo/es-diestro.ogg": {
+        "md5": "193ea789e04abb140406b7c2e40e50cd",
+        "size": 3533,
+        "content": "T2dnUwACAAAAAAAAAADh7WtFAAAAAHaytZsBE09wdXNIZWFkAQE4AYA+AAAAAABPZ2dTAAAAAAAAAAAAAOHta0UBAAAAcmzQxAP/"
+    }
+}

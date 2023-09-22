@@ -1,0 +1,19 @@
+{
+	"admins": {
+		"names": [
+			"superuser"
+		],
+		"roles": [
+			"admins"
+		]
+	},
+	"members": {
+		"names": [
+			"user1",
+			"user2"
+		],
+		"roles": [
+			"developers"
+		]
+	}
+}

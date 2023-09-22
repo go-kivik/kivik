@@ -1,0 +1,139 @@
+{
+  "_id": "theme-lGvfdJEXZ5utzE31Cx5x-DMbYD4",
+  "_rev": "1-924acdda5191401987bd46545b8c384b",
+  "name": "02. Vocabulary",
+  "models": [
+    {
+      "id": 0,
+      "modelType": "anki-basic",
+      "name": "02. Vocabulary",
+      "templates": [
+        "Visual Recognition",
+        "Recall 1",
+        "Recall 2",
+        "Spelling",
+        "Auditory Recognition"
+      ],
+      "fields": [
+        {
+          "fieldType": 3,
+          "name": "Term"
+        },
+        {
+          "fieldType": 3,
+          "name": "Synonyms"
+        },
+        {
+          "fieldType": 3,
+          "name": "IPA"
+        },
+        {
+          "fieldType": 3,
+          "name": "Audio"
+        },
+        {
+          "fieldType": 3,
+          "name": "Image"
+        },
+        {
+          "fieldType": 3,
+          "name": "Definition"
+        },
+        {
+          "fieldType": 3,
+          "name": "Image2"
+        },
+        {
+          "fieldType": 3,
+          "name": "Definition2"
+        },
+        {
+          "fieldType": 3,
+          "name": "POS"
+        },
+        {
+          "fieldType": 3,
+          "name": "Gender"
+        },
+        {
+          "fieldType": 3,
+          "name": "Extra"
+        },
+        {
+          "fieldType": 3,
+          "name": "SupressSpelling"
+        },
+        {
+          "fieldType": 3,
+          "name": "Language"
+        }
+      ],
+      "files": [
+        "!02. Vocabulary.Auditory Recognition answer.html",
+        "!02. Vocabulary.Auditory Recognition question.html",
+        "!02. Vocabulary.Recall 1 answer.html",
+        "!02. Vocabulary.Recall 1 question.html",
+        "!02. Vocabulary.Recall 2 answer.html",
+        "!02. Vocabulary.Recall 2 question.html",
+        "!02. Vocabulary.Spelling answer.html",
+        "!02. Vocabulary.Spelling question.html",
+        "!02. Vocabulary.Visual Recognition answer.html",
+        "!02. Vocabulary.Visual Recognition question.html",
+        "$template.0.html"
+      ]
+    }
+  ],
+  "files": [
+    "$main.css",
+    "_2954523.jpg",
+    "_65493475_kidney_right_and_left_spl.jpg",
+    "_71977818_71977817.jpg",
+    "_75507824_75507823.jpg",
+    "_German_Grunge_National_Flag.jpg",
+    "_K1Y2480-resized.jpg",
+    "_author.png",
+    "_bg.png",
+    "_bg2.png",
+    "_bg3.png",
+    "_bg4.png",
+    "_bg5.png",
+    "_brenglish.png",
+    "_c.png",
+    "_capitaltpl3.jpg",
+    "_coursera-machinelearning.jpg",
+    "_dimetpl2.jpg",
+    "_dymaxion.jpg",
+    "_e.png",
+    "_englishtpl2.jpg",
+    "_f.png",
+    "_govtpl2.jpg",
+    "_hor_bg.png",
+    "_hor_bg_top.png",
+    "_inline_replay_button.png",
+    "_ipa-mouth-alveolar.png",
+    "_ipa-mouth.png",
+    "_langstpl2.jpg",
+    "_logo_24.png",
+    "_logo_32.png",
+    "_logo_32_new.png",
+    "_logotext.png",
+    "_m.png",
+    "_melody1.png",
+    "_melody2.png",
+    "_melodygreen1.png",
+    "_melodygrey2.png",
+    "_name.png",
+    "_nl-flag.jpg",
+    "_nl-gender-m.png",
+    "_nl-gender-o.png",
+    "_nl-gender-v.png",
+    "_nl-gender-vm.png",
+    "_penciltpl2.jpg",
+    "_usenglish.png"
+  ],
+  "modelSequence": 1,
+  "type": "theme",
+  "created": "2015-03-10T21:33:08Z",
+  "modified": "2017-09-26T16:45:06Z",
+  "imported": "2019-03-25T15:44:32Z"
+}

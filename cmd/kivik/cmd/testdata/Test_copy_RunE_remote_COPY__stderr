@@ -1,0 +1,3 @@
+Debug mode enabled
+failed to read config: open ~/.kivik/config: no such file or directory
+[copy] Will copy: http://127.0.0.1:XXX/jjj/src to target

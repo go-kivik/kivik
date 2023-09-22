@@ -1,0 +1,15 @@
+contexts:
+- context:
+  name: short
+  scheme: https
+  user: admin
+  password: abc123
+  host: localhost:5984
+  database: somepath/db
+  cookiejar: /path/to/some/file # For later
+- context:
+  name: long
+  dsn: https://admin:abc123@localhost:5984/somepath/db
+# Equivalent:
+# KOUCHCTL_CONTEXT=https://admin:abc123@localhost:5984/somepath/db
+default: short

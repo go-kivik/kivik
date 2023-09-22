@@ -1,0 +1,12 @@
+{
+    "_id": "foo",
+    "_rev": 2,
+    "_deleted": true,
+    "_revisions": {
+        "start": 2,
+        "ids": [
+            "",
+            "0bea212bcd300c553585fe8cb69c0442"
+        ]
+    }
+}

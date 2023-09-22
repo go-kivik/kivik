@@ -1,0 +1,14 @@
+PUT /qwerty/target HTTP/1.1
+Host: XXX
+Transfer-Encoding: chunked
+Accept: application/json
+Accept-Encoding: gzip
+Content-Length: 69
+Content-Type: application/json
+User-Agent: Kivik chttp/4.0.0-prerelease (Language=goX.XX.X; Platform=amd64/linux) Kivik/4.0.0-prerelease Kivik CouchDB driver/4.0.0-prerelease
+
+45
+{"id":"target","ok":true,"rev":"2-62e778c9ec09214dd685a981dcc24074"}
+
+0
+

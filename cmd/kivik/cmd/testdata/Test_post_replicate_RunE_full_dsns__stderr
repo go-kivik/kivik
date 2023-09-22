@@ -1,0 +1,4 @@
+Debug mode enabled
+failed to read config: open ~/.kivik/config: no such file or directory
+CouchDB options: %vmap[source:http://example.com/foo target:http://example.com/bar]
+[post] Will replicate http://example.com/foo to http://example.com/bar

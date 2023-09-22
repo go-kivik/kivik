@@ -1,0 +1,3 @@
+Debug mode enabled
+successfully read config file "./testdata/localhost.yaml"
+DSN: http://admin:abc123@localhost:5984/_users from ""

@@ -1,0 +1,4 @@
+Debug mode enabled
+failed to read config: open ~/.kivik/config: no such file or directory
+[get] Will fetch document: http://localhost:1/foo/bar
+Error: Get "http://localhost:1/foo/bar": dial tcp [::1]:1: connect: connection refused

@@ -1,0 +1,23 @@
+(*config.Config)({
+  Contexts: (map[string]*config.Context) (len=2) {
+    (string) (len=1) "*": (*config.Context)({
+      Scheme: (string) (len=4) "http",
+      Host: (string) (len=14) "localhost:5984",
+      User: (string) (len=5) "admin",
+      Password: (string) (len=6) "abc123",
+      Database: (string) (len=6) "_users",
+      DocID: (string) (len=3) "bar"
+    }),
+    (string) (len=3) "foo": (*config.Context)({
+      Scheme: (string) (len=4) "http",
+      Host: (string) (len=14) "localhost:5984",
+      User: (string) (len=5) "admin",
+      Password: (string) (len=6) "abc123",
+      Database: (string) (len=6) "_users",
+      DocID: (string) ""
+    })
+  },
+  CurrentContext: (string) (len=1) "*",
+  log: (log.Logger) <nil>,
+  finalizer: (func()) <nil>
+})

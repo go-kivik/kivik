@@ -1,0 +1,1 @@
+[DEBUG] Incomplete DSN provided: "bar", merging with current context: "http://admin:abc123@localhost:5984/_users"

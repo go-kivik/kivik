@@ -1,0 +1,11 @@
+{
+	"backlog": "512",
+	"bind_address": "0.0.0.0",
+	"docroot": "./share/www",
+	"max_db_number_for_dbs_info_req": "100",
+	"port": "5984",
+	"prefer_minimal": "Cache-Control, Content-Length, Content-Range, Content-Type, ETag, Server, Transfer-Encoding, Vary",
+	"require_valid_user": "false",
+	"server_options": "[{recbuf, undefined}]",
+	"socket_options": "[{sndbuf, 262144}, {nodelay, true}]"
+}

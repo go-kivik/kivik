@@ -51,7 +51,9 @@ func TestChanges(t *testing.T) {
 	tests.Run(t, func(t *testing.T, tt tt) {
 		changes, err := tt.db.Changes(context.TODO(), tt.options)
 		testy.StatusErrorRE(t, tt.err, tt.status, err)
-		defer changes.Close() // nolint: errcheck
+		t.Cleanup(func() {
+			_ = changes.Close()
+		})
 		result := make(map[string]driver.Change)
 		ch := &driver.Change{}
 		for {

@@ -867,7 +867,9 @@ func TestDoReq(t *testing.T) {
 		}
 		res, err := tt.client.DoReq(ctx, tt.method, tt.path, tt.opts)
 		statusErrorRE(t, tt.err, tt.status, err)
-		defer res.Body.Close()
+		t.Cleanup(func() {
+			_ = res.Body.Close()
+		})
 		_, _ = io.Copy(io.Discard, res.Body)
 		if !traceSuccess {
 			t.Error("Trace failed")

@@ -45,7 +45,9 @@ func TestPut(t *testing.T) {
 	}
 	dbname := kt.TestDBName(t)
 	ctx := context.Background()
-	defer client.DestroyDB(ctx, dbname) // nolint: errcheck
+	t.Cleanup(func() {
+		_ = client.DestroyDB(ctx, dbname)
+	})
 	if e := client.CreateDB(ctx, dbname); e != nil {
 		t.Fatalf("Failed to create db: %s", e)
 	}

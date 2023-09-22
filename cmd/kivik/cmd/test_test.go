@@ -21,7 +21,9 @@ import (
 
 func checkRequest(t *testing.T, req *http.Request) {
 	t.Helper()
-	defer req.Body.Close() // nolint:errcheck
+	t.Cleanup(func() {
+		_ = req.Body.Close()
+	})
 
 	if d := testy.DiffHTTPRequest(testy.Snapshot(t), req, standardReplacements...); d != nil {
 		t.Error(d)

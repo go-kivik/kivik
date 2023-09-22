@@ -45,7 +45,9 @@ func TestSecurity(t *testing.T) {
 		dir := tt.path
 		if dir == "" {
 			dir = tempDir(t)
-			defer rmdir(t, dir)
+			t.Cleanup(func() {
+				rmdir(t, dir)
+			})
 		}
 		fs := tt.fs
 		if fs == nil {

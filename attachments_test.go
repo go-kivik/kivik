@@ -142,7 +142,10 @@ func TestAttachmentUnmarshalJSON(t *testing.T) {
 			err := json.Unmarshal([]byte(test.input), result)
 			testy.Error(t, test.err, err)
 			var body []byte
-			defer result.Content.Close() // nolint: errcheck
+			content := result.Content
+			t.Cleanup(func() {
+				_ = content.Close()
+			})
 			body, err = io.ReadAll(result.Content)
 			if err != nil {
 				t.Fatal(err)

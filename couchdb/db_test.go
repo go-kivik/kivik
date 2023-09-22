@@ -988,7 +988,7 @@ func TestPut(t *testing.T) {
 		rev     string
 		status  int
 		err     string
-		finish  func(*testing.T)
+		finish  func() error
 	}
 	tests := []pTest{
 		{
@@ -1100,10 +1100,8 @@ func TestPut(t *testing.T) {
 					},
 				},
 				rev: "1-1e527110339245a3191b3f6cbea27ab1",
-				finish: func(t *testing.T) {
-					if err := db.client.DestroyDB(context.Background(), db.dbName, nil); err != nil {
-						t.Fatal(err)
-					}
+				finish: func() error {
+					return db.client.DestroyDB(context.Background(), db.dbName, nil)
 				},
 			}
 		}(),
@@ -1111,7 +1109,11 @@ func TestPut(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			if test.finish != nil {
-				defer test.finish(t)
+				t.Cleanup(func() {
+					if err := test.finish(); err != nil {
+						t.Fatal(err)
+					}
+				})
 			}
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()

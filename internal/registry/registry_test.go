@@ -29,9 +29,9 @@ func TestRegister(t *testing.T) {
 	registryMU.Lock()
 	defer registryMU.Unlock()
 	t.Run("nil driver", func(t *testing.T) {
-		defer func() {
+		t.Cleanup(func() {
 			drivers = make(map[string]driver.Driver)
-		}()
+		})
 		p := func() (p interface{}) {
 			defer func() {
 				p = recover()
@@ -45,9 +45,9 @@ func TestRegister(t *testing.T) {
 	})
 
 	t.Run("duplicate driver", func(t *testing.T) {
-		defer func() {
+		t.Cleanup(func() {
 			drivers = make(map[string]driver.Driver)
-		}()
+		})
 		p := func() (p interface{}) {
 			defer func() {
 				p = recover()
@@ -62,9 +62,9 @@ func TestRegister(t *testing.T) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		defer func() {
+		t.Cleanup(func() {
 			drivers = make(map[string]driver.Driver)
-		}()
+		})
 		p := func() (p interface{}) {
 			defer func() {
 				p = recover()

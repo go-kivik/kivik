@@ -380,7 +380,9 @@ func TestGet(t *testing.T) {
 		dir := tt.path
 		if dir == "" {
 			dir = tempDir(t)
-			defer rmdir(t, dir)
+			t.Cleanup(func() {
+				rmdir(t, dir)
+			})
 		}
 		fs := tt.fs
 		if fs == nil {
@@ -400,12 +402,18 @@ func TestGet(t *testing.T) {
 		}
 		doc, err := db.Get(context.Background(), tt.id, opts)
 		testy.StatusErrorRE(t, tt.err, tt.status, err)
-		defer doc.Body.Close() // nolint: errcheck
+		body := doc.Body
+		t.Cleanup(func() {
+			_ = body.Close()
+		})
 		if d := testy.DiffAsJSON(testy.Snapshot(t), doc.Body); d != nil {
 			t.Errorf("document:\n%s", d)
 		}
 		if doc.Attachments != nil {
-			defer doc.Attachments.Close() // nolint: errcheck
+			attachments := doc.Attachments
+			t.Cleanup(func() {
+				_ = attachments.Close()
+			})
 			att := &driver.Attachment{}
 			for {
 				if err := doc.Attachments.Next(att); err != nil {

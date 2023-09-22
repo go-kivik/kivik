@@ -44,7 +44,9 @@ func TestChanges(t *testing.T) {
 			t.Fatalf("Failed to connect to PouchDB/memdown driver: %s", err)
 		}
 		dbname := kt.TestDBName(t)
-		defer client.DestroyDB(ctx, dbname) // nolint: errcheck
+		t.Cleanup(func() {
+			_ = client.DestroyDB(ctx, dbname)
+		})
 		if err := client.CreateDB(ctx, dbname); err != nil {
 			t.Fatalf("Failed to create db: %s", err)
 		}

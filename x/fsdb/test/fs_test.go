@@ -35,7 +35,9 @@ func TestFS(t *testing.T) {
 		t.Errorf("Failed to create temp dir to test FS driver: %s\n", err)
 		return
 	}
-	defer os.RemoveAll(tempDir) //nolint:errcheck // safe to ignore
+	t.Cleanup(func() {
+		_ = os.RemoveAll(tempDir)
+	})
 	client, err := kivik.New("fs", tempDir)
 	if err != nil {
 		t.Errorf("Failed to connect to FS driver: %s\n", err)

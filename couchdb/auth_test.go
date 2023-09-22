@@ -99,7 +99,7 @@ func TestAuthenticationOptions(t *testing.T) {
 	driver := &couch{}
 	tests.Run(t, func(t *testing.T, tt test) {
 		s := nettest.NewHTTPTestServer(t, tt.handler(t))
-		defer s.Close()
+		t.Cleanup(s.Close)
 		driverClient, err := driver.NewClient(s.URL, tt.options)
 		if err != nil {
 			t.Fatal(err)

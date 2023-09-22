@@ -178,7 +178,9 @@ func TestBulkGet(t *testing.T) {
 
 		row := new(driver.Row)
 		err = rows.Next(row)
-		defer rows.Close() // nolint: errcheck
+		t.Cleanup(func() {
+			_ = rows.Close()
+		})
 		testy.StatusError(t, test.rowErr, test.rowStatus, err)
 
 		if d := rowsDiff(test.expected, row); d != "" {

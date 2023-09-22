@@ -215,7 +215,9 @@ func TestChanges(t *testing.T) {
 			}
 			ch, err := test.db.Changes(context.Background(), opts)
 			if ch != nil {
-				defer ch.Close() // nolint:errcheck
+				t.Cleanup(func() {
+					_ = ch.Close()
+				})
 			}
 			testy.StatusErrorRE(t, test.err, test.status, err)
 			if etag := ch.ETag(); etag != test.etag {

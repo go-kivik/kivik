@@ -82,7 +82,7 @@ func (l *testLogger) Check(t *testing.T) {
 	t.Helper()
 	t.Run("logs", func(t *testing.T) {
 		l.mu.Lock()
-		defer l.mu.Unlock()
+		t.Cleanup(l.mu.Unlock)
 		if d := testy.DiffText(testy.Snapshot(t), strings.Join(l.logs, "\n")); d != nil {
 			t.Error(d)
 		}

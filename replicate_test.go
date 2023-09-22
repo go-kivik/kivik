@@ -147,6 +147,9 @@ func TestReplicateMock(t *testing.T) {
 }
 
 func TestReplicate(t *testing.T) {
+	if isGopherJS117 {
+		t.Skip("Replication doesn't work in GopherJS 1.17")
+	}
 	type tt struct {
 		path           string
 		target, source *kivik.DB

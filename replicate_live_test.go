@@ -16,6 +16,7 @@ import (
 	"context"
 	"net/http"
 	"os"
+	"runtime"
 	"testing"
 	"time"
 
@@ -27,7 +28,12 @@ import (
 	_ "github.com/go-kivik/kivik/v4/x/fsdb" // Filesystem driver
 )
 
+const isGopherJS117 = runtime.GOARCH == "js"
+
 func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
+	if isGopherJS117 {
+		t.Skip("Replication doesn't work in GopherJS 1.17")
+	}
 	type tt struct {
 		source, target *kivik.DB
 		options        kivik.Option

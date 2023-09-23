@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4"
@@ -144,6 +145,88 @@ func TestReplicateMock(t *testing.T) {
 			t.Error(d)
 		}
 	})
+}
+
+func TestReplicate_with_callback(t *testing.T) {
+	source, smock := kivikmock.NewT(t)
+	sdb := smock.NewDB()
+	smock.ExpectDB().WillReturn(sdb)
+	sdb.ExpectChanges().WillReturn(kivikmock.NewChanges().
+		AddChange(&driver.Change{
+			ID:      "foo",
+			Changes: []string{"2-7051cbe5c8faecd085a3fa619e6e6337"},
+			Seq:     "3-g1AAAAG3eJzLYWBg4MhgTmHgz8tPSTV0MDQy1zMAQsMcoARTIkOS_P___7MSGXAqSVIAkkn2IFUZzIkMuUAee5pRqnGiuXkKA2dpXkpqWmZeagpu_Q4g_fGEbEkAqaqH2sIItsXAyMjM2NgUUwdOU_JYgCRDA5ACGjQfn30QlQsgKvcjfGaQZmaUmmZClM8gZhyAmHGfsG0PICrBPmQC22ZqbGRqamyIqSsLAAArcXo",
+		}))
+
+	target, tmock := kivikmock.NewT(t)
+	tdb := tmock.NewDB()
+	tmock.ExpectDB().WillReturn(tdb)
+	tdb.ExpectRevsDiff().
+		WithRevLookup(map[string][]string{
+			"foo": {"2-7051cbe5c8faecd085a3fa619e6e6337"},
+		}).
+		WillReturn(kivikmock.NewRows().
+			AddRow(&driver.Row{
+				ID:    "foo",
+				Value: strings.NewReader(`{"missing":["2-7051cbe5c8faecd085a3fa619e6e6337"]}`),
+			}))
+	sdb.ExpectGet().
+		WithDocID("foo").
+		WithOptions(kivik.Params(map[string]interface{}{
+			"rev":         "2-7051cbe5c8faecd085a3fa619e6e6337",
+			"revs":        true,
+			"attachments": true,
+		})).
+		WillReturn(kivikmock.NewRows().AddRow(&driver.Row{
+			Doc: strings.NewReader(`{"_id":"foo","_rev":"2-7051cbe5c8faecd085a3fa619e6e6337","foo":"bar"}`),
+		}))
+	tdb.ExpectPut().
+		WithDocID("foo").
+		WithOptions(kivik.Param("new_edits", false)).
+		WillReturn("2-7051cbe5c8faecd085a3fa619e6e6337")
+
+	events := []kivik.ReplicationEvent{}
+
+	_, err := kivik.Replicate(context.TODO(), target.DB("tgt"), source.DB("src"), kivik.ReplicationCallback(func(e kivik.ReplicationEvent) {
+		events = append(events, e)
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := []kivik.ReplicationEvent{
+		{
+			Type: "changes",
+			Read: true,
+		},
+		{
+			Type:    "change",
+			Read:    true,
+			DocID:   "foo",
+			Changes: []string{"2-7051cbe5c8faecd085a3fa619e6e6337"},
+		},
+		{
+			Type: "revsdiff",
+			Read: true,
+		},
+		{
+			Type:  "revsdiff",
+			Read:  true,
+			DocID: "foo",
+		},
+		{
+			Type:  "document",
+			Read:  true,
+			DocID: "foo",
+		},
+		{
+			Type:  "document",
+			DocID: "foo",
+		},
+	}
+	if d := cmp.Diff(expected, events); d != "" {
+		t.Error(d)
+	}
 }
 
 func TestReplicate(t *testing.T) {

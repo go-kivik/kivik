@@ -102,24 +102,17 @@ type ReplicationEvent struct {
 // eventCallback is a function that receives replication events.
 type eventCallback func(ReplicationEvent)
 
-// WithEventCallback adds an EventCallback function to the context, which will
-// be used by the Replicate function, to emit events, useful for debugging or
-// logging.
-func WithEventCallback(ctx context.Context, cb eventCallback) context.Context {
-	return context.WithValue(ctx, callbackKey, cb)
-}
-
-func callback(ctx context.Context) eventCallback {
-	cb, _ := ctx.Value(callbackKey).(eventCallback)
-	if cb == nil {
-		cb = func(ReplicationEvent) {}
+func (c eventCallback) Apply(target interface{}) {
+	if c2, ok := target.(*eventCallback); ok {
+		*c2 = c
 	}
-	return cb
 }
 
-type contextKey struct{ name string }
-
-var callbackKey = &contextKey{"event_callback"}
+// ReplicationCallback sets a callback function to be called on every replication
+// event that takes place.
+func ReplicationCallback(callback func(ReplicationEvent)) Option {
+	return eventCallback(callback)
+}
 
 // Replicate performs a replication from source to target, using a limited
 // version of the CouchDB replication protocol.
@@ -143,8 +136,10 @@ func Replicate(ctx context.Context, target, source *DB, options ...Option) (*Rep
 		result.EndTime = time.Now()
 	}()
 	opts := map[string]interface{}{}
-	allOptions(options).Apply(opts)
-	cb := callback(ctx)
+	all := allOptions(options)
+	all.Apply(opts)
+	cb := eventCallback(func(ReplicationEvent) {})
+	all.Apply(&cb)
 
 	if _, sec := opts["copy_security"].(bool); sec {
 		if err := copySecurity(ctx, target, source, cb); err != nil {

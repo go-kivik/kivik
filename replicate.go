@@ -99,27 +99,20 @@ type ReplicationEvent struct {
 	Changes []string
 }
 
-// EventCallback is a function that receives replication events.
-type EventCallback func(ReplicationEvent)
+// eventCallback is a function that receives replication events.
+type eventCallback func(ReplicationEvent)
 
-// WithEventCallback adds an EventCallback function to the context, which will
-// be used by the Replicate function, to emit events, useful for debugging or
-// logging.
-func WithEventCallback(ctx context.Context, cb EventCallback) context.Context {
-	return context.WithValue(ctx, callbackKey, cb)
-}
-
-func callback(ctx context.Context) EventCallback {
-	cb, _ := ctx.Value(callbackKey).(EventCallback)
-	if cb == nil {
-		cb = func(ReplicationEvent) {}
+func (c eventCallback) Apply(target interface{}) {
+	if c2, ok := target.(*eventCallback); ok {
+		*c2 = c
 	}
-	return cb
 }
 
-type contextKey struct{ name string }
-
-var callbackKey = &contextKey{"event_callback"}
+// ReplicationCallback sets a callback function to be called on every replication
+// event that takes place.
+func ReplicationCallback(callback func(ReplicationEvent)) Option {
+	return eventCallback(callback)
+}
 
 // Replicate performs a replication from source to target, using a limited
 // version of the CouchDB replication protocol.
@@ -143,8 +136,10 @@ func Replicate(ctx context.Context, target, source *DB, options ...Option) (*Rep
 		result.EndTime = time.Now()
 	}()
 	opts := map[string]interface{}{}
-	allOptions(options).Apply(opts)
-	cb := callback(ctx)
+	all := allOptions(options)
+	all.Apply(opts)
+	cb := eventCallback(func(ReplicationEvent) {})
+	all.Apply(&cb)
 
 	if _, sec := opts["copy_security"].(bool); sec {
 		if err := copySecurity(ctx, target, source, cb); err != nil {
@@ -177,7 +172,7 @@ func Replicate(ctx context.Context, target, source *DB, options ...Option) (*Rep
 	return result.ReplicationResult, group.Wait()
 }
 
-func copySecurity(ctx context.Context, target, source *DB, cb EventCallback) error {
+func copySecurity(ctx context.Context, target, source *DB, cb eventCallback) error {
 	sec, err := source.Security(ctx)
 	cb(ReplicationEvent{
 		Type:  eventSecurity,
@@ -204,7 +199,7 @@ type change struct {
 	Changes []string
 }
 
-func readChanges(ctx context.Context, db *DB, results chan<- *change, options Option, cb EventCallback) error {
+func readChanges(ctx context.Context, db *DB, results chan<- *change, options Option, cb eventCallback) error {
 	changes := db.Changes(ctx, options, Param("feed", "normal"), Param("style", "all_docs"))
 	cb(ReplicationEvent{
 		Type: eventChanges,
@@ -248,7 +243,7 @@ type revDiff struct {
 
 const rdBatchSize = 10
 
-func readDiffs(ctx context.Context, db *DB, ch <-chan *change, results chan<- *revDiff, cb EventCallback) error {
+func readDiffs(ctx context.Context, db *DB, ch <-chan *change, results chan<- *revDiff, cb eventCallback) error {
 	for {
 		revMap := map[string][]string{}
 		var change *change
@@ -316,7 +311,7 @@ func readDiffs(ctx context.Context, db *DB, ch <-chan *change, results chan<- *r
 	}
 }
 
-func readDocs(ctx context.Context, db *DB, diffs <-chan *revDiff, results chan<- *Document, result *resultWrapper, cb EventCallback) error {
+func readDocs(ctx context.Context, db *DB, diffs <-chan *revDiff, results chan<- *Document, result *resultWrapper, cb eventCallback) error {
 	for {
 		var rd *revDiff
 		var ok bool
@@ -410,7 +405,7 @@ func readDoc(ctx context.Context, db *DB, docID, rev string) (*Document, error) 
 	return doc, nil
 }
 
-func storeDocs(ctx context.Context, db *DB, docs <-chan *Document, result *resultWrapper, cb EventCallback) error {
+func storeDocs(ctx context.Context, db *DB, docs <-chan *Document, result *resultWrapper, cb eventCallback) error {
 	for doc := range docs {
 		_, err := db.Put(ctx, doc.ID, doc, Param("new_edits", false))
 		cb(ReplicationEvent{

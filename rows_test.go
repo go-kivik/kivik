@@ -21,6 +21,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4/driver"
@@ -627,5 +628,40 @@ func Test_rows_Rev(t *testing.T) {
 	}
 	if rev != expected {
 		t.Errorf("Unexpected rev: %s", rev)
+	}
+}
+
+func Test_rows_single(t *testing.T) {
+	const wantRev = "1-abc"
+	const docContent = `{"_id":"foo"}`
+	wantDoc := map[string]interface{}{"_id": "foo"}
+	rows := newRows(context.Background(), nil, &mock.Rows{
+		NextFunc: func(row *driver.Row) error {
+			row.Rev = wantRev
+			row.Doc = strings.NewReader(docContent)
+			return nil
+		},
+	})
+
+	rev, err := rows.Rev()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rev != wantRev {
+		t.Errorf("Unexpected rev: %s", rev)
+	}
+	var doc map[string]interface{}
+	if err := rows.ScanDoc(&doc); err != nil {
+		t.Fatal(err)
+	}
+	if d := cmp.Diff(wantDoc, doc); d != "" {
+		t.Error(d)
+	}
+	rev2, err := rows.Rev()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rev2 != wantRev {
+		t.Errorf("Unexpected rev on second read: %s", rev2)
 	}
 }

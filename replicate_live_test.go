@@ -188,7 +188,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 		return tt{
 			source:  source,
 			target:  target,
-			options: kivik.Param("copy_security", true),
+			options: kivik.ReplicateCopySecurity(),
 			result: &kivik.ReplicationResult{
 				DocsRead:       1,
 				DocsWritten:    1,

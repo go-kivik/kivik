@@ -37,7 +37,7 @@ func replicateCmd(r *root) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "replicate",
 		Short: "Replicate a database",
-		Long: `Replicate source to target, managed by couchctl. For a server-controlled replication, use the 'post replicate' command instead.
+		Long: `Replicate source to target, managed by kivik. For a server-controlled replication, use the 'post replicate' command instead.
 
 This command supports a limited version of the CouchDB replication protocol. The following options are supported:
 
@@ -94,8 +94,12 @@ func (c *replicate) RunE(cmd *cobra.Command, _ []string) error {
 	}
 
 	opts := c.options
+	options := []kivik.Option{kivik.Params(opts)}
+	if cs, _ := opts["copy_security"].(bool); cs {
+		options = append(options, kivik.ReplicateCopySecurity())
+	}
 	c.log.Debugf("[replicate] Will replicate %s to %s", opts["source"], opts["target"])
-	result, err := kivik.Replicate(cmd.Context(), target, source, kivik.Params(opts))
+	result, err := kivik.Replicate(cmd.Context(), target, source, options...)
 	if err != nil {
 		return err
 	}

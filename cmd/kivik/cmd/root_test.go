@@ -255,7 +255,7 @@ var standardReplacements = []testy.Replacement{
 		Replacement: `Host: XXX`,
 	},
 	{
-		Regexp:      regexp.MustCompile(`go\d\.\d+(\.|rc)\d+`),
+		Regexp:      regexp.MustCompile(`go\d\.\d+\.[\da-z-]+`),
 		Replacement: `goX.XX.X`,
 	},
 }

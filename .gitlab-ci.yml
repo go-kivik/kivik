@@ -80,11 +80,6 @@ go-1.21:
   <<: *go_test_template
   image: golang:1.21
 
-go-rc:
-  <<: *go_test_template
-  image: golang:rc
-  allow_failure: true
-
 .gopherjs_test: &gopherjs_test_template
   <<: *go_test_template
   image: golang:1.18

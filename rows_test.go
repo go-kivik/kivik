@@ -611,3 +611,21 @@ func Test_bug576(t *testing.T) {
 		t.Errorf("Unexpected error status: %v", status)
 	}
 }
+
+func Test_rows_Rev(t *testing.T) {
+	const expected = "1-abc"
+	rows := newRows(context.Background(), nil, &mock.Rows{
+		NextFunc: func(row *driver.Row) error {
+			row.Rev = expected
+			return nil
+		},
+	})
+
+	rev, err := rows.Rev()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rev != expected {
+		t.Errorf("Unexpected rev: %s", rev)
+	}
+}

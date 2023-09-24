@@ -142,6 +142,11 @@ func (r *rows) Attachments() (*AttachmentsIterator, error) {
 }
 
 func (r *rows) Rev() (string, error) {
+	runlock, err := r.makeReady(nil)
+	if err != nil {
+		return "", err
+	}
+	defer runlock()
 	row := r.curVal.(*driver.Row)
 	return row.Rev, row.Error
 }

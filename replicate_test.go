@@ -187,7 +187,7 @@ func TestReplicate_with_callback(t *testing.T) {
 
 	events := []kivik.ReplicationEvent{}
 
-	_, err := kivik.Replicate(context.TODO(), target.DB("tgt"), source.DB("src"), kivik.ReplicationCallback(func(e kivik.ReplicationEvent) {
+	_, err := kivik.Replicate(context.TODO(), target.DB("tgt"), source.DB("src"), kivik.ReplicateCallback(func(e kivik.ReplicationEvent) {
 		events = append(events, e)
 	}))
 	if err != nil {

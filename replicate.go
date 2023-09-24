@@ -103,29 +103,58 @@ type ReplicationEvent struct {
 type eventCallback func(ReplicationEvent)
 
 func (c eventCallback) Apply(target interface{}) {
-	if c2, ok := target.(*eventCallback); ok {
-		*c2 = c
+	if ro, ok := target.(*replicateOptions); ok {
+		ro.cb = c
 	}
 }
 
-// ReplicationCallback sets a callback function to be called on every replication
+// ReplicateCallback sets a callback function to be called on every replication
 // event that takes place.
-func ReplicationCallback(callback func(ReplicationEvent)) Option {
+func ReplicateCallback(callback func(ReplicationEvent)) Option {
 	return eventCallback(callback)
+}
+
+type replicateOptions struct {
+	cb eventCallback
+	// CopySecurity indicates that the secuurity object should be read from
+	// source, and copied to the target, before the replication. Use with
+	// caution! The security object is not versioned, and will be
+	// unconditionally overwritten!
+	copySecurity bool
+}
+
+func (o replicateOptions) callback() eventCallback {
+	if o.cb != nil {
+		return o.cb
+	}
+	return func(ReplicationEvent) {}
+}
+
+type replicateCopySecurityOption struct{}
+
+func (r replicateCopySecurityOption) Apply(target interface{}) {
+	if ro, ok := target.(*replicateOptions); ok {
+		ro.copySecurity = true
+	}
+}
+
+// ReplicateCopySecurity will read the security object from source, and copy it
+// to the target, before the replication. Use with caution! The security object
+// is not versioned, and it will be unconditionally overwritten on the target!
+func ReplicateCopySecurity() Option {
+	return replicateCopySecurityOption{}
 }
 
 // Replicate performs a replication from source to target, using a limited
 // version of the CouchDB replication protocol.
 //
-// The following options are supported:
+// This function supports the [ReplicateCopySecurity] and [ReplicateCallback]
+// options. Additionally, the following standard options are passed along to
+// the source when querying the changes feed, for server-side filtering, where
+// supported:
 //
-//	filter (string) - The name of a filter function.
+//	filter (string)           - The name of a filter function.
 //	doc_ids (array of string) - Array of document IDs to be synchronized.
-//	copy_security (bool) - When true, the security object is read from the
-//	                       source, and copied to the target, before the
-//	                       replication. Use with caution! The security object
-//	                       is not versioned, and will be unconditionally
-//	                       overwritten!
 func Replicate(ctx context.Context, target, source *DB, options ...Option) (*ReplicationResult, error) {
 	result := &resultWrapper{
 		ReplicationResult: &ReplicationResult{
@@ -135,13 +164,11 @@ func Replicate(ctx context.Context, target, source *DB, options ...Option) (*Rep
 	defer func() {
 		result.EndTime = time.Now()
 	}()
-	opts := map[string]interface{}{}
-	all := allOptions(options)
-	all.Apply(opts)
-	cb := eventCallback(func(ReplicationEvent) {})
-	all.Apply(&cb)
+	repOpts := &replicateOptions{}
+	allOptions(options).Apply(repOpts)
+	cb := repOpts.callback()
 
-	if _, sec := opts["copy_security"].(bool); sec {
+	if repOpts.copySecurity {
 		if err := copySecurity(ctx, target, source, cb); err != nil {
 			return result.ReplicationResult, err
 		}

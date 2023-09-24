@@ -335,11 +335,11 @@ func Test_rows_ScanKey(t *testing.T) {
 }
 
 func Test_rows_Getters(t *testing.T) {
-	id := "foo"
+	const id = "foo"
 	key := []byte("[1234]")
-	offset := int64(2)
-	totalrows := int64(3)
-	updateseq := "asdfasdf"
+	const offset = int64(2)
+	const totalrows = int64(3)
+	const updateseq = "asdfasdf"
 	r := &rows{
 		iter: &iter{
 			state: stateRowReady,
@@ -493,7 +493,7 @@ func Test_rows_Metadata(t *testing.T) {
 		check(t, r)
 	})
 	t.Run("Warner", func(t *testing.T) {
-		expected := "test warning"
+		const expected = "test warning"
 		r := newRows(context.Background(), nil, &mock.RowsWarner{
 			WarningFunc: func() string { return expected },
 		})
@@ -602,7 +602,7 @@ func Test_bug576(t *testing.T) {
 
 	var result interface{}
 	err := rows.ScanDoc(&result)
-	wantErr := "no results"
+	const wantErr = "no results"
 	wantStatus := http.StatusNotFound
 	if !testy.ErrorMatches(wantErr, err) {
 		t.Errorf("unexpected error: %s", err)

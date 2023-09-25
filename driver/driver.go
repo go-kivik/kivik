@@ -180,16 +180,6 @@ type RowsGetter interface {
 	Get(ctx context.Context, docID string, options Options) (Rows, error)
 }
 
-// OldGetter is an optional interface that a [DB] may implement, to return a
-// single document from [github.com/go-kivik/kivik/v4.DB.Get]. [DB] must
-// implement either OldGetter or [RowsGetter].
-type OldGetter interface {
-	// Get fetches the requested document from the database, and returns the
-	// content length (or -1 if unknown), and an io.ReadCloser to access the
-	// raw JSON content.
-	Get(ctx context.Context, docID string, options Options) (*Document, error)
-}
-
 // DB is a database handle.
 type DB interface {
 	// AllDocs returns all of the documents in the database, subject to the

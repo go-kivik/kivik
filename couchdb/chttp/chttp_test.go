@@ -1045,19 +1045,19 @@ func TestUserAgent(t *testing.T) {
 		{
 			name: "defaults",
 			expected: fmt.Sprintf("%s/%s (Language=%s; Platform=%s/%s)",
-				UserAgent, Version, runtime.Version(), runtime.GOARCH, runtime.GOOS),
+				userAgent, kivik.Version, runtime.Version(), runtime.GOARCH, runtime.GOOS),
 		},
 		{
 			name: "custom",
 			ua:   []string{"Oinky/1.2.3"},
 			expected: fmt.Sprintf("%s/%s (Language=%s; Platform=%s/%s) Oinky/1.2.3",
-				UserAgent, Version, runtime.Version(), runtime.GOARCH, runtime.GOOS),
+				userAgent, kivik.Version, runtime.Version(), runtime.GOARCH, runtime.GOOS),
 		},
 		{
 			name: "multiple",
 			ua:   []string{"Oinky/1.2.3", "Moo/5.4.3"},
 			expected: fmt.Sprintf("%s/%s (Language=%s; Platform=%s/%s) Oinky/1.2.3 Moo/5.4.3",
-				UserAgent, Version, runtime.Version(), runtime.GOARCH, runtime.GOOS),
+				userAgent, kivik.Version, runtime.Version(), runtime.GOARCH, runtime.GOOS),
 		},
 	}
 	for _, test := range tests {

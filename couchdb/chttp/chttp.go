@@ -35,10 +35,9 @@ import (
 
 const typeJSON = "application/json"
 
-// The default UserAgent values
+// The default userAgent values
 const (
-	UserAgent = "Kivik chttp"
-	Version   = "4.0.0-prerelease"
+	userAgent = "Kivik"
 )
 
 // Client represents a client connection. It embeds an *http.Client
@@ -72,11 +71,7 @@ func New(client *http.Client, dsn string, options driver.Options) (*Client, erro
 	user := dsnURL.User
 	dsnURL.User = nil
 	c := &Client{
-		Client: client,
-		UserAgents: []string{
-			fmt.Sprintf("Kivik/%s", kivik.Version),
-			fmt.Sprintf("Kivik CouchDB driver/%s", Version),
-		},
+		Client:   client,
 		dsn:      dsnURL,
 		basePath: strings.TrimSuffix(dsnURL.Path, "/"),
 		rawDSN:   dsn,
@@ -516,6 +511,6 @@ func readRev(r io.Reader) (string, error) {
 
 func (c *Client) userAgent() string {
 	ua := fmt.Sprintf("%s/%s (Language=%s; Platform=%s/%s)",
-		UserAgent, Version, runtime.Version(), runtime.GOARCH, runtime.GOOS)
+		userAgent, kivik.Version, runtime.Version(), runtime.GOARCH, runtime.GOOS)
 	return strings.Join(append([]string{ua}, c.UserAgents...), " ")
 }

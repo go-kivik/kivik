@@ -255,7 +255,15 @@ type rowsIterator struct {
 var _ iterator = &rowsIterator{}
 
 func (r *rowsIterator) Next(i interface{}) error {
-	err := r.Rows.Next(i.(*driver.Row))
+	row := i.(*driver.Row)
+	row.ID = ""
+	row.Rev = ""
+	row.Key = row.Key[:0]
+	row.Value = nil
+	row.Doc = nil
+	row.Attachments = nil
+	row.Error = nil
+	err := r.Rows.Next(row)
 	if err == io.EOF || err == driver.EOQ {
 		var warning, bookmark string
 		if w, ok := r.Rows.(driver.RowsWarner); ok {

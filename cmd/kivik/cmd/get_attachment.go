@@ -48,19 +48,22 @@ func (c *getAttachment) RunE(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 	c.log.Debugf("[get] Will fetch document: %s/%s/%s", client.DSN(), db, docID)
-	return c.retry(func() error {
-		att, err := client.DB(db).GetAttachment(cmd.Context(), docID, filename, c.opts())
-		if err != nil {
-			return err
-		}
-
-		result := &attachment{
-			Reader:     output.JSONReader(att),
-			Attachment: att,
-		}
-
-		return c.fmt.Output(result)
+	var att *kivik.Attachment
+	err = c.retry(func() error {
+		var err error
+		att, err = client.DB(db).GetAttachment(cmd.Context(), docID, filename, c.opts())
+		return err
 	})
+	if err != nil {
+		return err
+	}
+
+	result := &attachment{
+		Reader:     output.JSONReader(att),
+		Attachment: att,
+	}
+
+	return c.fmt.Output(result)
 }
 
 type attachment struct {

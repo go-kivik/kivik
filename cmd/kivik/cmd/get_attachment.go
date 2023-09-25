@@ -75,6 +75,7 @@ var _ output.FriendlyOutput = &attachment{}
 
 func (a *attachment) Execute(w io.Writer) error {
 	_, err := io.Copy(w, a.Content)
+	_ = a.Content.Close()
 	return err
 }
 

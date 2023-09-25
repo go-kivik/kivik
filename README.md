@@ -52,6 +52,10 @@ In addition, there are two partial/experimental drivers available:
   - FilesystemDB: https://github.com/go-kivik/kivik/v4/x/fsdb
   - MemoryDB: https://github.com/go-kivik/kivik/v4/x/memorydb
 
+# CLI
+
+Consult the [CLI README](https://github.com/go-kivik/kivik/blob/master/cmd/kivik/README.md) for full details on the `kivik` CLI tool.
+
 # Example Usage
 
 Please consult the the [package documentation](https://godoc.org/github.com/go-kivik/kivik)
@@ -150,7 +154,7 @@ This is a partial list of breaking changes between 3.x and 4.x
 
 - Options are no longer a simple `map[string]interface{}`, but are rather functional parameters. In most cases, you can just use `kivik.Param(key, value)`, or `kivik.Params(map[string]interface{}{key: value})` as a replacement. Some shortcuts for common params now exist, and driver-specific options may work differently. Consult the GoDoc.
 - The `Authenticate` method has been removed. Authentication is now handled via option parameters.
-- The CouchDB, PouchDB, and MockDB drivers have been merged with this repo, rather than behing hosted in separate repos. For v3 you would have imported `github.com/go-kivik/couchdb/v3` or `github.com/go-kivik/pouchdb/v3` respectively. With v4, you instead use `github.com/go-kivik/v4/couchdb` annd `github.com/go-kivik/v4/pouchdb` respectively.
+- The CouchDB, PouchDB, and MockDB drivers, and the experimental FilesystemDB and MemoryDB drivers, have been merged with this repo, rather than behing hosted in separate repos. For v3 you would have imported `github.com/go-kivik/couchdb/v3`, for example. With v4, you instead use `github.com/go-kivik/kivik/v4/couchdb` for CouchDB, or `github.com/go-kivik/kivik/v4/x/fsdb` for the experimental FilesystemDB driver.
 - The return type for queries has been significantly changed.
   - In 3.x, queries returned a `*Rows` struct. Now they return a `*ResultSet`.
   - The `Offset()`, `TotalRows()`, `UpdateSeq()`, `Warning()` and `Bookmark()` methods have been removed, and replaced with the `ResultMetadata` type which is accessed via the `Metadata()` method. See [issue #552](https://github.com/go-kivik/kivik/issues/552).
@@ -170,6 +174,12 @@ This is a partial list of breaking changes between 3.x and 4.x
 #### CouchDB specific changes
 
 - The `SetTransport` authentication method has been removed, as a duplicate of [couchdb.OptionHTTPClient](https://pkg.go.dev/github.com/go-kivik/kivik/v4/couchdb#OptionHTTPClient).
+- Options passed to Kivik functions are now functional options, rather than a map of string to empty interface. As such, many of the options have changed. Consult the relevant GoDoc.
+
+#### New features and additions
+
+- Kivik now ships with the `kivik` command line tool (previously part of the `github.com/go-kivik/xkivik` repository).
+- The new [Replicate](https://pkg.go.dev/github.com/go-kivik/kivik/v4#Replicate) function allows replication between arbitrary databases, such as between CouchDB and a directory structure using the FilesystemDB.
 
 ## What projects currently use Kivik?
 

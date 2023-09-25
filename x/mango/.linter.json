@@ -1,0 +1,5 @@
+{
+    "Enable":   ["gofmt", "vet", "golint", "ineffassign", "vetshadow", "gas", "unparam", "varcheck", "errcheck"],
+    "Vendor":   true,
+    "Test":     true
+}

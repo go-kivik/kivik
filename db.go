@@ -16,7 +16,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -175,17 +174,12 @@ func (db *DB) Get(ctx context.Context, docID string, options ...Option) *ResultS
 	if err := db.startQuery(); err != nil {
 		return &ResultSet{err: err}
 	}
-	switch getter := db.driverDB.(type) {
-	case driver.RowsGetter:
-		rowsi, err := getter.Get(ctx, docID, allOptions(options))
-		if err != nil {
-			db.endQuery()
-			return &ResultSet{err: err}
-		}
-		return &ResultSet{underlying: newRows(ctx, db.endQuery, rowsi)}
-	default:
-		panic(fmt.Sprintf("driver of type %T is neither a driver.RowsGetter nor driver.OldGetter", db.driverDB))
+	rowsi, err := db.driverDB.Get(ctx, docID, allOptions(options))
+	if err != nil {
+		db.endQuery()
+		return &ResultSet{err: err}
 	}
+	return &ResultSet{underlying: newRows(ctx, db.endQuery, rowsi)}
 }
 
 // GetRev returns the active rev of the specified document. GetRev accepts

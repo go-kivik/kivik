@@ -29,7 +29,13 @@ type updatesIterator struct{ driver.DBUpdates }
 
 var _ iterator = &updatesIterator{}
 
-func (r *updatesIterator) Next(i interface{}) error { return r.DBUpdates.Next(i.(*driver.DBUpdate)) }
+func (r *updatesIterator) Next(i interface{}) error {
+	update := i.(*driver.DBUpdate)
+	update.DBName = ""
+	update.Seq = ""
+	update.Type = ""
+	return r.DBUpdates.Next(update)
+}
 
 func newDBUpdates(ctx context.Context, onClose func(), updatesi driver.DBUpdates) *DBUpdates {
 	return &DBUpdates{

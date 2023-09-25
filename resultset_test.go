@@ -17,9 +17,11 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"strconv"
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4/driver"
@@ -262,4 +264,34 @@ func TestScanAllDocs(t *testing.T) {
 			t.Error(d)
 		}
 	})
+}
+
+func TestResultSet_Next_resets_iterator_value(t *testing.T) {
+	idx := 0
+	rows := newRows(context.Background(), nil, &mock.Rows{
+		NextFunc: func(r *driver.Row) error {
+			idx++
+			switch idx {
+			case 1:
+				r.ID = strconv.Itoa(idx)
+				return nil
+			case 2:
+				return nil
+			}
+			return io.EOF
+		},
+	})
+
+	wantIDs := []string{"1", ""}
+	gotIDs := []string{}
+	for rows.Next() {
+		id, err := rows.ID()
+		if err != nil {
+			t.Fatal(err)
+		}
+		gotIDs = append(gotIDs, id)
+	}
+	if d := cmp.Diff(wantIDs, gotIDs); d != "" {
+		t.Error(d)
+	}
 }

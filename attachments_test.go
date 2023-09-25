@@ -17,9 +17,11 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4/driver"
@@ -251,5 +253,41 @@ func TestAttachmentsIteratorNext(t *testing.T) {
 				t.Error(d)
 			}
 		})
+	}
+}
+
+func TestAttachments_Next_resets_iterator_value(t *testing.T) {
+	idx := 0
+	atts := &AttachmentsIterator{
+		atti: &mock.Attachments{
+			NextFunc: func(att *driver.Attachment) error {
+				idx++
+				switch idx {
+				case 1:
+					att.Filename = strconv.Itoa(idx)
+					return nil
+				case 2:
+					return nil
+				}
+				return io.EOF
+			},
+		},
+	}
+
+	wantFilenames := []string{"1", ""}
+	gotFilenames := []string{}
+	for {
+		att, err := atts.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+		gotFilenames = append(gotFilenames, att.Filename)
+
+	}
+	if d := cmp.Diff(wantFilenames, gotFilenames); d != "" {
+		t.Error(d)
 	}
 }

@@ -37,7 +37,13 @@ type changesIterator struct {
 var _ iterator = &changesIterator{}
 
 func (c *changesIterator) Next(i interface{}) error {
-	err := c.Changes.Next(i.(*driver.Change))
+	change := i.(*driver.Change)
+	change.ID = ""
+	change.Seq = ""
+	change.Deleted = false
+	change.Changes = change.Changes[:0]
+	change.Doc = change.Doc[:0]
+	err := c.Changes.Next(change)
 	if err == io.EOF || err == driver.EOQ {
 		c.ChangesMetadata = &ChangesMetadata{
 			LastSeq: c.Changes.LastSeq(),

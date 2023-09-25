@@ -46,7 +46,7 @@ func (s *Selector) UnmarshalJSON(data []byte) error {
 	if len(x) == 0 {
 		return nil
 	}
-	var sels []Selector
+	sels := make([]Selector, 0, len(x))
 	for k, v := range x {
 		var op operator
 		var field string

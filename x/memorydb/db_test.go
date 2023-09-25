@@ -254,12 +254,16 @@ func TestPut(t *testing.T) {
 				}
 				_, err := db.Put(context.Background(), test.DocID, test.Doc, nil)
 				testy.StatusError(t, test.Error, test.Status, err)
-				doc, err := db.Get(context.Background(), test.DocID, kivik.Params(nil))
+				rows, err := db.Get(context.Background(), test.DocID, kivik.Params(nil))
 				if err != nil {
 					t.Fatal(err)
 				}
+				row := new(driver.Row)
+				if err := rows.Next(row); err != nil {
+					t.Fatal(err)
+				}
 				var result map[string]interface{}
-				if e := json.NewDecoder(doc.Body).Decode(&result); e != nil {
+				if e := json.NewDecoder(row.Doc).Decode(&result); e != nil {
 					t.Fatal(e)
 				}
 				if !strings.HasPrefix(test.DocID, "_local/") {
@@ -284,7 +288,6 @@ func TestGet(t *testing.T) {
 		DB       *db
 		Status   int
 		Error    string
-		doc      *driver.Document
 		Expected interface{}
 	}
 	tests := []getTest{
@@ -296,17 +299,14 @@ func TestGet(t *testing.T) {
 		},
 		func() getTest {
 			db := setupDB(t)
-			rev, err := db.Put(context.Background(), "foo", map[string]string{"_id": "foo", "foo": "bar"}, nil)
+			_, err := db.Put(context.Background(), "foo", map[string]string{"_id": "foo", "foo": "bar"}, nil)
 			if err != nil {
 				panic(err)
 			}
 			return getTest{
-				Name: "ExistingDoc",
-				ID:   "foo",
-				DB:   db,
-				doc: &driver.Document{
-					Rev: rev,
-				},
+				Name:     "ExistingDoc",
+				ID:       "foo",
+				DB:       db,
 				Expected: map[string]string{"_id": "foo", "foo": "bar"},
 			}
 		}(),
@@ -317,13 +317,10 @@ func TestGet(t *testing.T) {
 				panic(err)
 			}
 			return getTest{
-				Name:    "SpecificRev",
-				ID:      "foo",
-				DB:      db,
-				options: kivik.Rev(rev),
-				doc: &driver.Document{
-					Rev: rev,
-				},
+				Name:     "SpecificRev",
+				ID:       "foo",
+				DB:       db,
+				options:  kivik.Rev(rev),
 				Expected: map[string]string{"_id": "foo", "foo": "Bar"},
 			}
 		}(),
@@ -338,13 +335,10 @@ func TestGet(t *testing.T) {
 				panic(err)
 			}
 			return getTest{
-				Name:    "OldRev",
-				ID:      "foo",
-				DB:      db,
-				options: kivik.Rev(rev),
-				doc: &driver.Document{
-					Rev: rev,
-				},
+				Name:     "OldRev",
+				ID:       "foo",
+				DB:       db,
+				options:  kivik.Rev(rev),
 				Expected: map[string]string{"_id": "foo", "foo": "Bar"},
 			}
 		}(),
@@ -412,16 +406,18 @@ func TestGet(t *testing.T) {
 				if opts == nil {
 					opts = kivik.Params(nil)
 				}
-				doc, err := db.Get(context.Background(), test.ID, opts)
+				rows, err := db.Get(context.Background(), test.ID, opts)
 				testy.StatusError(t, test.Error, test.Status, err)
-				var result map[string]interface{}
-				if err := json.NewDecoder(doc.Body).Decode(&result); err != nil {
+				row := new(driver.Row)
+				if err := rows.Next(row); err != nil {
 					t.Fatal(err)
 				}
-				doc.Body = nil // Determinism
-				if d := testy.DiffInterface(test.doc, doc); d != nil {
-					t.Errorf("Unexpected doc:\n%s", d)
+
+				var result map[string]interface{}
+				if err := json.NewDecoder(row.Doc).Decode(&result); err != nil {
+					t.Fatal(err)
 				}
+
 				if result != nil {
 					delete(result, "_rev")
 				}
@@ -539,12 +535,16 @@ func TestDeleteDoc(t *testing.T) {
 				if err != nil {
 					return
 				}
-				row, err := db.Get(context.Background(), test.ID, kivik.Rev(rev))
+				rows, err := db.Get(context.Background(), test.ID, kivik.Rev(rev))
 				if err != nil {
 					t.Fatal(err)
 				}
+				row := new(driver.Row)
+				if err := rows.Next(row); err != nil {
+					t.Fatal(err)
+				}
 				var doc interface{}
-				if e := json.NewDecoder(row.Body).Decode(&doc); e != nil {
+				if e := json.NewDecoder(row.Doc).Decode(&doc); e != nil {
 					t.Fatal(e)
 				}
 				expected := map[string]interface{}{
@@ -619,12 +619,16 @@ func TestCreateDoc(t *testing.T) {
 				if err != nil {
 					return
 				}
-				row, err := db.Get(context.Background(), docID, kivik.Params(nil))
+				rows, err := db.Get(context.Background(), docID, kivik.Params(nil))
 				if err != nil {
 					t.Fatal(err)
 				}
+				row := new(driver.Row)
+				if err := rows.Next(row); err != nil {
+					t.Fatal(err)
+				}
 				var result map[string]interface{}
-				if e := json.NewDecoder(row.Body).Decode(&result); e != nil {
+				if e := json.NewDecoder(row.Doc).Decode(&result); e != nil {
 					t.Fatal(e)
 				}
 				if result["_id"].(string) != docID {

@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"sync/atomic"
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
@@ -40,7 +41,7 @@ func (d *db) Query(context.Context, string, string, driver.Options) (driver.Rows
 	return nil, notYetImplemented
 }
 
-func (d *db) Get(ctx context.Context, docID string, options driver.Options) (*driver.Document, error) {
+func (d *db) Get(ctx context.Context, docID string, options driver.Options) (driver.Rows, error) {
 	if exists, _ := d.client.DBExists(ctx, d.dbName, nil); !exists {
 		return nil, statusError{status: http.StatusPreconditionFailed, error: errors.New("database does not exist")}
 	}
@@ -51,7 +52,8 @@ func (d *db) Get(ctx context.Context, docID string, options driver.Options) (*dr
 	options.Apply(opts)
 	if rev, ok := opts["rev"].(string); ok {
 		if doc, found := d.db.getRevision(docID, rev); found {
-			return &driver.Document{
+			return &singleDocument{
+				ID:   docID,
 				Rev:  rev,
 				Body: io.NopCloser(bytes.NewReader(doc.data)),
 			}, nil
@@ -62,11 +64,40 @@ func (d *db) Get(ctx context.Context, docID string, options driver.Options) (*dr
 	if last.Deleted {
 		return nil, statusError{status: http.StatusNotFound, error: errors.New("missing")}
 	}
-	return &driver.Document{
+	return &singleDocument{
+		ID:   docID,
 		Rev:  fmt.Sprintf("%d-%s", last.ID, last.Rev),
 		Body: io.NopCloser(bytes.NewReader(last.data)),
 	}, nil
 }
+
+type singleDocument struct {
+	ID   string
+	Rev  string
+	Body io.ReadCloser
+
+	// closed will be 1 when the iterator has closed
+	closed int32
+}
+
+func (d *singleDocument) Next(row *driver.Row) error {
+	if atomic.SwapInt32(&d.closed, 1) != 0 {
+		return io.EOF
+	}
+	row.ID = d.ID
+	row.Rev = d.Rev
+	row.Doc = d.Body
+	return nil
+}
+
+func (d *singleDocument) Close() error {
+	atomic.StoreInt32(&d.closed, 1)
+	return nil
+}
+
+func (*singleDocument) UpdateSeq() string { return "" }
+func (*singleDocument) Offset() int64     { return 0 }
+func (*singleDocument) TotalRows() int64  { return 0 }
 
 func (d *db) CreateDoc(ctx context.Context, doc interface{}, _ driver.Options) (docID, rev string, err error) {
 	if exists, _ := d.client.DBExists(ctx, d.dbName, nil); !exists {

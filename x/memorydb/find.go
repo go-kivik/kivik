@@ -21,9 +21,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/go-kivik/mango"
-
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/x/mango"
 )
 
 var errFindNotImplemented = errors.New("find feature not yet implemented")

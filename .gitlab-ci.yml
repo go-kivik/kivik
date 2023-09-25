@@ -136,7 +136,7 @@ gopherjs1.18-pouchdb8:
 
 .releaser: &release_template
   image:
-    name: goreleaser/goreleaser:v1.18.1
+    name: goreleaser/goreleaser:v1.21.1
     entrypoint: [""]
   variables:
     GIT_DEPTH: 0

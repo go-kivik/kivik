@@ -93,7 +93,7 @@ func (f *Formatter) ConfigFlags(fs *pflag.FlagSet) {
 
 // Output outputs to r.
 func (f *Formatter) Output(r io.Reader) error {
-	fmt, err := f.formatter()
+	fmter, err := f.formatter()
 	if err != nil {
 		return err
 	}
@@ -104,7 +104,7 @@ func (f *Formatter) Output(r io.Reader) error {
 	if c, ok := out.(io.Closer); ok {
 		defer c.Close() // nolint:errcheck
 	}
-	return fmt.Output(out, r)
+	return fmter.Output(out, r)
 }
 
 func (f *Formatter) formatter() (Format, error) {

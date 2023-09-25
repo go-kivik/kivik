@@ -665,3 +665,30 @@ func Test_rows_single(t *testing.T) {
 		t.Errorf("Unexpected rev on second read: %s", rev2)
 	}
 }
+
+func Test_rows_Attachments(t *testing.T) {
+	const expected = "foo.txt"
+	rows := newRows(context.Background(), nil, &mock.Rows{
+		NextFunc: func(row *driver.Row) error {
+			row.Attachments = &mock.Attachments{
+				NextFunc: func(att *driver.Attachment) error {
+					att.Filename = expected
+					return nil
+				},
+			}
+			return nil
+		},
+	})
+
+	atts, err := rows.Attachments()
+	if err != nil {
+		t.Fatal(err)
+	}
+	att, err := atts.Next()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if att.Filename != expected {
+		t.Errorf("Unexpected filename: %s", att.Filename)
+	}
+}

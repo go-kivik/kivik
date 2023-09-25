@@ -1,7 +1,0 @@
-ignore:
-- "test/.*"
-coverage:
-  status:
-    project:
-      default:
-        target: 0

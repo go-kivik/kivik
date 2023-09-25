@@ -1,10 +1,9 @@
-[![Build Status](https://travis-ci.org/go-kivik/mango.svg?branch=master)](https://travis-ci.org/go-kivik/mango) [![Codecov](https://img.shields.io/codecov/c/github/go-kivik/mango.svg?style=flat)](https://codecov.io/gh/go-kivik/mango) [![GoDoc](https://godoc.org/github.com/go-kivik/mango?status.svg)](http://godoc.org/github.com/go-kivik/mango)
+[![GoDoc](https://godoc.org/github.com/go-kivik/kivik/v4/x/mango?status.svg)](http://godoc.org/github.com/go-kivik/kivik/v4/x/mango)
 
 # Mango
 
-Package mango provides support for parsing and executing Cloudant, CouchDB, and
+Package mango provides experimental support for parsing and executing Cloudant, CouchDB, and
 PouchDB-style Mango queries against JSON documents.
-
 
 ## License
 

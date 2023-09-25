@@ -5,7 +5,7 @@ Accept: application/json
 Accept-Encoding: gzip
 Content-Length: 7
 Content-Type: application/json
-User-Agent: Kivik/4.0.0-prerelease (Language=goX.XX.X; Platform=amd64/linux)
+User-Agent: Kivik/4.0.0-rc1 (Language=goX.XX.X; Platform=amd64/linux)
 
 7
 Testing

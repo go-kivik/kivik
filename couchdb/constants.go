@@ -13,7 +13,7 @@
 package couchdb
 
 // Version is the current version of this package.
-const Version = "4.0.0-prerelease"
+const Version = "4.0.0-rc1"
 
 const (
 	typeJSON      = "application/json"

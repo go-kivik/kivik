@@ -15,9 +15,12 @@ package kivik
 import (
 	"context"
 	"errors"
+	"io"
 	"net/http"
+	"strconv"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4/driver"
@@ -262,4 +265,38 @@ func TestDBUpdates(t *testing.T) {
 			_ = client.Close() // Should not block
 		})
 	})
+}
+
+func TestDBUpdates_Next_resets_iterator_value(t *testing.T) {
+	idx := 0
+	client := &Client{
+		driverClient: &mock.DBUpdater{
+			DBUpdatesFunc: func(context.Context, driver.Options) (driver.DBUpdates, error) {
+				return &mock.DBUpdates{
+					NextFunc: func(update *driver.DBUpdate) error {
+						idx++
+						switch idx {
+						case 1:
+							update.DBName = strconv.Itoa(idx)
+							return nil
+						case 2:
+							return nil
+						}
+						return io.EOF
+					},
+				}, nil
+			},
+		},
+	}
+
+	updates := client.DBUpdates(context.Background())
+
+	wantDBNames := []string{"1", ""}
+	gotDBNames := []string{}
+	for updates.Next() {
+		gotDBNames = append(gotDBNames, updates.DBName())
+	}
+	if d := cmp.Diff(wantDBNames, gotDBNames); d != "" {
+		t.Error(d)
+	}
 }

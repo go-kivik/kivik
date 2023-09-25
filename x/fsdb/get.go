@@ -19,6 +19,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"sync/atomic"
 
 	"github.com/go-kivik/kivik/v4/driver"
 )
@@ -31,7 +32,7 @@ import (
 // - local_seq
 // - meta
 // - open_revs
-func (d *db) Get(_ context.Context, docID string, options driver.Options) (*driver.Document, error) {
+func (d *db) Get(_ context.Context, docID string, options driver.Options) (driver.Rows, error) {
 	opts := map[string]interface{}{}
 	options.Apply(opts)
 	if docID == "" {
@@ -50,9 +51,41 @@ func (d *db) Get(_ context.Context, docID string, options driver.Options) (*driv
 	if err != nil {
 		return nil, err
 	}
-	return &driver.Document{
+	return &document{
+		ID:          docID,
 		Rev:         doc.Revisions[0].Rev.String(),
 		Body:        io.NopCloser(buf),
 		Attachments: attsIter,
 	}, nil
 }
+
+type document struct {
+	ID          string
+	Rev         string
+	Body        io.ReadCloser
+	Attachments driver.Attachments
+
+	// closed will be non-zero once the iterator is closed or the document
+	// has been read.
+	closed int32
+}
+
+func (d *document) Next(row *driver.Row) error {
+	if atomic.SwapInt32(&d.closed, 1) != 0 {
+		return io.EOF
+	}
+	row.Rev = d.ID
+	row.Rev = d.Rev
+	row.Doc = d.Body
+	row.Attachments = d.Attachments
+	return nil
+}
+
+func (d *document) Close() error {
+	atomic.StoreInt32(&d.closed, 1)
+	return nil
+}
+
+func (*document) UpdateSeq() string { return "" }
+func (*document) Offset() int64     { return 0 }
+func (*document) TotalRows() int64  { return 0 }

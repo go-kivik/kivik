@@ -170,26 +170,6 @@ func (s Security) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v)
 }
 
-// RowsGetter is an optional interface that a [DB] may implement, to return a
-// multi-row resultset from [github.com/go-kivik/kivik/v4.DB.Get]. [DB] must
-// implement either [OldGetter] or RowsGetter.
-type RowsGetter interface {
-	// Get fetches the requested document from the database, and returns the
-	// content length (or -1 if unknown), and an io.ReadCloser to access the
-	// raw JSON content.
-	Get(ctx context.Context, docID string, options Options) (Rows, error)
-}
-
-// OldGetter is an optional interface that a [DB] may implement, to return a
-// single document from [github.com/go-kivik/kivik/v4.DB.Get]. [DB] must
-// implement either OldGetter or [RowsGetter].
-type OldGetter interface {
-	// Get fetches the requested document from the database, and returns the
-	// content length (or -1 if unknown), and an io.ReadCloser to access the
-	// raw JSON content.
-	Get(ctx context.Context, docID string, options Options) (*Document, error)
-}
-
 // DB is a database handle.
 type DB interface {
 	// AllDocs returns all of the documents in the database, subject to the
@@ -199,6 +179,10 @@ type DB interface {
 	CreateDoc(ctx context.Context, doc interface{}, options Options) (docID, rev string, err error)
 	// Put writes the document in the database.
 	Put(ctx context.Context, docID string, doc interface{}, options Options) (rev string, err error)
+	// Get fetches the requested document from the database, and returns the
+	// content length (or -1 if unknown), and an io.ReadCloser to access the
+	// raw JSON content.
+	Get(ctx context.Context, docID string, options Options) (Rows, error)
 	// Delete marks the specified document as deleted.
 	Delete(ctx context.Context, docID string, options Options) (newRev string, err error)
 	// Stats returns database statistics.
@@ -251,7 +235,7 @@ type Document struct {
 }
 
 // Attachments is an iterator over the attachments included in a document when
-// [RowsGetter.Get] or [OldGetter.Get] is called with `include_docs=true`.
+// [DB.Get] is called with `include_docs=true`.
 type Attachments interface {
 	// Next is called to pupulate att with the next attachment in the result
 	// set.
@@ -363,8 +347,8 @@ type BulkResult struct {
 }
 
 // RevGetter is an optional interface that may be implemented by a [DB]. If not
-// implemented, [OldGetter.Get] or [RowsGetter.Get] will be used to emulate the
-// functionality, with options passed through unaltered.
+// implemented, [DB.Get] will be used to emulate the functionality, with options
+// passed through unaltered.
 type RevGetter interface {
 	// GetRev returns the document revision of the requested document. GetRev
 	// should accept the same options as [DB.Get].
@@ -386,9 +370,8 @@ type Flusher interface {
 // Copier is an optional interface that may be implemented by a [DB].
 //
 // If a [DB] does not implement Copier, the functionality will be emulated by
-// calling [RowsGetter.Get] or [OldGetter.Get] followed by [DB.Put], with
-// options passed through unaltered, except that the 'rev' option will be
-// removed for the [DB.Put] call.
+// calling [DB.Get] followed by [DB.Put], with options passed through unaltered,
+// except that the 'rev' option will be removed for the [DB.Put] call.
 type Copier interface {
 	Copy(ctx context.Context, targetID, sourceID string, options Options) (targetRev string, err error)
 }

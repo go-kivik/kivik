@@ -71,7 +71,7 @@ type attachment struct {
 	*kivik.Attachment
 }
 
-var _ output.FriendlyOutput = &attachment{}
+var _ output.FriendlyOutput = (*attachment)(nil)
 
 func (a *attachment) Execute(w io.Writer) error {
 	_, err := io.Copy(w, a.Content)
@@ -80,12 +80,11 @@ func (a *attachment) Execute(w io.Writer) error {
 }
 
 func (a *attachment) Read(p []byte) (int, error) {
-	if a.Reader == nil {
-		a.Reader = output.JSONReader(a)
-	}
 	n, err := a.Reader.Read(p)
 	if err == io.EOF {
-		_ = a.Content.Close()
+		if err := a.Content.Close(); err != nil {
+			return n, err
+		}
 	}
 	return n, err
 }

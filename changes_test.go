@@ -18,8 +18,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4/driver"
@@ -344,4 +346,39 @@ func TestChanges_uninitialized_should_not_panic(*testing.T) {
 	c := &Changes{}
 	_, _ = c.Metadata()
 	_ = c.ETag()
+}
+
+func TestChanges_Next_resets_iterator_value(t *testing.T) {
+	idx := 0
+	db := &DB{
+		client: &Client{},
+		driverDB: &mock.DB{
+			ChangesFunc: func(context.Context, driver.Options) (driver.Changes, error) {
+				return &mock.Changes{
+					NextFunc: func(change *driver.Change) error {
+						idx++
+						switch idx {
+						case 1:
+							change.ID = strconv.Itoa(idx)
+							return nil
+						case 2:
+							return nil
+						}
+						return io.EOF
+					},
+				}, nil
+			},
+		},
+	}
+
+	changes := db.Changes(context.Background())
+
+	wantIDs := []string{"1", ""}
+	gotIDs := []string{}
+	for changes.Next() {
+		gotIDs = append(gotIDs, changes.ID())
+	}
+	if d := cmp.Diff(wantIDs, gotIDs); d != "" {
+		t.Error(d)
+	}
 }

@@ -21,6 +21,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4/driver"
@@ -335,11 +336,11 @@ func Test_rows_ScanKey(t *testing.T) {
 }
 
 func Test_rows_Getters(t *testing.T) {
-	id := "foo"
+	const id = "foo"
 	key := []byte("[1234]")
-	offset := int64(2)
-	totalrows := int64(3)
-	updateseq := "asdfasdf"
+	const offset = int64(2)
+	const totalrows = int64(3)
+	const updateseq = "asdfasdf"
 	r := &rows{
 		iter: &iter{
 			state: stateRowReady,
@@ -493,7 +494,7 @@ func Test_rows_Metadata(t *testing.T) {
 		check(t, r)
 	})
 	t.Run("Warner", func(t *testing.T) {
-		expected := "test warning"
+		const expected = "test warning"
 		r := newRows(context.Background(), nil, &mock.RowsWarner{
 			WarningFunc: func() string { return expected },
 		})
@@ -602,12 +603,65 @@ func Test_bug576(t *testing.T) {
 
 	var result interface{}
 	err := rows.ScanDoc(&result)
-	wantErr := "no results"
+	const wantErr = "no results"
 	wantStatus := http.StatusNotFound
 	if !testy.ErrorMatches(wantErr, err) {
 		t.Errorf("unexpected error: %s", err)
 	}
 	if status := HTTPStatus(err); status != wantStatus {
 		t.Errorf("Unexpected error status: %v", status)
+	}
+}
+
+func Test_rows_Rev(t *testing.T) {
+	const expected = "1-abc"
+	rows := newRows(context.Background(), nil, &mock.Rows{
+		NextFunc: func(row *driver.Row) error {
+			row.Rev = expected
+			return nil
+		},
+	})
+
+	rev, err := rows.Rev()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rev != expected {
+		t.Errorf("Unexpected rev: %s", rev)
+	}
+}
+
+func Test_rows_single(t *testing.T) {
+	const wantRev = "1-abc"
+	const docContent = `{"_id":"foo"}`
+	wantDoc := map[string]interface{}{"_id": "foo"}
+	rows := newRows(context.Background(), nil, &mock.Rows{
+		NextFunc: func(row *driver.Row) error {
+			row.Rev = wantRev
+			row.Doc = strings.NewReader(docContent)
+			return nil
+		},
+	})
+
+	rev, err := rows.Rev()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rev != wantRev {
+		t.Errorf("Unexpected rev: %s", rev)
+	}
+	var doc map[string]interface{}
+	if err := rows.ScanDoc(&doc); err != nil {
+		t.Fatal(err)
+	}
+	if d := cmp.Diff(wantDoc, doc); d != "" {
+		t.Error(d)
+	}
+	rev2, err := rows.Rev()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rev2 != wantRev {
+		t.Errorf("Unexpected rev on second read: %s", rev2)
 	}
 }

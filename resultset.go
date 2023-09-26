@@ -65,7 +65,7 @@ type ResultSet struct {
 	// When ResultSet is invalid, due to an error, err is set, and should be
 	// returned by all methods.
 	err        error
-	underlying basicResultSet
+	underlying fullResultSet
 }
 
 // Next prepares the next result value for reading. It returns true on success
@@ -92,10 +92,7 @@ func (rs *ResultSet) NextResultSet() bool {
 	if rs.err != nil {
 		return false
 	}
-	if full, ok := rs.underlying.(fullResultSet); ok {
-		full.NextResultSet()
-	}
-	return false
+	return rs.underlying.NextResultSet()
 }
 
 // Err returns the error, if any, that was encountered during iteration.
@@ -126,10 +123,7 @@ func (rs *ResultSet) Metadata() (*ResultMetadata, error) {
 	if rs.err != nil {
 		return nil, rs.err
 	}
-	if full, ok := rs.underlying.(fullResultSet); ok {
-		return full.Metadata()
-	}
-	return &ResultMetadata{}, nil
+	return rs.underlying.Metadata()
 }
 
 // ScanValue copies the data from the result value into dest, which must be a
@@ -152,10 +146,7 @@ func (rs *ResultSet) ScanValue(dest interface{}) error {
 	if rs.err != nil {
 		return rs.err
 	}
-	if full, ok := rs.underlying.(fullResultSet); ok {
-		return full.ScanValue(dest)
-	}
-	return nil
+	return rs.underlying.ScanValue(dest)
 }
 
 // ScanDoc works the same as [ResultSet.ScanValue], but on the doc field of
@@ -181,10 +172,7 @@ func (rs *ResultSet) ScanKey(dest interface{}) error {
 	if rs.err != nil {
 		return rs.err
 	}
-	if full, ok := rs.underlying.(fullResultSet); ok {
-		return full.ScanKey(dest)
-	}
-	return nil
+	return rs.underlying.ScanKey(dest)
 }
 
 // ID returns the ID of the most recent result.
@@ -211,10 +199,7 @@ func (rs *ResultSet) Key() (string, error) {
 	if rs.err != nil {
 		return "", rs.err
 	}
-	if full, ok := rs.underlying.(fullResultSet); ok {
-		return full.Key()
-	}
-	return "", nil
+	return rs.underlying.Key()
 }
 
 // Attachments returns an attachments iterator. At present, it is only set
@@ -228,7 +213,7 @@ func (rs *ResultSet) Attachments() (*AttachmentsIterator, error) {
 	return rs.underlying.Attachments()
 }
 
-type basicResultSet interface {
+type fullResultSet interface {
 	Next() bool
 	Err() error
 	Close() error
@@ -236,10 +221,6 @@ type basicResultSet interface {
 	ID() (string, error)
 	Rev() (string, error)
 	Attachments() (*AttachmentsIterator, error)
-}
-
-type fullResultSet interface {
-	basicResultSet
 	NextResultSet() bool
 	Metadata() (*ResultMetadata, error)
 	ScanValue(dest interface{}) error

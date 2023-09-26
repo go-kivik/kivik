@@ -65,7 +65,7 @@ type ResultSet struct {
 	// When ResultSet is invalid, due to an error, err is set, and should be
 	// returned by all methods.
 	err        error
-	underlying fullResultSet
+	underlying *rows
 }
 
 // Next prepares the next result value for reading. It returns true on success
@@ -211,21 +211,6 @@ func (rs *ResultSet) Attachments() (*AttachmentsIterator, error) {
 		return nil, rs.err
 	}
 	return rs.underlying.Attachments()
-}
-
-type fullResultSet interface {
-	Next() bool
-	Err() error
-	Close() error
-	ScanDoc(dest interface{}) error
-	ID() (string, error)
-	Rev() (string, error)
-	Attachments() (*AttachmentsIterator, error)
-	NextResultSet() bool
-	Metadata() (*ResultMetadata, error)
-	ScanValue(dest interface{}) error
-	ScanKey(dest interface{}) error
-	Key() (string, error)
 }
 
 type rowsIterator struct {

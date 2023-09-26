@@ -465,7 +465,7 @@ func Test_rows_Metadata(t *testing.T) {
 		}
 	})
 
-	check := func(t *testing.T, r fullResultSet) {
+	check := func(t *testing.T, r *rows) {
 		t.Helper()
 		for r.Next() { //nolint:revive // Consume all rows
 		}

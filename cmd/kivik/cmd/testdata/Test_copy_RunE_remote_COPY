@@ -5,5 +5,5 @@ Accept-Encoding: gzip
 Content-Length: 0
 Content-Type: application/json
 Destination: target
-User-Agent: Kivik/4.0.0-prerelease (Language=goX.XX.X; Platform=amd64/linux)
+User-Agent: Kivik/4.0.0-rc1 (Language=goX.XX.X; Platform=amd64/linux)
 

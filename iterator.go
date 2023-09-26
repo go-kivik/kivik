@@ -82,11 +82,16 @@ func (i *iter) ready() bool {
 	return false
 }
 
-// makeReady ensures that the iterator is ready to be read from. In the case
-// that [iter.Next] has not been called, the returned unlock function will also
-// close the iterator, and set e if [iter.Close] errors and e != nil.
+// makeReady ensures that the iterator is ready to be read from. If i.err is
+// set, it is returned. In the case that [iter.Next] has not been called, the
+// returned unlock function will also close the iterator, and set e if
+// [iter.Close] errors and e != nil.
 func (i *iter) makeReady(e *error) (unlock func(), err error) {
 	i.mu.RLock()
+	if i.err != nil {
+		i.mu.RUnlock()
+		return nil, i.err
+	}
 	if !i.ready() {
 		i.mu.RUnlock()
 		if !i.Next() {

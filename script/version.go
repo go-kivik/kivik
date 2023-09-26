@@ -25,7 +25,7 @@ func main() {
 	if strings.HasSuffix(kivik.Version, "-prerelease") {
 		return
 	}
-	fmt.Printf("TAG=%s\n", kivik.Version)
+	fmt.Printf("TAG=v%s\n", kivik.Version)
 	if strings.Contains(kivik.Version, "-") {
 		fmt.Println("PRERELEASE=true")
 	}

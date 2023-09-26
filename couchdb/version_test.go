@@ -22,7 +22,6 @@ import (
 
 	"gitlab.com/flimzy/testy"
 
-	"github.com/go-kivik/kivik/v4/couchdb/chttp"
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
@@ -117,12 +116,5 @@ func TestVersion2(t *testing.T) {
 				t.Error(d)
 			}
 		})
-	}
-}
-
-func TestVersionConstant(t *testing.T) {
-	if Version != chttp.Version {
-		t.Errorf("CouchDB version (%s) and chttp version (%s) don't match",
-			Version, chttp.Version)
 	}
 }

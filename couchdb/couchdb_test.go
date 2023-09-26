@@ -19,7 +19,6 @@ import (
 
 	"gitlab.com/flimzy/testy"
 
-	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/internal/mock"
 )
@@ -41,20 +40,15 @@ func TestNewClient(t *testing.T) {
 			err:    `parse "?http://foo.com/%xxx"?: invalid URL escape "%xx"`,
 		},
 		{
-			name: "success",
-			dsn:  "http://foo.com/",
-			expectedUA: []string{
-				"Kivik/" + kivik.Version,
-				"Kivik CouchDB driver/" + Version,
-			},
+			name:       "success",
+			dsn:        "http://foo.com/",
+			expectedUA: nil,
 		},
 		{
 			name:    "User Agent",
 			dsn:     "http://foo.com/",
 			options: OptionUserAgent("test/foo"),
 			expectedUA: []string{
-				"Kivik/" + kivik.Version,
-				"Kivik CouchDB driver/" + Version,
 				"test/foo",
 			},
 		},

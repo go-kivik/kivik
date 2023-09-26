@@ -1750,47 +1750,6 @@ func TestExtractDocID(t *testing.T) {
 	}
 }
 
-func TestRowScanDoc(t *testing.T) {
-	tests := []struct {
-		name     string
-		row      *row
-		dst      interface{}
-		expected interface{}
-		status   int
-		err      string
-	}{
-		{
-			name:   "non-pointer dst",
-			row:    &row{body: body(`{"foo":123.4}`)},
-			dst:    map[string]interface{}{},
-			status: http.StatusInternalServerError,
-			err:    "json: Unmarshal(non-pointer map[string]interface {})",
-		},
-		{
-			name:   "invalid json",
-			row:    &row{body: body("invalid json")},
-			dst:    new(map[string]interface{}),
-			status: http.StatusInternalServerError,
-			err:    "invalid character 'i' looking for beginning of value",
-		},
-		{
-			name:     "success",
-			row:      &row{body: body(`{"foo":123.4}`)},
-			dst:      new(map[string]interface{}),
-			expected: &map[string]interface{}{"foo": 123.4},
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			err := test.row.ScanDoc(test.dst)
-			testy.StatusError(t, test.err, test.status, err)
-			if d := testy.DiffInterface(test.expected, test.dst); d != nil {
-				t.Error(d)
-			}
-		})
-	}
-}
-
 func TestCreateDoc(t *testing.T) {
 	tests := []struct {
 		name       string

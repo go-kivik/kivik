@@ -114,7 +114,7 @@ func TestNextResultSet(t *testing.T) {
 	})
 }
 
-func multiResultSet() fullResultSet {
+func multiResultSet() *rows {
 	rows := []interface{}{
 		&driver.Row{ID: "1", Doc: strings.NewReader(`{"foo":"bar"}`)},
 		&driver.Row{ID: "2", Doc: strings.NewReader(`{"foo":"bar"}`)},

@@ -51,3 +51,129 @@ distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 License for the specific language governing permissions and limitations under
 the License."""
+
+[linters-settings.revive]
+max-open-files = 2_048
+ignore-generated-header = true
+severity = "error"
+# Enable all revive rules, except those we disable explicitly below.
+# The full list of available rules can be found at
+# https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md
+enable-all-rules = true
+confidence = 0.1
+
+[[linters-settings.revive.rules]]
+name = "max-public-structs"
+disabled = true             # Silly rule, IMO
+
+[[linters-settings.revive.rules]]
+name = "banned-characters"
+disabled = true
+
+[[linters-settings.revive.rules]]
+name = "cyclomatic"
+disabled = true
+
+[[linters-settings.revive.rules]]
+name = "argument-limit"
+disabled = true
+
+[[linters-settings.revive.rules]]
+name = "cognitive-complexity"
+disabled = true
+
+[[linters-settings.revive.rules]]
+name = "function-length"
+disabled = true
+
+[[linters-settings.revive.rules]]
+name = "function-result-limit"
+disabled = true
+
+[[linters-settings.revive.rules]]
+name = "file-header"
+disabled = true
+
+[[linters-settings.revive.rules]]
+name = "add-constant"
+disabled = true
+
+[[linters-settings.revive.rules]]
+name = "error-strings"
+disabled = true
+
+[[linters-settings.revive.rules]]
+name = "modifies-parameter"
+disabled = true             # Too many false positives
+
+[[linters-settings.revive.rules]]
+name = "use-any"
+disabled = true  # Re-enable after we drop Go 1.17 support
+
+# To consider:
+
+[[linters-settings.revive.rules]]
+name = "unused-receiver"
+disabled = true
+
+[[linters-settings.revive.rules]]
+name = "import-shadowing"
+disabled = true
+
+[[linters-settings.revive.rules]]
+name = "flag-parameter"
+disabled = true
+
+[[linters-settings.revive.rules]]
+name = "defer"
+disabled = true
+
+[[linters-settings.revive.rules]]
+name = "deep-exit"
+disabled = true
+
+
+[[linters-settings.revive.rules]]
+name = "unhandled-error"
+disabled = true          # duplicate of errcheck
+
+[[linters-settings.revive.rules]]
+name = "optimize-operands-order"
+disabled = true                  # too many wrong suggestions
+
+[[linters-settings.revive.rules]]
+name = "line-length-limit"
+disabled = true
+arguments = [150]
+
+[[linters-settings.revive.rules]]
+name = "confusing-naming"
+disabled = true
+
+[[linters-settings.revive.rules]]
+name = "nested-structs"
+disabled = true
+
+[[linters-settings.revive.rules]]
+name = "datarace"
+disabled = true
+
+[[linters-settings.revive.rules]]
+name = "early-return"
+disabled = true
+
+[[linters-settings.revive.rules]]
+name = "empty-lines"
+disabled = true
+
+[[linters-settings.revive.rules]]
+name = "get-return"
+disabled = true
+
+[[linters-settings.revive.rules]]
+name = "confusing-results"
+disabled = true
+
+[[linters-settings.revive.rules]]
+name = "bare-return"
+disabled = true

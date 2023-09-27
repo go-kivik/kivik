@@ -258,6 +258,10 @@ var standardReplacements = []testy.Replacement{
 		Regexp:      regexp.MustCompile(`go\d\.\d+\.[\da-z-]+`),
 		Replacement: `goX.XX.X`,
 	},
+	{
+		Regexp:      regexp.MustCompile(`dial tcp 127\.0\.0\.1:`),
+		Replacement: "dial tcp [::1]:",
+	},
 }
 
 func (tt *cmdTest) Test(t *testing.T, re ...testy.Replacement) {

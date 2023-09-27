@@ -262,6 +262,10 @@ var standardReplacements = []testy.Replacement{
 		Regexp:      regexp.MustCompile(`dial tcp 127\.0\.0\.1:`),
 		Replacement: "dial tcp [::1]:",
 	},
+	{
+		Regexp:      regexp.MustCompile(`: (dial.*i/o timeout|context deadline exceeded) \(Client.Timeout`),
+		Replacement: ": ... (Client.Timeout)",
+	},
 }
 
 func (tt *cmdTest) Test(t *testing.T, re ...testy.Replacement) {

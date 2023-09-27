@@ -30,20 +30,20 @@ var findNotImplemented = &internal.Error{Status: http.StatusNotImplemented, Mess
 // [CouchDB documentation]: https://docs.couchdb.org/en/stable/api/database/find.html
 func (db *DB) Find(ctx context.Context, query interface{}, options ...Option) *ResultSet {
 	if db.err != nil {
-		return &ResultSet{err: db.err}
+		return &ResultSet{underlying: &rows{iter: errIterator(db.err)}}
 	}
 	if finder, ok := db.driverDB.(driver.Finder); ok {
 		if err := db.startQuery(); err != nil {
-			return &ResultSet{err: err}
+			return &ResultSet{underlying: &rows{iter: errIterator(err)}}
 		}
 		rowsi, err := finder.Find(ctx, query, allOptions(options))
 		if err != nil {
 			db.endQuery()
-			return &ResultSet{err: err}
+			return &ResultSet{underlying: &rows{iter: errIterator(err)}}
 		}
 		return &ResultSet{underlying: newRows(ctx, db.endQuery, rowsi)}
 	}
-	return &ResultSet{err: findNotImplemented}
+	return &ResultSet{underlying: &rows{iter: errIterator(findNotImplemented)}}
 }
 
 // CreateIndex creates an index if it doesn't already exist. ddoc and name may

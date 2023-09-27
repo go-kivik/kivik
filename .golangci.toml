@@ -164,7 +164,7 @@ disabled = true
 
 [[linters-settings.revive.rules]]
 name = "empty-lines"
-disabled = true
+disabled = false
 
 [[linters-settings.revive.rules]]
 name = "get-return"

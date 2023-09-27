@@ -285,7 +285,6 @@ func TestAttachments_Next_resets_iterator_value(t *testing.T) {
 			t.Fatal(err)
 		}
 		gotFilenames = append(gotFilenames, att.Filename)
-
 	}
 	if d := cmp.Diff(wantFilenames, gotFilenames); d != "" {
 		t.Error(d)

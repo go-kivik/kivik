@@ -176,4 +176,4 @@ disabled = true
 
 [[linters-settings.revive.rules]]
 name = "bare-return"
-disabled = true
+disabled = false

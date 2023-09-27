@@ -45,14 +45,16 @@ var extensions = func() []string {
 
 // OpenAny attempts to open base + any supported extension. It returns the open
 // file, the matched extension, or an error.
-func OpenAny(fs filesystem.Filesystem, base string) (f filesystem.File, ext string, err error) {
-	for ext = range decoders {
+func OpenAny(fs filesystem.Filesystem, base string) (_ filesystem.File, ext string, _ error) {
+	var f filesystem.File
+	var err error
+	for ext := range decoders {
 		f, err = fs.Open(base + "." + ext)
 		if err == nil || !os.IsNotExist(err) {
-			return
+			return f, ext, err
 		}
 	}
-	return
+	return nil, "", err
 }
 
 // Decode decodes r according to ext's registered decoder, into i.

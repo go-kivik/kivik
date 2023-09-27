@@ -140,7 +140,7 @@ func TestCouchTypeOf(t *testing.T) {
 				if result != test.expected {
 					t.Errorf("Unexpected type: %d", result)
 				}
-				return
+				return ""
 			}()
 			if r != test.recovery {
 				t.Errorf("Unexpected recovery: %s", r)

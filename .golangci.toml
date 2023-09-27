@@ -172,7 +172,7 @@ disabled = true
 
 [[linters-settings.revive.rules]]
 name = "confusing-results"
-disabled = true
+disabled = false
 
 [[linters-settings.revive.rules]]
 name = "bare-return"

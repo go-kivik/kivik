@@ -145,7 +145,7 @@ func (r *Revision) MarshalJSON() ([]byte, error) {
 	return joinJSON(parts...), nil
 }
 
-func (r *Revision) stubFollows() (bool, bool) {
+func (r *Revision) stubFollows() (stub bool, follows bool) {
 	attachments, _ := r.options["attachments"].(bool)
 	if !attachments {
 		return true, false

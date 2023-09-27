@@ -8,4 +8,4 @@ _attachments:
     foo.txt:
         content_type: text/plain
         revpos: 1
-value: y
+value: "y"

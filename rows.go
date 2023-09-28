@@ -18,16 +18,9 @@ import (
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
-type rows struct {
-	*iter
-	rowsi driver.Rows
-}
-
 func newResultSet(ctx context.Context, onClose func(), rowsi driver.Rows) *ResultSet {
 	return &ResultSet{
-		rows: &rows{
-			iter:  newIterator(ctx, onClose, &rowsIterator{Rows: rowsi}, &driver.Row{}),
-			rowsi: rowsi,
-		},
+		iter:  newIterator(ctx, onClose, &rowsIterator{Rows: rowsi}, &driver.Row{}),
+		rowsi: rowsi,
 	}
 }

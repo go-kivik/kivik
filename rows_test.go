@@ -28,22 +28,22 @@ import (
 	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
-func Test_rows_Next(t *testing.T) {
+func TestResultSet_Next(t *testing.T) {
 	tests := []struct {
 		name     string
-		rows     *rows
+		rows     *ResultSet
 		expected bool
 	}{
 		{
 			name: "nothing more",
-			rows: &rows{
+			rows: &ResultSet{
 				iter: &iter{state: stateClosed},
 			},
 			expected: false,
 		},
 		{
 			name: "more",
-			rows: &rows{
+			rows: &ResultSet{
 				iter: &iter{
 					feed: &mockIterator{
 						NextFunc: func(_ interface{}) error { return nil },
@@ -63,18 +63,18 @@ func Test_rows_Next(t *testing.T) {
 	}
 }
 
-func Test_rows_Err(t *testing.T) {
+func TestResultSet_Err(t *testing.T) {
 	const expected = "foo error"
-	r := &rows{
+	r := &ResultSet{
 		iter: &iter{err: errors.New(expected)},
 	}
 	err := r.Err()
 	testy.Error(t, expected, err)
 }
 
-func Test_rows_Close(t *testing.T) {
+func TestResultSet_Close(t *testing.T) {
 	const expected = "close error"
-	r := &rows{
+	r := &ResultSet{
 		iter: &iter{
 			feed: &mockIterator{CloseFunc: func() error { return errors.New(expected) }},
 		},
@@ -95,12 +95,10 @@ func Test_rows_ScanValue(t *testing.T) {
 	tests := testy.NewTable()
 	tests.Add("success", tt{
 		rows: &ResultSet{
-			rows: &rows{
-				iter: &iter{
-					state: stateRowReady,
-					curVal: &driver.Row{
-						Value: strings.NewReader(`{"foo":123.4}`),
-					},
+			iter: &iter{
+				state: stateRowReady,
+				curVal: &driver.Row{
+					Value: strings.NewReader(`{"foo":123.4}`),
 				},
 			},
 		},
@@ -122,12 +120,10 @@ func Test_rows_ScanValue(t *testing.T) {
 	})
 	tests.Add("closed", tt{
 		rows: &ResultSet{
-			rows: &rows{
-				iter: &iter{
-					state: stateClosed,
-					curVal: &driver.Row{
-						Value: strings.NewReader(`{"foo":123.4}`),
-					},
+			iter: &iter{
+				state: stateClosed,
+				curVal: &driver.Row{
+					Value: strings.NewReader(`{"foo":123.4}`),
 				},
 			},
 		},
@@ -136,12 +132,10 @@ func Test_rows_ScanValue(t *testing.T) {
 	})
 	tests.Add("row error", tt{
 		rows: &ResultSet{
-			rows: &rows{
-				iter: &iter{
-					state: stateRowReady,
-					curVal: &driver.Row{
-						Error: errors.New("row error"),
-					},
+			iter: &iter{
+				state: stateRowReady,
+				curVal: &driver.Row{
+					Error: errors.New("row error"),
 				},
 			},
 		},
@@ -175,12 +169,10 @@ func Test_rows_ScanDoc(t *testing.T) {
 
 	tests.Add("old row", tt{
 		rows: &ResultSet{
-			rows: &rows{
-				iter: &iter{
-					state: stateRowReady,
-					curVal: &driver.Row{
-						Doc: strings.NewReader(`{"foo":123.4}`),
-					},
+			iter: &iter{
+				state: stateRowReady,
+				curVal: &driver.Row{
+					Doc: strings.NewReader(`{"foo":123.4}`),
 				},
 			},
 		},
@@ -189,12 +181,10 @@ func Test_rows_ScanDoc(t *testing.T) {
 	})
 	tests.Add("success", tt{
 		rows: &ResultSet{
-			rows: &rows{
-				iter: &iter{
-					state: stateRowReady,
-					curVal: &driver.Row{
-						Doc: strings.NewReader(`{"foo":123.4}`),
-					},
+			iter: &iter{
+				state: stateRowReady,
+				curVal: &driver.Row{
+					Doc: strings.NewReader(`{"foo":123.4}`),
 				},
 			},
 		},
@@ -216,12 +206,10 @@ func Test_rows_ScanDoc(t *testing.T) {
 	})
 	tests.Add("closed", tt{
 		rows: &ResultSet{
-			rows: &rows{
-				iter: &iter{
-					state: stateClosed,
-					curVal: &driver.Row{
-						Doc: strings.NewReader(`{"foo":123.4}`),
-					},
+			iter: &iter{
+				state: stateClosed,
+				curVal: &driver.Row{
+					Doc: strings.NewReader(`{"foo":123.4}`),
 				},
 			},
 		},
@@ -230,12 +218,10 @@ func Test_rows_ScanDoc(t *testing.T) {
 	})
 	tests.Add("nil doc", tt{
 		rows: &ResultSet{
-			&rows{
-				iter: &iter{
-					state: stateRowReady,
-					curVal: &driver.Row{
-						Doc: nil,
-					},
+			iter: &iter{
+				state: stateRowReady,
+				curVal: &driver.Row{
+					Doc: nil,
 				},
 			},
 		},
@@ -244,12 +230,10 @@ func Test_rows_ScanDoc(t *testing.T) {
 	})
 	tests.Add("row error", tt{
 		rows: &ResultSet{
-			rows: &rows{
-				iter: &iter{
-					state: stateRowReady,
-					curVal: &driver.Row{
-						Error: errors.New("row error"),
-					},
+			iter: &iter{
+				state: stateRowReady,
+				curVal: &driver.Row{
+					Error: errors.New("row error"),
 				},
 			},
 		},
@@ -282,12 +266,10 @@ func Test_rows_ScanKey(t *testing.T) {
 	tests := testy.NewTable()
 	tests.Add("success", tt{
 		rows: &ResultSet{
-			rows: &rows{
-				iter: &iter{
-					state: stateRowReady,
-					curVal: &driver.Row{
-						Key: []byte(`{"foo":123.4}`),
-					},
+			iter: &iter{
+				state: stateRowReady,
+				curVal: &driver.Row{
+					Key: []byte(`{"foo":123.4}`),
 				},
 			},
 		},
@@ -309,12 +291,10 @@ func Test_rows_ScanKey(t *testing.T) {
 	})
 	tests.Add("closed", tt{
 		rows: &ResultSet{
-			rows: &rows{
-				iter: &iter{
-					state: stateClosed,
-					curVal: &driver.Row{
-						Key: []byte(`"foo"`),
-					},
+			iter: &iter{
+				state: stateClosed,
+				curVal: &driver.Row{
+					Key: []byte(`"foo"`),
 				},
 			},
 		},
@@ -323,13 +303,11 @@ func Test_rows_ScanKey(t *testing.T) {
 	})
 	tests.Add("row error", tt{
 		rows: &ResultSet{
-			rows: &rows{
-				iter: &iter{
-					state: stateRowReady,
-					curVal: &driver.Row{
-						Key:   json.RawMessage(`"id"`),
-						Error: errors.New("row error"),
-					},
+			iter: &iter{
+				state: stateRowReady,
+				curVal: &driver.Row{
+					Key:   json.RawMessage(`"id"`),
+					Error: errors.New("row error"),
 				},
 			},
 		},
@@ -364,19 +342,17 @@ func Test_rows_Getters(t *testing.T) {
 	const totalrows = int64(3)
 	const updateseq = "asdfasdf"
 	r := &ResultSet{
-		rows: &rows{
-			iter: &iter{
-				state: stateRowReady,
-				curVal: &driver.Row{
-					ID:  id,
-					Key: key,
-				},
+		iter: &iter{
+			state: stateRowReady,
+			curVal: &driver.Row{
+				ID:  id,
+				Key: key,
 			},
-			rowsi: &mock.Rows{
-				OffsetFunc:    func() int64 { return offset },
-				TotalRowsFunc: func() int64 { return totalrows },
-				UpdateSeqFunc: func() string { return updateseq },
-			},
+		},
+		rowsi: &mock.Rows{
+			OffsetFunc:    func() int64 { return offset },
+			TotalRowsFunc: func() int64 { return totalrows },
+			UpdateSeqFunc: func() string { return updateseq },
 		},
 	}
 
@@ -433,17 +409,15 @@ func Test_rows_Getters(t *testing.T) {
 			UpdateSeqFunc: func() string { return updateseq },
 		}
 		r := &ResultSet{
-			rows: &rows{
-				iter: &iter{
-					state: stateRowReady,
-					curVal: &driver.Row{
-						ID:  id,
-						Key: key,
-					},
-					feed: &rowsIterator{Rows: rowsi},
+			iter: &iter{
+				state: stateRowReady,
+				curVal: &driver.Row{
+					ID:  id,
+					Key: key,
 				},
-				rowsi: rowsi,
+				feed: &rowsIterator{Rows: rowsi},
 			},
+			rowsi: rowsi,
 		}
 
 		if err := r.Close(); err != nil {

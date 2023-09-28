@@ -65,7 +65,8 @@ type ResultMetadata struct {
 // is otherwise wasted. In this case, if the result set is empty, as when a view
 // returns no results, an error of "no results" will be returned.
 type ResultSet struct {
-	*rows
+	*iter
+	rowsi driver.Rows
 }
 
 // Next prepares the next result value for reading. It returns true on success

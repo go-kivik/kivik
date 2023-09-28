@@ -167,7 +167,7 @@ func TestScanAllDocs(t *testing.T) {
 		err:  "nil pointer passed to ScanAllDocs",
 	})
 	tests.Add("not a slice or array", tt{
-		dest: &rows{},
+		dest: &ResultSet{},
 		err:  "dest must be a pointer to a slice or array",
 	})
 	tests.Add("0-length array", tt{

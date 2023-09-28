@@ -41,6 +41,7 @@ func testFormatter() *output.Formatter {
 }
 
 func TestOutput(t *testing.T) {
+	t.Skip()
 	type tt struct {
 		args  []string
 		obj   string

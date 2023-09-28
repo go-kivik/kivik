@@ -14,6 +14,7 @@
 package output
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -95,16 +96,19 @@ func (f *Formatter) ConfigFlags(fs *pflag.FlagSet) {
 func (f *Formatter) Output(r io.Reader) error {
 	fmter, err := f.formatter()
 	if err != nil {
-		return err
+		return fmt.Errorf("f.formatter: %w", err)
 	}
 	out, err := f.writer()
 	if err != nil {
-		return err
+		return fmt.Errorf("f.writer: %w", err)
 	}
 	if c, ok := out.(io.Closer); ok {
 		defer c.Close() // nolint:errcheck
 	}
-	return fmter.Output(out, r)
+	if err := fmter.Output(out, r); err != nil {
+		return fmt.Errorf("fmter.Output: %w", err)
+	}
+	return nil
 }
 
 func (f *Formatter) formatter() (Format, error) {

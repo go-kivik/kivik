@@ -13,6 +13,7 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
 
 	"github.com/spf13/cobra"
@@ -52,10 +53,13 @@ func (c *getAttachment) RunE(cmd *cobra.Command, _ []string) error {
 	err = c.retry(func() error {
 		var err error
 		att, err = client.DB(db).GetAttachment(cmd.Context(), docID, filename, c.opts())
-		return err
+		if err != nil {
+			return fmt.Errorf("client.DB: %w", err)
+		}
+		return nil
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("retry: %w", err)
 	}
 
 	result := &attachment{
@@ -63,7 +67,10 @@ func (c *getAttachment) RunE(cmd *cobra.Command, _ []string) error {
 		Attachment: att,
 	}
 
-	return c.fmt.Output(result)
+	if err := c.fmt.Output(result); err != nil {
+		return fmt.Errorf("fmt.Output: %w", err)
+	}
+	return nil
 }
 
 type attachment struct {

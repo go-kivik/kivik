@@ -90,7 +90,7 @@ func (db *DB) AllDocs(ctx context.Context, options ...Option) *ResultSet {
 		db.endQuery()
 		return &ResultSet{rows: &rows{iter: errIterator(err)}}
 	}
-	return &ResultSet{rows: newRows(ctx, db.endQuery, rowsi)}
+	return newRows(ctx, db.endQuery, rowsi)
 }
 
 // DesignDocs returns a list of all documents in the database.
@@ -111,7 +111,7 @@ func (db *DB) DesignDocs(ctx context.Context, options ...Option) *ResultSet {
 		db.endQuery()
 		return &ResultSet{rows: &rows{iter: errIterator(err)}}
 	}
-	return &ResultSet{rows: newRows(ctx, db.endQuery, rowsi)}
+	return newRows(ctx, db.endQuery, rowsi)
 }
 
 // LocalDocs returns a list of all documents in the database.
@@ -131,7 +131,7 @@ func (db *DB) LocalDocs(ctx context.Context, options ...Option) *ResultSet {
 		db.endQuery()
 		return &ResultSet{rows: &rows{iter: errIterator(err)}}
 	}
-	return &ResultSet{rows: newRows(ctx, db.endQuery, rowsi)}
+	return newRows(ctx, db.endQuery, rowsi)
 }
 
 // Query executes the specified view function from the specified design
@@ -162,7 +162,7 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Option) *
 		db.endQuery()
 		return &ResultSet{rows: &rows{iter: errIterator(err)}}
 	}
-	return &ResultSet{rows: newRows(ctx, db.endQuery, rowsi)}
+	return newRows(ctx, db.endQuery, rowsi)
 }
 
 // Get fetches the requested document. Any errors are deferred until the first
@@ -179,7 +179,7 @@ func (db *DB) Get(ctx context.Context, docID string, options ...Option) *ResultS
 		db.endQuery()
 		return &ResultSet{rows: &rows{iter: errIterator(err)}}
 	}
-	return &ResultSet{rows: newRows(ctx, db.endQuery, rowsi)}
+	return newRows(ctx, db.endQuery, rowsi)
 }
 
 // GetRev returns the active rev of the specified document. GetRev accepts
@@ -751,7 +751,7 @@ func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...O
 		db.endQuery()
 		return &ResultSet{rows: &rows{iter: errIterator(err)}}
 	}
-	return &ResultSet{rows: newRows(ctx, db.endQuery, rowsi)}
+	return newRows(ctx, db.endQuery, rowsi)
 }
 
 // Close cleans up any resources used by the DB. Close is safe to call
@@ -808,7 +808,7 @@ func (db *DB) RevsDiff(ctx context.Context, revMap interface{}) *ResultSet {
 			db.endQuery()
 			return &ResultSet{rows: &rows{iter: errIterator(err)}}
 		}
-		return &ResultSet{rows: newRows(ctx, db.endQuery, rowsi)}
+		return newRows(ctx, db.endQuery, rowsi)
 	}
 	return &ResultSet{rows: &rows{iter: errIterator(&internal.Error{Status: http.StatusNotImplemented, Message: "kivik: _revs_diff not supported by driver"})}}
 }

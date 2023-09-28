@@ -85,7 +85,7 @@ func Test_rows_Close(t *testing.T) {
 
 func Test_rows_ScanValue(t *testing.T) {
 	type tt struct {
-		rows     *rows
+		rows     *ResultSet
 		expected interface{}
 		state    int
 		status   int
@@ -94,11 +94,13 @@ func Test_rows_ScanValue(t *testing.T) {
 
 	tests := testy.NewTable()
 	tests.Add("success", tt{
-		rows: &rows{
-			iter: &iter{
-				state: stateRowReady,
-				curVal: &driver.Row{
-					Value: strings.NewReader(`{"foo":123.4}`),
+		rows: &ResultSet{
+			rows: &rows{
+				iter: &iter{
+					state: stateRowReady,
+					curVal: &driver.Row{
+						Value: strings.NewReader(`{"foo":123.4}`),
+					},
 				},
 			},
 		},
@@ -119,11 +121,13 @@ func Test_rows_ScanValue(t *testing.T) {
 		}
 	})
 	tests.Add("closed", tt{
-		rows: &rows{
-			iter: &iter{
-				state: stateClosed,
-				curVal: &driver.Row{
-					Value: strings.NewReader(`{"foo":123.4}`),
+		rows: &ResultSet{
+			rows: &rows{
+				iter: &iter{
+					state: stateClosed,
+					curVal: &driver.Row{
+						Value: strings.NewReader(`{"foo":123.4}`),
+					},
 				},
 			},
 		},
@@ -131,11 +135,13 @@ func Test_rows_ScanValue(t *testing.T) {
 		state:    stateClosed,
 	})
 	tests.Add("row error", tt{
-		rows: &rows{
-			iter: &iter{
-				state: stateRowReady,
-				curVal: &driver.Row{
-					Error: errors.New("row error"),
+		rows: &ResultSet{
+			rows: &rows{
+				iter: &iter{
+					state: stateRowReady,
+					curVal: &driver.Row{
+						Error: errors.New("row error"),
+					},
 				},
 			},
 		},
@@ -158,7 +164,7 @@ func Test_rows_ScanValue(t *testing.T) {
 
 func Test_rows_ScanDoc(t *testing.T) {
 	type tt struct {
-		rows     *rows
+		rows     *ResultSet
 		expected interface{}
 		state    int
 		status   int
@@ -168,11 +174,13 @@ func Test_rows_ScanDoc(t *testing.T) {
 	tests := testy.NewTable()
 
 	tests.Add("old row", tt{
-		rows: &rows{
-			iter: &iter{
-				state: stateRowReady,
-				curVal: &driver.Row{
-					Doc: strings.NewReader(`{"foo":123.4}`),
+		rows: &ResultSet{
+			rows: &rows{
+				iter: &iter{
+					state: stateRowReady,
+					curVal: &driver.Row{
+						Doc: strings.NewReader(`{"foo":123.4}`),
+					},
 				},
 			},
 		},
@@ -180,11 +188,13 @@ func Test_rows_ScanDoc(t *testing.T) {
 		expected: map[string]interface{}{"foo": 123.4},
 	})
 	tests.Add("success", tt{
-		rows: &rows{
-			iter: &iter{
-				state: stateRowReady,
-				curVal: &driver.Row{
-					Doc: strings.NewReader(`{"foo":123.4}`),
+		rows: &ResultSet{
+			rows: &rows{
+				iter: &iter{
+					state: stateRowReady,
+					curVal: &driver.Row{
+						Doc: strings.NewReader(`{"foo":123.4}`),
+					},
 				},
 			},
 		},
@@ -205,11 +215,13 @@ func Test_rows_ScanDoc(t *testing.T) {
 		}
 	})
 	tests.Add("closed", tt{
-		rows: &rows{
-			iter: &iter{
-				state: stateClosed,
-				curVal: &driver.Row{
-					Doc: strings.NewReader(`{"foo":123.4}`),
+		rows: &ResultSet{
+			rows: &rows{
+				iter: &iter{
+					state: stateClosed,
+					curVal: &driver.Row{
+						Doc: strings.NewReader(`{"foo":123.4}`),
+					},
 				},
 			},
 		},
@@ -217,11 +229,13 @@ func Test_rows_ScanDoc(t *testing.T) {
 		expected: map[string]interface{}{"foo": 123.4},
 	})
 	tests.Add("nil doc", tt{
-		rows: &rows{
-			iter: &iter{
-				state: stateRowReady,
-				curVal: &driver.Row{
-					Doc: nil,
+		rows: &ResultSet{
+			&rows{
+				iter: &iter{
+					state: stateRowReady,
+					curVal: &driver.Row{
+						Doc: nil,
+					},
 				},
 			},
 		},
@@ -229,11 +243,13 @@ func Test_rows_ScanDoc(t *testing.T) {
 		err:    "kivik: doc is nil; does the query include docs?",
 	})
 	tests.Add("row error", tt{
-		rows: &rows{
-			iter: &iter{
-				state: stateRowReady,
-				curVal: &driver.Row{
-					Error: errors.New("row error"),
+		rows: &ResultSet{
+			rows: &rows{
+				iter: &iter{
+					state: stateRowReady,
+					curVal: &driver.Row{
+						Error: errors.New("row error"),
+					},
 				},
 			},
 		},
@@ -256,7 +272,7 @@ func Test_rows_ScanDoc(t *testing.T) {
 
 func Test_rows_ScanKey(t *testing.T) {
 	type tt struct {
-		rows     *rows
+		rows     *ResultSet
 		expected interface{}
 		state    int
 		status   int
@@ -265,11 +281,13 @@ func Test_rows_ScanKey(t *testing.T) {
 
 	tests := testy.NewTable()
 	tests.Add("success", tt{
-		rows: &rows{
-			iter: &iter{
-				state: stateRowReady,
-				curVal: &driver.Row{
-					Key: []byte(`{"foo":123.4}`),
+		rows: &ResultSet{
+			rows: &rows{
+				iter: &iter{
+					state: stateRowReady,
+					curVal: &driver.Row{
+						Key: []byte(`{"foo":123.4}`),
+					},
 				},
 			},
 		},
@@ -290,11 +308,13 @@ func Test_rows_ScanKey(t *testing.T) {
 		}
 	})
 	tests.Add("closed", tt{
-		rows: &rows{
-			iter: &iter{
-				state: stateClosed,
-				curVal: &driver.Row{
-					Key: []byte(`"foo"`),
+		rows: &ResultSet{
+			rows: &rows{
+				iter: &iter{
+					state: stateClosed,
+					curVal: &driver.Row{
+						Key: []byte(`"foo"`),
+					},
 				},
 			},
 		},
@@ -302,12 +322,14 @@ func Test_rows_ScanKey(t *testing.T) {
 		expected: "foo",
 	})
 	tests.Add("row error", tt{
-		rows: &rows{
-			iter: &iter{
-				state: stateRowReady,
-				curVal: &driver.Row{
-					Key:   json.RawMessage(`"id"`),
-					Error: errors.New("row error"),
+		rows: &ResultSet{
+			rows: &rows{
+				iter: &iter{
+					state: stateRowReady,
+					curVal: &driver.Row{
+						Key:   json.RawMessage(`"id"`),
+						Error: errors.New("row error"),
+					},
 				},
 			},
 		},
@@ -465,7 +487,7 @@ func Test_rows_Metadata(t *testing.T) {
 		}
 	})
 
-	check := func(t *testing.T, r *rows) {
+	check := func(t *testing.T, r *ResultSet) {
 		t.Helper()
 		for r.Next() { //nolint:revive // Consume all rows
 		}

@@ -114,7 +114,7 @@ func TestNextResultSet(t *testing.T) {
 	})
 }
 
-func multiResultSet() *rows {
+func multiResultSet() *ResultSet {
 	rows := []interface{}{
 		&driver.Row{ID: "1", Doc: strings.NewReader(`{"foo":"bar"}`)},
 		&driver.Row{ID: "2", Doc: strings.NewReader(`{"foo":"bar"}`)},
@@ -152,7 +152,7 @@ func multiResultSet() *rows {
 
 func TestScanAllDocs(t *testing.T) {
 	type tt struct {
-		rows *rows
+		rows *ResultSet
 		dest interface{}
 		err  string
 	}
@@ -256,10 +256,7 @@ func TestScanAllDocs(t *testing.T) {
 		if tt.rows == nil {
 			tt.rows = newRows(context.Background(), nil, &mock.Rows{})
 		}
-		rs := &ResultSet{
-			rows: tt.rows,
-		}
-		err := ScanAllDocs(rs, tt.dest)
+		err := ScanAllDocs(tt.rows, tt.dest)
 		if !testy.ErrorMatches(tt.err, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}

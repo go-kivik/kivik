@@ -257,7 +257,7 @@ func TestScanAllDocs(t *testing.T) {
 			tt.rows = newRows(context.Background(), nil, &mock.Rows{})
 		}
 		rs := &ResultSet{
-			underlying: tt.rows,
+			rows: tt.rows,
 		}
 		err := ScanAllDocs(rs, tt.dest)
 		if !testy.ErrorMatches(tt.err, err) {

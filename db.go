@@ -80,58 +80,58 @@ func (db *DB) Err() error {
 // AllDocs returns a list of all documents in the database.
 func (db *DB) AllDocs(ctx context.Context, options ...Option) *ResultSet {
 	if db.err != nil {
-		return &ResultSet{underlying: &rows{iter: errIterator(db.err)}}
+		return &ResultSet{rows: &rows{iter: errIterator(db.err)}}
 	}
 	if err := db.startQuery(); err != nil {
-		return &ResultSet{underlying: &rows{iter: errIterator(err)}}
+		return &ResultSet{rows: &rows{iter: errIterator(err)}}
 	}
 	rowsi, err := db.driverDB.AllDocs(ctx, allOptions(options))
 	if err != nil {
 		db.endQuery()
-		return &ResultSet{underlying: &rows{iter: errIterator(err)}}
+		return &ResultSet{rows: &rows{iter: errIterator(err)}}
 	}
-	return &ResultSet{underlying: newRows(ctx, db.endQuery, rowsi)}
+	return &ResultSet{rows: newRows(ctx, db.endQuery, rowsi)}
 }
 
 // DesignDocs returns a list of all documents in the database.
 func (db *DB) DesignDocs(ctx context.Context, options ...Option) *ResultSet {
 	if db.err != nil {
-		return &ResultSet{underlying: &rows{iter: errIterator(db.err)}}
+		return &ResultSet{rows: &rows{iter: errIterator(db.err)}}
 	}
 	ddocer, ok := db.driverDB.(driver.DesignDocer)
 	if !ok {
-		return &ResultSet{underlying: &rows{iter: errIterator(&internal.Error{Status: http.StatusNotImplemented, Err: errors.New("kivik: design doc view not supported by driver")})}}
+		return &ResultSet{rows: &rows{iter: errIterator(&internal.Error{Status: http.StatusNotImplemented, Err: errors.New("kivik: design doc view not supported by driver")})}}
 	}
 
 	if err := db.startQuery(); err != nil {
-		return &ResultSet{underlying: &rows{iter: errIterator(err)}}
+		return &ResultSet{rows: &rows{iter: errIterator(err)}}
 	}
 	rowsi, err := ddocer.DesignDocs(ctx, allOptions(options))
 	if err != nil {
 		db.endQuery()
-		return &ResultSet{underlying: &rows{iter: errIterator(err)}}
+		return &ResultSet{rows: &rows{iter: errIterator(err)}}
 	}
-	return &ResultSet{underlying: newRows(ctx, db.endQuery, rowsi)}
+	return &ResultSet{rows: newRows(ctx, db.endQuery, rowsi)}
 }
 
 // LocalDocs returns a list of all documents in the database.
 func (db *DB) LocalDocs(ctx context.Context, options ...Option) *ResultSet {
 	if db.err != nil {
-		return &ResultSet{underlying: &rows{iter: errIterator(db.err)}}
+		return &ResultSet{rows: &rows{iter: errIterator(db.err)}}
 	}
 	ldocer, ok := db.driverDB.(driver.LocalDocer)
 	if !ok {
-		return &ResultSet{underlying: &rows{iter: errIterator(&internal.Error{Status: http.StatusNotImplemented, Err: errors.New("kivik: local doc view not supported by driver")})}}
+		return &ResultSet{rows: &rows{iter: errIterator(&internal.Error{Status: http.StatusNotImplemented, Err: errors.New("kivik: local doc view not supported by driver")})}}
 	}
 	if err := db.startQuery(); err != nil {
-		return &ResultSet{underlying: &rows{iter: errIterator(err)}}
+		return &ResultSet{rows: &rows{iter: errIterator(err)}}
 	}
 	rowsi, err := ldocer.LocalDocs(ctx, allOptions(options))
 	if err != nil {
 		db.endQuery()
-		return &ResultSet{underlying: &rows{iter: errIterator(err)}}
+		return &ResultSet{rows: &rows{iter: errIterator(err)}}
 	}
-	return &ResultSet{underlying: newRows(ctx, db.endQuery, rowsi)}
+	return &ResultSet{rows: newRows(ctx, db.endQuery, rowsi)}
 }
 
 // Query executes the specified view function from the specified design
@@ -150,36 +150,36 @@ func (db *DB) LocalDocs(ctx context.Context, options ...Option) *ResultSet {
 // [multiple queries]: https://docs.couchdb.org/en/stable/api/ddoc/views.html#sending-multiple-queries-to-a-view
 func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Option) *ResultSet {
 	if db.err != nil {
-		return &ResultSet{underlying: &rows{iter: errIterator(db.err)}}
+		return &ResultSet{rows: &rows{iter: errIterator(db.err)}}
 	}
 	if err := db.startQuery(); err != nil {
-		return &ResultSet{underlying: &rows{iter: errIterator(err)}}
+		return &ResultSet{rows: &rows{iter: errIterator(err)}}
 	}
 	ddoc = strings.TrimPrefix(ddoc, "_design/")
 	view = strings.TrimPrefix(view, "_view/")
 	rowsi, err := db.driverDB.Query(ctx, ddoc, view, allOptions(options))
 	if err != nil {
 		db.endQuery()
-		return &ResultSet{underlying: &rows{iter: errIterator(err)}}
+		return &ResultSet{rows: &rows{iter: errIterator(err)}}
 	}
-	return &ResultSet{underlying: newRows(ctx, db.endQuery, rowsi)}
+	return &ResultSet{rows: newRows(ctx, db.endQuery, rowsi)}
 }
 
 // Get fetches the requested document. Any errors are deferred until the first
 // call to [ResultSet.ScanDoc] or any other result set method.
 func (db *DB) Get(ctx context.Context, docID string, options ...Option) *ResultSet {
 	if db.err != nil {
-		return &ResultSet{underlying: &rows{iter: errIterator(db.err)}}
+		return &ResultSet{rows: &rows{iter: errIterator(db.err)}}
 	}
 	if err := db.startQuery(); err != nil {
-		return &ResultSet{underlying: &rows{iter: errIterator(err)}}
+		return &ResultSet{rows: &rows{iter: errIterator(err)}}
 	}
 	rowsi, err := db.driverDB.Get(ctx, docID, allOptions(options))
 	if err != nil {
 		db.endQuery()
-		return &ResultSet{underlying: &rows{iter: errIterator(err)}}
+		return &ResultSet{rows: &rows{iter: errIterator(err)}}
 	}
-	return &ResultSet{underlying: newRows(ctx, db.endQuery, rowsi)}
+	return &ResultSet{rows: newRows(ctx, db.endQuery, rowsi)}
 }
 
 // GetRev returns the active rev of the specified document. GetRev accepts
@@ -732,15 +732,15 @@ type BulkGetReference struct {
 // [CouchDB documentation]: http://docs.couchdb.org/en/stable/api/database/bulk-api.html#db-bulk-get
 func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...Option) *ResultSet {
 	if db.err != nil {
-		return &ResultSet{underlying: &rows{iter: errIterator(db.err)}}
+		return &ResultSet{rows: &rows{iter: errIterator(db.err)}}
 	}
 	bulkGetter, ok := db.driverDB.(driver.BulkGetter)
 	if !ok {
-		return &ResultSet{underlying: &rows{iter: errIterator(&internal.Error{Status: http.StatusNotImplemented, Message: "kivik: bulk get not supported by driver"})}}
+		return &ResultSet{rows: &rows{iter: errIterator(&internal.Error{Status: http.StatusNotImplemented, Message: "kivik: bulk get not supported by driver"})}}
 	}
 
 	if err := db.startQuery(); err != nil {
-		return &ResultSet{underlying: &rows{iter: errIterator(err)}}
+		return &ResultSet{rows: &rows{iter: errIterator(err)}}
 	}
 	refs := make([]driver.BulkGetReference, len(docs))
 	for i, ref := range docs {
@@ -749,9 +749,9 @@ func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...O
 	rowsi, err := bulkGetter.BulkGet(ctx, refs, allOptions(options))
 	if err != nil {
 		db.endQuery()
-		return &ResultSet{underlying: &rows{iter: errIterator(err)}}
+		return &ResultSet{rows: &rows{iter: errIterator(err)}}
 	}
-	return &ResultSet{underlying: newRows(ctx, db.endQuery, rowsi)}
+	return &ResultSet{rows: newRows(ctx, db.endQuery, rowsi)}
 }
 
 // Close cleans up any resources used by the DB. Close is safe to call
@@ -797,20 +797,20 @@ type Diffs map[string]RevDiff
 // [expected format]: http://docs.couchdb.org/en/stable/api/database/misc.html#db-revs-diff
 func (db *DB) RevsDiff(ctx context.Context, revMap interface{}) *ResultSet {
 	if db.err != nil {
-		return &ResultSet{underlying: &rows{iter: errIterator(db.err)}}
+		return &ResultSet{rows: &rows{iter: errIterator(db.err)}}
 	}
 	if rd, ok := db.driverDB.(driver.RevsDiffer); ok {
 		if err := db.startQuery(); err != nil {
-			return &ResultSet{underlying: &rows{iter: errIterator(err)}}
+			return &ResultSet{rows: &rows{iter: errIterator(err)}}
 		}
 		rowsi, err := rd.RevsDiff(ctx, revMap)
 		if err != nil {
 			db.endQuery()
-			return &ResultSet{underlying: &rows{iter: errIterator(err)}}
+			return &ResultSet{rows: &rows{iter: errIterator(err)}}
 		}
-		return &ResultSet{underlying: newRows(ctx, db.endQuery, rowsi)}
+		return &ResultSet{rows: newRows(ctx, db.endQuery, rowsi)}
 	}
-	return &ResultSet{underlying: &rows{iter: errIterator(&internal.Error{Status: http.StatusNotImplemented, Message: "kivik: _revs_diff not supported by driver"})}}
+	return &ResultSet{rows: &rows{iter: errIterator(&internal.Error{Status: http.StatusNotImplemented, Message: "kivik: _revs_diff not supported by driver"})}}
 }
 
 // PartitionStats contains partition statistics.

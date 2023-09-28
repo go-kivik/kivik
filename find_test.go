@@ -106,9 +106,9 @@ func TestFind(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			rs := test.db.Find(context.Background(), test.query)
 			testy.StatusError(t, test.err, test.status, rs.Err())
-			rs.underlying.cancel = nil  // Determinism
-			rs.underlying.onClose = nil // Determinism
-			if d := testy.DiffInterface(&ResultSet{underlying: test.expected}, rs); d != nil {
+			rs.rows.cancel = nil  // Determinism
+			rs.rows.onClose = nil // Determinism
+			if d := testy.DiffInterface(&ResultSet{rows: test.expected}, rs); d != nil {
 				t.Error(d)
 			}
 		})

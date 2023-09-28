@@ -13,11 +13,14 @@
 package kivik
 
 import (
+	"encoding/json"
 	"errors"
 	"io"
+	"net/http"
 	"reflect"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 // ResultMetadata contains metadata about certain queries.
@@ -72,8 +75,8 @@ type ResultSet struct {
 // When Next returns false, and there are no more results/result sets to be
 // read, the [ResultSet.Close] is called implicitly, negating the need to call
 // it explicitly.
-func (rs *ResultSet) Next() bool {
-	return rs.rows.Next()
+func (r *ResultSet) Next() bool {
+	return r.iter.Next()
 }
 
 // NextResultSet prepares the next result set for reading. It returns false if
@@ -82,30 +85,46 @@ func (rs *ResultSet) Next() bool {
 //
 // After calling NextResultSet, [ResultSet.Next] must be called to advance to
 // the first result in the resultset before scanning.
-func (rs *ResultSet) NextResultSet() bool {
-	return rs.rows.NextResultSet()
+func (r *ResultSet) NextResultSet() bool {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	if r.err != nil {
+		return false
+	}
+	if r.state == stateClosed {
+		return false
+	}
+	if r.state == stateRowReady {
+		r.err = errors.New("must call NextResultSet before Next")
+		return false
+	}
+	r.state = stateResultSetReady
+	return true
 }
 
 // Err returns the error, if any, that was encountered during iteration.
 // [ResultSet.Err] may be called after an explicit or implicit call to
 // [ResultSet.Close].
-func (rs *ResultSet) Err() error {
-	return rs.rows.Err()
+func (r *ResultSet) Err() error {
+	return r.iter.Err()
 }
 
 // Close closes the result set, preventing further iteration, and freeing
 // any resources (such as the HTTP request body) of the underlying query.
 // Close is idempotent and does not affect the result of
 // [ResultSet.Err].
-func (rs *ResultSet) Close() error {
-	return rs.rows.Close()
+func (r *ResultSet) Close() error {
+	return r.iter.Close()
 }
 
 // Metadata returns the result metadata for the current query. It must be
 // called after [ResultSet.Next] returns false. Otherwise it will return an
 // error.
-func (rs *ResultSet) Metadata() (*ResultMetadata, error) {
-	return rs.rows.Metadata()
+func (r *ResultSet) Metadata() (*ResultMetadata, error) {
+	for r.iter == nil || (r.state != stateEOQ && r.state != stateClosed) {
+		return nil, &internal.Error{Status: http.StatusBadRequest, Err: errors.New("Metadata must not be called until result set iteration is complete")}
+	}
+	return r.feed.(*rowsIterator).ResultMetadata, nil
 }
 
 // ScanValue copies the data from the result value into dest, which must be a
@@ -124,8 +143,20 @@ func (rs *ResultSet) Metadata() (*ResultMetadata, error) {
 //
 // For all other types, refer to the documentation for
 // [encoding/json.Unmarshal] for type conversion rules.
-func (rs *ResultSet) ScanValue(dest interface{}) error {
-	return rs.rows.ScanValue(dest)
+func (r *ResultSet) ScanValue(dest interface{}) (err error) {
+	runlock, err := r.makeReady(&err)
+	if err != nil {
+		return err
+	}
+	defer runlock()
+	row := r.curVal.(*driver.Row)
+	if row.Error != nil {
+		return row.Error
+	}
+	if row.Value != nil {
+		return json.NewDecoder(row.Value).Decode(dest)
+	}
+	return nil
 }
 
 // ScanDoc works the same as [ResultSet.ScanValue], but on the doc field of
@@ -134,8 +165,20 @@ func (rs *ResultSet) ScanValue(dest interface{}) error {
 //
 // If the row returned an error, it will be returned rather than
 // unmarshaling the doc, as error rows do not include docs.
-func (rs *ResultSet) ScanDoc(dest interface{}) error {
-	return rs.rows.ScanDoc(dest)
+func (r *ResultSet) ScanDoc(dest interface{}) (err error) {
+	runlock, err := r.makeReady(&err)
+	if err != nil {
+		return err
+	}
+	defer runlock()
+	row := r.curVal.(*driver.Row)
+	if err := row.Error; err != nil {
+		return err
+	}
+	if row.Doc != nil {
+		return json.NewDecoder(row.Doc).Decode(dest)
+	}
+	return &internal.Error{Status: http.StatusBadRequest, Message: "kivik: doc is nil; does the query include docs?"}
 }
 
 // ScanKey works the same as [ResultSet.ScanValue], but on the key field of the
@@ -144,34 +187,73 @@ func (rs *ResultSet) ScanDoc(dest interface{}) error {
 //
 // Unlike [ResultSet.ScanValue] and [ResultSet.ScanDoc], this may successfully
 // scan the key, and also return an error, if the row itself represents an error.
-func (rs *ResultSet) ScanKey(dest interface{}) error {
-	return rs.rows.ScanKey(dest)
+func (r *ResultSet) ScanKey(dest interface{}) (err error) {
+	runlock, err := r.makeReady(&err)
+	if err != nil {
+		return err
+	}
+	defer runlock()
+	row := r.curVal.(*driver.Row)
+	if err := json.Unmarshal(row.Key, dest); err != nil {
+		return err
+	}
+	return row.Error
 }
 
 // ID returns the ID of the most recent result.
-func (rs *ResultSet) ID() (string, error) {
-	return rs.rows.ID()
+func (r *ResultSet) ID() (string, error) {
+	runlock, err := r.makeReady(nil)
+	if err != nil {
+		return "", err
+	}
+	defer runlock()
+	row := r.curVal.(*driver.Row)
+	return row.ID, row.Error
 }
 
 // Rev returns the document revision, when known. Not all result sets (such
 // as those from views) include revision IDs, so this will return an empty
 // string in such cases.
-func (rs *ResultSet) Rev() (string, error) {
-	return rs.rows.Rev()
+func (r *ResultSet) Rev() (string, error) {
+	runlock, err := r.makeReady(nil)
+	if err != nil {
+		return "", err
+	}
+	defer runlock()
+	row := r.curVal.(*driver.Row)
+	return row.Rev, row.Error
 }
 
 // Key returns the Key of the most recent result as a raw JSON string. For
 // compound keys, [ResultSet.ScanKey] may be more convenient.
-func (rs *ResultSet) Key() (string, error) {
-	return rs.rows.Key()
+func (r *ResultSet) Key() (string, error) {
+	runlock, err := r.makeReady(nil)
+	if err != nil {
+		return "", err
+	}
+	defer runlock()
+	row := r.curVal.(*driver.Row)
+	return string(row.Key), row.Error
 }
 
 // Attachments returns an attachments iterator. At present, it is only set
 // by [DB.Get] when doing a multi-part get from CouchDB (which is the
 // default where supported). This may be extended to other cases in the
 // future.
-func (rs *ResultSet) Attachments() (*AttachmentsIterator, error) {
-	return rs.rows.Attachments()
+func (r *ResultSet) Attachments() (*AttachmentsIterator, error) {
+	runlock, err := r.makeReady(nil)
+	if err != nil {
+		return nil, err
+	}
+	defer runlock()
+	row := r.curVal.(*driver.Row)
+	if row.Error != nil {
+		return nil, row.Error
+	}
+	if row.Attachments == nil {
+		return nil, nil // TODO: should this return an error?
+	}
+	return &AttachmentsIterator{atti: row.Attachments}, nil
 }
 
 type rowsIterator struct {

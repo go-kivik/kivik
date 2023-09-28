@@ -363,18 +363,20 @@ func Test_rows_Getters(t *testing.T) {
 	const offset = int64(2)
 	const totalrows = int64(3)
 	const updateseq = "asdfasdf"
-	r := &rows{
-		iter: &iter{
-			state: stateRowReady,
-			curVal: &driver.Row{
-				ID:  id,
-				Key: key,
+	r := &ResultSet{
+		rows: &rows{
+			iter: &iter{
+				state: stateRowReady,
+				curVal: &driver.Row{
+					ID:  id,
+					Key: key,
+				},
 			},
-		},
-		rowsi: &mock.Rows{
-			OffsetFunc:    func() int64 { return offset },
-			TotalRowsFunc: func() int64 { return totalrows },
-			UpdateSeqFunc: func() string { return updateseq },
+			rowsi: &mock.Rows{
+				OffsetFunc:    func() int64 { return offset },
+				TotalRowsFunc: func() int64 { return totalrows },
+				UpdateSeqFunc: func() string { return updateseq },
+			},
 		},
 	}
 
@@ -430,16 +432,18 @@ func Test_rows_Getters(t *testing.T) {
 			TotalRowsFunc: func() int64 { return totalrows },
 			UpdateSeqFunc: func() string { return updateseq },
 		}
-		r := &rows{
-			iter: &iter{
-				state: stateRowReady,
-				curVal: &driver.Row{
-					ID:  id,
-					Key: key,
+		r := &ResultSet{
+			rows: &rows{
+				iter: &iter{
+					state: stateRowReady,
+					curVal: &driver.Row{
+						ID:  id,
+						Key: key,
+					},
+					feed: &rowsIterator{Rows: rowsi},
 				},
-				feed: &rowsIterator{Rows: rowsi},
+				rowsi: rowsi,
 			},
-			rowsi: rowsi,
 		}
 
 		if err := r.Close(); err != nil {

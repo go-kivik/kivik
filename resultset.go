@@ -13,6 +13,7 @@
 package kivik
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -67,6 +68,13 @@ type ResultMetadata struct {
 type ResultSet struct {
 	*iter
 	rowsi driver.Rows
+}
+
+func newResultSet(ctx context.Context, onClose func(), rowsi driver.Rows) *ResultSet {
+	return &ResultSet{
+		iter:  newIterator(ctx, onClose, &rowsIterator{Rows: rowsi}, &driver.Row{}),
+		rowsi: rowsi,
+	}
 }
 
 // Next prepares the next result value for reading. It returns true on success

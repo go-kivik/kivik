@@ -41,7 +41,7 @@ func (db *DB) Find(ctx context.Context, query interface{}, options ...Option) *R
 			db.endQuery()
 			return &ResultSet{rows: &rows{iter: errIterator(err)}}
 		}
-		return newRows(ctx, db.endQuery, rowsi)
+		return newResultSet(ctx, db.endQuery, rowsi)
 	}
 	return &ResultSet{rows: &rows{iter: errIterator(findNotImplemented)}}
 }

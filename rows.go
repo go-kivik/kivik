@@ -27,7 +27,7 @@ type rows struct {
 	rowsi driver.Rows
 }
 
-func newRows(ctx context.Context, onClose func(), rowsi driver.Rows) *ResultSet {
+func newResultSet(ctx context.Context, onClose func(), rowsi driver.Rows) *ResultSet {
 	return &ResultSet{
 		rows: &rows{
 			iter:  newIterator(ctx, onClose, &rowsIterator{Rows: rowsi}, &driver.Row{}),

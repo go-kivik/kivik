@@ -126,7 +126,7 @@ func multiResultSet() *ResultSet {
 	}
 	var offset int64
 
-	return newRows(context.Background(), nil, &mock.Rows{
+	return newResultSet(context.Background(), nil, &mock.Rows{
 		NextFunc: func(r *driver.Row) error {
 			if len(rows) == 0 {
 				return io.EOF
@@ -175,7 +175,7 @@ func TestScanAllDocs(t *testing.T) {
 		err:  "0-length array passed to ScanAllDocs",
 	})
 	tests.Add("No docs to read", tt{
-		rows: newRows(context.Background(), nil, &mock.Rows{}),
+		rows: newResultSet(context.Background(), nil, &mock.Rows{}),
 		dest: func() *[]string { return &[]string{} }(),
 	})
 	tests.Add("Success", func() interface{} {
@@ -183,7 +183,7 @@ func TestScanAllDocs(t *testing.T) {
 			{Doc: strings.NewReader(`{"foo":"bar"}`)},
 		}
 		return tt{
-			rows: newRows(context.Background(), nil, &mock.Rows{
+			rows: newResultSet(context.Background(), nil, &mock.Rows{
 				NextFunc: func(r *driver.Row) error {
 					if len(rows) == 0 {
 						return io.EOF
@@ -201,7 +201,7 @@ func TestScanAllDocs(t *testing.T) {
 			{Doc: strings.NewReader(`{"foo":"bar"}`)},
 		}
 		return tt{
-			rows: newRows(context.Background(), nil, &mock.Rows{
+			rows: newResultSet(context.Background(), nil, &mock.Rows{
 				NextFunc: func(r *driver.Row) error {
 					if len(rows) == 0 {
 						return io.EOF
@@ -219,7 +219,7 @@ func TestScanAllDocs(t *testing.T) {
 			{Doc: strings.NewReader(`{"foo":"bar"}`)},
 		}
 		return tt{
-			rows: newRows(context.Background(), nil, &mock.Rows{
+			rows: newResultSet(context.Background(), nil, &mock.Rows{
 				NextFunc: func(r *driver.Row) error {
 					if len(rows) == 0 {
 						return io.EOF
@@ -239,7 +239,7 @@ func TestScanAllDocs(t *testing.T) {
 			{Doc: strings.NewReader(`{"foo":"bar"}`)},
 		}
 		return tt{
-			rows: newRows(context.Background(), nil, &mock.Rows{
+			rows: newResultSet(context.Background(), nil, &mock.Rows{
 				NextFunc: func(r *driver.Row) error {
 					if len(rows) == 0 {
 						return io.EOF
@@ -254,7 +254,7 @@ func TestScanAllDocs(t *testing.T) {
 	})
 	tests.Run(t, func(t *testing.T, tt tt) {
 		if tt.rows == nil {
-			tt.rows = newRows(context.Background(), nil, &mock.Rows{})
+			tt.rows = newResultSet(context.Background(), nil, &mock.Rows{})
 		}
 		err := ScanAllDocs(tt.rows, tt.dest)
 		if !testy.ErrorMatches(tt.err, err) {
@@ -268,7 +268,7 @@ func TestScanAllDocs(t *testing.T) {
 
 func TestResultSet_Next_resets_iterator_value(t *testing.T) {
 	idx := 0
-	rows := newRows(context.Background(), nil, &mock.Rows{
+	rows := newResultSet(context.Background(), nil, &mock.Rows{
 		NextFunc: func(r *driver.Row) error {
 			idx++
 			switch idx {

@@ -115,7 +115,7 @@ func Test_rows_ScanValue(t *testing.T) {
 			},
 		}
 		return tt{
-			rows:     newRows(context.Background(), nil, rowsi),
+			rows:     newResultSet(context.Background(), nil, rowsi),
 			expected: "foo",
 			state:    stateClosed,
 		}
@@ -209,7 +209,7 @@ func Test_rows_ScanDoc(t *testing.T) {
 			},
 		}
 		return tt{
-			rows:     newRows(context.Background(), nil, rowsi),
+			rows:     newResultSet(context.Background(), nil, rowsi),
 			expected: map[string]interface{}{"foo": "bar"},
 			state:    stateClosed,
 		}
@@ -302,7 +302,7 @@ func Test_rows_ScanKey(t *testing.T) {
 			},
 		}
 		return tt{
-			rows:     newRows(context.Background(), nil, rowsi),
+			rows:     newResultSet(context.Background(), nil, rowsi),
 			expected: "foo",
 			state:    stateClosed,
 		}
@@ -400,7 +400,7 @@ func Test_rows_Getters(t *testing.T) {
 					return nil
 				},
 			}
-			r := newRows(context.Background(), nil, rowsi)
+			r := newResultSet(context.Background(), nil, rowsi)
 
 			result, _ := r.ID()
 			if result != id {
@@ -415,7 +415,7 @@ func Test_rows_Getters(t *testing.T) {
 					return nil
 				},
 			}
-			r := newRows(context.Background(), nil, rowsi)
+			r := newResultSet(context.Background(), nil, rowsi)
 
 			result, _ := r.Key()
 			if result != string(key) {
@@ -475,7 +475,7 @@ func Test_rows_Getters(t *testing.T) {
 
 func Test_rows_Metadata(t *testing.T) {
 	t.Run("iteration incomplete", func(t *testing.T) {
-		r := newRows(context.Background(), nil, &mock.Rows{
+		r := newResultSet(context.Background(), nil, &mock.Rows{
 			OffsetFunc:    func() int64 { return 123 },
 			TotalRowsFunc: func() int64 { return 234 },
 			UpdateSeqFunc: func() string { return "seq" },
@@ -501,7 +501,7 @@ func Test_rows_Metadata(t *testing.T) {
 	}
 
 	t.Run("Standard", func(t *testing.T) {
-		r := newRows(context.Background(), nil, &mock.Rows{
+		r := newResultSet(context.Background(), nil, &mock.Rows{
 			OffsetFunc:    func() int64 { return 123 },
 			TotalRowsFunc: func() int64 { return 234 },
 			UpdateSeqFunc: func() string { return "seq" },
@@ -510,14 +510,14 @@ func Test_rows_Metadata(t *testing.T) {
 	})
 	t.Run("Bookmarker", func(t *testing.T) {
 		expected := "test bookmark"
-		r := newRows(context.Background(), nil, &mock.Bookmarker{
+		r := newResultSet(context.Background(), nil, &mock.Bookmarker{
 			BookmarkFunc: func() string { return expected },
 		})
 		check(t, r)
 	})
 	t.Run("Warner", func(t *testing.T) {
 		const expected = "test warning"
-		r := newRows(context.Background(), nil, &mock.RowsWarner{
+		r := newResultSet(context.Background(), nil, &mock.RowsWarner{
 			WarningFunc: func() string { return expected },
 		})
 		check(t, r)
@@ -529,7 +529,7 @@ func Test_rows_Metadata(t *testing.T) {
 			&driver.Row{Doc: strings.NewReader(`{"foo":"bar"}`)},
 		}
 
-		r := newRows(context.Background(), nil, &mock.Rows{
+		r := newResultSet(context.Background(), nil, &mock.Rows{
 			NextFunc: func(r *driver.Row) error {
 				if len(rows) == 0 {
 					return io.EOF
@@ -561,7 +561,7 @@ func Test_rows_Metadata(t *testing.T) {
 			&driver.Row{Doc: strings.NewReader(`{"foo":"bar"}`)},
 		}
 
-		r := newRows(context.Background(), nil, &mock.Rows{
+		r := newResultSet(context.Background(), nil, &mock.Rows{
 			NextFunc: func(r *driver.Row) error {
 				if len(rows) == 0 {
 					return io.EOF
@@ -617,7 +617,7 @@ func Test_rows_Metadata(t *testing.T) {
 }
 
 func Test_bug576(t *testing.T) {
-	rows := newRows(context.Background(), nil, &mock.Rows{
+	rows := newResultSet(context.Background(), nil, &mock.Rows{
 		NextFunc: func(*driver.Row) error {
 			return io.EOF
 		},
@@ -637,7 +637,7 @@ func Test_bug576(t *testing.T) {
 
 func Test_rows_Rev(t *testing.T) {
 	const expected = "1-abc"
-	rows := newRows(context.Background(), nil, &mock.Rows{
+	rows := newResultSet(context.Background(), nil, &mock.Rows{
 		NextFunc: func(row *driver.Row) error {
 			row.Rev = expected
 			return nil
@@ -657,7 +657,7 @@ func Test_rows_single(t *testing.T) {
 	const wantRev = "1-abc"
 	const docContent = `{"_id":"foo"}`
 	wantDoc := map[string]interface{}{"_id": "foo"}
-	rows := newRows(context.Background(), nil, &mock.Rows{
+	rows := newResultSet(context.Background(), nil, &mock.Rows{
 		NextFunc: func(row *driver.Row) error {
 			row.Rev = wantRev
 			row.Doc = strings.NewReader(docContent)
@@ -690,7 +690,7 @@ func Test_rows_single(t *testing.T) {
 
 func Test_rows_Attachments(t *testing.T) {
 	const expected = "foo.txt"
-	rows := newRows(context.Background(), nil, &mock.Rows{
+	rows := newResultSet(context.Background(), nil, &mock.Rows{
 		NextFunc: func(row *driver.Row) error {
 			row.Attachments = &mock.Attachments{
 				NextFunc: func(att *driver.Attachment) error {

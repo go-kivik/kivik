@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"net/http"
 	"strconv"
 	"strings"
 	"testing"
@@ -114,7 +115,7 @@ func TestNextResultSet(t *testing.T) {
 	})
 }
 
-func multiResultSet() *rows {
+func multiResultSet() *ResultSet {
 	rows := []interface{}{
 		&driver.Row{ID: "1", Doc: strings.NewReader(`{"foo":"bar"}`)},
 		&driver.Row{ID: "2", Doc: strings.NewReader(`{"foo":"bar"}`)},
@@ -126,7 +127,7 @@ func multiResultSet() *rows {
 	}
 	var offset int64
 
-	return newRows(context.Background(), nil, &mock.Rows{
+	return newResultSet(context.Background(), nil, &mock.Rows{
 		NextFunc: func(r *driver.Row) error {
 			if len(rows) == 0 {
 				return io.EOF
@@ -152,7 +153,7 @@ func multiResultSet() *rows {
 
 func TestScanAllDocs(t *testing.T) {
 	type tt struct {
-		rows *rows
+		rows *ResultSet
 		dest interface{}
 		err  string
 	}
@@ -167,7 +168,7 @@ func TestScanAllDocs(t *testing.T) {
 		err:  "nil pointer passed to ScanAllDocs",
 	})
 	tests.Add("not a slice or array", tt{
-		dest: &rows{},
+		dest: &ResultSet{},
 		err:  "dest must be a pointer to a slice or array",
 	})
 	tests.Add("0-length array", tt{
@@ -175,7 +176,7 @@ func TestScanAllDocs(t *testing.T) {
 		err:  "0-length array passed to ScanAllDocs",
 	})
 	tests.Add("No docs to read", tt{
-		rows: newRows(context.Background(), nil, &mock.Rows{}),
+		rows: newResultSet(context.Background(), nil, &mock.Rows{}),
 		dest: func() *[]string { return &[]string{} }(),
 	})
 	tests.Add("Success", func() interface{} {
@@ -183,7 +184,7 @@ func TestScanAllDocs(t *testing.T) {
 			{Doc: strings.NewReader(`{"foo":"bar"}`)},
 		}
 		return tt{
-			rows: newRows(context.Background(), nil, &mock.Rows{
+			rows: newResultSet(context.Background(), nil, &mock.Rows{
 				NextFunc: func(r *driver.Row) error {
 					if len(rows) == 0 {
 						return io.EOF
@@ -201,7 +202,7 @@ func TestScanAllDocs(t *testing.T) {
 			{Doc: strings.NewReader(`{"foo":"bar"}`)},
 		}
 		return tt{
-			rows: newRows(context.Background(), nil, &mock.Rows{
+			rows: newResultSet(context.Background(), nil, &mock.Rows{
 				NextFunc: func(r *driver.Row) error {
 					if len(rows) == 0 {
 						return io.EOF
@@ -219,7 +220,7 @@ func TestScanAllDocs(t *testing.T) {
 			{Doc: strings.NewReader(`{"foo":"bar"}`)},
 		}
 		return tt{
-			rows: newRows(context.Background(), nil, &mock.Rows{
+			rows: newResultSet(context.Background(), nil, &mock.Rows{
 				NextFunc: func(r *driver.Row) error {
 					if len(rows) == 0 {
 						return io.EOF
@@ -239,7 +240,7 @@ func TestScanAllDocs(t *testing.T) {
 			{Doc: strings.NewReader(`{"foo":"bar"}`)},
 		}
 		return tt{
-			rows: newRows(context.Background(), nil, &mock.Rows{
+			rows: newResultSet(context.Background(), nil, &mock.Rows{
 				NextFunc: func(r *driver.Row) error {
 					if len(rows) == 0 {
 						return io.EOF
@@ -254,12 +255,9 @@ func TestScanAllDocs(t *testing.T) {
 	})
 	tests.Run(t, func(t *testing.T, tt tt) {
 		if tt.rows == nil {
-			tt.rows = newRows(context.Background(), nil, &mock.Rows{})
+			tt.rows = newResultSet(context.Background(), nil, &mock.Rows{})
 		}
-		rs := &ResultSet{
-			underlying: tt.rows,
-		}
-		err := ScanAllDocs(rs, tt.dest)
+		err := ScanAllDocs(tt.rows, tt.dest)
 		if !testy.ErrorMatches(tt.err, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}
@@ -271,7 +269,7 @@ func TestScanAllDocs(t *testing.T) {
 
 func TestResultSet_Next_resets_iterator_value(t *testing.T) {
 	idx := 0
-	rows := newRows(context.Background(), nil, &mock.Rows{
+	rows := newResultSet(context.Background(), nil, &mock.Rows{
 		NextFunc: func(r *driver.Row) error {
 			idx++
 			switch idx {
@@ -296,5 +294,318 @@ func TestResultSet_Next_resets_iterator_value(t *testing.T) {
 	}
 	if d := cmp.Diff(wantIDs, gotIDs); d != "" {
 		t.Error(d)
+	}
+}
+
+func TestResultSet_Getters(t *testing.T) {
+	const id = "foo"
+	key := []byte("[1234]")
+	const offset = int64(2)
+	const totalrows = int64(3)
+	const updateseq = "asdfasdf"
+	r := &ResultSet{
+		iter: &iter{
+			state: stateRowReady,
+			curVal: &driver.Row{
+				ID:  id,
+				Key: key,
+			},
+		},
+		rowsi: &mock.Rows{
+			OffsetFunc:    func() int64 { return offset },
+			TotalRowsFunc: func() int64 { return totalrows },
+			UpdateSeqFunc: func() string { return updateseq },
+		},
+	}
+
+	t.Run("ID", func(t *testing.T) {
+		result, _ := r.ID()
+		if id != result {
+			t.Errorf("Unexpected result: %v", result)
+		}
+	})
+
+	t.Run("Key", func(t *testing.T) {
+		result, _ := r.Key()
+		if string(key) != result {
+			t.Errorf("Unexpected result: %v", result)
+		}
+	})
+
+	t.Run("Not Ready", func(t *testing.T) {
+		t.Run("ID", func(t *testing.T) {
+			rowsi := &mock.Rows{
+				NextFunc: func(r *driver.Row) error {
+					r.ID = id
+					return nil
+				},
+			}
+			r := newResultSet(context.Background(), nil, rowsi)
+
+			result, _ := r.ID()
+			if result != id {
+				t.Errorf("Unexpected result: %v", result)
+			}
+		})
+
+		t.Run("Key", func(t *testing.T) {
+			rowsi := &mock.Rows{
+				NextFunc: func(r *driver.Row) error {
+					r.Key = key
+					return nil
+				},
+			}
+			r := newResultSet(context.Background(), nil, rowsi)
+
+			result, _ := r.Key()
+			if result != string(key) {
+				t.Errorf("Unexpected result: %v", result)
+			}
+		})
+	})
+
+	t.Run("after close", func(t *testing.T) {
+		rowsi := &mock.Rows{
+			OffsetFunc:    func() int64 { return offset },
+			TotalRowsFunc: func() int64 { return totalrows },
+			UpdateSeqFunc: func() string { return updateseq },
+		}
+		r := &ResultSet{
+			iter: &iter{
+				state: stateRowReady,
+				curVal: &driver.Row{
+					ID:  id,
+					Key: key,
+				},
+				feed: &rowsIterator{Rows: rowsi},
+			},
+			rowsi: rowsi,
+		}
+
+		if err := r.Close(); err != nil {
+			t.Fatal(err)
+		}
+
+		t.Run("ID", func(t *testing.T) {
+			result, _ := r.ID()
+			if id != result {
+				t.Errorf("Unexpected result: %v", result)
+			}
+		})
+
+		t.Run("Key", func(t *testing.T) {
+			result, _ := r.Key()
+			if string(key) != result {
+				t.Errorf("Unexpected result: %v", result)
+			}
+		})
+
+		t.Run("ScanKey", func(t *testing.T) {
+			var result json.RawMessage
+			err := r.ScanKey(&result)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if string(result) != string(key) {
+				t.Errorf("Unexpected result: %v", result)
+			}
+		})
+	})
+}
+
+func TestResultSet_Metadata(t *testing.T) {
+	t.Run("iteration incomplete", func(t *testing.T) {
+		r := newResultSet(context.Background(), nil, &mock.Rows{
+			OffsetFunc:    func() int64 { return 123 },
+			TotalRowsFunc: func() int64 { return 234 },
+			UpdateSeqFunc: func() string { return "seq" },
+		})
+		_, err := r.Metadata()
+		wantErr := "Metadata must not be called until result set iteration is complete"
+		if !testy.ErrorMatches(wantErr, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
+	})
+
+	check := func(t *testing.T, r *ResultSet) {
+		t.Helper()
+		for r.Next() { //nolint:revive // Consume all rows
+		}
+		meta, err := r.Metadata()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if d := testy.DiffInterface(testy.Snapshot(t), meta); d != nil {
+			t.Error(d)
+		}
+	}
+
+	t.Run("Standard", func(t *testing.T) {
+		r := newResultSet(context.Background(), nil, &mock.Rows{
+			OffsetFunc:    func() int64 { return 123 },
+			TotalRowsFunc: func() int64 { return 234 },
+			UpdateSeqFunc: func() string { return "seq" },
+		})
+		check(t, r)
+	})
+	t.Run("Bookmarker", func(t *testing.T) {
+		expected := "test bookmark"
+		r := newResultSet(context.Background(), nil, &mock.Bookmarker{
+			BookmarkFunc: func() string { return expected },
+		})
+		check(t, r)
+	})
+	t.Run("Warner", func(t *testing.T) {
+		const expected = "test warning"
+		r := newResultSet(context.Background(), nil, &mock.RowsWarner{
+			WarningFunc: func() string { return expected },
+		})
+		check(t, r)
+	})
+	t.Run("query in progress", func(t *testing.T) {
+		rows := []interface{}{
+			&driver.Row{Doc: strings.NewReader(`{"foo":"bar"}`)},
+			&driver.Row{Doc: strings.NewReader(`{"foo":"bar"}`)},
+			&driver.Row{Doc: strings.NewReader(`{"foo":"bar"}`)},
+		}
+
+		r := newResultSet(context.Background(), nil, &mock.Rows{
+			NextFunc: func(r *driver.Row) error {
+				if len(rows) == 0 {
+					return io.EOF
+				}
+				if dr, ok := rows[0].(*driver.Row); ok {
+					rows = rows[1:]
+					*r = *dr
+					return nil
+				}
+				return driver.EOQ
+			},
+			OffsetFunc: func() int64 {
+				return 5
+			},
+		})
+		var i int
+		for r.Next() {
+			i++
+			if i > 10 {
+				panic(i)
+			}
+		}
+		check(t, r)
+	})
+	t.Run("no query in progress", func(t *testing.T) {
+		rows := []interface{}{
+			&driver.Row{Doc: strings.NewReader(`{"foo":"bar"}`)},
+			&driver.Row{Doc: strings.NewReader(`{"foo":"bar"}`)},
+			&driver.Row{Doc: strings.NewReader(`{"foo":"bar"}`)},
+		}
+
+		r := newResultSet(context.Background(), nil, &mock.Rows{
+			NextFunc: func(r *driver.Row) error {
+				if len(rows) == 0 {
+					return io.EOF
+				}
+				if dr, ok := rows[0].(*driver.Row); ok {
+					rows = rows[1:]
+					*r = *dr
+					return nil
+				}
+				return driver.EOQ
+			},
+			OffsetFunc: func() int64 {
+				return 5
+			},
+		})
+		check(t, r)
+	})
+	t.Run("followed by other query in resultset mode", func(t *testing.T) {
+		r := multiResultSet()
+
+		_ = r.NextResultSet()
+		check(t, r)
+		ids := []string{}
+		for r.Next() {
+			id, _ := r.ID()
+			ids = append(ids, id)
+		}
+		want := []string{"x", "y"}
+		if d := testy.DiffInterface(want, ids); d != nil {
+			t.Error(d)
+		}
+		t.Run("second query", func(t *testing.T) {
+			check(t, r)
+		})
+	})
+	t.Run("followed by other query in row mode", func(t *testing.T) {
+		r := multiResultSet()
+
+		check(t, r)
+		ids := []string{}
+		for r.Next() {
+			id, _ := r.ID()
+			ids = append(ids, id)
+		}
+		want := []string{}
+		if d := testy.DiffInterface(want, ids); d != nil {
+			t.Error(d)
+		}
+		t.Run("second query", func(t *testing.T) {
+			check(t, r)
+		})
+	})
+}
+
+func Test_bug576(t *testing.T) {
+	rows := newResultSet(context.Background(), nil, &mock.Rows{
+		NextFunc: func(*driver.Row) error {
+			return io.EOF
+		},
+	})
+
+	var result interface{}
+	err := rows.ScanDoc(&result)
+	const wantErr = "no results"
+	wantStatus := http.StatusNotFound
+	if !testy.ErrorMatches(wantErr, err) {
+		t.Errorf("unexpected error: %s", err)
+	}
+	if status := HTTPStatus(err); status != wantStatus {
+		t.Errorf("Unexpected error status: %v", status)
+	}
+}
+
+func TestResultSet_single(t *testing.T) {
+	const wantRev = "1-abc"
+	const docContent = `{"_id":"foo"}`
+	wantDoc := map[string]interface{}{"_id": "foo"}
+	rows := newResultSet(context.Background(), nil, &mock.Rows{
+		NextFunc: func(row *driver.Row) error {
+			row.Rev = wantRev
+			row.Doc = strings.NewReader(docContent)
+			return nil
+		},
+	})
+
+	rev, err := rows.Rev()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rev != wantRev {
+		t.Errorf("Unexpected rev: %s", rev)
+	}
+	var doc map[string]interface{}
+	if err := rows.ScanDoc(&doc); err != nil {
+		t.Fatal(err)
+	}
+	if d := cmp.Diff(wantDoc, doc); d != "" {
+		t.Error(d)
+	}
+	rev2, err := rows.Rev()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rev2 != wantRev {
+		t.Errorf("Unexpected rev on second read: %s", rev2)
 	}
 }

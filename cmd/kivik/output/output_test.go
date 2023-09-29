@@ -17,6 +17,8 @@ import (
 	"io"
 	"strings"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func Test_ensurenewlineEnding(t *testing.T) {
@@ -40,6 +42,33 @@ func Test_ensurenewlineEnding(t *testing.T) {
 		}
 		if buf.String() != "asdf\n" {
 			t.Errorf("Unexpected output: %q", buf.String())
+		}
+	})
+}
+
+func TestJSONReader(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		in := map[string]interface{}{
+			"foo": "bar",
+		}
+		r := JSONReader(in)
+		got, err := io.ReadAll(r)
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := `{"foo":"bar"}
+`
+		if d := cmp.Diff(want, string(got)); d != "" {
+			t.Error(d)
+		}
+	})
+	t.Run("error", func(t *testing.T) {
+		in := make(chan int)
+		r := JSONReader(in)
+		_, err := io.ReadAll(r)
+		want := "json: unsupported type: chan int"
+		if err == nil || err.Error() != want {
+			t.Errorf("Unexpected error: %s", err)
 		}
 	})
 }

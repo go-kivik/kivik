@@ -15,17 +15,37 @@ package output
 import (
 	"encoding/json"
 	"io"
+	"sync"
 	"text/template"
 )
 
+// delayedJSONReader waits until the first call to Read to call json.Marshal.
+// This saves calling json.Marshal if the reader is never read, and also
+// prevents the consumption of the input, in cases like an attachment, which
+// indirectly marshals an io.Reader.
+type delayedJSONReader struct {
+	mu sync.Mutex
+	r  io.Reader
+	i  interface{}
+}
+
+func (d *delayedJSONReader) Read(p []byte) (int, error) {
+	d.mu.Lock()
+	if d.r == nil {
+		r, w := io.Pipe()
+		go func() {
+			err := json.NewEncoder(w).Encode(d.i)
+			_ = w.CloseWithError(err)
+		}()
+		d.r = r
+	}
+	d.mu.Unlock()
+	return d.r.Read(p)
+}
+
 // JSONReader marshals i as JSON.
 func JSONReader(i interface{}) io.Reader {
-	r, w := io.Pipe()
-	go func() {
-		err := json.NewEncoder(w).Encode(i)
-		_ = w.CloseWithError(err)
-	}()
-	return r
+	return &delayedJSONReader{i: i}
 }
 
 // FriendlyOutput produces friendly output.

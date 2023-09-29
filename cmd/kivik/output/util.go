@@ -14,6 +14,7 @@ package output
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"text/template"
 )
@@ -23,6 +24,9 @@ func JSONReader(i interface{}) io.Reader {
 	r, w := io.Pipe()
 	go func() {
 		err := json.NewEncoder(w).Encode(i)
+		if err != nil {
+			err = fmt.Errorf("JSONReader: %w", err)
+		}
 		_ = w.CloseWithError(err)
 	}()
 	return r

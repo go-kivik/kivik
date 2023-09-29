@@ -90,8 +90,11 @@ func (a *attachment) Read(p []byte) (int, error) {
 	n, err := a.Reader.Read(p)
 	if err == io.EOF {
 		if err := a.Content.Close(); err != nil {
-			return n, err
+			return n, fmt.Errorf("attachment.Read [EOF]: %w", err)
 		}
+	}
+	if err != nil {
+		err = fmt.Errorf("attachment.Read: %w", err)
 	}
 	return n, err
 }

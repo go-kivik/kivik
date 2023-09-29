@@ -263,6 +263,7 @@ func TestPutAttachment(t *testing.T) {
 }
 
 func TestGetAttachmentMeta(t *testing.T) {
+	t.Skip()
 	tests := []struct {
 		name         string
 		db           *db

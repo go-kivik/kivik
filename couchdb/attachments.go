@@ -15,7 +15,10 @@ package couchdb
 import (
 	"context"
 	"errors"
+	"fmt"
+	"io"
 	"net/http"
+	"runtime/debug"
 
 	"github.com/go-kivik/kivik/v4/couchdb/chttp"
 	"github.com/go-kivik/kivik/v4/driver"
@@ -95,7 +98,7 @@ func (d *db) fetchAttachment(ctx context.Context, method, docID, filename string
 	}
 	resp, err := d.Client.DoReq(ctx, method, d.path(chttp.EncodeDocID(docID)+"/"+filename), chttpOpts)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("couchdb.fetchAttachment: %w", err)
 	}
 	return resp, chttp.ResponseError(resp)
 }
@@ -114,8 +117,27 @@ func decodeAttachment(resp *http.Response) (*driver.Attachment, error) {
 		ContentType: cType,
 		Digest:      digest,
 		Size:        resp.ContentLength,
-		Content:     resp.Body,
+		Content:     rcWrapper{resp.Body},
 	}, nil
+}
+
+type rcWrapper struct{ io.ReadCloser }
+
+func (w rcWrapper) Read(p []byte) (int, error) {
+	n, err := w.ReadCloser.Read(p)
+	if err != nil && err != io.EOF {
+		stack := debug.Stack()
+		err = fmt.Errorf("rcWrapper.Read: %w\n%s", err, string(stack))
+	}
+	return n, err
+}
+
+func (w rcWrapper) Close() error {
+	err := w.ReadCloser.Close()
+	if err != nil {
+		err = fmt.Errorf("rcWrapper.Close: %w", err)
+	}
+	return err
 }
 
 func getContentType(resp *http.Response) (string, error) {

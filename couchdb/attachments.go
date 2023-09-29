@@ -19,6 +19,7 @@ import (
 	"io"
 	"net/http"
 	"runtime/debug"
+	"sync"
 
 	"github.com/go-kivik/kivik/v4/couchdb/chttp"
 	"github.com/go-kivik/kivik/v4/driver"
@@ -117,22 +118,31 @@ func decodeAttachment(resp *http.Response) (*driver.Attachment, error) {
 		ContentType: cType,
 		Digest:      digest,
 		Size:        resp.ContentLength,
-		Content:     rcWrapper{resp.Body},
+		Content:     &rcWrapper{ReadCloser: resp.Body},
 	}, nil
 }
 
-type rcWrapper struct{ io.ReadCloser }
+type rcWrapper struct {
+	io.ReadCloser
+	mu         sync.Mutex
+	closeStack string
+}
 
-func (w rcWrapper) Read(p []byte) (int, error) {
+func (w *rcWrapper) Read(p []byte) (int, error) {
 	n, err := w.ReadCloser.Read(p)
 	if err != nil && err != io.EOF {
 		stack := debug.Stack()
-		err = fmt.Errorf("rcWrapper.Read: %w\n%s", err, string(stack))
+		w.mu.Lock()
+		err = fmt.Errorf("rcWrapper.Read: %w\n%s\n\nClosed: %s", err, string(stack), w.closeStack)
+		w.mu.Unlock()
 	}
 	return n, err
 }
 
-func (w rcWrapper) Close() error {
+func (w *rcWrapper) Close() error {
+	w.mu.Lock()
+	w.closeStack = string(debug.Stack())
+	w.mu.Unlock()
 	err := w.ReadCloser.Close()
 	if err != nil {
 		err = fmt.Errorf("rcWrapper.Close: %w", err)

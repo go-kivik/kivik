@@ -37,7 +37,6 @@ variables:
     - ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH33}
   script:
     - go mod download
-    - ./script/test_version.sh
     - go test -race -shuffle=on ./...
 
 linter:

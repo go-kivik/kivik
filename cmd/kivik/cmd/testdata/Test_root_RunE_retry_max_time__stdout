@@ -1,2 +1,0 @@
-Warning: Transient problem: Head "http://localhost:5984/_up": dial tcp [::1]:5984: connect: connection refused. Will retry in X.XXs. 99 retries left.
-Warning: Transient problem: Head "http://localhost:5984/_up": dial tcp [::1]:5984: connect: connection refused. Will retry in X.XXs. 98 retries left.

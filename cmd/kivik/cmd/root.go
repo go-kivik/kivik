@@ -125,9 +125,8 @@ func rootCmd(lg log.Logger) *root {
 	r.cmd = &cobra.Command{
 		Use:               "kivik",
 		Short:             "kivik facilitates controlling CouchDB instances",
-		Long:              `This tool makes it easier to administrate and interact with CouchDB's HTTP API`,
+		Long:              `Kivik makes it easier to administrate and interact with CouchDB's HTTP API`,
 		PersistentPreRunE: r.init,
-		RunE:              r.RunE,
 	}
 	r.conf = config.New(func() {
 		r.cmd.SilenceUsage = true
@@ -269,19 +268,6 @@ func (r *root) client() (*kivik.Client, error) {
 		return nil, err
 	}
 	return cx.KivikClient(r.parsedConnectTimeout, r.parsedRequestTimeout)
-}
-
-func (r *root) RunE(*cobra.Command, []string) error {
-	if _, err := r.client(); err != nil {
-		return err
-	}
-	cx, err := r.conf.DSN()
-	if err != nil {
-		return err
-	}
-	r.log.Debugf("DSN: %s from %q", cx, r.conf.CurrentContext)
-
-	return nil
 }
 
 func (r *root) retry(fn func() error) error {

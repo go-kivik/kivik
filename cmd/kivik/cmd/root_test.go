@@ -27,6 +27,7 @@ import (
 
 	"gitlab.com/flimzy/testy"
 
+	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/cmd/kivik/errors"
 	"github.com/go-kivik/kivik/v4/cmd/kivik/log"
 )
@@ -265,6 +266,18 @@ var standardReplacements = []testy.Replacement{
 	{
 		Regexp:      regexp.MustCompile(`: (dial.*i/o timeout|context deadline exceeded) \(Client.Timeout`),
 		Replacement: ": ... (Client.Timeout)",
+	},
+	{
+		Regexp:      regexp.MustCompile(`User-Agent: Kivik/` + kivik.Version),
+		Replacement: "User-Agent: Kivik/X.Y.Z",
+	},
+	{
+		Regexp:      regexp.MustCompile(`kivik version ` + kivik.Version),
+		Replacement: "kivik version X.Y.Z",
+	},
+	{
+		Regexp:      regexp.MustCompile(`"version": "` + kivik.Version),
+		Replacement: `"version": "X.Y.Z`,
 	},
 }
 

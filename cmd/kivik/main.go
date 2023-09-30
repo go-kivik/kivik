@@ -15,10 +15,14 @@ package main
 
 import (
 	"context"
+	"os/signal"
+	"syscall"
 
 	"github.com/go-kivik/kivik/v4/cmd/kivik/cmd"
 )
 
 func main() {
-	cmd.Execute(context.TODO())
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
+	cmd.Execute(ctx)
 }

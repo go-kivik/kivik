@@ -99,7 +99,9 @@ func TestAttachmentMarshalJSON(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, test tst) {
 		result, err := json.Marshal(test.att)
-		testy.Error(t, test.err, err)
+		if !testy.ErrorMatches(test.err, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
 		if d := testy.DiffJSON([]byte(test.expected), result); d != nil {
 			t.Error(d)
 		}
@@ -142,7 +144,9 @@ func TestAttachmentUnmarshalJSON(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			result := new(Attachment)
 			err := json.Unmarshal([]byte(test.input), result)
-			testy.Error(t, test.err, err)
+			if !testy.ErrorMatches(test.err, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			var body []byte
 			content := result.Content
 			t.Cleanup(func() {
@@ -196,7 +200,9 @@ func TestAttachmentsUnmarshalJSON(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			var att Attachments
 			err := json.Unmarshal([]byte(test.input), &att)
-			testy.Error(t, test.err, err)
+			if !testy.ErrorMatches(test.err, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			for _, v := range att {
 				_ = v.Content.Close()
 				v.Content = nil

@@ -69,7 +69,9 @@ func TestChangesErr(t *testing.T) {
 		iter: &iter{err: errors.New(expected)},
 	}
 	err := c.Err()
-	testy.Error(t, expected, err)
+	if !testy.ErrorMatches(expected, err) {
+		t.Errorf("Unexpected error: %s", err)
+	}
 }
 
 func TestChangesClose(t *testing.T) {
@@ -80,7 +82,9 @@ func TestChangesClose(t *testing.T) {
 		},
 	}
 	err := c.Close()
-	testy.Error(t, expected, err)
+	if !testy.ErrorMatches(expected, err) {
+		t.Errorf("Unexpected error: %s", err)
+	}
 }
 
 func TestChangesIteratorNext(t *testing.T) {
@@ -92,7 +96,9 @@ func TestChangesIteratorNext(t *testing.T) {
 	}
 	var i driver.Change
 	err := c.Next(&i)
-	testy.Error(t, expected, err)
+	if !testy.ErrorMatches(expected, err) {
+		t.Errorf("Unexpected error: %s", err)
+	}
 }
 
 func TestChangesIteratorNew(t *testing.T) {

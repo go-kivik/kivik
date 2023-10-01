@@ -8,7 +8,6 @@ require (
 	github.com/gopherjs/gopherjs v1.17.2
 	github.com/gopherjs/jsbuiltin v0.0.0-20180426082241-50091555e127
 	github.com/icza/dyno v0.0.0-20230330125955-09f820a8d9c0
-	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/pflag v1.0.5
 	gitlab.com/flimzy/testy v0.12.6
@@ -22,5 +21,6 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 )

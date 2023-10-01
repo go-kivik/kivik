@@ -17,8 +17,6 @@ import (
 	"fmt"
 	"testing"
 
-	pkgerrs "github.com/pkg/errors"
-
 	"github.com/go-kivik/kivik/v4/internal"
 )
 
@@ -44,19 +42,19 @@ func TestHTTPStatus(t *testing.T) {
 			Expected: 400,
 		},
 		{
-			Name:     "buried pkg/errors HTTPStatus",
-			Err:      pkgerrs.Wrap(&internal.Error{Status: 400, Err: errors.New("bad request")}, "foo"),
+			Name:     "wrapped HTTPStatus",
+			Err:      fmt.Errorf("foo: %w", &internal.Error{Status: 400, Err: errors.New("bad request")}),
 			Expected: 400,
 		},
 		{
 			Name: "deeply buried",
 			Err: func() error {
 				err := error(&internal.Error{Status: 400, Err: errors.New("bad request")})
-				err = pkgerrs.Wrap(err, "foo")
+				err = fmt.Errorf("foo:%w", err)
 				err = fmt.Errorf("bar: %w", err)
-				err = pkgerrs.Wrap(err, "foo")
+				err = fmt.Errorf("foo:%w", err)
 				err = fmt.Errorf("bar: %w", err)
-				err = pkgerrs.Wrap(err, "foo")
+				err = fmt.Errorf("foo:%w", err)
 				err = fmt.Errorf("bar: %w", err)
 				return err
 			}(),

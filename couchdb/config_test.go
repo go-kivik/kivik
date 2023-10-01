@@ -15,12 +15,13 @@ package couchdb
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
 	"testing"
 
-	"github.com/pkg/errors"
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4/driver"
@@ -187,7 +188,7 @@ func TestSetConfigValue(t *testing.T) {
 				return nil, err
 			}
 			if val != "baz" {
-				return nil, errors.Errorf("Unexpected value: %s", val)
+				return nil, fmt.Errorf("Unexpected value: %s", val)
 			}
 
 			return &http.Response{

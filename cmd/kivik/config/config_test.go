@@ -59,7 +59,12 @@ dsn: https://admin:abc123@localhost:5984/somedb
 	tests.Run(t, func(t *testing.T, tt tt) {
 		cx := &Context{}
 		err := yaml.Unmarshal([]byte(tt.input), cx)
-		testy.Error(t, tt.err, err)
+		if !testy.ErrorMatches(tt.err, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
+		if err != nil {
+			return
+		}
 		if d := testy.DiffInterface(testy.Snapshot(t), cx); d != nil {
 			t.Error(d)
 		}
@@ -110,7 +115,12 @@ func TestConfig_Read(t *testing.T) {
 		l := newTestLogger()
 		cf := New(nil)
 		err := cf.Read(tt.filename, l)
-		testy.Error(t, tt.err, err)
+		if !testy.ErrorMatches(tt.err, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
+		if err != nil {
+			return
+		}
 		if d := testy.DiffInterface(testy.Snapshot(t), cf); d != nil {
 			t.Error(d)
 		}
@@ -175,7 +185,9 @@ func TestConfig_DSN(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, tt tt) {
 		got, err := tt.cf.DSN()
-		testy.Error(t, tt.err, err)
+		if !testy.ErrorMatches(tt.err, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
 		if got != tt.want {
 			t.Errorf("Unexpected result: %s", got)
 		}
@@ -212,7 +224,12 @@ func TestConfigArgs(t *testing.T) {
 		}
 		cmd := &cobra.Command{}
 		err := tt.c.Args(cmd, tt.args)
-		testy.Error(t, tt.err, err)
+		if !testy.ErrorMatches(tt.err, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
+		if err != nil {
+			return
+		}
 		if d := testy.DiffInterface(testy.Snapshot(t), c); d != nil {
 			t.Error(d)
 		}
@@ -303,7 +320,9 @@ func TestConfig_SetURL(t *testing.T) {
 		if cwd != "" {
 			_ = os.Chdir(cwd)
 		}
-		testy.Error(t, tt.err, err)
+		if !testy.ErrorMatches(tt.err, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
 		tl.Check(t)
 		tt.cf.log = nil
 		if d := testy.DiffInterface(testy.Snapshot(t), tt.cf); d != nil {

@@ -400,7 +400,9 @@ func TestDecodeBulkResult(t *testing.T) {
 	tests.Run(t, func(t *testing.T, test tst) {
 		var result bulkResult
 		err := json.Unmarshal([]byte(test.input), &result)
-		testy.Error(t, test.err, err)
+		if !testy.ErrorMatches(test.err, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
 		if d := testy.DiffInterface(test.expected, result); d != nil {
 			t.Error(d)
 		}

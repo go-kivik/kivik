@@ -31,7 +31,9 @@ func TestCancelableReadCloser(t *testing.T) {
 			io.NopCloser(strings.NewReader("foo")),
 		)
 		result, err := io.ReadAll(rc)
-		testy.Error(t, "", err)
+		if !testy.ErrorMatches("", err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
 		if string(result) != "foo" {
 			t.Errorf("Unexpected result: %s", string(result))
 		}
@@ -45,7 +47,9 @@ func TestCancelableReadCloser(t *testing.T) {
 			io.NopCloser(strings.NewReader("foo")),
 		)
 		result, err := io.ReadAll(rc)
-		testy.Error(t, "context canceled", err)
+		if !testy.ErrorMatches("context canceled", err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
 		if string(result) != "" {
 			t.Errorf("Unexpected result: %s", string(result))
 		}
@@ -63,10 +67,9 @@ func TestCancelableReadCloser(t *testing.T) {
 			ctx,
 			io.NopCloser(r),
 		)
-		result, err := io.ReadAll(rc)
-		testy.Error(t, "context deadline exceeded", err)
-		if string(result) != "" {
-			t.Errorf("Unexpected result: %s", string(result))
+		_, err := io.ReadAll(rc)
+		if !testy.ErrorMatches("context deadline exceeded", err) {
+			t.Errorf("Unexpected error: %s", err)
 		}
 	})
 	t.Run("read error, not canceled", func(t *testing.T) {
@@ -75,10 +78,9 @@ func TestCancelableReadCloser(t *testing.T) {
 			context.Background(),
 			io.NopCloser(testy.ErrorReader("foo", errors.New("read err"))),
 		)
-		result, err := io.ReadAll(rc)
-		testy.Error(t, "read err", err)
-		if string(result) != "" {
-			t.Errorf("Unexpected result: %s", string(result))
+		_, err := io.ReadAll(rc)
+		if !testy.ErrorMatches("read err", err) {
+			t.Errorf("Unexpected error: %s", err)
 		}
 	})
 	t.Run("closed early", func(t *testing.T) {
@@ -89,7 +91,9 @@ func TestCancelableReadCloser(t *testing.T) {
 		)
 		_ = rc.Close()
 		result, err := io.ReadAll(rc)
-		testy.Error(t, "iterator closed", err)
+		if !testy.ErrorMatches("iterator closed", err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
 		if string(result) != "" {
 			t.Errorf("Unexpected result: %s", string(result))
 		}

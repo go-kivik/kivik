@@ -70,7 +70,9 @@ func TestStateTime(t *testing.T) {
 			t.Run(test.Name, func(t *testing.T) {
 				var result replicationStateTime
 				err := json.Unmarshal([]byte(test.Input), &result)
-				testy.Error(t, test.Error, err)
+				if !testy.ErrorMatches(test.Error, err) {
+					t.Errorf("Unexpected error: %s", err)
+				}
 				if r := time.Time(result).Format("2006-01-02 15:04:05 -0700"); r != test.Expected {
 					t.Errorf("Result\nExpected: %s\n  Actual: %s\n", test.Expected, r)
 				}
@@ -128,7 +130,12 @@ func TestReplicationErrorUnmarshal(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			repErr := new(replicationError)
 			err := repErr.UnmarshalJSON([]byte(test.input))
-			testy.Error(t, test.err, err)
+			if !testy.ErrorMatches(test.err, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
+			if err != nil {
+				return
+			}
 			if d := testy.DiffInterface(test.expected, repErr); d != nil {
 				t.Error(d)
 			}

@@ -35,7 +35,9 @@ func TestCloseDB(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			err := c.DB("foo").Close()
-			testy.Error(t, "foo err", err)
+			if !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 		err: "",
 	})
@@ -46,7 +48,9 @@ func TestCloseDB(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			err := c.DB("foo").Close()
-			testy.Error(t, "call to DB.Close() was not expected, all expectations already fulfilled", err)
+			if !testy.ErrorMatches("call to DB.Close() was not expected, all expectations already fulfilled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("wrong db", mockTest{
@@ -76,7 +80,9 @@ func TestCloseDB(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			err := c.DB("foo").Close()
-			testy.Error(t, "custom error", err)
+			if !testy.ErrorMatches("custom error", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Run(t, testMock)
@@ -134,7 +140,9 @@ func TestAllDocs(t *testing.T) {
 				// skip all rows
 			}
 			metadata, err := rows.Metadata()
-			testy.Error(t, "", err)
+			if !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			if metadata.Offset != 123 {
 				t.Errorf("Unexpected offset: %d", metadata.Offset)
 			}
@@ -153,7 +161,9 @@ func TestAllDocs(t *testing.T) {
 				// skip all rows
 			}
 			metadata, err := rows.Metadata()
-			testy.Error(t, "", err)
+			if !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			if metadata.TotalRows != 123 {
 				t.Errorf("Unexpected total rows: %d", metadata.TotalRows)
 			}
@@ -172,7 +182,9 @@ func TestAllDocs(t *testing.T) {
 				// skip all rows
 			}
 			metadata, err := rows.Metadata()
-			testy.Error(t, "", err)
+			if !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			if o := metadata.UpdateSeq; o != "1-xxx" {
 				t.Errorf("Unexpected update seq: %s", metadata.UpdateSeq)
 			}
@@ -191,7 +203,9 @@ func TestAllDocs(t *testing.T) {
 				// skip all rows
 			}
 			metadata, err := rows.Metadata()
-			testy.Error(t, "", err)
+			if !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			if o := metadata.Warning; o != "Caution!" {
 				t.Errorf("Unexpected warning seq: %s", metadata.Warning)
 			}
@@ -514,7 +528,9 @@ func TestCreateIndex(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			err := c.DB("foo").CreateIndex(context.TODO(), "foo", "bar", 123)
-			testy.Error(t, "foo err", err)
+			if !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("unmatched index", mockTest{
@@ -558,7 +574,9 @@ func TestCreateIndex(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			err := c.DB("foo").CreateIndex(context.TODO(), "foo", "bar", "moo")
-			testy.Error(t, "", err)
+			if !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("delay", mockTest{
@@ -569,7 +587,9 @@ func TestCreateIndex(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			err := c.DB("foo").CreateIndex(newCanceledContext(), "foo", "bar", "moo")
-			testy.Error(t, "context canceled", err)
+			if !testy.ErrorMatches("context canceled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("wrong db", mockTest{
@@ -602,7 +622,9 @@ func TestGetIndexes(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").GetIndexes(context.TODO())
-			testy.Error(t, "foo err", err)
+			if !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("indexes", mockTest{
@@ -616,7 +638,9 @@ func TestGetIndexes(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			indexes, err := c.DB("foo").GetIndexes(context.TODO())
-			testy.Error(t, "", err)
+			if !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			expected := []kivik.Index{
 				{Name: "foo"},
 				{Name: "bar"},
@@ -633,7 +657,9 @@ func TestGetIndexes(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").GetIndexes(context.TODO())
-			testy.Error(t, "call to DB.GetIndexes() was not expected, all expectations already fulfilled", err)
+			if !testy.ErrorMatches("call to DB.GetIndexes() was not expected, all expectations already fulfilled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("delay", mockTest{
@@ -644,7 +670,9 @@ func TestGetIndexes(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").GetIndexes(newCanceledContext())
-			testy.Error(t, "context canceled", err)
+			if !testy.ErrorMatches("context canceled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("wrong db", mockTest{
@@ -677,7 +705,9 @@ func TestDeleteIndex(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			err := c.DB("foo").DeleteIndex(context.TODO(), "foo", "bar")
-			testy.Error(t, "foo err", err)
+			if !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("ddoc", mockTest{
@@ -710,7 +740,9 @@ func TestDeleteIndex(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			err := c.DB("foo").DeleteIndex(newCanceledContext(), "foo", "bar")
-			testy.Error(t, "context canceled", err)
+			if !testy.ErrorMatches("context canceled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("wrong db", mockTest{
@@ -743,7 +775,9 @@ func TestExplain(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").Explain(context.TODO(), "foo")
-			testy.Error(t, "foo err", err)
+			if !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("unexpected", mockTest{
@@ -753,7 +787,9 @@ func TestExplain(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").Explain(context.TODO(), "foo")
-			testy.Error(t, "call to DB.Explain() was not expected, all expectations already fulfilled", err)
+			if !testy.ErrorMatches("call to DB.Explain() was not expected, all expectations already fulfilled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("query", mockTest{
@@ -764,7 +800,9 @@ func TestExplain(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").Explain(context.TODO(), map[string]interface{}{"foo": "bar"})
-			testy.Error(t, "", err)
+			if !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("plan", mockTest{
@@ -775,7 +813,9 @@ func TestExplain(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			plan, err := c.DB("foo").Explain(context.TODO(), map[string]interface{}{"foo": "bar"})
-			testy.Error(t, "", err)
+			if !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			expected := &kivik.QueryPlan{DBName: "foo"}
 			if d := testy.DiffInterface(expected, plan); d != nil {
 				t.Error(d)
@@ -790,7 +830,9 @@ func TestExplain(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").Explain(newCanceledContext(), 123)
-			testy.Error(t, "context canceled", err)
+			if !testy.ErrorMatches("context canceled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("wrong db", mockTest{
@@ -823,7 +865,9 @@ func TestCreateDoc(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, _, err := c.DB("foo").CreateDoc(context.TODO(), "foo")
-			testy.Error(t, "foo err", err)
+			if !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("return", func() interface{} {
@@ -836,7 +880,9 @@ func TestCreateDoc(t *testing.T) {
 			},
 			test: func(t *testing.T, c *kivik.Client) {
 				i, r, err := c.DB("foo").CreateDoc(context.TODO(), "foo")
-				testy.Error(t, "", err)
+				if !testy.ErrorMatches("", err) {
+					t.Errorf("Unexpected error: %s", err)
+				}
 				if i != docID || r != rev {
 					t.Errorf("Unexpected docID/Rev: %s/%s", i, r)
 				}
@@ -873,7 +919,9 @@ func TestCreateDoc(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, _, err := c.DB("foo").CreateDoc(newCanceledContext(), 123)
-			testy.Error(t, "context canceled", err)
+			if !testy.ErrorMatches("context canceled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("wrong db", mockTest{
@@ -906,7 +954,9 @@ func TestCompact(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			err := c.DB("foo").Compact(context.TODO())
-			testy.Error(t, "foo err", err)
+			if !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("delay", mockTest{
@@ -917,7 +967,9 @@ func TestCompact(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			err := c.DB("foo").Compact(newCanceledContext())
-			testy.Error(t, "context canceled", err)
+			if !testy.ErrorMatches("context canceled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("unexpected", mockTest{
@@ -927,7 +979,9 @@ func TestCompact(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			err := c.DB("foo").Compact(context.TODO())
-			testy.Error(t, "call to DB.Compact() was not expected, all expectations already fulfilled", err)
+			if !testy.ErrorMatches("call to DB.Compact() was not expected, all expectations already fulfilled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Run(t, testMock)
@@ -943,7 +997,9 @@ func TestCompactView(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			err := c.DB("foo").CompactView(context.TODO(), "foo")
-			testy.Error(t, "foo err", err)
+			if !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("ddocID", mockTest{
@@ -954,7 +1010,9 @@ func TestCompactView(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			err := c.DB("foo").CompactView(context.TODO(), "foo")
-			testy.Error(t, "", err)
+			if !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("unexpected ddoc", mockTest{
@@ -976,7 +1034,9 @@ func TestCompactView(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			err := c.DB("foo").CompactView(newCanceledContext(), "foo")
-			testy.Error(t, "context canceled", err)
+			if !testy.ErrorMatches("context canceled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("wrong db", mockTest{
@@ -1009,7 +1069,9 @@ func TestViewCleanup(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			err := c.DB("foo").ViewCleanup(context.TODO())
-			testy.Error(t, "foo err", err)
+			if !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("delay", mockTest{
@@ -1020,7 +1082,9 @@ func TestViewCleanup(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			err := c.DB("foo").ViewCleanup(newCanceledContext())
-			testy.Error(t, "context canceled", err)
+			if !testy.ErrorMatches("context canceled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("unexpected", mockTest{
@@ -1030,7 +1094,9 @@ func TestViewCleanup(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			err := c.DB("foo").ViewCleanup(context.TODO())
-			testy.Error(t, "call to DB.ViewCleanup() was not expected, all expectations already fulfilled", err)
+			if !testy.ErrorMatches("call to DB.ViewCleanup() was not expected, all expectations already fulfilled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Run(t, testMock)
@@ -1046,7 +1112,9 @@ func TestPut(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").Put(context.TODO(), "foo", 123)
-			testy.Error(t, "foo err", err)
+			if !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("delay", mockTest{
@@ -1057,7 +1125,9 @@ func TestPut(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").Put(newCanceledContext(), "foo", 123)
-			testy.Error(t, "context canceled", err)
+			if !testy.ErrorMatches("context canceled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("unexpected", mockTest{
@@ -1067,7 +1137,9 @@ func TestPut(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").Put(context.TODO(), "foo", 123)
-			testy.Error(t, "call to DB.Put() was not expected, all expectations already fulfilled", err)
+			if !testy.ErrorMatches("call to DB.Put() was not expected, all expectations already fulfilled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("wrong db", mockTest{
@@ -1147,7 +1219,9 @@ func TestGetRev(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").GetRev(context.TODO(), "foo")
-			testy.Error(t, "foo err", err)
+			if !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("delay", mockTest{
@@ -1158,7 +1232,9 @@ func TestGetRev(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").GetRev(newCanceledContext(), "foo")
-			testy.Error(t, "context canceled", err)
+			if !testy.ErrorMatches("context canceled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("unexpected", mockTest{
@@ -1168,7 +1244,9 @@ func TestGetRev(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").GetRev(context.TODO(), "foo")
-			testy.Error(t, "call to DB.GetRev() was not expected, all expectations already fulfilled", err)
+			if !testy.ErrorMatches("call to DB.GetRev() was not expected, all expectations already fulfilled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("wrong db", mockTest{
@@ -1237,7 +1315,9 @@ func TestFlush(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			err := c.DB("foo").Flush(context.TODO())
-			testy.Error(t, "foo err", err)
+			if !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("delay", mockTest{
@@ -1248,7 +1328,9 @@ func TestFlush(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			err := c.DB("foo").Flush(newCanceledContext())
-			testy.Error(t, "context canceled", err)
+			if !testy.ErrorMatches("context canceled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("wrong db", mockTest{
@@ -1281,7 +1363,9 @@ func TestDeleteAttachment(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").DeleteAttachment(context.TODO(), "foo", "1-foo", "foo.txt")
-			testy.Error(t, "foo err", err)
+			if !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("delay", mockTest{
@@ -1292,7 +1376,9 @@ func TestDeleteAttachment(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").DeleteAttachment(newCanceledContext(), "foo", "1-foo", "foo.txt")
-			testy.Error(t, "context canceled", err)
+			if !testy.ErrorMatches("context canceled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("wrong db", mockTest{
@@ -1364,7 +1450,9 @@ func TestDeleteAttachment(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			rev, err := c.DB("foo").DeleteAttachment(context.TODO(), "foo", "1-foo", "foo.txt")
-			testy.Error(t, "", err)
+			if !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			if rev != "2-fds" {
 				t.Errorf("Unexpected rev: %s", rev)
 			}
@@ -1383,7 +1471,9 @@ func TestDelete(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").Delete(context.TODO(), "foo", "1-foo")
-			testy.Error(t, "foo err", err)
+			if !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("delay", mockTest{
@@ -1394,7 +1484,9 @@ func TestDelete(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").Delete(newCanceledContext(), "foo", "1-foo")
-			testy.Error(t, "context canceled", err)
+			if !testy.ErrorMatches("context canceled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("wrong db", mockTest{
@@ -1455,7 +1547,9 @@ func TestDelete(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			rev, err := c.DB("foo").Delete(context.TODO(), "foo", "1-foo")
-			testy.Error(t, "", err)
+			if !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			if rev != "2-uio" {
 				t.Errorf("Unexpected rev: %s", rev)
 			}
@@ -1474,7 +1568,9 @@ func TestCopy(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").Copy(context.TODO(), "foo", "bar")
-			testy.Error(t, "foo err", err)
+			if !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("delay", mockTest{
@@ -1485,7 +1581,9 @@ func TestCopy(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").Copy(newCanceledContext(), "foo", "bar")
-			testy.Error(t, "context canceled", err)
+			if !testy.ErrorMatches("context canceled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("wrong db", mockTest{
@@ -1546,7 +1644,9 @@ func TestCopy(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			rev, err := c.DB("foo").Copy(context.TODO(), "foo", "bar")
-			testy.Error(t, "", err)
+			if !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			if rev != "2-oiu" {
 				t.Errorf("Unexpected rev: %s", rev)
 			}
@@ -1566,7 +1666,9 @@ func TestGet(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			rows := c.DB("foo").Get(context.TODO(), "foo")
 			err := rows.Err()
-			testy.Error(t, "foo err", err)
+			if !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			_ = rows.Close()
 		},
 	})
@@ -1579,7 +1681,9 @@ func TestGet(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			rows := c.DB("foo").Get(newCanceledContext(), "foo")
 			err := rows.Err()
-			testy.Error(t, "context canceled", err)
+			if !testy.ErrorMatches("context canceled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			_ = rows.Close()
 		},
 	})
@@ -1640,7 +1744,9 @@ func TestGet(t *testing.T) {
 				t.Fatalf("iteration failed")
 			}
 			rev, err := rows.Rev()
-			testy.Error(t, "", err)
+			if !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			if rev != "2-bar" {
 				t.Errorf("Unexpected rev: %s", rev)
 			}
@@ -1660,7 +1766,9 @@ func TestGetAttachmentMeta(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").GetAttachmentMeta(context.TODO(), "foo", "foo.txt")
-			testy.Error(t, "foo err", err)
+			if !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("delay", mockTest{
@@ -1671,7 +1779,9 @@ func TestGetAttachmentMeta(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").GetAttachmentMeta(newCanceledContext(), "foo", "foo.txt")
-			testy.Error(t, "context canceled", err)
+			if !testy.ErrorMatches("context canceled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("wrong db", mockTest{
@@ -1732,7 +1842,9 @@ func TestGetAttachmentMeta(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			att, err := c.DB("foo").GetAttachmentMeta(context.TODO(), "foo", "foo.txt")
-			testy.Error(t, "", err)
+			if !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			if filename := att.Filename; filename != "foo.txt" {
 				t.Errorf("Unexpected filename: %s", filename)
 			}
@@ -1822,7 +1934,9 @@ func TestPurge(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			_, err := db.Purge(context.TODO(), nil)
-			testy.Error(t, "foo err", err)
+			if !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("success", mockTest{
@@ -1834,7 +1948,9 @@ func TestPurge(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			result, err := db.Purge(context.TODO(), nil)
-			testy.Error(t, "", err)
+			if !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			if seq := result.Seq; seq != 123 {
 				t.Errorf("Unexpected seq: %v", seq)
 			}
@@ -1861,7 +1977,9 @@ func TestPurge(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			_, err := db.Purge(newCanceledContext(), nil)
-			testy.Error(t, "context canceled", err)
+			if !testy.ErrorMatches("context canceled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("wrong db", mockTest{
@@ -1894,7 +2012,9 @@ func TestPutAttachment(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").PutAttachment(context.TODO(), "foo", &kivik.Attachment{Filename: "foo.txt"})
-			testy.Error(t, "foo err", err)
+			if !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("delay", mockTest{
@@ -1905,7 +2025,9 @@ func TestPutAttachment(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").PutAttachment(newCanceledContext(), "foo", &kivik.Attachment{Filename: "foo.txt"})
-			testy.Error(t, "context canceled", err)
+			if !testy.ErrorMatches("context canceled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("wrong db", mockTest{
@@ -2097,7 +2219,9 @@ func TestSecurity(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			_, err := db.Security(context.TODO())
-			testy.Error(t, "foo err", err)
+			if !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("success", mockTest{
@@ -2109,7 +2233,9 @@ func TestSecurity(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			result, err := db.Security(context.TODO())
-			testy.Error(t, "", err)
+			if !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			if d := testy.DiffInterface(clientSec, result); d != nil {
 				t.Error(d)
 			}
@@ -2124,7 +2250,9 @@ func TestSecurity(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			_, err := db.Security(newCanceledContext())
-			testy.Error(t, "context canceled", err)
+			if !testy.ErrorMatches("context canceled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("wrong db", mockTest{
@@ -2158,7 +2286,9 @@ func TestSetSecurity(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			err := db.SetSecurity(context.TODO(), clientSec)
-			testy.Error(t, "foo err", err)
+			if !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("success", mockTest{
@@ -2170,7 +2300,9 @@ func TestSetSecurity(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			err := db.SetSecurity(context.TODO(), clientSec)
-			testy.Error(t, "", err)
+			if !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("delay", mockTest{
@@ -2182,7 +2314,9 @@ func TestSetSecurity(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			err := db.SetSecurity(newCanceledContext(), clientSec)
-			testy.Error(t, "context canceled", err)
+			if !testy.ErrorMatches("context canceled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("wrong db", mockTest{
@@ -2216,7 +2350,9 @@ func TestStats(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			_, err := db.Stats(context.TODO())
-			testy.Error(t, "foo err", err)
+			if !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("success", mockTest{
@@ -2228,7 +2364,9 @@ func TestStats(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			result, err := db.Stats(context.TODO())
-			testy.Error(t, "", err)
+			if !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			expected := &kivik.DBStats{Name: "foo"}
 			if d := testy.DiffInterface(expected, result); d != nil {
 				t.Error(d)
@@ -2244,7 +2382,9 @@ func TestStats(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			_, err := db.Stats(newCanceledContext())
-			testy.Error(t, "context canceled", err)
+			if !testy.ErrorMatches("context canceled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("wrong db", mockTest{
@@ -2278,7 +2418,9 @@ func TestBulkDocs(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			_, err := db.BulkDocs(context.TODO(), []interface{}{1})
-			testy.Error(t, "foo err", err)
+			if !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("unexpected", mockTest{
@@ -2289,7 +2431,9 @@ func TestBulkDocs(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			_, err := db.BulkDocs(context.TODO(), []interface{}{1})
-			testy.Error(t, "call to DB.BulkDocs() was not expected, all expectations already fulfilled", err)
+			if !testy.ErrorMatches("call to DB.BulkDocs() was not expected, all expectations already fulfilled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("results", mockTest{
@@ -2305,7 +2449,9 @@ func TestBulkDocs(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows, err := db.BulkDocs(context.TODO(), []interface{}{1})
-			testy.Error(t, "", err)
+			if !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			ids := []string{}
 			for _, row := range rows {
 				ids = append(ids, row.ID)
@@ -2328,7 +2474,9 @@ func TestBulkDocs(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows, err := db.BulkDocs(context.TODO(), []interface{}{1})
-			testy.Error(t, "", err)
+			if !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			ids := []string{}
 			var rowErr error
 			for _, row := range rows {
@@ -2366,7 +2514,9 @@ func TestBulkDocs(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			_, err := db.BulkDocs(newCanceledContext(), []interface{}{1})
-			testy.Error(t, "context canceled", err)
+			if !testy.ErrorMatches("context canceled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("wrong db", mockTest{
@@ -2399,7 +2549,9 @@ func TestGetAttachment(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").GetAttachment(context.TODO(), "foo", "bar")
-			testy.Error(t, "foo err", err)
+			if !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("delay", mockTest{
@@ -2410,7 +2562,9 @@ func TestGetAttachment(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").GetAttachment(newCanceledContext(), "foo", "bar")
-			testy.Error(t, "context canceled", err)
+			if !testy.ErrorMatches("context canceled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("wrong db", mockTest{
@@ -2449,7 +2603,9 @@ func TestGetAttachment(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			att, err := c.DB("foo").GetAttachment(context.TODO(), "foo", "bar")
-			testy.Error(t, "", err)
+			if !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			if name := att.Filename; name != "foo.txt" {
 				t.Errorf("Unexpected filename: %s", name)
 			}
@@ -2803,7 +2959,9 @@ func TestPartitionStats(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			_, err := db.PartitionStats(context.TODO(), "foo")
-			testy.Error(t, "foo err", err)
+			if !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("success", mockTest{
@@ -2820,7 +2978,9 @@ func TestPartitionStats(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			stats, err := db.PartitionStats(context.TODO(), "foo")
-			testy.Error(t, "", err)
+			if !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			if d := testy.DiffAsJSON(testy.Snapshot(t), stats); d != nil {
 				t.Error(d)
 			}

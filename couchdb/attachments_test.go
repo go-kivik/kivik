@@ -347,7 +347,9 @@ func TestGetDigest(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			digest, err := getDigest(test.resp)
-			testy.Error(t, test.err, err)
+			if !testy.ErrorMatches(test.err, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			if digest != test.expected {
 				t.Errorf("Unexpected result: %0x", digest)
 			}

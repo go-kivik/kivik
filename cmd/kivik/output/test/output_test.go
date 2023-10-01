@@ -163,7 +163,9 @@ func TestOutput(t *testing.T) {
 			err = fmt.Output(strings.NewReader(tt.obj))
 		})
 
-		testy.Error(t, tt.err, err)
+		if !testy.ErrorMatches(tt.err, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
 		if d := testy.DiffText(testy.Snapshot(t, "_stdout"), stdout); d != nil {
 			t.Errorf("STDOUT: %s", d)
 		}

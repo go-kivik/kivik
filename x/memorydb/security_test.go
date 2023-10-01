@@ -109,7 +109,9 @@ func TestGetSecurity(t *testing.T) {
 					db = setupDB(t)
 				}
 				sec, err := db.Security(context.Background())
-				testy.Error(t, test.Error, err)
+				if !testy.ErrorMatches(test.Error, err) {
+					t.Errorf("Unexpected error: %s", err)
+				}
 				if d := testy.DiffAsJSON(test.Expected, sec); d != nil {
 					t.Error(d)
 				}

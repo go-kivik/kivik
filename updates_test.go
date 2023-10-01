@@ -70,7 +70,9 @@ func TestDBUpdatesClose(t *testing.T) {
 		},
 	}
 	err := u.Close()
-	testy.Error(t, expected, err)
+	if !testy.ErrorMatches(expected, err) {
+		t.Errorf("Unexpected error: %s", err)
+	}
 }
 
 func TestDBUpdatesErr(t *testing.T) {
@@ -79,7 +81,9 @@ func TestDBUpdatesErr(t *testing.T) {
 		iter: &iter{err: errors.New(expected)},
 	}
 	err := u.Err()
-	testy.Error(t, expected, err)
+	if !testy.ErrorMatches(expected, err) {
+		t.Errorf("Unexpected error: %s", err)
+	}
 }
 
 func TestDBUpdatesIteratorNext(t *testing.T) {
@@ -91,7 +95,9 @@ func TestDBUpdatesIteratorNext(t *testing.T) {
 	}
 	var i driver.DBUpdate
 	err := u.Next(&i)
-	testy.Error(t, expected, err)
+	if !testy.ErrorMatches(expected, err) {
+		t.Errorf("Unexpected error: %s", err)
+	}
 }
 
 func TestDBUpdatesIteratorNew(t *testing.T) {

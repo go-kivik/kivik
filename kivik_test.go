@@ -675,7 +675,9 @@ func TestPing(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := test.client.Ping(context.Background())
-			testy.Error(t, test.err, err)
+			if !testy.ErrorMatches(test.err, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			if result != test.expected {
 				t.Errorf("Unexpected result: %t", result)
 			}
@@ -713,7 +715,9 @@ func TestClientClose(t *testing.T) {
 	tests.Run(t, func(t *testing.T, test tst) {
 		t.Parallel()
 		err := test.client.Close()
-		testy.Error(t, test.err, err)
+		if !testy.ErrorMatches(test.err, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
 	})
 
 	t.Run("blocks", func(t *testing.T) {

@@ -71,6 +71,8 @@ func TestReplication(t *testing.T) {
 	})
 	t.Run("Err", func(t *testing.T) {
 		err := dr.Err()
-		testy.Error(t, eErr, err)
+		if !testy.ErrorMatches(eErr, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
 	})
 }

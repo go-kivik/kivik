@@ -14,10 +14,11 @@ package kivik
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"net/http"
 	"testing"
 
-	"github.com/pkg/errors"
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4/driver"
@@ -51,7 +52,7 @@ func TestConfig(t *testing.T) {
 		client: &Client{driverClient: &mock.Configer{
 			ConfigFunc: func(_ context.Context, node string) (driver.Config, error) {
 				if node != "foo" {
-					return nil, errors.Errorf("Unexpected node: %s", node)
+					return nil, fmt.Errorf("Unexpected node: %s", node)
 				}
 				return driver.Config{
 					"foo": driver.ConfigSection{"asd": "rew"},
@@ -107,10 +108,10 @@ func TestConfigSection(t *testing.T) {
 		client: &Client{driverClient: &mock.Configer{
 			ConfigSectionFunc: func(_ context.Context, node, section string) (driver.ConfigSection, error) {
 				if node != "foo" {
-					return nil, errors.Errorf("Unexpected node: %s", node)
+					return nil, fmt.Errorf("Unexpected node: %s", node)
 				}
 				if section != "foo" {
-					return nil, errors.Errorf("Unexpected section: %s", section)
+					return nil, fmt.Errorf("Unexpected section: %s", section)
 				}
 				return driver.ConfigSection{"lkj": "ghj"}, nil
 			},
@@ -163,13 +164,13 @@ func TestConfigValue(t *testing.T) {
 		client: &Client{driverClient: &mock.Configer{
 			ConfigValueFunc: func(_ context.Context, node, section, key string) (string, error) {
 				if node != "foo" {
-					return "", errors.Errorf("Unexpected node: %s", node)
+					return "", fmt.Errorf("Unexpected node: %s", node)
 				}
 				if section != "foo" {
-					return "", errors.Errorf("Unexpected section: %s", section)
+					return "", fmt.Errorf("Unexpected section: %s", section)
 				}
 				if key != "asd" {
-					return "", errors.Errorf("Unexpected key: %s", key)
+					return "", fmt.Errorf("Unexpected key: %s", key)
 				}
 				return "jkl", nil
 			},
@@ -223,16 +224,16 @@ func TestSetConfigValue(t *testing.T) {
 		client: &Client{driverClient: &mock.Configer{
 			SetConfigValueFunc: func(_ context.Context, node, section, key, value string) (string, error) {
 				if node != "foo" {
-					return "", errors.Errorf("Unexpected node: %s", node)
+					return "", fmt.Errorf("Unexpected node: %s", node)
 				}
 				if section != "foo" {
-					return "", errors.Errorf("Unexpected section: %s", section)
+					return "", fmt.Errorf("Unexpected section: %s", section)
 				}
 				if key != "vbn" {
-					return "", errors.Errorf("Unexpected key: %s", key)
+					return "", fmt.Errorf("Unexpected key: %s", key)
 				}
 				if value != "baz" {
-					return "", errors.Errorf("Unexpected value: %s", value)
+					return "", fmt.Errorf("Unexpected value: %s", value)
 				}
 				return "old", nil
 			},
@@ -287,13 +288,13 @@ func TestDeleteConfigKey(t *testing.T) {
 		client: &Client{driverClient: &mock.Configer{
 			DeleteConfigKeyFunc: func(_ context.Context, node, section, key string) (string, error) {
 				if node != "foo" {
-					return "", errors.Errorf("Unexpected node: %s", node)
+					return "", fmt.Errorf("Unexpected node: %s", node)
 				}
 				if section != "foo" {
-					return "", errors.Errorf("Unexpected section: %s", section)
+					return "", fmt.Errorf("Unexpected section: %s", section)
 				}
 				if key != "baz" {
-					return "", errors.Errorf("Unexpected key: %s", key)
+					return "", fmt.Errorf("Unexpected key: %s", key)
 				}
 				return "old", nil
 			},

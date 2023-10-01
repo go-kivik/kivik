@@ -16,6 +16,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -27,7 +28,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pkg/errors"
 	"gitlab.com/flimzy/testy"
 	"golang.org/x/net/publicsuffix"
 
@@ -813,7 +813,7 @@ func TestDoReq(t *testing.T) {
 	tests.Add("couchdb mounted below root", tt{
 		client: newCustomClient("http://foo.com/dbroot/", func(r *http.Request) (*http.Response, error) {
 			if r.URL.Path != "/dbroot/foo" {
-				return nil, errors.Errorf("Unexpected path: %s", r.URL.Path)
+				return nil, fmt.Errorf("Unexpected path: %s", r.URL.Path)
 			}
 			return &http.Response{}, nil
 		}),
@@ -823,7 +823,7 @@ func TestDoReq(t *testing.T) {
 	tests.Add("user agent", tt{
 		client: newCustomClient("http://foo.com/", func(r *http.Request) (*http.Response, error) {
 			if ua := r.UserAgent(); ua != defaultUA {
-				return nil, errors.Errorf("Unexpected User Agent: %s", ua)
+				return nil, fmt.Errorf("Unexpected User Agent: %s", ua)
 			}
 			return &http.Response{}, nil
 		}),
@@ -833,7 +833,7 @@ func TestDoReq(t *testing.T) {
 	tests.Add("gzipped request", tt{
 		client: newCustomClient("http://foo.com/", func(r *http.Request) (*http.Response, error) {
 			if ce := r.Header.Get("Content-Encoding"); ce != "gzip" {
-				return nil, errors.Errorf("Unexpected Content-Encoding: %s", ce)
+				return nil, fmt.Errorf("Unexpected Content-Encoding: %s", ce)
 			}
 			return &http.Response{}, nil
 		}),
@@ -846,7 +846,7 @@ func TestDoReq(t *testing.T) {
 	tests.Add("gzipped disabled", tt{
 		client: newCustomClient("http://foo.com/", func(r *http.Request) (*http.Response, error) {
 			if ce := r.Header.Get("Content-Encoding"); ce != "" {
-				return nil, errors.Errorf("Unexpected Content-Encoding: %s", ce)
+				return nil, fmt.Errorf("Unexpected Content-Encoding: %s", ce)
 			}
 			return &http.Response{}, nil
 		}),

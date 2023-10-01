@@ -15,9 +15,9 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"sort"
 
-	"github.com/pkg/errors"
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4"
@@ -64,7 +64,7 @@ func setUpAllDocsTest(ctx *kt.Context) (dbName string, docIDs []string, err erro
 	dbName = ctx.TestDB()
 	db := ctx.Admin.DB(dbName, ctx.Options("db"))
 	if err := db.Err(); err != nil {
-		return dbName, nil, errors.Wrap(err, "failed to connect to db")
+		return dbName, nil, fmt.Errorf("failed to connect to db: %w", err)
 	}
 	const maxDocs = 10
 	docIDs = make([]string, maxDocs)
@@ -76,7 +76,7 @@ func setUpAllDocsTest(ctx *kt.Context) (dbName string, docIDs []string, err erro
 			ID: id,
 		}
 		if _, err := db.Put(context.Background(), doc.ID, doc); err != nil {
-			return dbName, nil, errors.Wrap(err, "failed to create doc")
+			return dbName, nil, fmt.Errorf("failed to create doc: %w", err)
 		}
 		docIDs[i] = id
 	}

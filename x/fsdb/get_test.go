@@ -24,8 +24,66 @@ import (
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/internal"
+	"github.com/go-kivik/kivik/v4/internal/mock"
 	"github.com/go-kivik/kivik/v4/x/fsdb/filesystem"
+	"github.com/google/go-cmp/cmp"
 )
+
+func TestGet_open_revs(t *testing.T) {
+	tests := []struct {
+		name     string
+		path     string
+		dbname   string
+		options  kivik.Option
+		id       string
+		status   int
+		err      string
+		wantRevs []string
+	}{
+		{
+			name:     "open_revs=all",
+			path:     "testdata",
+			dbname:   "db_foo",
+			id:       "withattach",
+			options:  kivik.Param("open_revs", "all"),
+			wantRevs: []string{"1-xxxxxxxxxx", "2-yyyyyyyyy"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fs := filesystem.Default()
+			c := &client{root: tt.path, fs: fs}
+			db, err := c.newDB(tt.dbname)
+			if err != nil {
+				t.Fatal(err)
+			}
+			opts := tt.options
+			if opts == nil {
+				opts = mock.NilOption
+			}
+			rows, err := db.Get(context.Background(), tt.id, opts)
+			if d := internal.StatusErrorDiffRE(tt.err, tt.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
+			var row driver.Row
+			gotRevs := []string{}
+			for {
+				err := rows.Next(&row)
+				if err == io.EOF {
+					break
+				}
+				gotRevs = append(gotRevs, row.Rev)
+			}
+			if d := cmp.Diff(tt.wantRevs, gotRevs); d != "" {
+				t.Errorf("Unexpected revs returned: %s", d)
+			}
+		})
+	}
+}
 
 func TestGet(t *testing.T) {
 	type tt struct {

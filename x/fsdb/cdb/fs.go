@@ -104,6 +104,7 @@ func (r *Revision) restoreAttachments() error {
 	return nil
 }
 
+// openRevs returns the active revisions for docID that match revid.
 func (fs *FS) openRevs(docID, revid string) (Revisions, error) {
 	revs := make(Revisions, 0, 1)
 	base := EscapeID(docID)

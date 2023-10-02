@@ -57,7 +57,9 @@ func TestChanges(t *testing.T) {
 		for changes.Next() {
 			results = append(results, changes.ID())
 		}
-		testy.Error(t, test.changesErr, changes.Err())
+		if err := changes.Err(); !testy.ErrorMatches(test.changesErr, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
 		if d := testy.DiffTextSlices(test.expectedIDs, results); d != nil {
 			t.Error(d)
 		}

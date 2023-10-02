@@ -211,8 +211,12 @@ func TestReplayReadCloser(t *testing.T) {
 			if d := testy.DiffText(test.expected, result); d != nil {
 				t.Error(d)
 			}
-			testy.Error(t, test.readErr, resultErr)
-			testy.Error(t, test.closeErr, resultCloseErr)
+			if err := resultErr; !testy.ErrorMatches(test.readErr, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
+			if err := resultCloseErr; !testy.ErrorMatches(test.closeErr, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		})
 	}
 }

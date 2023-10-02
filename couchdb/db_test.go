@@ -2162,16 +2162,18 @@ test content
 }
 
 func TestMultipartAttachmentsClose(t *testing.T) {
-	err := "some error"
+	const wantErr = "some error"
 	atts := &multipartAttachments{
 		content: &mockReadCloser{
 			CloseFunc: func() error {
-				return errors.New(err)
+				return errors.New(wantErr)
 			},
 		},
 	}
 
-	testy.Error(t, err, atts.Close())
+	if err := atts.Close(); !testy.ErrorMatches(wantErr, err) {
+		t.Errorf("Unexpected error: %s", err)
+	}
 }
 
 func TestPurge(t *testing.T) {

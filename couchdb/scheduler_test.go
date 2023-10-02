@@ -316,11 +316,13 @@ func TestSchedulerReplicationDelete(t *testing.T) {
 }
 
 func TestSchedulerReplicationGetters(t *testing.T) {
-	repID := "a"
-	source := "b"
-	target := "c"
-	state := "completed"
-	err := "e"
+	const (
+		repID   = "a"
+		source  = "b"
+		target  = "c"
+		state   = "completed"
+		wantErr = "e"
+	)
 	start := parseTime(t, "2017-01-01T01:01:01Z")
 	end := parseTime(t, "2017-01-01T01:01:02Z")
 	rep := &schedulerReplication{
@@ -330,7 +332,7 @@ func TestSchedulerReplicationGetters(t *testing.T) {
 		startTime:     start,
 		lastUpdated:   end,
 		state:         state,
-		info:          repInfo{Error: errors.New(err)},
+		info:          repInfo{Error: errors.New(wantErr)},
 	}
 	if result := rep.ReplicationID(); result != repID {
 		t.Errorf("Unexpected replication ID: %s", result)
@@ -350,7 +352,9 @@ func TestSchedulerReplicationGetters(t *testing.T) {
 	if result := rep.State(); result != state {
 		t.Errorf("Unexpected state: %s", result)
 	}
-	testy.Error(t, err, rep.Err())
+	if err := rep.Err(); !testy.ErrorMatches(wantErr, err) {
+		t.Errorf("Unexpected error: %s", err)
+	}
 }
 
 func TestSchedulerSupported(t *testing.T) {

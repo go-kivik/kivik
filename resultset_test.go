@@ -38,7 +38,9 @@ func TestRowsIteratorNext(t *testing.T) {
 	}
 	var i driver.Row
 	err := r.Next(&i)
-	testy.Error(t, expected, err)
+	if !testy.ErrorMatches(expected, err) {
+		t.Errorf("Unexpected error: %s", err)
+	}
 }
 
 func TestNextResultSet(t *testing.T) {

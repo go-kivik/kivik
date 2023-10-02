@@ -48,7 +48,9 @@ func TestOutput(t *testing.T) {
 		buf := &bytes.Buffer{}
 		f := format{}
 		err := f.Output(buf, tt.r)
-		testy.Error(t, tt.err, err)
+		if !testy.ErrorMatches(tt.err, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
 		if d := testy.DiffText(testy.Snapshot(t), buf); d != nil {
 			t.Error(d)
 		}

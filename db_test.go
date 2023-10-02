@@ -2737,7 +2737,9 @@ func TestDBClose(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, test tst) {
 		err := test.db.Close()
-		testy.Error(t, test.err, err)
+		if !testy.ErrorMatches(test.err, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
 	})
 
 	t.Run("blocks", func(t *testing.T) {

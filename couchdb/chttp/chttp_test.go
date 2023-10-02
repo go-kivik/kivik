@@ -511,7 +511,9 @@ func TestGetRev(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := GetRev(test.resp)
-			testy.Error(t, test.err, err)
+			if !testy.ErrorMatches(test.err, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			if result != test.expected {
 				t.Errorf("Got %s, expected %s", result, test.expected)
 			}
@@ -1114,7 +1116,12 @@ func TestExtractRev(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, tt tt) {
 		reassembled, rev, err := ExtractRev(tt.rc)
-		testy.Error(t, tt.err, err)
+		if !testy.ErrorMatches(tt.err, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
+		if err != nil {
+			return
+		}
 		if tt.rev != rev {
 			t.Errorf("Expected %s, got %s", tt.rev, rev)
 		}
@@ -1167,7 +1174,9 @@ func Test_readRev(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, tt tt) {
 		rev, err := readRev(strings.NewReader(tt.input))
-		testy.Error(t, tt.err, err)
+		if !testy.ErrorMatches(tt.err, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
 		if rev != tt.rev {
 			t.Errorf("Wanted %s, got %s", tt.rev, rev)
 		}

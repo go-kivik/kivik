@@ -271,7 +271,9 @@ func TestReplicationDelete(t *testing.T) {
 		},
 	}
 	err := r.Delete(context.Background())
-	testy.Error(t, expected, err)
+	if !testy.ErrorMatches(expected, err) {
+		t.Errorf("Unexpected error: %s", err)
+	}
 }
 
 func TestReplicationUpdate(t *testing.T) {
@@ -285,7 +287,9 @@ func TestReplicationUpdate(t *testing.T) {
 			},
 		}
 		err := r.Update(context.Background())
-		testy.Error(t, expected, err)
+		if !testy.ErrorMatches(expected, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
 	})
 
 	t.Run("success", func(t *testing.T) {
@@ -303,7 +307,9 @@ func TestReplicationUpdate(t *testing.T) {
 			},
 		}
 		err := r.Update(context.Background())
-		testy.Error(t, "", err)
+		if !testy.ErrorMatches("", err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
 		if d := testy.DiffInterface(&expected, r.info); d != nil {
 			t.Error(d)
 		}

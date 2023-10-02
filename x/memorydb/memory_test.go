@@ -82,7 +82,9 @@ func TestDBExists(t *testing.T) {
 			t.Run(test.Name, func(t *testing.T) {
 				c := setup(t, test.Setup)
 				result, err := c.DBExists(context.Background(), test.DBName, nil)
-				testy.Error(t, test.Error, err)
+				if !testy.ErrorMatches(test.Error, err) {
+					t.Errorf("Unexpected error: %s", err)
+				}
 				if result != test.Expected {
 					t.Errorf("Expected: %t, Actual: %t", test.Expected, result)
 				}

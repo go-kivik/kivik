@@ -2306,7 +2306,9 @@ test content
 		t.Run(test.name, func(t *testing.T) {
 			in := io.NopCloser(strings.NewReader(test.input))
 			boundary, size, body, err := newMultipartAttachments(in, test.atts)
-			testy.Error(t, test.err, err)
+			if !testy.ErrorMatches(test.err, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			if test.size != size {
 				t.Errorf("Unexpected size: %d (want %d)", size, test.size)
 			}
@@ -2411,7 +2413,9 @@ func TestStubMarshalJSON(t *testing.T) {
 	}
 	expected := `{"content_type":"text/plain","length":123,"follows":true}`
 	result, err := json.Marshal(att)
-	testy.Error(t, "", err)
+	if !testy.ErrorMatches("", err) {
+		t.Errorf("Unexpected error: %s", err)
+	}
 	if d := testy.DiffJSON([]byte(expected), result); d != nil {
 		t.Error(d)
 	}
@@ -2434,7 +2438,9 @@ func Test_attachmentSize(t *testing.T) {
 	})
 	tests.Run(t, func(t *testing.T, test tst) {
 		err := attachmentSize(test.att)
-		testy.Error(t, test.err, err)
+		if !testy.ErrorMatches(test.err, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
 		body, err := io.ReadAll(test.att.Content)
 		if err != nil {
 			t.Fatal(err)
@@ -2525,7 +2531,9 @@ func Test_readerSize(t *testing.T) {
 	})
 	tests.Run(t, func(t *testing.T, test tst) {
 		size, r, err := readerSize(test.in)
-		testy.Error(t, test.err, err)
+		if !testy.ErrorMatches(test.err, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
 		body, err := io.ReadAll(r)
 		if err != nil {
 			t.Fatal(err)
@@ -2583,7 +2591,9 @@ func TestNewAttachment(t *testing.T) {
 	})
 	tests.Run(t, func(t *testing.T, test tst) {
 		result, err := NewAttachment("foo.txt", "text/plain", test.content, test.size...)
-		testy.Error(t, test.err, err)
+		if !testy.ErrorMatches(test.err, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
 		content, err := io.ReadAll(result.Content)
 		if err != nil {
 			t.Fatal(err)

@@ -63,7 +63,12 @@ func TestDocument(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, test tst) {
 		result, err := Document(test.i)
-		testy.Error(t, test.err, err)
+		if !testy.ErrorMatches(test.err, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
+		if err != nil {
+			return
+		}
 		if d := testy.DiffAsJSON(test.content, result.Body); d != nil {
 			t.Errorf("Unexpected content:\n%s\n", d)
 		}

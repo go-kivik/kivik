@@ -70,7 +70,9 @@ func TestRenderDriverMethod(t *testing.T) {
 	})
 	tests.Run(t, func(t *testing.T, test tst) {
 		result, err := renderDriverMethod(test.method)
-		testy.Error(t, test.err, err)
+		if !testy.ErrorMatches(test.err, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
 		if d := testy.DiffText(testy.Snapshot(t), result); d != nil {
 			t.Error(d)
 		}

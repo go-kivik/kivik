@@ -44,7 +44,9 @@ func TestChangesUnmarshal(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			var result ChangedRevs
 			err := json.Unmarshal([]byte(test.input), &result)
-			testy.Error(t, test.err, err)
+			if !testy.ErrorMatches(test.err, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}

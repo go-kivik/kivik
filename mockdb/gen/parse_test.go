@@ -109,7 +109,9 @@ func TestMethods(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, test tst) {
 		result, err := parseMethods(test.input, test.isClient, nil)
-		testy.Error(t, test.err, err)
+		if !testy.ErrorMatches(test.err, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
 		if d := testy.DiffInterface(test.expected, result); d != nil {
 			t.Error(d)
 		}

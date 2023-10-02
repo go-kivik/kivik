@@ -92,8 +92,12 @@ func TestJSONData(t *testing.T) {
 		if status := errors.InspectErrorCode(err); status != tt.status {
 			t.Errorf("Unexpected error status. Want %d, got %d", tt.status, status)
 		}
-		testy.Error(t, tt.err, err)
-
+		if !testy.ErrorMatches(tt.err, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
+		if err != nil {
+			return
+		}
 		if d := testy.DiffAsJSON(testy.Snapshot(t), r); d != nil {
 			t.Error(d)
 		}

@@ -42,7 +42,9 @@ func TestSequenceIDUnmarshal(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			var seq sequenceID
 			err := json.Unmarshal([]byte(test.input), &seq)
-			testy.Error(t, test.err, err)
+			if !testy.ErrorMatches(test.err, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			if seq != test.expected {
 				t.Errorf("Unexpected result: %s", seq)
 			}

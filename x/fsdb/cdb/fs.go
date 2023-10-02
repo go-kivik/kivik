@@ -162,7 +162,10 @@ func (fs *FS) openRevs(docID string, revIDs []string) (Revisions, error) {
 func (fs *FS) OpenDocIDOpenRevs(docID string, options driver.Options) ([]*Document, error) {
 	opts := map[string]interface{}{}
 	options.Apply(opts)
-	rev, _ := opts["rev"].(string)
+	rev, ok := opts["rev"].(string)
+	if !ok {
+		rev, _ = opts["open_revs"].(string)
+	}
 	revs, err := fs.openRevs(docID, []string{rev})
 	if err != nil {
 		return nil, err

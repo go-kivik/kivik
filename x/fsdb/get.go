@@ -19,9 +19,11 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"sync"
 	"sync/atomic"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/x/fsdb/cdb"
 )
 
 // TODO:
@@ -42,6 +44,14 @@ func (d *db) Get(_ context.Context, docID string, options driver.Options) (drive
 	if err != nil {
 		return nil, err
 	}
+	switch opts["open_revs"].(type) {
+	case string, []string:
+		return &documentRevs{
+			ID:        docID,
+			mu:        sync.Mutex{},
+			Revisions: docs[0].Revisions,
+		}, nil
+	}
 	docs[0].Options = opts
 	buf := &bytes.Buffer{}
 	if err := json.NewEncoder(buf).Encode(docs[0]); err != nil {
@@ -58,6 +68,38 @@ func (d *db) Get(_ context.Context, docID string, options driver.Options) (drive
 		Attachments: attsIter,
 	}, nil
 }
+
+type documentRevs struct {
+	ID          string
+	mu          sync.Mutex
+	Revisions   cdb.Revisions
+	Body        io.ReadCloser
+	Attachments driver.Attachments
+}
+
+var _ driver.Rows = (*documentRevs)(nil)
+
+func (d *documentRevs) Next(row *driver.Row) error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if len(d.Revisions) == 0 {
+		return io.EOF
+	}
+	curRev := d.Revisions[0]
+	d.Revisions = d.Revisions[1:]
+
+	row.ID = d.ID
+	row.Rev = curRev.Rev.String()
+
+	return nil
+}
+
+func (*documentRevs) Close() error {
+	return nil
+}
+func (*documentRevs) Offset() int64     { return 0 }
+func (*documentRevs) TotalRows() int64  { return 0 }
+func (*documentRevs) UpdateSeq() string { return "" }
 
 type document struct {
 	ID          string

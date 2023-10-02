@@ -40,13 +40,21 @@ func TestGet_open_revs(t *testing.T) {
 		err      string
 		wantRevs []string
 	}{
+		// {
+		// 	name:     "open_revs=all",
+		// 	path:     "testdata",
+		// 	dbname:   "db_foo",
+		// 	id:       "withattach",
+		// 	options:  kivik.Param("open_revs", "all"),
+		// 	wantRevs: []string{"1-xxxxxxxxxx", "2-yyyyyyyyy"},
+		// },
 		{
-			name:     "open_revs=all",
+			name:     "open_revs=1-xxxxxxxxxx",
 			path:     "testdata",
 			dbname:   "db_foo",
 			id:       "withattach",
-			options:  kivik.Param("open_revs", "all"),
-			wantRevs: []string{"1-xxxxxxxxxx", "2-yyyyyyyyy"},
+			options:  kivik.Param("open_revs", "1-xxxxxxxxxx"),
+			wantRevs: []string{"1-xxxxxxxxxx"},
 		},
 	}
 

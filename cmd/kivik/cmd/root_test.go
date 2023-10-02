@@ -152,7 +152,12 @@ func Test_parseTimeout(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, tt tt) {
 		got, err := parseDuration(tt.input)
-		testy.ErrorRE(t, tt.err, err)
+		if !testy.ErrorMatchesRE(tt.err, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
+		if err != nil {
+			return
+		}
 		if got.String() != tt.want {
 			t.Errorf("Want: %s\n Got: %s", tt.want, got)
 		}

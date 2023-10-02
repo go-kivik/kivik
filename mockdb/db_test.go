@@ -66,9 +66,11 @@ func TestCloseDB(t *testing.T) {
 			foo := c.DB("foo")
 			_ = c.DB("bar")
 			err := foo.Close()
-			testy.ErrorRE(t, `Expected: call to DB\(bar`, err)
+			if !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
-		err: "there is a remaining unmet expectation: call to DB().Close()",
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("callback", mockTest{
 		setup: func(m *Client) {
@@ -268,8 +270,11 @@ func TestAllDocs(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.AllDocs(context.TODO())
-			testy.ErrorRE(t, `map\[foo:123]`, rows.Err())
+			if err := rows.Err(); !testy.ErrorMatchesRE(`map\[foo:123]`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("delay", mockTest{
 		setup: func(m *Client) {
@@ -323,9 +328,11 @@ func TestAllDocs(t *testing.T) {
 			foo := c.DB("foo")
 			_ = c.DB("bar")
 			rows := foo.AllDocs(context.TODO())
-			testy.ErrorRE(t, `Expected: call to DB\(bar`, rows.Err())
+			if err := rows.Err(); !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
-		err: "there is a remaining unmet expectation: call to DB().Close()",
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Run(t, testMock)
 }
@@ -388,8 +395,11 @@ func TestBulkGet(t *testing.T) { // nolint: gocyclo
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.BulkGet(context.TODO(), []kivik.BulkGetReference{})
-			testy.ErrorRE(t, `map\[foo:123]`, rows.Err())
+			if err := rows.Err(); !testy.ErrorMatchesRE(`map\[foo:123]`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("delay", mockTest{
 		setup: func(m *Client) {
@@ -416,9 +426,11 @@ func TestBulkGet(t *testing.T) { // nolint: gocyclo
 			foo := c.DB("foo")
 			_ = c.DB("bar")
 			rows := foo.BulkGet(context.TODO(), []kivik.BulkGetReference{})
-			testy.ErrorRE(t, `Expected: call to DB\(bar`, rows.Err())
+			if err := rows.Err(); !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
-		err: "there is a remaining unmet expectation: call to DB().Close()",
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Run(t, testMock)
 }
@@ -446,8 +458,11 @@ func TestFind(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.Find(context.TODO(), 321)
-			testy.ErrorRE(t, "has query: 123", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatchesRE("has query: 123", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("rows", mockTest{
 		setup: func(m *Client) {
@@ -482,7 +497,9 @@ func TestFind(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.Find(context.TODO(), map[string]string{"foo": "123"})
-			testy.ErrorRE(t, "", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatchesRE("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			_ = rows.Close()
 		},
 	})
@@ -511,9 +528,11 @@ func TestFind(t *testing.T) {
 			foo := c.DB("foo")
 			_ = c.DB("bar")
 			rows := foo.Find(context.TODO(), 1)
-			testy.ErrorRE(t, `Expected: call to DB\(bar`, rows.Err())
+			if err := rows.Err(); !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
-		err: "there is a remaining unmet expectation: call to DB().Close()",
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Run(t, testMock)
 }
@@ -541,8 +560,11 @@ func TestCreateIndex(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			err := c.DB("foo").CreateIndex(context.TODO(), "foo", "bar", 123)
-			testy.ErrorRE(t, "has index: 321", err)
+			if !testy.ErrorMatchesRE("has index: 321", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("ddoc", mockTest{
 		setup: func(m *Client) {
@@ -552,8 +574,11 @@ func TestCreateIndex(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			err := c.DB("foo").CreateIndex(context.TODO(), "foo", "bar", 123)
-			testy.ErrorRE(t, "has ddoc: moo", err)
+			if !testy.ErrorMatchesRE("has ddoc: moo", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("name", mockTest{
 		setup: func(m *Client) {
@@ -563,8 +588,11 @@ func TestCreateIndex(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			err := c.DB("foo").CreateIndex(context.TODO(), "foo", "bar", 123)
-			testy.ErrorRE(t, "has name: moo", err)
+			if !testy.ErrorMatchesRE("has name: moo", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("index", mockTest{
 		setup: func(m *Client) {
@@ -605,9 +633,11 @@ func TestCreateIndex(t *testing.T) {
 			foo := c.DB("foo")
 			_ = c.DB("bar")
 			err := foo.CreateIndex(context.TODO(), "foo", "bar", 123)
-			testy.ErrorRE(t, `Expected: call to DB\(bar`, err)
+			if !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
-		err: "there is a remaining unmet expectation: call to DB().Close()",
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Run(t, testMock)
 }
@@ -688,9 +718,11 @@ func TestGetIndexes(t *testing.T) {
 			foo := c.DB("foo")
 			_ = c.DB("bar")
 			_, err := foo.GetIndexes(context.TODO())
-			testy.ErrorRE(t, `Expected: call to DB\(bar`, err)
+			if !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
-		err: "there is a remaining unmet expectation: call to DB().Close()",
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Run(t, testMock)
 }
@@ -718,8 +750,11 @@ func TestDeleteIndex(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			err := c.DB("foo").DeleteIndex(context.TODO(), "foo", "bar")
-			testy.ErrorRE(t, "has ddoc: oink", err)
+			if !testy.ErrorMatchesRE("has ddoc: oink", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("name", mockTest{
 		setup: func(m *Client) {
@@ -729,8 +764,11 @@ func TestDeleteIndex(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			err := c.DB("foo").DeleteIndex(context.TODO(), "foo", "bar")
-			testy.ErrorRE(t, "has name: oink", err)
+			if !testy.ErrorMatchesRE("has name: oink", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("delay", mockTest{
 		setup: func(m *Client) {
@@ -758,9 +796,11 @@ func TestDeleteIndex(t *testing.T) {
 			foo := c.DB("foo")
 			_ = c.DB("bar")
 			err := foo.DeleteIndex(context.TODO(), "foo", "bar")
-			testy.ErrorRE(t, `Expected: call to DB\(bar`, err)
+			if !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
-		err: "there is a remaining unmet expectation: call to DB().Close()",
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Run(t, testMock)
 }
@@ -848,9 +888,11 @@ func TestExplain(t *testing.T) {
 			foo := c.DB("foo")
 			_ = c.DB("bar")
 			_, err := foo.Explain(context.TODO(), 123)
-			testy.ErrorRE(t, `Expected: call to DB\(bar`, err)
+			if !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
-		err: "there is a remaining unmet expectation: call to DB().Close()",
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Run(t, testMock)
 }
@@ -897,8 +939,11 @@ func TestCreateDoc(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, _, err := c.DB("foo").CreateDoc(context.TODO(), "bar")
-			testy.ErrorRE(t, `has doc: "foo"`, err)
+			if !testy.ErrorMatchesRE(`has doc: "foo"`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("options", mockTest{
 		setup: func(m *Client) {
@@ -908,8 +953,11 @@ func TestCreateDoc(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, _, err := c.DB("foo").CreateDoc(context.TODO(), "bar", kivik.Params(nil))
-			testy.ErrorRE(t, `has options: map\[foo:bar]`, err)
+			if !testy.ErrorMatchesRE(`has options: map\[foo:bar]`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("delay", mockTest{
 		setup: func(m *Client) {
@@ -937,9 +985,11 @@ func TestCreateDoc(t *testing.T) {
 			foo := c.DB("foo")
 			_ = c.DB("bar")
 			_, _, err := foo.CreateDoc(context.TODO(), 123)
-			testy.ErrorRE(t, `Expected: call to DB\(bar`, err)
+			if !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
-		err: "there is a remaining unmet expectation: call to DB().Close()",
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Run(t, testMock)
 }
@@ -1023,8 +1073,11 @@ func TestCompactView(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			err := c.DB("foo").CompactView(context.TODO(), "bar")
-			testy.ErrorRE(t, "has ddocID: foo", err)
+			if !testy.ErrorMatchesRE("has ddocID: foo", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("delay", mockTest{
 		setup: func(m *Client) {
@@ -1052,9 +1105,11 @@ func TestCompactView(t *testing.T) {
 			foo := c.DB("foo")
 			_ = c.DB("bar")
 			err := foo.CompactView(context.TODO(), "foo")
-			testy.ErrorRE(t, `Expected: call to DB\(bar`, err)
+			if !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
-		err: "there is a remaining unmet expectation: call to DB().Close()",
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Run(t, testMock)
 }
@@ -1155,9 +1210,11 @@ func TestPut(t *testing.T) {
 			foo := c.DB("foo")
 			_ = c.DB("bar")
 			_, err := foo.Put(context.TODO(), "foo", 123)
-			testy.ErrorRE(t, `Expected: call to DB\(bar`, err)
+			if !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
-		err: "there is a remaining unmet expectation: call to DB().Close()",
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("wrong id", mockTest{
 		setup: func(m *Client) {
@@ -1167,8 +1224,11 @@ func TestPut(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").Put(context.TODO(), "bar", 123)
-			testy.ErrorRE(t, "has docID: foo", err)
+			if !testy.ErrorMatchesRE("has docID: foo", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("wrong doc", mockTest{
 		setup: func(m *Client) {
@@ -1178,8 +1238,11 @@ func TestPut(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").Put(context.TODO(), "foo", 123)
-			testy.ErrorRE(t, "has docID: foo", err)
+			if !testy.ErrorMatchesRE("has docID: foo", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("wrong options", mockTest{
 		setup: func(m *Client) {
@@ -1189,8 +1252,11 @@ func TestPut(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").Put(context.TODO(), "foo", 123, kivik.Param("foo", 123))
-			testy.ErrorRE(t, "has docID: foo", err)
+			if !testy.ErrorMatchesRE("has docID: foo", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("success", mockTest{
 		setup: func(m *Client) {
@@ -1200,7 +1266,9 @@ func TestPut(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			result, err := c.DB("foo").Put(context.TODO(), "foo", 123)
-			testy.ErrorRE(t, "", err)
+			if !testy.ErrorMatchesRE("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			if result != "oink" {
 				t.Errorf("Unexpected result: %s", result)
 			}
@@ -1262,9 +1330,11 @@ func TestGetRev(t *testing.T) {
 			foo := c.DB("foo")
 			_ = c.DB("bar")
 			_, err := foo.GetRev(context.TODO(), "foo")
-			testy.ErrorRE(t, `Expected: call to DB\(bar`, err)
+			if !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
-		err: "there is a remaining unmet expectation: call to DB().Close()",
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("wrong id", mockTest{
 		setup: func(m *Client) {
@@ -1274,8 +1344,11 @@ func TestGetRev(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").GetRev(context.TODO(), "bar")
-			testy.ErrorRE(t, "has docID: foo", err)
+			if !testy.ErrorMatchesRE("has docID: foo", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("wrong options", mockTest{
 		setup: func(m *Client) {
@@ -1285,8 +1358,11 @@ func TestGetRev(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").GetRev(context.TODO(), "foo", kivik.Param("foo", 123))
-			testy.ErrorRE(t, "has docID: foo", err)
+			if !testy.ErrorMatchesRE("has docID: foo", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("success", mockTest{
 		setup: func(m *Client) {
@@ -1296,7 +1372,9 @@ func TestGetRev(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			rev, err := c.DB("foo").GetRev(context.TODO(), "foo")
-			testy.ErrorRE(t, "", err)
+			if !testy.ErrorMatchesRE("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			if rev != "1-oink" {
 				t.Errorf("Unexpected rev: %s", rev)
 			}
@@ -1346,9 +1424,11 @@ func TestFlush(t *testing.T) {
 			foo := c.DB("foo")
 			_ = c.DB("bar")
 			err := foo.Flush(context.TODO())
-			testy.ErrorRE(t, `Expected: call to DB\(bar`, err)
+			if !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
-		err: "there is a remaining unmet expectation: call to DB().Close()",
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Run(t, testMock)
 }
@@ -1394,9 +1474,11 @@ func TestDeleteAttachment(t *testing.T) {
 			foo := c.DB("foo")
 			_ = c.DB("bar")
 			_, err := foo.DeleteAttachment(context.TODO(), "foo", "1-foo", "foo.txt")
-			testy.ErrorRE(t, `Expected: call to DB\(bar`, err)
+			if !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
-		err: "there is a remaining unmet expectation: call to DB().Close()",
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("wrong docID", mockTest{
 		setup: func(m *Client) {
@@ -1406,8 +1488,11 @@ func TestDeleteAttachment(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").DeleteAttachment(context.TODO(), "foo", "1-foo", "foo.txt")
-			testy.ErrorRE(t, "has docID: bar", err)
+			if !testy.ErrorMatchesRE("has docID: bar", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("wrong rev", mockTest{
 		setup: func(m *Client) {
@@ -1417,8 +1502,11 @@ func TestDeleteAttachment(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").DeleteAttachment(context.TODO(), "foo", "1-foo", "foo.txt")
-			testy.ErrorRE(t, `has options: map\[rev:1-foo\]`, err)
+			if !testy.ErrorMatchesRE(`has options: map\[rev:1-foo\]`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("wrong filename", mockTest{
 		setup: func(m *Client) {
@@ -1428,8 +1516,11 @@ func TestDeleteAttachment(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").DeleteAttachment(context.TODO(), "foo", "1-foo", "foo.txt")
-			testy.ErrorRE(t, "has filename: bar.txt", err)
+			if !testy.ErrorMatchesRE("has filename: bar.txt", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("wrong options", mockTest{
 		setup: func(m *Client) {
@@ -1439,8 +1530,11 @@ func TestDeleteAttachment(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").DeleteAttachment(context.TODO(), "foo", "1-foo", "foo.txt")
-			testy.ErrorRE(t, `has options: map\[foo:baz]`, err)
+			if !testy.ErrorMatchesRE(`has options: map\[foo:baz]`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("success", mockTest{
 		setup: func(m *Client) {
@@ -1502,9 +1596,11 @@ func TestDelete(t *testing.T) {
 			foo := c.DB("foo")
 			_ = c.DB("bar")
 			_, err := foo.Delete(context.TODO(), "foo", "1-foo")
-			testy.ErrorRE(t, `Expected: call to DB\(bar`, err)
+			if !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
-		err: "there is a remaining unmet expectation: call to DB().Close()",
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("wrong docID", mockTest{
 		setup: func(m *Client) {
@@ -1514,8 +1610,11 @@ func TestDelete(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").Delete(context.TODO(), "foo", "1-foo")
-			testy.ErrorRE(t, "has docID: bar", err)
+			if !testy.ErrorMatchesRE("has docID: bar", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("wrong rev", mockTest{
 		setup: func(m *Client) {
@@ -1525,8 +1624,11 @@ func TestDelete(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").Delete(context.TODO(), "foo", "1-foo")
-			testy.ErrorRE(t, `has options: map\[rev:2-lkj\]`, err)
+			if !testy.ErrorMatchesRE(`has options: map\[rev:2-lkj\]`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("wrong options", mockTest{
 		setup: func(m *Client) {
@@ -1536,8 +1638,11 @@ func TestDelete(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").Delete(context.TODO(), "foo", "1-foo")
-			testy.ErrorRE(t, `has options: map\[foo:baz]`, err)
+			if !testy.ErrorMatchesRE(`has options: map\[foo:baz]`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("success", mockTest{
 		setup: func(m *Client) {
@@ -1599,9 +1704,11 @@ func TestCopy(t *testing.T) {
 			foo := c.DB("foo")
 			_ = c.DB("bar")
 			_, err := foo.Copy(context.TODO(), "foo", "1-foo")
-			testy.ErrorRE(t, `Expected: call to DB\(bar`, err)
+			if !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
-		err: "there is a remaining unmet expectation: call to DB().Close()",
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("wrong targetID", mockTest{
 		setup: func(m *Client) {
@@ -1611,8 +1718,11 @@ func TestCopy(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").Copy(context.TODO(), "foo", "bar")
-			testy.ErrorRE(t, "has targetID: bar", err)
+			if !testy.ErrorMatchesRE("has targetID: bar", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("wrong sourceID", mockTest{
 		setup: func(m *Client) {
@@ -1622,8 +1732,11 @@ func TestCopy(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").Copy(context.TODO(), "foo", "bar")
-			testy.ErrorRE(t, "has sourceID: baz", err)
+			if !testy.ErrorMatchesRE("has sourceID: baz", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("wrong options", mockTest{
 		setup: func(m *Client) {
@@ -1633,8 +1746,11 @@ func TestCopy(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").Copy(context.TODO(), "foo", "bar")
-			testy.ErrorRE(t, `has options: map\[foo:baz]`, err)
+			if !testy.ErrorMatchesRE(`has options: map\[foo:baz]`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("success", mockTest{
 		setup: func(m *Client) {
@@ -1701,10 +1817,12 @@ func TestGet(t *testing.T) {
 			_ = c.DB("bar")
 			rows := foo.Get(context.TODO(), "foo")
 			err := rows.Err()
-			testy.ErrorRE(t, `Expected: call to DB\(bar`, err)
+			if !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			_ = rows.Close()
 		},
-		err: "there is a remaining unmet expectation: call to DB().Close()",
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("wrong docID", mockTest{
 		setup: func(m *Client) {
@@ -1715,9 +1833,12 @@ func TestGet(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			rows := c.DB("foo").Get(context.TODO(), "foo")
 			err := rows.Err()
-			testy.ErrorRE(t, "has docID: bar", err)
+			if !testy.ErrorMatchesRE("has docID: bar", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			_ = rows.Close()
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("wrong options", mockTest{
 		setup: func(m *Client) {
@@ -1728,9 +1849,12 @@ func TestGet(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			rows := c.DB("foo").Get(context.TODO(), "foo")
 			err := rows.Err()
-			testy.ErrorRE(t, `has options: map\[foo:baz]`, err)
+			if !testy.ErrorMatchesRE(`has options: map\[foo:baz]`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			_ = rows.Close()
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("success", mockTest{
 		setup: func(m *Client) {
@@ -1797,9 +1921,11 @@ func TestGetAttachmentMeta(t *testing.T) {
 			foo := c.DB("foo")
 			_ = c.DB("bar")
 			_, err := foo.GetAttachmentMeta(context.TODO(), "foo", "foo.txt")
-			testy.ErrorRE(t, `Expected: call to DB\(bar`, err)
+			if !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
-		err: "there is a remaining unmet expectation: call to DB().Close()",
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("wrong docID", mockTest{
 		setup: func(m *Client) {
@@ -1809,8 +1935,11 @@ func TestGetAttachmentMeta(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").GetAttachmentMeta(context.TODO(), "foo", "foo.txt")
-			testy.ErrorRE(t, "has docID: bar", err)
+			if !testy.ErrorMatchesRE("has docID: bar", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("wrong filename", mockTest{
 		setup: func(m *Client) {
@@ -1820,8 +1949,11 @@ func TestGetAttachmentMeta(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").GetAttachmentMeta(context.TODO(), "foo", "foo.txt")
-			testy.ErrorRE(t, "has filename: bar.jpg", err)
+			if !testy.ErrorMatchesRE("has filename: bar.jpg", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("wrong options", mockTest{
 		setup: func(m *Client) {
@@ -1831,8 +1963,11 @@ func TestGetAttachmentMeta(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").GetAttachmentMeta(context.TODO(), "foo", "foo.txt")
-			testy.ErrorRE(t, `has options: map\[foo:baz]`, err)
+			if !testy.ErrorMatchesRE(`has options: map\[foo:baz]`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("success", mockTest{
 		setup: func(m *Client) {
@@ -1916,9 +2051,11 @@ func TestLocalDocs(t *testing.T) {
 			foo := c.DB("foo")
 			_ = c.DB("bar")
 			rows := foo.LocalDocs(context.TODO())
-			testy.ErrorRE(t, `Expected: call to DB\(bar`, rows.Err())
+			if err := rows.Err(); !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
-		err: "there is a remaining unmet expectation: call to DB().Close()",
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Run(t, testMock)
 }
@@ -1965,8 +2102,11 @@ func TestPurge(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			_, err := db.Purge(context.TODO(), nil)
-			testy.ErrorRE(t, "has docRevMap: map", err)
+			if !testy.ErrorMatchesRE("has docRevMap: map", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("delay", mockTest{
 		setup: func(m *Client) {
@@ -1995,9 +2135,11 @@ func TestPurge(t *testing.T) {
 			foo := c.DB("foo")
 			_ = c.DB("bar")
 			_, err := foo.Purge(context.TODO(), nil)
-			testy.ErrorRE(t, `Expected: call to DB\(bar`, err)
+			if !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
-		err: "there is a remaining unmet expectation: call to DB().Close()",
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Run(t, testMock)
 }
@@ -2043,9 +2185,11 @@ func TestPutAttachment(t *testing.T) {
 			foo := c.DB("foo")
 			_ = c.DB("bar")
 			_, err := foo.PutAttachment(context.TODO(), "foo", &kivik.Attachment{Filename: "foo.txt"})
-			testy.ErrorRE(t, `Expected: call to DB\(bar`, err)
+			if !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
-		err: "there is a remaining unmet expectation: call to DB().Close()",
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("wrong id", mockTest{
 		setup: func(m *Client) {
@@ -2055,8 +2199,11 @@ func TestPutAttachment(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").PutAttachment(context.TODO(), "foo", &kivik.Attachment{Filename: "foo.txt"})
-			testy.ErrorRE(t, "has docID: bar", err)
+			if !testy.ErrorMatchesRE("has docID: bar", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("wrong rev", mockTest{
 		setup: func(m *Client) {
@@ -2066,8 +2213,11 @@ func TestPutAttachment(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").PutAttachment(context.TODO(), "foo", &kivik.Attachment{Filename: "foo.txt"})
-			testy.ErrorRE(t, `has options: map\[rev:2-bar\]`, err)
+			if !testy.ErrorMatchesRE(`has options: map\[rev:2-bar\]`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("wrong attachment", mockTest{
 		setup: func(m *Client) {
@@ -2077,8 +2227,11 @@ func TestPutAttachment(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").PutAttachment(context.TODO(), "foo", &kivik.Attachment{Filename: "foo.txt"})
-			testy.ErrorRE(t, "has attachment: bar.jpg", err)
+			if !testy.ErrorMatchesRE("has attachment: bar.jpg", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("wrong options", mockTest{
 		setup: func(m *Client) {
@@ -2088,8 +2241,11 @@ func TestPutAttachment(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").PutAttachment(context.TODO(), "foo", &kivik.Attachment{Filename: "foo.txt"}, kivik.Param("foo", 123))
-			testy.ErrorRE(t, "has docID: foo", err)
+			if !testy.ErrorMatchesRE("has docID: foo", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("success", mockTest{
 		setup: func(m *Client) {
@@ -2099,7 +2255,9 @@ func TestPutAttachment(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			result, err := c.DB("foo").PutAttachment(context.TODO(), "foo", &kivik.Attachment{Filename: "foo.txt"})
-			testy.ErrorRE(t, "", err)
+			if !testy.ErrorMatchesRE("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			if result != "2-boo" {
 				t.Errorf("Unexpected result: %s", result)
 			}
@@ -2172,9 +2330,11 @@ func TestQuery(t *testing.T) {
 			foo := c.DB("foo")
 			_ = c.DB("bar")
 			rows := foo.Query(context.TODO(), "foo", "bar")
-			testy.ErrorRE(t, `Expected: call to DB\(bar`, rows.Err())
+			if err := rows.Err(); !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
-		err: "there is a remaining unmet expectation: call to DB().Close()",
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("wrong ddocID", mockTest{
 		setup: func(m *Client) {
@@ -2185,8 +2345,11 @@ func TestQuery(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.Query(context.TODO(), "foo", "bar")
-			testy.ErrorRE(t, "has ddocID: bar", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatchesRE("has ddocID: bar", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("wrong view", mockTest{
 		setup: func(m *Client) {
@@ -2197,8 +2360,11 @@ func TestQuery(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.Query(context.TODO(), "foo", "bar")
-			testy.ErrorRE(t, "has view: baz", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatchesRE("has view: baz", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Run(t, testMock)
 }
@@ -2268,9 +2434,11 @@ func TestSecurity(t *testing.T) {
 			foo := c.DB("foo")
 			_ = c.DB("bar")
 			_, err := foo.Security(context.TODO())
-			testy.ErrorRE(t, `Expected: call to DB\(bar`, err)
+			if !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
-		err: "there is a remaining unmet expectation: call to DB().Close()",
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Run(t, testMock)
 }
@@ -2332,9 +2500,11 @@ func TestSetSecurity(t *testing.T) {
 			foo := c.DB("foo")
 			_ = c.DB("bar")
 			err := foo.SetSecurity(context.TODO(), clientSec)
-			testy.ErrorRE(t, `Expected: call to DB\(bar`, err)
+			if !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
-		err: "there is a remaining unmet expectation: call to DB().Close()",
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Run(t, testMock)
 }
@@ -2400,9 +2570,11 @@ func TestStats(t *testing.T) {
 			foo := c.DB("foo")
 			_ = c.DB("bar")
 			_, err := foo.Stats(context.TODO())
-			testy.ErrorRE(t, `Expected: call to DB\(bar`, err)
+			if !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
-		err: "there is a remaining unmet expectation: call to DB().Close()",
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Run(t, testMock)
 }
@@ -2502,8 +2674,11 @@ func TestBulkDocs(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			_, err := db.BulkDocs(context.TODO(), []interface{}{1})
-			testy.ErrorRE(t, `map\[foo:123]`, err)
+			if !testy.ErrorMatchesRE(`map\[foo:123]`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("delay", mockTest{
 		setup: func(m *Client) {
@@ -2532,9 +2707,11 @@ func TestBulkDocs(t *testing.T) {
 			foo := c.DB("foo")
 			_ = c.DB("bar")
 			_, err := foo.BulkDocs(context.TODO(), []interface{}{1})
-			testy.ErrorRE(t, `Expected: call to DB\(bar`, err)
+			if !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
-		err: "there is a remaining unmet expectation: call to DB().Close()",
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Run(t, testMock)
 }
@@ -2580,9 +2757,11 @@ func TestGetAttachment(t *testing.T) {
 			foo := c.DB("foo")
 			_ = c.DB("bar")
 			_, err := foo.GetAttachment(context.TODO(), "foo", "bar")
-			testy.ErrorRE(t, `Expected: call to DB\(bar`, err)
+			if !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
-		err: "there is a remaining unmet expectation: call to DB().Close()",
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("wrong docID", mockTest{
 		setup: func(m *Client) {
@@ -2592,8 +2771,11 @@ func TestGetAttachment(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DB("foo").GetAttachment(context.TODO(), "foo", "bar")
-			testy.ErrorRE(t, "has docID: bar", err)
+			if !testy.ErrorMatchesRE("has docID: bar", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("success", mockTest{
 		setup: func(m *Client) {
@@ -2677,9 +2859,11 @@ func TestDesignDocs(t *testing.T) {
 			foo := c.DB("foo")
 			_ = c.DB("bar")
 			rows := foo.DesignDocs(context.TODO())
-			testy.ErrorRE(t, `Expected: call to DB\(bar`, rows.Err())
+			if err := rows.Err(); !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
-		err: "there is a remaining unmet expectation: call to DB().Close()",
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Run(t, testMock)
 }
@@ -2778,8 +2962,11 @@ func TestChanges(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.Changes(context.TODO())
-			testy.ErrorRE(t, `map\[foo:123]`, rows.Err())
+			if err := rows.Err(); !testy.ErrorMatchesRE(`map\[foo:123]`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("delay", mockTest{
 		setup: func(m *Client) {
@@ -2832,9 +3019,11 @@ func TestChanges(t *testing.T) {
 			foo := c.DB("foo")
 			_ = c.DB("bar")
 			rows := foo.Changes(context.TODO())
-			testy.ErrorRE(t, `Expected: call to DB\(bar`, rows.Err())
+			if err := rows.Err(); !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
-		err: "there is a remaining unmet expectation: call to DB().Close()",
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("changes last_seq", mockTest{
 		setup: func(m *Client) {

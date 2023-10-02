@@ -30,15 +30,19 @@ import (
 )
 
 func TestGet_open_revs(t *testing.T) {
+	type result struct {
+		Rev string
+		Doc interface{}
+	}
 	tests := []struct {
-		name     string
-		path     string
-		dbname   string
-		options  kivik.Option
-		id       string
-		status   int
-		err      string
-		wantRevs []string
+		name    string
+		path    string
+		dbname  string
+		options kivik.Option
+		id      string
+		status  int
+		err     string
+		want    []result
 	}{
 		// {
 		// 	name:     "open_revs=all",
@@ -49,12 +53,16 @@ func TestGet_open_revs(t *testing.T) {
 		// 	wantRevs: []string{"1-xxxxxxxxxx", "2-yyyyyyyyy"},
 		// },
 		{
-			name:     "open_revs=1-xxxxxxxxxx",
-			path:     "testdata",
-			dbname:   "db_foo",
-			id:       "withattach",
-			options:  kivik.Param("open_revs", "1-xxxxxxxxxx"),
-			wantRevs: []string{"1-xxxxxxxxxx"},
+			name:    "open_revs=1-xxxxxxxxxx",
+			path:    "testdata",
+			dbname:  "db_foo",
+			id:      "withattach",
+			options: kivik.Param("open_revs", "1-xxxxxxxxxx"),
+			want: []result{
+				{
+					Rev: "1-xxxxxxxxxx",
+				},
+			},
 		},
 	}
 
@@ -78,15 +86,18 @@ func TestGet_open_revs(t *testing.T) {
 				return
 			}
 			var row driver.Row
-			gotRevs := []string{}
+			got := []result{}
 			for {
 				err := rows.Next(&row)
 				if err == io.EOF {
 					break
 				}
-				gotRevs = append(gotRevs, row.Rev)
+				got = append(got, result{
+					Rev: row.Rev,
+				})
 			}
-			if d := cmp.Diff(tt.wantRevs, gotRevs); d != "" {
+
+			if d := cmp.Diff(tt.want, got); d != "" {
 				t.Errorf("Unexpected revs returned: %s", d)
 			}
 		})

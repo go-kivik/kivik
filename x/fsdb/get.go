@@ -38,22 +38,22 @@ func (d *db) Get(_ context.Context, docID string, options driver.Options) (drive
 	if docID == "" {
 		return nil, statusError{status: http.StatusBadRequest, error: errors.New("no docid specified")}
 	}
-	doc, err := d.cdb.OpenDocID(docID, options)
+	docs, err := d.cdb.OpenDocIDOpenRevs(docID, options)
 	if err != nil {
 		return nil, err
 	}
-	doc.Options = opts
+	docs[0].Options = opts
 	buf := &bytes.Buffer{}
-	if err := json.NewEncoder(buf).Encode(doc); err != nil {
+	if err := json.NewEncoder(buf).Encode(docs[0]); err != nil {
 		return nil, err
 	}
-	attsIter, err := doc.Revisions[0].AttachmentsIterator()
+	attsIter, err := docs[0].Revisions[0].AttachmentsIterator()
 	if err != nil {
 		return nil, err
 	}
 	return &document{
 		ID:          docID,
-		Rev:         doc.Revisions[0].Rev.String(),
+		Rev:         docs[0].Revisions[0].Rev.String(),
 		Body:        io.NopCloser(buf),
 		Attachments: attsIter,
 	}, nil

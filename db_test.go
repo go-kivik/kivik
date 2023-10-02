@@ -119,7 +119,13 @@ func TestAllDocs(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			rs := test.db.AllDocs(context.Background(), test.options)
-			testy.StatusError(t, test.err, test.status, rs.Err())
+			err := rs.Err()
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			rs.cancel = nil  // Determinism
 			rs.onClose = nil // Determinism
 			if d := testy.DiffInterface(test.expected, rs); d != nil {
@@ -306,7 +312,13 @@ func TestDesignDocs(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			rs := test.db.DesignDocs(context.Background(), test.options)
-			testy.StatusError(t, test.err, test.status, rs.Err())
+			err := rs.Err()
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			rs.cancel = nil  // Determinism
 			rs.onClose = nil // Determinism
 			if d := testy.DiffInterface(test.expected, rs); d != nil {
@@ -413,7 +425,13 @@ func TestLocalDocs(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			rs := test.db.LocalDocs(context.Background(), test.options)
-			testy.StatusError(t, test.err, test.status, rs.Err())
+			err := rs.Err()
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			rs.cancel = nil  // Determinism
 			rs.onClose = nil // Determinism
 			if d := testy.DiffInterface(test.expected, rs); d != nil {
@@ -522,7 +540,13 @@ func TestQuery(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			rs := test.db.Query(context.Background(), test.ddoc, test.view, test.options)
-			testy.StatusError(t, test.err, test.status, rs.Err())
+			err := rs.Err()
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			rs.cancel = nil  // Determinism
 			rs.onClose = nil // Determinism
 			if d := testy.DiffInterface(test.expected, rs); d != nil {
@@ -747,7 +771,9 @@ func TestFlush(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			err := test.db.Flush(context.Background())
-			testy.StatusError(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 		})
 	}
 }
@@ -831,7 +857,9 @@ func TestStats(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := test.db.Stats(context.Background())
-			testy.StatusError(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
@@ -851,7 +879,9 @@ func TestCompact(t *testing.T) {
 			},
 		}
 		err := db.Compact(context.Background())
-		testy.StatusError(t, expected, http.StatusBadRequest, err)
+		if d := internal.StatusErrorDiff(expected, http.StatusBadRequest, err); d != "" {
+			t.Error(d)
+		}
 	})
 	t.Run("closed", func(t *testing.T) {
 		expected := errClientClosed
@@ -861,7 +891,9 @@ func TestCompact(t *testing.T) {
 			},
 		}
 		err := db.Compact(context.Background())
-		testy.StatusError(t, expected, http.StatusServiceUnavailable, err)
+		if d := internal.StatusErrorDiff(expected, http.StatusServiceUnavailable, err); d != "" {
+			t.Error(d)
+		}
 	})
 	t.Run("db error", func(t *testing.T) {
 		db := &DB{
@@ -891,7 +923,9 @@ func TestCompactView(t *testing.T) {
 			},
 		}
 		err := db.CompactView(context.Background(), expectedDDocID)
-		testy.StatusError(t, expected, http.StatusBadRequest, err)
+		if d := internal.StatusErrorDiff(expected, http.StatusBadRequest, err); d != "" {
+			t.Error(d)
+		}
 	})
 	t.Run("closed", func(t *testing.T) {
 		expected := errClientClosed
@@ -901,7 +935,9 @@ func TestCompactView(t *testing.T) {
 			},
 		}
 		err := db.CompactView(context.Background(), "")
-		testy.StatusError(t, expected, http.StatusServiceUnavailable, err)
+		if d := internal.StatusErrorDiff(expected, http.StatusServiceUnavailable, err); d != "" {
+			t.Error(d)
+		}
 	})
 	t.Run("db error", func(t *testing.T) {
 		db := &DB{
@@ -927,7 +963,9 @@ func TestViewCleanup(t *testing.T) {
 			},
 		}
 		err := db.ViewCleanup(context.Background())
-		testy.StatusError(t, expected, http.StatusBadRequest, err)
+		if d := internal.StatusErrorDiff(expected, http.StatusBadRequest, err); d != "" {
+			t.Error(d)
+		}
 	})
 	t.Run(errClientClosed, func(t *testing.T) {
 		expected := errClientClosed
@@ -937,7 +975,9 @@ func TestViewCleanup(t *testing.T) {
 			},
 		}
 		err := db.ViewCleanup(context.Background())
-		testy.StatusError(t, expected, http.StatusServiceUnavailable, err)
+		if d := internal.StatusErrorDiff(expected, http.StatusServiceUnavailable, err); d != "" {
+			t.Error(d)
+		}
 	})
 	t.Run("db error", func(t *testing.T) {
 		expected := "db error"
@@ -945,7 +985,9 @@ func TestViewCleanup(t *testing.T) {
 			err: errors.New(expected),
 		}
 		err := db.ViewCleanup(context.Background())
-		testy.StatusError(t, expected, http.StatusInternalServerError, err)
+		if d := internal.StatusErrorDiff(expected, http.StatusInternalServerError, err); d != "" {
+			t.Error(d)
+		}
 	})
 }
 
@@ -1023,7 +1065,9 @@ func TestSecurity(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := test.db.Security(context.Background())
-			testy.StatusError(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
@@ -1120,7 +1164,9 @@ func TestSetSecurity(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			err := test.db.SetSecurity(context.Background(), test.security)
-			testy.StatusError(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 		})
 	}
 }
@@ -1275,7 +1321,9 @@ func TestGetRev(t *testing.T) { // nolint: gocyclo
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			rev, err := test.db.GetRev(context.Background(), test.docID, test.options)
-			testy.StatusError(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 			if rev != test.rev {
 				t.Errorf("Unexpected rev: %v", rev)
 			}
@@ -1468,7 +1516,9 @@ func TestCopy(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := test.db.Copy(context.Background(), test.target, test.source, test.options)
-			testy.StatusError(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 			if result != test.expected {
 				t.Errorf("Unexpected result: %s", result)
 			}
@@ -1519,7 +1569,9 @@ func TestNormalizeFromJSON(t *testing.T) {
 		func(test njTest) {
 			t.Run(test.Name, func(t *testing.T) {
 				result, err := normalizeFromJSON(test.Input)
-				testy.StatusError(t, test.Error, test.Status, err)
+				if d := internal.StatusErrorDiff(test.Error, test.Status, err); d != "" {
+					t.Error(d)
+				}
 				if d := testy.DiffAsJSON(test.Expected, result); d != nil {
 					t.Error(d)
 				}
@@ -1677,7 +1729,9 @@ func TestPut(t *testing.T) {
 		func(test putTest) {
 			t.Run(test.name, func(t *testing.T) {
 				newRev, err := test.db.Put(context.Background(), test.docID, test.input, test.options)
-				testy.StatusError(t, test.err, test.status, err)
+				if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+					t.Error(d)
+				}
 				if newRev != test.newRev {
 					t.Errorf("Unexpected new rev: %s", newRev)
 				}
@@ -1803,7 +1857,9 @@ func TestCreateDoc(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			docID, rev, err := test.db.CreateDoc(context.Background(), test.doc, test.options)
-			testy.StatusError(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 			if docID != test.docID || rev != test.rev {
 				t.Errorf("Unexpected result: %s / %s", docID, rev)
 			}
@@ -1944,7 +2000,9 @@ func TestDelete(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			newRev, err := test.db.Delete(context.Background(), test.docID, test.rev, test.options)
-			testy.StatusError(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 			if newRev != test.newRev {
 				t.Errorf("Unexpected newRev: %s", newRev)
 			}
@@ -2074,7 +2132,9 @@ func TestPutAttachment(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			newRev, err := test.db.PutAttachment(context.Background(), test.docID, test.att, test.options)
-			testy.StatusError(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 			if newRev != test.newRev {
 				t.Errorf("Unexpected newRev: %s", newRev)
 			}
@@ -2208,7 +2268,9 @@ func TestDeleteAttachment(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, tt tt) {
 		newRev, err := tt.db.DeleteAttachment(context.Background(), tt.docID, tt.rev, tt.filename, tt.options)
-		testy.StatusError(t, tt.err, tt.status, err)
+		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
 		if newRev != tt.newRev {
 			t.Errorf("Unexpected new rev: %s", newRev)
 		}
@@ -2316,7 +2378,12 @@ func TestGetAttachment(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, tt tt) {
 		result, err := tt.db.GetAttachment(context.Background(), tt.docID, tt.filename, tt.options)
-		testy.StatusError(t, tt.err, tt.status, err)
+		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
+		if err != nil {
+			return
+		}
 		content, err := io.ReadAll(result.Content)
 		if err != nil {
 			t.Fatal(err)
@@ -2491,7 +2558,9 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := test.db.GetAttachmentMeta(context.Background(), test.docID, test.filename, test.options)
-			testy.StatusError(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
@@ -2596,7 +2665,9 @@ func TestPurge(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := test.db.Purge(context.Background(), test.docMap)
-			testy.StatusError(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
@@ -2675,7 +2746,13 @@ func TestBulkGet(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			rs := test.db.BulkGet(context.Background(), test.docs, test.options)
-			testy.StatusError(t, test.err, test.status, rs.Err())
+			err := rs.Err()
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			rs.cancel = nil  // Determinism
 			rs.onClose = nil // Determinism
 			if d := testy.DiffInterface(test.expected, rs); d != nil {
@@ -2888,7 +2965,13 @@ func TestRevsDiff(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, tt tt) {
 		rs := tt.db.RevsDiff(context.Background(), tt.revMap)
-		testy.StatusError(t, tt.err, tt.status, rs.Err())
+		err := rs.Err()
+		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
+		if err != nil {
+			return
+		}
 		rs.cancel = nil  // Determinism
 		rs.onClose = nil // Determinism
 		if d := testy.DiffInterface(tt.expected, rs); d != nil {
@@ -2962,7 +3045,12 @@ func TestPartitionStats(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, tt tt) {
 		result, err := tt.db.PartitionStats(context.Background(), tt.name)
-		testy.StatusError(t, tt.err, tt.status, err)
+		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
+		if err != nil {
+			return
+		}
 		if d := testy.DiffInterface(testy.Snapshot(t), result); d != nil {
 			t.Error(d)
 		}

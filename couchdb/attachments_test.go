@@ -599,7 +599,12 @@ func TestDecodeAttachment(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			att, err := decodeAttachment(test.resp)
-			testy.StatusError(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			fileContent, err := io.ReadAll(att.Content)
 			if err != nil {
 				t.Fatal(err)

@@ -33,7 +33,9 @@ func TestReplicationError(t *testing.T) {
 	status := 404
 	reason := "not found"
 	err := &replicationError{status: status, reason: reason}
-	testy.StatusError(t, reason, status, err)
+	if d := internal.StatusErrorDiff(reason, status, err); d != "" {
+		t.Error(d)
+	}
 }
 
 func TestStateTime(t *testing.T) {

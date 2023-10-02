@@ -25,6 +25,7 @@ import (
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
@@ -240,7 +241,9 @@ func TestChangesScanDoc(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			var result interface{}
 			err := test.changes.ScanDoc(&result)
-			testy.StatusError(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
@@ -319,7 +322,13 @@ func TestChanges(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result := test.db.Changes(context.Background(), test.opts)
-			testy.StatusError(t, test.err, test.status, result.Err())
+			err := result.Err()
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			result.cancel = nil  // Determinism
 			result.onClose = nil // Determinism
 			if d := testy.DiffInterface(test.expected, result); d != nil {

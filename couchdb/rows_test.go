@@ -22,6 +22,7 @@ import (
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 const input = `
@@ -234,7 +235,12 @@ func TestRowsIteratorErrors(t *testing.T) {
 				if err == nil {
 					continue
 				}
-				testy.StatusError(t, test.err, test.status, err)
+				if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+					t.Error(d)
+				}
+				if err != nil {
+					return
+				}
 			}
 		})
 	}

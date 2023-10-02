@@ -22,6 +22,7 @@ import (
 	"gitlab.com/flimzy/testy"
 
 	kivik "github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 func TestDeJSONify(t *testing.T) {
@@ -62,7 +63,9 @@ func TestDeJSONify(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := deJSONify(test.input)
-			testy.StatusError(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}

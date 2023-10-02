@@ -273,7 +273,9 @@ func TestEncodeBody(t *testing.T) {
 				r := EncodeBody(test.input)
 				defer r.Close() // nolint: errcheck
 				body, err := io.ReadAll(r)
-				testy.StatusError(t, test.err, test.status, err)
+				if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+					t.Error(d)
+				}
 				result := strings.TrimSpace(string(body))
 				if result != test.expected {
 					t.Errorf("Result\nExpected: %s\n  Actual: %s\n", test.expected, result)
@@ -922,7 +924,9 @@ func TestDoError(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			_, err := test.client.DoError(context.Background(), test.method, test.path, test.opts)
-			testy.StatusError(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 		})
 	}
 }

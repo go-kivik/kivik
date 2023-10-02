@@ -23,6 +23,7 @@ import (
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
@@ -94,7 +95,9 @@ func TestDocsInterfaceSlice(t *testing.T) {
 		func(test diTest) {
 			t.Run(test.name, func(t *testing.T) {
 				result, err := docsInterfaceSlice(test.input)
-				testy.StatusError(t, test.err, test.status, err)
+				if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+					t.Error(d)
+				}
 				if d := testy.DiffAsJSON(test.expected, result); d != nil {
 					t.Errorf("%s", d)
 				}
@@ -256,7 +259,9 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 
 	tests.Run(t, func(t *testing.T, tt tt) {
 		result, err := tt.db.BulkDocs(context.Background(), tt.docs, tt.options)
-		testy.StatusError(t, tt.err, tt.status, err)
+		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
 		if d := testy.DiffInterface(tt.expected, result); d != nil {
 			t.Error(d)
 		}

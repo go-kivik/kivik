@@ -22,6 +22,7 @@ import (
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
@@ -105,7 +106,13 @@ func TestFind(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			rs := test.db.Find(context.Background(), test.query)
-			testy.StatusError(t, test.err, test.status, rs.Err())
+			err := rs.Err()
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			rs.cancel = nil  // Determinism
 			rs.onClose = nil // Determinism
 			if d := testy.DiffInterface(test.expected, rs); d != nil {
@@ -224,7 +231,9 @@ func TestCreateIndex(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.testName, func(t *testing.T) {
 			err := test.db.CreateIndex(context.Background(), test.ddoc, test.name, test.index)
-			testy.StatusError(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 		})
 	}
 }
@@ -303,7 +312,9 @@ func TestDeleteIndex(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.testName, func(t *testing.T) {
 			err := test.db.DeleteIndex(context.Background(), test.ddoc, test.name)
-			testy.StatusError(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 		})
 	}
 }
@@ -383,7 +394,12 @@ func TestGetIndexes(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.testName, func(t *testing.T) {
 			result, err := test.db.GetIndexes(context.Background())
-			testy.StatusError(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
@@ -456,7 +472,9 @@ func TestExplain(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, tt tt) {
 		result, err := tt.db.Explain(context.Background(), tt.query)
-		testy.StatusError(t, tt.err, tt.status, err)
+		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
 		if d := testy.DiffInterface(tt.expected, result); d != nil {
 			t.Error(d)
 		}

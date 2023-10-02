@@ -16,6 +16,8 @@ import (
 	"testing"
 
 	"gitlab.com/flimzy/testy"
+
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 func TestNewRevision(t *testing.T) {
@@ -46,7 +48,9 @@ func TestNewRevision(t *testing.T) {
 	tests.Run(t, func(t *testing.T, tt tt) {
 		fs := &FS{}
 		rev, err := fs.NewRevision(tt.i)
-		testy.StatusError(t, tt.err, tt.status, err)
+		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
 		rev.options = map[string]interface{}{
 			"revs":          true,
 			"attachments":   true,

@@ -23,6 +23,7 @@ import (
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/x/fsdb/filesystem"
 )
 
@@ -158,7 +159,12 @@ func TestDocumentPersist(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, tt tt) {
 		err := tt.doc.persist(context.TODO())
-		testy.StatusError(t, tt.err, tt.status, err)
+		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
+		if err != nil {
+			return
+		}
 		if d := testy.DiffInterface(testy.Snapshot(t), tt.doc, tmpdirRE(tt.path)); d != nil {
 			t.Error(d)
 		}
@@ -376,7 +382,12 @@ func TestDocumentAddRevision(t *testing.T) {
 			opts = kivik.Params(nil)
 		}
 		revid, err := tt.doc.addRevision(context.TODO(), tt.rev, opts)
-		testy.StatusError(t, tt.err, tt.status, err)
+		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
+		if err != nil {
+			return
+		}
 		if revid != tt.expected {
 			t.Errorf("Unexpected revd: %s", revid)
 		}

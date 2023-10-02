@@ -60,7 +60,9 @@ func TestAllDBs(t *testing.T) {
 	tests.Run(t, func(t *testing.T, tt tt) {
 		c, _ := d.NewClient(tt.path, nil)
 		result, err := c.AllDBs(context.TODO(), tt.options)
-		testy.StatusError(t, tt.err, tt.status, err)
+		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
 		if d := testy.DiffInterface(tt.expected, result); d != nil {
 			t.Error(d)
 		}
@@ -146,7 +148,9 @@ func TestClientnewDB(t *testing.T) {
 	tests.Run(t, func(t *testing.T, tt tt) {
 		c := &client{root: tt.root}
 		result, err := c.newDB(tt.dbname)
-		testy.StatusError(t, tt.err, tt.status, err)
+		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
 		if d := testy.DiffInterface(testy.Snapshot(t), result); d != nil {
 			t.Error(d)
 		}

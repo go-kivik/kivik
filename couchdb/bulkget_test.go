@@ -187,7 +187,9 @@ func TestBulkGet(t *testing.T) {
 		t.Cleanup(func() {
 			_ = rows.Close()
 		})
-		testy.StatusError(t, test.rowErr, test.rowStatus, err)
+		if d := internal.StatusErrorDiff(test.rowErr, test.rowStatus, err); d != "" {
+			t.Error(d)
+		}
 
 		if d := rowsDiff(test.expected, row); d != "" {
 			t.Error(d)

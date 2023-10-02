@@ -276,7 +276,12 @@ func TestChangesNext(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			row := new(driver.Change)
 			err := test.changes.Next(row)
-			testy.StatusError(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			if d := testy.DiffInterface(test.expected, row); d != nil {
 				t.Error(d)
 			}

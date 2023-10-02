@@ -26,6 +26,7 @@ import (
 	"golang.org/x/net/publicsuffix"
 
 	kivik "github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/internal/mock"
 	"github.com/go-kivik/kivik/v4/internal/nettest"
 )
@@ -95,14 +96,18 @@ func TestCookieAuthAuthenticate(t *testing.T) {
 			t.Fatal(e)
 		}
 		_, err = c.DoError(context.Background(), "GET", "/foo", nil)
-		testy.StatusError(t, test.err, test.status, err)
+		if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+			t.Error(d)
+		}
 		if d := testy.DiffInterface(test.expectedCookie, test.auth.Cookie()); d != nil {
 			t.Error(d)
 		}
 
 		// Do it again; should be idempotent
 		_, err = c.DoError(context.Background(), "GET", "/foo", nil)
-		testy.StatusError(t, test.err, test.status, err)
+		if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+			t.Error(d)
+		}
 		if d := testy.DiffInterface(test.expectedCookie, test.auth.Cookie()); d != nil {
 			t.Error(d)
 		}
@@ -329,7 +334,9 @@ func Test401Response(t *testing.T) {
 	}
 
 	_, err = c.DoError(context.Background(), "GET", "/foo", nil)
-	testy.StatusError(t, "", 0, err)
+	if d := internal.StatusErrorDiff("", 0, err); d != "" {
+		t.Error(d)
+	}
 	if d := testy.DiffInterface(expectedCookie, auth.Cookie()); d != nil {
 		t.Error(d)
 	}
@@ -337,7 +344,7 @@ func Test401Response(t *testing.T) {
 	_, err = c.DoError(context.Background(), "GET", "/foo", nil)
 
 	// this causes a skip so this won't work for us.
-	// testy.StatusError(t, "Unauthorized: You are not authorized to access this db.", 401, err)
+	// if d := internal.StatusErrorDiff("Unauthorized: You are not authorized to access this db.", 401, err); d != "" { t.Error(d) }
 	if !testy.ErrorMatches("Unauthorized: You are not authorized to access this db.", err) {
 		t.Fatalf("Unexpected error: %s", err)
 	}
@@ -351,7 +358,9 @@ func Test401Response(t *testing.T) {
 	}
 
 	_, err = c.DoError(context.Background(), "GET", "/foo", nil)
-	testy.StatusError(t, "", 0, err)
+	if d := internal.StatusErrorDiff("", 0, err); d != "" {
+		t.Error(d)
+	}
 	if d := testy.DiffInterface(newCookie, auth.Cookie()); d != nil {
 		t.Error(d)
 	}

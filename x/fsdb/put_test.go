@@ -22,6 +22,7 @@ import (
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/x/fsdb/filesystem"
 )
 
@@ -276,7 +277,12 @@ func TestPut(t *testing.T) {
 			opts = kivik.Params(nil)
 		}
 		rev, err := db.Put(context.Background(), tt.id, tt.doc, opts)
-		testy.StatusError(t, tt.err, tt.status, err)
+		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
+		if err != nil {
+			return
+		}
 		if rev != tt.expected {
 			t.Errorf("Unexpected rev returned: %s", rev)
 		}

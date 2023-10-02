@@ -2173,7 +2173,12 @@ test content
 		t.Run(test.name, func(t *testing.T) {
 			result := new(driver.Attachment)
 			err := test.atts.Next(result)
-			testy.StatusError(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			content, err := io.ReadAll(result.Content)
 			if err != nil {
 				t.Fatal(err)
@@ -2293,7 +2298,12 @@ func TestPurge(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := test.db.Purge(context.Background(), test.docMap)
-			testy.StatusError(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}

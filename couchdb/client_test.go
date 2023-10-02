@@ -325,7 +325,9 @@ func TestUpdatesNext(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			result := new(driver.DBUpdate)
 			err := test.updates.Next(result)
-			testy.StatusError(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}

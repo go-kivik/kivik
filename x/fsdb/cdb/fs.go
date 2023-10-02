@@ -164,7 +164,13 @@ func (fs *FS) OpenDocIDOpenRevs(docID string, options driver.Options) ([]*Docume
 	options.Apply(opts)
 	rev, ok := opts["rev"].(string)
 	if !ok {
-		rev, _ = opts["open_revs"].(string)
+		rev, ok = opts["open_revs"].(string)
+		if !ok {
+			revs, _ := opts["open_revs"].([]string)
+			if len(revs) > 0 {
+				rev = revs[0]
+			}
+		}
 	}
 	revs, err := fs.openRevs(docID, []string{rev})
 	if err != nil {

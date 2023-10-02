@@ -79,6 +79,32 @@ func TestGet_open_revs(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:    "open_revs=1-xxxxxxxxxx",
+			path:    "testdata",
+			dbname:  "db_foo",
+			id:      "withattach",
+			options: kivik.Param("open_revs", []string{"1-xxxxxxxxxx"}),
+			want: []result{
+				{
+					Rev: "1-xxxxxxxxxx",
+					Doc: map[string]interface{}{
+						"_id":  "withattach",
+						"_rev": "1-xxxxxxxxxx",
+						"foo":  "bar",
+						"_attachments": map[string]interface{}{
+							"foo.txt": map[string]interface{}{
+								"content_type": "text/plain",
+								"digest":       "md5-yalFnkJm6jWmErkNw2UxEg==",
+								"length":       float64(12),
+								"revpos":       float64(1),
+								"stub":         true,
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {

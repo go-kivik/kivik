@@ -21,6 +21,7 @@ import (
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 func TestChanges(t *testing.T) {
@@ -50,7 +51,12 @@ func TestChanges(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, tt tt) {
 		changes, err := tt.db.Changes(context.TODO(), tt.options)
-		testy.StatusErrorRE(t, tt.err, tt.status, err)
+		if d := internal.StatusErrorDiffRE(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
+		if err != nil {
+			return
+		}
 		t.Cleanup(func() {
 			_ = changes.Close()
 		})

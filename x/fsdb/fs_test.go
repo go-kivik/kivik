@@ -20,6 +20,7 @@ import (
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 func TestAllDBs(t *testing.T) {
@@ -110,7 +111,9 @@ func TestClientdbPath(t *testing.T) {
 	tests.Run(t, func(t *testing.T, tt tt) {
 		c := &client{root: tt.root}
 		path, name, err := c.dbPath(tt.dbname)
-		testy.StatusErrorRE(t, tt.err, tt.status, err)
+		if d := internal.StatusErrorDiffRE(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
 		if path != tt.path {
 			t.Errorf("Unexpected path: %s", path)
 		}

@@ -18,6 +18,7 @@ import (
 
 	"gitlab.com/flimzy/testy"
 
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/x/fsdb/filesystem"
 )
 
@@ -59,7 +60,9 @@ func TestSecurity(t *testing.T) {
 			t.Fatal(err)
 		}
 		sec, err := db.Security(context.Background())
-		testy.StatusErrorRE(t, tt.err, tt.status, err)
+		if d := internal.StatusErrorDiffRE(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
 		if d := testy.DiffAsJSON(testy.Snapshot(t), sec); d != nil {
 			t.Error(d)
 		}

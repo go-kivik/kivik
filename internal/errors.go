@@ -14,8 +14,10 @@
 package internal
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 )
 
@@ -96,4 +98,61 @@ func (e *Error) msg() string {
 
 type statusCoder interface {
 	HTTPStatus() int
+}
+
+// HTTPStatus returns the HTTP status code embedded in the error, or 500
+// (internal server error), if there was no specified status code.  If err is
+// nil, HTTPStatus returns 0.
+func HTTPStatus(err error) int {
+	if err == nil {
+		return 0
+	}
+	var coder statusCoder
+	for {
+		if errors.As(err, &coder) {
+			return coder.HTTPStatus()
+		}
+		if uw := errors.Unwrap(err); uw != nil {
+			err = uw
+			continue
+		}
+		return http.StatusInternalServerError
+	}
+}
+
+// StatusErrorDiff returns the empty string if the expected error string and
+// status match err. Otherwise, it returns a description of the mismatch.
+func StatusErrorDiff(wantErr string, wantStatus int, err error) string {
+	var (
+		msg    string
+		status int
+	)
+	if err != nil {
+		status = HTTPStatus(err)
+		msg = err.Error()
+	}
+	if msg != wantErr || status != wantStatus {
+		return fmt.Sprintf("Unexpected error: %s [%d] (expected: %s [%d])",
+			err, status, wantErr, wantStatus)
+	}
+	return ""
+}
+
+// StatusErrorDiffRE returns the empty string if the expected error RE and
+// status match err. Otherwise, it returns a description of the mismatch.
+func StatusErrorDiffRE(wantErrRE string, wantStatus int, err error) string {
+	re := regexp.MustCompile(wantErrRE)
+	var (
+		msg    string
+		status int
+	)
+	if err != nil {
+		status = HTTPStatus(err)
+		msg = err.Error()
+	}
+	if !re.MatchString(msg) || status != wantStatus {
+		return fmt.Sprintf("Unexpected error: %s [%d] (expected: %s [%d])",
+			err, status, re, wantStatus)
+	}
+	return ""
 }

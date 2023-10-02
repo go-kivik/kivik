@@ -26,6 +26,7 @@ import (
 
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
@@ -102,7 +103,9 @@ func TestExplain(t *testing.T) {
 				opts = mock.NilOption
 			}
 			result, err := test.db.Explain(context.Background(), test.query, opts)
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
@@ -227,7 +230,9 @@ func TestCreateIndex(t *testing.T) {
 				opts = mock.NilOption
 			}
 			err := test.db.CreateIndex(context.Background(), test.ddoc, test.indexName, test.index, opts)
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 		})
 	}
 }
@@ -299,7 +304,9 @@ func TestGetIndexes(t *testing.T) {
 				opts = mock.NilOption
 			}
 			result, err := test.db.GetIndexes(context.Background(), opts)
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
@@ -372,7 +379,9 @@ func TestDeleteIndex(t *testing.T) {
 				opts = mock.NilOption
 			}
 			err := test.db.DeleteIndex(context.Background(), test.ddoc, test.indexName, opts)
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 		})
 	}
 }
@@ -454,7 +463,12 @@ func TestFind(t *testing.T) {
 				opts = mock.NilOption
 			}
 			result, err := test.db.Find(context.Background(), test.query, opts)
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			if _, ok := result.(*rows); !ok {
 				t.Errorf("Unexpected type returned: %t", result)
 			}

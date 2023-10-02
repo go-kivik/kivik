@@ -20,6 +20,7 @@ import (
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
@@ -62,7 +63,12 @@ func TestNewClient(t *testing.T) {
 				opts = mock.NilOption
 			}
 			result, err := driver.NewClient(test.dsn, opts)
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			client, ok := result.(*client)
 			if !ok {
 				t.Errorf("Unexpected type returned: %t", result)

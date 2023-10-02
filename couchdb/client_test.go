@@ -22,6 +22,7 @@ import (
 
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
@@ -65,7 +66,9 @@ func TestAllDBs(t *testing.T) {
 				opts = mock.NilOption
 			}
 			result, err := test.client.AllDBs(context.Background(), opts)
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
@@ -130,7 +133,9 @@ func TestDBExists(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			exists, err := test.client.DBExists(context.Background(), test.dbName, nil)
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 			if exists != test.exists {
 				t.Errorf("Unexpected result: %t", exists)
 			}
@@ -185,7 +190,9 @@ func TestCreateDB(t *testing.T) {
 				opts = mock.NilOption
 			}
 			err := test.client.CreateDB(context.Background(), test.dbName, opts)
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 		})
 	}
 }
@@ -229,7 +236,9 @@ func TestDestroyDB(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			err := test.client.DestroyDB(context.Background(), test.dbName, nil)
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 		})
 	}
 }
@@ -274,7 +283,12 @@ func TestDBUpdates(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := test.client.DBUpdates(context.TODO(), nil)
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			if _, ok := result.(*couchUpdates); !ok {
 				t.Errorf("Unexpected type returned: %t", result)
 			}
@@ -382,7 +396,9 @@ func TestPing(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := test.client.Ping(context.Background())
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 			if result != test.expected {
 				t.Errorf("Unexpected result: %t", result)
 			}

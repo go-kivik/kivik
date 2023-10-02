@@ -22,6 +22,7 @@ import (
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/x/fsdb/filesystem"
 )
 
@@ -95,7 +96,12 @@ func TestRevsDiff(t *testing.T) {
 			ctx = context.Background()
 		}
 		rows, err := db.RevsDiff(ctx, tt.revMap)
-		testy.StatusErrorRE(t, tt.err, tt.status, err)
+		if d := internal.StatusErrorDiffRE(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
+		if err != nil {
+			return
+		}
 		result := make(map[string]json.RawMessage)
 		var row driver.Row
 		var rowErr error
@@ -112,7 +118,12 @@ func TestRevsDiff(t *testing.T) {
 			_ = json.NewDecoder(row.Value).Decode(&value)
 			result[row.ID] = value
 		}
-		testy.StatusErrorRE(t, tt.rowErr, tt.rowStatus, rowErr)
+		if d := internal.StatusErrorDiffRE(tt.rowErr, tt.rowStatus, rowErr); d != "" {
+			t.Error(d)
+		}
+		if rowErr != nil {
+			return
+		}
 		if d := testy.DiffAsJSON(testy.Snapshot(t), result); d != nil {
 			t.Error(d)
 		}

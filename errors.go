@@ -13,8 +13,9 @@
 package kivik
 
 import (
-	"errors"
 	"net/http"
+
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 type err int
@@ -84,18 +85,5 @@ type statusCoder interface {
 //	    HTTPStatus() int
 //	}
 func HTTPStatus(err error) int {
-	if err == nil {
-		return 0
-	}
-	var coder statusCoder
-	for {
-		if errors.As(err, &coder) {
-			return coder.HTTPStatus()
-		}
-		if uw := errors.Unwrap(err); uw != nil {
-			err = uw
-			continue
-		}
-		return http.StatusInternalServerError
-	}
+	return internal.HTTPStatus(err)
 }

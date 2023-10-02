@@ -25,6 +25,7 @@ import (
 
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
@@ -219,7 +220,12 @@ func TestChanges(t *testing.T) {
 					_ = ch.Close()
 				})
 			}
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			if etag := ch.ETag(); etag != test.etag {
 				t.Errorf("Unexpected ETag: %s", etag)
 			}

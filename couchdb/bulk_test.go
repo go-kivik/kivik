@@ -21,9 +21,8 @@ import (
 	"strings"
 	"testing"
 
-	"gitlab.com/flimzy/testy"
-
 	kivik "github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
@@ -136,7 +135,9 @@ func TestBulkDocs(t *testing.T) {
 				opts = mock.NilOption
 			}
 			_, err := test.db.BulkDocs(context.Background(), test.docs, opts)
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 		})
 	}
 }

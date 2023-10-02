@@ -590,7 +590,9 @@ func TestDoJSON(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			var i interface{}
 			err := test.client.DoJSON(context.Background(), test.method, test.path, test.opts, &i)
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 			if d := testy.DiffInterface(test.expected, i); d != nil {
 				t.Errorf("JSON result differs:\n%s\n", d)
 			}

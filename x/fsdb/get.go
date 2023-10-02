@@ -74,7 +74,7 @@ func (d *document) Next(row *driver.Row) error {
 	if atomic.SwapInt32(&d.closed, 1) != 0 {
 		return io.EOF
 	}
-	row.Rev = d.ID
+	row.ID = d.ID
 	row.Rev = d.Rev
 	row.Doc = d.Body
 	row.Attachments = d.Attachments

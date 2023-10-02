@@ -105,50 +105,52 @@ func (r *Revision) restoreAttachments() error {
 }
 
 // openRevs returns the active revisions for docID that match revid.
-func (fs *FS) openRevs(docID, revid string) (Revisions, error) {
-	revs := make(Revisions, 0, 1)
+func (fs *FS) openRevs(docID string, revIDs []string) (Revisions, error) {
+	revs := make(Revisions, 0, len(revIDs))
 	base := EscapeID(docID)
-	rev, err := fs.readMainRev(filepath.Join(fs.root, base))
-	if err != nil && err != errNotFound {
-		return nil, err
-	}
-	if err == nil {
-		if revid == "" || rev.Rev.String() == revid {
-			revs = append(revs, rev)
-		}
-	}
-	dirpath := filepath.Join(fs.root, "."+base)
-	dir, err := fs.fs.Open(dirpath)
-	if err != nil && !os.IsNotExist(err) {
-		return nil, err
-	}
-	if err == nil {
-		files, err := dir.Readdir(-1)
-		if err != nil {
+	for _, revid := range revIDs {
+		rev, err := fs.readMainRev(filepath.Join(fs.root, base))
+		if err != nil && err != errNotFound {
 			return nil, err
 		}
-		for _, info := range files {
-			if info.IsDir() {
-				continue
+		if err == nil {
+			if revid == "" || rev.Rev.String() == revid {
+				revs = append(revs, rev)
 			}
-			if revid != "" {
-				base := strings.TrimSuffix(info.Name(), filepath.Ext(info.Name()))
-				if base != revid {
-					continue
-				}
-			}
-			rev, err := fs.readSubRev(filepath.Join(dirpath, info.Name()))
-			switch {
-			case err == errUnrecognizedFile:
-				continue
-			case err != nil:
+		}
+		dirpath := filepath.Join(fs.root, "."+base)
+		dir, err := fs.fs.Open(dirpath)
+		if err != nil && !os.IsNotExist(err) {
+			return nil, err
+		}
+		if err == nil {
+			files, err := dir.Readdir(-1)
+			if err != nil {
 				return nil, err
 			}
-			revs = append(revs, rev)
+			for _, info := range files {
+				if info.IsDir() {
+					continue
+				}
+				if revid != "" {
+					baseRev := strings.TrimSuffix(info.Name(), filepath.Ext(info.Name()))
+					if baseRev != revid {
+						continue
+					}
+				}
+				rev, err := fs.readSubRev(filepath.Join(dirpath, info.Name()))
+				switch {
+				case err == errUnrecognizedFile:
+					continue
+				case err != nil:
+					return nil, err
+				}
+				revs = append(revs, rev)
+			}
 		}
-	}
-	if len(revs) == 0 {
-		return nil, errNotFound
+		if len(revs) == 0 {
+			return nil, errNotFound
+		}
 	}
 	sort.Sort(revs)
 	return revs, nil
@@ -161,7 +163,7 @@ func (fs *FS) OpenDocIDOpenRevs(docID string, options driver.Options) ([]*Docume
 	opts := map[string]interface{}{}
 	options.Apply(opts)
 	rev, _ := opts["rev"].(string)
-	revs, err := fs.openRevs(docID, rev)
+	revs, err := fs.openRevs(docID, []string{rev})
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +194,7 @@ func (fs *FS) OpenDocID(docID string, options driver.Options) (*Document, error)
 	opts := map[string]interface{}{}
 	options.Apply(opts)
 	rev, _ := opts["rev"].(string)
-	revs, err := fs.openRevs(docID, rev)
+	revs, err := fs.openRevs(docID, []string{rev})
 	if err != nil {
 		return nil, err
 	}

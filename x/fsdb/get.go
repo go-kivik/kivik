@@ -44,18 +44,20 @@ func (d *db) Get(_ context.Context, docID string, options driver.Options) (drive
 	if err != nil {
 		return nil, err
 	}
+	docs[0].Options = opts
+	buf := &bytes.Buffer{}
+	if err := json.NewEncoder(buf).Encode(docs[0]); err != nil {
+		return nil, err
+	}
+
 	switch opts["open_revs"].(type) {
 	case string, []string:
 		return &documentRevs{
 			ID:        docID,
 			mu:        sync.Mutex{},
 			Revisions: docs[0].Revisions,
+			Body:      buf,
 		}, nil
-	}
-	docs[0].Options = opts
-	buf := &bytes.Buffer{}
-	if err := json.NewEncoder(buf).Encode(docs[0]); err != nil {
-		return nil, err
 	}
 	attsIter, err := docs[0].Revisions[0].AttachmentsIterator()
 	if err != nil {
@@ -70,11 +72,10 @@ func (d *db) Get(_ context.Context, docID string, options driver.Options) (drive
 }
 
 type documentRevs struct {
-	ID          string
-	mu          sync.Mutex
-	Revisions   cdb.Revisions
-	Body        io.ReadCloser
-	Attachments driver.Attachments
+	ID        string
+	mu        sync.Mutex
+	Revisions cdb.Revisions
+	Body      io.Reader
 }
 
 var _ driver.Rows = (*documentRevs)(nil)
@@ -90,6 +91,7 @@ func (d *documentRevs) Next(row *driver.Row) error {
 
 	row.ID = d.ID
 	row.Rev = curRev.Rev.String()
+	row.Doc = d.Body
 
 	return nil
 }

@@ -14,11 +14,13 @@ package fs
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4"
@@ -26,13 +28,12 @@ import (
 	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/internal/mock"
 	"github.com/go-kivik/kivik/v4/x/fsdb/filesystem"
-	"github.com/google/go-cmp/cmp"
 )
 
 func TestGet_open_revs(t *testing.T) {
 	type result struct {
 		Rev string
-		Doc interface{}
+		Doc map[string]interface{}
 	}
 	tests := []struct {
 		name    string
@@ -61,6 +62,20 @@ func TestGet_open_revs(t *testing.T) {
 			want: []result{
 				{
 					Rev: "1-xxxxxxxxxx",
+					Doc: map[string]interface{}{
+						"_id":  "withattach",
+						"_rev": "1-xxxxxxxxxx",
+						"foo":  "bar",
+						"_attachments": map[string]interface{}{
+							"foo.txt": map[string]interface{}{
+								"content_type": "text/plain",
+								"digest":       "md5-yalFnkJm6jWmErkNw2UxEg==",
+								"length":       float64(12),
+								"revpos":       float64(1),
+								"stub":         true,
+							},
+						},
+					},
 				},
 			},
 		},
@@ -92,8 +107,15 @@ func TestGet_open_revs(t *testing.T) {
 				if err == io.EOF {
 					break
 				}
+
+				doc := map[string]interface{}{}
+				if err := json.NewDecoder(row.Doc).Decode(&doc); err != nil {
+					t.Fatal(err)
+				}
+
 				got = append(got, result{
 					Rev: row.Rev,
+					Doc: doc,
 				})
 			}
 

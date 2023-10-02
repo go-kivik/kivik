@@ -245,8 +245,11 @@ func TestClusterStatus(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.ClusterStatus(context.TODO())
-			testy.ErrorRE(t, `map\[foo:123]`, err)
+			if !testy.ErrorMatchesRE(`map\[foo:123]`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("success", func() interface{} {
 		const expected = "oink"
@@ -352,8 +355,11 @@ func TestDBExists(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DBExists(context.TODO(), "foo")
-			testy.ErrorRE(t, `map\[foo:123]`, err)
+			if !testy.ErrorMatchesRE(`map\[foo:123]`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("exists", mockTest{
 		setup: func(m *Client) {
@@ -361,7 +367,9 @@ func TestDBExists(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			exists, err := c.DBExists(context.TODO(), "foo")
-			testy.ErrorRE(t, "", err)
+			if !testy.ErrorMatchesRE("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			if !exists {
 				t.Errorf("DB should exist")
 			}
@@ -411,8 +419,11 @@ func TestDestroyDB(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			err := c.DestroyDB(newCanceledContext(), "foo")
-			testy.ErrorRE(t, `map\[foo:123]`, err)
+			if !testy.ErrorMatchesRE(`map\[foo:123]`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("delay", mockTest{
 		setup: func(m *Client) {
@@ -447,8 +458,11 @@ func TestDBsStats(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			_, err := c.DBsStats(context.TODO(), []string{"foo"})
-			testy.ErrorRE(t, "[a b]", err)
+			if !testy.ErrorMatchesRE("[a b]", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
+		err: "there is a remaining unmet expectation",
 	})
 	tests.Add("success", func() interface{} {
 		return mockTest{
@@ -460,7 +474,9 @@ func TestDBsStats(t *testing.T) {
 			},
 			test: func(t *testing.T, c *kivik.Client) {
 				result, err := c.DBsStats(context.TODO(), []string{"foo", "bar"})
-				testy.ErrorRE(t, "", err)
+				if !testy.ErrorMatchesRE("", err) {
+					t.Errorf("Unexpected error: %s", err)
+				}
 				expected := []*kivik.DBStats{
 					{Name: "foo", Cluster: &kivik.ClusterConfig{Replicas: 5}},
 					{Name: "bar"},

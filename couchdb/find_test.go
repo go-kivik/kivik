@@ -153,7 +153,12 @@ func TestUnmarshalQueryPlan(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			result := new(queryPlan)
 			err := json.Unmarshal([]byte(test.input), &result)
-			testy.ErrorRE(t, test.err, err)
+			if !testy.ErrorMatchesRE(test.err, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
+			if err != nil {
+				return
+			}
 			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}

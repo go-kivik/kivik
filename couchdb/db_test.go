@@ -41,38 +41,50 @@ func TestAllDocs(t *testing.T) {
 	t.Run("standard", func(t *testing.T) {
 		db := newTestDB(nil, errors.New("test error"))
 		_, err := db.AllDocs(context.Background(), mock.NilOption)
-		testy.ErrorRE(t, `Get "?http://example.com/testdb/_all_docs"?: test error`, err)
+		if !testy.ErrorMatchesRE(`Get "?http://example.com/testdb/_all_docs"?: test error`, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
 	})
 
 	t.Run("partitioned", func(t *testing.T) {
 		db := newTestDB(nil, errors.New("test error"))
 		_, err := db.AllDocs(context.Background(), OptionPartition("a1"))
-		testy.ErrorRE(t, `Get "?http://example.com/testdb/_partition/a1/_all_docs"?: test error`, err)
+		if !testy.ErrorMatchesRE(`Get "?http://example.com/testdb/_partition/a1/_all_docs"?: test error`, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
 	})
 }
 
 func TestDesignDocs(t *testing.T) {
 	db := newTestDB(nil, errors.New("test error"))
 	_, err := db.DesignDocs(context.Background(), mock.NilOption)
-	testy.ErrorRE(t, `Get "?http://example.com/testdb/_design_docs"?: test error`, err)
+	if !testy.ErrorMatchesRE(`Get "?http://example.com/testdb/_design_docs"?: test error`, err) {
+		t.Errorf("Unexpected error: %s", err)
+	}
 }
 
 func TestLocalDocs(t *testing.T) {
 	db := newTestDB(nil, errors.New("test error"))
 	_, err := db.LocalDocs(context.Background(), mock.NilOption)
-	testy.ErrorRE(t, `Get "?http://example.com/testdb/_local_docs"?: test error`, err)
+	if !testy.ErrorMatchesRE(`Get "?http://example.com/testdb/_local_docs"?: test error`, err) {
+		t.Errorf("Unexpected error: %s", err)
+	}
 }
 
 func TestQuery(t *testing.T) {
 	t.Run("standard", func(t *testing.T) {
 		db := newTestDB(nil, errors.New("test error"))
 		_, err := db.Query(context.Background(), "ddoc", "view", mock.NilOption)
-		testy.ErrorRE(t, `Get "?http://example.com/testdb/_design/ddoc/_view/view"?: test error`, err)
+		if !testy.ErrorMatchesRE(`Get "?http://example.com/testdb/_design/ddoc/_view/view"?: test error`, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
 	})
 	t.Run("partitioned", func(t *testing.T) {
 		db := newTestDB(nil, errors.New("test error"))
 		_, err := db.Query(context.Background(), "ddoc", "view", OptionPartition("a2"))
-		testy.ErrorRE(t, `Get "?http://example.com/testdb/_partition/a2/_design/ddoc/_view/view"?: test error`, err)
+		if !testy.ErrorMatchesRE(`Get "?http://example.com/testdb/_partition/a2/_design/ddoc/_view/view"?: test error`, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
 	})
 }
 

@@ -10,7 +10,7 @@ require (
 	github.com/icza/dyno v0.0.0-20230330125955-09f820a8d9c0
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/pflag v1.0.5
-	gitlab.com/flimzy/testy v0.12.6
+	gitlab.com/flimzy/testy v0.13.0
 	golang.org/x/net v0.15.0
 	golang.org/x/sync v0.3.0
 	gopkg.in/yaml.v3 v3.0.1

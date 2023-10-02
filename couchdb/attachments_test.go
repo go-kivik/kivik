@@ -26,6 +26,7 @@ import (
 
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
@@ -251,7 +252,12 @@ func TestPutAttachment(t *testing.T) {
 				opts = mock.NilOption
 			}
 			newRev, err := test.db.PutAttachment(context.Background(), test.id, test.att, opts)
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			if newRev != test.newRev {
 				t.Errorf("Expected %s, got %s\n", test.newRev, newRev)
 			}
@@ -307,7 +313,9 @@ func TestGetAttachmentMeta(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			att, err := test.db.GetAttachmentMeta(context.Background(), test.id, test.filename, mock.NilOption)
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 			if d := testy.DiffInterface(test.expected, att); d != nil {
 				t.Errorf("Unexpected attachment:\n%s", d)
 			}
@@ -410,7 +418,12 @@ func TestGetAttachment(t *testing.T) {
 				opts = mock.NilOption
 			}
 			att, err := test.db.GetAttachment(context.Background(), test.id, test.filename, opts)
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			fileContent, err := io.ReadAll(att.Content)
 			if err != nil {
 				t.Fatal(err)
@@ -523,8 +536,12 @@ func TestFetchAttachment(t *testing.T) {
 				opts = mock.NilOption
 			}
 			resp, err := test.db.fetchAttachment(context.Background(), test.method, test.id, test.filename, opts)
-			testy.StatusErrorRE(t, test.err, test.status, err)
-
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			if d := testy.DiffJSON(test.resp.Body, resp.Body); d != nil {
 				t.Errorf("Response body: %s", d)
 			}
@@ -582,7 +599,12 @@ func TestDecodeAttachment(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			att, err := decodeAttachment(test.resp)
-			testy.StatusError(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			fileContent, err := io.ReadAll(att.Content)
 			if err != nil {
 				t.Fatal(err)
@@ -716,7 +738,9 @@ func TestDeleteAttachment(t *testing.T) {
 				opts = mock.NilOption
 			}
 			newRev, err := test.db.DeleteAttachment(context.Background(), test.id, test.filename, opts)
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 			if newRev != test.newRev {
 				t.Errorf("Unexpected new rev: %s", newRev)
 			}

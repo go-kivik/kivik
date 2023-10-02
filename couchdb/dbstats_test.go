@@ -23,6 +23,7 @@ import (
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 func TestStats(t *testing.T) {
@@ -156,7 +157,9 @@ func TestStats(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := test.db.Stats(context.Background())
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
@@ -271,7 +274,12 @@ func TestDbsStats(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := test.client.DBsStats(context.Background(), test.dbnames)
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
@@ -345,7 +353,12 @@ func TestPartitionStats(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, tt tt) {
 		result, err := tt.db.PartitionStats(context.Background(), tt.name)
-		testy.StatusErrorRE(t, tt.err, tt.status, err)
+		if d := internal.StatusErrorDiffRE(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
+		if err != nil {
+			return
+		}
 		if d := testy.DiffInterface(testy.Snapshot(t), result); d != nil {
 			t.Error(d)
 		}

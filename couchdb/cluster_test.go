@@ -109,7 +109,9 @@ func TestClusterStatus(t *testing.T) {
 			opts = mock.NilOption
 		}
 		result, err := test.client.ClusterStatus(context.Background(), opts)
-		testy.StatusErrorRE(t, test.err, test.status, err)
+		if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+			t.Error(d)
+		}
 		if result != test.expected {
 			t.Errorf("Unexpected result:\nExpected: %s\n  Actual: %s\n", test.expected, result)
 		}
@@ -183,7 +185,9 @@ func TestClusterSetup(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, test tst) {
 		err := test.client.ClusterSetup(context.Background(), test.action)
-		testy.StatusErrorRE(t, test.err, test.status, err)
+		if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+			t.Error(d)
+		}
 	})
 }
 
@@ -232,7 +236,12 @@ func TestMembership(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, tt tt) {
 		got, err := tt.client.Membership(context.Background())
-		testy.StatusErrorRE(t, tt.err, tt.status, err)
+		if d := internal.StatusErrorDiffRE(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
+		if err != nil {
+			return
+		}
 		if d := testy.DiffInterface(tt.want, got); d != nil {
 			t.Error(d)
 		}

@@ -25,6 +25,7 @@ import (
 
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
@@ -32,7 +33,9 @@ func TestReplicationError(t *testing.T) {
 	status := 404
 	reason := "not found"
 	err := &replicationError{status: status, reason: reason}
-	testy.StatusError(t, reason, status, err)
+	if d := internal.StatusErrorDiff(reason, status, err); d != "" {
+		t.Error(d)
+	}
 }
 
 func TestStateTime(t *testing.T) {
@@ -269,7 +272,12 @@ func TestReplicate(t *testing.T) {
 				opts = mock.NilOption
 			}
 			resp, err := test.client.Replicate(context.Background(), test.target, test.source, opts)
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			if _, ok := resp.(*replication); ok {
 				return
 			}
@@ -335,7 +343,12 @@ func TestLegacyGetReplications(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			reps, err := test.client.legacyGetReplications(context.Background(), test.options)
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			result := make([]*replication, len(reps))
 			for i, rep := range reps {
 				result[i] = rep.(*replication)
@@ -405,7 +418,9 @@ func TestGetReplications(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			_, err := test.client.GetReplications(context.Background(), mock.NilOption)
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 		})
 	}
 }
@@ -470,7 +485,12 @@ func TestReplicationUpdate(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			result := new(driver.ReplicationInfo)
 			err := test.rep.Update(context.Background(), result)
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
@@ -557,7 +577,9 @@ func TestReplicationDelete(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			err := test.rep.Delete(context.Background())
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 		})
 	}
 }
@@ -636,7 +658,9 @@ func TestUpdateActiveTasks(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := test.rep.updateActiveTasks(context.Background())
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}

@@ -24,6 +24,7 @@ import (
 	"golang.org/x/net/publicsuffix"
 
 	kivik "github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/internal/mock"
 	"github.com/go-kivik/kivik/v4/internal/nettest"
 )
@@ -170,6 +171,8 @@ func TestAuthenticate(t *testing.T) {
 			c.Client.Jar = test.jar
 		}
 		_, err = c.DoError(ctx, "GET", "/foo", nil)
-		testy.StatusErrorRE(t, test.err, test.status, err)
+		if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+			t.Error(d)
+		}
 	})
 }

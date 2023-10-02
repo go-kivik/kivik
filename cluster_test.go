@@ -21,6 +21,7 @@ import (
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
@@ -69,7 +70,9 @@ func TestClusterStatus(t *testing.T) {
 			closed:       test.closed,
 		}
 		result, err := c.ClusterStatus(context.Background(), test.options)
-		testy.StatusError(t, test.err, test.status, err)
+		if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+			t.Error(d)
+		}
 		if result != test.expected {
 			t.Errorf("Unexpected status:\nExpected: %s\n  Actual: %s\n", test.expected, result)
 		}
@@ -120,7 +123,9 @@ func TestClusterSetup(t *testing.T) {
 			closed:       test.closed,
 		}
 		err := c.ClusterSetup(context.Background(), test.action)
-		testy.StatusError(t, test.err, test.status, err)
+		if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+			t.Error(d)
+		}
 	})
 }
 
@@ -175,7 +180,12 @@ func TestMembership(t *testing.T) {
 			closed:       tt.closed,
 		}
 		got, err := c.Membership(context.Background())
-		testy.StatusError(t, tt.err, tt.status, err)
+		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
+		if err != nil {
+			return
+		}
 		if d := testy.DiffInterface(tt.want, got); d != nil {
 			t.Error(d)
 		}

@@ -23,6 +23,7 @@ import (
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/x/fsdb/filesystem"
 )
 
@@ -401,7 +402,12 @@ func TestGet(t *testing.T) {
 			opts = kivik.Params(nil)
 		}
 		rows, err := db.Get(context.Background(), tt.id, opts)
-		testy.StatusErrorRE(t, tt.err, tt.status, err)
+		if d := internal.StatusErrorDiffRE(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
+		if err != nil {
+			return
+		}
 		row := new(driver.Row)
 		if err := rows.Next(row); err != nil {
 			t.Fatal(err)

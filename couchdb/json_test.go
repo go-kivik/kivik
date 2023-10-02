@@ -18,6 +18,8 @@ import (
 	"testing"
 
 	"gitlab.com/flimzy/testy"
+
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 func TestEncodeKey(t *testing.T) {
@@ -48,7 +50,9 @@ func TestEncodeKey(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, test tst) {
 		result, err := encodeKey(test.input)
-		testy.StatusError(t, test.err, test.status, err)
+		if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+			t.Error(d)
+		}
 		if d := testy.DiffJSON([]byte(test.expected), []byte(result)); d != nil {
 			t.Error(d)
 		}
@@ -146,7 +150,12 @@ func TestEncodeKeys(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, test tst) {
 		err := encodeKeys(test.input)
-		testy.StatusError(t, test.err, test.status, err)
+		if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+			t.Error(d)
+		}
+		if err != nil {
+			return
+		}
 		if d := testy.DiffInterface(test.expected, test.input); d != nil {
 			t.Error(d)
 		}

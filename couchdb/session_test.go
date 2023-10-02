@@ -25,6 +25,7 @@ import (
 	"gitlab.com/flimzy/testy"
 
 	kivik "github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/internal/nettest"
 )
 
@@ -69,7 +70,12 @@ func TestSession(t *testing.T) {
 				t.Fatal(err)
 			}
 			session, err := client.Session(context.Background())
-			testy.StatusErrorRE(t, test.err, test.errStatus, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.errStatus, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			if d := testy.DiffInterface(test.expected, session); d != nil {
 				t.Error(d)
 			}

@@ -20,6 +20,7 @@ import (
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 func TestAllDBs(t *testing.T) {
@@ -59,7 +60,9 @@ func TestAllDBs(t *testing.T) {
 	tests.Run(t, func(t *testing.T, tt tt) {
 		c, _ := d.NewClient(tt.path, nil)
 		result, err := c.AllDBs(context.TODO(), tt.options)
-		testy.StatusError(t, tt.err, tt.status, err)
+		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
 		if d := testy.DiffInterface(tt.expected, result); d != nil {
 			t.Error(d)
 		}
@@ -110,7 +113,9 @@ func TestClientdbPath(t *testing.T) {
 	tests.Run(t, func(t *testing.T, tt tt) {
 		c := &client{root: tt.root}
 		path, name, err := c.dbPath(tt.dbname)
-		testy.StatusErrorRE(t, tt.err, tt.status, err)
+		if d := internal.StatusErrorDiffRE(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
 		if path != tt.path {
 			t.Errorf("Unexpected path: %s", path)
 		}
@@ -143,7 +148,9 @@ func TestClientnewDB(t *testing.T) {
 	tests.Run(t, func(t *testing.T, tt tt) {
 		c := &client{root: tt.root}
 		result, err := c.newDB(tt.dbname)
-		testy.StatusError(t, tt.err, tt.status, err)
+		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
 		if d := testy.DiffInterface(testy.Snapshot(t), result); d != nil {
 			t.Error(d)
 		}

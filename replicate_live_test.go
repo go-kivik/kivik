@@ -24,6 +24,7 @@ import (
 
 	"github.com/go-kivik/kivik/v4"
 	_ "github.com/go-kivik/kivik/v4/couchdb" // CouchDB driver
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 	_ "github.com/go-kivik/kivik/v4/x/fsdb" // Filesystem driver
 )
@@ -355,7 +356,12 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 	tests.Run(t, func(t *testing.T, tt tt) {
 		ctx := context.TODO()
 		result, err := kivik.Replicate(ctx, tt.target, tt.source, tt.options)
-		testy.StatusError(t, tt.err, tt.status, err)
+		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
+		if err != nil {
+			return
+		}
 
 		verifyDoc(ctx, t, tt.target, tt.source, "foo")
 		verifySec(ctx, t, tt.target)

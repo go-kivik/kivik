@@ -23,6 +23,7 @@ import (
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 func TestStats(t *testing.T) {
@@ -253,7 +254,12 @@ func TestPut(t *testing.T) {
 					db = setupDB(t)
 				}
 				_, err := db.Put(context.Background(), test.DocID, test.Doc, nil)
-				testy.StatusError(t, test.Error, test.Status, err)
+				if d := internal.StatusErrorDiff(test.Error, test.Status, err); d != "" {
+					t.Error(d)
+				}
+				if err != nil {
+					return
+				}
 				rows, err := db.Get(context.Background(), test.DocID, kivik.Params(nil))
 				if err != nil {
 					t.Fatal(err)
@@ -407,7 +413,12 @@ func TestGet(t *testing.T) {
 					opts = kivik.Params(nil)
 				}
 				rows, err := db.Get(context.Background(), test.ID, opts)
-				testy.StatusError(t, test.Error, test.Status, err)
+				if d := internal.StatusErrorDiff(test.Error, test.Status, err); d != "" {
+					t.Error(d)
+				}
+				if err != nil {
+					return
+				}
 				row := new(driver.Row)
 				if err := rows.Next(row); err != nil {
 					t.Fatal(err)

@@ -34,6 +34,7 @@ import (
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/couchdb/chttp"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
@@ -793,7 +794,9 @@ func TestCreateDoc(t *testing.T) {
 				opts = mock.NilOption
 			}
 			id, rev, err := test.db.CreateDoc(context.Background(), test.doc, opts)
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 			if test.id != id || test.rev != rev {
 				t.Errorf("Unexpected results: ID=%s rev=%s", id, rev)
 			}
@@ -895,7 +898,9 @@ func TestCompact(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			err := test.db.Compact(context.Background())
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 		})
 	}
 }
@@ -944,7 +949,9 @@ func TestCompactView(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			err := test.db.CompactView(context.Background(), test.id)
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 		})
 	}
 }
@@ -985,7 +992,9 @@ func TestViewCleanup(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			err := test.db.ViewCleanup(context.Background())
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 		})
 	}
 }
@@ -1134,7 +1143,9 @@ func TestPut(t *testing.T) {
 				opts = mock.NilOption
 			}
 			rev, err := test.db.Put(ctx, test.id, test.doc, opts)
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 			if rev != test.rev {
 				t.Errorf("Unexpected rev: %s", rev)
 			}
@@ -1256,7 +1267,9 @@ func TestDelete(t *testing.T) {
 			opts = mock.NilOption
 		}
 		newrev, err := tt.db.Delete(context.Background(), tt.id, opts)
-		testy.StatusErrorRE(t, tt.err, tt.status, err)
+		if d := internal.StatusErrorDiffRE(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
 		if newrev != tt.newrev {
 			t.Errorf("Unexpected new rev: %s", newrev)
 		}
@@ -1320,7 +1333,9 @@ func TestFlush(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			err := test.db.Flush(context.Background())
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 		})
 	}
 }
@@ -1678,7 +1693,12 @@ func TestRowsQuery(t *testing.T) {
 				opts = mock.NilOption
 			}
 			rows, err := test.db.rowsQuery(context.Background(), test.path, opts)
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			result := queryResult{
 				Rows: []*driver.Row{},
 			}
@@ -1760,7 +1780,9 @@ func TestSecurity(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := test.db.Security(context.Background())
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
@@ -1829,7 +1851,9 @@ func TestSetSecurity(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, tt tt) {
 		err := tt.db.SetSecurity(context.Background(), tt.security)
-		testy.StatusErrorRE(t, tt.err, tt.status, err)
+		if d := internal.StatusErrorDiffRE(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
 	})
 }
 
@@ -1879,7 +1903,9 @@ func TestGetRev(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			rev, err := test.db.GetRev(context.Background(), test.id, mock.NilOption)
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 			if rev != test.rev {
 				t.Errorf("Got rev %s, expected %s", rev, test.rev)
 			}
@@ -2006,7 +2032,9 @@ func TestCopy(t *testing.T) {
 			opts = mock.NilOption
 		}
 		rev, err := tt.db.Copy(context.Background(), tt.target, tt.source, opts)
-		testy.StatusErrorRE(t, tt.err, tt.status, err)
+		if d := internal.StatusErrorDiffRE(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
 		if rev != tt.rev {
 			t.Errorf("Got %s, expected %s", rev, tt.rev)
 		}
@@ -2145,7 +2173,12 @@ test content
 		t.Run(test.name, func(t *testing.T) {
 			result := new(driver.Attachment)
 			err := test.atts.Next(result)
-			testy.StatusError(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			content, err := io.ReadAll(result.Content)
 			if err != nil {
 				t.Fatal(err)
@@ -2265,7 +2298,12 @@ func TestPurge(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := test.db.Purge(context.Background(), test.docMap)
-			testy.StatusError(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
@@ -2675,7 +2713,12 @@ func TestCopyWithAttachmentStubs(t *testing.T) {
 			w = &bytes.Buffer{}
 		}
 		err := copyWithAttachmentStubs(w, test.input, test.atts)
-		testy.StatusErrorRE(t, test.err, test.status, err)
+		if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+			t.Error(d)
+		}
+		if err != nil {
+			return
+		}
 		if d := testy.DiffText(test.expected, w.(*bytes.Buffer).String()); d != nil {
 			t.Error(d)
 		}
@@ -2740,7 +2783,12 @@ func TestRevsDiff(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), 2*time.Second)
 		defer cancel()
 		rows, err := tt.db.RevsDiff(ctx, tt.revMap)
-		testy.StatusErrorRE(t, tt.err, tt.status, err)
+		if d := internal.StatusErrorDiffRE(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
+		if err != nil {
+			return
+		}
 		results := make(map[string]interface{})
 		drow := new(driver.Row)
 		for {

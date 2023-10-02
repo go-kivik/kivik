@@ -24,6 +24,7 @@ import (
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 	kivikmock "github.com/go-kivik/kivik/v4/mockdb"
 	_ "github.com/go-kivik/kivik/v4/x/fsdb" // The filesystem driver
 )
@@ -132,7 +133,9 @@ func TestReplicateMock(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, tt tt) {
 		result, err := kivik.Replicate(context.TODO(), tt.target, tt.source, tt.options)
-		testy.StatusError(t, tt.err, tt.status, err)
+		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
 		if tt.mockT != nil {
 			if err := tt.mockT.ExpectationsWereMet(); !testy.ErrorMatches("", err) {
 				t.Errorf("Unexpected error: %s", err)
@@ -268,7 +271,9 @@ func TestReplicate(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, tt tt) {
 		result, err := kivik.Replicate(context.TODO(), tt.target, tt.source, tt.options)
-		testy.StatusError(t, tt.err, tt.status, err)
+		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
 		result.StartTime = time.Time{}
 		result.EndTime = time.Time{}
 		if d := testy.DiffAsJSON(testy.Snapshot(t), result); d != nil {

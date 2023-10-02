@@ -22,6 +22,7 @@ import (
 	"gitlab.com/flimzy/testy"
 
 	kivik "github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 )
 
@@ -52,7 +53,9 @@ func TestChanges(t *testing.T) {
 		}
 		db := client.DB(dbname)
 		changes := db.Changes(ctx, test.opts)
-		testy.StatusError(t, test.err, test.status, changes.Err())
+		if d := internal.StatusErrorDiff(test.err, test.status, changes.Err()); d != "" {
+			t.Error(d)
+		}
 		results := []string{}
 		for changes.Next() {
 			results = append(results, changes.ID())

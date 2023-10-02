@@ -24,6 +24,7 @@ import (
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
@@ -237,7 +238,13 @@ func TestDBUpdates(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result := test.client.DBUpdates(context.Background())
-			testy.StatusError(t, test.err, test.status, result.Err())
+			err := result.Err()
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			result.cancel = nil  // Determinism
 			result.onClose = nil // Determinism
 			if d := testy.DiffInterface(test.expected, result); d != nil {

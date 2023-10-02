@@ -27,6 +27,7 @@ import (
 	"gitlab.com/flimzy/testy"
 
 	kivik "github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 )
 
@@ -52,7 +53,9 @@ func TestPut(t *testing.T) {
 		t.Fatalf("Failed to create db: %s", e)
 	}
 	_, err = client.DB(dbname).Put(ctx, "foo", map[string]string{"_id": "bar"})
-	testy.StatusError(t, "id argument must match _id field in document", http.StatusBadRequest, err)
+	if d := internal.StatusErrorDiff("id argument must match _id field in document", http.StatusBadRequest, err); d != "" {
+		t.Error(d)
+	}
 }
 
 func TestPurge(t *testing.T) {

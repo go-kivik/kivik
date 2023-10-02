@@ -23,6 +23,7 @@ import (
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 func TestSRUpdate(t *testing.T) {
@@ -70,7 +71,12 @@ func TestSRUpdate(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			var result driver.ReplicationInfo
 			err := test.rep.Update(context.Background(), &result)
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			if d := testy.DiffInterface(test.expected, &result); d != nil {
 				t.Error(d)
 			}
@@ -222,7 +228,12 @@ func TestGetReplicationsFromScheduler(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			reps, err := test.client.getReplicationsFromScheduler(context.Background(), test.options)
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			result := make([]*schedulerReplication, len(reps))
 			for i, rep := range reps {
 				result[i] = rep.(*schedulerReplication)
@@ -310,7 +321,9 @@ func TestSchedulerReplicationDelete(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			err := test.rep.Delete(context.Background())
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 		})
 	}
 }
@@ -468,7 +481,9 @@ func TestSchedulerSupported(t *testing.T) {
 			if d := testy.DiffInterface(test.expectedState, test.client.schedulerDetected); d != nil {
 				t.Error(d)
 			}
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 			if result != test.expected {
 				t.Errorf("Unexpected result: %v", result)
 			}
@@ -617,7 +632,12 @@ func TestSRinnerUpdate(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			err := test.r.update(context.Background())
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			test.r.db = nil
 			if d := testy.DiffInterface(test.expected, test.r); d != nil {
 				t.Error(d)
@@ -680,7 +700,12 @@ func TestFetchSchedulerReplication(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := test.client.fetchSchedulerReplication(context.Background(), test.docID)
-			testy.StatusErrorRE(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			result.db = nil
 			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)

@@ -24,6 +24,7 @@ import (
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
@@ -80,7 +81,9 @@ func TestNew(t *testing.T) {
 				Register(test.driverName, test.driver)
 			}
 			result, err := New(test.driverName, test.dsn)
-			testy.StatusError(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
@@ -154,7 +157,9 @@ func TestVersion(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := test.client.Version(context.Background())
-			testy.StatusError(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
@@ -220,7 +225,12 @@ func TestDB(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			result := test.client.DB(test.dbName, test.options)
 			err := result.Err()
-			testy.StatusError(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
@@ -279,7 +289,9 @@ func TestAllDBs(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := test.client.AllDBs(context.Background(), test.options)
-			testy.StatusError(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 			if d := testy.DiffInterface(test.expected, result); d != nil {
 				t.Error(d)
 			}
@@ -344,7 +356,9 @@ func TestDBExists(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := test.client.DBExists(context.Background(), test.dbName, test.options)
-			testy.StatusError(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 			if test.expected != result {
 				t.Errorf("Unexpected result: %v", result)
 			}
@@ -414,7 +428,9 @@ func TestCreateDB(t *testing.T) {
 				opts = mock.NilOption
 			}
 			err := test.client.CreateDB(context.Background(), test.dbName, opts)
-			testy.StatusError(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 		})
 	}
 }
@@ -478,7 +494,9 @@ func TestDestroyDB(t *testing.T) {
 				opts = mock.NilOption
 			}
 			err := test.client.DestroyDB(context.Background(), test.dbName, opts)
-			testy.StatusError(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 		})
 	}
 }
@@ -625,7 +643,9 @@ func TestDBsStats(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			stats, err := test.client.DBsStats(context.Background(), test.dbnames)
-			testy.StatusError(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
 			if d := testy.DiffInterface(test.expected, stats); d != nil {
 				t.Error(d)
 			}

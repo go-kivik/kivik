@@ -28,6 +28,7 @@ import (
 
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
@@ -174,14 +175,21 @@ func TestBulkGet(t *testing.T) {
 			opts = mock.NilOption
 		}
 		rows, err := test.db.BulkGet(context.Background(), test.docs, opts)
-		testy.StatusErrorRE(t, test.err, test.status, err)
+		if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+			t.Error(d)
+		}
+		if err != nil {
+			return
+		}
 
 		row := new(driver.Row)
 		err = rows.Next(row)
 		t.Cleanup(func() {
 			_ = rows.Close()
 		})
-		testy.StatusError(t, test.rowErr, test.rowStatus, err)
+		if d := internal.StatusErrorDiff(test.rowErr, test.rowStatus, err); d != "" {
+			t.Error(d)
+		}
 
 		if d := rowsDiff(test.expected, row); d != "" {
 			t.Error(d)

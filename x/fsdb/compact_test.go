@@ -24,6 +24,7 @@ import (
 
 	"gitlab.com/flimzy/testy"
 
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/x/fsdb/filesystem"
 )
 
@@ -128,7 +129,12 @@ func TestCompact(t *testing.T) {
 			dbName: tt.dbname,
 		}
 		err := db.compact(context.Background(), fs)
-		testy.StatusErrorRE(t, tt.err, tt.status, err)
+		if d := internal.StatusErrorDiffRE(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
+		if err != nil {
+			return
+		}
 		if d := testy.DiffAsJSON(testy.Snapshot(t), testy.JSONDir{
 			Path:        tt.path,
 			NoMD5Sum:    true,

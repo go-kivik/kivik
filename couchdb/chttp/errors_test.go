@@ -151,7 +151,12 @@ func TestResponseError(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			err := ResponseError(test.resp)
-			testy.StatusError(t, test.err, test.status, err)
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
 			if he, ok := err.(*HTTPError); ok {
 				he.Response = nil
 				err = he

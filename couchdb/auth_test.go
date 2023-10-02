@@ -20,6 +20,7 @@ import (
 	"gitlab.com/flimzy/testy"
 
 	kivik "github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/internal/nettest"
 )
 
@@ -109,6 +110,8 @@ func TestAuthenticationOptions(t *testing.T) {
 			tt.setup(t, client)
 		}
 		_, err = client.Version(context.Background())
-		testy.StatusErrorRE(t, tt.err, tt.status, err)
+		if d := internal.StatusErrorDiffRE(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
 	})
 }

@@ -20,6 +20,7 @@ import (
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/x/fsdb/filesystem"
 )
 
@@ -105,7 +106,12 @@ func TestFSOpenDocID(t *testing.T) {
 			opts = kivik.Params(nil)
 		}
 		result, err := fs.OpenDocID(tt.docID, opts)
-		testy.StatusError(t, tt.err, tt.status, err)
+		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
+		if err != nil {
+			return
+		}
 		result.Options = map[string]interface{}{
 			"revs":          true,
 			"attachments":   true,
@@ -146,6 +152,8 @@ func TestRestoreAttachments(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, tt tt) {
 		err := tt.r.restoreAttachments()
-		testy.StatusError(t, tt.err, tt.status, err)
+		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
 	})
 }

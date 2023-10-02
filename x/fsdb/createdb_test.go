@@ -20,6 +20,7 @@ import (
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/x/fsdb/filesystem"
 )
 
@@ -48,7 +49,9 @@ func TestCreateDB(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, tt tt) {
 		client, err := tt.driver.NewClient(tt.path, nil)
-		testy.StatusError(t, tt.err, tt.status, err)
+		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
 		if d := testy.DiffInterface(tt.want, client); d != nil {
 			t.Error(d)
 		}

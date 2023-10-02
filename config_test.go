@@ -22,6 +22,7 @@ import (
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
@@ -74,7 +75,9 @@ func TestConfig(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, test tst) {
 		result, err := test.client.Config(context.Background(), test.node)
-		testy.StatusError(t, test.err, test.status, err)
+		if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+			t.Error(d)
+		}
 		if d := testy.DiffInterface(test.expected, result); d != nil {
 			t.Error(d)
 		}
@@ -130,7 +133,9 @@ func TestConfigSection(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, test tst) {
 		result, err := test.client.ConfigSection(context.Background(), test.node, test.section)
-		testy.StatusError(t, test.err, test.status, err)
+		if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+			t.Error(d)
+		}
 		if d := testy.DiffInterface(test.expected, result); d != nil {
 			t.Error(d)
 		}
@@ -190,7 +195,9 @@ func TestConfigValue(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, test tst) {
 		result, err := test.client.ConfigValue(context.Background(), test.node, test.section, test.key)
-		testy.StatusError(t, test.err, test.status, err)
+		if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+			t.Error(d)
+		}
 		if d := testy.DiffInterface(test.expected, result); d != nil {
 			t.Error(d)
 		}
@@ -254,7 +261,9 @@ func TestSetConfigValue(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, test tst) {
 		result, err := test.client.SetConfigValue(context.Background(), test.node, test.section, test.key, test.value)
-		testy.StatusError(t, test.err, test.status, err)
+		if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+			t.Error(d)
+		}
 		if d := testy.DiffInterface(test.expected, result); d != nil {
 			t.Error(d)
 		}
@@ -314,7 +323,9 @@ func TestDeleteConfigKey(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, test tst) {
 		result, err := test.client.DeleteConfigKey(context.Background(), test.node, test.section, test.key)
-		testy.StatusError(t, test.err, test.status, err)
+		if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+			t.Error(d)
+		}
 		if d := testy.DiffInterface(test.expected, result); d != nil {
 			t.Error(d)
 		}

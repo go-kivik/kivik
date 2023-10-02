@@ -70,6 +70,7 @@ func TestGet(t *testing.T) {
 		dbname: "db_foo",
 		id:     "noattach",
 		expected: &driver.Row{
+			ID:  "noattach",
 			Rev: "1-xxxxxxxxxx",
 		},
 	})
@@ -78,6 +79,7 @@ func TestGet(t *testing.T) {
 		dbname: "db_foo",
 		id:     "withattach",
 		expected: &driver.Row{
+			ID:  "withattach",
 			Rev: "2-yyyyyyyyy",
 		},
 	})
@@ -87,6 +89,7 @@ func TestGet(t *testing.T) {
 		id:      "withattach",
 		options: kivik.Param("attachments", true),
 		expected: &driver.Row{
+			ID:  "withattach",
 			Rev: "2-yyyyyyyyy",
 		},
 	})
@@ -99,6 +102,7 @@ func TestGet(t *testing.T) {
 			"header:accept": "application/json",
 		}),
 		expected: &driver.Row{
+			ID:  "withattach",
 			Rev: "2-yyyyyyyyy",
 		},
 	})
@@ -108,6 +112,7 @@ func TestGet(t *testing.T) {
 		id:      "noattach",
 		options: kivik.Rev("1-xxxxxxxxxx"),
 		expected: &driver.Row{
+			ID:  "noattach",
 			Rev: "1-xxxxxxxxxx",
 		},
 	})
@@ -117,6 +122,7 @@ func TestGet(t *testing.T) {
 		id:      "withattach",
 		options: kivik.Rev("1-xxxxxxxxxx"),
 		expected: &driver.Row{
+			ID:  "withattach",
 			Rev: "1-xxxxxxxxxx",
 		},
 	})
@@ -125,6 +131,7 @@ func TestGet(t *testing.T) {
 		dbname: "db_foo",
 		id:     "autorev",
 		expected: &driver.Row{
+			ID:  "autorev",
 			Rev: "6-",
 		},
 	})
@@ -133,6 +140,7 @@ func TestGet(t *testing.T) {
 		dbname: "db_foo",
 		id:     "intrev",
 		expected: &driver.Row{
+			ID:  "intrev",
 			Rev: "6-",
 		},
 	})
@@ -141,6 +149,7 @@ func TestGet(t *testing.T) {
 		dbname: "db_foo",
 		id:     "norev",
 		expected: &driver.Row{
+			ID:  "norev",
 			Rev: "1-",
 		},
 	})
@@ -149,6 +158,7 @@ func TestGet(t *testing.T) {
 		dbname: "db_foo",
 		id:     "noid",
 		expected: &driver.Row{
+			ID:  "noid",
 			Rev: "6-",
 		},
 	})
@@ -157,6 +167,7 @@ func TestGet(t *testing.T) {
 		dbname: "db_foo",
 		id:     "wrongid",
 		expected: &driver.Row{
+			ID:  "wrongid",
 			Rev: "6-",
 		},
 	})
@@ -165,6 +176,7 @@ func TestGet(t *testing.T) {
 		dbname: "db_foo",
 		id:     "yamltest",
 		expected: &driver.Row{
+			ID:  "yamltest",
 			Rev: "3-",
 		},
 	})
@@ -174,6 +186,7 @@ func TestGet(t *testing.T) {
 		id:      "yamltest",
 		options: kivik.Rev("3-"),
 		expected: &driver.Row{
+			ID:  "yamltest",
 			Rev: "3-",
 		},
 	})
@@ -183,6 +196,7 @@ func TestGet(t *testing.T) {
 		id:      "yamltest",
 		options: kivik.Rev("2-xxx"),
 		expected: &driver.Row{
+			ID:  "yamltest",
 			Rev: "2-xxx",
 		},
 	})
@@ -199,6 +213,7 @@ func TestGet(t *testing.T) {
 		dbname: "db_foo",
 		id:     "_design/users",
 		expected: &driver.Row{
+			ID:  "_design/users",
 			Rev: "2-",
 		},
 	})
@@ -208,6 +223,7 @@ func TestGet(t *testing.T) {
 		id:      "_design/users",
 		options: kivik.Rev("2-"),
 		expected: &driver.Row{
+			ID:  "_design/users",
 			Rev: "2-",
 		},
 	})
@@ -217,6 +233,7 @@ func TestGet(t *testing.T) {
 		id:      "wrongid",
 		options: kivik.Param("revs", true),
 		expected: &driver.Row{
+			ID:  "wrongid",
 			Rev: "6-",
 		},
 	})
@@ -226,6 +243,7 @@ func TestGet(t *testing.T) {
 		id:      "noattach",
 		options: kivik.Param("revs", true),
 		expected: &driver.Row{
+			ID:  "noattach",
 			Rev: "1-xxxxxxxxxx",
 		},
 	})
@@ -234,6 +252,7 @@ func TestGet(t *testing.T) {
 		dbname: "db_att",
 		id:     "note--XkWjFv13acvjJTt-CGJJ8hXlWE",
 		expected: &driver.Row{
+			ID:  "note--XkWjFv13acvjJTt-CGJJ8hXlWE",
 			Rev: "1-fbaabe005e0f4e5685a68f857c0777d6",
 		},
 	})
@@ -243,6 +262,7 @@ func TestGet(t *testing.T) {
 		id:      "note--XkWjFv13acvjJTt-CGJJ8hXlWE",
 		options: kivik.Param("attachments", true),
 		expected: &driver.Row{
+			ID:  "note--XkWjFv13acvjJTt-CGJJ8hXlWE",
 			Rev: "1-fbaabe005e0f4e5685a68f857c0777d6",
 		},
 	})
@@ -252,6 +272,7 @@ func TestGet(t *testing.T) {
 		id:      "autorev",
 		options: kivik.Param("revs_info", true),
 		expected: &driver.Row{
+			ID:  "autorev",
 			Rev: "6-",
 		},
 	})
@@ -261,6 +282,7 @@ func TestGet(t *testing.T) {
 		id:      "withrevs",
 		options: kivik.Param("revs", true),
 		expected: &driver.Row{
+			ID:  "withrevs",
 			Rev: "8-asdf",
 		},
 	})
@@ -273,6 +295,7 @@ func TestGet(t *testing.T) {
 			"revs_info": true,
 		}),
 		expected: &driver.Row{
+			ID:  "yamltest",
 			Rev: "3-",
 		},
 	})
@@ -285,6 +308,7 @@ func TestGet(t *testing.T) {
 			"revs_info": true,
 		}),
 		expected: &driver.Row{
+			ID:  "yamltest",
 			Rev: "2-xxx",
 		},
 	})
@@ -297,6 +321,7 @@ func TestGet(t *testing.T) {
 			"revs": true,
 		}),
 		expected: &driver.Row{
+			ID:  "withrevs",
 			Rev: "8-asdf",
 		},
 	})
@@ -309,6 +334,7 @@ func TestGet(t *testing.T) {
 		id:      "abortedput",
 		options: kivik.Param("attachments", true),
 		expected: &driver.Row{
+			ID:  "abortedput",
 			Rev: "2-yyyyyyyyy",
 		},
 	})
@@ -320,6 +346,7 @@ func TestGet(t *testing.T) {
 		dbname: "get_nowinner",
 		id:     "foo",
 		expected: &driver.Row{
+			ID:  "foo",
 			Rev: "1-yyy",
 		},
 	})
@@ -331,6 +358,7 @@ func TestGet(t *testing.T) {
 		dbname: "get_nowinner",
 		id:     "bar",
 		expected: &driver.Row{
+			ID:  "bar",
 			Rev: "2-yyy",
 		},
 	})
@@ -340,6 +368,7 @@ func TestGet(t *testing.T) {
 		id:      "foo",
 		options: kivik.Param("attachments", true),
 		expected: &driver.Row{
+			ID:  "foo",
 			Rev: "2-zzz",
 		},
 	})
@@ -349,6 +378,7 @@ func TestGet(t *testing.T) {
 		id:      "bar",
 		options: kivik.Param("attachments", true),
 		expected: &driver.Row{
+			ID:  "bar",
 			Rev: "2-yyy",
 		},
 	})
@@ -357,6 +387,7 @@ func TestGet(t *testing.T) {
 		dbname: "db_nonascii",
 		id:     "note-i_ɪ",
 		expected: &driver.Row{
+			ID:  "note-i_ɪ",
 			Rev: "1-",
 		},
 	})
@@ -373,6 +404,7 @@ func TestGet(t *testing.T) {
 		id:      "deleted",
 		options: kivik.Rev("3-"),
 		expected: &driver.Row{
+			ID:  "deleted",
 			Rev: "3-",
 		},
 	})

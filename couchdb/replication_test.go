@@ -729,11 +729,13 @@ func TestSetFromReplicatorDoc(t *testing.T) {
 }
 
 func TestReplicationGetters(t *testing.T) {
-	repID := "a"
-	source := "b"
-	target := "c"
-	state := "d"
-	err := "e"
+	const (
+		repID   = "a"
+		source  = "b"
+		target  = "c"
+		state   = "d"
+		wantErr = "e"
+	)
 	start := parseTime(t, "2017-01-01T01:01:01Z")
 	end := parseTime(t, "2017-01-01T01:01:02Z")
 	rep := &replication{
@@ -743,7 +745,7 @@ func TestReplicationGetters(t *testing.T) {
 		startTime:     start,
 		endTime:       end,
 		state:         state,
-		err:           errors.New(err),
+		err:           errors.New(wantErr),
 	}
 	if result := rep.ReplicationID(); result != repID {
 		t.Errorf("Unexpected replication ID: %s", result)
@@ -763,5 +765,7 @@ func TestReplicationGetters(t *testing.T) {
 	if result := rep.State(); result != state {
 		t.Errorf("Unexpected state: %s", result)
 	}
-	testy.Error(t, err, rep.Err())
+	if err := rep.Err(); !testy.ErrorMatches(wantErr, err) {
+		t.Errorf("Unexpected error: %s", err)
+	}
 }

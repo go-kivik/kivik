@@ -102,7 +102,9 @@ func TestAllDocs(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.AllDocs(context.TODO())
-			testy.Error(t, "foo err", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("unexpected", mockTest{
@@ -113,7 +115,9 @@ func TestAllDocs(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.AllDocs(context.TODO())
-			testy.Error(t, "call to DB.AllDocs() was not expected, all expectations already fulfilled", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("call to DB.AllDocs() was not expected, all expectations already fulfilled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("rows close error", mockTest{
@@ -125,8 +129,12 @@ func TestAllDocs(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.AllDocs(context.TODO())
-			testy.Error(t, "", rows.Err())
-			testy.Error(t, "bar err", rows.Close())
+			if err := rows.Err(); !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
+			if err := rows.Close(); !testy.ErrorMatches("bar err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("rows offset", mockTest{
@@ -225,7 +233,9 @@ func TestAllDocs(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.AllDocs(context.TODO())
-			testy.Error(t, "", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			ids := []string{}
 			for rows.Next() {
 				id, _ := rows.ID()
@@ -248,7 +258,9 @@ func TestAllDocs(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.AllDocs(context.TODO())
-			testy.Error(t, "", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			ids := []string{}
 			for rows.Next() {
 				id, _ := rows.ID()
@@ -258,7 +270,9 @@ func TestAllDocs(t *testing.T) {
 			if d := testy.DiffInterface(expected, ids); d != nil {
 				t.Error(d)
 			}
-			testy.Error(t, "foo err", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("options", mockTest{
@@ -285,7 +299,9 @@ func TestAllDocs(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.AllDocs(newCanceledContext())
-			testy.Error(t, "context canceled", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("context canceled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("row delay", mockTest{
@@ -302,7 +318,9 @@ func TestAllDocs(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 			defer cancel()
 			rows := c.DB("foo").AllDocs(ctx)
-			testy.Error(t, "", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			ids := []string{}
 			for rows.Next() {
 				id, _ := rows.ID()
@@ -312,7 +330,9 @@ func TestAllDocs(t *testing.T) {
 			if d := testy.DiffInterface(expected, ids); d != nil {
 				t.Error(d)
 			}
-			testy.Error(t, "context deadline exceeded", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("context deadline exceeded", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("wrong db", mockTest{
@@ -348,7 +368,9 @@ func TestBulkGet(t *testing.T) { // nolint: gocyclo
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.BulkGet(context.TODO(), []kivik.BulkGetReference{})
-			testy.Error(t, "foo err", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("unexpected", mockTest{
@@ -359,7 +381,9 @@ func TestBulkGet(t *testing.T) { // nolint: gocyclo
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.BulkGet(context.TODO(), []kivik.BulkGetReference{})
-			testy.Error(t, "call to DB.BulkGet() was not expected, all expectations already fulfilled", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("call to DB.BulkGet() was not expected, all expectations already fulfilled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("rows", mockTest{
@@ -374,7 +398,9 @@ func TestBulkGet(t *testing.T) { // nolint: gocyclo
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.BulkGet(context.TODO(), []kivik.BulkGetReference{})
-			testy.Error(t, "", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			ids := []string{}
 			for rows.Next() {
 				id, _ := rows.ID()
@@ -410,7 +436,9 @@ func TestBulkGet(t *testing.T) { // nolint: gocyclo
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.BulkGet(newCanceledContext(), []kivik.BulkGetReference{})
-			testy.Error(t, "context canceled", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("context canceled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("wrong db", mockTest{
@@ -446,7 +474,9 @@ func TestFind(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.Find(context.TODO(), nil)
-			testy.Error(t, "foo err", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("unmatched query", mockTest{
@@ -476,7 +506,9 @@ func TestFind(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.Find(context.TODO(), 7)
-			testy.Error(t, "", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			ids := []string{}
 			for rows.Next() {
 				id, _ := rows.ID()
@@ -512,7 +544,9 @@ func TestFind(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.Find(newCanceledContext(), 0)
-			testy.Error(t, "context canceled", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("context canceled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("wrong db", mockTest{
@@ -1999,7 +2033,9 @@ func TestLocalDocs(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.LocalDocs(context.TODO(), nil)
-			testy.Error(t, "foo err", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("success", mockTest{
@@ -2014,7 +2050,9 @@ func TestLocalDocs(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.LocalDocs(context.TODO())
-			testy.Error(t, "", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			ids := []string{}
 			for rows.Next() {
 				id, _ := rows.ID()
@@ -2035,7 +2073,9 @@ func TestLocalDocs(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.LocalDocs(newCanceledContext())
-			testy.Error(t, "context canceled", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("context canceled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("wrong db", mockTest{
@@ -2278,7 +2318,9 @@ func TestQuery(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.Query(context.TODO(), "foo", "bar")
-			testy.Error(t, "foo err", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("success", mockTest{
@@ -2293,7 +2335,9 @@ func TestQuery(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.Query(context.TODO(), "foo", "bar")
-			testy.Error(t, "", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			ids := []string{}
 			for rows.Next() {
 				id, _ := rows.ID()
@@ -2314,7 +2358,9 @@ func TestQuery(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.Query(newCanceledContext(), "foo", "bar")
-			testy.Error(t, "context canceled", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("context canceled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("wrong db", mockTest{
@@ -2662,7 +2708,9 @@ func TestBulkDocs(t *testing.T) {
 			if d := testy.DiffInterface(expected, ids); d != nil {
 				t.Error(d)
 			}
-			testy.Error(t, "foo err", rowErr)
+			if err := rowErr; !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("options", mockTest{
@@ -2807,7 +2855,9 @@ func TestDesignDocs(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.DesignDocs(context.TODO(), nil)
-			testy.Error(t, "foo err", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("success", mockTest{
@@ -2822,7 +2872,9 @@ func TestDesignDocs(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.DesignDocs(context.TODO())
-			testy.Error(t, "", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			ids := []string{}
 			for rows.Next() {
 				id, _ := rows.ID()
@@ -2843,7 +2895,9 @@ func TestDesignDocs(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.DesignDocs(newCanceledContext())
-			testy.Error(t, "context canceled", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("context canceled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("wrong db", mockTest{
@@ -2880,7 +2934,9 @@ func TestChanges(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.Changes(context.TODO())
-			testy.Error(t, "foo err", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("unexpected", mockTest{
@@ -2891,7 +2947,9 @@ func TestChanges(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.Changes(context.TODO())
-			testy.Error(t, "call to DB.Changes() was not expected, all expectations already fulfilled", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("call to DB.Changes() was not expected, all expectations already fulfilled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("close error", mockTest{
@@ -2903,8 +2961,12 @@ func TestChanges(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.Changes(context.TODO())
-			testy.Error(t, "", rows.Err())
-			testy.Error(t, "bar err", rows.Close())
+			if err := rows.Err(); !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
+			if err := rows.Close(); !testy.ErrorMatches("bar err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("changes", mockTest{
@@ -2919,7 +2981,9 @@ func TestChanges(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.Changes(context.TODO())
-			testy.Error(t, "", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			ids := []string{}
 			for rows.Next() {
 				ids = append(ids, rows.ID())
@@ -2941,7 +3005,9 @@ func TestChanges(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.Changes(context.TODO())
-			testy.Error(t, "", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			ids := []string{}
 			for rows.Next() {
 				ids = append(ids, rows.ID())
@@ -2950,7 +3016,9 @@ func TestChanges(t *testing.T) {
 			if d := testy.DiffInterface(expected, ids); d != nil {
 				t.Error(d)
 			}
-			testy.Error(t, "foo err", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("options", mockTest{
@@ -2977,7 +3045,9 @@ func TestChanges(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.Changes(newCanceledContext())
-			testy.Error(t, "context canceled", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("context canceled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("change delay", mockTest{
@@ -2994,7 +3064,9 @@ func TestChanges(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 			defer cancel()
 			rows := c.DB("foo").Changes(ctx)
-			testy.Error(t, "", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			ids := []string{}
 			for rows.Next() {
 				ids = append(ids, rows.ID())
@@ -3003,7 +3075,9 @@ func TestChanges(t *testing.T) {
 			if d := testy.DiffInterface(expected, ids); d != nil {
 				t.Error(d)
 			}
-			testy.Error(t, "context deadline exceeded", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("context deadline exceeded", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("wrong db", mockTest{
@@ -3034,7 +3108,9 @@ func TestChanges(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.Changes(context.TODO())
-			testy.Error(t, "", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			_ = rows.Next()
 			meta, err := rows.Metadata()
 			if err != nil {
@@ -3054,7 +3130,9 @@ func TestChanges(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.Changes(context.TODO())
-			testy.Error(t, "", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			_ = rows.Next()
 			meta, err := rows.Metadata()
 			if err != nil {
@@ -3074,7 +3152,9 @@ func TestChanges(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.Changes(context.TODO())
-			testy.Error(t, "", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			if o := rows.ETag(); o != "etag-foo" {
 				t.Errorf("Unexpected pending: %s", o)
 			}
@@ -3096,7 +3176,9 @@ func TestRevsDiff(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.RevsDiff(context.TODO(), revMap)
-			testy.Error(t, "foo err", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("success", mockTest{
@@ -3118,7 +3200,9 @@ func TestRevsDiff(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
 			rows := db.RevsDiff(context.TODO(), revMap)
-			testy.Error(t, "", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			results := map[string]interface{}{}
 			for rows.Next() {
 				var val map[string][]string

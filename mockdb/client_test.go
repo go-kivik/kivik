@@ -822,13 +822,17 @@ func TestDBUpdates(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			rows := c.DBUpdates(context.TODO())
-			testy.Error(t, "foo err", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("unexpected", mockTest{
 		test: func(t *testing.T, c *kivik.Client) {
 			rows := c.DBUpdates(context.TODO())
-			testy.Error(t, "call to DBUpdates() was not expected, all expectations already fulfilled", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("call to DBUpdates() was not expected, all expectations already fulfilled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("close error", mockTest{
@@ -837,8 +841,12 @@ func TestDBUpdates(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			rows := c.DBUpdates(context.TODO())
-			testy.Error(t, "", rows.Err())
-			testy.Error(t, "bar err", rows.Close())
+			if err := rows.Err(); !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
+			if err := rows.Close(); !testy.ErrorMatches("bar err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("updates", mockTest{
@@ -850,7 +858,9 @@ func TestDBUpdates(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			rows := c.DBUpdates(context.TODO())
-			testy.Error(t, "", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			names := []string{}
 			for rows.Next() {
 				names = append(names, rows.DBName())
@@ -869,7 +879,9 @@ func TestDBUpdates(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			rows := c.DBUpdates(context.TODO())
-			testy.Error(t, "", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			names := []string{}
 			for rows.Next() {
 				names = append(names, rows.DBName())
@@ -878,7 +890,9 @@ func TestDBUpdates(t *testing.T) {
 			if d := testy.DiffInterface(expected, names); d != nil {
 				t.Error(d)
 			}
-			testy.Error(t, "foo err", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("delay", mockTest{
@@ -887,7 +901,9 @@ func TestDBUpdates(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			rows := c.DBUpdates(newCanceledContext())
-			testy.Error(t, "context canceled", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("context canceled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Add("update delay", mockTest{
@@ -902,7 +918,9 @@ func TestDBUpdates(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 			defer cancel()
 			rows := c.DBUpdates(ctx)
-			testy.Error(t, "", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 			names := []string{}
 			for rows.Next() {
 				names = append(names, rows.DBName())
@@ -911,7 +929,9 @@ func TestDBUpdates(t *testing.T) {
 			if d := testy.DiffInterface(expected, names); d != nil {
 				t.Error(d)
 			}
-			testy.Error(t, "context deadline exceeded", rows.Err())
+			if err := rows.Err(); !testy.ErrorMatches("context deadline exceeded", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		},
 	})
 	tests.Run(t, testMock)

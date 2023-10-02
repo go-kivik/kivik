@@ -134,10 +134,14 @@ func TestReplicateMock(t *testing.T) {
 		result, err := kivik.Replicate(context.TODO(), tt.target, tt.source, tt.options)
 		testy.StatusError(t, tt.err, tt.status, err)
 		if tt.mockT != nil {
-			testy.Error(t, "", tt.mockT.ExpectationsWereMet())
+			if err := tt.mockT.ExpectationsWereMet(); !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		}
 		if tt.mockS != nil {
-			testy.Error(t, "", tt.mockS.ExpectationsWereMet())
+			if err := tt.mockS.ExpectationsWereMet(); !testy.ErrorMatches("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
 		}
 		result.StartTime = time.Time{}
 		result.EndTime = time.Time{}

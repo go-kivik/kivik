@@ -3,7 +3,6 @@ format = "colored-line-number"
 
 [linters]
 enable = [
-    "gocyclo",
     "gci",
     "unconvert",
     "goimports",

@@ -33,7 +33,6 @@ import (
 // - latest
 // - local_seq
 // - meta
-// - open_revs
 func (d *db) Get(_ context.Context, docID string, options driver.Options) (driver.Rows, error) {
 	opts := map[string]interface{}{}
 	options.Apply(opts)

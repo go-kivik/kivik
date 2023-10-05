@@ -251,6 +251,16 @@ func (db *DB) ExpectLocalDocs() *ExpectedLocalDocs {
 	return e
 }
 
+// ExpectOpenRevs queues an expectation that DB.OpenRevs will be called.
+func (db *DB) ExpectOpenRevs() *ExpectedOpenRevs {
+	e := &ExpectedOpenRevs{
+		commonExpectation: commonExpectation{db: db},
+	}
+	db.count++
+	db.client.expected = append(db.client.expected, e)
+	return e
+}
+
 // ExpectPartitionStats queues an expectation that DB.PartitionStats will be called.
 func (db *DB) ExpectPartitionStats() *ExpectedPartitionStats {
 	e := &ExpectedPartitionStats{

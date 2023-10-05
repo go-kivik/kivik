@@ -1046,17 +1046,15 @@ func TestClientClose(t *testing.T) {
 			client: &mock.Client{
 				DBFunc: func(string, driver.Options) (driver.DB, error) {
 					return &mock.DB{
-						GetFunc: func(context.Context, string, driver.Options) (driver.Rows, error) {
+						GetFunc: func(context.Context, string, driver.Options) (*driver.Result, error) {
 							time.Sleep(delay)
-							return &mock.Rows{}, nil
+							return &driver.Result{}, nil
 						},
 					}, nil
 				},
 			},
 			work: func(t *testing.T, c *Client) {
 				u := c.DB("foo").Get(context.Background(), "")
-				for u.Next() { //nolint:revive // intentional empty block
-				}
 				if u.Err() != nil {
 					t.Fatal(u.Err())
 				}

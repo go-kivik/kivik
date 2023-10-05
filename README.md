@@ -165,7 +165,7 @@ This is a partial list of breaking changes between 3.x and 4.x
 - The `Changes` type has been changed to semantically match the `ResultSet` type. Specifically, the `LastSeq()` and `Pending()` methods have been replaced by the `Metadata()` method.
 - The `DBUpdates()` and `Changes()` methods now defer errors to the iterator, for easier chaining and consistency with other iterators.
 - `DB.BulkDocs()` no longer returns an iterator, but rather an array of all results.
-- `Get` now returns a `*ResultSet`, rather than a `*Row`. Semantics work roughly the same for standard use cases where `Get` returns a single document: Just call `ScanDoc` as before. However, this allows `Get` to also return multiple docs, as it does when called with the `open_revs` flag. See the [CouchDB docs](https://docs.couchdb.org/en/stable/api/document/common.html#get--db-docid).
+- `Get` now returns a simpler `*Result` type than before.
 - `GetMeta` has been replaced with `GetRev`, and no longer claims to return the document size. The document size was never _really_ the document size, rather it is the `Content-Length` field of the HTTP response, which can vary depending on query parameters, making its use for determining document size dubious at best.
 - The `StatusCode() int` method on errors has been renamed to `HTTPStatus() int`, to be more descriptive. The related package function `StatusCode(error) int` has also been renamed to `HTTPStatus(error) int` to match.
 - `Client.Close()` and `DB.Close()` now block until any relevant calls have returned.

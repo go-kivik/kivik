@@ -186,7 +186,35 @@ func (*document) Offset() int64     { return 0 }
 func (*document) TotalRows() int64  { return 0 }
 
 // Get fetches the requested document.
-func (d *db) Get(ctx context.Context, docID string, options driver.Options) (driver.Rows, error) {
+func (d *db) Get(ctx context.Context, docID string, options driver.Options) (*driver.Result, error) {
+	resp, err := d.get(ctx, http.MethodGet, docID, options)
+	if err != nil {
+		return nil, err
+	}
+	ct, params, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
+	if err != nil {
+		return nil, &internal.Error{Status: http.StatusBadGateway, Err: err}
+	}
+
+	switch ct {
+	case typeJSON, typeMPRelated:
+		etag, _ := chttp.ETag(resp)
+		doc, err := processDoc(docID, ct, params["boundary"], etag, resp.Body)
+		if err != nil {
+			return nil, err
+		}
+		return &driver.Result{
+			Rev:         doc.rev,
+			Body:        doc.body,
+			Attachments: doc.attachments,
+		}, nil
+	default:
+		return nil, &internal.Error{Status: http.StatusBadGateway, Err: fmt.Errorf("kivik: invalid content type in response: %s", ct)}
+	}
+}
+
+// TODO: Flesh this out.
+func (d *db) OpenRevs(ctx context.Context, docID string, _ []string, options driver.Options) (driver.Rows, error) {
 	resp, err := d.get(ctx, http.MethodGet, docID, options)
 	if err != nil {
 		return nil, err

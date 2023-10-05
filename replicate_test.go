@@ -14,6 +14,7 @@ package kivik_test
 
 import (
 	"context"
+	"io"
 	"os"
 	"strings"
 	"testing"
@@ -109,9 +110,9 @@ func TestReplicateMock(t *testing.T) {
 				"revs":        true,
 				"attachments": true,
 			})).
-			WillReturn(kivikmock.NewRows().AddRow(&driver.Row{
-				Doc: strings.NewReader(`{"_id":"foo","_rev":"2-7051cbe5c8faecd085a3fa619e6e6337","foo":"bar"}`),
-			}))
+			WillReturn(&driver.Result{
+				Body: io.NopCloser(strings.NewReader(`{"_id":"foo","_rev":"2-7051cbe5c8faecd085a3fa619e6e6337","foo":"bar"}`)),
+			})
 		tdb.ExpectPut().
 			WithDocID("foo").
 			WithOptions(kivik.Param("new_edits", false)).
@@ -184,9 +185,9 @@ func TestReplicate_with_callback(t *testing.T) {
 			"revs":        true,
 			"attachments": true,
 		})).
-		WillReturn(kivikmock.NewRows().AddRow(&driver.Row{
-			Doc: strings.NewReader(`{"_id":"foo","_rev":"2-7051cbe5c8faecd085a3fa619e6e6337","foo":"bar"}`),
-		}))
+		WillReturn(&driver.Result{
+			Body: io.NopCloser(strings.NewReader(`{"_id":"foo","_rev":"2-7051cbe5c8faecd085a3fa619e6e6337","foo":"bar"}`)),
+		})
 	tdb.ExpectPut().
 		WithDocID("foo").
 		WithOptions(kivik.Param("new_edits", false)).

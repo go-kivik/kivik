@@ -571,7 +571,7 @@ func TestGet(t *testing.T) {
 		db: &DB{
 			client: &Client{},
 			driverDB: &mock.DB{
-				GetFunc: func(context.Context, string, driver.Options) (driver.Rows, error) {
+				GetFunc: func(context.Context, string, driver.Options) (*driver.Result, error) {
 					return nil, fmt.Errorf("db error")
 				},
 			},
@@ -583,7 +583,7 @@ func TestGet(t *testing.T) {
 		db: &DB{
 			client: &Client{},
 			driverDB: &mock.DB{
-				GetFunc: func(_ context.Context, docID string, options driver.Options) (driver.Rows, error) {
+				GetFunc: func(_ context.Context, docID string, options driver.Options) (*driver.Result, error) {
 					expectedDocID := "foo"
 					if docID != expectedDocID {
 						return nil, fmt.Errorf("Unexpected docID: %s", docID)
@@ -593,12 +593,9 @@ func TestGet(t *testing.T) {
 					if d := testy.DiffInterface(testOptions, gotOpts); d != nil {
 						return nil, fmt.Errorf("Unexpected options:\n%s", d)
 					}
-					return &mock.Rows{
-						NextFunc: func(row *driver.Row) error {
-							row.Rev = "1-xxx"
-							row.Doc = body(`{"_id":"foo"}`)
-							return nil
-						},
+					return &driver.Result{
+						Rev:  "1-xxx",
+						Body: body(`{"_id":"foo"}`),
 					}, nil
 				},
 			},
@@ -611,7 +608,7 @@ func TestGet(t *testing.T) {
 		db: &DB{
 			client: &Client{},
 			driverDB: &mock.DB{
-				GetFunc: func(_ context.Context, docID string, options driver.Options) (driver.Rows, error) {
+				GetFunc: func(_ context.Context, docID string, options driver.Options) (*driver.Result, error) {
 					expectedDocID := "foo"
 					gotOpts := map[string]interface{}{}
 					options.Apply(gotOpts)
@@ -622,13 +619,10 @@ func TestGet(t *testing.T) {
 					if d := testy.DiffInterface(wantOpts, gotOpts); d != nil {
 						return nil, fmt.Errorf("Unexpected options:\n%s", d)
 					}
-					return &mock.Rows{
-						NextFunc: func(row *driver.Row) error {
-							row.Rev = "1-xxx"
-							row.Doc = body(`{"_id":"foo"}`)
-							row.Attachments = &mock.Attachments{ID: "asdf"}
-							return nil
-						},
+					return &driver.Result{
+						Rev:         "1-xxx",
+						Body:        body(`{"_id":"foo"}`),
+						Attachments: &mock.Attachments{ID: "asdf"},
 					}, nil
 				},
 			},
@@ -646,43 +640,7 @@ func TestGet(t *testing.T) {
 		status: http.StatusServiceUnavailable,
 		err:    errClientClosed,
 	})
-	tests.Add("open_revs", tt{
-		db: &DB{
-			client: &Client{},
-			driverDB: &mock.DB{
-				GetFunc: func(_ context.Context, docID string, options driver.Options) (driver.Rows, error) {
-					expectedDocID := "foo"
-					if docID != expectedDocID {
-						return nil, fmt.Errorf("Unexpected docID: %s", docID)
-					}
-					gotOpts := map[string]interface{}{}
-					options.Apply(gotOpts)
-					if d := testy.DiffInterface(testOptions, gotOpts); d != nil {
-						return nil, fmt.Errorf("Unexpected options:\n%s", d)
-					}
-					return &mock.Rows{ID: "foo"}, nil
-				},
-			},
-		},
-		docID:   "foo",
-		options: Params(testOptions),
-		status:  http.StatusNotFound,
-		err:     "no results",
-	})
-	tests.Add("open_revs failure", tt{
-		db: &DB{
-			client: &Client{},
-			driverDB: &mock.DB{
-				GetFunc: func(context.Context, string, driver.Options) (driver.Rows, error) {
-					return nil, errors.New("random error")
-				},
-			},
-		},
-		docID:   "foo",
-		options: Params(testOptions),
-		status:  http.StatusInternalServerError,
-		err:     "random error",
-	})
+
 	tests.Run(t, func(t *testing.T, tt tt) {
 		var doc json.RawMessage
 		err := tt.db.Get(context.Background(), tt.docID, tt.options).ScanDoc(&doc)
@@ -1332,7 +1290,7 @@ func TestGetRev(t *testing.T) { // nolint: gocyclo
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					GetFunc: func(context.Context, string, driver.Options) (driver.Rows, error) {
+					GetFunc: func(context.Context, string, driver.Options) (*driver.Result, error) {
 						return nil, &internal.Error{Status: http.StatusBadGateway, Err: errors.New("get error")}
 					},
 				},
@@ -1345,17 +1303,14 @@ func TestGetRev(t *testing.T) { // nolint: gocyclo
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					GetFunc: func(_ context.Context, docID string, _ driver.Options) (driver.Rows, error) {
+					GetFunc: func(_ context.Context, docID string, _ driver.Options) (*driver.Result, error) {
 						expectedDocID := "foo"
 						if docID != expectedDocID {
 							return nil, fmt.Errorf("Unexpected docID: %s", docID)
 						}
-						return &mock.Rows{
-							NextFunc: func(row *driver.Row) error {
-								row.Rev = "1-xxx"
-								row.Doc = body(`{"_rev":"1-xxx"}`)
-								return nil
-							},
+						return &driver.Result{
+							Rev:  "1-xxx",
+							Body: body(`{"_rev":"1-xxx"}`),
 						}, nil
 					},
 				},
@@ -1368,16 +1323,13 @@ func TestGetRev(t *testing.T) { // nolint: gocyclo
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					GetFunc: func(_ context.Context, docID string, _ driver.Options) (driver.Rows, error) {
+					GetFunc: func(_ context.Context, docID string, _ driver.Options) (*driver.Result, error) {
 						expectedDocID := "foo"
 						if docID != expectedDocID {
 							return nil, fmt.Errorf("Unexpected docID: %s", docID)
 						}
-						return &mock.Rows{
-							NextFunc: func(row *driver.Row) error {
-								row.Doc = body(`{"_rev":"1-xxx"}`)
-								return nil
-							},
+						return &driver.Result{
+							Body: body(`{"_rev":"1-xxx"}`),
 						}, nil
 					},
 				},
@@ -1390,16 +1342,13 @@ func TestGetRev(t *testing.T) { // nolint: gocyclo
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					GetFunc: func(_ context.Context, docID string, _ driver.Options) (driver.Rows, error) {
+					GetFunc: func(_ context.Context, docID string, _ driver.Options) (*driver.Result, error) {
 						expectedDocID := "foo"
 						if docID != expectedDocID {
 							return nil, fmt.Errorf("Unexpected docID: %s", docID)
 						}
-						return &mock.Rows{
-							NextFunc: func(row *driver.Row) error {
-								row.Doc = body(`invalid json`)
-								return nil
-							},
+						return &driver.Result{
+							Body: body(`invalid json`),
 						}, nil
 					},
 				},
@@ -1516,7 +1465,7 @@ func TestCopy(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					GetFunc: func(context.Context, string, driver.Options) (driver.Rows, error) {
+					GetFunc: func(context.Context, string, driver.Options) (*driver.Result, error) {
 						return nil, &internal.Error{Status: http.StatusBadGateway, Err: errors.New("get error")}
 					},
 				},
@@ -1531,12 +1480,9 @@ func TestCopy(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					GetFunc: func(context.Context, string, driver.Options) (driver.Rows, error) {
-						return &mock.Rows{
-							NextFunc: func(row *driver.Row) error {
-								row.Doc = body("invalid json")
-								return nil
-							},
+					GetFunc: func(context.Context, string, driver.Options) (*driver.Result, error) {
+						return &driver.Result{
+							Body: body("invalid json"),
 						}, nil
 					},
 				},
@@ -1551,12 +1497,9 @@ func TestCopy(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					GetFunc: func(context.Context, string, driver.Options) (driver.Rows, error) {
-						return &mock.Rows{
-							NextFunc: func(row *driver.Row) error {
-								row.Doc = body(`{"_id":"foo","_rev":"1-xxx"}`)
-								return nil
-							},
+					GetFunc: func(context.Context, string, driver.Options) (*driver.Result, error) {
+						return &driver.Result{
+							Body: body(`{"_id":"foo","_rev":"1-xxx"}`),
 						}, nil
 					},
 					PutFunc: func(context.Context, string, interface{}, driver.Options) (string, error) {
@@ -1574,16 +1517,13 @@ func TestCopy(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.DB{
-					GetFunc: func(_ context.Context, docID string, _ driver.Options) (driver.Rows, error) {
+					GetFunc: func(_ context.Context, docID string, _ driver.Options) (*driver.Result, error) {
 						expectedDocID := "bar"
 						if docID != expectedDocID {
 							return nil, fmt.Errorf("Unexpected get docID: %s", docID)
 						}
-						return &mock.Rows{
-							NextFunc: func(row *driver.Row) error {
-								row.Doc = body(`{"_id":"bar","_rev":"1-xxx","foo":123.4}`)
-								return nil
-							},
+						return &driver.Result{
+							Body: body(`{"_id":"bar","_rev":"1-xxx","foo":123.4}`),
 						}, nil
 					},
 					PutFunc: func(_ context.Context, docID string, doc interface{}, options driver.Options) (string, error) {

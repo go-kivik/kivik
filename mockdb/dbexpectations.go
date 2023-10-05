@@ -419,7 +419,7 @@ func (e *ExpectedGet) String() string {
 		opts = []string{"has docID: " + e.arg0}
 	}
 	if e.ret0 != nil {
-		rets = []string{fmt.Sprintf("should return: %d results", e.ret0.count())}
+		rets = []string{fmt.Sprintf("should return document with rev: %s", e.ret0.Rev)}
 	}
 	return dbStringer("Get", &e.commonExpectation, withOptions, opts, rets)
 }
@@ -427,6 +427,36 @@ func (e *ExpectedGet) String() string {
 // WithDocID sets the expected docID for the DB.Get() call.
 func (e *ExpectedGet) WithDocID(docID string) *ExpectedGet {
 	e.arg0 = docID
+	return e
+}
+
+func (e *ExpectedOpenRevs) String() string {
+	var opts, rets []string
+	if e.arg0 == "" {
+		opts = []string{"has any docID"}
+	} else {
+		opts = []string{"has docID: " + e.arg0}
+	}
+	if len(e.arg1) == 0 {
+		opts = append(opts, "has any revs")
+	} else {
+		opts = append(opts, fmt.Sprintf("with revs: %s", e.arg1))
+	}
+	if e.ret0 != nil {
+		rets = []string{fmt.Sprintf("should return: %d results", e.ret0.count())}
+	}
+	return dbStringer("OpenRevs", &e.commonExpectation, withOptions, opts, rets)
+}
+
+// WithDocID sets the expected docID for the DB.OpenRevs() call.
+func (e *ExpectedOpenRevs) WithDocID(docID string) *ExpectedOpenRevs {
+	e.arg0 = docID
+	return e
+}
+
+// WithRevs sets the expected revs for the DB.OpenRevs() call.
+func (e *ExpectedOpenRevs) WithRevs(revs []string) *ExpectedOpenRevs {
+	e.arg1 = revs
 	return e
 }
 

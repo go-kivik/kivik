@@ -123,9 +123,22 @@ func (db *DB) DeleteAttachment(ctx context.Context, docID, filename string, opts
 	return db.DeleteAttachmentFunc(ctx, docID, filename, opts)
 }
 
-// Query calls db.QueryFunc
+// Query calls db.QueryFunc.
 func (db *DB) Query(ctx context.Context, ddoc, view string, opts driver.Options) (driver.Rows, error) {
 	return db.QueryFunc(ctx, ddoc, view, opts)
+}
+
+// OpenRever mocks a driver.DB and driver.OpenRever.
+type OpenRever struct {
+	*DB
+	OpenRevsFunc func(context.Context, string, []string, driver.Options) (driver.Rows, error)
+}
+
+var _ driver.OpenRever = (*OpenRever)(nil)
+
+// OpenRevs calls db.OpenRevsFunc.
+func (db *OpenRever) OpenRevs(ctx context.Context, docID string, revs []string, options driver.Options) (driver.Rows, error) {
+	return db.OpenRevsFunc(ctx, docID, revs, options)
 }
 
 // Finder mocks a driver.DB and driver.Finder

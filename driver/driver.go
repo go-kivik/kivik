@@ -179,9 +179,7 @@ type DB interface {
 	CreateDoc(ctx context.Context, doc interface{}, options Options) (docID, rev string, err error)
 	// Put writes the document in the database.
 	Put(ctx context.Context, docID string, doc interface{}, options Options) (rev string, err error)
-	// Get fetches the requested document from the database, and returns the
-	// content length (or -1 if unknown), and an io.ReadCloser to access the
-	// raw JSON content.
+	// Get fetches the requested document from the database.
 	Get(ctx context.Context, docID string, options Options) (Rows, error)
 	// Delete marks the specified document as deleted.
 	Delete(ctx context.Context, docID string, options Options) (newRev string, err error)
@@ -210,6 +208,17 @@ type DB interface {
 	Query(ctx context.Context, ddoc, view string, options Options) (Rows, error)
 	// Close is called to clean up any resources used by the database.
 	Close() error
+}
+
+// OpenRever is an ptional interface that extends a [DB] to support the open_revs
+// option of the CouchDB get document endpoint. It is used by the replicator.
+// Drivers that don't support this endpoint may not be able to replicate as
+// efficiently, or at all.
+type OpenRever interface {
+	// OpenRevs fetches the requested document revisions from the database.
+	// revs may be a list of revisions, or a single item with value "all" to
+	// request all open revs.
+	OpenRevs(ctx context.Context, docID string, revs []string, options Options) (Rows, error)
 }
 
 // SecurityDB is an optional interface that extends a [DB], for backends which

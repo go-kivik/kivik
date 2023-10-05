@@ -698,6 +698,116 @@ func TestGet(t *testing.T) {
 	})
 }
 
+func TestOpenRevs(t *testing.T) {
+	tests := []struct {
+		name     string
+		db       *DB
+		ddoc     string
+		revs     []string
+		options  Option
+		expected *ResultSet
+		status   int
+		err      string
+	}{
+		{
+			name: "db error",
+			db: &DB{
+				client: &Client{},
+				driverDB: &mock.OpenRever{
+					OpenRevsFunc: func(context.Context, string, []string, driver.Options) (driver.Rows, error) {
+						return nil, errors.New("db error")
+					},
+				},
+			},
+			status: http.StatusInternalServerError,
+			err:    "db error",
+		},
+		{
+			name: "success",
+			db: &DB{
+				client: &Client{},
+				driverDB: &mock.OpenRever{
+					OpenRevsFunc: func(_ context.Context, ddoc string, revs []string, options driver.Options) (driver.Rows, error) {
+						const expectedDdoc = "foo"
+						expectedRevs := []string{"all"}
+						if ddoc != expectedDdoc {
+							return nil, fmt.Errorf("Unexpected ddoc: %s", ddoc)
+						}
+						if d := cmp.Diff(expectedRevs, revs); d != "" {
+							return nil, fmt.Errorf("Unexpected revs: %s", d)
+						}
+						gotOpts := map[string]interface{}{}
+						options.Apply(gotOpts)
+						if d := testy.DiffInterface(testOptions, gotOpts); d != nil {
+							return nil, fmt.Errorf("Unexpected options: %s", d)
+						}
+						return &mock.Rows{ID: "a"}, nil
+					},
+				},
+			},
+			ddoc:    "foo",
+			revs:    []string{"all"},
+			options: Params(testOptions),
+			expected: &ResultSet{
+				iter: &iter{
+					feed: &rowsIterator{
+						Rows: &mock.Rows{ID: "a"},
+					},
+					curVal: &driver.Row{},
+				},
+				rowsi: &mock.Rows{ID: "a"},
+			},
+		},
+		{
+			name: "db error",
+			db: &DB{
+				err: errors.New("db error"),
+			},
+			status: http.StatusInternalServerError,
+			err:    "db error",
+		},
+		{
+			name: "unsupported by driver",
+			db: &DB{
+				client: &Client{
+					closed: 1,
+				},
+			},
+			status: http.StatusNotImplemented,
+			err:    "kivik: driver does not support OpenRevs interface",
+		},
+		{
+			name: errClientClosed,
+			db: &DB{
+				driverDB: &mock.OpenRever{},
+				client: &Client{
+					closed: 1,
+				},
+			},
+			status: http.StatusServiceUnavailable,
+			err:    errClientClosed,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			rs := test.db.OpenRevs(context.Background(), test.ddoc, test.revs, test.options)
+			err := rs.Err()
+			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
+			rs.cancel = nil  // Determinism
+			rs.onClose = nil // Determinism
+			if d := testy.DiffInterface(test.expected, rs); d != nil {
+				t.Error(d)
+			}
+		})
+	}
+}
+
 func TestFlush(t *testing.T) {
 	tests := []struct {
 		name   string

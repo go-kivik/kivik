@@ -182,6 +182,28 @@ func (db *DB) Get(ctx context.Context, docID string, options ...Option) *ResultS
 	return newResultSet(ctx, db.endQuery, rowsi)
 }
 
+var openRevsNotImplemented = &internal.Error{Status: http.StatusNotImplemented, Message: "kivik: driver does not support OpenRevs interface"}
+
+// OpenRevs returns documents of specified leaf revisions. Additionally, it
+// accepts a revs value of "all" to return all leaf revisions.
+func (db *DB) OpenRevs(ctx context.Context, docID string, revs []string, options ...Option) *ResultSet {
+	if db.err != nil {
+		return &ResultSet{iter: errIterator(db.err)}
+	}
+	if openRever, ok := db.driverDB.(driver.OpenRever); ok {
+		if err := db.startQuery(); err != nil {
+			return &ResultSet{iter: errIterator(err)}
+		}
+		rowsi, err := openRever.OpenRevs(ctx, docID, revs, allOptions(options))
+		if err != nil {
+			db.endQuery()
+			return &ResultSet{iter: errIterator(err)}
+		}
+		return newResultSet(ctx, db.endQuery, rowsi)
+	}
+	return &ResultSet{iter: errIterator(openRevsNotImplemented)}
+}
+
 // GetRev returns the active rev of the specified document. GetRev accepts
 // the same options as [DB.Get].
 func (db *DB) GetRev(ctx context.Context, docID string, options ...Option) (rev string, err error) {

@@ -165,8 +165,8 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Option) *
 	return newResultSet(ctx, db.endQuery, rowsi)
 }
 
-// Result is a single document result returned by [DB.Get].
-type Result struct {
+// Document is a single document result returned by [DB.Get].
+type Document struct {
 	err         error
 	rev         string
 	body        io.ReadCloser
@@ -174,17 +174,17 @@ type Result struct {
 }
 
 // Err returns the error, if any, that was encountered fetching the document.
-func (r *Result) Err() error {
+func (r *Document) Err() error {
 	return r.err
 }
 
 // Rev returns the document revision.
-func (r *Result) Rev() (string, error) {
+func (r *Document) Rev() (string, error) {
 	return r.rev, r.err
 }
 
 // ScanDoc unmarshals the document into i.
-func (r *Result) ScanDoc(i interface{}) error {
+func (r *Document) ScanDoc(i interface{}) error {
 	if r.err != nil {
 		return r.err
 	}
@@ -194,7 +194,7 @@ func (r *Result) ScanDoc(i interface{}) error {
 // Attachments returns an attachments iterator. At present, it is only set
 // when doing a multi-part get from CouchDB (which is the default where
 // supported).
-func (r *Result) Attachments() (*AttachmentsIterator, error) {
+func (r *Document) Attachments() (*AttachmentsIterator, error) {
 	if r.err != nil {
 		return nil, r.err
 	}
@@ -206,19 +206,19 @@ func (r *Result) Attachments() (*AttachmentsIterator, error) {
 
 // Get fetches the requested document. Any errors are deferred until the first
 // call to [ResultSet.ScanDoc] or any other result set method.
-func (db *DB) Get(ctx context.Context, docID string, options ...Option) *Result {
+func (db *DB) Get(ctx context.Context, docID string, options ...Option) *Document {
 	if db.err != nil {
-		return &Result{err: db.err}
+		return &Document{err: db.err}
 	}
 	if err := db.startQuery(); err != nil {
-		return &Result{err: err}
+		return &Document{err: err}
 	}
 	defer db.endQuery()
 	result, err := db.driverDB.Get(ctx, docID, allOptions(options))
 	if err != nil {
-		return &Result{err: err}
+		return &Document{err: err}
 	}
-	return &Result{
+	return &Document{
 		rev:         result.Rev,
 		body:        result.Body,
 		attachments: result.Attachments,

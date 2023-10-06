@@ -1889,7 +1889,7 @@ func TestGet(t *testing.T) {
 		setup: func(m *Client) {
 			db := m.NewDB()
 			m.ExpectDB().WillReturn(db)
-			db.ExpectGet().WillReturn(&driver.Result{Rev: "2-bar"})
+			db.ExpectGet().WillReturn(&driver.Document{Rev: "2-bar"})
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			rows := c.DB("foo").Get(context.TODO(), "foo")

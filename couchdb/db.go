@@ -186,7 +186,7 @@ func (*document) Offset() int64     { return 0 }
 func (*document) TotalRows() int64  { return 0 }
 
 // Get fetches the requested document.
-func (d *db) Get(ctx context.Context, docID string, options driver.Options) (*driver.Result, error) {
+func (d *db) Get(ctx context.Context, docID string, options driver.Options) (*driver.Document, error) {
 	resp, err := d.get(ctx, http.MethodGet, docID, options)
 	if err != nil {
 		return nil, err
@@ -203,7 +203,7 @@ func (d *db) Get(ctx context.Context, docID string, options driver.Options) (*dr
 		if err != nil {
 			return nil, err
 		}
-		return &driver.Result{
+		return &driver.Document{
 			Rev:         doc.rev,
 			Body:        doc.body,
 			Attachments: doc.attachments,

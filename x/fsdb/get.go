@@ -31,7 +31,7 @@ import (
 // - local_seq
 // - meta
 // - open_revs
-func (d *db) Get(_ context.Context, docID string, options driver.Options) (*driver.Result, error) {
+func (d *db) Get(_ context.Context, docID string, options driver.Options) (*driver.Document, error) {
 	opts := map[string]interface{}{}
 	options.Apply(opts)
 	if docID == "" {
@@ -50,7 +50,7 @@ func (d *db) Get(_ context.Context, docID string, options driver.Options) (*driv
 	if err != nil {
 		return nil, err
 	}
-	return &driver.Result{
+	return &driver.Document{
 		Rev:         docs[0].Revisions[0].Rev.String(),
 		Body:        io.NopCloser(buf),
 		Attachments: attsIter,

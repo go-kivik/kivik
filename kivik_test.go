@@ -1046,9 +1046,9 @@ func TestClientClose(t *testing.T) {
 			client: &mock.Client{
 				DBFunc: func(string, driver.Options) (driver.DB, error) {
 					return &mock.DB{
-						GetFunc: func(context.Context, string, driver.Options) (*driver.Result, error) {
+						GetFunc: func(context.Context, string, driver.Options) (*driver.Document, error) {
 							time.Sleep(delay)
-							return &driver.Result{}, nil
+							return &driver.Document{}, nil
 						},
 					}, nil
 				},

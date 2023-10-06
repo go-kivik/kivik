@@ -40,7 +40,7 @@ func (d *db) Query(context.Context, string, string, driver.Options) (driver.Rows
 	return nil, notYetImplemented
 }
 
-func (d *db) Get(ctx context.Context, docID string, options driver.Options) (*driver.Result, error) {
+func (d *db) Get(ctx context.Context, docID string, options driver.Options) (*driver.Document, error) {
 	if exists, _ := d.client.DBExists(ctx, d.dbName, nil); !exists {
 		return nil, statusError{status: http.StatusPreconditionFailed, error: errors.New("database does not exist")}
 	}
@@ -51,7 +51,7 @@ func (d *db) Get(ctx context.Context, docID string, options driver.Options) (*dr
 	options.Apply(opts)
 	if rev, ok := opts["rev"].(string); ok {
 		if doc, found := d.db.getRevision(docID, rev); found {
-			return &driver.Result{
+			return &driver.Document{
 				Rev:  rev,
 				Body: io.NopCloser(bytes.NewReader(doc.data)),
 			}, nil
@@ -62,7 +62,7 @@ func (d *db) Get(ctx context.Context, docID string, options driver.Options) (*dr
 	if last.Deleted {
 		return nil, statusError{status: http.StatusNotFound, error: errors.New("missing")}
 	}
-	return &driver.Result{
+	return &driver.Document{
 		Rev:  fmt.Sprintf("%d-%s", last.ID, last.Rev),
 		Body: io.NopCloser(bytes.NewReader(last.data)),
 	}, nil

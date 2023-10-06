@@ -186,7 +186,7 @@ func Replicate(ctx context.Context, target, source *DB, options ...Option) (*Rep
 		return readDiffs(ctx, target, changes, diffs, cb)
 	})
 
-	docs := make(chan *Document)
+	docs := make(chan *document)
 	group.Go(func() error {
 		defer close(docs)
 		return readDocs(ctx, source, diffs, docs, result, cb)
@@ -338,7 +338,7 @@ func readDiffs(ctx context.Context, db *DB, ch <-chan *change, results chan<- *r
 	}
 }
 
-func readDocs(ctx context.Context, db *DB, diffs <-chan *revDiff, results chan<- *Document, result *resultWrapper, cb eventCallback) error {
+func readDocs(ctx context.Context, db *DB, diffs <-chan *revDiff, results chan<- *document, result *resultWrapper, cb eventCallback) error {
 	for {
 		var rd *revDiff
 		var ok bool
@@ -373,8 +373,8 @@ func readDocs(ctx context.Context, db *DB, diffs <-chan *revDiff, results chan<-
 	}
 }
 
-func readDoc(ctx context.Context, db *DB, docID, rev string) (*Document, error) {
-	doc := new(Document)
+func readDoc(ctx context.Context, db *DB, docID, rev string) (*document, error) {
+	doc := new(document)
 	row := db.Get(ctx, docID, Params(map[string]interface{}{
 		"rev":         rev,
 		"revs":        true,
@@ -432,7 +432,7 @@ func readDoc(ctx context.Context, db *DB, docID, rev string) (*Document, error) 
 	return doc, nil
 }
 
-func storeDocs(ctx context.Context, db *DB, docs <-chan *Document, result *resultWrapper, cb eventCallback) error {
+func storeDocs(ctx context.Context, db *DB, docs <-chan *document, result *resultWrapper, cb eventCallback) error {
 	for doc := range docs {
 		_, err := db.Put(ctx, doc.ID, doc, Param("new_edits", false))
 		cb(ReplicationEvent{

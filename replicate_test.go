@@ -110,7 +110,7 @@ func TestReplicateMock(t *testing.T) {
 				"revs":        true,
 				"attachments": true,
 			})).
-			WillReturn(&driver.Result{
+			WillReturn(&driver.Document{
 				Body: io.NopCloser(strings.NewReader(`{"_id":"foo","_rev":"2-7051cbe5c8faecd085a3fa619e6e6337","foo":"bar"}`)),
 			})
 		tdb.ExpectPut().
@@ -185,7 +185,7 @@ func TestReplicate_with_callback(t *testing.T) {
 			"revs":        true,
 			"attachments": true,
 		})).
-		WillReturn(&driver.Result{
+		WillReturn(&driver.Document{
 			Body: io.NopCloser(strings.NewReader(`{"_id":"foo","_rev":"2-7051cbe5c8faecd085a3fa619e6e6337","foo":"bar"}`)),
 		})
 	tdb.ExpectPut().

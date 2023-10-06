@@ -180,7 +180,7 @@ type DB interface {
 	// Put writes the document in the database.
 	Put(ctx context.Context, docID string, doc interface{}, options Options) (rev string, err error)
 	// Get fetches the requested document from the database.
-	Get(ctx context.Context, docID string, options Options) (*Result, error)
+	Get(ctx context.Context, docID string, options Options) (*Document, error)
 	// Delete marks the specified document as deleted.
 	Delete(ctx context.Context, docID string, options Options) (newRev string, err error)
 	// Stats returns database statistics.
@@ -230,8 +230,8 @@ type SecurityDB interface {
 	SetSecurity(ctx context.Context, security *Security) error
 }
 
-// Result represents a single document returned by [DB.Get].
-type Result struct {
+// Document represents a single document returned by [DB.Get].
+type Document struct {
 	// Rev is the revision number returned
 	Rev string
 

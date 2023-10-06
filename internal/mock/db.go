@@ -23,7 +23,7 @@ type DB struct {
 	// ID is a unique identifier for the DB instance.
 	ID                   string
 	AllDocsFunc          func(ctx context.Context, options driver.Options) (driver.Rows, error)
-	GetFunc              func(ctx context.Context, docID string, options driver.Options) (*driver.Result, error)
+	GetFunc              func(ctx context.Context, docID string, options driver.Options) (*driver.Document, error)
 	CreateDocFunc        func(ctx context.Context, doc interface{}, options driver.Options) (docID, rev string, err error)
 	PutFunc              func(ctx context.Context, docID string, doc interface{}, options driver.Options) (rev string, err error)
 	DeleteFunc           func(ctx context.Context, docID string, options driver.Options) (newRev string, err error)
@@ -47,7 +47,7 @@ type SecurityDB struct {
 }
 
 // Get calls db.GetFunc
-func (db *DB) Get(ctx context.Context, docID string, opts driver.Options) (*driver.Result, error) {
+func (db *DB) Get(ctx context.Context, docID string, opts driver.Options) (*driver.Document, error) {
 	return db.GetFunc(ctx, docID, opts)
 }
 

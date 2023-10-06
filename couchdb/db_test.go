@@ -101,7 +101,7 @@ func TestGet(t *testing.T) {
 		db          *db
 		id          string
 		options     kivik.Option
-		doc         *driver.Result
+		doc         *driver.Document
 		expected    string
 		attachments []*Attachment
 		status      int
@@ -145,7 +145,7 @@ func TestGet(t *testing.T) {
 			ContentLength: 13,
 			Body:          Body(`{"foo":"bar"}`),
 		}, nil),
-		doc: &driver.Result{
+		doc: &driver.Document{
 			Rev: "12-xxx",
 		},
 		expected: `{"foo":"bar"}`,
@@ -300,7 +300,7 @@ Content-Length: 86
 		}, nil),
 		id:      "foo",
 		options: kivik.IncludeDocs(),
-		doc: &driver.Result{
+		doc: &driver.Document{
 			Rev: "2-c1c6c44c4bc3c9344b037c8690468605",
 			Attachments: &multipartAttachments{
 				meta: map[string]attMeta{
@@ -354,7 +354,7 @@ Content-Length: 86
 		}, nil),
 		id:      "foo",
 		options: kivik.IncludeDocs(),
-		doc: &driver.Result{
+		doc: &driver.Document{
 			Rev: "2-c1c6c44c4bc3c9344b037c8690468605",
 			Attachments: &multipartAttachments{
 				meta: map[string]attMeta{

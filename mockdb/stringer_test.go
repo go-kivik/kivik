@@ -961,7 +961,7 @@ func TestGetString(t *testing.T) {
 	- has any options`,
 	})
 	tests.Add("return value", stringerTest{
-		input: &ExpectedGet{commonExpectation: commonExpectation{db: &DB{name: "foo"}}, ret0: &driver.Result{Rev: "1-foo"}},
+		input: &ExpectedGet{commonExpectation: commonExpectation{db: &DB{name: "foo"}}, ret0: &driver.Document{Rev: "1-foo"}},
 		expected: `call to DB(foo#0).Get() which:
 	- has any docID
 	- has any options

@@ -22,7 +22,7 @@ import (
 
 func TestDocumentMarshalJSON(t *testing.T) {
 	tests := testy.NewTable()
-	tests.Add("no attachments", &Document{
+	tests.Add("no attachments", &document{
 		ID:  "foo",
 		Rev: "1-xxx",
 		Data: map[string]interface{}{
@@ -35,7 +35,7 @@ func TestDocumentMarshalJSON(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		return &Document{
+		return &document{
 			ID:  "foo",
 			Rev: "1-xxx",
 			Attachments: &Attachments{
@@ -47,7 +47,7 @@ func TestDocumentMarshalJSON(t *testing.T) {
 		}
 	})
 
-	tests.Run(t, func(t *testing.T, doc *Document) {
+	tests.Run(t, func(t *testing.T, doc *document) {
 		result, err := json.Marshal(doc)
 		if err != nil {
 			t.Fatal(err)
@@ -89,7 +89,7 @@ func TestNormalDocUnmarshalJSON(t *testing.T) {
     }`)
 
 	tests.Run(t, func(t *testing.T, in string) {
-		result := new(Document)
+		result := new(document)
 		if err := json.Unmarshal([]byte(in), &result); err != nil {
 			t.Fatal(err)
 		}

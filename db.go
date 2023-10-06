@@ -204,6 +204,11 @@ func (r *Document) Attachments() (*AttachmentsIterator, error) {
 	return &AttachmentsIterator{atti: r.attachments}, nil
 }
 
+// Close closes the document resources.
+func (r *Document) Close() error {
+	return r.body.Close()
+}
+
 // Get fetches the requested document. Any errors are deferred until the first
 // call to [ResultSet.ScanDoc] or any other result set method.
 func (db *DB) Get(ctx context.Context, docID string, options ...Option) *Document {

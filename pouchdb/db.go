@@ -94,17 +94,16 @@ func (d *document) UpdateSeq() string { return "" }
 func (d *document) Offset() int64     { return 0 }
 func (d *document) TotalRows() int64  { return 0 }
 
-func (d *db) Get(ctx context.Context, docID string, options driver.Options) (driver.Rows, error) {
+func (d *db) Get(ctx context.Context, docID string, options driver.Options) (*driver.Result, error) {
 	opts := map[string]interface{}{}
 	options.Apply(opts)
 	doc, rev, err := d.db.Get(ctx, docID, opts)
 	if err != nil {
 		return nil, err
 	}
-	return &document{
-		id:   docID,
-		rev:  rev,
-		body: bytes.NewReader(doc),
+	return &driver.Result{
+		Rev:  rev,
+		Body: io.NopCloser(bytes.NewReader(doc)),
 	}, nil
 }
 

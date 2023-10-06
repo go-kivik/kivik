@@ -264,12 +264,8 @@ func TestPut(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				row := new(driver.Row)
-				if err := rows.Next(row); err != nil {
-					t.Fatal(err)
-				}
 				var result map[string]interface{}
-				if e := json.NewDecoder(row.Doc).Decode(&result); e != nil {
+				if e := json.NewDecoder(rows.Body).Decode(&result); e != nil {
 					t.Fatal(e)
 				}
 				if !strings.HasPrefix(test.DocID, "_local/") {
@@ -419,13 +415,9 @@ func TestGet(t *testing.T) {
 				if err != nil {
 					return
 				}
-				row := new(driver.Row)
-				if err := rows.Next(row); err != nil {
-					t.Fatal(err)
-				}
 
 				var result map[string]interface{}
-				if err := json.NewDecoder(row.Doc).Decode(&result); err != nil {
+				if err := json.NewDecoder(rows.Body).Decode(&result); err != nil {
 					t.Fatal(err)
 				}
 
@@ -546,16 +538,12 @@ func TestDeleteDoc(t *testing.T) {
 				if err != nil {
 					return
 				}
-				rows, err := db.Get(context.Background(), test.ID, kivik.Rev(rev))
+				result, err := db.Get(context.Background(), test.ID, kivik.Rev(rev))
 				if err != nil {
 					t.Fatal(err)
 				}
-				row := new(driver.Row)
-				if err := rows.Next(row); err != nil {
-					t.Fatal(err)
-				}
 				var doc interface{}
-				if e := json.NewDecoder(row.Doc).Decode(&doc); e != nil {
+				if e := json.NewDecoder(result.Body).Decode(&doc); e != nil {
 					t.Fatal(e)
 				}
 				expected := map[string]interface{}{
@@ -634,12 +622,8 @@ func TestCreateDoc(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				row := new(driver.Row)
-				if err := rows.Next(row); err != nil {
-					t.Fatal(err)
-				}
 				var result map[string]interface{}
-				if e := json.NewDecoder(row.Doc).Decode(&result); e != nil {
+				if e := json.NewDecoder(rows.Body).Decode(&result); e != nil {
 					t.Fatal(e)
 				}
 				if result["_id"].(string) != docID {

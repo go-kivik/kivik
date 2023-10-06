@@ -24,14 +24,14 @@ import (
 func TestDocument(t *testing.T) {
 	type tst struct {
 		i        interface{}
-		expected *driver.Document
+		expected *driver.Result
 		content  interface{}
 		err      string
 	}
 	tests := testy.NewTable()
 	tests.Add("simple doc", tst{
 		i:        map[string]string{"foo": "bar"},
-		expected: &driver.Document{},
+		expected: &driver.Result{},
 		content:  []byte(`{"foo":"bar"}`),
 	})
 	tests.Add("Unmarshalable", tst{
@@ -40,22 +40,22 @@ func TestDocument(t *testing.T) {
 	})
 	tests.Add("raw string", tst{
 		i:        `{"foo":"bar"}`,
-		expected: &driver.Document{},
+		expected: &driver.Result{},
 		content:  []byte(`{"foo":"bar"}`),
 	})
 	tests.Add("raw bytes", tst{
 		i:        []byte(`{"foo":"bar"}`),
-		expected: &driver.Document{},
+		expected: &driver.Result{},
 		content:  []byte(`{"foo":"bar"}`),
 	})
 	tests.Add("json.RawMessage", tst{
 		i:        json.RawMessage(`{"foo":"bar"}`),
-		expected: &driver.Document{},
+		expected: &driver.Result{},
 		content:  []byte(`{"foo":"bar"}`),
 	})
 	tests.Add("rev", tst{
 		i: `{"_rev":"1-xxx"}`,
-		expected: &driver.Document{
+		expected: &driver.Result{
 			Rev: "1-xxx",
 		},
 		content: []byte(`{"_rev":"1-xxx"}`),

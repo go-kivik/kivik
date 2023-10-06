@@ -961,9 +961,43 @@ func TestGetString(t *testing.T) {
 	- has any options`,
 	})
 	tests.Add("return value", stringerTest{
-		input: &ExpectedGet{commonExpectation: commonExpectation{db: &DB{name: "foo"}}, ret0: NewRows().AddRow(&driver.Row{Rev: "1-foo"})},
+		input: &ExpectedGet{commonExpectation: commonExpectation{db: &DB{name: "foo"}}, ret0: &driver.Result{Rev: "1-foo"}},
 		expected: `call to DB(foo#0).Get() which:
 	- has any docID
+	- has any options
+	- should return document with rev: 1-foo`,
+	})
+	tests.Run(t, testStringer)
+}
+
+func TestOpenRevsString(t *testing.T) {
+	tests := testy.NewTable()
+	tests.Add("empty", stringerTest{
+		input: &ExpectedOpenRevs{commonExpectation: commonExpectation{db: &DB{name: "foo"}}},
+		expected: `call to DB(foo#0).OpenRevs() which:
+	- has any docID
+	- has any revs
+	- has any options`,
+	})
+	tests.Add("docID", stringerTest{
+		input: &ExpectedOpenRevs{commonExpectation: commonExpectation{db: &DB{name: "foo"}}, arg0: "foo"},
+		expected: `call to DB(foo#0).OpenRevs() which:
+	- has docID: foo
+	- has any revs
+	- has any options`,
+	})
+	tests.Add("revs", stringerTest{
+		input: &ExpectedOpenRevs{commonExpectation: commonExpectation{db: &DB{name: "foo"}}, arg1: []string{"foo", "bar"}},
+		expected: `call to DB(foo#0).OpenRevs() which:
+	- has any docID
+	- with revs: [foo bar]
+	- has any options`,
+	})
+	tests.Add("return value", stringerTest{
+		input: &ExpectedOpenRevs{commonExpectation: commonExpectation{db: &DB{name: "foo"}}, ret0: NewRows().AddRow(&driver.Row{Rev: "1-foo"})},
+		expected: `call to DB(foo#0).OpenRevs() which:
+	- has any docID
+	- has any revs
 	- has any options
 	- should return: 1 results`,
 	})

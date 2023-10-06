@@ -101,7 +101,7 @@ func TestGet(t *testing.T) {
 		db          *db
 		id          string
 		options     kivik.Option
-		doc         *driver.Row
+		doc         *driver.Result
 		expected    string
 		attachments []*Attachment
 		status      int
@@ -145,8 +145,7 @@ func TestGet(t *testing.T) {
 			ContentLength: 13,
 			Body:          Body(`{"foo":"bar"}`),
 		}, nil),
-		doc: &driver.Row{
-			ID:  "foo",
+		doc: &driver.Result{
 			Rev: "12-xxx",
 		},
 		expected: `{"foo":"bar"}`,
@@ -301,8 +300,7 @@ Content-Length: 86
 		}, nil),
 		id:      "foo",
 		options: kivik.IncludeDocs(),
-		doc: &driver.Row{
-			ID:  "foo",
+		doc: &driver.Result{
 			Rev: "2-c1c6c44c4bc3c9344b037c8690468605",
 			Attachments: &multipartAttachments{
 				meta: map[string]attMeta{
@@ -356,8 +354,7 @@ Content-Length: 86
 		}, nil),
 		id:      "foo",
 		options: kivik.IncludeDocs(),
-		doc: &driver.Row{
-			ID:  "foo",
+		doc: &driver.Result{
 			Rev: "2-c1c6c44c4bc3c9344b037c8690468605",
 			Attachments: &multipartAttachments{
 				meta: map[string]attMeta{
@@ -399,58 +396,28 @@ Content-Length: 86
 			err:    `^Get "?http://example.com/testdb/2020-01-30T13%3A33%3A00\.00%2B05%3A30%7Ckl"?: success$`,
 		}
 	})
-	tests.Add("open_revs", func(t *testing.T) interface{} {
-		return tt{
-			db: newCustomDB(func(req *http.Request) (*http.Response, error) {
-				want := "multipart/mixed, multipart/related, application/json"
-				if got := req.Header.Get("Accept"); got != want {
-					return nil, fmt.Errorf("Unexpected Accept header %q", got)
-				}
-				return &http.Response{
-					StatusCode: http.StatusOK,
-					Header: http.Header{
-						"Content-Type": []string{`multipart/mixed; boundary="ea68bec945fd9dece3e826462c5604e8"`},
-					},
-					Body: Body(`--ea68bec945fd9dece3e826462c5604e8
-Content-Type: application/json
-
-{"_id":"bar","_rev":"2-e2a6df12e36615e8def0bb38bb17b48d","foo":123}
---ea68bec945fd9dece3e826462c5604e8--
-`),
-				}, nil
-			}),
-			id:       "bar",
-			expected: `{"_id":"bar","_rev":"2-e2a6df12e36615e8def0bb38bb17b48d","foo":123}`,
-			doc: &driver.Row{
-				ID:  "bar",
-				Rev: "2-e2a6df12e36615e8def0bb38bb17b48d",
-			},
-		}
-	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
 		opts := tt.options
 		if opts == nil {
 			opts = mock.NilOption
 		}
-		rows, err := tt.db.Get(context.Background(), tt.id, opts)
+		result, err := tt.db.Get(context.Background(), tt.id, opts)
 		if !testy.ErrorMatchesRE(tt.err, err) {
 			t.Errorf("Unexpected error: \n Got: %s\nWant: /%s/", err, tt.err)
 		}
 		if err != nil {
 			return
 		}
-		row := new(driver.Row)
-		if err := rows.Next(row); err != nil {
-			t.Fatal(err)
-		}
-		if d := testy.DiffAsJSON([]byte(tt.expected), row.Doc); d != nil {
+
+		if d := testy.DiffAsJSON([]byte(tt.expected), result.Body); d != nil {
 			t.Errorf("Unexpected result: %s", d)
 		}
-		attachments := rowAttachments(t, row)
+		attachments := rowAttachments(t, result.Attachments)
 
-		row.Doc = nil // Determinism
-		if d := testy.DiffInterface(tt.doc, row); d != nil {
+		_ = result.Body.Close()
+		result.Body = nil // Determinism
+		if d := testy.DiffInterface(tt.doc, result); d != nil {
 			t.Errorf("Unexpected doc:\n%s", d)
 		}
 		if d := testy.DiffInterface(tt.attachments, attachments); d != nil {
@@ -459,12 +426,12 @@ Content-Type: application/json
 	})
 }
 
-func rowAttachments(t *testing.T, row *driver.Row) []*Attachment {
+func rowAttachments(t *testing.T, atts driver.Attachments) []*Attachment {
 	var attachments []*Attachment
-	if row.Attachments != nil {
+	if atts != nil {
 		att := new(driver.Attachment)
 		for {
-			if err := row.Attachments.Next(att); err != nil {
+			if err := atts.Next(att); err != nil {
 				if err != io.EOF {
 					t.Fatal(err)
 				}
@@ -481,13 +448,13 @@ func rowAttachments(t *testing.T, row *driver.Row) []*Attachment {
 				Content:     string(content),
 			})
 		}
-		row.Attachments.(*multipartAttachments).content = nil // Determinism
-		row.Attachments.(*multipartAttachments).mpReader = nil
+		atts.(*multipartAttachments).content = nil // Determinism
+		atts.(*multipartAttachments).mpReader = nil
 	}
 	return attachments
 }
 
-func TestGet_with_open_revs(t *testing.T) {
+func TestOpenRevs(t *testing.T) {
 	type rowResult struct {
 		ID    string
 		Rev   string
@@ -496,6 +463,7 @@ func TestGet_with_open_revs(t *testing.T) {
 	type tt struct {
 		db      *db
 		id      string
+		revs    []string
 		options kivik.Option
 		want    []rowResult
 		err     string
@@ -653,7 +621,7 @@ Content-Type: application/json; error="true"
 		if opts == nil {
 			opts = mock.NilOption
 		}
-		rows, err := tt.db.Get(context.Background(), tt.id, opts)
+		rows, err := tt.db.OpenRevs(context.Background(), tt.id, tt.revs, opts)
 		var errMsg string
 		if err != nil {
 			errMsg = err.Error()

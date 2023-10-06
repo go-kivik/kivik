@@ -137,21 +137,13 @@ func (r *ResultSet) Metadata() (*ResultMetadata, error) {
 }
 
 // ScanValue copies the data from the result value into dest, which must be a
-// pointer. Think of this as passing dest to [encoding/json.Unmarshal].
+// pointer. This acts as a wrapper around [encoding/json.Unmarshal].
 //
 // If the row returned an error, it will be returned rather than unmarshaling
 // the value, as error rows do not include values.
 //
-// If the dest argument is of type *[]byte, ScanValue stores a copy of the
-// input data. The copy is owned by the caller and may be modified and held
-// indefinitely.
-//
-// The copy can be avoided by using an argument of type
-// [*encoding/json.RawMessage] instead, after which the value is only
-// valid until the next call to [ResultSet.Next] or [ResultSet.Close].
-//
-// For all other types, refer to the documentation for
-// [encoding/json.Unmarshal] for type conversion rules.
+// Refer to the documentation for [encoding/json.Unmarshal] for unmarshaling
+// details.
 func (r *ResultSet) ScanValue(dest interface{}) (err error) {
 	runlock, err := r.makeReady(&err)
 	if err != nil {
@@ -260,7 +252,7 @@ func (r *ResultSet) Attachments() (*AttachmentsIterator, error) {
 		return nil, row.Error
 	}
 	if row.Attachments == nil {
-		return nil, nil // TODO: should this return an error?
+		return nil, nil // TODO: #804 return a proper error
 	}
 	return &AttachmentsIterator{atti: row.Attachments}, nil
 }

@@ -23,7 +23,7 @@ type DB struct {
 	// ID is a unique identifier for the DB instance.
 	ID                   string
 	AllDocsFunc          func(ctx context.Context, options driver.Options) (driver.Rows, error)
-	GetFunc              func(ctx context.Context, docID string, options driver.Options) (driver.Rows, error)
+	GetFunc              func(ctx context.Context, docID string, options driver.Options) (*driver.Result, error)
 	CreateDocFunc        func(ctx context.Context, doc interface{}, options driver.Options) (docID, rev string, err error)
 	PutFunc              func(ctx context.Context, docID string, doc interface{}, options driver.Options) (rev string, err error)
 	DeleteFunc           func(ctx context.Context, docID string, options driver.Options) (newRev string, err error)
@@ -47,7 +47,7 @@ type SecurityDB struct {
 }
 
 // Get calls db.GetFunc
-func (db *DB) Get(ctx context.Context, docID string, opts driver.Options) (driver.Rows, error) {
+func (db *DB) Get(ctx context.Context, docID string, opts driver.Options) (*driver.Result, error) {
 	return db.GetFunc(ctx, docID, opts)
 }
 
@@ -123,9 +123,22 @@ func (db *DB) DeleteAttachment(ctx context.Context, docID, filename string, opts
 	return db.DeleteAttachmentFunc(ctx, docID, filename, opts)
 }
 
-// Query calls db.QueryFunc
+// Query calls db.QueryFunc.
 func (db *DB) Query(ctx context.Context, ddoc, view string, opts driver.Options) (driver.Rows, error) {
 	return db.QueryFunc(ctx, ddoc, view, opts)
+}
+
+// OpenRever mocks a driver.DB and driver.OpenRever.
+type OpenRever struct {
+	*DB
+	OpenRevsFunc func(context.Context, string, []string, driver.Options) (driver.Rows, error)
+}
+
+var _ driver.OpenRever = (*OpenRever)(nil)
+
+// OpenRevs calls db.OpenRevsFunc.
+func (db *OpenRever) OpenRevs(ctx context.Context, docID string, revs []string, options driver.Options) (driver.Rows, error) {
+	return db.OpenRevsFunc(ctx, docID, revs, options)
 }
 
 // Finder mocks a driver.DB and driver.Finder

@@ -1819,7 +1819,6 @@ func TestGet(t *testing.T) {
 			if !testy.ErrorMatches("foo err", err) {
 				t.Errorf("Unexpected error: %s", err)
 			}
-			_ = rows.Close()
 		},
 	})
 	tests.Add("delay", mockTest{
@@ -1834,7 +1833,6 @@ func TestGet(t *testing.T) {
 			if !testy.ErrorMatches("context canceled", err) {
 				t.Errorf("Unexpected error: %s", err)
 			}
-			_ = rows.Close()
 		},
 	})
 	tests.Add("wrong db", mockTest{
@@ -1854,7 +1852,6 @@ func TestGet(t *testing.T) {
 			if !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
 				t.Errorf("Unexpected error: %s", err)
 			}
-			_ = rows.Close()
 		},
 		err: "there is a remaining unmet expectation",
 	})
@@ -1870,7 +1867,6 @@ func TestGet(t *testing.T) {
 			if !testy.ErrorMatchesRE("has docID: bar", err) {
 				t.Errorf("Unexpected error: %s", err)
 			}
-			_ = rows.Close()
 		},
 		err: "there is a remaining unmet expectation",
 	})
@@ -1886,7 +1882,6 @@ func TestGet(t *testing.T) {
 			if !testy.ErrorMatchesRE(`has options: map\[foo:baz]`, err) {
 				t.Errorf("Unexpected error: %s", err)
 			}
-			_ = rows.Close()
 		},
 		err: "there is a remaining unmet expectation",
 	})
@@ -1894,13 +1889,10 @@ func TestGet(t *testing.T) {
 		setup: func(m *Client) {
 			db := m.NewDB()
 			m.ExpectDB().WillReturn(db)
-			db.ExpectGet().WillReturn(NewRows().AddRow(&driver.Row{Rev: "2-bar"}))
+			db.ExpectGet().WillReturn(&driver.Result{Rev: "2-bar"})
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			rows := c.DB("foo").Get(context.TODO(), "foo")
-			if !rows.Next() {
-				t.Fatalf("iteration failed")
-			}
 			rev, err := rows.Rev()
 			if !testy.ErrorMatches("", err) {
 				t.Errorf("Unexpected error: %s", err)
@@ -1908,7 +1900,6 @@ func TestGet(t *testing.T) {
 			if rev != "2-bar" {
 				t.Errorf("Unexpected rev: %s", rev)
 			}
-			_ = rows.Close()
 		},
 	})
 	tests.Run(t, testMock)

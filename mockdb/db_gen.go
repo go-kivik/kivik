@@ -329,7 +329,7 @@ func (db *driverDB) Find(ctx context.Context, arg0 interface{}, options driver.O
 	return &driverRows{Context: ctx, Rows: coalesceRows(expected.ret0)}, expected.wait(ctx)
 }
 
-func (db *driverDB) Get(ctx context.Context, arg0 string, options driver.Options) (driver.Rows, error) {
+func (db *driverDB) Get(ctx context.Context, arg0 string, options driver.Options) (*driver.Result, error) {
 	expected := &ExpectedGet{
 		arg0: arg0,
 		commonExpectation: commonExpectation{
@@ -343,7 +343,7 @@ func (db *driverDB) Get(ctx context.Context, arg0 string, options driver.Options
 	if expected.callback != nil {
 		return expected.callback(ctx, arg0, options)
 	}
-	return &driverRows{Context: ctx, Rows: coalesceRows(expected.ret0)}, expected.wait(ctx)
+	return expected.ret0, expected.wait(ctx)
 }
 
 func (db *driverDB) GetAttachment(ctx context.Context, arg0 string, arg1 string, options driver.Options) (*driver.Attachment, error) {
@@ -410,6 +410,24 @@ func (db *driverDB) LocalDocs(ctx context.Context, options driver.Options) (driv
 	}
 	if expected.callback != nil {
 		return expected.callback(ctx, options)
+	}
+	return &driverRows{Context: ctx, Rows: coalesceRows(expected.ret0)}, expected.wait(ctx)
+}
+
+func (db *driverDB) OpenRevs(ctx context.Context, arg0 string, arg1 []string, options driver.Options) (driver.Rows, error) {
+	expected := &ExpectedOpenRevs{
+		arg0: arg0,
+		arg1: arg1,
+		commonExpectation: commonExpectation{
+			db:      db.DB,
+			options: options,
+		},
+	}
+	if err := db.client.nextExpectation(expected); err != nil {
+		return nil, err
+	}
+	if expected.callback != nil {
+		return expected.callback(ctx, arg0, arg1, options)
 	}
 	return &driverRows{Context: ctx, Rows: coalesceRows(expected.ret0)}, expected.wait(ctx)
 }

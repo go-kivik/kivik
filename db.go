@@ -165,21 +165,86 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Option) *
 	return newResultSet(ctx, db.endQuery, rowsi)
 }
 
+// Result is a single document result returned by [DB.Get].
+type Result struct {
+	err         error
+	rev         string
+	body        io.ReadCloser
+	attachments driver.Attachments
+}
+
+// Err returns the error, if any, that was encountered fetching the document.
+func (r *Result) Err() error {
+	return r.err
+}
+
+// Rev returns the document revision.
+func (r *Result) Rev() (string, error) {
+	return r.rev, r.err
+}
+
+// ScanDoc unmarshals the document into i.
+func (r *Result) ScanDoc(i interface{}) error {
+	if r.err != nil {
+		return r.err
+	}
+	return json.NewDecoder(r.body).Decode(i)
+}
+
+// Attachments returns an attachments iterator. At present, it is only set
+// when doing a multi-part get from CouchDB (which is the default where
+// supported).
+func (r *Result) Attachments() (*AttachmentsIterator, error) {
+	if r.err != nil {
+		return nil, r.err
+	}
+	if r.attachments == nil {
+		return nil, nil // TODO: #804 return a proper error
+	}
+	return &AttachmentsIterator{atti: r.attachments}, nil
+}
+
 // Get fetches the requested document. Any errors are deferred until the first
 // call to [ResultSet.ScanDoc] or any other result set method.
-func (db *DB) Get(ctx context.Context, docID string, options ...Option) *ResultSet {
+func (db *DB) Get(ctx context.Context, docID string, options ...Option) *Result {
+	if db.err != nil {
+		return &Result{err: db.err}
+	}
+	if err := db.startQuery(); err != nil {
+		return &Result{err: err}
+	}
+	defer db.endQuery()
+	result, err := db.driverDB.Get(ctx, docID, allOptions(options))
+	if err != nil {
+		return &Result{err: err}
+	}
+	return &Result{
+		rev:         result.Rev,
+		body:        result.Body,
+		attachments: result.Attachments,
+	}
+}
+
+var openRevsNotImplemented = &internal.Error{Status: http.StatusNotImplemented, Message: "kivik: driver does not support OpenRevs interface"}
+
+// OpenRevs returns documents of specified leaf revisions. Additionally, it
+// accepts a revs value of "all" to return all leaf revisions.
+func (db *DB) OpenRevs(ctx context.Context, docID string, revs []string, options ...Option) *ResultSet {
 	if db.err != nil {
 		return &ResultSet{iter: errIterator(db.err)}
 	}
-	if err := db.startQuery(); err != nil {
-		return &ResultSet{iter: errIterator(err)}
+	if openRever, ok := db.driverDB.(driver.OpenRever); ok {
+		if err := db.startQuery(); err != nil {
+			return &ResultSet{iter: errIterator(err)}
+		}
+		rowsi, err := openRever.OpenRevs(ctx, docID, revs, allOptions(options))
+		if err != nil {
+			db.endQuery()
+			return &ResultSet{iter: errIterator(err)}
+		}
+		return newResultSet(ctx, db.endQuery, rowsi)
 	}
-	rowsi, err := db.driverDB.Get(ctx, docID, allOptions(options))
-	if err != nil {
-		db.endQuery()
-		return &ResultSet{iter: errIterator(err)}
-	}
-	return newResultSet(ctx, db.endQuery, rowsi)
+	return &ResultSet{iter: errIterator(openRevsNotImplemented)}
 }
 
 // GetRev returns the active rev of the specified document. GetRev accepts

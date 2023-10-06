@@ -169,7 +169,7 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Option) *
 type Document struct {
 	err         error
 	rev         string
-	body        io.ReadCloser
+	body        io.Reader
 	attachments driver.Attachments
 }
 
@@ -206,7 +206,10 @@ func (r *Document) Attachments() (*AttachmentsIterator, error) {
 
 // Close closes the document resources.
 func (r *Document) Close() error {
-	return r.body.Close()
+	if c, ok := r.body.(io.Closer); ok {
+		return c.Close()
+	}
+	return nil
 }
 
 // Get fetches the requested document. Any errors are deferred until the first

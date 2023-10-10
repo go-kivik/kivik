@@ -98,7 +98,7 @@ func (i *iter) makeReady(e *error) (unlock func(), err error) {
 			return nil, &internal.Error{Status: http.StatusNotFound, Message: "no results"}
 		}
 		return func() {
-			if err := i.Close(); err != nil && e != nil {
+			if err := i.close(nil); err != nil && e != nil {
 				*e = err
 			}
 		}, nil
@@ -166,7 +166,7 @@ func (i *iter) Next() bool {
 		i.err = err
 		if i.err != nil {
 			i.mu.RUnlock()
-			_ = i.Close()
+			_ = i.close(nil)
 			i.mu.RLock()
 			return false
 		}

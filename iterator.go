@@ -55,6 +55,7 @@ type iter struct {
 	mu    sync.Mutex
 	state int   // Set to true once Next() has been called
 	err   error // non-nil only if state == stateClosed
+	wg    sync.WaitGroup
 
 	cancel func() // cancel function to exit context goroutine when iterator is closed
 
@@ -157,6 +158,7 @@ func (i *iter) Next() bool {
 func (i *iter) Close() error {
 	i.mu.Lock()
 	defer i.mu.Unlock()
+	i.wg.Wait()
 	return i.close(nil)
 }
 

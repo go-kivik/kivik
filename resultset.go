@@ -121,7 +121,8 @@ func (r *ResultSet) Err() error {
 // Close closes the result set, preventing further iteration, and freeing
 // any resources (such as the HTTP request body) of the underlying query.
 // Close is idempotent and does not affect the result of
-// [ResultSet.Err].
+// [ResultSet.Err]. Close is safe to call concurrently with other ResultSet
+// operations and will block until all other ResultSet operations finish.
 func (r *ResultSet) Close() error {
 	return r.iter.Close()
 }
@@ -246,15 +247,19 @@ func (r *ResultSet) Attachments() (*AttachmentsIterator, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer runlock()
 	row := r.curVal.(*driver.Row)
 	if row.Error != nil {
+		runlock()
 		return nil, row.Error
 	}
 	if row.Attachments == nil {
+		runlock()
 		return nil, nil // TODO: #804 return a proper error
 	}
-	return &AttachmentsIterator{atti: row.Attachments}, nil
+	return &AttachmentsIterator{
+		onClose: runlock,
+		atti:    row.Attachments,
+	}, nil
 }
 
 // makeReady ensures that the iterator is ready to be read from. If i.err is
@@ -272,13 +277,19 @@ func (r *ResultSet) makeReady(e *error) (unlock func(), err error) {
 		if !r.Next() {
 			return nil, &internal.Error{Status: http.StatusNotFound, Message: "no results"}
 		}
+		r.wg.Add(1)
 		return func() {
+			r.wg.Done()
 			if err := r.Close(); err != nil && e != nil {
 				*e = err
 			}
 		}, nil
 	}
-	return r.mu.Unlock, nil
+	r.wg.Add(1)
+	return func() {
+		r.wg.Done()
+		r.mu.Unlock()
+	}, nil
 }
 
 type rowsIterator struct {

@@ -174,16 +174,34 @@ func (a *Attachments) UnmarshalJSON(data []byte) error {
 // AttachmentsIterator allows reading streamed attachments from a multi-part
 // [DB.Get] request.
 type AttachmentsIterator struct {
-	atti driver.Attachments
+	atti    driver.Attachments
+	onClose func()
 }
 
 // Next returns the next attachment in the stream. [io.EOF] will be
 // returned when there are no more attachments.
+//
+// The returned attachment is only valid until the next call to [Next], or a
+// call to [Close].
 func (i *AttachmentsIterator) Next() (*Attachment, error) {
 	att := new(driver.Attachment)
 	if err := i.atti.Next(att); err != nil {
+		if err == io.EOF {
+			if e2 := i.Close(); e2 != nil {
+				return nil, e2
+			}
+		}
 		return nil, err
 	}
 	katt := Attachment(*att)
 	return &katt, nil
+}
+
+// Close closes the AttachmentsIterator. It is automatically called when
+// [AttachmentsIterator.Next] returns [io.EOF].
+func (i *AttachmentsIterator) Close() error {
+	if i.onClose != nil {
+		i.onClose()
+	}
+	return i.atti.Close()
 }

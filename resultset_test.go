@@ -21,6 +21,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"gitlab.com/flimzy/testy"
@@ -610,4 +611,85 @@ func TestResultSet_single(t *testing.T) {
 	if rev2 != wantRev {
 		t.Errorf("Unexpected rev on second read: %s", rev2)
 	}
+}
+
+func TestResultSet_Close_blocks(t *testing.T) {
+	t.Parallel()
+
+	const delay = 100 * time.Millisecond
+
+	type tt struct {
+		rows driver.Rows
+		work func(*testing.T, *ResultSet)
+	}
+
+	tests := testy.NewTable()
+	tests.Add("ScanDoc", tt{
+		rows: &mock.Rows{
+			NextFunc: func(row *driver.Row) error {
+				row.Doc = io.MultiReader(
+					testy.DelayReader(delay),
+					strings.NewReader(`{}`),
+				)
+				return nil
+			},
+		},
+		work: func(_ *testing.T, rs *ResultSet) {
+			var i interface{}
+			_ = rs.ScanDoc(&i)
+		},
+	})
+	tests.Add("ScanValue", tt{
+		rows: &mock.Rows{
+			NextFunc: func(row *driver.Row) error {
+				row.Value = io.MultiReader(
+					testy.DelayReader(delay),
+					strings.NewReader(`{}`),
+				)
+				return nil
+			},
+		},
+		work: func(_ *testing.T, rs *ResultSet) {
+			var i interface{}
+			_ = rs.ScanValue(&i)
+		},
+	})
+	tests.Add("Attachments", tt{
+		rows: &mock.Rows{
+			NextFunc: func(row *driver.Row) error {
+				row.Attachments = &mock.Attachments{
+					NextFunc: func(*driver.Attachment) error {
+						time.Sleep(delay)
+						return io.EOF
+					},
+				}
+				return nil
+			},
+		},
+		work: func(t *testing.T, rs *ResultSet) {
+			atts, err := rs.Attachments()
+			if err != nil {
+				t.Fatal(err)
+			}
+			for {
+				_, err := atts.Next()
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+		},
+	})
+	tests.Run(t, func(t *testing.T, tt tt) {
+		t.Parallel()
+
+		rs := newResultSet(context.Background(), nil, tt.rows)
+
+		start := time.Now()
+		go tt.work(t, rs)
+		time.Sleep(delay / 2)
+		_ = rs.Close()
+		if elapsed := time.Since(start); elapsed < delay {
+			t.Errorf("rs.Close() didn't block long enouggh (%v < %v)", elapsed, delay)
+		}
+	})
 }

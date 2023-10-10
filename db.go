@@ -828,8 +828,8 @@ func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...O
 }
 
 // Close cleans up any resources used by the DB. Close is safe to call
-// concurrently with other operations and will block until all other operations
-// finish. After calling Close, any other DB operations will return
+// concurrently with other DB operations and will block until all other DB
+// operations finish. After calling Close, any other DB operations will return
 // [ErrDatabaseClosed].
 func (db *DB) Close() error {
 	if db.err != nil {

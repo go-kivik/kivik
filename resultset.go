@@ -95,8 +95,8 @@ func (r *ResultSet) Next() bool {
 // After calling NextResultSet, [ResultSet.Next] must be called to advance to
 // the first result in the resultset before scanning.
 func (r *ResultSet) NextResultSet() bool {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	if r.err != nil {
 		return false
 	}

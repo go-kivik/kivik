@@ -78,11 +78,10 @@ func (c *Changes) ID() string {
 // ScanDoc works the same as [Changes.ScanValue], but on the doc field of the
 // result. It is only valid for results that include documents.
 func (c *Changes) ScanDoc(dest interface{}) error {
-	runlock, err := c.rlock()
+	err := c.isReady()
 	if err != nil {
 		return err
 	}
-	defer runlock()
 	return json.Unmarshal(c.curVal.(*driver.Change).Doc, dest)
 }
 

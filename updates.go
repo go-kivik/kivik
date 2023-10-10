@@ -45,31 +45,28 @@ func newDBUpdates(ctx context.Context, onClose func(), updatesi driver.DBUpdates
 
 // DBName returns the database name for the current update.
 func (f *DBUpdates) DBName() string {
-	runlock, err := f.rlock()
+	err := f.isReady()
 	if err != nil {
 		return ""
 	}
-	defer runlock()
 	return f.curVal.(*driver.DBUpdate).DBName
 }
 
 // Type returns the type of the current update.
 func (f *DBUpdates) Type() string {
-	runlock, err := f.rlock()
+	err := f.isReady()
 	if err != nil {
 		return ""
 	}
-	defer runlock()
 	return f.curVal.(*driver.DBUpdate).Type
 }
 
 // Seq returns the update sequence of the current update.
 func (f *DBUpdates) Seq() string {
-	runlock, err := f.rlock()
+	err := f.isReady()
 	if err != nil {
 		return ""
 	}
-	defer runlock()
 	return f.curVal.(*driver.DBUpdate).Seq
 }
 

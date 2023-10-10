@@ -52,7 +52,7 @@ type iter struct {
 	feed    iterator
 	onClose func()
 
-	mu    sync.RWMutex
+	mu    sync.Mutex
 	state int   // Set to true once Next() has been called
 	err   error // non-nil only if state == stateClosed
 
@@ -61,17 +61,16 @@ type iter struct {
 	curVal interface{}
 }
 
-func (i *iter) rlock() (unlock func(), err error) {
-	i.mu.RLock()
+// isReady returns an error if the iterator is not ready, because it has been
+// closed, or has not been made ready yet.
+func (i *iter) isReady() error {
 	if i.state == stateClosed {
-		i.mu.RUnlock()
-		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "kivik: Iterator is closed"}
+		return &internal.Error{Status: http.StatusBadRequest, Message: "kivik: Iterator is closed"}
 	}
 	if !stateIsReady(i.state) {
-		i.mu.RUnlock()
-		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "kivik: Iterator access before calling Next"}
+		return &internal.Error{Status: http.StatusBadRequest, Message: "kivik: Iterator access before calling Next"}
 	}
-	return i.mu.RUnlock, nil
+	return nil
 }
 
 func stateIsReady(state int) bool {
@@ -87,23 +86,25 @@ func stateIsReady(state int) bool {
 // returned unlock function will also close the iterator, and set e if
 // [iter.Close] errors and e != nil.
 func (i *iter) makeReady(e *error) (unlock func(), err error) {
-	i.mu.RLock()
+	i.mu.Lock()
 	if i.err != nil {
-		i.mu.RUnlock()
+		i.mu.Unlock()
 		return nil, i.err
 	}
 	if !stateIsReady(i.state) {
-		i.mu.RUnlock()
+		i.mu.Unlock()
 		if !i.Next() {
 			return nil, &internal.Error{Status: http.StatusNotFound, Message: "no results"}
 		}
 		return func() {
-			if err := i.Close(); err != nil && e != nil {
+			i.mu.Lock()
+			if err := i.close(nil); err != nil && e != nil {
 				*e = err
 			}
+			i.mu.Unlock()
 		}, nil
 	}
-	return i.mu.RUnlock, nil
+	return i.mu.Unlock, nil
 }
 
 // newIterator instantiates a new iterator.
@@ -135,15 +136,17 @@ func errIterator(err error) *iter {
 // closes the iterator if it's still open.
 func (i *iter) awaitDone(ctx context.Context) {
 	<-ctx.Done()
+	i.mu.Lock()
 	_ = i.close(ctx.Err())
+	i.mu.Unlock()
 }
 
 // Next prepares the next iterator result value for reading. It returns true on
 // success, or false if there is no next result or an error occurs while
 // preparing it. [Err] should be consulted to distinguish between the two.
 func (i *iter) Next() bool {
-	i.mu.RLock()
-	defer i.mu.RUnlock()
+	i.mu.Lock()
+	defer i.mu.Unlock()
 	if i.state == stateClosed {
 		return false
 	}
@@ -165,9 +168,7 @@ func (i *iter) Next() bool {
 		}
 		i.err = err
 		if i.err != nil {
-			i.mu.RUnlock()
-			_ = i.Close()
-			i.mu.RLock()
+			_ = i.close(nil)
 			return false
 		}
 		return true
@@ -180,12 +181,12 @@ func (i *iter) Next() bool {
 // automatically and it will suffice to check the result of [Err]. Close is
 // idempotent and does not affect the result of [Err].
 func (i *iter) Close() error {
+	i.mu.Lock()
+	defer i.mu.Unlock()
 	return i.close(nil)
 }
 
 func (i *iter) close(err error) error {
-	i.mu.Lock()
-	defer i.mu.Unlock()
 	if i.state == stateClosed {
 		return nil
 	}
@@ -211,8 +212,8 @@ func (i *iter) close(err error) error {
 // Err returns the error, if any, that was encountered during iteration. Err
 // may be called after an explicit or implicit [Close].
 func (i *iter) Err() error {
-	i.mu.RLock()
-	defer i.mu.RUnlock()
+	i.mu.Lock()
+	defer i.mu.Unlock()
 	if i.err == io.EOF {
 		return nil
 	}

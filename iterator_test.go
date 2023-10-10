@@ -74,3 +74,34 @@ func TestCancelledIterator(t *testing.T) {
 		t.Errorf("Unexpected error: %s", err)
 	}
 }
+
+func Test_iter_isReady(t *testing.T) {
+	tests := []struct {
+		name string
+		iter *iter
+		err  string
+	}{
+		{
+			name: "not ready",
+			iter: &iter{},
+			err:  "kivik: Iterator access before calling Next",
+		},
+		{
+			name: "closed",
+			iter: &iter{state: stateClosed},
+			err:  "kivik: Iterator is closed",
+		},
+		{
+			name: "success",
+			iter: &iter{state: stateRowReady},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := test.iter.isReady()
+			if !testy.ErrorMatches(test.err, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
+		})
+	}
+}

@@ -620,7 +620,7 @@ func TestResultSet_Close_blocks(t *testing.T) {
 
 	type tt struct {
 		rows driver.Rows
-		work func(*testing.T, *ResultSet)
+		work func(*ResultSet)
 	}
 
 	tests := testy.NewTable()
@@ -634,7 +634,7 @@ func TestResultSet_Close_blocks(t *testing.T) {
 				return nil
 			},
 		},
-		work: func(_ *testing.T, rs *ResultSet) {
+		work: func(rs *ResultSet) {
 			var i interface{}
 			_ = rs.ScanDoc(&i)
 		},
@@ -649,7 +649,7 @@ func TestResultSet_Close_blocks(t *testing.T) {
 				return nil
 			},
 		},
-		work: func(_ *testing.T, rs *ResultSet) {
+		work: func(rs *ResultSet) {
 			var i interface{}
 			_ = rs.ScanValue(&i)
 		},
@@ -666,16 +666,13 @@ func TestResultSet_Close_blocks(t *testing.T) {
 				return nil
 			},
 		},
-		work: func(t *testing.T, rs *ResultSet) {
+		work: func(rs *ResultSet) {
 			atts, err := rs.Attachments()
 			if err != nil {
 				t.Fatal(err)
 			}
 			for {
-				_, err := atts.Next()
-				if err != nil {
-					t.Fatal(err)
-				}
+				_, _ = atts.Next()
 			}
 		},
 	})
@@ -685,7 +682,7 @@ func TestResultSet_Close_blocks(t *testing.T) {
 		rs := newResultSet(context.Background(), nil, tt.rows)
 
 		start := time.Now()
-		go tt.work(t, rs)
+		go tt.work(rs)
 		time.Sleep(delay / 2)
 		_ = rs.Close()
 		if elapsed := time.Since(start); elapsed < delay {

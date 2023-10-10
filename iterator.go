@@ -61,17 +61,16 @@ type iter struct {
 	curVal interface{}
 }
 
-func (i *iter) rlock() (unlock func(), err error) {
-	i.mu.Lock()
+// isReady returns an error if the iterator is not ready, because it has been
+// closed, or has not been made ready yet.
+func (i *iter) isReady() error {
 	if i.state == stateClosed {
-		i.mu.Unlock()
-		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "kivik: Iterator is closed"}
+		return &internal.Error{Status: http.StatusBadRequest, Message: "kivik: Iterator is closed"}
 	}
 	if !stateIsReady(i.state) {
-		i.mu.Unlock()
-		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "kivik: Iterator access before calling Next"}
+		return &internal.Error{Status: http.StatusBadRequest, Message: "kivik: Iterator access before calling Next"}
 	}
-	return i.mu.Unlock, nil
+	return nil
 }
 
 func stateIsReady(state int) bool {

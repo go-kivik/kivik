@@ -27,7 +27,7 @@ import (
 	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
-func TestRLOCK(t *testing.T) {
+func Test_iter_isReady(t *testing.T) {
 	tests := []struct {
 		name string
 		iter *iter
@@ -50,17 +50,10 @@ func TestRLOCK(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			closeFn, err := test.iter.rlock()
+			err := test.iter.isReady()
 			if !testy.ErrorMatches(test.err, err) {
 				t.Errorf("Unexpected error: %s", err)
 			}
-			if err != nil {
-				return
-			}
-			if closeFn == nil {
-				t.Fatal("close is nil")
-			}
-			closeFn()
 		})
 	}
 }

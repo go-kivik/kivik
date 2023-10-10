@@ -98,9 +98,11 @@ func (i *iter) makeReady(e *error) (unlock func(), err error) {
 			return nil, &internal.Error{Status: http.StatusNotFound, Message: "no results"}
 		}
 		return func() {
+			i.mu.Lock()
 			if err := i.close(nil); err != nil && e != nil {
 				*e = err
 			}
+			i.mu.Unlock()
 		}, nil
 	}
 	return i.mu.RUnlock, nil
@@ -135,7 +137,9 @@ func errIterator(err error) *iter {
 // closes the iterator if it's still open.
 func (i *iter) awaitDone(ctx context.Context) {
 	<-ctx.Done()
+	i.mu.Lock()
 	_ = i.close(ctx.Err())
+	i.mu.Unlock()
 }
 
 // Next prepares the next iterator result value for reading. It returns true on
@@ -166,7 +170,9 @@ func (i *iter) Next() bool {
 		i.err = err
 		if i.err != nil {
 			i.mu.RUnlock()
+			i.mu.Lock()
 			_ = i.close(nil)
+			i.mu.Unlock()
 			i.mu.RLock()
 			return false
 		}
@@ -180,12 +186,12 @@ func (i *iter) Next() bool {
 // automatically and it will suffice to check the result of [Err]. Close is
 // idempotent and does not affect the result of [Err].
 func (i *iter) Close() error {
+	i.mu.Lock()
+	defer i.mu.Unlock()
 	return i.close(nil)
 }
 
 func (i *iter) close(err error) error {
-	i.mu.Lock()
-	defer i.mu.Unlock()
 	if i.state == stateClosed {
 		return nil
 	}

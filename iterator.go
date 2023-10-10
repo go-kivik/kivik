@@ -67,15 +67,15 @@ func (i *iter) rlock() (unlock func(), err error) {
 		i.mu.RUnlock()
 		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "kivik: Iterator is closed"}
 	}
-	if !i.ready() {
+	if !stateIsReady(i.state) {
 		i.mu.RUnlock()
 		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "kivik: Iterator access before calling Next"}
 	}
 	return i.mu.RUnlock, nil
 }
 
-func (i *iter) ready() bool {
-	switch i.state {
+func stateIsReady(state int) bool {
+	switch state {
 	case stateRowReady, stateResultSetReady, stateResultSetRowReady, stateClosed:
 		return true
 	}
@@ -92,7 +92,7 @@ func (i *iter) makeReady(e *error) (unlock func(), err error) {
 		i.mu.RUnlock()
 		return nil, i.err
 	}
-	if !i.ready() {
+	if !stateIsReady(i.state) {
 		i.mu.RUnlock()
 		if !i.Next() {
 			return nil, &internal.Error{Status: http.StatusNotFound, Message: "no results"}

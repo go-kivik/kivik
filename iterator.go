@@ -142,39 +142,36 @@ func (i *iter) awaitDone(ctx context.Context) {
 // success, or false if there is no next result or an error occurs while
 // preparing it. [Err] should be consulted to distinguish between the two.
 func (i *iter) Next() bool {
-	doClose, ok := i.next()
-	if doClose {
-		_ = i.Close()
-	}
-	return ok
-}
-
-func (i *iter) next() (doClose, ok bool) {
 	i.mu.RLock()
 	defer i.mu.RUnlock()
 	if i.state == stateClosed {
-		return false, false
+		return false
 	}
-	err := i.feed.Next(i.curVal)
-	if err == driver.EOQ {
-		if i.state == stateResultSetReady || i.state == stateResultSetRowReady {
-			i.state = stateEOQ
-			i.err = nil
-			return false, false
+	for {
+		err := i.feed.Next(i.curVal)
+		if err == driver.EOQ {
+			if i.state == stateResultSetReady || i.state == stateResultSetRowReady {
+				i.state = stateEOQ
+				i.err = nil
+				return false
+			}
+			continue
 		}
-		return i.next()
+		switch i.state {
+		case stateResultSetReady, stateResultSetRowReady:
+			i.state = stateResultSetRowReady
+		default:
+			i.state = stateRowReady
+		}
+		i.err = err
+		if i.err != nil {
+			i.mu.RUnlock()
+			_ = i.Close()
+			i.mu.RLock()
+			return false
+		}
+		return true
 	}
-	switch i.state {
-	case stateResultSetReady, stateResultSetRowReady:
-		i.state = stateResultSetRowReady
-	default:
-		i.state = stateRowReady
-	}
-	i.err = err
-	if i.err != nil {
-		return true, false
-	}
-	return false, true
 }
 
 // Close closes the iterator, preventing further enumeration, and freeing any

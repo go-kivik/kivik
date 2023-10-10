@@ -273,11 +273,9 @@ func (r *ResultSet) makeReady(e *error) (unlock func(), err error) {
 			return nil, &internal.Error{Status: http.StatusNotFound, Message: "no results"}
 		}
 		return func() {
-			r.mu.Lock()
-			if err := r.close(nil); err != nil && e != nil {
+			if err := r.Close(); err != nil && e != nil {
 				*e = err
 			}
-			r.mu.Unlock()
 		}, nil
 	}
 	return r.mu.Unlock, nil

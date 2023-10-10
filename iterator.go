@@ -152,29 +152,31 @@ func (i *iter) Next() bool {
 func (i *iter) next() (doClose, ok bool) {
 	i.mu.RLock()
 	defer i.mu.RUnlock()
-	if i.state == stateClosed {
-		return false, false
-	}
-	err := i.feed.Next(i.curVal)
-	if err == driver.EOQ {
-		if i.state == stateResultSetReady || i.state == stateResultSetRowReady {
-			i.state = stateEOQ
-			i.err = nil
+	for {
+		if i.state == stateClosed {
 			return false, false
 		}
-		return i.next()
+		err := i.feed.Next(i.curVal)
+		if err == driver.EOQ {
+			if i.state == stateResultSetReady || i.state == stateResultSetRowReady {
+				i.state = stateEOQ
+				i.err = nil
+				return false, false
+			}
+			continue
+		}
+		switch i.state {
+		case stateResultSetReady, stateResultSetRowReady:
+			i.state = stateResultSetRowReady
+		default:
+			i.state = stateRowReady
+		}
+		i.err = err
+		if i.err != nil {
+			return true, false
+		}
+		return false, true
 	}
-	switch i.state {
-	case stateResultSetReady, stateResultSetRowReady:
-		i.state = stateResultSetRowReady
-	default:
-		i.state = stateRowReady
-	}
-	i.err = err
-	if i.err != nil {
-		return true, false
-	}
-	return false, true
 }
 
 // Close closes the iterator, preventing further enumeration, and freeing any

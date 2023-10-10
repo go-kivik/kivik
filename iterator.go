@@ -52,7 +52,7 @@ type iter struct {
 	feed    iterator
 	onClose func()
 
-	mu    sync.RWMutex
+	mu    sync.Mutex
 	state int   // Set to true once Next() has been called
 	err   error // non-nil only if state == stateClosed
 
@@ -62,16 +62,16 @@ type iter struct {
 }
 
 func (i *iter) rlock() (unlock func(), err error) {
-	i.mu.RLock()
+	i.mu.Lock()
 	if i.state == stateClosed {
-		i.mu.RUnlock()
+		i.mu.Unlock()
 		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "kivik: Iterator is closed"}
 	}
 	if !stateIsReady(i.state) {
-		i.mu.RUnlock()
+		i.mu.Unlock()
 		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "kivik: Iterator access before calling Next"}
 	}
-	return i.mu.RUnlock, nil
+	return i.mu.Unlock, nil
 }
 
 func stateIsReady(state int) bool {
@@ -87,13 +87,13 @@ func stateIsReady(state int) bool {
 // returned unlock function will also close the iterator, and set e if
 // [iter.Close] errors and e != nil.
 func (i *iter) makeReady(e *error) (unlock func(), err error) {
-	i.mu.RLock()
+	i.mu.Lock()
 	if i.err != nil {
-		i.mu.RUnlock()
+		i.mu.Unlock()
 		return nil, i.err
 	}
 	if !stateIsReady(i.state) {
-		i.mu.RUnlock()
+		i.mu.Unlock()
 		if !i.Next() {
 			return nil, &internal.Error{Status: http.StatusNotFound, Message: "no results"}
 		}
@@ -105,7 +105,7 @@ func (i *iter) makeReady(e *error) (unlock func(), err error) {
 			i.mu.Unlock()
 		}, nil
 	}
-	return i.mu.RUnlock, nil
+	return i.mu.Unlock, nil
 }
 
 // newIterator instantiates a new iterator.
@@ -146,8 +146,8 @@ func (i *iter) awaitDone(ctx context.Context) {
 // success, or false if there is no next result or an error occurs while
 // preparing it. [Err] should be consulted to distinguish between the two.
 func (i *iter) Next() bool {
-	i.mu.RLock()
-	defer i.mu.RUnlock()
+	i.mu.Lock()
+	defer i.mu.Unlock()
 	if i.state == stateClosed {
 		return false
 	}
@@ -169,11 +169,7 @@ func (i *iter) Next() bool {
 		}
 		i.err = err
 		if i.err != nil {
-			i.mu.RUnlock()
-			i.mu.Lock()
 			_ = i.close(nil)
-			i.mu.Unlock()
-			i.mu.RLock()
 			return false
 		}
 		return true
@@ -217,8 +213,8 @@ func (i *iter) close(err error) error {
 // Err returns the error, if any, that was encountered during iteration. Err
 // may be called after an explicit or implicit [Close].
 func (i *iter) Err() error {
-	i.mu.RLock()
-	defer i.mu.RUnlock()
+	i.mu.Lock()
+	defer i.mu.Unlock()
 	if i.err == io.EOF {
 		return nil
 	}

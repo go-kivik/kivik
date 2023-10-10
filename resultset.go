@@ -257,6 +257,30 @@ func (r *ResultSet) Attachments() (*AttachmentsIterator, error) {
 	return &AttachmentsIterator{atti: row.Attachments}, nil
 }
 
+// makeReady ensures that the iterator is ready to be read from. If i.err is
+// set, it is returned. In the case that [iter.Next] has not been called, the
+// returned unlock function will also close the iterator, and set e if
+// [iter.Close] errors and e != nil.
+func (r *ResultSet) makeReady(e *error) (unlock func(), err error) {
+	r.mu.Lock()
+	if r.err != nil {
+		r.mu.Unlock()
+		return nil, r.err
+	}
+	if !stateIsReady(r.state) {
+		r.mu.Unlock()
+		if !r.Next() {
+			return nil, &internal.Error{Status: http.StatusNotFound, Message: "no results"}
+		}
+		return func() {
+			if err := r.Close(); err != nil && e != nil {
+				*e = err
+			}
+		}, nil
+	}
+	return r.mu.Unlock, nil
+}
+
 type rowsIterator struct {
 	driver.Rows
 	*ResultMetadata

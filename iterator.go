@@ -81,32 +81,6 @@ func stateIsReady(state int) bool {
 	return false
 }
 
-// makeReady ensures that the iterator is ready to be read from. If i.err is
-// set, it is returned. In the case that [iter.Next] has not been called, the
-// returned unlock function will also close the iterator, and set e if
-// [iter.Close] errors and e != nil.
-func (i *iter) makeReady(e *error) (unlock func(), err error) {
-	i.mu.Lock()
-	if i.err != nil {
-		i.mu.Unlock()
-		return nil, i.err
-	}
-	if !stateIsReady(i.state) {
-		i.mu.Unlock()
-		if !i.Next() {
-			return nil, &internal.Error{Status: http.StatusNotFound, Message: "no results"}
-		}
-		return func() {
-			i.mu.Lock()
-			if err := i.close(nil); err != nil && e != nil {
-				*e = err
-			}
-			i.mu.Unlock()
-		}, nil
-	}
-	return i.mu.Unlock, nil
-}
-
 // newIterator instantiates a new iterator.
 //
 // ctx is a possibly-cancellable context.  zeroValue is an empty instance of

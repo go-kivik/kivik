@@ -144,10 +144,10 @@ func (i *iter) awaitDone(ctx context.Context) {
 func (i *iter) Next() bool {
 	i.mu.RLock()
 	defer i.mu.RUnlock()
+	if i.state == stateClosed {
+		return false
+	}
 	for {
-		if i.state == stateClosed {
-			return false
-		}
 		err := i.feed.Next(i.curVal)
 		if err == driver.EOQ {
 			if i.state == stateResultSetReady || i.state == stateResultSetRowReady {

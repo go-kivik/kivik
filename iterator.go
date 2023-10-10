@@ -142,10 +142,7 @@ func (i *iter) awaitDone(ctx context.Context) {
 // success, or false if there is no next result or an error occurs while
 // preparing it. [Err] should be consulted to distinguish between the two.
 func (i *iter) Next() bool {
-	doClose, ok := i.next()
-	if doClose {
-		_ = i.Close()
-	}
+	_, ok := i.next()
 	return ok
 }
 
@@ -173,6 +170,9 @@ func (i *iter) next() (doClose, ok bool) {
 		}
 		i.err = err
 		if i.err != nil {
+			i.mu.RUnlock()
+			_ = i.Close()
+			i.mu.RLock()
 			return true, false
 		}
 		return false, true

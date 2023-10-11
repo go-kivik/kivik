@@ -31,6 +31,7 @@ const (
 	errSecurityNotImplemented    = internal.CompositeError("\x65driver does not support Security interface")
 	errConfigNotImplemented      = internal.CompositeError("\x65driver does not support Config interface")
 	errReplicationNotImplemented = internal.CompositeError("\x65driver does not support replication")
+	errNoAttachments             = internal.CompositeError("\x04no attachments")
 )
 
 // HTTPStatus returns the HTTP status code embedded in the error, or 500

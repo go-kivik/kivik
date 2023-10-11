@@ -255,7 +255,7 @@ func (r *ResultSet) Attachments() (*AttachmentsIterator, error) {
 	}
 	if row.Attachments == nil {
 		runlock()
-		return nil, nil // TODO: #804 return a proper error
+		return nil, errNoAttachments
 	}
 	return &AttachmentsIterator{
 		onClose: runlock,

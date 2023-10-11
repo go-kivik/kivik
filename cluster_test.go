@@ -61,7 +61,7 @@ func TestClusterStatus(t *testing.T) {
 		client: &mock.Cluster{},
 		closed: 1,
 		status: http.StatusServiceUnavailable,
-		err:    errClientClosed,
+		err:    errClientClosedText,
 	})
 
 	tests.Run(t, func(t *testing.T, test tst) {
@@ -114,7 +114,7 @@ func TestClusterSetup(t *testing.T) {
 		client: &mock.Cluster{},
 		closed: 1,
 		status: http.StatusServiceUnavailable,
-		err:    errClientClosed,
+		err:    errClientClosedText,
 	})
 
 	tests.Run(t, func(t *testing.T, test tst) {
@@ -171,7 +171,7 @@ func TestMembership(t *testing.T) {
 		client: &mock.Cluster{},
 		closed: 1,
 		status: http.StatusServiceUnavailable,
-		err:    errClientClosed,
+		err:    errClientClosedText,
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {

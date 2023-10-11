@@ -14,10 +14,8 @@ package kivik
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/kivik/v4/internal"
 )
 
 // Config represents all the config sections.
@@ -25,8 +23,6 @@ type Config map[string]ConfigSection
 
 // ConfigSection represents all key/value pairs for a section of configuration.
 type ConfigSection map[string]string
-
-var configNotImplemented = &internal.Error{Status: http.StatusNotImplemented, Message: "kivik: driver does not support Config interface"}
 
 // Config returns the entire [server config], for the specified node.
 //

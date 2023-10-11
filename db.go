@@ -240,8 +240,6 @@ func (db *DB) Get(ctx context.Context, docID string, options ...Option) *Documen
 	}
 }
 
-var openRevsNotImplemented = &internal.Error{Status: http.StatusNotImplemented, Message: "kivik: driver does not support OpenRevs interface"}
-
 // OpenRevs returns documents of specified leaf revisions. Additionally, it
 // accepts a revs value of "all" to return all leaf revisions.
 func (db *DB) OpenRevs(ctx context.Context, docID string, revs []string, options ...Option) *ResultSet {
@@ -561,8 +559,6 @@ func (db *DB) ViewCleanup(ctx context.Context) error {
 	defer endQuery()
 	return db.driverDB.ViewCleanup(ctx)
 }
-
-var securityNotImplemented = &internal.Error{Status: http.StatusNotImplemented, Message: "kivik: driver does not support Security interface"}
 
 // Security returns the database's security document.
 //

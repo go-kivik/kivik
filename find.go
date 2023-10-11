@@ -14,13 +14,9 @@ package kivik
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/kivik/v4/internal"
 )
-
-var findNotImplemented = &internal.Error{Status: http.StatusNotImplemented, Message: "kivik: driver does not support Find interface"}
 
 // Find executes a query using the new /_find interface. The query must be
 // JSON-marshalable to a valid query.

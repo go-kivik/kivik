@@ -98,14 +98,14 @@ func TestAllDocs(t *testing.T) {
 			},
 		},
 		{
-			name: errClientClosed,
+			name: errClientClosedText,
 			db: &DB{
 				client: &Client{
 					closed: 1,
 				},
 			},
 			status: http.StatusServiceUnavailable,
-			err:    errClientClosed,
+			err:    errClientClosedText,
 		},
 		{
 			name: "db error",
@@ -298,7 +298,7 @@ func TestDesignDocs(t *testing.T) {
 			err:    "db error",
 		},
 		{
-			name: errClientClosed,
+			name: errClientClosedText,
 			db: &DB{
 				client: &Client{
 					closed: 1,
@@ -306,7 +306,7 @@ func TestDesignDocs(t *testing.T) {
 				driverDB: &mock.DesignDocer{},
 			},
 			status: http.StatusServiceUnavailable,
-			err:    errClientClosed,
+			err:    errClientClosedText,
 		},
 	}
 	for _, test := range tests {
@@ -411,7 +411,7 @@ func TestLocalDocs(t *testing.T) {
 			err:    "db error",
 		},
 		{
-			name: errClientClosed,
+			name: errClientClosedText,
 			db: &DB{
 				client: &Client{
 					closed: 1,
@@ -419,7 +419,7 @@ func TestLocalDocs(t *testing.T) {
 				driverDB: &mock.LocalDocer{},
 			},
 			status: http.StatusServiceUnavailable,
-			err:    errClientClosed,
+			err:    errClientClosedText,
 		},
 	}
 	for _, test := range tests {
@@ -526,14 +526,14 @@ func TestQuery(t *testing.T) {
 			err:    "db error",
 		},
 		{
-			name: errClientClosed,
+			name: errClientClosedText,
 			db: &DB{
 				client: &Client{
 					closed: 1,
 				},
 			},
 			status: http.StatusServiceUnavailable,
-			err:    errClientClosed,
+			err:    errClientClosedText,
 		},
 	}
 
@@ -631,14 +631,14 @@ func TestGet(t *testing.T) {
 		options:  IncludeDocs(),
 		expected: `{"_id":"foo"}`,
 	})
-	tests.Add(errClientClosed, tt{
+	tests.Add(errClientClosedText, tt{
 		db: &DB{
 			client: &Client{
 				closed: 1,
 			},
 		},
 		status: http.StatusServiceUnavailable,
-		err:    errClientClosed,
+		err:    errClientClosedText,
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
@@ -735,7 +735,7 @@ func TestOpenRevs(t *testing.T) {
 			err:    "kivik: driver does not support OpenRevs interface",
 		},
 		{
-			name: errClientClosed,
+			name: errClientClosedText,
 			db: &DB{
 				driverDB: &mock.OpenRever{},
 				client: &Client{
@@ -743,7 +743,7 @@ func TestOpenRevs(t *testing.T) {
 				},
 			},
 			status: http.StatusServiceUnavailable,
-			err:    errClientClosed,
+			err:    errClientClosedText,
 		},
 	}
 
@@ -807,14 +807,14 @@ func TestFlush(t *testing.T) {
 			},
 		},
 		{
-			name: errClientClosed,
+			name: errClientClosedText,
 			db: &DB{
 				client: &Client{
 					closed: 1,
 				},
 			},
 			status: http.StatusServiceUnavailable,
-			err:    errClientClosed,
+			err:    errClientClosedText,
 		},
 		{
 			name: "db error",
@@ -825,7 +825,7 @@ func TestFlush(t *testing.T) {
 			err:    "db error",
 		},
 		{
-			name: errDatabaseClosed,
+			name: errDatabaseClosedText,
 			db: &DB{
 				closed: 1,
 				client: &Client{
@@ -833,7 +833,7 @@ func TestFlush(t *testing.T) {
 				},
 			},
 			status: http.StatusServiceUnavailable,
-			err:    errDatabaseClosed,
+			err:    errDatabaseClosedText,
 		},
 	}
 	for _, test := range tests {
@@ -912,14 +912,14 @@ func TestStats(t *testing.T) {
 			},
 		},
 		{
-			name: errClientClosed,
+			name: errClientClosedText,
 			db: &DB{
 				client: &Client{
 					closed: 1,
 				},
 			},
 			status: http.StatusServiceUnavailable,
-			err:    errClientClosed,
+			err:    errClientClosedText,
 		},
 	}
 	for _, test := range tests {
@@ -952,7 +952,7 @@ func TestCompact(t *testing.T) {
 		}
 	})
 	t.Run("closed", func(t *testing.T) {
-		expected := errClientClosed
+		expected := errClientClosedText
 		db := &DB{
 			client: &Client{
 				closed: 1,
@@ -996,7 +996,7 @@ func TestCompactView(t *testing.T) {
 		}
 	})
 	t.Run("closed", func(t *testing.T) {
-		expected := errClientClosed
+		expected := errClientClosedText
 		db := &DB{
 			client: &Client{
 				closed: 1,
@@ -1035,8 +1035,8 @@ func TestViewCleanup(t *testing.T) {
 			t.Error(d)
 		}
 	})
-	t.Run(errClientClosed, func(t *testing.T) {
-		expected := errClientClosed
+	t.Run(errClientClosedText, func(t *testing.T) {
+		expected := errClientClosedText
 		db := &DB{
 			client: &Client{
 				closed: 1,
@@ -1111,7 +1111,7 @@ func TestSecurity(t *testing.T) {
 			},
 		},
 		{
-			name: errClientClosed,
+			name: errClientClosedText,
 			db: &DB{
 				client: &Client{
 					closed: 1,
@@ -1119,7 +1119,7 @@ func TestSecurity(t *testing.T) {
 				driverDB: &mock.SecurityDB{},
 			},
 			status: http.StatusServiceUnavailable,
-			err:    errClientClosed,
+			err:    errClientClosedText,
 		},
 		{
 			name: "db error",
@@ -1209,7 +1209,7 @@ func TestSetSecurity(t *testing.T) {
 			},
 		},
 		{
-			name: errClientClosed,
+			name: errClientClosedText,
 			db: &DB{
 				client: &Client{
 					closed: 1,
@@ -1218,7 +1218,7 @@ func TestSetSecurity(t *testing.T) {
 			},
 			security: &Security{},
 			status:   http.StatusServiceUnavailable,
-			err:      errClientClosed,
+			err:      errClientClosedText,
 		},
 		{
 			name: "db error",
@@ -1358,7 +1358,7 @@ func TestGetRev(t *testing.T) { // nolint: gocyclo
 			err:    "invalid character 'i' looking for beginning of value",
 		},
 		{
-			name: errClientClosed,
+			name: errClientClosedText,
 			db: &DB{
 				client: &Client{
 					closed: 1,
@@ -1366,7 +1366,7 @@ func TestGetRev(t *testing.T) { // nolint: gocyclo
 				driverDB: &mock.RevGetter{},
 			},
 			status: http.StatusServiceUnavailable,
-			err:    errClientClosed,
+			err:    errClientClosedText,
 		},
 		{
 			name: "db error",
@@ -1560,7 +1560,7 @@ func TestCopy(t *testing.T) {
 			target: "x",
 			source: "y",
 			status: http.StatusServiceUnavailable,
-			err:    errClientClosed,
+			err:    errClientClosedText,
 		},
 	}
 	for _, test := range tests {
@@ -1756,7 +1756,7 @@ func TestPut(t *testing.T) {
 			err:    "errorReader",
 		},
 		{
-			name: errClientClosed,
+			name: errClientClosedText,
 			db: &DB{
 				client: &Client{
 					closed: 1,
@@ -1764,7 +1764,7 @@ func TestPut(t *testing.T) {
 			},
 			docID:  "foo",
 			status: http.StatusServiceUnavailable,
-			err:    errClientClosed,
+			err:    errClientClosedText,
 		},
 		{
 			name: "db error",
@@ -1901,7 +1901,7 @@ func TestCreateDoc(t *testing.T) {
 				},
 			},
 			status: http.StatusServiceUnavailable,
-			err:    errClientClosed,
+			err:    errClientClosedText,
 		},
 	}
 	for _, test := range tests {
@@ -2035,7 +2035,7 @@ func TestDelete(t *testing.T) {
 				},
 			},
 			status: http.StatusServiceUnavailable,
-			err:    errClientClosed,
+			err:    errClientClosedText,
 		},
 		{
 			name: "db error",
@@ -2165,7 +2165,7 @@ func TestPutAttachment(t *testing.T) {
 			err:    "kivik: attachment required",
 		},
 		{
-			name: errClientClosed,
+			name: errClientClosedText,
 			db: &DB{
 				client: &Client{
 					closed: 1,
@@ -2176,7 +2176,7 @@ func TestPutAttachment(t *testing.T) {
 				Filename: "foo.txt",
 			},
 			status: http.StatusServiceUnavailable,
-			err:    errClientClosed,
+			err:    errClientClosedText,
 		},
 	}
 	for _, test := range tests {
@@ -2306,7 +2306,7 @@ func TestDeleteAttachment(t *testing.T) {
 			},
 		},
 		status: http.StatusServiceUnavailable,
-		err:    errClientClosed,
+		err:    errClientClosedText,
 	})
 	tests.Add("db error", tt{
 		db: &DB{
@@ -2409,14 +2409,14 @@ func TestGetAttachment(t *testing.T) {
 		status: http.StatusBadRequest,
 		err:    "kivik: filename required",
 	})
-	tests.Add(errClientClosed, tt{
+	tests.Add(errClientClosedText, tt{
 		db: &DB{
 			client: &Client{
 				closed: 1,
 			},
 		},
 		status: http.StatusServiceUnavailable,
-		err:    errClientClosed,
+		err:    errClientClosedText,
 	})
 	tests.Add("db error", tt{
 		db: &DB{
@@ -2585,7 +2585,7 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 			err:    "kivik: filename required",
 		},
 		{
-			name: errClientClosed,
+			name: errClientClosedText,
 			db: &DB{
 				client: &Client{
 					closed: 1,
@@ -2594,7 +2594,7 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 			docID:    "foo",
 			filename: "bar.txt",
 			status:   http.StatusServiceUnavailable,
-			err:      errClientClosed,
+			err:      errClientClosedText,
 		},
 		{
 			name: "db eror",
@@ -2694,14 +2694,14 @@ func TestPurge(t *testing.T) {
 			err:    "this feature is not yet implemented",
 		},
 		{
-			name: errClientClosed,
+			name: errClientClosedText,
 			db: &DB{
 				client: &Client{
 					closed: 1,
 				},
 			},
 			status: http.StatusServiceUnavailable,
-			err:    errClientClosed,
+			err:    errClientClosedText,
 		},
 		{
 			name: "db error",
@@ -2781,7 +2781,7 @@ func TestBulkGet(t *testing.T) {
 			},
 		},
 		{
-			name: errClientClosed,
+			name: errClientClosedText,
 			db: &DB{
 				client: &Client{
 					closed: 1,
@@ -2789,7 +2789,7 @@ func TestBulkGet(t *testing.T) {
 				driverDB: &mock.BulkGetter{},
 			},
 			status: http.StatusServiceUnavailable,
-			err:    errClientClosed,
+			err:    errClientClosedText,
 		},
 	}
 
@@ -2995,7 +2995,7 @@ func TestRevsDiff(t *testing.T) {
 			rowsi: &mock.Rows{ID: "a"},
 		},
 	})
-	tests.Add(errClientClosed, tt{
+	tests.Add(errClientClosedText, tt{
 		db: &DB{
 			client: &Client{
 				closed: 1,
@@ -3003,7 +3003,7 @@ func TestRevsDiff(t *testing.T) {
 			driverDB: &mock.RevsDiffer{},
 		},
 		status: http.StatusServiceUnavailable,
-		err:    errClientClosed,
+		err:    errClientClosedText,
 	})
 	tests.Add("db error", tt{
 		db: &DB{
@@ -3076,14 +3076,14 @@ func TestPartitionStats(t *testing.T) {
 		},
 		name: "partXX",
 	})
-	tests.Add(errClientClosed, tt{
+	tests.Add(errClientClosedText, tt{
 		db: &DB{
 			client: &Client{
 				closed: 1,
 			},
 		},
 		status: http.StatusServiceUnavailable,
-		err:    errClientClosed,
+		err:    errClientClosedText,
 	})
 	tests.Add("db error", tt{
 		db: &DB{

@@ -91,7 +91,7 @@ func TestFind(t *testing.T) {
 			err:    "db error",
 		},
 		{
-			name: errClientClosed,
+			name: errClientClosedText,
 			db: &DB{
 				client: &Client{
 					closed: 1,
@@ -99,7 +99,7 @@ func TestFind(t *testing.T) {
 				driverDB: &mock.Finder{},
 			},
 			status: http.StatusServiceUnavailable,
-			err:    errClientClosed,
+			err:    errClientClosedText,
 		},
 	}
 
@@ -215,7 +215,7 @@ func TestCreateIndex(t *testing.T) {
 				},
 			},
 			status: http.StatusServiceUnavailable,
-			err:    errClientClosed,
+			err:    errClientClosedText,
 		},
 		{
 			name: "db error",
@@ -290,14 +290,14 @@ func TestDeleteIndex(t *testing.T) {
 			name: "bar",
 		},
 		{
-			testName: errClientClosed,
+			testName: errClientClosedText,
 			db: &DB{
 				client: &Client{
 					closed: 1,
 				},
 			},
 			status: http.StatusServiceUnavailable,
-			err:    errClientClosed,
+			err:    errClientClosedText,
 		},
 		{
 			testName: "db error",
@@ -372,14 +372,14 @@ func TestGetIndexes(t *testing.T) {
 			},
 		},
 		{
-			testName: errClientClosed,
+			testName: errClientClosedText,
 			db: &DB{
 				client: &Client{
 					closed: 1,
 				},
 			},
 			status: http.StatusServiceUnavailable,
-			err:    errClientClosed,
+			err:    errClientClosedText,
 		},
 		{
 			testName: "db error",
@@ -453,7 +453,7 @@ func TestExplain(t *testing.T) {
 		query:    int(3),
 		expected: &QueryPlan{DBName: "foo"},
 	})
-	tests.Add(errClientClosed, tt{
+	tests.Add(errClientClosedText, tt{
 		db: &DB{
 			driverDB: &mock.Finder{},
 			client: &Client{
@@ -461,7 +461,7 @@ func TestExplain(t *testing.T) {
 			},
 		},
 		status: http.StatusServiceUnavailable,
-		err:    errClientClosed,
+		err:    errClientClosedText,
 	})
 	tests.Add("db error", tt{
 		db: &DB{

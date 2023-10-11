@@ -14,12 +14,10 @@ package kivik
 
 import (
 	"context"
-	"net/http"
 	"sync"
 	"time"
 
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/kivik/v4/internal"
 )
 
 // ReplicationState represents a replication's state
@@ -165,8 +163,6 @@ func (r *Replication) Update(ctx context.Context) error {
 	r.infoMU.Unlock()
 	return nil
 }
-
-var replicationNotImplemented = &internal.Error{Status: http.StatusNotImplemented, Message: "kivik: driver does not support replication"}
 
 // GetReplications returns a list of defined replications in the _replicator
 // database. Options are in the same format as to [DB.AllDocs], except that

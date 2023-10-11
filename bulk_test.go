@@ -171,7 +171,7 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 			{ID: "foo"},
 		},
 	})
-	tests.Add(errClientClosed, tt{
+	tests.Add(errClientClosedText, tt{
 		db: &DB{
 			client: &Client{
 				closed: 1,
@@ -181,7 +181,7 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 			map[string]string{"_id": "foo"},
 		},
 		status: http.StatusServiceUnavailable,
-		err:    errClientClosed,
+		err:    errClientClosedText,
 	})
 	tests.Add("db error", tt{
 		db: &DB{

@@ -14,13 +14,9 @@ package kivik
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/kivik/v4/internal"
 )
-
-var clusterNotImplemented = &internal.Error{Status: http.StatusNotImplemented, Message: "kivik: driver does not support cluster operations"}
 
 // ClusterStatus returns the current [cluster status].
 //

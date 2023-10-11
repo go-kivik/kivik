@@ -226,13 +226,13 @@ func TestDBUpdates(t *testing.T) {
 			},
 		},
 		{
-			name: errClientClosed,
+			name: errClientClosedText,
 			client: &Client{
 				closed:       1,
 				driverClient: &mock.DBUpdater{},
 			},
 			status: http.StatusServiceUnavailable,
-			err:    errClientClosed,
+			err:    errClientClosedText,
 		},
 	}
 	for _, test := range tests {

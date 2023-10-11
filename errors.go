@@ -32,27 +32,56 @@ const (
 	// ErrDatabaseClosed is returned by any database operations after [DB.Close]
 	// has been called.
 	ErrDatabaseClosed
+
+	// Various not-implemented errors, that are returned, but don't need to be exposed directly.
+	findNotImplemented
+	clusterNotImplemented
+	openRevsNotImplemented
+	securityNotImplemented
+	configNotImplemented
+	replicationNotImplemented
 )
 
 const (
-	errClientClosed   = "client closed"
-	errDatabaseClosed = "database closed"
+	errClientClosedText           = "client closed"
+	errDatabaseClosedText         = "database closed"
+	findNotImplementedText        = "kivik: driver does not support Find interface"
+	clusterNotImplementedText     = "kivik: driver does not support cluster operations"
+	openRevsNotImplementedText    = "kivik: driver does not support OpenRevs interface"
+	securityNotImplementedText    = "kivik: driver does not support Security interface"
+	configNotImplementedText      = "kivik: driver does not support Config interface"
+	replicationNotImplementedText = "kivik: driver does not support replication"
 )
 
 func (e err) Error() string {
 	switch e {
 	case ErrClientClosed:
-		return errClientClosed
+		return errClientClosedText
 	case ErrDatabaseClosed:
-		return errDatabaseClosed
+		return errDatabaseClosedText
+	case findNotImplemented:
+		return findNotImplementedText
+	case clusterNotImplemented:
+		return clusterNotImplementedText
+	case openRevsNotImplemented:
+		return openRevsNotImplementedText
+	case securityNotImplemented:
+		return securityNotImplementedText
+	case configNotImplemented:
+		return configNotImplementedText
+	case replicationNotImplemented:
+		return replicationNotImplementedText
 	}
-	return "unknown error"
+	return "kivik: unknown error"
 }
 
 func (e err) HTTPStatus() int {
 	switch e {
 	case ErrClientClosed, ErrDatabaseClosed:
 		return http.StatusServiceUnavailable
+	case findNotImplemented, clusterNotImplemented, openRevsNotImplemented,
+		securityNotImplemented, configNotImplemented, replicationNotImplemented:
+		return http.StatusNotImplemented
 	}
 	return http.StatusInternalServerError
 }

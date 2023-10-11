@@ -268,31 +268,20 @@ func (r *ResultSet) Attachments() (*AttachmentsIterator, error) {
 }
 
 // makeReady ensures that the iterator is ready to be read from. If i.err is
-// set, it is returned. In the case that [iter.Next] has not been called, the
-// returned unlock function will also close the iterator, and set e if
-// [iter.Close] errors and e != nil.
-func (r *ResultSet) makeReady(e *error) (unlock func(), err error) {
+// set, it is returned.
+func (r *ResultSet) makeReady(_ *error) (unlock func(), err error) {
 	r.mu.Lock()
 	if r.err != nil {
 		r.mu.Unlock()
 		return nil, r.err
 	}
+	if r.state == stateClosed {
+		r.mu.Unlock()
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "kivik: Iterator is closed"}
+	}
 	if !stateIsReady(r.state) {
-		if !r.iter.next() {
-			r.mu.Unlock()
-			return nil, &internal.Error{Status: http.StatusNotFound, Message: "no results"}
-		}
-		var once sync.Once
-		r.wg.Add(1)
-		return func() {
-			once.Do(func() {
-				r.wg.Done()
-				r.mu.Unlock()
-				if err := r.Close(); err != nil && e != nil {
-					*e = err
-				}
-			})
-		}, nil
+		r.mu.Unlock()
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "kivik: Iterator access before calling Next"}
 	}
 	var once sync.Once
 	r.wg.Add(1)

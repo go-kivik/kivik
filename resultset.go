@@ -274,11 +274,12 @@ func (r *ResultSet) makeReady(e *error) (unlock func(), err error) {
 		return nil, r.err
 	}
 	if !stateIsReady(r.state) {
-		r.mu.Unlock()
-		if !r.Next() {
+		if !r.iter.next() {
+			r.mu.Unlock()
 			return nil, &internal.Error{Status: http.StatusNotFound, Message: "no results"}
 		}
 		r.wg.Add(1)
+		r.mu.Unlock()
 		return sync.OnceFunc(func() {
 			r.wg.Done()
 			if err := r.Close(); err != nil && e != nil {

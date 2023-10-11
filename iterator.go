@@ -122,6 +122,11 @@ func (i *iter) awaitDone(ctx context.Context) {
 func (i *iter) Next() bool {
 	i.mu.Lock()
 	defer i.mu.Unlock()
+	return i.next()
+}
+
+// next is the same as Next but doesn't do its own locking.
+func (i *iter) next() bool {
 	if i.state == stateClosed {
 		return false
 	}

@@ -280,10 +280,10 @@ func (r *ResultSet) makeReady(e *error) (unlock func(), err error) {
 		}
 		var once sync.Once
 		r.wg.Add(1)
-		r.mu.Unlock()
 		return func() {
 			once.Do(func() {
 				r.wg.Done()
+				r.mu.Unlock()
 				if err := r.Close(); err != nil && e != nil {
 					*e = err
 				}

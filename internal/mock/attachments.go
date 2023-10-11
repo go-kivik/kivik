@@ -31,5 +31,8 @@ func (a *Attachments) Next(att *driver.Attachment) error {
 
 // Close calls a.CloseFunc
 func (a *Attachments) Close() error {
-	return a.CloseFunc()
+	if a.CloseFunc != nil {
+		return a.CloseFunc()
+	}
+	return nil
 }

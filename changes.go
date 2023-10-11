@@ -93,15 +93,16 @@ func (db *DB) Changes(ctx context.Context, options ...Option) *Changes {
 	if db.err != nil {
 		return &Changes{iter: errIterator(db.err)}
 	}
-	if err := db.startQuery(); err != nil {
+	endQuery, err := db.startQuery()
+	if err != nil {
 		return &Changes{iter: errIterator(err)}
 	}
 	changesi, err := db.driverDB.Changes(ctx, allOptions(options))
 	if err != nil {
-		db.endQuery()
+		endQuery()
 		return &Changes{iter: errIterator(err)}
 	}
-	return newChanges(ctx, db.endQuery, changesi)
+	return newChanges(ctx, endQuery, changesi)
 }
 
 // Seq returns the Seq of the current result.

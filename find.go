@@ -33,15 +33,16 @@ func (db *DB) Find(ctx context.Context, query interface{}, options ...Option) *R
 		return &ResultSet{iter: errIterator(db.err)}
 	}
 	if finder, ok := db.driverDB.(driver.Finder); ok {
-		if err := db.startQuery(); err != nil {
+		endQuery, err := db.startQuery()
+		if err != nil {
 			return &ResultSet{iter: errIterator(err)}
 		}
 		rowsi, err := finder.Find(ctx, query, allOptions(options))
 		if err != nil {
-			db.endQuery()
+			endQuery()
 			return &ResultSet{iter: errIterator(err)}
 		}
-		return newResultSet(ctx, db.endQuery, rowsi)
+		return newResultSet(ctx, endQuery, rowsi)
 	}
 	return &ResultSet{iter: errIterator(findNotImplemented)}
 }
@@ -55,10 +56,11 @@ func (db *DB) CreateIndex(ctx context.Context, ddoc, name string, index interfac
 	if db.err != nil {
 		return db.err
 	}
-	if err := db.startQuery(); err != nil {
+	endQuery, err := db.startQuery()
+	if err != nil {
 		return err
 	}
-	defer db.endQuery()
+	defer endQuery()
 	if finder, ok := db.driverDB.(driver.Finder); ok {
 		return finder.CreateIndex(ctx, ddoc, name, index, allOptions(options))
 	}
@@ -70,10 +72,11 @@ func (db *DB) DeleteIndex(ctx context.Context, ddoc, name string, options ...Opt
 	if db.err != nil {
 		return db.err
 	}
-	if err := db.startQuery(); err != nil {
+	endQuery, err := db.startQuery()
+	if err != nil {
 		return err
 	}
-	defer db.endQuery()
+	defer endQuery()
 	if finder, ok := db.driverDB.(driver.Finder); ok {
 		return finder.DeleteIndex(ctx, ddoc, name, allOptions(options))
 	}
@@ -93,10 +96,11 @@ func (db *DB) GetIndexes(ctx context.Context, options ...Option) ([]Index, error
 	if db.err != nil {
 		return nil, db.err
 	}
-	if err := db.startQuery(); err != nil {
+	endQuery, err := db.startQuery()
+	if err != nil {
 		return nil, err
 	}
-	defer db.endQuery()
+	defer endQuery()
 	if finder, ok := db.driverDB.(driver.Finder); ok {
 		dIndexes, err := finder.GetIndexes(ctx, allOptions(options))
 		indexes := make([]Index, len(dIndexes))
@@ -130,11 +134,12 @@ func (db *DB) Explain(ctx context.Context, query interface{}, options ...Option)
 	if db.err != nil {
 		return nil, db.err
 	}
-	if err := db.startQuery(); err != nil {
-		return nil, err
-	}
-	defer db.endQuery()
 	if explainer, ok := db.driverDB.(driver.Finder); ok {
+		endQuery, err := db.startQuery()
+		if err != nil {
+			return nil, err
+		}
+		defer endQuery()
 		plan, err := explainer.Explain(ctx, query, allOptions(options))
 		if err != nil {
 			return nil, err

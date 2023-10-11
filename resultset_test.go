@@ -676,6 +676,7 @@ func TestResultSet_Close_blocks(t *testing.T) {
 			}
 		},
 	})
+
 	tests.Run(t, func(t *testing.T, tt tt) {
 		t.Parallel()
 

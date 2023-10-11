@@ -455,6 +455,7 @@ func TestExplain(t *testing.T) {
 	})
 	tests.Add(errClientClosed, tt{
 		db: &DB{
+			driverDB: &mock.Finder{},
 			client: &Client{
 				closed: 1,
 			},

@@ -39,24 +39,22 @@ type DB struct {
 	wg     sync.WaitGroup
 }
 
-func (db *DB) startQuery() error {
+func (db *DB) startQuery() (end func(), _ error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 	if atomic.LoadInt32(&db.closed) > 0 {
-		return ErrDatabaseClosed
+		return nil, ErrDatabaseClosed
 	}
 	if err := db.client.startQuery(); err != nil {
-		return err
+		return nil, err
 	}
 	db.wg.Add(1)
-	return nil
-}
-
-func (db *DB) endQuery() {
-	db.mu.Lock()
-	db.wg.Done()
-	db.client.endQuery()
-	db.mu.Unlock()
+	return sync.OnceFunc(func() {
+		db.mu.Lock()
+		db.wg.Done()
+		db.client.endQuery()
+		db.mu.Unlock()
+	}), nil
 }
 
 // Client returns the client used to connect to the database.
@@ -82,15 +80,16 @@ func (db *DB) AllDocs(ctx context.Context, options ...Option) *ResultSet {
 	if db.err != nil {
 		return &ResultSet{iter: errIterator(db.err)}
 	}
-	if err := db.startQuery(); err != nil {
+	endQuery, err := db.startQuery()
+	if err != nil {
 		return &ResultSet{iter: errIterator(err)}
 	}
 	rowsi, err := db.driverDB.AllDocs(ctx, allOptions(options))
 	if err != nil {
-		db.endQuery()
+		endQuery()
 		return &ResultSet{iter: errIterator(err)}
 	}
-	return newResultSet(ctx, db.endQuery, rowsi)
+	return newResultSet(ctx, endQuery, rowsi)
 }
 
 // DesignDocs returns a list of all documents in the database.
@@ -103,15 +102,16 @@ func (db *DB) DesignDocs(ctx context.Context, options ...Option) *ResultSet {
 		return &ResultSet{iter: errIterator(&internal.Error{Status: http.StatusNotImplemented, Err: errors.New("kivik: design doc view not supported by driver")})}
 	}
 
-	if err := db.startQuery(); err != nil {
+	endQuery, err := db.startQuery()
+	if err != nil {
 		return &ResultSet{iter: errIterator(err)}
 	}
 	rowsi, err := ddocer.DesignDocs(ctx, allOptions(options))
 	if err != nil {
-		db.endQuery()
+		endQuery()
 		return &ResultSet{iter: errIterator(err)}
 	}
-	return newResultSet(ctx, db.endQuery, rowsi)
+	return newResultSet(ctx, endQuery, rowsi)
 }
 
 // LocalDocs returns a list of all documents in the database.
@@ -123,15 +123,16 @@ func (db *DB) LocalDocs(ctx context.Context, options ...Option) *ResultSet {
 	if !ok {
 		return &ResultSet{iter: errIterator(&internal.Error{Status: http.StatusNotImplemented, Err: errors.New("kivik: local doc view not supported by driver")})}
 	}
-	if err := db.startQuery(); err != nil {
+	endQuery, err := db.startQuery()
+	if err != nil {
 		return &ResultSet{iter: errIterator(err)}
 	}
 	rowsi, err := ldocer.LocalDocs(ctx, allOptions(options))
 	if err != nil {
-		db.endQuery()
+		endQuery()
 		return &ResultSet{iter: errIterator(err)}
 	}
-	return newResultSet(ctx, db.endQuery, rowsi)
+	return newResultSet(ctx, endQuery, rowsi)
 }
 
 // Query executes the specified view function from the specified design
@@ -152,17 +153,18 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Option) *
 	if db.err != nil {
 		return &ResultSet{iter: errIterator(db.err)}
 	}
-	if err := db.startQuery(); err != nil {
+	endQuery, err := db.startQuery()
+	if err != nil {
 		return &ResultSet{iter: errIterator(err)}
 	}
 	ddoc = strings.TrimPrefix(ddoc, "_design/")
 	view = strings.TrimPrefix(view, "_view/")
 	rowsi, err := db.driverDB.Query(ctx, ddoc, view, allOptions(options))
 	if err != nil {
-		db.endQuery()
+		endQuery()
 		return &ResultSet{iter: errIterator(err)}
 	}
-	return newResultSet(ctx, db.endQuery, rowsi)
+	return newResultSet(ctx, endQuery, rowsi)
 }
 
 // Document is a single document result returned by [DB.Get].
@@ -218,10 +220,11 @@ func (db *DB) Get(ctx context.Context, docID string, options ...Option) *Documen
 	if db.err != nil {
 		return &Document{err: db.err}
 	}
-	if err := db.startQuery(); err != nil {
+	endQuery, err := db.startQuery()
+	if err != nil {
 		return &Document{err: err}
 	}
-	defer db.endQuery()
+	defer endQuery()
 	result, err := db.driverDB.Get(ctx, docID, allOptions(options))
 	if err != nil {
 		return &Document{err: err}
@@ -242,15 +245,16 @@ func (db *DB) OpenRevs(ctx context.Context, docID string, revs []string, options
 		return &ResultSet{iter: errIterator(db.err)}
 	}
 	if openRever, ok := db.driverDB.(driver.OpenRever); ok {
-		if err := db.startQuery(); err != nil {
+		endQuery, err := db.startQuery()
+		if err != nil {
 			return &ResultSet{iter: errIterator(err)}
 		}
 		rowsi, err := openRever.OpenRevs(ctx, docID, revs, allOptions(options))
 		if err != nil {
-			db.endQuery()
+			endQuery()
 			return &ResultSet{iter: errIterator(err)}
 		}
-		return newResultSet(ctx, db.endQuery, rowsi)
+		return newResultSet(ctx, endQuery, rowsi)
 	}
 	return &ResultSet{iter: errIterator(openRevsNotImplemented)}
 }
@@ -263,10 +267,11 @@ func (db *DB) GetRev(ctx context.Context, docID string, options ...Option) (rev 
 	}
 	opts := allOptions(options)
 	if r, ok := db.driverDB.(driver.RevGetter); ok {
-		if err := db.startQuery(); err != nil {
+		endQuery, err := db.startQuery()
+		if err != nil {
 			return "", err
 		}
-		defer db.endQuery()
+		defer endQuery()
 		return r.GetRev(ctx, docID, opts)
 	}
 	row := db.Get(ctx, docID, opts)
@@ -285,10 +290,11 @@ func (db *DB) CreateDoc(ctx context.Context, doc interface{}, options ...Option)
 	if db.err != nil {
 		return "", "", db.err
 	}
-	if err := db.startQuery(); err != nil {
+	endQuery, err := db.startQuery()
+	if err != nil {
 		return "", "", err
 	}
-	defer db.endQuery()
+	defer endQuery()
 	return db.driverDB.CreateDoc(ctx, doc, allOptions(options))
 }
 
@@ -358,10 +364,11 @@ func (db *DB) Put(ctx context.Context, docID string, doc interface{}, options ..
 	if docID == "" {
 		return "", missingArg("docID")
 	}
-	if err := db.startQuery(); err != nil {
+	endQuery, err := db.startQuery()
+	if err != nil {
 		return "", err
 	}
-	defer db.endQuery()
+	defer endQuery()
 	i, err := normalizeFromJSON(doc)
 	if err != nil {
 		return "", err
@@ -375,10 +382,11 @@ func (db *DB) Delete(ctx context.Context, docID, rev string, options ...Option) 
 	if db.err != nil {
 		return "", db.err
 	}
-	if err := db.startQuery(); err != nil {
+	endQuery, err := db.startQuery()
+	if err != nil {
 		return "", err
 	}
-	defer db.endQuery()
+	defer endQuery()
 	if docID == "" {
 		return "", missingArg("docID")
 	}
@@ -395,10 +403,11 @@ func (db *DB) Flush(ctx context.Context) error {
 	if db.err != nil {
 		return db.err
 	}
-	if err := db.startQuery(); err != nil {
+	endQuery, err := db.startQuery()
+	if err != nil {
 		return err
 	}
-	defer db.endQuery()
+	defer endQuery()
 	if flusher, ok := db.driverDB.(driver.Flusher); ok {
 		return flusher.Flush(ctx)
 	}
@@ -453,10 +462,11 @@ func (db *DB) Stats(ctx context.Context) (*DBStats, error) {
 	if db.err != nil {
 		return nil, db.err
 	}
-	if err := db.startQuery(); err != nil {
+	endQuery, err := db.startQuery()
+	if err != nil {
 		return nil, err
 	}
-	defer db.endQuery()
+	defer endQuery()
 	i, err := db.driverDB.Stats(ctx)
 	if err != nil {
 		return nil, err
@@ -499,10 +509,11 @@ func (db *DB) Compact(ctx context.Context) error {
 	if db.err != nil {
 		return db.err
 	}
-	if err := db.startQuery(); err != nil {
+	endQuery, err := db.startQuery()
+	if err != nil {
 		return err
 	}
-	defer db.endQuery()
+	defer endQuery()
 	return db.driverDB.Compact(ctx)
 }
 
@@ -521,10 +532,11 @@ func (db *DB) CompactView(ctx context.Context, ddocID string) error {
 	if db.err != nil {
 		return db.err
 	}
-	if err := db.startQuery(); err != nil {
+	endQuery, err := db.startQuery()
+	if err != nil {
 		return err
 	}
-	defer db.endQuery()
+	defer endQuery()
 	return db.driverDB.CompactView(ctx, ddocID)
 }
 
@@ -538,10 +550,11 @@ func (db *DB) ViewCleanup(ctx context.Context) error {
 	if db.err != nil {
 		return db.err
 	}
-	if err := db.startQuery(); err != nil {
+	endQuery, err := db.startQuery()
+	if err != nil {
 		return err
 	}
-	defer db.endQuery()
+	defer endQuery()
 	return db.driverDB.ViewCleanup(ctx)
 }
 
@@ -560,10 +573,11 @@ func (db *DB) Security(ctx context.Context) (*Security, error) {
 	if !ok {
 		return nil, securityNotImplemented
 	}
-	if err := db.startQuery(); err != nil {
+	endQuery, err := db.startQuery()
+	if err != nil {
 		return nil, err
 	}
-	defer db.endQuery()
+	defer endQuery()
 	s, err := secDB.Security(ctx)
 	if err != nil {
 		return nil, err
@@ -592,10 +606,11 @@ func (db *DB) SetSecurity(ctx context.Context, security *Security) error {
 	if security == nil {
 		return missingArg("security")
 	}
-	if err := db.startQuery(); err != nil {
+	endQuery, err := db.startQuery()
+	if err != nil {
 		return err
 	}
-	defer db.endQuery()
+	defer endQuery()
 	sec := &driver.Security{
 		Admins:  driver.Members(security.Admins),
 		Members: driver.Members(security.Members),
@@ -623,10 +638,11 @@ func (db *DB) Copy(ctx context.Context, targetID, sourceID string, options ...Op
 	}
 	opts := allOptions(options)
 	if copier, ok := db.driverDB.(driver.Copier); ok {
-		if err := db.startQuery(); err != nil {
+		endQuery, err := db.startQuery()
+		if err != nil {
 			return "", err
 		}
-		defer db.endQuery()
+		defer endQuery()
 		return copier.Copy(ctx, targetID, sourceID, opts)
 	}
 	var doc map[string]interface{}
@@ -653,10 +669,11 @@ func (db *DB) PutAttachment(ctx context.Context, docID string, att *Attachment, 
 	if e := att.validate(); e != nil {
 		return "", e
 	}
-	if err := db.startQuery(); err != nil {
+	endQuery, err := db.startQuery()
+	if err != nil {
 		return "", err
 	}
-	defer db.endQuery()
+	defer endQuery()
 	a := driver.Attachment(*att)
 	return db.driverDB.PutAttachment(ctx, docID, &a, allOptions(options))
 }
@@ -666,10 +683,11 @@ func (db *DB) GetAttachment(ctx context.Context, docID, filename string, options
 	if db.err != nil {
 		return nil, db.err
 	}
-	if err := db.startQuery(); err != nil {
+	endQuery, err := db.startQuery()
+	if err != nil {
 		return nil, err
 	}
-	defer db.endQuery()
+	defer endQuery()
 	if docID == "" {
 		return nil, missingArg("docID")
 	}
@@ -707,10 +725,11 @@ func (db *DB) GetAttachmentMeta(ctx context.Context, docID, filename string, opt
 	}
 	var att *Attachment
 	if metaer, ok := db.driverDB.(driver.AttachmentMetaGetter); ok {
-		if err := db.startQuery(); err != nil {
+		endQuery, err := db.startQuery()
+		if err != nil {
 			return nil, err
 		}
-		defer db.endQuery()
+		defer endQuery()
 		a, err := metaer.GetAttachmentMeta(ctx, docID, filename, allOptions(options))
 		if err != nil {
 			return nil, err
@@ -738,10 +757,11 @@ func (db *DB) DeleteAttachment(ctx context.Context, docID, rev, filename string,
 	if db.err != nil {
 		return "", db.err
 	}
-	if err := db.startQuery(); err != nil {
+	endQuery, err := db.startQuery()
+	if err != nil {
 		return "", err
 	}
-	defer db.endQuery()
+	defer endQuery()
 	if docID == "" {
 		return "", missingArg("docID")
 	}
@@ -774,10 +794,11 @@ func (db *DB) Purge(ctx context.Context, docRevMap map[string][]string) (*PurgeR
 	if db.err != nil {
 		return nil, db.err
 	}
-	if err := db.startQuery(); err != nil {
+	endQuery, err := db.startQuery()
+	if err != nil {
 		return nil, err
 	}
-	defer db.endQuery()
+	defer endQuery()
 	if purger, ok := db.driverDB.(driver.Purger); ok {
 		res, err := purger.Purge(ctx, docRevMap)
 		if err != nil {
@@ -812,7 +833,8 @@ func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...O
 		return &ResultSet{iter: errIterator(&internal.Error{Status: http.StatusNotImplemented, Message: "kivik: bulk get not supported by driver"})}
 	}
 
-	if err := db.startQuery(); err != nil {
+	endQuery, err := db.startQuery()
+	if err != nil {
 		return &ResultSet{iter: errIterator(err)}
 	}
 	refs := make([]driver.BulkGetReference, len(docs))
@@ -821,10 +843,10 @@ func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...O
 	}
 	rowsi, err := bulkGetter.BulkGet(ctx, refs, allOptions(options))
 	if err != nil {
-		db.endQuery()
+		endQuery()
 		return &ResultSet{iter: errIterator(err)}
 	}
-	return newResultSet(ctx, db.endQuery, rowsi)
+	return newResultSet(ctx, endQuery, rowsi)
 }
 
 // Close cleans up any resources used by the DB. Close is safe to call
@@ -873,15 +895,16 @@ func (db *DB) RevsDiff(ctx context.Context, revMap interface{}) *ResultSet {
 		return &ResultSet{iter: errIterator(db.err)}
 	}
 	if rd, ok := db.driverDB.(driver.RevsDiffer); ok {
-		if err := db.startQuery(); err != nil {
+		endQuery, err := db.startQuery()
+		if err != nil {
 			return &ResultSet{iter: errIterator(err)}
 		}
 		rowsi, err := rd.RevsDiff(ctx, revMap)
 		if err != nil {
-			db.endQuery()
+			endQuery()
 			return &ResultSet{iter: errIterator(err)}
 		}
-		return newResultSet(ctx, db.endQuery, rowsi)
+		return newResultSet(ctx, endQuery, rowsi)
 	}
 	return &ResultSet{iter: errIterator(&internal.Error{Status: http.StatusNotImplemented, Message: "kivik: _revs_diff not supported by driver"})}
 }
@@ -906,10 +929,11 @@ func (db *DB) PartitionStats(ctx context.Context, name string) (*PartitionStats,
 	if db.err != nil {
 		return nil, db.err
 	}
-	if err := db.startQuery(); err != nil {
+	endQuery, err := db.startQuery()
+	if err != nil {
 		return nil, err
 	}
-	defer db.endQuery()
+	defer endQuery()
 	if pdb, ok := db.driverDB.(driver.PartitionedDB); ok {
 		stats, err := pdb.PartitionStats(ctx, name)
 		if err != nil {

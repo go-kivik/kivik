@@ -49,10 +49,11 @@ func (db *DB) BulkDocs(ctx context.Context, docs []interface{}, options ...Optio
 	if len(docsi) == 0 {
 		return nil, &internal.Error{Status: http.StatusBadRequest, Err: errors.New("kivik: no documents provided")}
 	}
-	if err := db.startQuery(); err != nil {
+	endQuery, err := db.startQuery()
+	if err != nil {
 		return nil, err
 	}
-	defer db.endQuery()
+	defer endQuery()
 	opts := allOptions(options)
 	if bulkDocer, ok := db.driverDB.(driver.BulkDocer); ok {
 		bulki, err := bulkDocer.BulkDocs(ctx, docsi, opts)

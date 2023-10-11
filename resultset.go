@@ -19,6 +19,7 @@ import (
 	"io"
 	"net/http"
 	"reflect"
+	"sync"
 
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/internal"
@@ -278,18 +279,18 @@ func (r *ResultSet) makeReady(e *error) (unlock func(), err error) {
 			return nil, &internal.Error{Status: http.StatusNotFound, Message: "no results"}
 		}
 		r.wg.Add(1)
-		return func() {
+		return sync.OnceFunc(func() {
 			r.wg.Done()
 			if err := r.Close(); err != nil && e != nil {
 				*e = err
 			}
-		}, nil
+		}), nil
 	}
 	r.wg.Add(1)
-	return func() {
+	return sync.OnceFunc(func() {
 		r.wg.Done()
 		r.mu.Unlock()
-	}, nil
+	}), nil
 }
 
 type rowsIterator struct {

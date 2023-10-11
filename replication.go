@@ -175,7 +175,7 @@ func (c *Client) GetReplications(ctx context.Context, options ...Option) ([]*Rep
 	defer endQuery()
 	replicator, ok := c.driverClient.(driver.ClientReplicator)
 	if !ok {
-		return nil, replicationNotImplemented
+		return nil, errReplicationNotImplemented
 	}
 	reps, err := replicator.GetReplications(ctx, allOptions(options))
 	if err != nil {
@@ -200,7 +200,7 @@ func (c *Client) Replicate(ctx context.Context, targetDSN, sourceDSN string, opt
 	defer endQuery()
 	replicator, ok := c.driverClient.(driver.ClientReplicator)
 	if !ok {
-		return nil, replicationNotImplemented
+		return nil, errReplicationNotImplemented
 	}
 	rep, err := replicator.Replicate(ctx, targetDSN, sourceDSN, allOptions(options))
 	if err != nil {

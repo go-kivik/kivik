@@ -44,7 +44,7 @@ func (c *Client) Config(ctx context.Context, node string) (Config, error) {
 		}
 		return cf, nil
 	}
-	return nil, configNotImplemented
+	return nil, errConfigNotImplemented
 }
 
 // ConfigSection returns the requested server [config section] for the specified node.
@@ -60,7 +60,7 @@ func (c *Client) ConfigSection(ctx context.Context, node, section string) (Confi
 		sec, err := configer.ConfigSection(ctx, node, section)
 		return ConfigSection(sec), err
 	}
-	return nil, configNotImplemented
+	return nil, errConfigNotImplemented
 }
 
 // ConfigValue returns a single [config value] for the specified node.
@@ -75,7 +75,7 @@ func (c *Client) ConfigValue(ctx context.Context, node, section, key string) (st
 	if configer, ok := c.driverClient.(driver.Configer); ok {
 		return configer.ConfigValue(ctx, node, section, key)
 	}
-	return "", configNotImplemented
+	return "", errConfigNotImplemented
 }
 
 // SetConfigValue sets the server's [config value] on the specified node, creating
@@ -91,7 +91,7 @@ func (c *Client) SetConfigValue(ctx context.Context, node, section, key, value s
 	if configer, ok := c.driverClient.(driver.Configer); ok {
 		return configer.SetConfigValue(ctx, node, section, key, value)
 	}
-	return "", configNotImplemented
+	return "", errConfigNotImplemented
 }
 
 // DeleteConfigKey deletes the [configuration key] and associated value from the
@@ -107,5 +107,5 @@ func (c *Client) DeleteConfigKey(ctx context.Context, node, section, key string)
 	if configer, ok := c.driverClient.(driver.Configer); ok {
 		return configer.DeleteConfigKey(ctx, node, section, key)
 	}
-	return "", configNotImplemented
+	return "", errConfigNotImplemented
 }

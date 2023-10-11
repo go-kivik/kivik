@@ -258,7 +258,7 @@ func (db *DB) OpenRevs(ctx context.Context, docID string, revs []string, options
 		}
 		return newResultSet(ctx, endQuery, rowsi)
 	}
-	return &ResultSet{iter: errIterator(openRevsNotImplemented)}
+	return &ResultSet{iter: errIterator(errOpenRevsNotImplemented)}
 }
 
 // GetRev returns the active rev of the specified document. GetRev accepts
@@ -571,7 +571,7 @@ func (db *DB) Security(ctx context.Context) (*Security, error) {
 	}
 	secDB, ok := db.driverDB.(driver.SecurityDB)
 	if !ok {
-		return nil, securityNotImplemented
+		return nil, errSecurityNotImplemented
 	}
 	endQuery, err := db.startQuery()
 	if err != nil {
@@ -601,7 +601,7 @@ func (db *DB) SetSecurity(ctx context.Context, security *Security) error {
 	}
 	secDB, ok := db.driverDB.(driver.SecurityDB)
 	if !ok {
-		return securityNotImplemented
+		return errSecurityNotImplemented
 	}
 	if security == nil {
 		return missingArg("security")

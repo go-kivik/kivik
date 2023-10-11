@@ -25,12 +25,12 @@ const (
 	ErrDatabaseClosed = internal.CompositeError("\x67database closed")
 
 	// Various not-implemented errors, that are returned, but don't need to be exposed directly.
-	findNotImplemented        = internal.CompositeError("\x65driver does not support Find interface")
-	clusterNotImplemented     = internal.CompositeError("\x65driver does not support cluster operations")
-	openRevsNotImplemented    = internal.CompositeError("\x65driver does not support OpenRevs interface")
-	securityNotImplemented    = internal.CompositeError("\x65driver does not support Security interface")
-	configNotImplemented      = internal.CompositeError("\x65driver does not support Config interface")
-	replicationNotImplemented = internal.CompositeError("\x65driver does not support replication")
+	errFindNotImplemented        = internal.CompositeError("\x65driver does not support Find interface")
+	errClusterNotImplemented     = internal.CompositeError("\x65driver does not support cluster operations")
+	errOpenRevsNotImplemented    = internal.CompositeError("\x65driver does not support OpenRevs interface")
+	errSecurityNotImplemented    = internal.CompositeError("\x65driver does not support Security interface")
+	errConfigNotImplemented      = internal.CompositeError("\x65driver does not support Config interface")
+	errReplicationNotImplemented = internal.CompositeError("\x65driver does not support replication")
 )
 
 // HTTPStatus returns the HTTP status code embedded in the error, or 500

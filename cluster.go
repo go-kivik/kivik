@@ -29,7 +29,7 @@ func (c *Client) ClusterStatus(ctx context.Context, options ...Option) (string, 
 	defer endQuery()
 	cluster, ok := c.driverClient.(driver.Cluster)
 	if !ok {
-		return "", clusterNotImplemented
+		return "", errClusterNotImplemented
 	}
 	return cluster.ClusterStatus(ctx, allOptions(options))
 }
@@ -47,7 +47,7 @@ func (c *Client) ClusterSetup(ctx context.Context, action interface{}) error {
 	defer endQuery()
 	cluster, ok := c.driverClient.(driver.Cluster)
 	if !ok {
-		return clusterNotImplemented
+		return errClusterNotImplemented
 	}
 	return cluster.ClusterSetup(ctx, action)
 }
@@ -70,7 +70,7 @@ func (c *Client) Membership(ctx context.Context) (*ClusterMembership, error) {
 	defer endQuery()
 	cluster, ok := c.driverClient.(driver.Cluster)
 	if !ok {
-		return nil, clusterNotImplemented
+		return nil, errClusterNotImplemented
 	}
 	nodes, err := cluster.Membership(ctx)
 	return (*ClusterMembership)(nodes), err

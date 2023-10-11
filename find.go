@@ -40,7 +40,7 @@ func (db *DB) Find(ctx context.Context, query interface{}, options ...Option) *R
 		}
 		return newResultSet(ctx, endQuery, rowsi)
 	}
-	return &ResultSet{iter: errIterator(findNotImplemented)}
+	return &ResultSet{iter: errIterator(errFindNotImplemented)}
 }
 
 // CreateIndex creates an index if it doesn't already exist. ddoc and name may
@@ -60,7 +60,7 @@ func (db *DB) CreateIndex(ctx context.Context, ddoc, name string, index interfac
 	if finder, ok := db.driverDB.(driver.Finder); ok {
 		return finder.CreateIndex(ctx, ddoc, name, index, allOptions(options))
 	}
-	return findNotImplemented
+	return errFindNotImplemented
 }
 
 // DeleteIndex deletes the requested index.
@@ -76,7 +76,7 @@ func (db *DB) DeleteIndex(ctx context.Context, ddoc, name string, options ...Opt
 	if finder, ok := db.driverDB.(driver.Finder); ok {
 		return finder.DeleteIndex(ctx, ddoc, name, allOptions(options))
 	}
-	return findNotImplemented
+	return errFindNotImplemented
 }
 
 // Index is a MonboDB-style index definition.
@@ -105,7 +105,7 @@ func (db *DB) GetIndexes(ctx context.Context, options ...Option) ([]Index, error
 		}
 		return indexes, err
 	}
-	return nil, findNotImplemented
+	return nil, errFindNotImplemented
 }
 
 // QueryPlan is the query execution plan for a query, as returned by
@@ -143,5 +143,5 @@ func (db *DB) Explain(ctx context.Context, query interface{}, options ...Option)
 		qp := QueryPlan(*plan)
 		return &qp, nil
 	}
-	return nil, findNotImplemented
+	return nil, errFindNotImplemented
 }

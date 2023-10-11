@@ -86,7 +86,13 @@ func newResultSet(ctx context.Context, onClose func(), rowsi driver.Rows) *Resul
 // read, the [ResultSet.Close] is called implicitly, negating the need to call
 // it explicitly.
 func (r *ResultSet) Next() bool {
-	return r.iter.Next()
+	r.iter.mu.Lock()
+	defer r.iter.mu.Unlock()
+	if atts := r.curVal.(*driver.Row).Attachments; atts != nil {
+		_ = atts.Close()
+	}
+
+	return r.iter.next()
 }
 
 // NextResultSet prepares the next result set for reading. It returns false if
@@ -239,10 +245,8 @@ func (r *ResultSet) Key() (string, error) {
 	return string(row.Key), row.Error
 }
 
-// Attachments returns an attachments iterator. At present, it is only set
-// by [DB.Get] when doing a multi-part get from CouchDB (which is the
-// default where supported). This may be extended to other cases in the
-// future.
+// Attachments returns an attachments iterator if the document includes
+// attachments.
 func (r *ResultSet) Attachments() (*AttachmentsIterator, error) {
 	runlock, err := r.makeReady(nil)
 	if err != nil {

@@ -205,7 +205,7 @@ func (r *Document) Attachments() (*AttachmentsIterator, error) {
 		return nil, r.err
 	}
 	if r.attachments == nil {
-		return nil, nil // TODO: #804 return a proper error
+		return nil, errNoAttachments
 	}
 	return &AttachmentsIterator{atti: r.attachments}, nil
 }

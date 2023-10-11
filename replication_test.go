@@ -381,7 +381,7 @@ func TestGetReplications(t *testing.T) {
 		{
 			name: "closed",
 			client: &Client{
-				closed: 1,
+				closed: true,
 			},
 			status: http.StatusServiceUnavailable,
 			err:    "kivik: client closed",
@@ -465,7 +465,7 @@ func TestReplicate(t *testing.T) {
 		{
 			name: "closed",
 			client: &Client{
-				closed: 1,
+				closed: true,
 			},
 			status: http.StatusServiceUnavailable,
 			err:    "kivik: client closed",

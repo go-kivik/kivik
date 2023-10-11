@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
-	"sync/atomic"
 
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/internal"
@@ -31,8 +30,7 @@ type Client struct {
 	driverName   string
 	driverClient driver.Client
 
-	// closed will be non-0 when the client has been closed
-	closed int32
+	closed bool
 	mu     sync.Mutex
 	wg     sync.WaitGroup
 }
@@ -94,7 +92,7 @@ type ServerVersion struct {
 func (c *Client) startQuery() (end func(), _ error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if atomic.LoadInt32(&c.closed) > 0 {
+	if c.closed {
 		return nil, ErrClientClosed
 	}
 	var once sync.Once
@@ -244,7 +242,7 @@ func (c *Client) Ping(ctx context.Context) (bool, error) {
 // [ErrClientClosed].
 func (c *Client) Close() error {
 	c.mu.Lock()
-	atomic.StoreInt32(&c.closed, 1)
+	c.closed = true
 	c.mu.Unlock()
 	c.wg.Wait()
 	if closer, ok := c.driverClient.(driver.ClientCloser); ok {

@@ -228,7 +228,7 @@ func TestDBUpdates(t *testing.T) {
 		{
 			name: "client closed",
 			client: &Client{
-				closed:       1,
+				closed:       true,
 				driverClient: &mock.DBUpdater{},
 			},
 			status: http.StatusServiceUnavailable,

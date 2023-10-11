@@ -28,7 +28,7 @@ func TestSession(t *testing.T) {
 	tests := []struct {
 		name     string
 		client   driver.Client
-		closed   int32
+		closed   bool
 		expected interface{}
 		status   int
 		err      string
@@ -66,7 +66,7 @@ func TestSession(t *testing.T) {
 		},
 		{
 			name:   "closed",
-			closed: 1,
+			closed: true,
 			status: http.StatusServiceUnavailable,
 			err:    "kivik: client closed",
 		},

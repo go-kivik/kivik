@@ -198,7 +198,7 @@ func (r *Document) ScanDoc(i interface{}) error {
 }
 
 // Attachments returns an attachments iterator if the document includes
-// attachments.
+// attachments and they are not inline.
 func (r *Document) Attachments() (*AttachmentsIterator, error) {
 	if r.err != nil {
 		return nil, r.err

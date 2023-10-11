@@ -13,53 +13,25 @@
 package kivik
 
 import (
-	"net/http"
-
 	"github.com/go-kivik/kivik/v4/internal"
-)
-
-type err int
-
-var (
-	_ error       = err(0)
-	_ statusCoder = err(0)
 )
 
 const (
 	// ErrClientClosed is returned by any client operations after [Client.Close]
 	// has been called.
-	ErrClientClosed err = iota
+	ErrClientClosed = internal.CompositeError("\x67client closed")
 	// ErrDatabaseClosed is returned by any database operations after [DB.Close]
 	// has been called.
-	ErrDatabaseClosed
+	ErrDatabaseClosed = internal.CompositeError("\x67database closed")
+
+	// Various not-implemented errors, that are returned, but don't need to be exposed directly.
+	errFindNotImplemented        = internal.CompositeError("\x65driver does not support Find interface")
+	errClusterNotImplemented     = internal.CompositeError("\x65driver does not support cluster operations")
+	errOpenRevsNotImplemented    = internal.CompositeError("\x65driver does not support OpenRevs interface")
+	errSecurityNotImplemented    = internal.CompositeError("\x65driver does not support Security interface")
+	errConfigNotImplemented      = internal.CompositeError("\x65driver does not support Config interface")
+	errReplicationNotImplemented = internal.CompositeError("\x65driver does not support replication")
 )
-
-const (
-	errClientClosed   = "client closed"
-	errDatabaseClosed = "database closed"
-)
-
-func (e err) Error() string {
-	switch e {
-	case ErrClientClosed:
-		return errClientClosed
-	case ErrDatabaseClosed:
-		return errDatabaseClosed
-	}
-	return "unknown error"
-}
-
-func (e err) HTTPStatus() int {
-	switch e {
-	case ErrClientClosed, ErrDatabaseClosed:
-		return http.StatusServiceUnavailable
-	}
-	return http.StatusInternalServerError
-}
-
-type statusCoder interface {
-	HTTPStatus() int
-}
 
 // HTTPStatus returns the HTTP status code embedded in the error, or 500
 // (internal server error), if there was no specified status code.  If err is

@@ -281,7 +281,7 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, options map[string]i
 	return callBack(ctx, db, "query", ddoc+"/"+view, o)
 }
 
-var findPluginNotLoaded = &internal.Error{Status: http.StatusNotImplemented, Message: "kivik: pouchdb-find plugin not loaded"}
+const errFindPluginNotLoaded = internal.CompositeError("\x65pouchdb-find plugin not loaded")
 
 // Find executes a MongoDB-style find query with the pouchdb-find plugin, if it
 // is installed. If the plugin is not installed, a NotImplemented error will be
@@ -290,7 +290,7 @@ var findPluginNotLoaded = &internal.Error{Status: http.StatusNotImplemented, Mes
 // See https://github.com/pouchdb/pouchdb/tree/master/packages/node_modules/pouchdb-find#dbfindrequest--callback
 func (db *DB) Find(ctx context.Context, query interface{}) (*js.Object, error) {
 	if jsbuiltin.TypeOf(db.Object.Get("find")) != jsbuiltin.TypeFunction {
-		return nil, findPluginNotLoaded
+		return nil, errFindPluginNotLoaded
 	}
 	queryObj, err := Objectify(query)
 	if err != nil {
@@ -423,7 +423,7 @@ func (db *DB) RemoveAttachment(ctx context.Context, docID, filename, rev string)
 // See https://github.com/pouchdb/pouchdb/tree/master/packages/node_modules/pouchdb-find#dbcreateindexindex--callback
 func (db *DB) CreateIndex(ctx context.Context, index interface{}) (*js.Object, error) {
 	if jsbuiltin.TypeOf(db.Object.Get("find")) != jsbuiltin.TypeFunction {
-		return nil, findPluginNotLoaded
+		return nil, errFindPluginNotLoaded
 	}
 	return callBack(ctx, db, "createIndex", index)
 }
@@ -433,7 +433,7 @@ func (db *DB) CreateIndex(ctx context.Context, index interface{}) (*js.Object, e
 // See https://github.com/pouchdb/pouchdb/tree/master/packages/node_modules/pouchdb-find#dbgetindexescallback
 func (db *DB) GetIndexes(ctx context.Context) (*js.Object, error) {
 	if jsbuiltin.TypeOf(db.Object.Get("find")) != jsbuiltin.TypeFunction {
-		return nil, findPluginNotLoaded
+		return nil, errFindPluginNotLoaded
 	}
 	return callBack(ctx, db, "getIndexes")
 }
@@ -445,7 +445,7 @@ func (db *DB) GetIndexes(ctx context.Context) (*js.Object, error) {
 // See: https://github.com/pouchdb/pouchdb/tree/master/packages/node_modules/pouchdb-find#dbdeleteindexindex--callback
 func (db *DB) DeleteIndex(ctx context.Context, index interface{}) (*js.Object, error) {
 	if jsbuiltin.TypeOf(db.Object.Get("find")) != jsbuiltin.TypeFunction {
-		return nil, findPluginNotLoaded
+		return nil, errFindPluginNotLoaded
 	}
 	return callBack(ctx, db, "deleteIndex", index)
 }
@@ -472,7 +472,7 @@ func (p *PouchDB) Replicate(source, target interface{}, options map[string]inter
 // See https://pouchdb.com/api.html#explain_index
 func (db *DB) Explain(ctx context.Context, query interface{}) (*js.Object, error) {
 	if jsbuiltin.TypeOf(db.Object.Get("find")) != jsbuiltin.TypeFunction {
-		return nil, findPluginNotLoaded
+		return nil, errFindPluginNotLoaded
 	}
 	queryObj, err := Objectify(query)
 	if err != nil {

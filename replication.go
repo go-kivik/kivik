@@ -14,12 +14,10 @@ package kivik
 
 import (
 	"context"
-	"net/http"
 	"sync"
 	"time"
 
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/kivik/v4/internal"
 )
 
 // ReplicationState represents a replication's state
@@ -166,8 +164,6 @@ func (r *Replication) Update(ctx context.Context) error {
 	return nil
 }
 
-var replicationNotImplemented = &internal.Error{Status: http.StatusNotImplemented, Message: "kivik: driver does not support replication"}
-
 // GetReplications returns a list of defined replications in the _replicator
 // database. Options are in the same format as to [DB.AllDocs], except that
 // "conflicts" and "update_seq" are ignored.
@@ -179,7 +175,7 @@ func (c *Client) GetReplications(ctx context.Context, options ...Option) ([]*Rep
 	defer endQuery()
 	replicator, ok := c.driverClient.(driver.ClientReplicator)
 	if !ok {
-		return nil, replicationNotImplemented
+		return nil, errReplicationNotImplemented
 	}
 	reps, err := replicator.GetReplications(ctx, allOptions(options))
 	if err != nil {
@@ -204,7 +200,7 @@ func (c *Client) Replicate(ctx context.Context, targetDSN, sourceDSN string, opt
 	defer endQuery()
 	replicator, ok := c.driverClient.(driver.ClientReplicator)
 	if !ok {
-		return nil, replicationNotImplemented
+		return nil, errReplicationNotImplemented
 	}
 	rep, err := replicator.Replicate(ctx, targetDSN, sourceDSN, allOptions(options))
 	if err != nil {

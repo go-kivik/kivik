@@ -91,7 +91,7 @@ func TestFind(t *testing.T) {
 			err:    "db error",
 		},
 		{
-			name: errClientClosed,
+			name: "client closed",
 			db: &DB{
 				client: &Client{
 					closed: 1,
@@ -99,7 +99,7 @@ func TestFind(t *testing.T) {
 				driverDB: &mock.Finder{},
 			},
 			status: http.StatusServiceUnavailable,
-			err:    errClientClosed,
+			err:    "kivik: client closed",
 		},
 	}
 
@@ -215,7 +215,7 @@ func TestCreateIndex(t *testing.T) {
 				},
 			},
 			status: http.StatusServiceUnavailable,
-			err:    errClientClosed,
+			err:    "kivik: client closed",
 		},
 		{
 			name: "db error",
@@ -290,14 +290,14 @@ func TestDeleteIndex(t *testing.T) {
 			name: "bar",
 		},
 		{
-			testName: errClientClosed,
+			testName: "client closed",
 			db: &DB{
 				client: &Client{
 					closed: 1,
 				},
 			},
 			status: http.StatusServiceUnavailable,
-			err:    errClientClosed,
+			err:    "kivik: client closed",
 		},
 		{
 			testName: "db error",
@@ -372,14 +372,14 @@ func TestGetIndexes(t *testing.T) {
 			},
 		},
 		{
-			testName: errClientClosed,
+			testName: "client closed",
 			db: &DB{
 				client: &Client{
 					closed: 1,
 				},
 			},
 			status: http.StatusServiceUnavailable,
-			err:    errClientClosed,
+			err:    "kivik: client closed",
 		},
 		{
 			testName: "db error",
@@ -453,7 +453,7 @@ func TestExplain(t *testing.T) {
 		query:    int(3),
 		expected: &QueryPlan{DBName: "foo"},
 	})
-	tests.Add(errClientClosed, tt{
+	tests.Add("client closed", tt{
 		db: &DB{
 			driverDB: &mock.Finder{},
 			client: &Client{
@@ -461,7 +461,7 @@ func TestExplain(t *testing.T) {
 			},
 		},
 		status: http.StatusServiceUnavailable,
-		err:    errClientClosed,
+		err:    "kivik: client closed",
 	})
 	tests.Add("db error", tt{
 		db: &DB{

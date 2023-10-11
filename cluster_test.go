@@ -57,11 +57,11 @@ func TestClusterStatus(t *testing.T) {
 		},
 		expected: "cluster_finished",
 	})
-	tests.Add("closed", tst{
+	tests.Add("client closed", tst{
 		client: &mock.Cluster{},
 		closed: 1,
 		status: http.StatusServiceUnavailable,
-		err:    errClientClosed,
+		err:    "kivik: client closed",
 	})
 
 	tests.Run(t, func(t *testing.T, test tst) {
@@ -110,11 +110,11 @@ func TestClusterSetup(t *testing.T) {
 			},
 		},
 	})
-	tests.Add("closed", tst{
+	tests.Add("client closed", tst{
 		client: &mock.Cluster{},
 		closed: 1,
 		status: http.StatusServiceUnavailable,
-		err:    errClientClosed,
+		err:    "kivik: client closed",
 	})
 
 	tests.Run(t, func(t *testing.T, test tst) {
@@ -167,11 +167,11 @@ func TestMembership(t *testing.T) {
 			ClusterNodes: []string{"one", "two"},
 		},
 	})
-	tests.Add("closed", tt{
+	tests.Add("client closed", tt{
 		client: &mock.Cluster{},
 		closed: 1,
 		status: http.StatusServiceUnavailable,
-		err:    errClientClosed,
+		err:    "kivik: client closed",
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {

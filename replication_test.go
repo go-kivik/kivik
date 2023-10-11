@@ -384,7 +384,7 @@ func TestGetReplications(t *testing.T) {
 				closed: 1,
 			},
 			status: http.StatusServiceUnavailable,
-			err:    "client closed",
+			err:    "kivik: client closed",
 		},
 	}
 	for _, test := range tests {
@@ -468,7 +468,7 @@ func TestReplicate(t *testing.T) {
 				closed: 1,
 			},
 			status: http.StatusServiceUnavailable,
-			err:    "client closed",
+			err:    "kivik: client closed",
 		},
 	}
 	for _, test := range tests {

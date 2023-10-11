@@ -14,13 +14,9 @@ package kivik
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/kivik/v4/internal"
 )
-
-var clusterNotImplemented = &internal.Error{Status: http.StatusNotImplemented, Message: "kivik: driver does not support cluster operations"}
 
 // ClusterStatus returns the current [cluster status].
 //
@@ -33,7 +29,7 @@ func (c *Client) ClusterStatus(ctx context.Context, options ...Option) (string, 
 	defer endQuery()
 	cluster, ok := c.driverClient.(driver.Cluster)
 	if !ok {
-		return "", clusterNotImplemented
+		return "", errClusterNotImplemented
 	}
 	return cluster.ClusterStatus(ctx, allOptions(options))
 }
@@ -51,7 +47,7 @@ func (c *Client) ClusterSetup(ctx context.Context, action interface{}) error {
 	defer endQuery()
 	cluster, ok := c.driverClient.(driver.Cluster)
 	if !ok {
-		return clusterNotImplemented
+		return errClusterNotImplemented
 	}
 	return cluster.ClusterSetup(ctx, action)
 }
@@ -74,7 +70,7 @@ func (c *Client) Membership(ctx context.Context) (*ClusterMembership, error) {
 	defer endQuery()
 	cluster, ok := c.driverClient.(driver.Cluster)
 	if !ok {
-		return nil, clusterNotImplemented
+		return nil, errClusterNotImplemented
 	}
 	nodes, err := cluster.Membership(ctx)
 	return (*ClusterMembership)(nodes), err

@@ -13,82 +13,25 @@
 package kivik
 
 import (
-	"net/http"
-
 	"github.com/go-kivik/kivik/v4/internal"
-)
-
-type err int
-
-var (
-	_ error       = err(0)
-	_ statusCoder = err(0)
 )
 
 const (
 	// ErrClientClosed is returned by any client operations after [Client.Close]
 	// has been called.
-	ErrClientClosed err = iota
+	ErrClientClosed = internal.CompositeError("\x67client closed")
 	// ErrDatabaseClosed is returned by any database operations after [DB.Close]
 	// has been called.
-	ErrDatabaseClosed
+	ErrDatabaseClosed = internal.CompositeError("\x67database closed")
 
 	// Various not-implemented errors, that are returned, but don't need to be exposed directly.
-	findNotImplemented
-	clusterNotImplemented
-	openRevsNotImplemented
-	securityNotImplemented
-	configNotImplemented
-	replicationNotImplemented
+	findNotImplemented        = internal.CompositeError("\x65driver does not support Find interface")
+	clusterNotImplemented     = internal.CompositeError("\x65driver does not support cluster operations")
+	openRevsNotImplemented    = internal.CompositeError("\x65driver does not support OpenRevs interface")
+	securityNotImplemented    = internal.CompositeError("\x65driver does not support Security interface")
+	configNotImplemented      = internal.CompositeError("\x65driver does not support Config interface")
+	replicationNotImplemented = internal.CompositeError("\x65driver does not support replication")
 )
-
-const (
-	errClientClosedText           = "client closed"
-	errDatabaseClosedText         = "database closed"
-	findNotImplementedText        = "kivik: driver does not support Find interface"
-	clusterNotImplementedText     = "kivik: driver does not support cluster operations"
-	openRevsNotImplementedText    = "kivik: driver does not support OpenRevs interface"
-	securityNotImplementedText    = "kivik: driver does not support Security interface"
-	configNotImplementedText      = "kivik: driver does not support Config interface"
-	replicationNotImplementedText = "kivik: driver does not support replication"
-)
-
-func (e err) Error() string {
-	switch e {
-	case ErrClientClosed:
-		return errClientClosedText
-	case ErrDatabaseClosed:
-		return errDatabaseClosedText
-	case findNotImplemented:
-		return findNotImplementedText
-	case clusterNotImplemented:
-		return clusterNotImplementedText
-	case openRevsNotImplemented:
-		return openRevsNotImplementedText
-	case securityNotImplemented:
-		return securityNotImplementedText
-	case configNotImplemented:
-		return configNotImplementedText
-	case replicationNotImplemented:
-		return replicationNotImplementedText
-	}
-	return "kivik: unknown error"
-}
-
-func (e err) HTTPStatus() int {
-	switch e {
-	case ErrClientClosed, ErrDatabaseClosed:
-		return http.StatusServiceUnavailable
-	case findNotImplemented, clusterNotImplemented, openRevsNotImplemented,
-		securityNotImplemented, configNotImplemented, replicationNotImplemented:
-		return http.StatusNotImplemented
-	}
-	return http.StatusInternalServerError
-}
-
-type statusCoder interface {
-	HTTPStatus() int
-}
 
 // HTTPStatus returns the HTTP status code embedded in the error, or 500
 // (internal server error), if there was no specified status code.  If err is

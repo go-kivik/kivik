@@ -226,13 +226,13 @@ func TestDBUpdates(t *testing.T) {
 			},
 		},
 		{
-			name: errClientClosedText,
+			name: "client closed",
 			client: &Client{
 				closed:       1,
 				driverClient: &mock.DBUpdater{},
 			},
 			status: http.StatusServiceUnavailable,
-			err:    errClientClosedText,
+			err:    "kivik: client closed",
 		},
 	}
 	for _, test := range tests {

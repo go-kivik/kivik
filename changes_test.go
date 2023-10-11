@@ -301,14 +301,14 @@ func TestChanges(t *testing.T) {
 			},
 		},
 		{
-			name: errClientClosedText,
+			name: "client closed",
 			db: &DB{
 				client: &Client{
 					closed: 1,
 				},
 			},
 			status: http.StatusServiceUnavailable,
-			err:    errClientClosedText,
+			err:    "kivik: client closed",
 		},
 		{
 			name: "db error",

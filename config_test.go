@@ -70,7 +70,7 @@ func TestConfig(t *testing.T) {
 			closed: 1,
 		},
 		status: http.StatusServiceUnavailable,
-		err:    "client closed",
+		err:    "kivik: client closed",
 	})
 
 	tests.Run(t, func(t *testing.T, test tst) {
@@ -128,7 +128,7 @@ func TestConfigSection(t *testing.T) {
 			closed: 1,
 		},
 		status: http.StatusServiceUnavailable,
-		err:    "client closed",
+		err:    "kivik: client closed",
 	})
 
 	tests.Run(t, func(t *testing.T, test tst) {
@@ -190,7 +190,7 @@ func TestConfigValue(t *testing.T) {
 			closed: 1,
 		},
 		status: http.StatusServiceUnavailable,
-		err:    "client closed",
+		err:    "kivik: client closed",
 	})
 
 	tests.Run(t, func(t *testing.T, test tst) {
@@ -256,7 +256,7 @@ func TestSetConfigValue(t *testing.T) {
 			closed: 1,
 		},
 		status: http.StatusServiceUnavailable,
-		err:    "client closed",
+		err:    "kivik: client closed",
 	})
 
 	tests.Run(t, func(t *testing.T, test tst) {
@@ -318,7 +318,7 @@ func TestDeleteConfigKey(t *testing.T) {
 			closed: 1,
 		},
 		status: http.StatusServiceUnavailable,
-		err:    "client closed",
+		err:    "kivik: client closed",
 	})
 
 	tests.Run(t, func(t *testing.T, test tst) {

@@ -21,6 +21,19 @@ import (
 	"strings"
 )
 
+// CompositeError represents an HTTP status, encoded in the first byte as the
+// status - 400, plus the error message.
+type CompositeError string
+
+func (c CompositeError) Error() string {
+	return "kivik: " + string(c[1:])
+}
+
+// HTTPStatus returns c's HTTP status code.
+func (c CompositeError) HTTPStatus() int {
+	return int(c[0]) + http.StatusBadRequest
+}
+
 // Error represents an error returned by Kivik.
 //
 // This type definition is not guaranteed to remain stable, or even exported.

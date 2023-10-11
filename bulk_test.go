@@ -171,7 +171,7 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 			{ID: "foo"},
 		},
 	})
-	tests.Add(errClientClosedText, tt{
+	tests.Add("client closed", tt{
 		db: &DB{
 			client: &Client{
 				closed: 1,
@@ -181,7 +181,7 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 			map[string]string{"_id": "foo"},
 		},
 		status: http.StatusServiceUnavailable,
-		err:    errClientClosedText,
+		err:    "kivik: client closed",
 	})
 	tests.Add("db error", tt{
 		db: &DB{

@@ -77,14 +77,15 @@ func (c *Client) DBUpdates(ctx context.Context, options ...Option) *DBUpdates {
 		return &DBUpdates{errIterator(&internal.Error{Status: http.StatusNotImplemented, Message: "kivik: driver does not implement DBUpdater"})}
 	}
 
-	if err := c.startQuery(); err != nil {
+	endQuery, err := c.startQuery()
+	if err != nil {
 		return &DBUpdates{errIterator(err)}
 	}
 
 	updatesi, err := updater.DBUpdates(ctx, allOptions(options))
 	if err != nil {
-		c.endQuery()
+		endQuery()
 		return &DBUpdates{errIterator(err)}
 	}
-	return newDBUpdates(context.Background(), c.endQuery, updatesi)
+	return newDBUpdates(context.Background(), endQuery, updatesi)
 }

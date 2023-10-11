@@ -45,14 +45,15 @@ func (db *DB) startQuery() (end func(), _ error) {
 	if atomic.LoadInt32(&db.closed) > 0 {
 		return nil, ErrDatabaseClosed
 	}
-	if err := db.client.startQuery(); err != nil {
+	endQuery, err := db.client.startQuery()
+	if err != nil {
 		return nil, err
 	}
 	db.wg.Add(1)
 	return sync.OnceFunc(func() {
 		db.mu.Lock()
 		db.wg.Done()
-		db.client.endQuery()
+		endQuery()
 		db.mu.Unlock()
 	}), nil
 }

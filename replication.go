@@ -172,10 +172,11 @@ var replicationNotImplemented = &internal.Error{Status: http.StatusNotImplemente
 // database. Options are in the same format as to [DB.AllDocs], except that
 // "conflicts" and "update_seq" are ignored.
 func (c *Client) GetReplications(ctx context.Context, options ...Option) ([]*Replication, error) {
-	if err := c.startQuery(); err != nil {
+	endQuery, err := c.startQuery()
+	if err != nil {
 		return nil, err
 	}
-	defer c.endQuery()
+	defer endQuery()
 	replicator, ok := c.driverClient.(driver.ClientReplicator)
 	if !ok {
 		return nil, replicationNotImplemented
@@ -196,10 +197,11 @@ func (c *Client) GetReplications(ctx context.Context, options ...Option) ([]*Rep
 // To use an object for either "source" or "target", pass the desired object
 // in options. This will override targetDSN and sourceDSN function parameters.
 func (c *Client) Replicate(ctx context.Context, targetDSN, sourceDSN string, options ...Option) (*Replication, error) {
-	if err := c.startQuery(); err != nil {
+	endQuery, err := c.startQuery()
+	if err != nil {
 		return nil, err
 	}
-	defer c.endQuery()
+	defer endQuery()
 	replicator, ok := c.driverClient.(driver.ClientReplicator)
 	if !ok {
 		return nil, replicationNotImplemented

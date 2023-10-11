@@ -91,28 +91,27 @@ type ServerVersion struct {
 	RawResponse json.RawMessage
 }
 
-func (c *Client) startQuery() error {
+func (c *Client) startQuery() (end func(), _ error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if atomic.LoadInt32(&c.closed) > 0 {
-		return ErrClientClosed
+		return nil, ErrClientClosed
 	}
 	c.wg.Add(1)
-	return nil
-}
-
-func (c *Client) endQuery() {
-	c.mu.Lock()
-	c.wg.Done()
-	c.mu.Unlock()
+	return sync.OnceFunc(func() {
+		c.mu.Lock()
+		c.wg.Done()
+		c.mu.Unlock()
+	}), nil
 }
 
 // Version returns version and vendor info about the backend.
 func (c *Client) Version(ctx context.Context) (*ServerVersion, error) {
-	if err := c.startQuery(); err != nil {
+	endQuery, err := c.startQuery()
+	if err != nil {
 		return nil, err
 	}
-	defer c.endQuery()
+	defer endQuery()
 	ver, err := c.driverClient.Version(ctx)
 	if err != nil {
 		return nil, err
@@ -137,37 +136,41 @@ func (c *Client) DB(dbName string, options ...Option) *DB {
 
 // AllDBs returns a list of all databases.
 func (c *Client) AllDBs(ctx context.Context, options ...Option) ([]string, error) {
-	if err := c.startQuery(); err != nil {
+	endQuery, err := c.startQuery()
+	if err != nil {
 		return nil, err
 	}
-	defer c.endQuery()
+	defer endQuery()
 	return c.driverClient.AllDBs(ctx, allOptions(options))
 }
 
 // DBExists returns true if the specified database exists.
 func (c *Client) DBExists(ctx context.Context, dbName string, options ...Option) (bool, error) {
-	if err := c.startQuery(); err != nil {
+	endQuery, err := c.startQuery()
+	if err != nil {
 		return false, err
 	}
-	defer c.endQuery()
+	defer endQuery()
 	return c.driverClient.DBExists(ctx, dbName, allOptions(options))
 }
 
 // CreateDB creates a DB of the requested name.
 func (c *Client) CreateDB(ctx context.Context, dbName string, options ...Option) error {
-	if err := c.startQuery(); err != nil {
+	endQuery, err := c.startQuery()
+	if err != nil {
 		return err
 	}
-	defer c.endQuery()
+	defer endQuery()
 	return c.driverClient.CreateDB(ctx, dbName, allOptions(options))
 }
 
 // DestroyDB deletes the requested DB.
 func (c *Client) DestroyDB(ctx context.Context, dbName string, options ...Option) error {
-	if err := c.startQuery(); err != nil {
+	endQuery, err := c.startQuery()
+	if err != nil {
 		return err
 	}
-	defer c.endQuery()
+	defer endQuery()
 	return c.driverClient.DestroyDB(ctx, dbName, allOptions(options))
 }
 
@@ -177,10 +180,11 @@ func missingArg(arg string) error {
 
 // DBsStats returns database statistics about one or more databases.
 func (c *Client) DBsStats(ctx context.Context, dbnames []string) ([]*DBStats, error) {
-	if err := c.startQuery(); err != nil {
+	endQuery, err := c.startQuery()
+	if err != nil {
 		return nil, err
 	}
-	defer c.endQuery()
+	defer endQuery()
 	dbstats, err := c.nativeDBsStats(ctx, dbnames)
 	switch HTTPStatus(err) {
 	case http.StatusNotFound, http.StatusNotImplemented:
@@ -219,14 +223,15 @@ func (c *Client) nativeDBsStats(ctx context.Context, dbnames []string) ([]*DBSta
 
 // Ping returns true if the database is online and available for requests.
 func (c *Client) Ping(ctx context.Context) (bool, error) {
-	if err := c.startQuery(); err != nil {
+	endQuery, err := c.startQuery()
+	if err != nil {
 		return false, err
 	}
-	defer c.endQuery()
+	defer endQuery()
 	if pinger, ok := c.driverClient.(driver.Pinger); ok {
 		return pinger.Ping(ctx)
 	}
-	_, err := c.driverClient.Version(ctx)
+	_, err = c.driverClient.Version(ctx)
 	return err == nil, err
 }
 

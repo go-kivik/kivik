@@ -46,10 +46,11 @@ var _ = Session(driver.Session{})
 
 // Session returns information about the currently authenticated user.
 func (c *Client) Session(ctx context.Context) (*Session, error) {
-	if err := c.startQuery(); err != nil {
+	endQuery, err := c.startQuery()
+	if err != nil {
 		return nil, err
 	}
-	defer c.endQuery()
+	defer endQuery()
 	if sessioner, ok := c.driverClient.(driver.Sessioner); ok {
 		session, err := sessioner.Session(ctx)
 		if err != nil {

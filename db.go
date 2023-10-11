@@ -195,9 +195,8 @@ func (r *Document) ScanDoc(i interface{}) error {
 	return json.NewDecoder(r.body).Decode(i)
 }
 
-// Attachments returns an attachments iterator. At present, it is only set
-// when doing a multi-part get from CouchDB (which is the default where
-// supported).
+// Attachments returns an attachments iterator if the document includes
+// attachments.
 func (r *Document) Attachments() (*AttachmentsIterator, error) {
 	if r.err != nil {
 		return nil, r.err

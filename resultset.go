@@ -239,10 +239,8 @@ func (r *ResultSet) Key() (string, error) {
 	return string(row.Key), row.Error
 }
 
-// Attachments returns an attachments iterator. At present, it is only set
-// by [DB.Get] when doing a multi-part get from CouchDB (which is the
-// default where supported). This may be extended to other cases in the
-// future.
+// Attachments returns an attachments iterator if the document includes
+// attachments.
 func (r *ResultSet) Attachments() (*AttachmentsIterator, error) {
 	runlock, err := r.makeReady(nil)
 	if err != nil {

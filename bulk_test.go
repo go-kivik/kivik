@@ -174,7 +174,7 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 	tests.Add("client closed", tt{
 		db: &DB{
 			client: &Client{
-				closed: 1,
+				closed: true,
 			},
 		},
 		docs: []interface{}{

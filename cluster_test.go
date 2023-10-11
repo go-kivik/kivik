@@ -28,7 +28,7 @@ import (
 func TestClusterStatus(t *testing.T) {
 	type tst struct {
 		client   driver.Client
-		closed   int32
+		closed   bool
 		options  Option
 		expected string
 		status   int
@@ -59,7 +59,7 @@ func TestClusterStatus(t *testing.T) {
 	})
 	tests.Add("client closed", tst{
 		client: &mock.Cluster{},
-		closed: 1,
+		closed: true,
 		status: http.StatusServiceUnavailable,
 		err:    "kivik: client closed",
 	})
@@ -82,7 +82,7 @@ func TestClusterStatus(t *testing.T) {
 func TestClusterSetup(t *testing.T) {
 	type tst struct {
 		client driver.Client
-		closed int32
+		closed bool
 		action interface{}
 		status int
 		err    string
@@ -112,7 +112,7 @@ func TestClusterSetup(t *testing.T) {
 	})
 	tests.Add("client closed", tst{
 		client: &mock.Cluster{},
-		closed: 1,
+		closed: true,
 		status: http.StatusServiceUnavailable,
 		err:    "kivik: client closed",
 	})
@@ -132,7 +132,7 @@ func TestClusterSetup(t *testing.T) {
 func TestMembership(t *testing.T) {
 	type tt struct {
 		client driver.Client
-		closed int32
+		closed bool
 		want   *ClusterMembership
 		status int
 		err    string
@@ -169,7 +169,7 @@ func TestMembership(t *testing.T) {
 	})
 	tests.Add("client closed", tt{
 		client: &mock.Cluster{},
-		closed: 1,
+		closed: true,
 		status: http.StatusServiceUnavailable,
 		err:    "kivik: client closed",
 	})

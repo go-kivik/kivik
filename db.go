@@ -20,7 +20,6 @@ import (
 	"net/http"
 	"strings"
 	"sync"
-	"sync/atomic"
 
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/internal"
@@ -33,8 +32,7 @@ type DB struct {
 	driverDB driver.DB
 	err      error
 
-	// closed will be non-0 when the client has been closed
-	closed int32
+	closed bool
 	mu     sync.Mutex
 	wg     sync.WaitGroup
 }
@@ -42,7 +40,7 @@ type DB struct {
 func (db *DB) startQuery() (end func(), _ error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
-	if atomic.LoadInt32(&db.closed) > 0 {
+	if db.closed {
 		return nil, ErrDatabaseClosed
 	}
 	endQuery, err := db.client.startQuery()
@@ -858,7 +856,7 @@ func (db *DB) Close() error {
 		return db.err
 	}
 	db.mu.Lock()
-	atomic.StoreInt32(&db.closed, 1)
+	db.closed = true
 	db.mu.Unlock()
 	db.wg.Wait()
 	return db.driverDB.Close()

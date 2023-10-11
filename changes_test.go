@@ -304,7 +304,7 @@ func TestChanges(t *testing.T) {
 			name: "client closed",
 			db: &DB{
 				client: &Client{
-					closed: 1,
+					closed: true,
 				},
 			},
 			status: http.StatusServiceUnavailable,

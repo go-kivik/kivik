@@ -148,7 +148,7 @@ func TestVersion(t *testing.T) {
 		{
 			name: "closed",
 			client: &Client{
-				closed: 1,
+				closed: true,
 			},
 			status: http.StatusServiceUnavailable,
 			err:    "kivik: client closed",
@@ -280,7 +280,7 @@ func TestAllDBs(t *testing.T) {
 		{
 			name: "closed",
 			client: &Client{
-				closed: 1,
+				closed: true,
 			},
 			status: http.StatusServiceUnavailable,
 			err:    "kivik: client closed",
@@ -347,7 +347,7 @@ func TestDBExists(t *testing.T) {
 		{
 			name: "closed",
 			client: &Client{
-				closed: 1,
+				closed: true,
 			},
 			status: http.StatusServiceUnavailable,
 			err:    "kivik: client closed",
@@ -415,7 +415,7 @@ func TestCreateDB(t *testing.T) {
 		{
 			name: "closed",
 			client: &Client{
-				closed: 1,
+				closed: true,
 			},
 			status: http.StatusServiceUnavailable,
 			err:    "kivik: client closed",
@@ -481,7 +481,7 @@ func TestDestroyDB(t *testing.T) {
 		{
 			name: "closed",
 			client: &Client{
-				closed: 1,
+				closed: true,
 			},
 			status: http.StatusServiceUnavailable,
 			err:    "kivik: client closed",
@@ -634,7 +634,7 @@ func TestDBsStats(t *testing.T) {
 		{
 			name: "closed",
 			client: &Client{
-				closed: 1,
+				closed: true,
 			},
 			status: http.StatusServiceUnavailable,
 			err:    "kivik: client closed",
@@ -686,7 +686,7 @@ func TestPing(t *testing.T) {
 		{
 			name: "closed",
 			client: &Client{
-				closed: 1,
+				closed: true,
 			},
 			err: "kivik: client closed",
 		},

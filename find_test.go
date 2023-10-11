@@ -94,7 +94,7 @@ func TestFind(t *testing.T) {
 			name: "client closed",
 			db: &DB{
 				client: &Client{
-					closed: 1,
+					closed: true,
 				},
 				driverDB: &mock.Finder{},
 			},
@@ -211,7 +211,7 @@ func TestCreateIndex(t *testing.T) {
 			name: "closed",
 			db: &DB{
 				client: &Client{
-					closed: 1,
+					closed: true,
 				},
 			},
 			status: http.StatusServiceUnavailable,
@@ -293,7 +293,7 @@ func TestDeleteIndex(t *testing.T) {
 			testName: "client closed",
 			db: &DB{
 				client: &Client{
-					closed: 1,
+					closed: true,
 				},
 			},
 			status: http.StatusServiceUnavailable,
@@ -375,7 +375,7 @@ func TestGetIndexes(t *testing.T) {
 			testName: "client closed",
 			db: &DB{
 				client: &Client{
-					closed: 1,
+					closed: true,
 				},
 			},
 			status: http.StatusServiceUnavailable,
@@ -457,7 +457,7 @@ func TestExplain(t *testing.T) {
 		db: &DB{
 			driverDB: &mock.Finder{},
 			client: &Client{
-				closed: 1,
+				closed: true,
 			},
 		},
 		status: http.StatusServiceUnavailable,

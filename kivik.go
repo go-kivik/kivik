@@ -97,12 +97,15 @@ func (c *Client) startQuery() (end func(), _ error) {
 	if atomic.LoadInt32(&c.closed) > 0 {
 		return nil, ErrClientClosed
 	}
+	var once sync.Once
 	c.wg.Add(1)
-	return sync.OnceFunc(func() {
-		c.mu.Lock()
-		c.wg.Done()
-		c.mu.Unlock()
-	}), nil
+	return func() {
+		once.Do(func() {
+			c.mu.Lock()
+			c.wg.Done()
+			c.mu.Unlock()
+		})
+	}, nil
 }
 
 // Version returns version and vendor info about the backend.

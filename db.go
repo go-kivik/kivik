@@ -49,13 +49,16 @@ func (db *DB) startQuery() (end func(), _ error) {
 	if err != nil {
 		return nil, err
 	}
+	var once sync.Once
 	db.wg.Add(1)
-	return sync.OnceFunc(func() {
-		db.mu.Lock()
-		db.wg.Done()
-		endQuery()
-		db.mu.Unlock()
-	}), nil
+	return func() {
+		once.Do(func() {
+			db.mu.Lock()
+			db.wg.Done()
+			endQuery()
+			db.mu.Unlock()
+		})
+	}, nil
 }
 
 // Client returns the client used to connect to the database.

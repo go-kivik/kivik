@@ -278,20 +278,26 @@ func (r *ResultSet) makeReady(e *error) (unlock func(), err error) {
 			r.mu.Unlock()
 			return nil, &internal.Error{Status: http.StatusNotFound, Message: "no results"}
 		}
+		var once sync.Once
 		r.wg.Add(1)
 		r.mu.Unlock()
-		return sync.OnceFunc(func() {
-			r.wg.Done()
-			if err := r.Close(); err != nil && e != nil {
-				*e = err
-			}
-		}), nil
+		return func() {
+			once.Do(func() {
+				r.wg.Done()
+				if err := r.Close(); err != nil && e != nil {
+					*e = err
+				}
+			})
+		}, nil
 	}
+	var once sync.Once
 	r.wg.Add(1)
-	return sync.OnceFunc(func() {
-		r.wg.Done()
-		r.mu.Unlock()
-	}), nil
+	return func() {
+		once.Do(func() {
+			r.wg.Done()
+			r.mu.Unlock()
+		})
+	}, nil
 }
 
 type rowsIterator struct {

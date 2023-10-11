@@ -175,6 +175,8 @@ type Document struct {
 	rev         string
 	body        io.Reader
 	attachments driver.Attachments
+
+	mu sync.Mutex
 }
 
 // Err returns the error, if any, that was encountered fetching the document.
@@ -204,11 +206,20 @@ func (r *Document) Attachments() (*AttachmentsIterator, error) {
 	if r.attachments == nil {
 		return nil, errNoAttachments
 	}
-	return &AttachmentsIterator{atti: r.attachments}, nil
+	r.mu.Lock()
+	return &AttachmentsIterator{
+		atti:    r.attachments,
+		onClose: r.mu.Unlock,
+	}, nil
 }
 
 // Close closes the document resources.
 func (r *Document) Close() error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if atts := r.attachments; atts != nil {
+		_ = atts.Close()
+	}
 	if c, ok := r.body.(io.Closer); ok {
 		return c.Close()
 	}

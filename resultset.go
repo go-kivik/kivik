@@ -86,7 +86,13 @@ func newResultSet(ctx context.Context, onClose func(), rowsi driver.Rows) *Resul
 // read, the [ResultSet.Close] is called implicitly, negating the need to call
 // it explicitly.
 func (r *ResultSet) Next() bool {
-	return r.iter.Next()
+	r.iter.mu.Lock()
+	defer r.iter.mu.Unlock()
+	if atts := r.curVal.(*driver.Row).Attachments; atts != nil {
+		_ = atts.Close()
+	}
+
+	return r.iter.next()
 }
 
 // NextResultSet prepares the next result set for reading. It returns false if

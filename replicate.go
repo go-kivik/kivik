@@ -68,8 +68,8 @@ type ReplicationEvent struct {
 type eventCallback func(ReplicationEvent)
 
 func (c eventCallback) Apply(target interface{}) {
-	if ro, ok := target.(*replicateOptions); ok {
-		ro.cb = c
+	if r, ok := target.(*replicator); ok {
+		r.cb = c
 	}
 }
 
@@ -80,19 +80,11 @@ func ReplicateCallback(callback func(ReplicationEvent)) Option {
 }
 
 type replicateOptions struct {
-	cb eventCallback
 	// CopySecurity indicates that the secuurity object should be read from
 	// source, and copied to the target, before the replication. Use with
 	// caution! The security object is not versioned, and will be
 	// unconditionally overwritten!
 	copySecurity bool
-}
-
-func (o replicateOptions) callback() eventCallback {
-	if o.cb != nil {
-		return o.cb
-	}
-	return func(ReplicationEvent) {}
 }
 
 type replicateCopySecurityOption struct{}
@@ -127,9 +119,10 @@ func Replicate(ctx context.Context, target, source *DB, options ...Option) (*Rep
 }
 
 func (r *replicator) replicate(ctx context.Context, options ...Option) error {
+	opts := allOptions(options)
 	repOpts := &replicateOptions{}
-	allOptions(options).Apply(repOpts)
-	r.cb = repOpts.callback()
+	opts.Apply(repOpts)
+	opts.Apply(r)
 
 	if repOpts.copySecurity {
 		if err := r.copySecurity(ctx); err != nil {

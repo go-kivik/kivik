@@ -105,15 +105,15 @@ func ReplicateCopySecurity() Option {
 //	filter (string)           - The name of a filter function.
 //	doc_ids (array of string) - Array of document IDs to be synchronized.
 func Replicate(ctx context.Context, target, source *DB, options ...Option) (*ReplicationResult, error) {
+	opts := allOptions(options)
+
 	r := newReplicator(target, source)
-	err := r.replicate(ctx, options...)
+	opts.Apply(r)
+	err := r.replicate(ctx, opts)
 	return r.result(), err
 }
 
-func (r *replicator) replicate(ctx context.Context, options ...Option) error {
-	opts := allOptions(options)
-	opts.Apply(r)
-
+func (r *replicator) replicate(ctx context.Context, options Option) error {
 	if r.withSecurity {
 		if err := r.copySecurity(ctx); err != nil {
 			return err
@@ -123,7 +123,7 @@ func (r *replicator) replicate(ctx context.Context, options ...Option) error {
 	changes := make(chan *change)
 	group.Go(func() error {
 		defer close(changes)
-		return r.readChanges(ctx, changes, allOptions(options))
+		return r.readChanges(ctx, changes, options)
 	})
 
 	diffs := make(chan *revDiff)

@@ -226,6 +226,9 @@ type change struct {
 	Changes []string
 }
 
+// readChanges reads the changes feed.
+//
+// https://docs.couchdb.org/en/stable/replication/protocol.html#listen-to-changes-feed
 func readChanges(ctx context.Context, db *DB, results chan<- *change, options Option, cb eventCallback) error {
 	changes := db.Changes(ctx, options, Param("feed", "normal"), Param("style", "all_docs"))
 	cb(ReplicationEvent{
@@ -270,6 +273,9 @@ type revDiff struct {
 
 const rdBatchSize = 10
 
+// readDiffs reads the diffs for the reported changes.
+//
+// https://docs.couchdb.org/en/stable/replication/protocol.html#calculate-revision-difference
 func readDiffs(ctx context.Context, db *DB, ch <-chan *change, results chan<- *revDiff, cb eventCallback) error {
 	for {
 		revMap := map[string][]string{}
@@ -338,6 +344,10 @@ func readDiffs(ctx context.Context, db *DB, ch <-chan *change, results chan<- *r
 	}
 }
 
+// readDocs reads the document revisions that have changed between source and
+// target.
+//
+// https://docs.couchdb.org/en/stable/replication/protocol.html#fetch-changed-documents
 func readDocs(ctx context.Context, db *DB, diffs <-chan *revDiff, results chan<- *document, result *resultWrapper, cb eventCallback) error {
 	for {
 		var rd *revDiff
@@ -432,6 +442,9 @@ func readDoc(ctx context.Context, db *DB, docID, rev string) (*document, error) 
 	return doc, nil
 }
 
+// storeDocs updates the changed documents.
+//
+// https://docs.couchdb.org/en/stable/replication/protocol.html#upload-batch-of-changed-documents
 func storeDocs(ctx context.Context, db *DB, docs <-chan *document, result *resultWrapper, cb eventCallback) error {
 	for doc := range docs {
 		_, err := db.Put(ctx, doc.ID, doc, Param("new_edits", false))

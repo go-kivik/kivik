@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"sync"
+	"sync/atomic"
 	"time"
 
 	"golang.org/x/sync/errgroup"
@@ -33,41 +33,6 @@ type ReplicationResult struct {
 	MissingChecked   int       `json:"missing_checked"`
 	MissingFound     int       `json:"missing_found"`
 	StartTime        time.Time `json:"start_time"`
-}
-
-type resultWrapper struct {
-	*ReplicationResult
-	mu sync.Mutex
-}
-
-func (r *resultWrapper) read() {
-	r.mu.Lock()
-	r.DocsRead++
-	r.mu.Unlock()
-}
-
-func (r *resultWrapper) missingChecked() {
-	r.mu.Lock()
-	r.MissingChecked++
-	r.mu.Unlock()
-}
-
-func (r *resultWrapper) missingFound() {
-	r.mu.Lock()
-	r.MissingFound++
-	r.mu.Unlock()
-}
-
-func (r *resultWrapper) writeError() {
-	r.mu.Lock()
-	r.DocWriteFailures++
-	r.mu.Unlock()
-}
-
-func (r *resultWrapper) write() {
-	r.mu.Lock()
-	r.DocsWritten++
-	r.mu.Unlock()
 }
 
 const (
@@ -157,22 +122,18 @@ func ReplicateCopySecurity() Option {
 //	doc_ids (array of string) - Array of document IDs to be synchronized.
 func Replicate(ctx context.Context, target, source *DB, options ...Option) (*ReplicationResult, error) {
 	r := newReplicator(target, source)
+	err := r.replicate(ctx, options...)
+	return r.result(), err
+}
 
-	result := &resultWrapper{
-		ReplicationResult: &ReplicationResult{
-			StartTime: time.Now(),
-		},
-	}
-	defer func() {
-		result.EndTime = time.Now()
-	}()
+func (r *replicator) replicate(ctx context.Context, options ...Option) error {
 	repOpts := &replicateOptions{}
 	allOptions(options).Apply(repOpts)
 	cb := repOpts.callback()
 
 	if repOpts.copySecurity {
 		if err := r.copySecurity(ctx, cb); err != nil {
-			return result.ReplicationResult, err
+			return err
 		}
 	}
 	group, ctx := errgroup.WithContext(ctx)
@@ -191,25 +152,41 @@ func Replicate(ctx context.Context, target, source *DB, options ...Option) (*Rep
 	docs := make(chan *document)
 	group.Go(func() error {
 		defer close(docs)
-		return r.readDocs(ctx, diffs, docs, result, cb)
+		return r.readDocs(ctx, diffs, docs, cb)
 	})
 
 	group.Go(func() error {
-		return r.storeDocs(ctx, docs, result, cb)
+		return r.storeDocs(ctx, docs, cb)
 	})
 
-	return result.ReplicationResult, group.Wait()
+	return group.Wait()
 }
 
 // replicator manages a single replication.
 type replicator struct {
 	target, source *DB
+	start          time.Time
+	// replication stats counters
+	writeFailures, reads, writes, missingChecks, missingFound int32
 }
 
 func newReplicator(target, source *DB) *replicator {
 	return &replicator{
 		target: target,
 		source: source,
+		start:  time.Now(),
+	}
+}
+
+func (r *replicator) result() *ReplicationResult {
+	return &ReplicationResult{
+		StartTime:        r.start,
+		EndTime:          time.Now(),
+		DocWriteFailures: int(r.writeFailures),
+		DocsRead:         int(r.reads),
+		DocsWritten:      int(r.writes),
+		MissingChecked:   int(r.missingChecks),
+		MissingFound:     int(r.missingFound),
 	}
 }
 
@@ -362,7 +339,7 @@ func (r *replicator) readDiffs(ctx context.Context, ch <-chan *change, results c
 // target.
 //
 // https://docs.couchdb.org/en/stable/replication/protocol.html#fetch-changed-documents
-func (r *replicator) readDocs(ctx context.Context, diffs <-chan *revDiff, results chan<- *document, result *resultWrapper, cb eventCallback) error {
+func (r *replicator) readDocs(ctx context.Context, diffs <-chan *revDiff, results chan<- *document, cb eventCallback) error {
 	for {
 		var rd *revDiff
 		var ok bool
@@ -374,7 +351,7 @@ func (r *replicator) readDocs(ctx context.Context, diffs <-chan *revDiff, result
 				return nil
 			}
 			for _, rev := range rd.Missing {
-				result.missingChecked()
+				atomic.AddInt32(&r.missingChecks, 1)
 				d, err := readDoc(ctx, r.source, rd.ID, rev)
 				cb(ReplicationEvent{
 					Type:  eventDocument,
@@ -385,8 +362,8 @@ func (r *replicator) readDocs(ctx context.Context, diffs <-chan *revDiff, result
 				if err != nil {
 					return fmt.Errorf("read doc %s: %w", rd.ID, err)
 				}
-				result.read()
-				result.missingFound()
+				atomic.AddInt32(&r.reads, 1)
+				atomic.AddInt32(&r.missingFound, 1)
 				select {
 				case <-ctx.Done():
 					return ctx.Err()
@@ -459,7 +436,7 @@ func readDoc(ctx context.Context, db *DB, docID, rev string) (*document, error) 
 // storeDocs updates the changed documents.
 //
 // https://docs.couchdb.org/en/stable/replication/protocol.html#upload-batch-of-changed-documents
-func (r *replicator) storeDocs(ctx context.Context, docs <-chan *document, result *resultWrapper, cb eventCallback) error {
+func (r *replicator) storeDocs(ctx context.Context, docs <-chan *document, cb eventCallback) error {
 	for doc := range docs {
 		_, err := r.target.Put(ctx, doc.ID, doc, Param("new_edits", false))
 		cb(ReplicationEvent{
@@ -469,10 +446,10 @@ func (r *replicator) storeDocs(ctx context.Context, docs <-chan *document, resul
 			Error: err,
 		})
 		if err != nil {
-			result.writeError()
+			atomic.AddInt32(&r.writeFailures, 1)
 			return fmt.Errorf("store doc %s: %w", doc.ID, err)
 		}
-		result.write()
+		atomic.AddInt32(&r.writes, 1)
 	}
 	return nil
 }

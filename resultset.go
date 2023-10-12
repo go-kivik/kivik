@@ -152,8 +152,8 @@ func (r *ResultSet) Metadata() (*ResultMetadata, error) {
 //
 // Refer to the documentation for [encoding/json.Unmarshal] for unmarshaling
 // details.
-func (r *ResultSet) ScanValue(dest interface{}) (err error) {
-	runlock, err := r.makeReady(&err)
+func (r *ResultSet) ScanValue(dest interface{}) error {
+	runlock, err := r.makeReady()
 	if err != nil {
 		return err
 	}
@@ -174,8 +174,8 @@ func (r *ResultSet) ScanValue(dest interface{}) (err error) {
 //
 // If the row returned an error, it will be returned rather than
 // unmarshaling the doc, as error rows do not include docs.
-func (r *ResultSet) ScanDoc(dest interface{}) (err error) {
-	runlock, err := r.makeReady(&err)
+func (r *ResultSet) ScanDoc(dest interface{}) error {
+	runlock, err := r.makeReady()
 	if err != nil {
 		return err
 	}
@@ -196,8 +196,8 @@ func (r *ResultSet) ScanDoc(dest interface{}) (err error) {
 //
 // Unlike [ResultSet.ScanValue] and [ResultSet.ScanDoc], this may successfully
 // scan the key, and also return an error, if the row itself represents an error.
-func (r *ResultSet) ScanKey(dest interface{}) (err error) {
-	runlock, err := r.makeReady(&err)
+func (r *ResultSet) ScanKey(dest interface{}) error {
+	runlock, err := r.makeReady()
 	if err != nil {
 		return err
 	}
@@ -211,7 +211,7 @@ func (r *ResultSet) ScanKey(dest interface{}) (err error) {
 
 // ID returns the ID of the most recent result.
 func (r *ResultSet) ID() (string, error) {
-	runlock, err := r.makeReady(nil)
+	runlock, err := r.makeReady()
 	if err != nil {
 		return "", err
 	}
@@ -224,7 +224,7 @@ func (r *ResultSet) ID() (string, error) {
 // as those from views) include revision IDs, so this will return an empty
 // string in such cases.
 func (r *ResultSet) Rev() (string, error) {
-	runlock, err := r.makeReady(nil)
+	runlock, err := r.makeReady()
 	if err != nil {
 		return "", err
 	}
@@ -236,7 +236,7 @@ func (r *ResultSet) Rev() (string, error) {
 // Key returns the Key of the most recent result as a raw JSON string. For
 // compound keys, [ResultSet.ScanKey] may be more convenient.
 func (r *ResultSet) Key() (string, error) {
-	runlock, err := r.makeReady(nil)
+	runlock, err := r.makeReady()
 	if err != nil {
 		return "", err
 	}
@@ -248,7 +248,7 @@ func (r *ResultSet) Key() (string, error) {
 // Attachments returns an attachments iterator if the document includes
 // attachments.
 func (r *ResultSet) Attachments() (*AttachmentsIterator, error) {
-	runlock, err := r.makeReady(nil)
+	runlock, err := r.makeReady()
 	if err != nil {
 		return nil, err
 	}
@@ -268,31 +268,20 @@ func (r *ResultSet) Attachments() (*AttachmentsIterator, error) {
 }
 
 // makeReady ensures that the iterator is ready to be read from. If i.err is
-// set, it is returned. In the case that [iter.Next] has not been called, the
-// returned unlock function will also close the iterator, and set e if
-// [iter.Close] errors and e != nil.
-func (r *ResultSet) makeReady(e *error) (unlock func(), err error) {
+// set, it is returned.
+func (r *ResultSet) makeReady() (unlock func(), err error) {
 	r.mu.Lock()
 	if r.err != nil {
 		r.mu.Unlock()
 		return nil, r.err
 	}
+	if r.state == stateClosed {
+		r.mu.Unlock()
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "kivik: Iterator is closed"}
+	}
 	if !stateIsReady(r.state) {
-		if !r.iter.next() {
-			r.mu.Unlock()
-			return nil, &internal.Error{Status: http.StatusNotFound, Message: "no results"}
-		}
-		var once sync.Once
-		r.wg.Add(1)
-		return func() {
-			once.Do(func() {
-				r.wg.Done()
-				r.mu.Unlock()
-				if err := r.Close(); err != nil && e != nil {
-					*e = err
-				}
-			})
-		}, nil
+		r.mu.Unlock()
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "kivik: Iterator access before calling Next"}
 	}
 	var once sync.Once
 	r.wg.Add(1)

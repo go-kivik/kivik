@@ -345,9 +345,9 @@ func TestResultSet_Getters(t *testing.T) {
 			}
 			r := newResultSet(context.Background(), nil, rowsi)
 
-			result, _ := r.ID()
-			if result != id {
-				t.Errorf("Unexpected result: %v", result)
+			_, err := r.ID()
+			if !testy.ErrorMatches("kivik: Iterator access before calling Next", err) {
+				t.Errorf("Unexpected error: %v", err)
 			}
 		})
 
@@ -360,57 +360,9 @@ func TestResultSet_Getters(t *testing.T) {
 			}
 			r := newResultSet(context.Background(), nil, rowsi)
 
-			result, _ := r.Key()
-			if result != string(key) {
-				t.Errorf("Unexpected result: %v", result)
-			}
-		})
-	})
-
-	t.Run("after close", func(t *testing.T) {
-		rowsi := &mock.Rows{
-			OffsetFunc:    func() int64 { return offset },
-			TotalRowsFunc: func() int64 { return totalrows },
-			UpdateSeqFunc: func() string { return updateseq },
-		}
-		r := &ResultSet{
-			iter: &iter{
-				state: stateRowReady,
-				curVal: &driver.Row{
-					ID:  id,
-					Key: key,
-				},
-				feed: &rowsIterator{Rows: rowsi},
-			},
-			rowsi: rowsi,
-		}
-
-		if err := r.Close(); err != nil {
-			t.Fatal(err)
-		}
-
-		t.Run("ID", func(t *testing.T) {
-			result, _ := r.ID()
-			if id != result {
-				t.Errorf("Unexpected result: %v", result)
-			}
-		})
-
-		t.Run("Key", func(t *testing.T) {
-			result, _ := r.Key()
-			if string(key) != result {
-				t.Errorf("Unexpected result: %v", result)
-			}
-		})
-
-		t.Run("ScanKey", func(t *testing.T) {
-			var result json.RawMessage
-			err := r.ScanKey(&result)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if string(result) != string(key) {
-				t.Errorf("Unexpected result: %v", result)
+			_, err := r.Key()
+			if !testy.ErrorMatches("kivik: Iterator access before calling Next", err) {
+				t.Errorf("Unexpected error: %v", err)
 			}
 		})
 	})
@@ -568,48 +520,13 @@ func Test_bug576(t *testing.T) {
 
 	var result interface{}
 	err := rows.ScanDoc(&result)
-	const wantErr = "no results"
-	wantStatus := http.StatusNotFound
+	const wantErr = "kivik: Iterator access before calling Next"
+	wantStatus := http.StatusBadRequest
 	if !testy.ErrorMatches(wantErr, err) {
 		t.Errorf("unexpected error: %s", err)
 	}
 	if status := HTTPStatus(err); status != wantStatus {
 		t.Errorf("Unexpected error status: %v", status)
-	}
-}
-
-func TestResultSet_single(t *testing.T) {
-	const wantRev = "1-abc"
-	const docContent = `{"_id":"foo"}`
-	wantDoc := map[string]interface{}{"_id": "foo"}
-	rows := newResultSet(context.Background(), nil, &mock.Rows{
-		NextFunc: func(row *driver.Row) error {
-			row.Rev = wantRev
-			row.Doc = strings.NewReader(docContent)
-			return nil
-		},
-	})
-
-	rev, err := rows.Rev()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if rev != wantRev {
-		t.Errorf("Unexpected rev: %s", rev)
-	}
-	var doc map[string]interface{}
-	if err := rows.ScanDoc(&doc); err != nil {
-		t.Fatal(err)
-	}
-	if d := cmp.Diff(wantDoc, doc); d != "" {
-		t.Error(d)
-	}
-	rev2, err := rows.Rev()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if rev2 != wantRev {
-		t.Errorf("Unexpected rev on second read: %s", rev2)
 	}
 }
 
@@ -636,6 +553,7 @@ func TestResultSet_Close_blocks(t *testing.T) {
 		},
 		work: func(rs *ResultSet) {
 			var i interface{}
+			rs.Next()
 			_ = rs.ScanDoc(&i)
 		},
 	})
@@ -651,6 +569,7 @@ func TestResultSet_Close_blocks(t *testing.T) {
 		},
 		work: func(rs *ResultSet) {
 			var i interface{}
+			rs.Next()
 			_ = rs.ScanValue(&i)
 		},
 	})
@@ -667,6 +586,7 @@ func TestResultSet_Close_blocks(t *testing.T) {
 			},
 		},
 		work: func(rs *ResultSet) {
+			rs.Next()
 			atts, err := rs.Attachments()
 			if err != nil {
 				t.Fatal(err)
@@ -687,7 +607,7 @@ func TestResultSet_Close_blocks(t *testing.T) {
 		time.Sleep(delay / 2)
 		_ = rs.Close()
 		if elapsed := time.Since(start); elapsed < delay {
-			t.Errorf("rs.Close() didn't block long enouggh (%v < %v)", elapsed, delay)
+			t.Errorf("rs.Close() didn't block long enough (%v < %v)", elapsed, delay)
 		}
 	})
 }

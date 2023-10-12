@@ -168,10 +168,13 @@ func Replicate(ctx context.Context, target, source *DB, options ...Option) (*Rep
 	allOptions(options).Apply(repOpts)
 	cb := repOpts.callback()
 
-	r := &replicator{}
+	r := &replicator{
+		target: target,
+		source: source,
+	}
 
 	if repOpts.copySecurity {
-		if err := r.copySecurity(ctx, target, source, cb); err != nil {
+		if err := r.copySecurity(ctx, cb); err != nil {
 			return result.ReplicationResult, err
 		}
 	}
@@ -179,33 +182,35 @@ func Replicate(ctx context.Context, target, source *DB, options ...Option) (*Rep
 	changes := make(chan *change)
 	group.Go(func() error {
 		defer close(changes)
-		return r.readChanges(ctx, source, changes, allOptions(options), cb)
+		return r.readChanges(ctx, changes, allOptions(options), cb)
 	})
 
 	diffs := make(chan *revDiff)
 	group.Go(func() error {
 		defer close(diffs)
-		return r.readDiffs(ctx, target, changes, diffs, cb)
+		return r.readDiffs(ctx, changes, diffs, cb)
 	})
 
 	docs := make(chan *document)
 	group.Go(func() error {
 		defer close(docs)
-		return r.readDocs(ctx, source, diffs, docs, result, cb)
+		return r.readDocs(ctx, diffs, docs, result, cb)
 	})
 
 	group.Go(func() error {
-		return r.storeDocs(ctx, target, docs, result, cb)
+		return r.storeDocs(ctx, docs, result, cb)
 	})
 
 	return result.ReplicationResult, group.Wait()
 }
 
 // replicator manages a single replication.
-type replicator struct{}
+type replicator struct {
+	target, source *DB
+}
 
-func (*replicator) copySecurity(ctx context.Context, target, source *DB, cb eventCallback) error {
-	sec, err := source.Security(ctx)
+func (r *replicator) copySecurity(ctx context.Context, cb eventCallback) error {
+	sec, err := r.source.Security(ctx)
 	cb(ReplicationEvent{
 		Type:  eventSecurity,
 		Read:  true,
@@ -214,7 +219,7 @@ func (*replicator) copySecurity(ctx context.Context, target, source *DB, cb even
 	if err != nil {
 		return fmt.Errorf("read security: %w", err)
 	}
-	err = target.SetSecurity(ctx, sec)
+	err = r.target.SetSecurity(ctx, sec)
 	cb(ReplicationEvent{
 		Type:  eventSecurity,
 		Read:  false,
@@ -234,8 +239,8 @@ type change struct {
 // readChanges reads the changes feed.
 //
 // https://docs.couchdb.org/en/stable/replication/protocol.html#listen-to-changes-feed
-func (*replicator) readChanges(ctx context.Context, db *DB, results chan<- *change, options Option, cb eventCallback) error {
-	changes := db.Changes(ctx, options, Param("feed", "normal"), Param("style", "all_docs"))
+func (r *replicator) readChanges(ctx context.Context, results chan<- *change, options Option, cb eventCallback) error {
+	changes := r.source.Changes(ctx, options, Param("feed", "normal"), Param("style", "all_docs"))
 	cb(ReplicationEvent{
 		Type: eventChanges,
 		Read: true,
@@ -281,7 +286,7 @@ const rdBatchSize = 10
 // readDiffs reads the diffs for the reported changes.
 //
 // https://docs.couchdb.org/en/stable/replication/protocol.html#calculate-revision-difference
-func (*replicator) readDiffs(ctx context.Context, db *DB, ch <-chan *change, results chan<- *revDiff, cb eventCallback) error {
+func (r *replicator) readDiffs(ctx context.Context, ch <-chan *change, results chan<- *revDiff, cb eventCallback) error {
 	for {
 		revMap := map[string][]string{}
 		var change *change
@@ -305,7 +310,7 @@ func (*replicator) readDiffs(ctx context.Context, db *DB, ch <-chan *change, res
 		if len(revMap) == 0 {
 			return nil
 		}
-		diffs := db.RevsDiff(ctx, revMap)
+		diffs := r.target.RevsDiff(ctx, revMap)
 		err := diffs.Err()
 		cb(ReplicationEvent{
 			Type:  eventRevsDiff,
@@ -353,7 +358,7 @@ func (*replicator) readDiffs(ctx context.Context, db *DB, ch <-chan *change, res
 // target.
 //
 // https://docs.couchdb.org/en/stable/replication/protocol.html#fetch-changed-documents
-func (*replicator) readDocs(ctx context.Context, db *DB, diffs <-chan *revDiff, results chan<- *document, result *resultWrapper, cb eventCallback) error {
+func (r *replicator) readDocs(ctx context.Context, diffs <-chan *revDiff, results chan<- *document, result *resultWrapper, cb eventCallback) error {
 	for {
 		var rd *revDiff
 		var ok bool
@@ -366,7 +371,7 @@ func (*replicator) readDocs(ctx context.Context, db *DB, diffs <-chan *revDiff, 
 			}
 			for _, rev := range rd.Missing {
 				result.missingChecked()
-				d, err := readDoc(ctx, db, rd.ID, rev)
+				d, err := readDoc(ctx, r.source, rd.ID, rev)
 				cb(ReplicationEvent{
 					Type:  eventDocument,
 					Read:  true,
@@ -450,9 +455,9 @@ func readDoc(ctx context.Context, db *DB, docID, rev string) (*document, error) 
 // storeDocs updates the changed documents.
 //
 // https://docs.couchdb.org/en/stable/replication/protocol.html#upload-batch-of-changed-documents
-func (*replicator) storeDocs(ctx context.Context, db *DB, docs <-chan *document, result *resultWrapper, cb eventCallback) error {
+func (r *replicator) storeDocs(ctx context.Context, docs <-chan *document, result *resultWrapper, cb eventCallback) error {
 	for doc := range docs {
-		_, err := db.Put(ctx, doc.ID, doc, Param("new_edits", false))
+		_, err := r.target.Put(ctx, doc.ID, doc, Param("new_edits", false))
 		cb(ReplicationEvent{
 			Type:  "document",
 			Read:  false,

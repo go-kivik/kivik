@@ -114,11 +114,10 @@ func Replicate(ctx context.Context, target, source *DB, options ...Option) (*Rep
 }
 
 func (r *replicator) replicate(ctx context.Context, options Option) error {
-	if r.withSecurity {
-		if err := r.copySecurity(ctx); err != nil {
-			return err
-		}
+	if err := r.copySecurity(ctx); err != nil {
+		return err
 	}
+
 	group, ctx := errgroup.WithContext(ctx)
 	changes := make(chan *change)
 	group.Go(func() error {
@@ -187,6 +186,9 @@ func (r *replicator) result() *ReplicationResult {
 }
 
 func (r *replicator) copySecurity(ctx context.Context) error {
+	if !r.withSecurity {
+		return nil
+	}
 	sec, err := r.source.Security(ctx)
 	r.callback(ReplicationEvent{
 		Type:  eventSecurity,

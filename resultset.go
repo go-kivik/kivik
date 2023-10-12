@@ -88,6 +88,9 @@ func newResultSet(ctx context.Context, onClose func(), rowsi driver.Rows) *Resul
 func (r *ResultSet) Next() bool {
 	r.iter.mu.Lock()
 	defer r.iter.mu.Unlock()
+	if r.err != nil {
+		return false
+	}
 	if atts := r.curVal.(*driver.Row).Attachments; atts != nil {
 		_ = atts.Close()
 	}

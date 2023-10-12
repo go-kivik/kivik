@@ -18,9 +18,11 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
 	"sync/atomic"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -153,7 +155,9 @@ type replicator struct {
 	// caution! The security object is not versioned, and will be
 	// unconditionally overwritten!
 	withSecurity bool
-	start        time.Time
+	// noOpenRevs is set if a call to OpenRevs returns unsupported
+	noOpenRevs bool
+	start      time.Time
 	// replication stats counters
 	writeFailures, reads, writes, missingChecks, missingFound int32
 }
@@ -356,6 +360,67 @@ func (r *replicator) readDocs(ctx context.Context, diffs <-chan *revDiff, result
 }
 
 func (r *replicator) readDoc(ctx context.Context, id string, revs []string, results chan<- *document) error {
+	if !r.noOpenRevs {
+		err := r.readOpenRevs(ctx, id, revs, results)
+		if HTTPStatus(err) == http.StatusNotImplemented {
+			r.noOpenRevs = true
+		} else {
+			return err
+		}
+	}
+	return r.readIndividualDocs(ctx, id, revs, results)
+}
+
+func (r *replicator) readOpenRevs(ctx context.Context, id string, revs []string, results chan<- *document) error {
+	fmt.Println("readOpenRevs")
+	rs := r.source.OpenRevs(ctx, id, revs, Params(map[string]interface{}{
+		"revs":   true,
+		"latest": true,
+	}))
+	defer rs.Close()
+	for rs.Next() {
+		rev, err := rs.Rev()
+		r.callback(ReplicationEvent{
+			Type:  eventDocument,
+			Read:  true,
+			DocID: id,
+			Error: err,
+		})
+		if err != nil {
+			fmt.Println("readOpenRevs rev err:", err)
+
+			return err
+		}
+		atomic.AddInt32(&r.reads, 1)
+		atomic.AddInt32(&r.missingFound, 1)
+		origDoc, err := readDoc(ctx, r.source, id, rev)
+		if err != nil {
+			fmt.Println("readOpenRevs readDoc err:", err)
+			return err
+		}
+		doc := new(document)
+		if err := rs.ScanDoc(&doc); err != nil {
+			fmt.Println("readOpenRevs ScanDoc err:", err)
+			return err
+		}
+		if d := cmp.Diff(origDoc, doc); d != "" {
+			fmt.Println(d)
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case results <- doc:
+		}
+	}
+	err := rs.Err()
+	fmt.Println("readOpenRevs err:", err)
+	if err == nil {
+		atomic.AddInt32(&r.missingChecks, int32(len(revs)))
+	}
+	return err
+}
+
+func (r *replicator) readIndividualDocs(ctx context.Context, id string, revs []string, results chan<- *document) error {
 	for _, rev := range revs {
 		atomic.AddInt32(&r.missingChecks, 1)
 		d, err := readDoc(ctx, r.source, id, rev)

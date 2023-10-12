@@ -15,6 +15,7 @@ package kivik_test
 import (
 	"context"
 	"io"
+	"net/http"
 	"os"
 	"strings"
 	"testing"
@@ -103,6 +104,65 @@ func TestReplicateMock(t *testing.T) {
 					ID:    "foo",
 					Value: strings.NewReader(`{"missing":["2-7051cbe5c8faecd085a3fa619e6e6337"]}`),
 				}))
+		sdb.ExpectOpenRevs().WillReturnError(&internal.Error{Status: http.StatusNotImplemented})
+		sdb.ExpectGet().
+			WithDocID("foo").
+			WithOptions(kivik.Params(map[string]interface{}{
+				"rev":         "2-7051cbe5c8faecd085a3fa619e6e6337",
+				"revs":        true,
+				"attachments": true,
+			})).
+			WillReturn(&driver.Document{
+				Body: io.NopCloser(strings.NewReader(`{"_id":"foo","_rev":"2-7051cbe5c8faecd085a3fa619e6e6337","foo":"bar"}`)),
+			})
+		tdb.ExpectPut().
+			WithDocID("foo").
+			WithOptions(kivik.Param("new_edits", false)).
+			WillReturn("2-7051cbe5c8faecd085a3fa619e6e6337")
+
+		return tt{
+			mockS:  smock,
+			mockT:  tmock,
+			source: source.DB("src"),
+			target: target.DB("tgt"),
+			result: &kivik.ReplicationResult{
+				DocsRead:       1,
+				DocsWritten:    1,
+				MissingChecked: 1,
+				MissingFound:   1,
+			},
+		}
+	})
+	tests.Add("one update with OpenRevs", func(t *testing.T) interface{} {
+		source, smock := kivikmock.NewT(t)
+		sdb := smock.NewDB()
+		smock.ExpectDB().WillReturn(sdb)
+		sdb.ExpectChanges().WillReturn(kivikmock.NewChanges().
+			AddChange(&driver.Change{
+				ID:      "foo",
+				Changes: []string{"2-7051cbe5c8faecd085a3fa619e6e6337"},
+				Seq:     "3-g1AAAAG3eJzLYWBg4MhgTmHgz8tPSTV0MDQy1zMAQsMcoARTIkOS_P___7MSGXAqSVIAkkn2IFUZzIkMuUAee5pRqnGiuXkKA2dpXkpqWmZeagpu_Q4g_fGEbEkAqaqH2sIItsXAyMjM2NgUUwdOU_JYgCRDA5ACGjQfn30QlQsgKvcjfGaQZmaUmmZClM8gZhyAmHGfsG0PICrBPmQC22ZqbGRqamyIqSsLAAArcXo",
+			}))
+
+		target, tmock := kivikmock.NewT(t)
+		tdb := tmock.NewDB()
+		tmock.ExpectDB().WillReturn(tdb)
+		tdb.ExpectRevsDiff().
+			WithRevLookup(map[string][]string{
+				"foo": {"2-7051cbe5c8faecd085a3fa619e6e6337"},
+			}).
+			WillReturn(kivikmock.NewRows().
+				AddRow(&driver.Row{
+					ID:    "foo",
+					Value: strings.NewReader(`{"missing":["2-7051cbe5c8faecd085a3fa619e6e6337"]}`),
+				}))
+		sdb.ExpectOpenRevs().
+			WithDocID("foo").
+			WillReturn(kivikmock.NewRows().AddRow(&driver.Row{
+				ID:  "foo",
+				Rev: "2-7051cbe5c8faecd085a3fa619e6e6337",
+				Doc: strings.NewReader(`{"_id":"foo","_rev":"2-7051cbe5c8faecd085a3fa619e6e6337","foo":"bar"}`),
+			}))
 		sdb.ExpectGet().
 			WithDocID("foo").
 			WithOptions(kivik.Params(map[string]interface{}{
@@ -178,6 +238,7 @@ func TestReplicate_with_callback(t *testing.T) {
 				ID:    "foo",
 				Value: strings.NewReader(`{"missing":["2-7051cbe5c8faecd085a3fa619e6e6337"]}`),
 			}))
+	sdb.ExpectOpenRevs().WillReturnError(&internal.Error{Status: http.StatusNotImplemented})
 	sdb.ExpectGet().
 		WithDocID("foo").
 		WithOptions(kivik.Params(map[string]interface{}{

@@ -179,6 +179,13 @@ func newReplicator(target, source *DB) *replicator {
 	}
 }
 
+func (r *replicator) callback(e ReplicationEvent) {
+	if r.cb == nil {
+		return
+	}
+	r.cb(e)
+}
+
 func (r *replicator) result() *ReplicationResult {
 	return &ReplicationResult{
 		StartTime:        r.start,
@@ -193,7 +200,7 @@ func (r *replicator) result() *ReplicationResult {
 
 func (r *replicator) copySecurity(ctx context.Context) error {
 	sec, err := r.source.Security(ctx)
-	r.cb(ReplicationEvent{
+	r.callback(ReplicationEvent{
 		Type:  eventSecurity,
 		Read:  true,
 		Error: err,
@@ -202,7 +209,7 @@ func (r *replicator) copySecurity(ctx context.Context) error {
 		return fmt.Errorf("read security: %w", err)
 	}
 	err = r.target.SetSecurity(ctx, sec)
-	r.cb(ReplicationEvent{
+	r.callback(ReplicationEvent{
 		Type:  eventSecurity,
 		Read:  false,
 		Error: err,
@@ -223,7 +230,7 @@ type change struct {
 // https://docs.couchdb.org/en/stable/replication/protocol.html#listen-to-changes-feed
 func (r *replicator) readChanges(ctx context.Context, results chan<- *change, options Option) error {
 	changes := r.source.Changes(ctx, options, Param("feed", "normal"), Param("style", "all_docs"))
-	r.cb(ReplicationEvent{
+	r.callback(ReplicationEvent{
 		Type: eventChanges,
 		Read: true,
 	})
@@ -234,7 +241,7 @@ func (r *replicator) readChanges(ctx context.Context, results chan<- *change, op
 			ID:      changes.ID(),
 			Changes: changes.Changes(),
 		}
-		r.cb(ReplicationEvent{
+		r.callback(ReplicationEvent{
 			Type:    eventChange,
 			DocID:   ch.ID,
 			Read:    true,
@@ -247,7 +254,7 @@ func (r *replicator) readChanges(ctx context.Context, results chan<- *change, op
 		}
 	}
 	if err := changes.Err(); err != nil {
-		r.cb(ReplicationEvent{
+		r.callback(ReplicationEvent{
 			Type:  eventChanges,
 			Read:  true,
 			Error: err,
@@ -294,7 +301,7 @@ func (r *replicator) readDiffs(ctx context.Context, ch <-chan *change, results c
 		}
 		diffs := r.target.RevsDiff(ctx, revMap)
 		err := diffs.Err()
-		r.cb(ReplicationEvent{
+		r.callback(ReplicationEvent{
 			Type:  eventRevsDiff,
 			Read:  true,
 			Error: err,
@@ -306,7 +313,7 @@ func (r *replicator) readDiffs(ctx context.Context, ch <-chan *change, results c
 		for diffs.Next() {
 			var val revDiff
 			if err := diffs.ScanValue(&val); err != nil {
-				r.cb(ReplicationEvent{
+				r.callback(ReplicationEvent{
 					Type:  eventRevsDiff,
 					Read:  true,
 					Error: err,
@@ -314,7 +321,7 @@ func (r *replicator) readDiffs(ctx context.Context, ch <-chan *change, results c
 				return err
 			}
 			val.ID, _ = diffs.ID()
-			r.cb(ReplicationEvent{
+			r.callback(ReplicationEvent{
 				Type:  eventRevsDiff,
 				Read:  true,
 				DocID: val.ID,
@@ -326,7 +333,7 @@ func (r *replicator) readDiffs(ctx context.Context, ch <-chan *change, results c
 			}
 		}
 		if err := diffs.Err(); err != nil {
-			r.cb(ReplicationEvent{
+			r.callback(ReplicationEvent{
 				Type:  eventRevsDiff,
 				Read:  true,
 				Error: err,
@@ -354,7 +361,7 @@ func (r *replicator) readDocs(ctx context.Context, diffs <-chan *revDiff, result
 			for _, rev := range rd.Missing {
 				atomic.AddInt32(&r.missingChecks, 1)
 				d, err := readDoc(ctx, r.source, rd.ID, rev)
-				r.cb(ReplicationEvent{
+				r.callback(ReplicationEvent{
 					Type:  eventDocument,
 					Read:  true,
 					DocID: rd.ID,
@@ -440,7 +447,7 @@ func readDoc(ctx context.Context, db *DB, docID, rev string) (*document, error) 
 func (r *replicator) storeDocs(ctx context.Context, docs <-chan *document) error {
 	for doc := range docs {
 		_, err := r.target.Put(ctx, doc.ID, doc, Param("new_edits", false))
-		r.cb(ReplicationEvent{
+		r.callback(ReplicationEvent{
 			Type:  "document",
 			Read:  false,
 			DocID: doc.ID,

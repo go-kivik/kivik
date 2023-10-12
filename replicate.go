@@ -79,19 +79,11 @@ func ReplicateCallback(callback func(ReplicationEvent)) Option {
 	return eventCallback(callback)
 }
 
-type replicateOptions struct {
-	// CopySecurity indicates that the secuurity object should be read from
-	// source, and copied to the target, before the replication. Use with
-	// caution! The security object is not versioned, and will be
-	// unconditionally overwritten!
-	copySecurity bool
-}
-
 type replicateCopySecurityOption struct{}
 
 func (r replicateCopySecurityOption) Apply(target interface{}) {
-	if ro, ok := target.(*replicateOptions); ok {
-		ro.copySecurity = true
+	if r, ok := target.(*replicator); ok {
+		r.withSecurity = true
 	}
 }
 
@@ -120,11 +112,9 @@ func Replicate(ctx context.Context, target, source *DB, options ...Option) (*Rep
 
 func (r *replicator) replicate(ctx context.Context, options ...Option) error {
 	opts := allOptions(options)
-	repOpts := &replicateOptions{}
-	opts.Apply(repOpts)
 	opts.Apply(r)
 
-	if repOpts.copySecurity {
+	if r.withSecurity {
 		if err := r.copySecurity(ctx); err != nil {
 			return err
 		}
@@ -159,7 +149,12 @@ func (r *replicator) replicate(ctx context.Context, options ...Option) error {
 type replicator struct {
 	target, source *DB
 	cb             eventCallback
-	start          time.Time
+	// withSecurity indicates that the secuurity object should be read from
+	// source, and copied to the target, before the replication. Use with
+	// caution! The security object is not versioned, and will be
+	// unconditionally overwritten!
+	withSecurity bool
+	start        time.Time
 	// replication stats counters
 	writeFailures, reads, writes, missingChecks, missingFound int32
 }

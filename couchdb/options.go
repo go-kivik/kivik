@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"net/http"
 	"path"
+	"strings"
 
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/couchdb/chttp"
@@ -144,4 +145,26 @@ func (optionNoMultipartGet) String() string {
 // [github.com/go-kivik/kivik/v4.DB.Get] that request attachments.
 func OptionNoMultipartGet() kivik.Option {
 	return optionNoMultipartGet{}
+}
+
+type multiOptions []kivik.Option
+
+var _ kivik.Option = (multiOptions)(nil)
+
+func (o multiOptions) Apply(t interface{}) {
+	for _, opt := range o {
+		if opt != nil {
+			opt.Apply(t)
+		}
+	}
+}
+
+func (o multiOptions) String() string {
+	parts := make([]string, 0, len(o))
+	for _, opt := range o {
+		if part := fmt.Sprintf("%s", opt); part != "" {
+			parts = append(parts, part)
+		}
+	}
+	return strings.Join(parts, ",")
 }

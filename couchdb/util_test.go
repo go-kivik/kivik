@@ -14,14 +14,11 @@ package couchdb
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"strings"
 	"testing"
 
 	"gitlab.com/flimzy/testy"
 
-	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/internal"
 )
 
@@ -71,26 +68,4 @@ func TestDeJSONify(t *testing.T) {
 			}
 		})
 	}
-}
-
-type allOptions []kivik.Option
-
-var _ kivik.Option = (allOptions)(nil)
-
-func (o allOptions) Apply(t interface{}) {
-	for _, opt := range o {
-		if opt != nil {
-			opt.Apply(t)
-		}
-	}
-}
-
-func (o allOptions) String() string {
-	parts := make([]string, 0, len(o))
-	for _, opt := range o {
-		if part := fmt.Sprintf("%s", opt); part != "" {
-			parts = append(parts, part)
-		}
-	}
-	return strings.Join(parts, ",")
 }

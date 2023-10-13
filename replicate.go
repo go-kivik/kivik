@@ -105,7 +105,7 @@ func ReplicateCopySecurity() Option {
 //	filter (string)           - The name of a filter function.
 //	doc_ids (array of string) - Array of document IDs to be synchronized.
 func Replicate(ctx context.Context, target, source *DB, options ...Option) (*ReplicationResult, error) {
-	opts := allOptions(options)
+	opts := multiOptions(options)
 
 	r := newReplicator(target, source)
 	opts.Apply(r)

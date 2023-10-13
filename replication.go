@@ -177,7 +177,7 @@ func (c *Client) GetReplications(ctx context.Context, options ...Option) ([]*Rep
 	if !ok {
 		return nil, errReplicationNotImplemented
 	}
-	reps, err := replicator.GetReplications(ctx, allOptions(options))
+	reps, err := replicator.GetReplications(ctx, multiOptions(options))
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +202,7 @@ func (c *Client) Replicate(ctx context.Context, targetDSN, sourceDSN string, opt
 	if !ok {
 		return nil, errReplicationNotImplemented
 	}
-	rep, err := replicator.Replicate(ctx, targetDSN, sourceDSN, allOptions(options))
+	rep, err := replicator.Replicate(ctx, targetDSN, sourceDSN, multiOptions(options))
 	if err != nil {
 		return nil, err
 	}

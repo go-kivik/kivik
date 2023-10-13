@@ -86,7 +86,7 @@ func (db *DB) AllDocs(ctx context.Context, options ...Option) *ResultSet {
 	if err != nil {
 		return &ResultSet{iter: errIterator(err)}
 	}
-	rowsi, err := db.driverDB.AllDocs(ctx, allOptions(options))
+	rowsi, err := db.driverDB.AllDocs(ctx, multiOptions(options))
 	if err != nil {
 		endQuery()
 		return &ResultSet{iter: errIterator(err)}
@@ -108,7 +108,7 @@ func (db *DB) DesignDocs(ctx context.Context, options ...Option) *ResultSet {
 	if err != nil {
 		return &ResultSet{iter: errIterator(err)}
 	}
-	rowsi, err := ddocer.DesignDocs(ctx, allOptions(options))
+	rowsi, err := ddocer.DesignDocs(ctx, multiOptions(options))
 	if err != nil {
 		endQuery()
 		return &ResultSet{iter: errIterator(err)}
@@ -129,7 +129,7 @@ func (db *DB) LocalDocs(ctx context.Context, options ...Option) *ResultSet {
 	if err != nil {
 		return &ResultSet{iter: errIterator(err)}
 	}
-	rowsi, err := ldocer.LocalDocs(ctx, allOptions(options))
+	rowsi, err := ldocer.LocalDocs(ctx, multiOptions(options))
 	if err != nil {
 		endQuery()
 		return &ResultSet{iter: errIterator(err)}
@@ -161,7 +161,7 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, options ...Option) *
 	}
 	ddoc = strings.TrimPrefix(ddoc, "_design/")
 	view = strings.TrimPrefix(view, "_view/")
-	rowsi, err := db.driverDB.Query(ctx, ddoc, view, allOptions(options))
+	rowsi, err := db.driverDB.Query(ctx, ddoc, view, multiOptions(options))
 	if err != nil {
 		endQuery()
 		return &ResultSet{iter: errIterator(err)}
@@ -237,7 +237,7 @@ func (db *DB) Get(ctx context.Context, docID string, options ...Option) *Documen
 		return &Document{err: err}
 	}
 	defer endQuery()
-	result, err := db.driverDB.Get(ctx, docID, allOptions(options))
+	result, err := db.driverDB.Get(ctx, docID, multiOptions(options))
 	if err != nil {
 		return &Document{err: err}
 	}
@@ -259,7 +259,7 @@ func (db *DB) OpenRevs(ctx context.Context, docID string, revs []string, options
 		if err != nil {
 			return &ResultSet{iter: errIterator(err)}
 		}
-		rowsi, err := openRever.OpenRevs(ctx, docID, revs, allOptions(options))
+		rowsi, err := openRever.OpenRevs(ctx, docID, revs, multiOptions(options))
 		if err != nil {
 			endQuery()
 			return &ResultSet{iter: errIterator(err)}
@@ -275,7 +275,7 @@ func (db *DB) GetRev(ctx context.Context, docID string, options ...Option) (rev 
 	if db.err != nil {
 		return "", db.err
 	}
-	opts := allOptions(options)
+	opts := multiOptions(options)
 	if r, ok := db.driverDB.(driver.RevGetter); ok {
 		endQuery, err := db.startQuery()
 		if err != nil {
@@ -305,7 +305,7 @@ func (db *DB) CreateDoc(ctx context.Context, doc interface{}, options ...Option)
 		return "", "", err
 	}
 	defer endQuery()
-	return db.driverDB.CreateDoc(ctx, doc, allOptions(options))
+	return db.driverDB.CreateDoc(ctx, doc, multiOptions(options))
 }
 
 // normalizeFromJSON unmarshals a []byte, json.RawMessage or io.Reader to a
@@ -383,7 +383,7 @@ func (db *DB) Put(ctx context.Context, docID string, doc interface{}, options ..
 	if err != nil {
 		return "", err
 	}
-	return db.driverDB.Put(ctx, docID, i, allOptions(options))
+	return db.driverDB.Put(ctx, docID, i, multiOptions(options))
 }
 
 // Delete marks the specified document as deleted. The revision may be provided
@@ -400,7 +400,7 @@ func (db *DB) Delete(ctx context.Context, docID, rev string, options ...Option) 
 	if docID == "" {
 		return "", missingArg("docID")
 	}
-	opts := append(allOptions{Rev(rev)}, options...)
+	opts := append(multiOptions{Rev(rev)}, options...)
 	return db.driverDB.Delete(ctx, docID, opts)
 }
 
@@ -644,7 +644,7 @@ func (db *DB) Copy(ctx context.Context, targetID, sourceID string, options ...Op
 	if sourceID == "" {
 		return "", missingArg("sourceID")
 	}
-	opts := allOptions(options)
+	opts := multiOptions(options)
 	if copier, ok := db.driverDB.(driver.Copier); ok {
 		endQuery, err := db.startQuery()
 		if err != nil {
@@ -683,7 +683,7 @@ func (db *DB) PutAttachment(ctx context.Context, docID string, att *Attachment, 
 	}
 	defer endQuery()
 	a := driver.Attachment(*att)
-	return db.driverDB.PutAttachment(ctx, docID, &a, allOptions(options))
+	return db.driverDB.PutAttachment(ctx, docID, &a, multiOptions(options))
 }
 
 // GetAttachment returns a file attachment associated with the document.
@@ -702,7 +702,7 @@ func (db *DB) GetAttachment(ctx context.Context, docID, filename string, options
 	if filename == "" {
 		return nil, missingArg("filename")
 	}
-	att, err := db.driverDB.GetAttachment(ctx, docID, filename, allOptions(options))
+	att, err := db.driverDB.GetAttachment(ctx, docID, filename, multiOptions(options))
 	if err != nil {
 		return nil, err
 	}
@@ -738,7 +738,7 @@ func (db *DB) GetAttachmentMeta(ctx context.Context, docID, filename string, opt
 			return nil, err
 		}
 		defer endQuery()
-		a, err := metaer.GetAttachmentMeta(ctx, docID, filename, allOptions(options))
+		a, err := metaer.GetAttachmentMeta(ctx, docID, filename, multiOptions(options))
 		if err != nil {
 			return nil, err
 		}
@@ -776,7 +776,7 @@ func (db *DB) DeleteAttachment(ctx context.Context, docID, rev, filename string,
 	if filename == "" {
 		return "", missingArg("filename")
 	}
-	opts := append(allOptions{Rev(rev)}, options...)
+	opts := append(multiOptions{Rev(rev)}, options...)
 	return db.driverDB.DeleteAttachment(ctx, docID, filename, opts)
 }
 
@@ -849,7 +849,7 @@ func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...O
 	for i, ref := range docs {
 		refs[i] = driver.BulkGetReference(ref)
 	}
-	rowsi, err := bulkGetter.BulkGet(ctx, refs, allOptions(options))
+	rowsi, err := bulkGetter.BulkGet(ctx, refs, multiOptions(options))
 	if err != nil {
 		endQuery()
 		return &ResultSet{iter: errIterator(err)}

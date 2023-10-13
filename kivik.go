@@ -51,7 +51,7 @@ func New(driverName, dataSourceName string, options ...Option) (*Client, error) 
 	if driveri == nil {
 		return nil, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("kivik: unknown driver %q (forgotten import?)", driverName)}
 	}
-	client, err := driveri.NewClient(dataSourceName, allOptions(options))
+	client, err := driveri.NewClient(dataSourceName, multiOptions(options))
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +126,7 @@ func (c *Client) Version(ctx context.Context) (*ServerVersion, error) {
 // initiation of the DB object is deferred until the first method call, or may
 // be checked directly with [DB.Err].
 func (c *Client) DB(dbName string, options ...Option) *DB {
-	db, err := c.driverClient.DB(dbName, allOptions(options))
+	db, err := c.driverClient.DB(dbName, multiOptions(options))
 	return &DB{
 		client:   c,
 		name:     dbName,
@@ -142,7 +142,7 @@ func (c *Client) AllDBs(ctx context.Context, options ...Option) ([]string, error
 		return nil, err
 	}
 	defer endQuery()
-	return c.driverClient.AllDBs(ctx, allOptions(options))
+	return c.driverClient.AllDBs(ctx, multiOptions(options))
 }
 
 // DBExists returns true if the specified database exists.
@@ -152,7 +152,7 @@ func (c *Client) DBExists(ctx context.Context, dbName string, options ...Option)
 		return false, err
 	}
 	defer endQuery()
-	return c.driverClient.DBExists(ctx, dbName, allOptions(options))
+	return c.driverClient.DBExists(ctx, dbName, multiOptions(options))
 }
 
 // CreateDB creates a DB of the requested name.
@@ -162,7 +162,7 @@ func (c *Client) CreateDB(ctx context.Context, dbName string, options ...Option)
 		return err
 	}
 	defer endQuery()
-	return c.driverClient.CreateDB(ctx, dbName, allOptions(options))
+	return c.driverClient.CreateDB(ctx, dbName, multiOptions(options))
 }
 
 // DestroyDB deletes the requested DB.
@@ -172,7 +172,7 @@ func (c *Client) DestroyDB(ctx context.Context, dbName string, options ...Option
 		return err
 	}
 	defer endQuery()
-	return c.driverClient.DestroyDB(ctx, dbName, allOptions(options))
+	return c.driverClient.DestroyDB(ctx, dbName, multiOptions(options))
 }
 
 func missingArg(arg string) error {

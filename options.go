@@ -35,11 +35,11 @@ type Option interface {
 
 var _ Option = (driver.Options)(nil)
 
-type allOptions []Option
+type multiOptions []Option
 
-var _ Option = (allOptions)(nil)
+var _ Option = (multiOptions)(nil)
 
-func (o allOptions) Apply(t interface{}) {
+func (o multiOptions) Apply(t interface{}) {
 	for _, opt := range o {
 		if opt != nil {
 			opt.Apply(t)
@@ -47,7 +47,7 @@ func (o allOptions) Apply(t interface{}) {
 	}
 }
 
-func (o allOptions) String() string {
+func (o multiOptions) String() string {
 	parts := make([]string, 0, len(o))
 	for _, opt := range o {
 		if o != nil {

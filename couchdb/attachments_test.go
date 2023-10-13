@@ -205,7 +205,7 @@ func TestPutAttachment(t *testing.T) {
 				ContentType: "text/plain",
 				Content:     Body("x"),
 			},
-			options: allOptions{
+			options: multiOptions{
 				OptionFullCommit(),
 				kivik.Rev("1-xxx"),
 			},
@@ -231,7 +231,7 @@ func TestPutAttachment(t *testing.T) {
 					ContentType: "text/plain",
 					Content:     Body("x"),
 				},
-				options: allOptions{
+				options: multiOptions{
 					kivik.Rev("1-xxx"),
 					OptionFullCommit(),
 				},
@@ -723,7 +723,7 @@ func TestDeleteAttachment(t *testing.T) {
 			}),
 			id:       "foo",
 			filename: "foo.txt",
-			options: allOptions{
+			options: multiOptions{
 				kivik.Rev("1-xxx"),
 				OptionFullCommit(),
 			},

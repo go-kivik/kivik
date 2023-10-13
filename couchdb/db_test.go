@@ -1221,7 +1221,7 @@ func TestDelete(t *testing.T) {
 			return nil, errors.New("success")
 		}),
 		id: "foo",
-		options: allOptions{
+		options: multiOptions{
 			OptionFullCommit(),
 			kivik.Rev("1-xxx"),
 		},

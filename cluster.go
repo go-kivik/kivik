@@ -31,7 +31,7 @@ func (c *Client) ClusterStatus(ctx context.Context, options ...Option) (string, 
 	if !ok {
 		return "", errClusterNotImplemented
 	}
-	return cluster.ClusterStatus(ctx, allOptions(options))
+	return cluster.ClusterStatus(ctx, multiOptions(options))
 }
 
 // ClusterSetup performs the requested [cluster action]. action should be

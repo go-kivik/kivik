@@ -97,7 +97,7 @@ func (db *DB) Changes(ctx context.Context, options ...Option) *Changes {
 	if err != nil {
 		return &Changes{iter: errIterator(err)}
 	}
-	changesi, err := db.driverDB.Changes(ctx, allOptions(options))
+	changesi, err := db.driverDB.Changes(ctx, multiOptions(options))
 	if err != nil {
 		endQuery()
 		return &Changes{iter: errIterator(err)}

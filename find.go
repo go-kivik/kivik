@@ -33,7 +33,7 @@ func (db *DB) Find(ctx context.Context, query interface{}, options ...Option) *R
 		if err != nil {
 			return &ResultSet{iter: errIterator(err)}
 		}
-		rowsi, err := finder.Find(ctx, query, allOptions(options))
+		rowsi, err := finder.Find(ctx, query, multiOptions(options))
 		if err != nil {
 			endQuery()
 			return &ResultSet{iter: errIterator(err)}
@@ -58,7 +58,7 @@ func (db *DB) CreateIndex(ctx context.Context, ddoc, name string, index interfac
 	}
 	defer endQuery()
 	if finder, ok := db.driverDB.(driver.Finder); ok {
-		return finder.CreateIndex(ctx, ddoc, name, index, allOptions(options))
+		return finder.CreateIndex(ctx, ddoc, name, index, multiOptions(options))
 	}
 	return errFindNotImplemented
 }
@@ -74,7 +74,7 @@ func (db *DB) DeleteIndex(ctx context.Context, ddoc, name string, options ...Opt
 	}
 	defer endQuery()
 	if finder, ok := db.driverDB.(driver.Finder); ok {
-		return finder.DeleteIndex(ctx, ddoc, name, allOptions(options))
+		return finder.DeleteIndex(ctx, ddoc, name, multiOptions(options))
 	}
 	return errFindNotImplemented
 }
@@ -98,7 +98,7 @@ func (db *DB) GetIndexes(ctx context.Context, options ...Option) ([]Index, error
 	}
 	defer endQuery()
 	if finder, ok := db.driverDB.(driver.Finder); ok {
-		dIndexes, err := finder.GetIndexes(ctx, allOptions(options))
+		dIndexes, err := finder.GetIndexes(ctx, multiOptions(options))
 		indexes := make([]Index, len(dIndexes))
 		for i, index := range dIndexes {
 			indexes[i] = Index(index)
@@ -136,7 +136,7 @@ func (db *DB) Explain(ctx context.Context, query interface{}, options ...Option)
 			return nil, err
 		}
 		defer endQuery()
-		plan, err := explainer.Explain(ctx, query, allOptions(options))
+		plan, err := explainer.Explain(ctx, query, multiOptions(options))
 		if err != nil {
 			return nil, err
 		}

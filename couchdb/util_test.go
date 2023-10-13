@@ -73,11 +73,11 @@ func TestDeJSONify(t *testing.T) {
 	}
 }
 
-type allOptions []kivik.Option
+type multiOptions []kivik.Option
 
-var _ kivik.Option = (allOptions)(nil)
+var _ kivik.Option = (multiOptions)(nil)
 
-func (o allOptions) Apply(t interface{}) {
+func (o multiOptions) Apply(t interface{}) {
 	for _, opt := range o {
 		if opt != nil {
 			opt.Apply(t)
@@ -85,7 +85,7 @@ func (o allOptions) Apply(t interface{}) {
 	}
 }
 
-func (o allOptions) String() string {
+func (o multiOptions) String() string {
 	parts := make([]string, 0, len(o))
 	for _, opt := range o {
 		if part := fmt.Sprintf("%s", opt); part != "" {

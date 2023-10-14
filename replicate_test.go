@@ -163,16 +163,6 @@ func TestReplicateMock(t *testing.T) {
 				Rev: "2-7051cbe5c8faecd085a3fa619e6e6337",
 				Doc: strings.NewReader(`{"_id":"foo","_rev":"2-7051cbe5c8faecd085a3fa619e6e6337","foo":"bar"}`),
 			}))
-		sdb.ExpectGet().
-			WithDocID("foo").
-			WithOptions(kivik.Params(map[string]interface{}{
-				"rev":         "2-7051cbe5c8faecd085a3fa619e6e6337",
-				"revs":        true,
-				"attachments": true,
-			})).
-			WillReturn(&driver.Document{
-				Body: io.NopCloser(strings.NewReader(`{"_id":"foo","_rev":"2-7051cbe5c8faecd085a3fa619e6e6337","foo":"bar"}`)),
-			})
 		tdb.ExpectPut().
 			WithDocID("foo").
 			WithOptions(kivik.Param("new_edits", false)).

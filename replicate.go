@@ -22,7 +22,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -372,39 +371,28 @@ func (r *replicator) readDoc(ctx context.Context, id string, revs []string, resu
 }
 
 func (r *replicator) readOpenRevs(ctx context.Context, id string, revs []string, results chan<- *document) error {
-	fmt.Println("readOpenRevs")
 	rs := r.source.OpenRevs(ctx, id, revs, Params(map[string]interface{}{
 		"revs":   true,
 		"latest": true,
 	}))
 	defer rs.Close()
 	for rs.Next() {
-		rev, err := rs.Rev()
+		atomic.AddInt32(&r.reads, 1)
+		atomic.AddInt32(&r.missingFound, 1)
+		doc := new(document)
+		err := rs.ScanDoc(&doc)
+		if err != nil {
+			return err
+		}
 		r.callback(ReplicationEvent{
 			Type:  eventDocument,
 			Read:  true,
 			DocID: id,
 			Error: err,
 		})
-		if err != nil {
-			fmt.Println("readOpenRevs rev err:", err)
-
+		atts, _ := rs.Attachments()
+		if err := prepareAttachments(doc, atts); err != nil {
 			return err
-		}
-		atomic.AddInt32(&r.reads, 1)
-		atomic.AddInt32(&r.missingFound, 1)
-		origDoc, err := readDoc(ctx, r.source, id, rev)
-		if err != nil {
-			fmt.Println("readOpenRevs readDoc err:", err)
-			return err
-		}
-		doc := new(document)
-		if err := rs.ScanDoc(&doc); err != nil {
-			fmt.Println("readOpenRevs ScanDoc err:", err)
-			return err
-		}
-		if d := cmp.Diff(origDoc, doc); d != "" {
-			fmt.Println(d)
 		}
 		select {
 		case <-ctx.Done():
@@ -413,7 +401,6 @@ func (r *replicator) readOpenRevs(ctx context.Context, id string, revs []string,
 		}
 	}
 	err := rs.Err()
-	fmt.Println("readOpenRevs err:", err)
 	if err == nil {
 		atomic.AddInt32(&r.missingChecks, int32(len(revs)))
 	}
@@ -444,6 +431,58 @@ func (r *replicator) readIndividualDocs(ctx context.Context, id string, revs []s
 	return nil
 }
 
+// prepareAttachments reads attachments from atts, prepares them, and adds them
+// to doc.
+func prepareAttachments(doc *document, atts *AttachmentsIterator) error {
+	if atts == nil {
+		return nil
+	}
+	// TODO: It seems silly this is necessary... I need better attachment
+	// handling in kivik.
+	for {
+		att, err := atts.Next()
+		if err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			return err
+		}
+		var content []byte
+		switch att.ContentEncoding {
+		case "":
+			var err error
+			content, err = io.ReadAll(att.Content)
+			if err != nil {
+				return err
+			}
+			if err := att.Content.Close(); err != nil {
+				return err
+			}
+		case "gzip":
+			zr, err := gzip.NewReader(att.Content)
+			if err != nil {
+				return err
+			}
+			content, err = io.ReadAll(zr)
+			if err != nil {
+				return err
+			}
+			if err := zr.Close(); err != nil {
+				return err
+			}
+			if err := att.Content.Close(); err != nil {
+				return err
+			}
+		default:
+			return fmt.Errorf("Unknown encoding '%s' for attachment '%s'", att.ContentEncoding, att.Filename)
+		}
+		att.Stub = false
+		att.Follows = false
+		att.Content = io.NopCloser(bytes.NewReader(content))
+		doc.Attachments.Set(att.Filename, att)
+	}
+}
+
 func readDoc(ctx context.Context, db *DB, docID, rev string) (*document, error) {
 	doc := new(document)
 	row := db.Get(ctx, docID, Params(map[string]interface{}{
@@ -454,52 +493,11 @@ func readDoc(ctx context.Context, db *DB, docID, rev string) (*document, error) 
 	if err := row.ScanDoc(&doc); err != nil {
 		return nil, err
 	}
-	// TODO: It seems silly this is necessary... I need better attachment
-	// handling in kivik.
-	if atts, _ := row.Attachments(); atts != nil {
-		for {
-			att, err := atts.Next()
-			if err != nil {
-				if err != io.EOF {
-					return nil, err
-				}
-				break
-			}
-			var content []byte
-			switch att.ContentEncoding {
-			case "":
-				var err error
-				content, err = io.ReadAll(att.Content)
-				if err != nil {
-					return nil, err
-				}
-				if err := att.Content.Close(); err != nil {
-					return nil, err
-				}
-			case "gzip":
-				zr, err := gzip.NewReader(att.Content)
-				if err != nil {
-					return nil, err
-				}
-				content, err = io.ReadAll(zr)
-				if err != nil {
-					return nil, err
-				}
-				if err := zr.Close(); err != nil {
-					return nil, err
-				}
-				if err := att.Content.Close(); err != nil {
-					return nil, err
-				}
-			default:
-				return nil, fmt.Errorf("Unknown encoding '%s' for attachment '%s'", att.ContentEncoding, att.Filename)
-			}
-			att.Stub = false
-			att.Follows = false
-			att.Content = io.NopCloser(bytes.NewReader(content))
-			doc.Attachments.Set(att.Filename, att)
-		}
+	atts, _ := row.Attachments()
+	if err := prepareAttachments(doc, atts); err != nil {
+		return nil, err
 	}
+
 	return doc, nil
 }
 

@@ -235,8 +235,7 @@ type Document struct {
 	// Rev is the revision number returned
 	Rev string
 
-	// Body contains the response body, either in raw JSON or multipart/related
-	// format.
+	// Body returns the document JSON.
 	Body io.ReadCloser
 
 	// Attachments will be nil except when attachments=true.

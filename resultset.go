@@ -58,14 +58,6 @@ type ResultMetadata struct {
 // The Scan* methods are expected to be called only once per iteration, as
 // they may consume data from the network, rendering them unusable a second
 // time.
-//
-// Calling [ResultSet.ScanDoc], [ResultSet.ScanKey], [ResultSet.ScanValue],
-// [ResultSet.ID], [ResultSet.Key], [ResultSet.Rev], or [ResultSet.Attachments]
-// before calling [ResultSet.Next] will operate on the first item in the
-// resultset, then close the iterator immediately. This is for convenience in
-// cases where only a single item is expected, so the extra effort of iterating
-// is otherwise wasted. In this case, if the result set is empty, as when a view
-// returns no results, an error of "no results" will be returned.
 type ResultSet struct {
 	*iter
 	rowsi driver.Rows

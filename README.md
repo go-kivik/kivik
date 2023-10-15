@@ -160,7 +160,6 @@ This is a partial list of breaking changes between 3.x and 4.x
   - The `Offset()`, `TotalRows()`, `UpdateSeq()`, `Warning()` and `Bookmark()` methods have been removed, and replaced with the `ResultMetadata` type which is accessed via the `Metadata()` method. See [issue #552](https://github.com/go-kivik/kivik/issues/552).
   - Calling most methods on `ResultSet` will now work after closing the iterator.
   - The new `ResultSet` type supports multi-query mode, which is triggered by calling `NextResultSet` before `Next`.
-  - Calling `ScanDoc`, `ScanKey`, `ScanValue`, `Key`, or `ID` before calling `Next` or `NextResultSet` will make the iterator operate in single-item mode, meaning that only the first item in the iterator will be processed, then the iterator will be closed immediately.
   - `Key`, `ID`, `Rev`, `Attachments` all now return row-specific errors, and `ScanKey` may successfully decode while also returning a row-specific error.
 - The `Changes` type has been changed to semantically match the `ResultSet` type. Specifically, the `LastSeq()` and `Pending()` methods have been replaced by the `Metadata()` method.
 - The `DBUpdates()` and `Changes()` methods now defer errors to the iterator, for easier chaining and consistency with other iterators.

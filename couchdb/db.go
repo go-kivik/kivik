@@ -213,11 +213,16 @@ func (d *db) Get(ctx context.Context, docID string, options driver.Options) (*dr
 	}
 }
 
+func openRevs(revs []string) kivik.Option {
+	encoded, _ := json.Marshal(revs)
+	return kivik.Param("open_revs", string(encoded))
+}
+
 // TODO: Flesh this out.
 func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, options driver.Options) (driver.Rows, error) {
 	opts := multiOptions{
 		kivik.Option(options),
-		kivik.Param("open_revs", revs),
+		openRevs(revs),
 	}
 	resp, err := d.get(ctx, http.MethodGet, docID, opts)
 	if err != nil {

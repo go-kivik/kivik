@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
 	"sync/atomic"
 	"time"
 
@@ -153,7 +154,9 @@ type replicator struct {
 	// caution! The security object is not versioned, and will be
 	// unconditionally overwritten!
 	withSecurity bool
-	start        time.Time
+	// noOpenRevs is set if a call to OpenRevs returns unsupported
+	noOpenRevs bool
+	start      time.Time
 	// replication stats counters
 	writeFailures, reads, writes, missingChecks, missingFound int32
 }
@@ -356,6 +359,55 @@ func (r *replicator) readDocs(ctx context.Context, diffs <-chan *revDiff, result
 }
 
 func (r *replicator) readDoc(ctx context.Context, id string, revs []string, results chan<- *document) error {
+	if !r.noOpenRevs {
+		err := r.readOpenRevs(ctx, id, revs, results)
+		if HTTPStatus(err) == http.StatusNotImplemented {
+			r.noOpenRevs = true
+		} else {
+			return err
+		}
+	}
+	return r.readIndividualDocs(ctx, id, revs, results)
+}
+
+func (r *replicator) readOpenRevs(ctx context.Context, id string, revs []string, results chan<- *document) error {
+	rs := r.source.OpenRevs(ctx, id, revs, Params(map[string]interface{}{
+		"revs":   true,
+		"latest": true,
+	}))
+	defer rs.Close()
+	for rs.Next() {
+		atomic.AddInt32(&r.reads, 1)
+		atomic.AddInt32(&r.missingFound, 1)
+		doc := new(document)
+		err := rs.ScanDoc(&doc)
+		if err != nil {
+			return err
+		}
+		r.callback(ReplicationEvent{
+			Type:  eventDocument,
+			Read:  true,
+			DocID: id,
+			Error: err,
+		})
+		atts, _ := rs.Attachments()
+		if err := prepareAttachments(doc, atts); err != nil {
+			return err
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case results <- doc:
+		}
+	}
+	err := rs.Err()
+	if err == nil {
+		atomic.AddInt32(&r.missingChecks, int32(len(revs)))
+	}
+	return err
+}
+
+func (r *replicator) readIndividualDocs(ctx context.Context, id string, revs []string, results chan<- *document) error {
 	for _, rev := range revs {
 		atomic.AddInt32(&r.missingChecks, 1)
 		d, err := readDoc(ctx, r.source, id, rev)
@@ -379,6 +431,58 @@ func (r *replicator) readDoc(ctx context.Context, id string, revs []string, resu
 	return nil
 }
 
+// prepareAttachments reads attachments from atts, prepares them, and adds them
+// to doc.
+func prepareAttachments(doc *document, atts *AttachmentsIterator) error {
+	if atts == nil {
+		return nil
+	}
+	// TODO: It seems silly this is necessary... I need better attachment
+	// handling in kivik.
+	for {
+		att, err := atts.Next()
+		if err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			return err
+		}
+		var content []byte
+		switch att.ContentEncoding {
+		case "":
+			var err error
+			content, err = io.ReadAll(att.Content)
+			if err != nil {
+				return err
+			}
+			if err := att.Content.Close(); err != nil {
+				return err
+			}
+		case "gzip":
+			zr, err := gzip.NewReader(att.Content)
+			if err != nil {
+				return err
+			}
+			content, err = io.ReadAll(zr)
+			if err != nil {
+				return err
+			}
+			if err := zr.Close(); err != nil {
+				return err
+			}
+			if err := att.Content.Close(); err != nil {
+				return err
+			}
+		default:
+			return fmt.Errorf("Unknown encoding '%s' for attachment '%s'", att.ContentEncoding, att.Filename)
+		}
+		att.Stub = false
+		att.Follows = false
+		att.Content = io.NopCloser(bytes.NewReader(content))
+		doc.Attachments.Set(att.Filename, att)
+	}
+}
+
 func readDoc(ctx context.Context, db *DB, docID, rev string) (*document, error) {
 	doc := new(document)
 	row := db.Get(ctx, docID, Params(map[string]interface{}{
@@ -389,52 +493,11 @@ func readDoc(ctx context.Context, db *DB, docID, rev string) (*document, error) 
 	if err := row.ScanDoc(&doc); err != nil {
 		return nil, err
 	}
-	// TODO: It seems silly this is necessary... I need better attachment
-	// handling in kivik.
-	if atts, _ := row.Attachments(); atts != nil {
-		for {
-			att, err := atts.Next()
-			if err != nil {
-				if err != io.EOF {
-					return nil, err
-				}
-				break
-			}
-			var content []byte
-			switch att.ContentEncoding {
-			case "":
-				var err error
-				content, err = io.ReadAll(att.Content)
-				if err != nil {
-					return nil, err
-				}
-				if err := att.Content.Close(); err != nil {
-					return nil, err
-				}
-			case "gzip":
-				zr, err := gzip.NewReader(att.Content)
-				if err != nil {
-					return nil, err
-				}
-				content, err = io.ReadAll(zr)
-				if err != nil {
-					return nil, err
-				}
-				if err := zr.Close(); err != nil {
-					return nil, err
-				}
-				if err := att.Content.Close(); err != nil {
-					return nil, err
-				}
-			default:
-				return nil, fmt.Errorf("Unknown encoding '%s' for attachment '%s'", att.ContentEncoding, att.Filename)
-			}
-			att.Stub = false
-			att.Follows = false
-			att.Content = io.NopCloser(bytes.NewReader(content))
-			doc.Attachments.Set(att.Filename, att)
-		}
+	atts, _ := row.Attachments()
+	if err := prepareAttachments(doc, atts); err != nil {
+		return nil, err
 	}
+
 	return doc, nil
 }
 

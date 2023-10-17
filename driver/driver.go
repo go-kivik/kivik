@@ -158,14 +158,22 @@ type Security struct {
 // MarshalJSON satisfies the json.Marshaler interface.
 func (s Security) MarshalJSON() ([]byte, error) {
 	var v struct {
-		Admins  *Members `json:"admins,omitempty"`
-		Members *Members `json:"members,omitempty"`
+		Admins          *Members            `json:"admins,omitempty"`
+		Members         *Members            `json:"members,omitempty"`
+		Cloudant        map[string][]string `json:"cloudant,omitempty"`
+		CouchdbAuthOnly *bool               `json:"couchdb_auth_only,omitempty"`
 	}
 	if len(s.Admins.Names) > 0 || len(s.Admins.Roles) > 0 {
 		v.Admins = &s.Admins
 	}
 	if len(s.Members.Names) > 0 || len(s.Members.Roles) > 0 {
 		v.Members = &s.Members
+	}
+	if len(s.Cloudant) > 0 {
+		v.Cloudant = s.Cloudant
+	}
+	if s.CouchdbAuthOnly != nil {
+		v.CouchdbAuthOnly = s.CouchdbAuthOnly
 	}
 	return json.Marshal(v)
 }

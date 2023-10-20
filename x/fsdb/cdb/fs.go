@@ -159,15 +159,12 @@ func (fs *FS) openRevs(docID string, revIDs []string) (Revisions, error) {
 // OpenDocIDOpenRevs opens the requested document by ID (without file extension),
 // same as OpenDocID, however, it honors the open_revs option, to potentially
 // return multiple revisions of the same document.
-func (fs *FS) OpenDocIDOpenRevs(docID string, options driver.Options) ([]*Document, error) {
-	opts := map[string]interface{}{}
-	options.Apply(opts)
-	rev, _ := opts["rev"].(string)
-	revs, err := fs.openRevs(docID, []string{rev})
+func (fs *FS) OpenDocIDOpenRevs(docID string, revIDs []string) ([]*Document, error) {
+	revs, err := fs.openRevs(docID, revIDs)
 	if err != nil {
 		return nil, err
 	}
-	if rev == "" && revs.Deleted() {
+	if revIDs[0] == "" && revs.Deleted() {
 		return nil, statusError{status: http.StatusNotFound, error: errors.New("deleted")}
 	}
 	doc := &Document{

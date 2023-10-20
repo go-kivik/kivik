@@ -37,7 +37,8 @@ func (d *db) Get(_ context.Context, docID string, options driver.Options) (*driv
 	if docID == "" {
 		return nil, statusError{status: http.StatusBadRequest, error: errors.New("no docid specified")}
 	}
-	docs, err := d.cdb.OpenDocIDOpenRevs(docID, options)
+	rev, _ := opts["rev"].(string)
+	docs, err := d.cdb.OpenDocIDOpenRevs(docID, []string{rev})
 	if err != nil {
 		return nil, err
 	}

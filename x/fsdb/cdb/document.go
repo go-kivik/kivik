@@ -13,15 +13,18 @@
 package cdb
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync/atomic"
 
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/x/fsdb/filesystem"
@@ -41,7 +44,39 @@ type Document struct {
 	Options map[string]interface{} `json:"-" yaml:"-"`
 
 	cdb *FS
+
+	// cursor indicates the current position in the Revisions slice. 0 means
+	// Next() has not yet been called.
+	closed int32
 }
+
+var _ driver.Rows = (*Document)(nil)
+
+func (d *Document) Next(row *driver.Row) error {
+	if atomic.LoadInt32(&d.closed) == 1 {
+		return errors.New("iterator closed")
+	}
+	if len(d.Revisions) == 0 {
+		return io.EOF
+	}
+	row.ID = d.ID
+	row.Rev = d.Revisions[0].Rev.String()
+	buf := &bytes.Buffer{}
+	if err := json.NewEncoder(buf).Encode(d); err != nil {
+		return err
+	}
+	row.Doc = buf
+	d.Revisions = d.Revisions[1:]
+	return nil
+}
+
+func (d *Document) Close() error {
+	atomic.StoreInt32(&d.closed, 1)
+	return nil
+}
+func (*Document) UpdateSeq() string { return "" }
+func (*Document) Offset() int64     { return 0 }
+func (*Document) TotalRows() int64  { return 0 }
 
 // NewDocument creates a new document.
 func (fs *FS) NewDocument(docID string) *Document {

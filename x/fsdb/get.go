@@ -42,18 +42,35 @@ func (d *db) Get(_ context.Context, docID string, options driver.Options) (*driv
 	if err != nil {
 		return nil, err
 	}
-	docs[0].Options = opts
+	docs.Options = opts
 	buf := &bytes.Buffer{}
-	if err := json.NewEncoder(buf).Encode(docs[0]); err != nil {
+	if err := json.NewEncoder(buf).Encode(docs); err != nil {
 		return nil, err
 	}
-	attsIter, err := docs[0].Revisions[0].AttachmentsIterator()
+	attsIter, err := docs.Revisions[0].AttachmentsIterator()
 	if err != nil {
 		return nil, err
 	}
 	return &driver.Document{
-		Rev:         docs[0].Revisions[0].Rev.String(),
+		Rev:         docs.Revisions[0].Rev.String(),
 		Body:        io.NopCloser(buf),
 		Attachments: attsIter,
 	}, nil
+}
+
+func (d *db) OpenRevs(_ context.Context, docID string, revs []string, options driver.Options) (driver.Rows, error) {
+	opts := map[string]interface{}{}
+	options.Apply(opts)
+	if docID == "" {
+		return nil, statusError{status: http.StatusBadRequest, error: errors.New("no docid specified")}
+	}
+	if len(revs) == 0 {
+		return nil, statusError{status: http.StatusBadRequest, error: errors.New("no revs specified")}
+	}
+	docs, err := d.cdb.OpenDocIDOpenRevs(docID, revs)
+	if err != nil {
+		return nil, err
+	}
+	docs.Options = opts
+	return docs, nil
 }

@@ -104,8 +104,8 @@ func (r *Revision) restoreAttachments() error {
 	return nil
 }
 
-// openRevs returns the active revisions for docID that match revid.
-func (fs *FS) openRevs(docID string, revIDs []string) (Revisions, error) {
+// OpenRevs returns the active revisions for docID that match revid.
+func (fs *FS) OpenRevs(docID string, revIDs []string) (Revisions, error) {
 	revs := make(Revisions, 0, len(revIDs))
 	base := EscapeID(docID)
 	for _, revid := range revIDs {
@@ -159,8 +159,8 @@ func (fs *FS) openRevs(docID string, revIDs []string) (Revisions, error) {
 // OpenDocIDOpenRevs opens the requested document by ID (without file extension),
 // same as OpenDocID, however, it honors the open_revs option, to potentially
 // return multiple revisions of the same document.
-func (fs *FS) OpenDocIDOpenRevs(docID string, revIDs []string) ([]*Document, error) {
-	revs, err := fs.openRevs(docID, revIDs)
+func (fs *FS) OpenDocIDOpenRevs(docID string, revIDs []string) (*Document, error) {
+	revs, err := fs.OpenRevs(docID, revIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +183,7 @@ func (fs *FS) OpenDocIDOpenRevs(docID string, revIDs []string) ([]*Document, err
 			att.fs = fs.fs
 		}
 	}
-	return []*Document{doc}, nil
+	return doc, nil
 }
 
 // OpenDocID opens the requested document by ID (without file extension).
@@ -191,7 +191,7 @@ func (fs *FS) OpenDocID(docID string, options driver.Options) (*Document, error)
 	opts := map[string]interface{}{}
 	options.Apply(opts)
 	rev, _ := opts["rev"].(string)
-	revs, err := fs.openRevs(docID, []string{rev})
+	revs, err := fs.OpenRevs(docID, []string{rev})
 	if err != nil {
 		return nil, err
 	}

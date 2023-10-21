@@ -4,12 +4,14 @@ go 1.17
 
 require (
 	github.com/cenkalti/backoff/v4 v4.1.3
+	github.com/go-chi/chi/v5 v5.0.10
 	github.com/google/go-cmp v0.5.9
 	github.com/gopherjs/gopherjs v1.17.2
 	github.com/gopherjs/jsbuiltin v0.0.0-20180426082241-50091555e127
 	github.com/icza/dyno v0.0.0-20230330125955-09f820a8d9c0
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/pflag v1.0.5
+	gitlab.com/flimzy/httpe v0.0.0-20231112211905-06412f950a04
 	gitlab.com/flimzy/testy v0.13.0
 	golang.org/x/net v0.17.0
 	golang.org/x/sync v0.4.0

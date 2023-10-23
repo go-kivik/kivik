@@ -10,7 +10,9 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-// Package mango provides support for parsing and executing Cloudant, CouchDB,
-// and PouchDB-style Mango queries against JSON documents. This package is
-// experimental and subject to change without notice.
-package mango
+/*
+Package memorydb provides a memory-backed Kivik driver, intended for testing.
+This driver is an experimental work in progress, and subject to change without
+notice.
+*/
+package memorydb

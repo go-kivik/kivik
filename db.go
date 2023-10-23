@@ -250,6 +250,8 @@ func (db *DB) Get(ctx context.Context, docID string, options ...Option) *Documen
 
 // OpenRevs returns documents of specified leaf revisions. Additionally, it
 // accepts a revs value of "all" to return all leaf revisions.
+//
+// This function is experimental, and may change without notice.
 func (db *DB) OpenRevs(ctx context.Context, docID string, revs []string, options ...Option) *ResultSet {
 	if db.err != nil {
 		return &ResultSet{iter: errIterator(db.err)}

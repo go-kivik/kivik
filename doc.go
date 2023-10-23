@@ -78,10 +78,10 @@ this will use [cookie auth].
 
 Depending on which driver you use, there may be other ways to authenticate, as
 well. At the moment, the CouchDB driver is the only official driver which offers
-additional authentication methods. Please refer to the [CouchDB package
-documentation] for details.
+additional authentication methods. Please refer to the [CouchDB package documentation]
+for details.
 
 [cookie auth]: https://docs.couchdb.org/en/stable/api/server/authn.html?highlight=cookie%20auth#cookie-authentication
-[CouchDB package documentation]: github.com/go-kivik/kivik/v4/couchdb
+[CouchDB package documentation]: https://pkg.go.dev/github.com/go-kivik/kivik/v4/couchdb
 */
 package kivik // import "github.com/go-kivik/kivik/v4"

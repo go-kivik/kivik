@@ -112,7 +112,7 @@ func errIterator(err error) *iter {
 func (i *iter) awaitDone(ctx context.Context) {
 	<-ctx.Done()
 	i.mu.Lock()
-	_ = i.close(ctx.Err())
+	_ = i.closeErr(ctx.Err())
 	i.mu.Unlock()
 }
 
@@ -148,7 +148,7 @@ func (i *iter) next() bool {
 		}
 		i.err = err
 		if i.err != nil {
-			_ = i.close(nil)
+			_ = i.closeErr(nil)
 			return false
 		}
 		return true
@@ -164,10 +164,10 @@ func (i *iter) Close() error {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 	i.wg.Wait()
-	return i.close(nil)
+	return i.closeErr(nil)
 }
 
-func (i *iter) close(err error) error {
+func (i *iter) closeErr(err error) error {
 	if i.state == stateClosed {
 		return nil
 	}
@@ -190,8 +190,8 @@ func (i *iter) close(err error) error {
 	return err
 }
 
-// Err returns the error, if any, that was encountered during iteration. Err
-// may be called after an explicit or implicit [Close].
+// Err returns the error, if any, that was encountered during iteration. Err may
+// be called after an explicit or implicit [Close].
 func (i *iter) Err() error {
 	i.mu.Lock()
 	defer i.mu.Unlock()

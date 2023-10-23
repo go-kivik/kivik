@@ -60,6 +60,30 @@ func newChanges(ctx context.Context, onClose func(), changesi driver.Changes) *C
 	}
 }
 
+// Close closes the iterator, preventing further enumeration, and freeing any
+// resources (such as the http request body) of the underlying feed. If
+// [Changes.Next] is called and there are no further results, the iterator is
+// closed automatically and it will suffice to check the result of
+// [Changes.Err]. Close is idempotent and does not affect the result of
+// [Changes.Err].
+func (c *Changes) Close() error {
+	return c.iter.Close()
+}
+
+// Err returns the error, if any, that was encountered during iteration. Err may
+// be called after an explicit or implicit [Changes.Close].
+func (c *Changes) Err() error {
+	return c.iter.Err()
+}
+
+// Next prepares the next iterator result value for reading. It returns true on
+// success, or false if there is no next result or an error occurs while
+// preparing it. [Changes.Err] should be consulted to distinguish between the
+// two.
+func (c *Changes) Next() bool {
+	return c.iter.Next()
+}
+
 // Changes returns a list of changed revs.
 func (c *Changes) Changes() []string {
 	return c.curVal.(*driver.Change).Changes
@@ -75,8 +99,8 @@ func (c *Changes) ID() string {
 	return c.curVal.(*driver.Change).ID
 }
 
-// ScanDoc works the same as [Changes.ScanValue], but on the doc field of the
-// result. It is only valid for results that include documents.
+// ScanDoc copies the data from the result into dest.  See [ResultSet.ScanValue]
+// for additional details.
 func (c *Changes) ScanDoc(dest interface{}) error {
 	err := c.isReady()
 	if err != nil {

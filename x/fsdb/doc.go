@@ -12,8 +12,9 @@
 
 /*
 Package fs provides an experimental filesystem-backed Kivik driver. This driver
-is very much a work in progress. Please refer to the GitHub page for current
-status and ongoing changes. https://github.com/go-kivik/kivik/x/fsdb
+is an experimental work in progress, and subject to change without notice.
+Please refer to the GitHub page for current status and ongoing changes.
+https://github.com/go-kivik/kivik/x/fsdb
 
 Bug reports, feature requests, and pull requests are always welcome. Current
 development is primarily focused around using fsdb for testing of CouchDB

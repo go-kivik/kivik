@@ -10,7 +10,6 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-// Package memorydb provides a memory-backed Kivik driver, intended for testing.
 package memorydb
 
 import (

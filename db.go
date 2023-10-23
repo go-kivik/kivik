@@ -507,7 +507,7 @@ func driverStats2kivikStats(i *driver.DBStats) *DBStats {
 }
 
 // Compact begins compaction of the database. Check the CompactRunning field
-// returned by [DB.Info] to see if the compaction has completed.
+// returned by [DB.Stats] to see if the compaction has completed.
 //
 // See the [CouchDB documentation].
 //
@@ -881,8 +881,8 @@ type RevDiff struct {
 	PossibleAncestors []string `json:"possible_ancestors,omitempty"`
 }
 
-// Diffs is a collection of [RevDiff]s as returned by [DB.RevsDiff]. The map
-// key is the document ID.
+// Diffs is a collection of [RevDiff] values as returned by [DB.RevsDiff]. The
+// map key is the document ID.
 type Diffs map[string]RevDiff
 
 // RevsDiff returns the subset of document/revision IDs that do not correspond

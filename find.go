@@ -18,12 +18,10 @@ import (
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
-// Find executes a query using the new /_find interface. The query must be
+// Find executes a query using the [_find interface]. The query must be
 // JSON-marshalable to a valid query.
 //
-// See the [CouchDB documentation].
-//
-// [CouchDB documentation]: https://docs.couchdb.org/en/stable/api/database/find.html
+// [_find interface]: https://docs.couchdb.org/en/stable/api/database/find.html
 func (db *DB) Find(ctx context.Context, query interface{}, options ...Option) *ResultSet {
 	if db.err != nil {
 		return &ResultSet{iter: errIterator(db.err)}

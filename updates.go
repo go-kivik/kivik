@@ -43,6 +43,30 @@ func newDBUpdates(ctx context.Context, onClose func(), updatesi driver.DBUpdates
 	}
 }
 
+// Close closes the iterator, preventing further enumeration, and freeing any
+// resources (such as the http request body) of the underlying feed. If
+// [DBUpdates.Next] is called and there are no further results, the iterator is
+// closed automatically and it will suffice to check the result of
+// [DBUpdates.Err]. Close is idempotent and does not affect the result of
+// [DBUpdates.Err].
+func (f *DBUpdates) Close() error {
+	return f.iter.Close()
+}
+
+// Err returns the error, if any, that was encountered during iteration. Err may
+// be called after an explicit or implicit [DBUpdates.Close].
+func (f *DBUpdates) Err() error {
+	return f.iter.Err()
+}
+
+// Next prepares the next iterator result value for reading. It returns true on
+// success, or false if there is no next result or an error occurs while
+// preparing it. [DBUpdates.Err] should be consulted to distinguish between the
+// two.
+func (f *DBUpdates) Next() bool {
+	return f.iter.Next()
+}
+
 // DBName returns the database name for the current update.
 func (f *DBUpdates) DBName() string {
 	err := f.isReady()

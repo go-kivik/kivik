@@ -41,21 +41,6 @@ documentation for the standard library's [encoding/json] package.
 One would be well-advised to become familiar with using `json` struct field
 tags [encoding/json.Marshal] when working with JSON documents.
 
-# Using contexts
-
-Most Kivik methods take `context.Context` as their first argument. This allows
-the cancellation of blocking operations in the case that the result is no
-longer needed. A typical use case for a web application would be to cancel a
-Kivik request if the remote HTTP client ahs disconnected, rednering the results
-of the query irrelevant.
-
-To learn more about Go's contexts, read the [context] package documentation
-and read the Go blog post [Go Concurrency Patterns: Context] for example code.
-
-If in doubt, you can pass [context.TODO] as the context variable. Example:
-
-	row := db.Get(context.TODO(), "some_doc_id")
-
 # Options
 
 Most client and database methods take optional arguments of the type [Option].
@@ -96,7 +81,6 @@ well. At the moment, the CouchDB driver is the only official driver which offers
 additional authentication methods. Please refer to the [CouchDB package
 documentation] for details.
 
-[Go Concurrency Patterns: Context]: https://blog.golang.org/context
 [cookie auth]: https://docs.couchdb.org/en/stable/api/server/authn.html?highlight=cookie%20auth#cookie-authentication
 [CouchDB package documentation]: github.com/go-kivik/kivik/v4/couchdb
 */

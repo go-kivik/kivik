@@ -19,19 +19,19 @@ import (
 const (
 	// ErrClientClosed is returned by any client operations after [Client.Close]
 	// has been called.
-	ErrClientClosed = internal.CompositeError("\x67client closed")
+	ErrClientClosed = internal.CompositeError("503 client closed")
 	// ErrDatabaseClosed is returned by any database operations after [DB.Close]
 	// has been called.
-	ErrDatabaseClosed = internal.CompositeError("\x67database closed")
+	ErrDatabaseClosed = internal.CompositeError("503 database closed")
 
 	// Various not-implemented errors, that are returned, but don't need to be exposed directly.
-	errFindNotImplemented        = internal.CompositeError("\x65driver does not support Find interface")
-	errClusterNotImplemented     = internal.CompositeError("\x65driver does not support cluster operations")
-	errOpenRevsNotImplemented    = internal.CompositeError("\x65driver does not support OpenRevs interface")
-	errSecurityNotImplemented    = internal.CompositeError("\x65driver does not support Security interface")
-	errConfigNotImplemented      = internal.CompositeError("\x65driver does not support Config interface")
-	errReplicationNotImplemented = internal.CompositeError("\x65driver does not support replication")
-	errNoAttachments             = internal.CompositeError("\x04no attachments")
+	errFindNotImplemented        = internal.CompositeError("501 driver does not support Find interface")
+	errClusterNotImplemented     = internal.CompositeError("501 driver does not support cluster operations")
+	errOpenRevsNotImplemented    = internal.CompositeError("501 driver does not support OpenRevs interface")
+	errSecurityNotImplemented    = internal.CompositeError("501 driver does not support Security interface")
+	errConfigNotImplemented      = internal.CompositeError("501 driver does not support Config interface")
+	errReplicationNotImplemented = internal.CompositeError("501 driver does not support replication")
+	errNoAttachments             = internal.CompositeError("404 no attachments")
 )
 
 // HTTPStatus returns the HTTP status code embedded in the error, or 500

@@ -281,7 +281,7 @@ func (db *DB) Query(ctx context.Context, ddoc, view string, options map[string]i
 	return callBack(ctx, db, "query", ddoc+"/"+view, o)
 }
 
-const errFindPluginNotLoaded = internal.CompositeError("\x65pouchdb-find plugin not loaded")
+const errFindPluginNotLoaded = internal.CompositeError("501 pouchdb-find plugin not loaded")
 
 // Find executes a MongoDB-style find query with the pouchdb-find plugin, if it
 // is installed. If the plugin is not installed, a NotImplemented error will be

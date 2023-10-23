@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -26,12 +27,13 @@ import (
 type CompositeError string
 
 func (c CompositeError) Error() string {
-	return "kivik: " + string(c[1:])
+	return "kivik: " + string(c[4:])
 }
 
 // HTTPStatus returns c's HTTP status code.
 func (c CompositeError) HTTPStatus() int {
-	return int(c[0]) + http.StatusBadRequest
+	i, _ := strconv.Atoi(string(c[:3]))
+	return i
 }
 
 // Error represents an error returned by Kivik.

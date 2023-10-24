@@ -14,6 +14,7 @@ package kivik_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	kivik "github.com/go-kivik/kivik/v4"
@@ -120,19 +121,55 @@ func ExampleDB_query() {
 	}
 }
 
-func ExampleDB_multiple_queries() {
-	rs := db.Query(context.TODO(), "_design/foo", "_view/bar", kivik.Param("queries", []interface{}{
-		map[string]interface{}{
-			"startkey":     []string{"foo", "bar"},
-			"endkey":       []string{"foo", "bar" + kivik.EndKeySuffix},
-			"include_docs": true,
-		},
-		map[string]interface{}{
-			"startkey":     []string{"baz", "bar"},
-			"endkey":       []string{"baz", "bar" + kivik.EndKeySuffix},
-			"include_docs": true,
-		},
+func ExampleDB_query_compound_key() {
+	rs := db.Query(context.TODO(), "_design/foo", "_view/bar", kivik.Params(map[string]interface{}{
+		"startkey": []string{"foo", "bar"},
+		"endkey":   []string{"foo", "bar" + kivik.EndKeySuffix},
 	}))
+	defer rs.Close()
+	for rs.Next() {
+		var doc interface{}
+		if err := rs.ScanDoc(&doc); err != nil {
+			panic(err)
+		}
+		/* do something with doc */
+	}
+	if rs.Err() != nil {
+		panic(rs.Err())
+	}
+}
+
+func ExampleDB_query_literal_JSON_keys() {
+	rs := db.Query(context.TODO(), "_design/foo", "_view/bar", kivik.Param(
+		"startkey", json.RawMessage(`{"foo":true}`),
+	))
+	defer rs.Close()
+	for rs.Next() {
+		var doc interface{}
+		if err := rs.ScanDoc(&doc); err != nil {
+			panic(err)
+		}
+		/* do something with doc */
+	}
+	if rs.Err() != nil {
+		panic(rs.Err())
+	}
+}
+
+func ExampleDB_multiple_queries() {
+	rs := db.Query(context.TODO(), "_design/foo", "_view/bar", kivik.Param(
+		"queries", []interface{}{
+			map[string]interface{}{
+				"startkey":     []string{"foo", "bar"},
+				"endkey":       []string{"foo", "bar" + kivik.EndKeySuffix},
+				"include_docs": true,
+			},
+			map[string]interface{}{
+				"startkey":     []string{"baz", "bar"},
+				"endkey":       []string{"baz", "bar" + kivik.EndKeySuffix},
+				"include_docs": true,
+			},
+		}))
 	defer rs.Close()
 	var rsIndex int
 	for rs.NextResultSet() {

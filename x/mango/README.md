@@ -1,4 +1,4 @@
-[![GoDoc](https://godoc.org/github.com/go-kivik/kivik/v4/x/mango?status.svg)](http://godoc.org/github.com/go-kivik/kivik/v4/x/mango)
+[![Go Reference](https://pkg.go.dev/badge/github.com/go-kivik/kivik/v4/x/mango.svg)](https://pkg.go.dev/github.com/go-kivik/kivik/v4/x/mango)
 
 # Mango
 

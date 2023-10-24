@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/go-kivik/pouchdb.svg?branch=master)](https://travis-ci.org/go-kivik/pouchdb)  [![GoDoc](https://godoc.org/github.com/go-kivik/pouchdb?status.svg)](http://godoc.org/github.com/go-kivik/pouchdb)
+[![Go Reference](https://pkg.go.dev/badge/github.com/go-kivik/kivik/v4/pouchdb.svg)](https://pkg.go.dev/github.com/go-kivik/kivik/v4/pouchdb)
 
 # Kivik PouchDB
 
@@ -17,11 +17,9 @@ with Kivik as an example.
 ## Usage
 
 This package provides an implementation of the
-[`github.com/go-kivik/kivik/driver`](http://godoc.org/github.com/go-kivik/kivik/driver)
+[`github.com/go-kivik/kivik/v4/driver`](http://pkg.go.dev/github.com/go-kivik/kivik/v4/driver)
 interface. You must import the driver and can then use the full
-[`Kivik`](http://godoc.org/github.com/go-kivik/kivik) API. Please consult the
-[Kivik wiki](https://github.com/go-kivik/kivik/wiki) for complete documentation
-and coding examples.
+[`Kivik`](http://pkg.go.dev/github.com/go-kivik/kivik/v4) API.
 
 ```go
 // +build js

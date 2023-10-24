@@ -31,15 +31,15 @@ The kivik driver system is modeled after the standard library's `sql` and
 the different database models implemented by SQL and NoSQL databases such as
 CouchDB.
 
+The most methods, including those on [Client] and [DB] are safe to call
+concurrently, unless otherwise noted.
+
 # Working with JSON
 
 CouchDB stores JSON, so Kivik translates Go data structures to and from JSON as
 necessary. The conversion from Go data types to JSON, and vice versa, is
 handled automatically according to the rules and behavior described in the
 documentation for the standard library's [encoding/json] package.
-
-One would be well-advised to become familiar with using `json` struct field
-tags [encoding/json.Marshal] when working with JSON documents.
 
 # Options
 

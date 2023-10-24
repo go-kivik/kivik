@@ -1,4 +1,4 @@
-[![GoDoc](https://godoc.org/github.com/go-kivik/kivik/v4/x/memorydb?status.svg)](http://godoc.org/github.com/go-kivik/kivik/v4/x/memorydb)
+[![Go Reference](https://pkg.go.dev/badge/github.com/go-kivik/kivik/v4/x/memorydb.svg)](https://pkg.go.dev/github.com/go-kivik/kivik/v4/x/memorydb)
 
 # Kivik MemoryDB
 
@@ -9,11 +9,9 @@ This driver stores documents in memory only, and is intended for testing purpose
 ## Usage
 
 This package provides an implementation of the
-[`github.com/go-kivik/kivik/driver`](http://godoc.org/github.com/go-kivik/kivik/driver)
+[`github.com/go-kivik/kivik/driver`](http://pkg.go.dev/github.com/go-kivik/kivik/v4/driver)
 interface. You must import the driver and can then use the full
-[`Kivik`](http://godoc.org/github.com/go-kivik/kivik) API. Please consult the
-[Kivik wiki](https://github.com/go-kivik/kivik/wiki) for complete documentation
-and coding examples.
+[`Kivik`](http://pkg.go.dev/github.com/go-kivik/kivik/v4) API.
 
 ```go
 package main

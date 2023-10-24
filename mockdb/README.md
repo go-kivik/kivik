@@ -1,3 +1,5 @@
+[![Go Reference](https://pkg.go.dev/badge/github.com/go-kivik/kivik/v4/x/mockdb.svg)](https://pkg.go.dev/github.com/go-kivik/kivik/v4/x/mockdb)
+
 # MockDB
 
 Package **mockdb** is a mock library implementing a Kivik driver.

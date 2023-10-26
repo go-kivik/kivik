@@ -22,10 +22,10 @@ import (
 
 var db = &kivik.DB{}
 
-// Storing a document is done with Put or Create, which correspond to
+// Storing a document is done with Put or CreateDoc, which correspond to
 // `PUT /{db}/{doc}` and `POST /{db}` respectively. In most cases, you should
 // use Put.
-func ExampleDB_store() {
+func ExampleDB_CreateDoc() {
 	type Animal struct {
 		ID       string `json:"_id"`
 		Rev      string `json:"_rev,omitempty"`
@@ -33,11 +33,12 @@ func ExampleDB_store() {
 		Greeting string `json:"greeting"`
 	}
 
-	cow := Animal{ID: "cow", Feet: 4, Greeting: "moo"}
-	rev, err := db.Put(context.TODO(), "cow", cow)
+	cow := Animal{Feet: 4, Greeting: "moo"}
+	docID, rev, err := db.CreateDoc(context.TODO(), cow)
 	if err != nil {
 		panic(err)
 	}
+	cow.ID = docID
 	cow.Rev = rev
 }
 
@@ -48,7 +49,7 @@ var cow struct {
 
 // Updating a document is the same as storing one, except that the `_rev`
 // parameter must match that stored on the server.
-func ExampleDB_update() {
+func ExampleDB_Put() {
 	cow.Rev = "1-6e609020e0371257432797b4319c5829" // Must be set
 	cow.Greeting = "Moo!"
 	newRev, err := db.Put(context.TODO(), "cow", cow)
@@ -59,7 +60,7 @@ func ExampleDB_update() {
 }
 
 // As with updating a document, deletion depends on the proper _rev parameter.
-func ExampleDB_delete() {
+func ExampleDB_Delete() {
 	newRev, err := db.Delete(context.TODO(), "cow", "2-9c65296036141e575d32ba9c034dd3ee")
 	if err != nil {
 		panic(err)
@@ -69,7 +70,7 @@ func ExampleDB_delete() {
 
 // When fetching a document, the document will be unmarshaled from JSON into
 // your structure by the row.ScanDoc method.
-func ExampleDB_fetch() {
+func ExampleDB_Get() {
 	type Animal struct {
 		ID       string `json:"_id"`
 		Rev      string `json:"_rev,omitempty"`
@@ -89,7 +90,7 @@ func ExampleDB_fetch() {
 // and Kivik. The only difference is the document ID.
 //
 // Store your document normally, formatted with your views (or other functions).
-func ExampleDB_updateView() {
+func ExampleDB_Put_updateView() {
 	_, err := db.Put(context.TODO(), "_design/foo", map[string]interface{}{
 		"_id": "_design/foo",
 		"views": map[string]interface{}{
@@ -103,7 +104,7 @@ func ExampleDB_updateView() {
 	}
 }
 
-func ExampleDB_query() {
+func ExampleDB_Query() {
 	rs := db.Query(context.TODO(), "_design/foo", "_view/bar", kivik.Params(map[string]interface{}{
 		"startkey": `"foo"`,                           // Quotes are necessary so the
 		"endkey":   `"foo` + kivik.EndKeySuffix + `"`, // key is a valid JSON object
@@ -121,7 +122,7 @@ func ExampleDB_query() {
 	}
 }
 
-func ExampleDB_query_compound_key() {
+func ExampleDB_Query_compoundKey() {
 	rs := db.Query(context.TODO(), "_design/foo", "_view/bar", kivik.Params(map[string]interface{}{
 		"startkey": []string{"foo", "bar"},
 		"endkey":   []string{"foo", "bar" + kivik.EndKeySuffix},
@@ -139,7 +140,7 @@ func ExampleDB_query_compound_key() {
 	}
 }
 
-func ExampleDB_query_literal_JSON_keys() {
+func ExampleDB_Query_literalJSONKeys() {
 	rs := db.Query(context.TODO(), "_design/foo", "_view/bar", kivik.Param(
 		"startkey", json.RawMessage(`{"foo":true}`),
 	))
@@ -156,7 +157,7 @@ func ExampleDB_query_literal_JSON_keys() {
 	}
 }
 
-func ExampleDB_multiple_queries() {
+func ExampleDB_Query_multiple() {
 	rs := db.Query(context.TODO(), "_design/foo", "_view/bar", kivik.Param(
 		"queries", []interface{}{
 			map[string]interface{}{
@@ -185,7 +186,7 @@ func ExampleDB_multiple_queries() {
 }
 
 //nolint:revive // allow empty block in example
-func ExampleDB_mapReduce() {
+func ExampleDB_Query_mapReduce() {
 	opts := kivik.Param("group", true)
 	rows := db.Query(context.TODO(), "_design/foo", "_view/bar", opts)
 	if err := rows.Err(); err != nil {

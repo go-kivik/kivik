@@ -11,7 +11,7 @@ require (
 	github.com/icza/dyno v0.0.0-20230330125955-09f820a8d9c0
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/pflag v1.0.5
-	gitlab.com/flimzy/httpe v0.0.0-20231112211905-06412f950a04
+	gitlab.com/flimzy/httpe v0.0.0-20231112220855-6303bcec02b6
 	gitlab.com/flimzy/testy v0.13.0
 	golang.org/x/net v0.17.0
 	golang.org/x/sync v0.4.0

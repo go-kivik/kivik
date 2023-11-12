@@ -78,6 +78,16 @@ func TestServer(t *testing.T) {
 				"version": kivik.Version,
 			},
 		},
+		{
+			name:       "active tasks",
+			method:     http.MethodGet,
+			path:       "/_active_tasks",
+			wantStatus: http.StatusNotImplemented,
+			wantJSON: map[string]interface{}{
+				"error":  "not_implemented",
+				"reason": "Feature not implemented",
+			},
+		},
 	}
 
 	for _, tt := range tests {

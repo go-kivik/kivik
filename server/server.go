@@ -16,8 +16,10 @@ package server
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"gitlab.com/flimzy/httpe"
@@ -34,8 +36,25 @@ type Server struct {
 func New() *Server {
 	s := &Server{}
 	s.mux = chi.NewMux()
+	s.mux.Use(httpe.ToMiddleware(s.handleErrors))
 	s.mux.Get("/", httpe.ToHandler(s.root()).ServeHTTP)
+	s.mux.Get("/_active_tasks", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	return s
+}
+
+func (s *Server) handleErrors(next httpe.HandlerWithError) httpe.HandlerWithError {
+	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
+		if err := next.ServeHTTPWithError(w, r); err != nil {
+			status := kivik.HTTPStatus(err)
+			ce := &couchError{}
+			if !errors.As(err, &ce) {
+				ce.Err = strings.ReplaceAll(strings.ToLower(http.StatusText(status)), " ", "_")
+				ce.Reason = err.Error()
+			}
+			return serveJSON(w, status, ce)
+		}
+		return nil
+	})
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -63,5 +82,11 @@ func (s *Server) root() httpe.HandlerWithError {
 			},
 			"version": kivik.Version,
 		})
+	})
+}
+
+func (s *Server) notImplemented() httpe.HandlerWithError {
+	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
+		return errNotImplimented
 	})
 }

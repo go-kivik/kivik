@@ -23,6 +23,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/go-kivik/kivik/v4"
+	_ "github.com/go-kivik/kivik/v4/x/fsdb" // Filesystem driver
 )
 
 func toJSON(i interface{}) ([]byte, error) {
@@ -58,6 +59,7 @@ func TestServer(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name       string
+		client     *kivik.Client
 		method     string
 		path       string
 		body       io.Reader
@@ -88,13 +90,31 @@ func TestServer(t *testing.T) {
 				"reason": "Feature not implemented",
 			},
 		},
+		{
+			name:       "all dbs",
+			method:     http.MethodGet,
+			path:       "/_all_dbs",
+			wantStatus: http.StatusOK,
+			wantJSON:   []string{"db1", "db2"},
+		},
+		{
+			name:       "all dbs, descending",
+			method:     http.MethodGet,
+			path:       "/_all_dbs?descending=true",
+			wantStatus: http.StatusOK,
+			wantJSON:   []string{"db2", "db1"},
+		},
 	}
 
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			s := New()
+			client, err := kivik.New("fs", "testdata/fsdb")
+			if err != nil {
+				t.Fatal(err)
+			}
+			s := New(client)
 			req, err := http.NewRequest(tt.method, tt.path, tt.body)
 			if err != nil {
 				t.Fatal(err)

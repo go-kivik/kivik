@@ -17,6 +17,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -33,13 +34,16 @@ func init() {
 
 // Server is a server instance.
 type Server struct {
-	mux *chi.Mux
+	mux    *chi.Mux
+	client *kivik.Client
 }
 
 // New instantiates a new server instance.
-func New() *Server {
-	s := &Server{}
-	s.mux = chi.NewMux()
+func New(client *kivik.Client) *Server {
+	s := &Server{
+		mux:    chi.NewMux(),
+		client: client,
+	}
 	s.routes(s.mux)
 	return s
 }
@@ -48,7 +52,7 @@ func (s *Server) routes(mux *chi.Mux) {
 	mux.Use(httpe.ToMiddleware(s.handleErrors))
 	mux.Get("/", httpe.ToHandler(s.root()).ServeHTTP)
 	mux.Get("/_active_tasks", httpe.ToHandler(s.notImplemented()).ServeHTTP)
-	mux.Get("/_all_dbs", httpe.ToHandler(s.notImplemented()).ServeHTTP)
+	mux.Get("/_all_dbs", httpe.ToHandler(s.allDBs()).ServeHTTP)
 	mux.Get("/_dbs_info", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	mux.Post("/_dbs_info", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	mux.Get("/_cluster_setup", httpe.ToHandler(s.notImplemented()).ServeHTTP)
@@ -202,6 +206,12 @@ func serveJSON(w http.ResponseWriter, status int, payload interface{}) error {
 	return err
 }
 
+func (s *Server) notImplemented() httpe.HandlerWithError {
+	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
+		return errNotImplimented
+	})
+}
+
 func (s *Server) root() httpe.HandlerWithError {
 	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
 		return serveJSON(w, http.StatusOK, map[string]interface{}{
@@ -215,8 +225,22 @@ func (s *Server) root() httpe.HandlerWithError {
 	})
 }
 
-func (s *Server) notImplemented() httpe.HandlerWithError {
+func options(r *http.Request) kivik.Option {
+	query := r.URL.Query()
+	params := make(map[string]interface{}, len(query))
+	for k := range query {
+		params[k] = query.Get(k)
+	}
+	return kivik.Params(params)
+}
+
+func (s *Server) allDBs() httpe.HandlerWithError {
 	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
-		return errNotImplimented
+		dbs, err := s.client.AllDBs(r.Context(), options(r))
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+		return serveJSON(w, http.StatusOK, dbs)
 	})
 }

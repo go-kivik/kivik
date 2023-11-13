@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/go-kivik/kivik/v4"
@@ -99,7 +100,9 @@ func (c *client) Version(_ context.Context) (*driver.Version, error) {
 var validDBNameRE = regexp.MustCompile("^[a-z_][a-z0-9_$()+/-]*$")
 
 // AllDBs returns a list of all DBs present in the configured root dir.
-func (c *client) AllDBs(context.Context, driver.Options) ([]string, error) {
+func (c *client) AllDBs(_ context.Context, options driver.Options) ([]string, error) {
+	opts := map[string]interface{}{}
+	options.Apply(opts)
 	if c.root == "" {
 		return nil, statusError{status: http.StatusBadRequest, error: errors.New("no root path provided")}
 	}
@@ -115,6 +118,11 @@ func (c *client) AllDBs(context.Context, driver.Options) ([]string, error) {
 			continue
 		}
 		filenames = append(filenames, cdb.EscapeID(file.Name()))
+	}
+	if descending, _ := opts["descending"].(string); descending == "true" {
+		sort.Sort(sort.Reverse(sort.StringSlice(filenames)))
+	} else {
+		sort.Strings(filenames)
 	}
 	return filenames, nil
 }

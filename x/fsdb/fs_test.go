@@ -21,6 +21,7 @@ import (
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/internal"
+	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
 func TestAllDBs(t *testing.T) {
@@ -59,7 +60,11 @@ func TestAllDBs(t *testing.T) {
 	d := &fsDriver{}
 	tests.Run(t, func(t *testing.T, tt tt) {
 		c, _ := d.NewClient(tt.path, nil)
-		result, err := c.AllDBs(context.TODO(), tt.options)
+		opts := tt.options
+		if opts == nil {
+			opts = mock.NilOption
+		}
+		result, err := c.AllDBs(context.TODO(), opts)
 		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
 			t.Error(d)
 		}

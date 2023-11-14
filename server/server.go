@@ -49,7 +49,9 @@ func New(client *kivik.Client) *Server {
 }
 
 func (s *Server) routes(mux *chi.Mux) {
-	mux.Use(httpe.ToMiddleware(s.handleErrors))
+	mux.Use(
+		httpe.ToMiddleware(s.handleErrors),
+	)
 	mux.Get("/", httpe.ToHandler(s.root()).ServeHTTP)
 	mux.Get("/_active_tasks", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	mux.Get("/_all_dbs", httpe.ToHandler(s.allDBs()).ServeHTTP)
@@ -99,7 +101,7 @@ func (s *Server) routes(mux *chi.Mux) {
 	mux.Post("/_node/{node-name}/_config/_reload", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 
 	// Databases
-	mux.Get("/{db}", httpe.ToHandler(s.notImplemented()).ServeHTTP)
+	mux.Get("/{db}", httpe.ToHandler(s.db()).ServeHTTP)
 	mux.Put("/{db}", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	mux.Delete("/{db}", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	mux.Post("/{db}", httpe.ToHandler(s.notImplemented()).ServeHTTP)
@@ -242,5 +244,16 @@ func (s *Server) allDBs() httpe.HandlerWithError {
 			return err
 		}
 		return serveJSON(w, http.StatusOK, dbs)
+	})
+}
+
+func (s *Server) db() httpe.HandlerWithError {
+	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
+		db := chi.URLParam(r, "db")
+		stats, err := s.client.DB(db).Stats(r.Context())
+		if err != nil {
+			return err
+		}
+		return serveJSON(w, http.StatusOK, stats)
 	})
 }

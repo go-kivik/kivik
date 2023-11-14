@@ -104,6 +104,21 @@ func TestServer(t *testing.T) {
 			wantStatus: http.StatusOK,
 			wantJSON:   []string{"db2", "db1"},
 		},
+		{
+			name:       "db info",
+			method:     http.MethodGet,
+			path:       "/db1",
+			wantStatus: http.StatusOK,
+			wantJSON: map[string]interface{}{
+				"db_name":         "db1",
+				"compact_running": false,
+				"data_size":       0,
+				"disk_size":       0,
+				"doc_count":       0,
+				"doc_del_count":   0,
+				"update_seq":      "",
+			},
+		},
 	}
 
 	for _, tt := range tests {

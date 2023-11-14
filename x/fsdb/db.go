@@ -59,8 +59,10 @@ func (d *db) Delete(context.Context, string, driver.Options) (newRev string, err
 }
 
 func (d *db) Stats(context.Context) (*driver.DBStats, error) {
-	// FIXME: Unimplemented
-	return nil, notYetImplemented
+	return &driver.DBStats{
+		Name:           d.dbName,
+		CompactRunning: false,
+	}, nil
 }
 
 func (d *db) CompactView(context.Context, string) error {

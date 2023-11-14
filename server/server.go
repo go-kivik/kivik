@@ -102,6 +102,7 @@ func (s *Server) routes(mux *chi.Mux) {
 	mux.Post("/_node/{node-name}/_config/_reload", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 
 	// Databases
+	mux.Head("/{db}", httpe.ToHandler(s.dbExists()).ServeHTTP)
 	mux.Get("/{db}", httpe.ToHandler(s.db()).ServeHTTP)
 	mux.Put("/{db}", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	mux.Delete("/{db}", httpe.ToHandler(s.notImplemented()).ServeHTTP)
@@ -256,5 +257,21 @@ func (s *Server) db() httpe.HandlerWithError {
 			return err
 		}
 		return serveJSON(w, http.StatusOK, stats)
+	})
+}
+
+func (s *Server) dbExists() httpe.HandlerWithError {
+	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
+		db := chi.URLParam(r, "db")
+		exists, err := s.client.DBExists(r.Context(), db)
+		if err != nil {
+			return err
+		}
+		if !exists {
+			w.WriteHeader(http.StatusNotFound)
+			return nil
+		}
+		w.WriteHeader(http.StatusOK)
+		return nil
 	})
 }

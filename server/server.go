@@ -50,6 +50,7 @@ func New(client *kivik.Client) *Server {
 
 func (s *Server) routes(mux *chi.Mux) {
 	mux.Use(
+		GetHead,
 		httpe.ToMiddleware(s.handleErrors),
 	)
 	mux.Get("/", httpe.ToHandler(s.root()).ServeHTTP)

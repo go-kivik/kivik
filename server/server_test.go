@@ -119,6 +119,12 @@ func TestServer(t *testing.T) {
 				"update_seq":      "",
 			},
 		},
+		{
+			name:       "db info HEAD",
+			method:     http.MethodHead,
+			path:       "/db1",
+			wantStatus: http.StatusOK,
+		},
 	}
 
 	for _, tt := range tests {

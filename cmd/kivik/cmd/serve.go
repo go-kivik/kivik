@@ -12,36 +12,38 @@
 
 package cmd
 
-import (
-	"fmt"
+// import (
+// 	"fmt"
 
-	"github.com/spf13/cobra"
-)
+// 	"github.com/spf13/cobra"
+// )
 
-type serve struct {
-	*root
-	port int
-}
+// const defaultCouchDBPort = 5984
 
-func serveCmd(r *root) *cobra.Command {
-	s := &serve{
-		root: r,
-	}
+// type serve struct {
+// 	*root
+// 	port int
+// }
 
-	cmd := &cobra.Command{
-		Use:   "serve [dsn]",
-		Short: "[EXPERIMENTAL] Start HTTP server",
-		Long:  "[EXPERIMENTAL] Serves the resources located at the specified DSN via HTTP.",
-		RunE:  s.RunE,
-	}
+// func serveCmd(r *root) *cobra.Command {
+// 	s := &serve{
+// 		root: r,
+// 	}
 
-	f := cmd.Flags()
-	f.IntVarP(&s.port, "port", "p", 5984, "HTTP port to listen on")
+// 	cmd := &cobra.Command{
+// 		Use:   "serve [dsn]",
+// 		Short: "[EXPERIMENTAL] Start HTTP server",
+// 		Long:  "[EXPERIMENTAL] Serves the resources located at the specified DSN via HTTP.",
+// 		RunE:  s.RunE,
+// 	}
 
-	return cmd
-}
+// 	f := cmd.Flags()
+// 	f.IntVarP(&s.port, "port", "p", defaultCouchDBPort, "HTTP port to listen on")
 
-func (s *serve) RunE(*cobra.Command, []string) error {
-	fmt.Printf("port: %d\n", s.port)
-	return nil
-}
+// 	return cmd
+// }
+
+// func (s *serve) RunE(*cobra.Command, []string) error {
+// 	fmt.Printf("port: %d\n", s.port)
+// 	return nil
+// }

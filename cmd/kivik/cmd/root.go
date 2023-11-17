@@ -168,6 +168,7 @@ func rootCmd(lg log.Logger) *root {
 	r.cmd.AddCommand(postPurgeRootCmd(r))
 	r.cmd.AddCommand(copyCmd(r))
 	r.cmd.AddCommand(replicateCmd(r))
+	// r.cmd.AddCommand(serveCmd(r))
 
 	return r
 }

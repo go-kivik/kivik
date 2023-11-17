@@ -13,47 +13,16 @@
 package server
 
 import (
-	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
+	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4"
 	_ "github.com/go-kivik/kivik/v4/x/fsdb" // Filesystem driver
 )
-
-func toJSON(i interface{}) ([]byte, error) {
-	switch t := i.(type) {
-	case string:
-		return []byte(t), nil
-	case json.RawMessage:
-		return t, nil
-	case []byte:
-		return t, nil
-	case io.Reader:
-		return io.ReadAll(t)
-	}
-	return json.Marshal(i)
-}
-
-func diffAsJSON(want, got interface{}) string {
-	w, err := toJSON(want)
-	if err != nil {
-		return fmt.Sprintf("[failed to read want: %s]", err)
-	}
-	g, err := toJSON(got)
-	if err != nil {
-		return fmt.Sprintf("[failed to read get: %s]", err)
-	}
-	var wObj, gObj interface{}
-	_ = json.Unmarshal(w, &wObj)
-	_ = json.Unmarshal(g, &gObj)
-	return cmp.Diff(wObj, gObj)
-}
 
 func TestServer(t *testing.T) {
 	t.Parallel()
@@ -148,7 +117,7 @@ func TestServer(t *testing.T) {
 			if res.StatusCode != tt.wantStatus {
 				t.Errorf("Unexpected response status: %d", res.StatusCode)
 			}
-			if d := diffAsJSON(tt.wantJSON, res.Body); d != "" {
+			if d := testy.DiffAsJSON(tt.wantJSON, res.Body); d != nil {
 				t.Error(d)
 			}
 		})

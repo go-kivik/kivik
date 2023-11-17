@@ -13,8 +13,6 @@ enable = [
     "errcheck",
     "revive",
     "ineffassign",
-    "deadcode",
-    "goconst",
     "vet",
     "unparam",
     "gofumpt",

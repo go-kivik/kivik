@@ -95,8 +95,9 @@ func DecodeAuthToken(token string) (username string, created time.Time, err erro
 	if err != nil {
 		return username, created, err
 	}
-	parts := bytes.SplitN(payload, []byte(":"), 3)
-	if len(parts) < 3 {
+	const partCount = 3
+	parts := bytes.SplitN(payload, []byte(":"), partCount)
+	if len(parts) < partCount {
 		return username, created, errors.New("invalid payload")
 	}
 	seconds, err := strconv.ParseInt(string(parts[1]), 16, 64)

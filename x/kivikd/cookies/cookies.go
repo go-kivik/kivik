@@ -15,7 +15,8 @@ func DecodeCookie(cookie string) (name string, created int64, err error) {
 	if err != nil {
 		return "", 0, err
 	}
-	parts := bytes.SplitN(data, []byte(":"), 3)
+	const partCount = 3
+	parts := bytes.SplitN(data, []byte(":"), partCount)
 	t, err := strconv.ParseInt(string(parts[1]), 16, 64)
 	if err != nil {
 		return "", 0, errors.Wrap(err, "invalid timestamp")

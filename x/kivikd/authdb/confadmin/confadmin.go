@@ -56,8 +56,9 @@ func (c *confadmin) getKeySaltIter(username string) (key, salt string, iteration
 	if !strings.HasPrefix(hash, hashPrefix) {
 		return "", "", 0, errors.New("unrecognized password scheme")
 	}
+	const partsWanted = 3
 	parts := strings.Split(strings.TrimPrefix(hash, hashPrefix), ",")
-	if len(parts) != 3 {
+	if len(parts) != partsWanted {
 		return "", "", 0, errors.New("unrecognized hash format")
 	}
 	if iterations, err = strconv.Atoi(parts[2]); err != nil {

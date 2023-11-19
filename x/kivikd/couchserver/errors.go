@@ -12,15 +12,15 @@ import (
 
 func errorDescription(status int) string {
 	switch status {
-	case 401:
+	case http.StatusUnauthorized:
 		return "unauthorized"
-	case 400:
+	case http.StatusBadRequest:
 		return "bad_request"
-	case 404:
+	case http.StatusNotFound:
 		return "not_found"
-	case 500:
+	case http.StatusInternalServerError:
 		return "internal_server_error" // TODO: Validate that this is normative
-	case 501:
+	case http.StatusNotImplemented:
 		return "not_implemented" // Non-standard
 	}
 	panic(fmt.Sprintf("unknown status %d", status))

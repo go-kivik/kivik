@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/go-kivik/proxydb.svg?branch=master)](https://travis-ci.org/go-kivik/proxydb) [![Codecov](https://img.shields.io/codecov/c/github/go-kivik/proxydb.svg?style=flat)](https://codecov.io/gh/go-kivik/proxydb) [![Go Report Card](https://goreportcard.com/badge/github.com/go-kivik/proxydb)](https://goreportcard.com/report/github.com/go-kivik/proxydb) [![GoDoc](https://godoc.org/github.com/go-kivik/proxydb?status.svg)](http://godoc.org/github.com/go-kivik/proxydb)
+[![GoDoc](https://godoc.org/github.com/go-kivik/kivik/v4/x/proxydb?status.svg)](http://godoc.org/github.com/go-kivik/kivik/v4/x/proxydb)
 
 # Kivik Proxydb
 

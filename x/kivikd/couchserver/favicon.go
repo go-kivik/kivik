@@ -13,7 +13,7 @@
 package couchserver
 
 import (
-	"bytes"
+	"embed"
 	"io"
 	"net/http"
 	"os"
@@ -21,18 +21,20 @@ import (
 	"github.com/go-kivik/kivik/v4/internal"
 )
 
-//go:generate go-bindata -pkg couchserver -nometadata -nocompress -prefix files -o files.go files
+//go:embed files
+var files embed.FS
 
 // GetFavicon serves GET /favicon.ico
 func (h *Handler) GetFavicon() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var ico io.Reader
 		if h.Favicon == "" {
-			asset, err := Asset("favicon.ico")
+			asset, err := files.Open("files/favicon.ico")
 			if err != nil {
 				panic(err)
 			}
-			ico = bytes.NewBuffer(asset)
+			defer asset.Close()
+			ico = asset
 		} else {
 			file, err := os.Open(h.Favicon)
 			if err != nil {

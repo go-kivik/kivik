@@ -14,6 +14,7 @@ package couchserver
 
 import (
 	"bytes"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -31,9 +32,13 @@ func TestFavicoDefault(t *testing.T) {
 	if _, err := buf.ReadFrom(resp.Body); err != nil {
 		t.Fatal(err)
 	}
-	expected, err := Asset("favicon.ico")
+	embedded, err := files.Open("files/favicon.ico")
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
+	}
+	expected, err := io.ReadAll(embedded)
+	if err != nil {
+		t.Fatal(err)
 	}
 	if !bytes.Equal(buf.Bytes(), expected) {
 		t.Errorf("Unexpected file contents. %d bytes instead of %d", buf.Len(), len(expected))
@@ -65,9 +70,13 @@ func TestFavicoExternalFile(t *testing.T) {
 	if _, err := buf.ReadFrom(resp.Body); err != nil {
 		t.Fatal(err)
 	}
-	expected, err := Asset("favicon.ico")
+	embedded, err := files.Open("files/favicon.ico")
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
+	}
+	expected, err := io.ReadAll(embedded)
+	if err != nil {
+		t.Fatal(err)
 	}
 	if !bytes.Equal(buf.Bytes(), expected) {
 		t.Errorf("Unexpected file contents. %d bytes instead of %d", buf.Len(), len(expected))

@@ -12,10 +12,10 @@ import (
 	"sync"
 
 	"github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/x/kivikd/auth"
 	"github.com/go-kivik/kivik/v4/x/kivikd/authdb"
 	"github.com/go-kivik/kivik/v4/x/kivikd/conf"
-	"github.com/go-kivik/kivik/v4/x/kivikd/internal"
 	"github.com/go-kivik/kivik/v4/x/kivikd/logger"
 )
 

@@ -10,11 +10,11 @@ import (
 	"time"
 
 	"github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/x/kivikd"
 	"github.com/go-kivik/kivik/v4/x/kivikd/auth"
 	"github.com/go-kivik/kivik/v4/x/kivikd/authdb"
 	"github.com/go-kivik/kivik/v4/x/kivikd/cookies"
-	"github.com/go-kivik/kivik/v4/x/kivikd/internal"
 )
 
 const typeJSON = "application/json"

@@ -189,6 +189,9 @@ func TestGetDB(t *testing.T) {
 	t.Run("Response", func(t *testing.T) {
 		h := &Handler{client: &mockGetFound{}}
 		resp := callEndpoint(h, "GET", "/asdf")
+		t.Cleanup(func() {
+			_ = resp.Body.Close()
+		})
 		if cc := resp.Header.Get("Cache-Control"); cc != "must-revalidate" {
 			t.Errorf("Cache-Control header doesn't match, got %s", cc)
 		}
@@ -200,7 +203,6 @@ func TestGetDB(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		resp.Body.Close()
 		if err = json.Unmarshal(buf, &body); err != nil {
 			t.Errorf("JSON error, %s", err)
 		}
@@ -222,6 +224,6 @@ func callEndpoint(h *Handler, method string, path string) *http.Response {
 
 func callEndpointEndClose(h *Handler, path string) *http.Response {
 	resp := callEndpoint(h, http.MethodGet, path)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	return resp
 }

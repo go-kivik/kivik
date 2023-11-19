@@ -47,7 +47,7 @@ func TestFavicoNotFound(t *testing.T) {
 	handler := h.GetFavicon()
 	handler(w, req)
 	resp := w.Result()
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusNotFound {
 		t.Errorf("Expected status: %d, actual: %d", http.StatusNotFound, resp.StatusCode)
 	}

@@ -20,8 +20,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-kivik/kivik/v4/internal"
 	"gitlab.com/flimzy/testy"
+
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 func TestHandleError(t *testing.T) {

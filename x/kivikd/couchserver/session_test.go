@@ -17,9 +17,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"gitlab.com/flimzy/testy"
+
 	"github.com/go-kivik/kivik/v4/x/kivikd/auth"
 	"github.com/go-kivik/kivik/v4/x/kivikd/authdb"
-	"gitlab.com/flimzy/testy"
 )
 
 type testKey struct {

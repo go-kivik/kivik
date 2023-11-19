@@ -6,7 +6,7 @@ package test
 import (
 	"testing"
 
-	_ "github.com/go-kivik/kivikd/v4"
+	_ "github.com/go-kivik/kivik/v4/x/kivikd"
 )
 
 func init() {

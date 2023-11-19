@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/go-kivik/kivik/v4"
-	"github.com/go-kivik/kivikd/v4/internal"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 func errorDescription(status int) string {

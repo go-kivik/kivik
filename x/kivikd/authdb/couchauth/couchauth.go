@@ -9,7 +9,7 @@ import (
 	"net/url"
 
 	"github.com/go-kivik/kivik/v4/couchdb/chttp"
-	"github.com/go-kivik/kivikd/v4/authdb"
+	"github.com/go-kivik/kivik/v4/x/kivikd/authdb"
 )
 
 type client struct {

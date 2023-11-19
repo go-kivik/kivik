@@ -11,8 +11,8 @@ import (
 
 	"github.com/go-kivik/kivik/v4"
 	_ "github.com/go-kivik/kivik/v4/couchdb"
-	"github.com/go-kivik/kivikd/v4/authdb"
-	"github.com/go-kivik/kivikd/v4/conf"
+	"github.com/go-kivik/kivik/v4/x/kivikd/authdb"
+	"github.com/go-kivik/kivik/v4/x/kivikd/conf"
 )
 
 func TestInvalidHashes(t *testing.T) {

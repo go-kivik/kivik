@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-kivik/kivikd/v4/internal"
+	"github.com/go-kivik/kivik/v4/internal"
 	"gitlab.com/flimzy/testy"
 )
 

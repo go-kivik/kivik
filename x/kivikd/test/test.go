@@ -12,19 +12,18 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/go-kivik/kivik/v4"
+	_ "github.com/go-kivik/kivik/v4/couchdb" // CouchDB driver
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/kiviktest"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
-	"github.com/go-kivik/kivikd/v4"
-	"github.com/go-kivik/kivikd/v4/auth"
-	"github.com/go-kivik/kivikd/v4/auth/basic"
-	"github.com/go-kivik/kivikd/v4/auth/cookie"
-	"github.com/go-kivik/kivikd/v4/authdb/confadmin"
-	"github.com/go-kivik/kivikd/v4/conf"
-	"github.com/go-kivik/proxydb/v4"
-
-	_ "github.com/go-kivik/kivik/v4/couchdb"    // CouchDB driver
+	"github.com/go-kivik/kivik/v4/x/kivikd"
+	"github.com/go-kivik/kivik/v4/x/kivikd/auth"
+	"github.com/go-kivik/kivik/v4/x/kivikd/auth/basic"
+	"github.com/go-kivik/kivik/v4/x/kivikd/auth/cookie"
+	"github.com/go-kivik/kivik/v4/x/kivikd/authdb/confadmin"
+	"github.com/go-kivik/kivik/v4/x/kivikd/conf"
 	_ "github.com/go-kivik/kivik/v4/x/memorydb" // Memory driver
+	"github.com/go-kivik/kivik/v4/x/proxydb"
 )
 
 // RegisterKivikdSuites registers the Kivikd related integration test suites.

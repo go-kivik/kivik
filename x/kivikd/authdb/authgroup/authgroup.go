@@ -7,8 +7,8 @@ import (
 	"net/http"
 
 	"github.com/go-kivik/kivik/v4"
-	"github.com/go-kivik/kivikd/v4/authdb"
-	"github.com/go-kivik/kivikd/v4/internal"
+	"github.com/go-kivik/kivik/v4/x/kivikd/authdb"
+	"github.com/go-kivik/kivik/v4/x/kivikd/internal"
 )
 
 // AuthGroup is a group of auth handlers, to be tried in turn.

@@ -3,8 +3,8 @@ package kivikd
 import (
 	"net/http"
 
-	"github.com/go-kivik/kivikd/v4/auth"
-	"github.com/go-kivik/kivikd/v4/authdb"
+	"github.com/go-kivik/kivik/v4/x/kivikd/auth"
+	"github.com/go-kivik/kivik/v4/x/kivikd/authdb"
 )
 
 type doneWriter struct {

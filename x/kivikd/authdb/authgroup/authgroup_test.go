@@ -10,10 +10,10 @@ import (
 	"github.com/go-kivik/kivik/v4"
 	_ "github.com/go-kivik/kivik/v4/couchdb"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
-	"github.com/go-kivik/kivikd/v4/authdb"
-	"github.com/go-kivik/kivikd/v4/authdb/confadmin"
-	"github.com/go-kivik/kivikd/v4/authdb/usersdb"
-	"github.com/go-kivik/kivikd/v4/conf"
+	"github.com/go-kivik/kivik/v4/x/kivikd/authdb"
+	"github.com/go-kivik/kivik/v4/x/kivikd/authdb/confadmin"
+	"github.com/go-kivik/kivik/v4/x/kivikd/authdb/usersdb"
+	"github.com/go-kivik/kivik/v4/x/kivikd/conf"
 )
 
 type tuser struct {

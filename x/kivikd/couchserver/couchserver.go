@@ -68,6 +68,7 @@ type Handler struct {
 	SessionKey interface{}
 }
 
+// NewHandler returns a CouchDB server handler.
 func NewHandler(client *kivik.Client) *Handler {
 	return &Handler{client: &clientWrapper{client}}
 }

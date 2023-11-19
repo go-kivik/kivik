@@ -10,6 +10,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+// Package conf manages configuration for kivikd.
 package conf
 
 import (

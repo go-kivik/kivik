@@ -10,6 +10,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+// Package kivikd provides a kivik daemon.
 package kivikd
 
 import (

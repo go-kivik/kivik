@@ -10,6 +10,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+// Package logger defines the logger used by kivikd.
 package logger
 
 import (

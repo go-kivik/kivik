@@ -13,6 +13,7 @@
 //go:build !js
 // +build !js
 
+// Package test configures the integration test suite for kivikd.
 package test
 
 import (

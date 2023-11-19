@@ -10,6 +10,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+// Package auth manages authorization and authentication for kivikd.
 package auth
 
 import (

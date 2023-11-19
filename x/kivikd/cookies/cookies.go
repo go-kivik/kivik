@@ -16,9 +16,8 @@ package cookies
 import (
 	"bytes"
 	"encoding/base64"
+	"fmt"
 	"strconv"
-
-	"github.com/pkg/errors"
 )
 
 // DecodeCookie decodes a Base64-encoded cookie, and returns its component
@@ -32,7 +31,7 @@ func DecodeCookie(cookie string) (name string, created int64, err error) {
 	parts := bytes.SplitN(data, []byte(":"), partCount)
 	t, err := strconv.ParseInt(string(parts[1]), 16, 64)
 	if err != nil {
-		return "", 0, errors.Wrap(err, "invalid timestamp")
+		return "", 0, fmt.Errorf("invalid timestamp: %w", err)
 	}
 	return string(parts[0]), t, nil
 }

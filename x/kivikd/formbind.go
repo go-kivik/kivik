@@ -14,11 +14,11 @@ package kivikd
 
 import (
 	"encoding/json"
+	"fmt"
 	"mime"
 	"net/http"
 
 	"github.com/ajg/form"
-	"github.com/pkg/errors"
 )
 
 // BindParams binds the request form or JSON body to the provided struct.
@@ -32,5 +32,5 @@ func BindParams(r *http.Request, i interface{}) error {
 		defer r.Body.Close() // nolint: errcheck
 		return form.NewDecoder(r.Body).Decode(i)
 	}
-	return errors.Errorf("unable to bind media type %s", mtype)
+	return fmt.Errorf("unable to bind media type %s", mtype)
 }

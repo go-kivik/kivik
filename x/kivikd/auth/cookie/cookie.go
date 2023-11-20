@@ -10,6 +10,9 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+//go:build !js
+// +build !js
+
 // Package cookie provides standard CouchDB cookie auth as described at
 // http://docs.couchdb.org/en/2.0.0/api/server/authn.html#cookie-authentication
 package cookie

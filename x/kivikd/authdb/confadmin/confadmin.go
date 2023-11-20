@@ -10,8 +10,9 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-// Package confadmin provides an authentication service for admins configured
-// in server configuration.
+//go:build !js
+// +build !js
+
 package confadmin
 
 import (

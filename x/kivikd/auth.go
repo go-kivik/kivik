@@ -10,7 +10,9 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-// Package kivikd provides a kivik daemon.
+//go:build !js
+// +build !js
+
 package kivikd
 
 import (

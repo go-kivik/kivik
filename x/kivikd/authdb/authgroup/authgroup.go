@@ -10,8 +10,9 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-// Package authgroup groups two or more authentication backends together, trying
-// one, then falling through to the others.
+//go:build !js
+// +build !js
+
 package authgroup
 
 import (

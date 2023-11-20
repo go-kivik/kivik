@@ -10,18 +10,6 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-//go:build !js
-// +build !js
-
-package couchserver
-
-import (
-	"net/http"
-
-	"github.com/go-chi/chi"
-)
-
-// DB returns the db name in this request, or "" if none.
-func DB(r *http.Request) string {
-	return chi.URLParam(r, "db")
-}
+// Package authgroup groups two or more authentication backends together, trying
+// one, then falling through to the others.
+package authgroup

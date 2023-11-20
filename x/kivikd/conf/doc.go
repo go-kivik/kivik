@@ -10,18 +10,5 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-//go:build !js
-// +build !js
-
-package couchserver
-
-import (
-	"net/http"
-
-	"github.com/go-chi/chi"
-)
-
-// DB returns the db name in this request, or "" if none.
-func DB(r *http.Request) string {
-	return chi.URLParam(r, "db")
-}
+// Package conf manages configuration for kivikd.
+package conf

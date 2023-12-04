@@ -19,10 +19,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/monoculum/formam/v3"
 	"gitlab.com/flimzy/httpe"
 
 	"github.com/go-kivik/kivik/v4"
@@ -34,8 +36,9 @@ func init() {
 
 // Server is a server instance.
 type Server struct {
-	mux    *chi.Mux
-	client *kivik.Client
+	mux         *chi.Mux
+	client      *kivik.Client
+	formDecoder *formam.Decoder
 }
 
 // New instantiates a new server instance.
@@ -43,6 +46,9 @@ func New(client *kivik.Client) *Server {
 	s := &Server{
 		mux:    chi.NewMux(),
 		client: client,
+		formDecoder: formam.NewDecoder(&formam.DecoderOptions{
+			TagName: "form",
+		}),
 	}
 	s.routes(s.mux)
 	return s
@@ -90,7 +96,7 @@ func (s *Server) routes(mux *chi.Mux) {
 	mux.Put("/_reshard/jobs/{jobid}/state", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 
 	// Auth
-	mux.Post("/_session", httpe.ToHandler(s.notImplemented()).ServeHTTP)
+	mux.Post("/_session", httpe.ToHandler(s.startSession()).ServeHTTP)
 	mux.Get("/_session", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 
 	// Config
@@ -274,4 +280,21 @@ func (s *Server) dbExists() httpe.HandlerWithError {
 		w.WriteHeader(http.StatusOK)
 		return nil
 	})
+}
+
+func (s *Server) bind(r *http.Request, v interface{}) error {
+	ct, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type"))
+	switch ct {
+	case "application/json":
+		defer r.Body.Close()
+		return json.NewDecoder(r.Body).Decode(v)
+	case "application/x-www-form-urlencoded":
+		defer r.Body.Close()
+		if err := r.ParseForm(); err != nil {
+			return err
+		}
+		return s.formDecoder.Decode(r.Form, v)
+	default:
+		return &couchError{status: http.StatusUnsupportedMediaType, Err: "bad_content_type", Reason: "Content-Type must be 'application/x-www-form-urlencoded' or 'application/json'"}
+	}
 }

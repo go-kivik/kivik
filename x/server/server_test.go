@@ -16,6 +16,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"gitlab.com/flimzy/testy"
@@ -31,6 +32,7 @@ func TestServer(t *testing.T) {
 		client     *kivik.Client
 		method     string
 		path       string
+		headers    map[string]string
 		body       io.Reader
 		wantStatus int
 		wantJSON   interface{}
@@ -94,6 +96,29 @@ func TestServer(t *testing.T) {
 			path:       "/db1",
 			wantStatus: http.StatusOK,
 		},
+		{
+			name:       "start session, no content type header",
+			method:     http.MethodPost,
+			path:       "/_session",
+			body:       strings.NewReader(`name=root&password=abc123`),
+			wantStatus: http.StatusUnsupportedMediaType,
+			wantJSON: map[string]interface{}{
+				"error":  "bad_content_type",
+				"reason": "Content-Type must be 'application/x-www-form-urlencoded' or 'application/json'",
+			},
+		},
+		{
+			name:       "start session, invalid content type",
+			method:     http.MethodPost,
+			path:       "/_session",
+			body:       strings.NewReader(`name=root&password=abc123`),
+			headers:    map[string]string{"Content-Type": "application/xml"},
+			wantStatus: http.StatusUnsupportedMediaType,
+			wantJSON: map[string]interface{}{
+				"error":  "bad_content_type",
+				"reason": "Content-Type must be 'application/x-www-form-urlencoded' or 'application/json'",
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -108,6 +133,9 @@ func TestServer(t *testing.T) {
 			req, err := http.NewRequest(tt.method, tt.path, tt.body)
 			if err != nil {
 				t.Fatal(err)
+			}
+			for k, v := range tt.headers {
+				req.Header.Set(k, v)
 			}
 
 			rec := httptest.NewRecorder()

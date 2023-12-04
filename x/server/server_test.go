@@ -119,6 +119,18 @@ func TestServer(t *testing.T) {
 				"reason": "Content-Type must be 'application/x-www-form-urlencoded' or 'application/json'",
 			},
 		},
+		{
+			name:       "start session, no user name",
+			method:     http.MethodPost,
+			path:       "/_session",
+			body:       strings.NewReader(`{}`),
+			headers:    map[string]string{"Content-Type": "application/json"},
+			wantStatus: http.StatusBadRequest,
+			wantJSON: map[string]interface{}{
+				"error":  "bad_request",
+				"reason": "request body must contain a username",
+			},
+		},
 	}
 
 	for _, tt := range tests {

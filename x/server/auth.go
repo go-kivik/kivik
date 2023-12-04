@@ -21,11 +21,14 @@ import (
 func (s *Server) startSession() httpe.HandlerWithError {
 	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
 		var req struct {
-			Name     string `json:"name" form:"name"`
-			Password string `json:"password" form:"password"`
+			Name     *string `json:"name" form:"name"`
+			Password string  `json:"password" form:"password"`
 		}
 		if err := s.bind(r, &req); err != nil {
 			return err
+		}
+		if req.Name == nil {
+			return &couchError{status: http.StatusBadRequest, Err: "bad_request", Reason: "request body must contain a username"}
 		}
 		return nil
 	})

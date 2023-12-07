@@ -13,23 +13,70 @@
 package server
 
 import (
+	"context"
 	"net/http"
 
 	"gitlab.com/flimzy/httpe"
+
+	"github.com/go-kivik/kivik/v4/x/server/auth"
 )
 
-func (s *Server) startSession() httpe.HandlerWithError {
+type contextKey struct{ name string }
+
+var userContextKey = &contextKey{"userCtx"}
+
+func (s *Server) UserStore() auth.UserStore {
+	return nil
+	// return s.userStore
+}
+
+func (s *Server) ValidateCookie(user *auth.UserContext, cookie string) (bool, error) {
+	return false, nil
+}
+
+func (s *Server) authMiddleware(next httpe.HandlerWithError) httpe.HandlerWithError {
 	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
-		var req struct {
-			Name     *string `json:"name" form:"name"`
-			Password string  `json:"password" form:"password"`
+		ctx := r.Context()
+		if len(s.authFuncs) == 0 {
+			// Admin party!
+			r = r.WithContext(context.WithValue(ctx, userContextKey, &auth.UserContext{
+				Name:  "admin",
+				Roles: []string{"_admin"},
+			}))
+			return next.ServeHTTPWithError(w, r)
 		}
-		if err := s.bind(r, &req); err != nil {
-			return err
+
+		var userCtx *auth.UserContext
+		var err error
+		for _, authFunc := range s.authFuncs {
+			userCtx, err = authFunc(w, r)
+			if err != nil {
+				return err
+			}
+			if userCtx != nil {
+				break
+			}
 		}
-		if req.Name == nil {
-			return &couchError{status: http.StatusBadRequest, Err: "bad_request", Reason: "request body must contain a username"}
+		if userCtx == nil {
+			return &couchError{status: http.StatusUnauthorized, Err: "unauthorized", Reason: "Authentication required."}
 		}
-		return nil
+		r = r.WithContext(context.WithValue(ctx, userContextKey, userCtx))
+		return next.ServeHTTPWithError(w, r)
 	})
 }
+
+// func (s *Server) startSession() httpe.HandlerWithError {
+// 	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
+// 		var req struct {
+// 			Name     *string `json:"name" form:"name"`
+// 			Password string  `json:"password" form:"password"`
+// 		}
+// 		if err := s.bind(r, &req); err != nil {
+// 			return err
+// 		}
+// 		if req.Name == nil {
+// 			return &couchError{status: http.StatusBadRequest, Err: "bad_request", Reason: "request body must contain a username"}
+// 		}
+// 		return nil
+// 	})
+// }

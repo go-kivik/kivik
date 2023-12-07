@@ -28,6 +28,7 @@ import (
 	"gitlab.com/flimzy/httpe"
 
 	"github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/x/server/auth"
 )
 
 func init() {
@@ -39,16 +40,20 @@ type Server struct {
 	mux         *chi.Mux
 	client      *kivik.Client
 	formDecoder *formam.Decoder
+	authFuncs   []auth.AuthenticateFunc
 }
 
 // New instantiates a new server instance.
-func New(client *kivik.Client) *Server {
+func New(client *kivik.Client, options ...Option) *Server {
 	s := &Server{
 		mux:    chi.NewMux(),
 		client: client,
 		formDecoder: formam.NewDecoder(&formam.DecoderOptions{
 			TagName: "form",
 		}),
+	}
+	for _, option := range options {
+		option.apply(s)
 	}
 	s.routes(s.mux)
 	return s
@@ -58,6 +63,7 @@ func (s *Server) routes(mux *chi.Mux) {
 	mux.Use(
 		GetHead,
 		httpe.ToMiddleware(s.handleErrors),
+		httpe.ToMiddleware(s.authMiddleware),
 	)
 	mux.Get("/", httpe.ToHandler(s.root()).ServeHTTP)
 	mux.Get("/_active_tasks", httpe.ToHandler(s.notImplemented()).ServeHTTP)
@@ -96,8 +102,8 @@ func (s *Server) routes(mux *chi.Mux) {
 	mux.Put("/_reshard/jobs/{jobid}/state", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 
 	// Auth
-	mux.Post("/_session", httpe.ToHandler(s.startSession()).ServeHTTP)
-	mux.Get("/_session", httpe.ToHandler(s.notImplemented()).ServeHTTP)
+	// mux.Post("/_session", httpe.ToHandler(s.startSession()).ServeHTTP)
+	// mux.Get("/_session", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 
 	// Config
 	mux.Get("/_node/{node-name}/_config", httpe.ToHandler(s.notImplemented()).ServeHTTP)

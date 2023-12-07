@@ -23,6 +23,7 @@ import (
 
 	"github.com/go-kivik/kivik/v4"
 	_ "github.com/go-kivik/kivik/v4/x/fsdb" // Filesystem driver
+	"github.com/go-kivik/kivik/v4/x/server/auth"
 )
 
 func TestServer(t *testing.T) {
@@ -141,7 +142,7 @@ func TestServer(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			s := New(client)
+			s := New(client, WithAuthHandlers(auth.CookieAuth()))
 			req, err := http.NewRequest(tt.method, tt.path, tt.body)
 			if err != nil {
 				t.Fatal(err)

@@ -36,3 +36,18 @@ func (h authHandlerOption) apply(s *Server) {
 func WithAuthHandlers(h ...auth.Handler) Option {
 	return authHandlerOption(h)
 }
+
+type userStoreOption []auth.UserStore
+
+func (s userStoreOption) apply(srv *Server) {
+	for _, store := range s {
+		srv.userStores = append(srv.userStores, store)
+	}
+}
+
+// WithUserStores adds the provided user stores to the server. May be specified
+// more than once. Order is significant. Each user store is queried in the order
+// specified, until one returns a user context or an error.
+func WithUserStores(us ...auth.UserStore) Option {
+	return userStoreOption(us)
+}

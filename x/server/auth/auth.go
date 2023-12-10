@@ -10,6 +10,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+// Package auth provides authentication and authorization for the server.
 package auth
 
 import "net/http"
@@ -25,6 +26,8 @@ type UserContext struct {
 	Salt string `json:"-"`
 }
 
+// Server is the interface for the server which exposes capabilities needed
+// by auth handlers.
 type Server interface {
 	UserStore() UserStore
 	ValidateCookie(user *UserContext, cookie string) (bool, error)

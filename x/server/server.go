@@ -19,7 +19,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"mime"
 	"net/http"
 	"strings"
 
@@ -291,21 +290,4 @@ func (s *Server) dbExists() httpe.HandlerWithError {
 		w.WriteHeader(http.StatusOK)
 		return nil
 	})
-}
-
-func (s *Server) bind(r *http.Request, v interface{}) error {
-	ct, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type"))
-	switch ct {
-	case "application/json":
-		defer r.Body.Close()
-		return json.NewDecoder(r.Body).Decode(v)
-	case "application/x-www-form-urlencoded":
-		defer r.Body.Close()
-		if err := r.ParseForm(); err != nil {
-			return err
-		}
-		return s.formDecoder.Decode(r.Form, v)
-	default:
-		return &couchError{status: http.StatusUnsupportedMediaType, Err: "bad_content_type", Reason: "Content-Type must be 'application/x-www-form-urlencoded' or 'application/json'"}
-	}
 }

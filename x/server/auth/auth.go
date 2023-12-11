@@ -13,7 +13,9 @@
 // Package auth provides authentication and authorization for the server.
 package auth
 
-import "net/http"
+import (
+	"net/http"
+)
 
 // CouchDB system roles.
 const (

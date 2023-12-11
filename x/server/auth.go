@@ -18,6 +18,7 @@ import (
 
 	"gitlab.com/flimzy/httpe"
 
+	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/x/server/auth"
 )
 
@@ -62,7 +63,7 @@ func (s *Server) authMiddleware(next httpe.HandlerWithError) httpe.HandlerWithEr
 			// Admin party!
 			r = r.WithContext(context.WithValue(ctx, userContextKey, &auth.UserContext{
 				Name:  "admin",
-				Roles: []string{"_admin"},
+				Roles: []string{auth.RoleAdmin},
 			}))
 			return next.ServeHTTPWithError(w, r)
 		}
@@ -79,24 +80,24 @@ func (s *Server) authMiddleware(next httpe.HandlerWithError) httpe.HandlerWithEr
 			if dw.done {
 				return nil
 			}
+			if userCtx != nil {
+				break
+			}
 		}
 		r = r.WithContext(context.WithValue(ctx, userContextKey, userCtx))
 		return next.ServeHTTPWithError(w, r)
 	})
 }
 
-// func (s *Server) startSession() httpe.HandlerWithError {
-// 	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
-// 		var req struct {
-// 			Name     *string `json:"name" form:"name"`
-// 			Password string  `json:"password" form:"password"`
-// 		}
-// 		if err := s.bind(r, &req); err != nil {
-// 			return err
-// 		}
-// 		if req.Name == nil {
-// 			return &couchError{status: http.StatusBadRequest, Err: "bad_request", Reason: "request body must contain a username"}
-// 		}
-// 		return nil
-// 	})
-// }
+func adminRequired(next httpe.HandlerWithError) httpe.HandlerWithError {
+	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
+		userCtx, _ := r.Context().Value(userContextKey).(*auth.UserContext)
+		if userCtx == nil {
+			return &internal.Error{Status: http.StatusUnauthorized, Message: "User not authenticated"}
+		}
+		if !userCtx.HasRole(auth.RoleAdmin) {
+			return &internal.Error{Status: http.StatusForbidden, Message: "Admin privileges required"}
+		}
+		return next.ServeHTTPWithError(w, r)
+	})
+}

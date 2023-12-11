@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	userRoot       = "root"
+	userAdmin      = "admin"
 	userReader     = "reader"
 	userWriter     = "writer"
 	userReplicator = "replicator"
@@ -42,7 +42,7 @@ const (
 func testUserStore(t *testing.T) *auth.MemoryUserStore {
 	t.Helper()
 	us := auth.NewMemoryUserStore()
-	if err := us.AddUser(userRoot, testPassword, []string{auth.RoleAdmin}); err != nil {
+	if err := us.AddUser(userAdmin, testPassword, []string{auth.RoleAdmin}); err != nil {
 		t.Fatal(err)
 	}
 	if err := us.AddUser(userReader, testPassword, []string{auth.RoleReader}); err != nil {
@@ -98,7 +98,7 @@ func TestServer(t *testing.T) {
 			name:       "active tasks",
 			method:     http.MethodGet,
 			path:       "/_active_tasks",
-			headers:    map[string]string{"Authorization": basicAuth(userRoot)},
+			headers:    map[string]string{"Authorization": basicAuth(userAdmin)},
 			wantStatus: http.StatusNotImplemented,
 			wantJSON: map[string]interface{}{
 				"error":  "not_implemented",
@@ -109,7 +109,7 @@ func TestServer(t *testing.T) {
 			name:       "all dbs",
 			method:     http.MethodGet,
 			path:       "/_all_dbs",
-			headers:    map[string]string{"Authorization": basicAuth(userRoot)},
+			headers:    map[string]string{"Authorization": basicAuth(userAdmin)},
 			wantStatus: http.StatusOK,
 			wantJSON:   []string{"db1", "db2"},
 		},
@@ -117,7 +117,7 @@ func TestServer(t *testing.T) {
 			name:       "all dbs, cookie auth",
 			method:     http.MethodGet,
 			path:       "/_all_dbs",
-			authUser:   userRoot,
+			authUser:   userAdmin,
 			wantStatus: http.StatusOK,
 			wantJSON:   []string{"db1", "db2"},
 		},
@@ -126,14 +126,17 @@ func TestServer(t *testing.T) {
 			method:     http.MethodGet,
 			path:       "/_all_dbs",
 			headers:    map[string]string{"Authorization": basicAuth(userReader)},
-			wantStatus: http.StatusOK,
-			wantJSON:   []string{"db1", "db2"},
+			wantStatus: http.StatusForbidden,
+			wantJSON: map[string]interface{}{
+				"error":  "forbidden",
+				"reason": "Admin privileges required",
+			},
 		},
 		{
 			name:       "all dbs, descending",
 			method:     http.MethodGet,
 			path:       "/_all_dbs?descending=true",
-			headers:    map[string]string{"Authorization": basicAuth(userRoot)},
+			headers:    map[string]string{"Authorization": basicAuth(userAdmin)},
 			wantStatus: http.StatusOK,
 			wantJSON:   []string{"db2", "db1"},
 		},
@@ -141,7 +144,7 @@ func TestServer(t *testing.T) {
 			name:       "db info",
 			method:     http.MethodGet,
 			path:       "/db1",
-			headers:    map[string]string{"Authorization": basicAuth(userRoot)},
+			headers:    map[string]string{"Authorization": basicAuth(userAdmin)},
 			wantStatus: http.StatusOK,
 			wantJSON: map[string]interface{}{
 				"db_name":         "db1",
@@ -157,7 +160,7 @@ func TestServer(t *testing.T) {
 			name:       "db info HEAD",
 			method:     http.MethodHead,
 			path:       "/db1",
-			headers:    map[string]string{"Authorization": basicAuth(userRoot)},
+			headers:    map[string]string{"Authorization": basicAuth(userAdmin)},
 			wantStatus: http.StatusOK,
 		},
 		{
@@ -199,12 +202,12 @@ func TestServer(t *testing.T) {
 			name:       "start session, success",
 			method:     http.MethodPost,
 			path:       "/_session",
-			body:       strings.NewReader(`{"name":"root","password":"abc123"}`),
+			body:       strings.NewReader(`{"name":"admin","password":"abc123"}`),
 			headers:    map[string]string{"Content-Type": "application/json"},
 			wantStatus: http.StatusOK,
 			wantJSON: map[string]interface{}{
 				"ok":    true,
-				"name":  "root",
+				"name":  userAdmin,
 				"roles": []string{"_admin"},
 			},
 		},
@@ -213,7 +216,7 @@ func TestServer(t *testing.T) {
 			method:     http.MethodDelete,
 			path:       "/_session",
 			body:       strings.NewReader(`{"name":"root","password":"abc123"}`),
-			authUser:   userRoot,
+			authUser:   userAdmin,
 			wantStatus: http.StatusOK,
 			wantJSON: map[string]interface{}{
 				"ok": true,

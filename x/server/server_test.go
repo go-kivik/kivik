@@ -13,10 +13,13 @@
 package server
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
+	"time"
 
 	"gitlab.com/flimzy/testy"
 
@@ -33,6 +36,7 @@ func TestServer(t *testing.T) {
 		method     string
 		path       string
 		headers    map[string]string
+		cookie     bool
 		body       io.Reader
 		wantStatus int
 		wantJSON   interface{}
@@ -71,6 +75,14 @@ func TestServer(t *testing.T) {
 			wantJSON:   []string{"db1", "db2"},
 		},
 		{
+			name:       "all dbs, cookie auth",
+			method:     http.MethodGet,
+			path:       "/_all_dbs",
+			cookie:     true,
+			wantStatus: http.StatusOK,
+			wantJSON:   []string{"db1", "db2"},
+		},
+		{
 			name:       "all dbs, descending",
 			method:     http.MethodGet,
 			path:       "/_all_dbs?descending=true",
@@ -101,41 +113,65 @@ func TestServer(t *testing.T) {
 			headers:    map[string]string{"Authorization": "Basic cm9vdDphYmMxMjM="},
 			wantStatus: http.StatusOK,
 		},
-		// {
-		// 	name:       "start session, no content type header",
-		// 	method:     http.MethodPost,
-		// 	path:       "/_session",
-		// 	body:       strings.NewReader(`name=root&password=abc123`),
-		// 	wantStatus: http.StatusUnsupportedMediaType,
-		// 	wantJSON: map[string]interface{}{
-		// 		"error":  "bad_content_type",
-		// 		"reason": "Content-Type must be 'application/x-www-form-urlencoded' or 'application/json'",
-		// 	},
-		// },
-		// {
-		// 	name:       "start session, invalid content type",
-		// 	method:     http.MethodPost,
-		// 	path:       "/_session",
-		// 	body:       strings.NewReader(`name=root&password=abc123`),
-		// 	headers:    map[string]string{"Content-Type": "application/xml"},
-		// 	wantStatus: http.StatusUnsupportedMediaType,
-		// 	wantJSON: map[string]interface{}{
-		// 		"error":  "bad_content_type",
-		// 		"reason": "Content-Type must be 'application/x-www-form-urlencoded' or 'application/json'",
-		// 	},
-		// },
-		// {
-		// 	name:       "start session, no user name",
-		// 	method:     http.MethodPost,
-		// 	path:       "/_session",
-		// 	body:       strings.NewReader(`{}`),
-		// 	headers:    map[string]string{"Content-Type": "application/json"},
-		// 	wantStatus: http.StatusBadRequest,
-		// 	wantJSON: map[string]interface{}{
-		// 		"error":  "bad_request",
-		// 		"reason": "request body must contain a username",
-		// 	},
-		// },
+		{
+			name:       "start session, no content type header",
+			method:     http.MethodPost,
+			path:       "/_session",
+			body:       strings.NewReader(`name=root&password=abc123`),
+			wantStatus: http.StatusUnsupportedMediaType,
+			wantJSON: map[string]interface{}{
+				"error":  "bad_content_type",
+				"reason": "Content-Type must be 'application/x-www-form-urlencoded' or 'application/json'",
+			},
+		},
+		{
+			name:       "start session, invalid content type",
+			method:     http.MethodPost,
+			path:       "/_session",
+			body:       strings.NewReader(`name=root&password=abc123`),
+			headers:    map[string]string{"Content-Type": "application/xml"},
+			wantStatus: http.StatusUnsupportedMediaType,
+			wantJSON: map[string]interface{}{
+				"error":  "bad_content_type",
+				"reason": "Content-Type must be 'application/x-www-form-urlencoded' or 'application/json'",
+			},
+		},
+		{
+			name:       "start session, no user name",
+			method:     http.MethodPost,
+			path:       "/_session",
+			body:       strings.NewReader(`{}`),
+			headers:    map[string]string{"Content-Type": "application/json"},
+			wantStatus: http.StatusBadRequest,
+			wantJSON: map[string]interface{}{
+				"error":  "bad_request",
+				"reason": "request body must contain a username",
+			},
+		},
+		{
+			name:       "start session, success",
+			method:     http.MethodPost,
+			path:       "/_session",
+			body:       strings.NewReader(`{"name":"root","password":"abc123"}`),
+			headers:    map[string]string{"Content-Type": "application/json"},
+			wantStatus: http.StatusOK,
+			wantJSON: map[string]interface{}{
+				"ok":    true,
+				"name":  "root",
+				"roles": []string{"_admin"},
+			},
+		},
+		{
+			name:       "delete session",
+			method:     http.MethodDelete,
+			path:       "/_session",
+			body:       strings.NewReader(`{"name":"root","password":"abc123"}`),
+			cookie:     true,
+			wantStatus: http.StatusOK,
+			wantJSON: map[string]interface{}{
+				"ok": true,
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -150,9 +186,11 @@ func TestServer(t *testing.T) {
 			if err := us.AddUser("root", "abc123", []string{"_admin"}); err != nil {
 				t.Fatal(err)
 			}
+			const secret = "foo"
 			s := New(client,
 				WithUserStores(us),
 				WithAuthHandlers(auth.BasicAuth()),
+				WithAuthHandlers(auth.CookieAuth(secret, time.Hour)),
 			)
 			req, err := http.NewRequest(tt.method, tt.path, tt.body)
 			if err != nil {
@@ -160,6 +198,16 @@ func TestServer(t *testing.T) {
 			}
 			for k, v := range tt.headers {
 				req.Header.Set(k, v)
+			}
+			if tt.cookie {
+				user, err := us.UserCtx(context.Background(), "root")
+				if err != nil {
+					t.Fatal(err)
+				}
+				req.AddCookie(&http.Cookie{
+					Name:  kivik.SessionCookieName,
+					Value: auth.CreateAuthToken("root", user.Salt, secret, time.Now().Unix()),
+				})
 			}
 
 			rec := httptest.NewRecorder()

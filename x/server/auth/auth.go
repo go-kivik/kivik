@@ -15,6 +15,8 @@ package auth
 
 import "net/http"
 
+const typeJSON = "application/json"
+
 // UserContext represents a [CouchDB UserContext object].
 //
 // [CouchDB UserContext object]: https://docs.couchdb.org/en/stable/json-structure.html#user-context-object
@@ -30,7 +32,7 @@ type UserContext struct {
 // by auth handlers.
 type Server interface {
 	UserStore() UserStore
-	ValidateCookie(user *UserContext, cookie string) (bool, error)
+	Bind(*http.Request, interface{}) error
 }
 
 // AuthenticateFunc authenticates the HTTP request. On success, a user context

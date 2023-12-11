@@ -25,14 +25,34 @@ type contextKey struct{ name string }
 
 var userContextKey = &contextKey{"userCtx"}
 
-// UserStore returns the aggregate UserStore for the server.
-func (s *Server) UserStore() auth.UserStore {
-	return s.userStores
+type authService struct {
+	s *Server
 }
 
-// ValidateCookie validates the provided cookie against the configured UserStore.
-func (s *Server) ValidateCookie(_ *auth.UserContext, _ string) (bool, error) {
-	return false, nil
+var _ auth.Server = (*authService)(nil)
+
+// UserStore returns the aggregate UserStore for the server.
+func (s *authService) UserStore() auth.UserStore {
+	return s.s.userStores
+}
+
+func (s *authService) Bind(r *http.Request, v interface{}) error {
+	return s.s.bind(r, v)
+}
+
+type doneWriter struct {
+	http.ResponseWriter
+	done bool
+}
+
+func (w *doneWriter) WriteHeader(status int) {
+	w.done = true
+	w.ResponseWriter.WriteHeader(status)
+}
+
+func (w *doneWriter) Write(b []byte) (int, error) {
+	w.done = true
+	return w.ResponseWriter.Write(b)
 }
 
 func (s *Server) authMiddleware(next httpe.HandlerWithError) httpe.HandlerWithError {
@@ -47,19 +67,18 @@ func (s *Server) authMiddleware(next httpe.HandlerWithError) httpe.HandlerWithEr
 			return next.ServeHTTPWithError(w, r)
 		}
 
+		dw := &doneWriter{ResponseWriter: w}
+
 		var userCtx *auth.UserContext
 		var err error
 		for _, authFunc := range s.authFuncs {
-			userCtx, err = authFunc(w, r)
+			userCtx, err = authFunc(dw, r)
 			if err != nil {
 				return err
 			}
-			if userCtx != nil {
-				break
+			if dw.done {
+				return nil
 			}
-		}
-		if userCtx == nil {
-			return &couchError{status: http.StatusUnauthorized, Err: "unauthorized", Reason: "Authentication required."}
 		}
 		r = r.WithContext(context.WithValue(ctx, userContextKey, userCtx))
 		return next.ServeHTTPWithError(w, r)

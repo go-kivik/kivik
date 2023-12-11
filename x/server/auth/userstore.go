@@ -14,6 +14,8 @@ package auth
 
 import (
 	"context"
+	"crypto/rand"
+	"math/big"
 	"net/http"
 	"sync"
 
@@ -40,6 +42,7 @@ type MemoryUserStore struct {
 var _ UserStore = (*MemoryUserStore)(nil)
 
 type memoryUser struct {
+	Salt     string
 	Password string
 	Roles    []string
 }
@@ -52,7 +55,12 @@ func NewMemoryUserStore() *MemoryUserStore {
 // AddUser adds a user to the store. It returns an error if the user already
 // exists.
 func (s *MemoryUserStore) AddUser(username, password string, roles []string) error {
+	salt, err := generateSalt()
+	if err != nil {
+		return err
+	}
 	_, loaded := s.users.LoadOrStore(username, &memoryUser{
+		Salt:     salt,
 		Password: password,
 		Roles:    roles,
 	})
@@ -60,6 +68,21 @@ func (s *MemoryUserStore) AddUser(username, password string, roles []string) err
 		return &internal.Error{Status: http.StatusConflict, Message: "User already exists"}
 	}
 	return nil
+}
+
+func generateSalt() (string, error) {
+	const letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	const n = 16
+	ret := make([]byte, n)
+	for i := 0; i < n; i++ {
+		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(letters))))
+		if err != nil {
+			return "", err
+		}
+		ret[i] = letters[num.Int64()]
+	}
+
+	return string(ret), nil
 }
 
 // DeleteUser deletes a user from the store.
@@ -83,6 +106,7 @@ func (s *MemoryUserStore) Validate(_ context.Context, username, password string)
 	}
 	return &UserContext{
 		Name:  username,
+		Salt:  user.(*memoryUser).Salt,
 		Roles: user.(*memoryUser).Roles,
 	}, nil
 }
@@ -95,6 +119,7 @@ func (s *MemoryUserStore) UserCtx(_ context.Context, username string) (*UserCont
 	}
 	return &UserContext{
 		Name:  username,
+		Salt:  user.(*memoryUser).Salt,
 		Roles: user.(*memoryUser).Roles,
 	}, nil
 }

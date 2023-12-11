@@ -14,6 +14,7 @@ package server
 
 import (
 	"context"
+	"encoding/base64"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -28,6 +29,44 @@ import (
 	"github.com/go-kivik/kivik/v4/x/server/auth"
 )
 
+const (
+	userRoot       = "root"
+	userReader     = "reader"
+	userWriter     = "writer"
+	userReplicator = "replicator"
+	userDBUpdates  = "db_updates"
+	userDesign     = "design"
+	testPassword   = "abc123"
+)
+
+func testUserStore(t *testing.T) *auth.MemoryUserStore {
+	t.Helper()
+	us := auth.NewMemoryUserStore()
+	if err := us.AddUser(userRoot, testPassword, []string{auth.RoleAdmin}); err != nil {
+		t.Fatal(err)
+	}
+	if err := us.AddUser(userReader, testPassword, []string{auth.RoleReader}); err != nil {
+		t.Fatal(err)
+	}
+	if err := us.AddUser(userWriter, testPassword, []string{auth.RoleWriter}); err != nil {
+		t.Fatal(err)
+	}
+	if err := us.AddUser(userReplicator, testPassword, []string{auth.RoleReplicator}); err != nil {
+		t.Fatal(err)
+	}
+	if err := us.AddUser(userDBUpdates, testPassword, []string{auth.RoleDBUpdates}); err != nil {
+		t.Fatal(err)
+	}
+	if err := us.AddUser(userDesign, testPassword, []string{auth.RoleDesign}); err != nil {
+		t.Fatal(err)
+	}
+	return us
+}
+
+func basicAuth(user string) string {
+	return "Basic " + base64.StdEncoding.EncodeToString([]byte(user+":"+testPassword))
+}
+
 func TestServer(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -36,7 +75,7 @@ func TestServer(t *testing.T) {
 		method     string
 		path       string
 		headers    map[string]string
-		cookie     bool
+		authUser   string
 		body       io.Reader
 		wantStatus int
 		wantJSON   interface{}
@@ -59,7 +98,7 @@ func TestServer(t *testing.T) {
 			name:       "active tasks",
 			method:     http.MethodGet,
 			path:       "/_active_tasks",
-			headers:    map[string]string{"Authorization": "Basic cm9vdDphYmMxMjM="},
+			headers:    map[string]string{"Authorization": basicAuth(userRoot)},
 			wantStatus: http.StatusNotImplemented,
 			wantJSON: map[string]interface{}{
 				"error":  "not_implemented",
@@ -70,7 +109,7 @@ func TestServer(t *testing.T) {
 			name:       "all dbs",
 			method:     http.MethodGet,
 			path:       "/_all_dbs",
-			headers:    map[string]string{"Authorization": "Basic cm9vdDphYmMxMjM="},
+			headers:    map[string]string{"Authorization": basicAuth(userRoot)},
 			wantStatus: http.StatusOK,
 			wantJSON:   []string{"db1", "db2"},
 		},
@@ -78,7 +117,15 @@ func TestServer(t *testing.T) {
 			name:       "all dbs, cookie auth",
 			method:     http.MethodGet,
 			path:       "/_all_dbs",
-			cookie:     true,
+			authUser:   userRoot,
+			wantStatus: http.StatusOK,
+			wantJSON:   []string{"db1", "db2"},
+		},
+		{
+			name:       "all dbs, non-admin",
+			method:     http.MethodGet,
+			path:       "/_all_dbs",
+			headers:    map[string]string{"Authorization": basicAuth(userReader)},
 			wantStatus: http.StatusOK,
 			wantJSON:   []string{"db1", "db2"},
 		},
@@ -86,7 +133,7 @@ func TestServer(t *testing.T) {
 			name:       "all dbs, descending",
 			method:     http.MethodGet,
 			path:       "/_all_dbs?descending=true",
-			headers:    map[string]string{"Authorization": "Basic cm9vdDphYmMxMjM="},
+			headers:    map[string]string{"Authorization": basicAuth(userRoot)},
 			wantStatus: http.StatusOK,
 			wantJSON:   []string{"db2", "db1"},
 		},
@@ -94,7 +141,7 @@ func TestServer(t *testing.T) {
 			name:       "db info",
 			method:     http.MethodGet,
 			path:       "/db1",
-			headers:    map[string]string{"Authorization": "Basic cm9vdDphYmMxMjM="},
+			headers:    map[string]string{"Authorization": basicAuth(userRoot)},
 			wantStatus: http.StatusOK,
 			wantJSON: map[string]interface{}{
 				"db_name":         "db1",
@@ -110,7 +157,7 @@ func TestServer(t *testing.T) {
 			name:       "db info HEAD",
 			method:     http.MethodHead,
 			path:       "/db1",
-			headers:    map[string]string{"Authorization": "Basic cm9vdDphYmMxMjM="},
+			headers:    map[string]string{"Authorization": basicAuth(userRoot)},
 			wantStatus: http.StatusOK,
 		},
 		{
@@ -166,7 +213,7 @@ func TestServer(t *testing.T) {
 			method:     http.MethodDelete,
 			path:       "/_session",
 			body:       strings.NewReader(`{"name":"root","password":"abc123"}`),
-			cookie:     true,
+			authUser:   userRoot,
 			wantStatus: http.StatusOK,
 			wantJSON: map[string]interface{}{
 				"ok": true,
@@ -182,10 +229,7 @@ func TestServer(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			us := auth.NewMemoryUserStore()
-			if err := us.AddUser("root", "abc123", []string{"_admin"}); err != nil {
-				t.Fatal(err)
-			}
+			us := testUserStore(t)
 			const secret = "foo"
 			s := New(client,
 				WithUserStores(us),
@@ -199,14 +243,14 @@ func TestServer(t *testing.T) {
 			for k, v := range tt.headers {
 				req.Header.Set(k, v)
 			}
-			if tt.cookie {
-				user, err := us.UserCtx(context.Background(), "root")
+			if tt.authUser != "" {
+				user, err := us.UserCtx(context.Background(), tt.authUser)
 				if err != nil {
 					t.Fatal(err)
 				}
 				req.AddCookie(&http.Cookie{
 					Name:  kivik.SessionCookieName,
-					Value: auth.CreateAuthToken("root", user.Salt, secret, time.Now().Unix()),
+					Value: auth.CreateAuthToken(user.Name, user.Salt, secret, time.Now().Unix()),
 				})
 			}
 

@@ -22,6 +22,7 @@ import (
 
 	"github.com/go-kivik/kivik/v4"
 	_ "github.com/go-kivik/kivik/v4/x/fsdb" // Filesystem driver
+	"github.com/go-kivik/kivik/v4/x/server/auth"
 )
 
 func TestServer(t *testing.T) {
@@ -31,6 +32,7 @@ func TestServer(t *testing.T) {
 		client     *kivik.Client
 		method     string
 		path       string
+		headers    map[string]string
 		body       io.Reader
 		wantStatus int
 		wantJSON   interface{}
@@ -53,6 +55,7 @@ func TestServer(t *testing.T) {
 			name:       "active tasks",
 			method:     http.MethodGet,
 			path:       "/_active_tasks",
+			headers:    map[string]string{"Authorization": "Basic cm9vdDphYmMxMjM="},
 			wantStatus: http.StatusNotImplemented,
 			wantJSON: map[string]interface{}{
 				"error":  "not_implemented",
@@ -63,6 +66,7 @@ func TestServer(t *testing.T) {
 			name:       "all dbs",
 			method:     http.MethodGet,
 			path:       "/_all_dbs",
+			headers:    map[string]string{"Authorization": "Basic cm9vdDphYmMxMjM="},
 			wantStatus: http.StatusOK,
 			wantJSON:   []string{"db1", "db2"},
 		},
@@ -70,6 +74,7 @@ func TestServer(t *testing.T) {
 			name:       "all dbs, descending",
 			method:     http.MethodGet,
 			path:       "/_all_dbs?descending=true",
+			headers:    map[string]string{"Authorization": "Basic cm9vdDphYmMxMjM="},
 			wantStatus: http.StatusOK,
 			wantJSON:   []string{"db2", "db1"},
 		},
@@ -77,6 +82,7 @@ func TestServer(t *testing.T) {
 			name:       "db info",
 			method:     http.MethodGet,
 			path:       "/db1",
+			headers:    map[string]string{"Authorization": "Basic cm9vdDphYmMxMjM="},
 			wantStatus: http.StatusOK,
 			wantJSON: map[string]interface{}{
 				"db_name":         "db1",
@@ -92,8 +98,44 @@ func TestServer(t *testing.T) {
 			name:       "db info HEAD",
 			method:     http.MethodHead,
 			path:       "/db1",
+			headers:    map[string]string{"Authorization": "Basic cm9vdDphYmMxMjM="},
 			wantStatus: http.StatusOK,
 		},
+		// {
+		// 	name:       "start session, no content type header",
+		// 	method:     http.MethodPost,
+		// 	path:       "/_session",
+		// 	body:       strings.NewReader(`name=root&password=abc123`),
+		// 	wantStatus: http.StatusUnsupportedMediaType,
+		// 	wantJSON: map[string]interface{}{
+		// 		"error":  "bad_content_type",
+		// 		"reason": "Content-Type must be 'application/x-www-form-urlencoded' or 'application/json'",
+		// 	},
+		// },
+		// {
+		// 	name:       "start session, invalid content type",
+		// 	method:     http.MethodPost,
+		// 	path:       "/_session",
+		// 	body:       strings.NewReader(`name=root&password=abc123`),
+		// 	headers:    map[string]string{"Content-Type": "application/xml"},
+		// 	wantStatus: http.StatusUnsupportedMediaType,
+		// 	wantJSON: map[string]interface{}{
+		// 		"error":  "bad_content_type",
+		// 		"reason": "Content-Type must be 'application/x-www-form-urlencoded' or 'application/json'",
+		// 	},
+		// },
+		// {
+		// 	name:       "start session, no user name",
+		// 	method:     http.MethodPost,
+		// 	path:       "/_session",
+		// 	body:       strings.NewReader(`{}`),
+		// 	headers:    map[string]string{"Content-Type": "application/json"},
+		// 	wantStatus: http.StatusBadRequest,
+		// 	wantJSON: map[string]interface{}{
+		// 		"error":  "bad_request",
+		// 		"reason": "request body must contain a username",
+		// 	},
+		// },
 	}
 
 	for _, tt := range tests {
@@ -104,10 +146,20 @@ func TestServer(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			s := New(client)
+			us := auth.NewMemoryUserStore()
+			if err := us.AddUser("root", "abc123", []string{"_admin"}); err != nil {
+				t.Fatal(err)
+			}
+			s := New(client,
+				WithUserStores(us),
+				WithAuthHandlers(auth.BasicAuth()),
+			)
 			req, err := http.NewRequest(tt.method, tt.path, tt.body)
 			if err != nil {
 				t.Fatal(err)
+			}
+			for k, v := range tt.headers {
+				req.Header.Set(k, v)
 			}
 
 			rec := httptest.NewRecorder()

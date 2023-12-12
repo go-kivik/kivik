@@ -231,6 +231,66 @@ func TestServer(t *testing.T) {
 				"status": "ok",
 			},
 		},
+		{
+			name:       "all config",
+			method:     http.MethodGet,
+			path:       "/_node/_local/_config",
+			authUser:   userAdmin,
+			wantStatus: http.StatusOK,
+			wantJSON: map[string]interface{}{
+				"couchdb": map[string]interface{}{
+					"users_db_suffix": "_users",
+				},
+			},
+		},
+		{
+			name:       "all config, non-admin",
+			method:     http.MethodGet,
+			path:       "/_node/_local/_config",
+			authUser:   userReader,
+			wantStatus: http.StatusForbidden,
+			wantJSON: map[string]interface{}{
+				"error":  "forbidden",
+				"reason": "Admin privileges required",
+			},
+		},
+		{
+			name:       "all config, no such node",
+			method:     http.MethodGet,
+			path:       "/_node/asdf/_config",
+			authUser:   userAdmin,
+			wantStatus: http.StatusNotFound,
+			wantJSON: map[string]interface{}{
+				"error":  "not_found",
+				"reason": "no such node: asdf",
+			},
+		},
+		{
+			name:       "config section",
+			method:     http.MethodGet,
+			path:       "/_node/_local/_config/couchdb",
+			authUser:   userAdmin,
+			wantStatus: http.StatusOK,
+			wantJSON: map[string]interface{}{
+				"users_db_suffix": "_users",
+			},
+		},
+		{
+			name:       "config key",
+			method:     http.MethodGet,
+			path:       "/_node/_local/_config/couchdb/users_db_suffix",
+			authUser:   userAdmin,
+			wantStatus: http.StatusOK,
+			wantJSON:   "_users",
+		},
+		{
+			name:       "reload config",
+			method:     http.MethodPost,
+			path:       "/_node/_local/_config/_reload",
+			authUser:   userAdmin,
+			wantStatus: http.StatusOK,
+			wantJSON:   map[string]bool{"ok": true},
+		},
 	}
 
 	for _, tt := range tests {

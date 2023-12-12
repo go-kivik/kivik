@@ -13,7 +13,21 @@
 // Package auth provides authentication and authorization for the server.
 package auth
 
-import "net/http"
+import (
+	"net/http"
+)
+
+// CouchDB system roles.
+const (
+	RoleAdmin      = "_admin"
+	RoleReader     = "_reader"
+	RoleWriter     = "_writer"
+	RoleReplicator = "_replicator"
+	RoleDBUpdates  = "_db_updates"
+	RoleDesign     = "_design"
+)
+
+const typeJSON = "application/json"
 
 // UserContext represents a [CouchDB UserContext object].
 //
@@ -26,11 +40,21 @@ type UserContext struct {
 	Salt string `json:"-"`
 }
 
+// HasRole returns true if the user has the specified role.
+func (c *UserContext) HasRole(role string) bool {
+	for _, r := range c.Roles {
+		if r == role {
+			return true
+		}
+	}
+	return false
+}
+
 // Server is the interface for the server which exposes capabilities needed
 // by auth handlers.
 type Server interface {
 	UserStore() UserStore
-	ValidateCookie(user *UserContext, cookie string) (bool, error)
+	Bind(*http.Request, interface{}) error
 }
 
 // AuthenticateFunc authenticates the HTTP request. On success, a user context

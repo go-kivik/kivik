@@ -23,7 +23,7 @@ type authHandlerOption []auth.Handler
 
 func (h authHandlerOption) apply(s *Server) {
 	for _, handler := range h {
-		_, auth := handler.Init(s)
+		_, auth := handler.Init(&authService{s})
 		s.authFuncs = append(s.authFuncs, auth)
 	}
 }

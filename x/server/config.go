@@ -84,7 +84,7 @@ func (s *Server) setConfigKey() httpe.HandlerWithError {
 		}
 		confWriter, ok := s.config.(config.Writer)
 		if !ok {
-			return &internal.Error{Status: http.StatusNotImplemented, Message: "config writer not implemented"}
+			return &internal.Error{Status: http.StatusMethodNotAllowed, Message: "configuration is read-only"}
 		}
 		var newValue string
 		if err := json.NewDecoder(r.Body).Decode(&newValue); err != nil {
@@ -105,7 +105,7 @@ func (s *Server) deleteConfigKey() httpe.HandlerWithError {
 		}
 		confWriter, ok := s.config.(config.Writer)
 		if !ok {
-			return &internal.Error{Status: http.StatusNotImplemented, Message: "config writer not implemented"}
+			return &internal.Error{Status: http.StatusMethodNotAllowed, Message: "configuration is read-only"}
 		}
 		oldValue, err := confWriter.Delete(r.Context(), chi.URLParam(r, "section"), chi.URLParam(r, "key"))
 		if err != nil {

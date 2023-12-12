@@ -95,7 +95,7 @@ func (s *Server) routes(mux *chi.Mux) {
 	auth.Post("/_search_analyze", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	auth.Get("/_utils", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	auth.Get("/_utils/", httpe.ToHandler(s.notImplemented()).ServeHTTP)
-	mux.Get("/_up", httpe.ToHandler(s.notImplemented()).ServeHTTP)
+	mux.Get("/_up", httpe.ToHandler(s.up()).ServeHTTP)
 	auth.Get("/_uuids", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	mux.Get("/favicon.ico", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	auth.Get("/_reshard", httpe.ToHandler(s.notImplemented()).ServeHTTP)
@@ -288,5 +288,13 @@ func (s *Server) dbExists() httpe.HandlerWithError {
 		}
 		w.WriteHeader(http.StatusOK)
 		return nil
+	})
+}
+
+func (s *Server) up() httpe.HandlerWithError {
+	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
+		return serveJSON(w, http.StatusOK, map[string]interface{}{
+			"status": "ok",
+		})
 	})
 }

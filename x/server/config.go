@@ -13,6 +13,7 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -20,6 +21,7 @@ import (
 	"gitlab.com/flimzy/httpe"
 
 	"github.com/go-kivik/kivik/v4/internal"
+	"github.com/go-kivik/kivik/v4/x/server/config"
 )
 
 const nodeLocal = "_local"
@@ -72,5 +74,43 @@ func (s *Server) reloadConfig() httpe.HandlerWithError {
 			return err
 		}
 		return serveJSON(w, http.StatusOK, map[string]bool{"ok": true})
+	})
+}
+
+func (s *Server) setConfigKey() httpe.HandlerWithError {
+	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
+		if node := chi.URLParam(r, "node-name"); node != nodeLocal {
+			return &internal.Error{Status: http.StatusNotFound, Message: fmt.Sprintf("no such node: %s", node)}
+		}
+		confWriter, ok := s.config.(config.Writer)
+		if !ok {
+			return &internal.Error{Status: http.StatusNotImplemented, Message: "config writer not implemented"}
+		}
+		var newValue string
+		if err := json.NewDecoder(r.Body).Decode(&newValue); err != nil {
+			return &internal.Error{Status: http.StatusBadRequest, Err: err}
+		}
+		oldValue, err := confWriter.SetKey(r.Context(), chi.URLParam(r, "section"), chi.URLParam(r, "key"), newValue)
+		if err != nil {
+			return err
+		}
+		return serveJSON(w, http.StatusOK, oldValue)
+	})
+}
+
+func (s *Server) deleteConfigKey() httpe.HandlerWithError {
+	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
+		if node := chi.URLParam(r, "node-name"); node != nodeLocal {
+			return &internal.Error{Status: http.StatusNotFound, Message: fmt.Sprintf("no such node: %s", node)}
+		}
+		confWriter, ok := s.config.(config.Writer)
+		if !ok {
+			return &internal.Error{Status: http.StatusNotImplemented, Message: "config writer not implemented"}
+		}
+		oldValue, err := confWriter.Delete(r.Context(), chi.URLParam(r, "section"), chi.URLParam(r, "key"))
+		if err != nil {
+			return err
+		}
+		return serveJSON(w, http.StatusOK, oldValue)
 	})
 }

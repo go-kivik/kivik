@@ -291,6 +291,45 @@ func TestServer(t *testing.T) {
 			wantStatus: http.StatusOK,
 			wantJSON:   map[string]bool{"ok": true},
 		},
+		{
+			name:       "set new config key",
+			method:     http.MethodPut,
+			path:       "/_node/_local/_config/foo/bar",
+			body:       strings.NewReader(`"oink"`),
+			authUser:   userAdmin,
+			wantStatus: http.StatusOK,
+			wantJSON:   "",
+		},
+		{
+			name:       "set existing config key",
+			method:     http.MethodPut,
+			path:       "/_node/_local/_config/couchdb/users_db_suffix",
+			body:       strings.NewReader(`"oink"`),
+			authUser:   userAdmin,
+			wantStatus: http.StatusOK,
+			wantJSON:   "_users",
+		},
+		{
+			name:       "delete existing config key",
+			method:     http.MethodDelete,
+			path:       "/_node/_local/_config/couchdb/users_db_suffix",
+			body:       strings.NewReader(`"oink"`),
+			authUser:   userAdmin,
+			wantStatus: http.StatusOK,
+			wantJSON:   "_users",
+		},
+		{
+			name:       "delete non-existent config key",
+			method:     http.MethodDelete,
+			path:       "/_node/_local/_config/foo/bar",
+			body:       strings.NewReader(`"oink"`),
+			authUser:   userAdmin,
+			wantStatus: http.StatusNotFound,
+			wantJSON: map[string]interface{}{
+				"error":  "not_found",
+				"reason": "unknown_config_value",
+			},
+		},
 	}
 
 	for _, tt := range tests {

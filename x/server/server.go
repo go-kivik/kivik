@@ -115,8 +115,8 @@ func (s *Server) routes(mux *chi.Mux) {
 	admin.Get("/_node/{node-name}/_config", httpe.ToHandler(s.allConfig()).ServeHTTP)
 	admin.Get("/_node/{node-name}/_config/{section}", httpe.ToHandler(s.configSection()).ServeHTTP)
 	admin.Get("/_node/{node-name}/_config/{section}/{key}", httpe.ToHandler(s.configKey()).ServeHTTP)
-	admin.Put("/_node/{node-name}/_config/{section}/{key}", httpe.ToHandler(s.notImplemented()).ServeHTTP)
-	admin.Delete("/_node/{node-name}/_config/{section}/{key}", httpe.ToHandler(s.notImplemented()).ServeHTTP)
+	admin.Put("/_node/{node-name}/_config/{section}/{key}", httpe.ToHandler(s.setConfigKey()).ServeHTTP)
+	admin.Delete("/_node/{node-name}/_config/{section}/{key}", httpe.ToHandler(s.deleteConfigKey()).ServeHTTP)
 	admin.Post("/_node/{node-name}/_config/_reload", httpe.ToHandler(s.reloadConfig()).ServeHTTP)
 
 	// Databases

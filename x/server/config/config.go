@@ -24,55 +24,74 @@ import (
 // backends that allow modifying configuraiont will also implement
 // [ConfigWriter].
 type Config interface {
-	All(context.Context) (map[string]interface{}, error)
-	Section(context.Context, string) (map[string]interface{}, error)
-	Key(context.Context, string, string) (interface{}, error)
+	All(context.Context) (map[string]map[string]string, error)
+	Section(context.Context, string) (map[string]string, error)
+	Key(context.Context, string, string) (string, error)
 	Reload(context.Context) error
 }
 
 // Writer allows setting server configuration.
 type Writer interface {
-	SetSection(context.Context, string, interface{}) error
-	SetKey(context.Context, string, string, interface{}) error
-	Delete(context.Context, string, string) error
+	// SetKey sets a new config value, and returns the old value.
+	SetKey(context.Context, string, string, string) (string, error)
+	Delete(context.Context, string, string) (string, error)
 }
 
 type defaultConfig struct {
-	conf map[string]interface{}
+	conf map[string]map[string]string
 }
 
-var _ Config = (*defaultConfig)(nil)
+var (
+	_ Config = (*defaultConfig)(nil)
+	_ Writer = (*defaultConfig)(nil)
+)
 
-// Default returns a Config implementation which returns read-only default
-// values for all configuration options.
+// Default returns a Config implementation which returns default values for all
+// configuration options, and preserves changed settings only until restart.
 func Default() Config {
 	return &defaultConfig{
-		conf: map[string]interface{}{
-			"couchdb": map[string]interface{}{
+		conf: map[string]map[string]string{
+			"couchdb": {
 				"users_db_suffix": "_users",
 			},
 		},
 	}
 }
 
-func (c *defaultConfig) All(context.Context) (map[string]interface{}, error) {
+func (c *defaultConfig) All(context.Context) (map[string]map[string]string, error) {
 	return c.conf, nil
 }
 
-func (c *defaultConfig) Section(_ context.Context, section string) (map[string]interface{}, error) {
-	s, _ := c.conf[section].(map[string]interface{})
-	return s, nil
+func (c *defaultConfig) Section(_ context.Context, section string) (map[string]string, error) {
+	return c.conf[section], nil
 }
 
-func (c *defaultConfig) Key(_ context.Context, section, key string) (interface{}, error) {
-	s, _ := c.conf[section].(map[string]interface{})
-
-	if v, ok := s[key]; ok {
+func (c *defaultConfig) Key(_ context.Context, section, key string) (string, error) {
+	if v, ok := c.conf[section][key]; ok {
 		return v, nil
 	}
-	return nil, &internal.Error{Status: http.StatusNotFound, Message: "unknown_config_value"}
+	return "", &internal.Error{Status: http.StatusNotFound, Message: "unknown_config_value"}
 }
 
 func (c *defaultConfig) Reload(context.Context) error {
 	return nil
+}
+
+func (c *defaultConfig) SetKey(_ context.Context, section, key string, value string) (string, error) {
+	s, ok := c.conf[section]
+	if !ok {
+		s = map[string]string{}
+		c.conf[section] = s
+	}
+	old := s[key]
+	s[key] = value
+	return old, nil
+}
+
+func (c *defaultConfig) Delete(_ context.Context, section, key string) (string, error) {
+	if v, ok := c.conf[section][key]; ok {
+		delete(c.conf[section], key)
+		return v, nil
+	}
+	return "", &internal.Error{Status: http.StatusNotFound, Message: "unknown_config_value"}
 }

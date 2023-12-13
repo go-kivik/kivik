@@ -222,6 +222,15 @@ func TestServer(t *testing.T) {
 				"ok": true,
 			},
 		},
+		{
+			name:       "_up",
+			method:     http.MethodGet,
+			path:       "/_up",
+			wantStatus: http.StatusOK,
+			wantJSON: map[string]interface{}{
+				"status": "ok",
+			},
+		},
 	}
 
 	for _, tt := range tests {

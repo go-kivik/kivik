@@ -15,6 +15,7 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -99,7 +100,7 @@ func (s *Server) routes(mux *chi.Mux) {
 	auth.Get("/_utils", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	auth.Get("/_utils/", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	mux.Get("/_up", httpe.ToHandler(s.up()).ServeHTTP)
-	auth.Get("/_uuids", httpe.ToHandler(s.notImplemented()).ServeHTTP)
+	mux.Get("/_uuids", httpe.ToHandler(s.uuids()).ServeHTTP)
 	mux.Get("/favicon.ico", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	auth.Get("/_reshard", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	auth.Get("/_reshard/state", httpe.ToHandler(s.notImplemented()).ServeHTTP)
@@ -279,4 +280,12 @@ func (s *Server) dbExists() httpe.HandlerWithError {
 		w.WriteHeader(http.StatusOK)
 		return nil
 	})
+}
+
+func (s *Server) conf(ctx context.Context, section, key string, target interface{}) error {
+	value, err := s.config.Key(ctx, section, key)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal([]byte(value), target)
 }

@@ -362,6 +362,20 @@ func TestServer(t *testing.T) {
 				"reason": "configuration is read-only",
 			},
 		},
+		{
+			name: "uuids",
+			extraOptions: []Option{
+				WithConfig(&readOnlyConfig{
+					Config: config.Default(),
+				}),
+			},
+			method:     http.MethodGet,
+			path:       "/_uuids",
+			wantStatus: http.StatusOK,
+			wantJSON: map[string]interface{}{
+				"uuids": []string{"x"},
+			},
+		},
 	}
 
 	for _, tt := range tests {

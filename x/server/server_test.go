@@ -15,9 +15,11 @@ package server
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -68,6 +70,20 @@ func basicAuth(user string) string {
 	return "Basic " + base64.StdEncoding.EncodeToString([]byte(user+":"+testPassword))
 }
 
+var uuidRandomRE = regexp.MustCompile(`^[0-9a-f]{32}$`)
+
+func validateUUIDs(t *testing.T, uuids []string, count int, re *regexp.Regexp) {
+	t.Helper()
+	if len(uuids) != count {
+		t.Errorf("Unexpected number of UUIDs: %d", len(uuids))
+	}
+	for _, uuid := range uuids {
+		if !re.MatchString(uuid) {
+			t.Errorf("Unexpected UUID format: %s", uuid)
+		}
+	}
+}
+
 func TestServer(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -81,6 +97,8 @@ func TestServer(t *testing.T) {
 		body         io.Reader
 		wantStatus   int
 		wantJSON     interface{}
+		// wantFunc receives the response body to perform its own assertions.
+		wantFunc func(*testing.T, io.Reader)
 	}{
 		{
 			name:       "root",
@@ -363,20 +381,6 @@ func TestServer(t *testing.T) {
 			},
 		},
 		{
-			name: "uuids",
-			extraOptions: []Option{
-				WithConfig(&readOnlyConfig{
-					Config: config.Default(),
-				}),
-			},
-			method:     http.MethodGet,
-			path:       "/_uuids",
-			wantStatus: http.StatusOK,
-			wantJSON: map[string]interface{}{
-				"uuids": []string{"x"},
-			},
-		},
-		{
 			name: "too many uuids",
 			extraOptions: []Option{
 				WithConfig(&readOnlyConfig{
@@ -404,6 +408,50 @@ func TestServer(t *testing.T) {
 			wantJSON: map[string]interface{}{
 				"error":  "bad_request",
 				"reason": "count must be a positive integer",
+			},
+		},
+		{
+			name: "random uuids",
+			extraOptions: []Option{
+				WithConfig(&readOnlyConfig{
+					Config: config.Map(
+						map[string]map[string]string{
+							"uuids": {"algorithm": "random"},
+						},
+					),
+				}),
+			},
+			method:     http.MethodGet,
+			path:       "/_uuids",
+			wantStatus: http.StatusOK,
+			wantFunc: func(t *testing.T, r io.Reader) {
+				var target map[string][]string
+				if err := json.NewDecoder(r).Decode(&target); err != nil {
+					t.Fatal(err)
+				}
+				validateUUIDs(t, target["uuids"], 1, uuidRandomRE)
+			},
+		},
+		{
+			name: "many random uuids",
+			extraOptions: []Option{
+				WithConfig(&readOnlyConfig{
+					Config: config.Map(
+						map[string]map[string]string{
+							"uuids": {"algorithm": "random"},
+						},
+					),
+				}),
+			},
+			method:     http.MethodGet,
+			path:       "/_uuids?count=10",
+			wantStatus: http.StatusOK,
+			wantFunc: func(t *testing.T, r io.Reader) {
+				var target map[string][]string
+				if err := json.NewDecoder(r).Decode(&target); err != nil {
+					t.Fatal(err)
+				}
+				validateUUIDs(t, target["uuids"], 10, uuidRandomRE)
 			},
 		},
 	}
@@ -450,8 +498,12 @@ func TestServer(t *testing.T) {
 			if res.StatusCode != tt.wantStatus {
 				t.Errorf("Unexpected response status: %d", res.StatusCode)
 			}
-			if d := testy.DiffAsJSON(tt.wantJSON, res.Body); d != nil {
-				t.Error(d)
+			if tt.wantFunc != nil {
+				tt.wantFunc(t, res.Body)
+			} else {
+				if d := testy.DiffAsJSON(tt.wantJSON, res.Body); d != nil {
+					t.Error(d)
+				}
 			}
 		})
 	}

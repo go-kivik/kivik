@@ -14,6 +14,8 @@ package server
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -40,8 +42,8 @@ var supportedUUIDAlgorithms = []uuidAlgorithm{uuidAlgorithmRandom, uuidAlgorithm
 
 // confUUIDAlgorithm returns the UUID algorithm used by the server.
 func (s *Server) confUUIDAlgorithm(ctx context.Context) uuidAlgorithm {
-	var algo uuidAlgorithm
-	_ = s.conf(ctx, "couchdb", "algorithm", &algo)
+	value, _ := s.config.Key(ctx, "uuids", "algorithm")
+	algo := uuidAlgorithm(value)
 	for _, a := range supportedUUIDAlgorithms {
 		if algo == a {
 			return algo
@@ -53,7 +55,7 @@ func (s *Server) confUUIDAlgorithm(ctx context.Context) uuidAlgorithm {
 
 func (s *Server) confUUIDMaxCount(ctx context.Context) int {
 	var count int
-	_ = s.conf(ctx, "couchdb", "max_count", &count)
+	_ = s.conf(ctx, "uuids", "max_count", &count)
 	if count < 1 {
 		return uuidDefaultMaxCount
 	}
@@ -70,6 +72,9 @@ func (s *Server) uuids() httpe.HandlerWithError {
 				return &internal.Error{Status: http.StatusBadRequest, Message: "count must be a positive integer"}
 			}
 		}
+		if count == 0 {
+			count = 1
+		}
 		maxCount := s.confUUIDMaxCount(r.Context())
 		if count > maxCount {
 			return &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("count must not exceed %d", maxCount)}
@@ -78,13 +83,13 @@ func (s *Server) uuids() httpe.HandlerWithError {
 		var err error
 		switch algo := s.confUUIDAlgorithm(r.Context()); algo {
 		case uuidAlgorithmRandom:
-			uuids, err = s.uuidsRandom(r.Context())
+			uuids, err = s.uuidsRandom(count)
 		case uuidAlgorithmSequential:
-			uuids, err = s.uuidsRandom(r.Context())
+			uuids, err = s.uuidsRandom(count)
 		case uuidAlgorithmUTCRandom:
-			uuids, err = s.uuidsRandom(r.Context())
+			uuids, err = s.uuidsRandom(count)
 		case uuidAlgorithmUTCID:
-			uuids, err = s.uuidsRandom(r.Context())
+			uuids, err = s.uuidsRandom(count)
 		}
 		if err != nil {
 			return err
@@ -93,6 +98,23 @@ func (s *Server) uuids() httpe.HandlerWithError {
 	})
 }
 
-func (s *Server) uuidsRandom(ctx context.Context) ([]string, error) {
-	return []string{"x"}, nil
+func (s *Server) uuidsRandom(count int) ([]string, error) {
+	uuids := make([]string, count)
+	for i := range uuids {
+		uuid, err := randomUUID()
+		if err != nil {
+			return nil, err
+		}
+		uuids[i] = uuid
+	}
+	return uuids, nil
+}
+
+func randomUUID() (string, error) {
+	const uuidLength = 128 / 8
+	randomBytes := make([]byte, uuidLength)
+	if _, err := rand.Read(randomBytes); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(randomBytes), nil
 }

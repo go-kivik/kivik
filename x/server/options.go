@@ -12,7 +12,10 @@
 
 package server
 
-import "github.com/go-kivik/kivik/v4/x/server/auth"
+import (
+	"github.com/go-kivik/kivik/v4/x/server/auth"
+	"github.com/go-kivik/kivik/v4/x/server/config"
+)
 
 // Option is a server option.
 type Option interface {
@@ -50,4 +53,16 @@ func (s userStoreOption) apply(srv *Server) {
 // specified, until one returns a user context or an error.
 func WithUserStores(us ...auth.UserStore) Option {
 	return userStoreOption(us)
+}
+
+type configOption [1]config.Config
+
+func (c configOption) apply(s *Server) {
+	s.config = c[0]
+}
+
+// WithConfig sets the server configuration. If not set,
+// [github.com/go-kivik/kivik/v4/x/server/config.Default()] will be used.
+func WithConfig(c config.Config) Option {
+	return configOption{c}
 }

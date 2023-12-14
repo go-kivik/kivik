@@ -28,6 +28,7 @@ import (
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/x/server/auth"
+	"github.com/go-kivik/kivik/v4/x/server/config"
 )
 
 func init() {
@@ -41,6 +42,7 @@ type Server struct {
 	formDecoder *formam.Decoder
 	userStores  userStores
 	authFuncs   []auth.AuthenticateFunc
+	config      config.Config
 }
 
 // New instantiates a new server instance.
@@ -51,6 +53,7 @@ func New(client *kivik.Client, options ...Option) *Server {
 		formDecoder: formam.NewDecoder(&formam.DecoderOptions{
 			TagName: "form",
 		}),
+		config: config.Default(),
 	}
 	for _, option := range options {
 		option.apply(s)
@@ -109,12 +112,12 @@ func (s *Server) routes(mux *chi.Mux) {
 	auth.Put("/_reshard/jobs/{jobid}/state", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 
 	// Config
-	auth.Get("/_node/{node-name}/_config", httpe.ToHandler(s.notImplemented()).ServeHTTP)
-	auth.Get("/_node/{node-name}/_config/{section}", httpe.ToHandler(s.notImplemented()).ServeHTTP)
-	auth.Get("/_node/{node-name}/_config/{section}/{key}", httpe.ToHandler(s.notImplemented()).ServeHTTP)
-	auth.Put("/_node/{node-name}/_config/{section}/{key}", httpe.ToHandler(s.notImplemented()).ServeHTTP)
-	auth.Delete("/_node/{node-name}/_config/{section}/{key}", httpe.ToHandler(s.notImplemented()).ServeHTTP)
-	auth.Post("/_node/{node-name}/_config/_reload", httpe.ToHandler(s.notImplemented()).ServeHTTP)
+	admin.Get("/_node/{node-name}/_config", httpe.ToHandler(s.allConfig()).ServeHTTP)
+	admin.Get("/_node/{node-name}/_config/{section}", httpe.ToHandler(s.configSection()).ServeHTTP)
+	admin.Get("/_node/{node-name}/_config/{section}/{key}", httpe.ToHandler(s.configKey()).ServeHTTP)
+	admin.Put("/_node/{node-name}/_config/{section}/{key}", httpe.ToHandler(s.setConfigKey()).ServeHTTP)
+	admin.Delete("/_node/{node-name}/_config/{section}/{key}", httpe.ToHandler(s.deleteConfigKey()).ServeHTTP)
+	admin.Post("/_node/{node-name}/_config/_reload", httpe.ToHandler(s.reloadConfig()).ServeHTTP)
 
 	// Databases
 	auth.Head("/{db}", httpe.ToHandler(s.dbExists()).ServeHTTP)

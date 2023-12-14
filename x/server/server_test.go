@@ -27,6 +27,7 @@ import (
 	"github.com/go-kivik/kivik/v4"
 	_ "github.com/go-kivik/kivik/v4/x/fsdb" // Filesystem driver
 	"github.com/go-kivik/kivik/v4/x/server/auth"
+	"github.com/go-kivik/kivik/v4/x/server/config"
 )
 
 const (
@@ -70,15 +71,16 @@ func basicAuth(user string) string {
 func TestServer(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name       string
-		client     *kivik.Client
-		method     string
-		path       string
-		headers    map[string]string
-		authUser   string
-		body       io.Reader
-		wantStatus int
-		wantJSON   interface{}
+		name         string
+		extraOptions []Option
+		client       *kivik.Client
+		method       string
+		path         string
+		headers      map[string]string
+		authUser     string
+		body         io.Reader
+		wantStatus   int
+		wantJSON     interface{}
 	}{
 		{
 			name:       "root",
@@ -215,7 +217,6 @@ func TestServer(t *testing.T) {
 			name:       "delete session",
 			method:     http.MethodDelete,
 			path:       "/_session",
-			body:       strings.NewReader(`{"name":"root","password":"abc123"}`),
 			authUser:   userAdmin,
 			wantStatus: http.StatusOK,
 			wantJSON: map[string]interface{}{
@@ -231,6 +232,136 @@ func TestServer(t *testing.T) {
 				"status": "ok",
 			},
 		},
+		{
+			name:       "all config",
+			method:     http.MethodGet,
+			path:       "/_node/_local/_config",
+			authUser:   userAdmin,
+			wantStatus: http.StatusOK,
+			wantJSON: map[string]interface{}{
+				"couchdb": map[string]interface{}{
+					"users_db_suffix": "_users",
+				},
+			},
+		},
+		{
+			name:       "all config, non-admin",
+			method:     http.MethodGet,
+			path:       "/_node/_local/_config",
+			authUser:   userReader,
+			wantStatus: http.StatusForbidden,
+			wantJSON: map[string]interface{}{
+				"error":  "forbidden",
+				"reason": "Admin privileges required",
+			},
+		},
+		{
+			name:       "all config, no such node",
+			method:     http.MethodGet,
+			path:       "/_node/asdf/_config",
+			authUser:   userAdmin,
+			wantStatus: http.StatusNotFound,
+			wantJSON: map[string]interface{}{
+				"error":  "not_found",
+				"reason": "no such node: asdf",
+			},
+		},
+		{
+			name:       "config section",
+			method:     http.MethodGet,
+			path:       "/_node/_local/_config/couchdb",
+			authUser:   userAdmin,
+			wantStatus: http.StatusOK,
+			wantJSON: map[string]interface{}{
+				"users_db_suffix": "_users",
+			},
+		},
+		{
+			name:       "config key",
+			method:     http.MethodGet,
+			path:       "/_node/_local/_config/couchdb/users_db_suffix",
+			authUser:   userAdmin,
+			wantStatus: http.StatusOK,
+			wantJSON:   "_users",
+		},
+		{
+			name:       "reload config",
+			method:     http.MethodPost,
+			path:       "/_node/_local/_config/_reload",
+			authUser:   userAdmin,
+			wantStatus: http.StatusOK,
+			wantJSON:   map[string]bool{"ok": true},
+		},
+		{
+			name:       "set new config key",
+			method:     http.MethodPut,
+			path:       "/_node/_local/_config/foo/bar",
+			body:       strings.NewReader(`"oink"`),
+			authUser:   userAdmin,
+			wantStatus: http.StatusOK,
+			wantJSON:   "",
+		},
+		{
+			name:       "set existing config key",
+			method:     http.MethodPut,
+			path:       "/_node/_local/_config/couchdb/users_db_suffix",
+			body:       strings.NewReader(`"oink"`),
+			authUser:   userAdmin,
+			wantStatus: http.StatusOK,
+			wantJSON:   "_users",
+		},
+		{
+			name:       "delete existing config key",
+			method:     http.MethodDelete,
+			path:       "/_node/_local/_config/couchdb/users_db_suffix",
+			authUser:   userAdmin,
+			wantStatus: http.StatusOK,
+			wantJSON:   "_users",
+		},
+		{
+			name:       "delete non-existent config key",
+			method:     http.MethodDelete,
+			path:       "/_node/_local/_config/foo/bar",
+			authUser:   userAdmin,
+			wantStatus: http.StatusNotFound,
+			wantJSON: map[string]interface{}{
+				"error":  "not_found",
+				"reason": "unknown_config_value",
+			},
+		},
+		{
+			name: "set config not supported by config backend",
+			extraOptions: []Option{
+				WithConfig(&readOnlyConfig{
+					Config: config.Default(),
+				}),
+			},
+			method:     http.MethodPut,
+			path:       "/_node/_local/_config/foo/bar",
+			body:       strings.NewReader(`"oink"`),
+			authUser:   userAdmin,
+			wantStatus: http.StatusMethodNotAllowed,
+			wantJSON: map[string]interface{}{
+				"error":  "method_not_allowed",
+				"reason": "configuration is read-only",
+			},
+		},
+		{
+			name: "delete config not supported by config backend",
+			extraOptions: []Option{
+				WithConfig(&readOnlyConfig{
+					Config: config.Default(),
+				}),
+			},
+			method:     http.MethodDelete,
+			path:       "/_node/_local/_config/foo/bar",
+			authUser:   userAdmin,
+			wantStatus: http.StatusMethodNotAllowed,
+			wantJSON: map[string]interface{}{
+				"error":  "method_not_allowed",
+				"reason": "configuration is read-only",
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -243,11 +374,13 @@ func TestServer(t *testing.T) {
 			}
 			us := testUserStore(t)
 			const secret = "foo"
-			s := New(client,
+			opts := append([]Option{
 				WithUserStores(us),
 				WithAuthHandlers(auth.BasicAuth()),
 				WithAuthHandlers(auth.CookieAuth(secret, time.Hour)),
-			)
+			}, tt.extraOptions...)
+
+			s := New(client, opts...)
 			req, err := http.NewRequest(tt.method, tt.path, tt.body)
 			if err != nil {
 				t.Fatal(err)
@@ -278,4 +411,11 @@ func TestServer(t *testing.T) {
 			}
 		})
 	}
+}
+
+type readOnlyConfig struct {
+	config.Config
+	// To prevent the embedded methods from being accessible
+	SetKey int
+	Delete int
 }

@@ -454,6 +454,46 @@ func TestServer(t *testing.T) {
 				validateUUIDs(t, target["uuids"], 10, uuidRandomRE)
 			},
 		},
+		{
+			name: "sequential uuids",
+			extraOptions: []Option{
+				WithConfig(&readOnlyConfig{
+					Config: config.Default(),
+				}),
+			},
+			method:     http.MethodGet,
+			path:       "/_uuids",
+			wantStatus: http.StatusOK,
+			wantFunc: func(t *testing.T, r io.Reader) {
+				var target map[string][]string
+				if err := json.NewDecoder(r).Decode(&target); err != nil {
+					t.Fatal(err)
+				}
+				pattern := target["uuids"][0][0:26]
+				re := regexp.MustCompile(`^` + pattern + `[0-9a-f]{6}$`)
+				validateUUIDs(t, target["uuids"], 1, re)
+			},
+		},
+		{
+			name: "many random uuids",
+			extraOptions: []Option{
+				WithConfig(&readOnlyConfig{
+					Config: config.Default(),
+				}),
+			},
+			method:     http.MethodGet,
+			path:       "/_uuids?count=10",
+			wantStatus: http.StatusOK,
+			wantFunc: func(t *testing.T, r io.Reader) {
+				var target map[string][]string
+				if err := json.NewDecoder(r).Decode(&target); err != nil {
+					t.Fatal(err)
+				}
+				pattern := target["uuids"][0][0:26]
+				re := regexp.MustCompile(`^` + pattern + `[0-9a-f]{6}$`)
+				validateUUIDs(t, target["uuids"], 10, re)
+			},
+		},
 	}
 
 	for _, tt := range tests {

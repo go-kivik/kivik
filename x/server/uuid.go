@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"sync/atomic"
 
 	"gitlab.com/flimzy/httpe"
 
@@ -85,7 +86,7 @@ func (s *Server) uuids() httpe.HandlerWithError {
 		case uuidAlgorithmRandom:
 			uuids, err = s.uuidsRandom(count)
 		case uuidAlgorithmSequential:
-			uuids, err = s.uuidsRandom(count)
+			uuids, err = s.uuidsSequential(count)
 		case uuidAlgorithmUTCRandom:
 			uuids, err = s.uuidsRandom(count)
 		case uuidAlgorithmUTCID:
@@ -99,9 +100,10 @@ func (s *Server) uuids() httpe.HandlerWithError {
 }
 
 func (s *Server) uuidsRandom(count int) ([]string, error) {
+	const randomUUIDLength = 32
 	uuids := make([]string, count)
 	for i := range uuids {
-		uuid, err := randomUUID()
+		uuid, err := randomUUID(randomUUIDLength)
 		if err != nil {
 			return nil, err
 		}
@@ -110,11 +112,57 @@ func (s *Server) uuidsRandom(count int) ([]string, error) {
 	return uuids, nil
 }
 
-func randomUUID() (string, error) {
-	const uuidLength = 128 / 8
-	randomBytes := make([]byte, uuidLength)
+func randomUUID(length int) (string, error) {
+	const charsPerByte = 2
+	var hexByteLength int
+	if length%4 == 0 {
+		hexByteLength = length / charsPerByte
+	} else {
+		hexByteLength = length/charsPerByte + 1
+	}
+	randomBytes := make([]byte, hexByteLength)
 	if _, err := rand.Read(randomBytes); err != nil {
 		return "", err
 	}
-	return hex.EncodeToString(randomBytes), nil
+	return hex.EncodeToString(randomBytes)[:length], nil
+}
+
+// randomIncrement returns a random number between 1 and 256.
+func randomIncrement() (int32, error) {
+	buf := make([]byte, 1)
+	if _, err := rand.Read(buf); err != nil {
+		return 0, err
+	}
+	return int32(buf[0]) + 1, nil
+}
+
+func (s *Server) uuidsSequential(count int) ([]string, error) {
+	prefix, err := s.uuidSequentialPrefix()
+	if err != nil {
+		return nil, err
+	}
+
+	uuids := make([]string, count)
+	for i := range uuids {
+		incr, err := randomIncrement()
+		if err != nil {
+			return nil, err
+		}
+		monotonic := atomic.AddInt32(&s.sequentialUUIDMonotonicID, incr)
+		uuids[i] = prefix + fmt.Sprintf("%06x", monotonic)
+	}
+	return uuids, nil
+}
+
+func (s *Server) uuidSequentialPrefix() (string, error) {
+	s.sequentialMU.Lock()
+	defer s.sequentialMU.Unlock()
+	if s.sequentialUUIDPrefix != "" {
+		return s.sequentialUUIDPrefix, nil
+	}
+
+	const sequentialUUIDPrefixLength = 26
+	var err error
+	s.sequentialUUIDPrefix, err = randomUUID(sequentialUUIDPrefixLength)
+	return s.sequentialUUIDPrefix, err
 }

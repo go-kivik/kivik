@@ -22,6 +22,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/monoculum/formam/v3"
@@ -44,6 +45,12 @@ type Server struct {
 	userStores  userStores
 	authFuncs   []auth.AuthenticateFunc
 	config      config.Config
+
+	// This is set the first time a sequential UUID is generated, and is used
+	// for all subsequent sequential UUIDs.
+	sequentialMU              sync.Mutex
+	sequentialUUIDPrefix      string
+	sequentialUUIDMonotonicID int32
 }
 
 // New instantiates a new server instance.

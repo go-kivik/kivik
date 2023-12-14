@@ -234,19 +234,6 @@ func (s *Server) notImplemented() httpe.HandlerWithError {
 	})
 }
 
-func (s *Server) root() httpe.HandlerWithError {
-	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
-		return serveJSON(w, http.StatusOK, map[string]interface{}{
-			"couchdb": "Welcome",
-			"vendor": map[string]string{
-				"name":    "Kivik",
-				"version": kivik.Version,
-			},
-			"version": kivik.Version,
-		})
-	})
-}
-
 func options(r *http.Request) kivik.Option {
 	query := r.URL.Query()
 	params := make(map[string]interface{}, len(query))
@@ -291,13 +278,5 @@ func (s *Server) dbExists() httpe.HandlerWithError {
 		}
 		w.WriteHeader(http.StatusOK)
 		return nil
-	})
-}
-
-func (s *Server) up() httpe.HandlerWithError {
-	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
-		return serveJSON(w, http.StatusOK, map[string]interface{}{
-			"status": "ok",
-		})
 	})
 }

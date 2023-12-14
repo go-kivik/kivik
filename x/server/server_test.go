@@ -376,6 +376,36 @@ func TestServer(t *testing.T) {
 				"uuids": []string{"x"},
 			},
 		},
+		{
+			name: "too many uuids",
+			extraOptions: []Option{
+				WithConfig(&readOnlyConfig{
+					Config: config.Default(),
+				}),
+			},
+			method:     http.MethodGet,
+			path:       "/_uuids?count=99999",
+			wantStatus: http.StatusBadRequest,
+			wantJSON: map[string]interface{}{
+				"error":  "bad_request",
+				"reason": "count must not exceed 1000",
+			},
+		},
+		{
+			name: "invalid count",
+			extraOptions: []Option{
+				WithConfig(&readOnlyConfig{
+					Config: config.Default(),
+				}),
+			},
+			method:     http.MethodGet,
+			path:       "/_uuids?count=chicken",
+			wantStatus: http.StatusBadRequest,
+			wantJSON: map[string]interface{}{
+				"error":  "bad_request",
+				"reason": "count must be a positive integer",
+			},
+		},
 	}
 
 	for _, tt := range tests {

@@ -14,20 +14,26 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"strconv"
 
 	"gitlab.com/flimzy/httpe"
+
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 type uuidAlgorithm string
 
-// Supported UUID algorithms
 const (
+	// Supported UUID algorithms
 	uuidAlgorithmRandom     uuidAlgorithm = "random"
 	uuidAlgorithmSequential uuidAlgorithm = "sequential"
 	uuidAlgorithmUTCRandom  uuidAlgorithm = "utc_random"
 	uuidAlgorithmUTCID      uuidAlgorithm = "utc_id"
 	uuidAlgorithmDefault                  = uuidAlgorithmSequential
+
+	uuidDefaultMaxCount = 1000
 )
 
 var supportedUUIDAlgorithms = []uuidAlgorithm{uuidAlgorithmRandom, uuidAlgorithmSequential, uuidAlgorithmUTCRandom, uuidAlgorithmUTCID}
@@ -45,8 +51,29 @@ func (s *Server) confUUIDAlgorithm(ctx context.Context) uuidAlgorithm {
 	return uuidAlgorithmDefault
 }
 
+func (s *Server) confUUIDMaxCount(ctx context.Context) int {
+	var count int
+	_ = s.conf(ctx, "couchdb", "max_count", &count)
+	if count < 1 {
+		return uuidDefaultMaxCount
+	}
+	return count
+}
+
 func (s *Server) uuids() httpe.HandlerWithError {
 	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
+		var count int
+		if param := r.URL.Query().Get("count"); param != "" {
+			var err error
+			count, err = strconv.Atoi(param)
+			if err != nil {
+				return &internal.Error{Status: http.StatusBadRequest, Message: "count must be a positive integer"}
+			}
+		}
+		maxCount := s.confUUIDMaxCount(r.Context())
+		if count > maxCount {
+			return &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("count must not exceed %d", maxCount)}
+		}
 		var uuids []string
 		var err error
 		switch algo := s.confUUIDAlgorithm(r.Context()); algo {

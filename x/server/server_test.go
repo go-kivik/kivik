@@ -19,11 +19,11 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"regexp"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4"
@@ -31,6 +31,8 @@ import (
 	"github.com/go-kivik/kivik/v4/x/server/auth"
 	"github.com/go-kivik/kivik/v4/x/server/config"
 )
+
+var v = validator.New(validator.WithRequiredStructEnabled())
 
 const (
 	userAdmin      = "admin"
@@ -70,20 +72,6 @@ func basicAuth(user string) string {
 	return "Basic " + base64.StdEncoding.EncodeToString([]byte(user+":"+testPassword))
 }
 
-var uuidRandomRE = regexp.MustCompile(`^[0-9a-f]{32}$`)
-
-func validateUUIDs(t *testing.T, uuids []string, count int, re *regexp.Regexp) {
-	t.Helper()
-	if len(uuids) != count {
-		t.Errorf("Unexpected number of UUIDs: %d", len(uuids))
-	}
-	for _, uuid := range uuids {
-		if !re.MatchString(uuid) {
-			t.Errorf("Unexpected UUID format: %s", uuid)
-		}
-	}
-}
-
 func TestServer(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -97,8 +85,10 @@ func TestServer(t *testing.T) {
 		body         io.Reader
 		wantStatus   int
 		wantJSON     interface{}
-		// wantFunc receives the response body to perform its own assertions.
-		wantFunc func(*testing.T, io.Reader)
+
+		// if target is specified, it is expected to be a struct into which the
+		// response body will be unmarshaled, then validated.
+		target interface{}
 	}{
 		{
 			name:       "root",
@@ -424,13 +414,9 @@ func TestServer(t *testing.T) {
 			method:     http.MethodGet,
 			path:       "/_uuids",
 			wantStatus: http.StatusOK,
-			wantFunc: func(t *testing.T, r io.Reader) {
-				var target map[string][]string
-				if err := json.NewDecoder(r).Decode(&target); err != nil {
-					t.Fatal(err)
-				}
-				validateUUIDs(t, target["uuids"], 1, uuidRandomRE)
-			},
+			target: new(struct {
+				UUIDs []string `json:"uuids" validate:"required,len=1,dive,required,len=32,hexadecimal"`
+			}),
 		},
 		{
 			name: "many random uuids",
@@ -446,13 +432,9 @@ func TestServer(t *testing.T) {
 			method:     http.MethodGet,
 			path:       "/_uuids?count=10",
 			wantStatus: http.StatusOK,
-			wantFunc: func(t *testing.T, r io.Reader) {
-				var target map[string][]string
-				if err := json.NewDecoder(r).Decode(&target); err != nil {
-					t.Fatal(err)
-				}
-				validateUUIDs(t, target["uuids"], 10, uuidRandomRE)
-			},
+			target: new(struct {
+				UUIDs []string `json:"uuids" validate:"required,len=10,dive,required,len=32,hexadecimal"`
+			}),
 		},
 		{
 			name: "sequential uuids",
@@ -464,15 +446,9 @@ func TestServer(t *testing.T) {
 			method:     http.MethodGet,
 			path:       "/_uuids",
 			wantStatus: http.StatusOK,
-			wantFunc: func(t *testing.T, r io.Reader) {
-				var target map[string][]string
-				if err := json.NewDecoder(r).Decode(&target); err != nil {
-					t.Fatal(err)
-				}
-				pattern := target["uuids"][0][0:26]
-				re := regexp.MustCompile(`^` + pattern + `[0-9a-f]{6}$`)
-				validateUUIDs(t, target["uuids"], 1, re)
-			},
+			target: new(struct {
+				UUIDs []string `json:"uuids" validate:"required,len=1,dive,required,len=32,hexadecimal"`
+			}),
 		},
 		{
 			name: "many random uuids",
@@ -484,15 +460,9 @@ func TestServer(t *testing.T) {
 			method:     http.MethodGet,
 			path:       "/_uuids?count=10",
 			wantStatus: http.StatusOK,
-			wantFunc: func(t *testing.T, r io.Reader) {
-				var target map[string][]string
-				if err := json.NewDecoder(r).Decode(&target); err != nil {
-					t.Fatal(err)
-				}
-				pattern := target["uuids"][0][0:26]
-				re := regexp.MustCompile(`^` + pattern + `[0-9a-f]{6}$`)
-				validateUUIDs(t, target["uuids"], 10, re)
-			},
+			target: new(struct {
+				UUIDs []string `json:"uuids" validate:"required,len=10,dive,required,len=32,hexadecimal"`
+			}),
 		},
 	}
 
@@ -538,9 +508,15 @@ func TestServer(t *testing.T) {
 			if res.StatusCode != tt.wantStatus {
 				t.Errorf("Unexpected response status: %d", res.StatusCode)
 			}
-			if tt.wantFunc != nil {
-				tt.wantFunc(t, res.Body)
-			} else {
+			switch {
+			case tt.target != nil:
+				if err := json.NewDecoder(res.Body).Decode(tt.target); err != nil {
+					t.Fatal(err)
+				}
+				if err := v.Struct(tt.target); err != nil {
+					t.Fatalf("response does not match expectations: %s", err)
+				}
+			default:
 				if d := testy.DiffAsJSON(tt.wantJSON, res.Body); d != nil {
 					t.Error(d)
 				}

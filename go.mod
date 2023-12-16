@@ -7,6 +7,7 @@ require (
 	github.com/cenkalti/backoff/v4 v4.1.3
 	github.com/go-chi/chi v1.5.5
 	github.com/go-chi/chi/v5 v5.0.10
+	github.com/go-playground/validator/v10 v10.16.0
 	github.com/google/go-cmp v0.5.9
 	github.com/gopherjs/gopherjs v1.17.2
 	github.com/gopherjs/jsbuiltin v0.0.0-20180426082241-50091555e127
@@ -27,8 +28,12 @@ require (
 	github.com/Masterminds/semver/v3 v3.1.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
+	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
+	github.com/go-playground/locales v0.14.1 // indirect
+	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
+	github.com/leodido/go-urn v1.2.4 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/monoculum/formam v3.5.5+incompatible // indirect

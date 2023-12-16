@@ -500,6 +500,48 @@ func TestServer(t *testing.T) {
 				UUIDs []string `json:"uuids" validate:"required,len=10,dive,required,len=32,hexadecimal"`
 			}),
 		},
+		{
+			name: "one utc id uuid",
+			extraOptions: []Option{
+				WithConfig(&readOnlyConfig{
+					Config: config.Map(
+						map[string]map[string]string{
+							"uuids": {
+								"algorithm":     "utc_id",
+								"utc_id_suffix": "oink",
+							},
+						},
+					),
+				}),
+			},
+			method:     http.MethodGet,
+			path:       "/_uuids",
+			wantStatus: http.StatusOK,
+			target: new(struct {
+				UUIDs []string `json:"uuids" validate:"required,len=1,dive,required,len=18,endswith=oink"`
+			}),
+		},
+		{
+			name: "10 utc id uuids",
+			extraOptions: []Option{
+				WithConfig(&readOnlyConfig{
+					Config: config.Map(
+						map[string]map[string]string{
+							"uuids": {
+								"algorithm":     "utc_id",
+								"utc_id_suffix": "oink",
+							},
+						},
+					),
+				}),
+			},
+			method:     http.MethodGet,
+			path:       "/_uuids?count=10",
+			wantStatus: http.StatusOK,
+			target: new(struct {
+				UUIDs []string `json:"uuids" validate:"required,len=10,dive,required,len=18,endswith=oink"`
+			}),
+		},
 	}
 
 	for _, tt := range tests {

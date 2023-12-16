@@ -91,7 +91,7 @@ func (s *Server) uuids() httpe.HandlerWithError {
 		case uuidAlgorithmUTCRandom:
 			uuids, err = s.uuidsUTCRandom(count)
 		case uuidAlgorithmUTCID:
-			uuids, err = s.uuidsUTCID(count)
+			uuids = s.uuidsUTCID(r.Context(), count)
 		}
 		if err != nil {
 			return err
@@ -181,6 +181,11 @@ func (s *Server) uuidsUTCRandom(count int) ([]string, error) {
 	return uuids, nil
 }
 
-func (s *Server) uuidsUTCID(count int) ([]string, error) {
-	return nil, nil
+func (s *Server) uuidsUTCID(ctx context.Context, count int) []string {
+	suffix, _ := s.config.Key(ctx, "uuids", "utc_id_suffix")
+	uuids := make([]string, count)
+	for i := range uuids {
+		uuids[i] = fmt.Sprintf("%014x%s", time.Now().UnixMicro(), suffix)
+	}
+	return uuids
 }

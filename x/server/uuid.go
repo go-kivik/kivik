@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"strconv"
 	"sync/atomic"
+	"time"
 
 	"gitlab.com/flimzy/httpe"
 
@@ -88,9 +89,9 @@ func (s *Server) uuids() httpe.HandlerWithError {
 		case uuidAlgorithmSequential:
 			uuids, err = s.uuidsSequential(count)
 		case uuidAlgorithmUTCRandom:
-			uuids, err = s.uuidsRandom(count)
+			uuids, err = s.uuidsUTCRandom(count)
 		case uuidAlgorithmUTCID:
-			uuids, err = s.uuidsRandom(count)
+			uuids, err = s.uuidsUTCID(count)
 		}
 		if err != nil {
 			return err
@@ -103,7 +104,7 @@ func (s *Server) uuidsRandom(count int) ([]string, error) {
 	const randomUUIDLength = 32
 	uuids := make([]string, count)
 	for i := range uuids {
-		uuid, err := randomUUID(randomUUIDLength)
+		uuid, err := randomHexString(randomUUIDLength)
 		if err != nil {
 			return nil, err
 		}
@@ -112,7 +113,7 @@ func (s *Server) uuidsRandom(count int) ([]string, error) {
 	return uuids, nil
 }
 
-func randomUUID(length int) (string, error) {
+func randomHexString(length int) (string, error) {
 	const charsPerByte = 2
 	var hexByteLength int
 	if length%4 == 0 {
@@ -163,6 +164,23 @@ func (s *Server) uuidSequentialPrefix() (string, error) {
 
 	const sequentialUUIDPrefixLength = 26
 	var err error
-	s.sequentialUUIDPrefix, err = randomUUID(sequentialUUIDPrefixLength)
+	s.sequentialUUIDPrefix, err = randomHexString(sequentialUUIDPrefixLength)
 	return s.sequentialUUIDPrefix, err
+}
+
+func (s *Server) uuidsUTCRandom(count int) ([]string, error) {
+	const randomChars = 18
+	uuids := make([]string, count)
+	for i := range uuids {
+		r, err := randomHexString(randomChars)
+		if err != nil {
+			return nil, err
+		}
+		uuids[i] = fmt.Sprintf("%014x%s", time.Now().UnixMicro(), r)
+	}
+	return uuids, nil
+}
+
+func (s *Server) uuidsUTCID(count int) ([]string, error) {
+	return nil, nil
 }

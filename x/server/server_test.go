@@ -464,6 +464,42 @@ func TestServer(t *testing.T) {
 				UUIDs []string `json:"uuids" validate:"required,len=10,dive,required,len=32,hexadecimal"`
 			}),
 		},
+		{
+			name: "one utc random uuid",
+			extraOptions: []Option{
+				WithConfig(&readOnlyConfig{
+					Config: config.Map(
+						map[string]map[string]string{
+							"uuids": {"algorithm": "utc_random"},
+						},
+					),
+				}),
+			},
+			method:     http.MethodGet,
+			path:       "/_uuids",
+			wantStatus: http.StatusOK,
+			target: new(struct {
+				UUIDs []string `json:"uuids" validate:"required,len=1,dive,required,len=32,hexadecimal"`
+			}),
+		},
+		{
+			name: "10 utc random uuids",
+			extraOptions: []Option{
+				WithConfig(&readOnlyConfig{
+					Config: config.Map(
+						map[string]map[string]string{
+							"uuids": {"algorithm": "utc_random"},
+						},
+					),
+				}),
+			},
+			method:     http.MethodGet,
+			path:       "/_uuids?count=10",
+			wantStatus: http.StatusOK,
+			target: new(struct {
+				UUIDs []string `json:"uuids" validate:"required,len=10,dive,required,len=32,hexadecimal"`
+			}),
+		},
 	}
 
 	for _, tt := range tests {
@@ -514,7 +550,7 @@ func TestServer(t *testing.T) {
 					t.Fatal(err)
 				}
 				if err := v.Struct(tt.target); err != nil {
-					t.Fatalf("response does not match expectations: %s", err)
+					t.Fatalf("response does not match expectations: %s\n%v", err, tt.target)
 				}
 			default:
 				if d := testy.DiffAsJSON(tt.wantJSON, res.Body); d != nil {

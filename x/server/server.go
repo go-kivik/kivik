@@ -130,7 +130,7 @@ func (s *Server) routes(mux *chi.Mux) {
 	// Databases
 	auth.Head("/{db}", httpe.ToHandler(s.dbExists()).ServeHTTP)
 	auth.Get("/{db}", httpe.ToHandler(s.db()).ServeHTTP)
-	auth.Put("/{db}", httpe.ToHandler(s.notImplemented()).ServeHTTP)
+	auth.Put("/{db}", httpe.ToHandler(s.createDB()).ServeHTTP)
 	auth.Delete("/{db}", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	auth.Post("/{db}", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	auth.Get("/{db}/_all_docs", httpe.ToHandler(s.notImplemented()).ServeHTTP)

@@ -541,6 +541,16 @@ func TestServer(t *testing.T) {
 				UUIDs []string `json:"uuids" validate:"required,len=10,dive,required,len=18,endswith=oink"`
 			}),
 		},
+		{
+			name:       "create db",
+			method:     http.MethodPut,
+			path:       "/db3",
+			authUser:   userAdmin,
+			wantStatus: http.StatusCreated,
+			wantJSON: map[string]interface{}{
+				"ok": true,
+			},
+		},
 	}
 
 	for _, tt := range tests {

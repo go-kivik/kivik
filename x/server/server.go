@@ -262,33 +262,6 @@ func (s *Server) allDBs() httpe.HandlerWithError {
 	})
 }
 
-func (s *Server) db() httpe.HandlerWithError {
-	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
-		db := chi.URLParam(r, "db")
-		stats, err := s.client.DB(db).Stats(r.Context())
-		if err != nil {
-			return err
-		}
-		return serveJSON(w, http.StatusOK, stats)
-	})
-}
-
-func (s *Server) dbExists() httpe.HandlerWithError {
-	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
-		db := chi.URLParam(r, "db")
-		exists, err := s.client.DBExists(r.Context(), db)
-		if err != nil {
-			return err
-		}
-		if !exists {
-			w.WriteHeader(http.StatusNotFound)
-			return nil
-		}
-		w.WriteHeader(http.StatusOK)
-		return nil
-	})
-}
-
 func (s *Server) conf(ctx context.Context, section, key string, target interface{}) error {
 	value, err := s.config.Key(ctx, section, key)
 	if err != nil {

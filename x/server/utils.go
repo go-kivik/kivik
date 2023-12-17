@@ -40,3 +40,12 @@ func (s *Server) up() httpe.HandlerWithError {
 		})
 	})
 }
+
+// activeTasks returns a list of running tasks. For now it always returns an
+// empty list, as this server doesn't support running asynchronous tasks. But it
+// may be expanded in the future.
+func (s *Server) activeTasks() httpe.HandlerWithError {
+	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, _ *http.Request) error {
+		return serveJSON(w, http.StatusOK, []interface{}{})
+	})
+}

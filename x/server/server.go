@@ -84,7 +84,7 @@ func (s *Server) routes(mux *chi.Mux) {
 	admin := auth.With(
 		httpe.ToMiddleware(adminRequired),
 	)
-	auth.Get("/_active_tasks", httpe.ToHandler(s.notImplemented()).ServeHTTP)
+	admin.Get("/_active_tasks", httpe.ToHandler(s.activeTasks()).ServeHTTP)
 	admin.Get("/_all_dbs", httpe.ToHandler(s.allDBs()).ServeHTTP)
 	auth.Get("/_dbs_info", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	auth.Post("/_dbs_info", httpe.ToHandler(s.notImplemented()).ServeHTTP)

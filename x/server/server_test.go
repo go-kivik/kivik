@@ -109,11 +109,8 @@ func TestServer(t *testing.T) {
 			method:     http.MethodGet,
 			path:       "/_active_tasks",
 			headers:    map[string]string{"Authorization": basicAuth(userAdmin)},
-			wantStatus: http.StatusNotImplemented,
-			wantJSON: map[string]interface{}{
-				"error":  "not_implemented",
-				"reason": "Feature not implemented",
-			},
+			wantStatus: http.StatusOK,
+			wantJSON:   []interface{}{},
 		},
 		{
 			name:       "all dbs",

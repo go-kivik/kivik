@@ -84,7 +84,7 @@ func (s *Server) routes(mux *chi.Mux) {
 	admin := auth.With(
 		httpe.ToMiddleware(adminRequired),
 	)
-	auth.Get("/_active_tasks", httpe.ToHandler(s.notImplemented()).ServeHTTP)
+	admin.Get("/_active_tasks", httpe.ToHandler(s.activeTasks()).ServeHTTP)
 	admin.Get("/_all_dbs", httpe.ToHandler(s.allDBs()).ServeHTTP)
 	auth.Get("/_dbs_info", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	auth.Post("/_dbs_info", httpe.ToHandler(s.notImplemented()).ServeHTTP)
@@ -259,33 +259,6 @@ func (s *Server) allDBs() httpe.HandlerWithError {
 			return err
 		}
 		return serveJSON(w, http.StatusOK, dbs)
-	})
-}
-
-func (s *Server) db() httpe.HandlerWithError {
-	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
-		db := chi.URLParam(r, "db")
-		stats, err := s.client.DB(db).Stats(r.Context())
-		if err != nil {
-			return err
-		}
-		return serveJSON(w, http.StatusOK, stats)
-	})
-}
-
-func (s *Server) dbExists() httpe.HandlerWithError {
-	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
-		db := chi.URLParam(r, "db")
-		exists, err := s.client.DBExists(r.Context(), db)
-		if err != nil {
-			return err
-		}
-		if !exists {
-			w.WriteHeader(http.StatusNotFound)
-			return nil
-		}
-		w.WriteHeader(http.StatusOK)
-		return nil
 	})
 }
 

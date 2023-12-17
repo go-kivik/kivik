@@ -58,6 +58,11 @@ func Default() Config {
 	}
 }
 
+// Map returns a Config implementation which returns the provided configuration.
+func Map(conf map[string]map[string]string) Config {
+	return &defaultConfig{conf: conf}
+}
+
 func (c *defaultConfig) All(context.Context) (map[string]map[string]string, error) {
 	return c.conf, nil
 }

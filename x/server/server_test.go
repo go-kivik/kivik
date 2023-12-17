@@ -15,6 +15,7 @@ package server
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -22,6 +23,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4"
@@ -29,6 +31,8 @@ import (
 	"github.com/go-kivik/kivik/v4/x/server/auth"
 	"github.com/go-kivik/kivik/v4/x/server/config"
 )
+
+var v = validator.New(validator.WithRequiredStructEnabled())
 
 const (
 	userAdmin      = "admin"
@@ -81,6 +85,10 @@ func TestServer(t *testing.T) {
 		body         io.Reader
 		wantStatus   int
 		wantJSON     interface{}
+
+		// if target is specified, it is expected to be a struct into which the
+		// response body will be unmarshaled, then validated.
+		target interface{}
 	}{
 		{
 			name:       "root",
@@ -362,6 +370,178 @@ func TestServer(t *testing.T) {
 				"reason": "configuration is read-only",
 			},
 		},
+		{
+			name: "too many uuids",
+			extraOptions: []Option{
+				WithConfig(&readOnlyConfig{
+					Config: config.Default(),
+				}),
+			},
+			method:     http.MethodGet,
+			path:       "/_uuids?count=99999",
+			wantStatus: http.StatusBadRequest,
+			wantJSON: map[string]interface{}{
+				"error":  "bad_request",
+				"reason": "count must not exceed 1000",
+			},
+		},
+		{
+			name: "invalid count",
+			extraOptions: []Option{
+				WithConfig(&readOnlyConfig{
+					Config: config.Default(),
+				}),
+			},
+			method:     http.MethodGet,
+			path:       "/_uuids?count=chicken",
+			wantStatus: http.StatusBadRequest,
+			wantJSON: map[string]interface{}{
+				"error":  "bad_request",
+				"reason": "count must be a positive integer",
+			},
+		},
+		{
+			name: "random uuids",
+			extraOptions: []Option{
+				WithConfig(&readOnlyConfig{
+					Config: config.Map(
+						map[string]map[string]string{
+							"uuids": {"algorithm": "random"},
+						},
+					),
+				}),
+			},
+			method:     http.MethodGet,
+			path:       "/_uuids",
+			wantStatus: http.StatusOK,
+			target: new(struct {
+				UUIDs []string `json:"uuids" validate:"required,len=1,dive,required,len=32,hexadecimal"`
+			}),
+		},
+		{
+			name: "many random uuids",
+			extraOptions: []Option{
+				WithConfig(&readOnlyConfig{
+					Config: config.Map(
+						map[string]map[string]string{
+							"uuids": {"algorithm": "random"},
+						},
+					),
+				}),
+			},
+			method:     http.MethodGet,
+			path:       "/_uuids?count=10",
+			wantStatus: http.StatusOK,
+			target: new(struct {
+				UUIDs []string `json:"uuids" validate:"required,len=10,dive,required,len=32,hexadecimal"`
+			}),
+		},
+		{
+			name: "sequential uuids",
+			extraOptions: []Option{
+				WithConfig(&readOnlyConfig{
+					Config: config.Default(),
+				}),
+			},
+			method:     http.MethodGet,
+			path:       "/_uuids",
+			wantStatus: http.StatusOK,
+			target: new(struct {
+				UUIDs []string `json:"uuids" validate:"required,len=1,dive,required,len=32,hexadecimal"`
+			}),
+		},
+		{
+			name: "many random uuids",
+			extraOptions: []Option{
+				WithConfig(&readOnlyConfig{
+					Config: config.Default(),
+				}),
+			},
+			method:     http.MethodGet,
+			path:       "/_uuids?count=10",
+			wantStatus: http.StatusOK,
+			target: new(struct {
+				UUIDs []string `json:"uuids" validate:"required,len=10,dive,required,len=32,hexadecimal"`
+			}),
+		},
+		{
+			name: "one utc random uuid",
+			extraOptions: []Option{
+				WithConfig(&readOnlyConfig{
+					Config: config.Map(
+						map[string]map[string]string{
+							"uuids": {"algorithm": "utc_random"},
+						},
+					),
+				}),
+			},
+			method:     http.MethodGet,
+			path:       "/_uuids",
+			wantStatus: http.StatusOK,
+			target: new(struct {
+				UUIDs []string `json:"uuids" validate:"required,len=1,dive,required,len=32,hexadecimal"`
+			}),
+		},
+		{
+			name: "10 utc random uuids",
+			extraOptions: []Option{
+				WithConfig(&readOnlyConfig{
+					Config: config.Map(
+						map[string]map[string]string{
+							"uuids": {"algorithm": "utc_random"},
+						},
+					),
+				}),
+			},
+			method:     http.MethodGet,
+			path:       "/_uuids?count=10",
+			wantStatus: http.StatusOK,
+			target: new(struct {
+				UUIDs []string `json:"uuids" validate:"required,len=10,dive,required,len=32,hexadecimal"`
+			}),
+		},
+		{
+			name: "one utc id uuid",
+			extraOptions: []Option{
+				WithConfig(&readOnlyConfig{
+					Config: config.Map(
+						map[string]map[string]string{
+							"uuids": {
+								"algorithm":     "utc_id",
+								"utc_id_suffix": "oink",
+							},
+						},
+					),
+				}),
+			},
+			method:     http.MethodGet,
+			path:       "/_uuids",
+			wantStatus: http.StatusOK,
+			target: new(struct {
+				UUIDs []string `json:"uuids" validate:"required,len=1,dive,required,len=18,endswith=oink"`
+			}),
+		},
+		{
+			name: "10 utc id uuids",
+			extraOptions: []Option{
+				WithConfig(&readOnlyConfig{
+					Config: config.Map(
+						map[string]map[string]string{
+							"uuids": {
+								"algorithm":     "utc_id",
+								"utc_id_suffix": "oink",
+							},
+						},
+					),
+				}),
+			},
+			method:     http.MethodGet,
+			path:       "/_uuids?count=10",
+			wantStatus: http.StatusOK,
+			target: new(struct {
+				UUIDs []string `json:"uuids" validate:"required,len=10,dive,required,len=18,endswith=oink"`
+			}),
+		},
 	}
 
 	for _, tt := range tests {
@@ -406,8 +586,18 @@ func TestServer(t *testing.T) {
 			if res.StatusCode != tt.wantStatus {
 				t.Errorf("Unexpected response status: %d", res.StatusCode)
 			}
-			if d := testy.DiffAsJSON(tt.wantJSON, res.Body); d != nil {
-				t.Error(d)
+			switch {
+			case tt.target != nil:
+				if err := json.NewDecoder(res.Body).Decode(tt.target); err != nil {
+					t.Fatal(err)
+				}
+				if err := v.Struct(tt.target); err != nil {
+					t.Fatalf("response does not match expectations: %s\n%v", err, tt.target)
+				}
+			default:
+				if d := testy.DiffAsJSON(tt.wantJSON, res.Body); d != nil {
+					t.Error(d)
+				}
 			}
 		})
 	}

@@ -15,12 +15,14 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/monoculum/formam/v3"
@@ -43,6 +45,12 @@ type Server struct {
 	userStores  userStores
 	authFuncs   []auth.AuthenticateFunc
 	config      config.Config
+
+	// This is set the first time a sequential UUID is generated, and is used
+	// for all subsequent sequential UUIDs.
+	sequentialMU              sync.Mutex
+	sequentialUUIDPrefix      string
+	sequentialUUIDMonotonicID int32
 }
 
 // New instantiates a new server instance.
@@ -99,7 +107,7 @@ func (s *Server) routes(mux *chi.Mux) {
 	auth.Get("/_utils", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	auth.Get("/_utils/", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	mux.Get("/_up", httpe.ToHandler(s.up()).ServeHTTP)
-	auth.Get("/_uuids", httpe.ToHandler(s.notImplemented()).ServeHTTP)
+	mux.Get("/_uuids", httpe.ToHandler(s.uuids()).ServeHTTP)
 	mux.Get("/favicon.ico", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	auth.Get("/_reshard", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	auth.Get("/_reshard/state", httpe.ToHandler(s.notImplemented()).ServeHTTP)
@@ -234,19 +242,6 @@ func (s *Server) notImplemented() httpe.HandlerWithError {
 	})
 }
 
-func (s *Server) root() httpe.HandlerWithError {
-	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
-		return serveJSON(w, http.StatusOK, map[string]interface{}{
-			"couchdb": "Welcome",
-			"vendor": map[string]string{
-				"name":    "Kivik",
-				"version": kivik.Version,
-			},
-			"version": kivik.Version,
-		})
-	})
-}
-
 func options(r *http.Request) kivik.Option {
 	query := r.URL.Query()
 	params := make(map[string]interface{}, len(query))
@@ -294,10 +289,10 @@ func (s *Server) dbExists() httpe.HandlerWithError {
 	})
 }
 
-func (s *Server) up() httpe.HandlerWithError {
-	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
-		return serveJSON(w, http.StatusOK, map[string]interface{}{
-			"status": "ok",
-		})
-	})
+func (s *Server) conf(ctx context.Context, section, key string, target interface{}) error {
+	value, err := s.config.Key(ctx, section, key)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal([]byte(value), target)
 }

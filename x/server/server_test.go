@@ -593,6 +593,18 @@ func TestServer(t *testing.T) {
 				OK  bool   `json:"ok" validate:"required,eq=true"`
 			}{},
 		},
+		{
+			name:       "get document",
+			method:     http.MethodGet,
+			path:       "/db1/foo",
+			authUser:   userAdmin,
+			wantStatus: http.StatusOK,
+			wantJSON: map[string]interface{}{
+				"_id":  "foo",
+				"_rev": "1-beea34a62a215ab051862d1e5d93162e",
+				"foo":  "bar",
+			},
+		},
 	}
 
 	for _, tt := range tests {

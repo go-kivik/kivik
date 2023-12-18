@@ -38,3 +38,16 @@ func (s *Server) postDoc() httpe.HandlerWithError {
 		})
 	})
 }
+
+func (s *Server) doc() httpe.HandlerWithError {
+	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
+		db := chi.URLParam(r, "db")
+		id := chi.URLParam(r, "docid")
+		var doc interface{}
+		err := s.client.DB(db).Get(r.Context(), id, options(r)).ScanDoc(&doc)
+		if err != nil {
+			return err
+		}
+		return serveJSON(w, http.StatusOK, doc)
+	})
+}

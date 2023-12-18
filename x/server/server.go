@@ -169,7 +169,7 @@ func (s *Server) routes(mux *chi.Mux) {
 
 	// Documents
 	auth.Post("/{db}", httpe.ToHandler(s.postDoc()).ServeHTTP)
-	auth.Get("/{db}/{docid}", httpe.ToHandler(s.notImplemented()).ServeHTTP)
+	auth.Get("/{db}/{docid}", httpe.ToHandler(s.doc()).ServeHTTP)
 	auth.Put("/{db}/{docid}", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	auth.Delete("/{db}/{docid}", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	auth.Method("COPY", "/{db}/{docid}", httpe.ToHandler(s.notImplemented()))

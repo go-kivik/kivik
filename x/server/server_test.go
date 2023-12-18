@@ -551,6 +551,27 @@ func TestServer(t *testing.T) {
 				"ok": true,
 			},
 		},
+		{
+			name:       "delete db, not found",
+			method:     http.MethodDelete,
+			path:       "/db3",
+			authUser:   userAdmin,
+			wantStatus: http.StatusNotFound,
+			wantJSON: map[string]interface{}{
+				"error":  "not_found",
+				"reason": "database does not exist",
+			},
+		},
+		{
+			name:       "delete db",
+			method:     http.MethodDelete,
+			path:       "/db2",
+			authUser:   userAdmin,
+			wantStatus: http.StatusOK,
+			wantJSON: map[string]interface{}{
+				"ok": true,
+			},
+		},
 	}
 
 	for _, tt := range tests {

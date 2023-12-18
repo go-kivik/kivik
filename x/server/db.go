@@ -57,3 +57,15 @@ func (s *Server) createDB() httpe.HandlerWithError {
 		})
 	})
 }
+
+func (s *Server) deleteDB() httpe.HandlerWithError {
+	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
+		db := chi.URLParam(r, "db")
+		if err := s.client.DestroyDB(r.Context(), db, options(r)); err != nil {
+			return err
+		}
+		return serveJSON(w, http.StatusOK, map[string]interface{}{
+			"ok": true,
+		})
+	})
+}

@@ -76,6 +76,7 @@ func TestServer(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name         string
+		driver, dsn  string
 		extraOptions []Option
 		client       *kivik.Client
 		method       string
@@ -548,7 +549,14 @@ func TestServer(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			client, err := kivik.New("fs", "testdata/fsdb")
+			driver, dsn := "fs", "testdata/fsdb"
+			if tt.driver != "" {
+				driver = tt.driver
+			}
+			if tt.dsn != "" {
+				dsn = tt.dsn
+			}
+			client, err := kivik.New(driver, dsn)
 			if err != nil {
 				t.Fatal(err)
 			}

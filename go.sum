@@ -221,8 +221,8 @@ github.com/yuin/goldmark v1.1.32/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9de
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 gitlab.com/flimzy/httpe v0.0.0-20231112220855-6303bcec02b6 h1:3ODGAZUT677yb4ed1GWQk1McCIZEW/1vYhIAA6cKmqc=
 gitlab.com/flimzy/httpe v0.0.0-20231112220855-6303bcec02b6/go.mod h1:OG6Ai5iYKSqmRPKI2tpvbdaiQLnwy4A10Wu6wzSl4hA=
-gitlab.com/flimzy/testy v0.13.0 h1:6I9TEzU9OCkN0qUVLPbREBXaj0b8/TKfU+FkfUHfapg=
-gitlab.com/flimzy/testy v0.13.0/go.mod h1:m3aGuwdXc+N3QgnH+2Ar2zf1yg0UxNdIaXKvC5SlfMk=
+gitlab.com/flimzy/testy v0.14.0 h1:2nZV4Wa1OSJb3rOKHh0GJqvvhtE03zT+sKnPCI0owfQ=
+gitlab.com/flimzy/testy v0.14.0/go.mod h1:m3aGuwdXc+N3QgnH+2Ar2zf1yg0UxNdIaXKvC5SlfMk=
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=
 go.opencensus.io v0.22.0/go.mod h1:+kGneAE2xo2IficOXnaByMWTGM9T73dGwxeWcUqIpI8=
 go.opencensus.io v0.22.2/go.mod h1:yxeiOL68Rb0Xd1ddK5vPZ/oVn4vY4Ynel7k9FzqtOIw=

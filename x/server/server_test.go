@@ -553,12 +553,12 @@ func TestServer(t *testing.T) {
 			}
 			if tt.driver != "" {
 				driver = tt.driver
-				if driver == "fs" {
-					dsn = testy.CopyTempDir(t, dsn, 0)
-					t.Cleanup(func() {
-						_ = os.RemoveAll(dsn)
-					})
-				}
+			}
+			if driver == "fs" {
+				dsn = testy.CopyTempDir(t, dsn, 0)
+				t.Cleanup(func() {
+					_ = os.RemoveAll(dsn)
+				})
 			}
 			client, err := kivik.New(driver, dsn)
 			if err != nil {

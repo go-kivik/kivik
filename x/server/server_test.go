@@ -28,7 +28,8 @@ import (
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4"
-	_ "github.com/go-kivik/kivik/v4/x/fsdb" // Filesystem driver
+	_ "github.com/go-kivik/kivik/v4/x/fsdb"     // Filesystem driver
+	_ "github.com/go-kivik/kivik/v4/x/memorydb" // Memory driver
 	"github.com/go-kivik/kivik/v4/x/server/auth"
 	"github.com/go-kivik/kivik/v4/x/server/config"
 )
@@ -78,6 +79,7 @@ func TestServer(t *testing.T) {
 	tests := []struct {
 		name         string
 		driver, dsn  string
+		init         func(t *testing.T, client *kivik.Client)
 		extraOptions []Option
 		client       *kivik.Client
 		method       string
@@ -572,6 +574,25 @@ func TestServer(t *testing.T) {
 				"ok": true,
 			},
 		},
+		{
+			name:   "post document",
+			driver: "memory",
+			init: func(t *testing.T, client *kivik.Client) {
+				if err := client.CreateDB(context.Background(), "db1", nil); err != nil {
+					t.Fatal(err)
+				}
+			},
+			method:     http.MethodPost,
+			path:       "/db1",
+			body:       strings.NewReader(`{"foo":"bar"}`),
+			authUser:   userAdmin,
+			wantStatus: http.StatusCreated,
+			target: &struct {
+				ID  string `json:"id" validate:"required,hexadecimal,len=32"`
+				Rev string `json:"rev" validate:"required,startswith=1-"`
+				OK  bool   `json:"ok" validate:"required,eq=true"`
+			}{},
+		},
 	}
 
 	for _, tt := range tests {
@@ -594,6 +615,9 @@ func TestServer(t *testing.T) {
 			client, err := kivik.New(driver, dsn)
 			if err != nil {
 				t.Fatal(err)
+			}
+			if tt.init != nil {
+				tt.init(t, client)
 			}
 			us := testUserStore(t)
 			const secret = "foo"
@@ -627,7 +651,7 @@ func TestServer(t *testing.T) {
 
 			res := rec.Result()
 			if res.StatusCode != tt.wantStatus {
-				t.Errorf("Unexpected response status: %d", res.StatusCode)
+				t.Errorf("Unexpected response status: %d %s", res.StatusCode, http.StatusText(res.StatusCode))
 			}
 			switch {
 			case tt.target != nil:

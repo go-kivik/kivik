@@ -132,7 +132,6 @@ func (s *Server) routes(mux *chi.Mux) {
 	auth.Get("/{db}", httpe.ToHandler(s.db()).ServeHTTP)
 	auth.Put("/{db}", httpe.ToHandler(s.createDB()).ServeHTTP)
 	auth.Delete("/{db}", httpe.ToHandler(s.deleteDB()).ServeHTTP)
-	auth.Post("/{db}", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	auth.Get("/{db}/_all_docs", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	auth.Post("/{db}/_all_docs/queries", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	auth.Post("/{db}/_all_docs", httpe.ToHandler(s.notImplemented()).ServeHTTP)
@@ -169,6 +168,7 @@ func (s *Server) routes(mux *chi.Mux) {
 	auth.Put("/{db}/_revs_limit", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 
 	// Documents
+	auth.Post("/{db}", httpe.ToHandler(s.postDoc()).ServeHTTP)
 	auth.Get("/{db}/{docid}", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	auth.Put("/{db}/{docid}", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	auth.Delete("/{db}/{docid}", httpe.ToHandler(s.notImplemented()).ServeHTTP)

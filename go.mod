@@ -17,7 +17,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.16.0
 	gitlab.com/flimzy/httpe v0.0.0-20231112220855-6303bcec02b6
-	gitlab.com/flimzy/testy v0.13.0
+	gitlab.com/flimzy/testy v0.14.0
 	golang.org/x/crypto v0.14.0
 	golang.org/x/net v0.17.0
 	golang.org/x/sync v0.4.0

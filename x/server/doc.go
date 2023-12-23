@@ -10,25 +10,5 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-//go:build !js
-// +build !js
-
+// Package server provides a CouchDB server via HTTP.
 package server
-
-import "net/http"
-
-var errNotImplimented = &couchError{status: http.StatusNotImplemented, Err: "not_implemented", Reason: "Feature not implemented"}
-
-type couchError struct {
-	status int
-	Err    string `json:"error"`
-	Reason string `json:"reason"`
-}
-
-func (e *couchError) Error() string {
-	return e.Reason
-}
-
-func (e *couchError) HTTPStatus() int {
-	return e.status
-}

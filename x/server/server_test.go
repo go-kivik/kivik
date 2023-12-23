@@ -10,6 +10,9 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+//go:build !js
+// +build !js
+
 package server
 
 import (
@@ -28,7 +31,8 @@ import (
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4"
-	_ "github.com/go-kivik/kivik/v4/x/fsdb" // Filesystem driver
+	_ "github.com/go-kivik/kivik/v4/x/fsdb"     // Filesystem driver
+	_ "github.com/go-kivik/kivik/v4/x/memorydb" // Memory driver
 	"github.com/go-kivik/kivik/v4/x/server/auth"
 	"github.com/go-kivik/kivik/v4/x/server/config"
 )
@@ -78,6 +82,7 @@ func TestServer(t *testing.T) {
 	tests := []struct {
 		name         string
 		driver, dsn  string
+		init         func(t *testing.T, client *kivik.Client)
 		extraOptions []Option
 		client       *kivik.Client
 		method       string
@@ -541,6 +546,68 @@ func TestServer(t *testing.T) {
 				UUIDs []string `json:"uuids" validate:"required,len=10,dive,required,len=18,endswith=oink"`
 			}),
 		},
+		{
+			name:       "create db",
+			method:     http.MethodPut,
+			path:       "/db3",
+			authUser:   userAdmin,
+			wantStatus: http.StatusCreated,
+			wantJSON: map[string]interface{}{
+				"ok": true,
+			},
+		},
+		{
+			name:       "delete db, not found",
+			method:     http.MethodDelete,
+			path:       "/db3",
+			authUser:   userAdmin,
+			wantStatus: http.StatusNotFound,
+			wantJSON: map[string]interface{}{
+				"error":  "not_found",
+				"reason": "database does not exist",
+			},
+		},
+		{
+			name:       "delete db",
+			method:     http.MethodDelete,
+			path:       "/db2",
+			authUser:   userAdmin,
+			wantStatus: http.StatusOK,
+			wantJSON: map[string]interface{}{
+				"ok": true,
+			},
+		},
+		{
+			name:   "post document",
+			driver: "memory",
+			init: func(t *testing.T, client *kivik.Client) {
+				if err := client.CreateDB(context.Background(), "db1", nil); err != nil {
+					t.Fatal(err)
+				}
+			},
+			method:     http.MethodPost,
+			path:       "/db1",
+			body:       strings.NewReader(`{"foo":"bar"}`),
+			authUser:   userAdmin,
+			wantStatus: http.StatusCreated,
+			target: &struct {
+				ID  string `json:"id" validate:"required,hexadecimal,len=32"`
+				Rev string `json:"rev" validate:"required,startswith=1-"`
+				OK  bool   `json:"ok" validate:"required,eq=true"`
+			}{},
+		},
+		{
+			name:       "get document",
+			method:     http.MethodGet,
+			path:       "/db1/foo",
+			authUser:   userAdmin,
+			wantStatus: http.StatusOK,
+			wantJSON: map[string]interface{}{
+				"_id":  "foo",
+				"_rev": "1-beea34a62a215ab051862d1e5d93162e",
+				"foo":  "bar",
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -553,16 +620,19 @@ func TestServer(t *testing.T) {
 			}
 			if tt.driver != "" {
 				driver = tt.driver
-				if driver == "fs" {
-					dsn = testy.CopyTempDir(t, dsn, 0)
-					t.Cleanup(func() {
-						_ = os.RemoveAll(dsn)
-					})
-				}
+			}
+			if driver == "fs" {
+				dsn = testy.CopyTempDir(t, dsn, 0)
+				t.Cleanup(func() {
+					_ = os.RemoveAll(dsn)
+				})
 			}
 			client, err := kivik.New(driver, dsn)
 			if err != nil {
 				t.Fatal(err)
+			}
+			if tt.init != nil {
+				tt.init(t, client)
 			}
 			us := testUserStore(t)
 			const secret = "foo"
@@ -596,7 +666,7 @@ func TestServer(t *testing.T) {
 
 			res := rec.Result()
 			if res.StatusCode != tt.wantStatus {
-				t.Errorf("Unexpected response status: %d", res.StatusCode)
+				t.Errorf("Unexpected response status: %d %s", res.StatusCode, http.StatusText(res.StatusCode))
 			}
 			switch {
 			case tt.target != nil:

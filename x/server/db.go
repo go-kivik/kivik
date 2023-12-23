@@ -10,6 +10,9 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+//go:build !js
+// +build !js
+
 package server
 
 import (
@@ -33,7 +36,7 @@ func (s *Server) db() httpe.HandlerWithError {
 func (s *Server) dbExists() httpe.HandlerWithError {
 	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
 		db := chi.URLParam(r, "db")
-		exists, err := s.client.DBExists(r.Context(), db)
+		exists, err := s.client.DBExists(r.Context(), db, options(r))
 		if err != nil {
 			return err
 		}
@@ -43,5 +46,29 @@ func (s *Server) dbExists() httpe.HandlerWithError {
 		}
 		w.WriteHeader(http.StatusOK)
 		return nil
+	})
+}
+
+func (s *Server) createDB() httpe.HandlerWithError {
+	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
+		db := chi.URLParam(r, "db")
+		if err := s.client.CreateDB(r.Context(), db, options(r)); err != nil {
+			return err
+		}
+		return serveJSON(w, http.StatusCreated, map[string]interface{}{
+			"ok": true,
+		})
+	})
+}
+
+func (s *Server) deleteDB() httpe.HandlerWithError {
+	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
+		db := chi.URLParam(r, "db")
+		if err := s.client.DestroyDB(r.Context(), db, options(r)); err != nil {
+			return err
+		}
+		return serveJSON(w, http.StatusOK, map[string]interface{}{
+			"ok": true,
+		})
 	})
 }

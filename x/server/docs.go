@@ -16,39 +16,41 @@
 package server
 
 import (
+	"encoding/json"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"gitlab.com/flimzy/httpe"
-
-	"github.com/go-kivik/kivik/v4"
 )
 
-func (s *Server) root() httpe.HandlerWithError {
+func (s *Server) postDoc() httpe.HandlerWithError {
 	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
-		return serveJSON(w, http.StatusOK, map[string]interface{}{
-			"couchdb": "Welcome",
-			"vendor": map[string]string{
-				"name":    "Kivik",
-				"version": kivik.Version,
-			},
-			"version": kivik.Version,
+		db := chi.URLParam(r, "db")
+		var doc interface{}
+		if err := json.NewDecoder(r.Body).Decode(&doc); err != nil {
+			return err
+		}
+		id, rev, err := s.client.DB(db).CreateDoc(r.Context(), doc, options(r))
+		if err != nil {
+			return err
+		}
+		return serveJSON(w, http.StatusCreated, map[string]interface{}{
+			"id":  id,
+			"rev": rev,
+			"ok":  true,
 		})
 	})
 }
 
-func (s *Server) up() httpe.HandlerWithError {
+func (s *Server) doc() httpe.HandlerWithError {
 	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
-		return serveJSON(w, http.StatusOK, map[string]interface{}{
-			"status": "ok",
-		})
-	})
-}
-
-// activeTasks returns a list of running tasks. For now it always returns an
-// empty list, as this server doesn't support running asynchronous tasks. But it
-// may be expanded in the future.
-func (s *Server) activeTasks() httpe.HandlerWithError {
-	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, _ *http.Request) error {
-		return serveJSON(w, http.StatusOK, []interface{}{})
+		db := chi.URLParam(r, "db")
+		id := chi.URLParam(r, "docid")
+		var doc interface{}
+		err := s.client.DB(db).Get(r.Context(), id, options(r)).ScanDoc(&doc)
+		if err != nil {
+			return err
+		}
+		return serveJSON(w, http.StatusOK, doc)
 	})
 }

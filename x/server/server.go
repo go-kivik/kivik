@@ -13,7 +13,6 @@
 //go:build !js
 // +build !js
 
-// Package server provides a CouchDB server via HTTP.
 package server
 
 import (

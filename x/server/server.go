@@ -10,6 +10,9 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+//go:build !js
+// +build !js
+
 // Package server provides a CouchDB server via HTTP.
 package server
 

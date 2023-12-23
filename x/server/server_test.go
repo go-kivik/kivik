@@ -608,6 +608,30 @@ func TestServer(t *testing.T) {
 				"foo":  "bar",
 			},
 		},
+		{
+			name:       "dbs info",
+			method:     http.MethodGet,
+			path:       "/_dbs_info",
+			authUser:   userAdmin,
+			body:       strings.NewReader(`{"keys":["db1","db2"]}`),
+			wantStatus: http.StatusOK,
+			wantJSON: []interface{}{
+				map[string]interface{}{
+					"key": "db1",
+					"info": map[string]interface{}{
+						"db_name":         "db1",
+						"compact_running": false,
+					},
+				},
+				map[string]interface{}{
+					"key": "db2",
+					"info": map[string]interface{}{
+						"db_name":         "db2",
+						"compact_running": false,
+					},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {

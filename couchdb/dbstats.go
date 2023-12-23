@@ -78,7 +78,31 @@ type dbsInfoResponse struct {
 	Error  string  `json:"error"`
 }
 
-func (c *client) DBsStats(_ context.Context, dbnames []string) ([]*driver.DBStats, error) {
+func (c *client) AllDBsStats(ctx context.Context, options driver.Options) ([]*driver.DBStats, error) {
+	opts := map[string]interface{}{}
+	options.Apply(opts)
+	chttpOpts := &chttp.Options{
+		Header: http.Header{
+			chttp.HeaderIdempotencyKey: []string{},
+		},
+	}
+	var err error
+	chttpOpts.Query, err = optionsToParams(opts)
+	if err != nil {
+		return nil, err
+	}
+	result := []dbsInfoResponse{}
+	if err := c.DoJSON(ctx, http.MethodGet, "/_dbs_info", chttpOpts, &result); err != nil {
+		return nil, err
+	}
+	stats := make([]*driver.DBStats, len(result))
+	for i := range result {
+		stats[i] = result[i].DBInfo.driverStats()
+	}
+	return stats, nil
+}
+
+func (c *client) DBsStats(ctx context.Context, dbnames []string) ([]*driver.DBStats, error) {
 	opts := &chttp.Options{
 		GetBody: chttp.BodyEncoder(dbsInfoRequest{Keys: dbnames}),
 		Header: http.Header{
@@ -86,8 +110,7 @@ func (c *client) DBsStats(_ context.Context, dbnames []string) ([]*driver.DBStat
 		},
 	}
 	result := []dbsInfoResponse{}
-	err := c.DoJSON(context.Background(), http.MethodPost, "/_dbs_info", opts, &result)
-	if err != nil {
+	if err := c.DoJSON(ctx, http.MethodPost, "/_dbs_info", opts, &result); err != nil {
 		return nil, err
 	}
 	stats := make([]*driver.DBStats, len(result))

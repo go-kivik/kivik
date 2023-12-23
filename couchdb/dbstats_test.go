@@ -22,8 +22,10 @@ import (
 
 	"gitlab.com/flimzy/testy"
 
+	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/internal"
+	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
 func TestStats(t *testing.T) {
@@ -167,7 +169,7 @@ func TestStats(t *testing.T) {
 	}
 }
 
-func TestDbsStats(t *testing.T) {
+func TestDBsStats(t *testing.T) {
 	tests := []struct {
 		name     string
 		client   *client
@@ -274,6 +276,129 @@ func TestDbsStats(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := test.client.DBsStats(context.Background(), test.dbnames)
+			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+				t.Error(d)
+			}
+			if err != nil {
+				return
+			}
+			if d := testy.DiffInterface(test.expected, result); d != nil {
+				t.Error(d)
+			}
+		})
+	}
+}
+
+func TestAllDBsStats(t *testing.T) {
+	tests := []struct {
+		name     string
+		client   *client
+		options  kivik.Option
+		expected interface{}
+		status   int
+		err      string
+	}{
+		{
+			name:   "network error",
+			client: newTestClient(nil, errors.New("net error")),
+			status: http.StatusBadGateway,
+			err:    `Post "?http://example.com/_dbs_info"?: net error`,
+		},
+		// 		{
+		// 			name: "read error",
+		// 			client: newTestClient(&http.Response{
+		// 				StatusCode: http.StatusOK,
+		// 				Body: &mockReadCloser{
+		// 					ReadFunc: func(_ []byte) (int, error) {
+		// 						return 0, errors.New("read error")
+		// 					},
+		// 					CloseFunc: func() error { return nil },
+		// 				},
+		// 			}, nil),
+		// 			status: http.StatusBadGateway,
+		// 			err:    "read error",
+		// 		},
+		// 		{
+		// 			name: "invalid JSON response",
+		// 			client: newTestClient(&http.Response{
+		// 				StatusCode: http.StatusOK,
+		// 				Body:       io.NopCloser(strings.NewReader(`invalid json`)),
+		// 			}, nil),
+		// 			status: http.StatusBadGateway,
+		// 			err:    "invalid character 'i' looking for beginning of value",
+		// 		},
+		// 		{
+		// 			name: "error response",
+		// 			client: newTestClient(&http.Response{
+		// 				StatusCode: http.StatusBadRequest,
+		// 				Body:       io.NopCloser(strings.NewReader("")),
+		// 			}, nil),
+		// 			status: http.StatusBadRequest,
+		// 			err:    "Bad Request",
+		// 		},
+		// 		{
+		// 			name: "2.1.2",
+		// 			client: newTestClient(&http.Response{
+		// 				StatusCode: http.StatusNotFound,
+		// 				Header: http.Header{
+		// 					"Server":              {"CouchDB/2.1.2 (Erlang OTP/17)"},
+		// 					"Date":                {"Sat, 01 Sep 2018 15:42:53 GMT"},
+		// 					"Content-Type":        {"application/json"},
+		// 					"Content-Length":      {"58"},
+		// 					"Cache-Control":       {"must-revalidate"},
+		// 					"X-Couch-Request-ID":  {"e1264663f9"},
+		// 					"X-CouchDB-Body-Time": {"0"},
+		// 				},
+		// 				Body: io.NopCloser(strings.NewReader(`{"error":"not_found","reason":"Database does not exist."}`)),
+		// 			}, nil),
+		// 			dbnames: []string{"foo", "bar"},
+		// 			err:     "Not Found",
+		// 			status:  http.StatusNotFound,
+		// 		},
+		// 		{
+		// 			name: "2.2.0",
+		// 			client: newTestClient(&http.Response{
+		// 				StatusCode: http.StatusOK,
+		// 				Header: http.Header{
+		// 					"Server":              {"CouchDB/2.2.0 (Erlang OTP/19)"},
+		// 					"Date":                {"Sat, 01 Sep 2018 15:50:56 GMT"},
+		// 					"Content-Type":        {"application/json"},
+		// 					"Transfer-Encoding":   {"chunked"},
+		// 					"Cache-Control":       {"must-revalidate"},
+		// 					"X-Couch-Request-ID":  {"1bf258cfbe"},
+		// 					"X-CouchDB-Body-Time": {"0"},
+		// 				},
+		// 				Body: io.NopCloser(strings.NewReader(`[{"key":"foo","error":"not_found"},{"key":"bar","error":"not_found"},{"key":"_users","info":{"db_name":"_users","update_seq":"1-g1AAAAEzeJzLYWBg4MhgTmHgzcvPy09JdcjLz8gvLskBCjMlMiTJ____PyuRAYeCJAUgmWSPX40DSE08WA0jLjUJIDX1eM3JYwGSDA1ACqhsPiF1CyDq9hNSdwCi7j4hdQ8g6kDuywIAiVhi9w","sizes":{"file":24423,"external":5361,"active":2316},"purge_seq":0,"other":{"data_size":5361},"doc_del_count":0,"doc_count":1,"disk_size":24423,"disk_format_version":6,"data_size":2316,"compact_running":false,"cluster":{"q":8,"n":1,"w":1,"r":1},"instance_start_time":"0"}}]
+		// `)),
+		// 			}, nil),
+		// 			expected: []*driver.DBStats{
+		// 				nil,
+		// 				nil,
+		// 				{
+		// 					Name:         "_users",
+		// 					DocCount:     1,
+		// 					UpdateSeq:    "1-g1AAAAEzeJzLYWBg4MhgTmHgzcvPy09JdcjLz8gvLskBCjMlMiTJ____PyuRAYeCJAUgmWSPX40DSE08WA0jLjUJIDX1eM3JYwGSDA1ACqhsPiF1CyDq9hNSdwCi7j4hdQ8g6kDuywIAiVhi9w",
+		// 					DiskSize:     24423,
+		// 					ActiveSize:   2316,
+		// 					ExternalSize: 5361,
+		// 					Cluster: &driver.ClusterStats{
+		// 						Replicas:    1,
+		// 						Shards:      8,
+		// 						ReadQuorum:  1,
+		// 						WriteQuorum: 1,
+		// 					},
+		// 					RawResponse: []byte(`{"db_name":"_users","update_seq":"1-g1AAAAEzeJzLYWBg4MhgTmHgzcvPy09JdcjLz8gvLskBCjMlMiTJ____PyuRAYeCJAUgmWSPX40DSE08WA0jLjUJIDX1eM3JYwGSDA1ACqhsPiF1CyDq9hNSdwCi7j4hdQ8g6kDuywIAiVhi9w","sizes":{"file":24423,"external":5361,"active":2316},"purge_seq":0,"other":{"data_size":5361},"doc_del_count":0,"doc_count":1,"disk_size":24423,"disk_format_version":6,"data_size":2316,"compact_running":false,"cluster":{"q":8,"n":1,"w":1,"r":1},"instance_start_time":"0"}`),
+		// 				},
+		// 			},
+		// 		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			opts := test.options
+			if opts == nil {
+				opts = mock.NilOption
+			}
+			result, err := test.client.AllDBsStats(context.Background(), opts)
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}

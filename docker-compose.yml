@@ -1,0 +1,151 @@
+version: '3.1'
+
+x-common-env: &common-env
+  COUCHDB_USER: admin
+  COUCHDB_PASSWORD: abc123
+
+x-healthcheck: &healthcheck
+  test: ["CMD-SHELL", "curl -f http://localhost:5984/_up || exit 1"]
+  interval: 1m
+  timeout: 2s
+  retries: 3
+  start_period: 10s
+
+services:
+  couch22:
+    container_name: couch22
+    image: couchdb:2.2.0
+    restart: always
+    environment:
+      <<: *common-env
+    ports:
+      - "6002:5984"
+    healthcheck:
+      <<: *healthcheck
+  couch22setup:
+    image: curlimages/curl:8.5.0
+    restart: "no"
+    environment:
+      <<: *common-env
+    depends_on:
+      couch22:
+        condition: service_healthy
+    volumes:
+      - ./script/complete_couch2.sh:/complete_couch2.sh
+    entrypoint: /complete_couch2.sh
+    command: http://couch22:5984/
+
+  couch23:
+    container_name: couch23
+    image: couchdb:2.3.1
+    restart: always
+    environment:
+      <<: *common-env
+    ports:
+      - "6003:5984"
+    healthcheck:
+      <<: *healthcheck
+  couch23setup:
+    image: curlimages/curl:8.5.0
+    restart: "no"
+    environment:
+      <<: *common-env
+    depends_on:
+      couch22:
+        condition: service_healthy
+    volumes:
+      - ./script/complete_couch2.sh:/complete_couch2.sh
+    entrypoint: /complete_couch2.sh
+    command: http://couch23:5984/
+
+  couch30:
+    container_name: couch30
+    image: couchdb:3.0.0
+    restart: always
+    environment:
+      <<: *common-env
+    ports:
+      - "6004:5984"
+    healthcheck:
+      <<: *healthcheck
+  couch30setup:
+    image: curlimages/curl:8.5.0
+    restart: "no"
+    environment:
+      <<: *common-env
+    depends_on:
+      couch22:
+        condition: service_healthy
+    volumes:
+      - ./script/complete_couch2.sh:/complete_couch2.sh
+    entrypoint: /complete_couch2.sh
+    command: http://couch30:5984/
+
+  couch31:
+    container_name: couch31
+    image: couchdb:3.1.2
+    restart: always
+    environment:
+      <<: *common-env
+    ports:
+      - "6005:5984"
+    healthcheck:
+      <<: *healthcheck
+  couch31setup:
+    image: curlimages/curl:8.5.0
+    restart: "no"
+    environment:
+      <<: *common-env
+    depends_on:
+      couch22:
+        condition: service_healthy
+    volumes:
+      - ./script/complete_couch2.sh:/complete_couch2.sh
+    entrypoint: /complete_couch2.sh
+    command: http://couch31:5984/
+
+  couch32:
+    container_name: couch32
+    image: couchdb:3.2.3
+    restart: always
+    environment:
+      <<: *common-env
+    ports:
+      - "6006:5984"
+    healthcheck:
+      <<: *healthcheck
+  couch32setup:
+    image: curlimages/curl:8.5.0
+    restart: "no"
+    environment:
+      <<: *common-env
+    depends_on:
+      couch22:
+        condition: service_healthy
+    volumes:
+      - ./script/complete_couch2.sh:/complete_couch2.sh
+    entrypoint: /complete_couch2.sh
+    command: http://couch32:5984/
+
+  couch33:
+    container_name: couch33
+    image: couchdb:3.3.3
+    restart: always
+    environment:
+      <<: *common-env
+    ports:
+      - "6007:5984"
+    healthcheck:
+      <<: *healthcheck
+  couch33setup:
+    image: curlimages/curl:8.5.0
+    restart: "no"
+    environment:
+      <<: *common-env
+    depends_on:
+      couch22:
+        condition: service_healthy
+    volumes:
+      - ./script/complete_couch2.sh:/complete_couch2.sh
+    entrypoint: /complete_couch2.sh
+    command: http://couch33:5984/

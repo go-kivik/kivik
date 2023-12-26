@@ -111,6 +111,7 @@ func RegisterKivikdSuites() {
 		"Session/Post/GoodCredsJSONRedirEmpty.status":                 http.StatusBadRequest,
 		"Session/Post/GoodCredsJSONRedirSchemaless.status":            http.StatusBadRequest,
 
+		"DBsStats.skip":          true, // FIXME: Unimplemented
 		"Stats.skip":             true, // FIXME: Unimplemented
 		"CreateDoc.skip":         true, // FIXME: Unimplemented
 		"Compact.skip":           true, // FIXME: Unimplemented

@@ -217,7 +217,9 @@ func (c *Client) nativeDBsStats(ctx context.Context, dbnames []string) ([]*DBSta
 	}
 	dbstats := make([]*DBStats, len(stats))
 	for i, stat := range stats {
-		dbstats[i] = driverStats2kivikStats(stat)
+		if stat != nil {
+			dbstats[i] = driverStats2kivikStats(stat)
+		}
 	}
 	return dbstats, nil
 }

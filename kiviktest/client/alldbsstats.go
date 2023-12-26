@@ -15,6 +15,8 @@ package client
 import (
 	"context"
 
+	"github.com/google/go-cmp/cmp"
+
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 )
@@ -37,8 +39,14 @@ func testAllDBsStats(ctx *kt.Context, client *kivik.Client) {
 	if !ctx.IsExpectedSuccess(err) {
 		return
 	}
-	const wantResults = 3
-	if len(stats) != wantResults {
-		ctx.Errorf("Expected 2 database stats, got %d", len(stats))
+	if wantStats, ok := ctx.Interface("expected").([]*kivik.DBStats); ok {
+		if d := cmp.Diff(wantStats, stats); d != "" {
+			ctx.Errorf("Unexpected database stats: %s", d)
+		}
+	} else {
+		const wantResults = 3
+		if len(stats) != wantResults {
+			ctx.Errorf("Expected 2 database stats, got %d", len(stats))
+		}
 	}
 }

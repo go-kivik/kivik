@@ -238,10 +238,10 @@ func (c *Client) AllDBsStats(ctx context.Context, options ...Option) ([]*DBStats
 	}
 	defer endQuery()
 	dbstats, err := c.nativeAllDBsStats(ctx, options...)
-	// switch HTTPStatus(err) {
-	// case http.StatusNotFound, http.StatusNotImplemented:
-	//      return c.fallbackAllDBsStats(ctx, options...)
-	// }
+	switch HTTPStatus(err) {
+	case http.StatusMethodNotAllowed, http.StatusNotImplemented:
+		return c.fallbackAllDBsStats(ctx, options...)
+	}
 	return dbstats, err
 }
 
@@ -259,6 +259,14 @@ func (c *Client) nativeAllDBsStats(ctx context.Context, options ...Option) ([]*D
 		dbstats[i] = driverStats2kivikStats(stat)
 	}
 	return dbstats, nil
+}
+
+func (c *Client) fallbackAllDBsStats(ctx context.Context, options ...Option) ([]*DBStats, error) {
+	dbs, err := c.AllDBs(ctx, options...)
+	if err != nil {
+		return nil, err
+	}
+	return c.DBsStats(ctx, dbs)
 }
 
 // Ping returns true if the database is online and available for requests.

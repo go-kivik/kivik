@@ -153,6 +153,21 @@ func (c *driverClient) SetConfigValue(ctx context.Context, arg0 string, arg1 str
 	return expected.ret0, expected.wait(ctx)
 }
 
+func (c *driverClient) AllDBsStats(ctx context.Context, options driver.Options) ([]*driver.DBStats, error) {
+	expected := &ExpectedAllDBsStats{
+		commonExpectation: commonExpectation{
+			options: options,
+		},
+	}
+	if err := c.nextExpectation(expected); err != nil {
+		return nil, err
+	}
+	if expected.callback != nil {
+		return expected.callback(ctx, options)
+	}
+	return expected.ret0, expected.wait(ctx)
+}
+
 func (c *driverClient) Config(ctx context.Context, arg0 string) (driver.Config, error) {
 	expected := &ExpectedConfig{
 		arg0: arg0,

@@ -125,6 +125,13 @@ func (e *ExpectedDBsStats) WithNames(names []string) *ExpectedDBsStats {
 	return e
 }
 
+func (e *ExpectedAllDBsStats) String() string {
+	return "call to AllDBsStats() which:" +
+		optionsString(e.options) +
+		delayString(e.delay) +
+		errorString(e.err)
+}
+
 func (e *ExpectedPing) String() string {
 	msg := "call to Ping()"
 	extra := delayString(e.delay) + errorString(e.err)

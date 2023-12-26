@@ -16,6 +16,7 @@ package test
 import (
 	"net/http"
 
+	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/kiviktest"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 )
@@ -34,6 +35,8 @@ func registerFSSuite() {
 		"DBExists/Admin.databases":       []string{"chicken"},
 		"DBExists/Admin/chicken.exists":  false,
 		"DBExists/RW/group/Admin.exists": true,
+
+		"AllDBsStats.expected": []*kivik.DBStats{},
 
 		"DestroyDB/RW/Admin/NonExistantDB.status": http.StatusNotFound,
 

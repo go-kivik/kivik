@@ -217,9 +217,56 @@ func (c *Client) nativeDBsStats(ctx context.Context, dbnames []string) ([]*DBSta
 	}
 	dbstats := make([]*DBStats, len(stats))
 	for i, stat := range stats {
+		if stat != nil {
+			dbstats[i] = driverStats2kivikStats(stat)
+		}
+	}
+	return dbstats, nil
+}
+
+// AllDBsStats returns database statistics for all databases. If the driver does
+// not natively support this operation, it will be emulated by effectively
+// calling [Client.AllDBs] followed by [DB.DBsStats].
+//
+// See the [CouchDB documentation] for accepted options.
+//
+// [CouchDB documentation]: https://docs.couchdb.org/en/stable/api/server/common.html#get--_dbs_info
+func (c *Client) AllDBsStats(ctx context.Context, options ...Option) ([]*DBStats, error) {
+	endQuery, err := c.startQuery()
+	if err != nil {
+		return nil, err
+	}
+	defer endQuery()
+	dbstats, err := c.nativeAllDBsStats(ctx, options...)
+	switch HTTPStatus(err) {
+	case http.StatusMethodNotAllowed, http.StatusNotImplemented:
+		return c.fallbackAllDBsStats(ctx, options...)
+	}
+	return dbstats, err
+}
+
+func (c *Client) nativeAllDBsStats(ctx context.Context, options ...Option) ([]*DBStats, error) {
+	statser, ok := c.driverClient.(driver.AllDBsStatser)
+	if !ok {
+		return nil, &internal.Error{Status: http.StatusNotImplemented, Message: "kivik: not supported by driver"}
+	}
+	stats, err := statser.AllDBsStats(ctx, multiOptions(options))
+	if err != nil {
+		return nil, err
+	}
+	dbstats := make([]*DBStats, len(stats))
+	for i, stat := range stats {
 		dbstats[i] = driverStats2kivikStats(stat)
 	}
 	return dbstats, nil
+}
+
+func (c *Client) fallbackAllDBsStats(ctx context.Context, options ...Option) ([]*DBStats, error) {
+	dbs, err := c.AllDBs(ctx, options...)
+	if err != nil {
+		return nil, err
+	}
+	return c.DBsStats(ctx, dbs)
 }
 
 // Ping returns true if the database is online and available for requests.

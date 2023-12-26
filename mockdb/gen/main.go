@@ -55,6 +55,7 @@ func main() {
 type fullClient interface {
 	driver.Client
 	driver.DBsStatser
+	driver.AllDBsStatser
 	driver.Pinger
 	driver.Sessioner
 	driver.Cluster

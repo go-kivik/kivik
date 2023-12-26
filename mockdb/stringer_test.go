@@ -331,6 +331,17 @@ func TestDBsStatsString(t *testing.T) {
 	tests.Run(t, testStringer)
 }
 
+func TestAllDBsStatsString(t *testing.T) {
+	tests := testy.NewTable()
+	tests.Add("empty", stringerTest{
+		input: &ExpectedAllDBsStats{},
+		expected: `call to AllDBsStats() which:
+	- has any options`,
+	})
+
+	tests.Run(t, testStringer)
+}
+
 func TestPingString(t *testing.T) {
 	tests := testy.NewTable()
 	tests.Add("empty", stringerTest{

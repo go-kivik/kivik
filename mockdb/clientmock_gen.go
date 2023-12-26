@@ -80,6 +80,13 @@ func (c *Client) ExpectSetConfigValue() *ExpectedSetConfigValue {
 	return e
 }
 
+// ExpectAllDBsStats queues an expectation that AllDBsStats will be called.
+func (c *Client) ExpectAllDBsStats() *ExpectedAllDBsStats {
+	e := &ExpectedAllDBsStats{}
+	c.expected = append(c.expected, e)
+	return e
+}
+
 // ExpectConfig queues an expectation that Config will be called.
 func (c *Client) ExpectConfig() *ExpectedConfig {
 	e := &ExpectedConfig{}

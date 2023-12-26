@@ -25,13 +25,14 @@ type driverClient struct {
 }
 
 var (
-	_ driver.Client       = &driverClient{}
-	_ driver.ClientCloser = &driverClient{}
-	_ driver.Cluster      = &driverClient{}
-	_ driver.DBsStatser   = &driverClient{}
-	_ driver.Pinger       = &driverClient{}
-	_ driver.Sessioner    = &driverClient{}
-	_ driver.Configer     = &driverClient{}
+	_ driver.Client        = &driverClient{}
+	_ driver.ClientCloser  = &driverClient{}
+	_ driver.Cluster       = &driverClient{}
+	_ driver.DBsStatser    = &driverClient{}
+	_ driver.Pinger        = &driverClient{}
+	_ driver.Sessioner     = &driverClient{}
+	_ driver.Configer      = &driverClient{}
+	_ driver.AllDBsStatser = &driverClient{}
 )
 
 func (c *driverClient) CreateDB(ctx context.Context, name string, options driver.Options) error {

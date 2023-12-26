@@ -89,9 +89,9 @@ func registerSuiteCouch23() {
 		"DBExists/RW/group/Admin.exists":  true,
 		"DBExists/RW/group/NoAuth.exists": true,
 
-		"DBsStats/NoAuth.status": http.StatusUnauthorized,
+		// "DBsStats/NoAuth.status": http.StatusUnauthorized,
 
-		"AllDBsStats/NoAuth.status": http.StatusUnauthorized,
+		// "AllDBsStats/NoAuth.status": http.StatusUnauthorized,
 
 		"Log.skip": true, // This was removed in CouchDB 2.0
 

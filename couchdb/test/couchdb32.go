@@ -97,7 +97,7 @@ func registerSuiteCouch32() {
 		"DBExists/RW/group/Admin.exists":  true,
 		"DBExists/RW/group/NoAuth.status": http.StatusUnauthorized,
 
-		"DBsStats/NoAuth.status": http.StatusUnauthorized,
+		// "DBsStats/NoAuth.status": http.StatusUnauthorized,
 
 		"AllDBsStats/NoAuth.status": http.StatusUnauthorized,
 

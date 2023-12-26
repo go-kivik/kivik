@@ -99,6 +99,30 @@ func (c *client) DBsStats(_ context.Context, dbnames []string) ([]*driver.DBStat
 	return stats, nil
 }
 
+func (c *client) AllDBsStats(ctx context.Context, options driver.Options) ([]*driver.DBStats, error) {
+	opts := map[string]interface{}{}
+	options.Apply(opts)
+	chttpOpts := &chttp.Options{
+		Header: http.Header{
+			chttp.HeaderIdempotencyKey: []string{},
+		},
+	}
+	var err error
+	chttpOpts.Query, err = optionsToParams(opts)
+	if err != nil {
+		return nil, err
+	}
+	result := []dbsInfoResponse{}
+	if err := c.DoJSON(ctx, http.MethodGet, "/_dbs_info", chttpOpts, &result); err != nil {
+		return nil, err
+	}
+	stats := make([]*driver.DBStats, len(result))
+	for i := range result {
+		stats[i] = result[i].DBInfo.driverStats()
+	}
+	return stats, nil
+}
+
 type partitionStats struct {
 	DBName      string `json:"db_name"`
 	DocCount    int64  `json:"doc_count"`

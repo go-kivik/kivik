@@ -77,6 +77,19 @@ type DBsStatser interface {
 	DBsStats(ctx context.Context, dbNames []string) ([]*DBStats, error)
 }
 
+// AllDBsStatser is an optional interface that a [DB] may implement, added to
+// support CouchDB 3.2's GET /_dbs_info endpoint. If this is not supported, or
+// if this method returns status 404 or 405, Kivik will fall back to using
+// _all_dbs + the [DBStatser] interface (or its respective emulation).
+type AllDBsStatser interface {
+	// AllDBsStats returns database statistical information for each database
+	// in the CouchDB instance. See the [CouchDB documenatation] for supported
+	// options.
+	//
+	// [CouchDB documentation]: https://docs.couchdb.org/en/stable/api/server/common.html#get--_dbs_info
+	AllDBsStats(ctx context.Context, options Options) ([]*DBStats, error)
+}
+
 // Replication represents a _replicator document.
 type Replication interface {
 	// The following methods are called just once, when the Replication is first

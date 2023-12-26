@@ -99,6 +99,8 @@ func registerSuiteCouch30() {
 
 		"DBsStats/NoAuth.status": http.StatusUnauthorized,
 
+		"AllDBsStats/NoAuth.status": http.StatusUnauthorized,
+
 		"Log.skip": true, // This was removed in CouchDB 2.0
 
 		"Version.version":        `^3\.0\.`,

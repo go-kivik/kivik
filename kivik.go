@@ -198,10 +198,14 @@ func (c *Client) fallbackDBsStats(ctx context.Context, dbnames []string) ([]*DBS
 	dbstats := make([]*DBStats, len(dbnames))
 	for i, dbname := range dbnames {
 		stat, err := c.DB(dbname).Stats(ctx)
-		if err != nil {
+		switch {
+		case HTTPStatus(err) == http.StatusNotFound:
+			continue
+		case err != nil:
 			return nil, err
+		default:
+			dbstats[i] = stat
 		}
-		dbstats[i] = stat
 	}
 	return dbstats, nil
 }

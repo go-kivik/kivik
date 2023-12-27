@@ -656,6 +656,23 @@ func TestServer(t *testing.T) {
 				nil,
 			},
 		},
+		{
+			name:       "get security",
+			method:     http.MethodGet,
+			path:       "/db1/_security",
+			authUser:   userAdmin,
+			wantStatus: http.StatusOK,
+			wantJSON: map[string]interface{}{
+				"admins": map[string]interface{}{
+					"names": []string{"superuser"},
+					"roles": []string{"admins"},
+				},
+				"members": map[string]interface{}{
+					"names": []string{"user1", "user2"},
+					"roles": []string{"developers"},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {

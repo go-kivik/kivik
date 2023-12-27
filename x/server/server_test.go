@@ -79,12 +79,11 @@ func basicAuth(user string) string {
 
 func TestServer(t *testing.T) {
 	t.Parallel()
-	tests := []struct {
+	type test struct {
 		name         string
 		driver, dsn  string
 		init         func(t *testing.T, client *kivik.Client)
 		extraOptions []Option
-		client       *kivik.Client
 		method       string
 		path         string
 		headers      map[string]string
@@ -92,11 +91,14 @@ func TestServer(t *testing.T) {
 		body         io.Reader
 		wantStatus   int
 		wantJSON     interface{}
+		check        func(t *testing.T, client *kivik.Client)
 
 		// if target is specified, it is expected to be a struct into which the
 		// response body will be unmarshaled, then validated.
 		target interface{}
-	}{
+	}
+
+	tests := []test{
 		{
 			name:       "root",
 			method:     http.MethodGet,
@@ -673,6 +675,30 @@ func TestServer(t *testing.T) {
 				},
 			},
 		},
+		func() test {
+			const want = `{"admins":{"names":["superuser"],"roles":["admins"]},"members":{"names":["user1","user2"],"roles":["developers"]}}`
+			return test{
+				name:       "put security",
+				method:     http.MethodPut,
+				path:       "/db2/_security",
+				authUser:   userAdmin,
+				headers:    map[string]string{"Content-Type": "application/json"},
+				body:       strings.NewReader(want),
+				wantStatus: http.StatusOK,
+				wantJSON: map[string]interface{}{
+					"ok": true,
+				},
+				check: func(t *testing.T, client *kivik.Client) {
+					sec, err := client.DB("db2").Security(context.Background())
+					if err != nil {
+						t.Fatal(err)
+					}
+					if d := testy.DiffAsJSON([]byte(want), sec); d != nil {
+						t.Errorf("Unexpected final result: %s", d)
+					}
+				},
+			}
+		}(),
 	}
 
 	for _, tt := range tests {
@@ -745,6 +771,9 @@ func TestServer(t *testing.T) {
 				if d := testy.DiffAsJSON(tt.wantJSON, res.Body); d != nil {
 					t.Error(d)
 				}
+			}
+			if tt.check != nil {
+				tt.check(t, client)
 			}
 		})
 	}

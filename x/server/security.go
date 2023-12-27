@@ -20,6 +20,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"gitlab.com/flimzy/httpe"
+
+	"github.com/go-kivik/kivik/v4"
 )
 
 func (s *Server) getSecurity() httpe.HandlerWithError {
@@ -30,5 +32,21 @@ func (s *Server) getSecurity() httpe.HandlerWithError {
 			return err
 		}
 		return serveJSON(w, http.StatusOK, security)
+	})
+}
+
+func (s *Server) putSecurity() httpe.HandlerWithError {
+	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
+		dbName := chi.URLParam(r, "db")
+		var security kivik.Security
+		if err := s.bind(r, &security); err != nil {
+			return err
+		}
+		if err := s.client.DB(dbName).SetSecurity(r.Context(), &security); err != nil {
+			return err
+		}
+		return serveJSON(w, http.StatusOK, map[string]bool{
+			"ok": true,
+		})
 	})
 }

@@ -608,6 +608,54 @@ func TestServer(t *testing.T) {
 				"foo":  "bar",
 			},
 		},
+		{
+			name:       "all dbs stats",
+			method:     http.MethodGet,
+			path:       "/_dbs_info",
+			authUser:   userAdmin,
+			wantStatus: http.StatusOK,
+			wantJSON: []map[string]interface{}{
+				{
+					"compact_running": false,
+					"data_size":       0,
+					"db_name":         "db1",
+					"disk_size":       0,
+					"doc_count":       0,
+					"doc_del_count":   0,
+					"update_seq":      "",
+				},
+				{
+					"compact_running": false,
+					"data_size":       0,
+					"db_name":         "db2",
+					"disk_size":       0,
+					"doc_count":       0,
+					"doc_del_count":   0,
+					"update_seq":      "",
+				},
+			},
+		},
+		{
+			name:       "dbs stats",
+			method:     http.MethodPost,
+			path:       "/_dbs_info",
+			authUser:   userAdmin,
+			headers:    map[string]string{"Content-Type": "application/json"},
+			body:       strings.NewReader(`{"keys":["db1","notfound"]}`),
+			wantStatus: http.StatusOK,
+			wantJSON: []map[string]interface{}{
+				{
+					"compact_running": false,
+					"data_size":       0,
+					"db_name":         "db1",
+					"disk_size":       0,
+					"doc_count":       0,
+					"doc_del_count":   0,
+					"update_seq":      "",
+				},
+				nil,
+			},
+		},
 	}
 
 	for _, tt := range tests {

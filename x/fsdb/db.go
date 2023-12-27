@@ -16,6 +16,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"os"
 	"path/filepath"
 
 	"github.com/go-kivik/kivik/v4/driver"
@@ -59,6 +60,13 @@ func (d *db) Delete(context.Context, string, driver.Options) (newRev string, err
 }
 
 func (d *db) Stats(context.Context) (*driver.DBStats, error) {
+	_, err := d.fs.Stat(d.path())
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, &statusError{status: http.StatusNotFound, error: err}
+		}
+		return nil, err
+	}
 	return &driver.DBStats{
 		Name:           d.dbName,
 		CompactRunning: false,

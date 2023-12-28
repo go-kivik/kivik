@@ -103,7 +103,7 @@ func (s *Server) routes(mux *chi.Mux) {
 	auth.Get("/_node/{node-name}/_stats", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	auth.Get("/_node/{node-name}/_prometheus", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	auth.Get("/_node/{node-name}/_system", httpe.ToHandler(s.notImplemented()).ServeHTTP)
-	auth.Post("/_node/{node-name}/_restart", httpe.ToHandler(s.notImplemented()).ServeHTTP)
+	admin.Post("/_node/{node-name}/_restart", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	auth.Get("/_node/{node-name}/_versions", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	auth.Post("/_search_analyze", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 	auth.Get("/_utils", httpe.ToHandler(s.notImplemented()).ServeHTTP)
@@ -131,6 +131,9 @@ func (s *Server) routes(mux *chi.Mux) {
 
 	// Databases
 	auth.Route("/{db}", func(db chi.Router) {
+		admin := db.With(
+			httpe.ToMiddleware(adminRequired),
+		)
 		member := db.With(
 			httpe.ToMiddleware(s.dbMembershipRequired),
 		)
@@ -140,8 +143,8 @@ func (s *Server) routes(mux *chi.Mux) {
 
 		member.Head("/", httpe.ToHandler(s.dbExists()).ServeHTTP)
 		member.Get("/", httpe.ToHandler(s.db()).ServeHTTP)
-		member.Put("/", httpe.ToHandler(s.createDB()).ServeHTTP)
-		member.Delete("/", httpe.ToHandler(s.deleteDB()).ServeHTTP)
+		admin.Put("/", httpe.ToHandler(s.createDB()).ServeHTTP)
+		admin.Delete("/", httpe.ToHandler(s.deleteDB()).ServeHTTP)
 		member.Get("/_all_docs", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 		member.Post("/_all_docs/queries", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 		member.Post("/_all_docs", httpe.ToHandler(s.notImplemented()).ServeHTTP)
@@ -163,8 +166,8 @@ func (s *Server) routes(mux *chi.Mux) {
 		member.Get("/_sync_shards", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 		member.Get("/_changes", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 		member.Post("/_changes", httpe.ToHandler(s.notImplemented()).ServeHTTP)
-		member.Post("/_compact", httpe.ToHandler(s.notImplemented()).ServeHTTP)
-		member.Post("/_compact/{ddoc}", httpe.ToHandler(s.notImplemented()).ServeHTTP)
+		admin.Post("/_compact", httpe.ToHandler(s.notImplemented()).ServeHTTP)
+		admin.Post("/_compact/{ddoc}", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 		member.Post("/_ensure_full_commit", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 		member.Post("/_view_cleanup", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 		member.Get("/_security", httpe.ToHandler(s.getSecurity()).ServeHTTP)
@@ -175,7 +178,7 @@ func (s *Server) routes(mux *chi.Mux) {
 		member.Post("/_missing_revs", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 		member.Post("/_revs_diff", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 		member.Get("/_revs_limit", httpe.ToHandler(s.notImplemented()).ServeHTTP)
-		member.Put("/_revs_limit", httpe.ToHandler(s.notImplemented()).ServeHTTP)
+		dbAdmin.Put("/_revs_limit", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 
 		// Documents
 		member.Post("/", httpe.ToHandler(s.postDoc()).ServeHTTP)

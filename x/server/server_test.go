@@ -728,6 +728,55 @@ func TestServer(t *testing.T) {
 			}
 		}(),
 		{
+			name:       "put security, unauthorized",
+			method:     http.MethodPut,
+			path:       "/db2/_security",
+			headers:    map[string]string{"Content-Type": "application/json"},
+			body:       strings.NewReader(`{"admins":{"names":["bob"]}}`),
+			wantStatus: http.StatusUnauthorized,
+			wantJSON: map[string]interface{}{
+				"error":  "unauthorized",
+				"reason": "User not authenticated",
+			},
+		},
+		{
+			name:       "put security, no admin access",
+			method:     http.MethodPut,
+			authUser:   userBob,
+			path:       "/db2/_security",
+			headers:    map[string]string{"Content-Type": "application/json"},
+			body:       strings.NewReader(`{"admins":{"names":["bob"]}}`),
+			wantStatus: http.StatusForbidden,
+			wantJSON: map[string]interface{}{
+				"error":  "forbidden",
+				"reason": "User lacks sufficient privileges",
+			},
+		},
+		{
+			name:       "put security, correct admin user",
+			method:     http.MethodPut,
+			authUser:   userErin,
+			path:       "/bobsdb/_security",
+			headers:    map[string]string{"Content-Type": "application/json"},
+			body:       strings.NewReader(`{"admins":{"names":["bob"]}}`),
+			wantStatus: http.StatusOK,
+			wantJSON: map[string]interface{}{
+				"ok": true,
+			},
+		},
+		{
+			name:       "put security, correct admin role",
+			method:     http.MethodPut,
+			authUser:   userFrank,
+			path:       "/bobsdb/_security",
+			headers:    map[string]string{"Content-Type": "application/json"},
+			body:       strings.NewReader(`{"admins":{"names":["bob"]}}`),
+			wantStatus: http.StatusOK,
+			wantJSON: map[string]interface{}{
+				"ok": true,
+			},
+		},
+		{
 			name:       "db info, unauthenticated",
 			method:     http.MethodHead,
 			path:       "/bobsdb",

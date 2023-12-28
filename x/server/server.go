@@ -134,6 +134,9 @@ func (s *Server) routes(mux *chi.Mux) {
 		member := db.With(
 			httpe.ToMiddleware(s.dbMembershipRequired),
 		)
+		dbAdmin := member.With(
+			httpe.ToMiddleware(s.dbAdminRequired),
+		)
 
 		member.Head("/", httpe.ToHandler(s.dbExists()).ServeHTTP)
 		member.Get("/", httpe.ToHandler(s.db()).ServeHTTP)
@@ -165,7 +168,7 @@ func (s *Server) routes(mux *chi.Mux) {
 		member.Post("/_ensure_full_commit", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 		member.Post("/_view_cleanup", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 		member.Get("/_security", httpe.ToHandler(s.getSecurity()).ServeHTTP)
-		member.Put("/_security", httpe.ToHandler(s.putSecurity()).ServeHTTP)
+		dbAdmin.Put("/_security", httpe.ToHandler(s.putSecurity()).ServeHTTP)
 		member.Post("/_purge", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 		member.Get("/_purged_infos_limit", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 		member.Put("/_purged_infos_limit", httpe.ToHandler(s.notImplemented()).ServeHTTP)
@@ -187,12 +190,12 @@ func (s *Server) routes(mux *chi.Mux) {
 
 		// Design docs
 		member.Get("/_design/{ddoc}", httpe.ToHandler(s.notImplemented()).ServeHTTP)
-		member.Put("/_design/{ddoc}", httpe.ToHandler(s.notImplemented()).ServeHTTP)
-		member.Delete("/_design/{ddoc}", httpe.ToHandler(s.notImplemented()).ServeHTTP)
-		member.Method("COPY", "/{db}/_design/{ddoc}", httpe.ToHandler(s.notImplemented()))
+		dbAdmin.Put("/_design/{ddoc}", httpe.ToHandler(s.notImplemented()).ServeHTTP)
+		dbAdmin.Delete("/_design/{ddoc}", httpe.ToHandler(s.notImplemented()).ServeHTTP)
+		dbAdmin.Method("COPY", "/{db}/_design/{ddoc}", httpe.ToHandler(s.notImplemented()))
 		member.Get("/_design/{ddoc}/{attname}", httpe.ToHandler(s.notImplemented()).ServeHTTP)
-		member.Put("/_design/{ddoc}/{attname}", httpe.ToHandler(s.notImplemented()).ServeHTTP)
-		member.Delete("/_design/{ddoc}/{attname}", httpe.ToHandler(s.notImplemented()).ServeHTTP)
+		dbAdmin.Put("/_design/{ddoc}/{attname}", httpe.ToHandler(s.notImplemented()).ServeHTTP)
+		dbAdmin.Delete("/_design/{ddoc}/{attname}", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 		member.Get("/_design/{ddoc}/_view/{view}", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 		member.Get("/_design/{ddoc}/_info", httpe.ToHandler(s.notImplemented()).ServeHTTP)
 		member.Post("/_design/{ddoc}/_view/{view}", httpe.ToHandler(s.notImplemented()).ServeHTTP)

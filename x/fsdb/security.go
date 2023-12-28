@@ -30,7 +30,6 @@ func (d *db) Security(ctx context.Context) (*driver.Security, error) {
 	return d.cdb.ReadSecurity(ctx, d.path())
 }
 
-func (d *db) SetSecurity(_ context.Context, _ *driver.Security) error {
-	// FIXME: Unimplemented
-	return notYetImplemented
+func (d *db) SetSecurity(ctx context.Context, sec *driver.Security) error {
+	return d.cdb.WriteSecurity(ctx, d.path(), sec)
 }

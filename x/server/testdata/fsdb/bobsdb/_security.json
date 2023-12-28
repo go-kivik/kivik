@@ -1,0 +1,18 @@
+{
+    "members": {
+        "names": [
+            "bob"
+        ],
+        "roles": [
+            "bar"
+        ]
+    },
+    "admins": {
+        "names": [
+            "erin"
+        ],
+        "roles": [
+            "baz"
+        ]
+    }
+}

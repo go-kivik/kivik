@@ -41,12 +41,19 @@ var v = validator.New(validator.WithRequiredStructEnabled())
 
 const (
 	userAdmin      = "admin"
-	userReader     = "reader"
-	userWriter     = "writer"
+	userBob        = "bob"
+	userAlice      = "alice"
+	userCharlie    = "charlie"
+	userDavid      = "davic"
+	userErin       = "erin"
+	userFrank      = "frank"
 	userReplicator = "replicator"
 	userDBUpdates  = "db_updates"
 	userDesign     = "design"
 	testPassword   = "abc123"
+	roleFoo        = "foo"
+	roleBar        = "bar"
+	roleBaz        = "baz"
 )
 
 func testUserStore(t *testing.T) *auth.MemoryUserStore {
@@ -55,10 +62,22 @@ func testUserStore(t *testing.T) *auth.MemoryUserStore {
 	if err := us.AddUser(userAdmin, testPassword, []string{auth.RoleAdmin}); err != nil {
 		t.Fatal(err)
 	}
-	if err := us.AddUser(userReader, testPassword, []string{auth.RoleReader}); err != nil {
+	if err := us.AddUser(userBob, testPassword, []string{auth.RoleReader}); err != nil {
 		t.Fatal(err)
 	}
-	if err := us.AddUser(userWriter, testPassword, []string{auth.RoleWriter}); err != nil {
+	if err := us.AddUser(userAlice, testPassword, []string{auth.RoleWriter}); err != nil {
+		t.Fatal(err)
+	}
+	if err := us.AddUser(userCharlie, testPassword, []string{auth.RoleWriter, roleFoo}); err != nil {
+		t.Fatal(err)
+	}
+	if err := us.AddUser(userDavid, testPassword, []string{auth.RoleWriter, roleBar}); err != nil {
+		t.Fatal(err)
+	}
+	if err := us.AddUser(userErin, testPassword, []string{auth.RoleWriter}); err != nil {
+		t.Fatal(err)
+	}
+	if err := us.AddUser(userFrank, testPassword, []string{auth.RoleWriter, roleBaz}); err != nil {
 		t.Fatal(err)
 	}
 	if err := us.AddUser(userReplicator, testPassword, []string{auth.RoleReplicator}); err != nil {
@@ -127,7 +146,7 @@ func TestServer(t *testing.T) {
 			path:       "/_all_dbs",
 			headers:    map[string]string{"Authorization": basicAuth(userAdmin)},
 			wantStatus: http.StatusOK,
-			wantJSON:   []string{"db1", "db2"},
+			wantJSON:   []string{"bobsdb", "db1", "db2"},
 		},
 		{
 			name:       "all dbs, cookie auth",
@@ -135,13 +154,13 @@ func TestServer(t *testing.T) {
 			path:       "/_all_dbs",
 			authUser:   userAdmin,
 			wantStatus: http.StatusOK,
-			wantJSON:   []string{"db1", "db2"},
+			wantJSON:   []string{"bobsdb", "db1", "db2"},
 		},
 		{
 			name:       "all dbs, non-admin",
 			method:     http.MethodGet,
 			path:       "/_all_dbs",
-			headers:    map[string]string{"Authorization": basicAuth(userReader)},
+			headers:    map[string]string{"Authorization": basicAuth(userBob)},
 			wantStatus: http.StatusForbidden,
 			wantJSON: map[string]interface{}{
 				"error":  "forbidden",
@@ -154,16 +173,16 @@ func TestServer(t *testing.T) {
 			path:       "/_all_dbs?descending=true",
 			headers:    map[string]string{"Authorization": basicAuth(userAdmin)},
 			wantStatus: http.StatusOK,
-			wantJSON:   []string{"db2", "db1"},
+			wantJSON:   []string{"db2", "db1", "bobsdb"},
 		},
 		{
 			name:       "db info",
 			method:     http.MethodGet,
-			path:       "/db1",
+			path:       "/db2",
 			headers:    map[string]string{"Authorization": basicAuth(userAdmin)},
 			wantStatus: http.StatusOK,
 			wantJSON: map[string]interface{}{
-				"db_name":         "db1",
+				"db_name":         "db2",
 				"compact_running": false,
 				"data_size":       0,
 				"disk_size":       0,
@@ -175,7 +194,7 @@ func TestServer(t *testing.T) {
 		{
 			name:       "db info HEAD",
 			method:     http.MethodHead,
-			path:       "/db1",
+			path:       "/db2",
 			headers:    map[string]string{"Authorization": basicAuth(userAdmin)},
 			wantStatus: http.StatusOK,
 		},
@@ -262,7 +281,7 @@ func TestServer(t *testing.T) {
 			name:       "all config, non-admin",
 			method:     http.MethodGet,
 			path:       "/_node/_local/_config",
-			authUser:   userReader,
+			authUser:   userBob,
 			wantStatus: http.StatusForbidden,
 			wantJSON: map[string]interface{}{
 				"error":  "forbidden",
@@ -620,6 +639,15 @@ func TestServer(t *testing.T) {
 				{
 					"compact_running": false,
 					"data_size":       0,
+					"db_name":         "bobsdb",
+					"disk_size":       0,
+					"doc_count":       0,
+					"doc_del_count":   0,
+					"update_seq":      "",
+				},
+				{
+					"compact_running": false,
+					"data_size":       0,
 					"db_name":         "db1",
 					"disk_size":       0,
 					"doc_count":       0,
@@ -699,6 +727,66 @@ func TestServer(t *testing.T) {
 				},
 			}
 		}(),
+		{
+			name:       "db info, unauthenticated",
+			method:     http.MethodHead,
+			path:       "/bobsdb",
+			wantStatus: http.StatusUnauthorized,
+			wantJSON: map[string]interface{}{
+				"error":  "unauthorized",
+				"reason": "User not authenticated",
+			},
+		},
+		{
+			name:       "db info, authenticated wrong user, wrong role",
+			method:     http.MethodHead,
+			authUser:   userAlice,
+			path:       "/bobsdb",
+			wantStatus: http.StatusForbidden,
+			wantJSON: map[string]interface{}{
+				"error":  "forbidden",
+				"reason": "User lacks sufficient privileges",
+			},
+		},
+		{
+			name:       "db info, authenticated correct user",
+			method:     http.MethodHead,
+			authUser:   userBob,
+			path:       "/bobsdb",
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "db info, authenticated wrong role",
+			method:     http.MethodHead,
+			authUser:   userCharlie,
+			path:       "/bobsdb",
+			wantStatus: http.StatusForbidden,
+			wantJSON: map[string]interface{}{
+				"error":  "forbidden",
+				"reason": "User lacks sufficient privileges",
+			},
+		},
+		{
+			name:       "db info, authenticated correct role",
+			method:     http.MethodHead,
+			authUser:   userDavid,
+			path:       "/bobsdb",
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "db info, authenticated as admin user",
+			method:     http.MethodHead,
+			authUser:   userErin,
+			path:       "/bobsdb",
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "db info, authenticated as admin role",
+			method:     http.MethodHead,
+			authUser:   userFrank,
+			path:       "/bobsdb",
+			wantStatus: http.StatusOK,
+		},
 	}
 
 	for _, tt := range tests {

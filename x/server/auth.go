@@ -59,6 +59,7 @@ func (w *doneWriter) Write(b []byte) (int, error) {
 	return w.ResponseWriter.Write(b)
 }
 
+// authMiddleware sets the user context based on the authenticated user, if any.
 func (s *Server) authMiddleware(next httpe.HandlerWithError) httpe.HandlerWithError {
 	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
 		ctx := r.Context()
@@ -92,6 +93,8 @@ func (s *Server) authMiddleware(next httpe.HandlerWithError) httpe.HandlerWithEr
 	})
 }
 
+// adminRequired returns Status Forbidden if the session is not authenticated as
+// an admin.
 func adminRequired(next httpe.HandlerWithError) httpe.HandlerWithError {
 	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
 		userCtx, _ := r.Context().Value(userContextKey).(*auth.UserContext)

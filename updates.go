@@ -94,7 +94,11 @@ func (f *DBUpdates) Seq() string {
 	return f.curVal.(*driver.DBUpdate).Seq
 }
 
-// DBUpdates begins polling for database updates.
+// DBUpdates begins polling for database updates. Canceling the context will
+// close the iterator. The iterator will also close automatically if there are
+// no more updates, when an error occurs, or when the [DBUpdates.Close] method
+// is called. The [DBUpdates.Err] method should be consulted to determine if
+// there was an error during iteration.
 func (c *Client) DBUpdates(ctx context.Context, options ...Option) *DBUpdates {
 	updater, ok := c.driverClient.(driver.DBUpdater)
 	if !ok {

@@ -19,8 +19,10 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"gitlab.com/flimzy/httpe"
 
+	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/internal"
 	"github.com/go-kivik/kivik/v4/x/server/auth"
 )
@@ -28,6 +30,11 @@ import (
 type contextKey struct{ name string }
 
 var userContextKey = &contextKey{"userCtx"}
+
+func userFromContext(ctx context.Context) *auth.UserContext {
+	user, _ := ctx.Value(userContextKey).(*auth.UserContext)
+	return user
+}
 
 type authService struct {
 	s *Server
@@ -59,6 +66,7 @@ func (w *doneWriter) Write(b []byte) (int, error) {
 	return w.ResponseWriter.Write(b)
 }
 
+// authMiddleware sets the user context based on the authenticated user, if any.
 func (s *Server) authMiddleware(next httpe.HandlerWithError) httpe.HandlerWithError {
 	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
 		ctx := r.Context()
@@ -92,6 +100,8 @@ func (s *Server) authMiddleware(next httpe.HandlerWithError) httpe.HandlerWithEr
 	})
 }
 
+// adminRequired returns Status Forbidden if the session is not authenticated as
+// an admin.
 func adminRequired(next httpe.HandlerWithError) httpe.HandlerWithError {
 	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
 		userCtx, _ := r.Context().Value(userContextKey).(*auth.UserContext)
@@ -103,4 +113,102 @@ func adminRequired(next httpe.HandlerWithError) httpe.HandlerWithError {
 		}
 		return next.ServeHTTPWithError(w, r)
 	})
+}
+
+func (s *Server) dbMembershipRequired(next httpe.HandlerWithError) httpe.HandlerWithError {
+	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
+		db := chi.URLParam(r, "db")
+		security, err := s.client.DB(db).Security(r.Context())
+		if err != nil {
+			return &internal.Error{Status: http.StatusBadGateway, Err: err}
+		}
+
+		if err := validateDBMembership(userFromContext(r.Context()), security); err != nil {
+			return err
+		}
+
+		return next.ServeHTTPWithError(w, r)
+	})
+}
+
+// validateDBMembership returns an error if the user lacks sufficient membersip.
+//
+//	See the [CouchDB documentation] for the rules for granting access.
+//
+// [CouchDB documentatio]: https://docs.couchdb.org/en/stable/api/database/security.html#get--db-_security
+func validateDBMembership(user *auth.UserContext, security *kivik.Security) error {
+	// No membership names/roles means open read access.
+	if len(security.Members.Names) == 0 && len(security.Members.Roles) == 0 {
+		return nil
+	}
+
+	if user == nil {
+		return &internal.Error{Status: http.StatusUnauthorized, Message: "User not authenticated"}
+	}
+
+	for _, name := range security.Members.Names {
+		if name == user.Name {
+			return nil
+		}
+	}
+	for _, role := range security.Members.Roles {
+		if user.HasRole(role) {
+			return nil
+		}
+	}
+	for _, name := range security.Admins.Names {
+		if name == user.Name {
+			return nil
+		}
+	}
+	for _, role := range security.Admins.Roles {
+		if user.HasRole(role) {
+			return nil
+		}
+	}
+	if user.HasRole(auth.RoleAdmin) {
+		return nil
+	}
+	return &internal.Error{Status: http.StatusForbidden, Message: "User lacks sufficient privileges"}
+}
+
+func (s *Server) dbAdminRequired(next httpe.HandlerWithError) httpe.HandlerWithError {
+	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
+		db := chi.URLParam(r, "db")
+		security, err := s.client.DB(db).Security(r.Context())
+		if err != nil {
+			return &internal.Error{Status: http.StatusBadGateway, Err: err}
+		}
+
+		if err := validateDBAdmin(userFromContext(r.Context()), security); err != nil {
+			return err
+		}
+
+		return next.ServeHTTPWithError(w, r)
+	})
+}
+
+// validateDBAdmin returns an error if the user lacks sufficient membersip.
+//
+//	See the [CouchDB documentation] for the rules for granting access.
+//
+// [CouchDB documentatio]: https://docs.couchdb.org/en/stable/api/database/security.html#get--db-_security
+func validateDBAdmin(user *auth.UserContext, security *kivik.Security) error {
+	if user == nil {
+		return &internal.Error{Status: http.StatusUnauthorized, Message: "User not authenticated"}
+	}
+	for _, name := range security.Admins.Names {
+		if name == user.Name {
+			return nil
+		}
+	}
+	if user.HasRole(auth.RoleAdmin) {
+		return nil
+	}
+	for _, role := range security.Admins.Roles {
+		if user.HasRole(role) {
+			return nil
+		}
+	}
+	return &internal.Error{Status: http.StatusForbidden, Message: "User lacks sufficient privileges"}
 }

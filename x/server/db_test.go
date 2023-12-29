@@ -18,6 +18,7 @@ package server
 import (
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
@@ -86,6 +87,33 @@ func Test_dbUpdates(t *testing.T) {
 				"error":  "bad_request",
 				"reason": "strconv.Atoi: parsing \"chicken\": invalid syntax",
 			},
+		},
+		{
+			name: "db updates, with heartbeat",
+			client: func() *kivik.Client {
+				client, mock, err := mockdb.New()
+				if err != nil {
+					t.Fatal(err)
+				}
+				mock.ExpectDBUpdates().WillReturn(mockdb.NewDBUpdates().
+					AddUpdate(&driver.DBUpdate{
+						DBName: "foo",
+						Type:   "created",
+						Seq:    "1-aaa",
+					}).
+					AddDelay(500 * time.Millisecond).
+					AddUpdate(&driver.DBUpdate{
+						DBName: "foo",
+						Type:   "deleted",
+						Seq:    "2-aaa",
+					}))
+				return client
+			}(),
+			authUser:   userAdmin,
+			method:     http.MethodGet,
+			path:       "/_db_updates?heartbeat=100",
+			wantStatus: http.StatusOK,
+			wantBodyRE: "\n\n\n",
 		},
 	}
 

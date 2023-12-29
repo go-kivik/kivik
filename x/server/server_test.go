@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -108,6 +109,7 @@ type serverTest struct {
 	authUser     string
 	body         io.Reader
 	wantStatus   int
+	wantBodyRE   string
 	wantJSON     interface{}
 	check        func(t *testing.T, client *kivik.Client)
 
@@ -193,6 +195,15 @@ func (s serverTests) Run(t *testing.T) {
 				}
 				if err := v.Struct(tt.target); err != nil {
 					t.Fatalf("response does not match expectations: %s\n%v", err, tt.target)
+				}
+			case tt.wantBodyRE != "":
+				re := regexp.MustCompile(tt.wantBodyRE)
+				body, err := io.ReadAll(res.Body)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !re.Match(body) {
+					t.Errorf("Unexpected response body:\n%s", body)
 				}
 			default:
 				if d := testy.DiffAsJSON(tt.wantJSON, res.Body); d != nil {

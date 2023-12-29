@@ -16,10 +16,15 @@
 package server
 
 import (
+	"encoding/json"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"gitlab.com/flimzy/httpe"
+
+	"github.com/go-kivik/kivik/v4/driver"
 )
 
 func (s *Server) db() httpe.HandlerWithError {
@@ -70,5 +75,71 @@ func (s *Server) deleteDB() httpe.HandlerWithError {
 		return serveJSON(w, http.StatusOK, map[string]interface{}{
 			"ok": true,
 		})
+	})
+}
+
+const defaultHeartbeat = 60 * time.Second
+
+type heartbeat time.Duration
+
+func (h *heartbeat) UnmarshalText(text []byte) error {
+	var value time.Duration
+	if string(text) == "true" {
+		value = defaultHeartbeat
+	} else {
+		ms, err := strconv.Atoi(string(text))
+		if err != nil {
+			return err
+		}
+		value = time.Duration(ms) * time.Millisecond
+	}
+	*h = heartbeat(value)
+	return nil
+}
+
+func (s *Server) dbUpdates() httpe.HandlerWithError {
+	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
+		var req struct {
+			Heartbeat heartbeat `form:"heartbeat"`
+		}
+		if err := s.bind(r, &req); err != nil {
+			return err
+		}
+		updates := s.client.DBUpdates(r.Context(), options(r))
+
+		if err := updates.Err(); err != nil {
+			return err
+		}
+
+		defer updates.Close()
+
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+
+		if _, err := w.Write([]byte(`{"results":[`)); err != nil {
+			return err
+		}
+
+		var update driver.DBUpdate
+		var lastSeq string
+		for updates.Next() {
+			if lastSeq != "" {
+				if _, err := w.Write([]byte(",")); err != nil {
+					return err
+				}
+			}
+			update.DBName = updates.DBName()
+			update.Type = updates.Type()
+			update.Seq = updates.Seq()
+			lastSeq = update.Seq
+			if err := json.NewEncoder(w).Encode(update); err != nil {
+				return err
+			}
+		}
+		if _, err := w.Write([]byte(`],"last_seq":"` + lastSeq + "\"}")); err != nil {
+			return err
+		}
+
+		return updates.Err()
 	})
 }

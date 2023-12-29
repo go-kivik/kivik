@@ -96,7 +96,7 @@ func (s *Server) routes(mux *chi.Mux) {
 	auth.Post("/_dbs_info", e(s.dbsStats()))
 	admin.Get("/_cluster_setup", e(s.clusterStatus()))
 	admin.Post("/_cluster_setup", e(s.clusterSetup()))
-	auth.Post("/_db_updates", e(s.notImplemented()))
+	admin.Get("/_db_updates", e(s.dbUpdates()))
 	auth.Get("/_membership", e(s.notImplemented()))
 	auth.Post("/_replicate", e(s.notImplemented()))
 	auth.Get("/_scheduler/jobs", e(s.notImplemented()))

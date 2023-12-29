@@ -21,19 +21,33 @@ import (
 	"net/http"
 )
 
+// bind binds the request to v if it is of type application/json or
+// application/x-www-form-urlencoded.
 func (s *Server) bind(r *http.Request, v interface{}) error {
+	defer r.Body.Close()
 	ct, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	switch ct {
 	case "application/json":
-		defer r.Body.Close()
+
 		return json.NewDecoder(r.Body).Decode(v)
 	case "application/x-www-form-urlencoded":
-		defer r.Body.Close()
 		if err := r.ParseForm(); err != nil {
 			return err
 		}
 		return s.formDecoder.Decode(r.Form, v)
 	default:
 		return &couchError{status: http.StatusUnsupportedMediaType, Err: "bad_content_type", Reason: "Content-Type must be 'application/x-www-form-urlencoded' or 'application/json'"}
+	}
+}
+
+// bindJSON works like bind, but for endpoints that require application/json.
+func (s *Server) bindJSON(r *http.Request, v interface{}) error {
+	defer r.Body.Close()
+	ct, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type"))
+	switch ct {
+	case "application/json":
+		return json.NewDecoder(r.Body).Decode(v)
+	default:
+		return &couchError{status: http.StatusUnsupportedMediaType, Err: "bad_content_type", Reason: "Content-Type must be 'application/json'"}
 	}
 }

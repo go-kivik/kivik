@@ -19,21 +19,54 @@ import (
 	"encoding/json"
 	"mime"
 	"net/http"
+
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
+// bind binds the request to v if it is of type application/json or
+// application/x-www-form-urlencoded.
 func (s *Server) bind(r *http.Request, v interface{}) error {
+	defer r.Body.Close()
+	switch r.Method {
+	case http.MethodPatch, http.MethodPost, http.MethodPut:
+		// continue
+	default:
+		// simple query parsing
+		return s.bindForm(r, v)
+	}
 	ct, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	switch ct {
 	case "application/json":
-		defer r.Body.Close()
-		return json.NewDecoder(r.Body).Decode(v)
-	case "application/x-www-form-urlencoded":
-		defer r.Body.Close()
-		if err := r.ParseForm(); err != nil {
-			return err
+		if err := json.NewDecoder(r.Body).Decode(v); err != nil {
+			return &internal.Error{Status: http.StatusBadRequest, Err: err}
 		}
-		return s.formDecoder.Decode(r.Form, v)
+		return nil
+	case "application/x-www-form-urlencoded":
+		return s.bindForm(r, v)
 	default:
 		return &couchError{status: http.StatusUnsupportedMediaType, Err: "bad_content_type", Reason: "Content-Type must be 'application/x-www-form-urlencoded' or 'application/json'"}
+	}
+}
+
+func (s *Server) bindForm(r *http.Request, v interface{}) error {
+	defer r.Body.Close()
+	if err := r.ParseForm(); err != nil {
+		return &internal.Error{Status: http.StatusBadRequest, Err: err}
+	}
+	if err := s.formDecoder.Decode(r.Form, v); err != nil {
+		return &internal.Error{Status: http.StatusBadRequest, Err: err}
+	}
+	return nil
+}
+
+// bindJSON works like bind, but for endpoints that require application/json.
+func (s *Server) bindJSON(r *http.Request, v interface{}) error {
+	defer r.Body.Close()
+	ct, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type"))
+	switch ct {
+	case "application/json":
+		return json.NewDecoder(r.Body).Decode(v)
+	default:
+		return &couchError{status: http.StatusUnsupportedMediaType, Err: "bad_content_type", Reason: "Content-Type must be 'application/json'"}
 	}
 }

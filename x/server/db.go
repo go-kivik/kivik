@@ -16,10 +16,15 @@
 package server
 
 import (
+	"encoding/json"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"gitlab.com/flimzy/httpe"
+
+	"github.com/go-kivik/kivik/v4/driver"
 )
 
 func (s *Server) db() httpe.HandlerWithError {
@@ -70,5 +75,95 @@ func (s *Server) deleteDB() httpe.HandlerWithError {
 		return serveJSON(w, http.StatusOK, map[string]interface{}{
 			"ok": true,
 		})
+	})
+}
+
+const defaultHeartbeat = heartbeat(60 * time.Second)
+
+type heartbeat time.Duration
+
+func (h *heartbeat) UnmarshalText(text []byte) error {
+	var value heartbeat
+	if string(text) == "true" {
+		value = defaultHeartbeat
+	} else {
+		ms, err := strconv.Atoi(string(text))
+		if err != nil {
+			return err
+		}
+		value = heartbeat(ms) * heartbeat(time.Millisecond)
+	}
+	*h = value
+	return nil
+}
+
+func (s *Server) dbUpdates() httpe.HandlerWithError {
+	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
+		req := struct {
+			Heartbeat heartbeat `form:"heartbeat"`
+		}{
+			Heartbeat: defaultHeartbeat,
+		}
+		if err := s.bind(r, &req); err != nil {
+			return err
+		}
+		ticker := time.NewTicker(time.Duration(req.Heartbeat))
+		updates := s.client.DBUpdates(r.Context(), options(r))
+
+		if err := updates.Err(); err != nil {
+			return err
+		}
+
+		defer updates.Close()
+
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+
+		if _, err := w.Write([]byte(`{"results":[`)); err != nil {
+			return err
+		}
+
+		nextUpdate := make(chan *driver.DBUpdate)
+		go func() {
+			for updates.Next() {
+				nextUpdate <- &driver.DBUpdate{
+					DBName: updates.DBName(),
+					Type:   updates.Type(),
+					Seq:    updates.Seq(),
+				}
+			}
+			close(nextUpdate)
+		}()
+
+		var lastSeq string
+	loop:
+		for {
+			select {
+			case <-ticker.C:
+				if _, err := w.Write([]byte("\n")); err != nil {
+					return err
+				}
+			case update, ok := <-nextUpdate:
+				if !ok {
+					break loop
+				}
+				ticker.Reset(time.Duration(req.Heartbeat))
+				if lastSeq != "" {
+					if _, err := w.Write([]byte(",")); err != nil {
+						return err
+					}
+				}
+				lastSeq = update.Seq
+				if err := json.NewEncoder(w).Encode(update); err != nil {
+					return err
+				}
+			}
+		}
+
+		if _, err := w.Write([]byte(`],"last_seq":"` + lastSeq + "\"}")); err != nil {
+			return err
+		}
+
+		return updates.Err()
 	})
 }

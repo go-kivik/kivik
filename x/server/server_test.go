@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -96,28 +97,130 @@ func basicAuth(user string) string {
 	return "Basic " + base64.StdEncoding.EncodeToString([]byte(user+":"+testPassword))
 }
 
+type serverTest struct {
+	name         string
+	client       *kivik.Client
+	driver, dsn  string
+	init         func(t *testing.T, client *kivik.Client)
+	extraOptions []Option
+	method       string
+	path         string
+	headers      map[string]string
+	authUser     string
+	body         io.Reader
+	wantStatus   int
+	wantBodyRE   string
+	wantJSON     interface{}
+	check        func(t *testing.T, client *kivik.Client)
+
+	// if target is specified, it is expected to be a struct into which the
+	// response body will be unmarshaled, then validated.
+	target interface{}
+}
+
+type serverTests []serverTest
+
+func (s serverTests) Run(t *testing.T) {
+	t.Helper()
+	for _, tt := range s {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			driver, dsn := "fs", "testdata/fsdb"
+			if tt.dsn != "" {
+				dsn = tt.dsn
+			}
+			client := tt.client
+			if client == nil {
+				if tt.driver != "" {
+					driver = tt.driver
+				}
+				if driver == "fs" {
+					dsn = testy.CopyTempDir(t, dsn, 0)
+					t.Cleanup(func() {
+						_ = os.RemoveAll(dsn)
+					})
+				}
+				var err error
+				client, err = kivik.New(driver, dsn)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			if tt.init != nil {
+				tt.init(t, client)
+			}
+			us := testUserStore(t)
+			const secret = "foo"
+			opts := append([]Option{
+				WithUserStores(us),
+				WithAuthHandlers(auth.BasicAuth()),
+				WithAuthHandlers(auth.CookieAuth(secret, time.Hour)),
+			}, tt.extraOptions...)
+
+			s := New(client, opts...)
+			body := tt.body
+			if body == nil {
+				body = strings.NewReader("")
+			}
+			req, err := http.NewRequest(tt.method, tt.path, body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			for k, v := range tt.headers {
+				req.Header.Set(k, v)
+			}
+			if tt.authUser != "" {
+				user, err := us.UserCtx(context.Background(), tt.authUser)
+				if err != nil {
+					t.Fatal(err)
+				}
+				req.AddCookie(&http.Cookie{
+					Name:  kivik.SessionCookieName,
+					Value: auth.CreateAuthToken(user.Name, user.Salt, secret, time.Now().Unix()),
+				})
+			}
+
+			rec := httptest.NewRecorder()
+			s.ServeHTTP(rec, req)
+
+			res := rec.Result()
+			if res.StatusCode != tt.wantStatus {
+				t.Errorf("Unexpected response status: %d %s", res.StatusCode, http.StatusText(res.StatusCode))
+			}
+			switch {
+			case tt.target != nil:
+				if err := json.NewDecoder(res.Body).Decode(tt.target); err != nil {
+					t.Fatal(err)
+				}
+				if err := v.Struct(tt.target); err != nil {
+					t.Fatalf("response does not match expectations: %s\n%v", err, tt.target)
+				}
+			case tt.wantBodyRE != "":
+				re := regexp.MustCompile(tt.wantBodyRE)
+				body, err := io.ReadAll(res.Body)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !re.Match(body) {
+					t.Errorf("Unexpected response body:\n%s", body)
+				}
+			default:
+				if d := testy.DiffAsJSON(tt.wantJSON, res.Body); d != nil {
+					t.Error(d)
+				}
+			}
+			if tt.check != nil {
+				tt.check(t, client)
+			}
+		})
+	}
+}
+
 func TestServer(t *testing.T) {
 	t.Parallel()
-	type test struct {
-		name         string
-		driver, dsn  string
-		init         func(t *testing.T, client *kivik.Client)
-		extraOptions []Option
-		method       string
-		path         string
-		headers      map[string]string
-		authUser     string
-		body         io.Reader
-		wantStatus   int
-		wantJSON     interface{}
-		check        func(t *testing.T, client *kivik.Client)
 
-		// if target is specified, it is expected to be a struct into which the
-		// response body will be unmarshaled, then validated.
-		target interface{}
-	}
-
-	tests := []test{
+	tests := serverTests{
 		{
 			name:       "root",
 			method:     http.MethodGet,
@@ -703,9 +806,9 @@ func TestServer(t *testing.T) {
 				},
 			},
 		},
-		func() test {
+		func() serverTest {
 			const want = `{"admins":{"names":["superuser"],"roles":["admins"]},"members":{"names":["user1","user2"],"roles":["developers"]}}`
-			return test{
+			return serverTest{
 				name:       "put security",
 				method:     http.MethodPut,
 				path:       "/db2/_security",
@@ -838,82 +941,7 @@ func TestServer(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			driver, dsn := "fs", "testdata/fsdb"
-			if tt.dsn != "" {
-				dsn = tt.dsn
-			}
-			if tt.driver != "" {
-				driver = tt.driver
-			}
-			if driver == "fs" {
-				dsn = testy.CopyTempDir(t, dsn, 0)
-				t.Cleanup(func() {
-					_ = os.RemoveAll(dsn)
-				})
-			}
-			client, err := kivik.New(driver, dsn)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if tt.init != nil {
-				tt.init(t, client)
-			}
-			us := testUserStore(t)
-			const secret = "foo"
-			opts := append([]Option{
-				WithUserStores(us),
-				WithAuthHandlers(auth.BasicAuth()),
-				WithAuthHandlers(auth.CookieAuth(secret, time.Hour)),
-			}, tt.extraOptions...)
-
-			s := New(client, opts...)
-			req, err := http.NewRequest(tt.method, tt.path, tt.body)
-			if err != nil {
-				t.Fatal(err)
-			}
-			for k, v := range tt.headers {
-				req.Header.Set(k, v)
-			}
-			if tt.authUser != "" {
-				user, err := us.UserCtx(context.Background(), tt.authUser)
-				if err != nil {
-					t.Fatal(err)
-				}
-				req.AddCookie(&http.Cookie{
-					Name:  kivik.SessionCookieName,
-					Value: auth.CreateAuthToken(user.Name, user.Salt, secret, time.Now().Unix()),
-				})
-			}
-
-			rec := httptest.NewRecorder()
-			s.ServeHTTP(rec, req)
-
-			res := rec.Result()
-			if res.StatusCode != tt.wantStatus {
-				t.Errorf("Unexpected response status: %d %s", res.StatusCode, http.StatusText(res.StatusCode))
-			}
-			switch {
-			case tt.target != nil:
-				if err := json.NewDecoder(res.Body).Decode(tt.target); err != nil {
-					t.Fatal(err)
-				}
-				if err := v.Struct(tt.target); err != nil {
-					t.Fatalf("response does not match expectations: %s\n%v", err, tt.target)
-				}
-			default:
-				if d := testy.DiffAsJSON(tt.wantJSON, res.Body); d != nil {
-					t.Error(d)
-				}
-			}
-			if tt.check != nil {
-				tt.check(t, client)
-			}
-		})
-	}
+	tests.Run(t)
 }
 
 type readOnlyConfig struct {

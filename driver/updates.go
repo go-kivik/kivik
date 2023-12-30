@@ -32,6 +32,13 @@ type DBUpdates interface {
 	Close() error
 }
 
+// LastSeqer extends the [DBUpdates] interface, and in Kivik v5, will be
+// included in it.
+type LastSeqer interface {
+	// LastSeq returns the last sequence ID reported.
+	LastSeq() (string, error)
+}
+
 // DBUpdater is an optional interface that may be implemented by a
 // [Client] to provide access to the DB Updates feed.
 type DBUpdater interface {

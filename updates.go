@@ -14,6 +14,7 @@ package kivik
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
@@ -92,6 +93,21 @@ func (f *DBUpdates) Seq() string {
 		return ""
 	}
 	return f.curVal.(*driver.DBUpdate).Seq
+}
+
+// LastSeq returns the last sequence ID reported, or in the case no results
+// were returned due to `since`	being set to `now`, or some other value that
+// excludes all results, the current sequence ID. It must be called after
+// [DBUpdates.Next] returns false. Otherwise it will return an error.
+func (f *DBUpdates) LastSeq() (string, error) {
+	for f.iter == nil || f.state != stateEOQ && f.state != stateClosed {
+		return "", &internal.Error{Status: http.StatusBadRequest, Err: errors.New("LastSeq must not be called until results iteration is complete")}
+	}
+	driverUpdates := f.feed.(*updatesIterator).DBUpdates
+	if lastSeqer, ok := driverUpdates.(driver.LastSeqer); ok {
+		return lastSeqer.LastSeq()
+	}
+	return "", nil
 }
 
 // DBUpdates begins polling for database updates. Canceling the context will

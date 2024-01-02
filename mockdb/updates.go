@@ -22,6 +22,8 @@ import (
 // Updates is a mocked collection of database updates.
 type Updates struct {
 	iter
+	lastSeq    string
+	lastSeqErr error
 }
 
 type driverDBUpdates struct {
@@ -45,6 +47,10 @@ func (u *driverDBUpdates) Next(update *driver.DBUpdate) error {
 	}
 	*update = *result.(*driver.DBUpdate)
 	return nil
+}
+
+func (u *driverDBUpdates) LastSeq() (string, error) {
+	return u.lastSeq, u.lastSeqErr
 }
 
 // CloseError sets an error to be returned when the updates iterator is closed.
@@ -72,6 +78,18 @@ func (u *Updates) AddUpdate(update *driver.DBUpdate) *Updates {
 // AddDelay adds a delay before the next iteration will complete.
 func (u *Updates) AddDelay(delay time.Duration) *Updates {
 	u.push(&item{delay: delay})
+	return u
+}
+
+// LastSeq sets the LastSeq value to be returned by the DBUpdates iterator.
+func (u *Updates) LastSeq(lastSeq string) *Updates {
+	u.lastSeq = lastSeq
+	return u
+}
+
+// LastSeqError sets the error value to be returned when LastSeq is called.
+func (u *Updates) LastSeqError(err error) *Updates {
+	u.lastSeqErr = err
 	return u
 }
 

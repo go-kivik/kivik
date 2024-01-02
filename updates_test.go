@@ -350,7 +350,7 @@ func TestDBUpdates_LastSeq(t *testing.T) {
 			t.Errorf("Unexpected lastSeq: %s", lastSeq)
 		}
 	})
-	t.Run("non-LastSeqer", func(t *testing.T) {
+	t.Run("LastSeqer", func(t *testing.T) {
 		client := &Client{
 			driverClient: &mock.DBUpdater{
 				DBUpdatesFunc: func(context.Context, driver.Options) (driver.DBUpdates, error) {

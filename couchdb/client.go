@@ -13,8 +13,10 @@
 package couchdb
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -23,6 +25,7 @@ import (
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/couchdb/chttp"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 func (c *client) AllDBs(ctx context.Context, opts driver.Options) ([]string, error) {
@@ -100,9 +103,50 @@ func (p *updatesParser) decodeItem(i interface{}, dec *json.Decoder) error {
 	return dec.Decode(i)
 }
 
-func newUpdates(ctx context.Context, body io.ReadCloser) *couchUpdates {
+func newUpdates(ctx context.Context, r io.ReadCloser) *couchUpdates {
+	buf := &bytes.Buffer{}
+	// Read just the first two tokens, to determine feed type. We use a
+	// json.Decoder rather than reading raw bytes, because there may be
+	// whitespace, and it's also nice to return a consistent error in case the
+	// body is invalid.
+	dec := json.NewDecoder(io.TeeReader(r, buf))
+	tok, err := dec.Token()
+	if err != nil {
+		panic(err) // TODO: test
+	}
+	if tok != json.Delim('{') {
+		panic("unexpected") // TODO: test
+	}
+	tok, err = dec.Token()
+	if err != nil {
+		panic(err) // TODO: test
+	}
+	if _, ok := tok.(string); !ok {
+		panic("unexpected") // TODO: test
+	}
+
+	// restore reader
+	r = struct {
+		io.Reader
+		io.Closer
+	}{
+		Reader: io.MultiReader(buf, r),
+		Closer: r,
+	}
+
+	switch tok {
+	case "db_name": // Continuous feed
+		return newContinuousUpdates(ctx, r)
+	case "results": // Normal feed
+		panic("unimplemented")
+	default: // Something unexpected
+		panic(&internal.Error{Status: http.StatusBadGateway, Message: fmt.Sprintf("kivik: unexpected JSON token %q in feed response", tok)}) // TODO:test
+	}
+}
+
+func newContinuousUpdates(ctx context.Context, r io.ReadCloser) *couchUpdates {
 	return &couchUpdates{
-		iter: newIter(ctx, nil, "", body, &updatesParser{}),
+		iter: newIter(ctx, nil, "", r, &updatesParser{}),
 	}
 }
 

@@ -79,6 +79,9 @@ func (c *client) DBUpdates(ctx context.Context, opts driver.Options) (updates dr
 	} else if query.Get("since") == "" {
 		delete(query, "since")
 	}
+	if query.Get("feed") == "eventsource" {
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "kivik: eventsource feed type not supported by CouchDB driver"}
+	}
 	resp, err := c.DoReq(ctx, http.MethodGet, "/_db_updates", &chttp.Options{Query: query})
 	if err != nil {
 		return nil, err

@@ -374,6 +374,15 @@ func TestDBUpdates(t *testing.T) {
 				{DBName: "mailbox", Type: "deleted", Seq: "2-g1AAAAFR"},
 			},
 		},
+		{
+			name: "eventsource",
+			options: kivik.Params(map[string]interface{}{
+				"feed":  "eventsource",
+				"since": "",
+			}),
+			wantStatus: http.StatusBadRequest,
+			wantErr:    "eventsource feed type not supported",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

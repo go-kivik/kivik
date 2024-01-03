@@ -99,6 +99,9 @@ func (f *DBUpdates) Seq() string {
 // no more updates, when an error occurs, or when the [DBUpdates.Close] method
 // is called. The [DBUpdates.Err] method should be consulted to determine if
 // there was an error during iteration.
+//
+// For historical reasons, the CouchDB driver's implementation of this function
+// always sets feed=continuous and since=now, and ignores any options passed.
 func (c *Client) DBUpdates(ctx context.Context, options ...Option) *DBUpdates {
 	updater, ok := c.driverClient.(driver.DBUpdater)
 	if !ok {

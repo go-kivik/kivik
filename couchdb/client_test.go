@@ -245,10 +245,11 @@ func TestDestroyDB(t *testing.T) {
 
 func TestDBUpdates(t *testing.T) {
 	tests := []struct {
-		name   string
-		client *client
-		status int
-		err    string
+		name    string
+		client  *client
+		options driver.Options
+		status  int
+		err     string
 	}{
 		{
 			name:   "network error",
@@ -280,10 +281,14 @@ func TestDBUpdates(t *testing.T) {
 			}, nil),
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			result, err := test.client.DBUpdates(context.TODO(), nil)
-			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			opts := tt.options
+			if opts == nil {
+				opts = mock.NilOption
+			}
+			result, err := tt.client.DBUpdates(context.TODO(), opts)
+			if d := internal.StatusErrorDiffRE(tt.err, tt.status, err); d != "" {
 				t.Error(d)
 			}
 			if err != nil {

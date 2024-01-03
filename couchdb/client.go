@@ -113,7 +113,7 @@ func newUpdates(ctx context.Context, r io.ReadCloser) (*couchUpdates, error) {
 	case feedTypeContinuous:
 		return newContinuousUpdates(ctx, r), nil
 	case feedTypeNormal:
-		panic("unimplemented")
+		return newNormalUpdates(ctx, r), nil
 	}
 	panic("unknown") // TODO: test
 }
@@ -163,6 +163,12 @@ func updatesFeedType(r io.ReadCloser) (io.ReadCloser, feedType, error) {
 		return r, feedTypeNormal, nil
 	default: // Something unexpected
 		return nil, 0, fmt.Errorf("kivik: unexpected JSON token %q in feed response, expected `db_name` or `results`", tok)
+	}
+}
+
+func newNormalUpdates(ctx context.Context, r io.ReadCloser) *couchUpdates {
+	return &couchUpdates{
+		iter: newIter(ctx, nil, "results", r, &updatesParser{}),
 	}
 }
 

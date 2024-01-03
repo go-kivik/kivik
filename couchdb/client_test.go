@@ -294,16 +294,8 @@ func TestDBUpdates(t *testing.T) {
 				{"db_name":"mailbox","type":"deleted","seq":"2-g1AAAAFR"}`),
 			}, nil),
 			want: []driver.DBUpdate{
-				{
-					DBName: "mailbox",
-					Type:   "created",
-					Seq:    "1-g1AAAAFR",
-				},
-				{
-					DBName: "mailbox",
-					Type:   "deleted",
-					Seq:    "2-g1AAAAFR",
-				},
+				{DBName: "mailbox", Type: "created", Seq: "1-g1AAAAFR"},
+				{DBName: "mailbox", Type: "deleted", Seq: "2-g1AAAAFR"},
 			},
 		},
 		{
@@ -353,6 +345,34 @@ func TestDBUpdates(t *testing.T) {
 			}, nil),
 			wantStatus: http.StatusBadGateway,
 			wantErr:    "expected `db_name` or `results`",
+		},
+		{
+			name: "CouchDB defaults",
+			client: newTestClient(&http.Response{
+				StatusCode: 200,
+				Header: http.Header{
+					"Transfer-Encoding": {"chunked"},
+					"Server":            {"CouchDB/1.6.1 (Erlang OTP/17)"},
+					"Date":              {"Fri, 27 Oct 2017 19:55:43 GMT"},
+					"Content-Type":      {"application/json"},
+					"Cache-Control":     {"must-revalidate"},
+				},
+				Body: Body(`{
+					"results":[
+						{"db_name":"mailbox","type":"created","seq":"1-g1AAAAFR"},
+						{"db_name":"mailbox","type":"deleted","seq":"2-g1AAAAFR"}
+					],
+					"last_seq": "2-g1AAAAFR"
+				}`),
+			}, nil),
+			options: kivik.Params(map[string]interface{}{
+				"feed":  "",
+				"since": "",
+			}),
+			want: []driver.DBUpdate{
+				{DBName: "mailbox", Type: "created", Seq: "1-g1AAAAFR"},
+				{DBName: "mailbox", Type: "deleted", Seq: "2-g1AAAAFR"},
+			},
 		},
 	}
 	for _, tt := range tests {

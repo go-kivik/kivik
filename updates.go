@@ -101,7 +101,10 @@ func (f *DBUpdates) Seq() string {
 // there was an error during iteration.
 //
 // For historical reasons, the CouchDB driver's implementation of this function
-// always sets feed=continuous and since=now, and ignores any options passed.
+// defaults to feed=continuous and since=now. To use the default CouchDB
+// behavior, set feed to either the empty string or "normal", and since to the
+// empty string. In kivik/v5, the default behavior will be to use feed=normal
+// as CouchDB does by default.
 func (c *Client) DBUpdates(ctx context.Context, options ...Option) *DBUpdates {
 	updater, ok := c.driverClient.(driver.DBUpdater)
 	if !ok {

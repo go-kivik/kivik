@@ -15,6 +15,7 @@ package kivik
 import (
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -83,6 +84,12 @@ func (o params) Apply(target interface{}) {
 				values = []string{fmt.Sprintf("%t", v)}
 			case int, uint, uint8, uint16, uint32, uint64, int8, int16, int32, int64:
 				values = []string{fmt.Sprintf("%d", v)}
+			case float64:
+				values = []string{strconv.FormatFloat(v, 'f', -1, 64)}
+			case float32:
+				values = []string{strconv.FormatFloat(float64(v), 'f', -1, 32)}
+			default:
+				panic(fmt.Sprintf("kivik: unknown option type: %T", v))
 			}
 			for _, value := range values {
 				t.Add(key, value)

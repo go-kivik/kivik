@@ -104,6 +104,31 @@ func (p *updatesParser) decodeItem(i interface{}, dec *json.Decoder) error {
 }
 
 func newUpdates(ctx context.Context, r io.ReadCloser) *couchUpdates {
+	r, feedType, err := updatesFeedType(r)
+	if err != nil {
+		panic(err) // TODO:test
+	}
+
+	switch feedType {
+	case feedTypeContinuous:
+		return newContinuousUpdates(ctx, r)
+	case feedTypeNormal:
+		panic("unimplemented")
+	}
+	panic("unknown") // TODO: test
+}
+
+type feedType int
+
+const (
+	feedTypeNormal feedType = iota
+	feedTypeContinuous
+)
+
+// updatesFeedType detects the type of Updates Feed (continuous, or normal) by
+// reading the first two JSON tokens of the stream. It then returns a
+// re-assembled reader with the results.
+func updatesFeedType(r io.ReadCloser) (io.ReadCloser, feedType, error) {
 	buf := &bytes.Buffer{}
 	// Read just the first two tokens, to determine feed type. We use a
 	// json.Decoder rather than reading raw bytes, because there may be
@@ -136,9 +161,9 @@ func newUpdates(ctx context.Context, r io.ReadCloser) *couchUpdates {
 
 	switch tok {
 	case "db_name": // Continuous feed
-		return newContinuousUpdates(ctx, r)
+		return r, feedTypeContinuous, nil
 	case "results": // Normal feed
-		panic("unimplemented")
+		return r, feedTypeNormal, nil
 	default: // Something unexpected
 		panic(&internal.Error{Status: http.StatusBadGateway, Message: fmt.Sprintf("kivik: unexpected JSON token %q in feed response", tok)}) // TODO:test
 	}

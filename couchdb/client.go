@@ -86,7 +86,7 @@ func (c *client) DBUpdates(ctx context.Context, opts driver.Options) (updates dr
 	if err := chttp.ResponseError(resp); err != nil {
 		return nil, err
 	}
-	return newUpdates(ctx, resp.Body), nil
+	return newUpdates(ctx, resp.Body)
 }
 
 type couchUpdates struct {
@@ -103,15 +103,15 @@ func (p *updatesParser) decodeItem(i interface{}, dec *json.Decoder) error {
 	return dec.Decode(i)
 }
 
-func newUpdates(ctx context.Context, r io.ReadCloser) *couchUpdates {
+func newUpdates(ctx context.Context, r io.ReadCloser) (*couchUpdates, error) {
 	r, feedType, err := updatesFeedType(r)
 	if err != nil {
-		panic(err) // TODO:test
+		return nil, &internal.Error{Status: http.StatusBadGateway, Err: err}
 	}
 
 	switch feedType {
 	case feedTypeContinuous:
-		return newContinuousUpdates(ctx, r)
+		return newContinuousUpdates(ctx, r), nil
 	case feedTypeNormal:
 		panic("unimplemented")
 	}
@@ -137,17 +137,14 @@ func updatesFeedType(r io.ReadCloser) (io.ReadCloser, feedType, error) {
 	dec := json.NewDecoder(io.TeeReader(r, buf))
 	tok, err := dec.Token()
 	if err != nil {
-		panic(err) // TODO: test
+		return nil, 0, err
 	}
 	if tok != json.Delim('{') {
-		panic("unexpected") // TODO: test
+		return nil, 0, fmt.Errorf("kivik: unexpected JSON token %q in feed response, expected `{`", tok)
 	}
 	tok, err = dec.Token()
 	if err != nil {
-		panic(err) // TODO: test
-	}
-	if _, ok := tok.(string); !ok {
-		panic("unexpected") // TODO: test
+		return nil, 0, err
 	}
 
 	// restore reader
@@ -165,7 +162,7 @@ func updatesFeedType(r io.ReadCloser) (io.ReadCloser, feedType, error) {
 	case "results": // Normal feed
 		return r, feedTypeNormal, nil
 	default: // Something unexpected
-		panic(&internal.Error{Status: http.StatusBadGateway, Message: fmt.Sprintf("kivik: unexpected JSON token %q in feed response", tok)}) // TODO:test
+		return nil, 0, fmt.Errorf("kivik: unexpected JSON token %q in feed response, expected `db_name` or `results`", tok)
 	}
 }
 

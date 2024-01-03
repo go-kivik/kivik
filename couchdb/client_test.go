@@ -306,6 +306,54 @@ func TestDBUpdates(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "non-JSON response",
+			client: newTestClient(&http.Response{
+				StatusCode: 200,
+				Header: http.Header{
+					"Transfer-Encoding": {"chunked"},
+					"Server":            {"CouchDB/1.6.1 (Erlang OTP/17)"},
+					"Date":              {"Fri, 27 Oct 2017 19:55:43 GMT"},
+					"Content-Type":      {"application/json"},
+					"Cache-Control":     {"must-revalidate"},
+				},
+				Body: Body(`invalid json`),
+			}, nil),
+			wantStatus: http.StatusBadGateway,
+			wantErr:    `invalid character 'i' looking for beginning of value`,
+		},
+		{
+			name: "wrong opening JSON token",
+			client: newTestClient(&http.Response{
+				StatusCode: 200,
+				Header: http.Header{
+					"Transfer-Encoding": {"chunked"},
+					"Server":            {"CouchDB/1.6.1 (Erlang OTP/17)"},
+					"Date":              {"Fri, 27 Oct 2017 19:55:43 GMT"},
+					"Content-Type":      {"application/json"},
+					"Cache-Control":     {"must-revalidate"},
+				},
+				Body: Body(`[]`),
+			}, nil),
+			wantStatus: http.StatusBadGateway,
+			wantErr:    "expected `{`",
+		},
+		{
+			name: "wrong second JSON token type",
+			client: newTestClient(&http.Response{
+				StatusCode: 200,
+				Header: http.Header{
+					"Transfer-Encoding": {"chunked"},
+					"Server":            {"CouchDB/1.6.1 (Erlang OTP/17)"},
+					"Date":              {"Fri, 27 Oct 2017 19:55:43 GMT"},
+					"Content-Type":      {"application/json"},
+					"Cache-Control":     {"must-revalidate"},
+				},
+				Body: Body(`{"foo":"bar"}`),
+			}, nil),
+			wantStatus: http.StatusBadGateway,
+			wantErr:    "expected `db_name` or `results`",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -343,6 +391,15 @@ func TestDBUpdates(t *testing.T) {
 	}
 }
 
+func newTestUpdates(t *testing.T, body io.ReadCloser) *couchUpdates {
+	t.Helper()
+	u, err := newUpdates(context.Background(), body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return u
+}
+
 func TestUpdatesNext(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -360,7 +417,7 @@ func TestUpdatesNext(t *testing.T) {
 		},
 		{
 			name:    "read feed",
-			updates: newUpdates(context.TODO(), Body(`{"db_name":"mailbox","type":"created","seq":"1-g1AAAAFReJzLYWBg4MhgTmHgzcvPy09JdcjLz8gvLskBCjMlMiTJ____PyuDOZExFyjAnmJhkWaeaIquGIf2JAUgmWQPMiGRAZcaB5CaePxqEkBq6vGqyWMBkgwNQAqobD4h"},`)),
+			updates: newTestUpdates(t, Body(`{"db_name":"mailbox","type":"created","seq":"1-g1AAAAFReJzLYWBg4MhgTmHgzcvPy09JdcjLz8gvLskBCjMlMiTJ____PyuDOZExFyjAnmJhkWaeaIquGIf2JAUgmWQPMiGRAZcaB5CaePxqEkBq6vGqyWMBkgwNQAqobD4h"},`)),
 			expected: &driver.DBUpdate{
 				DBName: "mailbox",
 				Type:   "created",

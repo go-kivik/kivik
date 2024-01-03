@@ -13,8 +13,10 @@
 package couchdb
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -23,6 +25,7 @@ import (
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/couchdb/chttp"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 func (c *client) AllDBs(ctx context.Context, opts driver.Options) ([]string, error) {
@@ -62,15 +65,31 @@ func (c *client) DestroyDB(ctx context.Context, dbName string, _ driver.Options)
 	return err
 }
 
-func (c *client) DBUpdates(ctx context.Context, _ driver.Options) (updates driver.DBUpdates, err error) {
-	resp, err := c.DoReq(ctx, http.MethodGet, "/_db_updates?feed=continuous&since=now", nil)
+func (c *client) DBUpdates(ctx context.Context, opts driver.Options) (updates driver.DBUpdates, err error) {
+	query := url.Values{}
+	opts.Apply(&query)
+	// TODO #864: Remove this default behavior for v5
+	if _, ok := query["feed"]; !ok {
+		query.Set("feed", "continuous")
+	} else if query.Get("feed") == "" {
+		delete(query, "feed")
+	}
+	if _, ok := query["since"]; !ok {
+		query.Set("since", "now")
+	} else if query.Get("since") == "" {
+		delete(query, "since")
+	}
+	if query.Get("feed") == "eventsource" {
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "kivik: eventsource feed type not supported by CouchDB driver"}
+	}
+	resp, err := c.DoReq(ctx, http.MethodGet, "/_db_updates", &chttp.Options{Query: query})
 	if err != nil {
 		return nil, err
 	}
 	if err := chttp.ResponseError(resp); err != nil {
 		return nil, err
 	}
-	return newUpdates(ctx, resp.Body), nil
+	return newUpdates(ctx, resp.Body)
 }
 
 type couchUpdates struct {
@@ -87,9 +106,78 @@ func (p *updatesParser) decodeItem(i interface{}, dec *json.Decoder) error {
 	return dec.Decode(i)
 }
 
-func newUpdates(ctx context.Context, body io.ReadCloser) *couchUpdates {
+func newUpdates(ctx context.Context, r io.ReadCloser) (*couchUpdates, error) {
+	r, feedType, err := updatesFeedType(r)
+	if err != nil {
+		return nil, &internal.Error{Status: http.StatusBadGateway, Err: err}
+	}
+
+	switch feedType {
+	case feedTypeContinuous:
+		return newContinuousUpdates(ctx, r), nil
+	case feedTypeNormal:
+		return newNormalUpdates(ctx, r), nil
+	}
+	panic("unknown") // TODO: test
+}
+
+type feedType int
+
+const (
+	feedTypeNormal feedType = iota
+	feedTypeContinuous
+)
+
+// updatesFeedType detects the type of Updates Feed (continuous, or normal) by
+// reading the first two JSON tokens of the stream. It then returns a
+// re-assembled reader with the results.
+func updatesFeedType(r io.ReadCloser) (io.ReadCloser, feedType, error) {
+	buf := &bytes.Buffer{}
+	// Read just the first two tokens, to determine feed type. We use a
+	// json.Decoder rather than reading raw bytes, because there may be
+	// whitespace, and it's also nice to return a consistent error in case the
+	// body is invalid.
+	dec := json.NewDecoder(io.TeeReader(r, buf))
+	tok, err := dec.Token()
+	if err != nil {
+		return nil, 0, err
+	}
+	if tok != json.Delim('{') {
+		return nil, 0, fmt.Errorf("kivik: unexpected JSON token %q in feed response, expected `{`", tok)
+	}
+	tok, err = dec.Token()
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// restore reader
+	r = struct {
+		io.Reader
+		io.Closer
+	}{
+		Reader: io.MultiReader(buf, r),
+		Closer: r,
+	}
+
+	switch tok {
+	case "db_name": // Continuous feed
+		return r, feedTypeContinuous, nil
+	case "results": // Normal feed
+		return r, feedTypeNormal, nil
+	default: // Something unexpected
+		return nil, 0, fmt.Errorf("kivik: unexpected JSON token %q in feed response, expected `db_name` or `results`", tok)
+	}
+}
+
+func newNormalUpdates(ctx context.Context, r io.ReadCloser) *couchUpdates {
 	return &couchUpdates{
-		iter: newIter(ctx, nil, "", body, &updatesParser{}),
+		iter: newIter(ctx, nil, "results", r, &updatesParser{}),
+	}
+}
+
+func newContinuousUpdates(ctx context.Context, r io.ReadCloser) *couchUpdates {
+	return &couchUpdates{
+		iter: newIter(ctx, nil, "", r, &updatesParser{}),
 	}
 }
 

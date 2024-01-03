@@ -15,9 +15,11 @@ package couchdb
 import (
 	"context"
 	"errors"
+	"io"
 	"net/http"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"gitlab.com/flimzy/testy"
 
 	kivik "github.com/go-kivik/kivik/v4"
@@ -245,17 +247,28 @@ func TestDestroyDB(t *testing.T) {
 
 func TestDBUpdates(t *testing.T) {
 	tests := []struct {
-		name    string
-		client  *client
-		options driver.Options
-		status  int
-		err     string
+		name       string
+		client     *client
+		options    driver.Options
+		want       []driver.DBUpdate
+		wantStatus int
+		wantErr    string
 	}{
 		{
-			name:   "network error",
-			client: newTestClient(nil, errors.New("net error")),
-			status: http.StatusBadGateway,
-			err:    `Get "?http://example.com/_db_updates\?feed=continuous&since=now"?: net error`,
+			name:       "network error",
+			client:     newTestClient(nil, errors.New("net error")),
+			wantStatus: http.StatusBadGateway,
+			wantErr:    `Get "?http://example.com/_db_updates\?feed=continuous&since=now"?: net error`,
+		},
+		{
+			name: "CouchDB defaults, network error",
+			options: kivik.Params(map[string]interface{}{
+				"feed":  "",
+				"since": "",
+			}),
+			client:     newTestClient(nil, errors.New("net error")),
+			wantStatus: http.StatusBadGateway,
+			wantErr:    `Get "?http://example.com/_db_updates"?: net error`,
 		},
 		{
 			name: "error response",
@@ -263,8 +276,8 @@ func TestDBUpdates(t *testing.T) {
 				StatusCode: 400,
 				Body:       Body(""),
 			}, nil),
-			status: http.StatusBadRequest,
-			err:    "Bad Request",
+			wantStatus: http.StatusBadRequest,
+			wantErr:    "Bad Request",
 		},
 		{
 			name: "Success 1.6.1",
@@ -277,8 +290,98 @@ func TestDBUpdates(t *testing.T) {
 					"Content-Type":      {"application/json"},
 					"Cache-Control":     {"must-revalidate"},
 				},
-				Body: Body(""),
+				Body: Body(`{"db_name":"mailbox","type":"created","seq":"1-g1AAAAFR"}
+				{"db_name":"mailbox","type":"deleted","seq":"2-g1AAAAFR"}`),
 			}, nil),
+			want: []driver.DBUpdate{
+				{DBName: "mailbox", Type: "created", Seq: "1-g1AAAAFR"},
+				{DBName: "mailbox", Type: "deleted", Seq: "2-g1AAAAFR"},
+			},
+		},
+		{
+			name: "non-JSON response",
+			client: newTestClient(&http.Response{
+				StatusCode: 200,
+				Header: http.Header{
+					"Transfer-Encoding": {"chunked"},
+					"Server":            {"CouchDB/1.6.1 (Erlang OTP/17)"},
+					"Date":              {"Fri, 27 Oct 2017 19:55:43 GMT"},
+					"Content-Type":      {"application/json"},
+					"Cache-Control":     {"must-revalidate"},
+				},
+				Body: Body(`invalid json`),
+			}, nil),
+			wantStatus: http.StatusBadGateway,
+			wantErr:    `invalid character 'i' looking for beginning of value`,
+		},
+		{
+			name: "wrong opening JSON token",
+			client: newTestClient(&http.Response{
+				StatusCode: 200,
+				Header: http.Header{
+					"Transfer-Encoding": {"chunked"},
+					"Server":            {"CouchDB/1.6.1 (Erlang OTP/17)"},
+					"Date":              {"Fri, 27 Oct 2017 19:55:43 GMT"},
+					"Content-Type":      {"application/json"},
+					"Cache-Control":     {"must-revalidate"},
+				},
+				Body: Body(`[]`),
+			}, nil),
+			wantStatus: http.StatusBadGateway,
+			wantErr:    "expected `{`",
+		},
+		{
+			name: "wrong second JSON token type",
+			client: newTestClient(&http.Response{
+				StatusCode: 200,
+				Header: http.Header{
+					"Transfer-Encoding": {"chunked"},
+					"Server":            {"CouchDB/1.6.1 (Erlang OTP/17)"},
+					"Date":              {"Fri, 27 Oct 2017 19:55:43 GMT"},
+					"Content-Type":      {"application/json"},
+					"Cache-Control":     {"must-revalidate"},
+				},
+				Body: Body(`{"foo":"bar"}`),
+			}, nil),
+			wantStatus: http.StatusBadGateway,
+			wantErr:    "expected `db_name` or `results`",
+		},
+		{
+			name: "CouchDB defaults",
+			client: newTestClient(&http.Response{
+				StatusCode: 200,
+				Header: http.Header{
+					"Transfer-Encoding": {"chunked"},
+					"Server":            {"CouchDB/1.6.1 (Erlang OTP/17)"},
+					"Date":              {"Fri, 27 Oct 2017 19:55:43 GMT"},
+					"Content-Type":      {"application/json"},
+					"Cache-Control":     {"must-revalidate"},
+				},
+				Body: Body(`{
+					"results":[
+						{"db_name":"mailbox","type":"created","seq":"1-g1AAAAFR"},
+						{"db_name":"mailbox","type":"deleted","seq":"2-g1AAAAFR"}
+					],
+					"last_seq": "2-g1AAAAFR"
+				}`),
+			}, nil),
+			options: kivik.Params(map[string]interface{}{
+				"feed":  "",
+				"since": "",
+			}),
+			want: []driver.DBUpdate{
+				{DBName: "mailbox", Type: "created", Seq: "1-g1AAAAFR"},
+				{DBName: "mailbox", Type: "deleted", Seq: "2-g1AAAAFR"},
+			},
+		},
+		{
+			name: "eventsource",
+			options: kivik.Params(map[string]interface{}{
+				"feed":  "eventsource",
+				"since": "",
+			}),
+			wantStatus: http.StatusBadRequest,
+			wantErr:    "eventsource feed type not supported",
 		},
 	}
 	for _, tt := range tests {
@@ -288,7 +391,7 @@ func TestDBUpdates(t *testing.T) {
 				opts = mock.NilOption
 			}
 			result, err := tt.client.DBUpdates(context.TODO(), opts)
-			if d := internal.StatusErrorDiffRE(tt.err, tt.status, err); d != "" {
+			if d := internal.StatusErrorDiffRE(tt.wantErr, tt.wantStatus, err); d != "" {
 				t.Error(d)
 			}
 			if err != nil {
@@ -297,8 +400,33 @@ func TestDBUpdates(t *testing.T) {
 			if _, ok := result.(*couchUpdates); !ok {
 				t.Errorf("Unexpected type returned: %t", result)
 			}
+
+			var got []driver.DBUpdate
+			for {
+				var update driver.DBUpdate
+				err := result.Next(&update)
+				if err == io.EOF {
+					break
+				}
+				if err != nil {
+					t.Fatal(err)
+				}
+				got = append(got, update)
+			}
+			if d := cmp.Diff(tt.want, got); d != "" {
+				t.Errorf("Unexpected result:\n%s\n", d)
+			}
 		})
 	}
+}
+
+func newTestUpdates(t *testing.T, body io.ReadCloser) *couchUpdates {
+	t.Helper()
+	u, err := newUpdates(context.Background(), body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return u
 }
 
 func TestUpdatesNext(t *testing.T) {
@@ -311,14 +439,14 @@ func TestUpdatesNext(t *testing.T) {
 	}{
 		{
 			name:     "consumed feed",
-			updates:  newUpdates(context.TODO(), Body("")),
+			updates:  newContinuousUpdates(context.TODO(), Body("")),
 			expected: &driver.DBUpdate{},
 			status:   http.StatusInternalServerError,
 			err:      "EOF",
 		},
 		{
 			name:    "read feed",
-			updates: newUpdates(context.TODO(), Body(`{"db_name":"mailbox","type":"created","seq":"1-g1AAAAFReJzLYWBg4MhgTmHgzcvPy09JdcjLz8gvLskBCjMlMiTJ____PyuDOZExFyjAnmJhkWaeaIquGIf2JAUgmWQPMiGRAZcaB5CaePxqEkBq6vGqyWMBkgwNQAqobD4h"},`)),
+			updates: newTestUpdates(t, Body(`{"db_name":"mailbox","type":"created","seq":"1-g1AAAAFReJzLYWBg4MhgTmHgzcvPy09JdcjLz8gvLskBCjMlMiTJ____PyuDOZExFyjAnmJhkWaeaIquGIf2JAUgmWQPMiGRAZcaB5CaePxqEkBq6vGqyWMBkgwNQAqobD4h"},`)),
 			expected: &driver.DBUpdate{
 				DBName: "mailbox",
 				Type:   "created",
@@ -342,7 +470,7 @@ func TestUpdatesNext(t *testing.T) {
 
 func TestUpdatesClose(t *testing.T) {
 	body := &closeTracker{ReadCloser: Body("")}
-	u := newUpdates(context.TODO(), body)
+	u := newContinuousUpdates(context.TODO(), body)
 	if err := u.Close(); err != nil {
 		t.Fatal(err)
 	}

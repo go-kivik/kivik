@@ -36,3 +36,16 @@ func (u *DBUpdates) Close() error {
 	}
 	return nil
 }
+
+// LastSeqer mocks driver.DBUpdates and driver.LastSeqer.
+type LastSeqer struct {
+	*DBUpdates
+	LastSeqFunc func() (string, error)
+}
+
+var _ driver.LastSeqer = &LastSeqer{}
+
+// LastSeq calls l.LastSeqFunc.
+func (l *LastSeqer) LastSeq() (string, error) {
+	return l.LastSeqFunc()
+}

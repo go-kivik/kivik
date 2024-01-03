@@ -51,7 +51,7 @@ func (c *client) CreateDB(ctx context.Context, dbName string, opts driver.Option
 	if dbName == "" {
 		return missingArg("dbName")
 	}
-	var query url.Values
+	query := url.Values{}
 	opts.Apply(&query)
 	_, err := c.DoError(ctx, http.MethodPut, url.PathEscape(dbName), &chttp.Options{Query: query})
 	return err
@@ -94,9 +94,23 @@ func (c *client) DBUpdates(ctx context.Context, opts driver.Options) (updates dr
 
 type couchUpdates struct {
 	*iter
+	meta *updatesMeta
 }
 
-var _ driver.DBUpdates = &couchUpdates{}
+var _ driver.LastSeqer = &couchUpdates{}
+
+type updatesMeta struct {
+	lastSeq string
+}
+
+func (u *updatesMeta) parseMeta(key interface{}, dec *json.Decoder) error {
+	if key == "last_seq" {
+		return dec.Decode(&u.lastSeq)
+	}
+	// Just consume the value, since we don't know what it means.
+	var discard json.RawMessage
+	return dec.Decode(&discard)
+}
 
 type updatesParser struct{}
 
@@ -104,6 +118,11 @@ var _ parser = &updatesParser{}
 
 func (p *updatesParser) decodeItem(i interface{}, dec *json.Decoder) error {
 	return dec.Decode(i)
+}
+
+func (p *updatesParser) parseMeta(i interface{}, dec *json.Decoder, key string) error {
+	meta := i.(*updatesMeta)
+	return meta.parseMeta(key, dec)
 }
 
 func newUpdates(ctx context.Context, r io.ReadCloser) (*couchUpdates, error) {
@@ -170,8 +189,10 @@ func updatesFeedType(r io.ReadCloser) (io.ReadCloser, feedType, error) {
 }
 
 func newNormalUpdates(ctx context.Context, r io.ReadCloser) *couchUpdates {
+	meta := &updatesMeta{}
 	return &couchUpdates{
-		iter: newIter(ctx, nil, "results", r, &updatesParser{}),
+		iter: newIter(ctx, meta, "results", r, &updatesParser{}),
+		meta: meta,
 	}
 }
 
@@ -183,6 +204,13 @@ func newContinuousUpdates(ctx context.Context, r io.ReadCloser) *couchUpdates {
 
 func (u *couchUpdates) Next(update *driver.DBUpdate) error {
 	return u.iter.next(update)
+}
+
+func (u *couchUpdates) LastSeq() (string, error) {
+	if u.meta == nil {
+		return "", nil
+	}
+	return u.meta.lastSeq, nil
 }
 
 // Ping queries the /_up endpoint, and returns true if there are no errors, or

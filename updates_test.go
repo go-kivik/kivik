@@ -153,6 +153,16 @@ func TestDBUpdateGetters(t *testing.T) {
 		}
 	})
 
+	t.Run("LastSeq, should error during iteration", func(t *testing.T) {
+		result, err := u.LastSeq()
+		if result != "" {
+			t.Errorf("Unexpected result: %s", result)
+		}
+		if !testy.ErrorMatches("LastSeq must not be called until results iteration is complete", err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
+	})
+
 	t.Run("Not Ready", func(t *testing.T) {
 		u.state = stateReady
 
@@ -312,4 +322,62 @@ func TestDBUpdates_Next_resets_iterator_value(t *testing.T) {
 	if d := cmp.Diff(wantDBNames, gotDBNames); d != "" {
 		t.Error(d)
 	}
+}
+
+func TestDBUpdates_LastSeq(t *testing.T) {
+	t.Run("non-LastSeqer", func(t *testing.T) {
+		client := &Client{
+			driverClient: &mock.DBUpdater{
+				DBUpdatesFunc: func(context.Context, driver.Options) (driver.DBUpdates, error) {
+					return &mock.DBUpdates{
+						NextFunc: func(_ *driver.DBUpdate) error {
+							return io.EOF
+						},
+					}, nil
+				},
+			},
+		}
+
+		updates := client.DBUpdates(context.Background())
+		for updates.Next() {
+			/* .. do nothing .. */
+		}
+		lastSeq, err := updates.LastSeq()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if lastSeq != "" {
+			t.Errorf("Unexpected lastSeq: %s", lastSeq)
+		}
+	})
+	t.Run("LastSeqer", func(t *testing.T) {
+		client := &Client{
+			driverClient: &mock.DBUpdater{
+				DBUpdatesFunc: func(context.Context, driver.Options) (driver.DBUpdates, error) {
+					return &mock.LastSeqer{
+						DBUpdates: &mock.DBUpdates{
+							NextFunc: func(_ *driver.DBUpdate) error {
+								return io.EOF
+							},
+						},
+						LastSeqFunc: func() (string, error) {
+							return "99-last", nil
+						},
+					}, nil
+				},
+			},
+		}
+
+		updates := client.DBUpdates(context.Background())
+		for updates.Next() {
+			/* .. do nothing .. */
+		}
+		lastSeq, err := updates.LastSeq()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if lastSeq != "99-last" {
+			t.Errorf("Unexpected lastSeq: %s", lastSeq)
+		}
+	})
 }

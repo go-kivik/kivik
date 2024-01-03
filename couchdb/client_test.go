@@ -258,6 +258,16 @@ func TestDBUpdates(t *testing.T) {
 			err:    `Get "?http://example.com/_db_updates\?feed=continuous&since=now"?: net error`,
 		},
 		{
+			name: "CouchDB defaults, network error",
+			options: kivik.Params(map[string]interface{}{
+				"feed":  "",
+				"since": "",
+			}),
+			client: newTestClient(nil, errors.New("net error")),
+			status: http.StatusBadGateway,
+			err:    `Get "?http://example.com/_db_updates"?: net error`,
+		},
+		{
 			name: "error response",
 			client: newTestClient(&http.Response{
 				StatusCode: 400,

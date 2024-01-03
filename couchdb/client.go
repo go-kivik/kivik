@@ -62,8 +62,21 @@ func (c *client) DestroyDB(ctx context.Context, dbName string, _ driver.Options)
 	return err
 }
 
-func (c *client) DBUpdates(ctx context.Context, _ driver.Options) (updates driver.DBUpdates, err error) {
-	resp, err := c.DoReq(ctx, http.MethodGet, "/_db_updates?feed=continuous&since=now", nil)
+func (c *client) DBUpdates(ctx context.Context, opts driver.Options) (updates driver.DBUpdates, err error) {
+	query := url.Values{}
+	opts.Apply(&query)
+	// TODO #864: Remove this default behavior for v5
+	if _, ok := query["feed"]; !ok {
+		query.Set("feed", "continuous")
+	} else if query.Get("feed") == "" {
+		delete(query, "feed")
+	}
+	if _, ok := query["since"]; !ok {
+		query.Set("since", "now")
+	} else if query.Get("since") == "" {
+		delete(query, "since")
+	}
+	resp, err := c.DoReq(ctx, http.MethodGet, "/_db_updates", &chttp.Options{Query: query})
 	if err != nil {
 		return nil, err
 	}

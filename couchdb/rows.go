@@ -309,9 +309,9 @@ func (r *multiQueriesRows) Close() error {
 	}
 	r.dec = nil
 	if r.rows != nil {
-		defer r.rows.Close() // nolint:errcheck
+		defer r.rows.Close()
 	}
-	defer r.r.Close() // nolint:errcheck
+	defer r.r.Close()
 	if _, err := io.ReadAll(r.r); err != nil {
 		return err
 	}

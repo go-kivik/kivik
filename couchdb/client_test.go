@@ -430,6 +430,7 @@ func newTestUpdates(t *testing.T, body io.ReadCloser) *couchUpdates {
 }
 
 func TestUpdatesNext(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		updates  *couchUpdates
@@ -469,6 +470,7 @@ func TestUpdatesNext(t *testing.T) {
 }
 
 func TestUpdatesClose(t *testing.T) {
+	t.Parallel()
 	body := &closeTracker{ReadCloser: Body("")}
 	u := newContinuousUpdates(context.TODO(), body)
 	if err := u.Close(); err != nil {
@@ -476,6 +478,45 @@ func TestUpdatesClose(t *testing.T) {
 	}
 	if !body.closed {
 		t.Errorf("Failed to close")
+	}
+}
+
+func TestUpdatesLastSeq(t *testing.T) {
+	t.Parallel()
+
+	client := newTestClient(&http.Response{
+		StatusCode: 200,
+		Header: http.Header{
+			"Transfer-Encoding": {"chunked"},
+			"Server":            {"CouchDB/1.6.1 (Erlang OTP/17)"},
+			"Date":              {"Fri, 27 Oct 2017 19:55:43 GMT"},
+			"Content-Type":      {"application/json"},
+			"Cache-Control":     {"must-revalidate"},
+		},
+		Body: Body(`{"results":[],"last_seq":"99-asdf"}`),
+	}, nil)
+
+	updates, err := client.DBUpdates(context.TODO(), mock.NilOption)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for {
+		err := updates.Next(&driver.DBUpdate{})
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+
+	}
+	want := "99-asdf"
+	got, err := updates.(driver.LastSeqer).LastSeq()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != want {
+		t.Errorf("Unexpected last_seq: %s", got)
 	}
 }
 

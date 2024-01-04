@@ -17,6 +17,7 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -25,6 +26,7 @@ import (
 	"gitlab.com/flimzy/httpe"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 func (s *Server) db() httpe.HandlerWithError {
@@ -78,7 +80,14 @@ func (s *Server) deleteDB() httpe.HandlerWithError {
 	})
 }
 
-const defaultHeartbeat = heartbeat(60 * time.Second)
+const (
+	defaultHeartbeat = heartbeat(60 * time.Second)
+	defaultTimeout   = 60000 // milliseconds
+
+	feedTypeNormal     = "normal"
+	feedTypeLongpoll   = "longpoll"
+	feedTypeContinuous = "continuous"
+)
 
 type heartbeat time.Duration
 
@@ -99,71 +108,119 @@ func (h *heartbeat) UnmarshalText(text []byte) error {
 
 func (s *Server) dbUpdates() httpe.HandlerWithError {
 	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
-		req := struct {
-			Heartbeat heartbeat `form:"heartbeat"`
-		}{
-			Heartbeat: defaultHeartbeat,
+		switch feed := r.URL.Query().Get("feed"); feed {
+		case "", feedTypeNormal:
+			return s.serveNormalDBUpdates(w, r)
+		case feedTypeContinuous, feedTypeLongpoll:
+			return s.serveContinuousDBUpdates(w, r)
+		default:
+			return &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("kivik: feed type %q not supported", feed)}
 		}
-		if err := s.bind(r, &req); err != nil {
-			return err
-		}
-		ticker := time.NewTicker(time.Duration(req.Heartbeat))
-		updates := s.client.DBUpdates(r.Context(), options(r))
-
-		if err := updates.Err(); err != nil {
-			return err
-		}
-
-		defer updates.Close()
-
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusOK)
-
-		if _, err := w.Write([]byte(`{"results":[`)); err != nil {
-			return err
-		}
-
-		nextUpdate := make(chan *driver.DBUpdate)
-		go func() {
-			for updates.Next() {
-				nextUpdate <- &driver.DBUpdate{
-					DBName: updates.DBName(),
-					Type:   updates.Type(),
-					Seq:    updates.Seq(),
-				}
-			}
-			close(nextUpdate)
-		}()
-
-		var lastSeq string
-	loop:
-		for {
-			select {
-			case <-ticker.C:
-				if _, err := w.Write([]byte("\n")); err != nil {
-					return err
-				}
-			case update, ok := <-nextUpdate:
-				if !ok {
-					break loop
-				}
-				ticker.Reset(time.Duration(req.Heartbeat))
-				if lastSeq != "" {
-					if _, err := w.Write([]byte(",")); err != nil {
-						return err
-					}
-				}
-				lastSeq = update.Seq
-				if err := json.NewEncoder(w).Encode(update); err != nil {
-					return err
-				}
-			}
-		}
-
-		if _, err := w.Write([]byte(`],"last_seq":"` + lastSeq + "\"}")); err != nil {
-			return err
-		}
-
-		return updates.Err()
 	})
+}
+
+func (s *Server) serveNormalDBUpdates(w http.ResponseWriter, r *http.Request) error {
+	updates := s.client.DBUpdates(r.Context(), options(r))
+	if err := updates.Err(); err != nil {
+		return err
+	}
+
+	defer updates.Close()
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+
+	if _, err := w.Write([]byte(`{"results":[`)); err != nil {
+		return err
+	}
+
+	enc := json.NewEncoder(w)
+
+	var update driver.DBUpdate
+	for updates.Next() {
+		if update.DBName != "" { // Easy way to tell if this is the first result
+			if _, err := w.Write([]byte(",")); err != nil {
+				return err
+			}
+		}
+		update.DBName = updates.DBName()
+		update.Type = updates.Type()
+		update.Seq = updates.Seq()
+		if err := enc.Encode(&update); err != nil {
+			return err
+		}
+	}
+	if err := updates.Err(); err != nil {
+		return err
+	}
+
+	lastSeq, err := updates.LastSeq()
+	if err != nil {
+		return err
+	}
+
+	if _, err := w.Write([]byte(`],"last_seq":"` + lastSeq + "\"}")); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Server) serveContinuousDBUpdates(w http.ResponseWriter, r *http.Request) error {
+	req := struct {
+		Heartbeat heartbeat `form:"heartbeat"`
+	}{
+		Heartbeat: defaultHeartbeat,
+	}
+	if err := s.bind(r, &req); err != nil {
+		return err
+	}
+
+	ticker := time.NewTicker(time.Duration(req.Heartbeat))
+	updates := s.client.DBUpdates(r.Context(), options(r))
+	if err := updates.Err(); err != nil {
+		return err
+	}
+
+	defer updates.Close()
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+
+	nextUpdate := make(chan *driver.DBUpdate)
+	go func() {
+		for updates.Next() {
+			nextUpdate <- &driver.DBUpdate{
+				DBName: updates.DBName(),
+				Type:   updates.Type(),
+				Seq:    updates.Seq(),
+			}
+		}
+		close(nextUpdate)
+	}()
+
+	enc := json.NewEncoder(w)
+
+loop:
+	for {
+		select {
+		case <-ticker.C:
+			if _, err := w.Write([]byte("\n")); err != nil {
+				return err
+			}
+		case update, ok := <-nextUpdate:
+			if !ok {
+				break loop
+			}
+			ticker.Reset(time.Duration(req.Heartbeat))
+			if err := enc.Encode(update); err != nil {
+				return err
+			}
+			if _, err := w.Write([]byte("\n")); err != nil {
+				return err
+			}
+		}
+	}
+
+	return updates.Err()
 }

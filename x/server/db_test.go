@@ -54,7 +54,7 @@ func Test_dbUpdates(t *testing.T) {
 						DBName: "foo",
 						Type:   "deleted",
 						Seq:    "2-aaa",
-					}))
+					}).LastSeq("2-aaa"))
 				return client
 			}(),
 			authUser:   userAdmin,
@@ -78,10 +78,10 @@ func Test_dbUpdates(t *testing.T) {
 			},
 		},
 		{
-			name:       "db updates, invalid heartbeat",
+			name:       "continuous, invalid heartbeat",
 			method:     http.MethodGet,
 			authUser:   userAdmin,
-			path:       "/_db_updates?heartbeat=chicken",
+			path:       "/_db_updates?feed=continuous&heartbeat=chicken",
 			wantStatus: http.StatusBadRequest,
 			wantJSON: map[string]interface{}{
 				"error":  "bad_request",
@@ -89,7 +89,7 @@ func Test_dbUpdates(t *testing.T) {
 			},
 		},
 		{
-			name: "db updates, with heartbeat",
+			name: "continuous, with heartbeat",
 			client: func() *kivik.Client {
 				client, mock, err := mockdb.New()
 				if err != nil {
@@ -111,9 +111,9 @@ func Test_dbUpdates(t *testing.T) {
 			}(),
 			authUser:   userAdmin,
 			method:     http.MethodGet,
-			path:       "/_db_updates?heartbeat=100",
+			path:       "/_db_updates?feed=continuous&heartbeat=100",
 			wantStatus: http.StatusOK,
-			wantBodyRE: "\n\n\n",
+			wantBodyRE: "}\n+\n{",
 		},
 	}
 

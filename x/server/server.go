@@ -65,7 +65,8 @@ func New(client *kivik.Client, options ...Option) *Server {
 		mux:    chi.NewMux(),
 		client: client,
 		formDecoder: formam.NewDecoder(&formam.DecoderOptions{
-			TagName: "form",
+			TagName:           "form",
+			IgnoreUnknownKeys: true,
 		}),
 		config: config.Default(),
 	}

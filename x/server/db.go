@@ -224,3 +224,59 @@ loop:
 
 	return updates.Err()
 }
+
+func (s *Server) allDocs() httpe.HandlerWithError {
+	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
+		var req struct {
+			Offset int64 `form:"offset"`
+		}
+		if err := s.bind(r, &req); err != nil {
+			return err
+		}
+		db := chi.URLParam(r, "db")
+		rows := s.client.DB(db).AllDocs(r.Context(), options(r))
+		defer rows.Close()
+
+		if err := rows.Err(); err != nil {
+			return err
+		}
+
+		if _, err := fmt.Fprintf(w, `{"offset":%d,"rows":[`, req.Offset); err != nil {
+			return err
+		}
+
+		var row struct {
+			ID    string          `json:"id"`
+			Key   json.RawMessage `json:"key"`
+			Value json.RawMessage `json:"value"`
+		}
+		var err error
+		enc := json.NewEncoder(w)
+		for rows.Next() {
+			if row.ID != "" { // Easy way to tell if this is the first row
+				if _, err = w.Write([]byte(",")); err != nil {
+					return err
+				}
+			}
+			row.ID, err = rows.ID()
+			if err != nil {
+				return err
+			}
+			if err := rows.ScanKey(&row.Key); err != nil {
+				return err
+			}
+			if err := rows.ScanValue(&row.Value); err != nil {
+				return err
+			}
+			if err := enc.Encode(&row); err != nil {
+				return err
+			}
+		}
+		meta, err := rows.Metadata()
+		if err != nil {
+			return err
+		}
+		_, err = fmt.Fprintf(w, `],"total_rows":%d}`, meta.TotalRows)
+		return err
+	})
+}

@@ -150,7 +150,7 @@ func (s *Server) routes(mux *chi.Mux) {
 		member.Get("/", e(s.db()))
 		admin.Put("/", e(s.createDB()))
 		admin.Delete("/", e(s.deleteDB()))
-		member.Get("/_all_docs", e(s.notImplemented()))
+		member.Get("/_all_docs", e(s.allDocs()))
 		member.Post("/_all_docs/queries", e(s.notImplemented()))
 		member.Post("/_all_docs", e(s.notImplemented()))
 		member.Get("/_design_docs", e(s.notImplemented()))

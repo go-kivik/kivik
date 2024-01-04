@@ -17,6 +17,7 @@ package server
 
 import (
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -114,6 +115,53 @@ func Test_dbUpdates(t *testing.T) {
 			path:       "/_db_updates?feed=continuous&heartbeat=100",
 			wantStatus: http.StatusOK,
 			wantBodyRE: "}\n+\n{",
+		},
+	}
+
+	tests.Run(t)
+}
+
+func Test_allDocs(t *testing.T) {
+	tests := serverTests{
+		{
+			name:     "GET defaults",
+			authUser: userAdmin,
+			method:   http.MethodGet,
+			path:     "/db1/_all_docs",
+			client: func() *kivik.Client {
+				client, mock, err := mockdb.New()
+				if err != nil {
+					t.Fatal(err)
+				}
+				db := mock.NewDB()
+				mock.ExpectDB().WillReturn(db)
+				db.ExpectSecurity().WillReturn(&driver.Security{})
+				mock.ExpectDB().WillReturn(db)
+				db.ExpectAllDocs().WillReturn(mockdb.NewRows().
+					AddRow(&driver.Row{
+						ID:    "foo",
+						Key:   []byte(`"foo"`),
+						Value: strings.NewReader(`{"rev": "1-beea34a62a215ab051862d1e5d93162e"}`),
+					}).
+					TotalRows(99),
+				)
+				return client
+			}(),
+			wantStatus: http.StatusOK,
+			// wantBodyRE: "xxx",
+			wantJSON: map[string]interface{}{
+				"offset": 0,
+				"rows": []interface{}{
+					map[string]interface{}{
+						"id":  "foo",
+						"key": "foo",
+						"value": map[string]interface{}{
+							"rev": "1-beea34a62a215ab051862d1e5d93162e",
+						},
+					},
+				},
+				"total_rows": 99,
+			},
 		},
 	}
 

@@ -14,7 +14,7 @@ package kivik
 
 const (
 	// Version is the version of the Kivik library.
-	Version = "4.1.0"
+	Version = "4.2.0"
 )
 
 // SessionCookieName is the name of the CouchDB session cookie.

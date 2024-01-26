@@ -622,8 +622,10 @@ func (db *DB) SetSecurity(ctx context.Context, security *Security) error {
 	}
 	defer endQuery()
 	sec := &driver.Security{
-		Admins:  driver.Members(security.Admins),
-		Members: driver.Members(security.Members),
+		Admins:          driver.Members(security.Admins),
+		Members:         driver.Members(security.Members),
+		Cloudant:        security.Cloudant,
+		CouchdbAuthOnly: security.CouchdbAuthOnly,
 	}
 	return secDB.SetSecurity(ctx, sec)
 }

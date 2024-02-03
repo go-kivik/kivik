@@ -227,9 +227,7 @@ loop:
 
 func (s *Server) allDocs() httpe.HandlerWithError {
 	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
-		var req struct {
-			Offset int64 `form:"offset"`
-		}
+		req := map[string]interface{}{}
 		if err := s.bind(r, &req); err != nil {
 			return err
 		}
@@ -241,7 +239,7 @@ func (s *Server) allDocs() httpe.HandlerWithError {
 			return err
 		}
 
-		if _, err := fmt.Fprintf(w, `{"offset":%d,"rows":[`, req.Offset); err != nil {
+		if _, err := fmt.Fprint(w, `{"rows":[`); err != nil {
 			return err
 		}
 
@@ -276,7 +274,7 @@ func (s *Server) allDocs() httpe.HandlerWithError {
 		if err != nil {
 			return err
 		}
-		_, err = fmt.Fprintf(w, `],"total_rows":%d}`, meta.TotalRows)
+		_, err = fmt.Fprintf(w, `],"offset":%d,"total_rows":%d}`, meta.Offset, meta.TotalRows)
 		return err
 	})
 }

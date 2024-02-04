@@ -16,16 +16,18 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"gitlab.com/flimzy/httpe"
 
+	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/internal"
 )
@@ -226,10 +228,21 @@ loop:
 	return updates.Err()
 }
 
-func (s *Server) allDocs() httpe.HandlerWithError {
+// whichView returns `_all_docs`, `_local_docs`, of `_design_docs`, and whether
+// the path ends with /queries.
+func whichView(r *http.Request) (string, bool) {
+	parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
+	if parts[len(parts)-1] == "queries" {
+		return parts[len(parts)-2], true
+	}
+	return parts[len(parts)-1], false
+}
+
+func (s *Server) query() httpe.HandlerWithError {
 	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
+		view, isQueries := whichView(r)
 		req := map[string]interface{}{}
-		if _, last := filepath.Split(r.URL.Path); last == "queries" {
+		if isQueries {
 			var jsonReq struct {
 				Queries []map[string]interface{} `json:"queries"`
 			}
@@ -243,7 +256,16 @@ func (s *Server) allDocs() httpe.HandlerWithError {
 			}
 		}
 		db := chi.URLParam(r, "db")
-		rows := s.client.DB(db).AllDocs(r.Context(), options(r))
+		var viewFunc func(context.Context, ...kivik.Option) *kivik.ResultSet
+		switch view {
+		case "_all_docs":
+			viewFunc = s.client.DB(db).AllDocs
+		case "_local_docs":
+			viewFunc = s.client.DB(db).LocalDocs
+		default:
+			return &internal.Error{Status: http.StatusNotFound, Message: fmt.Sprintf("kivik: view %q not found", view)}
+		}
+		rows := viewFunc(r.Context(), options(r))
 		defer rows.Close()
 
 		if err := rows.Err(); err != nil {

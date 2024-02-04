@@ -205,6 +205,49 @@ func Test_allDocs(t *testing.T) {
 				"total_rows": 99,
 			},
 		},
+		{
+			name:     "POST _all_docs",
+			authUser: userAdmin,
+			method:   http.MethodPost,
+			path:     "/db1/_all_docs",
+			headers: map[string]string{
+				"Content-Type": "application/json",
+			},
+			body: strings.NewReader(`{"keys": ["foo", "bar"]}`),
+			client: func() *kivik.Client {
+				client, mock, err := mockdb.New()
+				if err != nil {
+					t.Fatal(err)
+				}
+				db := mock.NewDB()
+				mock.ExpectDB().WillReturn(db)
+				db.ExpectSecurity().WillReturn(&driver.Security{})
+				mock.ExpectDB().WillReturn(db)
+				db.ExpectAllDocs().WillReturn(mockdb.NewRows().
+					AddRow(&driver.Row{
+						ID:    "foo",
+						Key:   []byte(`"foo"`),
+						Value: strings.NewReader(`{"rev": "1-beea34a62a215ab051862d1e5d93162e"}`),
+					}).
+					TotalRows(99),
+				)
+				return client
+			}(),
+			wantStatus: http.StatusOK,
+			wantJSON: map[string]interface{}{
+				"offset": 0,
+				"rows": []interface{}{
+					map[string]interface{}{
+						"id":  "foo",
+						"key": "foo",
+						"value": map[string]interface{}{
+							"rev": "1-beea34a62a215ab051862d1e5d93162e",
+						},
+					},
+				},
+				"total_rows": 99,
+			},
+		},
 	}
 
 	tests.Run(t)

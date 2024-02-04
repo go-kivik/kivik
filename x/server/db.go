@@ -262,6 +262,8 @@ func (s *Server) query() httpe.HandlerWithError {
 			viewFunc = s.client.DB(db).AllDocs
 		case "_local_docs":
 			viewFunc = s.client.DB(db).LocalDocs
+		case "_design_docs":
+			viewFunc = s.client.DB(db).DesignDocs
 		default:
 			return &internal.Error{Status: http.StatusNotFound, Message: fmt.Sprintf("kivik: view %q not found", view)}
 		}

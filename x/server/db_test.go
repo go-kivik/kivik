@@ -516,3 +516,135 @@ func Test_designDocs(t *testing.T) {
 
 	tests.Run(t)
 }
+
+func Test_queryView(t *testing.T) {
+	tests := serverTests{
+		{
+			name:     "GET defaults",
+			authUser: userAdmin,
+			method:   http.MethodGet,
+			path:     "/db1/_design/foo/_view/bar",
+			client: func() *kivik.Client {
+				client, mock, err := mockdb.New()
+				if err != nil {
+					t.Fatal(err)
+				}
+				db := mock.NewDB()
+				mock.ExpectDB().WillReturn(db)
+				db.ExpectSecurity().WillReturn(&driver.Security{})
+				mock.ExpectDB().WillReturn(db)
+				db.ExpectQuery().WillReturn(mockdb.NewRows().
+					AddRow(&driver.Row{
+						ID:    "foo",
+						Key:   []byte(`"foo"`),
+						Value: strings.NewReader(`{"rev": "1-beea34a62a215ab051862d1e5d93162e"}`),
+					}).
+					TotalRows(99),
+				)
+				return client
+			}(),
+			wantStatus: http.StatusOK,
+			wantJSON: map[string]interface{}{
+				"offset": 0,
+				"rows": []interface{}{
+					map[string]interface{}{
+						"id":  "foo",
+						"key": "foo",
+						"value": map[string]interface{}{
+							"rev": "1-beea34a62a215ab051862d1e5d93162e",
+						},
+					},
+				},
+				"total_rows": 99,
+			},
+		},
+		{
+			name:     "multi queries",
+			authUser: userAdmin,
+			method:   http.MethodPost,
+			path:     "/db1/_design/foo/_view/bar/queries",
+			headers: map[string]string{
+				"Content-Type": "application/json",
+			},
+			body: strings.NewReader(`{"queries": [{"keys": ["foo", "bar"]}]}`),
+			client: func() *kivik.Client {
+				client, mock, err := mockdb.New()
+				if err != nil {
+					t.Fatal(err)
+				}
+				db := mock.NewDB()
+				mock.ExpectDB().WillReturn(db)
+				db.ExpectSecurity().WillReturn(&driver.Security{})
+				mock.ExpectDB().WillReturn(db)
+				db.ExpectQuery().WillReturn(mockdb.NewRows().
+					AddRow(&driver.Row{
+						ID:    "foo",
+						Key:   []byte(`"foo"`),
+						Value: strings.NewReader(`{"rev": "1-beea34a62a215ab051862d1e5d93162e"}`),
+					}).
+					TotalRows(99),
+				)
+				return client
+			}(),
+			wantStatus: http.StatusOK,
+			wantJSON: map[string]interface{}{
+				"offset": 0,
+				"rows": []interface{}{
+					map[string]interface{}{
+						"id":  "foo",
+						"key": "foo",
+						"value": map[string]interface{}{
+							"rev": "1-beea34a62a215ab051862d1e5d93162e",
+						},
+					},
+				},
+				"total_rows": 99,
+			},
+		},
+		{
+			name:     "POST _design/foo/_view/bar",
+			authUser: userAdmin,
+			method:   http.MethodPost,
+			path:     "/db1/_design/foo/_view/bar",
+			headers: map[string]string{
+				"Content-Type": "application/json",
+			},
+			body: strings.NewReader(`{"keys": ["foo", "bar"]}`),
+			client: func() *kivik.Client {
+				client, mock, err := mockdb.New()
+				if err != nil {
+					t.Fatal(err)
+				}
+				db := mock.NewDB()
+				mock.ExpectDB().WillReturn(db)
+				db.ExpectSecurity().WillReturn(&driver.Security{})
+				mock.ExpectDB().WillReturn(db)
+				db.ExpectQuery().WillReturn(mockdb.NewRows().
+					AddRow(&driver.Row{
+						ID:    "foo",
+						Key:   []byte(`"foo"`),
+						Value: strings.NewReader(`{"rev": "1-beea34a62a215ab051862d1e5d93162e"}`),
+					}).
+					TotalRows(99),
+				)
+				return client
+			}(),
+			wantStatus: http.StatusOK,
+			wantJSON: map[string]interface{}{
+				"offset": 0,
+				"rows": []interface{}{
+					map[string]interface{}{
+						"id":  "foo",
+						"key": "foo",
+						"value": map[string]interface{}{
+							"rev": "1-beea34a62a215ab051862d1e5d93162e",
+						},
+					},
+				},
+				"total_rows": 99,
+			},
+		},
+	}
+
+	tests.Run(t)
+}

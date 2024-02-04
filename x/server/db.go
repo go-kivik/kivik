@@ -230,17 +230,22 @@ loop:
 
 // whichView returns `_all_docs`, `_local_docs`, of `_design_docs`, and whether
 // the path ends with /queries.
-func whichView(r *http.Request) (string, bool) {
+func whichView(r *http.Request) (ddoc, view string, isQueries bool) {
 	parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
+	var isQuery bool
 	if parts[len(parts)-1] == "queries" {
-		return parts[len(parts)-2], true
+		isQuery = true
+		parts = parts[:len(parts)-1]
 	}
-	return parts[len(parts)-1], false
+	if parts[1] == "_design" {
+		return parts[2], parts[4], isQuery
+	}
+	return "", parts[len(parts)-1], isQuery
 }
 
 func (s *Server) query() httpe.HandlerWithError {
 	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
-		view, isQueries := whichView(r)
+		ddoc, view, isQueries := whichView(r)
 		req := map[string]interface{}{}
 		if isQueries {
 			var jsonReq struct {
@@ -257,15 +262,21 @@ func (s *Server) query() httpe.HandlerWithError {
 		}
 		db := chi.URLParam(r, "db")
 		var viewFunc func(context.Context, ...kivik.Option) *kivik.ResultSet
-		switch view {
-		case "_all_docs":
-			viewFunc = s.client.DB(db).AllDocs
-		case "_local_docs":
-			viewFunc = s.client.DB(db).LocalDocs
-		case "_design_docs":
-			viewFunc = s.client.DB(db).DesignDocs
-		default:
-			return &internal.Error{Status: http.StatusNotFound, Message: fmt.Sprintf("kivik: view %q not found", view)}
+		if ddoc == "" {
+			switch view {
+			case "_all_docs":
+				viewFunc = s.client.DB(db).AllDocs
+			case "_local_docs":
+				viewFunc = s.client.DB(db).LocalDocs
+			case "_design_docs":
+				viewFunc = s.client.DB(db).DesignDocs
+			default:
+				return &internal.Error{Status: http.StatusNotFound, Message: fmt.Sprintf("kivik: view %q not found", view)}
+			}
+		} else {
+			viewFunc = func(ctx context.Context, opts ...kivik.Option) *kivik.ResultSet {
+				return s.client.DB(db).Query(ctx, ddoc, view, options(r))
+			}
 		}
 		rows := viewFunc(r.Context(), options(r))
 		defer rows.Close()

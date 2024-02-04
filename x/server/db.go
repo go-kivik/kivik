@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -228,8 +229,18 @@ loop:
 func (s *Server) allDocs() httpe.HandlerWithError {
 	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
 		req := map[string]interface{}{}
-		if err := s.bind(r, &req); err != nil {
-			return err
+		if _, last := filepath.Split(r.URL.Path); last == "queries" {
+			var jsonReq struct {
+				Queries []map[string]interface{} `json:"queries"`
+			}
+			if err := s.bind(r, &jsonReq); err != nil {
+				return err
+			}
+			req["queries"] = jsonReq.Queries
+		} else {
+			if err := s.bind(r, &req); err != nil {
+				return err
+			}
 		}
 		db := chi.URLParam(r, "db")
 		rows := s.client.DB(db).AllDocs(r.Context(), options(r))

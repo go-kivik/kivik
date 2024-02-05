@@ -30,8 +30,16 @@ type client struct{}
 
 var _ driver.Client = (*client)(nil)
 
+const (
+	version = "0.0.1"
+	vendor  = "Kivik"
+)
+
 func (client) Version(context.Context) (*driver.Version, error) {
-	return nil, nil
+	return &driver.Version{
+		Version: version,
+		Vendor:  vendor,
+	}, nil
 }
 
 func (client) AllDBs(context.Context, driver.Options) ([]string, error) {

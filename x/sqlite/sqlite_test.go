@@ -12,7 +12,14 @@
 
 package sqlite
 
-import "testing"
+import (
+	"context"
+	"testing"
+
+	"github.com/google/go-cmp/cmp"
+
+	"github.com/go-kivik/kivik/v4/driver"
+)
 
 func TestNewClient(t *testing.T) {
 	d := drv{}
@@ -20,5 +27,21 @@ func TestNewClient(t *testing.T) {
 	client, _ := d.NewClient("xxx", nil)
 	if client == nil {
 		t.Fatal("client should not be nil")
+	}
+}
+
+func TestClientVersion(t *testing.T) {
+	c := client{}
+
+	ver, err := c.Version(context.Background())
+	if err != nil {
+		t.Fatal("err should be nil")
+	}
+	wantVer := &driver.Version{
+		Version: "0.0.1",
+		Vendor:  "Kivik",
+	}
+	if d := cmp.Diff(wantVer, ver); d != "" {
+		t.Fatal(d)
 	}
 }

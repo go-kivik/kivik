@@ -16,10 +16,15 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"net/http"
+	"regexp"
+	"strings"
 
+	"modernc.org/sqlite"
 	_ "modernc.org/sqlite" // SQLite driver
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 type drv struct{}
@@ -98,8 +103,28 @@ func (c *client) DBExists(ctx context.Context, name string, _ driver.Options) (b
 	return exists, nil
 }
 
-func (client) CreateDB(context.Context, string, driver.Options) error {
-	return nil
+var validDBNameRE = regexp.MustCompile(`^[a-z][a-z0-9_$()+/-]*$`)
+
+const (
+	// https://www.sqlite.org/rescode.html
+	codeSQLiteError = 1
+)
+
+func (c *client) CreateDB(ctx context.Context, name string, _ driver.Options) error {
+	if !validDBNameRE.MatchString(name) {
+		return &internal.Error{Status: http.StatusBadRequest, Message: "invalid database name"}
+	}
+	_, err := c.db.ExecContext(ctx, `CREATE TABLE "`+name+`" (id INTEGER)`)
+	if err == nil {
+		return nil
+	}
+	sqliteErr := new(sqlite.Error)
+	if errors.As(err, &sqliteErr) &&
+		sqliteErr.Code() == codeSQLiteError &&
+		strings.Contains(sqliteErr.Error(), "already exists") {
+		return &internal.Error{Status: http.StatusPreconditionFailed, Message: "database already exists"}
+	}
+	return err
 }
 
 func (client) DestroyDB(context.Context, string, driver.Options) error {

@@ -14,10 +14,12 @@ package sqlite
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
@@ -106,6 +108,72 @@ func TestClientDBExists(t *testing.T) {
 		}
 		if exists {
 			t.Fatal("foo should not exist")
+		}
+	})
+}
+
+func TestClientCreateDB(t *testing.T) {
+	t.Run("invalid name", func(t *testing.T) {
+		d := drv{}
+		dClient, err := d.NewClient(":memory:", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = dClient.CreateDB(context.Background(), "Foo", nil)
+		if err == nil {
+			t.Fatal("err should not be nil")
+		}
+		const wantErr = "invalid database name"
+		if err.Error() != wantErr {
+			t.Fatalf("err should be %s", wantErr)
+		}
+		const wantStatus = http.StatusBadRequest
+		if status := kivik.HTTPStatus(err); status != wantStatus {
+			t.Fatalf("status should be %d", wantStatus)
+		}
+	})
+	t.Run("success", func(t *testing.T) {
+		d := drv{}
+		dClient, err := d.NewClient(":memory:", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if err := dClient.CreateDB(context.Background(), "foo", nil); err != nil {
+			t.Fatal(err)
+		}
+
+		exists, err := dClient.DBExists(context.Background(), "foo", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !exists {
+			t.Fatal("foo should exist")
+		}
+	})
+	t.Run("db already exists", func(t *testing.T) {
+		d := drv{}
+		dClient, err := d.NewClient(":memory:", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if err := dClient.CreateDB(context.Background(), "foo", nil); err != nil {
+			t.Fatal(err)
+		}
+
+		err = dClient.CreateDB(context.Background(), "foo", nil)
+		if err == nil {
+			t.Fatal("err should not be nil")
+		}
+		const wantErr = "database already exists"
+		if err.Error() != wantErr {
+			t.Fatalf("err should be %s, got %s", wantErr, err)
+		}
+		const wantStatus = http.StatusPreconditionFailed
+		if status := kivik.HTTPStatus(err); status != wantStatus {
+			t.Fatalf("status should be %d", wantStatus)
 		}
 	})
 }

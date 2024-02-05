@@ -15,6 +15,7 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"errors"
 
 	_ "modernc.org/sqlite" // SQLite driver
 
@@ -80,8 +81,21 @@ func (c *client) AllDBs(ctx context.Context, _ driver.Options) ([]string, error)
 	return dbs, rows.Err()
 }
 
-func (client) DBExists(context.Context, string, driver.Options) (bool, error) {
-	return false, nil
+func (c *client) DBExists(ctx context.Context, name string, _ driver.Options) (bool, error) {
+	var exists bool
+	err := c.db.QueryRowContext(ctx, `
+		SELECT
+			TRUE
+		FROM
+			sqlite_schema
+		WHERE
+			type = 'table' AND
+			name = ?
+		`, name).Scan(&exists)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return false, err
+	}
+	return exists, nil
 }
 
 func (client) CreateDB(context.Context, string, driver.Options) error {

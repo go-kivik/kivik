@@ -62,7 +62,7 @@ func TestClientAllDBs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	dbs, err := c.AllDBs(context.Background(), nil)
+	dbs, err := dClient.AllDBs(context.Background(), nil)
 	if err != nil {
 		t.Fatal("err should be nil")
 	}
@@ -70,4 +70,42 @@ func TestClientAllDBs(t *testing.T) {
 	if d := cmp.Diff(wantDBs, dbs); d != "" {
 		t.Fatal(d)
 	}
+}
+
+func TestClientDBExists(t *testing.T) {
+	d := drv{}
+	t.Run("exists", func(t *testing.T) {
+		dClient, err := d.NewClient(":memory:", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		c := dClient.(*client)
+
+		if _, err := c.db.Exec("CREATE TABLE foo (id INTEGER)"); err != nil {
+			t.Fatal(err)
+		}
+
+		exists, err := dClient.DBExists(context.Background(), "foo", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !exists {
+			t.Fatal("foo should exist")
+		}
+	})
+	t.Run("does not exist", func(t *testing.T) {
+		dClient, err := d.NewClient(":memory:", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		exists, err := dClient.DBExists(context.Background(), "foo", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if exists {
+			t.Fatal("foo should not exist")
+		}
+	})
 }

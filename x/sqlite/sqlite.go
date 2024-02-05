@@ -127,8 +127,21 @@ func (c *client) CreateDB(ctx context.Context, name string, _ driver.Options) er
 	return err
 }
 
-func (client) DestroyDB(context.Context, string, driver.Options) error {
-	return nil
+func (c *client) DestroyDB(ctx context.Context, name string, _ driver.Options) error {
+	if !validDBNameRE.MatchString(name) {
+		return &internal.Error{Status: http.StatusBadRequest, Message: "invalid database name"}
+	}
+	_, err := c.db.ExecContext(ctx, `DROP TABLE "`+name+`"`)
+	if err == nil {
+		return nil
+	}
+	sqliteErr := new(sqlite.Error)
+	if errors.As(err, &sqliteErr) &&
+		sqliteErr.Code() == codeSQLiteError &&
+		strings.Contains(sqliteErr.Error(), "no such table") {
+		return &internal.Error{Status: http.StatusNotFound, Message: "database not found"}
+	}
+	return err
 }
 
 func (client) DB(string, driver.Options) (driver.DB, error) {

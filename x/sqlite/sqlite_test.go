@@ -177,3 +177,51 @@ func TestClientCreateDB(t *testing.T) {
 		}
 	})
 }
+
+func TestClientDestroyDB(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		d := drv{}
+		dClient, err := d.NewClient(":memory:", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if err := dClient.CreateDB(context.Background(), "foo", nil); err != nil {
+			t.Fatal(err)
+		}
+
+		if err := dClient.DestroyDB(context.Background(), "foo", nil); err != nil {
+			t.Fatal(err)
+		}
+
+		exists, err := dClient.DBExists(context.Background(), "foo", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if exists {
+			t.Fatal("foo should not exist")
+		}
+	})
+	t.Run("doesn't exist", func(t *testing.T) {
+		d := drv{}
+		dClient, err := d.NewClient(":memory:", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = dClient.DestroyDB(context.Background(), "foo", nil)
+		if err == nil {
+			t.Fatal("wanted an error")
+		}
+		const wantErr = "database not found"
+		if err.Error() != wantErr {
+			t.Fatalf("err should be %s, got %s", wantErr, err)
+		}
+		const wantStatus = http.StatusNotFound
+		if status := kivik.HTTPStatus(err); status != wantStatus {
+			t.Fatalf("status should be %d", wantStatus)
+		}
+	})
+}
+
+// tests for not-found with DBExists

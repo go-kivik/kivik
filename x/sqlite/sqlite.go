@@ -14,6 +14,9 @@ package sqlite
 
 import (
 	"context"
+	"database/sql"
+
+	_ "modernc.org/sqlite" // SQLite driver
 
 	"github.com/go-kivik/kivik/v4/driver"
 )
@@ -22,11 +25,21 @@ type drv struct{}
 
 var _ driver.Driver = (*drv)(nil)
 
-func (drv) NewClient(name string, _ driver.Options) (driver.Client, error) {
-	return &client{}, nil
+// NewClient returns a new SQLite client. dsn should be the full path to your
+// SQLite database file.
+func (drv) NewClient(dns string, _ driver.Options) (driver.Client, error) {
+	db, err := sql.Open("sqlite", dns)
+	if err != nil {
+		return nil, err
+	}
+	return &client{
+		db: db,
+	}, nil
 }
 
-type client struct{}
+type client struct {
+	db *sql.DB
+}
 
 var _ driver.Client = (*client)(nil)
 
@@ -42,8 +55,29 @@ func (client) Version(context.Context) (*driver.Version, error) {
 	}, nil
 }
 
-func (client) AllDBs(context.Context, driver.Options) ([]string, error) {
-	return nil, nil
+func (c *client) AllDBs(ctx context.Context, _ driver.Options) ([]string, error) {
+	rows, err := c.db.QueryContext(ctx, `
+		SELECT
+			name
+		FROM
+			sqlite_schema
+		WHERE
+			type ='table' AND
+			name NOT LIKE 'sqlite_%'
+		`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var dbs []string
+	for rows.Next() {
+		var db string
+		if err := rows.Scan(&db); err != nil {
+			return nil, err
+		}
+		dbs = append(dbs, db)
+	}
+	return dbs, rows.Err()
 }
 
 func (client) DBExists(context.Context, string, driver.Options) (bool, error) {

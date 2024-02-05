@@ -45,3 +45,29 @@ func TestClientVersion(t *testing.T) {
 		t.Fatal(d)
 	}
 }
+
+func TestClientAllDBs(t *testing.T) {
+	d := drv{}
+	dClient, err := d.NewClient(":memory:", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	c := dClient.(*client)
+
+	if _, err := c.db.Exec("CREATE TABLE foo (id INTEGER)"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.db.Exec("CREATE TABLE bar (id INTEGER)"); err != nil {
+		t.Fatal(err)
+	}
+
+	dbs, err := c.AllDBs(context.Background(), nil)
+	if err != nil {
+		t.Fatal("err should be nil")
+	}
+	wantDBs := []string{"foo", "bar"}
+	if d := cmp.Diff(wantDBs, dbs); d != "" {
+		t.Fatal(d)
+	}
+}

@@ -10,6 +10,9 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+//go:build !js
+// +build !js
+
 package sqlite
 
 import (
@@ -223,5 +226,3 @@ func TestClientDestroyDB(t *testing.T) {
 		}
 	})
 }
-
-// tests for not-found with DBExists

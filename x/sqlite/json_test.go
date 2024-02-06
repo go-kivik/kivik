@@ -52,7 +52,7 @@ func Test_calculateRev(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := calculateRev(tt.docID, tt.doc)
+			got, _, err := prepareDoc(tt.docID, tt.doc)
 			if !testy.ErrorMatches(tt.wantErr, err) {
 				t.Errorf("unexpected error = %v, wantErr %v", err, tt.wantErr)
 			}

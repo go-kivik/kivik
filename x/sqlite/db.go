@@ -35,7 +35,19 @@ func (db) CreateDoc(context.Context, interface{}, driver.Options) (string, strin
 }
 
 func (d *db) Put(ctx context.Context, docID string, doc interface{}, _ driver.Options) (string, error) {
-	return "", nil
+	rev, jsonDoc, err := prepareDoc(docID, doc)
+	if err != nil {
+		return "", err
+	}
+	var newRev string
+	err = d.db.QueryRowContext(ctx, `
+		INSERT INTO `+d.name+` (id, rev_id, rev, doc)
+		SELECT $1, COALESCE(MAX(rev_id),0) + 1, $2, $3
+		FROM `+d.name+`
+		WHERE id = $1
+		RETURNING rev_id || '-' || rev
+	`, docID, rev, jsonDoc).Scan(&newRev)
+	return newRev, err
 }
 
 func (db) Get(context.Context, string, driver.Options) (*driver.Document, error) {

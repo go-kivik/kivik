@@ -33,8 +33,8 @@ var _ driver.Driver = (*drv)(nil)
 
 // NewClient returns a new SQLite client. dsn should be the full path to your
 // SQLite database file.
-func (drv) NewClient(dns string, _ driver.Options) (driver.Client, error) {
-	db, err := sql.Open("sqlite", dns)
+func (drv) NewClient(dsn string, _ driver.Options) (driver.Client, error) {
+	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return nil, err
 	}

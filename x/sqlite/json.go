@@ -25,6 +25,32 @@ import (
 	"github.com/go-kivik/kivik/v4/internal"
 )
 
+type rev struct {
+	id  int
+	rev string
+}
+
+func (r rev) String() string {
+	return strconv.Itoa(r.id) + "-" + r.rev
+}
+
+func parseRev(s string) (rev, error) {
+	if s == "" {
+		return rev{}, &internal.Error{Status: http.StatusBadRequest, Message: "missing _rev"}
+	}
+	const revElements = 2
+	parts := strings.SplitN(s, "-", revElements)
+	id, err := strconv.ParseInt(parts[0], 10, 64)
+	if err != nil {
+		return rev{}, &internal.Error{Status: http.StatusBadRequest, Err: err}
+	}
+	if len(parts) == 1 {
+		// A rev that contains only a number is technically valid.
+		return rev{id: int(id)}, nil
+	}
+	return rev{id: int(id), rev: parts[1]}, nil
+}
+
 // prepareDoc prepares the doc for insertion. It returns the new rev and
 // marshaled doc.
 func prepareDoc(docID string, doc interface{}) (string, []byte, error) {
@@ -52,38 +78,24 @@ func prepareDoc(docID string, doc interface{}) (string, []byte, error) {
 }
 
 // extractRev extracts the rev from the document.
-func extractRev(doc interface{}) (int, string, error) {
-	var rev string
+func extractRev(doc interface{}) (rev, error) {
 	switch t := doc.(type) {
 	case map[string]interface{}:
-		rev, _ = t["_rev"].(string)
+		r, _ := t["_rev"].(string)
+		return parseRev(r)
 	case map[string]string:
-		rev = t["_rev"]
+		return parseRev(t["_rev"])
 	default:
 		tmpJSON, err := json.Marshal(doc)
 		if err != nil {
-			return 0, "", &internal.Error{Status: http.StatusBadRequest, Err: err}
+			return rev{}, &internal.Error{Status: http.StatusBadRequest, Err: err}
 		}
 		var revDoc struct {
 			Rev string `json:"_rev"`
 		}
 		if err := json.Unmarshal(tmpJSON, &revDoc); err != nil {
-			return 0, "", &internal.Error{Status: http.StatusBadRequest, Err: err}
+			return rev{}, &internal.Error{Status: http.StatusBadRequest, Err: err}
 		}
-		rev = revDoc.Rev
+		return parseRev(revDoc.Rev)
 	}
-	if rev == "" {
-		return 0, "", &internal.Error{Status: http.StatusBadRequest, Message: "missing _rev"}
-	}
-	const revElements = 2
-	parts := strings.SplitN(rev, "-", revElements)
-	id, err := strconv.ParseInt(parts[0], 10, 64)
-	if err != nil {
-		return 0, "", &internal.Error{Status: http.StatusBadRequest, Err: err}
-	}
-	if len(parts) == 1 {
-		// A rev that contains only a number is technically valid.
-		return int(id), "", nil
-	}
-	return int(id), parts[1], nil
 }

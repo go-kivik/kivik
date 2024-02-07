@@ -19,6 +19,8 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/go-kivik/kivik/v4/internal"
 )
@@ -47,4 +49,41 @@ func prepareDoc(docID string, doc interface{}) (string, []byte, error) {
 		return "", nil, err
 	}
 	return hex.EncodeToString(h.Sum(nil)), b, nil
+}
+
+// extractRev extracts the rev from the document.
+func extractRev(doc interface{}) (int, string, error) {
+	var rev string
+	switch t := doc.(type) {
+	case map[string]interface{}:
+		rev, _ = t["_rev"].(string)
+	case map[string]string:
+		rev = t["_rev"]
+	default:
+		tmpJSON, err := json.Marshal(doc)
+		if err != nil {
+			return 0, "", &internal.Error{Status: http.StatusBadRequest, Err: err}
+		}
+		var revDoc struct {
+			Rev string `json:"_rev"`
+		}
+		if err := json.Unmarshal(tmpJSON, &revDoc); err != nil {
+			return 0, "", &internal.Error{Status: http.StatusBadRequest, Err: err}
+		}
+		rev = revDoc.Rev
+	}
+	if rev == "" {
+		return 0, "", &internal.Error{Status: http.StatusBadRequest, Message: "missing _rev"}
+	}
+	const revElements = 2
+	parts := strings.SplitN(rev, "-", revElements)
+	id, err := strconv.ParseInt(parts[0], 10, 64)
+	if err != nil {
+		return 0, "", &internal.Error{Status: http.StatusBadRequest, Err: err}
+	}
+	if len(parts) == 1 {
+		// A rev that contains only a number is technically valid.
+		return int(id), "", nil
+	}
+	return int(id), parts[1], nil
 }

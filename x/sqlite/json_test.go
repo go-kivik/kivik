@@ -62,3 +62,86 @@ func Test_calculateRev(t *testing.T) {
 		})
 	}
 }
+
+func Test_extractRev(t *testing.T) {
+	tests := []struct {
+		name    string
+		doc     interface{}
+		wantID  int
+		wantRev string
+		wantErr string
+	}{
+		{
+			name:    "nil",
+			doc:     nil,
+			wantErr: "missing _rev",
+		},
+		{
+			name:    "empty",
+			doc:     map[string]string{},
+			wantErr: "missing _rev",
+		},
+		{
+			name:    "no rev",
+			doc:     map[string]string{"foo": "bar"},
+			wantErr: "missing _rev",
+		},
+		{
+			name:    "rev in string",
+			doc:     map[string]string{"_rev": "1-1234567890abcdef1234567890abcdef"},
+			wantID:  1,
+			wantRev: "1234567890abcdef1234567890abcdef",
+		},
+		{
+			name:    "rev in interface",
+			doc:     map[string]interface{}{"_rev": "1-1234567890abcdef1234567890abcdef"},
+			wantID:  1,
+			wantRev: "1234567890abcdef1234567890abcdef",
+		},
+		{
+			name: "rev in struct",
+			doc: struct {
+				Rev string `json:"_rev"`
+			}{Rev: "1-1234567890abcdef1234567890abcdef"},
+			wantID:  1,
+			wantRev: "1234567890abcdef1234567890abcdef",
+		},
+		{
+			name:    "invalid rev",
+			doc:     map[string]string{"_rev": "foo"},
+			wantErr: "strconv.ParseInt: parsing \"foo\": invalid syntax",
+		},
+		{
+			name:   "rev id only",
+			doc:    map[string]string{"_rev": "1"},
+			wantID: 1,
+		},
+		{
+			name:    "invalid rev struct",
+			doc:     struct{ Rev func() }{},
+			wantErr: "json: unsupported type: func()",
+		},
+		{
+			name: "invalid rev type",
+			doc: struct {
+				Rev int `json:"_rev"`
+			}{Rev: 1},
+			wantErr: "json: cannot unmarshal number into Go struct field ._rev of type string",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			id, rev, err := extractRev(tt.doc)
+			if !testy.ErrorMatches(tt.wantErr, err) {
+				t.Errorf("unexpected error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if id != tt.wantID {
+				t.Errorf("unexpected id= %v, want %v", id, tt.wantID)
+			}
+			if rev != tt.wantRev {
+				t.Errorf("unexpected rev= %v, want %v", rev, tt.wantRev)
+			}
+		})
+	}
+}

@@ -10,6 +10,9 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+//go:build !js
+// +build !js
+
 package sqlite
 
 import (
@@ -109,10 +112,42 @@ func TestDBPut(t *testing.T) {
 			},
 			wantRev: "2-7a6e18982fa6225a74a2207157b28047",
 		},
-		/*
-			existing document, new_edits: Accept any rev as-is
-			new_edits, missing rev: ??
-		*/
+		{
+			name:  "update doc with new_edits=false, no existing doc",
+			docID: "foo",
+			doc: map[string]interface{}{
+				"_rev": "1-6fe51f74859f3579abaccc426dd5104f",
+				"foo":  "baz",
+			},
+			options: kivik.Param("new_edits", false),
+			wantRev: "1-6fe51f74859f3579abaccc426dd5104f",
+		},
+		{
+			name:  "update doc with new_edits=false, no rev",
+			docID: "foo",
+			doc: map[string]interface{}{
+				"foo": "baz",
+			},
+			options:    kivik.Param("new_edits", false),
+			wantStatus: http.StatusBadRequest,
+			wantErr:    "When `new_edits: false`, the document needs `_rev` or `_revisions` specified",
+		},
+		{
+			name: "update doc with new_edits=false, existing doc",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			docID: "foo",
+			doc: map[string]interface{}{
+				"_rev": "1-asdf",
+				"foo":  "baz",
+			},
+			options: kivik.Param("new_edits", false),
+			wantRev: "1-asdf",
+		},
 	}
 
 	for _, tt := range tests {

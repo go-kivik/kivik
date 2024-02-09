@@ -42,7 +42,9 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 	if err != nil {
 		return "", err
 	}
-	opts := map[string]interface{}{}
+	opts := map[string]interface{}{
+		"new_edits": true,
+	}
 	options.Apply(opts)
 	optsRev, _ := opts["rev"].(string)
 	if optsRev != "" && docRev != "" && optsRev != docRev {
@@ -55,6 +57,23 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 	rev, jsonDoc, err := prepareDoc(docID, doc)
 	if err != nil {
 		return "", err
+	}
+
+	if newEdits, _ := opts["new_edits"].(bool); !newEdits {
+		if docRev == "" {
+			return "", &internal.Error{Status: http.StatusBadRequest, Message: "When `new_edits: false`, the document needs `_rev` or `_revisions` specified"}
+		}
+		rev, err := parseRev(docRev)
+		if err != nil {
+			return "", err
+		}
+		var newRev string
+		err = d.db.QueryRowContext(ctx, `
+			INSERT INTO `+d.name+` (id, rev_id, rev, doc)
+			VALUES ($1, $2, $3, $4)
+			RETURNING rev_id || '-' || rev
+		`, docID, rev.id, rev.rev, jsonDoc).Scan(&newRev)
+		return newRev, err
 	}
 
 	tx, err := d.db.BeginTx(ctx, nil)

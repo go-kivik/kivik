@@ -30,14 +30,14 @@ func Test_ping_RunE(t *testing.T) {
 		args:   []string{"--debug", "ping", "http://localhost:1/foo/bar/%xxx"},
 		status: errors.ErrUsage,
 	})
-	tests.Add("full url on command line", func(t *testing.T) interface{} {
+	tests.Add("full url on command line", func(*testing.T) interface{} {
 		s := testy.ServeResponse(&http.Response{})
 
 		return cmdTest{
 			args: []string{"ping", s.URL},
 		}
 	})
-	tests.Add("server only on command line", func(t *testing.T) interface{} {
+	tests.Add("server only on command line", func(*testing.T) interface{} {
 		s := testy.ServeResponse(&http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"status":"ok"}`)),
 		})
@@ -54,7 +54,7 @@ func Test_ping_RunE(t *testing.T) {
 		args:   []string{"ping", "http://localhost:9999/"},
 		status: errors.ErrUnavailable,
 	})
-	tests.Add("Couch 1.7, up", func(t *testing.T) interface{} {
+	tests.Add("Couch 1.7, up", func(*testing.T) interface{} {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusBadRequest,
 			Header: http.Header{
@@ -66,7 +66,7 @@ func Test_ping_RunE(t *testing.T) {
 			args: []string{"ping", s.URL},
 		}
 	})
-	tests.Add("Couch 3.0, up", func(t *testing.T) interface{} {
+	tests.Add("Couch 3.0, up", func(*testing.T) interface{} {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 		})
@@ -75,7 +75,7 @@ func Test_ping_RunE(t *testing.T) {
 			args: []string{"ping", s.URL},
 		}
 	})
-	tests.Add("Couch 3.0, down", func(t *testing.T) interface{} {
+	tests.Add("Couch 3.0, down", func(*testing.T) interface{} {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusNotFound,
 		})

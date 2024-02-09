@@ -30,7 +30,7 @@ func Test_delete_db_RunE(t *testing.T) {
 		args:   []string{"delete", "database"},
 		status: errors.ErrUsage,
 	})
-	tests.Add("success", func(t *testing.T) interface{} {
+	tests.Add("success", func(*testing.T) interface{} {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{

@@ -516,7 +516,7 @@ func TestSRinnerUpdate(t *testing.T) {
 				docID:    "foo",
 				db: func() *db {
 					var count int
-					db := newCustomDB(func(req *http.Request) (*http.Response, error) {
+					db := newCustomDB(func(*http.Request) (*http.Response, error) {
 						if count == 0 {
 							count++
 							return &http.Response{

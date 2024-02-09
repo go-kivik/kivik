@@ -117,7 +117,7 @@ func testCreateSession(ctx *kt.Context, client *chttp.Client) {
 	// Re-create client, so we can override defaults
 	client, _ = chttp.New(&http.Client{}, client.DSN(), mock.NilOption)
 	// Don't follow redirect
-	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+	client.CheckRedirect = func(*http.Request, []*http.Request) error {
 		return http.ErrUseLastResponse
 	}
 	var name, password string

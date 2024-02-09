@@ -376,9 +376,9 @@ Content-Length: 86
 			},
 		},
 	})
-	tests.Add("bug268 - complex id", func(t *testing.T) interface{} {
+	tests.Add("bug268 - complex id", func(*testing.T) interface{} {
 		return tt{
-			db: newCustomDB(func(req *http.Request) (*http.Response, error) {
+			db: newCustomDB(func(*http.Request) (*http.Response, error) {
 				return nil, errors.New("success")
 			}),
 			id:     "http://example.com/",
@@ -386,9 +386,9 @@ Content-Length: 86
 			err:    `Get "?http://example.com/testdb/http%3A%2F%2Fexample\.com%2F"?: success`,
 		}
 	})
-	tests.Add("plus sign", func(t *testing.T) interface{} {
+	tests.Add("plus sign", func(*testing.T) interface{} {
 		return tt{
-			db: newCustomDB(func(req *http.Request) (*http.Response, error) {
+			db: newCustomDB(func(*http.Request) (*http.Response, error) {
 				return nil, errors.New("success")
 			}),
 			id:     "2020-01-30T13:33:00.00+05:30|kl",
@@ -470,9 +470,9 @@ func TestOpenRevs(t *testing.T) {
 	}
 
 	tests := testy.NewTable()
-	tests.Add("open_revs", func(t *testing.T) interface{} {
+	tests.Add("open_revs", func(*testing.T) interface{} {
 		return tt{
-			db: newCustomDB(func(req *http.Request) (*http.Response, error) {
+			db: newCustomDB(func(*http.Request) (*http.Response, error) {
 				return &http.Response{
 					StatusCode: http.StatusOK,
 					Header: http.Header{
@@ -495,9 +495,9 @@ Content-Type: application/json
 			},
 		}
 	})
-	tests.Add("open_revs with multiple revs", func(t *testing.T) interface{} {
+	tests.Add("open_revs with multiple revs", func(*testing.T) interface{} {
 		return tt{
-			db: newCustomDB(func(req *http.Request) (*http.Response, error) {
+			db: newCustomDB(func(*http.Request) (*http.Response, error) {
 				return &http.Response{
 					StatusCode: http.StatusOK,
 					Header: http.Header{
@@ -601,9 +601,9 @@ Content-Type: application/json; error="true"
 			},
 		}
 	})
-	tests.Add("not found", func(t *testing.T) interface{} {
+	tests.Add("not found", func(*testing.T) interface{} {
 		return tt{
-			db: newCustomDB(func(req *http.Request) (*http.Response, error) {
+			db: newCustomDB(func(*http.Request) (*http.Response, error) {
 				return &http.Response{
 					StatusCode: http.StatusNotFound,
 					Header: http.Header{

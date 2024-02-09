@@ -389,7 +389,7 @@ func TestGetAttachment(t *testing.T) {
 			name:     "1.6.1",
 			id:       "foo",
 			filename: "foo.txt",
-			db: newCustomDB(func(req *http.Request) (*http.Response, error) {
+			db: newCustomDB(func(*http.Request) (*http.Response, error) {
 				return &http.Response{
 					StatusCode: 200,
 					Header: http.Header{

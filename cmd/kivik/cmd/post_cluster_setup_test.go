@@ -27,13 +27,13 @@ import (
 func Test_post_cluster_setup_RunE(t *testing.T) {
 	tests := testy.NewTable()
 
-	tests.Add("missing dsn", func(t *testing.T) interface{} {
+	tests.Add("missing dsn", func(*testing.T) interface{} {
 		return cmdTest{
 			args:   []string{"post", "cluster-setup"},
 			status: errors.ErrUsage,
 		}
 	})
-	tests.Add("no data", func(t *testing.T) interface{} {
+	tests.Add("no data", func(*testing.T) interface{} {
 		return cmdTest{
 			args:   []string{"post", "cluster-setup", "http://example.com"},
 			status: errors.ErrUsage,

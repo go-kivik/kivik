@@ -24,7 +24,7 @@ import (
 )
 
 func (s *Server) root() httpe.HandlerWithError {
-	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
+	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, _ *http.Request) error {
 		return serveJSON(w, http.StatusOK, map[string]interface{}{
 			"couchdb": "Welcome",
 			"vendor": map[string]string{
@@ -37,7 +37,7 @@ func (s *Server) root() httpe.HandlerWithError {
 }
 
 func (s *Server) up() httpe.HandlerWithError {
-	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
+	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, _ *http.Request) error {
 		return serveJSON(w, http.StatusOK, map[string]interface{}{
 			"status": "ok",
 		})

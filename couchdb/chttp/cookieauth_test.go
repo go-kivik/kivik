@@ -74,7 +74,7 @@ func TestCookieAuthAuthenticate(t *testing.T) {
 		}
 	})
 	tests.Add("cookie not set", func(t *testing.T) interface{} {
-		s := nettest.NewHTTPTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		s := nettest.NewHTTPTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			h := w.Header()
 			h.Set("Content-Type", "application/json")
 			h.Set("Date", "Sat, 08 Sep 2018 15:49:29 GMT")

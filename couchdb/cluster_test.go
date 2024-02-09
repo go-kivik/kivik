@@ -58,7 +58,7 @@ func TestClusterStatus(t *testing.T) {
 		expected: "cluster_finished",
 	})
 	tests.Add("invalid option", tst{
-		client: newCustomClient(func(r *http.Request) (*http.Response, error) {
+		client: newCustomClient(func(*http.Request) (*http.Response, error) {
 			return nil, nil
 		}),
 		options: kivik.Param(optionEnsureDBsExist, 1.0),
@@ -205,7 +205,7 @@ func TestMembership(t *testing.T) {
 		status: http.StatusBadGateway,
 		err:    `Get "?http://example.com/_membership"?: network error`,
 	})
-	tests.Add("success 2.3.1", func(t *testing.T) interface{} {
+	tests.Add("success 2.3.1", func(*testing.T) interface{} {
 		return tt{
 			client: newTestClient(&http.Response{
 				StatusCode: http.StatusOK,

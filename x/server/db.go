@@ -275,7 +275,7 @@ func (s *Server) query() httpe.HandlerWithError {
 			}
 		} else {
 			viewFunc = func(ctx context.Context, opts ...kivik.Option) *kivik.ResultSet {
-				return s.client.DB(db).Query(ctx, ddoc, view, options(r))
+				return s.client.DB(db).Query(ctx, ddoc, view, opts...)
 			}
 		}
 		rows := viewFunc(r.Context(), options(r))

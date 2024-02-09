@@ -26,7 +26,7 @@ import (
 func Test_delete_config_RunE(t *testing.T) {
 	tests := testy.NewTable()
 
-	tests.Add("missing key", func(t *testing.T) interface{} {
+	tests.Add("missing key", func(*testing.T) interface{} {
 		return cmdTest{
 			args:   []string{"delete", "config", "http://example.com/foo/"},
 			status: errors.ErrUsage,

@@ -256,7 +256,7 @@ func serveJSON(w http.ResponseWriter, status int, payload interface{}) error {
 }
 
 func (s *Server) notImplemented() httpe.HandlerWithError {
-	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
+	return httpe.HandlerWithErrorFunc(func(http.ResponseWriter, *http.Request) error {
 		return errNotImplimented
 	})
 }

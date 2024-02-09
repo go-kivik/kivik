@@ -30,7 +30,7 @@ func Test_describe_attachment_RunE(t *testing.T) {
 		args:   []string{"descr", "attachment"},
 		status: errors.ErrUsage,
 	})
-	tests.Add("not found", func(t *testing.T) interface{} {
+	tests.Add("not found", func(*testing.T) interface{} {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusNotFound,
 			Header: http.Header{
@@ -45,7 +45,7 @@ func Test_describe_attachment_RunE(t *testing.T) {
 			status: errors.ErrNotFound,
 		}
 	})
-	tests.Add("success", func(t *testing.T) interface{} {
+	tests.Add("success", func(*testing.T) interface{} {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{
@@ -61,7 +61,7 @@ func Test_describe_attachment_RunE(t *testing.T) {
 			args: []string{"descr", "attachment", s.URL + "/db/doc/foo.txt"},
 		}
 	})
-	tests.Add("success json", func(t *testing.T) interface{} {
+	tests.Add("success json", func(*testing.T) interface{} {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{

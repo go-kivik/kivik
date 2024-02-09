@@ -52,7 +52,7 @@ func TestGet(t *testing.T) {
 		status: http.StatusNotFound,
 		err:    `^missing$`,
 	})
-	tests.Add("forbidden", func(t *testing.T) interface{} {
+	tests.Add("forbidden", func(*testing.T) interface{} {
 		return tt{
 			fs: &filesystem.MockFS{
 				OpenFunc: func(_ string) (filesystem.File, error) {

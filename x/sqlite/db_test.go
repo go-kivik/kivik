@@ -94,9 +94,22 @@ func TestDBPut(t *testing.T) {
 			wantStatus: http.StatusConflict,
 			wantErr:    "conflict",
 		},
+		{
+			name: "update doc with correct rev",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			docID: "foo",
+			doc: map[string]interface{}{
+				"_rev": "1-6fe51f74859f3579abaccc426dd5104f",
+				"foo":  "baz",
+			},
+			wantRev: "2-7a6e18982fa6225a74a2207157b28047",
+		},
 		/*
-			existing document, with matching rev: create new rev
-			existing document, non-matching rev: conflict
 			existing document, new_edits: Accept any rev as-is
 			new_edits, missing rev: ??
 		*/

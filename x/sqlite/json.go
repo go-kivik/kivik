@@ -78,24 +78,24 @@ func prepareDoc(docID string, doc interface{}) (string, []byte, error) {
 }
 
 // extractRev extracts the rev from the document.
-func extractRev(doc interface{}) (rev, error) {
+func extractRev(doc interface{}) (string, error) {
 	switch t := doc.(type) {
 	case map[string]interface{}:
 		r, _ := t["_rev"].(string)
-		return parseRev(r)
+		return r, nil
 	case map[string]string:
-		return parseRev(t["_rev"])
+		return t["_rev"], nil
 	default:
 		tmpJSON, err := json.Marshal(doc)
 		if err != nil {
-			return rev{}, &internal.Error{Status: http.StatusBadRequest, Err: err}
+			return "", &internal.Error{Status: http.StatusBadRequest, Err: err}
 		}
 		var revDoc struct {
 			Rev string `json:"_rev"`
 		}
 		if err := json.Unmarshal(tmpJSON, &revDoc); err != nil {
-			return rev{}, &internal.Error{Status: http.StatusBadRequest, Err: err}
+			return "", &internal.Error{Status: http.StatusBadRequest, Err: err}
 		}
-		return parseRev(revDoc.Rev)
+		return revDoc.Rev, nil
 	}
 }

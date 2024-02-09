@@ -14,17 +14,24 @@ package sqlite
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"gitlab.com/flimzy/testy"
+
+	"github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
 func TestDBPut(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name       string
+		setup      func(*testing.T, driver.DB)
 		docID      string
 		doc        interface{}
+		options    driver.Options
 		wantRev    string
 		wantStatus int
 		wantErr    string
@@ -37,9 +44,57 @@ func TestDBPut(t *testing.T) {
 			},
 			wantRev: "1-6fe51f74859f3579abaccc426dd5104f",
 		},
+		{
+			name:  "doc rev & option rev mismatch",
+			docID: "foo",
+			doc: map[string]interface{}{
+				"_rev": "1-1234567890abcdef1234567890abcdef",
+				"foo":  "bar",
+			},
+			options:    driver.Options(kivik.Rev("2-1234567890abcdef1234567890abcdef")),
+			wantStatus: http.StatusBadRequest,
+			wantErr:    "Document rev and option have different values",
+		},
+		{
+			name:  "attempt to create doc with rev should conflict",
+			docID: "foo",
+			doc: map[string]interface{}{
+				"_rev": "1-1234567890abcdef1234567890abcdef",
+				"foo":  "bar",
+			},
+			wantStatus: http.StatusConflict,
+			wantErr:    "conflict",
+		},
+		{
+			name: "attempt to update doc without rev should conflict",
+			setup: func(t *testing.T, d driver.DB) {
+				if _, err := d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption); err != nil {
+					t.Fatal(err)
+				}
+			},
+			docID: "foo",
+			doc: map[string]interface{}{
+				"foo": "bar",
+			},
+			wantStatus: http.StatusConflict,
+			wantErr:    "conflict",
+		},
+		{
+			name: "attempt to update doc with wrong rev should conflict",
+			setup: func(t *testing.T, d driver.DB) {
+				if _, err := d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption); err != nil {
+					t.Fatal(err)
+				}
+			},
+			docID: "foo",
+			doc: map[string]interface{}{
+				"_rev": "2-1234567890abcdef1234567890abcdef",
+				"foo":  "bar",
+			},
+			wantStatus: http.StatusConflict,
+			wantErr:    "conflict",
+		},
 		/*
-			new document, with rev: create doc with provided rev (verify)
-			existing doc, no rev: conflict
 			existing document, with matching rev: create new rev
 			existing document, non-matching rev: conflict
 			existing document, new_edits: Accept any rev as-is
@@ -66,7 +121,14 @@ func TestDBPut(t *testing.T) {
 			t.Cleanup(func() {
 				_ = db.Close()
 			})
-			rev, err := db.Put(context.Background(), tt.docID, tt.doc, nil)
+			if tt.setup != nil {
+				tt.setup(t, db)
+			}
+			opts := tt.options
+			if opts == nil {
+				opts = mock.NilOption
+			}
+			rev, err := db.Put(context.Background(), tt.docID, tt.doc, opts)
 			if !testy.ErrorMatches(tt.wantErr, err) {
 				t.Errorf("Unexpected error: %s", err)
 			}

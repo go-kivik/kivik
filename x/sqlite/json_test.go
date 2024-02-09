@@ -73,17 +73,17 @@ func Test_extractRev(t *testing.T) {
 		{
 			name:    "nil",
 			doc:     nil,
-			wantErr: "missing _rev",
+			wantRev: "",
 		},
 		{
 			name:    "empty",
 			doc:     map[string]string{},
-			wantErr: "missing _rev",
+			wantRev: "",
 		},
 		{
 			name:    "no rev",
 			doc:     map[string]string{"foo": "bar"},
-			wantErr: "missing _rev",
+			wantRev: "",
 		},
 		{
 			name:    "rev in string",
@@ -103,14 +103,9 @@ func Test_extractRev(t *testing.T) {
 			wantRev: "1-1234567890abcdef1234567890abcdef",
 		},
 		{
-			name:    "invalid rev",
-			doc:     map[string]string{"_rev": "foo"},
-			wantErr: "strconv.ParseInt: parsing \"foo\": invalid syntax",
-		},
-		{
 			name:    "rev id only",
 			doc:     map[string]string{"_rev": "1"},
-			wantRev: "1-",
+			wantRev: "1",
 		},
 		{
 			name:    "invalid rev struct",
@@ -135,7 +130,7 @@ func Test_extractRev(t *testing.T) {
 			if err != nil {
 				return
 			}
-			if rev.String() != tt.wantRev {
+			if rev != tt.wantRev {
 				t.Errorf("unexpected rev= %v, want %v", rev, tt.wantRev)
 			}
 		})

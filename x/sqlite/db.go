@@ -15,8 +15,11 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 type db struct {
@@ -34,20 +37,56 @@ func (db) CreateDoc(context.Context, interface{}, driver.Options) (string, strin
 	return "", "", nil
 }
 
-func (d *db) Put(ctx context.Context, docID string, doc interface{}, _ driver.Options) (string, error) {
+func (d *db) Put(ctx context.Context, docID string, doc interface{}, options driver.Options) (string, error) {
+	docRev, err := extractRev(doc)
+	if err != nil {
+		return "", err
+	}
+	opts := map[string]interface{}{}
+	options.Apply(opts)
+	optsRev, _ := opts["rev"].(string)
+	if optsRev != "" && docRev != "" && optsRev != docRev {
+		return "", &internal.Error{Status: http.StatusBadRequest, Message: "Document rev and option have different values"}
+	}
+	if docRev == "" && optsRev != "" {
+		docRev = optsRev
+	}
+
 	rev, jsonDoc, err := prepareDoc(docID, doc)
 	if err != nil {
 		return "", err
 	}
+
+	tx, err := d.db.BeginTx(ctx, nil)
+	if err != nil {
+		return "", err
+	}
+	defer tx.Rollback()
+
+	var curRev string
+	err = tx.QueryRowContext(ctx, `
+		SELECT COALESCE(MAX(rev_id || '-' || rev),'')
+		FROM `+d.name+`
+		WHERE id = $1
+	`, docID).Scan(&curRev)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return "", err
+	}
+	if curRev != docRev {
+		return "", &internal.Error{Status: http.StatusConflict, Message: "conflict"}
+	}
 	var newRev string
-	err = d.db.QueryRowContext(ctx, `
+	err = tx.QueryRowContext(ctx, `
 		INSERT INTO `+d.name+` (id, rev_id, rev, doc)
 		SELECT $1, COALESCE(MAX(rev_id),0) + 1, $2, $3
 		FROM `+d.name+`
 		WHERE id = $1
 		RETURNING rev_id || '-' || rev
 	`, docID, rev, jsonDoc).Scan(&newRev)
-	return newRev, err
+	if err != nil {
+		return "", err
+	}
+	return newRev, tx.Commit()
 }
 
 func (db) Get(context.Context, string, driver.Options) (*driver.Document, error) {

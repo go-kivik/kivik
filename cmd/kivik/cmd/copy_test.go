@@ -178,7 +178,7 @@ func Test_copy_RunE(t *testing.T) {
 			args: []string{"--debug", "copy", ss.URL + "/asdf/src", ts.URL + "/qwerty/target?rev=7-qhk"},
 		}
 	})
-	tests.Add("from context", func(t *testing.T) interface{} {
+	tests.Add("from context", func(*testing.T) interface{} {
 		return cmdTest{
 			args:   []string{"--debug", "copy", "--config", "./testdata/copy.yaml", "--target", "target"},
 			status: errors.ErrUnavailable,

@@ -37,7 +37,7 @@ func TestLogger(t *testing.T) {
 	ctx := context.WithValue(req.Context(), SessionKey, &session)
 	req = req.WithContext(ctx)
 	w := httptest.NewRecorder()
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		_, _ = w.Write([]byte("Go away!"))
 	})
@@ -58,7 +58,7 @@ func TestLoggerNoAuth(t *testing.T) {
 	ctx := context.WithValue(req.Context(), SessionKey, &session)
 	req = req.WithContext(ctx)
 	w := httptest.NewRecorder()
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		_, _ = w.Write([]byte("Go away!"))
 	})

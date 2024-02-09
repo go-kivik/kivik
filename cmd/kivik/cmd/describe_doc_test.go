@@ -24,7 +24,7 @@ import (
 func Test_describe_doc_RunE(t *testing.T) {
 	tests := testy.NewTable()
 
-	tests.Add("describe doc", func(t *testing.T) interface{} {
+	tests.Add("describe doc", func(*testing.T) interface{} {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{
@@ -43,7 +43,7 @@ func Test_describe_doc_RunE(t *testing.T) {
 			args: []string{"describe", "doc", s.URL + "/foo/bar"},
 		}
 	})
-	tests.Add("describe doc json", func(t *testing.T) interface{} {
+	tests.Add("describe doc json", func(*testing.T) interface{} {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{
@@ -61,7 +61,7 @@ func Test_describe_doc_RunE(t *testing.T) {
 			args: []string{"describe", "-f", "json", "doc", s.URL + "/foo/bar"},
 		}
 	})
-	tests.Add("describe doc header", func(t *testing.T) interface{} {
+	tests.Add("describe doc header", func(*testing.T) interface{} {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{
@@ -80,7 +80,7 @@ func Test_describe_doc_RunE(t *testing.T) {
 			args: []string{"describe", "-H", "doc", s.URL + "/foo/bar"},
 		}
 	})
-	tests.Add("describe doc verbose", func(t *testing.T) interface{} {
+	tests.Add("describe doc verbose", func(*testing.T) interface{} {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{

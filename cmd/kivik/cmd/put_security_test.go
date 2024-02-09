@@ -27,7 +27,7 @@ import (
 func Test_put_security_RunE(t *testing.T) {
 	tests := testy.NewTable()
 
-	tests.Add("missing database", func(t *testing.T) interface{} {
+	tests.Add("missing database", func(*testing.T) interface{} {
 		return cmdTest{
 			args:   []string{"put", "security", "http://example.com/foo/"},
 			status: errors.ErrUsage,

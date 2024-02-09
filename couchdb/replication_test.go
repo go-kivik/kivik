@@ -195,7 +195,7 @@ func TestReplicate(t *testing.T) {
 			name:   "1.6.1",
 			target: "foo", source: "bar",
 			client: func() *client {
-				client := newCustomClient(func(req *http.Request) (*http.Response, error) {
+				client := newCustomClient(func(*http.Request) (*http.Response, error) {
 					return &http.Response{
 						StatusCode: 201,
 						Header: http.Header{

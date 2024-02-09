@@ -30,7 +30,7 @@ func Test_get_clusterSetup_RunE(t *testing.T) {
 		args:   []string{"get", "cluster"},
 		status: errors.ErrUsage,
 	})
-	tests.Add("success", func(t *testing.T) interface{} {
+	tests.Add("success", func(*testing.T) interface{} {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{
@@ -45,7 +45,7 @@ func Test_get_clusterSetup_RunE(t *testing.T) {
 			args: []string{"get", "cluster", s.URL},
 		}
 	})
-	tests.Add("success json", func(t *testing.T) interface{} {
+	tests.Add("success json", func(*testing.T) interface{} {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{

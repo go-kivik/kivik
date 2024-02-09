@@ -404,7 +404,7 @@ func TestCreateDB(t *testing.T) {
 						}
 						return nil
 					},
-					DBFunc: func(dbName string, _ driver.Options) (driver.DB, error) {
+					DBFunc: func(string, driver.Options) (driver.DB, error) {
 						return &mock.DB{ID: "abc"}, nil
 					},
 				},
@@ -574,7 +574,7 @@ func TestDBsStats(t *testing.T) {
 			name: "native success",
 			client: &Client{
 				driverClient: &mock.DBsStatser{
-					DBsStatsFunc: func(_ context.Context, names []string) ([]*driver.DBStats, error) {
+					DBsStatsFunc: func(context.Context, []string) ([]*driver.DBStats, error) {
 						return []*driver.DBStats{
 							{Name: "foo", DiskSize: 123},
 							{Name: "bar", DiskSize: 321},
@@ -592,7 +592,7 @@ func TestDBsStats(t *testing.T) {
 			name: "native error",
 			client: &Client{
 				driverClient: &mock.DBsStatser{
-					DBsStatsFunc: func(_ context.Context, names []string) ([]*driver.DBStats, error) {
+					DBsStatsFunc: func(context.Context, []string) ([]*driver.DBStats, error) {
 						return nil, errors.New("native failure")
 					},
 				},

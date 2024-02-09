@@ -2968,7 +2968,7 @@ func TestRevsDiff(t *testing.T) {
 		db: &DB{
 			client: &Client{},
 			driverDB: &mock.RevsDiffer{
-				RevsDiffFunc: func(_ context.Context, revMap interface{}) (driver.Rows, error) {
+				RevsDiffFunc: func(context.Context, interface{}) (driver.Rows, error) {
 					return nil, errors.New("net error")
 				},
 			},
@@ -2980,7 +2980,7 @@ func TestRevsDiff(t *testing.T) {
 		db: &DB{
 			client: &Client{},
 			driverDB: &mock.RevsDiffer{
-				RevsDiffFunc: func(_ context.Context, revMap interface{}) (driver.Rows, error) {
+				RevsDiffFunc: func(context.Context, interface{}) (driver.Rows, error) {
 					return &mock.Rows{ID: "a"}, nil
 				},
 			},

@@ -57,7 +57,7 @@ func TestRevsDiff(t *testing.T) {
 			"newdoc":   {"1-asdf"},
 		},
 	})
-	tests.Add("cancelled context", func(t *testing.T) interface{} {
+	tests.Add("cancelled context", func(*testing.T) interface{} {
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
 		return tt{

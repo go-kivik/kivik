@@ -29,7 +29,7 @@ var files embed.FS
 
 // GetFavicon serves GET /favicon.ico
 func (h *Handler) GetFavicon() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, _ *http.Request) {
 		var ico io.Reader
 		if h.Favicon == "" {
 			asset, err := files.Open("files/favicon.ico")

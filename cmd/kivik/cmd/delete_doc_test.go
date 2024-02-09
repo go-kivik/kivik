@@ -30,7 +30,7 @@ func Test_delete_doc_RunE(t *testing.T) {
 		args:   []string{"delete", "doc"},
 		status: errors.ErrUsage,
 	})
-	tests.Add("success", func(t *testing.T) interface{} {
+	tests.Add("success", func(*testing.T) interface{} {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{
@@ -45,7 +45,7 @@ func Test_delete_doc_RunE(t *testing.T) {
 			args: []string{"delete", "doc", s.URL + "/db/doc", "-O", "rev=1-xxx"},
 		}
 	})
-	tests.Add("no rev", func(t *testing.T) interface{} {
+	tests.Add("no rev", func(*testing.T) interface{} {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusConflict,
 			Header: http.Header{

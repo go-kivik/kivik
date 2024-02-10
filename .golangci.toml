@@ -24,6 +24,10 @@ enable = [
     "gocritic",
     "staticcheck",
     "goheader",
+
+    # SQL-related linters
+    "rowserrcheck",
+    "sqlclosecheck",
 ]
 
 [issues]

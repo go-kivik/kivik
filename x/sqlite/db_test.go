@@ -228,6 +228,7 @@ func TestGet(t *testing.T) {
 		name       string
 		setup      func(*testing.T, driver.DB)
 		id         string
+		options    driver.Options
 		wantDoc    interface{}
 		wantStatus int
 		wantErr    string
@@ -249,6 +250,29 @@ func TestGet(t *testing.T) {
 			id:      "foo",
 			wantDoc: map[string]string{"foo": "bar"},
 		},
+		{
+			name: "get specific rev",
+			setup: func(t *testing.T, d driver.DB) {
+				rev, err := d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]string{"foo": "baz"}, kivik.Rev(rev))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id:      "foo",
+			options: kivik.Rev("1-9bb58f26192e4ba00f01e2e7b136bbd8"),
+			wantDoc: map[string]string{"foo": "bar"},
+		},
+		{
+			name:       "specific rev not found",
+			id:         "foo",
+			options:    kivik.Rev("1-9bb58f26192e4ba00f01e2e7b136bbd8"),
+			wantStatus: http.StatusNotFound,
+			wantErr:    "not found",
+		},
 	}
 
 	for _, tt := range tests {
@@ -259,7 +283,11 @@ func TestGet(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup(t, db)
 			}
-			doc, err := db.Get(context.Background(), tt.id, nil)
+			opts := tt.options
+			if opts == nil {
+				opts = mock.NilOption
+			}
+			doc, err := db.Get(context.Background(), tt.id, opts)
 			if !testy.ErrorMatches(tt.wantErr, err) {
 				t.Errorf("Unexpected error: %s", err)
 			}

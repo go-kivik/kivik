@@ -120,7 +120,33 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 	return newRev, tx.Commit()
 }
 
-func (d *db) Get(ctx context.Context, id string, _ driver.Options) (*driver.Document, error) {
+func (d *db) Get(ctx context.Context, id string, options driver.Options) (*driver.Document, error) {
+	opts := map[string]interface{}{}
+	options.Apply(opts)
+	if rev, _ := opts["rev"].(string); rev != "" {
+		r, err := parseRev(rev)
+		if err != nil {
+			return nil, err
+		}
+		var body string
+		err = d.db.QueryRowContext(ctx, `
+			SELECT doc
+			FROM `+d.name+`
+			WHERE id = $1
+				AND rev_id = $2
+				AND rev = $3
+			`, id, r.id, r.rev).Scan(&body)
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, &internal.Error{Status: http.StatusNotFound, Message: "not found"}
+		}
+		if err != nil {
+			return nil, err
+		}
+		return &driver.Document{
+			Rev:  rev,
+			Body: io.NopCloser(strings.NewReader(body)),
+		}, nil
+	}
 	var rev, body string
 	err := d.db.QueryRowContext(ctx, `
 		SELECT rev_id || '-' || rev, doc

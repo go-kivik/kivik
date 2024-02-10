@@ -51,30 +51,31 @@ func parseRev(s string) (rev, error) {
 	return rev{id: int(id), rev: parts[1]}, nil
 }
 
-// prepareDoc prepares the doc for insertion. It returns the new rev and
-// marshaled doc.
-func prepareDoc(docID string, doc interface{}) (string, []byte, error) {
+// prepareDoc prepares the doc for insertion. It returns the new docID, rev, and
+// marshaled doc with rev and id removed.
+func prepareDoc(docID string, doc interface{}) (string, string, []byte, error) {
 	tmpJSON, err := json.Marshal(doc)
 	if err != nil {
-		return "", nil, err
+		return "", "", nil, err
 	}
 	var tmp map[string]interface{}
 	if err := json.Unmarshal(tmpJSON, &tmp); err != nil {
-		return "", nil, err
+		return "", "", nil, err
 	}
 	delete(tmp, "_rev")
-	if id, ok := tmp["_id"].(string); ok && docID != "" && id != docID {
-		return "", nil, &internal.Error{Status: http.StatusBadRequest, Message: "Document ID must match _id in document"}
-	}
-	if docID != "" {
-		tmp["_id"] = docID
+	if id, ok := tmp["_id"].(string); ok {
+		if docID != "" && id != docID {
+			return "", "", nil, &internal.Error{Status: http.StatusBadRequest, Message: "Document ID must match _id in document"}
+		}
+		docID = id
+		delete(tmp, "_id")
 	}
 	h := md5.New()
 	b, _ := json.Marshal(tmp)
 	if _, err := io.Copy(h, bytes.NewReader(b)); err != nil {
-		return "", nil, err
+		return "", "", nil, err
 	}
-	return hex.EncodeToString(h.Sum(nil)), b, nil
+	return docID, hex.EncodeToString(h.Sum(nil)), b, nil
 }
 
 // extractRev extracts the rev from the document.

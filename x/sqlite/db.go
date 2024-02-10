@@ -18,6 +18,9 @@ import (
 	"errors"
 	"net/http"
 
+	"modernc.org/sqlite"
+	sqlite3 "modernc.org/sqlite/lib"
+
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/internal"
 )
@@ -54,7 +57,7 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 		docRev = optsRev
 	}
 
-	rev, jsonDoc, err := prepareDoc(docID, doc)
+	docID, rev, jsonDoc, err := prepareDoc(docID, doc)
 	if err != nil {
 		return "", err
 	}
@@ -73,6 +76,13 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 			VALUES ($1, $2, $3, $4)
 			RETURNING rev_id || '-' || rev
 		`, docID, rev.id, rev.rev, jsonDoc).Scan(&newRev)
+		var sqliteErr *sqlite.Error
+		if errors.As(err, &sqliteErr) && sqliteErr.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE {
+			// In the case of a conflict for new_edits=false, we assume that the
+			// documents are identical, for the sake of idempotency, and return
+			// the current rev, to match CouchDB behavior.
+			return docRev, nil
+		}
 		return newRev, err
 	}
 

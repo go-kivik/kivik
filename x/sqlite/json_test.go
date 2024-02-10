@@ -46,13 +46,13 @@ func Test_calculateRev(t *testing.T) {
 			name:  "add docID",
 			docID: "foo",
 			doc:   map[string]string{"foo": "bar"},
-			want:  "6fe51f74859f3579abaccc426dd5104f",
+			want:  "9bb58f26192e4ba00f01e2e7b136bbd8",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, _, err := prepareDoc(tt.docID, tt.doc)
+			_, got, _, err := prepareDoc(tt.docID, tt.doc)
 			if !testy.ErrorMatches(tt.wantErr, err) {
 				t.Errorf("unexpected error = %v, wantErr %v", err, tt.wantErr)
 			}

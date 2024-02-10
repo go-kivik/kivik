@@ -35,6 +35,7 @@ func TestDBPut(t *testing.T) {
 		docID      string
 		doc        interface{}
 		options    driver.Options
+		check      func(*testing.T, driver.DB)
 		wantRev    string
 		wantStatus int
 		wantErr    string
@@ -45,7 +46,7 @@ func TestDBPut(t *testing.T) {
 			doc: map[string]string{
 				"foo": "bar",
 			},
-			wantRev: "1-6fe51f74859f3579abaccc426dd5104f",
+			wantRev: "1-9bb58f26192e4ba00f01e2e7b136bbd8",
 		},
 		{
 			name:  "doc rev & option rev mismatch",
@@ -107,10 +108,10 @@ func TestDBPut(t *testing.T) {
 			},
 			docID: "foo",
 			doc: map[string]interface{}{
-				"_rev": "1-6fe51f74859f3579abaccc426dd5104f",
+				"_rev": "1-9bb58f26192e4ba00f01e2e7b136bbd8",
 				"foo":  "baz",
 			},
-			wantRev: "2-7a6e18982fa6225a74a2207157b28047",
+			wantRev: "2-afa7ae8a1906f4bb061be63525974f92",
 		},
 		{
 			name:  "update doc with new_edits=false, no existing doc",
@@ -148,6 +149,37 @@ func TestDBPut(t *testing.T) {
 			options: kivik.Param("new_edits", false),
 			wantRev: "1-asdf",
 		},
+		{
+			name: "update doc with new_edits=false, existing doc and rev",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			docID: "foo",
+			doc: map[string]interface{}{
+				"_rev": "1-9bb58f26192e4ba00f01e2e7b136bbd8",
+				"foo":  "baz",
+			},
+			options: kivik.Param("new_edits", false),
+			wantRev: "1-9bb58f26192e4ba00f01e2e7b136bbd8",
+			check: func(t *testing.T, d driver.DB) {
+				var doc string
+				err := d.(*db).db.QueryRow(`
+					SELECT doc
+					FROM test
+					WHERE id='foo'
+						AND rev_id=1
+						AND rev='9bb58f26192e4ba00f01e2e7b136bbd8'`).Scan(&doc)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if doc != `{"foo":"bar"}` {
+					t.Errorf("Unexpected doc: %s", doc)
+				}
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -179,6 +211,9 @@ func TestDBPut(t *testing.T) {
 			rev, err := db.Put(context.Background(), tt.docID, tt.doc, opts)
 			if !testy.ErrorMatches(tt.wantErr, err) {
 				t.Errorf("Unexpected error: %s", err)
+			}
+			if tt.check != nil {
+				tt.check(t, db)
 			}
 			if err != nil {
 				return

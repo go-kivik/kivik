@@ -17,6 +17,7 @@ package sqlite
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"testing"
 
@@ -216,6 +217,64 @@ func TestDBPut(t *testing.T) {
 			}
 			if rev != tt.wantRev {
 				t.Errorf("Unexpected rev: %s, want %s", rev, tt.wantRev)
+			}
+		})
+	}
+}
+
+func TestGet(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name       string
+		setup      func(*testing.T, driver.DB)
+		id         string
+		wantDoc    interface{}
+		wantStatus int
+		wantErr    string
+	}{
+		{
+			name:       "not found",
+			id:         "foo",
+			wantStatus: http.StatusNotFound,
+			wantErr:    "not found",
+		},
+		{
+			name: "success",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id:      "foo",
+			wantDoc: map[string]string{"foo": "bar"},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			db := newDB(t)
+			if tt.setup != nil {
+				tt.setup(t, db)
+			}
+			doc, err := db.Get(context.Background(), tt.id, nil)
+			if !testy.ErrorMatches(tt.wantErr, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
+			if status := kivik.HTTPStatus(err); status != tt.wantStatus {
+				t.Errorf("Unexpected status: %d", status)
+			}
+			if err != nil {
+				return
+			}
+			var gotDoc interface{}
+			if err := json.NewDecoder(doc.Body).Decode(&gotDoc); err != nil {
+				t.Fatal(err)
+			}
+			if d := testy.DiffAsJSON(tt.wantDoc, gotDoc); d != nil {
+				t.Errorf("Unexpected doc: %s", doc)
 			}
 		})
 	}

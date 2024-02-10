@@ -16,7 +16,9 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"io"
 	"net/http"
+	"strings"
 
 	"modernc.org/sqlite"
 	sqlite3 "modernc.org/sqlite/lib"
@@ -118,8 +120,26 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 	return newRev, tx.Commit()
 }
 
-func (db) Get(context.Context, string, driver.Options) (*driver.Document, error) {
-	return nil, nil
+func (d *db) Get(ctx context.Context, id string, _ driver.Options) (*driver.Document, error) {
+	var rev, body string
+	err := d.db.QueryRowContext(ctx, `
+		SELECT rev_id || '-' || rev, doc
+		FROM `+d.name+`
+		WHERE id = $1
+			AND deleted = FALSE
+		ORDER BY rev_id DESC, rev DESC
+		LIMIT 1
+	`, id).Scan(&rev, &body)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, &internal.Error{Status: http.StatusNotFound, Message: "not found"}
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &driver.Document{
+		Rev:  rev,
+		Body: io.NopCloser(strings.NewReader(body)),
+	}, nil
 }
 
 func (db) Delete(context.Context, string, driver.Options) (string, error) {

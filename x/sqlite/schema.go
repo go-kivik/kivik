@@ -15,10 +15,11 @@ package sqlite
 const (
 	schema = `CREATE TABLE %q (
 		seq INTEGER PRIMARY KEY,
-		id TEXT,
-		rev_id INTEGER,
-		rev TEXT,
-		doc BLOB,
+		id TEXT NOT NULL,
+		rev_id INTEGER NOT NULL DEFAULT 1,
+		rev TEXT NOT NULL,
+		doc BLOB NOT NULL,
+		deleted BOOLEAN NOT NULL DEFAULT FALSE,
 		UNIQUE(id, rev_id, rev)
 	)`
 )

@@ -273,6 +273,45 @@ func TestGet(t *testing.T) {
 			wantStatus: http.StatusNotFound,
 			wantErr:    "not found",
 		},
+		{
+			name: "include conflicts",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+					"rev":       "1-abc",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+					"rev":       "1-xyz",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id:      "foo",
+			options: kivik.Param("conflicts", true),
+			wantDoc: map[string]interface{}{
+				"foo":        "baz",
+				"_conflicts": []string{"1-abc"},
+			},
+		},
+		/*
+			TODO:
+			attachments = true
+			att_encoding_info = true
+			atts_since = [revs]
+			conflicts = true
+			deleted_conflicts = true
+			latest = true
+			local_seq = true
+			meta = true
+			open_revs = []
+			revs = true
+			revs_info = true
+		*/
 	}
 
 	for _, tt := range tests {
@@ -302,7 +341,7 @@ func TestGet(t *testing.T) {
 				t.Fatal(err)
 			}
 			if d := testy.DiffAsJSON(tt.wantDoc, gotDoc); d != nil {
-				t.Errorf("Unexpected doc: %s", doc)
+				t.Errorf("Unexpected doc: %s", d)
 			}
 		})
 	}

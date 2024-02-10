@@ -15,6 +15,7 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -123,12 +124,16 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 func (d *db) Get(ctx context.Context, id string, options driver.Options) (*driver.Document, error) {
 	opts := map[string]interface{}{}
 	options.Apply(opts)
-	if rev, _ := opts["rev"].(string); rev != "" {
-		r, err := parseRev(rev)
+
+	var rev, body string
+	var err error
+
+	if optsRev, _ := opts["rev"].(string); optsRev != "" {
+		var r revision
+		r, err = parseRev(optsRev)
 		if err != nil {
 			return nil, err
 		}
-		var body string
 		err = d.db.QueryRowContext(ctx, `
 			SELECT doc
 			FROM `+d.name+`
@@ -136,19 +141,9 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 				AND rev_id = $2
 				AND rev = $3
 			`, id, r.id, r.rev).Scan(&body)
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, &internal.Error{Status: http.StatusNotFound, Message: "not found"}
-		}
-		if err != nil {
-			return nil, err
-		}
-		return &driver.Document{
-			Rev:  rev,
-			Body: io.NopCloser(strings.NewReader(body)),
-		}, nil
-	}
-	var rev, body string
-	err := d.db.QueryRowContext(ctx, `
+		rev = optsRev
+	} else {
+		err = d.db.QueryRowContext(ctx, `
 		SELECT rev_id || '-' || rev, doc
 		FROM `+d.name+`
 		WHERE id = $1
@@ -156,11 +151,48 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 		ORDER BY rev_id DESC, rev DESC
 		LIMIT 1
 	`, id).Scan(&rev, &body)
+	}
+
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, &internal.Error{Status: http.StatusNotFound, Message: "not found"}
 	}
 	if err != nil {
 		return nil, err
+	}
+
+	if conflicts, _ := opts["conflicts"].(bool); conflicts {
+		var revs []string
+		rows, err := d.db.QueryContext(ctx, `
+			SELECT rev_id || '-' || rev
+			FROM `+d.name+`
+			WHERE id = $1
+				AND rev_id || '-' || rev != $2
+				AND DELETED = FALSE
+			`, id, rev)
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var r string
+			if err := rows.Scan(&r); err != nil {
+				return nil, err
+			}
+			revs = append(revs, r)
+		}
+		if err := rows.Err(); err != nil {
+			return nil, err
+		}
+		var doc map[string]interface{}
+		if err := json.Unmarshal([]byte(body), &doc); err != nil {
+			return nil, err
+		}
+		doc["_conflicts"] = revs
+		jonDoc, err := json.Marshal(doc)
+		if err != nil {
+			return nil, err
+		}
+		body = string(jonDoc)
 	}
 	return &driver.Document{
 		Rev:  rev,

@@ -16,6 +16,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
@@ -33,8 +34,8 @@ var _ driver.Driver = (*drv)(nil)
 
 // NewClient returns a new SQLite client. dsn should be the full path to your
 // SQLite database file.
-func (drv) NewClient(dns string, _ driver.Options) (driver.Client, error) {
-	db, err := sql.Open("sqlite", dns)
+func (drv) NewClient(dsn string, _ driver.Options) (driver.Client, error) {
+	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +115,7 @@ func (c *client) CreateDB(ctx context.Context, name string, _ driver.Options) er
 	if !validDBNameRE.MatchString(name) {
 		return &internal.Error{Status: http.StatusBadRequest, Message: "invalid database name"}
 	}
-	_, err := c.db.ExecContext(ctx, `CREATE TABLE "`+name+`" (id INTEGER)`)
+	_, err := c.db.ExecContext(ctx, fmt.Sprintf(schema, name))
 	if err == nil {
 		return nil
 	}
@@ -144,6 +145,12 @@ func (c *client) DestroyDB(ctx context.Context, name string, _ driver.Options) e
 	return err
 }
 
-func (client) DB(string, driver.Options) (driver.DB, error) {
-	return nil, nil
+func (c *client) DB(name string, _ driver.Options) (driver.DB, error) {
+	if !validDBNameRE.MatchString(name) {
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "invalid database name"}
+	}
+	return &db{
+		db:   c.db,
+		name: name,
+	}, nil
 }

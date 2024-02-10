@@ -24,13 +24,17 @@ enable = [
     "gocritic",
     "staticcheck",
     "goheader",
+
+    # SQL-related linters
+    "rowserrcheck",
+    "sqlclosecheck",
 ]
 
 [issues]
 exclude-use-default = false
 
 [[issues.exclude-rules]]
-source = "defer .*\\.Close\\(\\)$"
+source = "defer .*\\.(Close|Rollback)\\(\\)$"
 linters = ["errcheck"]
 
 [linters-settings.gci]

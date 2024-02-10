@@ -196,21 +196,7 @@ func TestDBPut(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			d := drv{}
-			client, err := d.NewClient(":memory:", nil)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if err := client.CreateDB(context.Background(), "test", nil); err != nil {
-				t.Fatal(err)
-			}
-			db, err := client.DB("test", nil)
-			if err != nil {
-				t.Fatal(err)
-			}
-			t.Cleanup(func() {
-				_ = db.Close()
-			})
+			db := newDB(t)
 			if tt.setup != nil {
 				tt.setup(t, db)
 			}

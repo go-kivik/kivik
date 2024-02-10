@@ -180,6 +180,16 @@ func TestDBPut(t *testing.T) {
 				}
 			},
 		},
+		{
+			name:  "doc id in url and doc differ",
+			docID: "foo",
+			doc: map[string]interface{}{
+				"_id": "bar",
+				"foo": "baz",
+			},
+			wantStatus: http.StatusBadRequest,
+			wantErr:    "Document ID must match _id in document",
+		},
 	}
 
 	for _, tt := range tests {

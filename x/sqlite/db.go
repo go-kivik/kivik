@@ -80,6 +80,19 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 		if err != nil {
 			return "", err
 		}
+		_, err = tx.ExecContext(ctx, fmt.Sprintf(`
+			INSERT INTO %[1]q (id, rev, rev_id)
+			VALUES ($1, $2, $3)
+		`, d.name+"_revs"), docID, rev.rev, rev.id)
+		if err != nil {
+			var sqliteErr *sqlite.Error
+			// A conflict here can be ignored, as we're not actually writing the
+			// document, and the rev can theoretically be updated without the doc
+			// during replication.
+			if !errors.As(err, &sqliteErr) || sqliteErr.Code() != sqlite3.SQLITE_CONSTRAINT_UNIQUE {
+				return "", err
+			}
+		}
 		var newRev string
 		err = tx.QueryRowContext(ctx, fmt.Sprintf(`
 			INSERT INTO %q (id, rev, rev_id, doc)
@@ -111,18 +124,25 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 	if curRev != docRev {
 		return "", &internal.Error{Status: http.StatusConflict, Message: "conflict"}
 	}
-	var newRev string
+	var r revision
 	err = tx.QueryRowContext(ctx, fmt.Sprintf(`
-		INSERT INTO %[1]q (id, rev, rev_id, doc)
-		SELECT $1, COALESCE(MAX(rev),0) + 1, $2, $3
+		INSERT INTO %[1]q (id, rev, rev_id)
+		SELECT $1, COALESCE(MAX(rev),0) + 1, $2
 		FROM %[1]q
 		WHERE id = $1
-		RETURNING rev || '-' || rev_id
-	`, d.name), docID, rev, jsonDoc).Scan(&newRev)
+		RETURNING rev, rev_id
+	`, d.name+"_revs"), docID, rev).Scan(&r.rev, &r.id)
 	if err != nil {
 		return "", err
 	}
-	return newRev, tx.Commit()
+	_, err = tx.ExecContext(ctx, fmt.Sprintf(`
+		INSERT INTO %[1]q (id, rev, rev_id, doc)
+		VALUES ($1, $2, $3, $4)
+	`, d.name), docID, r.rev, r.id, jsonDoc)
+	if err != nil {
+		return "", err
+	}
+	return r.String(), tx.Commit()
 }
 
 func (d *db) Get(ctx context.Context, id string, options driver.Options) (*driver.Document, error) {

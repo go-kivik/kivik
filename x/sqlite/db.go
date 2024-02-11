@@ -126,11 +126,11 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 	opts := map[string]interface{}{}
 	options.Apply(opts)
 
-	var rev, body string
+	var r revision
+	var body string
 	var err error
 
 	if optsRev, _ := opts["rev"].(string); optsRev != "" {
-		var r revision
 		r, err = parseRev(optsRev)
 		if err != nil {
 			return nil, err
@@ -142,16 +142,18 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 				AND rev = $2
 				AND rev_id = $3
 			`, d.name), id, r.rev, r.id).Scan(&body)
-		rev = optsRev
 	} else {
+		var rev int
+		var revID string
 		err = d.db.QueryRowContext(ctx, fmt.Sprintf(`
-		SELECT rev || '-' || rev_id, doc
+		SELECT rev, rev_id, doc
 		FROM %q
 		WHERE id = $1
 			AND deleted = FALSE
 		ORDER BY rev DESC, rev_id DESC
 		LIMIT 1
-	`, d.name), id).Scan(&rev, &body)
+	`, d.name), id).Scan(&rev, &revID, &body)
+		r = revision{rev: rev, id: revID}
 	}
 
 	if errors.Is(err, sql.ErrNoRows) {
@@ -167,9 +169,9 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 			SELECT rev || '-' || rev_id
 			FROM %q
 			WHERE id = $1
-				AND rev || '-' || rev_id != $2
+				AND NOT (rev = $2 AND rev_id = $3)
 				AND DELETED = FALSE
-			`, d.name), id, rev)
+			`, d.name), id, r.rev, r.id)
 		if err != nil {
 			return nil, err
 		}
@@ -196,7 +198,7 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 		body = string(jonDoc)
 	}
 	return &driver.Document{
-		Rev:  rev,
+		Rev:  r.String(),
 		Body: io.NopCloser(strings.NewReader(body)),
 	}, nil
 }

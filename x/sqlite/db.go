@@ -66,6 +66,12 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 		return "", err
 	}
 
+	tx, err := d.db.BeginTx(ctx, nil)
+	if err != nil {
+		return "", err
+	}
+	defer tx.Rollback()
+
 	if newEdits, _ := opts["new_edits"].(bool); !newEdits {
 		if docRev == "" {
 			return "", &internal.Error{Status: http.StatusBadRequest, Message: "When `new_edits: false`, the document needs `_rev` or `_revisions` specified"}
@@ -75,7 +81,7 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 			return "", err
 		}
 		var newRev string
-		err = d.db.QueryRowContext(ctx, fmt.Sprintf(`
+		err = tx.QueryRowContext(ctx, fmt.Sprintf(`
 			INSERT INTO %q (id, rev, rev_id, doc)
 			VALUES ($1, $2, $3, $4)
 			RETURNING rev || '-' || rev_id
@@ -87,14 +93,11 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 			// the current rev, to match CouchDB behavior.
 			return docRev, nil
 		}
-		return newRev, err
+		if err != nil {
+			return "", err
+		}
+		return newRev, tx.Commit()
 	}
-
-	tx, err := d.db.BeginTx(ctx, nil)
-	if err != nil {
-		return "", err
-	}
-	defer tx.Rollback()
 
 	var curRev string
 	err = tx.QueryRowContext(ctx, fmt.Sprintf(`

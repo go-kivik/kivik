@@ -12,8 +12,8 @@
 
 package sqlite
 
-const (
-	schema = `CREATE TABLE %q (
+var schema = []string{
+	`CREATE TABLE %q (
 		seq INTEGER PRIMARY KEY,
 		id TEXT NOT NULL,
 		rev_id INTEGER NOT NULL DEFAULT 1,
@@ -21,5 +21,5 @@ const (
 		doc BLOB NOT NULL,
 		deleted BOOLEAN NOT NULL DEFAULT FALSE,
 		UNIQUE(id, rev_id, rev)
-	)`
-)
+	)`,
+}

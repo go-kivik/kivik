@@ -115,17 +115,25 @@ func (c *client) CreateDB(ctx context.Context, name string, _ driver.Options) er
 	if !validDBNameRE.MatchString(name) {
 		return &internal.Error{Status: http.StatusBadRequest, Message: "invalid database name"}
 	}
-	_, err := c.db.ExecContext(ctx, fmt.Sprintf(schema, name))
-	if err == nil {
-		return nil
+	tx, err := c.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
 	}
-	sqliteErr := new(sqlite.Error)
-	if errors.As(err, &sqliteErr) &&
-		sqliteErr.Code() == codeSQLiteError &&
-		strings.Contains(sqliteErr.Error(), "already exists") {
-		return &internal.Error{Status: http.StatusPreconditionFailed, Message: "database already exists"}
+	defer tx.Rollback()
+	for _, query := range schema {
+		_, err := tx.ExecContext(ctx, fmt.Sprintf(query, name))
+		if err == nil {
+			continue
+		}
+		sqliteErr := new(sqlite.Error)
+		if errors.As(err, &sqliteErr) &&
+			sqliteErr.Code() == codeSQLiteError &&
+			strings.Contains(sqliteErr.Error(), "already exists") {
+			return &internal.Error{Status: http.StatusPreconditionFailed, Message: "database already exists"}
+		}
+		return err
 	}
-	return err
+	return tx.Commit()
 }
 
 func (c *client) DestroyDB(ctx context.Context, name string, _ driver.Options) error {

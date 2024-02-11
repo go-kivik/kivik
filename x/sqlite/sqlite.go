@@ -39,6 +39,11 @@ func (drv) NewClient(dsn string, _ driver.Options) (driver.Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	_, err = db.Exec("PRAGMA foreign_keys = ON")
+	if err != nil {
+		return nil, err
+	}
+
 	return &client{
 		db: db,
 	}, nil

@@ -76,10 +76,10 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 		}
 		var newRev string
 		err = d.db.QueryRowContext(ctx, fmt.Sprintf(`
-			INSERT INTO %q (id, rev_id, rev, doc)
+			INSERT INTO %q (id, rev, rev_id, doc)
 			VALUES ($1, $2, $3, $4)
-			RETURNING rev_id || '-' || rev
-		`, d.name), docID, rev.id, rev.rev, jsonDoc).Scan(&newRev)
+			RETURNING rev || '-' || rev_id
+		`, d.name), docID, rev.rev, rev.id, jsonDoc).Scan(&newRev)
 		var sqliteErr *sqlite.Error
 		if errors.As(err, &sqliteErr) && sqliteErr.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE {
 			// In the case of a conflict for new_edits=false, we assume that the
@@ -98,7 +98,7 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 
 	var curRev string
 	err = tx.QueryRowContext(ctx, fmt.Sprintf(`
-		SELECT COALESCE(MAX(rev_id || '-' || rev),'')
+		SELECT COALESCE(MAX(rev || '-' || rev_id),'')
 		FROM %q
 		WHERE id = $1
 	`, d.name), docID).Scan(&curRev)
@@ -110,11 +110,11 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 	}
 	var newRev string
 	err = tx.QueryRowContext(ctx, fmt.Sprintf(`
-		INSERT INTO %[1]q (id, rev_id, rev, doc)
-		SELECT $1, COALESCE(MAX(rev_id),0) + 1, $2, $3
+		INSERT INTO %[1]q (id, rev, rev_id, doc)
+		SELECT $1, COALESCE(MAX(rev),0) + 1, $2, $3
 		FROM %[1]q
 		WHERE id = $1
-		RETURNING rev_id || '-' || rev
+		RETURNING rev || '-' || rev_id
 	`, d.name), docID, rev, jsonDoc).Scan(&newRev)
 	if err != nil {
 		return "", err
@@ -139,17 +139,17 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 			SELECT doc
 			FROM %q
 			WHERE id = $1
-				AND rev_id = $2
-				AND rev = $3
-			`, d.name), id, r.id, r.rev).Scan(&body)
+				AND rev = $2
+				AND rev_id = $3
+			`, d.name), id, r.rev, r.id).Scan(&body)
 		rev = optsRev
 	} else {
 		err = d.db.QueryRowContext(ctx, fmt.Sprintf(`
-		SELECT rev_id || '-' || rev, doc
+		SELECT rev || '-' || rev_id, doc
 		FROM %q
 		WHERE id = $1
 			AND deleted = FALSE
-		ORDER BY rev_id DESC, rev DESC
+		ORDER BY rev DESC, rev_id DESC
 		LIMIT 1
 	`, d.name), id).Scan(&rev, &body)
 	}
@@ -164,10 +164,10 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 	if conflicts, _ := opts["conflicts"].(bool); conflicts {
 		var revs []string
 		rows, err := d.db.QueryContext(ctx, fmt.Sprintf(`
-			SELECT rev_id || '-' || rev
+			SELECT rev || '-' || rev_id
 			FROM %q
 			WHERE id = $1
-				AND rev_id || '-' || rev != $2
+				AND rev || '-' || rev_id != $2
 				AND DELETED = FALSE
 			`, d.name), id, rev)
 		if err != nil {

@@ -16,10 +16,10 @@ var schema = []string{
 	`CREATE TABLE %q (
 		seq INTEGER PRIMARY KEY,
 		id TEXT NOT NULL,
-		rev_id INTEGER NOT NULL DEFAULT 1,
-		rev TEXT NOT NULL,
+		rev INTEGER NOT NULL DEFAULT 1,
+		rev_id TEXT NOT NULL,
 		doc BLOB NOT NULL,
 		deleted BOOLEAN NOT NULL DEFAULT FALSE,
-		UNIQUE(id, rev_id, rev)
+		UNIQUE(id, rev, rev_id)
 	)`,
 }

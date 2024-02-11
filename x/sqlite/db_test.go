@@ -171,8 +171,8 @@ func TestDBPut(t *testing.T) {
 					SELECT doc
 					FROM test
 					WHERE id='foo'
-						AND rev_id=1
-						AND rev='9bb58f26192e4ba00f01e2e7b136bbd8'`).Scan(&doc)
+						AND rev=1
+						AND rev_id='9bb58f26192e4ba00f01e2e7b136bbd8'`).Scan(&doc)
 				if err != nil {
 					t.Fatal(err)
 				}

@@ -25,30 +25,30 @@ import (
 	"github.com/go-kivik/kivik/v4/internal"
 )
 
-type rev struct {
+type revision struct {
 	id  int
 	rev string
 }
 
-func (r rev) String() string {
+func (r revision) String() string {
 	return strconv.Itoa(r.id) + "-" + r.rev
 }
 
-func parseRev(s string) (rev, error) {
+func parseRev(s string) (revision, error) {
 	if s == "" {
-		return rev{}, &internal.Error{Status: http.StatusBadRequest, Message: "missing _rev"}
+		return revision{}, &internal.Error{Status: http.StatusBadRequest, Message: "missing _rev"}
 	}
 	const revElements = 2
 	parts := strings.SplitN(s, "-", revElements)
 	id, err := strconv.ParseInt(parts[0], 10, 64)
 	if err != nil {
-		return rev{}, &internal.Error{Status: http.StatusBadRequest, Err: err}
+		return revision{}, &internal.Error{Status: http.StatusBadRequest, Err: err}
 	}
 	if len(parts) == 1 {
 		// A rev that contains only a number is technically valid.
-		return rev{id: int(id)}, nil
+		return revision{id: int(id)}, nil
 	}
-	return rev{id: int(id), rev: parts[1]}, nil
+	return revision{id: int(id), rev: parts[1]}, nil
 }
 
 // prepareDoc prepares the doc for insertion. It returns the new docID, rev, and

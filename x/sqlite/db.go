@@ -15,8 +15,12 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
 	"net/http"
+	"strings"
 
 	"modernc.org/sqlite"
 	sqlite3 "modernc.org/sqlite/lib"
@@ -71,11 +75,11 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 			return "", err
 		}
 		var newRev string
-		err = d.db.QueryRowContext(ctx, `
-			INSERT INTO `+d.name+` (id, rev_id, rev, doc)
+		err = d.db.QueryRowContext(ctx, fmt.Sprintf(`
+			INSERT INTO %q (id, rev_id, rev, doc)
 			VALUES ($1, $2, $3, $4)
 			RETURNING rev_id || '-' || rev
-		`, docID, rev.id, rev.rev, jsonDoc).Scan(&newRev)
+		`, d.name), docID, rev.id, rev.rev, jsonDoc).Scan(&newRev)
 		var sqliteErr *sqlite.Error
 		if errors.As(err, &sqliteErr) && sqliteErr.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE {
 			// In the case of a conflict for new_edits=false, we assume that the
@@ -93,11 +97,11 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 	defer tx.Rollback()
 
 	var curRev string
-	err = tx.QueryRowContext(ctx, `
+	err = tx.QueryRowContext(ctx, fmt.Sprintf(`
 		SELECT COALESCE(MAX(rev_id || '-' || rev),'')
-		FROM `+d.name+`
+		FROM %q
 		WHERE id = $1
-	`, docID).Scan(&curRev)
+	`, d.name), docID).Scan(&curRev)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return "", err
 	}
@@ -105,21 +109,96 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 		return "", &internal.Error{Status: http.StatusConflict, Message: "conflict"}
 	}
 	var newRev string
-	err = tx.QueryRowContext(ctx, `
-		INSERT INTO `+d.name+` (id, rev_id, rev, doc)
+	err = tx.QueryRowContext(ctx, fmt.Sprintf(`
+		INSERT INTO %[1]q (id, rev_id, rev, doc)
 		SELECT $1, COALESCE(MAX(rev_id),0) + 1, $2, $3
-		FROM `+d.name+`
+		FROM %[1]q
 		WHERE id = $1
 		RETURNING rev_id || '-' || rev
-	`, docID, rev, jsonDoc).Scan(&newRev)
+	`, d.name), docID, rev, jsonDoc).Scan(&newRev)
 	if err != nil {
 		return "", err
 	}
 	return newRev, tx.Commit()
 }
 
-func (db) Get(context.Context, string, driver.Options) (*driver.Document, error) {
-	return nil, nil
+func (d *db) Get(ctx context.Context, id string, options driver.Options) (*driver.Document, error) {
+	opts := map[string]interface{}{}
+	options.Apply(opts)
+
+	var rev, body string
+	var err error
+
+	if optsRev, _ := opts["rev"].(string); optsRev != "" {
+		var r revision
+		r, err = parseRev(optsRev)
+		if err != nil {
+			return nil, err
+		}
+		err = d.db.QueryRowContext(ctx, fmt.Sprintf(`
+			SELECT doc
+			FROM %q
+			WHERE id = $1
+				AND rev_id = $2
+				AND rev = $3
+			`, d.name), id, r.id, r.rev).Scan(&body)
+		rev = optsRev
+	} else {
+		err = d.db.QueryRowContext(ctx, fmt.Sprintf(`
+		SELECT rev_id || '-' || rev, doc
+		FROM %q
+		WHERE id = $1
+			AND deleted = FALSE
+		ORDER BY rev_id DESC, rev DESC
+		LIMIT 1
+	`, d.name), id).Scan(&rev, &body)
+	}
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, &internal.Error{Status: http.StatusNotFound, Message: "not found"}
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	if conflicts, _ := opts["conflicts"].(bool); conflicts {
+		var revs []string
+		rows, err := d.db.QueryContext(ctx, fmt.Sprintf(`
+			SELECT rev_id || '-' || rev
+			FROM %q
+			WHERE id = $1
+				AND rev_id || '-' || rev != $2
+				AND DELETED = FALSE
+			`, d.name), id, rev)
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var r string
+			if err := rows.Scan(&r); err != nil {
+				return nil, err
+			}
+			revs = append(revs, r)
+		}
+		if err := rows.Err(); err != nil {
+			return nil, err
+		}
+		var doc map[string]interface{}
+		if err := json.Unmarshal([]byte(body), &doc); err != nil {
+			return nil, err
+		}
+		doc["_conflicts"] = revs
+		jonDoc, err := json.Marshal(doc)
+		if err != nil {
+			return nil, err
+		}
+		body = string(jonDoc)
+	}
+	return &driver.Document{
+		Rev:  rev,
+		Body: io.NopCloser(strings.NewReader(body)),
+	}, nil
 }
 
 func (db) Delete(context.Context, string, driver.Options) (string, error) {

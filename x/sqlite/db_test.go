@@ -542,6 +542,34 @@ func TestGet(t *testing.T) {
 			wantStatus: http.StatusNotFound,
 			wantErr:    "not found",
 		},
+		{
+			name: "deleted document by rev",
+			setup: func(t *testing.T, d driver.DB) {
+				rev, err := d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Delete(context.Background(), "foo", kivik.Rev(rev))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id:      "foo",
+			options: kivik.Rev("2-df2a4fe30cde39c357c8d1105748d1b9"),
+			wantDoc: map[string]interface{}{"_deleted": true},
+		},
+		{
+			name: "deleted document with data by rev",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]interface{}{"_deleted": true, "foo": "bar"}, mock.NilOption)
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id:      "foo",
+			options: kivik.Rev("1-6872a0fc474ada5c46ce054b92897063"),
+			wantDoc: map[string]interface{}{"_deleted": true, "foo": "bar"},
+		},
 		/*
 			TODO:
 			attachments = true

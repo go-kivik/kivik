@@ -199,12 +199,16 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 	if conflicts, _ := opts["conflicts"].(bool); conflicts {
 		var revs []string
 		rows, err := d.db.QueryContext(ctx, fmt.Sprintf(`
-			SELECT rev || '-' || rev_id
-			FROM %q
-			WHERE id = $1
-				AND NOT (rev = $2 AND rev_id = $3)
-				AND DELETED = FALSE
-			`, d.name), id, r.rev, r.id)
+			SELECT rev.rev || '-' || rev.rev_id
+			FROM %[1]q AS rev
+			LEFT JOIN %[1]q AS child
+				ON rev.id = child.id
+				AND rev.rev = child.parent_rev
+				AND rev.rev_id = child.parent_rev_id
+			WHERE rev.id = $1
+				AND NOT (rev.rev = $2 AND rev.rev_id = $3)
+				AND child.id IS NULL
+			`, d.name+"_revs"), id, r.rev, r.id)
 		if err != nil {
 			return nil, err
 		}

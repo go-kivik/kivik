@@ -423,7 +423,6 @@ func TestGet(t *testing.T) {
 			attachments = true
 			att_encoding_info = true
 			atts_since = [revs]
-			conflicts = true
 			deleted_conflicts = true
 			latest = true
 			local_seq = true

@@ -54,21 +54,28 @@ func parseRev(s string) (revision, error) {
 	return revision{rev: int(id), id: parts[1]}, nil
 }
 
+// docData represents the document id, rev, deleted status, etc.
+type docData struct {
+	ID  string
+	Rev string
+	Doc []byte
+}
+
 // prepareDoc prepares the doc for insertion. It returns the new docID, rev, and
 // marshaled doc with rev and id removed.
-func prepareDoc(docID string, doc interface{}) (string, string, []byte, error) {
+func prepareDoc(docID string, doc interface{}) (*docData, error) {
 	tmpJSON, err := json.Marshal(doc)
 	if err != nil {
-		return "", "", nil, err
+		return nil, err
 	}
 	var tmp map[string]interface{}
 	if err := json.Unmarshal(tmpJSON, &tmp); err != nil {
-		return "", "", nil, err
+		return nil, err
 	}
 	delete(tmp, "_rev")
 	if id, ok := tmp["_id"].(string); ok {
 		if docID != "" && id != docID {
-			return "", "", nil, &internal.Error{Status: http.StatusBadRequest, Message: "Document ID must match _id in document"}
+			return nil, &internal.Error{Status: http.StatusBadRequest, Message: "Document ID must match _id in document"}
 		}
 		docID = id
 		delete(tmp, "_id")
@@ -76,9 +83,13 @@ func prepareDoc(docID string, doc interface{}) (string, string, []byte, error) {
 	h := md5.New()
 	b, _ := json.Marshal(tmp)
 	if _, err := io.Copy(h, bytes.NewReader(b)); err != nil {
-		return "", "", nil, err
+		return nil, err
 	}
-	return docID, hex.EncodeToString(h.Sum(nil)), b, nil
+	return &docData{
+		ID:  docID,
+		Rev: hex.EncodeToString(h.Sum(nil)),
+		Doc: b,
+	}, nil
 }
 
 // extractRev extracts the rev from the document.

@@ -60,7 +60,7 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 	if docRev == "" && optsRev != "" {
 		docRev = optsRev
 	}
-	docID, rev, jsonDoc, err := prepareDoc(docID, doc)
+	data, err := prepareDoc(docID, doc)
 	if err != nil {
 		return "", err
 	}
@@ -97,7 +97,7 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 			INSERT INTO %q (id, rev, rev_id, doc)
 			VALUES ($1, $2, $3, $4)
 			RETURNING rev || '-' || rev_id
-		`, d.name), docID, rev.rev, rev.id, jsonDoc).Scan(&newRev)
+		`, d.name), docID, rev.rev, rev.id, data.Doc).Scan(&newRev)
 		var sqliteErr *sqlite.Error
 		if errors.As(err, &sqliteErr) && sqliteErr.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE {
 			// In the case of a conflict for new_edits=false, we assume that the
@@ -140,14 +140,14 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 		FROM %[1]q
 		WHERE id = $1
 		RETURNING rev, rev_id
-	`, d.name+"_revs"), docID, rev, curRevRev, curRevID).Scan(&r.rev, &r.id)
+	`, d.name+"_revs"), data.ID, data.Rev, curRevRev, curRevID).Scan(&r.rev, &r.id)
 	if err != nil {
 		return "", err
 	}
 	_, err = tx.ExecContext(ctx, fmt.Sprintf(`
 		INSERT INTO %[1]q (id, rev, rev_id, doc)
 		VALUES ($1, $2, $3, $4)
-	`, d.name), docID, r.rev, r.id, jsonDoc)
+	`, d.name), data.ID, r.rev, r.id, data.Doc)
 	if err != nil {
 		return "", err
 	}
@@ -243,7 +243,7 @@ func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (
 	options.Apply(opts)
 	docRev, _ := opts["rev"].(string)
 
-	docID, rev, jsonDoc, err := prepareDoc(docID, map[string]interface{}{"_deleted": true})
+	data, err := prepareDoc(docID, map[string]interface{}{"_deleted": true})
 	if err != nil {
 		return "", err
 	}
@@ -261,7 +261,7 @@ func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (
 		WHERE id = $1
 		ORDER BY rev DESC, rev_id DESC
 		LIMIT 1
-	`, d.name), docID).Scan(&curRev.rev, &curRev.id)
+	`, d.name), data.ID).Scan(&curRev.rev, &curRev.id)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return "", &internal.Error{Status: http.StatusNotFound, Message: "not found"}
@@ -286,14 +286,14 @@ func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (
 		FROM %[1]q
 		WHERE id = $1
 		RETURNING rev, rev_id
-	`, d.name+"_revs"), docID, rev, curRevRev, curRevID).Scan(&r.rev, &r.id)
+	`, d.name+"_revs"), data.ID, data.Rev, curRevRev, curRevID).Scan(&r.rev, &r.id)
 	if err != nil {
 		return "", err
 	}
 	_, err = tx.ExecContext(ctx, fmt.Sprintf(`
 		INSERT INTO %[1]q (id, rev, rev_id, doc, deleted)
 		VALUES ($1, $2, $3, $4, TRUE)
-	`, d.name), docID, r.rev, r.id, jsonDoc)
+	`, d.name), data.ID, r.rev, r.id, data.Doc)
 	if err != nil {
 		return "", err
 	}

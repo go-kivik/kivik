@@ -112,16 +112,18 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 		return newRev, tx.Commit()
 	}
 
-	var curRev string
+	var curRev revision
 	err = tx.QueryRowContext(ctx, fmt.Sprintf(`
-		SELECT COALESCE(MAX(rev || '-' || rev_id),'')
+		SELECT rev, rev_id
 		FROM %q
 		WHERE id = $1
-	`, d.name), docID).Scan(&curRev)
+		ORDER BY rev DESC, rev_id DESC
+		LIMIT 1
+	`, d.name), docID).Scan(&curRev.rev, &curRev.id)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return "", err
 	}
-	if curRev != docRev {
+	if curRev.String() != docRev {
 		return "", &internal.Error{Status: http.StatusConflict, Message: "conflict"}
 	}
 	var r revision

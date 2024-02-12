@@ -126,14 +126,22 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 	if curRev.String() != docRev {
 		return "", &internal.Error{Status: http.StatusConflict, Message: "conflict"}
 	}
-	var r revision
+	var (
+		r         revision
+		curRevRev *int
+		curRevID  *string
+	)
+	if curRev.rev != 0 {
+		curRevRev = &curRev.rev
+		curRevID = &curRev.id
+	}
 	err = tx.QueryRowContext(ctx, fmt.Sprintf(`
-		INSERT INTO %[1]q (id, rev, rev_id)
-		SELECT $1, COALESCE(MAX(rev),0) + 1, $2
+		INSERT INTO %[1]q (id, rev, rev_id, parent_rev, parent_rev_id)
+		SELECT $1, COALESCE(MAX(rev),0) + 1, $2, $3, $4
 		FROM %[1]q
 		WHERE id = $1
 		RETURNING rev, rev_id
-	`, d.name+"_revs"), docID, rev).Scan(&r.rev, &r.id)
+	`, d.name+"_revs"), docID, rev, curRevRev, curRevID).Scan(&r.rev, &r.id)
 	if err != nil {
 		return "", err
 	}

@@ -219,6 +219,43 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 		toMerge["_deleted_conflicts"] = revs
 	}
 
+	if revsInfo, _ := opts["revs_info"].(bool); revsInfo {
+		rows, err := tx.QueryContext(ctx, fmt.Sprintf(`
+			SELECT
+				rev.rev || '-' || rev.rev_id,
+				CASE
+					WHEN doc.id IS NULL THEN 'missing'
+					WHEN doc.deleted THEN    'deleted'
+					ELSE                     'available'
+				END
+			FROM %[1]q AS rev
+			LEFT JOIN %[2]q AS doc ON doc.id = rev.id
+				AND doc.rev = rev.rev
+				AND doc.rev_id = rev.rev_id
+			WHERE rev.id = $1
+			ORDER BY rev.rev DESC, rev.rev_id DESC
+		`, d.name+"_revs", d.name), id)
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+		var revs []map[string]string
+		for rows.Next() {
+			var rev, status string
+			if err := rows.Scan(&rev, &status); err != nil {
+				return nil, err
+			}
+			revs = append(revs, map[string]string{
+				"rev":    rev,
+				"status": status,
+			})
+		}
+		if err := rows.Err(); err != nil {
+			return nil, err
+		}
+		toMerge["_revs_info"] = revs
+	}
+
 	if len(toMerge) > 0 {
 		body, err = mergeIntoDoc(body, toMerge)
 		if err != nil {

@@ -682,6 +682,49 @@ func TestDBGet(t *testing.T) {
 				"_conflicts":         []string{"1-abc"},
 			},
 		},
+		{
+			name: "include revs_info",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]interface{}{"foo": "moo", "_deleted": true}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+					"rev":       "1-qwe",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+					"rev":       "1-abc",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+					"rev":       "1-xyz",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]string{"foo": "qux"}, kivik.Rev("1-xyz"))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id: "foo",
+			options: kivik.Params(map[string]interface{}{
+				"revs_info": true,
+			}),
+			wantDoc: map[string]interface{}{
+				"foo": "qux",
+				"_revs_info": []map[string]string{
+					{"rev": "2-8ecd3d54a4d763ebc0b6e6666d9af066", "status": "available"},
+					{"rev": "1-xyz", "status": "available"},
+					{"rev": "1-qwe", "status": "deleted"},
+					{"rev": "1-abc", "status": "available"},
+				},
+			},
+		},
 		/*
 			TODO:
 			attachments = true
@@ -692,7 +735,6 @@ func TestDBGet(t *testing.T) {
 			meta = true
 			open_revs = []
 			revs = true
-			revs_info = true
 		*/
 	}
 

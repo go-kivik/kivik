@@ -127,3 +127,16 @@ func extractRev(doc interface{}) (string, error) {
 		return revDoc.Rev, nil
 	}
 }
+
+func mergeIntoDoc(doc []byte, partials ...map[string]interface{}) ([]byte, error) {
+	var merged map[string]interface{}
+	if err := json.Unmarshal(doc, &merged); err != nil {
+		return nil, err
+	}
+	for _, p := range partials {
+		for k, v := range p {
+			merged[k] = v
+		}
+	}
+	return json.Marshal(merged)
+}

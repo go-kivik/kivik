@@ -13,14 +13,13 @@
 package sqlite
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 
 	"modernc.org/sqlite"
 	sqlite3 "modernc.org/sqlite/lib"
@@ -160,7 +159,7 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 
 	var (
 		r       revision
-		body    string
+		body    []byte
 		err     error
 		deleted bool
 	)
@@ -200,22 +199,15 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 		return nil, err
 	}
 
+	toMerge := map[string]interface{}{}
+
 	if conflicts, _ := opts["conflicts"].(bool); conflicts {
 		revs, err := d.conflicts(ctx, tx, id, r, false)
 		if err != nil {
 			return nil, err
 		}
 
-		var doc map[string]interface{}
-		if err := json.Unmarshal([]byte(body), &doc); err != nil {
-			return nil, err
-		}
-		doc["_conflicts"] = revs
-		jonDoc, err := json.Marshal(doc)
-		if err != nil {
-			return nil, err
-		}
-		body = string(jonDoc)
+		toMerge["_conflicts"] = revs
 	}
 
 	if deletedConflicts, _ := opts["deleted_conflicts"].(bool); deletedConflicts {
@@ -224,21 +216,19 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 			return nil, err
 		}
 
-		var doc map[string]interface{}
-		if err := json.Unmarshal([]byte(body), &doc); err != nil {
-			return nil, err
-		}
-		doc["_deleted_conflicts"] = revs
-		jonDoc, err := json.Marshal(doc)
+		toMerge["_deleted_conflicts"] = revs
+	}
+
+	if len(toMerge) > 0 {
+		body, err = mergeIntoDoc(body, toMerge)
 		if err != nil {
 			return nil, err
 		}
-		body = string(jonDoc)
 	}
 
 	return &driver.Document{
 		Rev:  r.String(),
-		Body: io.NopCloser(strings.NewReader(body)),
+		Body: io.NopCloser(bytes.NewReader(body)),
 	}, tx.Commit()
 }
 

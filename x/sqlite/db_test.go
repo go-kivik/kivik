@@ -522,8 +522,40 @@ func TestDelete(t *testing.T) {
 				}
 			},
 		},
+		{
+			name: "replay delete should conflict",
+			setup: func(t *testing.T, d driver.DB) {
+				rev, err := d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Delete(context.Background(), "foo", kivik.Rev(rev))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id:         "foo",
+			options:    kivik.Rev("1-9bb58f26192e4ba00f01e2e7b136bbd8"),
+			wantStatus: http.StatusConflict,
+			wantErr:    "conflict",
+		},
+		{
+			name: "delete deleted doc should succeed",
+			setup: func(t *testing.T, d driver.DB) {
+				rev, err := d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Delete(context.Background(), "foo", kivik.Rev(rev))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id:      "foo",
+			options: kivik.Rev("2-df2a4fe30cde39c357c8d1105748d1b9"),
+			wantRev: "3-df2a4fe30cde39c357c8d1105748d1b9",
+		},
 		/*
-			- delete already deleted doc -- 200 or 404?
 			- missing rev -- how does Couchdb respond?
 		*/
 	}

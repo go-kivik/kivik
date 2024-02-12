@@ -39,6 +39,11 @@ func (drv) NewClient(dsn string, _ driver.Options) (driver.Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	_, err = db.Exec("PRAGMA foreign_keys = ON")
+	if err != nil {
+		return nil, err
+	}
+
 	return &client{
 		db: db,
 	}, nil
@@ -121,7 +126,7 @@ func (c *client) CreateDB(ctx context.Context, name string, _ driver.Options) er
 	}
 	defer tx.Rollback()
 	for _, query := range schema {
-		_, err := tx.ExecContext(ctx, fmt.Sprintf(query, name))
+		_, err := tx.ExecContext(ctx, fmt.Sprintf(query, name, name+"_revs"))
 		if err == nil {
 			continue
 		}

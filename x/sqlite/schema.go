@@ -13,13 +13,23 @@
 package sqlite
 
 var schema = []string{
-	`CREATE TABLE %q (
+	`CREATE TABLE %[2]q (
+		id TEXT NOT NULL,
+		rev INTEGER NOT NULL,
+		rev_id TEXT NOT NULL,
+		parent_rev INTEGER,
+		parent_rev_id TEXT,
+		FOREIGN KEY (id, parent_rev, parent_rev_id) REFERENCES %[2]q (id, rev, rev_id) ON DELETE CASCADE,
+		UNIQUE(id, rev, rev_id)
+	)`,
+	`CREATE TABLE %[1]q (
 		seq INTEGER PRIMARY KEY,
 		id TEXT NOT NULL,
-		rev_id INTEGER NOT NULL DEFAULT 1,
-		rev TEXT NOT NULL,
+		rev INTEGER NOT NULL,
+		rev_id TEXT NOT NULL,
 		doc BLOB NOT NULL,
 		deleted BOOLEAN NOT NULL DEFAULT FALSE,
-		UNIQUE(id, rev_id, rev)
+		FOREIGN KEY (id, rev, rev_id) REFERENCES %[2]q (id, rev, rev_id) ON DELETE CASCADE,
+		UNIQUE(id, rev, rev_id)
 	)`,
 }

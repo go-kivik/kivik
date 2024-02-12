@@ -26,12 +26,12 @@ import (
 )
 
 type revision struct {
-	id  int
-	rev string
+	rev int
+	id  string
 }
 
 func (r revision) String() string {
-	return strconv.Itoa(r.id) + "-" + r.rev
+	return strconv.Itoa(r.rev) + "-" + r.id
 }
 
 func parseRev(s string) (revision, error) {
@@ -46,9 +46,9 @@ func parseRev(s string) (revision, error) {
 	}
 	if len(parts) == 1 {
 		// A rev that contains only a number is technically valid.
-		return revision{id: int(id)}, nil
+		return revision{rev: int(id)}, nil
 	}
-	return revision{id: int(id), rev: parts[1]}, nil
+	return revision{rev: int(id), id: parts[1]}, nil
 }
 
 // prepareDoc prepares the doc for insertion. It returns the new docID, rev, and

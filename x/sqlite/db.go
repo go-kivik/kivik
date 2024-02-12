@@ -66,6 +66,12 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 		return "", err
 	}
 
+	tx, err := d.db.BeginTx(ctx, nil)
+	if err != nil {
+		return "", err
+	}
+	defer tx.Rollback()
+
 	if newEdits, _ := opts["new_edits"].(bool); !newEdits {
 		if docRev == "" {
 			return "", &internal.Error{Status: http.StatusBadRequest, Message: "When `new_edits: false`, the document needs `_rev` or `_revisions` specified"}
@@ -74,12 +80,25 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 		if err != nil {
 			return "", err
 		}
+		_, err = tx.ExecContext(ctx, fmt.Sprintf(`
+			INSERT INTO %[1]q (id, rev, rev_id)
+			VALUES ($1, $2, $3)
+		`, d.name+"_revs"), docID, rev.rev, rev.id)
+		if err != nil {
+			var sqliteErr *sqlite.Error
+			// A conflict here can be ignored, as we're not actually writing the
+			// document, and the rev can theoretically be updated without the doc
+			// during replication.
+			if !errors.As(err, &sqliteErr) || sqliteErr.Code() != sqlite3.SQLITE_CONSTRAINT_UNIQUE {
+				return "", err
+			}
+		}
 		var newRev string
-		err = d.db.QueryRowContext(ctx, fmt.Sprintf(`
-			INSERT INTO %q (id, rev_id, rev, doc)
+		err = tx.QueryRowContext(ctx, fmt.Sprintf(`
+			INSERT INTO %q (id, rev, rev_id, doc)
 			VALUES ($1, $2, $3, $4)
-			RETURNING rev_id || '-' || rev
-		`, d.name), docID, rev.id, rev.rev, jsonDoc).Scan(&newRev)
+			RETURNING rev || '-' || rev_id
+		`, d.name), docID, rev.rev, rev.id, jsonDoc).Scan(&newRev)
 		var sqliteErr *sqlite.Error
 		if errors.As(err, &sqliteErr) && sqliteErr.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE {
 			// In the case of a conflict for new_edits=false, we assume that the
@@ -87,18 +106,15 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 			// the current rev, to match CouchDB behavior.
 			return docRev, nil
 		}
-		return newRev, err
+		if err != nil {
+			return "", err
+		}
+		return newRev, tx.Commit()
 	}
-
-	tx, err := d.db.BeginTx(ctx, nil)
-	if err != nil {
-		return "", err
-	}
-	defer tx.Rollback()
 
 	var curRev string
 	err = tx.QueryRowContext(ctx, fmt.Sprintf(`
-		SELECT COALESCE(MAX(rev_id || '-' || rev),'')
+		SELECT COALESCE(MAX(rev || '-' || rev_id),'')
 		FROM %q
 		WHERE id = $1
 	`, d.name), docID).Scan(&curRev)
@@ -108,29 +124,36 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 	if curRev != docRev {
 		return "", &internal.Error{Status: http.StatusConflict, Message: "conflict"}
 	}
-	var newRev string
+	var r revision
 	err = tx.QueryRowContext(ctx, fmt.Sprintf(`
-		INSERT INTO %[1]q (id, rev_id, rev, doc)
-		SELECT $1, COALESCE(MAX(rev_id),0) + 1, $2, $3
+		INSERT INTO %[1]q (id, rev, rev_id)
+		SELECT $1, COALESCE(MAX(rev),0) + 1, $2
 		FROM %[1]q
 		WHERE id = $1
-		RETURNING rev_id || '-' || rev
-	`, d.name), docID, rev, jsonDoc).Scan(&newRev)
+		RETURNING rev, rev_id
+	`, d.name+"_revs"), docID, rev).Scan(&r.rev, &r.id)
 	if err != nil {
 		return "", err
 	}
-	return newRev, tx.Commit()
+	_, err = tx.ExecContext(ctx, fmt.Sprintf(`
+		INSERT INTO %[1]q (id, rev, rev_id, doc)
+		VALUES ($1, $2, $3, $4)
+	`, d.name), docID, r.rev, r.id, jsonDoc)
+	if err != nil {
+		return "", err
+	}
+	return r.String(), tx.Commit()
 }
 
 func (d *db) Get(ctx context.Context, id string, options driver.Options) (*driver.Document, error) {
 	opts := map[string]interface{}{}
 	options.Apply(opts)
 
-	var rev, body string
+	var r revision
+	var body string
 	var err error
 
 	if optsRev, _ := opts["rev"].(string); optsRev != "" {
-		var r revision
 		r, err = parseRev(optsRev)
 		if err != nil {
 			return nil, err
@@ -139,19 +162,21 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 			SELECT doc
 			FROM %q
 			WHERE id = $1
-				AND rev_id = $2
-				AND rev = $3
-			`, d.name), id, r.id, r.rev).Scan(&body)
-		rev = optsRev
+				AND rev = $2
+				AND rev_id = $3
+			`, d.name), id, r.rev, r.id).Scan(&body)
 	} else {
+		var rev int
+		var revID string
 		err = d.db.QueryRowContext(ctx, fmt.Sprintf(`
-		SELECT rev_id || '-' || rev, doc
+		SELECT rev, rev_id, doc
 		FROM %q
 		WHERE id = $1
 			AND deleted = FALSE
-		ORDER BY rev_id DESC, rev DESC
+		ORDER BY rev DESC, rev_id DESC
 		LIMIT 1
-	`, d.name), id).Scan(&rev, &body)
+	`, d.name), id).Scan(&rev, &revID, &body)
+		r = revision{rev: rev, id: revID}
 	}
 
 	if errors.Is(err, sql.ErrNoRows) {
@@ -164,12 +189,12 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 	if conflicts, _ := opts["conflicts"].(bool); conflicts {
 		var revs []string
 		rows, err := d.db.QueryContext(ctx, fmt.Sprintf(`
-			SELECT rev_id || '-' || rev
+			SELECT rev || '-' || rev_id
 			FROM %q
 			WHERE id = $1
-				AND rev_id || '-' || rev != $2
+				AND NOT (rev = $2 AND rev_id = $3)
 				AND DELETED = FALSE
-			`, d.name), id, rev)
+			`, d.name), id, r.rev, r.id)
 		if err != nil {
 			return nil, err
 		}
@@ -196,7 +221,7 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 		body = string(jonDoc)
 	}
 	return &driver.Document{
-		Rev:  rev,
+		Rev:  r.String(),
 		Body: io.NopCloser(strings.NewReader(body)),
 	}, nil
 }

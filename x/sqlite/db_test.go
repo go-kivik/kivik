@@ -17,16 +17,52 @@ package sqlite
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/internal/mock"
 )
+
+type leaf struct {
+	ID          string
+	Rev         int
+	RevID       string
+	ParentRev   *int
+	ParentRevID *string
+}
+
+func readRevisions(t *testing.T, db *sql.DB, id string) []leaf {
+	t.Helper()
+	rows, err := db.Query(`
+		SELECT id, rev, rev_id, parent_rev, parent_rev_id
+		FROM "test_revs"
+		WHERE id=$1
+		ORDER BY rev, rev_id
+	`, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	var leaves []leaf
+	for rows.Next() {
+		var l leaf
+		if err := rows.Scan(&l.ID, &l.Rev, &l.RevID, &l.ParentRev, &l.ParentRevID); err != nil {
+			t.Fatal(err)
+		}
+		leaves = append(leaves, l)
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+	return leaves
+}
 
 func TestDBPut(t *testing.T) {
 	t.Parallel()
@@ -38,6 +74,7 @@ func TestDBPut(t *testing.T) {
 		options    driver.Options
 		check      func(*testing.T, driver.DB)
 		wantRev    string
+		wantRevs   []leaf
 		wantStatus int
 		wantErr    string
 	}{
@@ -48,6 +85,13 @@ func TestDBPut(t *testing.T) {
 				"foo": "bar",
 			},
 			wantRev: "1-9bb58f26192e4ba00f01e2e7b136bbd8",
+			wantRevs: []leaf{
+				{
+					ID:    "foo",
+					Rev:   1,
+					RevID: "9bb58f26192e4ba00f01e2e7b136bbd8",
+				},
+			},
 		},
 		{
 			name:  "doc rev & option rev mismatch",
@@ -113,6 +157,18 @@ func TestDBPut(t *testing.T) {
 				"foo":  "baz",
 			},
 			wantRev: "2-afa7ae8a1906f4bb061be63525974f92",
+			wantRevs: []leaf{
+				{
+					ID:    "foo",
+					Rev:   1,
+					RevID: "9bb58f26192e4ba00f01e2e7b136bbd8",
+				},
+				{
+					ID:    "foo",
+					Rev:   2,
+					RevID: "afa7ae8a1906f4bb061be63525974f92",
+				},
+			},
 		},
 		{
 			name:  "update doc with new_edits=false, no existing doc",
@@ -123,6 +179,13 @@ func TestDBPut(t *testing.T) {
 			},
 			options: kivik.Param("new_edits", false),
 			wantRev: "1-6fe51f74859f3579abaccc426dd5104f",
+			wantRevs: []leaf{
+				{
+					ID:    "foo",
+					Rev:   1,
+					RevID: "6fe51f74859f3579abaccc426dd5104f",
+				},
+			},
 		},
 		{
 			name:  "update doc with new_edits=false, no rev",
@@ -149,6 +212,18 @@ func TestDBPut(t *testing.T) {
 			},
 			options: kivik.Param("new_edits", false),
 			wantRev: "1-asdf",
+			wantRevs: []leaf{
+				{
+					ID:    "foo",
+					Rev:   1,
+					RevID: "9bb58f26192e4ba00f01e2e7b136bbd8",
+				},
+				{
+					ID:    "foo",
+					Rev:   1,
+					RevID: "asdf",
+				},
+			},
 		},
 		{
 			name: "update doc with new_edits=false, existing doc and rev",
@@ -171,14 +246,21 @@ func TestDBPut(t *testing.T) {
 					SELECT doc
 					FROM test
 					WHERE id='foo'
-						AND rev_id=1
-						AND rev='9bb58f26192e4ba00f01e2e7b136bbd8'`).Scan(&doc)
+						AND rev=1
+						AND rev_id='9bb58f26192e4ba00f01e2e7b136bbd8'`).Scan(&doc)
 				if err != nil {
 					t.Fatal(err)
 				}
 				if doc != `{"foo":"bar"}` {
 					t.Errorf("Unexpected doc: %s", doc)
 				}
+			},
+			wantRevs: []leaf{
+				{
+					ID:    "foo",
+					Rev:   1,
+					RevID: "9bb58f26192e4ba00f01e2e7b136bbd8",
+				},
 			},
 		},
 		{
@@ -197,26 +279,33 @@ func TestDBPut(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			db := newDB(t)
+			dbc := newDB(t)
 			if tt.setup != nil {
-				tt.setup(t, db)
+				tt.setup(t, dbc)
 			}
 			opts := tt.options
 			if opts == nil {
 				opts = mock.NilOption
 			}
-			rev, err := db.Put(context.Background(), tt.docID, tt.doc, opts)
+			rev, err := dbc.Put(context.Background(), tt.docID, tt.doc, opts)
 			if !testy.ErrorMatches(tt.wantErr, err) {
 				t.Errorf("Unexpected error: %s", err)
 			}
 			if tt.check != nil {
-				tt.check(t, db)
+				tt.check(t, dbc)
 			}
 			if err != nil {
 				return
 			}
 			if rev != tt.wantRev {
 				t.Errorf("Unexpected rev: %s, want %s", rev, tt.wantRev)
+			}
+			if len(tt.wantRevs) == 0 {
+				t.Errorf("No leaves to check")
+			}
+			leaves := readRevisions(t, dbc.(*db).db, tt.docID)
+			if d := cmp.Diff(tt.wantRevs, leaves); d != "" {
+				t.Errorf("Unexpected leaves: %s", d)
 			}
 		})
 	}

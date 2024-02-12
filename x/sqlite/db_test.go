@@ -720,8 +720,6 @@ func TestDBGet(t *testing.T) {
 				"_revs_info": []map[string]string{
 					{"rev": "2-8ecd3d54a4d763ebc0b6e6666d9af066", "status": "available"},
 					{"rev": "1-xyz", "status": "available"},
-					{"rev": "1-qwe", "status": "deleted"},
-					{"rev": "1-abc", "status": "available"},
 				},
 			},
 		},
@@ -761,8 +759,6 @@ func TestDBGet(t *testing.T) {
 				"_revs_info": []map[string]string{
 					{"rev": "2-8ecd3d54a4d763ebc0b6e6666d9af066", "status": "available"},
 					{"rev": "1-xyz", "status": "available"},
-					{"rev": "1-qwe", "status": "deleted"},
-					{"rev": "1-abc", "status": "available"},
 				},
 				"_conflicts":         []string{"1-abc"},
 				"_deleted_conflicts": []string{"1-qwe"},

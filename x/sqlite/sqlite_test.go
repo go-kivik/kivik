@@ -29,7 +29,7 @@ import (
 func TestNewClient(t *testing.T) {
 	d := drv{}
 
-	client, _ := d.NewClient("xxx", nil)
+	client, _ := d.NewClient(":memory:", nil)
 	if client == nil {
 		t.Fatal("client should not be nil")
 	}

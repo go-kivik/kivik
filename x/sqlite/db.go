@@ -158,9 +158,12 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 	opts := map[string]interface{}{}
 	options.Apply(opts)
 
-	var r revision
-	var body string
-	var err error
+	var (
+		r       revision
+		body    string
+		err     error
+		deleted bool
+	)
 
 	if optsRev, _ := opts["rev"].(string); optsRev != "" {
 		r, err = parseRev(optsRev)
@@ -175,20 +178,16 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 				AND rev_id = $3
 			`, d.name), id, r.rev, r.id).Scan(&body)
 	} else {
-		var rev int
-		var revID string
 		err = d.db.QueryRowContext(ctx, fmt.Sprintf(`
-		SELECT rev, rev_id, doc
-		FROM %q
-		WHERE id = $1
-			AND deleted = FALSE
-		ORDER BY rev DESC, rev_id DESC
-		LIMIT 1
-	`, d.name), id).Scan(&rev, &revID, &body)
-		r = revision{rev: rev, id: revID}
+			SELECT rev, rev_id, doc, deleted
+			FROM %q
+			WHERE id = $1
+			ORDER BY rev DESC, rev_id DESC
+			LIMIT 1
+		`, d.name), id).Scan(&r.rev, &r.id, &body, &deleted)
 	}
 
-	if errors.Is(err, sql.ErrNoRows) {
+	if deleted || errors.Is(err, sql.ErrNoRows) {
 		return nil, &internal.Error{Status: http.StatusNotFound, Message: "not found"}
 	}
 	if err != nil {

@@ -285,6 +285,9 @@ func TestDBPut(t *testing.T) {
 			wantStatus: http.StatusBadRequest,
 			wantErr:    "Document ID must match _id in document",
 		},
+		/*
+			- put with _deleted=true
+		*/
 	}
 
 	for _, tt := range tests {
@@ -428,6 +431,22 @@ func TestGet(t *testing.T) {
 				"_conflicts": []string{"1-abc"},
 			},
 		},
+		{
+			name: "deleted document",
+			setup: func(t *testing.T, d driver.DB) {
+				rev, err := d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Delete(context.Background(), "foo", kivik.Rev(rev))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id:         "foo",
+			wantStatus: http.StatusNotFound,
+			wantErr:    "not found",
+		},
 		/*
 			TODO:
 			attachments = true
@@ -555,9 +574,18 @@ func TestDelete(t *testing.T) {
 			options: kivik.Rev("2-df2a4fe30cde39c357c8d1105748d1b9"),
 			wantRev: "3-df2a4fe30cde39c357c8d1105748d1b9",
 		},
-		/*
-			- missing rev -- how does Couchdb respond?
-		*/
+		{
+			name: "delete without rev",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id:         "foo",
+			wantStatus: http.StatusConflict,
+			wantErr:    "conflict",
+		},
 	}
 
 	for _, tt := range tests {

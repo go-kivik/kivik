@@ -201,6 +201,12 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 
 	toMerge := map[string]interface{}{}
 
+	if meta, _ := opts["meta"].(bool); meta {
+		opts["conflicts"] = true
+		opts["deleted_conflicts"] = true
+		opts["revs_info"] = true
+	}
+
 	if conflicts, _ := opts["conflicts"].(bool); conflicts {
 		revs, err := d.conflicts(ctx, tx, id, r, false)
 		if err != nil {

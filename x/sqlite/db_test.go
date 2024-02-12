@@ -421,7 +421,7 @@ func TestDBPut(t *testing.T) {
 	}
 }
 
-func TestGet(t *testing.T) {
+func TestDBGet(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name       string
@@ -570,12 +570,123 @@ func TestGet(t *testing.T) {
 			options: kivik.Rev("1-6872a0fc474ada5c46ce054b92897063"),
 			wantDoc: map[string]interface{}{"_deleted": true, "foo": "bar"},
 		},
+		{
+			name: "include conflicts, skip deleted conflicts",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]interface{}{"foo": "moo", "_deleted": true}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+					"rev":       "1-qwe",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+					"rev":       "1-abc",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+					"rev":       "1-xyz",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]string{"foo": "qux"}, kivik.Rev("1-xyz"))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id:      "foo",
+			options: kivik.Param("conflicts", true),
+			wantDoc: map[string]interface{}{
+				"foo":        "qux",
+				"_conflicts": []string{"1-abc"},
+			},
+		},
+		{
+			name: "include deleted conflicts",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]interface{}{"foo": "moo", "_deleted": true}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+					"rev":       "1-qwe",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+					"rev":       "1-abc",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+					"rev":       "1-xyz",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]string{"foo": "qux"}, kivik.Rev("1-xyz"))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id:      "foo",
+			options: kivik.Param("deleted_conflicts", true),
+			wantDoc: map[string]interface{}{
+				"foo":                "qux",
+				"_deleted_conflicts": []string{"1-qwe"},
+			},
+		},
+		{
+			name: "include all conflicts",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]interface{}{"foo": "moo", "_deleted": true}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+					"rev":       "1-qwe",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+					"rev":       "1-abc",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+					"rev":       "1-xyz",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]string{"foo": "qux"}, kivik.Rev("1-xyz"))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id: "foo",
+			options: kivik.Params(map[string]interface{}{
+				"conflicts":         true,
+				"deleted_conflicts": true,
+			}),
+			wantDoc: map[string]interface{}{
+				"foo":                "qux",
+				"_deleted_conflicts": []string{"1-qwe"},
+				"_conflicts":         []string{"1-abc"},
+			},
+		},
 		/*
 			TODO:
 			attachments = true
 			att_encoding_info = true
 			atts_since = [revs]
-			deleted_conflicts = true
 			latest = true
 			local_seq = true
 			meta = true
@@ -618,7 +729,7 @@ func TestGet(t *testing.T) {
 	}
 }
 
-func TestDelete(t *testing.T) {
+func TestDBDelete(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name       string

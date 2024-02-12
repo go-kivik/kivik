@@ -236,6 +236,50 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 		}
 		body = string(jonDoc)
 	}
+
+	if deletedConflicts, _ := opts["deleted_conflicts"].(bool); deletedConflicts {
+		var revs []string
+		rows, err := d.db.QueryContext(ctx, fmt.Sprintf(`
+			SELECT rev.rev || '-' || rev.rev_id
+			FROM %[1]q AS rev
+			LEFT JOIN %[1]q AS child
+				ON rev.id = child.id
+				AND rev.rev = child.parent_rev
+				AND rev.rev_id = child.parent_rev_id
+			JOIN %[2]q AS docs ON docs.id = rev.id
+				AND docs.rev = rev.rev
+				AND docs.rev_id = rev.rev_id
+			WHERE rev.id = $1
+				AND NOT (rev.rev = $2 AND rev.rev_id = $3)
+				AND child.id IS NULL
+				AND docs.deleted = TRUE
+			`, d.name+"_revs", d.name), id, r.rev, r.id)
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var r string
+			if err := rows.Scan(&r); err != nil {
+				return nil, err
+			}
+			revs = append(revs, r)
+		}
+		if err := rows.Err(); err != nil {
+			return nil, err
+		}
+		var doc map[string]interface{}
+		if err := json.Unmarshal([]byte(body), &doc); err != nil {
+			return nil, err
+		}
+		doc["_deleted_conflicts"] = revs
+		jonDoc, err := json.Marshal(doc)
+		if err != nil {
+			return nil, err
+		}
+		body = string(jonDoc)
+	}
+
 	return &driver.Document{
 		Rev:  r.String(),
 		Body: io.NopCloser(strings.NewReader(body)),

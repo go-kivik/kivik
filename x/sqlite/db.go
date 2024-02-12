@@ -165,12 +165,18 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 		deleted bool
 	)
 
+	tx, err := d.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
 	if optsRev, _ := opts["rev"].(string); optsRev != "" {
 		r, err = parseRev(optsRev)
 		if err != nil {
 			return nil, err
 		}
-		err = d.db.QueryRowContext(ctx, fmt.Sprintf(`
+		err = tx.QueryRowContext(ctx, fmt.Sprintf(`
 			SELECT doc
 			FROM %q
 			WHERE id = $1
@@ -178,7 +184,7 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 				AND rev_id = $3
 			`, d.name), id, r.rev, r.id).Scan(&body)
 	} else {
-		err = d.db.QueryRowContext(ctx, fmt.Sprintf(`
+		err = tx.QueryRowContext(ctx, fmt.Sprintf(`
 			SELECT rev, rev_id, doc, deleted
 			FROM %q
 			WHERE id = $1
@@ -195,36 +201,11 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 	}
 
 	if conflicts, _ := opts["conflicts"].(bool); conflicts {
-		var revs []string
-		rows, err := d.db.QueryContext(ctx, fmt.Sprintf(`
-			SELECT rev.rev || '-' || rev.rev_id
-			FROM %[1]q AS rev
-			LEFT JOIN %[1]q AS child
-				ON rev.id = child.id
-				AND rev.rev = child.parent_rev
-				AND rev.rev_id = child.parent_rev_id
-			JOIN %[2]q AS docs ON docs.id = rev.id
-				AND docs.rev = rev.rev
-				AND docs.rev_id = rev.rev_id
-			WHERE rev.id = $1
-				AND NOT (rev.rev = $2 AND rev.rev_id = $3)
-				AND child.id IS NULL
-				AND docs.deleted = FALSE
-			`, d.name+"_revs", d.name), id, r.rev, r.id)
+		revs, err := d.conflicts(ctx, tx, id, r, false)
 		if err != nil {
 			return nil, err
 		}
-		defer rows.Close()
-		for rows.Next() {
-			var r string
-			if err := rows.Scan(&r); err != nil {
-				return nil, err
-			}
-			revs = append(revs, r)
-		}
-		if err := rows.Err(); err != nil {
-			return nil, err
-		}
+
 		var doc map[string]interface{}
 		if err := json.Unmarshal([]byte(body), &doc); err != nil {
 			return nil, err
@@ -238,36 +219,11 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 	}
 
 	if deletedConflicts, _ := opts["deleted_conflicts"].(bool); deletedConflicts {
-		var revs []string
-		rows, err := d.db.QueryContext(ctx, fmt.Sprintf(`
-			SELECT rev.rev || '-' || rev.rev_id
-			FROM %[1]q AS rev
-			LEFT JOIN %[1]q AS child
-				ON rev.id = child.id
-				AND rev.rev = child.parent_rev
-				AND rev.rev_id = child.parent_rev_id
-			JOIN %[2]q AS docs ON docs.id = rev.id
-				AND docs.rev = rev.rev
-				AND docs.rev_id = rev.rev_id
-			WHERE rev.id = $1
-				AND NOT (rev.rev = $2 AND rev.rev_id = $3)
-				AND child.id IS NULL
-				AND docs.deleted = TRUE
-			`, d.name+"_revs", d.name), id, r.rev, r.id)
+		revs, err := d.conflicts(ctx, tx, id, r, true)
 		if err != nil {
 			return nil, err
 		}
-		defer rows.Close()
-		for rows.Next() {
-			var r string
-			if err := rows.Scan(&r); err != nil {
-				return nil, err
-			}
-			revs = append(revs, r)
-		}
-		if err := rows.Err(); err != nil {
-			return nil, err
-		}
+
 		var doc map[string]interface{}
 		if err := json.Unmarshal([]byte(body), &doc); err != nil {
 			return nil, err
@@ -283,7 +239,38 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 	return &driver.Document{
 		Rev:  r.String(),
 		Body: io.NopCloser(strings.NewReader(body)),
-	}, nil
+	}, tx.Commit()
+}
+
+func (d *db) conflicts(ctx context.Context, tx *sql.Tx, id string, r revision, deleted bool) ([]string, error) {
+	var revs []string
+	rows, err := tx.QueryContext(ctx, fmt.Sprintf(`
+			SELECT rev.rev || '-' || rev.rev_id
+			FROM %[1]q AS rev
+			LEFT JOIN %[1]q AS child
+				ON rev.id = child.id
+				AND rev.rev = child.parent_rev
+				AND rev.rev_id = child.parent_rev_id
+			JOIN %[2]q AS docs ON docs.id = rev.id
+				AND docs.rev = rev.rev
+				AND docs.rev_id = rev.rev_id
+			WHERE rev.id = $1
+				AND NOT (rev.rev = $2 AND rev.rev_id = $3)
+				AND child.id IS NULL
+				AND docs.deleted = $4
+			`, d.name+"_revs", d.name), id, r.rev, r.id, deleted)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var r string
+		if err := rows.Scan(&r); err != nil {
+			return nil, err
+		}
+		revs = append(revs, r)
+	}
+	return revs, rows.Err()
 }
 
 func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (string, error) {

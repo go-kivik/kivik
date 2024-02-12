@@ -389,6 +389,35 @@ func TestGet(t *testing.T) {
 				"_conflicts": []string{"1-abc"},
 			},
 		},
+		{
+			name: "include only leaf conflicts",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+					"rev":       "1-abc",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+					"rev":       "1-xyz",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]string{"foo": "qux"}, kivik.Rev("1-xyz"))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id:      "foo",
+			options: kivik.Param("conflicts", true),
+			wantDoc: map[string]interface{}{
+				"foo":        "qux",
+				"_conflicts": []string{"1-abc"},
+			},
+		},
 		/*
 			TODO:
 			attachments = true

@@ -56,9 +56,10 @@ func parseRev(s string) (revision, error) {
 
 // docData represents the document id, rev, deleted status, etc.
 type docData struct {
-	ID  string
-	Rev string
-	Doc []byte
+	ID      string
+	Rev     string
+	Doc     []byte
+	Deleted bool
 }
 
 // prepareDoc prepares the doc for insertion. It returns the new docID, rev, and
@@ -72,24 +73,36 @@ func prepareDoc(docID string, doc interface{}) (*docData, error) {
 	if err := json.Unmarshal(tmpJSON, &tmp); err != nil {
 		return nil, err
 	}
+	data := &docData{
+		ID: docID,
+	}
 	delete(tmp, "_rev")
 	if id, ok := tmp["_id"].(string); ok {
 		if docID != "" && id != docID {
 			return nil, &internal.Error{Status: http.StatusBadRequest, Message: "Document ID must match _id in document"}
 		}
-		docID = id
+		data.ID = id
 		delete(tmp, "_id")
 	}
+	switch deleted := tmp["_deleted"].(type) {
+	case bool:
+		data.Deleted = deleted
+		if !deleted {
+			delete(tmp, "_deleted")
+		}
+	case nil:
+	default:
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "_deleted must be a boolean"}
+	}
+
 	h := md5.New()
 	b, _ := json.Marshal(tmp)
 	if _, err := io.Copy(h, bytes.NewReader(b)); err != nil {
 		return nil, err
 	}
-	return &docData{
-		ID:  docID,
-		Rev: hex.EncodeToString(h.Sum(nil)),
-		Doc: b,
-	}, nil
+	data.Rev = hex.EncodeToString(h.Sum(nil))
+	data.Doc = b
+	return data, nil
 }
 
 // extractRev extracts the rev from the document.

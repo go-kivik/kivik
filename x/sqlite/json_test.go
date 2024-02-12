@@ -27,13 +27,13 @@ func Test_prepareDoc(t *testing.T) {
 		name    string
 		docID   string
 		doc     interface{}
-		want    docData
+		want    *docData
 		wantErr string
 	}{
 		{
 			name: "no rev in document",
 			doc:  map[string]string{"foo": "bar"},
-			want: docData{
+			want: &docData{
 				Rev: "9bb58f26192e4ba00f01e2e7b136bbd8",
 				Doc: []byte(`{"foo":"bar"}`),
 			},
@@ -44,7 +44,7 @@ func Test_prepareDoc(t *testing.T) {
 				"_rev": "1-1234567890abcdef1234567890abcdef",
 				"foo":  "bar",
 			},
-			want: docData{
+			want: &docData{
 				Rev: "9bb58f26192e4ba00f01e2e7b136bbd8",
 				Doc: []byte(`{"foo":"bar"}`),
 			},
@@ -53,11 +53,33 @@ func Test_prepareDoc(t *testing.T) {
 			name:  "add docID",
 			docID: "foo",
 			doc:   map[string]string{"foo": "bar"},
-			want: docData{
+			want: &docData{
 				ID:  "foo",
 				Rev: "9bb58f26192e4ba00f01e2e7b136bbd8",
 				Doc: []byte(`{"foo":"bar"}`),
 			},
+		},
+		{
+			name: "deleted true",
+			doc: map[string]interface{}{
+				"_rev":     "1-1234567890abcdef1234567890abcdef",
+				"_deleted": true,
+				"foo":      "bar",
+			},
+			want: &docData{
+				Rev:     "6872a0fc474ada5c46ce054b92897063",
+				Doc:     []byte(`{"_deleted":true,"foo":"bar"}`),
+				Deleted: true,
+			},
+		},
+		{
+			name: "wrong type for _deleted",
+			doc: map[string]interface{}{
+				"_rev":     "1-1234567890abcdef1234567890abcdef",
+				"_deleted": "oink",
+				"foo":      "bar",
+			},
+			wantErr: "_deleted must be a boolean",
 		},
 	}
 
@@ -67,7 +89,7 @@ func Test_prepareDoc(t *testing.T) {
 			if !testy.ErrorMatches(tt.wantErr, err) {
 				t.Errorf("unexpected error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if d := cmp.Diff(&tt.want, got); d != "" {
+			if d := cmp.Diff(tt.want, got); d != "" {
 				t.Errorf(d)
 			}
 		})

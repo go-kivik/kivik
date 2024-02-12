@@ -94,10 +94,10 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 		}
 		var newRev string
 		err = tx.QueryRowContext(ctx, fmt.Sprintf(`
-			INSERT INTO %q (id, rev, rev_id, doc)
-			VALUES ($1, $2, $3, $4)
+			INSERT INTO %q (id, rev, rev_id, doc, deleted)
+			VALUES ($1, $2, $3, $4, $5)
 			RETURNING rev || '-' || rev_id
-		`, d.name), docID, rev.rev, rev.id, data.Doc).Scan(&newRev)
+		`, d.name), docID, rev.rev, rev.id, data.Doc, data.Deleted).Scan(&newRev)
 		var sqliteErr *sqlite.Error
 		if errors.As(err, &sqliteErr) && sqliteErr.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE {
 			// In the case of a conflict for new_edits=false, we assume that the
@@ -145,9 +145,9 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 		return "", err
 	}
 	_, err = tx.ExecContext(ctx, fmt.Sprintf(`
-		INSERT INTO %[1]q (id, rev, rev_id, doc)
-		VALUES ($1, $2, $3, $4)
-	`, d.name), data.ID, r.rev, r.id, data.Doc)
+		INSERT INTO %[1]q (id, rev, rev_id, doc, deleted)
+		VALUES ($1, $2, $3, $4, $5)
+	`, d.name), data.ID, r.rev, r.id, data.Doc, data.Deleted)
 	if err != nil {
 		return "", err
 	}
@@ -203,10 +203,14 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 				ON rev.id = child.id
 				AND rev.rev = child.parent_rev
 				AND rev.rev_id = child.parent_rev_id
+			JOIN %[2]q AS docs ON docs.id = rev.id
+				AND docs.rev = rev.rev
+				AND docs.rev_id = rev.rev_id
 			WHERE rev.id = $1
 				AND NOT (rev.rev = $2 AND rev.rev_id = $3)
 				AND child.id IS NULL
-			`, d.name+"_revs"), id, r.rev, r.id)
+				AND docs.deleted = FALSE
+			`, d.name+"_revs", d.name), id, r.rev, r.id)
 		if err != nil {
 			return nil, err
 		}

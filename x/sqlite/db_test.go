@@ -285,9 +285,104 @@ func TestDBPut(t *testing.T) {
 			wantStatus: http.StatusBadRequest,
 			wantErr:    "Document ID must match _id in document",
 		},
-		/*
-			- put with _deleted=true
-		*/
+		{
+			name:  "set _deleted=true",
+			docID: "foo",
+			doc: map[string]interface{}{
+				"_deleted": true,
+				"foo":      "bar",
+			},
+			wantRev: "1-6872a0fc474ada5c46ce054b92897063",
+			wantRevs: []leaf{
+				{
+					ID:    "foo",
+					Rev:   1,
+					RevID: "6872a0fc474ada5c46ce054b92897063",
+				},
+			},
+			check: func(t *testing.T, d driver.DB) {
+				var deleted bool
+				err := d.(*db).db.QueryRow(`
+					SELECT deleted
+					FROM test
+					WHERE id='foo'
+					ORDER BY rev DESC, rev_id DESC
+					LIMIT 1
+				`).Scan(&deleted)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !deleted {
+					t.Errorf("Document not marked deleted")
+				}
+			},
+		},
+		{
+			name:  "set _deleted=false",
+			docID: "foo",
+			doc: map[string]interface{}{
+				"_deleted": false,
+				"foo":      "bar",
+			},
+			wantRev: "1-9bb58f26192e4ba00f01e2e7b136bbd8",
+			wantRevs: []leaf{
+				{
+					ID:    "foo",
+					Rev:   1,
+					RevID: "9bb58f26192e4ba00f01e2e7b136bbd8",
+				},
+			},
+			check: func(t *testing.T, d driver.DB) {
+				var deleted bool
+				err := d.(*db).db.QueryRow(`
+					SELECT deleted
+					FROM test
+					WHERE id='foo'
+					ORDER BY rev DESC, rev_id DESC
+					LIMIT 1
+				`).Scan(&deleted)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if deleted {
+					t.Errorf("Document marked deleted")
+				}
+			},
+		},
+		{
+			name:  "set _deleted=true and new_edits=false",
+			docID: "foo",
+			doc: map[string]interface{}{
+				"_deleted": true,
+				"foo":      "bar",
+				"_rev":     "1-abc",
+			},
+			options: kivik.Param("new_edits", false),
+			wantRev: "1-abc",
+			wantRevs: []leaf{
+				{
+					ID:    "foo",
+					Rev:   1,
+					RevID: "abc",
+				},
+			},
+			check: func(t *testing.T, d driver.DB) {
+				var deleted bool
+				err := d.(*db).db.QueryRow(`
+					SELECT deleted
+					FROM test
+					WHERE id='foo'
+					ORDER BY rev DESC, rev_id DESC
+					LIMIT 1
+				`).Scan(&deleted)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !deleted {
+					t.Errorf("Document not marked deleted")
+				}
+			},
+		},
 	}
 
 	for _, tt := range tests {

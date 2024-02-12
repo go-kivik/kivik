@@ -31,6 +31,9 @@ type revision struct {
 }
 
 func (r revision) String() string {
+	if r.rev == 0 {
+		return ""
+	}
 	return strconv.Itoa(r.rev) + "-" + r.id
 }
 

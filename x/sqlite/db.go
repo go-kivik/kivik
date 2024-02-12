@@ -60,7 +60,6 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 	if docRev == "" && optsRev != "" {
 		docRev = optsRev
 	}
-
 	docID, rev, jsonDoc, err := prepareDoc(docID, doc)
 	if err != nil {
 		return "", err
@@ -112,26 +111,36 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 		return newRev, tx.Commit()
 	}
 
-	var curRev string
+	var curRev revision
 	err = tx.QueryRowContext(ctx, fmt.Sprintf(`
-		SELECT COALESCE(MAX(rev || '-' || rev_id),'')
+		SELECT rev, rev_id
 		FROM %q
 		WHERE id = $1
-	`, d.name), docID).Scan(&curRev)
+		ORDER BY rev DESC, rev_id DESC
+		LIMIT 1
+	`, d.name), docID).Scan(&curRev.rev, &curRev.id)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return "", err
 	}
-	if curRev != docRev {
+	if curRev.String() != docRev {
 		return "", &internal.Error{Status: http.StatusConflict, Message: "conflict"}
 	}
-	var r revision
+	var (
+		r         revision
+		curRevRev *int
+		curRevID  *string
+	)
+	if curRev.rev != 0 {
+		curRevRev = &curRev.rev
+		curRevID = &curRev.id
+	}
 	err = tx.QueryRowContext(ctx, fmt.Sprintf(`
-		INSERT INTO %[1]q (id, rev, rev_id)
-		SELECT $1, COALESCE(MAX(rev),0) + 1, $2
+		INSERT INTO %[1]q (id, rev, rev_id, parent_rev, parent_rev_id)
+		SELECT $1, COALESCE(MAX(rev),0) + 1, $2, $3, $4
 		FROM %[1]q
 		WHERE id = $1
 		RETURNING rev, rev_id
-	`, d.name+"_revs"), docID, rev).Scan(&r.rev, &r.id)
+	`, d.name+"_revs"), docID, rev, curRevRev, curRevID).Scan(&r.rev, &r.id)
 	if err != nil {
 		return "", err
 	}
@@ -189,12 +198,16 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 	if conflicts, _ := opts["conflicts"].(bool); conflicts {
 		var revs []string
 		rows, err := d.db.QueryContext(ctx, fmt.Sprintf(`
-			SELECT rev || '-' || rev_id
-			FROM %q
-			WHERE id = $1
-				AND NOT (rev = $2 AND rev_id = $3)
-				AND DELETED = FALSE
-			`, d.name), id, r.rev, r.id)
+			SELECT rev.rev || '-' || rev.rev_id
+			FROM %[1]q AS rev
+			LEFT JOIN %[1]q AS child
+				ON rev.id = child.id
+				AND rev.rev = child.parent_rev
+				AND rev.rev_id = child.parent_rev_id
+			WHERE rev.id = $1
+				AND NOT (rev.rev = $2 AND rev.rev_id = $3)
+				AND child.id IS NULL
+			`, d.name+"_revs"), id, r.rev, r.id)
 		if err != nil {
 			return nil, err
 		}
@@ -226,8 +239,66 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 	}, nil
 }
 
-func (db) Delete(context.Context, string, driver.Options) (string, error) {
-	return "", nil
+func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (string, error) {
+	opts := map[string]interface{}{}
+	options.Apply(opts)
+	docRev, _ := opts["rev"].(string)
+
+	docID, rev, jsonDoc, err := prepareDoc(docID, map[string]interface{}{"_deleted": true})
+	if err != nil {
+		return "", err
+	}
+
+	tx, err := d.db.BeginTx(ctx, nil)
+	if err != nil {
+		return "", err
+	}
+	defer tx.Rollback()
+
+	var curRev revision
+	err = tx.QueryRowContext(ctx, fmt.Sprintf(`
+		SELECT rev, rev_id
+		FROM %q
+		WHERE id = $1
+		ORDER BY rev DESC, rev_id DESC
+		LIMIT 1
+	`, d.name), docID).Scan(&curRev.rev, &curRev.id)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return "", &internal.Error{Status: http.StatusNotFound, Message: "not found"}
+	case err != nil:
+		return "", err
+	}
+	if curRev.String() != docRev {
+		return "", &internal.Error{Status: http.StatusConflict, Message: "conflict"}
+	}
+	var (
+		r         revision
+		curRevRev *int
+		curRevID  *string
+	)
+	if curRev.rev != 0 {
+		curRevRev = &curRev.rev
+		curRevID = &curRev.id
+	}
+	err = tx.QueryRowContext(ctx, fmt.Sprintf(`
+		INSERT INTO %[1]q (id, rev, rev_id, parent_rev, parent_rev_id)
+		SELECT $1, COALESCE(MAX(rev),0) + 1, $2, $3, $4
+		FROM %[1]q
+		WHERE id = $1
+		RETURNING rev, rev_id
+	`, d.name+"_revs"), docID, rev, curRevRev, curRevID).Scan(&r.rev, &r.id)
+	if err != nil {
+		return "", err
+	}
+	_, err = tx.ExecContext(ctx, fmt.Sprintf(`
+		INSERT INTO %[1]q (id, rev, rev_id, doc, deleted)
+		VALUES ($1, $2, $3, $4, TRUE)
+	`, d.name), docID, r.rev, r.id, jsonDoc)
+	if err != nil {
+		return "", err
+	}
+	return r.String(), tx.Commit()
 }
 
 func (db) Stats(context.Context) (*driver.DBStats, error) {

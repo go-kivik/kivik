@@ -115,6 +115,16 @@ func TestDBPut(t *testing.T) {
 			wantErr:    "conflict",
 		},
 		{
+			name:  "attempt to create doc with rev should conflict",
+			docID: "foo",
+			doc: map[string]interface{}{
+				"foo": "bar",
+			},
+			options:    kivik.Rev("1-1234567890abcdef1234567890abcdef"),
+			wantStatus: http.StatusConflict,
+			wantErr:    "conflict",
+		},
+		{
 			name: "attempt to update doc without rev should conflict",
 			setup: func(t *testing.T, d driver.DB) {
 				if _, err := d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption); err != nil {
@@ -164,9 +174,11 @@ func TestDBPut(t *testing.T) {
 					RevID: "9bb58f26192e4ba00f01e2e7b136bbd8",
 				},
 				{
-					ID:    "foo",
-					Rev:   2,
-					RevID: "afa7ae8a1906f4bb061be63525974f92",
+					ID:          "foo",
+					Rev:         2,
+					RevID:       "afa7ae8a1906f4bb061be63525974f92",
+					ParentRev:   &[]int{1}[0],
+					ParentRevID: &[]string{"9bb58f26192e4ba00f01e2e7b136bbd8"}[0],
 				},
 			},
 		},
@@ -387,12 +399,40 @@ func TestGet(t *testing.T) {
 				"_conflicts": []string{"1-abc"},
 			},
 		},
+		{
+			name: "include only leaf conflicts",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+					"rev":       "1-abc",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+					"rev":       "1-xyz",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]string{"foo": "qux"}, kivik.Rev("1-xyz"))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id:      "foo",
+			options: kivik.Param("conflicts", true),
+			wantDoc: map[string]interface{}{
+				"foo":        "qux",
+				"_conflicts": []string{"1-abc"},
+			},
+		},
 		/*
 			TODO:
 			attachments = true
 			att_encoding_info = true
 			atts_since = [revs]
-			conflicts = true
 			deleted_conflicts = true
 			latest = true
 			local_seq = true
@@ -431,6 +471,90 @@ func TestGet(t *testing.T) {
 			}
 			if d := testy.DiffAsJSON(tt.wantDoc, gotDoc); d != nil {
 				t.Errorf("Unexpected doc: %s", d)
+			}
+		})
+	}
+}
+
+func TestDelete(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name       string
+		setup      func(*testing.T, driver.DB)
+		id         string
+		options    driver.Options
+		wantRev    string
+		check      func(*testing.T, driver.DB)
+		wantStatus int
+		wantErr    string
+	}{
+		{
+			name:       "not found",
+			id:         "foo",
+			wantStatus: http.StatusNotFound,
+			wantErr:    "not found",
+		},
+		{
+			name: "success",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id:      "foo",
+			options: kivik.Rev("1-9bb58f26192e4ba00f01e2e7b136bbd8"),
+			wantRev: "2-df2a4fe30cde39c357c8d1105748d1b9",
+			check: func(t *testing.T, d driver.DB) {
+				var deleted bool
+				err := d.(*db).db.QueryRow(`
+					SELECT deleted
+					FROM test
+					WHERE id='foo'
+					ORDER BY rev DESC, rev_id DESC
+					LIMIT 1
+				`).Scan(&deleted)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !deleted {
+					t.Errorf("Document not marked deleted")
+				}
+			},
+		},
+		/*
+			- delete already deleted doc -- 200 or 404?
+			- missing rev -- how does Couchdb respond?
+		*/
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			db := newDB(t)
+			if tt.setup != nil {
+				tt.setup(t, db)
+			}
+			opts := tt.options
+			if opts == nil {
+				opts = mock.NilOption
+			}
+			rev, err := db.Delete(context.Background(), tt.id, opts)
+			if !testy.ErrorMatches(tt.wantErr, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
+			if status := kivik.HTTPStatus(err); status != tt.wantStatus {
+				t.Errorf("Unexpected status: %d", status)
+			}
+			if err != nil {
+				return
+			}
+			if rev != tt.wantRev {
+				t.Errorf("Unexpected rev: %s", rev)
+			}
+			if tt.check != nil {
+				tt.check(t, db)
 			}
 		})
 	}

@@ -54,31 +54,55 @@ func parseRev(s string) (revision, error) {
 	return revision{rev: int(id), id: parts[1]}, nil
 }
 
+// docData represents the document id, rev, deleted status, etc.
+type docData struct {
+	ID      string
+	Rev     string
+	Doc     []byte
+	Deleted bool
+}
+
 // prepareDoc prepares the doc for insertion. It returns the new docID, rev, and
 // marshaled doc with rev and id removed.
-func prepareDoc(docID string, doc interface{}) (string, string, []byte, error) {
+func prepareDoc(docID string, doc interface{}) (*docData, error) {
 	tmpJSON, err := json.Marshal(doc)
 	if err != nil {
-		return "", "", nil, err
+		return nil, err
 	}
 	var tmp map[string]interface{}
 	if err := json.Unmarshal(tmpJSON, &tmp); err != nil {
-		return "", "", nil, err
+		return nil, err
+	}
+	data := &docData{
+		ID: docID,
 	}
 	delete(tmp, "_rev")
 	if id, ok := tmp["_id"].(string); ok {
 		if docID != "" && id != docID {
-			return "", "", nil, &internal.Error{Status: http.StatusBadRequest, Message: "Document ID must match _id in document"}
+			return nil, &internal.Error{Status: http.StatusBadRequest, Message: "Document ID must match _id in document"}
 		}
-		docID = id
+		data.ID = id
 		delete(tmp, "_id")
 	}
+	switch deleted := tmp["_deleted"].(type) {
+	case bool:
+		data.Deleted = deleted
+		if !deleted {
+			delete(tmp, "_deleted")
+		}
+	case nil:
+	default:
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "_deleted must be a boolean"}
+	}
+
 	h := md5.New()
 	b, _ := json.Marshal(tmp)
 	if _, err := io.Copy(h, bytes.NewReader(b)); err != nil {
-		return "", "", nil, err
+		return nil, err
 	}
-	return docID, hex.EncodeToString(h.Sum(nil)), b, nil
+	data.Rev = hex.EncodeToString(h.Sum(nil))
+	data.Doc = b
+	return data, nil
 }
 
 // extractRev extracts the rev from the document.
@@ -102,4 +126,17 @@ func extractRev(doc interface{}) (string, error) {
 		}
 		return revDoc.Rev, nil
 	}
+}
+
+func mergeIntoDoc(doc []byte, partials ...map[string]interface{}) ([]byte, error) {
+	var merged map[string]interface{}
+	if err := json.Unmarshal(doc, &merged); err != nil {
+		return nil, err
+	}
+	for _, p := range partials {
+		for k, v := range p {
+			merged[k] = v
+		}
+	}
+	return json.Marshal(merged)
 }

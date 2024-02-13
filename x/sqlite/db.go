@@ -13,14 +13,13 @@
 package sqlite
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 
 	"modernc.org/sqlite"
 	sqlite3 "modernc.org/sqlite/lib"
@@ -60,7 +59,7 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 	if docRev == "" && optsRev != "" {
 		docRev = optsRev
 	}
-	docID, rev, jsonDoc, err := prepareDoc(docID, doc)
+	data, err := prepareDoc(docID, doc)
 	if err != nil {
 		return "", err
 	}
@@ -94,10 +93,10 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 		}
 		var newRev string
 		err = tx.QueryRowContext(ctx, fmt.Sprintf(`
-			INSERT INTO %q (id, rev, rev_id, doc)
-			VALUES ($1, $2, $3, $4)
+			INSERT INTO %q (id, rev, rev_id, doc, deleted)
+			VALUES ($1, $2, $3, $4, $5)
 			RETURNING rev || '-' || rev_id
-		`, d.name), docID, rev.rev, rev.id, jsonDoc).Scan(&newRev)
+		`, d.name), docID, rev.rev, rev.id, data.Doc, data.Deleted).Scan(&newRev)
 		var sqliteErr *sqlite.Error
 		if errors.As(err, &sqliteErr) && sqliteErr.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE {
 			// In the case of a conflict for new_edits=false, we assume that the
@@ -140,14 +139,14 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 		FROM %[1]q
 		WHERE id = $1
 		RETURNING rev, rev_id
-	`, d.name+"_revs"), docID, rev, curRevRev, curRevID).Scan(&r.rev, &r.id)
+	`, d.name+"_revs"), data.ID, data.Rev, curRevRev, curRevID).Scan(&r.rev, &r.id)
 	if err != nil {
 		return "", err
 	}
 	_, err = tx.ExecContext(ctx, fmt.Sprintf(`
-		INSERT INTO %[1]q (id, rev, rev_id, doc)
-		VALUES ($1, $2, $3, $4)
-	`, d.name), docID, r.rev, r.id, jsonDoc)
+		INSERT INTO %[1]q (id, rev, rev_id, doc, deleted)
+		VALUES ($1, $2, $3, $4, $5)
+	`, d.name), data.ID, r.rev, r.id, data.Doc, data.Deleted)
 	if err != nil {
 		return "", err
 	}
@@ -158,16 +157,25 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 	opts := map[string]interface{}{}
 	options.Apply(opts)
 
-	var r revision
-	var body string
-	var err error
+	var (
+		r       revision
+		body    []byte
+		err     error
+		deleted bool
+	)
+
+	tx, err := d.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
 
 	if optsRev, _ := opts["rev"].(string); optsRev != "" {
 		r, err = parseRev(optsRev)
 		if err != nil {
 			return nil, err
 		}
-		err = d.db.QueryRowContext(ctx, fmt.Sprintf(`
+		err = tx.QueryRowContext(ctx, fmt.Sprintf(`
 			SELECT doc
 			FROM %q
 			WHERE id = $1
@@ -175,68 +183,157 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 				AND rev_id = $3
 			`, d.name), id, r.rev, r.id).Scan(&body)
 	} else {
-		var rev int
-		var revID string
-		err = d.db.QueryRowContext(ctx, fmt.Sprintf(`
-		SELECT rev, rev_id, doc
-		FROM %q
-		WHERE id = $1
-			AND deleted = FALSE
-		ORDER BY rev DESC, rev_id DESC
-		LIMIT 1
-	`, d.name), id).Scan(&rev, &revID, &body)
-		r = revision{rev: rev, id: revID}
+		err = tx.QueryRowContext(ctx, fmt.Sprintf(`
+			SELECT rev, rev_id, doc, deleted
+			FROM %q
+			WHERE id = $1
+			ORDER BY rev DESC, rev_id DESC
+			LIMIT 1
+		`, d.name), id).Scan(&r.rev, &r.id, &body, &deleted)
 	}
 
-	if errors.Is(err, sql.ErrNoRows) {
+	if deleted || errors.Is(err, sql.ErrNoRows) {
 		return nil, &internal.Error{Status: http.StatusNotFound, Message: "not found"}
 	}
 	if err != nil {
 		return nil, err
 	}
 
+	toMerge := map[string]interface{}{}
+
+	if meta, _ := opts["meta"].(bool); meta {
+		opts["conflicts"] = true
+		opts["deleted_conflicts"] = true
+		opts["revs_info"] = true
+	}
+
 	if conflicts, _ := opts["conflicts"].(bool); conflicts {
-		var revs []string
-		rows, err := d.db.QueryContext(ctx, fmt.Sprintf(`
+		revs, err := d.conflicts(ctx, tx, id, r, false)
+		if err != nil {
+			return nil, err
+		}
+
+		toMerge["_conflicts"] = revs
+	}
+
+	if deletedConflicts, _ := opts["deleted_conflicts"].(bool); deletedConflicts {
+		revs, err := d.conflicts(ctx, tx, id, r, true)
+		if err != nil {
+			return nil, err
+		}
+
+		toMerge["_deleted_conflicts"] = revs
+	}
+
+	if revsInfo, _ := opts["revs_info"].(bool); revsInfo {
+		rows, err := tx.QueryContext(ctx, fmt.Sprintf(`
+		SELECT revs.rev || '-' || revs.rev_id,
+			CASE
+				WHEN doc.id IS NULL THEN 'missing'
+				WHEN doc.deleted THEN    'deleted'
+				ELSE                     'available'
+			END
+		FROM (
+		WITH RECURSIVE
+			Ancestors AS (
+				-- Base case: Select the starting node for ancestors
+				SELECT id, rev, rev_id, parent_rev, parent_rev_id
+				FROM %[1]q AS revs
+				WHERE id = $1
+					AND rev = $2
+					AND rev_id = $3
+				UNION ALL
+				-- Recursive step: Select the parent of the current node
+				SELECT r.id, r.rev, r.rev_id, r.parent_rev, r.parent_rev_id
+				FROM %[1]q r
+				JOIN Ancestors a ON a.parent_rev_id = r.rev_id AND a.parent_rev = r.rev AND a.id = r.id
+			),
+			Descendants AS (
+				-- Base case: Select the starting node for descendants
+				SELECT id, rev, rev_id, parent_rev, parent_rev_id
+				FROM %[1]q AS revs
+				WHERE id = $1
+					AND rev = $2
+					AND rev_id = $3
+				UNION ALL
+				-- Recursive step: Select the children of the current node
+				SELECT r.id, r.rev, r.rev_id, r.parent_rev, r.parent_rev_id
+				FROM %[1]q r
+				JOIN Descendants d ON d.rev_id = r.parent_rev_id AND d.rev = r.parent_rev AND d.id = r.id
+			)
+			-- Combine ancestors and descendants, excluding the starting node twice
+			SELECT id, rev, rev_id FROM Ancestors
+			UNION
+			SELECT id, rev, rev_id FROM Descendants
+		) AS revs
+		LEFT JOIN %[2]q AS doc ON doc.id = revs.id
+			AND doc.rev = revs.rev
+			AND doc.rev_id = revs.rev_id
+		ORDER BY revs.rev DESC, revs.rev_id DESC
+		`, d.name+"_revs", d.name), id, r.rev, r.id)
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+		var revs []map[string]string
+		for rows.Next() {
+			var rev, status string
+			if err := rows.Scan(&rev, &status); err != nil {
+				return nil, err
+			}
+			revs = append(revs, map[string]string{
+				"rev":    rev,
+				"status": status,
+			})
+		}
+		if err := rows.Err(); err != nil {
+			return nil, err
+		}
+		toMerge["_revs_info"] = revs
+	}
+
+	if len(toMerge) > 0 {
+		body, err = mergeIntoDoc(body, toMerge)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &driver.Document{
+		Rev:  r.String(),
+		Body: io.NopCloser(bytes.NewReader(body)),
+	}, tx.Commit()
+}
+
+func (d *db) conflicts(ctx context.Context, tx *sql.Tx, id string, r revision, deleted bool) ([]string, error) {
+	var revs []string
+	rows, err := tx.QueryContext(ctx, fmt.Sprintf(`
 			SELECT rev.rev || '-' || rev.rev_id
 			FROM %[1]q AS rev
 			LEFT JOIN %[1]q AS child
 				ON rev.id = child.id
 				AND rev.rev = child.parent_rev
 				AND rev.rev_id = child.parent_rev_id
+			JOIN %[2]q AS docs ON docs.id = rev.id
+				AND docs.rev = rev.rev
+				AND docs.rev_id = rev.rev_id
 			WHERE rev.id = $1
 				AND NOT (rev.rev = $2 AND rev.rev_id = $3)
 				AND child.id IS NULL
-			`, d.name+"_revs"), id, r.rev, r.id)
-		if err != nil {
-			return nil, err
-		}
-		defer rows.Close()
-		for rows.Next() {
-			var r string
-			if err := rows.Scan(&r); err != nil {
-				return nil, err
-			}
-			revs = append(revs, r)
-		}
-		if err := rows.Err(); err != nil {
-			return nil, err
-		}
-		var doc map[string]interface{}
-		if err := json.Unmarshal([]byte(body), &doc); err != nil {
-			return nil, err
-		}
-		doc["_conflicts"] = revs
-		jonDoc, err := json.Marshal(doc)
-		if err != nil {
-			return nil, err
-		}
-		body = string(jonDoc)
+				AND docs.deleted = $4
+			`, d.name+"_revs", d.name), id, r.rev, r.id, deleted)
+	if err != nil {
+		return nil, err
 	}
-	return &driver.Document{
-		Rev:  r.String(),
-		Body: io.NopCloser(strings.NewReader(body)),
-	}, nil
+	defer rows.Close()
+	for rows.Next() {
+		var r string
+		if err := rows.Scan(&r); err != nil {
+			return nil, err
+		}
+		revs = append(revs, r)
+	}
+	return revs, rows.Err()
 }
 
 func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (string, error) {
@@ -244,7 +341,7 @@ func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (
 	options.Apply(opts)
 	docRev, _ := opts["rev"].(string)
 
-	docID, rev, jsonDoc, err := prepareDoc(docID, map[string]interface{}{"_deleted": true})
+	data, err := prepareDoc(docID, map[string]interface{}{"_deleted": true})
 	if err != nil {
 		return "", err
 	}
@@ -262,7 +359,7 @@ func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (
 		WHERE id = $1
 		ORDER BY rev DESC, rev_id DESC
 		LIMIT 1
-	`, d.name), docID).Scan(&curRev.rev, &curRev.id)
+	`, d.name), data.ID).Scan(&curRev.rev, &curRev.id)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return "", &internal.Error{Status: http.StatusNotFound, Message: "not found"}
@@ -287,14 +384,14 @@ func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (
 		FROM %[1]q
 		WHERE id = $1
 		RETURNING rev, rev_id
-	`, d.name+"_revs"), docID, rev, curRevRev, curRevID).Scan(&r.rev, &r.id)
+	`, d.name+"_revs"), data.ID, data.Rev, curRevRev, curRevID).Scan(&r.rev, &r.id)
 	if err != nil {
 		return "", err
 	}
 	_, err = tx.ExecContext(ctx, fmt.Sprintf(`
 		INSERT INTO %[1]q (id, rev, rev_id, doc, deleted)
 		VALUES ($1, $2, $3, $4, TRUE)
-	`, d.name), docID, r.rev, r.id, jsonDoc)
+	`, d.name), data.ID, r.rev, r.id, data.Doc)
 	if err != nil {
 		return "", err
 	}

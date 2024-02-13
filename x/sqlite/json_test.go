@@ -18,21 +18,25 @@ package sqlite
 import (
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"gitlab.com/flimzy/testy"
 )
 
-func Test_calculateRev(t *testing.T) {
+func Test_prepareDoc(t *testing.T) {
 	tests := []struct {
 		name    string
 		docID   string
 		doc     interface{}
-		want    string
+		want    *docData
 		wantErr string
 	}{
 		{
 			name: "no rev in document",
 			doc:  map[string]string{"foo": "bar"},
-			want: "9bb58f26192e4ba00f01e2e7b136bbd8",
+			want: &docData{
+				Rev: "9bb58f26192e4ba00f01e2e7b136bbd8",
+				Doc: []byte(`{"foo":"bar"}`),
+			},
 		},
 		{
 			name: "rev in document",
@@ -40,24 +44,53 @@ func Test_calculateRev(t *testing.T) {
 				"_rev": "1-1234567890abcdef1234567890abcdef",
 				"foo":  "bar",
 			},
-			want: "9bb58f26192e4ba00f01e2e7b136bbd8",
+			want: &docData{
+				Rev: "9bb58f26192e4ba00f01e2e7b136bbd8",
+				Doc: []byte(`{"foo":"bar"}`),
+			},
 		},
 		{
 			name:  "add docID",
 			docID: "foo",
 			doc:   map[string]string{"foo": "bar"},
-			want:  "9bb58f26192e4ba00f01e2e7b136bbd8",
+			want: &docData{
+				ID:  "foo",
+				Rev: "9bb58f26192e4ba00f01e2e7b136bbd8",
+				Doc: []byte(`{"foo":"bar"}`),
+			},
+		},
+		{
+			name: "deleted true",
+			doc: map[string]interface{}{
+				"_rev":     "1-1234567890abcdef1234567890abcdef",
+				"_deleted": true,
+				"foo":      "bar",
+			},
+			want: &docData{
+				Rev:     "6872a0fc474ada5c46ce054b92897063",
+				Doc:     []byte(`{"_deleted":true,"foo":"bar"}`),
+				Deleted: true,
+			},
+		},
+		{
+			name: "wrong type for _deleted",
+			doc: map[string]interface{}{
+				"_rev":     "1-1234567890abcdef1234567890abcdef",
+				"_deleted": "oink",
+				"foo":      "bar",
+			},
+			wantErr: "_deleted must be a boolean",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, got, _, err := prepareDoc(tt.docID, tt.doc)
+			got, err := prepareDoc(tt.docID, tt.doc)
 			if !testy.ErrorMatches(tt.wantErr, err) {
 				t.Errorf("unexpected error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if got != tt.want {
-				t.Errorf("unexpected rev= %v, want %v", got, tt.want)
+			if d := cmp.Diff(tt.want, got); d != "" {
+				t.Errorf(d)
 			}
 		})
 	}

@@ -285,6 +285,104 @@ func TestDBPut(t *testing.T) {
 			wantStatus: http.StatusBadRequest,
 			wantErr:    "Document ID must match _id in document",
 		},
+		{
+			name:  "set _deleted=true",
+			docID: "foo",
+			doc: map[string]interface{}{
+				"_deleted": true,
+				"foo":      "bar",
+			},
+			wantRev: "1-6872a0fc474ada5c46ce054b92897063",
+			wantRevs: []leaf{
+				{
+					ID:    "foo",
+					Rev:   1,
+					RevID: "6872a0fc474ada5c46ce054b92897063",
+				},
+			},
+			check: func(t *testing.T, d driver.DB) {
+				var deleted bool
+				err := d.(*db).db.QueryRow(`
+					SELECT deleted
+					FROM test
+					WHERE id='foo'
+					ORDER BY rev DESC, rev_id DESC
+					LIMIT 1
+				`).Scan(&deleted)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !deleted {
+					t.Errorf("Document not marked deleted")
+				}
+			},
+		},
+		{
+			name:  "set _deleted=false",
+			docID: "foo",
+			doc: map[string]interface{}{
+				"_deleted": false,
+				"foo":      "bar",
+			},
+			wantRev: "1-9bb58f26192e4ba00f01e2e7b136bbd8",
+			wantRevs: []leaf{
+				{
+					ID:    "foo",
+					Rev:   1,
+					RevID: "9bb58f26192e4ba00f01e2e7b136bbd8",
+				},
+			},
+			check: func(t *testing.T, d driver.DB) {
+				var deleted bool
+				err := d.(*db).db.QueryRow(`
+					SELECT deleted
+					FROM test
+					WHERE id='foo'
+					ORDER BY rev DESC, rev_id DESC
+					LIMIT 1
+				`).Scan(&deleted)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if deleted {
+					t.Errorf("Document marked deleted")
+				}
+			},
+		},
+		{
+			name:  "set _deleted=true and new_edits=false",
+			docID: "foo",
+			doc: map[string]interface{}{
+				"_deleted": true,
+				"foo":      "bar",
+				"_rev":     "1-abc",
+			},
+			options: kivik.Param("new_edits", false),
+			wantRev: "1-abc",
+			wantRevs: []leaf{
+				{
+					ID:    "foo",
+					Rev:   1,
+					RevID: "abc",
+				},
+			},
+			check: func(t *testing.T, d driver.DB) {
+				var deleted bool
+				err := d.(*db).db.QueryRow(`
+					SELECT deleted
+					FROM test
+					WHERE id='foo'
+					ORDER BY rev DESC, rev_id DESC
+					LIMIT 1
+				`).Scan(&deleted)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !deleted {
+					t.Errorf("Document not marked deleted")
+				}
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -323,7 +421,7 @@ func TestDBPut(t *testing.T) {
 	}
 }
 
-func TestGet(t *testing.T) {
+func TestDBGet(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name       string
@@ -428,18 +526,253 @@ func TestGet(t *testing.T) {
 				"_conflicts": []string{"1-abc"},
 			},
 		},
+		{
+			name: "deleted document",
+			setup: func(t *testing.T, d driver.DB) {
+				rev, err := d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Delete(context.Background(), "foo", kivik.Rev(rev))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id:         "foo",
+			wantStatus: http.StatusNotFound,
+			wantErr:    "not found",
+		},
+		{
+			name: "deleted document by rev",
+			setup: func(t *testing.T, d driver.DB) {
+				rev, err := d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Delete(context.Background(), "foo", kivik.Rev(rev))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id:      "foo",
+			options: kivik.Rev("2-df2a4fe30cde39c357c8d1105748d1b9"),
+			wantDoc: map[string]interface{}{"_deleted": true},
+		},
+		{
+			name: "deleted document with data by rev",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]interface{}{"_deleted": true, "foo": "bar"}, mock.NilOption)
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id:      "foo",
+			options: kivik.Rev("1-6872a0fc474ada5c46ce054b92897063"),
+			wantDoc: map[string]interface{}{"_deleted": true, "foo": "bar"},
+		},
+		{
+			name: "include conflicts, skip deleted conflicts",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]interface{}{"foo": "moo", "_deleted": true}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+					"rev":       "1-qwe",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+					"rev":       "1-abc",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+					"rev":       "1-xyz",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]string{"foo": "qux"}, kivik.Rev("1-xyz"))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id:      "foo",
+			options: kivik.Param("conflicts", true),
+			wantDoc: map[string]interface{}{
+				"foo":        "qux",
+				"_conflicts": []string{"1-abc"},
+			},
+		},
+		{
+			name: "include deleted conflicts",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]interface{}{"foo": "moo", "_deleted": true}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+					"rev":       "1-qwe",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+					"rev":       "1-abc",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+					"rev":       "1-xyz",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]string{"foo": "qux"}, kivik.Rev("1-xyz"))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id:      "foo",
+			options: kivik.Param("deleted_conflicts", true),
+			wantDoc: map[string]interface{}{
+				"foo":                "qux",
+				"_deleted_conflicts": []string{"1-qwe"},
+			},
+		},
+		{
+			name: "include all conflicts",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]interface{}{"foo": "moo", "_deleted": true}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+					"rev":       "1-qwe",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+					"rev":       "1-abc",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+					"rev":       "1-xyz",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]string{"foo": "qux"}, kivik.Rev("1-xyz"))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id: "foo",
+			options: kivik.Params(map[string]interface{}{
+				"conflicts":         true,
+				"deleted_conflicts": true,
+			}),
+			wantDoc: map[string]interface{}{
+				"foo":                "qux",
+				"_deleted_conflicts": []string{"1-qwe"},
+				"_conflicts":         []string{"1-abc"},
+			},
+		},
+		{
+			name: "include revs_info",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]interface{}{"foo": "moo", "_deleted": true}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+					"rev":       "1-qwe",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+					"rev":       "1-abc",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+					"rev":       "1-xyz",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]string{"foo": "qux"}, kivik.Rev("1-xyz"))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id: "foo",
+			options: kivik.Params(map[string]interface{}{
+				"revs_info": true,
+			}),
+			wantDoc: map[string]interface{}{
+				"foo": "qux",
+				"_revs_info": []map[string]string{
+					{"rev": "2-8ecd3d54a4d763ebc0b6e6666d9af066", "status": "available"},
+					{"rev": "1-xyz", "status": "available"},
+				},
+			},
+		},
+		{
+			name: "include meta",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]interface{}{"foo": "moo", "_deleted": true}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+					"rev":       "1-qwe",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+					"rev":       "1-abc",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+					"rev":       "1-xyz",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]string{"foo": "qux"}, kivik.Rev("1-xyz"))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id:      "foo",
+			options: kivik.Param("meta", true),
+			wantDoc: map[string]interface{}{
+				"foo": "qux",
+				"_revs_info": []map[string]string{
+					{"rev": "2-8ecd3d54a4d763ebc0b6e6666d9af066", "status": "available"},
+					{"rev": "1-xyz", "status": "available"},
+				},
+				"_conflicts":         []string{"1-abc"},
+				"_deleted_conflicts": []string{"1-qwe"},
+			},
+		},
 		/*
 			TODO:
 			attachments = true
 			att_encoding_info = true
 			atts_since = [revs]
-			deleted_conflicts = true
 			latest = true
 			local_seq = true
-			meta = true
 			open_revs = []
 			revs = true
-			revs_info = true
 		*/
 	}
 
@@ -476,7 +809,7 @@ func TestGet(t *testing.T) {
 	}
 }
 
-func TestDelete(t *testing.T) {
+func TestDBDelete(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name       string
@@ -522,10 +855,51 @@ func TestDelete(t *testing.T) {
 				}
 			},
 		},
-		/*
-			- delete already deleted doc -- 200 or 404?
-			- missing rev -- how does Couchdb respond?
-		*/
+		{
+			name: "replay delete should conflict",
+			setup: func(t *testing.T, d driver.DB) {
+				rev, err := d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Delete(context.Background(), "foo", kivik.Rev(rev))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id:         "foo",
+			options:    kivik.Rev("1-9bb58f26192e4ba00f01e2e7b136bbd8"),
+			wantStatus: http.StatusConflict,
+			wantErr:    "conflict",
+		},
+		{
+			name: "delete deleted doc should succeed",
+			setup: func(t *testing.T, d driver.DB) {
+				rev, err := d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Delete(context.Background(), "foo", kivik.Rev(rev))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id:      "foo",
+			options: kivik.Rev("2-df2a4fe30cde39c357c8d1105748d1b9"),
+			wantRev: "3-df2a4fe30cde39c357c8d1105748d1b9",
+		},
+		{
+			name: "delete without rev",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id:         "foo",
+			wantStatus: http.StatusConflict,
+			wantErr:    "conflict",
+		},
 	}
 
 	for _, tt := range tests {

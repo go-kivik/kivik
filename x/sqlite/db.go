@@ -226,13 +226,38 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 		if err != nil {
 			return nil, err
 		}
-		err = tx.QueryRowContext(ctx, fmt.Sprintf(`
-			SELECT doc
-			FROM %q
-			WHERE id = $1
-				AND rev = $2
-				AND rev_id = $3
-			`, d.name), id, r.rev, r.id).Scan(&body)
+		if latest, _ := opts["latest"].(bool); latest {
+			err = tx.QueryRowContext(ctx, fmt.Sprintf(`
+				WITH RECURSIVE Descendants AS (
+					-- Base case: Select the starting node for descendants
+					SELECT id, rev, rev_id, parent_rev, parent_rev_id
+					FROM %[1]q AS revs
+					WHERE id = $1
+						AND rev = $2
+						AND rev_id = $3
+					UNION ALL
+					-- Recursive step: Select the children of the current node
+					SELECT r.id, r.rev, r.rev_id, r.parent_rev, r.parent_rev_id
+					FROM %[1]q r
+					JOIN Descendants d ON d.rev_id = r.parent_rev_id AND d.rev = r.parent_rev AND d.id = r.id
+				)
+				-- Combine ancestors and descendants, excluding the starting node twice
+				SELECT rev.rev, rev.rev_id, doc, deleted
+				FROM Descendants AS rev
+				JOIN %[2]q AS doc ON doc.id = rev.id AND doc.rev = rev.rev AND doc.rev_id = rev.rev_id
+				LEFT JOIN %[1]q AS child ON child.parent_rev = rev.rev AND child.parent_rev_id = rev.rev_id
+				WHERE child.rev IS NULL
+				ORDER BY rev.rev DESC, rev.rev_id DESC
+			`, d.name+"_revs", d.name), id, r.rev, r.id).Scan(&r.rev, &r.id, &body, &deleted)
+		} else {
+			err = tx.QueryRowContext(ctx, fmt.Sprintf(`
+				SELECT doc
+				FROM %q
+				WHERE id = $1
+					AND rev = $2
+					AND rev_id = $3
+				`, d.name), id, r.rev, r.id).Scan(&body)
+		}
 	} else {
 		err = tx.QueryRowContext(ctx, fmt.Sprintf(`
 			SELECT rev, rev_id, doc, deleted
@@ -281,49 +306,49 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 
 	if revsInfo, _ := opts["revs_info"].(bool); revsInfo {
 		rows, err := tx.QueryContext(ctx, fmt.Sprintf(`
-		SELECT revs.rev || '-' || revs.rev_id,
-			CASE
-				WHEN doc.id IS NULL THEN 'missing'
-				WHEN doc.deleted THEN    'deleted'
-				ELSE                     'available'
-			END
-		FROM (
-		WITH RECURSIVE
-			Ancestors AS (
-				-- Base case: Select the starting node for ancestors
-				SELECT id, rev, rev_id, parent_rev, parent_rev_id
-				FROM %[1]q AS revs
-				WHERE id = $1
-					AND rev = $2
-					AND rev_id = $3
-				UNION ALL
-				-- Recursive step: Select the parent of the current node
-				SELECT r.id, r.rev, r.rev_id, r.parent_rev, r.parent_rev_id
-				FROM %[1]q r
-				JOIN Ancestors a ON a.parent_rev_id = r.rev_id AND a.parent_rev = r.rev AND a.id = r.id
-			),
-			Descendants AS (
-				-- Base case: Select the starting node for descendants
-				SELECT id, rev, rev_id, parent_rev, parent_rev_id
-				FROM %[1]q AS revs
-				WHERE id = $1
-					AND rev = $2
-					AND rev_id = $3
-				UNION ALL
-				-- Recursive step: Select the children of the current node
-				SELECT r.id, r.rev, r.rev_id, r.parent_rev, r.parent_rev_id
-				FROM %[1]q r
-				JOIN Descendants d ON d.rev_id = r.parent_rev_id AND d.rev = r.parent_rev AND d.id = r.id
-			)
-			-- Combine ancestors and descendants, excluding the starting node twice
-			SELECT id, rev, rev_id FROM Ancestors
-			UNION
-			SELECT id, rev, rev_id FROM Descendants
-		) AS revs
-		LEFT JOIN %[2]q AS doc ON doc.id = revs.id
-			AND doc.rev = revs.rev
-			AND doc.rev_id = revs.rev_id
-		ORDER BY revs.rev DESC, revs.rev_id DESC
+			SELECT revs.rev || '-' || revs.rev_id,
+				CASE
+					WHEN doc.id IS NULL THEN 'missing'
+					WHEN doc.deleted THEN    'deleted'
+					ELSE                     'available'
+				END
+			FROM (
+				WITH RECURSIVE
+				Ancestors AS (
+					-- Base case: Select the starting node for ancestors
+					SELECT id, rev, rev_id, parent_rev, parent_rev_id
+					FROM %[1]q AS revs
+					WHERE id = $1
+						AND rev = $2
+						AND rev_id = $3
+					UNION ALL
+					-- Recursive step: Select the parent of the current node
+					SELECT r.id, r.rev, r.rev_id, r.parent_rev, r.parent_rev_id
+					FROM %[1]q r
+					JOIN Ancestors a ON a.parent_rev_id = r.rev_id AND a.parent_rev = r.rev AND a.id = r.id
+				),
+				Descendants AS (
+					-- Base case: Select the starting node for descendants
+					SELECT id, rev, rev_id, parent_rev, parent_rev_id
+					FROM %[1]q AS revs
+					WHERE id = $1
+						AND rev = $2
+						AND rev_id = $3
+					UNION ALL
+					-- Recursive step: Select the children of the current node
+					SELECT r.id, r.rev, r.rev_id, r.parent_rev, r.parent_rev_id
+					FROM %[1]q r
+					JOIN Descendants d ON d.rev_id = r.parent_rev_id AND d.rev = r.parent_rev AND d.id = r.id
+				)
+				-- Combine ancestors and descendants, excluding the starting node twice
+				SELECT id, rev, rev_id FROM Ancestors
+				UNION
+				SELECT id, rev, rev_id FROM Descendants
+			) AS revs
+			LEFT JOIN %[2]q AS doc ON doc.id = revs.id
+				AND doc.rev = revs.rev
+				AND doc.rev_id = revs.rev_id
+			ORDER BY revs.rev DESC, revs.rev_id DESC
 		`, d.name+"_revs", d.name), id, r.rev, r.id)
 		if err != nil {
 			return nil, err

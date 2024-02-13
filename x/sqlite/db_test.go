@@ -446,8 +446,12 @@ func TestDBGet(t *testing.T) {
 					t.Fatal(err)
 				}
 			},
-			id:      "foo",
-			wantDoc: map[string]string{"foo": "bar"},
+			id: "foo",
+			wantDoc: map[string]string{
+				"_id":  "foo",
+				"_rev": "1-9bb58f26192e4ba00f01e2e7b136bbd8",
+				"foo":  "bar",
+			},
 		},
 		{
 			name: "get specific rev",
@@ -463,7 +467,11 @@ func TestDBGet(t *testing.T) {
 			},
 			id:      "foo",
 			options: kivik.Rev("1-9bb58f26192e4ba00f01e2e7b136bbd8"),
-			wantDoc: map[string]string{"foo": "bar"},
+			wantDoc: map[string]string{
+				"_id":  "foo",
+				"_rev": "1-9bb58f26192e4ba00f01e2e7b136bbd8",
+				"foo":  "bar",
+			},
 		},
 		{
 			name:       "specific rev not found",
@@ -493,6 +501,8 @@ func TestDBGet(t *testing.T) {
 			id:      "foo",
 			options: kivik.Param("conflicts", true),
 			wantDoc: map[string]interface{}{
+				"_id":        "foo",
+				"_rev":       "1-xyz",
 				"foo":        "baz",
 				"_conflicts": []string{"1-abc"},
 			},
@@ -522,6 +532,8 @@ func TestDBGet(t *testing.T) {
 			id:      "foo",
 			options: kivik.Param("conflicts", true),
 			wantDoc: map[string]interface{}{
+				"_id":        "foo",
+				"_rev":       "2-8ecd3d54a4d763ebc0b6e6666d9af066",
 				"foo":        "qux",
 				"_conflicts": []string{"1-abc"},
 			},
@@ -556,7 +568,11 @@ func TestDBGet(t *testing.T) {
 			},
 			id:      "foo",
 			options: kivik.Rev("2-df2a4fe30cde39c357c8d1105748d1b9"),
-			wantDoc: map[string]interface{}{"_deleted": true},
+			wantDoc: map[string]interface{}{
+				"_id":      "foo",
+				"_rev":     "2-df2a4fe30cde39c357c8d1105748d1b9",
+				"_deleted": true,
+			},
 		},
 		{
 			name: "deleted document with data by rev",
@@ -568,7 +584,12 @@ func TestDBGet(t *testing.T) {
 			},
 			id:      "foo",
 			options: kivik.Rev("1-6872a0fc474ada5c46ce054b92897063"),
-			wantDoc: map[string]interface{}{"_deleted": true, "foo": "bar"},
+			wantDoc: map[string]interface{}{
+				"_id":      "foo",
+				"_rev":     "1-6872a0fc474ada5c46ce054b92897063",
+				"_deleted": true,
+				"foo":      "bar",
+			},
 		},
 		{
 			name: "include conflicts, skip deleted conflicts",
@@ -602,6 +623,8 @@ func TestDBGet(t *testing.T) {
 			id:      "foo",
 			options: kivik.Param("conflicts", true),
 			wantDoc: map[string]interface{}{
+				"_id":        "foo",
+				"_rev":       "2-8ecd3d54a4d763ebc0b6e6666d9af066",
 				"foo":        "qux",
 				"_conflicts": []string{"1-abc"},
 			},
@@ -638,6 +661,8 @@ func TestDBGet(t *testing.T) {
 			id:      "foo",
 			options: kivik.Param("deleted_conflicts", true),
 			wantDoc: map[string]interface{}{
+				"_id":                "foo",
+				"_rev":               "2-8ecd3d54a4d763ebc0b6e6666d9af066",
 				"foo":                "qux",
 				"_deleted_conflicts": []string{"1-qwe"},
 			},
@@ -677,6 +702,8 @@ func TestDBGet(t *testing.T) {
 				"deleted_conflicts": true,
 			}),
 			wantDoc: map[string]interface{}{
+				"_id":                "foo",
+				"_rev":               "2-8ecd3d54a4d763ebc0b6e6666d9af066",
 				"foo":                "qux",
 				"_deleted_conflicts": []string{"1-qwe"},
 				"_conflicts":         []string{"1-abc"},
@@ -716,7 +743,9 @@ func TestDBGet(t *testing.T) {
 				"revs_info": true,
 			}),
 			wantDoc: map[string]interface{}{
-				"foo": "qux",
+				"_id":  "foo",
+				"_rev": "2-8ecd3d54a4d763ebc0b6e6666d9af066",
+				"foo":  "qux",
 				"_revs_info": []map[string]string{
 					{"rev": "2-8ecd3d54a4d763ebc0b6e6666d9af066", "status": "available"},
 					{"rev": "1-xyz", "status": "available"},
@@ -755,7 +784,9 @@ func TestDBGet(t *testing.T) {
 			id:      "foo",
 			options: kivik.Param("meta", true),
 			wantDoc: map[string]interface{}{
-				"foo": "qux",
+				"_id":  "foo",
+				"_rev": "2-8ecd3d54a4d763ebc0b6e6666d9af066",
+				"foo":  "qux",
 				"_revs_info": []map[string]string{
 					{"rev": "2-8ecd3d54a4d763ebc0b6e6666d9af066", "status": "available"},
 					{"rev": "1-xyz", "status": "available"},

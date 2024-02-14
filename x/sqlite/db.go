@@ -139,7 +139,7 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 		FROM %[1]q
 		WHERE id = $1
 		RETURNING rev, rev_id
-	`, d.name+"_revs"), data.ID, data.Rev, curRevRev, curRevID).Scan(&r.rev, &r.id)
+	`, d.name+"_revs"), data.ID, data.RevID, curRevRev, curRevID).Scan(&r.rev, &r.id)
 	if err != nil {
 		return "", err
 	}
@@ -387,7 +387,7 @@ func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (
 		FROM %[1]q
 		WHERE id = $1
 		RETURNING rev, rev_id
-	`, d.name+"_revs"), data.ID, data.Rev, curRevRev, curRevID).Scan(&r.rev, &r.id)
+	`, d.name+"_revs"), data.ID, data.RevID, curRevRev, curRevID).Scan(&r.rev, &r.id)
 	if err != nil {
 		return "", err
 	}

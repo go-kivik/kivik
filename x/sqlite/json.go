@@ -56,8 +56,10 @@ func parseRev(s string) (revision, error) {
 
 // docData represents the document id, rev, deleted status, etc.
 type docData struct {
-	ID      string `json:"_id"`
-	Rev     string `json:"_rev"`
+	ID string `json:"_id"`
+	// RevID is the calculated revision ID, not the actual _rev field from the
+	// document.
+	RevID   string `json:"-"`
 	Deleted bool   `json:"_deleted"`
 	Doc     []byte
 }
@@ -93,7 +95,7 @@ func prepareDoc(docID string, doc interface{}) (*docData, error) {
 	if _, err := io.Copy(h, bytes.NewReader(b)); err != nil {
 		return nil, err
 	}
-	data.Rev = hex.EncodeToString(h.Sum(nil))
+	data.RevID = hex.EncodeToString(h.Sum(nil))
 	data.Doc = b
 	return data, nil
 }

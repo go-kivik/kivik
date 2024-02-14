@@ -59,9 +59,28 @@ type docData struct {
 	ID string `json:"_id"`
 	// RevID is the calculated revision ID, not the actual _rev field from the
 	// document.
-	RevID   string `json:"-"`
-	Deleted bool   `json:"_deleted"`
-	Doc     []byte
+	RevID     string   `json:"-"`
+	Revisions revsInfo `json:"_revisions"`
+	Deleted   bool     `json:"_deleted"`
+	Doc       []byte
+}
+
+type revsInfo struct {
+	Start int      `json:"start"`
+	IDs   []string `json:"ids"`
+}
+
+func (r *revsInfo) revs() []revision {
+	revs := make([]revision, len(r.IDs))
+	for i, id := range r.IDs {
+		revs[len(r.IDs)-i-1] = revision{rev: r.Start - i, id: id}
+	}
+	return revs
+}
+
+// leaf returns the leaf revision of the revsInfo.
+func (r *revsInfo) leaf() revision {
+	return revision{rev: r.Start, id: r.IDs[0]}
 }
 
 // prepareDoc prepares the doc for insertion. It returns the new docID, rev, and

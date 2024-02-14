@@ -169,3 +169,51 @@ func Test_extractRev(t *testing.T) {
 		})
 	}
 }
+
+func Test_revsInfo_revs(t *testing.T) {
+	tests := []struct {
+		name string
+		ri   revsInfo
+		want []string
+	}{
+		{
+			name: "empty",
+			ri:   revsInfo{},
+			want: []string{},
+		},
+		{
+			name: "single",
+			ri: revsInfo{
+				Start: 1,
+				IDs:   []string{"a"},
+			},
+			want: []string{
+				"1-a",
+			},
+		},
+		{
+			name: "multiple",
+			ri: revsInfo{
+				Start: 8,
+				IDs:   []string{"z", "y", "x"},
+			},
+			want: []string{
+				"6-x",
+				"7-y",
+				"8-z",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := []string{}
+			for _, r := range tt.ri.revs() {
+				got = append(got, r.String())
+			}
+			if d := cmp.Diff(tt.want, got); d != "" {
+				t.Errorf(d)
+			}
+		})
+	}
+}

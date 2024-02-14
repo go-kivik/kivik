@@ -383,6 +383,47 @@ func TestDBPut(t *testing.T) {
 				}
 			},
 		},
+		{
+			name:  "new_edits=false, with _revisions",
+			docID: "foo",
+			doc: map[string]interface{}{
+				"_revisions": map[string]interface{}{
+					"ids":   []string{"ghi", "def", "abc"},
+					"start": 3,
+				},
+				"foo": "bar",
+			},
+			options: kivik.Param("new_edits", false),
+			wantRev: "3-ghi",
+			wantRevs: []leaf{
+				{
+					ID:    "foo",
+					Rev:   1,
+					RevID: "abc",
+				},
+				{
+					ID:          "foo",
+					Rev:         2,
+					RevID:       "def",
+					ParentRev:   &[]int{1}[0],
+					ParentRevID: &[]string{"abc"}[0],
+				},
+				{
+					ID:          "foo",
+					Rev:         3,
+					RevID:       "ghi",
+					ParentRev:   &[]int{2}[0],
+					ParentRevID: &[]string{"def"}[0],
+				},
+			},
+		},
+		/*
+		 - _revisions and _rev conflict
+		 - _revisions and rev query parameter conflict
+		 - _revisions replay
+		 - _revisions partial replay (some revs already exist)
+		 - _revisions with some revs and docs already exist
+		*/
 	}
 
 	for _, tt := range tests {

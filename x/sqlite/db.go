@@ -71,24 +71,51 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 	defer tx.Rollback()
 
 	if newEdits, _ := opts["new_edits"].(bool); !newEdits {
-		if docRev == "" {
-			return "", &internal.Error{Status: http.StatusBadRequest, Message: "When `new_edits: false`, the document needs `_rev` or `_revisions` specified"}
-		}
-		rev, err := parseRev(docRev)
-		if err != nil {
-			return "", err
-		}
-		_, err = tx.ExecContext(ctx, fmt.Sprintf(`
+		var rev revision
+		if data.Revisions.Start != 0 {
+			stmt, err := tx.PrepareContext(ctx, fmt.Sprintf(`
+				INSERT INTO %[1]q (id, rev, rev_id, parent_rev, parent_rev_id)
+				VALUES ($1, $2, $3, $4, $5)
+			`, d.name+"_revs"))
+			if err != nil {
+				return "", err
+			}
+			defer stmt.Close()
+
+			var (
+				parentRev   *int
+				parentRevID *string
+			)
+			for _, r := range data.Revisions.revs() {
+				r := r
+				_, err := stmt.ExecContext(ctx, data.ID, r.rev, r.id, parentRev, parentRevID)
+				if err != nil {
+					return "", err
+				}
+				parentRev = &r.rev
+				parentRevID = &r.id
+			}
+			rev = data.Revisions.leaf()
+		} else {
+			if docRev == "" {
+				return "", &internal.Error{Status: http.StatusBadRequest, Message: "When `new_edits: false`, the document needs `_rev` or `_revisions` specified"}
+			}
+			rev, err = parseRev(docRev)
+			if err != nil {
+				return "", err
+			}
+			_, err = tx.ExecContext(ctx, fmt.Sprintf(`
 			INSERT INTO %[1]q (id, rev, rev_id)
 			VALUES ($1, $2, $3)
 		`, d.name+"_revs"), docID, rev.rev, rev.id)
-		if err != nil {
-			var sqliteErr *sqlite.Error
-			// A conflict here can be ignored, as we're not actually writing the
-			// document, and the rev can theoretically be updated without the doc
-			// during replication.
-			if !errors.As(err, &sqliteErr) || sqliteErr.Code() != sqlite3.SQLITE_CONSTRAINT_UNIQUE {
-				return "", err
+			if err != nil {
+				var sqliteErr *sqlite.Error
+				// A conflict here can be ignored, as we're not actually writing the
+				// document, and the rev can theoretically be updated without the doc
+				// during replication.
+				if !errors.As(err, &sqliteErr) || sqliteErr.Code() != sqlite3.SQLITE_CONSTRAINT_UNIQUE {
+					return "", err
+				}
 			}
 		}
 		var newRev string

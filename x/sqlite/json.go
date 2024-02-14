@@ -56,10 +56,10 @@ func parseRev(s string) (revision, error) {
 
 // docData represents the document id, rev, deleted status, etc.
 type docData struct {
-	ID      string
-	Rev     string
+	ID      string `json:"_id"`
+	Rev     string `json:"_rev"`
+	Deleted bool   `json:"_deleted"`
 	Doc     []byte
-	Deleted bool
 }
 
 // prepareDoc prepares the doc for insertion. It returns the new docID, rev, and
@@ -73,26 +73,19 @@ func prepareDoc(docID string, doc interface{}) (*docData, error) {
 	if err := json.Unmarshal(tmpJSON, &tmp); err != nil {
 		return nil, err
 	}
-	data := &docData{
-		ID: docID,
+	data := &docData{}
+	if err := json.Unmarshal(tmpJSON, &data); err != nil {
+		return nil, &internal.Error{Status: http.StatusBadRequest, Err: err}
+	}
+	if !data.Deleted {
+		delete(tmp, "_deleted")
 	}
 	delete(tmp, "_rev")
-	if id, ok := tmp["_id"].(string); ok {
-		if docID != "" && id != docID {
-			return nil, &internal.Error{Status: http.StatusBadRequest, Message: "Document ID must match _id in document"}
-		}
-		data.ID = id
-		delete(tmp, "_id")
+	if docID != "" && data.ID != "" && docID != data.ID {
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "Document ID must match _id in document"}
 	}
-	switch deleted := tmp["_deleted"].(type) {
-	case bool:
-		data.Deleted = deleted
-		if !deleted {
-			delete(tmp, "_deleted")
-		}
-	case nil:
-	default:
-		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "_deleted must be a boolean"}
+	if data.ID == "" {
+		data.ID = docID
 	}
 
 	h := md5.New()

@@ -79,7 +79,7 @@ func Test_prepareDoc(t *testing.T) {
 				"_deleted": "oink",
 				"foo":      "bar",
 			},
-			wantErr: "_deleted must be a boolean",
+			wantErr: "json: cannot unmarshal string into Go struct field docData._deleted of type bool",
 		},
 	}
 

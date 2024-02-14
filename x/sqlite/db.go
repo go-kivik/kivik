@@ -199,7 +199,10 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 		return nil, err
 	}
 
-	toMerge := map[string]interface{}{}
+	toMerge := map[string]interface{}{
+		"_id":  id,
+		"_rev": r.String(),
+	}
 
 	if meta, _ := opts["meta"].(bool); meta {
 		opts["conflicts"] = true

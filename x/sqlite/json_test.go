@@ -34,8 +34,8 @@ func Test_prepareDoc(t *testing.T) {
 			name: "no rev in document",
 			doc:  map[string]string{"foo": "bar"},
 			want: &docData{
-				Rev: "9bb58f26192e4ba00f01e2e7b136bbd8",
-				Doc: []byte(`{"foo":"bar"}`),
+				RevID: "9bb58f26192e4ba00f01e2e7b136bbd8",
+				Doc:   []byte(`{"foo":"bar"}`),
 			},
 		},
 		{
@@ -45,8 +45,8 @@ func Test_prepareDoc(t *testing.T) {
 				"foo":  "bar",
 			},
 			want: &docData{
-				Rev: "9bb58f26192e4ba00f01e2e7b136bbd8",
-				Doc: []byte(`{"foo":"bar"}`),
+				RevID: "9bb58f26192e4ba00f01e2e7b136bbd8",
+				Doc:   []byte(`{"foo":"bar"}`),
 			},
 		},
 		{
@@ -54,9 +54,9 @@ func Test_prepareDoc(t *testing.T) {
 			docID: "foo",
 			doc:   map[string]string{"foo": "bar"},
 			want: &docData{
-				ID:  "foo",
-				Rev: "9bb58f26192e4ba00f01e2e7b136bbd8",
-				Doc: []byte(`{"foo":"bar"}`),
+				ID:    "foo",
+				RevID: "9bb58f26192e4ba00f01e2e7b136bbd8",
+				Doc:   []byte(`{"foo":"bar"}`),
 			},
 		},
 		{
@@ -67,7 +67,7 @@ func Test_prepareDoc(t *testing.T) {
 				"foo":      "bar",
 			},
 			want: &docData{
-				Rev:     "6872a0fc474ada5c46ce054b92897063",
+				RevID:   "6872a0fc474ada5c46ce054b92897063",
 				Doc:     []byte(`{"_deleted":true,"foo":"bar"}`),
 				Deleted: true,
 			},
@@ -165,6 +165,54 @@ func Test_extractRev(t *testing.T) {
 			}
 			if rev != tt.wantRev {
 				t.Errorf("unexpected rev= %v, want %v", rev, tt.wantRev)
+			}
+		})
+	}
+}
+
+func Test_revsInfo_revs(t *testing.T) {
+	tests := []struct {
+		name string
+		ri   revsInfo
+		want []string
+	}{
+		{
+			name: "empty",
+			ri:   revsInfo{},
+			want: []string{},
+		},
+		{
+			name: "single",
+			ri: revsInfo{
+				Start: 1,
+				IDs:   []string{"a"},
+			},
+			want: []string{
+				"1-a",
+			},
+		},
+		{
+			name: "multiple",
+			ri: revsInfo{
+				Start: 8,
+				IDs:   []string{"z", "y", "x"},
+			},
+			want: []string{
+				"6-x",
+				"7-y",
+				"8-z",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := []string{}
+			for _, r := range tt.ri.revs() {
+				got = append(got, r.String())
+			}
+			if d := cmp.Diff(tt.want, got); d != "" {
+				t.Errorf(d)
 			}
 		})
 	}

@@ -53,15 +53,19 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 	}
 	options.Apply(opts)
 	optsRev, _ := opts["rev"].(string)
+	data, err := prepareDoc(docID, doc)
+	if err != nil {
+		return "", err
+	}
+
+	if data.Revisions.Start != 0 {
+		docRev = data.Revisions.leaf().String()
+	}
 	if optsRev != "" && docRev != "" && optsRev != docRev {
 		return "", &internal.Error{Status: http.StatusBadRequest, Message: "Document rev and option have different values"}
 	}
 	if docRev == "" && optsRev != "" {
 		docRev = optsRev
-	}
-	data, err := prepareDoc(docID, doc)
-	if err != nil {
-		return "", err
 	}
 
 	tx, err := d.db.BeginTx(ctx, nil)

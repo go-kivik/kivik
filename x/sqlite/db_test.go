@@ -417,9 +417,45 @@ func TestDBPut(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:  "new_edits=false, with _revisions and _rev, _revisions wins",
+			docID: "foo",
+			doc: map[string]interface{}{
+				"_revisions": map[string]interface{}{
+					"ids":   []string{"ghi"},
+					"start": 1,
+				},
+				"_rev": "1-abc",
+				"foo":  "bar",
+			},
+			options: kivik.Param("new_edits", false),
+			wantRev: "1-ghi",
+			wantRevs: []leaf{
+				{
+					ID:    "foo",
+					Rev:   1,
+					RevID: "ghi",
+				},
+			},
+		},
+		{
+			name:  "new_edits=false, with _revisions and query rev, conflict",
+			docID: "foo",
+			doc: map[string]interface{}{
+				"_revisions": map[string]interface{}{
+					"ids":   []string{"ghi"},
+					"start": 1,
+				},
+				"foo": "bar",
+			},
+			options: kivik.Params(map[string]interface{}{
+				"new_edits": false,
+				"rev":       "1-abc",
+			}),
+			wantStatus: http.StatusConflict,
+			wantErr:    "Document rev and option have different values",
+		},
 		/*
-		 - _revisions and _rev conflict
-		 - _revisions and rev query parameter conflict
 		 - _revisions replay
 		 - _revisions partial replay (some revs already exist)
 		 - _revisions with some revs and docs already exist

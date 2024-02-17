@@ -221,7 +221,8 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 	}
 	defer tx.Rollback()
 
-	if optsRev, _ := opts["rev"].(string); optsRev != "" {
+	optsRev, _ := opts["rev"].(string)
+	if optsRev != "" {
 		r, err = parseRev(optsRev)
 		if err != nil {
 			return nil, err
@@ -251,12 +252,12 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 			`, d.name+"_revs", d.name), id, r.rev, r.id).Scan(&r.rev, &r.id, &body, &deleted)
 		} else {
 			err = tx.QueryRowContext(ctx, fmt.Sprintf(`
-				SELECT doc
+				SELECT doc, deleted
 				FROM %q
 				WHERE id = $1
 					AND rev = $2
 					AND rev_id = $3
-				`, d.name), id, r.rev, r.id).Scan(&body)
+				`, d.name), id, r.rev, r.id).Scan(&body, &deleted)
 		}
 	} else {
 		err = tx.QueryRowContext(ctx, fmt.Sprintf(`
@@ -268,10 +269,11 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 		`, d.name), id).Scan(&r.rev, &r.id, &body, &deleted)
 	}
 
-	if deleted || errors.Is(err, sql.ErrNoRows) {
+	switch {
+	case errors.Is(err, sql.ErrNoRows) ||
+		deleted && optsRev == "":
 		return nil, &internal.Error{Status: http.StatusNotFound, Message: "not found"}
-	}
-	if err != nil {
+	case err != nil:
 		return nil, err
 	}
 

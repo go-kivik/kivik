@@ -21,9 +21,6 @@ import (
 	"io"
 	"net/http"
 
-	"modernc.org/sqlite"
-	sqlite3 "modernc.org/sqlite/lib"
-
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/internal"
 )
@@ -53,12 +50,39 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 	}
 	options.Apply(opts)
 	optsRev, _ := opts["rev"].(string)
+	newEdits, _ := opts["new_edits"].(bool)
 	data, err := prepareDoc(docID, doc)
 	if err != nil {
 		return "", err
 	}
 
 	if data.Revisions.Start != 0 {
+		if newEdits {
+			stmt, err := d.db.PrepareContext(ctx, fmt.Sprintf(`
+				SELECT EXISTS(
+					SELECT 1
+					FROM %[1]q
+					WHERE id = $1
+						AND rev = $2
+						AND rev_id = $3
+				)
+			`, d.name+"_revs"))
+			if err != nil {
+				return "", err
+			}
+			defer stmt.Close()
+			var exists bool
+			revs := data.Revisions.revs()
+			for _, r := range revs[:len(revs)-1] {
+				err := stmt.QueryRowContext(ctx, data.ID, r.rev, r.id).Scan(&exists)
+				if err != nil {
+					return "", err
+				}
+				if !exists {
+					return "", &internal.Error{Status: http.StatusConflict, Message: "conflict"}
+				}
+			}
+		}
 		docRev = data.Revisions.leaf().String()
 	}
 	if optsRev != "" && docRev != "" && optsRev != docRev {
@@ -74,12 +98,13 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 	}
 	defer tx.Rollback()
 
-	if newEdits, _ := opts["new_edits"].(bool); !newEdits {
+	if !newEdits {
 		var rev revision
 		if data.Revisions.Start != 0 {
 			stmt, err := tx.PrepareContext(ctx, fmt.Sprintf(`
 				INSERT INTO %[1]q (id, rev, rev_id, parent_rev, parent_rev_id)
 				VALUES ($1, $2, $3, $4, $5)
+				ON CONFLICT DO UPDATE SET parent_rev = $4, parent_rev_id = $5
 			`, d.name+"_revs"))
 			if err != nil {
 				return "", err
@@ -111,28 +136,23 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 			_, err = tx.ExecContext(ctx, fmt.Sprintf(`
 			INSERT INTO %[1]q (id, rev, rev_id)
 			VALUES ($1, $2, $3)
+			ON CONFLICT DO NOTHING
 		`, d.name+"_revs"), docID, rev.rev, rev.id)
 			if err != nil {
-				var sqliteErr *sqlite.Error
-				// A conflict here can be ignored, as we're not actually writing the
-				// document, and the rev can theoretically be updated without the doc
-				// during replication.
-				if !errors.As(err, &sqliteErr) || sqliteErr.Code() != sqlite3.SQLITE_CONSTRAINT_UNIQUE {
-					return "", err
-				}
+				return "", err
 			}
 		}
 		var newRev string
 		err = tx.QueryRowContext(ctx, fmt.Sprintf(`
 			INSERT INTO %q (id, rev, rev_id, doc, deleted)
 			VALUES ($1, $2, $3, $4, $5)
+			ON CONFLICT DO NOTHING
 			RETURNING rev || '-' || rev_id
 		`, d.name), docID, rev.rev, rev.id, data.Doc, data.Deleted).Scan(&newRev)
-		var sqliteErr *sqlite.Error
-		if errors.As(err, &sqliteErr) && sqliteErr.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE {
-			// In the case of a conflict for new_edits=false, we assume that the
-			// documents are identical, for the sake of idempotency, and return
-			// the current rev, to match CouchDB behavior.
+		if errors.Is(err, sql.ErrNoRows) {
+			// No rows means a conflict, so  we assume that the documents are
+			// identical, for the sake of idempotency, and return the current
+			// rev, to match CouchDB behavior.
 			return docRev, nil
 		}
 		if err != nil {

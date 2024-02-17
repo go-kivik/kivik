@@ -300,13 +300,20 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 		"_rev": r.String(),
 	}
 
+	var (
+		optConflicts, _        = opts["conflicts"].(bool)
+		optDeletedConflicts, _ = opts["deleted_conflicts"].(bool)
+		optRevsInfo, _         = opts["revs_info"].(bool)
+		optRevs, _             = opts["revs"].(bool)
+	)
+
 	if meta, _ := opts["meta"].(bool); meta {
-		opts["conflicts"] = true
-		opts["deleted_conflicts"] = true
-		opts["revs_info"] = true
+		optConflicts = true
+		optDeletedConflicts = true
+		optRevsInfo = true
 	}
 
-	if conflicts, _ := opts["conflicts"].(bool); conflicts {
+	if optConflicts {
 		revs, err := d.conflicts(ctx, tx, id, r, false)
 		if err != nil {
 			return nil, err
@@ -315,7 +322,7 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 		toMerge["_conflicts"] = revs
 	}
 
-	if deletedConflicts, _ := opts["deleted_conflicts"].(bool); deletedConflicts {
+	if optDeletedConflicts {
 		revs, err := d.conflicts(ctx, tx, id, r, true)
 		if err != nil {
 			return nil, err
@@ -324,9 +331,9 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 		toMerge["_deleted_conflicts"] = revs
 	}
 
-	if revsInfo, _ := opts["revs_info"].(bool); revsInfo {
+	if optRevsInfo || optRevs {
 		rows, err := tx.QueryContext(ctx, fmt.Sprintf(`
-			SELECT revs.rev || '-' || revs.rev_id,
+			SELECT revs.rev, revs.rev_id,
 				CASE
 					WHEN doc.id IS NULL THEN 'missing'
 					WHEN doc.deleted THEN    'deleted'
@@ -374,21 +381,42 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 			return nil, err
 		}
 		defer rows.Close()
-		var revs []map[string]string
+		type revStatus struct {
+			rev    int
+			id     string
+			status string
+		}
+		var revs []revStatus
 		for rows.Next() {
-			var rev, status string
-			if err := rows.Scan(&rev, &status); err != nil {
+			var rs revStatus
+			if err := rows.Scan(&rs.rev, &rs.id, &rs.status); err != nil {
 				return nil, err
 			}
-			revs = append(revs, map[string]string{
-				"rev":    rev,
-				"status": status,
-			})
+			revs = append(revs, rs)
 		}
 		if err := rows.Err(); err != nil {
 			return nil, err
 		}
-		toMerge["_revs_info"] = revs
+		if optRevsInfo {
+			info := make([]map[string]string, 0, len(revs))
+			for _, r := range revs {
+				info = append(info, map[string]string{
+					"rev":    fmt.Sprintf("%d-%s", r.rev, r.id),
+					"status": r.status,
+				})
+			}
+			toMerge["_revs_info"] = info
+		} else {
+			// for revs=true, we include a different format of this data
+			revsInfo := revsInfo{
+				Start: revs[0].rev,
+				IDs:   make([]string, len(revs)),
+			}
+			for i, r := range revs {
+				revsInfo.IDs[i] = r.id
+			}
+			toMerge["_revisions"] = revsInfo
+		}
 	}
 
 	if len(toMerge) > 0 {

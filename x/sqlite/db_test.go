@@ -1297,6 +1297,55 @@ func TestDBGet(t *testing.T) {
 				"foo":  "ddd",
 			},
 		},
+		{
+			name: "revs=true, losing leaf",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]interface{}{
+					"foo": "bbb",
+					"_revisions": map[string]interface{}{
+						"ids":   []string{"bbb", "aaa"},
+						"start": 2,
+					},
+				}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]interface{}{
+					"foo": "ddd",
+					"_revisions": map[string]interface{}{
+						"ids":   []string{"yyy", "aaa"},
+						"start": 2,
+					},
+				}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id: "foo",
+			options: kivik.Params(map[string]interface{}{
+				"revs": true,
+				"rev":  "2-bbb",
+			}),
+			wantDoc: map[string]interface{}{
+				"_id":  "foo",
+				"_rev": "2-bbb",
+				"foo":  "bbb",
+				"_revisions": map[string]interface{}{
+					"start": 2,
+					"ids":   []string{"bbb", "aaa"},
+				},
+			},
+		},
 		/*
 			TODO:
 			attachments = true
@@ -1304,7 +1353,6 @@ func TestDBGet(t *testing.T) {
 			atts_since = [revs]
 			local_seq = true
 			open_revs = []
-			revs = true
 		*/
 	}
 

@@ -240,26 +240,42 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 			`, d.name), id, r.rev, r.id).Scan(&body, &deleted)
 	case optsRev != "" && latest:
 		err = tx.QueryRowContext(ctx, fmt.Sprintf(`
-			WITH RECURSIVE Descendants AS (
-				-- Base case: Select the starting node for descendants
-				SELECT id, rev, rev_id, parent_rev, parent_rev_id
-				FROM %[1]q AS revs
-				WHERE id = $1
-					AND rev = $2
-					AND rev_id = $3
-				UNION ALL
-				-- Recursive step: Select the children of the current node
-				SELECT r.id, r.rev, r.rev_id, r.parent_rev, r.parent_rev_id
-				FROM %[1]q r
-				JOIN Descendants d ON d.rev_id = r.parent_rev_id AND d.rev = r.parent_rev AND d.id = r.id
+			SELECT rev, rev_id, doc, deleted FROM (
+				WITH RECURSIVE Descendants AS (
+					-- Base case: Select the starting node for descendants
+					SELECT id, rev, rev_id, parent_rev, parent_rev_id
+					FROM %[1]q AS revs
+					WHERE id = $1
+						AND rev = $2
+						AND rev_id = $3
+					UNION ALL
+					-- Recursive step: Select the children of the current node
+					SELECT r.id, r.rev, r.rev_id, r.parent_rev, r.parent_rev_id
+					FROM %[1]q r
+					JOIN Descendants d ON d.rev_id = r.parent_rev_id AND d.rev = r.parent_rev AND d.id = r.id
+				)
+				-- Combine ancestors and descendants, excluding the starting node twice
+				SELECT rev.rev, rev.rev_id, doc, deleted
+				FROM Descendants AS rev
+				JOIN %[2]q AS doc ON doc.id = rev.id AND doc.rev = rev.rev AND doc.rev_id = rev.rev_id
+				LEFT JOIN %[1]q AS child ON child.parent_rev = rev.rev AND child.parent_rev_id = rev.rev_id
+				WHERE child.rev IS NULL
+					AND doc.deleted = FALSE
+				ORDER BY rev.rev DESC, rev.rev_id DESC
 			)
-			-- Combine ancestors and descendants, excluding the starting node twice
-			SELECT rev.rev, rev.rev_id, doc, deleted
-			FROM Descendants AS rev
-			JOIN %[2]q AS doc ON doc.id = rev.id AND doc.rev = rev.rev AND doc.rev_id = rev.rev_id
-			LEFT JOIN %[1]q AS child ON child.parent_rev = rev.rev AND child.parent_rev_id = rev.rev_id
-			WHERE child.rev IS NULL
-			ORDER BY rev.rev DESC, rev.rev_id DESC
+			UNION ALL
+			-- This query fetches the winning non-deleted rev, in case the above
+			-- query returns nothing, because the latest leaf rev is deleted.
+			SELECT rev, rev_id, doc, deleted FROM (
+				SELECT leaf.id, leaf.rev, leaf.rev_id, leaf.parent_rev, leaf.parent_rev_id, doc.doc, doc.deleted
+				FROM %[1]q AS leaf
+				LEFT JOIN %[1]q AS child ON child.id = leaf.id AND child.parent_rev = leaf.rev AND child.parent_rev_id = leaf.rev_id
+				JOIN %[2]q AS doc ON doc.id = leaf.id AND doc.rev = leaf.rev AND doc.rev_id = leaf.rev_id
+				WHERE child.rev IS NULL
+					AND doc.deleted = FALSE
+				ORDER BY leaf.rev DESC, leaf.rev_id DESC
+			)
+			LIMIT 1
 		`, d.name+"_revs", d.name), id, r.rev, r.id).Scan(&r.rev, &r.id, &body, &deleted)
 	default:
 		err = tx.QueryRowContext(ctx, fmt.Sprintf(`

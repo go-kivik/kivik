@@ -1243,9 +1243,62 @@ func TestDBGet(t *testing.T) {
 				"foo":  "bbb",
 			},
 		},
+		{
+			name: "get latest rev with deleted leaf, reverts to the winning branch",
+			setup: func(t *testing.T, d driver.DB) {
+				// common root doc
+				_, err := d.Put(context.Background(), "foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				// losing branch
+				_, err = d.Put(context.Background(), "foo", map[string]interface{}{
+					"foo": "bbb",
+					"_revisions": map[string]interface{}{
+						"ids":   []string{"ccc", "bbb", "aaa"},
+						"start": 3,
+					},
+				}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				// now delete the losing leaf
+				_, err = d.Delete(context.Background(), "foo", kivik.Rev("3-ccc"))
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				// winning branch
+				_, err = d.Put(context.Background(), "foo", map[string]interface{}{
+					"foo": "ddd",
+					"_revisions": map[string]interface{}{
+						"ids":   []string{"xxx", "yyy", "aaa"},
+						"start": 3,
+					},
+				}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id: "foo",
+			options: kivik.Params(map[string]interface{}{
+				"latest": true,
+				"rev":    "2-bbb",
+			}),
+			wantDoc: map[string]interface{}{
+				"_id":  "foo",
+				"_rev": "3-xxx",
+				"foo":  "ddd",
+			},
+		},
 		/*
 			TODO:
-			latest, with deleted leaf -- investigate
 			attachments = true
 			att_encoding_info = true
 			atts_since = [revs]

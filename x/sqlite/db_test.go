@@ -1346,13 +1346,73 @@ func TestDBGet(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "local_seq=true",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id:      "foo",
+			options: kivik.Param("local_seq", true),
+			wantDoc: map[string]interface{}{
+				"_id":        "foo",
+				"_rev":       "1-aaa",
+				"foo":        "aaa",
+				"_local_seq": float64(1),
+			},
+		},
+		{
+			name: "local_seq=true & specified rev",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id:      "foo",
+			options: kivik.Params(map[string]interface{}{"local_seq": true, "rev": "1-aaa"}),
+			wantDoc: map[string]interface{}{
+				"_id":        "foo",
+				"_rev":       "1-aaa",
+				"foo":        "aaa",
+				"_local_seq": float64(1),
+			},
+		},
+		{
+			name: "local_seq=true & specified rev & latest=true",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id: "foo",
+			options: kivik.Params(map[string]interface{}{
+				"local_seq": true,
+				"rev":       "1-aaa",
+				"latest":    true,
+			}),
+			wantDoc: map[string]interface{}{
+				"_id":        "foo",
+				"_rev":       "1-aaa",
+				"foo":        "aaa",
+				"_local_seq": float64(1),
+			},
+		},
 		/*
 			TODO:
 			attachments = true
 			att_encoding_info = true
 			atts_since = [revs]
-			local_seq = true
-			open_revs = []
+			open_revs = [] // TODO: driver.OpenRever
 		*/
 	}
 

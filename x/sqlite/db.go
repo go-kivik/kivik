@@ -209,10 +209,11 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 	options.Apply(opts)
 
 	var (
-		r       revision
-		body    []byte
-		err     error
-		deleted bool
+		r        revision
+		body     []byte
+		err      error
+		deleted  bool
+		localSeq int
 	)
 
 	tx, err := d.db.BeginTx(ctx, nil)
@@ -232,15 +233,15 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 	switch {
 	case optsRev != "" && !latest:
 		err = tx.QueryRowContext(ctx, fmt.Sprintf(`
-			SELECT doc, deleted
+			SELECT seq, doc, deleted
 			FROM %q
 			WHERE id = $1
 				AND rev = $2
 				AND rev_id = $3
-			`, d.name), id, r.rev, r.id).Scan(&body, &deleted)
+			`, d.name), id, r.rev, r.id).Scan(&localSeq, &body, &deleted)
 	case optsRev != "" && latest:
 		err = tx.QueryRowContext(ctx, fmt.Sprintf(`
-			SELECT rev, rev_id, doc, deleted FROM (
+			SELECT seq, rev, rev_id, doc, deleted FROM (
 				WITH RECURSIVE Descendants AS (
 					-- Base case: Select the starting node for descendants
 					SELECT id, rev, rev_id, parent_rev, parent_rev_id
@@ -255,7 +256,7 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 					JOIN Descendants d ON d.rev_id = r.parent_rev_id AND d.rev = r.parent_rev AND d.id = r.id
 				)
 				-- Combine ancestors and descendants, excluding the starting node twice
-				SELECT rev.rev, rev.rev_id, doc, deleted
+				SELECT seq, rev.rev, rev.rev_id, doc, deleted
 				FROM Descendants AS rev
 				JOIN %[2]q AS doc ON doc.id = rev.id AND doc.rev = rev.rev AND doc.rev_id = rev.rev_id
 				LEFT JOIN %[1]q AS child ON child.parent_rev = rev.rev AND child.parent_rev_id = rev.rev_id
@@ -266,8 +267,8 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 			UNION ALL
 			-- This query fetches the winning non-deleted rev, in case the above
 			-- query returns nothing, because the latest leaf rev is deleted.
-			SELECT rev, rev_id, doc, deleted FROM (
-				SELECT leaf.id, leaf.rev, leaf.rev_id, leaf.parent_rev, leaf.parent_rev_id, doc.doc, doc.deleted
+			SELECT seq, rev, rev_id, doc, deleted FROM (
+				SELECT leaf.id, leaf.rev, leaf.rev_id, leaf.parent_rev, leaf.parent_rev_id, doc.doc, doc.deleted, doc.seq
 				FROM %[1]q AS leaf
 				LEFT JOIN %[1]q AS child ON child.id = leaf.id AND child.parent_rev = leaf.rev AND child.parent_rev_id = leaf.rev_id
 				JOIN %[2]q AS doc ON doc.id = leaf.id AND doc.rev = leaf.rev AND doc.rev_id = leaf.rev_id
@@ -276,15 +277,15 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 				ORDER BY leaf.rev DESC, leaf.rev_id DESC
 			)
 			LIMIT 1
-		`, d.name+"_revs", d.name), id, r.rev, r.id).Scan(&r.rev, &r.id, &body, &deleted)
+		`, d.name+"_revs", d.name), id, r.rev, r.id).Scan(&localSeq, &r.rev, &r.id, &body, &deleted)
 	default:
 		err = tx.QueryRowContext(ctx, fmt.Sprintf(`
-			SELECT rev, rev_id, doc, deleted
+			SELECT seq, rev, rev_id, doc, deleted
 			FROM %q
 			WHERE id = $1
 			ORDER BY rev DESC, rev_id DESC
 			LIMIT 1
-		`, d.name), id).Scan(&r.rev, &r.id, &body, &deleted)
+		`, d.name), id).Scan(&localSeq, &r.rev, &r.id, &body, &deleted)
 	}
 
 	switch {
@@ -305,6 +306,7 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 		optDeletedConflicts, _ = opts["deleted_conflicts"].(bool)
 		optRevsInfo, _         = opts["revs_info"].(bool)
 		optRevs, _             = opts["revs"].(bool)
+		optLocalSeq, _         = opts["local_seq"].(bool)
 	)
 
 	if meta, _ := opts["meta"].(bool); meta {
@@ -417,6 +419,9 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 			}
 			toMerge["_revisions"] = revsInfo
 		}
+	}
+	if optLocalSeq {
+		toMerge["_local_seq"] = localSeq
 	}
 
 	if len(toMerge) > 0 {

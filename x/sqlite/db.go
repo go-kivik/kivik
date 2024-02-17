@@ -222,44 +222,46 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 	defer tx.Rollback()
 
 	optsRev, _ := opts["rev"].(string)
+	latest, _ := opts["latest"].(bool)
 	if optsRev != "" {
 		r, err = parseRev(optsRev)
 		if err != nil {
 			return nil, err
 		}
-		if latest, _ := opts["latest"].(bool); latest {
-			err = tx.QueryRowContext(ctx, fmt.Sprintf(`
-				WITH RECURSIVE Descendants AS (
-					-- Base case: Select the starting node for descendants
-					SELECT id, rev, rev_id, parent_rev, parent_rev_id
-					FROM %[1]q AS revs
-					WHERE id = $1
-						AND rev = $2
-						AND rev_id = $3
-					UNION ALL
-					-- Recursive step: Select the children of the current node
-					SELECT r.id, r.rev, r.rev_id, r.parent_rev, r.parent_rev_id
-					FROM %[1]q r
-					JOIN Descendants d ON d.rev_id = r.parent_rev_id AND d.rev = r.parent_rev AND d.id = r.id
-				)
-				-- Combine ancestors and descendants, excluding the starting node twice
-				SELECT rev.rev, rev.rev_id, doc, deleted
-				FROM Descendants AS rev
-				JOIN %[2]q AS doc ON doc.id = rev.id AND doc.rev = rev.rev AND doc.rev_id = rev.rev_id
-				LEFT JOIN %[1]q AS child ON child.parent_rev = rev.rev AND child.parent_rev_id = rev.rev_id
-				WHERE child.rev IS NULL
-				ORDER BY rev.rev DESC, rev.rev_id DESC
-			`, d.name+"_revs", d.name), id, r.rev, r.id).Scan(&r.rev, &r.id, &body, &deleted)
-		} else {
-			err = tx.QueryRowContext(ctx, fmt.Sprintf(`
-				SELECT doc, deleted
-				FROM %q
+	}
+	switch {
+	case optsRev != "" && !latest:
+		err = tx.QueryRowContext(ctx, fmt.Sprintf(`
+			SELECT doc, deleted
+			FROM %q
+			WHERE id = $1
+				AND rev = $2
+				AND rev_id = $3
+			`, d.name), id, r.rev, r.id).Scan(&body, &deleted)
+	case optsRev != "" && latest:
+		err = tx.QueryRowContext(ctx, fmt.Sprintf(`
+			WITH RECURSIVE Descendants AS (
+				-- Base case: Select the starting node for descendants
+				SELECT id, rev, rev_id, parent_rev, parent_rev_id
+				FROM %[1]q AS revs
 				WHERE id = $1
 					AND rev = $2
 					AND rev_id = $3
-				`, d.name), id, r.rev, r.id).Scan(&body, &deleted)
-		}
-	} else {
+				UNION ALL
+				-- Recursive step: Select the children of the current node
+				SELECT r.id, r.rev, r.rev_id, r.parent_rev, r.parent_rev_id
+				FROM %[1]q r
+				JOIN Descendants d ON d.rev_id = r.parent_rev_id AND d.rev = r.parent_rev AND d.id = r.id
+			)
+			-- Combine ancestors and descendants, excluding the starting node twice
+			SELECT rev.rev, rev.rev_id, doc, deleted
+			FROM Descendants AS rev
+			JOIN %[2]q AS doc ON doc.id = rev.id AND doc.rev = rev.rev AND doc.rev_id = rev.rev_id
+			LEFT JOIN %[1]q AS child ON child.parent_rev = rev.rev AND child.parent_rev_id = rev.rev_id
+			WHERE child.rev IS NULL
+			ORDER BY rev.rev DESC, rev.rev_id DESC
+		`, d.name+"_revs", d.name), id, r.rev, r.id).Scan(&r.rev, &r.id, &body, &deleted)
+	default:
 		err = tx.QueryRowContext(ctx, fmt.Sprintf(`
 			SELECT rev, rev_id, doc, deleted
 			FROM %q

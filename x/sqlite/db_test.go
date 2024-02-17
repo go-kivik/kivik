@@ -455,11 +455,137 @@ func TestDBPut(t *testing.T) {
 			wantStatus: http.StatusConflict,
 			wantErr:    "Document rev and option have different values",
 		},
-		/*
-		 - _revisions replay
-		 - _revisions partial replay (some revs already exist)
-		 - _revisions with some revs and docs already exist
-		*/
+		{
+			name: "new_edits=false, with _revisions replayed",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]interface{}{
+					"_revisions": map[string]interface{}{
+						"ids":   []string{"ghi", "def", "abc"},
+						"start": 3,
+					},
+					"foo": "bar",
+				}, kivik.Param("new_edits", false))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			docID: "foo",
+			doc: map[string]interface{}{
+				"_revisions": map[string]interface{}{
+					"ids":   []string{"ghi", "def", "abc"},
+					"start": 3,
+				},
+				"foo": "bar",
+			},
+			options: kivik.Param("new_edits", false),
+			wantRev: "3-ghi",
+			wantRevs: []leaf{
+				{
+					ID:    "foo",
+					Rev:   1,
+					RevID: "abc",
+				},
+				{
+					ID:          "foo",
+					Rev:         2,
+					RevID:       "def",
+					ParentRev:   &[]int{1}[0],
+					ParentRevID: &[]string{"abc"}[0],
+				},
+				{
+					ID:          "foo",
+					Rev:         3,
+					RevID:       "ghi",
+					ParentRev:   &[]int{2}[0],
+					ParentRevID: &[]string{"def"}[0],
+				},
+			},
+		},
+		{
+			name: "new_edits=false, with _revisions and some revs already exist without parents",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.(*db).db.Exec(`
+					INSERT INTO test_revs (id, rev, rev_id)
+					VALUES ('foo', 1, 'abc'), ('foo', 2, 'def')
+				`)
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			docID: "foo",
+			doc: map[string]interface{}{
+				"_revisions": map[string]interface{}{
+					"ids":   []string{"ghi", "def", "abc"},
+					"start": 3,
+				},
+				"foo": "bar",
+			},
+			options: kivik.Param("new_edits", false),
+			wantRev: "3-ghi",
+			wantRevs: []leaf{
+				{
+					ID:    "foo",
+					Rev:   1,
+					RevID: "abc",
+				},
+				{
+					ID:          "foo",
+					Rev:         2,
+					RevID:       "def",
+					ParentRev:   &[]int{1}[0],
+					ParentRevID: &[]string{"abc"}[0],
+				},
+				{
+					ID:          "foo",
+					Rev:         3,
+					RevID:       "ghi",
+					ParentRev:   &[]int{2}[0],
+					ParentRevID: &[]string{"def"}[0],
+				},
+			},
+		},
+		{
+			name: "new_edits=false, with _revisions and some revs already exist with docs",
+			setup: func(t *testing.T, d driver.DB) {
+				if _, err := d.Put(context.Background(), "foo", map[string]interface{}{
+					"_rev": "2-def",
+					"moo":  "oink",
+				}, kivik.Param("new_edits", false)); err != nil {
+					t.Fatal(err)
+				}
+			},
+			docID: "foo",
+			doc: map[string]interface{}{
+				"_revisions": map[string]interface{}{
+					"ids":   []string{"ghi", "def", "abc"},
+					"start": 3,
+				},
+				"foo": "bar",
+			},
+			options: kivik.Param("new_edits", false),
+			wantRev: "3-ghi",
+			wantRevs: []leaf{
+				{
+					ID:    "foo",
+					Rev:   1,
+					RevID: "abc",
+				},
+				{
+					ID:          "foo",
+					Rev:         2,
+					RevID:       "def",
+					ParentRev:   &[]int{1}[0],
+					ParentRevID: &[]string{"abc"}[0],
+				},
+				{
+					ID:          "foo",
+					Rev:         3,
+					RevID:       "ghi",
+					ParentRev:   &[]int{2}[0],
+					ParentRevID: &[]string{"def"}[0],
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {

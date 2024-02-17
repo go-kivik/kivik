@@ -80,6 +80,7 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 			stmt, err := tx.PrepareContext(ctx, fmt.Sprintf(`
 				INSERT INTO %[1]q (id, rev, rev_id, parent_rev, parent_rev_id)
 				VALUES ($1, $2, $3, $4, $5)
+				ON CONFLICT DO UPDATE SET parent_rev = $4, parent_rev_id = $5
 			`, d.name+"_revs"))
 			if err != nil {
 				return "", err

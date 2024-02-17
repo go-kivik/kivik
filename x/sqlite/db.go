@@ -50,12 +50,39 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 	}
 	options.Apply(opts)
 	optsRev, _ := opts["rev"].(string)
+	newEdits, _ := opts["new_edits"].(bool)
 	data, err := prepareDoc(docID, doc)
 	if err != nil {
 		return "", err
 	}
 
 	if data.Revisions.Start != 0 {
+		if newEdits {
+			stmt, err := d.db.PrepareContext(ctx, fmt.Sprintf(`
+				SELECT EXISTS(
+					SELECT 1
+					FROM %[1]q
+					WHERE id = $1
+						AND rev = $2
+						AND rev_id = $3
+				)
+			`, d.name+"_revs"))
+			if err != nil {
+				return "", err
+			}
+			defer stmt.Close()
+			var exists bool
+			revs := data.Revisions.revs()
+			for _, r := range revs[:len(revs)-1] {
+				err := stmt.QueryRowContext(ctx, data.ID, r.rev, r.id).Scan(&exists)
+				if err != nil {
+					return "", err
+				}
+				if !exists {
+					return "", &internal.Error{Status: http.StatusConflict, Message: "conflict"}
+				}
+			}
+		}
 		docRev = data.Revisions.leaf().String()
 	}
 	if optsRev != "" && docRev != "" && optsRev != docRev {
@@ -71,7 +98,7 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 	}
 	defer tx.Rollback()
 
-	if newEdits, _ := opts["new_edits"].(bool); !newEdits {
+	if !newEdits {
 		var rev revision
 		if data.Revisions.Start != 0 {
 			stmt, err := tx.PrepareContext(ctx, fmt.Sprintf(`

@@ -102,6 +102,7 @@ func prepareDoc(docID string, doc interface{}) (*docData, error) {
 		delete(tmp, "_deleted")
 	}
 	delete(tmp, "_rev")
+	delete(tmp, "_revisions")
 	if docID != "" && data.ID != "" && docID != data.ID {
 		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "Document ID must match _id in document"}
 	}

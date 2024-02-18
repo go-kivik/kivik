@@ -20,9 +20,9 @@ var schema = []string{
 		parent_rev INTEGER,
 		parent_rev_id TEXT,
 		FOREIGN KEY (id, parent_rev, parent_rev_id) REFERENCES %[2]q (id, rev, rev_id) ON DELETE CASCADE,
-		UNIQUE(id, rev, rev_id),
-		UNIQUE(id, parent_rev, parent_rev_id)
+		UNIQUE(id, rev, rev_id)
 	)`,
+	`CREATE INDEX idx_parent ON %[2]q (id, parent_rev, parent_rev_id)`,
 	`CREATE TABLE %[1]q (
 		seq INTEGER PRIMARY KEY,
 		id TEXT NOT NULL,

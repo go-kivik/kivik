@@ -642,7 +642,7 @@ func TestDBPut(t *testing.T) {
 				"foo": "bar",
 			},
 			options: kivik.Param("new_edits", true),
-			wantRev: "2-848afe1e5f1016121f8189958df7a7d8",
+			wantRev: "2-9bb58f26192e4ba00f01e2e7b136bbd8",
 			wantRevs: []leaf{
 				{
 					ID:    "foo",
@@ -652,7 +652,7 @@ func TestDBPut(t *testing.T) {
 				{
 					ID:          "foo",
 					Rev:         2,
-					RevID:       "848afe1e5f1016121f8189958df7a7d8",
+					RevID:       "9bb58f26192e4ba00f01e2e7b136bbd8",
 					ParentRev:   &[]int{1}[0],
 					ParentRevID: &[]string{"abc"}[0],
 				},
@@ -681,7 +681,7 @@ func TestDBPut(t *testing.T) {
 				"foo": "bar",
 			},
 			options: kivik.Param("new_edits", true),
-			wantRev: "4-d589879bbcba5a46c8e6ae58eb11f930",
+			wantRev: "4-9bb58f26192e4ba00f01e2e7b136bbd8",
 			wantRevs: []leaf{
 				{
 					ID:    "foo",
@@ -705,7 +705,7 @@ func TestDBPut(t *testing.T) {
 				{
 					ID:          "foo",
 					Rev:         4,
-					RevID:       "d589879bbcba5a46c8e6ae58eb11f930",
+					RevID:       "9bb58f26192e4ba00f01e2e7b136bbd8",
 					ParentRev:   &[]int{3}[0],
 					ParentRevID: &[]string{"ghi"}[0],
 				},
@@ -1149,15 +1149,270 @@ func TestDBGet(t *testing.T) {
 				"_deleted_conflicts": []string{"1-qwe"},
 			},
 		},
+		{
+			name: "get latest winning leaf",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]interface{}{
+					"foo": "bbb",
+					"_revisions": map[string]interface{}{
+						"ids":   []string{"bbb", "aaa"},
+						"start": 2,
+					},
+				}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]interface{}{
+					"foo": "ddd",
+					"_revisions": map[string]interface{}{
+						"ids":   []string{"yyy", "aaa"},
+						"start": 2,
+					},
+				}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id: "foo",
+			options: kivik.Params(map[string]interface{}{
+				"latest": true,
+				"rev":    "1-aaa",
+			}),
+			wantDoc: map[string]interface{}{
+				"_id":  "foo",
+				"_rev": "2-yyy",
+				"foo":  "ddd",
+			},
+		},
+		{
+			name: "get latest non-winning leaf",
+			setup: func(t *testing.T, d driver.DB) {
+				// common root doc
+				_, err := d.Put(context.Background(), "foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				// losing branch
+				_, err = d.Put(context.Background(), "foo", map[string]interface{}{
+					"foo": "bbb",
+					"_revisions": map[string]interface{}{
+						"ids":   []string{"ccc", "bbb", "aaa"},
+						"start": 3,
+					},
+				}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				// winning branch
+				_, err = d.Put(context.Background(), "foo", map[string]interface{}{
+					"foo": "ddd",
+					"_revisions": map[string]interface{}{
+						"ids":   []string{"xxx", "yyy", "aaa"},
+						"start": 3,
+					},
+				}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id: "foo",
+			options: kivik.Params(map[string]interface{}{
+				"latest": true,
+				"rev":    "2-bbb",
+			}),
+			wantDoc: map[string]interface{}{
+				"_id":  "foo",
+				"_rev": "3-ccc",
+				"foo":  "bbb",
+			},
+		},
+		{
+			name: "get latest rev with deleted leaf, reverts to the winning branch",
+			setup: func(t *testing.T, d driver.DB) {
+				// common root doc
+				_, err := d.Put(context.Background(), "foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				// losing branch
+				_, err = d.Put(context.Background(), "foo", map[string]interface{}{
+					"foo": "bbb",
+					"_revisions": map[string]interface{}{
+						"ids":   []string{"ccc", "bbb", "aaa"},
+						"start": 3,
+					},
+				}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				// now delete the losing leaf
+				_, err = d.Delete(context.Background(), "foo", kivik.Rev("3-ccc"))
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				// winning branch
+				_, err = d.Put(context.Background(), "foo", map[string]interface{}{
+					"foo": "ddd",
+					"_revisions": map[string]interface{}{
+						"ids":   []string{"xxx", "yyy", "aaa"},
+						"start": 3,
+					},
+				}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id: "foo",
+			options: kivik.Params(map[string]interface{}{
+				"latest": true,
+				"rev":    "2-bbb",
+			}),
+			wantDoc: map[string]interface{}{
+				"_id":  "foo",
+				"_rev": "3-xxx",
+				"foo":  "ddd",
+			},
+		},
+		{
+			name: "revs=true, losing leaf",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]interface{}{
+					"foo": "bbb",
+					"_revisions": map[string]interface{}{
+						"ids":   []string{"bbb", "aaa"},
+						"start": 2,
+					},
+				}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]interface{}{
+					"foo": "ddd",
+					"_revisions": map[string]interface{}{
+						"ids":   []string{"yyy", "aaa"},
+						"start": 2,
+					},
+				}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id: "foo",
+			options: kivik.Params(map[string]interface{}{
+				"revs": true,
+				"rev":  "2-bbb",
+			}),
+			wantDoc: map[string]interface{}{
+				"_id":  "foo",
+				"_rev": "2-bbb",
+				"foo":  "bbb",
+				"_revisions": map[string]interface{}{
+					"start": 2,
+					"ids":   []string{"bbb", "aaa"},
+				},
+			},
+		},
+		{
+			name: "local_seq=true",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id:      "foo",
+			options: kivik.Param("local_seq", true),
+			wantDoc: map[string]interface{}{
+				"_id":        "foo",
+				"_rev":       "1-aaa",
+				"foo":        "aaa",
+				"_local_seq": float64(1),
+			},
+		},
+		{
+			name: "local_seq=true & specified rev",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id:      "foo",
+			options: kivik.Params(map[string]interface{}{"local_seq": true, "rev": "1-aaa"}),
+			wantDoc: map[string]interface{}{
+				"_id":        "foo",
+				"_rev":       "1-aaa",
+				"foo":        "aaa",
+				"_local_seq": float64(1),
+			},
+		},
+		{
+			name: "local_seq=true & specified rev & latest=true",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
+					"new_edits": false,
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id: "foo",
+			options: kivik.Params(map[string]interface{}{
+				"local_seq": true,
+				"rev":       "1-aaa",
+				"latest":    true,
+			}),
+			wantDoc: map[string]interface{}{
+				"_id":        "foo",
+				"_rev":       "1-aaa",
+				"foo":        "aaa",
+				"_local_seq": float64(1),
+			},
+		},
 		/*
 			TODO:
 			attachments = true
 			att_encoding_info = true
 			atts_since = [revs]
-			latest = true
-			local_seq = true
-			open_revs = []
-			revs = true
+			open_revs = [] // TODO: driver.OpenRever
 		*/
 	}
 
@@ -1285,6 +1540,7 @@ func TestDBDelete(t *testing.T) {
 			wantStatus: http.StatusConflict,
 			wantErr:    "conflict",
 		},
+		/* _revisions */
 	}
 
 	for _, tt := range tests {

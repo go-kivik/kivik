@@ -303,32 +303,40 @@ func (d *db) conflicts(ctx context.Context, tx *sql.Tx, id string, r revision, d
 // It may return nil if there are no attachments.
 func (d *db) getAttachments(ctx context.Context, tx *sql.Tx, id string, rev revision) (*attachments, error) {
 	rows, err := tx.QueryContext(ctx, fmt.Sprintf(`
-		WITH RECURSIVE
-		Ancestors AS (
-			-- Base case: Select the starting node for ancestors
-			SELECT id, rev, rev_id, parent_rev, parent_rev_id
-			FROM %[1]q revs
-			WHERE id = $1
-				AND rev = $2
-				AND rev_id = $3
-			UNION ALL
-			-- Recursive step: Select the parent of the current node
-			SELECT r.id, r.rev, r.rev_id, r.parent_rev, r.parent_rev_id
-			FROM %[1]q AS r
-			JOIN Ancestors a ON a.parent_rev_id = r.rev_id AND a.parent_rev = r.rev AND a.id = r.id
+		WITH atts AS (
+			WITH RECURSIVE Ancestors AS (
+				-- Base case: Select the starting node for ancestors
+				SELECT id, rev, rev_id, parent_rev, parent_rev_id
+				FROM %[1]q revs
+				WHERE id = $1
+					AND rev = $2
+					AND rev_id = $3
+				UNION ALL
+				-- Recursive step: Select the parent of the current node
+				SELECT r.id, r.rev, r.rev_id, r.parent_rev, r.parent_rev_id
+				FROM %[1]q AS r
+				JOIN Ancestors a ON a.parent_rev_id = r.rev_id AND a.parent_rev = r.rev AND a.id = r.id
+			)
+			SELECT
+				att.filename,
+				att.content_type,
+				att.digest,
+				att.length,
+				att.rev,
+				att.data
+			FROM
+				Ancestors AS rev
+			JOIN
+				%[2]q AS att ON att.id = rev.id AND att.rev = rev.rev AND att.rev_id = rev.rev_id
+			WHERE att.deleted_rev IS NULL
 		)
-		SELECT
-			att.filename,
-			att.content_type,
-			att.digest,
-			att.length,
-			att.rev,
-			att.data
-		FROM
-			Ancestors AS rev
-		JOIN
-			%[2]q AS att ON att.id = rev.id AND att.rev = rev.rev AND att.rev_id = rev.rev_id
-		WHERE att.deleted_rev IS NULL
+		SELECT atts.filename, atts.content_type, atts.digest, atts.length, atts.rev, atts.data
+		FROM atts
+		JOIN (
+			SELECT filename, MAX(rev) AS rev
+			FROM atts
+			GROUP BY filename
+		) AS max ON atts.filename = max.filename AND atts.rev = max.rev
 	`, d.name+"_revs", d.name+"_attachments"), id, rev.rev, rev.id)
 	if err != nil {
 		return nil, err

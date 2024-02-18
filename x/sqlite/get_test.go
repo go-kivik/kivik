@@ -898,10 +898,54 @@ func TestDBGet(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "attachments=false, fetch updated attachment",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]interface{}{
+					"foo": "aaa",
+					"_attachments": map[string]interface{}{
+						"att.txt": map[string]interface{}{
+							"content_type": "text/plain",
+							"data":         "YXR0LnR4dA==",
+						},
+					},
+				}, mock.NilOption)
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]interface{}{
+					"foo": "aaa",
+					"_attachments": map[string]interface{}{
+						"att.txt": map[string]interface{}{
+							"data": "dmVyc2lvbiAyCg==",
+						},
+					},
+				}, kivik.Rev("1-5f3e7150f872a1dd295f44b1e4a9fa41"))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id: "foo",
+			options: kivik.Params(map[string]interface{}{
+				"attachments": false,
+			}),
+			wantDoc: map[string]interface{}{
+				"_id":  "foo",
+				"_rev": "2-f8b1930b7bdd8d48f4701188f999d326",
+				"foo":  "aaa",
+				"_attachments": map[string]interface{}{
+					"att.txt": map[string]interface{}{
+						"content_type": "application/octet-stream",
+						"digest":       "md5-sE0LKdS6wHgf6ETjKMXirA==",
+						"revpos":       float64(2),
+						"length":       float64(10),
+						"stub":         true,
+					},
+				},
+			},
+		},
 		/*
 			TODO:
-			attachments = true
-				- fetch correct version of attachment
 			att_encoding_info = true
 			atts_since = [revs]
 			open_revs = [] // TODO: driver.OpenRever

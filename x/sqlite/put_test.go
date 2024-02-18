@@ -832,9 +832,75 @@ func TestDBPut(t *testing.T) {
 				}
 			},
 		},
+		{
+			name: "update doc with attachments without deleting them",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]interface{}{
+					"foo": "bar",
+					"_attachments": map[string]interface{}{
+						"foo.txt": map[string]interface{}{
+							"content_type": "text/plain",
+							"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
+						},
+					},
+				}, mock.NilOption)
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			docID: "foo",
+			doc: map[string]interface{}{
+				"_rev": "1-4b98474b255b67856668474854b0d5f8",
+				"foo":  "baz",
+				"_attachments": map[string]interface{}{
+					"foo.txt": map[string]interface{}{
+						"stub": true,
+					},
+				},
+			},
+			wantRev: "2-a7cadffe4f950734f8eeae832e15f6c2",
+			wantRevs: []leaf{
+				{
+					ID:    "foo",
+					Rev:   1,
+					RevID: "4b98474b255b67856668474854b0d5f8",
+				},
+				{
+					ID:          "foo",
+					Rev:         2,
+					RevID:       "a7cadffe4f950734f8eeae832e15f6c2",
+					ParentRev:   &[]int{1}[0],
+					ParentRevID: &[]string{"4b98474b255b67856668474854b0d5f8"}[0],
+				},
+			},
+			check: func(t *testing.T, d driver.DB) {
+				var att driver.Attachment
+				var data []byte
+				err := d.(*db).db.QueryRow(`
+					SELECT filename, content_type, length, digest, data
+					FROM test_attachments
+					WHERE id='foo'
+						AND filename='foo.txt'`).Scan(&att.Filename, &att.ContentType, &att.Size, &att.Digest, &data)
+				if err != nil {
+					t.Fatal(err)
+				}
+				want := driver.Attachment{
+					Filename:    "foo.txt",
+					ContentType: "text/plain",
+					Size:        25,
+					Digest:      "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
+				}
+				if d := cmp.Diff(want, att); d != "" {
+					t.Errorf("Unexpected attachment: %s", d)
+				}
+				wantData := "This is a base64 encoding"
+				if string(data) != wantData {
+					t.Errorf("Unexpected data: %s", data)
+				}
+			},
+		},
 		/*
 			TODO:
-			- missing content
 			- Omit attachments to delete
 			- Include stub to update doc without deleting attachments
 			- Include stub with invalid filename

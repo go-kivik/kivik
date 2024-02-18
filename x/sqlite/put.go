@@ -198,6 +198,9 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 	}
 	defer stmt.Close()
 	for filename, att := range data.Attachments {
+		if att.Stub {
+			continue
+		}
 		if err := att.calculate(filename); err != nil {
 			return "", err
 		}

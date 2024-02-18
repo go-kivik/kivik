@@ -39,9 +39,15 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 		return "", err
 	}
 
+	tx, err := d.db.BeginTx(ctx, nil)
+	if err != nil {
+		return "", err
+	}
+	defer tx.Rollback()
+
 	if data.Revisions.Start != 0 {
 		if newEdits {
-			stmt, err := d.db.PrepareContext(ctx, fmt.Sprintf(`
+			stmt, err := tx.PrepareContext(ctx, fmt.Sprintf(`
 				SELECT EXISTS(
 					SELECT 1
 					FROM %[1]q
@@ -74,12 +80,6 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 	if docRev == "" && optsRev != "" {
 		docRev = optsRev
 	}
-
-	tx, err := d.db.BeginTx(ctx, nil)
-	if err != nil {
-		return "", err
-	}
-	defer tx.Rollback()
 
 	if !newEdits {
 		var rev revision

@@ -244,6 +244,13 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 	if optLocalSeq {
 		toMerge["_local_seq"] = localSeq
 	}
+	atts, err := d.getAttachments(ctx, tx, id, r)
+	if err != nil {
+		return nil, err
+	}
+	if mergeAtts := atts.inlineAttachments(); mergeAtts != nil {
+		toMerge["_attachments"] = mergeAtts
+	}
 
 	if len(toMerge) > 0 {
 		body, err = mergeIntoDoc(body, toMerge)
@@ -253,8 +260,9 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 	}
 
 	return &driver.Document{
-		Rev:  r.String(),
-		Body: io.NopCloser(bytes.NewReader(body)),
+		Attachments: atts,
+		Rev:         r.String(),
+		Body:        io.NopCloser(bytes.NewReader(body)),
 	}, tx.Commit()
 }
 
@@ -287,4 +295,77 @@ func (d *db) conflicts(ctx context.Context, tx *sql.Tx, id string, r revision, d
 		revs = append(revs, r)
 	}
 	return revs, rows.Err()
+}
+
+// getAttachments returns the attachments for the given docID and revision.
+// It may return nil if there are no attachments.
+func (d *db) getAttachments(ctx context.Context, tx *sql.Tx, id string, rev revision) (*attachments, error) {
+	rows, err := tx.QueryContext(ctx, fmt.Sprintf(`
+		SELECT
+			att.filename,
+			att.content_type,
+			att.digest,
+			att.length,
+			att.rev,
+			att.data
+		FROM
+			%[2]q AS att
+		WHERE
+			att.id = $1
+			AND att.rev = $2
+			AND att.rev_id = $3
+	`, d.name+"_revs", d.name+"_attachments"), id, rev.rev, rev.id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var atts attachments
+	for rows.Next() {
+		var a driver.Attachment
+		var data []byte
+		if err := rows.Scan(&a.Filename, &a.ContentType, &a.Digest, &a.Size, &a.RevPos, &data); err != nil {
+			return nil, err
+		}
+		a.Content = io.NopCloser(bytes.NewReader(data))
+		atts = append(atts, &a)
+	}
+	if len(atts) == 0 {
+		return nil, rows.Err()
+	}
+	return &atts, rows.Err()
+}
+
+type attachments []*driver.Attachment
+
+var _ driver.Attachments = &attachments{}
+
+func (a *attachments) Next(att *driver.Attachment) error {
+	if len(*a) == 0 {
+		return io.EOF
+	}
+	*att = *(*a)[0]
+	*a = (*a)[1:]
+	return nil
+}
+
+func (a *attachments) Close() error {
+	*a = nil
+	return nil
+}
+
+func (a *attachments) inlineAttachments() map[string]attachment {
+	if a == nil || len(*a) == 0 {
+		return nil
+	}
+	atts := make(map[string]attachment, len(*a))
+	for _, att := range *a {
+		atts[att.Filename] = attachment{
+			ContentType: att.ContentType,
+			Digest:      att.Digest,
+			Length:      att.Size,
+			RevPos:      int(att.RevPos),
+			Stub:        true,
+		}
+	}
+	return atts
 }

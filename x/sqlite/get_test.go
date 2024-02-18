@@ -660,9 +660,45 @@ func TestDBGet(t *testing.T) {
 				"_local_seq": float64(1),
 			},
 		},
+		{
+			name: "attachments=false, doc with attachments",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]interface{}{
+					"foo": "aaa",
+					"_attachments": map[string]interface{}{
+						"att.txt": map[string]interface{}{
+							"content_type": "text/plain",
+							"data":         "YXR0LnR4dA==",
+						},
+					},
+				}, mock.NilOption)
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id:      "foo",
+			options: kivik.Param("attachments", false),
+			wantDoc: map[string]interface{}{
+				"_id":  "foo",
+				"_rev": "1-5f3e7150f872a1dd295f44b1e4a9fa41",
+				"foo":  "aaa",
+				"_attachments": map[string]interface{}{
+					"att.txt": map[string]interface{}{
+						"content_type": "text/plain",
+						"digest":       "md5-a4NyknGw7YOh+a5ezPdZ4A==",
+						"length":       float64(7),
+						"revpos":       float64(1),
+						"stub":         true,
+					},
+				},
+			},
+		},
 		/*
 			TODO:
 			attachments = true
+				- with specific rev, exclude newer attachments
+				- exclude deleted attachments
+				- fetch correct version of attachment
 			att_encoding_info = true
 			atts_since = [revs]
 			open_revs = [] // TODO: driver.OpenRever

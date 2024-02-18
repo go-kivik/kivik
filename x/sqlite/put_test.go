@@ -762,17 +762,28 @@ func TestDBPut(t *testing.T) {
 				},
 			},
 			check: func(t *testing.T, d driver.DB) {
-				var atts string
+				var att driver.Attachment
+				var data []byte
 				err := d.(*db).db.QueryRow(`
-					SELECT data
+					SELECT filename, content_type, length, digest, data
 					FROM test_attachments
 					WHERE id='foo'
-						AND filename='foo.txt'`).Scan(&atts)
+						AND filename='foo.txt'`).Scan(&att.Filename, &att.ContentType, &att.Size, &att.Digest, &data)
 				if err != nil {
 					t.Fatal(err)
 				}
-				if atts != "This is a base64 encoding" {
-					t.Errorf("Unexpected attachment: %s", atts)
+				want := driver.Attachment{
+					Filename:    "foo.txt",
+					ContentType: "text/plain",
+					Size:        25,
+					Digest:      "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
+				}
+				if d := cmp.Diff(want, att); d != "" {
+					t.Errorf("Unexpected attachment: %s", d)
+				}
+				wantData := "This is a base64 encoding"
+				if string(data) != wantData {
+					t.Errorf("Unexpected data: %s", data)
 				}
 			},
 		},

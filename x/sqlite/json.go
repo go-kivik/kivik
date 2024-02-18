@@ -78,13 +78,13 @@ type attachment struct {
 	Digest      string `json:"digest"`
 	Length      int64  `json:"length"`
 	// Encoding      string `json:"encoding"`
-	// RevPos        int    `json:"revpos"`
-	// Stub          bool   `json:"stub"`
+	RevPos int  `json:"revpos"`
+	Stub   bool `json:"stub"`
 	// EncodedLength int64  `json:"encoded_length"`
 
 	// Data is the raw JSON representation of the attachment data. It is decoded
 	// into Content by the [attachment.calculate] method.
-	Data    json.RawMessage `json:"data"`
+	Data    json.RawMessage `json:"data,omitempty"`
 	Content []byte          `json:"-"`
 }
 

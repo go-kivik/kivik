@@ -693,6 +693,39 @@ func TestDBGet(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "attachments=true, doc with attachments",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]interface{}{
+					"foo": "aaa",
+					"_attachments": map[string]interface{}{
+						"att.txt": map[string]interface{}{
+							"content_type": "text/plain",
+							"data":         "YXR0LnR4dA==",
+						},
+					},
+				}, mock.NilOption)
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id:      "foo",
+			options: kivik.Param("attachments", true),
+			wantDoc: map[string]interface{}{
+				"_id":  "foo",
+				"_rev": "1-5f3e7150f872a1dd295f44b1e4a9fa41",
+				"foo":  "aaa",
+				"_attachments": map[string]interface{}{
+					"att.txt": map[string]interface{}{
+						"content_type": "text/plain",
+						"digest":       "md5-a4NyknGw7YOh+a5ezPdZ4A==",
+						"length":       float64(7),
+						"revpos":       float64(1),
+						"data":         "YXR0LnR4dA==",
+					},
+				},
+			},
+		},
 		/*
 			TODO:
 			attachments = true

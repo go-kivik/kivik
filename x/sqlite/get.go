@@ -16,6 +16,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -128,6 +129,7 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 		optRevsInfo, _         = opts["revs_info"].(bool)
 		optRevs, _             = opts["revs"].(bool)
 		optLocalSeq, _         = opts["local_seq"].(bool)
+		optAttachments, _      = opts["attachments"].(bool)
 	)
 
 	if meta, _ := opts["meta"].(bool); meta {
@@ -248,7 +250,7 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 	if err != nil {
 		return nil, err
 	}
-	if mergeAtts := atts.inlineAttachments(); mergeAtts != nil {
+	if mergeAtts := atts.inlineAttachments(optAttachments); mergeAtts != nil {
 		toMerge["_attachments"] = mergeAtts
 	}
 
@@ -353,19 +355,26 @@ func (a *attachments) Close() error {
 	return nil
 }
 
-func (a *attachments) inlineAttachments() map[string]attachment {
+func (a *attachments) inlineAttachments(includeAttachments bool) map[string]attachment {
 	if a == nil || len(*a) == 0 {
 		return nil
 	}
 	atts := make(map[string]attachment, len(*a))
 	for _, att := range *a {
-		atts[att.Filename] = attachment{
+		newAtt := attachment{
 			ContentType: att.ContentType,
 			Digest:      att.Digest,
 			Length:      att.Size,
 			RevPos:      int(att.RevPos),
-			Stub:        true,
 		}
+		if includeAttachments {
+			var data bytes.Buffer
+			_, _ = io.Copy(&data, att.Content)
+			newAtt.Data, _ = json.Marshal(data.Bytes())
+		} else {
+			newAtt.Stub = true
+		}
+		atts[att.Filename] = newAtt
 	}
 	return atts
 }

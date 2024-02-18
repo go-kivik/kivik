@@ -247,11 +247,11 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 	if optLocalSeq {
 		toMerge["_local_seq"] = localSeq
 	}
-	atts, err := d.getAttachments(ctx, tx, id, r, optAttsSince)
+	atts, err := d.getAttachments(ctx, tx, id, r, optAttachments, optAttsSince)
 	if err != nil {
 		return nil, err
 	}
-	if mergeAtts := atts.inlineAttachments(optAttachments || len(optAttsSince) > 0); mergeAtts != nil {
+	if mergeAtts := atts.inlineAttachments(); mergeAtts != nil {
 		toMerge["_attachments"] = mergeAtts
 	}
 
@@ -302,14 +302,14 @@ func (d *db) conflicts(ctx context.Context, tx *sql.Tx, id string, r revision, d
 
 // getAttachments returns the attachments for the given docID and revision.
 // It may return nil if there are no attachments.
-func (d *db) getAttachments(ctx context.Context, tx *sql.Tx, id string, rev revision, since []string) (*attachments, error) {
-	args := []interface{}{id, rev.rev, rev.id, len(since) == 0}
+func (d *db) getAttachments(ctx context.Context, tx *sql.Tx, id string, rev revision, includeAttachments bool, since []string) (*attachments, error) {
+	args := []interface{}{id, rev.rev, rev.id, includeAttachments}
 	for _, s := range since {
 		args = append(args, s)
 	}
-	sinceQuery := ""
+	sinceQuery := "FALSE"
 	if len(since) > 0 {
-		sinceQuery = fmt.Sprintf(" OR parent_rev||'-'||parent_rev_id IN (%s)", placeholders(len(args)-len(since)+1, len(since)))
+		sinceQuery = fmt.Sprintf("parent_rev||'-'||parent_rev_id IN (%s)", placeholders(len(args)-len(since)+1, len(since)))
 	}
 	query := fmt.Sprintf(`
 		WITH atts AS (
@@ -341,11 +341,16 @@ func (d *db) getAttachments(ctx context.Context, tx *sql.Tx, id string, rev revi
 				%[2]q AS att ON att.id = rev.id AND att.rev = rev.rev AND att.rev_id = rev.rev_id
 			WHERE att.deleted_rev IS NULL
 		)
-		SELECT atts.filename, atts.content_type, atts.digest, atts.length, atts.rev, atts.data, includeSince, history
+		SELECT
+			atts.filename,
+			atts.content_type,
+			atts.digest,
+			atts.length,
+			atts.rev,
+			IIF($4 OR includeSince, atts.data, NULL) AS data
 		FROM atts
 		JOIN (
-			SELECT filename, MAX(rev) AS rev, MAX($4%[3]s) AS includeSince,
-				GROUP_CONCAT(parent_rev||'-'||parent_rev_id) AS history
+			SELECT filename, MAX(rev) AS rev, MAX(%[3]s) AS includeSince
 			FROM atts
 			GROUP BY filename
 		) AS max ON atts.filename = max.filename AND atts.rev = max.rev
@@ -358,20 +363,14 @@ func (d *db) getAttachments(ctx context.Context, tx *sql.Tx, id string, rev revi
 	var atts attachments
 	for rows.Next() {
 		var a driver.Attachment
-		var data []byte
-		var includePtr *bool
-		var historyPtr *string
-		if err := rows.Scan(&a.Filename, &a.ContentType, &a.Digest, &a.Size, &a.RevPos, &data, &includePtr, &historyPtr); err != nil {
+		var data *[]byte
+		if err := rows.Scan(&a.Filename, &a.ContentType, &a.Digest, &a.Size, &a.RevPos, &data); err != nil {
 			return nil, err
 		}
-		include := false
-		if includePtr != nil {
-			include = *includePtr
-		}
-		if include {
-			a.Content = io.NopCloser(bytes.NewReader(data))
-		} else {
+		if data == nil {
 			a.Stub = true
+		} else {
+			a.Content = io.NopCloser(bytes.NewReader(*data))
 		}
 		atts = append(atts, &a)
 	}
@@ -399,7 +398,7 @@ func (a *attachments) Close() error {
 	return nil
 }
 
-func (a *attachments) inlineAttachments(includeAttachments bool) map[string]attachment {
+func (a *attachments) inlineAttachments() map[string]attachment {
 	if a == nil || len(*a) == 0 {
 		return nil
 	}
@@ -410,13 +409,12 @@ func (a *attachments) inlineAttachments(includeAttachments bool) map[string]atta
 			Digest:      att.Digest,
 			Length:      att.Size,
 			RevPos:      int(att.RevPos),
+			Stub:        att.Stub,
 		}
-		if includeAttachments && att.Content != nil {
+		if att.Content != nil {
 			var data bytes.Buffer
 			_, _ = io.Copy(&data, att.Content)
 			newAtt.Data, _ = json.Marshal(data.Bytes())
-		} else {
-			newAtt.Stub = true
 		}
 		atts[att.Filename] = newAtt
 	}

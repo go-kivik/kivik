@@ -726,6 +726,72 @@ func TestDBGet(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "attachments=true, doc without attachments",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]interface{}{
+					"foo": "aaa",
+				}, mock.NilOption)
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id:      "foo",
+			options: kivik.Param("attachments", true),
+			wantDoc: map[string]interface{}{
+				"_id":  "foo",
+				"_rev": "1-8655eafbc9513d4857258c6d48f40399",
+				"foo":  "aaa",
+			},
+		},
+		{
+			name: "attachments=false, do not return deleted attachments",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]interface{}{
+					"foo": "aaa",
+					"_attachments": map[string]interface{}{
+						"att.txt": map[string]interface{}{
+							"content_type": "text/plain",
+							"data":         "YXR0LnR4dA==",
+						},
+						"att2.txt": map[string]interface{}{
+							"content_type": "text/plain",
+							"data":         "YXR0LnR4dA==",
+						},
+					},
+				}, mock.NilOption)
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]interface{}{
+					"foo": "aaa",
+					"_attachments": map[string]interface{}{
+						"att.txt": map[string]interface{}{
+							"stub": true,
+						},
+					},
+				}, kivik.Rev("1-a4791acb8fcc7d205b4c582e0c9e3dc0"))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id:      "foo",
+			options: kivik.Param("attachments", false),
+			wantDoc: map[string]interface{}{
+				"_id":  "foo",
+				"_rev": "2-683854351c2ead3ccc353da6980070c4",
+				"foo":  "aaa",
+				"_attachments": map[string]interface{}{
+					"att.txt": map[string]interface{}{
+						"content_type": "text/plain",
+						"digest":       "md5-a4NyknGw7YOh+a5ezPdZ4A==",
+						"revpos":       float64(1),
+						"length":       float64(7),
+						"stub":         true,
+					},
+				},
+			},
+		},
 		/*
 			TODO:
 			attachments = true

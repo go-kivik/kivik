@@ -944,10 +944,66 @@ func TestDBGet(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "atts_since",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]interface{}{
+					"foo": "aaa",
+					"_attachments": map[string]interface{}{
+						"att.txt": map[string]interface{}{
+							"content_type": "text/plain",
+							"data":         "YXR0LnR4dA==",
+						},
+					},
+				}, mock.NilOption)
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = d.Put(context.Background(), "foo", map[string]interface{}{
+					"foo": "aaa",
+					"_attachments": map[string]interface{}{
+						"att.txt": map[string]interface{}{
+							"stub": true,
+						},
+						"att2.txt": map[string]interface{}{
+							"content_type": "text/plain",
+							"data":         "YXR0LnR4dA==",
+						},
+					},
+				}, kivik.Rev("1-5f3e7150f872a1dd295f44b1e4a9fa41"))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id:      "foo",
+			options: kivik.Param("atts_since", []string{"1-5f3e7150f872a1dd295f44b1e4a9fa41"}),
+			wantDoc: map[string]interface{}{
+				"_id":  "foo",
+				"_rev": "2-9dc3adaa7b08ac0ae246cded87669883",
+				"foo":  "aaa",
+				"_attachments": map[string]interface{}{
+					"att.txt": map[string]interface{}{
+						"content_type": "text/plain",
+						"digest":       "md5-a4NyknGw7YOh+a5ezPdZ4A==",
+						"revpos":       float64(1),
+						"length":       float64(7),
+						"stub":         true,
+					},
+					"att2.txt": map[string]interface{}{
+						"content_type": "text/plain",
+						"digest":       "md5-a4NyknGw7YOh+a5ezPdZ4A==",
+						"revpos":       float64(2),
+						"length":       float64(7),
+						"data":         "YXR0LnR4dA==",
+					},
+				},
+			},
+		},
 		/*
 			TODO:
+			atts_since with invalid rev
+			atts_since with non-existent rev
 			att_encoding_info = true
-			atts_since = [revs]
 			open_revs = [] // TODO: driver.OpenRever
 		*/
 	}

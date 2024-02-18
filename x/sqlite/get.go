@@ -130,6 +130,7 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 		optRevs, _             = opts["revs"].(bool)
 		optLocalSeq, _         = opts["local_seq"].(bool)
 		optAttachments, _      = opts["attachments"].(bool)
+		optAttsSince, _        = opts["atts_since"].([]string)
 	)
 
 	if meta, _ := opts["meta"].(bool); meta {
@@ -246,11 +247,11 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 	if optLocalSeq {
 		toMerge["_local_seq"] = localSeq
 	}
-	atts, err := d.getAttachments(ctx, tx, id, r)
+	atts, err := d.getAttachments(ctx, tx, id, r, optAttsSince)
 	if err != nil {
 		return nil, err
 	}
-	if mergeAtts := atts.inlineAttachments(optAttachments); mergeAtts != nil {
+	if mergeAtts := atts.inlineAttachments(optAttachments || len(optAttsSince) > 0); mergeAtts != nil {
 		toMerge["_attachments"] = mergeAtts
 	}
 
@@ -301,8 +302,16 @@ func (d *db) conflicts(ctx context.Context, tx *sql.Tx, id string, r revision, d
 
 // getAttachments returns the attachments for the given docID and revision.
 // It may return nil if there are no attachments.
-func (d *db) getAttachments(ctx context.Context, tx *sql.Tx, id string, rev revision) (*attachments, error) {
-	rows, err := tx.QueryContext(ctx, fmt.Sprintf(`
+func (d *db) getAttachments(ctx context.Context, tx *sql.Tx, id string, rev revision, since []string) (*attachments, error) {
+	args := []interface{}{id, rev.rev, rev.id, len(since) == 0}
+	for _, s := range since {
+		args = append(args, s)
+	}
+	sinceQuery := ""
+	if len(since) > 0 {
+		sinceQuery = fmt.Sprintf(" OR parent_rev||'-'||parent_rev_id IN (%s)", placeholders(len(args)-len(since)+1, len(since)))
+	}
+	query := fmt.Sprintf(`
 		WITH atts AS (
 			WITH RECURSIVE Ancestors AS (
 				-- Base case: Select the starting node for ancestors
@@ -323,6 +332,8 @@ func (d *db) getAttachments(ctx context.Context, tx *sql.Tx, id string, rev revi
 				att.digest,
 				att.length,
 				att.rev,
+				rev.parent_rev,
+				rev.parent_rev_id,
 				att.data
 			FROM
 				Ancestors AS rev
@@ -330,14 +341,16 @@ func (d *db) getAttachments(ctx context.Context, tx *sql.Tx, id string, rev revi
 				%[2]q AS att ON att.id = rev.id AND att.rev = rev.rev AND att.rev_id = rev.rev_id
 			WHERE att.deleted_rev IS NULL
 		)
-		SELECT atts.filename, atts.content_type, atts.digest, atts.length, atts.rev, atts.data
+		SELECT atts.filename, atts.content_type, atts.digest, atts.length, atts.rev, atts.data, includeSince, history
 		FROM atts
 		JOIN (
-			SELECT filename, MAX(rev) AS rev
+			SELECT filename, MAX(rev) AS rev, MAX($4%[3]s) AS includeSince,
+				GROUP_CONCAT(parent_rev||'-'||parent_rev_id) AS history
 			FROM atts
 			GROUP BY filename
 		) AS max ON atts.filename = max.filename AND atts.rev = max.rev
-	`, d.name+"_revs", d.name+"_attachments"), id, rev.rev, rev.id)
+	`, d.name+"_revs", d.name+"_attachments", sinceQuery)
+	rows, err := tx.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -346,10 +359,20 @@ func (d *db) getAttachments(ctx context.Context, tx *sql.Tx, id string, rev revi
 	for rows.Next() {
 		var a driver.Attachment
 		var data []byte
-		if err := rows.Scan(&a.Filename, &a.ContentType, &a.Digest, &a.Size, &a.RevPos, &data); err != nil {
+		var includePtr *bool
+		var historyPtr *string
+		if err := rows.Scan(&a.Filename, &a.ContentType, &a.Digest, &a.Size, &a.RevPos, &data, &includePtr, &historyPtr); err != nil {
 			return nil, err
 		}
-		a.Content = io.NopCloser(bytes.NewReader(data))
+		include := false
+		if includePtr != nil {
+			include = *includePtr
+		}
+		if include {
+			a.Content = io.NopCloser(bytes.NewReader(data))
+		} else {
+			a.Stub = true
+		}
 		atts = append(atts, &a)
 	}
 	if len(atts) == 0 {
@@ -388,7 +411,7 @@ func (a *attachments) inlineAttachments(includeAttachments bool) map[string]atta
 			Length:      att.Size,
 			RevPos:      int(att.RevPos),
 		}
-		if includeAttachments {
+		if includeAttachments && att.Content != nil {
 			var data bytes.Buffer
 			_, _ = io.Copy(&data, att.Content)
 			newAtt.Data, _ = json.Marshal(data.Bytes())

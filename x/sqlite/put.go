@@ -201,7 +201,11 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 		if err := att.calculate(filename); err != nil {
 			return "", err
 		}
-		_, err := stmt.ExecContext(ctx, data.ID, r.rev, r.id, filename, att.ContentType, att.Length, att.Digest, att.Content)
+		contentType := att.ContentType
+		if contentType == "" {
+			contentType = "application/octet-stream"
+		}
+		_, err := stmt.ExecContext(ctx, data.ID, r.rev, r.id, filename, contentType, att.Length, att.Digest, att.Content)
 		if err != nil {
 			return "", err
 		}

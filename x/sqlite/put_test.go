@@ -787,9 +787,53 @@ func TestDBPut(t *testing.T) {
 				}
 			},
 		},
+		{
+			name:  "with attachment, no content-type",
+			docID: "foo",
+			doc: map[string]interface{}{
+				"_attachments": map[string]interface{}{
+					"foo.txt": map[string]interface{}{
+						"data": "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
+					},
+				},
+				"foo": "bar",
+			},
+			wantRev: "1-1a46dc947908f36db2ac78b7edaecda3",
+			wantRevs: []leaf{
+				{
+					ID:    "foo",
+					Rev:   1,
+					RevID: "1a46dc947908f36db2ac78b7edaecda3",
+				},
+			},
+			check: func(t *testing.T, d driver.DB) {
+				var att driver.Attachment
+				var data []byte
+				err := d.(*db).db.QueryRow(`
+					SELECT filename, content_type, length, digest, data
+					FROM test_attachments
+					WHERE id='foo'
+						AND filename='foo.txt'`).Scan(&att.Filename, &att.ContentType, &att.Size, &att.Digest, &data)
+				if err != nil {
+					t.Fatal(err)
+				}
+				want := driver.Attachment{
+					Filename:    "foo.txt",
+					ContentType: "application/octet-stream",
+					Size:        25,
+					Digest:      "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
+				}
+				if d := cmp.Diff(want, att); d != "" {
+					t.Errorf("Unexpected attachment: %s", d)
+				}
+				wantData := "This is a base64 encoding"
+				if string(data) != wantData {
+					t.Errorf("Unexpected data: %s", data)
+				}
+			},
+		},
 		/*
 			TODO:
-			- Missing content type
 			- missing content
 			- Omit attachments to delete
 			- Include stub to update doc without deleting attachments

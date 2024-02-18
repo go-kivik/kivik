@@ -28,19 +28,33 @@ import (
 	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
+type attachmentRow struct {
+	DocID       string
+	Rev         int
+	RevID       string
+	Filename    string
+	ContentType string
+	Digest      string
+	Length      int64
+	RevPos      int
+	Stub        bool
+	Data        string
+}
+
 func TestDBPut(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name       string
-		setup      func(*testing.T, driver.DB)
-		docID      string
-		doc        interface{}
-		options    driver.Options
-		check      func(*testing.T, driver.DB)
-		wantRev    string
-		wantRevs   []leaf
-		wantStatus int
-		wantErr    string
+		name            string
+		setup           func(*testing.T, driver.DB)
+		docID           string
+		doc             interface{}
+		options         driver.Options
+		check           func(*testing.T, driver.DB)
+		wantRev         string
+		wantRevs        []leaf
+		wantStatus      int
+		wantErr         string
+		wantAttachments []attachmentRow
 	}{
 		{
 			name:  "create new document",
@@ -761,30 +775,17 @@ func TestDBPut(t *testing.T) {
 					RevID: "4b98474b255b67856668474854b0d5f8",
 				},
 			},
-			check: func(t *testing.T, d driver.DB) {
-				var att driver.Attachment
-				var data []byte
-				err := d.(*db).db.QueryRow(`
-					SELECT filename, content_type, length, digest, data
-					FROM test_attachments
-					WHERE id='foo'
-						AND filename='foo.txt'`).Scan(&att.Filename, &att.ContentType, &att.Size, &att.Digest, &data)
-				if err != nil {
-					t.Fatal(err)
-				}
-				want := driver.Attachment{
+			wantAttachments: []attachmentRow{
+				{
+					DocID:       "foo",
+					Rev:         1,
+					RevID:       "4b98474b255b67856668474854b0d5f8",
 					Filename:    "foo.txt",
 					ContentType: "text/plain",
-					Size:        25,
+					Length:      25,
 					Digest:      "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
-				}
-				if d := cmp.Diff(want, att); d != "" {
-					t.Errorf("Unexpected attachment: %s", d)
-				}
-				wantData := "This is a base64 encoding"
-				if string(data) != wantData {
-					t.Errorf("Unexpected data: %s", data)
-				}
+					Data:        "This is a base64 encoding",
+				},
 			},
 		},
 		{
@@ -806,30 +807,17 @@ func TestDBPut(t *testing.T) {
 					RevID: "1a46dc947908f36db2ac78b7edaecda3",
 				},
 			},
-			check: func(t *testing.T, d driver.DB) {
-				var att driver.Attachment
-				var data []byte
-				err := d.(*db).db.QueryRow(`
-					SELECT filename, content_type, length, digest, data
-					FROM test_attachments
-					WHERE id='foo'
-						AND filename='foo.txt'`).Scan(&att.Filename, &att.ContentType, &att.Size, &att.Digest, &data)
-				if err != nil {
-					t.Fatal(err)
-				}
-				want := driver.Attachment{
+			wantAttachments: []attachmentRow{
+				{
+					DocID:       "foo",
+					Rev:         1,
+					RevID:       "1a46dc947908f36db2ac78b7edaecda3",
 					Filename:    "foo.txt",
 					ContentType: "application/octet-stream",
-					Size:        25,
+					Length:      25,
 					Digest:      "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
-				}
-				if d := cmp.Diff(want, att); d != "" {
-					t.Errorf("Unexpected attachment: %s", d)
-				}
-				wantData := "This is a base64 encoding"
-				if string(data) != wantData {
-					t.Errorf("Unexpected data: %s", data)
-				}
+					Data:        "This is a base64 encoding",
+				},
 			},
 		},
 		{
@@ -873,30 +861,17 @@ func TestDBPut(t *testing.T) {
 					ParentRevID: &[]string{"4b98474b255b67856668474854b0d5f8"}[0],
 				},
 			},
-			check: func(t *testing.T, d driver.DB) {
-				var att driver.Attachment
-				var data []byte
-				err := d.(*db).db.QueryRow(`
-					SELECT filename, content_type, length, digest, data
-					FROM test_attachments
-					WHERE id='foo'
-						AND filename='foo.txt'`).Scan(&att.Filename, &att.ContentType, &att.Size, &att.Digest, &data)
-				if err != nil {
-					t.Fatal(err)
-				}
-				want := driver.Attachment{
+			wantAttachments: []attachmentRow{
+				{
+					DocID:       "foo",
+					Rev:         1,
+					RevID:       "4b98474b255b67856668474854b0d5f8",
 					Filename:    "foo.txt",
 					ContentType: "text/plain",
-					Size:        25,
+					Length:      25,
 					Digest:      "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
-				}
-				if d := cmp.Diff(want, att); d != "" {
-					t.Errorf("Unexpected attachment: %s", d)
-				}
-				wantData := "This is a base64 encoding"
-				if string(data) != wantData {
-					t.Errorf("Unexpected data: %s", data)
-				}
+					Data:        "This is a base64 encoding",
+				},
 			},
 		},
 		/*
@@ -943,6 +918,34 @@ func TestDBPut(t *testing.T) {
 			if d := cmp.Diff(tt.wantRevs, leaves); d != "" {
 				t.Errorf("Unexpected leaves: %s", d)
 			}
+			checkAttachments(t, dbc, tt.wantAttachments)
 		})
+	}
+}
+
+func checkAttachments(t *testing.T, d driver.DB, want []attachmentRow) {
+	t.Helper()
+	rows, err := d.(*db).db.Query(`
+		SELECT id, rev, rev_id, filename, content_type, length, digest, data
+		FROM test_attachments
+		ORDER BY id, rev, rev_id, filename
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	var got []attachmentRow
+	for rows.Next() {
+		var att attachmentRow
+		if err := rows.Scan(&att.DocID, &att.Rev, &att.RevID, &att.Filename, &att.ContentType, &att.Length, &att.Digest, &att.Data); err != nil {
+			t.Fatal(err)
+		}
+		got = append(got, att)
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+	if d := cmp.Diff(want, got); d != "" {
+		t.Errorf("Unexpected attachments: %s", d)
 	}
 }

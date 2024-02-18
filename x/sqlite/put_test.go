@@ -701,6 +701,93 @@ func TestDBPut(t *testing.T) {
 			wantStatus: http.StatusConflict,
 			wantErr:    "conflict",
 		},
+		{
+			name:  "with attachment, no data",
+			docID: "foo",
+			doc: map[string]interface{}{
+				"_attachments": map[string]interface{}{
+					"foo.txt": map[string]interface{}{},
+				},
+				"foo": "bar",
+			},
+			wantStatus: http.StatusBadRequest,
+			wantErr:    `invalid attachment data for "foo.txt"`,
+		},
+		{
+			name:  "with attachment, data is not base64",
+			docID: "foo",
+			doc: map[string]interface{}{
+				"_attachments": map[string]interface{}{
+					"foo.txt": map[string]interface{}{
+						"data": "This is not base64",
+					},
+				},
+				"foo": "bar",
+			},
+			wantStatus: http.StatusBadRequest,
+			wantErr:    `invalid attachment data for "foo.txt": illegal base64 data at input byte 4`,
+		},
+		{
+			name:  "with attachment, data is not a string",
+			docID: "foo",
+			doc: map[string]interface{}{
+				"_attachments": map[string]interface{}{
+					"foo.txt": map[string]interface{}{
+						"data": 1234,
+					},
+				},
+				"foo": "bar",
+			},
+			wantStatus: http.StatusBadRequest,
+			wantErr:    `invalid attachment data for "foo.txt": json: cannot unmarshal number into Go value of type []uint8`,
+		},
+		{
+			name:  "with attachment",
+			docID: "foo",
+			doc: map[string]interface{}{
+				"_attachments": map[string]interface{}{
+					"foo.txt": map[string]interface{}{
+						"content_type": "text/plain",
+						"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
+					},
+				},
+				"foo": "bar",
+			},
+			wantRev: "1-4b98474b255b67856668474854b0d5f8",
+			wantRevs: []leaf{
+				{
+					ID:    "foo",
+					Rev:   1,
+					RevID: "4b98474b255b67856668474854b0d5f8",
+				},
+			},
+			check: func(t *testing.T, d driver.DB) {
+				var atts string
+				err := d.(*db).db.QueryRow(`
+					SELECT data
+					FROM test_attachments
+					WHERE id='foo'
+						AND filename='foo.txt'`).Scan(&atts)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if atts != "This is a base64 encoding" {
+					t.Errorf("Unexpected attachment: %s", atts)
+				}
+			},
+		},
+		/*
+			TODO:
+			- Missing content type
+			- missing content
+			- Omit attachments to delete
+			- Include stub to update doc without deleting attachments
+			- Include stub with invalid filename
+			- Encoding/compression?
+			- new_edits=false + attachment
+			- new_edits=false + invalid attachment stub
+			- filename validation?
+		*/
 	}
 
 	for _, tt := range tests {

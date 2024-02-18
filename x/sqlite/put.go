@@ -184,5 +184,28 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 	if err != nil {
 		return "", err
 	}
+
+	if len(data.Attachments) == 0 {
+		return r.String(), tx.Commit()
+	}
+
+	stmt, err := tx.PrepareContext(ctx, fmt.Sprintf(`
+		INSERT INTO %[1]q (id, rev, rev_id, filename, content_type, length, digest, data)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+	`, d.name+"_attachments"))
+	if err != nil {
+		return "", err
+	}
+	defer stmt.Close()
+	for filename, att := range data.Attachments {
+		if err := att.calculate(filename); err != nil {
+			return "", err
+		}
+		_, err := stmt.ExecContext(ctx, data.ID, r.rev, r.id, filename, att.ContentType, att.Length, att.Digest, att.Content)
+		if err != nil {
+			return "", err
+		}
+	}
+
 	return r.String(), tx.Commit()
 }

@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"sort"
 
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/internal"
@@ -189,6 +190,13 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 		return r.String(), tx.Commit()
 	}
 
+	// order the filenames to insert for consistency
+	orderedFilenames := make([]string, 0, len(data.Attachments))
+	for filename := range data.Attachments {
+		orderedFilenames = append(orderedFilenames, filename)
+	}
+	sort.Strings(orderedFilenames)
+
 	stmt, err := tx.PrepareContext(ctx, fmt.Sprintf(`
 		INSERT INTO %[1]q (id, rev, rev_id, filename, content_type, length, digest, data)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -197,7 +205,8 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 		return "", err
 	}
 	defer stmt.Close()
-	for filename, att := range data.Attachments {
+	for _, filename := range orderedFilenames {
+		att := data.Attachments[filename]
 		if att.Stub {
 			continue
 		}
@@ -212,6 +221,24 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 		if err != nil {
 			return "", err
 		}
+	}
+
+	// Delete any attachments not included in the new revision
+	args := []interface{}{r.rev, r.id, data.ID}
+	for _, filename := range orderedFilenames {
+		args = append(args, filename)
+	}
+	query := fmt.Sprintf(`
+		UPDATE %[1]q
+		SET deleted_rev = $1, deleted_rev_id = $2
+		WHERE id = $3
+			AND filename NOT IN (`+placeholders(len(args)-len(orderedFilenames)+1, len(orderedFilenames))+`)
+			AND deleted_rev IS NULL
+			AND deleted_rev_id IS NULL
+	`, d.name+"_attachments")
+	_, err = tx.ExecContext(ctx, query, args...)
+	if err != nil {
+		return "", err
 	}
 
 	return r.String(), tx.Commit()

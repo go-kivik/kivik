@@ -45,6 +45,8 @@ var schema = []string{
 		length INTEGER NOT NULL,
 		digest TEXT NOT NULL,
 		data BLOB NOT NULL,
+		deleted_rev INTEGER,
+		deleted_rev_id TEXT,
 		FOREIGN KEY (id, rev, rev_id) REFERENCES %[2]q (id, rev, rev_id) ON DELETE CASCADE,
 		UNIQUE(id, rev, rev_id, filename)
 	)

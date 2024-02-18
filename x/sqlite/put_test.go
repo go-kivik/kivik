@@ -29,16 +29,18 @@ import (
 )
 
 type attachmentRow struct {
-	DocID       string
-	Rev         int
-	RevID       string
-	Filename    string
-	ContentType string
-	Digest      string
-	Length      int64
-	RevPos      int
-	Stub        bool
-	Data        string
+	DocID        string
+	Rev          int
+	RevID        string
+	Filename     string
+	ContentType  string
+	Digest       string
+	Length       int64
+	RevPos       int
+	Stub         bool
+	Data         string
+	DeletedRev   *int
+	DeletedRevID *string
 }
 
 func TestDBPut(t *testing.T) {
@@ -874,8 +876,79 @@ func TestDBPut(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "update doc with attachments, delete one",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]interface{}{
+					"foo": "bar",
+					"_attachments": map[string]interface{}{
+						"foo.txt": map[string]interface{}{
+							"content_type": "text/plain",
+							"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
+						},
+						"bar.txt": map[string]interface{}{
+							"content_type": "text/plain",
+							"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
+						},
+					},
+				}, mock.NilOption)
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			docID: "foo",
+			doc: map[string]interface{}{
+				"_rev": "1-7884bb688778892bd22837c5d8cba96b",
+				"foo":  "baz",
+				"_attachments": map[string]interface{}{
+					"foo.txt": map[string]interface{}{
+						"stub": true,
+					},
+				},
+			},
+			wantRev: "2-a7cadffe4f950734f8eeae832e15f6c2",
+			wantRevs: []leaf{
+				{
+					ID:    "foo",
+					Rev:   1,
+					RevID: "7884bb688778892bd22837c5d8cba96b",
+				},
+				{
+					ID:          "foo",
+					Rev:         2,
+					RevID:       "a7cadffe4f950734f8eeae832e15f6c2",
+					ParentRev:   &[]int{1}[0],
+					ParentRevID: &[]string{"7884bb688778892bd22837c5d8cba96b"}[0],
+				},
+			},
+			wantAttachments: []attachmentRow{
+				{
+					DocID:        "foo",
+					Rev:          1,
+					RevID:        "7884bb688778892bd22837c5d8cba96b",
+					Filename:     "bar.txt",
+					ContentType:  "text/plain",
+					Length:       25,
+					Digest:       "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
+					Data:         "This is a base64 encoding",
+					DeletedRev:   &[]int{2}[0],
+					DeletedRevID: &[]string{"a7cadffe4f950734f8eeae832e15f6c2"}[0],
+				},
+				{
+					DocID:       "foo",
+					Rev:         1,
+					RevID:       "7884bb688778892bd22837c5d8cba96b",
+					Filename:    "foo.txt",
+					ContentType: "text/plain",
+					Length:      25,
+					Digest:      "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
+					Data:        "This is a base64 encoding",
+				},
+			},
+		},
 		/*
 			TODO:
+			- delete attachments only in one branch of a document
 			- Omit attachments to delete
 			- Include stub to update doc without deleting attachments
 			- Include stub with invalid filename
@@ -926,7 +999,7 @@ func TestDBPut(t *testing.T) {
 func checkAttachments(t *testing.T, d driver.DB, want []attachmentRow) {
 	t.Helper()
 	rows, err := d.(*db).db.Query(`
-		SELECT id, rev, rev_id, filename, content_type, length, digest, data
+		SELECT id, rev, rev_id, filename, content_type, length, digest, data, deleted_rev, deleted_rev_id
 		FROM test_attachments
 		ORDER BY id, rev, rev_id, filename
 	`)
@@ -937,7 +1010,7 @@ func checkAttachments(t *testing.T, d driver.DB, want []attachmentRow) {
 	var got []attachmentRow
 	for rows.Next() {
 		var att attachmentRow
-		if err := rows.Scan(&att.DocID, &att.Rev, &att.RevID, &att.Filename, &att.ContentType, &att.Length, &att.Digest, &att.Data); err != nil {
+		if err := rows.Scan(&att.DocID, &att.Rev, &att.RevID, &att.Filename, &att.ContentType, &att.Length, &att.Digest, &att.Data, &att.DeletedRev, &att.DeletedRevID); err != nil {
 			t.Fatal(err)
 		}
 		got = append(got, att)

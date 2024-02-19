@@ -126,7 +126,7 @@ func (c *client) CreateDB(ctx context.Context, name string, _ driver.Options) er
 	}
 	defer tx.Rollback()
 	for _, query := range schema {
-		_, err := tx.ExecContext(ctx, fmt.Sprintf(query, name, name+"_revs", name+"_attachments"))
+		_, err := tx.ExecContext(ctx, fmt.Sprintf(query, name, name+"_revs", name+"_attachments", name+"_leaves"))
 		if err == nil {
 			continue
 		}

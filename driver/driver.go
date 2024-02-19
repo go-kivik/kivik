@@ -264,7 +264,7 @@ type Document struct {
 }
 
 // Attachments is an iterator over the attachments included in a document when
-// [DB.Get] is called with `include_docs=true`.
+// [DB.Get] is called with `attachments=true`.
 type Attachments interface {
 	// Next is called to pupulate att with the next attachment in the result
 	// set.

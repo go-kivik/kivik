@@ -15,8 +15,10 @@ package sqlite
 import (
 	"bytes"
 	"crypto/md5"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -59,15 +61,48 @@ type docData struct {
 	ID string `json:"_id"`
 	// RevID is the calculated revision ID, not the actual _rev field from the
 	// document.
-	RevID     string   `json:"-"`
-	Revisions revsInfo `json:"_revisions"`
-	Deleted   bool     `json:"_deleted"`
-	Doc       []byte
+	RevID       string                `json:"-"`
+	Revisions   revsInfo              `json:"_revisions"`
+	Deleted     bool                  `json:"_deleted"`
+	Attachments map[string]attachment `json:"_attachments"`
+	Doc         []byte
 }
 
 type revsInfo struct {
 	Start int      `json:"start"`
 	IDs   []string `json:"ids"`
+}
+
+type attachment struct {
+	ContentType string `json:"content_type"`
+	Digest      string `json:"digest"`
+	Length      int64  `json:"length"`
+	RevPos      int    `json:"revpos"`
+	Stub        bool   `json:"stub,omitempty"`
+	// TODO: Add encoding support to compress certain types of attachments.
+	// Encoding      string `json:"encoding"`
+	// EncodedLength int64  `json:"encoded_length"`
+
+	// Data is the raw JSON representation of the attachment data. It is decoded
+	// into Content by the [attachment.calculate] method.
+	Data    json.RawMessage `json:"data,omitempty"`
+	Content []byte          `json:"-"`
+}
+
+func (a *attachment) calculate(filename string) error {
+	if a.Data == nil {
+		return &internal.Error{Status: http.StatusBadRequest, Err: fmt.Errorf("invalid attachment data for %q", filename)}
+	}
+	if err := json.Unmarshal(a.Data, &a.Content); err != nil {
+		return &internal.Error{Status: http.StatusBadRequest, Err: fmt.Errorf("invalid attachment data for %q: %w", filename, err)}
+	}
+	a.Length = int64(len(a.Content))
+	h := md5.New()
+	if _, err := io.Copy(h, bytes.NewReader(a.Content)); err != nil {
+		return err
+	}
+	a.Digest = "md5-" + base64.StdEncoding.EncodeToString(h.Sum(nil))
+	return nil
 }
 
 func (r *revsInfo) revs() []revision {

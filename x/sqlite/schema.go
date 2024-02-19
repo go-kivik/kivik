@@ -13,6 +13,7 @@
 package sqlite
 
 var schema = []string{
+	// revs
 	`CREATE TABLE %[2]q (
 		id TEXT NOT NULL,
 		rev INTEGER NOT NULL,
@@ -23,6 +24,7 @@ var schema = []string{
 		UNIQUE(id, rev, rev_id)
 	)`,
 	`CREATE INDEX idx_parent ON %[2]q (id, parent_rev, parent_rev_id)`,
+	// the main db table
 	`CREATE TABLE %[1]q (
 		seq INTEGER PRIMARY KEY,
 		id TEXT NOT NULL,
@@ -32,5 +34,20 @@ var schema = []string{
 		deleted BOOLEAN NOT NULL DEFAULT FALSE,
 		FOREIGN KEY (id, rev, rev_id) REFERENCES %[2]q (id, rev, rev_id) ON DELETE CASCADE,
 		UNIQUE(id, rev, rev_id)
+	)`,
+	// attachments
+	`CREATE TABLE %[3]q (
+		id TEXT NOT NULL,
+		rev INTEGER NOT NULL,
+		rev_id TEXT NOT NULL,
+		filename TEXT NOT NULL,
+		content_type TEXT NOT NULL,
+		length INTEGER NOT NULL,
+		digest TEXT NOT NULL,
+		data BLOB NOT NULL,
+		deleted_rev INTEGER,
+		deleted_rev_id TEXT,
+		FOREIGN KEY (id, rev, rev_id) REFERENCES %[2]q (id, rev, rev_id) ON DELETE CASCADE,
+		UNIQUE(id, rev, rev_id, filename)
 	)`,
 }

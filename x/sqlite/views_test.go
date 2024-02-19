@@ -144,6 +144,36 @@ func TestDBAllDocs(t *testing.T) {
 			},
 			want: nil,
 		},
+		{
+			name: "conflicting document, select winning rev",
+			setup: func(t *testing.T, db driver.DB) {
+				_, err := db.Put(context.Background(), "foo", map[string]string{
+					"cat":  "meow",
+					"_rev": "1-xxx",
+				}, kivik.Param("new_edits", false))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = db.Put(context.Background(), "foo", map[string]string{
+					"cat":  "purr",
+					"_rev": "1-aaa",
+				}, kivik.Param("new_edits", false))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = db.Delete(context.Background(), "foo", kivik.Rev("1-aaa"))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			want: []rowResult{
+				{
+					ID:    "foo",
+					Rev:   "1-xxx",
+					Value: `{"value":{"rev":"1-xxx"}}` + "\n",
+				},
+			},
+		},
 		/*
 			TODO:
 			- deleted doc

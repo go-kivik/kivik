@@ -32,12 +32,16 @@ func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, 
 	query := fmt.Sprintf(`
 		WITH RankedRevisions AS (
 			SELECT
-				id                   AS id,
-				rev || '-' || rev_id AS rev,
-				IIF($1, doc, NULL)   AS doc,
-				deleted              AS deleted,
-				ROW_NUMBER() OVER (PARTITION BY id ORDER BY rev DESC, rev_id DESC) AS rank
-			FROM %[1]q
+				rev.id                       AS id,
+				rev.rev || '-' || rev.rev_id AS rev,
+				IIF($1, doc.doc, NULL)       AS doc,
+				doc.deleted                  AS deleted,
+				ROW_NUMBER() OVER (PARTITION BY rev.id ORDER BY rev.rev DESC, rev.rev_id DESC) AS rank
+			FROM %[1]q AS rev
+			LEFT JOIN %[1]q AS child ON rev.id = child.id AND rev.rev = child.parent_rev AND rev.rev_id = child.parent_rev_id
+			JOIN %[2]q AS doc ON rev.id = doc.id AND rev.rev = doc.rev AND rev.rev_id = doc.rev_id
+			WHERE child.id IS NULL
+				AND NOT doc.deleted
 		)
 		SELECT
 			id,
@@ -46,7 +50,7 @@ func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, 
 		FROM RankedRevisions
 		WHERE rank = 1
 			AND NOT deleted
-	`, d.name)
+	`, d.name+"_revs", d.name)
 	results, err := d.db.QueryContext(ctx, query, optIncludeDocs) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {
 		return nil, err

@@ -130,9 +130,24 @@ func TestDBAllDocs(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "deleted doc",
+			setup: func(t *testing.T, db driver.DB) {
+				_, err := db.Put(context.Background(), "foo", map[string]string{"cat": "meow"}, mock.NilOption)
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = db.Delete(context.Background(), "foo", kivik.Rev("1-274558516009acbe973682d27a58b598"))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			want: nil,
+		},
 		/*
 			TODO:
 			- deleted doc
+			- select lower revision number when higher rev in winning branch has been deleted
 			- Order return values
 			- Options:
 				- conflicts=true

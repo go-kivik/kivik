@@ -35,6 +35,7 @@ func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, 
 				id                   AS id,
 				rev || '-' || rev_id AS rev,
 				IIF($1, doc, NULL)   AS doc,
+				deleted              AS deleted,
 				ROW_NUMBER() OVER (PARTITION BY id ORDER BY rev DESC, rev_id DESC) AS rank
 			FROM %[1]q
 		)
@@ -44,6 +45,7 @@ func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, 
 			doc
 		FROM RankedRevisions
 		WHERE rank = 1
+			AND NOT deleted
 	`, d.name)
 	results, err := d.db.QueryContext(ctx, query, optIncludeDocs) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {

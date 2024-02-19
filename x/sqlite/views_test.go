@@ -167,6 +167,36 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		},
 	})
+	tests.Add("conflicts=true", test{
+		setup: func(t *testing.T, db driver.DB) {
+			_, err := db.Put(context.Background(), "foo", map[string]string{
+				"cat":  "meow",
+				"_rev": "1-xxx",
+			}, kivik.Param("new_edits", false))
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = db.Put(context.Background(), "foo", map[string]string{
+				"cat":  "purr",
+				"_rev": "1-aaa",
+			}, kivik.Param("new_edits", false))
+			if err != nil {
+				t.Fatal(err)
+			}
+		},
+		options: kivik.Params(map[string]interface{}{
+			"conflicts":    true,
+			"include_docs": true,
+		}),
+		want: []rowResult{
+			{
+				ID:    "foo",
+				Rev:   "1-xxx",
+				Value: `{"value":{"rev":"1-xxx"}}` + "\n",
+				Doc:   `{"_id":"foo","_rev":"1-xxx","cat":"meow","_conflicts":["1-aaa"]}`,
+			},
+		},
+	})
 
 	/*
 		TODO:

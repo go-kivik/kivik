@@ -31,6 +31,7 @@ import (
 type rowResult struct {
 	ID    string
 	Rev   string
+	Value string
 	Error string
 }
 
@@ -48,6 +49,22 @@ func TestDBAllDocs(t *testing.T) {
 			name: "no docs in db",
 			want: nil,
 		},
+		{
+			name: "single doc",
+			setup: func(t *testing.T, db driver.DB) {
+				_, err := db.Put(context.Background(), "foo", map[string]string{"cat": "meow"}, mock.NilOption)
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			want: []rowResult{
+				{
+					ID:    "foo",
+					Rev:   "1-274558516009acbe973682d27a58b598",
+					Value: `{"value":{"rev":"1-274558516009acbe973682d27a58b598"}}` + "\n",
+				},
+			},
+		},
 		/*
 			TODO:
 			- AllDocs() called for DB that doesn't exit
@@ -63,6 +80,9 @@ func TestDBAllDocs(t *testing.T) {
 			t.Parallel()
 			db := newDB(t)
 			opts := tt.options
+			if tt.setup != nil {
+				tt.setup(t, db)
+			}
 			if opts == nil {
 				opts = mock.NilOption
 			}
@@ -97,9 +117,14 @@ func TestDBAllDocs(t *testing.T) {
 				if row.Error != nil {
 					errMsg = row.Error.Error()
 				}
+				value, err := io.ReadAll(row.Value)
+				if err != nil {
+					t.Fatal(err)
+				}
 				got = append(got, rowResult{
 					ID:    row.ID,
 					Rev:   row.Rev,
+					Value: string(value),
 					Error: errMsg,
 				})
 			}

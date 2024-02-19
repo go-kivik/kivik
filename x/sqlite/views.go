@@ -13,8 +13,10 @@
 package sqlite
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"io"
 
@@ -22,11 +24,12 @@ import (
 )
 
 func (d *db) AllDocs(ctx context.Context, _ driver.Options) (driver.Rows, error) {
-	results, err := d.db.QueryContext(ctx, fmt.Sprintf(`
+	query := fmt.Sprintf(`
 		SELECT
-			id
+			id, rev || '-' || rev_id
 		FROM %[1]q
-	`, d.name))
+	`, d.name)
+	results, err := d.db.QueryContext(ctx, query) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +50,13 @@ func (r *rows) Next(row *driver.Row) error {
 		}
 		return io.EOF
 	}
-	return r.rows.Scan(&row.ID)
+	if err := r.rows.Scan(&row.ID, &row.Rev); err != nil {
+		return err
+	}
+	var buf bytes.Buffer
+	_ = json.NewEncoder(&buf).Encode(map[string]interface{}{"value": map[string]string{"rev": row.Rev}})
+	row.Value = &buf
+	return nil
 }
 
 func (r *rows) Close() error {

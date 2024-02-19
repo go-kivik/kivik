@@ -84,9 +84,55 @@ func TestDBAllDocs(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "single doc multiple revisions",
+			setup: func(t *testing.T, db driver.DB) {
+				_, err := db.Put(context.Background(), "foo", map[string]string{"cat": "meow"}, mock.NilOption)
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = db.Put(context.Background(), "foo", map[string]string{"cat": "purr"}, kivik.Rev("1-274558516009acbe973682d27a58b598"))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			want: []rowResult{
+				{
+					ID:    "foo",
+					Rev:   "2-c1f7f9ed8874502b095381186a35af4b",
+					Value: `{"value":{"rev":"2-c1f7f9ed8874502b095381186a35af4b"}}` + "\n",
+				},
+			},
+		},
+		{
+			name: "conflicting document, select winning rev",
+			setup: func(t *testing.T, db driver.DB) {
+				_, err := db.Put(context.Background(), "foo", map[string]string{
+					"cat":  "meow",
+					"_rev": "1-xxx",
+				}, kivik.Param("new_edits", false))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = db.Put(context.Background(), "foo", map[string]string{
+					"cat":  "purr",
+					"_rev": "1-aaa",
+				}, kivik.Param("new_edits", false))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			want: []rowResult{
+				{
+					ID:    "foo",
+					Rev:   "1-xxx",
+					Value: `{"value":{"rev":"1-xxx"}}` + "\n",
+				},
+			},
+		},
 		/*
 			TODO:
-			- Return only winning doc revision
+			- deleted doc
 			- Order return values
 			- Options:
 				- conflicts=true

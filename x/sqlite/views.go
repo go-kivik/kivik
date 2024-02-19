@@ -30,11 +30,20 @@ func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, 
 	optIncludeDocs, _ := opts["include_docs"].(bool)
 
 	query := fmt.Sprintf(`
+		WITH RankedRevisions AS (
+			SELECT
+				id                   AS id,
+				rev || '-' || rev_id AS rev,
+				IIF($1, doc, NULL)   AS doc,
+				ROW_NUMBER() OVER (PARTITION BY id ORDER BY rev DESC, rev_id DESC) AS rank
+			FROM %[1]q
+		)
 		SELECT
-			id                   AS id,
-			rev || '-' || rev_id AS rev,
-			IIF($1, doc, NULL)   AS doc
-		FROM %[1]q
+			id,
+			rev,
+			doc
+		FROM RankedRevisions
+		WHERE rank = 1
 	`, d.name)
 	results, err := d.db.QueryContext(ctx, query, optIncludeDocs) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {

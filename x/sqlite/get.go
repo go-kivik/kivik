@@ -303,6 +303,11 @@ func (d *db) conflicts(ctx context.Context, tx *sql.Tx, id string, r revision, d
 // getAttachments returns the attachments for the given docID and revision.
 // It may return nil if there are no attachments.
 func (d *db) getAttachments(ctx context.Context, tx *sql.Tx, id string, rev revision, includeAttachments bool, since []string) (*attachments, error) {
+	for _, s := range since {
+		if _, err := parseRev(s); err != nil {
+			return nil, err
+		}
+	}
 	args := []interface{}{id, rev.rev, rev.id, includeAttachments}
 	for _, s := range since {
 		args = append(args, s)

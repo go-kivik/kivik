@@ -26,10 +26,6 @@ type db struct {
 
 var _ driver.DB = (*db)(nil)
 
-func (db) AllDocs(context.Context, driver.Options) (driver.Rows, error) {
-	return nil, nil
-}
-
 func (db) CreateDoc(context.Context, interface{}, driver.Options) (string, string, error) {
 	return "", "", nil
 }

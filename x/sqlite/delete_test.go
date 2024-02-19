@@ -118,7 +118,32 @@ func TestDBDelete(t *testing.T) {
 			wantStatus: http.StatusConflict,
 			wantErr:    "conflict",
 		},
-		/* _revisions */
+		{
+			name: "delete losing rev for conflict",
+			setup: func(t *testing.T, db driver.DB) {
+				_, err := db.Put(context.Background(), "foo", map[string]string{
+					"cat":  "meow",
+					"_rev": "1-xxx",
+				}, kivik.Param("new_edits", false))
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = db.Put(context.Background(), "foo", map[string]string{
+					"cat":  "purr",
+					"_rev": "1-aaa",
+				}, kivik.Param("new_edits", false))
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id:      "foo",
+			options: kivik.Rev("1-aaa"),
+			wantRev: "2-xxxxx",
+		},
+		/*
+			- _revisions
+			- deleting losing rev should not conflict
+		*/
 	}
 
 	for _, tt := range tests {

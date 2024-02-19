@@ -32,7 +32,7 @@ func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (
 		// delete a doc without a rev.
 		return "", &internal.Error{Status: http.StatusConflict, Message: "conflict"}
 	}
-	_, err := parseRev(optRev)
+	delRev, err := parseRev(optRev)
 	if err != nil {
 		return "", err
 	}
@@ -65,22 +65,14 @@ func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (
 	if curRev.String() != optRev {
 		return "", &internal.Error{Status: http.StatusConflict, Message: "conflict"}
 	}
-	var (
-		r         revision
-		curRevRev *int
-		curRevID  *string
-	)
-	if curRev.rev != 0 {
-		curRevRev = &curRev.rev
-		curRevID = &curRev.id
-	}
+	var r revision
 	err = tx.QueryRowContext(ctx, fmt.Sprintf(`
 		INSERT INTO %[1]q (id, rev, rev_id, parent_rev, parent_rev_id)
 		SELECT $1, COALESCE(MAX(rev),0) + 1, $2, $3, $4
 		FROM %[1]q
 		WHERE id = $1
 		RETURNING rev, rev_id
-	`, d.name+"_revs"), data.ID, data.RevID, curRevRev, curRevID).Scan(&r.rev, &r.id)
+	`, d.name+"_revs"), data.ID, data.RevID, delRev.rev, delRev.id).Scan(&r.rev, &r.id)
 	if err != nil {
 		return "", err
 	}

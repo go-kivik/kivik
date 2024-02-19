@@ -999,9 +999,29 @@ func TestDBGet(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "atts_since with invalid rev format",
+			setup: func(t *testing.T, d driver.DB) {
+				_, err := d.Put(context.Background(), "foo", map[string]interface{}{
+					"foo": "aaa",
+					"_attachments": map[string]interface{}{
+						"att.txt": map[string]interface{}{
+							"content_type": "text/plain",
+							"data":         "YXR0LnR4dA==",
+						},
+					},
+				}, mock.NilOption)
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			id:         "foo",
+			options:    kivik.Param("atts_since", []string{"this is an invalid rev"}),
+			wantStatus: http.StatusBadRequest,
+			wantErr:    `strconv.ParseInt: parsing "this is an invalid rev": invalid syntax`,
+		},
 		/*
 			TODO:
-			atts_since with invalid rev
 			atts_since with non-existent rev
 			att_encoding_info = true
 			open_revs = [] // TODO: driver.OpenRever

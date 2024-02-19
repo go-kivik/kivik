@@ -23,13 +23,20 @@ import (
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
-func (d *db) AllDocs(ctx context.Context, _ driver.Options) (driver.Rows, error) {
+func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
+	opts := map[string]interface{}{}
+	options.Apply(opts)
+
+	optIncludeDocs, _ := opts["include_docs"].(bool)
+
 	query := fmt.Sprintf(`
 		SELECT
-			id, rev || '-' || rev_id
+			id                   AS id,
+			rev || '-' || rev_id AS rev,
+			IIF($1, doc, NULL)   AS doc
 		FROM %[1]q
 	`, d.name)
-	results, err := d.db.QueryContext(ctx, query) //nolint:rowserrcheck // Err checked in Next
+	results, err := d.db.QueryContext(ctx, query, optIncludeDocs) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {
 		return nil, err
 	}
@@ -50,12 +57,24 @@ func (r *rows) Next(row *driver.Row) error {
 		}
 		return io.EOF
 	}
-	if err := r.rows.Scan(&row.ID, &row.Rev); err != nil {
+	var doc []byte
+	if err := r.rows.Scan(&row.ID, &row.Rev, &doc); err != nil {
 		return err
 	}
 	var buf bytes.Buffer
 	_ = json.NewEncoder(&buf).Encode(map[string]interface{}{"value": map[string]string{"rev": row.Rev}})
 	row.Value = &buf
+	if doc != nil {
+		toMerge := map[string]interface{}{
+			"_id":  row.ID,
+			"_rev": row.Rev,
+		}
+		doc, err := mergeIntoDoc(doc, toMerge)
+		if err != nil {
+			return err
+		}
+		row.Doc = bytes.NewReader(doc)
+	}
 	return nil
 }
 

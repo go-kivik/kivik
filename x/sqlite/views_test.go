@@ -31,6 +31,7 @@ import (
 type rowResult struct {
 	ID    string
 	Rev   string
+	Doc   string
 	Value string
 	Error string
 }
@@ -65,8 +66,55 @@ func TestDBAllDocs(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "include_docs=true",
+			setup: func(t *testing.T, db driver.DB) {
+				_, err := db.Put(context.Background(), "foo", map[string]string{"cat": "meow"}, mock.NilOption)
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+			options: kivik.Param("include_docs", true),
+			want: []rowResult{
+				{
+					ID:    "foo",
+					Rev:   "1-274558516009acbe973682d27a58b598",
+					Value: `{"value":{"rev":"1-274558516009acbe973682d27a58b598"}}` + "\n",
+					Doc:   `{"_id":"foo","_rev":"1-274558516009acbe973682d27a58b598","cat":"meow"}`,
+				},
+			},
+		},
 		/*
 			TODO:
+			- Return only winning doc revision
+			- Order return values
+			- Options:
+				- conflicts=true
+				- descending=true
+				- endkey
+				- end_key
+				- endkey_docid
+				- end_key_doc_id
+				- group
+				- group_level
+				- include_docs
+				- attachments
+				- att_encoding_infio
+				- inclusive_end
+				- key
+				- keys
+				- limit
+				- reduce
+				- skip
+				- sorted
+				- stable
+				- statle
+				- startkey
+				- start_key
+				- startkey_docid
+				- start_key_doc_id
+				- update
+				- update_seq
 			- AllDocs() called for DB that doesn't exit
 			- UpdateSeq() called on rows
 			- Offset() called on rows
@@ -121,10 +169,18 @@ func TestDBAllDocs(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
+				var doc []byte
+				if row.Doc != nil {
+					doc, err = io.ReadAll(row.Doc)
+					if err != nil {
+						t.Fatal(err)
+					}
+				}
 				got = append(got, rowResult{
 					ID:    row.ID,
 					Rev:   row.Rev,
 					Value: string(value),
+					Doc:   string(doc),
 					Error: errMsg,
 				})
 			}

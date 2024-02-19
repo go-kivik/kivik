@@ -120,7 +120,7 @@ func TestDBDelete(t *testing.T) {
 			wantErr:    "conflict",
 		},
 		{
-			name: "delete losing rev for conflict",
+			name: "delete losing rev for conflict should succeed",
 			setup: func(t *testing.T, db driver.DB) {
 				_, err := db.Put(context.Background(), "foo", map[string]string{
 					"cat":  "meow",
@@ -139,7 +139,7 @@ func TestDBDelete(t *testing.T) {
 			},
 			id:      "foo",
 			options: kivik.Rev("1-aaa"),
-			wantRev: "2-xxxxx",
+			wantRev: "2-df2a4fe30cde39c357c8d1105748d1b9",
 		},
 		{
 			name:       "invalid rev format",

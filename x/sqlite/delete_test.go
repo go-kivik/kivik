@@ -42,6 +42,7 @@ func TestDBDelete(t *testing.T) {
 		{
 			name:       "not found",
 			id:         "foo",
+			options:    kivik.Rev("1-9bb58f26192e4ba00f01e2e7b136bbd8"),
 			wantStatus: http.StatusNotFound,
 			wantErr:    "not found",
 		},
@@ -140,9 +141,15 @@ func TestDBDelete(t *testing.T) {
 			options: kivik.Rev("1-aaa"),
 			wantRev: "2-xxxxx",
 		},
+		{
+			name:       "invalid rev format",
+			id:         "foo",
+			options:    kivik.Rev("not a rev"),
+			wantStatus: http.StatusBadRequest,
+			wantErr:    `strconv.ParseInt: parsing "not a rev": invalid syntax`,
+		},
 		/*
 			- _revisions
-			- deleting losing rev should not conflict
 		*/
 	}
 

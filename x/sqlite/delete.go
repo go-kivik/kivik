@@ -26,7 +26,16 @@ import (
 func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (string, error) {
 	opts := map[string]interface{}{}
 	options.Apply(opts)
-	docRev, _ := opts["rev"].(string)
+	optRev, ok := opts["rev"].(string)
+	if !ok {
+		// Special case: No rev for DELETE is always a conflict, since you can't
+		// delete a doc without a rev.
+		return "", &internal.Error{Status: http.StatusConflict, Message: "conflict"}
+	}
+	_, err := parseRev(optRev)
+	if err != nil {
+		return "", err
+	}
 
 	data, err := prepareDoc(docID, map[string]interface{}{"_deleted": true})
 	if err != nil {
@@ -53,7 +62,7 @@ func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (
 	case err != nil:
 		return "", err
 	}
-	if curRev.String() != docRev {
+	if curRev.String() != optRev {
 		return "", &internal.Error{Status: http.StatusConflict, Message: "conflict"}
 	}
 	var (

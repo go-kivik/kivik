@@ -50,4 +50,17 @@ var schema = []string{
 		FOREIGN KEY (id, rev, rev_id) REFERENCES %[2]q (id, rev, rev_id) ON DELETE CASCADE,
 		UNIQUE(id, rev, rev_id, filename)
 	)`,
+	`CREATE VIEW %[4]q AS
+		SELECT
+			doc.seq     AS seq,
+			rev.id      AS id,
+			rev.rev     AS rev,
+			rev.rev_id  AS rev_id,
+			doc.doc     AS doc,
+			doc.deleted AS deleted
+		FROM %[2]q AS rev
+		LEFT JOIN %[2]q AS child ON rev.id = child.id AND rev.rev = child.parent_rev AND rev.rev_id = child.parent_rev_id
+		JOIN %[1]q AS doc ON rev.id = doc.id AND rev.rev = doc.rev AND rev.rev_id = doc.rev_id
+		WHERE child.id IS NULL
+	`,
 }

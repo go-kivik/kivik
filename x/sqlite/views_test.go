@@ -412,6 +412,39 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		},
 	})
+	tests.Add("endkey, inclusive_end=false", test{
+		setup: func(t *testing.T, db driver.DB) {
+			_, err := db.Put(context.Background(), "cat", map[string]string{
+				"cat": "meow",
+			}, mock.NilOption)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = db.Put(context.Background(), "dog", map[string]string{
+				"dog": "woof",
+			}, mock.NilOption)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = db.Put(context.Background(), "cow", map[string]string{
+				"cow": "moo",
+			}, mock.NilOption)
+			if err != nil {
+				t.Fatal(err)
+			}
+		},
+		options: kivik.Params(map[string]interface{}{
+			"endkey":        "cow",
+			"inclusive_end": false,
+		}),
+		want: []rowResult{
+			{
+				ID:    "cat",
+				Rev:   "1-274558516009acbe973682d27a58b598",
+				Value: `{"value":{"rev":"1-274558516009acbe973682d27a58b598"}}` + "\n",
+			},
+		},
+	})
 
 	/*
 		TODO:
@@ -425,7 +458,6 @@ func TestDBAllDocs(t *testing.T) {
 			- include_docs
 			- attachments
 			- att_encoding_infio
-			- inclusive_end
 			- key
 			- keys
 			- limit

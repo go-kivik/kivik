@@ -31,3 +31,8 @@ func (o optsMaps) endKey() string {
 	}
 	return ""
 }
+
+func (o optsMaps) inclusiveEnd() bool {
+	inclusiveEnd, ok := o["inclusive_end"].(bool)
+	return !ok || inclusiveEnd
+}

@@ -24,11 +24,18 @@ import (
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
-func endKeyOp(descending bool) string {
-	if descending {
+func endKeyOp(descending, inclusive bool) string {
+	switch {
+	case descending && inclusive:
 		return ">="
+	case descending && !inclusive:
+		return ">"
+	case !descending && inclusive:
+		return "<="
+	case !descending && !inclusive:
+		return "<"
 	}
-	return "<="
+	panic("unreachable")
 }
 
 func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
@@ -49,7 +56,7 @@ func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, 
 
 	where := []string{"rev.rank = 1"}
 	if endkey := opts.endKey(); endkey != "" {
-		where = append(where, fmt.Sprintf("rev.id %s $%d", endKeyOp(optDescending), len(args)+1))
+		where = append(where, fmt.Sprintf("rev.id %s $%d", endKeyOp(optDescending, opts.inclusiveEnd()), len(args)+1))
 		args = append(args, endkey)
 	}
 

@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/go-kivik/kivik/v4/driver"
 )
@@ -36,7 +37,8 @@ func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, 
 		WITH RankedRevisions AS (
 			SELECT
 				id                    AS id,
-				rev || '-' || rev_id  AS rev,
+				rev                   AS rev,
+				rev_id                AS rev_id,
 				IIF($1, doc, NULL)    AS doc,
 				deleted               AS deleted,
 				ROW_NUMBER() OVER (PARTITION BY id ORDER BY rev DESC, rev_id DESC) AS rank
@@ -44,12 +46,23 @@ func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, 
 			WHERE NOT deleted
 		)
 		SELECT
-			id,
-			rev,
-			doc
-		FROM RankedRevisions
-		WHERE rank = 1
-	`, d.name+"_leaves", d.name)
+			rev.id                       AS id,
+			rev.rev || '-' || rev.rev_id AS rev,
+			rev.doc                      AS doc,
+			GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ',') AS conflicts
+		FROM RankedRevisions AS rev
+		LEFT JOIN (
+			SELECT rev.id, rev.rev, rev.rev_id
+			FROM %[3]q AS rev
+			LEFT JOIN %[3]q AS child
+				ON child.id = rev.id
+				AND rev.rev = child.parent_rev
+				AND rev.rev_id = child.parent_rev_id
+			WHERE child.id IS NULL
+		) AS conflicts ON conflicts.id = rev.id AND NOT (rev.rev = conflicts.rev AND rev.rev_id = conflicts.rev_id)
+		WHERE rev.rank = 1
+		GROUP BY rev.id, rev.rev, rev.rev_id
+	`, d.name+"_leaves", d.name, d.name+"_revs")
 	results, err := d.db.QueryContext(ctx, query, optIncludeDocs) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {
 		return nil, err
@@ -79,8 +92,11 @@ func (r *rows) Next(row *driver.Row) error {
 		}
 		return io.EOF
 	}
-	var doc []byte
-	if err := r.rows.Scan(&row.ID, &row.Rev, &doc); err != nil {
+	var (
+		doc       []byte
+		conflicts *string
+	)
+	if err := r.rows.Scan(&row.ID, &row.Rev, &doc, &conflicts); err != nil {
 		return err
 	}
 	var buf bytes.Buffer
@@ -92,13 +108,7 @@ func (r *rows) Next(row *driver.Row) error {
 			"_rev": row.Rev,
 		}
 		if r.conflicts {
-			parsedRev, _ := parseRev(row.Rev)
-			revs, err := r.db.conflicts(r.ctx, r.db.db, row.ID, parsedRev, false)
-			if err != nil {
-				return err
-			}
-
-			toMerge["_conflicts"] = revs
+			toMerge["_conflicts"] = strings.Split(*conflicts, ",")
 		}
 		doc, err := mergeIntoDoc(doc, toMerge)
 		if err != nil {

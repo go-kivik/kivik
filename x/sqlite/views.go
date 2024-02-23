@@ -27,7 +27,10 @@ func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, 
 	opts := map[string]interface{}{}
 	options.Apply(opts)
 
-	optIncludeDocs, _ := opts["include_docs"].(bool)
+	var (
+		optIncludeDocs, _ = opts["include_docs"].(bool)
+		optConflicts, _   = opts["conflicts"].(bool)
+	)
 
 	query := fmt.Sprintf(`
 		WITH RankedRevisions AS (
@@ -52,11 +55,19 @@ func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, 
 		return nil, err
 	}
 
-	return &rows{rows: results}, nil
+	return &rows{
+		ctx:       ctx,
+		db:        d,
+		rows:      results,
+		conflicts: optConflicts,
+	}, nil
 }
 
 type rows struct {
-	rows *sql.Rows
+	ctx       context.Context
+	db        *db
+	rows      *sql.Rows
+	conflicts bool
 }
 
 var _ driver.Rows = (*rows)(nil)
@@ -79,6 +90,15 @@ func (r *rows) Next(row *driver.Row) error {
 		toMerge := map[string]interface{}{
 			"_id":  row.ID,
 			"_rev": row.Rev,
+		}
+		if r.conflicts {
+			parsedRev, _ := parseRev(row.Rev)
+			revs, err := r.db.conflicts(r.ctx, r.db.db, row.ID, parsedRev, false)
+			if err != nil {
+				return err
+			}
+
+			toMerge["_conflicts"] = revs
 		}
 		doc, err := mergeIntoDoc(doc, toMerge)
 		if err != nil {

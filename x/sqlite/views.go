@@ -38,7 +38,10 @@ func endKeyOp(descending, inclusive bool) string {
 	panic("unreachable")
 }
 
-func startKeyOp() string {
+func startKeyOp(descending bool) string {
+	if descending {
+		return "<="
+	}
 	return ">="
 }
 
@@ -64,7 +67,7 @@ func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, 
 		args = append(args, endkey)
 	}
 	if startkey := opts.startKey(); startkey != "" {
-		where = append(where, fmt.Sprintf("rev.id %s $%d", startKeyOp(), len(args)+1))
+		where = append(where, fmt.Sprintf("rev.id %s $%d", startKeyOp(optDescending), len(args)+1))
 		args = append(args, startkey)
 	}
 

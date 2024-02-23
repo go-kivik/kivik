@@ -38,6 +38,10 @@ func endKeyOp(descending, inclusive bool) string {
 	panic("unreachable")
 }
 
+func startKeyOp() string {
+	return ">="
+}
+
 func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
 	opts := newOpts(options)
 
@@ -58,6 +62,10 @@ func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, 
 	if endkey := opts.endKey(); endkey != "" {
 		where = append(where, fmt.Sprintf("rev.id %s $%d", endKeyOp(optDescending, opts.inclusiveEnd()), len(args)+1))
 		args = append(args, endkey)
+	}
+	if startkey := opts.startKey(); startkey != "" {
+		where = append(where, fmt.Sprintf("rev.id %s $%d", startKeyOp(), len(args)+1))
+		args = append(args, startkey)
 	}
 
 	query := fmt.Sprintf(`

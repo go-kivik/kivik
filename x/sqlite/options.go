@@ -14,15 +14,15 @@ package sqlite
 
 import "github.com/go-kivik/kivik/v4/driver"
 
-type optsMaps map[string]interface{}
+type optsMap map[string]interface{}
 
-func newOpts(options driver.Options) optsMaps {
+func newOpts(options driver.Options) optsMap {
 	opts := map[string]interface{}{}
 	options.Apply(opts)
 	return opts
 }
 
-func (o optsMaps) endKey() string {
+func (o optsMap) endKey() string {
 	if endkey, ok := o["endkey"].(string); ok {
 		return endkey
 	}
@@ -32,7 +32,17 @@ func (o optsMaps) endKey() string {
 	return ""
 }
 
-func (o optsMaps) inclusiveEnd() bool {
+func (o optsMap) inclusiveEnd() bool {
 	inclusiveEnd, ok := o["inclusive_end"].(bool)
 	return !ok || inclusiveEnd
+}
+
+func (o optsMap) startKey() string {
+	if startkey, ok := o["startkey"].(string); ok {
+		return startkey
+	}
+	if startkey, ok := o["start_key"].(string); ok {
+		return startkey
+	}
+	return ""
 }

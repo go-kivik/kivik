@@ -304,6 +304,41 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		},
 	})
+	tests.Add("endkey", test{
+		setup: func(t *testing.T, db driver.DB) {
+			_, err := db.Put(context.Background(), "cat", map[string]string{
+				"cat": "meow",
+			}, mock.NilOption)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = db.Put(context.Background(), "dog", map[string]string{
+				"dog": "woof",
+			}, mock.NilOption)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = db.Put(context.Background(), "cow", map[string]string{
+				"cow": "moo",
+			}, mock.NilOption)
+			if err != nil {
+				t.Fatal(err)
+			}
+		},
+		options: kivik.Param("endkey", "cow"),
+		want: []rowResult{
+			{
+				ID:    "cat",
+				Rev:   "1-274558516009acbe973682d27a58b598",
+				Value: `{"value":{"rev":"1-274558516009acbe973682d27a58b598"}}` + "\n",
+			},
+			{
+				ID:    "cow",
+				Rev:   "1-80b1ed11e92f08613f0007cc2b2f486d",
+				Value: `{"value":{"rev":"1-80b1ed11e92f08613f0007cc2b2f486d"}}` + "\n",
+			},
+		},
+	})
 
 	/*
 		TODO:

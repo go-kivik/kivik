@@ -30,6 +30,7 @@ func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, 
 
 	var (
 		optConflicts, _   = opts["conflicts"].(bool)
+		optEndKey, _      = opts["endkey"].(string)
 		optDescending, _  = opts["descending"].(bool)
 		optIncludeDocs, _ = opts["include_docs"].(bool)
 	)
@@ -37,6 +38,14 @@ func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, 
 	direction := "ASC"
 	if optDescending {
 		direction = "DESC"
+	}
+
+	args := []interface{}{optIncludeDocs}
+
+	where := []string{"rev.rank = 1"}
+	if optEndKey != "" {
+		where = append(where, fmt.Sprintf("rev.id <= $%d", len(args)+1))
+		args = append(args, optEndKey)
 	}
 
 	query := fmt.Sprintf(`
@@ -66,11 +75,13 @@ func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, 
 				AND rev.rev_id = child.parent_rev_id
 			WHERE child.id IS NULL
 		) AS conflicts ON conflicts.id = rev.id AND NOT (rev.rev = conflicts.rev AND rev.rev_id = conflicts.rev_id)
-		WHERE rev.rank = 1
+		WHERE %[5]s
 		GROUP BY rev.id, rev.rev, rev.rev_id
 		ORDER BY id %[4]s
-	`, d.name+"_leaves", d.name, d.name+"_revs", direction)
-	results, err := d.db.QueryContext(ctx, query, optIncludeDocs) //nolint:rowserrcheck // Err checked in Next
+	`, d.name+"_leaves", d.name, d.name+"_revs", direction,
+		strings.Join(where, " AND "),
+	)
+	results, err := d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {
 		return nil, err
 	}

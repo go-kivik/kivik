@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -178,15 +179,40 @@ func extractRev(doc interface{}) (string, error) {
 	}
 }
 
-func mergeIntoDoc(doc []byte, partials ...map[string]interface{}) ([]byte, error) {
-	var merged map[string]interface{}
-	if err := json.Unmarshal(doc, &merged); err != nil {
-		return nil, err
+func mergeIntoDoc(doc []byte, partials map[string]interface{}) ([]byte, error) {
+	buf := bytes.Buffer{}
+	_ = buf.WriteByte('{')
+	if id, ok := partials["_id"].(string); ok {
+		_, _ = fmt.Fprintf(&buf, `"_id":%s,`, jsonString(id))
+		delete(partials, "_id")
 	}
-	for _, p := range partials {
-		for k, v := range p {
-			merged[k] = v
+	if rev, ok := partials["_rev"].(string); ok {
+		_, _ = fmt.Fprintf(&buf, `"_rev":%s,`, jsonString(rev))
+		delete(partials, "_rev")
+	}
+	_, _ = buf.Write(doc[1 : len(doc)-1]) // Omit opening and closing braces
+	_ = buf.WriteByte(',')
+	keys := make([]string, 0, len(partials))
+	for k := range partials {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		j, err := json.Marshal(partials[k])
+		if err != nil {
+			return nil, err
 		}
+		_, _ = fmt.Fprintf(&buf, `"%s":`, k)
+		_, _ = buf.Write(j)
+		_ = buf.WriteByte(',')
 	}
-	return json.Marshal(merged)
+	result := buf.Bytes()
+	// replace final ',' with '}'
+	result[len(result)-1] = '}'
+	return result, nil
+}
+
+func jsonString(s string) string {
+	j, _ := json.Marshal(s)
+	return string(j)
 }

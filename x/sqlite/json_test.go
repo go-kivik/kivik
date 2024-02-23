@@ -217,3 +217,54 @@ func Test_revsInfo_revs(t *testing.T) {
 		})
 	}
 }
+
+func Test_mergeIntoDoc(t *testing.T) {
+	tests := []struct {
+		name    string
+		doc     []byte
+		toMerge map[string]interface{}
+		want    []byte
+		wantErr string
+	}{
+		{
+			name: "nothing to merge",
+			doc:  []byte(`{"foo":"bar"}`),
+			want: []byte(`{"foo":"bar"}`),
+		},
+		{
+			name: "id and rev",
+			doc:  []byte(`{"foo":"bar"}`),
+			toMerge: map[string]interface{}{
+				"_id":  "foo",
+				"_rev": "1-abc",
+			},
+			want: []byte(`{"_id":"foo","_rev":"1-abc","foo":"bar"}`),
+		},
+		{
+			name: "id, rev, and other",
+			doc:  []byte(`{"foo":"bar"}`),
+			toMerge: map[string]interface{}{
+				"_id":  "foo",
+				"_rev": "1-abc",
+				"_foo": "bar",
+				"_bar": "baz",
+			},
+			want: []byte(`{"_id":"foo","_rev":"1-abc","foo":"bar","_bar":"baz","_foo":"bar"}`),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := mergeIntoDoc(tt.doc, tt.toMerge)
+			if !testy.ErrorMatches(tt.wantErr, err) {
+				t.Errorf("unexpected error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if err != nil {
+				return
+			}
+			if d := cmp.Diff(tt.want, got); d != "" {
+				t.Errorf(d)
+			}
+		})
+	}
+}

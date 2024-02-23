@@ -32,12 +32,10 @@ func endKeyOp(descending bool) string {
 }
 
 func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
-	opts := map[string]interface{}{}
-	options.Apply(opts)
+	opts := newOpts(options)
 
 	var (
 		optConflicts, _   = opts["conflicts"].(bool)
-		optEndKey, _      = opts["endkey"].(string)
 		optDescending, _  = opts["descending"].(bool)
 		optIncludeDocs, _ = opts["include_docs"].(bool)
 	)
@@ -50,9 +48,9 @@ func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, 
 	args := []interface{}{optIncludeDocs}
 
 	where := []string{"rev.rank = 1"}
-	if optEndKey != "" {
+	if endkey := opts.endKey(); endkey != "" {
 		where = append(where, fmt.Sprintf("rev.id %s $%d", endKeyOp(optDescending), len(args)+1))
-		args = append(args, optEndKey)
+		args = append(args, endkey)
 	}
 
 	query := fmt.Sprintf(`

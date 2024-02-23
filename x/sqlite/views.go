@@ -29,9 +29,15 @@ func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, 
 	options.Apply(opts)
 
 	var (
-		optIncludeDocs, _ = opts["include_docs"].(bool)
 		optConflicts, _   = opts["conflicts"].(bool)
+		optDescending, _  = opts["descending"].(bool)
+		optIncludeDocs, _ = opts["include_docs"].(bool)
 	)
+
+	direction := "ASC"
+	if optDescending {
+		direction = "DESC"
+	}
 
 	query := fmt.Sprintf(`
 		WITH RankedRevisions AS (
@@ -62,7 +68,8 @@ func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, 
 		) AS conflicts ON conflicts.id = rev.id AND NOT (rev.rev = conflicts.rev AND rev.rev_id = conflicts.rev_id)
 		WHERE rev.rank = 1
 		GROUP BY rev.id, rev.rev, rev.rev_id
-	`, d.name+"_leaves", d.name, d.name+"_revs")
+		ORDER BY id %[4]s
+	`, d.name+"_leaves", d.name, d.name+"_revs", direction)
 	results, err := d.db.QueryContext(ctx, query, optIncludeDocs) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {
 		return nil, err

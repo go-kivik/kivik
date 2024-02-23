@@ -24,6 +24,13 @@ import (
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
+func endKeyOp(descending bool) string {
+	if descending {
+		return ">="
+	}
+	return "<="
+}
+
 func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
 	opts := map[string]interface{}{}
 	options.Apply(opts)
@@ -44,7 +51,7 @@ func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, 
 
 	where := []string{"rev.rank = 1"}
 	if optEndKey != "" {
-		where = append(where, fmt.Sprintf("rev.id <= $%d", len(args)+1))
+		where = append(where, fmt.Sprintf("rev.id %s $%d", endKeyOp(optDescending), len(args)+1))
 		args = append(args, optEndKey)
 	}
 

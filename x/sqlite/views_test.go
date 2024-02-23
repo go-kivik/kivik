@@ -339,6 +339,44 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		},
 	})
+	tests.Add("descending=true, endkey", test{
+		setup: func(t *testing.T, db driver.DB) {
+			_, err := db.Put(context.Background(), "cat", map[string]string{
+				"cat": "meow",
+			}, mock.NilOption)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = db.Put(context.Background(), "dog", map[string]string{
+				"dog": "woof",
+			}, mock.NilOption)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = db.Put(context.Background(), "cow", map[string]string{
+				"cow": "moo",
+			}, mock.NilOption)
+			if err != nil {
+				t.Fatal(err)
+			}
+		},
+		options: kivik.Params(map[string]interface{}{
+			"endkey":     "cow",
+			"descending": true,
+		}),
+		want: []rowResult{
+			{
+				ID:    "dog",
+				Rev:   "1-a5f1dc478532231c6252f63fa94f433a",
+				Value: `{"value":{"rev":"1-a5f1dc478532231c6252f63fa94f433a"}}` + "\n",
+			},
+			{
+				ID:    "cow",
+				Rev:   "1-80b1ed11e92f08613f0007cc2b2f486d",
+				Value: `{"value":{"rev":"1-80b1ed11e92f08613f0007cc2b2f486d"}}` + "\n",
+			},
+		},
+	})
 
 	/*
 		TODO:

@@ -220,10 +220,9 @@ func Test_revsInfo_revs(t *testing.T) {
 
 func Test_mergeIntoDoc(t *testing.T) {
 	tests := []struct {
-		name    string
-		doc     fullDoc
-		want    string
-		wantErr string
+		name string
+		doc  fullDoc
+		want string
 	}{
 		{
 			name: "nothing to merge",
@@ -253,13 +252,7 @@ func Test_mergeIntoDoc(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := mergeIntoDoc(tt.doc)
-			if !testy.ErrorMatches(tt.wantErr, err) {
-				t.Errorf("unexpected error = %v, wantErr %v", err, tt.wantErr)
-			}
-			if err != nil {
-				return
-			}
+			got := mergeIntoDoc(tt.doc)
 			if d := cmp.Diff(tt.want, string(got)); d != "" {
 				t.Errorf(d)
 			}

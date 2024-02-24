@@ -256,10 +256,7 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 	}
 
 	toMerge.Doc = body
-	body, err = mergeIntoDoc(toMerge)
-	if err != nil {
-		return nil, err
-	}
+	body = mergeIntoDoc(toMerge)
 
 	return &driver.Document{
 		Attachments: atts,

@@ -179,26 +179,31 @@ func extractRev(doc interface{}) (string, error) {
 	}
 }
 
-func mergeIntoDoc(doc []byte, partials map[string]interface{}) ([]byte, error) {
+type fullDoc struct {
+	ID    string
+	Rev   string
+	Doc   json.RawMessage
+	Other map[string]interface{}
+}
+
+func mergeIntoDoc(doc fullDoc) ([]byte, error) {
 	buf := bytes.Buffer{}
 	_ = buf.WriteByte('{')
-	if id, ok := partials["_id"].(string); ok {
+	if id := doc.ID; id != "" {
 		_, _ = fmt.Fprintf(&buf, `"_id":%s,`, jsonString(id))
-		delete(partials, "_id")
 	}
-	if rev, ok := partials["_rev"].(string); ok {
+	if rev := doc.Rev; rev != "" {
 		_, _ = fmt.Fprintf(&buf, `"_rev":%s,`, jsonString(rev))
-		delete(partials, "_rev")
 	}
-	_, _ = buf.Write(doc[1 : len(doc)-1]) // Omit opening and closing braces
+	_, _ = buf.Write(doc.Doc[1 : len(doc.Doc)-1]) // Omit opening and closing braces
 	_ = buf.WriteByte(',')
-	keys := make([]string, 0, len(partials))
-	for k := range partials {
+	keys := make([]string, 0, len(doc.Other))
+	for k := range doc.Other {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
 	for _, k := range keys {
-		j, err := json.Marshal(partials[k])
+		j, err := json.Marshal(doc.Other[k])
 		if err != nil {
 			return nil, err
 		}

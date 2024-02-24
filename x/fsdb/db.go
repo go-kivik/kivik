@@ -49,11 +49,6 @@ func (d *db) Query(context.Context, string, string, driver.Options) (driver.Rows
 	return nil, notYetImplemented
 }
 
-func (d *db) CreateDoc(context.Context, interface{}, driver.Options) (docID, rev string, err error) {
-	// FIXME: Unimplemented
-	return "", "", notYetImplemented
-}
-
 func (d *db) Delete(context.Context, string, driver.Options) (newRev string, err error) {
 	// FIXME: Unimplemented
 	return "", notYetImplemented

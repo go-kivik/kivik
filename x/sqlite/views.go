@@ -151,7 +151,7 @@ func (r *rows) Next(row *driver.Row) error {
 			Other: map[string]interface{}{},
 		}
 		if r.conflicts {
-			toMerge.Other["_conflicts"] = strings.Split(*conflicts, ",")
+			toMerge.Conflicts = strings.Split(*conflicts, ",")
 		}
 		doc, err := mergeIntoDoc(toMerge)
 		if err != nil {

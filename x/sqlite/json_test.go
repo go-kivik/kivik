@@ -222,13 +222,13 @@ func Test_mergeIntoDoc(t *testing.T) {
 	tests := []struct {
 		name    string
 		doc     fullDoc
-		want    []byte
+		want    string
 		wantErr string
 	}{
 		{
 			name: "nothing to merge",
 			doc:  fullDoc{Doc: []byte(`{"foo":"bar"}`)},
-			want: []byte(`{"foo":"bar"}`),
+			want: `{"foo":"bar"}`,
 		},
 		{
 			name: "id and rev",
@@ -237,7 +237,7 @@ func Test_mergeIntoDoc(t *testing.T) {
 				Rev: "1-abc",
 				Doc: []byte(`{"foo":"bar"}`),
 			},
-			want: []byte(`{"_id":"foo","_rev":"1-abc","foo":"bar"}`),
+			want: `{"_id":"foo","_rev":"1-abc","foo":"bar"}`,
 		},
 		{
 			name: "id, rev, and other",
@@ -247,7 +247,7 @@ func Test_mergeIntoDoc(t *testing.T) {
 				Doc:   []byte(`{"foo":"bar"}`),
 				Other: map[string]interface{}{"_foo": "bar", "_bar": "baz"},
 			},
-			want: []byte(`{"_id":"foo","_rev":"1-abc","foo":"bar","_bar":"baz","_foo":"bar"}`),
+			want: `{"_id":"foo","_rev":"1-abc","foo":"bar","_bar":"baz","_foo":"bar"}`,
 		},
 	}
 
@@ -260,7 +260,7 @@ func Test_mergeIntoDoc(t *testing.T) {
 			if err != nil {
 				return
 			}
-			if d := cmp.Diff(tt.want, got); d != "" {
+			if d := cmp.Diff(tt.want, string(got)); d != "" {
 				t.Errorf(d)
 			}
 		})

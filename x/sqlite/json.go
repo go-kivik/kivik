@@ -180,23 +180,36 @@ func extractRev(doc interface{}) (string, error) {
 }
 
 type fullDoc struct {
-	ID    string
-	Rev   string
-	Doc   json.RawMessage
-	Other map[string]interface{}
+	ID        string                 `json:"-"`
+	Rev       string                 `json:"-"`
+	Doc       json.RawMessage        `json:"-"`
+	Conflicts []string               `json:"_conflicts,omitempty"`
+	Other     map[string]interface{} `json:"-"`
 }
 
 func mergeIntoDoc(doc fullDoc) ([]byte, error) {
 	buf := bytes.Buffer{}
 	_ = buf.WriteByte('{')
 	if id := doc.ID; id != "" {
-		_, _ = fmt.Fprintf(&buf, `"_id":%s,`, jsonString(id))
+		_, _ = buf.WriteString(`"_id":`)
+		_, _ = buf.Write(jsonMarshal(id))
+		_ = buf.WriteByte(',')
 	}
 	if rev := doc.Rev; rev != "" {
-		_, _ = fmt.Fprintf(&buf, `"_rev":%s,`, jsonString(rev))
+		_, _ = buf.WriteString(`"_rev":`)
+		_, _ = buf.Write(jsonMarshal(rev))
+		_ = buf.WriteByte(',')
 	}
+
+	// The main doc
 	_, _ = buf.Write(doc.Doc[1 : len(doc.Doc)-1]) // Omit opening and closing braces
 	_ = buf.WriteByte(',')
+
+	if tmp, _ := json.Marshal(doc); len(tmp) > 2 {
+		_, _ = buf.Write(tmp[1 : len(tmp)-1])
+		_ = buf.WriteByte(',')
+	}
+
 	keys := make([]string, 0, len(doc.Other))
 	for k := range doc.Other {
 		keys = append(keys, k)
@@ -217,7 +230,7 @@ func mergeIntoDoc(doc fullDoc) ([]byte, error) {
 	return result, nil
 }
 
-func jsonString(s string) string {
+func jsonMarshal(s interface{}) []byte {
 	j, _ := json.Marshal(s)
-	return string(j)
+	return j
 }

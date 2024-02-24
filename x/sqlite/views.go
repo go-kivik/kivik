@@ -19,21 +19,64 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
-func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
-	opts := map[string]interface{}{}
-	options.Apply(opts)
+func endKeyOp(descending, inclusive bool) string {
+	switch {
+	case descending && inclusive:
+		return ">="
+	case descending && !inclusive:
+		return ">"
+	case !descending && inclusive:
+		return "<="
+	case !descending && !inclusive:
+		return "<"
+	}
+	panic("unreachable")
+}
 
-	optIncludeDocs, _ := opts["include_docs"].(bool)
+func startKeyOp(descending bool) string {
+	if descending {
+		return "<="
+	}
+	return ">="
+}
+
+func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
+	opts := newOpts(options)
+
+	var (
+		optConflicts, _   = opts["conflicts"].(bool)
+		optDescending, _  = opts["descending"].(bool)
+		optIncludeDocs, _ = opts["include_docs"].(bool)
+	)
+
+	direction := "ASC"
+	if optDescending {
+		direction = "DESC"
+	}
+
+	args := []interface{}{optIncludeDocs}
+
+	where := []string{"rev.rank = 1"}
+	if endkey := opts.endKey(); endkey != "" {
+		where = append(where, fmt.Sprintf("rev.id %s $%d", endKeyOp(optDescending, opts.inclusiveEnd()), len(args)+1))
+		args = append(args, endkey)
+	}
+	if startkey := opts.startKey(); startkey != "" {
+		where = append(where, fmt.Sprintf("rev.id %s $%d", startKeyOp(optDescending), len(args)+1))
+		args = append(args, startkey)
+	}
 
 	query := fmt.Sprintf(`
 		WITH RankedRevisions AS (
 			SELECT
 				id                    AS id,
-				rev || '-' || rev_id  AS rev,
+				rev                   AS rev,
+				rev_id                AS rev_id,
 				IIF($1, doc, NULL)    AS doc,
 				deleted               AS deleted,
 				ROW_NUMBER() OVER (PARTITION BY id ORDER BY rev DESC, rev_id DESC) AS rank
@@ -41,22 +84,44 @@ func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, 
 			WHERE NOT deleted
 		)
 		SELECT
-			id,
-			rev,
-			doc
-		FROM RankedRevisions
-		WHERE rank = 1
-	`, d.name+"_leaves", d.name)
-	results, err := d.db.QueryContext(ctx, query, optIncludeDocs) //nolint:rowserrcheck // Err checked in Next
+			rev.id                       AS id,
+			rev.rev || '-' || rev.rev_id AS rev,
+			rev.doc                      AS doc,
+			GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ',') AS conflicts
+		FROM RankedRevisions AS rev
+		LEFT JOIN (
+			SELECT rev.id, rev.rev, rev.rev_id
+			FROM %[3]q AS rev
+			LEFT JOIN %[3]q AS child
+				ON child.id = rev.id
+				AND rev.rev = child.parent_rev
+				AND rev.rev_id = child.parent_rev_id
+			WHERE child.id IS NULL
+		) AS conflicts ON conflicts.id = rev.id AND NOT (rev.rev = conflicts.rev AND rev.rev_id = conflicts.rev_id)
+		WHERE %[5]s
+		GROUP BY rev.id, rev.rev, rev.rev_id
+		ORDER BY id %[4]s
+	`, d.name+"_leaves", d.name, d.name+"_revs", direction,
+		strings.Join(where, " AND "),
+	)
+	results, err := d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {
 		return nil, err
 	}
 
-	return &rows{rows: results}, nil
+	return &rows{
+		ctx:       ctx,
+		db:        d,
+		rows:      results,
+		conflicts: optConflicts,
+	}, nil
 }
 
 type rows struct {
-	rows *sql.Rows
+	ctx       context.Context
+	db        *db
+	rows      *sql.Rows
+	conflicts bool
 }
 
 var _ driver.Rows = (*rows)(nil)
@@ -68,8 +133,11 @@ func (r *rows) Next(row *driver.Row) error {
 		}
 		return io.EOF
 	}
-	var doc []byte
-	if err := r.rows.Scan(&row.ID, &row.Rev, &doc); err != nil {
+	var (
+		doc       []byte
+		conflicts *string
+	)
+	if err := r.rows.Scan(&row.ID, &row.Rev, &doc, &conflicts); err != nil {
 		return err
 	}
 	var buf bytes.Buffer
@@ -79,6 +147,9 @@ func (r *rows) Next(row *driver.Row) error {
 		toMerge := map[string]interface{}{
 			"_id":  row.ID,
 			"_rev": row.Rev,
+		}
+		if r.conflicts {
+			toMerge["_conflicts"] = strings.Split(*conflicts, ",")
 		}
 		doc, err := mergeIntoDoc(doc, toMerge)
 		if err != nil {

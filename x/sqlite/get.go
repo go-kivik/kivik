@@ -269,7 +269,11 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 	}, tx.Commit()
 }
 
-func (d *db) conflicts(ctx context.Context, tx *sql.Tx, id string, r revision, deleted bool) ([]string, error) {
+type dbOrTx interface {
+	QueryContext(context.Context, string, ...interface{}) (*sql.Rows, error)
+}
+
+func (d *db) conflicts(ctx context.Context, tx dbOrTx, id string, r revision, deleted bool) ([]string, error) {
 	var revs []string
 	rows, err := tx.QueryContext(ctx, fmt.Sprintf(`
 			SELECT rev.rev || '-' || rev.rev_id

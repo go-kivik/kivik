@@ -242,12 +242,12 @@ func Test_mergeIntoDoc(t *testing.T) {
 		{
 			name: "id, rev, and other",
 			doc: fullDoc{
-				ID:    "foo",
-				Rev:   "1-abc",
-				Doc:   []byte(`{"foo":"bar"}`),
-				Other: map[string]interface{}{"_foo": "bar", "_bar": "baz"},
+				ID:       "foo",
+				Rev:      "1-abc",
+				Doc:      []byte(`{"foo":"bar"}`),
+				LocalSeq: 1,
 			},
-			want: `{"_id":"foo","_rev":"1-abc","foo":"bar","_bar":"baz","_foo":"bar"}`,
+			want: `{"_id":"foo","_rev":"1-abc","foo":"bar","_local_seq":1}`,
 		},
 	}
 

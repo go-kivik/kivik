@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -180,11 +179,15 @@ func extractRev(doc interface{}) (string, error) {
 }
 
 type fullDoc struct {
-	ID        string                 `json:"-"`
-	Rev       string                 `json:"-"`
-	Doc       json.RawMessage        `json:"-"`
-	Conflicts []string               `json:"_conflicts,omitempty"`
-	Other     map[string]interface{} `json:"-"`
+	ID               string                `json:"-"`
+	Rev              string                `json:"-"`
+	Doc              json.RawMessage       `json:"-"`
+	Conflicts        []string              `json:"_conflicts,omitempty"`
+	DeletedConflicts []string              `json:"_deleted_conflicts,omitempty"`
+	RevsInfo         []map[string]string   `json:"_revs_info,omitempty"`
+	Revisions        *revsInfo             `json:"_revisions,omitempty"`
+	LocalSeq         int                   `json:"_local_seq,omitempty"`
+	Attachments      map[string]attachment `json:"_attachments,omitempty"`
 }
 
 func mergeIntoDoc(doc fullDoc) ([]byte, error) {
@@ -205,25 +208,12 @@ func mergeIntoDoc(doc fullDoc) ([]byte, error) {
 	_, _ = buf.Write(doc.Doc[1 : len(doc.Doc)-1]) // Omit opening and closing braces
 	_ = buf.WriteByte(',')
 
-	if tmp, _ := json.Marshal(doc); len(tmp) > 2 {
+	const minJSONObjectLen = 2
+	if tmp, _ := json.Marshal(doc); len(tmp) > minJSONObjectLen {
 		_, _ = buf.Write(tmp[1 : len(tmp)-1])
 		_ = buf.WriteByte(',')
 	}
 
-	keys := make([]string, 0, len(doc.Other))
-	for k := range doc.Other {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	for _, k := range keys {
-		j, err := json.Marshal(doc.Other[k])
-		if err != nil {
-			return nil, err
-		}
-		_, _ = fmt.Fprintf(&buf, `"%s":`, k)
-		_, _ = buf.Write(j)
-		_ = buf.WriteByte(',')
-	}
 	result := buf.Bytes()
 	// replace final ',' with '}'
 	result[len(result)-1] = '}'

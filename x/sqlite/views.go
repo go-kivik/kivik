@@ -145,10 +145,9 @@ func (r *rows) Next(row *driver.Row) error {
 	row.Value = &buf
 	if doc != nil {
 		toMerge := fullDoc{
-			ID:    row.ID,
-			Rev:   row.Rev,
-			Doc:   doc,
-			Other: map[string]interface{}{},
+			ID:  row.ID,
+			Rev: row.Rev,
+			Doc: doc,
 		}
 		if r.conflicts {
 			toMerge.Conflicts = strings.Split(*conflicts, ",")

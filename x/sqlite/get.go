@@ -119,9 +119,8 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 	}
 
 	toMerge := fullDoc{
-		ID:    id,
-		Rev:   r.String(),
-		Other: map[string]interface{}{},
+		ID:  id,
+		Rev: r.String(),
 	}
 
 	var (
@@ -146,7 +145,7 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 			return nil, err
 		}
 
-		toMerge.Other["_conflicts"] = revs
+		toMerge.Conflicts = revs
 	}
 
 	if optDeletedConflicts {
@@ -155,7 +154,7 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 			return nil, err
 		}
 
-		toMerge.Other["_deleted_conflicts"] = revs
+		toMerge.DeletedConflicts = revs
 	}
 
 	if optRevsInfo || optRevs {
@@ -232,7 +231,7 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 					"status": r.status,
 				})
 			}
-			toMerge.Other["_revs_info"] = info
+			toMerge.RevsInfo = info
 		} else {
 			// for revs=true, we include a different format of this data
 			revsInfo := revsInfo{
@@ -242,18 +241,18 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 			for i, r := range revs {
 				revsInfo.IDs[i] = r.id
 			}
-			toMerge.Other["_revisions"] = revsInfo
+			toMerge.Revisions = &revsInfo
 		}
 	}
 	if optLocalSeq {
-		toMerge.Other["_local_seq"] = localSeq
+		toMerge.LocalSeq = localSeq
 	}
 	atts, err := d.getAttachments(ctx, tx, id, r, optAttachments, optAttsSince)
 	if err != nil {
 		return nil, err
 	}
 	if mergeAtts := atts.inlineAttachments(); mergeAtts != nil {
-		toMerge.Other["_attachments"] = mergeAtts
+		toMerge.Attachments = mergeAtts
 	}
 
 	toMerge.Doc = body

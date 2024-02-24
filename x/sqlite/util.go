@@ -13,7 +13,10 @@
 package sqlite
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -23,4 +26,103 @@ func placeholders(start, count int) string {
 		result[i] = fmt.Sprintf("$%d", start+i)
 	}
 	return strings.Join(result, ", ")
+}
+
+func (d *db) currentRev(ctx context.Context, tx *sql.Tx, docID string) (revision, error) {
+	var curRev revision
+	err := tx.QueryRowContext(ctx, fmt.Sprintf(`
+		SELECT rev, rev_id
+		FROM %q
+		WHERE id = $1
+		ORDER BY rev DESC, rev_id DESC
+		LIMIT 1
+	`, d.name), docID).Scan(&curRev.rev, &curRev.id)
+	return curRev, err
+}
+
+// createRev creates a new entry in the revs table, inserts the document data
+// into the docs table, and returns the new revision.
+func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev revision) (revision, error) {
+	var (
+		r         revision
+		curRevRev *int
+		curRevID  *string
+	)
+	if curRev.rev != 0 {
+		curRevRev = &curRev.rev
+		curRevID = &curRev.id
+	}
+	err := tx.QueryRowContext(ctx, fmt.Sprintf(`
+		INSERT INTO %[1]q (id, rev, rev_id, parent_rev, parent_rev_id)
+		SELECT $1, COALESCE(MAX(rev),0) + 1, $2, $3, $4
+		FROM %[1]q
+		WHERE id = $1
+		RETURNING rev, rev_id
+	`, d.name+"_revs"), data.ID, data.RevID, curRevRev, curRevID).Scan(&r.rev, &r.id)
+	if err != nil {
+		return r, err
+	}
+	_, err = tx.ExecContext(ctx, fmt.Sprintf(`
+		INSERT INTO %[1]q (id, rev, rev_id, doc, deleted)
+		VALUES ($1, $2, $3, $4, $5)
+	`, d.name), data.ID, r.rev, r.id, data.Doc, data.Deleted)
+	if err != nil {
+		return r, err
+	}
+	if len(data.Attachments) == 0 {
+		return r, nil
+	}
+
+	// order the filenames to insert for consistency
+	orderedFilenames := make([]string, 0, len(data.Attachments))
+	for filename := range data.Attachments {
+		orderedFilenames = append(orderedFilenames, filename)
+	}
+	sort.Strings(orderedFilenames)
+
+	stmt, err := tx.PrepareContext(ctx, fmt.Sprintf(`
+			INSERT INTO %[1]q (id, rev, rev_id, filename, content_type, length, digest, data)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		`, d.name+"_attachments"))
+	if err != nil {
+		return r, err
+	}
+	defer stmt.Close()
+	for _, filename := range orderedFilenames {
+		att := data.Attachments[filename]
+		if att.Stub {
+			continue
+		}
+		if err := att.calculate(filename); err != nil {
+			return r, err
+		}
+		contentType := att.ContentType
+		if contentType == "" {
+			contentType = "application/octet-stream"
+		}
+		_, err := stmt.ExecContext(ctx, data.ID, r.rev, r.id, filename, contentType, att.Length, att.Digest, att.Content)
+		if err != nil {
+			return r, err
+		}
+	}
+
+	// Delete any attachments not included in the new revision
+	args := []interface{}{r.rev, r.id, data.ID}
+	for _, filename := range orderedFilenames {
+		args = append(args, filename)
+	}
+	query := fmt.Sprintf(`
+			UPDATE %[1]q
+			SET deleted_rev = $1, deleted_rev_id = $2
+			WHERE id = $3
+				AND filename NOT IN (`+placeholders(len(args)-len(orderedFilenames)+1, len(orderedFilenames))+`)
+				AND deleted_rev IS NULL
+				AND deleted_rev_id IS NULL
+		`, d.name+"_attachments")
+	_, err = tx.ExecContext(ctx, query, args...)
+	if err != nil {
+		return r, err
+	}
+
+	return r, nil
 }

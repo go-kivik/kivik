@@ -21,6 +21,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/google/uuid"
+
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/internal"
 )
@@ -302,12 +304,21 @@ func (db *DB) CreateDoc(ctx context.Context, doc interface{}, options ...Option)
 	if db.err != nil {
 		return "", "", db.err
 	}
-	endQuery, err := db.startQuery()
-	if err != nil {
-		return "", "", err
+	if docCreator, ok := db.driverDB.(driver.DocCreator); ok {
+		endQuery, err := db.startQuery()
+		if err != nil {
+			return "", "", err
+		}
+		defer endQuery()
+		return docCreator.CreateDoc(ctx, doc, multiOptions(options))
 	}
-	defer endQuery()
-	return db.driverDB.CreateDoc(ctx, doc, multiOptions(options))
+	docID, ok := extractDocID(doc)
+	if !ok {
+		// TODO: Consider making uuid algorithm configurable
+		docID = uuid.NewString()
+	}
+	rev, err = db.Put(ctx, docID, doc, options...)
+	return docID, rev, err
 }
 
 // normalizeFromJSON unmarshals a []byte, json.RawMessage or io.Reader to a

@@ -1860,7 +1860,7 @@ func TestCreateDoc(t *testing.T) {
 			name: "error",
 			db: &DB{
 				client: &Client{},
-				driverDB: &mock.DB{
+				driverDB: &mock.DocCreator{
 					CreateDocFunc: func(context.Context, interface{}, driver.Options) (string, string, error) {
 						return "", "", &internal.Error{Status: http.StatusBadRequest, Err: errors.New("create error")}
 					},
@@ -1873,7 +1873,7 @@ func TestCreateDoc(t *testing.T) {
 			name: "success",
 			db: &DB{
 				client: &Client{},
-				driverDB: &mock.DB{
+				driverDB: &mock.DocCreator{
 					CreateDocFunc: func(_ context.Context, doc interface{}, options driver.Options) (string, string, error) {
 						gotOpts := map[string]interface{}{}
 						options.Apply(gotOpts)
@@ -1899,9 +1899,37 @@ func TestCreateDoc(t *testing.T) {
 				client: &Client{
 					closed: true,
 				},
+				driverDB: &mock.DocCreator{},
 			},
 			status: http.StatusServiceUnavailable,
 			err:    "kivik: client closed",
+		},
+		{
+			name: "emulated with docID",
+			db: &DB{
+				client: &Client{},
+				driverDB: &mock.DB{
+					PutFunc: func(_ context.Context, docID string, doc interface{}, options driver.Options) (string, error) {
+						gotOpts := map[string]interface{}{}
+						options.Apply(gotOpts)
+						expectedDoc := map[string]string{"_id": "foo", "type": "test"}
+						if docID != "foo" {
+							return "", fmt.Errorf("Unexpected docID: %s", docID)
+						}
+						if d := testy.DiffInterface(expectedDoc, doc); d != nil {
+							return "", fmt.Errorf("Unexpected doc:\n%s", d)
+						}
+						if d := testy.DiffInterface(testOptions, gotOpts); d != nil {
+							return "", fmt.Errorf("Unexpected options:\n%s", d)
+						}
+						return "1-xxx", nil
+					},
+				},
+			},
+			doc:     map[string]string{"type": "test", "_id": "foo"},
+			options: Params(testOptions),
+			docID:   "foo",
+			rev:     "1-xxx",
 		},
 	}
 	for _, test := range tests {

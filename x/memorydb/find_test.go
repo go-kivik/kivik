@@ -216,7 +216,7 @@ func TestFindDoc(t *testing.T) {
 			query: `{"selector":{}, "fields":["value","_rev"]}`,
 			db: func() *db {
 				db := setupDB(t)
-				if _, _, err := db.CreateDoc(context.Background(), map[string]string{"value": "foo"}, nil); err != nil {
+				if _, err := db.Put(context.Background(), "foo", map[string]string{"value": "foo"}, nil); err != nil {
 					t.Fatal(err)
 				}
 				return db

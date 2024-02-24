@@ -196,8 +196,6 @@ type DB interface {
 	// AllDocs returns all of the documents in the database, subject to the
 	// options provided.
 	AllDocs(ctx context.Context, options Options) (Rows, error)
-	// CreateDoc creates a new doc, with a server-generated ID.
-	CreateDoc(ctx context.Context, doc interface{}, options Options) (docID, rev string, err error)
 	// Put writes the document in the database.
 	Put(ctx context.Context, docID string, doc interface{}, options Options) (rev string, err error)
 	// Get fetches the requested document from the database.
@@ -229,6 +227,14 @@ type DB interface {
 	Query(ctx context.Context, ddoc, view string, options Options) (Rows, error)
 	// Close is called to clean up any resources used by the database.
 	Close() error
+}
+
+// DocCreator is an optional interface that extends a [DB] to support the
+// creation of new documents. If not implemented, [DB.Put] will be used to
+// emulate the functionality, with missing document IDs generated as V4 UUIDs.
+type DocCreator interface {
+	// CreateDoc creates a new doc, with a server-generated ID.
+	CreateDoc(ctx context.Context, doc interface{}, options Options) (docID, rev string, err error)
 }
 
 // OpenRever is an ptional interface that extends a [DB] to support the open_revs

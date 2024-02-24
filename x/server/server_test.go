@@ -715,7 +715,7 @@ func TestServer(t *testing.T) {
 			authUser:   userAdmin,
 			wantStatus: http.StatusCreated,
 			target: &struct {
-				ID  string `json:"id" validate:"required,hexadecimal,len=32"`
+				ID  string `json:"id" validate:"required,uuid"`
 				Rev string `json:"rev" validate:"required,startswith=1-"`
 				OK  bool   `json:"ok" validate:"required,eq=true"`
 			}{},

@@ -9,6 +9,7 @@ require (
 	github.com/go-chi/chi/v5 v5.0.10
 	github.com/go-playground/validator/v10 v10.16.0
 	github.com/google/go-cmp v0.5.9
+	github.com/google/uuid v1.6.0
 	github.com/gopherjs/gopherjs v1.17.2
 	github.com/gopherjs/jsbuiltin v0.0.0-20180426082241-50091555e127
 	github.com/icza/dyno v0.0.0-20230330125955-09f820a8d9c0
@@ -33,7 +34,6 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
-	github.com/google/uuid v1.5.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect

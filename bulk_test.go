@@ -96,24 +96,26 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 	tests.Add("emulated BulkDocs support", tt{
 		db: &DB{
 			client: &Client{},
-			driverDB: &mock.DB{
-				PutFunc: func(_ context.Context, docID string, doc interface{}, options driver.Options) (string, error) {
-					if docID == "error" {
-						return "", errors.New("error")
-					}
-					if docID != "foo" { // nolint: goconst
-						return "", fmt.Errorf("Unexpected docID: %s", docID)
-					}
-					expectedDoc := map[string]string{"_id": "foo"}
-					if d := testy.DiffInterface(expectedDoc, doc); d != nil {
-						return "", fmt.Errorf("Unexpected doc:\n%s", d)
-					}
-					gotOpts := map[string]interface{}{}
-					options.Apply(gotOpts)
-					if d := testy.DiffInterface(testOptions, gotOpts); d != nil {
-						return "", fmt.Errorf("Unexpected opts:\n%s", d)
-					}
-					return "2-xxx", nil // nolint: goconst
+			driverDB: &mock.DocCreator{
+				DB: mock.DB{
+					PutFunc: func(_ context.Context, docID string, doc interface{}, options driver.Options) (string, error) {
+						if docID == "error" {
+							return "", errors.New("error")
+						}
+						if docID != "foo" { // nolint: goconst
+							return "", fmt.Errorf("Unexpected docID: %s", docID)
+						}
+						expectedDoc := map[string]string{"_id": "foo"}
+						if d := testy.DiffInterface(expectedDoc, doc); d != nil {
+							return "", fmt.Errorf("Unexpected doc:\n%s", d)
+						}
+						gotOpts := map[string]interface{}{}
+						options.Apply(gotOpts)
+						if d := testy.DiffInterface(testOptions, gotOpts); d != nil {
+							return "", fmt.Errorf("Unexpected opts:\n%s", d)
+						}
+						return "2-xxx", nil // nolint: goconst
+					},
 				},
 				CreateDocFunc: func(_ context.Context, doc interface{}, options driver.Options) (string, string, error) {
 					gotOpts := map[string]interface{}{}

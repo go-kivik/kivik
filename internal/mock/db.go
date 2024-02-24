@@ -24,7 +24,6 @@ type DB struct {
 	ID                   string
 	AllDocsFunc          func(ctx context.Context, options driver.Options) (driver.Rows, error)
 	GetFunc              func(ctx context.Context, docID string, options driver.Options) (*driver.Document, error)
-	CreateDocFunc        func(ctx context.Context, doc interface{}, options driver.Options) (docID, rev string, err error)
 	PutFunc              func(ctx context.Context, docID string, doc interface{}, options driver.Options) (rev string, err error)
 	DeleteFunc           func(ctx context.Context, docID string, options driver.Options) (newRev string, err error)
 	StatsFunc            func(ctx context.Context) (*driver.DBStats, error)
@@ -37,6 +36,17 @@ type DB struct {
 	DeleteAttachmentFunc func(ctx context.Context, docID, filename string, options driver.Options) (newRev string, err error)
 	QueryFunc            func(context.Context, string, string, driver.Options) (driver.Rows, error)
 	CloseFunc            func() error
+}
+
+// DocCreator is a stub for a [github.com/go-kivik/v4/driver.DocCreator].
+type DocCreator struct {
+	DB
+	CreateDocFunc func(ctx context.Context, doc interface{}, options driver.Options) (docID, rev string, err error)
+}
+
+// CreateDoc calls db.CreateDocFunc
+func (db *DocCreator) CreateDoc(ctx context.Context, doc interface{}, opts driver.Options) (string, string, error) {
+	return db.CreateDocFunc(ctx, doc, opts)
 }
 
 // SecurityDB is a stub for a driver.SecurityDB.
@@ -56,11 +66,6 @@ var _ driver.DB = &DB{}
 // AllDocs calls db.AllDocsFunc
 func (db *DB) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
 	return db.AllDocsFunc(ctx, options)
-}
-
-// CreateDoc calls db.CreateDocFunc
-func (db *DB) CreateDoc(ctx context.Context, doc interface{}, opts driver.Options) (string, string, error) {
-	return db.CreateDocFunc(ctx, doc, opts)
 }
 
 // Put calls db.PutFunc

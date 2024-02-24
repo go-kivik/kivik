@@ -68,23 +68,6 @@ func (d *db) Get(ctx context.Context, docID string, options driver.Options) (*dr
 	}, nil
 }
 
-func (d *db) CreateDoc(ctx context.Context, doc interface{}, _ driver.Options) (docID, rev string, err error) {
-	if exists, _ := d.client.DBExists(ctx, d.dbName, nil); !exists {
-		return "", "", statusError{status: http.StatusPreconditionFailed, error: errors.New("database does not exist")}
-	}
-	couchDoc, err := toCouchDoc(doc)
-	if err != nil {
-		return "", "", err
-	}
-	if id, ok := couchDoc["_id"].(string); ok {
-		docID = id
-	} else {
-		docID = randStr()
-	}
-	rev, err = d.Put(ctx, docID, doc, nil)
-	return docID, rev, err
-}
-
 func (d *db) Put(ctx context.Context, docID string, doc interface{}, _ driver.Options) (rev string, err error) {
 	if exists, _ := d.client.DBExists(ctx, d.dbName, nil); !exists {
 		return "", statusError{status: http.StatusPreconditionFailed, error: errors.New("database does not exist")}

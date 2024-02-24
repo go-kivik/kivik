@@ -88,6 +88,7 @@ func client() error {
 
 type fullDB interface {
 	driver.DB
+	driver.DocCreator
 	driver.AttachmentMetaGetter
 	driver.BulkDocer
 	driver.BulkGetter

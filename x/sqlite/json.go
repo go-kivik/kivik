@@ -190,7 +190,7 @@ type fullDoc struct {
 	Attachments      map[string]attachment `json:"_attachments,omitempty"`
 }
 
-func mergeIntoDoc(doc fullDoc) []byte {
+func mergeIntoDoc(doc fullDoc) io.ReadCloser {
 	buf := bytes.Buffer{}
 	_ = buf.WriteByte('{')
 	if id := doc.ID; id != "" {
@@ -217,7 +217,7 @@ func mergeIntoDoc(doc fullDoc) []byte {
 	result := buf.Bytes()
 	// replace final ',' with '}'
 	result[len(result)-1] = '}'
-	return result
+	return io.NopCloser(bytes.NewReader(result))
 }
 
 func jsonMarshal(s interface{}) []byte {

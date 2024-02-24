@@ -152,8 +152,7 @@ func (r *rows) Next(row *driver.Row) error {
 		if r.conflicts {
 			toMerge.Conflicts = strings.Split(*conflicts, ",")
 		}
-		doc := mergeIntoDoc(toMerge)
-		row.Doc = bytes.NewReader(doc)
+		row.Doc = mergeIntoDoc(toMerge)
 	}
 	return nil
 }

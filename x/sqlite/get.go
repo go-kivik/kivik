@@ -256,12 +256,11 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 	}
 
 	toMerge.Doc = body
-	body = mergeIntoDoc(toMerge)
 
 	return &driver.Document{
 		Attachments: atts,
 		Rev:         r.String(),
-		Body:        io.NopCloser(bytes.NewReader(body)),
+		Body:        mergeIntoDoc(toMerge),
 	}, tx.Commit()
 }
 

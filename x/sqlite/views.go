@@ -144,18 +144,15 @@ func (r *rows) Next(row *driver.Row) error {
 	_ = json.NewEncoder(&buf).Encode(map[string]interface{}{"value": map[string]string{"rev": row.Rev}})
 	row.Value = &buf
 	if doc != nil {
-		toMerge := map[string]interface{}{
-			"_id":  row.ID,
-			"_rev": row.Rev,
+		toMerge := fullDoc{
+			ID:  row.ID,
+			Rev: row.Rev,
+			Doc: doc,
 		}
 		if r.conflicts {
-			toMerge["_conflicts"] = strings.Split(*conflicts, ",")
+			toMerge.Conflicts = strings.Split(*conflicts, ",")
 		}
-		doc, err := mergeIntoDoc(doc, toMerge)
-		if err != nil {
-			return err
-		}
-		row.Doc = bytes.NewReader(doc)
+		row.Doc = mergeIntoDoc(toMerge)
 	}
 	return nil
 }

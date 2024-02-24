@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -179,40 +178,49 @@ func extractRev(doc interface{}) (string, error) {
 	}
 }
 
-func mergeIntoDoc(doc []byte, partials map[string]interface{}) ([]byte, error) {
+type fullDoc struct {
+	ID               string                `json:"-"`
+	Rev              string                `json:"-"`
+	Doc              json.RawMessage       `json:"-"`
+	Conflicts        []string              `json:"_conflicts,omitempty"`
+	DeletedConflicts []string              `json:"_deleted_conflicts,omitempty"`
+	RevsInfo         []map[string]string   `json:"_revs_info,omitempty"`
+	Revisions        *revsInfo             `json:"_revisions,omitempty"`
+	LocalSeq         int                   `json:"_local_seq,omitempty"`
+	Attachments      map[string]attachment `json:"_attachments,omitempty"`
+}
+
+func mergeIntoDoc(doc fullDoc) io.ReadCloser {
 	buf := bytes.Buffer{}
 	_ = buf.WriteByte('{')
-	if id, ok := partials["_id"].(string); ok {
-		_, _ = fmt.Fprintf(&buf, `"_id":%s,`, jsonString(id))
-		delete(partials, "_id")
-	}
-	if rev, ok := partials["_rev"].(string); ok {
-		_, _ = fmt.Fprintf(&buf, `"_rev":%s,`, jsonString(rev))
-		delete(partials, "_rev")
-	}
-	_, _ = buf.Write(doc[1 : len(doc)-1]) // Omit opening and closing braces
-	_ = buf.WriteByte(',')
-	keys := make([]string, 0, len(partials))
-	for k := range partials {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	for _, k := range keys {
-		j, err := json.Marshal(partials[k])
-		if err != nil {
-			return nil, err
-		}
-		_, _ = fmt.Fprintf(&buf, `"%s":`, k)
-		_, _ = buf.Write(j)
+	if id := doc.ID; id != "" {
+		_, _ = buf.WriteString(`"_id":`)
+		_, _ = buf.Write(jsonMarshal(id))
 		_ = buf.WriteByte(',')
 	}
+	if rev := doc.Rev; rev != "" {
+		_, _ = buf.WriteString(`"_rev":`)
+		_, _ = buf.Write(jsonMarshal(rev))
+		_ = buf.WriteByte(',')
+	}
+
+	// The main doc
+	_, _ = buf.Write(doc.Doc[1 : len(doc.Doc)-1]) // Omit opening and closing braces
+	_ = buf.WriteByte(',')
+
+	const minJSONObjectLen = 2
+	if tmp, _ := json.Marshal(doc); len(tmp) > minJSONObjectLen {
+		_, _ = buf.Write(tmp[1 : len(tmp)-1])
+		_ = buf.WriteByte(',')
+	}
+
 	result := buf.Bytes()
 	// replace final ',' with '}'
 	result[len(result)-1] = '}'
-	return result, nil
+	return io.NopCloser(bytes.NewReader(result))
 }
 
-func jsonString(s string) string {
+func jsonMarshal(s interface{}) []byte {
 	j, _ := json.Marshal(s)
-	return string(j)
+	return j
 }

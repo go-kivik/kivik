@@ -18,6 +18,7 @@ package sqlite
 import (
 	"context"
 	"io"
+	"net/http"
 	"strings"
 	"testing"
 
@@ -115,10 +116,36 @@ func TestDBPutAttachment(t *testing.T) {
 			},
 		},
 	})
+	tests.Add("non-existing doc with rev should conflict", test{
+		docID: "foo",
+		attachment: &driver.Attachment{
+			Filename:    "foo.txt",
+			ContentType: "text/plain",
+			Content:     io.NopCloser(strings.NewReader("Hello, world!")),
+		},
+		options:    kivik.Rev("1-9bb58f26192e4ba00f01e2e7b136bbd8"),
+		wantStatus: http.StatusConflict,
+		wantErr:    "conflict",
+	})
+	tests.Add("existing doc, wrong rev", test{
+		setup: func(t *testing.T, db driver.DB) {
+			_, err := db.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
+			if err != nil {
+				t.Fatal(err)
+			}
+		},
+		docID: "foo",
+		attachment: &driver.Attachment{
+			Filename:    "foo.txt",
+			ContentType: "text/plain",
+			Content:     io.NopCloser(strings.NewReader("Hello, world!")),
+		},
+		options:    kivik.Rev("1-wrong"),
+		wantStatus: http.StatusConflict,
+		wantErr:    "conflict",
+	})
 	/*
 		TODO:
-		- Add an attachment to an existing document, with incorrect rev (conflict)
-		- Create doc with rev (conflict)
 		- Don't delete existing attachments when adding a new one with this method
 		- Update an existing attachment
 	*/

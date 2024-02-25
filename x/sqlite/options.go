@@ -46,3 +46,8 @@ func (o optsMap) startKey() string {
 	}
 	return ""
 }
+
+func (o optsMap) rev() string {
+	rev, _ := o["rev"].(string)
+	return rev
+}

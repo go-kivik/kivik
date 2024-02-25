@@ -17,14 +17,18 @@ import (
 	"database/sql"
 	"errors"
 	"io"
+	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 // revIDEmpty is the revision ID for an empty document, i.e. `{}`
 const revIDEmpty = "99914b932bd37a50b983c5e7c90ae93b"
 
-func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attachment, _ driver.Options) (string, error) {
+func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attachment, options driver.Options) (string, error) {
+	opts := newOpts(options)
+
 	tx, err := d.db.BeginTx(ctx, nil)
 	if err != nil {
 		return "", err
@@ -44,6 +48,10 @@ func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attach
 		return "", err
 	default:
 		data.RevID = curRev.id
+	}
+
+	if rev := opts.rev(); rev != "" && rev != curRev.String() {
+		return "", &internal.Error{Status: http.StatusConflict, Message: "conflict"}
 	}
 
 	content, err := io.ReadAll(att.Content)

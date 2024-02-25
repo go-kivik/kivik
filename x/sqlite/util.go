@@ -41,7 +41,8 @@ func (d *db) currentRev(ctx context.Context, tx *sql.Tx, docID string) (revision
 }
 
 // createRev creates a new entry in the revs table, inserts the document data
-// into the docs table, and returns the new revision.
+// into the docs table, attachments into the attachments table, and returns the
+// new revision.
 func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev revision) (revision, error) {
 	var (
 		r         revision
@@ -62,10 +63,23 @@ func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev re
 	if err != nil {
 		return r, err
 	}
-	_, err = tx.ExecContext(ctx, fmt.Sprintf(`
-		INSERT INTO %[1]q (id, rev, rev_id, doc, deleted)
-		VALUES ($1, $2, $3, $4, $5)
-	`, d.name), data.ID, r.rev, r.id, data.Doc, data.Deleted)
+	if len(data.Doc) == 0 {
+		// No body can happen for example when calling PutAttachment, so we
+		// create the new docs table entry by reading the previous one.
+		_, err = tx.ExecContext(ctx, fmt.Sprintf(`
+			INSERT INTO %[1]q (id, rev, rev_id, doc, deleted)
+			SELECT $1, $2, $3, doc, deleted
+			FROM %[1]q
+			WHERE id = $1
+				AND rev = $2-1
+				AND rev_id = $3
+			`, d.name), data.ID, r.rev, r.id)
+	} else {
+		_, err = tx.ExecContext(ctx, fmt.Sprintf(`
+			INSERT INTO %[1]q (id, rev, rev_id, doc, deleted)
+			VALUES ($1, $2, $3, $4, $5)
+		`, d.name), data.ID, r.rev, r.id, data.Doc, data.Deleted)
+	}
 	if err != nil {
 		return r, err
 	}

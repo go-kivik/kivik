@@ -14,10 +14,15 @@ package sqlite
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"io"
 
 	"github.com/go-kivik/kivik/v4/driver"
 )
+
+// revIDEmpty is the revision ID for an empty document, i.e. `{}`
+const revIDEmpty = "99914b932bd37a50b983c5e7c90ae93b"
 
 func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attachment, _ driver.Options) (string, error) {
 	tx, err := d.db.BeginTx(ctx, nil)
@@ -26,10 +31,21 @@ func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attach
 	}
 	defer tx.Rollback()
 
-	data, err := prepareDoc(docID, map[string]string{})
-	if err != nil {
-		return "", err
+	data := &docData{
+		ID: docID,
 	}
+
+	curRev, err := d.currentRev(ctx, tx, docID)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		data.RevID = revIDEmpty
+		data.Doc = []byte("{}")
+	case err != nil:
+		return "", err
+	default:
+		data.RevID = curRev.id
+	}
+
 	content, err := io.ReadAll(att.Content)
 	if err != nil {
 		return "", err
@@ -45,7 +61,7 @@ func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attach
 		att.Filename: file,
 	}
 
-	r, err := d.createRev(ctx, tx, data, revision{})
+	r, err := d.createRev(ctx, tx, data, curRev)
 	if err != nil {
 		return "", err
 	}

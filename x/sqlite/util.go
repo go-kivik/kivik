@@ -120,6 +120,12 @@ func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev re
 		}
 	}
 
+	if len(data.Doc) == 0 {
+		// The only reason that the doc is nil is when we're creating a new
+		// attachment, and we should not delete existing attachments in that case.
+		return r, nil
+	}
+
 	// Delete any attachments not included in the new revision
 	args := []interface{}{r.rev, r.id, data.ID}
 	for _, filename := range orderedFilenames {

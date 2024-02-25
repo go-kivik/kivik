@@ -144,9 +144,69 @@ func TestDBPutAttachment(t *testing.T) {
 		wantStatus: http.StatusConflict,
 		wantErr:    "conflict",
 	})
+	tests.Add("don't delete existing attachment", test{
+		setup: func(t *testing.T, db driver.DB) {
+			_, err := db.Put(context.Background(), "foo", map[string]interface{}{
+				"foo": "bar",
+				"_attachments": map[string]interface{}{
+					"foo.txt": map[string]interface{}{
+						"content_type": "text/plain",
+						"data":         "SGVsbG8sIHdvcmxkIQ==",
+					},
+				},
+			}, mock.NilOption)
+			if err != nil {
+				t.Fatal(err)
+			}
+		},
+		docID: "foo",
+		attachment: &driver.Attachment{
+			Filename:    "bar.txt",
+			ContentType: "text/plain",
+			Content:     io.NopCloser(strings.NewReader("Hello, world!")),
+		},
+		options: kivik.Rev("1-53929381825df5c0a2b57f34d168999d"),
+		wantRev: "2-53929381825df5c0a2b57f34d168999d",
+		wantRevs: []leaf{
+			{
+				ID:    "foo",
+				Rev:   1,
+				RevID: "53929381825df5c0a2b57f34d168999d",
+			},
+			{
+				ID:          "foo",
+				Rev:         2,
+				RevID:       "53929381825df5c0a2b57f34d168999d",
+				ParentRev:   &[]int{1}[0],
+				ParentRevID: &[]string{"53929381825df5c0a2b57f34d168999d"}[0],
+			},
+		},
+		wantAttachments: []attachmentRow{
+			{
+				DocID:       "foo",
+				Rev:         1,
+				RevID:       "53929381825df5c0a2b57f34d168999d",
+				Filename:    "foo.txt",
+				ContentType: "text/plain",
+				Digest:      "md5-bNNVbesNpUvKBgtMOUeYOQ==",
+				Length:      13,
+				Data:        "Hello, world!",
+			},
+			{
+				DocID:       "foo",
+				Rev:         2,
+				RevID:       "53929381825df5c0a2b57f34d168999d",
+				Filename:    "bar.txt",
+				ContentType: "text/plain",
+				Digest:      "md5-bNNVbesNpUvKBgtMOUeYOQ==",
+				Length:      13,
+				Data:        "Hello, world!",
+			},
+		},
+	})
 	/*
 		TODO:
-		- Don't delete existing attachments when adding a new one with this method
+		- Add attachment to conflicting leaf
 		- Update an existing attachment
 	*/
 

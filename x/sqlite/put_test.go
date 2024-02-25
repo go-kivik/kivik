@@ -915,6 +915,7 @@ func TestDBPut(t *testing.T) {
 	})
 	/*
 		TODO:
+		- update conflicting leaf
 		- delete attachments only in one branch of a document
 		- Omit attachments to delete
 		- Include stub to update doc without deleting attachments

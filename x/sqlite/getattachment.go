@@ -2,6 +2,8 @@ package sqlite
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -10,21 +12,23 @@ import (
 )
 
 func (d *db) GetAttachment(ctx context.Context, docID string, filename string, _ driver.Options) (*driver.Attachment, error) {
-	var found bool
-
-	err := d.db.QueryRowContext(ctx, fmt.Sprintf(`
-		SELECT EXISTS (
-			SELECT 1
-			FROM %[1]q AS att
-			WHERE att.id = $1
-			AND att.filename = $2
-		)
-		`, d.name+"_attachments"), docID, filename).Scan(&found)
+	attachment, err := d.attachmentExists(ctx, docID, filename)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, &internal.Error{Status: http.StatusNotFound, Message: "Not Found: missing"}
+	}
 	if err != nil {
 		return nil, err
 	}
-	if found {
-		return &driver.Attachment{}, nil
-	}
-	return nil, &internal.Error{Status: http.StatusNotFound, Message: "Not Found: missing"}
+
+	return attachment, nil
+}
+
+func (d *db) attachmentExists(ctx context.Context, docID string, filename string) (*driver.Attachment, error) {
+	var att driver.Attachment
+	err := d.db.QueryRowContext(ctx, fmt.Sprintf(`
+		SELECT filename, content_type, length, rev
+		FROM %s
+		WHERE id = $1 AND filename = $2
+		`, d.name+"_attachments"), docID, filename).Scan(&att.Filename, &att.ContentType, &att.Size, &att.RevPos)
+	return &att, err
 }

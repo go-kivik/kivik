@@ -414,7 +414,7 @@ func TestDBPut(t *testing.T) {
 			"new_edits": false,
 			"rev":       "1-abc",
 		}),
-		wantStatus: http.StatusConflict,
+		wantStatus: http.StatusBadRequest,
 		wantErr:    "Document rev and option have different values",
 	})
 	tests.Add("new_edits=false, with _revisions replayed", test{
@@ -915,6 +915,7 @@ func TestDBPut(t *testing.T) {
 	})
 	/*
 		TODO:
+		- update conflicting leaf
 		- delete attachments only in one branch of a document
 		- Omit attachments to delete
 		- Include stub to update doc without deleting attachments
@@ -938,6 +939,9 @@ func TestDBPut(t *testing.T) {
 		rev, err := dbc.Put(context.Background(), tt.docID, tt.doc, opts)
 		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %s", err)
+		}
+		if status := kivik.HTTPStatus(err); status != tt.wantStatus {
+			t.Errorf("Unexpected status: %d", status)
 		}
 		if tt.check != nil {
 			tt.check(t, dbc)

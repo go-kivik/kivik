@@ -18,7 +18,9 @@ package sqlite
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
+	"strings"
 	"testing"
 
 	"gitlab.com/flimzy/testy"
@@ -1017,6 +1019,41 @@ func TestDBGet(t *testing.T) {
 					"digest":       "md5-a4NyknGw7YOh+a5ezPdZ4A==",
 					"revpos":       float64(1),
 					"length":       float64(7),
+					"stub":         true,
+				},
+			},
+		},
+	})
+	tests.Add("after PutAttachment", test{
+		setup: func(t *testing.T, d driver.DB) {
+			_, err := d.Put(context.Background(), "foo", map[string]string{
+				"foo": "aaa",
+			}, mock.NilOption)
+			if err != nil {
+				t.Fatal(err)
+			}
+			att := driver.Attachment{
+				ContentType: "text/plain",
+				Filename:    "att.txt",
+				Content:     io.NopCloser(strings.NewReader("test")),
+			}
+
+			_, err = d.PutAttachment(context.Background(), "foo", &att, kivik.Rev("1-8655eafbc9513d4857258c6d48f40399"))
+			if err != nil {
+				t.Fatal(err)
+			}
+		},
+		id: "foo",
+		wantDoc: map[string]interface{}{
+			"_id":  "foo",
+			"_rev": "2-8655eafbc9513d4857258c6d48f40399",
+			"foo":  "aaa",
+			"_attachments": map[string]interface{}{
+				"att.txt": map[string]interface{}{
+					"content_type": "text/plain",
+					"digest":       "md5-CY9rzUYh03PK3k6DJie09g==",
+					"revpos":       float64(2),
+					"length":       float64(4),
 					"stub":         true,
 				},
 			},

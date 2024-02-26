@@ -26,10 +26,6 @@ type db struct {
 
 var _ driver.DB = (*db)(nil)
 
-func (db) CreateDoc(context.Context, interface{}, driver.Options) (string, string, error) {
-	return "", "", nil
-}
-
 func (db) Stats(context.Context) (*driver.DBStats, error) {
 	return nil, nil
 }
@@ -48,10 +44,6 @@ func (db) ViewCleanup(context.Context) error {
 
 func (db) Changes(context.Context, driver.Options) (driver.Changes, error) {
 	return nil, nil
-}
-
-func (db) PutAttachment(context.Context, string, *driver.Attachment, driver.Options) (string, error) {
-	return "", nil
 }
 
 func (db) GetAttachment(context.Context, string, string, driver.Options) (*driver.Attachment, error) {

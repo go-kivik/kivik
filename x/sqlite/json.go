@@ -89,12 +89,15 @@ type attachment struct {
 	Content []byte          `json:"-"`
 }
 
+// calculate calculates the length, digest, and content of the attachment.
 func (a *attachment) calculate(filename string) error {
-	if a.Data == nil {
+	if a.Data == nil && len(a.Content) == 0 {
 		return &internal.Error{Status: http.StatusBadRequest, Err: fmt.Errorf("invalid attachment data for %q", filename)}
 	}
-	if err := json.Unmarshal(a.Data, &a.Content); err != nil {
-		return &internal.Error{Status: http.StatusBadRequest, Err: fmt.Errorf("invalid attachment data for %q: %w", filename, err)}
+	if len(a.Content) == 0 {
+		if err := json.Unmarshal(a.Data, &a.Content); err != nil {
+			return &internal.Error{Status: http.StatusBadRequest, Err: fmt.Errorf("invalid attachment data for %q: %w", filename, err)}
+		}
 	}
 	a.Length = int64(len(a.Content))
 	h := md5.New()

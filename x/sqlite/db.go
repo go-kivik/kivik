@@ -46,10 +46,6 @@ func (db) Changes(context.Context, driver.Options) (driver.Changes, error) {
 	return nil, nil
 }
 
-func (db) GetAttachment(context.Context, string, string, driver.Options) (*driver.Attachment, error) {
-	return nil, nil
-}
-
 func (db) Query(context.Context, string, string, driver.Options) (driver.Rows, error) {
 	return nil, nil
 }

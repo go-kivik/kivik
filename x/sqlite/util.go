@@ -15,9 +15,13 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
+	"net/http"
 	"sort"
 	"strings"
+
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 func placeholders(start, count int) string {
@@ -145,4 +149,27 @@ func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev re
 	}
 
 	return r, nil
+}
+
+// docRevExists returns an error if the requested document does not exist. It
+// returns false if the document does exist, but the specified revision is not
+// the latest. It returns true, nil if both the doc and revision are valid.
+func (d *db) docRevExists(ctx context.Context, tx *sql.Tx, docID string, rev revision) (bool, error) {
+	var found bool
+	err := tx.QueryRowContext(ctx, fmt.Sprintf(`
+		SELECT child.id IS NULL
+		FROM %[2]q AS rev
+		LEFT JOIN %[2]q AS child ON rev.id = child.id AND rev.rev = child.parent_rev AND rev.rev_id = child.parent_rev_id
+		JOIN %[1]q AS doc ON rev.id = doc.id AND rev.rev = doc.rev AND rev.rev_id = doc.rev_id
+		WHERE rev.id = $1
+			AND rev.rev = $2
+			AND rev.rev_id = $3
+	`, d.name, d.name+"_revs"), docID, rev.rev, rev.id).Scan(&found)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return false, &internal.Error{Status: http.StatusNotFound, Message: "not found"}
+	case err != nil:
+		return false, err
+	}
+	return found, nil
 }

@@ -20,7 +20,11 @@ import (
 	"github.com/go-kivik/kivik/v4/internal"
 )
 
-func (d *db) DeleteAttachment(ctx context.Context, docID, filename string, _ driver.Options) (string, error) {
+func (d *db) DeleteAttachment(ctx context.Context, docID, filename string, options driver.Options) (string, error) {
+	opts := newOpts(options)
+	if rev := opts.rev(); rev == "" {
+		return "", &internal.Error{Status: http.StatusConflict, Message: "conflict"}
+	}
 	tx, err := d.db.BeginTx(ctx, nil)
 	if err != nil {
 		return "", err

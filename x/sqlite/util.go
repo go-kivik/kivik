@@ -167,7 +167,7 @@ func (d *db) docRevExists(ctx context.Context, tx *sql.Tx, docID string, rev rev
 	`, d.name, d.name+"_revs"), docID, rev.rev, rev.id).Scan(&found)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
-		return false, &internal.Error{Status: http.StatusNotFound, Message: "not found"}
+		return false, &internal.Error{Status: http.StatusNotFound, Message: "document not found"}
 	case err != nil:
 		return false, err
 	}

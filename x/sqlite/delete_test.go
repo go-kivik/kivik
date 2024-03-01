@@ -43,7 +43,7 @@ func TestDBDelete(t *testing.T) {
 		id:         "foo",
 		options:    kivik.Rev("1-9bb58f26192e4ba00f01e2e7b136bbd8"),
 		wantStatus: http.StatusNotFound,
-		wantErr:    "not found",
+		wantErr:    "document not found",
 	})
 	tests.Add("success", test{
 		setup: func(t *testing.T, d driver.DB) {

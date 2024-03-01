@@ -63,12 +63,23 @@ func TestDBDeleteAttachment(t *testing.T) {
 		wantErr:    "conflict",
 		wantStatus: http.StatusConflict,
 	})
+	tests.Add("doc exists, but wrong rev provided", test{
+		setup: func(t *testing.T, d driver.DB) {
+			_, err := d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
+			if err != nil {
+				t.Fatal(err)
+			}
+		},
+		docID:      "foo",
+		filename:   "foo.txt",
+		options:    kivik.Rev("1-wrong"),
+		wantErr:    "document not found",
+		wantStatus: http.StatusNotFound,
+	})
 
 	/*
 		TODO:
 		- db missing => db not found
-		- doc does not exist at specified rev => missing rev
-		- doc does exist, no rev specified => conflict
 		- file does not exist => file not found
 	*/
 

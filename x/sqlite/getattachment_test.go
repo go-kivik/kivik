@@ -155,6 +155,41 @@ func TestDBGetAttachment(t *testing.T) {
 		wantStatus: http.StatusNotFound,
 		wantErr:    "Not Found: missing",
 	})
+	tests.Add("document has been been updated since attachment was added, should succeed", func(t *testing.T) interface{} {
+		db := newDB(t)
+		rev, err := db.Put(context.Background(), "foo", map[string]interface{}{
+			"_id": "foo",
+			"_attachments": map[string]interface{}{
+				"foo.txt": map[string]interface{}{
+					"content_type": "text/plain",
+					"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
+				},
+			},
+		}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = db.Put(context.Background(), "foo", map[string]interface{}{
+			"_id":     "foo",
+			"updated": true,
+		}, kivik.Rev(rev))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return test{
+			db:       db,
+			docID:    "foo",
+			filename: "foo.txt",
+			wantAttachment: &attachment{
+				Filename:    "foo.txt",
+				ContentType: "text/plain",
+				Length:      25,
+				RevPos:      1,
+				Data:        "This is a base64 encoding",
+			},
+		}
+	})
 	// GetAttachment returns the latest revision by default
 	//
 

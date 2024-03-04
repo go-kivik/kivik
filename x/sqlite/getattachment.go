@@ -26,7 +26,13 @@ import (
 )
 
 func (d *db) GetAttachment(ctx context.Context, docID string, filename string, _ driver.Options) (*driver.Attachment, error) {
-	attachment, err := d.attachmentExists(ctx, docID, filename)
+	tx, err := d.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	attachment, err := d.attachmentExists(ctx, tx, docID, filename)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, &internal.Error{Status: http.StatusNotFound, Message: "Not Found: missing"}
 	}
@@ -34,13 +40,17 @@ func (d *db) GetAttachment(ctx context.Context, docID string, filename string, _
 		return nil, err
 	}
 
-	return attachment, nil
+	return attachment, tx.Commit()
 }
 
-func (d *db) attachmentExists(ctx context.Context, docID string, filename string) (*driver.Attachment, error) {
+func (d *db) attachmentExists(
+	ctx context.Context,
+	tx *sql.Tx,
+	docID, filename string,
+) (*driver.Attachment, error) {
 	var att driver.Attachment
 	var data []byte
-	err := d.db.QueryRowContext(ctx, fmt.Sprintf(`
+	err := tx.QueryRowContext(ctx, fmt.Sprintf(`
 		SELECT filename, content_type, length, rev, data
 		FROM %s
 		WHERE id = $1 AND filename = $2

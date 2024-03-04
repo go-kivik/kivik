@@ -50,10 +50,6 @@ func (db) GetAttachment(context.Context, string, string, driver.Options) (*drive
 	return nil, nil
 }
 
-func (db) DeleteAttachment(context.Context, string, string, driver.Options) (string, error) {
-	return "", nil
-}
-
 func (db) Query(context.Context, string, string, driver.Options) (driver.Rows, error) {
 	return nil, nil
 }

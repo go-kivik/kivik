@@ -17,6 +17,7 @@ package sqlite
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"testing"
 
@@ -30,18 +31,19 @@ import (
 
 func TestDBGetAttachment(t *testing.T) {
 	t.Parallel()
-	type attachmentMetadata struct {
+	type attachment struct {
 		Filename    string
 		ContentType string
 		Length      int64
 		RevPos      int64
+		Data        string
 	}
 	type test struct {
 		db       driver.DB
 		docID    string
 		filename string
 
-		wantAttachment *attachmentMetadata
+		wantAttachment *attachment
 		wantStatus     int
 		wantErr        string
 	}
@@ -74,7 +76,7 @@ func TestDBGetAttachment(t *testing.T) {
 			filename: "foo.txt",
 		}
 	})
-	tests.Add("when an attachment is returned, it contains metadata...", func(t *testing.T) interface{} {
+	tests.Add("return an attachment when it exists", func(t *testing.T) interface{} {
 		db := newDB(t)
 		_, err := db.Put(context.Background(), "foo", map[string]interface{}{
 			"_id": "foo",
@@ -93,11 +95,12 @@ func TestDBGetAttachment(t *testing.T) {
 			db:       db,
 			docID:    "foo",
 			filename: "foo.txt",
-			wantAttachment: &attachmentMetadata{
+			wantAttachment: &attachment{
 				Filename:    "foo.txt",
 				ContentType: "text/plain",
 				Length:      25,
 				RevPos:      1,
+				Data:        "This is a base64 encoding",
 			},
 		}
 	})
@@ -133,7 +136,7 @@ func TestDBGetAttachment(t *testing.T) {
 		// if opts == nil {
 		opts := mock.NilOption
 		// }
-		attachment, err := db.GetAttachment(context.Background(), tt.docID, tt.filename, opts)
+		att, err := db.GetAttachment(context.Background(), tt.docID, tt.filename, opts)
 		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}
@@ -144,11 +147,16 @@ func TestDBGetAttachment(t *testing.T) {
 		if tt.wantAttachment == nil {
 			return
 		}
-		got := &attachmentMetadata{
-			Filename:    attachment.Filename,
-			ContentType: attachment.ContentType,
-			Length:      attachment.Size,
-			RevPos:      attachment.RevPos,
+		data, err := io.ReadAll(att.Content)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := &attachment{
+			Filename:    att.Filename,
+			ContentType: att.ContentType,
+			Length:      att.Size,
+			RevPos:      att.RevPos,
+			Data:        string(data),
 		}
 		if d := cmp.Diff(tt.wantAttachment, got); d != "" {
 			t.Errorf("Unexpected attachment metadata:\n%s", d)

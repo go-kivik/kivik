@@ -13,10 +13,12 @@
 package sqlite
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
@@ -37,10 +39,12 @@ func (d *db) GetAttachment(ctx context.Context, docID string, filename string, _
 
 func (d *db) attachmentExists(ctx context.Context, docID string, filename string) (*driver.Attachment, error) {
 	var att driver.Attachment
+	var data []byte
 	err := d.db.QueryRowContext(ctx, fmt.Sprintf(`
-		SELECT filename, content_type, length, rev
+		SELECT filename, content_type, length, rev, data
 		FROM %s
 		WHERE id = $1 AND filename = $2
-		`, d.name+"_attachments"), docID, filename).Scan(&att.Filename, &att.ContentType, &att.Size, &att.RevPos)
+		`, d.name+"_attachments"), docID, filename).Scan(&att.Filename, &att.ContentType, &att.Size, &att.RevPos, &data)
+	att.Content = io.NopCloser(bytes.NewReader(data))
 	return &att, err
 }

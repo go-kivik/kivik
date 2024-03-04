@@ -32,7 +32,12 @@ func (d *db) GetAttachment(ctx context.Context, docID string, filename string, _
 	}
 	defer tx.Rollback()
 
-	attachment, err := d.attachmentExists(ctx, tx, docID, filename)
+	curRev, err := d.currentRev(ctx, tx, docID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, &internal.Error{Status: http.StatusNotFound, Message: "Not Found: missing"}
+	}
+
+	attachment, err := d.attachmentExists(ctx, tx, docID, filename, curRev)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, &internal.Error{Status: http.StatusNotFound, Message: "Not Found: missing"}
 	}
@@ -47,14 +52,19 @@ func (d *db) attachmentExists(
 	ctx context.Context,
 	tx *sql.Tx,
 	docID, filename string,
+	rev revision,
 ) (*driver.Attachment, error) {
 	var att driver.Attachment
 	var data []byte
 	err := tx.QueryRowContext(ctx, fmt.Sprintf(`
 		SELECT filename, content_type, length, rev, data
 		FROM %s
-		WHERE id = $1 AND filename = $2
-		`, d.name+"_attachments"), docID, filename).Scan(&att.Filename, &att.ContentType, &att.Size, &att.RevPos, &data)
+		WHERE id = $1
+			AND filename = $2
+			AND rev = $3
+			AND rev_id = $4
+		`, d.name+"_attachments"), docID, filename, rev.rev, rev.id).
+		Scan(&att.Filename, &att.ContentType, &att.Size, &att.RevPos, &data)
 	att.Content = io.NopCloser(bytes.NewReader(data))
 	return &att, err
 }

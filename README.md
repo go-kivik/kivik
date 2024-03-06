@@ -13,26 +13,19 @@ implemented by SQL and NoSQL databases such as CouchDB.
 
 # Versions
 
-You are browsing the **development** branch of Kivik. The latest stable version
-is available [here](https://github.com/go-kivik/kivik/tree/v3). Please
-consult the documentation on that page for proper installation of the stable
-branch.
-
-This branch which will eventually become the Kivik 4.0.0 release. The API is
-subject to rapid and unannounced changes at this stage of development. For
-production work, you are encouraged to use the latest 3.x release of Kivik,
-which is stable. [Read a partial list of breaking changes](#changes-from-3x-to-4x).
+You are browsing the current **stable** branch of Kivik, v4. If you are upgrading
+from the previous stable version, v3, [read the list of breaking changes](#changes-from-3x-to-4x).
 
 Example configuration for common dependency managers follow.
 
 ## Go Modules
 
 Kivik 3.x and later supports Go modules, which is the recommended way to use it
-for Go version 1.11 or newer. Kivik 4.x only supports Go 1.17 and later. If your project is already using Go modules, simply fetch the desired version:
+for Go version 1.11 or newer. Kivik 4.x only supports Go 1.17 and later. If your
+project is already using Go modules, simply fetch the desired version:
 
 ```shell
-go get github.com/go-kivik/kivik/v3 # Stable release
-go get github.com/go-kivik/kivik/v4 # Development release
+go get github.com/go-kivik/kivik/v4
 ```
 
 # Installation
@@ -47,10 +40,11 @@ This will install the main Kivik package and the CouchDB database driver. Three 
   - PouchDB: https://github.com/go-kivik/kivik/v4/pouchdb (requires GopherJS)
   - MockDB: https://github.com/go-kivik/kivik/v4/mockdb
 
-In addition, there are two partial/experimental drivers available:
+In addition, there are partial/experimental drivers available:
 
   - FilesystemDB: https://github.com/go-kivik/kivik/v4/x/fsdb
   - MemoryDB: https://github.com/go-kivik/kivik/v4/x/memorydb
+  - SQLite: https://github.com/go-kivik/kivik/v4/x/sqlite
 
 # CLI
 

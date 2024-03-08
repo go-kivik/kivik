@@ -25,7 +25,7 @@ func ExampleHTTPStatus() {
 		panic(err)
 	}
 	row := client.DB("foo").Get(context.Background(), "my_doc_id")
-	switch kivik.HTTPStatus(row.Err()) {
+	switch err := row.Err(); kivik.HTTPStatus(err) {
 	case http.StatusNotFound:
 		return
 	case http.StatusUnauthorized:

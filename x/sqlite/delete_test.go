@@ -30,7 +30,7 @@ import (
 func TestDBDelete(t *testing.T) {
 	t.Parallel()
 	type test struct {
-		setup      func(*testing.T, driver.DB)
+		db         driver.DB
 		id         string
 		options    driver.Options
 		wantRev    string
@@ -45,96 +45,110 @@ func TestDBDelete(t *testing.T) {
 		wantStatus: http.StatusNotFound,
 		wantErr:    "document not found",
 	})
-	tests.Add("success", test{
-		setup: func(t *testing.T, d driver.DB) {
-			_, err := d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-		},
-		id:      "foo",
-		options: kivik.Rev("1-9bb58f26192e4ba00f01e2e7b136bbd8"),
-		wantRev: "2-df2a4fe30cde39c357c8d1105748d1b9",
-		check: func(t *testing.T, d driver.DB) {
-			var deleted bool
-			err := d.(*db).db.QueryRow(`
+	tests.Add("success", func(t *testing.T) interface{} {
+		dbc := newDB(t)
+		rev, err := dbc.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return test{
+			db:      dbc,
+			id:      "foo",
+			options: kivik.Rev(rev),
+			wantRev: "2-df2a4fe30cde39c357c8d1105748d1b9",
+			check: func(t *testing.T, d driver.DB) {
+				var deleted bool
+				err := d.(*db).db.QueryRow(`
 				SELECT deleted
 				FROM test
 				WHERE id='foo'
 				ORDER BY rev DESC, rev_id DESC
 				LIMIT 1
 			`).Scan(&deleted)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if !deleted {
-				t.Errorf("Document not marked deleted")
-			}
-		},
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !deleted {
+					t.Errorf("Document not marked deleted")
+				}
+			},
+		}
 	})
-	tests.Add("replay delete should conflict", test{
-		setup: func(t *testing.T, d driver.DB) {
-			rev, err := d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = d.Delete(context.Background(), "foo", kivik.Rev(rev))
-			if err != nil {
-				t.Fatal(err)
-			}
-		},
-		id:         "foo",
-		options:    kivik.Rev("1-9bb58f26192e4ba00f01e2e7b136bbd8"),
-		wantStatus: http.StatusConflict,
-		wantErr:    "conflict",
-	})
-	tests.Add("delete deleted doc should succeed", test{
-		setup: func(t *testing.T, d driver.DB) {
-			rev, err := d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = d.Delete(context.Background(), "foo", kivik.Rev(rev))
-			if err != nil {
-				t.Fatal(err)
-			}
-		},
-		id:      "foo",
-		options: kivik.Rev("2-df2a4fe30cde39c357c8d1105748d1b9"),
-		wantRev: "3-df2a4fe30cde39c357c8d1105748d1b9",
-	})
-	tests.Add("delete without rev", test{
-		setup: func(t *testing.T, d driver.DB) {
-			_, err := d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-		},
-		id:         "foo",
-		wantStatus: http.StatusConflict,
-		wantErr:    "conflict",
-	})
+	tests.Add("replay delete should conflict", func(t *testing.T) interface{} {
+		db := newDB(t)
+		rev, err := db.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = db.Delete(context.Background(), "foo", kivik.Rev(rev))
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	tests.Add("delete losing rev for conflict should succeed", test{
-		setup: func(t *testing.T, db driver.DB) {
-			_, err := db.Put(context.Background(), "foo", map[string]string{
-				"cat":  "meow",
-				"_rev": "1-xxx",
-			}, kivik.Param("new_edits", false))
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = db.Put(context.Background(), "foo", map[string]string{
-				"cat":  "purr",
-				"_rev": "1-aaa",
-			}, kivik.Param("new_edits", false))
-			if err != nil {
-				t.Fatal(err)
-			}
-		},
-		id:      "foo",
-		options: kivik.Rev("1-aaa"),
-		wantRev: "2-df2a4fe30cde39c357c8d1105748d1b9",
+		return test{
+			db:         db,
+			id:         "foo",
+			options:    kivik.Rev(rev),
+			wantStatus: http.StatusConflict,
+			wantErr:    "conflict",
+		}
+	})
+	tests.Add("delete deleted doc should succeed", func(t *testing.T) interface{} {
+		db := newDB(t)
+		rev, err := db.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+		rev2, err := db.Delete(context.Background(), "foo", kivik.Rev(rev))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return test{
+			db:      db,
+			id:      "foo",
+			options: kivik.Rev(rev2),
+			wantRev: "3-df2a4fe30cde39c357c8d1105748d1b9",
+		}
+	})
+	tests.Add("delete without rev", func(t *testing.T) interface{} {
+		db := newDB(t)
+		_, err := db.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return test{
+			db:         db,
+			id:         "foo",
+			wantStatus: http.StatusConflict,
+			wantErr:    "conflict",
+		}
+	})
+	tests.Add("delete losing rev for conflict should succeed", func(t *testing.T) interface{} {
+		db := newDB(t)
+		_, err := db.Put(context.Background(), "foo", map[string]string{
+			"cat":  "meow",
+			"_rev": "1-xxx",
+		}, kivik.Param("new_edits", false))
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = db.Put(context.Background(), "foo", map[string]string{
+			"cat":  "purr",
+			"_rev": "1-aaa",
+		}, kivik.Param("new_edits", false))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return test{
+			db:      db,
+			id:      "foo",
+			options: kivik.Rev("1-aaa"),
+			wantRev: "2-df2a4fe30cde39c357c8d1105748d1b9",
+		}
 	})
 	tests.Add("invalid rev format", test{
 		id:         "foo",
@@ -149,9 +163,9 @@ func TestDBDelete(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()
-		db := newDB(t)
-		if tt.setup != nil {
-			tt.setup(t, db)
+		db := tt.db
+		if db == nil {
+			db = newDB(t)
 		}
 		opts := tt.options
 		if opts == nil {

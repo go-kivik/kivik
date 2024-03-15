@@ -31,7 +31,7 @@ import (
 func TestDBDeleteAttachment(t *testing.T) {
 	t.Parallel()
 	type test struct {
-		setup           func(*testing.T, driver.DB)
+		db              driver.DB
 		docID           string
 		filename        string
 		options         driver.Options
@@ -51,30 +51,36 @@ func TestDBDeleteAttachment(t *testing.T) {
 		wantErr:    "document not found",
 		wantStatus: http.StatusNotFound,
 	})
-	tests.Add("doc exists, but no rev provided", test{
-		setup: func(t *testing.T, d driver.DB) {
-			_, err := d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-		},
-		docID:      "foo",
-		filename:   "foo.txt",
-		wantErr:    "conflict",
-		wantStatus: http.StatusConflict,
+	tests.Add("doc exists, but no rev provided", func(t *testing.T) interface{} {
+		db := newDB(t)
+		_, err := db.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return test{
+			db:         db,
+			docID:      "foo",
+			filename:   "foo.txt",
+			wantErr:    "conflict",
+			wantStatus: http.StatusConflict,
+		}
 	})
-	tests.Add("doc exists, but wrong rev provided", test{
-		setup: func(t *testing.T, d driver.DB) {
-			_, err := d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-		},
-		docID:      "foo",
-		filename:   "foo.txt",
-		options:    kivik.Rev("1-wrong"),
-		wantErr:    "document not found",
-		wantStatus: http.StatusNotFound,
+	tests.Add("doc exists, but wrong rev provided", func(t *testing.T) interface{} {
+		db := newDB(t)
+		_, err := db.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return test{
+			db:         db,
+			docID:      "foo",
+			filename:   "foo.txt",
+			options:    kivik.Rev("1-wrong"),
+			wantErr:    "document not found",
+			wantStatus: http.StatusNotFound,
+		}
 	})
 
 	/*
@@ -85,9 +91,9 @@ func TestDBDeleteAttachment(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()
-		dbc := newDB(t)
-		if tt.setup != nil {
-			tt.setup(t, dbc)
+		dbc := tt.db
+		if dbc == nil {
+			dbc = newDB(t)
 		}
 		opts := tt.options
 		if opts == nil {

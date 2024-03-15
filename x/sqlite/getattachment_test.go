@@ -37,7 +37,7 @@ func TestDBGetAttachment(t *testing.T) {
 		RevPos      int64
 	}
 	type test struct {
-		setup    func(t *testing.T, db driver.DB)
+		db       driver.DB
 		docID    string
 		filename string
 
@@ -53,48 +53,55 @@ func TestDBGetAttachment(t *testing.T) {
 		wantStatus: http.StatusNotFound,
 		wantErr:    "Not Found: missing",
 	})
-	tests.Add("when the attachment exists, return it", test{
-		setup: func(t *testing.T, db driver.DB) {
-			_, err := db.Put(context.Background(), "foo", map[string]interface{}{
-				"_id": "foo",
-				"_attachments": map[string]interface{}{
-					"foo.txt": map[string]interface{}{
-						"content_type": "text/plain",
-						"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
-					},
+	tests.Add("when the attachment exists, return it", func(t *testing.T) interface{} {
+		db := newDB(t)
+		_, err := db.Put(context.Background(), "foo", map[string]interface{}{
+			"_id": "foo",
+			"_attachments": map[string]interface{}{
+				"foo.txt": map[string]interface{}{
+					"content_type": "text/plain",
+					"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
 				},
-			}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-		},
-		docID:    "foo",
-		filename: "foo.txt",
+			},
+		}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return test{
+			db:       db,
+			docID:    "foo",
+			filename: "foo.txt",
+		}
 	})
-	tests.Add("when an attachment is returned, it contains metadata...", test{
-		setup: func(t *testing.T, db driver.DB) {
-			_, err := db.Put(context.Background(), "foo", map[string]interface{}{
-				"_id": "foo",
-				"_attachments": map[string]interface{}{
-					"foo.txt": map[string]interface{}{
-						"content_type": "text/plain",
-						"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
-					},
+	tests.Add("when an attachment is returned, it contains metadata...", func(t *testing.T) interface{} {
+		db := newDB(t)
+		_, err := db.Put(context.Background(), "foo", map[string]interface{}{
+			"_id": "foo",
+			"_attachments": map[string]interface{}{
+				"foo.txt": map[string]interface{}{
+					"content_type": "text/plain",
+					"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
 				},
-			}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-		},
-		docID:    "foo",
-		filename: "foo.txt",
-		wantAttachment: &attachmentMetadata{
-			Filename:    "foo.txt",
-			ContentType: "text/plain",
-			Length:      25,
-			RevPos:      1,
-		},
+			},
+		}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return test{
+			db:       db,
+			docID:    "foo",
+			filename: "foo.txt",
+			wantAttachment: &attachmentMetadata{
+				Filename:    "foo.txt",
+				ContentType: "text/plain",
+				Length:      25,
+				RevPos:      1,
+			},
+		}
 	})
+
 	// GetAttachment returns the latest revision by default
 	//
 
@@ -118,9 +125,9 @@ func TestDBGetAttachment(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()
-		db := newDB(t)
-		if tt.setup != nil {
-			tt.setup(t, db)
+		db := tt.db
+		if db == nil {
+			db = newDB(t)
 		}
 		// opts := tt.options
 		// if opts == nil {

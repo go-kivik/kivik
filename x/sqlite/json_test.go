@@ -68,8 +68,8 @@ func Test_prepareDoc(t *testing.T) {
 				"foo":      "bar",
 			},
 			want: &docData{
-				RevID:   "6872a0fc474ada5c46ce054b92897063",
-				Doc:     []byte(`{"_deleted":true,"foo":"bar"}`),
+				RevID:   "9bb58f26192e4ba00f01e2e7b136bbd8",
+				Doc:     []byte(`{"foo":"bar"}`),
 				Deleted: true,
 			},
 		},

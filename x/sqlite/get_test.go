@@ -16,6 +16,7 @@
 package sqlite
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io"
@@ -1175,8 +1176,9 @@ func TestDBGet(t *testing.T) {
 		if err != nil {
 			return
 		}
+		body, _ := io.ReadAll(doc.Body)
 		var gotDoc interface{}
-		if err := json.NewDecoder(doc.Body).Decode(&gotDoc); err != nil {
+		if err := json.NewDecoder(bytes.NewReader(body)).Decode(&gotDoc); err != nil {
 			t.Fatal(err)
 		}
 		if d := testy.DiffAsJSON(tt.wantDoc, gotDoc); d != nil {

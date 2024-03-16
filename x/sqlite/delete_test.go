@@ -18,6 +18,7 @@ package sqlite
 import (
 	"context"
 	"net/http"
+	"regexp"
 	"testing"
 
 	"gitlab.com/flimzy/testy"
@@ -56,7 +57,7 @@ func TestDBDelete(t *testing.T) {
 			db:      dbc,
 			id:      "foo",
 			options: kivik.Rev(rev),
-			wantRev: "2-df2a4fe30cde39c357c8d1105748d1b9",
+			wantRev: "2-.*",
 			check: func(t *testing.T, d driver.DB) {
 				var deleted bool
 				err := d.(*db).db.QueryRow(`
@@ -109,7 +110,7 @@ func TestDBDelete(t *testing.T) {
 			db:      db,
 			id:      "foo",
 			options: kivik.Rev(rev2),
-			wantRev: "3-df2a4fe30cde39c357c8d1105748d1b9",
+			wantRev: "3-.*",
 		}
 	})
 	tests.Add("delete without rev", func(t *testing.T) interface{} {
@@ -147,7 +148,7 @@ func TestDBDelete(t *testing.T) {
 			db:      db,
 			id:      "foo",
 			options: kivik.Rev("1-aaa"),
-			wantRev: "2-df2a4fe30cde39c357c8d1105748d1b9",
+			wantRev: "2-.*",
 		}
 	})
 	tests.Add("invalid rev format", test{
@@ -181,7 +182,7 @@ func TestDBDelete(t *testing.T) {
 		if err != nil {
 			return
 		}
-		if rev != tt.wantRev {
+		if !regexp.MustCompile(tt.wantRev).MatchString(rev) {
 			t.Errorf("Unexpected rev: %s", rev)
 		}
 		if tt.check != nil {

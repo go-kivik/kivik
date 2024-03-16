@@ -39,7 +39,7 @@ type rowResult struct {
 func TestDBAllDocs(t *testing.T) {
 	t.Parallel()
 	type test struct {
-		setup      func(*testing.T, driver.DB)
+		db         driver.DB
 		options    driver.Options
 		want       []rowResult
 		wantStatus int
@@ -49,509 +49,559 @@ func TestDBAllDocs(t *testing.T) {
 	tests.Add("no docs in db", test{
 		want: nil,
 	})
-	tests.Add("single doc", test{
-		setup: func(t *testing.T, db driver.DB) {
-			_, err := db.Put(context.Background(), "foo", map[string]string{"cat": "meow"}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-		},
-		want: []rowResult{
-			{
-				ID:    "foo",
-				Rev:   "1-274558516009acbe973682d27a58b598",
-				Value: `{"value":{"rev":"1-274558516009acbe973682d27a58b598"}}` + "\n",
+	tests.Add("single doc", func(t *testing.T) interface{} {
+		db := newDB(t)
+		_, err := db.Put(context.Background(), "foo", map[string]string{"cat": "meow"}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return test{
+			db: db,
+			want: []rowResult{
+				{
+					ID:    "foo",
+					Rev:   "1-274558516009acbe973682d27a58b598",
+					Value: `{"value":{"rev":"1-274558516009acbe973682d27a58b598"}}` + "\n",
+				},
 			},
-		},
+		}
 	})
-	tests.Add("include_docs=true", test{
-		setup: func(t *testing.T, db driver.DB) {
-			_, err := db.Put(context.Background(), "foo", map[string]string{"cat": "meow"}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-		},
-		options: kivik.Param("include_docs", true),
-		want: []rowResult{
-			{
-				ID:    "foo",
-				Rev:   "1-274558516009acbe973682d27a58b598",
-				Value: `{"value":{"rev":"1-274558516009acbe973682d27a58b598"}}` + "\n",
-				Doc:   `{"_id":"foo","_rev":"1-274558516009acbe973682d27a58b598","cat":"meow"}`,
+	tests.Add("include_docs=true", func(t *testing.T) interface{} {
+		db := newDB(t)
+		_, err := db.Put(context.Background(), "foo", map[string]string{"cat": "meow"}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return test{
+			db:      db,
+			options: kivik.Param("include_docs", true),
+			want: []rowResult{
+				{
+					ID:    "foo",
+					Rev:   "1-274558516009acbe973682d27a58b598",
+					Value: `{"value":{"rev":"1-274558516009acbe973682d27a58b598"}}` + "\n",
+					Doc:   `{"_id":"foo","_rev":"1-274558516009acbe973682d27a58b598","cat":"meow"}`,
+				},
 			},
-		},
+		}
 	})
-	tests.Add("single doc multiple revisions", test{
-		setup: func(t *testing.T, db driver.DB) {
-			_, err := db.Put(context.Background(), "foo", map[string]string{"cat": "meow"}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = db.Put(context.Background(), "foo", map[string]string{"cat": "purr"}, kivik.Rev("1-274558516009acbe973682d27a58b598"))
-			if err != nil {
-				t.Fatal(err)
-			}
-		},
-		want: []rowResult{
-			{
-				ID:    "foo",
-				Rev:   "2-c1f7f9ed8874502b095381186a35af4b",
-				Value: `{"value":{"rev":"2-c1f7f9ed8874502b095381186a35af4b"}}` + "\n",
+	tests.Add("single doc multiple revisions", func(t *testing.T) interface{} {
+		db := newDB(t)
+		_, err := db.Put(context.Background(), "foo", map[string]string{"cat": "meow"}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = db.Put(context.Background(), "foo", map[string]string{"cat": "purr"}, kivik.Rev("1-274558516009acbe973682d27a58b598"))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return test{
+			db: db,
+			want: []rowResult{
+				{
+					ID:    "foo",
+					Rev:   "2-c1f7f9ed8874502b095381186a35af4b",
+					Value: `{"value":{"rev":"2-c1f7f9ed8874502b095381186a35af4b"}}` + "\n",
+				},
 			},
-		},
+		}
 	})
-	tests.Add("conflicting document, select winning rev", test{
-		setup: func(t *testing.T, db driver.DB) {
-			_, err := db.Put(context.Background(), "foo", map[string]string{
-				"cat":  "meow",
-				"_rev": "1-xxx",
-			}, kivik.Param("new_edits", false))
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = db.Put(context.Background(), "foo", map[string]string{
-				"cat":  "purr",
-				"_rev": "1-aaa",
-			}, kivik.Param("new_edits", false))
-			if err != nil {
-				t.Fatal(err)
-			}
-		},
-		want: []rowResult{
-			{
-				ID:    "foo",
-				Rev:   "1-xxx",
-				Value: `{"value":{"rev":"1-xxx"}}` + "\n",
+	tests.Add("conflicting document, select winning rev", func(t *testing.T) interface{} {
+		db := newDB(t)
+		_, err := db.Put(context.Background(), "foo", map[string]string{
+			"cat":  "meow",
+			"_rev": "1-xxx",
+		}, kivik.Param("new_edits", false))
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = db.Put(context.Background(), "foo", map[string]string{
+			"cat":  "purr",
+			"_rev": "1-aaa",
+		}, kivik.Param("new_edits", false))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return test{
+			db: db,
+			want: []rowResult{
+				{
+					ID:    "foo",
+					Rev:   "1-xxx",
+					Value: `{"value":{"rev":"1-xxx"}}` + "\n",
+				},
 			},
-		},
+		}
 	})
-	tests.Add("deleted doc", test{
-		setup: func(t *testing.T, db driver.DB) {
-			_, err := db.Put(context.Background(), "foo", map[string]string{"cat": "meow"}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = db.Delete(context.Background(), "foo", kivik.Rev("1-274558516009acbe973682d27a58b598"))
-			if err != nil {
-				t.Fatal(err)
-			}
-		},
-		want: nil,
+	tests.Add("deleted doc", func(t *testing.T) interface{} {
+		db := newDB(t)
+		_, err := db.Put(context.Background(), "foo", map[string]string{"cat": "meow"}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = db.Delete(context.Background(), "foo", kivik.Rev("1-274558516009acbe973682d27a58b598"))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return test{
+			db:   db,
+			want: nil,
+		}
 	})
-	tests.Add("select lower revision number when higher rev in winning branch has been deleted", test{
-		setup: func(t *testing.T, db driver.DB) {
-			_, err := db.Put(context.Background(), "foo", map[string]string{
-				"cat":  "meow",
-				"_rev": "1-xxx",
-			}, kivik.Param("new_edits", false))
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = db.Put(context.Background(), "foo", map[string]string{
-				"cat":  "purr",
-				"_rev": "1-aaa",
-			}, kivik.Param("new_edits", false))
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = db.Delete(context.Background(), "foo", kivik.Rev("1-aaa"))
-			if err != nil {
-				t.Fatal(err)
-			}
-		},
-		want: []rowResult{
-			{
-				ID:    "foo",
-				Rev:   "1-xxx",
-				Value: `{"value":{"rev":"1-xxx"}}` + "\n",
+	tests.Add("select lower revision number when higher rev in winning branch has been deleted", func(t *testing.T) interface{} {
+		db := newDB(t)
+		_, err := db.Put(context.Background(), "foo", map[string]string{
+			"cat":  "meow",
+			"_rev": "1-xxx",
+		}, kivik.Param("new_edits", false))
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = db.Put(context.Background(), "foo", map[string]string{
+			"cat":  "purr",
+			"_rev": "1-aaa",
+		}, kivik.Param("new_edits", false))
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = db.Delete(context.Background(), "foo", kivik.Rev("1-aaa"))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return test{
+			db: db,
+			want: []rowResult{
+				{
+					ID:    "foo",
+					Rev:   "1-xxx",
+					Value: `{"value":{"rev":"1-xxx"}}` + "\n",
+				},
 			},
-		},
+		}
 	})
-	tests.Add("conflicts=true", test{
-		setup: func(t *testing.T, db driver.DB) {
-			_, err := db.Put(context.Background(), "foo", map[string]string{
-				"cat":  "meow",
-				"_rev": "1-xxx",
-			}, kivik.Param("new_edits", false))
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = db.Put(context.Background(), "foo", map[string]string{
-				"cat":  "purr",
-				"_rev": "1-aaa",
-			}, kivik.Param("new_edits", false))
-			if err != nil {
-				t.Fatal(err)
-			}
-		},
-		options: kivik.Params(map[string]interface{}{
-			"conflicts":    true,
-			"include_docs": true,
-		}),
-		want: []rowResult{
-			{
-				ID:    "foo",
-				Rev:   "1-xxx",
-				Value: `{"value":{"rev":"1-xxx"}}` + "\n",
-				Doc:   `{"_id":"foo","_rev":"1-xxx","cat":"meow","_conflicts":["1-aaa"]}`,
+	tests.Add("conflicts=true", func(t *testing.T) interface{} {
+		db := newDB(t)
+		_, err := db.Put(context.Background(), "foo", map[string]string{
+			"cat":  "meow",
+			"_rev": "1-xxx",
+		}, kivik.Param("new_edits", false))
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = db.Put(context.Background(), "foo", map[string]string{
+			"cat":  "purr",
+			"_rev": "1-aaa",
+		}, kivik.Param("new_edits", false))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return test{
+			db: db,
+			options: kivik.Params(map[string]interface{}{
+				"conflicts":    true,
+				"include_docs": true,
+			}),
+			want: []rowResult{
+				{
+					ID:    "foo",
+					Rev:   "1-xxx",
+					Value: `{"value":{"rev":"1-xxx"}}` + "\n",
+					Doc:   `{"_id":"foo","_rev":"1-xxx","cat":"meow","_conflicts":["1-aaa"]}`,
+				},
 			},
-		},
+		}
 	})
-	tests.Add("conflicts=true ignored without include_docs", test{
-		setup: func(t *testing.T, db driver.DB) {
-			_, err := db.Put(context.Background(), "foo", map[string]string{
-				"cat":  "meow",
-				"_rev": "1-xxx",
-			}, kivik.Param("new_edits", false))
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = db.Put(context.Background(), "foo", map[string]string{
-				"cat":  "purr",
-				"_rev": "1-aaa",
-			}, kivik.Param("new_edits", false))
-			if err != nil {
-				t.Fatal(err)
-			}
-		},
-		options: kivik.Params(map[string]interface{}{
-			"conflicts": true,
-		}),
-		want: []rowResult{
-			{
-				ID:    "foo",
-				Rev:   "1-xxx",
-				Value: `{"value":{"rev":"1-xxx"}}` + "\n",
+	tests.Add("conflicts=true ignored without include_docs", func(t *testing.T) interface{} {
+		db := newDB(t)
+		_, err := db.Put(context.Background(), "foo", map[string]string{
+			"cat":  "meow",
+			"_rev": "1-xxx",
+		}, kivik.Param("new_edits", false))
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = db.Put(context.Background(), "foo", map[string]string{
+			"cat":  "purr",
+			"_rev": "1-aaa",
+		}, kivik.Param("new_edits", false))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return test{
+			db: db,
+			options: kivik.Params(map[string]interface{}{
+				"conflicts": true,
+			}),
+			want: []rowResult{
+				{
+					ID:    "foo",
+					Rev:   "1-xxx",
+					Value: `{"value":{"rev":"1-xxx"}}` + "\n",
+				},
 			},
-		},
+		}
 	})
-	tests.Add("default sorting", test{
-		setup: func(t *testing.T, db driver.DB) {
-			_, err := db.Put(context.Background(), "cat", map[string]string{
-				"cat": "meow",
-			}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = db.Put(context.Background(), "dog", map[string]string{
-				"dog": "woof",
-			}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = db.Put(context.Background(), "cow", map[string]string{
-				"cow": "moo",
-			}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-		},
-		want: []rowResult{
-			{
-				ID:    "cat",
-				Rev:   "1-274558516009acbe973682d27a58b598",
-				Value: `{"value":{"rev":"1-274558516009acbe973682d27a58b598"}}` + "\n",
+	tests.Add("default sorting", func(t *testing.T) interface{} {
+		db := newDB(t)
+		_, err := db.Put(context.Background(), "cat", map[string]string{
+			"cat": "meow",
+		}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = db.Put(context.Background(), "dog", map[string]string{
+			"dog": "woof",
+		}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = db.Put(context.Background(), "cow", map[string]string{
+			"cow": "moo",
+		}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return test{
+			db: db,
+			want: []rowResult{
+				{
+					ID:    "cat",
+					Rev:   "1-274558516009acbe973682d27a58b598",
+					Value: `{"value":{"rev":"1-274558516009acbe973682d27a58b598"}}` + "\n",
+				},
+				{
+					ID:    "cow",
+					Rev:   "1-80b1ed11e92f08613f0007cc2b2f486d",
+					Value: `{"value":{"rev":"1-80b1ed11e92f08613f0007cc2b2f486d"}}` + "\n",
+				},
+				{
+					ID:    "dog",
+					Rev:   "1-a5f1dc478532231c6252f63fa94f433a",
+					Value: `{"value":{"rev":"1-a5f1dc478532231c6252f63fa94f433a"}}` + "\n",
+				},
 			},
-			{
-				ID:    "cow",
-				Rev:   "1-80b1ed11e92f08613f0007cc2b2f486d",
-				Value: `{"value":{"rev":"1-80b1ed11e92f08613f0007cc2b2f486d"}}` + "\n",
-			},
-			{
-				ID:    "dog",
-				Rev:   "1-a5f1dc478532231c6252f63fa94f433a",
-				Value: `{"value":{"rev":"1-a5f1dc478532231c6252f63fa94f433a"}}` + "\n",
-			},
-		},
+		}
 	})
-	tests.Add("descending=true", test{
-		setup: func(t *testing.T, db driver.DB) {
-			_, err := db.Put(context.Background(), "cat", map[string]string{
-				"cat": "meow",
-			}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = db.Put(context.Background(), "dog", map[string]string{
-				"dog": "woof",
-			}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = db.Put(context.Background(), "cow", map[string]string{
-				"cow": "moo",
-			}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-		},
-		options: kivik.Param("descending", true),
-		want: []rowResult{
-			{
-				ID:    "dog",
-				Rev:   "1-a5f1dc478532231c6252f63fa94f433a",
-				Value: `{"value":{"rev":"1-a5f1dc478532231c6252f63fa94f433a"}}` + "\n",
+	tests.Add("descending=true", func(t *testing.T) interface{} {
+		db := newDB(t)
+		_, err := db.Put(context.Background(), "cat", map[string]string{
+			"cat": "meow",
+		}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = db.Put(context.Background(), "dog", map[string]string{
+			"dog": "woof",
+		}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = db.Put(context.Background(), "cow", map[string]string{
+			"cow": "moo",
+		}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return test{
+			db:      db,
+			options: kivik.Param("descending", true),
+			want: []rowResult{
+				{
+					ID:    "dog",
+					Rev:   "1-a5f1dc478532231c6252f63fa94f433a",
+					Value: `{"value":{"rev":"1-a5f1dc478532231c6252f63fa94f433a"}}` + "\n",
+				},
+				{
+					ID:    "cow",
+					Rev:   "1-80b1ed11e92f08613f0007cc2b2f486d",
+					Value: `{"value":{"rev":"1-80b1ed11e92f08613f0007cc2b2f486d"}}` + "\n",
+				},
+				{
+					ID:    "cat",
+					Rev:   "1-274558516009acbe973682d27a58b598",
+					Value: `{"value":{"rev":"1-274558516009acbe973682d27a58b598"}}` + "\n",
+				},
 			},
-			{
-				ID:    "cow",
-				Rev:   "1-80b1ed11e92f08613f0007cc2b2f486d",
-				Value: `{"value":{"rev":"1-80b1ed11e92f08613f0007cc2b2f486d"}}` + "\n",
-			},
-			{
-				ID:    "cat",
-				Rev:   "1-274558516009acbe973682d27a58b598",
-				Value: `{"value":{"rev":"1-274558516009acbe973682d27a58b598"}}` + "\n",
-			},
-		},
+		}
 	})
-	tests.Add("endkey", test{
-		setup: func(t *testing.T, db driver.DB) {
-			_, err := db.Put(context.Background(), "cat", map[string]string{
-				"cat": "meow",
-			}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = db.Put(context.Background(), "dog", map[string]string{
-				"dog": "woof",
-			}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = db.Put(context.Background(), "cow", map[string]string{
-				"cow": "moo",
-			}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-		},
-		options: kivik.Param("endkey", "cow"),
-		want: []rowResult{
-			{
-				ID:    "cat",
-				Rev:   "1-274558516009acbe973682d27a58b598",
-				Value: `{"value":{"rev":"1-274558516009acbe973682d27a58b598"}}` + "\n",
+	tests.Add("endkey", func(t *testing.T) interface{} {
+		db := newDB(t)
+		_, err := db.Put(context.Background(), "cat", map[string]string{
+			"cat": "meow",
+		}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = db.Put(context.Background(), "dog", map[string]string{
+			"dog": "woof",
+		}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = db.Put(context.Background(), "cow", map[string]string{
+			"cow": "moo",
+		}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return test{
+			db:      db,
+			options: kivik.Param("endkey", "cow"),
+			want: []rowResult{
+				{
+					ID:    "cat",
+					Rev:   "1-274558516009acbe973682d27a58b598",
+					Value: `{"value":{"rev":"1-274558516009acbe973682d27a58b598"}}` + "\n",
+				},
+				{
+					ID:    "cow",
+					Rev:   "1-80b1ed11e92f08613f0007cc2b2f486d",
+					Value: `{"value":{"rev":"1-80b1ed11e92f08613f0007cc2b2f486d"}}` + "\n",
+				},
 			},
-			{
-				ID:    "cow",
-				Rev:   "1-80b1ed11e92f08613f0007cc2b2f486d",
-				Value: `{"value":{"rev":"1-80b1ed11e92f08613f0007cc2b2f486d"}}` + "\n",
-			},
-		},
+		}
 	})
-	tests.Add("descending=true, endkey", test{
-		setup: func(t *testing.T, db driver.DB) {
-			_, err := db.Put(context.Background(), "cat", map[string]string{
-				"cat": "meow",
-			}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = db.Put(context.Background(), "dog", map[string]string{
-				"dog": "woof",
-			}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = db.Put(context.Background(), "cow", map[string]string{
-				"cow": "moo",
-			}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-		},
-		options: kivik.Params(map[string]interface{}{
-			"endkey":     "cow",
-			"descending": true,
-		}),
-		want: []rowResult{
-			{
-				ID:    "dog",
-				Rev:   "1-a5f1dc478532231c6252f63fa94f433a",
-				Value: `{"value":{"rev":"1-a5f1dc478532231c6252f63fa94f433a"}}` + "\n",
+	tests.Add("descending=true, endkey", func(t *testing.T) interface{} {
+		db := newDB(t)
+		_, err := db.Put(context.Background(), "cat", map[string]string{
+			"cat": "meow",
+		}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = db.Put(context.Background(), "dog", map[string]string{
+			"dog": "woof",
+		}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = db.Put(context.Background(), "cow", map[string]string{
+			"cow": "moo",
+		}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return test{
+			db: db,
+			options: kivik.Params(map[string]interface{}{
+				"endkey":     "cow",
+				"descending": true,
+			}),
+			want: []rowResult{
+				{
+					ID:    "dog",
+					Rev:   "1-a5f1dc478532231c6252f63fa94f433a",
+					Value: `{"value":{"rev":"1-a5f1dc478532231c6252f63fa94f433a"}}` + "\n",
+				},
+				{
+					ID:    "cow",
+					Rev:   "1-80b1ed11e92f08613f0007cc2b2f486d",
+					Value: `{"value":{"rev":"1-80b1ed11e92f08613f0007cc2b2f486d"}}` + "\n",
+				},
 			},
-			{
-				ID:    "cow",
-				Rev:   "1-80b1ed11e92f08613f0007cc2b2f486d",
-				Value: `{"value":{"rev":"1-80b1ed11e92f08613f0007cc2b2f486d"}}` + "\n",
-			},
-		},
+		}
 	})
-	tests.Add("end_key", test{
-		setup: func(t *testing.T, db driver.DB) {
-			_, err := db.Put(context.Background(), "cat", map[string]string{
-				"cat": "meow",
-			}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = db.Put(context.Background(), "dog", map[string]string{
-				"dog": "woof",
-			}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = db.Put(context.Background(), "cow", map[string]string{
-				"cow": "moo",
-			}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-		},
-		options: kivik.Param("end_key", "cow"),
-		want: []rowResult{
-			{
-				ID:    "cat",
-				Rev:   "1-274558516009acbe973682d27a58b598",
-				Value: `{"value":{"rev":"1-274558516009acbe973682d27a58b598"}}` + "\n",
+	tests.Add("end_key", func(t *testing.T) interface{} {
+		db := newDB(t)
+		_, err := db.Put(context.Background(), "cat", map[string]string{
+			"cat": "meow",
+		}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = db.Put(context.Background(), "dog", map[string]string{
+			"dog": "woof",
+		}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = db.Put(context.Background(), "cow", map[string]string{
+			"cow": "moo",
+		}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return test{
+			db:      db,
+			options: kivik.Param("end_key", "cow"),
+			want: []rowResult{
+				{
+					ID:    "cat",
+					Rev:   "1-274558516009acbe973682d27a58b598",
+					Value: `{"value":{"rev":"1-274558516009acbe973682d27a58b598"}}` + "\n",
+				},
+				{
+					ID:    "cow",
+					Rev:   "1-80b1ed11e92f08613f0007cc2b2f486d",
+					Value: `{"value":{"rev":"1-80b1ed11e92f08613f0007cc2b2f486d"}}` + "\n",
+				},
 			},
-			{
-				ID:    "cow",
-				Rev:   "1-80b1ed11e92f08613f0007cc2b2f486d",
-				Value: `{"value":{"rev":"1-80b1ed11e92f08613f0007cc2b2f486d"}}` + "\n",
-			},
-		},
+		}
 	})
-	tests.Add("endkey, inclusive_end=false", test{
-		setup: func(t *testing.T, db driver.DB) {
-			_, err := db.Put(context.Background(), "cat", map[string]string{
-				"cat": "meow",
-			}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = db.Put(context.Background(), "dog", map[string]string{
-				"dog": "woof",
-			}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = db.Put(context.Background(), "cow", map[string]string{
-				"cow": "moo",
-			}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-		},
-		options: kivik.Params(map[string]interface{}{
-			"endkey":        "cow",
-			"inclusive_end": false,
-		}),
-		want: []rowResult{
-			{
-				ID:    "cat",
-				Rev:   "1-274558516009acbe973682d27a58b598",
-				Value: `{"value":{"rev":"1-274558516009acbe973682d27a58b598"}}` + "\n",
+	tests.Add("endkey, inclusive_end=false", func(t *testing.T) interface{} {
+		db := newDB(t)
+		_, err := db.Put(context.Background(), "cat", map[string]string{
+			"cat": "meow",
+		}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = db.Put(context.Background(), "dog", map[string]string{
+			"dog": "woof",
+		}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = db.Put(context.Background(), "cow", map[string]string{
+			"cow": "moo",
+		}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return test{
+			db: db,
+			options: kivik.Params(map[string]interface{}{
+				"endkey":        "cow",
+				"inclusive_end": false,
+			}),
+			want: []rowResult{
+				{
+					ID:    "cat",
+					Rev:   "1-274558516009acbe973682d27a58b598",
+					Value: `{"value":{"rev":"1-274558516009acbe973682d27a58b598"}}` + "\n",
+				},
 			},
-		},
+		}
 	})
-	tests.Add("startkey", test{
-		setup: func(t *testing.T, db driver.DB) {
-			_, err := db.Put(context.Background(), "cat", map[string]string{
-				"cat": "meow",
-			}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = db.Put(context.Background(), "dog", map[string]string{
-				"dog": "woof",
-			}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = db.Put(context.Background(), "cow", map[string]string{
-				"cow": "moo",
-			}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-		},
-		options: kivik.Param("startkey", "cow"),
-		want: []rowResult{
-			{
-				ID:    "cow",
-				Rev:   "1-80b1ed11e92f08613f0007cc2b2f486d",
-				Value: `{"value":{"rev":"1-80b1ed11e92f08613f0007cc2b2f486d"}}` + "\n",
+	tests.Add("startkey", func(t *testing.T) interface{} {
+		db := newDB(t)
+		_, err := db.Put(context.Background(), "cat", map[string]string{
+			"cat": "meow",
+		}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = db.Put(context.Background(), "dog", map[string]string{
+			"dog": "woof",
+		}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = db.Put(context.Background(), "cow", map[string]string{
+			"cow": "moo",
+		}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return test{
+			db:      db,
+			options: kivik.Param("startkey", "cow"),
+			want: []rowResult{
+				{
+					ID:    "cow",
+					Rev:   "1-80b1ed11e92f08613f0007cc2b2f486d",
+					Value: `{"value":{"rev":"1-80b1ed11e92f08613f0007cc2b2f486d"}}` + "\n",
+				},
+				{
+					ID:    "dog",
+					Rev:   "1-a5f1dc478532231c6252f63fa94f433a",
+					Value: `{"value":{"rev":"1-a5f1dc478532231c6252f63fa94f433a"}}` + "\n",
+				},
 			},
-			{
-				ID:    "dog",
-				Rev:   "1-a5f1dc478532231c6252f63fa94f433a",
-				Value: `{"value":{"rev":"1-a5f1dc478532231c6252f63fa94f433a"}}` + "\n",
-			},
-		},
+		}
 	})
-	tests.Add("start_key", test{
-		setup: func(t *testing.T, db driver.DB) {
-			_, err := db.Put(context.Background(), "cat", map[string]string{
-				"cat": "meow",
-			}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = db.Put(context.Background(), "dog", map[string]string{
-				"dog": "woof",
-			}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = db.Put(context.Background(), "cow", map[string]string{
-				"cow": "moo",
-			}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-		},
-		options: kivik.Param("start_key", "cow"),
-		want: []rowResult{
-			{
-				ID:    "cow",
-				Rev:   "1-80b1ed11e92f08613f0007cc2b2f486d",
-				Value: `{"value":{"rev":"1-80b1ed11e92f08613f0007cc2b2f486d"}}` + "\n",
+	tests.Add("start_key", func(t *testing.T) interface{} {
+		db := newDB(t)
+		_, err := db.Put(context.Background(), "cat", map[string]string{
+			"cat": "meow",
+		}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = db.Put(context.Background(), "dog", map[string]string{
+			"dog": "woof",
+		}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = db.Put(context.Background(), "cow", map[string]string{
+			"cow": "moo",
+		}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return test{
+			db:      db,
+			options: kivik.Param("start_key", "cow"),
+			want: []rowResult{
+				{
+					ID:    "cow",
+					Rev:   "1-80b1ed11e92f08613f0007cc2b2f486d",
+					Value: `{"value":{"rev":"1-80b1ed11e92f08613f0007cc2b2f486d"}}` + "\n",
+				},
+				{
+					ID:    "dog",
+					Rev:   "1-a5f1dc478532231c6252f63fa94f433a",
+					Value: `{"value":{"rev":"1-a5f1dc478532231c6252f63fa94f433a"}}` + "\n",
+				},
 			},
-			{
-				ID:    "dog",
-				Rev:   "1-a5f1dc478532231c6252f63fa94f433a",
-				Value: `{"value":{"rev":"1-a5f1dc478532231c6252f63fa94f433a"}}` + "\n",
-			},
-		},
+		}
 	})
-	tests.Add("startkey, descending", test{
-		setup: func(t *testing.T, db driver.DB) {
-			_, err := db.Put(context.Background(), "cat", map[string]string{
-				"cat": "meow",
-			}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = db.Put(context.Background(), "dog", map[string]string{
-				"dog": "woof",
-			}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = db.Put(context.Background(), "cow", map[string]string{
-				"cow": "moo",
-			}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-		},
-		options: kivik.Params(map[string]interface{}{
-			"startkey":   "cow",
-			"descending": true,
-		}),
-		want: []rowResult{
-			{
-				ID:    "cow",
-				Rev:   "1-80b1ed11e92f08613f0007cc2b2f486d",
-				Value: `{"value":{"rev":"1-80b1ed11e92f08613f0007cc2b2f486d"}}` + "\n",
+	tests.Add("startkey, descending", func(t *testing.T) interface{} {
+		db := newDB(t)
+		_, err := db.Put(context.Background(), "cat", map[string]string{
+			"cat": "meow",
+		}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = db.Put(context.Background(), "dog", map[string]string{
+			"dog": "woof",
+		}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = db.Put(context.Background(), "cow", map[string]string{
+			"cow": "moo",
+		}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return test{
+			db: db,
+			options: kivik.Params(map[string]interface{}{
+				"startkey":   "cow",
+				"descending": true,
+			}),
+			want: []rowResult{
+				{
+					ID:    "cow",
+					Rev:   "1-80b1ed11e92f08613f0007cc2b2f486d",
+					Value: `{"value":{"rev":"1-80b1ed11e92f08613f0007cc2b2f486d"}}` + "\n",
+				},
+				{
+					ID:    "cat",
+					Rev:   "1-274558516009acbe973682d27a58b598",
+					Value: `{"value":{"rev":"1-274558516009acbe973682d27a58b598"}}` + "\n",
+				},
 			},
-			{
-				ID:    "cat",
-				Rev:   "1-274558516009acbe973682d27a58b598",
-				Value: `{"value":{"rev":"1-274558516009acbe973682d27a58b598"}}` + "\n",
-			},
-		},
+		}
 	})
 
 	/*
@@ -586,11 +636,11 @@ func TestDBAllDocs(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()
-		db := newDB(t)
-		opts := tt.options
-		if tt.setup != nil {
-			tt.setup(t, db)
+		db := tt.db
+		if db == nil {
+			db = newDB(t)
 		}
+		opts := tt.options
 		if opts == nil {
 			opts = mock.NilOption
 		}

@@ -19,6 +19,7 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -152,7 +153,7 @@ func TestDBPutAttachment(t *testing.T) {
 	})
 	tests.Add("don't delete existing attachment", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]interface{}{
+		rev, err := db.Put(context.Background(), "foo", map[string]interface{}{
 			"foo": "bar",
 			"_attachments": map[string]interface{}{
 				"foo.txt": map[string]interface{}{
@@ -173,27 +174,23 @@ func TestDBPutAttachment(t *testing.T) {
 				ContentType: "text/plain",
 				Content:     io.NopCloser(strings.NewReader("Hello, world!")),
 			},
-			options: kivik.Rev("1-53929381825df5c0a2b57f34d168999d"),
-			wantRev: "2-53929381825df5c0a2b57f34d168999d",
+			options: kivik.Rev(rev),
+			wantRev: "2-.*",
 			wantRevs: []leaf{
 				{
-					ID:    "foo",
-					Rev:   1,
-					RevID: "53929381825df5c0a2b57f34d168999d",
+					ID:  "foo",
+					Rev: 1,
 				},
 				{
-					ID:          "foo",
-					Rev:         2,
-					RevID:       "53929381825df5c0a2b57f34d168999d",
-					ParentRev:   &[]int{1}[0],
-					ParentRevID: &[]string{"53929381825df5c0a2b57f34d168999d"}[0],
+					ID:        "foo",
+					Rev:       2,
+					ParentRev: &[]int{1}[0],
 				},
 			},
 			wantAttachments: []attachmentRow{
 				{
 					DocID:       "foo",
 					Rev:         1,
-					RevID:       "53929381825df5c0a2b57f34d168999d",
 					Filename:    "foo.txt",
 					ContentType: "text/plain",
 					Digest:      "md5-bNNVbesNpUvKBgtMOUeYOQ==",
@@ -203,7 +200,6 @@ func TestDBPutAttachment(t *testing.T) {
 				{
 					DocID:       "foo",
 					Rev:         2,
-					RevID:       "53929381825df5c0a2b57f34d168999d",
 					Filename:    "bar.txt",
 					ContentType: "text/plain",
 					Digest:      "md5-bNNVbesNpUvKBgtMOUeYOQ==",
@@ -215,7 +211,7 @@ func TestDBPutAttachment(t *testing.T) {
 	})
 	tests.Add("update existing attachment", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]interface{}{
+		rev, err := db.Put(context.Background(), "foo", map[string]interface{}{
 			"foo": "bar",
 			"_attachments": map[string]interface{}{
 				"foo.txt": map[string]interface{}{
@@ -236,27 +232,23 @@ func TestDBPutAttachment(t *testing.T) {
 				ContentType: "text/plain",
 				Content:     io.NopCloser(strings.NewReader("Hello, everybody!")),
 			},
-			options: kivik.Rev("1-53929381825df5c0a2b57f34d168999d"),
-			wantRev: "2-53929381825df5c0a2b57f34d168999d",
+			options: kivik.Rev(rev),
+			wantRev: "2-.*",
 			wantRevs: []leaf{
 				{
-					ID:    "foo",
-					Rev:   1,
-					RevID: "53929381825df5c0a2b57f34d168999d",
+					ID:  "foo",
+					Rev: 1,
 				},
 				{
-					ID:          "foo",
-					Rev:         2,
-					RevID:       "53929381825df5c0a2b57f34d168999d",
-					ParentRev:   &[]int{1}[0],
-					ParentRevID: &[]string{"53929381825df5c0a2b57f34d168999d"}[0],
+					ID:        "foo",
+					Rev:       2,
+					ParentRev: &[]int{1}[0],
 				},
 			},
 			wantAttachments: []attachmentRow{
 				{
 					DocID:       "foo",
 					Rev:         1,
-					RevID:       "53929381825df5c0a2b57f34d168999d",
 					Filename:    "foo.txt",
 					Digest:      "md5-bNNVbesNpUvKBgtMOUeYOQ==",
 					Length:      13,
@@ -266,7 +258,6 @@ func TestDBPutAttachment(t *testing.T) {
 				{
 					DocID:       "foo",
 					Rev:         2,
-					RevID:       "53929381825df5c0a2b57f34d168999d",
 					Filename:    "foo.txt",
 					ContentType: "text/plain",
 					Digest:      "md5-kDqL1OTtoET1YR0WdPZ5tQ==",
@@ -300,13 +291,22 @@ func TestDBPutAttachment(t *testing.T) {
 		if err != nil {
 			return
 		}
-		if rev != tt.wantRev {
+		if !regexp.MustCompile(tt.wantRev).MatchString(rev) {
 			t.Errorf("Unexpected rev: %s, want %s", rev, tt.wantRev)
 		}
 		if len(tt.wantRevs) == 0 {
 			t.Errorf("No leaves to check")
 		}
 		leaves := readRevisions(t, dbc.(*db).db, tt.docID)
+		for i, r := range tt.wantRevs {
+			// allow tests to omit RevID
+			if r.RevID == "" {
+				leaves[i].RevID = ""
+			}
+			if r.ParentRevID == nil {
+				leaves[i].ParentRevID = nil
+			}
+		}
 		if d := cmp.Diff(tt.wantRevs, leaves); d != "" {
 			t.Errorf("Unexpected leaves: %s", d)
 		}

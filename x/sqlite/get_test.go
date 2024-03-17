@@ -16,6 +16,7 @@
 package sqlite
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io"
@@ -184,7 +185,7 @@ func TestDBGet(t *testing.T) {
 		return test{
 			db:      db,
 			id:      "foo",
-			options: kivik.Rev("2-df2a4fe30cde39c357c8d1105748d1b9"),
+			options: kivik.Rev(rev),
 			wantDoc: map[string]interface{}{
 				"_id":      "foo",
 				"_rev":     rev,
@@ -202,7 +203,7 @@ func TestDBGet(t *testing.T) {
 		return test{
 			db:      db,
 			id:      "foo",
-			options: kivik.Rev("1-6872a0fc474ada5c46ce054b92897063"),
+			options: kivik.Rev(rev),
 			wantDoc: map[string]interface{}{
 				"_id":      "foo",
 				"_rev":     rev,
@@ -1175,8 +1176,9 @@ func TestDBGet(t *testing.T) {
 		if err != nil {
 			return
 		}
+		body, _ := io.ReadAll(doc.Body)
 		var gotDoc interface{}
-		if err := json.NewDecoder(doc.Body).Decode(&gotDoc); err != nil {
+		if err := json.NewDecoder(bytes.NewReader(body)).Decode(&gotDoc); err != nil {
 			t.Fatal(err)
 		}
 		if d := testy.DiffAsJSON(tt.wantDoc, gotDoc); d != nil {

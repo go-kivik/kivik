@@ -136,6 +136,11 @@ func prepareDoc(docID string, doc interface{}) (*docData, error) {
 	if err := json.Unmarshal(tmpJSON, &data); err != nil {
 		return nil, &internal.Error{Status: http.StatusBadRequest, Err: err}
 	}
+	for key := range tmp {
+		if strings.HasPrefix(key, "_") {
+			delete(tmp, key)
+		}
+	}
 	if !data.Deleted {
 		delete(tmp, "_deleted")
 	}
@@ -191,6 +196,7 @@ type fullDoc struct {
 	Revisions        *revsInfo             `json:"_revisions,omitempty"`
 	LocalSeq         int                   `json:"_local_seq,omitempty"`
 	Attachments      map[string]attachment `json:"_attachments,omitempty"`
+	Deleted          bool                  `json:"_deleted,omitempty"`
 }
 
 func mergeIntoDoc(doc fullDoc) io.ReadCloser {
@@ -207,11 +213,13 @@ func mergeIntoDoc(doc fullDoc) io.ReadCloser {
 		_ = buf.WriteByte(',')
 	}
 
-	// The main doc
-	_, _ = buf.Write(doc.Doc[1 : len(doc.Doc)-1]) // Omit opening and closing braces
-	_ = buf.WriteByte(',')
-
 	const minJSONObjectLen = 2
+	if len(doc.Doc) > minJSONObjectLen {
+		// The main doc
+		_, _ = buf.Write(doc.Doc[1 : len(doc.Doc)-1]) // Omit opening and closing braces
+		_ = buf.WriteByte(',')
+	}
+
 	if tmp, _ := json.Marshal(doc); len(tmp) > minJSONObjectLen {
 		_, _ = buf.Write(tmp[1 : len(tmp)-1])
 		_ = buf.WriteByte(',')

@@ -119,8 +119,9 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 	}
 
 	toMerge := fullDoc{
-		ID:  id,
-		Rev: r.String(),
+		ID:      id,
+		Rev:     r.String(),
+		Deleted: deleted,
 	}
 
 	var (

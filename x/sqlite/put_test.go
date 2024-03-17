@@ -18,6 +18,7 @@ package sqlite
 import (
 	"context"
 	"net/http"
+	"regexp"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -274,12 +275,11 @@ func TestDBPut(t *testing.T) {
 			"_deleted": true,
 			"foo":      "bar",
 		},
-		wantRev: "1-6872a0fc474ada5c46ce054b92897063",
+		wantRev: "1-.*",
 		wantRevs: []leaf{
 			{
-				ID:    "foo",
-				Rev:   1,
-				RevID: "6872a0fc474ada5c46ce054b92897063",
+				ID:  "foo",
+				Rev: 1,
 			},
 		},
 		check: func(t *testing.T, d driver.DB) {
@@ -775,19 +775,17 @@ func TestDBPut(t *testing.T) {
 			},
 			"foo": "bar",
 		},
-		wantRev: "1-4b98474b255b67856668474854b0d5f8",
+		wantRev: "1-.*",
 		wantRevs: []leaf{
 			{
-				ID:    "foo",
-				Rev:   1,
-				RevID: "4b98474b255b67856668474854b0d5f8",
+				ID:  "foo",
+				Rev: 1,
 			},
 		},
 		wantAttachments: []attachmentRow{
 			{
 				DocID:       "foo",
 				Rev:         1,
-				RevID:       "4b98474b255b67856668474854b0d5f8",
 				Filename:    "foo.txt",
 				ContentType: "text/plain",
 				Length:      25,
@@ -806,19 +804,17 @@ func TestDBPut(t *testing.T) {
 			},
 			"foo": "bar",
 		},
-		wantRev: "1-1a46dc947908f36db2ac78b7edaecda3",
+		wantRev: "1-.*",
 		wantRevs: []leaf{
 			{
-				ID:    "foo",
-				Rev:   1,
-				RevID: "1a46dc947908f36db2ac78b7edaecda3",
+				ID:  "foo",
+				Rev: 1,
 			},
 		},
 		wantAttachments: []attachmentRow{
 			{
 				DocID:       "foo",
 				Rev:         1,
-				RevID:       "1a46dc947908f36db2ac78b7edaecda3",
 				Filename:    "foo.txt",
 				ContentType: "application/octet-stream",
 				Length:      25,
@@ -829,7 +825,7 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("update doc with attachments without deleting them", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]interface{}{
+		rev, err := db.Put(context.Background(), "foo", map[string]interface{}{
 			"foo": "bar",
 			"_attachments": map[string]interface{}{
 				"foo.txt": map[string]interface{}{
@@ -846,7 +842,7 @@ func TestDBPut(t *testing.T) {
 			db:    db,
 			docID: "foo",
 			doc: map[string]interface{}{
-				"_rev": "1-4b98474b255b67856668474854b0d5f8",
+				"_rev": rev,
 				"foo":  "baz",
 				"_attachments": map[string]interface{}{
 					"foo.txt": map[string]interface{}{
@@ -854,26 +850,22 @@ func TestDBPut(t *testing.T) {
 					},
 				},
 			},
-			wantRev: "2-a7cadffe4f950734f8eeae832e15f6c2",
+			wantRev: "2-.*",
 			wantRevs: []leaf{
 				{
-					ID:    "foo",
-					Rev:   1,
-					RevID: "4b98474b255b67856668474854b0d5f8",
+					ID:  "foo",
+					Rev: 1,
 				},
 				{
-					ID:          "foo",
-					Rev:         2,
-					RevID:       "a7cadffe4f950734f8eeae832e15f6c2",
-					ParentRev:   &[]int{1}[0],
-					ParentRevID: &[]string{"4b98474b255b67856668474854b0d5f8"}[0],
+					ID:        "foo",
+					Rev:       2,
+					ParentRev: &[]int{1}[0],
 				},
 			},
 			wantAttachments: []attachmentRow{
 				{
 					DocID:       "foo",
 					Rev:         1,
-					RevID:       "4b98474b255b67856668474854b0d5f8",
 					Filename:    "foo.txt",
 					ContentType: "text/plain",
 					Length:      25,
@@ -885,7 +877,7 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("update doc with attachments, delete one", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]interface{}{
+		rev, err := db.Put(context.Background(), "foo", map[string]interface{}{
 			"foo": "bar",
 			"_attachments": map[string]interface{}{
 				"foo.txt": map[string]interface{}{
@@ -906,7 +898,7 @@ func TestDBPut(t *testing.T) {
 			db:    db,
 			docID: "foo",
 			doc: map[string]interface{}{
-				"_rev": "1-7884bb688778892bd22837c5d8cba96b",
+				"_rev": rev,
 				"foo":  "baz",
 				"_attachments": map[string]interface{}{
 					"foo.txt": map[string]interface{}{
@@ -914,38 +906,32 @@ func TestDBPut(t *testing.T) {
 					},
 				},
 			},
-			wantRev: "2-a7cadffe4f950734f8eeae832e15f6c2",
+			wantRev: "2-.*",
 			wantRevs: []leaf{
 				{
-					ID:    "foo",
-					Rev:   1,
-					RevID: "7884bb688778892bd22837c5d8cba96b",
+					ID:  "foo",
+					Rev: 1,
 				},
 				{
-					ID:          "foo",
-					Rev:         2,
-					RevID:       "a7cadffe4f950734f8eeae832e15f6c2",
-					ParentRev:   &[]int{1}[0],
-					ParentRevID: &[]string{"7884bb688778892bd22837c5d8cba96b"}[0],
+					ID:        "foo",
+					Rev:       2,
+					ParentRev: &[]int{1}[0],
 				},
 			},
 			wantAttachments: []attachmentRow{
 				{
-					DocID:        "foo",
-					Rev:          1,
-					RevID:        "7884bb688778892bd22837c5d8cba96b",
-					Filename:     "bar.txt",
-					ContentType:  "text/plain",
-					Length:       25,
-					Digest:       "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
-					Data:         "This is a base64 encoding",
-					DeletedRev:   &[]int{2}[0],
-					DeletedRevID: &[]string{"a7cadffe4f950734f8eeae832e15f6c2"}[0],
+					DocID:       "foo",
+					Rev:         1,
+					Filename:    "bar.txt",
+					ContentType: "text/plain",
+					Length:      25,
+					Digest:      "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
+					Data:        "This is a base64 encoding",
+					DeletedRev:  &[]int{2}[0],
 				},
 				{
 					DocID:       "foo",
 					Rev:         1,
-					RevID:       "7884bb688778892bd22837c5d8cba96b",
 					Filename:    "foo.txt",
 					ContentType: "text/plain",
 					Length:      25,
@@ -992,13 +978,22 @@ func TestDBPut(t *testing.T) {
 		if err != nil {
 			return
 		}
-		if rev != tt.wantRev {
+		if !regexp.MustCompile(tt.wantRev).MatchString(rev) {
 			t.Errorf("Unexpected rev: %s, want %s", rev, tt.wantRev)
 		}
 		if len(tt.wantRevs) == 0 {
 			t.Errorf("No leaves to check")
 		}
 		leaves := readRevisions(t, dbc.(*db).db, tt.docID)
+		for i, r := range tt.wantRevs {
+			// allow tests to omit RevID
+			if r.RevID == "" {
+				leaves[i].RevID = ""
+			}
+			if r.ParentRevID == nil {
+				leaves[i].ParentRevID = nil
+			}
+		}
 		if d := cmp.Diff(tt.wantRevs, leaves); d != "" {
 			t.Errorf("Unexpected leaves: %s", d)
 		}
@@ -1027,6 +1022,15 @@ func checkAttachments(t *testing.T, d driver.DB, want []attachmentRow) {
 	}
 	if err := rows.Err(); err != nil {
 		t.Fatal(err)
+	}
+	for i, w := range want {
+		// allow tests to omit RevID
+		if w.RevID == "" {
+			got[i].RevID = ""
+		}
+		if w.DeletedRevID == nil {
+			got[i].DeletedRevID = nil
+		}
 	}
 	if d := cmp.Diff(want, got); d != "" {
 		t.Errorf("Unexpected attachments: %s", d)

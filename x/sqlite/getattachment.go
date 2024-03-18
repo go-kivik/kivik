@@ -26,7 +26,18 @@ import (
 )
 
 func (d *db) GetAttachment(ctx context.Context, docID string, filename string, _ driver.Options) (*driver.Attachment, error) {
-	attachment, err := d.attachmentExists(ctx, docID, filename)
+	tx, err := d.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	curRev, err := d.currentRev(ctx, tx, docID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, &internal.Error{Status: http.StatusNotFound, Message: "Not Found: missing"}
+	}
+
+	attachment, err := d.attachmentExists(ctx, tx, docID, filename, curRev)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, &internal.Error{Status: http.StatusNotFound, Message: "Not Found: missing"}
 	}
@@ -34,17 +45,26 @@ func (d *db) GetAttachment(ctx context.Context, docID string, filename string, _
 		return nil, err
 	}
 
-	return attachment, nil
+	return attachment, tx.Commit()
 }
 
-func (d *db) attachmentExists(ctx context.Context, docID string, filename string) (*driver.Attachment, error) {
+func (d *db) attachmentExists(
+	ctx context.Context,
+	tx *sql.Tx,
+	docID, filename string,
+	rev revision,
+) (*driver.Attachment, error) {
 	var att driver.Attachment
 	var data []byte
-	err := d.db.QueryRowContext(ctx, fmt.Sprintf(`
+	err := tx.QueryRowContext(ctx, fmt.Sprintf(`
 		SELECT filename, content_type, length, rev, data
 		FROM %s
-		WHERE id = $1 AND filename = $2
-		`, d.name+"_attachments"), docID, filename).Scan(&att.Filename, &att.ContentType, &att.Size, &att.RevPos, &data)
+		WHERE id = $1
+			AND filename = $2
+			AND rev = $3
+			AND rev_id = $4
+		`, d.name+"_attachments"), docID, filename, rev.rev, rev.id).
+		Scan(&att.Filename, &att.ContentType, &att.Size, &att.RevPos, &data)
 	att.Content = io.NopCloser(bytes.NewReader(data))
 	return &att, err
 }

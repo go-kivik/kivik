@@ -104,19 +104,42 @@ func TestDBGetAttachment(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("document has been deleted, should return not-found", func(t *testing.T) interface{} {
+		db := newDB(t)
+		rev, err := db.Put(context.Background(), "foo", map[string]interface{}{
+			"_id": "foo",
+			"_attachments": map[string]interface{}{
+				"foo.txt": map[string]interface{}{
+					"content_type": "text/plain",
+					"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
+				},
+			},
+		}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = db.Delete(context.Background(), "foo", kivik.Rev(rev))
+		if err != nil {
+			t.Fatal(err)
+		}
 
+		return test{
+			db:         db,
+			docID:      "foo",
+			filename:   "foo.txt",
+			wantStatus: http.StatusNotFound,
+			wantErr:    "Not Found: missing",
+		}
+	})
 	// GetAttachment returns the latest revision by default
 	//
 
 	/*
 		TODO:
-		- doc exists, and file exists, but doc is deleted
 		- return correct attachment in case of a conflict
 		- return existing file from existing doc
 		- request attachment from historical revision
 		- failure: request attachment from historical revision that does not exist
-
-
 
 		- GetAttachment returns 404 when the document does exist, but the attachment has never existed
 		- GetAttachment returns 404 when the document has never existed

@@ -34,13 +34,13 @@ func placeholders(start, count int) string {
 
 func (d *db) currentRev(ctx context.Context, tx *sql.Tx, docID string) (revision, error) {
 	var curRev revision
-	err := tx.QueryRowContext(ctx, fmt.Sprintf(`
+	err := tx.QueryRowContext(ctx, d.query(`
 		SELECT rev, rev_id
-		FROM %q
+		FROM {{ .Docs }}
 		WHERE id = $1
 		ORDER BY rev DESC, rev_id DESC
 		LIMIT 1
-	`, d.name), docID).Scan(&curRev.rev, &curRev.id)
+	`), docID).Scan(&curRev.rev, &curRev.id)
 	return curRev, err
 }
 
@@ -57,32 +57,32 @@ func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev re
 		curRevRev = &curRev.rev
 		curRevID = &curRev.id
 	}
-	err := tx.QueryRowContext(ctx, fmt.Sprintf(`
-		INSERT INTO %[1]q (id, rev, rev_id, parent_rev, parent_rev_id)
+	err := tx.QueryRowContext(ctx, d.query(`
+		INSERT INTO {{ .Revs }} (id, rev, rev_id, parent_rev, parent_rev_id)
 		SELECT $1, COALESCE(MAX(rev),0) + 1, $2, $3, $4
-		FROM %[1]q
+		FROM {{ .Revs }}
 		WHERE id = $1
 		RETURNING rev, rev_id
-	`, d.name+"_revs"), data.ID, data.RevID, curRevRev, curRevID).Scan(&r.rev, &r.id)
+	`), data.ID, data.RevID, curRevRev, curRevID).Scan(&r.rev, &r.id)
 	if err != nil {
 		return r, err
 	}
 	if len(data.Doc) == 0 {
 		// No body can happen for example when calling PutAttachment, so we
 		// create the new docs table entry by reading the previous one.
-		_, err = tx.ExecContext(ctx, fmt.Sprintf(`
-			INSERT INTO %[1]q (id, rev, rev_id, doc, deleted)
+		_, err = tx.ExecContext(ctx, d.query(`
+			INSERT INTO {{ .Docs }} (id, rev, rev_id, doc, deleted)
 			SELECT $1, $2, $3, doc, deleted
-			FROM %[1]q
+			FROM {{ .Docs }}
 			WHERE id = $1
 				AND rev = $2-1
 				AND rev_id = $3
-			`, d.name), data.ID, r.rev, r.id)
+			`), data.ID, r.rev, r.id)
 	} else {
-		_, err = tx.ExecContext(ctx, fmt.Sprintf(`
-			INSERT INTO %[1]q (id, rev, rev_id, doc, deleted)
+		_, err = tx.ExecContext(ctx, d.query(`
+			INSERT INTO {{ .Docs }} (id, rev, rev_id, doc, deleted)
 			VALUES ($1, $2, $3, $4, $5)
-		`, d.name), data.ID, r.rev, r.id, data.Doc, data.Deleted)
+		`), data.ID, r.rev, r.id, data.Doc, data.Deleted)
 	}
 	if err != nil {
 		return r, err
@@ -98,10 +98,10 @@ func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev re
 	}
 	sort.Strings(orderedFilenames)
 
-	stmt, err := tx.PrepareContext(ctx, fmt.Sprintf(`
-			INSERT INTO %[1]q (id, rev, rev_id, filename, content_type, length, digest, data)
+	stmt, err := tx.PrepareContext(ctx, d.query(`
+			INSERT INTO {{ .Attachments }} (id, rev, rev_id, filename, content_type, length, digest, data)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-		`, d.name+"_attachments"))
+		`))
 	if err != nil {
 		return r, err
 	}
@@ -135,14 +135,14 @@ func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev re
 	for _, filename := range orderedFilenames {
 		args = append(args, filename)
 	}
-	query := fmt.Sprintf(`
-			UPDATE %[1]q
+	query := d.query(`
+			UPDATE {{ .Attachments }}
 			SET deleted_rev = $1, deleted_rev_id = $2
 			WHERE id = $3
-				AND filename NOT IN (`+placeholders(len(args)-len(orderedFilenames)+1, len(orderedFilenames))+`)
+				AND filename NOT IN (` + placeholders(len(args)-len(orderedFilenames)+1, len(orderedFilenames)) + `)
 				AND deleted_rev IS NULL
 				AND deleted_rev_id IS NULL
-		`, d.name+"_attachments")
+		`)
 	_, err = tx.ExecContext(ctx, query, args...)
 	if err != nil {
 		return r, err
@@ -156,15 +156,15 @@ func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev re
 // the latest. It returns true, nil if both the doc and revision are valid.
 func (d *db) docRevExists(ctx context.Context, tx *sql.Tx, docID string, rev revision) (bool, error) {
 	var found bool
-	err := tx.QueryRowContext(ctx, fmt.Sprintf(`
+	err := tx.QueryRowContext(ctx, d.query(`
 		SELECT child.id IS NULL
-		FROM %[2]q AS rev
-		LEFT JOIN %[2]q AS child ON rev.id = child.id AND rev.rev = child.parent_rev AND rev.rev_id = child.parent_rev_id
-		JOIN %[1]q AS doc ON rev.id = doc.id AND rev.rev = doc.rev AND rev.rev_id = doc.rev_id
+		FROM {{ .Revs }} AS rev
+		LEFT JOIN {{ .Revs }} AS child ON rev.id = child.id AND rev.rev = child.parent_rev AND rev.rev_id = child.parent_rev_id
+		JOIN {{ .Docs }} AS doc ON rev.id = doc.id AND rev.rev = doc.rev AND rev.rev_id = doc.rev_id
 		WHERE rev.id = $1
 			AND rev.rev = $2
 			AND rev.rev_id = $3
-	`, d.name, d.name+"_revs"), docID, rev.rev, rev.id).Scan(&found)
+	`), docID, rev.rev, rev.id).Scan(&found)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return false, &internal.Error{Status: http.StatusNotFound, Message: "document not found"}

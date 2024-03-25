@@ -14,29 +14,29 @@ package sqlite
 
 var schema = []string{
 	// revs
-	`CREATE TABLE %[2]q (
+	`CREATE TABLE {{ .Revs }} (
 		id TEXT NOT NULL,
 		rev INTEGER NOT NULL,
 		rev_id TEXT NOT NULL,
 		parent_rev INTEGER,
 		parent_rev_id TEXT,
-		FOREIGN KEY (id, parent_rev, parent_rev_id) REFERENCES %[2]q (id, rev, rev_id) ON DELETE CASCADE,
+		FOREIGN KEY (id, parent_rev, parent_rev_id) REFERENCES {{ .Revs }} (id, rev, rev_id) ON DELETE CASCADE,
 		UNIQUE(id, rev, rev_id)
 	)`,
-	`CREATE INDEX idx_parent ON %[2]q (id, parent_rev, parent_rev_id)`,
+	`CREATE INDEX idx_parent ON {{ .Revs }} (id, parent_rev, parent_rev_id)`,
 	// the main db table
-	`CREATE TABLE %[1]q (
+	`CREATE TABLE {{ .Docs }} (
 		seq INTEGER PRIMARY KEY,
 		id TEXT NOT NULL,
 		rev INTEGER NOT NULL,
 		rev_id TEXT NOT NULL,
 		doc BLOB NOT NULL,
 		deleted BOOLEAN NOT NULL DEFAULT FALSE,
-		FOREIGN KEY (id, rev, rev_id) REFERENCES %[2]q (id, rev, rev_id) ON DELETE CASCADE,
+		FOREIGN KEY (id, rev, rev_id) REFERENCES {{ .Revs }} (id, rev, rev_id) ON DELETE CASCADE,
 		UNIQUE(id, rev, rev_id)
 	)`,
 	// attachments
-	`CREATE TABLE %[3]q (
+	`CREATE TABLE {{ .Attachments }} (
 		id TEXT NOT NULL,
 		rev INTEGER NOT NULL,
 		rev_id TEXT NOT NULL,
@@ -47,10 +47,10 @@ var schema = []string{
 		data BLOB NOT NULL,
 		deleted_rev INTEGER,
 		deleted_rev_id TEXT,
-		FOREIGN KEY (id, rev, rev_id) REFERENCES %[2]q (id, rev, rev_id) ON DELETE CASCADE,
+		FOREIGN KEY (id, rev, rev_id) REFERENCES {{ .Revs }} (id, rev, rev_id) ON DELETE CASCADE,
 		UNIQUE(id, rev, rev_id, filename)
 	)`,
-	`CREATE VIEW %[4]q AS
+	`CREATE VIEW {{ .Leaves }} AS
 		SELECT
 			doc.seq     AS seq,
 			rev.id      AS id,
@@ -58,9 +58,9 @@ var schema = []string{
 			rev.rev_id  AS rev_id,
 			doc.doc     AS doc,
 			doc.deleted AS deleted
-		FROM %[2]q AS rev
-		LEFT JOIN %[2]q AS child ON rev.id = child.id AND rev.rev = child.parent_rev AND rev.rev_id = child.parent_rev_id
-		JOIN %[1]q AS doc ON rev.id = doc.id AND rev.rev = doc.rev AND rev.rev_id = doc.rev_id
+		FROM {{ .Revs }} AS rev
+		LEFT JOIN {{ .Revs }} AS child ON rev.id = child.id AND rev.rev = child.parent_rev AND rev.rev_id = child.parent_rev_id
+		JOIN {{ .Docs }} AS doc ON rev.id = doc.id AND rev.rev = doc.rev AND rev.rev_id = doc.rev_id
 		WHERE child.id IS NULL
 	`,
 }

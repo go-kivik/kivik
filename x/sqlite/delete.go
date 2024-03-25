@@ -14,7 +14,6 @@ package sqlite
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
@@ -54,20 +53,20 @@ func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (
 		return "", &internal.Error{Status: http.StatusConflict, Message: "conflict"}
 	}
 	var r revision
-	err = tx.QueryRowContext(ctx, fmt.Sprintf(`
-		INSERT INTO %[1]q (id, rev, rev_id, parent_rev, parent_rev_id)
+	err = tx.QueryRowContext(ctx, d.query(`
+		INSERT INTO {{ .Revs }} (id, rev, rev_id, parent_rev, parent_rev_id)
 		SELECT $1, COALESCE(MAX(rev),0) + 1, $2, $3, $4
-		FROM %[1]q
+		FROM {{ .Revs }}
 		WHERE id = $1
 		RETURNING rev, rev_id
-	`, d.name+"_revs"), data.ID, data.RevID, delRev.rev, delRev.id).Scan(&r.rev, &r.id)
+	`), data.ID, data.RevID, delRev.rev, delRev.id).Scan(&r.rev, &r.id)
 	if err != nil {
 		return "", err
 	}
-	_, err = tx.ExecContext(ctx, fmt.Sprintf(`
-		INSERT INTO %[1]q (id, rev, rev_id, doc, deleted)
+	_, err = tx.ExecContext(ctx, d.query(`
+		INSERT INTO {{ .Docs }} (id, rev, rev_id, doc, deleted)
 		VALUES ($1, $2, $3, $4, TRUE)
-	`, d.name), data.ID, r.rev, r.id, data.Doc)
+	`), data.ID, r.rev, r.id, data.Doc)
 	if err != nil {
 		return "", err
 	}

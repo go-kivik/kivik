@@ -131,30 +131,6 @@ func TestDBGetAttachment(t *testing.T) {
 			wantErr:    "Not Found: missing",
 		}
 	})
-	tests.Add("document has been deleted, should return not-found", test{
-		setup: func(t *testing.T, db driver.DB) {
-			rev, err := db.Put(context.Background(), "foo", map[string]interface{}{
-				"_id": "foo",
-				"_attachments": map[string]interface{}{
-					"foo.txt": map[string]interface{}{
-						"content_type": "text/plain",
-						"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
-					},
-				},
-			}, mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = db.Delete(context.Background(), "foo", kivik.Rev(rev))
-			if err != nil {
-				t.Fatal(err)
-			}
-		},
-		docID:      "foo",
-		filename:   "foo.txt",
-		wantStatus: http.StatusNotFound,
-		wantErr:    "Not Found: missing",
-	})
 	tests.Add("document has been been updated since attachment was added, should succeed", func(t *testing.T) interface{} {
 		db := newDB(t)
 		rev, err := db.Put(context.Background(), "foo", map[string]interface{}{

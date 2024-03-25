@@ -71,7 +71,7 @@ func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, 
 		args = append(args, startkey)
 	}
 
-	query := fmt.Sprintf(`
+	query := fmt.Sprintf(d.query(`
 		WITH RankedRevisions AS (
 			SELECT
 				id                    AS id,
@@ -80,7 +80,7 @@ func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, 
 				IIF($1, doc, NULL)    AS doc,
 				deleted               AS deleted,
 				ROW_NUMBER() OVER (PARTITION BY id ORDER BY rev DESC, rev_id DESC) AS rank
-			FROM %[1]q AS rev
+			FROM {{ .Leaves }} AS rev
 			WHERE NOT deleted
 		)
 		SELECT
@@ -91,19 +91,17 @@ func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, 
 		FROM RankedRevisions AS rev
 		LEFT JOIN (
 			SELECT rev.id, rev.rev, rev.rev_id
-			FROM %[3]q AS rev
-			LEFT JOIN %[3]q AS child
+			FROM {{ .Revs }} AS rev
+			LEFT JOIN {{ .Revs }} AS child
 				ON child.id = rev.id
 				AND rev.rev = child.parent_rev
 				AND rev.rev_id = child.parent_rev_id
 			WHERE child.id IS NULL
 		) AS conflicts ON conflicts.id = rev.id AND NOT (rev.rev = conflicts.rev AND rev.rev_id = conflicts.rev_id)
-		WHERE %[5]s
+		WHERE %[2]s
 		GROUP BY rev.id, rev.rev, rev.rev_id
-		ORDER BY id %[4]s
-	`, d.name+"_leaves", d.name, d.name+"_revs", direction,
-		strings.Join(where, " AND "),
-	)
+		ORDER BY id %[1]s
+	`), direction, strings.Join(where, " AND "))
 	results, err := d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {
 		return nil, err

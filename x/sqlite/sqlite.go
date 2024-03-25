@@ -16,7 +16,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
@@ -125,8 +124,12 @@ func (c *client) CreateDB(ctx context.Context, name string, _ driver.Options) er
 		return err
 	}
 	defer tx.Rollback()
+	d := &db{
+		db:   c.db,
+		name: name,
+	}
 	for _, query := range schema {
-		_, err := tx.ExecContext(ctx, fmt.Sprintf(query, name, name+"_revs", name+"_attachments", name+"_leaves"))
+		_, err := tx.ExecContext(ctx, d.query(query))
 		if err == nil {
 			continue
 		}

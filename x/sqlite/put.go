@@ -16,7 +16,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
@@ -47,15 +46,15 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 
 	if data.Revisions.Start != 0 {
 		if newEdits {
-			stmt, err := tx.PrepareContext(ctx, fmt.Sprintf(`
+			stmt, err := tx.PrepareContext(ctx, d.query(`
 				SELECT EXISTS(
 					SELECT 1
-					FROM %[1]q
+					FROM {{ .Revs }}
 					WHERE id = $1
 						AND rev = $2
 						AND rev_id = $3
 				)
-			`, d.name+"_revs"))
+			`))
 			if err != nil {
 				return "", err
 			}
@@ -84,11 +83,11 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 	if !newEdits {
 		var rev revision
 		if data.Revisions.Start != 0 {
-			stmt, err := tx.PrepareContext(ctx, fmt.Sprintf(`
-				INSERT INTO %[1]q (id, rev, rev_id, parent_rev, parent_rev_id)
+			stmt, err := tx.PrepareContext(ctx, d.query(`
+				INSERT INTO {{ .Revs }} (id, rev, rev_id, parent_rev, parent_rev_id)
 				VALUES ($1, $2, $3, $4, $5)
 				ON CONFLICT DO UPDATE SET parent_rev = $4, parent_rev_id = $5
-			`, d.name+"_revs"))
+			`))
 			if err != nil {
 				return "", err
 			}
@@ -116,22 +115,22 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 			if err != nil {
 				return "", err
 			}
-			_, err = tx.ExecContext(ctx, fmt.Sprintf(`
-			INSERT INTO %[1]q (id, rev, rev_id)
+			_, err = tx.ExecContext(ctx, d.query(`
+			INSERT INTO {{ .Revs }} (id, rev, rev_id)
 			VALUES ($1, $2, $3)
 			ON CONFLICT DO NOTHING
-		`, d.name+"_revs"), docID, rev.rev, rev.id)
+		`), docID, rev.rev, rev.id)
 			if err != nil {
 				return "", err
 			}
 		}
 		var newRev string
-		err = tx.QueryRowContext(ctx, fmt.Sprintf(`
-			INSERT INTO %q (id, rev, rev_id, doc, deleted)
+		err = tx.QueryRowContext(ctx, d.query(`
+			INSERT INTO {{ .Docs }} (id, rev, rev_id, doc, deleted)
 			VALUES ($1, $2, $3, $4, $5)
 			ON CONFLICT DO NOTHING
 			RETURNING rev || '-' || rev_id
-		`, d.name), docID, rev.rev, rev.id, data.Doc, data.Deleted).Scan(&newRev)
+		`), docID, rev.rev, rev.id, data.Doc, data.Deleted).Scan(&newRev)
 		if errors.Is(err, sql.ErrNoRows) {
 			// No rows means a conflict, so  we assume that the documents are
 			// identical, for the sake of idempotency, and return the current

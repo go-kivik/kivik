@@ -17,7 +17,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -56,14 +55,14 @@ func (d *db) attachmentExists(
 ) (*driver.Attachment, error) {
 	var att driver.Attachment
 	var data []byte
-	err := tx.QueryRowContext(ctx, fmt.Sprintf(`
+	err := tx.QueryRowContext(ctx, d.query(`
 		SELECT filename, content_type, length, rev, data
-		FROM %s
+		FROM {{ .Attachments }}
 		WHERE id = $1
 			AND filename = $2
 			AND rev = $3
 			AND rev_id = $4
-		`, d.name+"_attachments"), docID, filename, rev.rev, rev.id).
+		`), docID, filename, rev.rev, rev.id).
 		Scan(&att.Filename, &att.ContentType, &att.Size, &att.RevPos, &data)
 	att.Content = io.NopCloser(bytes.NewReader(data))
 	return &att, err

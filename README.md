@@ -125,8 +125,7 @@ me know by submitting a bug report via GitHub.
 
 ## What is the development status?
 
-Kivik 4.x is under active development, and subject to radical, and unannounced
-API changes. For production use, please use [Kivik 3.x](https://github.com/go-kivik/kivik/tree/v3).
+Kivik 4.x is stable, and suitable for production use.
 
 ## Why the name "Kivik"?
 

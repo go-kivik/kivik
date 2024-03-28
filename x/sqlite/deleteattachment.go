@@ -14,15 +14,17 @@ package sqlite
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/internal"
 )
 
-func (d *db) DeleteAttachment(ctx context.Context, docID, _ string, options driver.Options) (string, error) {
+func (d *db) DeleteAttachment(ctx context.Context, docID, filename string, options driver.Options) (string, error) {
 	opts := newOpts(options)
-	if rev := opts.rev(); rev == "" {
+	if opts.rev() == "" {
 		return "", &internal.Error{Status: http.StatusConflict, Message: "conflict"}
 	}
 	tx, err := d.db.BeginTx(ctx, nil)
@@ -31,13 +33,30 @@ func (d *db) DeleteAttachment(ctx context.Context, docID, _ string, options driv
 	}
 	defer tx.Rollback()
 
-	rev := revision{}
-	found, err := d.docRevExists(ctx, tx, docID, rev)
+	data := &docData{
+		ID: docID,
+	}
+
+	curRev, err := d.currentRev(ctx, tx, docID)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return "", &internal.Error{Status: http.StatusNotFound, Message: "document not found"}
+	case err != nil:
+		return "", err
+	default:
+		data.RevID = curRev.id
+	}
+
+	if rev := opts.rev(); rev != "" && rev != curRev.String() {
+		return "", &internal.Error{Status: http.StatusConflict, Message: "conflict"}
+	}
+
+	data.RemovedAttachments = []string{filename}
+
+	r, err := d.createRev(ctx, tx, data, curRev)
 	if err != nil {
 		return "", err
 	}
-	if !found {
-		return "", &internal.Error{Status: http.StatusNotFound, Message: "document not found"}
-	}
-	return "", tx.Commit()
+
+	return r.String(), tx.Commit()
 }

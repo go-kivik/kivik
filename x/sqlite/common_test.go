@@ -17,6 +17,7 @@ package sqlite
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/go-kivik/kivik/v4/driver"
@@ -25,8 +26,20 @@ import (
 // newDB creates a new driver.DB instance backed by an in-memory SQLite database,
 // and registers a cleanup function to close the database when the test is done.
 func newDB(t *testing.T) driver.DB {
+	dsn := ":memory:"
+	if os.Getenv("KEEP_TEST_DB") != "" {
+		file, err := os.CreateTemp("", "kivik-sqlite-test-*.db")
+		if err != nil {
+			t.Fatal(err)
+		}
+		dsn = file.Name()
+		if err := file.Close(); err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("Test database: %s", dsn)
+	}
 	d := drv{}
-	client, err := d.NewClient(":memory:", nil)
+	client, err := d.NewClient(dsn, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

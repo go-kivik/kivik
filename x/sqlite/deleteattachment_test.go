@@ -18,6 +18,7 @@ package sqlite
 import (
 	"context"
 	"net/http"
+	"regexp"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -78,8 +79,54 @@ func TestDBDeleteAttachment(t *testing.T) {
 			docID:      "foo",
 			filename:   "foo.txt",
 			options:    kivik.Rev("1-wrong"),
-			wantErr:    "document not found",
-			wantStatus: http.StatusNotFound,
+			wantErr:    "conflict",
+			wantStatus: http.StatusConflict,
+		}
+	})
+	tests.Add("success", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev, err := d.Put(context.Background(), "foo", map[string]interface{}{
+			"cat": "meow",
+			"_attachments": map[string]interface{}{
+				"foo.txt": map[string]interface{}{
+					"content_type": "text/plain",
+					"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
+				},
+			},
+		}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return test{
+			db:       d,
+			docID:    "foo",
+			filename: "foo.txt",
+			options:  kivik.Rev(rev),
+			wantRev:  "2-.*",
+			wantRevs: []leaf{
+				{
+					ID:  "foo",
+					Rev: 1,
+				},
+				{
+					ID:        "foo",
+					Rev:       2,
+					ParentRev: &[]int{1}[0],
+				},
+			},
+			wantAttachments: []attachmentRow{
+				{
+					DocID:       "foo",
+					Rev:         1,
+					Filename:    "foo.txt",
+					ContentType: "text/plain",
+					Length:      25,
+					Digest:      "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
+					Data:        "This is a base64 encoding",
+					DeletedRev:  &[]int{2}[0],
+				},
+			},
 		}
 	})
 
@@ -112,13 +159,22 @@ func TestDBDeleteAttachment(t *testing.T) {
 		if err != nil {
 			return
 		}
-		if rev != tt.wantRev {
+		if !regexp.MustCompile(tt.wantRev).MatchString(rev) {
 			t.Errorf("Unexpected rev: %s, want %s", rev, tt.wantRev)
 		}
 		if len(tt.wantRevs) == 0 {
 			t.Errorf("No leaves to check")
 		}
 		leaves := readRevisions(t, dbc.(*db).db, tt.docID)
+		for i, r := range tt.wantRevs {
+			// allow tests to omit RevID
+			if r.RevID == "" {
+				leaves[i].RevID = ""
+			}
+			if r.ParentRevID == nil {
+				leaves[i].ParentRevID = nil
+			}
+		}
 		if d := cmp.Diff(tt.wantRevs, leaves); d != "" {
 			t.Errorf("Unexpected leaves: %s", d)
 		}

@@ -61,11 +61,12 @@ type docData struct {
 	ID string `json:"_id"`
 	// RevID is the calculated revision ID, not the actual _rev field from the
 	// document.
-	RevID       string                `json:"-"`
-	Revisions   revsInfo              `json:"_revisions"`
-	Deleted     bool                  `json:"_deleted"`
-	Attachments map[string]attachment `json:"_attachments"`
-	Doc         []byte
+	RevID              string                `json:"-"`
+	Revisions          revsInfo              `json:"_revisions"`
+	Deleted            bool                  `json:"_deleted"`
+	Attachments        map[string]attachment `json:"_attachments"`
+	RemovedAttachments []string              `json:"-"`
+	Doc                []byte
 }
 
 type revsInfo struct {

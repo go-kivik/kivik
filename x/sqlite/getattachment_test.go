@@ -42,6 +42,7 @@ func TestDBGetAttachment(t *testing.T) {
 		db       driver.DB
 		docID    string
 		filename string
+		options  driver.Options
 
 		wantAttachment *attachment
 		wantStatus     int
@@ -166,14 +167,55 @@ func TestDBGetAttachment(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("returns old attachment content for revision that predates attachment update", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev, err := d.Put(context.Background(), "foo", map[string]interface{}{
+			"_id": "foo",
+			"_attachments": map[string]interface{}{
+				"foo.txt": map[string]interface{}{
+					"content_type": "text/plain",
+					"data":         "SGVsbG8gV29ybGQK",
+				},
+			},
+		}, mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = d.Put(context.Background(), "foo", map[string]interface{}{
+			"_id": "foo",
+			"_attachments": map[string]interface{}{
+				"foo.txt": map[string]interface{}{
+					"content_type": "text/plain",
+					"data":         "SGVsbG8gQm9iCg==",
+				},
+			},
+		}, kivik.Rev(rev))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return test{
+			db:       d,
+			docID:    "foo",
+			filename: "foo.txt",
+			options:  kivik.Rev(rev),
+
+			wantAttachment: &attachment{
+				Filename:    "foo.txt",
+				ContentType: "text/plain",
+				Length:      12,
+				RevPos:      1,
+				Data:        "Hello World\n",
+			},
+		}
+	})
 	// GetAttachment returns the latest revision by default
 	//
 
 	/*
 		TODO:
-		- return correct attachment in case of a conflict
-		- return existing file from existing doc
 		- request attachment from historical revision
+		- return correct attachment in case of a conflict
 		- failure: request attachment from historical revision that does not exist
 
 		- GetAttachment returns 404 when the document does exist, but the attachment has never existed
@@ -190,13 +232,16 @@ func TestDBGetAttachment(t *testing.T) {
 		if db == nil {
 			db = newDB(t)
 		}
-		// opts := tt.options
-		// if opts == nil {
-		opts := mock.NilOption
-		// }
+		opts := tt.options
+		if opts == nil {
+			opts = mock.NilOption
+		}
 		att, err := db.GetAttachment(context.Background(), tt.docID, tt.filename, opts)
 		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %s", err)
+		}
+		if err != nil {
+			return
 		}
 		if status := kivik.HTTPStatus(err); status != tt.wantStatus {
 			t.Errorf("Unexpected status: %d", status)

@@ -169,43 +169,23 @@ func TestDBGetAttachment(t *testing.T) {
 	})
 	tests.Add("returns old attachment content for revision that predates attachment update", func(t *testing.T) interface{} {
 		d := newDB(t)
-		rev, err := d.Put(context.Background(), "foo", map[string]interface{}{
-			"_id": "foo",
-			"_attachments": map[string]interface{}{
-				"foo.txt": map[string]interface{}{
-					"content_type": "text/plain",
-					"data":         "SGVsbG8gV29ybGQK",
-				},
-			},
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = d.Put(context.Background(), "foo", map[string]interface{}{
-			"_id": "foo",
-			"_attachments": map[string]interface{}{
-				"foo.txt": map[string]interface{}{
-					"content_type": "text/plain",
-					"data":         "SGVsbG8gQm9iCg==",
-				},
-			},
-		}, kivik.Rev(rev))
-		if err != nil {
-			t.Fatal(err)
-		}
+		const wantContent = "Hello World"
+		id, filename, rev := documentWithUpdatedAttachment(d, t, wantContent)
+
+		r, _ := parseRev(rev)
 
 		return test{
 			db:       d,
-			docID:    "foo",
-			filename: "foo.txt",
+			docID:    id,
+			filename: filename,
 			options:  kivik.Rev(rev),
 
 			wantAttachment: &attachment{
-				Filename:    "foo.txt",
+				Filename:    filename,
 				ContentType: "text/plain",
-				Length:      12,
-				RevPos:      1,
-				Data:        "Hello World\n",
+				Length:      int64(len(wantContent)),
+				RevPos:      int64(r.rev),
+				Data:        wantContent,
 			},
 		}
 	})
@@ -265,4 +245,36 @@ func TestDBGetAttachment(t *testing.T) {
 			t.Errorf("Unexpected attachment metadata:\n%s", d)
 		}
 	})
+}
+
+func documentWithUpdatedAttachment(d driver.DB, t *testing.T, content string) (id, filename, rev string) {
+	const (
+		docID          = "foo"
+		attachmentName = "foo.txt"
+	)
+	rev, err := d.Put(context.Background(), "foo", map[string]interface{}{
+		"_id": docID,
+		"_attachments": map[string]interface{}{
+			attachmentName: map[string]interface{}{
+				"content_type": "text/plain",
+				"data":         []byte(content),
+			},
+		},
+	}, mock.NilOption)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = d.Put(context.Background(), "foo", map[string]interface{}{
+		"_id": "foo",
+		"_attachments": map[string]interface{}{
+			"foo.txt": map[string]interface{}{
+				"content_type": "text/plain",
+				"data":         []byte(content + " [after update]"),
+			},
+		},
+	}, kivik.Rev(rev))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return docID, attachmentName, rev
 }

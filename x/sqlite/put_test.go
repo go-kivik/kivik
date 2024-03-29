@@ -846,7 +846,18 @@ func TestDBPut(t *testing.T) {
 			wantAttachments: []attachmentRow{
 				{
 					DocID:       "foo",
+					RevPos:      1,
 					Rev:         1,
+					Filename:    "foo.txt",
+					ContentType: "text/plain",
+					Length:      25,
+					Digest:      "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
+					Data:        "This is a base64 encoding",
+				},
+				{
+					DocID:       "foo",
+					RevPos:      1,
+					Rev:         2,
 					Filename:    "foo.txt",
 					ContentType: "text/plain",
 					Length:      25,
@@ -981,7 +992,7 @@ func TestDBPut(t *testing.T) {
 func checkAttachments(t *testing.T, d *sql.DB, want []attachmentRow) {
 	t.Helper()
 	rows, err := d.Query(`
-		SELECT b.id, b.rev, b.rev_id, a.filename, a.content_type, a.length, a.digest, a.data
+		SELECT b.id, b.rev, b.rev_id, a.rev_pos, a.filename, a.content_type, a.length, a.digest, a.data
 		FROM test_attachments AS a
 		JOIN test_attachments_bridge AS b ON b.pk=a.pk
 	`)
@@ -992,7 +1003,7 @@ func checkAttachments(t *testing.T, d *sql.DB, want []attachmentRow) {
 	var got []attachmentRow
 	for rows.Next() {
 		var att attachmentRow
-		if err := rows.Scan(&att.DocID, &att.Rev, &att.RevID, &att.Filename, &att.ContentType, &att.Length, &att.Digest, &att.Data); err != nil {
+		if err := rows.Scan(&att.DocID, &att.Rev, &att.RevID, &att.RevPos, &att.Filename, &att.ContentType, &att.Length, &att.Digest, &att.Data); err != nil {
 			t.Fatal(err)
 		}
 		got = append(got, att)

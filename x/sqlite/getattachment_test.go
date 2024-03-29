@@ -42,6 +42,7 @@ func TestDBGetAttachment(t *testing.T) {
 		db       driver.DB
 		docID    string
 		filename string
+		options  driver.Options
 
 		wantAttachment *attachment
 		wantStatus     int
@@ -166,14 +167,35 @@ func TestDBGetAttachment(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("returns old attachment content for revision that predates attachment update", func(t *testing.T) interface{} {
+		d := newDB(t)
+		const wantContent = "Hello World"
+		id, filename, rev := documentWithUpdatedAttachment(d, t, wantContent)
+
+		r, _ := parseRev(rev)
+
+		return test{
+			db:       d,
+			docID:    id,
+			filename: filename,
+			options:  kivik.Rev(rev),
+
+			wantAttachment: &attachment{
+				Filename:    filename,
+				ContentType: "text/plain",
+				Length:      int64(len(wantContent)),
+				RevPos:      int64(r.rev),
+				Data:        wantContent,
+			},
+		}
+	})
 	// GetAttachment returns the latest revision by default
 	//
 
 	/*
 		TODO:
-		- return correct attachment in case of a conflict
-		- return existing file from existing doc
 		- request attachment from historical revision
+		- return correct attachment in case of a conflict
 		- failure: request attachment from historical revision that does not exist
 
 		- GetAttachment returns 404 when the document does exist, but the attachment has never existed
@@ -190,13 +212,16 @@ func TestDBGetAttachment(t *testing.T) {
 		if db == nil {
 			db = newDB(t)
 		}
-		// opts := tt.options
-		// if opts == nil {
-		opts := mock.NilOption
-		// }
+		opts := tt.options
+		if opts == nil {
+			opts = mock.NilOption
+		}
 		att, err := db.GetAttachment(context.Background(), tt.docID, tt.filename, opts)
 		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %s", err)
+		}
+		if err != nil {
+			return
 		}
 		if status := kivik.HTTPStatus(err); status != tt.wantStatus {
 			t.Errorf("Unexpected status: %d", status)
@@ -220,4 +245,36 @@ func TestDBGetAttachment(t *testing.T) {
 			t.Errorf("Unexpected attachment metadata:\n%s", d)
 		}
 	})
+}
+
+func documentWithUpdatedAttachment(d driver.DB, t *testing.T, content string) (id, filename, rev string) {
+	const (
+		docID          = "foo"
+		attachmentName = "foo.txt"
+	)
+	rev, err := d.Put(context.Background(), "foo", map[string]interface{}{
+		"_id": docID,
+		"_attachments": map[string]interface{}{
+			attachmentName: map[string]interface{}{
+				"content_type": "text/plain",
+				"data":         []byte(content),
+			},
+		},
+	}, mock.NilOption)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = d.Put(context.Background(), "foo", map[string]interface{}{
+		"_id": "foo",
+		"_attachments": map[string]interface{}{
+			"foo.txt": map[string]interface{}{
+				"content_type": "text/plain",
+				"data":         []byte(content + " [after update]"),
+			},
+		},
+	}, kivik.Rev(rev))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return docID, attachmentName, rev
 }

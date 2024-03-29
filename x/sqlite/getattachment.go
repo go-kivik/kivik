@@ -24,19 +24,29 @@ import (
 	"github.com/go-kivik/kivik/v4/internal"
 )
 
-func (d *db) GetAttachment(ctx context.Context, docID string, filename string, _ driver.Options) (*driver.Attachment, error) {
+func (d *db) GetAttachment(ctx context.Context, docID string, filename string, options driver.Options) (*driver.Attachment, error) {
+	opts := newOpts(options)
+
 	tx, err := d.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
 	defer tx.Rollback()
 
-	curRev, err := d.currentRev(ctx, tx, docID)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, &internal.Error{Status: http.StatusNotFound, Message: "Not Found: missing"}
+	var requestedRev revision
+	if rev := opts.rev(); rev != "" {
+		requestedRev, err = parseRev(rev)
+		if err != nil {
+			return nil, &internal.Error{Message: err.Error(), Status: http.StatusBadRequest}
+		}
+	} else {
+		requestedRev, err = d.currentRev(ctx, tx, docID)
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, &internal.Error{Status: http.StatusNotFound, Message: "Not Found: missing"}
+		}
 	}
 
-	attachment, err := d.getAttachment(ctx, tx, docID, filename, curRev)
+	attachment, err := d.getAttachment(ctx, tx, docID, filename, requestedRev)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, &internal.Error{Status: http.StatusNotFound, Message: "Not Found: missing"}
 	}

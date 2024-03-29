@@ -108,6 +108,7 @@ func TestDBDeleteAttachment(t *testing.T) {
 			wantAttachments: []attachmentRow{
 				{
 					DocID:       "foo",
+					RevPos:      1,
 					Rev:         1,
 					Filename:    "foo.txt",
 					ContentType: "text/plain",

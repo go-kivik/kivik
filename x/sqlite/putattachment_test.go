@@ -64,6 +64,7 @@ func TestDBPutAttachment(t *testing.T) {
 		wantAttachments: []attachmentRow{
 			{
 				DocID:       "foo",
+				RevPos:      1,
 				Rev:         1,
 				RevID:       "99914b932bd37a50b983c5e7c90ae93b",
 				Filename:    "foo.txt",
@@ -105,6 +106,7 @@ func TestDBPutAttachment(t *testing.T) {
 			wantAttachments: []attachmentRow{
 				{
 					DocID:       "foo",
+					RevPos:      2,
 					Rev:         2,
 					RevID:       "9bb58f26192e4ba00f01e2e7b136bbd8",
 					Filename:    "foo.txt",
@@ -180,6 +182,7 @@ func TestDBPutAttachment(t *testing.T) {
 			wantAttachments: []attachmentRow{
 				{
 					DocID:       "foo",
+					RevPos:      1,
 					Rev:         1,
 					Filename:    "foo.txt",
 					ContentType: "text/plain",
@@ -189,6 +192,7 @@ func TestDBPutAttachment(t *testing.T) {
 				},
 				{
 					DocID:       "foo",
+					RevPos:      2,
 					Rev:         2,
 					Filename:    "bar.txt",
 					ContentType: "text/plain",
@@ -235,6 +239,7 @@ func TestDBPutAttachment(t *testing.T) {
 			wantAttachments: []attachmentRow{
 				{
 					DocID:       "foo",
+					RevPos:      1,
 					Rev:         1,
 					Filename:    "foo.txt",
 					Digest:      "md5-bNNVbesNpUvKBgtMOUeYOQ==",
@@ -244,6 +249,7 @@ func TestDBPutAttachment(t *testing.T) {
 				},
 				{
 					DocID:       "foo",
+					RevPos:      2,
 					Rev:         2,
 					Filename:    "foo.txt",
 					ContentType: "text/plain",

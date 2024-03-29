@@ -769,6 +769,7 @@ func TestDBPut(t *testing.T) {
 		wantAttachments: []attachmentRow{
 			{
 				DocID:       "foo",
+				RevPos:      1,
 				Rev:         1,
 				Filename:    "foo.txt",
 				ContentType: "text/plain",
@@ -798,6 +799,7 @@ func TestDBPut(t *testing.T) {
 		wantAttachments: []attachmentRow{
 			{
 				DocID:       "foo",
+				RevPos:      1,
 				Rev:         1,
 				Filename:    "foo.txt",
 				ContentType: "application/octet-stream",
@@ -910,6 +912,7 @@ func TestDBPut(t *testing.T) {
 			wantAttachments: []attachmentRow{
 				{
 					DocID:       "foo",
+					RevPos:      1,
 					Rev:         1,
 					Filename:    "bar.txt",
 					ContentType: "text/plain",
@@ -919,7 +922,18 @@ func TestDBPut(t *testing.T) {
 				},
 				{
 					DocID:       "foo",
+					RevPos:      1,
 					Rev:         1,
+					Filename:    "foo.txt",
+					ContentType: "text/plain",
+					Length:      25,
+					Digest:      "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
+					Data:        "This is a base64 encoding",
+				},
+				{
+					DocID:       "foo",
+					RevPos:      1,
+					Rev:         2,
 					Filename:    "foo.txt",
 					ContentType: "text/plain",
 					Length:      25,

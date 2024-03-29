@@ -111,8 +111,6 @@ func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev re
 		return r, nil
 	}
 
-	fmt.Println("createRev, attachments", data.Attachments)
-
 	// order the filenames to insert for consistency
 	orderedFilenames := make([]string, 0, len(data.Attachments))
 	for filename := range data.Attachments {
@@ -155,14 +153,11 @@ func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev re
 	}
 	defer bridgeStmt.Close()
 
-	fmt.Println("createRev, orderedFilenames", orderedFilenames)
-
 	for _, filename := range orderedFilenames {
 		att := data.Attachments[filename]
 
 		var pk int
 		if att.Stub {
-			fmt.Println("createRev pre stub", pk, filename, att.Length, att.Digest, data.ID, r.rev, r.id)
 			err := stubStmt.QueryRowContext(ctx, data.ID, r.rev, r.id, curRev.rev, curRev.id, filename).Scan(&pk)
 			if err != nil {
 				return r, err
@@ -175,19 +170,15 @@ func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev re
 			if contentType == "" {
 				contentType = "application/octet-stream"
 			}
-			fmt.Println("createRev pre full", pk, filename, att.Length, att.Digest, data.ID, r.rev, r.id)
 			err := attStmt.QueryRowContext(ctx, r.rev, filename, contentType, att.Length, att.Digest, att.Content).Scan(&pk)
 			if err != nil {
 				return r, err
 			}
 
-			fmt.Println("createRev pre bridge\t\t", pk, data.ID, r.rev, r.id)
-
 			_, err = bridgeStmt.ExecContext(ctx, pk, data.ID, r.rev, r.id)
 			if err != nil {
 				return r, err
 			}
-			fmt.Println("createRev inserted attachment\t\t\t\t\t", pk, data.ID, r.rev, r.id)
 		}
 	}
 

@@ -133,39 +133,6 @@ func TestDBDelete(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 		wantErr:    `strconv.ParseInt: parsing "not a rev": invalid syntax`,
 	})
-	tests.Add("when doc is deleted, attachments are marked as deleted as well", func(t *testing.T) interface{} {
-		d := newDB(t)
-		rev := d.tPut("foo", map[string]interface{}{
-			"cat": "meow",
-			"_attachments": map[string]interface{}{
-				"foo.txt": map[string]interface{}{
-					"content_type": "text/plain",
-					"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
-				},
-			},
-		})
-
-		return test{
-			db:      d,
-			id:      "foo",
-			options: kivik.Rev(rev),
-			wantRev: "2-.*",
-			check: func(t *testing.T) {
-				var deletedRev string
-				err := d.underlying().QueryRow(`
-				SELECT deleted_rev
-				FROM test_attachments
-				WHERE filename='foo.txt'
-			`).Scan(&deletedRev)
-				if err != nil {
-					t.Fatal(err)
-				}
-				if deletedRev != "2" {
-					t.Errorf("Attachment not marked deleted")
-				}
-			},
-		}
-	})
 
 	/*
 		- _revisions

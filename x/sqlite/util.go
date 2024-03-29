@@ -87,29 +87,31 @@ func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev re
 	if err != nil {
 		return r, err
 	}
-	if len(data.RemovedAttachments) > 0 {
-		stmt, err := tx.PrepareContext(ctx, d.query(`
-			UPDATE {{ .Attachments }}
-			SET deleted_rev = $1, deleted_rev_id = $2
-			WHERE id = $3
-				AND filename = $4
-				AND deleted_rev IS NULL
-		`))
-		if err != nil {
-			return r, err
-		}
-		defer stmt.Close()
-		for _, filename := range data.RemovedAttachments {
-			_, err = stmt.ExecContext(ctx, r.rev, r.id, data.ID, filename)
-			if err != nil {
-				return r, err
-			}
-		}
-	}
+	// if len(data.RemovedAttachments) > 0 {
+	// 	stmt, err := tx.PrepareContext(ctx, d.query(`
+	// 		UPDATE {{ .Attachments }}
+	// 		SET deleted_rev = $1, deleted_rev_id = $2
+	// 		WHERE id = $3
+	// 			AND filename = $4
+	// 			AND deleted_rev IS NULL
+	// 	`))
+	// 	if err != nil {
+	// 		return r, err
+	// 	}
+	// 	defer stmt.Close()
+	// 	for _, filename := range data.RemovedAttachments {
+	// 		_, err = stmt.ExecContext(ctx, r.rev, r.id, data.ID, filename)
+	// 		if err != nil {
+	// 			return r, err
+	// 		}
+	// 	}
+	// }
 
 	if len(data.Attachments) == 0 {
 		return r, nil
 	}
+
+	fmt.Println("createRev, attachments", data.Attachments)
 
 	// order the filenames to insert for consistency
 	orderedFilenames := make([]string, 0, len(data.Attachments))
@@ -118,54 +120,75 @@ func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev re
 	}
 	sort.Strings(orderedFilenames)
 
-	stmt, err := tx.PrepareContext(ctx, d.query(`
-			INSERT INTO {{ .Attachments }} (id, rev, rev_id, filename, content_type, length, digest, data)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+	attStmt, err := tx.PrepareContext(ctx, d.query(`
+			INSERT INTO {{ .Attachments }} (rev_pos, filename, content_type, length, digest, data)
+			VALUES ($1, $2, $3, $4, $5, $6)
+			RETURNING pk
 		`))
 	if err != nil {
 		return r, err
 	}
-	defer stmt.Close()
-	for _, filename := range orderedFilenames {
-		att := data.Attachments[filename]
-		if att.Stub {
-			continue
-		}
-		if err := att.calculate(filename); err != nil {
-			return r, err
-		}
-		contentType := att.ContentType
-		if contentType == "" {
-			contentType = "application/octet-stream"
-		}
-		_, err := stmt.ExecContext(ctx, data.ID, r.rev, r.id, filename, contentType, att.Length, att.Digest, att.Content)
-		if err != nil {
-			return r, err
-		}
-	}
+	defer attStmt.Close()
 
-	if len(data.Doc) == 0 {
-		// The only reason that the doc is nil is when we're creating a new
-		// attachment, and we should not delete existing attachments in that case.
-		return r, nil
-	}
-
-	// Delete any attachments not included in the new revision
-	args := []interface{}{r.rev, r.id, data.ID}
-	for _, filename := range orderedFilenames {
-		args = append(args, filename)
-	}
-	query := d.query(`
-			UPDATE {{ .Attachments }}
-			SET deleted_rev = $1, deleted_rev_id = $2
-			WHERE id = $3
-				AND filename NOT IN (` + placeholders(len(args)-len(orderedFilenames)+1, len(orderedFilenames)) + `)
-				AND deleted_rev IS NULL
-				AND deleted_rev_id IS NULL
-		`)
-	_, err = tx.ExecContext(ctx, query, args...)
+	stubStmt, err := tx.PrepareContext(ctx, d.query(`
+			INSERT INTO {{ .AttachmentsBridge }} (pk, id, rev, rev_id)
+			SELECT att.pk, $1, $2, $3
+			FROM {{ .Attachments }} AS att
+			JOIN {{ .AttachmentsBridge }} AS bridge ON att.pk = bridge.pk
+			WHERE bridge.id = $1
+				AND bridge.rev = $4
+				AND bridge.rev_id = $5
+				AND att.filename = $6
+			RETURNING pk
+		`))
 	if err != nil {
 		return r, err
+	}
+	defer stubStmt.Close()
+
+	bridgeStmt, err := tx.PrepareContext(ctx, d.query(`
+			INSERT INTO {{ .AttachmentsBridge }} (pk, id, rev, rev_id)
+			VALUES ($1, $2, $3, $4)
+		`))
+	if err != nil {
+		return r, err
+	}
+	defer bridgeStmt.Close()
+
+	fmt.Println("createRev, orderedFilenames", orderedFilenames)
+
+	for _, filename := range orderedFilenames {
+		att := data.Attachments[filename]
+
+		var pk int
+		if att.Stub {
+			fmt.Println("createRev pre stub", pk, filename, att.Length, att.Digest, data.ID, r.rev, r.id)
+			err := stubStmt.QueryRowContext(ctx, data.ID, r.rev, r.id, curRev.rev, curRev.id, filename).Scan(&pk)
+			if err != nil {
+				return r, err
+			}
+		} else {
+			if err := att.calculate(filename); err != nil {
+				return r, err
+			}
+			contentType := att.ContentType
+			if contentType == "" {
+				contentType = "application/octet-stream"
+			}
+			fmt.Println("createRev pre full", pk, filename, att.Length, att.Digest, data.ID, r.rev, r.id)
+			err := attStmt.QueryRowContext(ctx, r.rev, filename, contentType, att.Length, att.Digest, att.Content).Scan(&pk)
+			if err != nil {
+				return r, err
+			}
+
+			fmt.Println("createRev pre bridge\t\t", pk, data.ID, r.rev, r.id)
+
+			_, err = bridgeStmt.ExecContext(ctx, pk, data.ID, r.rev, r.id)
+			if err != nil {
+				return r, err
+			}
+			fmt.Println("createRev inserted attachment\t\t\t\t\t", pk, data.ID, r.rev, r.id)
+		}
 	}
 
 	return r, nil

@@ -312,10 +312,10 @@ func (d *db) getAttachments(ctx context.Context, tx *sql.Tx, id string, rev revi
 	for _, s := range since {
 		args = append(args, s)
 	}
-	sinceQuery := "FALSE"
-	if len(since) > 0 {
-		sinceQuery = fmt.Sprintf("parent_rev||'-'||parent_rev_id IN (%s)", placeholders(len(args)-len(since)+1, len(since)))
-	}
+	// sinceQuery := "FALSE"
+	// if len(since) > 0 {
+	// 	sinceQuery = fmt.Sprintf("parent_rev||'-'||parent_rev_id IN (%s)", placeholders(len(args)-len(since)+1, len(since)))
+	// }
 	query := fmt.Sprintf(d.query(`
 		WITH atts AS (
 			WITH RECURSIVE Ancestors AS (
@@ -336,30 +336,25 @@ func (d *db) getAttachments(ctx context.Context, tx *sql.Tx, id string, rev revi
 				att.content_type,
 				att.digest,
 				att.length,
-				att.rev,
+				att.rev_pos,
 				rev.parent_rev,
 				rev.parent_rev_id,
 				att.data
 			FROM
 				Ancestors AS rev
-			JOIN
-				{{ .Attachments }} AS att ON att.id = rev.id AND att.rev = rev.rev AND att.rev_id = rev.rev_id
-			WHERE att.deleted_rev IS NULL
+			JOIN {{ .AttachmentsBridge }} AS bridge ON bridge.id = rev.id AND bridge.rev = rev.rev AND bridge.rev_id = rev.rev_id
+			JOIN {{ .Attachments }} AS att ON att.pk = bridge.pk
 		)
 		SELECT
 			atts.filename,
 			atts.content_type,
 			atts.digest,
 			atts.length,
-			atts.rev,
-			IIF($4 OR includeSince, atts.data, NULL) AS data
+			atts.rev_pos,
+			IIF($4, atts.data, NULL) AS data
 		FROM atts
-		JOIN (
-			SELECT filename, MAX(rev) AS rev, MAX(%s) AS includeSince
-			FROM atts
-			GROUP BY filename
-		) AS max ON atts.filename = max.filename AND atts.rev = max.rev
-	`), sinceQuery)
+		
+	`) /* sinceQuery */)
 	rows, err := tx.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -377,11 +372,13 @@ func (d *db) getAttachments(ctx context.Context, tx *sql.Tx, id string, rev revi
 		} else {
 			a.Content = io.NopCloser(bytes.NewReader(*data))
 		}
+		fmt.Println(a)
 		atts = append(atts, &a)
 	}
 	if len(atts) == 0 {
 		return nil, rows.Err()
 	}
+	fmt.Println(atts)
 	return &atts, rows.Err()
 }
 

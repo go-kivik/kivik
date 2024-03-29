@@ -114,7 +114,6 @@ func TestDBDeleteAttachment(t *testing.T) {
 					Length:      25,
 					Digest:      "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
 					Data:        "This is a base64 encoding",
-					DeletedRev:  &[]int{2}[0],
 				},
 			},
 		}

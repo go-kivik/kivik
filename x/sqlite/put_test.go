@@ -31,18 +31,16 @@ import (
 )
 
 type attachmentRow struct {
-	DocID        string
-	Rev          int
-	RevID        string
-	Filename     string
-	ContentType  string
-	Digest       string
-	Length       int64
-	RevPos       int
-	Stub         bool
-	Data         string
-	DeletedRev   *int
-	DeletedRevID *string
+	DocID       string
+	Rev         int
+	RevID       string
+	Filename    string
+	ContentType string
+	Digest      string
+	Length      int64
+	RevPos      int
+	Stub        bool
+	Data        string
 }
 
 func TestDBPut(t *testing.T) {
@@ -907,7 +905,6 @@ func TestDBPut(t *testing.T) {
 					Length:      25,
 					Digest:      "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
 					Data:        "This is a base64 encoding",
-					DeletedRev:  &[]int{2}[0],
 				},
 				{
 					DocID:       "foo",
@@ -984,9 +981,9 @@ func TestDBPut(t *testing.T) {
 func checkAttachments(t *testing.T, d *sql.DB, want []attachmentRow) {
 	t.Helper()
 	rows, err := d.Query(`
-		SELECT id, rev, rev_id, filename, content_type, length, digest, data, deleted_rev, deleted_rev_id
-		FROM test_attachments
-		ORDER BY id, rev, rev_id, filename
+		SELECT b.id, b.rev, b.rev_id, a.filename, a.content_type, a.length, a.digest, a.data
+		FROM test_attachments AS a
+		JOIN test_attachments_bridge AS b ON b.pk=a.pk
 	`)
 	if err != nil {
 		t.Fatal(err)
@@ -995,7 +992,7 @@ func checkAttachments(t *testing.T, d *sql.DB, want []attachmentRow) {
 	var got []attachmentRow
 	for rows.Next() {
 		var att attachmentRow
-		if err := rows.Scan(&att.DocID, &att.Rev, &att.RevID, &att.Filename, &att.ContentType, &att.Length, &att.Digest, &att.Data, &att.DeletedRev, &att.DeletedRevID); err != nil {
+		if err := rows.Scan(&att.DocID, &att.Rev, &att.RevID, &att.Filename, &att.ContentType, &att.Length, &att.Digest, &att.Data); err != nil {
 			t.Fatal(err)
 		}
 		got = append(got, att)
@@ -1007,9 +1004,6 @@ func checkAttachments(t *testing.T, d *sql.DB, want []attachmentRow) {
 		// allow tests to omit RevID
 		if w.RevID == "" {
 			got[i].RevID = ""
-		}
-		if w.DeletedRevID == nil {
-			got[i].DeletedRevID = nil
 		}
 	}
 	if d := cmp.Diff(want, got); d != "" {

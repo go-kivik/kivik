@@ -29,28 +29,29 @@ import (
 	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
+type AttachmentX struct {
+	Filename    string
+	ContentType string
+	Length      int64
+	RevPos      int64
+	Data        string
+}
+type TestX struct {
+	db       driver.DB
+	docID    string
+	filename string
+	options  driver.Options
+
+	wantAttachment *AttachmentX
+	wantStatus     int
+	wantErr        string
+}
+
 func TestDBGetAttachment(t *testing.T) {
 	t.Parallel()
-	type attachment struct {
-		Filename    string
-		ContentType string
-		Length      int64
-		RevPos      int64
-		Data        string
-	}
-	type test struct {
-		db       driver.DB
-		docID    string
-		filename string
-		options  driver.Options
-
-		wantAttachment *attachment
-		wantStatus     int
-		wantErr        string
-	}
 
 	tests := testy.NewTable()
-	tests.Add("document does not exist", test{
+	tests.Add("document does not exist", TestX{
 		docID:      "foo",
 		filename:   "foo.txt",
 		wantStatus: http.StatusNotFound,
@@ -68,7 +69,7 @@ func TestDBGetAttachment(t *testing.T) {
 			},
 		})
 
-		return test{
+		return TestX{
 			db:       db,
 			docID:    "foo",
 			filename: "foo.txt",
@@ -86,11 +87,11 @@ func TestDBGetAttachment(t *testing.T) {
 			},
 		})
 
-		return test{
+		return TestX{
 			db:       db,
 			docID:    "foo",
 			filename: "foo.txt",
-			wantAttachment: &attachment{
+			wantAttachment: &AttachmentX{
 				Filename:    "foo.txt",
 				ContentType: "text/plain",
 				Length:      25,
@@ -115,7 +116,7 @@ func TestDBGetAttachment(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		return test{
+		return TestX{
 			db:         db,
 			docID:      "foo",
 			filename:   "foo.txt",
@@ -139,11 +140,11 @@ func TestDBGetAttachment(t *testing.T) {
 			"updated": true,
 		}, kivik.Rev(rev))
 
-		return test{
+		return TestX{
 			db:       db,
 			docID:    "foo",
 			filename: "foo.txt",
-			wantAttachment: &attachment{
+			wantAttachment: &AttachmentX{
 				Filename:    "foo.txt",
 				ContentType: "text/plain",
 				Length:      25,
@@ -159,19 +160,13 @@ func TestDBGetAttachment(t *testing.T) {
 
 		r, _ := parseRev(rev)
 
-		return test{
+		return TestX{
 			db:       d,
 			docID:    id,
 			filename: filename,
 			options:  kivik.Rev(rev),
 
-			wantAttachment: &attachment{
-				Filename:    filename,
-				ContentType: "text/plain",
-				Length:      int64(len(wantContent)),
-				RevPos:      int64(r.rev),
-				Data:        wantContent,
-			},
+			wantAttachment: &AttachmentX{Filename: filename, ContentType: "text/plain", Length: int64(len(wantContent)), RevPos: int64(r.rev), Data: wantContent},
 		}
 	})
 	// GetAttachment returns the latest revision by default
@@ -191,7 +186,7 @@ func TestDBGetAttachment(t *testing.T) {
 		- GetAttachment returns the latest revision
 	*/
 
-	tests.Run(t, func(t *testing.T, tt test) {
+	tests.Run(t, func(t *testing.T, tt TestX) {
 		t.Parallel()
 		db := tt.db
 		if db == nil {
@@ -219,7 +214,7 @@ func TestDBGetAttachment(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		got := &attachment{
+		got := &AttachmentX{
 			Filename:    att.Filename,
 			ContentType: att.ContentType,
 			Length:      att.Size,

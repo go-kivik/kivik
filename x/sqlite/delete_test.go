@@ -35,7 +35,7 @@ func TestDBDelete(t *testing.T) {
 		id         string
 		options    driver.Options
 		wantRev    string
-		check      func(*testing.T, driver.DB)
+		check      func(*testing.T)
 		wantStatus int
 		wantErr    string
 	}
@@ -47,18 +47,18 @@ func TestDBDelete(t *testing.T) {
 		wantErr:    "document not found",
 	})
 	tests.Add("success", func(t *testing.T) interface{} {
-		dbc := newDB(t)
-		rev, err := dbc.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
+		d := newDB(t)
+		rev, err := d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		return test{
-			db:      dbc,
+			db:      d,
 			id:      "foo",
 			options: kivik.Rev(rev),
 			wantRev: "2-.*",
-			check: func(t *testing.T, d driver.DB) {
+			check: func(t *testing.T) {
 				var deleted bool
 				err := d.(*db).db.QueryRow(`
 				SELECT deleted
@@ -177,7 +177,7 @@ func TestDBDelete(t *testing.T) {
 			id:      "foo",
 			options: kivik.Rev(rev),
 			wantRev: "2-.*",
-			check: func(t *testing.T, d driver.DB) {
+			check: func(t *testing.T) {
 				var deletedRev string
 				err := d.(*db).db.QueryRow(`
 				SELECT deleted_rev
@@ -222,7 +222,7 @@ func TestDBDelete(t *testing.T) {
 			t.Errorf("Unexpected rev: %s", rev)
 		}
 		if tt.check != nil {
-			tt.check(t, db)
+			tt.check(t)
 		}
 	})
 }

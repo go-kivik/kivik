@@ -38,7 +38,6 @@ func TestDBPutAttachment(t *testing.T) {
 		docID           string
 		attachment      *driver.Attachment
 		options         driver.Options
-		check           func(*testing.T, driver.DB)
 		wantRev         string
 		wantRevs        []leaf
 		wantStatus      int
@@ -284,9 +283,6 @@ func TestDBPutAttachment(t *testing.T) {
 		}
 		if status := kivik.HTTPStatus(err); status != tt.wantStatus {
 			t.Errorf("Unexpected status: %d", status)
-		}
-		if tt.check != nil {
-			tt.check(t, dbc)
 		}
 		if err != nil {
 			return

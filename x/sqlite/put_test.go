@@ -51,7 +51,7 @@ func TestDBPut(t *testing.T) {
 		docID           string
 		doc             interface{}
 		options         driver.Options
-		check           func(*testing.T, driver.DB)
+		check           func(*testing.T)
 		wantRev         string
 		wantRevs        []leaf
 		wantStatus      int
@@ -221,14 +221,14 @@ func TestDBPut(t *testing.T) {
 		}
 	})
 	tests.Add("update doc with new_edits=false, existing doc and rev", func(t *testing.T) interface{} {
-		dbc := newDB(t)
-		_, err := dbc.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
+		d := newDB(t)
+		_, err := d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		return test{
-			db:    dbc,
+			db:    d,
 			docID: "foo",
 			doc: map[string]interface{}{
 				"_rev": "1-9bb58f26192e4ba00f01e2e7b136bbd8",
@@ -236,7 +236,7 @@ func TestDBPut(t *testing.T) {
 			},
 			options: kivik.Param("new_edits", false),
 			wantRev: "1-9bb58f26192e4ba00f01e2e7b136bbd8",
-			check: func(t *testing.T, d driver.DB) {
+			check: func(t *testing.T) {
 				var doc string
 				err := d.(*db).db.QueryRow(`
 					SELECT doc
@@ -269,99 +269,114 @@ func TestDBPut(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 		wantErr:    "Document ID must match _id in document",
 	})
-	tests.Add("set _deleted=true", test{
-		docID: "foo",
-		doc: map[string]interface{}{
-			"_deleted": true,
-			"foo":      "bar",
-		},
-		wantRev: "1-.*",
-		wantRevs: []leaf{
-			{
-				ID:  "foo",
-				Rev: 1,
+	tests.Add("set _deleted=true", func(t *testing.T) interface{} {
+		d := newDB(t)
+
+		return test{
+			db:    d,
+			docID: "foo",
+			doc: map[string]interface{}{
+				"_deleted": true,
+				"foo":      "bar",
 			},
-		},
-		check: func(t *testing.T, d driver.DB) {
-			var deleted bool
-			err := d.(*db).db.QueryRow(`
+			wantRev: "1-.*",
+			wantRevs: []leaf{
+				{
+					ID:  "foo",
+					Rev: 1,
+				},
+			},
+			check: func(t *testing.T) {
+				var deleted bool
+				err := d.(*db).db.QueryRow(`
 					SELECT deleted
 					FROM test
 					WHERE id='foo'
 					ORDER BY rev DESC, rev_id DESC
 					LIMIT 1
 				`).Scan(&deleted)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if !deleted {
-				t.Errorf("Document not marked deleted")
-			}
-		},
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !deleted {
+					t.Errorf("Document not marked deleted")
+				}
+			},
+		}
 	})
-	tests.Add("set _deleted=false", test{
-		docID: "foo",
-		doc: map[string]interface{}{
-			"_deleted": false,
-			"foo":      "bar",
-		},
-		wantRev: "1-9bb58f26192e4ba00f01e2e7b136bbd8",
-		wantRevs: []leaf{
-			{
-				ID:    "foo",
-				Rev:   1,
-				RevID: "9bb58f26192e4ba00f01e2e7b136bbd8",
+	tests.Add("set _deleted=false", func(t *testing.T) interface{} {
+		d := newDB(t)
+
+		return test{
+			db:    d,
+			docID: "foo",
+			doc: map[string]interface{}{
+				"_deleted": false,
+				"foo":      "bar",
 			},
-		},
-		check: func(t *testing.T, d driver.DB) {
-			var deleted bool
-			err := d.(*db).db.QueryRow(`
+			wantRev: "1-9bb58f26192e4ba00f01e2e7b136bbd8",
+			wantRevs: []leaf{
+				{
+					ID:    "foo",
+					Rev:   1,
+					RevID: "9bb58f26192e4ba00f01e2e7b136bbd8",
+				},
+			},
+			check: func(t *testing.T) {
+				var deleted bool
+				err := d.(*db).db.QueryRow(`
 					SELECT deleted
 					FROM test
 					WHERE id='foo'
 					ORDER BY rev DESC, rev_id DESC
 					LIMIT 1
 				`).Scan(&deleted)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if deleted {
-				t.Errorf("Document marked deleted")
-			}
-		},
+				if err != nil {
+					t.Fatal(err)
+				}
+				if deleted {
+					t.Errorf("Document marked deleted")
+				}
+			},
+		}
 	})
-	tests.Add("set _deleted=true and new_edits=false", test{
-		docID: "foo",
-		doc: map[string]interface{}{
-			"_deleted": true,
-			"foo":      "bar",
-			"_rev":     "1-abc",
-		},
-		options: kivik.Param("new_edits", false),
-		wantRev: "1-abc",
-		wantRevs: []leaf{
-			{
-				ID:    "foo",
-				Rev:   1,
-				RevID: "abc",
+	tests.Add("set _deleted=true and new_edits=false", func(t *testing.T) interface{} {
+		d := newDB(t)
+
+		return test{
+			db:    d,
+			docID: "foo",
+			doc: map[string]interface{}{
+				"_deleted": true,
+				"foo":      "bar",
+				"_rev":     "1-abc",
 			},
-		},
-		check: func(t *testing.T, d driver.DB) {
-			var deleted bool
-			err := d.(*db).db.QueryRow(`
+			options: kivik.Param("new_edits", false),
+			wantRev: "1-abc",
+			wantRevs: []leaf{
+				{
+					ID:    "foo",
+					Rev:   1,
+					RevID: "abc",
+				},
+			},
+			check: func(t *testing.T) {
+				var deleted bool
+				err := d.(*db).db.QueryRow(`
 					SELECT deleted
 					FROM test
 					WHERE id='foo'
 					ORDER BY rev DESC, rev_id DESC
 					LIMIT 1
 				`).Scan(&deleted)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if !deleted {
-				t.Errorf("Document not marked deleted")
-			}
-		},
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !deleted {
+					t.Errorf("Document not marked deleted")
+				}
+			},
+		}
 	})
 	tests.Add("new_edits=false, with _revisions", test{
 		docID: "foo",
@@ -973,7 +988,7 @@ func TestDBPut(t *testing.T) {
 			t.Errorf("Unexpected status: %d", status)
 		}
 		if tt.check != nil {
-			tt.check(t, dbc)
+			tt.check(t)
 		}
 		if err != nil {
 			return

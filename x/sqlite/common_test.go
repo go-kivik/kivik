@@ -17,15 +17,24 @@ package sqlite
 
 import (
 	"context"
+	"database/sql"
 	"os"
 	"testing"
 
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
+type testDB struct {
+	driver.DB
+}
+
+func (tdb *testDB) underlying() *sql.DB {
+	return tdb.DB.(*db).db
+}
+
 // newDB creates a new driver.DB instance backed by an in-memory SQLite database,
 // and registers a cleanup function to close the database when the test is done.
-func newDB(t *testing.T) driver.DB {
+func newDB(t *testing.T) *testDB {
 	dsn := ":memory:"
 	if os.Getenv("KEEP_TEST_DB") != "" {
 		file, err := os.CreateTemp("", "kivik-sqlite-test-*.db")
@@ -53,5 +62,7 @@ func newDB(t *testing.T) driver.DB {
 	t.Cleanup(func() {
 		_ = db.Close()
 	})
-	return db
+	return &testDB{
+		DB: db,
+	}
 }

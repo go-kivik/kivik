@@ -60,7 +60,7 @@ func TestDBDelete(t *testing.T) {
 			wantRev: "2-.*",
 			check: func(t *testing.T) {
 				var deleted bool
-				err := d.(*db).db.QueryRow(`
+				err := d.underlying().QueryRow(`
 				SELECT deleted
 				FROM test
 				WHERE id='foo'
@@ -179,7 +179,7 @@ func TestDBDelete(t *testing.T) {
 			wantRev: "2-.*",
 			check: func(t *testing.T) {
 				var deletedRev string
-				err := d.(*db).db.QueryRow(`
+				err := d.underlying().QueryRow(`
 				SELECT deleted_rev
 				FROM test_attachments
 				WHERE filename='foo.txt'

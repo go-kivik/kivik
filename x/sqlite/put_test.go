@@ -48,7 +48,7 @@ type attachmentRow struct {
 func TestDBPut(t *testing.T) {
 	t.Parallel()
 	type test struct {
-		db              driver.DB
+		db              *testDB
 		docID           string
 		doc             interface{}
 		options         driver.Options
@@ -239,7 +239,7 @@ func TestDBPut(t *testing.T) {
 			wantRev: "1-9bb58f26192e4ba00f01e2e7b136bbd8",
 			check: func(t *testing.T) {
 				var doc string
-				err := d.(*db).db.QueryRow(`
+				err := d.underlying().QueryRow(`
 					SELECT doc
 					FROM test
 					WHERE id='foo'
@@ -289,7 +289,7 @@ func TestDBPut(t *testing.T) {
 			},
 			check: func(t *testing.T) {
 				var deleted bool
-				err := d.(*db).db.QueryRow(`
+				err := d.underlying().QueryRow(`
 					SELECT deleted
 					FROM test
 					WHERE id='foo'
@@ -325,7 +325,7 @@ func TestDBPut(t *testing.T) {
 			},
 			check: func(t *testing.T) {
 				var deleted bool
-				err := d.(*db).db.QueryRow(`
+				err := d.underlying().QueryRow(`
 					SELECT deleted
 					FROM test
 					WHERE id='foo'
@@ -363,7 +363,7 @@ func TestDBPut(t *testing.T) {
 			},
 			check: func(t *testing.T) {
 				var deleted bool
-				err := d.(*db).db.QueryRow(`
+				err := d.underlying().QueryRow(`
 					SELECT deleted
 					FROM test
 					WHERE id='foo'
@@ -498,7 +498,7 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("new_edits=false, with _revisions and some revs already exist without parents", func(t *testing.T) interface{} {
 		dbc := newDB(t)
-		_, err := dbc.(*db).db.Exec(`
+		_, err := dbc.underlying().Exec(`
 		INSERT INTO test_revs (id, rev, rev_id)
 		VALUES ('foo', 1, 'abc'), ('foo', 2, 'def')
 	`)
@@ -1000,7 +1000,7 @@ func TestDBPut(t *testing.T) {
 		if len(tt.wantRevs) == 0 {
 			t.Errorf("No leaves to check")
 		}
-		leaves := readRevisions(t, dbc.(*db).db, tt.docID)
+		leaves := readRevisions(t, dbc.underlying(), tt.docID)
 		for i, r := range tt.wantRevs {
 			// allow tests to omit RevID
 			if r.RevID == "" {
@@ -1013,7 +1013,7 @@ func TestDBPut(t *testing.T) {
 		if d := cmp.Diff(tt.wantRevs, leaves); d != "" {
 			t.Errorf("Unexpected leaves: %s", d)
 		}
-		checkAttachments(t, dbc.(*db).db, tt.wantAttachments)
+		checkAttachments(t, dbc.underlying(), tt.wantAttachments)
 	})
 }
 

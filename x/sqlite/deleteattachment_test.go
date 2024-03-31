@@ -32,7 +32,7 @@ import (
 func TestDBDeleteAttachment(t *testing.T) {
 	t.Parallel()
 	type test struct {
-		db              driver.DB
+		db              *testDB
 		docID           string
 		filename        string
 		options         driver.Options
@@ -161,7 +161,7 @@ func TestDBDeleteAttachment(t *testing.T) {
 		if len(tt.wantRevs) == 0 {
 			t.Errorf("No leaves to check")
 		}
-		leaves := readRevisions(t, dbc.(*db).db, tt.docID)
+		leaves := readRevisions(t, dbc.underlying(), tt.docID)
 		for i, r := range tt.wantRevs {
 			// allow tests to omit RevID
 			if r.RevID == "" {
@@ -174,6 +174,6 @@ func TestDBDeleteAttachment(t *testing.T) {
 		if d := cmp.Diff(tt.wantRevs, leaves); d != "" {
 			t.Errorf("Unexpected leaves: %s", d)
 		}
-		checkAttachments(t, dbc.(*db).db, tt.wantAttachments)
+		checkAttachments(t, dbc.underlying(), tt.wantAttachments)
 	})
 }

@@ -17,6 +17,7 @@ package sqlite
 
 import (
 	"context"
+	"database/sql"
 	"net/http"
 	"regexp"
 	"testing"
@@ -1012,13 +1013,13 @@ func TestDBPut(t *testing.T) {
 		if d := cmp.Diff(tt.wantRevs, leaves); d != "" {
 			t.Errorf("Unexpected leaves: %s", d)
 		}
-		checkAttachments(t, dbc, tt.wantAttachments)
+		checkAttachments(t, dbc.(*db).db, tt.wantAttachments)
 	})
 }
 
-func checkAttachments(t *testing.T, d driver.DB, want []attachmentRow) {
+func checkAttachments(t *testing.T, d *sql.DB, want []attachmentRow) {
 	t.Helper()
-	rows, err := d.(*db).db.Query(`
+	rows, err := d.Query(`
 		SELECT id, rev, rev_id, filename, content_type, length, digest, data, deleted_rev, deleted_rev_id
 		FROM test_attachments
 		ORDER BY id, rev, rev_id, filename

@@ -306,6 +306,6 @@ func TestDBPutAttachment(t *testing.T) {
 		if d := cmp.Diff(tt.wantRevs, leaves); d != "" {
 			t.Errorf("Unexpected leaves: %s", d)
 		}
-		checkAttachments(t, dbc, tt.wantAttachments)
+		checkAttachments(t, dbc.(*db).db, tt.wantAttachments)
 	})
 }

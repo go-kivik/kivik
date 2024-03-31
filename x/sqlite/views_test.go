@@ -122,10 +122,7 @@ func TestDBAllDocs(t *testing.T) {
 	tests.Add("deleted doc", func(t *testing.T) interface{} {
 		db := newDB(t)
 		_ = db.tPut("foo", map[string]string{"cat": "meow"})
-		_, err := db.Delete(context.Background(), "foo", kivik.Rev("1-274558516009acbe973682d27a58b598"))
-		if err != nil {
-			t.Fatal(err)
-		}
+		_ = db.tDelete("foo", kivik.Rev("1-274558516009acbe973682d27a58b598"))
 
 		return test{
 			db:   db,
@@ -142,10 +139,7 @@ func TestDBAllDocs(t *testing.T) {
 			"cat":  "purr",
 			"_rev": "1-aaa",
 		}, kivik.Param("new_edits", false))
-		_, err := db.Delete(context.Background(), "foo", kivik.Rev("1-aaa"))
-		if err != nil {
-			t.Fatal(err)
-		}
+		_ = db.tDelete("foo", kivik.Rev("1-aaa"))
 
 		return test{
 			db: db,

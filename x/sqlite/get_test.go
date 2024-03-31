@@ -132,10 +132,7 @@ func TestDBGet(t *testing.T) {
 	tests.Add("deleted document", func(t *testing.T) interface{} {
 		db := newDB(t)
 		rev := db.tPut("foo", map[string]string{"foo": "bar"})
-		_, err := db.Delete(context.Background(), "foo", kivik.Rev(rev))
-		if err != nil {
-			t.Fatal(err)
-		}
+		_ = db.tDelete("foo", kivik.Rev(rev))
 
 		return test{
 			db:         db,
@@ -147,10 +144,7 @@ func TestDBGet(t *testing.T) {
 	tests.Add("deleted document by rev", func(t *testing.T) interface{} {
 		db := newDB(t)
 		rev := db.tPut("foo", map[string]string{"foo": "bar"})
-		rev, err := db.Delete(context.Background(), "foo", kivik.Rev(rev))
-		if err != nil {
-			t.Fatal(err)
-		}
+		rev = db.tDelete("foo", kivik.Rev(rev))
 
 		return test{
 			db:      db,
@@ -430,10 +424,7 @@ func TestDBGet(t *testing.T) {
 			"new_edits": false,
 		}))
 		// now delete the losing leaf
-		_, err := db.Delete(context.Background(), "foo", kivik.Rev("3-ccc"))
-		if err != nil {
-			t.Fatal(err)
-		}
+		_ = db.tDelete("foo", kivik.Rev("3-ccc"))
 
 		// winning branch
 		_ = db.tPut("foo", map[string]interface{}{

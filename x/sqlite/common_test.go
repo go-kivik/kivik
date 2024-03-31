@@ -47,6 +47,19 @@ func (tdb *testDB) tPut(docID string, doc interface{}, options ...driver.Options
 	return rev
 }
 
+func (tdb *testDB) tDelete(docID string, options ...driver.Options) string { //nolint:unparam
+	tdb.t.Helper()
+	opt := driver.Options(mock.NilOption)
+	if len(options) > 0 {
+		opt = options[0]
+	}
+	rev, err := tdb.Delete(context.Background(), docID, opt)
+	if err != nil {
+		tdb.t.Fatalf("Failed to delete doc: %s", err)
+	}
+	return rev
+}
+
 // newDB creates a new driver.DB instance backed by an in-memory SQLite database,
 // and registers a cleanup function to close the database when the test is done.
 func newDB(t *testing.T) *testDB {

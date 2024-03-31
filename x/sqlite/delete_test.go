@@ -76,10 +76,7 @@ func TestDBDelete(t *testing.T) {
 	tests.Add("replay delete should conflict", func(t *testing.T) interface{} {
 		db := newDB(t)
 		rev := db.tPut("foo", map[string]string{"foo": "bar"})
-		_, err := db.Delete(context.Background(), "foo", kivik.Rev(rev))
-		if err != nil {
-			t.Fatal(err)
-		}
+		_ = db.tDelete("foo", kivik.Rev(rev))
 
 		return test{
 			db:         db,
@@ -92,10 +89,7 @@ func TestDBDelete(t *testing.T) {
 	tests.Add("delete deleted doc should succeed", func(t *testing.T) interface{} {
 		db := newDB(t)
 		rev := db.tPut("foo", map[string]string{"foo": "bar"})
-		rev2, err := db.Delete(context.Background(), "foo", kivik.Rev(rev))
-		if err != nil {
-			t.Fatal(err)
-		}
+		rev2 := db.tDelete("foo", kivik.Rev(rev))
 
 		return test{
 			db:      db,

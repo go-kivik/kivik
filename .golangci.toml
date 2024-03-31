@@ -1,7 +1,7 @@
 [run]
 timeout = "300s"
 
-[output]
+[[output.formats]]
 format = "colored-line-number"
 
 [linters]

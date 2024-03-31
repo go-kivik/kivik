@@ -48,10 +48,7 @@ func TestDBDelete(t *testing.T) {
 	})
 	tests.Add("success", func(t *testing.T) interface{} {
 		d := newDB(t)
-		rev, err := d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		rev := d.tPut("foo", map[string]string{"foo": "bar"})
 
 		return test{
 			db:      d,
@@ -78,11 +75,8 @@ func TestDBDelete(t *testing.T) {
 	})
 	tests.Add("replay delete should conflict", func(t *testing.T) interface{} {
 		db := newDB(t)
-		rev, err := db.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Delete(context.Background(), "foo", kivik.Rev(rev))
+		rev := db.tPut("foo", map[string]string{"foo": "bar"})
+		_, err := db.Delete(context.Background(), "foo", kivik.Rev(rev))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -97,10 +91,7 @@ func TestDBDelete(t *testing.T) {
 	})
 	tests.Add("delete deleted doc should succeed", func(t *testing.T) interface{} {
 		db := newDB(t)
-		rev, err := db.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		rev := db.tPut("foo", map[string]string{"foo": "bar"})
 		rev2, err := db.Delete(context.Background(), "foo", kivik.Rev(rev))
 		if err != nil {
 			t.Fatal(err)
@@ -115,10 +106,7 @@ func TestDBDelete(t *testing.T) {
 	})
 	tests.Add("delete without rev", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		_ = db.tPut("foo", map[string]string{"foo": "bar"})
 
 		return test{
 			db:         db,
@@ -129,20 +117,14 @@ func TestDBDelete(t *testing.T) {
 	})
 	tests.Add("delete losing rev for conflict should succeed", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]string{
+		_ = db.tPut("foo", map[string]string{
 			"cat":  "meow",
 			"_rev": "1-xxx",
 		}, kivik.Param("new_edits", false))
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "foo", map[string]string{
+		_ = db.tPut("foo", map[string]string{
 			"cat":  "purr",
 			"_rev": "1-aaa",
 		}, kivik.Param("new_edits", false))
-		if err != nil {
-			t.Fatal(err)
-		}
 
 		return test{
 			db:      db,
@@ -159,7 +141,7 @@ func TestDBDelete(t *testing.T) {
 	})
 	tests.Add("when doc is deleted, attachments are marked as deleted as well", func(t *testing.T) interface{} {
 		d := newDB(t)
-		rev, err := d.Put(context.Background(), "foo", map[string]interface{}{
+		rev := d.tPut("foo", map[string]interface{}{
 			"cat": "meow",
 			"_attachments": map[string]interface{}{
 				"foo.txt": map[string]interface{}{
@@ -167,10 +149,7 @@ func TestDBDelete(t *testing.T) {
 					"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
 				},
 			},
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		})
 
 		return test{
 			db:      d,

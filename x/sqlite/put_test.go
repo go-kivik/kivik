@@ -104,9 +104,7 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("attempt to update doc without rev should conflict", func(t *testing.T) interface{} {
 		db := newDB(t)
-		if _, err := db.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption); err != nil {
-			t.Fatal(err)
-		}
+		_ = db.tPut("foo", map[string]string{"foo": "bar"})
 
 		return test{
 			db:    db,
@@ -120,9 +118,7 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("attempt to update doc with wrong rev should conflict", func(t *testing.T) interface{} {
 		db := newDB(t)
-		if _, err := db.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption); err != nil {
-			t.Fatal(err)
-		}
+		_ = db.tPut("foo", map[string]string{"foo": "bar"})
 
 		return test{
 			db:    db,
@@ -137,10 +133,7 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("update doc with correct rev", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		_ = db.tPut("foo", map[string]string{"foo": "bar"})
 
 		return test{
 			db:    db,
@@ -193,10 +186,7 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("update doc with new_edits=false, existing doc", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		_ = db.tPut("foo", map[string]string{"foo": "bar"})
 
 		return test{
 			db:    db,
@@ -223,10 +213,7 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("update doc with new_edits=false, existing doc and rev", func(t *testing.T) interface{} {
 		d := newDB(t)
-		_, err := d.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		_ = d.tPut("foo", map[string]string{"foo": "bar"})
 
 		return test{
 			db:    d,
@@ -450,16 +437,13 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("new_edits=false, with _revisions replayed", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]interface{}{
 			"_revisions": map[string]interface{}{
 				"ids":   []string{"ghi", "def", "abc"},
 				"start": 3,
 			},
 			"foo": "bar",
 		}, kivik.Param("new_edits", false))
-		if err != nil {
-			t.Fatal(err)
-		}
 
 		return test{
 			db:    db,
@@ -543,12 +527,10 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("new_edits=false, with _revisions and some revs already exist with docs", func(t *testing.T) interface{} {
 		db := newDB(t)
-		if _, err := db.Put(context.Background(), "foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]interface{}{
 			"_rev": "2-def",
 			"moo":  "oink",
-		}, kivik.Param("new_edits", false)); err != nil {
-			t.Fatal(err)
-		}
+		}, kivik.Param("new_edits", false))
 
 		return test{
 			db:    db,
@@ -600,12 +582,9 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("new_edits=true, with _revisions should conflict for wrong rev", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]interface{}{
 			"foo": "bar",
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		})
 
 		return test{
 			db:    db,
@@ -624,13 +603,10 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("new_edits=true, with _revisions should succeed for correct rev", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]interface{}{
 			"foo":  "bar",
 			"_rev": "1-abc",
 		}, kivik.Param("new_edits", false))
-		if err != nil {
-			t.Fatal(err)
-		}
 
 		return test{
 			db:    db,
@@ -662,16 +638,13 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("new_edits=true, with _revisions should succeed for correct history", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]interface{}{
 			"foo": "bar",
 			"_revisions": map[string]interface{}{
 				"ids":   []string{"ghi", "def", "abc"},
 				"start": 3,
 			},
 		}, kivik.Param("new_edits", false))
-		if err != nil {
-			t.Fatal(err)
-		}
 
 		return test{
 			db:    db,
@@ -717,16 +690,13 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("new_edits=true, with _revisions should fail for wrong history", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]interface{}{
 			"foo": "bar",
 			"_revisions": map[string]interface{}{
 				"ids":   []string{"ghi", "def", "abc"},
 				"start": 3,
 			},
 		}, kivik.Param("new_edits", false))
-		if err != nil {
-			t.Fatal(err)
-		}
 
 		return test{
 			db:    db,
@@ -841,7 +811,7 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("update doc with attachments without deleting them", func(t *testing.T) interface{} {
 		db := newDB(t)
-		rev, err := db.Put(context.Background(), "foo", map[string]interface{}{
+		rev := db.tPut("foo", map[string]interface{}{
 			"foo": "bar",
 			"_attachments": map[string]interface{}{
 				"foo.txt": map[string]interface{}{
@@ -849,10 +819,7 @@ func TestDBPut(t *testing.T) {
 					"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
 				},
 			},
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		})
 
 		return test{
 			db:    db,
@@ -893,7 +860,7 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("update doc with attachments, delete one", func(t *testing.T) interface{} {
 		db := newDB(t)
-		rev, err := db.Put(context.Background(), "foo", map[string]interface{}{
+		rev := db.tPut("foo", map[string]interface{}{
 			"foo": "bar",
 			"_attachments": map[string]interface{}{
 				"foo.txt": map[string]interface{}{
@@ -905,10 +872,7 @@ func TestDBPut(t *testing.T) {
 					"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
 				},
 			},
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		})
 
 		return test{
 			db:    db,

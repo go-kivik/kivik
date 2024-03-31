@@ -76,10 +76,7 @@ func TestDBPutAttachment(t *testing.T) {
 	})
 	tests.Add("add attachment to existing doc", func(t *testing.T) interface{} {
 		db := newDB(t)
-		rev, err := db.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		rev := db.tPut("foo", map[string]string{"foo": "bar"})
 
 		return test{
 			db:    db,
@@ -132,10 +129,7 @@ func TestDBPutAttachment(t *testing.T) {
 	})
 	tests.Add("existing doc, wrong rev", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		_ = db.tPut("foo", map[string]string{"foo": "bar"})
 
 		return test{
 			db:    db,
@@ -152,7 +146,7 @@ func TestDBPutAttachment(t *testing.T) {
 	})
 	tests.Add("don't delete existing attachment", func(t *testing.T) interface{} {
 		db := newDB(t)
-		rev, err := db.Put(context.Background(), "foo", map[string]interface{}{
+		rev := db.tPut("foo", map[string]interface{}{
 			"foo": "bar",
 			"_attachments": map[string]interface{}{
 				"foo.txt": map[string]interface{}{
@@ -160,10 +154,7 @@ func TestDBPutAttachment(t *testing.T) {
 					"data":         "SGVsbG8sIHdvcmxkIQ==",
 				},
 			},
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		})
 
 		return test{
 			db:    db,
@@ -210,7 +201,7 @@ func TestDBPutAttachment(t *testing.T) {
 	})
 	tests.Add("update existing attachment", func(t *testing.T) interface{} {
 		db := newDB(t)
-		rev, err := db.Put(context.Background(), "foo", map[string]interface{}{
+		rev := db.tPut("foo", map[string]interface{}{
 			"foo": "bar",
 			"_attachments": map[string]interface{}{
 				"foo.txt": map[string]interface{}{
@@ -218,10 +209,7 @@ func TestDBPutAttachment(t *testing.T) {
 					"data":         "SGVsbG8sIHdvcmxkIQ==",
 				},
 			},
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		})
 
 		return test{
 			db:    db,

@@ -22,14 +22,29 @@ import (
 	"testing"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
 type testDB struct {
+	t *testing.T
 	driver.DB
 }
 
 func (tdb *testDB) underlying() *sql.DB {
 	return tdb.DB.(*db).db
+}
+
+func (tdb *testDB) tPut(docID string, doc interface{}, options ...driver.Options) string {
+	tdb.t.Helper()
+	opt := driver.Options(mock.NilOption)
+	if len(options) > 0 {
+		opt = options[0]
+	}
+	rev, err := tdb.Put(context.Background(), docID, doc, opt)
+	if err != nil {
+		tdb.t.Fatalf("Failed to put doc: %s", err)
+	}
+	return rev
 }
 
 // newDB creates a new driver.DB instance backed by an in-memory SQLite database,
@@ -64,5 +79,6 @@ func newDB(t *testing.T) *testDB {
 	})
 	return &testDB{
 		DB: db,
+		t:  t,
 	}
 }

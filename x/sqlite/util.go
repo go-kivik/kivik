@@ -32,7 +32,8 @@ func placeholders(start, count int) string {
 	return strings.Join(result, ", ")
 }
 
-func (d *db) currentRev(ctx context.Context, tx *sql.Tx, docID string) (revision, error) {
+// winningRev returns the current winning revision for the specified document.
+func (d *db) winningRev(ctx context.Context, tx *sql.Tx, docID string) (revision, error) {
 	var curRev revision
 	err := tx.QueryRowContext(ctx, d.query(`
 		SELECT rev, rev_id

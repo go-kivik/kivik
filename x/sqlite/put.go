@@ -143,7 +143,7 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 		return newRev, tx.Commit()
 	}
 
-	curRev, err := d.currentRev(ctx, tx, docID)
+	curRev, err := d.winningRev(ctx, tx, docID)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return "", err
 	}

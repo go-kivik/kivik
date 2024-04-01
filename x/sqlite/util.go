@@ -32,7 +32,37 @@ func placeholders(start, count int) string {
 	return strings.Join(result, ", ")
 }
 
-func (d *db) currentRev(ctx context.Context, tx *sql.Tx, docID string) (revision, error) {
+// isLeafRev returns a nil error if the specified revision is a leaf revision.
+// If the revision is not a leaf revision, it returns a conflict error.
+// If the document is not found, it returns a not found error.
+func (d *db) isLeafRev(ctx context.Context, tx *sql.Tx, docID string, rev int, revID string) error {
+	var exists bool
+	err := tx.QueryRowContext(ctx, d.query(`
+		SELECT
+			parent.parent_rev IS NOT NULL
+		FROM {{ .Revs }} AS r
+		LEFT JOIN {{ .Revs }} AS parent
+			ON r.id = parent.id
+			AND r.parent_rev = parent.parent_rev
+			AND r.parent_rev_id = parent.parent_rev_id
+		WHERE r.id = $1
+			AND r.rev = $2
+			AND r.rev_id = $3
+	`), docID, rev, revID).Scan(&exists)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return &internal.Error{Status: http.StatusNotFound, Message: "document not found"}
+	case err != nil:
+		return err
+	}
+	if !exists {
+		return &internal.Error{Status: http.StatusConflict, Message: "Document update conflict"}
+	}
+	return nil
+}
+
+// winningRev returns the current winning revision for the specified document.
+func (d *db) winningRev(ctx context.Context, tx *sql.Tx, docID string) (revision, error) {
 	var curRev revision
 	err := tx.QueryRowContext(ctx, d.query(`
 		SELECT rev, rev_id

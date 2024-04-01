@@ -39,7 +39,7 @@ func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attach
 		ID: docID,
 	}
 
-	curRev, err := d.currentRev(ctx, tx, docID)
+	curRev, err := d.winningRev(ctx, tx, docID)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		data.RevID = revIDEmpty

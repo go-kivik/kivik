@@ -51,10 +51,7 @@ func TestDBAllDocs(t *testing.T) {
 	})
 	tests.Add("single doc", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]string{"cat": "meow"}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		_ = db.tPut("foo", map[string]string{"cat": "meow"})
 
 		return test{
 			db: db,
@@ -69,10 +66,7 @@ func TestDBAllDocs(t *testing.T) {
 	})
 	tests.Add("include_docs=true", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]string{"cat": "meow"}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		_ = db.tPut("foo", map[string]string{"cat": "meow"})
 
 		return test{
 			db:      db,
@@ -89,14 +83,8 @@ func TestDBAllDocs(t *testing.T) {
 	})
 	tests.Add("single doc multiple revisions", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]string{"cat": "meow"}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "foo", map[string]string{"cat": "purr"}, kivik.Rev("1-274558516009acbe973682d27a58b598"))
-		if err != nil {
-			t.Fatal(err)
-		}
+		_ = db.tPut("foo", map[string]string{"cat": "meow"})
+		_ = db.tPut("foo", map[string]string{"cat": "purr"}, kivik.Rev("1-274558516009acbe973682d27a58b598"))
 
 		return test{
 			db: db,
@@ -111,20 +99,14 @@ func TestDBAllDocs(t *testing.T) {
 	})
 	tests.Add("conflicting document, select winning rev", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]string{
+		_ = db.tPut("foo", map[string]string{
 			"cat":  "meow",
 			"_rev": "1-xxx",
 		}, kivik.Param("new_edits", false))
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "foo", map[string]string{
+		_ = db.tPut("foo", map[string]string{
 			"cat":  "purr",
 			"_rev": "1-aaa",
 		}, kivik.Param("new_edits", false))
-		if err != nil {
-			t.Fatal(err)
-		}
 
 		return test{
 			db: db,
@@ -139,14 +121,8 @@ func TestDBAllDocs(t *testing.T) {
 	})
 	tests.Add("deleted doc", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]string{"cat": "meow"}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Delete(context.Background(), "foo", kivik.Rev("1-274558516009acbe973682d27a58b598"))
-		if err != nil {
-			t.Fatal(err)
-		}
+		_ = db.tPut("foo", map[string]string{"cat": "meow"})
+		_ = db.tDelete("foo", kivik.Rev("1-274558516009acbe973682d27a58b598"))
 
 		return test{
 			db:   db,
@@ -155,24 +131,15 @@ func TestDBAllDocs(t *testing.T) {
 	})
 	tests.Add("select lower revision number when higher rev in winning branch has been deleted", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]string{
+		_ = db.tPut("foo", map[string]string{
 			"cat":  "meow",
 			"_rev": "1-xxx",
 		}, kivik.Param("new_edits", false))
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "foo", map[string]string{
+		_ = db.tPut("foo", map[string]string{
 			"cat":  "purr",
 			"_rev": "1-aaa",
 		}, kivik.Param("new_edits", false))
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Delete(context.Background(), "foo", kivik.Rev("1-aaa"))
-		if err != nil {
-			t.Fatal(err)
-		}
+		_ = db.tDelete("foo", kivik.Rev("1-aaa"))
 
 		return test{
 			db: db,
@@ -187,20 +154,14 @@ func TestDBAllDocs(t *testing.T) {
 	})
 	tests.Add("conflicts=true", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]string{
+		_ = db.tPut("foo", map[string]string{
 			"cat":  "meow",
 			"_rev": "1-xxx",
 		}, kivik.Param("new_edits", false))
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "foo", map[string]string{
+		_ = db.tPut("foo", map[string]string{
 			"cat":  "purr",
 			"_rev": "1-aaa",
 		}, kivik.Param("new_edits", false))
-		if err != nil {
-			t.Fatal(err)
-		}
 
 		return test{
 			db: db,
@@ -220,20 +181,14 @@ func TestDBAllDocs(t *testing.T) {
 	})
 	tests.Add("conflicts=true ignored without include_docs", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]string{
+		_ = db.tPut("foo", map[string]string{
 			"cat":  "meow",
 			"_rev": "1-xxx",
 		}, kivik.Param("new_edits", false))
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "foo", map[string]string{
+		_ = db.tPut("foo", map[string]string{
 			"cat":  "purr",
 			"_rev": "1-aaa",
 		}, kivik.Param("new_edits", false))
-		if err != nil {
-			t.Fatal(err)
-		}
 
 		return test{
 			db: db,
@@ -251,24 +206,15 @@ func TestDBAllDocs(t *testing.T) {
 	})
 	tests.Add("default sorting", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "cat", map[string]string{
+		_ = db.tPut("cat", map[string]string{
 			"cat": "meow",
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "dog", map[string]string{
+		})
+		_ = db.tPut("dog", map[string]string{
 			"dog": "woof",
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "cow", map[string]string{
+		})
+		_ = db.tPut("cow", map[string]string{
 			"cow": "moo",
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		})
 
 		return test{
 			db: db,
@@ -293,24 +239,15 @@ func TestDBAllDocs(t *testing.T) {
 	})
 	tests.Add("descending=true", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "cat", map[string]string{
+		_ = db.tPut("cat", map[string]string{
 			"cat": "meow",
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "dog", map[string]string{
+		})
+		_ = db.tPut("dog", map[string]string{
 			"dog": "woof",
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "cow", map[string]string{
+		})
+		_ = db.tPut("cow", map[string]string{
 			"cow": "moo",
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		})
 
 		return test{
 			db:      db,
@@ -336,24 +273,15 @@ func TestDBAllDocs(t *testing.T) {
 	})
 	tests.Add("endkey", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "cat", map[string]string{
+		_ = db.tPut("cat", map[string]string{
 			"cat": "meow",
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "dog", map[string]string{
+		})
+		_ = db.tPut("dog", map[string]string{
 			"dog": "woof",
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "cow", map[string]string{
+		})
+		_ = db.tPut("cow", map[string]string{
 			"cow": "moo",
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		})
 
 		return test{
 			db:      db,
@@ -374,24 +302,15 @@ func TestDBAllDocs(t *testing.T) {
 	})
 	tests.Add("descending=true, endkey", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "cat", map[string]string{
+		_ = db.tPut("cat", map[string]string{
 			"cat": "meow",
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "dog", map[string]string{
+		})
+		_ = db.tPut("dog", map[string]string{
 			"dog": "woof",
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "cow", map[string]string{
+		})
+		_ = db.tPut("cow", map[string]string{
 			"cow": "moo",
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		})
 
 		return test{
 			db: db,
@@ -415,24 +334,15 @@ func TestDBAllDocs(t *testing.T) {
 	})
 	tests.Add("end_key", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "cat", map[string]string{
+		_ = db.tPut("cat", map[string]string{
 			"cat": "meow",
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "dog", map[string]string{
+		})
+		_ = db.tPut("dog", map[string]string{
 			"dog": "woof",
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "cow", map[string]string{
+		})
+		_ = db.tPut("cow", map[string]string{
 			"cow": "moo",
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		})
 
 		return test{
 			db:      db,
@@ -453,24 +363,15 @@ func TestDBAllDocs(t *testing.T) {
 	})
 	tests.Add("endkey, inclusive_end=false", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "cat", map[string]string{
+		_ = db.tPut("cat", map[string]string{
 			"cat": "meow",
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "dog", map[string]string{
+		})
+		_ = db.tPut("dog", map[string]string{
 			"dog": "woof",
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "cow", map[string]string{
+		})
+		_ = db.tPut("cow", map[string]string{
 			"cow": "moo",
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		})
 
 		return test{
 			db: db,
@@ -489,24 +390,15 @@ func TestDBAllDocs(t *testing.T) {
 	})
 	tests.Add("startkey", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "cat", map[string]string{
+		_ = db.tPut("cat", map[string]string{
 			"cat": "meow",
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "dog", map[string]string{
+		})
+		_ = db.tPut("dog", map[string]string{
 			"dog": "woof",
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "cow", map[string]string{
+		})
+		_ = db.tPut("cow", map[string]string{
 			"cow": "moo",
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		})
 
 		return test{
 			db:      db,
@@ -527,24 +419,16 @@ func TestDBAllDocs(t *testing.T) {
 	})
 	tests.Add("start_key", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "cat", map[string]string{
+		_ = db.tPut("cat", map[string]string{
 			"cat": "meow",
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "dog", map[string]string{
+		})
+		_ = db.tPut("dog", map[string]string{
 			"dog": "woof",
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "cow", map[string]string{
+		})
+		_ = db.tPut("cow", map[string]string{
 			"cow": "moo",
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		})
+
 		return test{
 			db:      db,
 			options: kivik.Param("start_key", "cow"),
@@ -564,24 +448,15 @@ func TestDBAllDocs(t *testing.T) {
 	})
 	tests.Add("startkey, descending", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "cat", map[string]string{
+		_ = db.tPut("cat", map[string]string{
 			"cat": "meow",
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "dog", map[string]string{
+		})
+		_ = db.tPut("dog", map[string]string{
 			"dog": "woof",
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "cow", map[string]string{
+		})
+		_ = db.tPut("cow", map[string]string{
 			"cow": "moo",
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		})
 
 		return test{
 			db: db,

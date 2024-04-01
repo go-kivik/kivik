@@ -58,7 +58,7 @@ func TestDBGetAttachment(t *testing.T) {
 	})
 	tests.Add("when the attachment exists, return it", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]interface{}{
 			"_id": "foo",
 			"_attachments": map[string]interface{}{
 				"foo.txt": map[string]interface{}{
@@ -66,10 +66,7 @@ func TestDBGetAttachment(t *testing.T) {
 					"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
 				},
 			},
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		})
 
 		return test{
 			db:       db,
@@ -79,7 +76,7 @@ func TestDBGetAttachment(t *testing.T) {
 	})
 	tests.Add("return an attachment when it exists", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]interface{}{
 			"_id": "foo",
 			"_attachments": map[string]interface{}{
 				"foo.txt": map[string]interface{}{
@@ -87,10 +84,7 @@ func TestDBGetAttachment(t *testing.T) {
 					"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
 				},
 			},
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		})
 
 		return test{
 			db:       db,
@@ -107,7 +101,7 @@ func TestDBGetAttachment(t *testing.T) {
 	})
 	tests.Add("document has been deleted, should return not-found", func(t *testing.T) interface{} {
 		db := newDB(t)
-		rev, err := db.Put(context.Background(), "foo", map[string]interface{}{
+		rev := db.tPut("foo", map[string]interface{}{
 			"_id": "foo",
 			"_attachments": map[string]interface{}{
 				"foo.txt": map[string]interface{}{
@@ -115,11 +109,8 @@ func TestDBGetAttachment(t *testing.T) {
 					"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
 				},
 			},
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Delete(context.Background(), "foo", kivik.Rev(rev))
+		})
+		_, err := db.Delete(context.Background(), "foo", kivik.Rev(rev))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -134,7 +125,7 @@ func TestDBGetAttachment(t *testing.T) {
 	})
 	tests.Add("document has been been updated since attachment was added, should succeed", func(t *testing.T) interface{} {
 		db := newDB(t)
-		rev, err := db.Put(context.Background(), "foo", map[string]interface{}{
+		rev := db.tPut("foo", map[string]interface{}{
 			"_id": "foo",
 			"_attachments": map[string]interface{}{
 				"foo.txt": map[string]interface{}{
@@ -142,17 +133,11 @@ func TestDBGetAttachment(t *testing.T) {
 					"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
 				},
 			},
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "foo", map[string]interface{}{
+		})
+		_ = db.tPut("foo", map[string]interface{}{
 			"_id":     "foo",
 			"updated": true,
 		}, kivik.Rev(rev))
-		if err != nil {
-			t.Fatal(err)
-		}
 
 		return test{
 			db:       db,
@@ -170,7 +155,7 @@ func TestDBGetAttachment(t *testing.T) {
 	tests.Add("returns old attachment content for revision that predates attachment update", func(t *testing.T) interface{} {
 		d := newDB(t)
 		const wantContent = "Hello World"
-		id, filename, rev := documentWithUpdatedAttachment(d, t, wantContent)
+		id, filename, rev := documentWithUpdatedAttachment(d, wantContent)
 
 		r, _ := parseRev(rev)
 
@@ -247,12 +232,12 @@ func TestDBGetAttachment(t *testing.T) {
 	})
 }
 
-func documentWithUpdatedAttachment(d driver.DB, t *testing.T, content string) (id, filename, rev string) {
+func documentWithUpdatedAttachment(d *testDB, content string) (id, filename, rev string) {
 	const (
 		docID          = "foo"
 		attachmentName = "foo.txt"
 	)
-	rev, err := d.Put(context.Background(), "foo", map[string]interface{}{
+	rev = d.tPut("foo", map[string]interface{}{
 		"_id": docID,
 		"_attachments": map[string]interface{}{
 			attachmentName: map[string]interface{}{
@@ -260,11 +245,9 @@ func documentWithUpdatedAttachment(d driver.DB, t *testing.T, content string) (i
 				"data":         []byte(content),
 			},
 		},
-	}, mock.NilOption)
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = d.Put(context.Background(), "foo", map[string]interface{}{
+	})
+
+	_ = d.tPut("foo", map[string]interface{}{
 		"_id": "foo",
 		"_attachments": map[string]interface{}{
 			"foo.txt": map[string]interface{}{
@@ -273,8 +256,5 @@ func documentWithUpdatedAttachment(d driver.DB, t *testing.T, content string) (i
 			},
 		},
 	}, kivik.Rev(rev))
-	if err != nil {
-		t.Fatal(err)
-	}
 	return docID, attachmentName, rev
 }

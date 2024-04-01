@@ -48,10 +48,7 @@ func TestDBGet(t *testing.T) {
 	})
 	tests.Add("success", func(t *testing.T) interface{} {
 		db := newDB(t)
-		rev, err := db.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		rev := db.tPut("foo", map[string]string{"foo": "bar"})
 
 		return test{
 			db: db,
@@ -65,14 +62,8 @@ func TestDBGet(t *testing.T) {
 	})
 	tests.Add("get specific rev", func(t *testing.T) interface{} {
 		db := newDB(t)
-		rev, err := db.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "foo", map[string]string{"foo": "baz"}, kivik.Rev(rev))
-		if err != nil {
-			t.Fatal(err)
-		}
+		rev := db.tPut("foo", map[string]string{"foo": "bar"})
+		_ = db.tPut("foo", map[string]string{"foo": "baz"}, kivik.Rev(rev))
 
 		return test{
 			db:      db,
@@ -93,20 +84,14 @@ func TestDBGet(t *testing.T) {
 	})
 	tests.Add("include conflicts", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]interface{}{
 			"new_edits": false,
 			"rev":       "1-abc",
 		}))
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]interface{}{
 			"new_edits": false,
 			"rev":       "1-xyz",
 		}))
-		if err != nil {
-			t.Fatal(err)
-		}
 
 		return test{
 			db:      db,
@@ -122,24 +107,15 @@ func TestDBGet(t *testing.T) {
 	})
 	tests.Add("include only leaf conflicts", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]interface{}{
 			"new_edits": false,
 			"rev":       "1-abc",
 		}))
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]interface{}{
 			"new_edits": false,
 			"rev":       "1-xyz",
 		}))
-		if err != nil {
-			t.Fatal(err)
-		}
-		rev, err := db.Put(context.Background(), "foo", map[string]string{"foo": "qux"}, kivik.Rev("1-xyz"))
-		if err != nil {
-			t.Fatal(err)
-		}
+		rev := db.tPut("foo", map[string]string{"foo": "qux"}, kivik.Rev("1-xyz"))
 
 		return test{
 			db:      db,
@@ -155,14 +131,8 @@ func TestDBGet(t *testing.T) {
 	})
 	tests.Add("deleted document", func(t *testing.T) interface{} {
 		db := newDB(t)
-		rev, err := db.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Delete(context.Background(), "foo", kivik.Rev(rev))
-		if err != nil {
-			t.Fatal(err)
-		}
+		rev := db.tPut("foo", map[string]string{"foo": "bar"})
+		_ = db.tDelete("foo", kivik.Rev(rev))
 
 		return test{
 			db:         db,
@@ -173,14 +143,8 @@ func TestDBGet(t *testing.T) {
 	})
 	tests.Add("deleted document by rev", func(t *testing.T) interface{} {
 		db := newDB(t)
-		rev, err := db.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-		rev, err = db.Delete(context.Background(), "foo", kivik.Rev(rev))
-		if err != nil {
-			t.Fatal(err)
-		}
+		rev := db.tPut("foo", map[string]string{"foo": "bar"})
+		rev = db.tDelete("foo", kivik.Rev(rev))
 
 		return test{
 			db:      db,
@@ -195,10 +159,7 @@ func TestDBGet(t *testing.T) {
 	})
 	tests.Add("deleted document with data by rev", func(t *testing.T) interface{} {
 		db := newDB(t)
-		rev, err := db.Put(context.Background(), "foo", map[string]interface{}{"_deleted": true, "foo": "bar"}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		rev := db.tPut("foo", map[string]interface{}{"_deleted": true, "foo": "bar"})
 
 		return test{
 			db:      db,
@@ -214,31 +175,19 @@ func TestDBGet(t *testing.T) {
 	})
 	tests.Add("include conflicts, skip deleted conflicts", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]interface{}{"foo": "moo", "_deleted": true}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]interface{}{"foo": "moo", "_deleted": true}, kivik.Params(map[string]interface{}{
 			"new_edits": false,
 			"rev":       "1-qwe",
 		}))
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]interface{}{
 			"new_edits": false,
 			"rev":       "1-abc",
 		}))
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]interface{}{
 			"new_edits": false,
 			"rev":       "1-xyz",
 		}))
-		if err != nil {
-			t.Fatal(err)
-		}
-		rev, err := db.Put(context.Background(), "foo", map[string]string{"foo": "qux"}, kivik.Rev("1-xyz"))
-		if err != nil {
-			t.Fatal(err)
-		}
+		rev := db.tPut("foo", map[string]string{"foo": "qux"}, kivik.Rev("1-xyz"))
 
 		return test{
 			db:      db,
@@ -254,31 +203,19 @@ func TestDBGet(t *testing.T) {
 	})
 	tests.Add("include deleted conflicts", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]interface{}{"foo": "moo", "_deleted": true}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]interface{}{"foo": "moo", "_deleted": true}, kivik.Params(map[string]interface{}{
 			"new_edits": false,
 			"rev":       "1-qwe",
 		}))
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]interface{}{
 			"new_edits": false,
 			"rev":       "1-abc",
 		}))
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]interface{}{
 			"new_edits": false,
 			"rev":       "1-xyz",
 		}))
-		if err != nil {
-			t.Fatal(err)
-		}
-		rev, err := db.Put(context.Background(), "foo", map[string]string{"foo": "qux"}, kivik.Rev("1-xyz"))
-		if err != nil {
-			t.Fatal(err)
-		}
+		rev := db.tPut("foo", map[string]string{"foo": "qux"}, kivik.Rev("1-xyz"))
 
 		return test{
 			db:      db,
@@ -294,31 +231,19 @@ func TestDBGet(t *testing.T) {
 	})
 	tests.Add("include all conflicts", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]interface{}{"foo": "moo", "_deleted": true}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]interface{}{"foo": "moo", "_deleted": true}, kivik.Params(map[string]interface{}{
 			"new_edits": false,
 			"rev":       "1-qwe",
 		}))
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]interface{}{
 			"new_edits": false,
 			"rev":       "1-abc",
 		}))
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]interface{}{
 			"new_edits": false,
 			"rev":       "1-xyz",
 		}))
-		if err != nil {
-			t.Fatal(err)
-		}
-		rev, err := db.Put(context.Background(), "foo", map[string]string{"foo": "qux"}, kivik.Rev("1-xyz"))
-		if err != nil {
-			t.Fatal(err)
-		}
+		rev := db.tPut("foo", map[string]string{"foo": "qux"}, kivik.Rev("1-xyz"))
 
 		return test{
 			db: db,
@@ -338,31 +263,19 @@ func TestDBGet(t *testing.T) {
 	})
 	tests.Add("include revs_info", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]interface{}{"foo": "moo", "_deleted": true}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]interface{}{"foo": "moo", "_deleted": true}, kivik.Params(map[string]interface{}{
 			"new_edits": false,
 			"rev":       "1-qwe",
 		}))
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]interface{}{
 			"new_edits": false,
 			"rev":       "1-abc",
 		}))
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]interface{}{
 			"new_edits": false,
 			"rev":       "1-xyz",
 		}))
-		if err != nil {
-			t.Fatal(err)
-		}
-		rev, err := db.Put(context.Background(), "foo", map[string]string{"foo": "qux"}, kivik.Rev("1-xyz"))
-		if err != nil {
-			t.Fatal(err)
-		}
+		rev := db.tPut("foo", map[string]string{"foo": "qux"}, kivik.Rev("1-xyz"))
 
 		return test{
 			db: db,
@@ -383,31 +296,19 @@ func TestDBGet(t *testing.T) {
 	})
 	tests.Add("include meta", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]interface{}{"foo": "moo", "_deleted": true}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]interface{}{"foo": "moo", "_deleted": true}, kivik.Params(map[string]interface{}{
 			"new_edits": false,
 			"rev":       "1-qwe",
 		}))
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]interface{}{
 			"new_edits": false,
 			"rev":       "1-abc",
 		}))
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]interface{}{
 			"new_edits": false,
 			"rev":       "1-xyz",
 		}))
-		if err != nil {
-			t.Fatal(err)
-		}
-		rev, err := db.Put(context.Background(), "foo", map[string]string{"foo": "qux"}, kivik.Rev("1-xyz"))
-		if err != nil {
-			t.Fatal(err)
-		}
+		rev := db.tPut("foo", map[string]string{"foo": "qux"}, kivik.Rev("1-xyz"))
 
 		return test{
 			db:      db,
@@ -428,13 +329,10 @@ func TestDBGet(t *testing.T) {
 	})
 	tests.Add("get latest winning leaf", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
 			"new_edits": false,
 		}))
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]interface{}{
 			"foo": "bbb",
 			"_revisions": map[string]interface{}{
 				"ids":   []string{"bbb", "aaa"},
@@ -443,10 +341,7 @@ func TestDBGet(t *testing.T) {
 		}, kivik.Params(map[string]interface{}{
 			"new_edits": false,
 		}))
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]interface{}{
 			"foo": "ddd",
 			"_revisions": map[string]interface{}{
 				"ids":   []string{"yyy", "aaa"},
@@ -455,9 +350,6 @@ func TestDBGet(t *testing.T) {
 		}, kivik.Params(map[string]interface{}{
 			"new_edits": false,
 		}))
-		if err != nil {
-			t.Fatal(err)
-		}
 
 		return test{
 			db: db,
@@ -476,14 +368,11 @@ func TestDBGet(t *testing.T) {
 	tests.Add("get latest non-winning leaf", func(t *testing.T) interface{} {
 		db := newDB(t)
 		// common root doc
-		_, err := db.Put(context.Background(), "foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
 			"new_edits": false,
 		}))
-		if err != nil {
-			t.Fatal(err)
-		}
 		// losing branch
-		_, err = db.Put(context.Background(), "foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]interface{}{
 			"foo": "bbb",
 			"_revisions": map[string]interface{}{
 				"ids":   []string{"ccc", "bbb", "aaa"},
@@ -492,12 +381,9 @@ func TestDBGet(t *testing.T) {
 		}, kivik.Params(map[string]interface{}{
 			"new_edits": false,
 		}))
-		if err != nil {
-			t.Fatal(err)
-		}
 
 		// winning branch
-		_, err = db.Put(context.Background(), "foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]interface{}{
 			"foo": "ddd",
 			"_revisions": map[string]interface{}{
 				"ids":   []string{"xxx", "yyy", "aaa"},
@@ -506,9 +392,6 @@ func TestDBGet(t *testing.T) {
 		}, kivik.Params(map[string]interface{}{
 			"new_edits": false,
 		}))
-		if err != nil {
-			t.Fatal(err)
-		}
 
 		return test{
 			db: db,
@@ -527,14 +410,11 @@ func TestDBGet(t *testing.T) {
 	tests.Add("get latest rev with deleted leaf, reverts to the winning branch", func(t *testing.T) interface{} {
 		db := newDB(t)
 		// common root doc
-		_, err := db.Put(context.Background(), "foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
 			"new_edits": false,
 		}))
-		if err != nil {
-			t.Fatal(err)
-		}
 		// losing branch
-		_, err = db.Put(context.Background(), "foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]interface{}{
 			"foo": "bbb",
 			"_revisions": map[string]interface{}{
 				"ids":   []string{"ccc", "bbb", "aaa"},
@@ -543,17 +423,11 @@ func TestDBGet(t *testing.T) {
 		}, kivik.Params(map[string]interface{}{
 			"new_edits": false,
 		}))
-		if err != nil {
-			t.Fatal(err)
-		}
 		// now delete the losing leaf
-		_, err = db.Delete(context.Background(), "foo", kivik.Rev("3-ccc"))
-		if err != nil {
-			t.Fatal(err)
-		}
+		_ = db.tDelete("foo", kivik.Rev("3-ccc"))
 
 		// winning branch
-		_, err = db.Put(context.Background(), "foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]interface{}{
 			"foo": "ddd",
 			"_revisions": map[string]interface{}{
 				"ids":   []string{"xxx", "yyy", "aaa"},
@@ -562,9 +436,6 @@ func TestDBGet(t *testing.T) {
 		}, kivik.Params(map[string]interface{}{
 			"new_edits": false,
 		}))
-		if err != nil {
-			t.Fatal(err)
-		}
 
 		return test{
 			db: db,
@@ -582,13 +453,10 @@ func TestDBGet(t *testing.T) {
 	})
 	tests.Add("revs=true, losing leaf", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
 			"new_edits": false,
 		}))
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]interface{}{
 			"foo": "bbb",
 			"_revisions": map[string]interface{}{
 				"ids":   []string{"bbb", "aaa"},
@@ -597,10 +465,7 @@ func TestDBGet(t *testing.T) {
 		}, kivik.Params(map[string]interface{}{
 			"new_edits": false,
 		}))
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]interface{}{
 			"foo": "ddd",
 			"_revisions": map[string]interface{}{
 				"ids":   []string{"yyy", "aaa"},
@@ -609,9 +474,6 @@ func TestDBGet(t *testing.T) {
 		}, kivik.Params(map[string]interface{}{
 			"new_edits": false,
 		}))
-		if err != nil {
-			t.Fatal(err)
-		}
 
 		return test{
 			db: db,
@@ -633,12 +495,9 @@ func TestDBGet(t *testing.T) {
 	})
 	tests.Add("local_seq=true", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
 			"new_edits": false,
 		}))
-		if err != nil {
-			t.Fatal(err)
-		}
 
 		return test{
 			db:      db,
@@ -654,12 +513,9 @@ func TestDBGet(t *testing.T) {
 	})
 	tests.Add("local_seq=true & specified rev", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
 			"new_edits": false,
 		}))
-		if err != nil {
-			t.Fatal(err)
-		}
 
 		return test{
 			db:      db,
@@ -675,12 +531,9 @@ func TestDBGet(t *testing.T) {
 	})
 	tests.Add("local_seq=true & specified rev & latest=true", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
 			"new_edits": false,
 		}))
-		if err != nil {
-			t.Fatal(err)
-		}
 
 		return test{
 			db: db,
@@ -700,7 +553,7 @@ func TestDBGet(t *testing.T) {
 	})
 	tests.Add("attachments=false, doc with attachments", func(t *testing.T) interface{} {
 		db := newDB(t)
-		rev, err := db.Put(context.Background(), "foo", map[string]interface{}{
+		rev := db.tPut("foo", map[string]interface{}{
 			"foo": "aaa",
 			"_attachments": map[string]interface{}{
 				"att.txt": map[string]interface{}{
@@ -708,10 +561,7 @@ func TestDBGet(t *testing.T) {
 					"data":         "YXR0LnR4dA==",
 				},
 			},
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		})
 
 		return test{
 			db:      db,
@@ -735,7 +585,7 @@ func TestDBGet(t *testing.T) {
 	})
 	tests.Add("attachments=true, doc with attachments", func(t *testing.T) interface{} {
 		db := newDB(t)
-		rev, err := db.Put(context.Background(), "foo", map[string]interface{}{
+		rev := db.tPut("foo", map[string]interface{}{
 			"foo": "aaa",
 			"_attachments": map[string]interface{}{
 				"att.txt": map[string]interface{}{
@@ -743,10 +593,7 @@ func TestDBGet(t *testing.T) {
 					"data":         "YXR0LnR4dA==",
 				},
 			},
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		})
 
 		return test{
 			db:      db,
@@ -770,12 +617,9 @@ func TestDBGet(t *testing.T) {
 	})
 	tests.Add("attachments=true, doc without attachments", func(t *testing.T) interface{} {
 		db := newDB(t)
-		rev, err := db.Put(context.Background(), "foo", map[string]interface{}{
+		rev := db.tPut("foo", map[string]interface{}{
 			"foo": "aaa",
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		})
 
 		return test{
 			db:      db,
@@ -790,7 +634,7 @@ func TestDBGet(t *testing.T) {
 	})
 	tests.Add("attachments=false, do not return deleted attachments", func(t *testing.T) interface{} {
 		db := newDB(t)
-		rev1, err := db.Put(context.Background(), "foo", map[string]interface{}{
+		rev1 := db.tPut("foo", map[string]interface{}{
 			"foo": "aaa",
 			"_attachments": map[string]interface{}{
 				"att.txt": map[string]interface{}{
@@ -802,11 +646,8 @@ func TestDBGet(t *testing.T) {
 					"data":         "YXR0LnR4dA==",
 				},
 			},
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-		rev2, err := db.Put(context.Background(), "foo", map[string]interface{}{
+		})
+		rev2 := db.tPut("foo", map[string]interface{}{
 			"foo": "aaa",
 			"_attachments": map[string]interface{}{
 				"att.txt": map[string]interface{}{
@@ -814,9 +655,6 @@ func TestDBGet(t *testing.T) {
 				},
 			},
 		}, kivik.Rev(rev1))
-		if err != nil {
-			t.Fatal(err)
-		}
 
 		return test{
 			db:      db,
@@ -840,7 +678,7 @@ func TestDBGet(t *testing.T) {
 	})
 	tests.Add("attachments=false, fetch atts added at different revs", func(t *testing.T) interface{} {
 		db := newDB(t)
-		rev1, err := db.Put(context.Background(), "foo", map[string]interface{}{
+		rev1 := db.tPut("foo", map[string]interface{}{
 			"foo": "aaa",
 			"_attachments": map[string]interface{}{
 				"att.txt": map[string]interface{}{
@@ -848,11 +686,8 @@ func TestDBGet(t *testing.T) {
 					"data":         "YXR0LnR4dA==",
 				},
 			},
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-		rev2, err := db.Put(context.Background(), "foo", map[string]interface{}{
+		})
+		rev2 := db.tPut("foo", map[string]interface{}{
 			"foo": "aaa",
 			"_attachments": map[string]interface{}{
 				"att.txt": map[string]interface{}{
@@ -864,9 +699,6 @@ func TestDBGet(t *testing.T) {
 				},
 			},
 		}, kivik.Rev(rev1))
-		if err != nil {
-			t.Fatal(err)
-		}
 
 		return test{
 			db:      db,
@@ -897,7 +729,7 @@ func TestDBGet(t *testing.T) {
 	})
 	tests.Add("attachments=false, fetch only atts that existed at time of specific rev", func(t *testing.T) interface{} {
 		db := newDB(t)
-		rev1, err := db.Put(context.Background(), "foo", map[string]interface{}{
+		rev1 := db.tPut("foo", map[string]interface{}{
 			"foo": "aaa",
 			"_attachments": map[string]interface{}{
 				"att.txt": map[string]interface{}{
@@ -905,11 +737,8 @@ func TestDBGet(t *testing.T) {
 					"data":         "YXR0LnR4dA==",
 				},
 			},
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.Put(context.Background(), "foo", map[string]interface{}{
+		})
+		_ = db.tPut("foo", map[string]interface{}{
 			"foo": "aaa",
 			"_attachments": map[string]interface{}{
 				"att.txt": map[string]interface{}{
@@ -921,9 +750,6 @@ func TestDBGet(t *testing.T) {
 				},
 			},
 		}, kivik.Rev(rev1))
-		if err != nil {
-			t.Fatal(err)
-		}
 
 		return test{
 			db: db,
@@ -950,7 +776,7 @@ func TestDBGet(t *testing.T) {
 	})
 	tests.Add("attachments=false, fetch updated attachment", func(t *testing.T) interface{} {
 		db := newDB(t)
-		rev1, err := db.Put(context.Background(), "foo", map[string]interface{}{
+		rev1 := db.tPut("foo", map[string]interface{}{
 			"foo": "aaa",
 			"_attachments": map[string]interface{}{
 				"att.txt": map[string]interface{}{
@@ -958,11 +784,8 @@ func TestDBGet(t *testing.T) {
 					"data":         "YXR0LnR4dA==",
 				},
 			},
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-		rev2, err := db.Put(context.Background(), "foo", map[string]interface{}{
+		})
+		rev2 := db.tPut("foo", map[string]interface{}{
 			"foo": "aaa",
 			"_attachments": map[string]interface{}{
 				"att.txt": map[string]interface{}{
@@ -970,9 +793,6 @@ func TestDBGet(t *testing.T) {
 				},
 			},
 		}, kivik.Rev(rev1))
-		if err != nil {
-			t.Fatal(err)
-		}
 
 		return test{
 			db: db,
@@ -998,7 +818,7 @@ func TestDBGet(t *testing.T) {
 	})
 	tests.Add("atts_since", func(t *testing.T) interface{} {
 		db := newDB(t)
-		rev1, err := db.Put(context.Background(), "foo", map[string]interface{}{
+		rev1 := db.tPut("foo", map[string]interface{}{
 			"foo": "aaa",
 			"_attachments": map[string]interface{}{
 				"att.txt": map[string]interface{}{
@@ -1006,11 +826,8 @@ func TestDBGet(t *testing.T) {
 					"data":         "YXR0LnR4dA==",
 				},
 			},
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-		rev2, err := db.Put(context.Background(), "foo", map[string]interface{}{
+		})
+		rev2 := db.tPut("foo", map[string]interface{}{
 			"foo": "aaa",
 			"_attachments": map[string]interface{}{
 				"att.txt": map[string]interface{}{
@@ -1022,9 +839,6 @@ func TestDBGet(t *testing.T) {
 				},
 			},
 		}, kivik.Rev(rev1))
-		if err != nil {
-			t.Fatal(err)
-		}
 
 		return test{
 			db:      db,
@@ -1055,7 +869,7 @@ func TestDBGet(t *testing.T) {
 	})
 	tests.Add("atts_since with invalid rev format", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_, err := db.Put(context.Background(), "foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]interface{}{
 			"foo": "aaa",
 			"_attachments": map[string]interface{}{
 				"att.txt": map[string]interface{}{
@@ -1063,10 +877,7 @@ func TestDBGet(t *testing.T) {
 					"data":         "YXR0LnR4dA==",
 				},
 			},
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		})
 
 		return test{
 			db:         db,
@@ -1078,7 +889,7 @@ func TestDBGet(t *testing.T) {
 	})
 	tests.Add("atts_since with non-existent rev", func(t *testing.T) interface{} {
 		db := newDB(t)
-		rev, err := db.Put(context.Background(), "foo", map[string]interface{}{
+		rev := db.tPut("foo", map[string]interface{}{
 			"foo": "aaa",
 			"_attachments": map[string]interface{}{
 				"att.txt": map[string]interface{}{
@@ -1086,10 +897,7 @@ func TestDBGet(t *testing.T) {
 					"data":         "YXR0LnR4dA==",
 				},
 			},
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		})
 
 		return test{
 			db:      db,
@@ -1113,12 +921,9 @@ func TestDBGet(t *testing.T) {
 	})
 	tests.Add("after PutAttachment", func(t *testing.T) interface{} {
 		db := newDB(t)
-		rev1, err := db.Put(context.Background(), "foo", map[string]string{
+		rev1 := db.tPut("foo", map[string]string{
 			"foo": "aaa",
-		}, mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		})
 		att := driver.Attachment{
 			ContentType: "text/plain",
 			Filename:    "att.txt",

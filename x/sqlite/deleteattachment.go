@@ -14,8 +14,6 @@ package sqlite
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
@@ -38,18 +36,13 @@ func (d *db) DeleteAttachment(ctx context.Context, docID, filename string, optio
 		Attachments: map[string]attachment{},
 	}
 
-	curRev, hash, err := d.winningRev(ctx, tx, docID)
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
-		return "", &internal.Error{Status: http.StatusNotFound, Message: "document not found"}
-	case err != nil:
+	curRev, err := parseRev(opts.rev())
+	if err != nil {
 		return "", err
-	default:
-		data.MD5sum = hash
 	}
 
-	if rev := opts.rev(); rev != "" && rev != curRev.String() {
-		return "", &internal.Error{Status: http.StatusConflict, Message: "conflict"}
+	if err := d.isLeafRev(ctx, tx, docID, curRev.rev, curRev.id); err != nil {
+		return "", err
 	}
 
 	// Read list of current attachments, then remove the requested one

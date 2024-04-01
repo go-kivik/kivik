@@ -132,11 +132,67 @@ func TestDBDeleteAttachment(t *testing.T) {
 			wantRevs:   []leaf{}, // skip checking leaves
 		}
 	})
+	tests.Add("when attempting to delete an attachment, unspecified attachments are unaltered", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("foo", map[string]interface{}{
+			"cat": "meow",
+			"_attachments": map[string]interface{}{
+				"foo.txt": map[string]interface{}{
+					"content_type": "text/plain",
+					"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
+				},
+				"bar.txt": map[string]interface{}{
+					"content_type": "text/plain",
+					"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
+				},
+			},
+		})
+
+		return test{
+			db:       d,
+			docID:    "foo",
+			filename: "foo.txt",
+			options:  kivik.Rev(rev),
+			wantRevs: []leaf{
+				{
+					ID:  "foo",
+					Rev: 1,
+				},
+				{
+					ID:        "foo",
+					Rev:       2,
+					ParentRev: &[]int{1}[0],
+				},
+			},
+			wantAttachments: []attachmentRow{
+				{
+					DocID:    "foo",
+					RevPos:   1,
+					Rev:      1,
+					Filename: "bar.txt",
+					Digest:   "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
+				},
+				{
+					DocID:    "foo",
+					RevPos:   1,
+					Rev:      1,
+					Filename: "foo.txt",
+					Digest:   "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
+				},
+				{
+					DocID:    "foo",
+					RevPos:   1,
+					Rev:      2,
+					Filename: "bar.txt",
+					Digest:   "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
+				},
+			},
+		}
+	})
 
 	/*
 		TODO:
 		- db missing => db not found
-		- only delete requested attachment, leaving others intact
 		- Delete from non-winning leaf node
 	*/
 

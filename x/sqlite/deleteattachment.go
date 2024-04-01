@@ -34,7 +34,8 @@ func (d *db) DeleteAttachment(ctx context.Context, docID, filename string, optio
 	defer tx.Rollback()
 
 	data := &docData{
-		ID: docID,
+		ID:          docID,
+		Attachments: map[string]attachment{},
 	}
 
 	curRev, hash, err := d.winningRev(ctx, tx, docID)
@@ -80,6 +81,13 @@ func (d *db) DeleteAttachment(ctx context.Context, docID, filename string, optio
 
 	if !attachmentsContains(attachments, filename) {
 		return "", &internal.Error{Status: http.StatusNotFound, Message: "attachment not found"}
+	}
+
+	for _, att := range attachments {
+		if att == filename {
+			continue
+		}
+		data.Attachments[att] = attachment{Stub: true}
 	}
 
 	r, err := d.createRev(ctx, tx, data, curRev)

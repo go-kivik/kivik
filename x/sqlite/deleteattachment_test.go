@@ -189,6 +189,84 @@ func TestDBDeleteAttachment(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("deleting attachments on non-winning leaf only alters that revision branch", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev1 := d.tPut("foo", map[string]interface{}{
+			"cat": "meow",
+		})
+		rev2 := d.tPut("foo", map[string]interface{}{
+			"dog": "woof",
+			"_attachments": map[string]interface{}{
+				"foo.txt": map[string]interface{}{
+					"content_type": "text/plain",
+					"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
+				},
+			},
+		}, kivik.Rev(rev1))
+
+		r1, _ := parseRev(rev1)
+		r2, _ := parseRev(rev2)
+
+		// Create a conflict
+		_ = d.tPut("foo", map[string]interface{}{
+			"pig": "oink",
+			"_revisions": map[string]interface{}{
+				"start": 3,
+				"ids":   []string{"abc", "def", r1.id},
+			},
+		}, kivik.Params(map[string]interface{}{"new_edits": false}))
+
+		return test{
+			db:       d,
+			docID:    "foo",
+			filename: "foo.txt",
+			options:  kivik.Rev(rev2),
+			wantRev:  "3-.*",
+			wantRevs: []leaf{
+				{
+					ID:    "foo",
+					Rev:   1,
+					RevID: r1.id,
+				},
+				{
+					ID:          "foo",
+					Rev:         2,
+					RevID:       r2.id,
+					ParentRev:   &[]int{1}[0],
+					ParentRevID: &r1.id,
+				},
+				{
+					ID:          "foo",
+					Rev:         3,
+					ParentRev:   &[]int{2}[0],
+					ParentRevID: &r2.id,
+				},
+				{
+					ID:          "foo",
+					Rev:         2,
+					RevID:       "def",
+					ParentRev:   &[]int{1}[0],
+					ParentRevID: &r1.id,
+				},
+				{
+					ID:          "foo",
+					Rev:         3,
+					RevID:       "abc",
+					ParentRev:   &[]int{2}[0],
+					ParentRevID: &[]string{"def"}[0],
+				},
+			},
+			wantAttachments: []attachmentRow{
+				{
+					DocID:    "foo",
+					RevPos:   2,
+					Rev:      2,
+					Filename: "foo.txt",
+					Digest:   "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
+				},
+			},
+		}
+	})
 
 	/*
 		TODO:

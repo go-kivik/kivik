@@ -360,13 +360,11 @@ func (d *db) getAttachments(ctx context.Context, tx *sql.Tx, id string, rev revi
 		} else {
 			a.Content = io.NopCloser(bytes.NewReader(*data))
 		}
-		fmt.Println(a)
 		atts = append(atts, &a)
 	}
 	if len(atts) == 0 {
 		return nil, rows.Err()
 	}
-	fmt.Println(atts)
 	return &atts, rows.Err()
 }
 

@@ -116,6 +116,22 @@ func TestDBDeleteAttachment(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("when attempting to delete an attachment that does not exist, a 404 is returned", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("foo", map[string]interface{}{
+			"cat": "meow",
+		})
+
+		return test{
+			db:         d,
+			docID:      "foo",
+			filename:   "foo.txt",
+			options:    kivik.Rev(rev),
+			wantErr:    "attachment not found",
+			wantStatus: http.StatusNotFound,
+			wantRevs:   []leaf{}, // skip checking leaves
+		}
+	})
 
 	/*
 		TODO:
@@ -146,21 +162,25 @@ func TestDBDeleteAttachment(t *testing.T) {
 		if !regexp.MustCompile(tt.wantRev).MatchString(rev) {
 			t.Errorf("Unexpected rev: %s, want %s", rev, tt.wantRev)
 		}
-		if len(tt.wantRevs) == 0 {
+		switch {
+		case tt.wantRevs == nil:
 			t.Errorf("No leaves to check")
-		}
-		leaves := readRevisions(t, dbc.underlying(), tt.docID)
-		for i, r := range tt.wantRevs {
-			// allow tests to omit RevID
-			if r.RevID == "" {
-				leaves[i].RevID = ""
+		case len(tt.wantRevs) == 0:
+			// Do nothing
+		default:
+			leaves := readRevisions(t, dbc.underlying(), tt.docID)
+			for i, r := range tt.wantRevs {
+				// allow tests to omit RevID
+				if r.RevID == "" {
+					leaves[i].RevID = ""
+				}
+				if r.ParentRevID == nil {
+					leaves[i].ParentRevID = nil
+				}
 			}
-			if r.ParentRevID == nil {
-				leaves[i].ParentRevID = nil
+			if d := cmp.Diff(tt.wantRevs, leaves); d != "" {
+				t.Errorf("Unexpected leaves: %s", d)
 			}
-		}
-		if d := cmp.Diff(tt.wantRevs, leaves); d != "" {
-			t.Errorf("Unexpected leaves: %s", d)
 		}
 		checkAttachments(t, dbc.underlying(), tt.wantAttachments)
 	})

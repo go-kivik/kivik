@@ -136,7 +136,8 @@ func TestDBDeleteAttachment(t *testing.T) {
 	/*
 		TODO:
 		- db missing => db not found
-		- file does not exist => file not found
+		- only delete requested attachment, leaving others intact
+		- Delete from non-winning leaf node
 	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {

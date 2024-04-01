@@ -242,19 +242,18 @@ func TestDBDeleteAttachment(t *testing.T) {
 					ParentRev:   &[]int{1}[0],
 					ParentRevID: &r1.id,
 				},
-
+				{
+					ID:          "foo",
+					Rev:         3,
+					ParentRev:   &[]int{2}[0],
+					ParentRevID: &r2.id,
+				},
 				{
 					ID:          "foo",
 					Rev:         3,
 					RevID:       "abc",
 					ParentRev:   &[]int{2}[0],
 					ParentRevID: &[]string{"def"}[0],
-				},
-				{
-					ID:          "foo",
-					Rev:         3,
-					ParentRev:   &[]int{2}[0],
-					ParentRevID: &r2.id,
 				},
 			},
 			wantAttachments: []attachmentRow{

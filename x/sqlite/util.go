@@ -87,25 +87,6 @@ func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev re
 	if err != nil {
 		return r, err
 	}
-	// if len(data.RemovedAttachments) > 0 {
-	// 	stmt, err := tx.PrepareContext(ctx, d.query(`
-	// 		UPDATE {{ .Attachments }}
-	// 		SET deleted_rev = $1, deleted_rev_id = $2
-	// 		WHERE id = $3
-	// 			AND filename = $4
-	// 			AND deleted_rev IS NULL
-	// 	`))
-	// 	if err != nil {
-	// 		return r, err
-	// 	}
-	// 	defer stmt.Close()
-	// 	for _, filename := range data.RemovedAttachments {
-	// 		_, err = stmt.ExecContext(ctx, r.rev, r.id, data.ID, filename)
-	// 		if err != nil {
-	// 			return r, err
-	// 		}
-	// 	}
-	// }
 
 	if len(data.Attachments) == 0 {
 		return r, nil

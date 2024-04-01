@@ -138,6 +138,11 @@ func TestDBGetAttachment(t *testing.T) {
 		_ = db.tPut("foo", map[string]interface{}{
 			"_id":     "foo",
 			"updated": true,
+			"_attachments": map[string]interface{}{
+				"foo.txt": map[string]interface{}{
+					"stub": true,
+				},
+			},
 		}, kivik.Rev(rev))
 
 		return TestX{

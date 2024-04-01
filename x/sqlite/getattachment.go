@@ -66,41 +66,22 @@ func (d *db) getAttachment(
 	var att driver.Attachment
 	var data []byte
 	err := tx.QueryRowContext(ctx, d.query(`
-		WITH atts AS (
-			WITH RECURSIVE Ancestors AS (
-				-- Base case: Select the starting node for ancestors
-				SELECT id, rev, rev_id, parent_rev, parent_rev_id
-				FROM {{ .Revs }} revs
-				WHERE id = $1
-					AND rev = $3
-					AND rev_id = $4
-				UNION ALL
-				-- Recursive step: Select the parent of the current node
-				SELECT r.id, r.rev, r.rev_id, r.parent_rev, r.parent_rev_id
-				FROM {{ .Revs }} AS r
-				JOIN Ancestors a ON a.parent_rev_id = r.rev_id AND a.parent_rev = r.rev AND a.id = r.id
-			)
-			SELECT
-				att.filename,
-				att.content_type,
-				att.digest,
-				att.length,
-				att.rev,
-				rev.parent_rev,
-				rev.parent_rev_id,
-				att.data
-			FROM
-				Ancestors AS rev
-			JOIN
-				{{ .Attachments }} AS att ON att.id = rev.id AND att.rev = rev.rev AND att.rev_id = rev.rev_id
-			WHERE
-				att.filename = $2
-				AND att.deleted_rev IS NULL
-		)
-		SELECT filename, content_type, length, rev, data
-		FROM atts
+		SELECT
+			att.filename,
+			att.content_type,
+			att.digest,
+			att.length,
+			att.rev_pos,
+			att.data
+		FROM {{ .Attachments }} AS att
+		JOIN {{ .AttachmentsBridge }} AS bridge ON bridge.pk = att.pk
+		WHERE
+			bridge.id = $1
+			AND att.filename = $2
+			AND bridge.rev = $3
+			AND bridge.rev_id = $4	
 	`), docID, filename, rev.rev, rev.id).
-		Scan(&att.Filename, &att.ContentType, &att.Size, &att.RevPos, &data)
+		Scan(&att.Filename, &att.ContentType, &att.Digest, &att.Size, &att.RevPos, &data)
 
 	att.Content = io.NopCloser(bytes.NewReader(data))
 	return &att, err

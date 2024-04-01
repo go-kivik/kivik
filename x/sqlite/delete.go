@@ -70,17 +70,6 @@ func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (
 	if err != nil {
 		return "", err
 	}
-	_, err = tx.ExecContext(ctx, d.query(`
-		UPDATE {{ .Attachments }}
-		SET deleted_rev = $1, deleted_rev_id = $2
-		WHERE id = $3
-			AND rev = $4
-			AND rev_id = $5
-			AND deleted_rev IS NULL
-	`), r.rev, r.id, data.ID, delRev.rev, delRev.id)
-	if err != nil {
-		return "", err
-	}
 
 	return r.String(), tx.Commit()
 }

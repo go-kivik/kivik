@@ -108,13 +108,13 @@ func TestDBDeleteAttachment(t *testing.T) {
 			wantAttachments: []attachmentRow{
 				{
 					DocID:       "foo",
+					RevPos:      1,
 					Rev:         1,
 					Filename:    "foo.txt",
 					ContentType: "text/plain",
 					Length:      25,
 					Digest:      "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
 					Data:        "This is a base64 encoding",
-					DeletedRev:  &[]int{2}[0],
 				},
 			},
 		}

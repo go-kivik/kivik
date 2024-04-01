@@ -46,6 +46,10 @@ func (t *tmplFuncs) Attachments() string {
 	return strconv.Quote(t.db.name + "_attachments")
 }
 
+func (t *tmplFuncs) AttachmentsBridge() string {
+	return strconv.Quote(t.db.name + "_attachments_bridge")
+}
+
 func (t *tmplFuncs) Leaves() string {
 	return strconv.Quote(t.db.name + "_leaves")
 }
@@ -56,6 +60,7 @@ func (t *tmplFuncs) Leaves() string {
 //	{{ .Docs }} -> db.name
 //	{{ .Revs }} -> db.name + "_revs"
 //	{{ .Attachments }} -> db.name + "_attachments"
+//	{{ .AttachmentsBridge }} -> db.name + "_attachments_bridge"
 //	{{ .Leaves }} -> db.name + "_leaves"
 func (d *db) query(format string) string {
 	var buf bytes.Buffer

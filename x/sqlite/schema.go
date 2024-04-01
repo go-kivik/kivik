@@ -20,7 +20,7 @@ var schema = []string{
 		rev_id TEXT NOT NULL,
 		parent_rev INTEGER,
 		parent_rev_id TEXT,
-		FOREIGN KEY (id, parent_rev, parent_rev_id) REFERENCES {{ .Revs }} (id, rev, rev_id) ON DELETE CASCADE,
+		FOREIGN KEY (id, parent_rev, parent_rev_id) REFERENCES {{ .Revs }} (id, rev, rev_id),
 		UNIQUE(id, rev, rev_id)
 	)`,
 	`CREATE INDEX idx_parent ON {{ .Revs }} (id, parent_rev, parent_rev_id)`,
@@ -32,23 +32,27 @@ var schema = []string{
 		rev_id TEXT NOT NULL,
 		doc BLOB NOT NULL,
 		deleted BOOLEAN NOT NULL DEFAULT FALSE,
-		FOREIGN KEY (id, rev, rev_id) REFERENCES {{ .Revs }} (id, rev, rev_id) ON DELETE CASCADE,
+		FOREIGN KEY (id, rev, rev_id) REFERENCES {{ .Revs }} (id, rev, rev_id),
 		UNIQUE(id, rev, rev_id)
 	)`,
 	// attachments
 	`CREATE TABLE {{ .Attachments }} (
-		id TEXT NOT NULL,
-		rev INTEGER NOT NULL,
-		rev_id TEXT NOT NULL,
+		pk INTEGER PRIMARY KEY,
 		filename TEXT NOT NULL,
 		content_type TEXT NOT NULL,
 		length INTEGER NOT NULL,
 		digest TEXT NOT NULL,
 		data BLOB NOT NULL,
-		deleted_rev INTEGER,
-		deleted_rev_id TEXT,
-		FOREIGN KEY (id, rev, rev_id) REFERENCES {{ .Revs }} (id, rev, rev_id) ON DELETE CASCADE,
-		UNIQUE(id, rev, rev_id, filename)
+		rev_pos INTEGER NOT NULL
+	)`,
+	`CREATE TABLE {{ .AttachmentsBridge }} (
+		pk INTEGER,
+		id TEXT NOT NULL,
+		rev INTEGER NOT NULL,
+		rev_id TEXT NOT NULL,
+		FOREIGN KEY (pk) REFERENCES {{ .Attachments }} (pk),
+		FOREIGN KEY (id, rev, rev_id) REFERENCES {{ .Docs }} (id, rev, rev_id) ON DELETE CASCADE,
+		UNIQUE (id, rev, rev_id, pk)
 	)`,
 	`CREATE VIEW {{ .Leaves }} AS
 		SELECT

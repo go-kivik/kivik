@@ -314,52 +314,35 @@ func (d *db) getAttachments(ctx context.Context, tx *sql.Tx, id string, rev revi
 	}
 	sinceQuery := "FALSE"
 	if len(since) > 0 {
-		sinceQuery = fmt.Sprintf("parent_rev||'-'||parent_rev_id IN (%s)", placeholders(len(args)-len(since)+1, len(since)))
+		sinceQuery = fmt.Sprintf("a.parent_rev || '-' || a.parent_rev_id IN (%s)", placeholders(len(args)-len(since)+1, len(since)))
 	}
+
 	query := fmt.Sprintf(d.query(`
-		WITH atts AS (
-			WITH RECURSIVE Ancestors AS (
-				-- Base case: Select the starting node for ancestors
+			WITH RECURSIVE ancestors AS (
 				SELECT id, rev, rev_id, parent_rev, parent_rev_id
-				FROM {{ .Revs }} revs
-				WHERE id = $1
-					AND rev = $2
-					AND rev_id = $3
+				FROM {{ .Revs }} AS revs
+
 				UNION ALL
-				-- Recursive step: Select the parent of the current node
-				SELECT r.id, r.rev, r.rev_id, r.parent_rev, r.parent_rev_id
-				FROM {{ .Revs }} AS r
-				JOIN Ancestors a ON a.parent_rev_id = r.rev_id AND a.parent_rev = r.rev AND a.id = r.id
+
+				SELECT child.id, child.rev, child.rev_id, a.parent_rev, a.parent_rev_id
+				FROM ancestors AS a
+				JOIN {{ .Revs }} AS child ON a.id = child.id AND a.rev = child.parent_rev AND a.rev_id = child.parent_rev_id
 			)
 			SELECT
 				att.filename,
 				att.content_type,
 				att.digest,
 				att.length,
-				att.rev,
-				rev.parent_rev,
-				rev.parent_rev_id,
-				att.data
-			FROM
-				Ancestors AS rev
-			JOIN
-				{{ .Attachments }} AS att ON att.id = rev.id AND att.rev = rev.rev AND att.rev_id = rev.rev_id
-			WHERE att.deleted_rev IS NULL
-		)
-		SELECT
-			atts.filename,
-			atts.content_type,
-			atts.digest,
-			atts.length,
-			atts.rev,
-			IIF($4 OR includeSince, atts.data, NULL) AS data
-		FROM atts
-		JOIN (
-			SELECT filename, MAX(rev) AS rev, MAX(%s) AS includeSince
-			FROM atts
-			GROUP BY filename
-		) AS max ON atts.filename = max.filename AND atts.rev = max.rev
-	`), sinceQuery)
+				att.rev_pos,
+				MAX(IIF($4 OR %s, att.data, NULL)) AS data
+			FROM {{ .Attachments }} AS att
+			JOIN {{ .AttachmentsBridge }} AS bridge ON att.pk = bridge.pk
+			LEFT JOIN ancestors AS a ON att.rev_pos = a.rev
+			WHERE bridge.id = $1
+				AND bridge.rev = $2
+				AND bridge.rev_id = $3
+			GROUP BY att.filename, att.content_type, att.digest, att.length, att.rev_pos
+		`), sinceQuery)
 	rows, err := tx.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err

@@ -39,15 +39,12 @@ func (d *db) isLeafRev(ctx context.Context, tx *sql.Tx, docID string, rev int, r
 	var exists bool
 	err := tx.QueryRowContext(ctx, d.query(`
 		SELECT
-			parent.parent_rev IS NOT NULL
-		FROM {{ .Revs }} AS r
-		LEFT JOIN {{ .Revs }} AS parent
-			ON r.id = parent.id
-			AND r.parent_rev = parent.parent_rev
-			AND r.parent_rev_id = parent.parent_rev_id
-		WHERE r.id = $1
-			AND r.rev = $2
-			AND r.rev_id = $3
+			child.id IS NULL AS is_leaf
+		FROM {{ .Revs }} AS parent
+		LEFT JOIN {{ .Revs }} AS child ON parent.id = child.id AND parent.rev = child.parent_rev AND parent.rev_id = child.parent_rev_id
+		WHERE parent.id = $1
+			AND parent.rev = $2
+			AND parent.rev_id = $3
 	`), docID, rev, revID).Scan(&exists)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):

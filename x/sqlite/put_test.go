@@ -31,16 +31,13 @@ import (
 )
 
 type attachmentRow struct {
-	DocID       string
-	Rev         int
-	RevID       string
-	Filename    string
-	ContentType string
-	Digest      string
-	Length      int64
-	RevPos      int
-	Stub        bool
-	Data        string
+	DocID    string
+	Rev      int
+	RevID    string
+	Filename string
+	Digest   string
+	RevPos   int
+	Stub     bool
 }
 
 func TestDBPut(t *testing.T) {
@@ -765,14 +762,11 @@ func TestDBPut(t *testing.T) {
 		},
 		wantAttachments: []attachmentRow{
 			{
-				DocID:       "foo",
-				RevPos:      1,
-				Rev:         1,
-				Filename:    "foo.txt",
-				ContentType: "text/plain",
-				Length:      25,
-				Digest:      "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
-				Data:        "This is a base64 encoding",
+				DocID:    "foo",
+				RevPos:   1,
+				Rev:      1,
+				Filename: "foo.txt",
+				Digest:   "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
 			},
 		},
 	})
@@ -795,14 +789,11 @@ func TestDBPut(t *testing.T) {
 		},
 		wantAttachments: []attachmentRow{
 			{
-				DocID:       "foo",
-				RevPos:      1,
-				Rev:         1,
-				Filename:    "foo.txt",
-				ContentType: "application/octet-stream",
-				Length:      25,
-				Digest:      "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
-				Data:        "This is a base64 encoding",
+				DocID:    "foo",
+				RevPos:   1,
+				Rev:      1,
+				Filename: "foo.txt",
+				Digest:   "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
 			},
 		},
 	})
@@ -844,24 +835,18 @@ func TestDBPut(t *testing.T) {
 			},
 			wantAttachments: []attachmentRow{
 				{
-					DocID:       "foo",
-					RevPos:      1,
-					Rev:         1,
-					Filename:    "foo.txt",
-					ContentType: "text/plain",
-					Length:      25,
-					Digest:      "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
-					Data:        "This is a base64 encoding",
+					DocID:    "foo",
+					RevPos:   1,
+					Rev:      1,
+					Filename: "foo.txt",
+					Digest:   "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
 				},
 				{
-					DocID:       "foo",
-					RevPos:      1,
-					Rev:         2,
-					Filename:    "foo.txt",
-					ContentType: "text/plain",
-					Length:      25,
-					Digest:      "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
-					Data:        "This is a base64 encoding",
+					DocID:    "foo",
+					RevPos:   1,
+					Rev:      2,
+					Filename: "foo.txt",
+					Digest:   "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
 				},
 			},
 		}
@@ -908,34 +893,25 @@ func TestDBPut(t *testing.T) {
 			},
 			wantAttachments: []attachmentRow{
 				{
-					DocID:       "foo",
-					RevPos:      1,
-					Rev:         1,
-					Filename:    "bar.txt",
-					ContentType: "text/plain",
-					Length:      25,
-					Digest:      "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
-					Data:        "This is a base64 encoding",
+					DocID:    "foo",
+					RevPos:   1,
+					Rev:      1,
+					Filename: "bar.txt",
+					Digest:   "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
 				},
 				{
-					DocID:       "foo",
-					RevPos:      1,
-					Rev:         1,
-					Filename:    "foo.txt",
-					ContentType: "text/plain",
-					Length:      25,
-					Digest:      "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
-					Data:        "This is a base64 encoding",
+					DocID:    "foo",
+					RevPos:   1,
+					Rev:      1,
+					Filename: "foo.txt",
+					Digest:   "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
 				},
 				{
-					DocID:       "foo",
-					RevPos:      1,
-					Rev:         2,
-					Filename:    "foo.txt",
-					ContentType: "text/plain",
-					Length:      25,
-					Digest:      "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
-					Data:        "This is a base64 encoding",
+					DocID:    "foo",
+					RevPos:   1,
+					Rev:      2,
+					Filename: "foo.txt",
+					Digest:   "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
 				},
 			},
 		}
@@ -1003,7 +979,7 @@ func TestDBPut(t *testing.T) {
 func checkAttachments(t *testing.T, d *sql.DB, want []attachmentRow) {
 	t.Helper()
 	rows, err := d.Query(`
-		SELECT b.id, b.rev, b.rev_id, a.rev_pos, a.filename, a.content_type, a.length, a.digest, a.data
+		SELECT b.id, b.rev, b.rev_id, a.rev_pos, a.filename, a.digest
 		FROM test_attachments AS a
 		JOIN test_attachments_bridge AS b ON b.pk=a.pk
 	`)
@@ -1015,7 +991,7 @@ func checkAttachments(t *testing.T, d *sql.DB, want []attachmentRow) {
 	for rows.Next() {
 		var att attachmentRow
 		var digest md5sum
-		if err := rows.Scan(&att.DocID, &att.Rev, &att.RevID, &att.RevPos, &att.Filename, &att.ContentType, &att.Length, &digest, &att.Data); err != nil {
+		if err := rows.Scan(&att.DocID, &att.Rev, &att.RevID, &att.RevPos, &att.Filename, &digest); err != nil {
 			t.Fatal(err)
 		}
 		att.Digest = digest.Digest()

@@ -835,10 +835,43 @@ func TestDBGet(t *testing.T) {
 				},
 				"att2.txt": map[string]interface{}{
 					"content_type": "text/plain",
-					"data":         "YXR0LnR4dA==",
+					"data":         "c2Vjb25kCg==",
 				},
 			},
 		}, kivik.Rev(rev1))
+		rev3 := db.tPut("foo", map[string]interface{}{
+			"foo": "aaa",
+			"_attachments": map[string]interface{}{
+				"att.txt": map[string]interface{}{
+					"stub": true,
+				},
+				"att2.txt": map[string]interface{}{
+					"stub": true,
+				},
+				"att3.txt": map[string]interface{}{
+					"content_type": "text/plain",
+					"data":         "VEhSRUUK",
+				},
+			},
+		}, kivik.Rev(rev2))
+		rev4 := db.tPut("foo", map[string]interface{}{
+			"foo": "aaa",
+			"_attachments": map[string]interface{}{
+				"att.txt": map[string]interface{}{
+					"stub": true,
+				},
+				"att2.txt": map[string]interface{}{
+					"stub": true,
+				},
+				"att3.txt": map[string]interface{}{
+					"stub": true,
+				},
+				"att4.txt": map[string]interface{}{
+					"content_type": "text/plain",
+					"data":         "SVYK",
+				},
+			},
+		}, kivik.Rev(rev3))
 
 		return test{
 			db:      db,
@@ -846,7 +879,7 @@ func TestDBGet(t *testing.T) {
 			options: kivik.Param("atts_since", []string{rev1}),
 			wantDoc: map[string]interface{}{
 				"_id":  "foo",
-				"_rev": rev2,
+				"_rev": rev4,
 				"foo":  "aaa",
 				"_attachments": map[string]interface{}{
 					"att.txt": map[string]interface{}{
@@ -858,10 +891,24 @@ func TestDBGet(t *testing.T) {
 					},
 					"att2.txt": map[string]interface{}{
 						"content_type": "text/plain",
-						"digest":       "md5-a4NyknGw7YOh+a5ezPdZ4A==",
+						"digest":       "md5-WdDRn8RcppIw2Fj2ClVX+A==",
 						"revpos":       float64(2),
 						"length":       float64(7),
-						"data":         "YXR0LnR4dA==",
+						"data":         "c2Vjb25kCg==",
+					},
+					"att3.txt": map[string]interface{}{
+						"content_type": "text/plain",
+						"digest":       "md5-+kNHBLBGcQJJi0WTQ1EEsA==",
+						"revpos":       float64(3),
+						"length":       float64(6),
+						"data":         "VEhSRUUK",
+					},
+					"att4.txt": map[string]interface{}{
+						"content_type": "text/plain",
+						"digest":       "md5-CVDeT3sXzxU0dMLAuMJKXA==",
+						"revpos":       float64(4),
+						"length":       float64(3),
+						"data":         "SVYK",
 					},
 				},
 			},

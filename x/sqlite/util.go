@@ -61,17 +61,18 @@ func (d *db) isLeafRev(ctx context.Context, tx *sql.Tx, docID string, rev int, r
 	return nil
 }
 
-// winningRev returns the current winning revision for the specified document.
-func (d *db) winningRev(ctx context.Context, tx *sql.Tx, docID string) (revision, error) {
+// winningRev returns the current winning revision, and MD5sum, for the specified document.
+func (d *db) winningRev(ctx context.Context, tx *sql.Tx, docID string) (revision, md5sum, error) {
 	var curRev revision
+	var hash md5sum
 	err := tx.QueryRowContext(ctx, d.query(`
-		SELECT rev, rev_id
+		SELECT rev, rev_id, md5sum
 		FROM {{ .Docs }}
 		WHERE id = $1
 		ORDER BY rev DESC, rev_id DESC
 		LIMIT 1
-	`), docID).Scan(&curRev.rev, &curRev.id)
-	return curRev, err
+	`), docID).Scan(&curRev.rev, &curRev.id, &hash)
+	return curRev, hash, err
 }
 
 // createRev creates a new entry in the revs table, inserts the document data
@@ -87,13 +88,14 @@ func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev re
 		curRevRev = &curRev.rev
 		curRevID = &curRev.id
 	}
+	r.id = data.RevID()
 	err := tx.QueryRowContext(ctx, d.query(`
 		INSERT INTO {{ .Revs }} (id, rev, rev_id, parent_rev, parent_rev_id)
 		SELECT $1, COALESCE(MAX(rev),0) + 1, $2, $3, $4
 		FROM {{ .Revs }}
 		WHERE id = $1
-		RETURNING rev, rev_id
-	`), data.ID, data.RevID, curRevRev, curRevID).Scan(&r.rev, &r.id)
+		RETURNING rev
+	`), data.ID, r.id, curRevRev, curRevID).Scan(&r.rev)
 	if err != nil {
 		return r, err
 	}

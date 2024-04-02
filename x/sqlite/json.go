@@ -59,10 +59,7 @@ func parseRev(s string) (revision, error) {
 
 // docData represents the document id, rev, deleted status, etc.
 type docData struct {
-	ID string `json:"_id"`
-	// RevID is the calculated revision ID, not the actual _rev field from the
-	// document.
-	RevID              string                `json:"-"`
+	ID                 string                `json:"_id"`
 	Revisions          revsInfo              `json:"_revisions"`
 	Deleted            bool                  `json:"_deleted"`
 	Attachments        map[string]attachment `json:"_attachments"`
@@ -71,6 +68,20 @@ type docData struct {
 	// MD5sum is the MD5sum of the document data. It, along with a hash of
 	// attachment metadata, is used to calculate the document revision.
 	MD5sum md5sum `json:"-"`
+}
+
+// RevID returns calculated revision ID, possibly setting the MD5sum if it is
+// not already set.
+func (d *docData) RevID() string {
+	if d.MD5sum.IsZero() {
+		if len(d.Doc) == 0 {
+			panic("MD5sum not set")
+		}
+		h := md5.New()
+		_, _ = io.Copy(h, bytes.NewReader(d.Doc))
+		copy(d.MD5sum[:], h.Sum(nil))
+	}
+	return hex.EncodeToString(d.MD5sum[:])
 }
 
 const md5sumLen = 16
@@ -87,15 +98,22 @@ func parseMD5sum(s string) (md5sum, error) {
 	return m, nil
 }
 
+func (m md5sum) IsZero() bool {
+	return m == md5sum{}
+}
+
 func (m md5sum) String() string {
 	return hex.EncodeToString(m[:])
 }
 
 func (m md5sum) Value() (driver.Value, error) {
+	if m.IsZero() {
+		panic("zero value")
+	}
 	return m[:], nil
 }
 
-func (m md5sum) Scan(src interface{}) error {
+func (m *md5sum) Scan(src interface{}) error {
 	x, ok := src.([]byte)
 	if !ok {
 		return fmt.Errorf("unsupported type: %T", src)
@@ -199,7 +217,6 @@ func prepareDoc(docID string, doc interface{}) (*docData, error) {
 		return nil, err
 	}
 	sum := h.Sum(nil)
-	data.RevID = hex.EncodeToString(sum)
 	data.Doc = b
 	copy(data.MD5sum[:], sum)
 	return data, nil

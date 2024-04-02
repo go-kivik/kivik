@@ -59,7 +59,7 @@ func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (
 		FROM {{ .Revs }}
 		WHERE id = $1
 		RETURNING rev, rev_id
-	`), data.ID, data.RevID, delRev.rev, delRev.id).Scan(&r.rev, &r.id)
+	`), data.ID, data.RevID(), delRev.rev, delRev.id).Scan(&r.rev, &r.id)
 	if err != nil {
 		return "", err
 	}

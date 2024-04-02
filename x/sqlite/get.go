@@ -349,10 +349,11 @@ func (d *db) getAttachments(ctx context.Context, tx *sql.Tx, id string, rev revi
 	}
 	defer rows.Close()
 	var atts attachments
+	var digest md5sum
 	for rows.Next() {
 		var a driver.Attachment
 		var data *[]byte
-		if err := rows.Scan(&a.Filename, &a.ContentType, &a.Digest, &a.Size, &a.RevPos, &data); err != nil {
+		if err := rows.Scan(&a.Filename, &a.ContentType, &digest, &a.Size, &a.RevPos, &data); err != nil {
 			return nil, err
 		}
 		if data == nil {
@@ -360,6 +361,7 @@ func (d *db) getAttachments(ctx context.Context, tx *sql.Tx, id string, rev revi
 		} else {
 			a.Content = io.NopCloser(bytes.NewReader(*data))
 		}
+		a.Digest = digest.Digest()
 		atts = append(atts, &a)
 	}
 	if len(atts) == 0 {
@@ -392,9 +394,15 @@ func (a *attachments) inlineAttachments() map[string]attachment {
 	}
 	atts := make(map[string]attachment, len(*a))
 	for _, att := range *a {
+		digest, err := parseDigest(att.Digest)
+		if err != nil {
+			// This should never happen, as the digest should have been validated
+			// when the attachment was created.
+			panic(err)
+		}
 		newAtt := attachment{
 			ContentType: att.ContentType,
-			Digest:      att.Digest,
+			Digest:      digest,
 			Length:      att.Size,
 			RevPos:      int(att.RevPos),
 			Stub:        att.Stub,

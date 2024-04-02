@@ -42,7 +42,7 @@ var schema = []string{
 		filename TEXT NOT NULL,
 		content_type TEXT NOT NULL,
 		length INTEGER NOT NULL,
-		digest TEXT NOT NULL,
+		digest BLOB NOT NULL,
 		data BLOB NOT NULL,
 		rev_pos INTEGER NOT NULL
 	)`,

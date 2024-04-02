@@ -1017,9 +1017,11 @@ func checkAttachments(t *testing.T, d *sql.DB, want []attachmentRow) {
 	var got []attachmentRow
 	for rows.Next() {
 		var att attachmentRow
-		if err := rows.Scan(&att.DocID, &att.Rev, &att.RevID, &att.RevPos, &att.Filename, &att.ContentType, &att.Length, &att.Digest, &att.Data); err != nil {
+		var digest md5sum
+		if err := rows.Scan(&att.DocID, &att.Rev, &att.RevID, &att.RevPos, &att.Filename, &att.ContentType, &att.Length, &digest, &att.Data); err != nil {
 			t.Fatal(err)
 		}
+		att.Digest = digest.Digest()
 		got = append(got, att)
 	}
 	if err := rows.Err(); err != nil {

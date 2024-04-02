@@ -98,6 +98,19 @@ func parseMD5sum(s string) (md5sum, error) {
 	return m, nil
 }
 
+func parseDigest(s string) (md5sum, error) {
+	if !strings.HasPrefix(s, "md5-") {
+		return md5sum{}, fmt.Errorf("invalid digest: %s", s)
+	}
+	x, err := base64.StdEncoding.DecodeString(s[4:])
+	if err != nil {
+		return md5sum{}, err
+	}
+	var m md5sum
+	copy(m[:], x)
+	return m, nil
+}
+
 func (m md5sum) IsZero() bool {
 	return m == md5sum{}
 }
@@ -126,6 +139,20 @@ func (m *md5sum) Scan(src interface{}) error {
 	return nil
 }
 
+func (m md5sum) Digest() string {
+	s, _ := m.MarshalText()
+	return string(s)
+}
+
+func (m md5sum) MarshalText() ([]byte, error) {
+	const prefix = "md5-"
+	enc := base64.StdEncoding
+	b := make([]byte, len(prefix)+enc.EncodedLen(md5sumLen))
+	copy(b, "md5-")
+	enc.Encode(b[4:], m[:])
+	return b, nil
+}
+
 type revsInfo struct {
 	Start int      `json:"start"`
 	IDs   []string `json:"ids"`
@@ -133,7 +160,7 @@ type revsInfo struct {
 
 type attachment struct {
 	ContentType string `json:"content_type"`
-	Digest      string `json:"digest"`
+	Digest      md5sum `json:"digest"`
 	Length      int64  `json:"length"`
 	RevPos      int    `json:"revpos"`
 	Stub        bool   `json:"stub,omitempty"`
@@ -162,7 +189,7 @@ func (a *attachment) calculate(filename string) error {
 	if _, err := io.Copy(h, bytes.NewReader(a.Content)); err != nil {
 		return err
 	}
-	a.Digest = "md5-" + base64.StdEncoding.EncodeToString(h.Sum(nil))
+	copy(a.Digest[:], h.Sum(nil))
 	return nil
 }
 

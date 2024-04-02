@@ -32,30 +32,48 @@ func placeholders(start, count int) string {
 	return strings.Join(result, ", ")
 }
 
-// isLeafRev returns a nil error if the specified revision is a leaf revision.
-// If the revision is not a leaf revision, it returns a conflict error.
-// If the document is not found, it returns a not found error.
-func (d *db) isLeafRev(ctx context.Context, tx *sql.Tx, docID string, rev int, revID string) error {
-	var exists bool
+// isLeafRev returns the leaf rev's hash and a nil error if the specified
+// revision is a leaf revision. If the revision is not a leaf revision, it
+// returns a conflict error. If the document is not found, it returns a not
+// found error.
+func (d *db) isLeafRev(ctx context.Context, tx *sql.Tx, docID string, rev int, revID string) (md5sum, error) {
+	var isLeaf bool
+	var hash md5sum
 	err := tx.QueryRowContext(ctx, d.query(`
 		SELECT
-			child.id IS NULL AS is_leaf
-		FROM {{ .Revs }} AS parent
-		LEFT JOIN {{ .Revs }} AS child ON parent.id = child.id AND parent.rev = child.parent_rev AND parent.rev_id = child.parent_rev_id
-		WHERE parent.id = $1
-			AND parent.rev = $2
-			AND parent.rev_id = $3
-	`), docID, rev, revID).Scan(&exists)
+			doc.md5sum,
+			COALESCE(revs.is_leaf, FALSE) AS is_leaf
+		FROM (
+			SELECT
+				id,
+				rev,
+				rev_id,
+				md5sum
+			FROM {{ .Docs }}
+			WHERE id = $1
+			LIMIT 1
+		) AS doc
+		LEFT JOIN (
+			SELECT
+			parent.id, parent.rev, parent.rev_id,
+				child.id IS NULL AS is_leaf
+			FROM {{ .Revs }} AS parent
+			LEFT JOIN {{ .Revs }} AS child ON parent.id = child.id AND parent.rev = child.parent_rev AND parent.rev_id = child.parent_rev_id
+			WHERE parent.id = $1
+				AND parent.rev = $2
+				AND parent.rev_id = $3
+		) AS revs ON doc.id=revs.id
+	`), docID, rev, revID).Scan(&hash, &isLeaf)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
-		return &internal.Error{Status: http.StatusNotFound, Message: "document not found"}
+		return md5sum{}, &internal.Error{Status: http.StatusNotFound, Message: "document not found"}
 	case err != nil:
-		return err
+		return md5sum{}, err
 	}
-	if !exists {
-		return &internal.Error{Status: http.StatusConflict, Message: "Document update conflict"}
+	if !isLeaf {
+		return md5sum{}, &internal.Error{Status: http.StatusConflict, Message: "Document update conflict"}
 	}
-	return nil
+	return hash, nil
 }
 
 // winningRev returns the current winning revision, and MD5sum, for the specified document.
@@ -94,7 +112,6 @@ func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev re
 	if err != nil {
 		return r, err
 	}
-
 	if len(data.Doc) == 0 {
 		// No body can happen for example when calling PutAttachment, so we
 		// create the new docs table entry by reading the previous one.

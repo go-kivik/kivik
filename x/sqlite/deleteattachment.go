@@ -41,7 +41,8 @@ func (d *db) DeleteAttachment(ctx context.Context, docID, filename string, optio
 		return "", err
 	}
 
-	if err := d.isLeafRev(ctx, tx, docID, curRev.rev, curRev.id); err != nil {
+	data.MD5sum, err = d.isLeafRev(ctx, tx, docID, curRev.rev, curRev.id)
+	if err != nil {
 		return "", err
 	}
 

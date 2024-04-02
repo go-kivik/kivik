@@ -80,7 +80,7 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 		docRev = optsRev
 	}
 
-	if !newEdits {
+	if !newEdits { // new_edits=false means replication mode
 		var rev revision
 		if data.Revisions.Start != 0 {
 			stmt, err := tx.PrepareContext(ctx, d.query(`

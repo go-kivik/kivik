@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -81,7 +82,28 @@ func (d *docData) RevID() string {
 		_, _ = io.Copy(h, bytes.NewReader(d.Doc))
 		copy(d.MD5sum[:], h.Sum(nil))
 	}
-	return hex.EncodeToString(d.MD5sum[:])
+	// The revision ID is a hash of:
+	// - The MD5sum of the document data
+	// - filenames and digests of attachments sorted by filename
+	// - the deleted flag, if true
+	h := md5.New()
+	_, _ = h.Write(d.MD5sum[:])
+	if len(d.Attachments) > 0 {
+		filenames := make([]string, 0, len(d.Attachments))
+		for filename := range d.Attachments {
+			filenames = append(filenames, filename)
+		}
+		sort.Strings(filenames)
+		for _, filename := range filenames {
+			_, _ = h.Write(d.Attachments[filename].Digest.Bytes())
+			_, _ = h.Write([]byte(filename))
+			_, _ = h.Write([]byte{0})
+		}
+	}
+	if d.Deleted {
+		_, _ = h.Write([]byte{0xff})
+	}
+	return hex.EncodeToString(h.Sum(nil))
 }
 
 const md5sumLen = 16
@@ -151,6 +173,10 @@ func (m md5sum) MarshalText() ([]byte, error) {
 	copy(b, "md5-")
 	enc.Encode(b[4:], m[:])
 	return b, nil
+}
+
+func (m md5sum) Bytes() []byte {
+	return m[:]
 }
 
 type revsInfo struct {

@@ -53,12 +53,11 @@ func TestDBPutAttachment(t *testing.T) {
 			ContentType: "text/plain",
 			Content:     io.NopCloser(strings.NewReader("Hello, world!")),
 		},
-		wantRev: "1-99914b932bd37a50b983c5e7c90ae93b",
+		wantRev: "1-.*",
 		wantRevs: []leaf{
 			{
-				ID:    "foo",
-				Rev:   1,
-				RevID: "99914b932bd37a50b983c5e7c90ae93b",
+				ID:  "foo",
+				Rev: 1,
 			},
 		},
 		wantAttachments: []attachmentRow{
@@ -66,7 +65,6 @@ func TestDBPutAttachment(t *testing.T) {
 				DocID:       "foo",
 				RevPos:      1,
 				Rev:         1,
-				RevID:       "99914b932bd37a50b983c5e7c90ae93b",
 				Filename:    "foo.txt",
 				ContentType: "text/plain",
 				Digest:      "md5-bNNVbesNpUvKBgtMOUeYOQ==",
@@ -88,19 +86,16 @@ func TestDBPutAttachment(t *testing.T) {
 				Content:     io.NopCloser(strings.NewReader("Hello, world!")),
 			},
 			options: kivik.Rev(rev),
-			wantRev: "2-9bb58f26192e4ba00f01e2e7b136bbd8",
+			wantRev: "2-.*",
 			wantRevs: []leaf{
 				{
-					ID:    "foo",
-					Rev:   1,
-					RevID: "9bb58f26192e4ba00f01e2e7b136bbd8",
+					ID:  "foo",
+					Rev: 1,
 				},
 				{
-					ID:          "foo",
-					Rev:         2,
-					RevID:       "9bb58f26192e4ba00f01e2e7b136bbd8",
-					ParentRev:   &[]int{1}[0],
-					ParentRevID: &[]string{"9bb58f26192e4ba00f01e2e7b136bbd8"}[0],
+					ID:        "foo",
+					Rev:       2,
+					ParentRev: &[]int{1}[0],
 				},
 			},
 			wantAttachments: []attachmentRow{
@@ -108,7 +103,6 @@ func TestDBPutAttachment(t *testing.T) {
 					DocID:       "foo",
 					RevPos:      2,
 					Rev:         2,
-					RevID:       "9bb58f26192e4ba00f01e2e7b136bbd8",
 					Filename:    "foo.txt",
 					ContentType: "text/plain",
 					Digest:      "md5-bNNVbesNpUvKBgtMOUeYOQ==",

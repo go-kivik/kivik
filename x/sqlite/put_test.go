@@ -63,12 +63,11 @@ func TestDBPut(t *testing.T) {
 		doc: map[string]string{
 			"foo": "bar",
 		},
-		wantRev: "1-9bb58f26192e4ba00f01e2e7b136bbd8",
+		wantRev: "1-.*",
 		wantRevs: []leaf{
 			{
-				ID:    "foo",
-				Rev:   1,
-				RevID: "9bb58f26192e4ba00f01e2e7b136bbd8",
+				ID:  "foo",
+				Rev: 1,
 			},
 		},
 	})
@@ -131,28 +130,25 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("update doc with correct rev", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_ = db.tPut("foo", map[string]string{"foo": "bar"})
+		rev := db.tPut("foo", map[string]string{"foo": "bar"})
 
 		return test{
 			db:    db,
 			docID: "foo",
 			doc: map[string]interface{}{
-				"_rev": "1-9bb58f26192e4ba00f01e2e7b136bbd8",
+				"_rev": rev,
 				"foo":  "baz",
 			},
-			wantRev: "2-afa7ae8a1906f4bb061be63525974f92",
+			wantRev: "2-.*",
 			wantRevs: []leaf{
 				{
-					ID:    "foo",
-					Rev:   1,
-					RevID: "9bb58f26192e4ba00f01e2e7b136bbd8",
+					ID:  "foo",
+					Rev: 1,
 				},
 				{
-					ID:          "foo",
-					Rev:         2,
-					RevID:       "afa7ae8a1906f4bb061be63525974f92",
-					ParentRev:   &[]int{1}[0],
-					ParentRevID: &[]string{"9bb58f26192e4ba00f01e2e7b136bbd8"}[0],
+					ID:        "foo",
+					Rev:       2,
+					ParentRev: &[]int{1}[0],
 				},
 			},
 		}
@@ -184,7 +180,9 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("update doc with new_edits=false, existing doc", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_ = db.tPut("foo", map[string]string{"foo": "bar"})
+		rev := db.tPut("foo", map[string]string{"foo": "bar"})
+
+		r, _ := parseRev(rev)
 
 		return test{
 			db:    db,
@@ -199,7 +197,7 @@ func TestDBPut(t *testing.T) {
 				{
 					ID:    "foo",
 					Rev:   1,
-					RevID: "9bb58f26192e4ba00f01e2e7b136bbd8",
+					RevID: r.id,
 				},
 				{
 					ID:    "foo",
@@ -211,17 +209,19 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("update doc with new_edits=false, existing doc and rev", func(t *testing.T) interface{} {
 		d := newDB(t)
-		_ = d.tPut("foo", map[string]string{"foo": "bar"})
+		rev := d.tPut("foo", map[string]string{"foo": "bar"})
+
+		r, _ := parseRev(rev)
 
 		return test{
 			db:    d,
 			docID: "foo",
 			doc: map[string]interface{}{
-				"_rev": "1-9bb58f26192e4ba00f01e2e7b136bbd8",
+				"_rev": rev,
 				"foo":  "baz",
 			},
 			options: kivik.Param("new_edits", false),
-			wantRev: "1-9bb58f26192e4ba00f01e2e7b136bbd8",
+			wantRev: rev,
 			check: func(t *testing.T) {
 				var doc string
 				err := d.underlying().QueryRow(`
@@ -229,7 +229,7 @@ func TestDBPut(t *testing.T) {
 					FROM test
 					WHERE id='foo'
 						AND rev=1
-						AND rev_id='9bb58f26192e4ba00f01e2e7b136bbd8'`).Scan(&doc)
+						AND rev_id=$1`, r.id).Scan(&doc)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -241,7 +241,7 @@ func TestDBPut(t *testing.T) {
 				{
 					ID:    "foo",
 					Rev:   1,
-					RevID: "9bb58f26192e4ba00f01e2e7b136bbd8",
+					RevID: r.id,
 				},
 			},
 		}
@@ -300,12 +300,11 @@ func TestDBPut(t *testing.T) {
 				"_deleted": false,
 				"foo":      "bar",
 			},
-			wantRev: "1-9bb58f26192e4ba00f01e2e7b136bbd8",
+			wantRev: "1-.*",
 			wantRevs: []leaf{
 				{
-					ID:    "foo",
-					Rev:   1,
-					RevID: "9bb58f26192e4ba00f01e2e7b136bbd8",
+					ID:  "foo",
+					Rev: 1,
 				},
 			},
 			check: func(t *testing.T) {
@@ -617,7 +616,7 @@ func TestDBPut(t *testing.T) {
 				"foo": "bar",
 			},
 			options: kivik.Param("new_edits", true),
-			wantRev: "2-9bb58f26192e4ba00f01e2e7b136bbd8",
+			wantRev: "2-.*",
 			wantRevs: []leaf{
 				{
 					ID:    "foo",
@@ -627,7 +626,6 @@ func TestDBPut(t *testing.T) {
 				{
 					ID:          "foo",
 					Rev:         2,
-					RevID:       "9bb58f26192e4ba00f01e2e7b136bbd8",
 					ParentRev:   &[]int{1}[0],
 					ParentRevID: &[]string{"abc"}[0],
 				},
@@ -655,7 +653,7 @@ func TestDBPut(t *testing.T) {
 				"foo": "bar",
 			},
 			options: kivik.Param("new_edits", true),
-			wantRev: "4-9bb58f26192e4ba00f01e2e7b136bbd8",
+			wantRev: "4-.*",
 			wantRevs: []leaf{
 				{
 					ID:    "foo",
@@ -679,7 +677,6 @@ func TestDBPut(t *testing.T) {
 				{
 					ID:          "foo",
 					Rev:         4,
-					RevID:       "9bb58f26192e4ba00f01e2e7b136bbd8",
 					ParentRev:   &[]int{3}[0],
 					ParentRevID: &[]string{"ghi"}[0],
 				},

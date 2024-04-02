@@ -15,6 +15,7 @@ package sqlite
 import (
 	"bytes"
 	"crypto/md5"
+	"database/sql/driver"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -67,6 +68,44 @@ type docData struct {
 	Attachments        map[string]attachment `json:"_attachments"`
 	RemovedAttachments []string              `json:"-"`
 	Doc                []byte
+	// MD5sum is the MD5sum of the document data. It, along with a hash of
+	// attachment metadata, is used to calculate the document revision.
+	MD5sum md5sum `json:"-"`
+}
+
+const md5sumLen = 16
+
+type md5sum [md5sumLen]byte
+
+func parseMD5sum(s string) (md5sum, error) {
+	x, err := hex.DecodeString(s)
+	if err != nil {
+		return md5sum{}, err
+	}
+	var m md5sum
+	copy(m[:], x)
+	return m, nil
+}
+
+func (m md5sum) String() string {
+	return hex.EncodeToString(m[:])
+}
+
+func (m md5sum) Value() (driver.Value, error) {
+	return m[:], nil
+}
+
+func (m md5sum) Scan(src interface{}) error {
+	x, ok := src.([]byte)
+	if !ok {
+		return fmt.Errorf("unsupported type: %T", src)
+	}
+	if len(x) != md5sumLen {
+		return fmt.Errorf("invalid length: %d", len(x))
+	}
+
+	copy(m[:], x)
+	return nil
 }
 
 type revsInfo struct {
@@ -159,8 +198,10 @@ func prepareDoc(docID string, doc interface{}) (*docData, error) {
 	if _, err := io.Copy(h, bytes.NewReader(b)); err != nil {
 		return nil, err
 	}
-	data.RevID = hex.EncodeToString(h.Sum(nil))
+	sum := h.Sum(nil)
+	data.RevID = hex.EncodeToString(sum)
 	data.Doc = b
+	copy(data.MD5sum[:], sum)
 	return data, nil
 }
 

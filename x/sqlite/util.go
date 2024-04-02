@@ -101,8 +101,8 @@ func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev re
 		// No body can happen for example when calling PutAttachment, so we
 		// create the new docs table entry by reading the previous one.
 		_, err = tx.ExecContext(ctx, d.query(`
-			INSERT INTO {{ .Docs }} (id, rev, rev_id, doc, deleted)
-			SELECT $1, $2, $3, doc, deleted
+			INSERT INTO {{ .Docs }} (id, rev, rev_id, doc, md5sum, deleted)
+			SELECT $1, $2, $3, doc, md5sum, deleted
 			FROM {{ .Docs }}
 			WHERE id = $1
 				AND rev = $2-1
@@ -110,9 +110,9 @@ func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev re
 			`), data.ID, r.rev, r.id)
 	} else {
 		_, err = tx.ExecContext(ctx, d.query(`
-			INSERT INTO {{ .Docs }} (id, rev, rev_id, doc, deleted)
-			VALUES ($1, $2, $3, $4, $5)
-		`), data.ID, r.rev, r.id, data.Doc, data.Deleted)
+			INSERT INTO {{ .Docs }} (id, rev, rev_id, doc, md5sum, deleted)
+			VALUES ($1, $2, $3, $4, $5, $6)
+		`), data.ID, r.rev, r.id, data.Doc, data.MD5sum, data.Deleted)
 	}
 	if err != nil {
 		return r, err

@@ -31,6 +31,7 @@ var schema = []string{
 		rev INTEGER NOT NULL,
 		rev_id TEXT NOT NULL,
 		doc BLOB NOT NULL,
+		md5sum TEXT NOT NULL,
 		deleted BOOLEAN NOT NULL DEFAULT FALSE,
 		FOREIGN KEY (id, rev, rev_id) REFERENCES {{ .Revs }} (id, rev, rev_id),
 		UNIQUE(id, rev, rev_id)

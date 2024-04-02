@@ -23,6 +23,14 @@ import (
 	"gitlab.com/flimzy/testy"
 )
 
+func mustParseMD5sum(s string) md5sum { //nolint:unparam
+	m, err := parseMD5sum(s)
+	if err != nil {
+		panic(err)
+	}
+	return m
+}
+
 func Test_prepareDoc(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -35,8 +43,8 @@ func Test_prepareDoc(t *testing.T) {
 			name: "no rev in document",
 			doc:  map[string]string{"foo": "bar"},
 			want: &docData{
-				RevID: "9bb58f26192e4ba00f01e2e7b136bbd8",
-				Doc:   []byte(`{"foo":"bar"}`),
+				Doc:    []byte(`{"foo":"bar"}`),
+				MD5sum: mustParseMD5sum("9bb58f26192e4ba00f01e2e7b136bbd8"),
 			},
 		},
 		{
@@ -46,8 +54,8 @@ func Test_prepareDoc(t *testing.T) {
 				"foo":  "bar",
 			},
 			want: &docData{
-				RevID: "9bb58f26192e4ba00f01e2e7b136bbd8",
-				Doc:   []byte(`{"foo":"bar"}`),
+				Doc:    []byte(`{"foo":"bar"}`),
+				MD5sum: mustParseMD5sum("9bb58f26192e4ba00f01e2e7b136bbd8"),
 			},
 		},
 		{
@@ -55,9 +63,9 @@ func Test_prepareDoc(t *testing.T) {
 			docID: "foo",
 			doc:   map[string]string{"foo": "bar"},
 			want: &docData{
-				ID:    "foo",
-				RevID: "9bb58f26192e4ba00f01e2e7b136bbd8",
-				Doc:   []byte(`{"foo":"bar"}`),
+				ID:     "foo",
+				Doc:    []byte(`{"foo":"bar"}`),
+				MD5sum: mustParseMD5sum("9bb58f26192e4ba00f01e2e7b136bbd8"),
 			},
 		},
 		{
@@ -68,9 +76,9 @@ func Test_prepareDoc(t *testing.T) {
 				"foo":      "bar",
 			},
 			want: &docData{
-				RevID:   "9bb58f26192e4ba00f01e2e7b136bbd8",
 				Doc:     []byte(`{"foo":"bar"}`),
 				Deleted: true,
+				MD5sum:  mustParseMD5sum("9bb58f26192e4ba00f01e2e7b136bbd8"),
 			},
 		},
 		{

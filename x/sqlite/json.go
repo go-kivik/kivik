@@ -15,12 +15,14 @@ package sqlite
 import (
 	"bytes"
 	"crypto/md5"
+	"database/sql/driver"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -58,15 +60,123 @@ func parseRev(s string) (revision, error) {
 
 // docData represents the document id, rev, deleted status, etc.
 type docData struct {
-	ID string `json:"_id"`
-	// RevID is the calculated revision ID, not the actual _rev field from the
-	// document.
-	RevID              string                `json:"-"`
+	ID                 string                `json:"_id"`
 	Revisions          revsInfo              `json:"_revisions"`
 	Deleted            bool                  `json:"_deleted"`
 	Attachments        map[string]attachment `json:"_attachments"`
 	RemovedAttachments []string              `json:"-"`
 	Doc                []byte
+	// MD5sum is the MD5sum of the document data. It, along with a hash of
+	// attachment metadata, is used to calculate the document revision.
+	MD5sum md5sum `json:"-"`
+}
+
+// RevID returns calculated revision ID, possibly setting the MD5sum if it is
+// not already set.
+func (d *docData) RevID() string {
+	if d.MD5sum.IsZero() {
+		if len(d.Doc) == 0 {
+			panic("MD5sum not set")
+		}
+		h := md5.New()
+		_, _ = io.Copy(h, bytes.NewReader(d.Doc))
+		copy(d.MD5sum[:], h.Sum(nil))
+	}
+	// The revision ID is a hash of:
+	// - The MD5sum of the document data
+	// - filenames and digests of attachments sorted by filename
+	// - the deleted flag, if true
+	h := md5.New()
+	_, _ = h.Write(d.MD5sum[:])
+	if len(d.Attachments) > 0 {
+		filenames := make([]string, 0, len(d.Attachments))
+		for filename := range d.Attachments {
+			filenames = append(filenames, filename)
+		}
+		sort.Strings(filenames)
+		for _, filename := range filenames {
+			_, _ = h.Write(d.Attachments[filename].Digest.Bytes())
+			_, _ = h.Write([]byte(filename))
+			_, _ = h.Write([]byte{0})
+		}
+	}
+	if d.Deleted {
+		_, _ = h.Write([]byte{0xff})
+	}
+	return hex.EncodeToString(h.Sum(nil))
+}
+
+const md5sumLen = 16
+
+type md5sum [md5sumLen]byte
+
+func parseMD5sum(s string) (md5sum, error) {
+	x, err := hex.DecodeString(s)
+	if err != nil {
+		return md5sum{}, err
+	}
+	var m md5sum
+	copy(m[:], x)
+	return m, nil
+}
+
+func parseDigest(s string) (md5sum, error) {
+	if !strings.HasPrefix(s, "md5-") {
+		return md5sum{}, fmt.Errorf("invalid digest: %s", s)
+	}
+	x, err := base64.StdEncoding.DecodeString(s[4:])
+	if err != nil {
+		return md5sum{}, err
+	}
+	var m md5sum
+	copy(m[:], x)
+	return m, nil
+}
+
+func (m md5sum) IsZero() bool {
+	return m == md5sum{}
+}
+
+func (m md5sum) String() string {
+	return hex.EncodeToString(m[:])
+}
+
+func (m md5sum) Value() (driver.Value, error) {
+	if m.IsZero() {
+		panic("zero value")
+	}
+	return m[:], nil
+}
+
+func (m *md5sum) Scan(src interface{}) error {
+	x, ok := src.([]byte)
+	if !ok {
+		return fmt.Errorf("unsupported type: %T", src)
+	}
+	if len(x) != md5sumLen {
+		return fmt.Errorf("invalid length: %d", len(x))
+	}
+
+	copy(m[:], x)
+	return nil
+}
+
+func (m md5sum) Digest() string {
+	s, _ := m.MarshalText()
+	return string(s)
+}
+
+func (m md5sum) MarshalText() ([]byte, error) {
+	const prefix = "md5-"
+	enc := base64.StdEncoding
+	b := make([]byte, len(prefix)+enc.EncodedLen(md5sumLen))
+	copy(b, "md5-")
+	enc.Encode(b[4:], m[:])
+	return b, nil
+}
+
+func (m md5sum) Bytes() []byte {
+	return m[:]
 }
 
 type revsInfo struct {
@@ -76,7 +186,7 @@ type revsInfo struct {
 
 type attachment struct {
 	ContentType string `json:"content_type"`
-	Digest      string `json:"digest"`
+	Digest      md5sum `json:"digest"`
 	Length      int64  `json:"length"`
 	RevPos      int    `json:"revpos"`
 	Stub        bool   `json:"stub,omitempty"`
@@ -105,7 +215,7 @@ func (a *attachment) calculate(filename string) error {
 	if _, err := io.Copy(h, bytes.NewReader(a.Content)); err != nil {
 		return err
 	}
-	a.Digest = "md5-" + base64.StdEncoding.EncodeToString(h.Sum(nil))
+	copy(a.Digest[:], h.Sum(nil))
 	return nil
 }
 
@@ -159,8 +269,9 @@ func prepareDoc(docID string, doc interface{}) (*docData, error) {
 	if _, err := io.Copy(h, bytes.NewReader(b)); err != nil {
 		return nil, err
 	}
-	data.RevID = hex.EncodeToString(h.Sum(nil))
+	sum := h.Sum(nil)
 	data.Doc = b
+	copy(data.MD5sum[:], sum)
 	return data, nil
 }
 

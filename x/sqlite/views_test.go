@@ -51,22 +51,22 @@ func TestDBAllDocs(t *testing.T) {
 	})
 	tests.Add("single doc", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_ = db.tPut("foo", map[string]string{"cat": "meow"})
+		rev := db.tPut("foo", map[string]string{"cat": "meow"})
 
 		return test{
 			db: db,
 			want: []rowResult{
 				{
 					ID:    "foo",
-					Rev:   "1-274558516009acbe973682d27a58b598",
-					Value: `{"value":{"rev":"1-274558516009acbe973682d27a58b598"}}` + "\n",
+					Rev:   rev,
+					Value: `{"value":{"rev":"` + rev + `"}}` + "\n",
 				},
 			},
 		}
 	})
 	tests.Add("include_docs=true", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_ = db.tPut("foo", map[string]string{"cat": "meow"})
+		rev := db.tPut("foo", map[string]string{"cat": "meow"})
 
 		return test{
 			db:      db,
@@ -74,25 +74,25 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "foo",
-					Rev:   "1-274558516009acbe973682d27a58b598",
-					Value: `{"value":{"rev":"1-274558516009acbe973682d27a58b598"}}` + "\n",
-					Doc:   `{"_id":"foo","_rev":"1-274558516009acbe973682d27a58b598","cat":"meow"}`,
+					Rev:   rev,
+					Value: `{"value":{"rev":"` + rev + `"}}` + "\n",
+					Doc:   `{"_id":"foo","_rev":"` + rev + `","cat":"meow"}`,
 				},
 			},
 		}
 	})
 	tests.Add("single doc multiple revisions", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_ = db.tPut("foo", map[string]string{"cat": "meow"})
-		_ = db.tPut("foo", map[string]string{"cat": "purr"}, kivik.Rev("1-274558516009acbe973682d27a58b598"))
+		rev := db.tPut("foo", map[string]string{"cat": "meow"})
+		rev2 := db.tPut("foo", map[string]string{"cat": "purr"}, kivik.Rev(rev))
 
 		return test{
 			db: db,
 			want: []rowResult{
 				{
 					ID:    "foo",
-					Rev:   "2-c1f7f9ed8874502b095381186a35af4b",
-					Value: `{"value":{"rev":"2-c1f7f9ed8874502b095381186a35af4b"}}` + "\n",
+					Rev:   rev2,
+					Value: `{"value":{"rev":"` + rev2 + `"}}` + "\n",
 				},
 			},
 		}
@@ -121,8 +121,8 @@ func TestDBAllDocs(t *testing.T) {
 	})
 	tests.Add("deleted doc", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_ = db.tPut("foo", map[string]string{"cat": "meow"})
-		_ = db.tDelete("foo", kivik.Rev("1-274558516009acbe973682d27a58b598"))
+		rev := db.tPut("foo", map[string]string{"cat": "meow"})
+		_ = db.tDelete("foo", kivik.Rev(rev))
 
 		return test{
 			db:   db,
@@ -206,13 +206,13 @@ func TestDBAllDocs(t *testing.T) {
 	})
 	tests.Add("default sorting", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_ = db.tPut("cat", map[string]string{
+		rev1 := db.tPut("cat", map[string]string{
 			"cat": "meow",
 		})
-		_ = db.tPut("dog", map[string]string{
+		rev2 := db.tPut("dog", map[string]string{
 			"dog": "woof",
 		})
-		_ = db.tPut("cow", map[string]string{
+		rev3 := db.tPut("cow", map[string]string{
 			"cow": "moo",
 		})
 
@@ -221,31 +221,31 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "cat",
-					Rev:   "1-274558516009acbe973682d27a58b598",
-					Value: `{"value":{"rev":"1-274558516009acbe973682d27a58b598"}}` + "\n",
+					Rev:   rev1,
+					Value: `{"value":{"rev":"` + rev1 + `"}}` + "\n",
 				},
 				{
 					ID:    "cow",
-					Rev:   "1-80b1ed11e92f08613f0007cc2b2f486d",
-					Value: `{"value":{"rev":"1-80b1ed11e92f08613f0007cc2b2f486d"}}` + "\n",
+					Rev:   rev3,
+					Value: `{"value":{"rev":"` + rev3 + `"}}` + "\n",
 				},
 				{
 					ID:    "dog",
-					Rev:   "1-a5f1dc478532231c6252f63fa94f433a",
-					Value: `{"value":{"rev":"1-a5f1dc478532231c6252f63fa94f433a"}}` + "\n",
+					Rev:   rev2,
+					Value: `{"value":{"rev":"` + rev2 + `"}}` + "\n",
 				},
 			},
 		}
 	})
 	tests.Add("descending=true", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_ = db.tPut("cat", map[string]string{
+		rev1 := db.tPut("cat", map[string]string{
 			"cat": "meow",
 		})
-		_ = db.tPut("dog", map[string]string{
+		rev2 := db.tPut("dog", map[string]string{
 			"dog": "woof",
 		})
-		_ = db.tPut("cow", map[string]string{
+		rev3 := db.tPut("cow", map[string]string{
 			"cow": "moo",
 		})
 
@@ -255,31 +255,31 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "dog",
-					Rev:   "1-a5f1dc478532231c6252f63fa94f433a",
-					Value: `{"value":{"rev":"1-a5f1dc478532231c6252f63fa94f433a"}}` + "\n",
+					Rev:   rev2,
+					Value: `{"value":{"rev":"` + rev2 + `"}}` + "\n",
 				},
 				{
 					ID:    "cow",
-					Rev:   "1-80b1ed11e92f08613f0007cc2b2f486d",
-					Value: `{"value":{"rev":"1-80b1ed11e92f08613f0007cc2b2f486d"}}` + "\n",
+					Rev:   rev3,
+					Value: `{"value":{"rev":"` + rev3 + `"}}` + "\n",
 				},
 				{
 					ID:    "cat",
-					Rev:   "1-274558516009acbe973682d27a58b598",
-					Value: `{"value":{"rev":"1-274558516009acbe973682d27a58b598"}}` + "\n",
+					Rev:   rev1,
+					Value: `{"value":{"rev":"` + rev1 + `"}}` + "\n",
 				},
 			},
 		}
 	})
 	tests.Add("endkey", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_ = db.tPut("cat", map[string]string{
+		rev1 := db.tPut("cat", map[string]string{
 			"cat": "meow",
 		})
 		_ = db.tPut("dog", map[string]string{
 			"dog": "woof",
 		})
-		_ = db.tPut("cow", map[string]string{
+		rev3 := db.tPut("cow", map[string]string{
 			"cow": "moo",
 		})
 
@@ -289,13 +289,13 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "cat",
-					Rev:   "1-274558516009acbe973682d27a58b598",
-					Value: `{"value":{"rev":"1-274558516009acbe973682d27a58b598"}}` + "\n",
+					Rev:   rev1,
+					Value: `{"value":{"rev":"` + rev1 + `"}}` + "\n",
 				},
 				{
 					ID:    "cow",
-					Rev:   "1-80b1ed11e92f08613f0007cc2b2f486d",
-					Value: `{"value":{"rev":"1-80b1ed11e92f08613f0007cc2b2f486d"}}` + "\n",
+					Rev:   rev3,
+					Value: `{"value":{"rev":"` + rev3 + `"}}` + "\n",
 				},
 			},
 		}
@@ -305,10 +305,10 @@ func TestDBAllDocs(t *testing.T) {
 		_ = db.tPut("cat", map[string]string{
 			"cat": "meow",
 		})
-		_ = db.tPut("dog", map[string]string{
+		rev2 := db.tPut("dog", map[string]string{
 			"dog": "woof",
 		})
-		_ = db.tPut("cow", map[string]string{
+		rev3 := db.tPut("cow", map[string]string{
 			"cow": "moo",
 		})
 
@@ -321,26 +321,26 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "dog",
-					Rev:   "1-a5f1dc478532231c6252f63fa94f433a",
-					Value: `{"value":{"rev":"1-a5f1dc478532231c6252f63fa94f433a"}}` + "\n",
+					Rev:   rev2,
+					Value: `{"value":{"rev":"` + rev2 + `"}}` + "\n",
 				},
 				{
 					ID:    "cow",
-					Rev:   "1-80b1ed11e92f08613f0007cc2b2f486d",
-					Value: `{"value":{"rev":"1-80b1ed11e92f08613f0007cc2b2f486d"}}` + "\n",
+					Rev:   rev3,
+					Value: `{"value":{"rev":"` + rev3 + `"}}` + "\n",
 				},
 			},
 		}
 	})
 	tests.Add("end_key", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_ = db.tPut("cat", map[string]string{
+		rev1 := db.tPut("cat", map[string]string{
 			"cat": "meow",
 		})
 		_ = db.tPut("dog", map[string]string{
 			"dog": "woof",
 		})
-		_ = db.tPut("cow", map[string]string{
+		rev3 := db.tPut("cow", map[string]string{
 			"cow": "moo",
 		})
 
@@ -350,20 +350,20 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "cat",
-					Rev:   "1-274558516009acbe973682d27a58b598",
-					Value: `{"value":{"rev":"1-274558516009acbe973682d27a58b598"}}` + "\n",
+					Rev:   rev1,
+					Value: `{"value":{"rev":"` + rev1 + `"}}` + "\n",
 				},
 				{
 					ID:    "cow",
-					Rev:   "1-80b1ed11e92f08613f0007cc2b2f486d",
-					Value: `{"value":{"rev":"1-80b1ed11e92f08613f0007cc2b2f486d"}}` + "\n",
+					Rev:   rev3,
+					Value: `{"value":{"rev":"` + rev3 + `"}}` + "\n",
 				},
 			},
 		}
 	})
 	tests.Add("endkey, inclusive_end=false", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_ = db.tPut("cat", map[string]string{
+		rev1 := db.tPut("cat", map[string]string{
 			"cat": "meow",
 		})
 		_ = db.tPut("dog", map[string]string{
@@ -382,8 +382,8 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "cat",
-					Rev:   "1-274558516009acbe973682d27a58b598",
-					Value: `{"value":{"rev":"1-274558516009acbe973682d27a58b598"}}` + "\n",
+					Rev:   rev1,
+					Value: `{"value":{"rev":"` + rev1 + `"}}` + "\n",
 				},
 			},
 		}
@@ -393,10 +393,10 @@ func TestDBAllDocs(t *testing.T) {
 		_ = db.tPut("cat", map[string]string{
 			"cat": "meow",
 		})
-		_ = db.tPut("dog", map[string]string{
+		rev2 := db.tPut("dog", map[string]string{
 			"dog": "woof",
 		})
-		_ = db.tPut("cow", map[string]string{
+		rev3 := db.tPut("cow", map[string]string{
 			"cow": "moo",
 		})
 
@@ -406,13 +406,13 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "cow",
-					Rev:   "1-80b1ed11e92f08613f0007cc2b2f486d",
-					Value: `{"value":{"rev":"1-80b1ed11e92f08613f0007cc2b2f486d"}}` + "\n",
+					Rev:   rev3,
+					Value: `{"value":{"rev":"` + rev3 + `"}}` + "\n",
 				},
 				{
 					ID:    "dog",
-					Rev:   "1-a5f1dc478532231c6252f63fa94f433a",
-					Value: `{"value":{"rev":"1-a5f1dc478532231c6252f63fa94f433a"}}` + "\n",
+					Rev:   rev2,
+					Value: `{"value":{"rev":"` + rev2 + `"}}` + "\n",
 				},
 			},
 		}
@@ -422,10 +422,10 @@ func TestDBAllDocs(t *testing.T) {
 		_ = db.tPut("cat", map[string]string{
 			"cat": "meow",
 		})
-		_ = db.tPut("dog", map[string]string{
+		rev2 := db.tPut("dog", map[string]string{
 			"dog": "woof",
 		})
-		_ = db.tPut("cow", map[string]string{
+		rev3 := db.tPut("cow", map[string]string{
 			"cow": "moo",
 		})
 
@@ -435,26 +435,26 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "cow",
-					Rev:   "1-80b1ed11e92f08613f0007cc2b2f486d",
-					Value: `{"value":{"rev":"1-80b1ed11e92f08613f0007cc2b2f486d"}}` + "\n",
+					Rev:   rev3,
+					Value: `{"value":{"rev":"` + rev3 + `"}}` + "\n",
 				},
 				{
 					ID:    "dog",
-					Rev:   "1-a5f1dc478532231c6252f63fa94f433a",
-					Value: `{"value":{"rev":"1-a5f1dc478532231c6252f63fa94f433a"}}` + "\n",
+					Rev:   rev2,
+					Value: `{"value":{"rev":"` + rev2 + `"}}` + "\n",
 				},
 			},
 		}
 	})
 	tests.Add("startkey, descending", func(t *testing.T) interface{} {
 		db := newDB(t)
-		_ = db.tPut("cat", map[string]string{
+		rev1 := db.tPut("cat", map[string]string{
 			"cat": "meow",
 		})
 		_ = db.tPut("dog", map[string]string{
 			"dog": "woof",
 		})
-		_ = db.tPut("cow", map[string]string{
+		rev3 := db.tPut("cow", map[string]string{
 			"cow": "moo",
 		})
 
@@ -467,13 +467,13 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "cow",
-					Rev:   "1-80b1ed11e92f08613f0007cc2b2f486d",
-					Value: `{"value":{"rev":"1-80b1ed11e92f08613f0007cc2b2f486d"}}` + "\n",
+					Rev:   rev3,
+					Value: `{"value":{"rev":"` + rev3 + `"}}` + "\n",
 				},
 				{
 					ID:    "cat",
-					Rev:   "1-274558516009acbe973682d27a58b598",
-					Value: `{"value":{"rev":"1-274558516009acbe973682d27a58b598"}}` + "\n",
+					Rev:   rev1,
+					Value: `{"value":{"rev":"` + rev1 + `"}}` + "\n",
 				},
 			},
 		}

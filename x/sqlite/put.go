@@ -80,7 +80,7 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 		docRev = optsRev
 	}
 
-	if !newEdits {
+	if !newEdits { // new_edits=false means replication mode
 		var rev revision
 		if data.Revisions.Start != 0 {
 			stmt, err := tx.PrepareContext(ctx, d.query(`
@@ -126,11 +126,11 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 		}
 		var newRev string
 		err = tx.QueryRowContext(ctx, d.query(`
-			INSERT INTO {{ .Docs }} (id, rev, rev_id, doc, deleted)
-			VALUES ($1, $2, $3, $4, $5)
+			INSERT INTO {{ .Docs }} (id, rev, rev_id, doc, md5sum, deleted)
+			VALUES ($1, $2, $3, $4, $5, $6)
 			ON CONFLICT DO NOTHING
 			RETURNING rev || '-' || rev_id
-		`), docID, rev.rev, rev.id, data.Doc, data.Deleted).Scan(&newRev)
+		`), docID, rev.rev, rev.id, data.Doc, data.MD5sum, data.Deleted).Scan(&newRev)
 		if errors.Is(err, sql.ErrNoRows) {
 			// No rows means a conflict, so  we assume that the documents are
 			// identical, for the sake of idempotency, and return the current
@@ -143,7 +143,7 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 		return newRev, tx.Commit()
 	}
 
-	curRev, err := d.winningRev(ctx, tx, docID)
+	curRev, _, err := d.winningRev(ctx, tx, docID)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return "", err
 	}

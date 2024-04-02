@@ -37,14 +37,14 @@ func (d *db) DeleteAttachment(ctx context.Context, docID, filename string, optio
 		ID: docID,
 	}
 
-	curRev, err := d.winningRev(ctx, tx, docID)
+	curRev, hash, err := d.winningRev(ctx, tx, docID)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return "", &internal.Error{Status: http.StatusNotFound, Message: "document not found"}
 	case err != nil:
 		return "", err
 	default:
-		data.RevID = curRev.id
+		data.MD5sum = hash
 	}
 
 	if rev := opts.rev(); rev != "" && rev != curRev.String() {

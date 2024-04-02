@@ -59,14 +59,14 @@ func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (
 		FROM {{ .Revs }}
 		WHERE id = $1
 		RETURNING rev, rev_id
-	`), data.ID, data.RevID, delRev.rev, delRev.id).Scan(&r.rev, &r.id)
+	`), data.ID, data.RevID(), delRev.rev, delRev.id).Scan(&r.rev, &r.id)
 	if err != nil {
 		return "", err
 	}
 	_, err = tx.ExecContext(ctx, d.query(`
-		INSERT INTO {{ .Docs }} (id, rev, rev_id, doc, deleted)
-		VALUES ($1, $2, $3, $4, TRUE)
-	`), data.ID, r.rev, r.id, data.Doc)
+		INSERT INTO {{ .Docs }} (id, rev, rev_id, doc, md5sum, deleted)
+		VALUES ($1, $2, $3, $4, $5, TRUE)
+	`), data.ID, r.rev, r.id, data.Doc, data.MD5sum)
 	if err != nil {
 		return "", err
 	}

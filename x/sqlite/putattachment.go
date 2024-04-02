@@ -23,9 +23,6 @@ import (
 	"github.com/go-kivik/kivik/v4/internal"
 )
 
-// revIDEmpty is the revision ID for an empty document, i.e. `{}`
-const revIDEmpty = "99914b932bd37a50b983c5e7c90ae93b"
-
 func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attachment, options driver.Options) (string, error) {
 	opts := newOpts(options)
 
@@ -39,15 +36,14 @@ func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attach
 		ID: docID,
 	}
 
-	curRev, err := d.winningRev(ctx, tx, docID)
+	curRev, hash, err := d.winningRev(ctx, tx, docID)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
-		data.RevID = revIDEmpty
 		data.Doc = []byte("{}")
 	case err != nil:
 		return "", err
 	default:
-		data.RevID = curRev.id
+		data.MD5sum = hash
 	}
 
 	if rev := opts.rev(); rev != "" && rev != curRev.String() {

@@ -160,8 +160,29 @@ func TestDBGetAttachment(t *testing.T) {
 	})
 	tests.Add("returns old attachment content for revision that predates attachment update", func(t *testing.T) interface{} {
 		d := newDB(t)
-		const wantContent = "Hello World"
-		id, filename, rev := documentWithUpdatedAttachment(d, wantContent)
+		const (
+			id          = "foo"
+			filename    = "foo.txt"
+			wantContent = "Hello World"
+		)
+		rev := d.tPut("foo", map[string]interface{}{
+			"_id": id,
+			"_attachments": map[string]interface{}{
+				filename: map[string]interface{}{
+					"content_type": "text/plain",
+					"data":         []byte(wantContent),
+				},
+			},
+		})
+		_ = d.tPut("foo", map[string]interface{}{
+			"_id": "foo",
+			"_attachments": map[string]interface{}{
+				"foo.txt": map[string]interface{}{
+					"content_type": "text/plain",
+					"data":         []byte(wantContent + " [after update]"),
+				},
+			},
+		}, kivik.Rev(rev))
 
 		r, _ := parseRev(rev)
 
@@ -174,6 +195,7 @@ func TestDBGetAttachment(t *testing.T) {
 			wantAttachment: &AttachmentX{Filename: filename, ContentType: "text/plain", Length: int64(len(wantContent)), RevPos: int64(r.rev), Data: wantContent},
 		}
 	})
+
 	// GetAttachment returns the latest revision by default
 	//
 
@@ -230,31 +252,4 @@ func TestDBGetAttachment(t *testing.T) {
 			t.Errorf("Unexpected attachment metadata:\n%s", d)
 		}
 	})
-}
-
-func documentWithUpdatedAttachment(d *testDB, content string) (id, filename, rev string) {
-	const (
-		docID          = "foo"
-		attachmentName = "foo.txt"
-	)
-	rev = d.tPut("foo", map[string]interface{}{
-		"_id": docID,
-		"_attachments": map[string]interface{}{
-			attachmentName: map[string]interface{}{
-				"content_type": "text/plain",
-				"data":         []byte(content),
-			},
-		},
-	})
-
-	_ = d.tPut("foo", map[string]interface{}{
-		"_id": "foo",
-		"_attachments": map[string]interface{}{
-			"foo.txt": map[string]interface{}{
-				"content_type": "text/plain",
-				"data":         []byte(content + " [after update]"),
-			},
-		},
-	}, kivik.Rev(rev))
-	return docID, attachmentName, rev
 }

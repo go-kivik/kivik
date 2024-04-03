@@ -152,7 +152,6 @@ func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev re
 	if err != nil {
 		return r, err
 	}
-	defer attStmt.Close()
 
 	stubStmt, err := tx.PrepareContext(ctx, d.query(`
 			INSERT INTO {{ .AttachmentsBridge }} (pk, id, rev, rev_id)
@@ -168,7 +167,6 @@ func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev re
 	if err != nil {
 		return r, err
 	}
-	defer stubStmt.Close()
 
 	bridgeStmt, err := tx.PrepareContext(ctx, d.query(`
 			INSERT INTO {{ .AttachmentsBridge }} (pk, id, rev, rev_id)
@@ -177,7 +175,6 @@ func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev re
 	if err != nil {
 		return r, err
 	}
-	defer bridgeStmt.Close()
 
 	for _, filename := range orderedFilenames {
 		att := data.Attachments[filename]

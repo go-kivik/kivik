@@ -72,7 +72,7 @@ func TestDBDeleteAttachment(t *testing.T) {
 			docID:      "foo",
 			filename:   "foo.txt",
 			options:    kivik.Rev("1-wrong"),
-			wantErr:    "Document update conflict",
+			wantErr:    "document update conflict",
 			wantStatus: http.StatusConflict,
 		}
 	})
@@ -214,14 +214,14 @@ func TestDBDeleteAttachment(t *testing.T) {
 				{
 					ID:          "foo",
 					Rev:         2,
-					RevID:       "def",
+					RevID:       r2.id,
 					ParentRev:   &[]int{1}[0],
 					ParentRevID: &r1.id,
 				},
 				{
 					ID:          "foo",
 					Rev:         2,
-					RevID:       r2.id,
+					RevID:       "def",
 					ParentRev:   &[]int{1}[0],
 					ParentRevID: &r1.id,
 				},

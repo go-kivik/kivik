@@ -71,7 +71,7 @@ func (d *db) isLeafRev(ctx context.Context, tx *sql.Tx, docID string, rev int, r
 		return md5sum{}, err
 	}
 	if !isLeaf {
-		return md5sum{}, &internal.Error{Status: http.StatusConflict, Message: "Document update conflict"}
+		return md5sum{}, &internal.Error{Status: http.StatusConflict, Message: "document update conflict"}
 	}
 	return hash, nil
 }

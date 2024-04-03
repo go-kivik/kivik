@@ -76,7 +76,7 @@ func TestDBPut(t *testing.T) {
 		},
 		options:    driver.Options(kivik.Rev("2-1234567890abcdef1234567890abcdef")),
 		wantStatus: http.StatusBadRequest,
-		wantErr:    "Document rev and option have different values",
+		wantErr:    "document rev and option have different values",
 	})
 	tests.Add("attempt to create doc with rev in doc should conflict", test{
 		docID: "foo",
@@ -85,7 +85,7 @@ func TestDBPut(t *testing.T) {
 			"foo":  "bar",
 		},
 		wantStatus: http.StatusConflict,
-		wantErr:    "conflict",
+		wantErr:    "document update conflict",
 	})
 	tests.Add("attempt to create doc with rev in params should conflict", test{
 		docID: "foo",
@@ -94,7 +94,7 @@ func TestDBPut(t *testing.T) {
 		},
 		options:    kivik.Rev("1-1234567890abcdef1234567890abcdef"),
 		wantStatus: http.StatusConflict,
-		wantErr:    "conflict",
+		wantErr:    "document update conflict",
 	})
 	tests.Add("attempt to update doc without rev should conflict", func(t *testing.T) interface{} {
 		db := newDB(t)
@@ -107,7 +107,7 @@ func TestDBPut(t *testing.T) {
 				"foo": "bar",
 			},
 			wantStatus: http.StatusConflict,
-			wantErr:    "conflict",
+			wantErr:    "document update conflict",
 		}
 	})
 	tests.Add("attempt to update doc with wrong rev should conflict", func(t *testing.T) interface{} {
@@ -122,7 +122,7 @@ func TestDBPut(t *testing.T) {
 				"foo":  "bar",
 			},
 			wantStatus: http.StatusConflict,
-			wantErr:    "conflict",
+			wantErr:    "document update conflict",
 		}
 	})
 	tests.Add("update doc with correct rev", func(t *testing.T) interface{} {
@@ -427,7 +427,7 @@ func TestDBPut(t *testing.T) {
 			"rev":       "1-abc",
 		}),
 		wantStatus: http.StatusBadRequest,
-		wantErr:    "Document rev and option have different values",
+		wantErr:    "document rev and option have different values",
 	})
 	tests.Add("new_edits=false, with _revisions replayed", func(t *testing.T) interface{} {
 		db := newDB(t)
@@ -572,7 +572,7 @@ func TestDBPut(t *testing.T) {
 		},
 		options:    kivik.Param("new_edits", true),
 		wantStatus: http.StatusConflict,
-		wantErr:    "conflict",
+		wantErr:    "document update conflict",
 	})
 	tests.Add("new_edits=true, with _revisions should conflict for wrong rev", func(t *testing.T) interface{} {
 		db := newDB(t)
@@ -592,7 +592,7 @@ func TestDBPut(t *testing.T) {
 			},
 			options:    kivik.Param("new_edits", true),
 			wantStatus: http.StatusConflict,
-			wantErr:    "conflict",
+			wantErr:    "document update conflict",
 		}
 	})
 	tests.Add("new_edits=true, with _revisions should succeed for correct rev", func(t *testing.T) interface{} {
@@ -702,7 +702,7 @@ func TestDBPut(t *testing.T) {
 			},
 			options:    kivik.Param("new_edits", true),
 			wantStatus: http.StatusConflict,
-			wantErr:    "conflict",
+			wantErr:    "document update conflict",
 		}
 	})
 	tests.Add("with attachment, no data", test{
@@ -918,10 +918,74 @@ func TestDBPut(t *testing.T) {
 			wantErr:    "invalid attachment stub in bar for invalid.png",
 		}
 	})
+	tests.Add("update to conflicting leaf updates the proper branch", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev1 := d.tPut("foo", map[string]interface{}{
+			"cat": "meow",
+		})
+		rev2 := d.tPut("foo", map[string]interface{}{
+			"dog": "woof",
+		}, kivik.Rev(rev1))
+
+		r1, _ := parseRev(rev1)
+		r2, _ := parseRev(rev2)
+
+		// Create a conflict
+		_ = d.tPut("foo", map[string]interface{}{
+			"pig": "oink",
+			"_revisions": map[string]interface{}{
+				"start": 3,
+				"ids":   []string{"abc", "def", r1.id},
+			},
+		}, kivik.Params(map[string]interface{}{"new_edits": false}))
+
+		return test{
+			db:      d,
+			docID:   "foo",
+			options: kivik.Rev(rev2),
+			doc: map[string]interface{}{
+				"cow": "moo",
+			},
+			wantRev: "3-.*",
+			wantRevs: []leaf{
+				{
+					ID:    "foo",
+					Rev:   1,
+					RevID: r1.id,
+				},
+				{
+					ID:          "foo",
+					Rev:         2,
+					RevID:       r2.id,
+					ParentRev:   &[]int{1}[0],
+					ParentRevID: &r1.id,
+				},
+				{
+					ID:          "foo",
+					Rev:         2,
+					RevID:       "def",
+					ParentRev:   &[]int{1}[0],
+					ParentRevID: &r1.id,
+				},
+				{
+					ID:          "foo",
+					Rev:         3,
+					ParentRev:   &[]int{2}[0],
+					ParentRevID: &r2.id,
+				},
+				{
+					ID:          "foo",
+					Rev:         3,
+					RevID:       "abc",
+					ParentRev:   &[]int{2}[0],
+					ParentRevID: &[]string{"def"}[0],
+				},
+			},
+		}
+	})
 
 	/*
 		TODO:
-		- update conflicting leaf
 		- delete attachments only in one branch of a document
 		- Omit attachments to delete
 		- Include stub to update doc without deleting attachments

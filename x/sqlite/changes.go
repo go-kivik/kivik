@@ -42,7 +42,7 @@ func (c *changes) Next(change *driver.Change) error {
 }
 
 func (c *changes) Close() error {
-	return nil
+	return c.rows.Close()
 }
 
 func (c *changes) LastSeq() string {
@@ -58,15 +58,16 @@ func (c *changes) ETag() string {
 }
 
 func (d *db) Changes(ctx context.Context, _ driver.Options) (driver.Changes, error) {
-	rows, err := d.db.QueryContext(ctx, d.query(`
-		SELECT
-			id,
-			seq,
-			deleted,
-			rev || '-' || rev_id AS rev
-		FROM {{ .Docs }}
-		ORDER BY seq
-	`))
+	query := d.query(`
+	SELECT
+		id,
+		seq,
+		deleted,
+		rev || '-' || rev_id AS rev
+	FROM {{ .Docs }}
+	ORDER BY seq
+`)
+	rows, err := d.db.QueryContext(ctx, query) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {
 		return nil, err
 	}

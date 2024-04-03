@@ -53,6 +53,55 @@ func TestDBChanges(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("deleted event", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
+		rev2 := d.tDelete("doc1", kivik.Rev(rev))
+
+		return test{
+			db: d,
+			wantChanges: []driver.Change{
+				{
+					ID:      "doc1",
+					Seq:     "1",
+					Changes: driver.ChangedRevs{rev},
+				},
+				{
+					ID:      "doc1",
+					Seq:     "2",
+					Deleted: true,
+					Changes: driver.ChangedRevs{rev2},
+				},
+			},
+		}
+	})
+
+	/*
+		TODO:
+		- Set LastSeq
+		- Set Pending
+		- Set ETag for normal mode
+		- Options
+			- doc_ids
+			- conflicts
+			- descending
+			- feed
+				- normal
+				- longpoll
+				- continuous
+			- filter
+			- heartbeat
+			- include_docs
+			- attachments
+			- att_encoding_info
+			- last-event-id
+			- limit
+			- since
+			- style
+			- timeout
+			- view
+			- seq_interval
+	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()

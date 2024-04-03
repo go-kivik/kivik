@@ -185,7 +185,10 @@ func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev re
 		var pk int
 		if att.Stub {
 			err := stubStmt.QueryRowContext(ctx, data.ID, r.rev, r.id, curRev.rev, curRev.id, filename).Scan(&pk)
-			if err != nil {
+			switch {
+			case errors.Is(err, sql.ErrNoRows):
+				return r, &internal.Error{Status: http.StatusPreconditionFailed, Message: fmt.Sprintf("invalid attachment stub in bar for %s", filename)}
+			case err != nil:
 				return r, err
 			}
 		} else {

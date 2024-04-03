@@ -899,6 +899,25 @@ func TestDBPut(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("put with invalid attachment stub returns 412", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("foo", map[string]interface{}{
+			"foo": "aaa",
+			"_attachments": newAttachments().
+				add("att.txt", "att.txt"),
+		})
+
+		return test{
+			db:      d,
+			docID:   "foo",
+			options: kivik.Rev(rev),
+			doc: map[string]interface{}{
+				"_attachments": newAttachments().addStub("invalid.png"),
+			},
+			wantStatus: http.StatusPreconditionFailed,
+			wantErr:    "invalid attachment stub in bar for invalid.png",
+		}
+	})
 
 	/*
 		TODO:
@@ -911,21 +930,6 @@ func TestDBPut(t *testing.T) {
 		- new_edits=false + attachment
 		- new_edits=false + invalid attachment stub
 		- filename validation?
-	*/
-
-	/* Put with invalid stub returns sql no rows:
-
-	rev1 := db.tPut("foo", map[string]interface{}{
-			"foo": "aaa",
-			"_attachments": newAttachments().
-				add("att.txt", "att.txt").
-				add("att2.txt", "att2.txt"),
-		})
-		rev2 := db.tPut("foo", map[string]interface{}{
-			"foo":          "aaa",
-			"_attachments": newAttachments().addStub("att.3txt"),
-		}, kivik.Rev(rev1))
-
 	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {

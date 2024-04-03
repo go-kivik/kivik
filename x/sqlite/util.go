@@ -90,6 +90,25 @@ func (d *db) winningRev(ctx context.Context, tx *sql.Tx, docID string) (revision
 	return curRev, hash, err
 }
 
+type stmtCache map[string]*sql.Stmt
+
+func newStmtCache() stmtCache {
+	return make(stmtCache)
+}
+
+func (c stmtCache) prepare(ctx context.Context, tx *sql.Tx, query string) (*sql.Stmt, error) {
+	stmt, ok := c[query]
+	if !ok {
+		var err error
+		stmt, err = tx.PrepareContext(ctx, query)
+		if err != nil {
+			return nil, err
+		}
+		c[query] = stmt
+	}
+	return stmt, nil
+}
+
 // createRev creates a new entry in the revs table, inserts the document data
 // into the docs table, attachments into the attachments table, and returns the
 // new revision.
@@ -144,44 +163,28 @@ func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev re
 	}
 	sort.Strings(orderedFilenames)
 
-	attStmt, err := tx.PrepareContext(ctx, d.query(`
-			INSERT INTO {{ .Attachments }} (rev_pos, filename, content_type, length, digest, data)
-			VALUES ($1, $2, $3, $4, $5, $6)
-			RETURNING pk
-		`))
-	if err != nil {
-		return r, err
-	}
-
-	stubStmt, err := tx.PrepareContext(ctx, d.query(`
-			INSERT INTO {{ .AttachmentsBridge }} (pk, id, rev, rev_id)
-			SELECT att.pk, $1, $2, $3
-			FROM {{ .Attachments }} AS att
-			JOIN {{ .AttachmentsBridge }} AS bridge ON att.pk = bridge.pk
-			WHERE bridge.id = $1
-				AND bridge.rev = $4
-				AND bridge.rev_id = $5
-				AND att.filename = $6
-			RETURNING pk
-		`))
-	if err != nil {
-		return r, err
-	}
-
-	bridgeStmt, err := tx.PrepareContext(ctx, d.query(`
-			INSERT INTO {{ .AttachmentsBridge }} (pk, id, rev, rev_id)
-			VALUES ($1, $2, $3, $4)
-		`))
-	if err != nil {
-		return r, err
-	}
+	stmts := newStmtCache()
 
 	for _, filename := range orderedFilenames {
 		att := data.Attachments[filename]
 
 		var pk int
 		if att.Stub {
-			err := stubStmt.QueryRowContext(ctx, data.ID, r.rev, r.id, curRev.rev, curRev.id, filename).Scan(&pk)
+			stubStmt, err := stmts.prepare(ctx, tx, d.query(`
+				INSERT INTO {{ .AttachmentsBridge }} (pk, id, rev, rev_id)
+				SELECT att.pk, $1, $2, $3
+				FROM {{ .Attachments }} AS att
+				JOIN {{ .AttachmentsBridge }} AS bridge ON att.pk = bridge.pk
+				WHERE bridge.id = $1
+					AND bridge.rev = $4
+					AND bridge.rev_id = $5
+					AND att.filename = $6
+				RETURNING pk
+			`))
+			if err != nil {
+				return r, err
+			}
+			err = stubStmt.QueryRowContext(ctx, data.ID, r.rev, r.id, curRev.rev, curRev.id, filename).Scan(&pk)
 			switch {
 			case errors.Is(err, sql.ErrNoRows):
 				return r, &internal.Error{Status: http.StatusPreconditionFailed, Message: fmt.Sprintf("invalid attachment stub in bar for %s", filename)}
@@ -196,11 +199,28 @@ func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev re
 			if contentType == "" {
 				contentType = "application/octet-stream"
 			}
-			err := attStmt.QueryRowContext(ctx, r.rev, filename, contentType, att.Length, att.Digest, att.Content).Scan(&pk)
+
+			attStmt, err := stmts.prepare(ctx, tx, d.query(`
+				INSERT INTO {{ .Attachments }} (rev_pos, filename, content_type, length, digest, data)
+				VALUES ($1, $2, $3, $4, $5, $6)
+				RETURNING pk
+			`))
 			if err != nil {
 				return r, err
 			}
 
+			err = attStmt.QueryRowContext(ctx, r.rev, filename, contentType, att.Length, att.Digest, att.Content).Scan(&pk)
+			if err != nil {
+				return r, err
+			}
+
+			bridgeStmt, err := stmts.prepare(ctx, tx, d.query(`
+				INSERT INTO {{ .AttachmentsBridge }} (pk, id, rev, rev_id)
+				VALUES ($1, $2, $3, $4)
+			`))
+			if err != nil {
+				return r, err
+			}
 			_, err = bridgeStmt.ExecContext(ctx, pk, data.ID, r.rev, r.id)
 			if err != nil {
 				return r, err

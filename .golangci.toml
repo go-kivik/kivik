@@ -58,5 +58,5 @@ the License."""
 
 # Prepared statements on transactions are closed by the transaction.
 [[issues.exclude-rules]]
-source = "tx.Prepare"
+source = "tx.Prepare|stmts.prepare"
 linters = ["sqlclosecheck"]

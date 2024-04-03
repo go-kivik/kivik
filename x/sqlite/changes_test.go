@@ -39,6 +39,20 @@ func TestDBChanges(t *testing.T) {
 	}
 	tests := testy.NewTable()
 	tests.Add("no changes in db", test{})
+	tests.Add("one change", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
+		return test{
+			db: d,
+			wantChanges: []driver.Change{
+				{
+					ID:      "doc1",
+					Seq:     "1",
+					Changes: driver.ChangedRevs{rev},
+				},
+			},
+		}
+	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()

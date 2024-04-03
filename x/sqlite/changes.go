@@ -14,17 +14,31 @@ package sqlite
 
 import (
 	"context"
+	"database/sql"
 	"io"
 
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
-type changes struct{}
+type changes struct {
+	rows *sql.Rows
+}
 
 var _ driver.Changes = &changes{}
 
 func (c *changes) Next(change *driver.Change) error {
-	return io.EOF
+	if !c.rows.Next() {
+		if err := c.rows.Err(); err != nil {
+			return err
+		}
+		return io.EOF
+	}
+	var rev string
+	if err := c.rows.Scan(&change.ID, &change.Seq, &change.Deleted, &rev); err != nil {
+		return err
+	}
+	change.Changes = driver.ChangedRevs{rev}
+	return nil
 }
 
 func (c *changes) Close() error {
@@ -43,6 +57,21 @@ func (c *changes) ETag() string {
 	return ""
 }
 
-func (db) Changes(context.Context, driver.Options) (driver.Changes, error) {
-	return &changes{}, nil
+func (d *db) Changes(ctx context.Context, _ driver.Options) (driver.Changes, error) {
+	rows, err := d.db.QueryContext(ctx, d.query(`
+		SELECT
+			id,
+			seq,
+			deleted,
+			rev || '-' || rev_id AS rev
+		FROM {{ .Docs }}
+		ORDER BY seq
+	`))
+	if err != nil {
+		return nil, err
+	}
+
+	return &changes{
+		rows: rows,
+	}, nil
 }

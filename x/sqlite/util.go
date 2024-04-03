@@ -213,26 +213,3 @@ func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev re
 
 	return r, nil
 }
-
-// docRevExists returns an error if the requested document does not exist. It
-// returns false if the document does exist, but the specified revision is not
-// the latest. It returns true, nil if both the doc and revision are valid.
-func (d *db) docRevExists(ctx context.Context, tx *sql.Tx, docID string, rev revision) (bool, error) {
-	var found bool
-	err := tx.QueryRowContext(ctx, d.query(`
-		SELECT child.id IS NULL
-		FROM {{ .Revs }} AS rev
-		LEFT JOIN {{ .Revs }} AS child ON rev.id = child.id AND rev.rev = child.parent_rev AND rev.rev_id = child.parent_rev_id
-		JOIN {{ .Docs }} AS doc ON rev.id = doc.id AND rev.rev = doc.rev AND rev.rev_id = doc.rev_id
-		WHERE rev.id = $1
-			AND rev.rev = $2
-			AND rev.rev_id = $3
-	`), docID, rev.rev, rev.id).Scan(&found)
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
-		return false, &internal.Error{Status: http.StatusNotFound, Message: "document not found"}
-	case err != nil:
-		return false, err
-	}
-	return found, nil
-}

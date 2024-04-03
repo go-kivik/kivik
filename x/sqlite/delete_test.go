@@ -83,7 +83,7 @@ func TestDBDelete(t *testing.T) {
 			id:         "foo",
 			options:    kivik.Rev(rev),
 			wantStatus: http.StatusConflict,
-			wantErr:    "conflict",
+			wantErr:    "document update conflict",
 		}
 	})
 	tests.Add("delete deleted doc should succeed", func(t *testing.T) interface{} {

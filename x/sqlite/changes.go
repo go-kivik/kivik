@@ -14,10 +14,35 @@ package sqlite
 
 import (
 	"context"
+	"io"
 
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
+type changes struct{}
+
+var _ driver.Changes = &changes{}
+
+func (c *changes) Next(change *driver.Change) error {
+	return io.EOF
+}
+
+func (c *changes) Close() error {
+	return nil
+}
+
+func (c *changes) LastSeq() string {
+	return ""
+}
+
+func (c *changes) Pending() int64 {
+	return 0
+}
+
+func (c *changes) ETag() string {
+	return ""
+}
+
 func (db) Changes(context.Context, driver.Options) (driver.Changes, error) {
-	return nil, nil
+	return &changes{}, nil
 }

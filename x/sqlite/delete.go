@@ -21,17 +21,13 @@ import (
 )
 
 func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (string, error) {
-	opts := map[string]interface{}{}
+	opts := newOpts(options)
 	options.Apply(opts)
-	optRev, ok := opts["rev"].(string)
-	if !ok {
+	optRev := opts.rev()
+	if optRev == "" {
 		// Special case: No rev for DELETE is always a conflict, since you can't
 		// delete a doc without a rev.
-		return "", &internal.Error{Status: http.StatusConflict, Message: "conflict"}
-	}
-	delRev, err := parseRev(optRev)
-	if err != nil {
-		return "", err
+		return "", &internal.Error{Status: http.StatusConflict, Message: "document update conflict"}
 	}
 
 	data, err := prepareDoc(docID, map[string]interface{}{"_deleted": true})
@@ -45,28 +41,19 @@ func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (
 	}
 	defer tx.Rollback()
 
-	found, err := d.docRevExists(ctx, tx, docID, delRev)
+	curRev, err := parseRev(opts.rev())
 	if err != nil {
 		return "", err
 	}
-	if !found {
-		return "", &internal.Error{Status: http.StatusConflict, Message: "conflict"}
-	}
-	var r revision
-	err = tx.QueryRowContext(ctx, d.query(`
-		INSERT INTO {{ .Revs }} (id, rev, rev_id, parent_rev, parent_rev_id)
-		SELECT $1, COALESCE(MAX(rev),0) + 1, $2, $3, $4
-		FROM {{ .Revs }}
-		WHERE id = $1
-		RETURNING rev, rev_id
-	`), data.ID, data.RevID(), delRev.rev, delRev.id).Scan(&r.rev, &r.id)
+
+	data.MD5sum, err = d.isLeafRev(ctx, tx, docID, curRev.rev, curRev.id)
 	if err != nil {
 		return "", err
 	}
-	_, err = tx.ExecContext(ctx, d.query(`
-		INSERT INTO {{ .Docs }} (id, rev, rev_id, doc, md5sum, deleted)
-		VALUES ($1, $2, $3, $4, $5, TRUE)
-	`), data.ID, r.rev, r.id, data.Doc, data.MD5sum)
+	data.Deleted = true
+	data.Doc = []byte("{}")
+
+	r, err := d.createRev(ctx, tx, data, curRev)
 	if err != nil {
 		return "", err
 	}

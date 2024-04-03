@@ -51,3 +51,11 @@ func (o optsMap) rev() string {
 	rev, _ := o["rev"].(string)
 	return rev
 }
+
+func (o optsMap) newEdits() bool {
+	newEdits, ok := o["new_edits"].(bool)
+	if !ok {
+		return true
+	}
+	return newEdits
+}

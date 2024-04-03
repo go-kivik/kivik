@@ -18,6 +18,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/internal"
 )
@@ -27,12 +28,9 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 	if err != nil {
 		return "", err
 	}
-	opts := map[string]interface{}{
-		"new_edits": true,
-	}
-	options.Apply(opts)
-	optsRev, _ := opts["rev"].(string)
-	newEdits, _ := opts["new_edits"].(bool)
+	opts := newOpts(options)
+	optsRev := opts.rev()
+	newEdits := opts.newEdits()
 	data, err := prepareDoc(docID, doc)
 	if err != nil {
 		return "", err
@@ -67,14 +65,14 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 					return "", err
 				}
 				if !exists {
-					return "", &internal.Error{Status: http.StatusConflict, Message: "conflict"}
+					return "", &internal.Error{Status: http.StatusConflict, Message: "document update conflict"}
 				}
 			}
 		}
 		docRev = data.Revisions.leaf().String()
 	}
 	if optsRev != "" && docRev != "" && optsRev != docRev {
-		return "", &internal.Error{Status: http.StatusBadRequest, Message: "Document rev and option have different values"}
+		return "", &internal.Error{Status: http.StatusBadRequest, Message: "document rev and option have different values"}
 	}
 	if docRev == "" && optsRev != "" {
 		docRev = optsRev
@@ -143,13 +141,24 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 		return newRev, tx.Commit()
 	}
 
-	curRev, _, err := d.winningRev(ctx, tx, docID)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+	var curRev revision
+	if docRev != "" {
+		curRev, err = parseRev(docRev)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	data.MD5sum, err = d.isLeafRev(ctx, tx, docID, curRev.rev, curRev.id)
+	switch {
+	case kivik.HTTPStatus(err) == http.StatusNotFound:
+		if docRev != "" {
+			return "", &internal.Error{Status: http.StatusConflict, Message: "document update conflict"}
+		}
+	case err != nil:
 		return "", err
 	}
-	if curRev.String() != docRev {
-		return "", &internal.Error{Status: http.StatusConflict, Message: "conflict"}
-	}
+
 	r, err := d.createRev(ctx, tx, data, curRev)
 	if err != nil {
 		return "", err

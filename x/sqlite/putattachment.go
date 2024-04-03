@@ -14,11 +14,10 @@ package sqlite
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"io"
 	"net/http"
 
+	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/internal"
 )
@@ -36,18 +35,25 @@ func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attach
 		ID: docID,
 	}
 
-	curRev, hash, err := d.winningRev(ctx, tx, docID)
+	var curRev revision
+	rev := opts.rev()
+	if rev != "" {
+		curRev, err = parseRev(rev)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	data.MD5sum, err = d.isLeafRev(ctx, tx, docID, curRev.rev, curRev.id)
 	switch {
-	case errors.Is(err, sql.ErrNoRows):
+	case kivik.HTTPStatus(err) == http.StatusNotFound:
+		if rev != "" {
+			return "", &internal.Error{Status: http.StatusConflict, Message: "document update conflict"}
+		}
+		// This means the doc is being created, and is empty other than the attachment
 		data.Doc = []byte("{}")
 	case err != nil:
 		return "", err
-	default:
-		data.MD5sum = hash
-	}
-
-	if rev := opts.rev(); rev != "" && rev != curRev.String() {
-		return "", &internal.Error{Status: http.StatusConflict, Message: "conflict"}
 	}
 
 	content, err := io.ReadAll(att.Content)

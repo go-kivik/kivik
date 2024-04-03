@@ -115,7 +115,7 @@ func TestDBPutAttachment(t *testing.T) {
 		},
 		options:    kivik.Rev("1-9bb58f26192e4ba00f01e2e7b136bbd8"),
 		wantStatus: http.StatusConflict,
-		wantErr:    "conflict",
+		wantErr:    "document update conflict",
 	})
 	tests.Add("existing doc, wrong rev", func(t *testing.T) interface{} {
 		db := newDB(t)
@@ -131,7 +131,7 @@ func TestDBPutAttachment(t *testing.T) {
 			},
 			options:    kivik.Rev("1-wrong"),
 			wantStatus: http.StatusConflict,
-			wantErr:    "conflict",
+			wantErr:    "document update conflict",
 		}
 	})
 	tests.Add("don't delete existing attachment", func(t *testing.T) interface{} {
@@ -222,6 +222,91 @@ func TestDBPutAttachment(t *testing.T) {
 					Rev:      2,
 					Filename: "foo.txt",
 					Digest:   "md5-kDqL1OTtoET1YR0WdPZ5tQ==",
+				},
+			},
+		}
+	})
+	tests.Add("updating attachments on non-winning leaf only alters that revision branch", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev1 := d.tPut("foo", map[string]interface{}{
+			"cat": "meow",
+		})
+		rev2 := d.tPut("foo", map[string]interface{}{
+			"dog":          "woof",
+			"_attachments": newAttachments().add("foo.txt", "This is a base64 encoding"),
+		}, kivik.Rev(rev1))
+
+		r1, _ := parseRev(rev1)
+		r2, _ := parseRev(rev2)
+
+		// Create a conflict
+		_ = d.tPut("foo", map[string]interface{}{
+			"pig": "oink",
+			"_revisions": map[string]interface{}{
+				"start": 3,
+				"ids":   []string{"abc", "def", r1.id},
+			},
+		}, kivik.Params(map[string]interface{}{"new_edits": false}))
+
+		return test{
+			db:    d,
+			docID: "foo",
+			attachment: &driver.Attachment{
+				Filename:    "new.txt",
+				ContentType: "text/plain",
+				Content:     io.NopCloser(strings.NewReader("new data")),
+			},
+			options: kivik.Rev(rev2),
+			wantRev: "3-.*",
+			wantRevs: []leaf{
+				{
+					ID:    "foo",
+					Rev:   1,
+					RevID: r1.id,
+				},
+				{
+					ID:          "foo",
+					Rev:         2,
+					RevID:       r2.id,
+					ParentRev:   &[]int{1}[0],
+					ParentRevID: &r1.id,
+				},
+				{
+					ID:          "foo",
+					Rev:         2,
+					RevID:       "def",
+					ParentRev:   &[]int{1}[0],
+					ParentRevID: &r1.id,
+				},
+
+				{
+					ID:          "foo",
+					Rev:         3,
+					RevID:       "abc",
+					ParentRev:   &[]int{2}[0],
+					ParentRevID: &[]string{"def"}[0],
+				},
+				{
+					ID:          "foo",
+					Rev:         3,
+					ParentRev:   &[]int{2}[0],
+					ParentRevID: &r2.id,
+				},
+			},
+			wantAttachments: []attachmentRow{
+				{
+					DocID:    "foo",
+					RevPos:   2,
+					Rev:      2,
+					Filename: "foo.txt",
+					Digest:   "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
+				},
+				{
+					DocID:    "foo",
+					RevPos:   3,
+					Rev:      3,
+					Filename: "new.txt",
+					Digest:   "md5-6DyjmnleVyg+wdEu2g/s0w==",
 				},
 			},
 		}

@@ -31,14 +31,32 @@ func Test_isLeafRev(t *testing.T) {
 			t.Fatal(err)
 		}
 		defer tx.Rollback()
-		err = d.DB.(*db).isLeafRev(context.Background(), tx, "foo", 1, "abc")
+		_, err = d.DB.(*db).isLeafRev(context.Background(), tx, "foo", 1, "abc")
 		status := kivik.HTTPStatus(err)
 		if status != http.StatusNotFound {
 			t.Errorf("Expected %d, got %d", http.StatusNotFound, status)
 		}
 	})
+	t.Run("doc exists, but missing rev provided returns conflict", func(t *testing.T) {
+		d := newDB(t)
+
+		// setup
+		_ = d.tPut("foo", map[string]string{"_id": "foo"})
+
+		tx, err := d.underlying().Begin()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer tx.Rollback()
+		_, err = d.DB.(*db).isLeafRev(context.Background(), tx, "foo", 3, "abc")
+		status := kivik.HTTPStatus(err)
+		if status != http.StatusConflict {
+			t.Errorf("Expected %d, got %d", http.StatusConflict, status)
+		}
+	})
 	t.Run("Not a leaf revision", func(t *testing.T) {
 		d := newDB(t)
+
 		// setup
 		rev := d.tPut("foo", map[string]string{"_id": "foo"})
 		_ = d.tPut("foo", map[string]string{"_id": "foo"}, kivik.Rev(rev))
@@ -50,7 +68,7 @@ func Test_isLeafRev(t *testing.T) {
 			t.Fatal(err)
 		}
 		defer tx.Rollback()
-		err = d.DB.(*db).isLeafRev(context.Background(), tx, "foo", r.rev, r.id)
+		_, err = d.DB.(*db).isLeafRev(context.Background(), tx, "foo", r.rev, r.id)
 		status := kivik.HTTPStatus(err)
 		if status != http.StatusConflict {
 			t.Errorf("Expected %d, got %d", http.StatusConflict, status)
@@ -58,6 +76,7 @@ func Test_isLeafRev(t *testing.T) {
 	})
 	t.Run("Is a leaf revision", func(t *testing.T) {
 		d := newDB(t)
+
 		// setup
 		rev := d.tPut("foo", map[string]string{"_id": "foo"})
 		rev2 := d.tPut("foo", map[string]string{"_id": "foo"}, kivik.Rev(rev))
@@ -69,7 +88,7 @@ func Test_isLeafRev(t *testing.T) {
 			t.Fatal(err)
 		}
 		defer tx.Rollback()
-		err = d.DB.(*db).isLeafRev(context.Background(), tx, "foo", r.rev, r.id)
+		_, err = d.DB.(*db).isLeafRev(context.Background(), tx, "foo", r.rev, r.id)
 		if err != nil {
 			t.Fatal(err)
 		}

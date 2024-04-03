@@ -14,8 +14,6 @@ package sqlite
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
@@ -34,24 +32,57 @@ func (d *db) DeleteAttachment(ctx context.Context, docID, filename string, optio
 	defer tx.Rollback()
 
 	data := &docData{
-		ID: docID,
+		ID:          docID,
+		Attachments: map[string]attachment{},
 	}
 
-	curRev, hash, err := d.winningRev(ctx, tx, docID)
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
-		return "", &internal.Error{Status: http.StatusNotFound, Message: "document not found"}
-	case err != nil:
+	curRev, err := parseRev(opts.rev())
+	if err != nil {
 		return "", err
-	default:
-		data.MD5sum = hash
 	}
 
-	if rev := opts.rev(); rev != "" && rev != curRev.String() {
-		return "", &internal.Error{Status: http.StatusConflict, Message: "conflict"}
+	data.MD5sum, err = d.isLeafRev(ctx, tx, docID, curRev.rev, curRev.id)
+	if err != nil {
+		return "", err
 	}
 
-	data.RemovedAttachments = []string{filename}
+	// Read list of current attachments, then remove the requested one
+
+	rows, err := tx.QueryContext(ctx, d.query(`
+		SELECT att.filename
+		FROM {{ .Attachments }} AS att
+		JOIN {{ .AttachmentsBridge }} AS bridge ON att.pk = bridge.pk
+		WHERE bridge.id = $1
+			AND bridge.rev = $2
+			AND bridge.rev_id = $3
+	`), docID, curRev.rev, curRev.id)
+	if err != nil {
+		return "", err
+	}
+	defer rows.Close()
+
+	var attachments []string
+	for rows.Next() {
+		var filename string
+		if err := rows.Scan(&filename); err != nil {
+			return "", err
+		}
+		attachments = append(attachments, filename)
+	}
+	if err := rows.Err(); err != nil {
+		return "", err
+	}
+
+	if !attachmentsContains(attachments, filename) {
+		return "", &internal.Error{Status: http.StatusNotFound, Message: "attachment not found"}
+	}
+
+	for _, att := range attachments {
+		if att == filename {
+			continue
+		}
+		data.Attachments[att] = attachment{Stub: true}
+	}
 
 	r, err := d.createRev(ctx, tx, data, curRev)
 	if err != nil {
@@ -59,4 +90,13 @@ func (d *db) DeleteAttachment(ctx context.Context, docID, filename string, optio
 	}
 
 	return r.String(), tx.Commit()
+}
+
+func attachmentsContains(attachments []string, filename string) bool {
+	for _, att := range attachments {
+		if att == filename {
+			return true
+		}
+	}
+	return false
 }

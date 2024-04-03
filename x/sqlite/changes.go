@@ -14,38 +14,10 @@ package sqlite
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
-type db struct {
-	db   *sql.DB
-	name string
-}
-
-var _ driver.DB = (*db)(nil)
-
-func (db) Stats(context.Context) (*driver.DBStats, error) {
+func (db) Changes(context.Context, driver.Options) (driver.Changes, error) {
 	return nil, nil
-}
-
-func (db) Compact(context.Context) error {
-	return nil
-}
-
-func (db) CompactView(context.Context, string) error {
-	return nil
-}
-
-func (db) ViewCleanup(context.Context) error {
-	return nil
-}
-
-func (db) Query(context.Context, string, string, driver.Options) (driver.Rows, error) {
-	return nil, nil
-}
-
-func (d *db) Close() error {
-	return d.db.Close()
 }

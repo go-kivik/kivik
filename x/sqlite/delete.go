@@ -27,7 +27,7 @@ func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (
 	if optRev == "" {
 		// Special case: No rev for DELETE is always a conflict, since you can't
 		// delete a doc without a rev.
-		return "", &internal.Error{Status: http.StatusConflict, Message: "conflict"}
+		return "", &internal.Error{Status: http.StatusConflict, Message: "document update conflict"}
 	}
 	delRev, err := parseRev(optRev)
 	if err != nil {

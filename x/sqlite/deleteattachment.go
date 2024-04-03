@@ -23,7 +23,9 @@ import (
 func (d *db) DeleteAttachment(ctx context.Context, docID, filename string, options driver.Options) (string, error) {
 	opts := newOpts(options)
 	if opts.rev() == "" {
-		return "", &internal.Error{Status: http.StatusConflict, Message: "conflict"}
+		// Special case: No rev for DELETE is always a conflict, since you can't
+		// delete a doc without a rev.
+		return "", &internal.Error{Status: http.StatusConflict, Message: "document update conflict"}
 	}
 	tx, err := d.db.BeginTx(ctx, nil)
 	if err != nil {

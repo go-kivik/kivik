@@ -59,7 +59,7 @@ func TestDBDeleteAttachment(t *testing.T) {
 			db:         db,
 			docID:      "foo",
 			filename:   "foo.txt",
-			wantErr:    "conflict",
+			wantErr:    "document update conflict",
 			wantStatus: http.StatusConflict,
 		}
 	})

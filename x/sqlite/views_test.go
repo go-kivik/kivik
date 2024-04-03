@@ -481,8 +481,6 @@ func TestDBAllDocs(t *testing.T) {
 
 	/*
 		TODO:
-		- deleted doc
-		- Order return values
 		- Options:
 			- endkey_docid
 			- end_key_doc_id

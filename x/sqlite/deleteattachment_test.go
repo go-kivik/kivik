@@ -79,13 +79,8 @@ func TestDBDeleteAttachment(t *testing.T) {
 	tests.Add("success", func(t *testing.T) interface{} {
 		d := newDB(t)
 		rev := d.tPut("foo", map[string]interface{}{
-			"cat": "meow",
-			"_attachments": map[string]interface{}{
-				"foo.txt": map[string]interface{}{
-					"content_type": "text/plain",
-					"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
-				},
-			},
+			"cat":          "meow",
+			"_attachments": newAttachments().add("foo.txt", "This is a base64 encoding"),
 		})
 
 		return test{
@@ -136,16 +131,9 @@ func TestDBDeleteAttachment(t *testing.T) {
 		d := newDB(t)
 		rev := d.tPut("foo", map[string]interface{}{
 			"cat": "meow",
-			"_attachments": map[string]interface{}{
-				"foo.txt": map[string]interface{}{
-					"content_type": "text/plain",
-					"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
-				},
-				"bar.txt": map[string]interface{}{
-					"content_type": "text/plain",
-					"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
-				},
-			},
+			"_attachments": newAttachments().
+				add("foo.txt", "This is a base64 encoding").
+				add("bar.txt", "This is a base64 encoding"),
 		})
 
 		return test{
@@ -195,13 +183,8 @@ func TestDBDeleteAttachment(t *testing.T) {
 			"cat": "meow",
 		})
 		rev2 := d.tPut("foo", map[string]interface{}{
-			"dog": "woof",
-			"_attachments": map[string]interface{}{
-				"foo.txt": map[string]interface{}{
-					"content_type": "text/plain",
-					"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
-				},
-			},
+			"dog":          "woof",
+			"_attachments": newAttachments().add("foo.txt", "This is a base64 encoding"),
 		}, kivik.Rev(rev1))
 
 		r1, _ := parseRev(rev1)

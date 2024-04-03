@@ -137,13 +137,8 @@ func TestDBPutAttachment(t *testing.T) {
 	tests.Add("don't delete existing attachment", func(t *testing.T) interface{} {
 		db := newDB(t)
 		rev := db.tPut("foo", map[string]interface{}{
-			"foo": "bar",
-			"_attachments": map[string]interface{}{
-				"foo.txt": map[string]interface{}{
-					"content_type": "text/plain",
-					"data":         "SGVsbG8sIHdvcmxkIQ==",
-				},
-			},
+			"foo":          "bar",
+			"_attachments": newAttachments().add("foo.txt", "Hello, world!"),
 		})
 
 		return test{
@@ -188,13 +183,8 @@ func TestDBPutAttachment(t *testing.T) {
 	tests.Add("update existing attachment", func(t *testing.T) interface{} {
 		db := newDB(t)
 		rev := db.tPut("foo", map[string]interface{}{
-			"foo": "bar",
-			"_attachments": map[string]interface{}{
-				"foo.txt": map[string]interface{}{
-					"content_type": "text/plain",
-					"data":         "SGVsbG8sIHdvcmxkIQ==",
-				},
-			},
+			"foo":          "bar",
+			"_attachments": newAttachments().add("foo.txt", "Hello, world!"),
 		})
 
 		return test{

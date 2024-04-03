@@ -95,3 +95,26 @@ func newDB(t *testing.T) *testDB {
 		t:  t,
 	}
 }
+
+type testAttachments map[string]interface{}
+
+// newAttachments returns a new testAttachments map. Use [add] to add one or
+// more attachments.
+func newAttachments() testAttachments {
+	return make(testAttachments)
+}
+
+func (a testAttachments) add(filename, content string) testAttachments {
+	a[filename] = map[string]interface{}{
+		"content_type": "text/plain",
+		"data":         []byte(content),
+	}
+	return a
+}
+
+func (a testAttachments) addStub(filename string) testAttachments {
+	a[filename] = map[string]interface{}{
+		"stub": true,
+	}
+	return a
+}

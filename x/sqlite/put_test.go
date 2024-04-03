@@ -745,13 +745,8 @@ func TestDBPut(t *testing.T) {
 	tests.Add("with attachment", test{
 		docID: "foo",
 		doc: map[string]interface{}{
-			"_attachments": map[string]interface{}{
-				"foo.txt": map[string]interface{}{
-					"content_type": "text/plain",
-					"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
-				},
-			},
-			"foo": "bar",
+			"_attachments": newAttachments().add("foo.txt", "This is a base64 encoding"),
+			"foo":          "bar",
 		},
 		wantRev: "1-.*",
 		wantRevs: []leaf{
@@ -800,13 +795,8 @@ func TestDBPut(t *testing.T) {
 	tests.Add("update doc with attachments without deleting them", func(t *testing.T) interface{} {
 		db := newDB(t)
 		rev := db.tPut("foo", map[string]interface{}{
-			"foo": "bar",
-			"_attachments": map[string]interface{}{
-				"foo.txt": map[string]interface{}{
-					"content_type": "text/plain",
-					"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
-				},
-			},
+			"foo":          "bar",
+			"_attachments": newAttachments().add("foo.txt", "This is a base64 encoding"),
 		})
 
 		return test{
@@ -855,16 +845,9 @@ func TestDBPut(t *testing.T) {
 		db := newDB(t)
 		rev := db.tPut("foo", map[string]interface{}{
 			"foo": "bar",
-			"_attachments": map[string]interface{}{
-				"foo.txt": map[string]interface{}{
-					"content_type": "text/plain",
-					"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
-				},
-				"bar.txt": map[string]interface{}{
-					"content_type": "text/plain",
-					"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
-				},
-			},
+			"_attachments": newAttachments().
+				add("foo.txt", "This is a base64 encoding").
+				add("bar.txt", "This is a base64 encoding"),
 		})
 
 		return test{
@@ -928,6 +911,21 @@ func TestDBPut(t *testing.T) {
 		- new_edits=false + attachment
 		- new_edits=false + invalid attachment stub
 		- filename validation?
+	*/
+
+	/* Put with invalid stub returns sql no rows:
+
+	rev1 := db.tPut("foo", map[string]interface{}{
+			"foo": "aaa",
+			"_attachments": newAttachments().
+				add("att.txt", "att.txt").
+				add("att2.txt", "att2.txt"),
+		})
+		rev2 := db.tPut("foo", map[string]interface{}{
+			"foo":          "aaa",
+			"_attachments": newAttachments().addStub("att.3txt"),
+		}, kivik.Rev(rev1))
+
 	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {

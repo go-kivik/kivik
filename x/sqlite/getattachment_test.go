@@ -60,13 +60,8 @@ func TestDBGetAttachment(t *testing.T) {
 	tests.Add("when the attachment exists, return it", func(t *testing.T) interface{} {
 		db := newDB(t)
 		_ = db.tPut("foo", map[string]interface{}{
-			"_id": "foo",
-			"_attachments": map[string]interface{}{
-				"foo.txt": map[string]interface{}{
-					"content_type": "text/plain",
-					"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
-				},
-			},
+			"_id":          "foo",
+			"_attachments": newAttachments().add("foo.txt", "This is a base64 encoding"),
 		})
 
 		return TestX{
@@ -78,13 +73,8 @@ func TestDBGetAttachment(t *testing.T) {
 	tests.Add("return an attachment when it exists", func(t *testing.T) interface{} {
 		db := newDB(t)
 		_ = db.tPut("foo", map[string]interface{}{
-			"_id": "foo",
-			"_attachments": map[string]interface{}{
-				"foo.txt": map[string]interface{}{
-					"content_type": "text/plain",
-					"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
-				},
-			},
+			"_id":          "foo",
+			"_attachments": newAttachments().add("foo.txt", "This is a base64 encoding"),
 		})
 
 		return TestX{
@@ -103,13 +93,8 @@ func TestDBGetAttachment(t *testing.T) {
 	tests.Add("document has been deleted, should return not-found", func(t *testing.T) interface{} {
 		db := newDB(t)
 		rev := db.tPut("foo", map[string]interface{}{
-			"_id": "foo",
-			"_attachments": map[string]interface{}{
-				"foo.txt": map[string]interface{}{
-					"content_type": "text/plain",
-					"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
-				},
-			},
+			"_id":          "foo",
+			"_attachments": newAttachments().add("foo.txt", "This is a base64 encoding"),
 		})
 		_, err := db.Delete(context.Background(), "foo", kivik.Rev(rev))
 		if err != nil {
@@ -127,22 +112,13 @@ func TestDBGetAttachment(t *testing.T) {
 	tests.Add("document has been been updated since attachment was added, should succeed", func(t *testing.T) interface{} {
 		db := newDB(t)
 		rev := db.tPut("foo", map[string]interface{}{
-			"_id": "foo",
-			"_attachments": map[string]interface{}{
-				"foo.txt": map[string]interface{}{
-					"content_type": "text/plain",
-					"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
-				},
-			},
+			"_id":          "foo",
+			"_attachments": newAttachments().add("foo.txt", "This is a base64 encoding"),
 		})
 		_ = db.tPut("foo", map[string]interface{}{
-			"_id":     "foo",
-			"updated": true,
-			"_attachments": map[string]interface{}{
-				"foo.txt": map[string]interface{}{
-					"stub": true,
-				},
-			},
+			"_id":          "foo",
+			"updated":      true,
+			"_attachments": newAttachments().addStub("foo.txt"),
 		}, kivik.Rev(rev))
 
 		return TestX{
@@ -166,22 +142,12 @@ func TestDBGetAttachment(t *testing.T) {
 			wantContent = "Hello World"
 		)
 		rev := d.tPut("foo", map[string]interface{}{
-			"_id": id,
-			"_attachments": map[string]interface{}{
-				filename: map[string]interface{}{
-					"content_type": "text/plain",
-					"data":         []byte(wantContent),
-				},
-			},
+			"_id":          id,
+			"_attachments": newAttachments().add(filename, wantContent),
 		})
 		_ = d.tPut("foo", map[string]interface{}{
-			"_id": "foo",
-			"_attachments": map[string]interface{}{
-				"foo.txt": map[string]interface{}{
-					"content_type": "text/plain",
-					"data":         []byte(wantContent + " [after update]"),
-				},
-			},
+			"_id":          "foo",
+			"_attachments": newAttachments().add(filename, wantContent+" [after update]"),
 		}, kivik.Rev(rev))
 
 		r, _ := parseRev(rev)

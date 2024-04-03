@@ -554,13 +554,8 @@ func TestDBGet(t *testing.T) {
 	tests.Add("attachments=false, doc with attachments", func(t *testing.T) interface{} {
 		db := newDB(t)
 		rev := db.tPut("foo", map[string]interface{}{
-			"foo": "aaa",
-			"_attachments": map[string]interface{}{
-				"att.txt": map[string]interface{}{
-					"content_type": "text/plain",
-					"data":         "YXR0LnR4dA==",
-				},
-			},
+			"foo":          "aaa",
+			"_attachments": newAttachments().add("att.txt", "att.txt"),
 		})
 
 		return test{
@@ -586,13 +581,8 @@ func TestDBGet(t *testing.T) {
 	tests.Add("attachments=true, doc with attachments", func(t *testing.T) interface{} {
 		db := newDB(t)
 		rev := db.tPut("foo", map[string]interface{}{
-			"foo": "aaa",
-			"_attachments": map[string]interface{}{
-				"att.txt": map[string]interface{}{
-					"content_type": "text/plain",
-					"data":         "YXR0LnR4dA==",
-				},
-			},
+			"foo":          "aaa",
+			"_attachments": newAttachments().add("att.txt", "att.txt"),
 		})
 
 		return test{
@@ -636,24 +626,13 @@ func TestDBGet(t *testing.T) {
 		db := newDB(t)
 		rev1 := db.tPut("foo", map[string]interface{}{
 			"foo": "aaa",
-			"_attachments": map[string]interface{}{
-				"att.txt": map[string]interface{}{
-					"content_type": "text/plain",
-					"data":         "YXR0LnR4dA==",
-				},
-				"att2.txt": map[string]interface{}{
-					"content_type": "text/plain",
-					"data":         "YXR0LnR4dA==",
-				},
-			},
+			"_attachments": newAttachments().
+				add("att.txt", "att.txt").
+				add("att2.txt", "att2.txt"),
 		})
 		rev2 := db.tPut("foo", map[string]interface{}{
-			"foo": "aaa",
-			"_attachments": map[string]interface{}{
-				"att.txt": map[string]interface{}{
-					"stub": true,
-				},
-			},
+			"foo":          "aaa",
+			"_attachments": newAttachments().addStub("att.txt"),
 		}, kivik.Rev(rev1))
 
 		return test{
@@ -679,25 +658,14 @@ func TestDBGet(t *testing.T) {
 	tests.Add("attachments=false, fetch atts added at different revs", func(t *testing.T) interface{} {
 		db := newDB(t)
 		rev1 := db.tPut("foo", map[string]interface{}{
-			"foo": "aaa",
-			"_attachments": map[string]interface{}{
-				"att.txt": map[string]interface{}{
-					"content_type": "text/plain",
-					"data":         "YXR0LnR4dA==",
-				},
-			},
+			"foo":          "aaa",
+			"_attachments": newAttachments().add("att.txt", "att.txt"),
 		})
 		rev2 := db.tPut("foo", map[string]interface{}{
 			"foo": "aaa",
-			"_attachments": map[string]interface{}{
-				"att.txt": map[string]interface{}{
-					"stub": true,
-				},
-				"att2.txt": map[string]interface{}{
-					"content_type": "text/plain",
-					"data":         "YXR0LnR4dA==",
-				},
-			},
+			"_attachments": newAttachments().
+				addStub("att.txt").
+				add("att2.txt", "att.txt"),
 		}, kivik.Rev(rev1))
 
 		return test{
@@ -730,25 +698,14 @@ func TestDBGet(t *testing.T) {
 	tests.Add("attachments=false, fetch only atts that existed at time of specific rev", func(t *testing.T) interface{} {
 		db := newDB(t)
 		rev1 := db.tPut("foo", map[string]interface{}{
-			"foo": "aaa",
-			"_attachments": map[string]interface{}{
-				"att.txt": map[string]interface{}{
-					"content_type": "text/plain",
-					"data":         "YXR0LnR4dA==",
-				},
-			},
+			"foo":          "aaa",
+			"_attachments": newAttachments().add("att.txt", "att.txt"),
 		})
 		_ = db.tPut("foo", map[string]interface{}{
 			"foo": "aaa",
-			"_attachments": map[string]interface{}{
-				"att.txt": map[string]interface{}{
-					"stub": true,
-				},
-				"att2.txt": map[string]interface{}{
-					"content_type": "text/plain",
-					"data":         "YXR0LnR4dA==",
-				},
-			},
+			"_attachments": newAttachments().
+				addStub("att.txt").
+				add("att2.txt", "att.txt"),
 		}, kivik.Rev(rev1))
 
 		return test{
@@ -777,13 +734,8 @@ func TestDBGet(t *testing.T) {
 	tests.Add("attachments=false, fetch updated attachment", func(t *testing.T) interface{} {
 		db := newDB(t)
 		rev1 := db.tPut("foo", map[string]interface{}{
-			"foo": "aaa",
-			"_attachments": map[string]interface{}{
-				"att.txt": map[string]interface{}{
-					"content_type": "text/plain",
-					"data":         "YXR0LnR4dA==",
-				},
-			},
+			"foo":          "aaa",
+			"_attachments": newAttachments().add("att.txt", "att.txt"),
 		})
 		rev2 := db.tPut("foo", map[string]interface{}{
 			"foo": "aaa",
@@ -819,58 +771,29 @@ func TestDBGet(t *testing.T) {
 	tests.Add("atts_since", func(t *testing.T) interface{} {
 		db := newDB(t)
 		rev1 := db.tPut("foo", map[string]interface{}{
-			"foo": "aaa",
-			"_attachments": map[string]interface{}{
-				"att.txt": map[string]interface{}{
-					"content_type": "text/plain",
-					"data":         "YXR0LnR4dA==",
-				},
-			},
+			"foo":          "aaa",
+			"_attachments": newAttachments().add("att.txt", "att.txt"),
 		})
 		rev2 := db.tPut("foo", map[string]interface{}{
 			"foo": "aaa",
-			"_attachments": map[string]interface{}{
-				"att.txt": map[string]interface{}{
-					"stub": true,
-				},
-				"att2.txt": map[string]interface{}{
-					"content_type": "text/plain",
-					"data":         "c2Vjb25kCg==",
-				},
-			},
+			"_attachments": newAttachments().
+				addStub("att.txt").
+				add("att2.txt", "second\n"),
 		}, kivik.Rev(rev1))
 		rev3 := db.tPut("foo", map[string]interface{}{
 			"foo": "aaa",
-			"_attachments": map[string]interface{}{
-				"att.txt": map[string]interface{}{
-					"stub": true,
-				},
-				"att2.txt": map[string]interface{}{
-					"stub": true,
-				},
-				"att3.txt": map[string]interface{}{
-					"content_type": "text/plain",
-					"data":         "VEhSRUUK",
-				},
-			},
+			"_attachments": newAttachments().
+				addStub("att.txt").
+				addStub("att2.txt").
+				add("att3.txt", "THREE\n"),
 		}, kivik.Rev(rev2))
 		rev4 := db.tPut("foo", map[string]interface{}{
 			"foo": "aaa",
-			"_attachments": map[string]interface{}{
-				"att.txt": map[string]interface{}{
-					"stub": true,
-				},
-				"att2.txt": map[string]interface{}{
-					"stub": true,
-				},
-				"att3.txt": map[string]interface{}{
-					"stub": true,
-				},
-				"att4.txt": map[string]interface{}{
-					"content_type": "text/plain",
-					"data":         "SVYK",
-				},
-			},
+			"_attachments": newAttachments().
+				addStub("att.txt").
+				addStub("att2.txt").
+				addStub("att3.txt").
+				add("att4.txt", "IV\n"),
 		}, kivik.Rev(rev3))
 
 		return test{
@@ -917,13 +840,8 @@ func TestDBGet(t *testing.T) {
 	tests.Add("atts_since with invalid rev format", func(t *testing.T) interface{} {
 		db := newDB(t)
 		_ = db.tPut("foo", map[string]interface{}{
-			"foo": "aaa",
-			"_attachments": map[string]interface{}{
-				"att.txt": map[string]interface{}{
-					"content_type": "text/plain",
-					"data":         "YXR0LnR4dA==",
-				},
-			},
+			"foo":          "aaa",
+			"_attachments": newAttachments().add("att.txt", "att.txt"),
 		})
 
 		return test{
@@ -937,13 +855,8 @@ func TestDBGet(t *testing.T) {
 	tests.Add("atts_since with non-existent rev", func(t *testing.T) interface{} {
 		db := newDB(t)
 		rev := db.tPut("foo", map[string]interface{}{
-			"foo": "aaa",
-			"_attachments": map[string]interface{}{
-				"att.txt": map[string]interface{}{
-					"content_type": "text/plain",
-					"data":         "YXR0LnR4dA==",
-				},
-			},
+			"foo":          "aaa",
+			"_attachments": newAttachments().add("att.txt", "att.txt"),
 		})
 
 		return test{

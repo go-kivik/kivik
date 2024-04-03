@@ -21,10 +21,10 @@ import (
 )
 
 func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (string, error) {
-	opts := map[string]interface{}{}
+	opts := newOpts(options)
 	options.Apply(opts)
-	optRev, ok := opts["rev"].(string)
-	if !ok {
+	optRev := opts.rev()
+	if optRev == "" {
 		// Special case: No rev for DELETE is always a conflict, since you can't
 		// delete a doc without a rev.
 		return "", &internal.Error{Status: http.StatusConflict, Message: "conflict"}

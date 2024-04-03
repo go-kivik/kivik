@@ -27,12 +27,9 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 	if err != nil {
 		return "", err
 	}
-	opts := map[string]interface{}{
-		"new_edits": true,
-	}
-	options.Apply(opts)
-	optsRev, _ := opts["rev"].(string)
-	newEdits, _ := opts["new_edits"].(bool)
+	opts := newOpts(options)
+	optsRev := opts.rev()
+	newEdits := opts.newEdits()
 	data, err := prepareDoc(docID, doc)
 	if err != nil {
 		return "", err

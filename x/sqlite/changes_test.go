@@ -115,9 +115,32 @@ func TestDBChanges(t *testing.T) {
 		wantErr:    "supported `feed` types: normal, longpoll",
 		wantStatus: http.StatusBadRequest,
 	})
+	tests.Add("since=1", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
+		rev2 := d.tDelete("doc1", kivik.Rev(rev))
+
+		return test{
+			db:      d,
+			options: kivik.Param("since", "1"),
+			wantChanges: []driver.Change{
+				{
+					ID:      "doc1",
+					Seq:     "2",
+					Deleted: true,
+					Changes: driver.ChangedRevs{rev2},
+				},
+			},
+			wantLastSeq: &[]string{"2"}[0],
+			wantETag:    &[]string{"bf701dae9aff5bb22b8f000dc9bf6199"}[0],
+		}
+	})
 
 	/*
 		TODO:
+		- malformed sequence id passed as since ??
+		- longpoll + since=1
+		- since=now
 		- Set Pending
 		- Options
 			- doc_ids

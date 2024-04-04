@@ -67,3 +67,11 @@ func (o optsMap) feed() string {
 	}
 	return feed
 }
+
+func (o optsMap) since() *string {
+	since, ok := o["since"].(string)
+	if !ok {
+		return nil
+	}
+	return &since
+}

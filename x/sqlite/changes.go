@@ -87,6 +87,7 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 					rev,
 					rev_id
 				FROM test
+				WHERE ($1 IS NULL OR seq > $1)
 				ORDER BY seq
 			)
 			SELECT
@@ -106,7 +107,7 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 			FROM results
 		`)
 		var err error
-		rows, err = d.db.QueryContext(ctx, query) //nolint:rowserrcheck // Err checked in Next
+		rows, err = d.db.QueryContext(ctx, query, opts.since()) //nolint:rowserrcheck // Err checked in Next
 		if err != nil {
 			return nil, err
 		}
@@ -130,15 +131,16 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 	case "longpoll":
 		query := d.query(`
 			SELECT
-					id,
-					seq,
-					deleted,
-					rev || '-' || rev_id AS rev
+				id,
+				seq,
+				deleted,
+				rev || '-' || rev_id AS rev
 			FROM {{ .Docs }}
+			WHERE ($1 IS NULL OR seq > $1)
 			ORDER BY seq
 		`)
 		var err error
-		rows, err = d.db.QueryContext(ctx, query) //nolint:rowserrcheck // Err checked in Next
+		rows, err = d.db.QueryContext(ctx, query, opts.since()) //nolint:rowserrcheck // Err checked in Next
 		if err != nil {
 			return nil, err
 		}

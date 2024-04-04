@@ -84,6 +84,31 @@ func TestDBChanges(t *testing.T) {
 			wantETag:    &[]string{"9562870d7e8245d03c2ac6055dff735f"}[0],
 		}
 	})
+	tests.Add("longpoll", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
+		rev2 := d.tDelete("doc1", kivik.Rev(rev))
+
+		return test{
+			db:      d,
+			options: kivik.Param("feed", "longpoll"),
+			wantChanges: []driver.Change{
+				{
+					ID:      "doc1",
+					Seq:     "1",
+					Changes: driver.ChangedRevs{rev},
+				},
+				{
+					ID:      "doc1",
+					Seq:     "2",
+					Deleted: true,
+					Changes: driver.ChangedRevs{rev2},
+				},
+			},
+			wantLastSeq: &[]string{"2"}[0],
+			wantETag:    &[]string{""}[0],
+		}
+	})
 
 	/*
 		TODO:

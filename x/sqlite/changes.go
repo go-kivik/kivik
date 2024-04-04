@@ -19,8 +19,10 @@ import (
 	"encoding/hex"
 	"errors"
 	"io"
+	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 type changes struct {
@@ -68,57 +70,84 @@ func (c *changes) ETag() string {
 	return c.etag
 }
 
-func (d *db) Changes(ctx context.Context, _ driver.Options) (driver.Changes, error) {
-	query := d.query(`
-		WITH results AS (
+func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Changes, error) {
+	opts := newOpts(options)
+	var (
+		rows *sql.Rows
+		etag string
+	)
+	switch opts.feed() {
+	case "normal":
+		query := d.query(`
+			WITH results AS (
+				SELECT
+					id,
+					seq,
+					deleted,
+					rev,
+					rev_id
+				FROM test
+				ORDER BY seq
+			)
+			SELECT
+				NULL AS id,
+				NULL AS seq,
+				NULL AS deleted,
+				COUNT(*) || '.' || COALESCE(MIN(seq),0) || '.' || COALESCE(MAX(seq),0) AS rev
+			FROM results
+
+			UNION ALL
+
 			SELECT
 				id,
 				seq,
 				deleted,
-				rev,
-				rev_id
-			FROM test
+				rev || '-' || rev_id AS rev
+			FROM results
+		`)
+		var err error
+		rows, err = d.db.QueryContext(ctx, query) //nolint:rowserrcheck // Err checked in Next
+		if err != nil {
+			return nil, err
+		}
+
+		// The first row is used to calculate the ETag; it's done as part of the
+		// same query, even though it's a bit ugly, to ensure it's all in the same
+		// implicit transaction.
+		if !rows.Next() {
+			// should never happen
+			return nil, errors.New("no rows returned")
+		}
+		var discard *string
+		var summary string
+		if err := rows.Scan(&discard, &discard, &discard, &summary); err != nil {
+			return nil, err
+		}
+
+		h := md5.New()
+		_, _ = h.Write([]byte(summary))
+		etag = hex.EncodeToString(h.Sum(nil))
+	case "longpoll":
+		query := d.query(`
+			SELECT
+					id,
+					seq,
+					deleted,
+					rev || '-' || rev_id AS rev
+			FROM {{ .Docs }}
 			ORDER BY seq
-		)
-		SELECT
-			NULL AS id,
-			NULL AS seq,
-			NULL AS deleted,
-			COUNT(*) || '.' || COALESCE(MIN(seq),0) || '.' || COALESCE(MAX(seq),0) AS rev
-		FROM results
-
-		UNION ALL
-
-		SELECT
-			id,
-			seq,
-			deleted,
-			rev || '-' || rev_id AS rev
-		FROM results
-	`)
-	rows, err := d.db.QueryContext(ctx, query) //nolint:rowserrcheck // Err checked in Next
-	if err != nil {
-		return nil, err
+		`)
+		var err error
+		rows, err = d.db.QueryContext(ctx, query) //nolint:rowserrcheck // Err checked in Next
+		if err != nil {
+			return nil, err
+		}
+	default:
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "supported `feed` types: normal, longpoll"}
 	}
-
-	// The first row is used to calculate the ETag; it's done as part of the
-	// same query, even though it's a bit ugly, to ensure it's all in the same
-	// implicit transaction.
-	if !rows.Next() {
-		// should never happen
-		return nil, errors.New("no rows returned")
-	}
-	var discard *string
-	var summary string
-	if err := rows.Scan(&discard, &discard, &discard, &summary); err != nil {
-		return nil, err
-	}
-
-	h := md5.New()
-	_, _ = h.Write([]byte(summary))
 
 	return &changes{
 		rows: rows,
-		etag: hex.EncodeToString(h.Sum(nil)),
+		etag: etag,
 	}, nil
 }

@@ -21,7 +21,8 @@ import (
 )
 
 type changes struct {
-	rows *sql.Rows
+	rows    *sql.Rows
+	lastSeq string
 }
 
 var _ driver.Changes = &changes{}
@@ -38,6 +39,7 @@ func (c *changes) Next(change *driver.Change) error {
 		return err
 	}
 	change.Changes = driver.ChangedRevs{rev}
+	c.lastSeq = change.Seq
 	return nil
 }
 
@@ -46,7 +48,12 @@ func (c *changes) Close() error {
 }
 
 func (c *changes) LastSeq() string {
-	return ""
+	// Columns returns an error if the rows are closed, so we can use that to
+	// determine if we've actually read the last sequence id.
+	if _, err := c.rows.Columns(); err == nil {
+		return ""
+	}
+	return c.lastSeq
 }
 
 func (c *changes) Pending() int64 {

@@ -36,6 +36,7 @@ func TestDBChanges(t *testing.T) {
 		wantErr     string
 		wantStatus  int
 		wantChanges []driver.Change
+		wantLastSeq *string
 	}
 	tests := testy.NewTable()
 	tests.Add("no changes in db", test{})
@@ -51,6 +52,7 @@ func TestDBChanges(t *testing.T) {
 					Changes: driver.ChangedRevs{rev},
 				},
 			},
+			wantLastSeq: &[]string{"1"}[0],
 		}
 	})
 	tests.Add("deleted event", func(t *testing.T) interface{} {
@@ -73,12 +75,12 @@ func TestDBChanges(t *testing.T) {
 					Changes: driver.ChangedRevs{rev2},
 				},
 			},
+			wantLastSeq: &[]string{"2"}[0],
 		}
 	})
 
 	/*
 		TODO:
-		- Set LastSeq
 		- Set Pending
 		- Set ETag for normal mode
 		- Options
@@ -141,6 +143,13 @@ func TestDBChanges(t *testing.T) {
 
 		if d := cmp.Diff(tt.wantChanges, got); d != "" {
 			t.Errorf("Unexpected changes:\n%s", d)
+		}
+
+		if tt.wantLastSeq != nil {
+			got := feed.LastSeq()
+			if got != *tt.wantLastSeq {
+				t.Errorf("Unexpected LastSeq: %s", got)
+			}
 		}
 	})
 }

@@ -18,6 +18,7 @@ package sqlite
 import (
 	"context"
 	"io"
+	"net/http"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -109,6 +110,11 @@ func TestDBChanges(t *testing.T) {
 			wantETag:    &[]string{""}[0],
 		}
 	})
+	tests.Add("invalid feed type", test{
+		options:    kivik.Param("feed", "invalid"),
+		wantErr:    "supported `feed` types: normal, longpoll",
+		wantStatus: http.StatusBadRequest,
+	})
 
 	/*
 		TODO:
@@ -151,6 +157,9 @@ func TestDBChanges(t *testing.T) {
 		}
 		if status := kivik.HTTPStatus(err); status != tt.wantStatus {
 			t.Errorf("Unexpected status: %d", status)
+		}
+		if err != nil {
+			return
 		}
 
 		// iterate over feed

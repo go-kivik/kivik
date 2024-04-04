@@ -37,9 +37,13 @@ func TestDBChanges(t *testing.T) {
 		wantStatus  int
 		wantChanges []driver.Change
 		wantLastSeq *string
+		wantETag    *string
 	}
 	tests := testy.NewTable()
-	tests.Add("no changes in db", test{})
+	tests.Add("no changes in db", test{
+		wantLastSeq: &[]string{""}[0],
+		wantETag:    &[]string{"c7ba27130f956748671e845893fd6b80"}[0],
+	})
 	tests.Add("one change", func(t *testing.T) interface{} {
 		d := newDB(t)
 		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
@@ -53,6 +57,7 @@ func TestDBChanges(t *testing.T) {
 				},
 			},
 			wantLastSeq: &[]string{"1"}[0],
+			wantETag:    &[]string{"872ccd9c6dce18ce6ea4d5106540f089"}[0],
 		}
 	})
 	tests.Add("deleted event", func(t *testing.T) interface{} {
@@ -76,13 +81,13 @@ func TestDBChanges(t *testing.T) {
 				},
 			},
 			wantLastSeq: &[]string{"2"}[0],
+			wantETag:    &[]string{"9562870d7e8245d03c2ac6055dff735f"}[0],
 		}
 	})
 
 	/*
 		TODO:
 		- Set Pending
-		- Set ETag for normal mode
 		- Options
 			- doc_ids
 			- conflicts
@@ -149,6 +154,12 @@ func TestDBChanges(t *testing.T) {
 			got := feed.LastSeq()
 			if got != *tt.wantLastSeq {
 				t.Errorf("Unexpected LastSeq: %s", got)
+			}
+		}
+		if tt.wantETag != nil {
+			got := feed.ETag()
+			if got != *tt.wantETag {
+				t.Errorf("Unexpected ETag: %s", got)
 			}
 		}
 	})

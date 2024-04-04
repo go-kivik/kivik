@@ -14,7 +14,10 @@ package sqlite
 
 import (
 	"context"
+	"crypto/md5"
 	"database/sql"
+	"encoding/hex"
+	"errors"
 	"io"
 
 	"github.com/go-kivik/kivik/v4/driver"
@@ -23,6 +26,7 @@ import (
 type changes struct {
 	rows    *sql.Rows
 	lastSeq string
+	etag    string
 }
 
 var _ driver.Changes = &changes{}
@@ -61,25 +65,60 @@ func (c *changes) Pending() int64 {
 }
 
 func (c *changes) ETag() string {
-	return ""
+	return c.etag
 }
 
 func (d *db) Changes(ctx context.Context, _ driver.Options) (driver.Changes, error) {
 	query := d.query(`
-	SELECT
-		id,
-		seq,
-		deleted,
-		rev || '-' || rev_id AS rev
-	FROM {{ .Docs }}
-	ORDER BY seq
-`)
+		WITH results AS (
+			SELECT
+				id,
+				seq,
+				deleted,
+				rev,
+				rev_id
+			FROM test
+			ORDER BY seq
+		)
+		SELECT
+			NULL AS id,
+			NULL AS seq,
+			NULL AS deleted,
+			COUNT(*) || '.' || COALESCE(MIN(seq),0) || '.' || COALESCE(MAX(seq),0) AS rev
+		FROM results
+
+		UNION ALL
+
+		SELECT
+			id,
+			seq,
+			deleted,
+			rev || '-' || rev_id AS rev
+		FROM results
+	`)
 	rows, err := d.db.QueryContext(ctx, query) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {
 		return nil, err
 	}
 
+	// The first row is used to calculate the ETag; it's done as part of the
+	// same query, even though it's a bit ugly, to ensure it's all in the same
+	// implicit transaction.
+	if !rows.Next() {
+		// should never happen
+		return nil, errors.New("no rows returned")
+	}
+	var discard *string
+	var summary string
+	if err := rows.Scan(&discard, &discard, &discard, &summary); err != nil {
+		return nil, err
+	}
+
+	h := md5.New()
+	_, _ = h.Write([]byte(summary))
+
 	return &changes{
 		rows: rows,
+		etag: hex.EncodeToString(h.Sum(nil)),
 	}, nil
 }

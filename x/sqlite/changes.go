@@ -23,6 +23,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
+
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/internal"
 )
@@ -248,25 +250,31 @@ func (d *db) newLongpollChanges(ctx context.Context) (*longpollChanges, error) {
 // detected.
 func (c *longpollChanges) watch(changes chan<- longpollChange) {
 	defer close(changes)
+
+	bo := backoff.NewExponentialBackOff()
+	bo.InitialInterval = 50 * time.Millisecond
+	bo.MaxInterval = 3 * time.Minute
+	bo.MaxElapsedTime = 0
+
 	var change driver.Change
-	for {
-		var rev string
+	var rev string
+	err := backoff.Retry(func() error {
 		err := c.stmt.QueryRowContext(c.ctx, c.since).Scan(&change.ID, &change.Seq, &change.Deleted, &rev)
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
-			// sleep, then try again
-			time.Sleep(time.Second)
-
-			continue
+			return err
 		case err != nil:
-			changes <- longpollChange{err: err}
+			return backoff.Permanent(err)
 		default:
 			change.Changes = driver.ChangedRevs{rev}
 			c.lastSeq = change.Seq
 
 			changes <- longpollChange{change: &change}
+			return nil
 		}
-		return
+	}, bo)
+	if err != nil {
+		changes <- longpollChange{err: err}
 	}
 }
 

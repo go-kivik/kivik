@@ -36,6 +36,7 @@ const (
 
 type changes struct {
 	rows    *sql.Rows
+	pending int64
 	lastSeq string
 	etag    string
 }
@@ -49,6 +50,7 @@ func (c *changes) Next(change *driver.Change) error {
 		}
 		return io.EOF
 	}
+	c.pending--
 	var rev string
 	if err := c.rows.Scan(&change.ID, &change.Seq, &change.Deleted, &rev); err != nil {
 		return err
@@ -72,7 +74,7 @@ func (c *changes) LastSeq() string {
 }
 
 func (c *changes) Pending() int64 {
-	return 0
+	return c.pending
 }
 
 func (c *changes) ETag() string {
@@ -115,6 +117,8 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 		}
 	}
 
+	var totalRows int64
+
 	switch opts.feed() {
 	case feedNormal:
 		if sinceNow {
@@ -142,7 +146,7 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 				ORDER BY seq
 			)
 			SELECT
-				NULL AS id,
+				COUNT(*) AS id,
 				NULL AS seq,
 				NULL AS deleted,
 				COUNT(*) || '.' || COALESCE(MIN(seq),0) || '.' || COALESCE(MAX(seq),0) AS rev
@@ -175,7 +179,7 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 		}
 		var discard *string
 		var summary string
-		if err := rows.Scan(&discard, &discard, &discard, &summary); err != nil {
+		if err := rows.Scan(&totalRows, &discard, &discard, &summary); err != nil {
 			return nil, err
 		}
 
@@ -207,6 +211,7 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 
 	return &changes{
 		rows:    rows,
+		pending: totalRows,
 		etag:    etag,
 		lastSeq: lastSeqID,
 	}, nil

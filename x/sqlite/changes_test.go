@@ -44,6 +44,7 @@ func TestDBChanges(t *testing.T) {
 		wantNextErr   string
 		wantLastSeq   *string
 		wantETag      *string
+		wantPending   *int64
 	}
 	tests := testy.NewTable()
 	tests.Add("no changes in db", test{
@@ -269,6 +270,7 @@ func TestDBChanges(t *testing.T) {
 			},
 			wantLastSeq: &[]string{"1"}[0],
 			wantETag:    &[]string{"9562870d7e8245d03c2ac6055dff735f"}[0],
+			wantPending: &[]int64{1}[0],
 		}
 	})
 	tests.Add("limit=1", func(t *testing.T) interface{} {
@@ -288,6 +290,7 @@ func TestDBChanges(t *testing.T) {
 			},
 			wantLastSeq: &[]string{"1"}[0],
 			wantETag:    &[]string{"9562870d7e8245d03c2ac6055dff735f"}[0],
+			wantPending: &[]int64{1}[0],
 		}
 	})
 	tests.Add("limit=1 as int", func(t *testing.T) interface{} {
@@ -307,12 +310,13 @@ func TestDBChanges(t *testing.T) {
 			},
 			wantLastSeq: &[]string{"1"}[0],
 			wantETag:    &[]string{"9562870d7e8245d03c2ac6055dff735f"}[0],
+			wantPending: &[]int64{1}[0],
 		}
 	})
 
 	/*
 		TODO:
-		- Set Pending
+		- longpoll, no since, limit=1, pending is set
 		- Options
 			- doc_ids
 			- conflicts
@@ -398,6 +402,12 @@ func TestDBChanges(t *testing.T) {
 			got := feed.ETag()
 			if got != *tt.wantETag {
 				t.Errorf("Unexpected ETag: %s", got)
+			}
+		}
+		if tt.wantPending != nil {
+			got := feed.Pending()
+			if got != *tt.wantPending {
+				t.Errorf("Unexpected Pending: %d", got)
 			}
 		}
 	})

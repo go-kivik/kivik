@@ -116,7 +116,7 @@ func toUint64(in interface{}, msg string) (uint64, error) {
 	case int:
 		return checkSign(int64(t))
 	case int64:
-		return checkSign(int64(t))
+		return checkSign(t)
 	case int8:
 		return checkSign(int64(t))
 	case int16:

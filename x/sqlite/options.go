@@ -12,7 +12,13 @@
 
 package sqlite
 
-import "github.com/go-kivik/kivik/v4/driver"
+import (
+	"net/http"
+	"strconv"
+
+	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
+)
 
 type optsMap map[string]interface{}
 
@@ -68,10 +74,13 @@ func (o optsMap) feed() string {
 	return feed
 }
 
-func (o optsMap) since() *string {
+func (o optsMap) since() (*string, error) {
 	since, ok := o["since"].(string)
 	if !ok {
-		return nil
+		return nil, nil
 	}
-	return &since
+	if _, err := strconv.Atoi(since); err != nil {
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "malformed sequence supplied in 'since' parameter"}
+	}
+	return &since, nil
 }

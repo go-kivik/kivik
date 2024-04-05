@@ -135,10 +135,15 @@ func TestDBChanges(t *testing.T) {
 			wantETag:    &[]string{"bf701dae9aff5bb22b8f000dc9bf6199"}[0],
 		}
 	})
+	tests.Add("malformed sequence id", test{
+		options:    kivik.Param("since", "invalid"),
+		wantErr:    "malformed sequence supplied in 'since' parameter",
+		wantStatus: http.StatusBadRequest,
+	})
 
 	/*
 		TODO:
-		- malformed sequence id passed as since ??
+		- since=future ... returns last rev only
 		- longpoll + since=1
 		- since=now
 		- Set Pending

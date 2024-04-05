@@ -76,6 +76,12 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 		rows *sql.Rows
 		etag string
 	)
+
+	since, err := opts.since()
+	if err != nil {
+		return nil, err
+	}
+
 	switch opts.feed() {
 	case "normal":
 		query := d.query(`
@@ -107,7 +113,7 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 			FROM results
 		`)
 		var err error
-		rows, err = d.db.QueryContext(ctx, query, opts.since()) //nolint:rowserrcheck // Err checked in Next
+		rows, err = d.db.QueryContext(ctx, query, since) //nolint:rowserrcheck // Err checked in Next
 		if err != nil {
 			return nil, err
 		}
@@ -140,7 +146,7 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 			ORDER BY seq
 		`)
 		var err error
-		rows, err = d.db.QueryContext(ctx, query, opts.since()) //nolint:rowserrcheck // Err checked in Next
+		rows, err = d.db.QueryContext(ctx, query, since) //nolint:rowserrcheck // Err checked in Next
 		if err != nil {
 			return nil, err
 		}

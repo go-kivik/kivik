@@ -252,6 +252,44 @@ func TestDBChanges(t *testing.T) {
 			wantETag:    &[]string{"c7ba27130f956748671e845893fd6b80"}[0],
 		}
 	})
+	tests.Add("limit=0 acts the same as limit=1", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
+		_ = d.tDelete("doc1", kivik.Rev(rev))
+
+		return test{
+			db:      d,
+			options: kivik.Param("limit", "0"),
+			wantChanges: []driver.Change{
+				{
+					ID:      "doc1",
+					Seq:     "1",
+					Changes: driver.ChangedRevs{rev},
+				},
+			},
+			wantLastSeq: &[]string{"1"}[0],
+			wantETag:    &[]string{"9562870d7e8245d03c2ac6055dff735f"}[0],
+		}
+	})
+	tests.Add("limit=1", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
+		_ = d.tDelete("doc1", kivik.Rev(rev))
+
+		return test{
+			db:      d,
+			options: kivik.Param("limit", "1"),
+			wantChanges: []driver.Change{
+				{
+					ID:      "doc1",
+					Seq:     "1",
+					Changes: driver.ChangedRevs{rev},
+				},
+			},
+			wantLastSeq: &[]string{"1"}[0],
+			wantETag:    &[]string{"9562870d7e8245d03c2ac6055dff735f"}[0],
+		}
+	})
 
 	/*
 		TODO:
@@ -270,8 +308,6 @@ func TestDBChanges(t *testing.T) {
 			- attachments
 			- att_encoding_info
 			- last-event-id
-			- limit
-			- since
 			- style
 			- timeout
 			- view

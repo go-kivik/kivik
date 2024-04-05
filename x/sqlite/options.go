@@ -159,3 +159,20 @@ func toUint64(in interface{}, msg string) (uint64, error) {
 		return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
 	}
 }
+
+func (o optsMap) direction() string {
+	if desc, ok := o["descending"]; ok {
+		switch t := desc.(type) {
+		case bool:
+			if t {
+				return "DESC"
+			}
+		case string:
+			b, _ := strconv.ParseBool(t)
+			if b {
+				return "DESC"
+			}
+		}
+	}
+	return "ASC"
+}

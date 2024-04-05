@@ -18,6 +18,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"io"
 	"strconv"
 	"time"
@@ -133,7 +134,7 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 		limit = nil
 		lastSeqID = strconv.FormatUint(*lastSeq, 10)
 	}
-	query := d.query(`
+	query := fmt.Sprintf(d.query(`
 			WITH results AS (
 				SELECT
 					id,
@@ -158,9 +159,17 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 				id,
 				seq,
 				deleted,
-				rev || '-' || rev_id AS rev
-			FROM results
-		`)
+				rev
+			FROM (
+				SELECT
+					id,
+					seq,
+					deleted,
+					rev || '-' || rev_id AS rev
+				FROM results
+				ORDER BY seq %s
+			)
+		`), opts.direction())
 	if limit != nil {
 		query += " LIMIT " + strconv.FormatUint(*limit+1, 10)
 	}

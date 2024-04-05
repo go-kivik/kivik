@@ -336,13 +336,38 @@ func TestDBChanges(t *testing.T) {
 			wantPending: &[]int64{1}[0],
 		}
 	})
+	tests.Add("Descending order", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
+		rev2 := d.tDelete("doc1", kivik.Rev(rev))
+
+		return test{
+			db:      d,
+			options: kivik.Param("descending", true),
+			wantChanges: []driver.Change{
+				{
+					ID:      "doc1",
+					Seq:     "2",
+					Deleted: true,
+					Changes: driver.ChangedRevs{rev2},
+				},
+				{
+					ID:      "doc1",
+					Seq:     "1",
+					Changes: driver.ChangedRevs{rev},
+				},
+			},
+			wantLastSeq: &[]string{"1"}[0],
+			wantETag:    &[]string{"9562870d7e8245d03c2ac6055dff735f"}[0],
+		}
+	})
 
 	/*
 		TODO:
+		- ETag should be based only on last sequence, I think
 		- Options
 			- doc_ids
 			- conflicts
-			- descending
 			- feed
 				- normal
 				- longpoll

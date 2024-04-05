@@ -140,10 +140,53 @@ func TestDBChanges(t *testing.T) {
 		wantErr:    "malformed sequence supplied in 'since' parameter",
 		wantStatus: http.StatusBadRequest,
 	})
+	tests.Add("future since value returns only latest change", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
+		rev2 := d.tDelete("doc1", kivik.Rev(rev))
+
+		return test{
+			db:      d,
+			options: kivik.Param("since", "9000"),
+			wantChanges: []driver.Change{
+				{
+					ID:      "doc1",
+					Seq:     "2",
+					Deleted: true,
+					Changes: driver.ChangedRevs{rev2},
+				},
+			},
+			wantLastSeq: &[]string{"2"}[0],
+			wantETag:    &[]string{"bf701dae9aff5bb22b8f000dc9bf6199"}[0],
+		}
+	})
+	tests.Add("future since value returns only latest change, longpoll mode", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
+		rev2 := d.tDelete("doc1", kivik.Rev(rev))
+
+		return test{
+			db: d,
+			options: kivik.Params(map[string]interface{}{
+				"since": "9000",
+				"feed":  "longpoll",
+			}),
+			wantChanges: []driver.Change{
+				{
+					ID:      "doc1",
+					Seq:     "2",
+					Deleted: true,
+					Changes: driver.ChangedRevs{rev2},
+				},
+			},
+			wantLastSeq: &[]string{"2"}[0],
+			wantETag:    &[]string{""}[0],
+		}
+	})
 
 	/*
 		TODO:
-		- since=future ... returns last rev only
+		- invalid limit value
 		- longpoll + since=1
 		- since=now
 		- Set Pending

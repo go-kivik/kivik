@@ -20,6 +20,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/internal"
@@ -81,6 +82,22 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 	if err != nil {
 		return nil, err
 	}
+	limit := opts.limit()
+
+	if since != nil {
+		var lastSeq uint64
+		err := d.db.QueryRowContext(ctx, d.query(`
+			SELECT COALESCE(MAX(seq), 0) FROM {{ .Docs }}
+		`), *since).Scan(&lastSeq)
+		if err != nil {
+			return nil, err
+		}
+		if lastSeq <= *since {
+			*since = lastSeq - 1
+			l := uint64(1)
+			limit = &l
+		}
+	}
 
 	switch opts.feed() {
 	case "normal":
@@ -112,6 +129,9 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 				rev || '-' || rev_id AS rev
 			FROM results
 		`)
+		if limit != nil {
+			query += " LIMIT " + strconv.FormatUint(*limit+1, 10)
+		}
 		var err error
 		rows, err = d.db.QueryContext(ctx, query, since) //nolint:rowserrcheck // Err checked in Next
 		if err != nil {
@@ -145,6 +165,9 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 			WHERE ($1 IS NULL OR seq > $1)
 			ORDER BY seq
 		`)
+		if limit != nil {
+			query += " LIMIT " + strconv.FormatUint(*limit, 10)
+		}
 		var err error
 		rows, err = d.db.QueryContext(ctx, query, since) //nolint:rowserrcheck // Err checked in Next
 		if err != nil {

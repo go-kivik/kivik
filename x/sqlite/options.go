@@ -74,13 +74,29 @@ func (o optsMap) feed() string {
 	return feed
 }
 
-func (o optsMap) since() (*string, error) {
+func (o optsMap) since() (*uint64, error) {
 	since, ok := o["since"].(string)
 	if !ok {
 		return nil, nil
 	}
-	if _, err := strconv.Atoi(since); err != nil {
+	i, err := strconv.ParseUint(since, 10, 64)
+	if err != nil {
 		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "malformed sequence supplied in 'since' parameter"}
 	}
-	return &since, nil
+	return &i, nil
+}
+
+func (o optsMap) limit() *uint64 {
+	limit, ok := o["limit"].(string)
+	if !ok {
+		return nil
+	}
+	i, err := strconv.ParseUint(limit, 10, 64)
+	if err != nil {
+		return nil
+	}
+	if i == 0 {
+		i = 1
+	}
+	return &i
 }

@@ -188,10 +188,38 @@ func TestDBChanges(t *testing.T) {
 		wantErr:    "malformed 'limit' parameter",
 		wantStatus: http.StatusBadRequest,
 	})
+	tests.Add("longpoll + since in past should return all historical changes since that seqid", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
+		rev2 := d.tDelete("doc1", kivik.Rev(rev))
+		rev3 := d.tPut("doc2", map[string]string{"foo": "bar"})
+
+		return test{
+			db: d,
+			options: kivik.Params(map[string]interface{}{
+				"since": "1",
+				"feed":  "longpoll",
+			}),
+			wantChanges: []driver.Change{
+				{
+					ID:      "doc1",
+					Seq:     "2",
+					Deleted: true,
+					Changes: driver.ChangedRevs{rev2},
+				},
+				{
+					ID:      "doc2",
+					Seq:     "3",
+					Changes: driver.ChangedRevs{rev3},
+				},
+			},
+			wantLastSeq: &[]string{"3"}[0],
+			wantETag:    &[]string{""}[0],
+		}
+	})
 
 	/*
 		TODO:
-		- longpoll + since=1
 		- since=now
 		- Set Pending
 		- Options

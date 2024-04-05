@@ -348,15 +348,12 @@ func TestDBChanges(t *testing.T) {
 				- longpoll
 				- continuous
 			- filter
-			- heartbeat
 			- include_docs
 			- attachments
 			- att_encoding_info
-			- last-event-id
 			- style
 			- timeout
 			- view
-			- seq_interval
 	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {

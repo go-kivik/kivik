@@ -183,10 +183,14 @@ func TestDBChanges(t *testing.T) {
 			wantETag:    &[]string{""}[0],
 		}
 	})
+	tests.Add("invalid limit value", test{
+		options:    kivik.Param("limit", "invalid"),
+		wantErr:    "malformed 'limit' parameter",
+		wantStatus: http.StatusBadRequest,
+	})
 
 	/*
 		TODO:
-		- invalid limit value
 		- longpoll + since=1
 		- since=now
 		- Set Pending

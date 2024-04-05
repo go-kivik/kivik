@@ -86,17 +86,17 @@ func (o optsMap) since() (*uint64, error) {
 	return &i, nil
 }
 
-func (o optsMap) limit() *uint64 {
+func (o optsMap) limit() (*uint64, error) {
 	limit, ok := o["limit"].(string)
 	if !ok {
-		return nil
+		return nil, nil
 	}
 	i, err := strconv.ParseUint(limit, 10, 64)
 	if err != nil {
-		return nil
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "malformed 'limit' parameter"}
 	}
 	if i == 0 {
 		i = 1
 	}
-	return &i
+	return &i, nil
 }

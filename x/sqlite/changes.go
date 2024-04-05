@@ -82,7 +82,10 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 	if err != nil {
 		return nil, err
 	}
-	limit := opts.limit()
+	limit, err := opts.limit()
+	if err != nil {
+		return nil, err
+	}
 
 	if since != nil {
 		var lastSeq uint64

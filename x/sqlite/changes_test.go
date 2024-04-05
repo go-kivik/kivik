@@ -222,10 +222,23 @@ func TestDBChanges(t *testing.T) {
 			wantETag:    &[]string{""}[0],
 		}
 	})
+	tests.Add("feed=normal, context cancellation", func(t *testing.T) interface{} {
+		d := newDB(t)
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
 
+		return test{
+			db:  d,
+			ctx: ctx,
+			options: kivik.Params(map[string]interface{}{
+				"feed": "normal",
+			}),
+			wantErr:    "context canceled",
+			wantStatus: http.StatusInternalServerError,
+		}
+	})
 	/*
 		TODO:
-		- ctx cancellation, feed=normal
 		- since=now, feed=normal
 		- Set Pending
 		- Options

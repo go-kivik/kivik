@@ -21,6 +21,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/internal"
@@ -88,9 +89,7 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 		return nil, err
 	}
 	if sinceNow && opts.feed() == feedLongpoll {
-		return &longpollChanges{
-			ctx: ctx,
-		}, nil
+		return d.newLongpollChanges(ctx)
 	}
 	limit, err := opts.limit()
 	if err != nil {
@@ -98,10 +97,7 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 	}
 
 	if since != nil {
-		var lastSeq uint64
-		err := d.db.QueryRowContext(ctx, d.query(`
-			SELECT COALESCE(MAX(seq), 0) FROM {{ .Docs }}
-		`), *since).Scan(&lastSeq)
+		lastSeq, err := d.lastSeq(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -197,15 +193,96 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 }
 
 type longpollChanges struct {
-	ctx context.Context
+	stmt    *sql.Stmt
+	since   uint64
+	lastSeq string
+	ctx     context.Context
+	cancel  context.CancelFunc
+	changes <-chan longpollChange
+}
+
+type longpollChange struct {
+	change *driver.Change
+	err    error
 }
 
 var _ driver.Changes = (*longpollChanges)(nil)
+
+func (d *db) newLongpollChanges(ctx context.Context) (*longpollChanges, error) {
+	since, err := d.lastSeq(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	stmt, err := d.db.PrepareContext(ctx, d.query(`
+		SELECT
+			id,
+			seq,
+			deleted,
+			rev || '-' || rev_id AS rev
+		FROM {{ .Docs }}
+		WHERE seq > $1
+		ORDER BY seq
+		LIMIT 1
+	`))
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	changes := make(chan longpollChange)
+	c := &longpollChanges{
+		stmt:    stmt,
+		since:   since,
+		ctx:     ctx,
+		cancel:  cancel,
+		changes: changes,
+	}
+
+	go c.watch(changes)
+
+	return c, nil
+}
+
+// watch runs in a loop until either the context is cancelled, or a change is
+// detected.
+func (c *longpollChanges) watch(changes chan<- longpollChange) {
+	defer close(changes)
+	var change driver.Change
+	for {
+		var rev string
+		err := c.stmt.QueryRowContext(c.ctx, c.since).Scan(&change.ID, &change.Seq, &change.Deleted, &rev)
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			// sleep, then try again
+			time.Sleep(time.Second)
+
+			continue
+		case err != nil:
+			changes <- longpollChange{err: err}
+		default:
+			change.Changes = driver.ChangedRevs{rev}
+			c.lastSeq = change.Seq
+
+			changes <- longpollChange{change: &change}
+		}
+		return
+	}
+}
 
 func (c *longpollChanges) Next(change *driver.Change) error {
 	select {
 	case <-c.ctx.Done():
 		return c.ctx.Err()
+	case ch, ok := <-c.changes:
+		if !ok {
+			return io.EOF
+		}
+		if ch.err != nil {
+			return ch.err
+		}
+		*change = *ch.change
+		return nil
 	}
 }
 
@@ -214,7 +291,7 @@ func (c *longpollChanges) Close() error {
 }
 
 func (c *longpollChanges) LastSeq() string {
-	return ""
+	return c.lastSeq
 }
 
 func (*longpollChanges) Pending() int64 { return 0 }

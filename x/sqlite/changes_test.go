@@ -19,7 +19,9 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"gitlab.com/flimzy/testy"
@@ -32,15 +34,16 @@ import (
 func TestDBChanges(t *testing.T) {
 	t.Parallel()
 	type test struct {
-		db          *testDB
-		ctx         context.Context
-		options     driver.Options
-		wantErr     string
-		wantStatus  int
-		wantChanges []driver.Change
-		wantNextErr string
-		wantLastSeq *string
-		wantETag    *string
+		db            *testDB
+		ctx           context.Context
+		options       driver.Options
+		wantErr       string
+		wantStatus    int
+		wantChanges   []driver.Change
+		wantChangesFn func() []driver.Change
+		wantNextErr   string
+		wantLastSeq   *string
+		wantETag      *string
 	}
 	tests := testy.NewTable()
 	tests.Add("no changes in db", test{
@@ -223,7 +226,7 @@ func TestDBChanges(t *testing.T) {
 	/*
 		TODO:
 		- ctx cancellation, feed=normal
-		- since=now
+		- since=now, feed=normal
 		- Set Pending
 		- Options
 			- doc_ids
@@ -293,7 +296,12 @@ func TestDBChanges(t *testing.T) {
 			got = append(got, change)
 		}
 
-		if d := cmp.Diff(tt.wantChanges, got); d != "" {
+		wantChanges := tt.wantChanges
+		if tt.wantChangesFn != nil {
+			wantChanges = tt.wantChangesFn()
+		}
+
+		if d := cmp.Diff(wantChanges, got); d != "" {
 			t.Errorf("Unexpected changes:\n%s", d)
 		}
 
@@ -356,5 +364,74 @@ loop:
 
 	if !testy.ErrorMatches("context canceled", iterationErr) {
 		t.Errorf("Unexpected error from Next(): %s", iterationErr)
+	}
+}
+
+func TestDBChanges_longpoll(t *testing.T) {
+	t.Parallel()
+	db := newDB(t)
+
+	// First create a single document to seed the changes feed
+	_ = db.tPut("doc1", map[string]string{"foo": "bar"})
+
+	// Start the changes feed, with feed=longpoll&since=now to block until
+	// another change is made.
+	feed, err := db.Changes(context.Background(), kivik.Params(map[string]interface{}{
+		"feed":  "longpoll",
+		"since": "now",
+	}))
+	if err != nil {
+		t.Fatalf("Failed to start changes feed: %s", err)
+	}
+	t.Cleanup(func() {
+		_ = feed.Close()
+	})
+
+	var mu sync.Mutex
+	var rev2 string
+	// Make a change to the database after a short delay
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		mu.Lock()
+		rev2 = db.tPut("doc2", map[string]string{"foo": "bar"})
+		mu.Unlock()
+	}()
+
+	start := time.Now()
+	// Meanwhile, the changes feed should block until the change is made
+	// iterate over feed
+	var got []driver.Change
+
+loop:
+	for {
+		change := driver.Change{}
+		err := feed.Next(&change)
+		switch err {
+		case io.EOF:
+			break loop
+		case nil:
+			// continue
+		default:
+			t.Fatalf("iteration failed: %s", err)
+		}
+		got = append(got, change)
+	}
+
+	if time.Since(start) < 100*time.Millisecond {
+		t.Errorf("Changes feed returned too quickly")
+	}
+
+	mu.Lock()
+	wantChanges := []driver.Change{
+		{
+			ID:      "doc2",
+			Seq:     "2",
+			Changes: driver.ChangedRevs{rev2},
+		},
+	}
+	mu.Unlock()
+
+	if d := cmp.Diff(wantChanges, got); d != "" {
+		t.Errorf("Unexpected changes:\n%s", d)
 	}
 }

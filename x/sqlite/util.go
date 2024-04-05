@@ -237,3 +237,11 @@ func createDocAttachments(ctx context.Context, data *docData, tx *sql.Tx, d *db,
 	}
 	return nil
 }
+
+func (d *db) lastSeq(ctx context.Context) (uint64, error) {
+	var lastSeq uint64
+	err := d.db.QueryRowContext(ctx, d.query(`
+			SELECT COALESCE(MAX(seq), 0) FROM {{ .Docs }}
+		`)).Scan(&lastSeq)
+	return lastSeq, err
+}

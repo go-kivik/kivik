@@ -84,8 +84,11 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 	var (
 		rows *sql.Rows
 		etag string
+		// lastSeqID is only used for feed=normal&since=now
+		lastSeqID string
 	)
 
+	var lastSeq *uint64
 	sinceNow, since, err := opts.since()
 	if err != nil {
 		return nil, err
@@ -93,18 +96,20 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 	if sinceNow && opts.feed() == feedLongpoll {
 		return d.newLongpollChanges(ctx)
 	}
+
 	limit, err := opts.limit()
 	if err != nil {
 		return nil, err
 	}
 
 	if since != nil {
-		lastSeq, err := d.lastSeq(ctx)
+		last, err := d.lastSeq(ctx)
 		if err != nil {
 			return nil, err
 		}
-		if lastSeq <= *since {
-			*since = lastSeq - 1
+		lastSeq = &last
+		if last <= *since {
+			*since = last - 1
 			l := uint64(1)
 			limit = &l
 		}
@@ -112,6 +117,18 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 
 	switch opts.feed() {
 	case feedNormal:
+		if sinceNow {
+			if lastSeq == nil {
+				last, err := d.lastSeq(ctx)
+				if err != nil {
+					return nil, err
+				}
+				lastSeq = &last
+			}
+			since = lastSeq
+			limit = nil
+			lastSeqID = strconv.FormatUint(*lastSeq, 10)
+		}
 		query := d.query(`
 			WITH results AS (
 				SELECT
@@ -189,8 +206,9 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 	}
 
 	return &changes{
-		rows: rows,
-		etag: etag,
+		rows:    rows,
+		etag:    etag,
+		lastSeq: lastSeqID,
 	}, nil
 }
 

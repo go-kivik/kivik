@@ -237,9 +237,24 @@ func TestDBChanges(t *testing.T) {
 			wantStatus: http.StatusInternalServerError,
 		}
 	})
+	tests.Add("feed=normal, since=now", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
+		_ = d.tDelete("doc1", kivik.Rev(rev))
+
+		return test{
+			db: d,
+			options: kivik.Params(map[string]interface{}{
+				"since": "now",
+			}),
+			wantChanges: nil,
+			wantLastSeq: &[]string{"2"}[0],
+			wantETag:    &[]string{"c7ba27130f956748671e845893fd6b80"}[0],
+		}
+	})
+
 	/*
 		TODO:
-		- since=now, feed=normal
 		- Set Pending
 		- Options
 			- doc_ids

@@ -51,11 +51,21 @@ func (c *changes) Next(change *driver.Change) error {
 	}
 	c.pending--
 	var rev string
-	if err := c.rows.Scan(&change.ID, &change.Seq, &change.Deleted, &rev); err != nil {
+	var doc *string
+	if err := c.rows.Scan(&change.ID, &change.Seq, &change.Deleted, &rev, &doc); err != nil {
 		return err
 	}
 	change.Changes = driver.ChangedRevs{rev}
 	c.lastSeq = change.Seq
+	if doc != nil {
+		toMerge := fullDoc{
+			ID:      change.ID,
+			Rev:     rev,
+			Deleted: change.Deleted,
+			Doc:     []byte(*doc),
+		}
+		change.Doc = toMerge.toRaw()
+	}
 	return nil
 }
 
@@ -99,7 +109,7 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 		return nil, err
 	}
 	if sinceNow && feed == feedLongpoll {
-		return d.newLongpollChanges(ctx)
+		return d.newLongpollChanges(ctx, opts.includeDocs())
 	}
 
 	limit, err := opts.limit()
@@ -141,7 +151,8 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 					seq,
 					deleted,
 					rev,
-					rev_id
+					rev_id,
+					IIF($2, doc, NULL) AS doc
 				FROM {{ .Docs }}
 				WHERE ($1 IS NULL OR seq > $1)
 				ORDER BY seq
@@ -150,7 +161,8 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 				COUNT(*) AS id,
 				NULL AS seq,
 				NULL AS deleted,
-				COUNT(*) || '.' || COALESCE(MIN(seq),0) || '.' || COALESCE(MAX(seq),0) AS rev
+				COUNT(*) || '.' || COALESCE(MIN(seq),0) || '.' || COALESCE(MAX(seq),0) AS rev,
+				NULL AS doc
 			FROM results
 
 			UNION ALL
@@ -159,13 +171,15 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 				id,
 				seq,
 				deleted,
-				rev
+				rev,
+				doc
 			FROM (
 				SELECT
 					id,
 					seq,
 					deleted,
-					rev || '-' || rev_id AS rev
+					rev || '-' || rev_id AS rev,
+					doc
 				FROM results
 				ORDER BY seq %s
 			)
@@ -173,7 +187,7 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 	if limit != nil {
 		query += " LIMIT " + strconv.FormatUint(*limit+1, 10)
 	}
-	rows, err = d.db.QueryContext(ctx, query, since) //nolint:rowserrcheck // Err checked in Next
+	rows, err = d.db.QueryContext(ctx, query, since, opts.includeDocs()) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +201,7 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 	}
 	var discard *string
 	var summary string
-	if err := rows.Scan(&totalRows, &discard, &discard, &summary); err != nil {
+	if err := rows.Scan(&totalRows, &discard, &discard, &summary, &discard); err != nil {
 		return nil, err
 	}
 
@@ -206,12 +220,13 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 }
 
 type longpollChanges struct {
-	stmt    *sql.Stmt
-	since   uint64
-	lastSeq string
-	ctx     context.Context
-	cancel  context.CancelFunc
-	changes <-chan longpollChange
+	stmt        *sql.Stmt
+	since       uint64
+	lastSeq     string
+	ctx         context.Context
+	cancel      context.CancelFunc
+	changes     <-chan longpollChange
+	includeDocs bool
 }
 
 type longpollChange struct {
@@ -221,7 +236,7 @@ type longpollChange struct {
 
 var _ driver.Changes = (*longpollChanges)(nil)
 
-func (d *db) newLongpollChanges(ctx context.Context) (*longpollChanges, error) {
+func (d *db) newLongpollChanges(ctx context.Context, includeDocs bool) (*longpollChanges, error) {
 	since, err := d.lastSeq(ctx)
 	if err != nil {
 		return nil, err
@@ -232,7 +247,8 @@ func (d *db) newLongpollChanges(ctx context.Context) (*longpollChanges, error) {
 			id,
 			seq,
 			deleted,
-			rev || '-' || rev_id AS rev
+			rev || '-' || rev_id AS rev,
+			IIF($2, doc, NULL)
 		FROM {{ .Docs }}
 		WHERE seq > $1
 		ORDER BY seq
@@ -245,11 +261,12 @@ func (d *db) newLongpollChanges(ctx context.Context) (*longpollChanges, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	changes := make(chan longpollChange)
 	c := &longpollChanges{
-		stmt:    stmt,
-		since:   since,
-		ctx:     ctx,
-		cancel:  cancel,
-		changes: changes,
+		stmt:        stmt,
+		since:       since,
+		ctx:         ctx,
+		cancel:      cancel,
+		changes:     changes,
+		includeDocs: includeDocs,
 	}
 
 	go c.watch(changes)
@@ -269,8 +286,10 @@ func (c *longpollChanges) watch(changes chan<- longpollChange) {
 
 	var change driver.Change
 	var rev string
+	var doc *string
 	err := backoff.Retry(func() error {
-		err := c.stmt.QueryRowContext(c.ctx, c.since).Scan(&change.ID, &change.Seq, &change.Deleted, &rev)
+		err := c.stmt.QueryRowContext(c.ctx, c.since, c.includeDocs).
+			Scan(&change.ID, &change.Seq, &change.Deleted, &rev, &doc)
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
 			return err
@@ -279,6 +298,16 @@ func (c *longpollChanges) watch(changes chan<- longpollChange) {
 		default:
 			change.Changes = driver.ChangedRevs{rev}
 			c.lastSeq = change.Seq
+
+			if doc != nil {
+				toMerge := fullDoc{
+					ID:      change.ID,
+					Rev:     rev,
+					Deleted: change.Deleted,
+					Doc:     []byte(*doc),
+				}
+				change.Doc = toMerge.toRaw()
+			}
 
 			changes <- longpollChange{change: &change}
 			return nil

@@ -160,19 +160,25 @@ func toUint64(in interface{}, msg string) (uint64, error) {
 	}
 }
 
+func toBool(in interface{}) bool {
+	switch t := in.(type) {
+	case bool:
+		return t
+	case string:
+		b, _ := strconv.ParseBool(t)
+		return b
+	default:
+		return false
+	}
+}
+
 func (o optsMap) direction() string {
-	if desc, ok := o["descending"]; ok {
-		switch t := desc.(type) {
-		case bool:
-			if t {
-				return "DESC"
-			}
-		case string:
-			b, _ := strconv.ParseBool(t)
-			if b {
-				return "DESC"
-			}
-		}
+	if toBool(o["descending"]) {
+		return "DESC"
 	}
 	return "ASC"
+}
+
+func (o optsMap) includeDocs() bool {
+	return toBool(o["include_docs"])
 }

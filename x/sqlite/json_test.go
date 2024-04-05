@@ -261,7 +261,7 @@ func Test_mergeIntoDoc(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, _ := io.ReadAll(mergeIntoDoc(tt.doc))
+			got, _ := io.ReadAll(tt.doc.toReader())
 			if d := cmp.Diff(tt.want, string(got)); d != "" {
 				t.Errorf(d)
 			}

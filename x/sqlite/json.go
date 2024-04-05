@@ -312,28 +312,28 @@ type fullDoc struct {
 	Deleted          bool                  `json:"_deleted,omitempty"`
 }
 
-func mergeIntoDoc(doc fullDoc) io.ReadCloser {
+func (d *fullDoc) toRaw() json.RawMessage {
 	buf := bytes.Buffer{}
 	_ = buf.WriteByte('{')
-	if id := doc.ID; id != "" {
+	if id := d.ID; id != "" {
 		_, _ = buf.WriteString(`"_id":`)
 		_, _ = buf.Write(jsonMarshal(id))
 		_ = buf.WriteByte(',')
 	}
-	if rev := doc.Rev; rev != "" {
+	if rev := d.Rev; rev != "" {
 		_, _ = buf.WriteString(`"_rev":`)
 		_, _ = buf.Write(jsonMarshal(rev))
 		_ = buf.WriteByte(',')
 	}
 
 	const minJSONObjectLen = 2
-	if len(doc.Doc) > minJSONObjectLen {
+	if len(d.Doc) > minJSONObjectLen {
 		// The main doc
-		_, _ = buf.Write(doc.Doc[1 : len(doc.Doc)-1]) // Omit opening and closing braces
+		_, _ = buf.Write(d.Doc[1 : len(d.Doc)-1]) // Omit opening and closing braces
 		_ = buf.WriteByte(',')
 	}
 
-	if tmp, _ := json.Marshal(doc); len(tmp) > minJSONObjectLen {
+	if tmp, _ := json.Marshal(d); len(tmp) > minJSONObjectLen {
 		_, _ = buf.Write(tmp[1 : len(tmp)-1])
 		_ = buf.WriteByte(',')
 	}
@@ -341,7 +341,11 @@ func mergeIntoDoc(doc fullDoc) io.ReadCloser {
 	result := buf.Bytes()
 	// replace final ',' with '}'
 	result[len(result)-1] = '}'
-	return io.NopCloser(bytes.NewReader(result))
+	return result
+}
+
+func (d *fullDoc) toReader() io.ReadCloser {
+	return io.NopCloser(bytes.NewReader(d.toRaw()))
 }
 
 func jsonMarshal(s interface{}) []byte {

@@ -261,7 +261,7 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 	return &driver.Document{
 		Attachments: atts,
 		Rev:         r.String(),
-		Body:        mergeIntoDoc(toMerge),
+		Body:        toMerge.toReader(),
 	}, tx.Commit()
 }
 

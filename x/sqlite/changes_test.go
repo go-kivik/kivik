@@ -33,10 +33,12 @@ func TestDBChanges(t *testing.T) {
 	t.Parallel()
 	type test struct {
 		db          *testDB
+		ctx         context.Context
 		options     driver.Options
 		wantErr     string
 		wantStatus  int
 		wantChanges []driver.Change
+		wantNextErr string
 		wantLastSeq *string
 		wantETag    *string
 	}
@@ -220,6 +222,7 @@ func TestDBChanges(t *testing.T) {
 
 	/*
 		TODO:
+		- ctx cancellation, feed=normal
 		- since=now
 		- Set Pending
 		- Options
@@ -250,11 +253,15 @@ func TestDBChanges(t *testing.T) {
 		if dbc == nil {
 			dbc = newDB(t)
 		}
+		ctx := tt.ctx
+		if ctx == nil {
+			ctx = context.Background()
+		}
 		opts := tt.options
 		if opts == nil {
 			opts = mock.NilOption
 		}
-		feed, err := dbc.Changes(context.Background(), opts)
+		feed, err := dbc.Changes(ctx, opts)
 		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}
@@ -278,7 +285,10 @@ func TestDBChanges(t *testing.T) {
 			case nil:
 				// continue
 			default:
-				t.Fatalf("Next() returned error: %s", err)
+				if !testy.ErrorMatches(tt.wantNextErr, err) {
+					t.Errorf("Unexpected error from Next(): %s", err)
+				}
+				break loop
 			}
 			got = append(got, change)
 		}
@@ -300,4 +310,51 @@ func TestDBChanges(t *testing.T) {
 			}
 		}
 	})
+}
+
+func TestDBChanges_longpoll_context_cancellation_during_iteration(t *testing.T) {
+	t.Parallel()
+	db := newDB(t)
+
+	// First create a single document to seed the changes feed
+	_ = db.tPut("doc1", map[string]string{"foo": "bar"})
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Start the changes feed, with feed=longpoll&since=now to block until
+	// another change is made.
+	feed, err := db.Changes(ctx, kivik.Params(map[string]interface{}{
+		"feed":  "longpoll",
+		"since": "now",
+	}))
+	if err != nil {
+		t.Fatalf("Failed to start changes feed: %s", err)
+	}
+	t.Cleanup(func() {
+		_ = feed.Close()
+	})
+
+	// Now cancel the context
+	cancel()
+
+	var iterationErr error
+	// Meanwhile, the changes feed should block until the context is cancelled
+loop:
+	for {
+		change := driver.Change{}
+		err := feed.Next(&change)
+		switch err {
+		case io.EOF:
+			break loop
+		case nil:
+			// continue
+		default:
+			iterationErr = err
+			break loop
+		}
+	}
+
+	if !testy.ErrorMatches("context canceled", iterationErr) {
+		t.Errorf("Unexpected error from Next(): %s", iterationErr)
+	}
 }

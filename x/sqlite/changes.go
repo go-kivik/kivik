@@ -26,6 +26,11 @@ import (
 	"github.com/go-kivik/kivik/v4/internal"
 )
 
+const (
+	feedNormal   = "normal"
+	feedLongpoll = "longpoll"
+)
+
 type changes struct {
 	rows    *sql.Rows
 	lastSeq string
@@ -78,9 +83,14 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 		etag string
 	)
 
-	since, err := opts.since()
+	sinceNow, since, err := opts.since()
 	if err != nil {
 		return nil, err
+	}
+	if sinceNow && opts.feed() == feedLongpoll {
+		return &longpollChanges{
+			ctx: ctx,
+		}, nil
 	}
 	limit, err := opts.limit()
 	if err != nil {
@@ -103,7 +113,7 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 	}
 
 	switch opts.feed() {
-	case "normal":
+	case feedNormal:
 		query := d.query(`
 			WITH results AS (
 				SELECT
@@ -157,7 +167,7 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 		h := md5.New()
 		_, _ = h.Write([]byte(summary))
 		etag = hex.EncodeToString(h.Sum(nil))
-	case "longpoll":
+	case feedLongpoll:
 		query := d.query(`
 			SELECT
 				id,
@@ -185,3 +195,27 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 		etag: etag,
 	}, nil
 }
+
+type longpollChanges struct {
+	ctx context.Context
+}
+
+var _ driver.Changes = (*longpollChanges)(nil)
+
+func (c *longpollChanges) Next(change *driver.Change) error {
+	select {
+	case <-c.ctx.Done():
+		return c.ctx.Err()
+	}
+}
+
+func (c *longpollChanges) Close() error {
+	return nil
+}
+
+func (c *longpollChanges) LastSeq() string {
+	return ""
+}
+
+func (*longpollChanges) Pending() int64 { return 0 }
+func (*longpollChanges) ETag() string   { return "" }

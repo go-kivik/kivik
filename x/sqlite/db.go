@@ -42,14 +42,10 @@ func (db) ViewCleanup(context.Context) error {
 	return nil
 }
 
-func (db) Changes(context.Context, driver.Options) (driver.Changes, error) {
-	return nil, nil
-}
-
 func (db) Query(context.Context, string, string, driver.Options) (driver.Rows, error) {
 	return nil, nil
 }
 
-func (db) Close() error {
-	return nil
+func (d *db) Close() error {
+	return d.db.Close()
 }

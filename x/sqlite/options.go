@@ -59,3 +59,19 @@ func (o optsMap) newEdits() bool {
 	}
 	return newEdits
 }
+
+func (o optsMap) feed() string {
+	feed, ok := o["feed"].(string)
+	if !ok {
+		return "normal"
+	}
+	return feed
+}
+
+func (o optsMap) since() *string {
+	since, ok := o["since"].(string)
+	if !ok {
+		return nil
+	}
+	return &since
+}

@@ -19,14 +19,12 @@ import (
 	"encoding/hex"
 	"errors"
 	"io"
-	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
 
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/kivik/v4/internal"
 )
 
 const (
@@ -95,7 +93,11 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 	if err != nil {
 		return nil, err
 	}
-	if sinceNow && opts.feed() == feedLongpoll {
+	feed, err := opts.feed()
+	if err != nil {
+		return nil, err
+	}
+	if sinceNow && feed == feedLongpoll {
 		return d.newLongpollChanges(ctx)
 	}
 
@@ -119,21 +121,19 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 
 	var totalRows int64
 
-	switch opts.feed() {
-	case feedNormal:
-		if sinceNow {
-			if lastSeq == nil {
-				last, err := d.lastSeq(ctx)
-				if err != nil {
-					return nil, err
-				}
-				lastSeq = &last
+	if sinceNow {
+		if lastSeq == nil {
+			last, err := d.lastSeq(ctx)
+			if err != nil {
+				return nil, err
 			}
-			since = lastSeq
-			limit = nil
-			lastSeqID = strconv.FormatUint(*lastSeq, 10)
+			lastSeq = &last
 		}
-		query := d.query(`
+		since = lastSeq
+		limit = nil
+		lastSeqID = strconv.FormatUint(*lastSeq, 10)
+	}
+	query := d.query(`
 			WITH results AS (
 				SELECT
 					id,
@@ -161,52 +161,31 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 				rev || '-' || rev_id AS rev
 			FROM results
 		`)
-		if limit != nil {
-			query += " LIMIT " + strconv.FormatUint(*limit+1, 10)
-		}
-		var err error
-		rows, err = d.db.QueryContext(ctx, query, since) //nolint:rowserrcheck // Err checked in Next
-		if err != nil {
-			return nil, err
-		}
+	if limit != nil {
+		query += " LIMIT " + strconv.FormatUint(*limit+1, 10)
+	}
+	rows, err = d.db.QueryContext(ctx, query, since) //nolint:rowserrcheck // Err checked in Next
+	if err != nil {
+		return nil, err
+	}
 
-		// The first row is used to calculate the ETag; it's done as part of the
-		// same query, even though it's a bit ugly, to ensure it's all in the same
-		// implicit transaction.
-		if !rows.Next() {
-			// should never happen
-			return nil, errors.New("no rows returned")
-		}
-		var discard *string
-		var summary string
-		if err := rows.Scan(&totalRows, &discard, &discard, &summary); err != nil {
-			return nil, err
-		}
+	// The first row is used to calculate the ETag; it's done as part of the
+	// same query, even though it's a bit ugly, to ensure it's all in the same
+	// implicit transaction.
+	if !rows.Next() {
+		// should never happen
+		return nil, errors.New("no rows returned")
+	}
+	var discard *string
+	var summary string
+	if err := rows.Scan(&totalRows, &discard, &discard, &summary); err != nil {
+		return nil, err
+	}
 
+	if feed == feedNormal {
 		h := md5.New()
 		_, _ = h.Write([]byte(summary))
 		etag = hex.EncodeToString(h.Sum(nil))
-	case feedLongpoll:
-		query := d.query(`
-			SELECT
-				id,
-				seq,
-				deleted,
-				rev || '-' || rev_id AS rev
-			FROM {{ .Docs }}
-			WHERE ($1 IS NULL OR seq > $1)
-			ORDER BY seq
-		`)
-		if limit != nil {
-			query += " LIMIT " + strconv.FormatUint(*limit, 10)
-		}
-		var err error
-		rows, err = d.db.QueryContext(ctx, query, since) //nolint:rowserrcheck // Err checked in Next
-		if err != nil {
-			return nil, err
-		}
-	default:
-		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "supported `feed` types: normal, longpoll"}
 	}
 
 	return &changes{

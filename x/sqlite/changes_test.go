@@ -313,10 +313,32 @@ func TestDBChanges(t *testing.T) {
 			wantPending: &[]int64{1}[0],
 		}
 	})
+	tests.Add("feed=longpoll, limit=1, pending is set", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
+		_ = d.tDelete("doc1", kivik.Rev(rev))
+
+		return test{
+			db: d,
+			options: kivik.Params(map[string]interface{}{
+				"feed":  "longpoll",
+				"limit": 1,
+			}),
+			wantChanges: []driver.Change{
+				{
+					ID:      "doc1",
+					Seq:     "1",
+					Changes: driver.ChangedRevs{rev},
+				},
+			},
+			wantLastSeq: &[]string{"1"}[0],
+			wantETag:    &[]string{""}[0],
+			wantPending: &[]int64{1}[0],
+		}
+	})
 
 	/*
 		TODO:
-		- longpoll, no since, limit=1, pending is set
 		- Options
 			- doc_ids
 			- conflicts

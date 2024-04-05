@@ -66,12 +66,16 @@ func (o optsMap) newEdits() bool {
 	return newEdits
 }
 
-func (o optsMap) feed() string {
+func (o optsMap) feed() (string, error) {
 	feed, ok := o["feed"].(string)
 	if !ok {
-		return "normal"
+		return "normal", nil
 	}
-	return feed
+	switch feed {
+	case feedNormal, feedLongpoll:
+		return feed, nil
+	}
+	return "", &internal.Error{Status: http.StatusBadRequest, Message: "supported `feed` types: normal, longpoll"}
 }
 
 // since returns true if the value is "now", otherwise it returns the sequence

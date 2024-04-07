@@ -112,7 +112,7 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 					deleted,
 					rev,
 					rev_id
-				FROM test
+				FROM {{ .Docs }}
 				WHERE ($1 IS NULL OR seq > $1)
 				ORDER BY seq
 			)

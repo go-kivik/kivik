@@ -44,7 +44,10 @@ func TestCancelableReadCloser(t *testing.T) {
 		cancel()
 		rc := newCancelableReadCloser(
 			ctx,
-			io.NopCloser(strings.NewReader("foo")),
+			io.NopCloser(io.MultiReader(
+				testy.DelayReader(100*time.Millisecond),
+				strings.NewReader("foo")),
+			),
 		)
 		result, err := io.ReadAll(rc)
 		if !testy.ErrorMatches("context canceled", err) {

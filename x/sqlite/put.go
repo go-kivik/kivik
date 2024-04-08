@@ -114,10 +114,10 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 				return "", err
 			}
 			_, err = tx.ExecContext(ctx, d.query(`
-			INSERT INTO {{ .Revs }} (id, rev, rev_id)
-			VALUES ($1, $2, $3)
-			ON CONFLICT DO NOTHING
-		`), docID, rev.rev, rev.id)
+				INSERT INTO {{ .Revs }} (id, rev, rev_id)
+				VALUES ($1, $2, $3)
+				ON CONFLICT DO NOTHING
+			`), docID, rev.rev, rev.id)
 			if err != nil {
 				return "", err
 			}
@@ -138,6 +138,11 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 		if err != nil {
 			return "", err
 		}
+
+		if err := createDocAttachments(ctx, data, tx, d, rev, rev /* TODO: 2nd rev should be currentRev, which doesn't make sense during replication */); err != nil {
+			return "", err
+		}
+
 		return newRev, tx.Commit()
 	}
 

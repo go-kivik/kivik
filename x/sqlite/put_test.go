@@ -983,15 +983,38 @@ func TestDBPut(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("new_edits=false with an attachment", test{
+		docID: "foo",
+		doc: map[string]interface{}{
+			"_rev":         "1-abc",
+			"_attachments": newAttachments().add("foo.txt", "This is a base64 encoding"),
+			"foo":          "bar",
+		},
+		options: kivik.Param("new_edits", false),
+		wantRev: "1-.*",
+		wantRevs: []leaf{
+			{
+				ID:  "foo",
+				Rev: 1,
+			},
+		},
+		wantAttachments: []attachmentRow{
+			{
+				DocID:    "foo",
+				RevPos:   1,
+				Rev:      1,
+				Filename: "foo.txt",
+				Digest:   "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
+			},
+		},
+	})
 
 	/*
 		TODO:
 		- delete attachments only in one branch of a document
 		- Omit attachments to delete
 		- Include stub to update doc without deleting attachments
-		- Include stub with invalid filename
 		- Encoding/compression?
-		- new_edits=false + attachment
 		- new_edits=false + invalid attachment stub
 		- filename validation?
 	*/

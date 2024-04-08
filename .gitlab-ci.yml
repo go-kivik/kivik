@@ -68,6 +68,50 @@ coverage:
     - go mod download
     - ./script/coverage.sh
 
+gopherjs:
+  parallel:
+    matrix:
+      - COUCHVER: "3.3.3"
+        GOVER: ["1.17", "1.18"]
+        POUCHVER: ["pouchdb7", "pouchdb8"]
+  stage: test
+  image: golang:$GOVER
+  services:
+    - name: couchdb:$COUCHVER
+      alias: couch$COUCHVER
+  before_script:
+    - export KIVIK_TEST_DSN_COUCH33=http://$COUCHDB_USER:$COUCHDB_PASSWORD@couch3.3.3:5984/
+    - ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH33}
+    - |
+      case $POUCHVER in
+        "pouchdb7")
+          export NODE_VER=14
+          ;;
+        "pouchdb8")
+          export NODE_VER=18
+          ;;
+      esac
+    - |
+      case $GOVER in
+        "1.17")
+          export GOPHERJS_TAG=v1.17.2
+          ;;
+        "1.18")
+          export GOPHERJS_TAG=v1.18.0-beta3
+          ;;
+      esac
+    - curl -sL https://deb.nodesource.com/setup_${NODE_VER}.x | bash -
+    - apt-get update -qq && apt-get install -y nodejs
+  script:
+    - cp pouchdb/${POUCHVER}-package.json package.json
+    - npm install -g npm@7.5.2 && npm update
+    - npm install
+    - npm install source-map-support
+    - mkdir -p /tmp/src
+    - ( cd /tmp && go install github.com/gopherjs/gopherjs@${GOPHERJS_TAG} )
+    - npm install -S https://github.com/gopherjs/gopherjs#${GOPHERJS_TAG} && node -r syscall
+    - gopherjs test `go list ./... | grep -v /cmd/`
+
 .gopherjs_test: &gopherjs_test_template
   variables:
     KIVIK_TEST_DSN_COUCH33: http://admin:abc123@couch33:5984/

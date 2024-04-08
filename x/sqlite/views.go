@@ -52,6 +52,8 @@ func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, 
 		optConflicts, _   = opts["conflicts"].(bool)
 		optDescending, _  = opts["descending"].(bool)
 		optIncludeDocs, _ = opts["include_docs"].(bool)
+		optLimit, _       = opts["limit"].(int)
+		optSkip, _        = opts["skip"].(int)
 	)
 
 	direction := "ASC"
@@ -69,6 +71,9 @@ func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, 
 	if startkey := opts.startKey(); startkey != "" {
 		where = append(where, fmt.Sprintf("rev.id %s $%d", startKeyOp(optDescending), len(args)+1))
 		args = append(args, startkey)
+	}
+	if optLimit == 0 {
+		optLimit = -1
 	}
 
 	query := fmt.Sprintf(d.query(`
@@ -101,7 +106,8 @@ func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, 
 		WHERE %[2]s
 		GROUP BY rev.id, rev.rev, rev.rev_id
 		ORDER BY id %[1]s
-	`), direction, strings.Join(where, " AND "))
+		LIMIT %[3]d OFFSET %[4]d
+	`), direction, strings.Join(where, " AND "), optLimit, optSkip)
 	results, err := d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {
 		return nil, err

@@ -478,6 +478,65 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("limit=2 returns first two documents only", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev1 := d.tPut("cat", map[string]string{"cat": "meow"})
+		_ = d.tPut("dog", map[string]string{"dog": "woof"})
+		rev3 := d.tPut("cow", map[string]string{"cow": "moo"})
+
+		return test{
+			db:      d,
+			options: kivik.Param("limit", 2),
+			want: []rowResult{
+				{
+					ID:    "cat",
+					Rev:   rev1,
+					Value: `{"value":{"rev":"` + rev1 + `"}}` + "\n",
+				},
+				{
+					ID:    "cow",
+					Rev:   rev3,
+					Value: `{"value":{"rev":"` + rev3 + `"}}` + "\n",
+				},
+			},
+		}
+	})
+	tests.Add("skip=2 skips first two documents", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("cat", map[string]string{"cat": "meow"})
+		rev2 := d.tPut("dog", map[string]string{"dog": "woof"})
+		_ = d.tPut("cow", map[string]string{"cow": "moo"})
+
+		return test{
+			db:      d,
+			options: kivik.Param("skip", 2),
+			want: []rowResult{
+				{
+					ID:    "dog",
+					Rev:   rev2,
+					Value: `{"value":{"rev":"` + rev2 + `"}}` + "\n",
+				},
+			},
+		}
+	})
+	tests.Add("limit=1,skip=1 skips 1, limits 1", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("cat", map[string]string{"cat": "meow"})
+		_ = d.tPut("dog", map[string]string{"dog": "woof"})
+		rev3 := d.tPut("cow", map[string]string{"cow": "moo"})
+
+		return test{
+			db:      d,
+			options: kivik.Params(map[string]interface{}{"limit": 1, "skip": 1}),
+			want: []rowResult{
+				{
+					ID:    "cow",
+					Rev:   rev3,
+					Value: `{"value":{"rev":"` + rev3 + `"}}` + "\n",
+				},
+			},
+		}
+	})
 
 	/*
 		TODO:
@@ -491,9 +550,7 @@ func TestDBAllDocs(t *testing.T) {
 			- att_encoding_infio
 			- key
 			- keys
-			- limit
 			- reduce
-			- skip
 			- sorted
 			- stable
 			- statle

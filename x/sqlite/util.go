@@ -157,6 +157,11 @@ func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev re
 	}
 
 	// order the filenames to insert for consistency
+	err = createDocAttachments(ctx, data, tx, d, r, curRev)
+	return r, err
+}
+
+func createDocAttachments(ctx context.Context, data *docData, tx *sql.Tx, d *db, r revision, curRev revision) error {
 	orderedFilenames := make([]string, 0, len(data.Attachments))
 	for filename := range data.Attachments {
 		orderedFilenames = append(orderedFilenames, filename)
@@ -182,18 +187,18 @@ func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev re
 				RETURNING pk
 			`))
 			if err != nil {
-				return r, err
+				return err
 			}
 			err = stubStmt.QueryRowContext(ctx, data.ID, r.rev, r.id, curRev.rev, curRev.id, filename).Scan(&pk)
 			switch {
 			case errors.Is(err, sql.ErrNoRows):
-				return r, &internal.Error{Status: http.StatusPreconditionFailed, Message: fmt.Sprintf("invalid attachment stub in bar for %s", filename)}
+				return &internal.Error{Status: http.StatusPreconditionFailed, Message: fmt.Sprintf("invalid attachment stub in bar for %s", filename)}
 			case err != nil:
-				return r, err
+				return err
 			}
 		} else {
 			if err := att.calculate(filename); err != nil {
-				return r, err
+				return err
 			}
 			contentType := att.ContentType
 			if contentType == "" {
@@ -206,12 +211,12 @@ func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev re
 				RETURNING pk
 			`))
 			if err != nil {
-				return r, err
+				return err
 			}
 
 			err = attStmt.QueryRowContext(ctx, r.rev, filename, contentType, att.Length, att.Digest, att.Content).Scan(&pk)
 			if err != nil {
-				return r, err
+				return err
 			}
 
 			bridgeStmt, err := stmts.prepare(ctx, tx, d.query(`
@@ -219,14 +224,13 @@ func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev re
 				VALUES ($1, $2, $3, $4)
 			`))
 			if err != nil {
-				return r, err
+				return err
 			}
 			_, err = bridgeStmt.ExecContext(ctx, pk, data.ID, r.rev, r.id)
 			if err != nil {
-				return r, err
+				return err
 			}
 		}
 	}
-
-	return r, nil
+	return nil
 }

@@ -66,42 +66,113 @@ func (o optsMap) newEdits() bool {
 	return newEdits
 }
 
-func (o optsMap) feed() string {
+func (o optsMap) feed() (string, error) {
 	feed, ok := o["feed"].(string)
 	if !ok {
-		return "normal"
+		return "normal", nil
 	}
-	return feed
+	switch feed {
+	case feedNormal, feedLongpoll:
+		return feed, nil
+	}
+	return "", &internal.Error{Status: http.StatusBadRequest, Message: "supported `feed` types: normal, longpoll"}
 }
 
 // since returns true if the value is "now", otherwise it returns the sequence
 // id as a uint64.
 func (o optsMap) since() (bool, *uint64, error) {
-	since, ok := o["since"].(string)
+	in, ok := o["since"].(string)
 	if !ok {
 		return false, nil, nil
 	}
-	if since == "now" {
+	if in == "now" {
 		return true, nil, nil
 	}
-	i, err := strconv.ParseUint(since, 10, 64)
-	if err != nil {
-		return false, nil, &internal.Error{Status: http.StatusBadRequest, Message: "malformed sequence supplied in 'since' parameter"}
-	}
-	return false, &i, nil
+	since, err := toUint64(in, "malformed sequence supplied in 'since' parameter")
+	return false, &since, err
 }
 
 func (o optsMap) limit() (*uint64, error) {
-	limit, ok := o["limit"].(string)
+	in, ok := o["limit"]
 	if !ok {
 		return nil, nil
 	}
-	i, err := strconv.ParseUint(limit, 10, 64)
+	limit, err := toUint64(in, "malformed 'limit' parameter")
 	if err != nil {
-		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "malformed 'limit' parameter"}
+		return nil, err
 	}
-	if i == 0 {
-		i = 1
+	if limit == 0 {
+		limit = 1
 	}
-	return &i, nil
+	return &limit, nil
+}
+
+// toUint64 converts the input to a uint64. If the input is malformed, it
+// returns an error with msg as the message, and 400 as the status code.
+func toUint64(in interface{}, msg string) (uint64, error) {
+	checkSign := func(i int64) (uint64, error) {
+		if i < 0 {
+			return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
+		}
+		return uint64(i), nil
+	}
+	switch t := in.(type) {
+	case int:
+		return checkSign(int64(t))
+	case int64:
+		return checkSign(t)
+	case int8:
+		return checkSign(int64(t))
+	case int16:
+		return checkSign(int64(t))
+	case int32:
+		return checkSign(int64(t))
+	case uint:
+		return uint64(t), nil
+	case uint8:
+		return uint64(t), nil
+	case uint16:
+		return uint64(t), nil
+	case uint32:
+		return uint64(t), nil
+	case uint64:
+		return t, nil
+	case string:
+		i, err := strconv.ParseUint(t, 10, 64)
+		if err != nil {
+			return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
+		}
+		return i, nil
+	case float32:
+		i := uint64(t)
+		if float32(i) != t {
+			return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
+		}
+		return i, nil
+	case float64:
+		i := uint64(t)
+		if float64(i) != t {
+			return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
+		}
+		return i, nil
+	default:
+		return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
+	}
+}
+
+func (o optsMap) direction() string {
+	if desc, ok := o["descending"]; ok {
+		switch t := desc.(type) {
+		case bool:
+			if t {
+				return "DESC"
+			}
+		case string:
+			b, _ := strconv.ParseBool(t)
+			if b {
+				return "DESC"
+			}
+		}
+	}
+	return "ASC"
 }

@@ -18,13 +18,14 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"io"
-	"net/http"
 	"strconv"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
+
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/kivik/v4/internal"
 )
 
 const (
@@ -34,6 +35,7 @@ const (
 
 type changes struct {
 	rows    *sql.Rows
+	pending int64
 	lastSeq string
 	etag    string
 }
@@ -47,6 +49,7 @@ func (c *changes) Next(change *driver.Change) error {
 		}
 		return io.EOF
 	}
+	c.pending--
 	var rev string
 	if err := c.rows.Scan(&change.ID, &change.Seq, &change.Deleted, &rev); err != nil {
 		return err
@@ -70,7 +73,7 @@ func (c *changes) LastSeq() string {
 }
 
 func (c *changes) Pending() int64 {
-	return 0
+	return c.pending
 }
 
 func (c *changes) ETag() string {
@@ -82,35 +85,56 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 	var (
 		rows *sql.Rows
 		etag string
+		// lastSeqID is only used for feed=normal&since=now
+		lastSeqID string
 	)
 
+	var lastSeq *uint64
 	sinceNow, since, err := opts.since()
 	if err != nil {
 		return nil, err
 	}
-	if sinceNow && opts.feed() == feedLongpoll {
+	feed, err := opts.feed()
+	if err != nil {
+		return nil, err
+	}
+	if sinceNow && feed == feedLongpoll {
 		return d.newLongpollChanges(ctx)
 	}
+
 	limit, err := opts.limit()
 	if err != nil {
 		return nil, err
 	}
 
 	if since != nil {
-		lastSeq, err := d.lastSeq(ctx)
+		last, err := d.lastSeq(ctx)
 		if err != nil {
 			return nil, err
 		}
-		if lastSeq <= *since {
-			*since = lastSeq - 1
+		lastSeq = &last
+		if last <= *since {
+			*since = last - 1
 			l := uint64(1)
 			limit = &l
 		}
 	}
 
-	switch opts.feed() {
-	case feedNormal:
-		query := d.query(`
+	var totalRows int64
+
+	if sinceNow {
+		if lastSeq == nil {
+			last, err := d.lastSeq(ctx)
+			if err != nil {
+				return nil, err
+			}
+			lastSeq = &last
+		}
+		since = lastSeq
+		limit = nil
+		lastSeqID = strconv.FormatUint(*lastSeq, 10)
+	}
+	query := fmt.Sprintf(d.query(`
 			WITH results AS (
 				SELECT
 					id,
@@ -123,7 +147,7 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 				ORDER BY seq
 			)
 			SELECT
-				NULL AS id,
+				COUNT(*) AS id,
 				NULL AS seq,
 				NULL AS deleted,
 				COUNT(*) || '.' || COALESCE(MIN(seq),0) || '.' || COALESCE(MAX(seq),0) AS rev
@@ -135,60 +159,49 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 				id,
 				seq,
 				deleted,
-				rev || '-' || rev_id AS rev
-			FROM results
-		`)
-		if limit != nil {
-			query += " LIMIT " + strconv.FormatUint(*limit+1, 10)
-		}
-		var err error
-		rows, err = d.db.QueryContext(ctx, query, since) //nolint:rowserrcheck // Err checked in Next
-		if err != nil {
-			return nil, err
-		}
+				rev
+			FROM (
+				SELECT
+					id,
+					seq,
+					deleted,
+					rev || '-' || rev_id AS rev
+				FROM results
+				ORDER BY seq %s
+			)
+		`), opts.direction())
+	if limit != nil {
+		query += " LIMIT " + strconv.FormatUint(*limit+1, 10)
+	}
+	rows, err = d.db.QueryContext(ctx, query, since) //nolint:rowserrcheck // Err checked in Next
+	if err != nil {
+		return nil, err
+	}
 
-		// The first row is used to calculate the ETag; it's done as part of the
-		// same query, even though it's a bit ugly, to ensure it's all in the same
-		// implicit transaction.
-		if !rows.Next() {
-			// should never happen
-			return nil, errors.New("no rows returned")
-		}
-		var discard *string
-		var summary string
-		if err := rows.Scan(&discard, &discard, &discard, &summary); err != nil {
-			return nil, err
-		}
+	// The first row is used to calculate the ETag; it's done as part of the
+	// same query, even though it's a bit ugly, to ensure it's all in the same
+	// implicit transaction.
+	if !rows.Next() {
+		// should never happen
+		return nil, errors.New("no rows returned")
+	}
+	var discard *string
+	var summary string
+	if err := rows.Scan(&totalRows, &discard, &discard, &summary); err != nil {
+		return nil, err
+	}
 
+	if feed == feedNormal {
 		h := md5.New()
 		_, _ = h.Write([]byte(summary))
 		etag = hex.EncodeToString(h.Sum(nil))
-	case feedLongpoll:
-		query := d.query(`
-			SELECT
-				id,
-				seq,
-				deleted,
-				rev || '-' || rev_id AS rev
-			FROM {{ .Docs }}
-			WHERE ($1 IS NULL OR seq > $1)
-			ORDER BY seq
-		`)
-		if limit != nil {
-			query += " LIMIT " + strconv.FormatUint(*limit, 10)
-		}
-		var err error
-		rows, err = d.db.QueryContext(ctx, query, since) //nolint:rowserrcheck // Err checked in Next
-		if err != nil {
-			return nil, err
-		}
-	default:
-		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "supported `feed` types: normal, longpoll"}
 	}
 
 	return &changes{
-		rows: rows,
-		etag: etag,
+		rows:    rows,
+		pending: totalRows,
+		etag:    etag,
+		lastSeq: lastSeqID,
 	}, nil
 }
 
@@ -248,25 +261,31 @@ func (d *db) newLongpollChanges(ctx context.Context) (*longpollChanges, error) {
 // detected.
 func (c *longpollChanges) watch(changes chan<- longpollChange) {
 	defer close(changes)
+
+	bo := backoff.NewExponentialBackOff()
+	bo.InitialInterval = 50 * time.Millisecond
+	bo.MaxInterval = 3 * time.Minute
+	bo.MaxElapsedTime = 0
+
 	var change driver.Change
-	for {
-		var rev string
+	var rev string
+	err := backoff.Retry(func() error {
 		err := c.stmt.QueryRowContext(c.ctx, c.since).Scan(&change.ID, &change.Seq, &change.Deleted, &rev)
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
-			// sleep, then try again
-			time.Sleep(time.Second)
-
-			continue
+			return err
 		case err != nil:
-			changes <- longpollChange{err: err}
+			return backoff.Permanent(err)
 		default:
 			change.Changes = driver.ChangedRevs{rev}
 			c.lastSeq = change.Seq
 
 			changes <- longpollChange{change: &change}
+			return nil
 		}
-		return
+	}, bo)
+	if err != nil {
+		changes <- longpollChange{err: err}
 	}
 }
 

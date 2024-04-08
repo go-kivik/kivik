@@ -44,6 +44,7 @@ func TestDBChanges(t *testing.T) {
 		wantNextErr   string
 		wantLastSeq   *string
 		wantETag      *string
+		wantPending   *int64
 	}
 	tests := testy.NewTable()
 	tests.Add("no changes in db", test{
@@ -222,32 +223,162 @@ func TestDBChanges(t *testing.T) {
 			wantETag:    &[]string{""}[0],
 		}
 	})
+	tests.Add("feed=normal, context cancellation", func(t *testing.T) interface{} {
+		d := newDB(t)
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+
+		return test{
+			db:  d,
+			ctx: ctx,
+			options: kivik.Params(map[string]interface{}{
+				"feed": "normal",
+			}),
+			wantErr:    "context canceled",
+			wantStatus: http.StatusInternalServerError,
+		}
+	})
+	tests.Add("feed=normal, since=now", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
+		_ = d.tDelete("doc1", kivik.Rev(rev))
+
+		return test{
+			db: d,
+			options: kivik.Params(map[string]interface{}{
+				"since": "now",
+			}),
+			wantChanges: nil,
+			wantLastSeq: &[]string{"2"}[0],
+			wantETag:    &[]string{"c7ba27130f956748671e845893fd6b80"}[0],
+		}
+	})
+	tests.Add("limit=0 acts the same as limit=1", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
+		_ = d.tDelete("doc1", kivik.Rev(rev))
+
+		return test{
+			db:      d,
+			options: kivik.Param("limit", "0"),
+			wantChanges: []driver.Change{
+				{
+					ID:      "doc1",
+					Seq:     "1",
+					Changes: driver.ChangedRevs{rev},
+				},
+			},
+			wantLastSeq: &[]string{"1"}[0],
+			wantETag:    &[]string{"9562870d7e8245d03c2ac6055dff735f"}[0],
+			wantPending: &[]int64{1}[0],
+		}
+	})
+	tests.Add("limit=1", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
+		_ = d.tDelete("doc1", kivik.Rev(rev))
+
+		return test{
+			db:      d,
+			options: kivik.Param("limit", "1"),
+			wantChanges: []driver.Change{
+				{
+					ID:      "doc1",
+					Seq:     "1",
+					Changes: driver.ChangedRevs{rev},
+				},
+			},
+			wantLastSeq: &[]string{"1"}[0],
+			wantETag:    &[]string{"9562870d7e8245d03c2ac6055dff735f"}[0],
+			wantPending: &[]int64{1}[0],
+		}
+	})
+	tests.Add("limit=1 as int", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
+		_ = d.tDelete("doc1", kivik.Rev(rev))
+
+		return test{
+			db:      d,
+			options: kivik.Param("limit", 1),
+			wantChanges: []driver.Change{
+				{
+					ID:      "doc1",
+					Seq:     "1",
+					Changes: driver.ChangedRevs{rev},
+				},
+			},
+			wantLastSeq: &[]string{"1"}[0],
+			wantETag:    &[]string{"9562870d7e8245d03c2ac6055dff735f"}[0],
+			wantPending: &[]int64{1}[0],
+		}
+	})
+	tests.Add("feed=longpoll, limit=1, pending is set", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
+		_ = d.tDelete("doc1", kivik.Rev(rev))
+
+		return test{
+			db: d,
+			options: kivik.Params(map[string]interface{}{
+				"feed":  "longpoll",
+				"limit": 1,
+			}),
+			wantChanges: []driver.Change{
+				{
+					ID:      "doc1",
+					Seq:     "1",
+					Changes: driver.ChangedRevs{rev},
+				},
+			},
+			wantLastSeq: &[]string{"1"}[0],
+			wantETag:    &[]string{""}[0],
+			wantPending: &[]int64{1}[0],
+		}
+	})
+	tests.Add("Descending order", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
+		rev2 := d.tDelete("doc1", kivik.Rev(rev))
+
+		return test{
+			db:      d,
+			options: kivik.Param("descending", true),
+			wantChanges: []driver.Change{
+				{
+					ID:      "doc1",
+					Seq:     "2",
+					Deleted: true,
+					Changes: driver.ChangedRevs{rev2},
+				},
+				{
+					ID:      "doc1",
+					Seq:     "1",
+					Changes: driver.ChangedRevs{rev},
+				},
+			},
+			wantLastSeq: &[]string{"1"}[0],
+			wantETag:    &[]string{"9562870d7e8245d03c2ac6055dff735f"}[0],
+		}
+	})
 
 	/*
 		TODO:
-		- ctx cancellation, feed=normal
-		- since=now, feed=normal
-		- Set Pending
+		- ETag should be based only on last sequence, I think
 		- Options
 			- doc_ids
 			- conflicts
-			- descending
 			- feed
 				- normal
 				- longpoll
 				- continuous
 			- filter
-			- heartbeat
 			- include_docs
 			- attachments
 			- att_encoding_info
-			- last-event-id
-			- limit
-			- since
 			- style
 			- timeout
 			- view
-			- seq_interval
 	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {
@@ -315,6 +446,12 @@ func TestDBChanges(t *testing.T) {
 			got := feed.ETag()
 			if got != *tt.wantETag {
 				t.Errorf("Unexpected ETag: %s", got)
+			}
+		}
+		if tt.wantPending != nil {
+			got := feed.Pending()
+			if got != *tt.wantPending {
+				t.Errorf("Unexpected Pending: %d", got)
 			}
 		}
 	})

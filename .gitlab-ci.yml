@@ -48,16 +48,6 @@ test:
     - go mod download
     - go test -race -shuffle=on ./...
 
-.test: &go_test_template
-  stage: test
-  variables:
-    KIVIK_TEST_DSN_COUCH22: http://admin:abc123@couch22:5984/
-    KIVIK_TEST_DSN_COUCH23: http://admin:abc123@couch23:5984/
-    KIVIK_TEST_DSN_COUCH30: http://admin:abc123@couch30:5984/
-    KIVIK_TEST_DSN_COUCH31: http://admin:abc123@couch31:5984/
-    KIVIK_TEST_DSN_COUCH32: http://admin:abc123@couch32:5984/
-    KIVIK_TEST_DSN_COUCH33: http://admin:abc123@couch33:5984/
-
 linter:
   stage: test
   image: golangci/golangci-lint:v1.57.2
@@ -79,7 +69,8 @@ coverage:
     - ./script/coverage.sh
 
 .gopherjs_test: &gopherjs_test_template
-  <<: *go_test_template
+  variables:
+    KIVIK_TEST_DSN_COUCH33: http://admin:abc123@couch33:5984/
   image: golang:1.18
   services:
     - name: couchdb:3.3.3

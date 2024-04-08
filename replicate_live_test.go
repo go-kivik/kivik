@@ -44,7 +44,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 	}
 	tests := testy.NewTable()
 	tests.Add("couch to couch", func(t *testing.T) interface{} {
-		dsn := kt.DSN(t)
+		dsn := kt.DSN3(t)
 		client, err := kivik.New("couch", dsn)
 		if err != nil {
 			t.Fatal(err)
@@ -87,7 +87,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 		if err != nil {
 			t.Fatal(err)
 		}
-		dsn := kt.DSN(t)
+		dsn := kt.DSN3(t)
 		client, err := kivik.New("couch", dsn)
 		if err != nil {
 			t.Fatal(err)
@@ -119,7 +119,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 		if err != nil {
 			t.Fatal(err)
 		}
-		dsn := kt.DSN(t)
+		dsn := kt.DSN3(t)
 		client, err := kivik.New("couch", dsn)
 		if err != nil {
 			t.Fatal(err)
@@ -151,7 +151,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 		}
 	})
 	tests.Add("couch to couch with sec", func(t *testing.T) interface{} {
-		dsn := kt.DSN(t)
+		dsn := kt.DSN3(t)
 		client, err := kivik.New("couch", dsn)
 		if err != nil {
 			t.Fatal(err)
@@ -203,7 +203,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 		if err != nil {
 			t.Fatal(err)
 		}
-		dsn := kt.DSN(t)
+		dsn := kt.DSN3(t)
 		client, err := kivik.New("couch", dsn)
 		if err != nil {
 			t.Fatal(err)
@@ -236,7 +236,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 		if err != nil {
 			t.Fatal(err)
 		}
-		dsn := kt.DSN(t)
+		dsn := kt.DSN3(t)
 		client, err := kivik.New("couch", dsn)
 		if err != nil {
 			t.Fatal(err)
@@ -276,7 +276,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 			t.Fatal(err)
 		}
 
-		dsn := kt.DSN(t)
+		dsn := kt.DSN3(t)
 		client, err := kivik.New("couch", dsn)
 		if err != nil {
 			t.Fatal(err)
@@ -323,7 +323,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 		if err != nil {
 			t.Fatal(err)
 		}
-		dsn := kt.DSN(t)
+		dsn := kt.DSN3(t)
 		client, err := kivik.New("couch", dsn)
 		if err != nil {
 			t.Fatal(err)

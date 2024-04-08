@@ -71,14 +71,13 @@ coverage:
 gopherjs:
   parallel:
     matrix:
-      - COUCHVER: "3.3.3"
-        GOVER: ["1.17", "1.18"]
+      - GOVER: ["1.17", "1.18"]
         POUCHVER: ["pouchdb7", "pouchdb8"]
   stage: test
   image: golang:$GOVER
   services:
-    - name: couchdb:$COUCHVER
-      alias: couch$COUCHVER
+    - name: couchdb:3.3.3
+      alias: couch3.3.3
   before_script:
     - export KIVIK_TEST_DSN_COUCH33=http://$COUCHDB_USER:$COUCHDB_PASSWORD@couch3.3.3:5984/
     - ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH33}

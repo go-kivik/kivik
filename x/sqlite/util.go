@@ -157,11 +157,11 @@ func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev re
 	}
 
 	// order the filenames to insert for consistency
-	err = createDocAttachments(ctx, data, tx, d, r, curRev)
+	err = createDocAttachments(ctx, data, tx, d, r, &curRev)
 	return r, err
 }
 
-func createDocAttachments(ctx context.Context, data *docData, tx *sql.Tx, d *db, r revision, curRev revision) error {
+func createDocAttachments(ctx context.Context, data *docData, tx *sql.Tx, d *db, r revision, curRev *revision) error {
 	orderedFilenames := make([]string, 0, len(data.Attachments))
 	for filename := range data.Attachments {
 		orderedFilenames = append(orderedFilenames, filename)
@@ -175,6 +175,9 @@ func createDocAttachments(ctx context.Context, data *docData, tx *sql.Tx, d *db,
 
 		var pk int
 		if att.Stub {
+			if curRev == nil {
+				return &internal.Error{Status: http.StatusPreconditionFailed, Message: fmt.Sprintf("invalid attachment stub in %s for %s", data.ID, filename)}
+			}
 			stubStmt, err := stmts.prepare(ctx, tx, d.query(`
 				INSERT INTO {{ .AttachmentsBridge }} (pk, id, rev, rev_id)
 				SELECT att.pk, $1, $2, $3
@@ -192,7 +195,7 @@ func createDocAttachments(ctx context.Context, data *docData, tx *sql.Tx, d *db,
 			err = stubStmt.QueryRowContext(ctx, data.ID, r.rev, r.id, curRev.rev, curRev.id, filename).Scan(&pk)
 			switch {
 			case errors.Is(err, sql.ErrNoRows):
-				return &internal.Error{Status: http.StatusPreconditionFailed, Message: fmt.Sprintf("invalid attachment stub in bar for %s", filename)}
+				return &internal.Error{Status: http.StatusPreconditionFailed, Message: fmt.Sprintf("invalid attachment stub in %s for %s", data.ID, filename)}
 			case err != nil:
 				return err
 			}

@@ -139,7 +139,7 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 			return "", err
 		}
 
-		if err := createDocAttachments(ctx, data, tx, d, rev, rev /* TODO: 2nd rev should be currentRev, which doesn't make sense during replication */); err != nil {
+		if err := createDocAttachments(ctx, data, tx, d, rev, nil); err != nil {
 			return "", err
 		}
 

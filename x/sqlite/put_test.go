@@ -915,7 +915,7 @@ func TestDBPut(t *testing.T) {
 				"_attachments": newAttachments().addStub("invalid.png"),
 			},
 			wantStatus: http.StatusPreconditionFailed,
-			wantErr:    "invalid attachment stub in bar for invalid.png",
+			wantErr:    "invalid attachment stub in foo for invalid.png",
 		}
 	})
 	tests.Add("update to conflicting leaf updates the proper branch", func(t *testing.T) interface{} {
@@ -1008,14 +1008,26 @@ func TestDBPut(t *testing.T) {
 			},
 		},
 	})
+	tests.Add("new_edits=false with an attachment stub and no parent rev results in 412", test{
+		docID: "foo",
+		doc: map[string]interface{}{
+			"_rev":         "1-abc",
+			"_attachments": newAttachments().addStub("foo.txt"),
+			"foo":          "bar",
+		},
+		options:    kivik.Param("new_edits", false),
+		wantStatus: http.StatusPreconditionFailed,
+		wantErr:    "invalid attachment stub in foo for foo.txt",
+	})
 
 	/*
 		TODO:
+		- new_edits=false + invalid attachment stub
+
 		- delete attachments only in one branch of a document
 		- Omit attachments to delete
 		- Include stub to update doc without deleting attachments
 		- Encoding/compression?
-		- new_edits=false + invalid attachment stub
 		- filename validation?
 	*/
 

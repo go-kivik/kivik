@@ -6,6 +6,16 @@ variables:
   COUCHDB_USER: admin
   COUCHDB_PASSWORD: abc123
 
+teststacks:
+  stage: test
+  image: golang:$GOVER
+  script:
+    - go mod download
+    - go test -race -shuffle=on ./...
+  parallel:
+    matrix:
+      - GOVER: ["1.17", "1.18", "1.19", "1.20", "1.21", "1.22"]
+
 .test: &go_test_template
   stage: test
   services:

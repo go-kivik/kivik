@@ -219,6 +219,7 @@ func (a *attachment) calculate(filename string) error {
 	return nil
 }
 
+// revs returns the revision list in oldest first order.
 func (r *revsInfo) revs() []revision {
 	revs := make([]revision, len(r.IDs))
 	for i, id := range r.IDs {

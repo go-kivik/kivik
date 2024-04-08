@@ -1019,16 +1019,90 @@ func TestDBPut(t *testing.T) {
 		wantStatus: http.StatusPreconditionFailed,
 		wantErr:    "invalid attachment stub in foo for foo.txt",
 	})
+	tests.Add("new_edits=false with attachment stub and parent in _revisions works", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("foo", map[string]interface{}{
+			"_attachments": newAttachments().add("foo.txt", "This is a base64 encoding"),
+		})
+
+		r, _ := parseRev(rev)
+
+		return test{
+			db:    d,
+			docID: "foo",
+			doc: map[string]interface{}{
+				"_revisions": map[string]interface{}{
+					"ids":   []string{"ghi", "def", r.id},
+					"start": 3,
+				},
+				"_attachments": newAttachments().addStub("foo.txt"),
+			},
+			options: kivik.Param("new_edits", false),
+			wantRev: "3-.*",
+			wantRevs: []leaf{
+				{
+					ID:    "foo",
+					Rev:   1,
+					RevID: r.id,
+				},
+				{
+					ID:          "foo",
+					Rev:         2,
+					RevID:       "def",
+					ParentRev:   &[]int{1}[0],
+					ParentRevID: &r.id,
+				},
+				{
+					ID:          "foo",
+					Rev:         3,
+					RevID:       "ghi",
+					ParentRev:   &[]int{2}[0],
+					ParentRevID: &[]string{"def"}[0],
+				},
+			},
+			wantAttachments: []attachmentRow{
+				{
+					DocID:    "foo",
+					RevPos:   1,
+					Rev:      1,
+					Filename: "foo.txt",
+					Digest:   "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
+				},
+				{
+					DocID:    "foo",
+					RevPos:   1,
+					Rev:      3,
+					Filename: "foo.txt",
+					Digest:   "md5-TmfHxaRgUrE9l3tkAn4s0Q==",
+				},
+			},
+		}
+	})
+	tests.Add("new_edits=false with attachment stub and no parent in _revisions returns 412", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("foo", map[string]interface{}{
+			"_attachments": newAttachments().add("foo.txt", "This is a base64 encoding"),
+		})
+
+		return test{
+			db:    d,
+			docID: "foo",
+			doc: map[string]interface{}{
+				"_revisions": map[string]interface{}{
+					"ids":   []string{"ghi", "def"},
+					"start": 6,
+				},
+				"_attachments": newAttachments().addStub("foo.txt"),
+			},
+			options:    kivik.Param("new_edits", false),
+			wantStatus: http.StatusPreconditionFailed,
+			wantErr:    "invalid attachment stub in foo for foo.txt",
+		}
+	})
 
 	/*
 		TODO:
-		- new_edits=false + invalid attachment stub
-
-		- delete attachments only in one branch of a document
-		- Omit attachments to delete
-		- Include stub to update doc without deleting attachments
 		- Encoding/compression?
-		- filename validation?
 	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {

@@ -50,19 +50,6 @@ test:
 
 .test: &go_test_template
   stage: test
-  services:
-    - name: couchdb:2.2.0
-      alias: couch22
-    - name: apache/couchdb:2.3.1
-      alias: couch23
-    - name: couchdb:3.0.1
-      alias: couch30
-    - name: couchdb:3.1.2
-      alias: couch31
-    - name: couchdb:3.2.3
-      alias: couch32
-    - name: couchdb:3.3.3
-      alias: couch33
   variables:
     KIVIK_TEST_DSN_COUCH22: http://admin:abc123@couch22:5984/
     KIVIK_TEST_DSN_COUCH23: http://admin:abc123@couch23:5984/

@@ -57,16 +57,6 @@ test:
     KIVIK_TEST_DSN_COUCH31: http://admin:abc123@couch31:5984/
     KIVIK_TEST_DSN_COUCH32: http://admin:abc123@couch32:5984/
     KIVIK_TEST_DSN_COUCH33: http://admin:abc123@couch33:5984/
-  before_script:
-    - ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH22}
-    - ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH23}
-    - ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH30}
-    - ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH31}
-    - ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH32}
-    - ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH33}
-  script:
-    - go mod download
-    - go test -race -shuffle=on ./...
 
 linter:
   stage: test

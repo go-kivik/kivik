@@ -6,35 +6,44 @@ variables:
   COUCHDB_USER: admin
   COUCHDB_PASSWORD: abc123
 
-.test: &go_test_template
+test:
+  parallel:
+    matrix:
+      - COUCHVER: ["2.2.0", "2.3.1", "3.0.1", "3.1.2", "3.2.3", "3.3.3"]
+        GOVER: ["1.17", "1.18", "1.19", "1.20", "1.21", "1.22"]
   stage: test
+  image: golang:$GOVER
   services:
-    - name: couchdb:2.2.0
-      alias: couch22
-    - name: apache/couchdb:2.3.1
-      alias: couch23
-    - name: couchdb:3.0.1
-      alias: couch30
-    - name: couchdb:3.1.2
-      alias: couch31
-    - name: couchdb:3.2.3
-      alias: couch32
-    - name: couchdb:3.3.3
-      alias: couch33
-  variables:
-    KIVIK_TEST_DSN_COUCH22: http://admin:abc123@couch22:5984/
-    KIVIK_TEST_DSN_COUCH23: http://admin:abc123@couch23:5984/
-    KIVIK_TEST_DSN_COUCH30: http://admin:abc123@couch30:5984/
-    KIVIK_TEST_DSN_COUCH31: http://admin:abc123@couch31:5984/
-    KIVIK_TEST_DSN_COUCH32: http://admin:abc123@couch32:5984/
-    KIVIK_TEST_DSN_COUCH33: http://admin:abc123@couch33:5984/
+    - name: couchdb:$COUCHVER
+      alias: couch$COUCHVER
   before_script:
-    - ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH22}
-    - ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH23}
-    - ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH30}
-    - ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH31}
-    - ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH32}
-    - ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH33}
+    - |
+      case $COUCHVER in
+        "2.2.0")
+          export KIVIK_TEST_DSN_COUCH22=http://$COUCHDB_USER:$COUCHDB_PASSWORD@couch2.2.0:5984/
+          ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH22}
+          ;;
+        "2.3.1")
+          export KIVIK_TEST_DSN_COUCH23=http://$COUCHDB_USER:$COUCHDB_PASSWORD@couch2.3.1:5984/
+          ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH23}
+          ;;
+        "3.0.1")
+          export KIVIK_TEST_DSN_COUCH30=http://$COUCHDB_USER:$COUCHDB_PASSWORD@couch3.0.1:5984/
+          ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH30}
+          ;;
+        "3.1.2")
+          export KIVIK_TEST_DSN_COUCH31=http://$COUCHDB_USER:$COUCHDB_PASSWORD@couch3.1.2:5984/
+          ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH31}
+          ;;
+        "3.2.3")
+          export KIVIK_TEST_DSN_COUCH32=http://$COUCHDB_USER:$COUCHDB_PASSWORD@couch3.2.3:5984/
+          ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH32}
+          ;;
+        "3.3.3")
+          export KIVIK_TEST_DSN_COUCH33=http://$COUCHDB_USER:$COUCHDB_PASSWORD@couch3.3.3:5984/
+          ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH33}
+          ;;
+      esac
   script:
     - go mod download
     - go test -race -shuffle=on ./...
@@ -59,32 +68,7 @@ coverage:
     - go mod download
     - ./script/coverage.sh
 
-go-1.17:
-  <<: *go_test_template
-  image: golang:1.17
-
-go-1.18:
-  <<: *go_test_template
-  image: golang:1.18
-
-go-1.19:
-  <<: *go_test_template
-  image: golang:1.19
-
-go-1.20:
-  <<: *go_test_template
-  image: golang:1.20
-
-go-1.21:
-  <<: *go_test_template
-  image: golang:1.21
-
-go-1.22:
-  <<: *go_test_template
-  image: golang:1.22
-
 .gopherjs_test: &gopherjs_test_template
-  <<: *go_test_template
   image: golang:1.18
   services:
     - name: couchdb:3.3.3

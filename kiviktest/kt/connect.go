@@ -20,14 +20,13 @@ import (
 	kivik "github.com/go-kivik/kivik/v4"
 )
 
-// DSN returns a testing DSN from the environment.
-func DSN(t *testing.T) string {
+// DSN3 returns a testing DSN from the environment for CouchDB 3.x.
+func DSN3(t *testing.T) string {
 	for _, env := range []string{
-		"KIVIK_TEST_DSN",
 		"KIVIK_TEST_DSN_COUCH33",
-		"KIVIK_TEST_DSN_COUCH32", "KIVIK_TEST_DSN_COUCH31",
-		"KIVIK_TEST_DSN_COUCH30", "KIVIK_TEST_DSN_COUCH23",
-		"KIVIK_TEST_DSN_COUCH22",
+		"KIVIK_TEST_DSN_COUCH32",
+		"KIVIK_TEST_DSN_COUCH31",
+		"KIVIK_TEST_DSN_COUCH30",
 	} {
 		dsn := os.Getenv(env)
 		if dsn != "" {
@@ -40,7 +39,7 @@ func DSN(t *testing.T) string {
 
 // NoAuthDSN returns a testing DSN with credentials stripped.
 func NoAuthDSN(t *testing.T) string {
-	dsn := DSN(t)
+	dsn := DSN3(t)
 	parsed, err := url.Parse(dsn)
 	if err != nil {
 		t.Fatalf("invalid DSN: %s", err)
@@ -59,7 +58,7 @@ func connect(dsn string, t *testing.T) *kivik.Client {
 
 // GetClient returns a connection to a CouchDB client, for testing.
 func GetClient(t *testing.T) *kivik.Client {
-	return connect(DSN(t), t)
+	return connect(DSN3(t), t)
 }
 
 // GetNoAuthClient returns an unauthenticated connection to a CouchDB client, for testing.

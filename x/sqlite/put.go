@@ -80,7 +80,9 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 
 	if !newEdits { // new_edits=false means replication mode
 		var rev revision
+		var ancestorRev *revision
 		if data.Revisions.Start != 0 {
+			ancestorRev = &data.Revisions.revs()[0]
 			stmt, err := tx.PrepareContext(ctx, d.query(`
 				INSERT INTO {{ .Revs }} (id, rev, rev_id, parent_rev, parent_rev_id)
 				VALUES ($1, $2, $3, $4, $5)
@@ -114,10 +116,10 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 				return "", err
 			}
 			_, err = tx.ExecContext(ctx, d.query(`
-			INSERT INTO {{ .Revs }} (id, rev, rev_id)
-			VALUES ($1, $2, $3)
-			ON CONFLICT DO NOTHING
-		`), docID, rev.rev, rev.id)
+				INSERT INTO {{ .Revs }} (id, rev, rev_id)
+				VALUES ($1, $2, $3)
+				ON CONFLICT DO NOTHING
+			`), docID, rev.rev, rev.id)
 			if err != nil {
 				return "", err
 			}
@@ -138,6 +140,11 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 		if err != nil {
 			return "", err
 		}
+
+		if err := createDocAttachments(ctx, data, tx, d, rev, ancestorRev); err != nil {
+			return "", err
+		}
+
 		return newRev, tx.Commit()
 	}
 

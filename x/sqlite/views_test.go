@@ -478,6 +478,29 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("limit=2 returns first two documents only", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev1 := d.tPut("cat", map[string]string{"cat": "meow"})
+		_ = d.tPut("dog", map[string]string{"dog": "woof"})
+		rev3 := d.tPut("cow", map[string]string{"cow": "moo"})
+
+		return test{
+			db:      d,
+			options: kivik.Param("limit", 2),
+			want: []rowResult{
+				{
+					ID:    "cat",
+					Rev:   rev1,
+					Value: `{"value":{"rev":"` + rev1 + `"}}` + "\n",
+				},
+				{
+					ID:    "cow",
+					Rev:   rev3,
+					Value: `{"value":{"rev":"` + rev3 + `"}}` + "\n",
+				},
+			},
+		}
+	})
 
 	/*
 		TODO:
@@ -491,7 +514,6 @@ func TestDBAllDocs(t *testing.T) {
 			- att_encoding_infio
 			- key
 			- keys
-			- limit
 			- reduce
 			- skip
 			- sorted

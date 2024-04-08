@@ -20,9 +20,16 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/internal"
+)
+
+const (
+	feedNormal   = "normal"
+	feedLongpoll = "longpoll"
 )
 
 type changes struct {
@@ -76,8 +83,33 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 		rows *sql.Rows
 		etag string
 	)
+
+	sinceNow, since, err := opts.since()
+	if err != nil {
+		return nil, err
+	}
+	if sinceNow && opts.feed() == feedLongpoll {
+		return d.newLongpollChanges(ctx)
+	}
+	limit, err := opts.limit()
+	if err != nil {
+		return nil, err
+	}
+
+	if since != nil {
+		lastSeq, err := d.lastSeq(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if lastSeq <= *since {
+			*since = lastSeq - 1
+			l := uint64(1)
+			limit = &l
+		}
+	}
+
 	switch opts.feed() {
-	case "normal":
+	case feedNormal:
 		query := d.query(`
 			WITH results AS (
 				SELECT
@@ -86,7 +118,7 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 					deleted,
 					rev,
 					rev_id
-				FROM test
+				FROM {{ .Docs }}
 				WHERE ($1 IS NULL OR seq > $1)
 				ORDER BY seq
 			)
@@ -106,8 +138,11 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 				rev || '-' || rev_id AS rev
 			FROM results
 		`)
+		if limit != nil {
+			query += " LIMIT " + strconv.FormatUint(*limit+1, 10)
+		}
 		var err error
-		rows, err = d.db.QueryContext(ctx, query, opts.since()) //nolint:rowserrcheck // Err checked in Next
+		rows, err = d.db.QueryContext(ctx, query, since) //nolint:rowserrcheck // Err checked in Next
 		if err != nil {
 			return nil, err
 		}
@@ -128,7 +163,7 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 		h := md5.New()
 		_, _ = h.Write([]byte(summary))
 		etag = hex.EncodeToString(h.Sum(nil))
-	case "longpoll":
+	case feedLongpoll:
 		query := d.query(`
 			SELECT
 				id,
@@ -139,8 +174,11 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 			WHERE ($1 IS NULL OR seq > $1)
 			ORDER BY seq
 		`)
+		if limit != nil {
+			query += " LIMIT " + strconv.FormatUint(*limit, 10)
+		}
 		var err error
-		rows, err = d.db.QueryContext(ctx, query, opts.since()) //nolint:rowserrcheck // Err checked in Next
+		rows, err = d.db.QueryContext(ctx, query, since) //nolint:rowserrcheck // Err checked in Next
 		if err != nil {
 			return nil, err
 		}
@@ -153,3 +191,108 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 		etag: etag,
 	}, nil
 }
+
+type longpollChanges struct {
+	stmt    *sql.Stmt
+	since   uint64
+	lastSeq string
+	ctx     context.Context
+	cancel  context.CancelFunc
+	changes <-chan longpollChange
+}
+
+type longpollChange struct {
+	change *driver.Change
+	err    error
+}
+
+var _ driver.Changes = (*longpollChanges)(nil)
+
+func (d *db) newLongpollChanges(ctx context.Context) (*longpollChanges, error) {
+	since, err := d.lastSeq(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	stmt, err := d.db.PrepareContext(ctx, d.query(`
+		SELECT
+			id,
+			seq,
+			deleted,
+			rev || '-' || rev_id AS rev
+		FROM {{ .Docs }}
+		WHERE seq > $1
+		ORDER BY seq
+		LIMIT 1
+	`))
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	changes := make(chan longpollChange)
+	c := &longpollChanges{
+		stmt:    stmt,
+		since:   since,
+		ctx:     ctx,
+		cancel:  cancel,
+		changes: changes,
+	}
+
+	go c.watch(changes)
+
+	return c, nil
+}
+
+// watch runs in a loop until either the context is cancelled, or a change is
+// detected.
+func (c *longpollChanges) watch(changes chan<- longpollChange) {
+	defer close(changes)
+	var change driver.Change
+	for {
+		var rev string
+		err := c.stmt.QueryRowContext(c.ctx, c.since).Scan(&change.ID, &change.Seq, &change.Deleted, &rev)
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			// sleep, then try again
+			time.Sleep(time.Second)
+
+			continue
+		case err != nil:
+			changes <- longpollChange{err: err}
+		default:
+			change.Changes = driver.ChangedRevs{rev}
+			c.lastSeq = change.Seq
+
+			changes <- longpollChange{change: &change}
+		}
+		return
+	}
+}
+
+func (c *longpollChanges) Next(change *driver.Change) error {
+	select {
+	case <-c.ctx.Done():
+		return c.ctx.Err()
+	case ch, ok := <-c.changes:
+		if !ok {
+			return io.EOF
+		}
+		if ch.err != nil {
+			return ch.err
+		}
+		*change = *ch.change
+		return nil
+	}
+}
+
+func (c *longpollChanges) Close() error {
+	return nil
+}
+
+func (c *longpollChanges) LastSeq() string {
+	return c.lastSeq
+}
+
+func (*longpollChanges) Pending() int64 { return 0 }
+func (*longpollChanges) ETag() string   { return "" }

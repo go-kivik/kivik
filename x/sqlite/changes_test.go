@@ -19,7 +19,9 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"gitlab.com/flimzy/testy"
@@ -32,13 +34,16 @@ import (
 func TestDBChanges(t *testing.T) {
 	t.Parallel()
 	type test struct {
-		db          *testDB
-		options     driver.Options
-		wantErr     string
-		wantStatus  int
-		wantChanges []driver.Change
-		wantLastSeq *string
-		wantETag    *string
+		db            *testDB
+		ctx           context.Context
+		options       driver.Options
+		wantErr       string
+		wantStatus    int
+		wantChanges   []driver.Change
+		wantChangesFn func() []driver.Change
+		wantNextErr   string
+		wantLastSeq   *string
+		wantETag      *string
 	}
 	tests := testy.NewTable()
 	tests.Add("no changes in db", test{
@@ -135,12 +140,93 @@ func TestDBChanges(t *testing.T) {
 			wantETag:    &[]string{"bf701dae9aff5bb22b8f000dc9bf6199"}[0],
 		}
 	})
+	tests.Add("malformed sequence id", test{
+		options:    kivik.Param("since", "invalid"),
+		wantErr:    "malformed sequence supplied in 'since' parameter",
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("future since value returns only latest change", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
+		rev2 := d.tDelete("doc1", kivik.Rev(rev))
+
+		return test{
+			db:      d,
+			options: kivik.Param("since", "9000"),
+			wantChanges: []driver.Change{
+				{
+					ID:      "doc1",
+					Seq:     "2",
+					Deleted: true,
+					Changes: driver.ChangedRevs{rev2},
+				},
+			},
+			wantLastSeq: &[]string{"2"}[0],
+			wantETag:    &[]string{"bf701dae9aff5bb22b8f000dc9bf6199"}[0],
+		}
+	})
+	tests.Add("future since value returns only latest change, longpoll mode", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
+		rev2 := d.tDelete("doc1", kivik.Rev(rev))
+
+		return test{
+			db: d,
+			options: kivik.Params(map[string]interface{}{
+				"since": "9000",
+				"feed":  "longpoll",
+			}),
+			wantChanges: []driver.Change{
+				{
+					ID:      "doc1",
+					Seq:     "2",
+					Deleted: true,
+					Changes: driver.ChangedRevs{rev2},
+				},
+			},
+			wantLastSeq: &[]string{"2"}[0],
+			wantETag:    &[]string{""}[0],
+		}
+	})
+	tests.Add("invalid limit value", test{
+		options:    kivik.Param("limit", "invalid"),
+		wantErr:    "malformed 'limit' parameter",
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("longpoll + since in past should return all historical changes since that seqid", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
+		rev2 := d.tDelete("doc1", kivik.Rev(rev))
+		rev3 := d.tPut("doc2", map[string]string{"foo": "bar"})
+
+		return test{
+			db: d,
+			options: kivik.Params(map[string]interface{}{
+				"since": "1",
+				"feed":  "longpoll",
+			}),
+			wantChanges: []driver.Change{
+				{
+					ID:      "doc1",
+					Seq:     "2",
+					Deleted: true,
+					Changes: driver.ChangedRevs{rev2},
+				},
+				{
+					ID:      "doc2",
+					Seq:     "3",
+					Changes: driver.ChangedRevs{rev3},
+				},
+			},
+			wantLastSeq: &[]string{"3"}[0],
+			wantETag:    &[]string{""}[0],
+		}
+	})
 
 	/*
 		TODO:
-		- malformed sequence id passed as since ??
-		- longpoll + since=1
-		- since=now
+		- ctx cancellation, feed=normal
+		- since=now, feed=normal
 		- Set Pending
 		- Options
 			- doc_ids
@@ -170,11 +256,15 @@ func TestDBChanges(t *testing.T) {
 		if dbc == nil {
 			dbc = newDB(t)
 		}
+		ctx := tt.ctx
+		if ctx == nil {
+			ctx = context.Background()
+		}
 		opts := tt.options
 		if opts == nil {
 			opts = mock.NilOption
 		}
-		feed, err := dbc.Changes(context.Background(), opts)
+		feed, err := dbc.Changes(ctx, opts)
 		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}
@@ -198,12 +288,20 @@ func TestDBChanges(t *testing.T) {
 			case nil:
 				// continue
 			default:
-				t.Fatalf("Next() returned error: %s", err)
+				if !testy.ErrorMatches(tt.wantNextErr, err) {
+					t.Errorf("Unexpected error from Next(): %s", err)
+				}
+				break loop
 			}
 			got = append(got, change)
 		}
 
-		if d := cmp.Diff(tt.wantChanges, got); d != "" {
+		wantChanges := tt.wantChanges
+		if tt.wantChangesFn != nil {
+			wantChanges = tt.wantChangesFn()
+		}
+
+		if d := cmp.Diff(wantChanges, got); d != "" {
 			t.Errorf("Unexpected changes:\n%s", d)
 		}
 
@@ -220,4 +318,120 @@ func TestDBChanges(t *testing.T) {
 			}
 		}
 	})
+}
+
+func TestDBChanges_longpoll_context_cancellation_during_iteration(t *testing.T) {
+	t.Parallel()
+	db := newDB(t)
+
+	// First create a single document to seed the changes feed
+	_ = db.tPut("doc1", map[string]string{"foo": "bar"})
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Start the changes feed, with feed=longpoll&since=now to block until
+	// another change is made.
+	feed, err := db.Changes(ctx, kivik.Params(map[string]interface{}{
+		"feed":  "longpoll",
+		"since": "now",
+	}))
+	if err != nil {
+		t.Fatalf("Failed to start changes feed: %s", err)
+	}
+	t.Cleanup(func() {
+		_ = feed.Close()
+	})
+
+	// Now cancel the context
+	cancel()
+
+	var iterationErr error
+	// Meanwhile, the changes feed should block until the context is cancelled
+loop:
+	for {
+		change := driver.Change{}
+		err := feed.Next(&change)
+		switch err {
+		case io.EOF:
+			break loop
+		case nil:
+			// continue
+		default:
+			iterationErr = err
+			break loop
+		}
+	}
+
+	if !testy.ErrorMatches("context canceled", iterationErr) {
+		t.Errorf("Unexpected error from Next(): %s", iterationErr)
+	}
+}
+
+func TestDBChanges_longpoll(t *testing.T) {
+	t.Parallel()
+	db := newDB(t)
+
+	// First create a single document to seed the changes feed
+	_ = db.tPut("doc1", map[string]string{"foo": "bar"})
+
+	// Start the changes feed, with feed=longpoll&since=now to block until
+	// another change is made.
+	feed, err := db.Changes(context.Background(), kivik.Params(map[string]interface{}{
+		"feed":  "longpoll",
+		"since": "now",
+	}))
+	if err != nil {
+		t.Fatalf("Failed to start changes feed: %s", err)
+	}
+	t.Cleanup(func() {
+		_ = feed.Close()
+	})
+
+	var mu sync.Mutex
+	var rev2 string
+	// Make a change to the database after a short delay
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		mu.Lock()
+		rev2 = db.tPut("doc2", map[string]string{"foo": "bar"})
+		mu.Unlock()
+	}()
+
+	start := time.Now()
+	// Meanwhile, the changes feed should block until the change is made
+	// iterate over feed
+	var got []driver.Change
+
+loop:
+	for {
+		change := driver.Change{}
+		err := feed.Next(&change)
+		switch err {
+		case io.EOF:
+			break loop
+		case nil:
+			// continue
+		default:
+			t.Fatalf("iteration failed: %s", err)
+		}
+		got = append(got, change)
+	}
+
+	if time.Since(start) < 100*time.Millisecond {
+		t.Errorf("Changes feed returned too quickly")
+	}
+
+	mu.Lock()
+	wantChanges := []driver.Change{
+		{
+			ID:      "doc2",
+			Seq:     "2",
+			Changes: driver.ChangedRevs{rev2},
+		},
+	}
+	mu.Unlock()
+
+	if d := cmp.Diff(wantChanges, got); d != "" {
+		t.Errorf("Unexpected changes:\n%s", d)
+	}
 }

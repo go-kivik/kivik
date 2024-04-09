@@ -695,3 +695,78 @@ loop:
 		t.Errorf("Unexpected changes:\n%s", d)
 	}
 }
+
+func TestDBChanges_longpoll_include_docs_with_attachment_stubs(t *testing.T) {
+	t.Parallel()
+	db := newDB(t)
+
+	// First create a single document to seed the changes feed
+	rev := db.tPut("doc1", map[string]string{"foo": "bar"})
+
+	// Start the changes feed, with feed=longpoll&since=now to block until
+	// another change is made.
+	feed, err := db.Changes(context.Background(), kivik.Params(map[string]interface{}{
+		"feed":         "longpoll",
+		"since":        "now",
+		"include_docs": true,
+	}))
+	if err != nil {
+		t.Fatalf("Failed to start changes feed: %s", err)
+	}
+	t.Cleanup(func() {
+		_ = feed.Close()
+	})
+
+	var mu sync.Mutex
+	var rev2 string
+	// Make a change to the database after a short delay
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		mu.Lock()
+		rev2 = db.tPut("doc1", map[string]interface{}{
+			"_attachments": newAttachments().
+				add("text.txt", "boring text").
+				add("text2.txt", "more boring text"),
+		}, kivik.Rev(rev))
+		mu.Unlock()
+	}()
+
+	start := time.Now()
+	// Meanwhile, the changes feed should block until the change is made
+	// iterate over feed
+	var got []driver.Change
+
+loop:
+	for {
+		change := driver.Change{}
+		err := feed.Next(&change)
+		switch err {
+		case io.EOF:
+			break loop
+		case nil:
+			// continue
+		default:
+			t.Fatalf("iteration failed: %s", err)
+		}
+		got = append(got, change)
+	}
+
+	if time.Since(start) < 100*time.Millisecond {
+		t.Errorf("Changes feed returned too quickly")
+	}
+
+	mu.Lock()
+	wantChanges := []driver.Change{
+		{
+			ID:      "doc1",
+			Seq:     "2",
+			Changes: driver.ChangedRevs{rev2},
+			Doc:     []byte(`{"_id":"doc1","_rev":"` + rev2 + `","_attachments":{"text.txt":{"content_type":"text/plain","digest":"md5-OIJSy6hr5f32Yfxm8ex95w==","length":11,"revpos":2},"text2.txt":{"content_type":"text/plain","digest":"md5-JlqzqsA7DA4Lw2arCp9iXQ==","length":16,"revpos":2}}}`),
+		},
+	}
+	mu.Unlock()
+
+	if d := cmp.Diff(wantChanges, got); d != "" {
+		t.Errorf("Unexpected changes:\n%s", d)
+	}
+}

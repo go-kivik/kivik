@@ -388,6 +388,30 @@ func TestDBChanges(t *testing.T) {
 			wantETag:    &[]string{"9562870d7e8245d03c2ac6055dff735f"}[0],
 		}
 	})
+	tests.Add("include docs, attachment stubs, normal feed", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("doc1", map[string]interface{}{
+			"foo": "bar",
+			"_attachments": newAttachments().
+				add("text.txt", "boring text").
+				add("text2.txt", "more boring text"),
+		})
+
+		return test{
+			db:      d,
+			options: kivik.Param("include_docs", true),
+			wantChanges: []driver.Change{
+				{
+					ID:      "doc1",
+					Seq:     "1",
+					Changes: driver.ChangedRevs{rev},
+					Doc:     []byte(`{"_id":"doc1","_rev":"` + rev + `","foo":"bar","_attachments":{"text.txt":{"content_type":"text/plain","digest":"md5-OIJSy6hr5f32Yfxm8ex95w==","length":11,"revpos":1},"text2.txt":{"content_type":"text/plain","digest":"md5-JlqzqsA7DA4Lw2arCp9iXQ==","length":16,"revpos":1}}}`),
+				},
+			},
+			wantLastSeq: &[]string{"1"}[0],
+			wantETag:    &[]string{"872ccd9c6dce18ce6ea4d5106540f089"}[0],
+		}
+	})
 
 	/*
 		TODO:

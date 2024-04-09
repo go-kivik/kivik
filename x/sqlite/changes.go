@@ -43,26 +43,55 @@ type changes struct {
 var _ driver.Changes = &changes{}
 
 func (c *changes) Next(change *driver.Change) error {
-	if !c.rows.Next() {
-		if err := c.rows.Err(); err != nil {
+	var (
+		rev             string
+		doc             *string
+		atts            = map[string]attachment{}
+		attachmentCount = 1
+	)
+
+	for {
+		if !c.rows.Next() {
+			if err := c.rows.Err(); err != nil {
+				return err
+			}
+			return io.EOF
+		}
+		var (
+			filename, contentType *string
+			length                *int64
+			revPos                *int
+			digest                *md5sum
+		)
+		if err := c.rows.Scan(
+			&change.ID, &change.Seq, &change.Deleted, &rev, &doc,
+			&attachmentCount, &filename, &contentType, &length, &digest, &revPos,
+		); err != nil {
 			return err
 		}
-		return io.EOF
+		if filename != nil {
+			atts[*filename] = attachment{
+				ContentType: *contentType,
+				Digest:      *digest,
+				Length:      *length,
+				RevPos:      *revPos,
+			}
+		}
+		change.Changes = driver.ChangedRevs{rev}
+		c.lastSeq = change.Seq
+		if attachmentCount == len(atts) {
+			break
+		}
 	}
 	c.pending--
-	var rev string
-	var doc *string
-	if err := c.rows.Scan(&change.ID, &change.Seq, &change.Deleted, &rev, &doc); err != nil {
-		return err
-	}
-	change.Changes = driver.ChangedRevs{rev}
-	c.lastSeq = change.Seq
+
 	if doc != nil {
 		toMerge := fullDoc{
-			ID:      change.ID,
-			Rev:     rev,
-			Deleted: change.Deleted,
-			Doc:     []byte(*doc),
+			ID:          change.ID,
+			Rev:         rev,
+			Deleted:     change.Deleted,
+			Doc:         []byte(*doc),
+			Attachments: atts,
 		}
 		change.Doc = toMerge.toRaw()
 	}
@@ -162,7 +191,13 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 				NULL AS seq,
 				NULL AS deleted,
 				COUNT(*) || '.' || COALESCE(MIN(seq),0) || '.' || COALESCE(MAX(seq),0) AS rev,
-				NULL AS doc
+				NULL AS doc,
+				NULL AS attachment_count,
+				NULL AS filename,
+				NULL AS content_type,
+				NULL AS length,
+				NULL AS digest,
+				NULL AS rev_pos
 			FROM results
 
 			UNION ALL
@@ -172,15 +207,29 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 				seq,
 				deleted,
 				rev,
-				doc
+				doc,
+				attachment_count,
+				filename,
+				content_type,
+				length,
+				digest,
+				rev_pos
 			FROM (
 				SELECT
-					id,
-					seq,
-					deleted,
-					rev || '-' || rev_id AS rev,
-					doc
+					results.id,
+					results.seq,
+					results.deleted,
+					results.rev || '-' || results.rev_id AS rev,
+					results.doc,
+					SUM(CASE WHEN bridge.pk IS NOT NULL THEN 1 ELSE 0 END) OVER (PARTITION BY results.id, results.rev, results.rev_id) AS attachment_count,
+					att.filename,
+					att.content_type,
+					att.length,
+					att.digest,
+					att.rev_pos
 				FROM results
+				LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON bridge.id = results.id AND bridge.rev = results.rev AND bridge.rev_id = results.rev_id
+				LEFT JOIN {{ .Attachments }} AS att ON att.pk = bridge.pk
 				ORDER BY seq %s
 			)
 		`), opts.direction())
@@ -201,7 +250,12 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 	}
 	var discard *string
 	var summary string
-	if err := rows.Scan(&totalRows, &discard, &discard, &summary, &discard); err != nil {
+	if err := rows.Scan(
+		&totalRows,
+		&discard, &discard,
+		&summary,
+		&discard, &discard, &discard, &discard, &discard, &discard, &discard,
+	); err != nil {
 		return nil, err
 	}
 

@@ -17,6 +17,7 @@ package sqlite
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"sync"
@@ -415,6 +416,8 @@ func TestDBChanges(t *testing.T) {
 
 	/*
 		TODO:
+		- Don't return doc body for all attachments
+		- don't query attachments for include_docs=false
 		- ETag should be based only on last sequence, I think
 		- include_docs + attachment stubs
 		- Options
@@ -580,8 +583,12 @@ func TestDBChanges_longpoll(t *testing.T) {
 	// Make a change to the database after a short delay
 	go func() {
 		time.Sleep(100 * time.Millisecond)
+		rev, err := db.Put(context.Background(), "doc2", interface{}(map[string]string{"foo": "bar"}), mock.NilOption)
+		if err != nil {
+			panic(fmt.Sprintf("Failed to put doc: %s", err))
+		}
 		mu.Lock()
-		rev2 = db.tPut("doc2", map[string]string{"foo": "bar"})
+		rev2 = rev
 		mu.Unlock()
 	}()
 

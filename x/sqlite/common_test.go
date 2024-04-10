@@ -25,9 +25,14 @@ import (
 	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
+type DB interface {
+	driver.DB
+	driver.Purger
+}
+
 type testDB struct {
 	t *testing.T
-	driver.DB
+	DB
 }
 
 func (tdb *testDB) underlying() *sql.DB {
@@ -91,7 +96,7 @@ func newDB(t *testing.T) *testDB {
 		_ = db.Close()
 	})
 	return &testDB{
-		DB: db,
+		DB: db.(DB),
 		t:  t,
 	}
 }

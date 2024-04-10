@@ -60,10 +60,6 @@ func (db) OpenRevs(context.Context, string, []string, driver.Options) (driver.Ro
 	return nil, nil
 }
 
-func (db) Purge(context.Context, map[string][]string) (*driver.PurgeResult, error) {
-	return nil, nil
-}
-
 func (db) BulkDocs(context.Context, []interface{}, driver.Options) ([]driver.BulkResult, error) {
 	return nil, nil
 }

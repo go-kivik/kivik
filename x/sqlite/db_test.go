@@ -28,14 +28,13 @@ type leaf struct {
 	ParentRevID *string
 }
 
-func readRevisions(t *testing.T, db *sql.DB, id string) []leaf {
+func readRevisions(t *testing.T, db *sql.DB) []leaf {
 	t.Helper()
 	rows, err := db.Query(`
 		SELECT id, rev, rev_id, parent_rev, parent_rev_id
 		FROM "test_revs"
-		WHERE id=$1
-		ORDER BY rev, rev_id
-	`, id)
+		ORDER BY id, rev, rev_id
+	`)
 	if err != nil {
 		t.Fatal(err)
 	}

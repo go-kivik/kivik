@@ -20,7 +20,7 @@ var schema = []string{
 		rev_id TEXT NOT NULL,
 		parent_rev INTEGER,
 		parent_rev_id TEXT,
-		FOREIGN KEY (id, parent_rev, parent_rev_id) REFERENCES {{ .Revs }} (id, rev, rev_id),
+		FOREIGN KEY (id, parent_rev, parent_rev_id) REFERENCES {{ .Revs }} (id, rev, rev_id) ON DELETE CASCADE,
 		UNIQUE(id, rev, rev_id)
 	)`,
 	`CREATE INDEX idx_parent ON {{ .Revs }} (id, parent_rev, parent_rev_id)`,
@@ -33,7 +33,7 @@ var schema = []string{
 		doc BLOB NOT NULL,
 		md5sum BLOB NOT NULL,
 		deleted BOOLEAN NOT NULL DEFAULT FALSE,
-		FOREIGN KEY (id, rev, rev_id) REFERENCES {{ .Revs }} (id, rev, rev_id),
+		FOREIGN KEY (id, rev, rev_id) REFERENCES {{ .Revs }} (id, rev, rev_id) ON DELETE CASCADE,
 		UNIQUE(id, rev, rev_id)
 	)`,
 	// attachments

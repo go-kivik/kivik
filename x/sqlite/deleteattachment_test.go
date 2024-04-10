@@ -285,7 +285,7 @@ func TestDBDeleteAttachment(t *testing.T) {
 		case len(tt.wantRevs) == 0:
 			// Do nothing
 		default:
-			leaves := readRevisions(t, dbc.underlying(), tt.docID)
+			leaves := readRevisions(t, dbc.underlying())
 			for i, r := range tt.wantRevs {
 				// allow tests to omit RevID
 				if r.RevID == "" {

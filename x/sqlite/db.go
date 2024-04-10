@@ -49,3 +49,43 @@ func (db) Query(context.Context, string, string, driver.Options) (driver.Rows, e
 func (d *db) Close() error {
 	return d.db.Close()
 }
+
+func (db) OpenRevs(context.Context, string, []string, driver.Options) (driver.Rows, error) {
+	return nil, nil
+}
+
+func (db) Purge(context.Context, map[string][]string) (*driver.PurgeResult, error) {
+	return nil, nil
+}
+
+func (db) BulkDocs(context.Context, []interface{}, driver.Options) ([]driver.BulkResult, error) {
+	return nil, nil
+}
+
+func (db) GetAttachmentMeta(context.Context, string, string, driver.Options) (*driver.Attachment, error) {
+	return nil, nil
+}
+
+func (db) GetRev(context.Context, string, driver.Options) (string, error) {
+	return "", nil
+}
+
+func (db) Copy(context.Context, string, string, driver.Options) (string, error) {
+	return "", nil
+}
+
+func (db) DesignDocs(context.Context, driver.Options) (driver.Rows, error) {
+	return nil, nil
+}
+
+func (db) LocalDocs(context.Context, driver.Options) (driver.Rows, error) {
+	return nil, nil
+}
+
+func (db) Ping(context.Context) error {
+	return nil
+}
+
+func (db) RevsDiff(context.Context, interface{}) (driver.Rows, error) {
+	return nil, nil
+}

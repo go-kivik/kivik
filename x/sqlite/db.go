@@ -26,6 +26,16 @@ type db struct {
 
 var _ driver.DB = (*db)(nil)
 
+func (d *db) Close() error {
+	return d.db.Close()
+}
+
+func (d *db) Ping(ctx context.Context) error {
+	return d.db.PingContext(ctx)
+}
+
+/* -- stub methods -- */
+
 func (db) Stats(context.Context) (*driver.DBStats, error) {
 	return nil, nil
 }
@@ -44,10 +54,6 @@ func (db) ViewCleanup(context.Context) error {
 
 func (db) Query(context.Context, string, string, driver.Options) (driver.Rows, error) {
 	return nil, nil
-}
-
-func (d *db) Close() error {
-	return d.db.Close()
 }
 
 func (db) OpenRevs(context.Context, string, []string, driver.Options) (driver.Rows, error) {
@@ -80,10 +86,6 @@ func (db) DesignDocs(context.Context, driver.Options) (driver.Rows, error) {
 
 func (db) LocalDocs(context.Context, driver.Options) (driver.Rows, error) {
 	return nil, nil
-}
-
-func (db) Ping(context.Context) error {
-	return nil
 }
 
 func (db) RevsDiff(context.Context, interface{}) (driver.Rows, error) {

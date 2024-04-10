@@ -43,19 +43,61 @@ type changes struct {
 var _ driver.Changes = &changes{}
 
 func (c *changes) Next(change *driver.Change) error {
-	if !c.rows.Next() {
-		if err := c.rows.Err(); err != nil {
+	var (
+		rev             string
+		doc             *string
+		atts            map[string]attachment
+		attachmentCount = 1
+	)
+
+	for {
+		if !c.rows.Next() {
+			if err := c.rows.Err(); err != nil {
+				return err
+			}
+			return io.EOF
+		}
+		var (
+			filename, contentType *string
+			length                *int64
+			revPos                *int
+			digest                *md5sum
+		)
+		if err := c.rows.Scan(
+			&change.ID, &change.Seq, &change.Deleted, &rev, &doc,
+			&attachmentCount, &filename, &contentType, &length, &digest, &revPos,
+		); err != nil {
 			return err
 		}
-		return io.EOF
+		if filename != nil {
+			if atts == nil {
+				atts = map[string]attachment{}
+			}
+			atts[*filename] = attachment{
+				ContentType: *contentType,
+				Digest:      *digest,
+				Length:      *length,
+				RevPos:      *revPos,
+			}
+		}
+		change.Changes = driver.ChangedRevs{rev}
+		c.lastSeq = change.Seq
+		if attachmentCount == len(atts) {
+			break
+		}
 	}
 	c.pending--
-	var rev string
-	if err := c.rows.Scan(&change.ID, &change.Seq, &change.Deleted, &rev); err != nil {
-		return err
+
+	if doc != nil {
+		toMerge := fullDoc{
+			ID:          change.ID,
+			Rev:         rev,
+			Deleted:     change.Deleted,
+			Doc:         []byte(*doc),
+			Attachments: atts,
+		}
+		change.Doc = toMerge.toRaw()
 	}
-	change.Changes = driver.ChangedRevs{rev}
-	c.lastSeq = change.Seq
 	return nil
 }
 
@@ -99,7 +141,7 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 		return nil, err
 	}
 	if sinceNow && feed == feedLongpoll {
-		return d.newLongpollChanges(ctx)
+		return d.newLongpollChanges(ctx, opts.includeDocs())
 	}
 
 	limit, err := opts.limit()
@@ -141,7 +183,8 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 					seq,
 					deleted,
 					rev,
-					rev_id
+					rev_id,
+					IIF($2, doc, NULL) AS doc
 				FROM {{ .Docs }}
 				WHERE ($1 IS NULL OR seq > $1)
 				ORDER BY seq
@@ -150,7 +193,14 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 				COUNT(*) AS id,
 				NULL AS seq,
 				NULL AS deleted,
-				COUNT(*) || '.' || COALESCE(MIN(seq),0) || '.' || COALESCE(MAX(seq),0) AS rev
+				COUNT(*) || '.' || COALESCE(MIN(seq),0) || '.' || COALESCE(MAX(seq),0) AS rev,
+				NULL AS doc,
+				NULL AS attachment_count,
+				NULL AS filename,
+				NULL AS content_type,
+				NULL AS length,
+				NULL AS digest,
+				NULL AS rev_pos
 			FROM results
 
 			UNION ALL
@@ -159,21 +209,37 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 				id,
 				seq,
 				deleted,
-				rev
+				rev,
+				doc,
+				attachment_count,
+				filename,
+				content_type,
+				length,
+				digest,
+				rev_pos
 			FROM (
 				SELECT
-					id,
-					seq,
-					deleted,
-					rev || '-' || rev_id AS rev
+					results.id,
+					results.seq,
+					results.deleted,
+					results.rev || '-' || results.rev_id AS rev,
+					results.doc,
+					SUM(CASE WHEN bridge.pk IS NOT NULL THEN 1 ELSE 0 END) OVER (PARTITION BY results.id, results.rev, results.rev_id) AS attachment_count,
+					att.filename,
+					att.content_type,
+					att.length,
+					att.digest,
+					att.rev_pos
 				FROM results
+				LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON bridge.id = results.id AND bridge.rev = results.rev AND bridge.rev_id = results.rev_id
+				LEFT JOIN {{ .Attachments }} AS att ON att.pk = bridge.pk
 				ORDER BY seq %s
 			)
 		`), opts.direction())
 	if limit != nil {
 		query += " LIMIT " + strconv.FormatUint(*limit+1, 10)
 	}
-	rows, err = d.db.QueryContext(ctx, query, since) //nolint:rowserrcheck // Err checked in Next
+	rows, err = d.db.QueryContext(ctx, query, since, opts.includeDocs()) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +253,12 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 	}
 	var discard *string
 	var summary string
-	if err := rows.Scan(&totalRows, &discard, &discard, &summary); err != nil {
+	if err := rows.Scan(
+		&totalRows,
+		&discard, &discard,
+		&summary,
+		&discard, &discard, &discard, &discard, &discard, &discard, &discard,
+	); err != nil {
 		return nil, err
 	}
 
@@ -206,12 +277,13 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 }
 
 type longpollChanges struct {
-	stmt    *sql.Stmt
-	since   uint64
-	lastSeq string
-	ctx     context.Context
-	cancel  context.CancelFunc
-	changes <-chan longpollChange
+	stmt        *sql.Stmt
+	since       uint64
+	lastSeq     string
+	ctx         context.Context
+	cancel      context.CancelFunc
+	changes     <-chan longpollChange
+	includeDocs bool
 }
 
 type longpollChange struct {
@@ -221,7 +293,7 @@ type longpollChange struct {
 
 var _ driver.Changes = (*longpollChanges)(nil)
 
-func (d *db) newLongpollChanges(ctx context.Context) (*longpollChanges, error) {
+func (d *db) newLongpollChanges(ctx context.Context, includeDocs bool) (*longpollChanges, error) {
 	since, err := d.lastSeq(ctx)
 	if err != nil {
 		return nil, err
@@ -229,14 +301,31 @@ func (d *db) newLongpollChanges(ctx context.Context) (*longpollChanges, error) {
 
 	stmt, err := d.db.PrepareContext(ctx, d.query(`
 		SELECT
-			id,
-			seq,
-			deleted,
-			rev || '-' || rev_id AS rev
-		FROM {{ .Docs }}
-		WHERE seq > $1
-		ORDER BY seq
-		LIMIT 1
+			doc.id,
+			doc.seq,
+			doc.deleted,
+			doc.rev || '-' || doc.rev_id AS rev,
+			doc.doc,
+			att.filename,
+			att.content_type,
+			att.length,
+			att.digest,
+			att.rev_pos
+		FROM (
+			SELECT
+				id,
+				seq,
+				deleted,
+				rev,
+				rev_id,
+				IIF($2, doc, NULL) AS doc
+			FROM {{ .Docs }}
+			WHERE seq > $1
+			ORDER BY seq
+			LIMIT 1
+		) AS doc
+		LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON bridge.id = doc.id AND bridge.rev = doc.rev AND bridge.rev_id = doc.rev_id
+		LEFT JOIN {{ .Attachments }} AS att ON att.pk = bridge.pk
 	`))
 	if err != nil {
 		return nil, err
@@ -245,11 +334,12 @@ func (d *db) newLongpollChanges(ctx context.Context) (*longpollChanges, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	changes := make(chan longpollChange)
 	c := &longpollChanges{
-		stmt:    stmt,
-		since:   since,
-		ctx:     ctx,
-		cancel:  cancel,
-		changes: changes,
+		stmt:        stmt,
+		since:       since,
+		ctx:         ctx,
+		cancel:      cancel,
+		changes:     changes,
+		includeDocs: includeDocs,
 	}
 
 	go c.watch(changes)
@@ -267,22 +357,68 @@ func (c *longpollChanges) watch(changes chan<- longpollChange) {
 	bo.MaxInterval = 3 * time.Minute
 	bo.MaxElapsedTime = 0
 
-	var change driver.Change
-	var rev string
 	err := backoff.Retry(func() error {
-		err := c.stmt.QueryRowContext(c.ctx, c.since).Scan(&change.ID, &change.Seq, &change.Deleted, &rev)
-		switch {
-		case errors.Is(err, sql.ErrNoRows):
-			return err
-		case err != nil:
+		rows, err := c.stmt.QueryContext(c.ctx, c.since, c.includeDocs)
+		if err != nil {
 			return backoff.Permanent(err)
-		default:
-			change.Changes = driver.ChangedRevs{rev}
-			c.lastSeq = change.Seq
-
-			changes <- longpollChange{change: &change}
-			return nil
 		}
+		defer rows.Close()
+
+		var (
+			change      driver.Change
+			rev         string
+			doc         *string
+			atts        map[string]attachment
+			filename    *string
+			contentType *string
+			length      *int64
+			digest      *md5sum
+			revPos      *int
+		)
+		for rows.Next() {
+			if err := rows.Scan(
+				&change.ID, &change.Seq, &change.Deleted, &rev, &doc,
+				&filename, &contentType, &length, &digest, &revPos,
+			); err != nil {
+				return backoff.Permanent(err)
+			}
+
+			if filename != nil {
+				if atts == nil {
+					atts = map[string]attachment{}
+				}
+				atts[*filename] = attachment{
+					ContentType: *contentType,
+					Digest:      *digest,
+					Length:      *length,
+					RevPos:      *revPos,
+				}
+			}
+		}
+		if err := rows.Err(); err != nil {
+			return backoff.Permanent(err)
+		}
+
+		if change.ID == "" {
+			return errors.New("retry")
+		}
+
+		change.Changes = driver.ChangedRevs{rev}
+		c.lastSeq = change.Seq
+
+		if doc != nil {
+			toMerge := fullDoc{
+				ID:          change.ID,
+				Rev:         rev,
+				Deleted:     change.Deleted,
+				Doc:         []byte(*doc),
+				Attachments: atts,
+			}
+			change.Doc = toMerge.toRaw()
+		}
+
+		changes <- longpollChange{change: &change}
+		return nil
 	}, bo)
 	if err != nil {
 		changes <- longpollChange{err: err}

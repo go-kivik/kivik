@@ -361,10 +361,62 @@ func TestDBChanges(t *testing.T) {
 			wantETag:    &[]string{"9562870d7e8245d03c2ac6055dff735f"}[0],
 		}
 	})
+	tests.Add("include docs, normal feed", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
+		rev2 := d.tDelete("doc1", kivik.Rev(rev))
+
+		return test{
+			db:      d,
+			options: kivik.Param("include_docs", true),
+			wantChanges: []driver.Change{
+				{
+					ID:      "doc1",
+					Seq:     "1",
+					Changes: driver.ChangedRevs{rev},
+					Doc:     []byte(`{"_id":"doc1","_rev":"` + rev + `","foo":"bar"}`),
+				},
+				{
+					ID:      "doc1",
+					Seq:     "2",
+					Deleted: true,
+					Changes: driver.ChangedRevs{rev2},
+					Doc:     []byte(`{"_id":"doc1","_rev":"` + rev2 + `","_deleted":true}`),
+				},
+			},
+			wantLastSeq: &[]string{"2"}[0],
+			wantETag:    &[]string{"9562870d7e8245d03c2ac6055dff735f"}[0],
+		}
+	})
+	tests.Add("include docs, attachment stubs, normal feed", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("doc1", map[string]interface{}{
+			"foo": "bar",
+			"_attachments": newAttachments().
+				add("text.txt", "boring text").
+				add("text2.txt", "more boring text"),
+		})
+
+		return test{
+			db:      d,
+			options: kivik.Param("include_docs", true),
+			wantChanges: []driver.Change{
+				{
+					ID:      "doc1",
+					Seq:     "1",
+					Changes: driver.ChangedRevs{rev},
+					Doc:     []byte(`{"_id":"doc1","_rev":"` + rev + `","foo":"bar","_attachments":{"text.txt":{"content_type":"text/plain","digest":"md5-OIJSy6hr5f32Yfxm8ex95w==","length":11,"revpos":1},"text2.txt":{"content_type":"text/plain","digest":"md5-JlqzqsA7DA4Lw2arCp9iXQ==","length":16,"revpos":1}}}`),
+				},
+			},
+			wantLastSeq: &[]string{"1"}[0],
+			wantETag:    &[]string{"872ccd9c6dce18ce6ea4d5106540f089"}[0],
+		}
+	})
 
 	/*
 		TODO:
 		- ETag should be based only on last sequence, I think
+		- include_docs + attachment stubs
 		- Options
 			- doc_ids
 			- conflicts
@@ -373,7 +425,6 @@ func TestDBChanges(t *testing.T) {
 				- longpoll
 				- continuous
 			- filter
-			- include_docs
 			- attachments
 			- att_encoding_info
 			- style
@@ -564,6 +615,153 @@ loop:
 			ID:      "doc2",
 			Seq:     "2",
 			Changes: driver.ChangedRevs{rev2},
+		},
+	}
+	mu.Unlock()
+
+	if d := cmp.Diff(wantChanges, got); d != "" {
+		t.Errorf("Unexpected changes:\n%s", d)
+	}
+}
+
+func TestDBChanges_longpoll_include_docs(t *testing.T) {
+	t.Parallel()
+	db := newDB(t)
+
+	// First create a single document to seed the changes feed
+	rev := db.tPut("doc1", map[string]string{"foo": "bar"})
+
+	// Start the changes feed, with feed=longpoll&since=now to block until
+	// another change is made.
+	feed, err := db.Changes(context.Background(), kivik.Params(map[string]interface{}{
+		"feed":         "longpoll",
+		"since":        "now",
+		"include_docs": true,
+	}))
+	if err != nil {
+		t.Fatalf("Failed to start changes feed: %s", err)
+	}
+	t.Cleanup(func() {
+		_ = feed.Close()
+	})
+
+	var mu sync.Mutex
+	var rev2 string
+	// Make a change to the database after a short delay
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		mu.Lock()
+		rev2 = db.tDelete("doc1", kivik.Rev(rev))
+		mu.Unlock()
+	}()
+
+	start := time.Now()
+	// Meanwhile, the changes feed should block until the change is made
+	// iterate over feed
+	var got []driver.Change
+
+loop:
+	for {
+		change := driver.Change{}
+		err := feed.Next(&change)
+		switch err {
+		case io.EOF:
+			break loop
+		case nil:
+			// continue
+		default:
+			t.Fatalf("iteration failed: %s", err)
+		}
+		got = append(got, change)
+	}
+
+	if time.Since(start) < 100*time.Millisecond {
+		t.Errorf("Changes feed returned too quickly")
+	}
+
+	mu.Lock()
+	wantChanges := []driver.Change{
+		{
+			ID:      "doc1",
+			Seq:     "2",
+			Deleted: true,
+			Changes: driver.ChangedRevs{rev2},
+			Doc:     []byte(`{"_id":"doc1","_rev":"` + rev2 + `","_deleted":true}`),
+		},
+	}
+	mu.Unlock()
+
+	if d := cmp.Diff(wantChanges, got); d != "" {
+		t.Errorf("Unexpected changes:\n%s", d)
+	}
+}
+
+func TestDBChanges_longpoll_include_docs_with_attachment_stubs(t *testing.T) {
+	t.Parallel()
+	db := newDB(t)
+
+	// First create a single document to seed the changes feed
+	rev := db.tPut("doc1", map[string]string{"foo": "bar"})
+
+	// Start the changes feed, with feed=longpoll&since=now to block until
+	// another change is made.
+	feed, err := db.Changes(context.Background(), kivik.Params(map[string]interface{}{
+		"feed":         "longpoll",
+		"since":        "now",
+		"include_docs": true,
+	}))
+	if err != nil {
+		t.Fatalf("Failed to start changes feed: %s", err)
+	}
+	t.Cleanup(func() {
+		_ = feed.Close()
+	})
+
+	var mu sync.Mutex
+	var rev2 string
+	// Make a change to the database after a short delay
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		mu.Lock()
+		rev2 = db.tPut("doc1", map[string]interface{}{
+			"_attachments": newAttachments().
+				add("text.txt", "boring text").
+				add("text2.txt", "more boring text"),
+		}, kivik.Rev(rev))
+		mu.Unlock()
+	}()
+
+	start := time.Now()
+	// Meanwhile, the changes feed should block until the change is made
+	// iterate over feed
+	var got []driver.Change
+
+loop:
+	for {
+		change := driver.Change{}
+		err := feed.Next(&change)
+		switch err {
+		case io.EOF:
+			break loop
+		case nil:
+			// continue
+		default:
+			t.Fatalf("iteration failed: %s", err)
+		}
+		got = append(got, change)
+	}
+
+	if time.Since(start) < 100*time.Millisecond {
+		t.Errorf("Changes feed returned too quickly")
+	}
+
+	mu.Lock()
+	wantChanges := []driver.Change{
+		{
+			ID:      "doc1",
+			Seq:     "2",
+			Changes: driver.ChangedRevs{rev2},
+			Doc:     []byte(`{"_id":"doc1","_rev":"` + rev2 + `","_attachments":{"text.txt":{"content_type":"text/plain","digest":"md5-OIJSy6hr5f32Yfxm8ex95w==","length":11,"revpos":2},"text2.txt":{"content_type":"text/plain","digest":"md5-JlqzqsA7DA4Lw2arCp9iXQ==","length":16,"revpos":2}}}`),
 		},
 	}
 	mu.Unlock()

@@ -131,7 +131,7 @@ func TestDBDelete(t *testing.T) {
 		id:         "foo",
 		options:    kivik.Rev("not a rev"),
 		wantStatus: http.StatusBadRequest,
-		wantErr:    `strconv.ParseInt: parsing "not a rev": invalid syntax`,
+		wantErr:    `invalid rev format`,
 	})
 
 	/*

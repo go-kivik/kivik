@@ -26,6 +26,16 @@ type db struct {
 
 var _ driver.DB = (*db)(nil)
 
+func (d *db) Close() error {
+	return d.db.Close()
+}
+
+func (d *db) Ping(ctx context.Context) error {
+	return d.db.PingContext(ctx)
+}
+
+/* -- stub methods -- */
+
 func (db) Stats(context.Context) (*driver.DBStats, error) {
 	return nil, nil
 }
@@ -46,6 +56,34 @@ func (db) Query(context.Context, string, string, driver.Options) (driver.Rows, e
 	return nil, nil
 }
 
-func (d *db) Close() error {
-	return d.db.Close()
+func (db) OpenRevs(context.Context, string, []string, driver.Options) (driver.Rows, error) {
+	return nil, nil
+}
+
+func (db) BulkDocs(context.Context, []interface{}, driver.Options) ([]driver.BulkResult, error) {
+	return nil, nil
+}
+
+func (db) GetAttachmentMeta(context.Context, string, string, driver.Options) (*driver.Attachment, error) {
+	return nil, nil
+}
+
+func (db) GetRev(context.Context, string, driver.Options) (string, error) {
+	return "", nil
+}
+
+func (db) Copy(context.Context, string, string, driver.Options) (string, error) {
+	return "", nil
+}
+
+func (db) DesignDocs(context.Context, driver.Options) (driver.Rows, error) {
+	return nil, nil
+}
+
+func (db) LocalDocs(context.Context, driver.Options) (driver.Rows, error) {
+	return nil, nil
+}
+
+func (db) RevsDiff(context.Context, interface{}) (driver.Rows, error) {
+	return nil, nil
 }

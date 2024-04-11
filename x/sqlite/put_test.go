@@ -1134,7 +1134,7 @@ func TestDBPut(t *testing.T) {
 		if len(tt.wantRevs) == 0 {
 			t.Errorf("No leaves to check")
 		}
-		leaves := readRevisions(t, dbc.underlying(), tt.docID)
+		leaves := readRevisions(t, dbc.underlying())
 		for i, r := range tt.wantRevs {
 			// allow tests to omit RevID
 			if r.RevID == "" {

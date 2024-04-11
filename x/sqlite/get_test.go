@@ -849,7 +849,7 @@ func TestDBGet(t *testing.T) {
 			id:         "foo",
 			options:    kivik.Param("atts_since", []string{"this is an invalid rev"}),
 			wantStatus: http.StatusBadRequest,
-			wantErr:    `strconv.ParseInt: parsing "this is an invalid rev": invalid syntax`,
+			wantErr:    `invalid rev format`,
 		}
 	})
 	tests.Add("atts_since with non-existent rev", func(t *testing.T) interface{} {

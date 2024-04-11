@@ -49,7 +49,7 @@ func parseRev(s string) (revision, error) {
 	parts := strings.SplitN(s, "-", revElements)
 	id, err := strconv.ParseInt(parts[0], 10, 64)
 	if err != nil {
-		return revision{}, &internal.Error{Status: http.StatusBadRequest, Err: err}
+		return revision{}, &internal.Error{Status: http.StatusBadRequest, Message: "invalid rev format"}
 	}
 	if len(parts) == 1 {
 		// A rev that contains only a number is technically valid.

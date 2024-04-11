@@ -85,10 +85,46 @@ func TestDBPurge(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("deleting conflict leaves non-conflicting leaf", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("foo", map[string]interface{}{
+			"version": "one",
+			"_revisions": map[string]interface{}{
+				"start": 3,
+				"ids":   []string{"ccc", "bbb", "aaa"},
+			},
+		}, kivik.Param("new_edits", false))
+		_ = d.tPut("foo", map[string]interface{}{
+			"version": "two",
+			"_revisions": map[string]interface{}{
+				"start": 3,
+				"ids":   []string{"rrr", "qqq", "aaa"},
+			},
+		}, kivik.Param("new_edits", false))
+
+		return test{
+			db: d,
+			arg: map[string][]string{
+				"foo": {"3-ccc"},
+			},
+			want: &driver.PurgeResult{
+				Purged: map[string][]string{
+					"foo": {"3-ccc"},
+				},
+			},
+			wantRevs: []leaf{
+				{ID: "foo", Rev: 1, RevID: "aaa"},
+				{ID: "foo", Rev: 2, RevID: "bbb", ParentRev: &[]int{1}[0], ParentRevID: &[]string{"aaa"}[0]},
+				{ID: "foo", Rev: 2, RevID: "qqq", ParentRev: &[]int{1}[0], ParentRevID: &[]string{"aaa"}[0]},
+				{ID: "foo", Rev: 3, RevID: "rrr", ParentRev: &[]int{2}[0], ParentRevID: &[]string{"qqq"}[0]},
+			},
+		}
+	})
 
 	/*
 		TODO:
-		- deleting one leaf leaves other leaves
+		- What happens when purging a leaf, and its parent at the same time?
+		- what is purge seq?
 		- refactor: bulk delete, bulk lookup
 	*/
 

@@ -17,6 +17,7 @@ package sqlite
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -60,10 +61,16 @@ func TestDBPurge(t *testing.T) {
 			wantRevs: nil,
 		}
 	})
+	tests.Add("malformed rev", test{
+		arg: map[string][]string{
+			"foo": {"abc"},
+		},
+		wantErr:    "invalid rev format",
+		wantStatus: http.StatusBadRequest,
+	})
 
 	/*
 		TODO:
-		- malformed rev
 		- deleting non-leaf rev does nothing
 		- deleting one leaf leaves other leaves
 		- refactor: bulk delete, bulk lookup

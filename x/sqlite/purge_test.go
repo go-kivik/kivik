@@ -68,10 +68,26 @@ func TestDBPurge(t *testing.T) {
 		wantErr:    "invalid rev format",
 		wantStatus: http.StatusBadRequest,
 	})
+	tests.Add("attempt to purge non-leaf rev does nothing", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("foo", map[string]string{"foo": "bar"})
+		_ = d.tPut("foo", map[string]string{"foo": "baz"}, kivik.Rev(rev))
+
+		return test{
+			db: d,
+			arg: map[string][]string{
+				"foo": {rev},
+			},
+			want: &driver.PurgeResult{},
+			wantRevs: []leaf{
+				{ID: "foo", Rev: 1},
+				{ID: "foo", Rev: 2, ParentRev: &[]int{1}[0]},
+			},
+		}
+	})
 
 	/*
 		TODO:
-		- deleting non-leaf rev does nothing
 		- deleting one leaf leaves other leaves
 		- refactor: bulk delete, bulk lookup
 	*/

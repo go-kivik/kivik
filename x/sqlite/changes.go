@@ -75,7 +75,17 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 		c.lastSeq = strconv.FormatUint(*lastSeq, 10)
 	}
 
-	if err := c.performChangesQuery(ctx, d, opts, limit, since); err != nil {
+	var query string
+	if opts.includeDocs() {
+		query = d.normalChangesQueryWithDocs(opts.direction())
+	} else {
+		query = d.normalChangesQueryWithoutDocs(opts.direction())
+	}
+	if limit > 0 {
+		query += " LIMIT " + strconv.FormatUint(limit+1, 10)
+	}
+	c.rows, err = d.db.QueryContext(ctx, query, since) //nolint:rowserrcheck,sqlclosecheck // Err checked in Next
+	if err != nil {
 		return nil, err
 	}
 
@@ -103,23 +113,6 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 	}
 
 	return c, nil
-}
-
-func (c *normalChanges) performChangesQuery(ctx context.Context, d *db, opts optsMap, limit uint64, since *uint64) error {
-	var query string
-	if opts.includeDocs() {
-		query = d.normalChangesQueryWithDocs(opts.direction())
-	} else {
-		query = d.normalChangesQueryWithoutDocs(opts.direction())
-	}
-
-	if limit > 0 {
-		query += " LIMIT " + strconv.FormatUint(limit+1, 10)
-	}
-
-	var err error
-	c.rows, err = d.db.QueryContext(ctx, query, since) //nolint:rowserrcheck,sqlclosecheck // Err checked in Next
-	return err
 }
 
 func (d *db) normalChangesQueryWithDocs(direction string) string {

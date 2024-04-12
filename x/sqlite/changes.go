@@ -42,106 +42,7 @@ type normalChanges struct {
 
 var _ driver.Changes = &normalChanges{}
 
-func (c *normalChanges) Next(change *driver.Change) error {
-	var (
-		rev             string
-		doc             *string
-		atts            map[string]*attachment
-		attachmentCount = 1
-	)
-
-	for {
-		if !c.rows.Next() {
-			if err := c.rows.Err(); err != nil {
-				return err
-			}
-			return io.EOF
-		}
-		var (
-			filename, contentType *string
-			length                *int64
-			revPos                *int
-			digest                *md5sum
-		)
-		if err := c.rows.Scan(
-			&change.ID, &change.Seq, &change.Deleted, &rev, &doc,
-			&attachmentCount, &filename, &contentType, &length, &digest, &revPos,
-		); err != nil {
-			return err
-		}
-		if filename != nil {
-			if atts == nil {
-				atts = map[string]*attachment{}
-			}
-			atts[*filename] = &attachment{
-				ContentType: *contentType,
-				Digest:      *digest,
-				Length:      *length,
-				RevPos:      *revPos,
-			}
-		}
-		change.Changes = driver.ChangedRevs{rev}
-		c.lastSeq = change.Seq
-		if attachmentCount == len(atts) {
-			break
-		}
-	}
-	c.pending--
-
-	if doc != nil {
-		toMerge := fullDoc{
-			ID:          change.ID,
-			Rev:         rev,
-			Deleted:     change.Deleted,
-			Doc:         []byte(*doc),
-			Attachments: atts,
-		}
-		change.Doc = toMerge.toRaw()
-	}
-	return nil
-}
-
-func (c *normalChanges) Close() error {
-	return c.rows.Close()
-}
-
-func (c *normalChanges) LastSeq() string {
-	// Columns returns an error if the rows are closed, so we can use that to
-	// determine if we've actually read the last sequence id.
-	if _, err := c.rows.Columns(); err == nil {
-		return ""
-	}
-	return c.lastSeq
-}
-
-func (c *normalChanges) Pending() int64 {
-	return c.pending
-}
-
-func (c *normalChanges) ETag() string {
-	return c.etag
-}
-
-func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Changes, error) {
-	opts := newOpts(options)
-
-	var lastSeq *uint64
-	sinceNow, since, err := opts.since()
-	if err != nil {
-		return nil, err
-	}
-	feed, err := opts.feed()
-	if err != nil {
-		return nil, err
-	}
-	if sinceNow && feed == feedLongpoll {
-		return d.newLongpollChanges(ctx, opts.includeDocs())
-	}
-
-	return d.newNormalChanges(ctx, opts, since, lastSeq, sinceNow, feed)
-}
-
-func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since *uint64, lastSeq *uint64, sinceNow bool, feed string) (driver.Changes, error) {
+func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq *uint64, sinceNow bool, feed string) (driver.Changes, error) {
 	limit, err := opts.limit()
 	if err != nil {
 		return nil, err
@@ -275,6 +176,105 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since *uint64, 
 	}
 
 	return c, nil
+}
+
+func (c *normalChanges) Next(change *driver.Change) error {
+	var (
+		rev             string
+		doc             *string
+		atts            map[string]*attachment
+		attachmentCount = 1
+	)
+
+	for {
+		if !c.rows.Next() {
+			if err := c.rows.Err(); err != nil {
+				return err
+			}
+			return io.EOF
+		}
+		var (
+			filename, contentType *string
+			length                *int64
+			revPos                *int
+			digest                *md5sum
+		)
+		if err := c.rows.Scan(
+			&change.ID, &change.Seq, &change.Deleted, &rev, &doc,
+			&attachmentCount, &filename, &contentType, &length, &digest, &revPos,
+		); err != nil {
+			return err
+		}
+		if filename != nil {
+			if atts == nil {
+				atts = map[string]*attachment{}
+			}
+			atts[*filename] = &attachment{
+				ContentType: *contentType,
+				Digest:      *digest,
+				Length:      *length,
+				RevPos:      *revPos,
+			}
+		}
+		change.Changes = driver.ChangedRevs{rev}
+		c.lastSeq = change.Seq
+		if attachmentCount == len(atts) {
+			break
+		}
+	}
+	c.pending--
+
+	if doc != nil {
+		toMerge := fullDoc{
+			ID:          change.ID,
+			Rev:         rev,
+			Deleted:     change.Deleted,
+			Doc:         []byte(*doc),
+			Attachments: atts,
+		}
+		change.Doc = toMerge.toRaw()
+	}
+	return nil
+}
+
+func (c *normalChanges) Close() error {
+	return c.rows.Close()
+}
+
+func (c *normalChanges) LastSeq() string {
+	// Columns returns an error if the rows are closed, so we can use that to
+	// determine if we've actually read the last sequence id.
+	if _, err := c.rows.Columns(); err == nil {
+		return ""
+	}
+	return c.lastSeq
+}
+
+func (c *normalChanges) Pending() int64 {
+	return c.pending
+}
+
+func (c *normalChanges) ETag() string {
+	return c.etag
+}
+
+func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Changes, error) {
+	opts := newOpts(options)
+
+	var lastSeq *uint64
+	sinceNow, since, err := opts.since()
+	if err != nil {
+		return nil, err
+	}
+	feed, err := opts.feed()
+	if err != nil {
+		return nil, err
+	}
+	if sinceNow && feed == feedLongpoll {
+		return d.newLongpollChanges(ctx, opts.includeDocs())
+	}
+
+	return d.newNormalChanges(ctx, opts, since, lastSeq, sinceNow, feed)
 }
 
 type longpollChanges struct {

@@ -777,3 +777,59 @@ loop:
 		t.Errorf("Unexpected changes:\n%s", d)
 	}
 }
+
+// This test validates that the query for the normal changes feed does not
+// duplicate unnecessary fields when returning multiple attachments.
+func Test_normal_changes_query(t *testing.T) {
+	t.Parallel()
+
+	filename1, filename2 := "text.txt", "text2.txt"
+
+	d := newDB(t)
+	rev := d.tPut("doc1", map[string]interface{}{
+		"_attachments": newAttachments().
+			add(filename1, "boring text").
+			add(filename2, "more boring text"),
+	})
+
+	changes, err := d.DB.(*db).newNormalChanges(context.Background(), nil, nil, nil, false, "normal")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rows := changes.(*normalChanges).rows
+	defer rows.Close()
+
+	type row struct {
+		ID              string
+		Seq             string
+		Deleted         bool
+		Rev             string
+		Doc             *string
+		AttachmentCount int
+		Filename        *string
+	}
+	var got []row
+	for rows.Next() {
+		var result row
+		if err := rows.Scan(
+			&result.ID, &result.Seq, &result.Deleted, &result.Rev, &result.Doc,
+			&result.AttachmentCount, &result.Filename, discard{}, discard{}, discard{}, discard{},
+		); err != nil {
+			t.Fatal(err)
+		}
+		got = append(got, result)
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+
+	want := []row{
+		{ID: "doc1", Seq: "1", Rev: rev, Doc: nil, AttachmentCount: 2, Filename: &filename1},
+		{ID: "", Seq: "", Rev: "", Doc: nil, AttachmentCount: 2, Filename: &filename2},
+	}
+
+	if d := cmp.Diff(got, want); d != "" {
+		t.Errorf("Unexpected rows:\n%s", d)
+	}
+}

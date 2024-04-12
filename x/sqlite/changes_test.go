@@ -416,7 +416,6 @@ func TestDBChanges(t *testing.T) {
 
 	/*
 		TODO:
-		- don't query attachments for include_docs=false
 		- ETag should be based only on last sequence, I think
 		- Options
 			- doc_ids

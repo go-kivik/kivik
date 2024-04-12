@@ -109,7 +109,7 @@ func (c *normalChanges) performChangesQuery(ctx context.Context, d *db, opts opt
 	if opts.includeDocs() {
 		return c.performChangesQueryWithDocs(ctx, d, opts.direction(), limit, since)
 	}
-	return c.performChangesQueryWithoutDocs(ctx, d, opts, limit, since)
+	return c.performChangesQueryWithoutDocs(ctx, d, opts.direction(), limit, since)
 }
 
 func (c *normalChanges) performChangesQueryWithDocs(ctx context.Context, d *db, direction string, limit uint64, since *uint64) error {
@@ -182,7 +182,7 @@ func (c *normalChanges) performChangesQueryWithDocs(ctx context.Context, d *db, 
 	return err
 }
 
-func (c *normalChanges) performChangesQueryWithoutDocs(ctx context.Context, d *db, opts optsMap, limit uint64, since *uint64) error {
+func (c *normalChanges) performChangesQueryWithoutDocs(ctx context.Context, d *db, direction string, limit uint64, since *uint64) error {
 	query := fmt.Sprintf(d.query(`
 		WITH results AS (
 			SELECT
@@ -190,8 +190,7 @@ func (c *normalChanges) performChangesQueryWithoutDocs(ctx context.Context, d *d
 				seq,
 				deleted,
 				rev,
-				rev_id,
-				IIF($2, doc, NULL) AS doc
+				rev_id
 			FROM {{ .Docs }}
 			WHERE ($1 IS NULL OR seq > $1)
 			ORDER BY seq
@@ -213,42 +212,32 @@ func (c *normalChanges) performChangesQueryWithoutDocs(ctx context.Context, d *d
 		UNION ALL
 
 		SELECT
-			CASE WHEN row_number = 1 THEN id END AS id,
-			CASE WHEN row_number = 1 THEN seq END AS seq,
-			CASE WHEN row_number = 1 THEN deleted END AS deleted,
-			CASE WHEN row_number = 1 THEN rev END AS rev,
-			CASE WHEN row_number = 1 THEN doc END AS doc,
-			attachment_count,
-			filename,
-			content_type,
-			length,
-			digest,
-			rev_pos
+			id,
+			seq,
+			deleted,
+			rev,
+			NULL AS doc,
+			0 AS attachment_count,
+			NULL AS filename,
+			NULL AS content_type,
+			NULL AS length,
+			NULL AS digest,
+			NULL AS rev_pos
 		FROM (
 			SELECT
 				results.id,
 				results.seq,
 				results.deleted,
-				results.rev || '-' || results.rev_id AS rev,
-				results.doc,
-				SUM(CASE WHEN bridge.pk IS NOT NULL THEN 1 ELSE 0 END) OVER (PARTITION BY results.id, results.rev, results.rev_id) AS attachment_count,
-				ROW_NUMBER() OVER (PARTITION BY results.id, results.rev, results.rev_id) AS row_number,
-				att.filename,
-				att.content_type,
-				att.length,
-				att.digest,
-				att.rev_pos
+				results.rev || '-' || results.rev_id AS rev
 			FROM results
-			LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON bridge.id = results.id AND bridge.rev = results.rev AND bridge.rev_id = results.rev_id
-			LEFT JOIN {{ .Attachments }} AS att ON att.pk = bridge.pk
 			ORDER BY seq %s
 		)
-	`), opts.direction())
+	`), direction)
 	if limit > 0 {
 		query += " LIMIT " + strconv.FormatUint(limit+1, 10)
 	}
 	var err error
-	c.rows, err = d.db.QueryContext(ctx, query, since, opts.includeDocs()) //nolint:rowserrcheck,sqlclosecheck // Err checked in Next
+	c.rows, err = d.db.QueryContext(ctx, query, since) //nolint:rowserrcheck,sqlclosecheck // Err checked in Next
 	return err
 }
 

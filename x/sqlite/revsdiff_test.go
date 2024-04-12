@@ -44,6 +44,21 @@ func TestDBRevsDiff(t *testing.T) {
 		revMap: map[string][]string{},
 		want:   nil,
 	})
+	tests.Add("all missing", test{
+		revMap: map[string][]string{
+			"foo": {"1-abc", "2-def"},
+			"bar": {"3-ghi"},
+		},
+		want: []rowResult{
+			{ID: "bar", Value: `{"missing":["3-ghi"]}`},
+			{ID: "foo", Value: `{"missing":["1-abc","2-def"]}`},
+		},
+	})
+
+	/*
+		TODO:
+		- populate `possible_ancestors`
+	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()

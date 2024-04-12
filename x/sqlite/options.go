@@ -184,3 +184,7 @@ func (o optsMap) direction() string {
 func (o optsMap) includeDocs() bool {
 	return toBool(o["include_docs"])
 }
+
+func (o optsMap) attachments() bool {
+	return toBool(o["attachments"])
+}

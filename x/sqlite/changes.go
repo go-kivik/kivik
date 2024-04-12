@@ -17,6 +17,7 @@ import (
 	"crypto/md5"
 	"database/sql"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -84,7 +85,7 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 	if limit > 0 {
 		query += " LIMIT " + strconv.FormatUint(limit+1, 10)
 	}
-	c.rows, err = d.db.QueryContext(ctx, query, since) //nolint:rowserrcheck,sqlclosecheck // Err checked in Next
+	c.rows, err = d.db.QueryContext(ctx, query, since, opts.attachments()) //nolint:rowserrcheck,sqlclosecheck // Err checked in Next
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +102,7 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 		&c.pending,
 		discard{}, discard{},
 		&summary,
-		discard{}, discard{}, discard{}, discard{}, discard{}, discard{}, discard{},
+		discard{}, discard{}, discard{}, discard{}, discard{}, discard{}, discard{}, discard{},
 	); err != nil {
 		return nil, err
 	}
@@ -140,7 +141,8 @@ func (d *db) normalChangesQueryWithDocs(direction string) string {
 			NULL AS content_type,
 			NULL AS length,
 			NULL AS digest,
-			NULL AS rev_pos
+			NULL AS rev_pos,
+			NULL AS data
 		FROM results
 
 		UNION ALL
@@ -156,7 +158,8 @@ func (d *db) normalChangesQueryWithDocs(direction string) string {
 			content_type,
 			length,
 			digest,
-			rev_pos
+			rev_pos,
+			data
 		FROM (
 			SELECT
 				results.id,
@@ -170,7 +173,8 @@ func (d *db) normalChangesQueryWithDocs(direction string) string {
 				att.content_type,
 				att.length,
 				att.digest,
-				att.rev_pos
+				att.rev_pos,
+				IIF($2, data, NULL) AS data
 			FROM results
 			LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON bridge.id = results.id AND bridge.rev = results.rev AND bridge.rev_id = results.rev_id
 			LEFT JOIN {{ .Attachments }} AS att ON att.pk = bridge.pk
@@ -203,7 +207,8 @@ func (d *db) normalChangesQueryWithoutDocs(direction string) string {
 			NULL AS content_type,
 			NULL AS length,
 			NULL AS digest,
-			NULL AS rev_pos
+			NULL AS rev_pos,
+			NULL AS data
 		FROM results
 
 		UNION ALL
@@ -219,7 +224,8 @@ func (d *db) normalChangesQueryWithoutDocs(direction string) string {
 			NULL AS content_type,
 			NULL AS length,
 			NULL AS digest,
-			NULL AS rev_pos
+			NULL AS rev_pos,
+			NULL AS data
 		FROM (
 			SELECT
 				results.id,
@@ -254,10 +260,11 @@ func (c *normalChanges) Next(change *driver.Change) error {
 			length                        *int64
 			revPos                        *int
 			digest                        *md5sum
+			data                          *[]byte
 		)
 		if err := c.rows.Scan(
 			&rowID, &rowSeq, &rowDeleted, &rowRev, &rowDoc,
-			&attachmentCount, &filename, &contentType, &length, &digest, &revPos,
+			&attachmentCount, &filename, &contentType, &length, &digest, &revPos, &data,
 		); err != nil {
 			return err
 		}
@@ -274,12 +281,17 @@ func (c *normalChanges) Next(change *driver.Change) error {
 			if atts == nil {
 				atts = map[string]*attachment{}
 			}
-			atts[*filename] = &attachment{
+			att := &attachment{
 				ContentType: *contentType,
 				Digest:      *digest,
 				Length:      *length,
 				RevPos:      *revPos,
 			}
+			if data != nil {
+				att.Data, _ = json.Marshal(*data)
+			}
+
+			atts[*filename] = att
 		}
 		if attachmentCount == len(atts) {
 			break

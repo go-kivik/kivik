@@ -413,9 +413,37 @@ func TestDBChanges(t *testing.T) {
 			wantETag:    &[]string{"872ccd9c6dce18ce6ea4d5106540f089"}[0],
 		}
 	})
+	tests.Add("include docs and attachments, normal feed", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("doc1", map[string]interface{}{
+			"foo": "bar",
+			"_attachments": newAttachments().
+				add("text.txt", "boring text").
+				add("text2.txt", "more boring text"),
+		})
+
+		return test{
+			db: d,
+			options: kivik.Params(map[string]interface{}{
+				"include_docs": true,
+				"attachments":  true,
+			}),
+			wantChanges: []driver.Change{
+				{
+					ID:      "doc1",
+					Seq:     "1",
+					Changes: driver.ChangedRevs{rev},
+					Doc:     []byte(`{"_id":"doc1","_rev":"` + rev + `","foo":"bar","_attachments":{"text.txt":{"content_type":"text/plain","digest":"md5-OIJSy6hr5f32Yfxm8ex95w==","length":11,"revpos":1,"data":"Ym9yaW5nIHRleHQ="},"text2.txt":{"content_type":"text/plain","digest":"md5-JlqzqsA7DA4Lw2arCp9iXQ==","length":16,"revpos":1,"data":"bW9yZSBib3JpbmcgdGV4dA=="}}}`),
+				},
+			},
+			wantLastSeq: &[]string{"1"}[0],
+			wantETag:    &[]string{"872ccd9c6dce18ce6ea4d5106540f089"}[0],
+		}
+	})
 
 	/*
 		TODO:
+		- attachments for longpoll feed
 		- ETag should be based only on last sequence, I think
 		- Options
 			- doc_ids
@@ -425,7 +453,6 @@ func TestDBChanges(t *testing.T) {
 				- longpoll
 				- continuous
 			- filter
-			- attachments
 			- att_encoding_info
 			- style
 			- timeout
@@ -810,7 +837,7 @@ func Test_normal_changes_query(t *testing.T) {
 		var result row
 		if err := changes.rows.Scan(
 			&result.ID, &result.Seq, &result.Deleted, &result.Rev, &result.Doc,
-			&result.AttachmentCount, &result.Filename, discard{}, discard{}, discard{}, discard{},
+			&result.AttachmentCount, &result.Filename, discard{}, discard{}, discard{}, discard{}, discard{},
 		); err != nil {
 			t.Fatal(err)
 		}
@@ -865,7 +892,7 @@ func Test_normal_changes_query_without_docs(t *testing.T) {
 		var result row
 		if err := changes.rows.Scan(
 			&result.ID, &result.Seq, &result.Deleted, &result.Rev, &result.Doc,
-			&result.AttachmentCount, &result.Filename, discard{}, discard{}, discard{}, discard{},
+			&result.AttachmentCount, &result.Filename, discard{}, discard{}, discard{}, discard{}, discard{},
 		); err != nil {
 			t.Fatal(err)
 		}

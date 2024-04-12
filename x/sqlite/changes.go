@@ -46,7 +46,7 @@ func (c *changes) Next(change *driver.Change) error {
 	var (
 		rev             string
 		doc             *string
-		atts            map[string]attachment
+		atts            map[string]*attachment
 		attachmentCount = 1
 	)
 
@@ -71,9 +71,9 @@ func (c *changes) Next(change *driver.Change) error {
 		}
 		if filename != nil {
 			if atts == nil {
-				atts = map[string]attachment{}
+				atts = map[string]*attachment{}
 			}
-			atts[*filename] = attachment{
+			atts[*filename] = &attachment{
 				ContentType: *contentType,
 				Digest:      *digest,
 				Length:      *length,
@@ -368,7 +368,7 @@ func (c *longpollChanges) watch(changes chan<- longpollChange) {
 			change      driver.Change
 			rev         string
 			doc         *string
-			atts        map[string]attachment
+			atts        map[string]*attachment
 			filename    *string
 			contentType *string
 			length      *int64
@@ -385,9 +385,9 @@ func (c *longpollChanges) watch(changes chan<- longpollChange) {
 
 			if filename != nil {
 				if atts == nil {
-					atts = map[string]attachment{}
+					atts = map[string]*attachment{}
 				}
-				atts[*filename] = attachment{
+				atts[*filename] = &attachment{
 					ContentType: *contentType,
 					Digest:      *digest,
 					Length:      *length,

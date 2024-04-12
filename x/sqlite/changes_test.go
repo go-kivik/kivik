@@ -406,7 +406,7 @@ func TestDBChanges(t *testing.T) {
 					ID:      "doc1",
 					Seq:     "1",
 					Changes: driver.ChangedRevs{rev},
-					Doc:     []byte(`{"_id":"doc1","_rev":"` + rev + `","foo":"bar","_attachments":{"text.txt":{"content_type":"text/plain","digest":"md5-OIJSy6hr5f32Yfxm8ex95w==","length":11,"revpos":1},"text2.txt":{"content_type":"text/plain","digest":"md5-JlqzqsA7DA4Lw2arCp9iXQ==","length":16,"revpos":1}}}`),
+					Doc:     []byte(`{"_id":"doc1","_rev":"` + rev + `","foo":"bar","_attachments":{"text.txt":{"content_type":"text/plain","digest":"md5-OIJSy6hr5f32Yfxm8ex95w==","length":11,"revpos":1,"stub":true},"text2.txt":{"content_type":"text/plain","digest":"md5-JlqzqsA7DA4Lw2arCp9iXQ==","length":16,"revpos":1,"stub":true}}}`),
 				},
 			},
 			wantLastSeq: &[]string{"1"}[0],
@@ -768,7 +768,7 @@ loop:
 			ID:      "doc1",
 			Seq:     "2",
 			Changes: driver.ChangedRevs{rev2},
-			Doc:     []byte(`{"_id":"doc1","_rev":"` + rev2 + `","_attachments":{"text.txt":{"content_type":"text/plain","digest":"md5-OIJSy6hr5f32Yfxm8ex95w==","length":11,"revpos":2},"text2.txt":{"content_type":"text/plain","digest":"md5-JlqzqsA7DA4Lw2arCp9iXQ==","length":16,"revpos":2}}}`),
+			Doc:     []byte(`{"_id":"doc1","_rev":"` + rev2 + `","_attachments":{"text.txt":{"content_type":"text/plain","digest":"md5-OIJSy6hr5f32Yfxm8ex95w==","length":11,"revpos":2,"stub":true},"text2.txt":{"content_type":"text/plain","digest":"md5-JlqzqsA7DA4Lw2arCp9iXQ==","length":16,"revpos":2,"stub":true}}}`),
 		},
 	}
 	mu.Unlock()

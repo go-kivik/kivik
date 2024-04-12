@@ -200,6 +200,25 @@ type attachment struct {
 	Content []byte          `json:"-"`
 }
 
+func (a *attachment) MarshalJSON() ([]byte, error) {
+	alias := struct {
+		attachment
+		Stub        bool            `json:"stub,omitempty"`
+		Data        json.RawMessage `json:"data,omitempty"`
+		MarshalJSON struct{}        `json:"-"`
+	}{
+		attachment: *a,
+	}
+	if a.Stub || len(a.Data) == 0 {
+		alias.Data = nil
+		alias.Stub = true
+	} else {
+		alias.Data = a.Data
+		alias.Stub = false
+	}
+	return json.Marshal(alias)
+}
+
 // calculate calculates the length, digest, and content of the attachment.
 func (a *attachment) calculate(filename string) error {
 	if a.Data == nil && len(a.Content) == 0 {
@@ -300,16 +319,16 @@ func extractRev(doc interface{}) (string, error) {
 }
 
 type fullDoc struct {
-	ID               string                `json:"-"`
-	Rev              string                `json:"-"`
-	Doc              json.RawMessage       `json:"-"`
-	Conflicts        []string              `json:"_conflicts,omitempty"`
-	DeletedConflicts []string              `json:"_deleted_conflicts,omitempty"`
-	RevsInfo         []map[string]string   `json:"_revs_info,omitempty"`
-	Revisions        *revsInfo             `json:"_revisions,omitempty"`
-	LocalSeq         int                   `json:"_local_seq,omitempty"`
-	Attachments      map[string]attachment `json:"_attachments,omitempty"`
-	Deleted          bool                  `json:"_deleted,omitempty"`
+	ID               string                 `json:"-"`
+	Rev              string                 `json:"-"`
+	Doc              json.RawMessage        `json:"-"`
+	Conflicts        []string               `json:"_conflicts,omitempty"`
+	DeletedConflicts []string               `json:"_deleted_conflicts,omitempty"`
+	RevsInfo         []map[string]string    `json:"_revs_info,omitempty"`
+	Revisions        *revsInfo              `json:"_revisions,omitempty"`
+	LocalSeq         int                    `json:"_local_seq,omitempty"`
+	Attachments      map[string]*attachment `json:"_attachments,omitempty"`
+	Deleted          bool                   `json:"_deleted,omitempty"`
 }
 
 func (d *fullDoc) toRaw() json.RawMessage {

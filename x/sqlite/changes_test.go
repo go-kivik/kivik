@@ -792,7 +792,7 @@ func Test_normal_changes_query(t *testing.T) {
 			add(filename2, "more boring text"),
 	})
 
-	changes, err := d.DB.(*db).newNormalChanges(context.Background(), nil, nil, nil, false, "normal")
+	changes, err := d.DB.(*db).newNormalChanges(context.Background(), optsMap{"include_docs": true}, nil, nil, false, "normal")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -801,10 +801,10 @@ func Test_normal_changes_query(t *testing.T) {
 	defer rows.Close()
 
 	type row struct {
-		ID              string
-		Seq             string
-		Deleted         bool
-		Rev             string
+		ID              *string
+		Seq             *string
+		Deleted         *bool
+		Rev             *string
 		Doc             *string
 		AttachmentCount int
 		Filename        *string
@@ -825,8 +825,8 @@ func Test_normal_changes_query(t *testing.T) {
 	}
 
 	want := []row{
-		{ID: "doc1", Seq: "1", Rev: rev, Doc: nil, AttachmentCount: 2, Filename: &filename1},
-		{ID: "", Seq: "", Rev: "", Doc: nil, AttachmentCount: 2, Filename: &filename2},
+		{ID: &[]string{"doc1"}[0], Seq: &[]string{"1"}[0], Deleted: &[]bool{false}[0], Rev: &rev, Doc: &[]string{"{}"}[0], AttachmentCount: 2, Filename: &filename1},
+		{AttachmentCount: 2, Filename: &filename2},
 	}
 
 	if d := cmp.Diff(got, want); d != "" {

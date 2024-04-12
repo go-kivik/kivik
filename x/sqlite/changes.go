@@ -108,11 +108,11 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 			UNION ALL
 
 			SELECT
-				id,
-				seq,
-				deleted,
-				rev,
-				doc,
+				CASE WHEN row_number = 1 THEN id END AS id,
+				CASE WHEN row_number = 1 THEN seq END AS seq,
+				CASE WHEN row_number = 1 THEN deleted END AS deleted,
+				CASE WHEN row_number = 1 THEN rev END AS rev,
+				CASE WHEN row_number = 1 THEN doc END AS doc,
 				attachment_count,
 				filename,
 				content_type,
@@ -127,6 +127,7 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 					results.rev || '-' || results.rev_id AS rev,
 					results.doc,
 					SUM(CASE WHEN bridge.pk IS NOT NULL THEN 1 ELSE 0 END) OVER (PARTITION BY results.id, results.rev, results.rev_id) AS attachment_count,
+					ROW_NUMBER() OVER (PARTITION BY results.id, results.rev, results.rev_id) AS row_number,
 					att.filename,
 					att.content_type,
 					att.length,
@@ -194,16 +195,27 @@ func (c *normalChanges) Next(change *driver.Change) error {
 			return io.EOF
 		}
 		var (
-			filename, contentType *string
-			length                *int64
-			revPos                *int
-			digest                *md5sum
+			rowID, rowSeq, rowRev, rowDoc *string
+			rowDeleted                    *bool
+			filename, contentType         *string
+			length                        *int64
+			revPos                        *int
+			digest                        *md5sum
 		)
 		if err := c.rows.Scan(
-			&change.ID, &change.Seq, &change.Deleted, &rev, &doc,
+			&rowID, &rowSeq, &rowDeleted, &rowRev, &rowDoc,
 			&attachmentCount, &filename, &contentType, &length, &digest, &revPos,
 		); err != nil {
 			return err
+		}
+		if rowID != nil {
+			change.ID = *rowID
+			change.Seq = *rowSeq
+			change.Deleted = *rowDeleted
+			change.Changes = driver.ChangedRevs{*rowRev}
+			c.lastSeq = change.Seq
+			rev = *rowRev
+			doc = rowDoc
 		}
 		if filename != nil {
 			if atts == nil {
@@ -216,8 +228,6 @@ func (c *normalChanges) Next(change *driver.Change) error {
 				RevPos:      *revPos,
 			}
 		}
-		change.Changes = driver.ChangedRevs{rev}
-		c.lastSeq = change.Seq
 		if attachmentCount == len(atts) {
 			break
 		}

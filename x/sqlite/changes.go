@@ -252,13 +252,12 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since *uint64, 
 		// should never happen
 		return nil, errors.New("no rows returned")
 	}
-	var discard *string
 	var summary string
 	if err := rows.Scan(
 		&totalRows,
-		&discard, &discard,
+		discard{}, discard{},
 		&summary,
-		&discard, &discard, &discard, &discard, &discard, &discard, &discard,
+		discard{}, discard{}, discard{}, discard{}, discard{}, discard{}, discard{},
 	); err != nil {
 		return nil, err
 	}

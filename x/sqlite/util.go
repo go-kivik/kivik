@@ -245,3 +245,11 @@ func (d *db) lastSeq(ctx context.Context) (uint64, error) {
 		`)).Scan(&lastSeq)
 	return lastSeq, err
 }
+
+// discard implements the [database/sql.Scanner] interface, but discards the
+// value. Useful when your query returns rows you don't always need.
+type discard struct{}
+
+func (discard) Scan(interface{}) error {
+	return nil
+}

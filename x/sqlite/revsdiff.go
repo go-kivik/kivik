@@ -15,6 +15,7 @@ package sqlite
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
@@ -38,5 +39,21 @@ func (db) RevsDiff(_ context.Context, revMap interface{}) (driver.Rows, error) {
 	if err != nil {
 		return nil, err
 	}
-	return nil, nil
+	return &revsDiffResponse{}, nil
 }
+
+type revsDiffResponse struct{}
+
+var _ driver.Rows = (*revsDiffResponse)(nil)
+
+func (r *revsDiffResponse) Next(*driver.Row) error {
+	return io.EOF
+}
+
+func (r *revsDiffResponse) Close() error {
+	return nil
+}
+
+func (*revsDiffResponse) Offset() int64     { return 0 }
+func (*revsDiffResponse) TotalRows() int64  { return 0 }
+func (*revsDiffResponse) UpdateSeq() string { return "" }

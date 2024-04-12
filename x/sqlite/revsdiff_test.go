@@ -40,6 +40,10 @@ func TestDBRevsDiff(t *testing.T) {
 		wantErr:    "invalid body",
 		wantStatus: http.StatusBadRequest,
 	})
+	tests.Add("empty revMap", test{
+		revMap: map[string][]string{},
+		want:   nil,
+	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()

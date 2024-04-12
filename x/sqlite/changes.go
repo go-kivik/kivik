@@ -157,8 +157,7 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 		lastSeq = &last
 		if last <= *since {
 			*since = last - 1
-			l := uint64(1)
-			limit = &l
+			limit = uint64(1)
 		}
 	}
 
@@ -173,7 +172,7 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 			lastSeq = &last
 		}
 		since = lastSeq
-		limit = nil
+		limit = 0
 		lastSeqID = strconv.FormatUint(*lastSeq, 10)
 	}
 	query := fmt.Sprintf(d.query(`
@@ -236,8 +235,8 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 				ORDER BY seq %s
 			)
 		`), opts.direction())
-	if limit != nil {
-		query += " LIMIT " + strconv.FormatUint(*limit+1, 10)
+	if limit > 0 {
+		query += " LIMIT " + strconv.FormatUint(limit+1, 10)
 	}
 	rows, err = d.db.QueryContext(ctx, query, since, opts.includeDocs()) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {

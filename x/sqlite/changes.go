@@ -33,16 +33,16 @@ const (
 	feedLongpoll = "longpoll"
 )
 
-type changes struct {
+type normalChanges struct {
 	rows    *sql.Rows
 	pending int64
 	lastSeq string
 	etag    string
 }
 
-var _ driver.Changes = &changes{}
+var _ driver.Changes = &normalChanges{}
 
-func (c *changes) Next(change *driver.Change) error {
+func (c *normalChanges) Next(change *driver.Change) error {
 	var (
 		rev             string
 		doc             *string
@@ -101,11 +101,11 @@ func (c *changes) Next(change *driver.Change) error {
 	return nil
 }
 
-func (c *changes) Close() error {
+func (c *normalChanges) Close() error {
 	return c.rows.Close()
 }
 
-func (c *changes) LastSeq() string {
+func (c *normalChanges) LastSeq() string {
 	// Columns returns an error if the rows are closed, so we can use that to
 	// determine if we've actually read the last sequence id.
 	if _, err := c.rows.Columns(); err == nil {
@@ -114,22 +114,16 @@ func (c *changes) LastSeq() string {
 	return c.lastSeq
 }
 
-func (c *changes) Pending() int64 {
+func (c *normalChanges) Pending() int64 {
 	return c.pending
 }
 
-func (c *changes) ETag() string {
+func (c *normalChanges) ETag() string {
 	return c.etag
 }
 
 func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Changes, error) {
 	opts := newOpts(options)
-	var (
-		rows *sql.Rows
-		etag string
-		// lastSeqID is only used for feed=normal&since=now
-		lastSeqID string
-	)
 
 	var lastSeq *uint64
 	sinceNow, since, err := opts.since()
@@ -144,6 +138,10 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 		return d.newLongpollChanges(ctx, opts.includeDocs())
 	}
 
+	return d.newNormalChanges(ctx, opts, since, lastSeq, sinceNow, feed)
+}
+
+func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since *uint64, lastSeq *uint64, sinceNow bool, feed string) (driver.Changes, error) {
 	limit, err := opts.limit()
 	if err != nil {
 		return nil, err
@@ -161,7 +159,11 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 		}
 	}
 
-	var totalRows int64
+	var (
+		totalRows int64
+		// lastSeqID is only used for feed=normal&since=now
+		lastSeqID string
+	)
 
 	if sinceNow {
 		if lastSeq == nil {
@@ -238,7 +240,7 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 	if limit > 0 {
 		query += " LIMIT " + strconv.FormatUint(limit+1, 10)
 	}
-	rows, err = d.db.QueryContext(ctx, query, since, opts.includeDocs()) //nolint:rowserrcheck // Err checked in Next
+	rows, err := d.db.QueryContext(ctx, query, since, opts.includeDocs()) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {
 		return nil, err
 	}
@@ -261,18 +263,19 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 		return nil, err
 	}
 
+	c := &normalChanges{
+		rows:    rows,
+		pending: totalRows,
+		lastSeq: lastSeqID,
+	}
+
 	if feed == feedNormal {
 		h := md5.New()
 		_, _ = h.Write([]byte(summary))
-		etag = hex.EncodeToString(h.Sum(nil))
+		c.etag = hex.EncodeToString(h.Sum(nil))
 	}
 
-	return &changes{
-		rows:    rows,
-		pending: totalRows,
-		etag:    etag,
-		lastSeq: lastSeqID,
-	}, nil
+	return c, nil
 }
 
 type longpollChanges struct {

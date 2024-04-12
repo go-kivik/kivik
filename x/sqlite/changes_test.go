@@ -797,8 +797,7 @@ func Test_normal_changes_query(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	rows := changes.(*normalChanges).rows
-	defer rows.Close()
+	defer changes.rows.Close()
 
 	type row struct {
 		ID              *string
@@ -810,11 +809,72 @@ func Test_normal_changes_query(t *testing.T) {
 		Filename        *string
 	}
 	var got []row
+	for changes.rows.Next() {
+		var result row
+		if err := changes.rows.Scan(
+			&result.ID, &result.Seq, &result.Deleted, &result.Rev, &result.Doc,
+			&result.AttachmentCount, &result.Filename, discard{}, discard{}, discard{}, discard{},
+		); err != nil {
+			t.Fatal(err)
+		}
+		got = append(got, result)
+	}
+	if err := changes.rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+
+	want := []row{
+		{ID: &[]string{"doc1"}[0], Seq: &[]string{"1"}[0], Deleted: &[]bool{false}[0], Rev: &rev, Doc: &[]string{"{}"}[0], AttachmentCount: 2, Filename: &filename1},
+		{AttachmentCount: 2, Filename: &filename2},
+	}
+
+	if d := cmp.Diff(got, want); d != "" {
+		t.Errorf("Unexpected rows:\n%s", d)
+	}
+}
+
+// This test validates that the query for the longpolll changes feed does not
+// duplicate unnecessary fields when returning multiple attachments.
+func Test_longpoll_changes_query(t *testing.T) {
+	t.Parallel()
+
+	filename1, filename2 := "text.txt", "text2.txt"
+
+	d := newDB(t)
+
+	changes, err := d.DB.(*db).newLongpollChanges(context.Background(), true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create a change
+	rev := d.tPut("doc1", map[string]interface{}{
+		"_attachments": newAttachments().
+			add(filename1, "boring text").
+			add(filename2, "more boring text"),
+	})
+
+	// Then execute the prepared statement
+	rows, err := changes.stmt.Query(0, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+
+	type row struct {
+		ID       *string
+		Seq      *string
+		Deleted  *bool
+		Rev      *string
+		Doc      *string
+		Filename *string
+	}
+	var got []row
 	for rows.Next() {
 		var result row
 		if err := rows.Scan(
 			&result.ID, &result.Seq, &result.Deleted, &result.Rev, &result.Doc,
-			&result.AttachmentCount, &result.Filename, discard{}, discard{}, discard{}, discard{},
+			&result.Filename, discard{}, discard{}, discard{}, discard{},
 		); err != nil {
 			t.Fatal(err)
 		}
@@ -825,8 +885,8 @@ func Test_normal_changes_query(t *testing.T) {
 	}
 
 	want := []row{
-		{ID: &[]string{"doc1"}[0], Seq: &[]string{"1"}[0], Deleted: &[]bool{false}[0], Rev: &rev, Doc: &[]string{"{}"}[0], AttachmentCount: 2, Filename: &filename1},
-		{AttachmentCount: 2, Filename: &filename2},
+		{ID: &[]string{"doc1"}[0], Seq: &[]string{"1"}[0], Deleted: &[]bool{false}[0], Rev: &rev, Doc: &[]string{"{}"}[0], Filename: &filename1},
+		{Filename: &filename2},
 	}
 
 	if d := cmp.Diff(got, want); d != "" {

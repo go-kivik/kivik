@@ -60,11 +60,7 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 		}
 	}
 
-	var (
-		totalRows int64
-		// lastSeqID is only used for feed=normal&since=now
-		lastSeqID string
-	)
+	c := &normalChanges{}
 
 	if sinceNow {
 		if lastSeq == nil {
@@ -76,7 +72,7 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 		}
 		since = lastSeq
 		limit = 0
-		lastSeqID = strconv.FormatUint(*lastSeq, 10)
+		c.lastSeq = strconv.FormatUint(*lastSeq, 10)
 	}
 	query := fmt.Sprintf(d.query(`
 			WITH results AS (
@@ -142,7 +138,7 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 	if limit > 0 {
 		query += " LIMIT " + strconv.FormatUint(limit+1, 10)
 	}
-	rows, err := d.db.QueryContext(ctx, query, since, opts.includeDocs()) //nolint:rowserrcheck // Err checked in Next
+	c.rows, err = d.db.QueryContext(ctx, query, since, opts.includeDocs()) //nolint:rowserrcheck,sqlclosecheck // Err checked in Next
 	if err != nil {
 		return nil, err
 	}
@@ -150,24 +146,18 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 	// The first row is used to calculate the ETag; it's done as part of the
 	// same query, even though it's a bit ugly, to ensure it's all in the same
 	// implicit transaction.
-	if !rows.Next() {
+	if !c.rows.Next() {
 		// should never happen
 		return nil, errors.New("no rows returned")
 	}
 	var summary string
-	if err := rows.Scan(
-		&totalRows,
+	if err := c.rows.Scan(
+		&c.pending,
 		discard{}, discard{},
 		&summary,
 		discard{}, discard{}, discard{}, discard{}, discard{}, discard{}, discard{},
 	); err != nil {
 		return nil, err
-	}
-
-	c := &normalChanges{
-		rows:    rows,
-		pending: totalRows,
-		lastSeq: lastSeqID,
 	}
 
 	if feed == feedNormal {

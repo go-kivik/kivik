@@ -288,13 +288,12 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 }
 
 type longpollChanges struct {
-	stmt        *sql.Stmt
-	since       uint64
-	lastSeq     string
-	ctx         context.Context
-	cancel      context.CancelFunc
-	changes     <-chan longpollChange
-	includeDocs bool
+	stmt    *sql.Stmt
+	since   uint64
+	lastSeq string
+	ctx     context.Context
+	cancel  context.CancelFunc
+	changes <-chan longpollChange
 }
 
 type longpollChange struct {
@@ -305,6 +304,13 @@ type longpollChange struct {
 var _ driver.Changes = (*longpollChanges)(nil)
 
 func (d *db) newLongpollChanges(ctx context.Context, includeDocs bool) (*longpollChanges, error) {
+	if includeDocs {
+		return d.newLongpollChangesWithDocs(ctx)
+	}
+	return d.newLongpollChangesWithoutDocs(ctx)
+}
+
+func (d *db) newLongpollChangesWithDocs(ctx context.Context) (*longpollChanges, error) {
 	since, err := d.lastSeq(ctx)
 	if err != nil {
 		return nil, err
@@ -342,7 +348,7 @@ func (d *db) newLongpollChanges(ctx context.Context, includeDocs bool) (*longpol
 					deleted,
 					rev,
 					rev_id,
-					IIF($2, doc, NULL) AS doc
+					doc
 				FROM {{ .Docs }}
 				WHERE seq > $1
 				ORDER BY seq
@@ -359,12 +365,62 @@ func (d *db) newLongpollChanges(ctx context.Context, includeDocs bool) (*longpol
 	ctx, cancel := context.WithCancel(ctx)
 	changes := make(chan longpollChange)
 	c := &longpollChanges{
-		stmt:        stmt,
-		since:       since,
-		ctx:         ctx,
-		cancel:      cancel,
-		changes:     changes,
-		includeDocs: includeDocs,
+		stmt:    stmt,
+		since:   since,
+		ctx:     ctx,
+		cancel:  cancel,
+		changes: changes,
+	}
+
+	go c.watch(changes)
+
+	return c, nil
+}
+
+func (d *db) newLongpollChangesWithoutDocs(ctx context.Context) (*longpollChanges, error) {
+	since, err := d.lastSeq(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	stmt, err := d.db.PrepareContext(ctx, d.query(`
+		SELECT
+			doc.id,
+			doc.seq,
+			doc.deleted,
+			doc.rev || '-' || doc.rev_id AS rev,
+			NULL AS doc,
+			NULL AS filename,
+			NULL AS content_type,
+			NULL AS length,
+			NULL AS digest,
+			NULL AS rev_pos
+		FROM (
+			SELECT
+				id,
+				seq,
+				deleted,
+				rev,
+				rev_id,
+				doc
+			FROM {{ .Docs }}
+			WHERE seq > $1
+			ORDER BY seq
+			LIMIT 1
+		) AS doc
+	`))
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	changes := make(chan longpollChange)
+	c := &longpollChanges{
+		stmt:    stmt,
+		since:   since,
+		ctx:     ctx,
+		cancel:  cancel,
+		changes: changes,
 	}
 
 	go c.watch(changes)
@@ -383,7 +439,7 @@ func (c *longpollChanges) watch(changes chan<- longpollChange) {
 	bo.MaxElapsedTime = 0
 
 	err := backoff.Retry(func() error {
-		rows, err := c.stmt.QueryContext(c.ctx, c.since, c.includeDocs)
+		rows, err := c.stmt.QueryContext(c.ctx, c.since)
 		if err != nil {
 			return backoff.Permanent(err)
 		}

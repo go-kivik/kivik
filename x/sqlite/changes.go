@@ -312,31 +312,45 @@ func (d *db) newLongpollChanges(ctx context.Context, includeDocs bool) (*longpol
 
 	stmt, err := d.db.PrepareContext(ctx, d.query(`
 		SELECT
-			doc.id,
-			doc.seq,
-			doc.deleted,
-			doc.rev || '-' || doc.rev_id AS rev,
-			doc.doc,
-			att.filename,
-			att.content_type,
-			att.length,
-			att.digest,
-			att.rev_pos
+			CASE WHEN row_number = 1 THEN id END AS id,
+			CASE WHEN row_number = 1 THEN seq END AS seq,
+			CASE WHEN row_number = 1 THEN deleted END AS deleted,
+			CASE WHEN row_number = 1 THEN rev END AS rev,
+			CASE WHEN row_number = 1 THEN doc END AS doc,
+			filename,
+			content_type,
+			length,
+			digest,
+			rev_pos
 		FROM (
 			SELECT
-				id,
-				seq,
-				deleted,
-				rev,
-				rev_id,
-				IIF($2, doc, NULL) AS doc
-			FROM {{ .Docs }}
-			WHERE seq > $1
-			ORDER BY seq
-			LIMIT 1
-		) AS doc
-		LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON bridge.id = doc.id AND bridge.rev = doc.rev AND bridge.rev_id = doc.rev_id
-		LEFT JOIN {{ .Attachments }} AS att ON att.pk = bridge.pk
+				doc.id,
+				doc.seq,
+				doc.deleted,
+				doc.rev || '-' || doc.rev_id AS rev,
+				doc.doc,
+				att.filename,
+				att.content_type,
+				att.length,
+				att.digest,
+				att.rev_pos,
+				ROW_NUMBER() OVER () AS row_number
+			FROM (
+				SELECT
+					id,
+					seq,
+					deleted,
+					rev,
+					rev_id,
+					IIF($2, doc, NULL) AS doc
+				FROM {{ .Docs }}
+				WHERE seq > $1
+				ORDER BY seq
+				LIMIT 1
+			) AS doc
+			LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON bridge.id = doc.id AND bridge.rev = doc.rev AND bridge.rev_id = doc.rev_id
+			LEFT JOIN {{ .Attachments }} AS att ON att.pk = bridge.pk
+		)
 	`))
 	if err != nil {
 		return nil, err
@@ -376,22 +390,31 @@ func (c *longpollChanges) watch(changes chan<- longpollChange) {
 		defer rows.Close()
 
 		var (
-			change      driver.Change
-			rev         string
-			doc         *string
-			atts        map[string]*attachment
-			filename    *string
-			contentType *string
-			length      *int64
-			digest      *md5sum
-			revPos      *int
+			rowID, rowSeq, rowRev, rowDoc *string
+			rowDeleted                    *bool
+			change                        driver.Change
+			rev                           string
+			doc                           *string
+			atts                          map[string]*attachment
+			filename                      *string
+			contentType                   *string
+			length                        *int64
+			digest                        *md5sum
+			revPos                        *int
 		)
 		for rows.Next() {
 			if err := rows.Scan(
-				&change.ID, &change.Seq, &change.Deleted, &rev, &doc,
+				&rowID, &rowSeq, &rowDeleted, &rowRev, &rowDoc,
 				&filename, &contentType, &length, &digest, &revPos,
 			); err != nil {
 				return backoff.Permanent(err)
+			}
+			if rowID != nil {
+				change.ID = *rowID
+				change.Seq = *rowSeq
+				change.Deleted = *rowDeleted
+				rev = *rowRev
+				doc = rowDoc
 			}
 
 			if filename != nil {

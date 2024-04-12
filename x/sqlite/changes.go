@@ -106,14 +106,24 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 }
 
 func (c *normalChanges) performChangesQuery(ctx context.Context, d *db, opts optsMap, limit uint64, since *uint64) error {
+	var query string
 	if opts.includeDocs() {
-		return c.performChangesQueryWithDocs(ctx, d, opts.direction(), limit, since)
+		query = d.normalChangesQueryWithDocs(opts.direction())
+	} else {
+		query = d.normalChangesQueryWithoutDocs(opts.direction())
 	}
-	return c.performChangesQueryWithoutDocs(ctx, d, opts.direction(), limit, since)
+
+	if limit > 0 {
+		query += " LIMIT " + strconv.FormatUint(limit+1, 10)
+	}
+
+	var err error
+	c.rows, err = d.db.QueryContext(ctx, query, since) //nolint:rowserrcheck,sqlclosecheck // Err checked in Next
+	return err
 }
 
-func (c *normalChanges) performChangesQueryWithDocs(ctx context.Context, d *db, direction string, limit uint64, since *uint64) error {
-	query := fmt.Sprintf(d.query(`
+func (d *db) normalChangesQueryWithDocs(direction string) string {
+	return fmt.Sprintf(d.query(`
 		WITH results AS (
 			SELECT
 				id,
@@ -174,16 +184,10 @@ func (c *normalChanges) performChangesQueryWithDocs(ctx context.Context, d *db, 
 			ORDER BY seq %s
 		)
 	`), direction)
-	if limit > 0 {
-		query += " LIMIT " + strconv.FormatUint(limit+1, 10)
-	}
-	var err error
-	c.rows, err = d.db.QueryContext(ctx, query, since) //nolint:rowserrcheck,sqlclosecheck // Err checked in Next
-	return err
 }
 
-func (c *normalChanges) performChangesQueryWithoutDocs(ctx context.Context, d *db, direction string, limit uint64, since *uint64) error {
-	query := fmt.Sprintf(d.query(`
+func (d *db) normalChangesQueryWithoutDocs(direction string) string {
+	return fmt.Sprintf(d.query(`
 		WITH results AS (
 			SELECT
 				id,
@@ -233,12 +237,6 @@ func (c *normalChanges) performChangesQueryWithoutDocs(ctx context.Context, d *d
 			ORDER BY seq %s
 		)
 	`), direction)
-	if limit > 0 {
-		query += " LIMIT " + strconv.FormatUint(limit+1, 10)
-	}
-	var err error
-	c.rows, err = d.db.QueryContext(ctx, query, since) //nolint:rowserrcheck,sqlclosecheck // Err checked in Next
-	return err
 }
 
 func (c *normalChanges) Next(change *driver.Change) error {

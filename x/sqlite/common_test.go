@@ -28,6 +28,7 @@ import (
 type DB interface {
 	driver.DB
 	driver.Purger
+	driver.RevsDiffer
 }
 
 type testDB struct {

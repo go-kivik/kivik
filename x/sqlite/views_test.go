@@ -584,48 +584,55 @@ func TestDBAllDocs(t *testing.T) {
 		if err != nil {
 			return
 		}
-		// iterate over rows
-		var got []rowResult
 
-	loop:
-		for {
-			row := driver.Row{}
-			err := rows.Next(&row)
-			switch err {
-			case io.EOF:
-				break loop
-			case driver.EOQ:
-				continue
-			case nil:
-				// continue
-			default:
-				t.Fatalf("Next() returned error: %s", err)
-			}
-			var errMsg string
-			if row.Error != nil {
-				errMsg = row.Error.Error()
-			}
-			value, err := io.ReadAll(row.Value)
+		checkRows(t, rows, tt.want)
+	})
+}
+
+func checkRows(t *testing.T, rows driver.Rows, want []rowResult) {
+	t.Helper()
+
+	// iterate over rows
+	var got []rowResult
+
+loop:
+	for {
+		row := driver.Row{}
+		err := rows.Next(&row)
+		switch err {
+		case io.EOF:
+			break loop
+		case driver.EOQ:
+			continue
+		case nil:
+			// continue
+		default:
+			t.Fatalf("Next() returned error: %s", err)
+		}
+		var errMsg string
+		if row.Error != nil {
+			errMsg = row.Error.Error()
+		}
+		value, err := io.ReadAll(row.Value)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var doc []byte
+		if row.Doc != nil {
+			doc, err = io.ReadAll(row.Doc)
 			if err != nil {
 				t.Fatal(err)
 			}
-			var doc []byte
-			if row.Doc != nil {
-				doc, err = io.ReadAll(row.Doc)
-				if err != nil {
-					t.Fatal(err)
-				}
-			}
-			got = append(got, rowResult{
-				ID:    row.ID,
-				Rev:   row.Rev,
-				Value: string(value),
-				Doc:   string(doc),
-				Error: errMsg,
-			})
 		}
-		if d := cmp.Diff(tt.want, got); d != "" {
-			t.Errorf("Unexpected rows:\n%s", d)
-		}
-	})
+		got = append(got, rowResult{
+			ID:    row.ID,
+			Rev:   row.Rev,
+			Value: string(value),
+			Doc:   string(doc),
+			Error: errMsg,
+		})
+	}
+	if d := cmp.Diff(want, got); d != "" {
+		t.Errorf("Unexpected rows:\n%s", d)
+	}
 }

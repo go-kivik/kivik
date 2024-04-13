@@ -83,7 +83,3 @@ func (db) DesignDocs(context.Context, driver.Options) (driver.Rows, error) {
 func (db) LocalDocs(context.Context, driver.Options) (driver.Rows, error) {
 	return nil, nil
 }
-
-func (db) RevsDiff(context.Context, interface{}) (driver.Rows, error) {
-	return nil, nil
-}

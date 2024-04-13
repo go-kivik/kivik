@@ -238,9 +238,7 @@ func TestRowsIteratorErrors(t *testing.T) {
 				if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
 					t.Error(d)
 				}
-				if err != nil {
-					return
-				}
+				return
 			}
 		})
 	}

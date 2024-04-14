@@ -17,6 +17,7 @@ package sqlite
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"sync"
@@ -405,7 +406,34 @@ func TestDBChanges(t *testing.T) {
 					ID:      "doc1",
 					Seq:     "1",
 					Changes: driver.ChangedRevs{rev},
-					Doc:     []byte(`{"_id":"doc1","_rev":"` + rev + `","foo":"bar","_attachments":{"text.txt":{"content_type":"text/plain","digest":"md5-OIJSy6hr5f32Yfxm8ex95w==","length":11,"revpos":1},"text2.txt":{"content_type":"text/plain","digest":"md5-JlqzqsA7DA4Lw2arCp9iXQ==","length":16,"revpos":1}}}`),
+					Doc:     []byte(`{"_id":"doc1","_rev":"` + rev + `","foo":"bar","_attachments":{"text.txt":{"content_type":"text/plain","digest":"md5-OIJSy6hr5f32Yfxm8ex95w==","length":11,"revpos":1,"stub":true},"text2.txt":{"content_type":"text/plain","digest":"md5-JlqzqsA7DA4Lw2arCp9iXQ==","length":16,"revpos":1,"stub":true}}}`),
+				},
+			},
+			wantLastSeq: &[]string{"1"}[0],
+			wantETag:    &[]string{"872ccd9c6dce18ce6ea4d5106540f089"}[0],
+		}
+	})
+	tests.Add("include docs and attachments, normal feed", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("doc1", map[string]interface{}{
+			"foo": "bar",
+			"_attachments": newAttachments().
+				add("text.txt", "boring text").
+				add("text2.txt", "more boring text"),
+		})
+
+		return test{
+			db: d,
+			options: kivik.Params(map[string]interface{}{
+				"include_docs": true,
+				"attachments":  true,
+			}),
+			wantChanges: []driver.Change{
+				{
+					ID:      "doc1",
+					Seq:     "1",
+					Changes: driver.ChangedRevs{rev},
+					Doc:     []byte(`{"_id":"doc1","_rev":"` + rev + `","foo":"bar","_attachments":{"text.txt":{"content_type":"text/plain","digest":"md5-OIJSy6hr5f32Yfxm8ex95w==","length":11,"revpos":1,"data":"Ym9yaW5nIHRleHQ="},"text2.txt":{"content_type":"text/plain","digest":"md5-JlqzqsA7DA4Lw2arCp9iXQ==","length":16,"revpos":1,"data":"bW9yZSBib3JpbmcgdGV4dA=="}}}`),
 				},
 			},
 			wantLastSeq: &[]string{"1"}[0],
@@ -415,8 +443,8 @@ func TestDBChanges(t *testing.T) {
 
 	/*
 		TODO:
+		- attachments for longpoll feed
 		- ETag should be based only on last sequence, I think
-		- include_docs + attachment stubs
 		- Options
 			- doc_ids
 			- conflicts
@@ -425,7 +453,6 @@ func TestDBChanges(t *testing.T) {
 				- longpoll
 				- continuous
 			- filter
-			- attachments
 			- att_encoding_info
 			- style
 			- timeout
@@ -580,8 +607,12 @@ func TestDBChanges_longpoll(t *testing.T) {
 	// Make a change to the database after a short delay
 	go func() {
 		time.Sleep(100 * time.Millisecond)
+		rev, err := db.Put(context.Background(), "doc2", interface{}(map[string]string{"foo": "bar"}), mock.NilOption)
+		if err != nil {
+			panic(fmt.Sprintf("Failed to put doc: %s", err))
+		}
 		mu.Lock()
-		rev2 = db.tPut("doc2", map[string]string{"foo": "bar"})
+		rev2 = rev
 		mu.Unlock()
 	}()
 
@@ -761,12 +792,242 @@ loop:
 			ID:      "doc1",
 			Seq:     "2",
 			Changes: driver.ChangedRevs{rev2},
-			Doc:     []byte(`{"_id":"doc1","_rev":"` + rev2 + `","_attachments":{"text.txt":{"content_type":"text/plain","digest":"md5-OIJSy6hr5f32Yfxm8ex95w==","length":11,"revpos":2},"text2.txt":{"content_type":"text/plain","digest":"md5-JlqzqsA7DA4Lw2arCp9iXQ==","length":16,"revpos":2}}}`),
+			Doc:     []byte(`{"_id":"doc1","_rev":"` + rev2 + `","_attachments":{"text.txt":{"content_type":"text/plain","digest":"md5-OIJSy6hr5f32Yfxm8ex95w==","length":11,"revpos":2,"stub":true},"text2.txt":{"content_type":"text/plain","digest":"md5-JlqzqsA7DA4Lw2arCp9iXQ==","length":16,"revpos":2,"stub":true}}}`),
 		},
 	}
 	mu.Unlock()
 
 	if d := cmp.Diff(wantChanges, got); d != "" {
 		t.Errorf("Unexpected changes:\n%s", d)
+	}
+}
+
+// This test validates that the query for the normal changes feed does not
+// duplicate unnecessary fields when returning multiple attachments.
+func Test_normal_changes_query(t *testing.T) {
+	t.Parallel()
+
+	filename1, filename2 := "text.txt", "text2.txt"
+
+	d := newDB(t)
+	rev := d.tPut("doc1", map[string]interface{}{
+		"_attachments": newAttachments().
+			add(filename1, "boring text").
+			add(filename2, "more boring text"),
+	})
+
+	changes, err := d.DB.(*db).newNormalChanges(context.Background(), optsMap{"include_docs": true}, nil, nil, false, "normal")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer changes.rows.Close()
+
+	type row struct {
+		ID              *string
+		Seq             *string
+		Deleted         *bool
+		Rev             *string
+		Doc             *string
+		AttachmentCount int
+		Filename        *string
+	}
+	var got []row
+	for changes.rows.Next() {
+		var result row
+		if err := changes.rows.Scan(
+			&result.ID, &result.Seq, &result.Deleted, &result.Rev, &result.Doc,
+			&result.AttachmentCount, &result.Filename, discard{}, discard{}, discard{}, discard{}, discard{},
+		); err != nil {
+			t.Fatal(err)
+		}
+		got = append(got, result)
+	}
+	if err := changes.rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+
+	want := []row{
+		{ID: &[]string{"doc1"}[0], Seq: &[]string{"1"}[0], Deleted: &[]bool{false}[0], Rev: &rev, Doc: &[]string{"{}"}[0], AttachmentCount: 2, Filename: &filename1},
+		{AttachmentCount: 2, Filename: &filename2},
+	}
+
+	if d := cmp.Diff(got, want); d != "" {
+		t.Errorf("Unexpected rows:\n%s", d)
+	}
+}
+
+// This test validates that the query for the normal changes feed does not
+// include attachments fields when include_docs=false.
+func Test_normal_changes_query_without_docs(t *testing.T) {
+	t.Parallel()
+
+	filename1, filename2 := "text.txt", "text2.txt"
+
+	d := newDB(t)
+	rev := d.tPut("doc1", map[string]interface{}{
+		"_attachments": newAttachments().
+			add(filename1, "boring text").
+			add(filename2, "more boring text"),
+	})
+
+	changes, err := d.DB.(*db).newNormalChanges(context.Background(), nil, nil, nil, false, "normal")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer changes.rows.Close()
+
+	type row struct {
+		ID              *string
+		Seq             *string
+		Deleted         *bool
+		Rev             *string
+		Doc             *string
+		AttachmentCount int
+		Filename        *string
+	}
+	var got []row
+	for changes.rows.Next() {
+		var result row
+		if err := changes.rows.Scan(
+			&result.ID, &result.Seq, &result.Deleted, &result.Rev, &result.Doc,
+			&result.AttachmentCount, &result.Filename, discard{}, discard{}, discard{}, discard{}, discard{},
+		); err != nil {
+			t.Fatal(err)
+		}
+		got = append(got, result)
+	}
+	if err := changes.rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+
+	want := []row{
+		{ID: &[]string{"doc1"}[0], Seq: &[]string{"1"}[0], Deleted: &[]bool{false}[0], Rev: &rev},
+	}
+
+	if d := cmp.Diff(got, want); d != "" {
+		t.Errorf("Unexpected rows:\n%s", d)
+	}
+}
+
+// This test validates that the query for the longpolll changes feed does not
+// duplicate unnecessary fields when returning multiple attachments.
+func Test_longpoll_changes_query(t *testing.T) {
+	t.Parallel()
+
+	filename1, filename2 := "text.txt", "text2.txt"
+
+	d := newDB(t)
+
+	changes, err := d.DB.(*db).newLongpollChanges(context.Background(), true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create a change
+	rev := d.tPut("doc1", map[string]interface{}{
+		"_attachments": newAttachments().
+			add(filename1, "boring text").
+			add(filename2, "more boring text"),
+	})
+
+	// Then execute the prepared statement
+	rows, err := changes.stmt.Query(0, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+
+	type row struct {
+		ID       *string
+		Seq      *string
+		Deleted  *bool
+		Rev      *string
+		Doc      *string
+		Filename *string
+	}
+	var got []row
+	for rows.Next() {
+		var result row
+		if err := rows.Scan(
+			&result.ID, &result.Seq, &result.Deleted, &result.Rev, &result.Doc,
+			&result.Filename, discard{}, discard{}, discard{}, discard{},
+		); err != nil {
+			t.Fatal(err)
+		}
+		got = append(got, result)
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+
+	want := []row{
+		{ID: &[]string{"doc1"}[0], Seq: &[]string{"1"}[0], Deleted: &[]bool{false}[0], Rev: &rev, Doc: &[]string{"{}"}[0], Filename: &filename1},
+		{Filename: &filename2},
+	}
+
+	if d := cmp.Diff(got, want); d != "" {
+		t.Errorf("Unexpected rows:\n%s", d)
+	}
+}
+
+// This test validates that the query for the longpolll changes feed does not
+// include any attachment data when include_docs=false
+func Test_longpoll_changes_query_without_docs(t *testing.T) {
+	t.Parallel()
+
+	filename1, filename2 := "text.txt", "text2.txt"
+
+	d := newDB(t)
+
+	changes, err := d.DB.(*db).newLongpollChanges(context.Background(), false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create a change
+	rev := d.tPut("doc1", map[string]interface{}{
+		"_attachments": newAttachments().
+			add(filename1, "boring text").
+			add(filename2, "more boring text"),
+	})
+
+	// Then execute the prepared statement
+	rows, err := changes.stmt.Query(0, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+
+	type row struct {
+		ID       *string
+		Seq      *string
+		Deleted  *bool
+		Rev      *string
+		Doc      *string
+		Filename *string
+	}
+	var got []row
+	for rows.Next() {
+		var result row
+		if err := rows.Scan(
+			&result.ID, &result.Seq, &result.Deleted, &result.Rev, &result.Doc,
+			&result.Filename, discard{}, discard{}, discard{}, discard{},
+		); err != nil {
+			t.Fatal(err)
+		}
+		got = append(got, result)
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+
+	want := []row{
+		{ID: &[]string{"doc1"}[0], Seq: &[]string{"1"}[0], Deleted: &[]bool{false}[0], Rev: &rev},
+	}
+
+	if d := cmp.Diff(got, want); d != "" {
+		t.Errorf("Unexpected rows:\n%s", d)
 	}
 }

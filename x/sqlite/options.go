@@ -92,19 +92,21 @@ func (o optsMap) since() (bool, *uint64, error) {
 	return false, &since, err
 }
 
-func (o optsMap) limit() (*uint64, error) {
+// limit returns 0 if the limit is unset, or the limit value as a uint64. An
+// explicit limit of 0 is converted to 1, as per CouchDB docs.
+func (o optsMap) limit() (uint64, error) {
 	in, ok := o["limit"]
 	if !ok {
-		return nil, nil
+		return 0, nil
 	}
 	limit, err := toUint64(in, "malformed 'limit' parameter")
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 	if limit == 0 {
 		limit = 1
 	}
-	return &limit, nil
+	return limit, nil
 }
 
 // toUint64 converts the input to a uint64. If the input is malformed, it
@@ -181,4 +183,8 @@ func (o optsMap) direction() string {
 
 func (o optsMap) includeDocs() bool {
 	return toBool(o["include_docs"])
+}
+
+func (o optsMap) attachments() bool {
+	return toBool(o["attachments"])
 }

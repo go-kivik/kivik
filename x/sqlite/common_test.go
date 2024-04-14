@@ -17,7 +17,9 @@ package sqlite
 
 import (
 	"context"
+	"crypto/md5"
 	"database/sql"
+	"fmt"
 	"os"
 	"testing"
 
@@ -69,7 +71,7 @@ func (tdb *testDB) tDelete(docID string, options ...driver.Options) string { //n
 // newDB creates a new driver.DB instance backed by an in-memory SQLite database,
 // and registers a cleanup function to close the database when the test is done.
 func newDB(t *testing.T) *testDB {
-	dsn := ":memory:"
+	var dsn string
 	if os.Getenv("KEEP_TEST_DB") != "" {
 		file, err := os.CreateTemp("", "kivik-sqlite-test-*.db")
 		if err != nil {
@@ -80,6 +82,11 @@ func newDB(t *testing.T) *testDB {
 			t.Fatal(err)
 		}
 		t.Logf("Test database: %s", dsn)
+	} else {
+		// calculate md5sum of test name
+		md5sum := md5.New()
+		_, _ = md5sum.Write([]byte(t.Name()))
+		dsn = fmt.Sprintf("file:%x?mode=memory&cache=shared", md5sum.Sum(nil))
 	}
 	d := drv{}
 	client, err := d.NewClient(dsn, nil)

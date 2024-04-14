@@ -388,11 +388,11 @@ func (a *attachments) Close() error {
 	return nil
 }
 
-func (a *attachments) inlineAttachments() map[string]attachment {
+func (a *attachments) inlineAttachments() map[string]*attachment {
 	if a == nil || len(*a) == 0 {
 		return nil
 	}
-	atts := make(map[string]attachment, len(*a))
+	atts := make(map[string]*attachment, len(*a))
 	for _, att := range *a {
 		digest, err := parseDigest(att.Digest)
 		if err != nil {
@@ -400,7 +400,7 @@ func (a *attachments) inlineAttachments() map[string]attachment {
 			// when the attachment was created.
 			panic(err)
 		}
-		newAtt := attachment{
+		newAtt := &attachment{
 			ContentType: att.ContentType,
 			Digest:      digest,
 			Length:      att.Size,

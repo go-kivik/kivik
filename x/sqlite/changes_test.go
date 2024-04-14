@@ -443,7 +443,6 @@ func TestDBChanges(t *testing.T) {
 
 	/*
 		TODO:
-		- attachments for longpoll feed
 		- ETag should be based only on last sequence, I think
 		- Options
 			- doc_ids
@@ -727,6 +726,82 @@ loop:
 	}
 }
 
+func TestDBChanges_longpoll_include_docs_and_attachments(t *testing.T) {
+	t.Parallel()
+	db := newDB(t)
+
+	// First create a single document to seed the changes feed
+	rev := db.tPut("doc1", map[string]string{"foo": "bar"})
+
+	// Start the changes feed, with feed=longpoll&since=now to block until
+	// another change is made.
+	feed, err := db.Changes(context.Background(), kivik.Params(map[string]interface{}{
+		"feed":         "longpoll",
+		"attachments":  true,
+		"since":        "now",
+		"include_docs": true,
+	}))
+	if err != nil {
+		t.Fatalf("Failed to start changes feed: %s", err)
+	}
+	t.Cleanup(func() {
+		_ = feed.Close()
+	})
+
+	var mu sync.Mutex
+	var rev2 string
+	// Make a change to the database after a short delay
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		mu.Lock()
+		rev2 = db.tPut("doc1", map[string]interface{}{
+			"_attachments": newAttachments().
+				add("text.txt", "boring text").
+				add("text2.txt", "more boring text"),
+		}, kivik.Rev(rev))
+		mu.Unlock()
+	}()
+
+	start := time.Now()
+	// Meanwhile, the changes feed should block until the change is made
+	// iterate over feed
+	var got []driver.Change
+
+loop:
+	for {
+		change := driver.Change{}
+		err := feed.Next(&change)
+		switch err {
+		case io.EOF:
+			break loop
+		case nil:
+			// continue
+		default:
+			t.Fatalf("iteration failed: %s", err)
+		}
+		got = append(got, change)
+	}
+
+	if time.Since(start) < 100*time.Millisecond {
+		t.Errorf("Changes feed returned too quickly")
+	}
+
+	mu.Lock()
+	wantChanges := []driver.Change{
+		{
+			ID:      "doc1",
+			Seq:     "2",
+			Changes: driver.ChangedRevs{rev2},
+			Doc:     []byte(`{"_id":"doc1","_rev":"` + rev2 + `","_attachments":{"text.txt":{"content_type":"text/plain","digest":"md5-OIJSy6hr5f32Yfxm8ex95w==","length":11,"revpos":2,"data":"Ym9yaW5nIHRleHQ="},"text2.txt":{"content_type":"text/plain","digest":"md5-JlqzqsA7DA4Lw2arCp9iXQ==","length":16,"revpos":2,"data":"bW9yZSBib3JpbmcgdGV4dA=="}}}`),
+		},
+	}
+	mu.Unlock()
+
+	if d := cmp.Diff(wantChanges, got); d != "" {
+		t.Errorf("Unexpected changes:\n%s", d)
+	}
+}
+
 func TestDBChanges_longpoll_include_docs_with_attachment_stubs(t *testing.T) {
 	t.Parallel()
 	db := newDB(t)
@@ -920,7 +995,7 @@ func Test_longpoll_changes_query(t *testing.T) {
 
 	d := newDB(t)
 
-	changes, err := d.DB.(*db).newLongpollChanges(context.Background(), true)
+	changes, err := d.DB.(*db).newLongpollChanges(context.Background(), true, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -952,7 +1027,7 @@ func Test_longpoll_changes_query(t *testing.T) {
 		var result row
 		if err := rows.Scan(
 			&result.ID, &result.Seq, &result.Deleted, &result.Rev, &result.Doc,
-			&result.Filename, discard{}, discard{}, discard{}, discard{},
+			&result.Filename, discard{}, discard{}, discard{}, discard{}, discard{},
 		); err != nil {
 			t.Fatal(err)
 		}
@@ -981,7 +1056,7 @@ func Test_longpoll_changes_query_without_docs(t *testing.T) {
 
 	d := newDB(t)
 
-	changes, err := d.DB.(*db).newLongpollChanges(context.Background(), false)
+	changes, err := d.DB.(*db).newLongpollChanges(context.Background(), false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1013,7 +1088,7 @@ func Test_longpoll_changes_query_without_docs(t *testing.T) {
 		var result row
 		if err := rows.Scan(
 			&result.ID, &result.Seq, &result.Deleted, &result.Rev, &result.Doc,
-			&result.Filename, discard{}, discard{}, discard{}, discard{},
+			&result.Filename, discard{}, discard{}, discard{}, discard{}, discard{},
 		); err != nil {
 			t.Fatal(err)
 		}

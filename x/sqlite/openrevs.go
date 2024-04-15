@@ -24,12 +24,14 @@ import (
 	"github.com/go-kivik/kivik/v4/internal"
 )
 
-func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, _ driver.Options) (driver.Rows, error) {
+func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, options driver.Options) (driver.Rows, error) {
+	opts := newOpts(options)
 	values := make([]string, 0, len(revs))
-	args := make([]interface{}, 3, len(revs)*2+3)
+	args := make([]interface{}, 4, len(revs)*2+4)
 	args[0] = docID
-	args[1] = len(revs) == 0 // latest
+	args[1] = len(revs) == 0 // open_revs=[]
 	args[2] = false
+	args[3] = opts.latest()
 	if len(revs) == 1 && revs[0] == "all" {
 		args[2] = true
 		revs = []string{}
@@ -37,7 +39,6 @@ func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, _ driver
 
 	i := len(args) + 1
 	for _, rev := range revs {
-		fmt.Println("rev", rev)
 		r, err := parseRev(rev)
 		if err != nil {
 			return nil, &internal.Error{Message: "invalid rev format", Status: http.StatusBadRequest}
@@ -55,7 +56,7 @@ func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, _ driver
 		WITH provided_revs (id, rev, rev_id) AS (
 			VALUES %s
 		),
-		revs (id, rev, rev_id) AS (
+		open_revs (id, rev, rev_id) AS (
 
 			-- Provided revs
 			SELECT *
@@ -64,7 +65,7 @@ func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, _ driver
 
 			UNION
 
-			-- latest
+			-- winning rev, for open_revs=[] case
 			SELECT *
 			FROM (
 				SELECT
@@ -80,6 +81,29 @@ func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, _ driver
 
 			UNION
 
+			-- latest=true
+			SELECT *
+			FROM (
+				WITH leaves AS (
+					SELECT id, rev AS child_rev, rev_id AS child_rev_id, rev, rev_id, parent_rev, parent_rev_id
+					FROM {{ .Revs }} AS revs
+					UNION ALL
+					SELECT r.id, r.rev, r.rev_id, a.rev, a.rev_id, r.parent_rev, r.parent_rev_id
+					FROM {{ .Revs }} AS r
+					JOIN leaves a ON r.id = a.id AND r.rev = a.parent_rev AND r.rev_id = a.parent_rev_id
+				)
+				SELECT
+					leaves.id,
+					leaves.rev AS rev,
+					leaves.rev_id AS rev_id
+				FROM leaves
+				JOIN provided_revs AS pr ON pr.id = leaves.id AND pr.rev = leaves.child_rev AND pr.rev_id = leaves.child_rev_id
+				LEFT JOIN {{ .Revs }} AS child ON leaves.id = child.id AND leaves.rev = child.parent_rev AND leaves.rev_id = child.parent_rev_id
+				WHERE $4 AND child.id IS NULL
+			)
+
+			UNION
+
 			-- all
 			SELECT
 				parent.id,
@@ -90,12 +114,12 @@ func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, _ driver
 			WHERE $3 AND (parent.id = $1 AND child.id IS NULL)
 		)
 		SELECT
-			revs.rev || '-' || revs.rev_id AS rev,
+			open_revs.rev || '-' || open_revs.rev_id AS rev,
 			docs.deleted,
 			docs.doc
-		FROM revs
-		LEFT JOIN {{ .Docs }} AS docs ON revs.id = docs.id AND revs.rev = docs.rev AND revs.rev_id = docs.rev_id
-		ORDER BY revs.rev, revs.rev_id
+		FROM open_revs
+		LEFT JOIN {{ .Docs }} AS docs ON open_revs.id = docs.id AND open_revs.rev = docs.rev AND open_revs.rev_id = docs.rev_id
+		ORDER BY open_revs.rev, open_revs.rev_id
 	`), strings.Join(values, ", "))
 	rows, err := d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {

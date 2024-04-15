@@ -188,3 +188,7 @@ func (o optsMap) includeDocs() bool {
 func (o optsMap) attachments() bool {
 	return toBool(o["attachments"])
 }
+
+func (o optsMap) latest() bool {
+	return toBool(o["latest"])
+}

@@ -268,3 +268,59 @@ func Test_mergeIntoDoc(t *testing.T) {
 		})
 	}
 }
+
+func mustParseMD5Sum(s string) md5sum {
+	m, err := parseMD5sum(s)
+	if err != nil {
+		panic(err)
+	}
+	return m
+}
+
+func Test_RevID(t *testing.T) {
+	tests := []struct {
+		name string
+		doc  docData
+		want string
+	}{
+		{
+			name: "empty",
+			doc: docData{
+				ID:  "foo",
+				Doc: []byte(`{}`),
+			},
+			want: "52a640a54c0880d3e7b04709b18719c5",
+		},
+		{
+			name: "empty, pre-set md5sum",
+			doc: docData{
+				ID:     "foo",
+				MD5sum: mustParseMD5Sum("99914b932bd37a50b983c5e7c90ae93b"),
+			},
+			want: "52a640a54c0880d3e7b04709b18719c5",
+		},
+		{
+			name: "foo:bar",
+			doc: docData{
+				Doc: []byte(`{"foo":"bar"}`),
+			},
+			want: "66f46afbe3effef8424aa0e291d21560",
+		},
+		{
+			name: "foo:baz",
+			doc: docData{
+				Doc: []byte(`{"foo":"baz"}`),
+			},
+			want: "a7ab6687616e7893a660455467033fc9",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.doc.RevID()
+			if got != tt.want {
+				t.Errorf("unexpected revID = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

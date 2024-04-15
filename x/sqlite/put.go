@@ -156,7 +156,7 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 		}
 	}
 
-	data.MD5sum, err = d.isLeafRev(ctx, tx, docID, curRev.rev, curRev.id)
+	_, err = d.isLeafRev(ctx, tx, docID, curRev.rev, curRev.id)
 	switch {
 	case kivik.HTTPStatus(err) == http.StatusNotFound:
 		if docRev != "" {

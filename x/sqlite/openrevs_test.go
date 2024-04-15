@@ -14,3 +14,53 @@
 // +build !js
 
 package sqlite
+
+import (
+	"context"
+	"testing"
+
+	"gitlab.com/flimzy/testy"
+
+	"github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal/mock"
+)
+
+func TestDBOpenRevs(t *testing.T) {
+	t.Parallel()
+	type test struct {
+		db         *testDB
+		docID      string
+		revs       []string
+		options    driver.Options
+		want       []rowResult
+		wantErr    string
+		wantStatus int
+	}
+	tests := testy.NewTable()
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		t.Parallel()
+		db := tt.db
+		if db == nil {
+			db = newDB(t)
+		}
+		opts := tt.options
+		if opts == nil {
+			opts = mock.NilOption
+		}
+
+		rows, err := db.OpenRevs(context.Background(), tt.docID, tt.revs, opts)
+		if !testy.ErrorMatches(tt.wantErr, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
+		if status := kivik.HTTPStatus(err); status != tt.wantStatus {
+			t.Errorf("Unexpected status: %d", status)
+		}
+		if err != nil {
+			return
+		}
+
+		checkRows(t, rows, tt.want)
+	})
+}

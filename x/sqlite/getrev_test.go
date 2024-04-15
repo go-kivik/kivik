@@ -14,3 +14,58 @@
 // +build !js
 
 package sqlite
+
+import (
+	"context"
+	"net/http"
+	"testing"
+
+	"gitlab.com/flimzy/testy"
+
+	"github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal/mock"
+)
+
+func TestGetRev(t *testing.T) {
+	t.Parallel()
+	type test struct {
+		db         *testDB
+		id         string
+		options    driver.Options
+		want       string
+		wantStatus int
+		wantErr    string
+	}
+	tests := testy.NewTable()
+	tests.Add("not found", test{
+		id:         "foo",
+		wantStatus: http.StatusNotFound,
+		wantErr:    "not found",
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		t.Parallel()
+		db := tt.db
+		if db == nil {
+			db = newDB(t)
+		}
+		opts := tt.options
+		if opts == nil {
+			opts = mock.NilOption
+		}
+		rev, err := db.GetRev(context.Background(), tt.id, opts)
+		if !testy.ErrorMatches(tt.wantErr, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
+		if status := kivik.HTTPStatus(err); status != tt.wantStatus {
+			t.Errorf("Unexpected status: %d", status)
+		}
+		if err != nil {
+			return
+		}
+		if rev != tt.want {
+			t.Errorf("Unexpected rev: %s", rev)
+		}
+	})
+}

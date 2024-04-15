@@ -55,7 +55,9 @@ func (d *db) isLeafRev(ctx context.Context, tx *sql.Tx, docID string, rev int, r
 		) AS doc
 		LEFT JOIN (
 			SELECT
-			parent.id, parent.rev, parent.rev_id,
+				parent.id,
+				parent.rev,
+				parent.rev_id,
 				child.id IS NULL AS is_leaf
 			FROM {{ .Revs }} AS parent
 			LEFT JOIN {{ .Revs }} AS child ON parent.id = child.id AND parent.rev = child.parent_rev AND parent.rev_id = child.parent_rev_id

@@ -31,6 +31,7 @@ type DB interface {
 	driver.DB
 	driver.Purger
 	driver.RevsDiffer
+	driver.OpenRever
 }
 
 type testDB struct {

@@ -918,7 +918,6 @@ func TestDBGet(t *testing.T) {
 	/*
 		TODO:
 		att_encoding_info = true
-		open_revs = [] // TODO: driver.OpenRever
 	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {

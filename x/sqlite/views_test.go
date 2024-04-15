@@ -613,11 +613,14 @@ loop:
 		if row.Error != nil {
 			errMsg = row.Error.Error()
 		}
-		value, err := io.ReadAll(row.Value)
-		if err != nil {
-			t.Fatal(err)
+		var value, doc []byte
+		if row.Value != nil {
+			value, err = io.ReadAll(row.Value)
+			if err != nil {
+				t.Fatal(err)
+			}
 		}
-		var doc []byte
+
 		if row.Doc != nil {
 			doc, err = io.ReadAll(row.Doc)
 			if err != nil {

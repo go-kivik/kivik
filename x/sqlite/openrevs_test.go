@@ -72,9 +72,23 @@ func TestDBOpenRevs(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("all, with deleted rev", func(t *testing.T) interface{} {
+		d := newDB(t)
+		docID := "foo"
+		rev := d.tPut(docID, map[string]string{"foo": "bar"})
+		rev2 := d.tDelete(docID, kivik.Rev(rev))
+
+		return test{
+			db:    d,
+			docID: docID,
+			revs:  []string{"all"},
+			want: []rowResult{
+				{ID: docID, Rev: rev2, Doc: `{"_id":"` + docID + `","_rev":"` + rev2 + `","_deleted":true}`},
+			},
+		}
+	})
 	/*
 		TODO:
-		- leaf rev is deleted -- returned as usual
 		- No revs provided == returns winning leaf
 		- document not found, open_revs=["something"] = 200 + missing
 		- document found, rev not found

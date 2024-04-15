@@ -98,9 +98,10 @@ func (r *openRevsRows) Next(row *driver.Row) error {
 		return err
 	}
 	toMerge := fullDoc{
-		ID:  r.id,
-		Rev: row.Rev,
-		Doc: doc,
+		ID:      r.id,
+		Rev:     row.Rev,
+		Doc:     doc,
+		Deleted: deleted,
 	}
 	row.ID = r.id
 	row.Doc = toMerge.toReader()

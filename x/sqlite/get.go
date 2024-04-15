@@ -160,45 +160,26 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 
 	if optRevsInfo || optRevs {
 		rows, err := tx.QueryContext(ctx, d.query(`
+			WITH RECURSIVE Ancestors AS (
+				-- Base case: Select the starting node for ancestors
+				SELECT id, rev, rev_id, parent_rev, parent_rev_id
+				FROM {{ .Revs }} AS revs
+				WHERE id = $1
+					AND rev = $2
+					AND rev_id = $3
+				UNION ALL
+				-- Recursive step: Select the parent of the current node
+				SELECT r.id, r.rev, r.rev_id, r.parent_rev, r.parent_rev_id
+				FROM {{ .Revs }} r
+				JOIN Ancestors a ON a.parent_rev_id = r.rev_id AND a.parent_rev = r.rev AND a.id = r.id
+			)
 			SELECT revs.rev, revs.rev_id,
 				CASE
 					WHEN doc.id IS NULL THEN 'missing'
 					WHEN doc.deleted THEN    'deleted'
 					ELSE                     'available'
 				END
-			FROM (
-				WITH RECURSIVE
-				Ancestors AS (
-					-- Base case: Select the starting node for ancestors
-					SELECT id, rev, rev_id, parent_rev, parent_rev_id
-					FROM {{ .Revs }} AS revs
-					WHERE id = $1
-						AND rev = $2
-						AND rev_id = $3
-					UNION ALL
-					-- Recursive step: Select the parent of the current node
-					SELECT r.id, r.rev, r.rev_id, r.parent_rev, r.parent_rev_id
-					FROM {{ .Revs }} r
-					JOIN Ancestors a ON a.parent_rev_id = r.rev_id AND a.parent_rev = r.rev AND a.id = r.id
-				),
-				Descendants AS (
-					-- Base case: Select the starting node for descendants
-					SELECT id, rev, rev_id, parent_rev, parent_rev_id
-					FROM {{ .Revs }} AS revs
-					WHERE id = $1
-						AND rev = $2
-						AND rev_id = $3
-					UNION ALL
-					-- Recursive step: Select the children of the current node
-					SELECT r.id, r.rev, r.rev_id, r.parent_rev, r.parent_rev_id
-					FROM {{ .Revs }} r
-					JOIN Descendants d ON d.rev_id = r.parent_rev_id AND d.rev = r.parent_rev AND d.id = r.id
-				)
-				-- Combine ancestors and descendants, excluding the starting node twice
-				SELECT id, rev, rev_id FROM Ancestors
-				UNION
-				SELECT id, rev, rev_id FROM Descendants
-			) AS revs
+			FROM Ancestors AS revs
 			LEFT JOIN {{ .Docs }} AS doc ON doc.id = revs.id
 				AND doc.rev = revs.rev
 				AND doc.rev_id = revs.rev_id

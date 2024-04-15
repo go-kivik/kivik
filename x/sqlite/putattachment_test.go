@@ -267,18 +267,17 @@ func TestDBPutAttachment(t *testing.T) {
 				{
 					ID:          "foo",
 					Rev:         2,
-					RevID:       r2.id,
+					RevID:       "def",
 					ParentRev:   &[]int{1}[0],
 					ParentRevID: &r1.id,
 				},
 				{
 					ID:          "foo",
 					Rev:         2,
-					RevID:       "def",
+					RevID:       r2.id,
 					ParentRev:   &[]int{1}[0],
 					ParentRevID: &r1.id,
 				},
-
 				{
 					ID:          "foo",
 					Rev:         3,

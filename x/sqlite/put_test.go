@@ -970,15 +970,16 @@ func TestDBPut(t *testing.T) {
 				{
 					ID:          "foo",
 					Rev:         3,
+					RevID:       "abc",
 					ParentRev:   &[]int{2}[0],
-					ParentRevID: &r2.id,
+					ParentRevID: &[]string{"def"}[0],
 				},
 				{
 					ID:          "foo",
 					Rev:         3,
-					RevID:       "abc",
+					RevID:       "f99110ca1be121ebf5653ee1ec34610c",
 					ParentRev:   &[]int{2}[0],
-					ParentRevID: &[]string{"def"}[0],
+					ParentRevID: &r2.id,
 				},
 			},
 		}
@@ -1183,5 +1184,20 @@ func checkAttachments(t *testing.T, d *sql.DB, want []attachmentRow) {
 	}
 	if d := cmp.Diff(want, got); d != "" {
 		t.Errorf("Unexpected attachments: %s", d)
+	}
+}
+
+func TestDBPut_updating_a_doc_should_produce_new_rev_id(t *testing.T) {
+	t.Parallel()
+
+	d := newDB(t)
+
+	rev := d.tPut("foo", map[string]string{"foo": "bar"})
+	rev2 := d.tPut("foo", map[string]string{"foo": "baz"}, kivik.Rev(rev))
+
+	r, _ := parseRev(rev)
+	r2, _ := parseRev(rev2)
+	if r.id == r2.id {
+		t.Fatalf("rev(%s) and rev2(%s) should have different rev ids", rev, rev2)
 	}
 }

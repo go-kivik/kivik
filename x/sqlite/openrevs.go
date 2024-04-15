@@ -123,13 +123,11 @@ func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, options 
 			WHERE $3 AND (parent.id = $1 AND child.id IS NULL)
 		)
 		SELECT
-			CASE WHEN row_number = 1 THEN rev END AS rev,
-			CASE WHEN row_number = 1 THEN rev_id END AS rev_id,
-			CASE WHEN row_number = 1 THEN deleted END AS deleted,
-			CASE WHEN row_number = 1 THEN doc END AS doc,
-			parent_rev,
-			parent_rev_id,
-			parent_count
+			rev,
+			rev_id,
+			deleted,
+			doc,
+			GROUP_CONCAT(parent_rev || '-' || parent_rev_id, ",") AS ancestors
 		FROM (
 			SELECT
 				open_revs.rev,
@@ -146,6 +144,7 @@ func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, options 
 			WHERE ancestors.parent_rev IS NOT NULL OR NOT $5
 			ORDER BY open_revs.rev, open_revs.rev_id, parent_rev DESC, parent_rev_id DESC
 		)
+		GROUP BY rev, rev_id, deleted, doc
 	`), strings.Join(values, ", "))
 	rows, err := d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {
@@ -181,10 +180,7 @@ type openRevsRows struct {
 var _ driver.Rows = (*openRevsRows)(nil)
 
 func (r *openRevsRows) Next(row *driver.Row) error {
-	var (
-		revsCount int
-		doc       fullDoc
-	)
+	var doc fullDoc
 	for {
 		if !r.pre && !r.rows.Next() {
 			if err := r.rows.Err(); err != nil {
@@ -194,12 +190,12 @@ func (r *openRevsRows) Next(row *driver.Row) error {
 		}
 		r.pre = false
 		var (
-			rowRev, parent        *int
-			rowRevID, parentRevID *string
-			rowDeleted            *bool
-			rowDoc                *[]byte
+			rowRev              *int
+			rowRevID, ancestors *string
+			rowDeleted          *bool
+			rowDoc              *[]byte
 		)
-		if err := r.rows.Scan(&rowRev, &rowRevID, &rowDeleted, &rowDoc, &parent, &parentRevID, &revsCount); err != nil {
+		if err := r.rows.Scan(&rowRev, &rowRevID, &rowDeleted, &rowDoc, &ancestors); err != nil {
 			return err
 		}
 		if rowRev != nil {
@@ -217,17 +213,23 @@ func (r *openRevsRows) Next(row *driver.Row) error {
 				Doc:     *rowDoc,
 				Deleted: *rowDeleted,
 			}
-			if parent != nil {
+			if ancestors != nil {
 				doc.Revisions = &revsInfo{
 					Start: rv.rev,
-					IDs:   []string{rv.id, *parentRevID},
+					IDs:   []string{rv.id},
+				}
+				for i, ancestor := range strings.Split(*ancestors, ",") {
+					a, _ := parseRev(ancestor)
+					if rv.rev-1-i != a.rev {
+						// missing a historical rev; this should not happen
+						// but to be safe, we'll be sure not to send a history
+						// with gaps
+						break
+					}
+					doc.Revisions.IDs = append(doc.Revisions.IDs, a.id)
 				}
 			}
-		} else {
-			doc.Revisions.IDs = append(doc.Revisions.IDs, *parentRevID)
-		}
 
-		if doc.Revisions == nil || len(doc.Revisions.IDs) == revsCount+1 {
 			row.Doc = doc.toReader()
 			return nil
 		}

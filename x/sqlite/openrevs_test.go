@@ -277,12 +277,31 @@ func TestDBOpenRevs(t *testing.T) {
 		}
 	})
 
+	tests.Add("include attachment data", func(t *testing.T) interface{} {
+		d := newDB(t)
+		docID := "foo"
+		rev := d.tPut(docID, map[string]interface{}{
+			"foo": "bar",
+			"_attachments": newAttachments().
+				add("att.txt", "hello, world").
+				add("att2.txt", "goodbye, world"),
+		})
+
+		return test{
+			db:    d,
+			docID: docID,
+			revs:  []string{rev},
+			want: []rowResult{
+				{ID: docID, Rev: rev, Doc: `{"_id":"` + docID + `","_rev":"` + rev + `","foo":"bar","_attachments":{"att.txt":{"content_type":"text/plain","digest":"md5-5NfxtO0uQtFYmPSyewGdpA==","length":12,"revpos":1,"data":"aGVsbG8sIHdvcmxk"},"att2.txt":{"content_type":"text/plain","digest":"md5-18/CjiFEUaAYOzOUOD2UPQ==","length":14,"revpos":1,"data":"Z29vZGJ5ZSwgd29ybGQ="}}}`},
+			},
+		}
+	})
 	/*
 		TODO:
 		- rev calculation is broken
 		- Include attachment info when relevant (https://docs.couchdb.org/en/stable/replication/protocol.html#:~:text=In%20case%20the%20Document%20contains%20attachments%2C%20Source%20MUST%20return%20information%20only%20for%20those%20ones%20that%20had%20been%20changed%20(added%20or%20updated)%20since%20the%20specified%20Revision%20values.%20If%20an%20attachment%20was%20deleted%2C%20the%20Document%20MUST%20NOT%20have%20stub%20information%20for%20it)
 
-		- revs=true
+		- revs=true + attachments
 	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {

@@ -98,19 +98,16 @@ func (d *db) getCoreDoc(ctx context.Context, tx queryer, id string, rev revision
 				deleted
 			FROM (
 				WITH RECURSIVE Descendants AS (
-					-- Base case: Select the starting node for descendants
 					SELECT id, rev, rev_id, parent_rev, parent_rev_id
 					FROM {{ .Revs }} AS revs
 					WHERE id = $1
 						AND rev = $2
 						AND rev_id = $3
 					UNION ALL
-					-- Recursive step: Select the children of the current node
 					SELECT r.id, r.rev, r.rev_id, r.parent_rev, r.parent_rev_id
 					FROM {{ .Revs }} AS r
 					JOIN Descendants d ON d.rev_id = r.parent_rev_id AND d.rev = r.parent_rev AND d.id = r.id
 				)
-				-- Combine ancestors and descendants, excluding the starting node twice
 				SELECT seq, rev.rev, rev.rev_id, doc, deleted
 				FROM Descendants AS rev
 				JOIN {{ .Docs }} AS doc ON doc.id = rev.id AND doc.rev = rev.rev AND doc.rev_id = rev.rev_id

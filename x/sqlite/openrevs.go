@@ -27,11 +27,7 @@ import (
 func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, _ driver.Options) (driver.Rows, error) {
 	if len(revs) == 0 {
 		query := d.query(`
-			SELECT
-				leaf.rev || '-' || leaf.rev_id AS rev,
-				docs.deleted,
-				docs.doc
-			FROM (
+			WITH revs (id, rev, rev_id) AS (
 				SELECT
 					parent.id,
 					parent.rev,
@@ -39,10 +35,16 @@ func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, _ driver
 				FROM {{ .Revs }} AS parent
 				LEFT JOIN {{ .Revs }} AS child ON parent.id = child.id AND parent.rev = child.parent_rev AND parent.rev_id = child.parent_rev_id
 				WHERE parent.id = $1 AND child.id IS NULL
-			) AS leaf
-			JOIN {{ .Docs }} AS docs ON leaf.id = docs.id AND leaf.rev = docs.rev AND leaf.rev_id = docs.rev_id
-			ORDER BY leaf.rev DESC, leaf.rev_id DESC
-			LIMIT 1
+				ORDER BY parent.rev DESC, parent.rev_id DESC
+				LIMIT 1
+			)
+			SELECT
+				revs.rev || '-' || revs.rev_id AS rev,
+				docs.deleted,
+				docs.doc
+			FROM revs
+			JOIN {{ .Docs }} AS docs ON revs.id = docs.id AND revs.rev = docs.rev AND revs.rev_id = docs.rev_id
+			ORDER BY revs.rev, revs.rev_id
 		`)
 		rows, err := d.db.QueryContext(ctx, query, docID) //nolint:rowserrcheck // Err checked in Next
 		if err != nil {
@@ -67,11 +69,7 @@ func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, _ driver
 	}
 	if len(revs) == 1 && revs[0] == "all" {
 		query := d.query(`
-			SELECT
-				leaf.rev || '-' || leaf.rev_id AS rev,
-				docs.deleted,
-				docs.doc
-			FROM (
+			WITH revs (id, rev, rev_id) AS (
 				SELECT
 					parent.id,
 					parent.rev,
@@ -79,9 +77,14 @@ func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, _ driver
 				FROM {{ .Revs }} AS parent
 				LEFT JOIN {{ .Revs }} AS child ON parent.id = child.id AND parent.rev = child.parent_rev AND parent.rev_id = child.parent_rev_id
 				WHERE parent.id = $1 AND child.id IS NULL
-			) AS leaf
-			JOIN {{ .Docs }} AS docs ON leaf.id = docs.id AND leaf.rev = docs.rev AND leaf.rev_id = docs.rev_id
-			ORDER BY leaf.rev, leaf.rev_id
+			)
+			SELECT
+				revs.rev || '-' || revs.rev_id AS rev,
+				docs.deleted,
+				docs.doc
+			FROM revs
+			JOIN {{ .Docs }} AS docs ON revs.id = docs.id AND revs.rev = docs.rev AND revs.rev_id = docs.rev_id
+			ORDER BY revs.rev, revs.rev_id
 		`)
 		rows, err := d.db.QueryContext(ctx, query, docID) //nolint:rowserrcheck // Err checked in Next
 		if err != nil {
@@ -121,16 +124,16 @@ func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, _ driver
 	}
 
 	query := fmt.Sprintf(d.query(`
-		WITH leaf (id, rev, rev_id) AS (
+		WITH revs (id, rev, rev_id) AS (
 			VALUES %s
 		)
 		SELECT
-			leaf.rev || '-' || leaf.rev_id AS rev,
+			revs.rev || '-' || revs.rev_id AS rev,
 			docs.deleted,
 			docs.doc
-		FROM leaf
-		LEFT JOIN {{ .Docs }} AS docs ON leaf.id = docs.id AND leaf.rev = docs.rev AND leaf.rev_id = docs.rev_id
-		ORDER BY leaf.rev, leaf.rev_id
+		FROM revs
+		LEFT JOIN {{ .Docs }} AS docs ON revs.id = docs.id AND revs.rev = docs.rev AND revs.rev_id = docs.rev_id
+		ORDER BY revs.rev, revs.rev_id
 	`), strings.Join(values, ", "))
 	rows, err := d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {

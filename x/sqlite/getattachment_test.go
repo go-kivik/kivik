@@ -46,9 +46,9 @@ func TestDBGetAttachment(t *testing.T) {
 		filename string
 		options  driver.Options
 
-		wantAttachment *attachment
-		wantStatus     int
-		wantErr        string
+		want       *attachment
+		wantStatus int
+		wantErr    string
 	}
 
 	tests := testy.NewTable()
@@ -57,19 +57,6 @@ func TestDBGetAttachment(t *testing.T) {
 		filename:   "foo.txt",
 		wantStatus: http.StatusNotFound,
 		wantErr:    "missing",
-	})
-	tests.Add("when the attachment exists, return it", func(t *testing.T) interface{} {
-		db := newDB(t)
-		_ = db.tPut("foo", map[string]interface{}{
-			"_id":          "foo",
-			"_attachments": newAttachments().add("foo.txt", "This is a base64 encoding"),
-		})
-
-		return test{
-			db:       db,
-			docID:    "foo",
-			filename: "foo.txt",
-		}
 	})
 	tests.Add("return an attachment when it exists", func(t *testing.T) interface{} {
 		db := newDB(t)
@@ -82,7 +69,7 @@ func TestDBGetAttachment(t *testing.T) {
 			db:       db,
 			docID:    "foo",
 			filename: "foo.txt",
-			wantAttachment: &attachment{
+			want: &attachment{
 				Filename:    "foo.txt",
 				ContentType: "text/plain",
 				Length:      25,
@@ -126,7 +113,7 @@ func TestDBGetAttachment(t *testing.T) {
 			db:       db,
 			docID:    "foo",
 			filename: "foo.txt",
-			wantAttachment: &attachment{
+			want: &attachment{
 				Filename:    "foo.txt",
 				ContentType: "text/plain",
 				Length:      25,
@@ -159,7 +146,7 @@ func TestDBGetAttachment(t *testing.T) {
 			filename: filename,
 			options:  kivik.Rev(rev),
 
-			wantAttachment: &attachment{Filename: filename, ContentType: "text/plain", Length: int64(len(wantContent)), RevPos: int64(r.rev), Data: wantContent},
+			want: &attachment{Filename: filename, ContentType: "text/plain", Length: int64(len(wantContent)), RevPos: int64(r.rev), Data: wantContent},
 		}
 	})
 
@@ -201,7 +188,7 @@ func TestDBGetAttachment(t *testing.T) {
 			t.Errorf("Unexpected status: %d", status)
 		}
 
-		if tt.wantAttachment == nil {
+		if tt.want == nil {
 			return
 		}
 		data, err := io.ReadAll(att.Content)
@@ -215,7 +202,7 @@ func TestDBGetAttachment(t *testing.T) {
 			RevPos:      att.RevPos,
 			Data:        string(data),
 		}
-		if d := cmp.Diff(tt.wantAttachment, got); d != "" {
+		if d := cmp.Diff(tt.want, got); d != "" {
 			t.Errorf("Unexpected attachment metadata:\n%s", d)
 		}
 	})

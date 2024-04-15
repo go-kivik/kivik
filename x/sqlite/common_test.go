@@ -32,6 +32,7 @@ type DB interface {
 	driver.Purger
 	driver.RevsDiffer
 	driver.OpenRever
+	driver.AttachmentMetaGetter
 }
 
 type testDB struct {

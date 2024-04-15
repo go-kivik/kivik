@@ -79,17 +79,16 @@ func (d *db) isLeafRev(ctx context.Context, tx *sql.Tx, docID string, rev int, r
 }
 
 // winningRev returns the current winning revision, and MD5sum, for the specified document.
-func (d *db) winningRev(ctx context.Context, tx *sql.Tx, docID string) (revision, md5sum, error) {
+func (d *db) winningRev(ctx context.Context, tx *sql.Tx, docID string) (revision, error) {
 	var curRev revision
-	var hash md5sum
 	err := tx.QueryRowContext(ctx, d.query(`
-		SELECT rev, rev_id, md5sum
+		SELECT rev, rev_id
 		FROM {{ .Docs }}
 		WHERE id = $1
 		ORDER BY rev DESC, rev_id DESC
 		LIMIT 1
-	`), docID).Scan(&curRev.rev, &curRev.id, &hash)
-	return curRev, hash, err
+	`), docID).Scan(&curRev.rev, &curRev.id)
+	return curRev, err
 }
 
 type stmtCache map[string]*sql.Stmt

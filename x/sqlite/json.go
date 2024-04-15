@@ -41,6 +41,10 @@ func (r revision) String() string {
 	return strconv.Itoa(r.rev) + "-" + r.id
 }
 
+func (r revision) IsZero() bool {
+	return r.rev == 0
+}
+
 func parseRev(s string) (revision, error) {
 	if s == "" {
 		return revision{}, &internal.Error{Status: http.StatusBadRequest, Message: "missing _rev"}

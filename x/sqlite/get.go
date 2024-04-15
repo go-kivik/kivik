@@ -53,7 +53,7 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 			return nil, err
 		}
 	}
-	toMerge, r, err := d.getCoreDoc(ctx, tx, id, r, latest)
+	toMerge, r, err := d.getCoreDoc(ctx, tx, id, r, latest, false)
 	if err != nil {
 		return nil, err
 	}

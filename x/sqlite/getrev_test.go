@@ -43,6 +43,170 @@ func TestGetRev(t *testing.T) {
 		wantStatus: http.StatusNotFound,
 		wantErr:    "not found",
 	})
+	tests.Add("success", func(t *testing.T) interface{} {
+		db := newDB(t)
+		rev := db.tPut("foo", map[string]string{"foo": "bar"})
+
+		return test{
+			db:   db,
+			id:   "foo",
+			want: rev,
+		}
+	})
+	tests.Add("get specific rev", func(t *testing.T) interface{} {
+		db := newDB(t)
+		rev := db.tPut("foo", map[string]string{"foo": "bar"})
+		_ = db.tPut("foo", map[string]string{"foo": "baz"}, kivik.Rev(rev))
+
+		return test{
+			db:      db,
+			id:      "foo",
+			options: kivik.Rev(rev),
+			want:    rev,
+		}
+	})
+	tests.Add("specific rev not found", test{
+		id:         "foo",
+		options:    kivik.Rev("1-9bb58f26192e4ba00f01e2e7b136bbd8"),
+		wantStatus: http.StatusNotFound,
+		wantErr:    "not found",
+	})
+	tests.Add("deleted document", func(t *testing.T) interface{} {
+		db := newDB(t)
+		rev := db.tPut("foo", map[string]string{"foo": "bar"})
+		_ = db.tDelete("foo", kivik.Rev(rev))
+
+		return test{
+			db:         db,
+			id:         "foo",
+			wantStatus: http.StatusNotFound,
+			wantErr:    "not found",
+		}
+	})
+	tests.Add("deleted document by rev", func(t *testing.T) interface{} {
+		db := newDB(t)
+		rev := db.tPut("foo", map[string]string{"foo": "bar"})
+		rev = db.tDelete("foo", kivik.Rev(rev))
+
+		return test{
+			db:      db,
+			id:      "foo",
+			options: kivik.Rev(rev),
+			want:    rev,
+		}
+	})
+	tests.Add("get latest winning leaf", func(t *testing.T) interface{} {
+		db := newDB(t)
+		_ = db.tPut("foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
+			"new_edits": false,
+		}))
+		_ = db.tPut("foo", map[string]interface{}{
+			"foo": "bbb",
+			"_revisions": map[string]interface{}{
+				"ids":   []string{"bbb", "aaa"},
+				"start": 2,
+			},
+		}, kivik.Params(map[string]interface{}{
+			"new_edits": false,
+		}))
+		_ = db.tPut("foo", map[string]interface{}{
+			"foo": "ddd",
+			"_revisions": map[string]interface{}{
+				"ids":   []string{"yyy", "aaa"},
+				"start": 2,
+			},
+		}, kivik.Params(map[string]interface{}{
+			"new_edits": false,
+		}))
+
+		return test{
+			db: db,
+			id: "foo",
+			options: kivik.Params(map[string]interface{}{
+				"latest": true,
+				"rev":    "1-aaa",
+			}),
+			want: "2-yyy",
+		}
+	})
+	tests.Add("get latest non-winning leaf", func(t *testing.T) interface{} {
+		db := newDB(t)
+		// common root doc
+		_ = db.tPut("foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
+			"new_edits": false,
+		}))
+		// losing branch
+		_ = db.tPut("foo", map[string]interface{}{
+			"foo": "bbb",
+			"_revisions": map[string]interface{}{
+				"ids":   []string{"ccc", "bbb", "aaa"},
+				"start": 3,
+			},
+		}, kivik.Params(map[string]interface{}{
+			"new_edits": false,
+		}))
+
+		// winning branch
+		_ = db.tPut("foo", map[string]interface{}{
+			"foo": "ddd",
+			"_revisions": map[string]interface{}{
+				"ids":   []string{"xxx", "yyy", "aaa"},
+				"start": 3,
+			},
+		}, kivik.Params(map[string]interface{}{
+			"new_edits": false,
+		}))
+
+		return test{
+			db: db,
+			id: "foo",
+			options: kivik.Params(map[string]interface{}{
+				"latest": true,
+				"rev":    "2-bbb",
+			}),
+			want: "3-ccc",
+		}
+	})
+	tests.Add("get latest rev with deleted leaf, reverts to the winning branch", func(t *testing.T) interface{} {
+		db := newDB(t)
+		// common root doc
+		_ = db.tPut("foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
+			"new_edits": false,
+		}))
+		// losing branch
+		_ = db.tPut("foo", map[string]interface{}{
+			"foo": "bbb",
+			"_revisions": map[string]interface{}{
+				"ids":   []string{"ccc", "bbb", "aaa"},
+				"start": 3,
+			},
+		}, kivik.Params(map[string]interface{}{
+			"new_edits": false,
+		}))
+		// now delete the losing leaf
+		_ = db.tDelete("foo", kivik.Rev("3-ccc"))
+
+		// winning branch
+		_ = db.tPut("foo", map[string]interface{}{
+			"foo": "ddd",
+			"_revisions": map[string]interface{}{
+				"ids":   []string{"xxx", "yyy", "aaa"},
+				"start": 3,
+			},
+		}, kivik.Params(map[string]interface{}{
+			"new_edits": false,
+		}))
+
+		return test{
+			db: db,
+			id: "foo",
+			options: kivik.Params(map[string]interface{}{
+				"latest": true,
+				"rev":    "2-bbb",
+			}),
+			want: "3-xxx",
+		}
+	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()

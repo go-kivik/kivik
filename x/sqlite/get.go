@@ -33,7 +33,6 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 	var (
 		r        revision
 		body     []byte
-		err      error
 		deleted  bool
 		localSeq int
 	)
@@ -63,7 +62,8 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 			`, d.name), id, r.rev, r.id).Scan(&localSeq, &body, &deleted)
 	case optsRev != "" && latest:
 		err = tx.QueryRowContext(ctx, fmt.Sprintf(`
-			SELECT seq, rev, rev_id, doc, deleted FROM (
+			SELECT seq, rev, rev_id, doc, deleted
+			FROM (
 				WITH RECURSIVE Descendants AS (
 					-- Base case: Select the starting node for descendants
 					SELECT id, rev, rev_id, parent_rev, parent_rev_id
@@ -89,7 +89,8 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 			UNION ALL
 			-- This query fetches the winning non-deleted rev, in case the above
 			-- query returns nothing, because the latest leaf rev is deleted.
-			SELECT seq, rev, rev_id, doc, deleted FROM (
+			SELECT seq, rev, rev_id, doc, deleted
+			FROM (
 				SELECT leaf.id, leaf.rev, leaf.rev_id, leaf.parent_rev, leaf.parent_rev_id, doc.doc, doc.deleted, doc.seq
 				FROM %[1]q AS leaf
 				LEFT JOIN %[1]q AS child ON child.id = leaf.id AND child.parent_rev = leaf.rev AND child.parent_rev_id = leaf.rev_id

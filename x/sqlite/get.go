@@ -53,35 +53,35 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 	}
 	switch {
 	case optsRev != "" && !latest:
-		err = tx.QueryRowContext(ctx, fmt.Sprintf(`
+		err = tx.QueryRowContext(ctx, d.query(`
 			SELECT seq, doc, deleted
-			FROM %q
+			FROM {{ .Docs }}
 			WHERE id = $1
 				AND rev = $2
 				AND rev_id = $3
-			`, d.name), id, r.rev, r.id).Scan(&localSeq, &body, &deleted)
+			`), id, r.rev, r.id).Scan(&localSeq, &body, &deleted)
 	case optsRev != "" && latest:
-		err = tx.QueryRowContext(ctx, fmt.Sprintf(`
+		err = tx.QueryRowContext(ctx, d.query(`
 			SELECT seq, rev, rev_id, doc, deleted
 			FROM (
 				WITH RECURSIVE Descendants AS (
 					-- Base case: Select the starting node for descendants
 					SELECT id, rev, rev_id, parent_rev, parent_rev_id
-					FROM %[1]q AS revs
+					FROM {{ .Revs }} AS revs
 					WHERE id = $1
 						AND rev = $2
 						AND rev_id = $3
 					UNION ALL
 					-- Recursive step: Select the children of the current node
 					SELECT r.id, r.rev, r.rev_id, r.parent_rev, r.parent_rev_id
-					FROM %[1]q r
+					FROM {{ .Revs }} AS r
 					JOIN Descendants d ON d.rev_id = r.parent_rev_id AND d.rev = r.parent_rev AND d.id = r.id
 				)
 				-- Combine ancestors and descendants, excluding the starting node twice
 				SELECT seq, rev.rev, rev.rev_id, doc, deleted
 				FROM Descendants AS rev
-				JOIN %[2]q AS doc ON doc.id = rev.id AND doc.rev = rev.rev AND doc.rev_id = rev.rev_id
-				LEFT JOIN %[1]q AS child ON child.parent_rev = rev.rev AND child.parent_rev_id = rev.rev_id
+				JOIN {{ .Docs }} AS doc ON doc.id = rev.id AND doc.rev = rev.rev AND doc.rev_id = rev.rev_id
+				LEFT JOIN {{ .Revs }} AS child ON child.parent_rev = rev.rev AND child.parent_rev_id = rev.rev_id
 				WHERE child.rev IS NULL
 					AND doc.deleted = FALSE
 				ORDER BY rev.rev DESC, rev.rev_id DESC
@@ -92,23 +92,23 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 			SELECT seq, rev, rev_id, doc, deleted
 			FROM (
 				SELECT leaf.id, leaf.rev, leaf.rev_id, leaf.parent_rev, leaf.parent_rev_id, doc.doc, doc.deleted, doc.seq
-				FROM %[1]q AS leaf
-				LEFT JOIN %[1]q AS child ON child.id = leaf.id AND child.parent_rev = leaf.rev AND child.parent_rev_id = leaf.rev_id
-				JOIN %[2]q AS doc ON doc.id = leaf.id AND doc.rev = leaf.rev AND doc.rev_id = leaf.rev_id
+				FROM {{ .Revs }} AS leaf
+				LEFT JOIN {{ .Revs }} AS child ON child.id = leaf.id AND child.parent_rev = leaf.rev AND child.parent_rev_id = leaf.rev_id
+				JOIN {{ .Docs }} AS doc ON doc.id = leaf.id AND doc.rev = leaf.rev AND doc.rev_id = leaf.rev_id
 				WHERE child.rev IS NULL
 					AND doc.deleted = FALSE
 				ORDER BY leaf.rev DESC, leaf.rev_id DESC
 			)
 			LIMIT 1
-		`, d.name+"_revs", d.name), id, r.rev, r.id).Scan(&localSeq, &r.rev, &r.id, &body, &deleted)
+		`), id, r.rev, r.id).Scan(&localSeq, &r.rev, &r.id, &body, &deleted)
 	default:
-		err = tx.QueryRowContext(ctx, fmt.Sprintf(`
+		err = tx.QueryRowContext(ctx, d.query(`
 			SELECT seq, rev, rev_id, doc, deleted
-			FROM %q
+			FROM {{ .Docs }}
 			WHERE id = $1
 			ORDER BY rev DESC, rev_id DESC
 			LIMIT 1
-		`, d.name), id).Scan(&localSeq, &r.rev, &r.id, &body, &deleted)
+		`), id).Scan(&localSeq, &r.rev, &r.id, &body, &deleted)
 	}
 
 	switch {
@@ -253,21 +253,21 @@ type dbOrTx interface {
 
 func (d *db) conflicts(ctx context.Context, tx dbOrTx, id string, r revision, deleted bool) ([]string, error) {
 	var revs []string
-	rows, err := tx.QueryContext(ctx, fmt.Sprintf(`
+	rows, err := tx.QueryContext(ctx, d.query(`
 			SELECT rev.rev || '-' || rev.rev_id
-			FROM %[1]q AS rev
-			LEFT JOIN %[1]q AS child
+			FROM {{ .Revs }} AS rev
+			LEFT JOIN {{ .Revs }} AS child
 				ON rev.id = child.id
 				AND rev.rev = child.parent_rev
 				AND rev.rev_id = child.parent_rev_id
-			JOIN %[2]q AS docs ON docs.id = rev.id
+			JOIN {{ .Docs }} AS docs ON docs.id = rev.id
 				AND docs.rev = rev.rev
 				AND docs.rev_id = rev.rev_id
 			WHERE rev.id = $1
 				AND NOT (rev.rev = $2 AND rev.rev_id = $3)
 				AND child.id IS NULL
 				AND docs.deleted = $4
-			`, d.name+"_revs", d.name), id, r.rev, r.id, deleted)
+			`), id, r.rev, r.id, deleted)
 	if err != nil {
 		return nil, err
 	}

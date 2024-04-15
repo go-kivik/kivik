@@ -16,7 +16,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
@@ -48,35 +47,35 @@ func (d *db) GetRev(ctx context.Context, id string, options driver.Options) (str
 	}
 	switch {
 	case optsRev != "" && !latest:
-		err = tx.QueryRowContext(ctx, fmt.Sprintf(`
+		err = tx.QueryRowContext(ctx, d.query(`
 			SELECT deleted
-			FROM %q
+			FROM {{ .Docs }}
 			WHERE id = $1
 				AND rev = $2
 				AND rev_id = $3
-			`, d.name), id, r.rev, r.id).Scan(&deleted)
+			`), id, r.rev, r.id).Scan(&deleted)
 	case optsRev != "" && latest:
-		err = tx.QueryRowContext(ctx, fmt.Sprintf(`
+		err = tx.QueryRowContext(ctx, d.query(`
 			SELECT rev, rev_id
 			FROM (
 				WITH RECURSIVE Descendants AS (
 					-- Base case: Select the starting node for descendants
 					SELECT id, rev, rev_id, parent_rev, parent_rev_id
-					FROM %[1]q AS revs
+					FROM {{ .Revs }} AS revs
 					WHERE id = $1
 						AND rev = $2
 						AND rev_id = $3
 					UNION ALL
 					-- Recursive step: Select the children of the current node
 					SELECT r.id, r.rev, r.rev_id, r.parent_rev, r.parent_rev_id
-					FROM %[1]q r
+					FROM {{ .Revs }} AS r
 					JOIN Descendants d ON d.rev_id = r.parent_rev_id AND d.rev = r.parent_rev AND d.id = r.id
 				)
 				-- Combine ancestors and descendants, excluding the starting node twice
 				SELECT rev.rev, rev.rev_id
 				FROM Descendants AS rev
-				JOIN %[2]q AS doc ON doc.id = rev.id AND doc.rev = rev.rev AND doc.rev_id = rev.rev_id
-				LEFT JOIN %[1]q AS child ON child.parent_rev = rev.rev AND child.parent_rev_id = rev.rev_id
+				JOIN {{ .Docs }} AS doc ON doc.id = rev.id AND doc.rev = rev.rev AND doc.rev_id = rev.rev_id
+				LEFT JOIN {{ .Revs }} AS child ON child.parent_rev = rev.rev AND child.parent_rev_id = rev.rev_id
 				WHERE child.rev IS NULL
 					AND doc.deleted = FALSE
 				ORDER BY rev.rev DESC, rev.rev_id DESC
@@ -87,23 +86,23 @@ func (d *db) GetRev(ctx context.Context, id string, options driver.Options) (str
 			SELECT rev, rev_id
 			FROM (
 				SELECT leaf.id, leaf.rev, leaf.rev_id, leaf.parent_rev, leaf.parent_rev_id
-				FROM %[1]q AS leaf
-				LEFT JOIN %[1]q AS child ON child.id = leaf.id AND child.parent_rev = leaf.rev AND child.parent_rev_id = leaf.rev_id
-				JOIN %[2]q AS doc ON doc.id = leaf.id AND doc.rev = leaf.rev AND doc.rev_id = leaf.rev_id
+				FROM {{ .Revs }} AS leaf
+				LEFT JOIN {{ .Revs }} AS child ON child.id = leaf.id AND child.parent_rev = leaf.rev AND child.parent_rev_id = leaf.rev_id
+				JOIN {{ .Docs }} AS doc ON doc.id = leaf.id AND doc.rev = leaf.rev AND doc.rev_id = leaf.rev_id
 				WHERE child.rev IS NULL
 					AND doc.deleted = FALSE
 				ORDER BY leaf.rev DESC, leaf.rev_id DESC
 			)
 			LIMIT 1
-		`, d.name+"_revs", d.name), id, r.rev, r.id).Scan(&r.rev, &r.id)
+		`), id, r.rev, r.id).Scan(&r.rev, &r.id)
 	default:
-		err = tx.QueryRowContext(ctx, fmt.Sprintf(`
+		err = tx.QueryRowContext(ctx, d.query(`
 			SELECT rev, rev_id, deleted
-			FROM %q
+			FROM {{ .Docs }}
 			WHERE id = $1
 			ORDER BY rev DESC, rev_id DESC
 			LIMIT 1
-		`, d.name), id).Scan(&r.rev, &r.id, &deleted)
+		`), id).Scan(&r.rev, &r.id, &deleted)
 	}
 
 	switch {

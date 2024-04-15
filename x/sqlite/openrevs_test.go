@@ -87,12 +87,27 @@ func TestDBOpenRevs(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("all, with conflicting leaves", func(t *testing.T) interface{} {
+		d := newDB(t)
+		docID := "foo"
+		rev := d.tPut(docID, map[string]string{"_rev": "1-xyz", "foo": "bar"}, kivik.Param("new_edits", false))
+		rev2 := d.tPut(docID, map[string]string{"_rev": "1-abc", "foo": "baz"}, kivik.Param("new_edits", false))
+
+		return test{
+			db:    d,
+			docID: docID,
+			revs:  []string{"all"},
+			want: []rowResult{
+				{ID: docID, Rev: rev, Doc: `{"_id":"` + docID + `","_rev":"` + rev + `","foo":"bar"}`},
+				{ID: docID, Rev: rev2, Doc: `{"_id":"` + docID + `","_rev":"` + rev2 + `","foo":"baz"}`},
+			},
+		}
+	})
 	/*
 		TODO:
 		- No revs provided == returns winning leaf
 		- document not found, open_revs=["something"] = 200 + missing
 		- document found, rev not found
-		- all revs
 		- latest=true
 		- non-leaf rev specified -- missing, I think
 		- Include attachment info when relevant (https://docs.couchdb.org/en/stable/replication/protocol.html#:~:text=In%20case%20the%20Document%20contains%20attachments%2C%20Source%20MUST%20return%20information%20only%20for%20those%20ones%20that%20had%20been%20changed%20(added%20or%20updated)%20since%20the%20specified%20Revision%20values.%20If%20an%20attachment%20was%20deleted%2C%20the%20Document%20MUST%20NOT%20have%20stub%20information%20for%20it)

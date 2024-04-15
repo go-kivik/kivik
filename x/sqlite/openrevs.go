@@ -40,6 +40,7 @@ func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, _ driver
 				WHERE parent.id = $1 AND child.id IS NULL
 			) AS leaf
 			JOIN {{ .Docs }} AS docs ON leaf.id = docs.id AND leaf.rev = docs.rev AND leaf.rev_id = docs.rev_id
+			ORDER BY leaf.rev DESC
 		`)
 		rows, err := d.db.QueryContext(ctx, query, docID) //nolint:rowserrcheck // Err checked in Next
 		if err != nil {

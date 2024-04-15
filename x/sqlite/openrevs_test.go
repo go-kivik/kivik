@@ -204,11 +204,41 @@ func TestDBOpenRevs(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("latest=true returns multiple leaves when requested ancestor has them", func(t *testing.T) interface{} {
+		d := newDB(t)
+		docID := "foo"
+		rev := d.tPut(docID, map[string]string{"step": "one"})
+		r, _ := parseRev(rev)
+		_ = d.tPut(docID, map[string]interface{}{
+			"step": "three",
+			"_revisions": map[string]interface{}{
+				"start": 3,
+				"ids":   []string{"def", "abc", r.id},
+			},
+		}, kivik.Param("new_edits", false))
+		_ = d.tPut(docID, map[string]interface{}{
+			"step": "four",
+			"_revisions": map[string]interface{}{
+				"start": 3,
+				"ids":   []string{"jkl", "ghi", r.id},
+			},
+		}, kivik.Param("new_edits", false))
+
+		return test{
+			db:      d,
+			docID:   docID,
+			revs:    []string{rev},
+			options: kivik.Param("latest", true),
+			want: []rowResult{
+				{ID: docID, Rev: rev, Doc: `{"_id":"` + docID + `","_rev":"` + rev + `","step":"one"}`},
+				{ID: docID, Rev: "3-def", Doc: `{"_id":"` + docID + `","_rev":"3-def","step":"three"}`},
+				{ID: docID, Rev: "3-jkl", Doc: `{"_id":"` + docID + `","_rev":"3-jkl","step":"four"}`},
+			},
+		}
+	})
 	/*
 		TODO:
 		- rev calculation is broken
-		- latest=true returns multiple leaves if they share the same requested ancestor
-		- non-leaf rev specified, returns non-leaf if available
 		- Include attachment info when relevant (https://docs.couchdb.org/en/stable/replication/protocol.html#:~:text=In%20case%20the%20Document%20contains%20attachments%2C%20Source%20MUST%20return%20information%20only%20for%20those%20ones%20that%20had%20been%20changed%20(added%20or%20updated)%20since%20the%20specified%20Revision%20values.%20If%20an%20attachment%20was%20deleted%2C%20the%20Document%20MUST%20NOT%20have%20stub%20information%20for%20it)
 
 		- revs=true

@@ -57,7 +57,6 @@ func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, options 
 			VALUES %s
 		),
 		open_revs (id, rev, rev_id) AS (
-
 			-- Provided revs
 			SELECT *
 			FROM provided_revs

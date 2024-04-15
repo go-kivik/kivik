@@ -15,9 +15,10 @@ package sqlite
 import (
 	"context"
 	"database/sql"
-	"errors"
+	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/internal"
@@ -103,13 +104,54 @@ func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, _ driver
 			rows: rows,
 		}, nil
 	}
+
+	values := make([]string, 0, len(revs))
+	args := make([]interface{}, 1, len(revs)*2+1)
+	args[0] = docID
+
+	i := 2
 	for _, rev := range revs {
-		if _, err := parseRev(rev); err != nil {
+		r, err := parseRev(rev)
+		if err != nil {
 			return nil, &internal.Error{Message: "invalid rev format", Status: http.StatusBadRequest}
 		}
+		values = append(values, fmt.Sprintf("($1, $%d, $%d)", i, i+1))
+		args = append(args, r.rev, r.id)
 	}
 
-	return nil, errors.New("TODO: not implemented")
+	query := fmt.Sprintf(d.query(`
+		WITH leaf (id, rev, rev_id) AS (
+			VALUES %s
+		)
+		SELECT
+			leaf.rev || '-' || leaf.rev_id AS rev,
+			docs.deleted,
+			docs.doc
+		FROM leaf
+		JOIN {{ .Docs }} AS docs ON leaf.id = docs.id AND leaf.rev = docs.rev AND leaf.rev_id = docs.rev_id
+		ORDER BY leaf.rev DESC
+		LIMIT 1
+	`), strings.Join(values, ", "))
+	rows, err := d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
+	if err != nil {
+		return nil, err
+	}
+
+	// Call rows.Next() to see if we get any results at all. If zero results,
+	// we need to return 404 instead of an iterator for the open_revs=all case.
+	if !rows.Next() {
+		if err := rows.Err(); err != nil {
+			return nil, err
+		}
+		return nil, &internal.Error{Message: "missing", Status: http.StatusNotFound}
+	}
+
+	return &openRevsRows{
+		id:   docID,
+		ctx:  ctx,
+		pre:  true,
+		rows: rows,
+	}, nil
 }
 
 type openRevsRows struct {

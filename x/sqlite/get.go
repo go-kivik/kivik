@@ -43,8 +43,18 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 	}
 	defer tx.Rollback()
 
-	optsRev, _ := opts["rev"].(string)
-	latest, _ := opts["latest"].(bool)
+	var (
+		optConflicts, _        = opts["conflicts"].(bool)
+		optDeletedConflicts, _ = opts["deleted_conflicts"].(bool)
+		optRevsInfo, _         = opts["revs_info"].(bool)
+		optRevs, _             = opts["revs"].(bool) // TODO: opts.revs()
+		optLocalSeq, _         = opts["local_seq"].(bool)
+		optAttachments, _      = opts["attachments"].(bool)
+		optAttsSince, _        = opts["atts_since"].([]string)
+		optsRev, _             = opts["rev"].(string)
+		latest, _              = opts["latest"].(bool)
+	)
+
 	if optsRev != "" {
 		r, err = parseRev(optsRev)
 		if err != nil {
@@ -120,20 +130,15 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 	}
 
 	toMerge := fullDoc{
-		ID:      id,
-		Rev:     r.String(),
-		Deleted: deleted,
+		ID:       id,
+		Rev:      r.String(),
+		Deleted:  deleted,
+		Doc:      body,
+		LocalSeq: localSeq,
 	}
-
-	var (
-		optConflicts, _        = opts["conflicts"].(bool)
-		optDeletedConflicts, _ = opts["deleted_conflicts"].(bool)
-		optRevsInfo, _         = opts["revs_info"].(bool)
-		optRevs, _             = opts["revs"].(bool) // TODO: opts.revs()
-		optLocalSeq, _         = opts["local_seq"].(bool)
-		optAttachments, _      = opts["attachments"].(bool)
-		optAttsSince, _        = opts["atts_since"].([]string)
-	)
+	if !optLocalSeq {
+		toMerge.LocalSeq = 0
+	}
 
 	if meta, _ := opts["meta"].(bool); meta {
 		optConflicts = true
@@ -227,9 +232,7 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 			toMerge.Revisions = &revsInfo
 		}
 	}
-	if optLocalSeq {
-		toMerge.LocalSeq = localSeq
-	}
+
 	atts, err := d.getAttachments(ctx, tx, id, r, optAttachments, optAttsSince)
 	if err != nil {
 		return nil, err
@@ -237,8 +240,6 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 	if mergeAtts := atts.inlineAttachments(); mergeAtts != nil {
 		toMerge.Attachments = mergeAtts
 	}
-
-	toMerge.Doc = body
 
 	return &driver.Document{
 		Attachments: atts,

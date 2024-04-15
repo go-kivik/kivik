@@ -45,9 +45,22 @@ func TestDBOpenRevs(t *testing.T) {
 		wantErr:    "missing",
 		wantStatus: http.StatusNotFound,
 	})
+	tests.Add("invalid rev format", func(t *testing.T) interface{} {
+		d := newDB(t)
+		docID := "foo"
+		_ = d.tPut(docID, map[string]string{"foo": "bar"})
+
+		return test{
+			db:         d,
+			docID:      docID,
+			revs:       []string{"oink", "all"},
+			wantErr:    "invalid rev format",
+			wantStatus: http.StatusBadRequest,
+		}
+	})
 	/*
 		TODO:
-		- No revs provided
+		- No revs provided == returns winning leaf
 		- document not found, open_revs=["something"] = 200 + missing
 		- document found, rev not found
 		- all revs

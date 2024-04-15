@@ -39,5 +39,10 @@ func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, _ driver
 		}
 		return nil, tx.Commit()
 	}
+	for _, rev := range revs {
+		if _, err := parseRev(rev); err != nil {
+			return nil, &internal.Error{Message: "invalid rev format", Status: http.StatusBadRequest}
+		}
+	}
 	return nil, nil
 }

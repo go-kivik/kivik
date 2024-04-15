@@ -24,6 +24,46 @@ import (
 )
 
 func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, _ driver.Options) (driver.Rows, error) {
+	if len(revs) == 0 {
+		query := d.query(`
+			SELECT
+				leaf.rev || '-' || leaf.rev_id AS rev,
+				docs.deleted,
+				docs.doc
+			FROM (
+				SELECT
+					parent.id,
+					parent.rev,
+					parent.rev_id
+				FROM {{ .Revs }} AS parent
+				LEFT JOIN {{ .Revs }} AS child ON parent.id = child.id AND parent.rev = child.parent_rev AND parent.rev_id = child.parent_rev_id
+				WHERE parent.id = $1 AND child.id IS NULL
+			) AS leaf
+			JOIN {{ .Docs }} AS docs ON leaf.id = docs.id AND leaf.rev = docs.rev AND leaf.rev_id = docs.rev_id
+			ORDER BY leaf.rev DESC
+			LIMIT 1
+		`)
+		rows, err := d.db.QueryContext(ctx, query, docID) //nolint:rowserrcheck // Err checked in Next
+		if err != nil {
+			return nil, err
+		}
+
+		// Call rows.Next() to see if we get any results at all. If zero results,
+		// we need to return 404 instead of an iterator for the open_revs=all case.
+		if !rows.Next() {
+			if err := rows.Err(); err != nil {
+				return nil, err
+			}
+			return nil, &internal.Error{Message: "missing", Status: http.StatusNotFound}
+		}
+
+		return &openRevsRows{
+			id:   docID,
+			ctx:  ctx,
+			pre:  true,
+			rows: rows,
+		}, nil
+	}
 	if len(revs) == 1 && revs[0] == "all" {
 		query := d.query(`
 			SELECT

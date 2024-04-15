@@ -103,9 +103,23 @@ func TestDBOpenRevs(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("no revs provided returns winning leaf", func(t *testing.T) interface{} {
+		d := newDB(t)
+		docID := "foo"
+		rev := d.tPut(docID, map[string]string{"_rev": "1-xyz", "foo": "bar"}, kivik.Param("new_edits", false))
+		_ = d.tPut(docID, map[string]string{"_rev": "1-abc", "foo": "baz"}, kivik.Param("new_edits", false))
+
+		return test{
+			db:    d,
+			docID: docID,
+			revs:  []string{},
+			want: []rowResult{
+				{ID: docID, Rev: rev, Doc: `{"_id":"` + docID + `","_rev":"` + rev + `","foo":"bar"}`},
+			},
+		}
+	})
 	/*
 		TODO:
-		- No revs provided == returns winning leaf
 		- document not found, open_revs=["something"] = 200 + missing
 		- document found, rev not found
 		- latest=true

@@ -961,7 +961,7 @@ func TestNetError(t *testing.T) {
 				return err
 			}(),
 			status: http.StatusBadGateway,
-			err:    `Get "?http://127.0.0.1:\d+"?: context deadline exceeded`,
+			err:    `(Get "?http://127.0.0.1:\d+"?: context deadline exceeded|dial tcp 127.0.0.1:\d+: i/o timeout)`,
 		},
 		{
 			name: "cannot resolve host",

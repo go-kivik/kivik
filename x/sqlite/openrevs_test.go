@@ -17,6 +17,7 @@ package sqlite
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"gitlab.com/flimzy/testy"
@@ -38,6 +39,33 @@ func TestDBOpenRevs(t *testing.T) {
 		wantStatus int
 	}
 	tests := testy.NewTable()
+	tests.Add("all revs, document not found", test{
+		docID:      "not there",
+		revs:       []string{"all"},
+		wantErr:    "missing",
+		wantStatus: http.StatusNotFound,
+	})
+	/*
+		TODO:
+		- No revs provided
+		- document not found, open_revs=["something"] = 200 + missing
+		- document found, rev not found
+		- all revs
+		- latest=true
+
+		Do other GET options have any effect?
+		- attachments
+		- att_encoding_info
+		- atts_since
+		- conflicts
+		- deleted_conflicts
+		- local_seq
+		- meta
+		- rev
+		- revs
+		- revs_info
+		- If-None-Match header
+	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()

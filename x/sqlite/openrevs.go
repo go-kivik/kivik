@@ -14,10 +14,30 @@ package sqlite
 
 import (
 	"context"
+	"database/sql"
+	"errors"
+	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
-func (db) OpenRevs(context.Context, string, []string, driver.Options) (driver.Rows, error) {
+func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, _ driver.Options) (driver.Rows, error) {
+	if len(revs) == 1 && revs[0] == "all" {
+		tx, err := d.db.Begin()
+		if err != nil {
+			return nil, err
+		}
+		defer tx.Rollback()
+
+		_, _, err = d.winningRev(ctx, tx, docID)
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, &internal.Error{Status: http.StatusNotFound, Message: "missing"}
+		case err != nil:
+			return nil, err
+		}
+		return nil, tx.Commit()
+	}
 	return nil, nil
 }

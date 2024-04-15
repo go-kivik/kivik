@@ -55,7 +55,7 @@ func TestDBGetAttachment(t *testing.T) {
 		docID:      "foo",
 		filename:   "foo.txt",
 		wantStatus: http.StatusNotFound,
-		wantErr:    "Not Found: missing",
+		wantErr:    "missing",
 	})
 	tests.Add("when the attachment exists, return it", func(t *testing.T) interface{} {
 		db := newDB(t)
@@ -106,7 +106,7 @@ func TestDBGetAttachment(t *testing.T) {
 			docID:      "foo",
 			filename:   "foo.txt",
 			wantStatus: http.StatusNotFound,
-			wantErr:    "Not Found: missing",
+			wantErr:    "missing",
 		}
 	})
 	tests.Add("document has been been updated since attachment was added, should succeed", func(t *testing.T) interface{} {

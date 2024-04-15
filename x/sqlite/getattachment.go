@@ -42,13 +42,13 @@ func (d *db) GetAttachment(ctx context.Context, docID string, filename string, o
 	} else {
 		requestedRev, _, err = d.winningRev(ctx, tx, docID)
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, &internal.Error{Status: http.StatusNotFound, Message: "Not Found: missing"}
+			return nil, &internal.Error{Status: http.StatusNotFound, Message: "missing"}
 		}
 	}
 
 	attachment, err := d.getAttachment(ctx, tx, docID, filename, requestedRev)
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, &internal.Error{Status: http.StatusNotFound, Message: "Not Found: missing"}
+		return nil, &internal.Error{Status: http.StatusNotFound, Message: "missing"}
 	}
 	if err != nil {
 		return nil, err

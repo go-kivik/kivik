@@ -27,11 +27,12 @@ import (
 func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, options driver.Options) (driver.Rows, error) {
 	opts := newOpts(options)
 	values := make([]string, 0, len(revs))
-	args := make([]interface{}, 4, len(revs)*2+4)
+	args := make([]interface{}, 5, len(revs)*2+5)
 	args[0] = docID
 	args[1] = len(revs) == 0 // open_revs=[]
 	args[2] = false
 	args[3] = opts.latest()
+	args[4] = opts.revs()
 	if len(revs) == 1 && revs[0] == "all" {
 		args[2] = true
 		revs = []string{}
@@ -53,7 +54,16 @@ func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, options 
 	}
 
 	query := fmt.Sprintf(d.query(`
-		WITH provided_revs (id, rev, rev_id) AS (
+		WITH
+		RECURSIVE ancestors AS (
+			SELECT id, rev, rev_id, parent_rev, parent_rev_id
+			FROM {{ .Revs }}
+			UNION ALL
+			SELECT a.id, c.rev, c.rev_id, a.parent_rev, a.parent_rev_id
+			FROM {{ .Revs }} AS c
+			JOIN ancestors AS a ON c.id = a.id AND c.parent_rev = a.rev AND c.parent_rev_id = a.rev_id
+		),
+		provided_revs (id, rev, rev_id) AS (
 			VALUES %s
 		),
 		open_revs (id, rev, rev_id) AS (
@@ -113,12 +123,29 @@ func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, options 
 			WHERE $3 AND (parent.id = $1 AND child.id IS NULL)
 		)
 		SELECT
-			open_revs.rev || '-' || open_revs.rev_id AS rev,
-			docs.deleted,
-			docs.doc
-		FROM open_revs
-		LEFT JOIN {{ .Docs }} AS docs ON open_revs.id = docs.id AND open_revs.rev = docs.rev AND open_revs.rev_id = docs.rev_id
-		ORDER BY open_revs.rev, open_revs.rev_id
+			CASE WHEN row_number = 1 THEN rev END AS rev,
+			CASE WHEN row_number = 1 THEN rev_id END AS rev_id,
+			CASE WHEN row_number = 1 THEN deleted END AS deleted,
+			CASE WHEN row_number = 1 THEN doc END AS doc,
+			parent_rev,
+			parent_rev_id,
+			parent_count
+		FROM (
+			SELECT
+				open_revs.rev,
+				open_revs.rev_id,
+				docs.deleted,
+				docs.doc,
+				ancestors.parent_rev AS parent_rev,
+				ancestors.parent_rev_id AS parent_rev_id,
+				ROW_NUMBER() OVER (PARTITION BY open_revs.rev, open_revs.rev_id ORDER BY open_revs.rev, ancestors.rev_id, parent_rev DESC, parent_rev_id DESC) AS row_number,
+				SUM(CASE WHEN ancestors.parent_rev IS NOT NULL THEN 1 ELSE 0 END) OVER (PARTITION BY open_revs.rev, open_revs.rev_id) AS parent_count
+			FROM open_revs
+			LEFT JOIN {{ .Docs }} AS docs ON open_revs.id = docs.id AND open_revs.rev = docs.rev AND open_revs.rev_id = docs.rev_id
+			LEFT JOIN ancestors ON $5 AND open_revs.id = ancestors.id AND open_revs.rev = ancestors.rev AND open_revs.rev_id = ancestors.rev_id
+			WHERE ancestors.parent_rev IS NOT NULL OR NOT $5
+			ORDER BY open_revs.rev, open_revs.rev_id, parent_rev DESC, parent_rev_id DESC
+		)
 	`), strings.Join(values, ", "))
 	rows, err := d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {
@@ -154,33 +181,57 @@ type openRevsRows struct {
 var _ driver.Rows = (*openRevsRows)(nil)
 
 func (r *openRevsRows) Next(row *driver.Row) error {
-	if !r.pre && !r.rows.Next() {
-		if err := r.rows.Err(); err != nil {
+	var (
+		revsCount int
+		doc       fullDoc
+	)
+	for {
+		if !r.pre && !r.rows.Next() {
+			if err := r.rows.Err(); err != nil {
+				return err
+			}
+			return io.EOF
+		}
+		r.pre = false
+		var (
+			rowRev, parent        *int
+			rowRevID, parentRevID *string
+			rowDeleted            *bool
+			rowDoc                *[]byte
+		)
+		if err := r.rows.Scan(&rowRev, &rowRevID, &rowDeleted, &rowDoc, &parent, &parentRevID, &revsCount); err != nil {
 			return err
 		}
-		return io.EOF
-	}
-	r.pre = false
-	var (
-		deleted *bool
-		doc     *[]byte
-	)
-	if err := r.rows.Scan(&row.Rev, &deleted, &doc); err != nil {
-		return err
-	}
-	if deleted == nil {
-		row.Error = &internal.Error{Message: "missing", Status: http.StatusNotFound}
-	} else {
-		toMerge := fullDoc{
-			ID:      r.id,
-			Rev:     row.Rev,
-			Doc:     *doc,
-			Deleted: *deleted,
+		if rowRev != nil {
+			rv := revision{rev: *rowRev, id: *rowRevID}
+			row.Rev = rv.String()
+			row.ID = r.id
+			if rowDeleted == nil {
+				row.Error = &internal.Error{Message: "missing", Status: http.StatusNotFound}
+				return nil
+			}
+
+			doc = fullDoc{
+				ID:      r.id,
+				Rev:     rv.String(),
+				Doc:     *rowDoc,
+				Deleted: *rowDeleted,
+			}
+			if parent != nil {
+				doc.Revisions = &revsInfo{
+					Start: rv.rev,
+					IDs:   []string{rv.id, *parentRevID},
+				}
+			}
+		} else {
+			doc.Revisions.IDs = append(doc.Revisions.IDs, *parentRevID)
 		}
-		row.Doc = toMerge.toReader()
+
+		if doc.Revisions == nil || len(doc.Revisions.IDs) == revsCount+1 {
+			row.Doc = doc.toReader()
+			return nil
+		}
 	}
-	row.ID = r.id
-	return nil
 }
 
 func (r *openRevsRows) Close() error {

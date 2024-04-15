@@ -192,3 +192,7 @@ func (o optsMap) attachments() bool {
 func (o optsMap) latest() bool {
 	return toBool(o["latest"])
 }
+
+func (o optsMap) revs() bool {
+	return toBool(o["revs"])
+}

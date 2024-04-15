@@ -128,7 +128,7 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 		optConflicts, _        = opts["conflicts"].(bool)
 		optDeletedConflicts, _ = opts["deleted_conflicts"].(bool)
 		optRevsInfo, _         = opts["revs_info"].(bool)
-		optRevs, _             = opts["revs"].(bool)
+		optRevs, _             = opts["revs"].(bool) // TODO: opts.revs()
 		optLocalSeq, _         = opts["local_seq"].(bool)
 		optAttachments, _      = opts["attachments"].(bool)
 		optAttsSince, _        = opts["atts_since"].([]string)

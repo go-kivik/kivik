@@ -127,7 +127,7 @@ func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, options 
 			rev_id,
 			deleted,
 			doc,
-			GROUP_CONCAT(parent_rev || '-' || parent_rev_id, ",") AS ancestors
+			IIF($5, COALESCE(GROUP_CONCAT(parent_rev || '-' || parent_rev_id, ","), ""), NULL) AS ancestors
 		FROM (
 			SELECT
 				open_revs.rev,
@@ -141,7 +141,6 @@ func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, options 
 			FROM open_revs
 			LEFT JOIN {{ .Docs }} AS docs ON open_revs.id = docs.id AND open_revs.rev = docs.rev AND open_revs.rev_id = docs.rev_id
 			LEFT JOIN ancestors ON $5 AND open_revs.id = ancestors.id AND open_revs.rev = ancestors.rev AND open_revs.rev_id = ancestors.rev_id
-			WHERE ancestors.parent_rev IS NOT NULL OR NOT $5
 			ORDER BY open_revs.rev, open_revs.rev_id, parent_rev DESC, parent_rev_id DESC
 		)
 		GROUP BY rev, rev_id, deleted, doc
@@ -218,15 +217,17 @@ func (r *openRevsRows) Next(row *driver.Row) error {
 					Start: rv.rev,
 					IDs:   []string{rv.id},
 				}
-				for i, ancestor := range strings.Split(*ancestors, ",") {
-					a, _ := parseRev(ancestor)
-					if rv.rev-1-i != a.rev {
-						// missing a historical rev; this should not happen
-						// but to be safe, we'll be sure not to send a history
-						// with gaps
-						break
+				if len(*ancestors) > 0 {
+					for i, ancestor := range strings.Split(*ancestors, ",") {
+						a, _ := parseRev(ancestor)
+						if rv.rev-1-i != a.rev {
+							// missing a historical rev; this should not happen
+							// but to be safe, we'll be sure not to send a history
+							// with gaps
+							break
+						}
+						doc.Revisions.IDs = append(doc.Revisions.IDs, a.id)
 					}
-					doc.Revisions.IDs = append(doc.Revisions.IDs, a.id)
 				}
 			}
 

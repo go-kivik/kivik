@@ -25,53 +25,17 @@ import (
 )
 
 func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, _ driver.Options) (driver.Rows, error) {
-	if len(revs) == 1 && revs[0] == "all" {
-		query := d.query(`
-			WITH revs (id, rev, rev_id) AS (
-				SELECT
-					parent.id,
-					parent.rev,
-					parent.rev_id
-				FROM {{ .Revs }} AS parent
-				LEFT JOIN {{ .Revs }} AS child ON parent.id = child.id AND parent.rev = child.parent_rev AND parent.rev_id = child.parent_rev_id
-				WHERE parent.id = $1 AND child.id IS NULL
-			)
-			SELECT
-				revs.rev || '-' || revs.rev_id AS rev,
-				docs.deleted,
-				docs.doc
-			FROM revs
-			JOIN {{ .Docs }} AS docs ON revs.id = docs.id AND revs.rev = docs.rev AND revs.rev_id = docs.rev_id
-			ORDER BY revs.rev, revs.rev_id
-		`)
-		rows, err := d.db.QueryContext(ctx, query, docID) //nolint:rowserrcheck // Err checked in Next
-		if err != nil {
-			return nil, err
-		}
-
-		// Call rows.Next() to see if we get any results at all. If zero results,
-		// we need to return 404 instead of an iterator for the open_revs=all case.
-		if !rows.Next() {
-			if err := rows.Err(); err != nil {
-				return nil, err
-			}
-			return nil, &internal.Error{Message: "missing", Status: http.StatusNotFound}
-		}
-
-		return &openRevsRows{
-			id:   docID,
-			ctx:  ctx,
-			pre:  true,
-			rows: rows,
-		}, nil
-	}
-
 	values := make([]string, 0, len(revs))
-	args := make([]interface{}, 2, len(revs)*2+3)
+	args := make([]interface{}, 3, len(revs)*2+3)
 	args[0] = docID
 	args[1] = len(revs) == 0 // latest
+	args[2] = false
+	if len(revs) == 1 && revs[0] == "all" {
+		args[2] = true
+		revs = []string{}
+	}
 
-	i := 3
+	i := len(args) + 1
 	for _, rev := range revs {
 		fmt.Println("rev", rev)
 		r, err := parseRev(rev)
@@ -114,6 +78,16 @@ func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, _ driver
 				LIMIT 1
 			)
 
+			UNION
+
+			-- all
+			SELECT
+				parent.id,
+				parent.rev,
+				parent.rev_id
+			FROM {{ .Revs }} AS parent
+			LEFT JOIN {{ .Revs }} AS child ON parent.id = child.id AND parent.rev = child.parent_rev AND parent.rev_id = child.parent_rev_id
+			WHERE $3 AND (parent.id = $1 AND child.id IS NULL)
 		)
 		SELECT
 			revs.rev || '-' || revs.rev_id AS rev,

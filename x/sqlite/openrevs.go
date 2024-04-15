@@ -129,7 +129,7 @@ func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, _ driver
 			docs.deleted,
 			docs.doc
 		FROM leaf
-		JOIN {{ .Docs }} AS docs ON leaf.id = docs.id AND leaf.rev = docs.rev AND leaf.rev_id = docs.rev_id
+		LEFT JOIN {{ .Docs }} AS docs ON leaf.id = docs.id AND leaf.rev = docs.rev AND leaf.rev_id = docs.rev_id
 		ORDER BY leaf.rev, leaf.rev_id
 	`), strings.Join(values, ", "))
 	rows, err := d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
@@ -174,20 +174,24 @@ func (r *openRevsRows) Next(row *driver.Row) error {
 	}
 	r.pre = false
 	var (
-		deleted bool
-		doc     []byte
+		deleted *bool
+		doc     *[]byte
 	)
 	if err := r.rows.Scan(&row.Rev, &deleted, &doc); err != nil {
 		return err
 	}
-	toMerge := fullDoc{
-		ID:      r.id,
-		Rev:     row.Rev,
-		Doc:     doc,
-		Deleted: deleted,
+	if deleted == nil {
+		row.Error = &internal.Error{Message: "missing", Status: http.StatusNotFound}
+	} else {
+		toMerge := fullDoc{
+			ID:      r.id,
+			Rev:     row.Rev,
+			Doc:     *doc,
+			Deleted: *deleted,
+		}
+		row.Doc = toMerge.toReader()
 	}
 	row.ID = r.id
-	row.Doc = toMerge.toReader()
 	return nil
 }
 

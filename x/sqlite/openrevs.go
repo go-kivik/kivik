@@ -41,7 +41,7 @@ func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, _ driver
 				WHERE parent.id = $1 AND child.id IS NULL
 			) AS leaf
 			JOIN {{ .Docs }} AS docs ON leaf.id = docs.id AND leaf.rev = docs.rev AND leaf.rev_id = docs.rev_id
-			ORDER BY leaf.rev DESC
+			ORDER BY leaf.rev DESC, leaf.rev_id DESC
 			LIMIT 1
 		`)
 		rows, err := d.db.QueryContext(ctx, query, docID) //nolint:rowserrcheck // Err checked in Next
@@ -81,7 +81,7 @@ func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, _ driver
 				WHERE parent.id = $1 AND child.id IS NULL
 			) AS leaf
 			JOIN {{ .Docs }} AS docs ON leaf.id = docs.id AND leaf.rev = docs.rev AND leaf.rev_id = docs.rev_id
-			ORDER BY leaf.rev DESC
+			ORDER BY leaf.rev, leaf.rev_id
 		`)
 		rows, err := d.db.QueryContext(ctx, query, docID) //nolint:rowserrcheck // Err checked in Next
 		if err != nil {
@@ -117,6 +117,7 @@ func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, _ driver
 		}
 		values = append(values, fmt.Sprintf("($1, $%d, $%d)", i, i+1))
 		args = append(args, r.rev, r.id)
+		i += 2
 	}
 
 	query := fmt.Sprintf(d.query(`
@@ -129,8 +130,7 @@ func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, _ driver
 			docs.doc
 		FROM leaf
 		JOIN {{ .Docs }} AS docs ON leaf.id = docs.id AND leaf.rev = docs.rev AND leaf.rev_id = docs.rev_id
-		ORDER BY leaf.rev DESC
-		LIMIT 1
+		ORDER BY leaf.rev, leaf.rev_id
 	`), strings.Join(values, ", "))
 	rows, err := d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {

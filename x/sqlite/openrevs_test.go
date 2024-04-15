@@ -98,8 +98,8 @@ func TestDBOpenRevs(t *testing.T) {
 			docID: docID,
 			revs:  []string{"all"},
 			want: []rowResult{
-				{ID: docID, Rev: rev, Doc: `{"_id":"` + docID + `","_rev":"` + rev + `","foo":"bar"}`},
 				{ID: docID, Rev: rev2, Doc: `{"_id":"` + docID + `","_rev":"` + rev2 + `","foo":"baz"}`},
+				{ID: docID, Rev: rev, Doc: `{"_id":"` + docID + `","_rev":"` + rev + `","foo":"bar"}`},
 			},
 		}
 	})
@@ -129,6 +129,22 @@ func TestDBOpenRevs(t *testing.T) {
 			docID: docID,
 			revs:  []string{rev2},
 			want: []rowResult{
+				{ID: docID, Rev: rev2, Doc: `{"_id":"` + docID + `","_rev":"` + rev2 + `","foo":"baz"}`},
+			},
+		}
+	})
+	tests.Add("specific revs, including non-leaf revs", func(t *testing.T) interface{} {
+		d := newDB(t)
+		docID := "foo"
+		rev := d.tPut(docID, map[string]string{"foo": "bar"})
+		rev2 := d.tPut(docID, map[string]string{"foo": "baz"}, kivik.Rev(rev))
+
+		return test{
+			db:    d,
+			docID: docID,
+			revs:  []string{rev, rev2},
+			want: []rowResult{
+				{ID: docID, Rev: rev, Doc: `{"_id":"` + docID + `","_rev":"` + rev + `","foo":"bar"}`},
 				{ID: docID, Rev: rev2, Doc: `{"_id":"` + docID + `","_rev":"` + rev2 + `","foo":"baz"}`},
 			},
 		}

@@ -72,7 +72,30 @@ type docData struct {
 	Doc                []byte
 	// MD5sum is the MD5sum of the document data. It, along with a hash of
 	// attachment metadata, is used to calculate the document revision.
-	MD5sum md5sum `json:"-"`
+	MD5sum       md5sum        `json:"-"`
+	DesignFields designDocData `json:"-"`
+}
+
+func (d *docData) IsDesignDoc() bool {
+	return strings.HasPrefix(d.ID, "_design/")
+}
+
+type views struct {
+	Map    string `json:"map"`
+	Reduce string `json:"reduce,omitempty"`
+}
+
+// designDocData represents a design document. See
+// https://docs.couchdb.org/en/stable/ddocs/ddocs.html#creation-and-structure
+type designDocData struct {
+	Language           string            `json:"language,omitempty"`
+	Views              map[string]views  `json:"views,omitempty"`
+	Updates            map[string]string `json:"updates,omitempty"`
+	Filters            map[string]string `json:"filters,omitempty"`
+	ValidateDocUpdates string            `json:"validate_doc_update,omitempty"`
+	// AutoUpdate indicates whether to automatically build indexes defined in
+	// this design document. Default is true.
+	AutoUpdate *bool `json:"autoupdate,omitempty"`
 }
 
 // RevID returns calculated revision ID, possibly setting the MD5sum if it is
@@ -263,11 +286,25 @@ func prepareDoc(docID string, doc interface{}) (*docData, error) {
 	if err != nil {
 		return nil, err
 	}
+	var ddocData designDocData
+	if strings.HasPrefix(docID, "_design/") {
+		if err := json.Unmarshal(tmpJSON, &ddocData); err != nil {
+			return nil, &internal.Error{Status: http.StatusBadRequest, Err: err}
+		}
+		if ddocData.Language == "" {
+			ddocData.Language = "javascript"
+		}
+		if ddocData.AutoUpdate == nil {
+			ddocData.AutoUpdate = &[]bool{true}[0]
+		}
+	}
 	var tmp map[string]interface{}
 	if err := json.Unmarshal(tmpJSON, &tmp); err != nil {
 		return nil, err
 	}
-	data := &docData{}
+	data := &docData{
+		DesignFields: ddocData,
+	}
 	if err := json.Unmarshal(tmpJSON, &data); err != nil {
 		return nil, &internal.Error{Status: http.StatusBadRequest, Err: err}
 	}

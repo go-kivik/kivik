@@ -77,6 +77,12 @@ func (d *db) queryView(ctx context.Context, view string, options driver.Options)
 	args := []interface{}{optIncludeDocs}
 
 	where := []string{"rev.rank = 1"}
+	switch view {
+	case viewAllDocs:
+		where = append(where, "rev.id NOT LIKE '_local/%'")
+	case viewLocalDocs:
+		where = append(where, "rev.id LIKE '_local/%'")
+	}
 	if endkey := opts.endKey(); endkey != "" {
 		where = append(where, fmt.Sprintf("rev.id %s $%d", endKeyOp(optDescending, opts.inclusiveEnd()), len(args)+1))
 		args = append(args, endkey)

@@ -537,6 +537,28 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("local docs excluded", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("cat", map[string]string{"cat": "meow"})
+		_ = d.tPut("_local/dog", map[string]string{"dog": "woof"})
+		rev3 := d.tPut("cow", map[string]string{"cow": "moo"})
+
+		return test{
+			db: d,
+			want: []rowResult{
+				{
+					ID:    "cat",
+					Rev:   rev,
+					Value: `{"value":{"rev":"` + rev + `"}}` + "\n",
+				},
+				{
+					ID:    "cow",
+					Rev:   rev3,
+					Value: `{"value":{"rev":"` + rev3 + `"}}` + "\n",
+				},
+			},
+		}
+	})
 
 	/*
 		TODO:

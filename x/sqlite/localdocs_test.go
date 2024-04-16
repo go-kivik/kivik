@@ -26,7 +26,7 @@ import (
 	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
-func TestDBDesignDocs(t *testing.T) {
+func TestDBLocalDocs(t *testing.T) {
 	t.Parallel()
 	type test struct {
 		db         *testDB
@@ -39,17 +39,16 @@ func TestDBDesignDocs(t *testing.T) {
 	tests.Add("no docs in db", test{
 		want: nil,
 	})
-	tests.Add("returns only the design docs", func(t *testing.T) interface{} {
+	tests.Add("returns only the local docs", func(t *testing.T) interface{} {
 		db := newDB(t)
 		_ = db.tPut("foo", map[string]string{"cat": "meow"})
-		rev2 := db.tPut("_design/bar", map[string]string{"dog": "woof"})
-		_ = db.tPut("_local/baz", map[string]string{"pig": "oink"})
+		rev2 := db.tPut("_local/bar", map[string]string{"dog": "woof"})
 
 		return test{
 			db: db,
 			want: []rowResult{
 				{
-					ID:    "_design/bar",
+					ID:    "_local/bar",
 					Rev:   rev2,
 					Value: `{"value":{"rev":"` + rev2 + `"}}` + "\n",
 				},
@@ -67,7 +66,7 @@ func TestDBDesignDocs(t *testing.T) {
 		if opts == nil {
 			opts = mock.NilOption
 		}
-		rows, err := db.DesignDocs(context.Background(), opts)
+		rows, err := db.LocalDocs(context.Background(), opts)
 		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}

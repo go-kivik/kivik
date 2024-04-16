@@ -69,3 +69,12 @@ var schema = []string{
 		WHERE child.id IS NULL
 	`,
 }
+
+var viewSchema = []string{
+	`CREATE TABLE {{ .View }} (
+		id TEXT NOT NULL,
+		key TEXT,
+		value TEXT
+	)
+	`,
+}

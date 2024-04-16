@@ -158,11 +158,18 @@ func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev re
 	}
 
 	// order the filenames to insert for consistency
-	err = createDocAttachments(ctx, data, tx, d, r, &curRev)
-	return r, err
+	if err := d.createDocAttachments(ctx, data, tx, r, &curRev); err != nil {
+		return r, err
+	}
+	if data.IsDesignDoc() {
+		if err := d.updateDesignDoc(ctx, tx, data); err != nil {
+			return r, err
+		}
+	}
+	return r, nil
 }
 
-func createDocAttachments(ctx context.Context, data *docData, tx *sql.Tx, d *db, r revision, curRev *revision) error {
+func (d *db) createDocAttachments(ctx context.Context, data *docData, tx *sql.Tx, r revision, curRev *revision) error {
 	orderedFilenames := make([]string, 0, len(data.Attachments))
 	for filename := range data.Attachments {
 		orderedFilenames = append(orderedFilenames, filename)

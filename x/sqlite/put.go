@@ -141,7 +141,7 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 			return "", err
 		}
 
-		if err := createDocAttachments(ctx, data, tx, d, rev, ancestorRev); err != nil {
+		if err := d.createDocAttachments(ctx, data, tx, rev, ancestorRev); err != nil {
 			return "", err
 		}
 

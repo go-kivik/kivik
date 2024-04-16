@@ -72,7 +72,12 @@ type docData struct {
 	Doc                []byte
 	// MD5sum is the MD5sum of the document data. It, along with a hash of
 	// attachment metadata, is used to calculate the document revision.
-	MD5sum md5sum `json:"-"`
+	MD5sum       md5sum        `json:"-"`
+	DesignFields designDocData `json:"-"`
+}
+
+func (d *docData) IsDesignDoc() bool {
+	return strings.HasPrefix(d.ID, "_design/")
 }
 
 type views struct {

@@ -2,7 +2,7 @@
 // use this file except in compliance with the License. You may obtain a copy of
 // the License at
 //
-//	http://www.apache.org/licenses/LICENSE-2.0
+//  http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
@@ -17,6 +17,45 @@ import (
 	"database/sql"
 )
 
-func (d *db) updateDesignDoc(ctx context.Context, tx *sql.Tx, data *docData) error {
+func (d *db) updateDesignDoc(ctx context.Context, tx *sql.Tx, rev revision, data *docData) error {
+	stmt, err := tx.PrepareContext(ctx, d.query(`
+		INSERT INTO {{ .Design }} (id, rev, rev_id, language, func_type, func_name, func_body, auto_update)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+	`))
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	for name, view := range data.DesignFields.Views {
+		if view.Map != "" {
+			if _, err := stmt.ExecContext(ctx, data.ID, rev.rev, rev.id, data.DesignFields.Language, "map", name, view.Map, data.DesignFields.AutoUpdate); err != nil {
+				return err
+			}
+			if _, err := tx.ExecContext(ctx, d.ddocQuery(data.ID, name, viewMapTable)); err != nil {
+				return err
+			}
+		}
+		if view.Reduce != "" {
+			if _, err := stmt.ExecContext(ctx, data.ID, rev.rev, rev.id, data.DesignFields.Language, "reduce", name, view.Reduce, data.DesignFields.AutoUpdate); err != nil {
+				return err
+			}
+		}
+	}
+	for name, update := range data.DesignFields.Updates {
+		if _, err := stmt.ExecContext(ctx, data.ID, rev.rev, rev.id, data.DesignFields.Language, "update", name, update, data.DesignFields.AutoUpdate); err != nil {
+			return err
+		}
+	}
+	for name, filter := range data.DesignFields.Filters {
+		if _, err := stmt.ExecContext(ctx, data.ID, rev.rev, rev.id, data.DesignFields.Language, "filter", name, filter, data.DesignFields.AutoUpdate); err != nil {
+			return err
+		}
+	}
+	if data.DesignFields.ValidateDocUpdates != "" {
+		if _, err := stmt.ExecContext(ctx, data.ID, rev.rev, rev.id, data.DesignFields.Language, "validate_doc_update", "validate", data.DesignFields.ValidateDocUpdates, data.DesignFields.AutoUpdate); err != nil {
+			return err
+		}
+	}
 	return nil
 }

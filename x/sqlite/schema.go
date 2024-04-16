@@ -92,3 +92,11 @@ var schema = []string{
 		UNIQUE (id, rev, rev_id, func_type, func_name)
 	)`,
 }
+
+const viewMapTable = `
+CREATE TABLE IF NOT EXISTS {{ .Map }} (
+	id TEXT NOT NULL,
+	key TEXT NOT NULL,
+	value TEXT
+)
+`

@@ -1133,12 +1133,12 @@ func TestDBPut(t *testing.T) {
 			t.Errorf("Unexpected rev: %s, want %s", rev, tt.wantRev)
 		}
 
-		checkLeaves(t, tt.wantRevs, dbc.underlying())
+		checkLeaves(t, dbc.underlying(), tt.wantRevs)
 		checkAttachments(t, dbc.underlying(), tt.wantAttachments)
 	})
 }
 
-func checkLeaves(t *testing.T, want []leaf, d *sql.DB) {
+func checkLeaves(t *testing.T, d *sql.DB, want []leaf) {
 	t.Helper()
 	if len(want) == 0 {
 		t.Errorf("No leaves to check")

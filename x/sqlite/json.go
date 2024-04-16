@@ -291,12 +291,20 @@ func prepareDoc(docID string, doc interface{}) (*docData, error) {
 		if err := json.Unmarshal(tmpJSON, &ddocData); err != nil {
 			return nil, &internal.Error{Status: http.StatusBadRequest, Err: err}
 		}
+		if ddocData.Language == "" {
+			ddocData.Language = "javascript"
+		}
+		if ddocData.AutoUpdate == nil {
+			ddocData.AutoUpdate = &[]bool{true}[0]
+		}
 	}
 	var tmp map[string]interface{}
 	if err := json.Unmarshal(tmpJSON, &tmp); err != nil {
 		return nil, err
 	}
-	data := &docData{}
+	data := &docData{
+		DesignFields: ddocData,
+	}
 	if err := json.Unmarshal(tmpJSON, &data); err != nil {
 		return nil, &internal.Error{Status: http.StatusBadRequest, Err: err}
 	}

@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"strconv"
+	"strings"
 	"sync"
 	"text/template"
 )
@@ -31,7 +32,9 @@ var (
 )
 
 type tmplFuncs struct {
-	db *db
+	db             *db
+	ddoc, viewName string
+	hash           string
 }
 
 func (t *tmplFuncs) Docs() string {
@@ -58,7 +61,34 @@ func (t *tmplFuncs) Design() string {
 	return strconv.Quote(t.db.name + "_design")
 }
 
-// query does variable substitution on a query string. The following transitions
+// hashedName returns a table name in the format "{{db name}}_{{ddoc}}_{{typ}}_{{hash}}"
+// where hash is the first 8 characters of the MD5 sum of the dbname, ddoc, and type.
+// If the final version is longer than 64 characters, it is truncated to size,
+// before appending the hash.
+func (t *tmplFuncs) hashedName(typ string) string {
+	if t.ddoc == "" {
+		panic("ddoc template method called outside of a ddoc template")
+	}
+	if t.hash == "" {
+		name := t.ddoc + "_" + t.viewName
+		t.hash = md5sumString(name)[:8]
+	}
+	name := t.ddoc + "_" + typ + "_" + t.viewName
+	if len(name) > 63-len(t.hash) {
+		name = name[:63-len(t.hash)]
+	}
+	return strconv.Quote(name + "_" + t.hash)
+}
+
+func (t *tmplFuncs) Map() string {
+	return t.hashedName("map")
+}
+
+func (t *tmplFuncs) Reduce() string {
+	return t.hashedName("reduce")
+}
+
+// query does variable substitution on a query string. The following translations
 // are made:
 //
 //	{{ .Docs }} -> db.name
@@ -72,6 +102,25 @@ func (d *db) query(format string) string {
 	tmpl := getTmpl(format)
 
 	if err := tmpl.Execute(&buf, &tmplFuncs{db: d}); err != nil {
+		panic(err)
+	}
+	return buf.String()
+}
+
+// ddocQuery works just like [db.query], but also enables access to the
+// following translations:
+//
+//	{{ .Map }} -> the view map table name
+//	{{ .Reduce }} -> the view reduce table name
+func (d *db) ddocQuery(docID, viewOrFuncName, format string) string {
+	var buf bytes.Buffer
+	tmpl := getTmpl(format)
+
+	if err := tmpl.Execute(&buf, &tmplFuncs{
+		db:       d,
+		ddoc:     strings.TrimPrefix(docID, "_design/"),
+		viewName: viewOrFuncName,
+	}); err != nil {
 		panic(err)
 	}
 	return buf.String()

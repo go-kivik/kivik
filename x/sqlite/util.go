@@ -14,7 +14,9 @@ package sqlite
 
 import (
 	"context"
+	"crypto/md5"
 	"database/sql"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/http"
@@ -153,16 +155,12 @@ func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev re
 		return r, err
 	}
 
-	if len(data.Attachments) == 0 {
-		return r, nil
-	}
-
 	// order the filenames to insert for consistency
 	if err := d.createDocAttachments(ctx, data, tx, r, &curRev); err != nil {
 		return r, err
 	}
 	if data.IsDesignDoc() {
-		if err := d.updateDesignDoc(ctx, tx, data); err != nil {
+		if err := d.updateDesignDoc(ctx, tx, r, data); err != nil {
 			return r, err
 		}
 	}
@@ -170,6 +168,9 @@ func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev re
 }
 
 func (d *db) createDocAttachments(ctx context.Context, data *docData, tx *sql.Tx, r revision, curRev *revision) error {
+	if len(data.Attachments) == 0 {
+		return nil
+	}
 	orderedFilenames := make([]string, 0, len(data.Attachments))
 	for filename := range data.Attachments {
 		orderedFilenames = append(orderedFilenames, filename)
@@ -260,4 +261,11 @@ type discard struct{}
 
 func (discard) Scan(interface{}) error {
 	return nil
+}
+
+// md5sumString returns the hex-encoded MD5 sum of s.
+func md5sumString(s string) string {
+	h := md5.New()
+	_, _ = h.Write([]byte(s))
+	return hex.EncodeToString(h.Sum(nil))
 }

@@ -54,6 +54,10 @@ func (t *tmplFuncs) Leaves() string {
 	return strconv.Quote(t.db.name + "_leaves")
 }
 
+func (t *tmplFuncs) Design() string {
+	return strconv.Quote(t.db.name + "_design")
+}
+
 // query does variable substitution on a query string. The following transitions
 // are made:
 //
@@ -62,6 +66,7 @@ func (t *tmplFuncs) Leaves() string {
 //	{{ .Attachments }} -> db.name + "_attachments"
 //	{{ .AttachmentsBridge }} -> db.name + "_attachments_bridge"
 //	{{ .Leaves }} -> db.name + "_leaves"
+//	{{ .Design }} -> db.name + "_design"
 func (d *db) query(format string) string {
 	var buf bytes.Buffer
 	tmpl := getTmpl(format)

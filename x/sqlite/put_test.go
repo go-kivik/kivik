@@ -1132,24 +1132,30 @@ func TestDBPut(t *testing.T) {
 		if !regexp.MustCompile(tt.wantRev).MatchString(rev) {
 			t.Errorf("Unexpected rev: %s, want %s", rev, tt.wantRev)
 		}
-		if len(tt.wantRevs) == 0 {
-			t.Errorf("No leaves to check")
-		}
-		leaves := readRevisions(t, dbc.underlying())
-		for i, r := range tt.wantRevs {
-			// allow tests to omit RevID
-			if r.RevID == "" {
-				leaves[i].RevID = ""
-			}
-			if r.ParentRevID == nil {
-				leaves[i].ParentRevID = nil
-			}
-		}
-		if d := cmp.Diff(tt.wantRevs, leaves); d != "" {
-			t.Errorf("Unexpected leaves: %s", d)
-		}
+
+		checkLeaves(t, tt.wantRevs, dbc.underlying())
 		checkAttachments(t, dbc.underlying(), tt.wantAttachments)
 	})
+}
+
+func checkLeaves(t *testing.T, want []leaf, d *sql.DB) {
+	t.Helper()
+	if len(want) == 0 {
+		t.Errorf("No leaves to check")
+	}
+	leaves := readRevisions(t, d)
+	for i, r := range want {
+		// allow tests to omit RevID or ParentRevID
+		if r.RevID == "" {
+			leaves[i].RevID = ""
+		}
+		if r.ParentRevID == nil {
+			leaves[i].ParentRevID = nil
+		}
+	}
+	if d := cmp.Diff(want, leaves); d != "" {
+		t.Errorf("Unexpected leaves: %s", d)
+	}
 }
 
 func checkAttachments(t *testing.T, d *sql.DB, want []attachmentRow) {

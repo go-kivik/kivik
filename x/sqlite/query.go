@@ -14,10 +14,26 @@ package sqlite
 
 import (
 	"context"
+	"strings"
 
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
-func (db) Query(context.Context, string, string, driver.Options) (driver.Rows, error) {
-	return nil, nil
+func (d *db) Query(ctx context.Context, ddoc, view string, _ driver.Options) (driver.Rows, error) {
+	// Normalize the ddoc and view values
+	ddoc = "_design/" + strings.TrimPrefix(ddoc, "_design/")
+	view = strings.TrimPrefix(view, "_view/")
+
+	tx, err := d.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	_, err = d.winningRev(ctx, tx, ddoc)
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, tx.Commit()
 }

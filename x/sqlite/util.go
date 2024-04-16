@@ -80,7 +80,7 @@ func (d *db) isLeafRev(ctx context.Context, tx *sql.Tx, docID string, rev int, r
 	return hash, nil
 }
 
-// winningRev returns the current winning revision, and MD5sum, for the specified document.
+// winningRev returns the current winning revision for the specified document.
 func (d *db) winningRev(ctx context.Context, tx *sql.Tx, docID string) (revision, error) {
 	var curRev revision
 	err := tx.QueryRowContext(ctx, d.query(`
@@ -90,6 +90,9 @@ func (d *db) winningRev(ctx context.Context, tx *sql.Tx, docID string) (revision
 		ORDER BY rev DESC, rev_id DESC
 		LIMIT 1
 	`), docID).Scan(&curRev.rev, &curRev.id)
+	if err != nil && errors.Is(err, sql.ErrNoRows) {
+		return curRev, &internal.Error{Status: http.StatusNotFound, Message: "missing"}
+	}
 	return curRev, err
 }
 

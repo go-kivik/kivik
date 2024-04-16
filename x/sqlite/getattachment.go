@@ -41,8 +41,8 @@ func (d *db) GetAttachment(ctx context.Context, docID string, filename string, o
 		}
 	} else {
 		requestedRev, err = d.winningRev(ctx, tx, docID)
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, &internal.Error{Status: http.StatusNotFound, Message: "missing"}
+		if err != nil {
+			return nil, err
 		}
 	}
 

@@ -39,8 +39,8 @@ func (d *db) GetAttachmentMeta(ctx context.Context, docID, filename string, opti
 		}
 	} else {
 		requestedRev, err = d.winningRev(ctx, tx, docID)
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, &internal.Error{Status: http.StatusNotFound, Message: "missing"}
+		if err != nil {
+			return nil, err
 		}
 	}
 

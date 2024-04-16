@@ -29,46 +29,34 @@ import (
 	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
-type AttachmentX struct {
-	Filename    string
-	ContentType string
-	Length      int64
-	RevPos      int64
-	Data        string
-}
-type TestX struct {
-	db       driver.DB
-	docID    string
-	filename string
-	options  driver.Options
-
-	wantAttachment *AttachmentX
-	wantStatus     int
-	wantErr        string
-}
-
 func TestDBGetAttachment(t *testing.T) {
 	t.Parallel()
 
+	type attachment struct {
+		Filename    string
+		ContentType string
+		Length      int64
+		RevPos      int64
+		Data        string
+	}
+
+	type test struct {
+		db       driver.DB
+		docID    string
+		filename string
+		options  driver.Options
+
+		want       *attachment
+		wantStatus int
+		wantErr    string
+	}
+
 	tests := testy.NewTable()
-	tests.Add("document does not exist", TestX{
+	tests.Add("document does not exist", test{
 		docID:      "foo",
 		filename:   "foo.txt",
 		wantStatus: http.StatusNotFound,
 		wantErr:    "missing",
-	})
-	tests.Add("when the attachment exists, return it", func(t *testing.T) interface{} {
-		db := newDB(t)
-		_ = db.tPut("foo", map[string]interface{}{
-			"_id":          "foo",
-			"_attachments": newAttachments().add("foo.txt", "This is a base64 encoding"),
-		})
-
-		return TestX{
-			db:       db,
-			docID:    "foo",
-			filename: "foo.txt",
-		}
 	})
 	tests.Add("return an attachment when it exists", func(t *testing.T) interface{} {
 		db := newDB(t)
@@ -77,11 +65,11 @@ func TestDBGetAttachment(t *testing.T) {
 			"_attachments": newAttachments().add("foo.txt", "This is a base64 encoding"),
 		})
 
-		return TestX{
+		return test{
 			db:       db,
 			docID:    "foo",
 			filename: "foo.txt",
-			wantAttachment: &AttachmentX{
+			want: &attachment{
 				Filename:    "foo.txt",
 				ContentType: "text/plain",
 				Length:      25,
@@ -101,7 +89,7 @@ func TestDBGetAttachment(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		return TestX{
+		return test{
 			db:         db,
 			docID:      "foo",
 			filename:   "foo.txt",
@@ -121,11 +109,11 @@ func TestDBGetAttachment(t *testing.T) {
 			"_attachments": newAttachments().addStub("foo.txt"),
 		}, kivik.Rev(rev))
 
-		return TestX{
+		return test{
 			db:       db,
 			docID:    "foo",
 			filename: "foo.txt",
-			wantAttachment: &AttachmentX{
+			want: &attachment{
 				Filename:    "foo.txt",
 				ContentType: "text/plain",
 				Length:      25,
@@ -152,13 +140,13 @@ func TestDBGetAttachment(t *testing.T) {
 
 		r, _ := parseRev(rev)
 
-		return TestX{
+		return test{
 			db:       d,
 			docID:    id,
 			filename: filename,
 			options:  kivik.Rev(rev),
 
-			wantAttachment: &AttachmentX{Filename: filename, ContentType: "text/plain", Length: int64(len(wantContent)), RevPos: int64(r.rev), Data: wantContent},
+			want: &attachment{Filename: filename, ContentType: "text/plain", Length: int64(len(wantContent)), RevPos: int64(r.rev), Data: wantContent},
 		}
 	})
 
@@ -179,7 +167,7 @@ func TestDBGetAttachment(t *testing.T) {
 		- GetAttachment returns the latest revision
 	*/
 
-	tests.Run(t, func(t *testing.T, tt TestX) {
+	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()
 		db := tt.db
 		if db == nil {
@@ -200,21 +188,21 @@ func TestDBGetAttachment(t *testing.T) {
 			t.Errorf("Unexpected status: %d", status)
 		}
 
-		if tt.wantAttachment == nil {
+		if tt.want == nil {
 			return
 		}
 		data, err := io.ReadAll(att.Content)
 		if err != nil {
 			t.Fatal(err)
 		}
-		got := &AttachmentX{
+		got := &attachment{
 			Filename:    att.Filename,
 			ContentType: att.ContentType,
 			Length:      att.Size,
 			RevPos:      att.RevPos,
 			Data:        string(data),
 		}
-		if d := cmp.Diff(tt.wantAttachment, got); d != "" {
+		if d := cmp.Diff(tt.want, got); d != "" {
 			t.Errorf("Unexpected attachment metadata:\n%s", d)
 		}
 	})

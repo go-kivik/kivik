@@ -13,18 +13,16 @@
 package sqlite
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"errors"
-	"io"
 	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/internal"
 )
 
-func (d *db) GetAttachment(ctx context.Context, docID string, filename string, options driver.Options) (*driver.Attachment, error) {
+func (d *db) GetAttachmentMeta(ctx context.Context, docID, filename string, options driver.Options) (*driver.Attachment, error) {
 	opts := newOpts(options)
 
 	tx, err := d.db.BeginTx(ctx, nil)
@@ -46,7 +44,7 @@ func (d *db) GetAttachment(ctx context.Context, docID string, filename string, o
 		}
 	}
 
-	attachment, err := d.getAttachment(ctx, tx, docID, filename, requestedRev)
+	attachment, err := d.getAttachmentMetadata(ctx, tx, docID, filename, requestedRev)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, &internal.Error{Status: http.StatusNotFound, Message: "missing"}
 	}
@@ -57,22 +55,20 @@ func (d *db) GetAttachment(ctx context.Context, docID string, filename string, o
 	return attachment, tx.Commit()
 }
 
-func (d *db) getAttachment(
+func (d *db) getAttachmentMetadata(
 	ctx context.Context,
 	tx *sql.Tx,
 	docID, filename string,
 	rev revision,
 ) (*driver.Attachment, error) {
 	var att driver.Attachment
-	var data []byte
+	var hash md5sum
 	err := tx.QueryRowContext(ctx, d.query(`
 		SELECT
 			att.filename,
 			att.content_type,
 			att.digest,
-			att.length,
-			att.rev_pos,
-			att.data
+			att.length
 		FROM {{ .Attachments }} AS att
 		JOIN {{ .AttachmentsBridge }} AS bridge ON bridge.pk = att.pk
 		WHERE
@@ -81,8 +77,7 @@ func (d *db) getAttachment(
 			AND bridge.rev = $3
 			AND bridge.rev_id = $4	
 	`), docID, filename, rev.rev, rev.id).
-		Scan(&att.Filename, &att.ContentType, &att.Digest, &att.Size, &att.RevPos, &data)
-
-	att.Content = io.NopCloser(bytes.NewReader(data))
+		Scan(&att.Filename, &att.ContentType, &hash, &att.Size)
+	att.Digest = hash.Digest()
 	return &att, err
 }

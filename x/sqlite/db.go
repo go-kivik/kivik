@@ -60,14 +60,6 @@ func (db) BulkDocs(context.Context, []interface{}, driver.Options) ([]driver.Bul
 	return nil, nil
 }
 
-func (db) GetAttachmentMeta(context.Context, string, string, driver.Options) (*driver.Attachment, error) {
-	return nil, nil
-}
-
-func (db) GetRev(context.Context, string, driver.Options) (string, error) {
-	return "", nil
-}
-
 func (db) Copy(context.Context, string, string, driver.Options) (string, error) {
 	return "", nil
 }

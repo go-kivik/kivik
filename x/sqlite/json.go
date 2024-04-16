@@ -75,6 +75,24 @@ type docData struct {
 	MD5sum md5sum `json:"-"`
 }
 
+type views struct {
+	Map    string `json:"map"`
+	Reduce string `json:"reduce,omitempty"`
+}
+
+// designDocData represents a design document. See
+// https://docs.couchdb.org/en/stable/ddocs/ddocs.html#creation-and-structure
+type designDocData struct {
+	Language           string            `json:"language,omitempty"`
+	Views              map[string]views  `json:"views,omitempty"`
+	Updates            map[string]string `json:"updates,omitempty"`
+	Filters            map[string]string `json:"filters,omitempty"`
+	ValidateDocUpdates string            `json:"validate_doc_update,omitempty"`
+	// AutoUpdate indicates whether to automatically build indexes defined in
+	// this design document. Default is true.
+	AutoUpdate *bool `json:"autoupdate,omitempty"`
+}
+
 // RevID returns calculated revision ID, possibly setting the MD5sum if it is
 // not already set.
 func (d *docData) RevID() string {
@@ -262,6 +280,12 @@ func prepareDoc(docID string, doc interface{}) (*docData, error) {
 	tmpJSON, err := json.Marshal(doc)
 	if err != nil {
 		return nil, err
+	}
+	var ddocData designDocData
+	if strings.HasPrefix(docID, "_design/") {
+		if err := json.Unmarshal(tmpJSON, &ddocData); err != nil {
+			return nil, &internal.Error{Status: http.StatusBadRequest, Err: err}
+		}
 	}
 	var tmp map[string]interface{}
 	if err := json.Unmarshal(tmpJSON, &tmp); err != nil {

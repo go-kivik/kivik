@@ -52,10 +52,6 @@ func (db) ViewCleanup(context.Context) error {
 	return nil
 }
 
-func (db) Query(context.Context, string, string, driver.Options) (driver.Rows, error) {
-	return nil, nil
-}
-
 func (db) BulkDocs(context.Context, []interface{}, driver.Options) ([]driver.BulkResult, error) {
 	return nil, nil
 }

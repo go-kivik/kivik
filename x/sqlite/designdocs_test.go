@@ -50,8 +50,8 @@ func TestDBDesignDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "_design/bar",
-					Rev:   rev2,
-					Value: `{"value":{"rev":"` + rev2 + `"}}` + "\n",
+					Key:   "_design/bar",
+					Value: `{"value":{"rev":"` + rev2 + `"}}`,
 				},
 			},
 		}

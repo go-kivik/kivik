@@ -55,11 +55,36 @@ func TestDBQuery(t *testing.T) {
 			wantStatus: http.StatusNotFound,
 		}
 	})
+	tests.Add("simple view with a single document", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) { emit(doc._id, null); }`,
+				},
+			},
+		})
+		_ = d.tPut("foo", map[string]string{"_id": "foo"})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: []rowResult{
+				{ID: "_design/foo", Key: `"_design/foo"`, Value: "null"},
+				{ID: "foo", Key: `"foo"`, Value: "null"},
+			},
+		}
+	})
 
 	/*
 		TODO:
 		- update view index before returning
 		- wait for pending index update before returning
+		- map function takes too long
+		- expose attachment stubs to map function
+		- Are conflicts or other metadata exposed to map function?
+		- custom/standard CouchDB collation https://pkg.go.dev/modernc.org/sqlite#RegisterCollationUtf8
 	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {

@@ -46,16 +46,21 @@ func startKeyOp(descending bool) string {
 }
 
 const (
-	viewAllDocs   = "_all_docs"
-	viewLocalDocs = "_local_docs"
+	viewAllDocs    = "_all_docs"
+	viewLocalDocs  = "_local_docs"
+	viewDesignDocs = "_design_docs"
 )
+
+func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
+	return d.queryView(ctx, viewAllDocs, options)
+}
 
 func (d *db) LocalDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
 	return d.queryView(ctx, viewLocalDocs, options)
 }
 
-func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
-	return d.queryView(ctx, viewAllDocs, options)
+func (d *db) DesignDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
+	return d.queryView(ctx, viewDesignDocs, options)
 }
 
 func (d *db) queryView(ctx context.Context, view string, options driver.Options) (driver.Rows, error) {
@@ -82,6 +87,8 @@ func (d *db) queryView(ctx context.Context, view string, options driver.Options)
 		where = append(where, "rev.id NOT LIKE '_local/%'")
 	case viewLocalDocs:
 		where = append(where, "rev.id LIKE '_local/%'")
+	case viewDesignDocs:
+		where = append(where, "rev.id LIKE '_design/%'")
 	}
 	if endkey := opts.endKey(); endkey != "" {
 		where = append(where, fmt.Sprintf("rev.id %s $%d", endKeyOp(optDescending, opts.inclusiveEnd()), len(args)+1))

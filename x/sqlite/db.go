@@ -63,7 +63,3 @@ func (db) BulkDocs(context.Context, []interface{}, driver.Options) ([]driver.Bul
 func (db) Copy(context.Context, string, string, driver.Options) (string, error) {
 	return "", nil
 }
-
-func (db) DesignDocs(context.Context, driver.Options) (driver.Rows, error) {
-	return nil, nil
-}

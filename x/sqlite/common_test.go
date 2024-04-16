@@ -35,6 +35,7 @@ type DB interface {
 	driver.AttachmentMetaGetter
 	driver.RevGetter
 	driver.LocalDocer
+	driver.DesignDocer
 }
 
 type testDB struct {

@@ -540,6 +540,7 @@ func TestDBAllDocs(t *testing.T) {
 
 	/*
 		TODO:
+		- excludes local docs
 		- Options:
 			- endkey_docid
 			- end_key_doc_id

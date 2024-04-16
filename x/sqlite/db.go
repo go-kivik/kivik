@@ -67,7 +67,3 @@ func (db) Copy(context.Context, string, string, driver.Options) (string, error) 
 func (db) DesignDocs(context.Context, driver.Options) (driver.Rows, error) {
 	return nil, nil
 }
-
-func (db) LocalDocs(context.Context, driver.Options) (driver.Rows, error) {
-	return nil, nil
-}

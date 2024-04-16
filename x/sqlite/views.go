@@ -45,7 +45,20 @@ func startKeyOp(descending bool) string {
 	return ">="
 }
 
+const (
+	viewAllDocs   = "_all_docs"
+	viewLocalDocs = "_local_docs"
+)
+
+func (d *db) LocalDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
+	return d.queryView(ctx, viewLocalDocs, options)
+}
+
 func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
+	return d.queryView(ctx, viewAllDocs, options)
+}
+
+func (d *db) queryView(ctx context.Context, view string, options driver.Options) (driver.Rows, error) {
 	opts := newOpts(options)
 
 	var (

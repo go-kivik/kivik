@@ -34,6 +34,7 @@ type DB interface {
 	driver.OpenRever
 	driver.AttachmentMetaGetter
 	driver.RevGetter
+	driver.LocalDocer
 }
 
 type testDB struct {

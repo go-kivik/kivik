@@ -14,14 +14,19 @@ package sqlite
 
 import (
 	"context"
+	"errors"
+	"net/http"
 	"strings"
 
+	"modernc.org/sqlite"
+
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal"
 )
 
 func (d *db) Query(ctx context.Context, ddoc, view string, _ driver.Options) (driver.Rows, error) {
 	// Normalize the ddoc and view values
-	ddoc = "_design/" + strings.TrimPrefix(ddoc, "_design/")
+	ddoc = strings.TrimPrefix(ddoc, "_design/")
 	view = strings.TrimPrefix(view, "_view/")
 
 	tx, err := d.db.Begin()
@@ -30,8 +35,29 @@ func (d *db) Query(ctx context.Context, ddoc, view string, _ driver.Options) (dr
 	}
 	defer tx.Rollback()
 
-	_, err = d.winningRev(ctx, tx, ddoc)
+	rev, err := d.winningRev(ctx, tx, "_design/"+ddoc)
 	if err != nil {
+		return nil, err
+	}
+
+	var funcBody string
+	err = tx.QueryRowContext(ctx, d.ddocQuery(ddoc, view, `
+		SELECT func_body
+		FROM {{ .Map }}
+		WHERE id = $1
+			AND rev = $2
+			AND rev_id = $3
+			AND func_type = 'map'
+			AND func_name = $4
+	`), "_design/"+ddoc, rev.rev, rev.id, view).Scan(&funcBody)
+	if err != nil {
+		sqliteErr := new(sqlite.Error)
+		if errors.As(err, &sqliteErr) &&
+			sqliteErr.Code() == codeSQLiteError &&
+			strings.Contains(sqliteErr.Error(), "no such table") {
+			return nil, &internal.Error{Status: http.StatusNotFound, Message: "missing named view"}
+		}
+
 		return nil, err
 	}
 

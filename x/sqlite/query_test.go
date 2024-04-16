@@ -43,6 +43,24 @@ func TestDBQuery(t *testing.T) {
 		wantErr:    "missing",
 		wantStatus: http.StatusNotFound,
 	})
+	tests.Add("ddoc does exist but view does not", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]string{"cat": "meow"})
+
+		return test{
+			db:         d,
+			ddoc:       "_design/foo",
+			view:       "_view/bar",
+			wantErr:    "missing named view",
+			wantStatus: http.StatusNotFound,
+		}
+	})
+
+	/*
+		TODO:
+		- update view index before returning
+		- wait for pending index update before returning
+	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()

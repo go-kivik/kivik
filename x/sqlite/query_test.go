@@ -19,6 +19,7 @@ import (
 	"context"
 	"net/http"
 	"testing"
+	"time"
 
 	"gitlab.com/flimzy/testy"
 
@@ -158,7 +159,6 @@ func TestDBQuery(t *testing.T) {
 			- start_key
 			- startkey_docid
 			- start_key_doc_id
-			- update // lazy (==update after)
 			- update_seq
 
 	*/
@@ -185,5 +185,44 @@ func TestDBQuery(t *testing.T) {
 		}
 
 		checkRows(t, rows, tt.want)
+	})
+}
+
+func TestDBQuery_update_lazy(t *testing.T) {
+	t.Parallel()
+	d := newDB(t)
+
+	_ = d.tPut("_design/foo", map[string]interface{}{
+		"views": map[string]interface{}{
+			"bar": map[string]string{
+				"map": `function(doc) { emit(doc._id, null); }`,
+			},
+		},
+	})
+	_ = d.tPut("foo", map[string]string{"_id": "foo"})
+
+	// Separate func for defer, to ensure it runs after the query.
+	func() {
+		// Do a query, with update=lazy, which should return nothing, but trigger
+		// an index build.
+		rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", kivik.Param("update", "lazy"))
+		if err != nil {
+			t.Fatalf("Failed to query view: %s", err)
+		}
+		defer rows.Close()
+		checkRows(t, rows, nil)
+	}()
+
+	// Now wait a moment, and query again to see if there are any results
+	time.Sleep(500 * time.Millisecond)
+
+	rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", kivik.Param("update", "false"))
+	if err != nil {
+		t.Fatalf("Failed to query view: %s", err)
+	}
+	defer rows.Close()
+	checkRows(t, rows, []rowResult{
+		{ID: "_design/foo", Key: `"_design/foo"`, Value: "null"},
+		{ID: "foo", Key: `"foo"`, Value: "null"},
 	})
 }

@@ -94,7 +94,7 @@ func newDB(t *testing.T) *testDB {
 		dsn = fmt.Sprintf("file:%x?mode=memory&cache=shared", md5sum.Sum(nil))
 	}
 	d := drv{}
-	client, err := d.NewClient(dsn, nil)
+	client, err := d.NewClient(dsn, mock.NilOption)
 	if err != nil {
 		t.Fatal(err)
 	}

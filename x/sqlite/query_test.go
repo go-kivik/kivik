@@ -100,7 +100,28 @@ func TestDBQuery(t *testing.T) {
 			want:    nil,
 		}
 	})
+	tests.Add("explicit update=true", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) { emit(doc._id, null); }`,
+				},
+			},
+		})
+		_ = d.tPut("foo", map[string]string{"_id": "foo"})
 
+		return test{
+			db:      d,
+			ddoc:    "_design/foo",
+			view:    "_view/bar",
+			options: kivik.Param("update", true),
+			want: []rowResult{
+				{ID: "_design/foo", Key: `"_design/foo"`, Value: "null"},
+				{ID: "foo", Key: `"foo"`, Value: "null"},
+			},
+		}
+	})
 	/*
 		TODO:
 		- update=false, missing ddoc should return proper error status
@@ -137,7 +158,7 @@ func TestDBQuery(t *testing.T) {
 			- start_key
 			- startkey_docid
 			- start_key_doc_id
-			- update // true, lazy (==update after)
+			- update // lazy (==update after)
 			- update_seq
 
 	*/

@@ -15,16 +15,26 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"log/slog"
 
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
 type db struct {
-	db   *sql.DB
-	name string
+	db     *sql.DB
+	name   string
+	logger *slog.Logger
 }
 
 var _ driver.DB = (*db)(nil)
+
+func (c *client) newDB(name string) *db {
+	return &db{
+		db:     c.db,
+		name:   name,
+		logger: c.logger,
+	}
+}
 
 func (d *db) Close() error {
 	return d.db.Close()

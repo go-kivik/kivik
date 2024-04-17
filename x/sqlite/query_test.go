@@ -81,9 +81,32 @@ func TestDBQuery(t *testing.T) {
 		wantErr:    "invalid value for `update`",
 		wantStatus: http.StatusBadRequest,
 	})
+	tests.Add("with update=false", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) { emit(doc._id, null); }`,
+				},
+			},
+		})
+		_ = d.tPut("foo", map[string]string{"_id": "foo"})
+
+		return test{
+			db:      d,
+			ddoc:    "_design/foo",
+			view:    "_view/bar",
+			options: kivik.Param("update", false),
+			want:    nil,
+		}
+	})
 
 	/*
 		TODO:
+		- update=false, missing ddoc should return proper error status
+		- update=false, missing view should return proper error status
+		- recover exception from map function
+		- recover panic from emit function
 		- update view index before returning
 		- wait for pending index update before returning
 		- map function takes too long
@@ -114,7 +137,7 @@ func TestDBQuery(t *testing.T) {
 			- start_key
 			- startkey_docid
 			- start_key_doc_id
-			- update // true, false, lazy (==update after)
+			- update // true, lazy (==update after)
 			- update_seq
 
 	*/

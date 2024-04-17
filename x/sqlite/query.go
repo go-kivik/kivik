@@ -41,7 +41,7 @@ func fromJSValue(v interface{}) (*string, error) {
 
 func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Options) (driver.Rows, error) {
 	opts := newOpts(options)
-	_, err := opts.update()
+	update, err := opts.update()
 	if err != nil {
 		return nil, err
 	}
@@ -49,15 +49,45 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 	ddoc = strings.TrimPrefix(ddoc, "_design/")
 	view = strings.TrimPrefix(view, "_view/")
 
-	tx, err := d.db.Begin()
+	if update == updateModeTrue {
+		if err := d.updateIndex(ctx, ddoc, view); err != nil {
+			return nil, err
+		}
+	}
+
+	query := d.ddocQuery(ddoc, view, `
+		SELECT
+			id,
+			key,
+			value,
+			"" AS rev,
+			NULL AS doc,
+			"" AS conflicts
+		FROM {{ .Map }}
+		ORDER BY key
+	`)
+	results, err := d.db.QueryContext(ctx, query) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {
 		return nil, err
+	}
+
+	return &rows{
+		ctx:  ctx,
+		db:   d,
+		rows: results,
+	}, nil
+}
+
+func (d *db) updateIndex(ctx context.Context, ddoc, view string) error {
+	tx, err := d.db.Begin()
+	if err != nil {
+		return err
 	}
 	defer tx.Rollback()
 
 	rev, err := d.winningRev(ctx, tx, "_design/"+ddoc)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	query := d.query(`
@@ -74,10 +104,10 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 	err = tx.QueryRowContext(ctx, query, "_design/"+ddoc, rev.rev, rev.id, view).Scan(&funcBody)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, &internal.Error{Status: http.StatusNotFound, Message: "missing named view"}
+			return &internal.Error{Status: http.StatusNotFound, Message: "missing named view"}
 		}
 
-		return nil, err
+		return err
 	}
 
 	insert, err := tx.PrepareContext(ctx, d.ddocQuery(ddoc, view, `
@@ -85,7 +115,7 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 		VAlUES ($1, $2, $3)		
 	`))
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	query = d.query(`
@@ -108,7 +138,7 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 	`)
 	docs, err := d.db.QueryContext(ctx, query)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer docs.Close()
 
@@ -130,12 +160,12 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 
 	vm := goja.New()
 	if _, err := vm.RunString("const map = " + funcBody); err != nil {
-		return nil, err
+		return err
 	}
 
 	mf, ok := goja.AssertFunction(vm.Get("map"))
 	if !ok {
-		return nil, fmt.Errorf("expected map to be a function, got %T", vm.Get("map"))
+		return fmt.Errorf("expected map to be a function, got %T", vm.Get("map"))
 	}
 
 	for docs.Next() {
@@ -144,7 +174,7 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 			doc     json.RawMessage
 		)
 		if err := docs.Scan(&id, &rev, &doc); err != nil {
-			return nil, err
+			return err
 		}
 		full := &fullDoc{
 			ID:  id,
@@ -152,39 +182,15 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 			Doc: doc,
 		}
 		if err := vm.Set("emit", emit(id)); err != nil {
-			return nil, err
+			return err
 		}
 		if _, err := mf(goja.Undefined(), vm.ToValue(full.toMap())); err != nil {
-			return nil, err
+			return err
 		}
 	}
 	if err := docs.Err(); err != nil {
-		return nil, err
+		return err
 	}
 
-	if err := tx.Commit(); err != nil {
-		return nil, err
-	}
-
-	query = d.ddocQuery(ddoc, view, `
-		SELECT
-			id,
-			key,
-			value,
-			"" AS rev,
-			NULL AS doc,
-			"" AS conflicts
-		FROM {{ .Map }}
-		ORDER BY key
-	`)
-	results, err := d.db.QueryContext(ctx, query) //nolint:rowserrcheck // Err checked in Next
-	if err != nil {
-		return nil, err
-	}
-
-	return &rows{
-		ctx:  ctx,
-		db:   d,
-		rows: results,
-	}, nil
+	return tx.Commit()
 }

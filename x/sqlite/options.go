@@ -196,3 +196,33 @@ func (o optsMap) latest() bool {
 func (o optsMap) revs() bool {
 	return toBool(o["revs"])
 }
+
+const (
+	updateModeTrue  = "true"
+	updateModeFalse = "false"
+	updateModeLazy  = "lazy"
+)
+
+func (o optsMap) update() (string, error) {
+	v, ok := o["update"]
+	if !ok {
+		return updateModeTrue, nil
+	}
+	switch t := v.(type) {
+	case bool:
+		if t {
+			return updateModeTrue, nil
+		}
+		return updateModeFalse, nil
+	case string:
+		switch t {
+		case "true":
+			return updateModeTrue, nil
+		case "false":
+			return updateModeFalse, nil
+		case "lazy":
+			return updateModeLazy, nil
+		}
+	}
+	return "", &internal.Error{Status: http.StatusBadRequest, Message: "invalid value for `update`"}
+}

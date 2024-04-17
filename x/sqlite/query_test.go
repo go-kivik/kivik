@@ -76,6 +76,11 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("invalid update value", test{
+		options:    kivik.Param("update", "foo"),
+		wantErr:    "invalid value for `update`",
+		wantStatus: http.StatusBadRequest,
+	})
 
 	/*
 		TODO:
@@ -85,6 +90,33 @@ func TestDBQuery(t *testing.T) {
 		- expose attachment stubs to map function
 		- Are conflicts or other metadata exposed to map function?
 		- custom/standard CouchDB collation https://pkg.go.dev/modernc.org/sqlite#RegisterCollationUtf8
+		- built-in reduce functions: _sum, _count
+		- Options:
+			- conflicts
+			- descending
+			- endkey
+			- end_key
+			- endkey_docid
+			- end_key_doc_id
+			- group
+			- group_level
+			- include_docs
+			- inclusive_end
+			- key
+			- keys
+			- limit
+			- reduce
+			- skip
+			- sorted
+			- stable // N/A only for clusters
+			- stale // deprecated
+			- startkey
+			- start_key
+			- startkey_docid
+			- start_key_doc_id
+			- update // true, false, lazy (==update after)
+			- update_seq
+
 	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {

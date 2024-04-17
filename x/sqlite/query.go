@@ -39,7 +39,12 @@ func fromJSValue(v interface{}) (*string, error) {
 	return &s, nil
 }
 
-func (d *db) Query(ctx context.Context, ddoc, view string, _ driver.Options) (driver.Rows, error) {
+func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Options) (driver.Rows, error) {
+	opts := newOpts(options)
+	_, err := opts.update()
+	if err != nil {
+		return nil, err
+	}
 	// Normalize the ddoc and view values
 	ddoc = strings.TrimPrefix(ddoc, "_design/")
 	view = strings.TrimPrefix(view, "_view/")

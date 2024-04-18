@@ -87,7 +87,10 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 			)
 		`)
 		results, err = d.db.QueryContext(ctx, query, "_design/"+ddoc, rev.rev, rev.id, view) //nolint:rowserrcheck // Err checked in Next
-		if err != nil {
+		switch {
+		case errIsNoSuchTable(err):
+			return nil, &internal.Error{Status: http.StatusNotFound, Message: "missing named view"}
+		case err != nil:
 			return nil, err
 		}
 
@@ -138,19 +141,20 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 			docs.rev,
 			docs.rev_id,
 			design.func_body,
-			COALESCE(design.last_seq,0) AS last_seq
+			COALESCE(design.last_seq, 0) AS last_seq
 		FROM {{ .Docs }} AS docs
 		LEFT JOIN {{ .Design }} AS design ON docs.id = design.id AND docs.rev = design.rev AND docs.rev_id = design.rev_id
 		WHERE docs.id = $1
 		ORDER BY docs.rev DESC, docs.rev_id DESC
 		LIMIT 1
 	`), "_design/"+ddoc).Scan(&ddocRev.rev, &ddocRev.id, &funcBody, &lastSeq)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return revision{}, &internal.Error{Status: http.StatusNotFound, Message: "missing"}
-		}
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return revision{}, &internal.Error{Status: http.StatusNotFound, Message: "missing"}
+	case err != nil:
 		return revision{}, err
 	}
+
 	if mode != "true" {
 		return ddocRev, nil
 	}

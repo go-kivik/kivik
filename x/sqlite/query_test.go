@@ -188,10 +188,27 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("ddoc does not exist with update=false", test{
+		ddoc:       "_design/foo",
+		options:    kivik.Param("update", false),
+		wantErr:    "missing",
+		wantStatus: http.StatusNotFound,
+	})
+	tests.Add("ddoc does exist but view does not with update=false", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]string{"cat": "meow"})
+
+		return test{
+			db:         d,
+			ddoc:       "_design/foo",
+			view:       "_view/bar",
+			options:    kivik.Param("update", false),
+			wantErr:    "missing named view",
+			wantStatus: http.StatusNotFound,
+		}
+	})
 	/*
 		TODO:
-		- update=false, missing ddoc should return proper error status
-		- update=false, missing view should return proper error status
 		- recover exception from map function
 		- recover panic from emit function
 		- update view index before returning

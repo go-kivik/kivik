@@ -312,7 +312,38 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("map that references attachments", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+						if (doc._attachments) { // Check if there are attachments
+							for (var filename in doc._attachments) { // Loop over all attachments
+								emit(doc._id, filename); // Emit the document ID and filename
+							}
+						}
+					}`,
+				},
+			},
+		})
+		_ = d.tPut("no_attachments", map[string]string{"foo": "bar"})
+		_ = d.tPut("with_attachments", map[string]interface{}{
+			"_attachments": newAttachments().
+				add("foo.txt", "Hello, World!").
+				add("bar.txt", "Goodbye, World!"),
+		})
 
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: []rowResult{
+				{},
+				{},
+			},
+		}
+	})
 	/*
 		TODO:
 		- update view index before returning

@@ -207,6 +207,37 @@ func TestDBQuery(t *testing.T) {
 			wantStatus: http.StatusNotFound,
 		}
 	})
+	tests.Add("deleting doc deindexes it", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("foo", map[string]string{"cat": "meow"})
+
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) { emit(doc._id, null); }`,
+				},
+			},
+		})
+		// Ensure the index is built
+		rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", mock.NilOption)
+		if err != nil {
+			t.Fatalf("Failed to query view: %s", err)
+		}
+		_ = rows.Close()
+
+		// Add a new doc to trigger an incremental update
+		_ = d.tDelete("foo", kivik.Rev(rev))
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: []rowResult{
+				{ID: "_design/foo", Key: `"_design/foo"`, Value: "null"},
+			},
+		}
+	})
+
 	/*
 		TODO:
 		- recover exception from map function

@@ -168,14 +168,15 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 			doc.seq                      AS seq,
 			rev.id                       AS id,
 			rev.rev || '-' || rev.rev_id AS rev,
-			doc.doc                      AS doc
+			doc.doc                      AS doc,
+			doc.deleted                  AS deleted
 		FROM {{ .Revs }} AS rev
 		LEFT JOIN {{ .Revs }} AS child ON rev.id = child.id AND rev.rev = child.parent_rev AND rev.rev_id = child.parent_rev_id
 		JOIN {{ .Docs }} AS doc ON rev.id = doc.id AND rev.rev = doc.rev AND rev.rev_id = doc.rev_id
 		WHERE rev.id NOT LIKE '_local/%'
 			AND child.id IS NULL
-			AND NOT doc.deleted
-		AND doc.seq > $1
+			AND ($1 != 0 OR NOT doc.deleted) -- Only include deleted docs for incremental updates
+			AND doc.seq > $1
 		ORDER BY doc.seq
 	`)
 	docs, err := d.db.QueryContext(ctx, query, lastSeq)
@@ -215,9 +216,14 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 		var (
 			id, rev string
 			doc     json.RawMessage
+			deleted bool
 		)
-		if err := docs.Scan(&seq, &id, &rev, &doc); err != nil {
+		if err := docs.Scan(&seq, &id, &rev, &doc, &deleted); err != nil {
 			return revision{}, err
+		}
+		if deleted {
+			batch.delete(id)
+			continue
 		}
 		full := &fullDoc{
 			ID:  id,
@@ -230,7 +236,7 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 		if _, err := mf(goja.Undefined(), vm.ToValue(full.toMap())); err != nil {
 			return revision{}, err
 		}
-		if batch.count >= batchSize {
+		if batch.insertCount >= batchSize {
 			if err := d.writeMapIndexBatch(ctx, seq, ddocRev, ddoc, view, batch); err != nil {
 				return revision{}, err
 			}
@@ -238,7 +244,7 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 		}
 	}
 
-	if batch.count > 0 {
+	if !batch.isEmpty() {
 		if err := d.writeMapIndexBatch(ctx, seq, ddocRev, ddoc, view, batch); err != nil {
 			return revision{}, err
 		}
@@ -248,8 +254,9 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 }
 
 type mapIndexBatch struct {
-	count   int
-	entries map[string][]mapIndexEntry
+	insertCount int
+	entries     map[string][]mapIndexEntry
+	deleted     []string
 }
 
 type mapIndexEntry struct {
@@ -268,12 +275,20 @@ func (b *mapIndexBatch) add(id string, key, value *string) {
 		Key:   key,
 		Value: value,
 	})
-	b.count++
+	b.insertCount++
+}
+
+func (b *mapIndexBatch) delete(id string) {
+	b.deleted = append(b.deleted, id)
 }
 
 func (b *mapIndexBatch) clear() {
-	b.count = 0
+	b.insertCount = 0
 	b.entries = make(map[string][]mapIndexEntry, batchSize)
+}
+
+func (b *mapIndexBatch) isEmpty() bool {
+	return b.insertCount == 0 && len(b.deleted) == 0
 }
 
 func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc, viewName string, batch *mapIndexBatch) error {
@@ -295,13 +310,12 @@ func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc
 		return err
 	}
 
-	if batch.count == 0 {
-		return tx.Commit()
-	}
-
 	// Clear any stale entries
-	ids := make([]interface{}, 0, len(batch.entries))
+	ids := make([]interface{}, 0, len(batch.entries)+len(batch.deleted))
 	for id := range batch.entries {
+		ids = append(ids, id)
+	}
+	for _, id := range batch.deleted {
 		ids = append(ids, id)
 	}
 	query := fmt.Sprintf(d.ddocQuery(ddoc, viewName, rev.String(), `
@@ -312,8 +326,12 @@ func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc
 		return err
 	}
 
-	args := make([]interface{}, 0, batch.count*3)
-	values := make([]string, 0, batch.count)
+	if batch.insertCount == 0 {
+		return tx.Commit()
+	}
+
+	args := make([]interface{}, 0, batch.insertCount*3)
+	values := make([]string, 0, batch.insertCount)
 	for id, entries := range batch.entries {
 		for _, entry := range entries {
 			values = append(values, fmt.Sprintf("($%d, $%d, $%d)", len(args)+1, len(args)+2, len(args)+3))

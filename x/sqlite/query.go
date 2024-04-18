@@ -124,26 +124,16 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view string) error {
 	}
 
 	query := d.query(`
-		WITH RankedRevisions AS (
-			SELECT
-				doc.seq     AS seq,
-				rev.id      AS id,
-				rev.rev     AS rev,
-				rev.rev_id  AS rev_id,
-				doc.doc     AS doc,
-				doc.deleted AS deleted
-			FROM {{ .Revs }} AS rev
-			LEFT JOIN {{ .Revs }} AS child ON rev.id = child.id AND rev.rev = child.parent_rev AND rev.rev_id = child.parent_rev_id
-			JOIN {{ .Docs }} AS doc ON rev.id = doc.id AND rev.rev = doc.rev AND rev.rev_id = doc.rev_id
-			WHERE child.id IS NULL AND NOT deleted
-		)
 		SELECT
 			rev.id                       AS id,
 			rev.rev || '-' || rev.rev_id AS rev,
-			rev.doc                      AS doc
-		FROM RankedRevisions AS rev
+			doc.doc                      AS doc
+		FROM {{ .Revs }} AS rev
+		LEFT JOIN {{ .Revs }} AS child ON rev.id = child.id AND rev.rev = child.parent_rev AND rev.rev_id = child.parent_rev_id
+		JOIN {{ .Docs }} AS doc ON rev.id = doc.id AND rev.rev = doc.rev AND rev.rev_id = doc.rev_id
 		WHERE rev.id NOT LIKE '_local/%'
-		GROUP BY rev.id, rev.rev, rev.rev_id
+			AND child.id IS NULL
+			AND NOT doc.deleted
 	`)
 	docs, err := d.db.QueryContext(ctx, query)
 	if err != nil {

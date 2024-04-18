@@ -15,7 +15,7 @@ package sqlite
 import (
 	"context"
 	"database/sql"
-	"log/slog"
+	"log"
 
 	"github.com/go-kivik/kivik/v4/driver"
 )
@@ -23,7 +23,7 @@ import (
 type db struct {
 	db     *sql.DB
 	name   string
-	logger *slog.Logger
+	logger *log.Logger
 }
 
 var _ driver.DB = (*db)(nil)

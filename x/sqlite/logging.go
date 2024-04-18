@@ -13,13 +13,13 @@
 package sqlite
 
 import (
-	"log/slog"
+	"log"
 
 	"github.com/go-kivik/kivik/v4"
 )
 
 type optionLogger struct {
-	*slog.Logger
+	*log.Logger
 }
 
 var _ kivik.Option = (*optionLogger)(nil)
@@ -33,6 +33,6 @@ func (o optionLogger) Apply(target interface{}) {
 // OptionLogger is an option to set a custom logger for the SQLite driver. The
 // logger will be used to log any errors that occur during asynchronous
 // operations such as background index rebuilding.
-func OptionLogger(logger *slog.Logger) kivik.Option {
+func OptionLogger(logger *log.Logger) kivik.Option {
 	return optionLogger{Logger: logger}
 }

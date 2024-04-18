@@ -74,7 +74,7 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 	if update == updateModeLazy {
 		go func() {
 			if err := d.updateIndex(context.Background(), ddoc, view); err != nil {
-				d.logger.Error("Failed to update index: " + err.Error())
+				d.logger.Print("Failed to update index: " + err.Error())
 			}
 		}()
 	}

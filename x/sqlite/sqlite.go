@@ -16,7 +16,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"log/slog"
+	"log"
 	"net/http"
 	"regexp"
 	"strings"
@@ -46,7 +46,7 @@ func (drv) NewClient(dsn string, options driver.Options) (driver.Client, error) 
 
 	c := &client{
 		db:     db,
-		logger: slog.Default(),
+		logger: log.Default(),
 	}
 	options.Apply(c)
 
@@ -55,7 +55,7 @@ func (drv) NewClient(dsn string, options driver.Options) (driver.Client, error) 
 
 type client struct {
 	db     *sql.DB
-	logger *slog.Logger
+	logger *log.Logger
 }
 
 var _ driver.Client = (*client)(nil)

@@ -255,10 +255,8 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 		}
 	}
 
-	if !batch.isEmpty() {
-		if err := d.writeMapIndexBatch(ctx, seq, ddocRev, ddoc, view, batch); err != nil {
-			return revision{}, err
-		}
+	if err := d.writeMapIndexBatch(ctx, seq, ddocRev, ddoc, view, batch); err != nil {
+		return revision{}, err
 	}
 
 	return ddocRev, docs.Err()
@@ -299,10 +297,6 @@ func (b *mapIndexBatch) clear() {
 	b.insertCount = 0
 	b.deleted = b.deleted[:0]
 	b.entries = make(map[string][]mapIndexEntry, batchSize)
-}
-
-func (b *mapIndexBatch) isEmpty() bool {
-	return b.insertCount == 0 && len(b.deleted) == 0
 }
 
 func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc, viewName string, batch *mapIndexBatch) error {

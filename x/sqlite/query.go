@@ -49,30 +49,68 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 	ddoc = strings.TrimPrefix(ddoc, "_design/")
 	view = strings.TrimPrefix(view, "_view/")
 
-	rev, _, err := d.updateIndex(ctx, ddoc, view, update)
-	if err != nil {
-		return nil, err
-	}
+	var results *sql.Rows
+	for {
+		rev, err := d.updateIndex(ctx, ddoc, view, update)
+		if err != nil {
+			return nil, err
+		}
 
-	query := d.ddocQuery(ddoc, view, rev.String(), `
-		SELECT
-			id,
-			key,
-			value,
-			"" AS rev,
-			NULL AS doc,
-			"" AS conflicts
-		FROM {{ .Map }}
-		ORDER BY key
-	`)
-	results, err := d.db.QueryContext(ctx, query) //nolint:rowserrcheck // Err checked in Next
-	if err != nil {
-		return nil, err
+		query := d.ddocQuery(ddoc, view, rev.String(), `
+			SELECT
+				COALESCE(MAX(last_seq), 0) == (SELECT COALESCE(max(seq),0) FROM {{ .Docs }}) AS up_to_date,
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL
+			FROM {{ .Design }}
+			WHERE id = $1
+				AND rev = $2
+				AND rev_id = $3
+				AND func_type = 'map'
+				AND func_name = $4
+
+			UNION
+
+			SELECT *
+			FROM (
+				SELECT
+					id,
+					key,
+					value,
+					"" AS rev,
+					NULL AS doc,
+					"" AS conflicts
+				FROM {{ .Map }}
+				ORDER BY key
+			)
+		`)
+		results, err = d.db.QueryContext(ctx, query, "_design/"+ddoc, rev.rev, rev.id, view) //nolint:rowserrcheck // Err checked in Next
+		if err != nil {
+			return nil, err
+		}
+
+		// The first row is used to verify the index is up to date
+		if !results.Next() {
+			// should never happen
+			return nil, errors.New("no rows returned")
+		}
+		if update != updateModeTrue {
+			break
+		}
+		var upToDate bool
+		if err := results.Scan(&upToDate, discard{}, discard{}, discard{}, discard{}, discard{}); err != nil {
+			return nil, err
+		}
+		if upToDate {
+			break
+		}
 	}
 
 	if update == updateModeLazy {
 		go func() {
-			if _, _, err := d.updateIndex(context.Background(), ddoc, view, updateModeTrue); err != nil {
+			if _, err := d.updateIndex(context.Background(), ddoc, view, updateModeTrue); err != nil {
 				d.logger.Print("Failed to update index: " + err.Error())
 			}
 		}()
@@ -89,7 +127,7 @@ const batchSize = 100
 
 // updateIndex queries for the current index status, and returns the current
 // ddoc revid and last_seq. If mode is "true", it will also update the index.
-func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision, int, error) {
+func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision, error) {
 	var (
 		ddocRev  revision
 		funcBody *string
@@ -109,16 +147,16 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 	`), "_design/"+ddoc).Scan(&ddocRev.rev, &ddocRev.id, &funcBody, &lastSeq)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return revision{}, 0, &internal.Error{Status: http.StatusNotFound, Message: "missing"}
+			return revision{}, &internal.Error{Status: http.StatusNotFound, Message: "missing"}
 		}
-		return revision{}, 0, err
+		return revision{}, err
 	}
 	if mode != "true" {
-		return ddocRev, lastSeq, nil
+		return ddocRev, nil
 	}
 
 	if funcBody == nil {
-		return revision{}, 0, &internal.Error{Status: http.StatusNotFound, Message: "missing named view"}
+		return revision{}, &internal.Error{Status: http.StatusNotFound, Message: "missing named view"}
 	}
 
 	query := d.query(`
@@ -138,7 +176,7 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 	`)
 	docs, err := d.db.QueryContext(ctx, query, lastSeq)
 	if err != nil {
-		return revision{}, 0, err
+		return revision{}, err
 	}
 	defer docs.Close()
 
@@ -160,12 +198,12 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 
 	vm := goja.New()
 	if _, err := vm.RunString("const map = " + *funcBody); err != nil {
-		return revision{}, 0, err
+		return revision{}, err
 	}
 
 	mf, ok := goja.AssertFunction(vm.Get("map"))
 	if !ok {
-		return revision{}, 0, fmt.Errorf("expected map to be a function, got %T", vm.Get("map"))
+		return revision{}, fmt.Errorf("expected map to be a function, got %T", vm.Get("map"))
 	}
 
 	var seq int
@@ -175,7 +213,7 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 			doc     json.RawMessage
 		)
 		if err := docs.Scan(&seq, &id, &rev, &doc); err != nil {
-			return revision{}, 0, err
+			return revision{}, err
 		}
 		full := &fullDoc{
 			ID:  id,
@@ -183,27 +221,26 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 			Doc: doc,
 		}
 		if err := vm.Set("emit", emit(id)); err != nil {
-			return revision{}, 0, err
+			return revision{}, err
 		}
 		if _, err := mf(goja.Undefined(), vm.ToValue(full.toMap())); err != nil {
-			return revision{}, 0, err
+			return revision{}, err
 		}
 		if batch.count >= batchSize {
 			if err := d.writeMapIndexBatch(ctx, seq, ddocRev, ddoc, view, batch); err != nil {
-				return revision{}, 0, err
+				return revision{}, err
 			}
 			batch.clear()
-
 		}
 	}
 
 	if batch.count > 0 {
 		if err := d.writeMapIndexBatch(ctx, seq, ddocRev, ddoc, view, batch); err != nil {
-			return revision{}, 0, err
+			return revision{}, err
 		}
 	}
 
-	return ddocRev, lastSeq, docs.Err()
+	return ddocRev, docs.Err()
 }
 
 type mapIndexBatch struct {

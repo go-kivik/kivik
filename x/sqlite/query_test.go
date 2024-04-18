@@ -157,6 +157,37 @@ func TestDBQuery(t *testing.T) {
 			want:    nil,
 		}
 	})
+	tests.Add("incremental update", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) { emit(doc._id, null); }`,
+				},
+			},
+		})
+		_ = d.tPut("foo", map[string]string{"_id": "foo"})
+		// Ensure the index is built
+		rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", mock.NilOption)
+		if err != nil {
+			t.Fatalf("Failed to query view: %s", err)
+		}
+		_ = rows.Close()
+
+		// Add a new doc to trigger an incremental update
+		_ = d.tPut("bar", map[string]interface{}{"_id": "bar"})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: []rowResult{
+				{ID: "_design/foo", Key: `"_design/foo"`, Value: "null"},
+				{ID: "bar", Key: `"bar"`, Value: "null"},
+				{ID: "foo", Key: `"foo"`, Value: "null"},
+			},
+		}
+	})
 	/*
 		TODO:
 		- update=false, missing ddoc should return proper error status

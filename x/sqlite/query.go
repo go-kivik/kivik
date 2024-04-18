@@ -175,7 +175,6 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 		JOIN {{ .Docs }} AS doc ON rev.id = doc.id AND rev.rev = doc.rev AND rev.rev_id = doc.rev_id
 		WHERE rev.id NOT LIKE '_local/%'
 			AND child.id IS NULL
-			AND ($1 != 0 OR NOT doc.deleted) -- Only include deleted docs for incremental updates
 			AND doc.seq > $1
 		ORDER BY doc.seq
 	`)

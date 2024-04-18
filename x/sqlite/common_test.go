@@ -16,12 +16,17 @@
 package sqlite
 
 import (
+	"bytes"
 	"context"
 	"crypto/md5"
 	"database/sql"
 	"fmt"
+	"log"
 	"os"
+	"strings"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/x/sqlite/v4/internal/mock"
@@ -41,6 +46,7 @@ type DB interface {
 type testDB struct {
 	t *testing.T
 	DB
+	logs *bytes.Buffer
 }
 
 func (tdb *testDB) underlying() *sql.DB {
@@ -94,14 +100,16 @@ func newDB(t *testing.T) *testDB {
 		dsn = fmt.Sprintf("file:%x?mode=memory&cache=shared", md5sum.Sum(nil))
 	}
 	d := drv{}
-	client, err := d.NewClient(dsn, mock.NilOption)
+	buf := &bytes.Buffer{}
+	logger := log.New(buf, "", 0)
+	client, err := d.NewClient(dsn, OptionLogger(logger))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if err := client.CreateDB(context.Background(), "test", nil); err != nil {
 		t.Fatal(err)
 	}
-	db, err := client.DB("test", nil)
+	db, err := client.DB("test", mock.NilOption)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -109,8 +117,23 @@ func newDB(t *testing.T) *testDB {
 		_ = db.Close()
 	})
 	return &testDB{
-		DB: db.(DB),
-		t:  t,
+		DB:   db.(DB),
+		t:    t,
+		logs: buf,
+	}
+}
+
+func (tdb *testDB) checkLogs(expected []string) {
+	tdb.t.Helper()
+	if expected == nil {
+		return
+	}
+	got := strings.Split(tdb.logs.String(), "\n")
+	if len(got) > 0 && got[len(got)-1] == "" {
+		got = got[:len(got)-1]
+	}
+	if d := cmp.Diff(expected, got); d != "" {
+		tdb.t.Errorf("Unexpected logs:\n%s", d)
 	}
 }
 

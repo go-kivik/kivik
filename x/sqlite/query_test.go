@@ -37,6 +37,7 @@ func TestDBQuery(t *testing.T) {
 		want       []rowResult
 		wantStatus int
 		wantErr    string
+		wantLogs   []string
 	}
 	tests := testy.NewTable()
 	tests.Add("ddoc does not exist", test{
@@ -258,29 +259,35 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	// tests.Add("map function throws exception", func(t *testing.T) interface{} {
-	// 	d := newDB(t)
-	// 	_ = d.tPut("foo", map[string]string{"cat": "meow"})
-	// 	_ = d.tPut("_design/foo", map[string]interface{}{
-	// 		"views": map[string]interface{}{
-	// 			"bar": map[string]string{
-	// 				"map": `function(doc) {
-	// 					emit(doc._id, null);
-	// 					throw new Error("broken");
-	// 				}`,
-	// 			},
-	// 		},
-	// 	})
-	// 	return test{
-	// 		db:   d,
-	// 		ddoc: "_design/foo",
-	// 		view: "_view/bar",
-	// 		want: nil,
-	// 	}
-	// })
+	tests.Add("map function throws exception", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("foo", map[string]string{"cat": "meow"})
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+						emit(doc._id, null);
+						throw new Error("broken");
+					}`,
+				},
+			},
+		})
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: nil,
+			wantLogs: []string{
+				"map function threw exception for foo: Error: broken",
+				"\tat map (<eval>:3:13(9))",
+				"map function threw exception for _design/foo: Error: broken",
+				"\tat map (<eval>:3:13(9))",
+			},
+		}
+	})
+
 	/*
 		TODO:
-		- recover exception from map function
 		- recover panic from emit function
 		- update view index before returning
 		- wait for pending index update before returning
@@ -338,6 +345,7 @@ func TestDBQuery(t *testing.T) {
 		}
 
 		checkRows(t, rows, tt.want)
+		db.checkLogs(tt.wantLogs)
 	})
 }
 

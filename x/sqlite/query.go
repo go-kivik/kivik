@@ -233,7 +233,13 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 			return revision{}, err
 		}
 		if _, err := mf(goja.Undefined(), vm.ToValue(full.toMap())); err != nil {
-			return revision{}, err
+			var exception *goja.Exception
+			if errors.As(err, &exception) {
+				d.logger.Printf("map function threw exception for %s: %s", id, exception.String())
+				batch.delete(id)
+			} else {
+				return revision{}, err
+			}
 		}
 		if batch.insertCount >= batchSize {
 			if err := d.writeMapIndexBatch(ctx, seq, ddocRev, ddoc, view, batch); err != nil {
@@ -279,10 +285,13 @@ func (b *mapIndexBatch) add(id string, key, value *string) {
 
 func (b *mapIndexBatch) delete(id string) {
 	b.deleted = append(b.deleted, id)
+	b.insertCount -= len(b.entries[id])
+	delete(b.entries, id)
 }
 
 func (b *mapIndexBatch) clear() {
 	b.insertCount = 0
+	b.deleted = b.deleted[:0]
 	b.entries = make(map[string][]mapIndexEntry, batchSize)
 }
 

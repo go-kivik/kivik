@@ -15,16 +15,26 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"log"
 
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
 type db struct {
-	db   *sql.DB
-	name string
+	db     *sql.DB
+	name   string
+	logger *log.Logger
 }
 
 var _ driver.DB = (*db)(nil)
+
+func (c *client) newDB(name string) *db {
+	return &db{
+		db:     c.db,
+		name:   name,
+		logger: c.logger,
+	}
+}
 
 func (d *db) Close() error {
 	return d.db.Close()
@@ -50,10 +60,6 @@ func (db) CompactView(context.Context, string) error {
 
 func (db) ViewCleanup(context.Context) error {
 	return nil
-}
-
-func (db) Query(context.Context, string, string, driver.Options) (driver.Rows, error) {
-	return nil, nil
 }
 
 func (db) BulkDocs(context.Context, []interface{}, driver.Options) ([]driver.BulkResult, error) {

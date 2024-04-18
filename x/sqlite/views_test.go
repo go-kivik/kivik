@@ -31,8 +31,9 @@ import (
 type rowResult struct {
 	ID    string
 	Rev   string
-	Doc   string
+	Key   string
 	Value string
+	Doc   string
 	Error string
 }
 
@@ -58,8 +59,8 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "foo",
-					Rev:   rev,
-					Value: `{"value":{"rev":"` + rev + `"}}` + "\n",
+					Key:   "foo",
+					Value: `{"value":{"rev":"` + rev + `"}}`,
 				},
 			},
 		}
@@ -74,8 +75,8 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "foo",
-					Rev:   rev,
-					Value: `{"value":{"rev":"` + rev + `"}}` + "\n",
+					Key:   "foo",
+					Value: `{"value":{"rev":"` + rev + `"}}`,
 					Doc:   `{"_id":"foo","_rev":"` + rev + `","cat":"meow"}`,
 				},
 			},
@@ -91,8 +92,8 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "foo",
-					Rev:   rev2,
-					Value: `{"value":{"rev":"` + rev2 + `"}}` + "\n",
+					Key:   "foo",
+					Value: `{"value":{"rev":"` + rev2 + `"}}`,
 				},
 			},
 		}
@@ -113,8 +114,8 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "foo",
-					Rev:   "1-xxx",
-					Value: `{"value":{"rev":"1-xxx"}}` + "\n",
+					Key:   "foo",
+					Value: `{"value":{"rev":"1-xxx"}}`,
 				},
 			},
 		}
@@ -146,8 +147,8 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "foo",
-					Rev:   "1-xxx",
-					Value: `{"value":{"rev":"1-xxx"}}` + "\n",
+					Key:   "foo",
+					Value: `{"value":{"rev":"1-xxx"}}`,
 				},
 			},
 		}
@@ -172,8 +173,8 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "foo",
-					Rev:   "1-xxx",
-					Value: `{"value":{"rev":"1-xxx"}}` + "\n",
+					Key:   "foo",
+					Value: `{"value":{"rev":"1-xxx"}}`,
 					Doc:   `{"_id":"foo","_rev":"1-xxx","cat":"meow","_conflicts":["1-aaa"]}`,
 				},
 			},
@@ -198,8 +199,8 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "foo",
-					Rev:   "1-xxx",
-					Value: `{"value":{"rev":"1-xxx"}}` + "\n",
+					Key:   "foo",
+					Value: `{"value":{"rev":"1-xxx"}}`,
 				},
 			},
 		}
@@ -221,18 +222,18 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "cat",
-					Rev:   rev1,
-					Value: `{"value":{"rev":"` + rev1 + `"}}` + "\n",
+					Key:   "cat",
+					Value: `{"value":{"rev":"` + rev1 + `"}}`,
 				},
 				{
 					ID:    "cow",
-					Rev:   rev3,
-					Value: `{"value":{"rev":"` + rev3 + `"}}` + "\n",
+					Key:   "cow",
+					Value: `{"value":{"rev":"` + rev3 + `"}}`,
 				},
 				{
 					ID:    "dog",
-					Rev:   rev2,
-					Value: `{"value":{"rev":"` + rev2 + `"}}` + "\n",
+					Key:   "dog",
+					Value: `{"value":{"rev":"` + rev2 + `"}}`,
 				},
 			},
 		}
@@ -255,18 +256,18 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "dog",
-					Rev:   rev2,
-					Value: `{"value":{"rev":"` + rev2 + `"}}` + "\n",
+					Key:   "dog",
+					Value: `{"value":{"rev":"` + rev2 + `"}}`,
 				},
 				{
 					ID:    "cow",
-					Rev:   rev3,
-					Value: `{"value":{"rev":"` + rev3 + `"}}` + "\n",
+					Key:   "cow",
+					Value: `{"value":{"rev":"` + rev3 + `"}}`,
 				},
 				{
 					ID:    "cat",
-					Rev:   rev1,
-					Value: `{"value":{"rev":"` + rev1 + `"}}` + "\n",
+					Key:   "cat",
+					Value: `{"value":{"rev":"` + rev1 + `"}}`,
 				},
 			},
 		}
@@ -289,13 +290,13 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "cat",
-					Rev:   rev1,
-					Value: `{"value":{"rev":"` + rev1 + `"}}` + "\n",
+					Key:   "cat",
+					Value: `{"value":{"rev":"` + rev1 + `"}}`,
 				},
 				{
 					ID:    "cow",
-					Rev:   rev3,
-					Value: `{"value":{"rev":"` + rev3 + `"}}` + "\n",
+					Key:   "cow",
+					Value: `{"value":{"rev":"` + rev3 + `"}}`,
 				},
 			},
 		}
@@ -321,13 +322,13 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "dog",
-					Rev:   rev2,
-					Value: `{"value":{"rev":"` + rev2 + `"}}` + "\n",
+					Key:   "dog",
+					Value: `{"value":{"rev":"` + rev2 + `"}}`,
 				},
 				{
 					ID:    "cow",
-					Rev:   rev3,
-					Value: `{"value":{"rev":"` + rev3 + `"}}` + "\n",
+					Key:   "cow",
+					Value: `{"value":{"rev":"` + rev3 + `"}}`,
 				},
 			},
 		}
@@ -350,13 +351,13 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "cat",
-					Rev:   rev1,
-					Value: `{"value":{"rev":"` + rev1 + `"}}` + "\n",
+					Key:   "cat",
+					Value: `{"value":{"rev":"` + rev1 + `"}}`,
 				},
 				{
 					ID:    "cow",
-					Rev:   rev3,
-					Value: `{"value":{"rev":"` + rev3 + `"}}` + "\n",
+					Key:   "cow",
+					Value: `{"value":{"rev":"` + rev3 + `"}}`,
 				},
 			},
 		}
@@ -382,8 +383,8 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "cat",
-					Rev:   rev1,
-					Value: `{"value":{"rev":"` + rev1 + `"}}` + "\n",
+					Key:   "cat",
+					Value: `{"value":{"rev":"` + rev1 + `"}}`,
 				},
 			},
 		}
@@ -406,13 +407,13 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "cow",
-					Rev:   rev3,
-					Value: `{"value":{"rev":"` + rev3 + `"}}` + "\n",
+					Key:   "cow",
+					Value: `{"value":{"rev":"` + rev3 + `"}}`,
 				},
 				{
 					ID:    "dog",
-					Rev:   rev2,
-					Value: `{"value":{"rev":"` + rev2 + `"}}` + "\n",
+					Key:   "dog",
+					Value: `{"value":{"rev":"` + rev2 + `"}}`,
 				},
 			},
 		}
@@ -435,13 +436,13 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "cow",
-					Rev:   rev3,
-					Value: `{"value":{"rev":"` + rev3 + `"}}` + "\n",
+					Key:   "cow",
+					Value: `{"value":{"rev":"` + rev3 + `"}}`,
 				},
 				{
 					ID:    "dog",
-					Rev:   rev2,
-					Value: `{"value":{"rev":"` + rev2 + `"}}` + "\n",
+					Key:   "dog",
+					Value: `{"value":{"rev":"` + rev2 + `"}}`,
 				},
 			},
 		}
@@ -467,13 +468,13 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "cow",
-					Rev:   rev3,
-					Value: `{"value":{"rev":"` + rev3 + `"}}` + "\n",
+					Key:   "cow",
+					Value: `{"value":{"rev":"` + rev3 + `"}}`,
 				},
 				{
 					ID:    "cat",
-					Rev:   rev1,
-					Value: `{"value":{"rev":"` + rev1 + `"}}` + "\n",
+					Key:   "cat",
+					Value: `{"value":{"rev":"` + rev1 + `"}}`,
 				},
 			},
 		}
@@ -490,13 +491,13 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "cat",
-					Rev:   rev1,
-					Value: `{"value":{"rev":"` + rev1 + `"}}` + "\n",
+					Key:   "cat",
+					Value: `{"value":{"rev":"` + rev1 + `"}}`,
 				},
 				{
 					ID:    "cow",
-					Rev:   rev3,
-					Value: `{"value":{"rev":"` + rev3 + `"}}` + "\n",
+					Key:   "cow",
+					Value: `{"value":{"rev":"` + rev3 + `"}}`,
 				},
 			},
 		}
@@ -513,8 +514,8 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "dog",
-					Rev:   rev2,
-					Value: `{"value":{"rev":"` + rev2 + `"}}` + "\n",
+					Key:   "dog",
+					Value: `{"value":{"rev":"` + rev2 + `"}}`,
 				},
 			},
 		}
@@ -531,8 +532,8 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "cow",
-					Rev:   rev3,
-					Value: `{"value":{"rev":"` + rev3 + `"}}` + "\n",
+					Key:   "cow",
+					Value: `{"value":{"rev":"` + rev3 + `"}}`,
 				},
 			},
 		}
@@ -548,13 +549,13 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "cat",
-					Rev:   rev,
-					Value: `{"value":{"rev":"` + rev + `"}}` + "\n",
+					Key:   "cat",
+					Value: `{"value":{"rev":"` + rev + `"}}`,
 				},
 				{
 					ID:    "cow",
-					Rev:   rev3,
-					Value: `{"value":{"rev":"` + rev3 + `"}}` + "\n",
+					Key:   "cow",
+					Value: `{"value":{"rev":"` + rev3 + `"}}`,
 				},
 			},
 		}
@@ -652,6 +653,7 @@ loop:
 		got = append(got, rowResult{
 			ID:    row.ID,
 			Rev:   row.Rev,
+			Key:   string(row.Key),
 			Value: string(value),
 			Doc:   string(doc),
 			Error: errMsg,

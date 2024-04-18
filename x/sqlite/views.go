@@ -16,7 +16,6 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
@@ -109,13 +108,15 @@ func (d *db) queryView(ctx context.Context, view string, options driver.Options)
 				rev                   AS rev,
 				rev_id                AS rev_id,
 				IIF($1, doc, NULL)    AS doc,
-				deleted               AS deleted,
+				deleted               AS deleted, -- TODO:remove this?
 				ROW_NUMBER() OVER (PARTITION BY id ORDER BY rev DESC, rev_id DESC) AS rank
 			FROM {{ .Leaves }} AS rev
 			WHERE NOT deleted
 		)
 		SELECT
 			rev.id                       AS id,
+			rev.id                       AS key,
+			'{"value":{"rev":"' || rev.rev || '-' || rev.rev_id || '"}}' AS value,
 			rev.rev || '-' || rev.rev_id AS rev,
 			rev.doc                      AS doc,
 			GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ',') AS conflicts
@@ -164,19 +165,24 @@ func (r *rows) Next(row *driver.Row) error {
 		return io.EOF
 	}
 	var (
-		doc       []byte
+		key, doc  []byte
+		value     *[]byte
 		conflicts *string
+		rev       string
 	)
-	if err := r.rows.Scan(&row.ID, &row.Rev, &doc, &conflicts); err != nil {
+	if err := r.rows.Scan(&row.ID, &key, &value, &rev, &doc, &conflicts); err != nil {
 		return err
 	}
-	var buf bytes.Buffer
-	_ = json.NewEncoder(&buf).Encode(map[string]interface{}{"value": map[string]string{"rev": row.Rev}})
-	row.Value = &buf
+	row.Key = key
+	if value == nil {
+		row.Value = strings.NewReader("null")
+	} else {
+		row.Value = bytes.NewReader(*value)
+	}
 	if doc != nil {
 		toMerge := fullDoc{
 			ID:  row.ID,
-			Rev: row.Rev,
+			Rev: rev,
 			Doc: doc,
 		}
 		if r.conflicts {

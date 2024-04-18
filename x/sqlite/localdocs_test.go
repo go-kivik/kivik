@@ -49,8 +49,8 @@ func TestDBLocalDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "_local/bar",
-					Rev:   rev2,
-					Value: `{"value":{"rev":"` + rev2 + `"}}` + "\n",
+					Key:   "_local/bar",
+					Value: `{"value":{"rev":"` + rev2 + `"}}`,
 				},
 			},
 		}

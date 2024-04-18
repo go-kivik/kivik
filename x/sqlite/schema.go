@@ -96,7 +96,7 @@ var schema = []string{
 const viewMapTable = `
 CREATE TABLE IF NOT EXISTS {{ .Map }} (
 	id TEXT NOT NULL,
-	key TEXT NOT NULL,
+	key TEXT,
 	value TEXT
 )
 `

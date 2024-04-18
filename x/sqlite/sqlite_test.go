@@ -24,12 +24,13 @@ import (
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/internal/mock"
 )
 
 func TestNewClient(t *testing.T) {
 	d := drv{}
 
-	client, _ := d.NewClient(":memory:", nil)
+	client, _ := d.NewClient(":memory:", mock.NilOption)
 	if client == nil {
 		t.Fatal("client should not be nil")
 	}
@@ -53,7 +54,7 @@ func TestClientVersion(t *testing.T) {
 
 func TestClientAllDBs(t *testing.T) {
 	d := drv{}
-	dClient, err := d.NewClient(":memory:", nil)
+	dClient, err := d.NewClient(":memory:", mock.NilOption)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,7 +68,7 @@ func TestClientAllDBs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	dbs, err := dClient.AllDBs(context.Background(), nil)
+	dbs, err := dClient.AllDBs(context.Background(), mock.NilOption)
 	if err != nil {
 		t.Fatal("err should be nil")
 	}
@@ -80,7 +81,7 @@ func TestClientAllDBs(t *testing.T) {
 func TestClientDBExists(t *testing.T) {
 	d := drv{}
 	t.Run("exists", func(t *testing.T) {
-		dClient, err := d.NewClient(":memory:", nil)
+		dClient, err := d.NewClient(":memory:", mock.NilOption)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -100,7 +101,7 @@ func TestClientDBExists(t *testing.T) {
 		}
 	})
 	t.Run("does not exist", func(t *testing.T) {
-		dClient, err := d.NewClient(":memory:", nil)
+		dClient, err := d.NewClient(":memory:", mock.NilOption)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -118,12 +119,12 @@ func TestClientDBExists(t *testing.T) {
 func TestClientCreateDB(t *testing.T) {
 	t.Run("invalid name", func(t *testing.T) {
 		d := drv{}
-		dClient, err := d.NewClient(":memory:", nil)
+		dClient, err := d.NewClient(":memory:", mock.NilOption)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		err = dClient.CreateDB(context.Background(), "Foo", nil)
+		err = dClient.CreateDB(context.Background(), "Foo", mock.NilOption)
 		if err == nil {
 			t.Fatal("err should not be nil")
 		}
@@ -138,16 +139,16 @@ func TestClientCreateDB(t *testing.T) {
 	})
 	t.Run("success", func(t *testing.T) {
 		d := drv{}
-		dClient, err := d.NewClient(":memory:", nil)
+		dClient, err := d.NewClient(":memory:", mock.NilOption)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if err := dClient.CreateDB(context.Background(), "foo", nil); err != nil {
+		if err := dClient.CreateDB(context.Background(), "foo", mock.NilOption); err != nil {
 			t.Fatal(err)
 		}
 
-		exists, err := dClient.DBExists(context.Background(), "foo", nil)
+		exists, err := dClient.DBExists(context.Background(), "foo", mock.NilOption)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -157,16 +158,16 @@ func TestClientCreateDB(t *testing.T) {
 	})
 	t.Run("db already exists", func(t *testing.T) {
 		d := drv{}
-		dClient, err := d.NewClient(":memory:", nil)
+		dClient, err := d.NewClient(":memory:", mock.NilOption)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if err := dClient.CreateDB(context.Background(), "foo", nil); err != nil {
+		if err := dClient.CreateDB(context.Background(), "foo", mock.NilOption); err != nil {
 			t.Fatal(err)
 		}
 
-		err = dClient.CreateDB(context.Background(), "foo", nil)
+		err = dClient.CreateDB(context.Background(), "foo", mock.NilOption)
 		if err == nil {
 			t.Fatal("err should not be nil")
 		}
@@ -184,20 +185,20 @@ func TestClientCreateDB(t *testing.T) {
 func TestClientDestroyDB(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		d := drv{}
-		dClient, err := d.NewClient(":memory:", nil)
+		dClient, err := d.NewClient(":memory:", mock.NilOption)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if err := dClient.CreateDB(context.Background(), "foo", nil); err != nil {
+		if err := dClient.CreateDB(context.Background(), "foo", mock.NilOption); err != nil {
 			t.Fatal(err)
 		}
 
-		if err := dClient.DestroyDB(context.Background(), "foo", nil); err != nil {
+		if err := dClient.DestroyDB(context.Background(), "foo", mock.NilOption); err != nil {
 			t.Fatal(err)
 		}
 
-		exists, err := dClient.DBExists(context.Background(), "foo", nil)
+		exists, err := dClient.DBExists(context.Background(), "foo", mock.NilOption)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -207,7 +208,7 @@ func TestClientDestroyDB(t *testing.T) {
 	})
 	t.Run("doesn't exist", func(t *testing.T) {
 		d := drv{}
-		dClient, err := d.NewClient(":memory:", nil)
+		dClient, err := d.NewClient(":memory:", mock.NilOption)
 		if err != nil {
 			t.Fatal(err)
 		}

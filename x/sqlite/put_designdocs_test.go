@@ -123,6 +123,8 @@ func TestDBPut_designDocs(t *testing.T) {
 	/*
 		TODO:
 		- unsupported language? -- ignored?
+		- Drop old indexes when a ddoc changes
+
 	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {

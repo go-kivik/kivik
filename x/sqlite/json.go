@@ -95,7 +95,8 @@ type designDocData struct {
 	ValidateDocUpdates string            `json:"validate_doc_update,omitempty"`
 	// AutoUpdate indicates whether to automatically build indexes defined in
 	// this design document. Default is true.
-	AutoUpdate *bool `json:"autoupdate,omitempty"`
+	AutoUpdate *bool                  `json:"autoupdate,omitempty"`
+	Options    map[string]interface{} `json:"options,omitempty"`
 }
 
 // RevID returns calculated revision ID, possibly setting the MD5sum if it is
@@ -411,4 +412,25 @@ func (d *fullDoc) toReader() io.ReadCloser {
 func jsonMarshal(s interface{}) []byte {
 	j, _ := json.Marshal(s)
 	return j
+}
+
+func (d *fullDoc) toMap() map[string]interface{} {
+	var result map[string]interface{}
+	if err := json.Unmarshal(d.Doc, &result); err != nil {
+		panic(err)
+	}
+	result["_id"] = d.ID
+	result["_rev"] = d.Rev
+	if d.Deleted {
+		result["_deleted"] = true
+	}
+	/*
+		Conflicts        []string               `json:"_conflicts,omitempty"`
+		DeletedConflicts []string               `json:"_deleted_conflicts,omitempty"`
+		RevsInfo         []map[string]string    `json:"_revs_info,omitempty"`
+		Revisions        *revsInfo              `json:"_revisions,omitempty"`
+		LocalSeq         int                    `json:"_local_seq,omitempty"`
+		Attachments      map[string]*attachment `json:"_attachments,omitempty"`
+	*/
+	return result
 }

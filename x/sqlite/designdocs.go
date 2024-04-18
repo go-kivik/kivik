@@ -18,6 +18,9 @@ import (
 )
 
 func (d *db) updateDesignDoc(ctx context.Context, tx *sql.Tx, rev revision, data *docData) error {
+	if !data.IsDesignDoc() {
+		return nil
+	}
 	stmt, err := tx.PrepareContext(ctx, d.query(`
 		INSERT INTO {{ .Design }} (id, rev, rev_id, language, func_type, func_name, func_body, auto_update)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -32,7 +35,7 @@ func (d *db) updateDesignDoc(ctx context.Context, tx *sql.Tx, rev revision, data
 			if _, err := stmt.ExecContext(ctx, data.ID, rev.rev, rev.id, data.DesignFields.Language, "map", name, view.Map, data.DesignFields.AutoUpdate); err != nil {
 				return err
 			}
-			if err := d.createViewMap(ctx, tx, data.ID, name); err != nil {
+			if err := d.createViewMap(ctx, tx, data.ID, name, rev.String()); err != nil {
 				return err
 			}
 		}
@@ -60,9 +63,9 @@ func (d *db) updateDesignDoc(ctx context.Context, tx *sql.Tx, rev revision, data
 	return nil
 }
 
-func (d *db) createViewMap(ctx context.Context, tx *sql.Tx, ddoc, name string) error {
+func (d *db) createViewMap(ctx context.Context, tx *sql.Tx, ddoc, name, rev string) error {
 	for _, query := range viewMapSchema {
-		if _, err := tx.ExecContext(ctx, d.ddocQuery(ddoc, name, query)); err != nil {
+		if _, err := tx.ExecContext(ctx, d.ddocQuery(ddoc, name, rev, query)); err != nil {
 			return err
 		}
 	}

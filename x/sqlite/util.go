@@ -81,7 +81,7 @@ func (d *db) isLeafRev(ctx context.Context, tx *sql.Tx, docID string, rev int, r
 }
 
 // winningRev returns the current winning revision for the specified document.
-func (d *db) winningRev(ctx context.Context, tx *sql.Tx, docID string) (revision, error) {
+func (d *db) winningRev(ctx context.Context, tx queryer, docID string) (revision, error) {
 	var curRev revision
 	err := tx.QueryRowContext(ctx, d.query(`
 		SELECT rev, rev_id
@@ -162,12 +162,8 @@ func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev re
 	if err := d.createDocAttachments(ctx, data, tx, r, &curRev); err != nil {
 		return r, err
 	}
-	if data.IsDesignDoc() {
-		if err := d.updateDesignDoc(ctx, tx, r, data); err != nil {
-			return r, err
-		}
-	}
-	return r, nil
+	err = d.updateDesignDoc(ctx, tx, r, data)
+	return r, err
 }
 
 func (d *db) createDocAttachments(ctx context.Context, data *docData, tx *sql.Tx, r revision, curRev *revision) error {

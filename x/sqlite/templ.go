@@ -32,9 +32,9 @@ var (
 )
 
 type tmplFuncs struct {
-	db             *db
-	ddoc, viewName string
-	hash           string
+	db                  *db
+	ddoc, viewName, rev string
+	hash                string
 }
 
 func (t *tmplFuncs) Docs() string {
@@ -71,11 +71,10 @@ func (t *tmplFuncs) hashedName(typ string) string {
 	if t.ddoc == "" {
 		panic("ddoc template method called outside of a ddoc template")
 	}
+	name := strings.Join([]string{t.ddoc, t.rev, typ, t.viewName}, "_")
 	if t.hash == "" {
-		name := t.ddoc + "_" + t.viewName
 		t.hash = md5sumString(name)[:8]
 	}
-	name := t.ddoc + "_" + typ + "_" + t.viewName
 	if len(name) > maxTableLen-len(t.hash) {
 		name = name[:maxTableLen-len(t.hash)]
 	}
@@ -119,7 +118,7 @@ func (d *db) query(format string) string {
 //	{{ .Map }} -> the view map table name
 //	{{ .IndexMap }} -> the view map index name
 //	{{ .Reduce }} -> the view reduce table name
-func (d *db) ddocQuery(docID, viewOrFuncName, format string) string {
+func (d *db) ddocQuery(docID, viewOrFuncName, rev, format string) string {
 	var buf bytes.Buffer
 	tmpl := getTmpl(format)
 
@@ -127,6 +126,7 @@ func (d *db) ddocQuery(docID, viewOrFuncName, format string) string {
 		db:       d,
 		ddoc:     strings.TrimPrefix(docID, "_design/"),
 		viewName: viewOrFuncName,
+		rev:      rev,
 	}); err != nil {
 		panic(err)
 	}

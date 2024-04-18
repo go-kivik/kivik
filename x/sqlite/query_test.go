@@ -123,6 +123,40 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("Updating ddoc renders index obsolete", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) { emit(doc._id, null); }`,
+				},
+			},
+		})
+		_ = d.tPut("foo", map[string]string{"_id": "foo"})
+		// Ensure the index is built
+		rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", mock.NilOption)
+		if err != nil {
+			t.Fatalf("Failed to query view: %s", err)
+		}
+		_ = rows.Close()
+
+		// Update the ddoc
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(x) { emit(x._id, null); }`,
+				},
+			},
+		}, kivik.Rev(rev))
+
+		return test{
+			db:      d,
+			ddoc:    "_design/foo",
+			view:    "_view/bar",
+			options: kivik.Param("update", false),
+			want:    nil,
+		}
+	})
 	/*
 		TODO:
 		- update=false, missing ddoc should return proper error status

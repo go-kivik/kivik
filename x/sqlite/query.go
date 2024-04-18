@@ -55,7 +55,12 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 		}
 	}
 
-	query := d.ddocQuery(ddoc, view, `
+	rev, err := d.winningRev(ctx, d.db, "_design/"+ddoc)
+	if err != nil {
+		return nil, err
+	}
+
+	query := d.ddocQuery(ddoc, view, rev.String(), `
 		SELECT
 			id,
 			key,
@@ -118,7 +123,7 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view string) error {
 		return err
 	}
 
-	insert, err := tx.PrepareContext(ctx, d.ddocQuery(ddoc, view, `
+	insert, err := tx.PrepareContext(ctx, d.ddocQuery(ddoc, view, rev.String(), `
 		INSERT INTO {{ .Map }} (id, key, value)
 		VAlUES ($1, $2, $3)		
 	`))

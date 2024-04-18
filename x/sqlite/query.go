@@ -186,8 +186,15 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 
 	batch := newMapIndexBatch()
 
+	vm := goja.New()
+
 	emit := func(id string) func(interface{}, interface{}) {
 		return func(key, value interface{}) {
+			defer func() {
+				if r := recover(); r != nil {
+					panic(vm.ToValue(r))
+				}
+			}()
 			k, err := fromJSValue(key)
 			if err != nil {
 				panic(err)
@@ -200,7 +207,6 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 		}
 	}
 
-	vm := goja.New()
 	if _, err := vm.RunString("const map = " + *funcBody); err != nil {
 		return revision{}, err
 	}

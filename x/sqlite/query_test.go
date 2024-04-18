@@ -285,10 +285,36 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("emit function throws exception", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("foo", map[string]string{"cat": "meow"})
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+						emit(doc._id, function() {});
+					}`,
+				},
+			},
+		})
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: nil,
+			wantLogs: []string{
+				"map function threw exception for foo: json: unsupported type: func(goja.FunctionCall) goja.Value",
+				"\tat github.com/go-kivik/kivik/v4/x/sqlite.(*db).updateIndex.(*db).updateIndex.func1.func2 (native)",
+				"\tat map (<eval>:2:11(5))",
+				"map function threw exception for _design/foo: json: unsupported type: func(goja.FunctionCall) goja.Value",
+				"\tat github.com/go-kivik/kivik/v4/x/sqlite.(*db).updateIndex.(*db).updateIndex.func1.func2 (native)",
+				"\tat map (<eval>:2:11(5))",
+			},
+		}
+	})
 
 	/*
 		TODO:
-		- recover panic from emit function
 		- update view index before returning
 		- wait for pending index update before returning
 		- map function takes too long

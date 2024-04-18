@@ -32,7 +32,7 @@ func (d *db) updateDesignDoc(ctx context.Context, tx *sql.Tx, rev revision, data
 			if _, err := stmt.ExecContext(ctx, data.ID, rev.rev, rev.id, data.DesignFields.Language, "map", name, view.Map, data.DesignFields.AutoUpdate); err != nil {
 				return err
 			}
-			if _, err := tx.ExecContext(ctx, d.ddocQuery(data.ID, name, viewMapTable)); err != nil {
+			if err := d.createViewMap(ctx, tx, data.ID, name); err != nil {
 				return err
 			}
 		}
@@ -54,6 +54,15 @@ func (d *db) updateDesignDoc(ctx context.Context, tx *sql.Tx, rev revision, data
 	}
 	if data.DesignFields.ValidateDocUpdates != "" {
 		if _, err := stmt.ExecContext(ctx, data.ID, rev.rev, rev.id, data.DesignFields.Language, "validate_doc_update", "validate", data.DesignFields.ValidateDocUpdates, data.DesignFields.AutoUpdate); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (d *db) createViewMap(ctx context.Context, tx *sql.Tx, ddoc, name string) error {
+	for _, query := range viewMapSchema {
+		if _, err := tx.ExecContext(ctx, d.ddocQuery(ddoc, name, query)); err != nil {
 			return err
 		}
 	}

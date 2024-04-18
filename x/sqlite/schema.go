@@ -93,10 +93,11 @@ var schema = []string{
 	)`,
 }
 
-const viewMapTable = `
-CREATE TABLE IF NOT EXISTS {{ .Map }} (
-	id TEXT NOT NULL,
-	key TEXT,
-	value TEXT
-)
-`
+var viewMapSchema = []string{
+	`CREATE TABLE IF NOT EXISTS {{ .Map }} (
+		id TEXT NOT NULL,
+		key TEXT,
+		value TEXT
+	)`,
+	`CREATE INDEX IF NOT EXISTS {{ .IndexMap }} ON {{ .Map }} (key)`,
+}

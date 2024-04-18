@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 
@@ -217,32 +218,29 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 	}
 
 	var seq int
-	for docs.Next() {
-		var (
-			id, rev string
-			doc     json.RawMessage
-			deleted bool
-		)
-		if err := docs.Scan(&seq, &id, &rev, &doc, &deleted); err != nil {
+	for {
+		full := &fullDoc{}
+		err := iter(docs, &seq, full)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
 			return revision{}, err
 		}
-		if deleted {
-			batch.delete(id)
+
+		if full.Deleted {
+			batch.delete(full.ID)
 			continue
 		}
-		full := &fullDoc{
-			ID:  id,
-			Rev: rev,
-			Doc: doc,
-		}
-		if err := vm.Set("emit", emit(id)); err != nil {
+
+		if err := vm.Set("emit", emit(full.ID)); err != nil {
 			return revision{}, err
 		}
 		if _, err := mf(goja.Undefined(), vm.ToValue(full.toMap())); err != nil {
 			var exception *goja.Exception
 			if errors.As(err, &exception) {
-				d.logger.Printf("map function threw exception for %s: %s", id, exception.String())
-				batch.delete(id)
+				d.logger.Printf("map function threw exception for %s: %s", full.ID, exception.String())
+				batch.delete(full.ID)
 			} else {
 				return revision{}, err
 			}
@@ -260,6 +258,19 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 	}
 
 	return ddocRev, docs.Err()
+}
+
+func iter(docs *sql.Rows, seq *int, full *fullDoc) error {
+	if !docs.Next() {
+		if err := docs.Err(); err != nil {
+			return err
+		}
+		return io.EOF
+	}
+	if err := docs.Scan(seq, &full.ID, &full.Rev, &full.Doc, &full.Deleted); err != nil {
+		return err
+	}
+	return nil
 }
 
 type mapIndexBatch struct {

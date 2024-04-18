@@ -238,8 +238,29 @@ func TestDBQuery(t *testing.T) {
 		}
 	})
 
+	// tests.Add("map function throws exception", func(t *testing.T) interface{} {
+	// 	d := newDB(t)
+	// 	_ = d.tPut("foo", map[string]string{"cat": "meow"})
+	// 	_ = d.tPut("_design/foo", map[string]interface{}{
+	// 		"views": map[string]interface{}{
+	// 			"bar": map[string]string{
+	// 				"map": `function(doc) {
+	// 					emit(doc._id, null);
+	// 					throw new Error("broken");
+	// 				}`,
+	// 			},
+	// 		},
+	// 	})
+	// 	return test{
+	// 		db:   d,
+	// 		ddoc: "_design/foo",
+	// 		view: "_view/bar",
+	// 		want: nil,
+	// 	}
+	// })
 	/*
 		TODO:
+		- initial indexing ignores deleted docs
 		- recover exception from map function
 		- recover panic from emit function
 		- update view index before returning

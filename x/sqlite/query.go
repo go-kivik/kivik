@@ -92,14 +92,18 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 }
 
 func (d *db) updateIndex(ctx context.Context, ddoc, view string) error {
-	var rev revision
+	var (
+		rev      revision
+		funcBody *string
+	)
 	err := d.db.QueryRowContext(ctx, d.query(`
-		SELECT rev, rev_id
-		FROM {{ .Docs }}
-		WHERE id = $1
-		ORDER BY rev DESC, rev_id DESC
+		SELECT docs.rev, docs.rev_id, design.func_body
+		FROM {{ .Docs }} AS docs
+		LEFT JOIN {{ .Design }} AS design ON docs.id = design.id AND docs.rev = design.rev AND docs.rev_id = design.rev_id
+		WHERE docs.id = $1
+		ORDER BY docs.rev DESC, docs.rev_id DESC
 		LIMIT 1
-	`), "_design/"+ddoc).Scan(&rev.rev, &rev.id)
+	`), "_design/"+ddoc).Scan(&rev.rev, &rev.id, &funcBody)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return &internal.Error{Status: http.StatusNotFound, Message: "missing"}
@@ -107,24 +111,8 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view string) error {
 		return err
 	}
 
-	query := d.query(`
-		SELECT func_body
-		FROM {{ .Design }}
-		WHERE id = $1
-			AND rev = $2
-			AND rev_id = $3
-			AND func_type = 'map'
-			AND func_name = $4
-	`)
-
-	var funcBody string
-	err = d.db.QueryRowContext(ctx, query, "_design/"+ddoc, rev.rev, rev.id, view).Scan(&funcBody)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return &internal.Error{Status: http.StatusNotFound, Message: "missing named view"}
-		}
-
-		return err
+	if funcBody == nil {
+		return &internal.Error{Status: http.StatusNotFound, Message: "missing named view"}
 	}
 
 	insert, err := d.db.PrepareContext(ctx, d.ddocQuery(ddoc, view, rev.String(), `
@@ -135,7 +123,7 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view string) error {
 		return err
 	}
 
-	query = d.query(`
+	query := d.query(`
 		WITH RankedRevisions AS (
 			SELECT
 				doc.seq     AS seq,
@@ -180,7 +168,7 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view string) error {
 	}
 
 	vm := goja.New()
-	if _, err := vm.RunString("const map = " + funcBody); err != nil {
+	if _, err := vm.RunString("const map = " + *funcBody); err != nil {
 		return err
 	}
 

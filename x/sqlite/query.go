@@ -166,18 +166,41 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 
 	query := d.query(`
 		SELECT
-			doc.seq                      AS seq,
-			rev.id                       AS id,
-			rev.rev || '-' || rev.rev_id AS rev,
-			doc.doc                      AS doc,
-			doc.deleted                  AS deleted
-		FROM {{ .Revs }} AS rev
-		LEFT JOIN {{ .Revs }} AS child ON rev.id = child.id AND rev.rev = child.parent_rev AND rev.rev_id = child.parent_rev_id
-		JOIN {{ .Docs }} AS doc ON rev.id = doc.id AND rev.rev = doc.rev AND rev.rev_id = doc.rev_id
-		WHERE rev.id NOT LIKE '_local/%'
-			AND child.id IS NULL
-			AND doc.seq > $1
-		ORDER BY doc.seq
+			CASE WHEN row_number = 1 THEN seq     END AS seq,
+			CASE WHEN row_number = 1 THEN id      END AS id,
+			CASE WHEN row_number = 1 THEN rev     END AS rev,
+			CASE WHEN row_number = 1 THEN doc     END AS doc,
+			CASE WHEN row_number = 1 THEN deleted END AS deleted,
+			attachment_count,
+			filename,
+			content_type,
+			length,
+			digest,
+			rev_pos
+		FROM (
+			SELECT
+				doc.seq                      AS seq,
+				rev.id                       AS id,
+				rev.rev || '-' || rev.rev_id AS rev,
+				doc.doc                      AS doc,
+				doc.deleted                  AS deleted,
+				SUM(CASE WHEN bridge.pk IS NOT NULL THEN 1 ELSE 0 END) OVER (PARTITION BY rev.id, rev.rev, rev.rev_id) AS attachment_count,
+				ROW_NUMBER() OVER (PARTITION BY rev.id, rev.rev, rev.rev_id) AS row_number,
+				att.filename,
+				att.content_type,
+				att.length,
+				att.digest,
+				att.rev_pos
+			FROM {{ .Revs }} AS rev
+			LEFT JOIN {{ .Revs }} AS child ON rev.id = child.id AND rev.rev = child.parent_rev AND rev.rev_id = child.parent_rev_id
+			JOIN {{ .Docs }} AS doc ON rev.id = doc.id AND rev.rev = doc.rev AND rev.rev_id = doc.rev_id
+			LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON doc.id = bridge.id AND doc.rev = bridge.rev AND doc.rev_id = bridge.rev_id
+			LEFT JOIN {{ .Attachments }} AS att ON bridge.pk = att.pk
+			WHERE rev.id NOT LIKE '_local/%'
+				AND child.id IS NULL
+				AND doc.seq > $1
+			ORDER BY doc.seq
+		)
 	`)
 	docs, err := d.db.QueryContext(ctx, query, lastSeq)
 	if err != nil {
@@ -261,14 +284,56 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 }
 
 func iter(docs *sql.Rows, seq *int, full *fullDoc) error {
-	if !docs.Next() {
-		if err := docs.Err(); err != nil {
+	var (
+		attachmentsCount int
+		rowSeq           *int
+		rowID, rowRev    *string
+		rowDoc           *[]byte
+		rowDeleted       *bool
+	)
+	for {
+		if !docs.Next() {
+			if err := docs.Err(); err != nil {
+				return err
+			}
+			return io.EOF
+		}
+		var (
+			filename, contentType *string
+			length                *int64
+			revPos                *int
+			digest                *md5sum
+		)
+		if err := docs.Scan(
+			&rowSeq, &rowID, &rowRev, &rowDoc, &rowDeleted,
+			&attachmentsCount,
+			&filename, &contentType, &length, &digest, &revPos,
+		); err != nil {
 			return err
 		}
-		return io.EOF
-	}
-	if err := docs.Scan(seq, &full.ID, &full.Rev, &full.Doc, &full.Deleted); err != nil {
-		return err
+		if rowSeq != nil {
+			*seq = *rowSeq
+			*full = fullDoc{
+				ID:      *rowID,
+				Rev:     *rowRev,
+				Doc:     *rowDoc,
+				Deleted: *rowDeleted,
+			}
+		}
+		if filename != nil {
+			if full.Attachments == nil {
+				full.Attachments = make(map[string]*attachment)
+			}
+			full.Attachments[*filename] = &attachment{
+				ContentType: *contentType,
+				Length:      *length,
+				Digest:      *digest,
+				RevPos:      *revPos,
+			}
+		}
+		if attachmentsCount == len(full.Attachments) {
+			break
+		}
 	}
 	return nil
 }

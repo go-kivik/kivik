@@ -414,6 +414,13 @@ func jsonMarshal(s interface{}) []byte {
 	return j
 }
 
+// toMap produces a map from the fullDoc. It only considers a few of the
+// meta fields; those used by map/reduce functions:
+//
+// - _id
+// - _rev
+// - _deleted
+// - _attachments
 func (d *fullDoc) toMap() map[string]interface{} {
 	var result map[string]interface{}
 	if err := json.Unmarshal(d.Doc, &result); err != nil {
@@ -424,13 +431,25 @@ func (d *fullDoc) toMap() map[string]interface{} {
 	if d.Deleted {
 		result["_deleted"] = true
 	}
+	if len(d.Attachments) > 0 {
+		attachments := make(map[string]interface{}, len(d.Attachments))
+		for name, att := range d.Attachments {
+			attachments[name] = map[string]interface{}{
+				"content_type": att.ContentType,
+				"digest":       att.Digest.Digest(),
+				"length":       att.Length,
+				"revpos":       att.RevPos,
+				"stub":         att.Stub,
+			}
+		}
+		result["_attachments"] = attachments
+	}
 	/*
 		Conflicts        []string               `json:"_conflicts,omitempty"`
 		DeletedConflicts []string               `json:"_deleted_conflicts,omitempty"`
 		RevsInfo         []map[string]string    `json:"_revs_info,omitempty"`
 		Revisions        *revsInfo              `json:"_revisions,omitempty"`
 		LocalSeq         int                    `json:"_local_seq,omitempty"`
-		Attachments      map[string]*attachment `json:"_attachments,omitempty"`
 	*/
 	return result
 }

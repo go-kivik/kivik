@@ -320,7 +320,7 @@ func TestDBQuery(t *testing.T) {
 					"map": `function(doc) {
 						if (doc._attachments) { // Check if there are attachments
 							for (var filename in doc._attachments) { // Loop over all attachments
-								emit(doc._id, filename); // Emit the document ID and filename
+								emit(filename); // Emit the attachment filename
 							}
 						}
 					}`,
@@ -339,17 +339,13 @@ func TestDBQuery(t *testing.T) {
 			ddoc: "_design/foo",
 			view: "_view/bar",
 			want: []rowResult{
-				{},
-				{},
+				{ID: "with_attachments", Key: `"bar.txt"`, Value: "null"},
+				{ID: "with_attachments", Key: `"foo.txt"`, Value: "null"},
 			},
 		}
 	})
 	/*
 		TODO:
-		- update view index before returning
-		- wait for pending index update before returning
-		- map function takes too long
-		- expose attachment stubs to map function
 		- Are conflicts or other metadata exposed to map function?
 		- custom/standard CouchDB collation https://pkg.go.dev/modernc.org/sqlite#RegisterCollationUtf8
 		- built-in reduce functions: _sum, _count
@@ -377,6 +373,7 @@ func TestDBQuery(t *testing.T) {
 			- startkey_docid
 			- start_key_doc_id
 			- update_seq
+		- map function takes too long
 
 	*/
 

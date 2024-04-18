@@ -49,13 +49,7 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 	ddoc = strings.TrimPrefix(ddoc, "_design/")
 	view = strings.TrimPrefix(view, "_view/")
 
-	if update == updateModeTrue {
-		if err := d.updateIndex(ctx, ddoc, view); err != nil {
-			return nil, err
-		}
-	}
-
-	rev, err := d.winningRev(ctx, d.db, "_design/"+ddoc)
+	rev, _, err := d.updateIndex(ctx, ddoc, view, update)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +72,7 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 
 	if update == updateModeLazy {
 		go func() {
-			if err := d.updateIndex(context.Background(), ddoc, view); err != nil {
+			if _, _, err := d.updateIndex(context.Background(), ddoc, view, updateModeTrue); err != nil {
 				d.logger.Print("Failed to update index: " + err.Error())
 			}
 		}()
@@ -93,7 +87,9 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 
 const batchSize = 100
 
-func (d *db) updateIndex(ctx context.Context, ddoc, view string) error {
+// updateIndex queries for the current index status, and returns the current
+// ddoc revid and last_seq. If mode is "true", it will also update the index.
+func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision, int, error) {
 	var (
 		ddocRev  revision
 		funcBody *string
@@ -113,13 +109,16 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view string) error {
 	`), "_design/"+ddoc).Scan(&ddocRev.rev, &ddocRev.id, &funcBody, &lastSeq)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return &internal.Error{Status: http.StatusNotFound, Message: "missing"}
+			return revision{}, 0, &internal.Error{Status: http.StatusNotFound, Message: "missing"}
 		}
-		return err
+		return revision{}, 0, err
+	}
+	if mode != "true" {
+		return ddocRev, lastSeq, nil
 	}
 
 	if funcBody == nil {
-		return &internal.Error{Status: http.StatusNotFound, Message: "missing named view"}
+		return revision{}, 0, &internal.Error{Status: http.StatusNotFound, Message: "missing named view"}
 	}
 
 	query := d.query(`
@@ -139,7 +138,7 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view string) error {
 	`)
 	docs, err := d.db.QueryContext(ctx, query, lastSeq)
 	if err != nil {
-		return err
+		return revision{}, 0, err
 	}
 	defer docs.Close()
 
@@ -161,12 +160,12 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view string) error {
 
 	vm := goja.New()
 	if _, err := vm.RunString("const map = " + *funcBody); err != nil {
-		return err
+		return revision{}, 0, err
 	}
 
 	mf, ok := goja.AssertFunction(vm.Get("map"))
 	if !ok {
-		return fmt.Errorf("expected map to be a function, got %T", vm.Get("map"))
+		return revision{}, 0, fmt.Errorf("expected map to be a function, got %T", vm.Get("map"))
 	}
 
 	var seq int
@@ -176,7 +175,7 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view string) error {
 			doc     json.RawMessage
 		)
 		if err := docs.Scan(&seq, &id, &rev, &doc); err != nil {
-			return err
+			return revision{}, 0, err
 		}
 		full := &fullDoc{
 			ID:  id,
@@ -184,14 +183,14 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view string) error {
 			Doc: doc,
 		}
 		if err := vm.Set("emit", emit(id)); err != nil {
-			return err
+			return revision{}, 0, err
 		}
 		if _, err := mf(goja.Undefined(), vm.ToValue(full.toMap())); err != nil {
-			return err
+			return revision{}, 0, err
 		}
 		if batch.count >= batchSize {
 			if err := d.writeMapIndexBatch(ctx, seq, ddocRev, ddoc, view, batch); err != nil {
-				return err
+				return revision{}, 0, err
 			}
 			batch.clear()
 
@@ -200,11 +199,11 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view string) error {
 
 	if batch.count > 0 {
 		if err := d.writeMapIndexBatch(ctx, seq, ddocRev, ddoc, view, batch); err != nil {
-			return err
+			return revision{}, 0, err
 		}
 	}
 
-	return docs.Err()
+	return ddocRev, lastSeq, docs.Err()
 }
 
 type mapIndexBatch struct {

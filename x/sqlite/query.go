@@ -92,8 +92,18 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 }
 
 func (d *db) updateIndex(ctx context.Context, ddoc, view string) error {
-	rev, err := d.winningRev(ctx, d.db, "_design/"+ddoc)
+	var rev revision
+	err := d.db.QueryRowContext(ctx, d.query(`
+		SELECT rev, rev_id
+		FROM {{ .Docs }}
+		WHERE id = $1
+		ORDER BY rev DESC, rev_id DESC
+		LIMIT 1
+	`), "_design/"+ddoc).Scan(&rev.rev, &rev.id)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return &internal.Error{Status: http.StatusNotFound, Message: "missing"}
+		}
 		return err
 	}
 

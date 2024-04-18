@@ -92,13 +92,7 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 }
 
 func (d *db) updateIndex(ctx context.Context, ddoc, view string) error {
-	tx, err := d.db.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	rev, err := d.winningRev(ctx, tx, "_design/"+ddoc)
+	rev, err := d.winningRev(ctx, d.db, "_design/"+ddoc)
 	if err != nil {
 		return err
 	}
@@ -114,7 +108,7 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view string) error {
 	`)
 
 	var funcBody string
-	err = tx.QueryRowContext(ctx, query, "_design/"+ddoc, rev.rev, rev.id, view).Scan(&funcBody)
+	err = d.db.QueryRowContext(ctx, query, "_design/"+ddoc, rev.rev, rev.id, view).Scan(&funcBody)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return &internal.Error{Status: http.StatusNotFound, Message: "missing named view"}
@@ -123,7 +117,7 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view string) error {
 		return err
 	}
 
-	insert, err := tx.PrepareContext(ctx, d.ddocQuery(ddoc, view, rev.String(), `
+	insert, err := d.db.PrepareContext(ctx, d.ddocQuery(ddoc, view, rev.String(), `
 		INSERT INTO {{ .Map }} (id, key, value)
 		VAlUES ($1, $2, $3)		
 	`))
@@ -201,9 +195,6 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view string) error {
 			return err
 		}
 	}
-	if err := docs.Err(); err != nil {
-		return err
-	}
 
-	return tx.Commit()
+	return docs.Err()
 }

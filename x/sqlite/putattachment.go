@@ -19,7 +19,7 @@ import (
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/kivik/v4/internal"
+	"github.com/go-kivik/kivik/x/sqlite/v4/internal"
 )
 
 func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attachment, options driver.Options) (string, error) {

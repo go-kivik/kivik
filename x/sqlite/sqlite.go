@@ -25,7 +25,7 @@ import (
 	_ "modernc.org/sqlite" // SQLite driver
 
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/kivik/v4/internal"
+	"github.com/go-kivik/kivik/x/sqlite/v4/internal"
 )
 
 type drv struct{}

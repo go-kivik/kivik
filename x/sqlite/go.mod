@@ -1,4 +1,4 @@
-module github.com/go-kivik/kivik/v4/x/sqlite
+module github.com/go-kivik/kivik/x/sqlite/v4
 
 go 1.22.0
 

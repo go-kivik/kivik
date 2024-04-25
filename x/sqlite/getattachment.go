@@ -21,7 +21,7 @@ import (
 	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/kivik/v4/internal"
+	"github.com/go-kivik/kivik/x/sqlite/v4/internal"
 )
 
 func (d *db) GetAttachment(ctx context.Context, docID string, filename string, options driver.Options) (*driver.Attachment, error) {

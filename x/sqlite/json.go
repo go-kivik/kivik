@@ -26,7 +26,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-kivik/kivik/v4/internal"
+	"github.com/go-kivik/kivik/x/sqlite/v4/internal"
 )
 
 type revision struct {

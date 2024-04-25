@@ -6,6 +6,23 @@ variables:
   COUCHDB_USER: admin
   COUCHDB_PASSWORD: abc123
 
+test-x-sqlite:
+  stage: test
+  image: golang:1.22
+  script:
+    - cd x/sqlite
+    - go mod download
+    - go test -race -shuffle=on ./...
+
+linter-x-sqlite:
+  stage: test
+  image: golangci/golangci-lint:v1.57.2
+  script:
+    - cd x/sqlite
+    - go mod download
+    - golangci-lint run ./...
+    - go mod tidy && git diff --exit-code
+
 test:
   parallel:
     matrix:

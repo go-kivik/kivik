@@ -19,7 +19,7 @@ import (
 	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/kivik/v4/internal"
+	"github.com/go-kivik/kivik/x/sqlite/v4/internal"
 )
 
 func (d *db) GetAttachmentMeta(ctx context.Context, docID, filename string, options driver.Options) (*driver.Attachment, error) {

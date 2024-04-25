@@ -23,7 +23,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/go-kivik/kivik/v4/internal"
+	"github.com/go-kivik/kivik/x/sqlite/v4/internal"
 )
 
 func placeholders(start, count int) string {

@@ -17,7 +17,7 @@ import (
 	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/kivik/v4/internal"
+	"github.com/go-kivik/kivik/x/sqlite/v4/internal"
 )
 
 func (d *db) DeleteAttachment(ctx context.Context, docID, filename string, options driver.Options) (string, error) {

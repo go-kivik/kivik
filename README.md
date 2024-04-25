@@ -36,15 +36,15 @@ Install Kivik as you normally would for any Go package:
 
 This will install the main Kivik package and the CouchDB database driver. Three officially supported drivers are shipped with this Go module:
 
-  - CouchDB: https://github.com/go-kivik/kivik/v4/couchdb
-  - PouchDB: https://github.com/go-kivik/kivik/v4/pouchdb (requires GopherJS)
-  - MockDB: https://github.com/go-kivik/kivik/v4/mockdb
+  - CouchDB: [github.com/go-kivik/kivik/v4/couchdb](https://pkg.go.dev/github.com/go-kivik/kivik/v4/couchdb)
+  - PouchDB: [github.com/go-kivik/kivik/v4/pouchdb](https://pkg.go.dev/github.com/go-kivik/kivik/v4/pouchdb) (requires GopherJS)
+  - MockDB: [github.com/go-kivik/kivik/v4/mockdb](https://pkg.go.dev/github.com/go-kivik/kivik/v4/mockdb)
 
 In addition, there are partial/experimental drivers available:
 
-  - FilesystemDB: https://github.com/go-kivik/kivik/v4/x/fsdb
-  - MemoryDB: https://github.com/go-kivik/kivik/v4/x/memorydb
-  - SQLite: https://github.com/go-kivik/kivik/v4/x/sqlite
+  - FilesystemDB: [github.com/go-kivik/kivik/v4/x/fsdb](https://pkg.go.dev/github.com/go-kivik/kivik/v4/x/fsdb)
+  - MemoryDB: [github.com/go-kivik/kivik/v4/x/memorydb](https://pkg.go.dev/github.com/go-kivik/kivik/v4/x/memorydb)
+  - SQLite: [github.com/go-kivik/kivik/x/sqlite/v4](https://pkg.go.dev/github.com/go-kivik/kivik/x/sqlite/v4)
 
 # CLI
 

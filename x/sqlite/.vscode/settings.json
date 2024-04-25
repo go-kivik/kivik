@@ -1,0 +1,11 @@
+{
+    "go.lintTool": "golangci-lint",
+    "emeraldwalk.runonsave": {
+        "commands": [
+            {
+                "match": "\\.go$",
+                "cmd": "golangci-lint run -c ${workspaceFolder}/.golangci-safe.toml ${fileDirname} --fix"
+            }
+        ]
+    }
+}

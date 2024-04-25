@@ -344,6 +344,78 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("default CouchDB collation", func(t *testing.T) interface{} {
+		// See https://docs.couchdb.org/en/stable/ddocs/views/collation.html
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) { emit(doc.key, null); }`,
+				},
+			},
+		})
+		_ = d.tPut("null", map[string]interface{}{"key": nil})
+		_ = d.tPut("bool: true", map[string]interface{}{"key": true})
+		_ = d.tPut("bool: false", map[string]interface{}{"key": false})
+		_ = d.tPut("numbers: 1", map[string]interface{}{"key": int(1)})
+		_ = d.tPut("numbers: 2", map[string]interface{}{"key": int(2)})
+		_ = d.tPut("numbers: 3.0", map[string]interface{}{"key": float64(3)})
+		_ = d.tPut("numbers: 4", map[string]interface{}{"key": int(4)})
+		_ = d.tPut("text: a", map[string]interface{}{"key": "a"})
+		_ = d.tPut("text: A", map[string]interface{}{"key": "A"})
+		_ = d.tPut("text: aa", map[string]interface{}{"key": "aa"})
+		_ = d.tPut("text: b", map[string]interface{}{"key": "b"})
+		_ = d.tPut("text: B", map[string]interface{}{"key": "B"})
+		_ = d.tPut("text: ba", map[string]interface{}{"key": "ba"})
+		_ = d.tPut("text: bb", map[string]interface{}{"key": "bb"})
+		_ = d.tPut("array: [a]", map[string]interface{}{"key": []string{"a"}})
+		_ = d.tPut("array: [b]", map[string]interface{}{"key": []string{"b"}})
+		_ = d.tPut("array: [b, c]", map[string]interface{}{"key": []string{"b", "c"}})
+		_ = d.tPut("array: [b, c, a]", map[string]interface{}{"key": []string{"b", "c", "a"}})
+		_ = d.tPut("array: [b, d]", map[string]interface{}{"key": []string{"b", "d"}})
+		_ = d.tPut("array: [b, d, e]", map[string]interface{}{"key": []string{"b", "d", "e"}})
+		_ = d.tPut("object: {a:1}", map[string]interface{}{"key": map[string]interface{}{"a": 1}})
+		_ = d.tPut("object: {a:2}", map[string]interface{}{"key": map[string]interface{}{"a": 2}})
+		_ = d.tPut("object: {b:1}", map[string]interface{}{"key": map[string]interface{}{"b": 1}})
+		_ = d.tPut("object: {b:2, a:1}", map[string]interface{}{"key": map[string]interface{}{"b": 2, "a": 1}})
+		_ = d.tPut("object: {b:2, c:2}", map[string]interface{}{"key": map[string]interface{}{"b": 2, "c": 2}})
+
+		return test{
+			db:      d,
+			ddoc:    "_design/foo",
+			view:    "_view/bar",
+			options: kivik.Param("update", true),
+			want: []rowResult{
+				{ID: "_design/foo", Key: `null`, Value: "null"},
+				{ID: "null", Key: `null`, Value: "null"},
+				{ID: "bool: true", Key: `true`, Value: "null"},
+				{ID: "bool: false", Key: `false`, Value: "null"},
+				{ID: "numbers: 1", Key: `1`, Value: "null"},
+				{ID: "numbers: 2", Key: `2`, Value: "null"},
+				{ID: "numbers: 3.0", Key: `3.0`, Value: "null"},
+				{ID: "numbers: 4", Key: `4`, Value: "null"},
+				{ID: "text: a", Key: `a`, Value: "null"},
+				{ID: "text: A", Key: `A`, Value: "null"},
+				{ID: "text: aa", Key: `aa`, Value: "null"},
+				{ID: "text: b", Key: `b`, Value: "null"},
+				{ID: "text: B", Key: `B`, Value: "null"},
+				{ID: "text: ba", Key: `ba`, Value: "null"},
+				{ID: "text: bb", Key: `bb`, Value: "null"},
+				{ID: "array: [a]", Key: `["a"]`, Value: "null"},
+				{ID: "array: [b]", Key: `["b"]`, Value: "null"},
+				{ID: "array: [b, c]", Key: `["b","c"]`, Value: "null"},
+				{ID: "array: [b, c, a]", Key: `["b","c","a"]`, Value: "null"},
+				{ID: "array: [b, d]", Key: `["b","d"]`, Value: "null"},
+				{ID: "array: [b, d, e]", Key: `["b","d","e"]`, Value: "null"},
+				{ID: "object: {a:1}", Key: `{"a":1}`, Value: "null"},
+				{ID: "object: {a:2}", Key: `{"a":2}`, Value: "null"},
+				{ID: "object: {b:1}", Key: `{"b":1}`, Value: "null"},
+				{ID: "object: {b:2, a:1}", Key: `{"a":1,"b":2}`, Value: "null"},
+				{ID: "object: {b:2, c:2}", Key: `{"b":2,"c":2}`, Value: "null"},
+			},
+		}
+	})
+
 	/*
 		TODO:
 		- Are conflicts or other metadata exposed to map function?

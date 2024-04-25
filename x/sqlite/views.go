@@ -174,6 +174,9 @@ func (r *rows) Next(row *driver.Row) error {
 		return err
 	}
 	row.Key = key
+	if key == nil {
+		row.Key = []byte("null")
+	}
 	if value == nil {
 		row.Value = strings.NewReader("null")
 	} else {

@@ -419,7 +419,6 @@ func TestDBQuery(t *testing.T) {
 	/*
 		TODO:
 		- Are conflicts or other metadata exposed to map function?
-		- custom/standard CouchDB collation https://pkg.go.dev/modernc.org/sqlite#RegisterCollationUtf8
 		- built-in reduce functions: _sum, _count
 		- Options:
 			- conflicts

@@ -24,9 +24,13 @@ import (
 
 var collator = collate.New(language.Und)
 
-// couchdbCmp is a comparison function for CouchDB collation.
+func couchdbCmpString(a, b string) int {
+	return couchdbCmpJSON(json.RawMessage(a), json.RawMessage(b))
+}
+
+// couchdbCmpJSON is a comparison function for CouchDB collation.
 // See https://docs.couchdb.org/en/stable/ddocs/views/collation.html
-func couchdbCmp(a, b json.RawMessage) int {
+func couchdbCmpJSON(a, b json.RawMessage) int {
 	if bytes.Equal(a, b) {
 		return 0
 	}
@@ -87,7 +91,7 @@ func couchdbCmp(a, b json.RawMessage) int {
 		_ = json.Unmarshal(a, &av)
 		_ = json.Unmarshal(b, &bv)
 		for i := 0; i < len(av) && i < len(bv); i++ {
-			if r := couchdbCmp(av[i], bv[i]); r != 0 {
+			if r := couchdbCmpJSON(av[i], bv[i]); r != 0 {
 				return r
 			}
 		}
@@ -107,11 +111,11 @@ func couchdbCmp(a, b json.RawMessage) int {
 		_ = json.Unmarshal(b, &bv)
 		for i := 0; i < len(av) && i < len(bv); i++ {
 			// First compare keys
-			if r := couchdbCmp(av[i][0], bv[i][0]); r != 0 {
+			if r := couchdbCmpJSON(av[i][0], bv[i][0]); r != 0 {
 				return r
 			}
 			// Then values
-			if r := couchdbCmp(av[i][1], bv[i][1]); r != 0 {
+			if r := couchdbCmpJSON(av[i][1], bv[i][1]); r != 0 {
 				return r
 			}
 		}
@@ -168,5 +172,5 @@ type couchdbKeys []json.RawMessage
 var _ sort.Interface = &couchdbKeys{}
 
 func (c couchdbKeys) Len() int           { return len(c) }
-func (c couchdbKeys) Less(i, j int) bool { return couchdbCmp(c[i], c[j]) < 0 }
+func (c couchdbKeys) Less(i, j int) bool { return couchdbCmpJSON(c[i], c[j]) < 0 }
 func (c couchdbKeys) Swap(i, j int)      { c[i], c[j] = c[j], c[i] }

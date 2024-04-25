@@ -9,7 +9,7 @@ require (
 	github.com/go-chi/chi v1.5.5
 	github.com/go-chi/chi/v5 v5.0.10
 	github.com/go-playground/validator/v10 v10.16.0
-	github.com/google/go-cmp v0.5.9
+	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
 	github.com/gopherjs/gopherjs v1.17.2
 	github.com/gopherjs/jsbuiltin v0.0.0-20180426082241-50091555e127

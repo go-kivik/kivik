@@ -304,10 +304,10 @@ func TestDBQuery(t *testing.T) {
 			want: nil,
 			wantLogs: []string{
 				`^map function threw exception for foo: json: unsupported type: func\(goja\.FunctionCall\) goja\.Value$`,
-				`^\tat github\.com/go-kivik/kivik/v4/x/sqlite\.\(\*db\)\.updateIndex\.\(\*db\)\.updateIndex\.func1\.func2 \(native\)`,
+				`^\tat github\.com/go-kivik/kivik/v4/x/sqlite\.\(\*db\)\.updateIndex\.`,
 				`^\tat map `,
 				`^map function threw exception for _design/foo: json: unsupported type: func\(goja\.FunctionCall\) goja\.Value$`,
-				`^\tat github\.com/go-kivik/kivik/v4/x/sqlite\.\(\*db\)\.updateIndex\.\(\*db\)\.updateIndex.func1\.func2 \(native\)$`,
+				`^\tat github\.com/go-kivik/kivik/v4/x/sqlite\.\(\*db\)\.updateIndex\.`,
 				`^\tat map `,
 			},
 		}

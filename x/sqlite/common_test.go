@@ -134,7 +134,7 @@ func (tdb *testDB) checkLogs(want []string) {
 	for i := 0; i < len(got) && i < len(want); i++ {
 		re := regexp.MustCompile(want[i])
 		if !re.MatchString(got[i]) {
-			tdb.t.Errorf("Unexpected log line: %d. %s", i+1, got[i])
+			tdb.t.Errorf("Unexpected log line: %d. Want /%s/,\n\t Got %s", i+1, want[i], got[i])
 		}
 	}
 	if len(got) > len(want) {

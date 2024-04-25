@@ -88,15 +88,17 @@ var schema = []string{
 		func_name TEXT NOT NULL,
 		func_body TEXT NOT NULL,
 		auto_update BOOLEAN NOT NULL DEFAULT TRUE,
+		last_seq INTEGER, -- the last indexed sequence id
 		FOREIGN KEY (id, rev, rev_id) REFERENCES {{ .Docs }} (id, rev, rev_id) ON DELETE CASCADE,
 		UNIQUE (id, rev, rev_id, func_type, func_name)
 	)`,
 }
 
-const viewMapTable = `
-CREATE TABLE IF NOT EXISTS {{ .Map }} (
-	id TEXT NOT NULL,
-	key TEXT,
-	value TEXT
-)
-`
+var viewMapSchema = []string{
+	`CREATE TABLE IF NOT EXISTS {{ .Map }} (
+		id TEXT NOT NULL,
+		key TEXT,
+		value TEXT
+	)`,
+	`CREATE INDEX IF NOT EXISTS {{ .IndexMap }} ON {{ .Map }} (key)`,
+}

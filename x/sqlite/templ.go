@@ -32,9 +32,9 @@ var (
 )
 
 type tmplFuncs struct {
-	db             *db
-	ddoc, viewName string
-	hash           string
+	db                  *db
+	ddoc, viewName, rev string
+	hash                string
 }
 
 func (t *tmplFuncs) Docs() string {
@@ -61,6 +61,8 @@ func (t *tmplFuncs) Design() string {
 	return strconv.Quote(t.db.name + "_design")
 }
 
+const maxTableLen = 59 // 64 minus the `idx_` prefix, and one more `_` separator
+
 // hashedName returns a table name in the format "{{db name}}_{{ddoc}}_{{typ}}_{{hash}}"
 // where hash is the first 8 characters of the MD5 sum of the dbname, ddoc, and type.
 // If the final version is longer than 64 characters, it is truncated to size,
@@ -69,23 +71,26 @@ func (t *tmplFuncs) hashedName(typ string) string {
 	if t.ddoc == "" {
 		panic("ddoc template method called outside of a ddoc template")
 	}
+	name := strings.Join([]string{t.ddoc, t.rev, typ, t.viewName}, "_")
 	if t.hash == "" {
-		name := t.ddoc + "_" + t.viewName
 		t.hash = md5sumString(name)[:8]
 	}
-	name := t.ddoc + "_" + typ + "_" + t.viewName
-	if len(name) > 63-len(t.hash) {
-		name = name[:63-len(t.hash)]
+	if len(name) > maxTableLen-len(t.hash) {
+		name = name[:maxTableLen-len(t.hash)]
 	}
-	return strconv.Quote(name + "_" + t.hash)
+	return name + "_" + t.hash
 }
 
 func (t *tmplFuncs) Map() string {
-	return t.hashedName("map")
+	return strconv.Quote(t.hashedName("map"))
 }
 
 func (t *tmplFuncs) Reduce() string {
-	return t.hashedName("reduce")
+	return strconv.Quote(t.hashedName("reduce"))
+}
+
+func (t *tmplFuncs) IndexMap() string {
+	return strconv.Quote("idx_" + t.hashedName("map"))
 }
 
 // query does variable substitution on a query string. The following translations
@@ -111,8 +116,9 @@ func (d *db) query(format string) string {
 // following translations:
 //
 //	{{ .Map }} -> the view map table name
+//	{{ .IndexMap }} -> the view map index name
 //	{{ .Reduce }} -> the view reduce table name
-func (d *db) ddocQuery(docID, viewOrFuncName, format string) string {
+func (d *db) ddocQuery(docID, viewOrFuncName, rev, format string) string {
 	var buf bytes.Buffer
 	tmpl := getTmpl(format)
 
@@ -120,6 +126,7 @@ func (d *db) ddocQuery(docID, viewOrFuncName, format string) string {
 		db:       d,
 		ddoc:     strings.TrimPrefix(docID, "_design/"),
 		viewName: viewOrFuncName,
+		rev:      rev,
 	}); err != nil {
 		panic(err)
 	}

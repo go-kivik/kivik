@@ -116,11 +116,6 @@ func (c *client) DBExists(ctx context.Context, name string, _ driver.Options) (b
 
 var validDBNameRE = regexp.MustCompile(`^[a-z][a-z0-9_$()+/-]*$`)
 
-const (
-	// https://www.sqlite.org/rescode.html
-	codeSQLiteError = 1
-)
-
 func (c *client) CreateDB(ctx context.Context, name string, _ driver.Options) error {
 	if !validDBNameRE.MatchString(name) {
 		return &internal.Error{Status: http.StatusBadRequest, Message: "invalid database name"}
@@ -137,10 +132,7 @@ func (c *client) CreateDB(ctx context.Context, name string, _ driver.Options) er
 		if err == nil {
 			continue
 		}
-		sqliteErr := new(sqlite.Error)
-		if errors.As(err, &sqliteErr) &&
-			sqliteErr.Code() == codeSQLiteError &&
-			strings.Contains(sqliteErr.Error(), "already exists") {
+		if errIsAlreadyExists(err) {
 			return &internal.Error{Status: http.StatusPreconditionFailed, Message: "database already exists"}
 		}
 		return err

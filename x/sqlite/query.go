@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 
@@ -49,31 +50,71 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 	ddoc = strings.TrimPrefix(ddoc, "_design/")
 	view = strings.TrimPrefix(view, "_view/")
 
-	if update == updateModeTrue {
-		if err := d.updateIndex(ctx, ddoc, view); err != nil {
+	var results *sql.Rows
+	for {
+		rev, err := d.updateIndex(ctx, ddoc, view, update)
+		if err != nil {
 			return nil, err
 		}
-	}
 
-	query := d.ddocQuery(ddoc, view, `
-		SELECT
-			id,
-			key,
-			value,
-			"" AS rev,
-			NULL AS doc,
-			"" AS conflicts
-		FROM {{ .Map }}
-		ORDER BY key
-	`)
-	results, err := d.db.QueryContext(ctx, query) //nolint:rowserrcheck // Err checked in Next
-	if err != nil {
-		return nil, err
+		query := d.ddocQuery(ddoc, view, rev.String(), `
+			SELECT
+				COALESCE(MAX(last_seq), 0) == (SELECT COALESCE(max(seq),0) FROM {{ .Docs }}) AS up_to_date,
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL
+			FROM {{ .Design }}
+			WHERE id = $1
+				AND rev = $2
+				AND rev_id = $3
+				AND func_type = 'map'
+				AND func_name = $4
+
+			UNION
+
+			SELECT *
+			FROM (
+				SELECT
+					id,
+					key,
+					value,
+					"" AS rev,
+					NULL AS doc,
+					"" AS conflicts
+				FROM {{ .Map }}
+				ORDER BY key
+			)
+		`)
+		results, err = d.db.QueryContext(ctx, query, "_design/"+ddoc, rev.rev, rev.id, view) //nolint:rowserrcheck // Err checked in Next
+		switch {
+		case errIsNoSuchTable(err):
+			return nil, &internal.Error{Status: http.StatusNotFound, Message: "missing named view"}
+		case err != nil:
+			return nil, err
+		}
+
+		// The first row is used to verify the index is up to date
+		if !results.Next() {
+			// should never happen
+			return nil, errors.New("no rows returned")
+		}
+		if update != updateModeTrue {
+			break
+		}
+		var upToDate bool
+		if err := results.Scan(&upToDate, discard{}, discard{}, discard{}, discard{}, discard{}); err != nil {
+			return nil, err
+		}
+		if upToDate {
+			break
+		}
 	}
 
 	if update == updateModeLazy {
 		go func() {
-			if err := d.updateIndex(context.Background(), ddoc, view); err != nil {
+			if _, err := d.updateIndex(context.Background(), ddoc, view, updateModeTrue); err != nil {
 				d.logger.Print("Failed to update index: " + err.Error())
 			}
 		}()
@@ -86,72 +127,98 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 	}, nil
 }
 
-func (d *db) updateIndex(ctx context.Context, ddoc, view string) error {
-	tx, err := d.db.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
+const batchSize = 100
 
-	rev, err := d.winningRev(ctx, tx, "_design/"+ddoc)
-	if err != nil {
-		return err
+// updateIndex queries for the current index status, and returns the current
+// ddoc revid and last_seq. If mode is "true", it will also update the index.
+func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision, error) {
+	var (
+		ddocRev  revision
+		funcBody *string
+		lastSeq  int
+	)
+	err := d.db.QueryRowContext(ctx, d.query(`
+		SELECT
+			docs.rev,
+			docs.rev_id,
+			design.func_body,
+			COALESCE(design.last_seq, 0) AS last_seq
+		FROM {{ .Docs }} AS docs
+		LEFT JOIN {{ .Design }} AS design ON docs.id = design.id AND docs.rev = design.rev AND docs.rev_id = design.rev_id
+		WHERE docs.id = $1
+		ORDER BY docs.rev DESC, docs.rev_id DESC
+		LIMIT 1
+	`), "_design/"+ddoc).Scan(&ddocRev.rev, &ddocRev.id, &funcBody, &lastSeq)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return revision{}, &internal.Error{Status: http.StatusNotFound, Message: "missing"}
+	case err != nil:
+		return revision{}, err
+	}
+
+	if mode != "true" {
+		return ddocRev, nil
+	}
+
+	if funcBody == nil {
+		return revision{}, &internal.Error{Status: http.StatusNotFound, Message: "missing named view"}
 	}
 
 	query := d.query(`
-		SELECT func_body
-		FROM {{ .Design }}
-		WHERE id = $1
-			AND rev = $2
-			AND rev_id = $3
-			AND func_type = 'map'
-			AND func_name = $4
-	`)
-
-	var funcBody string
-	err = tx.QueryRowContext(ctx, query, "_design/"+ddoc, rev.rev, rev.id, view).Scan(&funcBody)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return &internal.Error{Status: http.StatusNotFound, Message: "missing named view"}
-		}
-
-		return err
-	}
-
-	insert, err := tx.PrepareContext(ctx, d.ddocQuery(ddoc, view, `
-		INSERT INTO {{ .Map }} (id, key, value)
-		VAlUES ($1, $2, $3)		
-	`))
-	if err != nil {
-		return err
-	}
-
-	query = d.query(`
-		WITH RankedRevisions AS (
-			SELECT
-				id,
-				rev,
-				rev_id,
-				doc
-			FROM {{ .Leaves }} AS rev
-			WHERE NOT deleted
-		)
 		SELECT
-			rev.id                       AS id,
-			rev.rev || '-' || rev.rev_id AS rev,
-			rev.doc                      AS doc
-		FROM RankedRevisions AS rev
-		WHERE rev.id NOT LIKE '_local/%'
-		GROUP BY rev.id, rev.rev, rev.rev_id
+			CASE WHEN row_number = 1 THEN seq     END AS seq,
+			CASE WHEN row_number = 1 THEN id      END AS id,
+			CASE WHEN row_number = 1 THEN rev     END AS rev,
+			CASE WHEN row_number = 1 THEN doc     END AS doc,
+			CASE WHEN row_number = 1 THEN deleted END AS deleted,
+			attachment_count,
+			filename,
+			content_type,
+			length,
+			digest,
+			rev_pos
+		FROM (
+			SELECT
+				doc.seq                      AS seq,
+				rev.id                       AS id,
+				rev.rev || '-' || rev.rev_id AS rev,
+				doc.doc                      AS doc,
+				doc.deleted                  AS deleted,
+				SUM(CASE WHEN bridge.pk IS NOT NULL THEN 1 ELSE 0 END) OVER (PARTITION BY rev.id, rev.rev, rev.rev_id) AS attachment_count,
+				ROW_NUMBER() OVER (PARTITION BY rev.id, rev.rev, rev.rev_id) AS row_number,
+				att.filename,
+				att.content_type,
+				att.length,
+				att.digest,
+				att.rev_pos
+			FROM {{ .Revs }} AS rev
+			LEFT JOIN {{ .Revs }} AS child ON rev.id = child.id AND rev.rev = child.parent_rev AND rev.rev_id = child.parent_rev_id
+			JOIN {{ .Docs }} AS doc ON rev.id = doc.id AND rev.rev = doc.rev AND rev.rev_id = doc.rev_id
+			LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON doc.id = bridge.id AND doc.rev = bridge.rev AND doc.rev_id = bridge.rev_id
+			LEFT JOIN {{ .Attachments }} AS att ON bridge.pk = att.pk
+			WHERE rev.id NOT LIKE '_local/%'
+				AND child.id IS NULL
+				AND doc.seq > $1
+			ORDER BY doc.seq
+		)
 	`)
-	docs, err := d.db.QueryContext(ctx, query)
+	docs, err := d.db.QueryContext(ctx, query, lastSeq)
 	if err != nil {
-		return err
+		return revision{}, err
 	}
 	defer docs.Close()
 
+	batch := newMapIndexBatch()
+
+	vm := goja.New()
+
 	emit := func(id string) func(interface{}, interface{}) {
 		return func(key, value interface{}) {
+			defer func() {
+				if r := recover(); r != nil {
+					panic(vm.ToValue(r))
+				}
+			}()
 			k, err := fromJSValue(key)
 			if err != nil {
 				panic(err)
@@ -160,43 +227,206 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view string) error {
 			if err != nil {
 				panic(err)
 			}
-			if _, err := insert.ExecContext(ctx, id, k, v); err != nil {
-				panic(err)
-			}
+			batch.add(id, k, v)
 		}
 	}
 
-	vm := goja.New()
-	if _, err := vm.RunString("const map = " + funcBody); err != nil {
-		return err
+	if _, err := vm.RunString("const map = " + *funcBody); err != nil {
+		return revision{}, err
 	}
 
 	mf, ok := goja.AssertFunction(vm.Get("map"))
 	if !ok {
-		return fmt.Errorf("expected map to be a function, got %T", vm.Get("map"))
+		return revision{}, fmt.Errorf("expected map to be a function, got %T", vm.Get("map"))
 	}
 
-	for docs.Next() {
-		var (
-			id, rev string
-			doc     json.RawMessage
-		)
-		if err := docs.Scan(&id, &rev, &doc); err != nil {
-			return err
+	var seq int
+	for {
+		full := &fullDoc{}
+		err := iter(docs, &seq, full)
+		if err == io.EOF {
+			break
 		}
-		full := &fullDoc{
-			ID:  id,
-			Rev: rev,
-			Doc: doc,
+		if err != nil {
+			return revision{}, err
 		}
-		if err := vm.Set("emit", emit(id)); err != nil {
-			return err
+
+		if full.Deleted {
+			batch.delete(full.ID)
+			continue
+		}
+
+		if err := vm.Set("emit", emit(full.ID)); err != nil {
+			return revision{}, err
 		}
 		if _, err := mf(goja.Undefined(), vm.ToValue(full.toMap())); err != nil {
-			return err
+			var exception *goja.Exception
+			if errors.As(err, &exception) {
+				d.logger.Printf("map function threw exception for %s: %s", full.ID, exception.String())
+				batch.delete(full.ID)
+			} else {
+				return revision{}, err
+			}
+		}
+		if batch.insertCount >= batchSize {
+			if err := d.writeMapIndexBatch(ctx, seq, ddocRev, ddoc, view, batch); err != nil {
+				return revision{}, err
+			}
+			batch.clear()
 		}
 	}
-	if err := docs.Err(); err != nil {
+
+	if err := d.writeMapIndexBatch(ctx, seq, ddocRev, ddoc, view, batch); err != nil {
+		return revision{}, err
+	}
+
+	return ddocRev, docs.Err()
+}
+
+func iter(docs *sql.Rows, seq *int, full *fullDoc) error {
+	var (
+		attachmentsCount int
+		rowSeq           *int
+		rowID, rowRev    *string
+		rowDoc           *[]byte
+		rowDeleted       *bool
+	)
+	for {
+		if !docs.Next() {
+			if err := docs.Err(); err != nil {
+				return err
+			}
+			return io.EOF
+		}
+		var (
+			filename, contentType *string
+			length                *int64
+			revPos                *int
+			digest                *md5sum
+		)
+		if err := docs.Scan(
+			&rowSeq, &rowID, &rowRev, &rowDoc, &rowDeleted,
+			&attachmentsCount,
+			&filename, &contentType, &length, &digest, &revPos,
+		); err != nil {
+			return err
+		}
+		if rowSeq != nil {
+			*seq = *rowSeq
+			*full = fullDoc{
+				ID:      *rowID,
+				Rev:     *rowRev,
+				Doc:     *rowDoc,
+				Deleted: *rowDeleted,
+			}
+		}
+		if filename != nil {
+			if full.Attachments == nil {
+				full.Attachments = make(map[string]*attachment)
+			}
+			full.Attachments[*filename] = &attachment{
+				ContentType: *contentType,
+				Length:      *length,
+				Digest:      *digest,
+				RevPos:      *revPos,
+			}
+		}
+		if attachmentsCount == len(full.Attachments) {
+			break
+		}
+	}
+	return nil
+}
+
+type mapIndexBatch struct {
+	insertCount int
+	entries     map[string][]mapIndexEntry
+	deleted     []string
+}
+
+type mapIndexEntry struct {
+	Key   *string
+	Value *string
+}
+
+func newMapIndexBatch() *mapIndexBatch {
+	return &mapIndexBatch{
+		entries: make(map[string][]mapIndexEntry, batchSize),
+	}
+}
+
+func (b *mapIndexBatch) add(id string, key, value *string) {
+	b.entries[id] = append(b.entries[id], mapIndexEntry{
+		Key:   key,
+		Value: value,
+	})
+	b.insertCount++
+}
+
+func (b *mapIndexBatch) delete(id string) {
+	b.deleted = append(b.deleted, id)
+	b.insertCount -= len(b.entries[id])
+	delete(b.entries, id)
+}
+
+func (b *mapIndexBatch) clear() {
+	b.insertCount = 0
+	b.deleted = b.deleted[:0]
+	b.entries = make(map[string][]mapIndexEntry, batchSize)
+}
+
+func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc, viewName string, batch *mapIndexBatch) error {
+	tx, err := d.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	if _, err := tx.ExecContext(ctx, d.query(`
+		UPDATE {{ .Design }}
+		SET last_seq=$1
+		WHERE id = $2
+			AND rev = $3
+			AND rev_id = $4
+			AND func_type = 'map'
+			AND func_name = $5
+	`), seq, "_design/"+ddoc, rev.rev, rev.id, viewName); err != nil {
+		return err
+	}
+
+	// Clear any stale entries
+	ids := make([]interface{}, 0, len(batch.entries)+len(batch.deleted))
+	for id := range batch.entries {
+		ids = append(ids, id)
+	}
+	for _, id := range batch.deleted {
+		ids = append(ids, id)
+	}
+	query := fmt.Sprintf(d.ddocQuery(ddoc, viewName, rev.String(), `
+		DELETE FROM {{ .Map }}
+		WHERE id IN (%s)		
+	`), placeholders(1, len(ids)))
+	if _, err := tx.ExecContext(ctx, query, ids...); err != nil {
+		return err
+	}
+
+	if batch.insertCount == 0 {
+		return tx.Commit()
+	}
+
+	args := make([]interface{}, 0, batch.insertCount*3)
+	values := make([]string, 0, batch.insertCount)
+	for id, entries := range batch.entries {
+		for _, entry := range entries {
+			values = append(values, fmt.Sprintf("($%d, $%d, $%d)", len(args)+1, len(args)+2, len(args)+3))
+			args = append(args, id, entry.Key, entry.Value)
+		}
+	}
+	query = d.ddocQuery(ddoc, viewName, rev.String(), `
+		INSERT INTO {{ .Map }} (id, key, value)
+		VALUES
+	`) + strings.Join(values, ",")
+	if _, err := tx.ExecContext(ctx, query, args...); err != nil {
 		return err
 	}
 

@@ -37,6 +37,7 @@ func TestDBQuery(t *testing.T) {
 		want       []rowResult
 		wantStatus int
 		wantErr    string
+		wantLogs   []string
 	}
 	tests := testy.NewTable()
 	tests.Add("ddoc does not exist", test{
@@ -123,16 +124,228 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("Updating ddoc renders index obsolete", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) { emit(doc._id, null); }`,
+				},
+			},
+		})
+		_ = d.tPut("foo", map[string]string{"_id": "foo"})
+		// Ensure the index is built
+		rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", mock.NilOption)
+		if err != nil {
+			t.Fatalf("Failed to query view: %s", err)
+		}
+		_ = rows.Close()
+
+		// Update the ddoc
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(x) { emit(x._id, null); }`,
+				},
+			},
+		}, kivik.Rev(rev))
+
+		return test{
+			db:      d,
+			ddoc:    "_design/foo",
+			view:    "_view/bar",
+			options: kivik.Param("update", false),
+			want:    nil,
+		}
+	})
+	tests.Add("incremental update", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) { emit(doc._id, null); }`,
+				},
+			},
+		})
+		_ = d.tPut("foo", map[string]string{"_id": "foo"})
+		// Ensure the index is built
+		rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", mock.NilOption)
+		if err != nil {
+			t.Fatalf("Failed to query view: %s", err)
+		}
+		_ = rows.Close()
+
+		// Add a new doc to trigger an incremental update
+		_ = d.tPut("bar", map[string]interface{}{"_id": "bar"})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: []rowResult{
+				{ID: "_design/foo", Key: `"_design/foo"`, Value: "null"},
+				{ID: "bar", Key: `"bar"`, Value: "null"},
+				{ID: "foo", Key: `"foo"`, Value: "null"},
+			},
+		}
+	})
+	tests.Add("ddoc does not exist with update=false", test{
+		ddoc:       "_design/foo",
+		options:    kivik.Param("update", false),
+		wantErr:    "missing",
+		wantStatus: http.StatusNotFound,
+	})
+	tests.Add("ddoc does exist but view does not with update=false", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]string{"cat": "meow"})
+
+		return test{
+			db:         d,
+			ddoc:       "_design/foo",
+			view:       "_view/bar",
+			options:    kivik.Param("update", false),
+			wantErr:    "missing named view",
+			wantStatus: http.StatusNotFound,
+		}
+	})
+	tests.Add("deleting doc deindexes it", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("foo", map[string]string{"cat": "meow"})
+
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) { emit(doc._id, null); }`,
+				},
+			},
+		})
+		// Ensure the index is built
+		rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", mock.NilOption)
+		if err != nil {
+			t.Fatalf("Failed to query view: %s", err)
+		}
+		_ = rows.Close()
+
+		// Add a new doc to trigger an incremental update
+		_ = d.tDelete("foo", kivik.Rev(rev))
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: []rowResult{
+				{ID: "_design/foo", Key: `"_design/foo"`, Value: "null"},
+			},
+		}
+	})
+	tests.Add("doc deleted before index creation", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) { emit(doc._id, null); }`,
+				},
+			},
+		})
+		rev := d.tPut("foo", map[string]string{"_id": "foo"})
+		_ = d.tDelete("foo", kivik.Rev(rev))
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: []rowResult{
+				{ID: "_design/foo", Key: `"_design/foo"`, Value: "null"},
+			},
+		}
+	})
+	tests.Add("map function throws exception", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("foo", map[string]string{"cat": "meow"})
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+						emit(doc._id, null);
+						throw new Error("broken");
+					}`,
+				},
+			},
+		})
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: nil,
+			wantLogs: []string{
+				"^map function threw exception for foo: Error: broken$",
+				"^\tat map ",
+				"^map function threw exception for _design/foo: Error: broken$",
+				"^\tat map ",
+			},
+		}
+	})
+	tests.Add("emit function throws exception", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("foo", map[string]string{"cat": "meow"})
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+						emit(doc._id, function() {});
+					}`,
+				},
+			},
+		})
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: nil,
+			wantLogs: []string{
+				`^map function threw exception for foo: json: unsupported type: func\(goja\.FunctionCall\) goja\.Value$`,
+				`^\tat github\.com/go-kivik/kivik/x/sqlite/v4\.\(\*db\)\.updateIndex\.`,
+				`^\tat map `,
+				`^map function threw exception for _design/foo: json: unsupported type: func\(goja\.FunctionCall\) goja\.Value$`,
+				`^\tat github\.com/go-kivik/kivik/x/sqlite/v4\.\(\*db\)\.updateIndex\.`,
+				`^\tat map `,
+			},
+		}
+	})
+	tests.Add("map that references attachments", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+						if (doc._attachments) { // Check if there are attachments
+							for (var filename in doc._attachments) { // Loop over all attachments
+								emit(filename); // Emit the attachment filename
+							}
+						}
+					}`,
+				},
+			},
+		})
+		_ = d.tPut("no_attachments", map[string]string{"foo": "bar"})
+		_ = d.tPut("with_attachments", map[string]interface{}{
+			"_attachments": newAttachments().
+				add("foo.txt", "Hello, World!").
+				add("bar.txt", "Goodbye, World!"),
+		})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: []rowResult{
+				{ID: "with_attachments", Key: `"bar.txt"`, Value: "null"},
+				{ID: "with_attachments", Key: `"foo.txt"`, Value: "null"},
+			},
+		}
+	})
 	/*
 		TODO:
-		- update=false, missing ddoc should return proper error status
-		- update=false, missing view should return proper error status
-		- recover exception from map function
-		- recover panic from emit function
-		- update view index before returning
-		- wait for pending index update before returning
-		- map function takes too long
-		- expose attachment stubs to map function
 		- Are conflicts or other metadata exposed to map function?
 		- custom/standard CouchDB collation https://pkg.go.dev/modernc.org/sqlite#RegisterCollationUtf8
 		- built-in reduce functions: _sum, _count
@@ -160,6 +373,7 @@ func TestDBQuery(t *testing.T) {
 			- startkey_docid
 			- start_key_doc_id
 			- update_seq
+		- map function takes too long
 
 	*/
 
@@ -185,6 +399,7 @@ func TestDBQuery(t *testing.T) {
 		}
 
 		checkRows(t, rows, tt.want)
+		db.checkLogs(tt.wantLogs)
 	})
 }
 

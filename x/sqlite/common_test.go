@@ -16,11 +16,15 @@
 package sqlite
 
 import (
+	"bytes"
 	"context"
 	"crypto/md5"
 	"database/sql"
 	"fmt"
+	"log"
 	"os"
+	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/go-kivik/kivik/v4/driver"
@@ -41,6 +45,7 @@ type DB interface {
 type testDB struct {
 	t *testing.T
 	DB
+	logs *bytes.Buffer
 }
 
 func (tdb *testDB) underlying() *sql.DB {
@@ -94,14 +99,16 @@ func newDB(t *testing.T) *testDB {
 		dsn = fmt.Sprintf("file:%x?mode=memory&cache=shared", md5sum.Sum(nil))
 	}
 	d := drv{}
-	client, err := d.NewClient(dsn, mock.NilOption)
+	buf := &bytes.Buffer{}
+	logger := log.New(buf, "", 0)
+	client, err := d.NewClient(dsn, OptionLogger(logger))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if err := client.CreateDB(context.Background(), "test", nil); err != nil {
 		t.Fatal(err)
 	}
-	db, err := client.DB("test", nil)
+	db, err := client.DB("test", mock.NilOption)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -109,8 +116,32 @@ func newDB(t *testing.T) *testDB {
 		_ = db.Close()
 	})
 	return &testDB{
-		DB: db.(DB),
-		t:  t,
+		DB:   db.(DB),
+		t:    t,
+		logs: buf,
+	}
+}
+
+func (tdb *testDB) checkLogs(want []string) {
+	tdb.t.Helper()
+	if want == nil {
+		return
+	}
+	got := strings.Split(tdb.logs.String(), "\n")
+	if len(got) > 0 && got[len(got)-1] == "" {
+		got = got[:len(got)-1]
+	}
+	for i := 0; i < len(got) && i < len(want); i++ {
+		re := regexp.MustCompile(want[i])
+		if !re.MatchString(got[i]) {
+			tdb.t.Errorf("Unexpected log line: %d. Want /%s/,\n\t Got %s", i+1, want[i], got[i])
+		}
+	}
+	if len(got) > len(want) {
+		tdb.t.Errorf("Got %d more logs than expected: %s", len(got)-len(want), strings.Join(got[len(want):], "\n"))
+	}
+	if len(got) < len(want) {
+		tdb.t.Errorf("Got %d fewer logs than expected", len(want)-len(got))
 	}
 }
 

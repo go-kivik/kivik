@@ -100,5 +100,5 @@ var viewMapSchema = []string{
 		key TEXT COLLATE COUCHDB_UCI,
 		value TEXT
 	)`,
-	`CREATE INDEX IF NOT EXISTS {{ .IndexMap }} ON {{ .Map }} (key COLLATE COUCHDB_UCI)`,
+	`CREATE INDEX IF NOT EXISTS {{ .IndexMap }} ON {{ .Map }} (key)`,
 }

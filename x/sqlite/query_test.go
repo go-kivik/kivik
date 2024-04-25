@@ -350,13 +350,17 @@ func TestDBQuery(t *testing.T) {
 		_ = d.tPut("_design/foo", map[string]interface{}{
 			"views": map[string]interface{}{
 				"bar": map[string]string{
-					"map": `function(doc) { emit(doc.key, null); }`,
+					"map": `function(doc) {
+							if (doc.key !== undefined) {
+								emit(doc.key, null);
+							}
+						}`,
 				},
 			},
 		})
 		_ = d.tPut("null", map[string]interface{}{"key": nil})
-		_ = d.tPut("bool: true", map[string]interface{}{"key": true})
 		_ = d.tPut("bool: false", map[string]interface{}{"key": false})
+		_ = d.tPut("bool: true", map[string]interface{}{"key": true})
 		_ = d.tPut("numbers: 1", map[string]interface{}{"key": int(1)})
 		_ = d.tPut("numbers: 2", map[string]interface{}{"key": int(2)})
 		_ = d.tPut("numbers: 3.0", map[string]interface{}{"key": float64(3)})
@@ -386,21 +390,20 @@ func TestDBQuery(t *testing.T) {
 			view:    "_view/bar",
 			options: kivik.Param("update", true),
 			want: []rowResult{
-				{ID: "_design/foo", Key: `null`, Value: "null"},
 				{ID: "null", Key: `null`, Value: "null"},
-				{ID: "bool: true", Key: `true`, Value: "null"},
 				{ID: "bool: false", Key: `false`, Value: "null"},
+				{ID: "bool: true", Key: `true`, Value: "null"},
 				{ID: "numbers: 1", Key: `1`, Value: "null"},
 				{ID: "numbers: 2", Key: `2`, Value: "null"},
-				{ID: "numbers: 3.0", Key: `3.0`, Value: "null"},
+				{ID: "numbers: 3.0", Key: `3`, Value: "null"},
 				{ID: "numbers: 4", Key: `4`, Value: "null"},
-				{ID: "text: a", Key: `a`, Value: "null"},
-				{ID: "text: A", Key: `A`, Value: "null"},
-				{ID: "text: aa", Key: `aa`, Value: "null"},
-				{ID: "text: b", Key: `b`, Value: "null"},
-				{ID: "text: B", Key: `B`, Value: "null"},
-				{ID: "text: ba", Key: `ba`, Value: "null"},
-				{ID: "text: bb", Key: `bb`, Value: "null"},
+				{ID: "text: a", Key: `"a"`, Value: "null"},
+				{ID: "text: A", Key: `"A"`, Value: "null"},
+				{ID: "text: aa", Key: `"aa"`, Value: "null"},
+				{ID: "text: b", Key: `"b"`, Value: "null"},
+				{ID: "text: B", Key: `"B"`, Value: "null"},
+				{ID: "text: ba", Key: `"ba"`, Value: "null"},
+				{ID: "text: bb", Key: `"bb"`, Value: "null"},
 				{ID: "array: [a]", Key: `["a"]`, Value: "null"},
 				{ID: "array: [b]", Key: `["b"]`, Value: "null"},
 				{ID: "array: [b, c]", Key: `["b","c"]`, Value: "null"},

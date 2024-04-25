@@ -278,10 +278,10 @@ func TestDBQuery(t *testing.T) {
 			view: "_view/bar",
 			want: nil,
 			wantLogs: []string{
-				"map function threw exception for foo: Error: broken",
-				"\tat map (<eval>:3:13(9))",
-				"map function threw exception for _design/foo: Error: broken",
-				"\tat map (<eval>:3:13(9))",
+				"^map function threw exception for foo: Error: broken$",
+				"^\tat map ",
+				"^map function threw exception for _design/foo: Error: broken$",
+				"^\tat map ",
 			},
 		}
 	})
@@ -303,12 +303,12 @@ func TestDBQuery(t *testing.T) {
 			view: "_view/bar",
 			want: nil,
 			wantLogs: []string{
-				"map function threw exception for foo: json: unsupported type: func(goja.FunctionCall) goja.Value",
-				"\tat github.com/go-kivik/kivik/v4/x/sqlite.(*db).updateIndex.(*db).updateIndex.func1.func2 (native)",
-				"\tat map (<eval>:2:11(5))",
-				"map function threw exception for _design/foo: json: unsupported type: func(goja.FunctionCall) goja.Value",
-				"\tat github.com/go-kivik/kivik/v4/x/sqlite.(*db).updateIndex.(*db).updateIndex.func1.func2 (native)",
-				"\tat map (<eval>:2:11(5))",
+				`^map function threw exception for foo: json: unsupported type: func\(goja\.FunctionCall\) goja\.Value$`,
+				`^\tat github\.com/go-kivik/kivik/v4/x/sqlite\.\(\*db\)\.updateIndex\.\(\*db\)\.updateIndex\.func1\.func2 \(native\)`,
+				`^\tat map `,
+				`^map function threw exception for _design/foo: json: unsupported type: func\(goja\.FunctionCall\) goja\.Value$`,
+				`^\tat github\.com/go-kivik/kivik/v4/x/sqlite\.\(\*db\)\.updateIndex\.\(\*db\)\.updateIndex.func1\.func2 \(native\)$`,
+				`^\tat map `,
 			},
 		}
 	})

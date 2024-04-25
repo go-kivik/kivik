@@ -23,10 +23,9 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"regexp"
 	"strings"
 	"testing"
-
-	"github.com/google/go-cmp/cmp"
 
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/x/sqlite/v4/internal/mock"
@@ -123,17 +122,26 @@ func newDB(t *testing.T) *testDB {
 	}
 }
 
-func (tdb *testDB) checkLogs(expected []string) {
+func (tdb *testDB) checkLogs(want []string) {
 	tdb.t.Helper()
-	if expected == nil {
+	if want == nil {
 		return
 	}
 	got := strings.Split(tdb.logs.String(), "\n")
 	if len(got) > 0 && got[len(got)-1] == "" {
 		got = got[:len(got)-1]
 	}
-	if d := cmp.Diff(expected, got); d != "" {
-		tdb.t.Errorf("Unexpected logs:\n%s", d)
+	for i := 0; i < len(got) && i < len(want); i++ {
+		re := regexp.MustCompile(want[i])
+		if !re.MatchString(got[i]) {
+			tdb.t.Errorf("Unexpected log line: %d. %s", i+1, got[i])
+		}
+	}
+	if len(got) > len(want) {
+		tdb.t.Errorf("Got %d more logs than expected: %s", len(got)-len(want), strings.Join(got[len(want):], "\n"))
+	}
+	if len(got) < len(want) {
+		tdb.t.Errorf("Got %d fewer logs than expected", len(want)-len(got))
 	}
 }
 

@@ -57,6 +57,18 @@ func TestDBQuery(t *testing.T) {
 			wantStatus: http.StatusNotFound,
 		}
 	})
+	tests.Add("ddoc does exist but only non-view functions exist", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{"updates": map[string]string{"update1": "function() {}"}})
+
+		return test{
+			db:         d,
+			ddoc:       "_design/foo",
+			view:       "_view/bar",
+			wantErr:    "missing named view",
+			wantStatus: http.StatusNotFound,
+		}
+	})
 	tests.Add("simple view with a single document", func(t *testing.T) interface{} {
 		d := newDB(t)
 		_ = d.tPut("_design/foo", map[string]interface{}{

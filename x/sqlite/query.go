@@ -135,22 +135,36 @@ const batchSize = 100
 // ddoc revid and last_seq. If mode is "true", it will also update the index.
 func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision, error) {
 	var (
-		ddocRev  revision
-		funcBody *string
-		lastSeq  int
+		ddocRev             revision
+		mapBody, reduceBody *string
+		lastSeq             int
 	)
 	err := d.db.QueryRowContext(ctx, d.query(`
+		WITH design AS (
+			SELECT
+				id,
+				rev,
+				rev_id,
+				MAX(CASE WHEN func_type = 'map' THEN func_body END)    AS map_func,
+				MAX(CASE WHEN func_type = 'reduce' THEN func_body END) AS reduce_func,
+				MAX(last_seq)                                          AS last_seq
+			FROM {{ .Design }}
+			WHERE id = $1
+				AND func_type IN ('map', 'reduce')
+			GROUP BY id, rev, rev_id
+		)
 		SELECT
 			docs.rev,
 			docs.rev_id,
-			design.func_body,
+			design.map_func,
+			design.reduce_func,
 			COALESCE(design.last_seq, 0) AS last_seq
 		FROM {{ .Docs }} AS docs
-		LEFT JOIN {{ .Design }} AS design ON docs.id = design.id AND docs.rev = design.rev AND docs.rev_id = design.rev_id
+		LEFT JOIN design ON docs.id = design.id AND docs.rev = design.rev AND docs.rev_id = design.rev_id
 		WHERE docs.id = $1
 		ORDER BY docs.rev DESC, docs.rev_id DESC
 		LIMIT 1
-	`), "_design/"+ddoc).Scan(&ddocRev.rev, &ddocRev.id, &funcBody, &lastSeq)
+	`), "_design/"+ddoc).Scan(&ddocRev.rev, &ddocRev.id, &mapBody, &reduceBody, &lastSeq)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return revision{}, &internal.Error{Status: http.StatusNotFound, Message: "missing"}
@@ -162,7 +176,7 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 		return ddocRev, nil
 	}
 
-	if funcBody == nil {
+	if mapBody == nil {
 		return revision{}, &internal.Error{Status: http.StatusNotFound, Message: "missing named view"}
 	}
 
@@ -210,7 +224,7 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 	}
 	defer docs.Close()
 
-	batch := newMapIndexBatch()
+	batch := newMapIndexBatch(nil)
 
 	vm := goja.New()
 
@@ -233,7 +247,7 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 		}
 	}
 
-	if _, err := vm.RunString("const map = " + *funcBody); err != nil {
+	if _, err := vm.RunString("const map = " + *mapBody); err != nil {
 		return revision{}, err
 	}
 
@@ -344,6 +358,8 @@ type mapIndexBatch struct {
 	insertCount int
 	entries     map[string][]mapIndexEntry
 	deleted     []string
+	// reduce is the text of the JS reduce function, if any.
+	reduce *string
 }
 
 type mapIndexEntry struct {
@@ -351,9 +367,10 @@ type mapIndexEntry struct {
 	Value *string
 }
 
-func newMapIndexBatch() *mapIndexBatch {
+func newMapIndexBatch(reduce *string) *mapIndexBatch {
 	return &mapIndexBatch{
 		entries: make(map[string][]mapIndexEntry, batchSize),
+		reduce:  reduce,
 	}
 }
 

@@ -64,7 +64,7 @@ func (d *db) updateDesignDoc(ctx context.Context, tx *sql.Tx, rev revision, data
 }
 
 func (d *db) createViewMap(ctx context.Context, tx *sql.Tx, ddoc, name, rev string) error {
-	for _, query := range viewMapSchema {
+	for _, query := range viewSchema {
 		if _, err := tx.ExecContext(ctx, d.ddocQuery(ddoc, name, rev, query)); err != nil {
 			return err
 		}

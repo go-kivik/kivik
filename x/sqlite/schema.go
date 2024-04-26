@@ -97,7 +97,7 @@ var schema = []string{
 var viewMapSchema = []string{
 	`CREATE TABLE IF NOT EXISTS {{ .Map }} (
 		id TEXT NOT NULL,
-		key TEXT,
+		key TEXT COLLATE COUCHDB_UCI,
 		value TEXT
 	)`,
 	`CREATE INDEX IF NOT EXISTS {{ .IndexMap }} ON {{ .Map }} (key)`,

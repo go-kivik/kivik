@@ -22,11 +22,16 @@ import (
 	"strings"
 
 	"modernc.org/sqlite"
-	_ "modernc.org/sqlite" // SQLite driver
 
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/x/sqlite/v4/internal"
 )
+
+func init() {
+	if err := sqlite.RegisterCollationUtf8("COUCHDB_UCI", couchdbCmpString); err != nil {
+		panic(err)
+	}
+}
 
 type drv struct{}
 

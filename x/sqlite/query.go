@@ -59,6 +59,7 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 
 		query := d.ddocQuery(ddoc, view, rev.String(), `
 			SELECT
+				0 AS ord, -- Hack to ensure that header row comes first, since sub-union ordering doesn't work
 				COALESCE(MAX(last_seq), 0) == (SELECT COALESCE(max(seq),0) FROM {{ .Docs }}) AS up_to_date,
 				NULL,
 				NULL,
@@ -77,6 +78,7 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 			SELECT *
 			FROM (
 				SELECT
+					1 AS ord,
 					id,
 					key,
 					value,
@@ -84,8 +86,8 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 					NULL AS doc,
 					"" AS conflicts
 				FROM {{ .Map }}
-				ORDER BY key
 			)
+			ORDER BY ord, key
 		`)
 		results, err = d.db.QueryContext(ctx, query, "_design/"+ddoc, rev.rev, rev.id, view) //nolint:rowserrcheck // Err checked in Next
 		switch {
@@ -104,7 +106,7 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 			break
 		}
 		var upToDate bool
-		if err := results.Scan(&upToDate, discard{}, discard{}, discard{}, discard{}, discard{}); err != nil {
+		if err := results.Scan(discard{}, &upToDate, discard{}, discard{}, discard{}, discard{}, discard{}); err != nil {
 			return nil, err
 		}
 		if upToDate {
@@ -395,19 +397,21 @@ func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc
 	}
 
 	// Clear any stale entries
-	ids := make([]interface{}, 0, len(batch.entries)+len(batch.deleted))
-	for id := range batch.entries {
-		ids = append(ids, id)
-	}
-	for _, id := range batch.deleted {
-		ids = append(ids, id)
-	}
-	query := fmt.Sprintf(d.ddocQuery(ddoc, viewName, rev.String(), `
-		DELETE FROM {{ .Map }}
-		WHERE id IN (%s)		
-	`), placeholders(1, len(ids)))
-	if _, err := tx.ExecContext(ctx, query, ids...); err != nil {
-		return err
+	if len(batch.entries) > 0 || len(batch.deleted) > 0 {
+		ids := make([]interface{}, 0, len(batch.entries)+len(batch.deleted))
+		for id := range batch.entries {
+			ids = append(ids, id)
+		}
+		for _, id := range batch.deleted {
+			ids = append(ids, id)
+		}
+		query := fmt.Sprintf(d.ddocQuery(ddoc, viewName, rev.String(), `
+			DELETE FROM {{ .Map }}
+			WHERE id IN (%s)		
+		`), placeholders(1, len(ids)))
+		if _, err := tx.ExecContext(ctx, query, ids...); err != nil {
+			return err
+		}
 	}
 
 	if batch.insertCount == 0 {
@@ -422,7 +426,7 @@ func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc
 			args = append(args, id, entry.Key, entry.Value)
 		}
 	}
-	query = d.ddocQuery(ddoc, viewName, rev.String(), `
+	query := d.ddocQuery(ddoc, viewName, rev.String(), `
 		INSERT INTO {{ .Map }} (id, key, value)
 		VALUES
 	`) + strings.Join(values, ",")

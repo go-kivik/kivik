@@ -15,6 +15,7 @@ package sqlite
 import (
 	"bytes"
 	"encoding/json"
+	"slices"
 	"sort"
 	"strconv"
 
@@ -139,6 +140,18 @@ func (r *rawObject) UnmarshalJSON(b []byte) error {
 		rawKey, _ := json.Marshal(k)
 		*r = append(*r, [2]json.RawMessage{rawKey, v})
 	}
+	// This sort is a hack, to make sorting stable in light of the limitation
+	// outlined in #952. Without this, the order is arbitrary, and the collation
+	// order is unstable.  This could be simplified, but I'm leaving it as-is
+	// for the moment, so that it's easy to revert to CouchDB behavior if #952
+	// is ever implemented. If it is, deleting this sort call should be the
+	// only change needed in the [rawObject] type.
+	slices.SortFunc(*r, func(a, b [2]json.RawMessage) int {
+		if r := couchdbCmpJSON(a[0], b[0]); r != 0 {
+			return r
+		}
+		return couchdbCmpJSON(a[1], b[1])
+	})
 	return nil
 }
 

@@ -66,7 +66,8 @@ func Test_couchdbCmp(t *testing.T) {
 				`{"a":2}`,
 				`{"b":1}`,
 				`{"b":2}`,
-				`{"b":2, "a":1}`, // Member order does matter for collation. CouchDB preserves member order but doesn't require that clients will. this test might fail if used with a js engine that doesn't preserve order.
+				// TODO: See #952
+				// `{"b":2, "a":1}`, // Member order does matter for collation. CouchDB preserves member order but doesn't require that clients will. this test might fail if used with a js engine that doesn't preserve order.
 				`{"b":2, "c":2}`,
 			},
 		},

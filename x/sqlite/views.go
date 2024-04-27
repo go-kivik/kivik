@@ -114,7 +114,6 @@ func (d *db) queryView(ctx context.Context, view string, options driver.Options)
 			WHERE NOT deleted
 		)
 		SELECT
-			0                            AS ord,
 			rev.id                       AS id,
 			rev.id                       AS key,
 			'{"value":{"rev":"' || rev.rev || '-' || rev.rev_id || '"}}' AS value,
@@ -171,7 +170,7 @@ func (r *rows) Next(row *driver.Row) error {
 		conflicts *string
 		rev       string
 	)
-	if err := r.rows.Scan(discard{}, &row.ID, &key, &value, &rev, &doc, &conflicts); err != nil {
+	if err := r.rows.Scan(&row.ID, &key, &value, &rev, &doc, &conflicts); err != nil {
 		return err
 	}
 	row.Key = key

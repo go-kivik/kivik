@@ -60,7 +60,6 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 
 		query := d.ddocQuery(ddoc, view, rev.String(), `
 			SELECT
-				0 AS ord, -- Hack to ensure that header row comes first, since sub-union ordering doesn't work
 				COALESCE(MAX(last_seq), 0) == (SELECT COALESCE(max(seq),0) FROM {{ .Docs }}) AS up_to_date,
 				NULL,
 				NULL,
@@ -79,7 +78,6 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 			SELECT *
 			FROM (
 				SELECT
-					1 AS ord,
 					id,
 					key,
 					value,
@@ -87,8 +85,8 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 					NULL AS doc,
 					"" AS conflicts
 				FROM {{ .Map }}
+				ORDER BY key
 			)
-			ORDER BY ord, key
 		`)
 		results, err = d.db.QueryContext(ctx, query, "_design/"+ddoc, rev.rev, rev.id, view) //nolint:rowserrcheck // Err checked in Next
 		switch {
@@ -107,7 +105,7 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 			break
 		}
 		var upToDate bool
-		if err := results.Scan(discard{}, &upToDate, discard{}, discard{}, discard{}, discard{}, discard{}); err != nil {
+		if err := results.Scan(&upToDate, discard{}, discard{}, discard{}, discard{}, discard{}); err != nil {
 			return nil, err
 		}
 		if upToDate {

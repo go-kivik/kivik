@@ -73,7 +73,22 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 				AND func_type = 'map'
 				AND func_name = $4
 
-			UNION
+			UNION ALL
+
+			SELECT *
+			FROM (
+				SELECT
+					NULL  AS id,
+					NULL  AS key,
+					value AS value,
+					""    AS rev,
+					NULL  AS doc,
+					""    AS conflicts
+				FROM {{ .Reduce }}
+				
+			)
+
+			UNION ALL
 
 			SELECT *
 			FROM (
@@ -88,7 +103,7 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 				ORDER BY key
 			)
 		`)
-		results, err = d.db.QueryContext(ctx, query, "_design/"+ddoc, rev.rev, rev.id, view) //nolint:rowserrcheck // Err checked in Next
+		results, err = d.db.QueryContext(ctx, query, "_design/"+ddoc, rev.rev, rev.id, view, kivik.EndKeySuffix) //nolint:rowserrcheck // Err checked in Next
 		switch {
 		case errIsNoSuchTable(err):
 			return nil, &internal.Error{Status: http.StatusNotFound, Message: "missing named view"}
@@ -477,6 +492,9 @@ func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc
 			}
 			keys = append(keys, [2]interface{}{id, key})
 			values = append(values, value)
+		}
+		if err := rows.Err(); err != nil {
+			return err
 		}
 
 		vm := goja.New()

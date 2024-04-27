@@ -165,13 +165,17 @@ func (r *rows) Next(row *driver.Row) error {
 		return io.EOF
 	}
 	var (
+		id        *string
 		key, doc  []byte
 		value     *[]byte
 		conflicts *string
 		rev       string
 	)
-	if err := r.rows.Scan(&row.ID, &key, &value, &rev, &doc, &conflicts); err != nil {
+	if err := r.rows.Scan(&id, &key, &value, &rev, &doc, &conflicts); err != nil {
 		return err
+	}
+	if id != nil {
+		row.ID = *id
 	}
 	row.Key = key
 	if len(key) == 0 {

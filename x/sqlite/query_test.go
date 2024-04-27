@@ -470,6 +470,8 @@ func TestDBQuery(t *testing.T) {
 
 	/*
 		TODO:
+		- reduce=true for map-only view
+		- reduce function throws exception
 		- Are conflicts or other metadata exposed to map function?
 		- built-in reduce functions: _sum, _count, _approx_count_distinct, _stats
 		- Options:
@@ -497,6 +499,7 @@ func TestDBQuery(t *testing.T) {
 			- start_key_doc_id
 			- update_seq
 		- map/reduce function takes too long
+		- exclude design docs by default
 
 	*/
 

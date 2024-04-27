@@ -102,9 +102,9 @@ var viewSchema = []string{
 	)`,
 	`CREATE INDEX IF NOT EXISTS {{ .IndexMap }} ON {{ .Map }} (key)`,
 	`CREATE TABLE IF NOT EXISTS {{ .Reduce }} (
-		min_id TEXT NOT NULL,
-		max_id TEXT NOT NULL,
+		min_key TEXT,
+		max_key TEXT,
 		value TEXT,
-		UNIQUE (min_id, max_id)
+		UNIQUE (min_key, max_key)
 	)`,
 }

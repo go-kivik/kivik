@@ -109,7 +109,7 @@ func TestDBPut_designDocs(t *testing.T) {
 					SELECT COUNT(*)
 					FROM sqlite_master
 					WHERE type = 'table'
-						AND name LIKE 'foo_%_map_bar_%'
+						AND name LIKE 'foo_%_bar_map_%'
 				`).Scan(&viewCount)
 				if err != nil {
 					t.Fatal(err)

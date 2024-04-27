@@ -71,10 +71,11 @@ func (t *tmplFuncs) hashedName(typ string) string {
 	if t.ddoc == "" {
 		panic("ddoc template method called outside of a ddoc template")
 	}
-	name := strings.Join([]string{t.ddoc, t.rev, typ, t.viewName}, "_")
+	name := strings.Join([]string{t.ddoc, t.rev, t.viewName}, "_")
 	if t.hash == "" {
 		t.hash = md5sumString(name)[:8]
 	}
+	name += "_" + typ
 	if len(name) > maxTableLen-len(t.hash) {
 		name = name[:maxTableLen-len(t.hash)]
 	}

@@ -547,6 +547,18 @@ func (b *mapIndexBatch) reduceFunc(logger *log.Logger) (func(keys [][2]interface
 		return nil, nil
 	}
 	switch *b.reduce {
+	case "_count":
+		return func(_ [][2]interface{}, values []interface{}, rereduce bool) interface{} {
+			if !rereduce {
+				return len(values)
+			}
+			var total int
+			for _, value := range values {
+				v, _ := value.(int)
+				total += v
+			}
+			return total
+		}, nil
 	default:
 		vm := goja.New()
 

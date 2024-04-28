@@ -467,10 +467,33 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("reduce=true for map-only view returns 400", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]string{"a": "a"})
+		_ = d.tPut("b", map[string]string{"b": "b"})
+
+		return test{
+			db:         d,
+			ddoc:       "_design/foo",
+			view:       "_view/bar",
+			options:    kivik.Param("reduce", true),
+			wantErr:    "reduce is invalid for map-only views",
+			wantStatus: http.StatusBadRequest,
+		}
+	})
 
 	/*
 		TODO:
-		- reduce=true for map-only view
+		- reduce=true for reducible
 		- reduce function throws exception
 		- Are conflicts or other metadata exposed to map function?
 		- built-in reduce functions: _sum, _count, _approx_count_distinct, _stats

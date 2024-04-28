@@ -69,14 +69,16 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 						AND func_type = 'reduce'
 				) AS reducable
 			)
+
 			SELECT
 				COALESCE(MAX(last_seq), 0) == (SELECT COALESCE(max(seq),0) FROM {{ .Docs }}) AS up_to_date,
-				NULL,
+				view.reducable,
 				NULL,
 				NULL,
 				NULL,
 				NULL
 			FROM {{ .Design }}
+			JOIN view
 			WHERE id = $1
 				AND rev = $2
 				AND rev_id = $3
@@ -130,9 +132,12 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 		if update != updateModeTrue {
 			break
 		}
-		var upToDate bool
-		if err := results.Scan(&upToDate, discard{}, discard{}, discard{}, discard{}, discard{}); err != nil {
+		var upToDate, reducible bool
+		if err := results.Scan(&upToDate, &reducible, discard{}, discard{}, discard{}, discard{}); err != nil {
 			return nil, err
+		}
+		if reduce := opts.reduce(); reduce != nil && *reduce && !reducible {
+			return nil, &internal.Error{Status: http.StatusBadRequest, Message: "reduce is invalid for map-only views"}
 		}
 		if upToDate {
 			break

@@ -162,39 +162,43 @@ func toUint64(in interface{}, msg string) (uint64, error) {
 	}
 }
 
-func toBool(in interface{}) bool {
+func toBool(in interface{}) (value bool, ok bool) {
 	switch t := in.(type) {
 	case bool:
-		return t
+		return t, true
 	case string:
-		b, _ := strconv.ParseBool(t)
-		return b
+		b, err := strconv.ParseBool(t)
+		return b, err == nil
 	default:
-		return false
+		return false, false
 	}
 }
 
 func (o optsMap) direction() string {
-	if toBool(o["descending"]) {
+	if v, _ := toBool(o["descending"]); v {
 		return "DESC"
 	}
 	return "ASC"
 }
 
 func (o optsMap) includeDocs() bool {
-	return toBool(o["include_docs"])
+	v, _ := toBool(o["include_docs"])
+	return v
 }
 
 func (o optsMap) attachments() bool {
-	return toBool(o["attachments"])
+	v, _ := toBool(o["attachments"])
+	return v
 }
 
 func (o optsMap) latest() bool {
-	return toBool(o["latest"])
+	v, _ := toBool(o["latest"])
+	return v
 }
 
 func (o optsMap) revs() bool {
-	return toBool(o["revs"])
+	v, _ := toBool(o["revs"])
+	return v
 }
 
 const (
@@ -225,4 +229,12 @@ func (o optsMap) update() (string, error) {
 		}
 	}
 	return "", &internal.Error{Status: http.StatusBadRequest, Message: "invalid value for `update`"}
+}
+
+func (o optsMap) reduce() *bool {
+	v, ok := toBool(o["reduce"])
+	if !ok {
+		return nil
+	}
+	return &v
 }

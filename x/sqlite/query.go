@@ -59,6 +59,16 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 		}
 
 		query := d.ddocQuery(ddoc, view, rev.String(), `
+			WITH view AS (
+				SELECT EXISTS(
+					SELECT 1
+					FROM {{ .Design }}
+					WHERE id = $1
+						AND rev = $2
+						AND rev_id = $3
+						AND func_type = 'reduce'
+				) AS reducable
+			)
 			SELECT
 				COALESCE(MAX(last_seq), 0) == (SELECT COALESCE(max(seq),0) FROM {{ .Docs }}) AS up_to_date,
 				NULL,
@@ -85,7 +95,6 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 					NULL  AS doc,
 					""    AS conflicts
 				FROM {{ .Reduce }}
-				
 			)
 
 			UNION ALL
@@ -100,6 +109,8 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 					NULL AS doc,
 					"" AS conflicts
 				FROM {{ .Map }}
+				JOIN view
+				WHERE NOT view.reducable
 				ORDER BY key
 			)
 		`)

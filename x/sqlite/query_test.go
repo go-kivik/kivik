@@ -623,9 +623,37 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("built-in _sum reduce function", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, 3);
+						}`,
+					// Manual implementation of _count for testing purposes.
+					"reduce": `_sum`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]string{"a": "a"})
+		_ = d.tPut("b", map[string]string{"b": "b"})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: []rowResult{
+				{
+					Key:   "null",
+					Value: "9", // TODO: Should be 2 because ddocs should be ignored
+				},
+			},
+		}
+	})
 	/*
 		TODO:
-		- built-in reduce functions: _sum, _approx_count_distinct, _stats
+		- built-in reduce functions: _approx_count_distinct, _stats
 		- Options:
 			- conflicts
 			- descending

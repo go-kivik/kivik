@@ -518,7 +518,11 @@ func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc
 				return err
 			}
 			keys = append(keys, [2]interface{}{id, key})
-			values = append(values, value)
+			if value == nil {
+				values = append(values, nil)
+			} else {
+				values = append(values, *value)
+			}
 		}
 		if err := rows.Err(); err != nil {
 			return err
@@ -552,9 +556,18 @@ func (b *mapIndexBatch) reduceFunc(logger *log.Logger) (func(keys [][2]interface
 			if !rereduce {
 				return len(values)
 			}
-			var total int
+			var total uint64
 			for _, value := range values {
-				v, _ := value.(int)
+				v, _ := toUint64(value, "")
+				total += v
+			}
+			return total
+		}, nil
+	case "_sum":
+		return func(_ [][2]interface{}, values []interface{}, _ bool) interface{} {
+			var total uint64
+			for _, value := range values {
+				v, _ := toUint64(value, "")
 				total += v
 			}
 			return total
@@ -571,7 +584,7 @@ func (b *mapIndexBatch) reduceFunc(logger *log.Logger) (func(keys [][2]interface
 		}
 
 		return func(keys [][2]interface{}, values []interface{}, rereduce bool) interface{} {
-			reduceValue, err := reduceFunc(goja.Undefined(), vm.ToValue(keys), vm.ToValue(values), vm.ToValue(false))
+			reduceValue, err := reduceFunc(goja.Undefined(), vm.ToValue(keys), vm.ToValue(values), vm.ToValue(rereduce))
 			if err != nil {
 				var exception *goja.Exception
 				if errors.As(err, &exception) {

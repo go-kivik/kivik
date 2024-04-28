@@ -529,24 +529,30 @@ func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc
 			return fmt.Errorf("expected reduce to be a function, got %T", vm.Get("map"))
 		}
 
+		var rv interface{}
 		reduceValue, err := reduceFunc(goja.Undefined(), vm.ToValue(keys), vm.ToValue(values), vm.ToValue(false))
 		if err != nil {
-			return err
+			var exception *goja.Exception
+			if errors.As(err, &exception) {
+				d.logger.Printf("reduce function threw exception: %s", exception.String())
+			} else {
+				return err
+			}
+		} else {
+			rv = reduceValue.Export()
 		}
-
-		rv := reduceValue.Export()
 		var rvJSON *json.RawMessage
 		if rv != nil {
 			tmp, _ := json.Marshal(rv)
 			rvJSON = (*json.RawMessage)(&tmp)
 		}
+
 		if _, err := tx.ExecContext(ctx, d.ddocQuery(ddoc, viewName, rev.String(), `
-			INSERT INTO {{ .Reduce }} (min_key, max_key, value)
-			VALUES ($1, $2, $3)
-		`), nil, kivik.EndKeySuffix, rvJSON); err != nil {
+				INSERT INTO {{ .Reduce }} (min_key, max_key, value)
+				VALUES ($1, $2, $3)
+			`), nil, kivik.EndKeySuffix, rvJSON); err != nil {
 			return err
 		}
-
 	}
 
 	return tx.Commit()

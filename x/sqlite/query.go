@@ -97,6 +97,8 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 					NULL  AS doc,
 					""    AS conflicts
 				FROM {{ .Reduce }}
+				JOIN view
+				WHERE view.reducable AND ($6 IS NULL OR $6 == TRUE)
 			)
 
 			UNION ALL
@@ -112,11 +114,15 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 					"" AS conflicts
 				FROM {{ .Map }}
 				JOIN view
-				WHERE NOT view.reducable
+				WHERE $6 == FALSE OR NOT view.reducable
 				ORDER BY key
 			)
 		`)
-		results, err = d.db.QueryContext(ctx, query, "_design/"+ddoc, rev.rev, rev.id, view, kivik.EndKeySuffix) //nolint:rowserrcheck // Err checked in Next
+
+		results, err = d.db.QueryContext( //nolint:rowserrcheck // Err checked in Next
+			ctx, query,
+			"_design/"+ddoc, rev.rev, rev.id, view, kivik.EndKeySuffix, opts.reduce(),
+		)
 		switch {
 		case errIsNoSuchTable(err):
 			return nil, &internal.Error{Status: http.StatusNotFound, Message: "missing named view"}

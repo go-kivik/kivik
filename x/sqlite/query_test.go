@@ -490,10 +490,83 @@ func TestDBQuery(t *testing.T) {
 			wantStatus: http.StatusBadRequest,
 		}
 	})
+	tests.Add("simple reduce function with reduce=true", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					// Manual implementation of _count for testing purposes.
+					"reduce": `function(sum, values, rereduce) {
+							if (rereduce) {
+								let sum=0;
+								for (let i=0; i < values.length; i++) {
+									sum += values[i];
+								}
+								return sum;
+							}
+							return values.length;
+						}`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]string{"a": "a"})
+		_ = d.tPut("b", map[string]string{"b": "b"})
 
+		return test{
+			db:      d,
+			ddoc:    "_design/foo",
+			view:    "_view/bar",
+			options: kivik.Param("reduce", true),
+			want: []rowResult{
+				{
+					Key:   "null",
+					Value: "3", // TODO: Should be 2 because ddocs should be ignored
+				},
+			},
+		}
+	})
+	tests.Add("simple reduce function with reduce=false", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					// Manual implementation of _count for testing purposes.
+					"reduce": `function(sum, values, rereduce) {
+							if (rereduce) {
+								let sum=0;
+								for (let i=0; i < values.length; i++) {
+									sum += values[i];
+								}
+								return sum;
+							}
+							return values.length;
+						}`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]string{"a": "a"})
+		_ = d.tPut("b", map[string]string{"b": "b"})
+
+		return test{
+			db:      d,
+			ddoc:    "_design/foo",
+			view:    "_view/bar",
+			options: kivik.Param("reduce", false),
+			want: []rowResult{
+				{ID: "_design/foo", Key: `"_design/foo"`, Value: `[1]`},
+				{ID: "a", Key: `"a"`, Value: `[1]`},
+				{ID: "b", Key: `"b"`, Value: `[1]`},
+			},
+		}
+	})
 	/*
 		TODO:
-		- reduce=true for reducible
 		- reduce function throws exception
 		- Are conflicts or other metadata exposed to map function?
 		- built-in reduce functions: _sum, _count, _approx_count_distinct, _stats

@@ -653,7 +653,12 @@ func TestDBQuery(t *testing.T) {
 	})
 	/*
 		TODO:
-		- built-in reduce functions: _approx_count_distinct, _stats
+		- built-in reduce functions:
+			- _approx_count_distinct (https://docs.couchdb.org/en/stable/ddocs/ddocs.html#approx_count_distinct)
+				- _approx_count_distinct
+				- start/end keys
+				- group behavior
+			- _stats (https://docs.couchdb.org/en/stable/ddocs/ddocs.html#stats)
 		- Options:
 			- conflicts
 			- descending

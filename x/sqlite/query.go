@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 
@@ -485,7 +486,11 @@ func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc
 		}
 	}
 
-	if batch.reduce != nil {
+	reduceFunc, err := batch.reduceFunc(d.logger)
+	if err != nil {
+		return err
+	}
+	if reduceFunc != nil {
 		if _, err := tx.ExecContext(ctx, d.ddocQuery(ddoc, viewName, rev.String(), `
 			DELETE FROM {{ .Reduce }}
 		`)); err != nil {
@@ -519,28 +524,7 @@ func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc
 			return err
 		}
 
-		vm := goja.New()
-
-		if _, err := vm.RunString("const reduce = " + *batch.reduce); err != nil {
-			return err
-		}
-		reduceFunc, ok := goja.AssertFunction(vm.Get("reduce"))
-		if !ok {
-			return fmt.Errorf("expected reduce to be a function, got %T", vm.Get("map"))
-		}
-
-		var rv interface{}
-		reduceValue, err := reduceFunc(goja.Undefined(), vm.ToValue(keys), vm.ToValue(values), vm.ToValue(false))
-		if err != nil {
-			var exception *goja.Exception
-			if errors.As(err, &exception) {
-				d.logger.Printf("reduce function threw exception: %s", exception.String())
-			} else {
-				return err
-			}
-		} else {
-			rv = reduceValue.Export()
-		}
+		rv := reduceFunc(keys, values, false)
 		var rvJSON *json.RawMessage
 		if rv != nil {
 			tmp, _ := json.Marshal(rv)
@@ -556,4 +540,36 @@ func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc
 	}
 
 	return tx.Commit()
+}
+
+func (b *mapIndexBatch) reduceFunc(logger *log.Logger) (func(keys [][2]interface{}, values []interface{}, rereduce bool) interface{}, error) {
+	if b.reduce == nil {
+		return nil, nil
+	}
+	switch *b.reduce {
+	default:
+		vm := goja.New()
+
+		if _, err := vm.RunString("const reduce = " + *b.reduce); err != nil {
+			return nil, err
+		}
+		reduceFunc, ok := goja.AssertFunction(vm.Get("reduce"))
+		if !ok {
+			return nil, fmt.Errorf("expected reduce to be a function, got %T", vm.Get("map"))
+		}
+
+		return func(keys [][2]interface{}, values []interface{}, rereduce bool) interface{} {
+			reduceValue, err := reduceFunc(goja.Undefined(), vm.ToValue(keys), vm.ToValue(values), vm.ToValue(false))
+			if err != nil {
+				var exception *goja.Exception
+				if errors.As(err, &exception) {
+					logger.Printf("reduce function threw exception: %s", exception.String())
+					return nil
+				}
+				return err
+			}
+
+			return reduceValue.Export()
+		}, nil
+	}
 }

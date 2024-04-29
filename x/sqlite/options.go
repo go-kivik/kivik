@@ -254,3 +254,11 @@ func (o optsMap) group() (bool, error) {
 	}
 	return v, nil
 }
+
+func (o optsMap) groupLevel() (uint64, error) {
+	raw, ok := o["group_level"]
+	if !ok {
+		return 0, nil
+	}
+	return toUint64(raw, "invalid value for `group_level`")
+}

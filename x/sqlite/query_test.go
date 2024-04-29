@@ -573,7 +573,6 @@ func TestDBQuery(t *testing.T) {
 					"map": `function(doc) {
 							emit(doc._id, [1]);
 						}`,
-					// Manual implementation of _count for testing purposes.
 					"reduce": `function(sum, values, rereduce) {
 							throw new Error("broken");
 						}`,
@@ -603,7 +602,6 @@ func TestDBQuery(t *testing.T) {
 					"map": `function(doc) {
 							emit(doc._id, [1]);
 						}`,
-					// Manual implementation of _count for testing purposes.
 					"reduce": `_count`,
 				},
 			},
@@ -631,7 +629,6 @@ func TestDBQuery(t *testing.T) {
 					"map": `function(doc) {
 							emit(doc._id, 3);
 						}`,
-					// Manual implementation of _count for testing purposes.
 					"reduce": `_sum`,
 				},
 			},
@@ -646,7 +643,7 @@ func TestDBQuery(t *testing.T) {
 			want: []rowResult{
 				{
 					Key:   "null",
-					Value: "9", // TODO: Should be 2 because ddocs should be ignored
+					Value: "9",
 				},
 			},
 		}

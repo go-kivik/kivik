@@ -653,6 +653,9 @@ func TestDBQuery(t *testing.T) {
 	})
 	/*
 		TODO:
+		- invalid reduce param
+		- invalid group param
+		- invalid group_level param
 		- built-in reduce functions:
 			- _approx_count_distinct (https://docs.couchdb.org/en/stable/ddocs/ddocs.html#approx_count_distinct)
 				- _approx_count_distinct

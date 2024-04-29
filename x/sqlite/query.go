@@ -52,6 +52,27 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 	ddoc = strings.TrimPrefix(ddoc, "_design/")
 	view = strings.TrimPrefix(view, "_view/")
 
+	results, err := d.performQuery(ctx, ddoc, view, update, opts) //nolint:rowserrcheck // Err checked in Next
+	if err != nil {
+		return nil, err
+	}
+
+	if update == updateModeLazy {
+		go func() {
+			if _, err := d.updateIndex(context.Background(), ddoc, view, updateModeTrue); err != nil {
+				d.logger.Print("Failed to update index: " + err.Error())
+			}
+		}()
+	}
+
+	return &rows{
+		ctx:  ctx,
+		db:   d,
+		rows: results,
+	}, nil
+}
+
+func (d *db) performQuery(ctx context.Context, ddoc, view, update string, opts optsMap) (*sql.Rows, error) {
 	var results *sql.Rows
 	for {
 		rev, err := d.updateIndex(ctx, ddoc, view, update)
@@ -120,7 +141,7 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 			)
 		`)
 
-		results, err = d.db.QueryContext( //nolint:rowserrcheck // Err checked in Next
+		results, err = d.db.QueryContext(
 			ctx, query,
 			"_design/"+ddoc, rev.rev, rev.id, view, kivik.EndKeySuffix, opts.reduce(),
 		)
@@ -150,20 +171,7 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 			break
 		}
 	}
-
-	if update == updateModeLazy {
-		go func() {
-			if _, err := d.updateIndex(context.Background(), ddoc, view, updateModeTrue); err != nil {
-				d.logger.Print("Failed to update index: " + err.Error())
-			}
-		}()
-	}
-
-	return &rows{
-		ctx:  ctx,
-		db:   d,
-		rows: results,
-	}, nil
+	return results, nil
 }
 
 const batchSize = 100

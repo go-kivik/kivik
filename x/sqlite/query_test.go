@@ -573,7 +573,6 @@ func TestDBQuery(t *testing.T) {
 					"map": `function(doc) {
 							emit(doc._id, [1]);
 						}`,
-					// Manual implementation of _count for testing purposes.
 					"reduce": `function(sum, values, rereduce) {
 							throw new Error("broken");
 						}`,
@@ -603,7 +602,6 @@ func TestDBQuery(t *testing.T) {
 					"map": `function(doc) {
 							emit(doc._id, [1]);
 						}`,
-					// Manual implementation of _count for testing purposes.
 					"reduce": `_count`,
 				},
 			},
@@ -631,7 +629,6 @@ func TestDBQuery(t *testing.T) {
 					"map": `function(doc) {
 							emit(doc._id, 3);
 						}`,
-					// Manual implementation of _count for testing purposes.
 					"reduce": `_sum`,
 				},
 			},
@@ -646,13 +643,30 @@ func TestDBQuery(t *testing.T) {
 			want: []rowResult{
 				{
 					Key:   "null",
-					Value: "9", // TODO: Should be 2 because ddocs should be ignored
+					Value: "9",
 				},
 			},
 		}
 	})
+	tests.Add("malformed reduce param", test{
+		options:    kivik.Param("reduce", "foo"),
+		wantErr:    "invalid value for `reduce`",
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("malformed group param", test{
+		options:    kivik.Param("group", "foo"),
+		wantErr:    "invalid value for `group`",
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("malformed group_level param", test{
+		options:    kivik.Param("group_level", "foo"),
+		wantErr:    "invalid value for `group_level`",
+		wantStatus: http.StatusBadRequest,
+	})
 	/*
 		TODO:
+		- don't re-calculate reduce if already up to date
+		- do re-calculate reduce if out of date, even if map is up to date
 		- built-in reduce functions:
 			- _approx_count_distinct (https://docs.couchdb.org/en/stable/ddocs/ddocs.html#approx_count_distinct)
 				- _approx_count_distinct

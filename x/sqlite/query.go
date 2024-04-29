@@ -13,6 +13,7 @@
 package sqlite
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -80,7 +81,11 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 }
 
 func (d *db) performQuery(ctx context.Context, ddoc, view, update string, reduce *bool) (driver.Rows, error) {
-	var results *sql.Rows
+	var (
+		results      *sql.Rows
+		reducible    bool
+		reduceFuncJS *string
+	)
 	for {
 		rev, err := d.updateIndex(ctx, ddoc, view, update)
 		if err != nil {
@@ -103,7 +108,7 @@ func (d *db) performQuery(ctx context.Context, ddoc, view, update string, reduce
 			SELECT
 				COALESCE(MAX(last_seq), 0) == (SELECT COALESCE(max(seq),0) FROM {{ .Docs }}) AS up_to_date,
 				reduce.reducable,
-				NULL,
+				reduce.reduce_func,
 				NULL,
 				NULL,
 				NULL
@@ -120,15 +125,16 @@ func (d *db) performQuery(ctx context.Context, ddoc, view, update string, reduce
 			SELECT *
 			FROM (
 				SELECT
-					NULL  AS id,
-					NULL  AS key,
+					id    AS id,
+					key   AS key,
 					value AS value,
-					""    AS rev,
+					NULL  AS rev,
 					NULL  AS doc,
-					""    AS conflicts
-				FROM {{ .Reduce }}
+					NULL  AS conflicts
+				FROM {{ .Map }}
 				JOIN reduce
 				WHERE reduce.reducable AND ($6 IS NULL OR $6 == TRUE)
+				ORDER BY id, key
 			)
 
 			UNION ALL
@@ -168,8 +174,8 @@ func (d *db) performQuery(ctx context.Context, ddoc, view, update string, reduce
 		if update != updateModeTrue {
 			break
 		}
-		var upToDate, reducible bool
-		if err := results.Scan(&upToDate, &reducible, discard{}, discard{}, discard{}, discard{}); err != nil {
+		var upToDate bool
+		if err := results.Scan(&upToDate, &reducible, &reduceFuncJS, discard{}, discard{}, discard{}); err != nil {
 			return nil, err
 		}
 		if reduce != nil && *reduce && !reducible {
@@ -179,6 +185,46 @@ func (d *db) performQuery(ctx context.Context, ddoc, view, update string, reduce
 			break
 		}
 	}
+
+	if reducible && (reduce == nil || *reduce) {
+		reduceFn, err := d.reduceFunc(reduceFuncJS, d.logger)
+		if err != nil {
+			return nil, err
+		}
+		var (
+			keys   [][2]interface{}
+			values []interface{}
+
+			id, key, value *string
+		)
+
+		for results.Next() {
+			if err := results.Scan(&id, &key, &value, discard{}, discard{}, discard{}); err != nil {
+				return nil, err
+			}
+			keys = append(keys, [2]interface{}{id, key})
+			if value == nil {
+				values = append(values, nil)
+			} else {
+				values = append(values, *value)
+			}
+		}
+
+		if err := results.Err(); err != nil {
+			return nil, err
+		}
+
+		rv := reduceFn(keys, values, false)
+		tmp, _ := json.Marshal(rv)
+		return &reducedRows{
+			{
+				Key:   json.RawMessage(`null`),
+				Value: bytes.NewReader(tmp),
+			},
+		}, nil
+
+	}
+
 	return &rows{
 		ctx:  ctx,
 		db:   d,

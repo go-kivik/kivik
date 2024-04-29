@@ -16,8 +16,10 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"io"
 
 	"github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/driver"
 )
 
 func (d *db) updateReduce(ctx context.Context, tx *sql.Tx, ddoc, view string, rev revision, reduceFuncJS *string) error {
@@ -84,3 +86,25 @@ func (d *db) updateReduce(ctx context.Context, tx *sql.Tx, ddoc, view string, re
 
 	return nil
 }
+
+type reducedRows []driver.Row
+
+var _ driver.Rows = (*reducedRows)(nil)
+
+func (r *reducedRows) Close() error {
+	*r = nil
+	return nil
+}
+
+func (r *reducedRows) Next(row *driver.Row) error {
+	if len(*r) == 0 {
+		return io.EOF
+	}
+	*row = (*r)[0]
+	*r = (*r)[1:]
+	return nil
+}
+
+func (*reducedRows) Offset() int64     { return 0 }
+func (*reducedRows) TotalRows() int64  { return 0 }
+func (*reducedRows) UpdateSeq() string { return "" }

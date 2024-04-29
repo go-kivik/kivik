@@ -19,11 +19,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 
 	"github.com/dop251/goja"
 
+	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/x/sqlite/v4/internal"
 )
@@ -58,27 +60,53 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 		}
 
 		query := d.ddocQuery(ddoc, view, rev.String(), `
+			WITH view AS (
+				SELECT EXISTS(
+					SELECT 1
+					FROM {{ .Design }}
+					WHERE id = $1
+						AND rev = $2
+						AND rev_id = $3
+						AND func_type = 'reduce'
+				) AS reducable
+			)
+
 			SELECT
-				0 AS ord, -- Hack to ensure that header row comes first, since sub-union ordering doesn't work
 				COALESCE(MAX(last_seq), 0) == (SELECT COALESCE(max(seq),0) FROM {{ .Docs }}) AS up_to_date,
-				NULL,
+				view.reducable,
 				NULL,
 				NULL,
 				NULL,
 				NULL
 			FROM {{ .Design }}
+			JOIN view
 			WHERE id = $1
 				AND rev = $2
 				AND rev_id = $3
 				AND func_type = 'map'
 				AND func_name = $4
 
-			UNION
+			UNION ALL
 
 			SELECT *
 			FROM (
 				SELECT
-					1 AS ord,
+					NULL  AS id,
+					NULL  AS key,
+					value AS value,
+					""    AS rev,
+					NULL  AS doc,
+					""    AS conflicts
+				FROM {{ .Reduce }}
+				JOIN view
+				WHERE view.reducable AND ($6 IS NULL OR $6 == TRUE)
+			)
+
+			UNION ALL
+
+			SELECT *
+			FROM (
+				SELECT
 					id,
 					key,
 					value,
@@ -86,10 +114,16 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 					NULL AS doc,
 					"" AS conflicts
 				FROM {{ .Map }}
+				JOIN view
+				WHERE $6 == FALSE OR NOT view.reducable
+				ORDER BY key
 			)
-			ORDER BY ord, key
 		`)
-		results, err = d.db.QueryContext(ctx, query, "_design/"+ddoc, rev.rev, rev.id, view) //nolint:rowserrcheck // Err checked in Next
+
+		results, err = d.db.QueryContext( //nolint:rowserrcheck // Err checked in Next
+			ctx, query,
+			"_design/"+ddoc, rev.rev, rev.id, view, kivik.EndKeySuffix, opts.reduce(),
+		)
 		switch {
 		case errIsNoSuchTable(err):
 			return nil, &internal.Error{Status: http.StatusNotFound, Message: "missing named view"}
@@ -105,9 +139,12 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 		if update != updateModeTrue {
 			break
 		}
-		var upToDate bool
-		if err := results.Scan(discard{}, &upToDate, discard{}, discard{}, discard{}, discard{}, discard{}); err != nil {
+		var upToDate, reducible bool
+		if err := results.Scan(&upToDate, &reducible, discard{}, discard{}, discard{}, discard{}); err != nil {
 			return nil, err
+		}
+		if reduce := opts.reduce(); reduce != nil && *reduce && !reducible {
+			return nil, &internal.Error{Status: http.StatusBadRequest, Message: "reduce is invalid for map-only views"}
 		}
 		if upToDate {
 			break
@@ -135,22 +172,36 @@ const batchSize = 100
 // ddoc revid and last_seq. If mode is "true", it will also update the index.
 func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision, error) {
 	var (
-		ddocRev  revision
-		funcBody *string
-		lastSeq  int
+		ddocRev                 revision
+		mapFuncJS, reduceFuncJS *string
+		lastSeq                 int
 	)
 	err := d.db.QueryRowContext(ctx, d.query(`
+		WITH design AS (
+			SELECT
+				id,
+				rev,
+				rev_id,
+				MAX(CASE WHEN func_type = 'map' THEN func_body END)    AS map_func,
+				MAX(CASE WHEN func_type = 'reduce' THEN func_body END) AS reduce_func,
+				MAX(last_seq)                                          AS last_seq
+			FROM {{ .Design }}
+			WHERE id = $1
+				AND func_type IN ('map', 'reduce')
+			GROUP BY id, rev, rev_id
+		)
 		SELECT
 			docs.rev,
 			docs.rev_id,
-			design.func_body,
+			design.map_func,
+			design.reduce_func,
 			COALESCE(design.last_seq, 0) AS last_seq
 		FROM {{ .Docs }} AS docs
-		LEFT JOIN {{ .Design }} AS design ON docs.id = design.id AND docs.rev = design.rev AND docs.rev_id = design.rev_id
+		LEFT JOIN design ON docs.id = design.id AND docs.rev = design.rev AND docs.rev_id = design.rev_id
 		WHERE docs.id = $1
 		ORDER BY docs.rev DESC, docs.rev_id DESC
 		LIMIT 1
-	`), "_design/"+ddoc).Scan(&ddocRev.rev, &ddocRev.id, &funcBody, &lastSeq)
+	`), "_design/"+ddoc).Scan(&ddocRev.rev, &ddocRev.id, &mapFuncJS, &reduceFuncJS, &lastSeq)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return revision{}, &internal.Error{Status: http.StatusNotFound, Message: "missing"}
@@ -162,7 +213,7 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 		return ddocRev, nil
 	}
 
-	if funcBody == nil {
+	if mapFuncJS == nil {
 		return revision{}, &internal.Error{Status: http.StatusNotFound, Message: "missing named view"}
 	}
 
@@ -210,7 +261,7 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 	}
 	defer docs.Close()
 
-	batch := newMapIndexBatch()
+	batch := newMapIndexBatch(reduceFuncJS)
 
 	vm := goja.New()
 
@@ -233,11 +284,11 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 		}
 	}
 
-	if _, err := vm.RunString("const map = " + *funcBody); err != nil {
+	if _, err := vm.RunString("const map = " + *mapFuncJS); err != nil {
 		return revision{}, err
 	}
 
-	mf, ok := goja.AssertFunction(vm.Get("map"))
+	mapFunc, ok := goja.AssertFunction(vm.Get("map"))
 	if !ok {
 		return revision{}, fmt.Errorf("expected map to be a function, got %T", vm.Get("map"))
 	}
@@ -261,7 +312,7 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 		if err := vm.Set("emit", emit(full.ID)); err != nil {
 			return revision{}, err
 		}
-		if _, err := mf(goja.Undefined(), vm.ToValue(full.toMap())); err != nil {
+		if _, err := mapFunc(goja.Undefined(), vm.ToValue(full.toMap())); err != nil {
 			var exception *goja.Exception
 			if errors.As(err, &exception) {
 				d.logger.Printf("map function threw exception for %s: %s", full.ID, exception.String())
@@ -344,6 +395,8 @@ type mapIndexBatch struct {
 	insertCount int
 	entries     map[string][]mapIndexEntry
 	deleted     []string
+	// reduce is the text of the JS reduce function, if any.
+	reduce *string
 }
 
 type mapIndexEntry struct {
@@ -351,9 +404,10 @@ type mapIndexEntry struct {
 	Value *string
 }
 
-func newMapIndexBatch() *mapIndexBatch {
+func newMapIndexBatch(reduce *string) *mapIndexBatch {
 	return &mapIndexBatch{
 		entries: make(map[string][]mapIndexEntry, batchSize),
+		reduce:  reduce,
 	}
 }
 
@@ -414,25 +468,133 @@ func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc
 		}
 	}
 
-	if batch.insertCount == 0 {
-		return tx.Commit()
-	}
-
-	args := make([]interface{}, 0, batch.insertCount*3)
-	values := make([]string, 0, batch.insertCount)
-	for id, entries := range batch.entries {
-		for _, entry := range entries {
-			values = append(values, fmt.Sprintf("($%d, $%d, $%d)", len(args)+1, len(args)+2, len(args)+3))
-			args = append(args, id, entry.Key, entry.Value)
+	if batch.insertCount > 0 {
+		args := make([]interface{}, 0, batch.insertCount*3)
+		values := make([]string, 0, batch.insertCount)
+		for id, entries := range batch.entries {
+			for _, entry := range entries {
+				values = append(values, fmt.Sprintf("($%d, $%d, $%d)", len(args)+1, len(args)+2, len(args)+3))
+				args = append(args, id, entry.Key, entry.Value)
+			}
 		}
-	}
-	query := d.ddocQuery(ddoc, viewName, rev.String(), `
+		query := d.ddocQuery(ddoc, viewName, rev.String(), `
 		INSERT INTO {{ .Map }} (id, key, value)
 		VALUES
 	`) + strings.Join(values, ",")
-	if _, err := tx.ExecContext(ctx, query, args...); err != nil {
+		if _, err := tx.ExecContext(ctx, query, args...); err != nil {
+			return err
+		}
+	}
+
+	reduceFunc, err := batch.reduceFunc(d.logger)
+	if err != nil {
 		return err
+	}
+	if reduceFunc != nil {
+		if _, err := tx.ExecContext(ctx, d.ddocQuery(ddoc, viewName, rev.String(), `
+			DELETE FROM {{ .Reduce }}
+		`)); err != nil {
+			return err
+		}
+
+		rows, err := tx.QueryContext(ctx, d.ddocQuery(ddoc, viewName, rev.String(), `
+			SELECT id, key, value
+			FROM {{ .Map }}
+		`))
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+
+		var (
+			keys   [][2]interface{}
+			values []interface{}
+
+			id, key, value *string
+		)
+
+		for rows.Next() {
+			if err := rows.Scan(&id, &key, &value); err != nil {
+				return err
+			}
+			keys = append(keys, [2]interface{}{id, key})
+			if value == nil {
+				values = append(values, nil)
+			} else {
+				values = append(values, *value)
+			}
+		}
+		if err := rows.Err(); err != nil {
+			return err
+		}
+
+		rv := reduceFunc(keys, values, false)
+		var rvJSON *json.RawMessage
+		if rv != nil {
+			tmp, _ := json.Marshal(rv)
+			rvJSON = (*json.RawMessage)(&tmp)
+		}
+
+		if _, err := tx.ExecContext(ctx, d.ddocQuery(ddoc, viewName, rev.String(), `
+				INSERT INTO {{ .Reduce }} (min_key, max_key, value)
+				VALUES ($1, $2, $3)
+			`), nil, kivik.EndKeySuffix, rvJSON); err != nil {
+			return err
+		}
 	}
 
 	return tx.Commit()
+}
+
+func (b *mapIndexBatch) reduceFunc(logger *log.Logger) (func(keys [][2]interface{}, values []interface{}, rereduce bool) interface{}, error) {
+	if b.reduce == nil {
+		return nil, nil
+	}
+	switch *b.reduce {
+	case "_count":
+		return func(_ [][2]interface{}, values []interface{}, rereduce bool) interface{} {
+			if !rereduce {
+				return len(values)
+			}
+			var total uint64
+			for _, value := range values {
+				v, _ := toUint64(value, "")
+				total += v
+			}
+			return total
+		}, nil
+	case "_sum":
+		return func(_ [][2]interface{}, values []interface{}, _ bool) interface{} {
+			var total uint64
+			for _, value := range values {
+				v, _ := toUint64(value, "")
+				total += v
+			}
+			return total
+		}, nil
+	default:
+		vm := goja.New()
+
+		if _, err := vm.RunString("const reduce = " + *b.reduce); err != nil {
+			return nil, err
+		}
+		reduceFunc, ok := goja.AssertFunction(vm.Get("reduce"))
+		if !ok {
+			return nil, fmt.Errorf("expected reduce to be a function, got %T", vm.Get("map"))
+		}
+
+		return func(keys [][2]interface{}, values []interface{}, rereduce bool) interface{} {
+			reduceValue, err := reduceFunc(goja.Undefined(), vm.ToValue(keys), vm.ToValue(values), vm.ToValue(rereduce))
+			if err != nil {
+				var exception *goja.Exception
+				if errors.As(err, &exception) {
+					logger.Printf("reduce function threw exception: %s", exception.String())
+					return nil
+				}
+				return err
+			}
+
+			return reduceValue.Export()
+		}, nil
+	}
 }

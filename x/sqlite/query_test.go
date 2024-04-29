@@ -57,6 +57,18 @@ func TestDBQuery(t *testing.T) {
 			wantStatus: http.StatusNotFound,
 		}
 	})
+	tests.Add("ddoc does exist but only non-view functions exist", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{"updates": map[string]string{"update1": "function() {}"}})
+
+		return test{
+			db:         d,
+			ddoc:       "_design/foo",
+			view:       "_view/bar",
+			wantErr:    "missing named view",
+			wantStatus: http.StatusNotFound,
+		}
+	})
 	tests.Add("simple view with a single document", func(t *testing.T) interface{} {
 		d := newDB(t)
 		_ = d.tPut("_design/foo", map[string]interface{}{
@@ -418,11 +430,235 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("simple reduce function", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					// Manual implementation of _count for testing purposes.
+					"reduce": `function(sum, values, rereduce) {
+							if (rereduce) {
+								let sum=0;
+								for (let i=0; i < values.length; i++) {
+									sum += values[i];
+								}
+								return sum;
+							}
+							return values.length;
+						}`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]string{"a": "a"})
+		_ = d.tPut("b", map[string]string{"b": "b"})
 
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: []rowResult{
+				{
+					Key:   "null",
+					Value: "3", // TODO: Should be 2 because ddocs should be ignored
+				},
+			},
+		}
+	})
+	tests.Add("reduce=true for map-only view returns 400", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]string{"a": "a"})
+		_ = d.tPut("b", map[string]string{"b": "b"})
+
+		return test{
+			db:         d,
+			ddoc:       "_design/foo",
+			view:       "_view/bar",
+			options:    kivik.Param("reduce", true),
+			wantErr:    "reduce is invalid for map-only views",
+			wantStatus: http.StatusBadRequest,
+		}
+	})
+	tests.Add("simple reduce function with reduce=true", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					// Manual implementation of _count for testing purposes.
+					"reduce": `function(sum, values, rereduce) {
+							if (rereduce) {
+								let sum=0;
+								for (let i=0; i < values.length; i++) {
+									sum += values[i];
+								}
+								return sum;
+							}
+							return values.length;
+						}`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]string{"a": "a"})
+		_ = d.tPut("b", map[string]string{"b": "b"})
+
+		return test{
+			db:      d,
+			ddoc:    "_design/foo",
+			view:    "_view/bar",
+			options: kivik.Param("reduce", true),
+			want: []rowResult{
+				{
+					Key:   "null",
+					Value: "3", // TODO: Should be 2 because ddocs should be ignored
+				},
+			},
+		}
+	})
+	tests.Add("simple reduce function with reduce=false", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					// Manual implementation of _count for testing purposes.
+					"reduce": `function(sum, values, rereduce) {
+							if (rereduce) {
+								let sum=0;
+								for (let i=0; i < values.length; i++) {
+									sum += values[i];
+								}
+								return sum;
+							}
+							return values.length;
+						}`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]string{"a": "a"})
+		_ = d.tPut("b", map[string]string{"b": "b"})
+
+		return test{
+			db:      d,
+			ddoc:    "_design/foo",
+			view:    "_view/bar",
+			options: kivik.Param("reduce", false),
+			want: []rowResult{
+				{ID: "_design/foo", Key: `"_design/foo"`, Value: `[1]`},
+				{ID: "a", Key: `"a"`, Value: `[1]`},
+				{ID: "b", Key: `"b"`, Value: `[1]`},
+			},
+		}
+	})
+	tests.Add("reduce function throws an error", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					// Manual implementation of _count for testing purposes.
+					"reduce": `function(sum, values, rereduce) {
+							throw new Error("broken");
+						}`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]string{"a": "a"})
+		_ = d.tPut("b", map[string]string{"b": "b"})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: []rowResult{
+				{
+					Key:   "null",
+					Value: "null",
+				},
+			},
+		}
+	})
+	tests.Add("built-in _count reduce function", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					// Manual implementation of _count for testing purposes.
+					"reduce": `_count`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]string{"a": "a"})
+		_ = d.tPut("b", map[string]string{"b": "b"})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: []rowResult{
+				{
+					Key:   "null",
+					Value: "3", // TODO: Should be 2 because ddocs should be ignored
+				},
+			},
+		}
+	})
+	tests.Add("built-in _sum reduce function", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, 3);
+						}`,
+					// Manual implementation of _count for testing purposes.
+					"reduce": `_sum`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]string{"a": "a"})
+		_ = d.tPut("b", map[string]string{"b": "b"})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: []rowResult{
+				{
+					Key:   "null",
+					Value: "9", // TODO: Should be 2 because ddocs should be ignored
+				},
+			},
+		}
+	})
 	/*
 		TODO:
-		- Are conflicts or other metadata exposed to map function?
-		- built-in reduce functions: _sum, _count
+		- built-in reduce functions:
+			- _approx_count_distinct (https://docs.couchdb.org/en/stable/ddocs/ddocs.html#approx_count_distinct)
+				- _approx_count_distinct
+				- start/end keys
+				- group behavior
+			- _stats (https://docs.couchdb.org/en/stable/ddocs/ddocs.html#stats)
 		- Options:
 			- conflicts
 			- descending
@@ -447,7 +683,8 @@ func TestDBQuery(t *testing.T) {
 			- startkey_docid
 			- start_key_doc_id
 			- update_seq
-		- map function takes too long
+		- map/reduce function takes too long
+		- exclude design docs by default
 
 	*/
 

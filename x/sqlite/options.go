@@ -231,10 +231,14 @@ func (o optsMap) update() (string, error) {
 	return "", &internal.Error{Status: http.StatusBadRequest, Message: "invalid value for `update`"}
 }
 
-func (o optsMap) reduce() *bool {
-	v, ok := toBool(o["reduce"])
+func (o optsMap) reduce() (*bool, error) {
+	raw, ok := o["reduce"]
 	if !ok {
-		return nil
+		return nil, nil
 	}
-	return &v
+	v, ok := toBool(raw)
+	if !ok {
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "invalid value for `reduce`"}
+	}
+	return &v, nil
 }

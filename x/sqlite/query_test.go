@@ -651,9 +651,13 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("malformed reduce param", test{
+		options:    kivik.Param("reduce", "foo"),
+		wantErr:    "invalid value for `reduce`",
+		wantStatus: http.StatusBadRequest,
+	})
 	/*
 		TODO:
-		- invalid reduce param
 		- invalid group param
 		- invalid group_level param
 		- built-in reduce functions:

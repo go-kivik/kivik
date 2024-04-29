@@ -52,7 +52,10 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 	ddoc = strings.TrimPrefix(ddoc, "_design/")
 	view = strings.TrimPrefix(view, "_view/")
 
-	reduce := opts.reduce()
+	reduce, err := opts.reduce()
+	if err != nil {
+		return nil, err
+	}
 
 	results, err := d.performQuery(ctx, ddoc, view, update, reduce) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {

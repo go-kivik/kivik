@@ -63,7 +63,7 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 		return nil, err
 	}
 
-	results, err := d.performQuery(ctx, ddoc, view, update, reduce) //nolint:rowserrcheck // Err checked in Next
+	results, err := d.performQuery(ctx, ddoc, view, update, reduce)
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +152,7 @@ func (d *db) performQuery(ctx context.Context, ddoc, view, update string, reduce
 			)
 		`)
 
-		results, err = d.db.QueryContext(
+		results, err = d.db.QueryContext( //nolint:rowserrcheck // Err checked in Next
 			ctx, query,
 			"_design/"+ddoc, rev.rev, rev.id, view, kivik.EndKeySuffix, reduce,
 		)
@@ -280,7 +280,7 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 	}
 	defer docs.Close()
 
-	batch := newMapIndexBatch(reduceFuncJS)
+	batch := newMapIndexBatch()
 
 	vm := goja.New()
 
@@ -341,14 +341,14 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 			}
 		}
 		if batch.insertCount >= batchSize {
-			if err := d.writeMapIndexBatch(ctx, seq, ddocRev, ddoc, view, batch); err != nil {
+			if err := d.writeMapIndexBatch(ctx, seq, ddocRev, ddoc, view, batch, reduceFuncJS); err != nil {
 				return revision{}, err
 			}
 			batch.clear()
 		}
 	}
 
-	if err := d.writeMapIndexBatch(ctx, seq, ddocRev, ddoc, view, batch); err != nil {
+	if err := d.writeMapIndexBatch(ctx, seq, ddocRev, ddoc, view, batch, reduceFuncJS); err != nil {
 		return revision{}, err
 	}
 
@@ -414,8 +414,6 @@ type mapIndexBatch struct {
 	insertCount int
 	entries     map[string][]mapIndexEntry
 	deleted     []string
-	// reduce is the text of the JS reduce function, if any.
-	reduce *string
 }
 
 type mapIndexEntry struct {
@@ -423,10 +421,9 @@ type mapIndexEntry struct {
 	Value *string
 }
 
-func newMapIndexBatch(reduce *string) *mapIndexBatch {
+func newMapIndexBatch() *mapIndexBatch {
 	return &mapIndexBatch{
 		entries: make(map[string][]mapIndexEntry, batchSize),
-		reduce:  reduce,
 	}
 }
 
@@ -450,7 +447,7 @@ func (b *mapIndexBatch) clear() {
 	b.entries = make(map[string][]mapIndexEntry, batchSize)
 }
 
-func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc, viewName string, batch *mapIndexBatch) error {
+func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc, viewName string, batch *mapIndexBatch, reduceFuncJS *string) error {
 	tx, err := d.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -505,71 +502,20 @@ func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc
 		}
 	}
 
-	reduceFunc, err := batch.reduceFunc(d.logger)
-	if err != nil {
+	if err := d.updateReduce(ctx, tx, ddoc, viewName, rev, reduceFuncJS); err != nil {
 		return err
-	}
-	if reduceFunc != nil {
-		if _, err := tx.ExecContext(ctx, d.ddocQuery(ddoc, viewName, rev.String(), `
-			DELETE FROM {{ .Reduce }}
-		`)); err != nil {
-			return err
-		}
-
-		rows, err := tx.QueryContext(ctx, d.ddocQuery(ddoc, viewName, rev.String(), `
-			SELECT id, key, value
-			FROM {{ .Map }}
-		`))
-		if err != nil {
-			return err
-		}
-		defer rows.Close()
-
-		var (
-			keys   [][2]interface{}
-			values []interface{}
-
-			id, key, value *string
-		)
-
-		for rows.Next() {
-			if err := rows.Scan(&id, &key, &value); err != nil {
-				return err
-			}
-			keys = append(keys, [2]interface{}{id, key})
-			if value == nil {
-				values = append(values, nil)
-			} else {
-				values = append(values, *value)
-			}
-		}
-		if err := rows.Err(); err != nil {
-			return err
-		}
-
-		rv := reduceFunc(keys, values, false)
-		var rvJSON *json.RawMessage
-		if rv != nil {
-			tmp, _ := json.Marshal(rv)
-			rvJSON = (*json.RawMessage)(&tmp)
-		}
-
-		if _, err := tx.ExecContext(ctx, d.ddocQuery(ddoc, viewName, rev.String(), `
-				INSERT INTO {{ .Reduce }} (min_key, max_key, value)
-				VALUES ($1, $2, $3)
-			`), nil, kivik.EndKeySuffix, rvJSON); err != nil {
-			return err
-		}
 	}
 
 	return tx.Commit()
 }
 
-func (b *mapIndexBatch) reduceFunc(logger *log.Logger) (func(keys [][2]interface{}, values []interface{}, rereduce bool) interface{}, error) {
-	if b.reduce == nil {
+type reduceFunc func(keys [][2]interface{}, values []interface{}, rereduce bool) interface{}
+
+func (d *db) reduceFunc(reduceFuncJS *string, logger *log.Logger) (reduceFunc, error) {
+	if reduceFuncJS == nil {
 		return nil, nil
 	}
-	switch *b.reduce {
+	switch *reduceFuncJS {
 	case "_count":
 		return func(_ [][2]interface{}, values []interface{}, rereduce bool) interface{} {
 			if !rereduce {
@@ -594,7 +540,7 @@ func (b *mapIndexBatch) reduceFunc(logger *log.Logger) (func(keys [][2]interface
 	default:
 		vm := goja.New()
 
-		if _, err := vm.RunString("const reduce = " + *b.reduce); err != nil {
+		if _, err := vm.RunString("const reduce = " + *reduceFuncJS); err != nil {
 			return nil, err
 		}
 		reduceFunc, ok := goja.AssertFunction(vm.Get("reduce"))

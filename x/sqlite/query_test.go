@@ -668,6 +668,8 @@ func TestDBQuery(t *testing.T) {
 	})
 	/*
 		TODO:
+		- don't re-calculate reduce if already up to date
+		- do re-calculate reduce if out of date, even if map is up to date
 		- built-in reduce functions:
 			- _approx_count_distinct (https://docs.couchdb.org/en/stable/ddocs/ddocs.html#approx_count_distinct)
 				- _approx_count_distinct

@@ -13,79 +13,10 @@
 package sqlite
 
 import (
-	"context"
-	"database/sql"
-	"encoding/json"
 	"io"
 
-	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
 )
-
-func (d *db) updateReduce(ctx context.Context, tx *sql.Tx, ddoc, view string, rev revision, reduceFuncJS *string) error {
-	reduceFn, err := d.reduceFunc(reduceFuncJS, d.logger)
-	if err != nil {
-		return err
-	}
-	if reduceFn == nil {
-		return nil
-	}
-
-	if _, err := tx.ExecContext(ctx, d.ddocQuery(ddoc, view, rev.String(), `
-		DELETE FROM {{ .Reduce }}
-	`)); err != nil {
-		return err
-	}
-
-	rows, err := tx.QueryContext(ctx, d.ddocQuery(ddoc, view, rev.String(), `
-		SELECT id, key, value
-		FROM {{ .Map }}
-		ORDER BY id, key
-	`))
-	if err != nil {
-		return err
-	}
-	defer rows.Close()
-
-	var (
-		keys   [][2]interface{}
-		values []interface{}
-
-		id, key, value *string
-	)
-
-	for rows.Next() {
-		if err := rows.Scan(&id, &key, &value); err != nil {
-			return err
-		}
-		keys = append(keys, [2]interface{}{id, key})
-		if value == nil {
-			values = append(values, nil)
-		} else {
-			values = append(values, *value)
-		}
-	}
-
-	if err := rows.Err(); err != nil {
-		return err
-	}
-
-	rv := reduceFn(keys, values, false)
-	var rvJSON *json.RawMessage
-	if rv != nil {
-		tmp, _ := json.Marshal(rv)
-		rvJSON = (*json.RawMessage)(&tmp)
-	}
-
-	if _, err := tx.ExecContext(ctx, d.ddocQuery(ddoc, view, rev.String(), `
-			INSERT INTO {{ .Reduce }} (min_key, max_key, value)
-			VALUES ($1, $2, $3)
-		`), nil, kivik.EndKeySuffix, rvJSON); err != nil {
-		return err
-	}
-
-	return nil
-}
 
 type reducedRows []driver.Row
 

@@ -238,36 +238,22 @@ const batchSize = 100
 // ddoc revid and last_seq. If mode is "true", it will also update the index.
 func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision, error) {
 	var (
-		ddocRev                 revision
-		mapFuncJS, reduceFuncJS *string
-		lastSeq                 int
+		ddocRev   revision
+		mapFuncJS *string
+		lastSeq   int
 	)
 	err := d.db.QueryRowContext(ctx, d.query(`
-		WITH design AS (
-			SELECT
-				id,
-				rev,
-				rev_id,
-				MAX(CASE WHEN func_type = 'map' THEN func_body END)    AS map_func,
-				MAX(CASE WHEN func_type = 'reduce' THEN func_body END) AS reduce_func,
-				MAX(last_seq)                                          AS last_seq
-			FROM {{ .Design }}
-			WHERE id = $1
-				AND func_type IN ('map', 'reduce')
-			GROUP BY id, rev, rev_id
-		)
 		SELECT
 			docs.rev,
 			docs.rev_id,
-			design.map_func,
-			design.reduce_func,
+			design.func_body,
 			COALESCE(design.last_seq, 0) AS last_seq
 		FROM {{ .Docs }} AS docs
-		LEFT JOIN design ON docs.id = design.id AND docs.rev = design.rev AND docs.rev_id = design.rev_id
+		LEFT JOIN {{ .Design }} AS design ON docs.id = design.id AND docs.rev = design.rev AND docs.rev_id = design.rev_id AND design.func_type = 'map'
 		WHERE docs.id = $1
 		ORDER BY docs.rev DESC, docs.rev_id DESC
 		LIMIT 1
-	`), "_design/"+ddoc).Scan(&ddocRev.rev, &ddocRev.id, &mapFuncJS, &reduceFuncJS, &lastSeq)
+	`), "_design/"+ddoc).Scan(&ddocRev.rev, &ddocRev.id, &mapFuncJS, &lastSeq)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return revision{}, &internal.Error{Status: http.StatusNotFound, Message: "missing"}
@@ -388,14 +374,14 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 			}
 		}
 		if batch.insertCount >= batchSize {
-			if err := d.writeMapIndexBatch(ctx, seq, ddocRev, ddoc, view, batch, reduceFuncJS); err != nil {
+			if err := d.writeMapIndexBatch(ctx, seq, ddocRev, ddoc, view, batch); err != nil {
 				return revision{}, err
 			}
 			batch.clear()
 		}
 	}
 
-	if err := d.writeMapIndexBatch(ctx, seq, ddocRev, ddoc, view, batch, reduceFuncJS); err != nil {
+	if err := d.writeMapIndexBatch(ctx, seq, ddocRev, ddoc, view, batch); err != nil {
 		return revision{}, err
 	}
 
@@ -494,7 +480,7 @@ func (b *mapIndexBatch) clear() {
 	b.entries = make(map[string][]mapIndexEntry, batchSize)
 }
 
-func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc, viewName string, batch *mapIndexBatch, reduceFuncJS *string) error {
+func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc, viewName string, batch *mapIndexBatch) error {
 	tx, err := d.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -547,10 +533,6 @@ func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc
 		if _, err := tx.ExecContext(ctx, query, args...); err != nil {
 			return err
 		}
-	}
-
-	if err := d.updateReduce(ctx, tx, ddoc, viewName, rev, reduceFuncJS); err != nil {
-		return err
 	}
 
 	return tx.Commit()

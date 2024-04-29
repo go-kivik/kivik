@@ -52,7 +52,9 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 	ddoc = strings.TrimPrefix(ddoc, "_design/")
 	view = strings.TrimPrefix(view, "_view/")
 
-	results, err := d.performQuery(ctx, ddoc, view, update, opts) //nolint:rowserrcheck // Err checked in Next
+	reduce := opts.reduce()
+
+	results, err := d.performQuery(ctx, ddoc, view, update, reduce) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +74,7 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 	}, nil
 }
 
-func (d *db) performQuery(ctx context.Context, ddoc, view, update string, opts optsMap) (*sql.Rows, error) {
+func (d *db) performQuery(ctx context.Context, ddoc, view, update string, reduce *bool) (*sql.Rows, error) {
 	var results *sql.Rows
 	for {
 		rev, err := d.updateIndex(ctx, ddoc, view, update)
@@ -143,7 +145,7 @@ func (d *db) performQuery(ctx context.Context, ddoc, view, update string, opts o
 
 		results, err = d.db.QueryContext(
 			ctx, query,
-			"_design/"+ddoc, rev.rev, rev.id, view, kivik.EndKeySuffix, opts.reduce(),
+			"_design/"+ddoc, rev.rev, rev.id, view, kivik.EndKeySuffix, reduce,
 		)
 		switch {
 		case errIsNoSuchTable(err):
@@ -164,7 +166,7 @@ func (d *db) performQuery(ctx context.Context, ddoc, view, update string, opts o
 		if err := results.Scan(&upToDate, &reducible, discard{}, discard{}, discard{}, discard{}); err != nil {
 			return nil, err
 		}
-		if reduce := opts.reduce(); reduce != nil && *reduce && !reducible {
+		if reduce != nil && *reduce && !reducible {
 			return nil, &internal.Error{Status: http.StatusBadRequest, Message: "reduce is invalid for map-only views"}
 		}
 		if upToDate {

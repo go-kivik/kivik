@@ -76,14 +76,10 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 		}()
 	}
 
-	return &rows{
-		ctx:  ctx,
-		db:   d,
-		rows: results,
-	}, nil
+	return results, nil
 }
 
-func (d *db) performQuery(ctx context.Context, ddoc, view, update string, reduce *bool) (*sql.Rows, error) {
+func (d *db) performQuery(ctx context.Context, ddoc, view, update string, reduce *bool) (driver.Rows, error) {
 	var results *sql.Rows
 	for {
 		rev, err := d.updateIndex(ctx, ddoc, view, update)
@@ -182,7 +178,11 @@ func (d *db) performQuery(ctx context.Context, ddoc, view, update string, reduce
 			break
 		}
 	}
-	return results, nil
+	return &rows{
+		ctx:  ctx,
+		db:   d,
+		rows: results,
+	}, nil
 }
 
 const batchSize = 100

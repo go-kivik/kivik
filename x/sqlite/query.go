@@ -56,6 +56,9 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 	if err != nil {
 		return nil, err
 	}
+	if _, err := opts.group(); err != nil {
+		return nil, err
+	}
 
 	results, err := d.performQuery(ctx, ddoc, view, update, reduce) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {

@@ -656,9 +656,13 @@ func TestDBQuery(t *testing.T) {
 		wantErr:    "invalid value for `reduce`",
 		wantStatus: http.StatusBadRequest,
 	})
+	tests.Add("malformed group param", test{
+		options:    kivik.Param("group", "foo"),
+		wantErr:    "invalid value for `group`",
+		wantStatus: http.StatusBadRequest,
+	})
 	/*
 		TODO:
-		- invalid group param
 		- invalid group_level param
 		- built-in reduce functions:
 			- _approx_count_distinct (https://docs.couchdb.org/en/stable/ddocs/ddocs.html#approx_count_distinct)

@@ -242,3 +242,15 @@ func (o optsMap) reduce() (*bool, error) {
 	}
 	return &v, nil
 }
+
+func (o optsMap) group() (bool, error) {
+	raw, ok := o["group"]
+	if !ok {
+		return false, nil
+	}
+	v, ok := toBool(raw)
+	if !ok {
+		return false, &internal.Error{Status: http.StatusBadRequest, Message: "invalid value for `group`"}
+	}
+	return v, nil
+}

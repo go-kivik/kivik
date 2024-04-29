@@ -88,26 +88,27 @@ func (d *db) performQuery(ctx context.Context, ddoc, view, update string, reduce
 		}
 
 		query := d.ddocQuery(ddoc, view, rev.String(), `
-			WITH view AS (
-				SELECT EXISTS(
-					SELECT 1
-					FROM {{ .Design }}
-					WHERE id = $1
-						AND rev = $2
-						AND rev_id = $3
-						AND func_type = 'reduce'
-				) AS reducable
+			WITH reduce AS (
+				SELECT
+					CASE WHEN MAX(id) IS NOT NULL THEN TRUE ELSE FALSE END AS reducable,
+					func_body                                              AS reduce_func
+				FROM {{ .Design }}
+				WHERE id = $1
+					AND rev = $2
+					AND rev_id = $3
+					AND func_type = 'reduce'
+					AND func_name = $4
 			)
 
 			SELECT
 				COALESCE(MAX(last_seq), 0) == (SELECT COALESCE(max(seq),0) FROM {{ .Docs }}) AS up_to_date,
-				view.reducable,
+				reduce.reducable,
 				NULL,
 				NULL,
 				NULL,
 				NULL
-			FROM {{ .Design }}
-			JOIN view
+			FROM {{ .Design }} AS map
+			JOIN reduce
 			WHERE id = $1
 				AND rev = $2
 				AND rev_id = $3
@@ -126,8 +127,8 @@ func (d *db) performQuery(ctx context.Context, ddoc, view, update string, reduce
 					NULL  AS doc,
 					""    AS conflicts
 				FROM {{ .Reduce }}
-				JOIN view
-				WHERE view.reducable AND ($6 IS NULL OR $6 == TRUE)
+				JOIN reduce
+				WHERE reduce.reducable AND ($6 IS NULL OR $6 == TRUE)
 			)
 
 			UNION ALL
@@ -142,8 +143,8 @@ func (d *db) performQuery(ctx context.Context, ddoc, view, update string, reduce
 					NULL AS doc,
 					"" AS conflicts
 				FROM {{ .Map }}
-				JOIN view
-				WHERE $6 == FALSE OR NOT view.reducable
+				JOIN reduce
+				WHERE $6 == FALSE OR NOT reduce.reducable
 				ORDER BY key
 			)
 		`)

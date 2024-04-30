@@ -789,7 +789,7 @@ func TestDBQuery(t *testing.T) {
 			db:      d,
 			ddoc:    "_design/foo",
 			view:    "_view/bar",
-			options: kivik.Param("group", "true"),
+			options: kivik.Param("group_level", 100),
 			want: []rowResult{
 				{Key: `"a"`, Value: "2"},
 				{Key: `["a","a"]`, Value: "1"},
@@ -797,8 +797,39 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("group_level=1", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, 1);
+							}
+						}`,
+					"reduce": `_sum`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]string{"key": "a"})
+		_ = d.tPut("A", map[string]string{"key": "a"})
+		_ = d.tPut("ab", map[string]interface{}{"key": []string{"a", "b"}})
+		_ = d.tPut("aa", map[string]interface{}{"key": []string{"a", "a"}})
+
+		return test{
+			db:      d,
+			ddoc:    "_design/foo",
+			view:    "_view/bar",
+			options: kivik.Param("group_level", 1),
+			want: []rowResult{
+				{Key: `"a"`, Value: "2"},
+				{Key: `["a"]`, Value: "2"},
+			},
+		}
+	})
 	/*
 		TODO:
+		- group_level=0, same as reduce=true
 		- don't re-calculate reduce if already up to date
 		- do re-calculate reduce if out of date, even if map is up to date
 		- built-in reduce functions:

@@ -663,6 +663,109 @@ func TestDBQuery(t *testing.T) {
 		wantErr:    "invalid value for `group_level`",
 		wantStatus: http.StatusBadRequest,
 	})
+	tests.Add("group=true for map-only view returns 400", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]string{"a": "a"})
+		_ = d.tPut("b", map[string]string{"b": "b"})
+
+		return test{
+			db:         d,
+			ddoc:       "_design/foo",
+			view:       "_view/bar",
+			options:    kivik.Param("group", true),
+			wantErr:    "group is invalid for map-only views",
+			wantStatus: http.StatusBadRequest,
+		}
+	})
+	tests.Add("simple group=true case", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, 1);
+							}
+						}`,
+					"reduce": `_sum`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]string{"key": "a"})
+		_ = d.tPut("A", map[string]string{"key": "a"})
+		_ = d.tPut("b", map[string]string{"key": "b"})
+
+		return test{
+			db:      d,
+			ddoc:    "_design/foo",
+			view:    "_view/bar",
+			options: kivik.Param("group", "true"),
+			want: []rowResult{
+				{Key: `"a"`, Value: "2"},
+				{Key: `"b"`, Value: "1"},
+			},
+		}
+	})
+	tests.Add("group=true with null key", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(null, 1);
+							}
+						}`,
+					"reduce": `_sum`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]string{"key": "a"})
+		_ = d.tPut("A", map[string]string{"key": "a"})
+		_ = d.tPut("b", map[string]string{"key": "b"})
+
+		return test{
+			db:      d,
+			ddoc:    "_design/foo",
+			view:    "_view/bar",
+			options: kivik.Param("group", "true"),
+			want: []rowResult{
+				{Key: `null`, Value: "3"},
+			},
+		}
+	})
+	tests.Add("group_level=2 for map-only view returns 400", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]string{"a": "a"})
+		_ = d.tPut("b", map[string]string{"b": "b"})
+
+		return test{
+			db:         d,
+			ddoc:       "_design/foo",
+			view:       "_view/bar",
+			options:    kivik.Param("group_level", 2),
+			wantErr:    "group_level is invalid for map-only views",
+			wantStatus: http.StatusBadRequest,
+		}
+	})
 	/*
 		TODO:
 		- don't re-calculate reduce if already up to date

@@ -62,11 +62,12 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 	if err != nil {
 		return nil, err
 	}
-	if _, err := opts.groupLevel(); err != nil {
+	groupLevel, err := opts.groupLevel()
+	if err != nil {
 		return nil, err
 	}
 
-	results, err := d.performQuery(ctx, ddoc, view, update, reduce, group)
+	results, err := d.performQuery(ctx, ddoc, view, update, reduce, group, groupLevel)
 	if err != nil {
 		return nil, err
 	}
@@ -82,9 +83,9 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 	return results, nil
 }
 
-func (d *db) performQuery(ctx context.Context, ddoc, view, update string, reduce *bool, group bool) (driver.Rows, error) {
+func (d *db) performQuery(ctx context.Context, ddoc, view, update string, reduce *bool, group bool, groupLevel uint64) (driver.Rows, error) {
 	if group {
-		return d.performGroupQuery(ctx, ddoc, view, update)
+		return d.performGroupQuery(ctx, ddoc, view, update, groupLevel)
 	}
 	var (
 		results      *sql.Rows
@@ -184,11 +185,7 @@ func (d *db) performQuery(ctx context.Context, ddoc, view, update string, reduce
 			return nil, err
 		}
 		if reduce != nil && *reduce && !reducible {
-			field := "reduce"
-			if group {
-				field = "group"
-			}
-			return nil, &internal.Error{Status: http.StatusBadRequest, Message: field + " is invalid for map-only views"}
+			return nil, &internal.Error{Status: http.StatusBadRequest, Message: "reduce is invalid for map-only views"}
 		}
 		if upToDate {
 			break
@@ -241,7 +238,7 @@ func (d *db) performQuery(ctx context.Context, ddoc, view, update string, reduce
 	}, nil
 }
 
-func (d *db) performGroupQuery(ctx context.Context, ddoc, view, update string) (driver.Rows, error) {
+func (d *db) performGroupQuery(ctx context.Context, ddoc, view, update string, groupLevel uint64) (driver.Rows, error) {
 	var (
 		results      *sql.Rows
 		reducible    bool
@@ -325,6 +322,9 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view, update string) (
 		}
 		if !reducible {
 			field := "group"
+			if groupLevel > 0 {
+				field = "group_level"
+			}
 			return nil, &internal.Error{Status: http.StatusBadRequest, Message: field + " is invalid for map-only views"}
 		}
 		if upToDate {

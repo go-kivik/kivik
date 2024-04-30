@@ -22,6 +22,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/dop251/goja"
@@ -82,6 +83,9 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 }
 
 func (d *db) performQuery(ctx context.Context, ddoc, view, update string, reduce *bool, group bool) (driver.Rows, error) {
+	if group {
+		return d.performGroupQuery(ctx, ddoc, view, update)
+	}
 	var (
 		results      *sql.Rows
 		reducible    bool
@@ -235,6 +239,146 @@ func (d *db) performQuery(ctx context.Context, ddoc, view, update string, reduce
 		db:   d,
 		rows: results,
 	}, nil
+}
+
+func (d *db) performGroupQuery(ctx context.Context, ddoc, view, update string) (driver.Rows, error) {
+	var (
+		results      *sql.Rows
+		reducible    bool
+		reduceFuncJS *string
+	)
+	for {
+		rev, err := d.updateIndex(ctx, ddoc, view, update)
+		if err != nil {
+			return nil, err
+		}
+
+		query := d.ddocQuery(ddoc, view, rev.String(), `
+			WITH reduce AS (
+				SELECT
+					CASE WHEN MAX(id) IS NOT NULL THEN TRUE ELSE FALSE END AS reducable,
+					func_body                                              AS reduce_func
+				FROM {{ .Design }}
+				WHERE id = $1
+					AND rev = $2
+					AND rev_id = $3
+					AND func_type = 'reduce'
+					AND func_name = $4
+			)
+
+			SELECT
+				COALESCE(MAX(last_seq), 0) == (SELECT COALESCE(max(seq),0) FROM {{ .Docs }}) AS up_to_date,
+				reduce.reducable,
+				reduce.reduce_func,
+				NULL,
+				NULL,
+				NULL
+			FROM {{ .Design }} AS map
+			JOIN reduce
+			WHERE id = $1
+				AND rev = $2
+				AND rev_id = $3
+				AND func_type = 'map'
+				AND func_name = $4
+
+			UNION ALL
+
+			SELECT *
+			FROM (
+				SELECT
+					id    AS id,
+					key   AS key,
+					value AS value,
+					NULL  AS rev,
+					NULL  AS doc,
+					NULL  AS conflicts
+				FROM {{ .Map }}
+				JOIN reduce
+				WHERE reduce.reducable AND ($6 IS NULL OR $6 == TRUE)
+				ORDER BY id, key
+			)
+		`)
+
+		results, err = d.db.QueryContext(
+			ctx, query,
+			"_design/"+ddoc, rev.rev, rev.id, view, kivik.EndKeySuffix, true,
+		)
+		switch {
+		case errIsNoSuchTable(err):
+			return nil, &internal.Error{Status: http.StatusNotFound, Message: "missing named view"}
+		case err != nil:
+			return nil, err
+		}
+		defer results.Close()
+
+		// The first row is used to verify the index is up to date
+		if !results.Next() {
+			// should never happen
+			return nil, errors.New("no rows returned")
+		}
+		if update != updateModeTrue {
+			break
+		}
+		var upToDate bool
+		if err := results.Scan(&upToDate, &reducible, &reduceFuncJS, discard{}, discard{}, discard{}); err != nil {
+			return nil, err
+		}
+		if !reducible {
+			field := "group"
+			return nil, &internal.Error{Status: http.StatusBadRequest, Message: field + " is invalid for map-only views"}
+		}
+		if upToDate {
+			break
+		}
+	}
+
+	reduceFn, err := d.reduceFunc(reduceFuncJS, d.logger)
+	if err != nil {
+		return nil, err
+	}
+	var (
+		intermediate = map[string][]interface{}{}
+
+		id, key  string
+		rowValue *string
+	)
+
+	for results.Next() {
+		if err := results.Scan(&id, &key, &rowValue, discard{}, discard{}, discard{}); err != nil {
+			return nil, err
+		}
+		var value interface{}
+		if rowValue != nil {
+			value = *rowValue
+		}
+		rv := reduceFn([][2]interface{}{{id, key}}, []interface{}{value}, false)
+		intermediate[key] = append(intermediate[key], rv)
+	}
+
+	if err := results.Err(); err != nil {
+		return nil, err
+	}
+
+	final := make(reducedRows, 0, len(intermediate))
+	for key, values := range intermediate {
+		var value json.RawMessage
+		if len(values) > 1 {
+			rv := reduceFn(nil, values, true)
+			value, _ = json.Marshal(rv)
+		} else {
+			value, _ = json.Marshal(values[0])
+		}
+		final = append(final, driver.Row{
+			Key:   json.RawMessage(key),
+			Value: bytes.NewReader(value),
+		})
+	}
+
+	slices.SortFunc(final, func(a, b driver.Row) int {
+		return couchdbCmpJSON(a.Key, b.Key)
+	})
+
+	return &final, nil
 }
 
 const batchSize = 100

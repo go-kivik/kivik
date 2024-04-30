@@ -632,6 +632,30 @@ func (d *db) reduceFunc(reduceFuncJS *string, logger *log.Logger) (reduceFunc, e
 			}
 			return total
 		}, nil
+	case "_approx_count_distinct":
+		return func(keys [][2]interface{}, values []interface{}, rereduce bool) interface{} {
+			if rereduce {
+				var total uint64
+				fmt.Println("rereduce values", values)
+				for _, value := range values {
+					v, _ := toUint64(value, "")
+					total += v
+				}
+				return total
+			}
+
+			unique := make(map[string]struct{}, len(keys))
+			for _, keyValue := range keys {
+				fmt.Println("keyValue", keyValue)
+				key := keyValue[0]
+				if key == nil {
+					unique["null"] = struct{}{}
+				} else {
+					unique[key.(string)] = struct{}{}
+				}
+			}
+			return len(unique)
+		}, nil
 	default:
 		vm := goja.New()
 

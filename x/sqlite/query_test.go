@@ -856,6 +856,71 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("_approx_count_distinct && group=true", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc.key, 1);
+						}`,
+					"reduce": `_approx_count_distinct`,
+				},
+			},
+		})
+		_ = d.tPut("xxx", map[string]interface{}{})
+		_ = d.tPut("yyy", map[string]interface{}{"key": nil})
+		_ = d.tPut("keya", map[string]interface{}{"key": "a"})
+		_ = d.tPut("keyA", map[string]interface{}{"key": "a"})
+		_ = d.tPut("keyAB", map[string]interface{}{"key": []string{"a", "b"}})
+		_ = d.tPut("keyab", map[string]interface{}{"key": []string{"a", "b"}})
+		_ = d.tPut("keyAC", map[string]interface{}{"key": []string{"a", "c"}})
+
+		return test{
+			db:      d,
+			ddoc:    "_design/foo",
+			view:    "_view/bar",
+			options: kivik.Param("group", true),
+			want: []rowResult{
+				{Key: `null`, Value: "1"},
+				{Key: `"a"`, Value: "1"},
+				{Key: `["a","b"]`, Value: "1"},
+				{Key: `["a","c"]`, Value: "1"},
+			},
+		}
+	})
+	tests.Add("_approx_count_distinct && group_level=1", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc.key, 1);
+						}`,
+					"reduce": `_approx_count_distinct`,
+				},
+			},
+		})
+		_ = d.tPut("xxx", map[string]interface{}{})
+		_ = d.tPut("yyy", map[string]interface{}{"key": nil})
+		_ = d.tPut("keya", map[string]interface{}{"key": "a"})
+		_ = d.tPut("keyA", map[string]interface{}{"key": "a"})
+		_ = d.tPut("keyAB", map[string]interface{}{"key": []string{"a", "b"}})
+		_ = d.tPut("keyab", map[string]interface{}{"key": []string{"a", "b"}})
+		_ = d.tPut("keyAC", map[string]interface{}{"key": []string{"a", "c"}})
+
+		return test{
+			db:      d,
+			ddoc:    "_design/foo",
+			view:    "_view/bar",
+			options: kivik.Param("group_level", 1),
+			want: []rowResult{
+				{Key: `null`, Value: "1"},
+				{Key: `"a"`, Value: "1"},
+				{Key: `["a"]`, Value: "2"},
+			},
+		}
+	})
 	/*
 		TODO:
 		- built-in reduce functions:

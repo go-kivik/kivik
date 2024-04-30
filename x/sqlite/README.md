@@ -22,7 +22,7 @@ import (
 )
 
 func main() {
-    client, err := kivik.New(context.TODO(), "sqlite", "")
+    client, err := kivik.New(context.TODO(), "sqlite", "/path/to/file.db")
     // ...
 }
 ```
@@ -34,7 +34,7 @@ you to test your CouchDB apps without relying on a full-fledged CouchDB server.
 
 ## Status
 
-This driver is incomplete, and not yet usable. But watch this space.
+This driver is incomplete, experimental, and under rapid development.
 
 ## Incompatibilities
 

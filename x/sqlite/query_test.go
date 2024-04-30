@@ -663,10 +663,34 @@ func TestDBQuery(t *testing.T) {
 		wantErr:    "invalid value for `group_level`",
 		wantStatus: http.StatusBadRequest,
 	})
+	tests.Add("group=true for map-only view returns 400", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]string{"a": "a"})
+		_ = d.tPut("b", map[string]string{"b": "b"})
+
+		return test{
+			db:         d,
+			ddoc:       "_design/foo",
+			view:       "_view/bar",
+			options:    kivik.Param("group", true),
+			wantErr:    "group is invalid for map-only views",
+			wantStatus: http.StatusBadRequest,
+		}
+	})
 	/*
 		TODO:
 		- don't re-calculate reduce if already up to date
 		- do re-calculate reduce if out of date, even if map is up to date
+		- group_level set for map-only view
 		- built-in reduce functions:
 			- _approx_count_distinct (https://docs.couchdb.org/en/stable/ddocs/ddocs.html#approx_count_distinct)
 				- _approx_count_distinct

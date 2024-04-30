@@ -232,6 +232,9 @@ func (o optsMap) update() (string, error) {
 }
 
 func (o optsMap) reduce() (*bool, error) {
+	if group, _ := o.group(); group {
+		return &group, nil
+	}
 	raw, ok := o["reduce"]
 	if !ok {
 		return nil, nil

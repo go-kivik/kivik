@@ -57,14 +57,15 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 	if err != nil {
 		return nil, err
 	}
-	if _, err := opts.group(); err != nil {
+	group, err := opts.group()
+	if err != nil {
 		return nil, err
 	}
 	if _, err := opts.groupLevel(); err != nil {
 		return nil, err
 	}
 
-	results, err := d.performQuery(ctx, ddoc, view, update, reduce)
+	results, err := d.performQuery(ctx, ddoc, view, update, reduce, group)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +81,7 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 	return results, nil
 }
 
-func (d *db) performQuery(ctx context.Context, ddoc, view, update string, reduce *bool) (driver.Rows, error) {
+func (d *db) performQuery(ctx context.Context, ddoc, view, update string, reduce *bool, group bool) (driver.Rows, error) {
 	var (
 		results      *sql.Rows
 		reducible    bool
@@ -179,7 +180,11 @@ func (d *db) performQuery(ctx context.Context, ddoc, view, update string, reduce
 			return nil, err
 		}
 		if reduce != nil && *reduce && !reducible {
-			return nil, &internal.Error{Status: http.StatusBadRequest, Message: "reduce is invalid for map-only views"}
+			field := "reduce"
+			if group {
+				field = "group"
+			}
+			return nil, &internal.Error{Status: http.StatusBadRequest, Message: field + " is invalid for map-only views"}
 		}
 		if upToDate {
 			break

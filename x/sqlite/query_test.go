@@ -715,9 +715,36 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("group=true with null key", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(null, 1);
+							}
+						}`,
+					"reduce": `_sum`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]string{"key": "a"})
+		_ = d.tPut("A", map[string]string{"key": "a"})
+		_ = d.tPut("b", map[string]string{"key": "b"})
+
+		return test{
+			db:      d,
+			ddoc:    "_design/foo",
+			view:    "_view/bar",
+			options: kivik.Param("group", "true"),
+			want: []rowResult{
+				{Key: `null`, Value: "3"},
+			},
+		}
+	})
 	/*
 		TODO:
-		- null key passed to reduce func
 		- don't re-calculate reduce if already up to date
 		- do re-calculate reduce if out of date, even if map is up to date
 		- group_level set for map-only view

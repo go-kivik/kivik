@@ -287,7 +287,7 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view, update string) (
 			FROM (
 				SELECT
 					id    AS id,
-					key   AS key,
+					COALESCE(key, "null") AS key,
 					value AS value,
 					NULL  AS rev,
 					NULL  AS doc,

@@ -13,7 +13,6 @@
 package sqlite
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -22,7 +21,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"slices"
 	"strings"
 
 	"github.com/dop251/goja"
@@ -193,42 +191,7 @@ func (d *db) performQuery(ctx context.Context, ddoc, view, update string, reduce
 	}
 
 	if reducible && (reduce == nil || *reduce) {
-		reduceFn, err := d.reduceFunc(reduceFuncJS, d.logger)
-		if err != nil {
-			return nil, err
-		}
-		var (
-			keys   [][2]interface{}
-			values []interface{}
-
-			id, key, value *string
-		)
-
-		for results.Next() {
-			if err := results.Scan(&id, &key, &value, discard{}, discard{}, discard{}); err != nil {
-				return nil, err
-			}
-			keys = append(keys, [2]interface{}{id, key})
-			if value == nil {
-				values = append(values, nil)
-			} else {
-				values = append(values, *value)
-			}
-		}
-
-		if err := results.Err(); err != nil {
-			return nil, err
-		}
-
-		rv := reduceFn(keys, values, false)
-		tmp, _ := json.Marshal(rv)
-		return &reducedRows{
-			{
-				Key:   json.RawMessage(`null`),
-				Value: bytes.NewReader(tmp),
-			},
-		}, nil
-
+		return d.reduceRows(results, reduceFuncJS, false)
 	}
 
 	return &rows{
@@ -332,53 +295,7 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view, update string, g
 		}
 	}
 
-	reduceFn, err := d.reduceFunc(reduceFuncJS, d.logger)
-	if err != nil {
-		return nil, err
-	}
-	var (
-		intermediate = map[string][]interface{}{}
-
-		id, key  string
-		rowValue *string
-	)
-
-	for results.Next() {
-		if err := results.Scan(&id, &key, &rowValue, discard{}, discard{}, discard{}); err != nil {
-			return nil, err
-		}
-		var value interface{}
-		if rowValue != nil {
-			value = *rowValue
-		}
-		rv := reduceFn([][2]interface{}{{id, key}}, []interface{}{value}, false)
-		intermediate[key] = append(intermediate[key], rv)
-	}
-
-	if err := results.Err(); err != nil {
-		return nil, err
-	}
-
-	final := make(reducedRows, 0, len(intermediate))
-	for key, values := range intermediate {
-		var value json.RawMessage
-		if len(values) > 1 {
-			rv := reduceFn(nil, values, true)
-			value, _ = json.Marshal(rv)
-		} else {
-			value, _ = json.Marshal(values[0])
-		}
-		final = append(final, driver.Row{
-			Key:   json.RawMessage(key),
-			Value: bytes.NewReader(value),
-		})
-	}
-
-	slices.SortFunc(final, func(a, b driver.Row) int {
-		return couchdbCmpJSON(a.Key, b.Key)
-	})
-
-	return &final, nil
+	return d.reduceRows(results, reduceFuncJS, true)
 }
 
 const batchSize = 100

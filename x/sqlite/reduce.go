@@ -13,10 +13,81 @@
 package sqlite
 
 import (
+	"bytes"
+	"database/sql"
+	"encoding/json"
 	"io"
+	"slices"
 
 	"github.com/go-kivik/kivik/v4/driver"
 )
+
+func (d *db) reduceRows(results *sql.Rows, reduceFuncJS *string, group bool) (driver.Rows, error) {
+	reduceFn, err := d.reduceFunc(reduceFuncJS, d.logger)
+	if err != nil {
+		return nil, err
+	}
+	var (
+		intermediate = map[string][]interface{}{}
+
+		id, key  string
+		rowValue *string
+	)
+
+	for results.Next() {
+		if err := results.Scan(&id, &key, &rowValue, discard{}, discard{}, discard{}); err != nil {
+			return nil, err
+		}
+		var value interface{}
+		if rowValue != nil {
+			value = *rowValue
+		}
+		rv := reduceFn([][2]interface{}{{id, key}}, []interface{}{value}, false)
+		intermediate[key] = append(intermediate[key], rv)
+	}
+
+	if err := results.Err(); err != nil {
+		return nil, err
+	}
+
+	// Note that group_level is handled at the query level, so we don't need to
+	// worry about it here.
+	if !group {
+		var values []interface{}
+		for _, v := range intermediate {
+			values = append(values, v...)
+		}
+		rv := reduceFn(nil, values, true)
+		tmp, _ := json.Marshal(rv)
+		return &reducedRows{
+			{
+				Key:   json.RawMessage(`null`),
+				Value: bytes.NewReader(tmp),
+			},
+		}, nil
+	}
+
+	final := make(reducedRows, 0, len(intermediate))
+	for key, values := range intermediate {
+		var value json.RawMessage
+		if len(values) > 1 {
+			rv := reduceFn(nil, values, true)
+			value, _ = json.Marshal(rv)
+		} else {
+			value, _ = json.Marshal(values[0])
+		}
+		final = append(final, driver.Row{
+			Key:   json.RawMessage(key),
+			Value: bytes.NewReader(value),
+		})
+	}
+
+	slices.SortFunc(final, func(a, b driver.Row) int {
+		return couchdbCmpJSON(a.Key, b.Key)
+	})
+
+	return &final, nil
+}
 
 type reducedRows []driver.Row
 

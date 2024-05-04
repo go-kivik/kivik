@@ -22,7 +22,7 @@ import (
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
-func (d *db) reduceRows(results *sql.Rows, reduceFuncJS *string, group bool) (driver.Rows, error) {
+func (d *db) reduceRows(results *sql.Rows, reduceFuncJS *string, group bool, groupLevel uint64) (driver.Rows, error) {
 	reduceFn, err := d.reduceFunc(reduceFuncJS, d.logger)
 	if err != nil {
 		return nil, err
@@ -43,6 +43,15 @@ func (d *db) reduceRows(results *sql.Rows, reduceFuncJS *string, group bool) (dr
 			value = *rowValue
 		}
 		rv := reduceFn([][2]interface{}{{id, key}}, []interface{}{value}, false)
+		// group is handled below
+		if groupLevel > 0 {
+			var unkey []interface{}
+			_ = json.Unmarshal([]byte(key), &unkey)
+			if len(unkey) > int(groupLevel) {
+				newKey, _ := json.Marshal(unkey[:groupLevel])
+				key = string(newKey)
+			}
+		}
 		intermediate[key] = append(intermediate[key], rv)
 	}
 
@@ -50,8 +59,7 @@ func (d *db) reduceRows(results *sql.Rows, reduceFuncJS *string, group bool) (dr
 		return nil, err
 	}
 
-	// Note that group_level is handled at the query level, so we don't need to
-	// worry about it here.
+	// group_level is handled above
 	if !group {
 		var values []interface{}
 		for _, v := range intermediate {

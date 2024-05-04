@@ -248,7 +248,7 @@ func (o optsMap) reduce() (*bool, error) {
 
 func (o optsMap) group() (bool, error) {
 	if groupLevel, _ := o.groupLevel(); groupLevel > 0 {
-		return true, nil
+		return groupLevel > 0, nil
 	}
 	raw, ok := o["group"]
 	if !ok {

@@ -23,11 +23,14 @@ import (
 
 	"modernc.org/sqlite"
 
+	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/x/sqlite/v4/internal"
 )
 
 func init() {
+	kivik.Register("sqlite", &drv{})
+
 	if err := sqlite.RegisterCollationUtf8("COUCHDB_UCI", couchdbCmpString); err != nil {
 		panic(err)
 	}

@@ -191,7 +191,7 @@ func (d *db) performQuery(ctx context.Context, ddoc, view, update string, reduce
 	}
 
 	if reducible && (reduce == nil || *reduce) {
-		return d.reduceRows(results, reduceFuncJS, false)
+		return d.reduceRows(results, reduceFuncJS, false, 0)
 	}
 
 	return &rows{
@@ -295,7 +295,7 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view, update string, g
 		}
 	}
 
-	return d.reduceRows(results, reduceFuncJS, true)
+	return d.reduceRows(results, reduceFuncJS, true, groupLevel)
 }
 
 const batchSize = 100

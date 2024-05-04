@@ -766,10 +766,98 @@ func TestDBQuery(t *testing.T) {
 			wantStatus: http.StatusBadRequest,
 		}
 	})
+	tests.Add("group_level above maximum", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, 1);
+							}
+						}`,
+					"reduce": `_sum`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]string{"key": "a"})
+		_ = d.tPut("A", map[string]string{"key": "a"})
+		_ = d.tPut("ab", map[string]interface{}{"key": []string{"a", "b"}})
+		_ = d.tPut("aa", map[string]interface{}{"key": []string{"a", "a"}})
+
+		return test{
+			db:      d,
+			ddoc:    "_design/foo",
+			view:    "_view/bar",
+			options: kivik.Param("group_level", 100),
+			want: []rowResult{
+				{Key: `"a"`, Value: "2"},
+				{Key: `["a","a"]`, Value: "1"},
+				{Key: `["a","b"]`, Value: "1"},
+			},
+		}
+	})
+	tests.Add("group_level=1", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, 1);
+							}
+						}`,
+					"reduce": `_sum`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]string{"key": "a"})
+		_ = d.tPut("A", map[string]string{"key": "a"})
+		_ = d.tPut("ab", map[string]interface{}{"key": []string{"a", "b"}})
+		_ = d.tPut("aa", map[string]interface{}{"key": []string{"a", "a"}})
+
+		return test{
+			db:      d,
+			ddoc:    "_design/foo",
+			view:    "_view/bar",
+			options: kivik.Param("group_level", 1),
+			want: []rowResult{
+				{Key: `"a"`, Value: "2"},
+				{Key: `["a"]`, Value: "2"},
+			},
+		}
+	})
+	tests.Add("group_level=0 works same as no grouping", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, 1);
+							}
+						}`,
+					"reduce": `_sum`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]string{"key": "a"})
+		_ = d.tPut("A", map[string]string{"key": "a"})
+		_ = d.tPut("ab", map[string]interface{}{"key": []string{"a", "b"}})
+		_ = d.tPut("aa", map[string]interface{}{"key": []string{"a", "a"}})
+
+		return test{
+			db:      d,
+			ddoc:    "_design/foo",
+			view:    "_view/bar",
+			options: kivik.Param("group_level", 0),
+			want: []rowResult{
+				{Key: `null`, Value: "4"},
+			},
+		}
+	})
 	/*
 		TODO:
-		- don't re-calculate reduce if already up to date
-		- do re-calculate reduce if out of date, even if map is up to date
 		- built-in reduce functions:
 			- _approx_count_distinct (https://docs.couchdb.org/en/stable/ddocs/ddocs.html#approx_count_distinct)
 				- _approx_count_distinct
@@ -783,8 +871,6 @@ func TestDBQuery(t *testing.T) {
 			- end_key
 			- endkey_docid
 			- end_key_doc_id
-			- group
-			- group_level
 			- include_docs
 			- inclusive_end
 			- key
@@ -802,7 +888,6 @@ func TestDBQuery(t *testing.T) {
 			- update_seq
 		- map/reduce function takes too long
 		- exclude design docs by default
-
 	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {

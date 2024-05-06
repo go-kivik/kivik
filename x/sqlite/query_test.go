@@ -565,7 +565,7 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("reduce function throws an error", func(t *testing.T) interface{} {
+	tests.Add("reduce function throws an exception", func(t *testing.T) interface{} {
 		d := newDB(t)
 		_ = d.tPut("_design/foo", map[string]interface{}{
 			"views": map[string]interface{}{
@@ -591,6 +591,16 @@ func TestDBQuery(t *testing.T) {
 					Key:   "null",
 					Value: "null",
 				},
+			},
+			wantLogs: []string{
+				`^reduce function threw exception: Error: broken`,
+				`^\tat reduce `,
+				`^reduce function threw exception: Error: broken`,
+				`^\tat reduce `,
+				`^reduce function threw exception: Error: broken`,
+				`^\tat reduce `,
+				`^reduce function threw exception: Error: broken`,
+				`^\tat reduce `,
 			},
 		}
 	})

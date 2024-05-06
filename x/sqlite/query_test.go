@@ -884,6 +884,8 @@ func TestDBQuery(t *testing.T) {
 	})
 	/*
 		TODO:
+		- _stats
+			- value is null
 		- built-in reduce functions:
 			- _approx_count_distinct (https://docs.couchdb.org/en/stable/ddocs/ddocs.html#approx_count_distinct)
 				- _approx_count_distinct

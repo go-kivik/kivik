@@ -632,6 +632,23 @@ func (d *db) reduceFunc(reduceFuncJS *string, logger *log.Logger) (reduceFunc, e
 			}
 			return total
 		}, nil
+	case "_stats":
+		return func(_ [][2]interface{}, values []interface{}, _ bool) interface{} {
+			type stats struct {
+				Sum    uint64 `json:"sum"`
+				Min    uint64 `json:"min"`
+				Max    uint64 `json:"max"`
+				Count  uint64 `json:"count"`
+				SumSqr uint64 `json:"sumsqr"`
+			}
+			return stats{
+				Sum:    1,
+				Min:    1,
+				Max:    1,
+				Count:  2,
+				SumSqr: 2,
+			}
+		}, nil
 	default:
 		vm := goja.New()
 

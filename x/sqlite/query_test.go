@@ -969,8 +969,6 @@ func TestDBQuery(t *testing.T) {
 		TODO:
 		- _stats
 			- value is null
-			- floating point values
-		- Verify that when reduce function throws exception, its return value should be treated as null
 		- built-in reduce functions:
 			- _approx_count_distinct (https://docs.couchdb.org/en/stable/ddocs/ddocs.html#approx_count_distinct)
 				- _approx_count_distinct

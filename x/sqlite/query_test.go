@@ -934,6 +934,31 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("_stats with non numeric values", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc.value);
+							}
+						}`,
+					"reduce": `_stats`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{"key": "a", "value": 1.23})
+		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": "dog"})
+
+		return test{
+			db:         d,
+			ddoc:       "_design/foo",
+			view:       "_view/bar",
+			wantErr:    "the _stats function requires that map values be numbers or arrays of numbers, not '\"dog\"'",
+			wantStatus: http.StatusInternalServerError,
+		}
+	})
 	/*
 		TODO:
 		- _stats

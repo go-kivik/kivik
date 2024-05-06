@@ -13,6 +13,7 @@
 package sqlite
 
 import (
+	"math"
 	"net/http"
 	"strconv"
 
@@ -185,7 +186,10 @@ func toInt64(in interface{}, msg string) (int64, error) {
 	case uint32:
 		return int64(t), nil
 	case uint64:
-		return int64(t), nil // todo check for data loss
+		if t > math.MaxInt64 {
+			return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
+		}
+		return int64(t), nil
 	case string:
 		i, err := strconv.ParseInt(t, 10, 64)
 		if err != nil {

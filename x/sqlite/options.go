@@ -215,40 +215,40 @@ func toInt64(in interface{}, msg string) (int64, error) {
 
 // toFloat64 converts the input to a float64. If the input is malformed, it
 // returns an error with msg as the message, and 400 as the status code.
-func toFloat64(in interface{}, msg string) (float64, error) {
+func toFloat64(in interface{}) (float64, bool) {
 	switch t := in.(type) {
 	case int:
-		return float64(t), nil
+		return float64(t), true
 	case int64:
-		return float64(t), nil
+		return float64(t), true
 	case int8:
-		return float64(t), nil
+		return float64(t), true
 	case int16:
-		return float64(t), nil
+		return float64(t), true
 	case int32:
-		return float64(t), nil
+		return float64(t), true
 	case uint:
-		return float64(t), nil
+		return float64(t), true
 	case uint8:
-		return float64(t), nil
+		return float64(t), true
 	case uint16:
-		return float64(t), nil
+		return float64(t), true
 	case uint32:
-		return float64(t), nil
+		return float64(t), true
 	case uint64:
-		return float64(t), nil
+		return float64(t), true
 	case string:
 		i, err := strconv.ParseFloat(t, 64)
 		if err != nil {
-			return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
+			return 0, false
 		}
-		return i, nil
+		return i, true
 	case float32:
-		return float64(t), nil
+		return float64(t), true
 	case float64:
-		return t, nil
+		return t, true
 	default:
-		return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
+		return 0, false
 	}
 }
 

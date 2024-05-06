@@ -970,7 +970,7 @@ func TestDBQuery(t *testing.T) {
 		- _stats
 			- value is null
 			- floating point values
-			- reduce returns non-numeric value
+		- Verify that when reduce function throws exception, its return value should be treated as null
 		- built-in reduce functions:
 			- _approx_count_distinct (https://docs.couchdb.org/en/stable/ddocs/ddocs.html#approx_count_distinct)
 				- _approx_count_distinct
@@ -1001,6 +1001,7 @@ func TestDBQuery(t *testing.T) {
 			- update_seq
 		- map/reduce function takes too long
 		- exclude design docs by default
+		- treat map non-exception errors as exceptions
 	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {

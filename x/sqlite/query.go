@@ -21,6 +21,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/dop251/goja"
@@ -604,7 +605,7 @@ func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc
 	return tx.Commit()
 }
 
-type reduceFunc func(keys [][2]interface{}, values []interface{}, rereduce bool) interface{}
+type reduceFunc func(keys [][2]interface{}, values []interface{}, rereduce bool) (interface{}, error)
 
 func (d *db) reduceFunc(reduceFuncJS *string, logger *log.Logger) (reduceFunc, error) {
 	if reduceFuncJS == nil {
@@ -612,25 +613,68 @@ func (d *db) reduceFunc(reduceFuncJS *string, logger *log.Logger) (reduceFunc, e
 	}
 	switch *reduceFuncJS {
 	case "_count":
-		return func(_ [][2]interface{}, values []interface{}, rereduce bool) interface{} {
+		return func(_ [][2]interface{}, values []interface{}, rereduce bool) (interface{}, error) {
 			if !rereduce {
-				return len(values)
+				return len(values), nil
 			}
 			var total uint64
 			for _, value := range values {
 				v, _ := toUint64(value, "")
 				total += v
 			}
-			return total
+			return total, nil
 		}, nil
 	case "_sum":
-		return func(_ [][2]interface{}, values []interface{}, _ bool) interface{} {
+		return func(_ [][2]interface{}, values []interface{}, _ bool) (interface{}, error) {
 			var total uint64
 			for _, value := range values {
 				v, _ := toUint64(value, "")
 				total += v
 			}
-			return total
+			return total, nil
+		}, nil
+	case "_stats":
+		return func(_ [][2]interface{}, values []interface{}, rereduce bool) (interface{}, error) {
+			type stats struct {
+				Sum    float64 `json:"sum"`
+				Min    float64 `json:"min"`
+				Max    float64 `json:"max"`
+				Count  float64 `json:"count"`
+				SumSqr float64 `json:"sumsqr"`
+			}
+			var result stats
+			if rereduce {
+				mins := make([]float64, 0, len(values))
+				maxs := make([]float64, 0, len(values))
+				for _, v := range values {
+					value := v.(stats)
+					mins = append(mins, value.Min)
+					maxs = append(maxs, value.Max)
+					result.Sum += value.Sum
+					result.Count += value.Count
+					result.SumSqr += value.SumSqr
+				}
+				result.Min = slices.Min(mins)
+				result.Max = slices.Max(maxs)
+				return result, nil
+			}
+			result.Count = float64(len(values))
+			nvals := make([]float64, 0, len(values))
+			for _, v := range values {
+				value, ok := toFloat64(v)
+				if !ok {
+					return nil, &internal.Error{
+						Status:  http.StatusInternalServerError,
+						Message: fmt.Sprintf("the _stats function requires that map values be numbers or arrays of numbers, not '%s'", v),
+					}
+				}
+				nvals = append(nvals, value)
+				result.Sum += value
+				result.SumSqr += value * value
+			}
+			result.Min = slices.Min(nvals)
+			result.Max = slices.Max(nvals)
+			return result, nil
 		}, nil
 	default:
 		vm := goja.New()
@@ -643,18 +687,17 @@ func (d *db) reduceFunc(reduceFuncJS *string, logger *log.Logger) (reduceFunc, e
 			return nil, fmt.Errorf("expected reduce to be a function, got %T", vm.Get("map"))
 		}
 
-		return func(keys [][2]interface{}, values []interface{}, rereduce bool) interface{} {
+		return func(keys [][2]interface{}, values []interface{}, rereduce bool) (interface{}, error) {
 			reduceValue, err := reduceFunc(goja.Undefined(), vm.ToValue(keys), vm.ToValue(values), vm.ToValue(rereduce))
+			// According to CouchDB reference implementation, when a user-defined
+			// reduce function throws an exception, the error is logged and the
+			// return value is set to null.
 			if err != nil {
-				var exception *goja.Exception
-				if errors.As(err, &exception) {
-					logger.Printf("reduce function threw exception: %s", exception.String())
-					return nil
-				}
-				return err
+				logger.Printf("reduce function threw exception: %s", err.Error())
+				return nil, nil
 			}
 
-			return reduceValue.Export()
+			return reduceValue.Export(), nil
 		}, nil
 	}
 }

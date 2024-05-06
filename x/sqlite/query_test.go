@@ -565,7 +565,7 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("reduce function throws an error", func(t *testing.T) interface{} {
+	tests.Add("reduce function throws an exception", func(t *testing.T) interface{} {
 		d := newDB(t)
 		_ = d.tPut("_design/foo", map[string]interface{}{
 			"views": map[string]interface{}{
@@ -591,6 +591,12 @@ func TestDBQuery(t *testing.T) {
 					Key:   "null",
 					Value: "null",
 				},
+			},
+			wantLogs: []string{
+				`^reduce function threw exception: Error: broken at reduce `,
+				`^reduce function threw exception: Error: broken at reduce `,
+				`^reduce function threw exception: Error: broken at reduce `,
+				`^reduce function threw exception: Error: broken at reduce `,
 			},
 		}
 	})
@@ -856,8 +862,115 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("_stats with single numeric value from map function", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, 1);
+							}
+						}`,
+					"reduce": `_stats`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]string{"key": "a"})
+		_ = d.tPut("b", map[string]string{"key": "b"})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: []rowResult{
+				{Key: `null`, Value: `{"sum":2,"min":1,"max":1,"count":2,"sumsqr":2}`},
+			},
+		}
+	})
+	tests.Add("_stats with negative and positive values", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc.value);
+							}
+						}`,
+					"reduce": `_stats`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{"key": "a", "value": 1})
+		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": -1})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: []rowResult{
+				{Key: `null`, Value: `{"sum":0,"min":-1,"max":1,"count":2,"sumsqr":2}`},
+			},
+		}
+	})
+	tests.Add("_stats with floating point values", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc.value);
+							}
+						}`,
+					"reduce": `_stats`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{"key": "a", "value": 1.23})
+		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": -1.23})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: []rowResult{
+				{Key: `null`, Value: `{"sum":0,"min":-1.23,"max":1.23,"count":2,"sumsqr":3.0258}`},
+			},
+		}
+	})
+	tests.Add("_stats with non numeric values", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc.value);
+							}
+						}`,
+					"reduce": `_stats`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{"key": "a", "value": 1.23})
+		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": "dog"})
+
+		return test{
+			db:         d,
+			ddoc:       "_design/foo",
+			view:       "_view/bar",
+			wantErr:    "the _stats function requires that map values be numbers or arrays of numbers, not '\"dog\"'",
+			wantStatus: http.StatusInternalServerError,
+		}
+	})
 	/*
 		TODO:
+		- _stats
+			- value is null
+			- floating point values
+		- Verify that when reduce function throws exception, its return value should be treated as null
 		- built-in reduce functions:
 			- _approx_count_distinct (https://docs.couchdb.org/en/stable/ddocs/ddocs.html#approx_count_distinct)
 				- _approx_count_distinct
@@ -888,6 +1001,7 @@ func TestDBQuery(t *testing.T) {
 			- update_seq
 		- map/reduce function takes too long
 		- exclude design docs by default
+		- treat map non-exception errors as exceptions
 	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {

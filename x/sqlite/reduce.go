@@ -42,7 +42,10 @@ func (d *db) reduceRows(results *sql.Rows, reduceFuncJS *string, group bool, gro
 		if rowValue != nil {
 			value = *rowValue
 		}
-		rv := reduceFn([][2]interface{}{{id, key}}, []interface{}{value}, false)
+		rv, err := reduceFn([][2]interface{}{{id, key}}, []interface{}{value}, false)
+		if err != nil {
+			return nil, err
+		}
 		// group is handled below
 		if groupLevel > 0 {
 			var unkey []interface{}
@@ -65,7 +68,10 @@ func (d *db) reduceRows(results *sql.Rows, reduceFuncJS *string, group bool, gro
 		for _, v := range intermediate {
 			values = append(values, v...)
 		}
-		rv := reduceFn(nil, values, true)
+		rv, err := reduceFn(nil, values, true)
+		if err != nil {
+			return nil, err
+		}
 		tmp, _ := json.Marshal(rv)
 		return &reducedRows{
 			{
@@ -79,7 +85,10 @@ func (d *db) reduceRows(results *sql.Rows, reduceFuncJS *string, group bool, gro
 	for key, values := range intermediate {
 		var value json.RawMessage
 		if len(values) > 1 {
-			rv := reduceFn(nil, values, true)
+			rv, err := reduceFn(nil, values, true)
+			if err != nil {
+				return nil, err
+			}
 			value, _ = json.Marshal(rv)
 		} else {
 			value, _ = json.Marshal(values[0])

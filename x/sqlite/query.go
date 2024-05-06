@@ -21,6 +21,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/dop251/goja"
@@ -633,21 +634,41 @@ func (d *db) reduceFunc(reduceFuncJS *string, logger *log.Logger) (reduceFunc, e
 			return total
 		}, nil
 	case "_stats":
-		return func(_ [][2]interface{}, values []interface{}, _ bool) interface{} {
+		return func(_ [][2]interface{}, values []interface{}, rereduce bool) interface{} {
 			type stats struct {
-				Sum    uint64 `json:"sum"`
-				Min    uint64 `json:"min"`
-				Max    uint64 `json:"max"`
+				Sum    int64  `json:"sum"`
+				Min    int64  `json:"min"`
+				Max    int64  `json:"max"`
 				Count  uint64 `json:"count"`
 				SumSqr uint64 `json:"sumsqr"`
 			}
-			return stats{
-				Sum:    1,
-				Min:    1,
-				Max:    1,
-				Count:  2,
-				SumSqr: 2,
+			var result stats
+			if rereduce {
+				mins := make([]int64, 0, len(values))
+				maxs := make([]int64, 0, len(values))
+				for _, v := range values {
+					value := v.(stats)
+					mins = append(mins, value.Min)
+					maxs = append(maxs, value.Max)
+					result.Sum += value.Sum
+					result.Count += value.Count
+					result.SumSqr += value.SumSqr
+				}
+				result.Min = slices.Min(mins)
+				result.Max = slices.Max(maxs)
+				return result
 			}
+			result.Count = uint64(len(values))
+			nvals := make([]int64, 0, len(values))
+			for _, v := range values {
+				value, _ := toInt64(v, "")
+				nvals = append(nvals, value)
+				result.Sum += value
+				result.SumSqr += uint64(value * value)
+			}
+			result.Min = slices.Min(nvals)
+			result.Max = slices.Max(nvals)
+			return result
 		}, nil
 	default:
 		vm := goja.New()

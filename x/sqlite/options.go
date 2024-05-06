@@ -162,6 +162,53 @@ func toUint64(in interface{}, msg string) (uint64, error) {
 	}
 }
 
+// toInt64 converts the input to a int64. If the input is malformed, it
+// returns an error with msg as the message, and 400 as the status code.
+func toInt64(in interface{}, msg string) (int64, error) {
+	switch t := in.(type) {
+	case int:
+		return int64(t), nil
+	case int64:
+		return t, nil
+	case int8:
+		return int64(t), nil
+	case int16:
+		return int64(t), nil
+	case int32:
+		return int64(t), nil
+	case uint:
+		return int64(t), nil
+	case uint8:
+		return int64(t), nil
+	case uint16:
+		return int64(t), nil
+	case uint32:
+		return int64(t), nil
+	case uint64:
+		return int64(t), nil // todo check for data loss
+	case string:
+		i, err := strconv.ParseInt(t, 10, 64)
+		if err != nil {
+			return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
+		}
+		return i, nil
+	case float32:
+		i := int64(t)
+		if float32(i) != t {
+			return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
+		}
+		return i, nil
+	case float64:
+		i := int64(t)
+		if float64(i) != t {
+			return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
+		}
+		return i, nil
+	default:
+		return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
+	}
+}
+
 func toBool(in interface{}) (value bool, ok bool) {
 	switch t := in.(type) {
 	case bool:

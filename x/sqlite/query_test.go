@@ -878,7 +878,33 @@ func TestDBQuery(t *testing.T) {
 			ddoc: "_design/foo",
 			view: "_view/bar",
 			want: []rowResult{
-				{Key: `null`, Value: `{"sum":1,"min":1,"max":1,"count":2,"sumsqr":2}`},
+				{Key: `null`, Value: `{"sum":2,"min":1,"max":1,"count":2,"sumsqr":2}`},
+			},
+		}
+	})
+	tests.Add("_stats with negative and positive values", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc.value);
+							}
+						}`,
+					"reduce": `_stats`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{"key": "a", "value": 1})
+		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": -1})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: []rowResult{
+				{Key: `null`, Value: `{"sum":0,"min":-1,"max":1,"count":2,"sumsqr":2}`},
 			},
 		}
 	})
@@ -886,6 +912,7 @@ func TestDBQuery(t *testing.T) {
 		TODO:
 		- _stats
 			- value is null
+			- floating point values
 		- built-in reduce functions:
 			- _approx_count_distinct (https://docs.couchdb.org/en/stable/ddocs/ddocs.html#approx_count_distinct)
 				- _approx_count_distinct

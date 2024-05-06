@@ -856,6 +856,32 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("_stats with single numeric value from map function", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, 1);
+							}
+						}`,
+					"reduce": `_stats`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]string{"key": "a"})
+		_ = d.tPut("b", map[string]string{"key": "b"})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: []rowResult{
+				{Key: `null`, Value: `{"sum":1,"min":1,"max":1,"count":2,"sumsqr":2}`},
+			},
+		}
+	})
 	/*
 		TODO:
 		- built-in reduce functions:

@@ -684,12 +684,8 @@ func (d *db) reduceFunc(reduceFuncJS *string, logger *log.Logger) (reduceFunc, e
 		return func(keys [][2]interface{}, values []interface{}, rereduce bool) interface{} {
 			reduceValue, err := reduceFunc(goja.Undefined(), vm.ToValue(keys), vm.ToValue(values), vm.ToValue(rereduce))
 			if err != nil {
-				var exception *goja.Exception
-				if errors.As(err, &exception) {
-					logger.Printf("reduce function threw exception: %s", exception.String())
-					return nil
-				}
-				return err
+				logger.Printf("reduce function threw exception: %s", err.Error())
+				return nil
 			}
 
 			return reduceValue.Export()

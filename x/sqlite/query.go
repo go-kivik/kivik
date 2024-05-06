@@ -636,16 +636,16 @@ func (d *db) reduceFunc(reduceFuncJS *string, logger *log.Logger) (reduceFunc, e
 	case "_stats":
 		return func(_ [][2]interface{}, values []interface{}, rereduce bool) interface{} {
 			type stats struct {
-				Sum    int64  `json:"sum"`
-				Min    int64  `json:"min"`
-				Max    int64  `json:"max"`
-				Count  uint64 `json:"count"`
-				SumSqr uint64 `json:"sumsqr"`
+				Sum    float64 `json:"sum"`
+				Min    float64 `json:"min"`
+				Max    float64 `json:"max"`
+				Count  float64 `json:"count"`
+				SumSqr float64 `json:"sumsqr"`
 			}
 			var result stats
 			if rereduce {
-				mins := make([]int64, 0, len(values))
-				maxs := make([]int64, 0, len(values))
+				mins := make([]float64, 0, len(values))
+				maxs := make([]float64, 0, len(values))
 				for _, v := range values {
 					value := v.(stats)
 					mins = append(mins, value.Min)
@@ -658,13 +658,13 @@ func (d *db) reduceFunc(reduceFuncJS *string, logger *log.Logger) (reduceFunc, e
 				result.Max = slices.Max(maxs)
 				return result
 			}
-			result.Count = uint64(len(values))
-			nvals := make([]int64, 0, len(values))
+			result.Count = float64(len(values))
+			nvals := make([]float64, 0, len(values))
 			for _, v := range values {
-				value, _ := toInt64(v, "")
+				value, _ := toFloat64(v, "")
 				nvals = append(nvals, value)
 				result.Sum += value
-				result.SumSqr += uint64(value * value)
+				result.SumSqr += value * value
 			}
 			result.Min = slices.Min(nvals)
 			result.Max = slices.Max(nvals)

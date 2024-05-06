@@ -908,11 +908,38 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("_stats with floating point values", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc.value);
+							}
+						}`,
+					"reduce": `_stats`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{"key": "a", "value": 1.23})
+		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": -1.23})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: []rowResult{
+				{Key: `null`, Value: `{"sum":0,"min":-1.23,"max":1.23,"count":2,"sumsqr":3.0258}`},
+			},
+		}
+	})
 	/*
 		TODO:
 		- _stats
 			- value is null
 			- floating point values
+			- reduce returns non-numeric value
 		- built-in reduce functions:
 			- _approx_count_distinct (https://docs.couchdb.org/en/stable/ddocs/ddocs.html#approx_count_distinct)
 				- _approx_count_distinct

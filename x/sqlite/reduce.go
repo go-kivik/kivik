@@ -202,6 +202,55 @@ type stats struct {
 	SumSqr float64 `json:"sumsqr"`
 }
 
+type preAggregateStats struct {
+	Sum    *float64 `json:"sum"`
+	Min    *float64 `json:"min"`
+	Max    *float64 `json:"max"`
+	Count  *float64 `json:"count"`
+	SumSqr *float64 `json:"sumsqr"`
+	raw    json.RawMessage
+}
+
+func (s *preAggregateStats) UnmarshalJSON(data []byte) error {
+	alias := struct {
+		preAggregateStats
+		UnmarshalJSON struct{} `json:"-"`
+	}{
+		preAggregateStats: *s,
+	}
+	if err := json.Unmarshal(data, &alias); err != nil {
+		return err
+	}
+	*s = alias.preAggregateStats
+	s.raw = data
+	return nil
+}
+
+func (s preAggregateStats) Validate() error {
+	fieldError := func(field string) error {
+		return &internal.Error{
+			Status:  http.StatusInternalServerError,
+			Message: fmt.Sprintf("user _stats input missing required field %s (%s)", field, string(s.raw)),
+		}
+	}
+	if s.Sum == nil {
+		return fieldError("sum")
+	}
+	if s.Count == nil {
+		return fieldError("count")
+	}
+	if s.Min == nil {
+		return fieldError("min")
+	}
+	if s.Max == nil {
+		return fieldError("max")
+	}
+	if s.SumSqr == nil {
+		return fieldError("sumsqr")
+	}
+	return nil
+}
+
 func reduceStats(_ [][2]interface{}, values []interface{}, rereduce bool) (interface{}, error) {
 	var result stats
 	if rereduce {
@@ -227,44 +276,11 @@ func reduceStats(_ [][2]interface{}, values []interface{}, rereduce bool) (inter
 		value, ok := toFloat64(v)
 		if !ok {
 			if strValue, ok := v.(string); ok {
-				var mapStats struct {
-					Sum    *float64 `json:"sum"`
-					Min    *float64 `json:"min"`
-					Max    *float64 `json:"max"`
-					Count  *float64 `json:"count"`
-					SumSqr *float64 `json:"sumsqr"`
-				}
+				var mapStats preAggregateStats
 
 				if err := json.Unmarshal([]byte(strValue), &mapStats); err == nil {
-					if mapStats.Sum == nil {
-						return nil, &internal.Error{
-							Status:  http.StatusInternalServerError,
-							Message: fmt.Sprintf("user _stats input missing required field sum (%s)", strValue),
-						}
-					}
-					if mapStats.Count == nil {
-						return nil, &internal.Error{
-							Status:  http.StatusInternalServerError,
-							Message: fmt.Sprintf("user _stats input missing required field count (%s)", strValue),
-						}
-					}
-					if mapStats.Min == nil {
-						return nil, &internal.Error{
-							Status:  http.StatusInternalServerError,
-							Message: fmt.Sprintf("user _stats input missing required field min (%s)", strValue),
-						}
-					}
-					if mapStats.Max == nil {
-						return nil, &internal.Error{
-							Status:  http.StatusInternalServerError,
-							Message: fmt.Sprintf("user _stats input missing required field max (%s)", strValue),
-						}
-					}
-					if mapStats.SumSqr == nil {
-						return nil, &internal.Error{
-							Status:  http.StatusInternalServerError,
-							Message: fmt.Sprintf("user _stats input missing required field sumsqr (%s)", strValue),
-						}
+					if err := mapStats.Validate(); err != nil {
+						return nil, err
 					}
 					// The map function emitted pre-aggregated stats
 					result.Sum += *mapStats.Sum

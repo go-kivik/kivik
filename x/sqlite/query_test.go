@@ -1088,6 +1088,7 @@ func TestDBQuery(t *testing.T) {
 		})
 		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": map[string]float64{
 			"sum":   5,
+			"max":   5,
 			"count": 5,
 		}})
 
@@ -1176,7 +1177,7 @@ func TestDBQuery(t *testing.T) {
 			db:         d,
 			ddoc:       "_design/foo",
 			view:       "_view/bar",
-			wantErr:    `^user _stats input missing required field sum `,
+			wantErr:    `^user _stats input missing required field count `,
 			wantStatus: http.StatusInternalServerError,
 		}
 	})

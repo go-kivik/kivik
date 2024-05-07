@@ -21,6 +21,7 @@ import (
 	"log"
 	"net/http"
 	"slices"
+	"strings"
 
 	"github.com/dop251/goja"
 	"github.com/mitchellh/mapstructure"
@@ -212,32 +213,6 @@ type preAggregateStats struct {
 	SumSqr *float64 `json:"sumsqr"`
 }
 
-func (s preAggregateStats) Validate(v interface{}) error {
-	fieldError := func(field string) error {
-		raw, _ := json.Marshal(v)
-		return &internal.Error{
-			Status:  http.StatusInternalServerError,
-			Message: fmt.Sprintf("user _stats input missing required field %s (%s)", field, string(raw)),
-		}
-	}
-	if s.Sum == nil {
-		return fieldError("sum")
-	}
-	if s.Count == nil {
-		return fieldError("count")
-	}
-	if s.Min == nil {
-		return fieldError("min")
-	}
-	if s.Max == nil {
-		return fieldError("max")
-	}
-	if s.SumSqr == nil {
-		return fieldError("sumsqr")
-	}
-	return nil
-}
-
 func reduceStats(_ [][2]interface{}, values []interface{}, rereduce bool) (interface{}, error) {
 	var result stats
 	if rereduce {
@@ -269,11 +244,19 @@ func reduceStats(_ [][2]interface{}, values []interface{}, rereduce bool) (inter
 		}
 		value, ok := toFloat64(v)
 		if !ok {
-			var mapStats preAggregateStats
+			var (
+				mapStats preAggregateStats
+				metadata mapstructure.Metadata
+			)
 
-			if err := mapstructure.Decode(v, &mapStats); err == nil {
-				if err := mapStats.Validate(v); err != nil {
-					return nil, err
+			if err := mapstructure.DecodeMetadata(v, &mapStats, &metadata); err == nil {
+				if len(metadata.Unset) > 0 {
+					raw, _ := json.Marshal(v)
+					slices.Sort(metadata.Unset)
+					return nil, &internal.Error{
+						Status:  http.StatusInternalServerError,
+						Message: fmt.Sprintf("user _stats input missing required field %s (%s)", strings.ToLower(metadata.Unset[0]), string(raw)),
+					}
 				}
 				// The map function emitted pre-aggregated stats
 				result.Sum += *mapStats.Sum

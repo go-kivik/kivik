@@ -23,6 +23,7 @@ import (
 	"slices"
 
 	"github.com/dop251/goja"
+	"github.com/mitchellh/mapstructure"
 
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/x/sqlite/v4/internal"
@@ -36,17 +37,18 @@ func (d *db) reduceRows(results *sql.Rows, reduceFuncJS *string, group bool, gro
 	var (
 		intermediate = map[string][]interface{}{}
 
-		id, key  string
-		rowValue *string
+		id, rowKey string
+		rowValue   *string
 	)
 
 	for results.Next() {
-		if err := results.Scan(&id, &key, &rowValue, discard{}, discard{}, discard{}); err != nil {
+		if err := results.Scan(&id, &rowKey, &rowValue, discard{}, discard{}, discard{}); err != nil {
 			return nil, err
 		}
-		var value interface{}
+		var key, value interface{}
+		_ = json.Unmarshal([]byte(rowKey), &key)
 		if rowValue != nil {
-			value = *rowValue
+			_ = json.Unmarshal([]byte(*rowValue), &value)
 		}
 		rv, err := reduceFn([][2]interface{}{{id, key}}, []interface{}{value}, false)
 		if err != nil {
@@ -55,13 +57,13 @@ func (d *db) reduceRows(results *sql.Rows, reduceFuncJS *string, group bool, gro
 		// group is handled below
 		if groupLevel > 0 {
 			var unkey []interface{}
-			_ = json.Unmarshal([]byte(key), &unkey)
+			_ = json.Unmarshal([]byte(rowKey), &unkey)
 			if len(unkey) > int(groupLevel) {
 				newKey, _ := json.Marshal(unkey[:groupLevel])
-				key = string(newKey)
+				rowKey = string(newKey)
 			}
 		}
-		intermediate[key] = append(intermediate[key], rv)
+		intermediate[rowKey] = append(intermediate[rowKey], rv)
 	}
 
 	if err := results.Err(); err != nil {
@@ -208,29 +210,14 @@ type preAggregateStats struct {
 	Max    *float64 `json:"max"`
 	Count  *float64 `json:"count"`
 	SumSqr *float64 `json:"sumsqr"`
-	raw    json.RawMessage
 }
 
-func (s *preAggregateStats) UnmarshalJSON(data []byte) error {
-	alias := struct {
-		preAggregateStats
-		UnmarshalJSON struct{} `json:"-"`
-	}{
-		preAggregateStats: *s,
-	}
-	if err := json.Unmarshal(data, &alias); err != nil {
-		return err
-	}
-	*s = alias.preAggregateStats
-	s.raw = data
-	return nil
-}
-
-func (s preAggregateStats) Validate() error {
+func (s preAggregateStats) Validate(v interface{}) error {
 	fieldError := func(field string) error {
+		raw, _ := json.Marshal(v)
 		return &internal.Error{
 			Status:  http.StatusInternalServerError,
-			Message: fmt.Sprintf("user _stats input missing required field %s (%s)", field, string(s.raw)),
+			Message: fmt.Sprintf("user _stats input missing required field %s (%s)", field, string(raw)),
 		}
 	}
 	if s.Sum == nil {
@@ -273,32 +260,34 @@ func reduceStats(_ [][2]interface{}, values []interface{}, rereduce bool) (inter
 	mins := make([]float64, 0, len(values))
 	maxs := make([]float64, 0, len(values))
 	for _, v := range values {
-		value, ok := toFloat64(v)
-		if !ok {
-			if strValue, ok := v.(string); ok {
-				var mapStats preAggregateStats
-
-				if err := json.Unmarshal([]byte(strValue), &mapStats); err == nil {
-					if err := mapStats.Validate(); err != nil {
-						return nil, err
-					}
-					// The map function emitted pre-aggregated stats
-					result.Sum += *mapStats.Sum
-					result.Count += *mapStats.Count
-					result.SumSqr += *mapStats.SumSqr
-					result.Count-- // don't double-count the map stats
-					mins = append(mins, *mapStats.Min)
-					maxs = append(maxs, *mapStats.Max)
-					continue
-				}
-			}
-			val, _ := v.(string)
-			if v == nil {
-				val = "null"
-			}
+		if v == nil {
+			valBytes, _ := json.Marshal(v)
 			return nil, &internal.Error{
 				Status:  http.StatusInternalServerError,
-				Message: fmt.Sprintf("the _stats function requires that map values be numbers or arrays of numbers, not '%s'", val),
+				Message: fmt.Sprintf("the _stats function requires that map values be numbers or arrays of numbers, not '%s'", string(valBytes)),
+			}
+		}
+		value, ok := toFloat64(v)
+		if !ok {
+			var mapStats preAggregateStats
+
+			if err := mapstructure.Decode(v, &mapStats); err == nil {
+				if err := mapStats.Validate(v); err != nil {
+					return nil, err
+				}
+				// The map function emitted pre-aggregated stats
+				result.Sum += *mapStats.Sum
+				result.Count += *mapStats.Count
+				result.SumSqr += *mapStats.SumSqr
+				result.Count-- // don't double-count the map stats
+				mins = append(mins, *mapStats.Min)
+				maxs = append(maxs, *mapStats.Max)
+				continue
+			}
+			valBytes, _ := json.Marshal(v)
+			return nil, &internal.Error{
+				Status:  http.StatusInternalServerError,
+				Message: fmt.Sprintf("the _stats function requires that map values be numbers or arrays of numbers, not '%s'", string(valBytes)),
 			}
 		}
 		nvals = append(nvals, value)

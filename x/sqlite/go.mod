@@ -7,6 +7,7 @@ require (
 	github.com/dop251/goja v0.0.0-20240220182346-e401ed450204
 	github.com/go-kivik/kivik/v4 v4.2.2
 	github.com/google/go-cmp v0.6.0
+	github.com/mitchellh/mapstructure v1.5.0
 	gitlab.com/flimzy/testy v0.14.0
 	golang.org/x/text v0.15.0
 	modernc.org/sqlite v1.29.8

@@ -242,12 +242,7 @@ func toStatsValues(values []interface{}, rereduce bool) ([][]stats, bool) {
 	}
 	statsValues := make([][]stats, 0, len(values))
 	for _, v := range values {
-		fv := v.([]stats)
-		statsValue := make([]stats, 0, len(fv))
-		for _, s := range fv {
-			statsValue = append(statsValue, s)
-		}
-		statsValues = append(statsValues, statsValue)
+		statsValues = append(statsValues, v.([]stats))
 	}
 	return statsValues, true
 }

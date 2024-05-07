@@ -227,15 +227,15 @@ func reduceStats(_ [][2]interface{}, values []interface{}, rereduce bool) (inter
 	mins := make([]float64, 0, len(values))
 	maxs := make([]float64, 0, len(values))
 	for _, v := range values {
-		if v == nil {
-			valBytes, _ := json.Marshal(v)
-			return nil, &internal.Error{
-				Status:  http.StatusInternalServerError,
-				Message: fmt.Sprintf("the _stats function requires that map values be numbers or arrays of numbers, not '%s'", string(valBytes)),
-			}
-		}
-		value, ok := toFloat64(v)
-		if !ok {
+		switch t := v.(type) {
+		case float64:
+			nvals = append(nvals, t)
+			result.Sum += t
+			result.SumSqr += t * t
+			continue
+		case nil:
+			// jump to end of switch, to return an error
+		default:
 			var (
 				mapStats stats
 				metadata mapstructure.Metadata
@@ -259,15 +259,13 @@ func reduceStats(_ [][2]interface{}, values []interface{}, rereduce bool) (inter
 				maxs = append(maxs, mapStats.Max)
 				continue
 			}
-			valBytes, _ := json.Marshal(v)
-			return nil, &internal.Error{
-				Status:  http.StatusInternalServerError,
-				Message: fmt.Sprintf("the _stats function requires that map values be numbers or arrays of numbers, not '%s'", string(valBytes)),
-			}
 		}
-		nvals = append(nvals, value)
-		result.Sum += value
-		result.SumSqr += value * value
+
+		valBytes, _ := json.Marshal(v)
+		return nil, &internal.Error{
+			Status:  http.StatusInternalServerError,
+			Message: fmt.Sprintf("the _stats function requires that map values be numbers or arrays of numbers, not '%s'", string(valBytes)),
+		}
 	}
 	result.Min = slices.Min(slices.Concat(nvals, mins))
 	result.Max = slices.Max(slices.Concat(nvals, maxs))

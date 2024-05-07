@@ -21,7 +21,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"slices"
 	"strings"
 
 	"github.com/dop251/goja"
@@ -613,125 +612,11 @@ func (d *db) reduceFunc(reduceFuncJS *string, logger *log.Logger) (reduceFunc, e
 	}
 	switch *reduceFuncJS {
 	case "_count":
-		return func(_ [][2]interface{}, values []interface{}, rereduce bool) (interface{}, error) {
-			if !rereduce {
-				return len(values), nil
-			}
-			var total uint64
-			for _, value := range values {
-				v, _ := toUint64(value, "")
-				total += v
-			}
-			return total, nil
-		}, nil
+		return reduceCount, nil
 	case "_sum":
-		return func(_ [][2]interface{}, values []interface{}, _ bool) (interface{}, error) {
-			var total uint64
-			for _, value := range values {
-				v, _ := toUint64(value, "")
-				total += v
-			}
-			return total, nil
-		}, nil
+		return reduceSum, nil
 	case "_stats":
-		return func(_ [][2]interface{}, values []interface{}, rereduce bool) (interface{}, error) {
-			type stats struct {
-				Sum    float64 `json:"sum"`
-				Min    float64 `json:"min"`
-				Max    float64 `json:"max"`
-				Count  float64 `json:"count"`
-				SumSqr float64 `json:"sumsqr"`
-			}
-			var result stats
-			if rereduce {
-				mins := make([]float64, 0, len(values))
-				maxs := make([]float64, 0, len(values))
-				for _, v := range values {
-					value := v.(stats)
-					mins = append(mins, value.Min)
-					maxs = append(maxs, value.Max)
-					result.Sum += value.Sum
-					result.Count += value.Count
-					result.SumSqr += value.SumSqr
-				}
-				result.Min = slices.Min(mins)
-				result.Max = slices.Max(maxs)
-				return result, nil
-			}
-			result.Count = float64(len(values))
-			nvals := make([]float64, 0, len(values))
-			mins := make([]float64, 0, len(values))
-			maxs := make([]float64, 0, len(values))
-			for _, v := range values {
-				value, ok := toFloat64(v)
-				if !ok {
-					if strValue, ok := v.(string); ok {
-						var mapStats struct {
-							Sum    *float64 `json:"sum"`
-							Min    *float64 `json:"min"`
-							Max    *float64 `json:"max"`
-							Count  *float64 `json:"count"`
-							SumSqr *float64 `json:"sumsqr"`
-						}
-
-						if err := json.Unmarshal([]byte(strValue), &mapStats); err == nil {
-							if mapStats.Sum == nil {
-								return nil, &internal.Error{
-									Status:  http.StatusInternalServerError,
-									Message: fmt.Sprintf("user _stats input missing required field sum (%s)", strValue),
-								}
-							}
-							if mapStats.Count == nil {
-								return nil, &internal.Error{
-									Status:  http.StatusInternalServerError,
-									Message: fmt.Sprintf("user _stats input missing required field count (%s)", strValue),
-								}
-							}
-							if mapStats.Min == nil {
-								return nil, &internal.Error{
-									Status:  http.StatusInternalServerError,
-									Message: fmt.Sprintf("user _stats input missing required field min (%s)", strValue),
-								}
-							}
-							if mapStats.Max == nil {
-								return nil, &internal.Error{
-									Status:  http.StatusInternalServerError,
-									Message: fmt.Sprintf("user _stats input missing required field max (%s)", strValue),
-								}
-							}
-							if mapStats.SumSqr == nil {
-								return nil, &internal.Error{
-									Status:  http.StatusInternalServerError,
-									Message: fmt.Sprintf("user _stats input missing required field sumsqr (%s)", strValue),
-								}
-							}
-							// The map function emitted pre-aggregated stats
-							result.Sum += *mapStats.Sum
-							result.Count += *mapStats.Count
-							result.SumSqr += *mapStats.SumSqr
-							result.Count-- // don't double-count the map stats
-							mins = append(mins, *mapStats.Min)
-							maxs = append(maxs, *mapStats.Max)
-							continue
-						}
-					}
-					val, _ := v.(string)
-					if v == nil {
-						val = "null"
-					}
-					return nil, &internal.Error{
-						Status:  http.StatusInternalServerError,
-						Message: fmt.Sprintf("the _stats function requires that map values be numbers or arrays of numbers, not '%s'", val),
-					}
-				}
-				nvals = append(nvals, value)
-				result.Sum += value
-				result.SumSqr += value * value
-			}
-			result.Min = slices.Min(slices.Concat(nvals, mins))
-			result.Max = slices.Max(slices.Concat(nvals, maxs))
-			return result, nil
-		}, nil
+		return reduceStats, nil
 	default:
 		vm := goja.New()
 

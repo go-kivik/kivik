@@ -660,9 +660,24 @@ func (d *db) reduceFunc(reduceFuncJS *string, logger *log.Logger) (reduceFunc, e
 			}
 			result.Count = float64(len(values))
 			nvals := make([]float64, 0, len(values))
+			mins := make([]float64, 0, len(values))
+			maxs := make([]float64, 0, len(values))
 			for _, v := range values {
 				value, ok := toFloat64(v)
 				if !ok {
+					if strValue, ok := v.(string); ok {
+						var mapStats stats
+						if err := json.Unmarshal([]byte(strValue), &mapStats); err == nil {
+							// The map function emitted pre-aggregated stats
+							result.Sum += mapStats.Sum
+							result.Count += mapStats.Count
+							result.SumSqr += mapStats.SumSqr
+							result.Count-- // don't double-count the map stats
+							mins = append(mins, mapStats.Min)
+							maxs = append(maxs, mapStats.Max)
+							continue
+						}
+					}
 					val, _ := v.(string)
 					if v == nil {
 						val = "null"
@@ -676,8 +691,8 @@ func (d *db) reduceFunc(reduceFuncJS *string, logger *log.Logger) (reduceFunc, e
 				result.Sum += value
 				result.SumSqr += value * value
 			}
-			result.Min = slices.Min(nvals)
-			result.Max = slices.Max(nvals)
+			result.Min = slices.Min(slices.Concat(nvals, mins))
+			result.Max = slices.Max(slices.Concat(nvals, maxs))
 			return result, nil
 		}, nil
 	default:

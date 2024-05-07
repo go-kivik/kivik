@@ -1013,10 +1013,44 @@ func TestDBQuery(t *testing.T) {
 			wantStatus: http.StatusInternalServerError,
 		}
 	})
+	tests.Add("_stats with pre-aggregated value", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc.value);
+							}
+						}`,
+					"reduce": `_stats`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{"key": "b", "value": 100})
+		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": map[string]float64{
+			"sum":     5,
+			"min":     5,
+			"max":     5,
+			"count":   5,
+			"sumsqr":  5,
+			"ignored": 5,
+		}})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: []rowResult{
+				{Key: `null`, Value: `{"sum":105,"min":5,"max":100,"count":6,"sumsqr":10005}`},
+			},
+		}
+	})
 	/*
 		TODO:
 		- _stats
 			- invalid value to _stats renders non-reduced view broken as well
+			- partial pre-aggregate?
 		- built-in reduce functions:
 			- _approx_count_distinct (https://docs.couchdb.org/en/stable/ddocs/ddocs.html#approx_count_distinct)
 				- _approx_count_distinct

@@ -1184,7 +1184,11 @@ func TestDBQuery(t *testing.T) {
 	/*
 		TODO:
 		- _stats
+			- arrays of numbers
+			- arrays of stats
 			- invalid value to _stats renders non-reduced view broken as well
+		- _sum
+			- extended capabilities: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#sum
 		- built-in reduce functions:
 			- _approx_count_distinct (https://docs.couchdb.org/en/stable/ddocs/ddocs.html#approx_count_distinct)
 				- _approx_count_distinct

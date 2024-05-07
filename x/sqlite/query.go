@@ -663,9 +663,13 @@ func (d *db) reduceFunc(reduceFuncJS *string, logger *log.Logger) (reduceFunc, e
 			for _, v := range values {
 				value, ok := toFloat64(v)
 				if !ok {
+					val, _ := v.(string)
+					if v == nil {
+						val = "null"
+					}
 					return nil, &internal.Error{
 						Status:  http.StatusInternalServerError,
-						Message: fmt.Sprintf("the _stats function requires that map values be numbers or arrays of numbers, not '%s'", v),
+						Message: fmt.Sprintf("the _stats function requires that map values be numbers or arrays of numbers, not '%s'", val),
 					}
 				}
 				nvals = append(nvals, value)

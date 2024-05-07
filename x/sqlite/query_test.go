@@ -965,10 +965,58 @@ func TestDBQuery(t *testing.T) {
 			wantStatus: http.StatusInternalServerError,
 		}
 	})
+	tests.Add("_stats with null value", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc.value);
+							}
+						}`,
+					"reduce": `_stats`,
+				},
+			},
+		})
+		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": nil})
+
+		return test{
+			db:         d,
+			ddoc:       "_design/foo",
+			view:       "_view/bar",
+			wantErr:    "the _stats function requires that map values be numbers or arrays of numbers, not 'null'",
+			wantStatus: http.StatusInternalServerError,
+		}
+	})
+	tests.Add("_stats with array value", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc.value);
+							}
+						}`,
+					"reduce": `_stats`,
+				},
+			},
+		})
+		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": []int{1, 2, 3}})
+
+		return test{
+			db:         d,
+			ddoc:       "_design/foo",
+			view:       "_view/bar",
+			wantErr:    "the _stats function requires that map values be numbers or arrays of numbers, not '[1,2,3]'",
+			wantStatus: http.StatusInternalServerError,
+		}
+	})
 	/*
 		TODO:
 		- _stats
-			- value is null
+			- invalid value to _stats renders non-reduced view broken as well
 		- built-in reduce functions:
 			- _approx_count_distinct (https://docs.couchdb.org/en/stable/ddocs/ddocs.html#approx_count_distinct)
 				- _approx_count_distinct

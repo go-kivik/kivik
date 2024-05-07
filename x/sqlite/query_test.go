@@ -989,7 +989,7 @@ func TestDBQuery(t *testing.T) {
 			wantStatus: http.StatusInternalServerError,
 		}
 	})
-	tests.Add("_stats with array value", func(t *testing.T) interface{} {
+	tests.Add("_stats with array of strings value", func(t *testing.T) interface{} {
 		d := newDB(t)
 		_ = d.tPut("_design/foo", map[string]interface{}{
 			"views": map[string]interface{}{
@@ -1003,13 +1003,13 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": []int{1, 2, 3}})
+		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": []string{"dog", "cat", "cow"}})
 
 		return test{
 			db:         d,
 			ddoc:       "_design/foo",
 			view:       "_view/bar",
-			wantErr:    `the _stats function requires that map values be numbers or arrays of numbers, not '\[1,2,3\]'`,
+			wantErr:    `the _stats function requires that map values be numbers or arrays of numbers, not '\["dog","cat","cow"\]'`,
 			wantStatus: http.StatusInternalServerError,
 		}
 	})
@@ -1181,11 +1181,43 @@ func TestDBQuery(t *testing.T) {
 			wantStatus: http.StatusInternalServerError,
 		}
 	})
+	tests.Add("_stats with arrays of numbers", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, [1,2,3,4]);
+							}
+						}`,
+					"reduce": `_stats`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{"key": "a", "value": map[string]float64{}})
+		_ = d.tPut("b", map[string]interface{}{"key": "a", "value": map[string]float64{}})
+		_ = d.tPut("c", map[string]interface{}{"key": "a", "value": map[string]float64{}})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: []rowResult{
+				{Key: `null`, Value: `[{"sum":3,"min":1,"max":1,"count":3,"sumsqr":3},{"sum":6,"min":2,"max":2,"count":3,"sumsqr":12},{"sum":9,"min":3,"max":3,"count":3,"sumsqr":27},{"sum":12,"min":4,"max":4,"count":3,"sumsqr":48}]`},
+			},
+		}
+	})
 	/*
 		TODO:
 		- _stats
-			- arrays of numbers
+			- differing lengths of arrays of floats
+			- array with floats and other types
+			- array with floats and nulls
+			- non-integer count in array
+			- negative sumsqr in array (??)
 			- arrays of stats
+			- differing lengths of arrays of stats
 			- invalid value to _stats renders non-reduced view broken as well
 		- _sum
 			- extended capabilities: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#sum

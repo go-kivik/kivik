@@ -205,7 +205,62 @@ type stats struct {
 	SumSqr float64 `json:"sumsqr"`
 }
 
+// toFloatValues converts values to a slice of float64 slices, if possible.
+// This is used when a map function returns an array of numbers to be aggregated
+// by the _stats function
+func toFloatValues(values []interface{}, rereduce bool) ([][]float64, bool) {
+	if rereduce {
+		return nil, false
+	}
+	_, isSlice := values[0].([]interface{})
+	if !isSlice {
+		return nil, false
+	}
+	floatValues := make([][]float64, 0, len(values))
+	for _, v := range values {
+		fv := v.([]interface{})
+		float := make([]float64, 0, len(fv))
+		for _, f := range fv {
+			floatValue, ok := f.(float64)
+			if !ok {
+				return nil, false
+			}
+			float = append(float, floatValue)
+		}
+		floatValues = append(floatValues, float)
+	}
+	return floatValues, true
+}
+
+func toStatsValues(values []interface{}, rereduce bool) ([][]stats, bool) {
+	if !rereduce {
+		return nil, false
+	}
+	_, isSlice := values[0].([]stats)
+	if !isSlice {
+		return nil, false
+	}
+	statsValues := make([][]stats, 0, len(values))
+	for _, v := range values {
+		fv := v.([]stats)
+		statsValue := make([]stats, 0, len(fv))
+		for _, s := range fv {
+			statsValue = append(statsValue, s)
+		}
+		statsValues = append(statsValues, statsValue)
+	}
+	return statsValues, true
+}
+
 func reduceStats(_ [][2]interface{}, values []interface{}, rereduce bool) (interface{}, error) {
+	if floatValues, ok := toFloatValues(values, rereduce); ok {
+		return reduceStatsFloatArray(floatValues), nil
+	}
+	statsValues, ok := toStatsValues(values, rereduce)
+	if ok {
+		return rereduceStatsFloatArray(statsValues), nil
+	}
+
 	var result stats
 	if rereduce {
 		mins := make([]float64, 0, len(values))
@@ -270,4 +325,44 @@ func reduceStats(_ [][2]interface{}, values []interface{}, rereduce bool) (inter
 	result.Min = slices.Min(slices.Concat(nvals, mins))
 	result.Max = slices.Max(slices.Concat(nvals, maxs))
 	return result, nil
+}
+
+func reduceStatsFloatArray(values [][]float64) []stats {
+	results := make([]stats, len(values[0]))
+	minmax := make([][]float64, len(values[0]))
+
+	for _, numbers := range values {
+		for i, v := range numbers {
+			results[i].Sum += v
+			results[i].SumSqr += v * v
+			minmax[i] = append(minmax[i], v)
+		}
+	}
+	for i, mm := range minmax {
+		results[i].Count += float64(len(values))
+		results[i].Min = slices.Min(mm)
+		results[i].Max = slices.Max(mm)
+	}
+
+	return results
+}
+
+func rereduceStatsFloatArray(values [][]stats) []stats {
+	result := make([]stats, len(values[0]))
+	mins := make([][]float64, len(values[0]))
+	maxs := make([][]float64, len(values[0]))
+	for _, value := range values {
+		for j, stat := range value {
+			result[j].Sum += stat.Sum
+			result[j].Count += stat.Count
+			result[j].SumSqr += stat.SumSqr
+			mins[j] = append(mins[j], stat.Min)
+			maxs[j] = append(maxs[j], stat.Max)
+		}
+	}
+	for i, mm := range mins {
+		result[i].Min = slices.Min(mm)
+		result[i].Max = slices.Max(maxs[i])
+	}
+	return result
 }

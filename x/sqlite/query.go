@@ -19,7 +19,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"strings"
 
@@ -602,43 +601,4 @@ func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc
 	}
 
 	return tx.Commit()
-}
-
-type reduceFunc func(keys [][2]interface{}, values []interface{}, rereduce bool) (interface{}, error)
-
-func (d *db) reduceFunc(reduceFuncJS *string, logger *log.Logger) (reduceFunc, error) {
-	if reduceFuncJS == nil {
-		return nil, nil
-	}
-	switch *reduceFuncJS {
-	case "_count":
-		return reduceCount, nil
-	case "_sum":
-		return reduceSum, nil
-	case "_stats":
-		return reduceStats, nil
-	default:
-		vm := goja.New()
-
-		if _, err := vm.RunString("const reduce = " + *reduceFuncJS); err != nil {
-			return nil, err
-		}
-		reduceFunc, ok := goja.AssertFunction(vm.Get("reduce"))
-		if !ok {
-			return nil, fmt.Errorf("expected reduce to be a function, got %T", vm.Get("map"))
-		}
-
-		return func(keys [][2]interface{}, values []interface{}, rereduce bool) (interface{}, error) {
-			reduceValue, err := reduceFunc(goja.Undefined(), vm.ToValue(keys), vm.ToValue(values), vm.ToValue(rereduce))
-			// According to CouchDB reference implementation, when a user-defined
-			// reduce function throws an exception, the error is logged and the
-			// return value is set to null.
-			if err != nil {
-				logger.Printf("reduce function threw exception: %s", err.Error())
-				return nil, nil
-			}
-
-			return reduceValue.Export(), nil
-		}, nil
-	}
 }

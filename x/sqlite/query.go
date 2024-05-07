@@ -666,15 +666,52 @@ func (d *db) reduceFunc(reduceFuncJS *string, logger *log.Logger) (reduceFunc, e
 				value, ok := toFloat64(v)
 				if !ok {
 					if strValue, ok := v.(string); ok {
-						var mapStats stats
+						var mapStats struct {
+							Sum    *float64 `json:"sum"`
+							Min    *float64 `json:"min"`
+							Max    *float64 `json:"max"`
+							Count  *float64 `json:"count"`
+							SumSqr *float64 `json:"sumsqr"`
+						}
+
 						if err := json.Unmarshal([]byte(strValue), &mapStats); err == nil {
+							if mapStats.Sum == nil {
+								return nil, &internal.Error{
+									Status:  http.StatusInternalServerError,
+									Message: fmt.Sprintf("user _stats input missing required field sum (%s)", strValue),
+								}
+							}
+							if mapStats.Count == nil {
+								return nil, &internal.Error{
+									Status:  http.StatusInternalServerError,
+									Message: fmt.Sprintf("user _stats input missing required field count (%s)", strValue),
+								}
+							}
+							if mapStats.Min == nil {
+								return nil, &internal.Error{
+									Status:  http.StatusInternalServerError,
+									Message: fmt.Sprintf("user _stats input missing required field min (%s)", strValue),
+								}
+							}
+							if mapStats.Max == nil {
+								return nil, &internal.Error{
+									Status:  http.StatusInternalServerError,
+									Message: fmt.Sprintf("user _stats input missing required field max (%s)", strValue),
+								}
+							}
+							if mapStats.SumSqr == nil {
+								return nil, &internal.Error{
+									Status:  http.StatusInternalServerError,
+									Message: fmt.Sprintf("user _stats input missing required field sumsqr (%s)", strValue),
+								}
+							}
 							// The map function emitted pre-aggregated stats
-							result.Sum += mapStats.Sum
-							result.Count += mapStats.Count
-							result.SumSqr += mapStats.SumSqr
+							result.Sum += *mapStats.Sum
+							result.Count += *mapStats.Count
+							result.SumSqr += *mapStats.SumSqr
 							result.Count-- // don't double-count the map stats
-							mins = append(mins, mapStats.Min)
-							maxs = append(maxs, mapStats.Max)
+							mins = append(mins, *mapStats.Min)
+							maxs = append(maxs, *mapStats.Max)
 							continue
 						}
 					}

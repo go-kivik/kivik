@@ -1009,7 +1009,7 @@ func TestDBQuery(t *testing.T) {
 			db:         d,
 			ddoc:       "_design/foo",
 			view:       "_view/bar",
-			wantErr:    "the _stats function requires that map values be numbers or arrays of numbers, not '[1,2,3]'",
+			wantErr:    `the _stats function requires that map values be numbers or arrays of numbers, not '\[1,2,3\]'`,
 			wantStatus: http.StatusInternalServerError,
 		}
 	})
@@ -1046,11 +1046,144 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("_stats with partial pre-aggregated value, no count", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc.value);
+							}
+						}`,
+					"reduce": `_stats`,
+				},
+			},
+		})
+		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": map[string]float64{
+			"sum": 5,
+		}})
+
+		return test{
+			db:         d,
+			ddoc:       "_design/foo",
+			view:       "_view/bar",
+			wantErr:    `user _stats input missing required field count \({"sum":5}\)`,
+			wantStatus: http.StatusInternalServerError,
+		}
+	})
+	tests.Add("_stats with partial pre-aggregated value, no min", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc.value);
+							}
+						}`,
+					"reduce": `_stats`,
+				},
+			},
+		})
+		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": map[string]float64{
+			"sum":   5,
+			"count": 5,
+		}})
+
+		return test{
+			db:         d,
+			ddoc:       "_design/foo",
+			view:       "_view/bar",
+			wantErr:    `^user _stats input missing required field min `,
+			wantStatus: http.StatusInternalServerError,
+		}
+	})
+	tests.Add("_stats with partial pre-aggregated value, no max", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc.value);
+							}
+						}`,
+					"reduce": `_stats`,
+				},
+			},
+		})
+		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": map[string]float64{
+			"sum":   5,
+			"count": 5,
+			"min":   5,
+		}})
+
+		return test{
+			db:         d,
+			ddoc:       "_design/foo",
+			view:       "_view/bar",
+			wantErr:    `^user _stats input missing required field max `,
+			wantStatus: http.StatusInternalServerError,
+		}
+	})
+	tests.Add("_stats with partial pre-aggregated value, no sumsqr", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc.value);
+							}
+						}`,
+					"reduce": `_stats`,
+				},
+			},
+		})
+		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": map[string]float64{
+			"sum":   5,
+			"count": 5,
+			"min":   5,
+			"max":   5,
+		}})
+
+		return test{
+			db:         d,
+			ddoc:       "_design/foo",
+			view:       "_view/bar",
+			wantErr:    `^user _stats input missing required field sumsqr `,
+			wantStatus: http.StatusInternalServerError,
+		}
+	})
+	tests.Add("_stats with empty pre-aggregated value", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc.value);
+							}
+						}`,
+					"reduce": `_stats`,
+				},
+			},
+		})
+		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": map[string]float64{}})
+
+		return test{
+			db:         d,
+			ddoc:       "_design/foo",
+			view:       "_view/bar",
+			wantErr:    `^user _stats input missing required field sum `,
+			wantStatus: http.StatusInternalServerError,
+		}
+	})
 	/*
 		TODO:
 		- _stats
 			- invalid value to _stats renders non-reduced view broken as well
-			- partial pre-aggregate?
 		- built-in reduce functions:
 			- _approx_count_distinct (https://docs.couchdb.org/en/stable/ddocs/ddocs.html#approx_count_distinct)
 				- _approx_count_distinct
@@ -1095,7 +1228,7 @@ func TestDBQuery(t *testing.T) {
 			opts = mock.NilOption
 		}
 		rows, err := db.Query(context.Background(), tt.ddoc, tt.view, opts)
-		if !testy.ErrorMatches(tt.wantErr, err) {
+		if !testy.ErrorMatchesRE(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}
 		if status := kivik.HTTPStatus(err); status != tt.wantStatus {

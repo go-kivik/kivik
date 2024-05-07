@@ -205,14 +205,6 @@ type stats struct {
 	SumSqr float64 `json:"sumsqr"`
 }
 
-type preAggregateStats struct {
-	Sum    *float64 `json:"sum"`
-	Min    *float64 `json:"min"`
-	Max    *float64 `json:"max"`
-	Count  *float64 `json:"count"`
-	SumSqr *float64 `json:"sumsqr"`
-}
-
 func reduceStats(_ [][2]interface{}, values []interface{}, rereduce bool) (interface{}, error) {
 	var result stats
 	if rereduce {
@@ -245,7 +237,7 @@ func reduceStats(_ [][2]interface{}, values []interface{}, rereduce bool) (inter
 		value, ok := toFloat64(v)
 		if !ok {
 			var (
-				mapStats preAggregateStats
+				mapStats stats
 				metadata mapstructure.Metadata
 			)
 
@@ -259,12 +251,12 @@ func reduceStats(_ [][2]interface{}, values []interface{}, rereduce bool) (inter
 					}
 				}
 				// The map function emitted pre-aggregated stats
-				result.Sum += *mapStats.Sum
-				result.Count += *mapStats.Count
-				result.SumSqr += *mapStats.SumSqr
+				result.Sum += mapStats.Sum
+				result.Count += mapStats.Count
+				result.SumSqr += mapStats.SumSqr
 				result.Count-- // don't double-count the map stats
-				mins = append(mins, *mapStats.Min)
-				maxs = append(maxs, *mapStats.Max)
+				mins = append(mins, mapStats.Min)
+				maxs = append(maxs, mapStats.Max)
 				continue
 			}
 			valBytes, _ := json.Marshal(v)

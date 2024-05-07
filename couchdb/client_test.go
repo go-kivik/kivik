@@ -383,6 +383,18 @@ func TestDBUpdates(t *testing.T) {
 			wantStatus: http.StatusBadRequest,
 			wantErr:    "eventsource feed type not supported",
 		},
+		{
+			// Based on CI test failures, presumably from a race condition that
+			// causes the query to happen before any database is created.
+			name: "no databases",
+			client: newTestClient(&http.Response{
+				StatusCode: 200,
+				Header: http.Header{
+					"Content-Type": {"application/json"},
+				},
+				Body: Body(`{"last_seq":"38-g1AAAACLeJzLYWBgYMpgTmHgzcvPy09JdcjLz8gvLskBCScyJNX___8_K4M5UTgXKMBuZmFmYWFgjq4Yh_Y8FiDJ0ACk_qOYYpyanGiQYoquJwsAM_UqgA"}`),
+			}, nil),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -396,9 +408,6 @@ func TestDBUpdates(t *testing.T) {
 			}
 			if err != nil {
 				return
-			}
-			if _, ok := result.(*couchUpdates); !ok {
-				t.Errorf("Unexpected type returned: %t", result)
 			}
 
 			var got []driver.DBUpdate
@@ -420,7 +429,7 @@ func TestDBUpdates(t *testing.T) {
 	}
 }
 
-func newTestUpdates(t *testing.T, body io.ReadCloser) *couchUpdates {
+func newTestUpdates(t *testing.T, body io.ReadCloser) driver.DBUpdates {
 	t.Helper()
 	u, err := newUpdates(context.Background(), body)
 	if err != nil {
@@ -433,7 +442,7 @@ func TestUpdatesNext(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name     string
-		updates  *couchUpdates
+		updates  driver.DBUpdates
 		status   int
 		err      string
 		expected *driver.DBUpdate

@@ -17,6 +17,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -30,6 +31,8 @@ import (
 	kivikmock "github.com/go-kivik/kivik/v4/mockdb"
 	_ "github.com/go-kivik/kivik/v4/x/fsdb" // The filesystem driver
 )
+
+const isGopherJS117 = runtime.GOARCH == "js"
 
 func TestReplicateMock(t *testing.T) {
 	type tt struct {

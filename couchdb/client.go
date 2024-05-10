@@ -125,7 +125,7 @@ func (p *updatesParser) parseMeta(i interface{}, dec *json.Decoder, key string) 
 	return meta.parseMeta(key, dec)
 }
 
-func newUpdates(ctx context.Context, r io.ReadCloser) (*couchUpdates, error) {
+func newUpdates(ctx context.Context, r io.ReadCloser) (driver.DBUpdates, error) {
 	r, feedType, err := updatesFeedType(r)
 	if err != nil {
 		return nil, &internal.Error{Status: http.StatusBadGateway, Err: err}
@@ -136,6 +136,8 @@ func newUpdates(ctx context.Context, r io.ReadCloser) (*couchUpdates, error) {
 		return newContinuousUpdates(ctx, r), nil
 	case feedTypeNormal:
 		return newNormalUpdates(ctx, r), nil
+	case feedTypeEmpty:
+		return newEmptyUpdates(r)
 	}
 	panic("unknown") // TODO: test
 }
@@ -145,6 +147,7 @@ type feedType int
 const (
 	feedTypeNormal feedType = iota
 	feedTypeContinuous
+	feedTypeEmpty
 )
 
 // updatesFeedType detects the type of Updates Feed (continuous, or normal) by
@@ -183,6 +186,8 @@ func updatesFeedType(r io.ReadCloser) (io.ReadCloser, feedType, error) {
 		return r, feedTypeContinuous, nil
 	case "results": // Normal feed
 		return r, feedTypeNormal, nil
+	case "last_seq": // Normal feed, but with no results
+		return r, feedTypeEmpty, nil
 	default: // Something unexpected
 		return nil, 0, fmt.Errorf("kivik: unexpected JSON token %q in feed response, expected `db_name` or `results`", tok)
 	}
@@ -201,6 +206,27 @@ func newContinuousUpdates(ctx context.Context, r io.ReadCloser) *couchUpdates {
 		iter: newIter(ctx, nil, "", r, &updatesParser{}),
 	}
 }
+
+func newEmptyUpdates(r io.ReadCloser) (driver.DBUpdates, error) {
+	var updates emptyUpdates
+	if err := json.NewDecoder(r).Decode(&updates); err != nil {
+		return nil, err
+	}
+	return &updates, nil
+}
+
+type emptyUpdates struct {
+	Lastseq string `json:"last_seq"`
+}
+
+var (
+	_ driver.DBUpdates = (*emptyUpdates)(nil)
+	_ driver.LastSeqer = (*emptyUpdates)(nil)
+)
+
+func (u *emptyUpdates) Close() error                { return nil }
+func (u *emptyUpdates) Next(*driver.DBUpdate) error { return io.EOF }
+func (u *emptyUpdates) LastSeq() (string, error)    { return u.Lastseq, nil }
 
 func (u *couchUpdates) Next(update *driver.DBUpdate) error {
 	return u.iter.next(update)

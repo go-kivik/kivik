@@ -44,7 +44,7 @@ type normalChanges struct {
 var _ driver.Changes = &normalChanges{}
 
 func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq *uint64, sinceNow bool, feed string) (*normalChanges, error) {
-	limit, err := opts.limit()
+	limit, err := opts.changesLimit()
 	if err != nil {
 		return nil, err
 	}

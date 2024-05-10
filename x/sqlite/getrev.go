@@ -23,8 +23,7 @@ import (
 )
 
 func (d *db) GetRev(ctx context.Context, id string, options driver.Options) (string, error) {
-	opts := map[string]interface{}{}
-	options.Apply(opts)
+	opts := newOpts(options)
 
 	var r revision
 
@@ -34,15 +33,13 @@ func (d *db) GetRev(ctx context.Context, id string, options driver.Options) (str
 	}
 	defer tx.Rollback()
 
-	optsRev, _ := opts["rev"].(string)
-	latest, _ := opts["latest"].(bool)
-	if optsRev != "" {
-		r, err = parseRev(optsRev)
+	if opts.rev() != "" {
+		r, err = parseRev(opts.rev())
 		if err != nil {
 			return "", err
 		}
 	}
-	_, r, err = d.getCoreDoc(ctx, d.db, id, r, latest, true)
+	_, r, err = d.getCoreDoc(ctx, d.db, id, r, opts.latest(), true)
 	if err != nil {
 		return "", err
 	}

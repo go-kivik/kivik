@@ -18,12 +18,16 @@ import (
 	"slices"
 	"sort"
 	"strconv"
+	"sync"
 
 	"golang.org/x/text/collate"
 	"golang.org/x/text/language"
 )
 
-var collator = collate.New(language.Und)
+var (
+	collatorMu = new(sync.Mutex)
+	collator   = collate.New(language.Und)
+)
 
 func couchdbCmpString(a, b string) int {
 	return couchdbCmpJSON(json.RawMessage(a), json.RawMessage(b))
@@ -79,7 +83,10 @@ func couchdbCmpJSON(a, b json.RawMessage) int {
 		if bt != jsTypeString {
 			return -1
 		}
-		return collator.CompareString(string(a), string(b))
+		collatorMu.Lock()
+		cmp := collator.CompareString(string(a), string(b))
+		collatorMu.Unlock()
+		return cmp
 	case bt == jsTypeString:
 		return 1
 

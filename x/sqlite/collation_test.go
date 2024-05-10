@@ -111,3 +111,9 @@ func Test_couchdbCmp(t *testing.T) {
 		})
 	}
 }
+
+// This test triggers the race detector if the collator isn't protected
+func Test_collator_race(*testing.T) {
+	go couchdbCmpJSON(json.RawMessage(`"a"`), json.RawMessage(`"b"`))
+	go couchdbCmpJSON(json.RawMessage(`"a"`), json.RawMessage(`"b"`))
+}

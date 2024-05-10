@@ -87,7 +87,7 @@ coverage:
     - ./script/coverage.sh
 
 .gopherjs_test: &gopherjs_test_template
-  image: golang:1.18
+  image: golang:1.19
   services:
     - name: couchdb:3.3.3
       alias: couch33
@@ -104,7 +104,7 @@ coverage:
     - ( cd /tmp && go install github.com/gopherjs/gopherjs@${GOPHERJS_TAG} )
     - npm install https://github.com/gopherjs/gopherjs#${GOPHERJS_TAG}
     - npm list
-    - node -r syscall
+    - node --require syscall
     - gopherjs test `go list ./... | grep -v /cmd/`
 
 gopherjs1.17-pouchdb7:
@@ -127,6 +127,7 @@ gopherjs1.17-pouchdb8:
 
 gopherjs1.18-pouchdb7:
   <<: *gopherjs_test_template
+  image: golang:1.18
   variables:
     NODE_VER: 18
     NPM_PROFILE: pouchdb/pouchdb7-package.json
@@ -135,11 +136,28 @@ gopherjs1.18-pouchdb7:
 
 gopherjs1.18-pouchdb8:
   <<: *gopherjs_test_template
+  image: golang:1.18
   variables:
     NODE_VER: 18
     NPM_PROFILE: pouchdb/pouchdb8-package.json
     KIVIK_TEST_DSN_COUCH33: http://admin:abc123@couch33:5984/
     GOPHERJS_TAG: v1.18.0-beta3
+
+gopherjs1.19-pouchdb7:
+  <<: *gopherjs_test_template
+  variables:
+    NODE_VER: 18
+    NPM_PROFILE: pouchdb/pouchdb7-package.json
+    KIVIK_TEST_DSN_COUCH33: http://admin:abc123@couch33:5984/
+    GOPHERJS_TAG: v1.19.0-beta1
+
+gopherjs1.19-pouchdb8:
+  <<: *gopherjs_test_template
+  variables:
+    NODE_VER: 18
+    NPM_PROFILE: pouchdb/pouchdb8-package.json
+    KIVIK_TEST_DSN_COUCH33: http://admin:abc123@couch33:5984/
+    GOPHERJS_TAG: v1.19.0-beta1
 
 .releaser: &release_template
   image:

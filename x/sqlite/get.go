@@ -24,8 +24,7 @@ import (
 )
 
 func (d *db) Get(ctx context.Context, id string, options driver.Options) (*driver.Document, error) {
-	opts := map[string]interface{}{}
-	options.Apply(opts)
+	opts := newOpts(options)
 
 	var r revision
 
@@ -35,40 +34,22 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 	}
 	defer tx.Rollback()
 
-	var (
-		optConflicts, _        = opts["conflicts"].(bool)
-		optDeletedConflicts, _ = opts["deleted_conflicts"].(bool)
-		optRevsInfo, _         = opts["revs_info"].(bool)
-		optRevs, _             = opts["revs"].(bool) // TODO: opts.revs()
-		optLocalSeq, _         = opts["local_seq"].(bool)
-		optAttachments, _      = opts["attachments"].(bool)
-		optAttsSince, _        = opts["atts_since"].([]string)
-		optsRev, _             = opts["rev"].(string)
-		latest, _              = opts["latest"].(bool)
-	)
-
-	if optsRev != "" {
-		r, err = parseRev(optsRev)
+	if opts.rev() != "" {
+		r, err = parseRev(opts.rev())
 		if err != nil {
 			return nil, err
 		}
 	}
-	toMerge, r, err := d.getCoreDoc(ctx, tx, id, r, latest, false)
+	toMerge, r, err := d.getCoreDoc(ctx, tx, id, r, opts.latest(), false)
 	if err != nil {
 		return nil, err
 	}
 
-	if !optLocalSeq {
+	if !opts.localSeq() {
 		toMerge.LocalSeq = 0
 	}
 
-	if meta, _ := opts["meta"].(bool); meta {
-		optConflicts = true
-		optDeletedConflicts = true
-		optRevsInfo = true
-	}
-
-	if optConflicts {
+	if opts.conflicts() {
 		revs, err := d.conflicts(ctx, tx, id, r, false)
 		if err != nil {
 			return nil, err
@@ -77,7 +58,7 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 		toMerge.Conflicts = revs
 	}
 
-	if optDeletedConflicts {
+	if opts.deletedConflicts() {
 		revs, err := d.conflicts(ctx, tx, id, r, true)
 		if err != nil {
 			return nil, err
@@ -86,7 +67,7 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 		toMerge.DeletedConflicts = revs
 	}
 
-	if optRevsInfo || optRevs {
+	if opts.revsInfo() || opts.revs() {
 		rows, err := tx.QueryContext(ctx, d.query(`
 			WITH RECURSIVE Ancestors AS (
 				-- Base case: Select the starting node for ancestors
@@ -133,7 +114,7 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 		if err := rows.Err(); err != nil {
 			return nil, err
 		}
-		if optRevsInfo {
+		if opts.revsInfo() {
 			info := make([]map[string]string, 0, len(revs))
 			for _, r := range revs {
 				info = append(info, map[string]string{
@@ -155,7 +136,7 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 		}
 	}
 
-	atts, err := d.getAttachments(ctx, tx, id, r, optAttachments, optAttsSince)
+	atts, err := d.getAttachments(ctx, tx, id, r, opts.attachments(), opts.attsSince())
 	if err != nil {
 		return nil, err
 	}

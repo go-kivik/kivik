@@ -18,6 +18,7 @@ package sqlite
 import (
 	"context"
 	"io"
+	"net/http"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -559,6 +560,16 @@ func TestDBAllDocs(t *testing.T) {
 				},
 			},
 		}
+	})
+	tests.Add("invalid limit value", test{
+		options:    kivik.Params(map[string]interface{}{"limit": "chicken"}),
+		wantErr:    "malformed 'limit' parameter",
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("invalid skip value", test{
+		options:    kivik.Params(map[string]interface{}{"skip": "chicken"}),
+		wantErr:    "malformed 'skip' parameter",
+		wantStatus: http.StatusBadRequest,
 	})
 
 	/*

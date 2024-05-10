@@ -13,6 +13,7 @@
 package sqlite
 
 import (
+	"math"
 	"net/http"
 	"strconv"
 
@@ -92,9 +93,9 @@ func (o optsMap) since() (bool, *uint64, error) {
 	return false, &since, err
 }
 
-// limit returns 0 if the limit is unset, or the limit value as a uint64. An
-// explicit limit of 0 is converted to 1, as per CouchDB docs.
-func (o optsMap) limit() (uint64, error) {
+// changesLimit returns the changesLimit value as a uint64, or 0 if the changesLimit is unset. An
+// explicit changesLimit of 0 is converted to 1, as per CouchDB docs.
+func (o optsMap) changesLimit() (uint64, error) {
 	in, ok := o["limit"]
 	if !ok {
 		return 0, nil
@@ -107,6 +108,26 @@ func (o optsMap) limit() (uint64, error) {
 		limit = 1
 	}
 	return limit, nil
+}
+
+// limit returns the limit value as an int64, or -1 if the limit is unset.
+// If the limit is invalid, an error is returned with status 400.
+func (o optsMap) limit() (int64, error) {
+	in, ok := o["limit"]
+	if !ok {
+		return -1, nil
+	}
+	return toInt64(in, "malformed 'limit' parameter")
+}
+
+// skip returns the skip value as an int64, or 0 if the skip is unset.
+// If the skip is invalid, an error is returned with status 400.
+func (o optsMap) skip() (int64, error) {
+	in, ok := o["skip"]
+	if !ok {
+		return 0, nil
+	}
+	return toInt64(in, "malformed 'skip' parameter")
 }
 
 // toUint64 converts the input to a uint64. If the input is malformed, it
@@ -162,6 +183,56 @@ func toUint64(in interface{}, msg string) (uint64, error) {
 	}
 }
 
+// toInt64 converts the input to a int64. If the input is malformed, it
+// returns an error with msg as the message, and 400 as the status code.
+func toInt64(in interface{}, msg string) (int64, error) {
+	switch t := in.(type) {
+	case int:
+		return int64(t), nil
+	case int64:
+		return t, nil
+	case int8:
+		return int64(t), nil
+	case int16:
+		return int64(t), nil
+	case int32:
+		return int64(t), nil
+	case uint:
+		return int64(t), nil
+	case uint8:
+		return int64(t), nil
+	case uint16:
+		return int64(t), nil
+	case uint32:
+		return int64(t), nil
+	case uint64:
+		if t > math.MaxInt64 {
+			return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
+		}
+		return int64(t), nil
+	case string:
+		i, err := strconv.ParseInt(t, 10, 64)
+		if err != nil {
+			return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
+		}
+		return i, nil
+	case float32:
+		i := int64(t)
+		if float32(i) != t {
+			return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
+		}
+		return i, nil
+	case float64:
+		i := int64(t)
+		if float64(i) != t {
+			return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
+		}
+		return i, nil
+	default:
+		return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
+	}
+}
+
 func toBool(in interface{}) (value bool, ok bool) {
 	switch t := in.(type) {
 	case bool:
@@ -174,8 +245,13 @@ func toBool(in interface{}) (value bool, ok bool) {
 	}
 }
 
+func (o optsMap) descending() bool {
+	v, _ := toBool(o["descending"])
+	return v
+}
+
 func (o optsMap) direction() string {
-	if v, _ := toBool(o["descending"]); v {
+	if o.descending() {
 		return "DESC"
 	}
 	return "ASC"
@@ -267,4 +343,43 @@ func (o optsMap) groupLevel() (uint64, error) {
 		return 0, nil
 	}
 	return toUint64(raw, "invalid value for `group_level`")
+}
+
+func (o optsMap) conflicts() bool {
+	if o.meta() {
+		return true
+	}
+	v, _ := toBool(o["conflicts"])
+	return v
+}
+
+func (o optsMap) meta() bool {
+	v, _ := toBool(o["meta"])
+	return v
+}
+
+func (o optsMap) deletedConflicts() bool {
+	if o.meta() {
+		return true
+	}
+	v, _ := toBool(o["deleted_conflicts"])
+	return v
+}
+
+func (o optsMap) revsInfo() bool {
+	if o.meta() {
+		return true
+	}
+	v, _ := toBool(o["revs_info"])
+	return v
+}
+
+func (o optsMap) localSeq() bool {
+	v, _ := toBool(o["local_seq"])
+	return v
+}
+
+func (o optsMap) attsSince() []string {
+	attsSince, _ := o["atts_since"].([]string)
+	return attsSince
 }

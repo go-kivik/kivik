@@ -65,20 +65,7 @@ func (d *db) DesignDocs(ctx context.Context, options driver.Options) (driver.Row
 func (d *db) queryView(ctx context.Context, view string, options driver.Options) (driver.Rows, error) {
 	opts := newOpts(options)
 
-	var (
-		optConflicts, _   = opts["conflicts"].(bool)
-		optDescending, _  = opts["descending"].(bool)
-		optIncludeDocs, _ = opts["include_docs"].(bool)
-		optLimit, _       = opts["limit"].(int)
-		optSkip, _        = opts["skip"].(int)
-	)
-
-	direction := "ASC"
-	if optDescending {
-		direction = "DESC"
-	}
-
-	args := []interface{}{optIncludeDocs}
+	args := []interface{}{opts.includeDocs()}
 
 	where := []string{"rev.rank = 1"}
 	switch view {
@@ -90,15 +77,20 @@ func (d *db) queryView(ctx context.Context, view string, options driver.Options)
 		where = append(where, "rev.id LIKE '_design/%'")
 	}
 	if endkey := opts.endKey(); endkey != "" {
-		where = append(where, fmt.Sprintf("rev.id %s $%d", endKeyOp(optDescending, opts.inclusiveEnd()), len(args)+1))
+		where = append(where, fmt.Sprintf("rev.id %s $%d", endKeyOp(opts.descending(), opts.inclusiveEnd()), len(args)+1))
 		args = append(args, endkey)
 	}
 	if startkey := opts.startKey(); startkey != "" {
-		where = append(where, fmt.Sprintf("rev.id %s $%d", startKeyOp(optDescending), len(args)+1))
+		where = append(where, fmt.Sprintf("rev.id %s $%d", startKeyOp(opts.descending()), len(args)+1))
 		args = append(args, startkey)
 	}
-	if optLimit == 0 {
-		optLimit = -1
+	limit, err := opts.limit()
+	if err != nil {
+		return nil, err
+	}
+	skip, err := opts.skip()
+	if err != nil {
+		return nil, err
 	}
 
 	query := fmt.Sprintf(d.query(`
@@ -134,7 +126,7 @@ func (d *db) queryView(ctx context.Context, view string, options driver.Options)
 		GROUP BY rev.id, rev.rev, rev.rev_id
 		ORDER BY id %[1]s
 		LIMIT %[3]d OFFSET %[4]d
-	`), direction, strings.Join(where, " AND "), optLimit, optSkip)
+	`), opts.direction(), strings.Join(where, " AND "), limit, skip)
 	results, err := d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {
 		return nil, err
@@ -144,7 +136,7 @@ func (d *db) queryView(ctx context.Context, view string, options driver.Options)
 		ctx:       ctx,
 		db:        d,
 		rows:      results,
-		conflicts: optConflicts,
+		conflicts: opts.conflicts(),
 	}, nil
 }
 

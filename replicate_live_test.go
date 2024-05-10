@@ -10,13 +10,17 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+// TODO: Try to re-enable these tests when we're on a newer version of GopherJS.
+
+//go:build !js
+// +build !js
+
 package kivik_test
 
 import (
 	"context"
 	"net/http"
 	"os"
-	"runtime"
 	"testing"
 	"time"
 
@@ -28,8 +32,6 @@ import (
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 	_ "github.com/go-kivik/kivik/v4/x/fsdb" // Filesystem driver
 )
-
-const isGopherJS117 = runtime.GOARCH == "js"
 
 func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 	if isGopherJS117 {

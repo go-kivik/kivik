@@ -101,7 +101,9 @@ coverage:
     - npm install source-map-support
     - mkdir -p /tmp/src
     - ( cd /tmp && go install github.com/gopherjs/gopherjs@${GOPHERJS_TAG} )
-    - npm install -S https://github.com/gopherjs/gopherjs#${GOPHERJS_TAG} && node -r syscall
+    - npm install https://github.com/gopherjs/gopherjs#${GOPHERJS_TAG}
+    - npm list
+    - node -r syscall
     - gopherjs test `go list ./... | grep -v /cmd/`
 
 gopherjs1.17-pouchdb7:

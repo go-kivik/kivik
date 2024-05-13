@@ -84,7 +84,7 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 		return nil, err
 	}
 
-	results, err := d.performQuery(ctx, ddoc, view, update, reduce, group, groupLevel)
+	results, err := d.performQuery(ctx, ddoc, view, update, reduce, group, groupLevel, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +100,14 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 	return results, nil
 }
 
-func (d *db) performQuery(ctx context.Context, ddoc, view, update string, reduce *bool, group bool, groupLevel uint64) (driver.Rows, error) {
+func (d *db) performQuery(
+	ctx context.Context,
+	ddoc, view, update string,
+	reduce *bool,
+	group bool,
+	groupLevel uint64,
+	limit int64,
+) (driver.Rows, error) {
 	if group {
 		return d.performGroupQuery(ctx, ddoc, view, update, groupLevel)
 	}
@@ -115,7 +122,7 @@ func (d *db) performQuery(ctx context.Context, ddoc, view, update string, reduce
 			return nil, err
 		}
 
-		query := d.ddocQuery(ddoc, view, rev.String(), `
+		query := fmt.Sprintf(d.ddocQuery(ddoc, view, rev.String(), `
 			WITH reduce AS (
 				SELECT
 					CASE WHEN MAX(id) IS NOT NULL THEN TRUE ELSE FALSE END AS reducable,
@@ -175,8 +182,9 @@ func (d *db) performQuery(ctx context.Context, ddoc, view, update string, reduce
 				JOIN reduce
 				WHERE $6 == FALSE OR NOT reduce.reducable
 				ORDER BY key
+				LIMIT %[1]d
 			)
-		`)
+		`), limit)
 
 		results, err = d.db.QueryContext( //nolint:rowserrcheck // Err checked in Next
 			ctx, query,

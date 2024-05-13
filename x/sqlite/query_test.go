@@ -1208,6 +1208,32 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("limit=1", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc.value);
+							}
+						}`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{"key": "a", "value": 1})
+		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": 2})
+
+		return test{
+			db:      d,
+			ddoc:    "_design/foo",
+			view:    "_view/bar",
+			options: kivik.Param("limit", 1),
+			want: []rowResult{
+				{ID: "a", Key: `"a"`, Value: "1"},
+			},
+		}
+	})
 	/*
 		TODO:
 		- _stats
@@ -1238,7 +1264,6 @@ func TestDBQuery(t *testing.T) {
 			- inclusive_end
 			- key
 			- keys
-			- limit
 			- reduce
 			- skip
 			- sorted

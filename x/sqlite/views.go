@@ -62,7 +62,12 @@ func (d *db) DesignDocs(ctx context.Context, options driver.Options) (driver.Row
 	return d.Query(ctx, viewDesignDocs, "", options)
 }
 
-func (d *db) queryBuiltinView(ctx context.Context, view string, opts optsMap) (driver.Rows, error) {
+func (d *db) queryBuiltinView(
+	ctx context.Context,
+	view string,
+	limit, skip int64,
+	opts optsMap,
+) (driver.Rows, error) {
 	args := []interface{}{opts.includeDocs()}
 
 	where := []string{"rev.rank = 1"}
@@ -81,14 +86,6 @@ func (d *db) queryBuiltinView(ctx context.Context, view string, opts optsMap) (d
 	if startkey := opts.startKey(); startkey != "" {
 		where = append(where, fmt.Sprintf("rev.id %s $%d", startKeyOp(opts.descending()), len(args)+1))
 		args = append(args, startkey)
-	}
-	limit, err := opts.limit()
-	if err != nil {
-		return nil, err
-	}
-	skip, err := opts.skip()
-	if err != nil {
-		return nil, err
 	}
 
 	query := fmt.Sprintf(d.query(`

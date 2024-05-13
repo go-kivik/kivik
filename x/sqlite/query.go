@@ -44,9 +44,18 @@ func fromJSValue(v interface{}) (*string, error) {
 func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Options) (driver.Rows, error) {
 	opts := newOpts(options)
 
+	limit, err := opts.limit()
+	if err != nil {
+		return nil, err
+	}
+	skip, err := opts.skip()
+	if err != nil {
+		return nil, err
+	}
+
 	switch ddoc {
 	case viewAllDocs, viewLocalDocs, viewDesignDocs:
-		return d.queryBuiltinView(ctx, ddoc, opts)
+		return d.queryBuiltinView(ctx, ddoc, limit, skip, opts)
 	}
 	update, err := opts.update()
 	if err != nil {

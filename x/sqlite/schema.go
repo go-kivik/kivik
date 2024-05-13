@@ -55,19 +55,6 @@ var schema = []string{
 		FOREIGN KEY (id, rev, rev_id) REFERENCES {{ .Docs }} (id, rev, rev_id) ON DELETE CASCADE,
 		UNIQUE (id, rev, rev_id, pk)
 	)`,
-	`CREATE VIEW {{ .Leaves }} AS
-		SELECT
-			doc.seq     AS seq,
-			rev.id      AS id,
-			rev.rev     AS rev,
-			rev.rev_id  AS rev_id,
-			doc.doc     AS doc,
-			doc.deleted AS deleted
-		FROM {{ .Revs }} AS rev
-		LEFT JOIN {{ .Revs }} AS child ON rev.id = child.id AND rev.rev = child.parent_rev AND rev.rev_id = child.parent_rev_id
-		JOIN {{ .Docs }} AS doc ON rev.id = doc.id AND rev.rev = doc.rev AND rev.rev_id = doc.rev_id
-		WHERE child.id IS NULL
-	`,
 	/*
 		The .Design table is used to store design documents. The schema is as follows:
 		- id: The document ID.

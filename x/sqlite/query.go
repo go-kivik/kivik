@@ -391,13 +391,19 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 				att.length,
 				att.digest,
 				att.rev_pos
-			FROM {{ .Revs }} AS rev
-			LEFT JOIN {{ .Revs }} AS child ON rev.id = child.id AND rev.rev = child.parent_rev AND rev.rev_id = child.parent_rev_id
+			FROM (
+				SELECT
+					rev.id                    AS id,
+					rev.rev                   AS rev,
+					rev.rev_id                AS rev_id
+				FROM {{ .Revs }} AS rev
+				LEFT JOIN {{ .Revs }} AS child ON child.id = rev.id AND rev.rev = child.parent_rev AND rev.rev_id = child.parent_rev_id
+				WHERE child.id IS NULL
+			) AS rev
 			JOIN {{ .Docs }} AS doc ON rev.id = doc.id AND rev.rev = doc.rev AND rev.rev_id = doc.rev_id
 			LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON doc.id = bridge.id AND doc.rev = bridge.rev AND doc.rev_id = bridge.rev_id
 			LEFT JOIN {{ .Attachments }} AS att ON bridge.pk = att.pk
 			WHERE rev.id NOT LIKE '_local/%'
-				AND child.id IS NULL
 				AND doc.seq > $1
 			ORDER BY doc.seq
 		)

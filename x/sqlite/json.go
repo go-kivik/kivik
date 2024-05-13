@@ -373,6 +373,10 @@ type fullDoc struct {
 	Deleted          bool                   `json:"_deleted,omitempty"`
 }
 
+func (d fullDoc) rev() (revision, error) {
+	return parseRev(d.Rev)
+}
+
 func (d *fullDoc) toRaw() json.RawMessage {
 	buf := bytes.Buffer{}
 	_ = buf.WriteByte('{')

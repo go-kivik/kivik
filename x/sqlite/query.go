@@ -43,6 +43,26 @@ func fromJSValue(v interface{}) (*string, error) {
 
 func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Options) (driver.Rows, error) {
 	opts := newOpts(options)
+
+	limit, err := opts.limit()
+	if err != nil {
+		return nil, err
+	}
+	skip, err := opts.skip()
+	if err != nil {
+		return nil, err
+	}
+	endkey := opts.endKey()
+	startkey := opts.startKey()
+	descending := opts.descending()
+	includeDocs := opts.includeDocs()
+	inclusiveEnd := opts.inclusiveEnd()
+	conflicts := opts.conflicts()
+
+	switch ddoc {
+	case viewAllDocs, viewLocalDocs, viewDesignDocs:
+		return d.queryBuiltinView(ctx, ddoc, startkey, endkey, limit, skip, includeDocs, descending, inclusiveEnd, conflicts)
+	}
 	update, err := opts.update()
 	if err != nil {
 		return nil, err
@@ -64,7 +84,7 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 		return nil, err
 	}
 
-	results, err := d.performQuery(ctx, ddoc, view, update, reduce, group, groupLevel)
+	results, err := d.performQuery(ctx, ddoc, view, update, reduce, group, includeDocs, groupLevel, limit, skip)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +100,14 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 	return results, nil
 }
 
-func (d *db) performQuery(ctx context.Context, ddoc, view, update string, reduce *bool, group bool, groupLevel uint64) (driver.Rows, error) {
+func (d *db) performQuery(
+	ctx context.Context,
+	ddoc, view, update string,
+	reduce *bool,
+	group, includeDocs bool,
+	groupLevel uint64,
+	limit, skip int64,
+) (driver.Rows, error) {
 	if group {
 		return d.performGroupQuery(ctx, ddoc, view, update, groupLevel)
 	}
@@ -95,7 +122,7 @@ func (d *db) performQuery(ctx context.Context, ddoc, view, update string, reduce
 			return nil, err
 		}
 
-		query := d.ddocQuery(ddoc, view, rev.String(), `
+		query := fmt.Sprintf(d.ddocQuery(ddoc, view, rev.String(), `
 			WITH reduce AS (
 				SELECT
 					CASE WHEN MAX(id) IS NOT NULL THEN TRUE ELSE FALSE END AS reducable,
@@ -145,22 +172,25 @@ func (d *db) performQuery(ctx context.Context, ddoc, view, update string, reduce
 			SELECT *
 			FROM (
 				SELECT
-					id,
-					key,
-					value,
-					"" AS rev,
-					NULL AS doc,
+					map.id,
+					map.key,
+					map.value,
+					IIF($7, docs.rev || '-' || docs.rev_id, "") AS rev,
+					IIF($7, docs.doc, NULL) AS doc,
 					"" AS conflicts
-				FROM {{ .Map }}
+				FROM {{ .Map }} AS map
 				JOIN reduce
+				JOIN {{ .Docs }} AS docs ON map.id = docs.id AND map.rev = docs.rev AND map.rev_id = docs.rev_id
 				WHERE $6 == FALSE OR NOT reduce.reducable
 				ORDER BY key
+				LIMIT %[1]d OFFSET %[2]d
 			)
-		`)
+		`), limit, skip)
 
 		results, err = d.db.QueryContext( //nolint:rowserrcheck // Err checked in Next
 			ctx, query,
 			"_design/"+ddoc, rev.rev, rev.id, view, kivik.EndKeySuffix, reduce,
+			includeDocs,
 		)
 		switch {
 		case errIsNoSuchTable(err):
@@ -382,7 +412,7 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 
 	vm := goja.New()
 
-	emit := func(id string) func(interface{}, interface{}) {
+	emit := func(id string, rev revision) func(interface{}, interface{}) {
 		return func(key, value interface{}) {
 			defer func() {
 				if r := recover(); r != nil {
@@ -397,7 +427,7 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 			if err != nil {
 				panic(err)
 			}
-			batch.add(id, k, v)
+			batch.add(id, rev, k, v)
 		}
 	}
 
@@ -421,19 +451,24 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 			return revision{}, err
 		}
 
+		rev, err := full.rev()
+		if err != nil {
+			return revision{}, err
+		}
+
 		if full.Deleted {
-			batch.delete(full.ID)
+			batch.delete(full.ID, rev)
 			continue
 		}
 
-		if err := vm.Set("emit", emit(full.ID)); err != nil {
+		if err := vm.Set("emit", emit(full.ID, rev)); err != nil {
 			return revision{}, err
 		}
 		if _, err := mapFunc(goja.Undefined(), vm.ToValue(full.toMap())); err != nil {
 			var exception *goja.Exception
 			if errors.As(err, &exception) {
 				d.logger.Printf("map function threw exception for %s: %s", full.ID, exception.String())
-				batch.delete(full.ID)
+				batch.delete(full.ID, rev)
 			} else {
 				return revision{}, err
 			}
@@ -508,10 +543,16 @@ func iter(docs *sql.Rows, seq *int, full *fullDoc) error {
 	return nil
 }
 
+type docRev struct {
+	id    string
+	rev   int
+	revID string
+}
+
 type mapIndexBatch struct {
 	insertCount int
-	entries     map[string][]mapIndexEntry
-	deleted     []string
+	entries     map[docRev][]mapIndexEntry
+	deleted     []docRev
 }
 
 type mapIndexEntry struct {
@@ -521,28 +562,38 @@ type mapIndexEntry struct {
 
 func newMapIndexBatch() *mapIndexBatch {
 	return &mapIndexBatch{
-		entries: make(map[string][]mapIndexEntry, batchSize),
+		entries: make(map[docRev][]mapIndexEntry, batchSize),
 	}
 }
 
-func (b *mapIndexBatch) add(id string, key, value *string) {
-	b.entries[id] = append(b.entries[id], mapIndexEntry{
+func (b *mapIndexBatch) add(id string, rev revision, key, value *string) {
+	mapKey := docRev{
+		id:    id,
+		rev:   rev.rev,
+		revID: rev.id,
+	}
+	b.entries[mapKey] = append(b.entries[mapKey], mapIndexEntry{
 		Key:   key,
 		Value: value,
 	})
 	b.insertCount++
 }
 
-func (b *mapIndexBatch) delete(id string) {
-	b.deleted = append(b.deleted, id)
-	b.insertCount -= len(b.entries[id])
-	delete(b.entries, id)
+func (b *mapIndexBatch) delete(id string, rev revision) {
+	mapKey := docRev{
+		id:    id,
+		rev:   rev.rev,
+		revID: rev.id,
+	}
+	b.deleted = append(b.deleted, mapKey)
+	b.insertCount -= len(b.entries[mapKey])
+	delete(b.entries, mapKey)
 }
 
 func (b *mapIndexBatch) clear() {
 	b.insertCount = 0
 	b.deleted = b.deleted[:0]
-	b.entries = make(map[string][]mapIndexEntry, batchSize)
+	b.entries = make(map[docRev][]mapIndexEntry, batchSize)
 }
 
 func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc, viewName string, batch *mapIndexBatch) error {
@@ -567,11 +618,11 @@ func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc
 	// Clear any stale entries
 	if len(batch.entries) > 0 || len(batch.deleted) > 0 {
 		ids := make([]interface{}, 0, len(batch.entries)+len(batch.deleted))
-		for id := range batch.entries {
-			ids = append(ids, id)
+		for mapKey := range batch.entries {
+			ids = append(ids, mapKey.id)
 		}
-		for _, id := range batch.deleted {
-			ids = append(ids, id)
+		for _, mapKey := range batch.deleted {
+			ids = append(ids, mapKey.id)
 		}
 		query := fmt.Sprintf(d.ddocQuery(ddoc, viewName, rev.String(), `
 			DELETE FROM {{ .Map }}
@@ -583,16 +634,16 @@ func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc
 	}
 
 	if batch.insertCount > 0 {
-		args := make([]interface{}, 0, batch.insertCount*3)
+		args := make([]interface{}, 0, batch.insertCount*5)
 		values := make([]string, 0, batch.insertCount)
-		for id, entries := range batch.entries {
+		for mapKey, entries := range batch.entries {
 			for _, entry := range entries {
-				values = append(values, fmt.Sprintf("($%d, $%d, $%d)", len(args)+1, len(args)+2, len(args)+3))
-				args = append(args, id, entry.Key, entry.Value)
+				values = append(values, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", len(args)+1, len(args)+2, len(args)+3, len(args)+4, len(args)+5))
+				args = append(args, mapKey.id, mapKey.rev, mapKey.revID, entry.Key, entry.Value)
 			}
 		}
 		query := d.ddocQuery(ddoc, viewName, rev.String(), `
-		INSERT INTO {{ .Map }} (id, key, value)
+		INSERT INTO {{ .Map }} (id, rev, rev_id, key, value)
 		VALUES
 	`) + strings.Join(values, ",")
 		if _, err := tx.ExecContext(ctx, query, args...); err != nil {

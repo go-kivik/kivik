@@ -1208,6 +1208,87 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("limit=1", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc.value);
+							}
+						}`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{"key": "a", "value": 1})
+		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": 2})
+
+		return test{
+			db:      d,
+			ddoc:    "_design/foo",
+			view:    "_view/bar",
+			options: kivik.Param("limit", 1),
+			want: []rowResult{
+				{ID: "a", Key: `"a"`, Value: "1"},
+			},
+		}
+	})
+	tests.Add("limit=1, skip=1", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc.value);
+							}
+						}`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{"key": "a", "value": 1})
+		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": 2})
+		_ = d.tPut("c", map[string]interface{}{"key": "c", "value": 3})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"limit": 1,
+				"skip":  1,
+			}),
+			want: []rowResult{
+				{ID: "b", Key: `"b"`, Value: "2"},
+			},
+		}
+	})
+	tests.Add("include_docs=true", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc.value);
+							}
+						}`,
+				},
+			},
+		})
+		rev := d.tPut("a", map[string]interface{}{"key": "a", "value": 1})
+
+		return test{
+			db:      d,
+			ddoc:    "_design/foo",
+			view:    "_view/bar",
+			options: kivik.Param("include_docs", true),
+			want: []rowResult{
+				{ID: "a", Key: `"a"`, Value: "1", Doc: `{"_id":"a","_rev":"` + rev + `","key":"a","value":1}`},
+			},
+		}
+	})
 	/*
 		TODO:
 		- _stats
@@ -1234,13 +1315,10 @@ func TestDBQuery(t *testing.T) {
 			- end_key
 			- endkey_docid
 			- end_key_doc_id
-			- include_docs
 			- inclusive_end
 			- key
 			- keys
-			- limit
 			- reduce
-			- skip
 			- sorted
 			- stable // N/A only for clusters
 			- stale // deprecated

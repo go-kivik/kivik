@@ -51,21 +51,25 @@ const (
 )
 
 func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
-	return d.queryView(ctx, viewAllDocs, options)
+	return d.Query(ctx, viewAllDocs, "", options)
 }
 
 func (d *db) LocalDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
-	return d.queryView(ctx, viewLocalDocs, options)
+	return d.Query(ctx, viewLocalDocs, "", options)
 }
 
 func (d *db) DesignDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
-	return d.queryView(ctx, viewDesignDocs, options)
+	return d.Query(ctx, viewDesignDocs, "", options)
 }
 
-func (d *db) queryView(ctx context.Context, view string, options driver.Options) (driver.Rows, error) {
-	opts := newOpts(options)
-
-	args := []interface{}{opts.includeDocs()}
+func (d *db) queryBuiltinView(
+	ctx context.Context,
+	view string,
+	startkey, endkey string,
+	limit, skip int64,
+	includeDocs, descending, inclusiveEnd, conflicts bool,
+) (driver.Rows, error) {
+	args := []interface{}{includeDocs}
 
 	where := []string{"rev.rank = 1"}
 	switch view {
@@ -76,21 +80,13 @@ func (d *db) queryView(ctx context.Context, view string, options driver.Options)
 	case viewDesignDocs:
 		where = append(where, "rev.id LIKE '_design/%'")
 	}
-	if endkey := opts.endKey(); endkey != "" {
-		where = append(where, fmt.Sprintf("rev.id %s $%d", endKeyOp(opts.descending(), opts.inclusiveEnd()), len(args)+1))
+	if endkey != "" {
+		where = append(where, fmt.Sprintf("rev.id %s $%d", endKeyOp(descending, inclusiveEnd), len(args)+1))
 		args = append(args, endkey)
 	}
-	if startkey := opts.startKey(); startkey != "" {
-		where = append(where, fmt.Sprintf("rev.id %s $%d", startKeyOp(opts.descending()), len(args)+1))
+	if startkey != "" {
+		where = append(where, fmt.Sprintf("rev.id %s $%d", startKeyOp(descending), len(args)+1))
 		args = append(args, startkey)
-	}
-	limit, err := opts.limit()
-	if err != nil {
-		return nil, err
-	}
-	skip, err := opts.skip()
-	if err != nil {
-		return nil, err
 	}
 
 	query := fmt.Sprintf(d.query(`
@@ -126,7 +122,7 @@ func (d *db) queryView(ctx context.Context, view string, options driver.Options)
 		GROUP BY rev.id, rev.rev, rev.rev_id
 		ORDER BY id %[1]s
 		LIMIT %[3]d OFFSET %[4]d
-	`), opts.direction(), strings.Join(where, " AND "), limit, skip)
+	`), descendingToDirection(descending), strings.Join(where, " AND "), limit, skip)
 	results, err := d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {
 		return nil, err
@@ -136,8 +132,15 @@ func (d *db) queryView(ctx context.Context, view string, options driver.Options)
 		ctx:       ctx,
 		db:        d,
 		rows:      results,
-		conflicts: opts.conflicts(),
+		conflicts: conflicts,
 	}, nil
+}
+
+func descendingToDirection(descending bool) string {
+	if descending {
+		return "DESC"
+	}
+	return "ASC"
 }
 
 type rows struct {

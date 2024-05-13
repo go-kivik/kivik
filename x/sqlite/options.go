@@ -250,13 +250,6 @@ func (o optsMap) descending() bool {
 	return v
 }
 
-func (o optsMap) direction() string {
-	if o.descending() {
-		return "DESC"
-	}
-	return "ASC"
-}
-
 func (o optsMap) includeDocs() bool {
 	v, _ := toBool(o["include_docs"])
 	return v

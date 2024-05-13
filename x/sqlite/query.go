@@ -52,10 +52,12 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 	if err != nil {
 		return nil, err
 	}
+	endkey := opts.endKey()
+	startkey := opts.startKey()
 
 	switch ddoc {
 	case viewAllDocs, viewLocalDocs, viewDesignDocs:
-		return d.queryBuiltinView(ctx, ddoc, limit, skip, opts)
+		return d.queryBuiltinView(ctx, ddoc, startkey, endkey, limit, skip, opts)
 	}
 	update, err := opts.update()
 	if err != nil {

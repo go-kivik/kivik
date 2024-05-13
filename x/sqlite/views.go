@@ -65,6 +65,7 @@ func (d *db) DesignDocs(ctx context.Context, options driver.Options) (driver.Row
 func (d *db) queryBuiltinView(
 	ctx context.Context,
 	view string,
+	startkey, endkey string,
 	limit, skip int64,
 	opts optsMap,
 ) (driver.Rows, error) {
@@ -79,11 +80,11 @@ func (d *db) queryBuiltinView(
 	case viewDesignDocs:
 		where = append(where, "rev.id LIKE '_design/%'")
 	}
-	if endkey := opts.endKey(); endkey != "" {
+	if endkey != "" {
 		where = append(where, fmt.Sprintf("rev.id %s $%d", endKeyOp(opts.descending(), opts.inclusiveEnd()), len(args)+1))
 		args = append(args, endkey)
 	}
-	if startkey := opts.startKey(); startkey != "" {
+	if startkey != "" {
 		where = append(where, fmt.Sprintf("rev.id %s $%d", startKeyOp(opts.descending()), len(args)+1))
 		args = append(args, startkey)
 	}

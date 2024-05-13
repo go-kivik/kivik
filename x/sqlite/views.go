@@ -62,9 +62,7 @@ func (d *db) DesignDocs(ctx context.Context, options driver.Options) (driver.Row
 	return d.Query(ctx, viewDesignDocs, "", options)
 }
 
-func (d *db) queryBuiltinView(ctx context.Context, view string, options driver.Options) (driver.Rows, error) {
-	opts := newOpts(options)
-
+func (d *db) queryBuiltinView(ctx context.Context, view string, opts optsMap) (driver.Rows, error) {
 	args := []interface{}{opts.includeDocs()}
 
 	where := []string{"rev.rank = 1"}

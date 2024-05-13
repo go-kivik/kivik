@@ -123,7 +123,7 @@ func (d *db) queryBuiltinView(
 		GROUP BY rev.id, rev.rev, rev.rev_id
 		ORDER BY id %[1]s
 		LIMIT %[3]d OFFSET %[4]d
-	`), opts.direction(), strings.Join(where, " AND "), limit, skip)
+	`), descendingToDirection(descending), strings.Join(where, " AND "), limit, skip)
 	results, err := d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {
 		return nil, err
@@ -135,6 +135,13 @@ func (d *db) queryBuiltinView(
 		rows:      results,
 		conflicts: opts.conflicts(),
 	}, nil
+}
+
+func descendingToDirection(descending bool) string {
+	if descending {
+		return "DESC"
+	}
+	return "ASC"
 }
 
 type rows struct {

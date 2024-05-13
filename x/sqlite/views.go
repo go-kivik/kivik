@@ -51,18 +51,18 @@ const (
 )
 
 func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
-	return d.queryView(ctx, viewAllDocs, options)
+	return d.Query(ctx, viewAllDocs, "", options)
 }
 
 func (d *db) LocalDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
-	return d.queryView(ctx, viewLocalDocs, options)
+	return d.Query(ctx, viewLocalDocs, "", options)
 }
 
 func (d *db) DesignDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
-	return d.queryView(ctx, viewDesignDocs, options)
+	return d.Query(ctx, viewDesignDocs, "", options)
 }
 
-func (d *db) queryView(ctx context.Context, view string, options driver.Options) (driver.Rows, error) {
+func (d *db) queryBuiltinView(ctx context.Context, view string, options driver.Options) (driver.Rows, error) {
 	opts := newOpts(options)
 
 	args := []interface{}{opts.includeDocs()}

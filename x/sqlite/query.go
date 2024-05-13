@@ -84,7 +84,7 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 		return nil, err
 	}
 
-	results, err := d.performQuery(ctx, ddoc, view, update, reduce, group, groupLevel, limit)
+	results, err := d.performQuery(ctx, ddoc, view, update, reduce, group, groupLevel, limit, skip)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (d *db) performQuery(
 	reduce *bool,
 	group bool,
 	groupLevel uint64,
-	limit int64,
+	limit, skip int64,
 ) (driver.Rows, error) {
 	if group {
 		return d.performGroupQuery(ctx, ddoc, view, update, groupLevel)
@@ -182,9 +182,9 @@ func (d *db) performQuery(
 				JOIN reduce
 				WHERE $6 == FALSE OR NOT reduce.reducable
 				ORDER BY key
-				LIMIT %[1]d
+				LIMIT %[1]d OFFSET %[2]d
 			)
-		`), limit)
+		`), limit, skip)
 
 		results, err = d.db.QueryContext( //nolint:rowserrcheck // Err checked in Next
 			ctx, query,

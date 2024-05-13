@@ -1234,6 +1234,36 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("limit=1, skip=1", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc.value);
+							}
+						}`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{"key": "a", "value": 1})
+		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": 2})
+		_ = d.tPut("c", map[string]interface{}{"key": "c", "value": 3})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"limit": 1,
+				"skip":  1,
+			}),
+			want: []rowResult{
+				{ID: "b", Key: `"b"`, Value: "2"},
+			},
+		}
+	})
 	/*
 		TODO:
 		- _stats
@@ -1265,7 +1295,6 @@ func TestDBQuery(t *testing.T) {
 			- key
 			- keys
 			- reduce
-			- skip
 			- sorted
 			- stable // N/A only for clusters
 			- stale // deprecated

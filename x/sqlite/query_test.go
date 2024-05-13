@@ -1289,6 +1289,39 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("views should only include winning rev in case of conflict", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc.value);
+							}
+						}`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{
+			"key":   "a",
+			"value": 1,
+			"_rev":  "1-abc",
+		}, kivik.Param("new_edits", false))
+		_ = d.tPut("a", map[string]interface{}{
+			"key":   "a",
+			"value": 2,
+			"_rev":  "1-xyz",
+		}, kivik.Param("new_edits", false))
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: []rowResult{
+				{ID: "a", Key: `"a"`, Value: "1"},
+			},
+		}
+	})
 	/*
 		TODO:
 		- _stats

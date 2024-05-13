@@ -410,7 +410,7 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 
 	vm := goja.New()
 
-	emit := func(id string) func(interface{}, interface{}) {
+	emit := func(id string, rev revision) func(interface{}, interface{}) {
 		return func(key, value interface{}) {
 			defer func() {
 				if r := recover(); r != nil {
@@ -425,7 +425,7 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 			if err != nil {
 				panic(err)
 			}
-			batch.add(id, k, v)
+			batch.add(id, rev, k, v)
 		}
 	}
 
@@ -449,19 +449,24 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 			return revision{}, err
 		}
 
+		rev, err := full.rev()
+		if err != nil {
+			return revision{}, err
+		}
+
 		if full.Deleted {
-			batch.delete(full.ID)
+			batch.delete(full.ID, rev)
 			continue
 		}
 
-		if err := vm.Set("emit", emit(full.ID)); err != nil {
+		if err := vm.Set("emit", emit(full.ID, rev)); err != nil {
 			return revision{}, err
 		}
 		if _, err := mapFunc(goja.Undefined(), vm.ToValue(full.toMap())); err != nil {
 			var exception *goja.Exception
 			if errors.As(err, &exception) {
 				d.logger.Printf("map function threw exception for %s: %s", full.ID, exception.String())
-				batch.delete(full.ID)
+				batch.delete(full.ID, rev)
 			} else {
 				return revision{}, err
 			}
@@ -537,7 +542,9 @@ func iter(docs *sql.Rows, seq *int, full *fullDoc) error {
 }
 
 type docRev struct {
-	id string
+	id    string
+	rev   int
+	revID string
 }
 
 type mapIndexBatch struct {
@@ -557,9 +564,11 @@ func newMapIndexBatch() *mapIndexBatch {
 	}
 }
 
-func (b *mapIndexBatch) add(id string, key, value *string) {
+func (b *mapIndexBatch) add(id string, rev revision, key, value *string) {
 	mapKey := docRev{
-		id: id,
+		id:    id,
+		rev:   rev.rev,
+		revID: rev.id,
 	}
 	b.entries[mapKey] = append(b.entries[mapKey], mapIndexEntry{
 		Key:   key,
@@ -568,9 +577,11 @@ func (b *mapIndexBatch) add(id string, key, value *string) {
 	b.insertCount++
 }
 
-func (b *mapIndexBatch) delete(id string) {
+func (b *mapIndexBatch) delete(id string, rev revision) {
 	mapKey := docRev{
-		id: id,
+		id:    id,
+		rev:   rev.rev,
+		revID: rev.id,
 	}
 	b.deleted = append(b.deleted, mapKey)
 	b.insertCount -= len(b.entries[mapKey])

@@ -90,6 +90,19 @@ func (d *db) queryBuiltinView(
 	}
 
 	query := fmt.Sprintf(d.query(`
+		WITH leaves AS (
+			SELECT
+				rev.id,
+				rev.rev,
+				rev.rev_id,
+				doc.doc,
+				doc.deleted
+			FROM {{ .Revs }} AS rev
+			LEFT JOIN {{ .Revs }} AS child ON child.id = rev.id AND rev.rev = child.parent_rev AND rev.rev_id = child.parent_rev_id
+			JOIN {{ .Docs }} AS doc ON rev.id = doc.id AND rev.rev = doc.rev AND rev.rev_id = doc.rev_id
+			WHERE child.id IS NULL
+				AND NOT doc.deleted
+		)
 		SELECT
 			rev.id                       AS id,
 			rev.id                       AS key,
@@ -99,24 +112,15 @@ func (d *db) queryBuiltinView(
 			GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ',') AS conflicts
 		FROM (
 			SELECT
-				rev.id                    AS id,
-				rev.rev                   AS rev,
-				rev.rev_id                AS rev_id,
-				IIF($1, doc.doc, NULL)    AS doc,
-				doc.deleted               AS deleted, -- TODO:remove this?
-				ROW_NUMBER() OVER (PARTITION BY rev.id ORDER BY rev.rev DESC, rev.rev_id DESC) AS rank
-			FROM {{ .Revs }} AS rev
-			LEFT JOIN {{ .Revs }} AS child ON child.id = rev.id AND rev.rev = child.parent_rev AND rev.rev_id = child.parent_rev_id
-			JOIN {{ .Docs }} AS doc ON rev.id = doc.id AND rev.rev = doc.rev AND rev.rev_id = doc.rev_id
-			WHERE child.id IS NULL
-				AND NOT doc.deleted
+				id                    AS id,
+				rev                   AS rev,
+				rev_id                AS rev_id,
+				IIF($1, doc, NULL)    AS doc,
+				deleted               AS deleted, -- TODO:remove this?
+				ROW_NUMBER() OVER (PARTITION BY id ORDER BY rev DESC, rev_id DESC) AS rank
+			FROM leaves
 		) AS rev
-		LEFT JOIN (
-			SELECT rev.id, rev.rev, rev.rev_id
-			FROM {{ .Revs }} AS rev
-			LEFT JOIN {{ .Revs }} AS child ON child.id = rev.id AND rev.rev = child.parent_rev AND rev.rev_id = child.parent_rev_id
-			WHERE child.id IS NULL
-		) AS conflicts ON conflicts.id = rev.id AND NOT (rev.rev = conflicts.rev AND rev.rev_id = conflicts.rev_id)
+		LEFT JOIN leaves AS conflicts ON conflicts.id = rev.id AND NOT (rev.rev = conflicts.rev AND rev.rev_id = conflicts.rev_id)
 		WHERE %[2]s
 		GROUP BY rev.id, rev.rev, rev.rev_id
 		ORDER BY id %[1]s

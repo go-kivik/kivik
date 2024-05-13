@@ -365,6 +365,18 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 	}
 
 	query := d.query(`
+		WITH leaves AS (
+			SELECT
+				rev.id                    AS id,
+				rev.rev                   AS rev,
+				rev.rev_id                AS rev_id,
+				doc.doc,
+				doc.deleted
+			FROM {{ .Revs }} AS rev
+			LEFT JOIN {{ .Revs }} AS child ON child.id = rev.id AND rev.rev = child.parent_rev AND rev.rev_id = child.parent_rev_id
+			JOIN {{ .Docs }} AS doc ON rev.id = doc.id AND rev.rev = doc.rev AND rev.rev_id = doc.rev_id
+			WHERE child.id IS NULL
+		)
 		SELECT
 			CASE WHEN row_number = 1 THEN seq     END AS seq,
 			CASE WHEN row_number = 1 THEN id      END AS id,
@@ -379,11 +391,11 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 			rev_pos
 		FROM (
 			SELECT
-				doc.seq                      AS seq,
+				seq.seq                      AS seq,
 				rev.id                       AS id,
 				rev.rev || '-' || rev.rev_id AS rev,
-				doc.doc                      AS doc,
-				doc.deleted                  AS deleted,
+				seq.doc                      AS doc,
+				seq.deleted                  AS deleted,
 				SUM(CASE WHEN bridge.pk IS NOT NULL THEN 1 ELSE 0 END) OVER (PARTITION BY rev.id, rev.rev, rev.rev_id) AS attachment_count,
 				ROW_NUMBER() OVER (PARTITION BY rev.id, rev.rev, rev.rev_id) AS row_number,
 				att.filename,
@@ -391,21 +403,13 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 				att.length,
 				att.digest,
 				att.rev_pos
-			FROM (
-				SELECT
-					rev.id                    AS id,
-					rev.rev                   AS rev,
-					rev.rev_id                AS rev_id
-				FROM {{ .Revs }} AS rev
-				LEFT JOIN {{ .Revs }} AS child ON child.id = rev.id AND rev.rev = child.parent_rev AND rev.rev_id = child.parent_rev_id
-				WHERE child.id IS NULL
-			) AS rev
-			JOIN {{ .Docs }} AS doc ON rev.id = doc.id AND rev.rev = doc.rev AND rev.rev_id = doc.rev_id
-			LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON doc.id = bridge.id AND doc.rev = bridge.rev AND doc.rev_id = bridge.rev_id
+			FROM {{ .Docs }} AS seq
+			LEFT JOIN leaves AS rev ON seq.id = rev.id AND seq.rev = rev.rev AND seq.rev_id = rev.rev_id
+			LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON seq.id = bridge.id AND seq.rev = bridge.rev AND seq.rev_id = bridge.rev_id
 			LEFT JOIN {{ .Attachments }} AS att ON bridge.pk = att.pk
 			WHERE rev.id NOT LIKE '_local/%'
-				AND doc.seq > $1
-			ORDER BY doc.seq
+				AND seq.seq > $1
+			ORDER BY seq.seq
 		)
 	`)
 	docs, err := d.db.QueryContext(ctx, query, lastSeq)

@@ -632,16 +632,16 @@ func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc
 	}
 
 	if batch.insertCount > 0 {
-		args := make([]interface{}, 0, batch.insertCount*3)
+		args := make([]interface{}, 0, batch.insertCount*5)
 		values := make([]string, 0, batch.insertCount)
 		for mapKey, entries := range batch.entries {
 			for _, entry := range entries {
-				values = append(values, fmt.Sprintf("($%d, $%d, $%d)", len(args)+1, len(args)+2, len(args)+3))
-				args = append(args, mapKey.id, entry.Key, entry.Value)
+				values = append(values, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", len(args)+1, len(args)+2, len(args)+3, len(args)+4, len(args)+5))
+				args = append(args, mapKey.id, mapKey.rev, mapKey.revID, entry.Key, entry.Value)
 			}
 		}
 		query := d.ddocQuery(ddoc, viewName, rev.String(), `
-		INSERT INTO {{ .Map }} (id, key, value)
+		INSERT INTO {{ .Map }} (id, rev, rev_id, key, value)
 		VALUES
 	`) + strings.Join(values, ",")
 		if _, err := tx.ExecContext(ctx, query, args...); err != nil {

@@ -536,10 +536,14 @@ func iter(docs *sql.Rows, seq *int, full *fullDoc) error {
 	return nil
 }
 
+type docRev struct {
+	id string
+}
+
 type mapIndexBatch struct {
 	insertCount int
-	entries     map[string][]mapIndexEntry
-	deleted     []string
+	entries     map[docRev][]mapIndexEntry
+	deleted     []docRev
 }
 
 type mapIndexEntry struct {
@@ -549,12 +553,15 @@ type mapIndexEntry struct {
 
 func newMapIndexBatch() *mapIndexBatch {
 	return &mapIndexBatch{
-		entries: make(map[string][]mapIndexEntry, batchSize),
+		entries: make(map[docRev][]mapIndexEntry, batchSize),
 	}
 }
 
 func (b *mapIndexBatch) add(id string, key, value *string) {
-	b.entries[id] = append(b.entries[id], mapIndexEntry{
+	mapKey := docRev{
+		id: id,
+	}
+	b.entries[mapKey] = append(b.entries[mapKey], mapIndexEntry{
 		Key:   key,
 		Value: value,
 	})
@@ -562,15 +569,18 @@ func (b *mapIndexBatch) add(id string, key, value *string) {
 }
 
 func (b *mapIndexBatch) delete(id string) {
-	b.deleted = append(b.deleted, id)
-	b.insertCount -= len(b.entries[id])
-	delete(b.entries, id)
+	mapKey := docRev{
+		id: id,
+	}
+	b.deleted = append(b.deleted, mapKey)
+	b.insertCount -= len(b.entries[mapKey])
+	delete(b.entries, mapKey)
 }
 
 func (b *mapIndexBatch) clear() {
 	b.insertCount = 0
 	b.deleted = b.deleted[:0]
-	b.entries = make(map[string][]mapIndexEntry, batchSize)
+	b.entries = make(map[docRev][]mapIndexEntry, batchSize)
 }
 
 func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc, viewName string, batch *mapIndexBatch) error {
@@ -595,11 +605,11 @@ func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc
 	// Clear any stale entries
 	if len(batch.entries) > 0 || len(batch.deleted) > 0 {
 		ids := make([]interface{}, 0, len(batch.entries)+len(batch.deleted))
-		for id := range batch.entries {
-			ids = append(ids, id)
+		for mapKey := range batch.entries {
+			ids = append(ids, mapKey.id)
 		}
-		for _, id := range batch.deleted {
-			ids = append(ids, id)
+		for _, mapKey := range batch.deleted {
+			ids = append(ids, mapKey.id)
 		}
 		query := fmt.Sprintf(d.ddocQuery(ddoc, viewName, rev.String(), `
 			DELETE FROM {{ .Map }}
@@ -613,10 +623,10 @@ func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc
 	if batch.insertCount > 0 {
 		args := make([]interface{}, 0, batch.insertCount*3)
 		values := make([]string, 0, batch.insertCount)
-		for id, entries := range batch.entries {
+		for mapKey, entries := range batch.entries {
 			for _, entry := range entries {
 				values = append(values, fmt.Sprintf("($%d, $%d, $%d)", len(args)+1, len(args)+2, len(args)+3))
-				args = append(args, id, entry.Key, entry.Value)
+				args = append(args, mapKey.id, entry.Key, entry.Value)
 			}
 		}
 		query := d.ddocQuery(ddoc, viewName, rev.String(), `

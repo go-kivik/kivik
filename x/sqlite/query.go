@@ -84,7 +84,7 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 		return nil, err
 	}
 
-	results, err := d.performQuery(ctx, ddoc, view, update, reduce, group, groupLevel, limit, skip)
+	results, err := d.performQuery(ctx, ddoc, view, update, reduce, group, includeDocs, groupLevel, limit, skip)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (d *db) performQuery(
 	ctx context.Context,
 	ddoc, view, update string,
 	reduce *bool,
-	group bool,
+	group, includeDocs bool,
 	groupLevel uint64,
 	limit, skip int64,
 ) (driver.Rows, error) {
@@ -172,14 +172,15 @@ func (d *db) performQuery(
 			SELECT *
 			FROM (
 				SELECT
-					id,
-					key,
-					value,
-					"" AS rev,
-					NULL AS doc,
+					map.id,
+					map.key,
+					map.value,
+					IIF($7, docs.rev || '-' || docs.rev_id, "") AS rev,
+					IIF($7, docs.doc, NULL) AS doc,
 					"" AS conflicts
-				FROM {{ .Map }}
+				FROM {{ .Map }} AS map
 				JOIN reduce
+				JOIN {{ .Docs }} AS docs ON map.id = docs.id AND map.rev = docs.rev AND map.rev_id = docs.rev_id
 				WHERE $6 == FALSE OR NOT reduce.reducable
 				ORDER BY key
 				LIMIT %[1]d OFFSET %[2]d
@@ -189,6 +190,7 @@ func (d *db) performQuery(
 		results, err = d.db.QueryContext( //nolint:rowserrcheck // Err checked in Next
 			ctx, query,
 			"_design/"+ddoc, rev.rev, rev.id, view, kivik.EndKeySuffix, reduce,
+			includeDocs,
 		)
 		switch {
 		case errIsNoSuchTable(err):

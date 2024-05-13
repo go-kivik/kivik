@@ -67,8 +67,7 @@ func (d *db) queryBuiltinView(
 	view string,
 	startkey, endkey string,
 	limit, skip int64,
-	includeDocs, descending, inclusiveEnd bool,
-	opts optsMap,
+	includeDocs, descending, inclusiveEnd, conflicts bool,
 ) (driver.Rows, error) {
 	args := []interface{}{includeDocs}
 
@@ -133,7 +132,7 @@ func (d *db) queryBuiltinView(
 		ctx:       ctx,
 		db:        d,
 		rows:      results,
-		conflicts: opts.conflicts(),
+		conflicts: conflicts,
 	}, nil
 }
 

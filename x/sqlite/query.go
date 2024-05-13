@@ -57,10 +57,11 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 	descending := opts.descending()
 	includeDocs := opts.includeDocs()
 	inclusiveEnd := opts.inclusiveEnd()
+	conflicts := opts.conflicts()
 
 	switch ddoc {
 	case viewAllDocs, viewLocalDocs, viewDesignDocs:
-		return d.queryBuiltinView(ctx, ddoc, startkey, endkey, limit, skip, includeDocs, descending, inclusiveEnd, opts)
+		return d.queryBuiltinView(ctx, ddoc, startkey, endkey, limit, skip, includeDocs, descending, inclusiveEnd, conflicts)
 	}
 	update, err := opts.update()
 	if err != nil {

@@ -67,9 +67,10 @@ func (d *db) queryBuiltinView(
 	view string,
 	startkey, endkey string,
 	limit, skip int64,
+	includeDocs, descending, inclusiveEnd bool,
 	opts optsMap,
 ) (driver.Rows, error) {
-	args := []interface{}{opts.includeDocs()}
+	args := []interface{}{includeDocs}
 
 	where := []string{"rev.rank = 1"}
 	switch view {
@@ -81,11 +82,11 @@ func (d *db) queryBuiltinView(
 		where = append(where, "rev.id LIKE '_design/%'")
 	}
 	if endkey != "" {
-		where = append(where, fmt.Sprintf("rev.id %s $%d", endKeyOp(opts.descending(), opts.inclusiveEnd()), len(args)+1))
+		where = append(where, fmt.Sprintf("rev.id %s $%d", endKeyOp(descending, inclusiveEnd), len(args)+1))
 		args = append(args, endkey)
 	}
 	if startkey != "" {
-		where = append(where, fmt.Sprintf("rev.id %s $%d", startKeyOp(opts.descending()), len(args)+1))
+		where = append(where, fmt.Sprintf("rev.id %s $%d", startKeyOp(descending), len(args)+1))
 		args = append(args, startkey)
 	}
 

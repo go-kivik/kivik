@@ -69,7 +69,7 @@ func (d *db) queryBuiltinView(
 	limit, skip int64,
 	includeDocs, descending, inclusiveEnd, conflicts bool,
 ) (driver.Rows, error) {
-	args := []interface{}{includeDocs}
+	args := []interface{}{includeDocs, conflicts}
 
 	where := []string{"rev.rank = 1"}
 	switch view {
@@ -109,7 +109,7 @@ func (d *db) queryBuiltinView(
 			'{"value":{"rev":"' || rev.rev || '-' || rev.rev_id || '"}}' AS value,
 			rev.rev || '-' || rev.rev_id AS rev,
 			rev.doc                      AS doc,
-			GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ',') AS conflicts
+			IIF($2, GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ','), NULL) AS conflicts
 		FROM (
 			SELECT
 				id                    AS id,
@@ -132,10 +132,9 @@ func (d *db) queryBuiltinView(
 	}
 
 	return &rows{
-		ctx:       ctx,
-		db:        d,
-		rows:      results,
-		conflicts: conflicts,
+		ctx:  ctx,
+		db:   d,
+		rows: results,
 	}, nil
 }
 
@@ -147,10 +146,9 @@ func descendingToDirection(descending bool) string {
 }
 
 type rows struct {
-	ctx       context.Context
-	db        *db
-	rows      *sql.Rows
-	conflicts bool
+	ctx  context.Context
+	db   *db
+	rows *sql.Rows
 }
 
 var _ driver.Rows = (*rows)(nil)
@@ -190,7 +188,7 @@ func (r *rows) Next(row *driver.Row) error {
 			Rev: rev,
 			Doc: doc,
 		}
-		if r.conflicts {
+		if conflicts != nil {
 			toMerge.Conflicts = strings.Split(*conflicts, ",")
 		}
 		row.Doc = toMerge.toReader()

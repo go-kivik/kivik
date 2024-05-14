@@ -190,7 +190,7 @@ func (d *db) performQuery(
 					map.value,
 					IIF($7, docs.rev || '-' || docs.rev_id, "") AS rev,
 					IIF($7, docs.doc, NULL) AS doc,
-					GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ',') AS conflicts
+					IIF($8, GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ','), NULL) AS conflicts
 				FROM {{ .Map }} AS map
 				JOIN reduce
 				JOIN {{ .Docs }} AS docs ON map.id = docs.id AND map.rev = docs.rev AND map.rev_id = docs.rev_id
@@ -205,7 +205,7 @@ func (d *db) performQuery(
 		results, err = d.db.QueryContext( //nolint:rowserrcheck // Err checked in Next
 			ctx, query,
 			"_design/"+ddoc, rev.rev, rev.id, view, kivik.EndKeySuffix, reduce,
-			includeDocs,
+			includeDocs, conflicts,
 		)
 		switch {
 		case errIsNoSuchTable(err):
@@ -239,10 +239,9 @@ func (d *db) performQuery(
 	}
 
 	return &rows{
-		ctx:       ctx,
-		db:        d,
-		rows:      results,
-		conflicts: conflicts,
+		ctx:  ctx,
+		db:   d,
+		rows: results,
 	}, nil
 }
 

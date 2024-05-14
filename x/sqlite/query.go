@@ -100,6 +100,24 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 	return results, nil
 }
 
+const (
+	leavesCTE = `
+	WITH leaves AS (
+		SELECT
+			rev.id,
+			rev.rev,
+			rev.rev_id,
+			doc.doc,
+			doc.deleted
+		FROM {{ .Revs }} AS rev
+		LEFT JOIN {{ .Revs }} AS child ON child.id = rev.id AND rev.rev = child.parent_rev AND rev.rev_id = child.parent_rev_id
+		JOIN {{ .Docs }} AS doc ON rev.id = doc.id AND rev.rev = doc.rev AND rev.rev_id = doc.rev_id
+		WHERE child.id IS NULL
+			AND NOT doc.deleted
+	)
+`
+)
+
 func (d *db) performQuery(
 	ctx context.Context,
 	ddoc, view, update string,
@@ -122,8 +140,8 @@ func (d *db) performQuery(
 			return nil, err
 		}
 
-		query := fmt.Sprintf(d.ddocQuery(ddoc, view, rev.String(), `
-			WITH reduce AS (
+		query := fmt.Sprintf(d.ddocQuery(ddoc, view, rev.String(), leavesCTE+`,
+			 reduce AS (
 				SELECT
 					CASE WHEN MAX(id) IS NOT NULL THEN TRUE ELSE FALSE END AS reducible,
 					func_body                                              AS reduce_func
@@ -133,19 +151,6 @@ func (d *db) performQuery(
 					AND rev_id = $3
 					AND func_type = 'reduce'
 					AND func_name = $4
-			),
-			leaves AS (
-				SELECT
-					rev.id,
-					rev.rev,
-					rev.rev_id,
-					doc.doc,
-					doc.deleted
-				FROM {{ .Revs }} AS rev
-				LEFT JOIN {{ .Revs }} AS child ON child.id = rev.id AND rev.rev = child.parent_rev AND rev.rev_id = child.parent_rev_id
-				JOIN {{ .Docs }} AS doc ON rev.id = doc.id AND rev.rev = doc.rev AND rev.rev_id = doc.rev_id
-				WHERE child.id IS NULL
-					AND NOT doc.deleted
 			)
 
 			SELECT

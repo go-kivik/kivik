@@ -181,7 +181,7 @@ func (d *db) performQuery(
 					NULL  AS conflicts
 				FROM {{ .Map }}
 				JOIN reduce
-				WHERE reduce.reducible AND ($6 IS NULL OR $6 == TRUE)
+				WHERE reduce.reducible AND ($5 IS NULL OR $5 == TRUE)
 				ORDER BY id, key
 			)
 
@@ -193,14 +193,14 @@ func (d *db) performQuery(
 					map.id,
 					map.key,
 					map.value,
-					IIF($7, docs.rev || '-' || docs.rev_id, "") AS rev,
-					IIF($7, docs.doc, NULL) AS doc,
-					IIF($8, GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ','), NULL) AS conflicts
+					IIF($6, docs.rev || '-' || docs.rev_id, "") AS rev,
+					IIF($6, docs.doc, NULL) AS doc,
+					IIF($7, GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ','), NULL) AS conflicts
 				FROM {{ .Map }} AS map
 				JOIN reduce
 				JOIN {{ .Docs }} AS docs ON map.id = docs.id AND map.rev = docs.rev AND map.rev_id = docs.rev_id
 				LEFT JOIN leaves AS conflicts ON conflicts.id = map.id AND NOT (map.rev = conflicts.rev AND map.rev_id = conflicts.rev_id)
-				WHERE $6 == FALSE OR NOT reduce.reducible
+				WHERE $5 == FALSE OR NOT reduce.reducible
 				GROUP BY map.id, map.key, map.value, map.rev, map.rev_id
 				ORDER BY key
 				LIMIT %[1]d OFFSET %[2]d
@@ -209,7 +209,7 @@ func (d *db) performQuery(
 
 		results, err = d.db.QueryContext( //nolint:rowserrcheck // Err checked in Next
 			ctx, query,
-			"_design/"+ddoc, rev.rev, rev.id, view, kivik.EndKeySuffix, reduce,
+			"_design/"+ddoc, rev.rev, rev.id, view, reduce,
 			includeDocs, conflicts,
 		)
 		switch {

@@ -416,9 +416,19 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 					att.length,
 					att.digest,
 					att.rev_pos
-				FROM leaves AS rev
+				FROM (
+					SELECT
+						id                    AS id,
+						rev                   AS rev,
+						rev_id                AS rev_id,
+						IIF($1, doc, NULL)    AS doc,
+						deleted               AS deleted, -- TODO:remove this?
+						ROW_NUMBER() OVER (PARTITION BY id ORDER BY rev DESC, rev_id DESC) AS rank
+					FROM leaves
+				) AS rev
 				LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON rev.id = bridge.id AND rev.rev = bridge.rev AND rev.rev_id = bridge.rev_id
 				LEFT JOIN {{ .Attachments }} AS att ON bridge.pk = att.pk
+				WHERE rev.rank = 1
 			) AS doc ON seq.id = doc.id AND seq.rev = doc.rev AND seq.rev_id = doc.rev_id
 			WHERE doc.id NOT LIKE '_local/%'
 				AND seq.seq > $1

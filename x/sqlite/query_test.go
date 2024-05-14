@@ -1318,7 +1318,7 @@ func TestDBQuery(t *testing.T) {
 			ddoc: "_design/foo",
 			view: "_view/bar",
 			want: []rowResult{
-				{ID: "a", Key: `"a"`, Value: "1"},
+				{ID: "a", Key: `"a"`, Value: "2"},
 			},
 		}
 	})

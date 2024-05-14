@@ -146,11 +146,11 @@ func (d *db) performQuery(
 					CASE WHEN MAX(id) IS NOT NULL THEN TRUE ELSE FALSE END AS reducible,
 					func_body                                              AS reduce_func
 				FROM {{ .Design }}
-				WHERE id = $1
-					AND rev = $2
-					AND rev_id = $3
+				WHERE id = $4
+					AND rev = $5
+					AND rev_id = $6
 					AND func_type = 'reduce'
-					AND func_name = $4
+					AND func_name = $7
 			)
 
 			SELECT
@@ -162,11 +162,11 @@ func (d *db) performQuery(
 				NULL
 			FROM {{ .Design }} AS map
 			JOIN reduce
-			WHERE id = $1
-				AND rev = $2
-				AND rev_id = $3
+			WHERE id = $4
+				AND rev = $5
+				AND rev_id = $6
 				AND func_type = 'map'
-				AND func_name = $4
+				AND func_name = $7
 
 			UNION ALL
 
@@ -181,7 +181,7 @@ func (d *db) performQuery(
 					NULL  AS conflicts
 				FROM {{ .Map }}
 				JOIN reduce
-				WHERE reduce.reducible AND ($5 IS NULL OR $5 == TRUE)
+				WHERE reduce.reducible AND ($3 IS NULL OR $3 == TRUE)
 				ORDER BY id, key
 			)
 
@@ -193,14 +193,14 @@ func (d *db) performQuery(
 					map.id,
 					map.key,
 					map.value,
-					IIF($6, docs.rev || '-' || docs.rev_id, "") AS rev,
-					IIF($6, docs.doc, NULL) AS doc,
-					IIF($7, GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ','), NULL) AS conflicts
+					IIF($1, docs.rev || '-' || docs.rev_id, "") AS rev,
+					IIF($1, docs.doc, NULL) AS doc,
+					IIF($2, GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ','), NULL) AS conflicts
 				FROM {{ .Map }} AS map
 				JOIN reduce
 				JOIN {{ .Docs }} AS docs ON map.id = docs.id AND map.rev = docs.rev AND map.rev_id = docs.rev_id
 				LEFT JOIN leaves AS conflicts ON conflicts.id = map.id AND NOT (map.rev = conflicts.rev AND map.rev_id = conflicts.rev_id)
-				WHERE $5 == FALSE OR NOT reduce.reducible
+				WHERE $3 == FALSE OR NOT reduce.reducible
 				GROUP BY map.id, map.key, map.value, map.rev, map.rev_id
 				ORDER BY key
 				LIMIT %[1]d OFFSET %[2]d
@@ -209,8 +209,8 @@ func (d *db) performQuery(
 
 		results, err = d.db.QueryContext( //nolint:rowserrcheck // Err checked in Next
 			ctx, query,
-			"_design/"+ddoc, rev.rev, rev.id, view, reduce,
-			includeDocs, conflicts,
+			includeDocs, conflicts, reduce,
+			"_design/"+ddoc, rev.rev, rev.id, view,
 		)
 		switch {
 		case errIsNoSuchTable(err):

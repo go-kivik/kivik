@@ -69,7 +69,7 @@ func (d *db) queryBuiltinView(
 	limit, skip int64,
 	includeDocs, descending, inclusiveEnd, conflicts bool,
 ) (driver.Rows, error) {
-	args := []interface{}{includeDocs}
+	args := []interface{}{includeDocs, conflicts}
 
 	where := []string{"rev.rank = 1"}
 	switch view {
@@ -90,16 +90,18 @@ func (d *db) queryBuiltinView(
 	}
 
 	query := fmt.Sprintf(d.query(`
-		WITH RankedRevisions AS (
+		WITH leaves AS (
 			SELECT
-				id                    AS id,
-				rev                   AS rev,
-				rev_id                AS rev_id,
-				IIF($1, doc, NULL)    AS doc,
-				deleted               AS deleted, -- TODO:remove this?
-				ROW_NUMBER() OVER (PARTITION BY id ORDER BY rev DESC, rev_id DESC) AS rank
-			FROM {{ .Leaves }} AS rev
-			WHERE NOT deleted
+				rev.id,
+				rev.rev,
+				rev.rev_id,
+				doc.doc,
+				doc.deleted
+			FROM {{ .Revs }} AS rev
+			LEFT JOIN {{ .Revs }} AS child ON child.id = rev.id AND rev.rev = child.parent_rev AND rev.rev_id = child.parent_rev_id
+			JOIN {{ .Docs }} AS doc ON rev.id = doc.id AND rev.rev = doc.rev AND rev.rev_id = doc.rev_id
+			WHERE child.id IS NULL
+				AND NOT doc.deleted
 		)
 		SELECT
 			rev.id                       AS id,
@@ -107,17 +109,18 @@ func (d *db) queryBuiltinView(
 			'{"value":{"rev":"' || rev.rev || '-' || rev.rev_id || '"}}' AS value,
 			rev.rev || '-' || rev.rev_id AS rev,
 			rev.doc                      AS doc,
-			GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ',') AS conflicts
-		FROM RankedRevisions AS rev
-		LEFT JOIN (
-			SELECT rev.id, rev.rev, rev.rev_id
-			FROM {{ .Revs }} AS rev
-			LEFT JOIN {{ .Revs }} AS child
-				ON child.id = rev.id
-				AND rev.rev = child.parent_rev
-				AND rev.rev_id = child.parent_rev_id
-			WHERE child.id IS NULL
-		) AS conflicts ON conflicts.id = rev.id AND NOT (rev.rev = conflicts.rev AND rev.rev_id = conflicts.rev_id)
+			IIF($2, GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ','), NULL) AS conflicts
+		FROM (
+			SELECT
+				id                    AS id,
+				rev                   AS rev,
+				rev_id                AS rev_id,
+				IIF($1, doc, NULL)    AS doc,
+				deleted               AS deleted, -- TODO:remove this?
+				ROW_NUMBER() OVER (PARTITION BY id ORDER BY rev DESC, rev_id DESC) AS rank
+			FROM leaves
+		) AS rev
+		LEFT JOIN leaves AS conflicts ON conflicts.id = rev.id AND NOT (rev.rev = conflicts.rev AND rev.rev_id = conflicts.rev_id)
 		WHERE %[2]s
 		GROUP BY rev.id, rev.rev, rev.rev_id
 		ORDER BY id %[1]s
@@ -129,10 +132,9 @@ func (d *db) queryBuiltinView(
 	}
 
 	return &rows{
-		ctx:       ctx,
-		db:        d,
-		rows:      results,
-		conflicts: conflicts,
+		ctx:  ctx,
+		db:   d,
+		rows: results,
 	}, nil
 }
 
@@ -144,10 +146,9 @@ func descendingToDirection(descending bool) string {
 }
 
 type rows struct {
-	ctx       context.Context
-	db        *db
-	rows      *sql.Rows
-	conflicts bool
+	ctx  context.Context
+	db   *db
+	rows *sql.Rows
 }
 
 var _ driver.Rows = (*rows)(nil)
@@ -187,7 +188,7 @@ func (r *rows) Next(row *driver.Row) error {
 			Rev: rev,
 			Doc: doc,
 		}
-		if r.conflicts {
+		if conflicts != nil {
 			toMerge.Conflicts = strings.Split(*conflicts, ",")
 		}
 		row.Doc = toMerge.toReader()

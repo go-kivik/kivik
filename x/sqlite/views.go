@@ -71,7 +71,7 @@ func (d *db) queryBuiltinView(
 ) (driver.Rows, error) {
 	args := []interface{}{includeDocs, conflicts}
 
-	where := []string{"rev.rank = 1"}
+	where := []string{""}
 	switch view {
 	case viewAllDocs:
 		where = append(where, "rev.id NOT LIKE '_local/%'")
@@ -110,7 +110,8 @@ func (d *db) queryBuiltinView(
 				FROM leaves
 			) AS rev
 			LEFT JOIN leaves AS conflicts ON conflicts.id = rev.id AND NOT (rev.rev = conflicts.rev AND rev.rev_id = conflicts.rev_id)
-			WHERE %[2]s
+			WHERE rev.rank = 1
+				%[2]s
 			GROUP BY rev.id, rev.rev, rev.rev_id
 			ORDER BY id %[1]s
 			LIMIT %[3]d OFFSET %[4]d

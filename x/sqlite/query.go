@@ -84,7 +84,7 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 		return nil, err
 	}
 
-	results, err := d.performQuery(ctx, ddoc, view, update, reduce, group, includeDocs, groupLevel, limit, skip)
+	results, err := d.performQuery(ctx, ddoc, view, update, reduce, group, includeDocs, conflicts, groupLevel, limit, skip)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (d *db) performQuery(
 	ctx context.Context,
 	ddoc, view, update string,
 	reduce *bool,
-	group, includeDocs bool,
+	group, includeDocs, conflicts bool,
 	groupLevel uint64,
 	limit, skip int64,
 ) (driver.Rows, error) {
@@ -133,6 +133,19 @@ func (d *db) performQuery(
 					AND rev_id = $3
 					AND func_type = 'reduce'
 					AND func_name = $4
+			),
+			leaves AS (
+				SELECT
+					rev.id,
+					rev.rev,
+					rev.rev_id,
+					doc.doc,
+					doc.deleted
+				FROM {{ .Revs }} AS rev
+				LEFT JOIN {{ .Revs }} AS child ON child.id = rev.id AND rev.rev = child.parent_rev AND rev.rev_id = child.parent_rev_id
+				JOIN {{ .Docs }} AS doc ON rev.id = doc.id AND rev.rev = doc.rev AND rev.rev_id = doc.rev_id
+				WHERE child.id IS NULL
+					AND NOT doc.deleted
 			)
 
 			SELECT
@@ -177,11 +190,13 @@ func (d *db) performQuery(
 					map.value,
 					IIF($7, docs.rev || '-' || docs.rev_id, "") AS rev,
 					IIF($7, docs.doc, NULL) AS doc,
-					"" AS conflicts
+					GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ',') AS conflicts
 				FROM {{ .Map }} AS map
 				JOIN reduce
 				JOIN {{ .Docs }} AS docs ON map.id = docs.id AND map.rev = docs.rev AND map.rev_id = docs.rev_id
+				LEFT JOIN leaves AS conflicts ON conflicts.id = map.id AND NOT (map.rev = conflicts.rev AND map.rev_id = conflicts.rev_id)
 				WHERE $6 == FALSE OR NOT reduce.reducable
+				GROUP BY map.id, map.key, map.value, map.rev, map.rev_id
 				ORDER BY key
 				LIMIT %[1]d OFFSET %[2]d
 			)
@@ -224,9 +239,10 @@ func (d *db) performQuery(
 	}
 
 	return &rows{
-		ctx:  ctx,
-		db:   d,
-		rows: results,
+		ctx:       ctx,
+		db:        d,
+		rows:      results,
+		conflicts: conflicts,
 	}, nil
 }
 

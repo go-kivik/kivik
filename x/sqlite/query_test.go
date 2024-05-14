@@ -1322,6 +1322,43 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("conflicts=true", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc.value);
+							}
+						}`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{
+			"key":   "a",
+			"value": 1,
+			"_rev":  "1-abc",
+		}, kivik.Param("new_edits", false))
+		_ = d.tPut("a", map[string]interface{}{
+			"key":   "a",
+			"value": 2,
+			"_rev":  "1-xyz",
+		}, kivik.Param("new_edits", false))
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"include_docs": true,
+				"conflicts":    true,
+			}),
+			want: []rowResult{
+				{ID: "a", Key: `"a"`, Value: "2", Doc: `{"_id":"a","_rev":"1-xyz","key":"a","value":2,"_conflicts":["1-abc"]}`},
+			},
+		}
+	})
 	/*
 		TODO:
 		- _stats
@@ -1342,7 +1379,6 @@ func TestDBQuery(t *testing.T) {
 				- group behavior
 			- _stats (https://docs.couchdb.org/en/stable/ddocs/ddocs.html#stats)
 		- Options:
-			- conflicts
 			- descending
 			- endkey
 			- end_key

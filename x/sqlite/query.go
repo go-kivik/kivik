@@ -392,22 +392,35 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 		FROM (
 			SELECT
 				seq.seq                      AS seq,
-				rev.id                       AS id,
-				rev.rev || '-' || rev.rev_id AS rev,
+				doc.id                       AS id,
+				doc.rev || '-' || doc.rev_id AS rev,
 				seq.doc                      AS doc,
 				seq.deleted                  AS deleted,
-				SUM(CASE WHEN bridge.pk IS NOT NULL THEN 1 ELSE 0 END) OVER (PARTITION BY rev.id, rev.rev, rev.rev_id) AS attachment_count,
-				ROW_NUMBER() OVER (PARTITION BY rev.id, rev.rev, rev.rev_id) AS row_number,
-				att.filename,
-				att.content_type,
-				att.length,
-				att.digest,
-				att.rev_pos
+				doc.attachment_count,
+				doc.row_number,
+				doc.filename,
+				doc.content_type,
+				doc.length,
+				doc.digest,
+				doc.rev_pos
 			FROM {{ .Docs }} AS seq
-			LEFT JOIN leaves AS rev ON seq.id = rev.id AND seq.rev = rev.rev AND seq.rev_id = rev.rev_id
-			LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON seq.id = bridge.id AND seq.rev = bridge.rev AND seq.rev_id = bridge.rev_id
-			LEFT JOIN {{ .Attachments }} AS att ON bridge.pk = att.pk
-			WHERE rev.id NOT LIKE '_local/%'
+			LEFT JOIN (
+				SELECT
+					rev.id,
+					rev.rev,
+					rev.rev_id,
+					SUM(CASE WHEN bridge.pk IS NOT NULL THEN 1 ELSE 0 END) OVER (PARTITION BY rev.id, rev.rev, rev.rev_id) AS attachment_count,
+					ROW_NUMBER() OVER (PARTITION BY rev.id, rev.rev, rev.rev_id) AS row_number,
+					att.filename,
+					att.content_type,
+					att.length,
+					att.digest,
+					att.rev_pos
+				FROM leaves AS rev
+				LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON rev.id = bridge.id AND rev.rev = bridge.rev AND rev.rev_id = bridge.rev_id
+				LEFT JOIN {{ .Attachments }} AS att ON bridge.pk = att.pk
+			) AS doc ON seq.id = doc.id AND seq.rev = doc.rev AND seq.rev_id = doc.rev_id
+			WHERE doc.id NOT LIKE '_local/%'
 				AND seq.seq > $1
 			ORDER BY seq.seq
 		)

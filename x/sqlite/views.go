@@ -71,23 +71,7 @@ func (d *db) queryBuiltinView(
 ) (driver.Rows, error) {
 	args := []interface{}{includeDocs, conflicts}
 
-	where := []string{""}
-	switch view {
-	case viewAllDocs:
-		where = append(where, "rev.id NOT LIKE '_local/%'")
-	case viewLocalDocs:
-		where = append(where, "rev.id LIKE '_local/%'")
-	case viewDesignDocs:
-		where = append(where, "rev.id LIKE '_design/%'")
-	}
-	if endkey != "" {
-		where = append(where, fmt.Sprintf("rev.id %s $%d", endKeyOp(descending, inclusiveEnd), len(args)+1))
-		args = append(args, endkey)
-	}
-	if startkey != "" {
-		where = append(where, fmt.Sprintf("rev.id %s $%d", startKeyOp(descending), len(args)+1))
-		args = append(args, startkey)
-	}
+	where := append([]string{""}, buildWhere(view, endkey, startkey, inclusiveEnd, descending, &args)...)
 
 	query := fmt.Sprintf(d.query(leavesCTE+`
 		SELECT *
@@ -113,7 +97,7 @@ func (d *db) queryBuiltinView(
 			WHERE rev.rank = 1
 				%[2]s
 			GROUP BY rev.id, rev.rev, rev.rev_id
-			ORDER BY id %[1]s
+			ORDER BY key %[1]s
 			LIMIT %[3]d OFFSET %[4]d
 		)
 	`), descendingToDirection(descending), strings.Join(where, " AND "), limit, skip)

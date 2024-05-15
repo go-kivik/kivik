@@ -1359,6 +1359,66 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("endkey", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc.value);
+							}
+						}`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{"key": "a", "value": 1})
+		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": 2})
+		_ = d.tPut("c", map[string]interface{}{"key": "c", "value": 3})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"endkey": `"b"`,
+			}),
+			want: []rowResult{
+				{ID: "a", Key: `"a"`, Value: "1"},
+				{ID: "b", Key: `"b"`, Value: "2"},
+			},
+		}
+	})
+	tests.Add("startkey", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc.value);
+							}
+						}`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{"key": "a", "value": 1})
+		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": 2})
+		_ = d.tPut("c", map[string]interface{}{"key": "c", "value": 3})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"startkey": `"b"`,
+			}),
+			want: []rowResult{
+				{ID: "b", Key: `"b"`, Value: "2"},
+				{ID: "c", Key: `"c"`, Value: "3"},
+			},
+		}
+	})
 	/*
 		TODO:
 		- _stats
@@ -1379,20 +1439,12 @@ func TestDBQuery(t *testing.T) {
 				- group behavior
 			- _stats (https://docs.couchdb.org/en/stable/ddocs/ddocs.html#stats)
 		- Options:
-			- descending
-			- endkey
-			- end_key
 			- endkey_docid
 			- end_key_doc_id
-			- inclusive_end
 			- key
 			- keys
 			- reduce
 			- sorted
-			- stable // N/A only for clusters
-			- stale // deprecated
-			- startkey
-			- start_key
 			- startkey_docid
 			- start_key_doc_id
 			- update_seq

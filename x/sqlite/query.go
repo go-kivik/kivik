@@ -84,7 +84,14 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 		return nil, err
 	}
 
-	results, err := d.performQuery(ctx, ddoc, view, update, reduce, group, includeDocs, conflicts, groupLevel, limit, skip)
+	results, err := d.performQuery(
+		ctx,
+		ddoc, view, update, endkey, startkey,
+		reduce,
+		group, includeDocs, conflicts, inclusiveEnd, descending,
+		groupLevel,
+		limit, skip,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -118,11 +125,40 @@ const (
 `
 )
 
+// buildWhere returns WHERE conditions based on the provided configuration
+// arguments, and may append to args as needed.
+func buildWhere(
+	view, endkey, startkey string,
+	inclusiveEnd, descending bool,
+	args *[]any,
+) []string {
+	where := make([]string, 0, 3)
+	switch view {
+	case viewAllDocs:
+		where = append(where, "key NOT LIKE '_local/%'")
+	case viewLocalDocs:
+		where = append(where, "key LIKE '_local/%'")
+	case viewDesignDocs:
+		where = append(where, "key LIKE '_design/%'")
+	}
+
+	if endkey != "" {
+		where = append(where, fmt.Sprintf("key %s $%d", endKeyOp(descending, inclusiveEnd), len(*args)+1))
+		*args = append(*args, endkey)
+	}
+	if startkey != "" {
+		where = append(where, fmt.Sprintf("key %s $%d", startKeyOp(descending), len(*args)+1))
+		*args = append(*args, startkey)
+	}
+
+	return where
+}
+
 func (d *db) performQuery(
 	ctx context.Context,
-	ddoc, view, update string,
+	ddoc, view, update, endkey, startkey string,
 	reduce *bool,
-	group, includeDocs, conflicts bool,
+	group, includeDocs, conflicts, inclusiveEnd, descending bool,
 	groupLevel uint64,
 	limit, skip int64,
 ) (driver.Rows, error) {
@@ -139,6 +175,13 @@ func (d *db) performQuery(
 		if err != nil {
 			return nil, err
 		}
+
+		args := []interface{}{
+			includeDocs, conflicts, reduce,
+			"_design/" + ddoc, rev.rev, rev.id, view,
+		}
+
+		where := append([]string{""}, buildWhere(view, endkey, startkey, inclusiveEnd, descending, &args)...)
 
 		query := fmt.Sprintf(d.ddocQuery(ddoc, view, rev.String(), leavesCTE+`,
 			 reduce AS (
@@ -201,17 +244,13 @@ func (d *db) performQuery(
 				JOIN {{ .Docs }} AS docs ON map.id = docs.id AND map.rev = docs.rev AND map.rev_id = docs.rev_id
 				LEFT JOIN leaves AS conflicts ON conflicts.id = map.id AND NOT (map.rev = conflicts.rev AND map.rev_id = conflicts.rev_id)
 				WHERE $3 == FALSE OR NOT reduce.reducible
+					%[2]s
 				GROUP BY map.id, map.key, map.value, map.rev, map.rev_id
-				ORDER BY key
-				LIMIT %[1]d OFFSET %[2]d
+				ORDER BY key %[1]s
+				LIMIT %[3]d OFFSET %[4]d
 			)
-		`), limit, skip)
-
-		results, err = d.db.QueryContext( //nolint:rowserrcheck // Err checked in Next
-			ctx, query,
-			includeDocs, conflicts, reduce,
-			"_design/"+ddoc, rev.rev, rev.id, view,
-		)
+		`), descendingToDirection(descending), strings.Join(where, " AND "), limit, skip)
+		results, err = d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
 		switch {
 		case errIsNoSuchTable(err):
 			return nil, &internal.Error{Status: http.StatusNotFound, Message: "missing named view"}

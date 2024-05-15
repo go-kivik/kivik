@@ -586,8 +586,6 @@ func TestDBAllDocs(t *testing.T) {
 			- keys
 			- reduce
 			- sorted
-			- stable
-			- statle
 			- startkey_docid
 			- start_key_doc_id
 			- update

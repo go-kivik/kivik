@@ -71,7 +71,7 @@ func (d *db) queryBuiltinView(
 ) (driver.Rows, error) {
 	args := []interface{}{includeDocs, conflicts}
 
-	where := []string{"rev.rank = 1"}
+	where := []string{""}
 	switch view {
 	case viewAllDocs:
 		where = append(where, "rev.id NOT LIKE '_local/%'")
@@ -89,42 +89,33 @@ func (d *db) queryBuiltinView(
 		args = append(args, startkey)
 	}
 
-	query := fmt.Sprintf(d.query(`
-		WITH leaves AS (
-			SELECT
-				rev.id,
-				rev.rev,
-				rev.rev_id,
-				doc.doc,
-				doc.deleted
-			FROM {{ .Revs }} AS rev
-			LEFT JOIN {{ .Revs }} AS child ON child.id = rev.id AND rev.rev = child.parent_rev AND rev.rev_id = child.parent_rev_id
-			JOIN {{ .Docs }} AS doc ON rev.id = doc.id AND rev.rev = doc.rev AND rev.rev_id = doc.rev_id
-			WHERE child.id IS NULL
-				AND NOT doc.deleted
-		)
-		SELECT
-			rev.id                       AS id,
-			rev.id                       AS key,
-			'{"value":{"rev":"' || rev.rev || '-' || rev.rev_id || '"}}' AS value,
-			rev.rev || '-' || rev.rev_id AS rev,
-			rev.doc                      AS doc,
-			IIF($2, GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ','), NULL) AS conflicts
+	query := fmt.Sprintf(d.query(leavesCTE+`
+		SELECT *
 		FROM (
 			SELECT
-				id                    AS id,
-				rev                   AS rev,
-				rev_id                AS rev_id,
-				IIF($1, doc, NULL)    AS doc,
-				deleted               AS deleted, -- TODO:remove this?
-				ROW_NUMBER() OVER (PARTITION BY id ORDER BY rev DESC, rev_id DESC) AS rank
-			FROM leaves
-		) AS rev
-		LEFT JOIN leaves AS conflicts ON conflicts.id = rev.id AND NOT (rev.rev = conflicts.rev AND rev.rev_id = conflicts.rev_id)
-		WHERE %[2]s
-		GROUP BY rev.id, rev.rev, rev.rev_id
-		ORDER BY id %[1]s
-		LIMIT %[3]d OFFSET %[4]d
+				rev.id                       AS id,
+				rev.id                       AS key,
+				'{"value":{"rev":"' || rev.rev || '-' || rev.rev_id || '"}}' AS value,
+				rev.rev || '-' || rev.rev_id AS rev,
+				rev.doc                      AS doc,
+				IIF($2, GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ','), NULL) AS conflicts
+			FROM (
+				SELECT
+					id                    AS id,
+					rev                   AS rev,
+					rev_id                AS rev_id,
+					IIF($1, doc, NULL)    AS doc,
+					deleted               AS deleted, -- TODO:remove this?
+					ROW_NUMBER() OVER (PARTITION BY id ORDER BY rev DESC, rev_id DESC) AS rank
+				FROM leaves
+			) AS rev
+			LEFT JOIN leaves AS conflicts ON conflicts.id = rev.id AND NOT (rev.rev = conflicts.rev AND rev.rev_id = conflicts.rev_id)
+			WHERE rev.rank = 1
+				%[2]s
+			GROUP BY rev.id, rev.rev, rev.rev_id
+			ORDER BY id %[1]s
+			LIMIT %[3]d OFFSET %[4]d
+		)
 	`), descendingToDirection(descending), strings.Join(where, " AND "), limit, skip)
 	results, err := d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {

@@ -100,6 +100,24 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 	return results, nil
 }
 
+const (
+	leavesCTE = `
+	WITH leaves AS (
+		SELECT
+			rev.id,
+			rev.rev,
+			rev.rev_id,
+			doc.doc,
+			doc.deleted
+		FROM {{ .Revs }} AS rev
+		LEFT JOIN {{ .Revs }} AS child ON child.id = rev.id AND rev.rev = child.parent_rev AND rev.rev_id = child.parent_rev_id
+		JOIN {{ .Docs }} AS doc ON rev.id = doc.id AND rev.rev = doc.rev AND rev.rev_id = doc.rev_id
+		WHERE child.id IS NULL
+			AND NOT doc.deleted
+	)
+`
+)
+
 func (d *db) performQuery(
 	ctx context.Context,
 	ddoc, view, update string,
@@ -122,46 +140,33 @@ func (d *db) performQuery(
 			return nil, err
 		}
 
-		query := fmt.Sprintf(d.ddocQuery(ddoc, view, rev.String(), `
-			WITH reduce AS (
+		query := fmt.Sprintf(d.ddocQuery(ddoc, view, rev.String(), leavesCTE+`,
+			 reduce AS (
 				SELECT
-					CASE WHEN MAX(id) IS NOT NULL THEN TRUE ELSE FALSE END AS reducable,
+					CASE WHEN MAX(id) IS NOT NULL THEN TRUE ELSE FALSE END AS reducible,
 					func_body                                              AS reduce_func
 				FROM {{ .Design }}
-				WHERE id = $1
-					AND rev = $2
-					AND rev_id = $3
+				WHERE id = $4
+					AND rev = $5
+					AND rev_id = $6
 					AND func_type = 'reduce'
-					AND func_name = $4
-			),
-			leaves AS (
-				SELECT
-					rev.id,
-					rev.rev,
-					rev.rev_id,
-					doc.doc,
-					doc.deleted
-				FROM {{ .Revs }} AS rev
-				LEFT JOIN {{ .Revs }} AS child ON child.id = rev.id AND rev.rev = child.parent_rev AND rev.rev_id = child.parent_rev_id
-				JOIN {{ .Docs }} AS doc ON rev.id = doc.id AND rev.rev = doc.rev AND rev.rev_id = doc.rev_id
-				WHERE child.id IS NULL
-					AND NOT doc.deleted
+					AND func_name = $7
 			)
 
 			SELECT
 				COALESCE(MAX(last_seq), 0) == (SELECT COALESCE(max(seq),0) FROM {{ .Docs }}) AS up_to_date,
-				reduce.reducable,
+				reduce.reducible,
 				reduce.reduce_func,
 				NULL,
 				NULL,
 				NULL
 			FROM {{ .Design }} AS map
 			JOIN reduce
-			WHERE id = $1
-				AND rev = $2
-				AND rev_id = $3
+			WHERE id = $4
+				AND rev = $5
+				AND rev_id = $6
 				AND func_type = 'map'
-				AND func_name = $4
+				AND func_name = $7
 
 			UNION ALL
 
@@ -176,7 +181,7 @@ func (d *db) performQuery(
 					NULL  AS conflicts
 				FROM {{ .Map }}
 				JOIN reduce
-				WHERE reduce.reducable AND ($6 IS NULL OR $6 == TRUE)
+				WHERE reduce.reducible AND ($3 IS NULL OR $3 == TRUE)
 				ORDER BY id, key
 			)
 
@@ -188,14 +193,14 @@ func (d *db) performQuery(
 					map.id,
 					map.key,
 					map.value,
-					IIF($7, docs.rev || '-' || docs.rev_id, "") AS rev,
-					IIF($7, docs.doc, NULL) AS doc,
-					IIF($8, GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ','), NULL) AS conflicts
+					IIF($1, docs.rev || '-' || docs.rev_id, "") AS rev,
+					IIF($1, docs.doc, NULL) AS doc,
+					IIF($2, GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ','), NULL) AS conflicts
 				FROM {{ .Map }} AS map
 				JOIN reduce
 				JOIN {{ .Docs }} AS docs ON map.id = docs.id AND map.rev = docs.rev AND map.rev_id = docs.rev_id
 				LEFT JOIN leaves AS conflicts ON conflicts.id = map.id AND NOT (map.rev = conflicts.rev AND map.rev_id = conflicts.rev_id)
-				WHERE $6 == FALSE OR NOT reduce.reducable
+				WHERE $3 == FALSE OR NOT reduce.reducible
 				GROUP BY map.id, map.key, map.value, map.rev, map.rev_id
 				ORDER BY key
 				LIMIT %[1]d OFFSET %[2]d
@@ -204,8 +209,8 @@ func (d *db) performQuery(
 
 		results, err = d.db.QueryContext( //nolint:rowserrcheck // Err checked in Next
 			ctx, query,
-			"_design/"+ddoc, rev.rev, rev.id, view, kivik.EndKeySuffix, reduce,
-			includeDocs, conflicts,
+			includeDocs, conflicts, reduce,
+			"_design/"+ddoc, rev.rev, rev.id, view,
 		)
 		switch {
 		case errIsNoSuchTable(err):
@@ -260,7 +265,7 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view, update string, g
 		query := d.ddocQuery(ddoc, view, rev.String(), `
 			WITH reduce AS (
 				SELECT
-					CASE WHEN MAX(id) IS NOT NULL THEN TRUE ELSE FALSE END AS reducable,
+					CASE WHEN MAX(id) IS NOT NULL THEN TRUE ELSE FALSE END AS reducible,
 					func_body                                              AS reduce_func
 				FROM {{ .Design }}
 				WHERE id = $1
@@ -272,7 +277,7 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view, update string, g
 
 			SELECT
 				COALESCE(MAX(last_seq), 0) == (SELECT COALESCE(max(seq),0) FROM {{ .Docs }}) AS up_to_date,
-				reduce.reducable,
+				reduce.reducible,
 				reduce.reduce_func,
 				NULL,
 				NULL,
@@ -298,7 +303,7 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view, update string, g
 					NULL  AS conflicts
 				FROM {{ .Map }}
 				JOIN reduce
-				WHERE reduce.reducable AND ($6 IS NULL OR $6 == TRUE)
+				WHERE reduce.reducible AND ($6 IS NULL OR $6 == TRUE)
 				ORDER BY id, key
 			)
 		`)

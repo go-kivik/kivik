@@ -13,6 +13,7 @@
 package sqlite
 
 import (
+	"fmt"
 	"math"
 	"net/http"
 	"strconv"
@@ -375,4 +376,27 @@ func (o optsMap) localSeq() bool {
 func (o optsMap) attsSince() []string {
 	attsSince, _ := o["atts_since"].([]string)
 	return attsSince
+}
+
+// buildWhere returns WHERE conditions based on the provided configuration
+// arguments, and may append to args as needed.
+func (o optsMap) buildWhere(view string, args *[]any) []string {
+	where := make([]string, 0, 3)
+	switch view {
+	case viewAllDocs:
+		where = append(where, "key NOT LIKE '_local/%'")
+	case viewLocalDocs:
+		where = append(where, "key LIKE '_local/%'")
+	case viewDesignDocs:
+		where = append(where, "key LIKE '_design/%'")
+	}
+	if endkey := o.endKey(); endkey != "" {
+		where = append(where, fmt.Sprintf("key %s $%d", endKeyOp(o.descending(), o.inclusiveEnd()), len(*args)+1))
+		*args = append(*args, endkey)
+	}
+	if startkey := o.startKey(); startkey != "" {
+		where = append(where, fmt.Sprintf("key %s $%d", startKeyOp(o.descending()), len(*args)+1))
+		*args = append(*args, startkey)
+	}
+	return where
 }

@@ -65,13 +65,13 @@ func (d *db) DesignDocs(ctx context.Context, options driver.Options) (driver.Row
 func (d *db) queryBuiltinView(
 	ctx context.Context,
 	view string,
-	startkey, endkey string,
 	limit, skip int64,
-	includeDocs, descending, inclusiveEnd, conflicts bool,
+	includeDocs, descending, conflicts bool,
+	opts optsMap,
 ) (driver.Rows, error) {
 	args := []interface{}{includeDocs, conflicts}
 
-	where := append([]string{""}, buildWhere(view, endkey, startkey, inclusiveEnd, descending, &args)...)
+	where := append([]string{""}, opts.buildWhere(view, &args)...)
 
 	query := fmt.Sprintf(d.query(leavesCTE+`
 		SELECT *

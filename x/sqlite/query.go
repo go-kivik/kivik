@@ -52,16 +52,13 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 	if err != nil {
 		return nil, err
 	}
-	endkey := opts.endKey()
-	startkey := opts.startKey()
 	descending := opts.descending()
 	includeDocs := opts.includeDocs()
-	inclusiveEnd := opts.inclusiveEnd()
 	conflicts := opts.conflicts()
 
 	switch ddoc {
 	case viewAllDocs, viewLocalDocs, viewDesignDocs:
-		return d.queryBuiltinView(ctx, ddoc, startkey, endkey, limit, skip, includeDocs, descending, inclusiveEnd, conflicts)
+		return d.queryBuiltinView(ctx, ddoc, limit, skip, includeDocs, descending, conflicts, opts)
 	}
 	update, err := opts.update()
 	if err != nil {
@@ -86,11 +83,12 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 
 	results, err := d.performQuery(
 		ctx,
-		ddoc, view, update, endkey, startkey,
+		ddoc, view, update,
 		reduce,
-		group, includeDocs, conflicts, inclusiveEnd, descending,
+		group, includeDocs, conflicts, descending,
 		groupLevel,
 		limit, skip,
+		opts,
 	)
 	if err != nil {
 		return nil, err
@@ -125,42 +123,14 @@ const (
 `
 )
 
-// buildWhere returns WHERE conditions based on the provided configuration
-// arguments, and may append to args as needed.
-func buildWhere(
-	view, endkey, startkey string,
-	inclusiveEnd, descending bool,
-	args *[]any,
-) []string {
-	where := make([]string, 0, 3)
-	switch view {
-	case viewAllDocs:
-		where = append(where, "key NOT LIKE '_local/%'")
-	case viewLocalDocs:
-		where = append(where, "key LIKE '_local/%'")
-	case viewDesignDocs:
-		where = append(where, "key LIKE '_design/%'")
-	}
-
-	if endkey != "" {
-		where = append(where, fmt.Sprintf("key %s $%d", endKeyOp(descending, inclusiveEnd), len(*args)+1))
-		*args = append(*args, endkey)
-	}
-	if startkey != "" {
-		where = append(where, fmt.Sprintf("key %s $%d", startKeyOp(descending), len(*args)+1))
-		*args = append(*args, startkey)
-	}
-
-	return where
-}
-
 func (d *db) performQuery(
 	ctx context.Context,
-	ddoc, view, update, endkey, startkey string,
+	ddoc, view, update string,
 	reduce *bool,
-	group, includeDocs, conflicts, inclusiveEnd, descending bool,
+	group, includeDocs, conflicts, descending bool,
 	groupLevel uint64,
 	limit, skip int64,
+	opts optsMap,
 ) (driver.Rows, error) {
 	if group {
 		return d.performGroupQuery(ctx, ddoc, view, update, groupLevel)
@@ -181,7 +151,7 @@ func (d *db) performQuery(
 			"_design/" + ddoc, rev.rev, rev.id, view,
 		}
 
-		where := append([]string{""}, buildWhere(view, endkey, startkey, inclusiveEnd, descending, &args)...)
+		where := append([]string{""}, opts.buildWhere(view, &args)...)
 
 		query := fmt.Sprintf(d.ddocQuery(ddoc, view, rev.String(), leavesCTE+`,
 			 reduce AS (

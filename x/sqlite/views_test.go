@@ -571,6 +571,11 @@ func TestDBAllDocs(t *testing.T) {
 		wantErr:    "malformed 'skip' parameter",
 		wantStatus: http.StatusBadRequest,
 	})
+	tests.Add("reduce not allowed", test{
+		options:    kivik.Param("reduce", true),
+		wantErr:    "reduce is invalid for map-only views",
+		wantStatus: http.StatusBadRequest,
+	})
 
 	/*
 		TODO:
@@ -584,7 +589,6 @@ func TestDBAllDocs(t *testing.T) {
 			- att_encoding_infio
 			- key
 			- keys
-			- reduce
 			- sorted
 			- startkey_docid
 			- start_key_doc_id

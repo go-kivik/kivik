@@ -233,9 +233,7 @@ func (d *db) performQuery(
 			// should never happen
 			return nil, errors.New("no rows returned")
 		}
-		if update != updateModeTrue {
-			break
-		}
+
 		var upToDate bool
 		if err := results.Scan(&upToDate, &reducible, &reduceFuncJS, discard{}, discard{}, discard{}); err != nil {
 			return nil, err
@@ -243,7 +241,9 @@ func (d *db) performQuery(
 		if reduce != nil && *reduce && !reducible {
 			return nil, &internal.Error{Status: http.StatusBadRequest, Message: "reduce is invalid for map-only views"}
 		}
-		if upToDate {
+		if upToDate || update != updateModeTrue {
+			// If the results are up to date, OR, we're in false/lazy update mode,
+			// then these results are fine.
 			break
 		}
 		// Not up to date, so close the results and try again

@@ -52,16 +52,13 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 	if err != nil {
 		return nil, err
 	}
-	endkey := opts.endKey()
-	startkey := opts.startKey()
 	descending := opts.descending()
 	includeDocs := opts.includeDocs()
-	inclusiveEnd := opts.inclusiveEnd()
 	conflicts := opts.conflicts()
 
 	switch ddoc {
 	case viewAllDocs, viewLocalDocs, viewDesignDocs:
-		return d.queryBuiltinView(ctx, ddoc, startkey, endkey, limit, skip, includeDocs, descending, inclusiveEnd, conflicts)
+		return d.queryBuiltinView(ctx, ddoc, limit, skip, includeDocs, descending, conflicts, opts)
 	}
 	update, err := opts.update()
 	if err != nil {
@@ -84,7 +81,15 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 		return nil, err
 	}
 
-	results, err := d.performQuery(ctx, ddoc, view, update, reduce, group, includeDocs, conflicts, groupLevel, limit, skip)
+	results, err := d.performQuery(
+		ctx,
+		ddoc, view, update,
+		reduce,
+		group, includeDocs, conflicts, descending,
+		groupLevel,
+		limit, skip,
+		opts,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -122,9 +127,10 @@ func (d *db) performQuery(
 	ctx context.Context,
 	ddoc, view, update string,
 	reduce *bool,
-	group, includeDocs, conflicts bool,
+	group, includeDocs, conflicts, descending bool,
 	groupLevel uint64,
 	limit, skip int64,
+	opts optsMap,
 ) (driver.Rows, error) {
 	if group {
 		return d.performGroupQuery(ctx, ddoc, view, update, groupLevel)
@@ -139,6 +145,13 @@ func (d *db) performQuery(
 		if err != nil {
 			return nil, err
 		}
+
+		args := []interface{}{
+			includeDocs, conflicts, reduce,
+			"_design/" + ddoc, rev.rev, rev.id, view,
+		}
+
+		where := append([]string{""}, opts.buildWhere(view, &args)...)
 
 		query := fmt.Sprintf(d.ddocQuery(ddoc, view, rev.String(), leavesCTE+`,
 			 reduce AS (
@@ -201,17 +214,13 @@ func (d *db) performQuery(
 				JOIN {{ .Docs }} AS docs ON map.id = docs.id AND map.rev = docs.rev AND map.rev_id = docs.rev_id
 				LEFT JOIN leaves AS conflicts ON conflicts.id = map.id AND NOT (map.rev = conflicts.rev AND map.rev_id = conflicts.rev_id)
 				WHERE $3 == FALSE OR NOT reduce.reducible
+					%[2]s
 				GROUP BY map.id, map.key, map.value, map.rev, map.rev_id
-				ORDER BY key
-				LIMIT %[1]d OFFSET %[2]d
+				ORDER BY key %[1]s
+				LIMIT %[3]d OFFSET %[4]d
 			)
-		`), limit, skip)
-
-		results, err = d.db.QueryContext( //nolint:rowserrcheck // Err checked in Next
-			ctx, query,
-			includeDocs, conflicts, reduce,
-			"_design/"+ddoc, rev.rev, rev.id, view,
-		)
+		`), descendingToDirection(descending), strings.Join(where, " AND "), limit, skip)
+		results, err = d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
 		switch {
 		case errIsNoSuchTable(err):
 			return nil, &internal.Error{Status: http.StatusNotFound, Message: "missing named view"}

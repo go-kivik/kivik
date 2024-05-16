@@ -246,6 +246,8 @@ func (d *db) performQuery(
 		if upToDate {
 			break
 		}
+		// Not up to date, so close the results and try again
+		_ = results.Close()
 	}
 
 	if reducible && (reduce == nil || *reduce) {

@@ -48,9 +48,8 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 		return nil, err
 	}
 
-	switch ddoc {
-	case viewAllDocs, viewLocalDocs, viewDesignDocs:
-		return d.queryBuiltinView(ctx, ddoc, vopts)
+	if isBuiltinView(ddoc) {
+		return d.queryBuiltinView(ctx, vopts)
 	}
 	update, err := opts.update()
 	if err != nil {

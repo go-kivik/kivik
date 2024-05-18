@@ -50,6 +50,14 @@ const (
 	viewDesignDocs = "_design_docs"
 )
 
+func isBuiltinView(view string) bool {
+	switch view {
+	case viewAllDocs, viewLocalDocs, viewDesignDocs:
+		return true
+	}
+	return false
+}
+
 func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
 	return d.Query(ctx, viewAllDocs, "", options)
 }
@@ -64,7 +72,6 @@ func (d *db) DesignDocs(ctx context.Context, options driver.Options) (driver.Row
 
 func (d *db) queryBuiltinView(
 	ctx context.Context,
-	view string,
 	vopts *viewOptions,
 ) (driver.Rows, error) {
 	args := []interface{}{vopts.includeDocs, vopts.conflicts}

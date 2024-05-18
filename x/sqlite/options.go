@@ -380,9 +380,9 @@ func (o optsMap) attsSince() []string {
 
 // buildWhere returns WHERE conditions based on the provided configuration
 // arguments, and may append to args as needed.
-func (o optsMap) buildWhere(view string, args *[]any) []string {
+func (v viewOptions) buildWhere(args *[]any) []string {
 	where := make([]string, 0, 3)
-	switch view {
+	switch v.view {
 	case viewAllDocs:
 		where = append(where, "key NOT LIKE '_local/%'")
 	case viewLocalDocs:
@@ -390,13 +390,67 @@ func (o optsMap) buildWhere(view string, args *[]any) []string {
 	case viewDesignDocs:
 		where = append(where, "key LIKE '_design/%'")
 	}
-	if endkey := o.endKey(); endkey != "" {
-		where = append(where, fmt.Sprintf("key %s $%d", endKeyOp(o.descending(), o.inclusiveEnd()), len(*args)+1))
-		*args = append(*args, endkey)
+	if v.endkey != "" {
+		where = append(where, fmt.Sprintf("key %s $%d", endKeyOp(v.descending, v.inclusiveEnd), len(*args)+1))
+		*args = append(*args, v.endkey)
 	}
-	if startkey := o.startKey(); startkey != "" {
-		where = append(where, fmt.Sprintf("key %s $%d", startKeyOp(o.descending()), len(*args)+1))
-		*args = append(*args, startkey)
+	if v.startkey != "" {
+		where = append(where, fmt.Sprintf("key %s $%d", startKeyOp(v.descending), len(*args)+1))
+		*args = append(*args, v.startkey)
 	}
 	return where
+}
+
+// viewOptions are all of the options recognized by the view endpoints
+// _desgin/<ddoc>/_view/<view>, _all_docs, _design_docs, and _local_docs.
+type viewOptions struct {
+	view         string
+	limit        int64
+	skip         int64
+	descending   bool
+	includeDocs  bool
+	conflicts    bool
+	reduce       *bool
+	group        bool
+	groupLevel   uint64
+	endkey       string
+	startkey     string
+	inclusiveEnd bool
+}
+
+func (o optsMap) viewOptions(view string) (*viewOptions, error) {
+	limit, err := o.limit()
+	if err != nil {
+		return nil, err
+	}
+	skip, err := o.skip()
+	if err != nil {
+		return nil, err
+	}
+	reduce, err := o.reduce()
+	if err != nil {
+		return nil, err
+	}
+	group, err := o.group()
+	if err != nil {
+		return nil, err
+	}
+	groupLevel, err := o.groupLevel()
+	if err != nil {
+		return nil, err
+	}
+	return &viewOptions{
+		view:         view,
+		limit:        limit,
+		skip:         skip,
+		descending:   o.descending(),
+		includeDocs:  o.includeDocs(),
+		conflicts:    o.conflicts(),
+		reduce:       reduce,
+		group:        group,
+		groupLevel:   groupLevel,
+		endkey:       o.endKey(),
+		startkey:     o.startKey(),
+		inclusiveEnd: o.inclusiveEnd(),
+	}, nil
 }

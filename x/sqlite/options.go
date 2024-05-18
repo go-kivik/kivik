@@ -339,12 +339,19 @@ func (o optsMap) groupLevel() (uint64, error) {
 	return toUint64(raw, "invalid value for `group_level`")
 }
 
-func (o optsMap) conflicts() bool {
+func (o optsMap) conflicts() (bool, error) {
 	if o.meta() {
-		return true
+		return true, nil
 	}
-	v, _ := toBool(o["conflicts"])
-	return v
+	param, ok := o["conflicts"]
+	if !ok {
+		return false, nil
+	}
+	v, ok := toBool(param)
+	if !ok {
+		return false, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for `conflicts`: %v", param)}
+	}
+	return v, nil
 }
 
 func (o optsMap) meta() bool {
@@ -403,6 +410,8 @@ func (v viewOptions) buildWhere(args *[]any) []string {
 
 // viewOptions are all of the options recognized by the view endpoints
 // _desgin/<ddoc>/_view/<view>, _all_docs, _design_docs, and _local_docs.
+//
+// See https://docs.couchdb.org/en/stable/api/ddoc/views.html#api-ddoc-view
 type viewOptions struct {
 	view         string
 	limit        int64
@@ -442,13 +451,18 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 	if err != nil {
 		return nil, err
 	}
+	conflicts, err := o.conflicts()
+	if err != nil {
+		return nil, err
+	}
+
 	return &viewOptions{
 		view:         view,
 		limit:        limit,
 		skip:         skip,
 		descending:   o.descending(),
 		includeDocs:  o.includeDocs(),
-		conflicts:    o.conflicts(),
+		conflicts:    conflicts,
 		reduce:       reduce,
 		group:        group,
 		groupLevel:   groupLevel,

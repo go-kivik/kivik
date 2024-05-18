@@ -76,11 +76,16 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 		c.lastSeq = strconv.FormatUint(*lastSeq, 10)
 	}
 
+	descending, err := opts.descending()
+	if err != nil {
+		return nil, err
+	}
+
 	var query string
 	if opts.includeDocs() {
-		query = d.normalChangesQueryWithDocs(descendingToDirection(opts.descending()))
+		query = d.normalChangesQueryWithDocs(descendingToDirection(descending))
 	} else {
-		query = d.normalChangesQueryWithoutDocs(descendingToDirection(opts.descending()))
+		query = d.normalChangesQueryWithoutDocs(descendingToDirection(descending))
 	}
 	if limit > 0 {
 		query += " LIMIT " + strconv.FormatUint(limit+1, 10)

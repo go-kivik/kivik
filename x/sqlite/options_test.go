@@ -67,10 +67,34 @@ func Test_viewOptions(t *testing.T) {
 		wantErr:    "invalid value for `conflicts`: 3",
 		wantStatus: http.StatusBadRequest,
 	})
+	tests.Add("descending: bool", test{
+		options: kivik.Param("descending", true),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			descending:   true,
+		},
+	})
+	tests.Add("descending: string", test{
+		options: kivik.Param("descending", "true"),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			descending:   true,
+		},
+	})
+	tests.Add("descending: invalid string", test{
+		options:    kivik.Param("descending", "chicken"),
+		wantErr:    "invalid value for `descending`: chicken",
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("descending: int", test{
+		options:    kivik.Param("descending", 3),
+		wantErr:    "invalid value for `descending`: 3",
+		wantStatus: http.StatusBadRequest,
+	})
 
 	/*
-		descending (boolean) – Return the documents in descending order by key. Default is false.
-
 		endkey (json) – Stop returning records when the specified key is reached.
 
 		end_key (json) – Alias for endkey param

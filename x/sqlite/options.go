@@ -246,9 +246,16 @@ func toBool(in interface{}) (value bool, ok bool) {
 	}
 }
 
-func (o optsMap) descending() bool {
-	v, _ := toBool(o["descending"])
-	return v
+func (o optsMap) descending() (bool, error) {
+	param, ok := o["descending"]
+	if !ok {
+		return false, nil
+	}
+	v, ok := toBool(param)
+	if !ok {
+		return false, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for `descending`: %v", param)}
+	}
+	return v, nil
 }
 
 func (o optsMap) includeDocs() bool {
@@ -455,12 +462,16 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 	if err != nil {
 		return nil, err
 	}
+	descending, err := o.descending()
+	if err != nil {
+		return nil, err
+	}
 
 	return &viewOptions{
 		view:         view,
 		limit:        limit,
 		skip:         skip,
-		descending:   o.descending(),
+		descending:   descending,
 		includeDocs:  o.includeDocs(),
 		conflicts:    conflicts,
 		reduce:       reduce,

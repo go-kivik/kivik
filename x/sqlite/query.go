@@ -43,22 +43,13 @@ func fromJSValue(v interface{}) (*string, error) {
 
 func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Options) (driver.Rows, error) {
 	opts := newOpts(options)
-
-	limit, err := opts.limit()
+	vopts, err := opts.viewOptions(ddoc)
 	if err != nil {
 		return nil, err
 	}
-	skip, err := opts.skip()
-	if err != nil {
-		return nil, err
-	}
-	descending := opts.descending()
-	includeDocs := opts.includeDocs()
-	conflicts := opts.conflicts()
 
-	switch ddoc {
-	case viewAllDocs, viewLocalDocs, viewDesignDocs:
-		return d.queryBuiltinView(ctx, ddoc, limit, skip, includeDocs, descending, conflicts, opts)
+	if isBuiltinView(ddoc) {
+		return d.queryBuiltinView(ctx, vopts)
 	}
 	update, err := opts.update()
 	if err != nil {
@@ -68,27 +59,10 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 	ddoc = strings.TrimPrefix(ddoc, "_design/")
 	view = strings.TrimPrefix(view, "_view/")
 
-	reduce, err := opts.reduce()
-	if err != nil {
-		return nil, err
-	}
-	group, err := opts.group()
-	if err != nil {
-		return nil, err
-	}
-	groupLevel, err := opts.groupLevel()
-	if err != nil {
-		return nil, err
-	}
-
 	results, err := d.performQuery(
 		ctx,
 		ddoc, view, update,
-		reduce,
-		group, includeDocs, conflicts, descending,
-		groupLevel,
-		limit, skip,
-		opts,
+		vopts,
 	)
 	if err != nil {
 		return nil, err
@@ -126,14 +100,10 @@ const (
 func (d *db) performQuery(
 	ctx context.Context,
 	ddoc, view, update string,
-	reduce *bool,
-	group, includeDocs, conflicts, descending bool,
-	groupLevel uint64,
-	limit, skip int64,
-	opts optsMap,
+	vopts *viewOptions,
 ) (driver.Rows, error) {
-	if group {
-		return d.performGroupQuery(ctx, ddoc, view, update, groupLevel)
+	if vopts.group {
+		return d.performGroupQuery(ctx, ddoc, view, update, vopts.groupLevel)
 	}
 	var (
 		results      *sql.Rows
@@ -147,11 +117,11 @@ func (d *db) performQuery(
 		}
 
 		args := []interface{}{
-			includeDocs, conflicts, reduce,
+			vopts.includeDocs, vopts.conflicts, vopts.reduce,
 			"_design/" + ddoc, rev.rev, rev.id, view,
 		}
 
-		where := append([]string{""}, opts.buildWhere(view, &args)...)
+		where := append([]string{""}, vopts.buildWhere(&args)...)
 
 		query := fmt.Sprintf(d.ddocQuery(ddoc, view, rev.String(), leavesCTE+`,
 			 reduce AS (
@@ -219,7 +189,7 @@ func (d *db) performQuery(
 				ORDER BY key %[1]s
 				LIMIT %[3]d OFFSET %[4]d
 			)
-		`), descendingToDirection(descending), strings.Join(where, " AND "), limit, skip)
+		`), descendingToDirection(vopts.descending), strings.Join(where, " AND "), vopts.limit, vopts.skip)
 		results, err = d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
 		switch {
 		case errIsNoSuchTable(err):
@@ -231,24 +201,29 @@ func (d *db) performQuery(
 		// The first row is used to verify the index is up to date
 		if !results.Next() {
 			// should never happen
+			_ = results.Close() //nolint:sqlclosecheck // Aborting
 			return nil, errors.New("no rows returned")
 		}
-		if update != updateModeTrue {
-			break
-		}
+
 		var upToDate bool
 		if err := results.Scan(&upToDate, &reducible, &reduceFuncJS, discard{}, discard{}, discard{}); err != nil {
+			_ = results.Close() //nolint:sqlclosecheck // Aborting
 			return nil, err
 		}
-		if reduce != nil && *reduce && !reducible {
+		if vopts.reduce != nil && *vopts.reduce && !reducible {
+			_ = results.Close() //nolint:sqlclosecheck // Aborting
 			return nil, &internal.Error{Status: http.StatusBadRequest, Message: "reduce is invalid for map-only views"}
 		}
-		if upToDate {
+		if upToDate || update != updateModeTrue {
+			// If the results are up to date, OR, we're in false/lazy update mode,
+			// then these results are fine.
 			break
 		}
+
+		_ = results.Close() //nolint:sqlclosecheck // Not up to date, so close the results and try again
 	}
 
-	if reducible && (reduce == nil || *reduce) {
+	if reducible && (vopts.reduce == nil || *vopts.reduce) {
 		return d.reduceRows(results, reduceFuncJS, false, 0)
 	}
 

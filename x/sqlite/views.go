@@ -50,6 +50,14 @@ const (
 	viewDesignDocs = "_design_docs"
 )
 
+func isBuiltinView(view string) bool {
+	switch view {
+	case viewAllDocs, viewLocalDocs, viewDesignDocs:
+		return true
+	}
+	return false
+}
+
 func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
 	return d.Query(ctx, viewAllDocs, "", options)
 }
@@ -64,14 +72,11 @@ func (d *db) DesignDocs(ctx context.Context, options driver.Options) (driver.Row
 
 func (d *db) queryBuiltinView(
 	ctx context.Context,
-	view string,
-	limit, skip int64,
-	includeDocs, descending, conflicts bool,
-	opts optsMap,
+	vopts *viewOptions,
 ) (driver.Rows, error) {
-	args := []interface{}{includeDocs, conflicts}
+	args := []interface{}{vopts.includeDocs, vopts.conflicts}
 
-	where := append([]string{""}, opts.buildWhere(view, &args)...)
+	where := append([]string{""}, vopts.buildWhere(&args)...)
 
 	query := fmt.Sprintf(d.query(leavesCTE+`
 		SELECT *
@@ -100,7 +105,7 @@ func (d *db) queryBuiltinView(
 			ORDER BY key %[1]s
 			LIMIT %[3]d OFFSET %[4]d
 		)
-	`), descendingToDirection(descending), strings.Join(where, " AND "), limit, skip)
+	`), descendingToDirection(vopts.descending), strings.Join(where, " AND "), vopts.limit, vopts.skip)
 	results, err := d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {
 		return nil, err

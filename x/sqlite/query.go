@@ -201,14 +201,17 @@ func (d *db) performQuery(
 		// The first row is used to verify the index is up to date
 		if !results.Next() {
 			// should never happen
+			_ = results.Close() //nolint:sqlclosecheck // Aborting
 			return nil, errors.New("no rows returned")
 		}
 
 		var upToDate bool
 		if err := results.Scan(&upToDate, &reducible, &reduceFuncJS, discard{}, discard{}, discard{}); err != nil {
+			_ = results.Close() //nolint:sqlclosecheck // Aborting
 			return nil, err
 		}
 		if vopts.reduce != nil && *vopts.reduce && !reducible {
+			_ = results.Close() //nolint:sqlclosecheck // Aborting
 			return nil, &internal.Error{Status: http.StatusBadRequest, Message: "reduce is invalid for map-only views"}
 		}
 		if upToDate || update != updateModeTrue {
@@ -216,8 +219,8 @@ func (d *db) performQuery(
 			// then these results are fine.
 			break
 		}
-		// Not up to date, so close the results and try again
-		_ = results.Close()
+
+		_ = results.Close() //nolint:sqlclosecheck // Not up to date, so close the results and try again
 	}
 
 	if reducible && (vopts.reduce == nil || *vopts.reduce) {

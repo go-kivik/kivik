@@ -60,7 +60,7 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "foo",
-					Key:   "foo",
+					Key:   `"foo"`,
 					Value: `{"value":{"rev":"` + rev + `"}}`,
 				},
 			},
@@ -76,7 +76,7 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "foo",
-					Key:   "foo",
+					Key:   `"foo"`,
 					Value: `{"value":{"rev":"` + rev + `"}}`,
 					Doc:   `{"_id":"foo","_rev":"` + rev + `","cat":"meow"}`,
 				},
@@ -93,7 +93,7 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "foo",
-					Key:   "foo",
+					Key:   `"foo"`,
 					Value: `{"value":{"rev":"` + rev2 + `"}}`,
 				},
 			},
@@ -115,7 +115,7 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "foo",
-					Key:   "foo",
+					Key:   `"foo"`,
 					Value: `{"value":{"rev":"1-xxx"}}`,
 				},
 			},
@@ -148,7 +148,7 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "foo",
-					Key:   "foo",
+					Key:   `"foo"`,
 					Value: `{"value":{"rev":"1-xxx"}}`,
 				},
 			},
@@ -174,7 +174,7 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "foo",
-					Key:   "foo",
+					Key:   `"foo"`,
 					Value: `{"value":{"rev":"1-xxx"}}`,
 					Doc:   `{"_id":"foo","_rev":"1-xxx","cat":"meow","_conflicts":["1-aaa"]}`,
 				},
@@ -200,7 +200,7 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "foo",
-					Key:   "foo",
+					Key:   `"foo"`,
 					Value: `{"value":{"rev":"1-xxx"}}`,
 				},
 			},
@@ -223,17 +223,17 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "cat",
-					Key:   "cat",
+					Key:   `"cat"`,
 					Value: `{"value":{"rev":"` + rev1 + `"}}`,
 				},
 				{
 					ID:    "cow",
-					Key:   "cow",
+					Key:   `"cow"`,
 					Value: `{"value":{"rev":"` + rev3 + `"}}`,
 				},
 				{
 					ID:    "dog",
-					Key:   "dog",
+					Key:   `"dog"`,
 					Value: `{"value":{"rev":"` + rev2 + `"}}`,
 				},
 			},
@@ -257,17 +257,17 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "dog",
-					Key:   "dog",
+					Key:   `"dog"`,
 					Value: `{"value":{"rev":"` + rev2 + `"}}`,
 				},
 				{
 					ID:    "cow",
-					Key:   "cow",
+					Key:   `"cow"`,
 					Value: `{"value":{"rev":"` + rev3 + `"}}`,
 				},
 				{
 					ID:    "cat",
-					Key:   "cat",
+					Key:   `"cat"`,
 					Value: `{"value":{"rev":"` + rev1 + `"}}`,
 				},
 			},
@@ -287,16 +287,16 @@ func TestDBAllDocs(t *testing.T) {
 
 		return test{
 			db:      db,
-			options: kivik.Param("endkey", "cow"),
+			options: kivik.Param("endkey", `"cow"`),
 			want: []rowResult{
 				{
 					ID:    "cat",
-					Key:   "cat",
+					Key:   `"cat"`,
 					Value: `{"value":{"rev":"` + rev1 + `"}}`,
 				},
 				{
 					ID:    "cow",
-					Key:   "cow",
+					Key:   `"cow"`,
 					Value: `{"value":{"rev":"` + rev3 + `"}}`,
 				},
 			},
@@ -317,18 +317,18 @@ func TestDBAllDocs(t *testing.T) {
 		return test{
 			db: db,
 			options: kivik.Params(map[string]interface{}{
-				"endkey":     "cow",
+				"endkey":     `"cow"`,
 				"descending": true,
 			}),
 			want: []rowResult{
 				{
 					ID:    "dog",
-					Key:   "dog",
+					Key:   `"dog"`,
 					Value: `{"value":{"rev":"` + rev2 + `"}}`,
 				},
 				{
 					ID:    "cow",
-					Key:   "cow",
+					Key:   `"cow"`,
 					Value: `{"value":{"rev":"` + rev3 + `"}}`,
 				},
 			},
@@ -348,16 +348,16 @@ func TestDBAllDocs(t *testing.T) {
 
 		return test{
 			db:      db,
-			options: kivik.Param("end_key", "cow"),
+			options: kivik.Param("end_key", `"cow"`),
 			want: []rowResult{
 				{
 					ID:    "cat",
-					Key:   "cat",
+					Key:   `"cat"`,
 					Value: `{"value":{"rev":"` + rev1 + `"}}`,
 				},
 				{
 					ID:    "cow",
-					Key:   "cow",
+					Key:   `"cow"`,
 					Value: `{"value":{"rev":"` + rev3 + `"}}`,
 				},
 			},
@@ -378,13 +378,13 @@ func TestDBAllDocs(t *testing.T) {
 		return test{
 			db: db,
 			options: kivik.Params(map[string]interface{}{
-				"endkey":        "cow",
+				"endkey":        `"cow"`,
 				"inclusive_end": false,
 			}),
 			want: []rowResult{
 				{
 					ID:    "cat",
-					Key:   "cat",
+					Key:   `"cat"`,
 					Value: `{"value":{"rev":"` + rev1 + `"}}`,
 				},
 			},
@@ -404,16 +404,16 @@ func TestDBAllDocs(t *testing.T) {
 
 		return test{
 			db:      db,
-			options: kivik.Param("startkey", "cow"),
+			options: kivik.Param("startkey", `"cow"`),
 			want: []rowResult{
 				{
 					ID:    "cow",
-					Key:   "cow",
+					Key:   `"cow"`,
 					Value: `{"value":{"rev":"` + rev3 + `"}}`,
 				},
 				{
 					ID:    "dog",
-					Key:   "dog",
+					Key:   `"dog"`,
 					Value: `{"value":{"rev":"` + rev2 + `"}}`,
 				},
 			},
@@ -433,16 +433,16 @@ func TestDBAllDocs(t *testing.T) {
 
 		return test{
 			db:      db,
-			options: kivik.Param("start_key", "cow"),
+			options: kivik.Param("start_key", `"cow"`),
 			want: []rowResult{
 				{
 					ID:    "cow",
-					Key:   "cow",
+					Key:   `"cow"`,
 					Value: `{"value":{"rev":"` + rev3 + `"}}`,
 				},
 				{
 					ID:    "dog",
-					Key:   "dog",
+					Key:   `"dog"`,
 					Value: `{"value":{"rev":"` + rev2 + `"}}`,
 				},
 			},
@@ -463,18 +463,18 @@ func TestDBAllDocs(t *testing.T) {
 		return test{
 			db: db,
 			options: kivik.Params(map[string]interface{}{
-				"startkey":   "cow",
+				"startkey":   `"cow"`,
 				"descending": true,
 			}),
 			want: []rowResult{
 				{
 					ID:    "cow",
-					Key:   "cow",
+					Key:   `"cow"`,
 					Value: `{"value":{"rev":"` + rev3 + `"}}`,
 				},
 				{
 					ID:    "cat",
-					Key:   "cat",
+					Key:   `"cat"`,
 					Value: `{"value":{"rev":"` + rev1 + `"}}`,
 				},
 			},
@@ -492,12 +492,12 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "cat",
-					Key:   "cat",
+					Key:   `"cat"`,
 					Value: `{"value":{"rev":"` + rev1 + `"}}`,
 				},
 				{
 					ID:    "cow",
-					Key:   "cow",
+					Key:   `"cow"`,
 					Value: `{"value":{"rev":"` + rev3 + `"}}`,
 				},
 			},
@@ -515,7 +515,7 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "dog",
-					Key:   "dog",
+					Key:   `"dog"`,
 					Value: `{"value":{"rev":"` + rev2 + `"}}`,
 				},
 			},
@@ -533,7 +533,7 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "cow",
-					Key:   "cow",
+					Key:   `"cow"`,
 					Value: `{"value":{"rev":"` + rev3 + `"}}`,
 				},
 			},
@@ -550,12 +550,12 @@ func TestDBAllDocs(t *testing.T) {
 			want: []rowResult{
 				{
 					ID:    "cat",
-					Key:   "cat",
+					Key:   `"cat"`,
 					Value: `{"value":{"rev":"` + rev + `"}}`,
 				},
 				{
 					ID:    "cow",
-					Key:   "cow",
+					Key:   `"cow"`,
 					Value: `{"value":{"rev":"` + rev3 + `"}}`,
 				},
 			},
@@ -575,6 +575,27 @@ func TestDBAllDocs(t *testing.T) {
 		options:    kivik.Param("reduce", true),
 		wantErr:    "reduce is invalid for map-only views",
 		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("test collation order", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("~", map[string]string{})
+		rev2 := d.tPut("a", map[string]string{})
+
+		return test{
+			db: d,
+			want: []rowResult{
+				{
+					ID:    "~",
+					Key:   `"~"`,
+					Value: `{"value":{"rev":"` + rev + `"}}`,
+				},
+				{
+					ID:    "a",
+					Key:   `"a"`,
+					Value: `{"value":{"rev":"` + rev2 + `"}}`,
+				},
+			},
+		}
 	})
 
 	/*

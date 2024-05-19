@@ -82,26 +82,27 @@ func (d *db) queryBuiltinView(
 		SELECT *
 		FROM (
 			SELECT
-				rev.id                       AS id,
-				rev.id                       AS key,
-				'{"value":{"rev":"' || rev.rev || '-' || rev.rev_id || '"}}' AS value,
-				rev.rev || '-' || rev.rev_id AS rev,
-				rev.doc                      AS doc,
+				view.id                       AS id,
+				view.key                      AS key,
+				'{"value":{"rev":"' || view.rev || '-' || view.rev_id || '"}}' AS value,
+				view.rev || '-' || view.rev_id AS rev,
+				view.doc                      AS doc,
 				IIF($2, GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ','), NULL) AS conflicts
 			FROM (
 				SELECT
 					id                    AS id,
 					rev                   AS rev,
 					rev_id                AS rev_id,
+					key                   AS key,
 					IIF($1, doc, NULL)    AS doc,
 					deleted               AS deleted, -- TODO:remove this?
 					ROW_NUMBER() OVER (PARTITION BY id ORDER BY rev DESC, rev_id DESC) AS rank
 				FROM leaves
-			) AS rev
-			LEFT JOIN leaves AS conflicts ON conflicts.id = rev.id AND NOT (rev.rev = conflicts.rev AND rev.rev_id = conflicts.rev_id)
-			WHERE rev.rank = 1
+			) AS view
+			LEFT JOIN leaves AS conflicts ON conflicts.id = view.id AND NOT (view.rev = conflicts.rev AND view.rev_id = conflicts.rev_id)
+			WHERE view.rank = 1
 				%[2]s
-			GROUP BY rev.id, rev.rev, rev.rev_id
+			GROUP BY view.id, view.rev, view.rev_id
 			ORDER BY key %[1]s
 			LIMIT %[3]d OFFSET %[4]d
 		)

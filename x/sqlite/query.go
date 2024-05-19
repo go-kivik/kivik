@@ -86,6 +86,7 @@ const (
 			rev.id,
 			rev.rev,
 			rev.rev_id,
+			rev.key,
 			doc.doc,
 			doc.deleted
 		FROM {{ .Revs }} AS rev
@@ -173,20 +174,20 @@ func (d *db) performQuery(
 			SELECT *
 			FROM (
 				SELECT
-					map.id,
-					map.key,
-					map.value,
+					view.id,
+					view.key,
+					view.value,
 					IIF($1, docs.rev || '-' || docs.rev_id, "") AS rev,
 					IIF($1, docs.doc, NULL) AS doc,
 					IIF($2, GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ','), NULL) AS conflicts
-				FROM {{ .Map }} AS map
+				FROM {{ .Map }} AS view
 				JOIN reduce
-				JOIN {{ .Docs }} AS docs ON map.id = docs.id AND map.rev = docs.rev AND map.rev_id = docs.rev_id
-				LEFT JOIN leaves AS conflicts ON conflicts.id = map.id AND NOT (map.rev = conflicts.rev AND map.rev_id = conflicts.rev_id)
+				JOIN {{ .Docs }} AS docs ON view.id = docs.id AND view.rev = docs.rev AND view.rev_id = docs.rev_id
+				LEFT JOIN leaves AS conflicts ON conflicts.id = view.id AND NOT (view.rev = conflicts.rev AND view.rev_id = conflicts.rev_id)
 				WHERE $3 == FALSE OR NOT reduce.reducible
 					%[2]s
-				GROUP BY map.id, map.key, map.value, map.rev, map.rev_id
-				ORDER BY key %[1]s
+				GROUP BY view.id, view.key, view.value, view.rev, view.rev_id
+				ORDER BY view.key %[1]s
 				LIMIT %[3]d OFFSET %[4]d
 			)
 		`), descendingToDirection(vopts.descending), strings.Join(where, " AND "), vopts.limit, vopts.skip)

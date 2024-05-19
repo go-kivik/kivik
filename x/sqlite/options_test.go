@@ -195,13 +195,46 @@ func Test_viewOptions(t *testing.T) {
 		wantErr:    "invalid value for `group`: 3",
 		wantStatus: http.StatusBadRequest,
 	})
+	tests.Add("group_level: int", test{
+		options: kivik.Param("group_level", 3),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			reduce:       &[]bool{true}[0],
+			group:        true,
+			groupLevel:   3,
+		},
+	})
+	tests.Add("group_level: valid string", test{
+		options: kivik.Param("group_level", "3"),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			reduce:       &[]bool{true}[0],
+			group:        true,
+			groupLevel:   3,
+		},
+	})
+	tests.Add("group_level: invalid string", test{
+		options:    kivik.Param("group_level", "chicken"),
+		wantErr:    "invalid value for `group_level`: chicken",
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("group_level: float64", test{
+		options: kivik.Param("group_level", 3.0),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			reduce:       &[]bool{true}[0],
+			group:        true,
+			groupLevel:   3,
+		},
+	})
 
 	/*
 		endkey_docid (string) – Stop returning records when the specified document ID is reached. Ignored if endkey is not set.
 
 		end_key_doc_id (string) – Alias for endkey_docid.
-
-		group_level (number) – Specify the group level to be used. Implies group is true.
 
 		include_docs (boolean) – Include the associated document with each row. Default is false.
 

@@ -144,7 +144,7 @@ func TestDBChanges(t *testing.T) {
 	})
 	tests.Add("malformed sequence id", test{
 		options:    kivik.Param("since", "invalid"),
-		wantErr:    "malformed sequence supplied in 'since' parameter",
+		wantErr:    "malformed sequence supplied in 'since' parameter: invalid",
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("future since value returns only latest change", func(t *testing.T) interface{} {
@@ -192,7 +192,7 @@ func TestDBChanges(t *testing.T) {
 	})
 	tests.Add("invalid limit value", test{
 		options:    kivik.Param("limit", "invalid"),
-		wantErr:    "malformed 'limit' parameter",
+		wantErr:    "malformed 'limit' parameter: invalid",
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("longpoll + since in past should return all historical changes since that seqid", func(t *testing.T) interface{} {

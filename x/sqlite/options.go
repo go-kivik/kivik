@@ -162,7 +162,7 @@ func (o optsMap) skip() (int64, error) {
 func toUint64(in interface{}, msg string) (uint64, error) {
 	checkSign := func(i int64) (uint64, error) {
 		if i < 0 {
-			return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
+			return 0, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("%s: %v", msg, in)}
 		}
 		return uint64(i), nil
 	}
@@ -190,19 +190,19 @@ func toUint64(in interface{}, msg string) (uint64, error) {
 	case string:
 		i, err := strconv.ParseUint(t, 10, 64)
 		if err != nil {
-			return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
+			return 0, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("%s: %v", msg, in)}
 		}
 		return i, nil
 	case float32:
 		i := uint64(t)
 		if float32(i) != t {
-			return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
+			return 0, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("%s: %v", msg, in)}
 		}
 		return i, nil
 	case float64:
 		i := uint64(t)
 		if float64(i) != t {
-			return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
+			return 0, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("%s: %v", msg, in)}
 		}
 		return i, nil
 	default:
@@ -331,7 +331,7 @@ func (o optsMap) update() (string, error) {
 			return updateModeLazy, nil
 		}
 	}
-	return "", &internal.Error{Status: http.StatusBadRequest, Message: "invalid value for `update`"}
+	return "", &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for `update`: %v", v)}
 }
 
 func (o optsMap) reduce() (*bool, error) {

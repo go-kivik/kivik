@@ -95,7 +95,11 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 	if limit > 0 {
 		query += " LIMIT " + strconv.FormatUint(limit+1, 10)
 	}
-	c.rows, err = d.db.QueryContext(ctx, query, since, opts.attachments()) //nolint:rowserrcheck,sqlclosecheck // Err checked in Next
+	attachments, err := opts.attachments()
+	if err != nil {
+		return nil, err
+	}
+	c.rows, err = d.db.QueryContext(ctx, query, since, attachments) //nolint:rowserrcheck,sqlclosecheck // Err checked in Next
 	if err != nil {
 		return nil, err
 	}
@@ -360,7 +364,11 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 		return nil, err
 	}
 	if sinceNow && feed == feedLongpoll {
-		return d.newLongpollChanges(ctx, includeDocs, opts.attachments())
+		attachments, err := opts.attachments()
+		if err != nil {
+			return nil, err
+		}
+		return d.newLongpollChanges(ctx, includeDocs, attachments)
 	}
 
 	return d.newNormalChanges(ctx, opts, since, lastSeq, sinceNow, feed)

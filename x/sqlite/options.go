@@ -296,9 +296,16 @@ func (o optsMap) includeDocs() (bool, error) {
 	return v, nil
 }
 
-func (o optsMap) attachments() bool {
-	v, _ := toBool(o["attachments"])
-	return v
+func (o optsMap) attachments() (bool, error) {
+	param, ok := o["attachments"]
+	if !ok {
+		return false, nil
+	}
+	v, ok := toBool(param)
+	if !ok {
+		return false, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for `attachments`: %v", param)}
+	}
+	return v, nil
 }
 
 func (o optsMap) latest() bool {
@@ -465,6 +472,7 @@ type viewOptions struct {
 	endkey       string
 	startkey     string
 	inclusiveEnd bool
+	attachments  bool
 }
 
 func (o optsMap) viewOptions(view string) (*viewOptions, error) {
@@ -511,6 +519,10 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 	if err != nil {
 		return nil, err
 	}
+	attachments, err := o.attachments()
+	if err != nil {
+		return nil, err
+	}
 
 	return &viewOptions{
 		view:         view,
@@ -525,5 +537,6 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 		endkey:       endkey,
 		startkey:     startkey,
 		inclusiveEnd: o.inclusiveEnd(),
+		attachments:  attachments,
 	}, nil
 }

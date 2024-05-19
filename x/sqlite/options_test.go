@@ -256,13 +256,37 @@ func Test_viewOptions(t *testing.T) {
 		wantErr:    "invalid value for `include_docs`: 3",
 		wantStatus: http.StatusBadRequest,
 	})
+	tests.Add("attachments: bool", test{
+		options: kivik.Param("attachments", true),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			attachments:  true,
+		},
+	})
+	tests.Add("attachments: valid string", test{
+		options: kivik.Param("attachments", "true"),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			attachments:  true,
+		},
+	})
+	tests.Add("attachments: invalid string", test{
+		options:    kivik.Param("attachments", "chicken"),
+		wantErr:    "invalid value for `attachments`: chicken",
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("attachments: int", test{
+		options:    kivik.Param("attachments", 3),
+		wantErr:    "invalid value for `attachments`: 3",
+		wantStatus: http.StatusBadRequest,
+	})
 
 	/*
 		endkey_docid (string) – Stop returning records when the specified document ID is reached. Ignored if endkey is not set.
 
 		end_key_doc_id (string) – Alias for endkey_docid.
-
-		attachments (boolean) – Include the Base64-encoded content of attachments in the documents that are included if include_docs is true. Ignored if include_docs isn’t true. Default is false.
 
 		att_encoding_info (boolean) – Include encoding information in attachment stubs if include_docs is true and the particular attachment is compressed. Ignored if include_docs isn’t true. Default is false.
 

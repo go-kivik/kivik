@@ -284,9 +284,16 @@ func (o optsMap) descending() (bool, error) {
 	return v, nil
 }
 
-func (o optsMap) includeDocs() bool {
-	v, _ := toBool(o["include_docs"])
-	return v
+func (o optsMap) includeDocs() (bool, error) {
+	param, ok := o["include_docs"]
+	if !ok {
+		return false, nil
+	}
+	v, ok := toBool(param)
+	if !ok {
+		return false, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for `include_docs`: %v", param)}
+	}
+	return v, nil
 }
 
 func (o optsMap) attachments() bool {
@@ -500,13 +507,17 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 	if err != nil {
 		return nil, err
 	}
+	includeDocs, err := o.includeDocs()
+	if err != nil {
+		return nil, err
+	}
 
 	return &viewOptions{
 		view:         view,
 		limit:        limit,
 		skip:         skip,
 		descending:   descending,
-		includeDocs:  o.includeDocs(),
+		includeDocs:  includeDocs,
 		conflicts:    conflicts,
 		reduce:       reduce,
 		group:        group,

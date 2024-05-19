@@ -230,13 +230,37 @@ func Test_viewOptions(t *testing.T) {
 			groupLevel:   3,
 		},
 	})
+	tests.Add("include_docs: bool", test{
+		options: kivik.Param("include_docs", true),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			includeDocs:  true,
+		},
+	})
+	tests.Add("include_docs: valid string", test{
+		options: kivik.Param("include_docs", "true"),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			includeDocs:  true,
+		},
+	})
+	tests.Add("include_docs: invalid string", test{
+		options:    kivik.Param("include_docs", "chicken"),
+		wantErr:    "invalid value for `include_docs`: chicken",
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("include_docs: int", test{
+		options:    kivik.Param("include_docs", 3),
+		wantErr:    "invalid value for `include_docs`: 3",
+		wantStatus: http.StatusBadRequest,
+	})
 
 	/*
 		endkey_docid (string) – Stop returning records when the specified document ID is reached. Ignored if endkey is not set.
 
 		end_key_doc_id (string) – Alias for endkey_docid.
-
-		include_docs (boolean) – Include the associated document with each row. Default is false.
 
 		attachments (boolean) – Include the Base64-encoded content of attachments in the documents that are included if include_docs is true. Ignored if include_docs isn’t true. Default is false.
 

@@ -81,8 +81,13 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 		return nil, err
 	}
 
+	includeDocs, err := opts.includeDocs()
+	if err != nil {
+		return nil, err
+	}
+
 	var query string
-	if opts.includeDocs() {
+	if includeDocs {
 		query = d.normalChangesQueryWithDocs(descendingToDirection(descending))
 	} else {
 		query = d.normalChangesQueryWithoutDocs(descendingToDirection(descending))
@@ -350,8 +355,12 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 	if err != nil {
 		return nil, err
 	}
+	includeDocs, err := opts.includeDocs()
+	if err != nil {
+		return nil, err
+	}
 	if sinceNow && feed == feedLongpoll {
-		return d.newLongpollChanges(ctx, opts.includeDocs(), opts.attachments())
+		return d.newLongpollChanges(ctx, includeDocs, opts.attachments())
 	}
 
 	return d.newNormalChanges(ctx, opts, since, lastSeq, sinceNow, feed)

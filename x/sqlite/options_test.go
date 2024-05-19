@@ -345,6 +345,49 @@ func Test_viewOptions(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 	})
 
+	tests.Add("skip: int", test{
+		options: kivik.Param("skip", 3),
+		want: &viewOptions{
+			limit:        -1,
+			skip:         3,
+			inclusiveEnd: true,
+		},
+	})
+	tests.Add("skip: float64", test{
+		options: kivik.Param("skip", 3.0),
+		want: &viewOptions{
+			limit:        -1,
+			skip:         3,
+			inclusiveEnd: true,
+		},
+	})
+	tests.Add("skip: valid string", test{
+		options: kivik.Param("skip", "3"),
+		want: &viewOptions{
+			limit:        -1,
+			skip:         3,
+			inclusiveEnd: true,
+		},
+	})
+	tests.Add("skip: valid string2", test{
+		options: kivik.Param("skip", "3.0"),
+		want: &viewOptions{
+			limit:        -1,
+			skip:         3,
+			inclusiveEnd: true,
+		},
+	})
+	tests.Add("skip: invalid string", test{
+		options:    kivik.Param("skip", "chicken"),
+		wantErr:    "invalid value for 'skip': chicken",
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("skip: slice", test{
+		options:    kivik.Param("skip", []int{1, 2}),
+		wantErr:    "invalid value for 'skip': [1 2]",
+		wantStatus: http.StatusBadRequest,
+	})
+
 	/*
 		endkey_docid (string) – Stop returning records when the specified document ID is reached. Ignored if endkey is not set.
 
@@ -357,8 +400,6 @@ func Test_viewOptions(t *testing.T) {
 		keys (json-array) – Return only documents where the key matches one of the keys specified in the array.
 
 		reduce (boolean) – Use the reduction function. Default is true when a reduce function is defined.
-
-		skip (number) – Skip this number of records before starting to return the results. Default is 0.
 
 		sorted (boolean) – Sort returned rows (see Sorting Returned Rows). Setting this to false offers a performance boost. The total_rows and offset fields are not available when this is set to false. Default is true.
 

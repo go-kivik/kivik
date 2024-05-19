@@ -568,7 +568,7 @@ func TestDBAllDocs(t *testing.T) {
 	})
 	tests.Add("invalid skip value", test{
 		options:    kivik.Params(map[string]interface{}{"skip": "chicken"}),
-		wantErr:    "malformed 'skip' parameter: chicken",
+		wantErr:    "invalid value for 'skip': chicken",
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("reduce not allowed", test{

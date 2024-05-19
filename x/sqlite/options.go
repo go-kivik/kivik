@@ -161,7 +161,7 @@ func (o optsMap) skip() (int64, error) {
 	if !ok {
 		return 0, nil
 	}
-	return toInt64(in, "malformed 'skip' parameter")
+	return toInt64(in, "invalid value for 'skip'")
 }
 
 // toUint64 converts the input to a uint64. If the input is malformed, it

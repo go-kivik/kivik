@@ -106,8 +106,8 @@ func ExampleDB_Put_updateView() {
 
 func ExampleDB_Query() {
 	rs := db.Query(context.TODO(), "_design/foo", "_view/bar", kivik.Params(map[string]interface{}{
-		"startkey": `"foo"`,                           // Quotes are necessary so the
-		"endkey":   `"foo` + kivik.EndKeySuffix + `"`, // key is a valid JSON object
+		"startkey": `foo`,
+		"endkey":   `foo` + kivik.EndKeySuffix,
 	}))
 	defer rs.Close()
 	for rs.Next() {

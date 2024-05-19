@@ -1569,6 +1569,78 @@ func TestRowsQuery(t *testing.T) {
 			},
 		},
 		{
+			name:    "all docs with simple string endkey",
+			path:    "/_all_docs",
+			options: kivik.Param("endkey", "foo"),
+			db: newCustomDB(func(r *http.Request) (*http.Response, error) {
+				if d := testy.DiffAsJSON([]byte(`"foo"`), []byte(r.URL.Query().Get("endkey"))); d != nil {
+					t.Error(d)
+				}
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Header: http.Header{
+						"Transfer-Encoding":  {"chunked"},
+						"Date":               {"Sat, 01 Sep 2018 19:01:30 GMT"},
+						"Server":             {"CouchDB/2.2.0 (Erlang OTP/19)"},
+						"Content-Type":       {typeJSON},
+						"Cache-Control":      {"must-revalidate"},
+						"X-Couch-Request-ID": {"24fdb3fd86"},
+						"X-Couch-Body-Time":  {"0"},
+					},
+					Body: io.NopCloser(strings.NewReader(`{"total_rows":1,"offset":null,"rows":[
+{"id":"_design/_auth","key":"_design/_auth","value":{"rev":"1-6e609020e0371257432797b4319c5829"}}
+]}`)),
+				}, nil
+			}),
+			expected: queryResult{
+				TotalRows: 1,
+				UpdateSeq: "",
+				Rows: []*driver.Row{
+					{
+						ID:    "_design/_auth",
+						Key:   []byte(`"_design/_auth"`),
+						Value: strings.NewReader(`{"rev":"1-6e609020e0371257432797b4319c5829"}`),
+					},
+				},
+			},
+		},
+		{
+			name:    "all docs with raw JSON endkey",
+			path:    "/_all_docs",
+			options: kivik.Param("endkey", json.RawMessage(`"foo"`)),
+			db: newCustomDB(func(r *http.Request) (*http.Response, error) {
+				if d := testy.DiffAsJSON([]byte(`"foo"`), []byte(r.URL.Query().Get("endkey"))); d != nil {
+					t.Error(d)
+				}
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Header: http.Header{
+						"Transfer-Encoding":  {"chunked"},
+						"Date":               {"Sat, 01 Sep 2018 19:01:30 GMT"},
+						"Server":             {"CouchDB/2.2.0 (Erlang OTP/19)"},
+						"Content-Type":       {typeJSON},
+						"Cache-Control":      {"must-revalidate"},
+						"X-Couch-Request-ID": {"24fdb3fd86"},
+						"X-Couch-Body-Time":  {"0"},
+					},
+					Body: io.NopCloser(strings.NewReader(`{"total_rows":1,"offset":null,"rows":[
+{"id":"_design/_auth","key":"_design/_auth","value":{"rev":"1-6e609020e0371257432797b4319c5829"}}
+]}`)),
+				}, nil
+			}),
+			expected: queryResult{
+				TotalRows: 1,
+				UpdateSeq: "",
+				Rows: []*driver.Row{
+					{
+						ID:    "_design/_auth",
+						Key:   []byte(`"_design/_auth"`),
+						Value: strings.NewReader(`{"rev":"1-6e609020e0371257432797b4319c5829"}`),
+					},
+				},
+			},
+		},
+		{
 			name:    "all docs with object keys",
 			path:    "/_all_docs",
 			options: kivik.Param("keys", []interface{}{"_design/_auth", "foo", []string{"bar", "baz"}}),

@@ -44,7 +44,7 @@ func Test_viewOptions(t *testing.T) {
 	})
 	tests.Add("confclits: invalid string", test{
 		options:    kivik.Param("conflicts", "oink"),
-		wantErr:    "invalid value for `conflicts`: oink",
+		wantErr:    "invalid value for 'conflicts': oink",
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("conflicts: string", test{
@@ -65,7 +65,7 @@ func Test_viewOptions(t *testing.T) {
 	})
 	tests.Add("conflicts: int", test{
 		options:    kivik.Param("conflicts", 3),
-		wantErr:    "invalid value for `conflicts`: 3",
+		wantErr:    "invalid value for 'conflicts': 3",
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("descending: bool", test{
@@ -86,12 +86,12 @@ func Test_viewOptions(t *testing.T) {
 	})
 	tests.Add("descending: invalid string", test{
 		options:    kivik.Param("descending", "chicken"),
-		wantErr:    "invalid value for `descending`: chicken",
+		wantErr:    "invalid value for 'descending': chicken",
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("descending: int", test{
 		options:    kivik.Param("descending", 3),
-		wantErr:    "invalid value for `descending`: 3",
+		wantErr:    "invalid value for 'descending': 3",
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("endkey: invalid json", test{
@@ -187,12 +187,12 @@ func Test_viewOptions(t *testing.T) {
 	})
 	tests.Add("group: invalid string", test{
 		options:    kivik.Param("group", "chicken"),
-		wantErr:    "invalid value for `group`: chicken",
+		wantErr:    "invalid value for 'group': chicken",
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("group: int", test{
 		options:    kivik.Param("group", 3),
-		wantErr:    "invalid value for `group`: 3",
+		wantErr:    "invalid value for 'group': 3",
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("group_level: int", test{
@@ -217,7 +217,7 @@ func Test_viewOptions(t *testing.T) {
 	})
 	tests.Add("group_level: invalid string", test{
 		options:    kivik.Param("group_level", "chicken"),
-		wantErr:    "invalid value for `group_level`: chicken",
+		wantErr:    "invalid value for 'group_level': chicken",
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("group_level: float64", test{
@@ -248,12 +248,12 @@ func Test_viewOptions(t *testing.T) {
 	})
 	tests.Add("include_docs: invalid string", test{
 		options:    kivik.Param("include_docs", "chicken"),
-		wantErr:    "invalid value for `include_docs`: chicken",
+		wantErr:    "invalid value for 'include_docs': chicken",
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("include_docs: int", test{
 		options:    kivik.Param("include_docs", 3),
-		wantErr:    "invalid value for `include_docs`: 3",
+		wantErr:    "invalid value for 'include_docs': 3",
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("attachments: bool", test{
@@ -274,12 +274,12 @@ func Test_viewOptions(t *testing.T) {
 	})
 	tests.Add("attachments: invalid string", test{
 		options:    kivik.Param("attachments", "chicken"),
-		wantErr:    "invalid value for `attachments`: chicken",
+		wantErr:    "invalid value for 'attachments': chicken",
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("attachments: int", test{
 		options:    kivik.Param("attachments", 3),
-		wantErr:    "invalid value for `attachments`: 3",
+		wantErr:    "invalid value for 'attachments': 3",
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("inclusive_end: bool", test{
@@ -298,12 +298,50 @@ func Test_viewOptions(t *testing.T) {
 	})
 	tests.Add("inclusive_end: invalid string", test{
 		options:    kivik.Param("inclusive_end", "chicken"),
-		wantErr:    "invalid value for `inclusive_end`: chicken",
+		wantErr:    "invalid value for 'inclusive_end': chicken",
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("inclusive_end: int", test{
 		options:    kivik.Param("inclusive_end", 3),
-		wantErr:    "invalid value for `inclusive_end`: 3",
+		wantErr:    "invalid value for 'inclusive_end': 3",
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("limit: int", test{
+		options: kivik.Param("limit", 3),
+		want: &viewOptions{
+			limit:        3,
+			inclusiveEnd: true,
+		},
+	})
+	tests.Add("limit: float64", test{
+		options: kivik.Param("limit", 3.0),
+		want: &viewOptions{
+			limit:        3,
+			inclusiveEnd: true,
+		},
+	})
+	tests.Add("limit: valid string", test{
+		options: kivik.Param("limit", "3"),
+		want: &viewOptions{
+			limit:        3,
+			inclusiveEnd: true,
+		},
+	})
+	tests.Add("limit: valid string2", test{
+		options: kivik.Param("limit", "3.0"),
+		want: &viewOptions{
+			limit:        3,
+			inclusiveEnd: true,
+		},
+	})
+	tests.Add("limit: invalid string", test{
+		options:    kivik.Param("limit", "chicken"),
+		wantErr:    "invalid value for 'limit': chicken",
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("limit: slice", test{
+		options:    kivik.Param("limit", []int{1, 2}),
+		wantErr:    "invalid value for 'limit': [1 2]",
 		wantStatus: http.StatusBadRequest,
 	})
 
@@ -317,8 +355,6 @@ func Test_viewOptions(t *testing.T) {
 		key (json) – Return only documents that match the specified key.
 
 		keys (json-array) – Return only documents where the key matches one of the keys specified in the array.
-
-		limit (number) – Limit the number of the returned documents to the specified number.
 
 		reduce (boolean) – Use the reduction function. Default is true when a reduce function is defined.
 

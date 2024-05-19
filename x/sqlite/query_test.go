@@ -92,7 +92,7 @@ func TestDBQuery(t *testing.T) {
 	})
 	tests.Add("invalid update value", test{
 		options:    kivik.Param("update", "foo"),
-		wantErr:    "invalid value for `update`",
+		wantErr:    "invalid value for 'update'",
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("with update=false", func(t *testing.T) interface{} {
@@ -656,17 +656,17 @@ func TestDBQuery(t *testing.T) {
 	})
 	tests.Add("malformed reduce param", test{
 		options:    kivik.Param("reduce", "foo"),
-		wantErr:    "invalid value for `reduce`",
+		wantErr:    "invalid value for 'reduce'",
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("malformed group param", test{
 		options:    kivik.Param("group", "foo"),
-		wantErr:    "invalid value for `group`",
+		wantErr:    "invalid value for 'group'",
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("malformed group_level param", test{
 		options:    kivik.Param("group_level", "foo"),
-		wantErr:    "invalid value for `group_level`",
+		wantErr:    "invalid value for 'group_level'",
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("group=true for map-only view returns 400", func(t *testing.T) interface{} {

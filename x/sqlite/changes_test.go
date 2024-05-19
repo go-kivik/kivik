@@ -192,7 +192,7 @@ func TestDBChanges(t *testing.T) {
 	})
 	tests.Add("invalid limit value", test{
 		options:    kivik.Param("limit", "invalid"),
-		wantErr:    "malformed 'limit' parameter: invalid",
+		wantErr:    "invalid value for 'limit': invalid",
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("longpoll + since in past should return all historical changes since that seqid", func(t *testing.T) interface{} {

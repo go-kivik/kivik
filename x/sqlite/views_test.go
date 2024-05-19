@@ -563,12 +563,12 @@ func TestDBAllDocs(t *testing.T) {
 	})
 	tests.Add("invalid limit value", test{
 		options:    kivik.Params(map[string]interface{}{"limit": "chicken"}),
-		wantErr:    "malformed 'limit' parameter",
+		wantErr:    "invalid value for 'limit': chicken",
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("invalid skip value", test{
 		options:    kivik.Params(map[string]interface{}{"skip": "chicken"}),
-		wantErr:    "malformed 'skip' parameter",
+		wantErr:    "malformed 'skip' parameter: chicken",
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("reduce not allowed", test{

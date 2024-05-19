@@ -75,7 +75,7 @@ func (o optsMap) inclusiveEnd() (bool, error) {
 	}
 	v, ok := toBool(param)
 	if !ok {
-		return false, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for `inclusive_end`: %v", param)}
+		return false, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'inclusive_end': %v", param)}
 	}
 	return v, nil
 }
@@ -134,7 +134,7 @@ func (o optsMap) changesLimit() (uint64, error) {
 	if !ok {
 		return 0, nil
 	}
-	limit, err := toUint64(in, "malformed 'limit' parameter")
+	limit, err := toUint64(in, "invalid value for 'limit'")
 	if err != nil {
 		return 0, err
 	}
@@ -151,7 +151,7 @@ func (o optsMap) limit() (int64, error) {
 	if !ok {
 		return -1, nil
 	}
-	return toInt64(in, "malformed 'limit' parameter")
+	return toInt64(in, "invalid value for 'limit'")
 }
 
 // skip returns the skip value as an int64, or 0 if the skip is unset.
@@ -241,30 +241,32 @@ func toInt64(in interface{}, msg string) (int64, error) {
 		return int64(t), nil
 	case uint64:
 		if t > math.MaxInt64 {
-			return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
+			return 0, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("%s: %v", msg, in)}
 		}
 		return int64(t), nil
 	case string:
 		i, err := strconv.ParseInt(t, 10, 64)
-		if err != nil {
-			return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
+		if err == nil {
+			return i, nil
 		}
-		return i, nil
+		f, err := strconv.ParseFloat(t, 64)
+		if err == nil {
+			return int64(f), nil
+		}
 	case float32:
 		i := int64(t)
 		if float32(i) != t {
-			return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
+			return 0, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("%s: %v", msg, in)}
 		}
 		return i, nil
 	case float64:
 		i := int64(t)
 		if float64(i) != t {
-			return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
+			return 0, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("%s: %v", msg, in)}
 		}
 		return i, nil
-	default:
-		return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
 	}
+	return 0, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("%s: %v", msg, in)}
 }
 
 func toBool(in interface{}) (value bool, ok bool) {
@@ -286,7 +288,7 @@ func (o optsMap) descending() (bool, error) {
 	}
 	v, ok := toBool(param)
 	if !ok {
-		return false, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for `descending`: %v", param)}
+		return false, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'descending': %v", param)}
 	}
 	return v, nil
 }
@@ -298,7 +300,7 @@ func (o optsMap) includeDocs() (bool, error) {
 	}
 	v, ok := toBool(param)
 	if !ok {
-		return false, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for `include_docs`: %v", param)}
+		return false, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'include_docs': %v", param)}
 	}
 	return v, nil
 }
@@ -310,7 +312,7 @@ func (o optsMap) attachments() (bool, error) {
 	}
 	v, ok := toBool(param)
 	if !ok {
-		return false, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for `attachments`: %v", param)}
+		return false, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'attachments': %v", param)}
 	}
 	return v, nil
 }
@@ -352,7 +354,7 @@ func (o optsMap) update() (string, error) {
 			return updateModeLazy, nil
 		}
 	}
-	return "", &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for `update`: %v", v)}
+	return "", &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'update': %v", v)}
 }
 
 func (o optsMap) reduce() (*bool, error) {
@@ -365,7 +367,7 @@ func (o optsMap) reduce() (*bool, error) {
 	}
 	v, ok := toBool(raw)
 	if !ok {
-		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "invalid value for `reduce`"}
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "invalid value for 'reduce'"}
 	}
 	return &v, nil
 }
@@ -380,7 +382,7 @@ func (o optsMap) group() (bool, error) {
 	}
 	v, ok := toBool(raw)
 	if !ok {
-		return false, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for `group`: %v", raw)}
+		return false, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'group': %v", raw)}
 	}
 	return v, nil
 }
@@ -390,7 +392,7 @@ func (o optsMap) groupLevel() (uint64, error) {
 	if !ok {
 		return 0, nil
 	}
-	return toUint64(raw, "invalid value for `group_level`")
+	return toUint64(raw, "invalid value for 'group_level'")
 }
 
 func (o optsMap) conflicts() (bool, error) {
@@ -403,7 +405,7 @@ func (o optsMap) conflicts() (bool, error) {
 	}
 	v, ok := toBool(param)
 	if !ok {
-		return false, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for `conflicts`: %v", param)}
+		return false, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'conflicts': %v", param)}
 	}
 	return v, nil
 }

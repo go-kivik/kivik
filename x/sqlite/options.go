@@ -384,18 +384,18 @@ func (v viewOptions) buildWhere(args *[]any) []string {
 	where := make([]string, 0, 3)
 	switch v.view {
 	case viewAllDocs:
-		where = append(where, "key NOT LIKE '_local/%'")
+		where = append(where, `view.key NOT LIKE '"_local/%'`)
 	case viewLocalDocs:
-		where = append(where, "key LIKE '_local/%'")
+		where = append(where, `view.key LIKE '"_local/%'`)
 	case viewDesignDocs:
-		where = append(where, "key LIKE '_design/%'")
+		where = append(where, `view.key LIKE '"_design/%'`)
 	}
 	if v.endkey != "" {
-		where = append(where, fmt.Sprintf("key %s $%d", endKeyOp(v.descending, v.inclusiveEnd), len(*args)+1))
+		where = append(where, fmt.Sprintf("view.key %s $%d", endKeyOp(v.descending, v.inclusiveEnd), len(*args)+1))
 		*args = append(*args, v.endkey)
 	}
 	if v.startkey != "" {
-		where = append(where, fmt.Sprintf("key %s $%d", startKeyOp(v.descending), len(*args)+1))
+		where = append(where, fmt.Sprintf("view.key %s $%d", startKeyOp(v.descending), len(*args)+1))
 		*args = append(*args, v.startkey)
 	}
 	return where

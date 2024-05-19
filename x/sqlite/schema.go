@@ -18,11 +18,13 @@ var schema = []string{
 		id TEXT NOT NULL,
 		rev INTEGER NOT NULL,
 		rev_id TEXT NOT NULL,
+		key TEXT GENERATED ALWAYS AS (json_quote(id)) VIRTUAL COLLATE COUCHDB_UCI,
 		parent_rev INTEGER,
 		parent_rev_id TEXT,
 		FOREIGN KEY (id, parent_rev, parent_rev_id) REFERENCES {{ .Revs }} (id, rev, rev_id) ON DELETE CASCADE,
 		UNIQUE(id, rev, rev_id)
 	)`,
+	`CREATE INDEX default_key ON {{ .Revs }} (key)`,
 	`CREATE INDEX idx_parent ON {{ .Revs }} (id, parent_rev, parent_rev_id)`,
 	// the main db table
 	`CREATE TABLE {{ .Docs }} (

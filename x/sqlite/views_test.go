@@ -287,7 +287,7 @@ func TestDBAllDocs(t *testing.T) {
 
 		return test{
 			db:      db,
-			options: kivik.Param("endkey", `"cow"`),
+			options: kivik.Param("endkey", "cow"),
 			want: []rowResult{
 				{
 					ID:    "cat",
@@ -317,7 +317,7 @@ func TestDBAllDocs(t *testing.T) {
 		return test{
 			db: db,
 			options: kivik.Params(map[string]interface{}{
-				"endkey":     `"cow"`,
+				"endkey":     "cow",
 				"descending": true,
 			}),
 			want: []rowResult{
@@ -348,7 +348,7 @@ func TestDBAllDocs(t *testing.T) {
 
 		return test{
 			db:      db,
-			options: kivik.Param("end_key", `"cow"`),
+			options: kivik.Param("end_key", "cow"),
 			want: []rowResult{
 				{
 					ID:    "cat",
@@ -378,7 +378,7 @@ func TestDBAllDocs(t *testing.T) {
 		return test{
 			db: db,
 			options: kivik.Params(map[string]interface{}{
-				"endkey":        `"cow"`,
+				"endkey":        "cow",
 				"inclusive_end": false,
 			}),
 			want: []rowResult{
@@ -404,7 +404,7 @@ func TestDBAllDocs(t *testing.T) {
 
 		return test{
 			db:      db,
-			options: kivik.Param("startkey", `"cow"`),
+			options: kivik.Param("startkey", "cow"),
 			want: []rowResult{
 				{
 					ID:    "cow",
@@ -433,7 +433,7 @@ func TestDBAllDocs(t *testing.T) {
 
 		return test{
 			db:      db,
-			options: kivik.Param("start_key", `"cow"`),
+			options: kivik.Param("start_key", "cow"),
 			want: []rowResult{
 				{
 					ID:    "cow",
@@ -463,7 +463,7 @@ func TestDBAllDocs(t *testing.T) {
 		return test{
 			db: db,
 			options: kivik.Params(map[string]interface{}{
-				"startkey":   `"cow"`,
+				"startkey":   "cow",
 				"descending": true,
 			}),
 			want: []rowResult{

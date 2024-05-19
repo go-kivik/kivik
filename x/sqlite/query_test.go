@@ -1381,7 +1381,7 @@ func TestDBQuery(t *testing.T) {
 			ddoc: "_design/foo",
 			view: "_view/bar",
 			options: kivik.Params(map[string]interface{}{
-				"endkey": `"b"`,
+				"endkey": "b",
 			}),
 			want: []rowResult{
 				{ID: "a", Key: `"a"`, Value: "1"},
@@ -1411,7 +1411,7 @@ func TestDBQuery(t *testing.T) {
 			ddoc: "_design/foo",
 			view: "_view/bar",
 			options: kivik.Params(map[string]interface{}{
-				"startkey": `"b"`,
+				"startkey": "b",
 			}),
 			want: []rowResult{
 				{ID: "b", Key: `"b"`, Value: "2"},

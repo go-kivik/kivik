@@ -13,6 +13,7 @@
 package sqlite
 
 import (
+	"encoding/json"
 	"net/http"
 	"testing"
 
@@ -93,12 +94,81 @@ func Test_viewOptions(t *testing.T) {
 		wantErr:    "invalid value for `descending`: 3",
 		wantStatus: http.StatusBadRequest,
 	})
+	tests.Add("endkey: invalid json", test{
+		options:    kivik.Param("endkey", json.RawMessage("oink")),
+		wantErr:    `invalid value for 'endkey': invalid character 'o' looking for beginning of value in key`,
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("endkey: valid json", test{
+		options: kivik.Param("endkey", json.RawMessage(`"oink"`)),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			endkey:       `"oink"`,
+		},
+	})
+	tests.Add("endkey: plain string", test{
+		options: kivik.Param("endkey", "oink"),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			endkey:       `"oink"`,
+		},
+	})
+	tests.Add("endkey: unmarshalable value", test{
+		options:    kivik.Param("endkey", func() {}),
+		wantErr:    `invalid value for 'endkey': json: unsupported type: func() in key`,
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("endkey: slice", test{
+		options: kivik.Param("endkey", []string{"foo", "bar"}),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			endkey:       `["foo","bar"]`,
+		},
+	})
+	tests.Add("end_key: invalid json", test{
+		options:    kivik.Param("end_key", json.RawMessage("oink")),
+		wantErr:    `invalid value for 'end_key': invalid character 'o' looking for beginning of value in key`,
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("end_key: valid json", test{
+		options: kivik.Param("end_key", json.RawMessage(`"oink"`)),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			endkey:       `"oink"`,
+		},
+	})
+	tests.Add("startkey: invalid json", test{
+		options:    kivik.Param("startkey", json.RawMessage("oink")),
+		wantErr:    `invalid value for 'startkey': invalid character 'o' looking for beginning of value in key`,
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("startkey: valid json", test{
+		options: kivik.Param("startkey", json.RawMessage(`"oink"`)),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			startkey:     `"oink"`,
+		},
+	})
+	tests.Add("start_key: invalid json", test{
+		options:    kivik.Param("start_key", json.RawMessage("oink")),
+		wantErr:    `invalid value for 'start_key': invalid character 'o' looking for beginning of value in key`,
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("start_key: valid json", test{
+		options: kivik.Param("start_key", json.RawMessage(`"oink"`)),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			startkey:     `"oink"`,
+		},
+	})
 
 	/*
-		endkey (json) – Stop returning records when the specified key is reached.
-
-		end_key (json) – Alias for endkey param
-
 		endkey_docid (string) – Stop returning records when the specified document ID is reached. Ignored if endkey is not set.
 
 		end_key_doc_id (string) – Alias for endkey_docid.
@@ -130,10 +200,6 @@ func Test_viewOptions(t *testing.T) {
 		stable (boolean) – Whether or not the view results should be returned from a stable set of shards. Default is false.
 
 		stale (string) – Allow the results from a stale view to be used. Supported values: ok and update_after. ok is equivalent to stable=true&update=false. update_after is equivalent to stable=true&update=lazy. The default behavior is equivalent to stable=false&update=true. Note that this parameter is deprecated. Use stable and update instead. See Views Generation for more details.
-
-		startkey (json) – Return records starting with the specified key.
-
-		start_key (json) – Alias for startkey.
 
 		startkey_docid (string) – Return records starting with the specified document ID. Ignored if startkey is not set.
 

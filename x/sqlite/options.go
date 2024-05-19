@@ -13,6 +13,7 @@
 package sqlite
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"net/http"
@@ -30,14 +31,41 @@ func newOpts(options driver.Options) optsMap {
 	return opts
 }
 
-func (o optsMap) endKey() string {
-	if endkey, ok := o["endkey"].(string); ok {
-		return endkey
+// get works like standard map access, but allows for multiple keys to be
+// checked in order.
+func (o optsMap) get(key ...string) (string, interface{}, bool) {
+	for _, k := range key {
+		v, ok := o[k]
+		if ok {
+			return k, v, true
+		}
 	}
-	if endkey, ok := o["end_key"].(string); ok {
-		return endkey
+	return "", nil, false
+}
+
+func parseKey(key string, in any) (string, error) {
+	switch t := in.(type) {
+	case json.RawMessage:
+		var v interface{}
+		if err := json.Unmarshal(t, &v); err != nil {
+			return "", &internal.Error{Status: http.StatusBadRequest, Err: fmt.Errorf("invalid value for '%s': %w in key", key, err)}
+		}
+		return string(t), nil
+	default:
+		v, err := json.Marshal(t)
+		if err != nil {
+			return "", &internal.Error{Status: http.StatusBadRequest, Err: fmt.Errorf("invalid value for '%s': %w in key", key, err)}
+		}
+		return string(v), nil
 	}
-	return ""
+}
+
+func (o optsMap) endKey() (string, error) {
+	key, value, ok := o.get("endkey", "end_key")
+	if !ok {
+		return "", nil
+	}
+	return parseKey(key, value)
 }
 
 func (o optsMap) inclusiveEnd() bool {
@@ -45,14 +73,12 @@ func (o optsMap) inclusiveEnd() bool {
 	return !ok || inclusiveEnd
 }
 
-func (o optsMap) startKey() string {
-	if startkey, ok := o["startkey"].(string); ok {
-		return startkey
+func (o optsMap) startKey() (string, error) {
+	key, value, ok := o.get("startkey", "start_key")
+	if !ok {
+		return "", nil
 	}
-	if startkey, ok := o["start_key"].(string); ok {
-		return startkey
-	}
-	return ""
+	return parseKey(key, value)
 }
 
 func (o optsMap) rev() string {
@@ -466,6 +492,14 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 	if err != nil {
 		return nil, err
 	}
+	endkey, err := o.endKey()
+	if err != nil {
+		return nil, err
+	}
+	startkey, err := o.startKey()
+	if err != nil {
+		return nil, err
+	}
 
 	return &viewOptions{
 		view:         view,
@@ -477,8 +511,8 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 		reduce:       reduce,
 		group:        group,
 		groupLevel:   groupLevel,
-		endkey:       o.endKey(),
-		startkey:     o.startKey(),
+		endkey:       endkey,
+		startkey:     startkey,
 		inclusiveEnd: o.inclusiveEnd(),
 	}, nil
 }

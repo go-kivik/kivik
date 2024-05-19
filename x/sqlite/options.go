@@ -68,9 +68,16 @@ func (o optsMap) endKey() (string, error) {
 	return parseKey(key, value)
 }
 
-func (o optsMap) inclusiveEnd() bool {
-	inclusiveEnd, ok := o["inclusive_end"].(bool)
-	return !ok || inclusiveEnd
+func (o optsMap) inclusiveEnd() (bool, error) {
+	param, ok := o["inclusive_end"]
+	if !ok {
+		return true, nil
+	}
+	v, ok := toBool(param)
+	if !ok {
+		return false, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for `inclusive_end`: %v", param)}
+	}
+	return v, nil
 }
 
 func (o optsMap) startKey() (string, error) {
@@ -523,6 +530,10 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 	if err != nil {
 		return nil, err
 	}
+	inclusiveEnd, err := o.inclusiveEnd()
+	if err != nil {
+		return nil, err
+	}
 
 	return &viewOptions{
 		view:         view,
@@ -536,7 +547,7 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 		groupLevel:   groupLevel,
 		endkey:       endkey,
 		startkey:     startkey,
-		inclusiveEnd: o.inclusiveEnd(),
+		inclusiveEnd: inclusiveEnd,
 		attachments:  attachments,
 	}, nil
 }

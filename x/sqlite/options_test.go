@@ -282,6 +282,30 @@ func Test_viewOptions(t *testing.T) {
 		wantErr:    "invalid value for `attachments`: 3",
 		wantStatus: http.StatusBadRequest,
 	})
+	tests.Add("inclusive_end: bool", test{
+		options: kivik.Param("inclusive_end", false),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: false,
+		},
+	})
+	tests.Add("inclusive_end: valid string", test{
+		options: kivik.Param("inclusive_end", "false"),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: false,
+		},
+	})
+	tests.Add("inclusive_end: invalid string", test{
+		options:    kivik.Param("inclusive_end", "chicken"),
+		wantErr:    "invalid value for `inclusive_end`: chicken",
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("inclusive_end: int", test{
+		options:    kivik.Param("inclusive_end", 3),
+		wantErr:    "invalid value for `inclusive_end`: 3",
+		wantStatus: http.StatusBadRequest,
+	})
 
 	/*
 		endkey_docid (string) – Stop returning records when the specified document ID is reached. Ignored if endkey is not set.
@@ -289,8 +313,6 @@ func Test_viewOptions(t *testing.T) {
 		end_key_doc_id (string) – Alias for endkey_docid.
 
 		att_encoding_info (boolean) – Include encoding information in attachment stubs if include_docs is true and the particular attachment is compressed. Ignored if include_docs isn’t true. Default is false.
-
-		inclusive_end (boolean) – Specifies whether the specified end key should be included in the result. Default is true.
 
 		key (json) – Return only documents that match the specified key.
 

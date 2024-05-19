@@ -359,7 +359,7 @@ func (o optsMap) group() (bool, error) {
 	}
 	v, ok := toBool(raw)
 	if !ok {
-		return false, &internal.Error{Status: http.StatusBadRequest, Message: "invalid value for `group`"}
+		return false, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for `group`: %v", raw)}
 	}
 	return v, nil
 }

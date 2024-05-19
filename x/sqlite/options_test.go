@@ -167,13 +167,39 @@ func Test_viewOptions(t *testing.T) {
 			startkey:     `"oink"`,
 		},
 	})
+	tests.Add("group: bool", test{
+		options: kivik.Param("group", true),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			reduce:       &[]bool{true}[0],
+			group:        true,
+		},
+	})
+	tests.Add("group: valid string", test{
+		options: kivik.Param("group", "true"),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			reduce:       &[]bool{true}[0],
+			group:        true,
+		},
+	})
+	tests.Add("group: invalid string", test{
+		options:    kivik.Param("group", "chicken"),
+		wantErr:    "invalid value for `group`: chicken",
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("group: int", test{
+		options:    kivik.Param("group", 3),
+		wantErr:    "invalid value for `group`: 3",
+		wantStatus: http.StatusBadRequest,
+	})
 
 	/*
 		endkey_docid (string) – Stop returning records when the specified document ID is reached. Ignored if endkey is not set.
 
 		end_key_doc_id (string) – Alias for endkey_docid.
-
-		group (boolean) – Group the results using the reduce function to a group or single row. Implies reduce is true and the maximum group_level. Default is false.
 
 		group_level (number) – Specify the group level to be used. Implies group is true.
 

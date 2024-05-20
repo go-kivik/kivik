@@ -40,6 +40,8 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
 		},
 	})
 	tests.Add("confclits: invalid string", test{
@@ -52,6 +54,8 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
 			conflicts:    true,
 		},
 	})
@@ -60,6 +64,8 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
 			conflicts:    true,
 		},
 	})
@@ -73,6 +79,8 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
 			descending:   true,
 		},
 	})
@@ -81,6 +89,8 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
 			descending:   true,
 		},
 	})
@@ -104,6 +114,8 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
 			endkey:       `"oink"`,
 		},
 	})
@@ -112,6 +124,8 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
 			endkey:       `"oink"`,
 		},
 	})
@@ -125,6 +139,8 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
 			endkey:       `["foo","bar"]`,
 		},
 	})
@@ -138,6 +154,8 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
 			endkey:       `"oink"`,
 		},
 	})
@@ -151,6 +169,8 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
 			startkey:     `"oink"`,
 		},
 	})
@@ -164,6 +184,8 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
 			startkey:     `"oink"`,
 		},
 	})
@@ -173,6 +195,8 @@ func Test_viewOptions(t *testing.T) {
 			limit:        -1,
 			inclusiveEnd: true,
 			reduce:       &[]bool{true}[0],
+			update:       "true",
+			sorted:       true,
 			group:        true,
 		},
 	})
@@ -182,6 +206,8 @@ func Test_viewOptions(t *testing.T) {
 			limit:        -1,
 			inclusiveEnd: true,
 			reduce:       &[]bool{true}[0],
+			update:       "true",
+			sorted:       true,
 			group:        true,
 		},
 	})
@@ -201,6 +227,8 @@ func Test_viewOptions(t *testing.T) {
 			limit:        -1,
 			inclusiveEnd: true,
 			reduce:       &[]bool{true}[0],
+			update:       "true",
+			sorted:       true,
 			group:        true,
 			groupLevel:   3,
 		},
@@ -211,6 +239,8 @@ func Test_viewOptions(t *testing.T) {
 			limit:        -1,
 			inclusiveEnd: true,
 			reduce:       &[]bool{true}[0],
+			update:       "true",
+			sorted:       true,
 			group:        true,
 			groupLevel:   3,
 		},
@@ -226,6 +256,8 @@ func Test_viewOptions(t *testing.T) {
 			limit:        -1,
 			inclusiveEnd: true,
 			reduce:       &[]bool{true}[0],
+			update:       "true",
+			sorted:       true,
 			group:        true,
 			groupLevel:   3,
 		},
@@ -235,6 +267,8 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
 			includeDocs:  true,
 		},
 	})
@@ -243,6 +277,8 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
 			includeDocs:  true,
 		},
 	})
@@ -261,6 +297,8 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
 			attachments:  true,
 		},
 	})
@@ -269,6 +307,8 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
 			attachments:  true,
 		},
 	})
@@ -287,6 +327,8 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: false,
+			update:       "true",
+			sorted:       true,
 		},
 	})
 	tests.Add("inclusive_end: valid string", test{
@@ -294,6 +336,8 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: false,
+			update:       "true",
+			sorted:       true,
 		},
 	})
 	tests.Add("inclusive_end: invalid string", test{
@@ -311,6 +355,8 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        3,
 			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
 		},
 	})
 	tests.Add("limit: float64", test{
@@ -318,6 +364,8 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        3,
 			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
 		},
 	})
 	tests.Add("limit: valid string", test{
@@ -325,6 +373,8 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        3,
 			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
 		},
 	})
 	tests.Add("limit: valid string2", test{
@@ -332,6 +382,8 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        3,
 			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
 		},
 	})
 	tests.Add("limit: invalid string", test{
@@ -351,6 +403,8 @@ func Test_viewOptions(t *testing.T) {
 			limit:        -1,
 			skip:         3,
 			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
 		},
 	})
 	tests.Add("skip: float64", test{
@@ -359,6 +413,8 @@ func Test_viewOptions(t *testing.T) {
 			limit:        -1,
 			skip:         3,
 			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
 		},
 	})
 	tests.Add("skip: valid string", test{
@@ -367,6 +423,8 @@ func Test_viewOptions(t *testing.T) {
 			limit:        -1,
 			skip:         3,
 			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
 		},
 	})
 	tests.Add("skip: valid string2", test{
@@ -375,6 +433,8 @@ func Test_viewOptions(t *testing.T) {
 			limit:        -1,
 			skip:         3,
 			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
 		},
 	})
 	tests.Add("skip: invalid string", test{
@@ -388,32 +448,367 @@ func Test_viewOptions(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 	})
 
+	tests.Add("reduce: bool", test{
+		options: kivik.Param("reduce", true),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
+			reduce:       &[]bool{true}[0],
+		},
+	})
+	tests.Add("reduce: valid string", test{
+		options: kivik.Param("reduce", "true"),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
+			reduce:       &[]bool{true}[0],
+		},
+	})
+	tests.Add("reduce: invalid string", test{
+		options:    kivik.Param("reduce", "chicken"),
+		wantErr:    "invalid value for 'reduce': chicken",
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("reduce: int", test{
+		options:    kivik.Param("reduce", 3),
+		wantErr:    "invalid value for 'reduce': 3",
+		wantStatus: http.StatusBadRequest,
+	})
+
+	tests.Add("update: bool", test{
+		options: kivik.Param("update", true),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
+		},
+	})
+	tests.Add("update: valid string", test{
+		options: kivik.Param("update", "true"),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
+		},
+	})
+	tests.Add("update: valid string2", test{
+		options: kivik.Param("update", "lazy"),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "lazy",
+			sorted:       true,
+		},
+	})
+	tests.Add("update: invalid string", test{
+		options:    kivik.Param("update", "chicken"),
+		wantErr:    "invalid value for 'update': chicken",
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("update: int", test{
+		options:    kivik.Param("update", 3),
+		wantErr:    "invalid value for 'update': 3",
+		wantStatus: http.StatusBadRequest,
+	})
+
+	tests.Add("update_seq: bool", test{
+		options: kivik.Param("update_seq", true),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
+			updateSeq:    true,
+		},
+	})
+	tests.Add("update_seq: valid string", test{
+		options: kivik.Param("update_seq", "true"),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
+			updateSeq:    true,
+		},
+	})
+	tests.Add("update_seq: invalid string", test{
+		options:    kivik.Param("update_seq", "chicken"),
+		wantErr:    "invalid value for 'update_seq': chicken",
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("update_seq: int", test{
+		options:    kivik.Param("update_seq", 3),
+		wantErr:    "invalid value for 'update_seq': 3",
+		wantStatus: http.StatusBadRequest,
+	})
+
+	tests.Add("endkey_doc_id: valid string", test{
+		options: kivik.Param("endkey_doc_id", "oink"),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
+			endkeyDocID:  `"oink"`,
+		},
+	})
+	tests.Add("endkey_doc_id: valid json", test{
+		options: kivik.Param("endkey_doc_id", json.RawMessage(`"oink"`)),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
+			endkeyDocID:  `"oink"`,
+		},
+	})
+	tests.Add("endkey_doc_id: invalid json", test{
+		options:    kivik.Param("endkey_doc_id", json.RawMessage(`oink`)),
+		wantErr:    `invalid value for 'endkey_doc_id': invalid character 'o' looking for beginning of value in key`,
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("end_key_doc_id: valid string", test{
+		options: kivik.Param("end_key_doc_id", "oink"),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
+			endkeyDocID:  `"oink"`,
+		},
+	})
+	tests.Add("end_key_doc_id: valid json", test{
+		options: kivik.Param("end_key_doc_id", json.RawMessage(`"oink"`)),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
+			endkeyDocID:  `"oink"`,
+		},
+	})
+	tests.Add("end_key_doc_id: invalid json", test{
+		options:    kivik.Param("end_key_doc_id", json.RawMessage(`oink`)),
+		wantErr:    `invalid value for 'end_key_doc_id': invalid character 'o' looking for beginning of value in key`,
+		wantStatus: http.StatusBadRequest,
+	})
+
+	tests.Add("key: valid string", test{
+		options: kivik.Param("key", "oink"),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
+			key:          `"oink"`,
+		},
+	})
+	tests.Add("key: valid json", test{
+		options: kivik.Param("key", json.RawMessage(`"oink"`)),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
+			key:          `"oink"`,
+		},
+	})
+	tests.Add("key: invalid json", test{
+		options:    kivik.Param("key", json.RawMessage(`oink`)),
+		wantErr:    `invalid value for 'key': invalid character 'o' looking for beginning of value in key`,
+		wantStatus: http.StatusBadRequest,
+	})
+
+	tests.Add("keys: slice of strings", test{
+		options: kivik.Param("keys", []string{"foo", "bar"}),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
+			keys:         []string{`"foo"`, `"bar"`},
+		},
+	})
+	tests.Add("keys: slice of ints", test{
+		options: kivik.Param("keys", []int{1, 2, 3}),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
+			keys:         []string{`1`, `2`, `3`},
+		},
+	})
+	tests.Add("keys: slice of mixed values", test{
+		options: kivik.Param("keys", []any{"one", 2, [3]int{1, 2, 3}, json.RawMessage(`"foo"`)}),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
+			keys:         []string{`"one"`, `2`, `[1,2,3]`, `"foo"`},
+		},
+	})
+	tests.Add("keys: valid raw JSON", test{
+		options: kivik.Param("keys", json.RawMessage(`["foo", "bar"]`)),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
+			keys:         []string{`"foo"`, `"bar"`},
+		},
+	})
+	tests.Add("keys: invalid raw JSON", test{
+		options:    kivik.Param("keys", json.RawMessage(`invalid`)),
+		wantErr:    `invalid value for 'keys': invalid character 'i' looking for beginning of value`,
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("keys: unmarshalable type", test{
+		options:    kivik.Param("keys", []any{func() {}}),
+		wantErr:    `invalid value for 'keys': json: unsupported type: func()`,
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("keys: non slice/array type", test{
+		options:    kivik.Param("keys", "foo"),
+		wantErr:    `invalid value for 'keys': json: cannot unmarshal string into Go value of type []json.RawMessage`,
+		wantStatus: http.StatusBadRequest,
+	})
+
+	tests.Add("startkey_doc_id: valid string", test{
+		options: kivik.Param("startkey_doc_id", "oink"),
+		want: &viewOptions{
+			limit:         -1,
+			inclusiveEnd:  true,
+			update:        "true",
+			sorted:        true,
+			startkeyDocID: `"oink"`,
+		},
+	})
+	tests.Add("startkey_doc_id: valid json", test{
+		options: kivik.Param("startkey_doc_id", json.RawMessage(`"oink"`)),
+		want: &viewOptions{
+			limit:         -1,
+			inclusiveEnd:  true,
+			update:        "true",
+			sorted:        true,
+			startkeyDocID: `"oink"`,
+		},
+	})
+	tests.Add("startkey_doc_id: invalid json", test{
+		options:    kivik.Param("startkey_doc_id", json.RawMessage(`oink`)),
+		wantErr:    `invalid value for 'startkey_doc_id': invalid character 'o' looking for beginning of value in key`,
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("start_key_doc_id: valid string", test{
+		options: kivik.Param("start_key_doc_id", "oink"),
+		want: &viewOptions{
+			limit:         -1,
+			inclusiveEnd:  true,
+			update:        "true",
+			sorted:        true,
+			startkeyDocID: `"oink"`,
+		},
+	})
+	tests.Add("start_key_doc_id: valid json", test{
+		options: kivik.Param("start_key_doc_id", json.RawMessage(`"oink"`)),
+		want: &viewOptions{
+			limit:         -1,
+			inclusiveEnd:  true,
+			update:        "true",
+			sorted:        true,
+			startkeyDocID: `"oink"`,
+		},
+	})
+	tests.Add("start_key_doc_id: invalid json", test{
+		options:    kivik.Param("start_key_doc_id", json.RawMessage(`oink`)),
+		wantErr:    `invalid value for 'start_key_doc_id': invalid character 'o' looking for beginning of value in key`,
+		wantStatus: http.StatusBadRequest,
+	})
+
+	tests.Add("sorted: bool", test{
+		options: kivik.Param("sorted", false),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			sorted:       false,
+		},
+	})
+	tests.Add("sorted: false, but re-enabled by descending=true", test{
+		options: kivik.Params(map[string]interface{}{
+			"sorted":     false,
+			"descending": true,
+		}),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			descending:   true,
+			sorted:       true,
+		},
+	})
+	tests.Add("sorted: false, but re-enabled by descending=false", test{
+		options: kivik.Params(map[string]interface{}{
+			"sorted":     false,
+			"descending": false,
+		}), want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			descending:   false,
+			sorted:       true,
+		},
+	})
+	tests.Add("sorted: valid string", test{
+		options: kivik.Param("sorted", "false"),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			sorted:       false,
+		},
+	})
+	tests.Add("sorted: invalid string", test{
+		options:    kivik.Param("sorted", "chicken"),
+		wantErr:    "invalid value for 'sorted': chicken",
+		wantStatus: http.StatusBadRequest,
+	})
+
+	tests.Add("att_encoding_info: bool", test{
+		options: kivik.Param("att_encoding_info", true),
+		want: &viewOptions{
+			limit:           -1,
+			inclusiveEnd:    true,
+			update:          "true",
+			sorted:          true,
+			attEncodingInfo: true,
+		},
+	})
+	tests.Add("att_encoding_info: valid string", test{
+		options: kivik.Param("att_encoding_info", "true"),
+		want: &viewOptions{
+			limit:           -1,
+			inclusiveEnd:    true,
+			update:          "true",
+			sorted:          true,
+			attEncodingInfo: true,
+		},
+	})
+	tests.Add("att_encoding_info: invalid string", test{
+		options:    kivik.Param("att_encoding_info", "chicken"),
+		wantErr:    "invalid value for 'att_encoding_info': chicken",
+		wantStatus: http.StatusBadRequest,
+	})
+
 	/*
-		endkey_docid (string) – Stop returning records when the specified document ID is reached. Ignored if endkey is not set.
-
-		end_key_doc_id (string) – Alias for endkey_docid.
-
-		att_encoding_info (boolean) – Include encoding information in attachment stubs if include_docs is true and the particular attachment is compressed. Ignored if include_docs isn’t true. Default is false.
-
-		key (json) – Return only documents that match the specified key.
-
-		keys (json-array) – Return only documents where the key matches one of the keys specified in the array.
-
-		reduce (boolean) – Use the reduction function. Default is true when a reduce function is defined.
-
-		sorted (boolean) – Sort returned rows (see Sorting Returned Rows). Setting this to false offers a performance boost. The total_rows and offset fields are not available when this is set to false. Default is true.
-
 		stable (boolean) – Whether or not the view results should be returned from a stable set of shards. Default is false.
-
-		stale (string) – Allow the results from a stale view to be used. Supported values: ok and update_after. ok is equivalent to stable=true&update=false. update_after is equivalent to stable=true&update=lazy. The default behavior is equivalent to stable=false&update=true. Note that this parameter is deprecated. Use stable and update instead. See Views Generation for more details.
-
-		startkey_docid (string) – Return records starting with the specified document ID. Ignored if startkey is not set.
-
-		start_key_doc_id (string) – Alias for startkey_docid param
-
-		update (string) – Whether or not the view in question should be updated prior to responding to the user. Supported values: true, false, lazy. Default is true.
-
-		update_seq (boolean) – Whether to include in the response an update_seq value indicating the sequence id of the database the view reflects. Default is false.
 	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {

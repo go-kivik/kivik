@@ -68,6 +68,57 @@ func (o optsMap) endKey() (string, error) {
 	return parseKey(key, value)
 }
 
+func (o optsMap) endkeyDocID() (string, error) {
+	key, value, ok := o.get("endkey_doc_id", "end_key_doc_id")
+	if !ok {
+		return "", nil
+	}
+	return parseKey(key, value)
+}
+
+func (o optsMap) startkeyDocID() (string, error) {
+	key, value, ok := o.get("startkey_doc_id", "start_key_doc_id")
+	if !ok {
+		return "", nil
+	}
+	return parseKey(key, value)
+}
+
+func (o optsMap) key() (string, error) {
+	value, ok := o["key"]
+	if !ok {
+		return "", nil
+	}
+	return parseKey("key", value)
+}
+
+func (o optsMap) keys() ([]string, error) {
+	raw, ok := o["keys"]
+	if !ok {
+		return nil, nil
+	}
+	var tmp json.RawMessage
+	switch t := raw.(type) {
+	case json.RawMessage:
+		tmp = t
+	default:
+		var err error
+		tmp, err = json.Marshal(raw)
+		if err != nil {
+			return nil, &internal.Error{Status: http.StatusBadRequest, Err: fmt.Errorf("invalid value for 'keys': %w", err)}
+		}
+	}
+	var out []json.RawMessage
+	if err := json.Unmarshal(tmp, &out); err != nil {
+		return nil, &internal.Error{Status: http.StatusBadRequest, Err: fmt.Errorf("invalid value for 'keys': %w", err)}
+	}
+	keys := make([]string, len(out))
+	for i, v := range out {
+		keys[i] = string(v)
+	}
+	return keys, nil
+}
+
 func (o optsMap) inclusiveEnd() (bool, error) {
 	param, ok := o["inclusive_end"]
 	if !ok {
@@ -274,11 +325,33 @@ func toBool(in interface{}) (value bool, ok bool) {
 	case bool:
 		return t, true
 	case string:
-		b, err := strconv.ParseBool(t)
-		return b, err == nil
+		switch t {
+		case "true":
+			return true, true
+		case "false":
+			return false, true
+		}
+		return false, false
 	default:
 		return false, false
 	}
+}
+
+func (o optsMap) sorted() (bool, error) {
+	param, ok := o["sorted"]
+	if !ok {
+		return true, nil
+	}
+	v, ok := toBool(param)
+	if !ok {
+		return false, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'sorted': %v", param)}
+	}
+	if _, ok := o["descending"]; ok {
+		// If descending is set to anything, then sorted must be true.
+		// Error handling for invalid descending values is handled elsewhere.
+		return true, nil
+	}
+	return v, nil
 }
 
 func (o optsMap) descending() (bool, error) {
@@ -367,7 +440,7 @@ func (o optsMap) reduce() (*bool, error) {
 	}
 	v, ok := toBool(raw)
 	if !ok {
-		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "invalid value for 'reduce'"}
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'reduce': %v", raw)}
 	}
 	return &v, nil
 }
@@ -441,6 +514,30 @@ func (o optsMap) attsSince() []string {
 	return attsSince
 }
 
+func (o optsMap) updateSeq() (bool, error) {
+	param, ok := o["update_seq"]
+	if !ok {
+		return false, nil
+	}
+	v, ok := toBool(param)
+	if !ok {
+		return false, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'update_seq': %v", param)}
+	}
+	return v, nil
+}
+
+func (o optsMap) attEncodingInfo() (bool, error) {
+	param, ok := o["att_encoding_info"]
+	if !ok {
+		return false, nil
+	}
+	v, ok := toBool(param)
+	if !ok {
+		return false, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'att_encoding_info': %v", param)}
+	}
+	return v, nil
+}
+
 // buildWhere returns WHERE conditions based on the provided configuration
 // arguments, and may append to args as needed.
 func (v viewOptions) buildWhere(args *[]any) []string {
@@ -469,19 +566,27 @@ func (v viewOptions) buildWhere(args *[]any) []string {
 //
 // See https://docs.couchdb.org/en/stable/api/ddoc/views.html#api-ddoc-view
 type viewOptions struct {
-	view         string
-	limit        int64
-	skip         int64
-	descending   bool
-	includeDocs  bool
-	conflicts    bool
-	reduce       *bool
-	group        bool
-	groupLevel   uint64
-	endkey       string
-	startkey     string
-	inclusiveEnd bool
-	attachments  bool
+	view            string
+	limit           int64
+	skip            int64
+	descending      bool
+	includeDocs     bool
+	conflicts       bool
+	reduce          *bool
+	group           bool
+	groupLevel      uint64
+	endkey          string
+	startkey        string
+	inclusiveEnd    bool
+	attachments     bool
+	update          string
+	updateSeq       bool
+	endkeyDocID     string
+	startkeyDocID   string
+	key             string
+	keys            []string
+	sorted          bool
+	attEncodingInfo bool
 }
 
 func (o optsMap) viewOptions(view string) (*viewOptions, error) {
@@ -536,20 +641,60 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 	if err != nil {
 		return nil, err
 	}
+	update, err := o.update()
+	if err != nil {
+		return nil, err
+	}
+	updateSeq, err := o.updateSeq()
+	if err != nil {
+		return nil, err
+	}
+	endkeyDocID, err := o.endkeyDocID()
+	if err != nil {
+		return nil, err
+	}
+	startkeyDocID, err := o.startkeyDocID()
+	if err != nil {
+		return nil, err
+	}
+	key, err := o.key()
+	if err != nil {
+		return nil, err
+	}
+	keys, err := o.keys()
+	if err != nil {
+		return nil, err
+	}
+	sorted, err := o.sorted()
+	if err != nil {
+		return nil, err
+	}
+	attEncodingInfo, err := o.attEncodingInfo()
+	if err != nil {
+		return nil, err
+	}
 
 	return &viewOptions{
-		view:         view,
-		limit:        limit,
-		skip:         skip,
-		descending:   descending,
-		includeDocs:  includeDocs,
-		conflicts:    conflicts,
-		reduce:       reduce,
-		group:        group,
-		groupLevel:   groupLevel,
-		endkey:       endkey,
-		startkey:     startkey,
-		inclusiveEnd: inclusiveEnd,
-		attachments:  attachments,
+		view:            view,
+		limit:           limit,
+		skip:            skip,
+		descending:      descending,
+		includeDocs:     includeDocs,
+		conflicts:       conflicts,
+		reduce:          reduce,
+		group:           group,
+		groupLevel:      groupLevel,
+		endkey:          endkey,
+		startkey:        startkey,
+		inclusiveEnd:    inclusiveEnd,
+		attachments:     attachments,
+		update:          update,
+		updateSeq:       updateSeq,
+		endkeyDocID:     endkeyDocID,
+		startkeyDocID:   startkeyDocID,
+		key:             key,
+		keys:            keys,
+		sorted:          sorted,
+		attEncodingInfo: attEncodingInfo,
 	}, nil
 }

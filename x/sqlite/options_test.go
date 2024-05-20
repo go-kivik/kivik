@@ -40,6 +40,7 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
+			update:       "true",
 		},
 	})
 	tests.Add("confclits: invalid string", test{
@@ -52,6 +53,7 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
+			update:       "true",
 			conflicts:    true,
 		},
 	})
@@ -60,6 +62,7 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
+			update:       "true",
 			conflicts:    true,
 		},
 	})
@@ -73,6 +76,7 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
+			update:       "true",
 			descending:   true,
 		},
 	})
@@ -81,6 +85,7 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
+			update:       "true",
 			descending:   true,
 		},
 	})
@@ -104,6 +109,7 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
+			update:       "true",
 			endkey:       `"oink"`,
 		},
 	})
@@ -112,6 +118,7 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
+			update:       "true",
 			endkey:       `"oink"`,
 		},
 	})
@@ -125,6 +132,7 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
+			update:       "true",
 			endkey:       `["foo","bar"]`,
 		},
 	})
@@ -138,6 +146,7 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
+			update:       "true",
 			endkey:       `"oink"`,
 		},
 	})
@@ -151,6 +160,7 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
+			update:       "true",
 			startkey:     `"oink"`,
 		},
 	})
@@ -164,6 +174,7 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
+			update:       "true",
 			startkey:     `"oink"`,
 		},
 	})
@@ -173,6 +184,7 @@ func Test_viewOptions(t *testing.T) {
 			limit:        -1,
 			inclusiveEnd: true,
 			reduce:       &[]bool{true}[0],
+			update:       "true",
 			group:        true,
 		},
 	})
@@ -182,6 +194,7 @@ func Test_viewOptions(t *testing.T) {
 			limit:        -1,
 			inclusiveEnd: true,
 			reduce:       &[]bool{true}[0],
+			update:       "true",
 			group:        true,
 		},
 	})
@@ -201,6 +214,7 @@ func Test_viewOptions(t *testing.T) {
 			limit:        -1,
 			inclusiveEnd: true,
 			reduce:       &[]bool{true}[0],
+			update:       "true",
 			group:        true,
 			groupLevel:   3,
 		},
@@ -211,6 +225,7 @@ func Test_viewOptions(t *testing.T) {
 			limit:        -1,
 			inclusiveEnd: true,
 			reduce:       &[]bool{true}[0],
+			update:       "true",
 			group:        true,
 			groupLevel:   3,
 		},
@@ -226,6 +241,7 @@ func Test_viewOptions(t *testing.T) {
 			limit:        -1,
 			inclusiveEnd: true,
 			reduce:       &[]bool{true}[0],
+			update:       "true",
 			group:        true,
 			groupLevel:   3,
 		},
@@ -235,6 +251,7 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
+			update:       "true",
 			includeDocs:  true,
 		},
 	})
@@ -243,6 +260,7 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
+			update:       "true",
 			includeDocs:  true,
 		},
 	})
@@ -261,6 +279,7 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
+			update:       "true",
 			attachments:  true,
 		},
 	})
@@ -269,6 +288,7 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
+			update:       "true",
 			attachments:  true,
 		},
 	})
@@ -287,6 +307,7 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: false,
+			update:       "true",
 		},
 	})
 	tests.Add("inclusive_end: valid string", test{
@@ -294,6 +315,7 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: false,
+			update:       "true",
 		},
 	})
 	tests.Add("inclusive_end: invalid string", test{
@@ -311,6 +333,7 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        3,
 			inclusiveEnd: true,
+			update:       "true",
 		},
 	})
 	tests.Add("limit: float64", test{
@@ -318,6 +341,7 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        3,
 			inclusiveEnd: true,
+			update:       "true",
 		},
 	})
 	tests.Add("limit: valid string", test{
@@ -325,6 +349,7 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        3,
 			inclusiveEnd: true,
+			update:       "true",
 		},
 	})
 	tests.Add("limit: valid string2", test{
@@ -332,6 +357,7 @@ func Test_viewOptions(t *testing.T) {
 		want: &viewOptions{
 			limit:        3,
 			inclusiveEnd: true,
+			update:       "true",
 		},
 	})
 	tests.Add("limit: invalid string", test{
@@ -351,6 +377,7 @@ func Test_viewOptions(t *testing.T) {
 			limit:        -1,
 			skip:         3,
 			inclusiveEnd: true,
+			update:       "true",
 		},
 	})
 	tests.Add("skip: float64", test{
@@ -359,6 +386,7 @@ func Test_viewOptions(t *testing.T) {
 			limit:        -1,
 			skip:         3,
 			inclusiveEnd: true,
+			update:       "true",
 		},
 	})
 	tests.Add("skip: valid string", test{
@@ -367,6 +395,7 @@ func Test_viewOptions(t *testing.T) {
 			limit:        -1,
 			skip:         3,
 			inclusiveEnd: true,
+			update:       "true",
 		},
 	})
 	tests.Add("skip: valid string2", test{
@@ -375,6 +404,7 @@ func Test_viewOptions(t *testing.T) {
 			limit:        -1,
 			skip:         3,
 			inclusiveEnd: true,
+			update:       "true",
 		},
 	})
 	tests.Add("skip: invalid string", test{
@@ -385,6 +415,70 @@ func Test_viewOptions(t *testing.T) {
 	tests.Add("skip: slice", test{
 		options:    kivik.Param("skip", []int{1, 2}),
 		wantErr:    "invalid value for 'skip': [1 2]",
+		wantStatus: http.StatusBadRequest,
+	})
+
+	tests.Add("reduce: bool", test{
+		options: kivik.Param("reduce", true),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			reduce:       &[]bool{true}[0],
+		},
+	})
+	tests.Add("reduce: valid string", test{
+		options: kivik.Param("reduce", "true"),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			reduce:       &[]bool{true}[0],
+		},
+	})
+	tests.Add("reduce: invalid string", test{
+		options:    kivik.Param("reduce", "chicken"),
+		wantErr:    "invalid value for 'reduce': chicken",
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("reduce: int", test{
+		options:    kivik.Param("reduce", 3),
+		wantErr:    "invalid value for 'reduce': 3",
+		wantStatus: http.StatusBadRequest,
+	})
+
+	tests.Add("update: bool", test{
+		options: kivik.Param("update", true),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+		},
+	})
+	tests.Add("update: valid string", test{
+		options: kivik.Param("update", "true"),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+		},
+	})
+	tests.Add("update: valid string2", test{
+		options: kivik.Param("update", "lazy"),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "lazy",
+		},
+	})
+	tests.Add("update: invalid string", test{
+		options:    kivik.Param("update", "chicken"),
+		wantErr:    "invalid value for 'update': chicken",
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("update: int", test{
+		options:    kivik.Param("update", 3),
+		wantErr:    "invalid value for 'update': 3",
 		wantStatus: http.StatusBadRequest,
 	})
 
@@ -399,8 +493,6 @@ func Test_viewOptions(t *testing.T) {
 
 		keys (json-array) – Return only documents where the key matches one of the keys specified in the array.
 
-		reduce (boolean) – Use the reduction function. Default is true when a reduce function is defined.
-
 		sorted (boolean) – Sort returned rows (see Sorting Returned Rows). Setting this to false offers a performance boost. The total_rows and offset fields are not available when this is set to false. Default is true.
 
 		stable (boolean) – Whether or not the view results should be returned from a stable set of shards. Default is false.
@@ -410,8 +502,6 @@ func Test_viewOptions(t *testing.T) {
 		startkey_docid (string) – Return records starting with the specified document ID. Ignored if startkey is not set.
 
 		start_key_doc_id (string) – Alias for startkey_docid param
-
-		update (string) – Whether or not the view in question should be updated prior to responding to the user. Supported values: true, false, lazy. Default is true.
 
 		update_seq (boolean) – Whether to include in the response an update_seq value indicating the sequence id of the database the view reflects. Default is false.
 	*/

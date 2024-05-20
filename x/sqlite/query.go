@@ -51,24 +51,21 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 	if isBuiltinView(ddoc) {
 		return d.queryBuiltinView(ctx, vopts)
 	}
-	update, err := opts.update()
-	if err != nil {
-		return nil, err
-	}
+
 	// Normalize the ddoc and view values
 	ddoc = strings.TrimPrefix(ddoc, "_design/")
 	view = strings.TrimPrefix(view, "_view/")
 
 	results, err := d.performQuery(
 		ctx,
-		ddoc, view, update,
+		ddoc, view,
 		vopts,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	if update == updateModeLazy {
+	if vopts.update == updateModeLazy {
 		go func() {
 			if _, err := d.updateIndex(context.Background(), ddoc, view, updateModeTrue); err != nil {
 				d.logger.Print("Failed to update index: " + err.Error())
@@ -100,11 +97,11 @@ const (
 
 func (d *db) performQuery(
 	ctx context.Context,
-	ddoc, view, update string,
+	ddoc, view string,
 	vopts *viewOptions,
 ) (driver.Rows, error) {
 	if vopts.group {
-		return d.performGroupQuery(ctx, ddoc, view, update, vopts.groupLevel)
+		return d.performGroupQuery(ctx, ddoc, view, vopts.update, vopts.groupLevel)
 	}
 	var (
 		results      *sql.Rows
@@ -112,7 +109,7 @@ func (d *db) performQuery(
 		reduceFuncJS *string
 	)
 	for {
-		rev, err := d.updateIndex(ctx, ddoc, view, update)
+		rev, err := d.updateIndex(ctx, ddoc, view, vopts.update)
 		if err != nil {
 			return nil, err
 		}
@@ -215,7 +212,7 @@ func (d *db) performQuery(
 			_ = results.Close() //nolint:sqlclosecheck // Aborting
 			return nil, &internal.Error{Status: http.StatusBadRequest, Message: "reduce is invalid for map-only views"}
 		}
-		if upToDate || update != updateModeTrue {
+		if upToDate || vopts.update != updateModeTrue {
 			// If the results are up to date, OR, we're in false/lazy update mode,
 			// then these results are fine.
 			break

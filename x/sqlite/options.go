@@ -274,8 +274,13 @@ func toBool(in interface{}) (value bool, ok bool) {
 	case bool:
 		return t, true
 	case string:
-		b, err := strconv.ParseBool(t)
-		return b, err == nil
+		switch t {
+		case "true":
+			return true, true
+		case "false":
+			return false, true
+		}
+		return false, false
 	default:
 		return false, false
 	}
@@ -367,7 +372,7 @@ func (o optsMap) reduce() (*bool, error) {
 	}
 	v, ok := toBool(raw)
 	if !ok {
-		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "invalid value for 'reduce'"}
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'reduce': %v", raw)}
 	}
 	return &v, nil
 }
@@ -482,6 +487,7 @@ type viewOptions struct {
 	startkey     string
 	inclusiveEnd bool
 	attachments  bool
+	update       string
 }
 
 func (o optsMap) viewOptions(view string) (*viewOptions, error) {
@@ -536,6 +542,10 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 	if err != nil {
 		return nil, err
 	}
+	update, err := o.update()
+	if err != nil {
+		return nil, err
+	}
 
 	return &viewOptions{
 		view:         view,
@@ -551,5 +561,6 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 		startkey:     startkey,
 		inclusiveEnd: inclusiveEnd,
 		attachments:  attachments,
+		update:       update,
 	}, nil
 }

@@ -19,6 +19,8 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"sort"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -668,9 +670,7 @@ func TestDBAllDocs(t *testing.T) {
 	})
 }
 
-func checkRows(t *testing.T, rows driver.Rows, want []rowResult) {
-	t.Helper()
-
+func readRows(t *testing.T, rows driver.Rows) []rowResult {
 	// iterate over rows
 	var got []rowResult
 
@@ -715,6 +715,34 @@ loop:
 			Error: errMsg,
 		})
 	}
+	return got
+}
+
+func checkUnorderedRows(t *testing.T, rows driver.Rows, want []rowResult) {
+	t.Helper()
+
+	got := readRows(t, rows)
+	sort.Slice(got, func(i, j int) bool {
+		if r := strings.Compare(got[i].ID, got[j].ID); r != 0 {
+			return r < 0
+		}
+		return strings.Compare(got[i].Key, got[j].Key) < 0
+	})
+	sort.Slice(want, func(i, j int) bool {
+		if r := strings.Compare(want[i].ID, want[j].ID); r != 0 {
+			return r < 0
+		}
+		return strings.Compare(want[i].Key, want[j].Key) < 0
+	})
+	if d := cmp.Diff(want, got); d != "" {
+		t.Errorf("Unexpected rows:\n%s", d)
+	}
+}
+
+func checkRows(t *testing.T, rows driver.Rows, want []rowResult) {
+	t.Helper()
+
+	got := readRows(t, rows)
 	if d := cmp.Diff(want, got); d != "" {
 		t.Errorf("Unexpected rows:\n%s", d)
 	}

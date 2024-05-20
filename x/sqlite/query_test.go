@@ -31,13 +31,14 @@ import (
 func TestDBQuery(t *testing.T) {
 	t.Parallel()
 	type test struct {
-		db         *testDB
-		ddoc, view string
-		options    driver.Options
-		want       []rowResult
-		wantStatus int
-		wantErr    string
-		wantLogs   []string
+		db            *testDB
+		ddoc, view    string
+		options       driver.Options
+		want          []rowResult
+		wantUnordered bool
+		wantStatus    int
+		wantErr       string
+		wantLogs      []string
 	}
 	tests := testy.NewTable()
 	tests.Add("ddoc does not exist", test{
@@ -1455,12 +1456,53 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("group=true, unordered results", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+		_ = d.tPut("~", map[string]interface{}{})
+		_ = d.tPut("a", map[string]interface{}{})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"sorted": false,
+				"group":  true,
+			}),
+			wantUnordered: true,
+			want: []rowResult{
+				{Key: `"_design/foo"`, Value: "1"},
+				{Key: `"~"`, Value: "1"},
+				{Key: `"a"`, Value: "1"},
+			},
+		}
+	})
 
 	/*
 		TODO:
-		- reduce=true
+		- reduce=true, group=true
 			- descending
-			- sorted
+			- limit
+			- skip
+			- endkey
+			- startkey
+			- conflicts
+			- include_docs
+			- attachments
+			- att_encoding_info
+			- key
+			- keys
+			- update_seq
 		- _stats
 			- differing lengths of arrays of floats
 			- array with floats and other types
@@ -1513,7 +1555,11 @@ func TestDBQuery(t *testing.T) {
 			return
 		}
 
-		checkRows(t, rows, tt.want)
+		if tt.wantUnordered {
+			checkUnorderedRows(t, rows, tt.want)
+		} else {
+			checkRows(t, rows, tt.want)
+		}
 		db.checkLogs(tt.wantLogs)
 	})
 }

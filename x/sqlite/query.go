@@ -101,7 +101,7 @@ func (d *db) performQuery(
 	vopts *viewOptions,
 ) (driver.Rows, error) {
 	if vopts.group {
-		return d.performGroupQuery(ctx, ddoc, view, vopts.update, vopts.groupLevel)
+		return d.performGroupQuery(ctx, ddoc, view, vopts.update, vopts.groupLevel, vopts)
 	}
 	var (
 		results      *sql.Rows
@@ -160,10 +160,10 @@ func (d *db) performQuery(
 					NULL  AS rev,
 					NULL  AS doc,
 					NULL  AS conflicts
-				FROM {{ .Map }}
+				FROM {{ .Map }} AS view
 				JOIN reduce
 				WHERE reduce.reducible AND ($3 IS NULL OR $3 == TRUE)
-				ORDER BY id, key
+				ORDER BY key
 			)
 
 			UNION ALL
@@ -222,7 +222,7 @@ func (d *db) performQuery(
 	}
 
 	if reducible && (vopts.reduce == nil || *vopts.reduce) {
-		return d.reduceRows(results, reduceFuncJS, false, 0)
+		return d.reduceRows(results, reduceFuncJS, false, 0, vopts)
 	}
 
 	return &rows{
@@ -232,7 +232,7 @@ func (d *db) performQuery(
 	}, nil
 }
 
-func (d *db) performGroupQuery(ctx context.Context, ddoc, view, update string, groupLevel uint64) (driver.Rows, error) {
+func (d *db) performGroupQuery(ctx context.Context, ddoc, view, update string, groupLevel uint64, vopts *viewOptions) (driver.Rows, error) {
 	var (
 		results      *sql.Rows
 		reducible    bool
@@ -326,7 +326,7 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view, update string, g
 		}
 	}
 
-	return d.reduceRows(results, reduceFuncJS, true, groupLevel)
+	return d.reduceRows(results, reduceFuncJS, true, groupLevel, vopts)
 }
 
 const batchSize = 100

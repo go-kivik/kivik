@@ -635,6 +635,21 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("support fetching multiple specific keys", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev1 := d.tPut("a", map[string]interface{}{"key": "a", "value": 1})
+		rev2 := d.tPut("b", map[string]interface{}{"key": "b", "value": 2})
+		_ = d.tPut("c", map[string]interface{}{"key": "c", "value": 3})
+
+		return test{
+			db:      d,
+			options: kivik.Param("keys", []string{"a", "b"}),
+			want: []rowResult{
+				{ID: "a", Key: `"a"`, Value: `{"value":{"rev":"` + rev1 + `"}}`},
+				{ID: "b", Key: `"b"`, Value: `{"value":{"rev":"` + rev2 + `"}}`},
+			},
+		}
+	})
 
 	/*
 		TODO:
@@ -646,7 +661,6 @@ func TestDBAllDocs(t *testing.T) {
 			- include_docs
 			- attachments
 			- att_encoding_infio
-			- keys
 			- startkey_docid
 			- start_key_doc_id
 			- update

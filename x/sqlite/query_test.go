@@ -1575,6 +1575,36 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("support fetching multiple specific keys", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc.value);
+							}
+						}`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{"key": "a", "value": 1})
+		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": 2})
+		_ = d.tPut("c", map[string]interface{}{"key": "c", "value": 3})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"keys": []string{"a", "b"},
+			}),
+			want: []rowResult{
+				{ID: "a", Key: `"a"`, Value: "1"},
+				{ID: "b", Key: `"b"`, Value: "2"},
+			},
+		}
+	})
 
 	/*
 		TODO:
@@ -1610,7 +1640,6 @@ func TestDBQuery(t *testing.T) {
 		- Options:
 			- endkey_docid
 			- end_key_doc_id
-			- keys
 			- reduce
 			- startkey_docid
 			- start_key_doc_id

@@ -31,13 +31,14 @@ import (
 func TestDBQuery(t *testing.T) {
 	t.Parallel()
 	type test struct {
-		db         *testDB
-		ddoc, view string
-		options    driver.Options
-		want       []rowResult
-		wantStatus int
-		wantErr    string
-		wantLogs   []string
+		db            *testDB
+		ddoc, view    string
+		options       driver.Options
+		want          []rowResult
+		wantUnordered bool
+		wantStatus    int
+		wantErr       string
+		wantLogs      []string
 	}
 	tests := testy.NewTable()
 	tests.Add("ddoc does not exist", test{
@@ -1419,8 +1420,268 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("return unsorted results", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc.value);
+							}
+						}`,
+				},
+			},
+		})
+		// Returned results are implcitly ordered, due to the ordering of
+		// the index on the `id` column for joins. So we need to insert
+		// a key that sorts differently implicitly (with ASCII ordering) than
+		// explcitly (with CouchDB's UCI ordering). Thus the `~` id/key.  In
+		// ASCII, ~ comes after the alphabet, in UCI it comes first.  So we
+		// expect it to come after, with implicit ordering, or after, with
+		// explicit. Comment out the options line below to see the difference.
+		_ = d.tPut("~", map[string]interface{}{"key": "~", "value": 3})
+		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": 2})
+		_ = d.tPut("a", map[string]interface{}{"key": "a", "value": 1})
+
+		return test{
+			db:      d,
+			ddoc:    "_design/foo",
+			view:    "_view/bar",
+			options: kivik.Param("sorted", false),
+			want: []rowResult{
+				{ID: "a", Key: `"a"`, Value: "1"},
+				{ID: "b", Key: `"b"`, Value: "2"},
+				{ID: "~", Key: `"~"`, Value: "3"},
+			},
+		}
+	})
+	tests.Add("group=true, unordered results", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+		_ = d.tPut("~", map[string]interface{}{})
+		_ = d.tPut("a", map[string]interface{}{})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"sorted": false,
+				"group":  true,
+			}),
+			wantUnordered: true,
+			want: []rowResult{
+				{Key: `"_design/foo"`, Value: "1"},
+				{Key: `"~"`, Value: "1"},
+				{Key: `"a"`, Value: "1"},
+			},
+		}
+	})
+	tests.Add("group=true, ascending order", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+		_ = d.tPut("~", map[string]interface{}{})
+		_ = d.tPut("a", map[string]interface{}{})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"group": true,
+			}),
+			want: []rowResult{
+				{Key: `"_design/foo"`, Value: "1"},
+				{Key: `"~"`, Value: "1"},
+				{Key: `"a"`, Value: "1"},
+			},
+		}
+	})
+	tests.Add("group=true, descending order", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+		_ = d.tPut("~", map[string]interface{}{})
+		_ = d.tPut("a", map[string]interface{}{})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"group":      true,
+				"descending": true,
+			}),
+			want: []rowResult{
+				{Key: `"a"`, Value: "1"},
+				{Key: `"~"`, Value: "1"},
+				{Key: `"_design/foo"`, Value: "1"},
+			},
+		}
+	})
+	tests.Add("support fetching specific key", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc.value);
+							}
+						}`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{"key": "a", "value": 1})
+		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": 2})
+		_ = d.tPut("c", map[string]interface{}{"key": "c", "value": 3})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"key": "b",
+			}),
+			want: []rowResult{
+				{ID: "b", Key: `"b"`, Value: "2"},
+			},
+		}
+	})
+	tests.Add("support fetching multiple specific keys", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc.value);
+							}
+						}`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{"key": "a", "value": 1})
+		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": 2})
+		_ = d.tPut("c", map[string]interface{}{"key": "c", "value": 3})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"keys": []string{"a", "b"},
+			}),
+			want: []rowResult{
+				{ID: "a", Key: `"a"`, Value: "1"},
+				{ID: "b", Key: `"b"`, Value: "2"},
+			},
+		}
+	})
+	tests.Add("endkey_docid", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, null);
+							}
+						}`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{"key": "a"})
+		_ = d.tPut("b", map[string]interface{}{"key": "a"})
+		_ = d.tPut("c", map[string]interface{}{"key": "a"})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"endkey":       "a",
+				"endkey_docid": "b",
+			}),
+			want: []rowResult{
+				{ID: "a", Key: `"a"`, Value: "null"},
+				{ID: "b", Key: `"a"`, Value: "null"},
+			},
+		}
+	})
+	tests.Add("startkey_docid", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc.value);
+							}
+						}`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{"key": "a"})
+		_ = d.tPut("b", map[string]interface{}{"key": "a"})
+		_ = d.tPut("c", map[string]interface{}{"key": "a"})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"startkey":       "a",
+				"startkey_docid": "b",
+			}),
+			want: []rowResult{
+				{ID: "b", Key: `"a"`, Value: "null"},
+				{ID: "c", Key: `"a"`, Value: "null"},
+			},
+		}
+	})
+
 	/*
 		TODO:
+		- reduce=true, group=true
+			- limit
+			- skip
+			- endkey
+			- startkey
+			- conflicts
+			- include_docs
+			- attachments
+			- att_encoding_info
+			- key
+			- keys
+			- update_seq
 		- _stats
 			- differing lengths of arrays of floats
 			- array with floats and other types
@@ -1439,15 +1700,7 @@ func TestDBQuery(t *testing.T) {
 				- group behavior
 			- _stats (https://docs.couchdb.org/en/stable/ddocs/ddocs.html#stats)
 		- Options:
-			- endkey_docid
-			- end_key_doc_id
-			- key
-			- keys
 			- reduce
-			- sorted
-			- startkey_docid
-			- start_key_doc_id
-			- update_seq
 		- map/reduce function takes too long
 		- exclude design docs by default
 		- treat map non-exception errors as exceptions
@@ -1474,9 +1727,38 @@ func TestDBQuery(t *testing.T) {
 			return
 		}
 
-		checkRows(t, rows, tt.want)
+		if tt.wantUnordered {
+			checkUnorderedRows(t, rows, tt.want)
+		} else {
+			checkRows(t, rows, tt.want)
+		}
 		db.checkLogs(tt.wantLogs)
 	})
+}
+
+func TestDBQuery_update_seq(t *testing.T) {
+	t.Parallel()
+	d := newDB(t)
+
+	_ = d.tPut("_design/foo", map[string]interface{}{
+		"views": map[string]interface{}{
+			"bar": map[string]string{
+				"map": `function(doc) { emit(doc._id, null); }`,
+			},
+		},
+	})
+	_ = d.tPut("foo", map[string]string{"_id": "foo"})
+
+	rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", kivik.Param("update_seq", true))
+	if err != nil {
+		t.Fatalf("Failed to query view: %s", err)
+	}
+	want := "2"
+	got := rows.UpdateSeq()
+	if got != want {
+		t.Errorf("Unexpected update seq: %s", got)
+	}
+	_ = rows.Close()
 }
 
 func TestDBQuery_update_lazy(t *testing.T) {

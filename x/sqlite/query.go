@@ -101,12 +101,13 @@ func (d *db) performQuery(
 	vopts *viewOptions,
 ) (driver.Rows, error) {
 	if vopts.group {
-		return d.performGroupQuery(ctx, ddoc, view, vopts.update, vopts.groupLevel)
+		return d.performGroupQuery(ctx, ddoc, view, vopts.update, vopts.groupLevel, vopts)
 	}
 	var (
 		results      *sql.Rows
 		reducible    bool
 		reduceFuncJS *string
+		updateSeq    string
 	)
 	for {
 		rev, err := d.updateIndex(ctx, ddoc, view, vopts.update)
@@ -115,7 +116,7 @@ func (d *db) performQuery(
 		}
 
 		args := []interface{}{
-			vopts.includeDocs, vopts.conflicts, vopts.reduce,
+			vopts.includeDocs, vopts.conflicts, vopts.reduce, vopts.updateSeq,
 			"_design/" + ddoc, rev.rev, rev.id, view,
 		}
 
@@ -127,27 +128,27 @@ func (d *db) performQuery(
 					CASE WHEN MAX(id) IS NOT NULL THEN TRUE ELSE FALSE END AS reducible,
 					func_body                                              AS reduce_func
 				FROM {{ .Design }}
-				WHERE id = $4
-					AND rev = $5
-					AND rev_id = $6
+				WHERE id = $5
+					AND rev = $6
+					AND rev_id = $7
 					AND func_type = 'reduce'
-					AND func_name = $7
+					AND func_name = $8
 			)
 
 			SELECT
 				COALESCE(MAX(last_seq), 0) == (SELECT COALESCE(max(seq),0) FROM {{ .Docs }}) AS up_to_date,
 				reduce.reducible,
 				reduce.reduce_func,
-				NULL,
+				IIF($4, last_seq, "") AS update_seq,
 				NULL,
 				NULL
 			FROM {{ .Design }} AS map
 			JOIN reduce
-			WHERE id = $4
-				AND rev = $5
-				AND rev_id = $6
+			WHERE id = $5
+				AND rev = $6
+				AND rev_id = $7
 				AND func_type = 'map'
-				AND func_name = $7
+				AND func_name = $8
 
 			UNION ALL
 
@@ -160,10 +161,10 @@ func (d *db) performQuery(
 					NULL  AS rev,
 					NULL  AS doc,
 					NULL  AS conflicts
-				FROM {{ .Map }}
+				FROM {{ .Map }} AS view
 				JOIN reduce
 				WHERE reduce.reducible AND ($3 IS NULL OR $3 == TRUE)
-				ORDER BY id, key
+				ORDER BY key
 			)
 
 			UNION ALL
@@ -184,10 +185,10 @@ func (d *db) performQuery(
 				WHERE $3 == FALSE OR NOT reduce.reducible
 					%[2]s
 				GROUP BY view.id, view.key, view.value, view.rev, view.rev_id
-				ORDER BY view.key %[1]s
+				%[1]s
 				LIMIT %[3]d OFFSET %[4]d
 			)
-		`), descendingToDirection(vopts.descending), strings.Join(where, " AND "), vopts.limit, vopts.skip)
+		`), vopts.buildOrderBy(), strings.Join(where, " AND "), vopts.limit, vopts.skip)
 		results, err = d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
 		switch {
 		case errIsNoSuchTable(err):
@@ -204,7 +205,7 @@ func (d *db) performQuery(
 		}
 
 		var upToDate bool
-		if err := results.Scan(&upToDate, &reducible, &reduceFuncJS, discard{}, discard{}, discard{}); err != nil {
+		if err := results.Scan(&upToDate, &reducible, &reduceFuncJS, &updateSeq, discard{}, discard{}); err != nil {
 			_ = results.Close() //nolint:sqlclosecheck // Aborting
 			return nil, err
 		}
@@ -222,17 +223,18 @@ func (d *db) performQuery(
 	}
 
 	if reducible && (vopts.reduce == nil || *vopts.reduce) {
-		return d.reduceRows(results, reduceFuncJS, false, 0)
+		return d.reduceRows(results, reduceFuncJS, false, 0, vopts)
 	}
 
 	return &rows{
-		ctx:  ctx,
-		db:   d,
-		rows: results,
+		ctx:       ctx,
+		db:        d,
+		rows:      results,
+		updateSeq: updateSeq,
 	}, nil
 }
 
-func (d *db) performGroupQuery(ctx context.Context, ddoc, view, update string, groupLevel uint64) (driver.Rows, error) {
+func (d *db) performGroupQuery(ctx context.Context, ddoc, view, update string, groupLevel uint64, vopts *viewOptions) (driver.Rows, error) {
 	var (
 		results      *sql.Rows
 		reducible    bool
@@ -326,7 +328,7 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view, update string, g
 		}
 	}
 
-	return d.reduceRows(results, reduceFuncJS, true, groupLevel)
+	return d.reduceRows(results, reduceFuncJS, true, groupLevel, vopts)
 }
 
 const batchSize = 100

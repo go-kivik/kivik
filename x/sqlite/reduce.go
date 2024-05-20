@@ -30,7 +30,7 @@ import (
 	"github.com/go-kivik/kivik/x/sqlite/v4/internal"
 )
 
-func (d *db) reduceRows(results *sql.Rows, reduceFuncJS *string, group bool, groupLevel uint64) (driver.Rows, error) {
+func (d *db) reduceRows(results *sql.Rows, reduceFuncJS *string, group bool, groupLevel uint64, vopts *viewOptions) (driver.Rows, error) {
 	reduceFn, err := d.reduceFunc(reduceFuncJS, d.logger)
 	if err != nil {
 		return nil, err
@@ -108,9 +108,14 @@ func (d *db) reduceRows(results *sql.Rows, reduceFuncJS *string, group bool, gro
 		})
 	}
 
-	slices.SortFunc(final, func(a, b driver.Row) int {
-		return couchdbCmpJSON(a.Key, b.Key)
-	})
+	if vopts.sorted {
+		slices.SortFunc(final, func(a, b driver.Row) int {
+			return couchdbCmpJSON(a.Key, b.Key)
+		})
+		if vopts.descending {
+			slices.Reverse(final)
+		}
+	}
 
 	return &final, nil
 }

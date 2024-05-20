@@ -103,10 +103,10 @@ func (d *db) queryBuiltinView(
 			WHERE view.rank = 1
 				%[2]s
 			GROUP BY view.id, view.rev, view.rev_id
-			ORDER BY key %[1]s
+			%[1]s
 			LIMIT %[3]d OFFSET %[4]d
 		)
-	`), descendingToDirection(vopts.descending), strings.Join(where, " AND "), vopts.limit, vopts.skip)
+	`), vopts.buildOrderBy(), strings.Join(where, " AND "), vopts.limit, vopts.skip)
 	results, err := d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {
 		return nil, err
@@ -127,9 +127,10 @@ func descendingToDirection(descending bool) string {
 }
 
 type rows struct {
-	ctx  context.Context
-	db   *db
-	rows *sql.Rows
+	ctx       context.Context
+	db        *db
+	rows      *sql.Rows
+	updateSeq string
 }
 
 var _ driver.Rows = (*rows)(nil)
@@ -182,7 +183,7 @@ func (r *rows) Close() error {
 }
 
 func (r *rows) UpdateSeq() string {
-	return ""
+	return r.updateSeq
 }
 
 func (r *rows) Offset() int64 {

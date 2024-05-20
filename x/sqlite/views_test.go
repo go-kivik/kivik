@@ -19,6 +19,8 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"sort"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -597,23 +599,73 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("return unsorted results", func(t *testing.T) interface{} {
+		d := newDB(t)
+		// Returned results are implcitly ordered, due to the ordering of
+		// the index on the `id` column for joins. So we need to insert
+		// a key that sorts differently implicitly (with ASCII ordering) than
+		// explcitly (with CouchDB's UCI ordering). Thus the `~` id/key.  In
+		// ASCII, ~ comes after the alphabet, in UCI it comes first.  So we
+		// expect it to come after, with implicit ordering, or after, with
+		// explicit. Comment out the options line below to see the difference.
+		rev1 := d.tPut("~", map[string]interface{}{"key": "~", "value": 3})
+		rev2 := d.tPut("b", map[string]interface{}{"key": "b", "value": 2})
+		rev3 := d.tPut("a", map[string]interface{}{"key": "a", "value": 1})
 
+		return test{
+			db:      d,
+			options: kivik.Param("sorted", false),
+			want: []rowResult{
+				{ID: "a", Key: `"a"`, Value: `{"value":{"rev":"` + rev3 + `"}}`},
+				{ID: "b", Key: `"b"`, Value: `{"value":{"rev":"` + rev2 + `"}}`},
+				{ID: "~", Key: `"~"`, Value: `{"value":{"rev":"` + rev1 + `"}}`},
+			},
+		}
+	})
+	tests.Add("support fetching specific key", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev2 := d.tPut("b", map[string]interface{}{"key": "b", "value": 2})
+		_ = d.tPut("a", map[string]interface{}{"key": "a", "value": 1})
+
+		return test{
+			db:      d,
+			options: kivik.Param("key", "b"),
+			want: []rowResult{
+				{ID: "b", Key: `"b"`, Value: `{"value":{"rev":"` + rev2 + `"}}`},
+			},
+		}
+	})
+	tests.Add("support fetching multiple specific keys", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev1 := d.tPut("a", map[string]interface{}{"key": "a", "value": 1})
+		rev2 := d.tPut("b", map[string]interface{}{"key": "b", "value": 2})
+		_ = d.tPut("c", map[string]interface{}{"key": "c", "value": 3})
+
+		return test{
+			db:      d,
+			options: kivik.Param("keys", []string{"a", "b"}),
+			want: []rowResult{
+				{ID: "a", Key: `"a"`, Value: `{"value":{"rev":"` + rev1 + `"}}`},
+				{ID: "b", Key: `"b"`, Value: `{"value":{"rev":"` + rev2 + `"}}`},
+			},
+		}
+	})
+	tests.Add("group not allowed", test{
+		options:    kivik.Param("group", true),
+		wantErr:    "invalid use of grouping on a map view",
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("group_level not allowed", test{
+		options:    kivik.Param("group_level", 3),
+		wantErr:    "invalid use of grouping on a map view",
+		wantStatus: http.StatusBadRequest,
+	})
 	/*
 		TODO:
 		- Options:
-			- endkey_docid
-			- end_key_doc_id
-			- group
-			- group_level
 			- include_docs
 			- attachments
 			- att_encoding_infio
-			- key
-			- keys
-			- sorted
-			- startkey_docid
-			- start_key_doc_id
-			- update
 			- update_seq
 		- AllDocs() called for DB that doesn't exit
 		- UpdateSeq() called on rows
@@ -646,9 +698,7 @@ func TestDBAllDocs(t *testing.T) {
 	})
 }
 
-func checkRows(t *testing.T, rows driver.Rows, want []rowResult) {
-	t.Helper()
-
+func readRows(t *testing.T, rows driver.Rows) []rowResult {
 	// iterate over rows
 	var got []rowResult
 
@@ -693,6 +743,34 @@ loop:
 			Error: errMsg,
 		})
 	}
+	return got
+}
+
+func checkUnorderedRows(t *testing.T, rows driver.Rows, want []rowResult) {
+	t.Helper()
+
+	got := readRows(t, rows)
+	sort.Slice(got, func(i, j int) bool {
+		if r := strings.Compare(got[i].ID, got[j].ID); r != 0 {
+			return r < 0
+		}
+		return strings.Compare(got[i].Key, got[j].Key) < 0
+	})
+	sort.Slice(want, func(i, j int) bool {
+		if r := strings.Compare(want[i].ID, want[j].ID); r != 0 {
+			return r < 0
+		}
+		return strings.Compare(want[i].Key, want[j].Key) < 0
+	})
+	if d := cmp.Diff(want, got); d != "" {
+		t.Errorf("Unexpected rows:\n%s", d)
+	}
+}
+
+func checkRows(t *testing.T, rows driver.Rows, want []rowResult) {
+	t.Helper()
+
+	got := readRows(t, rows)
 	if d := cmp.Diff(want, got); d != "" {
 		t.Errorf("Unexpected rows:\n%s", d)
 	}

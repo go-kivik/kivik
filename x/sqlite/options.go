@@ -337,6 +337,23 @@ func toBool(in interface{}) (value bool, ok bool) {
 	}
 }
 
+func (o optsMap) sorted() (bool, error) {
+	param, ok := o["sorted"]
+	if !ok {
+		return true, nil
+	}
+	v, ok := toBool(param)
+	if !ok {
+		return false, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'sorted': %v", param)}
+	}
+	if _, ok := o["descending"]; ok {
+		// If descending is set to anything, then sorted must be true.
+		// Error handling for invalid descending values is handled elsewhere.
+		return true, nil
+	}
+	return v, nil
+}
+
 func (o optsMap) descending() (bool, error) {
 	param, ok := o["descending"]
 	if !ok {
@@ -556,6 +573,7 @@ type viewOptions struct {
 	startkeyDocID string
 	key           string
 	keys          []string
+	sorted        bool
 }
 
 func (o optsMap) viewOptions(view string) (*viewOptions, error) {
@@ -634,6 +652,10 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 	if err != nil {
 		return nil, err
 	}
+	sorted, err := o.sorted()
+	if err != nil {
+		return nil, err
+	}
 
 	return &viewOptions{
 		view:          view,
@@ -655,5 +677,6 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 		startkeyDocID: startkeyDocID,
 		key:           key,
 		keys:          keys,
+		sorted:        sorted,
 	}, nil
 }

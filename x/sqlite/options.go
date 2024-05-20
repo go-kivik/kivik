@@ -561,6 +561,11 @@ func (v viewOptions) buildWhere(args *[]any) []string {
 	return where
 }
 
+func (v viewOptions) buildOrderBy() string {
+	direction := descendingToDirection(v.descending)
+	return fmt.Sprintf("ORDER BY view.key %s", direction)
+}
+
 // viewOptions are all of the options recognized by the view endpoints
 // _desgin/<ddoc>/_view/<view>, _all_docs, _design_docs, and _local_docs.
 //

@@ -103,10 +103,10 @@ func (d *db) queryBuiltinView(
 			WHERE view.rank = 1
 				%[2]s
 			GROUP BY view.id, view.rev, view.rev_id
-			ORDER BY key %[1]s
+			%[1]s
 			LIMIT %[3]d OFFSET %[4]d
 		)
-	`), descendingToDirection(vopts.descending), strings.Join(where, " AND "), vopts.limit, vopts.skip)
+	`), vopts.buildOrderBy(), strings.Join(where, " AND "), vopts.limit, vopts.skip)
 	results, err := d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {
 		return nil, err

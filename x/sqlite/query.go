@@ -184,10 +184,10 @@ func (d *db) performQuery(
 				WHERE $3 == FALSE OR NOT reduce.reducible
 					%[2]s
 				GROUP BY view.id, view.key, view.value, view.rev, view.rev_id
-				ORDER BY view.key %[1]s
+				%[1]s
 				LIMIT %[3]d OFFSET %[4]d
 			)
-		`), descendingToDirection(vopts.descending), strings.Join(where, " AND "), vopts.limit, vopts.skip)
+		`), vopts.buildOrderBy(), strings.Join(where, " AND "), vopts.limit, vopts.skip)
 		results, err = d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
 		switch {
 		case errIsNoSuchTable(err):

@@ -49,7 +49,11 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 		toMerge.LocalSeq = 0
 	}
 
-	if opts.conflicts() {
+	conflicts, err := opts.conflicts()
+	if err != nil {
+		return nil, err
+	}
+	if conflicts {
 		revs, err := d.conflicts(ctx, tx, id, r, false)
 		if err != nil {
 			return nil, err
@@ -136,7 +140,11 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 		}
 	}
 
-	atts, err := d.getAttachments(ctx, tx, id, r, opts.attachments(), opts.attsSince())
+	attachments, err := opts.attachments()
+	if err != nil {
+		return nil, err
+	}
+	atts, err := d.getAttachments(ctx, tx, id, r, attachments, opts.attsSince())
 	if err != nil {
 		return nil, err
 	}

@@ -76,16 +76,30 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 		c.lastSeq = strconv.FormatUint(*lastSeq, 10)
 	}
 
+	descending, err := opts.descending()
+	if err != nil {
+		return nil, err
+	}
+
+	includeDocs, err := opts.includeDocs()
+	if err != nil {
+		return nil, err
+	}
+
 	var query string
-	if opts.includeDocs() {
-		query = d.normalChangesQueryWithDocs(descendingToDirection(opts.descending()))
+	if includeDocs {
+		query = d.normalChangesQueryWithDocs(descendingToDirection(descending))
 	} else {
-		query = d.normalChangesQueryWithoutDocs(descendingToDirection(opts.descending()))
+		query = d.normalChangesQueryWithoutDocs(descendingToDirection(descending))
 	}
 	if limit > 0 {
 		query += " LIMIT " + strconv.FormatUint(limit+1, 10)
 	}
-	c.rows, err = d.db.QueryContext(ctx, query, since, opts.attachments()) //nolint:rowserrcheck,sqlclosecheck // Err checked in Next
+	attachments, err := opts.attachments()
+	if err != nil {
+		return nil, err
+	}
+	c.rows, err = d.db.QueryContext(ctx, query, since, attachments) //nolint:rowserrcheck,sqlclosecheck // Err checked in Next
 	if err != nil {
 		return nil, err
 	}
@@ -345,8 +359,16 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 	if err != nil {
 		return nil, err
 	}
+	includeDocs, err := opts.includeDocs()
+	if err != nil {
+		return nil, err
+	}
 	if sinceNow && feed == feedLongpoll {
-		return d.newLongpollChanges(ctx, opts.includeDocs(), opts.attachments())
+		attachments, err := opts.attachments()
+		if err != nil {
+			return nil, err
+		}
+		return d.newLongpollChanges(ctx, includeDocs, attachments)
 	}
 
 	return d.newNormalChanges(ctx, opts, since, lastSeq, sinceNow, feed)

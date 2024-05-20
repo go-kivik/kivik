@@ -13,6 +13,7 @@
 package sqlite
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"net/http"
@@ -30,29 +31,61 @@ func newOpts(options driver.Options) optsMap {
 	return opts
 }
 
-func (o optsMap) endKey() string {
-	if endkey, ok := o["endkey"].(string); ok {
-		return endkey
+// get works like standard map access, but allows for multiple keys to be
+// checked in order.
+func (o optsMap) get(key ...string) (string, interface{}, bool) {
+	for _, k := range key {
+		v, ok := o[k]
+		if ok {
+			return k, v, true
+		}
 	}
-	if endkey, ok := o["end_key"].(string); ok {
-		return endkey
-	}
-	return ""
+	return "", nil, false
 }
 
-func (o optsMap) inclusiveEnd() bool {
-	inclusiveEnd, ok := o["inclusive_end"].(bool)
-	return !ok || inclusiveEnd
+func parseKey(key string, in any) (string, error) {
+	switch t := in.(type) {
+	case json.RawMessage:
+		var v interface{}
+		if err := json.Unmarshal(t, &v); err != nil {
+			return "", &internal.Error{Status: http.StatusBadRequest, Err: fmt.Errorf("invalid value for '%s': %w in key", key, err)}
+		}
+		return string(t), nil
+	default:
+		v, err := json.Marshal(t)
+		if err != nil {
+			return "", &internal.Error{Status: http.StatusBadRequest, Err: fmt.Errorf("invalid value for '%s': %w in key", key, err)}
+		}
+		return string(v), nil
+	}
 }
 
-func (o optsMap) startKey() string {
-	if startkey, ok := o["startkey"].(string); ok {
-		return startkey
+func (o optsMap) endKey() (string, error) {
+	key, value, ok := o.get("endkey", "end_key")
+	if !ok {
+		return "", nil
 	}
-	if startkey, ok := o["start_key"].(string); ok {
-		return startkey
+	return parseKey(key, value)
+}
+
+func (o optsMap) inclusiveEnd() (bool, error) {
+	param, ok := o["inclusive_end"]
+	if !ok {
+		return true, nil
 	}
-	return ""
+	v, ok := toBool(param)
+	if !ok {
+		return false, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'inclusive_end': %v", param)}
+	}
+	return v, nil
+}
+
+func (o optsMap) startKey() (string, error) {
+	key, value, ok := o.get("startkey", "start_key")
+	if !ok {
+		return "", nil
+	}
+	return parseKey(key, value)
 }
 
 func (o optsMap) rev() string {
@@ -101,7 +134,7 @@ func (o optsMap) changesLimit() (uint64, error) {
 	if !ok {
 		return 0, nil
 	}
-	limit, err := toUint64(in, "malformed 'limit' parameter")
+	limit, err := toUint64(in, "invalid value for 'limit'")
 	if err != nil {
 		return 0, err
 	}
@@ -118,7 +151,7 @@ func (o optsMap) limit() (int64, error) {
 	if !ok {
 		return -1, nil
 	}
-	return toInt64(in, "malformed 'limit' parameter")
+	return toInt64(in, "invalid value for 'limit'")
 }
 
 // skip returns the skip value as an int64, or 0 if the skip is unset.
@@ -128,7 +161,7 @@ func (o optsMap) skip() (int64, error) {
 	if !ok {
 		return 0, nil
 	}
-	return toInt64(in, "malformed 'skip' parameter")
+	return toInt64(in, "invalid value for 'skip'")
 }
 
 // toUint64 converts the input to a uint64. If the input is malformed, it
@@ -136,7 +169,7 @@ func (o optsMap) skip() (int64, error) {
 func toUint64(in interface{}, msg string) (uint64, error) {
 	checkSign := func(i int64) (uint64, error) {
 		if i < 0 {
-			return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
+			return 0, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("%s: %v", msg, in)}
 		}
 		return uint64(i), nil
 	}
@@ -164,19 +197,19 @@ func toUint64(in interface{}, msg string) (uint64, error) {
 	case string:
 		i, err := strconv.ParseUint(t, 10, 64)
 		if err != nil {
-			return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
+			return 0, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("%s: %v", msg, in)}
 		}
 		return i, nil
 	case float32:
 		i := uint64(t)
 		if float32(i) != t {
-			return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
+			return 0, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("%s: %v", msg, in)}
 		}
 		return i, nil
 	case float64:
 		i := uint64(t)
 		if float64(i) != t {
-			return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
+			return 0, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("%s: %v", msg, in)}
 		}
 		return i, nil
 	default:
@@ -208,30 +241,32 @@ func toInt64(in interface{}, msg string) (int64, error) {
 		return int64(t), nil
 	case uint64:
 		if t > math.MaxInt64 {
-			return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
+			return 0, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("%s: %v", msg, in)}
 		}
 		return int64(t), nil
 	case string:
 		i, err := strconv.ParseInt(t, 10, 64)
-		if err != nil {
-			return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
+		if err == nil {
+			return i, nil
 		}
-		return i, nil
+		f, err := strconv.ParseFloat(t, 64)
+		if err == nil {
+			return int64(f), nil
+		}
 	case float32:
 		i := int64(t)
 		if float32(i) != t {
-			return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
+			return 0, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("%s: %v", msg, in)}
 		}
 		return i, nil
 	case float64:
 		i := int64(t)
 		if float64(i) != t {
-			return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
+			return 0, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("%s: %v", msg, in)}
 		}
 		return i, nil
-	default:
-		return 0, &internal.Error{Status: http.StatusBadRequest, Message: msg}
 	}
+	return 0, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("%s: %v", msg, in)}
 }
 
 func toBool(in interface{}) (value bool, ok bool) {
@@ -246,19 +281,40 @@ func toBool(in interface{}) (value bool, ok bool) {
 	}
 }
 
-func (o optsMap) descending() bool {
-	v, _ := toBool(o["descending"])
-	return v
+func (o optsMap) descending() (bool, error) {
+	param, ok := o["descending"]
+	if !ok {
+		return false, nil
+	}
+	v, ok := toBool(param)
+	if !ok {
+		return false, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'descending': %v", param)}
+	}
+	return v, nil
 }
 
-func (o optsMap) includeDocs() bool {
-	v, _ := toBool(o["include_docs"])
-	return v
+func (o optsMap) includeDocs() (bool, error) {
+	param, ok := o["include_docs"]
+	if !ok {
+		return false, nil
+	}
+	v, ok := toBool(param)
+	if !ok {
+		return false, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'include_docs': %v", param)}
+	}
+	return v, nil
 }
 
-func (o optsMap) attachments() bool {
-	v, _ := toBool(o["attachments"])
-	return v
+func (o optsMap) attachments() (bool, error) {
+	param, ok := o["attachments"]
+	if !ok {
+		return false, nil
+	}
+	v, ok := toBool(param)
+	if !ok {
+		return false, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'attachments': %v", param)}
+	}
+	return v, nil
 }
 
 func (o optsMap) latest() bool {
@@ -298,7 +354,7 @@ func (o optsMap) update() (string, error) {
 			return updateModeLazy, nil
 		}
 	}
-	return "", &internal.Error{Status: http.StatusBadRequest, Message: "invalid value for `update`"}
+	return "", &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'update': %v", v)}
 }
 
 func (o optsMap) reduce() (*bool, error) {
@@ -311,7 +367,7 @@ func (o optsMap) reduce() (*bool, error) {
 	}
 	v, ok := toBool(raw)
 	if !ok {
-		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "invalid value for `reduce`"}
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "invalid value for 'reduce'"}
 	}
 	return &v, nil
 }
@@ -326,7 +382,7 @@ func (o optsMap) group() (bool, error) {
 	}
 	v, ok := toBool(raw)
 	if !ok {
-		return false, &internal.Error{Status: http.StatusBadRequest, Message: "invalid value for `group`"}
+		return false, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'group': %v", raw)}
 	}
 	return v, nil
 }
@@ -336,15 +392,22 @@ func (o optsMap) groupLevel() (uint64, error) {
 	if !ok {
 		return 0, nil
 	}
-	return toUint64(raw, "invalid value for `group_level`")
+	return toUint64(raw, "invalid value for 'group_level'")
 }
 
-func (o optsMap) conflicts() bool {
+func (o optsMap) conflicts() (bool, error) {
 	if o.meta() {
-		return true
+		return true, nil
 	}
-	v, _ := toBool(o["conflicts"])
-	return v
+	param, ok := o["conflicts"]
+	if !ok {
+		return false, nil
+	}
+	v, ok := toBool(param)
+	if !ok {
+		return false, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'conflicts': %v", param)}
+	}
+	return v, nil
 }
 
 func (o optsMap) meta() bool {
@@ -403,6 +466,8 @@ func (v viewOptions) buildWhere(args *[]any) []string {
 
 // viewOptions are all of the options recognized by the view endpoints
 // _desgin/<ddoc>/_view/<view>, _all_docs, _design_docs, and _local_docs.
+//
+// See https://docs.couchdb.org/en/stable/api/ddoc/views.html#api-ddoc-view
 type viewOptions struct {
 	view         string
 	limit        int64
@@ -416,6 +481,7 @@ type viewOptions struct {
 	endkey       string
 	startkey     string
 	inclusiveEnd bool
+	attachments  bool
 }
 
 func (o optsMap) viewOptions(view string) (*viewOptions, error) {
@@ -442,18 +508,48 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 	if err != nil {
 		return nil, err
 	}
+	conflicts, err := o.conflicts()
+	if err != nil {
+		return nil, err
+	}
+	descending, err := o.descending()
+	if err != nil {
+		return nil, err
+	}
+	endkey, err := o.endKey()
+	if err != nil {
+		return nil, err
+	}
+	startkey, err := o.startKey()
+	if err != nil {
+		return nil, err
+	}
+	includeDocs, err := o.includeDocs()
+	if err != nil {
+		return nil, err
+	}
+	attachments, err := o.attachments()
+	if err != nil {
+		return nil, err
+	}
+	inclusiveEnd, err := o.inclusiveEnd()
+	if err != nil {
+		return nil, err
+	}
+
 	return &viewOptions{
 		view:         view,
 		limit:        limit,
 		skip:         skip,
-		descending:   o.descending(),
-		includeDocs:  o.includeDocs(),
-		conflicts:    o.conflicts(),
+		descending:   descending,
+		includeDocs:  includeDocs,
+		conflicts:    conflicts,
 		reduce:       reduce,
 		group:        group,
 		groupLevel:   groupLevel,
-		endkey:       o.endKey(),
-		startkey:     o.startKey(),
-		inclusiveEnd: o.inclusiveEnd(),
+		endkey:       endkey,
+		startkey:     startkey,
+		inclusiveEnd: inclusiveEnd,
+		attachments:  attachments,
 	}, nil
 }

@@ -482,6 +482,35 @@ func Test_viewOptions(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 	})
 
+	tests.Add("update_seq: bool", test{
+		options: kivik.Param("update_seq", true),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			updateSeq:    true,
+		},
+	})
+	tests.Add("update_seq: valid string", test{
+		options: kivik.Param("update_seq", "true"),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			updateSeq:    true,
+		},
+	})
+	tests.Add("update_seq: invalid string", test{
+		options:    kivik.Param("update_seq", "chicken"),
+		wantErr:    "invalid value for 'update_seq': chicken",
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("update_seq: int", test{
+		options:    kivik.Param("update_seq", 3),
+		wantErr:    "invalid value for 'update_seq': 3",
+		wantStatus: http.StatusBadRequest,
+	})
+
 	/*
 		endkey_docid (string) – Stop returning records when the specified document ID is reached. Ignored if endkey is not set.
 
@@ -502,8 +531,6 @@ func Test_viewOptions(t *testing.T) {
 		startkey_docid (string) – Return records starting with the specified document ID. Ignored if startkey is not set.
 
 		start_key_doc_id (string) – Alias for startkey_docid param
-
-		update_seq (boolean) – Whether to include in the response an update_seq value indicating the sequence id of the database the view reflects. Default is false.
 	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {

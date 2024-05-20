@@ -446,6 +446,18 @@ func (o optsMap) attsSince() []string {
 	return attsSince
 }
 
+func (o optsMap) updateSeq() (bool, error) {
+	param, ok := o["update_seq"]
+	if !ok {
+		return false, nil
+	}
+	v, ok := toBool(param)
+	if !ok {
+		return false, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'update_seq': %v", param)}
+	}
+	return v, nil
+}
+
 // buildWhere returns WHERE conditions based on the provided configuration
 // arguments, and may append to args as needed.
 func (v viewOptions) buildWhere(args *[]any) []string {
@@ -488,6 +500,7 @@ type viewOptions struct {
 	inclusiveEnd bool
 	attachments  bool
 	update       string
+	updateSeq    bool
 }
 
 func (o optsMap) viewOptions(view string) (*viewOptions, error) {
@@ -546,6 +559,10 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 	if err != nil {
 		return nil, err
 	}
+	updateSeq, err := o.updateSeq()
+	if err != nil {
+		return nil, err
+	}
 
 	return &viewOptions{
 		view:         view,
@@ -562,5 +579,6 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 		inclusiveEnd: inclusiveEnd,
 		attachments:  attachments,
 		update:       update,
+		updateSeq:    updateSeq,
 	}, nil
 }

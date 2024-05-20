@@ -1432,9 +1432,16 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("c", map[string]interface{}{"key": "c", "value": 3})
-		_ = d.tPut("a", map[string]interface{}{"key": "a", "value": 1})
+		// Returned results are implcitly ordered, due to the ordering of
+		// the index on the `id` column for joins. So we need to insert
+		// a key that sorts differently implicitly (with ASCII ordering) than
+		// explcitly (with CouchDB's UCI ordering). Thus the `~` id/key.  In
+		// ASCII, ~ comes after the alphabet, in UCI it comes first.  So we
+		// expect it to come after, with implicit ordering, or after, with
+		// explicit. Comment out the options line below to see the difference.
+		_ = d.tPut("~", map[string]interface{}{"key": "~", "value": 3})
 		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": 2})
+		_ = d.tPut("a", map[string]interface{}{"key": "a", "value": 1})
 
 		return test{
 			db:      d,
@@ -1442,15 +1449,18 @@ func TestDBQuery(t *testing.T) {
 			view:    "_view/bar",
 			options: kivik.Param("sorted", false),
 			want: []rowResult{
-				{ID: "c", Key: `"c"`, Value: "3"},
 				{ID: "a", Key: `"a"`, Value: "1"},
 				{ID: "b", Key: `"b"`, Value: "2"},
+				{ID: "~", Key: `"~"`, Value: "3"},
 			},
 		}
 	})
 
 	/*
 		TODO:
+		- reduce=true
+			- descending
+			- sorted
 		- _stats
 			- differing lengths of arrays of floats
 			- array with floats and other types

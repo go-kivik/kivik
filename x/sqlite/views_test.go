@@ -597,6 +597,29 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("return unsorted results", func(t *testing.T) interface{} {
+		d := newDB(t)
+		// Returned results are implcitly ordered, due to the ordering of
+		// the index on the `id` column for joins. So we need to insert
+		// a key that sorts differently implicitly (with ASCII ordering) than
+		// explcitly (with CouchDB's UCI ordering). Thus the `~` id/key.  In
+		// ASCII, ~ comes after the alphabet, in UCI it comes first.  So we
+		// expect it to come after, with implicit ordering, or after, with
+		// explicit. Comment out the options line below to see the difference.
+		rev1 := d.tPut("~", map[string]interface{}{"key": "~", "value": 3})
+		rev2 := d.tPut("b", map[string]interface{}{"key": "b", "value": 2})
+		rev3 := d.tPut("a", map[string]interface{}{"key": "a", "value": 1})
+
+		return test{
+			db:      d,
+			options: kivik.Param("sorted", false),
+			want: []rowResult{
+				{ID: "a", Key: `"a"`, Value: `{"value":{"rev":"` + rev3 + `"}}`},
+				{ID: "b", Key: `"b"`, Value: `{"value":{"rev":"` + rev2 + `"}}`},
+				{ID: "~", Key: `"~"`, Value: `{"value":{"rev":"` + rev1 + `"}}`},
+			},
+		}
+	})
 
 	/*
 		TODO:
@@ -610,7 +633,6 @@ func TestDBAllDocs(t *testing.T) {
 			- att_encoding_infio
 			- key
 			- keys
-			- sorted
 			- startkey_docid
 			- start_key_doc_id
 			- update

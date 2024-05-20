@@ -562,8 +562,11 @@ func (v viewOptions) buildWhere(args *[]any) []string {
 }
 
 func (v viewOptions) buildOrderBy() string {
-	direction := descendingToDirection(v.descending)
-	return fmt.Sprintf("ORDER BY view.key %s", direction)
+	if v.sorted {
+		direction := descendingToDirection(v.descending)
+		return fmt.Sprintf("ORDER BY view.key %s", direction)
+	}
+	return ""
 }
 
 // viewOptions are all of the options recognized by the view endpoints

@@ -76,6 +76,14 @@ func (o optsMap) endkeyDocID() (string, error) {
 	return parseKey(key, value)
 }
 
+func (o optsMap) startkeyDocID() (string, error) {
+	key, value, ok := o.get("startkey_doc_id", "start_key_doc_id")
+	if !ok {
+		return "", nil
+	}
+	return parseKey(key, value)
+}
+
 func (o optsMap) key() (string, error) {
 	value, ok := o["key"]
 	if !ok {
@@ -529,24 +537,25 @@ func (v viewOptions) buildWhere(args *[]any) []string {
 //
 // See https://docs.couchdb.org/en/stable/api/ddoc/views.html#api-ddoc-view
 type viewOptions struct {
-	view         string
-	limit        int64
-	skip         int64
-	descending   bool
-	includeDocs  bool
-	conflicts    bool
-	reduce       *bool
-	group        bool
-	groupLevel   uint64
-	endkey       string
-	startkey     string
-	inclusiveEnd bool
-	attachments  bool
-	update       string
-	updateSeq    bool
-	endkeyDocID  string
-	key          string
-	keys         []string
+	view          string
+	limit         int64
+	skip          int64
+	descending    bool
+	includeDocs   bool
+	conflicts     bool
+	reduce        *bool
+	group         bool
+	groupLevel    uint64
+	endkey        string
+	startkey      string
+	inclusiveEnd  bool
+	attachments   bool
+	update        string
+	updateSeq     bool
+	endkeyDocID   string
+	startkeyDocID string
+	key           string
+	keys          []string
 }
 
 func (o optsMap) viewOptions(view string) (*viewOptions, error) {
@@ -613,6 +622,10 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 	if err != nil {
 		return nil, err
 	}
+	startkeyDocID, err := o.startkeyDocID()
+	if err != nil {
+		return nil, err
+	}
 	key, err := o.key()
 	if err != nil {
 		return nil, err
@@ -623,23 +636,24 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 	}
 
 	return &viewOptions{
-		view:         view,
-		limit:        limit,
-		skip:         skip,
-		descending:   descending,
-		includeDocs:  includeDocs,
-		conflicts:    conflicts,
-		reduce:       reduce,
-		group:        group,
-		groupLevel:   groupLevel,
-		endkey:       endkey,
-		startkey:     startkey,
-		inclusiveEnd: inclusiveEnd,
-		attachments:  attachments,
-		update:       update,
-		updateSeq:    updateSeq,
-		endkeyDocID:  endkeyDocID,
-		key:          key,
-		keys:         keys,
+		view:          view,
+		limit:         limit,
+		skip:          skip,
+		descending:    descending,
+		includeDocs:   includeDocs,
+		conflicts:     conflicts,
+		reduce:        reduce,
+		group:         group,
+		groupLevel:    groupLevel,
+		endkey:        endkey,
+		startkey:      startkey,
+		inclusiveEnd:  inclusiveEnd,
+		attachments:   attachments,
+		update:        update,
+		updateSeq:     updateSeq,
+		endkeyDocID:   endkeyDocID,
+		startkeyDocID: startkeyDocID,
+		key:           key,
+		keys:          keys,
 	}, nil
 }

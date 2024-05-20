@@ -634,6 +634,53 @@ func Test_viewOptions(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 	})
 
+	tests.Add("startkey_doc_id: valid string", test{
+		options: kivik.Param("startkey_doc_id", "oink"),
+		want: &viewOptions{
+			limit:         -1,
+			inclusiveEnd:  true,
+			update:        "true",
+			startkeyDocID: `"oink"`,
+		},
+	})
+	tests.Add("startkey_doc_id: valid json", test{
+		options: kivik.Param("startkey_doc_id", json.RawMessage(`"oink"`)),
+		want: &viewOptions{
+			limit:         -1,
+			inclusiveEnd:  true,
+			update:        "true",
+			startkeyDocID: `"oink"`,
+		},
+	})
+	tests.Add("startkey_doc_id: invalid json", test{
+		options:    kivik.Param("startkey_doc_id", json.RawMessage(`oink`)),
+		wantErr:    `invalid value for 'startkey_doc_id': invalid character 'o' looking for beginning of value in key`,
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("start_key_doc_id: valid string", test{
+		options: kivik.Param("start_key_doc_id", "oink"),
+		want: &viewOptions{
+			limit:         -1,
+			inclusiveEnd:  true,
+			update:        "true",
+			startkeyDocID: `"oink"`,
+		},
+	})
+	tests.Add("start_key_doc_id: valid json", test{
+		options: kivik.Param("start_key_doc_id", json.RawMessage(`"oink"`)),
+		want: &viewOptions{
+			limit:         -1,
+			inclusiveEnd:  true,
+			update:        "true",
+			startkeyDocID: `"oink"`,
+		},
+	})
+	tests.Add("start_key_doc_id: invalid json", test{
+		options:    kivik.Param("start_key_doc_id", json.RawMessage(`oink`)),
+		wantErr:    `invalid value for 'start_key_doc_id': invalid character 'o' looking for beginning of value in key`,
+		wantStatus: http.StatusBadRequest,
+	})
+
 	/*
 		att_encoding_info (boolean) – Include encoding information in attachment stubs if include_docs is true and the particular attachment is compressed. Ignored if include_docs isn’t true. Default is false.
 
@@ -642,10 +689,6 @@ func Test_viewOptions(t *testing.T) {
 		stable (boolean) – Whether or not the view results should be returned from a stable set of shards. Default is false.
 
 		stale (string) – Allow the results from a stale view to be used. Supported values: ok and update_after. ok is equivalent to stable=true&update=false. update_after is equivalent to stable=true&update=lazy. The default behavior is equivalent to stable=false&update=true. Note that this parameter is deprecated. Use stable and update instead. See Views Generation for more details.
-
-		startkey_docid (string) – Return records starting with the specified document ID. Ignored if startkey is not set.
-
-		start_key_doc_id (string) – Alias for startkey_docid param
 	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {

@@ -548,54 +548,35 @@ func Test_viewOptions(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 	})
 
-	tests.Add("endkey_doc_id: valid string", test{
-		options: kivik.Param("endkey_doc_id", "oink"),
+	tests.Add("endkey_docid: string", test{
+		options: kivik.Param("endkey_docid", "oink"),
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
 			sorted:       true,
-			endkeyDocID:  `"oink"`,
+			endkeyDocID:  `oink`,
 		},
 	})
-	tests.Add("endkey_doc_id: valid json", test{
-		options: kivik.Param("endkey_doc_id", json.RawMessage(`"oink"`)),
-		want: &viewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
-			endkeyDocID:  `"oink"`,
-		},
-	})
-	tests.Add("endkey_doc_id: invalid json", test{
-		options:    kivik.Param("endkey_doc_id", json.RawMessage(`oink`)),
-		wantErr:    `invalid value for 'endkey_doc_id': invalid character 'o' looking for beginning of value in key`,
+	tests.Add("endkey_docid: raw json", test{
+		options:    kivik.Param("endkey_docid", json.RawMessage(`"oink"`)),
+		wantErr:    `invalid value for 'endkey_docid': [34 111 105 110 107 34]`,
 		wantStatus: http.StatusBadRequest,
 	})
-	tests.Add("end_key_doc_id: valid string", test{
+
+	tests.Add("end_key_doc_id: string", test{
 		options: kivik.Param("end_key_doc_id", "oink"),
 		want: &viewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
 			sorted:       true,
-			endkeyDocID:  `"oink"`,
+			endkeyDocID:  `oink`,
 		},
 	})
-	tests.Add("end_key_doc_id: valid json", test{
-		options: kivik.Param("end_key_doc_id", json.RawMessage(`"oink"`)),
-		want: &viewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
-			endkeyDocID:  `"oink"`,
-		},
-	})
-	tests.Add("end_key_doc_id: invalid json", test{
-		options:    kivik.Param("end_key_doc_id", json.RawMessage(`oink`)),
-		wantErr:    `invalid value for 'end_key_doc_id': invalid character 'o' looking for beginning of value in key`,
+	tests.Add("end_key_doc_id: raw json", test{
+		options:    kivik.Param("end_key_doc_id", json.RawMessage(`"oink"`)),
+		wantErr:    `invalid value for 'end_key_doc_id': [34 111 105 110 107 34]`,
 		wantStatus: http.StatusBadRequest,
 	})
 
@@ -681,54 +662,34 @@ func Test_viewOptions(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 	})
 
-	tests.Add("startkey_doc_id: valid string", test{
-		options: kivik.Param("startkey_doc_id", "oink"),
+	tests.Add("startkey_docid: string", test{
+		options: kivik.Param("startkey_docid", "oink"),
 		want: &viewOptions{
 			limit:         -1,
 			inclusiveEnd:  true,
 			update:        "true",
 			sorted:        true,
-			startkeyDocID: `"oink"`,
+			startkeyDocID: `oink`,
 		},
 	})
-	tests.Add("startkey_doc_id: valid json", test{
-		options: kivik.Param("startkey_doc_id", json.RawMessage(`"oink"`)),
-		want: &viewOptions{
-			limit:         -1,
-			inclusiveEnd:  true,
-			update:        "true",
-			sorted:        true,
-			startkeyDocID: `"oink"`,
-		},
-	})
-	tests.Add("startkey_doc_id: invalid json", test{
-		options:    kivik.Param("startkey_doc_id", json.RawMessage(`oink`)),
-		wantErr:    `invalid value for 'startkey_doc_id': invalid character 'o' looking for beginning of value in key`,
+	tests.Add("startkey_docid: raw json", test{
+		options:    kivik.Param("startkey_docid", json.RawMessage(`"oink"`)),
+		wantErr:    `invalid value for 'startkey_docid': [34 111 105 110 107 34]`,
 		wantStatus: http.StatusBadRequest,
 	})
-	tests.Add("start_key_doc_id: valid string", test{
+	tests.Add("start_key_doc_id: string", test{
 		options: kivik.Param("start_key_doc_id", "oink"),
 		want: &viewOptions{
 			limit:         -1,
 			inclusiveEnd:  true,
 			update:        "true",
 			sorted:        true,
-			startkeyDocID: `"oink"`,
+			startkeyDocID: `oink`,
 		},
 	})
-	tests.Add("start_key_doc_id: valid json", test{
-		options: kivik.Param("start_key_doc_id", json.RawMessage(`"oink"`)),
-		want: &viewOptions{
-			limit:         -1,
-			inclusiveEnd:  true,
-			update:        "true",
-			sorted:        true,
-			startkeyDocID: `"oink"`,
-		},
-	})
-	tests.Add("start_key_doc_id: invalid json", test{
-		options:    kivik.Param("start_key_doc_id", json.RawMessage(`oink`)),
-		wantErr:    `invalid value for 'start_key_doc_id': invalid character 'o' looking for beginning of value in key`,
+	tests.Add("start_key_doc_id: raw json", test{
+		options:    kivik.Param("start_key_doc_id", json.RawMessage(`"oink"`)),
+		wantErr:    `invalid value for 'start_key_doc_id': [34 111 105 110 107 34]`,
 		wantStatus: http.StatusBadRequest,
 	})
 

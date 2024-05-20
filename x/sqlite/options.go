@@ -43,7 +43,7 @@ func (o optsMap) get(key ...string) (string, interface{}, bool) {
 	return "", nil, false
 }
 
-func parseKey(key string, in any) (string, error) {
+func parseJSONKey(key string, in any) (string, error) {
 	switch t := in.(type) {
 	case json.RawMessage:
 		var v interface{}
@@ -65,23 +65,31 @@ func (o optsMap) endKey() (string, error) {
 	if !ok {
 		return "", nil
 	}
-	return parseKey(key, value)
+	return parseJSONKey(key, value)
 }
 
 func (o optsMap) endkeyDocID() (string, error) {
-	key, value, ok := o.get("endkey_doc_id", "end_key_doc_id")
+	key, value, ok := o.get("endkey_docid", "end_key_doc_id")
 	if !ok {
 		return "", nil
 	}
-	return parseKey(key, value)
+	v, ok := value.(string)
+	if !ok {
+		return "", &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for '%s': %v", key, value)}
+	}
+	return v, nil
 }
 
 func (o optsMap) startkeyDocID() (string, error) {
-	key, value, ok := o.get("startkey_doc_id", "start_key_doc_id")
+	key, value, ok := o.get("startkey_docid", "start_key_doc_id")
 	if !ok {
 		return "", nil
 	}
-	return parseKey(key, value)
+	v, ok := value.(string)
+	if !ok {
+		return "", &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for '%s': %v", key, value)}
+	}
+	return v, nil
 }
 
 func (o optsMap) key() (string, error) {
@@ -89,7 +97,7 @@ func (o optsMap) key() (string, error) {
 	if !ok {
 		return "", nil
 	}
-	return parseKey("key", value)
+	return parseJSONKey("key", value)
 }
 
 func (o optsMap) keys() ([]string, error) {
@@ -136,7 +144,7 @@ func (o optsMap) startKey() (string, error) {
 	if !ok {
 		return "", nil
 	}
-	return parseKey(key, value)
+	return parseJSONKey(key, value)
 }
 
 func (o optsMap) rev() string {

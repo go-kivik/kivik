@@ -127,9 +127,10 @@ func descendingToDirection(descending bool) string {
 }
 
 type rows struct {
-	ctx  context.Context
-	db   *db
-	rows *sql.Rows
+	ctx       context.Context
+	db        *db
+	rows      *sql.Rows
+	updateSeq string
 }
 
 var _ driver.Rows = (*rows)(nil)
@@ -182,7 +183,7 @@ func (r *rows) Close() error {
 }
 
 func (r *rows) UpdateSeq() string {
-	return ""
+	return r.updateSeq
 }
 
 func (r *rows) Offset() int64 {

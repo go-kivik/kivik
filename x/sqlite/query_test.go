@@ -1701,7 +1701,6 @@ func TestDBQuery(t *testing.T) {
 			- _stats (https://docs.couchdb.org/en/stable/ddocs/ddocs.html#stats)
 		- Options:
 			- reduce
-			- update_seq
 		- map/reduce function takes too long
 		- exclude design docs by default
 		- treat map non-exception errors as exceptions
@@ -1735,6 +1734,31 @@ func TestDBQuery(t *testing.T) {
 		}
 		db.checkLogs(tt.wantLogs)
 	})
+}
+
+func TestDBQuery_update_seq(t *testing.T) {
+	t.Parallel()
+	d := newDB(t)
+
+	_ = d.tPut("_design/foo", map[string]interface{}{
+		"views": map[string]interface{}{
+			"bar": map[string]string{
+				"map": `function(doc) { emit(doc._id, null); }`,
+			},
+		},
+	})
+	_ = d.tPut("foo", map[string]string{"_id": "foo"})
+
+	rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", kivik.Param("update_seq", true))
+	if err != nil {
+		t.Fatalf("Failed to query view: %s", err)
+	}
+	want := "2"
+	got := rows.UpdateSeq()
+	if got != want {
+		t.Errorf("Unexpected update seq: %s", got)
+	}
+	_ = rows.Close()
 }
 
 func TestDBQuery_update_lazy(t *testing.T) {

@@ -107,6 +107,7 @@ func (d *db) performQuery(
 		results      *sql.Rows
 		reducible    bool
 		reduceFuncJS *string
+		updateSeq    string
 	)
 	for {
 		rev, err := d.updateIndex(ctx, ddoc, view, vopts.update)
@@ -115,7 +116,7 @@ func (d *db) performQuery(
 		}
 
 		args := []interface{}{
-			vopts.includeDocs, vopts.conflicts, vopts.reduce,
+			vopts.includeDocs, vopts.conflicts, vopts.reduce, vopts.updateSeq,
 			"_design/" + ddoc, rev.rev, rev.id, view,
 		}
 
@@ -127,27 +128,27 @@ func (d *db) performQuery(
 					CASE WHEN MAX(id) IS NOT NULL THEN TRUE ELSE FALSE END AS reducible,
 					func_body                                              AS reduce_func
 				FROM {{ .Design }}
-				WHERE id = $4
-					AND rev = $5
-					AND rev_id = $6
+				WHERE id = $5
+					AND rev = $6
+					AND rev_id = $7
 					AND func_type = 'reduce'
-					AND func_name = $7
+					AND func_name = $8
 			)
 
 			SELECT
 				COALESCE(MAX(last_seq), 0) == (SELECT COALESCE(max(seq),0) FROM {{ .Docs }}) AS up_to_date,
 				reduce.reducible,
 				reduce.reduce_func,
-				NULL,
+				IIF($4, last_seq, "") AS update_seq,
 				NULL,
 				NULL
 			FROM {{ .Design }} AS map
 			JOIN reduce
-			WHERE id = $4
-				AND rev = $5
-				AND rev_id = $6
+			WHERE id = $5
+				AND rev = $6
+				AND rev_id = $7
 				AND func_type = 'map'
-				AND func_name = $7
+				AND func_name = $8
 
 			UNION ALL
 
@@ -204,7 +205,7 @@ func (d *db) performQuery(
 		}
 
 		var upToDate bool
-		if err := results.Scan(&upToDate, &reducible, &reduceFuncJS, discard{}, discard{}, discard{}); err != nil {
+		if err := results.Scan(&upToDate, &reducible, &reduceFuncJS, &updateSeq, discard{}, discard{}); err != nil {
 			_ = results.Close() //nolint:sqlclosecheck // Aborting
 			return nil, err
 		}
@@ -226,9 +227,10 @@ func (d *db) performQuery(
 	}
 
 	return &rows{
-		ctx:  ctx,
-		db:   d,
-		rows: results,
+		ctx:       ctx,
+		db:        d,
+		rows:      results,
+		updateSeq: updateSeq,
 	}, nil
 }
 

@@ -781,9 +781,33 @@ func Test_viewOptions(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 	})
 
-	/*
-		att_encoding_info (boolean) – Include encoding information in attachment stubs if include_docs is true and the particular attachment is compressed. Ignored if include_docs isn’t true. Default is false.
+	tests.Add("att_encoding_info: bool", test{
+		options: kivik.Param("att_encoding_info", true),
+		want: &viewOptions{
+			limit:           -1,
+			inclusiveEnd:    true,
+			update:          "true",
+			sorted:          true,
+			attEncodingInfo: true,
+		},
+	})
+	tests.Add("att_encoding_info: valid string", test{
+		options: kivik.Param("att_encoding_info", "true"),
+		want: &viewOptions{
+			limit:           -1,
+			inclusiveEnd:    true,
+			update:          "true",
+			sorted:          true,
+			attEncodingInfo: true,
+		},
+	})
+	tests.Add("att_encoding_info: invalid string", test{
+		options:    kivik.Param("att_encoding_info", "chicken"),
+		wantErr:    "invalid value for 'att_encoding_info': chicken",
+		wantStatus: http.StatusBadRequest,
+	})
 
+	/*
 		stable (boolean) – Whether or not the view results should be returned from a stable set of shards. Default is false.
 	*/
 

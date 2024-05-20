@@ -526,6 +526,18 @@ func (o optsMap) updateSeq() (bool, error) {
 	return v, nil
 }
 
+func (o optsMap) attEncodingInfo() (bool, error) {
+	param, ok := o["att_encoding_info"]
+	if !ok {
+		return false, nil
+	}
+	v, ok := toBool(param)
+	if !ok {
+		return false, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'att_encoding_info': %v", param)}
+	}
+	return v, nil
+}
+
 // buildWhere returns WHERE conditions based on the provided configuration
 // arguments, and may append to args as needed.
 func (v viewOptions) buildWhere(args *[]any) []string {
@@ -554,26 +566,27 @@ func (v viewOptions) buildWhere(args *[]any) []string {
 //
 // See https://docs.couchdb.org/en/stable/api/ddoc/views.html#api-ddoc-view
 type viewOptions struct {
-	view          string
-	limit         int64
-	skip          int64
-	descending    bool
-	includeDocs   bool
-	conflicts     bool
-	reduce        *bool
-	group         bool
-	groupLevel    uint64
-	endkey        string
-	startkey      string
-	inclusiveEnd  bool
-	attachments   bool
-	update        string
-	updateSeq     bool
-	endkeyDocID   string
-	startkeyDocID string
-	key           string
-	keys          []string
-	sorted        bool
+	view            string
+	limit           int64
+	skip            int64
+	descending      bool
+	includeDocs     bool
+	conflicts       bool
+	reduce          *bool
+	group           bool
+	groupLevel      uint64
+	endkey          string
+	startkey        string
+	inclusiveEnd    bool
+	attachments     bool
+	update          string
+	updateSeq       bool
+	endkeyDocID     string
+	startkeyDocID   string
+	key             string
+	keys            []string
+	sorted          bool
+	attEncodingInfo bool
 }
 
 func (o optsMap) viewOptions(view string) (*viewOptions, error) {
@@ -656,27 +669,32 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 	if err != nil {
 		return nil, err
 	}
+	attEncodingInfo, err := o.attEncodingInfo()
+	if err != nil {
+		return nil, err
+	}
 
 	return &viewOptions{
-		view:          view,
-		limit:         limit,
-		skip:          skip,
-		descending:    descending,
-		includeDocs:   includeDocs,
-		conflicts:     conflicts,
-		reduce:        reduce,
-		group:         group,
-		groupLevel:    groupLevel,
-		endkey:        endkey,
-		startkey:      startkey,
-		inclusiveEnd:  inclusiveEnd,
-		attachments:   attachments,
-		update:        update,
-		updateSeq:     updateSeq,
-		endkeyDocID:   endkeyDocID,
-		startkeyDocID: startkeyDocID,
-		key:           key,
-		keys:          keys,
-		sorted:        sorted,
+		view:            view,
+		limit:           limit,
+		skip:            skip,
+		descending:      descending,
+		includeDocs:     includeDocs,
+		conflicts:       conflicts,
+		reduce:          reduce,
+		group:           group,
+		groupLevel:      groupLevel,
+		endkey:          endkey,
+		startkey:        startkey,
+		inclusiveEnd:    inclusiveEnd,
+		attachments:     attachments,
+		update:          update,
+		updateSeq:       updateSeq,
+		endkeyDocID:     endkeyDocID,
+		startkeyDocID:   startkeyDocID,
+		key:             key,
+		keys:            keys,
+		sorted:          sorted,
+		attEncodingInfo: attEncodingInfo,
 	}, nil
 }

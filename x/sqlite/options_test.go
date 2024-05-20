@@ -582,10 +582,60 @@ func Test_viewOptions(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 	})
 
+	tests.Add("keys: slice of strings", test{
+		options: kivik.Param("keys", []string{"foo", "bar"}),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			keys:         []string{`"foo"`, `"bar"`},
+		},
+	})
+	tests.Add("keys: slice of ints", test{
+		options: kivik.Param("keys", []int{1, 2, 3}),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			keys:         []string{`1`, `2`, `3`},
+		},
+	})
+	tests.Add("keys: slice of mixed values", test{
+		options: kivik.Param("keys", []any{"one", 2, [3]int{1, 2, 3}, json.RawMessage(`"foo"`)}),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			keys:         []string{`"one"`, `2`, `[1,2,3]`, `"foo"`},
+		},
+	})
+	tests.Add("keys: valid raw JSON", test{
+		options: kivik.Param("keys", json.RawMessage(`["foo", "bar"]`)),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			keys:         []string{`"foo"`, `"bar"`},
+		},
+	})
+	tests.Add("keys: invalid raw JSON", test{
+		options:    kivik.Param("keys", json.RawMessage(`invalid`)),
+		wantErr:    `invalid value for 'keys': invalid character 'i' looking for beginning of value`,
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("keys: unmarshalable type", test{
+		options:    kivik.Param("keys", []any{func() {}}),
+		wantErr:    `invalid value for 'keys': json: unsupported type: func()`,
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("keys: non slice/array type", test{
+		options:    kivik.Param("keys", "foo"),
+		wantErr:    `invalid value for 'keys': json: cannot unmarshal string into Go value of type []json.RawMessage`,
+		wantStatus: http.StatusBadRequest,
+	})
+
 	/*
 		att_encoding_info (boolean) – Include encoding information in attachment stubs if include_docs is true and the particular attachment is compressed. Ignored if include_docs isn’t true. Default is false.
-
-		keys (json-array) – Return only documents where the key matches one of the keys specified in the array.
 
 		sorted (boolean) – Sort returned rows (see Sorting Returned Rows). Setting this to false offers a performance boost. The total_rows and offset fields are not available when this is set to false. Default is true.
 

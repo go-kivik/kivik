@@ -84,6 +84,33 @@ func (o optsMap) key() (string, error) {
 	return parseKey("key", value)
 }
 
+func (o optsMap) keys() ([]string, error) {
+	raw, ok := o["keys"]
+	if !ok {
+		return nil, nil
+	}
+	var tmp json.RawMessage
+	switch t := raw.(type) {
+	case json.RawMessage:
+		tmp = t
+	default:
+		var err error
+		tmp, err = json.Marshal(raw)
+		if err != nil {
+			return nil, &internal.Error{Status: http.StatusBadRequest, Err: fmt.Errorf("invalid value for 'keys': %w", err)}
+		}
+	}
+	var out []json.RawMessage
+	if err := json.Unmarshal(tmp, &out); err != nil {
+		return nil, &internal.Error{Status: http.StatusBadRequest, Err: fmt.Errorf("invalid value for 'keys': %w", err)}
+	}
+	keys := make([]string, len(out))
+	for i, v := range out {
+		keys[i] = string(v)
+	}
+	return keys, nil
+}
+
 func (o optsMap) inclusiveEnd() (bool, error) {
 	param, ok := o["inclusive_end"]
 	if !ok {
@@ -519,6 +546,7 @@ type viewOptions struct {
 	updateSeq    bool
 	endkeyDocID  string
 	key          string
+	keys         []string
 }
 
 func (o optsMap) viewOptions(view string) (*viewOptions, error) {
@@ -589,6 +617,10 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 	if err != nil {
 		return nil, err
 	}
+	keys, err := o.keys()
+	if err != nil {
+		return nil, err
+	}
 
 	return &viewOptions{
 		view:         view,
@@ -608,5 +640,6 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 		updateSeq:    updateSeq,
 		endkeyDocID:  endkeyDocID,
 		key:          key,
+		keys:         keys,
 	}, nil
 }

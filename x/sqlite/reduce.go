@@ -112,6 +112,9 @@ func (d *db) reduceRows(results *sql.Rows, reduceFuncJS *string, group bool, gro
 		slices.SortFunc(final, func(a, b driver.Row) int {
 			return couchdbCmpJSON(a.Key, b.Key)
 		})
+		if vopts.descending {
+			slices.Reverse(final)
+		}
 	}
 
 	return &final, nil

@@ -559,8 +559,13 @@ func (v viewOptions) buildWhere(args *[]any) []string {
 		where = append(where, `view.key LIKE '"_design/%'`)
 	}
 	if v.endkey != "" {
-		where = append(where, fmt.Sprintf("view.key %s $%d", endKeyOp(v.descending, v.inclusiveEnd), len(*args)+1))
+		op := endKeyOp(v.descending, v.inclusiveEnd)
+		where = append(where, fmt.Sprintf("view.key %s $%d", op, len(*args)+1))
 		*args = append(*args, v.endkey)
+		if v.endkeyDocID != "" {
+			where = append(where, fmt.Sprintf("view.id %s $%d", op, len(*args)+1))
+			*args = append(*args, v.endkeyDocID)
+		}
 	}
 	if v.startkey != "" {
 		where = append(where, fmt.Sprintf("view.key %s $%d", startKeyOp(v.descending), len(*args)+1))

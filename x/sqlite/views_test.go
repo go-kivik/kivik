@@ -663,13 +663,9 @@ func TestDBAllDocs(t *testing.T) {
 	/*
 		TODO:
 		- Options:
-			- endkey_docid
-			- end_key_doc_id
 			- include_docs
 			- attachments
 			- att_encoding_infio
-			- startkey_docid
-			- start_key_doc_id
 			- update_seq
 		- AllDocs() called for DB that doesn't exit
 		- UpdateSeq() called on rows

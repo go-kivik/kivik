@@ -1605,6 +1605,37 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("endkey_docid", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, null);
+							}
+						}`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{"key": "a"})
+		_ = d.tPut("b", map[string]interface{}{"key": "a"})
+		_ = d.tPut("c", map[string]interface{}{"key": "a"})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"endkey":       "a",
+				"endkey_docid": "b",
+			}),
+			want: []rowResult{
+				{ID: "a", Key: `"a"`, Value: "null"},
+				{ID: "b", Key: `"a"`, Value: "null"},
+			},
+		}
+	})
 
 	/*
 		TODO:
@@ -1638,8 +1669,6 @@ func TestDBQuery(t *testing.T) {
 				- group behavior
 			- _stats (https://docs.couchdb.org/en/stable/ddocs/ddocs.html#stats)
 		- Options:
-			- endkey_docid
-			- end_key_doc_id
 			- reduce
 			- startkey_docid
 			- start_key_doc_id

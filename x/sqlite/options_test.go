@@ -558,10 +558,32 @@ func Test_viewOptions(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 	})
 
+	tests.Add("key: valid string", test{
+		options: kivik.Param("key", "oink"),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			key:          `"oink"`,
+		},
+	})
+	tests.Add("key: valid json", test{
+		options: kivik.Param("key", json.RawMessage(`"oink"`)),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			key:          `"oink"`,
+		},
+	})
+	tests.Add("key: invalid json", test{
+		options:    kivik.Param("key", json.RawMessage(`oink`)),
+		wantErr:    `invalid value for 'key': invalid character 'o' looking for beginning of value in key`,
+		wantStatus: http.StatusBadRequest,
+	})
+
 	/*
 		att_encoding_info (boolean) – Include encoding information in attachment stubs if include_docs is true and the particular attachment is compressed. Ignored if include_docs isn’t true. Default is false.
-
-		key (json) – Return only documents that match the specified key.
 
 		keys (json-array) – Return only documents where the key matches one of the keys specified in the array.
 

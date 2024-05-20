@@ -76,6 +76,14 @@ func (o optsMap) endkeyDocID() (string, error) {
 	return parseKey(key, value)
 }
 
+func (o optsMap) key() (string, error) {
+	value, ok := o["key"]
+	if !ok {
+		return "", nil
+	}
+	return parseKey("key", value)
+}
+
 func (o optsMap) inclusiveEnd() (bool, error) {
 	param, ok := o["inclusive_end"]
 	if !ok {
@@ -510,6 +518,7 @@ type viewOptions struct {
 	update       string
 	updateSeq    bool
 	endkeyDocID  string
+	key          string
 }
 
 func (o optsMap) viewOptions(view string) (*viewOptions, error) {
@@ -576,6 +585,10 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 	if err != nil {
 		return nil, err
 	}
+	key, err := o.key()
+	if err != nil {
+		return nil, err
+	}
 
 	return &viewOptions{
 		view:         view,
@@ -594,5 +607,6 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 		update:       update,
 		updateSeq:    updateSeq,
 		endkeyDocID:  endkeyDocID,
+		key:          key,
 	}, nil
 }

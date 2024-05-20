@@ -650,20 +650,22 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		}
 	})
-
+	tests.Add("group not allowed", test{
+		options:    kivik.Param("group", true),
+		wantErr:    "invalid use of grouping on a map view",
+		wantStatus: http.StatusBadRequest,
+	})
 	/*
 		TODO:
 		- Options:
 			- endkey_docid
 			- end_key_doc_id
-			- group
 			- group_level
 			- include_docs
 			- attachments
 			- att_encoding_infio
 			- startkey_docid
 			- start_key_doc_id
-			- update
 			- update_seq
 		- AllDocs() called for DB that doesn't exit
 		- UpdateSeq() called on rows

@@ -620,13 +620,17 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 	if err != nil {
 		return nil, err
 	}
-	if reduce != nil && *reduce && isBuiltinView(view) {
-		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "reduce is invalid for map-only views"}
-	}
 	group, err := o.group()
 	if err != nil {
 		return nil, err
 	}
+	if group && isBuiltinView(view) {
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "invalid use of grouping on a map view"}
+	}
+	if reduce != nil && *reduce && isBuiltinView(view) {
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "reduce is invalid for map-only views"}
+	}
+
 	groupLevel, err := o.groupLevel()
 	if err != nil {
 		return nil, err

@@ -655,12 +655,16 @@ func TestDBAllDocs(t *testing.T) {
 		wantErr:    "invalid use of grouping on a map view",
 		wantStatus: http.StatusBadRequest,
 	})
+	tests.Add("group_level not allowed", test{
+		options:    kivik.Param("group_level", 3),
+		wantErr:    "invalid use of grouping on a map view",
+		wantStatus: http.StatusBadRequest,
+	})
 	/*
 		TODO:
 		- Options:
 			- endkey_docid
 			- end_key_doc_id
-			- group_level
 			- include_docs
 			- attachments
 			- att_encoding_infio

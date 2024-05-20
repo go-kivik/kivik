@@ -511,11 +511,54 @@ func Test_viewOptions(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 	})
 
+	tests.Add("endkey_doc_id: valid string", test{
+		options: kivik.Param("endkey_doc_id", "oink"),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			endkeyDocID:  `"oink"`,
+		},
+	})
+	tests.Add("endkey_doc_id: valid json", test{
+		options: kivik.Param("endkey_doc_id", json.RawMessage(`"oink"`)),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			endkeyDocID:  `"oink"`,
+		},
+	})
+	tests.Add("endkey_doc_id: invalid json", test{
+		options:    kivik.Param("endkey_doc_id", json.RawMessage(`oink`)),
+		wantErr:    `invalid value for 'endkey_doc_id': invalid character 'o' looking for beginning of value in key`,
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("end_key_doc_id: valid string", test{
+		options: kivik.Param("end_key_doc_id", "oink"),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			endkeyDocID:  `"oink"`,
+		},
+	})
+	tests.Add("end_key_doc_id: valid json", test{
+		options: kivik.Param("end_key_doc_id", json.RawMessage(`"oink"`)),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			endkeyDocID:  `"oink"`,
+		},
+	})
+	tests.Add("end_key_doc_id: invalid json", test{
+		options:    kivik.Param("end_key_doc_id", json.RawMessage(`oink`)),
+		wantErr:    `invalid value for 'end_key_doc_id': invalid character 'o' looking for beginning of value in key`,
+		wantStatus: http.StatusBadRequest,
+	})
+
 	/*
-		endkey_docid (string) – Stop returning records when the specified document ID is reached. Ignored if endkey is not set.
-
-		end_key_doc_id (string) – Alias for endkey_docid.
-
 		att_encoding_info (boolean) – Include encoding information in attachment stubs if include_docs is true and the particular attachment is compressed. Ignored if include_docs isn’t true. Default is false.
 
 		key (json) – Return only documents that match the specified key.

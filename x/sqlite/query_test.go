@@ -1419,6 +1419,36 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("return unsorted results", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc.value);
+							}
+						}`,
+				},
+			},
+		})
+		_ = d.tPut("c", map[string]interface{}{"key": "c", "value": 3})
+		_ = d.tPut("a", map[string]interface{}{"key": "a", "value": 1})
+		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": 2})
+
+		return test{
+			db:      d,
+			ddoc:    "_design/foo",
+			view:    "_view/bar",
+			options: kivik.Param("sorted", false),
+			want: []rowResult{
+				{ID: "c", Key: `"c"`, Value: "3"},
+				{ID: "a", Key: `"a"`, Value: "1"},
+				{ID: "b", Key: `"b"`, Value: "2"},
+			},
+		}
+	})
+
 	/*
 		TODO:
 		- _stats
@@ -1444,7 +1474,6 @@ func TestDBQuery(t *testing.T) {
 			- key
 			- keys
 			- reduce
-			- sorted
 			- startkey_docid
 			- start_key_doc_id
 			- update_seq

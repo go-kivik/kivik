@@ -568,8 +568,13 @@ func (v viewOptions) buildWhere(args *[]any) []string {
 		}
 	}
 	if v.startkey != "" {
-		where = append(where, fmt.Sprintf("view.key %s $%d", startKeyOp(v.descending), len(*args)+1))
+		op := startKeyOp(v.descending)
+		where = append(where, fmt.Sprintf("view.key %s $%d", op, len(*args)+1))
 		*args = append(*args, v.startkey)
+		if v.startkeyDocID != "" {
+			where = append(where, fmt.Sprintf("view.id %s $%d", op, len(*args)+1))
+			*args = append(*args, v.startkeyDocID)
+		}
 	}
 	if v.key != "" {
 		where = append(where, "view.key = $"+strconv.Itoa(len(*args)+1))

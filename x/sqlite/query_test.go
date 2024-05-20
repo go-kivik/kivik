@@ -1636,6 +1636,37 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("startkey_docid", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc.value);
+							}
+						}`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{"key": "a"})
+		_ = d.tPut("b", map[string]interface{}{"key": "a"})
+		_ = d.tPut("c", map[string]interface{}{"key": "a"})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"startkey":       "a",
+				"startkey_docid": "b",
+			}),
+			want: []rowResult{
+				{ID: "b", Key: `"a"`, Value: "null"},
+				{ID: "c", Key: `"a"`, Value: "null"},
+			},
+		}
+	})
 
 	/*
 		TODO:
@@ -1670,8 +1701,6 @@ func TestDBQuery(t *testing.T) {
 			- _stats (https://docs.couchdb.org/en/stable/ddocs/ddocs.html#stats)
 		- Options:
 			- reduce
-			- startkey_docid
-			- start_key_doc_id
 			- update_seq
 		- map/reduce function takes too long
 		- exclude design docs by default

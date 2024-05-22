@@ -84,7 +84,8 @@ var schema = []string{
 }
 
 var viewSchema = []string{
-	`CREATE TABLE IF NOT EXISTS {{ .Map }} (
+	`CREATE TABLE {{ .Map }} (
+		pk INTEGER PRIMARY KEY,
 		id TEXT NOT NULL,
 		rev INTEGER NOT NULL,
 		rev_id TEXT NOT NULL,
@@ -92,5 +93,12 @@ var viewSchema = []string{
 		value TEXT,
 		FOREIGN KEY (id, rev, rev_id) REFERENCES {{ .Docs }} (id, rev, rev_id)
 	)`,
-	`CREATE INDEX IF NOT EXISTS {{ .IndexMap }} ON {{ .Map }} (key)`,
+	`CREATE INDEX {{ .IndexMap }} ON {{ .Map }} (key)`,
+	`CREATE TABLE {{ .Reduce }} (
+		start_key INTEGER NOT NULL,
+		end_key INTEGER NOT NULL,
+		value TEXT,
+		FOREIGN KEY (start_key) REFERENCES {{ .Map }} (pk),
+		FOREIGN KEY (end_key) REFERENCES {{ .Map }} (pk)
+	)`,
 }

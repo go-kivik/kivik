@@ -103,12 +103,6 @@ func (d *db) performQuery(
 	if vopts.group {
 		return d.performGroupQuery(ctx, ddoc, view, vopts.update, vopts.groupLevel, vopts)
 	}
-	var (
-		results      *sql.Rows
-		reducible    bool
-		reduceFuncJS *string
-		updateSeq    string
-	)
 	for {
 		rev, err := d.updateIndex(ctx, ddoc, view, vopts.update)
 		if err != nil {
@@ -189,7 +183,7 @@ func (d *db) performQuery(
 				LIMIT %[3]d OFFSET %[4]d
 			)
 		`), vopts.buildOrderBy(), strings.Join(where, " AND "), vopts.limit, vopts.skip)
-		results, err = d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
+		results, err := d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
 		switch {
 		case errIsNoSuchTable(err):
 			return nil, &internal.Error{Status: http.StatusNotFound, Message: "missing named view"}
@@ -197,41 +191,33 @@ func (d *db) performQuery(
 			return nil, err
 		}
 
-		// The first row is used to verify the index is up to date
-		if !results.Next() {
-			// should never happen
-			_ = results.Close() //nolint:sqlclosecheck // Aborting
-			return nil, errors.New("no rows returned")
-		}
-
-		var upToDate bool
-		if err := results.Scan(&upToDate, &reducible, &reduceFuncJS, &updateSeq, discard{}, discard{}); err != nil {
-			_ = results.Close() //nolint:sqlclosecheck // Aborting
+		meta, err := readFirstRow(results)
+		if err != nil {
 			return nil, err
 		}
-		if vopts.reduce != nil && *vopts.reduce && !reducible {
+
+		if vopts.reduce != nil && *vopts.reduce && !meta.reducible {
 			_ = results.Close() //nolint:sqlclosecheck // Aborting
 			return nil, &internal.Error{Status: http.StatusBadRequest, Message: "reduce is invalid for map-only views"}
 		}
-		if upToDate || vopts.update != updateModeTrue {
-			// If the results are up to date, OR, we're in false/lazy update mode,
-			// then these results are fine.
-			break
+		if !meta.upToDate && vopts.update == updateModeTrue {
+			_ = results.Close() //nolint:sqlclosecheck // Not up to date, so close the results and try again
+			continue
 		}
 
-		_ = results.Close() //nolint:sqlclosecheck // Not up to date, so close the results and try again
-	}
+		if meta.reducible && (vopts.reduce == nil || *vopts.reduce) {
+			return d.reduceRows(results, meta.reduceFuncJS, false, 0, vopts)
+		}
 
-	if reducible && (vopts.reduce == nil || *vopts.reduce) {
-		return d.reduceRows(results, reduceFuncJS, false, 0, vopts)
+		// If the results are up to date, OR, we're in false/lazy update mode,
+		// then these results are fine.
+		return &rows{
+			ctx:       ctx,
+			db:        d,
+			rows:      results,
+			updateSeq: meta.updateSeq,
+		}, nil
 	}
-
-	return &rows{
-		ctx:       ctx,
-		db:        d,
-		rows:      results,
-		updateSeq: updateSeq,
-	}, nil
 }
 
 func (d *db) performGroupQuery(ctx context.Context, ddoc, view, update string, groupLevel uint64, vopts *viewOptions) (driver.Rows, error) {

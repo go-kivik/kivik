@@ -81,9 +81,9 @@ func (d *db) queryBuiltinView(
 
 	query := fmt.Sprintf(d.query(leavesCTE+`
 		SELECT
-			NULL,
-			NULL,
-			NULL,
+			TRUE                  AS up_to_date,
+			FALSE                 AS reducible,
+			NULL                  AS reduce_func,
 			IIF($3, MAX(seq), "") AS update_seq,
 			NULL,
 			NULL
@@ -124,16 +124,8 @@ func (d *db) queryBuiltinView(
 		return nil, err
 	}
 
-	// The first row is used for some metadata
-	if !results.Next() {
-		// should never happen
-		_ = results.Close() //nolint:sqlclosecheck // Aborting
-		return nil, errors.New("no rows returned")
-	}
-
-	var updateSeq string
-	if err := results.Scan(discard{}, discard{}, discard{}, &updateSeq, discard{}, discard{}); err != nil {
-		_ = results.Close() //nolint:sqlclosecheck // Aborting
+	meta, err := readFirstRow(results)
+	if err != nil {
 		return nil, err
 	}
 
@@ -141,8 +133,31 @@ func (d *db) queryBuiltinView(
 		ctx:       ctx,
 		db:        d,
 		rows:      results,
-		updateSeq: updateSeq,
+		updateSeq: meta.updateSeq,
 	}, nil
+}
+
+type viewMetadata struct {
+	upToDate     bool
+	reducible    bool
+	reduceFuncJS *string
+	updateSeq    string
+}
+
+// readFirstRow reads the first row from the resultset, which contains. In the
+// case of an error, the result set is closed and an error is returned.
+func readFirstRow(results *sql.Rows) (*viewMetadata, error) {
+	if !results.Next() {
+		// should never happen
+		_ = results.Close() //nolint:sqlclosecheck // Aborting
+		return nil, errors.New("no rows returned")
+	}
+	var meta viewMetadata
+	if err := results.Scan(&meta.upToDate, &meta.reducible, &meta.reduceFuncJS, &meta.updateSeq, discard{}, discard{}); err != nil {
+		_ = results.Close() //nolint:sqlclosecheck // Aborting
+		return nil, err
+	}
+	return &meta, nil
 }
 
 func descendingToDirection(descending bool) string {

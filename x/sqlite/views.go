@@ -16,6 +16,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -74,11 +75,22 @@ func (d *db) queryBuiltinView(
 	ctx context.Context,
 	vopts *viewOptions,
 ) (driver.Rows, error) {
-	args := []interface{}{vopts.includeDocs, vopts.conflicts}
+	args := []interface{}{vopts.includeDocs, vopts.conflicts, vopts.updateSeq}
 
 	where := append([]string{""}, vopts.buildWhere(&args)...)
 
 	query := fmt.Sprintf(d.query(leavesCTE+`
+		SELECT
+			NULL,
+			NULL,
+			NULL,
+			IIF($3, MAX(seq), "") AS update_seq,
+			NULL,
+			NULL
+		FROM {{ .Docs }}
+
+		UNION ALL
+
 		SELECT *
 		FROM (
 			SELECT
@@ -112,10 +124,24 @@ func (d *db) queryBuiltinView(
 		return nil, err
 	}
 
+	// The first row is used for some metadata
+	if !results.Next() {
+		// should never happen
+		_ = results.Close() //nolint:sqlclosecheck // Aborting
+		return nil, errors.New("no rows returned")
+	}
+
+	var updateSeq string
+	if err := results.Scan(discard{}, discard{}, discard{}, &updateSeq, discard{}, discard{}); err != nil {
+		_ = results.Close() //nolint:sqlclosecheck // Aborting
+		return nil, err
+	}
+
 	return &rows{
-		ctx:  ctx,
-		db:   d,
-		rows: results,
+		ctx:       ctx,
+		db:        d,
+		rows:      results,
+		updateSeq: updateSeq,
 	}, nil
 }
 

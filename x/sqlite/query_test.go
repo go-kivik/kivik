@@ -1761,6 +1761,31 @@ func TestDBQuery_update_seq(t *testing.T) {
 	_ = rows.Close()
 }
 
+func TestDBQuery_no_update_seq(t *testing.T) {
+	t.Parallel()
+	d := newDB(t)
+
+	_ = d.tPut("_design/foo", map[string]interface{}{
+		"views": map[string]interface{}{
+			"bar": map[string]string{
+				"map": `function(doc) { emit(doc._id, null); }`,
+			},
+		},
+	})
+	_ = d.tPut("foo", map[string]string{"_id": "foo"})
+
+	rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", mock.NilOption)
+	if err != nil {
+		t.Fatalf("Failed to query view: %s", err)
+	}
+	want := ""
+	got := rows.UpdateSeq()
+	if got != want {
+		t.Errorf("Unexpected update seq: %s", got)
+	}
+	_ = rows.Close()
+}
+
 func TestDBQuery_update_lazy(t *testing.T) {
 	t.Parallel()
 	d := newDB(t)

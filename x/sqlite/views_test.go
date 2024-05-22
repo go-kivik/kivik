@@ -652,12 +652,12 @@ func TestDBAllDocs(t *testing.T) {
 	})
 	tests.Add("group not allowed", test{
 		options:    kivik.Param("group", true),
-		wantErr:    "invalid use of grouping on a map view",
+		wantErr:    "group is invalid for map-only views",
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("group_level not allowed", test{
 		options:    kivik.Param("group_level", 3),
-		wantErr:    "invalid use of grouping on a map view",
+		wantErr:    "group_level is invalid for map-only views",
 		wantStatus: http.StatusBadRequest,
 	})
 	/*

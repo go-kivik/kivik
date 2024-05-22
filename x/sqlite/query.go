@@ -191,15 +191,11 @@ func (d *db) performQuery(
 			return nil, err
 		}
 
-		meta, err := readFirstRow(results)
+		meta, err := readFirstRow(results, vopts)
 		if err != nil {
 			return nil, err
 		}
 
-		if vopts.reduce != nil && *vopts.reduce && !meta.reducible {
-			_ = results.Close() //nolint:sqlclosecheck // Aborting
-			return nil, &internal.Error{Status: http.StatusBadRequest, Message: "reduce is invalid for map-only views"}
-		}
 		if !meta.upToDate && vopts.update == updateModeTrue {
 			_ = results.Close() //nolint:sqlclosecheck // Not up to date, so close the results and try again
 			continue

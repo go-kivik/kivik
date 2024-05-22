@@ -19,9 +19,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"strings"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/x/sqlite/v4/internal"
 )
 
 func endKeyOp(descending, inclusive bool) string {
@@ -124,7 +126,7 @@ func (d *db) queryBuiltinView(
 		return nil, err
 	}
 
-	meta, err := readFirstRow(results)
+	meta, err := readFirstRow(results, vopts)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +148,7 @@ type viewMetadata struct {
 
 // readFirstRow reads the first row from the resultset, which contains. In the
 // case of an error, the result set is closed and an error is returned.
-func readFirstRow(results *sql.Rows) (*viewMetadata, error) {
+func readFirstRow(results *sql.Rows, vopts *viewOptions) (*viewMetadata, error) {
 	if !results.Next() {
 		// should never happen
 		_ = results.Close() //nolint:sqlclosecheck // Aborting
@@ -156,6 +158,10 @@ func readFirstRow(results *sql.Rows) (*viewMetadata, error) {
 	if err := results.Scan(&meta.upToDate, &meta.reducible, &meta.reduceFuncJS, &meta.updateSeq, discard{}, discard{}); err != nil {
 		_ = results.Close() //nolint:sqlclosecheck // Aborting
 		return nil, err
+	}
+	if vopts.reduce != nil && *vopts.reduce && !meta.reducible {
+		_ = results.Close() //nolint:sqlclosecheck // Aborting
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "reduce is invalid for map-only views"}
 	}
 	return &meta, nil
 }

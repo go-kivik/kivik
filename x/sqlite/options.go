@@ -646,9 +646,6 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 		if group {
 			return nil, &internal.Error{Status: http.StatusBadRequest, Message: "invalid use of grouping on a map view"}
 		}
-		if reduce != nil {
-			return nil, &internal.Error{Status: http.StatusBadRequest, Message: "reduce is invalid for map-only views"}
-		}
 	}
 	groupLevel, err := o.groupLevel()
 	if err != nil {

@@ -369,7 +369,7 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 			CASE WHEN row_number = 1 THEN rev     END AS rev,
 			CASE WHEN row_number = 1 THEN doc     END AS doc,
 			CASE WHEN row_number = 1 THEN deleted END AS deleted,
-			attachment_count,
+			COALESCE(attachment_count,0)              AS attachment_count,
 			filename,
 			content_type,
 			length,
@@ -416,8 +416,7 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 				LEFT JOIN {{ .Attachments }} AS att ON bridge.pk = att.pk
 				WHERE rev.rank = 1
 			) AS doc ON seq.id = doc.id AND seq.rev = doc.rev AND seq.rev_id = doc.rev_id
-			WHERE doc.id NOT LIKE '_local/%'
-				AND seq.seq > $1
+			WHERE seq.seq > $1
 			ORDER BY seq.seq
 		)
 	`)
@@ -470,9 +469,19 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 			return revision{}, err
 		}
 
+		// Skip design/local docs
+		if full.ID == "" {
+			continue
+		}
+
 		rev, err := full.rev()
 		if err != nil {
 			return revision{}, err
+		}
+
+		// TODO move this to the query
+		if strings.HasPrefix(full.ID, "_design/") || strings.HasPrefix(full.ID, "_local/") {
+			continue
 		}
 
 		if full.Deleted {

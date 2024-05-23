@@ -35,9 +35,9 @@ type reduceRowIter struct {
 }
 
 type reduceRow struct {
-	id    string
-	key   string
-	value *string
+	ID    string
+	Key   string
+	Value *string
 }
 
 func (r *reduceRowIter) Next() (*reduceRow, error) {
@@ -48,7 +48,7 @@ func (r *reduceRowIter) Next() (*reduceRow, error) {
 		return nil, io.EOF
 	}
 	var row reduceRow
-	if err := r.results.Scan(&row.id, &row.key, &row.value, discard{}, discard{}, discard{}); err != nil {
+	if err := r.results.Scan(&row.ID, &row.Key, &row.Value, discard{}, discard{}, discard{}); err != nil {
 		return nil, err
 	}
 	return &row, nil
@@ -58,7 +58,7 @@ type reduceRows interface {
 	Next() (*reduceRow, error)
 }
 
-func (d *db) reduceRows(ri reduceRows, reduceFuncJS *string, group bool, groupLevel uint64, vopts *viewOptions) (driver.Rows, error) {
+func (d *db) reduceRows(ri reduceRows, reduceFuncJS *string, group bool, groupLevel uint64, vopts *viewOptions) (*reducedRows, error) {
 	reduceFn, err := d.reduceFunc(reduceFuncJS, d.logger)
 	if err != nil {
 		return nil, err
@@ -75,24 +75,24 @@ func (d *db) reduceRows(ri reduceRows, reduceFuncJS *string, group bool, groupLe
 		}
 
 		var key, value interface{}
-		_ = json.Unmarshal([]byte(row.key), &key)
-		if row.value != nil {
-			_ = json.Unmarshal([]byte(*row.value), &value)
+		_ = json.Unmarshal([]byte(row.Key), &key)
+		if row.Value != nil {
+			_ = json.Unmarshal([]byte(*row.Value), &value)
 		}
-		rv, err := reduceFn([][2]interface{}{{row.id, key}}, []interface{}{value}, false)
+		rv, err := reduceFn([][2]interface{}{{row.ID, key}}, []interface{}{value}, false)
 		if err != nil {
 			return nil, err
 		}
 		// group is handled below
 		if groupLevel > 0 {
 			var unkey []interface{}
-			_ = json.Unmarshal([]byte(row.key), &unkey)
+			_ = json.Unmarshal([]byte(row.Key), &unkey)
 			if len(unkey) > int(groupLevel) {
 				newKey, _ := json.Marshal(unkey[:groupLevel])
-				row.key = string(newKey)
+				row.Key = string(newKey)
 			}
 		}
-		intermediate[row.key] = append(intermediate[row.key], rv)
+		intermediate[row.Key] = append(intermediate[row.Key], rv)
 	}
 
 	// group_level is handled above
@@ -100,6 +100,9 @@ func (d *db) reduceRows(ri reduceRows, reduceFuncJS *string, group bool, groupLe
 		var values []interface{}
 		for _, v := range intermediate {
 			values = append(values, v...)
+		}
+		if len(values) == 0 {
+			return &reducedRows{}, nil
 		}
 		rv, err := reduceFn(nil, values, true)
 		if err != nil {

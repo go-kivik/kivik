@@ -44,8 +44,6 @@ func Test_reduceRows(t *testing.T) {
 	type test struct {
 		rows          reduceRows
 		reduceFuncJS  string
-		group         bool
-		groupLevel    uint64
 		vopts         *viewOptions
 		want          []reducedRow
 		wantErr       string
@@ -88,7 +86,9 @@ func Test_reduceRows(t *testing.T) {
 			{ID: "bar", Key: "bar", Value: &[]string{"1"}[0]},
 		},
 		reduceFuncJS: `_sum`,
-		group:        true,
+		vopts: &viewOptions{
+			group: true,
+		},
 		want: []reducedRow{
 			{
 				Key:   "foo",
@@ -106,8 +106,10 @@ func Test_reduceRows(t *testing.T) {
 			{ID: "bar", Key: `["a","b"]`, Value: &[]string{"1"}[0]},
 		},
 		reduceFuncJS: `_sum`,
-		group:        true,
-		groupLevel:   1,
+		vopts: &viewOptions{
+			group:      true,
+			groupLevel: 1,
+		},
 		want: []reducedRow{
 			{
 				Key:   `["a"]`,
@@ -134,7 +136,7 @@ func Test_reduceRows(t *testing.T) {
 		if tt.vopts != nil {
 			vopts = tt.vopts
 		}
-		got, err := d.DB.(*db).reduceRows(tt.rows, reduceFuncJS, tt.group, tt.groupLevel, vopts)
+		got, err := d.DB.(*db).reduceRows(tt.rows, reduceFuncJS, vopts)
 		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}

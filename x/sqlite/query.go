@@ -203,7 +203,7 @@ func (d *db) performQuery(
 
 		if meta.reducible && (vopts.reduce == nil || *vopts.reduce) {
 			ri := &reduceRowIter{results: results}
-			return d.reduceRows(ri, meta.reduceFuncJS, false, 0, vopts)
+			return d.reduceRows(ri, meta.reduceFuncJS, vopts)
 		}
 
 		// If the results are up to date, OR, we're in false/lazy update mode,
@@ -312,7 +312,7 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view, update string, g
 	}
 
 	ri := &reduceRowIter{results: results}
-	return d.reduceRows(ri, reduceFuncJS, true, groupLevel, vopts)
+	return d.reduceRows(ri, reduceFuncJS, vopts)
 }
 
 const batchSize = 100

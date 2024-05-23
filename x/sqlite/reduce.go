@@ -58,7 +58,7 @@ type reduceRows interface {
 	Next() (*reduceRow, error)
 }
 
-func (d *db) reduceRows(ri reduceRows, reduceFuncJS *string, group bool, groupLevel uint64, vopts *viewOptions) (*reducedRows, error) {
+func (d *db) reduceRows(ri reduceRows, reduceFuncJS *string, vopts *viewOptions) (*reducedRows, error) {
 	reduceFn, err := d.reduceFunc(reduceFuncJS, d.logger)
 	if err != nil {
 		return nil, err
@@ -84,11 +84,11 @@ func (d *db) reduceRows(ri reduceRows, reduceFuncJS *string, group bool, groupLe
 			return nil, err
 		}
 		// group is handled below
-		if groupLevel > 0 {
+		if vopts.groupLevel > 0 {
 			var unkey []interface{}
 			_ = json.Unmarshal([]byte(row.Key), &unkey)
-			if len(unkey) > int(groupLevel) {
-				newKey, _ := json.Marshal(unkey[:groupLevel])
+			if len(unkey) > int(vopts.groupLevel) {
+				newKey, _ := json.Marshal(unkey[:vopts.groupLevel])
 				row.Key = string(newKey)
 			}
 		}
@@ -96,7 +96,7 @@ func (d *db) reduceRows(ri reduceRows, reduceFuncJS *string, group bool, groupLe
 	}
 
 	// group_level is handled above
-	if !group {
+	if !vopts.group {
 		var values []interface{}
 		for _, v := range intermediate {
 			values = append(values, v...)

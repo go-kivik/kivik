@@ -30,45 +30,69 @@ import (
 	"github.com/go-kivik/kivik/x/sqlite/v4/internal"
 )
 
-func (d *db) reduceRows(results *sql.Rows, reduceFuncJS *string, group bool, groupLevel uint64, vopts *viewOptions) (driver.Rows, error) {
+type reduceRowIter struct {
+	results *sql.Rows
+}
+
+type reduceRow struct {
+	id    string
+	key   string
+	value *string
+}
+
+func (r *reduceRowIter) Next() (*reduceRow, error) {
+	if !r.results.Next() {
+		if err := r.results.Err(); err != nil {
+			return nil, err
+		}
+		return nil, io.EOF
+	}
+	var row reduceRow
+	if err := r.results.Scan(&row.id, &row.key, &row.value, discard{}, discard{}, discard{}); err != nil {
+		return nil, err
+	}
+	return &row, nil
+}
+
+type reduceRows interface {
+	Next() (*reduceRow, error)
+}
+
+func (d *db) reduceRows(ri reduceRows, reduceFuncJS *string, group bool, groupLevel uint64, vopts *viewOptions) (driver.Rows, error) {
 	reduceFn, err := d.reduceFunc(reduceFuncJS, d.logger)
 	if err != nil {
 		return nil, err
 	}
-	var (
-		intermediate = map[string][]interface{}{}
+	intermediate := map[string][]interface{}{}
 
-		id, rowKey string
-		rowValue   *string
-	)
-
-	for results.Next() {
-		if err := results.Scan(&id, &rowKey, &rowValue, discard{}, discard{}, discard{}); err != nil {
+	for {
+		row, err := ri.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
 			return nil, err
 		}
+
 		var key, value interface{}
-		_ = json.Unmarshal([]byte(rowKey), &key)
-		if rowValue != nil {
-			_ = json.Unmarshal([]byte(*rowValue), &value)
+		_ = json.Unmarshal([]byte(row.key), &key)
+		if row.value != nil {
+			_ = json.Unmarshal([]byte(*row.value), &value)
 		}
-		rv, err := reduceFn([][2]interface{}{{id, key}}, []interface{}{value}, false)
+		rv, err := reduceFn([][2]interface{}{{row.id, key}}, []interface{}{value}, false)
 		if err != nil {
 			return nil, err
 		}
 		// group is handled below
 		if groupLevel > 0 {
 			var unkey []interface{}
-			_ = json.Unmarshal([]byte(rowKey), &unkey)
+			_ = json.Unmarshal([]byte(row.key), &unkey)
 			if len(unkey) > int(groupLevel) {
 				newKey, _ := json.Marshal(unkey[:groupLevel])
-				rowKey = string(newKey)
+				row.key = string(newKey)
 			}
 		}
-		intermediate[rowKey] = append(intermediate[rowKey], rv)
-	}
-
-	if err := results.Err(); err != nil {
-		return nil, err
+		intermediate[row.key] = append(intermediate[row.key], rv)
 	}
 
 	// group_level is handled above

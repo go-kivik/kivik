@@ -202,7 +202,8 @@ func (d *db) performQuery(
 		}
 
 		if meta.reducible && (vopts.reduce == nil || *vopts.reduce) {
-			return d.reduceRows(results, meta.reduceFuncJS, false, 0, vopts)
+			ri := &reduceRowIter{results: results}
+			return d.reduceRows(ri, meta.reduceFuncJS, false, 0, vopts)
 		}
 
 		// If the results are up to date, OR, we're in false/lazy update mode,
@@ -274,7 +275,7 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view, update string, g
 			)
 		`)
 
-		results, err = d.db.QueryContext(
+		results, err = d.db.QueryContext( //nolint:rowserrcheck // Err checked in iterator
 			ctx, query,
 			"_design/"+ddoc, rev.rev, rev.id, view, kivik.EndKeySuffix, true,
 		)
@@ -310,7 +311,8 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view, update string, g
 		}
 	}
 
-	return d.reduceRows(results, reduceFuncJS, true, groupLevel, vopts)
+	ri := &reduceRowIter{results: results}
+	return d.reduceRows(ri, reduceFuncJS, true, groupLevel, vopts)
 }
 
 const batchSize = 100

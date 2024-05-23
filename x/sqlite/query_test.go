@@ -1650,6 +1650,63 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("include design docs in view output", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"key": "design",
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc.value);
+							}
+						}`,
+				},
+			},
+			"options": map[string]interface{}{
+				"include_design": true,
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{"key": "a"})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: []rowResult{
+				{ID: "a", Key: `"a"`, Value: "null"},
+				{ID: "_design/foo", Key: `"design"`, Value: "null"},
+			},
+		}
+	})
+	tests.Add("options.local_seq=true", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"key": "design",
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc._local_seq);
+							}
+						}`,
+				},
+			},
+			"options": map[string]interface{}{
+				"local_seq": true,
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{"key": "a"})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: []rowResult{
+				{ID: "a", Key: `"a"`, Value: "2"},
+			},
+		}
+	})
 
 	/*
 		TODO:
@@ -1687,7 +1744,6 @@ func TestDBQuery(t *testing.T) {
 		- treat map non-exception errors as exceptions
 		- make sure local docs are properly skipped
 		- make sure deleted docs are properly skipped
-
 	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {

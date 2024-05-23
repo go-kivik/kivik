@@ -120,11 +120,106 @@ func TestDBPut_designDocs(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("options.include_design=true", func(t *testing.T) interface{} {
+		d := newDB(t)
+		return test{
+			db:    d,
+			docID: "_design/foo",
+			doc: map[string]interface{}{
+				"language": "javascript",
+				"views": map[string]interface{}{
+					"bar": map[string]interface{}{
+						"map": "function(doc) { emit(doc._id, null); }",
+					},
+				},
+				"options": map[string]interface{}{
+					"include_design": true,
+				},
+			},
+			wantRev: "1-.*",
+			wantRevs: []leaf{
+				{ID: "_design/foo", Rev: 1},
+			},
+			wantDDocs: []ddoc{
+				{
+					ID:         "_design/foo",
+					Rev:        1,
+					Lang:       "javascript",
+					FuncType:   "map",
+					FuncName:   "bar",
+					FuncBody:   "function(doc) { emit(doc._id, null); }",
+					AutoUpdate: true,
+				},
+			},
+			check: func(t *testing.T) {
+				var includeDesign bool
+				err := d.underlying().QueryRow(`
+					SELECT include_design
+					FROM test_design
+					WHERE func_type = 'map'
+					LIMIT 1
+					`).Scan(&includeDesign)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !includeDesign {
+					t.Errorf("include_design was false, expected true")
+				}
+			},
+		}
+	})
+	tests.Add("options.local_seq=true", func(t *testing.T) interface{} {
+		d := newDB(t)
+		return test{
+			db:    d,
+			docID: "_design/foo",
+			doc: map[string]interface{}{
+				"language": "javascript",
+				"views": map[string]interface{}{
+					"bar": map[string]interface{}{
+						"map": "function(doc) { emit(doc._id, null); }",
+					},
+				},
+				"options": map[string]interface{}{
+					"local_seq": true,
+				},
+			},
+			wantRev: "1-.*",
+			wantRevs: []leaf{
+				{ID: "_design/foo", Rev: 1},
+			},
+			wantDDocs: []ddoc{
+				{
+					ID:         "_design/foo",
+					Rev:        1,
+					Lang:       "javascript",
+					FuncType:   "map",
+					FuncName:   "bar",
+					FuncBody:   "function(doc) { emit(doc._id, null); }",
+					AutoUpdate: true,
+				},
+			},
+			check: func(t *testing.T) {
+				var includeDesign bool
+				err := d.underlying().QueryRow(`
+					SELECT local_seq
+					FROM test_design
+					WHERE func_type = 'map'
+					LIMIT 1
+					`).Scan(&includeDesign)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !includeDesign {
+					t.Errorf("include_design was false, expected true")
+				}
+			},
+		}
+	})
 	/*
 		TODO:
 		- unsupported language? -- ignored?
 		- Drop old indexes when a ddoc changes
-
 	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {

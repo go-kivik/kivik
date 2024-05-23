@@ -77,6 +77,9 @@ var schema = []string{
 		func_name TEXT NOT NULL,
 		func_body TEXT NOT NULL,
 		auto_update BOOLEAN NOT NULL DEFAULT TRUE,
+		-- Options include_design and local_seq are only stored for 'map' type
+		include_design BOOLEAN,
+		local_seq BOOLEAN,
 		last_seq INTEGER, -- the last map-indexed sequence id, NULL for others
 		FOREIGN KEY (id, rev, rev_id) REFERENCES {{ .Docs }} (id, rev, rev_id) ON DELETE CASCADE,
 		UNIQUE (id, rev, rev_id, func_type, func_name)

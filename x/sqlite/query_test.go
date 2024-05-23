@@ -86,7 +86,6 @@ func TestDBQuery(t *testing.T) {
 			ddoc: "_design/foo",
 			view: "_view/bar",
 			want: []rowResult{
-				{ID: "_design/foo", Key: `"_design/foo"`, Value: "null"},
 				{ID: "foo", Key: `"foo"`, Value: "null"},
 			},
 		}
@@ -132,7 +131,6 @@ func TestDBQuery(t *testing.T) {
 			view:    "_view/bar",
 			options: kivik.Param("update", true),
 			want: []rowResult{
-				{ID: "_design/foo", Key: `"_design/foo"`, Value: "null"},
 				{ID: "foo", Key: `"foo"`, Value: "null"},
 			},
 		}
@@ -196,7 +194,6 @@ func TestDBQuery(t *testing.T) {
 			ddoc: "_design/foo",
 			view: "_view/bar",
 			want: []rowResult{
-				{ID: "_design/foo", Key: `"_design/foo"`, Value: "null"},
 				{ID: "bar", Key: `"bar"`, Value: "null"},
 				{ID: "foo", Key: `"foo"`, Value: "null"},
 			},
@@ -246,9 +243,7 @@ func TestDBQuery(t *testing.T) {
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			want: []rowResult{
-				{ID: "_design/foo", Key: `"_design/foo"`, Value: "null"},
-			},
+			want: nil,
 		}
 	})
 	tests.Add("doc deleted before index creation", func(t *testing.T) interface{} {
@@ -267,9 +262,7 @@ func TestDBQuery(t *testing.T) {
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			want: []rowResult{
-				{ID: "_design/foo", Key: `"_design/foo"`, Value: "null"},
-			},
+			want: nil,
 		}
 	})
 	tests.Add("map function throws exception", func(t *testing.T) interface{} {
@@ -293,8 +286,6 @@ func TestDBQuery(t *testing.T) {
 			wantLogs: []string{
 				"^map function threw exception for foo: Error: broken$",
 				"^\tat map ",
-				"^map function threw exception for _design/foo: Error: broken$",
-				"^\tat map ",
 			},
 		}
 	})
@@ -317,9 +308,6 @@ func TestDBQuery(t *testing.T) {
 			want: nil,
 			wantLogs: []string{
 				`^map function threw exception for foo: json: unsupported type: func\(goja\.FunctionCall\) goja\.Value$`,
-				`^\tat github\.com/go-kivik/kivik/x/sqlite/v4\.\(\*db\)\.updateIndex\.`,
-				`^\tat map `,
-				`^map function threw exception for _design/foo: json: unsupported type: func\(goja\.FunctionCall\) goja\.Value$`,
 				`^\tat github\.com/go-kivik/kivik/x/sqlite/v4\.\(\*db\)\.updateIndex\.`,
 				`^\tat map `,
 			},
@@ -463,7 +451,7 @@ func TestDBQuery(t *testing.T) {
 			want: []rowResult{
 				{
 					Key:   "null",
-					Value: "3", // TODO: Should be 2 because ddocs should be ignored
+					Value: "2",
 				},
 			},
 		}
@@ -524,7 +512,7 @@ func TestDBQuery(t *testing.T) {
 			want: []rowResult{
 				{
 					Key:   "null",
-					Value: "3", // TODO: Should be 2 because ddocs should be ignored
+					Value: "2",
 				},
 			},
 		}
@@ -560,7 +548,6 @@ func TestDBQuery(t *testing.T) {
 			view:    "_view/bar",
 			options: kivik.Param("reduce", false),
 			want: []rowResult{
-				{ID: "_design/foo", Key: `"_design/foo"`, Value: `[1]`},
 				{ID: "a", Key: `"a"`, Value: `[1]`},
 				{ID: "b", Key: `"b"`, Value: `[1]`},
 			},
@@ -597,7 +584,6 @@ func TestDBQuery(t *testing.T) {
 				`^reduce function threw exception: Error: broken at reduce `,
 				`^reduce function threw exception: Error: broken at reduce `,
 				`^reduce function threw exception: Error: broken at reduce `,
-				`^reduce function threw exception: Error: broken at reduce `,
 			},
 		}
 	})
@@ -623,7 +609,7 @@ func TestDBQuery(t *testing.T) {
 			want: []rowResult{
 				{
 					Key:   "null",
-					Value: "3", // TODO: Should be 2 because ddocs should be ignored
+					Value: "2",
 				},
 			},
 		}
@@ -650,7 +636,7 @@ func TestDBQuery(t *testing.T) {
 			want: []rowResult{
 				{
 					Key:   "null",
-					Value: "9",
+					Value: "6",
 				},
 			},
 		}
@@ -1481,7 +1467,6 @@ func TestDBQuery(t *testing.T) {
 			}),
 			wantUnordered: true,
 			want: []rowResult{
-				{Key: `"_design/foo"`, Value: "1"},
 				{Key: `"~"`, Value: "1"},
 				{Key: `"a"`, Value: "1"},
 			},
@@ -1510,7 +1495,6 @@ func TestDBQuery(t *testing.T) {
 				"group": true,
 			}),
 			want: []rowResult{
-				{Key: `"_design/foo"`, Value: "1"},
 				{Key: `"~"`, Value: "1"},
 				{Key: `"a"`, Value: "1"},
 			},
@@ -1542,7 +1526,6 @@ func TestDBQuery(t *testing.T) {
 			want: []rowResult{
 				{Key: `"a"`, Value: "1"},
 				{Key: `"~"`, Value: "1"},
-				{Key: `"_design/foo"`, Value: "1"},
 			},
 		}
 	})
@@ -1699,11 +1682,12 @@ func TestDBQuery(t *testing.T) {
 				- start/end keys
 				- group behavior
 			- _stats (https://docs.couchdb.org/en/stable/ddocs/ddocs.html#stats)
-		- Options:
-			- reduce
 		- map/reduce function takes too long
-		- exclude design docs by default
+		- include design docs
 		- treat map non-exception errors as exceptions
+		- make sure local docs are properly skipped
+		- make sure deleted docs are properly skipped
+
 	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {
@@ -1761,6 +1745,31 @@ func TestDBQuery_update_seq(t *testing.T) {
 	_ = rows.Close()
 }
 
+func TestDBQuery_no_update_seq(t *testing.T) {
+	t.Parallel()
+	d := newDB(t)
+
+	_ = d.tPut("_design/foo", map[string]interface{}{
+		"views": map[string]interface{}{
+			"bar": map[string]string{
+				"map": `function(doc) { emit(doc._id, null); }`,
+			},
+		},
+	})
+	_ = d.tPut("foo", map[string]string{"_id": "foo"})
+
+	rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", mock.NilOption)
+	if err != nil {
+		t.Fatalf("Failed to query view: %s", err)
+	}
+	want := ""
+	got := rows.UpdateSeq()
+	if got != want {
+		t.Errorf("Unexpected update seq: %s", got)
+	}
+	_ = rows.Close()
+}
+
 func TestDBQuery_update_lazy(t *testing.T) {
 	t.Parallel()
 	d := newDB(t)
@@ -1795,7 +1804,6 @@ func TestDBQuery_update_lazy(t *testing.T) {
 	}
 	defer rows.Close()
 	checkRows(t, rows, []rowResult{
-		{ID: "_design/foo", Key: `"_design/foo"`, Value: "null"},
 		{ID: "foo", Key: `"foo"`, Value: "null"},
 	})
 }

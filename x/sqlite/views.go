@@ -16,11 +16,14 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"strings"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/x/sqlite/v4/internal"
 )
 
 func endKeyOp(descending, inclusive bool) string {
@@ -74,11 +77,22 @@ func (d *db) queryBuiltinView(
 	ctx context.Context,
 	vopts *viewOptions,
 ) (driver.Rows, error) {
-	args := []interface{}{vopts.includeDocs, vopts.conflicts}
+	args := []interface{}{vopts.includeDocs, vopts.conflicts, vopts.updateSeq}
 
 	where := append([]string{""}, vopts.buildWhere(&args)...)
 
 	query := fmt.Sprintf(d.query(leavesCTE+`
+		SELECT
+			TRUE                  AS up_to_date,
+			FALSE                 AS reducible,
+			NULL                  AS reduce_func,
+			IIF($3, MAX(seq), "") AS update_seq,
+			NULL,
+			NULL
+		FROM {{ .Docs }}
+
+		UNION ALL
+
 		SELECT *
 		FROM (
 			SELECT
@@ -112,11 +126,44 @@ func (d *db) queryBuiltinView(
 		return nil, err
 	}
 
+	meta, err := readFirstRow(results, vopts)
+	if err != nil {
+		return nil, err
+	}
+
 	return &rows{
-		ctx:  ctx,
-		db:   d,
-		rows: results,
+		ctx:       ctx,
+		db:        d,
+		rows:      results,
+		updateSeq: meta.updateSeq,
 	}, nil
+}
+
+type viewMetadata struct {
+	upToDate     bool
+	reducible    bool
+	reduceFuncJS *string
+	updateSeq    string
+}
+
+// readFirstRow reads the first row from the resultset, which contains. In the
+// case of an error, the result set is closed and an error is returned.
+func readFirstRow(results *sql.Rows, vopts *viewOptions) (*viewMetadata, error) {
+	if !results.Next() {
+		// should never happen
+		_ = results.Close() //nolint:sqlclosecheck // Aborting
+		return nil, errors.New("no rows returned")
+	}
+	var meta viewMetadata
+	if err := results.Scan(&meta.upToDate, &meta.reducible, &meta.reduceFuncJS, &meta.updateSeq, discard{}, discard{}); err != nil {
+		_ = results.Close() //nolint:sqlclosecheck // Aborting
+		return nil, err
+	}
+	if vopts.reduce != nil && *vopts.reduce && !meta.reducible {
+		_ = results.Close() //nolint:sqlclosecheck // Aborting
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "reduce is invalid for map-only views"}
+	}
+	return &meta, nil
 }
 
 func descendingToDirection(descending bool) string {

@@ -652,12 +652,12 @@ func TestDBAllDocs(t *testing.T) {
 	})
 	tests.Add("group not allowed", test{
 		options:    kivik.Param("group", true),
-		wantErr:    "invalid use of grouping on a map view",
+		wantErr:    "group is invalid for map-only views",
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("group_level not allowed", test{
 		options:    kivik.Param("group_level", 3),
-		wantErr:    "invalid use of grouping on a map view",
+		wantErr:    "group_level is invalid for map-only views",
 		wantStatus: http.StatusBadRequest,
 	})
 	/*
@@ -666,9 +666,7 @@ func TestDBAllDocs(t *testing.T) {
 			- include_docs
 			- attachments
 			- att_encoding_infio
-			- update_seq
 		- AllDocs() called for DB that doesn't exit
-		- UpdateSeq() called on rows
 		- Offset() called on rows
 		- TotalRows() called on rows
 	*/
@@ -774,4 +772,40 @@ func checkRows(t *testing.T, rows driver.Rows, want []rowResult) {
 	if d := cmp.Diff(want, got); d != "" {
 		t.Errorf("Unexpected rows:\n%s", d)
 	}
+}
+
+func TestDBAllDocs_update_seq(t *testing.T) {
+	t.Parallel()
+	d := newDB(t)
+
+	_ = d.tPut("foo", map[string]string{"_id": "foo"})
+
+	rows, err := d.AllDocs(context.Background(), kivik.Param("update_seq", true))
+	if err != nil {
+		t.Fatalf("Failed to query view: %s", err)
+	}
+	want := "1"
+	got := rows.UpdateSeq()
+	if got != want {
+		t.Errorf("Unexpected update seq: %s", got)
+	}
+	_ = rows.Close()
+}
+
+func TestDBAllDocs_no_update_seq(t *testing.T) {
+	t.Parallel()
+	d := newDB(t)
+
+	_ = d.tPut("foo", map[string]string{"_id": "foo"})
+
+	rows, err := d.AllDocs(context.Background(), mock.NilOption)
+	if err != nil {
+		t.Fatalf("Failed to query view: %s", err)
+	}
+	want := ""
+	got := rows.UpdateSeq()
+	if got != want {
+		t.Errorf("Unexpected update seq: %s", got)
+	}
+	_ = rows.Close()
 }

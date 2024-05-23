@@ -1650,6 +1650,35 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("include design docs in view output", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"key": "design",
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc.value);
+							}
+						}`,
+				},
+			},
+			"options": map[string]interface{}{
+				"include_design": true,
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{"key": "a"})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: []rowResult{
+				{ID: "a", Key: `"a"`, Value: "null"},
+				{ID: "_design/foo", Key: `"design"`, Value: "null"},
+			},
+		}
+	})
 
 	/*
 		TODO:
@@ -1687,6 +1716,8 @@ func TestDBQuery(t *testing.T) {
 		- treat map non-exception errors as exceptions
 		- make sure local docs are properly skipped
 		- make sure deleted docs are properly skipped
+		- view options: https://docs.couchdb.org/en/stable/api/ddoc/views.html#view-options
+			- local_seq
 
 	*/
 

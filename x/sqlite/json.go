@@ -453,12 +453,14 @@ func (d *fullDoc) toMap() map[string]interface{} {
 		}
 		result["_attachments"] = attachments
 	}
+	if d.LocalSeq > 0 {
+		result["_local_seq"] = d.LocalSeq
+	}
 	/*
 		Conflicts        []string               `json:"_conflicts,omitempty"`
 		DeletedConflicts []string               `json:"_deleted_conflicts,omitempty"`
 		RevsInfo         []map[string]string    `json:"_revs_info,omitempty"`
 		Revisions        *revsInfo              `json:"_revisions,omitempty"`
-		LocalSeq         int                    `json:"_local_seq,omitempty"`
 	*/
 	return result
 }

@@ -319,10 +319,10 @@ const batchSize = 100
 // ddoc revid and last_seq. If mode is "true", it will also update the index.
 func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision, error) {
 	var (
-		ddocRev       revision
-		mapFuncJS     *string
-		lastSeq       int
-		includeDesign sql.NullBool
+		ddocRev                 revision
+		mapFuncJS               *string
+		lastSeq                 int
+		includeDesign, localSeq sql.NullBool
 	)
 	err := d.db.QueryRowContext(ctx, d.query(`
 		SELECT
@@ -330,13 +330,14 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 			docs.rev_id,
 			design.func_body,
 			design.include_design,
+			design.local_seq,
 			COALESCE(design.last_seq, 0) AS last_seq
 		FROM {{ .Docs }} AS docs
 		LEFT JOIN {{ .Design }} AS design ON docs.id = design.id AND docs.rev = design.rev AND docs.rev_id = design.rev_id AND design.func_type = 'map'
 		WHERE docs.id = $1
 		ORDER BY docs.rev DESC, docs.rev_id DESC
 		LIMIT 1
-	`), "_design/"+ddoc).Scan(&ddocRev.rev, &ddocRev.id, &mapFuncJS, &includeDesign, &lastSeq)
+	`), "_design/"+ddoc).Scan(&ddocRev.rev, &ddocRev.id, &mapFuncJS, &includeDesign, &localSeq, &lastSeq)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return revision{}, &internal.Error{Status: http.StatusNotFound, Message: "missing"}
@@ -490,6 +491,10 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 		if full.Deleted {
 			batch.delete(full.ID, rev)
 			continue
+		}
+
+		if localSeq.Bool {
+			full.LocalSeq = seq
 		}
 
 		if err := vm.Set("emit", emit(full.ID, rev)); err != nil {

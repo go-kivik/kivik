@@ -1679,6 +1679,34 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("options.local_seq=true", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"key": "design",
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc._local_seq);
+							}
+						}`,
+				},
+			},
+			"options": map[string]interface{}{
+				"local_seq": true,
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{"key": "a"})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: []rowResult{
+				{ID: "a", Key: `"a"`, Value: "2"},
+			},
+		}
+	})
 
 	/*
 		TODO:
@@ -1716,9 +1744,6 @@ func TestDBQuery(t *testing.T) {
 		- treat map non-exception errors as exceptions
 		- make sure local docs are properly skipped
 		- make sure deleted docs are properly skipped
-		- view options: https://docs.couchdb.org/en/stable/api/ddoc/views.html#view-options
-			- local_seq
-
 	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {

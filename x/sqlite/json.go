@@ -85,6 +85,11 @@ type views struct {
 	Reduce string `json:"reduce,omitempty"`
 }
 
+type designDocViewOptions struct {
+	LocalSeq      bool `json:"local_seq,omitempty"`
+	IncludeDesign bool `json:"include_design,omitempty"`
+}
+
 // designDocData represents a design document. See
 // https://docs.couchdb.org/en/stable/ddocs/ddocs.html#creation-and-structure
 type designDocData struct {
@@ -95,8 +100,8 @@ type designDocData struct {
 	ValidateDocUpdates string            `json:"validate_doc_update,omitempty"`
 	// AutoUpdate indicates whether to automatically build indexes defined in
 	// this design document. Default is true.
-	AutoUpdate *bool                  `json:"autoupdate,omitempty"`
-	Options    map[string]interface{} `json:"options,omitempty"`
+	AutoUpdate *bool                `json:"autoupdate,omitempty"`
+	Options    designDocViewOptions `json:"options,omitempty"`
 }
 
 // RevID returns calculated revision ID, possibly setting the MD5sum if it is

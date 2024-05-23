@@ -76,7 +76,9 @@ var schema = []string{
 		func_type TEXT CHECK (func_type IN ('map', 'reduce', 'update', 'filter', 'validate')) NOT NULL,
 		func_name TEXT NOT NULL,
 		func_body TEXT NOT NULL,
+		-- Options
 		auto_update BOOLEAN NOT NULL DEFAULT TRUE,
+		include_design BOOLEAN NOT NULL DEFAULT FALSE,
 		last_seq INTEGER, -- the last map-indexed sequence id, NULL for others
 		FOREIGN KEY (id, rev, rev_id) REFERENCES {{ .Docs }} (id, rev, rev_id) ON DELETE CASCADE,
 		UNIQUE (id, rev, rev_id, func_type, func_name)

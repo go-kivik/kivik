@@ -101,7 +101,7 @@ func (d *db) performQuery(
 	vopts *viewOptions,
 ) (driver.Rows, error) {
 	if vopts.group {
-		return d.performGroupQuery(ctx, ddoc, view, vopts.update, vopts.groupLevel, vopts)
+		return d.performGroupQuery(ctx, ddoc, view, vopts)
 	}
 	for {
 		rev, err := d.updateIndex(ctx, ddoc, view, vopts.update)
@@ -202,7 +202,8 @@ func (d *db) performQuery(
 		}
 
 		if meta.reducible && (vopts.reduce == nil || *vopts.reduce) {
-			return d.reduceRows(results, meta.reduceFuncJS, false, 0, vopts)
+			ri := &reduceRowIter{results: results}
+			return d.reduceRows(ri, meta.reduceFuncJS, vopts)
 		}
 
 		// If the results are up to date, OR, we're in false/lazy update mode,
@@ -216,14 +217,14 @@ func (d *db) performQuery(
 	}
 }
 
-func (d *db) performGroupQuery(ctx context.Context, ddoc, view, update string, groupLevel uint64, vopts *viewOptions) (driver.Rows, error) {
+func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *viewOptions) (driver.Rows, error) {
 	var (
 		results      *sql.Rows
 		reducible    bool
 		reduceFuncJS *string
 	)
 	for {
-		rev, err := d.updateIndex(ctx, ddoc, view, update)
+		rev, err := d.updateIndex(ctx, ddoc, view, vopts.update)
 		if err != nil {
 			return nil, err
 		}
@@ -274,7 +275,7 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view, update string, g
 			)
 		`)
 
-		results, err = d.db.QueryContext(
+		results, err = d.db.QueryContext( //nolint:rowserrcheck // Err checked in iterator
 			ctx, query,
 			"_design/"+ddoc, rev.rev, rev.id, view, kivik.EndKeySuffix, true,
 		)
@@ -291,7 +292,7 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view, update string, g
 			// should never happen
 			return nil, errors.New("no rows returned")
 		}
-		if update != updateModeTrue {
+		if vopts.update != updateModeTrue {
 			break
 		}
 		var upToDate bool
@@ -300,7 +301,7 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view, update string, g
 		}
 		if !reducible {
 			field := "group"
-			if groupLevel > 0 {
+			if vopts.groupLevel > 0 {
 				field = "group_level"
 			}
 			return nil, &internal.Error{Status: http.StatusBadRequest, Message: field + " is invalid for map-only views"}
@@ -310,7 +311,8 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view, update string, g
 		}
 	}
 
-	return d.reduceRows(results, reduceFuncJS, true, groupLevel, vopts)
+	ri := &reduceRowIter{results: results}
+	return d.reduceRows(ri, reduceFuncJS, vopts)
 }
 
 const batchSize = 100

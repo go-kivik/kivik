@@ -94,7 +94,8 @@ func (d *db) queryBuiltinView(
 			NULL AS content_type,
 			NULL AS length,
 			NULL AS digest,
-			NULL AS rev_pos
+			NULL AS rev_pos,
+			NULL AS data
 		FROM {{ .Docs }}
 
 		UNION ALL
@@ -111,7 +112,8 @@ func (d *db) queryBuiltinView(
 			content_type,
 			length,
 			digest,
-			rev_pos
+			rev_pos,
+			data
 		FROM (
 			SELECT
 				view.id                       AS id,
@@ -125,7 +127,8 @@ func (d *db) queryBuiltinView(
 				att.content_type AS content_type,
 				att.length AS length,
 				att.digest AS digest,
-				att.rev_pos AS rev_pos
+				att.rev_pos AS rev_pos,
+				att.data AS data
 			FROM (
 				SELECT
 					id                    AS id,
@@ -182,7 +185,7 @@ func readFirstRow(results *sql.Rows, vopts *viewOptions) (*viewMetadata, error) 
 	var meta viewMetadata
 	if err := results.Scan(
 		&meta.upToDate, &meta.reducible, &meta.reduceFuncJS, &meta.updateSeq, discard{}, discard{},
-		discard{}, discard{}, discard{}, discard{}, discard{}, discard{},
+		discard{}, discard{}, discard{}, discard{}, discard{}, discard{}, discard{},
 	); err != nil {
 		_ = results.Close() //nolint:sqlclosecheck // Aborting
 		return nil, err
@@ -236,7 +239,7 @@ func (r *rows) Next(row *driver.Row) error {
 		if err := r.rows.Scan(
 			&id, &key, &value, &rev, &doc, &conflicts,
 			&attachmentsCount,
-			&filename, &contentType, &length, &digest, &revPos,
+			&filename, &contentType, &length, &digest, &revPos, discard{},
 		); err != nil {
 			return err
 		}

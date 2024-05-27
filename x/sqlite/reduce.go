@@ -50,7 +50,7 @@ func (r *reduceRowIter) Next() (*reduceRow, error) {
 	var row reduceRow
 	if err := r.results.Scan(
 		&row.ID, &row.Key, &row.Value, discard{}, discard{}, discard{},
-		discard{}, discard{}, discard{}, discard{}, discard{}, discard{},
+		discard{}, discard{}, discard{}, discard{}, discard{}, discard{}, discard{},
 	); err != nil {
 		return nil, err
 	}

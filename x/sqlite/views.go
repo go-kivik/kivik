@@ -121,7 +121,6 @@ func (d *db) queryBuiltinView(
 					rev_id                AS rev_id,
 					key                   AS key,
 					IIF($1, doc, NULL)    AS doc,
-					deleted               AS deleted, -- TODO:remove this?
 					ROW_NUMBER() OVER (PARTITION BY id ORDER BY rev DESC, rev_id DESC) AS rank
 				FROM leaves
 			) AS view

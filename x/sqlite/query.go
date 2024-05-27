@@ -446,7 +446,6 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 						rev                   AS rev,
 						rev_id                AS rev_id,
 						IIF($1, doc, NULL)    AS doc,
-						deleted               AS deleted, -- TODO:remove this?
 						ROW_NUMBER() OVER (PARTITION BY id ORDER BY rev DESC, rev_id DESC) AS rank
 					FROM leaves
 				) AS rev

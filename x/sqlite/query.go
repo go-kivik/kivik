@@ -135,7 +135,13 @@ func (d *db) performQuery(
 				reduce.reduce_func,
 				IIF($4, last_seq, "") AS update_seq,
 				NULL,
-				NULL
+				NULL,
+				NULL AS attachment_count,
+				NULL AS filename,
+				NULL AS content_type,
+				NULL AS length,
+				NULL AS digest,
+				NULL AS rev_pos
 			FROM {{ .Design }} AS map
 			JOIN reduce
 			WHERE id = $5
@@ -154,7 +160,13 @@ func (d *db) performQuery(
 					value AS value,
 					NULL  AS rev,
 					NULL  AS doc,
-					NULL  AS conflicts
+					NULL  AS conflicts,
+					NULL AS attachment_count,
+					NULL AS filename,
+					NULL AS content_type,
+					NULL AS length,
+					NULL AS digest,
+					NULL AS rev_pos	
 				FROM {{ .Map }} AS view
 				JOIN reduce
 				WHERE reduce.reducible AND ($3 IS NULL OR $3 == TRUE)
@@ -171,7 +183,13 @@ func (d *db) performQuery(
 					view.value,
 					IIF($1, docs.rev || '-' || docs.rev_id, "") AS rev,
 					IIF($1, docs.doc, NULL) AS doc,
-					IIF($2, GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ','), NULL) AS conflicts
+					IIF($2, GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ','), NULL) AS conflicts,
+					NULL AS attachment_count,
+					NULL AS filename,
+					NULL AS content_type,
+					NULL AS length,
+					NULL AS digest,
+					NULL AS rev_pos	
 				FROM {{ .Map }} AS view
 				JOIN reduce
 				JOIN {{ .Docs }} AS docs ON view.id = docs.id AND view.rev = docs.rev AND view.rev_id = docs.rev_id
@@ -248,7 +266,13 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 				reduce.reduce_func,
 				NULL,
 				NULL,
-				NULL
+				NULL,
+				NULL AS attachment_count,
+				NULL AS filename,
+				NULL AS content_type,
+				NULL AS length,
+				NULL AS digest,
+				NULL AS rev_pos
 			FROM {{ .Design }} AS map
 			JOIN reduce
 			WHERE id = $1
@@ -267,7 +291,13 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 					value AS value,
 					NULL  AS rev,
 					NULL  AS doc,
-					NULL  AS conflicts
+					NULL  AS conflicts,
+					NULL AS attachment_count,
+					NULL AS filename,
+					NULL AS content_type,
+					NULL AS length,
+					NULL AS digest,
+					NULL AS rev_pos
 				FROM {{ .Map }}
 				JOIN reduce
 				WHERE reduce.reducible AND ($6 IS NULL OR $6 == TRUE)
@@ -296,7 +326,10 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 			break
 		}
 		var upToDate bool
-		if err := results.Scan(&upToDate, &reducible, &reduceFuncJS, discard{}, discard{}, discard{}); err != nil {
+		if err := results.Scan(
+			&upToDate, &reducible, &reduceFuncJS, discard{}, discard{}, discard{},
+			discard{}, discard{}, discard{}, discard{}, discard{}, discard{},
+		); err != nil {
 			return nil, err
 		}
 		if !reducible {

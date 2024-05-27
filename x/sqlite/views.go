@@ -88,7 +88,13 @@ func (d *db) queryBuiltinView(
 			NULL                  AS reduce_func,
 			IIF($3, MAX(seq), "") AS update_seq,
 			NULL,
-			NULL
+			NULL,
+			NULL AS attachment_count,
+			NULL AS filename,
+			NULL AS content_type,
+			NULL AS length,
+			NULL AS digest,
+			NULL AS rev_pos
 		FROM {{ .Docs }}
 
 		UNION ALL
@@ -101,7 +107,13 @@ func (d *db) queryBuiltinView(
 				'{"value":{"rev":"' || view.rev || '-' || view.rev_id || '"}}' AS value,
 				view.rev || '-' || view.rev_id AS rev,
 				view.doc                      AS doc,
-				IIF($2, GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ','), NULL) AS conflicts
+				IIF($2, GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ','), NULL) AS conflicts,
+				NULL AS attachment_count,
+				NULL AS filename,
+				NULL AS content_type,
+				NULL AS length,
+				NULL AS digest,
+				NULL AS rev_pos
 			FROM (
 				SELECT
 					id                    AS id,
@@ -155,7 +167,10 @@ func readFirstRow(results *sql.Rows, vopts *viewOptions) (*viewMetadata, error) 
 		return nil, errors.New("no rows returned")
 	}
 	var meta viewMetadata
-	if err := results.Scan(&meta.upToDate, &meta.reducible, &meta.reduceFuncJS, &meta.updateSeq, discard{}, discard{}); err != nil {
+	if err := results.Scan(
+		&meta.upToDate, &meta.reducible, &meta.reduceFuncJS, &meta.updateSeq, discard{}, discard{},
+		discard{}, discard{}, discard{}, discard{}, discard{}, discard{},
+	); err != nil {
 		_ = results.Close() //nolint:sqlclosecheck // Aborting
 		return nil, err
 	}
@@ -196,7 +211,10 @@ func (r *rows) Next(row *driver.Row) error {
 		conflicts *string
 		rev       string
 	)
-	if err := r.rows.Scan(&id, &key, &value, &rev, &doc, &conflicts); err != nil {
+	if err := r.rows.Scan(
+		&id, &key, &value, &rev, &doc, &conflicts,
+		discard{}, discard{}, discard{}, discard{}, discard{}, discard{},
+	); err != nil {
 		return err
 	}
 	if id != nil {

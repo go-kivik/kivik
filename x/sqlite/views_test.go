@@ -660,11 +660,76 @@ func TestDBAllDocs(t *testing.T) {
 		wantErr:    "group_level is invalid for map-only views",
 		wantStatus: http.StatusBadRequest,
 	})
+	tests.Add("fetch attachments", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev1 := d.tPut("a", map[string]interface{}{
+			"_attachments": newAttachments().add("foo.txt", "This is a base64 encoding"),
+		})
+
+		return test{
+			db: d,
+			options: kivik.Params(map[string]interface{}{
+				"include_docs": true,
+				"attachments":  true,
+			}),
+			want: []rowResult{
+				{
+					ID:    "a",
+					Key:   `"a"`,
+					Value: `{"value":{"rev":"` + rev1 + `"}}`,
+					Doc:   `{"_id":"a","_rev":"` + rev1 + `","_attachments":{"foo.txt":{"content_type":"text/plain","digest":"md5-TmfHxaRgUrE9l3tkAn4s0Q==","length":25,"revpos":1,"data":"VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw=="}}}`,
+				},
+			},
+		}
+	})
+	tests.Add("document has attachment, but attachments=false", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev1 := d.tPut("a", map[string]interface{}{
+			"_attachments": newAttachments().add("foo.txt", "This is a base64 encoding"),
+		})
+
+		return test{
+			db: d,
+			options: kivik.Params(map[string]interface{}{
+				"include_docs": true,
+				"attachments":  false,
+			}),
+			want: []rowResult{
+				{
+					ID:    "a",
+					Key:   `"a"`,
+					Value: `{"value":{"rev":"` + rev1 + `"}}`,
+					Doc:   `{"_id":"a","_rev":"` + rev1 + `","_attachments":{"foo.txt":{"content_type":"text/plain","digest":"md5-TmfHxaRgUrE9l3tkAn4s0Q==","length":25,"revpos":1,"stub":true}}}`,
+				},
+			},
+		}
+	})
+	tests.Add("doc with two attachments", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev1 := d.tPut("a", map[string]interface{}{
+			"_attachments": newAttachments().
+				add("foo.txt", "This is a base64 encoding").
+				add("bar.txt", "This is also base64 encoded"),
+		})
+
+		return test{
+			db: d,
+			options: kivik.Params(map[string]interface{}{
+				"include_docs": true,
+			}),
+			want: []rowResult{
+				{
+					ID:    "a",
+					Key:   `"a"`,
+					Value: `{"value":{"rev":"` + rev1 + `"}}`,
+					Doc:   `{"_id":"a","_rev":"` + rev1 + `","_attachments":{"bar.txt":{"content_type":"text/plain","digest":"md5-uLHEKNY+WmubFxerYl5gvA==","length":27,"revpos":1,"stub":true},"foo.txt":{"content_type":"text/plain","digest":"md5-TmfHxaRgUrE9l3tkAn4s0Q==","length":25,"revpos":1,"stub":true}}}`,
+				},
+			},
+		}
+	})
 	/*
 		TODO:
 		- Options:
-			- include_docs
-			- attachments
 			- att_encoding_infio
 		- AllDocs() called for DB that doesn't exit
 		- Offset() called on rows

@@ -16,6 +16,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -77,7 +78,7 @@ func (d *db) queryBuiltinView(
 	ctx context.Context,
 	vopts *viewOptions,
 ) (driver.Rows, error) {
-	args := []interface{}{vopts.includeDocs, vopts.conflicts, vopts.updateSeq}
+	args := []interface{}{vopts.includeDocs, vopts.conflicts, vopts.updateSeq, vopts.attachments}
 
 	where := append([]string{""}, vopts.buildWhere(&args)...)
 
@@ -88,37 +89,76 @@ func (d *db) queryBuiltinView(
 			NULL                  AS reduce_func,
 			IIF($3, MAX(seq), "") AS update_seq,
 			NULL,
-			NULL
+			NULL,
+			NULL AS attachment_count,
+			NULL AS filename,
+			NULL AS content_type,
+			NULL AS length,
+			NULL AS digest,
+			NULL AS rev_pos,
+			NULL AS data
 		FROM {{ .Docs }}
 
 		UNION ALL
 
-		SELECT *
+		SELECT
+			CASE WHEN row_number = 1 THEN id        END AS id,
+			CASE WHEN row_number = 1 THEN key       END AS key,
+			CASE WHEN row_number = 1 THEN value     END AS value,
+			CASE WHEN row_number = 1 THEN rev       END AS rev,
+			CASE WHEN row_number = 1 THEN doc       END AS doc,
+			CASE WHEN row_number = 1 THEN conflicts END AS conflicts,
+			COALESCE(attachment_count, 0) AS attachment_count,
+			filename,
+			content_type,
+			length,
+			digest,
+			rev_pos,
+			data
 		FROM (
 			SELECT
-				view.id                       AS id,
-				view.key                      AS key,
+				view.id,
+				view.key,
 				'{"value":{"rev":"' || view.rev || '-' || view.rev_id || '"}}' AS value,
 				view.rev || '-' || view.rev_id AS rev,
-				view.doc                      AS doc,
-				IIF($2, GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ','), NULL) AS conflicts
+				view.doc,
+				view.conflicts,
+				SUM(CASE WHEN bridge.pk IS NOT NULL THEN 1 ELSE 0 END) OVER (PARTITION BY view.id, view.rev, view.rev_id) AS attachment_count,
+				ROW_NUMBER() OVER (PARTITION BY view.id, view.rev, view.rev_id) AS row_number,
+				att.filename AS filename,
+				att.content_type AS content_type,
+				att.length AS length,
+				att.digest AS digest,
+				att.rev_pos AS rev_pos,
+				IIF($4, att.data, NULL) AS data
 			FROM (
 				SELECT
-					id                    AS id,
-					rev                   AS rev,
-					rev_id                AS rev_id,
-					key                   AS key,
-					IIF($1, doc, NULL)    AS doc,
-					deleted               AS deleted, -- TODO:remove this?
-					ROW_NUMBER() OVER (PARTITION BY id ORDER BY rev DESC, rev_id DESC) AS rank
-				FROM leaves
+					view.id     AS id,
+					view.key    AS key,
+					view.rev    AS rev,
+					view.rev_id AS rev_id,
+					view.doc    AS doc,
+					IIF($2, GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ','), NULL) AS conflicts
+				FROM (
+					SELECT
+						id                    AS id,
+						rev                   AS rev,
+						rev_id                AS rev_id,
+						key                   AS key,
+						IIF($1, doc, NULL)    AS doc,
+						ROW_NUMBER() OVER (PARTITION BY id ORDER BY rev DESC, rev_id DESC) AS rank
+					FROM leaves
+				) AS view
+				LEFT JOIN leaves AS conflicts ON conflicts.id = view.id AND NOT (view.rev = conflicts.rev AND view.rev_id = conflicts.rev_id)
+				WHERE view.rank = 1
+					%[2]s -- WHERE
+				GROUP BY view.id, view.rev, view.rev_id
+				%[1]s -- ORDER BY
+				LIMIT %[3]d OFFSET %[4]d
 			) AS view
-			LEFT JOIN leaves AS conflicts ON conflicts.id = view.id AND NOT (view.rev = conflicts.rev AND view.rev_id = conflicts.rev_id)
-			WHERE view.rank = 1
-				%[2]s
-			GROUP BY view.id, view.rev, view.rev_id
-			%[1]s
-			LIMIT %[3]d OFFSET %[4]d
+			LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON view.id = bridge.id AND view.rev = bridge.rev AND view.rev_id = bridge.rev_id
+			LEFT JOIN {{ .Attachments }} AS att ON bridge.pk = att.pk
+			%[1]s -- ORDER BY
 		)
 	`), vopts.buildOrderBy(), strings.Join(where, " AND "), vopts.limit, vopts.skip)
 	results, err := d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
@@ -155,7 +195,10 @@ func readFirstRow(results *sql.Rows, vopts *viewOptions) (*viewMetadata, error) 
 		return nil, errors.New("no rows returned")
 	}
 	var meta viewMetadata
-	if err := results.Scan(&meta.upToDate, &meta.reducible, &meta.reduceFuncJS, &meta.updateSeq, discard{}, discard{}); err != nil {
+	if err := results.Scan(
+		&meta.upToDate, &meta.reducible, &meta.reduceFuncJS, &meta.updateSeq, discard{}, discard{},
+		discard{}, discard{}, discard{}, discard{}, discard{}, discard{}, discard{},
+	); err != nil {
 		_ = results.Close() //nolint:sqlclosecheck // Aborting
 		return nil, err
 	}
@@ -183,44 +226,84 @@ type rows struct {
 var _ driver.Rows = (*rows)(nil)
 
 func (r *rows) Next(row *driver.Row) error {
-	if !r.rows.Next() {
-		if err := r.rows.Err(); err != nil {
+	var (
+		attachmentsCount int
+		full             *fullDoc
+	)
+	for {
+		if !r.rows.Next() {
+			if err := r.rows.Err(); err != nil {
+				return err
+			}
+			return io.EOF
+		}
+		var (
+			key, doc                                     []byte
+			value, data                                  *[]byte
+			id, conflicts, rowRev, filename, contentType *string
+			length                                       *int64
+			revPos                                       *int
+			digest                                       *md5sum
+		)
+		if err := r.rows.Scan(
+			&id, &key, &value, &rowRev, &doc, &conflicts,
+			&attachmentsCount,
+			&filename, &contentType, &length, &digest, &revPos, &data,
+		); err != nil {
 			return err
 		}
-		return io.EOF
-	}
-	var (
-		id        *string
-		key, doc  []byte
-		value     *[]byte
-		conflicts *string
-		rev       string
-	)
-	if err := r.rows.Scan(&id, &key, &value, &rev, &doc, &conflicts); err != nil {
-		return err
-	}
-	if id != nil {
-		row.ID = *id
-	}
-	row.Key = key
-	if len(key) == 0 {
-		row.Key = []byte("null")
-	}
-	if value == nil {
-		row.Value = strings.NewReader("null")
-	} else {
-		row.Value = bytes.NewReader(*value)
-	}
-	if doc != nil {
-		toMerge := fullDoc{
-			ID:  row.ID,
-			Rev: rev,
-			Doc: doc,
+		if rowRev != nil {
+			// If rowRev is populated, it means we're on the first row for the
+			// document. Otherwise, we're on an attachment-only row.
+			if id != nil {
+				row.ID = *id
+			}
+			row.Key = key
+			if len(key) == 0 {
+				row.Key = []byte("null")
+			}
+			if value == nil {
+				row.Value = strings.NewReader("null")
+			} else {
+				row.Value = bytes.NewReader(*value)
+			}
+			if doc != nil {
+				full = &fullDoc{
+					ID:  row.ID,
+					Rev: *rowRev,
+					Doc: doc,
+				}
+				if conflicts != nil {
+					full.Conflicts = strings.Split(*conflicts, ",")
+				}
+			}
 		}
-		if conflicts != nil {
-			toMerge.Conflicts = strings.Split(*conflicts, ",")
+		if filename != nil {
+			if full.Attachments == nil {
+				full.Attachments = make(map[string]*attachment)
+			}
+			var jsonData json.RawMessage
+			if data != nil {
+				var err error
+				jsonData, err = json.Marshal(*data)
+				if err != nil {
+					return err
+				}
+			}
+			full.Attachments[*filename] = &attachment{
+				ContentType: *contentType,
+				Length:      *length,
+				Digest:      *digest,
+				RevPos:      *revPos,
+				Data:        jsonData,
+			}
 		}
-		row.Doc = toMerge.toReader()
+		if attachmentsCount == 0 || attachmentsCount == len(full.Attachments) {
+			break
+		}
+	}
+	if full != nil {
+		row.Doc = full.toReader()
 	}
 	return nil
 }

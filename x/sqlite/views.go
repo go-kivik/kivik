@@ -99,7 +99,19 @@ func (d *db) queryBuiltinView(
 
 		UNION ALL
 
-		SELECT *
+		SELECT
+			id,
+			key,
+			value,
+			rev,
+			doc,
+			conflicts,
+			attachment_count,
+			filename,
+			content_type,
+			length,
+			digest,
+			rev_pos
 		FROM (
 			SELECT
 				view.id                       AS id,

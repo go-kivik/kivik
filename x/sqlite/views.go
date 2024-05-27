@@ -16,6 +16,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -235,11 +236,12 @@ func (r *rows) Next(row *driver.Row) error {
 			length                *int64
 			revPos                *int
 			digest                *md5sum
+			data                  *[]byte
 		)
 		if err := r.rows.Scan(
 			&id, &key, &value, &rev, &doc, &conflicts,
 			&attachmentsCount,
-			&filename, &contentType, &length, &digest, &revPos, discard{},
+			&filename, &contentType, &length, &digest, &revPos, &data,
 		); err != nil {
 			return err
 		}
@@ -264,9 +266,33 @@ func (r *rows) Next(row *driver.Row) error {
 			if conflicts != nil {
 				full.Conflicts = strings.Split(*conflicts, ",")
 			}
-			row.Doc = full.toReader()
 		}
-		break
+		if filename != nil {
+			if full.Attachments == nil {
+				full.Attachments = make(map[string]*attachment)
+			}
+			var jsonData json.RawMessage
+			if data != nil {
+				var err error
+				jsonData, err = json.Marshal(*data)
+				if err != nil {
+					return err
+				}
+			}
+			full.Attachments[*filename] = &attachment{
+				ContentType: *contentType,
+				Length:      *length,
+				Digest:      *digest,
+				RevPos:      *revPos,
+				Data:        jsonData,
+			}
+		}
+		if attachmentsCount == 0 || attachmentsCount == len(full.Attachments) {
+			break
+		}
+	}
+	if full != nil {
+		row.Doc = full.toReader()
 	}
 	return nil
 }

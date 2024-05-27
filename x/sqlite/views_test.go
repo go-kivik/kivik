@@ -677,7 +677,7 @@ func TestDBAllDocs(t *testing.T) {
 					ID:    "a",
 					Key:   `"a"`,
 					Value: `{"value":{"rev":"` + rev1 + `"}}`,
-					Doc:   `{"_id":"a","_rev":"` + rev1 + `","_attachments":{"foo.txt":{"content_type":"text/plain"}}}`,
+					Doc:   `{"_id":"a","_rev":"` + rev1 + `","_attachments":{"foo.txt":{"content_type":"text/plain","digest":"md5-TmfHxaRgUrE9l3tkAn4s0Q==","length":25,"revpos":1,"data":"VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw=="}}}`,
 				},
 			},
 		}

@@ -78,7 +78,7 @@ func (d *db) queryBuiltinView(
 	ctx context.Context,
 	vopts *viewOptions,
 ) (driver.Rows, error) {
-	args := []interface{}{vopts.includeDocs, vopts.conflicts, vopts.updateSeq}
+	args := []interface{}{vopts.includeDocs, vopts.conflicts, vopts.updateSeq, vopts.attachments}
 
 	where := append([]string{""}, vopts.buildWhere(&args)...)
 
@@ -129,7 +129,7 @@ func (d *db) queryBuiltinView(
 				att.length AS length,
 				att.digest AS digest,
 				att.rev_pos AS rev_pos,
-				att.data AS data
+				IIF($4, att.data, NULL) AS data
 			FROM (
 				SELECT
 					id                    AS id,

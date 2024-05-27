@@ -102,12 +102,12 @@ func (d *db) queryBuiltinView(
 		UNION ALL
 
 		SELECT
-			id,
-			key,
-			value,
-			rev,
-			doc,
-			conflicts,
+			CASE WHEN row_number = 1 THEN id        END AS id,
+			CASE WHEN row_number = 1 THEN key       END AS key,
+			CASE WHEN row_number = 1 THEN value     END AS value,
+			CASE WHEN row_number = 1 THEN rev       END AS rev,
+			CASE WHEN row_number = 1 THEN doc       END AS doc,
+			CASE WHEN row_number = 1 THEN conflicts END AS conflicts,
 			COALESCE(attachment_count, 0) AS attachment_count,
 			filename,
 			content_type,
@@ -124,6 +124,7 @@ func (d *db) queryBuiltinView(
 				view.doc,
 				view.conflicts,
 				SUM(CASE WHEN bridge.pk IS NOT NULL THEN 1 ELSE 0 END) OVER (PARTITION BY view.id, view.rev, view.rev_id) AS attachment_count,
+				ROW_NUMBER() OVER (PARTITION BY view.id, view.rev, view.rev_id) AS row_number,
 				att.filename AS filename,
 				att.content_type AS content_type,
 				att.length AS length,
@@ -237,44 +238,44 @@ func (r *rows) Next(row *driver.Row) error {
 			return io.EOF
 		}
 		var (
-			id                    *string
-			key, doc              []byte
-			value                 *[]byte
-			conflicts             *string
-			rev                   string
-			filename, contentType *string
-			length                *int64
-			revPos                *int
-			digest                *md5sum
-			data                  *[]byte
+			key, doc                                     []byte
+			value, data                                  *[]byte
+			id, conflicts, rowRev, filename, contentType *string
+			length                                       *int64
+			revPos                                       *int
+			digest                                       *md5sum
 		)
 		if err := r.rows.Scan(
-			&id, &key, &value, &rev, &doc, &conflicts,
+			&id, &key, &value, &rowRev, &doc, &conflicts,
 			&attachmentsCount,
 			&filename, &contentType, &length, &digest, &revPos, &data,
 		); err != nil {
 			return err
 		}
-		if id != nil {
-			row.ID = *id
-		}
-		row.Key = key
-		if len(key) == 0 {
-			row.Key = []byte("null")
-		}
-		if value == nil {
-			row.Value = strings.NewReader("null")
-		} else {
-			row.Value = bytes.NewReader(*value)
-		}
-		if doc != nil {
-			full = &fullDoc{
-				ID:  row.ID,
-				Rev: rev,
-				Doc: doc,
+		if rowRev != nil {
+			// If rowRev is populated, it means we're on the first row for the
+			// document. Otherwise, we're on an attachment-only row.
+			if id != nil {
+				row.ID = *id
 			}
-			if conflicts != nil {
-				full.Conflicts = strings.Split(*conflicts, ",")
+			row.Key = key
+			if len(key) == 0 {
+				row.Key = []byte("null")
+			}
+			if value == nil {
+				row.Value = strings.NewReader("null")
+			} else {
+				row.Value = bytes.NewReader(*value)
+			}
+			if doc != nil {
+				full = &fullDoc{
+					ID:  row.ID,
+					Rev: *rowRev,
+					Doc: doc,
+				}
+				if conflicts != nil {
+					full.Conflicts = strings.Split(*conflicts, ",")
+				}
 			}
 		}
 		if filename != nil {

@@ -722,7 +722,7 @@ func TestDBAllDocs(t *testing.T) {
 					ID:    "a",
 					Key:   `"a"`,
 					Value: `{"value":{"rev":"` + rev1 + `"}}`,
-					Doc:   `{"_id":"a","_rev":"` + rev1 + `","_attachments":{"bar.txt":{"content_type":"text/plain","digest":"md5-uLHEKNY+WmubFxerYl5gvA==","length":27,"revpos":1,"stub":true},"foo.txt":{"content_type":"text/plain","digest":"md5-TmfHxaRgUrE9l3tkAn4s0Q==","length":25,"revpos":1,"stub":true}}}}`,
+					Doc:   `{"_id":"a","_rev":"` + rev1 + `","_attachments":{"bar.txt":{"content_type":"text/plain","digest":"md5-uLHEKNY+WmubFxerYl5gvA==","length":27,"revpos":1,"stub":true},"foo.txt":{"content_type":"text/plain","digest":"md5-TmfHxaRgUrE9l3tkAn4s0Q==","length":25,"revpos":1,"stub":true}}}`,
 				},
 			},
 		}
@@ -730,9 +730,6 @@ func TestDBAllDocs(t *testing.T) {
 	/*
 		TODO:
 		- Options:
-			- attachments
-				- Multiple attachments
-				- NULL doc data for 2nd+ attachment
 			- att_encoding_infio
 		- AllDocs() called for DB that doesn't exit
 		- Offset() called on rows

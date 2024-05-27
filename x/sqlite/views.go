@@ -106,7 +106,7 @@ func (d *db) queryBuiltinView(
 			rev,
 			doc,
 			conflicts,
-			attachment_count,
+			COALESCE(attachment_count, 0) AS attachment_count,
 			filename,
 			content_type,
 			length,
@@ -211,47 +211,55 @@ type rows struct {
 var _ driver.Rows = (*rows)(nil)
 
 func (r *rows) Next(row *driver.Row) error {
-	if !r.rows.Next() {
-		if err := r.rows.Err(); err != nil {
+	var (
+		attachmentsCount int
+		toMerge          fullDoc
+	)
+	for {
+		if !r.rows.Next() {
+			if err := r.rows.Err(); err != nil {
+				return err
+			}
+			return io.EOF
+		}
+		var (
+			id        *string
+			key, doc  []byte
+			value     *[]byte
+			conflicts *string
+			rev       string
+		)
+		if err := r.rows.Scan(
+			&id, &key, &value, &rev, &doc, &conflicts,
+			&attachmentsCount,
+			discard{}, discard{}, discard{}, discard{}, discard{},
+		); err != nil {
 			return err
 		}
-		return io.EOF
-	}
-	var (
-		id        *string
-		key, doc  []byte
-		value     *[]byte
-		conflicts *string
-		rev       string
-	)
-	if err := r.rows.Scan(
-		&id, &key, &value, &rev, &doc, &conflicts,
-		discard{}, discard{}, discard{}, discard{}, discard{}, discard{},
-	); err != nil {
-		return err
-	}
-	if id != nil {
-		row.ID = *id
-	}
-	row.Key = key
-	if len(key) == 0 {
-		row.Key = []byte("null")
-	}
-	if value == nil {
-		row.Value = strings.NewReader("null")
-	} else {
-		row.Value = bytes.NewReader(*value)
-	}
-	if doc != nil {
-		toMerge := fullDoc{
-			ID:  row.ID,
-			Rev: rev,
-			Doc: doc,
+		if id != nil {
+			row.ID = *id
 		}
-		if conflicts != nil {
-			toMerge.Conflicts = strings.Split(*conflicts, ",")
+		row.Key = key
+		if len(key) == 0 {
+			row.Key = []byte("null")
 		}
-		row.Doc = toMerge.toReader()
+		if value == nil {
+			row.Value = strings.NewReader("null")
+		} else {
+			row.Value = bytes.NewReader(*value)
+		}
+		if doc != nil {
+			toMerge = fullDoc{
+				ID:  row.ID,
+				Rev: rev,
+				Doc: doc,
+			}
+			if conflicts != nil {
+				toMerge.Conflicts = strings.Split(*conflicts, ",")
+			}
+			row.Doc = toMerge.toReader()
+		}
+		break
 	}
 	return nil
 }

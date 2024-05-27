@@ -120,12 +120,12 @@ func (d *db) queryBuiltinView(
 				view.rev || '-' || view.rev_id AS rev,
 				view.doc                      AS doc,
 				IIF($2, GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ','), NULL) AS conflicts,
-				NULL AS attachment_count,
-				NULL AS filename,
-				NULL AS content_type,
-				NULL AS length,
-				NULL AS digest,
-				NULL AS rev_pos
+				SUM(CASE WHEN bridge.pk IS NOT NULL THEN 1 ELSE 0 END) OVER (PARTITION BY view.id, view.rev, view.rev_id) AS attachment_count,
+				att.filename AS filename,
+				att.content_type AS content_type,
+				att.length AS length,
+				att.digest AS digest,
+				att.rev_pos AS rev_pos
 			FROM (
 				SELECT
 					id                    AS id,
@@ -137,6 +137,8 @@ func (d *db) queryBuiltinView(
 				FROM leaves
 			) AS view
 			LEFT JOIN leaves AS conflicts ON conflicts.id = view.id AND NOT (view.rev = conflicts.rev AND view.rev_id = conflicts.rev_id)
+			LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON view.id = bridge.id AND view.rev = bridge.rev AND view.rev_id = bridge.rev_id
+			LEFT JOIN {{ .Attachments }} AS att ON bridge.pk = att.pk
 			WHERE view.rank = 1
 				%[2]s
 			GROUP BY view.id, view.rev, view.rev_id

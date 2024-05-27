@@ -223,16 +223,20 @@ func (r *rows) Next(row *driver.Row) error {
 			return io.EOF
 		}
 		var (
-			id        *string
-			key, doc  []byte
-			value     *[]byte
-			conflicts *string
-			rev       string
+			id                    *string
+			key, doc              []byte
+			value                 *[]byte
+			conflicts             *string
+			rev                   string
+			filename, contentType *string
+			length                *int64
+			revPos                *int
+			digest                *md5sum
 		)
 		if err := r.rows.Scan(
 			&id, &key, &value, &rev, &doc, &conflicts,
 			&attachmentsCount,
-			discard{}, discard{}, discard{}, discard{}, discard{},
+			&filename, &contentType, &length, &digest, &revPos,
 		); err != nil {
 			return err
 		}

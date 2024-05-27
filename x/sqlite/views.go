@@ -119,32 +119,25 @@ func (d *db) queryBuiltinView(
 			SELECT
 				view.id,
 				view.key,
-				view.value,
-				view.rev,
+				'{"value":{"rev":"' || view.rev || '-' || view.rev_id || '"}}' AS value,
+				view.rev || '-' || view.rev_id AS rev,
 				view.doc,
 				view.conflicts,
-				view.attachment_count,
-				view.filename,
-				view.content_type,
-				view.length,
-				view.digest,
-				view.rev_pos,
-				view.data
+				SUM(CASE WHEN bridge.pk IS NOT NULL THEN 1 ELSE 0 END) OVER (PARTITION BY view.id, view.rev, view.rev_id) AS attachment_count,
+				att.filename AS filename,
+				att.content_type AS content_type,
+				att.length AS length,
+				att.digest AS digest,
+				att.rev_pos AS rev_pos,
+				IIF($4, att.data, NULL) AS data
 			FROM (
 				SELECT
-					view.id                       AS id,
-					view.key                      AS key,
-					'{"value":{"rev":"' || view.rev || '-' || view.rev_id || '"}}' AS value,
-					view.rev || '-' || view.rev_id AS rev,
-					view.doc                      AS doc,
-					IIF($2, GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ','), NULL) AS conflicts,
-					SUM(CASE WHEN bridge.pk IS NOT NULL THEN 1 ELSE 0 END) OVER (PARTITION BY view.id, view.rev, view.rev_id) AS attachment_count,
-					att.filename AS filename,
-					att.content_type AS content_type,
-					att.length AS length,
-					att.digest AS digest,
-					att.rev_pos AS rev_pos,
-					IIF($4, att.data, NULL) AS data
+					view.id     AS id,
+					view.key    AS key,
+					view.rev    AS rev,
+					view.rev_id AS rev_id,
+					view.doc    AS doc,
+					IIF($2, GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ','), NULL) AS conflicts
 				FROM (
 					SELECT
 						id                    AS id,
@@ -156,14 +149,14 @@ func (d *db) queryBuiltinView(
 					FROM leaves
 				) AS view
 				LEFT JOIN leaves AS conflicts ON conflicts.id = view.id AND NOT (view.rev = conflicts.rev AND view.rev_id = conflicts.rev_id)
-				LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON view.id = bridge.id AND view.rev = bridge.rev AND view.rev_id = bridge.rev_id
-				LEFT JOIN {{ .Attachments }} AS att ON bridge.pk = att.pk
 				WHERE view.rank = 1
 					%[2]s -- WHERE
 				GROUP BY view.id, view.rev, view.rev_id
 				%[1]s -- ORDER BY
 				LIMIT %[3]d OFFSET %[4]d
 			) AS view
+			LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON view.id = bridge.id AND view.rev = bridge.rev AND view.rev_id = bridge.rev_id
+			LEFT JOIN {{ .Attachments }} AS att ON bridge.pk = att.pk
 			%[1]s -- ORDER BY
 		)
 	`), vopts.buildOrderBy(), strings.Join(where, " AND "), vopts.limit, vopts.skip)

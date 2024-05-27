@@ -216,7 +216,7 @@ var _ driver.Rows = (*rows)(nil)
 func (r *rows) Next(row *driver.Row) error {
 	var (
 		attachmentsCount int
-		toMerge          fullDoc
+		full             *fullDoc
 	)
 	for {
 		if !r.rows.Next() {
@@ -256,15 +256,15 @@ func (r *rows) Next(row *driver.Row) error {
 			row.Value = bytes.NewReader(*value)
 		}
 		if doc != nil {
-			toMerge = fullDoc{
+			full = &fullDoc{
 				ID:  row.ID,
 				Rev: rev,
 				Doc: doc,
 			}
 			if conflicts != nil {
-				toMerge.Conflicts = strings.Split(*conflicts, ",")
+				full.Conflicts = strings.Split(*conflicts, ",")
 			}
-			row.Doc = toMerge.toReader()
+			row.Doc = full.toReader()
 		}
 		break
 	}

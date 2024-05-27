@@ -660,10 +660,31 @@ func TestDBAllDocs(t *testing.T) {
 		wantErr:    "group_level is invalid for map-only views",
 		wantStatus: http.StatusBadRequest,
 	})
+	tests.Add("fetch attachments", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev1 := d.tPut("a", map[string]interface{}{
+			"_attachments": newAttachments().add("foo.txt", "This is a base64 encoding"),
+		})
+
+		return test{
+			db: d,
+			options: kivik.Params(map[string]interface{}{
+				"include_docs": true,
+				"attachments":  true,
+			}),
+			want: []rowResult{
+				{
+					ID:    "a",
+					Key:   `"a"`,
+					Value: `{"value":{"rev":"` + rev1 + `"}}`,
+					Doc:   `{"_id":"a","_rev":"` + rev1 + `","_attachments":{"foo.txt":{"content_type":"text/plain"}}}`,
+				},
+			},
+		}
+	})
 	/*
 		TODO:
 		- Options:
-			- include_docs
 			- attachments
 			- att_encoding_infio
 		- AllDocs() called for DB that doesn't exit

@@ -200,7 +200,7 @@ func (d *db) performQuery(
 					view.doc,
 					view.conflicts,
 					0 AS attachment_count,
-					1 AS row_number,
+					ROW_NUMBER() OVER (PARTITION BY view.id, view.rev, view.rev_id, view.pk) AS row_number,
 					NULL AS filename,
 					NULL AS content_type,
 					NULL AS length,
@@ -209,6 +209,7 @@ func (d *db) performQuery(
 					NULL AS data
 				FROM (
 					SELECT
+						view.pk,
 						view.id,
 						view.key,
 						view.value,

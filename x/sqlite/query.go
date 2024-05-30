@@ -184,13 +184,13 @@ func (d *db) performQuery(
 				rev,
 				doc,
 				conflicts,
-				attachment_count,
-				filename,
-				content_type,
-				length,
-				digest,
-				rev_pos,
-				data
+				0    AS attachment_count,
+				NULL AS filename,
+				NULL AS content_type,
+				NULL AS length,
+				NULL AS digest,
+				NULL AS rev_pos,
+				NULL AS data
 			FROM (
 				SELECT
 					view.id,
@@ -198,14 +198,7 @@ func (d *db) performQuery(
 					view.value,
 					IIF($1, docs.rev || '-' || docs.rev_id, "") AS rev,
 					IIF($1, docs.doc, NULL) AS doc,
-					IIF($2, GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ','), NULL) AS conflicts,
-					0    AS attachment_count,
-					NULL AS filename,
-					NULL AS content_type,
-					NULL AS length,
-					NULL AS digest,
-					NULL AS rev_pos,
-					NULL AS data
+					IIF($2, GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ','), NULL) AS conflicts
 				FROM {{ .Map }} AS view
 				JOIN reduce
 				JOIN {{ .Docs }} AS docs ON view.id = docs.id AND view.rev = docs.rev AND view.rev_id = docs.rev_id

@@ -111,7 +111,7 @@ func (d *db) performQuery(
 
 		args := []interface{}{
 			vopts.includeDocs, vopts.conflicts, vopts.reduce, vopts.updateSeq,
-			"_design/" + ddoc, rev.rev, rev.id, view,
+			"_design/" + ddoc, rev.rev, rev.id, view, vopts.attachments,
 		}
 
 		where := append([]string{""}, vopts.buildWhere(&args)...)
@@ -199,14 +199,14 @@ func (d *db) performQuery(
 					IIF($1, view.rev || '-' || view.rev_id, "") AS rev,
 					view.doc,
 					view.conflicts,
-					0 AS attachment_count,
+					SUM(CASE WHEN bridge.pk IS NOT NULL THEN 1 ELSE 0 END) OVER (PARTITION BY view.id, view.rev, view.rev_id) AS attachment_count,
 					ROW_NUMBER() OVER (PARTITION BY view.id, view.rev, view.rev_id, view.pk) AS row_number,
-					NULL AS filename,
-					NULL AS content_type,
-					NULL AS length,
-					NULL AS digest,
-					NULL AS rev_pos,
-					NULL AS data
+					att.filename AS filename,
+					att.content_type AS content_type,
+					att.length AS length,
+					att.digest AS digest,
+					att.rev_pos AS rev_pos,
+					IIF($9, att.data, NULL) AS data
 				FROM (
 					SELECT
 						view.pk,
@@ -227,6 +227,8 @@ func (d *db) performQuery(
 					%[1]s -- ORDER BY
 					LIMIT %[3]d OFFSET %[4]d
 				) AS view
+				LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON view.id = bridge.id AND view.rev = bridge.rev AND view.rev_id = bridge.rev_id AND $1
+				LEFT JOIN {{ .Attachments }} AS att ON bridge.pk = att.pk
 				%[1]s -- ORDER BY
 			)
 		`), vopts.buildOrderBy(), strings.Join(where, " AND "), vopts.limit, vopts.skip)

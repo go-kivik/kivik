@@ -1731,7 +1731,7 @@ func TestDBQuery(t *testing.T) {
 			ddoc: "_design/foo",
 			view: "_view/bar",
 			options: kivik.Params(map[string]interface{}{
-				"attachments":  true,
+				"attachments":  false,
 				"include_docs": true,
 			}),
 			want: []rowResult{
@@ -1739,7 +1739,7 @@ func TestDBQuery(t *testing.T) {
 					ID:    "a",
 					Key:   `"a"`,
 					Value: `"a"`,
-					Doc:   `{"_id":"a","_rev":"` + rev + `","key":"a","_attachments":{"foo.txt":{"content_type":"text/plain","digest":"xxx","length":3,"revpos":1,"stub":true}}}`,
+					Doc:   `{"_id":"a","_rev":"` + rev + `","key":"a","_attachments":{"foo.txt":{"content_type":"text/plain","digest":"md5-rL0Y20zC+Fzt72VPzMSk2A==","length":3,"revpos":1,"stub":true}}}`,
 				},
 			},
 		}

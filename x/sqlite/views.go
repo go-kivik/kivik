@@ -156,7 +156,7 @@ func (d *db) queryBuiltinView(
 				%[1]s -- ORDER BY
 				LIMIT %[3]d OFFSET %[4]d
 			) AS view
-			LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON view.id = bridge.id AND view.rev = bridge.rev AND view.rev_id = bridge.rev_id
+			LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON view.id = bridge.id AND view.rev = bridge.rev AND view.rev_id = bridge.rev_id AND $1
 			LEFT JOIN {{ .Attachments }} AS att ON bridge.pk = att.pk
 			%[1]s -- ORDER BY
 		)
@@ -227,8 +227,8 @@ var _ driver.Rows = (*rows)(nil)
 
 func (r *rows) Next(row *driver.Row) error {
 	var (
-		attachmentsCount int
-		full             *fullDoc
+		attachmentCount int
+		full            *fullDoc
 	)
 	for {
 		if !r.rows.Next() {
@@ -247,7 +247,7 @@ func (r *rows) Next(row *driver.Row) error {
 		)
 		if err := r.rows.Scan(
 			&id, &key, &value, &rowRev, &doc, &conflicts,
-			&attachmentsCount,
+			&attachmentCount,
 			&filename, &contentType, &length, &digest, &revPos, &data,
 		); err != nil {
 			return err
@@ -298,7 +298,7 @@ func (r *rows) Next(row *driver.Row) error {
 				Data:        jsonData,
 			}
 		}
-		if attachmentsCount == 0 || attachmentsCount == len(full.Attachments) {
+		if attachmentCount == 0 || attachmentCount == len(full.Attachments) {
 			break
 		}
 	}

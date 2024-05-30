@@ -178,28 +178,35 @@ func (d *db) performQuery(
 			UNION ALL
 
 			SELECT
-				view.id,
-				view.key,
-				view.value,
-				IIF($1, view.rev || '-' || view.rev_id, "") AS rev,
-				view.doc,
-				view.conflicts,
-				0    AS attachment_count,
-				NULL AS filename,
-				NULL AS content_type,
-				NULL AS length,
-				NULL AS digest,
-				NULL AS rev_pos,
-				NULL AS data
+				CASE WHEN row_number = 1 THEN id        END AS id,
+				CASE WHEN row_number = 1 THEN key       END AS key,
+				CASE WHEN row_number = 1 THEN value     END AS value,
+				CASE WHEN row_number = 1 THEN rev       END AS rev,
+				CASE WHEN row_number = 1 THEN doc       END AS doc,
+				CASE WHEN row_number = 1 THEN conflicts END AS conflicts,
+				COALESCE(attachment_count, 0) AS attachment_count,
+				filename,
+				content_type,
+				length,
+				digest,
+				rev_pos,
+				data
 			FROM (
 				SELECT
-					id,
-					key,
-					value,
-					rev,
-					rev_id,
-					doc,
-					conflicts
+					view.id,
+					view.key,
+					view.value,
+					IIF($1, view.rev || '-' || view.rev_id, "") AS rev,
+					view.doc,
+					view.conflicts,
+					0 AS attachment_count,
+					1 AS row_number,
+					NULL AS filename,
+					NULL AS content_type,
+					NULL AS length,
+					NULL AS digest,
+					NULL AS rev_pos,
+					NULL AS data
 				FROM (
 					SELECT
 						view.id,
@@ -214,12 +221,13 @@ func (d *db) performQuery(
 					JOIN {{ .Docs }} AS docs ON view.id = docs.id AND view.rev = docs.rev AND view.rev_id = docs.rev_id
 					LEFT JOIN leaves AS conflicts ON conflicts.id = view.id AND NOT (view.rev = conflicts.rev AND view.rev_id = conflicts.rev_id)
 					WHERE $3 == FALSE OR NOT reduce.reducible
-						%[2]s
+						%[2]s -- WHERE
 					GROUP BY view.id, view.key, view.value, view.rev, view.rev_id
-					%[1]s
+					%[1]s -- ORDER BY
 					LIMIT %[3]d OFFSET %[4]d
-				)
-			)  AS view
+				) AS view
+				%[1]s -- ORDER BY
+			)
 		`), vopts.buildOrderBy(), strings.Join(where, " AND "), vopts.limit, vopts.skip)
 		results, err := d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
 		switch {

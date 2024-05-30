@@ -178,12 +178,12 @@ func (d *db) performQuery(
 			UNION ALL
 
 			SELECT
-				id,
-				key,
-				value,
-				rev,
-				doc,
-				conflicts,
+				view.id,
+				view.key,
+				view.value,
+				view.rev,
+				view.doc,
+				view.conflicts,
 				0    AS attachment_count,
 				NULL AS filename,
 				NULL AS content_type,
@@ -193,22 +193,31 @@ func (d *db) performQuery(
 				NULL AS data
 			FROM (
 				SELECT
-					view.id,
-					view.key,
-					view.value,
-					IIF($1, docs.rev || '-' || docs.rev_id, "") AS rev,
-					IIF($1, docs.doc, NULL) AS doc,
-					IIF($2, GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ','), NULL) AS conflicts
-				FROM {{ .Map }} AS view
-				JOIN reduce
-				JOIN {{ .Docs }} AS docs ON view.id = docs.id AND view.rev = docs.rev AND view.rev_id = docs.rev_id
-				LEFT JOIN leaves AS conflicts ON conflicts.id = view.id AND NOT (view.rev = conflicts.rev AND view.rev_id = conflicts.rev_id)
-				WHERE $3 == FALSE OR NOT reduce.reducible
-					%[2]s
-				GROUP BY view.id, view.key, view.value, view.rev, view.rev_id
-				%[1]s
-				LIMIT %[3]d OFFSET %[4]d
-			)
+					id,
+					key,
+					value,
+					rev,
+					doc,
+					conflicts
+				FROM (
+					SELECT
+						view.id,
+						view.key,
+						view.value,
+						IIF($1, docs.rev || '-' || docs.rev_id, "") AS rev,
+						IIF($1, docs.doc, NULL) AS doc,
+						IIF($2, GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ','), NULL) AS conflicts
+					FROM {{ .Map }} AS view
+					JOIN reduce
+					JOIN {{ .Docs }} AS docs ON view.id = docs.id AND view.rev = docs.rev AND view.rev_id = docs.rev_id
+					LEFT JOIN leaves AS conflicts ON conflicts.id = view.id AND NOT (view.rev = conflicts.rev AND view.rev_id = conflicts.rev_id)
+					WHERE $3 == FALSE OR NOT reduce.reducible
+						%[2]s
+					GROUP BY view.id, view.key, view.value, view.rev, view.rev_id
+					%[1]s
+					LIMIT %[3]d OFFSET %[4]d
+				)
+			)  AS view
 		`), vopts.buildOrderBy(), strings.Join(where, " AND "), vopts.limit, vopts.skip)
 		results, err := d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
 		switch {

@@ -592,7 +592,7 @@ func (v viewOptions) buildWhere(args *[]any) []string {
 func (v viewOptions) buildOrderBy() string {
 	if v.sorted {
 		direction := descendingToDirection(v.descending)
-		return fmt.Sprintf("ORDER BY view.key %s", direction)
+		return "ORDER BY view.key " + direction
 	}
 	return ""
 }

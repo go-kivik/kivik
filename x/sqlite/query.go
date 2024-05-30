@@ -111,7 +111,7 @@ func (d *db) performQuery(
 
 		args := []interface{}{
 			vopts.includeDocs, vopts.conflicts, vopts.reduce, vopts.updateSeq,
-			"_design/" + ddoc, rev.rev, rev.id, view,
+			"_design/" + ddoc, rev.rev, rev.id, view, vopts.attachments,
 		}
 
 		where := append([]string{""}, vopts.buildWhere(&args)...)
@@ -177,31 +177,59 @@ func (d *db) performQuery(
 
 			UNION ALL
 
-			SELECT *
+			SELECT
+				CASE WHEN row_number = 1 THEN id        END AS id,
+				CASE WHEN row_number = 1 THEN key       END AS key,
+				CASE WHEN row_number = 1 THEN value     END AS value,
+				CASE WHEN row_number = 1 THEN rev       END AS rev,
+				CASE WHEN row_number = 1 THEN doc       END AS doc,
+				CASE WHEN row_number = 1 THEN conflicts END AS conflicts,
+				COALESCE(attachment_count, 0) AS attachment_count,
+				filename,
+				content_type,
+				length,
+				digest,
+				rev_pos,
+				data
 			FROM (
 				SELECT
 					view.id,
 					view.key,
 					view.value,
-					IIF($1, docs.rev || '-' || docs.rev_id, "") AS rev,
-					IIF($1, docs.doc, NULL) AS doc,
-					IIF($2, GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ','), NULL) AS conflicts,
-					0    AS attachment_count,
-					NULL AS filename,
-					NULL AS content_type,
-					NULL AS length,
-					NULL AS digest,
-					NULL AS rev_pos,
-					NULL AS data
-				FROM {{ .Map }} AS view
-				JOIN reduce
-				JOIN {{ .Docs }} AS docs ON view.id = docs.id AND view.rev = docs.rev AND view.rev_id = docs.rev_id
-				LEFT JOIN leaves AS conflicts ON conflicts.id = view.id AND NOT (view.rev = conflicts.rev AND view.rev_id = conflicts.rev_id)
-				WHERE $3 == FALSE OR NOT reduce.reducible
-					%[2]s
-				GROUP BY view.id, view.key, view.value, view.rev, view.rev_id
-				%[1]s
-				LIMIT %[3]d OFFSET %[4]d
+					IIF($1, view.rev || '-' || view.rev_id, "") AS rev,
+					view.doc,
+					view.conflicts,
+					SUM(CASE WHEN bridge.pk IS NOT NULL THEN 1 ELSE 0 END) OVER (PARTITION BY view.id, view.rev, view.rev_id) AS attachment_count,
+					ROW_NUMBER() OVER (PARTITION BY view.id, view.rev, view.rev_id, view.pk) AS row_number,
+					att.filename AS filename,
+					att.content_type AS content_type,
+					att.length AS length,
+					att.digest AS digest,
+					att.rev_pos AS rev_pos,
+					IIF($9, att.data, NULL) AS data
+				FROM (
+					SELECT
+						view.pk,
+						view.id,
+						view.key,
+						view.value,
+						docs.rev,
+						docs.rev_id,
+						IIF($1, docs.doc, NULL) AS doc,
+						IIF($2, GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ','), NULL) AS conflicts
+					FROM {{ .Map }} AS view
+					JOIN reduce
+					JOIN {{ .Docs }} AS docs ON view.id = docs.id AND view.rev = docs.rev AND view.rev_id = docs.rev_id
+					LEFT JOIN leaves AS conflicts ON conflicts.id = view.id AND NOT (view.rev = conflicts.rev AND view.rev_id = conflicts.rev_id)
+					WHERE $3 == FALSE OR NOT reduce.reducible
+						%[2]s -- WHERE
+					GROUP BY view.id, view.key, view.value, view.rev, view.rev_id
+					%[1]s -- ORDER BY
+					LIMIT %[3]d OFFSET %[4]d
+				) AS view
+				LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON view.id = bridge.id AND view.rev = bridge.rev AND view.rev_id = bridge.rev_id AND $1
+				LEFT JOIN {{ .Attachments }} AS att ON bridge.pk = att.pk
+				%[1]s -- ORDER BY
 			)
 		`), vopts.buildOrderBy(), strings.Join(where, " AND "), vopts.limit, vopts.skip)
 		results, err := d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next

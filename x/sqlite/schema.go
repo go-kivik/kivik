@@ -88,6 +88,7 @@ var schema = []string{
 
 var viewSchema = []string{
 	`CREATE TABLE IF NOT EXISTS {{ .Map }} (
+		pk INTEGER PRIMARY KEY,
 		id TEXT NOT NULL,
 		rev INTEGER NOT NULL,
 		rev_id TEXT NOT NULL,

@@ -1707,6 +1707,43 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("attachments=false, one attachment", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"key": "design",
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc.key);
+							}
+						}`,
+				},
+			},
+		})
+		rev := d.tPut("a", map[string]interface{}{
+			"key":          "a",
+			"_attachments": newAttachments().add("foo.txt", "foo"),
+		})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"attachments":  true,
+				"include_docs": true,
+			}),
+			want: []rowResult{
+				{
+					ID:    "a",
+					Key:   `"a"`,
+					Value: `"a"`,
+					Doc:   `{"_id":"a","_rev":"` + rev + `","key":"a","_attachments":{"foo.txt":{"content_type":"text/plain","digest":"xxx","length":3,"revpos":1,"stub":true}}}`,
+				},
+			},
+		}
+	})
 
 	/*
 		TODO:

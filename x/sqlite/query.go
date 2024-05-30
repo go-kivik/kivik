@@ -177,7 +177,20 @@ func (d *db) performQuery(
 
 			UNION ALL
 
-			SELECT *
+			SELECT
+				id,
+				key,
+				value,
+				rev,
+				doc,
+				conflicts,
+				attachment_count,
+				filename,
+				content_type,
+				length,
+				digest,
+				rev_pos,
+				data
 			FROM (
 				SELECT
 					view.id,

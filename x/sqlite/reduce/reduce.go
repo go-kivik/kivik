@@ -79,11 +79,12 @@ func Reduce(rows []Row, fn Func, groupLevel int) ([]Row, error) {
 	keys := make([][2]interface{}, 0, len(rows))
 	values := make([]interface{}, 0, len(rows))
 	var targetKey []any
+	var rereduce bool
 	for _, row := range rows {
 		if groupLevel != 0 {
 			switch {
-			case targetKey != nil && !slices.Equal(targetKey, truncateKey(row.Key, groupLevel)):
-				if err := callReduce(keys, values, false, targetKey); err != nil {
+			case targetKey != nil && (!slices.Equal(targetKey, truncateKey(row.Key, groupLevel)) || rereduce != (row.ID == "")):
+				if err := callReduce(keys, values, rereduce, targetKey); err != nil {
 					return nil, err
 				}
 
@@ -92,6 +93,7 @@ func Reduce(rows []Row, fn Func, groupLevel int) ([]Row, error) {
 				fallthrough
 			case targetKey == nil:
 				targetKey = truncateKey(row.Key, groupLevel)
+				rereduce = row.ID == ""
 			}
 		}
 		if first == 0 {
@@ -103,8 +105,26 @@ func Reduce(rows []Row, fn Func, groupLevel int) ([]Row, error) {
 		values = append(values, row.Value)
 	}
 
-	err := callReduce(keys, values, false, targetKey)
-	return out, err
+	if err := callReduce(keys, values, false, targetKey); err != nil {
+		return nil, err
+	}
+
+	if len(out) <= 1 {
+		// One or fewer results can't have duplicates that need to be re-reduced.
+		return out, nil
+	}
+
+	// If we received mixed map/reduce inputs, then we may need to re-reduce
+	// the output before returning.
+	lastKey := truncateKey(out[0].Key, groupLevel)
+	for i := 1; i < len(out); i++ {
+		key := truncateKey(out[i].Key, groupLevel)
+		if slices.Equal(lastKey, key) {
+			return Reduce(out, fn, groupLevel)
+		}
+	}
+
+	return out, nil
 }
 
 // truncateKey truncates the key to the given level.

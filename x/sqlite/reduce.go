@@ -47,13 +47,11 @@ func (r *reduceRowIter) Next() (*reduceRow, error) {
 		return nil, io.EOF
 	}
 	var row reduceRow
-	if err := r.results.Scan(
+	err := r.results.Scan(
 		&row.ID, &row.Key, &row.Value, discard{}, discard{}, discard{},
 		discard{}, discard{}, discard{}, discard{}, discard{}, discard{}, discard{},
-	); err != nil {
-		return nil, err
-	}
-	return &row, nil
+	)
+	return &row, err
 }
 
 type reduceRows interface {

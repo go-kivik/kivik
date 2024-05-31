@@ -18,7 +18,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"slices"
 	"strings"
@@ -62,7 +61,7 @@ type reduceRows interface {
 }
 
 func (d *db) reduceRows(ri reduceRows, reduceFuncJS *string, vopts *viewOptions) (*reducedRows, error) {
-	reduceFn, err := d.reduceFunc(reduceFuncJS, d.logger)
+	reduceFn, err := d.reduceFunc(reduceFuncJS)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +173,7 @@ func (*reducedRows) UpdateSeq() string { return "" }
 
 type reduceFunc func(keys [][2]interface{}, values []interface{}, rereduce bool) (interface{}, error)
 
-func (d *db) reduceFunc(reduceFuncJS *string, logger *log.Logger) (reduceFunc, error) {
+func (d *db) reduceFunc(reduceFuncJS *string) (reduceFunc, error) {
 	if reduceFuncJS == nil {
 		return nil, nil
 	}
@@ -202,7 +201,7 @@ func (d *db) reduceFunc(reduceFuncJS *string, logger *log.Logger) (reduceFunc, e
 			// reduce function throws an exception, the error is logged and the
 			// return value is set to null.
 			if err != nil {
-				logger.Printf("reduce function threw exception: %s", err.Error())
+				d.logger.Printf("reduce function threw exception: %s", err.Error())
 				return nil, nil
 			}
 

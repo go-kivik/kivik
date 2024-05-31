@@ -93,7 +93,7 @@ coverage:
       alias: couch33
   before_script:
     - ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH33}
-    - curl -sL https://deb.nodesource.com/setup_${NODE_VER}.x | bash -
+    - curl -sL https://deb.nodesource.com/setup_${NODE_VER}.x | sed -e '/sleep/d' | bash -
     - apt-get update -qq && apt-get install -y nodejs
   script:
     - cp "$NPM_PROFILE" package.json

@@ -46,67 +46,67 @@ func TestReduce(t *testing.T) {
 	tests.Add("no inputs", test{})
 	tests.Add("count single row", test{
 		input: []Row{
-			{ID: "1", Key: "foo", Value: nil},
+			{ID: "1", Key: "foo", Value: nil, First: 1, Last: 1},
 		},
 		fn: reduceCount,
 		want: []Row{
-			{Value: 1},
+			{Value: 1, First: 1, Last: 1},
 		},
 	})
 	tests.Add("count two rows", test{
 		input: []Row{
-			{ID: "1", Key: "foo", Value: nil},
-			{ID: "2", Key: "foo", Value: nil},
+			{ID: "1", Key: "foo", Value: nil, First: 1, Last: 1},
+			{ID: "2", Key: "foo", Value: nil, First: 2, Last: 2},
 		},
 		fn: reduceCount,
 		want: []Row{
-			{Value: 2},
+			{Value: 2, First: 1, Last: 2},
 		},
 	})
 	tests.Add("max group_level", test{
 		input: []Row{
-			{ID: "a", Key: []any{1, 2, 3}, Value: nil},
-			{ID: "b", Key: []any{1, 2, 3}, Value: nil},
-			{ID: "c", Key: []any{1, 2, 4}, Value: nil},
-			{ID: "d", Key: []any{1, 2, 5}, Value: nil},
+			{ID: "a", Key: []any{1, 2, 3}, Value: nil, First: 1, Last: 1},
+			{ID: "b", Key: []any{1, 2, 3}, Value: nil, First: 2, Last: 2},
+			{ID: "c", Key: []any{1, 2, 4}, Value: nil, First: 3, Last: 3},
+			{ID: "d", Key: []any{1, 2, 5}, Value: nil, First: 4, Last: 4},
 		},
 		groupLevel: -1,
 		fn:         reduceCount,
 		want: []Row{
-			{Key: []any{1, 2, 3}, Value: 2},
-			{Key: []any{1, 2, 4}, Value: 1},
-			{Key: []any{1, 2, 5}, Value: 1},
+			{Key: []any{1, 2, 3}, Value: 2, First: 1, Last: 2},
+			{Key: []any{1, 2, 4}, Value: 1, First: 3, Last: 3},
+			{Key: []any{1, 2, 5}, Value: 1, First: 4, Last: 4},
 		},
 	})
 	tests.Add("max group_level with mixed depth keys", test{
 		input: []Row{
-			{ID: "a", Key: []any{1, 2, 3, 4, 5}, Value: nil},
-			{ID: "b", Key: []any{1, 2, 3}, Value: nil},
-			{ID: "c", Key: []any{1, 2, 4}, Value: nil},
-			{ID: "d", Key: []any{1, 2, 5}, Value: nil},
+			{ID: "a", Key: []any{1, 2, 3, 4, 5}, Value: nil, First: 1, Last: 1},
+			{ID: "b", Key: []any{1, 2, 3}, Value: nil, First: 2, Last: 2},
+			{ID: "c", Key: []any{1, 2, 4}, Value: nil, First: 3, Last: 3},
+			{ID: "d", Key: []any{1, 2, 5}, Value: nil, First: 4, Last: 4},
 		},
 		groupLevel: -1,
 		fn:         reduceCount,
 		want: []Row{
-			{Key: []any{1, 2, 3, 4, 5}, Value: 1},
-			{Key: []any{1, 2, 3}, Value: 1},
-			{Key: []any{1, 2, 4}, Value: 1},
-			{Key: []any{1, 2, 5}, Value: 1},
+			{Key: []any{1, 2, 3, 4, 5}, Value: 1, First: 1, Last: 1},
+			{Key: []any{1, 2, 3}, Value: 1, First: 2, Last: 2},
+			{Key: []any{1, 2, 4}, Value: 1, First: 3, Last: 3},
+			{Key: []any{1, 2, 5}, Value: 1, First: 4, Last: 4},
 		},
 	})
 	tests.Add("explicit group_level with mixed-depth keys", test{
 		input: []Row{
-			{ID: "a", Key: []any{1, 2, 3, 4, 5}, Value: nil},
-			{ID: "b", Key: []any{1, 2, 3}, Value: nil},
-			{ID: "c", Key: []any{1, 2, 4}, Value: nil},
-			{ID: "d", Key: []any{1, 2, 5}, Value: nil},
+			{ID: "a", Key: []any{1, 2, 3, 4, 5}, Value: nil, First: 1, Last: 1},
+			{ID: "b", Key: []any{1, 2, 3}, Value: nil, First: 2, Last: 2},
+			{ID: "c", Key: []any{1, 2, 4}, Value: nil, First: 3, Last: 3},
+			{ID: "d", Key: []any{1, 2, 5}, Value: nil, First: 4, Last: 4},
 		},
 		groupLevel: 3,
 		fn:         reduceCount,
 		want: []Row{
-			{Key: []any{1, 2, 3}, Value: 2},
-			{Key: []any{1, 2, 4}, Value: 1},
-			{Key: []any{1, 2, 5}, Value: 1},
+			{Key: []any{1, 2, 3}, Value: 2, First: 1, Last: 2},
+			{Key: []any{1, 2, 4}, Value: 1, First: 3, Last: 3},
+			{Key: []any{1, 2, 5}, Value: 1, First: 4, Last: 4},
 		},
 	})
 

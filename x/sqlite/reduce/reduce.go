@@ -22,6 +22,11 @@ import (
 // and passing non-serializable data may result in a panic. ID is only used for
 // input rows as returned by a map function. It is always empty for output rows.
 type Row struct {
+	// First and Last reference the key's primary key, and are used to
+	// disambiguate rows with the same key. For map inputs, they should be
+	// the same.  For reduced inputs, they represent a range of keys.
+	First int
+	Last  int
 	ID    string
 	Key   any
 	Value any
@@ -46,6 +51,7 @@ func Reduce(rows []Row, fn Func, groupLevel int) ([]Row, error) {
 		return nil, nil
 	}
 	out := make([]Row, 0, 1)
+	var first, last int
 
 	callReduce := func(keys [][2]interface{}, values []interface{}, rereduce bool, key []any) error {
 		if len(keys) == 0 {
@@ -58,11 +64,14 @@ func Reduce(rows []Row, fn Func, groupLevel int) ([]Row, error) {
 		for _, result := range results {
 			row := Row{
 				Value: result,
+				First: first,
+				Last:  last,
 			}
 			if len(key) > 0 {
 				row.Key = key
 			}
 			out = append(out, row)
+			first, last = 0, 0
 		}
 		return nil
 	}
@@ -85,15 +94,17 @@ func Reduce(rows []Row, fn Func, groupLevel int) ([]Row, error) {
 				targetKey = truncateKey(row.Key, groupLevel)
 			}
 		}
+		if first == 0 {
+			first = row.First
+		}
+		last = row.Last
 
 		keys = append(keys, [2]interface{}{row.Key, row.ID})
 		values = append(values, row.Value)
 	}
 
-	if err := callReduce(keys, values, false, targetKey); err != nil {
-		return nil, err
-	}
-	return out, nil
+	err := callReduce(keys, values, false, targetKey)
+	return out, err
 }
 
 // truncateKey truncates the key to the given level.

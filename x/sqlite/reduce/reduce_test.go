@@ -40,6 +40,7 @@ func TestReduce(t *testing.T) {
 		fn         Func
 		groupLevel int
 		want       []Row
+		wantCache  [][]Row
 		wantErr    string
 		wantStatus int
 	}
@@ -114,19 +115,30 @@ func TestReduce(t *testing.T) {
 	tests.Add("mix map and pre-reduced inputs", test{
 		input: []Row{
 			{Key: []any{1.0, 2.0, 3.0, 4.0}, Value: 3.0, First: 1, Last: 3},
-			{ID: "b", Key: []any{1.0, 2.0, 3.0}, Value: nil, First: 4, Last: 4},
-			{ID: "c", Key: []any{1.0, 2.0, 4.0}, Value: nil, First: 5, Last: 5},
+			{Key: []any{1.0, 2.0, 3.0, 6.0}, Value: 1.0, First: 4, Last: 4},
+			{ID: "b", Key: []any{1.0, 2.0, 3.0}, Value: nil, First: 5, Last: 5},
+			{ID: "c", Key: []any{1.0, 2.0, 4.0}, Value: nil, First: 6, Last: 6},
 		},
 		groupLevel: 3,
 		fn:         reduceCount,
 		want: []Row{
-			{Key: []any{1.0, 2.0, 3.0}, Value: 4.0, First: 1, Last: 4},
-			{Key: []any{1.0, 2.0, 4.0}, Value: 1.0, First: 5, Last: 5},
+			{Key: []any{1.0, 2.0, 3.0}, Value: 5.0, First: 1, Last: 5},
+			{Key: []any{1.0, 2.0, 4.0}, Value: 1.0, First: 6, Last: 6},
+		},
+		wantCache: [][]Row{
+			{{Key: []any{1.0, 2.0, 3.0}, Value: 4.0, First: 1, Last: 4}}, // Merge of first two rows, rereduce=true
+			{{Key: []any{1.0, 2.0, 3.0}, Value: 1.0, First: 5, Last: 5}}, // Single map row, rereduce=false
+			{{Key: []any{1.0, 2.0, 4.0}, Value: 1.0, First: 6, Last: 6}}, // Single map row, rereduce=false, final
+			{{Key: []any{1.0, 2.0, 3.0}, Value: 5.0, First: 1, Last: 5}}, // Merge of the first two reduce outputs, final
 		},
 	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
-		got, err := Reduce(tt.input, tt.fn, tt.groupLevel)
+		var cache [][]Row
+		cb := func(rows []Row) {
+			cache = append(cache, rows)
+		}
+		got, err := Reduce(tt.input, tt.fn, tt.groupLevel, cb)
 		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %v", err)
 		}
@@ -138,6 +150,11 @@ func TestReduce(t *testing.T) {
 		}
 		if d := cmp.Diff(tt.want, got); d != "" {
 			t.Errorf("Unexpected output (-want +got):\n%s", d)
+		}
+		if tt.wantCache != nil {
+			if d := cmp.Diff(tt.wantCache, cache); d != "" {
+				t.Errorf("Unexpected cache (-want +got):\n%s", d)
+			}
 		}
 	})
 }

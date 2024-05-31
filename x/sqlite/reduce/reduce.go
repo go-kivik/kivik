@@ -37,7 +37,10 @@ type Row struct {
 // [CouchDB reduce function]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#reduce-and-rereduce-functions
 type Func func(keys [][2]interface{}, values []interface{}, rereduce bool) ([]interface{}, error)
 
-// Reduce calls fn on rows, and returns the results.
+// Reduce calls fn on rows, and returns the results. The input must be in
+// key-sorted order, and may contain both previously reduced rows, and map
+// output rows.  cb, if not nil, is called with the results of every
+// intermediate reduce step.
 //
 // The Key field of the returned row(s) will be set only when grouping.
 //
@@ -46,7 +49,7 @@ type Func func(keys [][2]interface{}, values []interface{}, rereduce bool) ([]in
 //	-1: Maximum grouping, same as group=true
 //	 0: No grouping, same as group=false
 //	1+: Group by the first N elements of the key, same as group_level=N
-func Reduce(rows []Row, fn Func, groupLevel int) ([]Row, error) {
+func Reduce(rows []Row, fn Func, groupLevel int, cb func([]Row)) ([]Row, error) {
 	if len(rows) == 0 {
 		return nil, nil
 	}
@@ -57,10 +60,21 @@ func Reduce(rows []Row, fn Func, groupLevel int) ([]Row, error) {
 		if len(keys) == 0 {
 			return nil
 		}
+		if len(keys) == 1 && rereduce {
+			// Nothing to rereduce if we have only a single input--just pass it through
+			out = append(out, Row{
+				Key:   key,
+				Value: values[0],
+				First: first,
+				Last:  last,
+			})
+			return nil
+		}
 		results, err := fn(keys, values, rereduce)
 		if err != nil {
 			return err
 		}
+		rows := make([]Row, 0, len(results))
 		for _, result := range results {
 			row := Row{
 				Value: result,
@@ -70,9 +84,13 @@ func Reduce(rows []Row, fn Func, groupLevel int) ([]Row, error) {
 			if len(key) > 0 {
 				row.Key = key
 			}
-			out = append(out, row)
+			rows = append(rows, row)
 			first, last = 0, 0
 		}
+		if cb != nil {
+			cb(rows)
+		}
+		out = append(out, rows...)
 		return nil
 	}
 
@@ -105,7 +123,7 @@ func Reduce(rows []Row, fn Func, groupLevel int) ([]Row, error) {
 		values = append(values, row.Value)
 	}
 
-	if err := callReduce(keys, values, false, targetKey); err != nil {
+	if err := callReduce(keys, values, rereduce, targetKey); err != nil {
 		return nil, err
 	}
 
@@ -120,7 +138,7 @@ func Reduce(rows []Row, fn Func, groupLevel int) ([]Row, error) {
 	for i := 1; i < len(out); i++ {
 		key := truncateKey(out[i].Key, groupLevel)
 		if slices.Equal(lastKey, key) {
-			return Reduce(out, fn, groupLevel)
+			return Reduce(out, fn, groupLevel, cb)
 		}
 	}
 
@@ -143,8 +161,3 @@ func truncateKey(key any, level int) []any {
 	}
 	return target
 }
-
-/*
-	- First group inputs by key according to group level
-
-*/

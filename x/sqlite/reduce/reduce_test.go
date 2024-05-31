@@ -36,6 +36,7 @@ func TestReduce(t *testing.T) {
 	type test struct {
 		input      []Row
 		fn         Func
+		groupLevel int
 		want       []Row
 		wantErr    string
 		wantStatus int
@@ -62,9 +63,55 @@ func TestReduce(t *testing.T) {
 			{Value: 2},
 		},
 	})
+	tests.Add("max group_level", test{
+		input: []Row{
+			{ID: "a", Key: []any{1, 2, 3}, Value: nil},
+			{ID: "b", Key: []any{1, 2, 3}, Value: nil},
+			{ID: "c", Key: []any{1, 2, 4}, Value: nil},
+			{ID: "d", Key: []any{1, 2, 5}, Value: nil},
+		},
+		groupLevel: -1,
+		fn:         reduceCount,
+		want: []Row{
+			{Key: []any{1, 2, 3}, Value: 2},
+			{Key: []any{1, 2, 4}, Value: 1},
+			{Key: []any{1, 2, 5}, Value: 1},
+		},
+	})
+	tests.Add("max group_level with mixed depth keys", test{
+		input: []Row{
+			{ID: "a", Key: []any{1, 2, 3, 4, 5}, Value: nil},
+			{ID: "b", Key: []any{1, 2, 3}, Value: nil},
+			{ID: "c", Key: []any{1, 2, 4}, Value: nil},
+			{ID: "d", Key: []any{1, 2, 5}, Value: nil},
+		},
+		groupLevel: -1,
+		fn:         reduceCount,
+		want: []Row{
+			{Key: []any{1, 2, 3, 4, 5}, Value: 1},
+			{Key: []any{1, 2, 3}, Value: 1},
+			{Key: []any{1, 2, 4}, Value: 1},
+			{Key: []any{1, 2, 5}, Value: 1},
+		},
+	})
+	tests.Add("explicit group_level with mixed-depth keys", test{
+		input: []Row{
+			{ID: "a", Key: []any{1, 2, 3, 4, 5}, Value: nil},
+			{ID: "b", Key: []any{1, 2, 3}, Value: nil},
+			{ID: "c", Key: []any{1, 2, 4}, Value: nil},
+			{ID: "d", Key: []any{1, 2, 5}, Value: nil},
+		},
+		groupLevel: 3,
+		fn:         reduceCount,
+		want: []Row{
+			{Key: []any{1, 2, 3}, Value: 2},
+			{Key: []any{1, 2, 4}, Value: 1},
+			{Key: []any{1, 2, 5}, Value: 1},
+		},
+	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
-		got, err := Reduce(tt.input, tt.fn)
+		got, err := Reduce(tt.input, tt.fn, tt.groupLevel)
 		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %v", err)
 		}

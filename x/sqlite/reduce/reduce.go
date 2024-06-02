@@ -14,8 +14,16 @@
 package reduce
 
 import (
+	"io"
 	"slices"
 )
+
+// RowIterator is the interface for iterating over rows of data to be reduced.
+type RowIterator interface {
+	// Next should populate Row, or return an error. It should return [io.EOF]
+	// when there are no more rows to read.
+	Next(*Row) error
+}
 
 // Row represents a single row of data to be reduced, or the result of a
 // reduction. Key and Value are expected to represent JSON serializable data,
@@ -30,6 +38,20 @@ type Row struct {
 	ID    string
 	Key   any
 	Value any
+}
+
+// Rows is a slice of Row, and implements RowIterator.
+type Rows []Row
+
+var _ RowIterator = (*Rows)(nil)
+
+// Next implements RowIterator.
+func (r *Rows) Next(row *Row) error {
+	if len(*r) == 0 {
+		return io.EOF
+	}
+	*row, *r = (*r)[0], (*r)[1:]
+	return nil
 }
 
 // Func is the signature of a [CouchDB reduce function], translated to Go.
@@ -49,10 +71,7 @@ type Func func(keys [][2]interface{}, values []interface{}, rereduce bool) ([]in
 //	-1: Maximum grouping, same as group=true
 //	 0: No grouping, same as group=false
 //	1+: Group by the first N elements of the key, same as group_level=N
-func Reduce(rows []Row, fn Func, groupLevel int, cb func([]Row)) ([]Row, error) {
-	if len(rows) == 0 {
-		return nil, nil
-	}
+func Reduce(rows RowIterator, fn Func, groupLevel int, cb func([]Row)) ([]Row, error) {
 	out := make([]Row, 0, 1)
 	var first, last int
 
@@ -94,11 +113,20 @@ func Reduce(rows []Row, fn Func, groupLevel int, cb func([]Row)) ([]Row, error) 
 		return nil
 	}
 
-	keys := make([][2]interface{}, 0, len(rows))
-	values := make([]interface{}, 0, len(rows))
+	const defaultCap = 10
+	keys := make([][2]interface{}, 0, defaultCap)
+	values := make([]interface{}, 0, defaultCap)
 	var targetKey []any
 	var rereduce bool
-	for _, row := range rows {
+	for {
+		var row Row
+		if err := rows.Next(&row); err != nil {
+			if err == io.EOF {
+				break
+			}
+			return nil, err
+		}
+
 		if groupLevel != 0 {
 			switch {
 			case targetKey != nil && (!slices.Equal(targetKey, truncateKey(row.Key, groupLevel)) || rereduce != (row.ID == "")):
@@ -138,7 +166,8 @@ func Reduce(rows []Row, fn Func, groupLevel int, cb func([]Row)) ([]Row, error) 
 	for i := 1; i < len(out); i++ {
 		key := truncateKey(out[i].Key, groupLevel)
 		if slices.Equal(lastKey, key) {
-			return Reduce(out, fn, groupLevel, cb)
+			rowsOut := Rows(out)
+			return Reduce(&rowsOut, fn, groupLevel, cb)
 		}
 	}
 

@@ -36,7 +36,7 @@ func reduceCount(_ [][2]interface{}, values []interface{}, rereduce bool) ([]int
 
 func TestReduce(t *testing.T) {
 	type test struct {
-		input      []Row
+		input      RowIterator
 		fn         Func
 		groupLevel int
 		want       []Row
@@ -46,9 +46,12 @@ func TestReduce(t *testing.T) {
 	}
 
 	tests := testy.NewTable()
-	tests.Add("no inputs", test{})
+	tests.Add("no inputs", test{
+		input: &Rows{},
+		want:  []Row{},
+	})
 	tests.Add("count single row", test{
-		input: []Row{
+		input: &Rows{
 			{ID: "1", Key: "foo", Value: nil, First: 1, Last: 1},
 		},
 		fn: reduceCount,
@@ -57,7 +60,7 @@ func TestReduce(t *testing.T) {
 		},
 	})
 	tests.Add("count two rows", test{
-		input: []Row{
+		input: &Rows{
 			{ID: "1", Key: "foo", Value: nil, First: 1, Last: 1},
 			{ID: "2", Key: "foo", Value: nil, First: 2, Last: 2},
 		},
@@ -67,7 +70,7 @@ func TestReduce(t *testing.T) {
 		},
 	})
 	tests.Add("max group_level", test{
-		input: []Row{
+		input: &Rows{
 			{ID: "a", Key: []any{1.0, 2.0, 3.0}, Value: nil, First: 1, Last: 1},
 			{ID: "b", Key: []any{1.0, 2.0, 3.0}, Value: nil, First: 2, Last: 2},
 			{ID: "c", Key: []any{1.0, 2.0, 4.0}, Value: nil, First: 3, Last: 3},
@@ -82,7 +85,7 @@ func TestReduce(t *testing.T) {
 		},
 	})
 	tests.Add("max group_level with mixed depth keys", test{
-		input: []Row{
+		input: &Rows{
 			{ID: "a", Key: []any{1.0, 2.0, 3.0, 4.0, 5.0}, Value: nil, First: 1, Last: 1},
 			{ID: "b", Key: []any{1.0, 2.0, 3.0}, Value: nil, First: 2, Last: 2},
 			{ID: "c", Key: []any{1.0, 2.0, 4.0}, Value: nil, First: 3, Last: 3},
@@ -98,7 +101,7 @@ func TestReduce(t *testing.T) {
 		},
 	})
 	tests.Add("explicit group_level with mixed-depth keys", test{
-		input: []Row{
+		input: &Rows{
 			{ID: "a", Key: []any{1.0, 2.0, 3.0, 4.0, 5.0}, Value: nil, First: 1, Last: 1},
 			{ID: "b", Key: []any{1.0, 2.0, 3.0}, Value: nil, First: 2, Last: 2},
 			{ID: "c", Key: []any{1.0, 2.0, 4.0}, Value: nil, First: 3, Last: 3},
@@ -113,7 +116,7 @@ func TestReduce(t *testing.T) {
 		},
 	})
 	tests.Add("mix map and pre-reduced inputs", test{
-		input: []Row{
+		input: &Rows{
 			{Key: []any{1.0, 2.0, 3.0, 4.0}, Value: 3.0, First: 1, Last: 3},
 			{Key: []any{1.0, 2.0, 3.0, 6.0}, Value: 1.0, First: 4, Last: 4},
 			{ID: "b", Key: []any{1.0, 2.0, 3.0}, Value: nil, First: 5, Last: 5},

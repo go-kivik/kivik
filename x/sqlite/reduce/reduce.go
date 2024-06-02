@@ -16,7 +16,7 @@ package reduce
 import (
 	"io"
 	"log"
-	"slices"
+	"reflect"
 )
 
 // RowIterator is the interface for iterating over rows of data to be reduced.
@@ -84,7 +84,7 @@ func reduce(rows RowIterator, fn Func, groupLevel int, cb func([]Row)) ([]Row, e
 	out := make([]Row, 0, 1)
 	var first, last int
 
-	callReduce := func(keys [][2]interface{}, values []interface{}, rereduce bool, key []any) error {
+	callReduce := func(keys [][2]interface{}, values []interface{}, rereduce bool, key any) error {
 		if len(keys) == 0 {
 			return nil
 		}
@@ -109,7 +109,7 @@ func reduce(rows RowIterator, fn Func, groupLevel int, cb func([]Row)) ([]Row, e
 				First: first,
 				Last:  last,
 			}
-			if len(key) > 0 {
+			if keyLen(key) > 0 {
 				row.Key = key
 			}
 			rows = append(rows, row)
@@ -125,7 +125,7 @@ func reduce(rows RowIterator, fn Func, groupLevel int, cb func([]Row)) ([]Row, e
 	const defaultCap = 10
 	keys := make([][2]interface{}, 0, defaultCap)
 	values := make([]interface{}, 0, defaultCap)
-	var targetKey []any
+	var targetKey any
 	var rereduce bool
 	for {
 		var row Row
@@ -138,7 +138,7 @@ func reduce(rows RowIterator, fn Func, groupLevel int, cb func([]Row)) ([]Row, e
 
 		if groupLevel != 0 {
 			switch {
-			case targetKey != nil && (!slices.Equal(targetKey, truncateKey(row.Key, groupLevel)) || rereduce != (row.ID == "")):
+			case targetKey != nil && (!reflect.DeepEqual(targetKey, truncateKey(row.Key, groupLevel)) || rereduce != (row.ID == "")):
 				if err := callReduce(keys, values, rereduce, targetKey); err != nil {
 					return nil, err
 				}
@@ -174,7 +174,7 @@ func reduce(rows RowIterator, fn Func, groupLevel int, cb func([]Row)) ([]Row, e
 	lastKey := truncateKey(out[0].Key, groupLevel)
 	for i := 1; i < len(out); i++ {
 		key := truncateKey(out[i].Key, groupLevel)
-		if slices.Equal(lastKey, key) {
+		if reflect.DeepEqual(lastKey, key) {
 			rowsOut := Rows(out)
 			return reduce(&rowsOut, fn, groupLevel, cb)
 		}
@@ -183,19 +183,28 @@ func reduce(rows RowIterator, fn Func, groupLevel int, cb func([]Row)) ([]Row, e
 	return out, nil
 }
 
+func keyLen(key any) int {
+	if key == nil {
+		return 0
+	}
+	if k, ok := key.([]any); ok {
+		return len(k)
+	}
+	return 1
+}
+
 // truncateKey truncates the key to the given level.
-func truncateKey(key any, level int) []any {
+func truncateKey(key any, level int) any {
 	if level == 0 {
 		return nil
 	}
-	var target []any
-	if tk, ok := key.([]any); ok {
-		target = tk
-	} else {
-		target = []any{key}
+	target, ok := key.([]any)
+	if !ok {
+		return key
 	}
+
 	if level > 0 && level < len(target) {
-		target = target[:level]
+		return target[:level]
 	}
 	return target
 }

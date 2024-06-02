@@ -48,6 +48,26 @@ func TestReduce(t *testing.T) {
 			{Value: 1.0, First: 1, Last: 1},
 		},
 	})
+	tests.Add("non-array key with grouping", test{
+		input: &Rows{
+			{ID: "1", Key: "foo", Value: nil, First: 1, Last: 1},
+		},
+		javascript: "_count",
+		groupLevel: -1,
+		want: []Row{
+			{Key: "foo", Value: 1.0, First: 1, Last: 1},
+		},
+	})
+	tests.Add("single-element array key with grouping", test{
+		input: &Rows{
+			{ID: "1", Key: []any{"foo"}, Value: nil, First: 1, Last: 1},
+		},
+		javascript: "_count",
+		groupLevel: -1,
+		want: []Row{
+			{Key: []any{"foo"}, Value: 1.0, First: 1, Last: 1},
+		},
+	})
 	tests.Add("count two rows", test{
 		input: &Rows{
 			{ID: "1", Key: "foo", Value: nil, First: 1, Last: 1},

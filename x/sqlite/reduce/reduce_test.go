@@ -21,19 +21,6 @@ import (
 	"github.com/go-kivik/kivik/v4"
 )
 
-func reduceCount(_ [][2]interface{}, values []interface{}, rereduce bool) ([]interface{}, error) {
-	if !rereduce {
-		return []any{float64(len(values))}, nil
-	}
-	var total float64
-	for _, value := range values {
-		if value != nil {
-			total += value.(float64)
-		}
-	}
-	return []any{total}, nil
-}
-
 func TestReduce(t *testing.T) {
 	type test struct {
 		input      RowIterator
@@ -54,7 +41,7 @@ func TestReduce(t *testing.T) {
 		input: &Rows{
 			{ID: "1", Key: "foo", Value: nil, First: 1, Last: 1},
 		},
-		fn: reduceCount,
+		fn: Count,
 		want: []Row{
 			{Value: 1.0, First: 1, Last: 1},
 		},
@@ -64,7 +51,7 @@ func TestReduce(t *testing.T) {
 			{ID: "1", Key: "foo", Value: nil, First: 1, Last: 1},
 			{ID: "2", Key: "foo", Value: nil, First: 2, Last: 2},
 		},
-		fn: reduceCount,
+		fn: Count,
 		want: []Row{
 			{Value: 2.0, First: 1, Last: 2},
 		},
@@ -77,7 +64,7 @@ func TestReduce(t *testing.T) {
 			{ID: "d", Key: []any{1.0, 2.0, 5.0}, Value: nil, First: 4, Last: 4},
 		},
 		groupLevel: -1,
-		fn:         reduceCount,
+		fn:         Count,
 		want: []Row{
 			{Key: []any{1.0, 2.0, 3.0}, Value: 2.0, First: 1, Last: 2},
 			{Key: []any{1.0, 2.0, 4.0}, Value: 1.0, First: 3, Last: 3},
@@ -92,7 +79,7 @@ func TestReduce(t *testing.T) {
 			{ID: "d", Key: []any{1.0, 2.0, 5.0}, Value: nil, First: 4, Last: 4},
 		},
 		groupLevel: -1,
-		fn:         reduceCount,
+		fn:         Count,
 		want: []Row{
 			{Key: []any{1.0, 2.0, 3.0, 4.0, 5.0}, Value: 1.0, First: 1, Last: 1},
 			{Key: []any{1.0, 2.0, 3.0}, Value: 1.0, First: 2, Last: 2},
@@ -108,7 +95,7 @@ func TestReduce(t *testing.T) {
 			{ID: "d", Key: []any{1.0, 2.0, 5.0}, Value: nil, First: 4, Last: 4},
 		},
 		groupLevel: 3,
-		fn:         reduceCount,
+		fn:         Count,
 		want: []Row{
 			{Key: []any{1.0, 2.0, 3.0}, Value: 2.0, First: 1, Last: 2},
 			{Key: []any{1.0, 2.0, 4.0}, Value: 1.0, First: 3, Last: 3},
@@ -123,7 +110,7 @@ func TestReduce(t *testing.T) {
 			{ID: "c", Key: []any{1.0, 2.0, 4.0}, Value: nil, First: 6, Last: 6},
 		},
 		groupLevel: 3,
-		fn:         reduceCount,
+		fn:         Count,
 		want: []Row{
 			{Key: []any{1.0, 2.0, 3.0}, Value: 5.0, First: 1, Last: 5},
 			{Key: []any{1.0, 2.0, 4.0}, Value: 1.0, First: 6, Last: 6},

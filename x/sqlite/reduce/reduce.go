@@ -15,6 +15,7 @@ package reduce
 
 import (
 	"io"
+	"log"
 	"slices"
 )
 
@@ -71,7 +72,15 @@ type Func func(keys [][2]interface{}, values []interface{}, rereduce bool) ([]in
 //	-1: Maximum grouping, same as group=true
 //	 0: No grouping, same as group=false
 //	1+: Group by the first N elements of the key, same as group_level=N
-func Reduce(rows RowIterator, fn Func, groupLevel int, cb func([]Row)) ([]Row, error) {
+func Reduce(rows RowIterator, javascript string, logger *log.Logger, groupLevel int, cb func([]Row)) ([]Row, error) {
+	fn, err := ParseFunc(javascript, logger)
+	if err != nil {
+		return nil, err
+	}
+	return reduce(rows, fn, groupLevel, cb)
+}
+
+func reduce(rows RowIterator, fn Func, groupLevel int, cb func([]Row)) ([]Row, error) {
 	out := make([]Row, 0, 1)
 	var first, last int
 
@@ -167,7 +176,7 @@ func Reduce(rows RowIterator, fn Func, groupLevel int, cb func([]Row)) ([]Row, e
 		key := truncateKey(out[i].Key, groupLevel)
 		if slices.Equal(lastKey, key) {
 			rowsOut := Rows(out)
-			return Reduce(&rowsOut, fn, groupLevel, cb)
+			return reduce(&rowsOut, fn, groupLevel, cb)
 		}
 	}
 

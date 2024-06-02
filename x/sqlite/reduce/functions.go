@@ -15,10 +15,13 @@ package reduce
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"reflect"
 	"slices"
 	"strings"
 
+	"github.com/dop251/goja"
 	"github.com/mitchellh/mapstructure"
 
 	"github.com/go-kivik/kivik/x/sqlite/v4/internal"
@@ -103,6 +106,23 @@ func toStatsValues(values []interface{}, rereduce bool) ([][]stats, bool) {
 	return statsValues, true
 }
 
+func flattenStats(values []interface{}) []stats {
+	statsValues := make([]stats, 0, len(values))
+	for _, v := range values {
+		switch t := v.(type) {
+		case stats:
+			statsValues = append(statsValues, t)
+		case []interface{}:
+			for _, vv := range t {
+				if stat, ok := vv.(stats); ok {
+					statsValues = append(statsValues, stat)
+				}
+			}
+		}
+	}
+	return statsValues
+}
+
 // Stats is the built-in reduce function, [_stats].
 //
 // [_stats]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#stats
@@ -119,8 +139,7 @@ func Stats(_ [][2]interface{}, values []interface{}, rereduce bool) ([]interface
 	if rereduce {
 		mins := make([]float64, 0, len(values))
 		maxs := make([]float64, 0, len(values))
-		for _, v := range values {
-			value := v.(stats)
+		for _, value := range flattenStats(values) {
 			mins = append(mins, value.Min)
 			maxs = append(maxs, value.Max)
 			result.Sum += value.Sum
@@ -198,11 +217,7 @@ func reduceStatsFloatArray(values [][]float64) []interface{} {
 		results[i].Max = slices.Max(mm)
 	}
 
-	out := make([]interface{}, len(results))
-	for i, r := range results {
-		out[i] = r
-	}
-	return out
+	return []interface{}{results}
 }
 
 func rereduceStatsFloatArray(values [][]stats) []interface{} {
@@ -223,9 +238,57 @@ func rereduceStatsFloatArray(values [][]stats) []interface{} {
 		result[i].Max = slices.Max(maxs[i])
 	}
 
-	out := make([]interface{}, len(result))
-	for i, r := range result {
-		out[i] = r
+	return []interface{}{result}
+}
+
+// ParseFunc parses the passed javascript string, and returns a Go function that
+// will execute it.  If the input is empty, nil is returned. If the input is a
+// string that corresponds to one of the built-in function names (i.e. '_sum',
+// '_count', etc), the native Go implementation is returned instead. The logger
+// is used to log any unhandled exceptions thrown by the JavaScript function.
+func ParseFunc(javascript string, logger *log.Logger) (Func, error) {
+	switch javascript {
+	case "":
+		return nil, nil
+	case "_count":
+		return Count, nil
+	case "_sum":
+		return Sum, nil
+	case "_stats":
+		return Stats, nil
+	default:
+		vm := goja.New()
+
+		if _, err := vm.RunString("const reduce = " + javascript); err != nil {
+			return nil, err
+		}
+		reduceFunc, ok := goja.AssertFunction(vm.Get("reduce"))
+		if !ok {
+			return nil, fmt.Errorf("expected reduce to be a function, got %T", vm.Get("map"))
+		}
+
+		return func(keys [][2]interface{}, values []interface{}, rereduce bool) ([]interface{}, error) {
+			reduceValue, err := reduceFunc(goja.Undefined(), vm.ToValue(keys), vm.ToValue(values), vm.ToValue(rereduce))
+			// According to CouchDB reference implementation, when a user-defined
+			// reduce function throws an exception, the error is logged and the
+			// return value is set to null.
+			if err != nil {
+				logger.Printf("reduce function threw exception: %s", err.Error())
+				return nil, nil
+			}
+
+			rv := reduceValue.Export()
+			// If rv is a slice, convert it to a []interface{} before returning it.
+			v := reflect.ValueOf(rv)
+			if v.Kind() == reflect.Slice {
+				out := make([]interface{}, v.Len())
+				for i := 0; i < v.Len(); i++ {
+					out[i] = v.Index(i).Interface()
+				}
+				return out, nil
+			}
+
+			return []interface{}{rv}, nil
+		}, nil
 	}
-	return out
 }

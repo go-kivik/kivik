@@ -14,10 +14,14 @@ package sqlite
 
 import (
 	"context"
+	"database/sql"
+	"errors"
+	"net/http"
 
 	"github.com/google/uuid"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	kerrors "github.com/go-kivik/kivik/v4/int/errors"
 )
 
 func (d *db) CreateDoc(ctx context.Context, doc interface{}, _ driver.Options) (string, string, error) {
@@ -34,6 +38,25 @@ func (d *db) CreateDoc(ctx context.Context, doc interface{}, _ driver.Options) (
 		return "", "", err
 	}
 	defer tx.Rollback()
+
+	var exists bool
+	err = tx.QueryRowContext(ctx, d.query(`
+		SELECT EXISTS (
+			SELECT 1
+			FROM {{ .Revs }} AS rev
+			JOIN {{ .Docs }} AS doc ON doc.id = rev.id AND doc.rev = rev.rev AND doc.rev_id = rev.rev_id
+			LEFT JOIN {{ .Revs }} AS child ON child.parent_rev = rev.rev AND child.parent_rev_id = rev.rev_id
+			WHERE rev.id = $1
+				AND child.rev IS NULL
+				AND doc.deleted = FALSE
+		)
+	`), data.ID).Scan(&exists)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return "", "", err
+	}
+	if exists {
+		return "", "", &kerrors.Error{Status: http.StatusConflict, Message: "document update conflict"}
+	}
 
 	_, err = tx.ExecContext(ctx, d.query(`
 		INSERT INTO {{ .Revs }} (id, rev, rev_id)

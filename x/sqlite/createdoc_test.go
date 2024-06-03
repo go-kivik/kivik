@@ -82,10 +82,20 @@ func TestDBCreateDoc(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("creating doc with existing id causes conflict", func(t *testing.T) interface{} {
+		db := newDB(t)
+		_ = db.tPut("foo", map[string]string{"foo": "bar"})
+
+		return test{
+			db:         db,
+			doc:        map[string]string{"_id": "foo"},
+			wantErr:    "document update conflict",
+			wantStatus: http.StatusConflict,
+		}
+	})
 
 	/*
 		TODO:
-		- create doc with specific doc id, but the id already exists -- should conflict
 		- different UUID configuration options????
 		- create doc with attachments
 		- create deleted document?

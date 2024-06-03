@@ -13,6 +13,8 @@
 package reduce
 
 import (
+	"io"
+	"log"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -21,23 +23,10 @@ import (
 	"github.com/go-kivik/kivik/v4"
 )
 
-func reduceCount(_ [][2]interface{}, values []interface{}, rereduce bool) ([]interface{}, error) {
-	if !rereduce {
-		return []any{float64(len(values))}, nil
-	}
-	var total float64
-	for _, value := range values {
-		if value != nil {
-			total += value.(float64)
-		}
-	}
-	return []any{total}, nil
-}
-
 func TestReduce(t *testing.T) {
 	type test struct {
-		input      []Row
-		fn         Func
+		input      RowIterator
+		javascript string
 		groupLevel int
 		want       []Row
 		wantCache  [][]Row
@@ -46,35 +35,58 @@ func TestReduce(t *testing.T) {
 	}
 
 	tests := testy.NewTable()
-	tests.Add("no inputs", test{})
+	tests.Add("no inputs", test{
+		input: &Rows{},
+		want:  []Row{},
+	})
 	tests.Add("count single row", test{
-		input: []Row{
+		input: &Rows{
 			{ID: "1", Key: "foo", Value: nil, First: 1, Last: 1},
 		},
-		fn: reduceCount,
+		javascript: "_count",
 		want: []Row{
 			{Value: 1.0, First: 1, Last: 1},
 		},
 	})
+	tests.Add("non-array key with grouping", test{
+		input: &Rows{
+			{ID: "1", Key: "foo", Value: nil, First: 1, Last: 1},
+		},
+		javascript: "_count",
+		groupLevel: -1,
+		want: []Row{
+			{Key: "foo", Value: 1.0, First: 1, Last: 1},
+		},
+	})
+	tests.Add("single-element array key with grouping", test{
+		input: &Rows{
+			{ID: "1", Key: []any{"foo"}, Value: nil, First: 1, Last: 1},
+		},
+		javascript: "_count",
+		groupLevel: -1,
+		want: []Row{
+			{Key: []any{"foo"}, Value: 1.0, First: 1, Last: 1},
+		},
+	})
 	tests.Add("count two rows", test{
-		input: []Row{
+		input: &Rows{
 			{ID: "1", Key: "foo", Value: nil, First: 1, Last: 1},
 			{ID: "2", Key: "foo", Value: nil, First: 2, Last: 2},
 		},
-		fn: reduceCount,
+		javascript: "_count",
 		want: []Row{
 			{Value: 2.0, First: 1, Last: 2},
 		},
 	})
 	tests.Add("max group_level", test{
-		input: []Row{
+		input: &Rows{
 			{ID: "a", Key: []any{1.0, 2.0, 3.0}, Value: nil, First: 1, Last: 1},
 			{ID: "b", Key: []any{1.0, 2.0, 3.0}, Value: nil, First: 2, Last: 2},
 			{ID: "c", Key: []any{1.0, 2.0, 4.0}, Value: nil, First: 3, Last: 3},
 			{ID: "d", Key: []any{1.0, 2.0, 5.0}, Value: nil, First: 4, Last: 4},
 		},
 		groupLevel: -1,
-		fn:         reduceCount,
+		javascript: "_count",
 		want: []Row{
 			{Key: []any{1.0, 2.0, 3.0}, Value: 2.0, First: 1, Last: 2},
 			{Key: []any{1.0, 2.0, 4.0}, Value: 1.0, First: 3, Last: 3},
@@ -82,14 +94,14 @@ func TestReduce(t *testing.T) {
 		},
 	})
 	tests.Add("max group_level with mixed depth keys", test{
-		input: []Row{
+		input: &Rows{
 			{ID: "a", Key: []any{1.0, 2.0, 3.0, 4.0, 5.0}, Value: nil, First: 1, Last: 1},
 			{ID: "b", Key: []any{1.0, 2.0, 3.0}, Value: nil, First: 2, Last: 2},
 			{ID: "c", Key: []any{1.0, 2.0, 4.0}, Value: nil, First: 3, Last: 3},
 			{ID: "d", Key: []any{1.0, 2.0, 5.0}, Value: nil, First: 4, Last: 4},
 		},
 		groupLevel: -1,
-		fn:         reduceCount,
+		javascript: "_count",
 		want: []Row{
 			{Key: []any{1.0, 2.0, 3.0, 4.0, 5.0}, Value: 1.0, First: 1, Last: 1},
 			{Key: []any{1.0, 2.0, 3.0}, Value: 1.0, First: 2, Last: 2},
@@ -98,14 +110,14 @@ func TestReduce(t *testing.T) {
 		},
 	})
 	tests.Add("explicit group_level with mixed-depth keys", test{
-		input: []Row{
+		input: &Rows{
 			{ID: "a", Key: []any{1.0, 2.0, 3.0, 4.0, 5.0}, Value: nil, First: 1, Last: 1},
 			{ID: "b", Key: []any{1.0, 2.0, 3.0}, Value: nil, First: 2, Last: 2},
 			{ID: "c", Key: []any{1.0, 2.0, 4.0}, Value: nil, First: 3, Last: 3},
 			{ID: "d", Key: []any{1.0, 2.0, 5.0}, Value: nil, First: 4, Last: 4},
 		},
 		groupLevel: 3,
-		fn:         reduceCount,
+		javascript: "_count",
 		want: []Row{
 			{Key: []any{1.0, 2.0, 3.0}, Value: 2.0, First: 1, Last: 2},
 			{Key: []any{1.0, 2.0, 4.0}, Value: 1.0, First: 3, Last: 3},
@@ -113,14 +125,14 @@ func TestReduce(t *testing.T) {
 		},
 	})
 	tests.Add("mix map and pre-reduced inputs", test{
-		input: []Row{
+		input: &Rows{
 			{Key: []any{1.0, 2.0, 3.0, 4.0}, Value: 3.0, First: 1, Last: 3},
 			{Key: []any{1.0, 2.0, 3.0, 6.0}, Value: 1.0, First: 4, Last: 4},
 			{ID: "b", Key: []any{1.0, 2.0, 3.0}, Value: nil, First: 5, Last: 5},
 			{ID: "c", Key: []any{1.0, 2.0, 4.0}, Value: nil, First: 6, Last: 6},
 		},
 		groupLevel: 3,
-		fn:         reduceCount,
+		javascript: "_count",
 		want: []Row{
 			{Key: []any{1.0, 2.0, 3.0}, Value: 5.0, First: 1, Last: 5},
 			{Key: []any{1.0, 2.0, 4.0}, Value: 1.0, First: 6, Last: 6},
@@ -138,7 +150,7 @@ func TestReduce(t *testing.T) {
 		cb := func(rows []Row) {
 			cache = append(cache, rows)
 		}
-		got, err := Reduce(tt.input, tt.fn, tt.groupLevel, cb)
+		got, err := Reduce(tt.input, tt.javascript, log.New(io.Discard, "", 0), tt.groupLevel, cb)
 		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %v", err)
 		}

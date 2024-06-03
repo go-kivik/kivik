@@ -14,8 +14,17 @@
 package reduce
 
 import (
-	"slices"
+	"io"
+	"log"
+	"reflect"
 )
+
+// RowIterator is the interface for iterating over rows of data to be reduced.
+type RowIterator interface {
+	// Next should populate Row, or return an error. It should return [io.EOF]
+	// when there are no more rows to read.
+	Next(*Row) error
+}
 
 // Row represents a single row of data to be reduced, or the result of a
 // reduction. Key and Value are expected to represent JSON serializable data,
@@ -30,6 +39,20 @@ type Row struct {
 	ID    string
 	Key   any
 	Value any
+}
+
+// Rows is a slice of Row, and implements RowIterator.
+type Rows []Row
+
+var _ RowIterator = (*Rows)(nil)
+
+// Next implements RowIterator.
+func (r *Rows) Next(row *Row) error {
+	if len(*r) == 0 {
+		return io.EOF
+	}
+	*row, *r = (*r)[0], (*r)[1:]
+	return nil
 }
 
 // Func is the signature of a [CouchDB reduce function], translated to Go.
@@ -49,14 +72,19 @@ type Func func(keys [][2]interface{}, values []interface{}, rereduce bool) ([]in
 //	-1: Maximum grouping, same as group=true
 //	 0: No grouping, same as group=false
 //	1+: Group by the first N elements of the key, same as group_level=N
-func Reduce(rows []Row, fn Func, groupLevel int, cb func([]Row)) ([]Row, error) {
-	if len(rows) == 0 {
-		return nil, nil
+func Reduce(rows RowIterator, javascript string, logger *log.Logger, groupLevel int, cb func([]Row)) ([]Row, error) {
+	fn, err := ParseFunc(javascript, logger)
+	if err != nil {
+		return nil, err
 	}
+	return reduce(rows, fn, groupLevel, cb)
+}
+
+func reduce(rows RowIterator, fn Func, groupLevel int, cb func([]Row)) ([]Row, error) {
 	out := make([]Row, 0, 1)
 	var first, last int
 
-	callReduce := func(keys [][2]interface{}, values []interface{}, rereduce bool, key []any) error {
+	callReduce := func(keys [][2]interface{}, values []interface{}, rereduce bool, key any) error {
 		if len(keys) == 0 {
 			return nil
 		}
@@ -81,7 +109,7 @@ func Reduce(rows []Row, fn Func, groupLevel int, cb func([]Row)) ([]Row, error) 
 				First: first,
 				Last:  last,
 			}
-			if len(key) > 0 {
+			if keyLen(key) > 0 {
 				row.Key = key
 			}
 			rows = append(rows, row)
@@ -94,14 +122,23 @@ func Reduce(rows []Row, fn Func, groupLevel int, cb func([]Row)) ([]Row, error) 
 		return nil
 	}
 
-	keys := make([][2]interface{}, 0, len(rows))
-	values := make([]interface{}, 0, len(rows))
-	var targetKey []any
+	const defaultCap = 10
+	keys := make([][2]interface{}, 0, defaultCap)
+	values := make([]interface{}, 0, defaultCap)
+	var targetKey any
 	var rereduce bool
-	for _, row := range rows {
+	for {
+		var row Row
+		if err := rows.Next(&row); err != nil {
+			if err == io.EOF {
+				break
+			}
+			return nil, err
+		}
+
 		if groupLevel != 0 {
 			switch {
-			case targetKey != nil && (!slices.Equal(targetKey, truncateKey(row.Key, groupLevel)) || rereduce != (row.ID == "")):
+			case targetKey != nil && (!reflect.DeepEqual(targetKey, truncateKey(row.Key, groupLevel)) || rereduce != (row.ID == "")):
 				if err := callReduce(keys, values, rereduce, targetKey); err != nil {
 					return nil, err
 				}
@@ -137,27 +174,37 @@ func Reduce(rows []Row, fn Func, groupLevel int, cb func([]Row)) ([]Row, error) 
 	lastKey := truncateKey(out[0].Key, groupLevel)
 	for i := 1; i < len(out); i++ {
 		key := truncateKey(out[i].Key, groupLevel)
-		if slices.Equal(lastKey, key) {
-			return Reduce(out, fn, groupLevel, cb)
+		if reflect.DeepEqual(lastKey, key) {
+			rowsOut := Rows(out)
+			return reduce(&rowsOut, fn, groupLevel, cb)
 		}
 	}
 
 	return out, nil
 }
 
+func keyLen(key any) int {
+	if key == nil {
+		return 0
+	}
+	if k, ok := key.([]any); ok {
+		return len(k)
+	}
+	return 1
+}
+
 // truncateKey truncates the key to the given level.
-func truncateKey(key any, level int) []any {
+func truncateKey(key any, level int) any {
 	if level == 0 {
 		return nil
 	}
-	var target []any
-	if tk, ok := key.([]any); ok {
-		target = tk
-	} else {
-		target = []any{key}
+	target, ok := key.([]any)
+	if !ok {
+		return key
 	}
+
 	if level > 0 && level < len(target) {
-		target = target[:level]
+		return target[:level]
 	}
 	return target
 }

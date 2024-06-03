@@ -40,6 +40,7 @@ type DB interface {
 	driver.RevGetter
 	driver.LocalDocer
 	driver.DesignDocer
+	driver.DocCreator
 }
 
 type testDB struct {

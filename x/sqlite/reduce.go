@@ -64,7 +64,7 @@ func (r *reduceRowIter) ReduceNext(row *reduce.Row) error {
 	return err
 }
 
-func (d *db) reduceRows(ri reduce.Reducer, javascript string, vopts *viewOptions) (*reducedRows, error) {
+func (d *db) reduceRows(ri reduce.Reducer, javascript string, vopts *viewOptions) (driver.Rows, error) {
 	rows, err := reduce.Reduce(ri, javascript, d.logger, vopts.reduceGroupLevel(), nil)
 	if err != nil {
 		return nil, err

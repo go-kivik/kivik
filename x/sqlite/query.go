@@ -27,6 +27,7 @@ import (
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
+	"github.com/go-kivik/kivik/x/sqlite/v4/reduce"
 )
 
 func fromJSValue(v interface{}) (*string, error) {
@@ -252,7 +253,7 @@ func (d *db) performQuery(
 
 		if meta.reducible && (vopts.reduce == nil || *vopts.reduce) {
 			ri := &reduceRowIter{results: results}
-			return d.reduceRows(ri, meta.reduceFuncJS, vopts)
+			return reduce.Reduce(ri, meta.reduceFuncJS, d.logger, vopts.reduceGroupLevel(), nil)
 		}
 
 		// If the results are up to date, OR, we're in false/lazy update mode,
@@ -378,7 +379,7 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 	}
 
 	ri := &reduceRowIter{results: results}
-	return d.reduceRows(ri, reduceFuncJS, vopts)
+	return reduce.Reduce(ri, reduceFuncJS, d.logger, vopts.reduceGroupLevel(), nil)
 }
 
 const batchSize = 100

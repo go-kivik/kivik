@@ -25,12 +25,6 @@ type reduceRowIter struct {
 	results *sql.Rows
 }
 
-type reduceRow struct {
-	ID    string
-	Key   string
-	Value *string
-}
-
 func (r *reduceRowIter) ReduceNext(row *reduce.Row) error {
 	if !r.results.Next() {
 		if err := r.results.Err(); err != nil {
@@ -61,10 +55,6 @@ func (r *reduceRowIter) ReduceNext(row *reduce.Row) error {
 		row.Value = nil
 	}
 	return err
-}
-
-func (d *db) reduceRows(ri reduce.Reducer, javascript string, vopts *viewOptions) (driver.Rows, error) {
-	return reduce.Reduce(ri, javascript, d.logger, vopts.reduceGroupLevel(), nil)
 }
 
 type reducedRows []driver.Row

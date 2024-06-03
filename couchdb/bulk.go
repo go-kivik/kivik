@@ -20,7 +20,7 @@ import (
 
 	"github.com/go-kivik/kivik/v4/couchdb/chttp"
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/kivik/v4/internal"
+	internal "github.com/go-kivik/kivik/v4/int/errors"
 )
 
 func (d *db) BulkDocs(ctx context.Context, docs []interface{}, options driver.Options) ([]driver.BulkResult, error) {

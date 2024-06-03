@@ -23,7 +23,7 @@ import (
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/kivik/v4/internal"
+	internal "github.com/go-kivik/kivik/v4/int/errors"
 	"github.com/go-kivik/kivik/v4/x/fsdb/filesystem"
 )
 

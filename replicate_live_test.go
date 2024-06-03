@@ -28,7 +28,7 @@ import (
 
 	"github.com/go-kivik/kivik/v4"
 	_ "github.com/go-kivik/kivik/v4/couchdb" // CouchDB driver
-	"github.com/go-kivik/kivik/v4/internal"
+	internal "github.com/go-kivik/kivik/v4/int/errors"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 	_ "github.com/go-kivik/kivik/v4/x/fsdb" // Filesystem driver
 )

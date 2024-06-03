@@ -27,7 +27,7 @@ import (
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/kivik/v4/internal"
+	internal "github.com/go-kivik/kivik/v4/int/errors"
 	kivikmock "github.com/go-kivik/kivik/v4/mockdb"
 	_ "github.com/go-kivik/kivik/v4/x/fsdb" // The filesystem driver
 )

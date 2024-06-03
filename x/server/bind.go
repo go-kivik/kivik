@@ -20,7 +20,7 @@ import (
 	"mime"
 	"net/http"
 
-	"github.com/go-kivik/kivik/v4/internal"
+	internal "github.com/go-kivik/kivik/v4/int/errors"
 )
 
 // bind binds the request to v if it is of type application/json or

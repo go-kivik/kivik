@@ -22,7 +22,7 @@ import (
 	"github.com/gopherjs/gopherjs/js"
 
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/kivik/v4/internal"
+	internal "github.com/go-kivik/kivik/v4/int/errors"
 )
 
 type bulkResult struct {

@@ -10,8 +10,8 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-// Package internal provides some internal utilities.
-package internal
+// Package errors provides some internal error types and utilities.
+package errors
 
 import (
 	"errors"

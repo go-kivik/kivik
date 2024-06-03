@@ -30,7 +30,7 @@ import (
 	"github.com/gopherjs/gopherjs/js"
 	"github.com/gopherjs/jsbuiltin"
 
-	"github.com/go-kivik/kivik/v4/internal"
+	internal "github.com/go-kivik/kivik/v4/int/errors"
 )
 
 // DB is a PouchDB database object.

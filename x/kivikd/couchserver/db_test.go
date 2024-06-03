@@ -27,7 +27,7 @@ import (
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4"
-	"github.com/go-kivik/kivik/v4/internal"
+	internal "github.com/go-kivik/kivik/v4/int/errors"
 )
 
 type mockCreator struct {

@@ -1818,6 +1818,55 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("include_docs is invalid for reduce=true", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"reduce":       true,
+				"include_docs": true,
+			}),
+			wantErr:    "include_docs is invalid for reduce",
+			wantStatus: http.StatusBadRequest,
+		}
+	})
+	tests.Add("include_docs is invalid for implicit reduce", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"include_docs": true,
+			}),
+			wantErr:    "include_docs is invalid for reduce",
+			wantStatus: http.StatusBadRequest,
+		}
+	})
 
 	/*
 		TODO:
@@ -1827,7 +1876,6 @@ func TestDBQuery(t *testing.T) {
 			- endkey
 			- startkey
 			- conflicts
-			- include_docs
 			- attachments
 			- att_encoding_info
 			- key

@@ -1867,6 +1867,55 @@ func TestDBQuery(t *testing.T) {
 			wantStatus: http.StatusBadRequest,
 		}
 	})
+	tests.Add("conflicts is invalid for reduce=true", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"reduce":    true,
+				"conflicts": true,
+			}),
+			wantErr:    "conflicts is invalid for reduce",
+			wantStatus: http.StatusBadRequest,
+		}
+	})
+	tests.Add("conflicts is invalid for implicit reduce", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"conflicts": true,
+			}),
+			wantErr:    "conflicts is invalid for reduce",
+			wantStatus: http.StatusBadRequest,
+		}
+	})
 
 	/*
 		TODO:
@@ -1875,9 +1924,6 @@ func TestDBQuery(t *testing.T) {
 			- skip
 			- endkey
 			- startkey
-			- conflicts
-			- attachments
-			- att_encoding_info
 			- key
 			- keys
 			- update_seq

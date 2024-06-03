@@ -258,8 +258,12 @@ func (d *db) performQuery(
 
 		if meta.reducible && (vopts.reduce == nil || *vopts.reduce) {
 			if vopts.includeDocs {
-				_ = results.Close()
+				_ = results.Close() //nolint:sqlclosecheck // invalid option specified for reduce, so abort the query
 				return nil, &internal.Error{Status: http.StatusBadRequest, Message: "include_docs is invalid for reduce"}
+			}
+			if vopts.conflicts {
+				_ = results.Close() //nolint:sqlclosecheck // invalid option specified for reduce, so abort the query
+				return nil, &internal.Error{Status: http.StatusBadRequest, Message: "conflicts is invalid for reduce"}
 			}
 			return d.reduce(ctx, meta.lastSeq, ddoc, view, rev.String(), results, meta.reduceFuncJS, vopts.reduceGroupLevel())
 		}

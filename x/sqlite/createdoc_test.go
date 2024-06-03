@@ -119,10 +119,36 @@ func TestDBCreateDoc(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("create a deleted document", func(t *testing.T) interface{} {
+		db := newDB(t)
+
+		return test{
+			db: db,
+			doc: map[string]interface{}{
+				"foo":      "bar",
+				"_deleted": true,
+			},
+			wantDocID: "(?i)^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$",
+			wantRev:   "1-.*",
+			check: func(t *testing.T) {
+				var attCount int
+				err := db.underlying().QueryRow(`
+					SELECT COUNT(*)
+					FROM test
+					WHERE deleted=true
+				`).Scan(&attCount)
+				if err != nil {
+					t.Fatalf("Failed to query for doc: %s", err)
+				}
+				if attCount != 1 {
+					t.Errorf("Expected 1 deleted document, got %d", attCount)
+				}
+			},
+		}
+	})
 	/*
 		TODO:
 		- different UUID configuration options????
-		- create deleted document?
 		- retry in case of duplicate random uuid ???
 
 	*/

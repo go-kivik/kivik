@@ -68,8 +68,8 @@ func (d *db) CreateDoc(ctx context.Context, doc interface{}, _ driver.Options) (
 
 	_, err = tx.ExecContext(ctx, d.query(`
 		INSERT INTO {{ .Docs }} (id, rev, rev_id, doc, md5sum, deleted)
-		VALUES ($1, 1, $2, $3, $4, FALSE)
-	`), data.ID, data.RevID(), data.Doc, data.MD5sum)
+		VALUES ($1, 1, $2, $3, $4, $5)
+	`), data.ID, data.RevID(), data.Doc, data.MD5sum, data.Deleted)
 	if err != nil {
 		return "", "", err
 	}

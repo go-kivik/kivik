@@ -150,7 +150,7 @@ func TestDBCreateDoc(t *testing.T) {
 		TODO:
 		- different UUID configuration options????
 		- retry in case of duplicate random uuid ???
-
+		- support batch mode?
 	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {

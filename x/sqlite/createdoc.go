@@ -74,5 +74,9 @@ func (d *db) CreateDoc(ctx context.Context, doc interface{}, _ driver.Options) (
 		return "", "", err
 	}
 
+	if err := d.createDocAttachments(ctx, data, tx, revision{rev: 1, id: data.RevID()}, nil); err != nil {
+		return "", "", err
+	}
+
 	return data.ID, "1-" + data.RevID(), tx.Commit()
 }

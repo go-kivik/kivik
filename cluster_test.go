@@ -22,7 +22,7 @@ import (
 
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
-	"github.com/go-kivik/kivik/v4/internal/mock"
+	"github.com/go-kivik/kivik/v4/int/mock"
 )
 
 func TestClusterStatus(t *testing.T) {

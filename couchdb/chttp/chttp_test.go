@@ -33,7 +33,7 @@ import (
 
 	kivik "github.com/go-kivik/kivik/v4"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
-	"github.com/go-kivik/kivik/v4/internal/mock"
+	"github.com/go-kivik/kivik/v4/int/mock"
 	"github.com/go-kivik/kivik/v4/internal/nettest"
 )
 

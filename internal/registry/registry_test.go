@@ -19,7 +19,7 @@ import (
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/kivik/v4/internal/mock"
+	"github.com/go-kivik/kivik/v4/int/mock"
 )
 
 // to protect the registry from concurrent tests

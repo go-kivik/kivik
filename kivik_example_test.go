@@ -18,7 +18,7 @@ import (
 	kivik "github.com/go-kivik/kivik/v4"
 	_ "github.com/go-kivik/kivik/v4/couchdb" // CouchDB driver, needed for executable example
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/kivik/v4/internal/mock"
+	"github.com/go-kivik/kivik/v4/int/mock"
 )
 
 func init() {

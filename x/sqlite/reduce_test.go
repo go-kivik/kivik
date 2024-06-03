@@ -144,17 +144,13 @@ func Test_reduceRows(t *testing.T) {
 		t.Parallel()
 
 		d := newDB(t)
-		var reduceFuncJS *string
-		if tt.reduceFuncJS != "" {
-			reduceFuncJS = &tt.reduceFuncJS
-		}
 		vopts := &viewOptions{
 			sorted: true,
 		}
 		if tt.vopts != nil {
 			vopts = tt.vopts
 		}
-		got, err := d.DB.(*db).reduceRows(tt.rows, reduceFuncJS, vopts)
+		got, err := d.DB.(*db).reduceRows(tt.rows, tt.reduceFuncJS, vopts)
 		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}

@@ -64,11 +64,7 @@ func (r *reduceRowIter) Next(row *reduce.Row) error {
 	return err
 }
 
-func (d *db) reduceRows(ri reduce.RowIterator, reduceFuncJS *string, vopts *viewOptions) (*reducedRows, error) {
-	var javascript string
-	if reduceFuncJS != nil {
-		javascript = *reduceFuncJS
-	}
+func (d *db) reduceRows(ri reduce.RowIterator, javascript string, vopts *viewOptions) (*reducedRows, error) {
 	groupLevel := int(vopts.groupLevel)
 	if groupLevel == 0 && vopts.group {
 		groupLevel = -1

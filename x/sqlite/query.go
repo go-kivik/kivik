@@ -120,7 +120,7 @@ func (d *db) performQuery(
 			 reduce AS (
 				SELECT
 					CASE WHEN MAX(id) IS NOT NULL THEN TRUE ELSE FALSE END AS reducible,
-					func_body                                              AS reduce_func
+					COALESCE(func_body, "")                                AS reduce_func
 				FROM {{ .Design }}
 				WHERE id = $5
 					AND rev = $6
@@ -270,7 +270,7 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 	var (
 		results      *sql.Rows
 		reducible    bool
-		reduceFuncJS *string
+		reduceFuncJS string
 	)
 	for {
 		rev, err := d.updateIndex(ctx, ddoc, view, vopts.update)
@@ -282,7 +282,7 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 			WITH reduce AS (
 				SELECT
 					CASE WHEN MAX(id) IS NOT NULL THEN TRUE ELSE FALSE END AS reducible,
-					func_body                                              AS reduce_func
+					COALESCE(func_body, "")                                AS reduce_func
 				FROM {{ .Design }}
 				WHERE id = $1
 					AND rev = $2

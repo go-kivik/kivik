@@ -34,6 +34,7 @@ func TestDBCreateDoc(t *testing.T) {
 
 		wantDocID  string
 		wantRev    string
+		check      func(*testing.T)
 		wantErr    string
 		wantStatus int
 	}
@@ -54,12 +55,42 @@ func TestDBCreateDoc(t *testing.T) {
 		wantErr:    "json: unsupported type: chan int",
 		wantStatus: http.StatusBadRequest,
 	})
+	tests.Add("doc without ID", func(t *testing.T) interface{} {
+		db := newDB(t)
+
+		return test{
+			db:        db,
+			doc:       map[string]interface{}{"foo": "bar"},
+			wantDocID: "(?i)^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$",
+			wantRev:   "1-.*",
+			check: func(t *testing.T) {
+				var docID, doc string
+				err := db.underlying().QueryRow(`
+					SELECT id, doc
+					FROM test
+					WHERE rev=1
+				`).Scan(&docID, &doc)
+				if err != nil {
+					t.Fatalf("Failed to query for doc: %s", err)
+				}
+				if docID == "" {
+					t.Errorf("Expected doc ID, got empty string")
+				}
+				if doc != `{"foo":"bar"}` {
+					t.Errorf("Unexpected doc content: %s", doc)
+				}
+			},
+		}
+	})
 
 	/*
 		TODO:
 		- create doc with specific doc id, but the id already exists -- should conflict
-		- create doc with no id, should generate one
 		- different UUID configuration options????
+		- create doc with attachments
+		- create deleted document?
+		- retry in case of duplicate random uuid ???
+
 	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {
@@ -79,11 +110,14 @@ func TestDBCreateDoc(t *testing.T) {
 		if err != nil {
 			return
 		}
-		if docID != tt.wantDocID {
+		if !regexp.MustCompile(tt.wantDocID).MatchString(docID) {
 			t.Errorf("Unexpected doc ID. Expected %s, got %s", tt.wantDocID, docID)
 		}
 		if !regexp.MustCompile(tt.wantRev).MatchString(rev) {
 			t.Errorf("Unexpected rev. Expected %s, got %s", tt.wantRev, rev)
+		}
+		if tt.check != nil {
+			tt.check(t)
 		}
 	})
 }

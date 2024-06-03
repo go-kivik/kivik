@@ -15,13 +15,41 @@ package sqlite
 import (
 	"context"
 
+	"github.com/google/uuid"
+
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
-func (db) CreateDoc(_ context.Context, doc interface{}, _ driver.Options) (string, string, error) {
+func (d *db) CreateDoc(ctx context.Context, doc interface{}, _ driver.Options) (string, string, error) {
 	data, err := prepareDoc("", doc)
 	if err != nil {
 		return "", "", err
 	}
-	return data.ID, "1-" + data.RevID(), nil
+	if data.ID == "" {
+		data.ID = uuid.NewString()
+	}
+
+	tx, err := d.db.BeginTx(ctx, nil)
+	if err != nil {
+		return "", "", err
+	}
+	defer tx.Rollback()
+
+	_, err = tx.ExecContext(ctx, d.query(`
+		INSERT INTO {{ .Revs }} (id, rev, rev_id)
+		VALUES ($1, 1, $2)
+	`), data.ID, data.RevID())
+	if err != nil {
+		return "", "", err
+	}
+
+	_, err = tx.ExecContext(ctx, d.query(`
+		INSERT INTO {{ .Docs }} (id, rev, rev_id, doc, md5sum, deleted)
+		VALUES ($1, 1, $2, $3, $4, FALSE)
+	`), data.ID, data.RevID(), data.Doc, data.MD5sum)
+	if err != nil {
+		return "", "", err
+	}
+
+	return data.ID, "1-" + data.RevID(), tx.Commit()
 }

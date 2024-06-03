@@ -274,7 +274,7 @@ func ParseFunc(javascript string, logger *log.Logger) (Func, error) {
 			// return value is set to null.
 			if err != nil {
 				logger.Printf("reduce function threw exception: %s", err.Error())
-				return nil, nil
+				return []interface{}{nil}, nil
 			}
 
 			rv := reduceValue.Export()

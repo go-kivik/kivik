@@ -582,8 +582,6 @@ func TestDBQuery(t *testing.T) {
 			},
 			wantLogs: []string{
 				`^reduce function threw exception: Error: broken at reduce `,
-				`^reduce function threw exception: Error: broken at reduce `,
-				`^reduce function threw exception: Error: broken at reduce `,
 			},
 		}
 	})

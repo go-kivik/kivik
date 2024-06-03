@@ -33,112 +33,69 @@ type reduceRow struct {
 	Value *string
 }
 
-func (r *reduceRowIter) Next() (*reduceRow, error) {
+func (r *reduceRowIter) Next(row *reduce.Row) error {
 	if !r.results.Next() {
 		if err := r.results.Err(); err != nil {
-			return nil, err
+			return err
 		}
-		return nil, io.EOF
+		return io.EOF
 	}
-	var row reduceRow
+	var key, value *[]byte
 	err := r.results.Scan(
-		&row.ID, &row.Key, &row.Value, discard{}, discard{}, discard{},
+		&row.ID, &key, &value, discard{}, discard{}, discard{},
 		discard{}, discard{}, discard{}, discard{}, discard{}, discard{}, discard{},
 	)
-	return &row, err
+	if err != nil {
+		return err
+	}
+	if key != nil {
+		if err = json.Unmarshal(*key, &row.Key); err != nil {
+			return err
+		}
+	} else {
+		row.Key = nil
+	}
+	if value != nil {
+		if err = json.Unmarshal(*value, &row.Value); err != nil {
+			return err
+		}
+	} else {
+		row.Value = nil
+	}
+	return err
 }
 
-type reduceRows interface {
-	Next() (*reduceRow, error)
-}
-
-func (d *db) reduceRows(ri reduceRows, reduceFuncJS *string, vopts *viewOptions) (*reducedRows, error) {
-	reduceFn, err := d.reduceFunc(reduceFuncJS)
+func (d *db) reduceRows(ri reduce.RowIterator, reduceFuncJS *string, vopts *viewOptions) (*reducedRows, error) {
+	var javascript string
+	if reduceFuncJS != nil {
+		javascript = *reduceFuncJS
+	}
+	groupLevel := int(vopts.groupLevel)
+	if groupLevel == 0 && vopts.group {
+		groupLevel = -1
+	}
+	rows, err := reduce.Reduce(ri, javascript, d.logger, groupLevel, nil)
 	if err != nil {
 		return nil, err
 	}
-	intermediate := map[string][]interface{}{}
-
-	for {
-		row, err := ri.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return nil, err
-		}
-
-		var key, value interface{}
-		_ = json.Unmarshal([]byte(row.Key), &key)
-		if row.Value != nil {
-			_ = json.Unmarshal([]byte(*row.Value), &value)
-		}
-		rv, err := reduceFn([][2]interface{}{{row.ID, key}}, []interface{}{value}, false)
-		if err != nil {
-			return nil, err
-		}
-		// group is handled below
-		if vopts.groupLevel > 0 {
-			var unkey []interface{}
-			_ = json.Unmarshal([]byte(row.Key), &unkey)
-			if len(unkey) > int(vopts.groupLevel) {
-				newKey, _ := json.Marshal(unkey[:vopts.groupLevel])
-				row.Key = string(newKey)
-			}
-		}
-		intermediate[row.Key] = append(intermediate[row.Key], rv)
-	}
-
-	// group_level is handled above
-	if !vopts.group {
-		var values []interface{}
-		for _, v := range intermediate {
-			values = append(values, v...)
-		}
-		if len(values) == 0 {
-			return &reducedRows{}, nil
-		}
-		rv, err := reduceFn(nil, values, true)
-		if err != nil {
-			return nil, err
-		}
-		tmp, _ := json.Marshal(rv)
-		return &reducedRows{
-			{
-				Key:   json.RawMessage(`null`),
-				Value: bytes.NewReader(tmp),
-			},
-		}, nil
-	}
-
-	final := make(reducedRows, 0, len(intermediate))
-	for key, values := range intermediate {
-		var value json.RawMessage
-		if len(values) > 1 {
-			rv, err := reduceFn(nil, values, true)
-			if err != nil {
-				return nil, err
-			}
-			value, _ = json.Marshal(rv)
-		} else {
-			value, _ = json.Marshal(values[0])
-		}
-		final = append(final, driver.Row{
-			Key:   json.RawMessage(key),
+	out := make(reducedRows, 0, len(rows))
+	for _, row := range rows {
+		key, _ := json.Marshal(row.Key)
+		value, _ := json.Marshal(row.Value)
+		out = append(out, driver.Row{
+			Key:   key,
 			Value: bytes.NewReader(value),
 		})
 	}
-
 	if vopts.sorted {
-		slices.SortFunc(final, func(a, b driver.Row) int {
+		slices.SortFunc(out, func(a, b driver.Row) int {
 			return couchdbCmpJSON(a.Key, b.Key)
 		})
 		if vopts.descending {
-			slices.Reverse(final)
+			slices.Reverse(out)
 		}
 	}
-
-	return &final, nil
+	return &out, nil
 }
 
 type reducedRows []driver.Row
@@ -162,26 +119,3 @@ func (r *reducedRows) Next(row *driver.Row) error {
 func (*reducedRows) Offset() int64     { return 0 }
 func (*reducedRows) TotalRows() int64  { return 0 }
 func (*reducedRows) UpdateSeq() string { return "" }
-
-type reduceFunc func(keys [][2]interface{}, values []interface{}, rereduce bool) (interface{}, error)
-
-func (d *db) reduceFunc(reduceFuncJS *string) (reduceFunc, error) {
-	var js string
-	if reduceFuncJS != nil {
-		js = *reduceFuncJS
-	}
-	f, err := reduce.ParseFunc(js, d.logger)
-	if err != nil {
-		return nil, err
-	}
-	return func(keys [][2]interface{}, values []interface{}, rereduce bool) (interface{}, error) {
-		out, err := f(keys, values, rereduce)
-		if err != nil {
-			return nil, err
-		}
-		if len(out) == 1 {
-			return out[0], nil
-		}
-		return out, nil
-	}, nil
-}

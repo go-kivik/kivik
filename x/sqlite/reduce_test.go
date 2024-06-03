@@ -16,6 +16,7 @@
 package sqlite
 
 import (
+	"encoding/json"
 	"io"
 	"testing"
 
@@ -23,26 +24,43 @@ import (
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/x/sqlite/v4/reduce"
 )
 
 type testReduceRows []*reduceRow
 
-var _ reduceRows = &testReduceRows{}
+var _ reduce.RowIterator = &testReduceRows{}
 
-func (r *testReduceRows) Next() (*reduceRow, error) {
+func (r *testReduceRows) Next(row *reduce.Row) error {
 	if len(*r) == 0 {
-		return nil, io.EOF
+		return io.EOF
 	}
-	row := (*r)[0]
+	thisRow := *(*r)[0]
 	*r = (*r)[1:]
-	return row, nil
+	var key, value interface{}
+	if thisRow.Key != "" {
+		if err := json.Unmarshal([]byte(thisRow.Key), &key); err != nil {
+			return err
+		}
+	}
+	if thisRow.Value != nil {
+		if err := json.Unmarshal([]byte(*thisRow.Value), &value); err != nil {
+			return err
+		}
+	}
+	*row = reduce.Row{
+		ID:    thisRow.ID,
+		Key:   key,
+		Value: value,
+	}
+	return nil
 }
 
 func Test_reduceRows(t *testing.T) {
 	t.Parallel()
 
 	type test struct {
-		rows          reduceRows
+		rows          reduce.RowIterator
 		reduceFuncJS  string
 		vopts         *viewOptions
 		want          []reducedRow
@@ -57,7 +75,7 @@ func Test_reduceRows(t *testing.T) {
 	})
 	tests.Add("one row", test{
 		rows: &testReduceRows{
-			{ID: "foo", Key: "foo", Value: &[]string{"1"}[0]},
+			{ID: "foo", Key: `"foo"`, Value: &[]string{"1"}[0]},
 		},
 		reduceFuncJS: `_sum`,
 		want: []reducedRow{
@@ -69,8 +87,8 @@ func Test_reduceRows(t *testing.T) {
 	})
 	tests.Add("two rows", test{
 		rows: &testReduceRows{
-			{ID: "foo", Key: "foo", Value: &[]string{"1"}[0]},
-			{ID: "bar", Key: "bar", Value: &[]string{"1"}[0]},
+			{ID: "foo", Key: `"foo"`, Value: &[]string{"1"}[0]},
+			{ID: "bar", Key: `"bar"`, Value: &[]string{"1"}[0]},
 		},
 		reduceFuncJS: `_sum`,
 		want: []reducedRow{
@@ -82,8 +100,8 @@ func Test_reduceRows(t *testing.T) {
 	})
 	tests.Add("group=true", test{
 		rows: &testReduceRows{
-			{ID: "foo", Key: "foo", Value: &[]string{"1"}[0]},
-			{ID: "bar", Key: "bar", Value: &[]string{"1"}[0]},
+			{ID: "foo", Key: `"foo"`, Value: &[]string{"1"}[0]},
+			{ID: "bar", Key: `"bar"`, Value: &[]string{"1"}[0]},
 		},
 		reduceFuncJS: `_sum`,
 		vopts: &viewOptions{
@@ -91,11 +109,11 @@ func Test_reduceRows(t *testing.T) {
 		},
 		want: []reducedRow{
 			{
-				Key:   "foo",
+				Key:   `"foo"`,
 				Value: "1",
 			},
 			{
-				Key:   "bar",
+				Key:   `"bar"`,
 				Value: "1",
 			},
 		},

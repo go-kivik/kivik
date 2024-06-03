@@ -14,6 +14,7 @@ package sqlite
 
 import (
 	"context"
+	"net/http"
 	"regexp"
 	"testing"
 
@@ -43,6 +44,18 @@ func TestDBCreateDoc(t *testing.T) {
 		wantDocID: "foo",
 		wantRev:   "1-.*",
 	})
+	tests.Add("invalid document should return 400", test{
+		doc:        make(chan int),
+		wantErr:    "json: unsupported type: chan int",
+		wantStatus: http.StatusBadRequest,
+	})
+
+	/*
+		TODO:
+		- create doc with specific doc id, but the id already exists -- should conflict
+		- create doc with no id, should generate one
+		- different UUID configuration options????
+	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()

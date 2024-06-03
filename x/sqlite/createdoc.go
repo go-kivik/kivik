@@ -14,10 +14,16 @@ package sqlite
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/int/errors"
 )
 
-func (db) CreateDoc(context.Context, interface{}, driver.Options) (string, string, error) {
+func (db) CreateDoc(_ context.Context, doc interface{}, _ driver.Options) (string, string, error) {
+	_, err := json.Marshal(doc)
+	if err != nil {
+		return "", "", &errors.Error{Status: 400, Err: err}
+	}
 	return "foo", "1-asdf", nil
 }

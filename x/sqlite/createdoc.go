@@ -58,10 +58,11 @@ func (d *db) CreateDoc(ctx context.Context, doc interface{}, _ driver.Options) (
 		return "", "", &kerrors.Error{Status: http.StatusConflict, Message: "document update conflict"}
 	}
 
+	rev := revision{rev: 1, id: data.RevID()}
 	_, err = tx.ExecContext(ctx, d.query(`
 		INSERT INTO {{ .Revs }} (id, rev, rev_id)
 		VALUES ($1, 1, $2)
-	`), data.ID, data.RevID())
+	`), data.ID, rev.id)
 	if err != nil {
 		return "", "", err
 	}
@@ -69,14 +70,14 @@ func (d *db) CreateDoc(ctx context.Context, doc interface{}, _ driver.Options) (
 	_, err = tx.ExecContext(ctx, d.query(`
 		INSERT INTO {{ .Docs }} (id, rev, rev_id, doc, md5sum, deleted)
 		VALUES ($1, 1, $2, $3, $4, $5)
-	`), data.ID, data.RevID(), data.Doc, data.MD5sum, data.Deleted)
+	`), data.ID, rev.id, data.Doc, data.MD5sum, data.Deleted)
 	if err != nil {
 		return "", "", err
 	}
 
-	if err := d.createDocAttachments(ctx, data, tx, revision{rev: 1, id: data.RevID()}, nil); err != nil {
+	if err := d.createDocAttachments(ctx, data, tx, rev, nil); err != nil {
 		return "", "", err
 	}
 
-	return data.ID, "1-" + data.RevID(), tx.Commit()
+	return data.ID, rev.String(), tx.Commit()
 }

@@ -14,16 +14,20 @@
 package reduce
 
 import (
+	"bytes"
+	"encoding/json"
 	"io"
 	"log"
 	"reflect"
+
+	"github.com/go-kivik/kivik/v4/driver"
 )
 
-// RowIterator is the interface for iterating over rows of data to be reduced.
-type RowIterator interface {
-	// Next should populate Row, or return an error. It should return [io.EOF]
-	// when there are no more rows to read.
-	Next(*Row) error
+// Reducer is the interface for iterating over rows of data to be reduced.
+type Reducer interface {
+	// ReduceNext should populate Row, or return an error. It should return
+	// [io.EOF] when there are no more rows to read.
+	ReduceNext(*Row) error
 }
 
 // Row represents a single row of data to be reduced, or the result of a
@@ -44,16 +48,44 @@ type Row struct {
 // Rows is a slice of Row, and implements RowIterator.
 type Rows []Row
 
-var _ RowIterator = (*Rows)(nil)
+var _ Reducer = (*Rows)(nil)
 
-// Next implements RowIterator.
-func (r *Rows) Next(row *Row) error {
+// ReduceNext implements RowIterator.
+func (r *Rows) ReduceNext(row *Row) error {
 	if len(*r) == 0 {
 		return io.EOF
 	}
 	*row, *r = (*r)[0], (*r)[1:]
 	return nil
 }
+
+// Next implements the [github.com/go-kivik/kivik/v4/driver.Rows] interface.
+func (r *Rows) Next(row *driver.Row) error {
+	if len(*r) == 0 {
+		return io.EOF
+	}
+	thisRow := (*r)[0]
+	*r = (*r)[1:]
+	row.Key, _ = json.Marshal(thisRow.Key)
+	value, _ := json.Marshal(thisRow.Value)
+	row.Value = bytes.NewReader(value)
+	return nil
+}
+
+// Close closes the rows iterator.
+func (r *Rows) Close() error {
+	*r = nil
+	return nil
+}
+
+// Offset returns 0.
+func (*Rows) Offset() int64 { return 0 }
+
+// TotalRows returns 0.
+func (*Rows) TotalRows() int64 { return 0 }
+
+// UpdateSeq returns "".
+func (*Rows) UpdateSeq() string { return "" }
 
 // Func is the signature of a [CouchDB reduce function], translated to Go.
 //
@@ -72,7 +104,7 @@ type Func func(keys [][2]interface{}, values []interface{}, rereduce bool) ([]in
 //	-1: Maximum grouping, same as group=true
 //	 0: No grouping, same as group=false
 //	1+: Group by the first N elements of the key, same as group_level=N
-func Reduce(rows RowIterator, javascript string, logger *log.Logger, groupLevel int, cb func([]Row)) ([]Row, error) {
+func Reduce(rows Reducer, javascript string, logger *log.Logger, groupLevel int, cb func([]Row)) (*Rows, error) {
 	fn, err := ParseFunc(javascript, logger)
 	if err != nil {
 		return nil, err
@@ -80,8 +112,8 @@ func Reduce(rows RowIterator, javascript string, logger *log.Logger, groupLevel 
 	return reduce(rows, fn, groupLevel, cb)
 }
 
-func reduce(rows RowIterator, fn Func, groupLevel int, cb func([]Row)) ([]Row, error) {
-	out := make([]Row, 0, 1)
+func reduce(rows Reducer, fn Func, groupLevel int, cb func([]Row)) (*Rows, error) {
+	out := make(Rows, 0, 1)
 	var first, last int
 
 	callReduce := func(keys [][2]interface{}, values []interface{}, rereduce bool, key any) error {
@@ -129,7 +161,7 @@ func reduce(rows RowIterator, fn Func, groupLevel int, cb func([]Row)) ([]Row, e
 	var rereduce bool
 	for {
 		var row Row
-		if err := rows.Next(&row); err != nil {
+		if err := rows.ReduceNext(&row); err != nil {
 			if err == io.EOF {
 				break
 			}
@@ -166,7 +198,7 @@ func reduce(rows RowIterator, fn Func, groupLevel int, cb func([]Row)) ([]Row, e
 
 	if len(out) <= 1 {
 		// One or fewer results can't have duplicates that need to be re-reduced.
-		return out, nil
+		return &out, nil
 	}
 
 	// If we received mixed map/reduce inputs, then we may need to re-reduce
@@ -175,12 +207,11 @@ func reduce(rows RowIterator, fn Func, groupLevel int, cb func([]Row)) ([]Row, e
 	for i := 1; i < len(out); i++ {
 		key := truncateKey(out[i].Key, groupLevel)
 		if reflect.DeepEqual(lastKey, key) {
-			rowsOut := Rows(out)
-			return reduce(&rowsOut, fn, groupLevel, cb)
+			return reduce(&out, fn, groupLevel, cb)
 		}
 	}
 
-	return out, nil
+	return &out, nil
 }
 
 func keyLen(key any) int {

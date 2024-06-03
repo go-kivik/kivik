@@ -27,6 +27,7 @@ import (
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
+	"github.com/go-kivik/kivik/x/sqlite/v4/reduce"
 )
 
 func fromJSValue(v interface{}) (*string, error) {
@@ -120,7 +121,7 @@ func (d *db) performQuery(
 			 reduce AS (
 				SELECT
 					CASE WHEN MAX(id) IS NOT NULL THEN TRUE ELSE FALSE END AS reducible,
-					func_body                                              AS reduce_func
+					COALESCE(func_body, "")                                AS reduce_func
 				FROM {{ .Design }}
 				WHERE id = $5
 					AND rev = $6
@@ -252,7 +253,7 @@ func (d *db) performQuery(
 
 		if meta.reducible && (vopts.reduce == nil || *vopts.reduce) {
 			ri := &reduceRowIter{results: results}
-			return d.reduceRows(ri, meta.reduceFuncJS, vopts)
+			return reduce.Reduce(ri, meta.reduceFuncJS, d.logger, vopts.reduceGroupLevel(), nil)
 		}
 
 		// If the results are up to date, OR, we're in false/lazy update mode,
@@ -270,7 +271,7 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 	var (
 		results      *sql.Rows
 		reducible    bool
-		reduceFuncJS *string
+		reduceFuncJS string
 	)
 	for {
 		rev, err := d.updateIndex(ctx, ddoc, view, vopts.update)
@@ -278,11 +279,11 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 			return nil, err
 		}
 
-		query := d.ddocQuery(ddoc, view, rev.String(), `
+		query := fmt.Sprintf(d.ddocQuery(ddoc, view, rev.String(), `
 			WITH reduce AS (
 				SELECT
 					CASE WHEN MAX(id) IS NOT NULL THEN TRUE ELSE FALSE END AS reducible,
-					func_body                                              AS reduce_func
+					COALESCE(func_body, "")                                AS reduce_func
 				FROM {{ .Design }}
 				WHERE id = $1
 					AND rev = $2
@@ -331,12 +332,12 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 					NULL AS digest,
 					NULL AS rev_pos,
 					NULL AS data
-				FROM {{ .Map }}
+				FROM {{ .Map }} AS view
 				JOIN reduce
 				WHERE reduce.reducible AND ($6 IS NULL OR $6 == TRUE)
-				ORDER BY id, key
+				%[1]s -- ORDER BY
 			)
-		`)
+		`), vopts.buildOrderBy())
 
 		results, err = d.db.QueryContext( //nolint:rowserrcheck // Err checked in iterator
 			ctx, query,
@@ -378,7 +379,7 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 	}
 
 	ri := &reduceRowIter{results: results}
-	return d.reduceRows(ri, reduceFuncJS, vopts)
+	return reduce.Reduce(ri, reduceFuncJS, d.logger, vopts.reduceGroupLevel(), nil)
 }
 
 const batchSize = 100

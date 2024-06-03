@@ -13,11 +13,9 @@
 package sqlite
 
 import (
-	"bytes"
 	"database/sql"
 	"encoding/json"
 	"io"
-	"slices"
 
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/x/sqlite/v4/reduce"
@@ -27,118 +25,36 @@ type reduceRowIter struct {
 	results *sql.Rows
 }
 
-type reduceRow struct {
-	ID    string
-	Key   string
-	Value *string
-}
-
-func (r *reduceRowIter) Next() (*reduceRow, error) {
+func (r *reduceRowIter) ReduceNext(row *reduce.Row) error {
 	if !r.results.Next() {
 		if err := r.results.Err(); err != nil {
-			return nil, err
+			return err
 		}
-		return nil, io.EOF
+		return io.EOF
 	}
-	var row reduceRow
+	var key, value *[]byte
 	err := r.results.Scan(
-		&row.ID, &row.Key, &row.Value, discard{}, discard{}, discard{},
+		&row.ID, &key, &value, discard{}, discard{}, discard{},
 		discard{}, discard{}, discard{}, discard{}, discard{}, discard{}, discard{},
 	)
-	return &row, err
-}
-
-type reduceRows interface {
-	Next() (*reduceRow, error)
-}
-
-func (d *db) reduceRows(ri reduceRows, reduceFuncJS *string, vopts *viewOptions) (*reducedRows, error) {
-	reduceFn, err := d.reduceFunc(reduceFuncJS)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	intermediate := map[string][]interface{}{}
-
-	for {
-		row, err := ri.Next()
-		if err == io.EOF {
-			break
+	if key != nil {
+		if err = json.Unmarshal(*key, &row.Key); err != nil {
+			return err
 		}
-		if err != nil {
-			return nil, err
-		}
-
-		var key, value interface{}
-		_ = json.Unmarshal([]byte(row.Key), &key)
-		if row.Value != nil {
-			_ = json.Unmarshal([]byte(*row.Value), &value)
-		}
-		rv, err := reduceFn([][2]interface{}{{row.ID, key}}, []interface{}{value}, false)
-		if err != nil {
-			return nil, err
-		}
-		// group is handled below
-		if vopts.groupLevel > 0 {
-			var unkey []interface{}
-			_ = json.Unmarshal([]byte(row.Key), &unkey)
-			if len(unkey) > int(vopts.groupLevel) {
-				newKey, _ := json.Marshal(unkey[:vopts.groupLevel])
-				row.Key = string(newKey)
-			}
-		}
-		intermediate[row.Key] = append(intermediate[row.Key], rv)
+	} else {
+		row.Key = nil
 	}
-
-	// group_level is handled above
-	if !vopts.group {
-		var values []interface{}
-		for _, v := range intermediate {
-			values = append(values, v...)
+	if value != nil {
+		if err = json.Unmarshal(*value, &row.Value); err != nil {
+			return err
 		}
-		if len(values) == 0 {
-			return &reducedRows{}, nil
-		}
-		rv, err := reduceFn(nil, values, true)
-		if err != nil {
-			return nil, err
-		}
-		tmp, _ := json.Marshal(rv)
-		return &reducedRows{
-			{
-				Key:   json.RawMessage(`null`),
-				Value: bytes.NewReader(tmp),
-			},
-		}, nil
+	} else {
+		row.Value = nil
 	}
-
-	final := make(reducedRows, 0, len(intermediate))
-	for key, values := range intermediate {
-		var value json.RawMessage
-		if len(values) > 1 {
-			rv, err := reduceFn(nil, values, true)
-			if err != nil {
-				return nil, err
-			}
-			value, _ = json.Marshal(rv)
-		} else {
-			value, _ = json.Marshal(values[0])
-		}
-		final = append(final, driver.Row{
-			Key:   json.RawMessage(key),
-			Value: bytes.NewReader(value),
-		})
-	}
-
-	if vopts.sorted {
-		slices.SortFunc(final, func(a, b driver.Row) int {
-			return couchdbCmpJSON(a.Key, b.Key)
-		})
-		if vopts.descending {
-			slices.Reverse(final)
-		}
-	}
-
-	return &final, nil
+	return err
 }
 
 type reducedRows []driver.Row
@@ -162,26 +78,3 @@ func (r *reducedRows) Next(row *driver.Row) error {
 func (*reducedRows) Offset() int64     { return 0 }
 func (*reducedRows) TotalRows() int64  { return 0 }
 func (*reducedRows) UpdateSeq() string { return "" }
-
-type reduceFunc func(keys [][2]interface{}, values []interface{}, rereduce bool) (interface{}, error)
-
-func (d *db) reduceFunc(reduceFuncJS *string) (reduceFunc, error) {
-	var js string
-	if reduceFuncJS != nil {
-		js = *reduceFuncJS
-	}
-	f, err := reduce.ParseFunc(js, d.logger)
-	if err != nil {
-		return nil, err
-	}
-	return func(keys [][2]interface{}, values []interface{}, rereduce bool) (interface{}, error) {
-		out, err := f(keys, values, rereduce)
-		if err != nil {
-			return nil, err
-		}
-		if len(out) == 1 {
-			return out[0], nil
-		}
-		return out, nil
-	}, nil
-}

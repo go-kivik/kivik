@@ -25,10 +25,10 @@ import (
 
 func TestReduce(t *testing.T) {
 	type test struct {
-		input      RowIterator
+		input      Reducer
 		javascript string
 		groupLevel int
-		want       []Row
+		want       Rows
 		wantCache  [][]Row
 		wantErr    string
 		wantStatus int
@@ -160,7 +160,7 @@ func TestReduce(t *testing.T) {
 		if err != nil {
 			return
 		}
-		if d := cmp.Diff(tt.want, got); d != "" {
+		if d := cmp.Diff(tt.want, *got); d != "" {
 			t.Errorf("Unexpected output (-want +got):\n%s", d)
 		}
 		if tt.wantCache != nil {

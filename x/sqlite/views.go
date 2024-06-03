@@ -86,7 +86,7 @@ func (d *db) queryBuiltinView(
 		SELECT
 			TRUE                  AS up_to_date,
 			FALSE                 AS reducible,
-			NULL                  AS reduce_func,
+			""                    AS reduce_func,
 			IIF($3, MAX(seq), "") AS update_seq,
 			NULL,
 			NULL,
@@ -182,7 +182,7 @@ func (d *db) queryBuiltinView(
 type viewMetadata struct {
 	upToDate     bool
 	reducible    bool
-	reduceFuncJS *string
+	reduceFuncJS string
 	updateSeq    string
 }
 

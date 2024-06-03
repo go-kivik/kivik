@@ -597,6 +597,19 @@ func (v viewOptions) buildOrderBy() string {
 	return ""
 }
 
+// reduceGroupLevel returns the calculated groupLevel value to pass to
+// [github.com/go-kivik/kivik/v4/x/sqlite/reduce.Reduce].
+//
+//	-1: Maximum grouping, same as group=true
+//	 0: No grouping, same as group=false
+//	1+: Group by the first N elements of the key, same as group_level=N
+func (v viewOptions) reduceGroupLevel() int {
+	if v.groupLevel == 0 && v.group {
+		return -1
+	}
+	return int(v.groupLevel)
+}
+
 // viewOptions are all of the options recognized by the view endpoints
 // _desgin/<ddoc>/_view/<view>, _all_docs, _design_docs, and _local_docs.
 //

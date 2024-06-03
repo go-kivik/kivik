@@ -11,3 +11,61 @@
 // the License.
 
 package sqlite
+
+import (
+	"context"
+	"regexp"
+	"testing"
+
+	"gitlab.com/flimzy/testy"
+
+	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/int/errors"
+	"github.com/go-kivik/kivik/v4/int/mock"
+)
+
+func TestDBCreateDoc(t *testing.T) {
+	t.Parallel()
+	type test struct {
+		db   *testDB
+		doc  interface{}
+		opts driver.Options
+
+		wantDocID  string
+		wantRev    string
+		wantErr    string
+		wantStatus int
+	}
+
+	tests := testy.NewTable()
+	tests.Add("create doc with specified doc id", test{
+		doc:       map[string]string{"_id": "foo"},
+		wantDocID: "foo",
+		wantRev:   "1-.*",
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		t.Parallel()
+		db := tt.db
+		if db == nil {
+			db = newDB(t)
+		}
+		opts := tt.opts
+		if opts == nil {
+			opts = mock.NilOption
+		}
+		docID, rev, err := db.CreateDoc(context.Background(), tt.doc, opts)
+		if d := errors.StatusErrorDiff(tt.wantErr, tt.wantStatus, err); d != "" {
+			t.Errorf("Unexpected error: %s", d)
+		}
+		if err != nil {
+			return
+		}
+		if docID != tt.wantDocID {
+			t.Errorf("Unexpected doc ID. Expected %s, got %s", tt.wantDocID, docID)
+		}
+		if !regexp.MustCompile(tt.wantRev).MatchString(rev) {
+			t.Errorf("Unexpected rev. Expected %s, got %s", tt.wantRev, rev)
+		}
+	})
+}

@@ -19,5 +19,5 @@ import (
 )
 
 func (db) CreateDoc(context.Context, interface{}, driver.Options) (string, string, error) {
-	return "", "", nil
+	return "foo", "1-asdf", nil
 }

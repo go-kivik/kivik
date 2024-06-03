@@ -24,7 +24,7 @@ import (
 
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/couchdb/chttp"
-	"github.com/go-kivik/kivik/v4/internal/mock"
+	"github.com/go-kivik/kivik/v4/int/mock"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 )
 

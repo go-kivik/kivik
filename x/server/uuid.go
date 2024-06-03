@@ -27,7 +27,7 @@ import (
 
 	"gitlab.com/flimzy/httpe"
 
-	"github.com/go-kivik/kivik/v4/internal"
+	internal "github.com/go-kivik/kivik/v4/int/errors"
 )
 
 type uuidAlgorithm string

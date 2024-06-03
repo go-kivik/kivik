@@ -18,7 +18,7 @@ import (
 	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/kivik/v4/internal"
+	internal "github.com/go-kivik/kivik/v4/int/errors"
 )
 
 // DBUpdates is an iterator for database updates.

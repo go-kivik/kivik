@@ -23,7 +23,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"gitlab.com/flimzy/httpe"
 
-	"github.com/go-kivik/kivik/v4/internal"
+	internal "github.com/go-kivik/kivik/v4/int/errors"
 	"github.com/go-kivik/kivik/v4/x/server/config"
 )
 

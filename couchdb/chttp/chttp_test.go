@@ -32,8 +32,8 @@ import (
 	"golang.org/x/net/publicsuffix"
 
 	kivik "github.com/go-kivik/kivik/v4"
-	"github.com/go-kivik/kivik/v4/internal"
-	"github.com/go-kivik/kivik/v4/internal/mock"
+	internal "github.com/go-kivik/kivik/v4/int/errors"
+	"github.com/go-kivik/kivik/v4/int/mock"
 	"github.com/go-kivik/kivik/v4/internal/nettest"
 )
 

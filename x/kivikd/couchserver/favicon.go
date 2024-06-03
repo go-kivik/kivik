@@ -21,7 +21,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/go-kivik/kivik/v4/internal"
+	internal "github.com/go-kivik/kivik/v4/int/errors"
 )
 
 //go:embed files

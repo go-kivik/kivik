@@ -19,7 +19,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/go-kivik/kivik/v4/internal"
+	internal "github.com/go-kivik/kivik/v4/int/errors"
 )
 
 // A UserStore provides an AuthHandler with access to a user store for.

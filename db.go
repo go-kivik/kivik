@@ -24,7 +24,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/kivik/v4/internal"
+	internal "github.com/go-kivik/kivik/v4/int/errors"
 )
 
 // DB is a handle to a specific database.

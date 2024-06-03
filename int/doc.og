@@ -10,15 +10,8 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-package couchdb
-
-import (
-	"fmt"
-	"net/http"
-
-	internal "github.com/go-kivik/kivik/v4/int/errors"
-)
-
-func missingArg(arg string) error {
-	return &internal.Error{Status: http.StatusBadRequest, Err: fmt.Errorf("kivik: %s required", arg)}
-}
+// Package int and its subdirectories contain internal packages that are
+// imported by other kivik modules, and thus cannot be included in the `internal`
+// directory. Do not use these packages directly. They are subject to change
+// without warning.
+package int

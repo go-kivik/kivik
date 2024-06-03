@@ -20,7 +20,7 @@ import (
 	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/kivik/v4/internal"
+	internal "github.com/go-kivik/kivik/v4/int/errors"
 )
 
 // Changes is an iterator over the database changes feed.

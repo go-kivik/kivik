@@ -25,8 +25,8 @@ import (
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/kivik/v4/internal"
-	"github.com/go-kivik/kivik/v4/internal/mock"
+	internal "github.com/go-kivik/kivik/v4/int/errors"
+	"github.com/go-kivik/kivik/v4/int/mock"
 )
 
 const optionEnsureDBsExist = "ensure_dbs_exist"

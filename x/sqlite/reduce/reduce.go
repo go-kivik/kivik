@@ -92,6 +92,10 @@ func (*Rows) UpdateSeq() string { return "" }
 // [CouchDB reduce function]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#reduce-and-rereduce-functions
 type Func func(keys [][2]interface{}, values []interface{}, rereduce bool) ([]interface{}, error)
 
+// Callback is called with the group depth and result of each intermediate
+// reduce call. It can be used to cache intermediate results.
+type Callback func(depth uint, rows []Row)
+
 // Reduce calls fn on rows, and returns the results. The input must be in
 // key-sorted order, and may contain both previously reduced rows, and map
 // output rows.  cb, if not nil, is called with the results of every
@@ -104,7 +108,7 @@ type Func func(keys [][2]interface{}, values []interface{}, rereduce bool) ([]in
 //	-1: Maximum grouping, same as group=true
 //	 0: No grouping, same as group=false
 //	1+: Group by the first N elements of the key, same as group_level=N
-func Reduce(rows Reducer, javascript string, logger *log.Logger, groupLevel int, cb func([]Row)) (*Rows, error) {
+func Reduce(rows Reducer, javascript string, logger *log.Logger, groupLevel int, cb Callback) (*Rows, error) {
 	fn, err := ParseFunc(javascript, logger)
 	if err != nil {
 		return nil, err
@@ -112,7 +116,7 @@ func Reduce(rows Reducer, javascript string, logger *log.Logger, groupLevel int,
 	return reduce(rows, fn, groupLevel, cb)
 }
 
-func reduce(rows Reducer, fn Func, groupLevel int, cb func([]Row)) (*Rows, error) {
+func reduce(rows Reducer, fn Func, groupLevel int, cb Callback) (*Rows, error) {
 	out := make(Rows, 0, 1)
 	var first, last int
 
@@ -148,7 +152,16 @@ func reduce(rows Reducer, fn Func, groupLevel int, cb func([]Row)) (*Rows, error
 			first, last = 0, 0
 		}
 		if cb != nil {
-			cb(rows)
+			var depth uint
+			switch t := key.(type) {
+			case nil:
+				// depth is 0 for non-grouped results
+			case []any:
+				depth = uint(len(t))
+			default:
+				depth = 1
+			}
+			cb(depth, rows)
 		}
 		out = append(out, rows...)
 		return nil

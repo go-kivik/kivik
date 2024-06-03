@@ -18,6 +18,7 @@ import (
 	"math"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
@@ -589,10 +590,18 @@ func (v viewOptions) buildWhere(args *[]any) []string {
 	return where
 }
 
-func (v viewOptions) buildOrderBy() string {
+func (v viewOptions) buildOrderBy(moreColumns ...string) string {
 	if v.sorted {
 		direction := descendingToDirection(v.descending)
-		return "ORDER BY view.key " + direction
+		if len(moreColumns) == 0 {
+			return "ORDER BY view.key " + direction
+		}
+		conditions := make([]string, 0, len(moreColumns)+1)
+		conditions = append(conditions, "view.key "+direction)
+		for _, col := range moreColumns {
+			conditions = append(conditions, "view."+col+" "+direction)
+		}
+		return "ORDER BY " + strings.Join(conditions, ", ")
 	}
 	return ""
 }

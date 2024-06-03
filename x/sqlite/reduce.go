@@ -17,7 +17,6 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/x/sqlite/v4/reduce"
 )
 
@@ -34,7 +33,7 @@ func (r *reduceRowIter) ReduceNext(row *reduce.Row) error {
 	}
 	var key, value *[]byte
 	err := r.results.Scan(
-		&row.ID, &key, &value, discard{}, discard{}, discard{},
+		&row.ID, &key, &value, &row.First, &row.Last, discard{},
 		discard{}, discard{}, discard{}, discard{}, discard{}, discard{}, discard{},
 	)
 	if err != nil {
@@ -54,27 +53,5 @@ func (r *reduceRowIter) ReduceNext(row *reduce.Row) error {
 	} else {
 		row.Value = nil
 	}
-	return err
-}
-
-type reducedRows []driver.Row
-
-var _ driver.Rows = (*reducedRows)(nil)
-
-func (r *reducedRows) Close() error {
-	*r = nil
 	return nil
 }
-
-func (r *reducedRows) Next(row *driver.Row) error {
-	if len(*r) == 0 {
-		return io.EOF
-	}
-	*row = (*r)[0]
-	*r = (*r)[1:]
-	return nil
-}
-
-func (*reducedRows) Offset() int64     { return 0 }
-func (*reducedRows) TotalRows() int64  { return 0 }
-func (*reducedRows) UpdateSeq() string { return "" }

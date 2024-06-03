@@ -87,7 +87,7 @@ var schema = []string{
 }
 
 var viewSchema = []string{
-	`CREATE TABLE IF NOT EXISTS {{ .Map }} (
+	`CREATE TABLE {{ .Map }} (
 		pk INTEGER PRIMARY KEY,
 		id TEXT NOT NULL,
 		rev INTEGER NOT NULL,
@@ -96,5 +96,15 @@ var viewSchema = []string{
 		value TEXT,
 		FOREIGN KEY (id, rev, rev_id) REFERENCES {{ .Docs }} (id, rev, rev_id)
 	)`,
-	`CREATE INDEX IF NOT EXISTS {{ .IndexMap }} ON {{ .Map }} (key)`,
+	`CREATE INDEX {{ .IndexMap }} ON {{ .Map }} (key)`,
+	`CREATE TABLE {{ .Reduce }} (
+		seq INTEGER NOT NULL,
+		depth INTEGER NOT NULL,
+		first_key TEXT COLLATE COUCHDB_UCI,
+		first_pk INTEGER NOT NULL,
+		last_key TEXT COLLATE COUCHDB_UCI,
+		last_pk INTEGER NOT NULL,
+		value TEXT,
+		UNIQUE (depth, first_key, first_pk, last_key, last_pk)
+	)`,
 }

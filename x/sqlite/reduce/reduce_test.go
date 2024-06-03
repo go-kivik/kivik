@@ -160,7 +160,7 @@ func TestReduce(t *testing.T) {
 		if err != nil {
 			return
 		}
-		if d := cmp.Diff(tt.want, got); d != "" {
+		if d := cmp.Diff(tt.want, *got); d != "" {
 			t.Errorf("Unexpected output (-want +got):\n%s", d)
 		}
 		if tt.wantCache != nil {

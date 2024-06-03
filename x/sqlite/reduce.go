@@ -13,7 +13,6 @@
 package sqlite
 
 import (
-	"bytes"
 	"database/sql"
 	"encoding/json"
 	"io"
@@ -65,20 +64,7 @@ func (r *reduceRowIter) ReduceNext(row *reduce.Row) error {
 }
 
 func (d *db) reduceRows(ri reduce.Reducer, javascript string, vopts *viewOptions) (driver.Rows, error) {
-	rows, err := reduce.Reduce(ri, javascript, d.logger, vopts.reduceGroupLevel(), nil)
-	if err != nil {
-		return nil, err
-	}
-	out := make(reducedRows, 0, len(rows))
-	for _, row := range rows {
-		key, _ := json.Marshal(row.Key)
-		value, _ := json.Marshal(row.Value)
-		out = append(out, driver.Row{
-			Key:   key,
-			Value: bytes.NewReader(value),
-		})
-	}
-	return &out, nil
+	return reduce.Reduce(ri, javascript, d.logger, vopts.reduceGroupLevel(), nil)
 }
 
 type reducedRows []driver.Row

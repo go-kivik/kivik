@@ -290,7 +290,7 @@ func (r *revsInfo) leaf() revision {
 func prepareDoc(docID string, doc interface{}) (*docData, error) {
 	tmpJSON, err := json.Marshal(doc)
 	if err != nil {
-		return nil, err
+		return nil, &internal.Error{Status: http.StatusBadRequest, Err: err}
 	}
 	var ddocData designDocData
 	if strings.HasPrefix(docID, "_design/") {

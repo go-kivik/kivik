@@ -44,6 +44,11 @@ func TestDBCreateDoc(t *testing.T) {
 		wantDocID: "foo",
 		wantRev:   "1-.*",
 	})
+	tests.Add("create doc with different doc id", test{
+		doc:       map[string]string{"_id": "bar"},
+		wantDocID: "bar",
+		wantRev:   "1-.*",
+	})
 	tests.Add("invalid document should return 400", test{
 		doc:        make(chan int),
 		wantErr:    "json: unsupported type: chan int",

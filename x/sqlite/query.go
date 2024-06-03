@@ -136,7 +136,7 @@ func (d *db) performQuery(
 				reduce.reducible,
 				reduce.reduce_func,
 				IIF($4, last_seq, "") AS update_seq,
-				NULL,
+				MAX(last_seq)         AS last_seq,
 				NULL,
 				0    AS attachment_count,
 				NULL AS filename,
@@ -257,7 +257,7 @@ func (d *db) performQuery(
 		}
 
 		if meta.reducible && (vopts.reduce == nil || *vopts.reduce) {
-			return d.reduce(results, meta.reduceFuncJS, vopts.reduceGroupLevel())
+			return d.reduce(ctx, meta.lastSeq, ddoc, view, rev.String(), results, meta.reduceFuncJS, vopts.reduceGroupLevel())
 		}
 
 		// If the results are up to date, OR, we're in false/lazy update mode,
@@ -276,9 +276,12 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 		results      *sql.Rows
 		reducible    bool
 		reduceFuncJS string
+		rev          revision
+		err          error
+		lastSeq      int
 	)
 	for {
-		rev, err := d.updateIndex(ctx, ddoc, view, vopts.update)
+		rev, err = d.updateIndex(ctx, ddoc, view, vopts.update)
 		if err != nil {
 			return nil, err
 		}
@@ -300,7 +303,7 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 				COALESCE(MAX(last_seq), 0) == (SELECT COALESCE(max(seq),0) FROM {{ .Docs }}) AS up_to_date,
 				reduce.reducible,
 				reduce.reduce_func,
-				NULL,
+				MAX(last_seq) AS last_seq,
 				NULL,
 				NULL,
 				0    AS attachment_count,
@@ -365,7 +368,7 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 		}
 		var upToDate bool
 		if err := results.Scan(
-			&upToDate, &reducible, &reduceFuncJS, discard{}, discard{}, discard{},
+			&upToDate, &reducible, &reduceFuncJS, &lastSeq, discard{}, discard{},
 			discard{}, discard{}, discard{}, discard{}, discard{}, discard{}, discard{},
 		); err != nil {
 			return nil, err
@@ -382,12 +385,31 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 		}
 	}
 
-	return d.reduce(results, reduceFuncJS, vopts.reduceGroupLevel())
+	return d.reduce(ctx, lastSeq, ddoc, view, rev.String(), results, reduceFuncJS, vopts.reduceGroupLevel())
 }
 
-func (d *db) reduce(results *sql.Rows, reduceFuncJS string, groupLevel int) (driver.Rows, error) {
-	callback := func(uint, []reduce.Row) {
-		// fmt.Println(rows)
+func (d *db) reduce(ctx context.Context, seq int, ddoc, name, rev string, results *sql.Rows, reduceFuncJS string, groupLevel int) (driver.Rows, error) {
+	stmt, err := d.db.PrepareContext(ctx, d.ddocQuery(ddoc, name, rev, `
+		INSERT INTO {{ .Reduce }} (seq, depth, first_key, first_pk, last_key, last_pk, value)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+	`))
+	if err != nil {
+		return nil, err
+	}
+	callback := func(depth uint, rows []reduce.Row) {
+		for _, row := range rows {
+			key, _ := json.Marshal(row.Key)
+			var value []byte
+			if row.Value != nil {
+				value, _ = json.Marshal(row.Value)
+			}
+			fmt.Printf("INSERTING: %v, %v, %v, %v, %v, %v, %v\n", seq, depth, string(key), row.First, string(key), row.Last, string(value))
+			if _, err = stmt.ExecContext(ctx, seq, depth, key, row.First, key, row.Last, value); err != nil {
+				d.logger.Printf("Failed to insert reduce result [%v, %v, %v, %v, %v, %v, %v]: %s",
+					seq, depth, key, row.First, key, row.Last, value,
+					err)
+			}
+		}
 	}
 	return reduce.Reduce(&reduceRowIter{results: results}, reduceFuncJS, d.logger, groupLevel, callback)
 }

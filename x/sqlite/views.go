@@ -184,6 +184,7 @@ type viewMetadata struct {
 	reducible    bool
 	reduceFuncJS string
 	updateSeq    string
+	lastSeq      int
 }
 
 // readFirstRow reads the first row from the resultset, which contains. In the
@@ -195,8 +196,9 @@ func readFirstRow(results *sql.Rows, vopts *viewOptions) (*viewMetadata, error) 
 		return nil, errors.New("no rows returned")
 	}
 	var meta viewMetadata
+	var lastSeq *int
 	if err := results.Scan(
-		&meta.upToDate, &meta.reducible, &meta.reduceFuncJS, &meta.updateSeq, discard{}, discard{},
+		&meta.upToDate, &meta.reducible, &meta.reduceFuncJS, &meta.updateSeq, &lastSeq, discard{},
 		discard{}, discard{}, discard{}, discard{}, discard{}, discard{}, discard{},
 	); err != nil {
 		_ = results.Close() //nolint:sqlclosecheck // Aborting
@@ -205,6 +207,9 @@ func readFirstRow(results *sql.Rows, vopts *viewOptions) (*viewMetadata, error) 
 	if vopts.reduce != nil && *vopts.reduce && !meta.reducible {
 		_ = results.Close() //nolint:sqlclosecheck // Aborting
 		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "reduce is invalid for map-only views"}
+	}
+	if lastSeq != nil {
+		meta.lastSeq = *lastSeq
 	}
 	return &meta, nil
 }

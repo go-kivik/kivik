@@ -33,7 +33,7 @@ func (r *reduceRowIter) ReduceNext(row *reduce.Row) error {
 	}
 	var key, value *[]byte
 	err := r.results.Scan(
-		&row.ID, &key, &value, discard{}, discard{}, discard{},
+		&row.ID, &key, &value, &row.First, &row.Last, discard{},
 		discard{}, discard{}, discard{}, discard{}, discard{}, discard{}, discard{},
 	)
 	if err != nil {

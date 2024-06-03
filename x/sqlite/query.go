@@ -130,6 +130,7 @@ func (d *db) performQuery(
 					AND func_name = $8
 			)
 
+			-- Metadata header
 			SELECT
 				COALESCE(MAX(last_seq), 0) == (SELECT COALESCE(max(seq),0) FROM {{ .Docs }}) AS up_to_date,
 				reduce.reducible,
@@ -154,14 +155,16 @@ func (d *db) performQuery(
 
 			UNION ALL
 
-			SELECT *
+			-- View map to pass to reduce
+			SELECT
+				*
 			FROM (
 				SELECT
 					id    AS id,
 					key   AS key,
 					value AS value,
-					NULL  AS rev,
-					NULL  AS doc,
+					pk    AS first,
+					pk    AS last,
 					NULL  AS conflicts,
 					0     AS attachment_count,
 					NULL AS filename,
@@ -173,11 +176,12 @@ func (d *db) performQuery(
 				FROM {{ .Map }} AS view
 				JOIN reduce
 				WHERE reduce.reducible AND ($3 IS NULL OR $3 == TRUE)
-				ORDER BY key
+				%[5]s -- ORDER BY
 			)
 
 			UNION ALL
 
+			-- Normal query results
 			SELECT
 				CASE WHEN row_number = 1 THEN id        END AS id,
 				CASE WHEN row_number = 1 THEN key       END AS key,
@@ -232,7 +236,8 @@ func (d *db) performQuery(
 				LEFT JOIN {{ .Attachments }} AS att ON bridge.pk = att.pk
 				%[1]s -- ORDER BY
 			)
-		`), vopts.buildOrderBy(), strings.Join(where, " AND "), vopts.limit, vopts.skip)
+		`), vopts.buildOrderBy(), strings.Join(where, " AND "), vopts.limit, vopts.skip,
+			vopts.buildOrderBy("pk"))
 		results, err := d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
 		switch {
 		case errIsNoSuchTable(err):
@@ -321,8 +326,8 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 					id    AS id,
 					COALESCE(key, "null") AS key,
 					value AS value,
-					NULL  AS rev,
-					NULL  AS doc,
+					pk    AS first,
+					pk    AS last,
 					NULL  AS conflicts,
 					0    AS attachment_count,
 					NULL AS filename,
@@ -336,7 +341,7 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 				WHERE reduce.reducible AND ($6 IS NULL OR $6 == TRUE)
 				%[1]s -- ORDER BY
 			)
-		`), vopts.buildOrderBy())
+		`), vopts.buildOrderBy("pk"))
 
 		results, err = d.db.QueryContext( //nolint:rowserrcheck // Err checked in iterator
 			ctx, query,

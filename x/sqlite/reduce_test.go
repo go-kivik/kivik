@@ -24,6 +24,7 @@ import (
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/x/sqlite/v4/reduce"
 )
 
@@ -173,10 +174,17 @@ type reducedRow struct {
 	Error string
 }
 
-func checkReducedRows(t *testing.T, want []reducedRow, got *reducedRows) {
+func checkReducedRows(t *testing.T, want []reducedRow, got driver.Rows) {
 	t.Helper()
-	g := make([]reducedRow, 0, len(*got))
-	for _, row := range *got {
+	g := make([]reducedRow, 0, len(want))
+	for {
+		var row driver.Row
+		if err := got.Next(&row); err != nil {
+			if err == io.EOF {
+				break
+			}
+			t.Fatalf("Next() failed: %s", err)
+		}
 		newRow := reducedRow{
 			ID:  row.ID,
 			Rev: row.Rev,

@@ -72,7 +72,7 @@ type Func func(keys [][2]interface{}, values []interface{}, rereduce bool) ([]in
 //	-1: Maximum grouping, same as group=true
 //	 0: No grouping, same as group=false
 //	1+: Group by the first N elements of the key, same as group_level=N
-func Reduce(rows RowIterator, javascript string, logger *log.Logger, groupLevel int, cb func([]Row)) ([]Row, error) {
+func Reduce(rows RowIterator, javascript string, logger *log.Logger, groupLevel int, cb func([]Row)) (Rows, error) {
 	fn, err := ParseFunc(javascript, logger)
 	if err != nil {
 		return nil, err

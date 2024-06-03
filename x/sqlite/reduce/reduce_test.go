@@ -28,7 +28,7 @@ func TestReduce(t *testing.T) {
 		input      RowIterator
 		javascript string
 		groupLevel int
-		want       []Row
+		want       Rows
 		wantCache  [][]Row
 		wantErr    string
 		wantStatus int

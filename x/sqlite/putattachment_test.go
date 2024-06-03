@@ -28,7 +28,7 @@ import (
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/kivik/x/sqlite/v4/internal/mock"
+	"github.com/go-kivik/kivik/v4/int/mock"
 )
 
 func TestDBPutAttachment(t *testing.T) {

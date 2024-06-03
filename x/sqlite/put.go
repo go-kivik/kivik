@@ -20,7 +20,7 @@ import (
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/kivik/x/sqlite/v4/internal"
+	internal "github.com/go-kivik/kivik/v4/int/errors"
 )
 
 func (d *db) Put(ctx context.Context, docID string, doc interface{}, options driver.Options) (string, error) {

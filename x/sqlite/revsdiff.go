@@ -23,7 +23,7 @@ import (
 	"sort"
 
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/kivik/x/sqlite/v4/internal"
+	internal "github.com/go-kivik/kivik/v4/int/errors"
 )
 
 func toRevDiffRequest(revMap interface{}) (map[string][]string, error) {

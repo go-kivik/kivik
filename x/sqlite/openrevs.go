@@ -22,7 +22,7 @@ import (
 	"strings"
 
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/kivik/x/sqlite/v4/internal"
+	internal "github.com/go-kivik/kivik/v4/int/errors"
 )
 
 func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, options driver.Options) (driver.Rows, error) {

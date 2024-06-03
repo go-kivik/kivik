@@ -24,7 +24,7 @@ import (
 	"github.com/dop251/goja"
 	"github.com/mitchellh/mapstructure"
 
-	"github.com/go-kivik/kivik/x/sqlite/v4/internal"
+	internal "github.com/go-kivik/kivik/v4/int/errors"
 )
 
 // Count is the built-in reduce function, [_count].

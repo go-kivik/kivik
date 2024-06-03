@@ -19,7 +19,7 @@ import (
 	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/kivik/x/sqlite/v4/internal"
+	internal "github.com/go-kivik/kivik/v4/int/errors"
 )
 
 func (d *db) GetRev(ctx context.Context, id string, options driver.Options) (string, error) {

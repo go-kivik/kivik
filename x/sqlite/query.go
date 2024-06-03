@@ -381,7 +381,10 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 }
 
 func (d *db) reduce(results *sql.Rows, reduceFuncJS string, groupLevel int) (driver.Rows, error) {
-	return reduce.Reduce(&reduceRowIter{results: results}, reduceFuncJS, d.logger, groupLevel, nil)
+	callback := func([]reduce.Row) {
+		// fmt.Println(rows)
+	}
+	return reduce.Reduce(&reduceRowIter{results: results}, reduceFuncJS, d.logger, groupLevel, callback)
 }
 
 const batchSize = 100

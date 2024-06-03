@@ -20,7 +20,7 @@ import (
 	"strconv"
 
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/kivik/x/sqlite/v4/internal"
+	internal "github.com/go-kivik/kivik/v4/int/errors"
 )
 
 type optsMap map[string]interface{}

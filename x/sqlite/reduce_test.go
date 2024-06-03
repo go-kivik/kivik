@@ -29,9 +29,9 @@ import (
 
 type testReduceRows []*reduceRow
 
-var _ reduce.RowIterator = &testReduceRows{}
+var _ reduce.Reducer = &testReduceRows{}
 
-func (r *testReduceRows) Next(row *reduce.Row) error {
+func (r *testReduceRows) ReduceNext(row *reduce.Row) error {
 	if len(*r) == 0 {
 		return io.EOF
 	}
@@ -60,7 +60,7 @@ func Test_reduceRows(t *testing.T) {
 	t.Parallel()
 
 	type test struct {
-		rows          reduce.RowIterator
+		rows          reduce.Reducer
 		reduceFuncJS  string
 		vopts         *viewOptions
 		want          []reducedRow

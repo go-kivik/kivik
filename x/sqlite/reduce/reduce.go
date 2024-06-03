@@ -19,11 +19,11 @@ import (
 	"reflect"
 )
 
-// RowIterator is the interface for iterating over rows of data to be reduced.
-type RowIterator interface {
-	// Next should populate Row, or return an error. It should return [io.EOF]
-	// when there are no more rows to read.
-	Next(*Row) error
+// Reducer is the interface for iterating over rows of data to be reduced.
+type Reducer interface {
+	// ReduceNext should populate Row, or return an error. It should return
+	// [io.EOF] when there are no more rows to read.
+	ReduceNext(*Row) error
 }
 
 // Row represents a single row of data to be reduced, or the result of a
@@ -44,10 +44,10 @@ type Row struct {
 // Rows is a slice of Row, and implements RowIterator.
 type Rows []Row
 
-var _ RowIterator = (*Rows)(nil)
+var _ Reducer = (*Rows)(nil)
 
-// Next implements RowIterator.
-func (r *Rows) Next(row *Row) error {
+// ReduceNext implements RowIterator.
+func (r *Rows) ReduceNext(row *Row) error {
 	if len(*r) == 0 {
 		return io.EOF
 	}
@@ -72,7 +72,7 @@ type Func func(keys [][2]interface{}, values []interface{}, rereduce bool) ([]in
 //	-1: Maximum grouping, same as group=true
 //	 0: No grouping, same as group=false
 //	1+: Group by the first N elements of the key, same as group_level=N
-func Reduce(rows RowIterator, javascript string, logger *log.Logger, groupLevel int, cb func([]Row)) (Rows, error) {
+func Reduce(rows Reducer, javascript string, logger *log.Logger, groupLevel int, cb func([]Row)) (Rows, error) {
 	fn, err := ParseFunc(javascript, logger)
 	if err != nil {
 		return nil, err
@@ -80,7 +80,7 @@ func Reduce(rows RowIterator, javascript string, logger *log.Logger, groupLevel 
 	return reduce(rows, fn, groupLevel, cb)
 }
 
-func reduce(rows RowIterator, fn Func, groupLevel int, cb func([]Row)) ([]Row, error) {
+func reduce(rows Reducer, fn Func, groupLevel int, cb func([]Row)) ([]Row, error) {
 	out := make([]Row, 0, 1)
 	var first, last int
 
@@ -129,7 +129,7 @@ func reduce(rows RowIterator, fn Func, groupLevel int, cb func([]Row)) ([]Row, e
 	var rereduce bool
 	for {
 		var row Row
-		if err := rows.Next(&row); err != nil {
+		if err := rows.ReduceNext(&row); err != nil {
 			if err == io.EOF {
 				break
 			}

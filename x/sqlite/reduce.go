@@ -32,7 +32,7 @@ type reduceRow struct {
 	Value *string
 }
 
-func (r *reduceRowIter) Next(row *reduce.Row) error {
+func (r *reduceRowIter) ReduceNext(row *reduce.Row) error {
 	if !r.results.Next() {
 		if err := r.results.Err(); err != nil {
 			return err
@@ -64,7 +64,7 @@ func (r *reduceRowIter) Next(row *reduce.Row) error {
 	return err
 }
 
-func (d *db) reduceRows(ri reduce.RowIterator, javascript string, vopts *viewOptions) (*reducedRows, error) {
+func (d *db) reduceRows(ri reduce.Reducer, javascript string, vopts *viewOptions) (*reducedRows, error) {
 	rows, err := reduce.Reduce(ri, javascript, d.logger, vopts.reduceGroupLevel(), nil)
 	if err != nil {
 		return nil, err

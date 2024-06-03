@@ -25,7 +25,7 @@ import (
 
 func TestReduce(t *testing.T) {
 	type test struct {
-		input      RowIterator
+		input      Reducer
 		javascript string
 		groupLevel int
 		want       Rows

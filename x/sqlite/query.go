@@ -278,7 +278,7 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 			return nil, err
 		}
 
-		query := d.ddocQuery(ddoc, view, rev.String(), `
+		query := fmt.Sprintf(d.ddocQuery(ddoc, view, rev.String(), `
 			WITH reduce AS (
 				SELECT
 					CASE WHEN MAX(id) IS NOT NULL THEN TRUE ELSE FALSE END AS reducible,
@@ -331,12 +331,12 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 					NULL AS digest,
 					NULL AS rev_pos,
 					NULL AS data
-				FROM {{ .Map }}
+				FROM {{ .Map }} AS view
 				JOIN reduce
 				WHERE reduce.reducible AND ($6 IS NULL OR $6 == TRUE)
-				ORDER BY id, key
+				%[1]s -- ORDER BY
 			)
-		`)
+		`), vopts.buildOrderBy())
 
 		results, err = d.db.QueryContext( //nolint:rowserrcheck // Err checked in iterator
 			ctx, query,

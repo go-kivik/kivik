@@ -17,7 +17,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"io"
-	"slices"
 
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/x/sqlite/v4/reduce"
@@ -86,14 +85,6 @@ func (d *db) reduceRows(ri reduce.RowIterator, reduceFuncJS *string, vopts *view
 			Key:   key,
 			Value: bytes.NewReader(value),
 		})
-	}
-	if vopts.sorted {
-		slices.SortFunc(out, func(a, b driver.Row) int {
-			return couchdbCmpJSON(a.Key, b.Key)
-		})
-		if vopts.descending {
-			slices.Reverse(out)
-		}
 	}
 	return &out, nil
 }

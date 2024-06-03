@@ -53,5 +53,5 @@ func (r *reduceRowIter) ReduceNext(row *reduce.Row) error {
 	} else {
 		row.Value = nil
 	}
-	return err
+	return nil
 }

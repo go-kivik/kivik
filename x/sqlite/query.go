@@ -386,7 +386,7 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 }
 
 func (d *db) reduce(results *sql.Rows, reduceFuncJS string, groupLevel int) (driver.Rows, error) {
-	callback := func([]reduce.Row) {
+	callback := func(uint, []reduce.Row) {
 		// fmt.Println(rows)
 	}
 	return reduce.Reduce(&reduceRowIter{results: results}, reduceFuncJS, d.logger, groupLevel, callback)

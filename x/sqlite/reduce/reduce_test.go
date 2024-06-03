@@ -147,7 +147,7 @@ func TestReduce(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		var cache [][]Row
-		cb := func(rows []Row) {
+		cb := func(_ uint, rows []Row) {
 			cache = append(cache, rows)
 		}
 		got, err := Reduce(tt.input, tt.javascript, log.New(io.Discard, "", 0), tt.groupLevel, cb)

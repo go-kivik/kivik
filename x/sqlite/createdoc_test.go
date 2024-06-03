@@ -42,7 +42,7 @@ func TestDBCreateDoc(t *testing.T) {
 	tests.Add("create doc with specified doc id", test{
 		doc:       map[string]string{"_id": "foo"},
 		wantDocID: "foo",
-		wantRev:   "1-.*",
+		wantRev:   "1-" + (&docData{ID: "foo", Doc: []byte(`{}`)}).RevID(),
 	})
 	tests.Add("create doc with different doc id", test{
 		doc:       map[string]string{"_id": "bar"},

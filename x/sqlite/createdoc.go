@@ -23,5 +23,5 @@ func (db) CreateDoc(_ context.Context, doc interface{}, _ driver.Options) (strin
 	if err != nil {
 		return "", "", err
 	}
-	return data.ID, "1-asdf", nil
+	return data.ID, "1-" + data.RevID(), nil
 }

@@ -257,6 +257,14 @@ func (d *db) performQuery(
 		}
 
 		if meta.reducible && (vopts.reduce == nil || *vopts.reduce) {
+			if vopts.includeDocs {
+				_ = results.Close() //nolint:sqlclosecheck // invalid option specified for reduce, so abort the query
+				return nil, &internal.Error{Status: http.StatusBadRequest, Message: "include_docs is invalid for reduce"}
+			}
+			if vopts.conflicts {
+				_ = results.Close() //nolint:sqlclosecheck // invalid option specified for reduce, so abort the query
+				return nil, &internal.Error{Status: http.StatusBadRequest, Message: "conflicts is invalid for reduce"}
+			}
 			return d.reduce(ctx, meta.lastSeq, ddoc, view, rev.String(), results, meta.reduceFuncJS, vopts.reduceGroupLevel())
 		}
 
@@ -403,7 +411,6 @@ func (d *db) reduce(ctx context.Context, seq int, ddoc, name, rev string, result
 			if row.Value != nil {
 				value, _ = json.Marshal(row.Value)
 			}
-			fmt.Printf("INSERTING: %v, %v, %v, %v, %v, %v, %v\n", seq, depth, string(key), row.First, string(key), row.Last, string(value))
 			if _, err = stmt.ExecContext(ctx, seq, depth, key, row.First, key, row.Last, value); err != nil {
 				d.logger.Printf("Failed to insert reduce result [%v, %v, %v, %v, %v, %v, %v]: %s",
 					seq, depth, key, row.First, key, row.Last, value,

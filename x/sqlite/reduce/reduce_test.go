@@ -28,6 +28,7 @@ func TestReduce(t *testing.T) {
 		input      Reducer
 		javascript string
 		groupLevel int
+		batchSize  int
 		want       Rows
 		wantCache  [][]Row
 		wantErr    string
@@ -185,7 +186,11 @@ func TestReduce(t *testing.T) {
 		cb := func(_ uint, rows []Row) {
 			cache = append(cache, rows)
 		}
-		got, err := Reduce(tt.input, tt.javascript, log.New(io.Discard, "", 0), tt.groupLevel, cb)
+		batchSize := tt.batchSize
+		if batchSize == 0 {
+			batchSize = defaultBatchSize
+		}
+		got, err := reduceWithBatchSize(tt.input, tt.javascript, log.New(io.Discard, "", 0), tt.groupLevel, cb, batchSize)
 		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %v", err)
 		}

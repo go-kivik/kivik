@@ -96,6 +96,8 @@ type Func func(keys [][2]interface{}, values []interface{}, rereduce bool) ([]in
 // reduce call. It can be used to cache intermediate results.
 type Callback func(depth uint, rows []Row)
 
+const defaultBatchSize = 1000
+
 // Reduce calls fn on rows, and returns the results. The input must be in
 // key-sorted order, and may contain both previously reduced rows, and map
 // output rows.  cb, if not nil, is called with the results of every
@@ -109,14 +111,18 @@ type Callback func(depth uint, rows []Row)
 //	 0: No grouping, same as group=false
 //	1+: Group by the first N elements of the key, same as group_level=N
 func Reduce(rows Reducer, javascript string, logger *log.Logger, groupLevel int, cb Callback) (*Rows, error) {
+	return reduceWithBatchSize(rows, javascript, logger, groupLevel, cb, defaultBatchSize)
+}
+
+func reduceWithBatchSize(rows Reducer, javascript string, logger *log.Logger, groupLevel int, cb Callback, batchSize int) (*Rows, error) {
 	fn, err := ParseFunc(javascript, logger)
 	if err != nil {
 		return nil, err
 	}
-	return reduce(rows, fn, groupLevel, cb)
+	return reduce(rows, fn, groupLevel, batchSize, cb)
 }
 
-func reduce(rows Reducer, fn Func, groupLevel int, cb Callback) (*Rows, error) {
+func reduce(rows Reducer, fn Func, groupLevel int, batchSize int, cb Callback) (*Rows, error) {
 	out := make(Rows, 0, 1)
 	var first, last int
 
@@ -220,7 +226,7 @@ func reduce(rows Reducer, fn Func, groupLevel int, cb Callback) (*Rows, error) {
 	for i := 1; i < len(out); i++ {
 		key := truncateKey(out[i].Key, groupLevel)
 		if reflect.DeepEqual(lastKey, key) {
-			return reduce(&out, fn, groupLevel, cb)
+			return reduce(&out, fn, groupLevel, batchSize, cb)
 		}
 	}
 

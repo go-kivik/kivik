@@ -39,6 +39,7 @@ func TestDBQuery(t *testing.T) {
 		wantStatus    int
 		wantErr       string
 		wantLogs      []string
+		wantReduced   []reduced
 	}
 	tests := testy.NewTable()
 	tests.Add("ddoc does not exist", test{
@@ -1916,6 +1917,31 @@ func TestDBQuery(t *testing.T) {
 			wantStatus: http.StatusBadRequest,
 		}
 	})
+	tests.Add("reduce cache created", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{})
+		_ = d.tPut("b", map[string]interface{}{})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: []rowResult{{Key: `null`, Value: `2`}},
+			wantReduced: []reduced{
+				{Seq: 3, Depth: 0, FirstKey: "null", FirstPK: 1, LastKey: "null", LastPK: 2, Value: "2"},
+			},
+		}
+	})
 
 	/*
 		TODO:
@@ -1978,6 +2004,9 @@ func TestDBQuery(t *testing.T) {
 			checkRows(t, rows, tt.want)
 		}
 		db.checkLogs(tt.wantLogs)
+		if tt.wantReduced != nil {
+			checkReduced(t, db.underlying(), tt.wantReduced)
+		}
 	})
 }
 

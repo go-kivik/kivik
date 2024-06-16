@@ -27,6 +27,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/int/mock"
 )
@@ -167,4 +169,49 @@ func (a testAttachments) addStub(filename string) testAttachments {
 		"stub": true,
 	}
 	return a
+}
+
+type reduced struct {
+	Seq      int
+	Depth    int
+	FirstKey string
+	FirstPK  int
+	LastKey  string
+	LastPK   int
+	Value    string
+}
+
+func checkReduced(t *testing.T, db *sql.DB, want []reduced) {
+	t.Helper()
+	var table string
+	if err := db.QueryRow(`
+		SELECT name
+		FROM sqlite_master
+		WHERE type = 'table'
+			AND name LIKE '%_%_reduce_%'
+	`).Scan(&table); err != nil {
+		t.Fatalf("Failed to find reduced table: %s", err)
+	}
+	rows, err := db.Query(fmt.Sprintf(`
+		SELECT *
+		FROM %q
+		ORDER BY first_key, first_pk, last_key, last_pk, depth`, table))
+	if err != nil {
+		t.Fatalf("Failed to query reduced table: %s", err)
+	}
+	defer rows.Close()
+	got := make([]reduced, 0, len(want))
+	for rows.Next() {
+		var r reduced
+		if err := rows.Scan(&r.Seq, &r.Depth, &r.FirstKey, &r.FirstPK, &r.LastKey, &r.LastPK, &r.Value); err != nil {
+			t.Fatalf("Failed to scan reduced row: %s", err)
+		}
+		got = append(got, r)
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatalf("Failed to iterate reduced rows: %s", err)
+	}
+	if d := cmp.Diff(want, got); d != "" {
+		t.Errorf("Unexpected reduced rows (-want, +got): %s", d)
+	}
 }

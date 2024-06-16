@@ -182,12 +182,12 @@ func TestReduce(t *testing.T) {
 	})
 	tests.Add("batched reduce", test{
 		input: &Rows{
-			{ID: "a", FirstKey: []any{1.0, 2.0, 4.0}, Value: nil, FirstPK: 1, LastPK: 1},
-			{ID: "b", FirstKey: []any{1.0, 2.0, 5.0}, Value: nil, FirstPK: 2, LastPK: 2},
-			{ID: "c", FirstKey: []any{1.0, 2.0, 4.0}, Value: nil, FirstPK: 3, LastPK: 3},
-			{ID: "d", FirstKey: []any{1.0, 2.0, 5.0}, Value: nil, FirstPK: 4, LastPK: 4},
-			{ID: "e", FirstKey: []any{1.0, 2.0, 4.0}, Value: nil, FirstPK: 5, LastPK: 5},
-			{ID: "f", FirstKey: []any{1.0, 2.0, 5.0}, Value: nil, FirstPK: 6, LastPK: 6},
+			{ID: "a", FirstKey: []any{1.0, 2.0, 4.0}, Value: nil, FirstPK: 1},
+			{ID: "b", FirstKey: []any{1.0, 2.0, 5.0}, Value: nil, FirstPK: 2},
+			{ID: "c", FirstKey: []any{1.0, 2.0, 4.0}, Value: nil, FirstPK: 3},
+			{ID: "d", FirstKey: []any{1.0, 2.0, 5.0}, Value: nil, FirstPK: 4},
+			{ID: "e", FirstKey: []any{1.0, 2.0, 4.0}, Value: nil, FirstPK: 5},
+			{ID: "f", FirstKey: []any{1.0, 2.0, 5.0}, Value: nil, FirstPK: 6},
 		},
 		groupLevel: 0,
 		javascript: "_count",

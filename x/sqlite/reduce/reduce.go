@@ -32,18 +32,25 @@ type Reducer interface {
 
 // Row represents a single row of data to be reduced, or the result of a
 // reduction. Key and Value are expected to represent JSON serializable data,
-// and passing non-serializable data may result in a panic. ID is only used for
-// input rows as returned by a map function. It is always empty for output rows.
+// and passing non-serializable data may result in a panic.
 type Row struct {
+	// ID is the document ID. It is only populated for input rows. It is always
+	// empty for output rows.
+	ID string
+
+	// FirstKey represents the key of a map row, or the first key of a reduced
+	// row. It is used for grouping and caching.
 	FirstKey any
-	// FirstPK and LastPK reference the First & Last key's primary key,
-	// respectively, and are used to disambiguate rows with the same key. For
-	// map inputs, they should be the same.  For reduced inputs, they represent
-	// a range of keys.
+	// FirstPK disambiguates multiple identical keys.
 	FirstPK int
-	LastPK  int
-	ID      string
-	Value   any
+
+	// LastKey is the last key of a reduced row. It is only populated for
+	// reduced rows. LastKey and LastPK may be omitted for map rows.
+	LastKey any
+	// LastPK disambiguates multiple identical keys.
+	LastPK int
+
+	Value any
 }
 
 // Rows is a slice of Row, and implements RowIterator.
@@ -208,6 +215,9 @@ func reduce(rows Reducer, fn Func, groupLevel int, batchSize int, cb Callback) (
 			firstPK = row.FirstPK
 		}
 		lastPK = row.LastPK
+		if lastPK == 0 {
+			lastPK = row.FirstPK
+		}
 
 		keys = append(keys, [2]interface{}{row.FirstKey, row.ID})
 		values = append(values, row.Value)

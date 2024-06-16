@@ -28,6 +28,7 @@ func TestReduce(t *testing.T) {
 		input      Reducer
 		javascript string
 		groupLevel int
+		batchSize  int
 		want       Rows
 		wantCache  [][]Row
 		wantErr    string
@@ -41,142 +42,165 @@ func TestReduce(t *testing.T) {
 	})
 	tests.Add("count single row", test{
 		input: &Rows{
-			{ID: "1", Key: "foo", Value: nil, First: 1, Last: 1},
+			{ID: "1", FirstKey: "foo", FirstPK: 1},
 		},
 		javascript: "_count",
 		want: []Row{
-			{Value: 1.0, First: 1, Last: 1},
+			{FirstKey: "foo", FirstPK: 1, LastKey: "foo", LastPK: 1, Value: 1.0},
 		},
 	})
 	tests.Add("non-array key with grouping", test{
 		input: &Rows{
-			{ID: "1", Key: "foo", Value: nil, First: 1, Last: 1},
+			{ID: "1", FirstKey: "foo", FirstPK: 1},
 		},
 		javascript: "_count",
 		groupLevel: -1,
 		want: []Row{
-			{Key: "foo", Value: 1.0, First: 1, Last: 1},
+			{TargetKey: "foo", FirstKey: "foo", FirstPK: 1, LastKey: "foo", LastPK: 1, Value: 1.0},
 		},
 	})
 	tests.Add("single-element array key with grouping", test{
 		input: &Rows{
-			{ID: "1", Key: []any{"foo"}, Value: nil, First: 1, Last: 1},
+			{ID: "1", FirstKey: []any{"foo"}, FirstPK: 1},
 		},
 		javascript: "_count",
 		groupLevel: -1,
 		want: []Row{
-			{Key: []any{"foo"}, Value: 1.0, First: 1, Last: 1},
+			{TargetKey: []any{"foo"}, FirstKey: []any{"foo"}, FirstPK: 1, LastKey: []any{"foo"}, LastPK: 1, Value: 1.0},
 		},
 	})
 	tests.Add("count two rows", test{
 		input: &Rows{
-			{ID: "1", Key: "foo", Value: nil, First: 1, Last: 1},
-			{ID: "2", Key: "foo", Value: nil, First: 2, Last: 2},
+			{ID: "1", FirstKey: "foo", FirstPK: 1},
+			{ID: "2", FirstKey: "foo", FirstPK: 2},
 		},
 		javascript: "_count",
 		want: []Row{
-			{Value: 2.0, First: 1, Last: 2},
+			{FirstKey: "foo", FirstPK: 1, LastKey: "foo", LastPK: 2, Value: 2.0},
 		},
 	})
 	tests.Add("max group_level", test{
 		input: &Rows{
-			{ID: "a", Key: []any{1.0, 2.0, 3.0}, Value: nil, First: 1, Last: 1},
-			{ID: "b", Key: []any{1.0, 2.0, 3.0}, Value: nil, First: 2, Last: 2},
-			{ID: "c", Key: []any{1.0, 2.0, 4.0}, Value: nil, First: 3, Last: 3},
-			{ID: "d", Key: []any{1.0, 2.0, 5.0}, Value: nil, First: 4, Last: 4},
+			{ID: "a", FirstKey: []any{1.0, 2.0, 3.0}, FirstPK: 1},
+			{ID: "b", FirstKey: []any{1.0, 2.0, 3.0}, FirstPK: 2},
+			{ID: "c", FirstKey: []any{1.0, 2.0, 4.0}, FirstPK: 3},
+			{ID: "d", FirstKey: []any{1.0, 2.0, 5.0}, FirstPK: 4},
 		},
 		groupLevel: -1,
 		javascript: "_count",
 		want: []Row{
-			{Key: []any{1.0, 2.0, 3.0}, Value: 2.0, First: 1, Last: 2},
-			{Key: []any{1.0, 2.0, 4.0}, Value: 1.0, First: 3, Last: 3},
-			{Key: []any{1.0, 2.0, 5.0}, Value: 1.0, First: 4, Last: 4},
+			{TargetKey: []any{1.0, 2.0, 3.0}, FirstKey: []any{1.0, 2.0, 3.0}, FirstPK: 1, LastKey: []any{1.0, 2.0, 3.0}, LastPK: 2, Value: 2.0},
+			{TargetKey: []any{1.0, 2.0, 4.0}, FirstKey: []any{1.0, 2.0, 4.0}, FirstPK: 3, LastKey: []any{1.0, 2.0, 4.0}, LastPK: 3, Value: 1.0},
+			{TargetKey: []any{1.0, 2.0, 5.0}, FirstKey: []any{1.0, 2.0, 5.0}, FirstPK: 4, LastKey: []any{1.0, 2.0, 5.0}, LastPK: 4, Value: 1.0},
 		},
 	})
 	tests.Add("max group_level with mixed depth keys", test{
 		input: &Rows{
-			{ID: "a", Key: []any{1.0, 2.0, 3.0, 4.0, 5.0}, Value: nil, First: 1, Last: 1},
-			{ID: "b", Key: []any{1.0, 2.0, 3.0}, Value: nil, First: 2, Last: 2},
-			{ID: "c", Key: []any{1.0, 2.0, 4.0}, Value: nil, First: 3, Last: 3},
-			{ID: "d", Key: []any{1.0, 2.0, 5.0}, Value: nil, First: 4, Last: 4},
+			{ID: "a", FirstKey: []any{1.0, 2.0, 3.0, 4.0, 5.0}, FirstPK: 1},
+			{ID: "b", FirstKey: []any{1.0, 2.0, 3.0}, FirstPK: 2},
+			{ID: "c", FirstKey: []any{1.0, 2.0, 4.0}, FirstPK: 3},
+			{ID: "d", FirstKey: []any{1.0, 2.0, 5.0}, FirstPK: 4},
 		},
 		groupLevel: -1,
 		javascript: "_count",
 		want: []Row{
-			{Key: []any{1.0, 2.0, 3.0, 4.0, 5.0}, Value: 1.0, First: 1, Last: 1},
-			{Key: []any{1.0, 2.0, 3.0}, Value: 1.0, First: 2, Last: 2},
-			{Key: []any{1.0, 2.0, 4.0}, Value: 1.0, First: 3, Last: 3},
-			{Key: []any{1.0, 2.0, 5.0}, Value: 1.0, First: 4, Last: 4},
+			{TargetKey: []any{1.0, 2.0, 3.0, 4.0, 5.0}, FirstKey: []any{1.0, 2.0, 3.0, 4.0, 5.0}, FirstPK: 1, LastKey: []any{1.0, 2.0, 3.0, 4.0, 5.0}, LastPK: 1, Value: 1.0},
+			{TargetKey: []any{1.0, 2.0, 3.0}, FirstKey: []any{1.0, 2.0, 3.0}, FirstPK: 2, LastKey: []any{1.0, 2.0, 3.0}, LastPK: 2, Value: 1.0},
+			{TargetKey: []any{1.0, 2.0, 4.0}, FirstKey: []any{1.0, 2.0, 4.0}, FirstPK: 3, LastKey: []any{1.0, 2.0, 4.0}, LastPK: 3, Value: 1.0},
+			{TargetKey: []any{1.0, 2.0, 5.0}, FirstKey: []any{1.0, 2.0, 5.0}, FirstPK: 4, LastKey: []any{1.0, 2.0, 5.0}, LastPK: 4, Value: 1.0},
 		},
 	})
 	tests.Add("explicit group_level with mixed-depth keys", test{
 		input: &Rows{
-			{ID: "a", Key: []any{1.0, 2.0, 3.0, 4.0, 5.0}, Value: nil, First: 1, Last: 1},
-			{ID: "b", Key: []any{1.0, 2.0, 3.0}, Value: nil, First: 2, Last: 2},
-			{ID: "c", Key: []any{1.0, 2.0, 4.0}, Value: nil, First: 3, Last: 3},
-			{ID: "d", Key: []any{1.0, 2.0, 5.0}, Value: nil, First: 4, Last: 4},
+			{ID: "a", FirstKey: []any{1.0, 2.0, 3.0, 4.0, 5.0}, FirstPK: 1},
+			{ID: "b", FirstKey: []any{1.0, 2.0, 3.0}, FirstPK: 2},
+			{ID: "c", FirstKey: []any{1.0, 2.0, 4.0}, FirstPK: 3},
+			{ID: "d", FirstKey: []any{1.0, 2.0, 5.0}, FirstPK: 4},
 		},
 		groupLevel: 3,
 		javascript: "_count",
 		want: []Row{
-			{Key: []any{1.0, 2.0, 3.0}, Value: 2.0, First: 1, Last: 2},
-			{Key: []any{1.0, 2.0, 4.0}, Value: 1.0, First: 3, Last: 3},
-			{Key: []any{1.0, 2.0, 5.0}, Value: 1.0, First: 4, Last: 4},
+			{TargetKey: []any{1.0, 2.0, 3.0}, FirstKey: []any{1.0, 2.0, 3.0, 4.0, 5.0}, FirstPK: 1, LastKey: []any{1.0, 2.0, 3.0}, LastPK: 2, Value: 2.0},
+			{TargetKey: []any{1.0, 2.0, 4.0}, FirstKey: []any{1.0, 2.0, 4.0}, FirstPK: 3, LastKey: []any{1.0, 2.0, 4.0}, LastPK: 3, Value: 1.0},
+			{TargetKey: []any{1.0, 2.0, 5.0}, FirstKey: []any{1.0, 2.0, 5.0}, FirstPK: 4, LastKey: []any{1.0, 2.0, 5.0}, LastPK: 4, Value: 1.0},
 		},
 	})
 	tests.Add("mix map and pre-reduced inputs", test{
 		input: &Rows{
-			{Key: []any{1.0, 2.0, 3.0, 4.0}, Value: 3.0, First: 1, Last: 3},
-			{Key: []any{1.0, 2.0, 3.0, 6.0}, Value: 1.0, First: 4, Last: 4},
-			{ID: "b", Key: []any{1.0, 2.0, 3.0}, Value: nil, First: 5, Last: 5},
-			{ID: "c", Key: []any{1.0, 2.0, 4.0}, Value: nil, First: 6, Last: 6},
+			{FirstKey: []any{1.0, 2.0, 3.0, 4.0}, FirstPK: 1, LastKey: []any{1.0, 2.0, 3.0, 4.0}, LastPK: 3, Value: 3.0},
+			{FirstKey: []any{1.0, 2.0, 3.0, 6.0}, FirstPK: 4, LastKey: []any{1.0, 2.0, 3.0, 6.0}, LastPK: 4, Value: 1.0},
+			{ID: "b", FirstKey: []any{1.0, 2.0, 3.0}, FirstPK: 5},
+			{ID: "c", FirstKey: []any{1.0, 2.0, 4.0}, FirstPK: 6},
 		},
 		groupLevel: 3,
 		javascript: "_count",
 		want: []Row{
-			{Key: []any{1.0, 2.0, 3.0}, Value: 5.0, First: 1, Last: 5},
-			{Key: []any{1.0, 2.0, 4.0}, Value: 1.0, First: 6, Last: 6},
+			{TargetKey: []any{1.0, 2.0, 3.0}, FirstKey: []any{1.0, 2.0, 3.0, 4.0}, FirstPK: 1, LastKey: []any{1.0, 2.0, 3.0}, LastPK: 5, Value: 5.0},
+			{TargetKey: []any{1.0, 2.0, 4.0}, FirstKey: []any{1.0, 2.0, 4.0}, FirstPK: 6, LastKey: []any{1.0, 2.0, 4.0}, LastPK: 6, Value: 1.0},
 		},
 		wantCache: [][]Row{
-			{{Key: []any{1.0, 2.0, 3.0}, Value: 4.0, First: 1, Last: 4}}, // Merge of first two rows, rereduce=true
-			{{Key: []any{1.0, 2.0, 3.0}, Value: 1.0, First: 5, Last: 5}}, // Single map row, rereduce=false
-			{{Key: []any{1.0, 2.0, 4.0}, Value: 1.0, First: 6, Last: 6}}, // Single map row, rereduce=false, final
-			{{Key: []any{1.0, 2.0, 3.0}, Value: 5.0, First: 1, Last: 5}}, // Merge of the first two reduce outputs, final
+			{{TargetKey: []any{1.0, 2.0, 3.0}, FirstKey: []any{1.0, 2.0, 3.0, 4.0}, FirstPK: 1, LastKey: []any{1.0, 2.0, 3.0, 6.0}, LastPK: 4, Value: 4.0}}, // Merge of first two rows, rereduce=true
+			{{TargetKey: []any{1.0, 2.0, 3.0}, FirstKey: []any{1.0, 2.0, 3.0}, FirstPK: 5, LastKey: []any{1.0, 2.0, 3.0}, LastPK: 5, Value: 1.0}},           // Single map row, rereduce=false
+			{{TargetKey: []any{1.0, 2.0, 4.0}, FirstKey: []any{1.0, 2.0, 4.0}, FirstPK: 6, LastKey: []any{1.0, 2.0, 4.0}, LastPK: 6, Value: 1.0}},           // Single map row, rereduce=false, final
+			{{TargetKey: []any{1.0, 2.0, 3.0}, FirstKey: []any{1.0, 2.0, 3.0, 4.0}, FirstPK: 1, LastKey: []any{1.0, 2.0, 3.0}, LastPK: 5, Value: 5.0}},      // Merge of the first two reduce outputs, final
 		},
 	})
 	tests.Add("group level 0", test{
 		input: &Rows{
-			{ID: "a", Key: []any{1.0, 2.0, 3.0}, Value: nil, First: 1, Last: 1},
-			{ID: "b", Key: []any{1.0, 2.0, 3.0}, Value: nil, First: 2, Last: 2},
-			{ID: "c", Key: []any{1.0, 2.0, 4.0}, Value: nil, First: 3, Last: 3},
-			{ID: "d", Key: []any{1.0, 2.0, 5.0}, Value: nil, First: 4, Last: 4},
+			{ID: "a", FirstKey: []any{1.0, 2.0, 3.0}, FirstPK: 1},
+			{ID: "b", FirstKey: []any{1.0, 2.0, 3.0}, FirstPK: 2},
+			{ID: "c", FirstKey: []any{1.0, 2.0, 4.0}, FirstPK: 3},
+			{ID: "d", FirstKey: []any{1.0, 2.0, 5.0}, FirstPK: 4},
 		},
 		groupLevel: 0,
 		javascript: "_count",
 		want: []Row{
-			{Key: nil, Value: 4.0, First: 1, Last: 4},
+			{FirstKey: []any{1.0, 2.0, 3.0}, FirstPK: 1, LastKey: []any{1.0, 2.0, 5.0}, LastPK: 4, Value: 4.0},
 		},
 	})
 	tests.Add("group level 0, cached", test{
 		input: &Rows{
-			{Key: nil, Value: 4.0, First: 1, Last: 4},
+			{FirstKey: nil, Value: 4.0, FirstPK: 1, LastPK: 4},
 		},
 		groupLevel: 0,
 		javascript: "_count",
 		want: []Row{
-			{Key: nil, Value: 4.0, First: 1, Last: 4},
+			{FirstKey: nil, Value: 4.0, FirstPK: 1, LastPK: 4},
 		},
 	})
 	tests.Add("group level 0, partially cached", test{
 		input: &Rows{
-			{Key: nil, Value: 4.0, First: 1, Last: 4},
-			{ID: "e", Key: []any{1.0, 2.0, 4.0}, Value: nil, First: 5, Last: 5},
-			{ID: "f", Key: []any{1.0, 2.0, 5.0}, Value: nil, First: 6, Last: 6},
+			{FirstKey: nil, Value: 4.0, FirstPK: 1, LastPK: 4},
+			{ID: "e", FirstKey: []any{1.0, 2.0, 4.0}, Value: nil, FirstPK: 5, LastPK: 5},
+			{ID: "f", FirstKey: []any{1.0, 2.0, 5.0}, Value: nil, FirstPK: 6, LastPK: 6},
 		},
 		groupLevel: 0,
 		javascript: "_count",
 		want: []Row{
-			{Key: nil, Value: 6.0, First: 1, Last: 6},
+			{FirstKey: nil, Value: 6.0, FirstPK: 1, LastPK: 6},
+		},
+	})
+	tests.Add("batched reduce", test{
+		input: &Rows{
+			{ID: "a", FirstKey: []any{1.0}, FirstPK: 1},
+			{ID: "b", FirstKey: []any{2.0}, FirstPK: 2},
+			{ID: "c", FirstKey: []any{3.0}, FirstPK: 3},
+			{ID: "d", FirstKey: []any{4.0}, FirstPK: 4},
+			{ID: "e", FirstKey: []any{5.0}, FirstPK: 5},
+			{ID: "f", FirstKey: []any{6.0}, FirstPK: 6},
+		},
+		groupLevel: 0,
+		javascript: "_count",
+		batchSize:  2,
+		want: []Row{
+			{TargetKey: nil, FirstKey: []any{1.0}, FirstPK: 1, LastKey: []any{6.0}, LastPK: 6, Value: 6.0},
+		},
+		wantCache: [][]Row{
+			{{FirstKey: []any{1.0}, FirstPK: 1, LastKey: []any{2.0}, LastPK: 2, Value: 2.0}},
+			{{FirstKey: []any{3.0}, FirstPK: 3, LastKey: []any{4.0}, LastPK: 4, Value: 2.0}},
+			{{FirstKey: []any{5.0}, FirstPK: 5, LastKey: []any{6.0}, LastPK: 6, Value: 2.0}},
+			{{FirstKey: []any{1.0}, FirstPK: 1, LastKey: []any{4.0}, LastPK: 4, Value: 4.0}},
+			{{FirstKey: []any{1.0}, FirstPK: 1, LastKey: []any{6.0}, LastPK: 6, Value: 6.0}},
 		},
 	})
 
@@ -185,7 +209,11 @@ func TestReduce(t *testing.T) {
 		cb := func(_ uint, rows []Row) {
 			cache = append(cache, rows)
 		}
-		got, err := Reduce(tt.input, tt.javascript, log.New(io.Discard, "", 0), tt.groupLevel, cb)
+		batchSize := tt.batchSize
+		if batchSize == 0 {
+			batchSize = defaultBatchSize
+		}
+		got, err := reduceWithBatchSize(tt.input, tt.javascript, log.New(io.Discard, "", 0), tt.groupLevel, cb, batchSize)
 		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %v", err)
 		}

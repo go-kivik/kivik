@@ -38,6 +38,10 @@ type Row struct {
 	// empty for output rows.
 	ID string
 
+	// TargetKey is the key of a map row, or the key of a reduced row. It is
+	// used in output for grouping.
+	TargetKey any
+
 	// FirstKey represents the key of a map row, or the first key of a reduced
 	// row. It is used for grouping and caching.
 	FirstKey any
@@ -45,7 +49,8 @@ type Row struct {
 	FirstPK int
 
 	// LastKey is the last key of a reduced row. It is only populated for
-	// reduced rows. LastKey and LastPK may be omitted for map rows.
+	// reduced rows. LastKey and LastPK may be omitted for map rows. If omitted,
+	// Key and PK are used.
 	LastKey any
 	// LastPK disambiguates multiple identical keys.
 	LastPK int
@@ -74,7 +79,7 @@ func (r *Rows) Next(row *driver.Row) error {
 	}
 	thisRow := (*r)[0]
 	*r = (*r)[1:]
-	row.Key, _ = json.Marshal(thisRow.FirstKey)
+	row.Key, _ = json.Marshal(thisRow.TargetKey)
 	value, _ := json.Marshal(thisRow.Value)
 	row.Value = bytes.NewReader(value)
 	return nil
@@ -132,7 +137,10 @@ func reduceWithBatchSize(rows Reducer, javascript string, logger *log.Logger, gr
 
 func reduce(rows Reducer, fn Func, groupLevel int, batchSize int, cb Callback) (*Rows, error) {
 	out := make(Rows, 0, 1)
-	var firstPK, lastPK int
+	var (
+		firstKey, lastKey any
+		firstPK, lastPK   int
+	)
 
 	callReduce := func(keys [][2]interface{}, values []interface{}, rereduce bool, key any) error {
 		if len(keys) == 0 {
@@ -141,10 +149,12 @@ func reduce(rows Reducer, fn Func, groupLevel int, batchSize int, cb Callback) (
 		if len(keys) == 1 && rereduce {
 			// Nothing to rereduce if we have only a single input--just pass it through
 			out = append(out, Row{
-				FirstKey: key,
-				Value:    values[0],
-				FirstPK:  firstPK,
-				LastPK:   lastPK,
+				TargetKey: key,
+				FirstKey:  firstKey,
+				FirstPK:   firstPK,
+				LastKey:   lastKey,
+				LastPK:    lastPK,
+				Value:     values[0],
 			})
 			return nil
 		}
@@ -155,15 +165,17 @@ func reduce(rows Reducer, fn Func, groupLevel int, batchSize int, cb Callback) (
 		rows := make([]Row, 0, len(results))
 		for _, result := range results {
 			row := Row{
-				Value:   result,
-				FirstPK: firstPK,
-				LastPK:  lastPK,
+				FirstKey: firstKey,
+				FirstPK:  firstPK,
+				LastKey:  lastKey,
+				LastPK:   lastPK,
+				Value:    result,
 			}
 			if keyLen(key) > 0 {
-				row.FirstKey = key
+				row.TargetKey = key
 			}
 			rows = append(rows, row)
-			firstPK, lastPK = 0, 0
+			firstKey, firstPK, lastKey, lastPK = nil, 0, nil, 0
 		}
 		if cb != nil {
 			var depth uint
@@ -212,10 +224,13 @@ func reduce(rows Reducer, fn Func, groupLevel int, batchSize int, cb Callback) (
 		}
 
 		if firstPK == 0 {
+			firstKey = row.FirstKey
 			firstPK = row.FirstPK
 		}
+		lastKey = row.LastKey
 		lastPK = row.LastPK
 		if lastPK == 0 {
+			lastKey = row.FirstKey
 			lastPK = row.FirstPK
 		}
 
@@ -234,10 +249,10 @@ func reduce(rows Reducer, fn Func, groupLevel int, batchSize int, cb Callback) (
 
 	// If we received mixed map/reduce inputs, then we may need to re-reduce
 	// the output before returning.
-	lastKey := truncateKey(out[0].FirstKey, groupLevel)
+	finalKey := truncateKey(out[0].FirstKey, groupLevel)
 	for i := 1; i < len(out); i++ {
 		key := truncateKey(out[i].FirstKey, groupLevel)
-		if reflect.DeepEqual(lastKey, key) {
+		if reflect.DeepEqual(finalKey, key) {
 			return reduce(&out, fn, groupLevel, batchSize, cb)
 		}
 	}

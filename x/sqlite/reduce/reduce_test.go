@@ -180,6 +180,29 @@ func TestReduce(t *testing.T) {
 			{Key: nil, Value: 6.0, First: 1, Last: 6},
 		},
 	})
+	tests.Add("batched reduce", test{
+		input: &Rows{
+			{ID: "a", Key: []any{1.0, 2.0, 4.0}, Value: nil, First: 1, Last: 1},
+			{ID: "b", Key: []any{1.0, 2.0, 5.0}, Value: nil, First: 2, Last: 2},
+			{ID: "c", Key: []any{1.0, 2.0, 4.0}, Value: nil, First: 3, Last: 3},
+			{ID: "d", Key: []any{1.0, 2.0, 5.0}, Value: nil, First: 4, Last: 4},
+			{ID: "e", Key: []any{1.0, 2.0, 4.0}, Value: nil, First: 5, Last: 5},
+			{ID: "f", Key: []any{1.0, 2.0, 5.0}, Value: nil, First: 6, Last: 6},
+		},
+		groupLevel: 0,
+		javascript: "_count",
+		batchSize:  2,
+		want: []Row{
+			{Key: nil, Value: 6.0, First: 1, Last: 6},
+		},
+		wantCache: [][]Row{
+			{{Key: nil, Value: 2.0, First: 1, Last: 2}},
+			{{Key: nil, Value: 2.0, First: 3, Last: 4}},
+			{{Key: nil, Value: 2.0, First: 5, Last: 6}},
+			{{Key: nil, Value: 4.0, First: 1, Last: 4}},
+			{{Key: nil, Value: 6.0, First: 1, Last: 6}},
+		},
+	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		var cache [][]Row

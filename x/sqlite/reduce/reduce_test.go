@@ -180,11 +180,6 @@ func TestReduce(t *testing.T) {
 		},
 	})
 
-	/* TODO:
-	- reduce level = 0
-	- partial cache
-	*/
-
 	tests.Run(t, func(t *testing.T, tt test) {
 		var cache [][]Row
 		cb := func(_ uint, rows []Row) {

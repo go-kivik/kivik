@@ -182,9 +182,8 @@ func reduce(rows Reducer, fn Func, groupLevel int, cb Callback) (*Rows, error) {
 		}
 
 		switch {
-		case groupLevel == 0 && rereduce != (row.ID == ""):
-			fallthrough
-		case targetKey != nil && (!reflect.DeepEqual(targetKey, truncateKey(row.Key, groupLevel)) || rereduce != (row.ID == "")):
+		case (groupLevel == 0 && rereduce != (row.ID == "")) ||
+			(targetKey != nil && (!reflect.DeepEqual(targetKey, truncateKey(row.Key, groupLevel)) || rereduce != (row.ID == ""))):
 			if err := callReduce(keys, values, rereduce, targetKey); err != nil {
 				return nil, err
 			}

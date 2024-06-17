@@ -2160,9 +2160,6 @@ func TestDBQuery(t *testing.T) {
 
 	/*
 		TODO:
-		- reduce with:
-			- keys
-			- update_seq
 		- group with:
 			- endkey
 			- startkey
@@ -2246,6 +2243,58 @@ func TestDBQuery(t *testing.T) {
 			checkReduced(t, db.underlying(), tt.wantCache)
 		}
 	})
+}
+
+func TestDBQuery_reduce_with_update_seq(t *testing.T) {
+	t.Parallel()
+	d := newDB(t)
+
+	_ = d.tPut("_design/foo", map[string]interface{}{
+		"views": map[string]interface{}{
+			"bar": map[string]string{
+				"map":    `function(doc) { emit(doc._id, null); }`,
+				"reduce": "_count",
+			},
+		},
+	})
+	_ = d.tPut("foo", map[string]string{"_id": "foo"})
+
+	rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", kivik.Param("update_seq", true))
+	if err != nil {
+		t.Fatalf("Failed to query view: %s", err)
+	}
+	want := "2"
+	got := rows.UpdateSeq()
+	if got != want {
+		t.Errorf("Unexpected update seq: %s", got)
+	}
+	_ = rows.Close()
+}
+
+func TestDBQuery_reduce_without_update_seq(t *testing.T) {
+	t.Parallel()
+	d := newDB(t)
+
+	_ = d.tPut("_design/foo", map[string]interface{}{
+		"views": map[string]interface{}{
+			"bar": map[string]string{
+				"map":    `function(doc) { emit(doc._id, null); }`,
+				"reduce": "_count",
+			},
+		},
+	})
+	_ = d.tPut("foo", map[string]string{"_id": "foo"})
+
+	rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", kivik.Param("update_seq", false))
+	if err != nil {
+		t.Fatalf("Failed to query view: %s", err)
+	}
+	want := ""
+	got := rows.UpdateSeq()
+	if got != want {
+		t.Errorf("Unexpected update seq: %s", got)
+	}
+	_ = rows.Close()
 }
 
 func TestDBQuery_update_seq(t *testing.T) {

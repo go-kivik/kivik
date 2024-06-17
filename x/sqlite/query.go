@@ -303,7 +303,11 @@ func (d *db) performQuery(
 				_ = results.Close() //nolint:sqlclosecheck // invalid option specified for reduce, so abort the query
 				return nil, &internal.Error{Status: http.StatusBadRequest, Message: "conflicts is invalid for reduce"}
 			}
-			return d.reduce(ctx, meta.lastSeq, ddoc, view, rev.String(), results, meta.reduceFuncJS, vopts.reduceGroupLevel())
+			result, err := d.reduce(ctx, meta.lastSeq, ddoc, view, rev.String(), results, meta.reduceFuncJS, vopts.reduceGroupLevel())
+			if err != nil {
+				return nil, err
+			}
+			return metaReduced{Rows: result, meta: meta}, nil
 		}
 
 		// If the results are up to date, OR, we're in false/lazy update mode,
@@ -315,6 +319,16 @@ func (d *db) performQuery(
 			updateSeq: meta.updateSeq,
 		}, nil
 	}
+}
+
+// metaReduced wraps a driver.Rows and some metadata, to serve both.
+type metaReduced struct {
+	driver.Rows
+	meta *viewMetadata
+}
+
+func (m metaReduced) UpdateSeq() string {
+	return m.meta.updateSeq
 }
 
 func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *viewOptions) (driver.Rows, error) {

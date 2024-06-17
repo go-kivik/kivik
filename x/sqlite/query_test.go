@@ -17,6 +17,7 @@ package sqlite
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -39,6 +40,7 @@ func TestDBQuery(t *testing.T) {
 		wantStatus    int
 		wantErr       string
 		wantLogs      []string
+		wantCache     []reduced
 	}
 	tests := testy.NewTable()
 	tests.Add("ddoc does not exist", test{
@@ -1916,9 +1918,82 @@ func TestDBQuery(t *testing.T) {
 			wantStatus: http.StatusBadRequest,
 		}
 	})
+	tests.Add("reduce cache created", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{})
+		_ = d.tPut("b", map[string]interface{}{})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: []rowResult{{Key: `null`, Value: `2`}},
+			wantCache: []reduced{
+				{Seq: 3, Depth: 0, FirstKey: `"a"`, FirstPK: 1, LastKey: `"b"`, LastPK: 2, Value: "2"},
+			},
+		}
+	})
+	tests.Add("cached reduce reused", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{})
+		_ = d.tPut("b", map[string]interface{}{})
+
+		db := d.underlying()
+		var table string
+		if err := db.QueryRow(`
+			SELECT name
+			FROM sqlite_master
+			WHERE type = 'table'
+				AND name LIKE '%_%_reduce_%'
+		`).Scan(&table); err != nil {
+			t.Fatalf("Failed to find reduced table: %s", err)
+		}
+		if _, err := db.Exec(fmt.Sprintf(`
+			INSERT INTO %q (seq, depth, first_key, first_pk, last_key, last_pk, value)
+			VALUES ($1, $2, $3, $4, $5, $6, $7)
+		`, table), 3, 0, `"a"`, 1, `"b"`, 2, "2"); err != nil {
+			t.Fatalf("Failed to insert reduced value: %s", err)
+		}
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: []rowResult{{Key: `null`, Value: `2`}},
+			wantCache: []reduced{
+				{Seq: 3, Depth: 0, FirstKey: `"a"`, FirstPK: 1, LastKey: `"b"`, LastPK: 2, Value: "2"},
+			},
+		}
+	})
 
 	/*
 		TODO:
+		- reduce cache
+			- partial cache
+			- inclusive vs non-inclusive end (and start?)
+			- differenth depths
+			- competing cache depths
+			- gaps in cache results
 		- reduce=true, group=true
 			- limit
 			- skip
@@ -1978,6 +2053,9 @@ func TestDBQuery(t *testing.T) {
 			checkRows(t, rows, tt.want)
 		}
 		db.checkLogs(tt.wantLogs)
+		if tt.wantCache != nil {
+			checkReduced(t, db.underlying(), tt.wantCache)
+		}
 	})
 }
 

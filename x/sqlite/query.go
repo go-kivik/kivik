@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/dop251/goja"
@@ -128,6 +129,16 @@ func (d *db) performQuery(
 					AND rev_id = $7
 					AND func_type = 'reduce'
 					AND func_name = $8
+			),
+			cache AS (
+			SELECT
+					first_key,
+					first_pk,
+					last_pk,
+					last_key,
+					value
+				FROM {{ .Reduce }}
+				JOIN reduce ON reduce.reducible AND ($3 IS NULL OR $3 == TRUE)
 			)
 
 			-- Metadata header
@@ -155,16 +166,41 @@ func (d *db) performQuery(
 
 			UNION ALL
 
+			-- Cached reduce data
+			SELECT
+				*
+			FROM (
+				SELECT
+					"", -- id
+					first_key,
+					value,
+					first_pk,
+					last_pk,
+					last_key,
+					0, -- attachment_count
+					NULL, -- filename
+					NULL, -- content_type
+					NULL, -- length
+					NULL, -- digest
+					NULL, -- rev_pos
+					NULL  -- data
+				FROM cache
+				JOIN reduce
+				WHERE reduce.reducible AND ($3 IS NULL OR $3 == TRUE)
+			)
+
+			UNION ALL
+
 			-- View map to pass to reduce
 			SELECT
 				*
 			FROM (
 				SELECT
-					id    AS id,
-					key   AS key,
-					value AS value,
-					pk    AS first,
-					pk    AS last,
+					view.id    AS id,
+					view.key   AS key,
+					view.value AS value,
+					view.pk    AS first,
+					view.pk    AS last,
 					NULL  AS conflicts,
 					0     AS attachment_count,
 					NULL AS filename,
@@ -174,8 +210,9 @@ func (d *db) performQuery(
 					NULL AS rev_pos,
 					NULL AS data
 				FROM {{ .Map }} AS view
-				JOIN reduce
-				WHERE reduce.reducible AND ($3 IS NULL OR $3 == TRUE)
+				JOIN reduce ON reduce.reducible AND ($3 IS NULL OR $3 == TRUE)
+				LEFT JOIN cache ON view.key >= cache.first_key AND view.key <= cache.last_key
+				WHERE cache.first_key IS NULL
 				%[5]s -- ORDER BY
 			)
 
@@ -406,14 +443,15 @@ func (d *db) reduce(ctx context.Context, seq int, ddoc, name, rev string, result
 	}
 	callback := func(depth uint, rows []reduce.Row) {
 		for _, row := range rows {
-			key, _ := json.Marshal(row.FirstKey)
+			firstKey, _ := json.Marshal(row.FirstKey)
+			lastKey, _ := json.Marshal(row.LastKey)
 			var value []byte
 			if row.Value != nil {
 				value, _ = json.Marshal(row.Value)
 			}
-			if _, err = stmt.ExecContext(ctx, seq, depth, key, row.FirstPK, key, row.LastPK, value); err != nil {
+			if _, err = stmt.ExecContext(ctx, seq, depth, firstKey, row.FirstPK, lastKey, row.LastPK, value); err != nil {
 				d.logger.Printf("Failed to insert reduce result [%v, %v, %v, %v, %v, %v, %v]: %s",
-					seq, depth, key, row.FirstPK, key, row.LastPK, value,
+					seq, depth, firstKey, row.FirstPK, lastKey, row.LastPK, value,
 					err)
 			}
 		}
@@ -779,8 +817,33 @@ func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc
 	if batch.insertCount > 0 {
 		args := make([]interface{}, 0, batch.insertCount*5)
 		values := make([]string, 0, batch.insertCount)
-		for mapKey, entries := range batch.entries {
-			for _, entry := range entries {
+		mapKeys := make([]docRev, 0, len(batch.entries))
+		for mapKey := range batch.entries {
+			mapKeys = append(mapKeys, mapKey)
+		}
+		slices.SortFunc(mapKeys, func(a, b docRev) int {
+			if a.id < b.id {
+				return -1
+			}
+			if a.id > b.id {
+				return 1
+			}
+			if a.rev < b.rev {
+				return -1
+			}
+			if a.rev > b.rev {
+				return 1
+			}
+			if a.revID < b.revID {
+				return -1
+			}
+			if a.revID > b.revID {
+				return 1
+			}
+			return 0
+		})
+		for _, mapKey := range mapKeys {
+			for _, entry := range batch.entries[mapKey] {
 				values = append(values, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", len(args)+1, len(args)+2, len(args)+3, len(args)+4, len(args)+5))
 				args = append(args, mapKey.id, mapKey.rev, mapKey.revID, entry.Key, entry.Value)
 			}

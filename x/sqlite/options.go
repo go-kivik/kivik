@@ -593,12 +593,8 @@ func (v viewOptions) buildWhere(args *[]any) []string {
 func (v viewOptions) buildOrderBy(moreColumns ...string) string {
 	if v.sorted {
 		direction := descendingToDirection(v.descending)
-		if len(moreColumns) == 0 {
-			return "ORDER BY view.key " + direction
-		}
 		conditions := make([]string, 0, len(moreColumns)+1)
-		conditions = append(conditions, "view.key "+direction)
-		for _, col := range moreColumns {
+		for _, col := range append([]string{"key"}, moreColumns...) {
 			conditions = append(conditions, "view."+col+" "+direction)
 		}
 		return "ORDER BY " + strings.Join(conditions, ", ")

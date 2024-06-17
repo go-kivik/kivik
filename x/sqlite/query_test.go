@@ -40,7 +40,7 @@ func TestDBQuery(t *testing.T) {
 		wantStatus    int
 		wantErr       string
 		wantLogs      []string
-		wantReduced   []reduced
+		wantCache     []reduced
 	}
 	tests := testy.NewTable()
 	tests.Add("ddoc does not exist", test{
@@ -1938,8 +1938,8 @@ func TestDBQuery(t *testing.T) {
 			ddoc: "_design/foo",
 			view: "_view/bar",
 			want: []rowResult{{Key: `null`, Value: `2`}},
-			wantReduced: []reduced{
-				{Seq: 3, Depth: 0, FirstKey: "null", FirstPK: 1, LastKey: "null", LastPK: 2, Value: "2"},
+			wantCache: []reduced{
+				{Seq: 3, Depth: 0, FirstKey: `"a"`, FirstPK: 1, LastKey: `"b"`, LastPK: 2, Value: "2"},
 			},
 		}
 	})
@@ -1980,7 +1980,7 @@ func TestDBQuery(t *testing.T) {
 			ddoc: "_design/foo",
 			view: "_view/bar",
 			want: []rowResult{{Key: `null`, Value: `2`}},
-			wantReduced: []reduced{
+			wantCache: []reduced{
 				{Seq: 3, Depth: 0, FirstKey: "null", FirstPK: 1, LastKey: "null", LastPK: 2, Value: "2"},
 			},
 		}
@@ -2053,8 +2053,8 @@ func TestDBQuery(t *testing.T) {
 			checkRows(t, rows, tt.want)
 		}
 		db.checkLogs(tt.wantLogs)
-		if tt.wantReduced != nil {
-			checkReduced(t, db.underlying(), tt.wantReduced)
+		if tt.wantCache != nil {
+			checkReduced(t, db.underlying(), tt.wantCache)
 		}
 	})
 }

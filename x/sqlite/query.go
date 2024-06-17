@@ -407,14 +407,15 @@ func (d *db) reduce(ctx context.Context, seq int, ddoc, name, rev string, result
 	}
 	callback := func(depth uint, rows []reduce.Row) {
 		for _, row := range rows {
-			key, _ := json.Marshal(row.FirstKey)
+			firstKey, _ := json.Marshal(row.FirstKey)
+			lastKey, _ := json.Marshal(row.LastKey)
 			var value []byte
 			if row.Value != nil {
 				value, _ = json.Marshal(row.Value)
 			}
-			if _, err = stmt.ExecContext(ctx, seq, depth, key, row.FirstPK, key, row.LastPK, value); err != nil {
+			if _, err = stmt.ExecContext(ctx, seq, depth, firstKey, row.FirstPK, lastKey, row.LastPK, value); err != nil {
 				d.logger.Printf("Failed to insert reduce result [%v, %v, %v, %v, %v, %v, %v]: %s",
-					seq, depth, key, row.FirstPK, key, row.LastPK, value,
+					seq, depth, firstKey, row.FirstPK, lastKey, row.LastPK, value,
 					err)
 			}
 		}

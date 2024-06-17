@@ -2107,7 +2107,7 @@ func TestDBQuery(t *testing.T) {
 			want: []rowResult{{Key: `null`, Value: `2`}},
 		}
 	})
-	tests.Add("key with reduce and descending", func(t *testing.T) interface{} {
+	tests.Add("key with reduce", func(t *testing.T) interface{} {
 		d := newDB(t)
 		_ = d.tPut("_design/foo", map[string]interface{}{
 			"views": map[string]interface{}{
@@ -2132,7 +2132,7 @@ func TestDBQuery(t *testing.T) {
 			want:    []rowResult{{Key: `null`, Value: `1`}},
 		}
 	})
-	tests.Add("keys with reduce and descending", func(t *testing.T) interface{} {
+	tests.Add("keys with reduce", func(t *testing.T) interface{} {
 		d := newDB(t)
 		_ = d.tPut("_design/foo", map[string]interface{}{
 			"views": map[string]interface{}{
@@ -2157,11 +2157,76 @@ func TestDBQuery(t *testing.T) {
 			want:    []rowResult{{Key: `null`, Value: `2`}},
 		}
 	})
+	tests.Add("endkey with group=true", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{})
+		_ = d.tPut("b", map[string]interface{}{})
+		_ = d.tPut("c", map[string]interface{}{})
+		_ = d.tPut("d", map[string]interface{}{})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"endkey": "b",
+				"group":  true,
+			}),
+			want: []rowResult{
+				{Key: `"a"`, Value: `1`},
+				{Key: `"b"`, Value: `1`},
+			},
+		}
+	})
+	tests.Add("endkey with group=true and descending", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{})
+		_ = d.tPut("b", map[string]interface{}{})
+		_ = d.tPut("c", map[string]interface{}{})
+		_ = d.tPut("d", map[string]interface{}{})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"endkey":     "b",
+				"group":      true,
+				"descending": true,
+			}),
+			want: []rowResult{
+				{Key: `"d"`, Value: `1`},
+				{Key: `"c"`, Value: `1`},
+				{Key: `"b"`, Value: `1`},
+			},
+		}
+	})
 
 	/*
 		TODO:
+		- reduce
+			inclusive_end
 		- group with:
-			- endkey
 			- startkey
 			- key
 			- keys
@@ -2170,6 +2235,7 @@ func TestDBQuery(t *testing.T) {
 			- sorted
 			- update_seq
 			- descending
+			- inclsive_end
 		- reduce cache
 			- inclusive vs non-inclusive end (and start?)
 			- differenth depths
@@ -2180,6 +2246,7 @@ func TestDBQuery(t *testing.T) {
 			- key
 			- keys
 			- update_seq
+			- inclusive_end
 			- group
 				- limit
 				- skip
@@ -2188,6 +2255,7 @@ func TestDBQuery(t *testing.T) {
 				- key
 				- keys
 				- update_seq
+				- inclusive_end
 		- _stats
 			- differing lengths of arrays of floats
 			- array with floats and other types

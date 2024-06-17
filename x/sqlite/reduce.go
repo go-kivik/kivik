@@ -31,20 +31,28 @@ func (r *reduceRowIter) ReduceNext(row *reduce.Row) error {
 		}
 		return io.EOF
 	}
-	var key, value *[]byte
+	var firstKey, lastKey, value *[]byte
 	err := r.results.Scan(
-		&row.ID, &key, &value, &row.FirstPK, discard{}, discard{},
+		&row.ID, &firstKey, &value, &row.FirstPK, &row.LastPK, &lastKey,
 		discard{}, discard{}, discard{}, discard{}, discard{}, discard{}, discard{},
 	)
 	if err != nil {
 		return err
 	}
-	if key != nil {
-		if err = json.Unmarshal(*key, &row.FirstKey); err != nil {
+	if firstKey != nil {
+		if err = json.Unmarshal(*firstKey, &row.FirstKey); err != nil {
 			return err
 		}
 	} else {
 		row.FirstKey = nil
+	}
+	if lastKey != nil {
+		if err = json.Unmarshal(*lastKey, &row.LastKey); err != nil {
+			return err
+		}
+	} else {
+		row.LastKey = nil
+		row.LastPK = 0
 	}
 	if value != nil {
 		if err = json.Unmarshal(*value, &row.Value); err != nil {

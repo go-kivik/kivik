@@ -129,6 +129,16 @@ func (d *db) performQuery(
 					AND rev_id = $7
 					AND func_type = 'reduce'
 					AND func_name = $8
+			),
+			cache AS (
+			SELECT
+					first_key,
+					first_pk,
+					last_pk,
+					last_key,
+					value
+				FROM {{ .Reduce }}
+				JOIN reduce ON reduce.reducible AND ($3 IS NULL OR $3 == TRUE)
 			)
 
 			-- Metadata header
@@ -156,16 +166,41 @@ func (d *db) performQuery(
 
 			UNION ALL
 
+			-- Cached reduce data
+			SELECT
+				*
+			FROM (
+				SELECT
+					"", -- id
+					first_key,
+					value,
+					first_pk,
+					last_pk,
+					last_key,
+					0, -- attachment_count
+					NULL, -- filename
+					NULL, -- content_type
+					NULL, -- length
+					NULL, -- digest
+					NULL, -- rev_pos
+					NULL  -- data
+				FROM cache
+				JOIN reduce
+				WHERE reduce.reducible AND ($3 IS NULL OR $3 == TRUE)
+			)
+
+			UNION ALL
+
 			-- View map to pass to reduce
 			SELECT
 				*
 			FROM (
 				SELECT
-					id    AS id,
-					key   AS key,
-					value AS value,
-					pk    AS first,
-					pk    AS last,
+					view.id    AS id,
+					view.key   AS key,
+					view.value AS value,
+					view.pk    AS first,
+					view.pk    AS last,
 					NULL  AS conflicts,
 					0     AS attachment_count,
 					NULL AS filename,
@@ -175,8 +210,9 @@ func (d *db) performQuery(
 					NULL AS rev_pos,
 					NULL AS data
 				FROM {{ .Map }} AS view
-				JOIN reduce
-				WHERE reduce.reducible AND ($3 IS NULL OR $3 == TRUE)
+				JOIN reduce ON reduce.reducible AND ($3 IS NULL OR $3 == TRUE)
+				LEFT JOIN cache ON view.key >= cache.first_key AND view.key <= cache.last_key
+				WHERE cache.first_key IS NULL
 				%[5]s -- ORDER BY
 			)
 

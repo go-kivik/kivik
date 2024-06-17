@@ -1971,7 +1971,7 @@ func TestDBQuery(t *testing.T) {
 		if _, err := db.Exec(fmt.Sprintf(`
 			INSERT INTO %q (seq, depth, first_key, first_pk, last_key, last_pk, value)
 			VALUES ($1, $2, $3, $4, $5, $6, $7)
-		`, table), 3, 0, "null", 1, "null", 2, "2"); err != nil {
+		`, table), 3, 0, `"a"`, 1, `"b"`, 2, "2"); err != nil {
 			t.Fatalf("Failed to insert reduced value: %s", err)
 		}
 
@@ -1981,7 +1981,7 @@ func TestDBQuery(t *testing.T) {
 			view: "_view/bar",
 			want: []rowResult{{Key: `null`, Value: `2`}},
 			wantCache: []reduced{
-				{Seq: 3, Depth: 0, FirstKey: "null", FirstPK: 1, LastKey: "null", LastPK: 2, Value: "2"},
+				{Seq: 3, Depth: 0, FirstKey: `"a"`, FirstPK: 1, LastKey: `"b"`, LastPK: 2, Value: "2"},
 			},
 		}
 	})

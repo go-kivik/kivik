@@ -209,7 +209,7 @@ func reduce(rows Reducer, fn Func, groupLevel int, batchSize int, cb Callback) (
 
 		switch {
 		case (len(keys) >= batchSize) ||
-			(groupLevel == 0 && rereduce != (row.ID == "")) ||
+			(len(keys) > 0 && groupLevel == 0 && rereduce != (row.ID == "")) ||
 			(targetKey != nil && (!reflect.DeepEqual(targetKey, truncateKey(row.FirstKey, groupLevel)) || rereduce != (row.ID == ""))):
 			if err := callReduce(keys, values, rereduce, targetKey); err != nil {
 				return nil, err

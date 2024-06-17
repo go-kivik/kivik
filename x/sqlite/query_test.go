@@ -2221,13 +2221,76 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("startkey with group=true", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{})
+		_ = d.tPut("b", map[string]interface{}{})
+		_ = d.tPut("c", map[string]interface{}{})
+		_ = d.tPut("d", map[string]interface{}{})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"startkey": "b",
+				"group":    true,
+			}),
+			want: []rowResult{
+				{Key: `"b"`, Value: `1`},
+				{Key: `"c"`, Value: `1`},
+				{Key: `"d"`, Value: `1`},
+			},
+		}
+	})
+	tests.Add("startkey with group=true and descending", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{})
+		_ = d.tPut("b", map[string]interface{}{})
+		_ = d.tPut("c", map[string]interface{}{})
+		_ = d.tPut("d", map[string]interface{}{})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"startkey":   "b",
+				"group":      true,
+				"descending": true,
+			}),
+			want: []rowResult{
+				{Key: `"b"`, Value: `1`},
+				{Key: `"a"`, Value: `1`},
+			},
+		}
+	})
 
 	/*
 		TODO:
 		- reduce
 			inclusive_end
 		- group with:
-			- startkey
 			- key
 			- keys
 			- limit

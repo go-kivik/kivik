@@ -2069,12 +2069,91 @@ func TestDBQuery(t *testing.T) {
 		_ = d.tPut("a", map[string]interface{}{})
 		_ = d.tPut("b", map[string]interface{}{})
 		_ = d.tPut("c", map[string]interface{}{})
+		_ = d.tPut("d", map[string]interface{}{})
 
 		return test{
 			db:      d,
 			ddoc:    "_design/foo",
 			view:    "_view/bar",
 			options: kivik.Param("startkey", "b"),
+			want:    []rowResult{{Key: `null`, Value: `3`}},
+		}
+	})
+	tests.Add("startkey with reduce and descending", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{})
+		_ = d.tPut("b", map[string]interface{}{})
+		_ = d.tPut("c", map[string]interface{}{})
+		_ = d.tPut("d", map[string]interface{}{})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"startkey":   "b",
+				"descending": true,
+			}),
+			want: []rowResult{{Key: `null`, Value: `2`}},
+		}
+	})
+	tests.Add("key with reduce and descending", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{})
+		_ = d.tPut("b", map[string]interface{}{})
+		_ = d.tPut("c", map[string]interface{}{})
+		_ = d.tPut("d", map[string]interface{}{})
+
+		return test{
+			db:      d,
+			ddoc:    "_design/foo",
+			view:    "_view/bar",
+			options: kivik.Param("key", "b"),
+			want:    []rowResult{{Key: `null`, Value: `1`}},
+		}
+	})
+	tests.Add("keys with reduce and descending", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{})
+		_ = d.tPut("b", map[string]interface{}{})
+		_ = d.tPut("c", map[string]interface{}{})
+		_ = d.tPut("d", map[string]interface{}{})
+
+		return test{
+			db:      d,
+			ddoc:    "_design/foo",
+			view:    "_view/bar",
+			options: kivik.Param("keys", []string{"b", "c"}),
 			want:    []rowResult{{Key: `null`, Value: `2`}},
 		}
 	})
@@ -2082,12 +2161,8 @@ func TestDBQuery(t *testing.T) {
 	/*
 		TODO:
 		- reduce with:
-			- endkey
-			- startkey
-			- key
 			- keys
 			- update_seq
-			- descending
 		- group with:
 			- endkey
 			- startkey
@@ -2103,14 +2178,19 @@ func TestDBQuery(t *testing.T) {
 			- differenth depths
 			- competing cache depths
 			- gaps in cache results
-		- reduce=true, group=true
-			- limit
-			- skip
 			- endkey
 			- startkey
 			- key
 			- keys
 			- update_seq
+			- group
+				- limit
+				- skip
+				- endkey
+				- startkey
+				- key
+				- keys
+				- update_seq
 		- _stats
 			- differing lengths of arrays of floats
 			- array with floats and other types

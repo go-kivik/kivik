@@ -156,6 +156,7 @@ func reduce(rows Reducer, fn Func, groupLevel int, batchSize int, cb Callback) (
 				LastPK:    lastPK,
 				Value:     values[0],
 			})
+			firstKey, firstPK, lastKey, lastPK = nil, 0, nil, 0
 			return nil
 		}
 		if rereduce {

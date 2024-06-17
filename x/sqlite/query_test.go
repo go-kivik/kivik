@@ -2030,9 +2030,48 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("endkey with reduce", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{})
+		_ = d.tPut("b", map[string]interface{}{})
+		_ = d.tPut("c", map[string]interface{}{})
+
+		return test{
+			db:      d,
+			ddoc:    "_design/foo",
+			view:    "_view/bar",
+			options: kivik.Param("endkey", "b"),
+			want:    []rowResult{{Key: `null`, Value: `2`}},
+		}
+	})
 
 	/*
 		TODO:
+		- reduce with:
+			- endkey
+			- startkey
+			- key
+			- keys
+			- update_seq
+		- group with:
+			- endkey
+			- startkey
+			- key
+			- keys
+			- limit
+			- skip
+			- sorted
+			- update_seq
 		- reduce cache
 			- inclusive vs non-inclusive end (and start?)
 			- differenth depths

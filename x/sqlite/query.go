@@ -213,6 +213,7 @@ func (d *db) performQuery(
 				JOIN reduce ON reduce.reducible AND ($3 IS NULL OR $3 == TRUE)
 				LEFT JOIN cache ON view.key >= cache.first_key AND view.key <= cache.last_key
 				WHERE cache.first_key IS NULL
+					%[2]s -- WHERE
 				%[5]s -- ORDER BY
 			)
 

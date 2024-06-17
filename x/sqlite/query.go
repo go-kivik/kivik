@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/dop251/goja"
@@ -779,8 +780,33 @@ func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc
 	if batch.insertCount > 0 {
 		args := make([]interface{}, 0, batch.insertCount*5)
 		values := make([]string, 0, batch.insertCount)
-		for mapKey, entries := range batch.entries {
-			for _, entry := range entries {
+		mapKeys := make([]docRev, 0, len(batch.entries))
+		for mapKey := range batch.entries {
+			mapKeys = append(mapKeys, mapKey)
+		}
+		slices.SortFunc(mapKeys, func(a, b docRev) int {
+			if a.id < b.id {
+				return -1
+			}
+			if a.id > b.id {
+				return 1
+			}
+			if a.rev < b.rev {
+				return -1
+			}
+			if a.rev > b.rev {
+				return 1
+			}
+			if a.revID < b.revID {
+				return -1
+			}
+			if a.revID > b.revID {
+				return 1
+			}
+			return 0
+		})
+		for _, mapKey := range mapKeys {
+			for _, entry := range batch.entries[mapKey] {
 				values = append(values, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", len(args)+1, len(args)+2, len(args)+3, len(args)+4, len(args)+5))
 				args = append(args, mapKey.id, mapKey.rev, mapKey.revID, entry.Key, entry.Value)
 			}

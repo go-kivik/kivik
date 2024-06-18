@@ -781,6 +781,9 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 	if err != nil {
 		return nil, err
 	}
+	if len(keys) > 0 && (key != "" || endkey != "" || startkey != "") {
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "`keys` is incompatible with `key`, `start_key` and `end_key`"}
+	}
 	sorted, err := o.sorted()
 	if err != nil {
 		return nil, err

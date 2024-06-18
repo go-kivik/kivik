@@ -549,6 +549,18 @@ func (o optsMap) attEncodingInfo() (bool, error) {
 
 const defaultWhereCap = 3
 
+// buildReduceCacheWhere returns WHERE conditions for use when querying the
+// reduce cache.
+func (v viewOptions) buildReduceCacheWhere(args *[]any) []string {
+	where := make([]string, 0, defaultWhereCap)
+	if v.endkey != "" {
+		op := endKeyOp(v.descending, v.inclusiveEnd)
+		where = append(where, fmt.Sprintf("view.last_key %s $%d", op, len(*args)+1))
+		*args = append(*args, v.endkey)
+	}
+	return where
+}
+
 // buildGroupWhere returns WHERE conditions for use with grouping.
 func (v viewOptions) buildGroupWhere(args *[]any) []string {
 	where := make([]string, 0, defaultWhereCap)

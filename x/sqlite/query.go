@@ -117,6 +117,7 @@ func (d *db) performQuery(
 		}
 
 		where := append([]string{""}, vopts.buildWhere(&args)...)
+		reduceWhere := append([]string{""}, vopts.buildReduceCacheWhere(&args)...)
 
 		query := fmt.Sprintf(d.ddocQuery(ddoc, view, rev.String(), leavesCTE+`,
 			 reduce AS (
@@ -137,8 +138,10 @@ func (d *db) performQuery(
 					last_pk,
 					last_key,
 					value
-				FROM {{ .Reduce }}
+				FROM {{ .Reduce }} AS view
 				JOIN reduce ON reduce.reducible AND ($3 IS NULL OR $3 == TRUE)
+				WHERE TRUE
+					%[5]s -- WHERE
 			)
 
 			-- Metadata header
@@ -185,8 +188,6 @@ func (d *db) performQuery(
 					NULL, -- rev_pos
 					NULL  -- data
 				FROM cache
-				JOIN reduce
-				WHERE reduce.reducible AND ($3 IS NULL OR $3 == TRUE)
 			)
 
 			UNION ALL
@@ -214,7 +215,7 @@ func (d *db) performQuery(
 				LEFT JOIN cache ON view.key >= cache.first_key AND view.key <= cache.last_key
 				WHERE cache.first_key IS NULL
 					%[2]s -- WHERE
-				%[5]s -- ORDER BY
+				%[1]s -- ORDER BY
 			)
 
 			UNION ALL
@@ -274,8 +275,7 @@ func (d *db) performQuery(
 				LEFT JOIN {{ .Attachments }} AS att ON bridge.pk = att.pk
 				%[1]s -- ORDER BY
 			)
-		`), vopts.buildOrderBy(), strings.Join(where, " AND "), vopts.limit, vopts.skip,
-			vopts.buildOrderBy("pk"))
+		`), vopts.buildOrderBy("pk"), strings.Join(where, " AND "), vopts.limit, vopts.skip, strings.Join(reduceWhere, " AND "))
 		results, err := d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
 		switch {
 		case errIsNoSuchTable(err):

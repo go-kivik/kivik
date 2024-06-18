@@ -409,8 +409,9 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 				WHERE reduce.reducible AND ($6 IS NULL OR $6 == TRUE)
 					%[2]s
 				%[1]s -- ORDER BY
+				LIMIT %[3]d OFFSET %[4]d
 			)
-		`), vopts.buildOrderBy("pk"), strings.Join(where, " AND "))
+		`), vopts.buildOrderBy("pk"), strings.Join(where, " AND "), vopts.limit, vopts.skip)
 		results, err = d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in iterator
 
 		switch {

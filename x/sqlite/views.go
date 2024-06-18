@@ -206,7 +206,14 @@ func readFirstRow(results *sql.Rows, vopts *viewOptions) (*viewMetadata, error) 
 	}
 	if vopts.reduce != nil && *vopts.reduce && !meta.reducible {
 		_ = results.Close() //nolint:sqlclosecheck // Aborting
-		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "reduce is invalid for map-only views"}
+		opt := "reduce"
+		switch {
+		case vopts.groupLevel > 0:
+			opt = "group_level"
+		case vopts.group:
+			opt = "group"
+		}
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: opt + " is invalid for map-only views"}
 	}
 	if lastSeq != nil {
 		meta.lastSeq = *lastSeq

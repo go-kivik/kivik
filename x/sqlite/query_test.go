@@ -2285,23 +2285,329 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("endkey with reduce=true, descending, and inclusive_end=false", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{})
+		_ = d.tPut("b", map[string]interface{}{})
+		_ = d.tPut("c", map[string]interface{}{})
+		_ = d.tPut("d", map[string]interface{}{})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"endkey":        "b",
+				"descending":    true,
+				"inclusive_end": false,
+			}),
+			want: []rowResult{
+				{Key: `null`, Value: `2`},
+			},
+		}
+	})
+	tests.Add("endkey with reduce=true and inclusive_end=false", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{})
+		_ = d.tPut("b", map[string]interface{}{})
+		_ = d.tPut("c", map[string]interface{}{})
+		_ = d.tPut("d", map[string]interface{}{})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"endkey":        "b",
+				"inclusive_end": false,
+			}),
+			want: []rowResult{
+				{Key: `null`, Value: `1`},
+			},
+		}
+	})
+	tests.Add("key with group=true", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{})
+		_ = d.tPut("b", map[string]interface{}{})
+		_ = d.tPut("c", map[string]interface{}{})
+		_ = d.tPut("d", map[string]interface{}{})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"key":   "b",
+				"group": true,
+			}),
+			want: []rowResult{
+				{Key: `"b"`, Value: `1`},
+			},
+		}
+	})
+	tests.Add("keys with group=true", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{})
+		_ = d.tPut("b", map[string]interface{}{})
+		_ = d.tPut("c", map[string]interface{}{})
+		_ = d.tPut("d", map[string]interface{}{})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"keys":  []string{"b", "c"},
+				"group": true,
+			}),
+			want: []rowResult{
+				{Key: `"b"`, Value: `1`},
+				{Key: `"c"`, Value: `1`},
+			},
+		}
+	})
+	tests.Add("keys with group=true, descending=true", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{})
+		_ = d.tPut("b", map[string]interface{}{})
+		_ = d.tPut("c", map[string]interface{}{})
+		_ = d.tPut("d", map[string]interface{}{})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"keys":       []string{"b", "c"},
+				"group":      true,
+				"descending": true,
+			}),
+			want: []rowResult{
+				{Key: `"c"`, Value: `1`},
+				{Key: `"b"`, Value: `1`},
+			},
+		}
+	})
+	tests.Add("limit with group=true", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{})
+		_ = d.tPut("b", map[string]interface{}{})
+		_ = d.tPut("c", map[string]interface{}{})
+		_ = d.tPut("d", map[string]interface{}{})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"group": true,
+				"limit": 3,
+			}),
+			want: []rowResult{
+				{Key: `"a"`, Value: `1`},
+				{Key: `"b"`, Value: `1`},
+				{Key: `"c"`, Value: `1`},
+			},
+		}
+	})
+	tests.Add("skip with group=true", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{})
+		_ = d.tPut("b", map[string]interface{}{})
+		_ = d.tPut("c", map[string]interface{}{})
+		_ = d.tPut("d", map[string]interface{}{})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"group": true,
+				"skip":  3,
+			}),
+			want: []rowResult{
+				{Key: `"d"`, Value: `1`},
+			},
+		}
+	})
+	tests.Add("limit with group=true and descending", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{})
+		_ = d.tPut("b", map[string]interface{}{})
+		_ = d.tPut("c", map[string]interface{}{})
+		_ = d.tPut("d", map[string]interface{}{})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"group":      true,
+				"limit":      3,
+				"descending": true,
+			}),
+			want: []rowResult{
+				{Key: `"d"`, Value: `1`},
+				{Key: `"c"`, Value: `1`},
+				{Key: `"b"`, Value: `1`},
+			},
+		}
+	})
+	tests.Add("skip with group=true and descending", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{})
+		_ = d.tPut("b", map[string]interface{}{})
+		_ = d.tPut("c", map[string]interface{}{})
+		_ = d.tPut("d", map[string]interface{}{})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"group":      true,
+				"skip":       3,
+				"descending": true,
+			}),
+			want: []rowResult{
+				{Key: `"a"`, Value: `1`},
+			},
+		}
+	})
+	tests.Add("sorted=false with group=true", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+		_ = d.tPut("c", map[string]interface{}{})
+		_ = d.tPut("a", map[string]interface{}{})
+		_ = d.tPut("d", map[string]interface{}{})
+		_ = d.tPut("b", map[string]interface{}{})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"group":  true,
+				"sorted": false,
+			}),
+			// We don't care about order in this case, although the results
+			// are ordered anyway, by virtue of the way we do grouping.  But
+			// if that behavior ever changes, we don't need to care.
+			wantUnordered: true,
+			want: []rowResult{
+				{Key: `"d"`, Value: `1`},
+				{Key: `"a"`, Value: `1`},
+				{Key: `"b"`, Value: `1`},
+				{Key: `"c"`, Value: `1`},
+			},
+		}
+	})
 
 	/*
 		TODO:
-		- reduce
-			inclusive_end
-		- group with:
-			- key
-			- keys
-			- limit
-			- skip
-			- sorted
-			- update_seq
-			- descending
-			- inclsive_end
 		- reduce cache
-			- inclusive vs non-inclusive end (and start?)
-			- differenth depths
+			- inclusive vs non-inclusive end
+			- different depths
 			- competing cache depths
 			- gaps in cache results
 			- endkey
@@ -2467,6 +2773,61 @@ func TestDBQuery_no_update_seq(t *testing.T) {
 	_ = d.tPut("foo", map[string]string{"_id": "foo"})
 
 	rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", mock.NilOption)
+	if err != nil {
+		t.Fatalf("Failed to query view: %s", err)
+	}
+	want := ""
+	got := rows.UpdateSeq()
+	if got != want {
+		t.Errorf("Unexpected update seq: %s", got)
+	}
+	_ = rows.Close()
+}
+
+func TestDBQuery_group_with_update_seq(t *testing.T) {
+	t.Parallel()
+	d := newDB(t)
+
+	_ = d.tPut("_design/foo", map[string]interface{}{
+		"views": map[string]interface{}{
+			"bar": map[string]string{
+				"map":    `function(doc) { emit(doc._id, null); }`,
+				"reduce": "_count",
+			},
+		},
+	})
+	_ = d.tPut("foo", map[string]string{"_id": "foo"})
+
+	rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", kivik.Params(map[string]interface{}{
+		"update_seq": true,
+		"group":      true,
+	}))
+	if err != nil {
+		t.Fatalf("Failed to query view: %s", err)
+	}
+	want := "2"
+	got := rows.UpdateSeq()
+	if got != want {
+		t.Errorf("Unexpected update seq: %s", got)
+	}
+	_ = rows.Close()
+}
+
+func TestDBQuery_group_without_update_seq(t *testing.T) {
+	t.Parallel()
+	d := newDB(t)
+
+	_ = d.tPut("_design/foo", map[string]interface{}{
+		"views": map[string]interface{}{
+			"bar": map[string]string{
+				"map":    `function(doc) { emit(doc._id, null); }`,
+				"reduce": "_count",
+			},
+		},
+	})
+	_ = d.tPut("foo", map[string]string{"_id": "foo"})
+
+	rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", kivik.Param("group", true))
 	if err != nil {
 		t.Fatalf("Failed to query view: %s", err)
 	}

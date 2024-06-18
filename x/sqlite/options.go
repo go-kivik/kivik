@@ -562,6 +562,16 @@ func (v viewOptions) buildGroupWhere(args *[]any) []string {
 		where = append(where, fmt.Sprintf("view.key %s $%d", op, len(*args)+1))
 		*args = append(*args, v.startkey)
 	}
+	if v.key != "" {
+		where = append(where, "view.key = $"+strconv.Itoa(len(*args)+1))
+		*args = append(*args, v.key)
+	}
+	if len(v.keys) > 0 {
+		where = append(where, fmt.Sprintf("view.key IN (%s)", placeholders(len(v.keys), len(*args)+1)))
+		for _, key := range v.keys {
+			*args = append(*args, key)
+		}
+	}
 	return where
 }
 

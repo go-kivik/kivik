@@ -333,12 +333,11 @@ func (m metaReduced) UpdateSeq() string {
 
 func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *viewOptions) (driver.Rows, error) {
 	var (
-		results      *sql.Rows
-		reducible    bool
-		reduceFuncJS string
-		rev          revision
-		err          error
-		lastSeq      int
+		results *sql.Rows
+		rev     revision
+		err     error
+		lastSeq int
+		meta    *viewMetadata
 	)
 	for {
 		rev, err = d.updateIndex(ctx, ddoc, view, vopts.update)
@@ -346,7 +345,7 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 			return nil, err
 		}
 
-		args := []any{"_design/" + ddoc, rev.rev, rev.id, view, kivik.EndKeySuffix, true}
+		args := []any{"_design/" + ddoc, rev.rev, rev.id, view, kivik.EndKeySuffix, true, vopts.updateSeq}
 		where := append([]string{""}, vopts.buildGroupWhere(&args)...)
 
 		query := fmt.Sprintf(d.ddocQuery(ddoc, view, rev.String(), `
@@ -367,8 +366,8 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 				COALESCE(MAX(last_seq), 0) == (SELECT COALESCE(max(seq),0) FROM {{ .Docs }}) AS up_to_date,
 				reduce.reducible,
 				reduce.reduce_func,
-				MAX(last_seq) AS last_seq,
-				NULL,
+				IIF($7, last_seq, "") AS update_seq,
+				MAX(last_seq)         AS last_seq,
 				NULL,
 				0    AS attachment_count,
 				NULL AS filename,
@@ -409,8 +408,9 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 				WHERE reduce.reducible AND ($6 IS NULL OR $6 == TRUE)
 					%[2]s
 				%[1]s -- ORDER BY
+				LIMIT %[3]d OFFSET %[4]d
 			)
-		`), vopts.buildOrderBy("pk"), strings.Join(where, " AND "))
+		`), vopts.buildOrderBy("pk"), strings.Join(where, " AND "), vopts.limit, vopts.skip)
 		results, err = d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in iterator
 
 		switch {
@@ -421,34 +421,28 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 		}
 		defer results.Close()
 
-		// The first row is used to verify the index is up to date
-		if !results.Next() {
-			// should never happen
-			return nil, errors.New("no rows returned")
-		}
-		if vopts.update != updateModeTrue {
-			break
-		}
-		var upToDate bool
-		if err := results.Scan(
-			&upToDate, &reducible, &reduceFuncJS, &lastSeq, discard{}, discard{},
-			discard{}, discard{}, discard{}, discard{}, discard{}, discard{}, discard{},
-		); err != nil {
+		meta, err = readFirstRow(results, vopts)
+		if err != nil {
 			return nil, err
 		}
-		if !reducible {
+
+		if !meta.reducible {
 			field := "group"
 			if vopts.groupLevel > 0 {
 				field = "group_level"
 			}
 			return nil, &internal.Error{Status: http.StatusBadRequest, Message: field + " is invalid for map-only views"}
 		}
-		if upToDate {
+		if meta.upToDate {
 			break
 		}
 	}
 
-	return d.reduce(ctx, lastSeq, ddoc, view, rev.String(), results, reduceFuncJS, vopts.reduceGroupLevel())
+	result, err := d.reduce(ctx, lastSeq, ddoc, view, rev.String(), results, meta.reduceFuncJS, vopts.reduceGroupLevel())
+	if err != nil {
+		return nil, err
+	}
+	return metaReduced{Rows: result, meta: meta}, nil
 }
 
 func (d *db) reduce(ctx context.Context, seq int, ddoc, name, rev string, results *sql.Rows, reduceFuncJS string, groupLevel int) (driver.Rows, error) {

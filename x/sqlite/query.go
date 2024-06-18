@@ -117,6 +117,7 @@ func (d *db) performQuery(
 		}
 
 		where := append([]string{""}, vopts.buildWhere(&args)...)
+		reduceWhere := append([]string{""}, vopts.buildReduceCacheWhere(&args)...)
 
 		query := fmt.Sprintf(d.ddocQuery(ddoc, view, rev.String(), leavesCTE+`,
 			 reduce AS (
@@ -137,8 +138,10 @@ func (d *db) performQuery(
 					last_pk,
 					last_key,
 					value
-				FROM {{ .Reduce }}
+				FROM {{ .Reduce }} AS view
 				JOIN reduce ON reduce.reducible AND ($3 IS NULL OR $3 == TRUE)
+				WHERE TRUE
+					%[5]s -- WHERE
 			)
 
 			-- Metadata header
@@ -185,8 +188,6 @@ func (d *db) performQuery(
 					NULL, -- rev_pos
 					NULL  -- data
 				FROM cache
-				JOIN reduce
-				WHERE reduce.reducible AND ($3 IS NULL OR $3 == TRUE)
 			)
 
 			UNION ALL
@@ -197,24 +198,24 @@ func (d *db) performQuery(
 			FROM (
 				SELECT
 					view.id    AS id,
-					view.key   AS key,
+					view.key   AS first_key,
 					view.value AS value,
-					view.pk    AS first,
-					view.pk    AS last,
-					NULL  AS conflicts,
-					0     AS attachment_count,
-					NULL AS filename,
-					NULL AS content_type,
-					NULL AS length,
-					NULL AS digest,
-					NULL AS rev_pos,
-					NULL AS data
+					view.pk    AS first_pk,
+					view.pk    AS last_pk,
+					NULL, -- conflicts,
+					0,    -- attachment_count,
+					NULL, -- filename
+					NULL, -- content_type
+					NULL, -- length
+					NULL, -- digest
+					NULL, -- rev_pos
+					NULL  -- data
 				FROM {{ .Map }} AS view
 				JOIN reduce ON reduce.reducible AND ($3 IS NULL OR $3 == TRUE)
 				LEFT JOIN cache ON view.key >= cache.first_key AND view.key <= cache.last_key
 				WHERE cache.first_key IS NULL
 					%[2]s -- WHERE
-				%[5]s -- ORDER BY
+				%[1]s -- ORDER BY
 			)
 
 			UNION ALL
@@ -274,8 +275,7 @@ func (d *db) performQuery(
 				LEFT JOIN {{ .Attachments }} AS att ON bridge.pk = att.pk
 				%[1]s -- ORDER BY
 			)
-		`), vopts.buildOrderBy(), strings.Join(where, " AND "), vopts.limit, vopts.skip,
-			vopts.buildOrderBy("pk"))
+		`), vopts.buildOrderBy("pk"), strings.Join(where, " AND "), vopts.limit, vopts.skip, strings.Join(reduceWhere, " AND "))
 		results, err := d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
 		switch {
 		case errIsNoSuchTable(err):
@@ -303,7 +303,7 @@ func (d *db) performQuery(
 				_ = results.Close() //nolint:sqlclosecheck // invalid option specified for reduce, so abort the query
 				return nil, &internal.Error{Status: http.StatusBadRequest, Message: "conflicts is invalid for reduce"}
 			}
-			result, err := d.reduce(ctx, meta.lastSeq, ddoc, view, rev.String(), results, meta.reduceFuncJS, vopts.reduceGroupLevel())
+			result, err := d.reduce(ctx, meta.lastSeq, ddoc, view, rev.String(), results, meta.reduceFuncJS, vopts.reduceGroupLevel(), len(vopts.keys) > 0)
 			if err != nil {
 				return nil, err
 			}
@@ -438,14 +438,14 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 		}
 	}
 
-	result, err := d.reduce(ctx, lastSeq, ddoc, view, rev.String(), results, meta.reduceFuncJS, vopts.reduceGroupLevel())
+	result, err := d.reduce(ctx, lastSeq, ddoc, view, rev.String(), results, meta.reduceFuncJS, vopts.reduceGroupLevel(), len(vopts.keys) > 0)
 	if err != nil {
 		return nil, err
 	}
 	return metaReduced{Rows: result, meta: meta}, nil
 }
 
-func (d *db) reduce(ctx context.Context, seq int, ddoc, name, rev string, results *sql.Rows, reduceFuncJS string, groupLevel int) (driver.Rows, error) {
+func (d *db) reduce(ctx context.Context, seq int, ddoc, name, rev string, results *sql.Rows, reduceFuncJS string, groupLevel int, individualKeys bool) (driver.Rows, error) {
 	stmt, err := d.db.PrepareContext(ctx, d.ddocQuery(ddoc, name, rev, `
 		INSERT INTO {{ .Reduce }} (seq, depth, first_key, first_pk, last_key, last_pk, value)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -467,6 +467,9 @@ func (d *db) reduce(ctx context.Context, seq int, ddoc, name, rev string, result
 					err)
 			}
 		}
+	}
+	if individualKeys {
+		callback = nil
 	}
 	return reduce.Reduce(&reduceRowIter{results: results}, reduceFuncJS, d.logger, groupLevel, callback)
 }

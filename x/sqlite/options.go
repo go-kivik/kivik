@@ -549,6 +549,35 @@ func (o optsMap) attEncodingInfo() (bool, error) {
 
 const defaultWhereCap = 3
 
+// buildReduceCacheWhere returns WHERE conditions for use when querying the
+// reduce cache.
+func (v viewOptions) buildReduceCacheWhere(args *[]any) []string {
+	where := make([]string, 0, defaultWhereCap)
+	if v.endkey != "" {
+		op := endKeyOp(v.descending, v.inclusiveEnd)
+		where = append(where, fmt.Sprintf("view.last_key %s $%d", op, len(*args)+1))
+		*args = append(*args, v.endkey)
+	}
+	if v.startkey != "" {
+		op := startKeyOp(v.descending)
+		where = append(where, fmt.Sprintf("view.first_key %s $%d", op, len(*args)+1))
+		*args = append(*args, v.startkey)
+	}
+	if v.key != "" {
+		idx := strconv.Itoa(len(*args) + 1)
+		where = append(where, "view.last_key = $"+idx, "view.first_key = $"+idx)
+		*args = append(*args, v.key)
+	}
+	if len(v.keys) > 0 {
+		for _, key := range v.keys {
+			idx := strconv.Itoa(len(*args) + 1)
+			where = append(where, "view.last_key = $"+idx, "view.first_key = $"+idx)
+			*args = append(*args, key)
+		}
+	}
+	return where
+}
+
 // buildGroupWhere returns WHERE conditions for use with grouping.
 func (v viewOptions) buildGroupWhere(args *[]any) []string {
 	where := make([]string, 0, defaultWhereCap)
@@ -751,6 +780,9 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 	keys, err := o.keys()
 	if err != nil {
 		return nil, err
+	}
+	if len(keys) > 0 && (key != "" || endkey != "" || startkey != "") {
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "`keys` is incompatible with `key`, `start_key` and `end_key`"}
 	}
 	sorted, err := o.sorted()
 	if err != nil {

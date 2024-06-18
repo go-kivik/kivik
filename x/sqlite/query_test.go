@@ -2606,8 +2606,8 @@ func TestDBQuery(t *testing.T) {
 	/*
 		TODO:
 		- reduce cache
-			- inclusive vs non-inclusive end (and start?)
-			- differenth depths
+			- inclusive vs non-inclusive end
+			- different depths
 			- competing cache depths
 			- gaps in cache results
 			- endkey

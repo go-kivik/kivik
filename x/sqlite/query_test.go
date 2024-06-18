@@ -2285,11 +2285,70 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("endkey with reduce=true, descending, and inclusive_end=false", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{})
+		_ = d.tPut("b", map[string]interface{}{})
+		_ = d.tPut("c", map[string]interface{}{})
+		_ = d.tPut("d", map[string]interface{}{})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"endkey":        "b",
+				"descending":    true,
+				"inclusive_end": false,
+			}),
+			want: []rowResult{
+				{Key: `null`, Value: `2`},
+			},
+		}
+	})
+	tests.Add("endkey with reduce=true and inclusive_end=false", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{})
+		_ = d.tPut("b", map[string]interface{}{})
+		_ = d.tPut("c", map[string]interface{}{})
+		_ = d.tPut("d", map[string]interface{}{})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"endkey":        "b",
+				"inclusive_end": false,
+			}),
+			want: []rowResult{
+				{Key: `null`, Value: `1`},
+			},
+		}
+	})
 
 	/*
 		TODO:
-		- reduce
-			inclusive_end
 		- group with:
 			- key
 			- keys

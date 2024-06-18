@@ -547,10 +547,28 @@ func (o optsMap) attEncodingInfo() (bool, error) {
 	return v, nil
 }
 
+const defaultWhereCap = 3
+
+// buildGroupWhere returns WHERE conditions for use with grouping.
+func (v viewOptions) buildGroupWhere(args *[]any) []string {
+	where := make([]string, 0, defaultWhereCap)
+	if v.endkey != "" {
+		op := endKeyOp(v.descending, v.inclusiveEnd)
+		where = append(where, fmt.Sprintf("view.key %s $%d", op, len(*args)+1))
+		*args = append(*args, v.endkey)
+	}
+	if v.startkey != "" {
+		op := startKeyOp(v.descending)
+		where = append(where, fmt.Sprintf("view.key %s $%d", op, len(*args)+1))
+		*args = append(*args, v.startkey)
+	}
+	return where
+}
+
 // buildWhere returns WHERE conditions based on the provided configuration
 // arguments, and may append to args as needed.
 func (v viewOptions) buildWhere(args *[]any) []string {
-	where := make([]string, 0, 3)
+	where := make([]string, 0, defaultWhereCap)
 	switch v.view {
 	case viewAllDocs:
 		where = append(where, `view.key NOT LIKE '"_local/%'`)

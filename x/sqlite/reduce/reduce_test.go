@@ -203,6 +203,21 @@ func TestReduce(t *testing.T) {
 			{{FirstKey: []any{1.0}, FirstPK: 1, LastKey: []any{6.0}, LastPK: 6, Value: 6.0}},
 		},
 	})
+	tests.Add("partial cache update", test{
+		input: &Rows{
+			{FirstKey: `"a"`, FirstPK: 1, LastKey: `"b"`, LastPK: 2, Value: 2.0},
+			{ID: "c", FirstKey: `"c"`, FirstPK: 3},
+		},
+		groupLevel: 0,
+		javascript: "_count",
+		want: []Row{
+			{TargetKey: nil, FirstKey: `"a"`, FirstPK: 1, LastKey: `"c"`, LastPK: 3, Value: 3.0},
+		},
+		wantCache: [][]Row{
+			{{FirstKey: `"c"`, FirstPK: 3, LastKey: `"c"`, LastPK: 3, Value: 1.0}},
+			{{FirstKey: `"a"`, FirstPK: 1, LastKey: `"c"`, LastPK: 3, Value: 3.0}},
+		},
+	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		var cache [][]Row

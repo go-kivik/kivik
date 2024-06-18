@@ -213,6 +213,7 @@ func (d *db) performQuery(
 				JOIN reduce ON reduce.reducible AND ($3 IS NULL OR $3 == TRUE)
 				LEFT JOIN cache ON view.key >= cache.first_key AND view.key <= cache.last_key
 				WHERE cache.first_key IS NULL
+					%[2]s -- WHERE
 				%[5]s -- ORDER BY
 			)
 
@@ -302,7 +303,11 @@ func (d *db) performQuery(
 				_ = results.Close() //nolint:sqlclosecheck // invalid option specified for reduce, so abort the query
 				return nil, &internal.Error{Status: http.StatusBadRequest, Message: "conflicts is invalid for reduce"}
 			}
-			return d.reduce(ctx, meta.lastSeq, ddoc, view, rev.String(), results, meta.reduceFuncJS, vopts.reduceGroupLevel())
+			result, err := d.reduce(ctx, meta.lastSeq, ddoc, view, rev.String(), results, meta.reduceFuncJS, vopts.reduceGroupLevel())
+			if err != nil {
+				return nil, err
+			}
+			return metaReduced{Rows: result, meta: meta}, nil
 		}
 
 		// If the results are up to date, OR, we're in false/lazy update mode,
@@ -314,6 +319,16 @@ func (d *db) performQuery(
 			updateSeq: meta.updateSeq,
 		}, nil
 	}
+}
+
+// metaReduced wraps a driver.Rows and some metadata, to serve both.
+type metaReduced struct {
+	driver.Rows
+	meta *viewMetadata
+}
+
+func (m metaReduced) UpdateSeq() string {
+	return m.meta.updateSeq
 }
 
 func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *viewOptions) (driver.Rows, error) {
@@ -331,6 +346,9 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 			return nil, err
 		}
 
+		args := []any{"_design/" + ddoc, rev.rev, rev.id, view, kivik.EndKeySuffix, true}
+		where := append([]string{""}, vopts.buildGroupWhere(&args)...)
+
 		query := fmt.Sprintf(d.ddocQuery(ddoc, view, rev.String(), `
 			WITH reduce AS (
 				SELECT
@@ -344,6 +362,7 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 					AND func_name = $4
 			)
 
+			-- Metadata
 			SELECT
 				COALESCE(MAX(last_seq), 0) == (SELECT COALESCE(max(seq),0) FROM {{ .Docs }}) AS up_to_date,
 				reduce.reducible,
@@ -368,17 +387,18 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 
 			UNION ALL
 
+			-- Actual results
 			SELECT *
 			FROM (
 				SELECT
-					id    AS id,
-					COALESCE(key, "null") AS key,
-					value AS value,
-					pk    AS first,
-					pk    AS last,
+					view.id    AS id,
+					COALESCE(view.key, "null") AS key,
+					view.value AS value,
+					view.pk    AS first,
+					view.pk    AS last,
 					NULL  AS conflicts,
 					0    AS attachment_count,
-					NULL AS filename,
+					NULL, --
 					NULL AS content_type,
 					NULL AS length,
 					NULL AS digest,
@@ -387,14 +407,12 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 				FROM {{ .Map }} AS view
 				JOIN reduce
 				WHERE reduce.reducible AND ($6 IS NULL OR $6 == TRUE)
+					%[2]s
 				%[1]s -- ORDER BY
 			)
-		`), vopts.buildOrderBy("pk"))
+		`), vopts.buildOrderBy("pk"), strings.Join(where, " AND "))
+		results, err = d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in iterator
 
-		results, err = d.db.QueryContext( //nolint:rowserrcheck // Err checked in iterator
-			ctx, query,
-			"_design/"+ddoc, rev.rev, rev.id, view, kivik.EndKeySuffix, true,
-		)
 		switch {
 		case errIsNoSuchTable(err):
 			return nil, &internal.Error{Status: http.StatusNotFound, Message: "missing named view"}

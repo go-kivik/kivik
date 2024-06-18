@@ -146,7 +146,7 @@ func reduce(rows Reducer, fn Func, groupLevel int, batchSize int, cb Callback) (
 		if len(keys) == 0 {
 			return nil
 		}
-		if len(keys) == 1 && rereduce {
+		if len(values) == 1 && rereduce {
 			// Nothing to rereduce if we have only a single input--just pass it through
 			out = append(out, Row{
 				TargetKey: key,
@@ -156,7 +156,11 @@ func reduce(rows Reducer, fn Func, groupLevel int, batchSize int, cb Callback) (
 				LastPK:    lastPK,
 				Value:     values[0],
 			})
+			firstKey, firstPK, lastKey, lastPK = nil, 0, nil, 0
 			return nil
+		}
+		if rereduce {
+			keys = nil
 		}
 		results, err := fn(keys, values, rereduce)
 		if err != nil {
@@ -209,7 +213,7 @@ func reduce(rows Reducer, fn Func, groupLevel int, batchSize int, cb Callback) (
 
 		switch {
 		case (len(keys) >= batchSize) ||
-			(groupLevel == 0 && rereduce != (row.ID == "")) ||
+			(len(keys) > 0 && groupLevel == 0 && rereduce != (row.ID == "")) ||
 			(targetKey != nil && (!reflect.DeepEqual(targetKey, truncateKey(row.FirstKey, groupLevel)) || rereduce != (row.ID == ""))):
 			if err := callReduce(keys, values, rereduce, targetKey); err != nil {
 				return nil, err

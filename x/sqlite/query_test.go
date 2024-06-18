@@ -2605,9 +2605,6 @@ func TestDBQuery(t *testing.T) {
 
 	/*
 		TODO:
-		- group with:
-			- update_seq
-			- inclsive_end
 		- reduce cache
 			- inclusive vs non-inclusive end (and start?)
 			- differenth depths
@@ -2776,6 +2773,61 @@ func TestDBQuery_no_update_seq(t *testing.T) {
 	_ = d.tPut("foo", map[string]string{"_id": "foo"})
 
 	rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", mock.NilOption)
+	if err != nil {
+		t.Fatalf("Failed to query view: %s", err)
+	}
+	want := ""
+	got := rows.UpdateSeq()
+	if got != want {
+		t.Errorf("Unexpected update seq: %s", got)
+	}
+	_ = rows.Close()
+}
+
+func TestDBQuery_group_with_update_seq(t *testing.T) {
+	t.Parallel()
+	d := newDB(t)
+
+	_ = d.tPut("_design/foo", map[string]interface{}{
+		"views": map[string]interface{}{
+			"bar": map[string]string{
+				"map":    `function(doc) { emit(doc._id, null); }`,
+				"reduce": "_count",
+			},
+		},
+	})
+	_ = d.tPut("foo", map[string]string{"_id": "foo"})
+
+	rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", kivik.Params(map[string]interface{}{
+		"update_seq": true,
+		"group":      true,
+	}))
+	if err != nil {
+		t.Fatalf("Failed to query view: %s", err)
+	}
+	want := "2"
+	got := rows.UpdateSeq()
+	if got != want {
+		t.Errorf("Unexpected update seq: %s", got)
+	}
+	_ = rows.Close()
+}
+
+func TestDBQuery_group_without_update_seq(t *testing.T) {
+	t.Parallel()
+	d := newDB(t)
+
+	_ = d.tPut("_design/foo", map[string]interface{}{
+		"views": map[string]interface{}{
+			"bar": map[string]string{
+				"map":    `function(doc) { emit(doc._id, null); }`,
+				"reduce": "_count",
+			},
+		},
+	})
+	_ = d.tPut("foo", map[string]string{"_id": "foo"})
+
+	rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", kivik.Param("group", true))
 	if err != nil {
 		t.Fatalf("Failed to query view: %s", err)
 	}

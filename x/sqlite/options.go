@@ -568,6 +568,13 @@ func (v viewOptions) buildReduceCacheWhere(args *[]any) []string {
 		where = append(where, "view.last_key = $"+idx, "view.first_key = $"+idx)
 		*args = append(*args, v.key)
 	}
+	if len(v.keys) > 0 {
+		for _, key := range v.keys {
+			idx := strconv.Itoa(len(*args) + 1)
+			where = append(where, "view.last_key = $"+idx, "view.first_key = $"+idx)
+			*args = append(*args, key)
+		}
+	}
 	return where
 }
 

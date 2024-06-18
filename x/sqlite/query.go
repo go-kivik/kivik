@@ -303,7 +303,7 @@ func (d *db) performQuery(
 				_ = results.Close() //nolint:sqlclosecheck // invalid option specified for reduce, so abort the query
 				return nil, &internal.Error{Status: http.StatusBadRequest, Message: "conflicts is invalid for reduce"}
 			}
-			result, err := d.reduce(ctx, meta.lastSeq, ddoc, view, rev.String(), results, meta.reduceFuncJS, vopts.reduceGroupLevel())
+			result, err := d.reduce(ctx, meta.lastSeq, ddoc, view, rev.String(), results, meta.reduceFuncJS, vopts.reduceGroupLevel(), len(vopts.keys) > 0)
 			if err != nil {
 				return nil, err
 			}
@@ -438,14 +438,14 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 		}
 	}
 
-	result, err := d.reduce(ctx, lastSeq, ddoc, view, rev.String(), results, meta.reduceFuncJS, vopts.reduceGroupLevel())
+	result, err := d.reduce(ctx, lastSeq, ddoc, view, rev.String(), results, meta.reduceFuncJS, vopts.reduceGroupLevel(), len(vopts.keys) > 0)
 	if err != nil {
 		return nil, err
 	}
 	return metaReduced{Rows: result, meta: meta}, nil
 }
 
-func (d *db) reduce(ctx context.Context, seq int, ddoc, name, rev string, results *sql.Rows, reduceFuncJS string, groupLevel int) (driver.Rows, error) {
+func (d *db) reduce(ctx context.Context, seq int, ddoc, name, rev string, results *sql.Rows, reduceFuncJS string, groupLevel int, individualKeys bool) (driver.Rows, error) {
 	stmt, err := d.db.PrepareContext(ctx, d.ddocQuery(ddoc, name, rev, `
 		INSERT INTO {{ .Reduce }} (seq, depth, first_key, first_pk, last_key, last_pk, value)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -467,6 +467,9 @@ func (d *db) reduce(ctx context.Context, seq int, ddoc, name, rev string, result
 					err)
 			}
 		}
+	}
+	if individualKeys {
+		callback = nil
 	}
 	return reduce.Reduce(&reduceRowIter{results: results}, reduceFuncJS, d.logger, groupLevel, callback)
 }

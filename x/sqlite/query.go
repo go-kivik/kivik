@@ -197,18 +197,18 @@ func (d *db) performQuery(
 			FROM (
 				SELECT
 					view.id    AS id,
-					view.key   AS key,
+					view.key   AS first_key,
 					view.value AS value,
-					view.pk    AS first,
-					view.pk    AS last,
-					NULL  AS conflicts,
-					0     AS attachment_count,
-					NULL AS filename,
-					NULL AS content_type,
-					NULL AS length,
-					NULL AS digest,
-					NULL AS rev_pos,
-					NULL AS data
+					view.pk    AS first_pk,
+					view.pk    AS last_pk,
+					NULL, -- conflicts,
+					0,    -- attachment_count,
+					NULL, -- filename
+					NULL, -- content_type
+					NULL, -- length
+					NULL, -- digest
+					NULL, -- rev_pos
+					NULL  -- data
 				FROM {{ .Map }} AS view
 				JOIN reduce ON reduce.reducible AND ($3 IS NULL OR $3 == TRUE)
 				LEFT JOIN cache ON view.key >= cache.first_key AND view.key <= cache.last_key

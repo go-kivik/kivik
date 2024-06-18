@@ -2602,7 +2602,6 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-
 	tests.Add("cache is not useable with endkey", func(t *testing.T) interface{} {
 		d := newDB(t)
 		_ = d.tPut("_design/foo", map[string]interface{}{
@@ -2648,6 +2647,51 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("cache is not useable with startkey", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{})
+		_ = d.tPut("b", map[string]interface{}{})
+		_ = d.tPut("c", map[string]interface{}{})
+
+		db := d.underlying()
+		var table string
+		if err := db.QueryRow(`
+			SELECT name
+			FROM sqlite_master
+			WHERE type = 'table'
+				AND name LIKE '%_%_reduce_%'
+		`).Scan(&table); err != nil {
+			t.Fatalf("Failed to find reduced table: %s", err)
+		}
+		if _, err := db.Exec(fmt.Sprintf(`
+			INSERT INTO %q (seq, depth, first_key, first_pk, last_key, last_pk, value)
+			VALUES ($1, $2, $3, $4, $5, $6, $7)
+		`, table), 3, 0, `"a"`, 1, `"c"`, 3, "3"); err != nil {
+			t.Fatalf("Failed to insert reduced value: %s", err)
+		}
+
+		return test{
+			db:      d,
+			ddoc:    "_design/foo",
+			view:    "_view/bar",
+			options: kivik.Param("startkey", "b"),
+			want:    []rowResult{{Key: `null`, Value: `2`}},
+			wantCache: []reduced{
+				{Seq: 3, Depth: 0, FirstKey: `"a"`, FirstPK: 1, LastKey: `"c"`, LastPK: 3, Value: "3"},
+				{Seq: 4, Depth: 0, FirstKey: `"b"`, FirstPK: 2, LastKey: `"c"`, LastPK: 3, Value: "2"},
+			},
+		}
+	})
 
 	/*
 		TODO:
@@ -2656,8 +2700,6 @@ func TestDBQuery(t *testing.T) {
 			- different depths
 			- competing cache depths
 			- gaps in cache results
-			- endkey
-			- startkey
 			- key
 			- keys
 			- update_seq

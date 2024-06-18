@@ -2565,11 +2565,47 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("sorted=false with group=true", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+		_ = d.tPut("c", map[string]interface{}{})
+		_ = d.tPut("a", map[string]interface{}{})
+		_ = d.tPut("d", map[string]interface{}{})
+		_ = d.tPut("b", map[string]interface{}{})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"group":  true,
+				"sorted": false,
+			}),
+			// We don't care about order in this case, although the results
+			// are ordered anyway, by virtue of the way we do grouping.  But
+			// if that behavior ever changes, we don't need to care.
+			wantUnordered: true,
+			want: []rowResult{
+				{Key: `"d"`, Value: `1`},
+				{Key: `"a"`, Value: `1`},
+				{Key: `"b"`, Value: `1`},
+				{Key: `"c"`, Value: `1`},
+			},
+		}
+	})
 
 	/*
 		TODO:
 		- group with:
-			- sorted
 			- update_seq
 			- inclsive_end
 		- reduce cache

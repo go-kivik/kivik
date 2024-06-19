@@ -793,7 +793,7 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 		return nil, err
 	}
 
-	return &viewOptions{
+	v := &viewOptions{
 		view:            view,
 		limit:           limit,
 		skip:            skip,
@@ -815,5 +815,31 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 		keys:            keys,
 		sorted:          sorted,
 		attEncodingInfo: attEncodingInfo,
-	}, nil
+	}
+	return v, v.validate()
+}
+
+func (v viewOptions) validate() error {
+	descendingModifier := 1
+	if v.descending {
+		descendingModifier = -1
+	}
+	if v.endkey != "" && v.startkey != "" && couchdbCmpString(v.startkey, v.endkey)*descendingModifier > 0 {
+		return &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("no rows can match your key range, reverse your start_key and end_key or set descending=%v", !v.descending)}
+	}
+	if v.key != "" {
+		startFail := v.startkey != "" && couchdbCmpString(v.key, v.startkey)*descendingModifier < 0
+		endFail := v.endkey != "" && couchdbCmpString(v.key, v.endkey)*descendingModifier > 0
+		if startFail && v.endkey != "" || endFail && v.startkey != "" {
+			return &internal.Error{Status: http.StatusBadRequest, Message: "no rows can match your key range, change your start_key, end_key, or key"}
+		}
+		if startFail {
+			return &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("no rows can match your key range, change your start_key or key or set descending=%v", !v.descending)}
+		}
+		if endFail {
+			return &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("no rows can match your key range, reverse your end_key or key or set descending=%v", !v.descending)}
+		}
+	}
+
+	return nil
 }

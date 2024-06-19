@@ -2781,21 +2781,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("key + keys", test{
-		ddoc:       "_design/foo",
-		view:       "_view/bar",
-		options:    kivik.Params(map[string]interface{}{"key": "a", "keys": []string{"b", "c"}}),
-		wantErr:    "`keys` is incompatible with `key`, `start_key` and `end_key`",
-		wantStatus: http.StatusBadRequest,
-	})
 
 	/*
 		TODO:
 		- cache invidual keys with keys=[...] + reduce/group
-		- key + start_key
-		- key + end_key
-		- key + startkey + descending
-		- key + endkey + descending
 		- reduce cache
 			- caches created with key, used for range
 			- inclusive vs non-inclusive end

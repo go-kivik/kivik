@@ -793,6 +793,22 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 		return nil, err
 	}
 
+	descendingModifier := 1
+	if descending {
+		descendingModifier = -1
+	}
+	if key != "" {
+		if startkey != "" && couchdbCmpString(key, startkey)*descendingModifier < 0 {
+			return nil, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("no rows can match your key range, reverse your start_key and end_key or set descending=%v", !descending)}
+		}
+		if endkey != "" && couchdbCmpString(key, endkey)*descendingModifier > 0 {
+			return nil, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("no rows can match your key range, reverse your start_key and end_key or set descending=%v", !descending)}
+		}
+	}
+	if endkey != "" && startkey != "" && couchdbCmpString(startkey, endkey)*descendingModifier > 0 {
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("no rows can match your key range, reverse your start_key and end_key or set descending=%v", !descending)}
+	}
+
 	return &viewOptions{
 		view:            view,
 		limit:           limit,

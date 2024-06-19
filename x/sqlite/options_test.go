@@ -767,7 +767,171 @@ func Test_viewOptions(t *testing.T) {
 		wantErr:    "invalid value for 'att_encoding_info': chicken",
 		wantStatus: http.StatusBadRequest,
 	})
-
+	tests.Add("keys + key", test{
+		options: kivik.Params(map[string]interface{}{
+			"key":  "a",
+			"keys": []string{"b", "c"},
+		}),
+		wantErr:    "`keys` is incompatible with `key`, `start_key` and `end_key`",
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("keys + endkey", test{
+		options: kivik.Params(map[string]interface{}{
+			"endkey": "a",
+			"keys":   []string{"b", "c"},
+		}),
+		wantErr:    "`keys` is incompatible with `key`, `start_key` and `end_key`",
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("keys + startkey", test{
+		options: kivik.Params(map[string]interface{}{
+			"startkey": "a",
+			"keys":     []string{"b", "c"},
+		}),
+		wantErr:    "`keys` is incompatible with `key`, `start_key` and `end_key`",
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("key & startkey conflict", test{
+		options: kivik.Params(map[string]interface{}{
+			"startkey": "d",
+			"key":      "a",
+		}),
+		wantErr:    "no rows can match your key range, reverse your start_key and end_key or set descending=true",
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("key & startkey no conflict", test{
+		options: kivik.Params(map[string]interface{}{
+			"startkey": "a",
+			"key":      "a",
+		}),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
+			startkey:     `"a"`,
+			key:          `"a"`,
+		},
+	})
+	tests.Add("key & startkey + descending", test{
+		options: kivik.Params(map[string]interface{}{
+			"startkey":   "d",
+			"key":        "a",
+			"descending": true,
+		}),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
+			descending:   true,
+			startkey:     `"d"`,
+			key:          `"a"`,
+		},
+	})
+	tests.Add("key & startkey + descending conflict", test{
+		options: kivik.Params(map[string]interface{}{
+			"startkey":   "a",
+			"key":        "b",
+			"descending": true,
+		}),
+		wantErr:    "no rows can match your key range, reverse your start_key and end_key or set descending=false",
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("key & endkey conflict", test{
+		options: kivik.Params(map[string]interface{}{
+			"endkey": "a",
+			"key":    "b",
+		}),
+		wantErr:    "no rows can match your key range, reverse your start_key and end_key or set descending=true",
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("key & endkey no  conflict", test{
+		options: kivik.Params(map[string]interface{}{
+			"endkey": "a",
+			"key":    "a",
+		}),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
+			endkey:       `"a"`,
+			key:          `"a"`,
+		},
+	})
+	tests.Add("key & endkey + descending", test{
+		options: kivik.Params(map[string]interface{}{
+			"endkey":     "a",
+			"key":        "b",
+			"descending": true,
+		}),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
+			descending:   true,
+			endkey:       `"a"`,
+			key:          `"b"`,
+		},
+	})
+	tests.Add("key & endkey + descending conflict", test{
+		options: kivik.Params(map[string]interface{}{
+			"endkey":     "b",
+			"key":        "a",
+			"descending": true,
+		}),
+		wantErr:    "no rows can match your key range, reverse your start_key and end_key or set descending=false",
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("endkey and startkey conflict", test{
+		options: kivik.Params(map[string]interface{}{
+			"startkey": "z",
+			"endkey":   "a",
+		}),
+		wantErr:    "no rows can match your key range, reverse your start_key and end_key or set descending=true",
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("endkey and startkey no conflict", test{
+		options: kivik.Params(map[string]interface{}{
+			"startkey": "a",
+			"endkey":   "z",
+		}),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
+			startkey:     `"a"`,
+			endkey:       `"z"`,
+		},
+	})
+	tests.Add("endkey and startkey + descending conflict", test{
+		options: kivik.Params(map[string]interface{}{
+			"startkey":   "a",
+			"endkey":     "z",
+			"descending": true,
+		}),
+		wantErr:    "no rows can match your key range, reverse your start_key and end_key or set descending=false",
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("endkey and startkey + descending no conflict", test{
+		options: kivik.Params(map[string]interface{}{
+			"startkey":   "z",
+			"endkey":     "a",
+			"descending": true,
+		}),
+		want: &viewOptions{
+			limit:        -1,
+			inclusiveEnd: true,
+			update:       "true",
+			sorted:       true,
+			descending:   true,
+			startkey:     `"z"`,
+			endkey:       `"a"`,
+		},
+	})
 	/*
 		stable (boolean) – Whether or not the view results should be returned from a stable set of shards. Default is false.
 	*/

@@ -175,11 +175,11 @@ func (d *db) performQuery(
 			FROM (
 				SELECT
 					"", -- id
-					first_key,
-					value,
-					first_pk,
-					last_pk,
-					last_key,
+					cache.first_key,
+					cache.value,
+					cache.first_pk,
+					cache.last_pk,
+					cache.last_key,
 					0, -- attachment_count
 					NULL, -- filename
 					NULL, -- content_type
@@ -188,6 +188,19 @@ func (d *db) performQuery(
 					NULL, -- rev_pos
 					NULL  -- data
 				FROM cache
+				LEFT JOIN (
+					SELECT
+						c1.first_key,
+						c1.first_pk,
+						c1.last_key,
+						c1.last_pk
+					FROM cache AS c1
+					INNER JOIN cache AS c2
+						-- todo: consider pk columns
+						ON NOT (c2.first_key BETWEEN c1.first_key AND c1.last_key
+							AND c2.last_key BETWEEN c1.first_key AND c1.last_key)
+				) AS winning ON cache.first_key = winning.first_key AND cache.last_key = winning.last_key
+				WHERE winning.first_key IS NULL
 			)
 
 			UNION ALL

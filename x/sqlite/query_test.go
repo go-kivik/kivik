@@ -2781,13 +2781,88 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("cache entry created with key, used for range", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc.key, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{"key": "a"})
+		_ = d.tPut("b", map[string]interface{}{"key": "a"})
+		_ = d.tPut("c", map[string]interface{}{"key": "a"})
+		_ = d.tPut("d", map[string]interface{}{"key": "b"})
+
+		db := d.underlying()
+		var table string
+		if err := db.QueryRow(`
+			SELECT name
+			FROM sqlite_master
+			WHERE type = 'table'
+				AND name LIKE '%_%_reduce_%'
+		`).Scan(&table); err != nil {
+			t.Fatalf("Failed to find reduced table: %s", err)
+		}
+		if _, err := db.Exec(fmt.Sprintf(`
+			INSERT INTO %q (seq, depth, first_key, first_pk, last_key, last_pk, value)
+			VALUES ($1, $2, $3, $4, $5, $6, $7)
+		`, table), 5, 0, `"a"`, 1, `"a"`, 3, "3"); err != nil {
+			t.Fatalf("Failed to insert reduced value: %s", err)
+		}
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: []rowResult{{Key: `null`, Value: `4`}},
+			wantCache: []reduced{
+				{Seq: 5, Depth: 0, FirstKey: `"a"`, FirstPK: 1, LastKey: `"a"`, LastPK: 3, Value: "3"},
+				{Seq: 5, Depth: 0, FirstKey: `"a"`, FirstPK: 1, LastKey: `"b"`, LastPK: 4, Value: "4"},
+				{Seq: 5, Depth: 0, FirstKey: `"b"`, FirstPK: 4, LastKey: `"b"`, LastPK: 4, Value: "1"},
+			},
+		}
+	})
+	tests.Add("non-inclusive end caches properly", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc.key, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{"key": "a"})
+		_ = d.tPut("b", map[string]interface{}{"key": "a"})
+		_ = d.tPut("c", map[string]interface{}{"key": "a"})
+		_ = d.tPut("d", map[string]interface{}{"key": "b"})
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			options: kivik.Params(map[string]interface{}{
+				"endkey":        "b",
+				"inclusive_end": false,
+			}),
+			want: []rowResult{{Key: `null`, Value: `3`}},
+			wantCache: []reduced{
+				{Seq: 5, Depth: 0, FirstKey: `"a"`, FirstPK: 1, LastKey: `"a"`, LastPK: 3, Value: "3"},
+			},
+		}
+	})
 
 	/*
 		TODO:
 		- cache invidual keys with keys=[...] + reduce/group
 		- reduce cache
-			- caches created with key, used for range
-			- inclusive vs non-inclusive end
 			- different depths
 			- competing cache depths
 			- gaps in cache results

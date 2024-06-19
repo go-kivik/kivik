@@ -2912,6 +2912,7 @@ func TestDBQuery(t *testing.T) {
 
 	/*
 		TODO:
+		- add support for ASCII collation to facilitate testing
 		- overlapping, not contained, cache entries
 		- cache invalidated by new document or deleted document
 		- cache invidual keys with keys=[...] + reduce/group

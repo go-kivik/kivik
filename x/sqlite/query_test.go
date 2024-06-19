@@ -2858,10 +2858,64 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("one cache entry contained within other", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]interface{}{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							emit(doc._id, [1]);
+						}`,
+					"reduce": `_count`,
+				},
+			},
+		})
+		_ = d.tPut("a", map[string]interface{}{})
+		_ = d.tPut("b", map[string]interface{}{})
+		_ = d.tPut("c", map[string]interface{}{})
+		_ = d.tPut("d", map[string]interface{}{})
+
+		db := d.underlying()
+		var table string
+		if err := db.QueryRow(`
+			SELECT name
+			FROM sqlite_master
+			WHERE type = 'table'
+				AND name LIKE '%_%_reduce_%'
+		`).Scan(&table); err != nil {
+			t.Fatalf("Failed to find reduced table: %s", err)
+		}
+		if _, err := db.Exec(fmt.Sprintf(`
+			INSERT INTO %q (seq, depth, first_key, first_pk, last_key, last_pk, value)
+			VALUES ($1, $2, $3, $4, $5, $6, $7)
+		`, table), 5, 0, `"a"`, 1, `"d"`, 4, "4"); err != nil {
+			t.Fatalf("Failed to insert reduced value: %s", err)
+		}
+		if _, err := db.Exec(fmt.Sprintf(`
+			INSERT INTO %q (seq, depth, first_key, first_pk, last_key, last_pk, value)
+			VALUES ($1, $2, $3, $4, $5, $6, $7)
+		`, table), 5, 0, `"b"`, 2, `"b"`, 2, "1"); err != nil {
+			t.Fatalf("Failed to insert reduced value: %s", err)
+		}
+
+		return test{
+			db:   d,
+			ddoc: "_design/foo",
+			view: "_view/bar",
+			want: []rowResult{{Key: `null`, Value: `4`}},
+			wantCache: []reduced{
+				{Seq: 5, Depth: 0, FirstKey: `"a"`, FirstPK: 1, LastKey: `"d"`, LastPK: 4, Value: "4"},
+				{Seq: 5, Depth: 0, FirstKey: `"b"`, FirstPK: 2, LastKey: `"b"`, LastPK: 2, Value: "1"},
+			},
+		}
+	})
 
 	/*
 		TODO:
+		- overlapping, not contained, cache entries
+		- cache invalidated by new document or deleted document
 		- cache invidual keys with keys=[...] + reduce/group
+		- test sub-key cache entry boundaries
 		- reduce cache
 			- different depths
 			- competing cache depths

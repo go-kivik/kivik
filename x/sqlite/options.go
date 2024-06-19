@@ -793,23 +793,7 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 		return nil, err
 	}
 
-	descendingModifier := 1
-	if descending {
-		descendingModifier = -1
-	}
-	if key != "" {
-		if startkey != "" && couchdbCmpString(key, startkey)*descendingModifier < 0 {
-			return nil, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("no rows can match your key range, reverse your start_key and end_key or set descending=%v", !descending)}
-		}
-		if endkey != "" && couchdbCmpString(key, endkey)*descendingModifier > 0 {
-			return nil, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("no rows can match your key range, reverse your start_key and end_key or set descending=%v", !descending)}
-		}
-	}
-	if endkey != "" && startkey != "" && couchdbCmpString(startkey, endkey)*descendingModifier > 0 {
-		return nil, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("no rows can match your key range, reverse your start_key and end_key or set descending=%v", !descending)}
-	}
-
-	return &viewOptions{
+	vo := &viewOptions{
 		view:            view,
 		limit:           limit,
 		skip:            skip,
@@ -831,5 +815,25 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 		keys:            keys,
 		sorted:          sorted,
 		attEncodingInfo: attEncodingInfo,
-	}, nil
+	}
+	return vo, vo.validate()
+}
+
+func (o viewOptions) validate() error {
+	descendingModifier := 1
+	if o.descending {
+		descendingModifier = -1
+	}
+	if o.key != "" {
+		if o.startkey != "" && couchdbCmpString(o.key, o.startkey)*descendingModifier < 0 {
+			return &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("no rows can match your key range, reverse your start_key and end_key or set descending=%v", !o.descending)}
+		}
+		if o.endkey != "" && couchdbCmpString(o.key, o.endkey)*descendingModifier > 0 {
+			return &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("no rows can match your key range, reverse your start_key and end_key or set descending=%v", !o.descending)}
+		}
+	}
+	if o.endkey != "" && o.startkey != "" && couchdbCmpString(o.startkey, o.endkey)*descendingModifier > 0 {
+		return &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("no rows can match your key range, reverse your start_key and end_key or set descending=%v", !o.descending)}
+	}
+	return nil
 }

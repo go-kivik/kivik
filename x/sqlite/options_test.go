@@ -796,7 +796,7 @@ func Test_viewOptions(t *testing.T) {
 			"startkey": "d",
 			"key":      "a",
 		}),
-		wantErr:    "no rows can match your key range, reverse your start_key and end_key or set descending=true",
+		wantErr:    "no rows can match your key range, change your start_key or key or set descending=true",
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("key & startkey no conflict", test{
@@ -835,7 +835,7 @@ func Test_viewOptions(t *testing.T) {
 			"key":        "b",
 			"descending": true,
 		}),
-		wantErr:    "no rows can match your key range, reverse your start_key and end_key or set descending=false",
+		wantErr:    "no rows can match your key range, change your start_key or key or set descending=false",
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("key & endkey conflict", test{
@@ -843,10 +843,10 @@ func Test_viewOptions(t *testing.T) {
 			"endkey": "a",
 			"key":    "b",
 		}),
-		wantErr:    "no rows can match your key range, reverse your start_key and end_key or set descending=true",
+		wantErr:    "no rows can match your key range, reverse your end_key or key or set descending=true",
 		wantStatus: http.StatusBadRequest,
 	})
-	tests.Add("key & endkey no  conflict", test{
+	tests.Add("key & endkey no conflict", test{
 		options: kivik.Params(map[string]interface{}{
 			"endkey": "a",
 			"key":    "a",
@@ -882,7 +882,7 @@ func Test_viewOptions(t *testing.T) {
 			"key":        "a",
 			"descending": true,
 		}),
-		wantErr:    "no rows can match your key range, reverse your start_key and end_key or set descending=false",
+		wantErr:    "no rows can match your key range, reverse your end_key or key or set descending=false",
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("endkey and startkey conflict", test{
@@ -931,6 +931,25 @@ func Test_viewOptions(t *testing.T) {
 			startkey:     `"z"`,
 			endkey:       `"a"`,
 		},
+	})
+	tests.Add("key falls outof range of startkey-endkey", test{
+		options: kivik.Params(map[string]interface{}{
+			"startkey": "a",
+			"endkey":   "q",
+			"key":      "z",
+		}),
+		wantErr:    "no rows can match your key range, change your start_key, end_key, or key",
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("key falls outof range of startkey-endkey even when descending", test{
+		options: kivik.Params(map[string]interface{}{
+			"startkey":   "a",
+			"endkey":     "q",
+			"key":        "z",
+			"descending": true,
+		}),
+		wantErr:    "no rows can match your key range, reverse your start_key and end_key or set descending=false",
+		wantStatus: http.StatusBadRequest,
 	})
 	/*
 		stable (boolean) – Whether or not the view results should be returned from a stable set of shards. Default is false.

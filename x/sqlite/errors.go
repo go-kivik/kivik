@@ -21,7 +21,8 @@ import (
 
 const (
 	// https://www.sqlite.org/rescode.html
-	codeSQLiteError = 1
+	codeSQLiteError           = 1
+	codeSQLiteConstraintCheck = 275
 )
 
 func errIsAlreadyExists(err error) bool {
@@ -45,6 +46,19 @@ func errIsNoSuchTable(err error) bool {
 	if errors.As(err, &sqliteErr) &&
 		sqliteErr.Code() == codeSQLiteError &&
 		strings.Contains(sqliteErr.Error(), "no such table") {
+		return true
+	}
+	return false
+}
+
+func errIsInvalidCollation(err error) bool {
+	if err == nil {
+		return false
+	}
+	sqliteErr := new(sqlite.Error)
+	if errors.As(err, &sqliteErr) &&
+		sqliteErr.Code() == codeSQLiteConstraintCheck &&
+		strings.Contains(sqliteErr.Error(), " collation IN ") {
 		return true
 	}
 	return false

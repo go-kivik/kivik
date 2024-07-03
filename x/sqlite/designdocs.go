@@ -15,6 +15,9 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"net/http"
+
+	internal "github.com/go-kivik/kivik/v4/int/errors"
 )
 
 func (d *db) updateDesignDoc(ctx context.Context, tx *sql.Tx, rev revision, data *docData) error {
@@ -22,8 +25,8 @@ func (d *db) updateDesignDoc(ctx context.Context, tx *sql.Tx, rev revision, data
 		return nil
 	}
 	stmt, err := tx.PrepareContext(ctx, d.query(`
-		INSERT INTO {{ .Design }} (id, rev, rev_id, language, func_type, func_name, func_body, auto_update, include_design, local_seq)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		INSERT INTO {{ .Design }} (id, rev, rev_id, language, func_type, func_name, func_body, auto_update, include_design, collation, local_seq)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 	`))
 	if err != nil {
 		return err
@@ -34,27 +37,30 @@ func (d *db) updateDesignDoc(ctx context.Context, tx *sql.Tx, rev revision, data
 		if view.Map != "" {
 			if _, err := stmt.ExecContext(ctx,
 				data.ID, rev.rev, rev.id, data.DesignFields.Language, "map", name, view.Map,
-				data.DesignFields.AutoUpdate, data.DesignFields.Options.IncludeDesign, data.DesignFields.Options.LocalSeq,
+				data.DesignFields.AutoUpdate, data.DesignFields.Options.IncludeDesign, data.DesignFields.Options.Collation, data.DesignFields.Options.LocalSeq,
 			); err != nil {
+				if errIsInvalidCollation(err) {
+					return &internal.Error{Status: http.StatusBadRequest, Message: "unsupported collation: " + *data.DesignFields.Options.Collation}
+				}
 				return err
 			}
-			if err := d.createViewMap(ctx, tx, data.ID, name, rev.String()); err != nil {
+			if err := d.createViewMap(ctx, tx, data.ID, name, rev.String(), data.DesignFields.Options.Collation); err != nil {
 				return err
 			}
 		}
 		if view.Reduce != "" {
-			if _, err := stmt.ExecContext(ctx, data.ID, rev.rev, rev.id, data.DesignFields.Language, "reduce", name, view.Reduce, data.DesignFields.AutoUpdate, nil, nil); err != nil {
+			if _, err := stmt.ExecContext(ctx, data.ID, rev.rev, rev.id, data.DesignFields.Language, "reduce", name, view.Reduce, data.DesignFields.AutoUpdate, nil, nil, nil); err != nil {
 				return err
 			}
 		}
 	}
 	for name, update := range data.DesignFields.Updates {
-		if _, err := stmt.ExecContext(ctx, data.ID, rev.rev, rev.id, data.DesignFields.Language, "update", name, update, data.DesignFields.AutoUpdate, nil, nil); err != nil {
+		if _, err := stmt.ExecContext(ctx, data.ID, rev.rev, rev.id, data.DesignFields.Language, "update", name, update, data.DesignFields.AutoUpdate, nil, nil, nil); err != nil {
 			return err
 		}
 	}
 	for name, filter := range data.DesignFields.Filters {
-		if _, err := stmt.ExecContext(ctx, data.ID, rev.rev, rev.id, data.DesignFields.Language, "filter", name, filter, data.DesignFields.AutoUpdate, nil, nil); err != nil {
+		if _, err := stmt.ExecContext(ctx, data.ID, rev.rev, rev.id, data.DesignFields.Language, "filter", name, filter, data.DesignFields.AutoUpdate, nil, nil, nil); err != nil {
 			return err
 		}
 	}
@@ -66,9 +72,9 @@ func (d *db) updateDesignDoc(ctx context.Context, tx *sql.Tx, rev revision, data
 	return nil
 }
 
-func (d *db) createViewMap(ctx context.Context, tx *sql.Tx, ddoc, name, rev string) error {
+func (d *db) createViewMap(ctx context.Context, tx *sql.Tx, ddoc, name, rev string, collation *string) error {
 	for _, query := range viewSchema {
-		if _, err := tx.ExecContext(ctx, d.ddocQuery(ddoc, name, rev, query)); err != nil {
+		if _, err := tx.ExecContext(ctx, d.createDdocQuery(ddoc, name, rev, query, collation)); err != nil {
 			return err
 		}
 	}

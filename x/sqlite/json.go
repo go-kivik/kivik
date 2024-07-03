@@ -86,8 +86,25 @@ type views struct {
 }
 
 type designDocViewOptions struct {
-	LocalSeq      bool `json:"local_seq,omitempty"`
+	// LocalSeq makes documents' local sequence numbers available to map
+	// functions (as a `_local_seq` document property). See
+	// https://docs.couchdb.org/en/stable/api/ddoc/views.html#view-options
+	LocalSeq bool `json:"local_seq,omitempty"`
+	// IncludeDesign allows map functions to be called on design documents as
+	// well as regular documents. See
+	// https://docs.couchdb.org/en/stable/api/ddoc/views.html#view-options
 	IncludeDesign bool `json:"include_design,omitempty"`
+	// Collation allows specifying an alternative collation sequence. Supported
+	// options are:
+	//
+	//	- nil: CouchDB's default collation sequence.
+	//	- "ascii": ASCII order, JSON values are sorted using their ASCII order.
+	//	  This value is not supported by CouchDB.
+	//	- "raw": Same as ASCII for now, but may change to match CouchDB's `raw`
+	//	  collation in the future.
+	//
+	// See https://docs.couchdb.org/en/stable/ddocs/views/collation.html#raw-collation
+	Collation *string `json:"collation,omitempty"`
 }
 
 // designDocData represents a design document. See

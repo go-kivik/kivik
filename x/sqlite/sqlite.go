@@ -19,7 +19,6 @@ import (
 	"log"
 	"net/http"
 	"regexp"
-	"strings"
 
 	"modernc.org/sqlite"
 
@@ -156,10 +155,7 @@ func (c *client) DestroyDB(ctx context.Context, name string, _ driver.Options) e
 	if err == nil {
 		return nil
 	}
-	sqliteErr := new(sqlite.Error)
-	if errors.As(err, &sqliteErr) &&
-		sqliteErr.Code() == codeSQLiteError &&
-		strings.Contains(sqliteErr.Error(), "no such table") {
+	if errIsNoSuchTable(err) {
 		return &internal.Error{Status: http.StatusNotFound, Message: "database not found"}
 	}
 	return err

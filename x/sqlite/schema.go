@@ -80,6 +80,7 @@ var schema = []string{
 		-- Options include_design and local_seq are only stored for 'map' type
 		include_design BOOLEAN,
 		local_seq BOOLEAN,
+		collation STRING CHECK (collation IN ('raw', 'ascii')),
 		last_seq INTEGER, -- the last map-indexed sequence id, NULL for others
 		FOREIGN KEY (id, rev, rev_id) REFERENCES {{ .Docs }} (id, rev, rev_id) ON DELETE CASCADE,
 		UNIQUE (id, rev, rev_id, func_type, func_name)
@@ -92,7 +93,7 @@ var viewSchema = []string{
 		id TEXT NOT NULL,
 		rev INTEGER NOT NULL,
 		rev_id TEXT NOT NULL,
-		key TEXT COLLATE COUCHDB_UCI,
+		key TEXT COLLATE {{ .Collation }},
 		value TEXT,
 		FOREIGN KEY (id, rev, rev_id) REFERENCES {{ .Docs }} (id, rev, rev_id)
 	)`,
@@ -100,9 +101,9 @@ var viewSchema = []string{
 	`CREATE TABLE {{ .Reduce }} (
 		seq INTEGER NOT NULL,
 		depth INTEGER NOT NULL,
-		first_key TEXT COLLATE COUCHDB_UCI,
+		first_key TEXT COLLATE {{ .Collation }},
 		first_pk INTEGER NOT NULL,
-		last_key TEXT COLLATE COUCHDB_UCI,
+		last_key TEXT COLLATE {{ .Collation }},
 		last_pk INTEGER NOT NULL,
 		value TEXT,
 		UNIQUE (depth, first_key, first_pk, last_key, last_pk)

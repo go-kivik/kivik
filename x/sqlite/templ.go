@@ -35,6 +35,7 @@ type tmplFuncs struct {
 	db                  *db
 	ddoc, viewName, rev string
 	hash                string
+	collation           *string
 }
 
 func (t *tmplFuncs) Docs() string {
@@ -90,6 +91,18 @@ func (t *tmplFuncs) IndexMap() string {
 	return strconv.Quote("idx_" + t.hashedName("map"))
 }
 
+func (t *tmplFuncs) Collation() string {
+	if t.collation == nil {
+		return "COUCHDB_UCI"
+	}
+	switch *t.collation {
+	case "ascii", "raw":
+		return "BINARY"
+	default:
+		panic("unsupported collation: " + *t.collation)
+	}
+}
+
 // query does variable substitution on a query string. The following translations
 // are made:
 //
@@ -123,6 +136,26 @@ func (d *db) ddocQuery(docID, viewOrFuncName, rev, format string) string {
 		ddoc:     strings.TrimPrefix(docID, "_design/"),
 		viewName: viewOrFuncName,
 		rev:      rev,
+	}); err != nil {
+		panic(err)
+	}
+	return buf.String()
+}
+
+// createDdocQuery works just like [db.ddocQuery], but also enables access to the
+// following translations:
+//
+//	{{ .Collation }} -> the view's collation sequence
+func (d *db) createDdocQuery(docID, viewOrFuncName, rev, format string, collation *string) string {
+	var buf bytes.Buffer
+	tmpl := getTmpl(format)
+
+	if err := tmpl.Execute(&buf, &tmplFuncs{
+		db:        d,
+		ddoc:      strings.TrimPrefix(docID, "_design/"),
+		viewName:  viewOrFuncName,
+		rev:       rev,
+		collation: collation,
 	}); err != nil {
 		panic(err)
 	}

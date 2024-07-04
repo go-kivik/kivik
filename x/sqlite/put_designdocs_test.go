@@ -211,7 +211,78 @@ func TestDBPut_designDocs(t *testing.T) {
 					t.Fatal(err)
 				}
 				if !includeDesign {
-					t.Errorf("include_design was false, expected true")
+					t.Error("include_design was false, expected true")
+				}
+			},
+		}
+	})
+	tests.Add("options.collation=chicken", func(t *testing.T) interface{} {
+		d := newDB(t)
+		return test{
+			db:    d,
+			docID: "_design/foo",
+			doc: map[string]interface{}{
+				"language": "javascript",
+				"views": map[string]interface{}{
+					"bar": map[string]interface{}{
+						"map": "function(doc) { emit(doc._id, null); }",
+					},
+				},
+				"options": map[string]interface{}{
+					"collation": "chicken",
+				},
+			},
+			// CouchDB seems to silently ignore invalid collations, perhaps
+			// defaulting to raw, or the default. An error seems better to me.
+			wantErr:    "unsupported collation: chicken",
+			wantStatus: http.StatusBadRequest,
+		}
+	})
+	tests.Add("options.local_seq=ascii", func(t *testing.T) interface{} {
+		d := newDB(t)
+		return test{
+			db:    d,
+			docID: "_design/foo",
+			doc: map[string]interface{}{
+				"language": "javascript",
+				"views": map[string]interface{}{
+					"bar": map[string]interface{}{
+						"map": "function(doc) { emit(doc._id, null); }",
+					},
+				},
+				"options": map[string]interface{}{
+					"collation": "ascii",
+				},
+			},
+			wantRev: "1-.*",
+			wantRevs: []leaf{
+				{ID: "_design/foo", Rev: 1},
+			},
+			wantDDocs: []ddoc{
+				{
+					ID:         "_design/foo",
+					Rev:        1,
+					Lang:       "javascript",
+					FuncType:   "map",
+					FuncName:   "bar",
+					FuncBody:   "function(doc) { emit(doc._id, null); }",
+					AutoUpdate: true,
+				},
+			},
+			check: func(t *testing.T) {
+				var collation sql.NullString
+				err := d.underlying().QueryRow(`
+					SELECT collation
+					FROM test_design
+					WHERE func_type = 'map'
+					LIMIT 1
+					`).Scan(&collation)
+				if err != nil {
+					t.Fatal(err)
+				}
+				const want = `ascii`
+				if collation.String != want {
+					t.Errorf("collation was %q, expected %q", collation.String, want)
 				}
 			},
 		}

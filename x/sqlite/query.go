@@ -835,7 +835,7 @@ func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc
 		}
 		query := fmt.Sprintf(d.ddocQuery(ddoc, viewName, rev.String(), `
 			DELETE FROM {{ .Map }}
-			WHERE id IN (%s)		
+			WHERE id IN (%s)
 		`), placeholders(1, len(ids)))
 		if _, err := tx.ExecContext(ctx, query, ids...); err != nil {
 			return err

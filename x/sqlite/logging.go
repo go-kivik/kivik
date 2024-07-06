@@ -13,7 +13,10 @@
 package sqlite
 
 import (
+	"database/sql"
 	"log"
+
+	"gitlab.com/flimzy/errsql"
 
 	"github.com/go-kivik/kivik/v4"
 )
@@ -35,4 +38,45 @@ func (o optionLogger) Apply(target interface{}) {
 // operations such as background index rebuilding.
 func OptionLogger(logger *log.Logger) kivik.Option {
 	return optionLogger{Logger: logger}
+}
+
+// connector is used temporarily on startup, to connect to a database, and
+// to possibly switch to the errsql driver if query logging is enabled.
+type connector struct {
+	dsn          string
+	queryLogging bool
+}
+
+func (c *connector) Connect() (*sql.DB, error) {
+	db, err := sql.Open("sqlite", c.dsn)
+	if err != nil {
+		return nil, err
+	}
+	if c.queryLogging {
+		drv := errsql.NewWithHooks(db.Driver(), &errsql.Hooks{})
+		cn, err := drv.OpenConnector(c.dsn)
+		if err != nil {
+			return nil, err
+		}
+		db = sql.OpenDB(cn)
+	}
+	_, err = db.Exec("PRAGMA foreign_keys = ON")
+	if err != nil {
+		return nil, err
+	}
+	return db, nil
+}
+
+type optionQueryLog struct{}
+
+func (o optionQueryLog) Apply(target interface{}) {
+	if cn, ok := target.(*connector); ok {
+		cn.queryLogging = true
+	}
+}
+
+// OptionQueryLog enables query logging for the SQLite driver. Query logs are
+// sent to the logger (see [OptionLogger]) at DEBUG level.
+func OptionQueryLog() kivik.Option {
+	return optionQueryLog{}
 }

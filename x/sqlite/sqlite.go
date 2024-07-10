@@ -42,16 +42,15 @@ var _ driver.Driver = (*drv)(nil)
 // NewClient returns a new SQLite client. dsn should be the full path to your
 // SQLite database file.
 func (drv) NewClient(dsn string, options driver.Options) (driver.Client, error) {
-	db, err := sql.Open("sqlite", dsn)
-	if err != nil {
-		return nil, err
-	}
-	_, err = db.Exec("PRAGMA foreign_keys = ON")
+	cn := &connector{dsn: dsn}
+	options.Apply(cn)
+	db, err := cn.Connect()
 	if err != nil {
 		return nil, err
 	}
 
 	c := &client{
+		dsn:    dsn,
 		db:     db,
 		logger: log.Default(),
 	}
@@ -61,6 +60,7 @@ func (drv) NewClient(dsn string, options driver.Options) (driver.Client, error) 
 }
 
 type client struct {
+	dsn    string
 	db     *sql.DB
 	logger *log.Logger
 }

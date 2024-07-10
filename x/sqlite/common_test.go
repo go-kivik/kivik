@@ -29,6 +29,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/int/mock"
 )
@@ -81,6 +82,18 @@ func (tdb *testDB) tDelete(docID string, options ...driver.Options) string { //n
 	return rev
 }
 
+type multiOptions []kivik.Option
+
+var _ kivik.Option = (multiOptions)(nil)
+
+func (o multiOptions) Apply(t interface{}) {
+	for _, opt := range o {
+		if opt != nil {
+			opt.Apply(t)
+		}
+	}
+}
+
 // newDB creates a new driver.DB instance backed by an in-memory SQLite database,
 // and registers a cleanup function to close the database when the test is done.
 func newDB(t *testing.T) *testDB {
@@ -104,7 +117,11 @@ func newDB(t *testing.T) *testDB {
 	d := drv{}
 	buf := &bytes.Buffer{}
 	logger := log.New(buf, "", 0)
-	client, err := d.NewClient(dsn, OptionLogger(logger))
+	options := OptionLogger(logger)
+	if os.Getenv("QUERY_LOG") != "" {
+		options = multiOptions{options, OptionQueryLogger(log.New(os.Stderr, "", 0))}
+	}
+	client, err := d.NewClient(dsn, options)
 	if err != nil {
 		t.Fatal(err)
 	}

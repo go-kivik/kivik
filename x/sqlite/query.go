@@ -130,18 +130,6 @@ func (d *db) performQuery(
 					AND rev_id = $7
 					AND func_type = 'reduce'
 					AND func_name = $8
-			),
-			cache AS (
-			SELECT
-					first_key,
-					first_pk,
-					last_pk,
-					last_key,
-					value
-				FROM {{ .Reduce }} AS view
-				JOIN reduce ON reduce.reducible AND ($3 IS NULL OR $3 == TRUE)
-				WHERE TRUE
-					%[5]s -- WHERE
 			)
 
 			-- Metadata header
@@ -169,42 +157,6 @@ func (d *db) performQuery(
 
 			UNION ALL
 
-			-- Cached reduce data
-			SELECT
-				*
-			FROM (
-				SELECT
-					"", -- id
-					cache.first_key,
-					cache.value,
-					cache.first_pk,
-					cache.last_pk,
-					cache.last_key,
-					0, -- attachment_count
-					NULL, -- filename
-					NULL, -- content_type
-					NULL, -- length
-					NULL, -- digest
-					NULL, -- rev_pos
-					NULL  -- data
-				FROM cache
-				LEFT JOIN (
-					SELECT
-						c1.first_key,
-						c1.first_pk,
-						c1.last_key,
-						c1.last_pk
-					FROM cache AS c1
-					INNER JOIN cache AS c2
-						-- todo: consider pk columns
-						ON NOT (c2.first_key BETWEEN c1.first_key AND c1.last_key
-							AND c2.last_key BETWEEN c1.first_key AND c1.last_key)
-				) AS winning ON cache.first_key = winning.first_key AND cache.last_key = winning.last_key
-				WHERE winning.first_key IS NULL
-			)
-
-			UNION ALL
-
 			-- View map to pass to reduce
 			SELECT
 				*
@@ -225,8 +177,7 @@ func (d *db) performQuery(
 					NULL  -- data
 				FROM {{ .Map }} AS view
 				JOIN reduce ON reduce.reducible AND ($3 IS NULL OR $3 == TRUE)
-				LEFT JOIN cache ON view.key >= cache.first_key AND view.key <= cache.last_key
-				WHERE cache.first_key IS NULL
+				WHERE TRUE
 					%[2]s -- WHERE
 				%[1]s -- ORDER BY
 			)
@@ -316,7 +267,7 @@ func (d *db) performQuery(
 				_ = results.Close() //nolint:sqlclosecheck // invalid option specified for reduce, so abort the query
 				return nil, &internal.Error{Status: http.StatusBadRequest, Message: "conflicts is invalid for reduce"}
 			}
-			result, err := d.reduce(ctx, meta.lastSeq, ddoc, view, rev.String(), results, meta.reduceFuncJS, vopts.reduceGroupLevel(), len(vopts.keys) > 0)
+			result, err := d.reduce(results, meta.reduceFuncJS, vopts.reduceGroupLevel())
 			if err != nil {
 				return nil, err
 			}
@@ -349,7 +300,6 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 		results *sql.Rows
 		rev     revision
 		err     error
-		lastSeq int
 		meta    *viewMetadata
 	)
 	for {
@@ -451,40 +401,15 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 		}
 	}
 
-	result, err := d.reduce(ctx, lastSeq, ddoc, view, rev.String(), results, meta.reduceFuncJS, vopts.reduceGroupLevel(), len(vopts.keys) > 0)
+	result, err := d.reduce(results, meta.reduceFuncJS, vopts.reduceGroupLevel())
 	if err != nil {
 		return nil, err
 	}
 	return metaReduced{Rows: result, meta: meta}, nil
 }
 
-func (d *db) reduce(ctx context.Context, seq int, ddoc, name, rev string, results *sql.Rows, reduceFuncJS string, groupLevel int, individualKeys bool) (driver.Rows, error) {
-	stmt, err := d.db.PrepareContext(ctx, d.ddocQuery(ddoc, name, rev, `
-		INSERT INTO {{ .Reduce }} (seq, depth, first_key, first_pk, last_key, last_pk, value)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
-	`))
-	if err != nil {
-		return nil, err
-	}
-	callback := func(depth uint, rows []reduce.Row) {
-		for _, row := range rows {
-			firstKey, _ := json.Marshal(row.FirstKey)
-			lastKey, _ := json.Marshal(row.LastKey)
-			var value []byte
-			if row.Value != nil {
-				value, _ = json.Marshal(row.Value)
-			}
-			if _, err = stmt.ExecContext(ctx, seq, depth, firstKey, row.FirstPK, lastKey, row.LastPK, value); err != nil {
-				d.logger.Printf("Failed to insert reduce result [%v, %v, %v, %v, %v, %v, %v]: %s",
-					seq, depth, firstKey, row.FirstPK, lastKey, row.LastPK, value,
-					err)
-			}
-		}
-	}
-	if individualKeys {
-		callback = nil
-	}
-	return reduce.Reduce(&reduceRowIter{results: results}, reduceFuncJS, d.logger, groupLevel, callback)
+func (d *db) reduce(results *sql.Rows, reduceFuncJS string, groupLevel int) (driver.Rows, error) {
+	return reduce.Reduce(&reduceRowIter{results: results}, reduceFuncJS, d.logger, groupLevel)
 }
 
 const batchSize = 100

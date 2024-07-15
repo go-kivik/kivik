@@ -98,14 +98,4 @@ var viewSchema = []string{
 		FOREIGN KEY (id, rev, rev_id) REFERENCES {{ .Docs }} (id, rev, rev_id)
 	)`,
 	`CREATE INDEX {{ .IndexMap }} ON {{ .Map }} (key)`,
-	`CREATE TABLE {{ .Reduce }} (
-		seq INTEGER NOT NULL,
-		depth INTEGER NOT NULL,
-		first_key TEXT COLLATE {{ .Collation }},
-		first_pk INTEGER NOT NULL,
-		last_key TEXT COLLATE {{ .Collation }},
-		last_pk INTEGER NOT NULL,
-		value TEXT,
-		UNIQUE (depth, first_key, first_pk, last_key, last_pk)
-	)`,
 }

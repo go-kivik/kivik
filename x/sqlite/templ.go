@@ -83,10 +83,6 @@ func (t *tmplFuncs) Map() string {
 	return strconv.Quote(t.hashedName("map"))
 }
 
-func (t *tmplFuncs) Reduce() string {
-	return strconv.Quote(t.hashedName("reduce"))
-}
-
 func (t *tmplFuncs) IndexMap() string {
 	return strconv.Quote("idx_" + t.hashedName("map"))
 }
@@ -126,7 +122,6 @@ func (d *db) query(format string) string {
 //
 //	{{ .Map }} -> the view map table name
 //	{{ .IndexMap }} -> the view map index name
-//	{{ .Reduce }} -> the view reduce table name
 func (d *db) ddocQuery(docID, viewOrFuncName, rev, format string) string {
 	var buf bytes.Buffer
 	tmpl := getTmpl(format)

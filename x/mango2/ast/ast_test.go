@@ -164,10 +164,21 @@ func TestParse(t *testing.T) {
 		input:   `{"foo": {"$nin": 42}}`,
 		wantErr: "$nin: json: cannot unmarshal number into Go value of type []interface {}",
 	})
+	tests.Add("size", test{
+		input: `{"foo": {"$size": 42}}`,
+		want: &conditionSelector{
+			field: "foo",
+			op:    OpSize,
+			value: float64(42),
+		},
+	})
+	tests.Add("size with non-integer", test{
+		input:   `{"foo": {"$size": 42.5}}`,
+		wantErr: "$size: json: cannot unmarshal number 42.5 into Go value of type uint",
+	})
 
 	/*
 		TODO:
-		- $size
 		- $mod
 		- $regex
 		- implicit $and

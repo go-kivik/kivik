@@ -90,6 +90,12 @@ func opAndValue(input json.RawMessage) (Operator, interface{}, error) {
 					return "", nil, fmt.Errorf("%s: %w", k, err)
 				}
 				return op, value, nil
+			case OpSize:
+				var value uint
+				if err := json.Unmarshal(v, &value); err != nil {
+					return "", nil, fmt.Errorf("%s: %w", k, err)
+				}
+				return OpSize, float64(value), nil
 			}
 			return "", nil, fmt.Errorf("invalid operator %s", k)
 		}

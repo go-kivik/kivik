@@ -34,7 +34,7 @@ func Parse(input []byte) (Selector, error) {
 		for k, v := range tmp {
 			op, value, err := opAndValue(v)
 			if err != nil {
-				return nil, fmt.Errorf("%s for operator %s", err, OpEqual)
+				return nil, err
 			}
 			return &conditionSelector{
 				field: k,
@@ -63,7 +63,11 @@ func opAndValue(input json.RawMessage) (Operator, interface{}, error) {
 		return OpEqual, map[string]interface{}{}, nil
 	case 1:
 		for k, v := range tmp {
-			return Operator(k), v, nil
+			switch op := Operator(k); op {
+			case OpEqual:
+				return op, v, nil
+			}
+			return "", nil, fmt.Errorf("invalid operator %s", k)
 		}
 	default:
 		return "", nil, errors.New("too many keys in object")

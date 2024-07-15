@@ -54,7 +54,7 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("explicit equality with too many object keys", test{
 		input:   `{"foo": {"$eq": "bar", "$ne": "baz"}}`,
-		wantErr: "too many keys in object for operator $eq",
+		wantErr: "too many keys in object",
 	})
 	tests.Add("implicit equality with empty object", test{
 		input: `{"foo": {}}`,
@@ -64,11 +64,21 @@ func TestParse(t *testing.T) {
 			value: map[string]interface{}{},
 		},
 	})
+	tests.Add("explicit invalid comparison operator", test{
+		input:   `{"foo": {"$invalid": "bar"}}`,
+		wantErr: "invalid operator $invalid",
+	})
+	tests.Add("explicit equiality against object", test{
+		input: `{"foo": {"$eq": {"bar": "baz"}}}`,
+		want: &conditionSelector{
+			field: "foo",
+			op:    OpEqual,
+			value: map[string]interface{}{"bar": "baz"},
+		},
+	})
 
 	/*
 		TODO:
-		- explicit equality against object with invalid operator -- error
-		- explicit equality against an object
 		- $lt
 		- $lte
 		- $eq

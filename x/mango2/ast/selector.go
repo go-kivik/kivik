@@ -50,6 +50,7 @@ func (c *combinationSelector) Value() interface{} {
 }
 
 type conditionSelector struct {
+	field string
 	op    Operator
 	value interface{}
 }

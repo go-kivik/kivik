@@ -176,10 +176,25 @@ func TestParse(t *testing.T) {
 		input:   `{"foo": {"$size": 42.5}}`,
 		wantErr: "$size: json: cannot unmarshal number 42.5 into Go value of type uint",
 	})
+	tests.Add("mod", test{
+		input: `{"foo": {"$mod": [2, 1]}}`,
+		want: &conditionSelector{
+			field: "foo",
+			op:    OpMod,
+			value: [2]int{2, 1},
+		},
+	})
+	tests.Add("mod with non-array", test{
+		input:   `{"foo": {"$mod": 42}}`,
+		wantErr: "$mod: json: cannot unmarshal number into Go value of type [2]int",
+	})
+	tests.Add("mod with zero divisor", test{
+		input:   `{"foo": {"$mod": [0, 1]}}`,
+		wantErr: "$mod: divisor must be non-zero",
+	})
 
 	/*
 		TODO:
-		- $mod
 		- $regex
 		- implicit $and
 		- $and
@@ -191,6 +206,7 @@ func TestParse(t *testing.T) {
 		- $allMatch
 		- $keyMapMatch
 
+		- $mod with non-integer values returns 404 (WTF) https://docs.couchdb.org/en/stable/api/database/find.html#condition-operators
 
 	*/
 

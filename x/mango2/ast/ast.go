@@ -96,6 +96,15 @@ func opAndValue(input json.RawMessage) (Operator, interface{}, error) {
 					return "", nil, fmt.Errorf("%s: %w", k, err)
 				}
 				return OpSize, float64(value), nil
+			case OpMod:
+				var value [2]int
+				if err := json.Unmarshal(v, &value); err != nil {
+					return "", nil, fmt.Errorf("%s: %w", k, err)
+				}
+				if value[0] == 0 {
+					return "", nil, errors.New("$mod: divisor must be non-zero")
+				}
+				return OpMod, value, nil
 			}
 			return "", nil, fmt.Errorf("invalid operator %s", k)
 		}

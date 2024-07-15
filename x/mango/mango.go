@@ -48,28 +48,28 @@ func (s *Selector) UnmarshalJSON(data []byte) error {
 	}
 	sels := make([]Selector, 0, len(x))
 	for k, v := range x {
-		var op operator
-		var field string
-		var value interface{}
-		field = k
-		if v[0] == '{' {
-			var e error
-			op, value, e = opPattern(v)
-			if e != nil {
-				return e
+		var sel Selector
+		sel.field = k
+		switch v[0] {
+		case '{':
+			var err error
+			sel.op, sel.value, err = opObjectPattern(v)
+			if err != nil {
+				return err
+			}
+		case '[':
+			sel.op = operator(k)
+			if err := json.Unmarshal(v, &sel.sel); err != nil {
+				return err
 			}
 		}
-		if op == "" {
-			op = opEq
-			if e := json.Unmarshal(v, &value); e != nil {
-				return e
+		if sel.op == "" {
+			sel.op = opEq
+			if err := json.Unmarshal(v, &sel.value); err != nil {
+				return err
 			}
 		}
-		sels = append(sels, Selector{
-			op:    op,
-			field: field,
-			value: value,
-		})
+		sels = append(sels, sel)
 	}
 	if len(sels) == 1 {
 		*s = sels[0]
@@ -82,10 +82,10 @@ func (s *Selector) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func opPattern(data []byte) (op operator, value interface{}, err error) {
+func opObjectPattern(data []byte) (op operator, value interface{}, err error) {
 	var x map[operator]json.RawMessage
-	if e := json.Unmarshal(data, &x); e != nil {
-		return operator(""), nil, e
+	if err := json.Unmarshal(data, &x); err != nil {
+		return operator(""), nil, err
 	}
 	if len(x) != 1 {
 		panic("got more than one result")
@@ -94,15 +94,16 @@ func opPattern(data []byte) (op operator, value interface{}, err error) {
 		switch k {
 		case opEq, opNE, opLT, opLTE, opGT, opGTE:
 			var value interface{}
-			if e := json.Unmarshal(v, &value); e != nil {
-				return "", nil, e
-			}
-			return k, value, nil
+			err := json.Unmarshal(v, &value)
+			return k, value, err
 		default:
-			return "", nil, fmt.Errorf("unknown mango operator '%s'", k)
+			if len(k) > 0 && k[0] == '$' {
+				return "", nil, fmt.Errorf("unknown mango operator '%s'", k)
+			}
+			return opNone, v, nil
 		}
 	}
-	return operator(""), nil, nil
+	return opNone, nil, nil
 }
 
 type couchDoc map[string]interface{}
@@ -132,12 +133,23 @@ func (s *Selector) Matches(doc couchDoc) (bool, error) {
 		}
 	case opAnd:
 		for _, sel := range s.sel {
-			m, e := sel.Matches(doc)
-			if e != nil || !m {
-				return m, e
+			match, err := sel.Matches(doc)
+			if err != nil || !match {
+				return match, err
 			}
 		}
 		return true, nil
+	case opOr:
+		for _, sel := range s.sel {
+			match, err := sel.Matches(doc)
+			if err != nil {
+				return false, err
+			}
+			if match {
+				return true, nil
+			}
+		}
+		return false, nil
 	default:
 		return false, fmt.Errorf("unknown mango operator '%s'", s.op)
 	}

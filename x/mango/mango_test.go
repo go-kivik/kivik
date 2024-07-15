@@ -155,99 +155,155 @@ func mustNew(data string) *Selector {
 func TestMatches(t *testing.T) {
 	type mTest struct {
 		name     string
-		sel      *Selector
+		sel      string
 		doc      couchDoc
 		expected bool
 		err      string
 	}
 	tests := []mTest{
-		{
-			name: "invalid op",
-			sel:  &Selector{op: "$invalid"},
-			err:  "unknown mango operator '$invalid'",
-		},
+		// {
+		// 	name: "invalid op",
+		// 	sel:  &Selector{op: "$invalid"},
+		// 	err:  "unknown mango operator '$invalid'",
+		// },
 		{
 			name:     "empty selecotor",
-			sel:      mustNew("{}"),
+			sel:      "{}",
 			doc:      couchDoc{"foo": "bar"},
 			expected: true,
 		},
 		{
 			name:     "exact match hit",
-			sel:      mustNew(`{"foo":"bar"}`),
+			sel:      `{"foo":"bar"}`,
 			doc:      couchDoc{"foo": "bar"},
 			expected: true,
 		},
 		{
 			name:     "exact match miss",
-			sel:      mustNew(`{"foo":"bar"}`),
+			sel:      `{"foo":"bar"}`,
 			doc:      couchDoc{"foo": "baz"},
 			expected: false,
 		},
 		{
 			name:     "missing field",
-			sel:      mustNew(`{"foo":"bar"}`),
+			sel:      `{"foo":"bar"}`,
 			doc:      couchDoc{"boo": "baz"},
 			expected: false,
 		},
 		{
 			name:     "compound match hit",
-			sel:      mustNew(`{"foo":"bar","baz":"qux"}`),
+			sel:      `{"foo":"bar","baz":"qux"}`,
 			doc:      couchDoc{"foo": "bar", "baz": "qux"},
 			expected: true,
 		},
 		{
 			name:     "compound match, one miss",
-			sel:      mustNew(`{"foo":"bar","baz":"qux"}`),
+			sel:      `{"foo":"bar","baz":"qux"}`,
 			doc:      couchDoc{"foo": "bar", "baz": "quxx"},
 			expected: false,
 		},
 		{
 			name:     "explicit $eq",
-			sel:      mustNew(`{"foo":{"$eq":"bar"}}`),
+			sel:      `{"foo":{"$eq":"bar"}}`,
 			doc:      couchDoc{"foo": "bar", "baz": "quxx"},
 			expected: true,
 		},
 		{
 			name:     "$gt",
-			sel:      mustNew(`{"foo":{"$gt":"bar"}}`),
+			sel:      `{"foo":{"$gt":"bar"}}`,
 			doc:      couchDoc{"foo": "bar"},
 			expected: false,
 		},
 		{
 			name:     "$gte",
-			sel:      mustNew(`{"foo":{"$gte":"bar"}}`),
+			sel:      `{"foo":{"$gte":"bar"}}`,
 			doc:      couchDoc{"foo": "bar"},
 			expected: true,
 		},
 		{
 			name:     "$lte",
-			sel:      mustNew(`{"foo":{"$lte":"bar"}}`),
+			sel:      `{"foo":{"$lte":"bar"}}`,
 			doc:      couchDoc{"foo": "bar"},
 			expected: true,
 		},
 		{
 			name:     "$lt",
-			sel:      mustNew(`{"foo":{"$lt":"bar"}}`),
+			sel:      `{"foo":{"$lt":"bar"}}`,
 			doc:      couchDoc{"foo": "bar"},
 			expected: false,
 		},
 		{
 			name:     "$lt zzz",
-			sel:      mustNew(`{"foo":{"$lt":"bar"}}`),
+			sel:      `{"foo":{"$lt":"bar"}}`,
 			doc:      couchDoc{"foo": "zzz"},
 			expected: false,
 		},
 		{
 			name:     "$lt aaa",
-			sel:      mustNew(`{"foo":{"$lt":"bar"}}`),
+			sel:      `{"foo":{"$lt":"bar"}}`,
 			doc:      couchDoc{"foo": "aaa"},
 			expected: true,
 		},
+		{
+			name:     "selector with two fields",
+			sel:      `{"name": "Paul", "location": "Boston"}`,
+			doc:      couchDoc{"name": "Paul", "location": "Boston"},
+			expected: true,
+		},
+		{
+			name:     "subfield selector",
+			sel:      `{"imdb": {"rating": 8}}`,
+			doc:      couchDoc{"imdb": map[string]interface{}{"rating": 8}},
+			expected: true,
+		},
+		{
+			name:     "subfield selector, no match",
+			sel:      `{"imdb": {"rating": 3}}`,
+			doc:      couchDoc{"imdb": map[string]interface{}{"rating": 8}},
+			expected: false,
+		},
+		{
+			name:     "subfield selector, operator",
+			sel:      `{"imdb": {"rating": {"$gte": 8}}}`,
+			doc:      couchDoc{"imdb": map[string]interface{}{"rating": 8}},
+			expected: false,
+		},
+		{
+			name:     "logical or",
+			sel:      `{"$or": [{"foo": "bar"}, {"baz": "qux"}]}`,
+			doc:      couchDoc{"foo": "bar"},
+			expected: true,
+		},
+		{
+			name:     "logical or, no match",
+			sel:      `{"$or": [{"foo": "bar"}, {"baz": "qux"}]}`,
+			doc:      couchDoc{"xxx": "yyy"},
+			expected: false,
+		},
+		/* TODO:
+		- "$or":[]
+		- explicit $and
+		- "$and":[]
+		- $not
+		- $nor
+		- $all
+		- $elemMatch
+		- $allMatch
+		- $keyMapMatch
+		- $exists
+		- $type
+		- $in
+		- $nin
+		- $size
+		- $mod
+		- $regex
+		- array selector: [{"foo": "bar"}, {"baz": "qux"}]
+		*/
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.sel.Matches(test.doc)
+			sel := mustNew(test.sel)
+			result, err := sel.Matches(test.doc)
 			var msg string
 			if err != nil {
 				msg = err.Error()

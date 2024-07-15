@@ -76,15 +76,49 @@ func TestParse(t *testing.T) {
 			value: map[string]interface{}{"bar": "baz"},
 		},
 	})
+	tests.Add("less than", test{
+		input: `{"foo": {"$lt": 42}}`,
+		want: &conditionSelector{
+			field: "foo",
+			op:    OpLessThan,
+			value: float64(42),
+		},
+	})
+	tests.Add("less than or equal", test{
+		input: `{"foo": {"$lte": 42}}`,
+		want: &conditionSelector{
+			field: "foo",
+			op:    OpLessThanOrEqual,
+			value: float64(42),
+		},
+	})
+	tests.Add("not equal", test{
+		input: `{"foo": {"$ne": 42}}`,
+		want: &conditionSelector{
+			field: "foo",
+			op:    OpNotEqual,
+			value: float64(42),
+		},
+	})
+	tests.Add("greater than", test{
+		input: `{"foo": {"$gt": 42}}`,
+		want: &conditionSelector{
+			field: "foo",
+			op:    OpGreaterThan,
+			value: float64(42),
+		},
+	})
+	tests.Add("greater than or equal", test{
+		input: `{"foo": {"$gte": 42}}`,
+		want: &conditionSelector{
+			field: "foo",
+			op:    OpGreaterThanOrEqual,
+			value: float64(42),
+		},
+	})
 
 	/*
 		TODO:
-		- $lt
-		- $lte
-		- $eq
-		- $ne
-		- $gt
-		- $gte
 		- $exists
 		- $type
 		- $in

@@ -46,6 +46,9 @@ func Parse(input []byte) (Selector, error) {
 	panic("not implemented")
 }
 
+// opAndValue is called when the input is an object in a context where a
+// comparison operator is expected. It returns the operator and value,
+// defaulting to [OpEqual] if no operator is specified.
 func opAndValue(input json.RawMessage) (Operator, interface{}, error) {
 	if input[0] != '{' {
 		var value interface{}
@@ -64,7 +67,8 @@ func opAndValue(input json.RawMessage) (Operator, interface{}, error) {
 	case 1:
 		for k, v := range tmp {
 			switch op := Operator(k); op {
-			case OpEqual:
+			case OpEqual, OpLessThan, OpLessThanOrEqual, OpNotEqual,
+				OpGreaterThan, OpGreaterThanOrEqual:
 				return op, v, nil
 			}
 			return "", nil, fmt.Errorf("invalid operator %s", k)

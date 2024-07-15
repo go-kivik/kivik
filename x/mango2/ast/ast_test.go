@@ -126,14 +126,47 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("exists with non-boolean", test{
 		input:   `{"foo": {"$exists": 42}}`,
-		wantErr: "invalid value 42 for $exists",
+		wantErr: "$exists: json: cannot unmarshal number into Go value of type bool",
+	})
+	tests.Add("type", test{
+		input: `{"foo": {"$type": "string"}}`,
+		want: &conditionSelector{
+			field: "foo",
+			op:    OpType,
+			value: "string",
+		},
+	})
+	tests.Add("type with non-string", test{
+		input:   `{"foo": {"$type": 42}}`,
+		wantErr: "$type: json: cannot unmarshal number into Go value of type string",
+	})
+	tests.Add("in", test{
+		input: `{"foo": {"$in": [1, 2, 3]}}`,
+		want: &conditionSelector{
+			field: "foo",
+			op:    OpIn,
+			value: []interface{}{float64(1), float64(2), float64(3)},
+		},
+	})
+	tests.Add("in with non-array", test{
+		input:   `{"foo": {"$in": 42}}`,
+		wantErr: "$in: json: cannot unmarshal number into Go value of type []interface {}",
+	})
+	tests.Add("not in", test{
+		input: `{"foo": {"$nin": [1, 2, 3]}}`,
+		want: &conditionSelector{
+			field: "foo",
+			op:    OpNotIn,
+			value: []interface{}{float64(1), float64(2), float64(3)},
+		},
+	})
+	tests.Add("not in with non-array", test{
+		input:   `{"foo": {"$nin": 42}}`,
+		wantErr: "$nin: json: cannot unmarshal number into Go value of type []interface {}",
 	})
 
 	/*
 		TODO:
-		- $type
-		- $in
-		- $nin
 		- $size
 		- $mod
 		- $regex

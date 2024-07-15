@@ -57,7 +57,7 @@ func opAndValue(input json.RawMessage) (Operator, interface{}, error) {
 		}
 		return OpEqual, value, nil
 	}
-	var tmp map[string]interface{}
+	var tmp map[string]json.RawMessage
 	if err := json.Unmarshal(input, &tmp); err != nil {
 		return "", nil, err
 	}
@@ -69,13 +69,27 @@ func opAndValue(input json.RawMessage) (Operator, interface{}, error) {
 			switch op := Operator(k); op {
 			case OpEqual, OpLessThan, OpLessThanOrEqual, OpNotEqual,
 				OpGreaterThan, OpGreaterThanOrEqual:
-				return op, v, nil
+				var value interface{}
+				err := json.Unmarshal(v, &value)
+				return op, value, err
 			case OpExists:
-				boolVal, ok := v.(bool)
-				if !ok {
-					return "", nil, fmt.Errorf("invalid value %v for $exists", v)
+				var value bool
+				if err := json.Unmarshal(v, &value); err != nil {
+					return "", nil, fmt.Errorf("%s: %w", k, err)
 				}
-				return OpExists, boolVal, nil
+				return OpExists, value, nil
+			case OpType:
+				var value string
+				if err := json.Unmarshal(v, &value); err != nil {
+					return "", nil, fmt.Errorf("%s: %w", k, err)
+				}
+				return OpType, value, nil
+			case OpIn, OpNotIn:
+				var value []interface{}
+				if err := json.Unmarshal(v, &value); err != nil {
+					return "", nil, fmt.Errorf("%s: %w", k, err)
+				}
+				return op, value, nil
 			}
 			return "", nil, fmt.Errorf("invalid operator %s", k)
 		}

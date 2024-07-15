@@ -116,10 +116,21 @@ func TestParse(t *testing.T) {
 			value: float64(42),
 		},
 	})
+	tests.Add("exists", test{
+		input: `{"foo": {"$exists": true}}`,
+		want: &conditionSelector{
+			field: "foo",
+			op:    OpExists,
+			value: true,
+		},
+	})
+	tests.Add("exists with non-boolean", test{
+		input:   `{"foo": {"$exists": 42}}`,
+		wantErr: "invalid value 42 for $exists",
+	})
 
 	/*
 		TODO:
-		- $exists
 		- $type
 		- $in
 		- $nin

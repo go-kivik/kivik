@@ -70,6 +70,12 @@ func opAndValue(input json.RawMessage) (Operator, interface{}, error) {
 			case OpEqual, OpLessThan, OpLessThanOrEqual, OpNotEqual,
 				OpGreaterThan, OpGreaterThanOrEqual:
 				return op, v, nil
+			case OpExists:
+				boolVal, ok := v.(bool)
+				if !ok {
+					return "", nil, fmt.Errorf("invalid value %v for $exists", v)
+				}
+				return OpExists, boolVal, nil
 			}
 			return "", nil, fmt.Errorf("invalid operator %s", k)
 		}

@@ -12,7 +12,11 @@
 
 package ast
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+)
 
 // Parse parses s into a Mango Selector tree.
 func Parse(input []byte) (Selector, error) {
@@ -30,7 +34,7 @@ func Parse(input []byte) (Selector, error) {
 		for k, v := range tmp {
 			op, value, err := opAndValue(v)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("%s for operator %s", err, OpEqual)
 			}
 			return &conditionSelector{
 				field: k,
@@ -54,10 +58,15 @@ func opAndValue(input json.RawMessage) (Operator, interface{}, error) {
 	if err := json.Unmarshal(input, &tmp); err != nil {
 		return "", nil, err
 	}
-	if len(tmp) == 1 {
+	switch len(tmp) {
+	case 0:
+		return OpEqual, map[string]interface{}{}, nil
+	case 1:
 		for k, v := range tmp {
 			return Operator(k), v, nil
 		}
+	default:
+		return "", nil, errors.New("too many keys in object")
 	}
-	return "", nil, nil
+	panic("impossible")
 }

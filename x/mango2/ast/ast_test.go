@@ -52,9 +52,22 @@ func TestParse(t *testing.T) {
 			value: "bar",
 		},
 	})
+	tests.Add("explicit equality with too many object keys", test{
+		input:   `{"foo": {"$eq": "bar", "$ne": "baz"}}`,
+		wantErr: "too many keys in object for operator $eq",
+	})
+	tests.Add("implicit equality with empty object", test{
+		input: `{"foo": {}}`,
+		want: &conditionSelector{
+			field: "foo",
+			op:    OpEqual,
+			value: map[string]interface{}{},
+		},
+	})
 
 	/*
 		TODO:
+		- explicit equality against object with invalid operator -- error
 		- explicit equality against an object
 		- $lt
 		- $lte

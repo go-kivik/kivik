@@ -97,10 +97,13 @@ func opPattern(data []byte) (op operator, value interface{}, err error) {
 			err := json.Unmarshal(v, &value)
 			return k, value, err
 		default:
-			return "", nil, fmt.Errorf("unknown mango operator '%s'", k)
+			if len(k) > 0 && k[0] == '$' {
+				return "", nil, fmt.Errorf("unknown mango operator '%s'", k)
+			}
+			return opNone, v, nil
 		}
 	}
-	return operator(""), nil, nil
+	return opNone, nil, nil
 }
 
 type couchDoc map[string]interface{}

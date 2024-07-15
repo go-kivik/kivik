@@ -244,6 +244,30 @@ func TestMatches(t *testing.T) {
 			doc:      couchDoc{"foo": "aaa"},
 			expected: true,
 		},
+		{
+			name:     "selector with two fields",
+			sel:      mustNew(`{"name": "Paul", "location": "Boston"}`),
+			doc:      couchDoc{"name": "Paul", "location": "Boston"},
+			expected: true,
+		},
+		{
+			name:     "subfield selector",
+			sel:      mustNew(`{"imdb": {"rating": 8}}`),
+			doc:      couchDoc{"imdb": map[string]interface{}{"rating": 8}},
+			expected: true,
+		},
+		{
+			name:     "subfield selector, no match",
+			sel:      mustNew(`{"imdb": {"rating": 3}}`),
+			doc:      couchDoc{"imdb": map[string]interface{}{"rating": 8}},
+			expected: false,
+		},
+		{
+			name:     "subfield selector, operator",
+			sel:      mustNew(`{"imdb": {"rating": {"$gte": 8}}}`),
+			doc:      couchDoc{"imdb": map[string]interface{}{"rating": 8}},
+			expected: false,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

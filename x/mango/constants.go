@@ -19,11 +19,13 @@ const (
 
 	// Combination operators - http://docs.couchdb.org/en/2.0.0/api/database/find.html#combination-operators
 	opAnd = operator("$and")
-	// opOr        = operator("$or")
+	opOr  = operator("$or")
 	// opNot       = operator("$not")
 	// opNor       = operator("$nor")
 	// opAll       = operator("$all")
 	// opElemMatch = operator("$elemMatch")
+	// opAllMatch = operator("$allMatch")
+	// opKeyMapMatch = operator("$keyMapMatch")
 
 	// Condition operators - http://docs.couchdb.org/en/2.0.0/api/database/find.html#condition-operators
 	opLT  = operator("$lt")

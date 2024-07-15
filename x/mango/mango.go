@@ -48,28 +48,28 @@ func (s *Selector) UnmarshalJSON(data []byte) error {
 	}
 	sels := make([]Selector, 0, len(x))
 	for k, v := range x {
-		var op operator
-		var field string
-		var value interface{}
-		field = k
-		if v[0] == '{' {
-			var e error
-			op, value, e = opPattern(v)
-			if e != nil {
-				return e
+		var sel Selector
+		sel.field = k
+		switch v[0] {
+		case '{':
+			var err error
+			sel.op, sel.value, err = opObjectPattern(v)
+			if err != nil {
+				return err
+			}
+		case '[':
+			sel.op = operator(k)
+			if err := json.Unmarshal(v, &sel.sel); err != nil {
+				return err
 			}
 		}
-		if op == "" {
-			op = opEq
-			if e := json.Unmarshal(v, &value); e != nil {
-				return e
+		if sel.op == "" {
+			sel.op = opEq
+			if err := json.Unmarshal(v, &sel.value); err != nil {
+				return err
 			}
 		}
-		sels = append(sels, Selector{
-			op:    op,
-			field: field,
-			value: value,
-		})
+		sels = append(sels, sel)
 	}
 	if len(sels) == 1 {
 		*s = sels[0]
@@ -82,10 +82,10 @@ func (s *Selector) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func opPattern(data []byte) (op operator, value interface{}, err error) {
+func opObjectPattern(data []byte) (op operator, value interface{}, err error) {
 	var x map[operator]json.RawMessage
-	if e := json.Unmarshal(data, &x); e != nil {
-		return operator(""), nil, e
+	if err := json.Unmarshal(data, &x); err != nil {
+		return operator(""), nil, err
 	}
 	if len(x) != 1 {
 		panic("got more than one result")
@@ -139,6 +139,17 @@ func (s *Selector) Matches(doc couchDoc) (bool, error) {
 			}
 		}
 		return true, nil
+	case opOr:
+		for _, sel := range s.sel {
+			match, err := sel.Matches(doc)
+			if err != nil {
+				return false, err
+			}
+			if match {
+				return true, nil
+			}
+		}
+		return false, nil
 	default:
 		return false, fmt.Errorf("unknown mango operator '%s'", s.op)
 	}

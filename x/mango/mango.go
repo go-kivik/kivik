@@ -94,10 +94,8 @@ func opPattern(data []byte) (op operator, value interface{}, err error) {
 		switch k {
 		case opEq, opNE, opLT, opLTE, opGT, opGTE:
 			var value interface{}
-			if e := json.Unmarshal(v, &value); e != nil {
-				return "", nil, e
-			}
-			return k, value, nil
+			err := json.Unmarshal(v, &value)
+			return k, value, err
 		default:
 			return "", nil, fmt.Errorf("unknown mango operator '%s'", k)
 		}
@@ -132,9 +130,9 @@ func (s *Selector) Matches(doc couchDoc) (bool, error) {
 		}
 	case opAnd:
 		for _, sel := range s.sel {
-			m, e := sel.Matches(doc)
-			if e != nil || !m {
-				return m, e
+			match, err := sel.Matches(doc)
+			if err != nil || !match {
+				return match, err
 			}
 		}
 		return true, nil

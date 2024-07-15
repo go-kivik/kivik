@@ -30,7 +30,6 @@ func TestReduce(t *testing.T) {
 		groupLevel int
 		batchSize  int
 		want       Rows
-		wantCache  [][]Row
 		wantErr    string
 		wantStatus int
 	}
@@ -138,12 +137,6 @@ func TestReduce(t *testing.T) {
 			{TargetKey: []any{1.0, 2.0, 3.0}, FirstKey: []any{1.0, 2.0, 3.0, 4.0}, FirstPK: 1, LastKey: []any{1.0, 2.0, 3.0}, LastPK: 5, Value: 5.0},
 			{TargetKey: []any{1.0, 2.0, 4.0}, FirstKey: []any{1.0, 2.0, 4.0}, FirstPK: 6, LastKey: []any{1.0, 2.0, 4.0}, LastPK: 6, Value: 1.0},
 		},
-		wantCache: [][]Row{
-			{{TargetKey: []any{1.0, 2.0, 3.0}, FirstKey: []any{1.0, 2.0, 3.0, 4.0}, FirstPK: 1, LastKey: []any{1.0, 2.0, 3.0, 6.0}, LastPK: 4, Value: 4.0}}, // Merge of first two rows, rereduce=true
-			{{TargetKey: []any{1.0, 2.0, 3.0}, FirstKey: []any{1.0, 2.0, 3.0}, FirstPK: 5, LastKey: []any{1.0, 2.0, 3.0}, LastPK: 5, Value: 1.0}},           // Single map row, rereduce=false
-			{{TargetKey: []any{1.0, 2.0, 4.0}, FirstKey: []any{1.0, 2.0, 4.0}, FirstPK: 6, LastKey: []any{1.0, 2.0, 4.0}, LastPK: 6, Value: 1.0}},           // Single map row, rereduce=false, final
-			{{TargetKey: []any{1.0, 2.0, 3.0}, FirstKey: []any{1.0, 2.0, 3.0, 4.0}, FirstPK: 1, LastKey: []any{1.0, 2.0, 3.0}, LastPK: 5, Value: 5.0}},      // Merge of the first two reduce outputs, final
-		},
 	})
 	tests.Add("group level 0", test{
 		input: &Rows{
@@ -195,13 +188,6 @@ func TestReduce(t *testing.T) {
 		want: []Row{
 			{TargetKey: nil, FirstKey: []any{1.0}, FirstPK: 1, LastKey: []any{6.0}, LastPK: 6, Value: 6.0},
 		},
-		wantCache: [][]Row{
-			{{FirstKey: []any{1.0}, FirstPK: 1, LastKey: []any{2.0}, LastPK: 2, Value: 2.0}},
-			{{FirstKey: []any{3.0}, FirstPK: 3, LastKey: []any{4.0}, LastPK: 4, Value: 2.0}},
-			{{FirstKey: []any{5.0}, FirstPK: 5, LastKey: []any{6.0}, LastPK: 6, Value: 2.0}},
-			{{FirstKey: []any{1.0}, FirstPK: 1, LastKey: []any{4.0}, LastPK: 4, Value: 4.0}},
-			{{FirstKey: []any{1.0}, FirstPK: 1, LastKey: []any{6.0}, LastPK: 6, Value: 6.0}},
-		},
 	})
 	tests.Add("partial cache update", test{
 		input: &Rows{
@@ -213,22 +199,14 @@ func TestReduce(t *testing.T) {
 		want: []Row{
 			{TargetKey: nil, FirstKey: `"a"`, FirstPK: 1, LastKey: `"c"`, LastPK: 3, Value: 3.0},
 		},
-		wantCache: [][]Row{
-			{{FirstKey: `"c"`, FirstPK: 3, LastKey: `"c"`, LastPK: 3, Value: 1.0}},
-			{{FirstKey: `"a"`, FirstPK: 1, LastKey: `"c"`, LastPK: 3, Value: 3.0}},
-		},
 	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
-		var cache [][]Row
-		cb := func(_ uint, rows []Row) {
-			cache = append(cache, rows)
-		}
 		batchSize := tt.batchSize
 		if batchSize == 0 {
 			batchSize = defaultBatchSize
 		}
-		got, err := reduceWithBatchSize(tt.input, tt.javascript, log.New(io.Discard, "", 0), tt.groupLevel, cb, batchSize)
+		got, err := reduceWithBatchSize(tt.input, tt.javascript, log.New(io.Discard, "", 0), tt.groupLevel, batchSize)
 		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %v", err)
 		}
@@ -240,11 +218,6 @@ func TestReduce(t *testing.T) {
 		}
 		if d := cmp.Diff(tt.want, *got); d != "" {
 			t.Errorf("Unexpected output (-want +got):\n%s", d)
-		}
-		if tt.wantCache != nil {
-			if d := cmp.Diff(tt.wantCache, cache); d != "" {
-				t.Errorf("Unexpected cache (-want +got):\n%s", d)
-			}
 		}
 	})
 }

@@ -123,19 +123,19 @@ const defaultBatchSize = 1000
 //	-1: Maximum grouping, same as group=true
 //	 0: No grouping, same as group=false
 //	1+: Group by the first N elements of the key, same as group_level=N
-func Reduce(rows Reducer, javascript string, logger *log.Logger, groupLevel int, cb Callback) (*Rows, error) {
-	return reduceWithBatchSize(rows, javascript, logger, groupLevel, cb, defaultBatchSize)
+func Reduce(rows Reducer, javascript string, logger *log.Logger, groupLevel int) (*Rows, error) {
+	return reduceWithBatchSize(rows, javascript, logger, groupLevel, defaultBatchSize)
 }
 
-func reduceWithBatchSize(rows Reducer, javascript string, logger *log.Logger, groupLevel int, cb Callback, batchSize int) (*Rows, error) {
+func reduceWithBatchSize(rows Reducer, javascript string, logger *log.Logger, groupLevel int, batchSize int) (*Rows, error) {
 	fn, err := ParseFunc(javascript, logger)
 	if err != nil {
 		return nil, err
 	}
-	return reduce(rows, fn, groupLevel, batchSize, cb)
+	return reduce(rows, fn, groupLevel, batchSize)
 }
 
-func reduce(rows Reducer, fn Func, groupLevel int, batchSize int, cb Callback) (*Rows, error) {
+func reduce(rows Reducer, fn Func, groupLevel int, batchSize int) (*Rows, error) {
 	out := make(Rows, 0, 1)
 	var (
 		firstKey, lastKey any
@@ -180,18 +180,6 @@ func reduce(rows Reducer, fn Func, groupLevel int, batchSize int, cb Callback) (
 			}
 			rows = append(rows, row)
 			firstKey, firstPK, lastKey, lastPK = nil, 0, nil, 0
-		}
-		if cb != nil {
-			var depth uint
-			switch t := key.(type) {
-			case nil:
-				// depth is 0 for non-grouped results
-			case []any:
-				depth = uint(len(t))
-			default:
-				depth = 1
-			}
-			cb(depth, rows)
 		}
 		out = append(out, rows...)
 		return nil
@@ -257,7 +245,7 @@ func reduce(rows Reducer, fn Func, groupLevel int, batchSize int, cb Callback) (
 	for i := 1; i < len(out); i++ {
 		key := truncateKey(out[i].FirstKey, groupLevel)
 		if reflect.DeepEqual(finalKey, key) {
-			return reduce(&out, fn, groupLevel, batchSize, cb)
+			return reduce(&out, fn, groupLevel, batchSize)
 		}
 	}
 

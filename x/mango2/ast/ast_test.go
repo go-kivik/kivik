@@ -13,13 +13,16 @@
 package ast
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"gitlab.com/flimzy/testy"
 )
 
-var cmpOpts = cmp.AllowUnexported(unarySelector{}, combinationSelector{}, conditionSelector{})
+var cmpOpts = []cmp.Option{
+	cmp.AllowUnexported(unarySelector{}, combinationSelector{}, conditionSelector{}),
+}
 
 func TestParse(t *testing.T) {
 	type test struct {
@@ -192,10 +195,25 @@ func TestParse(t *testing.T) {
 		input:   `{"foo": {"$mod": [0, 1]}}`,
 		wantErr: "$mod: divisor must be non-zero",
 	})
+	tests.Add("regex", test{
+		input: `{"foo": {"$regex": "^bar$"}}`,
+		want: &conditionSelector{
+			field: "foo",
+			op:    OpRegex,
+			value: regexp.MustCompile("^bar$"),
+		},
+	})
+	tests.Add("regexp non-string", test{
+		input:   `{"foo": {"$regex": 42}}`,
+		wantErr: "$regex: json: cannot unmarshal number into Go value of type string",
+	})
+	tests.Add("regexp invalid", test{
+		input:   `{"foo": {"$regex": "["}}`,
+		wantErr: "$regex: error parsing regexp: missing closing ]: `[`",
+	})
 
 	/*
 		TODO:
-		- $regex
 		- implicit $and
 		- $and
 		- $or
@@ -215,7 +233,7 @@ func TestParse(t *testing.T) {
 		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Fatalf("Unexpected error: %s", err)
 		}
-		if d := cmp.Diff(tt.want, got, cmpOpts); d != "" {
+		if d := cmp.Diff(tt.want, got, cmpOpts...); d != "" {
 			t.Errorf("Unexpected result (-want +got):\n%s", d)
 		}
 	})

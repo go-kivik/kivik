@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
 )
 
 // Parse parses s into a Mango Selector tree.
@@ -105,6 +106,16 @@ func opAndValue(input json.RawMessage) (Operator, interface{}, error) {
 					return "", nil, errors.New("$mod: divisor must be non-zero")
 				}
 				return OpMod, value, nil
+			case OpRegex:
+				var pattern string
+				if err := json.Unmarshal(v, &pattern); err != nil {
+					return "", nil, fmt.Errorf("%s: %w", k, err)
+				}
+				re, err := regexp.Compile(pattern)
+				if err != nil {
+					return "", nil, fmt.Errorf("%s: %w", k, err)
+				}
+				return OpRegex, re, nil
 			}
 			return "", nil, fmt.Errorf("invalid operator %s", k)
 		}

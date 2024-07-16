@@ -59,8 +59,7 @@ func Parse(input []byte) (Selector, error) {
 			if err != nil {
 				return nil, fmt.Errorf("%s: %w", k, err)
 			}
-			sels = append(sels, &unarySelector{
-				op:  op,
+			sels = append(sels, &notSelector{
 				sel: sel,
 			})
 		case OpEqual, OpLessThan, OpLessThanOrEqual, OpNotEqual,
@@ -70,8 +69,8 @@ func Parse(input []byte) (Selector, error) {
 				return nil, err
 			}
 			sels = append(sels, &conditionSelector{
-				op:    op,
-				value: value,
+				op:   op,
+				cond: value,
 			})
 		default:
 			if op[0] == '$' {
@@ -95,8 +94,8 @@ func Parse(input []byte) (Selector, error) {
 				sels = append(sels, &fieldSelector{
 					field: k,
 					cond: &conditionSelector{
-						op:    op,
-						value: value,
+						op:   op,
+						cond: value,
 					},
 				})
 			}
@@ -168,7 +167,7 @@ func opAndValue(input json.RawMessage) (Operator, interface{}, error) {
 				}
 				return OpSize, float64(value), nil
 			case OpMod:
-				var value [2]int
+				var value [2]int64
 				if err := json.Unmarshal(v, &value); err != nil {
 					return "", nil, fmt.Errorf("%s: %w", k, err)
 				}

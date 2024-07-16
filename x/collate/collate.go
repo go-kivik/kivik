@@ -28,6 +28,7 @@
 package collate
 
 import (
+	"sort"
 	"sync"
 
 	"golang.org/x/text/collate"
@@ -45,4 +46,80 @@ func CompareString(a, b string) int {
 	collatorMu.Lock()
 	defer collatorMu.Unlock()
 	return collator.CompareString(a, b)
+}
+
+// CompareObject compares two unmarshaled JSON objects. The function will panic
+// if it encounters an unexpected type. The comparison is performed recursively,
+// with keys sorted before comparison. The result will be 0 if a==b, -1 if a < b,
+// and +1 if a > b.
+func CompareObject(a, b interface{}) int {
+	aType := jsonTypeOf(a)
+	switch bType := jsonTypeOf(b); {
+	case aType < bType:
+		return -1
+	case aType > bType:
+		return 1
+	}
+
+	switch aType {
+	case jsonTypeBool:
+		aBool := a.(bool)
+		bBool := b.(bool)
+		if aBool == bBool {
+			return 0
+		}
+		// false before true
+		if !aBool {
+			return -1
+		}
+		return 1
+	case jsonTypeNumber:
+		return int(a.(float64) - b.(float64))
+	case jsonTypeString:
+		return CompareString(a.(string), b.(string))
+	case jsonTypeArray:
+		aArray := a.([]interface{})
+		bArray := b.([]interface{})
+		for i := 0; i < len(aArray) && i < len(bArray); i++ {
+			if cmp := CompareObject(aArray[i], bArray[i]); cmp != 0 {
+				return cmp
+			}
+		}
+		return len(aArray) - len(bArray)
+	case jsonTypeObject:
+		aObject := a.(map[string]interface{})
+		bObject := b.(map[string]interface{})
+		keyMap := make(map[string]struct{}, len(aObject))
+		for k := range aObject {
+			keyMap[k] = struct{}{}
+		}
+		for k := range bObject {
+			keyMap[k] = struct{}{}
+		}
+		keys := make([]string, 0, len(keyMap))
+		for k := range keyMap {
+			keys = append(keys, k)
+		}
+		sort.Slice(keys, func(i, j int) bool {
+			return CompareString(keys[i], keys[j]) < 0
+		})
+
+		for i, k := range keys {
+			av, aok := aObject[k]
+			if !aok {
+				return 1
+			}
+			bv, bok := bObject[k]
+			if !bok {
+				return -1
+			}
+			if cmp := CompareObject(av, bv); cmp != 0 {
+				return cmp
+			}
+			if i+1 == len(aObject) || i+1 == len(bObject) {
+				return len(aObject) - len(bObject)
+			}
+		}
+	}
+	panic("unexpected JSON type")
 }

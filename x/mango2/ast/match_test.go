@@ -700,10 +700,41 @@ func TestMatch(t *testing.T) {
 		},
 		want: false,
 	})
+	tests.Add("not", test{
+		sel: &unarySelector{
+			op: OpNot,
+			sel: &fieldSelector{
+				field: "foo",
+				cond: &conditionSelector{
+					op:   OpEqual,
+					cond: "bar",
+				},
+			},
+		},
+		doc: map[string]interface{}{
+			"foo": "baz",
+		},
+		want: true,
+	})
+	tests.Add("!not", test{
+		sel: &unarySelector{
+			op: OpNot,
+			sel: &fieldSelector{
+				field: "foo",
+				cond: &conditionSelector{
+					op:   OpEqual,
+					cond: "bar",
+				},
+			},
+		},
+		doc: map[string]interface{}{
+			"foo": "bar",
+		},
+		want: false,
+	})
 
 	/*
 		TODO:
-		$not
 		$nor
 	*/
 

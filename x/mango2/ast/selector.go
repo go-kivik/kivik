@@ -48,8 +48,12 @@ func (u *unarySelector) String() string {
 	return fmt.Sprintf("%s %s", u.op, u.sel)
 }
 
-func (u *unarySelector) Match(interface{}) bool {
-	panic("not implemented")
+func (u *unarySelector) Match(doc interface{}) bool {
+	switch u.op {
+	case OpNot:
+		return !u.sel.Match(doc)
+	}
+	panic("unimplemented")
 }
 
 type combinationSelector struct {

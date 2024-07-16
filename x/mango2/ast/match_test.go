@@ -648,10 +648,61 @@ func TestMatch(t *testing.T) {
 		},
 		want: false,
 	})
+	tests.Add("or", test{
+		sel: &combinationSelector{
+			op: OpOr,
+			sel: []Selector{
+				&fieldSelector{
+					field: "foo",
+					cond: &conditionSelector{
+						op:   OpEqual,
+						cond: "bar",
+					},
+				},
+				&fieldSelector{
+					field: "baz",
+					cond: &conditionSelector{
+						op:   OpEqual,
+						cond: "qux",
+					},
+				},
+			},
+		},
+		doc: map[string]interface{}{
+			"foo": "bar",
+			"baz": "quux",
+		},
+		want: true,
+	})
+	tests.Add("!or", test{
+		sel: &combinationSelector{
+			op: OpOr,
+			sel: []Selector{
+				&fieldSelector{
+					field: "foo",
+					cond: &conditionSelector{
+						op:   OpEqual,
+						cond: "bar",
+					},
+				},
+				&fieldSelector{
+					field: "baz",
+					cond: &conditionSelector{
+						op:   OpEqual,
+						cond: "qux",
+					},
+				},
+			},
+		},
+		doc: map[string]interface{}{
+			"foo": "baz",
+			"baz": "quux",
+		},
+		want: false,
+	})
 
 	/*
 		TODO:
-		$or
 		$not
 		$nor
 	*/

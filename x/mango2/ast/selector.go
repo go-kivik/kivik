@@ -90,6 +90,13 @@ func (c *combinationSelector) Match(doc interface{}) bool {
 			}
 		}
 		return true
+	case OpOr:
+		for _, sel := range c.sel {
+			if sel.Match(doc) {
+				return true
+			}
+		}
+		return false
 	}
 	panic("not implemented")
 }

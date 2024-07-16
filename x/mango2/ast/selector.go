@@ -81,7 +81,16 @@ func (c *combinationSelector) String() string {
 	return sb.String()
 }
 
-func (c *combinationSelector) Match(interface{}) bool {
+func (c *combinationSelector) Match(doc interface{}) bool {
+	switch c.op {
+	case OpAnd:
+		for _, sel := range c.sel {
+			if !sel.Match(doc) {
+				return false
+			}
+		}
+		return true
+	}
 	panic("not implemented")
 }
 

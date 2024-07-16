@@ -458,7 +458,7 @@ func TestMatch(t *testing.T) {
 	})
 	tests.Add("!elemMatch", test{
 		sel: &fieldSelector{
-			field: "foo",
+			field: "genre",
 			cond: &elementSelector{
 				op: OpElemMatch,
 				cond: &conditionSelector{
@@ -468,7 +468,7 @@ func TestMatch(t *testing.T) {
 			},
 		},
 		doc: map[string]interface{}{
-			"foo": []interface{}{
+			"genre": []interface{}{
 				"Comedy",
 			},
 		},
@@ -476,7 +476,7 @@ func TestMatch(t *testing.T) {
 	})
 	tests.Add("elemMatch, non-array", test{
 		sel: &fieldSelector{
-			field: "foo",
+			field: "genre",
 			cond: &elementSelector{
 				op: OpElemMatch,
 				cond: &conditionSelector{
@@ -486,14 +486,67 @@ func TestMatch(t *testing.T) {
 			},
 		},
 		doc: map[string]interface{}{
-			"foo": "bar",
+			"genre": "Comedy",
+		},
+		want: false,
+	})
+	tests.Add("allMatch", test{
+		sel: &fieldSelector{
+			field: "genre",
+			cond: &elementSelector{
+				op: OpAllMatch,
+				cond: &conditionSelector{
+					op:   OpEqual,
+					cond: "Horror",
+				},
+			},
+		},
+		doc: map[string]interface{}{
+			"genre": []interface{}{
+				"Horror",
+				"Horror",
+			},
+		},
+		want: true,
+	})
+	tests.Add("!allMatch", test{
+		sel: &fieldSelector{
+			field: "genre",
+			cond: &elementSelector{
+				op: OpAllMatch,
+				cond: &conditionSelector{
+					op:   OpEqual,
+					cond: "Horror",
+				},
+			},
+		},
+		doc: map[string]interface{}{
+			"genre": []interface{}{
+				"Horror",
+				"Comedy",
+			},
+		},
+		want: false,
+	})
+	tests.Add("allMatch, non-array", test{
+		sel: &fieldSelector{
+			field: "genre",
+			cond: &elementSelector{
+				op: OpAllMatch,
+				cond: &conditionSelector{
+					op:   OpEqual,
+					cond: "Horror",
+				},
+			},
+		},
+		doc: map[string]interface{}{
+			"genre": "Horror",
 		},
 		want: false,
 	})
 
 	/*
 		TODO:
-		$allMatch
 		$keyMapMatch
 		$and
 		$or

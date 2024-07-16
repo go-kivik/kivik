@@ -265,6 +265,17 @@ func (e *elementSelector) Match(doc interface{}) bool {
 			}
 		}
 		return false
+	case OpAllMatch:
+		array, ok := doc.([]interface{})
+		if !ok {
+			return false
+		}
+		for _, v := range array {
+			if !e.cond.Match(v) {
+				return false
+			}
+		}
+		return true
 	}
 	panic("unready")
 }

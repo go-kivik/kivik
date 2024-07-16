@@ -48,3 +48,58 @@ func TestCompareString(t *testing.T) {
 		t.Errorf("Unexpected result:\n%s", d)
 	}
 }
+
+func TestCompareObject(t *testing.T) {
+	want := []interface{}{
+		nil,
+		false,
+		true,
+
+		// then numbers
+		float64(1),
+		float64(2),
+		float64(3.0),
+		float64(4),
+
+		// then text, case sensitive
+		"a",
+		"A",
+		"aa",
+		"b",
+		"B",
+		"ba",
+		"bb",
+
+		// then arrays. compared element by element until different.
+		// Longer arrays sort after their prefixes
+		[]interface{}{"a"},
+		[]interface{}{"b"},
+		[]interface{}{"b", "c"},
+		[]interface{}{"b", "c", "a"},
+		[]interface{}{"b", "d"},
+		[]interface{}{"b", "d", "e"},
+
+		// then object, compares each key value in the list until different.
+		// larger objects sort after their subset objects.
+		map[string]interface{}{"a": float64(1)},
+		map[string]interface{}{"a": float64(2)},
+		map[string]interface{}{"b": float64(1)},
+		map[string]interface{}{"b": float64(2)},
+		// TODO: See #952
+		// map[string]interface{}{"b": float64(2), "a": float64(1)}, // Member order does matter for collation. CouchDB preserves member order but doesn't require that clients will. this test might fail if used with a js engine that doesn't preserve order.
+		map[string]interface{}{"b": float64(2), "c": float64(2)},
+	}
+
+	input := make([]interface{}, len(want))
+	copy(input, want)
+	// Shuffle the input
+	rand.Shuffle(len(input), func(i, j int) { input[i], input[j] = input[j], input[i] })
+
+	sort.Slice(input, func(i, j int) bool {
+		return CompareObject(input[i], input[j]) < 0
+	})
+
+	if d := cmp.Diff(want, input); d != "" {
+		t.Errorf("Unexpected result:\n%s", d)
+	}
+}

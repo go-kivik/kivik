@@ -20,6 +20,26 @@ import (
 	"sort"
 )
 
+// Selector represents a Mango Selector tree.
+type Selector struct {
+	root Node
+}
+
+// Match returns true if doc matches the selector.
+func (s *Selector) Match(doc interface{}) bool {
+	return s.root.Match(doc)
+}
+
+// UnmarshalJSON parses the JSON-encoded data and stores the result in s.
+func (s *Selector) UnmarshalJSON(data []byte) error {
+	node, err := Parse(data)
+	if err != nil {
+		return err
+	}
+	s.root = node
+	return nil
+}
+
 // Parse parses s into a Mango Selector tree.
 func Parse(input []byte) (Node, error) {
 	var tmp map[string]json.RawMessage

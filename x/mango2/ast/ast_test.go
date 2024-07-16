@@ -323,12 +323,29 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("$and with invalid selector", test{
 		input:   `{"$and": [42]}`,
-		wantErr: "$and: json: cannot unmarshal number into Go value of type map[string]json.RawMessag",
+		wantErr: "$and: json: cannot unmarshal number into Go value of type map[string]json.RawMessage",
+	})
+	tests.Add("$nor", test{
+		input: `{"$nor":[{"foo":"bar"},{"baz":"qux"}]}`,
+		want: &combinationSelector{
+			op: OpNor,
+			sel: []Selector{
+				&conditionSelector{
+					field: "foo",
+					op:    OpEqual,
+					value: "bar",
+				},
+				&conditionSelector{
+					field: "baz",
+					op:    OpEqual,
+					value: "qux",
+				},
+			},
+		},
 	})
 
 	/*
 		TODO:
-		- $nor
 		- $all
 		- $elemMatch
 		- $allMatch

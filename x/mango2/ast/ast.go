@@ -36,7 +36,7 @@ func Parse(input []byte) (Selector, error) {
 	sels := make([]Selector, 0, len(tmp))
 	for k, v := range tmp {
 		switch op := Operator(k); op {
-		case OpAnd, OpOr:
+		case OpAnd, OpOr, OpNor:
 			var sel []json.RawMessage
 			if err := json.Unmarshal(v, &sel); err != nil {
 				return nil, fmt.Errorf("%s: %w", k, err)

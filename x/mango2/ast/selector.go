@@ -252,8 +252,21 @@ func (e *elementSelector) String() string {
 	return fmt.Sprintf("%s {%s}", e.op, e.cond)
 }
 
-func (e *elementSelector) Match(interface{}) bool {
-	panic("not implemented")
+func (e *elementSelector) Match(doc interface{}) bool {
+	switch e.op {
+	case OpElemMatch:
+		array, ok := doc.([]interface{})
+		if !ok {
+			return false
+		}
+		for _, v := range array {
+			if e.cond.Match(v) {
+				return true
+			}
+		}
+		return false
+	}
+	panic("unready")
 }
 
 /*

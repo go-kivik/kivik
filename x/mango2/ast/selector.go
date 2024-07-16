@@ -29,31 +29,26 @@ type Selector interface {
 	Match(interface{}) bool
 }
 
-type unarySelector struct {
-	op  Operator
+type notSelector struct {
 	sel Selector
 }
 
-var _ Selector = (*unarySelector)(nil)
+var _ Selector = (*notSelector)(nil)
 
-func (u *unarySelector) Op() Operator {
-	return u.op
+func (*notSelector) Op() Operator {
+	return OpNot
 }
 
-func (u *unarySelector) Value() interface{} {
-	return u.sel
+func (n *notSelector) Value() interface{} {
+	return n.sel
 }
 
-func (u *unarySelector) String() string {
-	return fmt.Sprintf("%s %s", u.op, u.sel)
+func (n *notSelector) String() string {
+	return fmt.Sprintf("%s %s", OpNot, n.sel)
 }
 
-func (u *unarySelector) Match(doc interface{}) bool {
-	switch u.op {
-	case OpNot:
-		return !u.sel.Match(doc)
-	}
-	panic("unimplemented")
+func (n *notSelector) Match(doc interface{}) bool {
+	return !n.sel.Match(doc)
 }
 
 type combinationSelector struct {
@@ -357,8 +352,8 @@ func cmpSelectors(a, b Selector) int {
 		return c
 	}
 	switch t := a.(type) {
-	case *unarySelector:
-		u := b.(*unarySelector)
+	case *notSelector:
+		u := b.(*notSelector)
 		return cmpSelectors(t.sel, u.sel)
 	case *combinationSelector:
 		u := b.(*combinationSelector)

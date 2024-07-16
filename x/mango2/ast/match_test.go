@@ -701,8 +701,7 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("not", test{
-		sel: &unarySelector{
-			op: OpNot,
+		sel: &notSelector{
 			sel: &fieldSelector{
 				field: "foo",
 				cond: &conditionSelector{
@@ -717,8 +716,7 @@ func TestMatch(t *testing.T) {
 		want: true,
 	})
 	tests.Add("!not", test{
-		sel: &unarySelector{
-			op: OpNot,
+		sel: &notSelector{
 			sel: &fieldSelector{
 				field: "foo",
 				cond: &conditionSelector{

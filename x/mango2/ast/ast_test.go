@@ -21,7 +21,7 @@ import (
 )
 
 var cmpOpts = []cmp.Option{
-	cmp.AllowUnexported(unarySelector{}, combinationSelector{}, conditionSelector{}),
+	cmp.AllowUnexported(notSelector{}, combinationSelector{}, conditionSelector{}),
 }
 
 func TestParse(t *testing.T) {
@@ -356,8 +356,7 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("$not", test{
 		input: `{"$not": {"foo":"bar"}}`,
-		want: &unarySelector{
-			op: OpNot,
+		want: &notSelector{
 			sel: &fieldSelector{
 				field: "foo",
 				cond: &conditionSelector{

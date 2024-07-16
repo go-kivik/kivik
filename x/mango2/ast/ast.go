@@ -59,8 +59,7 @@ func Parse(input []byte) (Selector, error) {
 			if err != nil {
 				return nil, fmt.Errorf("%s: %w", k, err)
 			}
-			sels = append(sels, &unarySelector{
-				op:  op,
+			sels = append(sels, &notSelector{
 				sel: sel,
 			})
 		case OpEqual, OpLessThan, OpLessThanOrEqual, OpNotEqual,

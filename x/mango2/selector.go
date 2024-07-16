@@ -10,8 +10,8 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-// Package ast provides the abstract syntax tree for Mango selectors.
-package ast
+// Package mango provides a Mango query language parser and evaluator.
+package mango
 
 import (
 	"fmt"

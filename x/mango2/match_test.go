@@ -10,8 +10,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-// Package ast provides the abstract syntax tree for Mango selectors.
-package ast
+package mango
 
 import (
 	"regexp"

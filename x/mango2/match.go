@@ -10,8 +10,14 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-// Package mango2 provides support for parsing and executing Cloudant, CouchDB,
-// and PouchDB-style [Mango queries] against JSON documents.
-//
-// [Mango queries]: https://docs.couchdb.org/en/stable/api/database/find.html#find-selectors
-package mango2
+package mango
+
+// Match returns true if the selector matches the input document. doc is
+// expected to be the result of unmarshaling JSON to an empty interface. An
+// invalid document will cause Match to panic.
+func Match(sel Selector, doc interface{}) bool {
+	if sel == nil {
+		return true
+	}
+	return sel.Match(doc)
+}

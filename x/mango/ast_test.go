@@ -10,7 +10,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-package ast
+package mango
 
 import (
 	"regexp"
@@ -21,29 +21,29 @@ import (
 )
 
 var cmpOpts = []cmp.Option{
-	cmp.AllowUnexported(notSelector{}, combinationSelector{}, conditionSelector{}),
+	cmp.AllowUnexported(notNode{}, combinationNode{}, conditionNode{}),
 }
 
 func TestParse(t *testing.T) {
 	type test struct {
 		input   string
-		want    Selector
+		want    Node
 		wantErr string
 	}
 
 	tests := testy.NewTable()
 	tests.Add("empty", test{
 		input: "{}",
-		want: &combinationSelector{
+		want: &combinationNode{
 			op:  OpAnd,
 			sel: nil,
 		},
 	})
 	tests.Add("implicit equality", test{
 		input: `{"foo": "bar"}`,
-		want: &fieldSelector{
+		want: &fieldNode{
 			field: "foo",
-			cond: &conditionSelector{
+			cond: &conditionNode{
 				op:   OpEqual,
 				cond: "bar",
 			},
@@ -51,9 +51,9 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("explicit equality", test{
 		input: `{"foo": {"$eq": "bar"}}`,
-		want: &fieldSelector{
+		want: &fieldNode{
 			field: "foo",
-			cond: &conditionSelector{
+			cond: &conditionNode{
 				op:   OpEqual,
 				cond: "bar",
 			},
@@ -65,9 +65,9 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("implicit equality with empty object", test{
 		input: `{"foo": {}}`,
-		want: &fieldSelector{
+		want: &fieldNode{
 			field: "foo",
-			cond: &conditionSelector{
+			cond: &conditionNode{
 				op:   OpEqual,
 				cond: map[string]interface{}{},
 			},
@@ -79,9 +79,9 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("explicit equiality against object", test{
 		input: `{"foo": {"$eq": {"bar": "baz"}}}`,
-		want: &fieldSelector{
+		want: &fieldNode{
 			field: "foo",
-			cond: &conditionSelector{
+			cond: &conditionNode{
 				op:   OpEqual,
 				cond: map[string]interface{}{"bar": "baz"},
 			},
@@ -89,9 +89,9 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("less than", test{
 		input: `{"foo": {"$lt": 42}}`,
-		want: &fieldSelector{
+		want: &fieldNode{
 			field: "foo",
-			cond: &conditionSelector{
+			cond: &conditionNode{
 				op:   OpLessThan,
 				cond: float64(42),
 			},
@@ -99,9 +99,9 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("less than or equal", test{
 		input: `{"foo": {"$lte": 42}}`,
-		want: &fieldSelector{
+		want: &fieldNode{
 			field: "foo",
-			cond: &conditionSelector{
+			cond: &conditionNode{
 				op:   OpLessThanOrEqual,
 				cond: float64(42),
 			},
@@ -109,9 +109,9 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("not equal", test{
 		input: `{"foo": {"$ne": 42}}`,
-		want: &fieldSelector{
+		want: &fieldNode{
 			field: "foo",
-			cond: &conditionSelector{
+			cond: &conditionNode{
 				op:   OpNotEqual,
 				cond: float64(42),
 			},
@@ -119,9 +119,9 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("greater than", test{
 		input: `{"foo": {"$gt": 42}}`,
-		want: &fieldSelector{
+		want: &fieldNode{
 			field: "foo",
-			cond: &conditionSelector{
+			cond: &conditionNode{
 				op:   OpGreaterThan,
 				cond: float64(42),
 			},
@@ -129,9 +129,9 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("greater than or equal", test{
 		input: `{"foo": {"$gte": 42}}`,
-		want: &fieldSelector{
+		want: &fieldNode{
 			field: "foo",
-			cond: &conditionSelector{
+			cond: &conditionNode{
 				op:   OpGreaterThanOrEqual,
 				cond: float64(42),
 			},
@@ -139,9 +139,9 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("exists", test{
 		input: `{"foo": {"$exists": true}}`,
-		want: &fieldSelector{
+		want: &fieldNode{
 			field: "foo",
-			cond: &conditionSelector{
+			cond: &conditionNode{
 				op:   OpExists,
 				cond: true,
 			},
@@ -153,9 +153,9 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("type", test{
 		input: `{"foo": {"$type": "string"}}`,
-		want: &fieldSelector{
+		want: &fieldNode{
 			field: "foo",
-			cond: &conditionSelector{
+			cond: &conditionNode{
 				op:   OpType,
 				cond: "string",
 			},
@@ -167,9 +167,9 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("in", test{
 		input: `{"foo": {"$in": [1, 2, 3]}}`,
-		want: &fieldSelector{
+		want: &fieldNode{
 			field: "foo",
-			cond: &conditionSelector{
+			cond: &conditionNode{
 				op:   OpIn,
 				cond: []interface{}{float64(1), float64(2), float64(3)},
 			},
@@ -181,9 +181,9 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("not in", test{
 		input: `{"foo": {"$nin": [1, 2, 3]}}`,
-		want: &fieldSelector{
+		want: &fieldNode{
 			field: "foo",
-			cond: &conditionSelector{
+			cond: &conditionNode{
 				op:   OpNotIn,
 				cond: []interface{}{float64(1), float64(2), float64(3)},
 			},
@@ -195,9 +195,9 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("size", test{
 		input: `{"foo": {"$size": 42}}`,
-		want: &fieldSelector{
+		want: &fieldNode{
 			field: "foo",
-			cond: &conditionSelector{
+			cond: &conditionNode{
 				op:   OpSize,
 				cond: float64(42),
 			},
@@ -209,9 +209,9 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("mod", test{
 		input: `{"foo": {"$mod": [2, 1]}}`,
-		want: &fieldSelector{
+		want: &fieldNode{
 			field: "foo",
-			cond: &conditionSelector{
+			cond: &conditionNode{
 				op:   OpMod,
 				cond: [2]int64{2, 1},
 			},
@@ -227,9 +227,9 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("regex", test{
 		input: `{"foo": {"$regex": "^bar$"}}`,
-		want: &fieldSelector{
+		want: &fieldNode{
 			field: "foo",
-			cond: &conditionSelector{
+			cond: &conditionNode{
 				op:   OpRegex,
 				cond: regexp.MustCompile("^bar$"),
 			},
@@ -245,19 +245,19 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("implicit $and", test{
 		input: `{"foo":"bar","baz":"qux"}`,
-		want: &combinationSelector{
+		want: &combinationNode{
 			op: OpAnd,
-			sel: []Selector{
-				&fieldSelector{
+			sel: []Node{
+				&fieldNode{
 					field: "baz",
-					cond: &conditionSelector{
+					cond: &conditionNode{
 						op:   OpEqual,
 						cond: "qux",
 					},
 				},
-				&fieldSelector{
+				&fieldNode{
 					field: "foo",
-					cond: &conditionSelector{
+					cond: &conditionNode{
 						op:   OpEqual,
 						cond: "bar",
 					},
@@ -267,19 +267,19 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("explicit $and", test{
 		input: `{"$and":[{"foo":"bar"},{"baz":"qux"}]}`,
-		want: &combinationSelector{
+		want: &combinationNode{
 			op: OpAnd,
-			sel: []Selector{
-				&fieldSelector{
+			sel: []Node{
+				&fieldNode{
 					field: "foo",
-					cond: &conditionSelector{
+					cond: &conditionNode{
 						op:   OpEqual,
 						cond: "bar",
 					},
 				},
-				&fieldSelector{
+				&fieldNode{
 					field: "baz",
-					cond: &conditionSelector{
+					cond: &conditionNode{
 						op:   OpEqual,
 						cond: "qux",
 					},
@@ -289,36 +289,36 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("nested implicit and explicit $and", test{
 		input: `{"$and":[{"foo":"bar"},{"baz":"qux"}, {"quux":"corge","grault":"garply"}]}`,
-		want: &combinationSelector{
+		want: &combinationNode{
 			op: OpAnd,
-			sel: []Selector{
-				&fieldSelector{
+			sel: []Node{
+				&fieldNode{
 					field: "foo",
-					cond: &conditionSelector{
+					cond: &conditionNode{
 						op:   OpEqual,
 						cond: "bar",
 					},
 				},
-				&fieldSelector{
+				&fieldNode{
 					field: "baz",
-					cond: &conditionSelector{
+					cond: &conditionNode{
 						op:   OpEqual,
 						cond: "qux",
 					},
 				},
-				&combinationSelector{
+				&combinationNode{
 					op: OpAnd,
-					sel: []Selector{
-						&fieldSelector{
+					sel: []Node{
+						&fieldNode{
 							field: "grault",
-							cond: &conditionSelector{
+							cond: &conditionNode{
 								op:   OpEqual,
 								cond: "garply",
 							},
 						},
-						&fieldSelector{
+						&fieldNode{
 							field: "quux",
-							cond: &conditionSelector{
+							cond: &conditionNode{
 								op:   OpEqual,
 								cond: "corge",
 							},
@@ -330,19 +330,19 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("$or", test{
 		input: `{"$or":[{"foo":"bar"},{"baz":"qux"}]}`,
-		want: &combinationSelector{
+		want: &combinationNode{
 			op: OpOr,
-			sel: []Selector{
-				&fieldSelector{
+			sel: []Node{
+				&fieldNode{
 					field: "foo",
-					cond: &conditionSelector{
+					cond: &conditionNode{
 						op:   OpEqual,
 						cond: "bar",
 					},
 				},
-				&fieldSelector{
+				&fieldNode{
 					field: "baz",
-					cond: &conditionSelector{
+					cond: &conditionNode{
 						op:   OpEqual,
 						cond: "qux",
 					},
@@ -356,10 +356,10 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("$not", test{
 		input: `{"$not": {"foo":"bar"}}`,
-		want: &notSelector{
-			sel: &fieldSelector{
+		want: &notNode{
+			sel: &fieldNode{
 				field: "foo",
-				cond: &conditionSelector{
+				cond: &conditionNode{
 					op:   OpEqual,
 					cond: "bar",
 				},
@@ -380,19 +380,19 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("$nor", test{
 		input: `{"$nor":[{"foo":"bar"},{"baz":"qux"}]}`,
-		want: &combinationSelector{
+		want: &combinationNode{
 			op: OpNor,
-			sel: []Selector{
-				&fieldSelector{
+			sel: []Node{
+				&fieldNode{
 					field: "foo",
-					cond: &conditionSelector{
+					cond: &conditionNode{
 						op:   OpEqual,
 						cond: "bar",
 					},
 				},
-				&fieldSelector{
+				&fieldNode{
 					field: "baz",
-					cond: &conditionSelector{
+					cond: &conditionNode{
 						op:   OpEqual,
 						cond: "qux",
 					},
@@ -402,9 +402,9 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("$all", test{
 		input: `{"foo": {"$all": ["bar", "baz"]}}`,
-		want: &fieldSelector{
+		want: &fieldNode{
 			field: "foo",
-			cond: &conditionSelector{
+			cond: &conditionNode{
 				op:   OpAll,
 				cond: []interface{}{"bar", "baz"},
 			},
@@ -416,11 +416,11 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("$elemMatch", test{
 		input: `{"genre": {"$elemMatch": {"$eq": "Horror"}}}`,
-		want: &fieldSelector{
+		want: &fieldNode{
 			field: "genre",
-			cond: &elementSelector{
+			cond: &elementNode{
 				op: OpElemMatch,
-				cond: &conditionSelector{
+				cond: &conditionNode{
 					op:   OpEqual,
 					cond: "Horror",
 				},
@@ -429,11 +429,11 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("$allMatch", test{
 		input: `{"genre": {"$allMatch": {"$eq": "Horror"}}}`,
-		want: &fieldSelector{
+		want: &fieldNode{
 			field: "genre",
-			cond: &elementSelector{
+			cond: &elementNode{
 				op: OpAllMatch,
-				cond: &conditionSelector{
+				cond: &conditionNode{
 					op:   OpEqual,
 					cond: "Horror",
 				},
@@ -442,11 +442,11 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("$keyMapMatch", test{
 		input: `{"cameras": {"$keyMapMatch": {"$eq": "secondary"}}}`,
-		want: &fieldSelector{
+		want: &fieldNode{
 			field: "cameras",
-			cond: &elementSelector{
+			cond: &elementNode{
 				op: OpKeyMapMatch,
-				cond: &conditionSelector{
+				cond: &conditionNode{
 					op:   OpEqual,
 					cond: "secondary",
 				},

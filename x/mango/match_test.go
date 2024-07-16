@@ -10,8 +10,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-// Package ast provides the abstract syntax tree for Mango selectors.
-package ast
+package mango
 
 import (
 	"regexp"
@@ -22,7 +21,7 @@ import (
 
 func TestMatch(t *testing.T) {
 	type test struct {
-		sel  Selector
+		sel  Node
 		doc  interface{}
 		want bool
 	}
@@ -34,7 +33,7 @@ func TestMatch(t *testing.T) {
 		want: true,
 	})
 	tests.Add("equality", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpEqual,
 			cond: "foo",
 		},
@@ -42,7 +41,7 @@ func TestMatch(t *testing.T) {
 		want: true,
 	})
 	tests.Add("!equality", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpEqual,
 			cond: "foo",
 		},
@@ -50,7 +49,7 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("inequality", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpNotEqual,
 			cond: "foo",
 		},
@@ -58,7 +57,7 @@ func TestMatch(t *testing.T) {
 		want: true,
 	})
 	tests.Add("!inequality", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpNotEqual,
 			cond: "foo",
 		},
@@ -66,7 +65,7 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("less than", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpLessThan,
 			cond: float64(5),
 		},
@@ -74,7 +73,7 @@ func TestMatch(t *testing.T) {
 		want: true,
 	})
 	tests.Add("!less than", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpLessThan,
 			cond: float64(5),
 		},
@@ -82,7 +81,7 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("less than or equal", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpLessThanOrEqual,
 			cond: float64(5),
 		},
@@ -90,7 +89,7 @@ func TestMatch(t *testing.T) {
 		want: true,
 	})
 	tests.Add("!less than or equal", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpLessThanOrEqual,
 			cond: float64(5),
 		},
@@ -98,7 +97,7 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("greater than", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpGreaterThan,
 			cond: float64(5),
 		},
@@ -106,7 +105,7 @@ func TestMatch(t *testing.T) {
 		want: true,
 	})
 	tests.Add("!greater than", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpGreaterThan,
 			cond: float64(5),
 		},
@@ -114,7 +113,7 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("greater than or equal", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpGreaterThanOrEqual,
 			cond: float64(5),
 		},
@@ -122,7 +121,7 @@ func TestMatch(t *testing.T) {
 		want: true,
 	})
 	tests.Add("!greater than or equal", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpGreaterThanOrEqual,
 			cond: float64(5),
 		},
@@ -130,7 +129,7 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("exists", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpExists,
 			cond: true,
 		},
@@ -138,7 +137,7 @@ func TestMatch(t *testing.T) {
 		want: true,
 	})
 	tests.Add("!exists", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpExists,
 			cond: false,
 		},
@@ -146,7 +145,7 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("not exists", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpExists,
 			cond: false,
 		},
@@ -154,7 +153,7 @@ func TestMatch(t *testing.T) {
 		want: true,
 	})
 	tests.Add("!not exists", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpExists,
 			cond: true,
 		},
@@ -162,7 +161,7 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("type, null", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpType,
 			cond: "null",
 		},
@@ -170,7 +169,7 @@ func TestMatch(t *testing.T) {
 		want: true,
 	})
 	tests.Add("!type, null", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpType,
 			cond: "null",
 		},
@@ -178,7 +177,7 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("type, boolean", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpType,
 			cond: "boolean",
 		},
@@ -186,7 +185,7 @@ func TestMatch(t *testing.T) {
 		want: true,
 	})
 	tests.Add("!type, boolean", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpType,
 			cond: "boolean",
 		},
@@ -194,7 +193,7 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("type, number", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpType,
 			cond: "number",
 		},
@@ -202,7 +201,7 @@ func TestMatch(t *testing.T) {
 		want: true,
 	})
 	tests.Add("!type, number", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpType,
 			cond: "number",
 		},
@@ -210,7 +209,7 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("type, string", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpType,
 			cond: "string",
 		},
@@ -218,7 +217,7 @@ func TestMatch(t *testing.T) {
 		want: true,
 	})
 	tests.Add("!type, string", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpType,
 			cond: "string",
 		},
@@ -226,7 +225,7 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("type, array", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpType,
 			cond: "array",
 		},
@@ -234,7 +233,7 @@ func TestMatch(t *testing.T) {
 		want: true,
 	})
 	tests.Add("!type, array", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpType,
 			cond: "array",
 		},
@@ -242,7 +241,7 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("type, object", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpType,
 			cond: "object",
 		},
@@ -250,7 +249,7 @@ func TestMatch(t *testing.T) {
 		want: true,
 	})
 	tests.Add("!type, object", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpType,
 			cond: "object",
 		},
@@ -258,7 +257,7 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("in", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpIn,
 			cond: []interface{}{"foo", "bar"},
 		},
@@ -266,7 +265,7 @@ func TestMatch(t *testing.T) {
 		want: true,
 	})
 	tests.Add("!in", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpIn,
 			cond: []interface{}{"foo", "bar"},
 		},
@@ -274,7 +273,7 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("not in", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpNotIn,
 			cond: []interface{}{"foo", "bar"},
 		},
@@ -282,7 +281,7 @@ func TestMatch(t *testing.T) {
 		want: true,
 	})
 	tests.Add("!not in", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpNotIn,
 			cond: []interface{}{"foo", "bar"},
 		},
@@ -290,7 +289,7 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("size", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpSize,
 			cond: float64(3),
 		},
@@ -298,7 +297,7 @@ func TestMatch(t *testing.T) {
 		want: true,
 	})
 	tests.Add("!size", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpSize,
 			cond: float64(3),
 		},
@@ -306,7 +305,7 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("size, non-array", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpSize,
 			cond: float64(3),
 		},
@@ -314,7 +313,7 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("mod", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpMod,
 			cond: [2]int64{3, 2},
 		},
@@ -322,7 +321,7 @@ func TestMatch(t *testing.T) {
 		want: true,
 	})
 	tests.Add("!mod", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpMod,
 			cond: [2]int64{3, 2},
 		},
@@ -330,7 +329,7 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("mod, non-integer", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpMod,
 			cond: [2]int64{3, 2},
 		},
@@ -338,7 +337,7 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("mod, non-number", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpMod,
 			cond: [2]int64{3, 2},
 		},
@@ -346,7 +345,7 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("regex", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpRegex,
 			cond: regexp.MustCompile("^foo$"),
 		},
@@ -354,7 +353,7 @@ func TestMatch(t *testing.T) {
 		want: true,
 	})
 	tests.Add("!regex", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpRegex,
 			cond: regexp.MustCompile("^foo$"),
 		},
@@ -362,7 +361,7 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("regexp, non-string", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpRegex,
 			cond: regexp.MustCompile("^foo$"),
 		},
@@ -370,7 +369,7 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("all", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpAll,
 			cond: []interface{}{"Comedy", "Short"},
 		},
@@ -382,7 +381,7 @@ func TestMatch(t *testing.T) {
 		want: true,
 	})
 	tests.Add("!all", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpAll,
 			cond: []interface{}{"Comedy", "Short"},
 		},
@@ -393,7 +392,7 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("all, non-array", test{
-		sel: &conditionSelector{
+		sel: &conditionNode{
 			op:   OpAll,
 			cond: []interface{}{"Comedy", "Short"},
 		},
@@ -401,9 +400,9 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("field selector", test{
-		sel: &fieldSelector{
+		sel: &fieldNode{
 			field: "foo",
-			cond: &conditionSelector{
+			cond: &conditionNode{
 				op:   OpEqual,
 				cond: "bar",
 			},
@@ -414,9 +413,9 @@ func TestMatch(t *testing.T) {
 		want: true,
 	})
 	tests.Add("!field selector", test{
-		sel: &fieldSelector{
+		sel: &fieldNode{
 			field: "asdf",
-			cond: &conditionSelector{
+			cond: &conditionNode{
 				op:   OpEqual,
 				cond: "foo",
 			},
@@ -427,9 +426,9 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("field selector, non-object", test{
-		sel: &fieldSelector{
+		sel: &fieldNode{
 			field: "foo",
-			cond: &conditionSelector{
+			cond: &conditionNode{
 				op:   OpEqual,
 				cond: "bar",
 			},
@@ -438,11 +437,11 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("elemMatch", test{
-		sel: &fieldSelector{
+		sel: &fieldNode{
 			field: "foo",
-			cond: &elementSelector{
+			cond: &elementNode{
 				op: OpElemMatch,
-				cond: &conditionSelector{
+				cond: &conditionNode{
 					op:   OpEqual,
 					cond: "Horror",
 				},
@@ -457,11 +456,11 @@ func TestMatch(t *testing.T) {
 		want: true,
 	})
 	tests.Add("!elemMatch", test{
-		sel: &fieldSelector{
+		sel: &fieldNode{
 			field: "genre",
-			cond: &elementSelector{
+			cond: &elementNode{
 				op: OpElemMatch,
-				cond: &conditionSelector{
+				cond: &conditionNode{
 					op:   OpEqual,
 					cond: "Horror",
 				},
@@ -475,11 +474,11 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("elemMatch, non-array", test{
-		sel: &fieldSelector{
+		sel: &fieldNode{
 			field: "genre",
-			cond: &elementSelector{
+			cond: &elementNode{
 				op: OpElemMatch,
-				cond: &conditionSelector{
+				cond: &conditionNode{
 					op:   OpEqual,
 					cond: "Horror",
 				},
@@ -491,11 +490,11 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("allMatch", test{
-		sel: &fieldSelector{
+		sel: &fieldNode{
 			field: "genre",
-			cond: &elementSelector{
+			cond: &elementNode{
 				op: OpAllMatch,
-				cond: &conditionSelector{
+				cond: &conditionNode{
 					op:   OpEqual,
 					cond: "Horror",
 				},
@@ -510,11 +509,11 @@ func TestMatch(t *testing.T) {
 		want: true,
 	})
 	tests.Add("!allMatch", test{
-		sel: &fieldSelector{
+		sel: &fieldNode{
 			field: "genre",
-			cond: &elementSelector{
+			cond: &elementNode{
 				op: OpAllMatch,
-				cond: &conditionSelector{
+				cond: &conditionNode{
 					op:   OpEqual,
 					cond: "Horror",
 				},
@@ -529,11 +528,11 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("allMatch, non-array", test{
-		sel: &fieldSelector{
+		sel: &fieldNode{
 			field: "genre",
-			cond: &elementSelector{
+			cond: &elementNode{
 				op: OpAllMatch,
-				cond: &conditionSelector{
+				cond: &conditionNode{
 					op:   OpEqual,
 					cond: "Horror",
 				},
@@ -545,11 +544,11 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("keyMapMatch", test{
-		sel: &fieldSelector{
+		sel: &fieldNode{
 			field: "cameras",
-			cond: &elementSelector{
+			cond: &elementNode{
 				op: OpKeyMapMatch,
-				cond: &conditionSelector{
+				cond: &conditionNode{
 					op:   OpEqual,
 					cond: "secondary",
 				},
@@ -564,11 +563,11 @@ func TestMatch(t *testing.T) {
 		want: true,
 	})
 	tests.Add("!keyMapMatch", test{
-		sel: &fieldSelector{
+		sel: &fieldNode{
 			field: "cameras",
-			cond: &elementSelector{
+			cond: &elementNode{
 				op: OpKeyMapMatch,
-				cond: &conditionSelector{
+				cond: &conditionNode{
 					op:   OpEqual,
 					cond: "secondary",
 				},
@@ -582,11 +581,11 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("keyMapMatch, non-object", test{
-		sel: &fieldSelector{
+		sel: &fieldNode{
 			field: "cameras",
-			cond: &elementSelector{
+			cond: &elementNode{
 				op: OpKeyMapMatch,
-				cond: &conditionSelector{
+				cond: &conditionNode{
 					op:   OpEqual,
 					cond: "secondary",
 				},
@@ -598,19 +597,19 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("and", test{
-		sel: &combinationSelector{
+		sel: &combinationNode{
 			op: OpAnd,
-			sel: []Selector{
-				&fieldSelector{
+			sel: []Node{
+				&fieldNode{
 					field: "foo",
-					cond: &conditionSelector{
+					cond: &conditionNode{
 						op:   OpEqual,
 						cond: "bar",
 					},
 				},
-				&fieldSelector{
+				&fieldNode{
 					field: "baz",
-					cond: &conditionSelector{
+					cond: &conditionNode{
 						op:   OpEqual,
 						cond: "qux",
 					},
@@ -624,19 +623,19 @@ func TestMatch(t *testing.T) {
 		want: true,
 	})
 	tests.Add("!and", test{
-		sel: &combinationSelector{
+		sel: &combinationNode{
 			op: OpAnd,
-			sel: []Selector{
-				&fieldSelector{
+			sel: []Node{
+				&fieldNode{
 					field: "foo",
-					cond: &conditionSelector{
+					cond: &conditionNode{
 						op:   OpEqual,
 						cond: "bar",
 					},
 				},
-				&fieldSelector{
+				&fieldNode{
 					field: "baz",
-					cond: &conditionSelector{
+					cond: &conditionNode{
 						op:   OpEqual,
 						cond: "qux",
 					},
@@ -649,19 +648,19 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("or", test{
-		sel: &combinationSelector{
+		sel: &combinationNode{
 			op: OpOr,
-			sel: []Selector{
-				&fieldSelector{
+			sel: []Node{
+				&fieldNode{
 					field: "foo",
-					cond: &conditionSelector{
+					cond: &conditionNode{
 						op:   OpEqual,
 						cond: "bar",
 					},
 				},
-				&fieldSelector{
+				&fieldNode{
 					field: "baz",
-					cond: &conditionSelector{
+					cond: &conditionNode{
 						op:   OpEqual,
 						cond: "qux",
 					},
@@ -675,19 +674,19 @@ func TestMatch(t *testing.T) {
 		want: true,
 	})
 	tests.Add("!or", test{
-		sel: &combinationSelector{
+		sel: &combinationNode{
 			op: OpOr,
-			sel: []Selector{
-				&fieldSelector{
+			sel: []Node{
+				&fieldNode{
 					field: "foo",
-					cond: &conditionSelector{
+					cond: &conditionNode{
 						op:   OpEqual,
 						cond: "bar",
 					},
 				},
-				&fieldSelector{
+				&fieldNode{
 					field: "baz",
-					cond: &conditionSelector{
+					cond: &conditionNode{
 						op:   OpEqual,
 						cond: "qux",
 					},
@@ -701,10 +700,10 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("not", test{
-		sel: &notSelector{
-			sel: &fieldSelector{
+		sel: &notNode{
+			sel: &fieldNode{
 				field: "foo",
-				cond: &conditionSelector{
+				cond: &conditionNode{
 					op:   OpEqual,
 					cond: "bar",
 				},
@@ -716,10 +715,10 @@ func TestMatch(t *testing.T) {
 		want: true,
 	})
 	tests.Add("!not", test{
-		sel: &notSelector{
-			sel: &fieldSelector{
+		sel: &notNode{
+			sel: &fieldNode{
 				field: "foo",
-				cond: &conditionSelector{
+				cond: &conditionNode{
 					op:   OpEqual,
 					cond: "bar",
 				},
@@ -731,19 +730,19 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("nor", test{
-		sel: &combinationSelector{
+		sel: &combinationNode{
 			op: OpNor,
-			sel: []Selector{
-				&fieldSelector{
+			sel: []Node{
+				&fieldNode{
 					field: "foo",
-					cond: &conditionSelector{
+					cond: &conditionNode{
 						op:   OpEqual,
 						cond: "bar",
 					},
 				},
-				&fieldSelector{
+				&fieldNode{
 					field: "baz",
-					cond: &conditionSelector{
+					cond: &conditionNode{
 						op:   OpEqual,
 						cond: "qux",
 					},
@@ -757,19 +756,19 @@ func TestMatch(t *testing.T) {
 		want: true,
 	})
 	tests.Add("!nor", test{
-		sel: &combinationSelector{
+		sel: &combinationNode{
 			op: OpNor,
-			sel: []Selector{
-				&fieldSelector{
+			sel: []Node{
+				&fieldNode{
 					field: "foo",
-					cond: &conditionSelector{
+					cond: &conditionNode{
 						op:   OpEqual,
 						cond: "bar",
 					},
 				},
-				&fieldSelector{
+				&fieldNode{
 					field: "baz",
-					cond: &conditionSelector{
+					cond: &conditionNode{
 						op:   OpEqual,
 						cond: "qux",
 					},

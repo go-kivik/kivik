@@ -14,144 +14,214 @@ package mango
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
-
-	"github.com/go-kivik/kivik/v4/x/mango/collate"
+	"regexp"
+	"sort"
 )
 
-// Selector represents a CouchDB Find query selector. See
-// http://docs.couchdb.org/en/2.0.0/api/database/find.html#find-selectors
+// Selector represents a Mango Selector tree.
 type Selector struct {
-	op    operator
-	field string
-	value interface{}
-	sel   []Selector
+	root Node
 }
 
-// New returns a new selector, parsed from data.
-func New(data string) (*Selector, error) {
-	s := &Selector{}
-	err := json.Unmarshal([]byte(data), &s)
-	return s, err
+// Match returns true if doc matches the selector.
+func (s *Selector) Match(doc interface{}) bool {
+	return s.root.Match(doc)
 }
 
-// UnmarshalJSON unmarshals a JSON selector as described in the CouchDB
-// documentation.
-// http://docs.couchdb.org/en/2.0.0/api/database/find.html#selector-syntax
+// UnmarshalJSON parses the JSON-encoded data and stores the result in s.
 func (s *Selector) UnmarshalJSON(data []byte) error {
-	var x map[string]json.RawMessage
-	if err := json.Unmarshal(data, &x); err != nil {
+	node, err := Parse(data)
+	if err != nil {
 		return err
 	}
-	if len(x) == 0 {
-		return nil
-	}
-	sels := make([]Selector, 0, len(x))
-	for k, v := range x {
-		var sel Selector
-		sel.field = k
-		switch v[0] {
-		case '{':
-			var err error
-			sel.op, sel.value, err = opObjectPattern(v)
-			if err != nil {
-				return err
-			}
-		case '[':
-			sel.op = operator(k)
-			if err := json.Unmarshal(v, &sel.sel); err != nil {
-				return err
-			}
-		}
-		if sel.op == "" {
-			sel.op = opEq
-			if err := json.Unmarshal(v, &sel.value); err != nil {
-				return err
-			}
-		}
-		sels = append(sels, sel)
-	}
-	if len(sels) == 1 {
-		*s = sels[0]
-	} else {
-		*s = Selector{
-			op:  opAnd,
-			sel: sels,
-		}
-	}
+	s.root = node
 	return nil
 }
 
-func opObjectPattern(data []byte) (op operator, value interface{}, err error) {
-	var x map[operator]json.RawMessage
-	if err := json.Unmarshal(data, &x); err != nil {
-		return operator(""), nil, err
+// Parse parses s into a Mango Selector tree.
+func Parse(input []byte) (Node, error) {
+	var tmp map[string]json.RawMessage
+	if err := json.Unmarshal(input, &tmp); err != nil {
+		return nil, err
 	}
-	if len(x) != 1 {
-		panic("got more than one result")
+	if len(tmp) == 0 {
+		// Empty object is an implicit $and
+		return &combinationNode{
+			op:  OpAnd,
+			sel: nil,
+		}, nil
 	}
-	for k, v := range x {
-		switch k {
-		case opEq, opNE, opLT, opLTE, opGT, opGTE:
-			var value interface{}
-			err := json.Unmarshal(v, &value)
-			return k, value, err
-		default:
-			if len(k) > 0 && k[0] == '$' {
-				return "", nil, fmt.Errorf("unknown mango operator '%s'", k)
+	sels := make([]Node, 0, len(tmp))
+	for k, v := range tmp {
+		switch op := Operator(k); op {
+		case OpAnd, OpOr, OpNor:
+			var sel []json.RawMessage
+			if err := json.Unmarshal(v, &sel); err != nil {
+				return nil, fmt.Errorf("%s: %w", k, err)
 			}
-			return opNone, v, nil
+			subsels := make([]Node, 0, len(sel))
+			for _, s := range sel {
+				sel, err := Parse(s)
+				if err != nil {
+					return nil, fmt.Errorf("%s: %w", k, err)
+				}
+				subsels = append(subsels, sel)
+			}
+
+			sels = append(sels, &combinationNode{
+				op:  op,
+				sel: subsels,
+			})
+		case OpNot:
+			sel, err := Parse(v)
+			if err != nil {
+				return nil, fmt.Errorf("%s: %w", k, err)
+			}
+			sels = append(sels, &notNode{
+				sel: sel,
+			})
+		case OpEqual, OpLessThan, OpLessThanOrEqual, OpNotEqual,
+			OpGreaterThan, OpGreaterThanOrEqual:
+			op, value, err := opAndValue(v)
+			if err != nil {
+				return nil, err
+			}
+			sels = append(sels, &conditionNode{
+				op:   op,
+				cond: value,
+			})
+		default:
+			if op[0] == '$' {
+				return nil, fmt.Errorf("unknown operator %s", op)
+			}
+			op, value, err := opAndValue(v)
+			if err != nil {
+				return nil, err
+			}
+
+			switch op {
+			case OpElemMatch, OpAllMatch, OpKeyMapMatch:
+				sels = append(sels, &fieldNode{
+					field: k,
+					cond: &elementNode{
+						op:   op,
+						cond: value.(*conditionNode),
+					},
+				})
+			default:
+				sels = append(sels, &fieldNode{
+					field: k,
+					cond: &conditionNode{
+						op:   op,
+						cond: value,
+					},
+				})
+			}
 		}
 	}
-	return opNone, nil, nil
+	if len(sels) == 1 {
+		return sels[0], nil
+	}
+
+	// Sort the selectors to ensure deterministic output.
+	sort.Slice(sels, func(i, j int) bool {
+		return cmpSelectors(sels[i], sels[j]) < 0
+	})
+
+	return &combinationNode{
+		op:  OpAnd,
+		sel: sels,
+	}, nil
 }
 
-type couchDoc map[string]interface{}
-
-// Matches returns true if the provided doc matches the selector.
-func (s *Selector) Matches(doc couchDoc) (bool, error) {
-	c := &collate.Raw{}
-	switch s.op {
-	case opNone:
-		return true, nil
-	case opEq, opGT, opGTE, opLT, opLTE:
-		v, ok := doc[s.field]
-		if !ok {
-			return false, nil
+// opAndValue is called when the input is an object in a context where a
+// comparison operator is expected. It returns the operator and value,
+// defaulting to [OpEqual] if no operator is specified.
+func opAndValue(input json.RawMessage) (Operator, interface{}, error) {
+	if input[0] != '{' {
+		var value interface{}
+		if err := json.Unmarshal(input, &value); err != nil {
+			return "", nil, err
 		}
-		switch s.op {
-		case opEq:
-			return c.Eq(v, s.value), nil
-		case opGT:
-			return c.GT(v, s.value), nil
-		case opGTE:
-			return c.GTE(v, s.value), nil
-		case opLT:
-			return c.LT(v, s.value), nil
-		case opLTE:
-			return c.LTE(v, s.value), nil
-		}
-	case opAnd:
-		for _, sel := range s.sel {
-			match, err := sel.Matches(doc)
-			if err != nil || !match {
-				return match, err
-			}
-		}
-		return true, nil
-	case opOr:
-		for _, sel := range s.sel {
-			match, err := sel.Matches(doc)
-			if err != nil {
-				return false, err
-			}
-			if match {
-				return true, nil
-			}
-		}
-		return false, nil
-	default:
-		return false, fmt.Errorf("unknown mango operator '%s'", s.op)
+		return OpEqual, value, nil
 	}
-	return true, nil
+	var tmp map[string]json.RawMessage
+	if err := json.Unmarshal(input, &tmp); err != nil {
+		return "", nil, err
+	}
+	switch len(tmp) {
+	case 0:
+		return OpEqual, map[string]interface{}{}, nil
+	case 1:
+		for k, v := range tmp {
+			switch op := Operator(k); op {
+			case OpEqual, OpLessThan, OpLessThanOrEqual, OpNotEqual,
+				OpGreaterThan, OpGreaterThanOrEqual:
+				var value interface{}
+				err := json.Unmarshal(v, &value)
+				return op, value, err
+			case OpExists:
+				var value bool
+				if err := json.Unmarshal(v, &value); err != nil {
+					return "", nil, fmt.Errorf("%s: %w", k, err)
+				}
+				return OpExists, value, nil
+			case OpType:
+				var value string
+				if err := json.Unmarshal(v, &value); err != nil {
+					return "", nil, fmt.Errorf("%s: %w", k, err)
+				}
+				return OpType, value, nil
+			case OpIn, OpNotIn:
+				var value []interface{}
+				if err := json.Unmarshal(v, &value); err != nil {
+					return "", nil, fmt.Errorf("%s: %w", k, err)
+				}
+				return op, value, nil
+			case OpSize:
+				var value uint
+				if err := json.Unmarshal(v, &value); err != nil {
+					return "", nil, fmt.Errorf("%s: %w", k, err)
+				}
+				return OpSize, float64(value), nil
+			case OpMod:
+				var value [2]int64
+				if err := json.Unmarshal(v, &value); err != nil {
+					return "", nil, fmt.Errorf("%s: %w", k, err)
+				}
+				if value[0] == 0 {
+					return "", nil, errors.New("$mod: divisor must be non-zero")
+				}
+				return OpMod, value, nil
+			case OpRegex:
+				var pattern string
+				if err := json.Unmarshal(v, &pattern); err != nil {
+					return "", nil, fmt.Errorf("%s: %w", k, err)
+				}
+				re, err := regexp.Compile(pattern)
+				if err != nil {
+					return "", nil, fmt.Errorf("%s: %w", k, err)
+				}
+				return OpRegex, re, nil
+			case OpAll:
+				var value []interface{}
+				if err := json.Unmarshal(v, &value); err != nil {
+					return "", nil, fmt.Errorf("%s: %w", k, err)
+				}
+				return OpAll, value, nil
+			case OpElemMatch, OpAllMatch, OpKeyMapMatch:
+				sel, err := Parse(v)
+				if err != nil {
+					return "", nil, fmt.Errorf("%s: %w", k, err)
+				}
+				return op, sel, nil
+			}
+			return "", nil, fmt.Errorf("invalid operator %s", k)
+		}
+	default:
+		return "", nil, errors.New("too many keys in object")
+	}
+	panic("impossible")
 }

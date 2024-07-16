@@ -12,33 +12,40 @@
 
 package mango
 
-type operator string
+// Operator represents a Mango [operator].
+//
+// [operator]: https://docs.couchdb.org/en/stable/api/database/find.html#explicit-operators
+type Operator string
 
+// [Combination Operators]
+//
+// [Combination Operators]: https://docs.couchdb.org/en/stable/api/database/find.html#combination-operators
 const (
-	opNone = operator("")
+	OpAnd         = Operator("$and")
+	OpOr          = Operator("$or")
+	OpNot         = Operator("$not")
+	OpNor         = Operator("$nor")
+	OpAllMatch    = Operator("$allMatch")
+	OpKeyMapMatch = Operator("$keyMapMatch")
+)
 
-	// Combination operators - http://docs.couchdb.org/en/2.0.0/api/database/find.html#combination-operators
-	opAnd = operator("$and")
-	opOr  = operator("$or")
-	// opNot       = operator("$not")
-	// opNor       = operator("$nor")
-	// opAll       = operator("$all")
-	// opElemMatch = operator("$elemMatch")
-	// opAllMatch = operator("$allMatch")
-	// opKeyMapMatch = operator("$keyMapMatch")
-
-	// Condition operators - http://docs.couchdb.org/en/2.0.0/api/database/find.html#condition-operators
-	opLT  = operator("$lt")
-	opLTE = operator("$lte")
-	opEq  = operator("$eq")
-	opNE  = operator("$ne")
-	opGTE = operator("$gte")
-	opGT  = operator("$gt")
-	// opExists = operator("$exists")
-	// opType   = operator("$type")
-	// opIn     = operator("$in")
-	// opNIn    = operator("$nin")
-	// opSize   = operator("$size")
-	// opMod    = operator("$mod")
-	// opRegex  = operator("$regex")
+// [Condition Operators]
+//
+// [Condition Operators]: https://docs.couchdb.org/en/stable/api/database/find.html#condition-operators
+const (
+	OpLessThan           = Operator("$lt")
+	OpLessThanOrEqual    = Operator("$lte")
+	OpEqual              = Operator("$eq")
+	OpNotEqual           = Operator("$ne")
+	OpGreaterThan        = Operator("$gt")
+	OpGreaterThanOrEqual = Operator("$gte")
+	OpExists             = Operator("$exists")
+	OpType               = Operator("$type")
+	OpIn                 = Operator("$in")
+	OpNotIn              = Operator("$nin")
+	OpSize               = Operator("$size")
+	OpMod                = Operator("$mod")
+	OpRegex              = Operator("$regex")
+	OpAll                = Operator("$all")
+	OpElemMatch          = Operator("$elemMatch")
 )

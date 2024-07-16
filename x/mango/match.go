@@ -10,7 +10,14 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-// Package mango provides support for parsing and executing Cloudant, CouchDB,
-// and PouchDB-style Mango queries against JSON documents. This package is
-// experimental and subject to change without notice.
 package mango
+
+// Match returns true if the selector matches the input document. doc is
+// expected to be the result of unmarshaling JSON to an empty interface. An
+// invalid document will cause Match to panic.
+func Match(sel Node, doc interface{}) bool {
+	if sel == nil {
+		return true
+	}
+	return sel.Match(doc)
+}

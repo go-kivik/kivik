@@ -18,15 +18,8 @@ import (
 	"slices"
 	"sort"
 	"strconv"
-	"sync"
 
-	"golang.org/x/text/collate"
-	"golang.org/x/text/language"
-)
-
-var (
-	collatorMu = new(sync.Mutex)
-	collator   = collate.New(language.Und)
+	"github.com/go-kivik/kivik/v4/x/collate"
 )
 
 func couchdbCmpString(a, b string) int {
@@ -83,10 +76,7 @@ func couchdbCmpJSON(a, b json.RawMessage) int {
 		if bt != jsTypeString {
 			return -1
 		}
-		collatorMu.Lock()
-		cmp := collator.CompareString(string(a), string(b))
-		collatorMu.Unlock()
-		return cmp
+		return collate.CompareString(string(a), string(b))
 	case bt == jsTypeString:
 		return 1
 

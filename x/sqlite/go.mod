@@ -5,13 +5,12 @@ go 1.22.0
 require (
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/dop251/goja v0.0.0-20240220182346-e401ed450204
-	github.com/go-kivik/kivik/v4 v4.2.4-0.20240603093710-a20699b64fe0
+	github.com/go-kivik/kivik/v4 v4.2.4-0.20240716103146-b1a9ff9c0569
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
 	github.com/mitchellh/mapstructure v1.5.0
 	gitlab.com/flimzy/errsql v0.1.3
 	gitlab.com/flimzy/testy v0.14.0
-	golang.org/x/text v0.15.0
 	modernc.org/sqlite v1.29.8
 )
 
@@ -30,6 +29,7 @@ require (
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	golang.org/x/sync v0.4.0 // indirect
 	golang.org/x/sys v0.19.0 // indirect
+	golang.org/x/text v0.15.0 // indirect
 	modernc.org/gc/v3 v3.0.0-20240107210532-573471604cb6 // indirect
 	modernc.org/libc v1.49.3 // indirect
 	modernc.org/mathutil v1.6.0 // indirect

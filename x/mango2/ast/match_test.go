@@ -14,6 +14,7 @@
 package ast
 
 import (
+	"regexp"
 	"testing"
 
 	"gitlab.com/flimzy/testy"
@@ -344,10 +345,33 @@ func TestMatch(t *testing.T) {
 		doc:  "foo",
 		want: false,
 	})
+	tests.Add("regex", test{
+		sel: &conditionSelector{
+			op:    OpRegex,
+			value: regexp.MustCompile("^foo$"),
+		},
+		doc:  "foo",
+		want: true,
+	})
+	tests.Add("!regex", test{
+		sel: &conditionSelector{
+			op:    OpRegex,
+			value: regexp.MustCompile("^foo$"),
+		},
+		doc:  "bar",
+		want: false,
+	})
+	tests.Add("regexp, non-string", test{
+		sel: &conditionSelector{
+			op:    OpRegex,
+			value: regexp.MustCompile("^foo$"),
+		},
+		doc:  float64(5),
+		want: false,
+	})
 
 	/*
 		TODO:
-		$regex
 		$all
 		$elemMatch
 		$allMatch

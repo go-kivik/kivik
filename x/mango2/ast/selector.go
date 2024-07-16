@@ -15,6 +15,7 @@ package ast
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/go-kivik/kivik/v4/x/collate"
@@ -182,6 +183,12 @@ func (e *conditionSelector) Match(doc interface{}) bool {
 		}
 		mod := e.value.([2]int64)
 		return int64(num)%mod[0] == mod[1]
+	case OpRegex:
+		str, ok := doc.(string)
+		if !ok {
+			return false
+		}
+		return e.value.(*regexp.Regexp).MatchString(str)
 	}
 	return false
 }

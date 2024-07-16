@@ -39,13 +39,13 @@ func Parse(input []byte) (Selector, error) {
 		case OpAnd, OpOr:
 			var sel []json.RawMessage
 			if err := json.Unmarshal(v, &sel); err != nil {
-				return nil, err
+				return nil, fmt.Errorf("%s: %w", k, err)
 			}
 			subsels := make([]Selector, 0, len(sel))
 			for _, s := range sel {
 				sel, err := Parse(s)
 				if err != nil {
-					return nil, err
+					return nil, fmt.Errorf("%s: %w", k, err)
 				}
 				subsels = append(subsels, sel)
 			}
@@ -57,7 +57,7 @@ func Parse(input []byte) (Selector, error) {
 		case OpNot:
 			sel, err := Parse(v)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("%s: %w", k, err)
 			}
 			sels = append(sels, &unarySelector{
 				op:  op,

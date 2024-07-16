@@ -313,6 +313,18 @@ func TestParse(t *testing.T) {
 			},
 		},
 	})
+	tests.Add("$not with invalid selector", test{
+		input:   `{"$not": []}`,
+		wantErr: "$not: json: cannot unmarshal array into Go value of type map[string]json.RawMessage",
+	})
+	tests.Add("$and with invalid selector array", test{
+		input:   `{"$and": {}}`,
+		wantErr: "$and: json: cannot unmarshal object into Go value of type []json.RawMessage",
+	})
+	tests.Add("$and with invalid selector", test{
+		input:   `{"$and": [42]}`,
+		wantErr: "$and: json: cannot unmarshal number into Go value of type map[string]json.RawMessag",
+	})
 
 	/*
 		TODO:

@@ -298,6 +298,10 @@ func TestParse(t *testing.T) {
 			},
 		},
 	})
+	tests.Add("invalid operator", test{
+		input:   `{"$invalid": "bar"}`,
+		wantErr: "unknown operator $invalid",
+	})
 
 	/*
 		TODO:

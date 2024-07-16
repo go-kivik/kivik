@@ -54,6 +54,15 @@ func Parse(input []byte) (Selector, error) {
 				op:  op,
 				sel: subsels,
 			})
+		case OpNot:
+			sel, err := Parse(v)
+			if err != nil {
+				return nil, err
+			}
+			sels = append(sels, &unarySelector{
+				op:  op,
+				sel: sel,
+			})
 		default:
 			if op[0] == '$' {
 				return nil, fmt.Errorf("unknown operator %s", op)

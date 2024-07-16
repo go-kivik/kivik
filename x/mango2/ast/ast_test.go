@@ -302,10 +302,20 @@ func TestParse(t *testing.T) {
 		input:   `{"$invalid": "bar"}`,
 		wantErr: "unknown operator $invalid",
 	})
+	tests.Add("$not", test{
+		input: `{"$not": {"foo":"bar"}}`,
+		want: &unarySelector{
+			op: OpNot,
+			sel: &conditionSelector{
+				field: "foo",
+				op:    OpEqual,
+				value: "bar",
+			},
+		},
+	})
 
 	/*
 		TODO:
-		- $not
 		- $nor
 		- $all
 		- $elemMatch

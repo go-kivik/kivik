@@ -441,11 +441,26 @@ func TestParse(t *testing.T) {
 			},
 		},
 	})
+	tests.Add("$keyMapMatch", test{
+		input: `{"cameras": {"$keyMapMatch": {"$eq": "secondary"}}}`,
+		want: &fieldSelector{
+			field: "cameras",
+			cond: &elementSelector{
+				op: OpKeyMapMatch,
+				cond: &conditionSelector{
+					op:    OpEqual,
+					value: "secondary",
+				},
+			},
+		},
+	})
+	tests.Add("element selector with invalid selector", test{
+		input:   `{"cameras": {"$keyMapMatch": 42}}`,
+		wantErr: "$keyMapMatch: json: cannot unmarshal number into Go value of type map[string]json.RawMessage",
+	})
 
 	/*
 		TODO:
-		- $keyMapMatch
-
 		- $mod with non-integer values returns 404 (WTF) https://docs.couchdb.org/en/stable/api/database/find.html#condition-operators
 
 	*/

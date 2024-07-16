@@ -25,7 +25,6 @@ const (
 	OpOr          = Operator("$or")
 	OpNot         = Operator("$not")
 	OpNor         = Operator("$nor")
-	OpElemMatch   = Operator("$elemMatch")
 	OpAllMatch    = Operator("$allMatch")
 	OpKeyMapMatch = Operator("$keyMapMatch")
 )
@@ -48,4 +47,5 @@ const (
 	OpMod                = Operator("$mod")
 	OpRegex              = Operator("$regex")
 	OpAll                = Operator("$all")
+	OpElemMatch          = Operator("$elemMatch")
 )

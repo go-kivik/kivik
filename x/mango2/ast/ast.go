@@ -63,6 +63,16 @@ func Parse(input []byte) (Selector, error) {
 				op:  op,
 				sel: sel,
 			})
+		case OpEqual, OpLessThan, OpLessThanOrEqual, OpNotEqual,
+			OpGreaterThan, OpGreaterThanOrEqual:
+			op, value, err := opAndValue(v)
+			if err != nil {
+				return nil, err
+			}
+			sels = append(sels, &conditionSelector{
+				op:    op,
+				value: value,
+			})
 		default:
 			if op[0] == '$' {
 				return nil, fmt.Errorf("unknown operator %s", op)
@@ -71,11 +81,25 @@ func Parse(input []byte) (Selector, error) {
 			if err != nil {
 				return nil, err
 			}
-			sels = append(sels, &conditionSelector{
-				field: k,
-				op:    op,
-				value: value,
-			})
+
+			switch op {
+			case OpElemMatch:
+				sels = append(sels, &fieldSelector{
+					field: k,
+					cond: &elementSelector{
+						op:   op,
+						cond: value.(*conditionSelector),
+					},
+				})
+			default:
+				sels = append(sels, &fieldSelector{
+					field: k,
+					cond: &conditionSelector{
+						op:    op,
+						value: value,
+					},
+				})
+			}
 		}
 	}
 	if len(sels) == 1 {
@@ -168,6 +192,12 @@ func opAndValue(input json.RawMessage) (Operator, interface{}, error) {
 					return "", nil, fmt.Errorf("%s: %w", k, err)
 				}
 				return OpAll, value, nil
+			case OpElemMatch:
+				sel, err := Parse(v)
+				if err != nil {
+					return "", nil, fmt.Errorf("%s: %w", k, err)
+				}
+				return OpElemMatch, sel, nil
 			}
 			return "", nil, fmt.Errorf("invalid operator %s", k)
 		}

@@ -73,8 +73,26 @@ func (c *combinationSelector) String() string {
 	return sb.String()
 }
 
-type conditionSelector struct {
+type fieldSelector struct {
 	field string
+	cond  Selector
+}
+
+var _ Selector = (*fieldSelector)(nil)
+
+func (f *fieldSelector) Op() Operator {
+	return f.cond.Op()
+}
+
+func (f *fieldSelector) Value() interface{} {
+	return f.cond.Value()
+}
+
+func (f *fieldSelector) String() string {
+	return fmt.Sprintf("%s %s", f.field, f.cond.String())
+}
+
+type conditionSelector struct {
 	op    Operator
 	value interface{}
 }
@@ -90,7 +108,26 @@ func (e *conditionSelector) Value() interface{} {
 }
 
 func (e *conditionSelector) String() string {
-	return fmt.Sprintf("%s %s %v", e.field, e.op, e.value)
+	return fmt.Sprintf("%s %v", e.op, e.value)
+}
+
+type elementSelector struct {
+	op   Operator
+	cond *conditionSelector
+}
+
+var _ Selector = (*elementSelector)(nil)
+
+func (e *elementSelector) Op() Operator {
+	return e.op
+}
+
+func (e *elementSelector) Value() interface{} {
+	return e.cond
+}
+
+func (e *elementSelector) String() string {
+	return fmt.Sprintf("%s {%s}", e.op, e.cond)
 }
 
 /*
@@ -143,11 +180,14 @@ func cmpSelectors(a, b Selector) int {
 			}
 		}
 		return len(t.sel) - len(u.sel)
-	case *conditionSelector:
-		u := b.(*conditionSelector)
+	case *fieldSelector:
+		u := b.(*fieldSelector)
 		if c := strings.Compare(t.field, u.field); c != 0 {
 			return c
 		}
+		return cmpSelectors(t.cond, u.cond)
+	case *conditionSelector:
+		u := b.(*conditionSelector)
 		switch t.op {
 		case OpIn, OpNotIn:
 			for i := 0; i < len(t.value.([]interface{})) && i < len(u.value.([]interface{})); i++ {

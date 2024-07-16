@@ -41,18 +41,22 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("implicit equality", test{
 		input: `{"foo": "bar"}`,
-		want: &conditionSelector{
+		want: &fieldSelector{
 			field: "foo",
-			op:    OpEqual,
-			value: "bar",
+			cond: &conditionSelector{
+				op:    OpEqual,
+				value: "bar",
+			},
 		},
 	})
 	tests.Add("explicit equality", test{
 		input: `{"foo": {"$eq": "bar"}}`,
-		want: &conditionSelector{
+		want: &fieldSelector{
 			field: "foo",
-			op:    OpEqual,
-			value: "bar",
+			cond: &conditionSelector{
+				op:    OpEqual,
+				value: "bar",
+			},
 		},
 	})
 	tests.Add("explicit equality with too many object keys", test{
@@ -61,10 +65,12 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("implicit equality with empty object", test{
 		input: `{"foo": {}}`,
-		want: &conditionSelector{
+		want: &fieldSelector{
 			field: "foo",
-			op:    OpEqual,
-			value: map[string]interface{}{},
+			cond: &conditionSelector{
+				op:    OpEqual,
+				value: map[string]interface{}{},
+			},
 		},
 	})
 	tests.Add("explicit invalid comparison operator", test{
@@ -73,58 +79,72 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("explicit equiality against object", test{
 		input: `{"foo": {"$eq": {"bar": "baz"}}}`,
-		want: &conditionSelector{
+		want: &fieldSelector{
 			field: "foo",
-			op:    OpEqual,
-			value: map[string]interface{}{"bar": "baz"},
+			cond: &conditionSelector{
+				op:    OpEqual,
+				value: map[string]interface{}{"bar": "baz"},
+			},
 		},
 	})
 	tests.Add("less than", test{
 		input: `{"foo": {"$lt": 42}}`,
-		want: &conditionSelector{
+		want: &fieldSelector{
 			field: "foo",
-			op:    OpLessThan,
-			value: float64(42),
+			cond: &conditionSelector{
+				op:    OpLessThan,
+				value: float64(42),
+			},
 		},
 	})
 	tests.Add("less than or equal", test{
 		input: `{"foo": {"$lte": 42}}`,
-		want: &conditionSelector{
+		want: &fieldSelector{
 			field: "foo",
-			op:    OpLessThanOrEqual,
-			value: float64(42),
+			cond: &conditionSelector{
+				op:    OpLessThanOrEqual,
+				value: float64(42),
+			},
 		},
 	})
 	tests.Add("not equal", test{
 		input: `{"foo": {"$ne": 42}}`,
-		want: &conditionSelector{
+		want: &fieldSelector{
 			field: "foo",
-			op:    OpNotEqual,
-			value: float64(42),
+			cond: &conditionSelector{
+				op:    OpNotEqual,
+				value: float64(42),
+			},
 		},
 	})
 	tests.Add("greater than", test{
 		input: `{"foo": {"$gt": 42}}`,
-		want: &conditionSelector{
+		want: &fieldSelector{
 			field: "foo",
-			op:    OpGreaterThan,
-			value: float64(42),
+			cond: &conditionSelector{
+				op:    OpGreaterThan,
+				value: float64(42),
+			},
 		},
 	})
 	tests.Add("greater than or equal", test{
 		input: `{"foo": {"$gte": 42}}`,
-		want: &conditionSelector{
+		want: &fieldSelector{
 			field: "foo",
-			op:    OpGreaterThanOrEqual,
-			value: float64(42),
+			cond: &conditionSelector{
+				op:    OpGreaterThanOrEqual,
+				value: float64(42),
+			},
 		},
 	})
 	tests.Add("exists", test{
 		input: `{"foo": {"$exists": true}}`,
-		want: &conditionSelector{
+		want: &fieldSelector{
 			field: "foo",
-			op:    OpExists,
-			value: true,
+			cond: &conditionSelector{
+				op:    OpExists,
+				value: true,
+			},
 		},
 	})
 	tests.Add("exists with non-boolean", test{
@@ -133,10 +153,12 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("type", test{
 		input: `{"foo": {"$type": "string"}}`,
-		want: &conditionSelector{
+		want: &fieldSelector{
 			field: "foo",
-			op:    OpType,
-			value: "string",
+			cond: &conditionSelector{
+				op:    OpType,
+				value: "string",
+			},
 		},
 	})
 	tests.Add("type with non-string", test{
@@ -145,10 +167,12 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("in", test{
 		input: `{"foo": {"$in": [1, 2, 3]}}`,
-		want: &conditionSelector{
+		want: &fieldSelector{
 			field: "foo",
-			op:    OpIn,
-			value: []interface{}{float64(1), float64(2), float64(3)},
+			cond: &conditionSelector{
+				op:    OpIn,
+				value: []interface{}{float64(1), float64(2), float64(3)},
+			},
 		},
 	})
 	tests.Add("in with non-array", test{
@@ -157,10 +181,12 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("not in", test{
 		input: `{"foo": {"$nin": [1, 2, 3]}}`,
-		want: &conditionSelector{
+		want: &fieldSelector{
 			field: "foo",
-			op:    OpNotIn,
-			value: []interface{}{float64(1), float64(2), float64(3)},
+			cond: &conditionSelector{
+				op:    OpNotIn,
+				value: []interface{}{float64(1), float64(2), float64(3)},
+			},
 		},
 	})
 	tests.Add("not in with non-array", test{
@@ -169,10 +195,12 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("size", test{
 		input: `{"foo": {"$size": 42}}`,
-		want: &conditionSelector{
+		want: &fieldSelector{
 			field: "foo",
-			op:    OpSize,
-			value: float64(42),
+			cond: &conditionSelector{
+				op:    OpSize,
+				value: float64(42),
+			},
 		},
 	})
 	tests.Add("size with non-integer", test{
@@ -181,10 +209,12 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("mod", test{
 		input: `{"foo": {"$mod": [2, 1]}}`,
-		want: &conditionSelector{
+		want: &fieldSelector{
 			field: "foo",
-			op:    OpMod,
-			value: [2]int{2, 1},
+			cond: &conditionSelector{
+				op:    OpMod,
+				value: [2]int{2, 1},
+			},
 		},
 	})
 	tests.Add("mod with non-array", test{
@@ -197,10 +227,12 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("regex", test{
 		input: `{"foo": {"$regex": "^bar$"}}`,
-		want: &conditionSelector{
+		want: &fieldSelector{
 			field: "foo",
-			op:    OpRegex,
-			value: regexp.MustCompile("^bar$"),
+			cond: &conditionSelector{
+				op:    OpRegex,
+				value: regexp.MustCompile("^bar$"),
+			},
 		},
 	})
 	tests.Add("regexp non-string", test{
@@ -216,15 +248,19 @@ func TestParse(t *testing.T) {
 		want: &combinationSelector{
 			op: OpAnd,
 			sel: []Selector{
-				&conditionSelector{
+				&fieldSelector{
 					field: "baz",
-					op:    OpEqual,
-					value: "qux",
+					cond: &conditionSelector{
+						op:    OpEqual,
+						value: "qux",
+					},
 				},
-				&conditionSelector{
+				&fieldSelector{
 					field: "foo",
-					op:    OpEqual,
-					value: "bar",
+					cond: &conditionSelector{
+						op:    OpEqual,
+						value: "bar",
+					},
 				},
 			},
 		},
@@ -234,15 +270,19 @@ func TestParse(t *testing.T) {
 		want: &combinationSelector{
 			op: OpAnd,
 			sel: []Selector{
-				&conditionSelector{
+				&fieldSelector{
 					field: "foo",
-					op:    OpEqual,
-					value: "bar",
+					cond: &conditionSelector{
+						op:    OpEqual,
+						value: "bar",
+					},
 				},
-				&conditionSelector{
+				&fieldSelector{
 					field: "baz",
-					op:    OpEqual,
-					value: "qux",
+					cond: &conditionSelector{
+						op:    OpEqual,
+						value: "qux",
+					},
 				},
 			},
 		},
@@ -252,28 +292,36 @@ func TestParse(t *testing.T) {
 		want: &combinationSelector{
 			op: OpAnd,
 			sel: []Selector{
-				&conditionSelector{
+				&fieldSelector{
 					field: "foo",
-					op:    OpEqual,
-					value: "bar",
+					cond: &conditionSelector{
+						op:    OpEqual,
+						value: "bar",
+					},
 				},
-				&conditionSelector{
+				&fieldSelector{
 					field: "baz",
-					op:    OpEqual,
-					value: "qux",
+					cond: &conditionSelector{
+						op:    OpEqual,
+						value: "qux",
+					},
 				},
 				&combinationSelector{
 					op: OpAnd,
 					sel: []Selector{
-						&conditionSelector{
+						&fieldSelector{
 							field: "grault",
-							op:    OpEqual,
-							value: "garply",
+							cond: &conditionSelector{
+								op:    OpEqual,
+								value: "garply",
+							},
 						},
-						&conditionSelector{
+						&fieldSelector{
 							field: "quux",
-							op:    OpEqual,
-							value: "corge",
+							cond: &conditionSelector{
+								op:    OpEqual,
+								value: "corge",
+							},
 						},
 					},
 				},
@@ -285,15 +333,19 @@ func TestParse(t *testing.T) {
 		want: &combinationSelector{
 			op: OpOr,
 			sel: []Selector{
-				&conditionSelector{
+				&fieldSelector{
 					field: "foo",
-					op:    OpEqual,
-					value: "bar",
+					cond: &conditionSelector{
+						op:    OpEqual,
+						value: "bar",
+					},
 				},
-				&conditionSelector{
+				&fieldSelector{
 					field: "baz",
-					op:    OpEqual,
-					value: "qux",
+					cond: &conditionSelector{
+						op:    OpEqual,
+						value: "qux",
+					},
 				},
 			},
 		},
@@ -306,10 +358,12 @@ func TestParse(t *testing.T) {
 		input: `{"$not": {"foo":"bar"}}`,
 		want: &unarySelector{
 			op: OpNot,
-			sel: &conditionSelector{
+			sel: &fieldSelector{
 				field: "foo",
-				op:    OpEqual,
-				value: "bar",
+				cond: &conditionSelector{
+					op:    OpEqual,
+					value: "bar",
+				},
 			},
 		},
 	})
@@ -330,30 +384,49 @@ func TestParse(t *testing.T) {
 		want: &combinationSelector{
 			op: OpNor,
 			sel: []Selector{
-				&conditionSelector{
+				&fieldSelector{
 					field: "foo",
-					op:    OpEqual,
-					value: "bar",
+					cond: &conditionSelector{
+						op:    OpEqual,
+						value: "bar",
+					},
 				},
-				&conditionSelector{
+				&fieldSelector{
 					field: "baz",
-					op:    OpEqual,
-					value: "qux",
+					cond: &conditionSelector{
+						op:    OpEqual,
+						value: "qux",
+					},
 				},
 			},
 		},
 	})
 	tests.Add("$all", test{
 		input: `{"foo": {"$all": ["bar", "baz"]}}`,
-		want: &conditionSelector{
+		want: &fieldSelector{
 			field: "foo",
-			op:    OpAll,
-			value: []interface{}{"bar", "baz"},
+			cond: &conditionSelector{
+				op:    OpAll,
+				value: []interface{}{"bar", "baz"},
+			},
 		},
 	})
 	tests.Add("$all with non-array", test{
 		input:   `{"foo": {"$all": "bar"}}`,
 		wantErr: "$all: json: cannot unmarshal string into Go value of type []interface {}",
+	})
+	tests.Add("$elemMatch", test{
+		input: `{"genre": {"$elemMatch": {"$eq": "Horror"}}}`,
+		want: &fieldSelector{
+			field: "genre",
+			cond: &elementSelector{
+				op: OpElemMatch,
+				cond: &conditionSelector{
+					op:    OpEqual,
+					value: "Horror",
+				},
+			},
+		},
 	})
 
 	/*

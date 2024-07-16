@@ -99,7 +99,6 @@ func (e *conditionSelector) String() string {
  - $or []Selector
  - $not Selector
  - $nor []Selector
- - $all []Selector
  - $elemMatch Selector
  - $allMatch Selector
  - $keyMapMatch Selector
@@ -117,6 +116,7 @@ func (e *conditionSelector) String() string {
  - $size Integer
  - $mod Divisor and Remainder
  - $regex String
+ - $all Array
 
 */
 

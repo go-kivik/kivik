@@ -162,6 +162,12 @@ func opAndValue(input json.RawMessage) (Operator, interface{}, error) {
 					return "", nil, fmt.Errorf("%s: %w", k, err)
 				}
 				return OpRegex, re, nil
+			case OpAll:
+				var value []interface{}
+				if err := json.Unmarshal(v, &value); err != nil {
+					return "", nil, fmt.Errorf("%s: %w", k, err)
+				}
+				return OpAll, value, nil
 			}
 			return "", nil, fmt.Errorf("invalid operator %s", k)
 		}

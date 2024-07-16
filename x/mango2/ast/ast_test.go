@@ -343,10 +343,21 @@ func TestParse(t *testing.T) {
 			},
 		},
 	})
+	tests.Add("$all", test{
+		input: `{"foo": {"$all": ["bar", "baz"]}}`,
+		want: &conditionSelector{
+			field: "foo",
+			op:    OpAll,
+			value: []interface{}{"bar", "baz"},
+		},
+	})
+	tests.Add("$all with non-array", test{
+		input:   `{"foo": {"$all": "bar"}}`,
+		wantErr: "$all: json: cannot unmarshal string into Go value of type []interface {}",
+	})
 
 	/*
 		TODO:
-		- $all
 		- $elemMatch
 		- $allMatch
 		- $keyMapMatch

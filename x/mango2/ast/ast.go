@@ -70,8 +70,8 @@ func Parse(input []byte) (Selector, error) {
 				return nil, err
 			}
 			sels = append(sels, &conditionSelector{
-				op:    op,
-				value: value,
+				op:   op,
+				cond: value,
 			})
 		default:
 			if op[0] == '$' {
@@ -95,8 +95,8 @@ func Parse(input []byte) (Selector, error) {
 				sels = append(sels, &fieldSelector{
 					field: k,
 					cond: &conditionSelector{
-						op:    op,
-						value: value,
+						op:   op,
+						cond: value,
 					},
 				})
 			}

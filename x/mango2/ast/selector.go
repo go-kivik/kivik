@@ -26,7 +26,7 @@ type Selector interface {
 	Op() Operator
 	Value() interface{}
 	String() string
-	// Match(interface{}) (bool, error)
+	Match(interface{}) bool
 }
 
 type unarySelector struct {
@@ -46,6 +46,10 @@ func (u *unarySelector) Value() interface{} {
 
 func (u *unarySelector) String() string {
 	return fmt.Sprintf("%s %s", u.op, u.sel)
+}
+
+func (u *unarySelector) Match(interface{}) bool {
+	panic("not implemented")
 }
 
 type combinationSelector struct {
@@ -77,6 +81,10 @@ func (c *combinationSelector) String() string {
 	return sb.String()
 }
 
+func (c *combinationSelector) Match(interface{}) bool {
+	panic("not implemented")
+}
+
 type fieldSelector struct {
 	field string
 	cond  Selector
@@ -96,9 +104,21 @@ func (f *fieldSelector) String() string {
 	return fmt.Sprintf("%s %s", f.field, f.cond.String())
 }
 
+func (f *fieldSelector) Match(doc interface{}) bool {
+	m, ok := doc.(map[string]interface{})
+	if !ok {
+		return false
+	}
+	val, ok := m[f.field]
+	if !ok {
+		return false
+	}
+	return f.cond.Match(val)
+}
+
 type conditionSelector struct {
-	op    Operator
-	value interface{}
+	op   Operator
+	cond interface{}
 }
 
 var _ Selector = (*conditionSelector)(nil)
@@ -108,31 +128,31 @@ func (e *conditionSelector) Op() Operator {
 }
 
 func (e *conditionSelector) Value() interface{} {
-	return e.value
+	return e.cond
 }
 
 func (e *conditionSelector) String() string {
-	return fmt.Sprintf("%s %v", e.op, e.value)
+	return fmt.Sprintf("%s %v", e.op, e.cond)
 }
 
 func (e *conditionSelector) Match(doc interface{}) bool {
 	switch e.op {
 	case OpEqual:
-		return collate.CompareObject(doc, e.value) == 0
+		return collate.CompareObject(doc, e.cond) == 0
 	case OpNotEqual:
-		return collate.CompareObject(doc, e.value) != 0
+		return collate.CompareObject(doc, e.cond) != 0
 	case OpLessThan:
-		return collate.CompareObject(doc, e.value) < 0
+		return collate.CompareObject(doc, e.cond) < 0
 	case OpLessThanOrEqual:
-		return collate.CompareObject(doc, e.value) <= 0
+		return collate.CompareObject(doc, e.cond) <= 0
 	case OpGreaterThan:
-		return collate.CompareObject(doc, e.value) > 0
+		return collate.CompareObject(doc, e.cond) > 0
 	case OpGreaterThanOrEqual:
-		return collate.CompareObject(doc, e.value) >= 0
+		return collate.CompareObject(doc, e.cond) >= 0
 	case OpExists:
-		return (doc != nil) == e.value.(bool)
+		return (doc != nil) == e.cond.(bool)
 	case OpType:
-		switch tp := e.value.(string); tp {
+		switch tp := e.cond.(string); tp {
 		case "null":
 			return doc == nil
 		case "boolean":
@@ -154,14 +174,14 @@ func (e *conditionSelector) Match(doc interface{}) bool {
 			panic("unexpected $type value: " + tp)
 		}
 	case OpIn:
-		for _, v := range e.value.([]interface{}) {
+		for _, v := range e.cond.([]interface{}) {
 			if collate.CompareObject(doc, v) == 0 {
 				return true
 			}
 		}
 		return false
 	case OpNotIn:
-		for _, v := range e.value.([]interface{}) {
+		for _, v := range e.cond.([]interface{}) {
 			if collate.CompareObject(doc, v) == 0 {
 				return false
 			}
@@ -172,7 +192,7 @@ func (e *conditionSelector) Match(doc interface{}) bool {
 		if !ok {
 			return false
 		}
-		return float64(len(array)) == e.value.(float64)
+		return float64(len(array)) == e.cond.(float64)
 	case OpMod:
 		num, ok := doc.(float64)
 		if !ok {
@@ -181,20 +201,20 @@ func (e *conditionSelector) Match(doc interface{}) bool {
 		if num != float64(int(num)) {
 			return false
 		}
-		mod := e.value.([2]int64)
+		mod := e.cond.([2]int64)
 		return int64(num)%mod[0] == mod[1]
 	case OpRegex:
 		str, ok := doc.(string)
 		if !ok {
 			return false
 		}
-		return e.value.(*regexp.Regexp).MatchString(str)
+		return e.cond.(*regexp.Regexp).MatchString(str)
 	case OpAll:
 		array, ok := doc.([]interface{})
 		if !ok {
 			return false
 		}
-		for _, v := range e.value.([]interface{}) {
+		for _, v := range e.cond.([]interface{}) {
 			if !contains(array, v) {
 				return false
 			}
@@ -230,6 +250,10 @@ func (e *elementSelector) Value() interface{} {
 
 func (e *elementSelector) String() string {
 	return fmt.Sprintf("%s {%s}", e.op, e.cond)
+}
+
+func (e *elementSelector) Match(interface{}) bool {
+	panic("not implemented")
 }
 
 /*
@@ -292,21 +316,21 @@ func cmpSelectors(a, b Selector) int {
 		u := b.(*conditionSelector)
 		switch t.op {
 		case OpIn, OpNotIn:
-			for i := 0; i < len(t.value.([]interface{})) && i < len(u.value.([]interface{})); i++ {
-				if c := cmpValues(t.value.([]interface{})[i], u.value.([]interface{})[i]); c != 0 {
+			for i := 0; i < len(t.cond.([]interface{})) && i < len(u.cond.([]interface{})); i++ {
+				if c := cmpValues(t.cond.([]interface{})[i], u.cond.([]interface{})[i]); c != 0 {
 					return c
 				}
 			}
-			return len(t.value.([]interface{})) - len(u.value.([]interface{}))
+			return len(t.cond.([]interface{})) - len(u.cond.([]interface{}))
 		case OpMod:
-			tm := t.value.([2]int)
-			um := u.value.([2]int)
+			tm := t.cond.([2]int)
+			um := u.cond.([2]int)
 			if tm[0] != um[0] {
 				return tm[0] - um[0]
 			}
 			return tm[1] - um[1]
 		default:
-			return cmpValues(t.value, u.value)
+			return cmpValues(t.cond, u.cond)
 		}
 	}
 	return 0

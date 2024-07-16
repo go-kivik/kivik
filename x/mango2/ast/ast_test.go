@@ -44,8 +44,8 @@ func TestParse(t *testing.T) {
 		want: &fieldSelector{
 			field: "foo",
 			cond: &conditionSelector{
-				op:    OpEqual,
-				value: "bar",
+				op:   OpEqual,
+				cond: "bar",
 			},
 		},
 	})
@@ -54,8 +54,8 @@ func TestParse(t *testing.T) {
 		want: &fieldSelector{
 			field: "foo",
 			cond: &conditionSelector{
-				op:    OpEqual,
-				value: "bar",
+				op:   OpEqual,
+				cond: "bar",
 			},
 		},
 	})
@@ -68,8 +68,8 @@ func TestParse(t *testing.T) {
 		want: &fieldSelector{
 			field: "foo",
 			cond: &conditionSelector{
-				op:    OpEqual,
-				value: map[string]interface{}{},
+				op:   OpEqual,
+				cond: map[string]interface{}{},
 			},
 		},
 	})
@@ -82,8 +82,8 @@ func TestParse(t *testing.T) {
 		want: &fieldSelector{
 			field: "foo",
 			cond: &conditionSelector{
-				op:    OpEqual,
-				value: map[string]interface{}{"bar": "baz"},
+				op:   OpEqual,
+				cond: map[string]interface{}{"bar": "baz"},
 			},
 		},
 	})
@@ -92,8 +92,8 @@ func TestParse(t *testing.T) {
 		want: &fieldSelector{
 			field: "foo",
 			cond: &conditionSelector{
-				op:    OpLessThan,
-				value: float64(42),
+				op:   OpLessThan,
+				cond: float64(42),
 			},
 		},
 	})
@@ -102,8 +102,8 @@ func TestParse(t *testing.T) {
 		want: &fieldSelector{
 			field: "foo",
 			cond: &conditionSelector{
-				op:    OpLessThanOrEqual,
-				value: float64(42),
+				op:   OpLessThanOrEqual,
+				cond: float64(42),
 			},
 		},
 	})
@@ -112,8 +112,8 @@ func TestParse(t *testing.T) {
 		want: &fieldSelector{
 			field: "foo",
 			cond: &conditionSelector{
-				op:    OpNotEqual,
-				value: float64(42),
+				op:   OpNotEqual,
+				cond: float64(42),
 			},
 		},
 	})
@@ -122,8 +122,8 @@ func TestParse(t *testing.T) {
 		want: &fieldSelector{
 			field: "foo",
 			cond: &conditionSelector{
-				op:    OpGreaterThan,
-				value: float64(42),
+				op:   OpGreaterThan,
+				cond: float64(42),
 			},
 		},
 	})
@@ -132,8 +132,8 @@ func TestParse(t *testing.T) {
 		want: &fieldSelector{
 			field: "foo",
 			cond: &conditionSelector{
-				op:    OpGreaterThanOrEqual,
-				value: float64(42),
+				op:   OpGreaterThanOrEqual,
+				cond: float64(42),
 			},
 		},
 	})
@@ -142,8 +142,8 @@ func TestParse(t *testing.T) {
 		want: &fieldSelector{
 			field: "foo",
 			cond: &conditionSelector{
-				op:    OpExists,
-				value: true,
+				op:   OpExists,
+				cond: true,
 			},
 		},
 	})
@@ -156,8 +156,8 @@ func TestParse(t *testing.T) {
 		want: &fieldSelector{
 			field: "foo",
 			cond: &conditionSelector{
-				op:    OpType,
-				value: "string",
+				op:   OpType,
+				cond: "string",
 			},
 		},
 	})
@@ -170,8 +170,8 @@ func TestParse(t *testing.T) {
 		want: &fieldSelector{
 			field: "foo",
 			cond: &conditionSelector{
-				op:    OpIn,
-				value: []interface{}{float64(1), float64(2), float64(3)},
+				op:   OpIn,
+				cond: []interface{}{float64(1), float64(2), float64(3)},
 			},
 		},
 	})
@@ -184,8 +184,8 @@ func TestParse(t *testing.T) {
 		want: &fieldSelector{
 			field: "foo",
 			cond: &conditionSelector{
-				op:    OpNotIn,
-				value: []interface{}{float64(1), float64(2), float64(3)},
+				op:   OpNotIn,
+				cond: []interface{}{float64(1), float64(2), float64(3)},
 			},
 		},
 	})
@@ -198,8 +198,8 @@ func TestParse(t *testing.T) {
 		want: &fieldSelector{
 			field: "foo",
 			cond: &conditionSelector{
-				op:    OpSize,
-				value: float64(42),
+				op:   OpSize,
+				cond: float64(42),
 			},
 		},
 	})
@@ -212,8 +212,8 @@ func TestParse(t *testing.T) {
 		want: &fieldSelector{
 			field: "foo",
 			cond: &conditionSelector{
-				op:    OpMod,
-				value: [2]int64{2, 1},
+				op:   OpMod,
+				cond: [2]int64{2, 1},
 			},
 		},
 	})
@@ -230,8 +230,8 @@ func TestParse(t *testing.T) {
 		want: &fieldSelector{
 			field: "foo",
 			cond: &conditionSelector{
-				op:    OpRegex,
-				value: regexp.MustCompile("^bar$"),
+				op:   OpRegex,
+				cond: regexp.MustCompile("^bar$"),
 			},
 		},
 	})
@@ -251,15 +251,15 @@ func TestParse(t *testing.T) {
 				&fieldSelector{
 					field: "baz",
 					cond: &conditionSelector{
-						op:    OpEqual,
-						value: "qux",
+						op:   OpEqual,
+						cond: "qux",
 					},
 				},
 				&fieldSelector{
 					field: "foo",
 					cond: &conditionSelector{
-						op:    OpEqual,
-						value: "bar",
+						op:   OpEqual,
+						cond: "bar",
 					},
 				},
 			},
@@ -273,15 +273,15 @@ func TestParse(t *testing.T) {
 				&fieldSelector{
 					field: "foo",
 					cond: &conditionSelector{
-						op:    OpEqual,
-						value: "bar",
+						op:   OpEqual,
+						cond: "bar",
 					},
 				},
 				&fieldSelector{
 					field: "baz",
 					cond: &conditionSelector{
-						op:    OpEqual,
-						value: "qux",
+						op:   OpEqual,
+						cond: "qux",
 					},
 				},
 			},
@@ -295,15 +295,15 @@ func TestParse(t *testing.T) {
 				&fieldSelector{
 					field: "foo",
 					cond: &conditionSelector{
-						op:    OpEqual,
-						value: "bar",
+						op:   OpEqual,
+						cond: "bar",
 					},
 				},
 				&fieldSelector{
 					field: "baz",
 					cond: &conditionSelector{
-						op:    OpEqual,
-						value: "qux",
+						op:   OpEqual,
+						cond: "qux",
 					},
 				},
 				&combinationSelector{
@@ -312,15 +312,15 @@ func TestParse(t *testing.T) {
 						&fieldSelector{
 							field: "grault",
 							cond: &conditionSelector{
-								op:    OpEqual,
-								value: "garply",
+								op:   OpEqual,
+								cond: "garply",
 							},
 						},
 						&fieldSelector{
 							field: "quux",
 							cond: &conditionSelector{
-								op:    OpEqual,
-								value: "corge",
+								op:   OpEqual,
+								cond: "corge",
 							},
 						},
 					},
@@ -336,15 +336,15 @@ func TestParse(t *testing.T) {
 				&fieldSelector{
 					field: "foo",
 					cond: &conditionSelector{
-						op:    OpEqual,
-						value: "bar",
+						op:   OpEqual,
+						cond: "bar",
 					},
 				},
 				&fieldSelector{
 					field: "baz",
 					cond: &conditionSelector{
-						op:    OpEqual,
-						value: "qux",
+						op:   OpEqual,
+						cond: "qux",
 					},
 				},
 			},
@@ -361,8 +361,8 @@ func TestParse(t *testing.T) {
 			sel: &fieldSelector{
 				field: "foo",
 				cond: &conditionSelector{
-					op:    OpEqual,
-					value: "bar",
+					op:   OpEqual,
+					cond: "bar",
 				},
 			},
 		},
@@ -387,15 +387,15 @@ func TestParse(t *testing.T) {
 				&fieldSelector{
 					field: "foo",
 					cond: &conditionSelector{
-						op:    OpEqual,
-						value: "bar",
+						op:   OpEqual,
+						cond: "bar",
 					},
 				},
 				&fieldSelector{
 					field: "baz",
 					cond: &conditionSelector{
-						op:    OpEqual,
-						value: "qux",
+						op:   OpEqual,
+						cond: "qux",
 					},
 				},
 			},
@@ -406,8 +406,8 @@ func TestParse(t *testing.T) {
 		want: &fieldSelector{
 			field: "foo",
 			cond: &conditionSelector{
-				op:    OpAll,
-				value: []interface{}{"bar", "baz"},
+				op:   OpAll,
+				cond: []interface{}{"bar", "baz"},
 			},
 		},
 	})
@@ -422,8 +422,8 @@ func TestParse(t *testing.T) {
 			cond: &elementSelector{
 				op: OpElemMatch,
 				cond: &conditionSelector{
-					op:    OpEqual,
-					value: "Horror",
+					op:   OpEqual,
+					cond: "Horror",
 				},
 			},
 		},
@@ -435,8 +435,8 @@ func TestParse(t *testing.T) {
 			cond: &elementSelector{
 				op: OpAllMatch,
 				cond: &conditionSelector{
-					op:    OpEqual,
-					value: "Horror",
+					op:   OpEqual,
+					cond: "Horror",
 				},
 			},
 		},
@@ -448,8 +448,8 @@ func TestParse(t *testing.T) {
 			cond: &elementSelector{
 				op: OpKeyMapMatch,
 				cond: &conditionSelector{
-					op:    OpEqual,
-					value: "secondary",
+					op:   OpEqual,
+					cond: "secondary",
 				},
 			},
 		},

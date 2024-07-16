@@ -19,9 +19,5 @@ func Match(sel Selector, doc interface{}) bool {
 	if sel == nil {
 		return true
 	}
-	m, ok := sel.(interface{ Match(interface{}) bool })
-	if !ok {
-		return false
-	}
-	return m.Match(doc)
+	return sel.Match(doc)
 }

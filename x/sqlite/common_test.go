@@ -42,6 +42,7 @@ type DB interface {
 	driver.LocalDocer
 	driver.DesignDocer
 	driver.DocCreator
+	driver.Finder
 }
 
 type testDB struct {

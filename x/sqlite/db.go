@@ -73,10 +73,6 @@ func (db) Copy(context.Context, string, string, driver.Options) (string, error) 
 	return "", nil
 }
 
-func (db) Find(context.Context, interface{}, driver.Options) (driver.Rows, error) {
-	return nil, nil
-}
-
 func (db) CreateIndex(context.Context, string, string, interface{}, driver.Options) error {
 	return nil
 }

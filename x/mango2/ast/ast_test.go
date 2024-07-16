@@ -280,10 +280,27 @@ func TestParse(t *testing.T) {
 			},
 		},
 	})
+	tests.Add("$or", test{
+		input: `{"$or":[{"foo":"bar"},{"baz":"qux"}]}`,
+		want: &combinationSelector{
+			op: OpOr,
+			sel: []Selector{
+				&conditionSelector{
+					field: "foo",
+					op:    OpEqual,
+					value: "bar",
+				},
+				&conditionSelector{
+					field: "baz",
+					op:    OpEqual,
+					value: "qux",
+				},
+			},
+		},
+	})
 
 	/*
 		TODO:
-		- $or
 		- $not
 		- $nor
 		- $all

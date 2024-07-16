@@ -36,7 +36,7 @@ func Parse(input []byte) (Selector, error) {
 	sels := make([]Selector, 0, len(tmp))
 	for k, v := range tmp {
 		switch op := Operator(k); op {
-		case OpAnd:
+		case OpAnd, OpOr:
 			var sel []json.RawMessage
 			if err := json.Unmarshal(v, &sel); err != nil {
 				return nil, err
@@ -51,10 +51,13 @@ func Parse(input []byte) (Selector, error) {
 			}
 
 			sels = append(sels, &combinationSelector{
-				op:  OpAnd,
+				op:  op,
 				sel: subsels,
 			})
 		default:
+			if op[0] == '$' {
+				return nil, fmt.Errorf("unknown operator %s", op)
+			}
 			op, value, err := opAndValue(v)
 			if err != nil {
 				return nil, err

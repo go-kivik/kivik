@@ -16,6 +16,8 @@ package ast
 import (
 	"fmt"
 	"strings"
+
+	"github.com/go-kivik/kivik/v4/x/collate"
 )
 
 // Selector represents a node in the Mango Selector.
@@ -23,6 +25,7 @@ type Selector interface {
 	Op() Operator
 	Value() interface{}
 	String() string
+	// Match(interface{}) (bool, error)
 }
 
 type unarySelector struct {
@@ -111,6 +114,68 @@ func (e *conditionSelector) String() string {
 	return fmt.Sprintf("%s %v", e.op, e.value)
 }
 
+func (e *conditionSelector) Match(doc interface{}) bool {
+	switch e.op {
+	case OpEqual:
+		return collate.CompareObject(doc, e.value) == 0
+	case OpNotEqual:
+		return collate.CompareObject(doc, e.value) != 0
+	case OpLessThan:
+		return collate.CompareObject(doc, e.value) < 0
+	case OpLessThanOrEqual:
+		return collate.CompareObject(doc, e.value) <= 0
+	case OpGreaterThan:
+		return collate.CompareObject(doc, e.value) > 0
+	case OpGreaterThanOrEqual:
+		return collate.CompareObject(doc, e.value) >= 0
+	case OpExists:
+		return (doc != nil) == e.value.(bool)
+	case OpType:
+		switch tp := e.value.(string); tp {
+		case "null":
+			return doc == nil
+		case "boolean":
+			_, ok := doc.(bool)
+			return ok
+		case "number":
+			_, ok := doc.(float64)
+			return ok
+		case "string":
+			_, ok := doc.(string)
+			return ok
+		case "array":
+			_, ok := doc.([]interface{})
+			return ok
+		case "object":
+			_, ok := doc.(map[string]interface{})
+			return ok
+		default:
+			panic("unexpected $type value: " + tp)
+		}
+	case OpIn:
+		for _, v := range e.value.([]interface{}) {
+			if collate.CompareObject(doc, v) == 0 {
+				return true
+			}
+		}
+		return false
+	case OpNotIn:
+		for _, v := range e.value.([]interface{}) {
+			if collate.CompareObject(doc, v) == 0 {
+				return false
+			}
+		}
+		return true
+	case OpSize:
+		array, ok := doc.([]interface{})
+		if !ok {
+			return false
+		}
+		return float64(len(array)) == e.value.(float64)
+	}
+	return false
+}
+
 type elementSelector struct {
 	op   Operator
 	cond *conditionSelector
@@ -136,9 +201,6 @@ func (e *elementSelector) String() string {
  - $or []Selector
  - $not Selector
  - $nor []Selector
- - $elemMatch Selector
- - $allMatch Selector
- - $keyMapMatch Selector
 
  - $lt Any JSON
  - $lte Any JSON
@@ -154,6 +216,9 @@ func (e *elementSelector) String() string {
  - $mod Divisor and Remainder
  - $regex String
  - $all Array
+ - $elemMatch Selector
+ - $allMatch Selector
+ - $keyMapMatch Selector
 
 */
 

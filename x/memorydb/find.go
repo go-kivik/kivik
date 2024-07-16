@@ -22,7 +22,7 @@ import (
 	"strings"
 
 	"github.com/go-kivik/kivik/v4/driver"
-	mango "github.com/go-kivik/kivik/v4/x/mango2"
+	"github.com/go-kivik/kivik/v4/x/mango"
 )
 
 var errFindNotImplemented = errors.New("find feature not yet implemented")

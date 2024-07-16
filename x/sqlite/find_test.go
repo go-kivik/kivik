@@ -60,6 +60,18 @@ func TestFind(t *testing.T) {
 		}
 	})
 
+	/*
+		TODO:
+		- Include _design_docs in results?
+		- Include _local_docs in results?
+		- limit
+		- skip
+		- fields
+		- use_index
+		- bookmark
+		- execution_stats
+	*/
+
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()
 		db := tt.db

@@ -369,10 +369,40 @@ func TestMatch(t *testing.T) {
 		doc:  float64(5),
 		want: false,
 	})
+	tests.Add("all", test{
+		sel: &conditionSelector{
+			op:    OpAll,
+			value: []interface{}{"Comedy", "Short"},
+		},
+		doc: []interface{}{
+			"Comedy",
+			"Short",
+			"Animation",
+		},
+		want: true,
+	})
+	tests.Add("!all", test{
+		sel: &conditionSelector{
+			op:    OpAll,
+			value: []interface{}{"Comedy", "Short"},
+		},
+		doc: []interface{}{
+			"Comedy",
+			"Animation",
+		},
+		want: false,
+	})
+	tests.Add("all, non-array", test{
+		sel: &conditionSelector{
+			op:    OpAll,
+			value: []interface{}{"Comedy", "Short"},
+		},
+		doc:  "Comedy",
+		want: false,
+	})
 
 	/*
 		TODO:
-		$all
 		$elemMatch
 		$allMatch
 		$keyMapMatch

@@ -189,6 +189,26 @@ func (e *conditionSelector) Match(doc interface{}) bool {
 			return false
 		}
 		return e.value.(*regexp.Regexp).MatchString(str)
+	case OpAll:
+		array, ok := doc.([]interface{})
+		if !ok {
+			return false
+		}
+		for _, v := range e.value.([]interface{}) {
+			if !contains(array, v) {
+				return false
+			}
+		}
+		return true
+	}
+	return false
+}
+
+func contains(haystack []interface{}, needle interface{}) bool {
+	for _, v := range haystack {
+		if collate.CompareObject(v, needle) == 0 {
+			return true
+		}
 	}
 	return false
 }

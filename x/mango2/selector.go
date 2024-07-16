@@ -21,52 +21,52 @@ import (
 	"github.com/go-kivik/kivik/v4/x/collate"
 )
 
-// Selector represents a node in the Mango Selector.
-type Selector interface {
+// Node represents a node in the Mango Selector.
+type Node interface {
 	Op() Operator
 	Value() interface{}
 	String() string
 	Match(interface{}) bool
 }
 
-type notSelector struct {
-	sel Selector
+type notNode struct {
+	sel Node
 }
 
-var _ Selector = (*notSelector)(nil)
+var _ Node = (*notNode)(nil)
 
-func (*notSelector) Op() Operator {
+func (*notNode) Op() Operator {
 	return OpNot
 }
 
-func (n *notSelector) Value() interface{} {
+func (n *notNode) Value() interface{} {
 	return n.sel
 }
 
-func (n *notSelector) String() string {
+func (n *notNode) String() string {
 	return fmt.Sprintf("%s %s", OpNot, n.sel)
 }
 
-func (n *notSelector) Match(doc interface{}) bool {
+func (n *notNode) Match(doc interface{}) bool {
 	return !n.sel.Match(doc)
 }
 
-type combinationSelector struct {
+type combinationNode struct {
 	op  Operator
-	sel []Selector
+	sel []Node
 }
 
-var _ Selector = (*combinationSelector)(nil)
+var _ Node = (*combinationNode)(nil)
 
-func (c *combinationSelector) Op() Operator {
+func (c *combinationNode) Op() Operator {
 	return c.op
 }
 
-func (c *combinationSelector) Value() interface{} {
+func (c *combinationNode) Value() interface{} {
 	return c.sel
 }
 
-func (c *combinationSelector) String() string {
+func (c *combinationNode) String() string {
 	var sb strings.Builder
 	sb.WriteString(string(c.op))
 	sb.WriteString(" [")
@@ -80,7 +80,7 @@ func (c *combinationSelector) String() string {
 	return sb.String()
 }
 
-func (c *combinationSelector) Match(doc interface{}) bool {
+func (c *combinationNode) Match(doc interface{}) bool {
 	switch c.op {
 	case OpAnd:
 		for _, sel := range c.sel {
@@ -107,26 +107,26 @@ func (c *combinationSelector) Match(doc interface{}) bool {
 	panic("not implemented")
 }
 
-type fieldSelector struct {
+type fieldNode struct {
 	field string
-	cond  Selector
+	cond  Node
 }
 
-var _ Selector = (*fieldSelector)(nil)
+var _ Node = (*fieldNode)(nil)
 
-func (f *fieldSelector) Op() Operator {
+func (f *fieldNode) Op() Operator {
 	return f.cond.Op()
 }
 
-func (f *fieldSelector) Value() interface{} {
+func (f *fieldNode) Value() interface{} {
 	return f.cond.Value()
 }
 
-func (f *fieldSelector) String() string {
+func (f *fieldNode) String() string {
 	return fmt.Sprintf("%s %s", f.field, f.cond.String())
 }
 
-func (f *fieldSelector) Match(doc interface{}) bool {
+func (f *fieldNode) Match(doc interface{}) bool {
 	m, ok := doc.(map[string]interface{})
 	if !ok {
 		return false
@@ -138,26 +138,26 @@ func (f *fieldSelector) Match(doc interface{}) bool {
 	return f.cond.Match(val)
 }
 
-type conditionSelector struct {
+type conditionNode struct {
 	op   Operator
 	cond interface{}
 }
 
-var _ Selector = (*conditionSelector)(nil)
+var _ Node = (*conditionNode)(nil)
 
-func (e *conditionSelector) Op() Operator {
+func (e *conditionNode) Op() Operator {
 	return e.op
 }
 
-func (e *conditionSelector) Value() interface{} {
+func (e *conditionNode) Value() interface{} {
 	return e.cond
 }
 
-func (e *conditionSelector) String() string {
+func (e *conditionNode) String() string {
 	return fmt.Sprintf("%s %v", e.op, e.cond)
 }
 
-func (e *conditionSelector) Match(doc interface{}) bool {
+func (e *conditionNode) Match(doc interface{}) bool {
 	switch e.op {
 	case OpEqual:
 		return collate.CompareObject(doc, e.cond) == 0
@@ -255,26 +255,26 @@ func contains(haystack []interface{}, needle interface{}) bool {
 	return false
 }
 
-type elementSelector struct {
+type elementNode struct {
 	op   Operator
-	cond *conditionSelector
+	cond *conditionNode
 }
 
-var _ Selector = (*elementSelector)(nil)
+var _ Node = (*elementNode)(nil)
 
-func (e *elementSelector) Op() Operator {
+func (e *elementNode) Op() Operator {
 	return e.op
 }
 
-func (e *elementSelector) Value() interface{} {
+func (e *elementNode) Value() interface{} {
 	return e.cond
 }
 
-func (e *elementSelector) String() string {
+func (e *elementNode) String() string {
 	return fmt.Sprintf("%s {%s}", e.op, e.cond)
 }
 
-func (e *elementSelector) Match(doc interface{}) bool {
+func (e *elementNode) Match(doc interface{}) bool {
 	switch e.op {
 	case OpElemMatch:
 		array, ok := doc.([]interface{})
@@ -313,64 +313,37 @@ func (e *elementSelector) Match(doc interface{}) bool {
 	panic("unready")
 }
 
-/*
-
- - $and []Selector
- - $or []Selector
- - $not Selector
- - $nor []Selector
-
- - $lt Any JSON
- - $lte Any JSON
- - $eq Any JSON
- - $ne Any JSON
- - $gt Any JSON
- - $gte Any JSON
- - $exists Boolean
- - $type String
- - $in Array
- - $nin Array
- - $size Integer
- - $mod Divisor and Remainder
- - $regex String
- - $all Array
- - $elemMatch Selector
- - $allMatch Selector
- - $keyMapMatch Selector
-
-*/
-
 // cmpValues compares two arbitrary values by converting them to strings.
 func cmpValues(a, b interface{}) int {
 	return strings.Compare(fmt.Sprintf("%v", a), fmt.Sprintf("%v", b))
 }
 
 // cmpSelectors compares two selectors, for ordering.
-func cmpSelectors(a, b Selector) int {
+func cmpSelectors(a, b Node) int {
 	// Naively sort operators alphabetically.
 	if c := strings.Compare(string(a.Op()), string(b.Op())); c != 0 {
 		return c
 	}
 	switch t := a.(type) {
-	case *notSelector:
-		u := b.(*notSelector)
+	case *notNode:
+		u := b.(*notNode)
 		return cmpSelectors(t.sel, u.sel)
-	case *combinationSelector:
-		u := b.(*combinationSelector)
+	case *combinationNode:
+		u := b.(*combinationNode)
 		for i := 0; i < len(t.sel) && i < len(u.sel); i++ {
 			if c := cmpSelectors(t.sel[i], u.sel[i]); c != 0 {
 				return c
 			}
 		}
 		return len(t.sel) - len(u.sel)
-	case *fieldSelector:
-		u := b.(*fieldSelector)
+	case *fieldNode:
+		u := b.(*fieldNode)
 		if c := strings.Compare(t.field, u.field); c != 0 {
 			return c
 		}
 		return cmpSelectors(t.cond, u.cond)
-	case *conditionSelector:
-		u := b.(*conditionSelector)
+	case *conditionNode:
+		u := b.(*conditionNode)
 		switch t.op {
 		case OpIn, OpNotIn:
 			for i := 0; i < len(t.cond.([]interface{})) && i < len(u.cond.([]interface{})); i++ {

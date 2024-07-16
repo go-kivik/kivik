@@ -21,19 +21,19 @@ import (
 )
 
 // Parse parses s into a Mango Selector tree.
-func Parse(input []byte) (Selector, error) {
+func Parse(input []byte) (Node, error) {
 	var tmp map[string]json.RawMessage
 	if err := json.Unmarshal(input, &tmp); err != nil {
 		return nil, err
 	}
 	if len(tmp) == 0 {
 		// Empty object is an implicit $and
-		return &combinationSelector{
+		return &combinationNode{
 			op:  OpAnd,
 			sel: nil,
 		}, nil
 	}
-	sels := make([]Selector, 0, len(tmp))
+	sels := make([]Node, 0, len(tmp))
 	for k, v := range tmp {
 		switch op := Operator(k); op {
 		case OpAnd, OpOr, OpNor:
@@ -41,7 +41,7 @@ func Parse(input []byte) (Selector, error) {
 			if err := json.Unmarshal(v, &sel); err != nil {
 				return nil, fmt.Errorf("%s: %w", k, err)
 			}
-			subsels := make([]Selector, 0, len(sel))
+			subsels := make([]Node, 0, len(sel))
 			for _, s := range sel {
 				sel, err := Parse(s)
 				if err != nil {
@@ -50,7 +50,7 @@ func Parse(input []byte) (Selector, error) {
 				subsels = append(subsels, sel)
 			}
 
-			sels = append(sels, &combinationSelector{
+			sels = append(sels, &combinationNode{
 				op:  op,
 				sel: subsels,
 			})
@@ -59,7 +59,7 @@ func Parse(input []byte) (Selector, error) {
 			if err != nil {
 				return nil, fmt.Errorf("%s: %w", k, err)
 			}
-			sels = append(sels, &notSelector{
+			sels = append(sels, &notNode{
 				sel: sel,
 			})
 		case OpEqual, OpLessThan, OpLessThanOrEqual, OpNotEqual,
@@ -68,7 +68,7 @@ func Parse(input []byte) (Selector, error) {
 			if err != nil {
 				return nil, err
 			}
-			sels = append(sels, &conditionSelector{
+			sels = append(sels, &conditionNode{
 				op:   op,
 				cond: value,
 			})
@@ -83,17 +83,17 @@ func Parse(input []byte) (Selector, error) {
 
 			switch op {
 			case OpElemMatch, OpAllMatch, OpKeyMapMatch:
-				sels = append(sels, &fieldSelector{
+				sels = append(sels, &fieldNode{
 					field: k,
-					cond: &elementSelector{
+					cond: &elementNode{
 						op:   op,
-						cond: value.(*conditionSelector),
+						cond: value.(*conditionNode),
 					},
 				})
 			default:
-				sels = append(sels, &fieldSelector{
+				sels = append(sels, &fieldNode{
 					field: k,
-					cond: &conditionSelector{
+					cond: &conditionNode{
 						op:   op,
 						cond: value,
 					},
@@ -110,7 +110,7 @@ func Parse(input []byte) (Selector, error) {
 		return cmpSelectors(sels[i], sels[j]) < 0
 	})
 
-	return &combinationSelector{
+	return &combinationNode{
 		op:  OpAnd,
 		sel: sels,
 	}, nil

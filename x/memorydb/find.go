@@ -22,7 +22,7 @@ import (
 	"strings"
 
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/kivik/v4/x/mango"
+	mango "github.com/go-kivik/kivik/v4/x/mango2"
 )
 
 var errFindNotImplemented = errors.New("find feature not yet implemented")
@@ -106,11 +106,7 @@ func (d *db) Find(ctx context.Context, query interface{}, _ driver.Options) (dri
 			if err := json.Unmarshal(doc.data, &cd); err != nil {
 				panic(err)
 			}
-			match, err := fq.Selector.Matches(map[string]interface{}(cd))
-			if err != nil {
-				return nil, err
-			}
-			if match {
+			if fq.Selector.Match(map[string]interface{}(cd)) {
 				rows.docIDs = append(rows.docIDs, docID)
 				rows.revs = append(rows.revs, doc)
 			}

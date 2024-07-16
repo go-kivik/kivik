@@ -25,6 +25,7 @@ import (
 
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
+	"github.com/go-kivik/kivik/v4/x/mango"
 )
 
 func endKeyOp(descending, inclusive bool) string {
@@ -77,6 +78,7 @@ func (d *db) DesignDocs(ctx context.Context, options driver.Options) (driver.Row
 func (d *db) queryBuiltinView(
 	ctx context.Context,
 	vopts *viewOptions,
+	sel *mango.Selector,
 ) (driver.Rows, error) {
 	args := []interface{}{vopts.includeDocs, vopts.conflicts, vopts.updateSeq, vopts.attachments}
 
@@ -176,6 +178,7 @@ func (d *db) queryBuiltinView(
 		db:        d,
 		rows:      results,
 		updateSeq: meta.updateSeq,
+		selector:  sel,
 	}, nil
 }
 
@@ -233,6 +236,7 @@ type rows struct {
 	db        *db
 	rows      *sql.Rows
 	updateSeq string
+	selector  *mango.Selector
 }
 
 var _ driver.Rows = (*rows)(nil)
@@ -315,6 +319,15 @@ func (r *rows) Next(row *driver.Row) error {
 		}
 	}
 	if full != nil {
+		if r.selector != nil {
+			// This means we're responding to a _find query, which requires
+			// filtering the results, and a different format.
+			if !r.selector.Match(full.toMap()) {
+				return r.Next(row)
+			}
+			row.Key = nil
+			row.Value = nil
+		}
 		row.Doc = full.toReader()
 	}
 	return nil

@@ -44,9 +44,16 @@ func parseQuery(query interface{}) (*mango.Selector, error) {
 }
 
 func (d *db) Find(ctx context.Context, query interface{}, options driver.Options) (driver.Rows, error) {
-	_, err := parseQuery(query)
+	opts := newOpts(options)
+	vopts, err := opts.viewOptions(viewAllDocs)
+	if err != nil {
+		return nil, err
+	}
+	vopts.includeDocs = true
+
+	selector, err := parseQuery(query)
 	if err != nil {
 		return nil, &errors.Error{Status: http.StatusBadRequest, Err: err}
 	}
-	return d.Query(ctx, viewAllDocs, "", options)
+	return d.queryBuiltinView(ctx, vopts, selector)
 }

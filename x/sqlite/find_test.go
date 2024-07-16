@@ -44,6 +44,21 @@ func TestFind(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 		wantErr:    "invalid character 'i' looking for beginning of value",
 	})
+	tests.Add("field equality", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("foo", map[string]string{"foo": "bar"})
+		_ = d.tPut("bar", map[string]string{"bar": "baz"})
+
+		return test{
+			db: d,
+			query: map[string]interface{}{
+				"foo": "bar",
+			},
+			want: []rowResult{
+				{ID: "foo", Doc: `{"_id":"foo","_rev":"` + rev + `","foo":"bar"}`},
+			},
+		}
+	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()

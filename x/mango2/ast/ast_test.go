@@ -428,11 +428,22 @@ func TestParse(t *testing.T) {
 			},
 		},
 	})
+	tests.Add("$allMatch", test{
+		input: `{"genre": {"$allMatch": {"$eq": "Horror"}}}`,
+		want: &fieldSelector{
+			field: "genre",
+			cond: &elementSelector{
+				op: OpAllMatch,
+				cond: &conditionSelector{
+					op:    OpEqual,
+					value: "Horror",
+				},
+			},
+		},
+	})
 
 	/*
 		TODO:
-		- $elemMatch
-		- $allMatch
 		- $keyMapMatch
 
 		- $mod with non-integer values returns 404 (WTF) https://docs.couchdb.org/en/stable/api/database/find.html#condition-operators

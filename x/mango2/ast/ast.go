@@ -83,7 +83,7 @@ func Parse(input []byte) (Selector, error) {
 			}
 
 			switch op {
-			case OpElemMatch:
+			case OpElemMatch, OpAllMatch:
 				sels = append(sels, &fieldSelector{
 					field: k,
 					cond: &elementSelector{
@@ -192,12 +192,12 @@ func opAndValue(input json.RawMessage) (Operator, interface{}, error) {
 					return "", nil, fmt.Errorf("%s: %w", k, err)
 				}
 				return OpAll, value, nil
-			case OpElemMatch:
+			case OpElemMatch, OpAllMatch:
 				sel, err := Parse(v)
 				if err != nil {
 					return "", nil, fmt.Errorf("%s: %w", k, err)
 				}
-				return OpElemMatch, sel, nil
+				return op, sel, nil
 			}
 			return "", nil, fmt.Errorf("invalid operator %s", k)
 		}

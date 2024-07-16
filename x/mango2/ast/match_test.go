@@ -732,11 +732,58 @@ func TestMatch(t *testing.T) {
 		},
 		want: false,
 	})
-
-	/*
-		TODO:
-		$nor
-	*/
+	tests.Add("nor", test{
+		sel: &combinationSelector{
+			op: OpNor,
+			sel: []Selector{
+				&fieldSelector{
+					field: "foo",
+					cond: &conditionSelector{
+						op:   OpEqual,
+						cond: "bar",
+					},
+				},
+				&fieldSelector{
+					field: "baz",
+					cond: &conditionSelector{
+						op:   OpEqual,
+						cond: "qux",
+					},
+				},
+			},
+		},
+		doc: map[string]interface{}{
+			"foo": "baz",
+			"baz": "quux",
+		},
+		want: true,
+	})
+	tests.Add("!nor", test{
+		sel: &combinationSelector{
+			op: OpNor,
+			sel: []Selector{
+				&fieldSelector{
+					field: "foo",
+					cond: &conditionSelector{
+						op:   OpEqual,
+						cond: "bar",
+					},
+				},
+				&fieldSelector{
+					field: "baz",
+					cond: &conditionSelector{
+						op:   OpEqual,
+						cond: "qux",
+					},
+				},
+			},
+		},
+		doc: map[string]interface{}{
+			"foo": "bar",
+			"baz": "quux",
+		},
+		want: false,
+	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		got := Match(tt.sel, tt.doc)

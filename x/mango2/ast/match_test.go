@@ -312,10 +312,41 @@ func TestMatch(t *testing.T) {
 		doc:  "foo",
 		want: false,
 	})
+	tests.Add("mod", test{
+		sel: &conditionSelector{
+			op:    OpMod,
+			value: [2]int64{3, 2},
+		},
+		doc:  float64(8),
+		want: true,
+	})
+	tests.Add("!mod", test{
+		sel: &conditionSelector{
+			op:    OpMod,
+			value: [2]int64{3, 2},
+		},
+		doc:  float64(7),
+		want: false,
+	})
+	tests.Add("mod, non-integer", test{
+		sel: &conditionSelector{
+			op:    OpMod,
+			value: [2]int64{3, 2},
+		},
+		doc:  float64(7.5),
+		want: false,
+	})
+	tests.Add("mod, non-number", test{
+		sel: &conditionSelector{
+			op:    OpMod,
+			value: [2]int64{3, 2},
+		},
+		doc:  "foo",
+		want: false,
+	})
 
 	/*
 		TODO:
-		$mod
 		$regex
 		$all
 		$elemMatch

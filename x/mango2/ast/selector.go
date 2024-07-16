@@ -172,6 +172,16 @@ func (e *conditionSelector) Match(doc interface{}) bool {
 			return false
 		}
 		return float64(len(array)) == e.value.(float64)
+	case OpMod:
+		num, ok := doc.(float64)
+		if !ok {
+			return false
+		}
+		if num != float64(int(num)) {
+			return false
+		}
+		mod := e.value.([2]int64)
+		return int64(num)%mod[0] == mod[1]
 	}
 	return false
 }

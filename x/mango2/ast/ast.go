@@ -168,7 +168,7 @@ func opAndValue(input json.RawMessage) (Operator, interface{}, error) {
 				}
 				return OpSize, float64(value), nil
 			case OpMod:
-				var value [2]int
+				var value [2]int64
 				if err := json.Unmarshal(v, &value); err != nil {
 					return "", nil, fmt.Errorf("%s: %w", k, err)
 				}

@@ -213,13 +213,13 @@ func TestParse(t *testing.T) {
 			field: "foo",
 			cond: &conditionSelector{
 				op:    OpMod,
-				value: [2]int{2, 1},
+				value: [2]int64{2, 1},
 			},
 		},
 	})
 	tests.Add("mod with non-array", test{
 		input:   `{"foo": {"$mod": 42}}`,
-		wantErr: "$mod: json: cannot unmarshal number into Go value of type [2]int",
+		wantErr: "$mod: json: cannot unmarshal number into Go value of type [2]int64",
 	})
 	tests.Add("mod with zero divisor", test{
 		input:   `{"foo": {"$mod": [0, 1]}}`,

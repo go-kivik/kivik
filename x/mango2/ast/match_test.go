@@ -544,10 +544,62 @@ func TestMatch(t *testing.T) {
 		},
 		want: false,
 	})
+	tests.Add("keyMapMatch", test{
+		sel: &fieldSelector{
+			field: "cameras",
+			cond: &elementSelector{
+				op: OpKeyMapMatch,
+				cond: &conditionSelector{
+					op:   OpEqual,
+					cond: "secondary",
+				},
+			},
+		},
+		doc: map[string]interface{}{
+			"cameras": map[string]interface{}{
+				"primary":   "Canon",
+				"secondary": "Nikon",
+			},
+		},
+		want: true,
+	})
+	tests.Add("!keyMapMatch", test{
+		sel: &fieldSelector{
+			field: "cameras",
+			cond: &elementSelector{
+				op: OpKeyMapMatch,
+				cond: &conditionSelector{
+					op:   OpEqual,
+					cond: "secondary",
+				},
+			},
+		},
+		doc: map[string]interface{}{
+			"cameras": map[string]interface{}{
+				"primary": "Canon",
+			},
+		},
+		want: false,
+	})
+	tests.Add("keyMapMatch, non-object", test{
+		sel: &fieldSelector{
+			field: "cameras",
+			cond: &elementSelector{
+				op: OpKeyMapMatch,
+				cond: &conditionSelector{
+					op:   OpEqual,
+					cond: "secondary",
+				},
+			},
+		},
+		doc: map[string]interface{}{
+			"cameras": []interface{}{"Canon", "Nikon"},
+		},
+		want: false,
+	})
 
 	/*
 		TODO:
-		$keyMapMatch
 		$and
 		$or
 		$not

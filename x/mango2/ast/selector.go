@@ -276,6 +276,17 @@ func (e *elementSelector) Match(doc interface{}) bool {
 			}
 		}
 		return true
+	case OpKeyMapMatch:
+		object, ok := doc.(map[string]interface{})
+		if !ok {
+			return false
+		}
+		for k := range object {
+			if k == e.cond.cond.(string) {
+				return e.cond.Match(k)
+			}
+		}
+		return false
 	}
 	panic("unready")
 }

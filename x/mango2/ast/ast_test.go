@@ -211,11 +211,78 @@ func TestParse(t *testing.T) {
 		input:   `{"foo": {"$regex": "["}}`,
 		wantErr: "$regex: error parsing regexp: missing closing ]: `[`",
 	})
+	tests.Add("implicit $and", test{
+		input: `{"foo":"bar","baz":"qux"}`,
+		want: &combinationSelector{
+			op: OpAnd,
+			sel: []Selector{
+				&conditionSelector{
+					field: "baz",
+					op:    OpEqual,
+					value: "qux",
+				},
+				&conditionSelector{
+					field: "foo",
+					op:    OpEqual,
+					value: "bar",
+				},
+			},
+		},
+	})
+	tests.Add("explicit $and", test{
+		input: `{"$and":[{"foo":"bar"},{"baz":"qux"}]}`,
+		want: &combinationSelector{
+			op: OpAnd,
+			sel: []Selector{
+				&conditionSelector{
+					field: "foo",
+					op:    OpEqual,
+					value: "bar",
+				},
+				&conditionSelector{
+					field: "baz",
+					op:    OpEqual,
+					value: "qux",
+				},
+			},
+		},
+	})
+	tests.Add("nested implicit and explicit $and", test{
+		input: `{"$and":[{"foo":"bar"},{"baz":"qux"}, {"quux":"corge","grault":"garply"}]}`,
+		want: &combinationSelector{
+			op: OpAnd,
+			sel: []Selector{
+				&conditionSelector{
+					field: "foo",
+					op:    OpEqual,
+					value: "bar",
+				},
+				&conditionSelector{
+					field: "baz",
+					op:    OpEqual,
+					value: "qux",
+				},
+				&combinationSelector{
+					op: OpAnd,
+					sel: []Selector{
+						&conditionSelector{
+							field: "grault",
+							op:    OpEqual,
+							value: "garply",
+						},
+						&conditionSelector{
+							field: "quux",
+							op:    OpEqual,
+							value: "corge",
+						},
+					},
+				},
+			},
+		},
+	})
 
 	/*
 		TODO:
-		- implicit $and
-		- $and
 		- $or
 		- $not
 		- $nor
@@ -233,7 +300,10 @@ func TestParse(t *testing.T) {
 		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Fatalf("Unexpected error: %s", err)
 		}
-		if d := cmp.Diff(tt.want, got, cmpOpts...); d != "" {
+		if err != nil {
+			return
+		}
+		if d := cmp.Diff(tt.want.String(), got.String(), cmpOpts...); d != "" {
 			t.Errorf("Unexpected result (-want +got):\n%s", d)
 		}
 	})

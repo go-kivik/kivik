@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"sort"
 )
 
 // Parse parses s into a Mango Selector tree.
@@ -26,25 +27,58 @@ func Parse(input []byte) (Selector, error) {
 		return nil, err
 	}
 	if len(tmp) == 0 {
+		// Empty object is an implicit $and
 		return &combinationSelector{
 			op:  OpAnd,
 			sel: nil,
 		}, nil
 	}
-	if len(tmp) == 1 {
-		for k, v := range tmp {
+	sels := make([]Selector, 0, len(tmp))
+	for k, v := range tmp {
+		switch op := Operator(k); op {
+		case OpAnd:
+			var sel []json.RawMessage
+			if err := json.Unmarshal(v, &sel); err != nil {
+				return nil, err
+			}
+			subsels := make([]Selector, 0, len(sel))
+			for _, s := range sel {
+				sel, err := Parse(s)
+				if err != nil {
+					return nil, err
+				}
+				subsels = append(subsels, sel)
+			}
+
+			sels = append(sels, &combinationSelector{
+				op:  OpAnd,
+				sel: subsels,
+			})
+		default:
 			op, value, err := opAndValue(v)
 			if err != nil {
 				return nil, err
 			}
-			return &conditionSelector{
+			sels = append(sels, &conditionSelector{
 				field: k,
 				op:    op,
 				value: value,
-			}, nil
+			})
 		}
 	}
-	panic("not implemented")
+	if len(sels) == 1 {
+		return sels[0], nil
+	}
+
+	// Sort the selectors to ensure deterministic output.
+	sort.Slice(sels, func(i, j int) bool {
+		return cmpSelectors(sels[i], sels[j]) < 0
+	})
+
+	return &combinationSelector{
+		op:  OpAnd,
+		sel: sels,
+	}, nil
 }
 
 // opAndValue is called when the input is an object in a context where a

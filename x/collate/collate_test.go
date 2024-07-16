@@ -10,6 +10,9 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+// GopherJS does not work with go-cmp diffs
+//go:build !js
+
 package collate
 
 import (

@@ -10,8 +10,8 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-//go:build go1.18 && !go1.23
-// +build go1.18,!go1.23
+//go:build go1.23
+// +build go1.23
 
 package kiviktest
 
@@ -72,6 +72,9 @@ func (*deps) RunFuzzWorker(func(corpusEntry) error) error              { return 
 func (*deps) ReadCorpus(string, []reflect.Type) ([]corpusEntry, error) { return nil, nil }
 func (*deps) ResetCoverage()                                           {}
 func (*deps) SnapshotCoverage()                                        {}
+func (*deps) InitRuntimeCoverage() (string, func(string, string) (string, error), func() float64) {
+	return "", nil, nil
+}
 
 func mainStart(tests []testing.InternalTest) {
 	m := testing.MainStart(&deps{}, tests, nil, nil, nil)

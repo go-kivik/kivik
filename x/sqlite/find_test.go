@@ -15,12 +15,14 @@ package sqlite
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"testing"
 
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/int/mock"
 )
 
@@ -136,9 +138,45 @@ func TestFind(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("bookmark", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("a", map[string]interface{}{})
+		_ = d.tPut("b", map[string]interface{}{})
+		revC := d.tPut("c", map[string]interface{}{})
+		_ = d.tPut("d", map[string]interface{}{})
+
+		rows, err := d.Find(context.Background(), json.RawMessage(`{"selector":{},"limit":1,"skip":1}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("Failed to get bookmark: %s", err)
+		}
+		defer rows.Close()
+		var row driver.Row
+		for {
+			err := rows.Next(&row)
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+		bookmark := rows.(driver.Bookmarker).Bookmark()
+
+		return test{
+			db:    d,
+			query: `{"selector":{},"bookmark":"` + bookmark + `","limit":1}`,
+			want: []rowResult{
+				{Doc: `{"_id":"c","_rev":"` + revC + `"}`},
+			},
+		}
+	})
 
 	/*
 		TODO:
+		- sort
+		- stable
+		- update
+		- stale
 		- use_index
 		- bookmark
 		- execution_stats

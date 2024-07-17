@@ -32,6 +32,14 @@ func couchdbCmpJSON(a, b json.RawMessage) int {
 	if bytes.Equal(a, b) {
 		return 0
 	}
+	// Literal nothing sorts first
+	if len(a) == 0 {
+		return -1
+	}
+	if len(b) == 0 {
+		return 1
+	}
+
 	at, bt := jsType(a), jsType(b)
 	switch {
 

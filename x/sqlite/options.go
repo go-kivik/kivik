@@ -619,6 +619,13 @@ func (v viewOptions) buildGroupWhere(args *[]any) []string {
 	return where
 }
 
+func (v viewOptions) bookmarkWhere() string {
+	if v.bookmark != "" {
+		return `WHERE main.doc_number > (SELECT doc_number FROM bookmark)`
+	}
+	return ""
+}
+
 // buildWhere returns WHERE conditions based on the provided configuration
 // arguments, and may append to args as needed.
 func (v viewOptions) buildWhere(args *[]any) []string {
@@ -719,6 +726,7 @@ type viewOptions struct {
 	findLimit int64
 	findSkip  int64
 	fields    []string
+	bookmark  string
 }
 
 // findOptions converts a _find query body into a viewOptions struct.
@@ -751,6 +759,10 @@ func findOptions(query interface{}) (*viewOptions, error) {
 	if err != nil {
 		return nil, err
 	}
+	bookmark, _ := o["bookmark"].(string)
+	if bookmark != "" {
+		skip = 0
+	}
 
 	v := &viewOptions{
 		view:        viewAllDocs,
@@ -761,6 +773,7 @@ func findOptions(query interface{}) (*viewOptions, error) {
 		findSkip:    skip,
 		selector:    s.Selector,
 		fields:      fields,
+		bookmark:    bookmark,
 	}
 
 	return v, v.validate()

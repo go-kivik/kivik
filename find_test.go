@@ -14,6 +14,7 @@ package kivik
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -31,6 +32,7 @@ func TestFind(t *testing.T) {
 		name     string
 		db       *DB
 		query    interface{}
+		options  []Option
 		expected *ResultSet
 		status   int
 		err      string
@@ -63,7 +65,7 @@ func TestFind(t *testing.T) {
 				client: &Client{},
 				driverDB: &mock.Finder{
 					FindFunc: func(_ context.Context, query interface{}, _ driver.Options) (driver.Rows, error) {
-						expectedQuery := int(3)
+						expectedQuery := json.RawMessage(`{"limit":3,"selector":{"foo":"bar"},"skip":10}`)
 						if d := testy.DiffInterface(expectedQuery, query); d != nil {
 							return nil, fmt.Errorf("Unexpected query:\n%s", d)
 						}
@@ -71,7 +73,11 @@ func TestFind(t *testing.T) {
 					},
 				},
 			},
-			query: int(3),
+			query: map[string]interface{}{"selector": map[string]interface{}{"foo": "bar"}},
+			options: []Option{
+				Param("limit", 3),
+				Param("skip", 10),
+			},
 			expected: &ResultSet{
 				iter: &iter{
 					feed: &rowsIterator{
@@ -105,7 +111,7 @@ func TestFind(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rs := test.db.Find(context.Background(), test.query)
+			rs := test.db.Find(context.Background(), test.query, test.options...)
 			err := rs.Err()
 			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
 				t.Error(d)

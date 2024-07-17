@@ -16,6 +16,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -398,7 +399,7 @@ func (*rows) TotalRows() int64 {
 func (r *rows) Bookmark() string {
 	if r.done {
 		// Only return the bookmark if we've reached the end of the rows.
-		return r.bookmark
+		return base64.StdEncoding.EncodeToString([]byte(r.bookmark))
 	}
 
 	return ""

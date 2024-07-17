@@ -170,6 +170,16 @@ func TestFind(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("non-string bookmark", test{
+		query:      `{"selector":{},"bookmark":true}`,
+		wantStatus: http.StatusBadRequest,
+		wantErr:    "invalid value for 'bookmark': true",
+	})
+	tests.Add("invalid bookmark", test{
+		query:      `{"selector":{},"bookmark":"oink"}`,
+		wantStatus: http.StatusBadRequest,
+		wantErr:    "invalid value for 'bookmark': true",
+	})
 
 	/*
 		TODO:

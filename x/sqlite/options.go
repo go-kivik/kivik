@@ -13,6 +13,7 @@
 package sqlite
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -492,6 +493,22 @@ func (o optsMap) groupLevel() (uint64, error) {
 	return toUint64(raw, "invalid value for 'group_level'")
 }
 
+func (o optsMap) bookmark() (string, error) {
+	raw, ok := o["bookmark"]
+	if !ok {
+		return "", nil
+	}
+	v, ok := raw.(string)
+	if !ok {
+		return "", &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'bookmark': %v", raw)}
+	}
+	bookmark, err := base64.StdEncoding.DecodeString(v)
+	if err != nil {
+		return "", &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'bookmark': %v", raw)}
+	}
+	return string(bookmark), nil
+}
+
 func (o optsMap) conflicts() (bool, error) {
 	if o.meta() {
 		return true, nil
@@ -759,7 +776,10 @@ func findOptions(query interface{}) (*viewOptions, error) {
 	if err != nil {
 		return nil, err
 	}
-	bookmark, _ := o["bookmark"].(string)
+	bookmark, err := o.bookmark()
+	if err != nil {
+		return nil, err
+	}
 	if bookmark != "" {
 		skip = 0
 	}

@@ -14,8 +14,11 @@ package kivik
 
 import (
 	"context"
+	"encoding/json"
+	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/int/errors"
 )
 
 // Find executes a query using the [_find interface]. The query must be a
@@ -32,19 +35,52 @@ func (db *DB) Find(ctx context.Context, query interface{}, options ...Option) *R
 	if db.err != nil {
 		return &ResultSet{iter: errIterator(db.err)}
 	}
-	if finder, ok := db.driverDB.(driver.Finder); ok {
-		endQuery, err := db.startQuery()
-		if err != nil {
-			return &ResultSet{iter: errIterator(err)}
-		}
-		rowsi, err := finder.Find(ctx, query, multiOptions(options))
-		if err != nil {
-			endQuery()
-			return &ResultSet{iter: errIterator(err)}
-		}
-		return newResultSet(ctx, endQuery, rowsi)
+	finder, ok := db.driverDB.(driver.Finder)
+	if !ok {
+		return &ResultSet{iter: errIterator(errFindNotImplemented)}
 	}
-	return &ResultSet{iter: errIterator(errFindNotImplemented)}
+
+	jsonQuery, err := toQuery(query, options...)
+	if err != nil {
+		return &ResultSet{iter: errIterator(err)}
+	}
+
+	endQuery, err := db.startQuery()
+	if err != nil {
+		return &ResultSet{iter: errIterator(err)}
+	}
+	rowsi, err := finder.Find(ctx, jsonQuery, multiOptions(options))
+	if err != nil {
+		endQuery()
+		return &ResultSet{iter: errIterator(err)}
+	}
+	return newResultSet(ctx, endQuery, rowsi)
+}
+
+// toQuery combines query and options into a final JSON query to be sent to the
+// driver.
+func toQuery(query interface{}, options ...Option) (json.RawMessage, error) {
+	var queryJSON []byte
+	switch t := query.(type) {
+	case string:
+		queryJSON = []byte(t)
+	case []byte:
+		queryJSON = t
+	case json.RawMessage:
+		queryJSON = t
+	default:
+		var err error
+		queryJSON, err = json.Marshal(query)
+		if err != nil {
+			return nil, &errors.Error{Status: http.StatusBadRequest, Err: err}
+		}
+	}
+	var queryObject map[string]interface{}
+	if err := json.Unmarshal(queryJSON, &queryObject); err != nil {
+		return nil, &errors.Error{Status: http.StatusBadRequest, Err: err}
+	}
+
+	return json.Marshal(queryObject)
 }
 
 // CreateIndex creates an index if it doesn't already exist. ddoc and name may

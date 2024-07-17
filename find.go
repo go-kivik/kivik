@@ -18,10 +18,16 @@ import (
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
-// Find executes a query using the [_find interface]. The query must be
-// JSON-marshalable to a valid query.
+// Find executes a query using the [_find interface]. The query must be a
+// string, []byte, or [encoding/json.RawMessage] value, or JSON-marshalable to a
+// valid valid query. The options are merged with the query, and will overwrite
+// any values in the query.
+//
+// This arguments this method accepts will change in Kivik 5.x, to be more
+// consistent with the rest of the Kivik API. See [issue #1014] for details.
 //
 // [_find interface]: https://docs.couchdb.org/en/stable/api/database/find.html
+// [issue #1014]: https://github.com/go-kivik/kivik/issues/1014
 func (db *DB) Find(ctx context.Context, query interface{}, options ...Option) *ResultSet {
 	if db.err != nil {
 		return &ResultSet{iter: errIterator(db.err)}

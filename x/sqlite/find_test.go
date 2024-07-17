@@ -53,7 +53,7 @@ func TestFind(t *testing.T) {
 			db:    d,
 			query: `{"selector":{"foo":"bar"}}`,
 			want: []rowResult{
-				{ID: "foo", Doc: `{"_id":"foo","_rev":"` + rev + `","foo":"bar"}`},
+				{Doc: `{"_id":"foo","_rev":"` + rev + `","foo":"bar"}`},
 			},
 		}
 	})
@@ -68,8 +68,8 @@ func TestFind(t *testing.T) {
 			db:    d,
 			query: `{"selector":{"foo": "bar"}, "limit": 2}`,
 			want: []rowResult{
-				{ID: "foo", Doc: `{"_id":"foo","_rev":"` + rev + `","foo":"bar"}`},
-				{ID: "foo2", Doc: `{"_id":"foo2","_rev":"` + rev2 + `","foo":"bar"}`},
+				{Doc: `{"_id":"foo","_rev":"` + rev + `","foo":"bar"}`},
+				{Doc: `{"_id":"foo2","_rev":"` + rev2 + `","foo":"bar"}`},
 			},
 		}
 	})
@@ -84,14 +84,61 @@ func TestFind(t *testing.T) {
 			db:    d,
 			query: `{"selector":{"foo": "bar"}, "skip": 2}`,
 			want: []rowResult{
-				{ID: "foo3", Doc: `{"_id":"foo3","_rev":"` + rev3 + `","foo":"bar"}`},
+				{Doc: `{"_id":"foo3","_rev":"` + rev3 + `","foo":"bar"}`},
+			},
+		}
+	})
+	tests.Add("fields", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("foo", map[string]interface{}{
+			"foo": "bar",
+			"baz": "qux",
+			"deeply": map[string]interface{}{
+				"nested": "value",
+				"other":  "value",
+				"yet":    "more",
+			},
+		})
+
+		return test{
+			db:    d,
+			query: `{"selector":{"foo": "bar"},"fields":["foo","deeply.nested","deeply.yet"]}`,
+			want: []rowResult{
+				{Doc: `{"deeply":{"nested":"value","yet":"more"},"foo":"bar"}`},
+			},
+		}
+	})
+	tests.Add("_attachments field ", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("foo", map[string]interface{}{
+			"foo":          "bar",
+			"_attachments": newAttachments().add("foo.txt", "foo"),
+		})
+
+		return test{
+			db:    d,
+			query: `{"selector":{"foo": "bar"},"fields":["_attachments"]}`,
+			want: []rowResult{
+				{Doc: `{"_attachments":{"foo.txt":{"content_type":"text/plain","digest":"md5-rL0Y20zC+Fzt72VPzMSk2A==","length":3,"revpos":1,"stub":true}}}`},
+			},
+		}
+	})
+	tests.Add("_conflicts field ", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("foo", map[string]interface{}{"_rev": "1-foo"}, kivik.Param("new_edits", false))
+		_ = d.tPut("foo", map[string]interface{}{"_rev": "1-bar"}, kivik.Param("new_edits", false))
+
+		return test{
+			db:    d,
+			query: `{"selector":{},"fields":["_conflicts"],"conflicts":true}`,
+			want: []rowResult{
+				{Doc: `{"_conflicts":["1-bar"]}`},
 			},
 		}
 	})
 
 	/*
 		TODO:
-		- fields
 		- use_index
 		- bookmark
 		- execution_stats

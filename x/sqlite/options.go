@@ -225,6 +225,20 @@ func (o optsMap) skip() (int64, error) {
 	return toInt64(in, "invalid value for 'skip'")
 }
 
+func (o optsMap) fields() []string {
+	f, ok := o["fields"].([]interface{})
+	if !ok {
+		return nil
+	}
+	fields := make([]string, 0, len(f))
+	for _, v := range f {
+		if s, ok := v.(string); ok {
+			fields = append(fields, s)
+		}
+	}
+	return fields
+}
+
 // toUint64 converts the input to a uint64. If the input is malformed, it
 // returns an error with msg as the message, and 400 as the status code.
 func toUint64(in interface{}, msg string) (uint64, error) {
@@ -704,6 +718,7 @@ type viewOptions struct {
 	selector  *mango.Selector
 	findLimit int64
 	findSkip  int64
+	fields    []string
 }
 
 // findOptions converts a _find query body into a viewOptions struct.
@@ -731,14 +746,21 @@ func findOptions(query interface{}) (*viewOptions, error) {
 	if err != nil {
 		return nil, err
 	}
+	fields := o.fields()
+	conflicts, err := o.conflicts()
+	if err != nil {
+		return nil, err
+	}
 
 	v := &viewOptions{
 		view:        viewAllDocs,
+		conflicts:   conflicts,
 		includeDocs: true,
 		limit:       -1,
 		findLimit:   limit,
 		findSkip:    skip,
 		selector:    s.Selector,
+		fields:      fields,
 	}
 
 	return v, v.validate()

@@ -180,6 +180,7 @@ func (d *db) queryBuiltinView(
 		selector:  vopts.selector,
 		findLimit: vopts.findLimit,
 		findSkip:  vopts.findSkip,
+		fields:    vopts.fields,
 	}, nil
 }
 
@@ -240,6 +241,7 @@ type rows struct {
 	selector            *mango.Selector
 	findLimit, findSkip int64
 	index               int64
+	fields              []string
 }
 
 var _ driver.Rows = (*rows)(nil)
@@ -335,10 +337,12 @@ func (r *rows) Next(row *driver.Row) error {
 			if r.findLimit > 0 && r.index > r.findLimit+r.findSkip {
 				return io.EOF
 			}
+			// These values are omitted from the _find response
+			row.ID = ""
 			row.Key = nil
 			row.Value = nil
 		}
-		row.Doc = full.toReader()
+		row.Doc = full.toReader(r.fields...)
 	}
 	return nil
 }

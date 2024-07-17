@@ -80,6 +80,13 @@ func toQuery(query interface{}, options ...Option) (json.RawMessage, error) {
 		return nil, &errors.Error{Status: http.StatusBadRequest, Err: err}
 	}
 
+	opts := map[string]interface{}{}
+	multiOptions(options).Apply(opts)
+
+	for k, v := range opts {
+		queryObject[k] = v
+	}
+
 	return json.Marshal(queryObject)
 }
 

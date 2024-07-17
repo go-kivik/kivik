@@ -26,7 +26,10 @@ type db struct {
 	logger *log.Logger
 }
 
-var _ driver.DB = (*db)(nil)
+var (
+	_ driver.DB     = (*db)(nil)
+	_ driver.Finder = (*db)(nil)
+)
 
 func (c *client) newDB(name string) *db {
 	return &db{
@@ -68,4 +71,20 @@ func (db) BulkDocs(context.Context, []interface{}, driver.Options) ([]driver.Bul
 
 func (db) Copy(context.Context, string, string, driver.Options) (string, error) {
 	return "", nil
+}
+
+func (db) CreateIndex(context.Context, string, string, interface{}, driver.Options) error {
+	return nil
+}
+
+func (db) GetIndexes(context.Context, driver.Options) ([]driver.Index, error) {
+	return nil, nil
+}
+
+func (db) DeleteIndex(context.Context, string, string, driver.Options) error {
+	return nil
+}
+
+func (db) Explain(context.Context, interface{}, driver.Options) (*driver.QueryPlan, error) {
+	return nil, nil
 }

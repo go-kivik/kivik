@@ -176,9 +176,44 @@ func TestFind(t *testing.T) {
 		wantErr:    "invalid value for 'bookmark': true",
 	})
 	tests.Add("invalid bookmark", test{
-		query:      `{"selector":{},"bookmark":"oink"}`,
+		query:      `{"selector":{},"bookmark":"moo"}`,
 		wantStatus: http.StatusBadRequest,
-		wantErr:    "invalid value for 'bookmark': true",
+		wantErr:    "invalid value for 'bookmark': moo",
+	})
+	tests.Add("sort", func(t *testing.T) interface{} {
+		d := newDB(t)
+		// revA := d.tPut("a", map[string]interface{}{"name": "Bob"})
+		// revB := d.tPut("b", map[string]interface{}{"name": "Alice"})
+		// revC := d.tPut("c", map[string]interface{}{"name": "Charlie"})
+		// revD := d.tPut("d", map[string]interface{}{"name": "Dick"})
+
+		return test{
+			db:    d,
+			query: `{"selector":{},"sort":["name"]}`,
+			// TODO: Support sorting
+			wantStatus: http.StatusBadRequest,
+			wantErr:    "no index exists for this sort, try indexing by the sort fields",
+		}
+	})
+	tests.Add("sort, non-array", test{
+		query:      `{"selector":{},"sort":"x"}`,
+		wantStatus: http.StatusBadRequest,
+		wantErr:    "invalid value for 'sort': x",
+	})
+	tests.Add("sort, invalid field", test{
+		query:      `{"selector":{},"sort":["x",3]}`,
+		wantStatus: http.StatusBadRequest,
+		wantErr:    "invalid sort field: 3",
+	})
+	tests.Add("fields, non-array", test{
+		query:      `{"selector":{},"fields":"x"}`,
+		wantStatus: http.StatusBadRequest,
+		wantErr:    "invalid value for 'fields': x",
+	})
+	tests.Add("fields, invalid field", test{
+		query:      `{"selector":{},"fields":["x",3]}`,
+		wantStatus: http.StatusBadRequest,
+		wantErr:    "invalid fields field: 3",
 	})
 
 	/*

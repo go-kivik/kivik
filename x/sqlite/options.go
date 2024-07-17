@@ -226,18 +226,25 @@ func (o optsMap) skip() (int64, error) {
 	return toInt64(in, "invalid value for 'skip'")
 }
 
-func (o optsMap) fields() []string {
-	f, ok := o["fields"].([]interface{})
+func (o optsMap) fields() ([]string, error) {
+	raw, ok := o["fields"]
 	if !ok {
-		return nil
+		return nil, nil
+	}
+
+	f, ok := raw.([]interface{})
+	if !ok {
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'fields': %v", raw)}
 	}
 	fields := make([]string, 0, len(f))
 	for _, v := range f {
-		if s, ok := v.(string); ok {
-			fields = append(fields, s)
+		s, ok := v.(string)
+		if !ok {
+			return nil, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid fields field: %v", v)}
 		}
+		fields = append(fields, s)
 	}
-	return fields
+	return fields, nil
 }
 
 // toUint64 converts the input to a uint64. If the input is malformed, it
@@ -493,6 +500,26 @@ func (o optsMap) groupLevel() (uint64, error) {
 	return toUint64(raw, "invalid value for 'group_level'")
 }
 
+func (o optsMap) sort() ([]string, error) {
+	raw, ok := o["sort"]
+	if !ok {
+		return nil, nil
+	}
+	list, ok := raw.([]interface{})
+	if !ok {
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'sort': %v", raw)}
+	}
+	sort := make([]string, len(list))
+	for i, v := range list {
+		s, ok := v.(string)
+		if !ok {
+			return nil, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid sort field: %v", v)}
+		}
+		sort[i] = s
+	}
+	return sort, nil
+}
+
 func (o optsMap) bookmark() (string, error) {
 	raw, ok := o["bookmark"]
 	if !ok {
@@ -744,6 +771,7 @@ type viewOptions struct {
 	findSkip  int64
 	fields    []string
 	bookmark  string
+	sort      []string
 }
 
 // findOptions converts a _find query body into a viewOptions struct.
@@ -771,7 +799,10 @@ func findOptions(query interface{}) (*viewOptions, error) {
 	if err != nil {
 		return nil, err
 	}
-	fields := o.fields()
+	fields, err := o.fields()
+	if err != nil {
+		return nil, err
+	}
 	conflicts, err := o.conflicts()
 	if err != nil {
 		return nil, err
@@ -782,6 +813,13 @@ func findOptions(query interface{}) (*viewOptions, error) {
 	}
 	if bookmark != "" {
 		skip = 0
+	}
+	sort, err := o.sort()
+	if err != nil {
+		return nil, err
+	}
+	if len(sort) > 0 {
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "no index exists for this sort, try indexing by the sort fields"}
 	}
 
 	v := &viewOptions{
@@ -794,6 +832,7 @@ func findOptions(query interface{}) (*viewOptions, error) {
 		selector:    s.Selector,
 		fields:      fields,
 		bookmark:    bookmark,
+		sort:        sort,
 	}
 
 	return v, v.validate()

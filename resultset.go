@@ -130,8 +130,8 @@ func (r *ResultSet) Close() error {
 }
 
 // Metadata returns the result metadata for the current query. It must be
-// called after [ResultSet.Next] returns false. Otherwise it will return an
-// error.
+// called after [ResultSet.Next] returns false or [ResultSetIterator] has been
+// completely and successfully iterated. Otherwise it will return an error.
 func (r *ResultSet) Metadata() (*ResultMetadata, error) {
 	for r.iter == nil || (r.state != stateEOQ && r.state != stateClosed) {
 		return nil, &internal.Error{Status: http.StatusBadRequest, Err: errors.New("Metadata must not be called until result set iteration is complete")}
@@ -391,4 +391,112 @@ func scanAll(r *ResultSet, dest interface{}, scan func(interface{}) error) (err 
 		}
 	}
 	return nil
+}
+
+// Row represents a single row in a result set, as returned by
+// [ResultSet.Iterator] and [ResultSet.NextIterator].
+//
+// !!NOTICE!! This struct is considered experimental, and may change without
+// notice.
+type Row struct {
+	dRow *driver.Row
+}
+
+// ID returns the document ID of the row, if present in the result.
+func (r *Row) ID() (string, error) {
+	return r.dRow.ID, r.dRow.Error
+}
+
+// Rev returns the view key of the row, if present in the result.
+func (r *Row) Rev() (string, error) {
+	return r.dRow.Rev, r.dRow.Error
+}
+
+// Key returns the raw, JSON-encoded key of the row, if present in the result.
+func (r *Row) Key() (json.RawMessage, error) {
+	return r.dRow.Key, r.dRow.Error
+}
+
+// ScanValue copies the data from the result value into dest, which must be a
+// pointer. This acts as a wrapper around [encoding/json.Unmarshal].
+//
+// Refer to the documentation for [encoding/json.Unmarshal] for unmarshaling
+// details.
+//
+// If the row returned an error, it will be returned rather than
+// unmarshaling the doc, as error rows do not include values.
+func (r *Row) ScanValue(dest interface{}) error {
+	if err := r.dRow.Error; err != nil {
+		return err
+	}
+	return json.NewDecoder(r.dRow.Value).Decode(dest)
+}
+
+// ScanKey works the same as [Row.ScanValue], but on the key field of the
+// result. For simple keys, which are just strings, [Row.Key] may be easier to
+// use.
+//
+// Unlike [Row.ScanValue] and [Row.ScanDoc], this may successfully scan the key,
+// and also return an error, if the row itself represents an error.
+func (r *Row) ScanKey(dest interface{}) error {
+	if err := r.dRow.Error; err != nil {
+		return err
+	}
+	return json.Unmarshal(r.dRow.Key, dest)
+}
+
+// ScanDoc works the same as [Row.ScanValue], but on the doc field of the
+// result. It will return an error if the query does not include documents.
+//
+// If the row returned an error, it will be returned rather than
+// unmarshaling the doc, as error rows do not include docs.
+func (r *Row) ScanDoc(dest interface{}) error {
+	if err := r.dRow.Error; err != nil {
+		return err
+	}
+	return json.NewDecoder(r.dRow.Doc).Decode(dest)
+}
+
+// Iterator returns a function that can be used to iterate over all rows in the
+// result set(s). This function is the analogue to [ResultSet.Next] for Go
+// 1.23's new range functions. The error returned by the iterator is
+// row-specific, and does not mean the entire result set is invalid.
+//
+// If your ResultSet contains multiple result sets, this iterator will iterate
+// over all of them, without distinction. If you need to iterate over each
+// result set individually, use [ResultSet.NextIterator].
+//
+// !!NOTICE!! This function is considered experimental, and may change without
+// notice.
+func (r *ResultSet) Iterator() func(yield func(*Row, error) bool) {
+	return func(yield func(*Row, error) bool) {
+		for r.Next() {
+			row := r.iter.curVal.(*driver.Row)
+			if !yield(&Row{dRow: row}, nil) {
+				_ = r.Close()
+				break
+			}
+		}
+		if err := r.Err(); err != nil {
+			yield(nil, err)
+		}
+	}
+}
+
+// NextIterator returns a function that can be used to iterate over the
+// multiple result sets in a [ResultSet]. This function is the analogue to
+// [ResultSet.NextResultSet] for Go 1.23's. For queries that return multiple
+// resultsets, you may call this function once for each result set.
+//
+// !!NOTICE!! This function is considered experimental, and may change without
+// notice.
+func (r *ResultSet) NextIterator() func(yield func() bool) {
+	return func(yield func() bool) {
+		for r.NextResultSet() {
+			if !yield() {
+				_ = r.Close()
+				break
+			}
+		}
+	}
 }

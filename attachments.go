@@ -205,3 +205,21 @@ func (i *AttachmentsIterator) Close() error {
 	}
 	return i.atti.Close()
 }
+
+// Iterator returns a function that can be used to iterate over the attachments.
+// This function works with Go 1.23's range functions, and is an alternative to
+// using [AttachmentsIterator.Next] directly.
+func (i *AttachmentsIterator) Iterator() func(yield func(*Attachment, error) bool) {
+	return func(yield func(*Attachment, error) bool) {
+		for {
+			att, err := i.Next()
+			if err == io.EOF {
+				return
+			}
+			if !yield(att, err) || err != nil {
+				_ = i.Close()
+				return
+			}
+		}
+	}
+}

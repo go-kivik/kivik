@@ -268,7 +268,9 @@ type rows struct {
 	findLimit, findSkip int64
 	index               int64
 	fields              []string
-	bookmark            string
+
+	done     bool
+	bookmark string
 }
 
 var _ driver.Rows = (*rows)(nil)
@@ -283,6 +285,7 @@ func (r *rows) Next(row *driver.Row) error {
 			if err := r.rows.Err(); err != nil {
 				return err
 			}
+			r.done = true
 			return io.EOF
 		}
 		var (
@@ -362,6 +365,7 @@ func (r *rows) Next(row *driver.Row) error {
 				return r.Next(row)
 			}
 			if r.findLimit > 0 && r.index > r.findLimit+r.findSkip {
+				r.done = true
 				return io.EOF
 			}
 			// These values are omitted from the _find response
@@ -392,5 +396,10 @@ func (*rows) TotalRows() int64 {
 }
 
 func (r *rows) Bookmark() string {
-	return r.bookmark
+	if r.done {
+		// Only return the bookmark if we've reached the end of the rows.
+		return r.bookmark
+	}
+
+	return ""
 }

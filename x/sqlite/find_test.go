@@ -178,7 +178,6 @@ func TestFind(t *testing.T) {
 		- update
 		- stale
 		- use_index
-		- bookmark
 		- execution_stats
 	*/
 

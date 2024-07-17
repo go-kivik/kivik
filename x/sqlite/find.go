@@ -19,8 +19,7 @@ import (
 )
 
 func (d *db) Find(ctx context.Context, query interface{}, _ driver.Options) (driver.Rows, error) {
-	opts := optsMap{}
-	vopts, err := opts.findOptions(query)
+	vopts, err := findOptions(query)
 	if err != nil {
 		return nil, err
 	}

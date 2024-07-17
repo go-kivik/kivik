@@ -178,6 +178,8 @@ func (d *db) queryBuiltinView(
 		rows:      results,
 		updateSeq: meta.updateSeq,
 		selector:  vopts.selector,
+		findLimit: vopts.findLimit,
+		findSkip:  vopts.findSkip,
 	}, nil
 }
 
@@ -231,11 +233,13 @@ func descendingToDirection(descending bool) string {
 }
 
 type rows struct {
-	ctx       context.Context
-	db        *db
-	rows      *sql.Rows
-	updateSeq string
-	selector  *mango.Selector
+	ctx                 context.Context
+	db                  *db
+	rows                *sql.Rows
+	updateSeq           string
+	selector            *mango.Selector
+	findLimit, findSkip int64
+	index               int64
 }
 
 var _ driver.Rows = (*rows)(nil)
@@ -323,6 +327,13 @@ func (r *rows) Next(row *driver.Row) error {
 			// filtering the results, and a different format.
 			if !r.selector.Match(full.toMap()) {
 				return r.Next(row)
+			}
+			r.index++
+			if r.index <= r.findSkip {
+				return r.Next(row)
+			}
+			if r.findLimit > 0 && r.index > r.findLimit+r.findSkip {
+				return io.EOF
 			}
 			row.Key = nil
 			row.Value = nil

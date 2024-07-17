@@ -69,15 +69,28 @@ func TestFind(t *testing.T) {
 			query: `{"selector":{"foo": "bar"}, "limit": 2}`,
 			want: []rowResult{
 				{ID: "foo", Doc: `{"_id":"foo","_rev":"` + rev + `","foo":"bar"}`},
-				{ID: "foo2", Doc: `{"_id":"foo","_rev":"` + rev2 + `","foo":"bar"}`},
+				{ID: "foo2", Doc: `{"_id":"foo2","_rev":"` + rev2 + `","foo":"bar"}`},
+			},
+		}
+	})
+	tests.Add("skip", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("foo", map[string]string{"foo": "bar"})
+		_ = d.tPut("bar", map[string]string{"bar": "baz"})
+		_ = d.tPut("foo2", map[string]string{"foo": "bar"})
+		rev3 := d.tPut("foo3", map[string]string{"foo": "bar"})
+
+		return test{
+			db:    d,
+			query: `{"selector":{"foo": "bar"}, "skip": 2}`,
+			want: []rowResult{
+				{ID: "foo3", Doc: `{"_id":"foo3","_rev":"` + rev3 + `","foo":"bar"}`},
 			},
 		}
 	})
 
 	/*
 		TODO:
-		- limit
-		- skip
 		- fields
 		- use_index
 		- bookmark

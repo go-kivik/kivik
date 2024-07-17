@@ -701,11 +701,13 @@ type viewOptions struct {
 	attEncodingInfo bool
 
 	// Find-specific options
-	selector *mango.Selector
+	selector  *mango.Selector
+	findLimit int64
+	findSkip  int64
 }
 
 // findOptions converts a _find query body into a viewOptions struct.
-func (o optsMap) findOptions(query interface{}) (*viewOptions, error) {
+func findOptions(query interface{}) (*viewOptions, error) {
 	input := query.(json.RawMessage)
 	var s struct {
 		Selector *mango.Selector `json:"selector"`
@@ -716,15 +718,26 @@ func (o optsMap) findOptions(query interface{}) (*viewOptions, error) {
 	if s.Selector == nil {
 		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "selector cannot be null"}
 	}
-	var q map[string]interface{}
-	if err := json.Unmarshal(input, &q); err != nil {
+	var o optsMap
+	if err := json.Unmarshal(input, &o); err != nil {
 		return nil, &internal.Error{Status: http.StatusBadRequest, Err: err}
+	}
+
+	limit, err := o.limit()
+	if err != nil {
+		return nil, err
+	}
+	skip, err := o.skip()
+	if err != nil {
+		return nil, err
 	}
 
 	v := &viewOptions{
 		view:        viewAllDocs,
 		includeDocs: true,
 		limit:       -1,
+		findLimit:   limit,
+		findSkip:    skip,
 		selector:    s.Selector,
 	}
 

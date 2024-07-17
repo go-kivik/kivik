@@ -13,6 +13,7 @@
 package sqlite
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -22,6 +23,7 @@ import (
 
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
+	"github.com/go-kivik/kivik/v4/x/mango"
 )
 
 type optsMap map[string]interface{}
@@ -222,6 +224,27 @@ func (o optsMap) skip() (int64, error) {
 		return 0, nil
 	}
 	return toInt64(in, "invalid value for 'skip'")
+}
+
+func (o optsMap) fields() ([]string, error) {
+	raw, ok := o["fields"]
+	if !ok {
+		return nil, nil
+	}
+
+	f, ok := raw.([]interface{})
+	if !ok {
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'fields': %v", raw)}
+	}
+	fields := make([]string, 0, len(f))
+	for _, v := range f {
+		s, ok := v.(string)
+		if !ok {
+			return nil, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid fields field: %v", v)}
+		}
+		fields = append(fields, s)
+	}
+	return fields, nil
 }
 
 // toUint64 converts the input to a uint64. If the input is malformed, it
@@ -477,6 +500,42 @@ func (o optsMap) groupLevel() (uint64, error) {
 	return toUint64(raw, "invalid value for 'group_level'")
 }
 
+func (o optsMap) sort() ([]string, error) {
+	raw, ok := o["sort"]
+	if !ok {
+		return nil, nil
+	}
+	list, ok := raw.([]interface{})
+	if !ok {
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'sort': %v", raw)}
+	}
+	sort := make([]string, len(list))
+	for i, v := range list {
+		s, ok := v.(string)
+		if !ok {
+			return nil, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid sort field: %v", v)}
+		}
+		sort[i] = s
+	}
+	return sort, nil
+}
+
+func (o optsMap) bookmark() (string, error) {
+	raw, ok := o["bookmark"]
+	if !ok {
+		return "", nil
+	}
+	v, ok := raw.(string)
+	if !ok {
+		return "", &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'bookmark': %v", raw)}
+	}
+	bookmark, err := base64.StdEncoding.DecodeString(v)
+	if err != nil {
+		return "", &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'bookmark': %v", raw)}
+	}
+	return string(bookmark), nil
+}
+
 func (o optsMap) conflicts() (bool, error) {
 	if o.meta() {
 		return true, nil
@@ -604,6 +663,13 @@ func (v viewOptions) buildGroupWhere(args *[]any) []string {
 	return where
 }
 
+func (v viewOptions) bookmarkWhere() string {
+	if v.bookmark != "" {
+		return `WHERE main.doc_number > (SELECT doc_number FROM bookmark)`
+	}
+	return ""
+}
+
 // buildWhere returns WHERE conditions based on the provided configuration
 // arguments, and may append to args as needed.
 func (v viewOptions) buildWhere(args *[]any) []string {
@@ -698,6 +764,78 @@ type viewOptions struct {
 	keys            []string
 	sorted          bool
 	attEncodingInfo bool
+
+	// Find-specific options
+	selector  *mango.Selector
+	findLimit int64
+	findSkip  int64
+	fields    []string
+	bookmark  string
+	sort      []string
+}
+
+// findOptions converts a _find query body into a viewOptions struct.
+func findOptions(query interface{}) (*viewOptions, error) {
+	input := query.(json.RawMessage)
+	var s struct {
+		Selector *mango.Selector `json:"selector"`
+	}
+	if err := json.Unmarshal(input, &s); err != nil {
+		return nil, &internal.Error{Status: http.StatusBadRequest, Err: err}
+	}
+	if s.Selector == nil {
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "selector cannot be null"}
+	}
+	var o optsMap
+	if err := json.Unmarshal(input, &o); err != nil {
+		return nil, &internal.Error{Status: http.StatusBadRequest, Err: err}
+	}
+
+	limit, err := o.limit()
+	if err != nil {
+		return nil, err
+	}
+	skip, err := o.skip()
+	if err != nil {
+		return nil, err
+	}
+	fields, err := o.fields()
+	if err != nil {
+		return nil, err
+	}
+	conflicts, err := o.conflicts()
+	if err != nil {
+		return nil, err
+	}
+	bookmark, err := o.bookmark()
+	if err != nil {
+		return nil, err
+	}
+	if bookmark != "" {
+		skip = 0
+	}
+	sort, err := o.sort()
+	if err != nil {
+		return nil, err
+	}
+	if len(sort) > 0 {
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "no index exists for this sort, try indexing by the sort fields"}
+	}
+
+	v := &viewOptions{
+		view:        viewAllDocs,
+		conflicts:   conflicts,
+		includeDocs: true,
+		limit:       -1,
+		findLimit:   limit,
+		findSkip:    skip,
+		selector:    s.Selector,
+		fields:      fields,
+		bookmark:    bookmark,
+		sort:        sort,
+	}
+
+	return v, v.validate()
 }
 
 func (o optsMap) viewOptions(view string) (*viewOptions, error) {

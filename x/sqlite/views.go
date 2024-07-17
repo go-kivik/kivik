@@ -16,6 +16,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -78,13 +79,81 @@ func (d *db) DesignDocs(ctx context.Context, options driver.Options) (driver.Row
 func (d *db) queryBuiltinView(
 	ctx context.Context,
 	vopts *viewOptions,
-	sel *mango.Selector,
 ) (driver.Rows, error) {
-	args := []interface{}{vopts.includeDocs, vopts.conflicts, vopts.updateSeq, vopts.attachments}
+	args := []interface{}{vopts.includeDocs, vopts.conflicts, vopts.updateSeq, vopts.attachments, vopts.bookmark}
 
 	where := append([]string{""}, vopts.buildWhere(&args)...)
 
-	query := fmt.Sprintf(d.query(leavesCTE+`
+	query := fmt.Sprintf(d.query(leavesCTE+`,
+		main AS (
+			SELECT
+				CASE WHEN row_number = 1 THEN id        END AS id,
+				CASE WHEN row_number = 1 THEN key       END AS key,
+				CASE WHEN row_number = 1 THEN value     END AS value,
+				CASE WHEN row_number = 1 THEN rev       END AS rev,
+				CASE WHEN row_number = 1 THEN doc       END AS doc,
+				CASE WHEN row_number = 1 THEN conflicts END AS conflicts,
+				COALESCE(attachment_count, 0) AS attachment_count,
+				filename,
+				content_type,
+				length,
+				digest,
+				rev_pos,
+				data,
+				doc_number
+			FROM (
+				SELECT
+					view.id,
+					view.key,
+					'{"value":{"rev":"' || view.rev || '-' || view.rev_id || '"}}' AS value,
+					view.rev || '-' || view.rev_id AS rev,
+					view.doc,
+					view.conflicts,
+					SUM(CASE WHEN bridge.pk IS NOT NULL THEN 1 ELSE 0 END) OVER (PARTITION BY view.id, view.rev, view.rev_id) AS attachment_count,
+					ROW_NUMBER() OVER (PARTITION BY view.id, view.rev, view.rev_id) AS row_number,
+					att.filename AS filename,
+					att.content_type AS content_type,
+					att.length AS length,
+					att.digest AS digest,
+					att.rev_pos AS rev_pos,
+					IIF($4, att.data, NULL) AS data,
+					ROW_NUMBER() OVER (%[1]s) AS doc_number
+				FROM (
+					SELECT
+						view.id     AS id,
+						view.key    AS key,
+						view.rev    AS rev,
+						view.rev_id AS rev_id,
+						view.doc    AS doc,
+						IIF($2, GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ','), NULL) AS conflicts
+					FROM (
+						SELECT
+							id                    AS id,
+							rev                   AS rev,
+							rev_id                AS rev_id,
+							key                   AS key,
+							IIF($1, doc, NULL)    AS doc,
+							ROW_NUMBER() OVER (PARTITION BY id ORDER BY rev DESC, rev_id DESC) AS rank
+						FROM leaves
+					) AS view
+					LEFT JOIN leaves AS conflicts ON conflicts.id = view.id AND NOT (view.rev = conflicts.rev AND view.rev_id = conflicts.rev_id)
+					WHERE view.rank = 1
+						%[2]s -- WHERE
+					GROUP BY view.id, view.rev, view.rev_id
+					%[1]s -- ORDER BY
+					LIMIT %[3]d OFFSET %[4]d
+				) AS view
+				LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON view.id = bridge.id AND view.rev = bridge.rev AND view.rev_id = bridge.rev_id AND $1
+				LEFT JOIN {{ .Attachments }} AS att ON bridge.pk = att.pk
+				%[1]s -- ORDER BY
+			)
+		),
+		bookmark AS (
+			SELECT doc_number
+			FROM main
+			WHERE id = $5
+		)
+
 		SELECT
 			TRUE                  AS up_to_date,
 			FALSE                 AS reducible,
@@ -104,65 +173,22 @@ func (d *db) queryBuiltinView(
 		UNION ALL
 
 		SELECT
-			CASE WHEN row_number = 1 THEN id        END AS id,
-			CASE WHEN row_number = 1 THEN key       END AS key,
-			CASE WHEN row_number = 1 THEN value     END AS value,
-			CASE WHEN row_number = 1 THEN rev       END AS rev,
-			CASE WHEN row_number = 1 THEN doc       END AS doc,
-			CASE WHEN row_number = 1 THEN conflicts END AS conflicts,
-			COALESCE(attachment_count, 0) AS attachment_count,
+			id,
+			key,
+			value,
+			rev,
+			doc,
+			conflicts,
+			attachment_count,
 			filename,
 			content_type,
 			length,
 			digest,
 			rev_pos,
 			data
-		FROM (
-			SELECT
-				view.id,
-				view.key,
-				'{"value":{"rev":"' || view.rev || '-' || view.rev_id || '"}}' AS value,
-				view.rev || '-' || view.rev_id AS rev,
-				view.doc,
-				view.conflicts,
-				SUM(CASE WHEN bridge.pk IS NOT NULL THEN 1 ELSE 0 END) OVER (PARTITION BY view.id, view.rev, view.rev_id) AS attachment_count,
-				ROW_NUMBER() OVER (PARTITION BY view.id, view.rev, view.rev_id) AS row_number,
-				att.filename AS filename,
-				att.content_type AS content_type,
-				att.length AS length,
-				att.digest AS digest,
-				att.rev_pos AS rev_pos,
-				IIF($4, att.data, NULL) AS data
-			FROM (
-				SELECT
-					view.id     AS id,
-					view.key    AS key,
-					view.rev    AS rev,
-					view.rev_id AS rev_id,
-					view.doc    AS doc,
-					IIF($2, GROUP_CONCAT(conflicts.rev || '-' || conflicts.rev_id, ','), NULL) AS conflicts
-				FROM (
-					SELECT
-						id                    AS id,
-						rev                   AS rev,
-						rev_id                AS rev_id,
-						key                   AS key,
-						IIF($1, doc, NULL)    AS doc,
-						ROW_NUMBER() OVER (PARTITION BY id ORDER BY rev DESC, rev_id DESC) AS rank
-					FROM leaves
-				) AS view
-				LEFT JOIN leaves AS conflicts ON conflicts.id = view.id AND NOT (view.rev = conflicts.rev AND view.rev_id = conflicts.rev_id)
-				WHERE view.rank = 1
-					%[2]s -- WHERE
-				GROUP BY view.id, view.rev, view.rev_id
-				%[1]s -- ORDER BY
-				LIMIT %[3]d OFFSET %[4]d
-			) AS view
-			LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON view.id = bridge.id AND view.rev = bridge.rev AND view.rev_id = bridge.rev_id AND $1
-			LEFT JOIN {{ .Attachments }} AS att ON bridge.pk = att.pk
-			%[1]s -- ORDER BY
-		)
-	`), vopts.buildOrderBy(), strings.Join(where, " AND "), vopts.limit, vopts.skip)
+		FROM main
+		%[5]s -- bookmark filtering
+	`), vopts.buildOrderBy(), strings.Join(where, " AND "), vopts.limit, vopts.skip, vopts.bookmarkWhere())
 	results, err := d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {
 		return nil, err
@@ -178,7 +204,10 @@ func (d *db) queryBuiltinView(
 		db:        d,
 		rows:      results,
 		updateSeq: meta.updateSeq,
-		selector:  sel,
+		selector:  vopts.selector,
+		findLimit: vopts.findLimit,
+		findSkip:  vopts.findSkip,
+		fields:    vopts.fields,
 	}, nil
 }
 
@@ -232,11 +261,17 @@ func descendingToDirection(descending bool) string {
 }
 
 type rows struct {
-	ctx       context.Context
-	db        *db
-	rows      *sql.Rows
-	updateSeq string
-	selector  *mango.Selector
+	ctx                 context.Context
+	db                  *db
+	rows                *sql.Rows
+	updateSeq           string
+	selector            *mango.Selector
+	findLimit, findSkip int64
+	index               int64
+	fields              []string
+
+	done     bool
+	bookmark string
 }
 
 var _ driver.Rows = (*rows)(nil)
@@ -251,6 +286,7 @@ func (r *rows) Next(row *driver.Row) error {
 			if err := r.rows.Err(); err != nil {
 				return err
 			}
+			r.done = true
 			return io.EOF
 		}
 		var (
@@ -325,10 +361,21 @@ func (r *rows) Next(row *driver.Row) error {
 			if !r.selector.Match(full.toMap()) {
 				return r.Next(row)
 			}
+			r.index++
+			if r.index <= r.findSkip {
+				return r.Next(row)
+			}
+			if r.findLimit > 0 && r.index > r.findLimit+r.findSkip {
+				r.done = true
+				return io.EOF
+			}
+			// These values are omitted from the _find response
+			r.bookmark = row.ID
+			row.ID = ""
 			row.Key = nil
 			row.Value = nil
 		}
-		row.Doc = full.toReader()
+		row.Doc = full.toReader(r.fields...)
 	}
 	return nil
 }
@@ -341,10 +388,19 @@ func (r *rows) UpdateSeq() string {
 	return r.updateSeq
 }
 
-func (r *rows) Offset() int64 {
+func (*rows) Offset() int64 {
 	return 0
 }
 
-func (r *rows) TotalRows() int64 {
+func (*rows) TotalRows() int64 {
 	return 0
+}
+
+func (r *rows) Bookmark() string {
+	if r.done {
+		// Only return the bookmark if we've reached the end of the rows.
+		return base64.StdEncoding.EncodeToString([]byte(r.bookmark))
+	}
+
+	return ""
 }

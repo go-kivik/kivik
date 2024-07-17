@@ -395,34 +395,98 @@ type fullDoc struct {
 	Deleted          bool                   `json:"_deleted,omitempty"`
 }
 
+// hasMeta returns true if d contains metadata (_* fields other than _id and
+// _rev) that would be included when marshaling.
+func (d fullDoc) hasMeta() bool {
+	return len(d.Conflicts) > 0 ||
+		len(d.DeletedConflicts) > 0 ||
+		len(d.RevsInfo) > 0 ||
+		d.Revisions != nil ||
+		d.LocalSeq > 0 ||
+		len(d.Attachments) > 0 ||
+		d.Deleted
+}
+
 func (d fullDoc) rev() (revision, error) {
 	return parseRev(d.Rev)
 }
 
-func (d *fullDoc) toRaw() json.RawMessage {
+// renders only the requested fields. If fields is is empty,
+// the entire docuemnt is returned.
+func (d *fullDoc) toRaw(fields ...string) json.RawMessage {
+	want := func(string) bool { return true }
+	if len(fields) > 0 {
+		wantFields := make(map[string]struct{}, len(fields))
+		for _, f := range fields {
+			wantFields[f] = struct{}{}
+		}
+		want = func(field string) bool {
+			_, ok := wantFields[field]
+			return ok
+		}
+	}
 	buf := bytes.Buffer{}
 	_ = buf.WriteByte('{')
-	if id := d.ID; id != "" {
-		_, _ = buf.WriteString(`"_id":`)
-		_, _ = buf.Write(jsonMarshal(id))
-		_ = buf.WriteByte(',')
+	if want("_id") {
+		if id := d.ID; id != "" {
+			_, _ = buf.WriteString(`"_id":`)
+			_, _ = buf.Write(jsonMarshal(id))
+			_ = buf.WriteByte(',')
+		}
 	}
-	if rev := d.Rev; rev != "" {
-		_, _ = buf.WriteString(`"_rev":`)
-		_, _ = buf.Write(jsonMarshal(rev))
-		_ = buf.WriteByte(',')
+	if want("_rev") {
+		if rev := d.Rev; rev != "" {
+			_, _ = buf.WriteString(`"_rev":`)
+			_, _ = buf.Write(jsonMarshal(rev))
+			_ = buf.WriteByte(',')
+		}
 	}
 
 	const minJSONObjectLen = 2
 	if len(d.Doc) > minJSONObjectLen {
-		// The main doc
-		_, _ = buf.Write(d.Doc[1 : len(d.Doc)-1]) // Omit opening and closing braces
-		_ = buf.WriteByte(',')
+		if len(fields) == 0 {
+			// The main doc
+			_, _ = buf.Write(d.Doc[1 : len(d.Doc)-1]) // Omit opening and closing braces
+			_ = buf.WriteByte(',')
+		} else {
+			var doc map[string]interface{}
+			tmp := map[string]interface{}{}
+			_ = json.Unmarshal(d.Doc, &doc)
+			for _, f := range fields {
+				if f == "_id" || f == "_rev" {
+					continue
+				}
+				keys := splitKeys(f)
+				if v, ok := extractValue(doc, keys...); ok {
+					insertValue(tmp, v, keys)
+				}
+			}
+			if len(tmp) > 0 {
+				jsonText, _ := json.Marshal(tmp)
+				_, _ = buf.Write(jsonText[1 : len(jsonText)-1])
+				_ = buf.WriteByte(',')
+			}
+		}
 	}
 
-	if tmp, _ := json.Marshal(d); len(tmp) > minJSONObjectLen {
-		_, _ = buf.Write(tmp[1 : len(tmp)-1])
-		_ = buf.WriteByte(',')
+	if d.hasMeta() {
+		if len(fields) == 0 {
+			tmp, _ := json.Marshal(d)
+			_, _ = buf.Write(tmp[1 : len(tmp)-1])
+			_ = buf.WriteByte(',')
+		} else {
+			// These are the only two meta fields supported by the _find endpoint
+			if want("_conflicts") && len(d.Conflicts) > 0 {
+				_, _ = buf.WriteString(`"_conflicts":`)
+				_, _ = buf.Write(jsonMarshal(d.Conflicts))
+				_ = buf.WriteByte(',')
+			}
+			if want("_attachments") && len(d.Attachments) > 0 {
+				_, _ = buf.WriteString(`"_attachments":`)
+				_, _ = buf.Write(jsonMarshal(d.Attachments))
+				_ = buf.WriteByte(',')
+			}
+		}
 	}
 
 	result := buf.Bytes()
@@ -431,8 +495,78 @@ func (d *fullDoc) toRaw() json.RawMessage {
 	return result
 }
 
-func (d *fullDoc) toReader() io.ReadCloser {
-	return io.NopCloser(bytes.NewReader(d.toRaw()))
+// splitKeys splits a field into its component keys. For example,
+// `splitKeys("foo.bar")` returns `["foo", "bar"]`. Escaped dots are treated as
+// a single key, so `splitKeys("foo\\.bar")` returns `["foo.bar"]`.
+func splitKeys(field string) []string {
+	var escaped bool
+	result := []string{}
+	word := make([]byte, 0, len(field))
+	for _, ch := range field {
+		if escaped {
+			word = append(word, byte(ch))
+			escaped = false
+			continue
+		}
+		if ch == '\\' {
+			escaped = true
+			continue
+		}
+		if ch == '.' {
+			result = append(result, string(word))
+			word = word[:0]
+			continue
+		}
+		word = append(word, byte(ch))
+	}
+	if escaped {
+		word = append(word, '\\')
+	}
+	return append(result, string(word))
+}
+
+func extractValue(obj map[string]interface{}, keys ...string) (interface{}, bool) {
+	for i, key := range keys {
+		if i == len(keys)-1 {
+			o, ok := obj[key]
+			return o, ok
+		}
+		if v, ok := obj[key]; ok {
+			if m, ok := v.(map[string]interface{}); ok {
+				obj = m
+			} else {
+				return nil, false
+			}
+		} else {
+			return nil, false
+		}
+	}
+	return nil, false
+}
+
+func insertValue(obj map[string]interface{}, value interface{}, keys []string) {
+	for i, key := range keys {
+		if i == len(keys)-1 {
+			obj[key] = value
+			return
+		}
+		if v, ok := obj[key]; ok {
+			m, ok := v.(map[string]interface{})
+			if !ok {
+				return
+			}
+
+			obj = m
+		} else {
+			m := make(map[string]interface{}, 1)
+			obj[key] = m
+			obj = m
+		}
+	}
+}
+
+func (d *fullDoc) toReader(fields ...string) io.ReadCloser {
+	return io.NopCloser(bytes.NewReader(d.toRaw(fields...)))
 }
 
 func jsonMarshal(s interface{}) []byte {

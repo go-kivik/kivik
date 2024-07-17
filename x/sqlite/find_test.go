@@ -14,13 +14,13 @@ package sqlite
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"testing"
 
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4"
-	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/int/mock"
 )
 
@@ -28,8 +28,7 @@ func TestFind(t *testing.T) {
 	t.Parallel()
 	type test struct {
 		db         *testDB
-		query      any
-		options    driver.Options
+		query      string
 		want       []rowResult
 		wantStatus int
 		wantErr    string
@@ -37,7 +36,8 @@ func TestFind(t *testing.T) {
 
 	tests := testy.NewTable()
 	tests.Add("no docs in db", test{
-		want: nil,
+		query: `{"selector":{}}`,
+		want:  nil,
 	})
 	tests.Add("query is invalid json", test{
 		query:      "invalid json",
@@ -50,20 +50,32 @@ func TestFind(t *testing.T) {
 		_ = d.tPut("bar", map[string]string{"bar": "baz"})
 
 		return test{
-			db: d,
-			query: map[string]interface{}{
-				"foo": "bar",
-			},
+			db:    d,
+			query: `{"selector":{"foo":"bar"}}`,
 			want: []rowResult{
 				{ID: "foo", Doc: `{"_id":"foo","_rev":"` + rev + `","foo":"bar"}`},
+			},
+		}
+	})
+	tests.Add("limit", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("foo", map[string]string{"foo": "bar"})
+		_ = d.tPut("bar", map[string]string{"bar": "baz"})
+		rev2 := d.tPut("foo2", map[string]string{"foo": "bar"})
+		_ = d.tPut("foo3", map[string]string{"foo": "bar"})
+
+		return test{
+			db:    d,
+			query: `{"selector":{"foo": "bar"}, "limit": 2}`,
+			want: []rowResult{
+				{ID: "foo", Doc: `{"_id":"foo","_rev":"` + rev + `","foo":"bar"}`},
+				{ID: "foo2", Doc: `{"_id":"foo","_rev":"` + rev2 + `","foo":"bar"}`},
 			},
 		}
 	})
 
 	/*
 		TODO:
-		- Include _design_docs in results?
-		- Include _local_docs in results?
 		- limit
 		- skip
 		- fields
@@ -78,11 +90,7 @@ func TestFind(t *testing.T) {
 		if db == nil {
 			db = newDB(t)
 		}
-		opts := tt.options
-		if opts == nil {
-			opts = mock.NilOption
-		}
-		rows, err := db.Find(context.Background(), tt.query, opts)
+		rows, err := db.Find(context.Background(), json.RawMessage(tt.query), mock.NilOption)
 		if !testy.ErrorMatchesRE(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}

@@ -14,46 +14,16 @@ package sqlite
 
 import (
 	"context"
-	"encoding/json"
-	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
-	"github.com/go-kivik/kivik/v4/int/errors"
-	"github.com/go-kivik/kivik/v4/x/mango"
 )
 
-func parseQuery(query interface{}) (*mango.Selector, error) {
-	var selector []byte
-	switch t := query.(type) {
-	case string:
-		selector = []byte(t)
-	case []byte:
-		selector = t
-	case json.RawMessage:
-		selector = t
-	default:
-		var err error
-		selector, err = json.Marshal(query)
-		if err != nil {
-			return nil, err
-		}
-	}
-	var s mango.Selector
-	err := json.Unmarshal(selector, &s)
-	return &s, err
-}
-
-func (d *db) Find(ctx context.Context, query interface{}, options driver.Options) (driver.Rows, error) {
-	opts := newOpts(options)
-	vopts, err := opts.viewOptions(viewAllDocs)
+func (d *db) Find(ctx context.Context, query interface{}, _ driver.Options) (driver.Rows, error) {
+	opts := optsMap{}
+	vopts, err := opts.findOptions(query)
 	if err != nil {
 		return nil, err
 	}
-	vopts.includeDocs = true
 
-	selector, err := parseQuery(query)
-	if err != nil {
-		return nil, &errors.Error{Status: http.StatusBadRequest, Err: err}
-	}
-	return d.queryBuiltinView(ctx, vopts, selector)
+	return d.queryBuiltinView(ctx, vopts)
 }

@@ -78,7 +78,6 @@ func (d *db) DesignDocs(ctx context.Context, options driver.Options) (driver.Row
 func (d *db) queryBuiltinView(
 	ctx context.Context,
 	vopts *viewOptions,
-	sel *mango.Selector,
 ) (driver.Rows, error) {
 	args := []interface{}{vopts.includeDocs, vopts.conflicts, vopts.updateSeq, vopts.attachments}
 
@@ -178,7 +177,7 @@ func (d *db) queryBuiltinView(
 		db:        d,
 		rows:      results,
 		updateSeq: meta.updateSeq,
-		selector:  sel,
+		selector:  vopts.selector,
 	}, nil
 }
 

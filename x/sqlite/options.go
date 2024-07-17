@@ -22,6 +22,7 @@ import (
 
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
+	"github.com/go-kivik/kivik/v4/x/mango"
 )
 
 type optsMap map[string]interface{}
@@ -698,6 +699,36 @@ type viewOptions struct {
 	keys            []string
 	sorted          bool
 	attEncodingInfo bool
+
+	// Find-specific options
+	selector *mango.Selector
+}
+
+// findOptions converts a _find query body into a viewOptions struct.
+func (o optsMap) findOptions(query interface{}) (*viewOptions, error) {
+	input := query.(json.RawMessage)
+	var s struct {
+		Selector *mango.Selector `json:"selector"`
+	}
+	if err := json.Unmarshal(input, &s); err != nil {
+		return nil, &internal.Error{Status: http.StatusBadRequest, Err: err}
+	}
+	if s.Selector == nil {
+		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "selector cannot be null"}
+	}
+	var q map[string]interface{}
+	if err := json.Unmarshal(input, &q); err != nil {
+		return nil, &internal.Error{Status: http.StatusBadRequest, Err: err}
+	}
+
+	v := &viewOptions{
+		view:        viewAllDocs,
+		includeDocs: true,
+		limit:       -1,
+		selector:    s.Selector,
+	}
+
+	return v, v.validate()
 }
 
 func (o optsMap) viewOptions(view string) (*viewOptions, error) {

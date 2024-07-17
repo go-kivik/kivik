@@ -223,7 +223,7 @@ func TestFind(t *testing.T) {
 		- update
 		- stale
 		- use_index
-		- execution_stats
+		- execution_stats -- Not currently supported by Kivik
 	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {

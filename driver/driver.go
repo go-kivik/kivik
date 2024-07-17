@@ -310,9 +310,12 @@ type BulkDocer interface {
 // Finder is an optional interface which may be implemented by a [DB]. It
 // provides access to the MongoDB-style query interface added in CouchDB 2.
 type Finder interface {
-	// Find executes a query using the new /_find interface. If query is a
-	// string, []byte, or [encoding/json.RawMessage], it should be treated as a
-	// raw JSON payload. Any other type should be marshaled to JSON.
+	// Find executes a query using the new /_find interface. query is always
+	// converted to a [encoding/json.RawMessage] value before passing it to the
+	// driver. The type remains `interface{}` for backward compatibility, but
+	// will change with Kivik 5.x. See [issue #1015] for details.
+	//
+	// [issue #1014]: https://github.com/go-kivik/kivik/issues/1015
 	Find(ctx context.Context, query interface{}, options Options) (Rows, error)
 	// CreateIndex creates an index if it doesn't already exist. If the index
 	// already exists, it should do nothing. ddoc and name may be empty, in

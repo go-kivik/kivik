@@ -487,7 +487,7 @@ func TestFind(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
-			rows := db.Find(context.TODO(), 321)
+			rows := db.Find(context.TODO(), map[string]interface{}{"selector": map[string]interface{}{"foo": "123"}})
 			if err := rows.Err(); !testy.ErrorMatchesRE("has query: 123", err) {
 				t.Errorf("Unexpected error: %s", err)
 			}
@@ -505,7 +505,7 @@ func TestFind(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
-			rows := db.Find(context.TODO(), 7)
+			rows := db.Find(context.TODO(), map[string]interface{}{})
 			if err := rows.Err(); !testy.ErrorMatches("", err) {
 				t.Errorf("Unexpected error: %s", err)
 			}
@@ -543,7 +543,7 @@ func TestFind(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) {
 			db := c.DB("foo")
-			rows := db.Find(newCanceledContext(), 0)
+			rows := db.Find(newCanceledContext(), map[string]interface{}{})
 			if err := rows.Err(); !testy.ErrorMatches("context canceled", err) {
 				t.Errorf("Unexpected error: %s", err)
 			}
@@ -561,7 +561,7 @@ func TestFind(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) {
 			foo := c.DB("foo")
 			_ = c.DB("bar")
-			rows := foo.Find(context.TODO(), 1)
+			rows := foo.Find(context.TODO(), map[string]interface{}{})
 			if err := rows.Err(); !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
 				t.Errorf("Unexpected error: %s", err)
 			}

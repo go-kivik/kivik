@@ -59,7 +59,7 @@ func TestNextResultSet(t *testing.T) {
 			t.Error(err)
 		}
 		want := []string{"1", "2", "3", "x", "y"}
-		if d := testy.DiffInterface(want, ids); d != nil {
+		if d := cmp.Diff(want, ids); d != "" {
 			t.Error(d)
 		}
 	})

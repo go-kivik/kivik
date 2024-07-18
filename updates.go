@@ -98,7 +98,8 @@ func (f *DBUpdates) Seq() string {
 // LastSeq returns the last sequence ID reported, or in the case no results
 // were returned due to `since`	being set to `now`, or some other value that
 // excludes all results, the current sequence ID. It must be called after
-// [DBUpdates.Next] returns false. Otherwise it will return an error.
+// [DBUpdates.Next] returns false or [DBUpdates.Iterator] has been completely
+// and successfully iterated. Otherwise it will return an error.
 func (f *DBUpdates) LastSeq() (string, error) {
 	for f.iter == nil || f.state != stateEOQ && f.state != stateClosed {
 		return "", &internal.Error{Status: http.StatusBadRequest, Err: errors.New("LastSeq must not be called until results iteration is complete")}
@@ -138,4 +139,35 @@ func (c *Client) DBUpdates(ctx context.Context, options ...Option) *DBUpdates {
 		return &DBUpdates{errIterator(err)}
 	}
 	return newDBUpdates(context.Background(), endQuery, updatesi)
+}
+
+// DBUpdate represents a database update as returned by [DBUpdates.Iterator].
+//
+// !!NOTICE!! This struct is considered experimental, and may change without
+// notice.
+type DBUpdate struct {
+	DBName string `json:"db_name"`
+	Type   string `json:"type"`
+	Seq    string `json:"seq"`
+}
+
+// Iterator returns a function that can be used to iterate over the DB updates
+// feed. This function works with Go 1.23's range functions, and is an
+// alternative to using [DBUpdates.Next] directly.
+//
+// !!NOTICE!! This function is considered experimental, and may change without
+// notice.
+func (f *DBUpdates) Iterator() func(yield func(*DBUpdate, error) bool) {
+	return func(yield func(*DBUpdate, error) bool) {
+		for f.Next() {
+			update := f.curVal.(*driver.DBUpdate)
+			if !yield((*DBUpdate)(update), nil) {
+				_ = f.Close()
+				break
+			}
+		}
+		if err := f.Err(); err != nil {
+			yield(nil, err)
+		}
+	}
 }

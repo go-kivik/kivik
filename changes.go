@@ -144,7 +144,8 @@ type ChangesMetadata struct {
 }
 
 // Metadata returns the result metadata for the changes feed. It must be called
-// after [Changes.Next] returns false. Otherwise it will return an error.
+// after [Changes.Next] returns false or [Changes.Iterator] has been completely
+// and successfully iterated. Otherwise it will return an error.
 func (c *Changes) Metadata() (*ChangesMetadata, error) {
 	if c.iter == nil || (c.state != stateEOQ && c.state != stateClosed) {
 		return nil, &internal.Error{Status: http.StatusBadRequest, Err: errors.New("Metadata must not be called until result set iteration is complete")}
@@ -158,4 +159,59 @@ func (c *Changes) ETag() string {
 		return ""
 	}
 	return c.changesi.ETag()
+}
+
+// Change represents a single change in the changes feed, as returned by
+// [Changes.Iterator].
+//
+// !!NOTICE!! This struct is considered experimental, and may change without
+// notice.
+type Change struct {
+	// ID is the document ID to which the change relates.
+	ID string `json:"id"`
+	// Seq is the update sequence for the changes feed.
+	Seq string `json:"seq"`
+	// Deleted is set to true for the changes feed, if the document has been
+	// deleted.
+	Deleted bool `json:"deleted"`
+	// Changes represents a list of document leaf revisions for the /_changes
+	// endpoint.
+	Changes []string `json:"-"`
+	// Doc is the raw, un-decoded JSON document. This is only populated when
+	// include_docs=true is set.
+	doc json.RawMessage
+}
+
+// ScanDoc copies the data from the result into dest.  See [Row.ScanValue]
+// for additional details.
+func (c *Change) ScanDoc(dest interface{}) error {
+	return json.Unmarshal(c.doc, dest)
+}
+
+// Iterator returns a function that can be used to iterate over the changes
+// feed. This function works with Go 1.23's range functions, and is an
+// alternative to using [Changes.Next] directly.
+//
+// !!NOTICE!! This function is considered experimental, and may change without
+// notice.
+func (c *Changes) Iterator() func(yield func(*Change, error) bool) {
+	return func(yield func(*Change, error) bool) {
+		for c.Next() {
+			dChange := c.curVal.(*driver.Change)
+			change := &Change{
+				ID:      dChange.ID,
+				Seq:     dChange.Seq,
+				Deleted: dChange.Deleted,
+				Changes: dChange.Changes,
+				doc:     dChange.Doc,
+			}
+			if !yield(change, nil) {
+				_ = c.Close()
+				return
+			}
+		}
+		if err := c.Err(); err != nil {
+			yield(nil, err)
+		}
+	}
 }

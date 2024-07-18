@@ -5,7 +5,6 @@ stages:
 variables:
   COUCHDB_USER: admin
   COUCHDB_PASSWORD: abc123
-  CI_DEBUG_SERVICES: trace
 
 test-x-sqlite:
   parallel:
@@ -148,6 +147,26 @@ gopherjs1.17-pouchdb8:
     - node --require syscall
     - gopherjs test `go list ./... | grep -v /cmd/`
 
+gopherjs1.17-pouchdb9:
+  <<: *gopherjs_test_template
+  image: golang:1.17
+  variables:
+    NODE_VER: 14
+    NPM_PROFILE: pouchdb/pouchdb9-package.json
+    KIVIK_TEST_DSN_COUCH33: http://admin:abc123@couch33:5984/
+    GOPHERJS_TAG: v1.17.2
+  script:
+    - cp "$NPM_PROFILE" package.json
+    - npm install -g npm@7.5.2 && npm update
+    - npm install
+    - npm install source-map-support
+    - mkdir -p /tmp/src
+    - ( cd /tmp && go install github.com/gopherjs/gopherjs@${GOPHERJS_TAG} )
+    - npm install --force https://github.com/gopherjs/gopherjs#${GOPHERJS_TAG}
+    - npm list
+    - node --require syscall
+    - gopherjs test `go list ./... | grep -v /cmd/`
+
 gopherjs1.18-pouchdb7:
   <<: *gopherjs_test_template
   image: golang:1.18
@@ -166,6 +185,15 @@ gopherjs1.18-pouchdb8:
     KIVIK_TEST_DSN_COUCH33: http://admin:abc123@couch33:5984/
     GOPHERJS_TAG: v1.18.0-beta3
 
+gopherjs1.18-pouchdb9:
+  <<: *gopherjs_test_template
+  image: golang:1.18
+  variables:
+    NODE_VER: 18
+    NPM_PROFILE: pouchdb/pouchdb9-package.json
+    KIVIK_TEST_DSN_COUCH33: http://admin:abc123@couch33:5984/
+    GOPHERJS_TAG: v1.18.0-beta3
+
 gopherjs1.19-pouchdb7:
   <<: *gopherjs_test_template
   variables:
@@ -179,6 +207,14 @@ gopherjs1.19-pouchdb8:
   variables:
     NODE_VER: 18
     NPM_PROFILE: pouchdb/pouchdb8-package.json
+    KIVIK_TEST_DSN_COUCH33: http://admin:abc123@couch33:5984/
+    GOPHERJS_TAG: v1.19.0-beta1
+
+gopherjs1.19-pouchdb9:
+  <<: *gopherjs_test_template
+  variables:
+    NODE_VER: 18
+    NPM_PROFILE: pouchdb/pouchdb9-package.json
     KIVIK_TEST_DSN_COUCH33: http://admin:abc123@couch33:5984/
     GOPHERJS_TAG: v1.19.0-beta1
 

@@ -1,0 +1,21 @@
+{
+    "name": "kivik-pouchdb",
+    "version": "1.0.0",
+    "description": "PouchDB driver for Kivik",
+    "author": "Jonathan Hall <flimzy@flimzy.com>",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/go-kivik/pouchdb"
+    },
+    "devDependencies": {
+        "fake-indexeddb": "^4.0.1",
+        "inherits": "^2.0.3",
+        "memdown": "^3.0.0",
+        "pouchdb": "^9.0.0",
+        "pouchdb-all-dbs": "^1.1.1",
+        "pouchdb-find": "^9.0.0",
+        "pouchdb-adapter-indexeddb": "^9.0.0",
+        "source-map-support": "^0.5.9",
+        "xhr2": "^0.1.4"
+    }
+}

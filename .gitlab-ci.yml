@@ -5,7 +5,6 @@ stages:
 variables:
   COUCHDB_USER: admin
   COUCHDB_PASSWORD: abc123
-  CI_DEBUG_SERVICES: trace
 
 test-x-sqlite:
   parallel:

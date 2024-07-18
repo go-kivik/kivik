@@ -50,7 +50,7 @@ func TestDBChanges(t *testing.T) {
 	tests := testy.NewTable()
 	tests.Add("no changes in db", test{
 		wantLastSeq: &[]string{""}[0],
-		wantETag:    &[]string{"c7ba27130f956748671e845893fd6b80"}[0],
+		wantETag:    &[]string{"cfcd208495d565ef66e7dff9f98764da"}[0],
 	})
 	tests.Add("one change", func(t *testing.T) interface{} {
 		d := newDB(t)
@@ -65,7 +65,7 @@ func TestDBChanges(t *testing.T) {
 				},
 			},
 			wantLastSeq: &[]string{"1"}[0],
-			wantETag:    &[]string{"872ccd9c6dce18ce6ea4d5106540f089"}[0],
+			wantETag:    &[]string{"c4ca4238a0b923820dcc509a6f75849b"}[0],
 		}
 	})
 	tests.Add("deleted event", func(t *testing.T) interface{} {
@@ -89,7 +89,7 @@ func TestDBChanges(t *testing.T) {
 				},
 			},
 			wantLastSeq: &[]string{"2"}[0],
-			wantETag:    &[]string{"9562870d7e8245d03c2ac6055dff735f"}[0],
+			wantETag:    &[]string{"c81e728d9d4c2f636f067f89cc14862c"}[0],
 		}
 	})
 	tests.Add("longpoll", func(t *testing.T) interface{} {
@@ -139,7 +139,7 @@ func TestDBChanges(t *testing.T) {
 				},
 			},
 			wantLastSeq: &[]string{"2"}[0],
-			wantETag:    &[]string{"bf701dae9aff5bb22b8f000dc9bf6199"}[0],
+			wantETag:    &[]string{"c81e728d9d4c2f636f067f89cc14862c"}[0],
 		}
 	})
 	tests.Add("malformed sequence id", test{
@@ -164,7 +164,7 @@ func TestDBChanges(t *testing.T) {
 				},
 			},
 			wantLastSeq: &[]string{"2"}[0],
-			wantETag:    &[]string{"bf701dae9aff5bb22b8f000dc9bf6199"}[0],
+			wantETag:    &[]string{"c81e728d9d4c2f636f067f89cc14862c"}[0],
 		}
 	})
 	tests.Add("future since value returns only latest change, longpoll mode", func(t *testing.T) interface{} {
@@ -251,7 +251,7 @@ func TestDBChanges(t *testing.T) {
 			}),
 			wantChanges: nil,
 			wantLastSeq: &[]string{"2"}[0],
-			wantETag:    &[]string{"c7ba27130f956748671e845893fd6b80"}[0],
+			wantETag:    &[]string{"cfcd208495d565ef66e7dff9f98764da"}[0],
 		}
 	})
 	tests.Add("limit=0 acts the same as limit=1", func(t *testing.T) interface{} {
@@ -270,7 +270,7 @@ func TestDBChanges(t *testing.T) {
 				},
 			},
 			wantLastSeq: &[]string{"1"}[0],
-			wantETag:    &[]string{"9562870d7e8245d03c2ac6055dff735f"}[0],
+			wantETag:    &[]string{"c81e728d9d4c2f636f067f89cc14862c"}[0],
 			wantPending: &[]int64{1}[0],
 		}
 	})
@@ -290,7 +290,7 @@ func TestDBChanges(t *testing.T) {
 				},
 			},
 			wantLastSeq: &[]string{"1"}[0],
-			wantETag:    &[]string{"9562870d7e8245d03c2ac6055dff735f"}[0],
+			wantETag:    &[]string{"c81e728d9d4c2f636f067f89cc14862c"}[0],
 			wantPending: &[]int64{1}[0],
 		}
 	})
@@ -310,7 +310,7 @@ func TestDBChanges(t *testing.T) {
 				},
 			},
 			wantLastSeq: &[]string{"1"}[0],
-			wantETag:    &[]string{"9562870d7e8245d03c2ac6055dff735f"}[0],
+			wantETag:    &[]string{"c81e728d9d4c2f636f067f89cc14862c"}[0],
 			wantPending: &[]int64{1}[0],
 		}
 	})
@@ -359,7 +359,7 @@ func TestDBChanges(t *testing.T) {
 				},
 			},
 			wantLastSeq: &[]string{"1"}[0],
-			wantETag:    &[]string{"9562870d7e8245d03c2ac6055dff735f"}[0],
+			wantETag:    &[]string{"c81e728d9d4c2f636f067f89cc14862c"}[0],
 		}
 	})
 	tests.Add("include docs, normal feed", func(t *testing.T) interface{} {
@@ -386,7 +386,7 @@ func TestDBChanges(t *testing.T) {
 				},
 			},
 			wantLastSeq: &[]string{"2"}[0],
-			wantETag:    &[]string{"9562870d7e8245d03c2ac6055dff735f"}[0],
+			wantETag:    &[]string{"c81e728d9d4c2f636f067f89cc14862c"}[0],
 		}
 	})
 	tests.Add("include docs, attachment stubs, normal feed", func(t *testing.T) interface{} {
@@ -410,7 +410,7 @@ func TestDBChanges(t *testing.T) {
 				},
 			},
 			wantLastSeq: &[]string{"1"}[0],
-			wantETag:    &[]string{"872ccd9c6dce18ce6ea4d5106540f089"}[0],
+			wantETag:    &[]string{"c4ca4238a0b923820dcc509a6f75849b"}[0],
 		}
 	})
 	tests.Add("include docs and attachments, normal feed", func(t *testing.T) interface{} {
@@ -437,21 +437,88 @@ func TestDBChanges(t *testing.T) {
 				},
 			},
 			wantLastSeq: &[]string{"1"}[0],
-			wantETag:    &[]string{"872ccd9c6dce18ce6ea4d5106540f089"}[0],
+			wantETag:    &[]string{"c4ca4238a0b923820dcc509a6f75849b"}[0],
+		}
+	})
+	tests.Add("filter=_doc_ids without doc_ids", test{
+		options: kivik.Params(map[string]interface{}{
+			"filter": "_doc_ids",
+		}),
+		wantStatus: http.StatusBadRequest,
+		wantErr:    "filter=_doc_ids requires doc_ids parameter",
+	})
+	tests.Add("filter=_doc_ids with invalid doc_ids", test{
+		options: kivik.Params(map[string]interface{}{
+			"filter":  "_doc_ids",
+			"doc_ids": 3,
+		}),
+		wantStatus: http.StatusBadRequest,
+		wantErr:    "invalid value for 'doc_ids': 3",
+	})
+	tests.Add("filter=_doc_ids with invalid doc_ids field", test{
+		options: kivik.Params(map[string]interface{}{
+			"filter":  "_doc_ids",
+			"doc_ids": []interface{}{"foo", 3},
+		}),
+		wantStatus: http.StatusBadRequest,
+		wantErr:    "invalid 'doc_ids' field: 3",
+	})
+	tests.Add("normal feed, doc_ids", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
+		_ = d.tPut("doc2", map[string]string{"foo": "bar"})
+
+		return test{
+			db: d,
+			options: kivik.Params(map[string]interface{}{
+				"filter":  "_doc_ids",
+				"doc_ids": []interface{}{"doc1"},
+			}),
+			wantChanges: []driver.Change{
+				{
+					ID:      "doc1",
+					Seq:     "1",
+					Changes: driver.ChangedRevs{rev},
+				},
+			},
+			wantLastSeq: &[]string{"1"}[0],
+			wantETag:    &[]string{"c81e728d9d4c2f636f067f89cc14862c"}[0],
+		}
+	})
+	tests.Add("normal feed with docs, doc_ids", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
+		_ = d.tPut("doc2", map[string]string{"foo": "bar"})
+
+		return test{
+			db: d,
+			options: kivik.Params(map[string]interface{}{
+				"include_docs": true,
+				"filter":       "_doc_ids",
+				"doc_ids":      []interface{}{"doc1"},
+			}),
+			wantChanges: []driver.Change{
+				{
+					ID:      "doc1",
+					Seq:     "1",
+					Changes: driver.ChangedRevs{rev},
+					Doc:     []byte(`{"_id":"doc1","_rev":"1-66f46afbe3effef8424aa0e291d21560","foo":"bar"}`),
+				},
+			},
+			wantLastSeq: &[]string{"1"}[0],
+			wantETag:    &[]string{"c81e728d9d4c2f636f067f89cc14862c"}[0],
 		}
 	})
 
 	/*
 		TODO:
-		- ETag should be based only on last sequence, I think
 		- Options
-			- doc_ids
 			- conflicts
 			- feed
 				- normal
 				- longpoll
 				- continuous
-			- filter
+			- filter w/ design doc
 			- att_encoding_info
 			- style
 			- timeout
@@ -986,7 +1053,7 @@ func Test_normal_changes_query_without_docs(t *testing.T) {
 	}
 }
 
-// This test validates that the query for the longpolll changes feed does not
+// This test validates that the query for the longpoll changes feed does not
 // duplicate unnecessary fields when returning multiple attachments.
 func Test_longpoll_changes_query(t *testing.T) {
 	t.Parallel()
@@ -1008,7 +1075,7 @@ func Test_longpoll_changes_query(t *testing.T) {
 	})
 
 	// Then execute the prepared statement
-	rows, err := changes.stmt.Query(0, true)
+	rows, err := changes.stmt.Query(0, true, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1047,7 +1114,7 @@ func Test_longpoll_changes_query(t *testing.T) {
 	}
 }
 
-// This test validates that the query for the longpolll changes feed does not
+// This test validates that the query for the longpoll changes feed does not
 // include any attachment data when include_docs=false
 func Test_longpoll_changes_query_without_docs(t *testing.T) {
 	t.Parallel()
@@ -1069,7 +1136,7 @@ func Test_longpoll_changes_query_without_docs(t *testing.T) {
 	})
 
 	// Then execute the prepared statement
-	rows, err := changes.stmt.Query(0, true)
+	rows, err := changes.stmt.Query(0, true, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1102,7 +1169,7 @@ func Test_longpoll_changes_query_without_docs(t *testing.T) {
 		{ID: &[]string{"doc1"}[0], Seq: &[]string{"1"}[0], Deleted: &[]bool{false}[0], Rev: &rev},
 	}
 
-	if d := cmp.Diff(got, want); d != "" {
+	if d := cmp.Diff(want, got); d != "" {
 		t.Errorf("Unexpected rows:\n%s", d)
 	}
 }

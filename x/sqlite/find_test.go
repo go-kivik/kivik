@@ -203,7 +203,7 @@ func TestFind(t *testing.T) {
 	tests.Add("sort, invalid field", test{
 		query:      `{"selector":{},"sort":["x",3]}`,
 		wantStatus: http.StatusBadRequest,
-		wantErr:    "invalid sort field: 3",
+		wantErr:    "invalid 'sort' field: 3",
 	})
 	tests.Add("fields, non-array", test{
 		query:      `{"selector":{},"fields":"x"}`,
@@ -213,7 +213,7 @@ func TestFind(t *testing.T) {
 	tests.Add("fields, invalid field", test{
 		query:      `{"selector":{},"fields":["x",3]}`,
 		wantStatus: http.StatusBadRequest,
-		wantErr:    "invalid fields field: 3",
+		wantErr:    "invalid 'fields' field: 3",
 	})
 
 	/*

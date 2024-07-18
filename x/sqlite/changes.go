@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	"github.com/dop251/goja"
 
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
@@ -37,10 +38,12 @@ const (
 )
 
 type normalChanges struct {
-	rows    *sql.Rows
-	pending int64
-	lastSeq string
-	etag    string
+	rows        *sql.Rows
+	pending     int64
+	lastSeq     string
+	etag        string
+	includeDocs bool
+	filter      func(doc any, req any) (bool, error)
 }
 
 var _ driver.Changes = &normalChanges{}
@@ -83,7 +86,7 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 		return nil, err
 	}
 
-	includeDocs, err := opts.includeDocs()
+	c.includeDocs, err = opts.includeDocs()
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +100,7 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 		return nil, err
 	}
 
-	args := []any{since, attachments, includeDocs, filterDdoc, filterName}
+	args := []any{since, attachments, c.includeDocs, filterDdoc, filterName}
 	where, err := opts.changesWhere(&args)
 	if err != nil {
 		return nil, err
@@ -111,7 +114,7 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 				deleted,
 				rev,
 				rev_id,
-				IIF($3, doc, NULL) AS doc
+				IIF($3 OR $5 != '', doc, NULL) AS doc
 			FROM {{ .Docs }}
 			WHERE ($1 IS NULL OR seq > $1)
 			ORDER BY seq
@@ -173,7 +176,7 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 				att.rev_pos,
 				IIF($2, data, NULL) AS data
 			FROM results
-			LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON bridge.id = results.id AND bridge.rev = results.rev AND bridge.rev_id = results.rev_id AND doc IS NOT NULL
+			LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON bridge.id = results.id AND bridge.rev = results.rev AND bridge.rev_id = results.rev_id AND $3
 			LEFT JOIN {{ .Attachments }} AS att ON att.pk = bridge.pk
 			%[2]s -- WHERE
 			ORDER BY seq %[1]s
@@ -215,6 +218,24 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 		}
 		if *filterFuncJS == "" {
 			return nil, &internal.Error{Status: http.StatusNotFound, Message: fmt.Sprintf("design doc '%s' missing filter function '%s'", filterDdoc, filterName)}
+		}
+		vm := goja.New()
+		if _, err := vm.RunString("const filter = " + *filterFuncJS); err != nil {
+			return nil, &internal.Error{Status: http.StatusInternalServerError, Message: fmt.Sprintf("failed to compile filter function: %s", err)}
+		}
+		filterFunc, ok := goja.AssertFunction(vm.Get("filter"))
+		if !ok {
+			return nil, fmt.Errorf("expected filter to be a function, got %T", vm.Get("filter"))
+		}
+
+		c.filter = func(doc any, req any) (bool, error) {
+			result, err := filterFunc(goja.Undefined(), vm.ToValue(doc), vm.ToValue(req))
+			if err != nil {
+				return false, err
+			}
+			rv := result.Export()
+			b, _ := rv.(bool)
+			return b, nil
 		}
 	}
 
@@ -296,7 +317,18 @@ func (c *normalChanges) Next(change *driver.Change) error {
 			Doc:         []byte(*doc),
 			Attachments: atts,
 		}
-		change.Doc = toMerge.toRaw()
+		if c.filter != nil {
+			ok, err := c.filter(toMerge.toMap(), nil)
+			if err != nil {
+				return &internal.Error{Status: http.StatusInternalServerError, Err: err}
+			}
+			if !ok {
+				return c.Next(change)
+			}
+		}
+		if c.includeDocs {
+			change.Doc = toMerge.toRaw()
+		}
 	}
 	return nil
 }

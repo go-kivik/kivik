@@ -264,7 +264,7 @@ func ParseFunc(javascript string, logger *log.Logger) (Func, error) {
 		}
 		reduceFunc, ok := goja.AssertFunction(vm.Get("reduce"))
 		if !ok {
-			return nil, fmt.Errorf("expected reduce to be a function, got %T", vm.Get("map"))
+			return nil, fmt.Errorf("expected reduce to be a function, got %T", vm.Get("reduce"))
 		}
 
 		return func(keys [][2]interface{}, values []interface{}, rereduce bool) ([]interface{}, error) {

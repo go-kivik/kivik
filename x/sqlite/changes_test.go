@@ -440,17 +440,85 @@ func TestDBChanges(t *testing.T) {
 			wantETag:    &[]string{"c4ca4238a0b923820dcc509a6f75849b"}[0],
 		}
 	})
+	tests.Add("filter=_doc_ids without doc_ids", test{
+		options: kivik.Params(map[string]interface{}{
+			"filter": "_doc_ids",
+		}),
+		wantStatus: http.StatusBadRequest,
+		wantErr:    "filter=_doc_ids requires doc_ids parameter",
+	})
+	tests.Add("filter=_doc_ids with invalid doc_ids", test{
+		options: kivik.Params(map[string]interface{}{
+			"filter":  "_doc_ids",
+			"doc_ids": 3,
+		}),
+		wantStatus: http.StatusBadRequest,
+		wantErr:    "invalid value for 'doc_ids': 3",
+	})
+	tests.Add("filter=_doc_ids with invalid doc_ids field", test{
+		options: kivik.Params(map[string]interface{}{
+			"filter":  "_doc_ids",
+			"doc_ids": []interface{}{"foo", 3},
+		}),
+		wantStatus: http.StatusBadRequest,
+		wantErr:    "invalid 'doc_ids' field: 3",
+	})
+	tests.Add("normal feed, doc_ids", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
+		_ = d.tPut("doc2", map[string]string{"foo": "bar"})
+
+		return test{
+			db: d,
+			options: kivik.Params(map[string]interface{}{
+				"filter":  "_doc_ids",
+				"doc_ids": []interface{}{"doc1"},
+			}),
+			wantChanges: []driver.Change{
+				{
+					ID:      "doc1",
+					Seq:     "1",
+					Changes: driver.ChangedRevs{rev},
+				},
+			},
+			wantLastSeq: &[]string{"1"}[0],
+			wantETag:    &[]string{"c81e728d9d4c2f636f067f89cc14862c"}[0],
+		}
+	})
+	tests.Add("normal feed with docs, doc_ids", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
+		_ = d.tPut("doc2", map[string]string{"foo": "bar"})
+
+		return test{
+			db: d,
+			options: kivik.Params(map[string]interface{}{
+				"include_docs": true,
+				"filter":       "_doc_ids",
+				"doc_ids":      []interface{}{"doc1"},
+			}),
+			wantChanges: []driver.Change{
+				{
+					ID:      "doc1",
+					Seq:     "1",
+					Changes: driver.ChangedRevs{rev},
+					Doc:     []byte(`{"_id":"doc1","_rev":"1-66f46afbe3effef8424aa0e291d21560","foo":"bar"}`),
+				},
+			},
+			wantLastSeq: &[]string{"1"}[0],
+			wantETag:    &[]string{"c81e728d9d4c2f636f067f89cc14862c"}[0],
+		}
+	})
 
 	/*
 		TODO:
 		- Options
-			- doc_ids
 			- conflicts
 			- feed
 				- normal
 				- longpoll
 				- continuous
-			- filter
+			- filter w/ design doc
 			- att_encoding_info
 			- style
 			- timeout

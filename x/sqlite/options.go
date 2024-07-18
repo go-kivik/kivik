@@ -206,6 +206,34 @@ func (o optsMap) changesLimit() (uint64, error) {
 	return limit, nil
 }
 
+func (o optsMap) changesWhere(args *[]any) (string, error) {
+	filter, _ := o["filter"].(string)
+	switch filter {
+	case "":
+		return "", nil
+	case "_doc_ids":
+		raw, ok := o["doc_ids"]
+		if !ok {
+			return "", &internal.Error{Status: http.StatusBadRequest, Message: "filter=_doc_ids requires doc_ids parameter"}
+		}
+		list, ok := raw.([]any)
+		if !ok {
+			return "", &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'doc_ids': %v", raw)}
+		}
+		start := len(*args)
+		for _, v := range list {
+			if _, ok := v.(string); !ok {
+				return "", &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid 'doc_ids' field: %v", v)}
+			}
+			*args = append(*args, v)
+		}
+
+		return fmt.Sprintf("WHERE results.id IN (%s)", placeholders(start+1, len(*args)-start)), nil
+	default:
+		panic("unimplemented")
+	}
+}
+
 // limit returns the limit value as an int64, or -1 if the limit is unset.
 // If the limit is invalid, an error is returned with status 400.
 func (o optsMap) limit() (int64, error) {
@@ -240,7 +268,7 @@ func (o optsMap) fields() ([]string, error) {
 	for _, v := range f {
 		s, ok := v.(string)
 		if !ok {
-			return nil, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid fields field: %v", v)}
+			return nil, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid 'fields' field: %v", v)}
 		}
 		fields = append(fields, s)
 	}
@@ -513,7 +541,7 @@ func (o optsMap) sort() ([]string, error) {
 	for i, v := range list {
 		s, ok := v.(string)
 		if !ok {
-			return nil, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid sort field: %v", v)}
+			return nil, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid 'sort' field: %v", v)}
 		}
 		sort[i] = s
 	}

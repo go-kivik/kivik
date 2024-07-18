@@ -85,21 +85,28 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 	if err != nil {
 		return nil, err
 	}
-
-	var query string
-	if includeDocs {
-		query = d.normalChangesQueryWithDocs(descendingToDirection(descending))
-	} else {
-		query = d.normalChangesQueryWithoutDocs(descendingToDirection(descending))
-	}
-	if limit > 0 {
-		query += " LIMIT " + strconv.FormatUint(limit+1, 10)
-	}
 	attachments, err := opts.attachments()
 	if err != nil {
 		return nil, err
 	}
-	c.rows, err = d.db.QueryContext(ctx, query, since, attachments) //nolint:rowserrcheck,sqlclosecheck // Err checked in Next
+
+	args := []any{since, attachments}
+	where, err := opts.changesWhere(&args)
+	if err != nil {
+		return nil, err
+	}
+
+	var query string
+	if includeDocs {
+		query = d.normalChangesQueryWithDocs(descendingToDirection(descending), where)
+	} else {
+		query = d.normalChangesQueryWithoutDocs(descendingToDirection(descending), where)
+	}
+	if limit > 0 {
+		query += " LIMIT " + strconv.FormatUint(limit+1, 10)
+	}
+
+	c.rows, err = d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck,sqlclosecheck // Err checked in Next
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +137,7 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 	return c, nil
 }
 
-func (d *db) normalChangesQueryWithDocs(direction string) string {
+func (d *db) normalChangesQueryWithDocs(direction, where string) string {
 	return fmt.Sprintf(d.query(`
 		WITH results AS (
 			SELECT
@@ -192,12 +199,13 @@ func (d *db) normalChangesQueryWithDocs(direction string) string {
 			FROM results
 			LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON bridge.id = results.id AND bridge.rev = results.rev AND bridge.rev_id = results.rev_id
 			LEFT JOIN {{ .Attachments }} AS att ON att.pk = bridge.pk
-			ORDER BY seq %s
+			%[2]s -- WHERE
+			ORDER BY seq %[1]s
 		)
-	`), direction)
+	`), direction, where)
 }
 
-func (d *db) normalChangesQueryWithoutDocs(direction string) string {
+func (d *db) normalChangesQueryWithoutDocs(direction, where string) string {
 	return fmt.Sprintf(d.query(`
 		WITH results AS (
 			SELECT
@@ -247,9 +255,10 @@ func (d *db) normalChangesQueryWithoutDocs(direction string) string {
 				results.deleted,
 				results.rev || '-' || results.rev_id AS rev
 			FROM results
-			ORDER BY seq %s
+			%[2]s -- WHERE
+			ORDER BY seq %[1]s
 		)
-	`), direction)
+	`), direction, where)
 }
 
 func (c *normalChanges) Next(change *driver.Change) error {

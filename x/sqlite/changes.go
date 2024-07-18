@@ -21,12 +21,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	internal "github.com/go-kivik/kivik/v4/int/errors"
 )
 
 const (
@@ -90,18 +92,19 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 		return nil, err
 	}
 
-	args := []any{since, attachments, includeDocs}
-	where, err := opts.changesWhere(&args)
-	if err != nil {
-		return nil, err
-	}
-	_, _, err = opts.changesFilter()
+	filterDdoc, filterName, err := opts.changesFilter()
 	if err != nil {
 		return nil, err
 	}
 
-	query := fmt.Sprintf(d.query(`
-		WITH results AS (
+	args := []any{since, attachments, includeDocs, filterDdoc, filterName}
+	where, err := opts.changesWhere(&args)
+	if err != nil {
+		return nil, err
+	}
+
+	query := fmt.Sprintf(d.query(leavesCTE+`,
+		results AS (
 			SELECT
 				id,
 				seq,
@@ -115,7 +118,18 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 		)
 		SELECT
 			COUNT(*) AS id,
-			NULL AS seq,
+			(
+				-- Will return NULL if the ddoc doesn't exist, empty string
+				-- if it exists but the filter func doesn't exist, or the
+				-- filter function if it does exist.
+				SELECT
+					COALESCE(design.func_body, '')
+				FROM leaves
+				LEFT JOIN {{ .Design }} AS design ON design.id = leaves.id AND design.rev = leaves.rev AND design.rev_id = leaves.rev_id AND design.func_type = 'filter' AND design.func_name = $5
+				WHERE leaves.id = $4
+				ORDER BY leaves.rev DESC
+				LIMIT 1
+			) AS filter_func,
 			NULL AS deleted,
 			COALESCE(MAX(seq),0) AS summary,
 			NULL AS doc,
@@ -182,14 +196,26 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 		// should never happen
 		return nil, errors.New("no rows returned")
 	}
-	var summary string
+	var (
+		summary      string
+		filterFuncJS *string
+	)
 	if err := c.rows.Scan(
-		&c.pending,
-		discard{}, discard{},
+		&c.pending, &filterFuncJS,
+		discard{},
 		&summary,
 		discard{}, discard{}, discard{}, discard{}, discard{}, discard{}, discard{}, discard{},
 	); err != nil {
 		return nil, err
+	}
+
+	if filterName != "" {
+		if filterFuncJS == nil {
+			return nil, &internal.Error{Status: http.StatusNotFound, Message: fmt.Sprintf("design doc '%s' not found", filterDdoc)}
+		}
+		if *filterFuncJS == "" {
+			return nil, &internal.Error{Status: http.StatusNotFound, Message: fmt.Sprintf("design doc '%s' missing filter function '%s'", filterDdoc, filterName)}
+		}
 	}
 
 	if feed == feedNormal {

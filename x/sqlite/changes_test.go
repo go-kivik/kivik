@@ -514,6 +514,30 @@ func TestDBChanges(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 		wantErr:    `'filter' must be of the form 'designname/filtername'`,
 	})
+	tests.Add("filter ddoc does not exist", test{
+		options: kivik.Params(map[string]interface{}{
+			"filter": "foo/qux",
+		}),
+		wantStatus: http.StatusNotFound,
+		wantErr:    "design doc '_design/foo' not found",
+	})
+	tests.Add("filter function does not exist", func(t *testing.T) any {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]any{
+			"filters": map[string]interface{}{
+				"bar": "function(doc, req) { return doc.foo; }",
+			},
+		})
+
+		return test{
+			db: d,
+			options: kivik.Params(map[string]interface{}{
+				"filter": "foo/qux",
+			}),
+			wantStatus: http.StatusNotFound,
+			wantErr:    "design doc '_design/foo' missing filter function 'qux'",
+		}
+	})
 
 	/*
 		TODO:

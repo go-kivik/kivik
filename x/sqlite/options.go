@@ -222,15 +222,15 @@ func (o optsMap) changesFilter() (string, string, error) {
 	if len(parts) != 2 {
 		return "", "", &internal.Error{Status: http.StatusBadRequest, Message: `'filter' must be of the form 'designname/filtername'`}
 	}
-	return parts[0], parts[1], nil
+	return "_design/" + parts[0], parts[1], nil
 }
 
 func (o optsMap) changesWhere(args *[]any) (string, error) {
-	filterDdoc, filterName, err := o.changesFilter()
+	filterDdoc, _, err := o.changesFilter()
 	if err != nil {
 		return "", err
 	}
-	if filterDdoc != "_doc_ids" || filterName != "" {
+	if filterDdoc != "_doc_ids" {
 		return "", nil
 	}
 

@@ -96,44 +96,7 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 		return nil, err
 	}
 
-	query := d.normalChangesQueryWithDocs(descendingToDirection(descending), where)
-	if limit > 0 {
-		query += " LIMIT " + strconv.FormatUint(limit+1, 10)
-	}
-
-	c.rows, err = d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck,sqlclosecheck // Err checked in Next
-	if err != nil {
-		return nil, err
-	}
-
-	// The first row is used to calculate the ETag; it's done as part of the
-	// same query, even though it's a bit ugly, to ensure it's all in the same
-	// implicit transaction.
-	if !c.rows.Next() {
-		// should never happen
-		return nil, errors.New("no rows returned")
-	}
-	var summary string
-	if err := c.rows.Scan(
-		&c.pending,
-		discard{}, discard{},
-		&summary,
-		discard{}, discard{}, discard{}, discard{}, discard{}, discard{}, discard{}, discard{},
-	); err != nil {
-		return nil, err
-	}
-
-	if feed == feedNormal {
-		h := md5.New()
-		_, _ = h.Write([]byte(summary))
-		c.etag = hex.EncodeToString(h.Sum(nil))
-	}
-
-	return c, nil
-}
-
-func (d *db) normalChangesQueryWithDocs(direction, where string) string {
-	return fmt.Sprintf(d.query(`
+	query := fmt.Sprintf(d.query(`
 		WITH results AS (
 			SELECT
 				id,
@@ -197,7 +160,41 @@ func (d *db) normalChangesQueryWithDocs(direction, where string) string {
 			%[2]s -- WHERE
 			ORDER BY seq %[1]s
 		)
-	`), direction, where)
+	`), descendingToDirection(descending), where)
+
+	if limit > 0 {
+		query += " LIMIT " + strconv.FormatUint(limit+1, 10)
+	}
+
+	c.rows, err = d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck,sqlclosecheck // Err checked in Next
+	if err != nil {
+		return nil, err
+	}
+
+	// The first row is used to calculate the ETag; it's done as part of the
+	// same query, even though it's a bit ugly, to ensure it's all in the same
+	// implicit transaction.
+	if !c.rows.Next() {
+		// should never happen
+		return nil, errors.New("no rows returned")
+	}
+	var summary string
+	if err := c.rows.Scan(
+		&c.pending,
+		discard{}, discard{},
+		&summary,
+		discard{}, discard{}, discard{}, discard{}, discard{}, discard{}, discard{}, discard{},
+	); err != nil {
+		return nil, err
+	}
+
+	if feed == feedNormal {
+		h := md5.New()
+		_, _ = h.Write([]byte(summary))
+		c.etag = hex.EncodeToString(h.Sum(nil))
+	}
+
+	return c, nil
 }
 
 func (c *normalChanges) Next(change *driver.Change) error {

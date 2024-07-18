@@ -459,8 +459,8 @@ func (r *Row) ScanDoc(dest interface{}) error {
 
 // Iterator returns a function that can be used to iterate over all rows in the
 // result set(s). This function is the analogue to [ResultSet.Next] for Go
-// 1.23's new range functions. The error returned by the iterator is
-// row-specific, and does not mean the entire result set is invalid.
+// 1.23's new range functions. When the iterator returns an error, it means that
+// iteration has failed. For row-specific errors, check the value of [Row.Err].
 //
 // If your ResultSet contains multiple result sets, this iterator will iterate
 // over all of them, without distinction. If you need to iterate over each

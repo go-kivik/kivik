@@ -27,18 +27,13 @@ import (
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 	_ "github.com/go-kivik/kivik/v4/pouchdb" // PouchDB driver we're testing
+	"github.com/go-kivik/kivik/v4/pouchdb/internal"
 )
 
 func TestPurge(t *testing.T) {
-	client, err := kivik.New("pouch", "")
-	if err != nil {
-		t.Errorf("Failed to connect to PouchDB/memdown driver: %s", err)
-		return
-	}
-	v, _ := client.Version(context.Background())
-	pouchVer := v.Version
+	pouchVer := internal.PouchDBVersion(t)
 	if strings.HasPrefix(pouchVer, "7.") {
-		t.Skipf("Skipping PouchDB 8 test for PouchDB %v", pouchVer)
+		t.Skipf("Skipping PouchDB 8+ test for PouchDB %v", pouchVer)
 	}
 
 	js.Global.Call("require", "fake-indexeddb/auto")

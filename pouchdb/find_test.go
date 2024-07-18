@@ -29,6 +29,7 @@ import (
 
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/pouchdb/bindings"
+	"github.com/go-kivik/kivik/v4/pouchdb/internal"
 )
 
 func init() {
@@ -65,25 +66,40 @@ func TestBuildIndex(t *testing.T) {
 }
 
 func TestExplain(t *testing.T) {
-	tests := []struct {
-		name     string
+	defaultLimit := int64(0)
+	if ver := internal.PouchDBVersion(t); strings.HasPrefix(ver, "9") {
+		defaultLimit = 25
+	}
+	type test struct {
 		db       *db
 		query    interface{}
 		expected *driver.QueryPlan
 		err      string
-	}{
-		{
-			name:  "query error",
-			db:    &db{db: bindings.GlobalPouchDB().New("foo", nil)},
-			query: nil,
-			err:   "TypeError: Cannot read propert",
-		},
-		{
-			name:  "simple selector",
+	}
+	tests := testy.NewTable()
+	tests.Add("query error", test{
+		db:    &db{db: bindings.GlobalPouchDB().New("foo", nil)},
+		query: nil,
+		err:   "TypeError: Cannot read propert",
+	})
+	tests.Add("simple selector", func(t *testing.T) interface{} {
+		options := map[string]interface{}{
+			"bookmark":  "nil",
+			"conflicts": false,
+			"r":         []interface{}{49},
+			"sort":      map[string]interface{}{},
+			"use_index": []interface{}{},
+		}
+		if defaultLimit > 0 {
+			options["limit"] = defaultLimit
+		}
+
+		return test{
 			db:    &db{db: bindings.GlobalPouchDB().New("foo", nil)},
 			query: map[string]interface{}{"selector": map[string]interface{}{"_id": "foo"}},
 			expected: &driver.QueryPlan{
 				DBName: "foo",
+				Limit:  defaultLimit,
 				Index: map[string]interface{}{
 					"ddoc": nil,
 					"def": map[string]interface{}{
@@ -92,13 +108,7 @@ func TestExplain(t *testing.T) {
 					"name": "_all_docs",
 					"type": "special",
 				},
-				Options: map[string]interface{}{
-					"bookmark":  "nil",
-					"conflicts": false,
-					"r":         []interface{}{49},
-					"sort":      map[string]interface{}{},
-					"use_index": []interface{}{},
-				},
+				Options:  options,
 				Selector: map[string]interface{}{"_id": map[string]interface{}{"$eq": "foo"}},
 				Fields: func() []interface{} {
 					fmt.Println(runtime.Version())
@@ -110,16 +120,30 @@ func TestExplain(t *testing.T) {
 				}(),
 				Range: map[string]interface{}{},
 			},
-		},
-		{
-			name: "fields list",
-			db:   &db{db: bindings.GlobalPouchDB().New("foo", nil)},
+		}
+	})
+	tests.Add("fields list", func(t *testing.T) interface{} {
+		options := map[string]interface{}{
+			"bookmark":  "nil",
+			"conflicts": false,
+			"fields":    []interface{}{"_id", map[string]interface{}{"type": "desc"}},
+			"r":         []interface{}{49},
+			"sort":      map[string]interface{}{},
+			"use_index": []interface{}{},
+		}
+		if defaultLimit > 0 {
+			options["limit"] = defaultLimit
+		}
+
+		return test{
+			db: &db{db: bindings.GlobalPouchDB().New("foo", nil)},
 			query: map[string]interface{}{
 				"selector": map[string]interface{}{"_id": "foo"},
 				"fields":   []interface{}{"_id", map[string]interface{}{"type": "desc"}},
 			},
 			expected: &driver.QueryPlan{
 				DBName: "foo",
+				Limit:  defaultLimit,
 				Index: map[string]interface{}{
 					"ddoc": nil,
 					"def": map[string]interface{}{
@@ -128,34 +152,25 @@ func TestExplain(t *testing.T) {
 					"name": "_all_docs",
 					"type": "special",
 				},
-				Options: map[string]interface{}{
-					"bookmark":  "nil",
-					"conflicts": false,
-					"fields":    []interface{}{"_id", map[string]interface{}{"type": "desc"}},
-					"r":         []interface{}{49},
-					"sort":      map[string]interface{}{},
-					"use_index": []interface{}{},
-				},
+				Options:  options,
 				Selector: map[string]interface{}{"_id": map[string]interface{}{"$eq": "foo"}},
 				Fields:   []interface{}{"_id", map[string]interface{}{"type": "desc"}},
 				Range:    map[string]interface{}{},
 			},
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			result, err := test.db.Explain(context.Background(), test.query, nil)
-			if !testy.ErrorMatchesRE(test.err, err) {
-				t.Errorf("Unexpected error: %s", err)
-			}
-			if err != nil {
-				return
-			}
-			if d := testy.DiffAsJSON(test.expected, result); d != nil {
-				t.Error(d)
-			}
-		})
-	}
+		}
+	})
+	tests.Run(t, func(t *testing.T, tt test) {
+		result, err := tt.db.Explain(context.Background(), tt.query, nil)
+		if !testy.ErrorMatchesRE(tt.err, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
+		if err != nil {
+			return
+		}
+		if d := testy.DiffAsJSON(tt.expected, result); d != nil {
+			t.Error(d)
+		}
+	})
 }
 
 func TestUnmarshalQueryPlan(t *testing.T) {

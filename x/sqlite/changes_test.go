@@ -50,7 +50,7 @@ func TestDBChanges(t *testing.T) {
 	tests := testy.NewTable()
 	tests.Add("no changes in db", test{
 		wantLastSeq: &[]string{""}[0],
-		wantETag:    &[]string{"c7ba27130f956748671e845893fd6b80"}[0],
+		wantETag:    &[]string{"cfcd208495d565ef66e7dff9f98764da"}[0],
 	})
 	tests.Add("one change", func(t *testing.T) interface{} {
 		d := newDB(t)
@@ -65,7 +65,7 @@ func TestDBChanges(t *testing.T) {
 				},
 			},
 			wantLastSeq: &[]string{"1"}[0],
-			wantETag:    &[]string{"872ccd9c6dce18ce6ea4d5106540f089"}[0],
+			wantETag:    &[]string{"c4ca4238a0b923820dcc509a6f75849b"}[0],
 		}
 	})
 	tests.Add("deleted event", func(t *testing.T) interface{} {
@@ -89,7 +89,7 @@ func TestDBChanges(t *testing.T) {
 				},
 			},
 			wantLastSeq: &[]string{"2"}[0],
-			wantETag:    &[]string{"9562870d7e8245d03c2ac6055dff735f"}[0],
+			wantETag:    &[]string{"c81e728d9d4c2f636f067f89cc14862c"}[0],
 		}
 	})
 	tests.Add("longpoll", func(t *testing.T) interface{} {
@@ -139,7 +139,7 @@ func TestDBChanges(t *testing.T) {
 				},
 			},
 			wantLastSeq: &[]string{"2"}[0],
-			wantETag:    &[]string{"bf701dae9aff5bb22b8f000dc9bf6199"}[0],
+			wantETag:    &[]string{"c81e728d9d4c2f636f067f89cc14862c"}[0],
 		}
 	})
 	tests.Add("malformed sequence id", test{
@@ -164,7 +164,7 @@ func TestDBChanges(t *testing.T) {
 				},
 			},
 			wantLastSeq: &[]string{"2"}[0],
-			wantETag:    &[]string{"bf701dae9aff5bb22b8f000dc9bf6199"}[0],
+			wantETag:    &[]string{"c81e728d9d4c2f636f067f89cc14862c"}[0],
 		}
 	})
 	tests.Add("future since value returns only latest change, longpoll mode", func(t *testing.T) interface{} {
@@ -251,7 +251,7 @@ func TestDBChanges(t *testing.T) {
 			}),
 			wantChanges: nil,
 			wantLastSeq: &[]string{"2"}[0],
-			wantETag:    &[]string{"c7ba27130f956748671e845893fd6b80"}[0],
+			wantETag:    &[]string{"cfcd208495d565ef66e7dff9f98764da"}[0],
 		}
 	})
 	tests.Add("limit=0 acts the same as limit=1", func(t *testing.T) interface{} {
@@ -270,7 +270,7 @@ func TestDBChanges(t *testing.T) {
 				},
 			},
 			wantLastSeq: &[]string{"1"}[0],
-			wantETag:    &[]string{"9562870d7e8245d03c2ac6055dff735f"}[0],
+			wantETag:    &[]string{"c81e728d9d4c2f636f067f89cc14862c"}[0],
 			wantPending: &[]int64{1}[0],
 		}
 	})
@@ -290,7 +290,7 @@ func TestDBChanges(t *testing.T) {
 				},
 			},
 			wantLastSeq: &[]string{"1"}[0],
-			wantETag:    &[]string{"9562870d7e8245d03c2ac6055dff735f"}[0],
+			wantETag:    &[]string{"c81e728d9d4c2f636f067f89cc14862c"}[0],
 			wantPending: &[]int64{1}[0],
 		}
 	})
@@ -310,7 +310,7 @@ func TestDBChanges(t *testing.T) {
 				},
 			},
 			wantLastSeq: &[]string{"1"}[0],
-			wantETag:    &[]string{"9562870d7e8245d03c2ac6055dff735f"}[0],
+			wantETag:    &[]string{"c81e728d9d4c2f636f067f89cc14862c"}[0],
 			wantPending: &[]int64{1}[0],
 		}
 	})
@@ -359,7 +359,7 @@ func TestDBChanges(t *testing.T) {
 				},
 			},
 			wantLastSeq: &[]string{"1"}[0],
-			wantETag:    &[]string{"9562870d7e8245d03c2ac6055dff735f"}[0],
+			wantETag:    &[]string{"c81e728d9d4c2f636f067f89cc14862c"}[0],
 		}
 	})
 	tests.Add("include docs, normal feed", func(t *testing.T) interface{} {
@@ -386,7 +386,7 @@ func TestDBChanges(t *testing.T) {
 				},
 			},
 			wantLastSeq: &[]string{"2"}[0],
-			wantETag:    &[]string{"9562870d7e8245d03c2ac6055dff735f"}[0],
+			wantETag:    &[]string{"c81e728d9d4c2f636f067f89cc14862c"}[0],
 		}
 	})
 	tests.Add("include docs, attachment stubs, normal feed", func(t *testing.T) interface{} {
@@ -410,7 +410,7 @@ func TestDBChanges(t *testing.T) {
 				},
 			},
 			wantLastSeq: &[]string{"1"}[0],
-			wantETag:    &[]string{"872ccd9c6dce18ce6ea4d5106540f089"}[0],
+			wantETag:    &[]string{"c4ca4238a0b923820dcc509a6f75849b"}[0],
 		}
 	})
 	tests.Add("include docs and attachments, normal feed", func(t *testing.T) interface{} {
@@ -437,13 +437,12 @@ func TestDBChanges(t *testing.T) {
 				},
 			},
 			wantLastSeq: &[]string{"1"}[0],
-			wantETag:    &[]string{"872ccd9c6dce18ce6ea4d5106540f089"}[0],
+			wantETag:    &[]string{"c4ca4238a0b923820dcc509a6f75849b"}[0],
 		}
 	})
 
 	/*
 		TODO:
-		- ETag should be based only on last sequence, I think
 		- Options
 			- doc_ids
 			- conflicts

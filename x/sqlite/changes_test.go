@@ -1053,7 +1053,7 @@ func Test_normal_changes_query_without_docs(t *testing.T) {
 	}
 }
 
-// This test validates that the query for the longpolll changes feed does not
+// This test validates that the query for the longpoll changes feed does not
 // duplicate unnecessary fields when returning multiple attachments.
 func Test_longpoll_changes_query(t *testing.T) {
 	t.Parallel()
@@ -1075,7 +1075,7 @@ func Test_longpoll_changes_query(t *testing.T) {
 	})
 
 	// Then execute the prepared statement
-	rows, err := changes.stmt.Query(0, true)
+	rows, err := changes.stmt.Query(0, true, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1114,7 +1114,7 @@ func Test_longpoll_changes_query(t *testing.T) {
 	}
 }
 
-// This test validates that the query for the longpolll changes feed does not
+// This test validates that the query for the longpoll changes feed does not
 // include any attachment data when include_docs=false
 func Test_longpoll_changes_query_without_docs(t *testing.T) {
 	t.Parallel()
@@ -1136,7 +1136,7 @@ func Test_longpoll_changes_query_without_docs(t *testing.T) {
 	})
 
 	// Then execute the prepared statement
-	rows, err := changes.stmt.Query(0, true)
+	rows, err := changes.stmt.Query(0, true, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1169,7 +1169,7 @@ func Test_longpoll_changes_query_without_docs(t *testing.T) {
 		{ID: &[]string{"doc1"}[0], Seq: &[]string{"1"}[0], Deleted: &[]bool{false}[0], Rev: &rev},
 	}
 
-	if d := cmp.Diff(got, want); d != "" {
+	if d := cmp.Diff(want, got); d != "" {
 		t.Errorf("Unexpected rows:\n%s", d)
 	}
 }

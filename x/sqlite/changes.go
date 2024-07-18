@@ -322,6 +322,7 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 type longpollChanges struct {
 	stmt        *sql.Stmt
 	since       uint64
+	includeDocs bool
 	attachments bool
 	lastSeq     string
 	ctx         context.Context
@@ -337,13 +338,6 @@ type longpollChange struct {
 var _ driver.Changes = (*longpollChanges)(nil)
 
 func (d *db) newLongpollChanges(ctx context.Context, includeDocs, attachments bool) (*longpollChanges, error) {
-	if includeDocs {
-		return d.newLongpollChangesWithDocs(ctx, attachments)
-	}
-	return d.newLongpollChangesWithoutDocs(ctx)
-}
-
-func (d *db) newLongpollChangesWithDocs(ctx context.Context, attachments bool) (*longpollChanges, error) {
 	since, err := d.lastSeq(ctx)
 	if err != nil {
 		return nil, err
@@ -368,7 +362,7 @@ func (d *db) newLongpollChangesWithDocs(ctx context.Context, attachments bool) (
 				doc.seq,
 				doc.deleted,
 				doc.rev || '-' || doc.rev_id AS rev,
-				doc.doc,
+				doc,
 				att.filename,
 				att.content_type,
 				att.length,
@@ -383,13 +377,13 @@ func (d *db) newLongpollChangesWithDocs(ctx context.Context, attachments bool) (
 					deleted,
 					rev,
 					rev_id,
-					doc
+					IIF($3, doc, NULL) AS doc
 				FROM {{ .Docs }}
 				WHERE seq > $1
 				ORDER BY seq
 				LIMIT 1
 			) AS doc
-			LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON bridge.id = doc.id AND bridge.rev = doc.rev AND bridge.rev_id = doc.rev_id
+			LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON bridge.id = doc.id AND bridge.rev = doc.rev AND bridge.rev_id = doc.rev_id AND doc IS NOT NULL
 			LEFT JOIN {{ .Attachments }} AS att ON att.pk = bridge.pk
 		)
 	`))
@@ -403,61 +397,10 @@ func (d *db) newLongpollChangesWithDocs(ctx context.Context, attachments bool) (
 		stmt:        stmt,
 		since:       since,
 		attachments: attachments,
+		includeDocs: includeDocs,
 		ctx:         ctx,
 		cancel:      cancel,
 		changes:     changes,
-	}
-
-	go c.watch(changes)
-
-	return c, nil
-}
-
-func (d *db) newLongpollChangesWithoutDocs(ctx context.Context) (*longpollChanges, error) {
-	since, err := d.lastSeq(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	stmt, err := d.db.PrepareContext(ctx, d.query(`
-		SELECT
-			doc.id,
-			doc.seq,
-			doc.deleted,
-			doc.rev || '-' || doc.rev_id AS rev,
-			NULL AS doc,
-			NULL AS filename,
-			NULL AS content_type,
-			NULL AS length,
-			NULL AS digest,
-			NULL AS rev_pos,
-			NULL AS data
-		FROM (
-			SELECT
-				id,
-				seq,
-				deleted,
-				rev,
-				rev_id,
-				doc
-			FROM {{ .Docs }}
-			WHERE seq > $1
-			ORDER BY seq
-			LIMIT 1
-		) AS doc
-	`))
-	if err != nil {
-		return nil, err
-	}
-
-	ctx, cancel := context.WithCancel(ctx)
-	changes := make(chan longpollChange)
-	c := &longpollChanges{
-		stmt:    stmt,
-		since:   since,
-		ctx:     ctx,
-		cancel:  cancel,
-		changes: changes,
 	}
 
 	go c.watch(changes)
@@ -476,7 +419,7 @@ func (c *longpollChanges) watch(changes chan<- longpollChange) {
 	bo.MaxElapsedTime = 0
 
 	err := backoff.Retry(func() error {
-		rows, err := c.stmt.QueryContext(c.ctx, c.since, c.attachments)
+		rows, err := c.stmt.QueryContext(c.ctx, c.since, c.attachments, c.includeDocs)
 		if err != nil {
 			return backoff.Permanent(err)
 		}

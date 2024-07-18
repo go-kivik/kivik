@@ -95,6 +95,10 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 	if err != nil {
 		return nil, err
 	}
+	_, _, err = opts.changesFilter()
+	if err != nil {
+		return nil, err
+	}
 
 	query := fmt.Sprintf(d.query(`
 		WITH results AS (

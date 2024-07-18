@@ -63,7 +63,7 @@ var schema = []string{
 		- rev: The revision number.
 		- rev_id: The revision ID.  id, rev, and rev_id together form the primary key, which is also a foreign key to the .Docs table.
 		- language: The language of the design document. Defaults to 'javascript'. Duplicated for each function, for convenience when doing function lookups.
-		- func_type: The function type. One of 'map', 'reduce', 'update', 'filter', or 'validate', for use as a view map or reduce function respectively, an update function, a filter function, or a validate_doc_updates function.
+		- func_type: The function type. One of 'map', 'reduce', 'update', 'filter', or 'validate', for use as a view map or reduce function, an update function, a filter function, or a validate_doc_updates function, respectively.
 		- func_name: The name of the function. Ignored for validate functions.
 		- func_body: The function body.
 		- auto_update: A boolean indicating whether the view should be automatically updated when the design document is updated. Defaults to true.

@@ -509,6 +509,11 @@ func TestDBChanges(t *testing.T) {
 			wantETag:    &[]string{"c81e728d9d4c2f636f067f89cc14862c"}[0],
 		}
 	})
+	tests.Add("invalid filter", test{
+		options:    kivik.Param("filter", "invalid"),
+		wantStatus: http.StatusBadRequest,
+		wantErr:    `'filter' must be of the form 'designname/filtername'`,
+	})
 
 	/*
 		TODO:

@@ -206,32 +206,51 @@ func (o optsMap) changesLimit() (uint64, error) {
 	return limit, nil
 }
 
-func (o optsMap) changesWhere(args *[]any) (string, error) {
-	filter, _ := o["filter"].(string)
-	switch filter {
-	case "":
-		return "", nil
-	case "_doc_ids":
-		raw, ok := o["doc_ids"]
-		if !ok {
-			return "", &internal.Error{Status: http.StatusBadRequest, Message: "filter=_doc_ids requires doc_ids parameter"}
-		}
-		list, ok := raw.([]any)
-		if !ok {
-			return "", &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'doc_ids': %v", raw)}
-		}
-		start := len(*args)
-		for _, v := range list {
-			if _, ok := v.(string); !ok {
-				return "", &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid 'doc_ids' field: %v", v)}
-			}
-			*args = append(*args, v)
-		}
-
-		return fmt.Sprintf("WHERE results.id IN (%s)", placeholders(start+1, len(*args)-start)), nil
-	default:
-		panic("unimplemented")
+func (o optsMap) changesFilter() (string, string, error) {
+	raw, ok := o["filter"]
+	if !ok {
+		return "", "", nil
 	}
+	filter, ok := raw.(string)
+	if !ok {
+		return "", "", &internal.Error{Status: http.StatusBadRequest, Message: `'filter' must be of the form 'designname/filtername'`}
+	}
+	if filter == "_doc_ids" {
+		return "_doc_ids", "", nil
+	}
+	parts := strings.SplitN(filter, "/", 2)
+	if len(parts) != 2 {
+		return "", "", &internal.Error{Status: http.StatusBadRequest, Message: `'filter' must be of the form 'designname/filtername'`}
+	}
+	return parts[0], parts[1], nil
+}
+
+func (o optsMap) changesWhere(args *[]any) (string, error) {
+	filterDdoc, filterName, err := o.changesFilter()
+	if err != nil {
+		return "", err
+	}
+	if filterDdoc != "_doc_ids" || filterName != "" {
+		return "", nil
+	}
+
+	raw, ok := o["doc_ids"]
+	if !ok {
+		return "", &internal.Error{Status: http.StatusBadRequest, Message: "filter=_doc_ids requires doc_ids parameter"}
+	}
+	list, ok := raw.([]any)
+	if !ok {
+		return "", &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'doc_ids': %v", raw)}
+	}
+	start := len(*args)
+	for _, v := range list {
+		if _, ok := v.(string); !ok {
+			return "", &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid 'doc_ids' field: %v", v)}
+		}
+		*args = append(*args, v)
+	}
+
+	return fmt.Sprintf("WHERE results.id IN (%s)", placeholders(start+1, len(*args)-start)), nil
 }
 
 // limit returns the limit value as an int64, or -1 if the limit is unset.

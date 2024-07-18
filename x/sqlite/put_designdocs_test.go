@@ -287,10 +287,41 @@ func TestDBPut_designDocs(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("Add a filter function", func(t *testing.T) interface{} {
+		d := newDB(t)
+
+		return test{
+			db:    d,
+			docID: "_design/foo",
+			doc: map[string]interface{}{
+				"language": "javascript",
+				"filters": map[string]interface{}{
+					"bar": "function(doc, req) { return true; }",
+				},
+			},
+			wantRev: "1-.*",
+			wantRevs: []leaf{
+				{ID: "_design/foo", Rev: 1},
+			},
+			wantDDocs: []ddoc{
+				{
+					ID:         "_design/foo",
+					Rev:        1,
+					Lang:       "javascript",
+					FuncType:   "filter",
+					FuncName:   "bar",
+					FuncBody:   "function(doc, req) { return true; }",
+					AutoUpdate: true,
+				},
+			},
+		}
+	})
+
 	/*
 		TODO:
 		- unsupported language? -- ignored?
 		- Drop old indexes when a ddoc changes
+		- func_type: update, validate
 	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {

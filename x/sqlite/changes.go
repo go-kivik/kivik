@@ -21,12 +21,15 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	"github.com/dop251/goja"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	internal "github.com/go-kivik/kivik/v4/int/errors"
 )
 
 const (
@@ -35,10 +38,12 @@ const (
 )
 
 type normalChanges struct {
-	rows    *sql.Rows
-	pending int64
-	lastSeq string
-	etag    string
+	rows        *sql.Rows
+	pending     int64
+	lastSeq     string
+	etag        string
+	includeDocs bool
+	filter      func(doc any, req any) (bool, error)
 }
 
 var _ driver.Changes = &normalChanges{}
@@ -81,7 +86,7 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 		return nil, err
 	}
 
-	includeDocs, err := opts.includeDocs()
+	c.includeDocs, err = opts.includeDocs()
 	if err != nil {
 		return nil, err
 	}
@@ -90,28 +95,44 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 		return nil, err
 	}
 
-	args := []any{since, attachments, includeDocs}
+	filterDdoc, filterName, err := opts.changesFilter()
+	if err != nil {
+		return nil, err
+	}
+
+	args := []any{since, attachments, c.includeDocs, filterDdoc, filterName}
 	where, err := opts.changesWhere(&args)
 	if err != nil {
 		return nil, err
 	}
 
-	query := fmt.Sprintf(d.query(`
-		WITH results AS (
+	query := fmt.Sprintf(d.query(leavesCTE+`,
+		results AS (
 			SELECT
 				id,
 				seq,
 				deleted,
 				rev,
 				rev_id,
-				IIF($3, doc, NULL) AS doc
+				IIF($3 OR $5 != '', doc, NULL) AS doc
 			FROM {{ .Docs }}
 			WHERE ($1 IS NULL OR seq > $1)
 			ORDER BY seq
 		)
 		SELECT
 			COUNT(*) AS id,
-			NULL AS seq,
+			(
+				-- Will return NULL if the ddoc doesn't exist, empty string
+				-- if it exists but the filter func doesn't exist, or the
+				-- filter function if it does exist.
+				SELECT
+					COALESCE(design.func_body, '')
+				FROM leaves
+				LEFT JOIN {{ .Design }} AS design ON design.id = leaves.id AND design.rev = leaves.rev AND design.rev_id = leaves.rev_id AND design.func_type = 'filter' AND design.func_name = $5
+				WHERE leaves.id = $4
+				ORDER BY leaves.rev DESC
+				LIMIT 1
+			) AS filter_func,
 			NULL AS deleted,
 			COALESCE(MAX(seq),0) AS summary,
 			NULL AS doc,
@@ -155,7 +176,7 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 				att.rev_pos,
 				IIF($2, data, NULL) AS data
 			FROM results
-			LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON bridge.id = results.id AND bridge.rev = results.rev AND bridge.rev_id = results.rev_id AND doc IS NOT NULL
+			LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON bridge.id = results.id AND bridge.rev = results.rev AND bridge.rev_id = results.rev_id AND $3
 			LEFT JOIN {{ .Attachments }} AS att ON att.pk = bridge.pk
 			%[2]s -- WHERE
 			ORDER BY seq %[1]s
@@ -178,14 +199,44 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 		// should never happen
 		return nil, errors.New("no rows returned")
 	}
-	var summary string
+	var (
+		summary      string
+		filterFuncJS *string
+	)
 	if err := c.rows.Scan(
-		&c.pending,
-		discard{}, discard{},
+		&c.pending, &filterFuncJS,
+		discard{},
 		&summary,
 		discard{}, discard{}, discard{}, discard{}, discard{}, discard{}, discard{}, discard{},
 	); err != nil {
 		return nil, err
+	}
+
+	if filterName != "" {
+		if filterFuncJS == nil {
+			return nil, &internal.Error{Status: http.StatusNotFound, Message: fmt.Sprintf("design doc '%s' not found", filterDdoc)}
+		}
+		if *filterFuncJS == "" {
+			return nil, &internal.Error{Status: http.StatusNotFound, Message: fmt.Sprintf("design doc '%s' missing filter function '%s'", filterDdoc, filterName)}
+		}
+		vm := goja.New()
+		if _, err := vm.RunString("const filter = " + *filterFuncJS); err != nil {
+			return nil, &internal.Error{Status: http.StatusInternalServerError, Message: fmt.Sprintf("failed to compile filter function: %s", err)}
+		}
+		filterFunc, ok := goja.AssertFunction(vm.Get("filter"))
+		if !ok {
+			return nil, fmt.Errorf("expected filter to be a function, got %T", vm.Get("filter"))
+		}
+
+		c.filter = func(doc any, req any) (bool, error) {
+			result, err := filterFunc(goja.Undefined(), vm.ToValue(doc), vm.ToValue(req))
+			if err != nil {
+				return false, err
+			}
+			rv := result.Export()
+			b, _ := rv.(bool)
+			return b, nil
+		}
 	}
 
 	if feed == feedNormal {
@@ -266,7 +317,18 @@ func (c *normalChanges) Next(change *driver.Change) error {
 			Doc:         []byte(*doc),
 			Attachments: atts,
 		}
-		change.Doc = toMerge.toRaw()
+		if c.filter != nil {
+			ok, err := c.filter(toMerge.toMap(), nil)
+			if err != nil {
+				return &internal.Error{Status: http.StatusInternalServerError, Err: err}
+			}
+			if !ok {
+				return c.Next(change)
+			}
+		}
+		if c.includeDocs {
+			change.Doc = toMerge.toRaw()
+		}
 	}
 	return nil
 }

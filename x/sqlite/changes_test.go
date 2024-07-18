@@ -509,6 +509,95 @@ func TestDBChanges(t *testing.T) {
 			wantETag:    &[]string{"c81e728d9d4c2f636f067f89cc14862c"}[0],
 		}
 	})
+	tests.Add("invalid filter", test{
+		options:    kivik.Param("filter", "invalid"),
+		wantStatus: http.StatusBadRequest,
+		wantErr:    `'filter' must be of the form 'designname/filtername'`,
+	})
+	tests.Add("filter ddoc does not exist", test{
+		options: kivik.Params(map[string]interface{}{
+			"filter": "foo/qux",
+		}),
+		wantStatus: http.StatusNotFound,
+		wantErr:    "design doc '_design/foo' not found",
+	})
+	tests.Add("filter function does not exist", func(t *testing.T) any {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]any{
+			"filters": map[string]interface{}{
+				"bar": "function(doc, req) { return doc.foo; }",
+			},
+		})
+
+		return test{
+			db: d,
+			options: kivik.Params(map[string]interface{}{
+				"filter": "foo/qux",
+			}),
+			wantStatus: http.StatusNotFound,
+			wantErr:    "design doc '_design/foo' missing filter function 'qux'",
+		}
+	})
+	tests.Add("filter function does not compile", func(t *testing.T) any {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]any{
+			"filters": map[string]interface{}{
+				"bar": "function(doc, req) { return",
+			},
+		})
+
+		return test{
+			db: d,
+			options: kivik.Params(map[string]interface{}{
+				"filter": "foo/bar",
+			}),
+			wantStatus: http.StatusInternalServerError,
+			wantErr:    "failed to compile filter function: SyntaxError: SyntaxError: (anonymous): Line 1:43 Unexpected end of input (and 1 more errors)",
+		}
+	})
+	tests.Add("filter function throws an exception", func(t *testing.T) any {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]any{
+			"filters": map[string]interface{}{
+				"bar": "function() { throw(3); }",
+			},
+		})
+
+		return test{
+			db: d,
+			options: kivik.Params(map[string]interface{}{
+				"filter": "foo/bar",
+			}),
+			wantNextErr: "3 at filter (<eval>:1:29(2))",
+		}
+	})
+
+	tests.Add("with filter function", func(t *testing.T) any {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]any{
+			"filters": map[string]interface{}{
+				"bar": "function(doc, req) { return doc.foo; }",
+			},
+		})
+		rev := d.tPut("doc1", map[string]bool{"foo": true})
+		_ = d.tPut("doc2", map[string]bool{"foo": false})
+
+		return test{
+			db: d,
+			options: kivik.Params(map[string]interface{}{
+				"filter": "foo/bar",
+			}),
+			wantChanges: []driver.Change{
+				{
+					ID:      "doc1",
+					Seq:     "2",
+					Changes: driver.ChangedRevs{rev},
+				},
+			},
+			wantLastSeq: &[]string{"3"}[0],
+			wantETag:    &[]string{"eccbc87e4b5ce2fe28308fd9f2a7baf3"}[0],
+		}
+	})
 
 	/*
 		TODO:
@@ -518,7 +607,6 @@ func TestDBChanges(t *testing.T) {
 				- normal
 				- longpoll
 				- continuous
-			- filter w/ design doc
 			- att_encoding_info
 			- style
 			- timeout

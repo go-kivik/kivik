@@ -90,18 +90,13 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 		return nil, err
 	}
 
-	args := []any{since, attachments}
+	args := []any{since, attachments, includeDocs}
 	where, err := opts.changesWhere(&args)
 	if err != nil {
 		return nil, err
 	}
 
-	var query string
-	if includeDocs {
-		query = d.normalChangesQueryWithDocs(descendingToDirection(descending), where)
-	} else {
-		query = d.normalChangesQueryWithoutDocs(descendingToDirection(descending), where)
-	}
+	query := d.normalChangesQueryWithDocs(descendingToDirection(descending), where)
 	if limit > 0 {
 		query += " LIMIT " + strconv.FormatUint(limit+1, 10)
 	}
@@ -146,7 +141,7 @@ func (d *db) normalChangesQueryWithDocs(direction, where string) string {
 				deleted,
 				rev,
 				rev_id,
-				doc
+				IIF($3, doc, NULL) AS doc
 			FROM {{ .Docs }}
 			WHERE ($1 IS NULL OR seq > $1)
 			ORDER BY seq
@@ -197,64 +192,8 @@ func (d *db) normalChangesQueryWithDocs(direction, where string) string {
 				att.rev_pos,
 				IIF($2, data, NULL) AS data
 			FROM results
-			LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON bridge.id = results.id AND bridge.rev = results.rev AND bridge.rev_id = results.rev_id
+			LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON bridge.id = results.id AND bridge.rev = results.rev AND bridge.rev_id = results.rev_id AND doc IS NOT NULL
 			LEFT JOIN {{ .Attachments }} AS att ON att.pk = bridge.pk
-			%[2]s -- WHERE
-			ORDER BY seq %[1]s
-		)
-	`), direction, where)
-}
-
-func (d *db) normalChangesQueryWithoutDocs(direction, where string) string {
-	return fmt.Sprintf(d.query(`
-		WITH results AS (
-			SELECT
-				id,
-				seq,
-				deleted,
-				rev,
-				rev_id
-			FROM {{ .Docs }}
-			WHERE ($1 IS NULL OR seq > $1)
-			ORDER BY seq
-		)
-		SELECT
-			COUNT(*) AS id,
-			NULL AS seq,
-			NULL AS deleted,
-			COALESCE(MAX(seq),0) AS summary,
-			NULL AS doc,
-			NULL AS attachment_count,
-			NULL AS filename,
-			NULL AS content_type,
-			NULL AS length,
-			NULL AS digest,
-			NULL AS rev_pos,
-			NULL AS data
-		FROM results
-
-		UNION ALL
-
-		SELECT
-			id,
-			seq,
-			deleted,
-			rev,
-			NULL AS doc,
-			0 AS attachment_count,
-			NULL AS filename,
-			NULL AS content_type,
-			NULL AS length,
-			NULL AS digest,
-			NULL AS rev_pos,
-			NULL AS data
-		FROM (
-			SELECT
-				results.id,
-				results.seq,
-				results.deleted,
-				results.rev || '-' || results.rev_id AS rev
-			FROM results
 			%[2]s -- WHERE
 			ORDER BY seq %[1]s
 		)

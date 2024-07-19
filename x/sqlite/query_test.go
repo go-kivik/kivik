@@ -307,9 +307,7 @@ func TestDBQuery(t *testing.T) {
 			view: "_view/bar",
 			want: nil,
 			wantLogs: []string{
-				`^map function threw exception for foo: json: unsupported type: func\(goja\.FunctionCall\) goja\.Value$`,
-				`^\tat github\.com/go-kivik/kivik/x/sqlite/v4\.\(\*db\)\.updateIndex\.`,
-				`^\tat map `,
+				`^map function emitted invalid value '0x[\da-f]+': json: unsupported type: func\(goja\.FunctionCall\) goja\.Value$`,
 			},
 		}
 	})

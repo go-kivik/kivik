@@ -46,15 +46,8 @@ func Map(code string, emit func(key, value any)) (MapFunc, error) {
 	}
 
 	return func(doc any) error {
-		if _, err := mapFunc(goja.Undefined(), vm.ToValue(doc)); err != nil {
-			var exception *goja.Exception
-			if errors.As(err, &exception) {
-				return errors.New(exception.String())
-			}
-			// Should never happen
-			return err
-		}
-		return nil
+		_, err := mapFunc(goja.Undefined(), vm.ToValue(doc))
+		return exception(err)
 	}, nil
 }
 
@@ -77,12 +70,7 @@ func Filter(code string) (FilterFunc, error) {
 	return func(doc, req any) (bool, error) {
 		result, err := filterFunc(goja.Undefined(), vm.ToValue(doc), vm.ToValue(req))
 		if err != nil {
-			var exception *goja.Exception
-			if errors.As(err, &exception) {
-				return false, errors.New(exception.String())
-			}
-			// Should never happen
-			return false, err
+			return false, exception(err)
 		}
 		rv := result.Export()
 		b, _ := rv.(bool)
@@ -113,12 +101,7 @@ func Reduce(code string) (ReduceFunc, error) {
 	return func(keys [][2]interface{}, values []interface{}, rereduce bool) ([]interface{}, error) {
 		reduceValue, err := reduceFunc(goja.Undefined(), vm.ToValue(keys), vm.ToValue(values), vm.ToValue(rereduce))
 		if err != nil {
-			var exception *goja.Exception
-			if errors.As(err, &exception) {
-				return nil, errors.New(exception.String())
-			}
-			// Should never happen
-			return nil, err
+			return nil, exception(err)
 		}
 
 		rv := reduceValue.Export()
@@ -134,4 +117,17 @@ func Reduce(code string) (ReduceFunc, error) {
 
 		return []interface{}{rv}, nil
 	}, nil
+}
+
+// exception converts a JavaScript exception to a Go error.
+func exception(err error) error {
+	if err == nil {
+		return nil
+	}
+	var exception *goja.Exception
+	if errors.As(err, &exception) {
+		return errors.New(exception.String())
+	}
+	// should never happen that we get a non-exception error
+	return err
 }

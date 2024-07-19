@@ -445,7 +445,7 @@ func TestDBChanges(t *testing.T) {
 			"filter": "_doc_ids",
 		}),
 		wantStatus: http.StatusBadRequest,
-		wantErr:    "filter=_doc_ids requires doc_ids parameter",
+		wantErr:    "filter=_doc_ids requires 'doc_ids' parameter",
 	})
 	tests.Add("filter=_doc_ids with invalid doc_ids", test{
 		options: kivik.Params(map[string]interface{}{
@@ -571,7 +571,6 @@ func TestDBChanges(t *testing.T) {
 			wantNextErr: `^exceptional!`,
 		}
 	})
-
 	tests.Add("with filter function", func(t *testing.T) any {
 		d := newDB(t)
 		_ = d.tPut("_design/foo", map[string]any{
@@ -596,6 +595,45 @@ func TestDBChanges(t *testing.T) {
 			},
 			wantLastSeq: &[]string{"3"}[0],
 			wantETag:    &[]string{"eccbc87e4b5ce2fe28308fd9f2a7baf3"}[0],
+		}
+	})
+	tests.Add("filter=_view without view parameter", test{
+		options:    kivik.Param("filter", "_view"),
+		wantStatus: http.StatusBadRequest,
+		wantErr:    `filter=_view requires 'view' parameter`,
+	})
+	tests.Add("filter=_view with invalid view", test{
+		options: kivik.Params(map[string]interface{}{
+			"filter": "_view",
+			"view":   3,
+		}),
+		wantStatus: http.StatusBadRequest,
+		wantErr:    `'view' must be of the form 'designname/filtername'`,
+	})
+	tests.Add("filter=_view ddoc does not exist", test{
+		options: kivik.Params(map[string]interface{}{
+			"filter": "_view",
+			"view":   "foo/qux",
+		}),
+		wantStatus: http.StatusNotFound,
+		wantErr:    "design doc '_design/foo' not found",
+	})
+	tests.Add("filter=_view, view function does not exist", func(t *testing.T) any {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]any{
+			"filters": map[string]interface{}{
+				"bar": "function(doc, req) { return doc.foo; }",
+			},
+		})
+
+		return test{
+			db: d,
+			options: kivik.Params(map[string]interface{}{
+				"filter": "_view",
+				"view":   "foo/qux",
+			}),
+			wantStatus: http.StatusNotFound,
+			wantErr:    "design doc '_design/foo' missing map function 'qux'",
 		}
 	})
 

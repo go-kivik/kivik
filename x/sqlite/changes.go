@@ -95,7 +95,7 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 		return nil, err
 	}
 
-	filterDdoc, filterName, err := opts.changesFilter()
+	filterType, filterDdoc, filterName, err := opts.changesFilter()
 	if err != nil {
 		return nil, err
 	}
@@ -217,7 +217,7 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 			return nil, &internal.Error{Status: http.StatusNotFound, Message: fmt.Sprintf("design doc '%s' not found", filterDdoc)}
 		}
 		if *filterFuncJS == "" {
-			return nil, &internal.Error{Status: http.StatusNotFound, Message: fmt.Sprintf("design doc '%s' missing filter function '%s'", filterDdoc, filterName)}
+			return nil, &internal.Error{Status: http.StatusNotFound, Message: fmt.Sprintf("design doc '%s' missing %s function '%s'", filterDdoc, filterType, filterName)}
 		}
 
 		c.filter, err = js.Filter(*filterFuncJS)

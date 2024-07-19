@@ -206,37 +206,43 @@ func (o optsMap) changesLimit() (uint64, error) {
 	return limit, nil
 }
 
-func (o optsMap) changesFilter() (string, string, error) {
+func (o optsMap) changesFilter() (filterType, filterDdoc, filterName string, _ error) {
 	raw, ok := o["filter"]
 	if !ok {
-		return "", "", nil
+		return "", "", "", nil
 	}
-	filter, ok := raw.(string)
-	if !ok {
-		return "", "", &internal.Error{Status: http.StatusBadRequest, Message: `'filter' must be of the form 'designname/filtername'`}
-	}
-	if filter == "_doc_ids" {
-		return "_doc_ids", "", nil
+	filter, _ := raw.(string)
+	field, filterType := "filter", "filter"
+	switch filter {
+	case "_doc_ids":
+		return "_doc_ids", "", "", nil
+	case "_view":
+		raw, ok := o["view"]
+		if !ok {
+			return "", "", "", &internal.Error{Status: http.StatusBadRequest, Message: "filter=_view requires 'view' parameter"}
+		}
+		filter, _ = raw.(string)
+		field, filterType = "view", "map"
 	}
 	parts := strings.SplitN(filter, "/", 2)
 	if len(parts) != 2 {
-		return "", "", &internal.Error{Status: http.StatusBadRequest, Message: `'filter' must be of the form 'designname/filtername'`}
+		return "", "", "", &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf(`'%s' must be of the form 'designname/filtername'`, field)}
 	}
-	return "_design/" + parts[0], parts[1], nil
+	return filterType, "_design/" + parts[0], parts[1], nil
 }
 
 func (o optsMap) changesWhere(args *[]any) (string, error) {
-	filterDdoc, _, err := o.changesFilter()
+	filterType, _, _, err := o.changesFilter()
 	if err != nil {
 		return "", err
 	}
-	if filterDdoc != "_doc_ids" {
+	if filterType != "_doc_ids" {
 		return "", nil
 	}
 
 	raw, ok := o["doc_ids"]
 	if !ok {
-		return "", &internal.Error{Status: http.StatusBadRequest, Message: "filter=_doc_ids requires doc_ids parameter"}
+		return "", &internal.Error{Status: http.StatusBadRequest, Message: "filter=_doc_ids requires 'doc_ids' parameter"}
 	}
 	list, ok := raw.([]any)
 	if !ok {

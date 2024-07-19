@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
@@ -128,9 +129,9 @@ func TestClientCreateDB(t *testing.T) {
 		if err == nil {
 			t.Fatal("err should not be nil")
 		}
-		const wantErr = "invalid database name"
-		if err.Error() != wantErr {
-			t.Fatalf("err should be %s", wantErr)
+		const wantErr = "invalid database name: Foo"
+		if !testy.ErrorMatches(wantErr, err) {
+			t.Fatalf("Unexpected error: %s", err)
 		}
 		const wantStatus = http.StatusBadRequest
 		if status := kivik.HTTPStatus(err); status != wantStatus {

@@ -16,6 +16,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"regexp"
@@ -123,9 +124,21 @@ func (c *client) DBExists(ctx context.Context, name string, _ driver.Options) (b
 
 var validDBNameRE = regexp.MustCompile(`^[a-z][a-z0-9_$()+/-]*$`)
 
+func validateDBName(name string) error {
+	switch name {
+	case "_users", "_replicator", "_global_changes":
+		return nil
+	default:
+		if !validDBNameRE.MatchString(name) {
+			return &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid database name: %s", name)}
+		}
+	}
+	return nil
+}
+
 func (c *client) CreateDB(ctx context.Context, name string, _ driver.Options) error {
-	if !validDBNameRE.MatchString(name) {
-		return &internal.Error{Status: http.StatusBadRequest, Message: "invalid database name"}
+	if err := validateDBName(name); err != nil {
+		return err
 	}
 	tx, err := c.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -136,34 +149,77 @@ func (c *client) CreateDB(ctx context.Context, name string, _ driver.Options) er
 	d := c.newDB(name)
 	for _, query := range schema {
 		_, err := tx.ExecContext(ctx, d.query(query))
-		if err == nil {
-			continue
+		if err != nil {
+			if errIsAlreadyExists(err) {
+				return &internal.Error{Status: http.StatusPreconditionFailed, Message: "database already exists"}
+			}
+			return err
 		}
-		if errIsAlreadyExists(err) {
-			return &internal.Error{Status: http.StatusPreconditionFailed, Message: "database already exists"}
-		}
-		return err
 	}
+
 	return tx.Commit()
 }
 
 func (c *client) DestroyDB(ctx context.Context, name string, _ driver.Options) error {
-	if !validDBNameRE.MatchString(name) {
-		return &internal.Error{Status: http.StatusBadRequest, Message: "invalid database name"}
+	if err := validateDBName(name); err != nil {
+		return err
 	}
-	_, err := c.db.ExecContext(ctx, `DROP TABLE "`+name+`"`)
-	if err == nil {
-		return nil
+	tx, err := c.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
 	}
-	if errIsNoSuchTable(err) {
-		return &internal.Error{Status: http.StatusNotFound, Message: "database not found"}
+	defer tx.Rollback()
+
+	d := c.newDB(name)
+	rows, err := tx.QueryContext(ctx, d.query(`
+		SELECT
+			id,
+			rev,
+			rev_id,
+			func_name
+		FROM {{ .Design }}
+		WHERE func_type = 'map'
+	`))
+	if err != nil {
+		if errIsNoSuchTable(err) {
+			return &internal.Error{Status: http.StatusNotFound, Message: "database not found"}
+		}
+		return err
 	}
-	return err
+
+	defer rows.Close()
+	for rows.Next() {
+		var (
+			id, view string
+			rev      revision
+		)
+		if err := rows.Scan(&id, &rev.rev, &rev.id, &view); err != nil {
+			return err
+		}
+		_, err := tx.ExecContext(ctx, d.ddocQuery(id, view, rev.String(), `DROP TABLE {{ .Map }}`))
+		if err != nil {
+			return err
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	for _, query := range destroySchema {
+		_, err := tx.ExecContext(ctx, d.query(query))
+		if err != nil {
+			if errIsNoSuchTable(err) {
+				return &internal.Error{Status: http.StatusNotFound, Message: "database not found"}
+			}
+			return err
+		}
+	}
+	return tx.Commit()
 }
 
 func (c *client) DB(name string, _ driver.Options) (driver.DB, error) {
-	if !validDBNameRE.MatchString(name) {
-		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "invalid database name"}
+	if err := validateDBName(name); err != nil {
+		return nil, err
 	}
 	return c.newDB(name), nil
 }

@@ -99,3 +99,11 @@ var viewSchema = []string{
 	)`,
 	`CREATE INDEX {{ .IndexMap }} ON {{ .Map }} (key)`,
 }
+
+var destroySchema = []string{
+	`DROP TABLE {{ .Design }}`,
+	`DROP TABLE {{ .AttachmentsBridge }}`,
+	`DROP TABLE {{ .Attachments }}`,
+	`DROP TABLE {{ .Docs }}`,
+	`DROP TABLE {{ .Revs }}`,
+}

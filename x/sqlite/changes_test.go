@@ -636,7 +636,40 @@ func TestDBChanges(t *testing.T) {
 			wantErr:    "design doc '_design/foo' missing map function 'qux'",
 		}
 	})
+	tests.Add("filter=_view with view function", func(t *testing.T) any {
+		d := newDB(t)
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]interface{}{
+				"bar": map[string]string{
+					"map": `function(doc) {
+							if (doc.key) {
+								emit(doc.key, doc.value);
+							}
+						}`,
+					"reduce": `_stats`,
+				},
+			},
+		})
+		rev := d.tPut("doc1", map[string]bool{"key": true})
+		_ = d.tPut("doc2", map[string]bool{"foo": false})
 
+		return test{
+			db: d,
+			options: kivik.Params(map[string]interface{}{
+				"filter": "_view",
+				"view":   "foo/bar",
+			}),
+			wantChanges: []driver.Change{
+				{
+					ID:      "doc1",
+					Seq:     "2",
+					Changes: driver.ChangedRevs{rev},
+				},
+			},
+			wantLastSeq: &[]string{"3"}[0],
+			wantETag:    &[]string{"eccbc87e4b5ce2fe28308fd9f2a7baf3"}[0],
+		}
+	})
 	/*
 		TODO:
 		- Options
@@ -648,7 +681,6 @@ func TestDBChanges(t *testing.T) {
 			- att_encoding_info
 			- style
 			- timeout
-			- view
 	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {

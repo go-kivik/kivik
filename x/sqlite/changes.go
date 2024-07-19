@@ -100,7 +100,7 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 		return nil, err
 	}
 
-	args := []any{since, attachments, c.includeDocs, filterDdoc, filterName}
+	args := []any{since, attachments, c.includeDocs, filterType, filterDdoc, filterName}
 	where, err := opts.changesWhere(&args)
 	if err != nil {
 		return nil, err
@@ -114,7 +114,7 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 				deleted,
 				rev,
 				rev_id,
-				IIF($3 OR $5 != '', doc, NULL) AS doc
+				IIF($3 OR $6 != '', doc, NULL) AS doc
 			FROM {{ .Docs }}
 			WHERE ($1 IS NULL OR seq > $1)
 			ORDER BY seq
@@ -128,8 +128,8 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 				SELECT
 					COALESCE(design.func_body, '')
 				FROM leaves
-				LEFT JOIN {{ .Design }} AS design ON design.id = leaves.id AND design.rev = leaves.rev AND design.rev_id = leaves.rev_id AND design.func_type = 'filter' AND design.func_name = $5
-				WHERE leaves.id = $4
+				LEFT JOIN {{ .Design }} AS design ON design.id = leaves.id AND design.rev = leaves.rev AND design.rev_id = leaves.rev_id AND design.func_type = $4 AND design.func_name = $6
+				WHERE leaves.id = $5
 				ORDER BY leaves.rev DESC
 				LIMIT 1
 			) AS filter_func,
@@ -220,9 +220,24 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 			return nil, &internal.Error{Status: http.StatusNotFound, Message: fmt.Sprintf("design doc '%s' missing %s function '%s'", filterDdoc, filterType, filterName)}
 		}
 
-		c.filter, err = js.Filter(*filterFuncJS)
-		if err != nil {
-			return nil, &internal.Error{Status: http.StatusInternalServerError, Err: err}
+		if filterType == "filter" {
+			c.filter, err = js.Filter(*filterFuncJS)
+			if err != nil {
+				return nil, &internal.Error{Status: http.StatusInternalServerError, Err: err}
+			}
+		} else {
+			var emitted bool
+			mapFunc, err := js.Map(*filterFuncJS, func(any, any) {
+				emitted = true
+			})
+			if err != nil {
+				return nil, &internal.Error{Status: http.StatusInternalServerError, Err: err}
+			}
+			c.filter = func(doc, _ any) (bool, error) {
+				emitted = false
+				err := mapFunc(doc)
+				return emitted, err
+			}
 		}
 	}
 

@@ -16,6 +16,7 @@ package js
 import (
 	"errors"
 	"fmt"
+	"reflect"
 
 	"github.com/dop251/goja"
 )
@@ -27,8 +28,7 @@ import (
 type MapFunc func(doc any) error
 
 // Map compiles the provided JavaScript code into a MapFunc, and makes emit
-// available to the JavaScript code. The JavaScript code should call emit with
-// the key and value to emit. The key and value must be JSON serializable.
+// available to the JavaScript code.
 func Map(code string, emit func(key, value any)) (MapFunc, error) {
 	vm := goja.New()
 
@@ -87,5 +87,51 @@ func Filter(code string) (FilterFunc, error) {
 		rv := result.Export()
 		b, _ := rv.(bool)
 		return b, nil
+	}, nil
+}
+
+// ReduceFunc is the Go representation of a CouchDB [reduce function]. Exceptions
+// are converted to errors. The JavaScript function may return either a single
+// item, or an array.  If a single item is returned, it is wrapped in an array
+// before being returned to the caller.
+//
+// [reduce function]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#reduce-and-rereduce-functions
+type ReduceFunc func(keys [][2]interface{}, values []interface{}, rereduce bool) ([]interface{}, error)
+
+// Reduce compiles the provided JavaScript code into a ReduceFunc.
+func Reduce(code string) (ReduceFunc, error) {
+	vm := goja.New()
+
+	if _, err := vm.RunString("const reduce = " + code); err != nil {
+		return nil, err
+	}
+	reduceFunc, ok := goja.AssertFunction(vm.Get("reduce"))
+	if !ok {
+		return nil, fmt.Errorf("expected reduce to be a function, got %T", vm.Get("reduce"))
+	}
+
+	return func(keys [][2]interface{}, values []interface{}, rereduce bool) ([]interface{}, error) {
+		reduceValue, err := reduceFunc(goja.Undefined(), vm.ToValue(keys), vm.ToValue(values), vm.ToValue(rereduce))
+		if err != nil {
+			var exception *goja.Exception
+			if errors.As(err, &exception) {
+				return nil, errors.New(exception.String())
+			}
+			// Should never happen
+			return nil, err
+		}
+
+		rv := reduceValue.Export()
+		// If rv is a slice, convert it to a []interface{} before returning it.
+		v := reflect.ValueOf(rv)
+		if v.Kind() == reflect.Slice {
+			out := make([]interface{}, v.Len())
+			for i := 0; i < v.Len(); i++ {
+				out[i] = v.Index(i).Interface()
+			}
+			return out, nil
+		}
+
+		return []interface{}{rv}, nil
 	}, nil
 }

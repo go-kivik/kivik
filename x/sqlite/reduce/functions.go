@@ -17,14 +17,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"reflect"
 	"slices"
 	"strings"
 
-	"github.com/dop251/goja"
 	"github.com/mitchellh/mapstructure"
 
 	internal "github.com/go-kivik/kivik/v4/int/errors"
+	"github.com/go-kivik/kivik/x/sqlite/v4/js"
 )
 
 // Count is the built-in reduce function, [_count].
@@ -257,38 +256,20 @@ func ParseFunc(javascript string, logger *log.Logger) (Func, error) {
 	case "_stats":
 		return Stats, nil
 	default:
-		vm := goja.New()
-
-		if _, err := vm.RunString("const reduce = " + javascript); err != nil {
+		reduceFunc, err := js.Reduce(javascript)
+		if err != nil {
 			return nil, err
 		}
-		reduceFunc, ok := goja.AssertFunction(vm.Get("reduce"))
-		if !ok {
-			return nil, fmt.Errorf("expected reduce to be a function, got %T", vm.Get("reduce"))
-		}
-
 		return func(keys [][2]interface{}, values []interface{}, rereduce bool) ([]interface{}, error) {
-			reduceValue, err := reduceFunc(goja.Undefined(), vm.ToValue(keys), vm.ToValue(values), vm.ToValue(rereduce))
+			ret, err := reduceFunc(keys, values, rereduce)
 			// According to CouchDB reference implementation, when a user-defined
 			// reduce function throws an exception, the error is logged and the
 			// return value is set to null.
 			if err != nil {
-				logger.Printf("reduce function threw exception: %s", err.Error())
+				logger.Printf("reduce function threw exception: %s", err)
 				return []interface{}{nil}, nil
 			}
-
-			rv := reduceValue.Export()
-			// If rv is a slice, convert it to a []interface{} before returning it.
-			v := reflect.ValueOf(rv)
-			if v.Kind() == reflect.Slice {
-				out := make([]interface{}, v.Len())
-				for i := 0; i < v.Len(); i++ {
-					out[i] = v.Index(i).Interface()
-				}
-				return out, nil
-			}
-
-			return []interface{}{rv}, nil
+			return ret, nil
 		}, nil
 	}
 }

@@ -23,11 +23,10 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/dop251/goja"
-
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
+	"github.com/go-kivik/kivik/x/sqlite/v4/js"
 	"github.com/go-kivik/kivik/x/sqlite/v4/reduce"
 )
 
@@ -529,21 +528,15 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 
 	batch := newMapIndexBatch()
 
-	vm := goja.New()
-
-	emit := func(id string, rev revision) func(any, any) {
-		return func(key, value any) {
-			batch.add(id, rev, key, value)
-		}
-	}
-
-	if _, err := vm.RunString("const map = " + *mapFuncJS); err != nil {
+	var (
+		emitID  string
+		emitRev revision
+	)
+	mapFunc, err := js.Map(*mapFuncJS, func(key, value any) {
+		batch.add(emitID, emitRev, key, value)
+	})
+	if err != nil {
 		return revision{}, err
-	}
-
-	mapFunc, ok := goja.AssertFunction(vm.Get("map"))
-	if !ok {
-		return revision{}, fmt.Errorf("expected map to be a function, got %T", vm.Get("map"))
 	}
 
 	var seq int
@@ -582,18 +575,13 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 			full.LocalSeq = seq
 		}
 
-		if err := vm.Set("emit", emit(full.ID, rev)); err != nil {
-			return revision{}, err
+		emitID = full.ID
+		emitRev = rev
+		if err := mapFunc(full.toMap()); err != nil {
+			d.logger.Printf("map function threw exception for %s: %s", full.ID, err)
+			batch.delete(full.ID, rev)
 		}
-		if _, err := mapFunc(goja.Undefined(), vm.ToValue(full.toMap())); err != nil {
-			var exception *goja.Exception
-			if errors.As(err, &exception) {
-				d.logger.Printf("map function threw exception for %s: %s", full.ID, exception.String())
-				batch.delete(full.ID, rev)
-			} else {
-				return revision{}, err
-			}
-		}
+
 		if batch.insertCount >= batchSize {
 			if err := d.writeMapIndexBatch(ctx, seq, ddocRev, ddoc, view, batch); err != nil {
 				return revision{}, err

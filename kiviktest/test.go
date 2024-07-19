@@ -44,6 +44,7 @@ const (
 	SuiteCouch33     = "couch33"
 	SuiteKivikServer = "kivikServer"
 	SuiteKivikMemory = "kivikMemory"
+	SuiteKivikSQLite = "kivikSQLite"
 	SuiteKivikFS     = "kivikFilesystem"
 )
 
@@ -58,6 +59,7 @@ var AllSuites = []string{
 	SuiteCouch33,
 	SuiteKivikMemory,
 	SuiteKivikFS,
+	SuiteKivikSQLite,
 	SuiteKivikServer,
 }
 
@@ -72,6 +74,7 @@ var driverMap = map[string]string{
 	SuiteCouch33:     "couch",
 	SuiteKivikServer: "couch",
 	SuiteKivikMemory: "memory",
+	SuiteKivikSQLite: "sqlite",
 	SuiteKivikFS:     "fs",
 }
 

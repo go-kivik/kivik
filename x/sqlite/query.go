@@ -31,7 +31,7 @@ import (
 	"github.com/go-kivik/kivik/x/sqlite/v4/reduce"
 )
 
-func fromJSValue(v interface{}) (*string, error) {
+func fromJSValue(v any) (*string, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -531,22 +531,14 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 
 	vm := goja.New()
 
-	emit := func(id string, rev revision) func(interface{}, interface{}) {
-		return func(key, value interface{}) {
+	emit := func(id string, rev revision) func(any, any) {
+		return func(key, value any) {
 			defer func() {
 				if r := recover(); r != nil {
 					panic(vm.ToValue(r))
 				}
 			}()
-			k, err := fromJSValue(key)
-			if err != nil {
-				panic(err)
-			}
-			v, err := fromJSValue(value)
-			if err != nil {
-				panic(err)
-			}
-			batch.add(id, rev, k, v)
+			batch.add(id, rev, key, value)
 		}
 	}
 
@@ -700,15 +692,25 @@ func newMapIndexBatch() *mapIndexBatch {
 	}
 }
 
-func (b *mapIndexBatch) add(id string, rev revision, key, value *string) {
+func (b *mapIndexBatch) add(id string, rev revision, key, value any) {
 	mapKey := docRev{
 		id:    id,
 		rev:   rev.rev,
 		revID: rev.id,
 	}
+
+	k, err := fromJSValue(key)
+	if err != nil {
+		panic(err)
+	}
+	v, err := fromJSValue(value)
+	if err != nil {
+		panic(err)
+	}
+
 	b.entries[mapKey] = append(b.entries[mapKey], mapIndexEntry{
-		Key:   key,
-		Value: value,
+		Key:   k,
+		Value: v,
 	})
 	b.insertCount++
 }

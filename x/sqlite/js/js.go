@@ -42,7 +42,7 @@ func Map(code string, emit func(key, value any)) (MapFunc, error) {
 
 	mapFunc, ok := goja.AssertFunction(vm.Get("map"))
 	if !ok {
-		return nil, fmt.Errorf("expected map to be a function, got %T", vm.Get("map"))
+		panic(fmt.Sprintf("expected map to be a function, got %T", vm.Get("map")))
 	}
 
 	return func(doc any) error {
@@ -55,5 +55,37 @@ func Map(code string, emit func(key, value any)) (MapFunc, error) {
 			return err
 		}
 		return nil
+	}, nil
+}
+
+// FilterFunc represents a CouchDB [filter function]. Exceptions are converted
+// to errors.
+//
+// [filter function]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#filter-functions
+type FilterFunc func(doc, req any) (bool, error)
+
+// Filter compiles the provided JavaScript code into a FilterFunc.
+func Filter(code string) (FilterFunc, error) {
+	vm := goja.New()
+	if _, err := vm.RunString("const filter = " + code); err != nil {
+		return nil, fmt.Errorf("failed to compile filter function: %s", err)
+	}
+	filterFunc, ok := goja.AssertFunction(vm.Get("filter"))
+	if !ok {
+		panic(fmt.Sprintf("expected filter to be a function, got %T", vm.Get("filter")))
+	}
+	return func(doc, req any) (bool, error) {
+		result, err := filterFunc(goja.Undefined(), vm.ToValue(doc), vm.ToValue(req))
+		if err != nil {
+			var exception *goja.Exception
+			if errors.As(err, &exception) {
+				return false, errors.New(exception.String())
+			}
+			// Should never happen
+			return false, err
+		}
+		rv := result.Export()
+		b, _ := rv.(bool)
+		return b, nil
 	}, nil
 }

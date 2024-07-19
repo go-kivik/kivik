@@ -26,10 +26,10 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
-	"github.com/dop251/goja"
 
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
+	"github.com/go-kivik/kivik/x/sqlite/v4/js"
 )
 
 const (
@@ -219,23 +219,10 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 		if *filterFuncJS == "" {
 			return nil, &internal.Error{Status: http.StatusNotFound, Message: fmt.Sprintf("design doc '%s' missing filter function '%s'", filterDdoc, filterName)}
 		}
-		vm := goja.New()
-		if _, err := vm.RunString("const filter = " + *filterFuncJS); err != nil {
-			return nil, &internal.Error{Status: http.StatusInternalServerError, Message: fmt.Sprintf("failed to compile filter function: %s", err)}
-		}
-		filterFunc, ok := goja.AssertFunction(vm.Get("filter"))
-		if !ok {
-			return nil, fmt.Errorf("expected filter to be a function, got %T", vm.Get("filter"))
-		}
 
-		c.filter = func(doc any, req any) (bool, error) {
-			result, err := filterFunc(goja.Undefined(), vm.ToValue(doc), vm.ToValue(req))
-			if err != nil {
-				return false, err
-			}
-			rv := result.Export()
-			b, _ := rv.(bool)
-			return b, nil
+		c.filter, err = js.Filter(*filterFuncJS)
+		if err != nil {
+			return nil, &internal.Error{Status: http.StatusInternalServerError, Err: err}
 		}
 	}
 

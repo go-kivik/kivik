@@ -552,14 +552,14 @@ func TestDBChanges(t *testing.T) {
 				"filter": "foo/bar",
 			}),
 			wantStatus: http.StatusInternalServerError,
-			wantErr:    "failed to compile filter function: SyntaxError: SyntaxError: (anonymous): Line 1:43 Unexpected end of input (and 1 more errors)",
+			wantErr:    `failed to compile filter function: SyntaxError: SyntaxError: \(anonymous\): Line 1:43 Unexpected end of input \(and 1 more errors\)`,
 		}
 	})
 	tests.Add("filter function throws an exception", func(t *testing.T) any {
 		d := newDB(t)
 		_ = d.tPut("_design/foo", map[string]any{
 			"filters": map[string]interface{}{
-				"bar": "function() { throw(3); }",
+				"bar": "function() { throw('exceptional!'); }",
 			},
 		})
 
@@ -568,7 +568,7 @@ func TestDBChanges(t *testing.T) {
 			options: kivik.Params(map[string]interface{}{
 				"filter": "foo/bar",
 			}),
-			wantNextErr: "3 at filter (<eval>:1:29(2))",
+			wantNextErr: `^exceptional!`,
 		}
 	})
 
@@ -628,7 +628,7 @@ func TestDBChanges(t *testing.T) {
 			opts = mock.NilOption
 		}
 		feed, err := dbc.Changes(ctx, opts)
-		if !testy.ErrorMatches(tt.wantErr, err) {
+		if !testy.ErrorMatchesRE(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}
 		if status := kivik.HTTPStatus(err); status != tt.wantStatus {
@@ -651,7 +651,7 @@ func TestDBChanges(t *testing.T) {
 			case nil:
 				// continue
 			default:
-				if !testy.ErrorMatches(tt.wantNextErr, err) {
+				if !testy.ErrorMatchesRE(tt.wantNextErr, err) {
 					t.Errorf("Unexpected error from Next(): %s", err)
 				}
 				break loop

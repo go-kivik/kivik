@@ -22,6 +22,7 @@ import (
 
 // DSN3 returns a testing DSN from the environment for CouchDB 3.x.
 func DSN3(t *testing.T) string {
+	t.Helper()
 	for _, env := range []string{
 		"KIVIK_TEST_DSN_COUCH33",
 		"KIVIK_TEST_DSN_COUCH32",
@@ -39,6 +40,7 @@ func DSN3(t *testing.T) string {
 
 // NoAuthDSN returns a testing DSN with credentials stripped.
 func NoAuthDSN(t *testing.T) string {
+	t.Helper()
 	dsn := DSN3(t)
 	parsed, err := url.Parse(dsn)
 	if err != nil {
@@ -49,6 +51,7 @@ func NoAuthDSN(t *testing.T) string {
 }
 
 func connect(dsn string, t *testing.T) *kivik.Client {
+	t.Helper()
 	client, err := kivik.New("couch", dsn)
 	if err != nil {
 		t.Fatalf("Failed to connect to '%s': %s", dsn, err)
@@ -58,10 +61,12 @@ func connect(dsn string, t *testing.T) *kivik.Client {
 
 // GetClient returns a connection to a CouchDB client, for testing.
 func GetClient(t *testing.T) *kivik.Client {
+	t.Helper()
 	return connect(DSN3(t), t)
 }
 
 // GetNoAuthClient returns an unauthenticated connection to a CouchDB client, for testing.
 func GetNoAuthClient(t *testing.T) *kivik.Client {
+	t.Helper()
 	return connect(NoAuthDSN(t), t)
 }

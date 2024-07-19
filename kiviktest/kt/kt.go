@@ -60,6 +60,7 @@ func (c *Context) Child(t *testing.T) *Context {
 
 // Skip will skip the currently running test if configuration dictates.
 func (c *Context) Skip() {
+	c.T.Helper()
 	if c.Config.Bool(c.T, "skip") {
 		c.T.Skip("Test skipped by suite configuration")
 	}
@@ -67,21 +68,25 @@ func (c *Context) Skip() {
 
 // Skipf is a wrapper around t.Skipf()
 func (c *Context) Skipf(format string, args ...interface{}) {
+	c.T.Helper()
 	c.T.Skipf(format, args...)
 }
 
 // Logf is a wrapper around t.Logf()
 func (c *Context) Logf(format string, args ...interface{}) {
+	c.T.Helper()
 	c.T.Logf(format, args...)
 }
 
 // Fatalf is a wrapper around t.Fatalf()
 func (c *Context) Fatalf(format string, args ...interface{}) {
+	c.T.Helper()
 	c.T.Fatalf(format, args...)
 }
 
 // MustBeSet ends the test with a failure if the config key is not set.
 func (c *Context) MustBeSet(key string) {
+	c.T.Helper()
 	if !c.IsSet(key) {
 		c.T.Fatalf("'%s' not set. Please configure this test.", key)
 	}
@@ -89,67 +94,79 @@ func (c *Context) MustBeSet(key string) {
 
 // MustStringSlice returns a string slice, or fails if the value is unset.
 func (c *Context) MustStringSlice(key string) []string {
+	c.T.Helper()
 	c.MustBeSet(key)
 	return c.StringSlice(key)
 }
 
 // MustBool returns a bool, or fails if the value is unset.
 func (c *Context) MustBool(key string) bool {
+	c.T.Helper()
 	c.MustBeSet(key)
 	return c.Bool(key)
 }
 
 // IntSlice returns a []int from config.
 func (c *Context) IntSlice(key string) []int {
+	c.T.Helper()
 	v, _ := c.Config.Interface(c.T, key).([]int)
 	return v
 }
 
 // MustIntSlice returns a []int, or fails if the value is unset.
 func (c *Context) MustIntSlice(key string) []int {
+	c.T.Helper()
 	c.MustBeSet(key)
 	return c.IntSlice(key)
 }
 
 // StringSlice returns a string slice from the config.
 func (c *Context) StringSlice(key string) []string {
+	c.T.Helper()
 	return c.Config.StringSlice(c.T, key)
 }
 
 // String returns a string from config.
 func (c *Context) String(key string) string {
+	c.T.Helper()
 	return c.Config.String(c.T, key)
 }
 
 // MustString returns a string from config, or fails if the value is unset.
 func (c *Context) MustString(key string) string {
+	c.T.Helper()
 	c.MustBeSet(key)
 	return c.String(key)
 }
 
 // Int returns an int from the config.
 func (c *Context) Int(key string) int {
+	c.T.Helper()
 	return c.Config.Int(c.T, key)
 }
 
 // MustInt returns an int from the config, or fails if the value is unset.
 func (c *Context) MustInt(key string) int {
+	c.T.Helper()
 	c.MustBeSet(key)
 	return c.Int(key)
 }
 
 // Bool returns a bool from the config.
 func (c *Context) Bool(key string) bool {
+	c.T.Helper()
 	return c.Config.Bool(c.T, key)
 }
 
 // Interface returns the configuration value as an interface{}.
 func (c *Context) Interface(key string) interface{} {
+	c.T.Helper()
 	return c.Config.get(name(c.T), key)
 }
 
 // Options returns an options map value.
 func (c *Context) Options(key string) kivik.Option {
+	c.T.Helper()
 	testName := name(c.T)
 	i := c.Config.get(testName, key)
 	if i == nil {
@@ -164,18 +181,22 @@ func (c *Context) Options(key string) kivik.Option {
 
 // MustInterface returns an interface{} from the config, or fails if the value is unset.
 func (c *Context) MustInterface(key string) interface{} {
+	c.T.Helper()
 	c.MustBeSet(key)
 	return c.Interface(key)
 }
 
 // IsSet returns true if the value is set in the configuration.
 func (c *Context) IsSet(key string) bool {
+	c.T.Helper()
 	return c.Interface(key) != nil
 }
 
 // Run wraps t.Run()
 func (c *Context) Run(name string, fn testFunc) {
+	c.T.Helper()
 	c.T.Run(name, func(t *testing.T) {
+		c.T.Helper()
 		ctx := c.Child(t)
 		ctx.Skip()
 		fn(ctx)
@@ -214,6 +235,7 @@ const TestDBPrefix = "kivik$"
 
 // TestDB creates a test database and returns its name.
 func (c *Context) TestDB() string {
+	c.T.Helper()
 	dbname := c.TestDBName()
 	err := Retry(func() error {
 		return c.Admin.CreateDB(context.Background(), dbname, c.Options("db"))

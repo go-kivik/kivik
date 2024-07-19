@@ -31,7 +31,7 @@ import (
 	"github.com/go-kivik/kivik/x/sqlite/v4/reduce"
 )
 
-func fromJSValue(v interface{}) (*string, error) {
+func fromJSValue(v any) (*string, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -531,22 +531,9 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 
 	vm := goja.New()
 
-	emit := func(id string, rev revision) func(interface{}, interface{}) {
-		return func(key, value interface{}) {
-			defer func() {
-				if r := recover(); r != nil {
-					panic(vm.ToValue(r))
-				}
-			}()
-			k, err := fromJSValue(key)
-			if err != nil {
-				panic(err)
-			}
-			v, err := fromJSValue(value)
-			if err != nil {
-				panic(err)
-			}
-			batch.add(id, rev, k, v)
+	emit := func(id string, rev revision) func(any, any) {
+		return func(key, value any) {
+			batch.add(id, rev, key, value)
 		}
 	}
 
@@ -690,8 +677,7 @@ type mapIndexBatch struct {
 }
 
 type mapIndexEntry struct {
-	Key   *string
-	Value *string
+	Key, Value any
 }
 
 func newMapIndexBatch() *mapIndexBatch {
@@ -700,12 +686,13 @@ func newMapIndexBatch() *mapIndexBatch {
 	}
 }
 
-func (b *mapIndexBatch) add(id string, rev revision, key, value *string) {
+func (b *mapIndexBatch) add(id string, rev revision, key, value any) {
 	mapKey := docRev{
 		id:    id,
 		rev:   rev.rev,
 		revID: rev.id,
 	}
+
 	b.entries[mapKey] = append(b.entries[mapKey], mapIndexEntry{
 		Key:   key,
 		Value: value,
@@ -795,18 +782,37 @@ func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc
 			}
 			return 0
 		})
+	docRev:
 		for _, mapKey := range mapKeys {
+			newValues := make([]string, 0, len(batch.entries[mapKey]))
+			newArgs := make([]interface{}, 0, len(batch.entries[mapKey])*5)
 			for _, entry := range batch.entries[mapKey] {
-				values = append(values, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", len(args)+1, len(args)+2, len(args)+3, len(args)+4, len(args)+5))
-				args = append(args, mapKey.id, mapKey.rev, mapKey.revID, entry.Key, entry.Value)
+				key, err := fromJSValue(entry.Key)
+				if err != nil {
+					d.logger.Printf("map function emitted invalid key '%v': %s", entry.Key, err)
+					continue docRev
+				}
+				value, err := fromJSValue(entry.Value)
+				if err != nil {
+					d.logger.Printf("map function emitted invalid value '%v': %s", entry.Value, err)
+					continue docRev
+				}
+
+				argsLen := len(args) + len(newArgs)
+				newValues = append(newValues, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", argsLen+1, argsLen+2, argsLen+3, argsLen+4, argsLen+5))
+				newArgs = append(newArgs, mapKey.id, mapKey.rev, mapKey.revID, key, value)
 			}
+			values = append(values, newValues...)
+			args = append(args, newArgs...)
 		}
-		query := d.ddocQuery(ddoc, viewName, rev.String(), `
-		INSERT INTO {{ .Map }} (id, rev, rev_id, key, value)
-		VALUES
-	`) + strings.Join(values, ",")
-		if _, err := tx.ExecContext(ctx, query, args...); err != nil {
-			return err
+		if len(values) > 0 {
+			query := d.ddocQuery(ddoc, viewName, rev.String(), `
+				INSERT INTO {{ .Map }} (id, rev, rev_id, key, value)
+				VALUES
+			`) + strings.Join(values, ",")
+			if _, err := tx.ExecContext(ctx, query, args...); err != nil {
+				return err
+			}
 		}
 	}
 

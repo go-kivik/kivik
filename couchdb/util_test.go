@@ -51,7 +51,7 @@ func TestDeJSONify(t *testing.T) {
 			expected: map[string]string{"foo": "bar"},
 		},
 		{
-			name:   "invalid JSON sring",
+			name:   "invalid JSON string",
 			input:  `{"foo":"\C"}`,
 			status: http.StatusBadRequest,
 			err:    "invalid character 'C' in string escape code",

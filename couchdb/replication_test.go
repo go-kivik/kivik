@@ -169,7 +169,7 @@ func TestReplicate(t *testing.T) {
 		{
 			name: "invalid options",
 			client: func() *client {
-				client := newTestClient(nil, errors.New("net eror"))
+				client := newTestClient(nil, errors.New("net error"))
 				b := false
 				client.schedulerDetected = &b
 				return client

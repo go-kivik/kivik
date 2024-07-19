@@ -24,7 +24,7 @@ import (
 )
 
 func TestCancelableReadCloser(t *testing.T) {
-	t.Run("no cancelation", func(t *testing.T) {
+	t.Run("no cancellation", func(t *testing.T) {
 		t.Parallel()
 		rc := newCancelableReadCloser(
 			context.Background(),
@@ -38,7 +38,7 @@ func TestCancelableReadCloser(t *testing.T) {
 			t.Errorf("Unexpected result: %s", string(result))
 		}
 	})
-	t.Run("pre-canceled", func(t *testing.T) {
+	t.Run("pre-cancelled", func(t *testing.T) {
 		t.Parallel()
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()

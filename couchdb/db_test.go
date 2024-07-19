@@ -1758,7 +1758,7 @@ func TestRowsQuery(t *testing.T) {
 			if warner, ok := rows.(driver.RowsWarner); ok {
 				result.Warning = warner.Warning()
 			} else {
-				t.Errorf("RowsWarner interface not satisified!!?")
+				t.Errorf("RowsWarner interface not satisfied!!?")
 			}
 
 			if d := queryResultDiff(test.expected, result); d != "" {

@@ -601,10 +601,10 @@ func TestDBAllDocs(t *testing.T) {
 	})
 	tests.Add("return unsorted results", func(t *testing.T) interface{} {
 		d := newDB(t)
-		// Returned results are implcitly ordered, due to the ordering of
+		// Returned results are implicitly ordered, due to the ordering of
 		// the index on the `id` column for joins. So we need to insert
 		// a key that sorts differently implicitly (with ASCII ordering) than
-		// explcitly (with CouchDB's UCI ordering). Thus the `~` id/key.  In
+		// explicitly (with CouchDB's UCI ordering). Thus the `~` id/key.  In
 		// ASCII, ~ comes after the alphabet, in UCI it comes first.  So we
 		// expect it to come after, with implicit ordering, or after, with
 		// explicit. Comment out the options line below to see the difference.

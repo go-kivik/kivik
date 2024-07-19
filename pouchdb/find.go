@@ -31,7 +31,7 @@ import (
 
 var _ driver.Finder = &db{}
 
-// buildIndex merges the ddoc and name into the index structure, as reqiured
+// buildIndex merges the ddoc and name into the index structure, as required
 // by the PouchDB-find plugin.
 func buildIndex(ddoc, name string, index interface{}) (*js.Object, error) {
 	i, err := bindings.Objectify(index)

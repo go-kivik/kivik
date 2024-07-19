@@ -183,7 +183,7 @@ func (p *PouchDB) AllDBs(ctx context.Context) ([]string, error) {
 	return allDBs, nil
 }
 
-// DBInfo is a struct respresenting information about a specific database.
+// DBInfo is a struct representing information about a specific database.
 type DBInfo struct {
 	*js.Object
 	Name      string `js:"db_name"`

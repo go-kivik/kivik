@@ -30,6 +30,7 @@ jobs:
       - name: Prepare CouchDB
         run: |
           export KIVIK_TEST_DSN_COUCH22=http://${COUCHDB_USER}:${COUCHDB_PASSWORD}@couchdb:5984/
+          sleep 60
           ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH22}
       - name: Run tests
         run: |

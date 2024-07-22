@@ -1,4 +1,4 @@
-name: tests-sqlite
+name: tests
 
 on:
   pull_request:
@@ -19,6 +19,5 @@ jobs:
           go-version: ${{ matrix.go-version }}
       - name: Run tests
         run: |
-          cd x/sqlite
           go mod download
           go test -race -shuffle=on ./...

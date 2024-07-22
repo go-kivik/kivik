@@ -13,12 +13,23 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: 1.22
-      - name: Main module
+      - name: Main module lint
         uses: golangci/golangci-lint-action@v6
         with:
           version: v1.57.2
-      - name: x/sqlite module
+      - name: x/sqlite module lint
         uses: golangci/golangci-lint-action@v6
         with:
           working-directory: ./x/sqlite
           version: v1.57.2
+      - name: Main module go.mod
+        run: |
+          go mod tidy -compat=1.17 && git diff --exit-code
+      - name: x/sqlite module go.mod
+        run: |
+          cd x/sqlite
+          go mod tidy && git diff --exit-code
+      - name: Main module generate
+        run: |
+            go generate ./...
+            git diff --exit-code

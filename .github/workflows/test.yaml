@@ -10,10 +10,11 @@ env:
 jobs:
   container-job:
     runs-on: ubuntu-latest
-    # container: node:16-bullseye
-#     services:
-#       couchdb:
-#         image: couchdb:2.2.0
+    container:
+      image: node:16-bullseye
+    services:
+      couchdb:
+        image: couchdb:2.2.0
   test:
     strategy:
       matrix:

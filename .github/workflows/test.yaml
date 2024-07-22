@@ -10,6 +10,12 @@ jobs:
         go-version: [1.22] # TODO: Add 1.23rc2
     name: test
     runs-on: ubuntu-latest
+    services:
+      couchdb:
+        env:
+          COUCHDB_USER: admin
+          COUCHDB_PASSWORD: abc123
+        image: couchdb:2.2.0
     steps:
       - uses: actions/checkout@v4
       - name: Set up Go
@@ -17,6 +23,10 @@ jobs:
         with:
           check-latest: true
           go-version: ${{ matrix.go-version }}
+      - name: Prepare CouchDB
+        run: |
+          export KIVIK_TEST_DSN_COUCH22=http://$COUCHDB_USER:$COUCHDB_PASSWORD@couch2.2.0:5984/
+          ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH22}
       - name: Run tests
         run: |
           go mod download

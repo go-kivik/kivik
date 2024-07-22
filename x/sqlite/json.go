@@ -412,7 +412,7 @@ func (d fullDoc) rev() (revision, error) {
 }
 
 // renders only the requested fields. If fields is is empty,
-// the entire docuemnt is returned.
+// the entire document is returned.
 func (d *fullDoc) toRaw(fields ...string) json.RawMessage {
 	want := func(string) bool { return true }
 	if len(fields) > 0 {

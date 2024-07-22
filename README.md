@@ -146,7 +146,7 @@ This is a partial list of breaking changes between 3.x and 4.x
 
 - Options are no longer a simple `map[string]interface{}`, but are rather functional parameters. In most cases, you can just use `kivik.Param(key, value)`, or `kivik.Params(map[string]interface{}{key: value})` as a replacement. Some shortcuts for common params now exist, and driver-specific options may work differently. Consult the GoDoc.
 - The `Authenticate` method has been removed. Authentication is now handled via option parameters.
-- The CouchDB, PouchDB, and MockDB drivers, and the experimental FilesystemDB and MemoryDB drivers, have been merged with this repo, rather than behing hosted in separate repos. For v3 you would have imported `github.com/go-kivik/couchdb/v3`, for example. With v4, you instead use `github.com/go-kivik/kivik/v4/couchdb` for CouchDB, or `github.com/go-kivik/kivik/v4/x/fsdb` for the experimental FilesystemDB driver.
+- The CouchDB, PouchDB, and MockDB drivers, and the experimental FilesystemDB and MemoryDB drivers, have been merged with this repo, rather than being hosted in separate repos. For v3 you would have imported `github.com/go-kivik/couchdb/v3`, for example. With v4, you instead use `github.com/go-kivik/kivik/v4/couchdb` for CouchDB, or `github.com/go-kivik/kivik/v4/x/fsdb` for the experimental FilesystemDB driver.
 - The return type for queries has been significantly changed.
   - In 3.x, queries returned a `*Rows` struct. Now they return a `*ResultSet`.
   - The `Offset()`, `TotalRows()`, `UpdateSeq()`, `Warning()` and `Bookmark()` methods have been removed, and replaced with the `ResultMetadata` type which is accessed via the `Metadata()` method. See [issue #552](https://github.com/go-kivik/kivik/issues/552).

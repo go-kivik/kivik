@@ -84,7 +84,7 @@ func (d *db) Put(ctx context.Context, docID string, i interface{}, options drive
 	doc, err := d.cdb.OpenDocID(docID, options)
 	switch {
 	case kivik.HTTPStatus(err) == http.StatusNotFound:
-		// Crate new doc
+		// Create new doc
 		doc = d.cdb.NewDocument(docID)
 	case err != nil:
 		return "", err

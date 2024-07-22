@@ -83,7 +83,7 @@ type DBsStatser interface {
 // _all_dbs + the [DBStatser] interface (or its respective emulation).
 type AllDBsStatser interface {
 	// AllDBsStats returns database statistical information for each database
-	// in the CouchDB instance. See the [CouchDB documenatation] for supported
+	// in the CouchDB instance. See the [CouchDB documentation] for supported
 	// options.
 	//
 	// [CouchDB documentation]: https://docs.couchdb.org/en/stable/api/server/common.html#get--_dbs_info
@@ -272,7 +272,7 @@ type Document struct {
 // Attachments is an iterator over the attachments included in a document when
 // [DB.Get] is called with `attachments=true`.
 type Attachments interface {
-	// Next is called to pupulate att with the next attachment in the result
+	// Next is called to populate att with the next attachment in the result
 	// set.
 	//
 	// Next should return [io.EOF] when there are no more attachments.

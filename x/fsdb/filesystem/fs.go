@@ -18,7 +18,7 @@ import (
 	"os"
 )
 
-// Filesystem is a filesystem implemenatation.
+// Filesystem is a filesystem implementation.
 type Filesystem interface {
 	Mkdir(name string, perm os.FileMode) error
 	MkdirAll(path string, perm os.FileMode) error

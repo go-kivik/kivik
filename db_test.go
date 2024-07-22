@@ -2625,7 +2625,7 @@ func TestGetAttachmentMeta(t *testing.T) { // nolint: gocyclo
 			err:      "kivik: client closed",
 		},
 		{
-			name: "db eror",
+			name: "db error",
 			db: &DB{
 				err: errors.New("db error"),
 			},

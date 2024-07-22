@@ -34,7 +34,7 @@ type Logger interface {
 	Debugf(string, ...interface{})
 	// Info logs normal priority messages.
 	Info(...interface{})
-	// Infof logs formatted normal priorty messages.
+	// Infof logs formatted normal priority messages.
 	Infof(string, ...interface{})
 	// Error logs error messages.
 	Error(...interface{})

@@ -81,7 +81,7 @@ type client struct {
 	opts  map[string]Options
 	pouch *bindings.PouchDB
 
-	// This mantains a list of running replications
+	// This maintains a list of running replications
 	replications   []*replication
 	replicationsMU sync.RWMutex
 }

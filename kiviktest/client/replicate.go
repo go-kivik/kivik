@@ -98,7 +98,7 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 				}
 			}
 			if !success {
-				ctx.Errorf("Replication failied after %d tries", tries)
+				ctx.Errorf("Replication failed after %d tries", tries)
 			}
 		})
 		ctx.Run("MissingSource", func(ctx *kt.Context) {

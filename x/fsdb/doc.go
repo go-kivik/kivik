@@ -18,7 +18,7 @@ https://github.com/go-kivik/kivik/x/fsdb
 
 Bug reports, feature requests, and pull requests are always welcome. Current
 development is primarily focused around using fsdb for testing of CouchDB
-applications, and bootstraping CouchDB applications.
+applications, and bootstrapping CouchDB applications.
 
 # General Usage
 

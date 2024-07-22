@@ -39,7 +39,7 @@ func (c CompositeError) HTTPStatus() int {
 // Error represents an error returned by Kivik.
 //
 // This type definition is not guaranteed to remain stable, or even exported.
-// When examining errors programatically, you should rely instead on the
+// When examining errors programmatically, you should rely instead on the
 // HTTPStatus() function in this package, rather than on directly observing
 // the fields of this type.
 type Error struct {

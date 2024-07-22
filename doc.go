@@ -44,7 +44,7 @@ documentation for the standard library's [encoding/json] package.
 # Options
 
 Most client and database methods take optional arguments of the type [Option].
-Multiple options may be passed, and latter options take precidence over earlier
+Multiple options may be passed, and latter options take precedence over earlier
 ones, in case of a conflict.
 
 [Params] and [Param] can be used to set options that are generally converted to

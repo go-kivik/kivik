@@ -299,7 +299,7 @@ func consumeDelim(dec *json.Decoder, expectedDelim json.Delim) error {
 }
 
 // unexpectedDelim is used to indicate to the multiQueriesRows type that the
-// end of input has been reached, while behaving as an unexpected delimter
+// end of input has been reached, while behaving as an unexpected delimiter
 // error to all other code.
 type unexpectedDelim byte
 

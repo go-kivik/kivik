@@ -25,7 +25,7 @@ type SearchInfo struct {
 	RawResponse json.RawMessage
 }
 
-// SearchIndex contains textual search index informatoin.
+// SearchIndex contains textual search index information.
 type SearchIndex struct {
 	PendingSeq   int64
 	DocDelCount  int64
@@ -42,6 +42,6 @@ type Searcher interface {
 	Search(ctx context.Context, ddoc, index, query string, options map[string]interface{}) (Rows, error)
 	// SearchInfo returns statistics about the specified search index.
 	SearchInfo(ctx context.Context, ddoc, index string) (*SearchInfo, error)
-	// SerachAnalyze tests the results of Lucene analyzer tokenization on sample text.
+	// SearchAnalyze tests the results of Lucene analyzer tokenization on sample text.
 	SearchAnalyze(ctx context.Context, text string) ([]string, error)
 }

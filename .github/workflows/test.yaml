@@ -31,7 +31,8 @@ jobs:
         run: |
           echo user: ${COUCHDB_USER}
           echo password: ${COUCHDB_PASSWORD}
-          export KIVIK_TEST_DSN_COUCH22=http://${COUCHDB_USER}:${COUCHDB_PASSWORD}@couch2.2.0:5984/
+          export KIVIK_TEST_DSN_COUCH22=http://$COUCHDB_USER:${COUCHDB_PASSWORD}@couch2.2.0:5984/
+          echo dsn ${KIVIK_TEST_DSN_COUCH22} | base64
           ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH22}
       - name: Run tests
         run: |

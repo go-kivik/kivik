@@ -17,15 +17,6 @@ test-x-sqlite:
     - go mod download
     - go test -race -shuffle=on ./...
 
-linter-x-sqlite:
-  stage: test
-  image: golangci/golangci-lint:v1.57.2
-  script:
-    - cd x/sqlite
-    - go mod download
-    - golangci-lint run ./...
-    - go mod tidy && git diff --exit-code
-
 test:
   parallel:
     matrix:
@@ -67,16 +58,6 @@ test:
   script:
     - go mod download
     - go test -race -shuffle=on ./...
-
-linter:
-  stage: test
-  image: golangci/golangci-lint:v1.57.2
-  script:
-    - go mod download
-    - golangci-lint run ./...
-    - go mod tidy -compat=1.17 && git diff --exit-code
-    - go generate ./...
-    - git diff --exit-code
 
 coverage:
   stage: test

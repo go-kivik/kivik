@@ -3,6 +3,10 @@ name: tests
 on:
   pull_request:
 
+env:
+  COUCHDB_USER: admin
+  COUCHDB_PASSWORD: abc123
+
 jobs:
   test:
     strategy:

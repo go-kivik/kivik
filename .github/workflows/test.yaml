@@ -29,7 +29,7 @@ jobs:
           go-version: ${{ matrix.go-version }}
       - name: Prepare CouchDB
         run: |
-          export KIVIK_TEST_DSN_COUCH22=http://${COUCHDB_USER}:${COUCHDB_PASSWORD}@couch2.2.0:5984/
+          export KIVIK_TEST_DSN_COUCH22=http://${COUCHDB_USER}:${COUCHDB_PASSWORD}@couchdb:5984/
           ./script/complete_couch2.sh ${KIVIK_TEST_DSN_COUCH22}
       - name: Run tests
         run: |

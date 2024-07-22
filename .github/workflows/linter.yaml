@@ -13,7 +13,12 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: 1.22
-      - name: golangci-lint
+      - name: Main module
         uses: golangci/golangci-lint-action@v6
         with:
+          version: v1.57.2
+      - name: x/sqlite module
+        uses: golangci/golangci-lint-action@v6
+        with:
+          working-directory: ./x/sqlite
           version: v1.57.2

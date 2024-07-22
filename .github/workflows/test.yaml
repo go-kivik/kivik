@@ -8,25 +8,35 @@ env:
   COUCHDB_PASSWORD: abc123
 
 jobs:
+  container-job:
+    runs-on: ubuntu-latest
+    container:
+      image: node:18-bullseye
+    services:
+      couchdb:
+        image: couchdb:2.2.0
+        env:
+          COUCHDB_USER: admin
+          COUCHDB_PASSWORD: abc123
+        ports:
+          - 5984:5984
   test:
     strategy:
       matrix:
         go-version: [1.22] # TODO: Add 1.23rc2
     name: test
     runs-on: ubuntu-latest
-    services:
-      couchdb:
-        env:
-          COUCHDB_USER: admin
-          COUCHDB_PASSWORD: abc123
-        image: couchdb:2.2.0
-        options: >-
-          --health-cmd "curl -sSf http://localhost:5984/_up"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5984:5984
+    # services:
+    #   couchdb:
+    #     env:
+    #       COUCHDB_USER: admin
+    #       COUCHDB_PASSWORD: abc123
+    #     image: couchdb:2.2.0
+    #     options: >-
+    #       --health-cmd "curl -sSf http://localhost:5984/_up"
+    #       --health-interval 10s
+    #       --health-timeout 5s
+    #       --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - name: Set up Go

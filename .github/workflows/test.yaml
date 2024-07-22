@@ -15,6 +15,11 @@ jobs:
     services:
       couchdb:
         image: couchdb:2.2.0
+        env:
+          COUCHDB_USER: admin
+          COUCHDB_PASSWORD: abc123
+        ports:
+          - 5984:5984
   test:
     strategy:
       matrix:

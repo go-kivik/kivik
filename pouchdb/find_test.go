@@ -80,7 +80,7 @@ func TestExplain(t *testing.T) {
 	tests.Add("query error", test{
 		db:    &db{db: bindings.GlobalPouchDB().New("foo", nil)},
 		query: nil,
-		err:   "TypeError: Cannot read properties",
+		err:   "TypeError: Cannot read propert",
 	})
 	tests.Add("simple selector", func(t *testing.T) interface{} {
 		options := map[string]interface{}{

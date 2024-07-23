@@ -167,7 +167,7 @@ func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, options 
 	`), strings.Join(values, ", "))
 	rows, err := d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {
-		return nil, err
+		return nil, d.errDatabaseNotFound(err)
 	}
 
 	// Call rows.Next() to see if we get any results at all. If zero results,

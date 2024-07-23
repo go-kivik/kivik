@@ -189,7 +189,7 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 
 	c.rows, err = d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck,sqlclosecheck // Err checked in Next
 	if err != nil {
-		return nil, err
+		return nil, d.errDatabaseNotFound(err)
 	}
 
 	// The first row is used to calculate the ETag; it's done as part of the

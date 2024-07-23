@@ -191,7 +191,7 @@ func (d *db) queryBuiltinView(
 	`), vopts.buildOrderBy(), strings.Join(where, " AND "), vopts.limit, vopts.skip, vopts.bookmarkWhere())
 	results, err := d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {
-		return nil, err
+		return nil, d.errDatabaseNotFound(err)
 	}
 
 	meta, err := readFirstRow(results, vopts)

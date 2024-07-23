@@ -44,7 +44,7 @@ func (d *db) Purge(ctx context.Context, request map[string][]string) (*driver.Pu
 					// Non-leaf rev, do nothing
 					continue
 				default:
-					return nil, err
+					return nil, d.errDatabaseNotFound(err)
 				}
 			}
 

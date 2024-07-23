@@ -52,7 +52,7 @@ func (d *db) CreateDoc(ctx context.Context, doc interface{}, _ driver.Options) (
 		)
 	`), data.ID).Scan(&exists)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return "", "", err
+		return "", "", d.errDatabaseNotFound(err)
 	}
 	if exists {
 		return "", "", &kerrors.Error{Status: http.StatusConflict, Message: "document update conflict"}

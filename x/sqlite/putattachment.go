@@ -53,7 +53,7 @@ func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attach
 		// This means the doc is being created, and is empty other than the attachment
 		data.Doc = []byte("{}")
 	case err != nil:
-		return "", err
+		return "", d.errDatabaseNotFound(err)
 	}
 
 	content, err := io.ReadAll(att.Content)

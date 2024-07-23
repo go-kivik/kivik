@@ -15,9 +15,12 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
+	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	internal "github.com/go-kivik/kivik/v4/int/errors"
 )
 
 type db struct {
@@ -43,6 +46,7 @@ func (d *db) Close() error {
 	return d.db.Close()
 }
 
+// TODO: I think Ping belongs on *client, not *db
 func (d *db) Ping(ctx context.Context) error {
 	return d.db.PingContext(ctx)
 }
@@ -87,4 +91,19 @@ func (db) DeleteIndex(context.Context, string, string, driver.Options) error {
 
 func (db) Explain(context.Context, interface{}, driver.Options) (*driver.QueryPlan, error) {
 	return nil, nil
+}
+
+// errDatabaseNotFound converts a sqlite "no such table"  error into a kivik
+// database not found error
+func (d *db) errDatabaseNotFound(err error) error {
+	if err == nil {
+		return nil
+	}
+	if errIsNoSuchTable(err) {
+		return &internal.Error{
+			Status:  http.StatusNotFound,
+			Message: fmt.Sprintf("database not found: %s", d.name),
+		}
+	}
+	return err
 }

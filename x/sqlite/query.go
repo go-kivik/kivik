@@ -107,7 +107,7 @@ func (d *db) performQuery(
 	for {
 		rev, err := d.updateIndex(ctx, ddoc, view, vopts.update)
 		if err != nil {
-			return nil, err
+			return nil, d.errDatabaseNotFound(err)
 		}
 
 		args := []interface{}{
@@ -304,7 +304,7 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 	for {
 		rev, err = d.updateIndex(ctx, ddoc, view, vopts.update)
 		if err != nil {
-			return nil, err
+			return nil, d.errDatabaseNotFound(err)
 		}
 
 		args := []any{"_design/" + ddoc, rev.rev, rev.id, view, kivik.EndKeySuffix, true, vopts.updateSeq}

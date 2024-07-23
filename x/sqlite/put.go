@@ -62,7 +62,7 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 			for _, r := range revs[:len(revs)-1] {
 				err := stmt.QueryRowContext(ctx, data.ID, r.rev, r.id).Scan(&exists)
 				if err != nil {
-					return "", err
+					return "", d.errDatabaseNotFound(err)
 				}
 				if !exists {
 					return "", &internal.Error{Status: http.StatusConflict, Message: "document update conflict"}
@@ -101,7 +101,7 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 				r := r
 				_, err := stmt.ExecContext(ctx, data.ID, r.rev, r.id, parentRev, parentRevID)
 				if err != nil {
-					return "", err
+					return "", d.errDatabaseNotFound(err)
 				}
 				parentRev = &r.rev
 				parentRevID = &r.id
@@ -121,7 +121,7 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 				ON CONFLICT DO NOTHING
 			`), docID, rev.rev, rev.id)
 			if err != nil {
-				return "", err
+				return "", d.errDatabaseNotFound(err)
 			}
 		}
 		var newRev string
@@ -163,7 +163,7 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 			return "", &internal.Error{Status: http.StatusConflict, Message: "document update conflict"}
 		}
 	case err != nil:
-		return "", err
+		return "", d.errDatabaseNotFound(err)
 	}
 
 	r, err := d.createRev(ctx, tx, data, curRev)

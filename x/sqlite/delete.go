@@ -48,7 +48,7 @@ func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (
 
 	data.MD5sum, err = d.isLeafRev(ctx, tx, docID, curRev.rev, curRev.id)
 	if err != nil {
-		return "", err
+		return "", d.errDatabaseNotFound(err)
 	}
 	data.Deleted = true
 	data.Doc = []byte("{}")

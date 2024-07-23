@@ -133,7 +133,7 @@ func (d *db) getCoreDoc(ctx context.Context, tx queryer, id string, rev revision
 	case errors.Is(err, sql.ErrNoRows) || deleted && rev.IsZero():
 		return nil, revision{}, &internal.Error{Status: http.StatusNotFound, Message: "not found"}
 	case err != nil:
-		return nil, revision{}, err
+		return nil, revision{}, d.errDatabaseNotFound(err)
 	}
 
 	return &fullDoc{

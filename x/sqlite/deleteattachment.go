@@ -45,7 +45,7 @@ func (d *db) DeleteAttachment(ctx context.Context, docID, filename string, optio
 
 	data.MD5sum, err = d.isLeafRev(ctx, tx, docID, curRev.rev, curRev.id)
 	if err != nil {
-		return "", err
+		return "", d.errDatabaseNotFound(err)
 	}
 
 	// Read list of current attachments, then remove the requested one

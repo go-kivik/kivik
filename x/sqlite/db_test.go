@@ -16,8 +16,17 @@
 package sqlite
 
 import (
+	"context"
 	"database/sql"
+	"encoding/json"
+	"net/http"
 	"testing"
+
+	"gitlab.com/flimzy/testy"
+
+	"github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/int/mock"
 )
 
 type leaf struct {
@@ -51,4 +60,188 @@ func readRevisions(t *testing.T, db *sql.DB) []leaf {
 		t.Fatal(err)
 	}
 	return leaves
+}
+
+func Test_db_not_found(t *testing.T) {
+	t.Parallel()
+	const (
+		wantStatus = http.StatusNotFound
+		wantErr    = "database not found: db_not_found"
+	)
+
+	type test struct {
+		call func(*db) error
+	}
+
+	tests := testy.NewTable()
+	tests.Add("Changes", test{
+		call: func(d *db) error {
+			_, err := d.Changes(context.Background(), mock.NilOption)
+			return err
+		},
+	})
+	tests.Add("Changes, since=now", test{
+		call: func(d *db) error {
+			_, err := d.Changes(context.Background(), kivik.Param("since", "now"))
+			return err
+		},
+	})
+	tests.Add("Changes, longpoll", test{
+		call: func(d *db) error {
+			_, err := d.Changes(context.Background(), kivik.Param("feed", "longpoll"))
+			return err
+		},
+	})
+	tests.Add("CreateDoc", test{
+		call: func(d *db) error {
+			_, _, err := d.CreateDoc(context.Background(), map[string]string{}, mock.NilOption)
+			return err
+		},
+	})
+	tests.Add("DeleteAttachment", test{
+		call: func(d *db) error {
+			_, err := d.DeleteAttachment(context.Background(), "doc", "att", kivik.Rev("1-x"))
+			return err
+		},
+	})
+	tests.Add("Delete", test{
+		call: func(d *db) error {
+			_, err := d.Delete(context.Background(), "doc", kivik.Rev("1-x"))
+			return err
+		},
+	})
+	tests.Add("Find", test{
+		call: func(d *db) error {
+			_, err := d.Find(context.Background(), json.RawMessage(`{"selector":{}}`), mock.NilOption)
+			return err
+		},
+	})
+	tests.Add("GetAttachment", test{
+		call: func(d *db) error {
+			_, err := d.GetAttachment(context.Background(), "doc", "att", mock.NilOption)
+			return err
+		},
+	})
+	tests.Add("GetAttachmentMeta", test{
+		call: func(d *db) error {
+			_, err := d.GetAttachmentMeta(context.Background(), "doc", "att", mock.NilOption)
+			return err
+		},
+	})
+	tests.Add("Get", test{
+		call: func(d *db) error {
+			_, err := d.Get(context.Background(), "doc", mock.NilOption)
+			return err
+		},
+	})
+	tests.Add("GetRev", test{
+		call: func(d *db) error {
+			_, err := d.GetRev(context.Background(), "doc", mock.NilOption)
+			return err
+		},
+	})
+	tests.Add("OpenRevs", test{
+		call: func(d *db) error {
+			_, err := d.OpenRevs(context.Background(), "doc", nil, mock.NilOption)
+			return err
+		},
+	})
+	tests.Add("Purge", test{
+		call: func(d *db) error {
+			_, err := d.Purge(context.Background(), map[string][]string{"doc": {"1-x"}})
+			return err
+		},
+	})
+	tests.Add("PutAttachment", test{
+		call: func(d *db) error {
+			_, err := d.PutAttachment(context.Background(), "doc", &driver.Attachment{}, mock.NilOption)
+			return err
+		},
+	})
+	tests.Add("Put", test{
+		call: func(d *db) error {
+			_, err := d.Put(context.Background(), "doc", map[string]string{}, mock.NilOption)
+			return err
+		},
+	})
+	tests.Add("Put, new_edits=false", test{
+		call: func(d *db) error {
+			_, err := d.Put(context.Background(), "doc", map[string]any{
+				"_rev": "1-x",
+			}, kivik.Param("new_edits", false))
+			return err
+		},
+	})
+	tests.Add("Put, new_edits=false + _revisions", test{
+		call: func(d *db) error {
+			_, err := d.Put(context.Background(), "doc", map[string]any{
+				"_revisions": map[string]interface{}{
+					"start": 1,
+					"ids":   []string{"x"},
+				},
+			}, kivik.Param("new_edits", false))
+			return err
+		},
+	})
+	tests.Add("Put, _revisoins + new_edits=true", test{
+		call: func(d *db) error {
+			_, err := d.Put(context.Background(), "doc", map[string]any{
+				"_revisions": map[string]interface{}{
+					"start": 1,
+					"ids":   []string{"x", "y", "z"},
+				},
+			}, mock.NilOption)
+			return err
+		},
+	})
+	tests.Add("AllDocs", test{
+		call: func(d *db) error {
+			_, err := d.AllDocs(context.Background(), mock.NilOption)
+			return err
+		},
+	})
+	tests.Add("Query", test{
+		call: func(d *db) error {
+			_, err := d.Query(context.Background(), "ddoc", "view", mock.NilOption)
+			return err
+		},
+	})
+	tests.Add("Query, group=true", test{
+		call: func(d *db) error {
+			_, err := d.Query(context.Background(), "ddoc", "view", kivik.Param("group", true))
+			return err
+		},
+	})
+	tests.Add("RevsDiff", test{
+		call: func(d *db) error {
+			_, err := d.RevsDiff(context.Background(), map[string][]string{"doc": {"1-x"}})
+			return err
+		},
+	})
+	/*
+		TODO:
+	*/
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		t.Parallel()
+		client, err := (drv{}).NewClient(":memory:", mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+		d, err := client.DB("db_not_found", mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = tt.call(d.(*db))
+		if err == nil {
+			t.Fatal("Expected error")
+		}
+		if wantErr != err.Error() {
+			t.Errorf("Unexpected error: %s", err)
+		}
+		if status := kivik.HTTPStatus(err); status != wantStatus {
+			t.Errorf("Unexpected status: %d", status)
+		}
+	})
 }

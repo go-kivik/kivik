@@ -93,7 +93,7 @@ func (d *db) winningRev(ctx context.Context, tx queryer, docID string) (revision
 	if err != nil && errors.Is(err, sql.ErrNoRows) {
 		return curRev, &internal.Error{Status: http.StatusNotFound, Message: "missing"}
 	}
-	return curRev, err
+	return curRev, d.errDatabaseNotFound(err)
 }
 
 type stmtCache map[string]*sql.Stmt
@@ -251,7 +251,7 @@ func (d *db) lastSeq(ctx context.Context) (uint64, error) {
 	err := d.db.QueryRowContext(ctx, d.query(`
 			SELECT COALESCE(MAX(seq), 0) FROM {{ .Docs }}
 		`)).Scan(&lastSeq)
-	return lastSeq, err
+	return lastSeq, d.errDatabaseNotFound(err)
 }
 
 // discard implements the [database/sql.Scanner] interface, but discards the

@@ -67,7 +67,7 @@ func (d *db) RevsDiff(ctx context.Context, revMap interface{}) (driver.Rows, err
 
 	rows, err := d.db.QueryContext(ctx, query, ids...) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {
-		return nil, err
+		return nil, d.errDatabaseNotFound(err)
 	}
 
 	return &revsDiffResponse{

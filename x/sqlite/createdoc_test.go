@@ -148,6 +148,7 @@ func TestDBCreateDoc(t *testing.T) {
 	})
 	/*
 		TODO:
+		- nil doc
 		- different UUID configuration options????
 		- retry in case of duplicate random uuid ???
 		- support batch mode?

@@ -15,6 +15,7 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -54,43 +55,43 @@ func (d *db) Ping(ctx context.Context) error {
 /* -- stub methods -- */
 
 func (db) Stats(context.Context) (*driver.DBStats, error) {
-	return nil, nil
+	return nil, errors.New("not implemented")
 }
 
 func (db) Compact(context.Context) error {
-	return nil
+	return errors.New("not implemented")
 }
 
 func (db) CompactView(context.Context, string) error {
-	return nil
+	return errors.New("not implemented")
 }
 
 func (db) ViewCleanup(context.Context) error {
-	return nil
+	return errors.New("not implemented")
 }
 
 func (db) BulkDocs(context.Context, []interface{}, driver.Options) ([]driver.BulkResult, error) {
-	return nil, nil
+	return nil, errors.New("not implemented")
 }
 
 func (db) Copy(context.Context, string, string, driver.Options) (string, error) {
-	return "", nil
+	return "", errors.New("not implemented")
 }
 
 func (db) CreateIndex(context.Context, string, string, interface{}, driver.Options) error {
-	return nil
+	return errors.New("not implemented")
 }
 
 func (db) GetIndexes(context.Context, driver.Options) ([]driver.Index, error) {
-	return nil, nil
+	return nil, errors.New("not implemented")
 }
 
 func (db) DeleteIndex(context.Context, string, string, driver.Options) error {
-	return nil
+	return errors.New("not implemented")
 }
 
 func (db) Explain(context.Context, interface{}, driver.Options) (*driver.QueryPlan, error) {
-	return nil, nil
+	return nil, errors.New("not implemented")
 }
 
 // errDatabaseNotFound converts a sqlite "no such table"  error into a kivik

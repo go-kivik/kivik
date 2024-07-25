@@ -440,7 +440,7 @@ func (db *DB) GetIndexes(ctx context.Context) (*js.Object, error) {
 
 // DeleteIndex deletes an index used by the MongoDB-style queries with the
 // pouchdb-find plugin, if it is installed. If the plugin is not installed, a
-// NotImplemeneted error will be returned.
+// NotImplemented error will be returned.
 //
 // See: https://github.com/pouchdb/pouchdb/tree/master/packages/node_modules/pouchdb-find#dbdeleteindexindex--callback
 func (db *DB) DeleteIndex(ctx context.Context, index interface{}) (*js.Object, error) {

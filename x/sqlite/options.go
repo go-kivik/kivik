@@ -792,7 +792,7 @@ func (v viewOptions) reduceGroupLevel() int {
 }
 
 // viewOptions are all of the options recognized by the view endpoints
-// _desgin/<ddoc>/_view/<view>, _all_docs, _design_docs, and _local_docs.
+// _design/<ddoc>/_view/<view>, _all_docs, _design_docs, and _local_docs.
 //
 // See https://docs.couchdb.org/en/stable/api/ddoc/views.html#api-ddoc-view
 type viewOptions struct {

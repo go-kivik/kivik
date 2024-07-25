@@ -131,11 +131,11 @@ func (s *Server) dbMembershipRequired(next httpe.HandlerWithError) httpe.Handler
 	})
 }
 
-// validateDBMembership returns an error if the user lacks sufficient membersip.
+// validateDBMembership returns an error if the user lacks sufficient membership.
 //
 //	See the [CouchDB documentation] for the rules for granting access.
 //
-// [CouchDB documentatio]: https://docs.couchdb.org/en/stable/api/database/security.html#get--db-_security
+// [CouchDB documentation]: https://docs.couchdb.org/en/stable/api/database/security.html#get--db-_security
 func validateDBMembership(user *auth.UserContext, security *kivik.Security) error {
 	// No membership names/roles means open read access.
 	if len(security.Members.Names) == 0 && len(security.Members.Roles) == 0 {
@@ -188,11 +188,11 @@ func (s *Server) dbAdminRequired(next httpe.HandlerWithError) httpe.HandlerWithE
 	})
 }
 
-// validateDBAdmin returns an error if the user lacks sufficient membersip.
+// validateDBAdmin returns an error if the user lacks sufficient membership.
 //
 //	See the [CouchDB documentation] for the rules for granting access.
 //
-// [CouchDB documentatio]: https://docs.couchdb.org/en/stable/api/database/security.html#get--db-_security
+// [CouchDB documentation]: https://docs.couchdb.org/en/stable/api/database/security.html#get--db-_security
 func validateDBAdmin(user *auth.UserContext, security *kivik.Security) error {
 	if user == nil {
 		return &internal.Error{Status: http.StatusUnauthorized, Message: "User not authenticated"}

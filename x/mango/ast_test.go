@@ -77,7 +77,7 @@ func TestParse(t *testing.T) {
 		input:   `{"foo": {"$invalid": "bar"}}`,
 		wantErr: "invalid operator $invalid",
 	})
-	tests.Add("explicit equiality against object", test{
+	tests.Add("explicit equality against object", test{
 		input: `{"foo": {"$eq": {"bar": "baz"}}}`,
 		want: &fieldNode{
 			field: "foo",

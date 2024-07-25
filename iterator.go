@@ -98,7 +98,7 @@ func newIterator(ctx context.Context, onClose func(), feed iterator, zeroValue i
 	return i
 }
 
-// errIterator instantiates a new iteratore that is already closed, and only
+// errIterator instantiates a new iterator that is already closed, and only
 // returns an error.
 func errIterator(err error) *iter {
 	return &iter{

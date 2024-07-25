@@ -149,7 +149,7 @@ func (r *replicator) replicate(ctx context.Context, options Option) error {
 type replicator struct {
 	target, source *DB
 	cb             eventCallback
-	// withSecurity indicates that the secuurity object should be read from
+	// withSecurity indicates that the security object should be read from
 	// source, and copied to the target, before the replication. Use with
 	// caution! The security object is not versioned, and will be
 	// unconditionally overwritten!

@@ -88,7 +88,7 @@ func (c *Client) open() (*kivik.Client, *Client, error) {
 	return client, c, err
 }
 
-// ExpectationsWereMet returns an error if any outstanding expectatios were
+// ExpectationsWereMet returns an error if any outstanding expectations were
 // not met.
 func (c *Client) ExpectationsWereMet() error {
 	c.drv.Lock()

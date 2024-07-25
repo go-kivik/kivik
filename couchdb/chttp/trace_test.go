@@ -100,7 +100,7 @@ func TestHTTPRequest(t *testing.T) {
 			finalReq: httptest.NewRequest("PUT", "/", io.NopCloser(strings.NewReader("testing"))),
 		},
 		{
-			name: "HTTPRequesteBody/cloned response",
+			name: "HTTPRequestBody/cloned response",
 			trace: func(t *testing.T) *ClientTrace {
 				return &ClientTrace{
 					HTTPRequestBody: func(r *http.Request) {
@@ -119,7 +119,7 @@ func TestHTTPRequest(t *testing.T) {
 			finalReq: httptest.NewRequest("PUT", "/", io.NopCloser(strings.NewReader("testing"))),
 		},
 		{
-			name: "HTTPRequeste/cloned response",
+			name: "HTTPRequest/cloned response",
 			trace: func(t *testing.T) *ClientTrace {
 				return &ClientTrace{
 					HTTPRequest: func(r *http.Request) {
@@ -137,7 +137,7 @@ func TestHTTPRequest(t *testing.T) {
 			finalReq: httptest.NewRequest("PUT", "/", io.NopCloser(strings.NewReader("testing"))),
 		},
 		{
-			name: "HTTPRequesteBody/no body",
+			name: "HTTPRequestBody/no body",
 			trace: func(t *testing.T) *ClientTrace {
 				return &ClientTrace{
 					HTTPRequestBody: func(r *http.Request) {

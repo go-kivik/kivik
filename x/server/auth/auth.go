@@ -68,7 +68,7 @@ type AuthenticateFunc func(http.ResponseWriter, *http.Request) (*UserContext, er
 
 // Handler is an auth handler.
 type Handler interface {
-	// Init should return the name of the authenticatoin method, and an
+	// Init should return the name of the authentication method, and an
 	// authentication function. It is only called once on server startup.
 	Init(Server) (string, AuthenticateFunc)
 }

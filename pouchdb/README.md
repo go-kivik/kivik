@@ -22,7 +22,7 @@ interface. You must import the driver and can then use the full
 [`Kivik`](http://pkg.go.dev/github.com/go-kivik/kivik/v4) API.
 
 ```go
-// +build js
+//go:build js
 
 package main
 

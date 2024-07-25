@@ -11,7 +11,6 @@
 // the License.
 
 //go:build !js
-// +build !js
 
 // GopherJS can't run a test server
 

@@ -11,7 +11,6 @@
 // the License.
 
 //go:build js
-// +build js
 
 // Package poucherr exists only for the purpose of testing the PouchDB binding's
 // handling of PouchDB-specific error messages. This Go package is empty, the

@@ -21,7 +21,7 @@ Use the `pouch` driver name when using this driver. The DSN should be the
 blank string for local database connections, or a full URL, including any
 required credentials, when connecting to a remote database.
 
-	// +build js
+	//go:build js
 
 	package main
 

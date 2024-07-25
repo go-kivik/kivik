@@ -11,7 +11,6 @@
 // the License.
 
 //go:build js
-// +build js
 
 // Package nettest wraps [httptest.NewServer] to skip when called from GopherJS.
 package nettest

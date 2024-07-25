@@ -44,7 +44,7 @@ func Test_viewOptions(t *testing.T) {
 			sorted:       true,
 		},
 	})
-	tests.Add("confclits: invalid string", test{
+	tests.Add("conflicts: invalid string", test{
 		options:    kivik.Param("conflicts", "oink"),
 		wantErr:    "invalid value for 'conflicts': oink",
 		wantStatus: http.StatusBadRequest,

@@ -21,7 +21,7 @@ import (
 )
 
 // Config provides access to read server configuration. Configuration
-// backends that allow modifying configuraiont will also implement
+// backends that allow modifying configuration will also implement
 // [ConfigWriter].
 type Config interface {
 	All(context.Context) (map[string]map[string]string, error)

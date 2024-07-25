@@ -500,7 +500,7 @@ func TestGetRev(t *testing.T) {
 			expected: `12345`,
 		},
 		{
-			name: "satndard ETag header",
+			name: "standard ETag header",
 			resp: &http.Response{
 				StatusCode: 200,
 				Request:    &http.Request{Method: "POST"},

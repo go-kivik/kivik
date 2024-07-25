@@ -194,7 +194,7 @@ Further, by providing the `--yaml` flag, or by reading from a file with a `.yml`
 
 ## Network Controls
 
-`kivik` provides a number of network configuratione parameters to facilitate working during network problems, or while waiting for a CouchDB server to come online.
+`kivik` provides a number of network configuration parameters to facilitate working during network problems, or while waiting for a CouchDB server to come online.
 
 
       --request-timeout string       The time limit for each request.

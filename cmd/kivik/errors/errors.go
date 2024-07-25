@@ -35,7 +35,7 @@ const (
 	// error.
 	ErrInternalServerError = 4
 
-	// ErrBadReuqest indicates that the server responded with a 400 error.
+	// ErrBadRequest indicates that the server responded with a 400 error.
 	ErrBadRequest = 10
 	// ErrUnauthorized indicates that the server responded with a 401 error.
 	ErrUnauthorized = 11

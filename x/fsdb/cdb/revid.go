@@ -32,7 +32,7 @@ func (r *RevID) Changed() bool {
 	return r.String() != r.original
 }
 
-// UnmarshalText xatisfies the json.Unmarshaler interface.
+// UnmarshalText satisfies the json.Unmarshaler interface.
 func (r *RevID) UnmarshalText(p []byte) error {
 	r.original = string(p)
 	if bytes.Contains(p, []byte("-")) {

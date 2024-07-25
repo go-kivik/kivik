@@ -56,7 +56,7 @@ func (r *Replication) Err() error {
 	return r.ErrFunc()
 }
 
-// ReplicationID calls r.ReplicatoinIDFunc
+// ReplicationID calls r.ReplicationIDFunc
 func (r *Replication) ReplicationID() string {
 	return r.ReplicationIDFunc()
 }

@@ -127,7 +127,7 @@ type ReplicationInfo struct {
 type ClientReplicator interface {
 	// Replicate initiates a replication.
 	Replicate(ctx context.Context, targetDSN, sourceDSN string, options Options) (Replication, error)
-	// GetReplications returns a list of replicatoins (i.e. all docs in the
+	// GetReplications returns a list of replications (i.e. all docs in the
 	// _replicator database)
 	GetReplications(ctx context.Context, options Options) ([]Replication, error)
 }
@@ -237,7 +237,7 @@ type DocCreator interface {
 	CreateDoc(ctx context.Context, doc interface{}, options Options) (docID, rev string, err error)
 }
 
-// OpenRever is an ptional interface that extends a [DB] to support the open_revs
+// OpenRever is an optional interface that extends a [DB] to support the open_revs
 // option of the CouchDB get document endpoint. It is used by the replicator.
 // Drivers that don't support this endpoint may not be able to replicate as
 // efficiently, or at all.

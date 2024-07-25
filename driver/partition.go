@@ -18,7 +18,7 @@ import (
 )
 
 // PartitionedDB is an optional interface that may be implemented by a [DB] to
-// support querying partitoin-specific information.
+// support querying partition-specific information.
 type PartitionedDB interface {
 	// PartitionStats returns information about the named partition.
 	PartitionStats(ctx context.Context, name string) (*PartitionStats, error)

@@ -11,7 +11,6 @@
 // the License.
 
 //go:build js
-// +build js
 
 // Package bindings provides minimal GopherJS bindings around the PouchDB
 // library. (https://pouchdb.com/api.html)

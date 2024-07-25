@@ -13,7 +13,6 @@
 // TODO: Try to re-enable these tests when we're on a newer version of GopherJS.
 
 //go:build !js
-// +build !js
 
 package kivik_test
 

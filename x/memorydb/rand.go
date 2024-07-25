@@ -11,7 +11,6 @@
 // the License.
 
 //go:build go1.8
-// +build go1.8
 
 package memorydb
 

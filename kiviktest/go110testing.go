@@ -11,7 +11,6 @@
 // the License.
 
 //go:build go1.10 && !go1.18
-// +build go1.10,!go1.18
 
 package kiviktest
 

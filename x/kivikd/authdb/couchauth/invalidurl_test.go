@@ -1,5 +1,4 @@
 //go:build 1.8
-// +build 1.8
 
 package couchauth
 

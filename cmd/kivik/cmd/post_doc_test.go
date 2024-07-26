@@ -41,7 +41,7 @@ func Test_post_doc_RunE(t *testing.T) {
 	tests.Add("json data string", func(t *testing.T) interface{} {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true,"id":"random","rev":"1-xxx"}`)),
-		}, gunzip(func(t *testing.T, req *http.Request) {
+		}, gunzip(func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
 			defer req.Body.Close() // nolint:errcheck
 			if d := testy.DiffAsJSON(testy.Snapshot(t), req.Body); d != nil {
 				t.Error(d)
@@ -55,7 +55,7 @@ func Test_post_doc_RunE(t *testing.T) {
 	tests.Add("json data stdin", func(t *testing.T) interface{} {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true,"id":"random","rev":"1-xxx"}`)),
-		}, gunzip(func(t *testing.T, req *http.Request) {
+		}, gunzip(func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
 			defer req.Body.Close() // nolint:errcheck
 			if d := testy.DiffAsJSON(testy.Snapshot(t), req.Body); d != nil {
 				t.Error(d)
@@ -70,7 +70,7 @@ func Test_post_doc_RunE(t *testing.T) {
 	tests.Add("json data file", func(t *testing.T) interface{} {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true,"id":"random","rev":"1-xxx"}`)),
-		}, gunzip(func(t *testing.T, req *http.Request) {
+		}, gunzip(func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
 			defer req.Body.Close() // nolint:errcheck
 			if d := testy.DiffAsJSON(testy.Snapshot(t), req.Body); d != nil {
 				t.Error(d)
@@ -84,7 +84,7 @@ func Test_post_doc_RunE(t *testing.T) {
 	tests.Add("yaml data string", func(t *testing.T) interface{} {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true,"id":"random","rev":"1-xxx"}`)),
-		}, gunzip(func(t *testing.T, req *http.Request) {
+		}, gunzip(func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
 			defer req.Body.Close() // nolint:errcheck
 			if d := testy.DiffAsJSON(testy.Snapshot(t), req.Body); d != nil {
 				t.Error(d)

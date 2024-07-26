@@ -55,7 +55,7 @@ func Test_post_RunE(t *testing.T) {
 	tests.Add("auto create doc", func(t *testing.T) interface{} {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true,"id":"random","rev":"1-xxx"}`)),
-		}, gunzip(func(t *testing.T, req *http.Request) {
+		}, gunzip(func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
 			defer req.Body.Close() // nolint:errcheck
 			if d := testy.DiffAsJSON(testy.Snapshot(t), req.Body); d != nil {
 				t.Error(d)
@@ -69,7 +69,7 @@ func Test_post_RunE(t *testing.T) {
 	tests.Add("auto view cleanup", func(t *testing.T) interface{} {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true,"id":"random","rev":"1-xxx"}`)),
-		}, func(t *testing.T, req *http.Request) {
+		}, func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
 			if req.Method != http.MethodPost {
 				t.Errorf("Unexpected method: %s", req.Method)
 			}
@@ -82,7 +82,7 @@ func Test_post_RunE(t *testing.T) {
 	tests.Add("auto flush", func(t *testing.T) interface{} {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true}`)),
-		}, func(t *testing.T, req *http.Request) {
+		}, func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
 			if req.Method != http.MethodPost {
 				t.Errorf("Unexpected method: %v", req.Method)
 			}
@@ -98,7 +98,7 @@ func Test_post_RunE(t *testing.T) {
 	tests.Add("auto compact", func(t *testing.T) interface{} {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true}`)),
-		}, func(t *testing.T, req *http.Request) {
+		}, func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
 			if req.Method != http.MethodPost {
 				t.Errorf("Unexpected method: %v", req.Method)
 			}
@@ -114,7 +114,7 @@ func Test_post_RunE(t *testing.T) {
 	tests.Add("auto compact views", func(t *testing.T) interface{} {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true}`)),
-		}, func(t *testing.T, req *http.Request) {
+		}, func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
 			if req.Method != http.MethodPost {
 				t.Errorf("Unexpected method: %v", req.Method)
 			}
@@ -130,7 +130,7 @@ func Test_post_RunE(t *testing.T) {
 	tests.Add("auto purge", func(t *testing.T) interface{} {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true}`)),
-		}, gunzip(func(t *testing.T, req *http.Request) {
+		}, gunzip(func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
 			if req.Method != http.MethodPost {
 				t.Errorf("Unexpected method: %v", req.Method)
 			}
@@ -174,7 +174,7 @@ func Test_post_RunE(t *testing.T) {
 				"Content-Type": []string{"application/json"},
 			},
 			Body: io.NopCloser(strings.NewReader(`"old"`)),
-		}, gunzip(func(t *testing.T, req *http.Request) {
+		}, gunzip(func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
 			if req.Method != http.MethodPost {
 				t.Errorf("Unexpected method: %v", req.Method)
 			}

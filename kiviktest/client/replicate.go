@@ -220,6 +220,7 @@ func doReplicationTest(ctx *kt.Context, client *kivik.Client, dbtarget, dbsource
 }
 
 func checkReplicationURL(t *testing.T, name, want, got string) {
+	t.Helper()
 	wantURL, err := url.Parse(want)
 	if err != nil {
 		t.Fatal(err)

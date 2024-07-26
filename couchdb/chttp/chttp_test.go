@@ -715,7 +715,7 @@ func TestDoReq(t *testing.T) {
 		err:    `Put "?http://example.com/foo"?: bad request`,
 	})
 	tests.Add("response trace", tt{
-		trace: func(t *testing.T, success *bool) *ClientTrace {
+		trace: func(t *testing.T, success *bool) *ClientTrace { //nolint:thelper // Not a helper
 			return &ClientTrace{
 				HTTPResponse: func(r *http.Response) {
 					*success = true
@@ -735,7 +735,7 @@ func TestDoReq(t *testing.T) {
 		// response body trace
 	})
 	tests.Add("response body trace", tt{
-		trace: func(t *testing.T, success *bool) *ClientTrace {
+		trace: func(t *testing.T, success *bool) *ClientTrace { //nolint:thelper // Not a helper
 			return &ClientTrace{
 				HTTPResponseBody: func(r *http.Response) {
 					*success = true
@@ -758,7 +758,7 @@ func TestDoReq(t *testing.T) {
 		// response trace
 	})
 	tests.Add("request trace", tt{
-		trace: func(t *testing.T, success *bool) *ClientTrace {
+		trace: func(t *testing.T, success *bool) *ClientTrace { //nolint:thelper // Not a helper
 			return &ClientTrace{
 				HTTPRequest: func(r *http.Request) {
 					*success = true
@@ -785,7 +785,7 @@ func TestDoReq(t *testing.T) {
 		// request trace
 	})
 	tests.Add("request body trace", tt{
-		trace: func(t *testing.T, success *bool) *ClientTrace {
+		trace: func(t *testing.T, success *bool) *ClientTrace { //nolint:thelper // Not a helper
 			return &ClientTrace{
 				HTTPRequestBody: func(r *http.Request) {
 					*success = true

@@ -397,6 +397,7 @@ func verifyDoc(ctx context.Context, t *testing.T, target, source *kivik.DB, docI
 }
 
 func verifySec(ctx context.Context, t *testing.T, target *kivik.DB) {
+	t.Helper()
 	sec, err := target.Security(ctx)
 	if err != nil {
 		t.Fatal(err)

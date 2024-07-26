@@ -237,7 +237,7 @@ func TestPutAttachment(t *testing.T) {
 				},
 				status: http.StatusBadGateway,
 				err:    "success",
-				final: func(t *testing.T) {
+				final: func(t *testing.T) { //nolint:thelper // Not a helper
 					if !body.closed {
 						t.Fatal("body wasn't closed")
 					}

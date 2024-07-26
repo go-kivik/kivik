@@ -148,6 +148,7 @@ func (cd customDriver) NewClient(string, driver.Options) (driver.Client, error) 
 
 // ServerTest tests the kivikd server
 func ServerTest(t *testing.T) {
+	t.Helper()
 	memClient, err := kivik.New("memory", "")
 	if err != nil {
 		t.Fatalf("Failed to connect to memory driver: %s", err)

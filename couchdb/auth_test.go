@@ -35,7 +35,7 @@ func TestAuthenticationOptions(t *testing.T) {
 
 	tests := testy.NewTable()
 	tests.Add("BasicAuth", test{
-		handler: func(t *testing.T) http.Handler {
+		handler: func(t *testing.T) http.Handler { //nolint:thelper // Not a helper
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if h := r.Header.Get("Authorization"); h != "Basic Ym9iOmFiYzEyMw==" {
 					t.Errorf("Unexpected Auth header: %s\n", h)
@@ -47,7 +47,7 @@ func TestAuthenticationOptions(t *testing.T) {
 		options: BasicAuth("bob", "abc123"),
 	})
 	tests.Add("CookieAuth", test{
-		handler: func(t *testing.T) http.Handler {
+		handler: func(t *testing.T) http.Handler { //nolint:thelper // Not a helper
 			expectedPaths := []string{"/_session", "/"}
 			i := -1
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -62,7 +62,7 @@ func TestAuthenticationOptions(t *testing.T) {
 		options: CookieAuth("bob", "abc123"),
 	})
 	tests.Add("ProxyAuth", test{
-		handler: func(t *testing.T) http.Handler {
+		handler: func(t *testing.T) http.Handler { //nolint:thelper // Not a helper
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if h := r.Header.Get("X-Auth-CouchDB-UserName"); h != "bob" {
 					t.Errorf("Unexpected X-Auth-CouchDB-UserName header: %s", h)
@@ -85,7 +85,7 @@ func TestAuthenticationOptions(t *testing.T) {
 		),
 	})
 	tests.Add("JWTAuth", test{
-		handler: func(t *testing.T) http.Handler {
+		handler: func(t *testing.T) http.Handler { //nolint:thelper // Not a helper
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if h := r.Header.Get("Authorization"); h != "Bearer tokentoken" {
 					t.Errorf("Unexpected Auth header: %s\n", h)

@@ -2930,7 +2930,7 @@ func TestDBClose(t *testing.T) {
 					}, nil
 				},
 			},
-			work: func(t *testing.T, db *DB) {
+			work: func(t *testing.T, db *DB) { //nolint:thelper // Not a helper
 				u := db.AllDocs(context.Background())
 				for u.Next() { //nolint:revive // intentional empty block
 				}
@@ -2946,7 +2946,7 @@ func TestDBClose(t *testing.T) {
 					return []driver.BulkResult{}, nil
 				},
 			},
-			work: func(t *testing.T, db *DB) {
+			work: func(t *testing.T, db *DB) { //nolint:thelper // Not a helper
 				_, err := db.BulkDocs(context.Background(), []interface{}{
 					map[string]string{"_id": "foo"},
 				})

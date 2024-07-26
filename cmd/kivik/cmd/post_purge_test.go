@@ -33,7 +33,7 @@ func Test_post_purge_RunE(t *testing.T) {
 	tests.Add("one rev", func(t *testing.T) interface{} {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true}`)),
-		}, gunzip(func(t *testing.T, req *http.Request) {
+		}, gunzip(func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
 			if req.Method != http.MethodPost {
 				t.Errorf("Unexpected method: %v", req.Method)
 			}
@@ -52,7 +52,7 @@ func Test_post_purge_RunE(t *testing.T) {
 	tests.Add("two revs", func(t *testing.T) interface{} {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true}`)),
-		}, gunzip(func(t *testing.T, req *http.Request) {
+		}, gunzip(func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
 			if req.Method != http.MethodPost {
 				t.Errorf("Unexpected method: %v", req.Method)
 			}
@@ -71,7 +71,7 @@ func Test_post_purge_RunE(t *testing.T) {
 	tests.Add("from --data", func(t *testing.T) interface{} {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true}`)),
-		}, gunzip(func(t *testing.T, req *http.Request) {
+		}, gunzip(func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
 			if req.Method != http.MethodPost {
 				t.Errorf("Unexpected method: %v", req.Method)
 			}

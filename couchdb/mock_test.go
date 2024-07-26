@@ -82,6 +82,7 @@ func Body(str string) io.ReadCloser {
 }
 
 func parseTime(t *testing.T, str string) time.Time {
+	t.Helper()
 	ts, err := time.Parse(time.RFC3339, str)
 	if err != nil {
 		t.Fatal(err)
@@ -133,6 +134,7 @@ func realDB(t *testing.T) *db {
 }
 
 func realDBConnect(t *testing.T) (*db, error) {
+	t.Helper()
 	driver := &couch{}
 	c, err := driver.NewClient(kt.DSN3(t), OptionNoRequestCompression())
 	if err != nil {

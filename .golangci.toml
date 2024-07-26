@@ -10,13 +10,11 @@ enable = [
     "unconvert",
     "goimports",
     "unused",
-    "vetshadow",
     "misspell",
     "nakedret",
     "errcheck",
     "revive",
     "ineffassign",
-    "vet",
     "unparam",
     "gofumpt",
     "prealloc",
@@ -27,6 +25,9 @@ enable = [
     # SQL-related linters
     "rowserrcheck",
     "sqlclosecheck",
+
+    # Testing
+    "thelper",
 ]
 
 [issues]
@@ -35,6 +36,11 @@ exclude-use-default = false
 [[issues.exclude-rules]]
 source = "defer .*\\.(Close|Rollback)\\(\\)$"
 linters = ["errcheck"]
+
+[[issues.exclude-rules]]
+source = "tests\\.(Add|Run)\\("
+text = "test helper function should start"
+linters = ["thelper"]
 
 [linters-settings.gci]
 sections = ["standard", "default", "prefix(github.com/go-kivik/kivik)"]

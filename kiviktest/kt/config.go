@@ -29,6 +29,7 @@ var AllDocsIndex = kivik.Index{
 type SuiteConfig map[string]interface{}
 
 func name(t *testing.T) string {
+	t.Helper()
 	name := t.Name()
 	return name[strings.Index(name, "/")+1:]
 }
@@ -58,17 +59,20 @@ func (c SuiteConfig) get(name, key string) interface{} {
 
 // Interface returns the configuration value as an interface{}.
 func (c SuiteConfig) Interface(t *testing.T, key string) interface{} {
+	t.Helper()
 	return c.get(name(t), key)
 }
 
 // Bool returns the boolean value of the key.
 func (c SuiteConfig) Bool(t *testing.T, key string) bool {
+	t.Helper()
 	b, _ := c.Interface(t, key).(bool)
 	return b
 }
 
 // Skip will skip the currently running test if configuration dictates.
 func (c SuiteConfig) Skip(t *testing.T) {
+	t.Helper()
 	if c.Bool(t, "skip") {
 		t.Skip("Test skipped by suite configuration")
 	}
@@ -76,18 +80,21 @@ func (c SuiteConfig) Skip(t *testing.T) {
 
 // StringSlice returns a string slice.
 func (c SuiteConfig) StringSlice(t *testing.T, key string) []string {
+	t.Helper()
 	v, _ := c.Interface(t, key).([]string)
 	return v
 }
 
 // Int returns an int.
 func (c SuiteConfig) Int(t *testing.T, key string) int {
+	t.Helper()
 	v, _ := c.Interface(t, key).(int)
 	return v
 }
 
 // String returns a string.
 func (c SuiteConfig) String(t *testing.T, key string) string {
+	t.Helper()
 	v, _ := c.Interface(t, key).(string)
 	return v
 }

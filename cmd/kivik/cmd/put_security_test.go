@@ -40,7 +40,7 @@ func Test_put_security_RunE(t *testing.T) {
 				"Content-Type": []string{"application/json"},
 			},
 			Body: io.NopCloser(strings.NewReader(`"old"`)),
-		}, gunzip(func(t *testing.T, req *http.Request) {
+		}, gunzip(func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
 			if req.Method != http.MethodPut {
 				t.Errorf("Unexpected method: %v", req.Method)
 			}

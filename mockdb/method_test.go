@@ -25,6 +25,7 @@ type methodTest struct {
 }
 
 func testMethod(t *testing.T, test methodTest) {
+	t.Helper()
 	result := test.input.method(false)
 	if result != test.standard {
 		t.Errorf("Unexpected method(false) output.\nWant: %s\n Got: %s\n", test.standard, result)

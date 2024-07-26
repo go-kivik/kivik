@@ -49,6 +49,7 @@ type Context struct {
 
 // Child returns a shallow copy of itself with a new t.
 func (c *Context) Child(t *testing.T) *Context {
+	t.Helper()
 	return &Context{
 		RW:     c.RW,
 		Admin:  c.Admin,

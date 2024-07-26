@@ -703,7 +703,7 @@ func TestServer(t *testing.T) {
 		{
 			name:   "post document",
 			driver: "memory",
-			init: func(t *testing.T, client *kivik.Client) {
+			init: func(t *testing.T, client *kivik.Client) { //nolint:thelper // not a helper
 				if err := client.CreateDB(context.Background(), "db1", nil); err != nil {
 					t.Fatal(err)
 				}
@@ -818,7 +818,7 @@ func TestServer(t *testing.T) {
 				wantJSON: map[string]interface{}{
 					"ok": true,
 				},
-				check: func(t *testing.T, client *kivik.Client) {
+				check: func(t *testing.T, client *kivik.Client) { //nolint:thelper // Not a helper
 					sec, err := client.DB("db2").Security(context.Background())
 					if err != nil {
 						t.Fatal(err)

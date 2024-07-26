@@ -50,7 +50,7 @@ func NoAuthDSN(t *testing.T) string {
 	return parsed.String()
 }
 
-func connect(dsn string, t *testing.T) *kivik.Client {
+func connect(t *testing.T, dsn string) *kivik.Client {
 	t.Helper()
 	client, err := kivik.New("couch", dsn)
 	if err != nil {
@@ -62,11 +62,11 @@ func connect(dsn string, t *testing.T) *kivik.Client {
 // GetClient returns a connection to a CouchDB client, for testing.
 func GetClient(t *testing.T) *kivik.Client {
 	t.Helper()
-	return connect(DSN3(t), t)
+	return connect(t, DSN3(t))
 }
 
 // GetNoAuthClient returns an unauthenticated connection to a CouchDB client, for testing.
 func GetNoAuthClient(t *testing.T) *kivik.Client {
 	t.Helper()
-	return connect(NoAuthDSN(t), t)
+	return connect(t, NoAuthDSN(t))
 }

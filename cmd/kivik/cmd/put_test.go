@@ -38,7 +38,7 @@ func Test_put_RunE(t *testing.T) {
 	tests.Add("json data string", func(t *testing.T) interface{} {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true,"rev":"1-xxx"}`)),
-		}, gunzip(func(t *testing.T, req *http.Request) {
+		}, gunzip(func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
 			defer req.Body.Close() // nolint:errcheck
 			if d := testy.DiffAsJSON(testy.Snapshot(t), req.Body); d != nil {
 				t.Error(d)
@@ -52,7 +52,7 @@ func Test_put_RunE(t *testing.T) {
 	tests.Add("json data stdin", func(t *testing.T) interface{} {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true,"rev":"1-xxx"}`)),
-		}, gunzip(func(t *testing.T, req *http.Request) {
+		}, gunzip(func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
 			defer req.Body.Close() // nolint:errcheck
 			if d := testy.DiffAsJSON(testy.Snapshot(t), req.Body); d != nil {
 				t.Error(d)
@@ -67,7 +67,7 @@ func Test_put_RunE(t *testing.T) {
 	tests.Add("json data file", func(t *testing.T) interface{} {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true,"rev":"1-xxx"}`)),
-		}, gunzip(func(t *testing.T, req *http.Request) {
+		}, gunzip(func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
 			defer req.Body.Close() // nolint:errcheck
 			if d := testy.DiffAsJSON(testy.Snapshot(t), req.Body); d != nil {
 				t.Error(d)
@@ -82,7 +82,7 @@ func Test_put_RunE(t *testing.T) {
 	tests.Add("yaml data string", func(t *testing.T) interface{} {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"status":"ok"}`)),
-		}, gunzip(func(t *testing.T, req *http.Request) {
+		}, gunzip(func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
 			defer req.Body.Close() // nolint:errcheck
 			if d := testy.DiffAsJSON(testy.Snapshot(t), req.Body); d != nil {
 				t.Error(d)
@@ -100,7 +100,7 @@ func Test_put_RunE(t *testing.T) {
 				"Content-Type": []string{"application/json"},
 			},
 			Body: io.NopCloser(strings.NewReader(`"old"`)),
-		}, gunzip(func(t *testing.T, req *http.Request) {
+		}, gunzip(func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
 			content, _ := io.ReadAll(req.Body)
 			if string(content) != `"baz"` {
 				t.Errorf("Unexpected request body: %s", string(content))
@@ -124,7 +124,7 @@ func Test_put_RunE(t *testing.T) {
 				"Content-Type": []string{"application/json"},
 			},
 			Body: io.NopCloser(strings.NewReader(`"old"`)),
-		}, gunzip(func(t *testing.T, req *http.Request) {
+		}, gunzip(func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
 			if req.Method != http.MethodPut {
 				t.Errorf("Unexpected method: %s", req.Method)
 			}

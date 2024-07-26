@@ -91,7 +91,7 @@ func New(w io.Writer) RequestLogger {
 var DefaultLogger = New(os.Stderr)
 
 func (l *logger) Log(req *http.Request, status int, fields Fields) {
-	fmt.Fprintf(l.w, `%s %s [%s] (%s) "%s %s %s" %d %d "%s" "%s"%c`,
+	_, _ = fmt.Fprintf(l.w, `%s %s [%s] (%s) "%s %s %s" %d %d "%s" "%s"%c`,
 		req.RemoteAddr[0:strings.LastIndex(req.RemoteAddr, ":")],
 		fields.GetString(FieldUsername),
 		fields.GetTime(FieldTimestamp).Format("2006-01-02 15:04:05Z07:00"),

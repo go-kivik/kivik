@@ -104,6 +104,7 @@ func TestAllDocs(t *testing.T) {
 }
 
 func checkRows(t *testing.T, rows driver.Rows, expectedIDs []string, rowsErr string) {
+	t.Helper()
 	var row driver.Row
 	var ids []string
 	msg := ""

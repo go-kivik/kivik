@@ -188,7 +188,7 @@ func Test_get_RunE(t *testing.T) {
 				"ETag":         []string{"1-xxx"},
 			},
 			Body: io.NopCloser(strings.NewReader(`"512"`)),
-		}, func(t *testing.T, req *http.Request) {
+		}, func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
 			if req.URL.Path != "/_node/_local/_config/chttpd/backlog" {
 				t.Errorf("unexpected path: %s", req.URL.Path)
 			}
@@ -206,7 +206,7 @@ func Test_get_RunE(t *testing.T) {
 				"ETag":         []string{"1-xxx"},
 			},
 			Body: io.NopCloser(strings.NewReader(`{"admins":{"names":["bob"]}}`)),
-		}, func(t *testing.T, req *http.Request) {
+		}, func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
 			if req.URL.Path != "/foo/_security" {
 				t.Errorf("unexpected path: %s", req.URL.Path)
 			}
@@ -225,7 +225,7 @@ func Test_get_RunE(t *testing.T) {
 			},
 			Body: io.NopCloser(strings.NewReader(`{"state":"cluster_enabled"}
 }`)),
-		}, func(t *testing.T, req *http.Request) {
+		}, func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
 			if req.URL.Path != clusterPath {
 				t.Errorf("unexpected path: %s", req.URL.Path)
 			}

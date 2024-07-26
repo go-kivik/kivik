@@ -63,11 +63,11 @@ func (l *logger) SetErr(err io.Writer) { l.stderr = err }
 func (l *logger) SetDebug(debug bool)  { l.debug = debug }
 
 func (l *logger) err(line string) {
-	fmt.Fprintln(l.stderr, strings.TrimSpace(line))
+	_, _ = fmt.Fprintln(l.stderr, strings.TrimSpace(line))
 }
 
 func (l *logger) out(line string) {
-	fmt.Fprintln(l.stdout, strings.TrimSpace(line))
+	_, _ = fmt.Fprintln(l.stdout, strings.TrimSpace(line))
 }
 
 func (l *logger) Debug(args ...interface{}) {

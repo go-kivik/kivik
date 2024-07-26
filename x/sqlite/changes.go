@@ -107,17 +107,34 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 	}
 
 	query := fmt.Sprintf(d.query(leavesCTE+`,
-		results AS (
+		winning AS (
 			SELECT
 				id,
-				seq,
-				deleted,
 				rev,
-				rev_id,
-				IIF($3 OR $6 != '', doc, NULL) AS doc
-			FROM {{ .Docs }}
-			WHERE ($1 IS NULL OR seq > $1)
-			ORDER BY seq
+				rev_id
+			FROM (
+				SELECT
+					id,
+					rev,
+					rev_id,
+					ROW_NUMBER() OVER (PARTITION BY id ORDER BY rev DESC, rev_id DESC) AS rank
+				FROM {{ .Revs }}
+			)
+			WHERE rank = 1
+		),
+		results AS (
+			SELECT
+				doc.id,
+				doc.seq,
+				doc.deleted,
+				doc.rev,
+				doc.rev_id,
+				IIF($3 OR $6 != '', doc.doc, NULL) AS doc
+			FROM {{ .Docs }} AS doc
+			LEFT JOIN winning ON winning.id = doc.id AND winning.rev = doc.rev AND winning.rev_id = doc.rev_id
+			WHERE ($1 IS NULL OR doc.seq > $1)
+				AND winning.id IS NOT NULL
+			ORDER BY doc.seq
 		)
 		SELECT
 			COUNT(*) AS id,

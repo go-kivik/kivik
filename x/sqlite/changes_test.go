@@ -77,11 +77,6 @@ func TestDBChanges(t *testing.T) {
 			wantChanges: []driver.Change{
 				{
 					ID:      "doc1",
-					Seq:     "1",
-					Changes: driver.ChangedRevs{rev},
-				},
-				{
-					ID:      "doc1",
 					Seq:     "2",
 					Deleted: true,
 					Changes: driver.ChangedRevs{rev2},
@@ -94,7 +89,6 @@ func TestDBChanges(t *testing.T) {
 	tests.Add("longpoll", func(t *testing.T) interface{} {
 		d := newDB(t)
 		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
-		rev2 := d.tDelete("doc1", kivik.Rev(rev))
 
 		return test{
 			db:      d,
@@ -105,14 +99,8 @@ func TestDBChanges(t *testing.T) {
 					Seq:     "1",
 					Changes: driver.ChangedRevs{rev},
 				},
-				{
-					ID:      "doc1",
-					Seq:     "2",
-					Deleted: true,
-					Changes: driver.ChangedRevs{rev2},
-				},
 			},
-			wantLastSeq: &[]string{"2"}[0],
+			wantLastSeq: &[]string{"1"}[0],
 			wantETag:    &[]string{""}[0],
 		}
 	})
@@ -256,7 +244,7 @@ func TestDBChanges(t *testing.T) {
 	tests.Add("limit=0 acts the same as limit=1", func(t *testing.T) interface{} {
 		d := newDB(t)
 		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
-		_ = d.tDelete("doc1", kivik.Rev(rev))
+		_ = d.tPut("doc2", map[string]string{"foo": "bar"})
 
 		return test{
 			db:      d,
@@ -276,7 +264,7 @@ func TestDBChanges(t *testing.T) {
 	tests.Add("limit=1", func(t *testing.T) interface{} {
 		d := newDB(t)
 		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
-		_ = d.tDelete("doc1", kivik.Rev(rev))
+		_ = d.tPut("doc2", map[string]string{"foo": "bar"})
 
 		return test{
 			db:      d,
@@ -296,7 +284,7 @@ func TestDBChanges(t *testing.T) {
 	tests.Add("limit=1 as int", func(t *testing.T) interface{} {
 		d := newDB(t)
 		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
-		_ = d.tDelete("doc1", kivik.Rev(rev))
+		_ = d.tPut("doc2", map[string]string{"foo": "bar"})
 
 		return test{
 			db:      d,
@@ -316,7 +304,7 @@ func TestDBChanges(t *testing.T) {
 	tests.Add("feed=longpoll, limit=1, pending is set", func(t *testing.T) interface{} {
 		d := newDB(t)
 		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
-		_ = d.tDelete("doc1", kivik.Rev(rev))
+		_ = d.tPut("doc2", map[string]string{"foo": "bar"})
 
 		return test{
 			db: d,
@@ -339,16 +327,15 @@ func TestDBChanges(t *testing.T) {
 	tests.Add("Descending order", func(t *testing.T) interface{} {
 		d := newDB(t)
 		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
-		rev2 := d.tDelete("doc1", kivik.Rev(rev))
+		rev2 := d.tPut("doc2", map[string]string{"foo": "bar"})
 
 		return test{
 			db:      d,
 			options: kivik.Param("descending", true),
 			wantChanges: []driver.Change{
 				{
-					ID:      "doc1",
+					ID:      "doc2",
 					Seq:     "2",
-					Deleted: true,
 					Changes: driver.ChangedRevs{rev2},
 				},
 				{
@@ -364,7 +351,6 @@ func TestDBChanges(t *testing.T) {
 	tests.Add("include docs, normal feed", func(t *testing.T) interface{} {
 		d := newDB(t)
 		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
-		rev2 := d.tDelete("doc1", kivik.Rev(rev))
 
 		return test{
 			db:      d,
@@ -376,16 +362,9 @@ func TestDBChanges(t *testing.T) {
 					Changes: driver.ChangedRevs{rev},
 					Doc:     []byte(`{"_id":"doc1","_rev":"` + rev + `","foo":"bar"}`),
 				},
-				{
-					ID:      "doc1",
-					Seq:     "2",
-					Deleted: true,
-					Changes: driver.ChangedRevs{rev2},
-					Doc:     []byte(`{"_id":"doc1","_rev":"` + rev2 + `","_deleted":true}`),
-				},
 			},
-			wantLastSeq: &[]string{"2"}[0],
-			wantETag:    &[]string{"c81e728d9d4c2f636f067f89cc14862c"}[0],
+			wantLastSeq: &[]string{"1"}[0],
+			wantETag:    &[]string{"c4ca4238a0b923820dcc509a6f75849b"}[0],
 		}
 	})
 	tests.Add("include docs, attachment stubs, normal feed", func(t *testing.T) interface{} {

@@ -234,7 +234,8 @@ func init() {
 // TestDBPrefix is used to prefix temporary database names during tests.
 const TestDBPrefix = "kivik$"
 
-// TestDB creates a test database and returns its name.
+// TestDB creates a test database, regesters a cleanup function to destroy it,
+// and returns its name.
 func (c *Context) TestDB() string {
 	c.T.Helper()
 	dbname := c.TestDBName()
@@ -244,6 +245,7 @@ func (c *Context) TestDB() string {
 	if err != nil {
 		c.Fatalf("Failed to create database: %s", err)
 	}
+	c.T.Cleanup(func() { c.DestroyDB(dbname) })
 	return dbname
 }
 

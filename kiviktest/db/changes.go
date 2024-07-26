@@ -65,7 +65,6 @@ type cDoc struct {
 func testContinuousChanges(ctx *kt.Context, client *kivik.Client) {
 	ctx.Parallel()
 	dbname := ctx.TestDB()
-	defer ctx.DestroyDB(dbname)
 	db := client.DB(dbname, ctx.Options("db"))
 	if err := db.Err(); err != nil {
 		ctx.Fatalf("failed to connect to db: %s", err)
@@ -148,7 +147,6 @@ func testContinuousChanges(ctx *kt.Context, client *kivik.Client) {
 func testNormalChanges(ctx *kt.Context, client *kivik.Client) {
 	ctx.Parallel()
 	dbname := ctx.TestDB()
-	defer ctx.DestroyDB(dbname)
 	db := client.DB(dbname, ctx.Options("db"))
 	if err := db.Err(); err != nil {
 		ctx.Fatalf("failed to connect to db: %s", err)

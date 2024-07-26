@@ -61,10 +61,6 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 		prefix = ""
 	}
 	targetDB, sourceDB := ctx.TestDB(), ctx.TestDB()
-	defer func() {
-		ctx.DestroyDB(targetDB)
-		ctx.DestroyDB(sourceDB)
-	}()
 	dbtarget := prefix + targetDB
 	dbsource := prefix + sourceDB
 

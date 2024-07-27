@@ -38,7 +38,6 @@ func viewCleanup(ctx *kt.Context) {
 
 func testViewCleanup(ctx *kt.Context, client *kivik.Client) {
 	dbname := ctx.TestDB()
-	defer ctx.DestroyDB(dbname)
 	db := client.DB(dbname, ctx.Options("db"))
 	if err := db.Err(); err != nil {
 		ctx.Fatalf("Failed to connect to db: %s", err)

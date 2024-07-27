@@ -33,7 +33,7 @@ func Test_post_compact_RunE(t *testing.T) {
 	tests.Add("success", func(t *testing.T) interface{} {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true}`)),
-		}, func(t *testing.T, req *http.Request) {
+		}, func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
 			if req.Method != http.MethodPost {
 				t.Errorf("Unexpected method: %v", req.Method)
 			}

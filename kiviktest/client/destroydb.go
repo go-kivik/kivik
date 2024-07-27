@@ -41,7 +41,6 @@ func testDestroy(ctx *kt.Context, client *kivik.Client) {
 	ctx.Run("ExistingDB", func(ctx *kt.Context) {
 		ctx.Parallel()
 		dbName := ctx.TestDB()
-		defer ctx.DestroyDB(dbName)
 		ctx.CheckError(client.DestroyDB(context.Background(), dbName, ctx.Options("db")))
 	})
 	ctx.Run("NonExistantDB", func(ctx *kt.Context) {

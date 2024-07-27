@@ -38,7 +38,7 @@ func TestHTTPResponse(t *testing.T) {
 		},
 		{
 			name: "HTTPResponseBody/cloned response",
-			trace: func(t *testing.T) *ClientTrace {
+			trace: func(t *testing.T) *ClientTrace { //nolint:thelper // Not a helper
 				return &ClientTrace{
 					HTTPResponseBody: func(r *http.Response) {
 						if r.StatusCode != 200 {
@@ -57,7 +57,7 @@ func TestHTTPResponse(t *testing.T) {
 		},
 		{
 			name: "HTTPResponse/cloned response",
-			trace: func(t *testing.T) *ClientTrace {
+			trace: func(t *testing.T) *ClientTrace { //nolint:thelper // Not a helper
 				return &ClientTrace{
 					HTTPResponse: func(r *http.Response) {
 						if r.StatusCode != 200 {
@@ -101,7 +101,7 @@ func TestHTTPRequest(t *testing.T) {
 		},
 		{
 			name: "HTTPRequestBody/cloned response",
-			trace: func(t *testing.T) *ClientTrace {
+			trace: func(t *testing.T) *ClientTrace { //nolint:thelper // Not a helper
 				return &ClientTrace{
 					HTTPRequestBody: func(r *http.Request) {
 						if r.Method != "PUT" {
@@ -120,7 +120,7 @@ func TestHTTPRequest(t *testing.T) {
 		},
 		{
 			name: "HTTPRequest/cloned response",
-			trace: func(t *testing.T) *ClientTrace {
+			trace: func(t *testing.T) *ClientTrace { //nolint:thelper // Not a helper
 				return &ClientTrace{
 					HTTPRequest: func(r *http.Request) {
 						if r.Method != "PUT" {
@@ -138,7 +138,7 @@ func TestHTTPRequest(t *testing.T) {
 		},
 		{
 			name: "HTTPRequestBody/no body",
-			trace: func(t *testing.T) *ClientTrace {
+			trace: func(t *testing.T) *ClientTrace { //nolint:thelper // Not a helper
 				return &ClientTrace{
 					HTTPRequestBody: func(r *http.Request) {
 						if r.Method != "GET" {

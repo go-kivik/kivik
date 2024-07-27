@@ -39,7 +39,7 @@ func Test_delete_config_RunE(t *testing.T) {
 				"Content-Type": []string{"application/json"},
 			},
 			Body: io.NopCloser(strings.NewReader(`"foo"`)),
-		}, func(t *testing.T, req *http.Request) {
+		}, func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
 			if req.Method != http.MethodDelete {
 				t.Errorf("Unexpected method: %s", req.Method)
 			}

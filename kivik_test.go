@@ -839,7 +839,7 @@ func TestClientClose(t *testing.T) {
 					}, nil
 				},
 			},
-			work: func(t *testing.T, c *Client) {
+			work: func(t *testing.T, c *Client) { //nolint:thelper // Not a helper
 				u := c.DBUpdates(context.Background())
 				if err := u.Err(); err != nil {
 					t.Fatal(err)
@@ -866,7 +866,7 @@ func TestClientClose(t *testing.T) {
 					}, nil
 				},
 			},
-			work: func(t *testing.T, c *Client) {
+			work: func(t *testing.T, c *Client) { //nolint:thelper // Not a helper
 				u := c.DB("foo").AllDocs(context.Background())
 				for u.Next() { //nolint:revive // intentional empty block
 				}
@@ -886,7 +886,7 @@ func TestClientClose(t *testing.T) {
 					}, nil
 				},
 			},
-			work: func(t *testing.T, c *Client) {
+			work: func(t *testing.T, c *Client) { //nolint:thelper // Not a helper
 				_, err := c.DB("foo").BulkDocs(context.Background(), []interface{}{
 					map[string]string{"_id": "foo"},
 				})
@@ -910,7 +910,7 @@ func TestClientClose(t *testing.T) {
 					}, nil
 				},
 			},
-			work: func(t *testing.T, c *Client) {
+			work: func(t *testing.T, c *Client) { //nolint:thelper // Not a helper
 				u := c.DB("foo").BulkGet(context.Background(), []BulkGetReference{})
 				for u.Next() { //nolint:revive // intentional empty block
 				}
@@ -934,7 +934,7 @@ func TestClientClose(t *testing.T) {
 					}, nil
 				},
 			},
-			work: func(t *testing.T, c *Client) {
+			work: func(t *testing.T, c *Client) { //nolint:thelper // Not a helper
 				u := c.DB("foo").Changes(context.Background())
 				if err := u.Err(); err != nil {
 					t.Fatal(err)
@@ -961,7 +961,7 @@ func TestClientClose(t *testing.T) {
 					}, nil
 				},
 			},
-			work: func(t *testing.T, c *Client) {
+			work: func(t *testing.T, c *Client) { //nolint:thelper // Not a helper
 				u := c.DB("foo").DesignDocs(context.Background())
 				for u.Next() { //nolint:revive // intentional empty block
 				}
@@ -985,7 +985,7 @@ func TestClientClose(t *testing.T) {
 					}, nil
 				},
 			},
-			work: func(t *testing.T, c *Client) {
+			work: func(t *testing.T, c *Client) { //nolint:thelper // Not a helper
 				u := c.DB("foo").LocalDocs(context.Background())
 				for u.Next() { //nolint:revive // intentional empty block
 				}
@@ -1009,7 +1009,7 @@ func TestClientClose(t *testing.T) {
 					}, nil
 				},
 			},
-			work: func(t *testing.T, c *Client) {
+			work: func(t *testing.T, c *Client) { //nolint:thelper // Not a helper
 				u := c.DB("foo").Query(context.Background(), "", "")
 				for u.Next() { //nolint:revive // intentional empty block
 				}
@@ -1033,7 +1033,7 @@ func TestClientClose(t *testing.T) {
 					}, nil
 				},
 			},
-			work: func(t *testing.T, c *Client) {
+			work: func(t *testing.T, c *Client) { //nolint:thelper // Not a helper
 				u := c.DB("foo").Find(context.Background(), nil)
 				for u.Next() { //nolint:revive // intentional empty block
 				}
@@ -1053,7 +1053,7 @@ func TestClientClose(t *testing.T) {
 					}, nil
 				},
 			},
-			work: func(t *testing.T, c *Client) {
+			work: func(t *testing.T, c *Client) { //nolint:thelper // Not a helper
 				u := c.DB("foo").Get(context.Background(), "")
 				if u.Err() != nil {
 					t.Fatal(u.Err())
@@ -1075,7 +1075,7 @@ func TestClientClose(t *testing.T) {
 					}, nil
 				},
 			},
-			work: func(t *testing.T, c *Client) {
+			work: func(t *testing.T, c *Client) { //nolint:thelper // Not a helper
 				u := c.DB("foo").RevsDiff(context.Background(), "")
 				for u.Next() { //nolint:revive // intentional empty block
 				}

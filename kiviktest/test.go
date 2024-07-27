@@ -319,7 +319,7 @@ func RunTests(opts Options) {
 	tests := []testing.InternalTest{
 		{
 			Name: "MainTest",
-			F: func(t *testing.T) {
+			F: func(t *testing.T) { //nolint:thelper // Not a helper
 				Test(t, opts.Driver, opts.DSN, opts.Suites, opts.RW)
 			},
 		},
@@ -399,6 +399,7 @@ func detectCompatibility(client *kivik.Client) ([]string, error) {
 
 // ConnectClients connects clients.
 func ConnectClients(t *testing.T, driverName, dsn string, opts kivik.Option) (*kt.Context, error) {
+	t.Helper()
 	var noAuthDSN string
 	if parsed, err := url.Parse(dsn); err == nil {
 		if parsed.User == nil {
@@ -427,7 +428,7 @@ func ConnectClients(t *testing.T, driverName, dsn string, opts kivik.Option) (*k
 }
 
 // DoTest runs a suite of tests.
-func DoTest(t *testing.T, suite, envName string) {
+func DoTest(t *testing.T, suite, envName string) { //nolint:thelper // Not a helper
 	opts, _ := suites[suite].Interface(t, "Options").(kivik.Option)
 
 	dsn := os.Getenv(envName)

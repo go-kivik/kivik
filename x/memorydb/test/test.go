@@ -107,10 +107,10 @@ func RegisterMemoryDBSuite() {
 
 // MemoryTest runs the integration tests for the Memory driver.
 func MemoryTest(t *testing.T) {
+	t.Helper()
 	client, err := kivik.New("memory", "")
 	if err != nil {
-		t.Errorf("Failed to connect to memory driver: %s\n", err)
-		return
+		t.Fatalf("Failed to connect to memory driver: %s\n", err)
 	}
 	clients := &kt.Context{
 		RW:    true,

@@ -43,7 +43,6 @@ type deleteDoc struct {
 func testDelete(ctx *kt.Context, client *kivik.Client) {
 	ctx.Parallel()
 	dbName := ctx.TestDB()
-	defer ctx.DestroyDB(dbName)
 	admdb := ctx.Admin.DB(dbName, ctx.Options("db"))
 	if err := admdb.Err(); err != nil {
 		ctx.Errorf("Failed to connect to db as admin: %s", err)

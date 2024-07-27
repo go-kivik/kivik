@@ -36,7 +36,6 @@ func get(ctx *kt.Context) {
 	ctx.RunRW(func(ctx *kt.Context) {
 		const age = 32
 		dbName := ctx.TestDB()
-		defer ctx.DestroyDB(dbName)
 		db := ctx.Admin.DB(dbName, ctx.Options("db"))
 		if err := db.Err(); err != nil {
 			ctx.Fatalf("Failed to connect to test db: %s", err)

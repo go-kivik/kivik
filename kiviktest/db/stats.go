@@ -48,7 +48,6 @@ func stats(ctx *kt.Context) {
 
 func rwTests(ctx *kt.Context, client *kivik.Client) {
 	dbname := ctx.TestDB()
-	defer ctx.DestroyDB(dbname)
 	db := ctx.Admin.DB(dbname, ctx.Options("db"))
 	if err := db.Err(); err != nil {
 		ctx.Fatalf("Failed to connect to db: %s", err)

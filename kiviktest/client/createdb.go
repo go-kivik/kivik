@@ -37,7 +37,7 @@ func createDB(ctx *kt.Context) {
 func testCreateDB(ctx *kt.Context, client *kivik.Client) {
 	ctx.Parallel()
 	dbName := ctx.TestDBName()
-	defer ctx.DestroyDB(dbName)
+	ctx.T.Cleanup(func() { ctx.DestroyDB(dbName) })
 	err := client.CreateDB(context.Background(), dbName, ctx.Options("db"))
 	if !ctx.IsExpectedSuccess(err) {
 		return

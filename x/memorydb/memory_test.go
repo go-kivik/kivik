@@ -25,6 +25,7 @@ import (
 var d = &memDriver{}
 
 func setup(t *testing.T, setup func(driver.Client)) driver.Client {
+	t.Helper()
 	c, err := d.NewClient("foo", nil)
 	if err != nil {
 		t.Fatal(err)

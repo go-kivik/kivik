@@ -49,6 +49,7 @@ type Context struct {
 
 // Child returns a shallow copy of itself with a new t.
 func (c *Context) Child(t *testing.T) *Context {
+	t.Helper()
 	return &Context{
 		RW:     c.RW,
 		Admin:  c.Admin,
@@ -233,7 +234,8 @@ func init() {
 // TestDBPrefix is used to prefix temporary database names during tests.
 const TestDBPrefix = "kivik$"
 
-// TestDB creates a test database and returns its name.
+// TestDB creates a test database, regesters a cleanup function to destroy it,
+// and returns its name.
 func (c *Context) TestDB() string {
 	c.T.Helper()
 	dbname := c.TestDBName()
@@ -243,6 +245,7 @@ func (c *Context) TestDB() string {
 	if err != nil {
 		c.Fatalf("Failed to create database: %s", err)
 	}
+	c.T.Cleanup(func() { c.DestroyDB(dbname) })
 	return dbname
 }
 
@@ -262,8 +265,8 @@ func TestDBName(t *testing.T) string {
 	id = id[strings.Index(id, "/")+1:]
 	id = strings.ReplaceAll(id, "/", "_") + "$"
 	rndMU.Lock()
-	defer rndMU.Unlock()
 	dbname := fmt.Sprintf("%s%s%016x", TestDBPrefix, id, rnd.Int63())
+	rndMU.Unlock()
 	return dbname
 }
 

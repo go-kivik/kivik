@@ -427,6 +427,7 @@ Content-Length: 86
 }
 
 func rowAttachments(t *testing.T, atts driver.Attachments) []*Attachment {
+	t.Helper()
 	var attachments []*Attachment
 	if atts != nil {
 		att := new(driver.Attachment)

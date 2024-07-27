@@ -74,6 +74,7 @@ func TestStats(t *testing.T) {
 }
 
 func setupDB(t *testing.T) *db {
+	t.Helper()
 	c := setup(t, nil)
 	if err := c.CreateDB(context.Background(), "foo", nil); err != nil {
 		t.Fatal(err)

@@ -38,7 +38,7 @@ func delindex(ctx *kt.Context) {
 
 func testDelIndex(ctx *kt.Context, client *kivik.Client) {
 	dbname := ctx.TestDB()
-	defer ctx.Admin.DestroyDB(context.Background(), dbname, ctx.Options("db")) // nolint: errcheck
+	// ctx.T.Cleanup(func() { ctx.Admin.DestroyDB(context.Background(), dbname, ctx.Options("db")) }) // nolint: errcheck
 	dba := ctx.Admin.DB(dbname, ctx.Options("db"))
 	if err := dba.Err(); err != nil {
 		ctx.Fatalf("Failed to open db as admin: %s", err)

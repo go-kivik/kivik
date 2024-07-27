@@ -265,8 +265,8 @@ func TestDBName(t *testing.T) string {
 	id = id[strings.Index(id, "/")+1:]
 	id = strings.ReplaceAll(id, "/", "_") + "$"
 	rndMU.Lock()
-	defer rndMU.Unlock()
 	dbname := fmt.Sprintf("%s%s%016x", TestDBPrefix, id, rnd.Int63())
+	rndMU.Unlock()
 	return dbname
 }
 

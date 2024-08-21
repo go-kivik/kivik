@@ -15,6 +15,7 @@ package couchdb
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -135,17 +136,29 @@ func TestDBExists(t *testing.T) {
 		{
 			name:   "slashes",
 			dbName: "foo/bar",
-			client: newTestClientWithRawPath("/"+url.PathEscape("foo/bar"), &http.Response{
-				StatusCode: 200,
-				Header: http.Header{
-					"Server":         {"CouchDB/1.6.1 (Erlang OTP/17)"},
-					"Date":           {"Fri, 27 Oct 2017 15:09:19 GMT"},
-					"Content-Type":   {"text/plain; charset=utf-8"},
-					"Content-Length": {"229"},
-					"Cache-Control":  {"must-revalidate"},
-				},
-				Body: Body(""),
-			}, nil),
+			client: newCustomClient(func(req *http.Request) (*http.Response, error) {
+				if err := consume(req.Body); err != nil {
+					return nil, err
+				}
+				expected := "/" + url.PathEscape("foo/bar")
+				actual := req.URL.RawPath
+				if actual != expected {
+					return nil, fmt.Errorf("expected path %s, got %s", expected, actual)
+				}
+				response := &http.Response{
+					StatusCode: 200,
+					Header: http.Header{
+						"Server":         {"CouchDB/1.6.1 (Erlang OTP/17)"},
+						"Date":           {"Fri, 27 Oct 2017 15:09:19 GMT"},
+						"Content-Type":   {"text/plain; charset=utf-8"},
+						"Content-Length": {"229"},
+						"Cache-Control":  {"must-revalidate"},
+					},
+					Body: Body(""),
+				}
+				response.Request = req
+				return response, nil
+			}),
 			exists: true,
 		},
 	}

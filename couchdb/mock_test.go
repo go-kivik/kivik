@@ -15,6 +15,7 @@ package couchdb
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -59,6 +60,23 @@ func newTestClient(response *http.Response, err error) *client {
 		}
 		if err != nil {
 			return nil, err
+		}
+		response := response
+		response.Request = req
+		return response, nil
+	})
+}
+
+func newTestClientWithRawPath(path string, response *http.Response, err error) *client {
+	return newCustomClient(func(req *http.Request) (*http.Response, error) {
+		if e := consume(req.Body); e != nil {
+			return nil, e
+		}
+		if err != nil {
+			return nil, err
+		}
+		if req.URL.RawPath != path {
+			return nil, fmt.Errorf("expected path %s, got %s", path, req.URL.Path)
 		}
 		response := response
 		response.Request = req

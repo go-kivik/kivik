@@ -17,6 +17,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"net/url"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -119,6 +120,22 @@ func TestDBExists(t *testing.T) {
 			name:   "exists, 1.6.1",
 			dbName: "foo",
 			client: newTestClient(&http.Response{
+				StatusCode: 200,
+				Header: http.Header{
+					"Server":         {"CouchDB/1.6.1 (Erlang OTP/17)"},
+					"Date":           {"Fri, 27 Oct 2017 15:09:19 GMT"},
+					"Content-Type":   {"text/plain; charset=utf-8"},
+					"Content-Length": {"229"},
+					"Cache-Control":  {"must-revalidate"},
+				},
+				Body: Body(""),
+			}, nil),
+			exists: true,
+		},
+		{
+			name:   "slashes",
+			dbName: "foo/bar",
+			client: newTestClientWithRawPath("/"+url.PathEscape("foo/bar"), &http.Response{
 				StatusCode: 200,
 				Header: http.Header{
 					"Server":         {"CouchDB/1.6.1 (Erlang OTP/17)"},

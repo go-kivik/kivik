@@ -40,7 +40,7 @@ func (c *client) DBExists(ctx context.Context, dbName string, _ driver.Options) 
 	if dbName == "" {
 		return false, missingArg("dbName")
 	}
-	_, err := c.DoError(ctx, http.MethodHead, dbName, nil)
+	_, err := c.DoError(ctx, http.MethodHead, url.PathEscape(dbName), nil)
 	if kivik.HTTPStatus(err) == http.StatusNotFound {
 		return false, nil
 	}

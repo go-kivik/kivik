@@ -129,35 +129,43 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("exists", test{
-		sel: &conditionNode{
-			op:   OpExists,
-			cond: true,
+		sel: &fieldNode{
+			field: "foo",
+			cond:  &conditionNode{op: OpExists, cond: true},
 		},
-		doc:  "foo",
+		doc: map[string]interface{}{
+			"foo": "bar",
+		},
 		want: true,
 	})
 	tests.Add("!exists", test{
-		sel: &conditionNode{
-			op:   OpExists,
-			cond: false,
+		sel: &fieldNode{
+			field: "baz",
+			cond:  &conditionNode{op: OpExists, cond: true},
 		},
-		doc:  "foo",
+		doc: map[string]interface{}{
+			"foo": "bar",
+		},
 		want: false,
 	})
 	tests.Add("not exists", test{
-		sel: &conditionNode{
-			op:   OpExists,
-			cond: false,
+		sel: &fieldNode{
+			field: "baz",
+			cond:  &conditionNode{op: OpExists, cond: false},
 		},
-		doc:  nil,
+		doc: map[string]interface{}{
+			"foo": "bar",
+		},
 		want: true,
 	})
 	tests.Add("!not exists", test{
-		sel: &conditionNode{
-			op:   OpExists,
-			cond: true,
+		sel: &fieldNode{
+			field: "baz",
+			cond:  &conditionNode{op: OpExists, cond: true},
 		},
-		doc:  nil,
+		doc: map[string]interface{}{
+			"foo": "bar",
+		},
 		want: false,
 	})
 	tests.Add("type, null", test{

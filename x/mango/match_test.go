@@ -444,6 +444,53 @@ func TestMatch(t *testing.T) {
 		doc:  "bar",
 		want: false,
 	})
+	tests.Add("field selector, nested", test{
+		sel: &fieldNode{
+			field: "foo.bar.baz",
+			cond: &conditionNode{
+				op:   OpEqual,
+				cond: "hello",
+			},
+		},
+		doc: map[string]interface{}{
+			"foo": map[string]interface{}{
+				"bar": map[string]interface{}{
+					"baz": "hello",
+				},
+			},
+		},
+		want: true,
+	})
+	tests.Add("field selector, nested, non-object", test{
+		sel: &fieldNode{
+			field: "foo.bar.baz",
+			cond: &conditionNode{
+				op:   OpEqual,
+				cond: "hello",
+			},
+		},
+		doc: map[string]interface{}{
+			"foo": "hello",
+		},
+		want: false,
+	})
+	tests.Add("!field selector, nested", test{
+		sel: &fieldNode{
+			field: "foo.bar.baz",
+			cond: &conditionNode{
+				op:   OpEqual,
+				cond: "hello",
+			},
+		},
+		doc: map[string]interface{}{
+			"foo": map[string]interface{}{
+				"bar": map[string]interface{}{
+					"buzz": "hello",
+				},
+			},
+		},
+		want: false,
+	})
 	tests.Add("elemMatch", test{
 		sel: &fieldNode{
 			field: "foo",

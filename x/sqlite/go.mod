@@ -5,7 +5,7 @@ go 1.22.0
 require (
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/dop251/goja v0.0.0-20240220182346-e401ed450204
-	github.com/go-kivik/kivik/v4 v4.2.4-0.20240716145309-5be038df2f1e
+	github.com/go-kivik/kivik/v4 v4.3.2-0.20240911141255-ada1fcc539f5
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
 	github.com/mitchellh/mapstructure v1.5.0

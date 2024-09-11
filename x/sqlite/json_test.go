@@ -98,7 +98,7 @@ func Test_prepareDoc(t *testing.T) {
 				t.Errorf("unexpected error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if d := cmp.Diff(tt.want, got); d != "" {
-				t.Errorf(d)
+				t.Error(d)
 			}
 		})
 	}
@@ -220,7 +220,7 @@ func Test_revsInfo_revs(t *testing.T) {
 				got = append(got, r.String())
 			}
 			if d := cmp.Diff(tt.want, got); d != "" {
-				t.Errorf(d)
+				t.Error(d)
 			}
 		})
 	}
@@ -262,7 +262,7 @@ func Test_mergeIntoDoc(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, _ := io.ReadAll(tt.doc.toReader())
 			if d := cmp.Diff(tt.want, string(got)); d != "" {
-				t.Errorf(d)
+				t.Error(d)
 			}
 		})
 	}
@@ -319,51 +319,6 @@ func Test_RevID(t *testing.T) {
 			got := tt.doc.RevID()
 			if got != tt.want {
 				t.Errorf("unexpected revID = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_splitKeys(t *testing.T) {
-	tests := []struct {
-		input string
-		want  []string
-	}{
-		{
-			input: "foo.bar.baz",
-			want:  []string{"foo", "bar", "baz"},
-		},
-		{
-			input: "foo",
-			want:  []string{"foo"},
-		},
-		{
-			input: "",
-			want:  []string{""},
-		},
-		{
-			input: "foo\\.bar",
-			want:  []string{"foo.bar"},
-		},
-		{
-			input: "foo\\\\.bar",
-			want:  []string{"foo\\", "bar"},
-		},
-		{
-			input: "foo\\",
-			want:  []string{"foo\\"},
-		},
-		{
-			input: "foo.",
-			want:  []string{"foo", ""},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.input, func(t *testing.T) {
-			got := splitKeys(tt.input)
-			if d := cmp.Diff(tt.want, got); d != "" {
-				t.Errorf("unexpected keys (-want, +got): %s", d)
 			}
 		})
 	}

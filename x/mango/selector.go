@@ -130,7 +130,7 @@ func (f *fieldNode) Match(doc interface{}) bool {
 	val := doc
 
 	// Traverse nested fields (e.g. "foo.bar.baz")
-	segments := strings.Split(f.field, ".")
+	segments := SplitKeys(f.field)
 	for _, segment := range segments {
 		m, ok := val.(map[string]interface{})
 		if !ok {
@@ -370,4 +370,34 @@ func cmpSelectors(a, b Node) int {
 		}
 	}
 	return 0
+}
+
+// SplitKeys splits a field into its component keys. For example,
+// "foo.bar" is split into `["foo", "bar"]`. Escaped dots are not treated
+// as separators, so `"foo\\.bar"` becomes `["foo.bar"]`.
+func SplitKeys(field string) []string {
+	var escaped bool
+	result := []string{}
+	word := make([]byte, 0, len(field))
+	for _, ch := range field {
+		if escaped {
+			word = append(word, byte(ch))
+			escaped = false
+			continue
+		}
+		if ch == '\\' {
+			escaped = true
+			continue
+		}
+		if ch == '.' {
+			result = append(result, string(word))
+			word = word[:0]
+			continue
+		}
+		word = append(word, byte(ch))
+	}
+	if escaped {
+		word = append(word, '\\')
+	}
+	return append(result, string(word))
 }

@@ -27,6 +27,7 @@ import (
 	"strings"
 
 	internal "github.com/go-kivik/kivik/v4/int/errors"
+	"github.com/go-kivik/kivik/v4/x/mango"
 )
 
 type revision struct {
@@ -456,7 +457,7 @@ func (d *fullDoc) toRaw(fields ...string) json.RawMessage {
 				if f == "_id" || f == "_rev" {
 					continue
 				}
-				keys := splitKeys(f)
+				keys := mango.SplitKeys(f)
 				if v, ok := extractValue(doc, keys...); ok {
 					insertValue(tmp, v, keys)
 				}
@@ -493,36 +494,6 @@ func (d *fullDoc) toRaw(fields ...string) json.RawMessage {
 	// replace final ',' with '}'
 	result[len(result)-1] = '}'
 	return result
-}
-
-// splitKeys splits a field into its component keys. For example,
-// `splitKeys("foo.bar")` returns `["foo", "bar"]`. Escaped dots are treated as
-// a single key, so `splitKeys("foo\\.bar")` returns `["foo.bar"]`.
-func splitKeys(field string) []string {
-	var escaped bool
-	result := []string{}
-	word := make([]byte, 0, len(field))
-	for _, ch := range field {
-		if escaped {
-			word = append(word, byte(ch))
-			escaped = false
-			continue
-		}
-		if ch == '\\' {
-			escaped = true
-			continue
-		}
-		if ch == '.' {
-			result = append(result, string(word))
-			word = word[:0]
-			continue
-		}
-		word = append(word, byte(ch))
-	}
-	if escaped {
-		word = append(word, '\\')
-	}
-	return append(result, string(word))
 }
 
 func extractValue(obj map[string]interface{}, keys ...string) (interface{}, bool) {

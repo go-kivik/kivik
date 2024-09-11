@@ -127,14 +127,20 @@ func (f *fieldNode) String() string {
 }
 
 func (f *fieldNode) Match(doc interface{}) bool {
-	m, ok := doc.(map[string]interface{})
-	if !ok {
-		return false
+	val := doc
+
+	// Traverse nested fields (e.g. "foo.bar.baz")
+	segments := strings.Split(f.field, ".")
+	for _, segment := range segments {
+		m, ok := val.(map[string]interface{})
+		if !ok {
+			return false
+		}
+
+		val = m[segment]
 	}
-	val, ok := m[f.field]
-	if !ok {
-		return false
-	}
+
+	// Even if the field does not exist we need to pass it to the condition expression because of `$exists`
 	return f.cond.Match(val)
 }
 

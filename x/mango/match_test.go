@@ -129,35 +129,43 @@ func TestMatch(t *testing.T) {
 		want: false,
 	})
 	tests.Add("exists", test{
-		sel: &conditionNode{
-			op:   OpExists,
-			cond: true,
+		sel: &fieldNode{
+			field: "foo",
+			cond:  &conditionNode{op: OpExists, cond: true},
 		},
-		doc:  "foo",
+		doc: map[string]interface{}{
+			"foo": "bar",
+		},
 		want: true,
 	})
 	tests.Add("!exists", test{
-		sel: &conditionNode{
-			op:   OpExists,
-			cond: false,
+		sel: &fieldNode{
+			field: "baz",
+			cond:  &conditionNode{op: OpExists, cond: true},
 		},
-		doc:  "foo",
+		doc: map[string]interface{}{
+			"foo": "bar",
+		},
 		want: false,
 	})
 	tests.Add("not exists", test{
-		sel: &conditionNode{
-			op:   OpExists,
-			cond: false,
+		sel: &fieldNode{
+			field: "baz",
+			cond:  &conditionNode{op: OpExists, cond: false},
 		},
-		doc:  nil,
+		doc: map[string]interface{}{
+			"foo": "bar",
+		},
 		want: true,
 	})
 	tests.Add("!not exists", test{
-		sel: &conditionNode{
-			op:   OpExists,
-			cond: true,
+		sel: &fieldNode{
+			field: "baz",
+			cond:  &conditionNode{op: OpExists, cond: true},
 		},
-		doc:  nil,
+		doc: map[string]interface{}{
+			"foo": "bar",
+		},
 		want: false,
 	})
 	tests.Add("type, null", test{
@@ -434,6 +442,53 @@ func TestMatch(t *testing.T) {
 			},
 		},
 		doc:  "bar",
+		want: false,
+	})
+	tests.Add("field selector, nested", test{
+		sel: &fieldNode{
+			field: "foo.bar.baz",
+			cond: &conditionNode{
+				op:   OpEqual,
+				cond: "hello",
+			},
+		},
+		doc: map[string]interface{}{
+			"foo": map[string]interface{}{
+				"bar": map[string]interface{}{
+					"baz": "hello",
+				},
+			},
+		},
+		want: true,
+	})
+	tests.Add("field selector, nested, non-object", test{
+		sel: &fieldNode{
+			field: "foo.bar.baz",
+			cond: &conditionNode{
+				op:   OpEqual,
+				cond: "hello",
+			},
+		},
+		doc: map[string]interface{}{
+			"foo": "hello",
+		},
+		want: false,
+	})
+	tests.Add("!field selector, nested", test{
+		sel: &fieldNode{
+			field: "foo.bar.baz",
+			cond: &conditionNode{
+				op:   OpEqual,
+				cond: "hello",
+			},
+		},
+		doc: map[string]interface{}{
+			"foo": map[string]interface{}{
+				"bar": map[string]interface{}{
+					"buzz": "hello",
+				},
+			},
+		},
 		want: false,
 	})
 	tests.Add("elemMatch", test{

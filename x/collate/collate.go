@@ -73,6 +73,11 @@ func CompareObject(a, b interface{}) int {
 			return -1
 		}
 		return 1
+	case jsonTypeNull:
+		if b == nil {
+			return 0
+		}
+		return -1
 	case jsonTypeNumber:
 		return int(a.(float64) - b.(float64))
 	case jsonTypeString:

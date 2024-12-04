@@ -60,6 +60,12 @@ func TestAllDBs(t *testing.T) {
 		}, nil),
 		expected: []string{"_global_changes", "_replicator", "_users"},
 	})
+	tests.Add("with param", test{
+		client:  newTestClient(nil, errors.New("expected")),
+		options: kivik.Param("startkey", "bar"),
+		status:  http.StatusBadGateway,
+		err:     `Get "?http://example.com/_all_dbs\?startkey=bar"?: expected`,
+	})
 
 	tests.Run(t, func(t *testing.T, test test) {
 		opts := test.options

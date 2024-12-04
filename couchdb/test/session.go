@@ -164,15 +164,15 @@ func testCreateSession(ctx *kt.Context, client *chttp.Client) {
 		}},
 		{Name: "GoodCredsJSON", Creds: true, Options: &chttp.Options{
 			ContentType: "application/json",
-			Body:        kt.Body(fmt.Sprintf(`{"name":"%s","password":"%s"}`, name, password)),
+			Body:        kt.Body(`{"name":"%s","password":"%s"}`, name, password),
 		}},
 		{Name: "GoodCredsForm", Creds: true, Options: &chttp.Options{
 			ContentType: "application/x-www-form-urlencoded",
-			Body:        kt.Body(fmt.Sprintf(`name=%s&password=%s`, name, password)),
+			Body:        kt.Body(`name=%s&password=%s`, name, password),
 		}},
 		{Name: "BadCredsJSON", Creds: true, Options: &chttp.Options{
 			ContentType: "application/json",
-			Body:        kt.Body(fmt.Sprintf(`{"name":"%s","password":"%sxxx"}`, name, password)),
+			Body:        kt.Body(`{"name":"%s","password":"%sxxx"}`, name, password),
 		}},
 		{Name: "BadCredsForm", Creds: true, Options: &chttp.Options{
 			ContentType: "application/x-www-form-urlencoded",

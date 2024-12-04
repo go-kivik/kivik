@@ -31,53 +31,49 @@ import (
 )
 
 func TestAllDBs(t *testing.T) {
-	tests := []struct {
-		name     string
+	type test struct {
 		client   *client
 		options  kivik.Option
 		expected []string
 		status   int
 		err      string
-	}{
-		{
-			name:   "network error",
-			client: newTestClient(nil, errors.New("net error")),
-			status: http.StatusBadGateway,
-			err:    `Get "?http://example.com/_all_dbs"?: net error`,
-		},
-		{
-			name: "2.0.0",
-			client: newTestClient(&http.Response{
-				StatusCode: 200,
-				Header: http.Header{
-					"Server":              {"CouchDB/2.0.0 (Erlang OTP/17)"},
-					"Date":                {"Fri, 27 Oct 2017 15:15:07 GMT"},
-					"Content-Type":        {"application/json"},
-					"ETag":                {`"33UVNAZU752CYNGBBTMWQFP7U"`},
-					"Transfer-Encoding":   {"chunked"},
-					"X-Couch-Request-ID":  {"ab5cd97c3e"},
-					"X-CouchDB-Body-Time": {"0"},
-				},
-				Body: Body(`["_global_changes","_replicator","_users"]`),
-			}, nil),
-			expected: []string{"_global_changes", "_replicator", "_users"},
-		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			opts := test.options
-			if opts == nil {
-				opts = mock.NilOption
-			}
-			result, err := test.client.AllDBs(context.Background(), opts)
-			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
-				t.Error(d)
-			}
-			if d := testy.DiffInterface(test.expected, result); d != nil {
-				t.Error(d)
-			}
-		})
-	}
+	tests := testy.NewTable()
+	tests.Add("network error", test{
+		client: newTestClient(nil, errors.New("net error")),
+		status: http.StatusBadGateway,
+		err:    `Get "?http://example.com/_all_dbs"?: net error`,
+	})
+	tests.Add("2.0.0", test{
+		client: newTestClient(&http.Response{
+			StatusCode: 200,
+			Header: http.Header{
+				"Server":              {"CouchDB/2.0.0 (Erlang OTP/17)"},
+				"Date":                {"Fri, 27 Oct 2017 15:15:07 GMT"},
+				"Content-Type":        {"application/json"},
+				"ETag":                {`"33UVNAZU752CYNGBBTMWQFP7U"`},
+				"Transfer-Encoding":   {"chunked"},
+				"X-Couch-Request-ID":  {"ab5cd97c3e"},
+				"X-CouchDB-Body-Time": {"0"},
+			},
+			Body: Body(`["_global_changes","_replicator","_users"]`),
+		}, nil),
+		expected: []string{"_global_changes", "_replicator", "_users"},
+	})
+
+	tests.Run(t, func(t *testing.T, test test) {
+		opts := test.options
+		if opts == nil {
+			opts = mock.NilOption
+		}
+		result, err := test.client.AllDBs(context.Background(), opts)
+		if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
+			t.Error(d)
+		}
+		if d := testy.DiffInterface(test.expected, result); d != nil {
+			t.Error(d)
+		}
+	})
 }
 
 func TestDBExists(t *testing.T) {

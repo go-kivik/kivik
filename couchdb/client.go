@@ -29,7 +29,7 @@ import (
 )
 
 func (c *client) AllDBs(ctx context.Context, opts driver.Options) ([]string, error) {
-	var query url.Values
+	query := url.Values{}
 	opts.Apply(&query)
 	var allDBs []string
 	err := c.DoJSON(ctx, http.MethodGet, "/_all_dbs", &chttp.Options{Query: query}, &allDBs)

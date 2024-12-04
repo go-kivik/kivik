@@ -19,8 +19,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/go-chi/chi"
-	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 
 	"github.com/go-kivik/kivik/v4/x/kivikd/couchserver"
 	"github.com/go-kivik/kivik/v4/x/kivikd/logger"

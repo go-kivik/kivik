@@ -17,7 +17,7 @@ package couchserver
 import (
 	"net/http"
 
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 )
 
 // DB returns the db name in this request, or "" if none.

@@ -178,8 +178,8 @@ github.com/monoculum/formam v3.5.5+incompatible h1:iPl5csfEN96G2N2mGu8V/ZB62XLf9
 github.com/monoculum/formam v3.5.5+incompatible/go.mod h1:RKgILGEJq24YyJ2ban8EO0RUVSJlF1pGsEvoLEACr/Q=
 github.com/monoculum/formam/v3 v3.6.0 h1:Lz7TOal1D8cCY2Hv1NGLdLX9Rm4xt/Gkpw4qC/RKTmc=
 github.com/monoculum/formam/v3 v3.6.0/go.mod h1:kWmkNHidfOgIjrLj2pLt+Yq9qL5MGXSl6mpKY30QV/o=
-github.com/pelletier/go-toml/v2 v2.1.0 h1:FnwAJ4oYMvbT/34k9zzHuZNrhlz48GB3/s6at6/MHO4=
-github.com/pelletier/go-toml/v2 v2.1.0/go.mod h1:tJU2Z3ZkXwnxa4DPO899bsyIoywizdUvyaeZurnPPDc=
+github.com/pelletier/go-toml/v2 v2.1.1 h1:LWAJwfNvjQZCFIDKWYQaM62NcYeYViCmWIwmOStowAI=
+github.com/pelletier/go-toml/v2 v2.1.1/go.mod h1:tJU2Z3ZkXwnxa4DPO899bsyIoywizdUvyaeZurnPPDc=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/sftp v1.13.1/go.mod h1:3HaPG6Dq1ILlpPZRO0HVMrsydcdLt6HRDccSgb87qRg=

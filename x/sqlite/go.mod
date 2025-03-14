@@ -10,7 +10,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/mitchellh/mapstructure v1.5.0
 	gitlab.com/flimzy/errsql v0.1.3
-	gitlab.com/flimzy/testy v0.14.0
+	gitlab.com/flimzy/testy v0.15.0
 	modernc.org/sqlite v1.36.1
 )
 

@@ -135,7 +135,7 @@ func (s *Service) Start() error {
 }
 
 func (s *Service) authHandlersSetup() {
-	if s.AuthHandlers == nil || len(s.AuthHandlers) == 0 {
+	if len(s.AuthHandlers) == 0 {
 		fmt.Fprintf(os.Stderr, "No AuthHandler specified! Welcome to the PERPETUAL ADMIN PARTY!\n")
 	}
 	s.authHandlers = make(map[string]auth.Handler)

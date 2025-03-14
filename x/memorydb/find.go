@@ -136,7 +136,7 @@ func (r *findResults) Warning() string {
 }
 
 func (r *findResults) Next(row *driver.Row) error {
-	if r.revs == nil || len(r.revs) == 0 {
+	if len(r.revs) == 0 {
 		return io.EOF
 	}
 	row.ID, r.docIDs = r.docIDs[0], r.docIDs[1:]

@@ -474,7 +474,7 @@ func (r *ResultSet) Iterator() func(yield func(*Row, error) bool) {
 			row := r.iter.curVal.(*driver.Row)
 			if !yield(&Row{dRow: row}, nil) {
 				_ = r.Close()
-				break
+				return
 			}
 		}
 		if err := r.Err(); err != nil {

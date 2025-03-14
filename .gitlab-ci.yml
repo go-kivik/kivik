@@ -19,7 +19,7 @@ test-x-sqlite:
 
 linter-x-sqlite:
   stage: test
-  image: golangci/golangci-lint:v1.57.2
+  image: golangci/golangci-lint:v1.64.7
   script:
     - cd x/sqlite
     - go mod download
@@ -70,7 +70,7 @@ test:
 
 linter:
   stage: test
-  image: golangci/golangci-lint:v1.57.2
+  image: golangci/golangci-lint:v1.64.7
   script:
     - go mod download
     - golangci-lint run ./...

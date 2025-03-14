@@ -163,7 +163,7 @@ func (f *DBUpdates) Iterator() func(yield func(*DBUpdate, error) bool) {
 			update := f.curVal.(*driver.DBUpdate)
 			if !yield((*DBUpdate)(update), nil) {
 				_ = f.Close()
-				break
+				return
 			}
 		}
 		if err := f.Err(); err != nil {

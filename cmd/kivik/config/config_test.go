@@ -17,6 +17,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/spf13/cobra"
 	"gitlab.com/flimzy/testy"
 	"gopkg.in/yaml.v3"
@@ -75,39 +77,75 @@ func TestConfig_Read(t *testing.T) {
 	type tt struct {
 		filename string
 		env      map[string]string
-		err      string
+		want     *Config
+		wantErr  string
 	}
 
 	tests := testy.NewTable()
-	tests.Add("no config file", tt{})
+	tests.Add("no config file", tt{
+		want: &Config{
+			Contexts: make(map[string]*Context),
+		},
+	})
 	tests.Add("other read error", tt{
 		filename: "foo\x00bar",
-		err:      "open foo\x00bar: invalid argument",
+		wantErr:  "open foo\x00bar: invalid argument",
 	})
 	tests.Add("not regular file", tt{
 		filename: "./testdata",
-		err:      "yaml: input error: read ./testdata: is a directory",
+		wantErr:  "yaml: input error: read ./testdata: is a directory",
 	})
 	tests.Add("file not found", tt{
 		filename: "not found",
+		want: &Config{
+			Contexts: make(map[string]*Context),
+		},
 	})
 	tests.Add("invalid env", tt{
 		env: map[string]string{
 			"KIVIKDSN": "http://foo.com/%xxx",
 		},
-		err: `parse "http://foo.com/%xxx": invalid URL escape "%xx"`,
+		wantErr: `parse "http://foo.com/%xxx": invalid URL escape "%xx"`,
 	})
 	tests.Add("env only", tt{
 		env: map[string]string{
-			"KIVIKSN": "http://foo.com/",
+			"KIVIKDSN": "http://foo.com/",
+		},
+		want: &Config{
+			Contexts: map[string]*Context{
+				"*": {
+					Scheme:   "http",
+					Host:     "foo.com",
+					Database: "/",
+					DocID:    "/",
+				},
+			},
+			CurrentContext: "*",
 		},
 	})
 	tests.Add("invalid yaml", tt{
 		filename: "testdata/invalid.yaml",
-		err:      `yaml: found unexpected end of stream`,
+		wantErr:  `yaml: found unexpected end of stream`,
 	})
 	tests.Add("valid yaml", tt{
 		filename: "testdata/valid.yaml",
+		want: &Config{
+			Contexts: map[string]*Context{
+				"foo": {
+					Scheme:   "http",
+					Host:     "localhost:5984",
+					User:     "admin",
+					Password: "abc123",
+					Database: "/_users",
+				},
+				"bar": {
+					Scheme:   "http",
+					Host:     "bar.com",
+					Database: "/_users",
+				},
+			},
+			CurrentContext: "foo",
+		},
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
@@ -115,14 +153,14 @@ func TestConfig_Read(t *testing.T) {
 		l := newTestLogger()
 		cf := New(nil)
 		err := cf.Read(tt.filename, l)
-		if !testy.ErrorMatches(tt.err, err) {
+		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}
 		if err != nil {
 			return
 		}
-		if d := testy.DiffInterface(testy.Snapshot(t), cf); d != nil {
-			t.Error(d)
+		if d := cmp.Diff(tt.want, cf, cmpopts.IgnoreUnexported(Config{})); d != "" {
+			t.Errorf("Unexpected result (-want, +got): %s", d)
 		}
 		l.Check(t)
 	})
@@ -196,23 +234,38 @@ func TestConfig_DSN(t *testing.T) {
 
 func TestConfigArgs(t *testing.T) {
 	type tt struct {
-		c    *Config
-		args []string
-		err  string
+		c       *Config
+		args    []string
+		want    *Config
+		wantErr string
 	}
 
 	tests := testy.NewTable()
 	tests.Add("no arguments", tt{
 		c: &Config{},
+		want: &Config{
+			Contexts: make(map[string]*Context),
+		},
 	})
 	tests.Add("invalid dsn", tt{
-		c:    &Config{},
-		args: []string{"http://localhost:5984/%xxx"},
-		err:  `parse "http://localhost:5984/%xxx": invalid URL escape "%xx"`,
+		c:       &Config{},
+		args:    []string{"http://localhost:5984/%xxx"},
+		wantErr: `parse "http://localhost:5984/%xxx": invalid URL escape "%xx"`,
 	})
 	tests.Add("full dsn in args", tt{
 		c:    &Config{},
 		args: []string{"http://localhost:5984/foo/bar"},
+		want: &Config{
+			Contexts: map[string]*Context{
+				"*": {
+					Scheme:   "http",
+					Host:     "localhost:5984",
+					Database: "/foo",
+					DocID:    "bar",
+				},
+			},
+			CurrentContext: "*",
+		},
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
@@ -224,14 +277,14 @@ func TestConfigArgs(t *testing.T) {
 		}
 		cmd := &cobra.Command{}
 		err := tt.c.Args(cmd, tt.args)
-		if !testy.ErrorMatches(tt.err, err) {
+		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}
 		if err != nil {
 			return
 		}
-		if d := testy.DiffInterface(testy.Snapshot(t), c); d != nil {
-			t.Error(d)
+		if d := cmp.Diff(tt.want, c, cmpopts.IgnoreUnexported(Config{})); d != "" {
+			t.Errorf("Unexpected result (-want, +got): %s", d)
 		}
 		lg.Check(t)
 	})

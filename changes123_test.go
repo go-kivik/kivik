@@ -76,7 +76,7 @@ func TestChangesIteratorBreak(t *testing.T) {
 	t.Parallel()
 
 	changes := newChanges(context.Background(), nil, &mock.Changes{
-		NextFunc: func(ch *driver.Change) error {
+		NextFunc: func(*driver.Change) error {
 			return nil
 		},
 	})

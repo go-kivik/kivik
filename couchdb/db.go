@@ -554,7 +554,7 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 	if docID == "" {
 		return "", missingArg("docID")
 	}
-	opts2, err := putOpts(doc, options)
+	opts, err := putOpts(doc, options)
 	if err != nil {
 		return "", err
 	}
@@ -562,7 +562,7 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 		ID  string `json:"id"`
 		Rev string `json:"rev"`
 	}
-	err = d.Client.DoJSON(ctx, http.MethodPut, d.path(chttp.EncodeDocID(docID)), opts2, &result)
+	err = d.Client.DoJSON(ctx, http.MethodPut, d.path(chttp.EncodeDocID(docID)), opts, &result)
 	if err != nil {
 		return "", err
 	}

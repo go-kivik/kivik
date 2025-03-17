@@ -1108,6 +1108,87 @@ func TestPut(t *testing.T) {
 	})
 }
 
+func TestUpdate(t *testing.T) {
+	type test struct {
+		db             *db
+		ddoc, funcName string
+		id             string
+		doc            interface{}
+		options        kivik.Option
+		rev            string
+		status         int
+		err            string
+		finish         func() error
+	}
+
+	tests := testy.NewTable()
+	tests.Add("network error", test{
+		id:       "foo",
+		ddoc:     "ddoc",
+		funcName: "func",
+		db:       newTestDB(nil, errors.New("net error")),
+		status:   http.StatusBadGateway,
+		err:      `Put "?http://example.com/testdb/_design/ddoc/_update/func/foo"?: net error`,
+	})
+	tests.Add("error response", test{
+		id:       "foo",
+		ddoc:     "ddoc",
+		funcName: "func",
+		db: newTestDB(&http.Response{
+			StatusCode: http.StatusBadRequest,
+			Body:       io.NopCloser(strings.NewReader("")),
+		}, nil),
+		status: http.StatusBadRequest,
+		err:    "Bad Request",
+	})
+	tests.Add("invalid JSON response", test{
+		id:       "foo",
+		ddoc:     "ddoc",
+		funcName: "func",
+		db: newTestDB(&http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(strings.NewReader("invalid json")),
+		}, nil),
+		status: http.StatusBadGateway,
+		err:    "invalid character 'i' looking for beginning of value",
+	})
+	tests.Add("invalid document", test{
+		id:       "foo",
+		ddoc:     "ddoc",
+		funcName: "func",
+		doc:      make(chan int),
+		db: newTestDB(&http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(strings.NewReader("")),
+		}, nil),
+		status: http.StatusBadRequest,
+		err:    `Put "?http://example.com/testdb/_design/ddoc/_update/func/foo"?: json: unsupported type: chan int`,
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		if tt.finish != nil {
+			t.Cleanup(func() {
+				if err := tt.finish(); err != nil {
+					t.Fatal(err)
+				}
+			})
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		opts := tt.options
+		if opts == nil {
+			opts = mock.NilOption
+		}
+		rev, err := tt.db.Update(ctx, tt.ddoc, tt.funcName, tt.id, tt.doc, opts)
+		if d := internal.StatusErrorDiffRE(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
+		if rev != tt.rev {
+			t.Errorf("Unexpected rev: %s", rev)
+		}
+	})
+}
+
 func TestDelete(t *testing.T) {
 	type tt struct {
 		db      *db

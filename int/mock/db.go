@@ -38,11 +38,26 @@ type DB struct {
 	CloseFunc            func() error
 }
 
+// Updater is a stub for a [github.com/go-kivik/v4/driver.Updater].
+type Updater struct {
+	DB
+	UpdateFunc func(ctx context.Context, ddocID, funcName, docID string, doc interface{}, options driver.Options) (string, error)
+}
+
+var _ driver.Updater = &Updater{}
+
+// Update calls db.UpdateFunc
+func (db *Updater) Update(ctx context.Context, ddocID, funcName, docID string, doc interface{}, options driver.Options) (string, error) {
+	return db.UpdateFunc(ctx, ddocID, funcName, docID, doc, options)
+}
+
 // DocCreator is a stub for a [github.com/go-kivik/v4/driver.DocCreator].
 type DocCreator struct {
 	DB
 	CreateDocFunc func(ctx context.Context, doc interface{}, options driver.Options) (docID, rev string, err error)
 }
+
+var _ driver.DocCreator = &DocCreator{}
 
 // CreateDoc calls db.CreateDocFunc
 func (db *DocCreator) CreateDoc(ctx context.Context, doc interface{}, opts driver.Options) (string, string, error) {

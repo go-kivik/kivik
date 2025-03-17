@@ -257,6 +257,13 @@ type SecurityDB interface {
 	SetSecurity(ctx context.Context, security *Security) error
 }
 
+// Updater is an optional interface that extends a [DB] to support invoking
+// update functions.
+type Updater interface {
+	// Update calls the named update function with the provided document.
+	Update(ctx context.Context, ddoc, funcName, docID string, doc interface{}, options Options) (rev string, err error)
+}
+
 // Document represents a single document returned by [DB.Get].
 type Document struct {
 	// Rev is the revision number returned

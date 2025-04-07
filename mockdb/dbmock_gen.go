@@ -100,6 +100,16 @@ func (db *DB) ExpectPut() *ExpectedPut {
 	return e
 }
 
+// ExpectUpdate queues an expectation that DB.Update will be called.
+func (db *DB) ExpectUpdate() *ExpectedUpdate {
+	e := &ExpectedUpdate{
+		commonExpectation: commonExpectation{db: db},
+	}
+	db.count++
+	db.client.expected = append(db.client.expected, e)
+	return e
+}
+
 // ExpectViewCleanup queues an expectation that DB.ViewCleanup will be called.
 func (db *DB) ExpectViewCleanup() *ExpectedViewCleanup {
 	e := &ExpectedViewCleanup{

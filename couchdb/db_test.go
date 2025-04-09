@@ -1052,21 +1052,23 @@ func TestPut(t *testing.T) {
 		status:  http.StatusBadGateway,
 		err:     `Put "?http://example.com/testdb/foo"?: success`,
 	})
-	tests.Add("connection refused", test{
-		db: func() *db {
-			c, err := chttp.New(&http.Client{}, "http://127.0.0.1:1/", mock.NilOption)
-			if err != nil {
-				t.Fatal(err)
-			}
-			return &db{
-				client: &client{Client: c},
-				dbName: "animals",
-			}
-		}(),
-		id:     "cow",
-		doc:    map[string]interface{}{"feet": 4},
-		status: http.StatusBadGateway,
-		err:    `Put "?http://127\.0\.0\.1:1/animals/cow"?: dial tcp (\[::1\]|127.0.0.1):1: (getsockopt|connect): connection refused`,
+	tests.Add("connection refused", func(t *testing.T) interface{} {
+		return test{
+			db: func() *db {
+				c, err := chttp.New(&http.Client{}, "http://127.0.0.1:1/", mock.NilOption)
+				if err != nil {
+					t.Fatal(err)
+				}
+				return &db{
+					client: &client{Client: c},
+					dbName: "animals",
+				}
+			}(),
+			id:     "cow",
+			doc:    map[string]interface{}{"feet": 4},
+			status: http.StatusBadGateway,
+			err:    `Put "?http://127\.0\.0\.1:1/animals/cow"?: (net/http: XMLHttpRequest failed|dial tcp (\[::1\]|127.0.0.1):1: (getsockopt|connect): connection refused)`,
+		}
 	})
 	tests.Add("real database, multipart attachments", func(t *testing.T) interface{} {
 		db := realDB(t)

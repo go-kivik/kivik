@@ -977,7 +977,6 @@ func TestPut(t *testing.T) {
 		rev     string
 		status  int
 		err     string
-		finish  func() error
 	}
 
 	tests := testy.NewTable()
@@ -1067,10 +1066,15 @@ func TestPut(t *testing.T) {
 		id:     "cow",
 		doc:    map[string]interface{}{"feet": 4},
 		status: http.StatusBadGateway,
-		err:    `Put "?http://127.0.0.1:1/animals/cow"?: dial tcp ([::1]|127.0.0.1):1: (getsockopt|connect): connection refused`,
+		err:    `Put "?http://127\.0\.0\.1:1/animals/cow"?: dial tcp (\[::1\]|127.0.0.1):1: (getsockopt|connect): connection refused`,
 	})
 	tests.Add("real database, multipart attachments", func(t *testing.T) interface{} {
 		db := realDB(t)
+		t.Cleanup(func() {
+			if err := db.client.DestroyDB(context.Background(), db.dbName, nil); err != nil {
+				t.Fatal(err)
+			}
+		})
 
 		return test{
 			db: db,
@@ -1082,20 +1086,10 @@ func TestPut(t *testing.T) {
 				},
 			},
 			rev: "1-1e527110339245a3191b3f6cbea27ab1",
-			finish: func() error {
-				return db.client.DestroyDB(context.Background(), db.dbName, nil)
-			},
 		}
 	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
-		if tt.finish != nil {
-			t.Cleanup(func() {
-				if err := tt.finish(); err != nil {
-					t.Fatal(err)
-				}
-			})
-		}
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		opts := tt.options

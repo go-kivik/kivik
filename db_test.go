@@ -1647,8 +1647,8 @@ func TestPut(t *testing.T) {
 		}
 		return "1-xxx", nil
 	}
-	type putTest struct {
-		name    string
+
+	type test struct {
 		db      *DB
 		docID   string
 		input   interface{}
@@ -1657,137 +1657,123 @@ func TestPut(t *testing.T) {
 		err     string
 		newRev  string
 	}
-	tests := []putTest{
-		{
-			name: "no docID",
-			db: &DB{
-				client: &Client{},
-			},
-			status: http.StatusBadRequest,
-			err:    "kivik: docID required",
+
+	tests := testy.NewTable()
+	tests.Add("no docID", test{
+		db: &DB{
+			client: &Client{},
 		},
-		{
-			name: "error",
-			db: &DB{
-				client: &Client{},
-				driverDB: &mock.DB{
-					PutFunc: func(context.Context, string, interface{}, driver.Options) (string, error) {
-						return "", &internal.Error{Status: http.StatusBadRequest, Err: errors.New("db error")}
-					},
+		status: http.StatusBadRequest,
+		err:    "kivik: docID required",
+	})
+	tests.Add("error", test{
+		db: &DB{
+			client: &Client{},
+			driverDB: &mock.DB{
+				PutFunc: func(context.Context, string, interface{}, driver.Options) (string, error) {
+					return "", &internal.Error{Status: http.StatusBadRequest, Err: errors.New("db error")}
 				},
 			},
-			docID:  "foo",
-			status: http.StatusBadRequest,
-			err:    "db error",
 		},
-		{
-			name: "Interface",
-			db: &DB{
-				client: &Client{},
-				driverDB: &mock.DB{
-					PutFunc: putFunc,
-				},
+		docID:  "foo",
+		status: http.StatusBadRequest,
+		err:    "db error",
+	})
+	tests.Add("Interface", test{
+		db: &DB{
+			client: &Client{},
+			driverDB: &mock.DB{
+				PutFunc: putFunc,
 			},
-			docID:   "foo",
-			input:   map[string]interface{}{"foo": "bar"},
-			options: Params(testOptions),
-			newRev:  "1-xxx",
 		},
-		{
-			name: "InvalidJSON",
-			db: &DB{
-				client: &Client{},
-				driverDB: &mock.DB{
-					PutFunc: putFunc,
-				},
+		docID:   "foo",
+		input:   map[string]interface{}{"foo": "bar"},
+		options: Params(testOptions),
+		newRev:  "1-xxx",
+	})
+	tests.Add("InvalidJSON", test{
+		db: &DB{
+			client: &Client{},
+			driverDB: &mock.DB{
+				PutFunc: putFunc,
 			},
-			docID:  "foo",
-			input:  json.RawMessage("Something bogus"),
-			status: http.StatusInternalServerError,
-			err:    "Unexpected doc: failed to marshal actual value: invalid character 'S' looking for beginning of value",
 		},
-		{
-			name: "Bytes",
-			db: &DB{
-				client: &Client{},
-				driverDB: &mock.DB{
-					PutFunc: putFunc,
-				},
+		docID:  "foo",
+		input:  json.RawMessage("Something bogus"),
+		status: http.StatusInternalServerError,
+		err:    "Unexpected doc: failed to marshal actual value: invalid character 'S' looking for beginning of value",
+	})
+	tests.Add("Bytes", test{
+		db: &DB{
+			client: &Client{},
+			driverDB: &mock.DB{
+				PutFunc: putFunc,
 			},
-			docID:   "foo",
-			input:   []byte(`{"foo":"bar"}`),
-			options: Params(testOptions),
-			newRev:  "1-xxx",
 		},
-		{
-			name: "RawMessage",
-			db: &DB{
-				client: &Client{},
-				driverDB: &mock.DB{
-					PutFunc: putFunc,
-				},
+		docID:   "foo",
+		input:   []byte(`{"foo":"bar"}`),
+		options: Params(testOptions),
+		newRev:  "1-xxx",
+	})
+	tests.Add("RawMessage", test{
+		db: &DB{
+			client: &Client{},
+			driverDB: &mock.DB{
+				PutFunc: putFunc,
 			},
-			docID:   "foo",
-			input:   json.RawMessage(`{"foo":"bar"}`),
-			options: Params(testOptions),
-			newRev:  "1-xxx",
 		},
-		{
-			name: "Reader",
-			db: &DB{
-				client: &Client{},
-				driverDB: &mock.DB{
-					PutFunc: putFunc,
-				},
+		docID:   "foo",
+		input:   json.RawMessage(`{"foo":"bar"}`),
+		options: Params(testOptions),
+		newRev:  "1-xxx",
+	})
+	tests.Add("Reader", test{
+		db: &DB{
+			client: &Client{},
+			driverDB: &mock.DB{
+				PutFunc: putFunc,
 			},
-			docID:   "foo",
-			input:   strings.NewReader(`{"foo":"bar"}`),
-			options: Params(testOptions),
-			newRev:  "1-xxx",
 		},
-		{
-			name: "ErrorReader",
-			db: &DB{
-				client: &Client{},
+		docID:   "foo",
+		input:   strings.NewReader(`{"foo":"bar"}`),
+		options: Params(testOptions),
+		newRev:  "1-xxx",
+	})
+	tests.Add("ErrorReader", test{
+		db: &DB{
+			client: &Client{},
+		},
+		docID:  "foo",
+		input:  &errorReader{},
+		status: http.StatusBadRequest,
+		err:    "errorReader",
+	})
+	tests.Add("client closed", test{
+		db: &DB{
+			client: &Client{
+				closed: true,
 			},
-			docID:  "foo",
-			input:  &errorReader{},
-			status: http.StatusBadRequest,
-			err:    "errorReader",
 		},
-		{
-			name: "client closed",
-			db: &DB{
-				client: &Client{
-					closed: true,
-				},
-			},
-			docID:  "foo",
-			status: http.StatusServiceUnavailable,
-			err:    "kivik: client closed",
+		docID:  "foo",
+		status: http.StatusServiceUnavailable,
+		err:    "kivik: client closed",
+	})
+	tests.Add("db error", test{
+		db: &DB{
+			err: errors.New("db error"),
 		},
-		{
-			name: "db error",
-			db: &DB{
-				err: errors.New("db error"),
-			},
-			status: http.StatusInternalServerError,
-			err:    "db error",
-		},
-	}
-	for _, test := range tests {
-		func(test putTest) {
-			t.Run(test.name, func(t *testing.T) {
-				newRev, err := test.db.Put(context.Background(), test.docID, test.input, test.options)
-				if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
-					t.Error(d)
-				}
-				if newRev != test.newRev {
-					t.Errorf("Unexpected new rev: %s", newRev)
-				}
-			})
-		}(test)
-	}
+		status: http.StatusInternalServerError,
+		err:    "db error",
+	})
+	tests.Run(t, func(t *testing.T, tt test) {
+		newRev, err := tt.db.Put(context.Background(), tt.docID, tt.input, tt.options)
+		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
+		if newRev != tt.newRev {
+			t.Errorf("Unexpected new rev: %s", newRev)
+		}
+	})
 }
 
 func TestExtractDocID(t *testing.T) {

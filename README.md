@@ -6,7 +6,7 @@ Package kivik provides a common interface to CouchDB or CouchDB-like databases.
 
 The kivik package must be used in conjunction with a database driver.
 
-The kivik driver system is modeled after the standard library's [sql](https://golang.org/pkg/database/sql/)
+The kivik driver system is modeled after the standard library's [database/sql](https://golang.org/pkg/database/sql/)
 and [sql/driver](https://golang.org/pkg/database/sql/driver/) packages, although
 the client API is completely different due to the different database models
 implemented by SQL and NoSQL databases such as CouchDB.
@@ -36,15 +36,15 @@ Install Kivik as you normally would for any Go package:
 
 This will install the main Kivik package and the CouchDB database driver. Three officially supported drivers are shipped with this Go module:
 
-  - CouchDB: [github.com/go-kivik/kivik/v4/couchdb](https://pkg.go.dev/github.com/go-kivik/kivik/v4/couchdb)
-  - PouchDB: [github.com/go-kivik/kivik/v4/pouchdb](https://pkg.go.dev/github.com/go-kivik/kivik/v4/pouchdb) (requires GopherJS)
-  - MockDB: [github.com/go-kivik/kivik/v4/mockdb](https://pkg.go.dev/github.com/go-kivik/kivik/v4/mockdb)
+- CouchDB: [github.com/go-kivik/kivik/v4/couchdb](https://pkg.go.dev/github.com/go-kivik/kivik/v4/couchdb)
+- PouchDB: [github.com/go-kivik/kivik/v4/pouchdb](https://pkg.go.dev/github.com/go-kivik/kivik/v4/pouchdb) (requires GopherJS)
+- MockDB: [github.com/go-kivik/kivik/v4/mockdb](https://pkg.go.dev/github.com/go-kivik/kivik/v4/mockdb)
 
 In addition, there are partial/experimental drivers available:
 
-  - FilesystemDB: [github.com/go-kivik/kivik/v4/x/fsdb](https://pkg.go.dev/github.com/go-kivik/kivik/v4/x/fsdb)
-  - MemoryDB: [github.com/go-kivik/kivik/v4/x/memorydb](https://pkg.go.dev/github.com/go-kivik/kivik/v4/x/memorydb)
-  - SQLite: [github.com/go-kivik/kivik/x/sqlite/v4](https://pkg.go.dev/github.com/go-kivik/kivik/x/sqlite/v4)
+- FilesystemDB: [github.com/go-kivik/kivik/v4/x/fsdb](https://pkg.go.dev/github.com/go-kivik/kivik/v4/x/fsdb)
+- MemoryDB: [github.com/go-kivik/kivik/v4/x/memorydb](https://pkg.go.dev/github.com/go-kivik/kivik/v4/x/memorydb)
+- SQLite: [github.com/go-kivik/kivik/x/sqlite/v4](https://pkg.go.dev/github.com/go-kivik/kivik/x/sqlite/v4)
 
 # CLI
 

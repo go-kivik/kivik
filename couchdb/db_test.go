@@ -969,8 +969,7 @@ func TestViewCleanup(t *testing.T) {
 }
 
 func TestPut(t *testing.T) {
-	type pTest struct {
-		name    string
+	type test struct {
 		db      *db
 		id      string
 		doc     interface{}
@@ -978,90 +977,83 @@ func TestPut(t *testing.T) {
 		rev     string
 		status  int
 		err     string
-		finish  func() error
 	}
-	tests := []pTest{
-		{
-			name:   "missing docID",
-			status: http.StatusBadRequest,
-			err:    "kivik: docID required",
-		},
-		{
-			name:   "network error",
-			id:     "foo",
-			db:     newTestDB(nil, errors.New("net error")),
-			status: http.StatusBadGateway,
-			err:    `Put "?http://example.com/testdb/foo"?: net error`,
-		},
-		{
-			name: "error response",
-			id:   "foo",
-			db: newTestDB(&http.Response{
-				StatusCode: http.StatusBadRequest,
-				Body:       io.NopCloser(strings.NewReader("")),
-			}, nil),
-			status: http.StatusBadRequest,
-			err:    "Bad Request",
-		},
-		{
-			name: "invalid JSON response",
-			id:   "foo",
-			db: newTestDB(&http.Response{
-				StatusCode: http.StatusOK,
-				Body:       io.NopCloser(strings.NewReader("invalid json")),
-			}, nil),
-			status: http.StatusBadGateway,
-			err:    "invalid character 'i' looking for beginning of value",
-		},
-		{
-			name: "invalid document",
-			id:   "foo",
-			doc:  make(chan int),
-			db: newTestDB(&http.Response{
-				StatusCode: http.StatusOK,
-				Body:       io.NopCloser(strings.NewReader("")),
-			}, nil),
-			status: http.StatusBadRequest,
-			err:    `Put "?http://example.com/testdb/foo"?: json: unsupported type: chan int`,
-		},
-		{
-			name: "doc created, 1.6.1",
-			id:   "foo",
-			doc:  map[string]string{"foo": "bar"},
-			db: newTestDB(&http.Response{
-				StatusCode: http.StatusCreated,
-				Header: http.Header{
-					"Server":         {"CouchDB/1.6.1 (Erlang OTP/17)"},
-					"Location":       {"http://localhost:5984/foo/foo"},
-					"ETag":           {`"1-4c6114c65e295552ab1019e2b046b10e"`},
-					"Date":           {"Wed, 25 Oct 2017 12:33:09 GMT"},
-					"Content-Type":   {"text/plain; charset=utf-8"},
-					"Content-Length": {"66"},
-					"Cache-Control":  {"must-revalidate"},
-				},
-				Body: io.NopCloser(strings.NewReader(`{"ok":true,"id":"foo","rev":"1-4c6114c65e295552ab1019e2b046b10e"}`)),
-			}, nil),
-			rev: "1-4c6114c65e295552ab1019e2b046b10e",
-		},
-		{
-			name: "full commit",
-			db: newCustomDB(func(req *http.Request) (*http.Response, error) {
-				if err := consume(req.Body); err != nil {
-					return nil, err
-				}
-				if fullCommit := req.Header.Get("X-Couch-Full-Commit"); fullCommit != "true" {
-					return nil, errors.New("X-Couch-Full-Commit not true")
-				}
-				return nil, errors.New("success")
-			}),
-			id:      "foo",
-			doc:     map[string]string{"foo": "bar"},
-			options: OptionFullCommit(),
-			status:  http.StatusBadGateway,
-			err:     `Put "?http://example.com/testdb/foo"?: success`,
-		},
-		{
-			name: "connection refused",
+
+	tests := testy.NewTable()
+	tests.Add("missing docID", test{
+		status: http.StatusBadRequest,
+		err:    "kivik: docID required",
+	})
+	tests.Add("network error", test{
+		id:     "foo",
+		db:     newTestDB(nil, errors.New("net error")),
+		status: http.StatusBadGateway,
+		err:    `Put "?http://example.com/testdb/foo"?: net error`,
+	})
+	tests.Add("error response", test{
+		id: "foo",
+		db: newTestDB(&http.Response{
+			StatusCode: http.StatusBadRequest,
+			Body:       io.NopCloser(strings.NewReader("")),
+		}, nil),
+		status: http.StatusBadRequest,
+		err:    "Bad Request",
+	})
+	tests.Add("invalid JSON response", test{
+		id: "foo",
+		db: newTestDB(&http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(strings.NewReader("invalid json")),
+		}, nil),
+		status: http.StatusBadGateway,
+		err:    "invalid character 'i' looking for beginning of value",
+	})
+	tests.Add("invalid document", test{
+		id:  "foo",
+		doc: make(chan int),
+		db: newTestDB(&http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(strings.NewReader("")),
+		}, nil),
+		status: http.StatusBadRequest,
+		err:    `Put "?http://example.com/testdb/foo"?: json: unsupported type: chan int`,
+	})
+	tests.Add("doc created, 1.6.1", test{
+		id:  "foo",
+		doc: map[string]string{"foo": "bar"},
+		db: newTestDB(&http.Response{
+			StatusCode: http.StatusCreated,
+			Header: http.Header{
+				"Server":         {"CouchDB/1.6.1 (Erlang OTP/17)"},
+				"Location":       {"http://localhost:5984/foo/foo"},
+				"ETag":           {`"1-4c6114c65e295552ab1019e2b046b10e"`},
+				"Date":           {"Wed, 25 Oct 2017 12:33:09 GMT"},
+				"Content-Type":   {"text/plain; charset=utf-8"},
+				"Content-Length": {"66"},
+				"Cache-Control":  {"must-revalidate"},
+			},
+			Body: io.NopCloser(strings.NewReader(`{"ok":true,"id":"foo","rev":"1-4c6114c65e295552ab1019e2b046b10e"}`)),
+		}, nil),
+		rev: "1-4c6114c65e295552ab1019e2b046b10e",
+	})
+	tests.Add("full commit", test{
+		db: newCustomDB(func(req *http.Request) (*http.Response, error) {
+			if err := consume(req.Body); err != nil {
+				return nil, err
+			}
+			if fullCommit := req.Header.Get("X-Couch-Full-Commit"); fullCommit != "true" {
+				return nil, errors.New("X-Couch-Full-Commit not true")
+			}
+			return nil, errors.New("success")
+		}),
+		id:      "foo",
+		doc:     map[string]string{"foo": "bar"},
+		options: OptionFullCommit(),
+		status:  http.StatusBadGateway,
+		err:     `Put "?http://example.com/testdb/foo"?: success`,
+	})
+	tests.Add("connection refused", func(t *testing.T) interface{} {
+		return test{
 			db: func() *db {
 				c, err := chttp.New(&http.Client{}, "http://127.0.0.1:1/", mock.NilOption)
 				if err != nil {
@@ -1075,51 +1067,45 @@ func TestPut(t *testing.T) {
 			id:     "cow",
 			doc:    map[string]interface{}{"feet": 4},
 			status: http.StatusBadGateway,
-			err:    `Put "?http://127.0.0.1:1/animals/cow"?: dial tcp ([::1]|127.0.0.1):1: (getsockopt|connect): connection refused`,
-		},
-		func() pTest {
-			db := realDB(t)
-			return pTest{
-				name: "real database, multipart attachments",
-				db:   db,
-				id:   "foo",
-				doc: map[string]interface{}{
-					"feet": 4,
-					"_attachments": &kivik.Attachments{
-						"foo.txt": &kivik.Attachment{Filename: "foo.txt", ContentType: "text/plain", Content: Body("test content")},
-					},
-				},
-				rev: "1-1e527110339245a3191b3f6cbea27ab1",
-				finish: func() error {
-					return db.client.DestroyDB(context.Background(), db.dbName, nil)
-				},
-			}
-		}(),
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			if test.finish != nil {
-				t.Cleanup(func() {
-					if err := test.finish(); err != nil {
-						t.Fatal(err)
-					}
-				})
-			}
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
-			opts := test.options
-			if opts == nil {
-				opts = mock.NilOption
-			}
-			rev, err := test.db.Put(ctx, test.id, test.doc, opts)
-			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
-				t.Error(d)
-			}
-			if rev != test.rev {
-				t.Errorf("Unexpected rev: %s", rev)
+			err:    `Put "?http://127\.0\.0\.1:1/animals/cow"?: (net/http: XMLHttpRequest failed|dial tcp (\[::1\]|127.0.0.1):1: (getsockopt|connect): connection refused)`,
+		}
+	})
+	tests.Add("real database, multipart attachments", func(t *testing.T) interface{} {
+		db := realDB(t)
+		t.Cleanup(func() {
+			if err := db.client.DestroyDB(context.Background(), db.dbName, nil); err != nil {
+				t.Fatal(err)
 			}
 		})
-	}
+
+		return test{
+			db: db,
+			id: "foo",
+			doc: map[string]interface{}{
+				"feet": 4,
+				"_attachments": &kivik.Attachments{
+					"foo.txt": &kivik.Attachment{Filename: "foo.txt", ContentType: "text/plain", Content: Body("test content")},
+				},
+			},
+			rev: "1-1e527110339245a3191b3f6cbea27ab1",
+		}
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		opts := tt.options
+		if opts == nil {
+			opts = mock.NilOption
+		}
+		rev, err := tt.db.Put(ctx, tt.id, tt.doc, opts)
+		if d := internal.StatusErrorDiffRE(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
+		if rev != tt.rev {
+			t.Errorf("Unexpected rev: %s", rev)
+		}
+	})
 }
 
 func TestDelete(t *testing.T) {

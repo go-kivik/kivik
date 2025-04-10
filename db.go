@@ -399,6 +399,46 @@ func (db *DB) Put(ctx context.Context, docID string, doc interface{}, options ..
 	return db.driverDB.Put(ctx, docID, i, multiOptions(options))
 }
 
+// Update executes an [update function] for the specified document. If the docID
+// is the empty string, the update function is executed for a null document. See
+// the CouchDB documentation for [standard updates] and [update of null documents].
+//
+// Not all backends support update functions. If the backend does not support
+// update functions, this method will return an error.
+//
+// [update function]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#updatefun
+// [standard updates]: https://docs.couchdb.org/en/stable/api/ddoc/render.html#put--db-_design-ddoc-_update-func-docid
+// [update of null documents]: https://docs.couchdb.org/en/stable/api/ddoc/render.html#post--db-_design-ddoc-_update-func
+func (db *DB) Update(ctx context.Context, ddoc, funcName, docID string, doc interface{}, options ...Option) (newRev string, err error) {
+	if db.err != nil {
+		return "", db.err
+	}
+	updateDB, ok := db.driverDB.(driver.Updater)
+	if !ok {
+		return "", errUpdateNotImplemented
+	}
+
+	if ddoc == "" {
+		return "", missingArg("ddoc")
+	}
+	if funcName == "" {
+		return "", missingArg("funcName")
+	}
+	if docID == "" {
+		return "", missingArg("docID")
+	}
+	endQuery, err := db.startQuery()
+	if err != nil {
+		return "", err
+	}
+	defer endQuery()
+	i, err := normalizeFromJSON(doc)
+	if err != nil {
+		return "", err
+	}
+	return updateDB.Update(ctx, ddoc, funcName, docID, i, multiOptions(options))
+}
+
 // Delete marks the specified document as deleted. The revision may be provided
 // via options, which takes priority over the rev argument.
 func (db *DB) Delete(ctx context.Context, docID, rev string, options ...Option) (newRev string, err error) {

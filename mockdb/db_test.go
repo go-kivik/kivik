@@ -1311,6 +1311,154 @@ func TestPut(t *testing.T) {
 	tests.Run(t, testMock)
 }
 
+func TestUpdate(t *testing.T) {
+	tests := testy.NewTable()
+	tests.Add("error", mockTest{
+		setup: func(m *Client) {
+			db := m.NewDB()
+			m.ExpectDB().WillReturn(db)
+			db.ExpectUpdate().WillReturnError(errors.New("foo err"))
+		},
+		test: func(t *testing.T, c *kivik.Client) { //nolint:thelper // Not a helper
+			_, err := c.DB("foo").Update(context.TODO(), "ddoc", "func", "foo", 123)
+			if !testy.ErrorMatches("foo err", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
+		},
+	})
+	tests.Add("delay", mockTest{
+		setup: func(m *Client) {
+			db := m.NewDB()
+			m.ExpectDB().WillReturn(db)
+			db.ExpectUpdate().WillDelay(time.Second)
+		},
+		test: func(t *testing.T, c *kivik.Client) { //nolint:thelper // Not a helper
+			_, err := c.DB("foo").Update(newCanceledContext(), "ddoc", "func", "foo", 123)
+			if !testy.ErrorMatches("context canceled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
+		},
+	})
+	tests.Add("unexpected", mockTest{
+		setup: func(m *Client) {
+			db := m.NewDB()
+			m.ExpectDB().WillReturn(db)
+		},
+		test: func(t *testing.T, c *kivik.Client) { //nolint:thelper // Not a helper
+			_, err := c.DB("foo").Update(context.TODO(), "ddoc", "func", "foo", 123)
+			if !testy.ErrorMatches("call to DB.Update() was not expected, all expectations already fulfilled", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
+		},
+	})
+	tests.Add("wrong db", mockTest{
+		setup: func(m *Client) {
+			foo := m.NewDB()
+			bar := m.NewDB()
+			m.ExpectDB().WithName("foo").WillReturn(foo)
+			m.ExpectDB().WithName("bar").WillReturn(bar)
+			bar.ExpectUpdate()
+			foo.ExpectUpdate()
+		},
+		test: func(t *testing.T, c *kivik.Client) { //nolint:thelper // Not a helper
+			foo := c.DB("foo")
+			_ = c.DB("bar")
+			_, err := foo.Update(context.TODO(), "ddoc", "func", "foo", 123)
+			if !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
+		},
+		err: "there is a remaining unmet expectation",
+	})
+	tests.Add("wrong ddoc", mockTest{
+		setup: func(m *Client) {
+			db := m.NewDB()
+			m.ExpectDB().WillReturn(db)
+			db.ExpectUpdate().WithDDocID("foo")
+		},
+		test: func(t *testing.T, c *kivik.Client) { //nolint:thelper // Not a helper
+			_, err := c.DB("foo").Update(context.TODO(), "ddoc", "func", "bar", 123)
+			if !testy.ErrorMatchesRE("has ddocID: foo", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
+		},
+		err: "there is a remaining unmet expectation",
+	})
+	tests.Add("wrong function name", mockTest{
+		setup: func(m *Client) {
+			db := m.NewDB()
+			m.ExpectDB().WillReturn(db)
+			db.ExpectUpdate().WithFuncName("foo")
+		},
+		test: func(t *testing.T, c *kivik.Client) { //nolint:thelper // Not a helper
+			_, err := c.DB("foo").Update(context.TODO(), "ddoc", "func", "bar", 123)
+			if !testy.ErrorMatchesRE("has funcName: foo", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
+		},
+		err: "there is a remaining unmet expectation",
+	})
+	tests.Add("wrong id", mockTest{
+		setup: func(m *Client) {
+			db := m.NewDB()
+			m.ExpectDB().WillReturn(db)
+			db.ExpectUpdate().WithDocID("foo")
+		},
+		test: func(t *testing.T, c *kivik.Client) { //nolint:thelper // Not a helper
+			_, err := c.DB("foo").Update(context.TODO(), "ddoc", "func", "bar", 123)
+			if !testy.ErrorMatchesRE("has docID: foo", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
+		},
+		err: "there is a remaining unmet expectation",
+	})
+	tests.Add("wrong doc", mockTest{
+		setup: func(m *Client) {
+			db := m.NewDB()
+			m.ExpectDB().WillReturn(db)
+			db.ExpectUpdate().WithDoc(map[string]string{"foo": "bar"})
+		},
+		test: func(t *testing.T, c *kivik.Client) { //nolint:thelper // Not a helper
+			_, err := c.DB("foo").Update(context.TODO(), "ddoc", "func", "foo", 123)
+			if !testy.ErrorMatchesRE("has docID: foo", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
+		},
+		err: "there is a remaining unmet expectation",
+	})
+	tests.Add("wrong options", mockTest{
+		setup: func(m *Client) {
+			db := m.NewDB()
+			m.ExpectDB().WillReturn(db)
+			db.ExpectUpdate().WithOptions(kivik.Param("foo", "bar"))
+		},
+		test: func(t *testing.T, c *kivik.Client) { //nolint:thelper // Not a helper
+			_, err := c.DB("foo").Update(context.TODO(), "ddoc", "func", "foo", 123, kivik.Param("foo", 123))
+			if !testy.ErrorMatchesRE("has docID: foo", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
+		},
+		err: "there is a remaining unmet expectation",
+	})
+	tests.Add("success", mockTest{
+		setup: func(m *Client) {
+			db := m.NewDB()
+			m.ExpectDB().WillReturn(db)
+			db.ExpectUpdate().WillReturn("oink")
+		},
+		test: func(t *testing.T, c *kivik.Client) { //nolint:thelper // Not a helper
+			result, err := c.DB("foo").Update(context.TODO(), "ddoc", "func", "foo", 123)
+			if !testy.ErrorMatchesRE("", err) {
+				t.Errorf("Unexpected error: %s", err)
+			}
+			if result != "oink" {
+				t.Errorf("Unexpected result: %s", result)
+			}
+		},
+	})
+	tests.Run(t, testMock)
+}
+
 func TestGetRev(t *testing.T) {
 	tests := testy.NewTable()
 	tests.Add("error", mockTest{

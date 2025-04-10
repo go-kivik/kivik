@@ -292,6 +292,55 @@ func (e *ExpectedPut) WithDoc(doc interface{}) *ExpectedPut {
 	return e
 }
 
+func (e *ExpectedUpdate) String() string {
+	custom := []string{}
+	if e.arg0 == "" {
+		custom = append(custom, "has any ddocID")
+	} else {
+		custom = append(custom, fmt.Sprintf("has ddocID: %s", e.arg0))
+	}
+	if e.arg1 == "" {
+		custom = append(custom, "has any funcName")
+	} else {
+		custom = append(custom, fmt.Sprintf("has funcName: %s", e.arg1))
+	}
+	if e.arg2 == "" {
+		custom = append(custom, "has any docID")
+	} else {
+		custom = append(custom, fmt.Sprintf("has docID: %s", e.arg2))
+	}
+	if e.arg3 == nil {
+		custom = append(custom, "has any doc")
+	} else {
+		custom = append(custom, fmt.Sprintf("has doc: %s", jsonDoc(e.arg3)))
+	}
+	return dbStringer("Update", &e.commonExpectation, withOptions, custom, nil)
+}
+
+// WithDDocID sets the expectation for the ddocID passed to the DB.Update() call.
+func (e *ExpectedUpdate) WithDDocID(docID string) *ExpectedUpdate {
+	e.arg0 = docID
+	return e
+}
+
+// WithFuncName sets the expectation for the funcName passed to the DB.Update() call.
+func (e *ExpectedUpdate) WithFuncName(funcName string) *ExpectedUpdate {
+	e.arg1 = funcName
+	return e
+}
+
+// WithDocID sets the expectation for the docID passed to the DB.Update() call.
+func (e *ExpectedUpdate) WithDocID(docID string) *ExpectedUpdate {
+	e.arg2 = docID
+	return e
+}
+
+// WithDoc sets the expectation for the doc passed to the DB.Update() call.
+func (e *ExpectedUpdate) WithDoc(doc interface{}) *ExpectedUpdate {
+	e.arg3 = doc
+	return e
+}
+
 func (e *ExpectedGetRev) String() string {
 	var opts []string
 	if e.arg0 == "" {

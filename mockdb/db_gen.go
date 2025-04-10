@@ -163,6 +163,26 @@ func (db *driverDB) Put(ctx context.Context, arg0 string, arg1 interface{}, opti
 	return expected.ret0, expected.wait(ctx)
 }
 
+func (db *driverDB) Update(ctx context.Context, arg0 string, arg1 string, arg2 string, arg3 interface{}, options driver.Options) (string, error) {
+	expected := &ExpectedUpdate{
+		arg0: arg0,
+		arg1: arg1,
+		arg2: arg2,
+		arg3: arg3,
+		commonExpectation: commonExpectation{
+			db:      db.DB,
+			options: options,
+		},
+	}
+	if err := db.client.nextExpectation(expected); err != nil {
+		return "", err
+	}
+	if expected.callback != nil {
+		return expected.callback(ctx, arg0, arg1, arg2, arg3, options)
+	}
+	return expected.ret0, expected.wait(ctx)
+}
+
 func (db *driverDB) ViewCleanup(ctx context.Context) error {
 	expected := &ExpectedViewCleanup{
 		commonExpectation: commonExpectation{

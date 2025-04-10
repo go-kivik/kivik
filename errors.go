@@ -32,6 +32,7 @@ const (
 	errConfigNotImplemented      = internal.CompositeError("501 driver does not support Config interface")
 	errReplicationNotImplemented = internal.CompositeError("501 driver does not support replication")
 	errNoAttachments             = internal.CompositeError("404 no attachments")
+	errUpdateNotImplemented      = internal.CompositeError("501 driver does not support Update interface")
 )
 
 // HTTPStatus returns the HTTP status code embedded in the error, or 500

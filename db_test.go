@@ -1632,7 +1632,7 @@ func TestNormalizeFromJSON(t *testing.T) {
 
 func TestPut(t *testing.T) {
 	putFunc := func(_ context.Context, docID string, doc interface{}, options driver.Options) (string, error) {
-		expectedDocID := "foo"
+		const expectedDocID = "foo"
 		expectedDoc := map[string]interface{}{"foo": "bar"}
 		if expectedDocID != docID {
 			return "", fmt.Errorf("Unexpected docID: %s", docID)
@@ -1765,8 +1765,143 @@ func TestPut(t *testing.T) {
 		status: http.StatusInternalServerError,
 		err:    "db error",
 	})
+
 	tests.Run(t, func(t *testing.T, tt test) {
 		newRev, err := tt.db.Put(context.Background(), tt.docID, tt.input, tt.options)
+		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
+			t.Error(d)
+		}
+		if newRev != tt.newRev {
+			t.Errorf("Unexpected new rev: %s", newRev)
+		}
+	})
+}
+
+func TestUpdate(t *testing.T) {
+	updateFunc := func(_ context.Context, ddocID, funcName, docID string, doc interface{}, options driver.Options) (string, error) {
+		const (
+			wantDDocID   = "ddoc"
+			wantFuncName = "func"
+			wantDocID    = "foo"
+		)
+		if wantDDocID != ddocID {
+			return "", fmt.Errorf("Unexpected ddocID: %s", ddocID)
+		}
+		if wantFuncName != funcName {
+			return "", fmt.Errorf("Unexpected funcName: %s", funcName)
+		}
+		if wantDocID != docID {
+			return "", fmt.Errorf("Unexpected docID: %s", docID)
+		}
+		expectedDoc := map[string]interface{}{"foo": "bar"}
+		if d := testy.DiffAsJSON(expectedDoc, doc); d != nil {
+			return "", fmt.Errorf("Unexpected doc: %s", d)
+		}
+		gotOpts := map[string]interface{}{}
+		options.Apply(gotOpts)
+		if d := testy.DiffInterface(testOptions, gotOpts); d != nil {
+			return "", fmt.Errorf("Unexpected opts: %s", d)
+		}
+		return "1-xxx", nil
+	}
+
+	type test struct {
+		db                      *DB
+		ddocID, funcName, docID string
+		input                   interface{}
+		options                 Option
+		status                  int
+		err                     string
+		newRev                  string
+	}
+
+	tests := testy.NewTable()
+	tests.Add("update not supported", test{
+		db: &DB{
+			client: &Client{},
+		},
+		err:    "kivik: driver does not support Update interface",
+		status: http.StatusNotImplemented,
+	})
+	tests.Add("no ddocID", test{
+		db: &DB{
+			client:   &Client{},
+			driverDB: &mock.Updater{},
+		},
+		status: http.StatusBadRequest,
+		err:    "kivik: ddoc required",
+	})
+	tests.Add("no funcName", test{
+		db: &DB{
+			client:   &Client{},
+			driverDB: &mock.Updater{},
+		},
+		ddocID: "foo",
+		status: http.StatusBadRequest,
+		err:    "kivik: funcName required",
+	})
+	tests.Add("no docID", test{
+		db: &DB{
+			client:   &Client{},
+			driverDB: &mock.Updater{},
+		},
+		ddocID:   "foo",
+		funcName: "bar",
+		status:   http.StatusBadRequest,
+		err:      "kivik: docID required",
+	})
+	tests.Add("error", test{
+		db: &DB{
+			client: &Client{},
+			driverDB: &mock.Updater{
+				UpdateFunc: func(context.Context, string, string, string, interface{}, driver.Options) (string, error) {
+					return "", &internal.Error{Status: http.StatusBadRequest, Err: errors.New("db error")}
+				},
+			},
+		},
+		ddocID:   "ddoc",
+		funcName: "bar",
+		docID:    "foo",
+		status:   http.StatusBadRequest,
+		err:      "db error",
+	})
+	tests.Add("Interface", test{
+		db: &DB{
+			client: &Client{},
+			driverDB: &mock.Updater{
+				UpdateFunc: updateFunc,
+			},
+		},
+		ddocID:   "ddoc",
+		funcName: "func",
+		docID:    "foo",
+		input:    map[string]interface{}{"foo": "bar"},
+		options:  Params(testOptions),
+		newRev:   "1-xxx",
+	})
+	tests.Add("client closed", test{
+		db: &DB{
+			client: &Client{
+				closed: true,
+			},
+			driverDB: &mock.Updater{},
+		},
+		ddocID:   "ddoc",
+		funcName: "func",
+		docID:    "foo",
+		status:   http.StatusServiceUnavailable,
+		err:      "kivik: client closed",
+	})
+	tests.Add("db error", test{
+		db: &DB{
+			err: errors.New("db error"),
+		},
+		status: http.StatusInternalServerError,
+		err:    "db error",
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		newRev, err := tt.db.Update(context.Background(), tt.ddocID, tt.funcName, tt.docID, tt.input, tt.options)
 		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
 			t.Error(d)
 		}

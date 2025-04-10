@@ -50,6 +50,7 @@ var (
 	_ driver.RevGetter            = &db{}
 	_ driver.AttachmentMetaGetter = &db{}
 	_ driver.PartitionedDB        = &db{}
+	_ driver.Updater              = &db{}
 )
 
 func (d *db) path(path string) string {
@@ -563,6 +564,29 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 		Rev string `json:"rev"`
 	}
 	err = d.Client.DoJSON(ctx, http.MethodPut, d.path(chttp.EncodeDocID(docID)), opts, &result)
+	if err != nil {
+		return "", err
+	}
+	return result.Rev, nil
+}
+
+func (d *db) Update(ctx context.Context, ddoc, funcName, docID string, doc interface{}, options driver.Options) (string, error) {
+	opts, err := putOpts(doc, options)
+	if err != nil {
+		return "", err
+	}
+	var result struct {
+		ID  string `json:"id"`
+		Rev string `json:"rev"`
+	}
+	pathParts := make([]string, 0, 5)
+	pathParts = append(pathParts, "_design", chttp.EncodeDocID(ddoc), "_update", chttp.EncodeDocID(funcName))
+	method := http.MethodPost
+	if docID != "" {
+		method = http.MethodPut
+		pathParts = append(pathParts, chttp.EncodeDocID(docID))
+	}
+	err = d.Client.DoJSON(ctx, method, d.path(filepath.Join(pathParts...)), opts, &result)
 	if err != nil {
 		return "", err
 	}

@@ -103,6 +103,7 @@ type fullDB interface {
 	driver.PartitionedDB
 	driver.SecurityDB
 	driver.OpenRever
+	driver.Updater
 }
 
 func db() error {

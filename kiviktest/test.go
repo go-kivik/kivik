@@ -17,6 +17,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -489,21 +490,16 @@ func startCouchDB(t *testing.T, image string) string { //nolint:thelper // Not a
 	}
 	dsn := fmt.Sprintf("http://admin:abc123@%s:%s", ip, mappedPort.Port())
 	for _, db := range []string{"_replicator", "_users", "_global_changes"} {
-		rq, err := http.NewRequest(http.MethodPut, dsn+"/"+db, nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		rq.Header.Set("Content-Type", "application/json")
-		resp, err := http.DefaultClient.Do(rq)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer resp.Body.Close()
-		if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusPreconditionFailed {
-			t.Fatalf("Failed to create %s: %s", db, resp.Status)
-		}
+		put(t, dsn+"/"+db, nil)
 	}
-	rq, err := http.NewRequest(http.MethodPut, dsn+"/_node/nonode@nohost/_config/replicator/interval", strings.NewReader(`"1000"`))
+	put(t, dsn+"/_node/nonode@nohost/_config/replicator/interval", strings.NewReader(`"1000"`))
+	put(t, dsn+"/_node/nonode@nohost/_config/replicator/worker_processes", strings.NewReader(`"1"`))
+	return dsn
+}
+
+func put(t *testing.T, path string, body io.Reader) {
+	t.Helper()
+	rq, err := http.NewRequest(http.MethodPut, path, body)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -513,21 +509,9 @@ func startCouchDB(t *testing.T, image string) string { //nolint:thelper // Not a
 		t.Fatal(err)
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("Failed to set replicator interval: %s", resp.Status)
+	switch resp.StatusCode {
+	case http.StatusOK, http.StatusCreated, http.StatusPreconditionFailed:
+		return
 	}
-	rq, err = http.NewRequest(http.MethodPut, dsn+"/_node/nonode@nohost/_config/replicator/worker_processes", strings.NewReader(`"1"`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	rq.Header.Set("Content-Type", "application/json")
-	resp, err = http.DefaultClient.Do(rq)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("Failed to set replicator worker_processes: %s", resp.Status)
-	}
-	return dsn
+	t.Fatalf("Failed to create %s: %s", path, resp.Status)
 }

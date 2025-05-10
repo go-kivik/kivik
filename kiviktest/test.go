@@ -24,6 +24,10 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
+
+	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/wait"
 
 	"github.com/go-kivik/kivik/v4"
 	_ "github.com/go-kivik/kivik/v4/kiviktest/client" // Tests
@@ -428,13 +432,15 @@ func ConnectClients(t *testing.T, driverName, dsn string, opts kivik.Option) (*k
 }
 
 // DoTest runs a suite of tests.
-func DoTest(t *testing.T, suite, envName string) { //nolint:thelper // Not a helper
+func DoTest(t *testing.T, suite, _ string) { //nolint:thelper // Not a helper
 	opts, _ := suites[suite].Interface(t, "Options").(kivik.Option)
 
-	dsn := os.Getenv(envName)
-	if dsn == "" {
-		t.Skipf("%s: %s DSN not set; skipping tests", envName, suite)
+	image := imageMap[suite]
+	if image == "" {
+		t.Fatalf("docker image not set for %s", suite)
 	}
+	dsn := startCouchDB(t, image)
+
 	clients, err := ConnectClients(t, driverMap[suite], dsn, opts)
 	if err != nil {
 		t.Errorf("Failed to connect to %s: %s\n", suite, err)
@@ -442,4 +448,86 @@ func DoTest(t *testing.T, suite, envName string) { //nolint:thelper // Not a hel
 	}
 	clients.RW = true
 	RunTestsInternal(clients, suite)
+}
+
+var imageMap = map[string]string{
+	SuiteCouch22: "couchdb:2.2.0",
+	SuiteCouch23: "couchdb:2.3.1",
+	SuiteCouch30: "couchdb:3.0.1",
+	SuiteCouch31: "couchdb:3.1.2",
+	SuiteCouch32: "couchdb:3.2.3",
+	SuiteCouch33: "couchdb:3.3.3",
+}
+
+func startCouchDB(t *testing.T, image string) string { //nolint:thelper // Not a helper
+	if os.Getenv("USETC") == "" {
+		t.Skip("USETC not set, skipping testcontainers")
+	}
+	req := testcontainers.ContainerRequest{
+		Image:        image,
+		ExposedPorts: []string{"5984/tcp"},
+		WaitingFor:   wait.ForHTTP("/").WithPort("5984/tcp").WithStartupTimeout(120 * time.Second),
+		Env: map[string]string{
+			"COUCHDB_USER":     "admin",
+			"COUCHDB_PASSWORD": "abc123",
+		},
+	}
+	container, err := testcontainers.GenericContainer(context.TODO(), testcontainers.GenericContainerRequest{
+		ContainerRequest: req,
+		Started:          true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ip, err := container.Host(context.TODO())
+	if err != nil {
+		t.Fatal(err)
+	}
+	mappedPort, err := container.MappedPort(context.TODO(), "5984/tcp")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dsn := fmt.Sprintf("http://admin:abc123@%s:%s", ip, mappedPort.Port())
+	for _, db := range []string{"_replicator", "_users", "_global_changes"} {
+		rq, err := http.NewRequest(http.MethodPut, dsn+"/"+db, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		rq.Header.Set("Content-Type", "application/json")
+		resp, err := http.DefaultClient.Do(rq)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusPreconditionFailed {
+			t.Fatalf("Failed to create %s: %s", db, resp.Status)
+		}
+	}
+	rq, err := http.NewRequest(http.MethodPut, dsn+"/_node/nonode@nohost/_config/replicator/interval", strings.NewReader(`"1000"`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	rq.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(rq)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("Failed to set replicator interval: %s", resp.Status)
+	}
+	rq, err = http.NewRequest(http.MethodPut, dsn+"/_node/nonode@nohost/_config/replicator/worker_processes", strings.NewReader(`"1"`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	rq.Header.Set("Content-Type", "application/json")
+	resp, err = http.DefaultClient.Do(rq)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("Failed to set replicator worker_processes: %s", resp.Status)
+	}
+	return dsn
 }

@@ -17,7 +17,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -25,10 +24,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
-	"time"
-
-	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/wait"
 
 	"github.com/go-kivik/kivik/v4"
 	_ "github.com/go-kivik/kivik/v4/kiviktest/client" // Tests
@@ -458,60 +453,4 @@ var imageMap = map[string]string{
 	SuiteCouch31: "couchdb:3.1.2",
 	SuiteCouch32: "couchdb:3.2.3",
 	SuiteCouch33: "couchdb:3.3.3",
-}
-
-func startCouchDB(t *testing.T, image string) string { //nolint:thelper // Not a helper
-	if os.Getenv("USETC") == "" {
-		t.Skip("USETC not set, skipping testcontainers")
-	}
-	req := testcontainers.ContainerRequest{
-		Image:        image,
-		ExposedPorts: []string{"5984/tcp"},
-		WaitingFor:   wait.ForHTTP("/").WithPort("5984/tcp").WithStartupTimeout(120 * time.Second),
-		Env: map[string]string{
-			"COUCHDB_USER":     "admin",
-			"COUCHDB_PASSWORD": "abc123",
-		},
-	}
-	container, err := testcontainers.GenericContainer(context.TODO(), testcontainers.GenericContainerRequest{
-		ContainerRequest: req,
-		Started:          true,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	ip, err := container.Host(context.TODO())
-	if err != nil {
-		t.Fatal(err)
-	}
-	mappedPort, err := container.MappedPort(context.TODO(), "5984/tcp")
-	if err != nil {
-		t.Fatal(err)
-	}
-	dsn := fmt.Sprintf("http://admin:abc123@%s:%s", ip, mappedPort.Port())
-	for _, db := range []string{"_replicator", "_users", "_global_changes"} {
-		put(t, dsn+"/"+db, nil)
-	}
-	put(t, dsn+"/_node/nonode@nohost/_config/replicator/interval", strings.NewReader(`"1000"`))
-	put(t, dsn+"/_node/nonode@nohost/_config/replicator/worker_processes", strings.NewReader(`"1"`))
-	return dsn
-}
-
-func put(t *testing.T, path string, body io.Reader) {
-	t.Helper()
-	rq, err := http.NewRequest(http.MethodPut, path, body)
-	if err != nil {
-		t.Fatal(err)
-	}
-	rq.Header.Set("Content-Type", "application/json")
-	resp, err := http.DefaultClient.Do(rq)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer resp.Body.Close()
-	switch resp.StatusCode {
-	case http.StatusOK, http.StatusCreated, http.StatusPreconditionFailed:
-		return
-	}
-	t.Fatalf("Failed to create %s: %s", path, resp.Status)
 }

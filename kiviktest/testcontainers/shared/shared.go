@@ -12,6 +12,8 @@
 
 //go:build !js
 
+// Package shared provides shared functionality for testcontainers run directly,
+// or via web service.
 package shared
 
 import (

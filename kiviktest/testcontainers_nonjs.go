@@ -15,6 +15,7 @@
 package kiviktest
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -26,7 +27,7 @@ func startCouchDB(t *testing.T, image string) string { //nolint:thelper // Not a
 		t.Skip("USETC not set, skipping testcontainers")
 	}
 
-	dsn, err := shared.StartCouchDB(t.Context(), image)
+	dsn, err := shared.StartCouchDB(context.TODO(), image)
 	if err != nil {
 		t.Fatal(err)
 	}

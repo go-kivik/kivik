@@ -1073,7 +1073,7 @@ func TestPut(t *testing.T) {
 	tests.Add("real database, multipart attachments", func(t *testing.T) interface{} {
 		db := realDB(t)
 		t.Cleanup(func() {
-			if err := db.client.DestroyDB(context.Background(), db.dbName, nil); err != nil {
+			if err := db.DestroyDB(context.Background(), db.dbName, nil); err != nil {
 				t.Fatal(err)
 			}
 		})

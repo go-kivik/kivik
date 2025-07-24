@@ -73,7 +73,7 @@ func TestNewClient(t *testing.T) {
 			if !ok {
 				t.Errorf("Unexpected type returned: %t", result)
 			}
-			if d := testy.DiffInterface(test.expectedUA, client.Client.UserAgents); d != nil {
+			if d := testy.DiffInterface(test.expectedUA, client.UserAgents); d != nil {
 				t.Error(d)
 			}
 		})
@@ -85,7 +85,7 @@ func TestNewClient(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if c.(*client).Client.Timeout != time.Millisecond {
+		if c.(*client).Timeout != time.Millisecond {
 			t.Error("Unexpected *http.Client returned")
 		}
 	})

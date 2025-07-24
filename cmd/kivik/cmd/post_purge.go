@@ -38,7 +38,7 @@ func postPurgeRootCmd(r *root) *cobra.Command {
 		RunE:    c.RunE,
 	}
 
-	c.Input.ConfigFlags(cmd.PersistentFlags())
+	c.ConfigFlags(cmd.PersistentFlags())
 
 	pf := cmd.PersistentFlags()
 	pf.StringSliceVarP(&c.revs, "revs", "R", nil, "List of revisions to purge")

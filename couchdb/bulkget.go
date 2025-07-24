@@ -39,7 +39,7 @@ func (d *db) BulkGet(ctx context.Context, docs []driver.BulkGetReference, option
 			chttp.HeaderIdempotencyKey: []string{},
 		},
 	}
-	resp, err := d.Client.DoReq(ctx, http.MethodPost, d.path("_bulk_get"), chttpOpts)
+	resp, err := d.DoReq(ctx, http.MethodPost, d.path("_bulk_get"), chttpOpts)
 	if err != nil {
 		return nil, err
 	}

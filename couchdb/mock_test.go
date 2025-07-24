@@ -68,7 +68,7 @@ func newTestClient(response *http.Response, err error) *client {
 
 func newCustomClient(fn func(*http.Request) (*http.Response, error)) *client {
 	chttpClient, _ := chttp.New(&http.Client{}, "http://example.com/", OptionNoRequestCompression())
-	chttpClient.Client.Transport = customTransport(fn)
+	chttpClient.Transport = customTransport(fn)
 	return &client{
 		Client: chttpClient,
 	}

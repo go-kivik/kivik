@@ -214,7 +214,7 @@ func isBug1000(err error) bool {
 func (r *schedulerReplication) update(ctx context.Context) error {
 	path := fmt.Sprintf("/_scheduler/docs/%s/%s", r.database, chttp.EncodeDocID(r.docID))
 	var doc schedulerDoc
-	if err := r.db.Client.DoJSON(ctx, http.MethodGet, path, nil, &doc); err != nil {
+	if err := r.DoJSON(ctx, http.MethodGet, path, nil, &doc); err != nil {
 		if isBug1000(err) {
 			return r.update(ctx)
 		}

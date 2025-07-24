@@ -78,8 +78,8 @@ func newResultSet(ctx context.Context, onClose func(), rowsi driver.Rows) *Resul
 // read, the [ResultSet.Close] is called implicitly, negating the need to call
 // it explicitly.
 func (r *ResultSet) Next() bool {
-	r.iter.mu.Lock()
-	defer r.iter.mu.Unlock()
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	if r.err != nil {
 		return false
 	}
@@ -87,7 +87,7 @@ func (r *ResultSet) Next() bool {
 		_ = atts.Close()
 	}
 
-	return r.iter.next()
+	return r.next()
 }
 
 // NextResultSet prepares the next result set for reading. It returns false if
@@ -471,7 +471,7 @@ func (r *Row) ScanDoc(dest interface{}) error {
 func (r *ResultSet) Iterator() func(yield func(*Row, error) bool) {
 	return func(yield func(*Row, error) bool) {
 		for r.Next() {
-			row := r.iter.curVal.(*driver.Row)
+			row := r.curVal.(*driver.Row)
 			if !yield(&Row{dRow: row}, nil) {
 				_ = r.Close()
 				return

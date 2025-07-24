@@ -121,7 +121,7 @@ func (d *db) rowsQuery(ctx context.Context, path string, options driver.Options)
 			chttp.HeaderIdempotencyKey: []string{},
 		}
 	}
-	resp, err := d.Client.DoReq(ctx, method, d.path(path), chttpOpts)
+	resp, err := d.DoReq(ctx, method, d.path(path), chttpOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -486,7 +486,7 @@ func (d *db) get(ctx context.Context, method, docID string, options driver.Optio
 	if getOpts.noMultipartGet {
 		chttpOpts.Accept = typeJSON
 	}
-	resp, err := d.Client.DoReq(ctx, method, d.path(chttp.EncodeDocID(docID)), chttpOpts)
+	resp, err := d.DoReq(ctx, method, d.path(chttp.EncodeDocID(docID)), chttpOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -516,7 +516,7 @@ func (d *db) CreateDoc(ctx context.Context, doc interface{}, options driver.Opti
 
 	chttpOpts.Body = chttp.EncodeBody(doc)
 
-	err = d.Client.DoJSON(ctx, http.MethodPost, path, chttpOpts, &result)
+	err = d.DoJSON(ctx, http.MethodPost, path, chttpOpts, &result)
 	return result.ID, result.Rev, err
 }
 
@@ -563,7 +563,7 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 		ID  string `json:"id"`
 		Rev string `json:"rev"`
 	}
-	err = d.Client.DoJSON(ctx, http.MethodPut, d.path(chttp.EncodeDocID(docID)), opts, &result)
+	err = d.DoJSON(ctx, http.MethodPut, d.path(chttp.EncodeDocID(docID)), opts, &result)
 	if err != nil {
 		return "", err
 	}
@@ -586,7 +586,7 @@ func (d *db) Update(ctx context.Context, ddoc, funcName, docID string, doc inter
 		method = http.MethodPut
 		pathParts = append(pathParts, chttp.EncodeDocID(docID))
 	}
-	err = d.Client.DoJSON(ctx, method, d.path(filepath.Join(pathParts...)), opts, &result)
+	err = d.DoJSON(ctx, method, d.path(filepath.Join(pathParts...)), opts, &result)
 	if err != nil {
 		return "", err
 	}
@@ -950,7 +950,7 @@ func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (
 		return "", err
 	}
 
-	resp, err := d.Client.DoReq(ctx, http.MethodDelete, d.path(chttp.EncodeDocID(docID)), chttpOpts)
+	resp, err := d.DoReq(ctx, http.MethodDelete, d.path(chttp.EncodeDocID(docID)), chttpOpts)
 	if err != nil {
 		return "", err
 	}
@@ -967,7 +967,7 @@ func (d *db) Flush(ctx context.Context) error {
 			chttp.HeaderIdempotencyKey: []string{},
 		},
 	}
-	_, err := d.Client.DoError(ctx, http.MethodPost, d.path("/_ensure_full_commit"), opts)
+	_, err := d.DoError(ctx, http.MethodPost, d.path("/_ensure_full_commit"), opts)
 	return err
 }
 
@@ -977,7 +977,7 @@ func (d *db) Compact(ctx context.Context) error {
 			chttp.HeaderIdempotencyKey: []string{},
 		},
 	}
-	res, err := d.Client.DoReq(ctx, http.MethodPost, d.path("/_compact"), opts)
+	res, err := d.DoReq(ctx, http.MethodPost, d.path("/_compact"), opts)
 	if err != nil {
 		return err
 	}
@@ -994,7 +994,7 @@ func (d *db) CompactView(ctx context.Context, ddocID string) error {
 			chttp.HeaderIdempotencyKey: []string{},
 		},
 	}
-	res, err := d.Client.DoReq(ctx, http.MethodPost, d.path("/_compact/"+ddocID), opts)
+	res, err := d.DoReq(ctx, http.MethodPost, d.path("/_compact/"+ddocID), opts)
 	if err != nil {
 		return err
 	}
@@ -1008,7 +1008,7 @@ func (d *db) ViewCleanup(ctx context.Context) error {
 			chttp.HeaderIdempotencyKey: []string{},
 		},
 	}
-	res, err := d.Client.DoReq(ctx, http.MethodPost, d.path("/_view_cleanup"), opts)
+	res, err := d.DoReq(ctx, http.MethodPost, d.path("/_view_cleanup"), opts)
 	if err != nil {
 		return err
 	}
@@ -1018,7 +1018,7 @@ func (d *db) ViewCleanup(ctx context.Context) error {
 
 func (d *db) Security(ctx context.Context) (*driver.Security, error) {
 	var sec *driver.Security
-	err := d.Client.DoJSON(ctx, http.MethodGet, d.path("/_security"), nil, &sec)
+	err := d.DoJSON(ctx, http.MethodGet, d.path("/_security"), nil, &sec)
 	return sec, err
 }
 
@@ -1029,7 +1029,7 @@ func (d *db) SetSecurity(ctx context.Context, security *driver.Security) error {
 			chttp.HeaderIdempotencyKey: []string{},
 		},
 	}
-	res, err := d.Client.DoReq(ctx, http.MethodPut, d.path("/_security"), opts)
+	res, err := d.DoReq(ctx, http.MethodPut, d.path("/_security"), opts)
 	if err != nil {
 		return err
 	}
@@ -1056,7 +1056,7 @@ func (d *db) Copy(ctx context.Context, targetID, sourceID string, options driver
 		chttp.HeaderDestination: []string{targetID},
 	}
 
-	resp, err := d.Client.DoReq(ctx, "COPY", d.path(chttp.EncodeDocID(sourceID)), chttpOpts)
+	resp, err := d.DoReq(ctx, "COPY", d.path(chttp.EncodeDocID(sourceID)), chttpOpts)
 	if err != nil {
 		return "", err
 	}
@@ -1075,7 +1075,7 @@ func (d *db) Purge(ctx context.Context, docMap map[string][]string) (*driver.Pur
 			chttp.HeaderIdempotencyKey: []string{},
 		},
 	}
-	err := d.Client.DoJSON(ctx, http.MethodPost, d.path("_purge"), options, &result)
+	err := d.DoJSON(ctx, http.MethodPost, d.path("_purge"), options, &result)
 	return result, err
 }
 
@@ -1088,7 +1088,7 @@ func (d *db) RevsDiff(ctx context.Context, revMap interface{}) (driver.Rows, err
 			chttp.HeaderIdempotencyKey: []string{},
 		},
 	}
-	resp, err := d.Client.DoReq(ctx, http.MethodPost, d.path("_revs_diff"), options)
+	resp, err := d.DoReq(ctx, http.MethodPost, d.path("_revs_diff"), options)
 	if err != nil {
 		return nil, err
 	}

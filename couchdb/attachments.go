@@ -50,7 +50,7 @@ func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attach
 	chttpOpts.Body = att.Content
 	chttpOpts.ContentType = att.ContentType
 	chttpOpts.Query = query
-	err = d.Client.DoJSON(ctx, http.MethodPut, d.path(chttp.EncodeDocID(docID)+"/"+att.Filename), chttpOpts, &response)
+	err = d.DoJSON(ctx, http.MethodPut, d.path(chttp.EncodeDocID(docID)+"/"+att.Filename), chttpOpts, &response)
 	if err != nil {
 		return "", err
 	}
@@ -93,7 +93,7 @@ func (d *db) fetchAttachment(ctx context.Context, method, docID, filename string
 	if err != nil {
 		return nil, err
 	}
-	resp, err := d.Client.DoReq(ctx, method, d.path(chttp.EncodeDocID(docID)+"/"+filename), chttpOpts)
+	resp, err := d.DoReq(ctx, method, d.path(chttp.EncodeDocID(docID)+"/"+filename), chttpOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +157,7 @@ func (d *db) DeleteAttachment(ctx context.Context, docID, filename string, optio
 		Rev string `json:"rev"`
 	}
 
-	err = d.Client.DoJSON(ctx, http.MethodDelete, d.path(chttp.EncodeDocID(docID)+"/"+filename), chttpOpts, &response)
+	err = d.DoJSON(ctx, http.MethodDelete, d.path(chttp.EncodeDocID(docID)+"/"+filename), chttpOpts, &response)
 	if err != nil {
 		return "", err
 	}

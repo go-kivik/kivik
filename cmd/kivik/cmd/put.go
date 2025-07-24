@@ -44,7 +44,7 @@ func putCmd(r *root) *cobra.Command {
 		RunE:  c.RunE,
 	}
 
-	c.Input.ConfigFlags(cmd.PersistentFlags())
+	c.ConfigFlags(cmd.PersistentFlags())
 
 	cmd.AddCommand(c.db)
 	cmd.AddCommand(c.doc)

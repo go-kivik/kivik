@@ -229,7 +229,7 @@ func (u *emptyUpdates) Next(*driver.DBUpdate) error { return io.EOF }
 func (u *emptyUpdates) LastSeq() (string, error)    { return u.Lastseq, nil }
 
 func (u *couchUpdates) Next(update *driver.DBUpdate) error {
-	return u.iter.next(update)
+	return u.next(update)
 }
 
 func (u *couchUpdates) LastSeq() (string, error) {

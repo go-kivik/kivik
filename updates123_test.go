@@ -90,7 +90,7 @@ func TestDBUpdatesIteratorBreak(t *testing.T) {
 		break
 	}
 
-	if updates.iter.state != stateClosed {
+	if updates.state != stateClosed {
 		t.Errorf("Expected iterator to be closed")
 	}
 }

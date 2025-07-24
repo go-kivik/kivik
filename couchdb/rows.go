@@ -171,7 +171,7 @@ func (r *rows) UpdateSeq() string {
 
 func (r *rows) Next(row *driver.Row) error {
 	row.Error = nil
-	return r.iter.next(row)
+	return r.next(row)
 }
 
 // parseMeta parses result metadata
@@ -264,7 +264,7 @@ func (r *multiQueriesRows) begin() error {
 			Closer: r.r,
 		}
 		r.rows = newRows(r.ctx, in).(*rows)
-		r.rows.body = nil
+		r.body = nil
 		r.rows.dec = json.NewDecoder(in)
 		return r.rows.begin()
 	}
@@ -273,9 +273,9 @@ func (r *multiQueriesRows) begin() error {
 		return err
 	}
 	r.rows = newRows(r.ctx, r.r).(*rows)
-	r.rows.body = nil
-	r.rows.iter.dec = r.dec
-	return r.rows.iter.begin()
+	r.body = nil
+	r.iter.dec = r.dec
+	return r.iter.begin()
 }
 
 func (r *multiQueriesRows) nextQuery() error {
@@ -286,8 +286,8 @@ func (r *multiQueriesRows) nextQuery() error {
 		return io.EOF
 	}
 	rows := newRows(r.ctx, r.r).(*rows)
-	rows.iter.dec = r.dec
-	if err := rows.iter.begin(); err != nil {
+	rows.dec = r.dec
+	if err := rows.begin(); err != nil {
 		var ud unexpectedDelim
 		if errors.As(err, &ud); ud == unexpectedDelim(']') {
 			if err := r.Close(); err != nil {
@@ -299,7 +299,7 @@ func (r *multiQueriesRows) nextQuery() error {
 	}
 	r.queryIndex++
 	r.rows = rows
-	r.rows.body = nil
+	r.body = nil
 	return nil
 }
 

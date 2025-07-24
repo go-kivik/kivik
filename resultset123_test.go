@@ -100,7 +100,7 @@ func TestResultSetIteratorBreak(t *testing.T) {
 		}
 		break
 	}
-	if r.iter.state != stateClosed {
+	if r.state != stateClosed {
 		t.Errorf("Expected iterator to be closed")
 	}
 }
@@ -159,7 +159,7 @@ func TestResultSetNextIteratorBreak(t *testing.T) {
 		break
 	}
 
-	if r.iter.state != stateClosed {
+	if r.state != stateClosed {
 		t.Errorf("Expected iterator to be closed")
 	}
 }

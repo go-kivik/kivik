@@ -168,7 +168,7 @@ func TestAuthenticate(t *testing.T) {
 			t.Fatal(err)
 		}
 		if test.jar != nil {
-			c.Client.Jar = test.jar
+			c.Jar = test.jar
 		}
 		_, err = c.DoError(ctx, "GET", "/foo", nil)
 		if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {

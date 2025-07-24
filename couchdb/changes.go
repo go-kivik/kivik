@@ -50,7 +50,7 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 		return nil, err
 	}
 
-	resp, err := d.Client.DoReq(ctx, http.MethodPost, d.path("_changes"), chttpOpts)
+	resp, err := d.DoReq(ctx, http.MethodPost, d.path("_changes"), chttpOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ type change struct {
 
 func (r *changesRows) Next(row *driver.Change) error {
 	row.Deleted = false
-	return r.iter.next(row)
+	return r.next(row)
 }
 
 // LastSeq returns the last sequence ID.

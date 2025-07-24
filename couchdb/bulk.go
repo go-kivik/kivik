@@ -30,7 +30,7 @@ func (d *db) BulkDocs(ctx context.Context, docs []interface{}, options driver.Op
 	opts["docs"] = docs
 	chttpOpts.GetBody = chttp.BodyEncoder(opts)
 
-	resp, err := d.Client.DoReq(ctx, http.MethodPost, d.path("/_bulk_docs"), chttpOpts)
+	resp, err := d.DoReq(ctx, http.MethodPost, d.path("/_bulk_docs"), chttpOpts)
 	if err != nil {
 		return nil, err
 	}

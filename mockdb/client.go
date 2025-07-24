@@ -58,31 +58,31 @@ type driverReplication struct {
 var _ driver.Replication = &driverReplication{}
 
 func (r *driverReplication) ReplicationID() string {
-	return r.Replication.id
+	return r.id
 }
 
 func (r *driverReplication) Source() string {
-	return r.Replication.source
+	return r.source
 }
 
 func (r *driverReplication) Target() string {
-	return r.Replication.target
+	return r.target
 }
 
 func (r *driverReplication) StartTime() time.Time {
-	return r.Replication.startTime
+	return r.startTime
 }
 
 func (r *driverReplication) EndTime() time.Time {
-	return r.Replication.endTime
+	return r.endTime
 }
 
 func (r *driverReplication) State() string {
-	return r.Replication.state
+	return r.state
 }
 
 func (r *driverReplication) Err() error {
-	return r.Replication.err
+	return r.err
 }
 
 func (r *driverReplication) Delete(context.Context) error {

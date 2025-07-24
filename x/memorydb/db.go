@@ -41,7 +41,7 @@ func (d *db) Query(context.Context, string, string, driver.Options) (driver.Rows
 }
 
 func (d *db) Get(ctx context.Context, docID string, options driver.Options) (*driver.Document, error) {
-	if exists, _ := d.client.DBExists(ctx, d.dbName, nil); !exists {
+	if exists, _ := d.DBExists(ctx, d.dbName, nil); !exists {
 		return nil, statusError{status: http.StatusPreconditionFailed, error: errors.New("database does not exist")}
 	}
 	if !d.db.docExists(docID) {
@@ -69,7 +69,7 @@ func (d *db) Get(ctx context.Context, docID string, options driver.Options) (*dr
 }
 
 func (d *db) Put(ctx context.Context, docID string, doc interface{}, _ driver.Options) (rev string, err error) {
-	if exists, _ := d.client.DBExists(ctx, d.dbName, nil); !exists {
+	if exists, _ := d.DBExists(ctx, d.dbName, nil); !exists {
 		return "", statusError{status: http.StatusPreconditionFailed, error: errors.New("database does not exist")}
 	}
 	isLocal := strings.HasPrefix(docID, "_local/")
@@ -105,7 +105,7 @@ func validRev(rev string) bool {
 }
 
 func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (newRev string, err error) {
-	if exists, _ := d.client.DBExists(ctx, d.dbName, kivik.Params(nil)); !exists {
+	if exists, _ := d.DBExists(ctx, d.dbName, kivik.Params(nil)); !exists {
 		return "", statusError{status: http.StatusPreconditionFailed, error: errors.New("database does not exist")}
 	}
 	opts := map[string]interface{}{}

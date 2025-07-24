@@ -49,7 +49,7 @@ func postCmd(r *root) *cobra.Command {
 		RunE:  c.RunE,
 	}
 
-	c.Input.ConfigFlags(cmd.PersistentFlags())
+	c.ConfigFlags(cmd.PersistentFlags())
 
 	cmd.AddCommand(c.doc)
 	cmd.AddCommand(c.vc)

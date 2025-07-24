@@ -95,7 +95,7 @@ func TestNew(t *testing.T) {
 			client:    c,
 			transport: http.DefaultTransport,
 		}
-		c.Client.Transport = auth
+		c.Transport = auth
 
 		return tt{
 			dsn:      authDSN.String(),
@@ -134,7 +134,7 @@ func TestNew(t *testing.T) {
 			client:    c,
 			transport: http.DefaultTransport,
 		}
-		c.Client.Transport = auth
+		c.Transport = auth
 
 		return tt{
 			dsn:      authDSN.String(),

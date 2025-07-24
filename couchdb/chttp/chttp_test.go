@@ -994,7 +994,7 @@ func TestNetError(t *testing.T) {
 			input: func() error {
 				var s *httptest.Server
 				redirHandler := func(w http.ResponseWriter, r *http.Request) {
-					http.Redirect(w, r, s.URL, 302)
+					http.Redirect(w, r, s.URL, http.StatusFound)
 				}
 				s = nettest.NewHTTPTestServer(t, http.HandlerFunc(redirHandler))
 				_, err := http.Get(s.URL)

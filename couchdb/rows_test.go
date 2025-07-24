@@ -206,7 +206,7 @@ func TestRowsIteratorErrors(t *testing.T) {
 			name:   "unexpected input",
 			input:  `"foo"`,
 			status: http.StatusBadGateway,
-			err:    "Unexpected token string: foo",
+			err:    "unexpected JSON token string: foo",
 		},
 		{
 			name:   "missing closing delimiter",

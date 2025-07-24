@@ -394,7 +394,7 @@ func detectCompatibility(client *kivik.Client) ([]string, error) {
 	case "Kivik Memory Adaptor":
 		return []string{SuiteKivikMemory}, nil
 	}
-	return []string{}, errors.New("Unable to automatically determine the proper test suite")
+	return []string{}, errors.New("unable to automatically determine the proper test suite")
 }
 
 // ConnectClients connects clients.

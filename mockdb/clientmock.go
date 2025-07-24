@@ -55,7 +55,7 @@ func (c *Client) nextExpectation(actual expectation) error {
 					break
 				}
 				next.Unlock()
-				return fmt.Errorf("Expectation not met:\nExpected: %s\n  Actual: %s",
+				return fmt.Errorf("expectation not met:\nExpected: %s\n  Actual: %s",
 					next, actual)
 			}
 			next.Unlock()

@@ -1155,7 +1155,7 @@ func Test_readRev(t *testing.T) {
 	})
 	tests.Add("non-object", tt{
 		input: "[]",
-		err:   `Expected '{' token, found "["`,
+		err:   `expected '{' token, found "["`,
 	})
 	tests.Add("_rev missing", tt{
 		input: "{}",

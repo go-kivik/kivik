@@ -2219,7 +2219,7 @@ test content
 --xxx--`), "xxx"),
 			},
 			status: http.StatusBadGateway,
-			err:    "File 'foo.txt' not in manifest",
+			err:    "file 'foo.txt' not in manifest",
 		},
 		{
 			name: "invalid content-disposition",
@@ -2231,7 +2231,7 @@ Content-Disposition: oink
 --xxx--`), "xxx"),
 			},
 			status: http.StatusBadGateway,
-			err:    "Unexpected Content-Disposition: oink",
+			err:    "unexpected Content-Disposition: oink",
 		},
 		{
 			name: "success",

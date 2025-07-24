@@ -57,7 +57,7 @@ func testUpdates(ctx *kt.Context, client *kivik.Client) {
 				if updates.Type() == "created" {
 					break
 				}
-				eventErrors <- fmt.Errorf("Unexpected event type '%s'", updates.Type())
+				eventErrors <- fmt.Errorf("unexpected event type '%s'", updates.Type())
 			}
 		}
 		eventErrors <- updates.Err()

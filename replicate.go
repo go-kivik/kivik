@@ -474,7 +474,7 @@ func prepareAttachments(doc *document, atts *AttachmentsIterator) error {
 				return err
 			}
 		default:
-			return fmt.Errorf("Unknown encoding '%s' for attachment '%s'", att.ContentEncoding, att.Filename)
+			return fmt.Errorf("unknown encoding '%s' for attachment '%s'", att.ContentEncoding, att.Filename)
 		}
 		att.Stub = false
 		att.Follows = false

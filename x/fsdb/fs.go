@@ -60,7 +60,7 @@ var _ driver.Client = &client{}
 func parseFileURL(dir string) (string, error) {
 	parsed, err := url.Parse(dir)
 	if parsed.Scheme != "" && parsed.Scheme != "file" {
-		return "", statusError{status: http.StatusBadRequest, error: fmt.Errorf("Unsupported URL scheme '%s'. Wrong driver?", parsed.Scheme)}
+		return "", statusError{status: http.StatusBadRequest, error: fmt.Errorf("unsupported URL scheme '%s'. Wrong driver?", parsed.Scheme)}
 	}
 	if !strings.HasPrefix(dir, "file://") {
 		return dir, nil

@@ -201,7 +201,7 @@ func nextKey(dec *json.Decoder) (string, error) {
 	key, ok := t.(string)
 	if !ok {
 		// The JSON parser should never permit this
-		return "", fmt.Errorf("Unexpected token: (%T) %v", t, t)
+		return "", fmt.Errorf("unexpected JSON token: (%T) %v", t, t)
 	}
 	return key, nil
 }
@@ -249,7 +249,7 @@ func (i *iter) finish() (err error) {
 		case json.Delim:
 			if v != json.Delim('}') {
 				// This should never happen, as the JSON parser should prevent it.
-				return fmt.Errorf("Unexpected JSON delimiter: %c", v)
+				return fmt.Errorf("unexpected JSON delimiter: %c", v)
 			}
 		case string:
 			if err := i.parseMeta(v); err != nil {
@@ -258,7 +258,7 @@ func (i *iter) finish() (err error) {
 		default:
 			// This should never happen, as the JSON parser would never get
 			// this far.
-			return fmt.Errorf("Unexpected JSON token: (%T) '%s'", t, t)
+			return fmt.Errorf("unexpected JSON token: (%T) '%s'", t, t)
 		}
 	}
 	return consumeDelim(i.dec, json.Delim('}'))
@@ -290,7 +290,7 @@ func consumeDelim(dec *json.Decoder, expectedDelim json.Delim) error {
 	}
 	d, ok := t.(json.Delim)
 	if !ok {
-		return &internal.Error{Status: http.StatusBadGateway, Err: fmt.Errorf("Unexpected token %T: %v", t, t)}
+		return &internal.Error{Status: http.StatusBadGateway, Err: fmt.Errorf("unexpected JSON token %T: %v", t, t)}
 	}
 	if d != expectedDelim {
 		return unexpectedDelim(d)

@@ -406,13 +406,13 @@ func (a *multipartAttachments) Next(att *driver.Attachment) error {
 		return &internal.Error{Status: http.StatusBadGateway, Err: fmt.Errorf("Content-Disposition: %s", err)}
 	}
 	if disp != "attachment" {
-		return &internal.Error{Status: http.StatusBadGateway, Err: fmt.Errorf("Unexpected Content-Disposition: %s", disp)}
+		return &internal.Error{Status: http.StatusBadGateway, Err: fmt.Errorf("unexpected Content-Disposition: %s", disp)}
 	}
 	filename := dispositionParams["filename"]
 
 	meta := a.meta[filename]
 	if !meta.Follows {
-		return &internal.Error{Status: http.StatusBadGateway, Err: fmt.Errorf("File '%s' not in manifest", filename)}
+		return &internal.Error{Status: http.StatusBadGateway, Err: fmt.Errorf("file '%s' not in manifest", filename)}
 	}
 
 	size := int64(-1)

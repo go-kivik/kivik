@@ -482,7 +482,7 @@ func readRev(r io.Reader) (string, error) {
 		return "", err
 	}
 	if tk != json.Delim('{') {
-		return "", fmt.Errorf("Expected %q token, found %q", '{', tk)
+		return "", fmt.Errorf("expected %q token, found %q", '{', tk)
 	}
 	var val json.RawMessage
 	for dec.More() {

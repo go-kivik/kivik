@@ -3,6 +3,7 @@ stages:
   - release
 
 variables:
+  LINTER_VERSION: v2.2.1
   COUCHDB_USER: admin
   COUCHDB_PASSWORD: abc123
 
@@ -19,7 +20,7 @@ test-x-sqlite:
 
 linter-x-sqlite:
   stage: test
-  image: golangci/golangci-lint:v1.64.7
+  image: golangci/golangci-lint:${LINTER_VERSION}
   script:
     - cd x/sqlite
     - go mod download
@@ -70,7 +71,7 @@ test:
 
 linter:
   stage: test
-  image: golangci/golangci-lint:v1.64.7
+  image: golangci/golangci-lint:${LINTER_VERSION}
   script:
     - go mod download
     - golangci-lint run ./...

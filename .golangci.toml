@@ -1,67 +1,87 @@
-[run]
-timeout = "300s"
+version = '2'
 
-[[output.formats]]
-format = "colored-line-number"
+[output]
+[output.formats]
+[output.formats.text]
+path = 'stdout'
 
 [linters]
 enable = [
-    "gci",
-    "unconvert",
-    "goimports",
-    "unused",
-    "misspell",
-    "nakedret",
-    "errcheck",
-    "revive",
-    "ineffassign",
-    "unparam",
-    "gofumpt",
-    "prealloc",
-    "gocritic",
-    "staticcheck",
-    "goheader",
-
-    # SQL-related linters
-    "rowserrcheck",
-    "sqlclosecheck",
-
-    # Testing
-    "thelper",
+  'gocritic',
+  'goheader',
+  'misspell',
+  'nakedret',
+  'prealloc',
+  'revive',
+  'rowserrcheck',
+  'sqlclosecheck',
+  'thelper',
+  'unconvert',
+  'unparam'
 ]
 
-[issues]
-exclude-use-default = false
-
-[[issues.exclude-rules]]
-source = "defer .*\\.(Close|Rollback)\\(\\)$"
-linters = ["errcheck"]
-
-[[issues.exclude-rules]]
-source = "tests\\.(Add|Run)\\("
-text = "test helper function should start"
-linters = ["thelper"]
-
-[linters-settings.gci]
-sections = ["standard", "default", "prefix(github.com/go-kivik/kivik)"]
-skip-generated = false
-custom-order = true
-
-[linters-settings.goheader]
+[linters.settings]
+[linters.settings.goheader]
 template = """
-Licensed under the Apache License, Version 2.0 (the "License"); you may not
+Licensed under the Apache License, Version 2.0 (the \"License\"); you may not
 use this file except in compliance with the License. You may obtain a copy of
 the License at
 
  http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+distributed under the License is distributed on an \"AS IS\" BASIS, WITHOUT
 WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 License for the specific language governing permissions and limitations under
 the License."""
 
-# Prepared statements on transactions are closed by the transaction.
-[[issues.exclude-rules]]
-source = "tx.Prepare|stmts.prepare"
-linters = ["sqlclosecheck"]
+[linters.exclusions]
+generated = 'lax'
+paths = [
+  'third_party$',
+  'builtin$',
+  'examples$'
+]
+
+[[linters.exclusions.rules]]
+linters = [
+  'errcheck'
+]
+source = 'defer .*\.(Close|Rollback)\(\)$'
+
+[[linters.exclusions.rules]]
+linters = [
+  'thelper'
+]
+text = 'test helper function should start'
+source = 'tests\.(Add|Run)\('
+
+[[linters.exclusions.rules]]
+linters = [
+  'sqlclosecheck'
+]
+source = 'tx.Prepare|stmts.prepare'
+
+[formatters]
+enable = [
+  'gci',
+  'gofumpt',
+  'goimports'
+]
+
+[formatters.settings]
+[formatters.settings.gci]
+sections = [
+  'standard',
+  'default',
+  'prefix(github.com/go-kivik/kivik)'
+]
+custom-order = true
+
+[formatters.exclusions]
+generated = 'lax'
+paths = [
+  'third_party$',
+  'builtin$',
+  'examples$'
+]

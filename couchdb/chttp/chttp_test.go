@@ -95,7 +95,7 @@ func TestNew(t *testing.T) {
 			client:    c,
 			transport: http.DefaultTransport,
 		}
-		c.Client.Transport = auth
+		c.Transport = auth
 
 		return tt{
 			dsn:      authDSN.String(),
@@ -134,7 +134,7 @@ func TestNew(t *testing.T) {
 			client:    c,
 			transport: http.DefaultTransport,
 		}
-		c.Client.Transport = auth
+		c.Transport = auth
 
 		return tt{
 			dsn:      authDSN.String(),
@@ -994,7 +994,7 @@ func TestNetError(t *testing.T) {
 			input: func() error {
 				var s *httptest.Server
 				redirHandler := func(w http.ResponseWriter, r *http.Request) {
-					http.Redirect(w, r, s.URL, 302)
+					http.Redirect(w, r, s.URL, http.StatusFound)
 				}
 				s = nettest.NewHTTPTestServer(t, http.HandlerFunc(redirHandler))
 				_, err := http.Get(s.URL)
@@ -1155,7 +1155,7 @@ func Test_readRev(t *testing.T) {
 	})
 	tests.Add("non-object", tt{
 		input: "[]",
-		err:   `Expected '{' token, found "["`,
+		err:   `expected '{' token, found "["`,
 	})
 	tests.Add("_rev missing", tt{
 		input: "{}",

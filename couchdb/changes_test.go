@@ -49,10 +49,7 @@ func TestChanges_metadata(t *testing.T) {
 		t.Fatal(err)
 	}
 	ch := &driver.Change{}
-	for {
-		if changes.Next(ch) != nil {
-			break
-		}
+	for changes.Next(ch) == nil { //nolint:revive // empty loop needed to consume all changes
 	}
 	want := int64(10)
 	if got := changes.Pending(); want != got {

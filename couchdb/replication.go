@@ -160,7 +160,7 @@ type activeTask struct {
 }
 
 func (r *replication) updateActiveTasks(ctx context.Context) (*activeTask, error) {
-	resp, err := r.client.DoReq(ctx, http.MethodGet, "/_active_tasks", nil)
+	resp, err := r.DoReq(ctx, http.MethodGet, "/_active_tasks", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +196,7 @@ func (r *replication) updateMain(ctx context.Context) error {
 }
 
 func (r *replication) getReplicatorDoc(ctx context.Context) (*replicatorDoc, error) {
-	result, err := r.db.Get(ctx, r.docID, kivik.Params(nil))
+	result, err := r.Get(ctx, r.docID, kivik.Params(nil))
 	if err != nil {
 		return nil, err
 	}
@@ -323,7 +323,7 @@ func (c *client) Replicate(ctx context.Context, targetDSN, sourceDSN string, opt
 	var repStub struct {
 		ID string `json:"id"`
 	}
-	if e := c.Client.DoJSON(ctx, http.MethodPost, "/_replicator", chttpOpts, &repStub); e != nil {
+	if e := c.DoJSON(ctx, http.MethodPost, "/_replicator", chttpOpts, &repStub); e != nil {
 		return nil, e
 	}
 	if scheduler {

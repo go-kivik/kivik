@@ -47,7 +47,7 @@ func (d *db) CreateIndex(ctx context.Context, ddoc, name string, index interface
 	chttpOpts := &chttp.Options{
 		Body: chttp.EncodeBody(parameters),
 	}
-	_, err = d.Client.DoError(ctx, http.MethodPost, d.path(reqPath.String()), chttpOpts)
+	_, err = d.DoError(ctx, http.MethodPost, d.path(reqPath.String()), chttpOpts)
 	return err
 }
 
@@ -59,7 +59,7 @@ func (d *db) GetIndexes(ctx context.Context, options driver.Options) ([]driver.I
 	var result struct {
 		Indexes []driver.Index `json:"indexes"`
 	}
-	err := d.Client.DoJSON(ctx, http.MethodGet, d.path(reqPath.String()), nil, &result)
+	err := d.DoJSON(ctx, http.MethodGet, d.path(reqPath.String()), nil, &result)
 	return result.Indexes, err
 }
 
@@ -75,7 +75,7 @@ func (d *db) DeleteIndex(ctx context.Context, ddoc, name string, options driver.
 	reqPath := partPath(pathIndex)
 	options.Apply(reqPath)
 	path := fmt.Sprintf("%s/%s/json/%s", reqPath, ddoc, name)
-	_, err := d.Client.DoError(ctx, http.MethodDelete, d.path(path), nil)
+	_, err := d.DoError(ctx, http.MethodDelete, d.path(path), nil)
 	return err
 }
 
@@ -90,7 +90,7 @@ func (d *db) Find(ctx context.Context, query interface{}, options driver.Options
 			chttp.HeaderIdempotencyKey: []string{},
 		},
 	}
-	resp, err := d.Client.DoReq(ctx, http.MethodPost, d.path(reqPath.String()), chttpOpts)
+	resp, err := d.DoReq(ctx, http.MethodPost, d.path(reqPath.String()), chttpOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +139,7 @@ func (d *db) Explain(ctx context.Context, query interface{}, options driver.Opti
 		},
 	}
 	var plan queryPlan
-	if err := d.Client.DoJSON(ctx, http.MethodPost, d.path(reqPath.String()), chttpOpts, &plan); err != nil {
+	if err := d.DoJSON(ctx, http.MethodPost, d.path(reqPath.String()), chttpOpts, &plan); err != nil {
 		return nil, err
 	}
 	return &driver.QueryPlan{

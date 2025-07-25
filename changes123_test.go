@@ -87,7 +87,7 @@ func TestChangesIteratorBreak(t *testing.T) {
 		}
 		break
 	}
-	if changes.iter.state != stateClosed {
+	if changes.state != stateClosed {
 		t.Errorf("Expected iterator to be closed")
 	}
 }

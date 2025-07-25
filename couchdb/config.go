@@ -46,19 +46,19 @@ func configURL(node string, parts ...string) string {
 
 func (c *client) Config(ctx context.Context, node string) (driver.Config, error) {
 	cf := driver.Config{}
-	err := c.Client.DoJSON(ctx, http.MethodGet, configURL(node), nil, &cf)
+	err := c.DoJSON(ctx, http.MethodGet, configURL(node), nil, &cf)
 	return cf, err
 }
 
 func (c *client) ConfigSection(ctx context.Context, node, section string) (driver.ConfigSection, error) {
 	sec := driver.ConfigSection{}
-	err := c.Client.DoJSON(ctx, http.MethodGet, configURL(node, section), nil, &sec)
+	err := c.DoJSON(ctx, http.MethodGet, configURL(node, section), nil, &sec)
 	return sec, err
 }
 
 func (c *client) ConfigValue(ctx context.Context, node, section, key string) (string, error) {
 	var value string
-	err := c.Client.DoJSON(ctx, http.MethodGet, configURL(node, section, key), nil, &value)
+	err := c.DoJSON(ctx, http.MethodGet, configURL(node, section, key), nil, &value)
 	return value, err
 }
 
@@ -68,12 +68,12 @@ func (c *client) SetConfigValue(ctx context.Context, node, section, key, value s
 	opts := &chttp.Options{
 		Body: io.NopCloser(bytes.NewReader(body)),
 	}
-	err := c.Client.DoJSON(ctx, http.MethodPut, configURL(node, section, key), opts, &old)
+	err := c.DoJSON(ctx, http.MethodPut, configURL(node, section, key), opts, &old)
 	return old, err
 }
 
 func (c *client) DeleteConfigKey(ctx context.Context, node, section, key string) (string, error) {
 	var value string
-	err := c.Client.DoJSON(ctx, http.MethodDelete, configURL(node, section, key), nil, &value)
+	err := c.DoJSON(ctx, http.MethodDelete, configURL(node, section, key), nil, &value)
 	return value, err
 }

@@ -131,7 +131,7 @@ func TestFind(t *testing.T) {
 		},
 		{
 			name: "No query",
-			err:  "Missing required key: selector",
+			err:  "missing required key: selector",
 		},
 		{
 			name:  "empty selector",

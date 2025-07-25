@@ -60,7 +60,7 @@ func Decode(r io.Reader, ext string, i interface{}) error {
 	ext = strings.TrimPrefix(ext, ".")
 	dec, ok := decoders[ext]
 	if !ok {
-		return fmt.Errorf("No decoder for %s", ext)
+		return fmt.Errorf("no decoder for %s", ext)
 	}
 	return dec.Decode(r, i)
 }

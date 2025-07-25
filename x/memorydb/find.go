@@ -87,7 +87,7 @@ func (d *db) Find(ctx context.Context, query interface{}, _ driver.Options) (dri
 		return nil, err
 	}
 	if fq == nil || fq.Selector == nil {
-		return nil, errors.New("Missing required key: selector")
+		return nil, errors.New("missing required key: selector")
 	}
 	fields := make(map[string]struct{}, len(fq.Fields))
 	for _, field := range fq.Fields {

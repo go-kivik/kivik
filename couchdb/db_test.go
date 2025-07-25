@@ -1073,7 +1073,7 @@ func TestPut(t *testing.T) {
 	tests.Add("real database, multipart attachments", func(t *testing.T) interface{} {
 		db := realDB(t)
 		t.Cleanup(func() {
-			if err := db.client.DestroyDB(context.Background(), db.dbName, nil); err != nil {
+			if err := db.DestroyDB(context.Background(), db.dbName, nil); err != nil {
 				t.Fatal(err)
 			}
 		})
@@ -2219,7 +2219,7 @@ test content
 --xxx--`), "xxx"),
 			},
 			status: http.StatusBadGateway,
-			err:    "File 'foo.txt' not in manifest",
+			err:    "file 'foo.txt' not in manifest",
 		},
 		{
 			name: "invalid content-disposition",
@@ -2231,7 +2231,7 @@ Content-Disposition: oink
 --xxx--`), "xxx"),
 			},
 			status: http.StatusBadGateway,
-			err:    "Unexpected Content-Disposition: oink",
+			err:    "unexpected Content-Disposition: oink",
 		},
 		{
 			name: "success",

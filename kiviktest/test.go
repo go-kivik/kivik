@@ -429,6 +429,7 @@ func ConnectClients(t *testing.T, driverName, dsn string, opts kivik.Option) (*k
 
 // DoTest runs a suite of tests.
 func DoTest(t *testing.T, suite, _ string) { //nolint:thelper // Not a helper
+	fmt.Println("DoTest: suite ", suite)
 	t.Log("DoTest: suite ", suite)
 	opts, _ := suites[suite].Interface(t, "Options").(kivik.Option)
 
@@ -436,6 +437,7 @@ func DoTest(t *testing.T, suite, _ string) { //nolint:thelper // Not a helper
 	if image == "" {
 		t.Fatalf("docker image not set for %s", suite)
 	}
+	fmt.Println("DoTest: Using image: ", image)
 	t.Log("DoTest: Using image: ", image)
 	dsn := startCouchDB(t, image)
 

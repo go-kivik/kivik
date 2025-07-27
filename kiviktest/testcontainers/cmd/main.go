@@ -23,7 +23,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/go-kivik/kivik/v4/kiviktest/testcontainers/shared"
+	tc "github.com/go-kivik/kivik/v4/kiviktest/testcontainers"
 )
 
 func main() {
@@ -50,7 +50,7 @@ func startCouchDB(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "image query parameter is required", http.StatusBadRequest)
 		return
 	}
-	dsn, err := shared.StartCouchDB(r.Context(), image)
+	dsn, err := tc.StartCouchDB(r.Context(), image)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

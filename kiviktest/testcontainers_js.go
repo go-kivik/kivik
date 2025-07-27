@@ -18,11 +18,15 @@ import (
 	"bytes"
 	"io"
 	"net/http"
+	"os"
 	"testing"
 )
 
 func startCouchDB(t *testing.T, image string) string { //nolint:thelper // Not a helper
-	t.Logf("Starting CouchDB with image: %s", image)
+	if os.Getenv("USETC") == "" {
+		t.Skip("USETC not set, skipping testcontainers")
+	}
+	t.Logf("testcontainers: Starting CouchDB with image: %s", image)
 	req, err := http.NewRequest(http.MethodPost, "http://localhost:8080?image="+image, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -43,6 +47,6 @@ func startCouchDB(t *testing.T, image string) string { //nolint:thelper // Not a
 	if dsn == "" {
 		t.Fatal("Received empty DSN from CouchDB daemon")
 	}
-	t.Logf("CouchDB started with DSN: %s", dsn)
+	t.Logf("testcontainers: CouchDB started with DSN: %s", dsn)
 	return dsn
 }

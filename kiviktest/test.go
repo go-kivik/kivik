@@ -429,12 +429,14 @@ func ConnectClients(t *testing.T, driverName, dsn string, opts kivik.Option) (*k
 
 // DoTest runs a suite of tests.
 func DoTest(t *testing.T, suite, _ string) { //nolint:thelper // Not a helper
+	t.Log("DoTest: suite ", suite)
 	opts, _ := suites[suite].Interface(t, "Options").(kivik.Option)
 
 	image := imageMap[suite]
 	if image == "" {
 		t.Fatalf("docker image not set for %s", suite)
 	}
+	t.Log("DoTest: Using image: ", image)
 	dsn := startCouchDB(t, image)
 
 	clients, err := ConnectClients(t, driverMap[suite], dsn, opts)
@@ -447,10 +449,11 @@ func DoTest(t *testing.T, suite, _ string) { //nolint:thelper // Not a helper
 }
 
 var imageMap = map[string]string{
-	SuiteCouch22: "couchdb:2.2.0",
-	SuiteCouch23: "couchdb:2.3.1",
-	SuiteCouch30: "couchdb:3.0.1",
-	SuiteCouch31: "couchdb:3.1.2",
-	SuiteCouch32: "couchdb:3.2.3",
-	SuiteCouch33: "couchdb:3.3.3",
+	SuiteCouch22:     "couchdb:2.2.0",
+	SuiteCouch23:     "couchdb:2.3.1",
+	SuiteCouch30:     "couchdb:3.0.1",
+	SuiteCouch31:     "couchdb:3.1.2",
+	SuiteCouch32:     "couchdb:3.2.3",
+	SuiteCouch33:     "couchdb:3.3.3",
+	SuitePouchRemote: "couchdb:3.3.3",
 }

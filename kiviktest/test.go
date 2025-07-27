@@ -449,10 +449,11 @@ func DoTest(t *testing.T, suite, _ string) { //nolint:thelper // Not a helper
 }
 
 var imageMap = map[string]string{
-	SuiteCouch22: "couchdb:2.2.0",
-	SuiteCouch23: "couchdb:2.3.1",
-	SuiteCouch30: "couchdb:3.0.1",
-	SuiteCouch31: "couchdb:3.1.2",
-	SuiteCouch32: "couchdb:3.2.3",
-	SuiteCouch33: "couchdb:3.3.3",
+	SuiteCouch22:     "couchdb:2.2.0",
+	SuiteCouch23:     "couchdb:2.3.1",
+	SuiteCouch30:     "couchdb:3.0.1",
+	SuiteCouch31:     "couchdb:3.1.2",
+	SuiteCouch32:     "couchdb:3.2.3",
+	SuiteCouch33:     "couchdb:3.3.3",
+	SuitePouchRemote: "couchdb:2.2.0",
 }

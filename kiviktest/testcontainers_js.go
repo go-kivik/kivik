@@ -14,8 +14,35 @@
 
 package kiviktest
 
-import "testing"
+import (
+	"bytes"
+	"io"
+	"net/http"
+	"testing"
+)
 
-func startCouchDB(*testing.T, string) string { //nolint:thelper // Not a helper
-	return ""
+func startCouchDB(t *testing.T, image string) string { //nolint:thelper // Not a helper
+	t.Logf("Starting CouchDB with image: %s", image)
+	req, err := http.NewRequest(http.MethodPost, "http://localhost:8080?image="+image, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("Expected status OK, got %s", resp.Status)
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dsn := string(bytes.TrimSpace(body))
+	if dsn == "" {
+		t.Fatal("Received empty DSN from CouchDB daemon")
+	}
+	t.Logf("CouchDB started with DSN: %s", dsn)
+	return dsn
 }

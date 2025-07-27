@@ -19,7 +19,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/go-kivik/kivik/v4/kiviktest/testcontainers/shared"
+	tc "github.com/go-kivik/kivik/v4/kiviktest/testcontainers"
 )
 
 func startCouchDB(t *testing.T, image string) string { //nolint:thelper // Not a helper
@@ -27,7 +27,7 @@ func startCouchDB(t *testing.T, image string) string { //nolint:thelper // Not a
 		t.Skip("USETC not set, skipping testcontainers")
 	}
 
-	dsn, err := shared.StartCouchDB(context.TODO(), image)
+	dsn, err := tc.StartCouchDB(context.TODO(), image)
 	if err != nil {
 		t.Fatal(err)
 	}

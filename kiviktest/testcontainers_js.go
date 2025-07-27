@@ -16,6 +16,7 @@ package kiviktest
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -26,6 +27,7 @@ func startCouchDB(t *testing.T, image string) string { //nolint:thelper // Not a
 	if os.Getenv("USETC") == "" {
 		t.Skip("USETC not set, skipping testcontainers")
 	}
+	fmt.Println("testcontainers: Starting CouchDB with image:", image)
 	t.Logf("testcontainers: Starting CouchDB with image: %s", image)
 	req, err := http.NewRequest(http.MethodPost, "http://localhost:8080?image="+image, nil)
 	if err != nil {
@@ -47,6 +49,7 @@ func startCouchDB(t *testing.T, image string) string { //nolint:thelper // Not a
 	if dsn == "" {
 		t.Fatal("Received empty DSN from CouchDB daemon")
 	}
+	fmt.Println("testcontainers: CouchDB started with DSN:", dsn)
 	t.Logf("testcontainers: CouchDB started with DSN: %s", dsn)
 	return dsn
 }

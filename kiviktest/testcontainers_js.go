@@ -25,8 +25,10 @@ import (
 
 func startCouchDB(t *testing.T, image string) string { //nolint:thelper // Not a helper
 	if os.Getenv("USETC") == "" {
+		panic("USETC not set, skipping testcontainers")
 		t.Skip("USETC not set, skipping testcontainers")
 	}
+	panic("testcontainers")
 	fmt.Println("testcontainers: Starting CouchDB with image:", image)
 	t.Logf("testcontainers: Starting CouchDB with image: %s", image)
 	req, err := http.NewRequest(http.MethodPost, "http://localhost:8080?image="+image, nil)

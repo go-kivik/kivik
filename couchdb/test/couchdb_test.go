@@ -26,25 +26,31 @@ func init() {
 }
 
 func TestCouch22(t *testing.T) {
+	t.Parallel()
 	kiviktest.DoTest(t, kiviktest.SuiteCouch22, "KIVIK_TEST_DSN_COUCH22")
 }
 
 func TestCouch23(t *testing.T) {
+	t.Parallel()
 	kiviktest.DoTest(t, kiviktest.SuiteCouch23, "KIVIK_TEST_DSN_COUCH23")
 }
 
 func TestCouch30(t *testing.T) {
+	t.Parallel()
 	kiviktest.DoTest(t, kiviktest.SuiteCouch30, "KIVIK_TEST_DSN_COUCH30")
 }
 
 func TestCouch31(t *testing.T) {
+	t.Parallel()
 	kiviktest.DoTest(t, kiviktest.SuiteCouch31, "KIVIK_TEST_DSN_COUCH31")
 }
 
 func TestCouch32(t *testing.T) {
+	t.Parallel()
 	kiviktest.DoTest(t, kiviktest.SuiteCouch32, "KIVIK_TEST_DSN_COUCH32")
 }
 
 func TestCouch33(t *testing.T) {
+	t.Parallel()
 	kiviktest.DoTest(t, kiviktest.SuiteCouch33, "KIVIK_TEST_DSN_COUCH33")
 }

@@ -110,6 +110,9 @@ gopherjs1.18-pouchdb9:
   <<: *gopherjs_test_template
   image: golang:1.18
   variables:
+    USETC: "1"
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_TLS_CERTDIR: ""
     NODE_VER: 18
     NPM_PROFILE: pouchdb/pouchdb9-package.json
     KIVIK_TEST_DSN_COUCH33: http://admin:abc123@couch33:5984/
@@ -118,6 +121,9 @@ gopherjs1.18-pouchdb9:
 gopherjs1.19-pouchdb9:
   <<: *gopherjs_test_template
   variables:
+    USETC: "1"
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_TLS_CERTDIR: ""
     NODE_VER: 18
     NPM_PROFILE: pouchdb/pouchdb9-package.json
     KIVIK_TEST_DSN_COUCH33: http://admin:abc123@couch33:5984/

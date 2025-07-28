@@ -74,6 +74,8 @@ coverage:
   before_script:
     - curl -sL https://deb.nodesource.com/setup_${NODE_VER}.x | sed -e '/sleep/d' | bash -
     - apt-get update -qq && apt-get install -y nodejs
+    - go build -o testcontainers ./kiviktest/testcontainers/cmd
+    - ./testcontainers &
   script:
     - cp "$NPM_PROFILE" package.json
     - npm install -g npm@7.5.2 && npm update

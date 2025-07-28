@@ -16,6 +16,7 @@ package kiviktest
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"testing"
 
@@ -23,6 +24,7 @@ import (
 )
 
 func startCouchDB(t *testing.T, image string) string { //nolint:thelper // Not a helper
+	fmt.Println("unf")
 	if os.Getenv("USETC") == "" {
 		t.Skip("USETC not set, skipping testcontainers")
 	}

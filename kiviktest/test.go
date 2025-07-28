@@ -440,6 +440,8 @@ func DoTest(t *testing.T, suite, _ string) { //nolint:thelper // Not a helper
 	fmt.Println("DoTest: Using image: ", image)
 	t.Log("DoTest: Using image: ", image)
 	dsn := startCouchDB(t, image)
+	fmt.Println("DoTest: DSN: ", dsn)
+	t.Log("DoTest: DSN: ", dsn)
 
 	clients, err := ConnectClients(t, driverMap[suite], dsn, opts)
 	if err != nil {

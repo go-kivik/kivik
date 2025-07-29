@@ -12,7 +12,6 @@
 
 //go:build js
 
-// Package test provides PouchDB integration tests.
 package test
 
 import (

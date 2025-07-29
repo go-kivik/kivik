@@ -84,6 +84,7 @@ coverage:
     - mkdir -p /tmp/src
     - ( cd /tmp && go install github.com/gopherjs/gopherjs@${GOPHERJS_TAG} )
     - npm list
+    - go list ./...
     - gopherjs test -v `go list ./... | grep -Ev '/cmd/|/kiviktest/testcontainers'`
 
 gopherjs1.17-pouchdb9:
@@ -104,6 +105,7 @@ gopherjs1.17-pouchdb9:
     - npm install --force https://github.com/gopherjs/gopherjs#${GOPHERJS_TAG}
     - npm list
     - node --require syscall
+    - go list ./...
     - gopherjs test -v `go list ./... | grep -Ev '/cmd/|/kiviktest/testcontainers'`
 
 gopherjs1.18-pouchdb9:

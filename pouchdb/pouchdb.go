@@ -154,8 +154,10 @@ func (c *client) DBExists(ctx context.Context, dbName string, options driver.Opt
 }
 
 func (c *client) CreateDB(ctx context.Context, dbName string, options driver.Options) error {
+	fmt.Println("pouchdb.CreateDB called with dbName:", dbName)
 	if c.isRemote() {
 		if exists, _ := c.DBExists(ctx, dbName, options); exists {
+			fmt.Println("pouchdb.CreateDB: database already exists:", dbName)
 			return &internal.Error{Status: http.StatusPreconditionFailed, Message: "database exists"}
 		}
 	}

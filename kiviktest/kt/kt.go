@@ -239,11 +239,15 @@ const TestDBPrefix = "kivik$"
 func (c *Context) TestDB() string {
 	c.T.Helper()
 	dbname := c.TestDBName()
+	fmt.Println("TestDB: Creating database", dbname)
 	err := Retry(func() error {
-		return c.Admin.CreateDB(context.Background(), dbname, c.Options("db"))
+		fmt.Println("TestDB: Creating database (retry)", dbname)
+		err := c.Admin.CreateDB(context.Background(), dbname, c.Options("db"))
+		fmt.Println("TestDB: Created database", dbname, err)
+		return err
 	})
 	if err != nil {
-		c.Fatalf("Failed to create database: %s", err)
+		c.Fatalf("Failed to create database %q: %s", dbname, err)
 	}
 	c.T.Cleanup(func() { c.DestroyDB(dbname) })
 	return dbname

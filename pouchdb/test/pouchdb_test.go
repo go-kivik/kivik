@@ -25,9 +25,11 @@ func init() {
 }
 
 func TestPouchLocal(t *testing.T) {
+	t.Parallel()
 	PouchLocalTest(t)
 }
 
 func TestPouchRemote(t *testing.T) {
+	t.Parallel()
 	PouchRemoteTest(t)
 }

@@ -143,7 +143,9 @@ func (c *client) isRemote() bool {
 func (c *client) DBExists(ctx context.Context, dbName string, options driver.Options) (bool, error) {
 	pouchOpts := map[string]interface{}{"skip_setup": true}
 	options.Apply(pouchOpts)
+	fmt.Println("pouchdb.DBExists url:", c.dbURL(dbName))
 	_, err := c.pouch.New(c.dbURL(dbName), pouchOpts).Info(ctx)
+	fmt.Println("pouchdb.DBExists called with dbName:", dbName, "result:", err)
 	if err == nil {
 		return true, nil
 	}
@@ -154,14 +156,17 @@ func (c *client) DBExists(ctx context.Context, dbName string, options driver.Opt
 }
 
 func (c *client) CreateDB(ctx context.Context, dbName string, options driver.Options) error {
+	fmt.Println("pouchdb.CreateDB called with dbName:", dbName)
 	if c.isRemote() {
 		if exists, _ := c.DBExists(ctx, dbName, options); exists {
+			fmt.Println("pouchdb.CreateDB: database already exists:", dbName)
 			return &internal.Error{Status: http.StatusPreconditionFailed, Message: "database exists"}
 		}
 	}
 	pouchOpts := map[string]interface{}{}
 	options.Apply(pouchOpts)
 	_, err := c.pouch.New(c.dbURL(dbName), pouchOpts).Info(ctx)
+	fmt.Println("pouchdb.CreateDB called with dbName:", dbName, "result:", err)
 	return err
 }
 

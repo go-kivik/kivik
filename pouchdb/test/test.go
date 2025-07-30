@@ -176,7 +176,7 @@ func RegisterPouchDBSuites() {
 		"AllDocs/Admin/chicken.status":                       http.StatusNotFound,
 		"AllDocs/NoAuth/_replicator.status":                  http.StatusUnauthorized,
 		"AllDocs/NoAuth/_users.status":                       http.StatusUnauthorized,
-		"AllDocs/NoAuth/chicken.status":                      http.StatusNotFound,
+		"AllDocs/NoAuth/chicken.status":                      http.StatusUnauthorized,
 		"AllDocs/Admin/_replicator/WithDocs/UpdateSeq.skip":  true,
 		"AllDocs/Admin/_users/WithDocs/UpdateSeq.skip":       true,
 		"AllDocs/RW/group/Admin/WithDocs/UpdateSeq.skip":     true,

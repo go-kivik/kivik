@@ -4,16 +4,6 @@
 
 PouchDB driver for [Kivik](https://github.com/go-kivik/pouchdb).
 
-## Installation
-
-Kivik 3.x and newer requires Go 1.11+, with Go modules enabled. At the time of
-this writing, GopherJS still does not support Go modules (this is tracked at
-[GopherJS Issue #855](https://github.com/gopherjs/gopherjs/issues/855)). Despite
-this shortcoming of GopherJS, it is relatively straight forward to use the
-standard Go toolchain as a dependency manager for GopherJS. I have written a
-brief tutorial on this [here](https://jhall.io/posts/gopherjs-with-modules/),
-with Kivik as an example.
-
 ## Usage
 
 This package provides an implementation of the

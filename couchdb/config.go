@@ -36,7 +36,7 @@ func configURL(node string, parts ...string) string {
 		components = append(make([]string, 0, len(parts)+1),
 			"_config")
 	} else {
-		components = append(make([]string, 0, len(parts)+3), // nolint:gomnd
+		components = append(make([]string, 0, len(parts)+3),
 			"_node", node, "_config",
 		)
 	}

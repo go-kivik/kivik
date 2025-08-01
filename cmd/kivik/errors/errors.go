@@ -148,7 +148,7 @@ func fromHTTPStatus(status int) int {
 	case status == http.StatusInternalServerError:
 		return ErrInternalServerError
 	case status >= 400 && status < 500:
-		return status - 390 // nolint:gomnd
+		return status - 390
 	default:
 		return ErrUnknown
 	}

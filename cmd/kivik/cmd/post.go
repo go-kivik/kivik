@@ -65,7 +65,7 @@ func postCmd(r *root) *cobra.Command {
 
 func dbCommandFromDSN(dsn *url.URL) (command, db string) {
 	parts := strings.Split(dsn.Path, "/")
-	if len(parts) != 3 { // nolint:gomnd
+	if len(parts) != 3 {
 		return "", ""
 	}
 	return parts[2], parts[1]

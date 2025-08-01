@@ -63,8 +63,8 @@ func (c *putConfig) RunE(cmd *cobra.Command, _ []string) error {
 		c.key = key
 	}
 
-	parts := strings.SplitN(c.key, "/", 2) //nolint:gomnd
-	if len(parts) != 2 {                   //nolint:gomnd
+	parts := strings.SplitN(c.key, "/", 2)
+	if len(parts) != 2 {
 		return errors.Code(errors.ErrUsage, "section/key must contain a slash")
 	}
 

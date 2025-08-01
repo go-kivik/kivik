@@ -55,7 +55,7 @@ func (c *_copy) RunE(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	if len(args) >= 2 && c.target == "" { // nolint:gomnd
+	if len(args) >= 2 && c.target == "" {
 		c.target = args[1]
 	}
 	if c.target == "" {

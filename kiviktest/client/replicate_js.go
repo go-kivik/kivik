@@ -31,7 +31,7 @@ func (mo multiOptions) Apply(target interface{}) {
 	}
 }
 
-func replicationOptions(ctx *kt.Context, client *kivik.Client, target, source, repID string, in kivik.Option) kivik.Option {
+func replicationOptions(ctx *kt.Context, target, source, repID string, in kivik.Option) kivik.Option {
 	if ctx.String("mode") != "pouchdb" {
 		return multiOptions{kivik.Param("_id", repID), in}
 	}

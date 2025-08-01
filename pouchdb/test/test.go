@@ -152,7 +152,8 @@ func RegisterPouchDBSuites() {
 
 		"PreCleanup.skip": true,
 
-		"AllDBs.skip": true, // FIXME: Perhaps a workaround can be found?
+		"AllDBs.skip":      true, // FIXME: Perhaps a workaround can be found?
+		"AllDBsStats.skip": true, // FIXME: Depends on AllDBs
 
 		"CreateDB/RW/NoAuth.status":         http.StatusUnauthorized,
 		"CreateDB/RW/Admin/Recreate.status": http.StatusPreconditionFailed,
@@ -351,6 +352,8 @@ func RegisterPouchDBSuites() {
 			"live":    true,
 			"timeout": false,
 		}),
+
+		"DBsStats/NoAuth.status": http.StatusUnauthorized,
 	})
 }
 

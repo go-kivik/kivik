@@ -145,7 +145,7 @@ func omitNil(a interface{}) bool {
 // callback's return value. An error is returned if either the callback returns
 // an error, or if the context is cancelled. No attempt is made to abort the
 // callback in the case that the context is cancelled.
-func callBack(ctx context.Context, o caller, method string, args ...interface{}) (r *js.Object, e error) {
+func callBack(ctx context.Context, o caller, method string, args ...interface{}) (_ *js.Object, e error) {
 	defer RecoverError(&e)
 	resultCh := make(chan *js.Object)
 	var err error
@@ -159,7 +159,15 @@ func callBack(ctx context.Context, o caller, method string, args ...interface{})
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	case result := <-resultCh:
-		return result, err
+		if err != nil {
+			return nil, err
+		}
+		if result.Get("error") != js.Undefined {
+			// PouchDB returns an error object with an "error" property
+			// instead of throwing an error, so we need to check for that.
+			return nil, NewPouchError(result)
+		}
+		return result, nil
 	}
 }
 

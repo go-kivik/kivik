@@ -143,12 +143,15 @@ func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (
 
 func (d *db) Stats(ctx context.Context) (*driver.DBStats, error) {
 	i, err := d.db.Info(ctx)
+	if err != nil {
+		return nil, err
+	}
 	return &driver.DBStats{
 		Name:           i.Name,
 		CompactRunning: atomic.LoadUint32(&d.compacting) == 1 || atomic.LoadUint32(&d.viewCleanup) == 1,
 		DocCount:       i.DocCount,
 		UpdateSeq:      i.UpdateSeq,
-	}, err
+	}, nil
 }
 
 func (d *db) Compact(context.Context) error {

@@ -36,12 +36,28 @@ func NewPouchError(o *js.Object) error {
 	if o == nil || o == js.Undefined {
 		return nil
 	}
-	status := o.Get("status").Int()
-	if status == 0 {
-		status = http.StatusInternalServerError
+
+	var err string
+	switch {
+	case o.Get("name") != js.Undefined:
+		err = o.Get("name").String()
+	case o.Get("error") != js.Undefined:
+		err = o.Get("error").String()
 	}
 
-	var err, msg string
+	status := o.Get("status").Int()
+	if status == 0 {
+		switch err {
+		case "not_found":
+			status = http.StatusNotFound
+		case "unauthorized":
+			status = http.StatusUnauthorized
+		default:
+			status = http.StatusInternalServerError
+		}
+	}
+
+	var msg string
 	switch {
 	case o.Get("reason") != js.Undefined:
 		msg = o.Get("reason").String()
@@ -51,12 +67,6 @@ func NewPouchError(o *js.Object) error {
 		if jsbuiltin.InstanceOf(o, js.Global.Get("Error")) {
 			return &internal.Error{Status: status, Message: o.Get("message").String()}
 		}
-	}
-	switch {
-	case o.Get("name") != js.Undefined:
-		err = o.Get("name").String()
-	case o.Get("error") != js.Undefined:
-		err = o.Get("error").String()
 	}
 
 	if msg == "" && o.Get("errno") != js.Undefined {

@@ -15,6 +15,7 @@
 package bindings
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/gopherjs/gopherjs/js"
@@ -51,6 +52,31 @@ func TestNewPouchError(t *testing.T) {
 			Expected:       "error name: error reason",
 		},
 		{
+			Name: "PouchDB Remote info returns an error-like response for not-found",
+			/*
+				{
+					error: 'not_found',
+					reason: 'Database does not exist.',
+					host: 'http://localhost:32800/kivik%24alldbsstats_admin%246550ad7f92f36665/',
+					db_name: 'http://localhost:32800/kivik$alldbsstats_admin$6550ad7f92f36665',
+					auto_compaction: false,
+					adapter: 'http'
+				}
+			*/
+			Object: func() *js.Object {
+				o := js.Global.Get("Object").New()
+				o.Set("error", "not_found")
+				o.Set("reason", "Database does not exist.")
+				o.Set("host", "http://localhost:32800/kivik%24alldbsstats_admin%246550ad7f92f36665/")
+				o.Set("db_name", "http://localhost:32800/kivik$alldbsstats_admin$6550ad7f92f36665")
+				o.Set("auto_compaction", false)
+				o.Set("adapter", "http")
+				return o
+			}(),
+			ExpectedStatus: http.StatusNotFound,
+			Expected:       "not_found: Database does not exist.",
+		},
+		{
 			Name: "ECONNREFUSED",
 			Object: js.Global.Call("ReconstitutePouchError", `{
                 "code":    "ECONNREFUSED",
@@ -71,7 +97,7 @@ func TestNewPouchError(t *testing.T) {
                         "last_seq": 0
                     }
                 }`),
-			ExpectedStatus: 500,
+			ExpectedStatus: http.StatusInternalServerError,
 			Expected:       "Error: connection refused",
 		},
 	}

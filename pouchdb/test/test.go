@@ -218,7 +218,7 @@ func RegisterPouchDBSuites() {
 				"stale":           false,
 				"update":          true,
 				"skip":            0,
-				"limit":           25, //nolint:gomnd
+				"limit":           25,
 				"fields":          "all_fields",
 			},
 			Fields: func() []interface{} {
@@ -229,7 +229,7 @@ func RegisterPouchDBSuites() {
 				return nil
 			}(),
 			Range: nil,
-			Limit: 25, //nolint:gomnd
+			Limit: 25,
 		},
 
 		"CreateIndex/RW/Admin/group/EmptyIndex.status":    http.StatusBadRequest,
@@ -340,7 +340,7 @@ func RegisterPouchDBSuites() {
 			return strings.TrimSuffix(parsed.String(), "/") + "/doesntexist"
 		}(),
 		"Replicate.prefix":         "none",
-		"Replicate.timeoutSeconds": 5, //nolint:gomnd
+		"Replicate.timeoutSeconds": 5,
 		"Replicate.mode":           "pouchdb",
 		"Replicate/RW/Admin/group/MissingSource/Results.status":  http.StatusUnauthorized,
 		"Replicate/RW/Admin/group/MissingTarget/Results.status":  http.StatusUnauthorized,

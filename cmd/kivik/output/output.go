@@ -108,7 +108,7 @@ func (f *Formatter) Output(r io.Reader) error {
 }
 
 func (f *Formatter) formatter() (Format, error) {
-	args := strings.SplitN(f.format, "=", 2) //nolint:gomnd
+	args := strings.SplitN(f.format, "=", 2)
 	name := args[0]
 	if format, ok := f.formats[name]; ok {
 		if fmtArg, ok := format.(FormatArg); ok {
@@ -142,7 +142,7 @@ func (f *Formatter) createFile(path string) (*os.File, error) {
 	if f.overwrite {
 		return os.Create(path)
 	}
-	return os.OpenFile(path, os.O_EXCL|os.O_CREATE|os.O_WRONLY, 0o666) //nolint:gomnd
+	return os.OpenFile(path, os.O_EXCL|os.O_CREATE|os.O_WRONLY, 0o666)
 }
 
 // OK outputs the 'OK' indication.

@@ -48,7 +48,7 @@ func (e *HTTPError) HTTPStatus() int {
 // ResponseError returns an error from an *http.Response if the status code
 // indicates an error.
 func ResponseError(resp *http.Response) error {
-	if resp.StatusCode < 400 { // nolint:gomnd
+	if resp.StatusCode < 400 {
 		return nil
 	}
 	if resp.Body != nil {

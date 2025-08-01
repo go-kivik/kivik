@@ -99,7 +99,7 @@ func setTimeout(ctx context.Context, options map[string]interface{}) map[string]
 		options["ajax"] = make(map[string]interface{})
 	}
 	ajax := options["ajax"].(map[string]interface{})
-	timeout := int(time.Until(deadline) * 1000) //nolint:gomnd
+	timeout := int(time.Until(deadline) * 1000)
 	// Used by ajax calls
 	ajax["timeout"] = timeout
 	// Used by changes and replications

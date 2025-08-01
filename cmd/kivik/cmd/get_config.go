@@ -70,7 +70,7 @@ func (c *getConfig) RunE(cmd *cobra.Command, _ []string) error {
 		var conf interface{}
 		var err error
 		if c.key != "" {
-			if parts := strings.SplitN(c.key, "/", 2); len(parts) > 1 { //nolint:gomnd
+			if parts := strings.SplitN(c.key, "/", 2); len(parts) > 1 {
 				conf, err = client.ConfigValue(cmd.Context(), c.node, parts[0], parts[1])
 			} else {
 				conf, err = client.ConfigSection(cmd.Context(), c.node, c.key)

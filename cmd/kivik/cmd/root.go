@@ -315,7 +315,6 @@ func (r *root) retry(fn func() error) error {
 	}, bo)
 }
 
-// nolint:gomnd
 func fmtDuration(dur time.Duration) string {
 	s := dur.Seconds()
 	if s < 60 {

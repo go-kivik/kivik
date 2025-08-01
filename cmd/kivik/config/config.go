@@ -504,7 +504,7 @@ func expandDSN(addr *url.URL) (dsn, db, doc, filename string) {
 // be used to specify the end of the root element, when disambiguation is
 // required.
 func splitPath(p string) []string {
-	if parts := strings.SplitN(p, "//", 2); len(parts) == 2 { // nolint:gomnd
+	if parts := strings.SplitN(p, "//", 2); len(parts) == 2 {
 		result := splitPath(parts[1])
 		result[0] = parts[0] + "/" + result[0]
 		return result

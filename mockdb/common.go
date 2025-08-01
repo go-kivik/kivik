@@ -48,7 +48,7 @@ type expectation interface {
 type commonExpectation struct {
 	sync.Mutex
 	triggered bool
-	err       error // nolint: structcheck
+	err       error
 	delay     time.Duration
 	options   kivik.Option
 	db        *DB

@@ -20,7 +20,6 @@ import (
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 )
 
-// nolint:gomnd
 func registerSuiteCouch23() {
 	kiviktest.RegisterSuite(kiviktest.SuiteCouch23, kt.SuiteConfig{
 		"Options":         httpClient(),

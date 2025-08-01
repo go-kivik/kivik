@@ -37,9 +37,9 @@ type RevMeta struct {
 
 	// isMain should be set to true when unmarshaling the main Rev, to enable
 	// auto-population of the _rev key, if necessary
-	isMain bool                  // nolint: structcheck
-	path   string                // nolint: structcheck
-	fs     filesystem.Filesystem // nolint: structcheck
+	isMain bool
+	path   string
+	fs     filesystem.Filesystem
 }
 
 // Revision is a specific instance of a document.

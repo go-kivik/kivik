@@ -70,12 +70,14 @@ func RegisterPouchDBSuites() {
 				"def":  map[string]interface{}{"fields": []interface{}{map[string]string{"_id": "asc"}}},
 			},
 			Selector: map[string]interface{}{"_id": map[string]interface{}{"$gt": nil}},
+			Limit:    25,
 			Options: map[string]interface{}{
 				"bookmark":  "nil",
 				"conflicts": false,
 				"r":         []int{49},
 				"sort":      map[string]interface{}{},
 				"use_index": []interface{}{},
+				"limit":     25,
 			},
 			Fields: func() []interface{} {
 				if ver := runtime.Version(); strings.HasPrefix(ver, "go1.16") {

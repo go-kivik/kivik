@@ -143,9 +143,7 @@ func (c *client) isRemote() bool {
 func (c *client) DBExists(ctx context.Context, dbName string, options driver.Options) (bool, error) {
 	pouchOpts := map[string]interface{}{"skip_setup": true}
 	options.Apply(pouchOpts)
-	fmt.Println("pouchdb.DBExists url:", c.dbURL(dbName))
-	_, err := c.pouch.New(c.dbURL(dbName), pouchOpts).Info(ctx)
-	fmt.Println("pouchdb.DBExists called with dbName:", dbName, "result:", err)
+	_, err := c.pouch.New(c.dbURL(dbName), c.options(pouchOpts)).Info(ctx)
 	if err == nil {
 		return true, nil
 	}

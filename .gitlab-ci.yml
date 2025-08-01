@@ -3,7 +3,7 @@ stages:
   - release
 
 variables:
-  LINTER_VERSION: v2.2.1
+  LINTER_VERSION: v2.3.0
   COUCHDB_USER: admin
   COUCHDB_PASSWORD: abc123
 

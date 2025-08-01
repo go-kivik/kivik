@@ -346,10 +346,6 @@ func RegisterPouchDBSuites() {
 		"Replicate.prefix":         "none",
 		"Replicate.timeoutSeconds": 5,
 		"Replicate.mode":           "pouchdb",
-		"Replicate/RW/Admin/group/MissingSource/Results.status":  http.StatusUnauthorized,
-		"Replicate/RW/Admin/group/MissingTarget/Results.status":  http.StatusUnauthorized,
-		"Replicate/RW/NoAuth/group/MissingSource/Results.status": http.StatusUnauthorized,
-		"Replicate/RW/NoAuth/group/MissingTarget/Results.status": http.StatusUnauthorized,
 
 		"Query/RW/group/Admin/WithoutDocs/ScanDoc.status":  http.StatusBadRequest,
 		"Query/RW/group/NoAuth/WithoutDocs/ScanDoc.status": http.StatusBadRequest,

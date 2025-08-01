@@ -10,26 +10,28 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-//go:build js
+//go:build !js
 
-package test
+package kiviktest
 
 import (
+	"context"
+	"fmt"
+	"os"
 	"testing"
 
-	_ "github.com/go-kivik/kivik/v4/pouchdb"
+	tc "github.com/go-kivik/kivik/v4/kiviktest/testcontainers"
 )
 
-func init() {
-	RegisterPouchDBSuites()
-}
+func startCouchDB(t *testing.T, image string) string { //nolint:thelper // Not a helper
+	fmt.Println("unf")
+	if os.Getenv("USETC") == "" {
+		t.Skip("USETC not set, skipping testcontainers")
+	}
 
-func TestPouchLocal(t *testing.T) {
-	t.Parallel()
-	PouchLocalTest(t)
-}
-
-func TestPouchRemote(t *testing.T) {
-	t.Parallel()
-	PouchRemoteTest(t)
+	dsn, err := tc.StartCouchDB(context.TODO(), image)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return dsn
 }

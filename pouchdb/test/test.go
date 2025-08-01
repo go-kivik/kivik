@@ -12,7 +12,6 @@
 
 //go:build js
 
-// Package test provides PouchDB integration tests.
 package test
 
 import (
@@ -71,12 +70,14 @@ func RegisterPouchDBSuites() {
 				"def":  map[string]interface{}{"fields": []interface{}{map[string]string{"_id": "asc"}}},
 			},
 			Selector: map[string]interface{}{"_id": map[string]interface{}{"$gt": nil}},
+			Limit:    25,
 			Options: map[string]interface{}{
 				"bookmark":  "nil",
 				"conflicts": false,
 				"r":         []int{49},
 				"sort":      map[string]interface{}{},
 				"use_index": []interface{}{},
+				"limit":     25,
 			},
 			Fields: func() []interface{} {
 				if ver := runtime.Version(); strings.HasPrefix(ver, "go1.16") {
@@ -153,7 +154,8 @@ func RegisterPouchDBSuites() {
 
 		"PreCleanup.skip": true,
 
-		"AllDBs.skip": true, // FIXME: Perhaps a workaround can be found?
+		"AllDBs.skip":      true, // FIXME: Perhaps a workaround can be found?
+		"AllDBsStats.skip": true, // FIXME: Depends on AllDBs
 
 		"CreateDB/RW/NoAuth.status":         http.StatusUnauthorized,
 		"CreateDB/RW/Admin/Recreate.status": http.StatusPreconditionFailed,
@@ -177,7 +179,7 @@ func RegisterPouchDBSuites() {
 		"AllDocs/Admin/chicken.status":                       http.StatusNotFound,
 		"AllDocs/NoAuth/_replicator.status":                  http.StatusUnauthorized,
 		"AllDocs/NoAuth/_users.status":                       http.StatusUnauthorized,
-		"AllDocs/NoAuth/chicken.status":                      http.StatusNotFound,
+		"AllDocs/NoAuth/chicken.status":                      http.StatusUnauthorized,
 		"AllDocs/Admin/_replicator/WithDocs/UpdateSeq.skip":  true,
 		"AllDocs/Admin/_users/WithDocs/UpdateSeq.skip":       true,
 		"AllDocs/RW/group/Admin/WithDocs/UpdateSeq.skip":     true,
@@ -342,10 +344,6 @@ func RegisterPouchDBSuites() {
 		"Replicate.prefix":         "none",
 		"Replicate.timeoutSeconds": 5,
 		"Replicate.mode":           "pouchdb",
-		"Replicate/RW/Admin/group/MissingSource/Results.status":  http.StatusUnauthorized,
-		"Replicate/RW/Admin/group/MissingTarget/Results.status":  http.StatusUnauthorized,
-		"Replicate/RW/NoAuth/group/MissingSource/Results.status": http.StatusUnauthorized,
-		"Replicate/RW/NoAuth/group/MissingTarget/Results.status": http.StatusUnauthorized,
 
 		"Query/RW/group/Admin/WithoutDocs/ScanDoc.status":  http.StatusBadRequest,
 		"Query/RW/group/NoAuth/WithoutDocs/ScanDoc.status": http.StatusBadRequest,
@@ -356,6 +354,8 @@ func RegisterPouchDBSuites() {
 			"live":    true,
 			"timeout": false,
 		}),
+
+		"DBsStats/NoAuth.status": http.StatusUnauthorized,
 	})
 }
 

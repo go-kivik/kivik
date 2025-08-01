@@ -10,26 +10,10 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-//go:build js
+/*
+	This file exists as a separate file so that `go list` will pick up this package
+	and include it in the GopherJS test suite.
+*/
 
+// Package test provides PouchDB integration tests.
 package test
-
-import (
-	"testing"
-
-	_ "github.com/go-kivik/kivik/v4/pouchdb"
-)
-
-func init() {
-	RegisterPouchDBSuites()
-}
-
-func TestPouchLocal(t *testing.T) {
-	t.Parallel()
-	PouchLocalTest(t)
-}
-
-func TestPouchRemote(t *testing.T) {
-	t.Parallel()
-	PouchRemoteTest(t)
-}

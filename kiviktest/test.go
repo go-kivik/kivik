@@ -411,14 +411,14 @@ func ConnectClients(t *testing.T, driverName, dsn string, opts kivik.Option) (*k
 	clients := &kt.Context{
 		T: t,
 	}
-	t.Logf("Connecting to %s ...\n", dsn)
+	t.Logf("[Auth] Connecting to %s ...\n", dsn)
 	if client, err := kivik.New(driverName, dsn, opts); err == nil {
 		clients.Admin = client
 	} else {
 		return nil, err
 	}
 
-	t.Logf("Connecting to %s ...\n", noAuthDSN)
+	t.Logf("[NoAuth] Connecting to %s ...\n", noAuthDSN)
 	if client, err := kivik.New(driverName, noAuthDSN, opts); err == nil {
 		clients.NoAuth = client
 	} else {
@@ -428,13 +428,21 @@ func ConnectClients(t *testing.T, driverName, dsn string, opts kivik.Option) (*k
 }
 
 // DoTest runs a suite of tests.
-func DoTest(t *testing.T, suite, envName string) { //nolint:thelper // Not a helper
+func DoTest(t *testing.T, suite, _ string) { //nolint:thelper // Not a helper
+	fmt.Println("DoTest: suite ", suite)
+	t.Log("DoTest: suite ", suite)
 	opts, _ := suites[suite].Interface(t, "Options").(kivik.Option)
 
-	dsn := os.Getenv(envName)
-	if dsn == "" {
-		t.Skipf("%s: %s DSN not set; skipping tests", envName, suite)
+	image := imageMap[suite]
+	if image == "" {
+		t.Fatalf("docker image not set for %s", suite)
 	}
+	fmt.Println("DoTest: Using image: ", image)
+	t.Log("DoTest: Using image: ", image)
+	dsn := startCouchDB(t, image)
+	fmt.Println("DoTest: DSN: ", dsn)
+	t.Log("DoTest: DSN: ", dsn)
+
 	clients, err := ConnectClients(t, driverMap[suite], dsn, opts)
 	if err != nil {
 		t.Errorf("Failed to connect to %s: %s\n", suite, err)
@@ -442,4 +450,14 @@ func DoTest(t *testing.T, suite, envName string) { //nolint:thelper // Not a hel
 	}
 	clients.RW = true
 	RunTestsInternal(clients, suite)
+}
+
+var imageMap = map[string]string{
+	SuiteCouch22:     "couchdb:2.2.0",
+	SuiteCouch23:     "couchdb:2.3.1",
+	SuiteCouch30:     "couchdb:3.0.1",
+	SuiteCouch31:     "couchdb:3.1.2",
+	SuiteCouch32:     "couchdb:3.2.3",
+	SuiteCouch33:     "couchdb:3.3.3",
+	SuitePouchRemote: "couchdb:3.3.3",
 }

@@ -25,20 +25,16 @@ func init() {
 
 func allDBsStats(ctx *kt.Context) {
 	ctx.RunAdmin(func(ctx *kt.Context) {
-		testAllDBsStats(ctx, ctx.Admin, ctx.Admin)
+		testAllDBsStats(ctx, ctx.Admin)
 	})
 	ctx.RunNoAuth(func(ctx *kt.Context) {
-		testAllDBsStats(ctx, ctx.Admin, ctx.NoAuth)
+		testAllDBsStats(ctx, ctx.NoAuth)
 	})
 }
 
-func testAllDBsStats(ctx *kt.Context, admin, client *kivik.Client) {
+func testAllDBsStats(ctx *kt.Context, client *kivik.Client) {
 	// create a db
-	dbName := ctx.TestDBName()
-	if err := admin.CreateDB(context.Background(), dbName); err != nil {
-		ctx.Fatalf("Failed to create test database %s: %s", dbName, err)
-	}
-	ctx.T.Cleanup(func() { ctx.DestroyDB(dbName) })
+	dbName := ctx.TestDB()
 	stats, err := client.AllDBsStats(context.Background())
 	if !ctx.IsExpectedSuccess(err) {
 		return

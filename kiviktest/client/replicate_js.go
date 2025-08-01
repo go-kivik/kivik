@@ -25,7 +25,9 @@ type multiOptions []kivik.Option
 
 func (mo multiOptions) Apply(target interface{}) {
 	for _, o := range mo {
-		o.Apply(target)
+		if o != nil {
+			o.Apply(target)
+		}
 	}
 }
 

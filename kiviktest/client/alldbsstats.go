@@ -15,8 +15,6 @@ package client
 import (
 	"context"
 
-	"github.com/google/go-cmp/cmp"
-
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 )
@@ -27,26 +25,28 @@ func init() {
 
 func allDBsStats(ctx *kt.Context) {
 	ctx.RunAdmin(func(ctx *kt.Context) {
-		testAllDBsStats(ctx, ctx.Admin)
+		testAllDBsStats(ctx, ctx.Admin, ctx.Admin)
 	})
 	ctx.RunNoAuth(func(ctx *kt.Context) {
-		testAllDBsStats(ctx, ctx.NoAuth)
+		testAllDBsStats(ctx, ctx.Admin, ctx.NoAuth)
 	})
 }
 
-func testAllDBsStats(ctx *kt.Context, client *kivik.Client) {
+func testAllDBsStats(ctx *kt.Context, admin, client *kivik.Client) {
+	// create a db
+	dbName := ctx.TestDBName()
+	if err := admin.CreateDB(context.Background(), dbName); err != nil {
+		ctx.Fatalf("Failed to create test database %s: %s", dbName, err)
+	}
+	ctx.T.Cleanup(func() { ctx.DestroyDB(dbName) })
 	stats, err := client.AllDBsStats(context.Background())
 	if !ctx.IsExpectedSuccess(err) {
 		return
 	}
-	if wantStats, ok := ctx.Interface("expected").([]*kivik.DBStats); ok {
-		if d := cmp.Diff(wantStats, stats); d != "" {
-			ctx.Errorf("Unexpected database stats: %s", d)
-		}
-	} else {
-		const wantResults = 3
-		if len(stats) != wantResults {
-			ctx.Errorf("Expected %d database stats, got %d", wantResults, len(stats))
+	for _, stat := range stats {
+		if stat.Name == dbName {
+			return
 		}
 	}
+	ctx.Errorf("Expected database %s to be in stats, but it was not found", dbName)
 }

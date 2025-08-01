@@ -39,12 +39,6 @@ func RegisterMemoryDBSuite() {
 		"DBExists/Admin/chicken.exists":  false,
 		"DBExists/RW/group/Admin.exists": true,
 
-		"AllDBsStats.expected": []*kivik.DBStats{
-			{
-				Name: "_users",
-			},
-		},
-
 		"DestroyDB/RW/Admin/NonExistantDB.status": http.StatusNotFound,
 
 		"Log.status":          http.StatusNotImplemented,

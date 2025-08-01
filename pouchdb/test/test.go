@@ -68,7 +68,7 @@ func RegisterPouchDBSuites() {
 				"ddoc": nil,
 				"name": "_all_docs",
 				"type": "special",
-				"def":  map[string]interface{}{"fields": []interface{}{map[string]string{"_id": "asc"}}},
+				"def":  map[string]interface{}{"fields": []interface{}{map[string]interface{}{"_id": "asc"}}},
 			},
 			Selector: map[string]interface{}{"_id": map[string]interface{}{"$gt": nil}},
 			Limit: func() int64 {
@@ -77,14 +77,19 @@ func RegisterPouchDBSuites() {
 				}
 				return 0
 			}(),
-			Options: map[string]interface{}{
-				"bookmark":  "nil",
-				"conflicts": false,
-				"limit":     25,
-				"r":         []int{49},
-				"sort":      map[string]interface{}{},
-				"use_index": []interface{}{},
-			},
+			Options: func() map[string]interface{} {
+				options := map[string]interface{}{
+					"bookmark":  "nil",
+					"conflicts": false,
+					"r":         []int{49},
+					"sort":      map[string]interface{}{},
+					"use_index": []interface{}{},
+				}
+				if strings.HasPrefix(internal.MustPouchDBVersion(), "9.") {
+					options["limit"] = float64(25)
+				}
+				return options
+			}(),
 			Fields: nil,
 			Range: map[string]interface{}{
 				"start_key": nil,
@@ -154,7 +159,8 @@ func RegisterPouchDBSuites() {
 
 		"PreCleanup.skip": true,
 
-		"AllDBs.skip": true, // FIXME: Perhaps a workaround can be found?
+		"AllDBs.skip":      true, // FIXME: Perhaps a workaround can be found?
+		"AllDBsStats.skip": true, // FIXME: Depends on AllDBs
 
 		"CreateDB/RW/NoAuth.status":         http.StatusUnauthorized,
 		"CreateDB/RW/Admin/Recreate.status": http.StatusPreconditionFailed,
@@ -166,6 +172,8 @@ func RegisterPouchDBSuites() {
 		"DBExists/NoAuth/chicken.exists":  false,
 		"DBExists/RW/group/Admin.exists":  true,
 		"DBExists/RW/group/NoAuth.exists": true,
+		"DBExists/NoAuth/_users.status":   http.StatusUnauthorized,
+		"DBExists/RW/group/NoAuth.status": http.StatusUnauthorized,
 
 		"DestroyDB/RW/NoAuth/NonExistantDB.status": http.StatusNotFound,
 		"DestroyDB/RW/Admin/NonExistantDB.status":  http.StatusNotFound,
@@ -188,25 +196,24 @@ func RegisterPouchDBSuites() {
 		"AllDocs/RW/group/NoAuth/WithoutDocs/UpdateSeq.skip": true,
 		"AllDocs/Admin/chicken/WithDocs/UpdateSeq.skip":      true,
 
-		"Find.databases":                     []string{"chicken", "_duck"},
-		"Find/Admin/chicken/Warning.warning": "No matching index found, create an index to optimize query time.",
-		"Find/Admin/_duck.status":            http.StatusNotFound,
-		"Find/NoAuth/chicken.status":         http.StatusNotFound,
-		"Find/NoAuth/_duck.status":           http.StatusUnauthorized,
-		// TODO: Fix this and uncomment https://github.com/go-kivik/kivik/issues/588
-		// "Find/RW/group/Admin/Warning.warning":  "No matching index found, create an index to optimize query time",
-		"Find/RW/group/NoAuth/Warning.warning": "No matching index found, create an index to optimize query time",
+		"Find.databases":                       []string{"chicken", "_duck"},
+		"Find/Admin/chicken/Warning.warning":   "No matching index found, create an index to optimize query time.",
+		"Find/Admin/_duck.status":              http.StatusBadRequest,
+		"Find/NoAuth/chicken.status":           http.StatusUnauthorized,
+		"Find/NoAuth/_duck.status":             http.StatusUnauthorized,
+		"Find/RW/group/Admin/Warning.warning":  "No matching index found, create an index to optimize query time.",
+		"Find/RW/group/NoAuth/Warning.warning": "No matching index found, create an index to optimize query time.",
 
 		"Explain.databases":             []string{"chicken", "_duck"},
-		"Explain/Admin/_duck.status":    http.StatusNotFound,
-		"Explain/NoAuth/chicken.status": http.StatusNotFound,
+		"Explain/Admin/_duck.status":    http.StatusBadRequest,
+		"Explain/NoAuth/chicken.status": http.StatusUnauthorized,
 		"Explain/NoAuth/_duck.status":   http.StatusUnauthorized,
 		"Explain.plan": &kivik.QueryPlan{
 			Index: map[string]interface{}{
 				"ddoc": nil,
 				"name": "_all_docs",
 				"type": "special",
-				"def":  map[string]interface{}{"fields": []interface{}{map[string]string{"_id": "asc"}}},
+				"def":  map[string]interface{}{"fields": []interface{}{map[string]interface{}{"_id": "asc"}}},
 			},
 			Selector: map[string]interface{}{"_id": map[string]interface{}{"$gt": nil}},
 			Options: map[string]interface{}{
@@ -214,14 +221,14 @@ func RegisterPouchDBSuites() {
 				"conflicts":       false,
 				"execution_stats": false,
 				"partition":       "",
-				"r":               []int{49},
+				"r":               []interface{}{float64(49)},
 				"sort":            map[string]interface{}{},
 				"use_index":       []interface{}{},
 				"stable":          false,
 				"stale":           false,
 				"update":          true,
 				"skip":            0,
-				"limit":           25,
+				"limit":           float64(25),
 				"fields":          "all_fields",
 			},
 			Fields: nil,
@@ -234,19 +241,21 @@ func RegisterPouchDBSuites() {
 		"CreateIndex/RW/Admin/group/InvalidIndex.status":  http.StatusBadRequest,
 		"CreateIndex/RW/Admin/group/NilIndex.status":      http.StatusBadRequest,
 		"CreateIndex/RW/Admin/group/InvalidJSON.status":   http.StatusBadRequest,
-		"CreateIndex/RW/NoAuth/group/EmptyIndex.status":   http.StatusBadRequest,
+		"CreateIndex/RW/NoAuth/group/EmptyIndex.status":   http.StatusUnauthorized,
 		"CreateIndex/RW/NoAuth/group/BlankIndex.status":   http.StatusBadRequest,
-		"CreateIndex/RW/NoAuth/group/InvalidIndex.status": http.StatusBadRequest,
-		"CreateIndex/RW/NoAuth/group/NilIndex.status":     http.StatusBadRequest,
+		"CreateIndex/RW/NoAuth/group/InvalidIndex.status": http.StatusUnauthorized,
+		"CreateIndex/RW/NoAuth/group/NilIndex.status":     http.StatusUnauthorized,
 		"CreateIndex/RW/NoAuth/group/InvalidJSON.status":  http.StatusBadRequest,
-		"CreateIndex/RW/NoAuth/group/Valid.status":        http.StatusInternalServerError, // COUCHDB-3374
+		"CreateIndex/RW/NoAuth/group/Valid.status":        http.StatusUnauthorized,
 
 		"GetIndexes.databases":                     []string{"_replicator", "_users", "_global_changes"},
 		"GetIndexes/Admin/_replicator.indexes":     []kivik.Index{kt.AllDocsIndex},
 		"GetIndexes/Admin/_users.indexes":          []kivik.Index{kt.AllDocsIndex},
 		"GetIndexes/Admin/_global_changes.indexes": []kivik.Index{kt.AllDocsIndex},
 		"GetIndexes/NoAuth/_replicator.indexes":    []kivik.Index{kt.AllDocsIndex},
+		"GetIndexes/NoAuth/_replicator.status":     http.StatusUnauthorized,
 		"GetIndexes/NoAuth/_users.indexes":         []kivik.Index{kt.AllDocsIndex},
+		"GetIndexes/NoAuth/_users.status":          http.StatusUnauthorized,
 		"GetIndexes/NoAuth/_global_changes.skip":   true, // Pouch connects to the DB before searching the Index, so this test fails
 		"GetIndexes/NoAuth/_global_changes.status": http.StatusUnauthorized,
 		"GetIndexes/RW.indexes": []kivik.Index{
@@ -266,8 +275,8 @@ func RegisterPouchDBSuites() {
 
 		"DeleteIndex/RW/Admin/group/NotFoundDdoc.status":  http.StatusNotFound,
 		"DeleteIndex/RW/Admin/group/NotFoundName.status":  http.StatusNotFound,
-		"DeleteIndex/RW/NoAuth/group/NotFoundDdoc.status": http.StatusNotFound,
-		"DeleteIndex/RW/NoAuth/group/NotFoundName.status": http.StatusNotFound,
+		"DeleteIndex/RW/NoAuth/group/NotFoundDdoc.status": http.StatusUnauthorized,
+		"DeleteIndex/RW/NoAuth/group/NotFoundName.status": http.StatusUnauthorized,
 
 		"Query/RW/group/Admin/WithDocs/UpdateSeq.skip":  true,
 		"Query/RW/group/NoAuth/WithDocs/UpdateSeq.skip": true,
@@ -292,40 +301,53 @@ func RegisterPouchDBSuites() {
 		"Delete/RW/Admin/group/MissingDoc.status":        http.StatusNotFound,
 		"Delete/RW/Admin/group/InvalidRevFormat.status":  http.StatusBadRequest,
 		"Delete/RW/Admin/group/WrongRev.status":          http.StatusConflict,
-		"Delete/RW/NoAuth/group/MissingDoc.status":       http.StatusNotFound,
-		"Delete/RW/NoAuth/group/InvalidRevFormat.status": http.StatusBadRequest,
-		"Delete/RW/NoAuth/group/WrongRev.status":         http.StatusConflict,
+		"Delete/RW/NoAuth/group/MissingDoc.status":       http.StatusUnauthorized,
+		"Delete/RW/NoAuth/group/InvalidRevFormat.status": http.StatusUnauthorized,
+		"Delete/RW/NoAuth/group/WrongRev.status":         http.StatusUnauthorized,
 		"Delete/RW/NoAuth/group/DesignDoc.status":        http.StatusUnauthorized,
+		"Delete/RW/NoAuth/group/Local.status":            http.StatusUnauthorized,
+		"Delete/RW/NoAuth/group/ValidRev.status":         http.StatusUnauthorized,
 
-		"Stats.databases":             []string{"_users", "chicken"},
-		"Stats/Admin/chicken.status":  http.StatusNotFound,
-		"Stats/NoAuth/chicken.status": http.StatusNotFound,
+		"Stats.databases":        []string{"_users", "chicken"},
+		"Stats/NoAuth.status":    http.StatusUnauthorized,
+		"Stats/RW/NoAuth.status": http.StatusUnauthorized,
 
 		"BulkDocs/RW/NoAuth/group/Mix/Conflict.status": http.StatusConflict,
 		"BulkDocs/RW/Admin/group/Mix/Conflict.status":  http.StatusConflict,
+		"BulkDocs/RW/NoAuth/group/Create.status":       http.StatusUnauthorized,
+		"BulkDocs/RW/NoAuth/group/Update.status":       http.StatusUnauthorized,
+		"BulkDocs/RW/NoAuth/group/Delete.status":       http.StatusUnauthorized,
+		"BulkDocs/RW/NoAuth/group/Mix.status":          http.StatusUnauthorized,
+		"BulkDocs/RW/NoAuth/group/NonJSON.status":      http.StatusUnauthorized,
 
 		"GetAttachment/RW/group/Admin/foo/NotFound.status":  http.StatusNotFound,
-		"GetAttachment/RW/group/NoAuth/foo/NotFound.status": http.StatusNotFound,
+		"GetAttachment/RW/group/NoAuth/foo/NotFound.status": http.StatusUnauthorized,
+		"GetAttachment/RW/group/NoAuth.status":              http.StatusUnauthorized,
 
-		"GetAttachmentMeta/RW/group/Admin/foo/NotFound.status":  http.StatusNotFound,
-		"GetAttachmentMeta/RW/group/NoAuth/foo/NotFound.status": http.StatusNotFound,
+		"GetAttachmentMeta/RW/group/Admin/foo/NotFound.status": http.StatusNotFound,
+		"GetAttachmentMeta/RW/group/NoAuth.status":             http.StatusUnauthorized,
 
 		"PutAttachment/RW/group/Admin/Conflict.status":         http.StatusConflict,
-		"PutAttachment/RW/group/NoAuth/Conflict.status":        http.StatusConflict,
+		"PutAttachment/RW/group/NoAuth/Create.status":          http.StatusUnauthorized,
+		"PutAttachment/RW/group/NoAuth/Update.status":          http.StatusUnauthorized,
+		"PutAttachment/RW/group/NoAuth/Conflict.status":        http.StatusUnauthorized,
 		"PutAttachment/RW/group/NoAuth/UpdateDesignDoc.status": http.StatusUnauthorized,
 		"PutAttachment/RW/group/NoAuth/CreateDesignDoc.status": http.StatusUnauthorized,
 
-		// "DeleteAttachment/RW/group/Admin/NotFound.status":  http.StatusNotFound, // COUCHDB-3362
-		// "DeleteAttachment/RW/group/NoAuth/NotFound.status": http.StatusNotFound, // COUCHDB-3362
-		"DeleteAttachment/RW/group/Admin/NoDoc.status":      http.StatusConflict,
-		"DeleteAttachment/RW/group/NoAuth/NoDoc.status":     http.StatusConflict,
-		"DeleteAttachment/RW/group/NoAuth/DesignDoc.status": http.StatusUnauthorized,
+		"DeleteAttachment/RW/group/Admin/NotFound.status":  http.StatusNotFound,
+		"DeleteAttachment/RW/group/NoAuth/NotFound.status": http.StatusUnauthorized,
+		"DeleteAttachment/RW/group/Admin/NoDoc.status":     http.StatusConflict,
+		"DeleteAttachment/RW/group/NoAuth.status":          http.StatusUnauthorized,
 
 		"Put/RW/Admin/group/LeadingUnderscoreInID.status":  http.StatusBadRequest,
 		"Put/RW/Admin/group/Conflict.status":               http.StatusConflict,
+		"Put/RW/NoAuth/group/Create.status":                http.StatusUnauthorized,
 		"Put/RW/NoAuth/group/DesignDoc.status":             http.StatusUnauthorized,
+		"Put/RW/NoAuth/group/Local.status":                 http.StatusUnauthorized,
 		"Put/RW/NoAuth/group/LeadingUnderscoreInID.status": http.StatusBadRequest,
-		"Put/RW/NoAuth/group/Conflict.status":              http.StatusConflict,
+		"Put/RW/NoAuth/group/HeavilyEscapedID.status":      http.StatusUnauthorized,
+		"Put/RW/NoAuth/group/SlashInID.status":             http.StatusUnauthorized,
+		"Put/RW/NoAuth/group/Conflict.status":              http.StatusUnauthorized,
 
 		"Replicate.NotFoundDB": func() string {
 			var dsn string
@@ -346,15 +368,12 @@ func RegisterPouchDBSuites() {
 		"Replicate.prefix":         "none",
 		"Replicate.timeoutSeconds": 5,
 		"Replicate.mode":           "pouchdb",
-		"Replicate/RW/Admin/group/MissingSource/Results.status":  http.StatusUnauthorized,
-		"Replicate/RW/Admin/group/MissingTarget/Results.status":  http.StatusUnauthorized,
-		"Replicate/RW/NoAuth/group/MissingSource/Results.status": http.StatusUnauthorized,
-		"Replicate/RW/NoAuth/group/MissingTarget/Results.status": http.StatusUnauthorized,
 
-		"Query/RW/group/Admin/WithoutDocs/ScanDoc.status":  http.StatusBadRequest,
-		"Query/RW/group/NoAuth/WithoutDocs/ScanDoc.status": http.StatusBadRequest,
+		"Query/RW/group/Admin/WithoutDocs/ScanDoc.status": http.StatusBadRequest,
+		"Query/RW/group/NoAuth/WithoutDocs.status":        http.StatusUnauthorized,
+		"Query/RW/group/NoAuth/WithDocs.status":           http.StatusUnauthorized,
 
-		// "ViewCleanup/RW/NoAuth.status": http.StatusUnauthorized, # FIXME: #14
+		"ViewCleanup/RW/NoAuth.status": http.StatusUnauthorized,
 
 		"Changes/Continuous.options": kivik.Params(map[string]interface{}{
 			"live":    true,
@@ -375,6 +394,17 @@ func RegisterPouchDBSuites() {
 			}
 			return false
 		}(),
+
+		"DBsStats/NoAuth.status": http.StatusUnauthorized,
+
+		"Copy/RW/group/NoAuth.status":                   http.StatusUnauthorized,
+		"Compact/RW/NoAuth.status":                      http.StatusUnauthorized,
+		"Find/NoAuth.status":                            http.StatusUnauthorized,
+		"Find/RW/group/NoAuth.status":                   http.StatusUnauthorized,
+		"Explain/NoAuth.status":                         http.StatusUnauthorized,
+		"CreateDoc/RW/group/NoAuth.status":              http.StatusUnauthorized,
+		"Explain/RW/group/NoAuth.status":                http.StatusUnauthorized,
+		"DeleteIndex/RW/NoAuth/group/ValidIndex.status": http.StatusUnauthorized,
 	})
 }
 

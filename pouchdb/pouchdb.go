@@ -143,7 +143,7 @@ func (c *client) isRemote() bool {
 func (c *client) DBExists(ctx context.Context, dbName string, options driver.Options) (bool, error) {
 	pouchOpts := map[string]interface{}{"skip_setup": true}
 	options.Apply(pouchOpts)
-	_, err := c.pouch.New(c.dbURL(dbName), pouchOpts).Info(ctx)
+	_, err := c.pouch.New(c.dbURL(dbName), c.options(pouchOpts)).Info(ctx)
 	if err == nil {
 		return true, nil
 	}
@@ -161,7 +161,7 @@ func (c *client) CreateDB(ctx context.Context, dbName string, options driver.Opt
 	}
 	pouchOpts := map[string]interface{}{}
 	options.Apply(pouchOpts)
-	_, err := c.pouch.New(c.dbURL(dbName), pouchOpts).Info(ctx)
+	_, err := c.pouch.New(c.dbURL(dbName), c.options(pouchOpts)).Info(ctx)
 	return err
 }
 
@@ -176,7 +176,7 @@ func (c *client) DestroyDB(ctx context.Context, dbName string, options driver.Op
 	}
 	pouchOpts := map[string]interface{}{}
 	options.Apply(pouchOpts)
-	return c.pouch.New(c.dbURL(dbName), pouchOpts).Destroy(ctx, nil)
+	return c.pouch.New(c.dbURL(dbName), c.options(pouchOpts)).Destroy(ctx, nil)
 }
 
 func (c *client) DB(dbName string, options driver.Options) (driver.DB, error) {
@@ -185,7 +185,7 @@ func (c *client) DB(dbName string, options driver.Options) (driver.DB, error) {
 	return &db{
 		// TODO: #68 Consider deferring this pouch.New call until the first use,
 		// so ctx can be used.
-		db:     c.pouch.New(c.dbURL(dbName), pouchOpts),
+		db:     c.pouch.New(c.dbURL(dbName), c.options(pouchOpts)),
 		client: c,
 	}, nil
 }

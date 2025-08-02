@@ -39,6 +39,6 @@ func testDBsStats(ctx *kt.Context, client *kivik.Client) {
 	}
 	const wantResults = 2
 	if len(stats) != wantResults {
-		ctx.Errorf("Expected 2 database stats, got %d", len(stats))
+		ctx.Errorf("Expected %d database stats, got %d", wantResults, len(stats))
 	}
 }

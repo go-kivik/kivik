@@ -167,6 +167,8 @@ func RegisterPouchDBSuites() {
 		"DBExists/NoAuth/chicken.exists":  false,
 		"DBExists/RW/group/Admin.exists":  true,
 		"DBExists/RW/group/NoAuth.exists": true,
+		"DBExists/NoAuth/_users.status":   http.StatusUnauthorized,
+		"DBExists/RW/group/NoAuth.status": http.StatusUnauthorized,
 
 		"DestroyDB/RW/NoAuth/NonExistantDB.status": http.StatusNotFound,
 		"DestroyDB/RW/Admin/NonExistantDB.status":  http.StatusNotFound,
@@ -391,8 +393,6 @@ func RegisterPouchDBSuites() {
 		"Find/RW/group/NoAuth.status":                   http.StatusUnauthorized,
 		"Explain/NoAuth.status":                         http.StatusUnauthorized,
 		"CreateDoc/RW/group/NoAuth.status":              http.StatusUnauthorized,
-		"DBExists/NoAuth.status":                        http.StatusUnauthorized,
-		"DBExists/RW/group/NoAuth.status":               http.StatusUnauthorized,
 		"Explain/RW/group/NoAuth.status":                http.StatusUnauthorized,
 		"DeleteIndex/RW/NoAuth/group/ValidIndex.status": http.StatusUnauthorized,
 	})

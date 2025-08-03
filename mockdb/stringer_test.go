@@ -641,7 +641,7 @@ func TestExplainString(t *testing.T) {
 		input: &ExpectedExplain{commonExpectation: commonExpectation{db: &DB{name: "foo"}}, ret0: &driver.QueryPlan{DBName: "foo"}},
 		expected: `call to DB(foo#0).Explain() which:
 	- has any query
-	- should return query plan: &{foo map[] map[] map[] 0 0 [] map[]}`,
+	- should return query plan: &{foo map[] map[] map[] 0  0 [] map[]}`,
 	})
 	tests.Add("error", stringerTest{
 		input: &ExpectedExplain{commonExpectation: commonExpectation{db: &DB{name: "foo"}, err: errors.New("foo err")}},

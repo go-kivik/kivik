@@ -341,12 +341,13 @@ type Finder interface {
 
 // QueryPlan is the response of an Explain query.
 type QueryPlan struct {
-	DBName   string                 `json:"dbname"`
-	Index    map[string]interface{} `json:"index"`
-	Selector map[string]interface{} `json:"selector"`
-	Options  map[string]interface{} `json:"opts"`
-	Limit    int64                  `json:"limit"`
-	Skip     int64                  `json:"skip"`
+	DBName    string                 `json:"dbname"`
+	Index     map[string]interface{} `json:"index"`
+	Selector  map[string]interface{} `json:"selector"`
+	Options   map[string]interface{} `json:"opts"`
+	Limit     int64                  `json:"limit"`
+	Partition string                 `json:"partition"`
+	Skip      int64                  `json:"skip"`
 
 	// Fields is the list of fields to be returned in the result set, or
 	// an empty list if all fields are to be returned.

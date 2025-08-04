@@ -185,11 +185,11 @@ func RegisterPouchDBSuites() {
 		"AllDocs/RW/group/NoAuth/WithDocs/UpdateSeq.skip":    true,
 		"AllDocs/RW/group/NoAuth/WithoutDocs/UpdateSeq.skip": true,
 
-		"Find.databases":             []string{"chicken", "_duck"},
-		"Find/Admin/chicken.status":  http.StatusNotFound,
-		"Find/Admin/_duck.status":    http.StatusNotFound,
-		"Find/NoAuth/chicken.status": http.StatusNotFound,
-		"Find/NoAuth/_duck.status":   http.StatusUnauthorized,
+		"Find.databases":                     []string{"chicken", "_duck"},
+		"Find/Admin/chicken/Warning.warning": "No matching index found, create an index to optimize query time.",
+		"Find/Admin/_duck.status":            http.StatusNotFound,
+		"Find/NoAuth/chicken.status":         http.StatusNotFound,
+		"Find/NoAuth/_duck.status":           http.StatusUnauthorized,
 		// TODO: Fix this and uncomment https://github.com/go-kivik/kivik/issues/588
 		// "Find/RW/group/Admin/Warning.warning":  "No matching index found, create an index to optimize query time",
 		"Find/RW/group/NoAuth/Warning.warning": "No matching index found, create an index to optimize query time",

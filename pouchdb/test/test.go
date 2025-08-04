@@ -282,8 +282,12 @@ func RegisterPouchDBSuites() {
 		"Get/RW/group/Admin/bogus.status":  http.StatusNotFound,
 		"Get/RW/group/NoAuth/bogus.status": http.StatusNotFound,
 
-		"GetRev/RW/group/Admin/bogus.status":  http.StatusNotFound,
-		"GetRev/RW/group/NoAuth/bogus.status": http.StatusNotFound,
+		"GetRev/RW/group/Admin/bogus.status":        http.StatusNotFound,
+		"GetRev/RW/group/NoAuth/bob.status":         http.StatusUnauthorized,
+		"GetRev/RW/group/NoAuth/foo.status":         http.StatusUnauthorized,
+		"GetRev/RW/group/NoAuth/bogus.status":       http.StatusUnauthorized,
+		"GetRev/RW/group/NoAuth/_design/foo.status": http.StatusUnauthorized,
+		"GetRev/RW/group/NoAuth/_local/foo.status":  http.StatusUnauthorized,
 
 		"Delete/RW/Admin/group/MissingDoc.status":        http.StatusNotFound,
 		"Delete/RW/Admin/group/InvalidRevFormat.status":  http.StatusBadRequest,

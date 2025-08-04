@@ -195,7 +195,6 @@ func RegisterPouchDBSuites() {
 		"Find/RW/group/NoAuth/Warning.warning": "No matching index found, create an index to optimize query time",
 
 		"Explain.databases":             []string{"chicken", "_duck"},
-		"Explain/Admin/chicken.status":  http.StatusNotFound,
 		"Explain/Admin/_duck.status":    http.StatusNotFound,
 		"Explain/NoAuth/chicken.status": http.StatusNotFound,
 		"Explain/NoAuth/_duck.status":   http.StatusUnauthorized,
@@ -211,6 +210,7 @@ func RegisterPouchDBSuites() {
 				"bookmark":        "nil",
 				"conflicts":       false,
 				"execution_stats": false,
+				"partition":       "",
 				"r":               []int{49},
 				"sort":            map[string]interface{}{},
 				"use_index":       []interface{}{},

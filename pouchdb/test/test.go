@@ -279,8 +279,11 @@ func RegisterPouchDBSuites() {
 		"Version.vendor":         `^PouchDB$`,
 		"Version.vendor_version": `^[789]\.\d\.\d$`,
 
-		"Get/RW/group/Admin/bogus.status":  http.StatusNotFound,
-		"Get/RW/group/NoAuth/bogus.status": http.StatusNotFound,
+		"Get/RW/group/Admin/bogus.status":        http.StatusNotFound,
+		"Get/RW/group/NoAuth/bob.status":         http.StatusUnauthorized,
+		"Get/RW/group/NoAuth/_design/foo.status": http.StatusUnauthorized,
+		"Get/RW/group/NoAuth/_local/foo.status":  http.StatusUnauthorized,
+		"Get/RW/group/NoAuth/bogus.status":       http.StatusUnauthorized,
 
 		"GetRev/RW/group/Admin/bogus.status":        http.StatusNotFound,
 		"GetRev/RW/group/NoAuth/bob.status":         http.StatusUnauthorized,

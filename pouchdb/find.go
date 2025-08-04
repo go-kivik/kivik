@@ -144,14 +144,15 @@ func (r *findRows) Next(row *driver.Row) (err error) {
 }
 
 type queryPlan struct {
-	DBName   string                 `json:"dbname"`
-	Index    map[string]interface{} `json:"index"`
-	Selector map[string]interface{} `json:"selector"`
-	Options  map[string]interface{} `json:"opts"`
-	Limit    int64                  `json:"limit"`
-	Skip     int64                  `json:"skip"`
-	Fields   fields                 `json:"fields"`
-	Range    map[string]interface{} `json:"range"`
+	DBName    string                 `json:"dbname"`
+	Index     map[string]interface{} `json:"index"`
+	Selector  map[string]interface{} `json:"selector"`
+	Options   map[string]interface{} `json:"opts"`
+	Limit     int64                  `json:"limit"`
+	Partition string                 `json:"partition"`
+	Skip      int64                  `json:"skip"`
+	Fields    fields                 `json:"fields"`
+	Range     map[string]interface{} `json:"range"`
 }
 
 type fields []interface{}

@@ -41,3 +41,20 @@ func PouchDBVersion(t *testing.T) string {
 	pouchdbVer = &v.Version
 	return v.Version
 }
+
+// MustPouchDBVersion returns the version of PouchDB library being used.
+func MustPouchDBVersion() string {
+	if pouchdbVer != nil {
+		return *pouchdbVer
+	}
+	client, err := kivik.New("pouch", "")
+	if err != nil {
+		panic(err)
+	}
+	v, err := client.Version(context.Background())
+	if err != nil {
+		panic(err)
+	}
+	pouchdbVer = &v.Version
+	return v.Version
+}

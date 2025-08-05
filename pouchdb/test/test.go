@@ -19,7 +19,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -86,13 +85,7 @@ func RegisterPouchDBSuites() {
 				"sort":      map[string]interface{}{},
 				"use_index": []interface{}{},
 			},
-			Fields: func() []interface{} {
-				if ver := runtime.Version(); strings.HasPrefix(ver, "go1.16") {
-					return []interface{}{}
-				}
-				// From GopherJS 17 on, null arrays are properly converted to nil
-				return nil
-			}(),
+			Fields: nil,
 			Range: map[string]interface{}{
 				"start_key": nil,
 			},
@@ -229,15 +222,9 @@ func RegisterPouchDBSuites() {
 				"limit":           25,
 				"fields":          "all_fields",
 			},
-			Fields: func() []interface{} {
-				if ver := runtime.Version(); strings.HasPrefix(ver, "go1.16") {
-					return []interface{}{}
-				}
-				// From GopherJS 17 on, null arrays are properly converted to nil
-				return nil
-			}(),
-			Range: nil,
-			Limit: 25,
+			Fields: nil,
+			Range:  nil,
+			Limit:  25,
 		},
 
 		"CreateIndex/RW/Admin/group/EmptyIndex.status":    http.StatusBadRequest,

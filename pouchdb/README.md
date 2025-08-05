@@ -2,7 +2,7 @@
 
 # Kivik PouchDB
 
-PouchDB driver for [Kivik](https://github.com/go-kivik/pouchdb).
+PouchDB 9.x driver for [Kivik](https://github.com/go-kivik/pouchdb).
 
 ## Usage
 

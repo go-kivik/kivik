@@ -4,3 +4,4 @@ coverage.txt
 **/package-lock.json
 mockdb/other
 **/*~
+pouch__all_dbs__

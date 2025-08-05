@@ -28,6 +28,7 @@ import (
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/kiviktest"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
+	"github.com/go-kivik/kivik/v4/pouchdb/internal"
 )
 
 func init() {
@@ -71,9 +72,16 @@ func RegisterPouchDBSuites() {
 				"def":  map[string]interface{}{"fields": []interface{}{map[string]string{"_id": "asc"}}},
 			},
 			Selector: map[string]interface{}{"_id": map[string]interface{}{"$gt": nil}},
+			Limit: func() int64 {
+				if strings.HasPrefix(internal.MustPouchDBVersion(), "9.") {
+					return 25
+				}
+				return 0
+			}(),
 			Options: map[string]interface{}{
 				"bookmark":  "nil",
 				"conflicts": false,
+				"limit":     25,
 				"r":         []int{49},
 				"sort":      map[string]interface{}{},
 				"use_index": []interface{}{},

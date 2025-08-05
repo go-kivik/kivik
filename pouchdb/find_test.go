@@ -17,8 +17,6 @@ package pouchdb
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -109,15 +107,8 @@ func TestExplain(t *testing.T) {
 				},
 				Options:  options,
 				Selector: map[string]interface{}{"_id": map[string]interface{}{"$eq": "foo"}},
-				Fields: func() []interface{} {
-					fmt.Println(runtime.Version())
-					if ver := runtime.Version(); strings.HasPrefix(ver, "go1.16") {
-						return []interface{}{}
-					}
-					// From GopherJS 17 on, null arrays are properly converted to nil
-					return nil
-				}(),
-				Range: map[string]interface{}{},
+				Fields:   nil,
+				Range:    map[string]interface{}{},
 			},
 		}
 	})

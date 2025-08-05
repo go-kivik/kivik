@@ -5,3 +5,5 @@ coverage.txt
 mockdb/other
 **/*~
 pouch__all_dbs__
+*_test.[0-9]*.js
+*_test.[0-9]*.js.map

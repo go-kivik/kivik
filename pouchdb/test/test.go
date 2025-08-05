@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -358,6 +359,21 @@ func RegisterPouchDBSuites() {
 			"live":    true,
 			"timeout": false,
 		}),
+		"Changes/Continuous/RW/group/NoAuth.status": http.StatusUnauthorized,
+		"Changes/Continuous.skip": func() bool {
+			// Node.js 14, required for GopherJS 1.17, does not support the AbortController function
+			if ver := runtime.Version(); strings.HasPrefix(ver, "go1.17") {
+				return true
+			}
+			return false
+		}(),
+		"Changes/Normal.skip": func() bool {
+			// Node.js 14, required for GopherJS 1.17, does not support the AbortController function
+			if ver := runtime.Version(); strings.HasPrefix(ver, "go1.17") {
+				return true
+			}
+			return false
+		}(),
 	})
 }
 

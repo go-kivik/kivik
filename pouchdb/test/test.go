@@ -378,5 +378,5 @@ func PouchLocalTest(t *testing.T) {
 
 // PouchRemoteTest runs the PouchDB tests against a remote CouchDB database.
 func PouchRemoteTest(t *testing.T) {
-	kiviktest.DoTest(t, kiviktest.SuitePouchRemote, "KIVIK_TEST_DSN_COUCH22")
+	kiviktest.DoTest(t, kiviktest.SuitePouchRemote, "KIVIK_TEST_DSN_COUCH33")
 }

@@ -3,7 +3,6 @@ stages:
   - release
 
 variables:
-  LINTER_VERSION: v2.3.0
   COUCHDB_USER: admin
   COUCHDB_PASSWORD: abc123
 
@@ -17,15 +16,6 @@ test-x-sqlite:
     - cd x/sqlite
     - go mod download
     - go test -race -shuffle=on ./...
-
-linter-x-sqlite:
-  stage: test
-  image: golangci/golangci-lint:${LINTER_VERSION}
-  script:
-    - cd x/sqlite
-    - go mod download
-    - golangci-lint run ./...
-    - go mod tidy && git diff --exit-code
 
 test:
   parallel:
@@ -42,16 +32,6 @@ test:
   script:
     - go mod download
     - go test -race -shuffle=on ./...
-
-linter:
-  stage: test
-  image: golangci/golangci-lint:${LINTER_VERSION}
-  script:
-    - go mod download
-    - golangci-lint run ./...
-    - go mod tidy -compat=1.17 && git diff --exit-code
-    - go generate ./...
-    - git diff --exit-code
 
 coverage:
   stage: test

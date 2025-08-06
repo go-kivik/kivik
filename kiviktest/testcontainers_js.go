@@ -74,7 +74,6 @@ func spawnTCDaemon(t *testing.T) <-chan string {
 
 	t.Log("Starting testcontainers daemon...")
 	spawn := js.Global().Call("require", "child_process").Get("spawn")
-	js.Global().Get("console").Call("log", "Starting testcontainers daemon...", spawn)
 
 	options := js.Global().Get("Object").New()
 	options.Set("detached", true)
@@ -134,7 +133,6 @@ func spawnTCDaemon(t *testing.T) <-chan string {
 		return nil
 	}))
 
-	js.Global().Get("console").Call("log", "testcontainers daemon started", child)
 	child.Call("unref") // Let the child keep running independently of the parent
 	t.Cleanup(func() {
 		js.Global().Get("process").Call("kill", child.Get("pid"))

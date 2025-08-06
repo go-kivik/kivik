@@ -16,9 +16,11 @@ package kiviktest
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"strings"
 	"testing"
 
 	"syscall/js"
@@ -28,9 +30,9 @@ func startCouchDB(t *testing.T, image string) string { //nolint:thelper // Not a
 	if os.Getenv("USETC") == "" {
 		t.Skip("USETC not set, skipping testcontainers")
 	}
-	startTCDaemon(t)
+	addr := startTCDaemon(t)
 	t.Logf("testcontainers: Starting CouchDB with image: %s", image)
-	req, err := http.NewRequest(http.MethodPost, "http://localhost:8080?image="+image, nil)
+	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://%s?image=%s", addr, image), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -55,14 +57,21 @@ func startCouchDB(t *testing.T, image string) string { //nolint:thelper // Not a
 	return dsn
 }
 
-func startTCDaemon(t *testing.T) {
+// startTCDaemon starts the testcontainers daemon in a separate
+// process, and returns the listening address.
+func startTCDaemon(t *testing.T) string {
+	return <-spawnTCDaemon(t)
+}
+
+func spawnTCDaemon(t *testing.T) <-chan string {
+	t.Helper()
+
 	defer func() {
 		if r := recover(); r != nil {
 			t.Fatalf("Failed to start testcontainers daemon: %v", r)
 		}
 	}()
 
-	t.Helper()
 	t.Log("Starting testcontainers daemon...")
 	spawn := js.Global().Call("require", "child_process").Get("spawn")
 	js.Global().Get("console").Call("log", "Starting testcontainers daemon...", spawn)
@@ -99,11 +108,21 @@ func startTCDaemon(t *testing.T) {
 		return nil
 	}))
 
+	ready := make(chan string)
+
 	// Log stdout
 	child.Get("stdout").Call("on", "data", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		buffer := args[0]
 		data := buffer.Call("toString").String()
 		go t.Logf("[STDOUT] %s", data)
+		if strings.HasPrefix(data, "Listening on ") {
+			// Extract the address from the log message
+			addr := strings.TrimSpace(strings.TrimPrefix(data, "Listening on "))
+			go func() {
+				ready <- addr
+				close(ready)
+			}()
+		}
 		return nil
 	}))
 
@@ -120,4 +139,5 @@ func startTCDaemon(t *testing.T) {
 	t.Cleanup(func() {
 		js.Global().Get("process").Call("kill", child.Get("pid"))
 	})
+	return ready
 }

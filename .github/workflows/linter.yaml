@@ -1,0 +1,34 @@
+name: linter
+
+on:
+  pull_request:
+
+jobs:
+  golangcilint:
+    name: golangci-lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.24
+      - name: Lint main module
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.3.1
+      - name: Validate generated sources
+        run: |
+          go generate ./...
+          git diff --exit-code
+      - name: Validate main go.mod
+        run: |
+          go mod tidy -compat=1.17 && git diff --exit-code
+      - name: Lint x/sqlite module
+        uses: golangci/golangci-lint-action@v8
+        with:
+          working-directory: ./x/sqlite
+          version: v2.3.1
+      - name: Validate x/sqlite go.mod
+        run: |
+          cd x/sqlite && go mod tidy && git diff --exit-code

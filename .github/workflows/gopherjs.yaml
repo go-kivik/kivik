@@ -46,7 +46,7 @@ jobs:
         run: |
           mkdir -p /tmp/src
           ( cd /tmp && go install github.com/gopherjs/gopherjs@${{ matrix.gopherjs }} )
-          npm install --force https://github.com/gopherjs/gopherjs#${{ matrix.gopherjs }}
+          npm install --force https://github.com/gopherjs/gopherjs/archive/refs/tags/${{ matrix.gopherjs }}.tar.gz
           npm list
 
       - name: Run GopherJS tests

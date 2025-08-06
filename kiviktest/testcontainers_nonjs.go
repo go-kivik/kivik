@@ -27,9 +27,17 @@ func startCouchDB(t *testing.T, image string) string { //nolint:thelper // Not a
 		t.Skip("USETC not set, skipping testcontainers")
 	}
 
-	dsn, err := tc.StartCouchDB(context.TODO(), image)
+	dsn, err := tc.StartCouchDB(tContext(t), image)
 	if err != nil {
 		t.Fatal(err)
 	}
 	return dsn
+}
+
+func tContext(t *testing.T) context.Context {
+	t.Helper()
+	if c, ok := interface{}(t).(interface{ Context() context.Context }); ok {
+		return c.Context()
+	}
+	return context.Background()
 }

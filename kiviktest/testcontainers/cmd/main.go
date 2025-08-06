@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"os"
 	"os/signal"
 	"syscall"
 	"time"
@@ -31,14 +30,12 @@ import (
 )
 
 func main() {
-	// Ensure this process doesn't run forever
-	func() {
-		time.Sleep(20 * time.Minute)
-		fmt.Fprintf(os.Stderr, "Exiting after 20 minutes\n")
-		os.Exit(1)
-	}()
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
+
+	// Set a timeout for the context to avoid hanging indefinitely
+	ctx, timeoutCancel := context.WithTimeout(ctx, 20*time.Minute)
+	defer timeoutCancel()
 
 	// choose a random port for the HTTP server
 	l, err := net.Listen("tcp", "127.0.0.1:")
@@ -49,7 +46,7 @@ func main() {
 	_ = l.Close()
 	s := http.Server{
 		Addr:    addr,
-		Handler: http.HandlerFunc(startCouchDB),
+		Handler: http.HandlerFunc(startCouchDB(ctx)),
 	}
 	go func() {
 		fmt.Printf("Listening on %s\n", addr)
@@ -63,19 +60,21 @@ func main() {
 	}
 }
 
-func startCouchDB(w http.ResponseWriter, r *http.Request) {
-	image := r.URL.Query().Get("image")
-	if image == "" {
-		http.Error(w, "image query parameter is required", http.StatusBadRequest)
-		return
+func startCouchDB(ctx context.Context) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		image := r.URL.Query().Get("image")
+		if image == "" {
+			http.Error(w, "image query parameter is required", http.StatusBadRequest)
+			return
+		}
+		dsn, err := tc.StartCouchDB(ctx, image)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "text/plain")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(dsn))
+		_, _ = w.Write([]byte("\n"))
 	}
-	dsn, err := tc.StartCouchDB(r.Context(), image)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "text/plain")
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(dsn))
-	_, _ = w.Write([]byte("\n"))
 }

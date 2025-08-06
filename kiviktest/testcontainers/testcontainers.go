@@ -40,7 +40,7 @@ func StartCouchDB(ctx context.Context, image string) (string, error) {
 			"COUCHDB_PASSWORD": "abc123",
 		},
 	}
-	container, err := testcontainers.GenericContainer(context.TODO(), testcontainers.GenericContainerRequest{
+	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
 		Started:          true,
 		Reuse:            false,
@@ -48,11 +48,11 @@ func StartCouchDB(ctx context.Context, image string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	ip, err := container.Host(context.TODO())
+	ip, err := container.Host(ctx)
 	if err != nil {
 		return "", err
 	}
-	mappedPort, err := container.MappedPort(context.TODO(), "5984/tcp")
+	mappedPort, err := container.MappedPort(ctx, "5984/tcp")
 	if err != nil {
 		return "", err
 	}

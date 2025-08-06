@@ -70,9 +70,7 @@ func testContinuousChanges(ctx *kt.Context, client *kivik.Client) {
 		ctx.Fatalf("failed to connect to db: %s", err)
 	}
 	changes := db.Changes(context.Background(), ctx.Options("options"))
-	if !ctx.IsExpectedSuccess(changes.Err()) {
-		return
-	}
+
 	const maxChanges = 3
 	expected := make([]string, 0, maxChanges)
 	doc := cDoc{
@@ -86,7 +84,7 @@ func testContinuousChanges(ctx *kt.Context, client *kivik.Client) {
 	expected = append(expected, rev)
 	doc.Rev = rev
 	doc.Value = "bar"
-	rev, err = db.Put(context.Background(), doc.ID, doc)
+	rev, err = ctx.Admin.DB(dbname).Put(context.Background(), doc.ID, doc)
 	if err != nil {
 		ctx.Fatalf("Failed to update doc: %s", err)
 	}
@@ -94,14 +92,14 @@ func testContinuousChanges(ctx *kt.Context, client *kivik.Client) {
 	doc.Rev = rev
 	const delay = 10 * time.Millisecond
 	time.Sleep(delay) // Pause to ensure that the update counts as a separate rev; especially problematic on PouchDB
-	rev, err = db.Delete(context.Background(), doc.ID, doc.Rev)
+	rev, err = ctx.Admin.DB(dbname).Delete(context.Background(), doc.ID, doc.Rev)
 	if err != nil {
 		ctx.Fatalf("Failed to delete doc: %s", err)
 	}
 	expected = append(expected, rev)
 	const maxRevs = 3
 	revs := make([]string, 0, maxRevs)
-	errChan := make(chan error)
+	done := make(chan struct{})
 	go func() {
 		for changes.Next() {
 			revs = append(revs, changes.Changes()...)
@@ -109,23 +107,18 @@ func testContinuousChanges(ctx *kt.Context, client *kivik.Client) {
 				_ = changes.Close()
 			}
 		}
-		if err = changes.Err(); err != nil {
-			errChan <- err
-		}
-		close(errChan)
+		close(done)
 	}()
 	timer := time.NewTimer(maxWait)
 	select {
-	case chErr, ok := <-errChan:
-		if ok {
-			ctx.Errorf("Error reading changes: %s", chErr)
-		}
+	case <-done:
+		timer.Stop()
 	case <-timer.C:
 		_ = changes.Close()
 		ctx.Errorf("Failed to read changes in %s", maxWait)
 	}
-	if err = changes.Err(); err != nil {
-		ctx.Errorf("iteration failed: %s", err)
+	if !ctx.IsExpectedSuccess(changes.Err()) {
+		return
 	}
 	expectedRevs := make(map[string]struct{})
 	for _, rev := range expected {
@@ -200,9 +193,6 @@ func testNormalChanges(ctx *kt.Context, client *kivik.Client) {
 	expected = append(expected, rev)
 
 	changes := db.Changes(context.Background(), ctx.Options("options"))
-	if !ctx.IsExpectedSuccess(changes.Err()) {
-		return
-	}
 
 	const maxRevs = 3
 	revs := make([]string, 0, maxRevs)
@@ -212,8 +202,8 @@ func testNormalChanges(ctx *kt.Context, client *kivik.Client) {
 			_ = changes.Close()
 		}
 	}
-	if err = changes.Err(); err != nil {
-		ctx.Errorf("iteration failed: %s", err)
+	if !ctx.IsExpectedSuccess(changes.Err()) {
+		return
 	}
 	expectedRevs := make(map[string]struct{})
 	for _, rev := range expected {

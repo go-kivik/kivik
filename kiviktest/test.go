@@ -411,14 +411,14 @@ func ConnectClients(t *testing.T, driverName, dsn string, opts kivik.Option) (*k
 	clients := &kt.Context{
 		T: t,
 	}
-	t.Logf("Connecting to %s ...\n", dsn)
+	t.Logf("[Auth] Connecting to %s ...\n", dsn)
 	if client, err := kivik.New(driverName, dsn, opts); err == nil {
 		clients.Admin = client
 	} else {
 		return nil, err
 	}
 
-	t.Logf("Connecting to %s ...\n", noAuthDSN)
+	t.Logf("[NoAuth] Connecting to %s ...\n", noAuthDSN)
 	if client, err := kivik.New(driverName, noAuthDSN, opts); err == nil {
 		clients.NoAuth = client
 	} else {

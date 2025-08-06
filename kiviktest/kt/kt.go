@@ -243,7 +243,7 @@ func (c *Context) TestDB() string {
 		return c.Admin.CreateDB(context.Background(), dbname, c.Options("db"))
 	})
 	if err != nil {
-		c.Fatalf("Failed to create database: %s", err)
+		c.Fatalf("Failed to create database %q: %s", dbname, err)
 	}
 	c.T.Cleanup(func() { c.DestroyDB(dbname) })
 	return dbname

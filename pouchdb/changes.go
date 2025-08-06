@@ -65,6 +65,7 @@ type changeRow struct {
 func (c *changesFeed) setErr(err error) {
 	c.errMu.Lock()
 	c.err = err
+	close(c.feed)
 	c.errMu.Unlock()
 }
 
@@ -82,6 +83,9 @@ func (c *changesFeed) Next(row *driver.Change) error {
 		return err
 	case newRow, ok := <-c.feed:
 		if !ok {
+			if c.err != nil {
+				return c.err
+			}
 			c.setErr(io.EOF)
 			return io.EOF
 		}

@@ -380,6 +380,7 @@ func RegisterPouchDBSuites() {
 			"timeout": false,
 		}),
 		"Changes/Continuous/RW/group/NoAuth.status": http.StatusUnauthorized,
+		"Changes/Normal/RW/group/NoAuth.status":     http.StatusUnauthorized,
 		"Changes/Continuous.skip": func() bool {
 			// Node.js 14, required for GopherJS 1.17, does not support the AbortController function
 			if ver := runtime.Version(); strings.HasPrefix(ver, "go1.17") {

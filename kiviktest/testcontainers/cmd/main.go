@@ -22,13 +22,21 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	tc "github.com/go-kivik/kivik/v4/kiviktest/testcontainers"
 )
 
 func main() {
+	// Ensure this process doesn't run forever
+	func() {
+		time.Sleep(20 * time.Minute)
+		fmt.Fprintf(os.Stderr, "Exiting after 20 minutes\n")
+		os.Exit(1)
+	}()
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 

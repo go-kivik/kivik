@@ -18,6 +18,9 @@ jobs:
           - go: "1.18"
             node: "18"
             gopherjs: v1.18.0-beta3
+          - go: "1.19"
+            node: "18"
+            gopherjs: v1.19.0-beta1
 
     container:
       image: golang:${{ matrix.go }}

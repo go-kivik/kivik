@@ -32,40 +32,6 @@ coverage:
     - go mod download
     - ./script/coverage.sh
 
-.gopherjs_test: &gopherjs_test_template
-  image: golang:1.19
-  services:
-    - docker:24-dind
-  variables:
-    USETC: "1"
-    DOCKER_HOST: tcp://docker:2375/
-    DOCKER_TLS_CERTDIR: ""
-  before_script:
-    - curl -sL https://deb.nodesource.com/setup_${NODE_VER}.x | sed -e '/sleep/d' | bash -
-    - apt-get update -qq && apt-get install -y nodejs
-    - go build -o testcontainers ./kiviktest/testcontainers/cmd
-    - ./testcontainers &
-  script:
-    - cp "$NPM_PROFILE" package.json
-    - npm install -g npm@7.5.2 && npm update
-    - npm install
-    - npm install source-map-support
-    - mkdir -p /tmp/src
-    - ( cd /tmp && go install github.com/gopherjs/gopherjs@${GOPHERJS_TAG} )
-    - npm list
-    - gopherjs test `go list ./... | grep -Ev '/cmd/|/kiviktest/testcontainers'`
-
-gopherjs1.19-pouchdb9:
-  <<: *gopherjs_test_template
-  variables:
-    USETC: "1"
-    DOCKER_HOST: tcp://docker:2375/
-    DOCKER_TLS_CERTDIR: ""
-    NODE_VER: 18
-    NPM_PROFILE: pouchdb/pouchdb9-package.json
-    KIVIK_TEST_DSN_COUCH33: http://admin:abc123@couch33:5984/
-    GOPHERJS_TAG: v1.19.0-beta1
-
 .releaser: &release_template
   image:
     name: goreleaser/goreleaser:v1.25.1

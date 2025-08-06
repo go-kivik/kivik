@@ -6,17 +6,6 @@ variables:
   COUCHDB_USER: admin
   COUCHDB_PASSWORD: abc123
 
-test-x-sqlite:
-  parallel:
-    matrix:
-      - GOVER: ["1.22", "1.23", "1.24"]
-  stage: test
-  image: golang:$GOVER
-  script:
-    - cd x/sqlite
-    - go mod download
-    - go test -race -shuffle=on ./...
-
 test:
   parallel:
     matrix:

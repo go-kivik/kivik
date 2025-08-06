@@ -51,5 +51,7 @@ jobs:
 
       - name: Run GopherJS tests
         run: |
-          node --require syscall || true
+          if [ "${{ matrix.go }}" = "1.17" ]; then
+            node --require syscall || true
+          fi
           gopherjs test $(go list ./... | grep -Ev '/cmd/|/kiviktest/testcontainers')

@@ -43,6 +43,7 @@ func StartCouchDB(ctx context.Context, image string) (string, error) {
 	container, err := testcontainers.GenericContainer(context.TODO(), testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
 		Started:          true,
+		Reuse:            false,
 	})
 	if err != nil {
 		return "", err

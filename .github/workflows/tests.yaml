@@ -31,3 +31,36 @@ jobs:
 
       - name: Run tests
         run: go test -race -shuffle=on ./...
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.24
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Generate and upload code coverage
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: |
+          echo "" > coverage.txt
+          TEST_PKGS=$(go list ./... | grep -v /test/)
+          for d in $TEST_PKGS; do
+            go test -coverprofile=profile.out -covermode=set "$d"
+            if [ -f profile.out ]; then
+              cat profile.out >> coverage.txt
+              rm profile.out
+            fi
+          done
+          curl -fs https://codecov.io/bash | bash -s -- -Z

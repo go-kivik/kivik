@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  test:
+  go:
     name: Go ${{ matrix.go-version }}
     runs-on: ubuntu-latest
 
@@ -64,3 +64,59 @@ jobs:
             fi
           done
           curl -fs https://codecov.io/bash | bash -s -- -Z
+
+  gopherjs:
+    name: GopherJS ${{ matrix.go }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - go: "1.17"
+            node: "14"
+            gopherjs: v1.17.2
+          - go: "1.18"
+            node: "18"
+            gopherjs: v1.18.0-beta3
+          - go: "1.19"
+            node: "18"
+            gopherjs: v1.19.0-beta1
+
+    container:
+      image: golang:${{ matrix.go }}
+
+    env:
+      USETC: "1"
+      NPM_PROFILE: pouchdb/pouchdb9-package.json
+      GOFLAGS: ${{ matrix.go == '1.19' && '-buildvcs=false' || '' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Node.js ${{ matrix.node }}.x
+        run: |
+          curl -sL https://deb.nodesource.com/setup_${{ matrix.node }}.x | sed -e '/sleep/d' | bash -
+          apt-get update -qq && apt-get install -y nodejs
+
+      - name: Install npm dependencies
+        run: |
+          cp "$NPM_PROFILE" package.json
+          npm install -g npm@7.5.2 && npm update
+          npm install
+          npm install source-map-support
+
+      - name: Install GopherJS
+        run: |
+          mkdir -p /tmp/src
+          ( cd /tmp && go install github.com/gopherjs/gopherjs@${{ matrix.gopherjs }} )
+          npm install --force https://github.com/gopherjs/gopherjs/archive/refs/tags/${{ matrix.gopherjs }}.tar.gz
+          npm list
+
+      - name: Run GopherJS tests
+        run: |
+          if [ "${{ matrix.go }}" = "1.17" ]; then
+            node --require syscall || true
+          fi
+          gopherjs test $(go list ./... | grep -Ev '/cmd/|/kiviktest/testcontainers')

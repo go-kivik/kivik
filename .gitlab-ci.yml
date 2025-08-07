@@ -6,16 +6,6 @@ variables:
   COUCHDB_USER: admin
   COUCHDB_PASSWORD: abc123
 
-coverage:
-  stage: test
-  image: golang:1.22
-  services: []
-  before_script:
-    - ""
-  script:
-    - go mod download
-    - ./script/coverage.sh
-
 .releaser: &release_template
   image:
     name: goreleaser/goreleaser:v1.25.1

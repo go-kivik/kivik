@@ -1,16 +1,11 @@
-name: release
+name: goreleaser check
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'
+  pull_request:
 
 jobs:
-  release:
+  check-goreleaser:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -20,11 +15,9 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.24
+          go-version: "1.24.5"
 
-      - name: Run GoReleaser
+      - name: Run goreleaser check
         uses: goreleaser/goreleaser-action@v5
         with:
-          args: release --clean
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          args: check

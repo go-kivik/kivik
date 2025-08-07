@@ -55,7 +55,10 @@ func main() {
 		}
 	}()
 	<-ctx.Done()
-	if err := s.Shutdown(ctx); err != nil {
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer shutdownCancel()
+	fmt.Println("Shutting down server...")
+	if err := s.Shutdown(shutdownCtx); err != nil {
 		panic(err)
 	}
 }

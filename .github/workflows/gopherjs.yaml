@@ -28,6 +28,7 @@ jobs:
     env:
       USETC: "1"
       NPM_PROFILE: pouchdb/pouchdb9-package.json
+      GOFLAGS: ${{ matrix.go == '1.19' && '-buildvcs=false' || '' }}
 
     steps:
       - name: Checkout code

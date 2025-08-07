@@ -1,4 +1,5 @@
-[![Build Status](https://gitlab.com/go-kivik/kivik/badges/master/pipeline.svg)](https://gitlab.com/go-kivik/kivik/pipelines) [![Codecov](https://img.shields.io/codecov/c/github/go-kivik/kivik.svg?style=flat)](https://codecov.io/gh/go-kivik/kivik) [![Go Report Card](https://goreportcard.com/badge/github.com/go-kivik/kivik)](https://goreportcard.com/report/github.com/go-kivik/kivik) [![Go Reference](https://pkg.go.dev/badge/github.com/go-kivik/kivik/v4.svg)](https://pkg.go.dev/github.com/go-kivik/kivik/v4) [![Website](https://img.shields.io/website-up-down-green-red/http/kivik.io.svg?label=website&colorB=007fff)](http://kivik.io)
+[![Build Status](https://github.com/go-kivik/kivik/actions/workflows/tests.yaml/badge.svg?branch=master)](https://github.com/go-kivik/kivik/actions/workflows/tests.yaml)
+ [![Codecov](https://img.shields.io/codecov/c/github/go-kivik/kivik.svg?style=flat)](https://codecov.io/gh/go-kivik/kivik) [![Go Report Card](https://goreportcard.com/badge/github.com/go-kivik/kivik)](https://goreportcard.com/report/github.com/go-kivik/kivik) [![Go Reference](https://pkg.go.dev/badge/github.com/go-kivik/kivik/v4.svg)](https://pkg.go.dev/github.com/go-kivik/kivik/v4) [![Website](https://img.shields.io/website-up-down-green-red/http/kivik.io.svg?label=website&colorB=007fff)](http://kivik.io)
 
 # Kivik
 

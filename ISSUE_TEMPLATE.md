@@ -1,6 +1,6 @@
 ## Bug Report Checklist (remove this template if submitting a feature request)
 
-1. Which version of Kivik are you using? Please state a version number, or `master`.
+1. Which version of Kivik are you using? Please state a version number, or `main`.
 
 2. Which version of Go are you using? (Output of `go version`) -- Kivik 3.x supports Go 1.13 and later. Kivik 4.x requires Go 1.17 or later.
 

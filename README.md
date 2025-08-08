@@ -1,4 +1,4 @@
-[![Build Status](https://github.com/go-kivik/kivik/actions/workflows/tests.yaml/badge.svg?branch=master)](https://github.com/go-kivik/kivik/actions/workflows/tests.yaml)
+[![Build Status](https://github.com/go-kivik/kivik/actions/workflows/tests.yaml/badge.svg?branch=main)](https://github.com/go-kivik/kivik/actions/workflows/tests.yaml)
  [![Codecov](https://img.shields.io/codecov/c/github/go-kivik/kivik.svg?style=flat)](https://codecov.io/gh/go-kivik/kivik) [![Go Report Card](https://goreportcard.com/badge/github.com/go-kivik/kivik)](https://goreportcard.com/report/github.com/go-kivik/kivik) [![Go Reference](https://pkg.go.dev/badge/github.com/go-kivik/kivik/v4.svg)](https://pkg.go.dev/github.com/go-kivik/kivik/v4) [![Website](https://img.shields.io/website-up-down-green-red/http/kivik.io.svg?label=website&colorB=007fff)](http://kivik.io)
 
 # Kivik
@@ -49,7 +49,7 @@ In addition, there are partial/experimental drivers available:
 
 # CLI
 
-Consult the [CLI README](https://github.com/go-kivik/kivik/blob/master/cmd/kivik/README.md) for full details on the `kivik` CLI tool.
+Consult the [CLI README](https://github.com/go-kivik/kivik/blob/main/cmd/kivik/README.md) for full details on the `kivik` CLI tool.
 
 # Example Usage
 

@@ -2,7 +2,7 @@ name: tag-release
 
 on:
   push:
-    branches: [master, main]
+    branches: [main]
 
 jobs:
   create-release:
@@ -27,7 +27,7 @@ jobs:
         uses: ncipollo/release-action@v1.13.0
         with:
           tag: ${{ env.TAG }}
-          commit: master
+          commit: main
           skipIfReleaseExists: true
           prerelease: ${{ env.PRERELEASE }}
           generateReleaseNotes: true

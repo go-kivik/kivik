@@ -15,7 +15,6 @@ package mockdb
 import (
 	"context"
 	"errors"
-	"fmt"
 	"testing"
 	"time"
 
@@ -95,7 +94,7 @@ func TestAllDBs(t *testing.T) {
 	tests := testy.NewTable()
 	tests.Add("error", mockTest{
 		setup: func(m *Client) {
-			m.ExpectAllDBs().WillReturnError(fmt.Errorf("AllDBs failed"))
+			m.ExpectAllDBs().WillReturnError(errors.New("AllDBs failed"))
 		},
 		test: func(t *testing.T, c *kivik.Client) { //nolint:thelper // Not a helper
 			_, err := c.AllDBs(context.TODO())

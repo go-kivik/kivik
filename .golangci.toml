@@ -12,13 +12,14 @@ enable = [
   'misspell',
   'nakedret',
   'makezero',
+  'perfsprint',
   'prealloc',
   'revive',
   'rowserrcheck',
   'sqlclosecheck',
   'thelper',
   'unconvert',
-  'unparam'
+  'unparam',
 ]
 
 [linters.settings]

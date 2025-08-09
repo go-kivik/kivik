@@ -20,6 +20,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha1"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -59,7 +60,7 @@ type UserContext struct {
 
 // ValidatePBKDF2 returns true if the calculated hash matches the derivedKey.
 func ValidatePBKDF2(password, salt, derivedKey string, iterations int) bool {
-	hash := fmt.Sprintf("%x", pbkdf2.Key([]byte(password), []byte(salt), iterations, PBKDF2KeyLength, sha1.New))
+	hash := hex.EncodeToString(pbkdf2.Key([]byte(password), []byte(salt), iterations, PBKDF2KeyLength, sha1.New))
 	return hash == derivedKey
 }
 

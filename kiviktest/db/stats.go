@@ -14,7 +14,7 @@ package db
 
 import (
 	"context"
-	"fmt"
+	"strconv"
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
@@ -53,7 +53,7 @@ func rwTests(ctx *kt.Context, client *kivik.Client) {
 		ctx.Fatalf("Failed to connect to db: %s", err)
 	}
 	for i := 0; i < 10; i++ {
-		id := fmt.Sprintf("%d", i)
+		id := strconv.Itoa(i)
 		rev, err := db.Put(context.Background(), id, struct{}{})
 		if err != nil {
 			ctx.Fatalf("Failed to create document ID %s: %s", id, err)

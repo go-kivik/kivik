@@ -213,7 +213,7 @@ func (e *ExpectedCreateDoc) String() string {
 	if e.arg0 == nil {
 		msg += "\n\t- has any doc"
 	} else {
-		msg += fmt.Sprintf("\n\t- has doc: %s", jsonDoc(e.arg0))
+		msg += "\n\t- has doc: " + jsonDoc(e.arg0)
 	}
 	msg += optionsString(e.options)
 	if e.ret0 != "" {
@@ -270,12 +270,12 @@ func (e *ExpectedPut) String() string {
 	if e.arg0 == "" {
 		custom = append(custom, "has any docID")
 	} else {
-		custom = append(custom, fmt.Sprintf("has docID: %s", e.arg0))
+		custom = append(custom, "has docID: "+e.arg0)
 	}
 	if e.arg1 == nil {
 		custom = append(custom, "has any doc")
 	} else {
-		custom = append(custom, fmt.Sprintf("has doc: %s", jsonDoc(e.arg1)))
+		custom = append(custom, "has doc: "+jsonDoc(e.arg1))
 	}
 	return dbStringer("Put", &e.commonExpectation, withOptions, custom, nil)
 }
@@ -297,22 +297,22 @@ func (e *ExpectedUpdate) String() string {
 	if e.arg0 == "" {
 		custom = append(custom, "has any ddocID")
 	} else {
-		custom = append(custom, fmt.Sprintf("has ddocID: %s", e.arg0))
+		custom = append(custom, "has ddocID: "+e.arg0)
 	}
 	if e.arg1 == "" {
 		custom = append(custom, "has any funcName")
 	} else {
-		custom = append(custom, fmt.Sprintf("has funcName: %s", e.arg1))
+		custom = append(custom, "has funcName: "+e.arg1)
 	}
 	if e.arg2 == "" {
 		custom = append(custom, "has any docID")
 	} else {
-		custom = append(custom, fmt.Sprintf("has docID: %s", e.arg2))
+		custom = append(custom, "has docID: "+e.arg2)
 	}
 	if e.arg3 == nil {
 		custom = append(custom, "has any doc")
 	} else {
-		custom = append(custom, fmt.Sprintf("has doc: %s", jsonDoc(e.arg3)))
+		custom = append(custom, "has doc: "+jsonDoc(e.arg3))
 	}
 	return dbStringer("Update", &e.commonExpectation, withOptions, custom, nil)
 }
@@ -346,7 +346,7 @@ func (e *ExpectedGetRev) String() string {
 	if e.arg0 == "" {
 		opts = append(opts, "has any docID")
 	} else {
-		opts = append(opts, fmt.Sprintf("has docID: %s", e.arg0))
+		opts = append(opts, "has docID: "+e.arg0)
 	}
 	var rets []string
 	if e.ret0 != "" {
@@ -468,7 +468,7 @@ func (e *ExpectedGet) String() string {
 		opts = []string{"has docID: " + e.arg0}
 	}
 	if e.ret0 != nil {
-		rets = []string{fmt.Sprintf("should return document with rev: %s", e.ret0.Rev)}
+		rets = []string{"should return document with rev: " + e.ret0.Rev}
 	}
 	return dbStringer("Get", &e.commonExpectation, withOptions, opts, rets)
 }
@@ -522,7 +522,7 @@ func (e *ExpectedGetAttachmentMeta) String() string {
 		opts = append(opts, "has filename: "+e.arg1)
 	}
 	if e.ret0 != nil {
-		rets = []string{fmt.Sprintf("should return attachment: %s", e.ret0.Filename)}
+		rets = []string{"should return attachment: " + e.ret0.Filename}
 	}
 	return dbStringer("GetAttachmentMeta", &e.commonExpectation, withOptions, opts, rets)
 }
@@ -571,12 +571,12 @@ func (e *ExpectedPutAttachment) String() string {
 	if e.arg0 == "" {
 		opts = append(opts, "has any docID")
 	} else {
-		opts = append(opts, fmt.Sprintf("has docID: %s", e.arg0))
+		opts = append(opts, "has docID: "+e.arg0)
 	}
 	if e.arg1 == nil {
 		opts = append(opts, "has any attachment")
 	} else {
-		opts = append(opts, fmt.Sprintf("has attachment: %s", e.arg1.Filename))
+		opts = append(opts, "has attachment: "+e.arg1.Filename)
 	}
 	if e.ret0 != "" {
 		rets = append(rets, "should return rev: "+e.ret0)
@@ -629,7 +629,7 @@ func (e *ExpectedQuery) WithView(view string) *ExpectedQuery {
 func (e *ExpectedSecurity) String() string {
 	var rets []string
 	if e.ret0 != nil {
-		rets = append(rets, fmt.Sprintf("should return: %s", jsonDoc(e.ret0)))
+		rets = append(rets, "should return: "+jsonDoc(e.ret0))
 	}
 	return dbStringer("Security", &e.commonExpectation, 0, nil, rets)
 }
@@ -639,7 +639,7 @@ func (e *ExpectedSetSecurity) String() string {
 	if e.arg0 == nil {
 		opts = append(opts, "has any security object")
 	} else {
-		opts = append(opts, fmt.Sprintf("has security object: %v", e.arg0))
+		opts = append(opts, "has security object: "+fmt.Sprintf("%v", e.arg0))
 	}
 	return dbStringer("SetSecurity", &e.commonExpectation, 0, opts, nil)
 }
@@ -740,7 +740,7 @@ func (e *ExpectedRevsDiff) WithRevLookup(revLookup interface{}) *ExpectedRevsDif
 func (e *ExpectedPartitionStats) String() string {
 	var rets, opts []string
 	if e.ret0 != nil {
-		rets = []string{fmt.Sprintf("should return: %s", jsonDoc(e.ret0))}
+		rets = []string{"should return: " + jsonDoc(e.ret0)}
 	}
 	if e.arg0 != "" {
 		opts = []string{fmt.Sprintf("with name: %v", e.arg0)}

@@ -572,7 +572,7 @@ func TestGet(t *testing.T) {
 			client: &Client{},
 			driverDB: &mock.DB{
 				GetFunc: func(context.Context, string, driver.Options) (*driver.Document, error) {
-					return nil, fmt.Errorf("db error")
+					return nil, errors.New("db error")
 				},
 			},
 		},

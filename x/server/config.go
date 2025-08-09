@@ -16,7 +16,6 @@ package server
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -31,7 +30,7 @@ const nodeLocal = "_local"
 func (s *Server) allConfig() httpe.HandlerWithError {
 	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
 		if node := chi.URLParam(r, "node-name"); node != nodeLocal {
-			return &internal.Error{Status: http.StatusNotFound, Message: fmt.Sprintf("no such node: %s", node)}
+			return &internal.Error{Status: http.StatusNotFound, Message: "no such node: " + node}
 		}
 		conf, err := s.config.All(r.Context())
 		if err != nil {
@@ -44,7 +43,7 @@ func (s *Server) allConfig() httpe.HandlerWithError {
 func (s *Server) configSection() httpe.HandlerWithError {
 	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
 		if node := chi.URLParam(r, "node-name"); node != nodeLocal {
-			return &internal.Error{Status: http.StatusNotFound, Message: fmt.Sprintf("no such node: %s", node)}
+			return &internal.Error{Status: http.StatusNotFound, Message: "no such node: " + node}
 		}
 		section, err := s.config.Section(r.Context(), chi.URLParam(r, "section"))
 		if err != nil {
@@ -57,7 +56,7 @@ func (s *Server) configSection() httpe.HandlerWithError {
 func (s *Server) configKey() httpe.HandlerWithError {
 	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
 		if node := chi.URLParam(r, "node-name"); node != nodeLocal {
-			return &internal.Error{Status: http.StatusNotFound, Message: fmt.Sprintf("no such node: %s", node)}
+			return &internal.Error{Status: http.StatusNotFound, Message: "no such node: " + node}
 		}
 		key, err := s.config.Key(r.Context(), chi.URLParam(r, "section"), chi.URLParam(r, "key"))
 		if err != nil {
@@ -70,7 +69,7 @@ func (s *Server) configKey() httpe.HandlerWithError {
 func (s *Server) reloadConfig() httpe.HandlerWithError {
 	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
 		if node := chi.URLParam(r, "node-name"); node != nodeLocal {
-			return &internal.Error{Status: http.StatusNotFound, Message: fmt.Sprintf("no such node: %s", node)}
+			return &internal.Error{Status: http.StatusNotFound, Message: "no such node: " + node}
 		}
 		if err := s.config.Reload(r.Context()); err != nil {
 			return err
@@ -82,7 +81,7 @@ func (s *Server) reloadConfig() httpe.HandlerWithError {
 func (s *Server) setConfigKey() httpe.HandlerWithError {
 	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
 		if node := chi.URLParam(r, "node-name"); node != nodeLocal {
-			return &internal.Error{Status: http.StatusNotFound, Message: fmt.Sprintf("no such node: %s", node)}
+			return &internal.Error{Status: http.StatusNotFound, Message: "no such node: " + node}
 		}
 		confWriter, ok := s.config.(config.Writer)
 		if !ok {
@@ -103,7 +102,7 @@ func (s *Server) setConfigKey() httpe.HandlerWithError {
 func (s *Server) deleteConfigKey() httpe.HandlerWithError {
 	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
 		if node := chi.URLParam(r, "node-name"); node != nodeLocal {
-			return &internal.Error{Status: http.StatusNotFound, Message: fmt.Sprintf("no such node: %s", node)}
+			return &internal.Error{Status: http.StatusNotFound, Message: "no such node: " + node}
 		}
 		confWriter, ok := s.config.(config.Writer)
 		if !ok {

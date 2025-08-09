@@ -15,6 +15,7 @@ package cdb
 import (
 	"context"
 	"crypto/md5"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -279,5 +280,5 @@ func (r *Revision) hash() (string, error) {
 	}
 	h := md5.New()
 	_, _ = h.Write(data)
-	return fmt.Sprintf("%x", h.Sum(nil)), nil
+	return hex.EncodeToString(h.Sum(nil)), nil
 }

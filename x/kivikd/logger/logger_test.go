@@ -14,6 +14,7 @@ package logger
 
 import (
 	"bytes"
+	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -101,7 +102,7 @@ func TestLogger(t *testing.T) {
 		{
 			Name: "EmptyishRequest",
 			Func: func(l RequestLogger) {
-				r, _ := http.NewRequest("GET", "/foo", nil)
+				r, _ := http.NewRequestWithContext(context.TODO(), http.MethodGet, "/foo", nil)
 				r.RemoteAddr = "127.0.0.1:123"
 				l.Log(r, 200, nil)
 			},
@@ -110,7 +111,7 @@ func TestLogger(t *testing.T) {
 		{
 			Name: "Fields",
 			Func: func(l RequestLogger) {
-				r, _ := http.NewRequest("GET", "/foo", nil)
+				r, _ := http.NewRequestWithContext(context.TODO(), http.MethodGet, "/foo", nil)
 				r.RemoteAddr = "127.0.0.1:123"
 				r.Header.Add("User-Agent", "Bog's special browser version 1.23")
 				r.Header.Add("Referer", "http://somesite.com/")

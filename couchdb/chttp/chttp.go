@@ -190,7 +190,7 @@ func (c *Client) NewRequest(ctx context.Context, method, path string, body io.Re
 	u.Path = reqPath.Path
 	u.RawQuery = reqPath.RawQuery
 	compress, body := c.compressBody(u.String(), body, opts)
-	req, err := http.NewRequest(method, u.String(), body)
+	req, err := http.NewRequestWithContext(ctx, method, u.String(), body)
 	if err != nil {
 		return nil, &internal.Error{Status: http.StatusBadRequest, Err: err}
 	}
@@ -198,7 +198,7 @@ func (c *Client) NewRequest(ctx context.Context, method, path string, body io.Re
 		req.Header.Add("Content-Encoding", "gzip")
 	}
 	req.Header.Add("User-Agent", c.userAgent())
-	return req.WithContext(ctx), nil
+	return req, nil
 }
 
 func (c *Client) shouldCompressBody(path string, body io.Reader, opts *Options) bool {

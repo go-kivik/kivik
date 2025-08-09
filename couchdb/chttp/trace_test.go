@@ -13,6 +13,7 @@
 package chttp
 
 import (
+	"context"
 	"errors"
 	"io"
 	"net/http"
@@ -152,11 +153,11 @@ func TestHTTPRequest(t *testing.T) {
 				}
 			},
 			req: func() *http.Request {
-				req, _ := http.NewRequest("GET", "/", nil)
+				req, _ := http.NewRequestWithContext(context.TODO(), http.MethodGet, "/", nil)
 				return req
 			}(),
 			finalReq: func() *http.Request {
-				req, _ := http.NewRequest("GET", "/", nil)
+				req, _ := http.NewRequestWithContext(context.TODO(), http.MethodGet, "/", nil)
 				req.Header.Add("Host", "example.com")
 				return req
 			}(),

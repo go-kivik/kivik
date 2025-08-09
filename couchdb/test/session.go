@@ -324,6 +324,7 @@ func testDeleteSession(ctx *kt.Context, client *chttp.Client) {
 				ctx.Errorf("Failed to establish session: %s", err)
 				return
 			}
+			defer r.Body.Close()
 			for _, c := range r.Cookies() {
 				if c.Name == kivik.SessionCookieName {
 					cookie = c

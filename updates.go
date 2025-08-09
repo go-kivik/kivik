@@ -70,8 +70,7 @@ func (f *DBUpdates) Next() bool {
 
 // DBName returns the database name for the current update.
 func (f *DBUpdates) DBName() string {
-	err := f.isReady()
-	if err != nil {
+	if err := f.isReady(); err != nil {
 		return ""
 	}
 	return f.curVal.(*driver.DBUpdate).DBName
@@ -79,8 +78,7 @@ func (f *DBUpdates) DBName() string {
 
 // Type returns the type of the current update.
 func (f *DBUpdates) Type() string {
-	err := f.isReady()
-	if err != nil {
+	if err := f.isReady(); err != nil {
 		return ""
 	}
 	return f.curVal.(*driver.DBUpdate).Type
@@ -88,8 +86,7 @@ func (f *DBUpdates) Type() string {
 
 // Seq returns the update sequence of the current update.
 func (f *DBUpdates) Seq() string {
-	err := f.isReady()
-	if err != nil {
+	if err := f.isReady(); err != nil {
 		return ""
 	}
 	return f.curVal.(*driver.DBUpdate).Seq

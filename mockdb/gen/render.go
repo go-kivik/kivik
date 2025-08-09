@@ -137,7 +137,7 @@ func (m *method) ExpectedVariables() string {
 }
 
 func (m *method) InputVariables() string {
-	result := make([]string, len(m.Accepts)+1)
+	result := make([]string, 0, len(m.Accepts)+1)
 	var common []string
 	if m.DBMethod {
 		common = append(common, "\t\t\tdb: db.DB,\n")

@@ -102,8 +102,7 @@ func (c *Changes) ID() string {
 // ScanDoc copies the data from the result into dest.  See [ResultSet.ScanValue]
 // for additional details.
 func (c *Changes) ScanDoc(dest interface{}) error {
-	err := c.isReady()
-	if err != nil {
+	if err := c.isReady(); err != nil {
 		return err
 	}
 	return json.Unmarshal(c.curVal.(*driver.Change).Doc, dest)

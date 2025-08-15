@@ -2,7 +2,7 @@ module github.com/go-kivik/kivik/v4/x/pg
 
 go 1.24
 
-require github.com/go-kivik/kivik/v4 v4.4.2-0.20250815192536-7a8bf49aa585
+require github.com/go-kivik/kivik/v4 v4.4.2-0.20250815203910-ec0589e80eb3
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect

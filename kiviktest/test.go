@@ -46,6 +46,7 @@ const (
 	SuiteKivikMemory = "kivikMemory"
 	SuiteKivikSQLite = "kivikSQLite"
 	SuiteKivikFS     = "kivikFilesystem"
+	SuitePG          = "pg"
 )
 
 // AllSuites is a list of all defined suites.

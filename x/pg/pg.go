@@ -26,5 +26,5 @@ func init() {
 }
 
 func (d *pg) NewClient(string, driver.Options) (driver.Client, error) {
-	return nil, nil
+	return &client{}, nil
 }

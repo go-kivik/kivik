@@ -40,4 +40,6 @@ func (c *client) CreateDB(context.Context, string, driver.Options) error { retur
 func (c *client) DestroyDB(context.Context, string, driver.Options) error { return nil }
 
 // DB returns nil, nil.
-func (c *client) DB(string, driver.Options) (driver.DB, error) { return nil, nil }
+func (c *client) DB(string, driver.Options) (driver.DB, error) {
+	return &db{}, nil
+}

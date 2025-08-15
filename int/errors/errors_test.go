@@ -90,3 +90,61 @@ func TestFormatError(t *testing.T) {
 		}
 	})
 }
+
+func TestHTTPStatus(t *testing.T) {
+	type scTest struct {
+		Name     string
+		Err      error
+		Expected int
+	}
+	tests := []scTest{
+		{
+			Name:     "nil",
+			Expected: 0,
+		},
+		{
+			Name:     "Standard error",
+			Err:      errors.New("foo"),
+			Expected: 500,
+		},
+		{
+			Name:     "HTTPStatus",
+			Err:      &Error{Status: 400, Err: errors.New("bad request")},
+			Expected: 400,
+		},
+		{
+			Name:     "wrapped HTTPStatus",
+			Err:      fmt.Errorf("foo: %w", &Error{Status: 400, Err: errors.New("bad request")}),
+			Expected: 400,
+		},
+		{
+			Name: "deeply buried",
+			Err: func() error {
+				err := error(&Error{Status: 400, Err: errors.New("bad request")})
+				err = fmt.Errorf("foo:%w", err)
+				err = fmt.Errorf("bar: %w", err)
+				err = fmt.Errorf("foo:%w", err)
+				err = fmt.Errorf("bar: %w", err)
+				err = fmt.Errorf("foo:%w", err)
+				err = fmt.Errorf("bar: %w", err)
+				return err
+			}(),
+			Expected: 400,
+		},
+		{
+			Name:     "errors.ErrUnsupported",
+			Err:      errUnsupported,
+			Expected: 501,
+		},
+	}
+	for _, test := range tests {
+		func(test scTest) {
+			t.Run(test.Name, func(t *testing.T) {
+				result := HTTPStatus(test.Err)
+				if result != test.Expected {
+					t.Errorf("Unexpected result. Expected %d, got %d", test.Expected, result)
+				}
+			})
+		}(test)
+	}
+}

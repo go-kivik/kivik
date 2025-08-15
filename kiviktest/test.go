@@ -167,7 +167,7 @@ func cleanupDatabases(ctx context.Context, client *kivik.Client, verbose bool) (
 	}
 	allDBs, err := client.AllDBs(ctx)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to fetch all DBs: %w", err)
 	}
 	var count int
 	for _, dbName := range allDBs {
@@ -177,16 +177,16 @@ func cleanupDatabases(ctx context.Context, client *kivik.Client, verbose bool) (
 			if verbose {
 				fmt.Printf("\t--- Deleting %s\n", dbName)
 			}
-			if e := client.DestroyDB(ctx, dbName); e != nil && kivik.HTTPStatus(e) != http.StatusNotFound {
-				return count, e
+			if err := client.DestroyDB(ctx, dbName); err != nil && kivik.HTTPStatus(err) != http.StatusNotFound {
+				return count, fmt.Errorf("failed to delete database %s: %w", dbName, err)
 			}
 			count++
 		}
 	}
 	replicator := client.DB("_replicator")
-	if e := replicator.Err(); e != nil {
-		if kivik.HTTPStatus(e) != http.StatusNotFound && kivik.HTTPStatus(e) != http.StatusNotImplemented {
-			return count, e
+	if err := replicator.Err(); err != nil {
+		if kivik.HTTPStatus(err) != http.StatusNotFound && kivik.HTTPStatus(err) != http.StatusNotImplemented {
+			return count, fmt.Errorf("failed to open _replicator db: %w", err)
 		}
 		return count, nil
 	}
@@ -195,7 +195,7 @@ func cleanupDatabases(ctx context.Context, client *kivik.Client, verbose bool) (
 		if kivik.HTTPStatus(err) == http.StatusNotImplemented || kivik.HTTPStatus(err) == http.StatusNotFound {
 			return count, nil
 		}
-		return count, err
+		return count, fmt.Errorf("failed to fetch all docs from _replicator: %w", err)
 	}
 	var replDoc struct {
 		Rev string `json:"_rev"`
@@ -207,7 +207,7 @@ func cleanupDatabases(ctx context.Context, client *kivik.Client, verbose bool) (
 				return count, err
 			}
 			if _, err := replicator.Delete(context.Background(), id, replDoc.Rev); err != nil {
-				return count, err
+				return count, fmt.Errorf("failed to delete replication doc %s: %w", id, err)
 			}
 			count++
 		}

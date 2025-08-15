@@ -122,6 +122,9 @@ func HTTPStatus(err error) int {
 	if err == nil {
 		return 0
 	}
+	if errors.Is(err, errUnsupported) {
+		return http.StatusNotImplemented
+	}
 	var coder statusCoder
 	for {
 		if errors.As(err, &coder) {

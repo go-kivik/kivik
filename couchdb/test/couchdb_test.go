@@ -17,7 +17,7 @@ package test
 import (
 	"testing"
 
-	_ "github.com/go-kivik/kivik/v4/couchdb"
+	_ "github.com/go-kivik/kivik/v4/couchdb" // couchDB driver
 	"github.com/go-kivik/kivik/v4/kiviktest"
 )
 

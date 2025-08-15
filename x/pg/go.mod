@@ -1,4 +1,4 @@
-module github.com/go-kivik/kivik/x/pg
+module github.com/go-kivik/kivik/v4/x/pg
 
 go 1.24
 

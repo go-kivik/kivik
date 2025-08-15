@@ -10,32 +10,5 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-package test
-
-import (
-	"testing"
-
-	"github.com/go-kivik/kivik/v4"
-	"github.com/go-kivik/kivik/v4/kiviktest"
-	"github.com/go-kivik/kivik/v4/kiviktest/kt"
-	_ "github.com/go-kivik/kivik/v4/x/pg" // Postgres driver
-)
-
-func init() {
-	RegisterPGSuites()
-}
-
-func TestPG(t *testing.T) {
-	t.Parallel()
-	client, err := kivik.New("pg", "")
-	if err != nil {
-		t.Errorf("Failed to connect to PostgreSQL driver: %s", err)
-		return
-	}
-	clients := &kt.Context{
-		RW:    true,
-		Admin: client,
-		T:     t,
-	}
-	kiviktest.RunTestsInternal(clients, kiviktest.SuitePG)
-}
+// Package pg provides the PostgreSQL driver for Kivik.
+package pg

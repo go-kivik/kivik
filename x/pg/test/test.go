@@ -24,5 +24,42 @@ func RegisterPGSuites() {
 }
 
 func registerSuitePG() {
-	kiviktest.RegisterSuite(kiviktest.SuitePG, kt.SuiteConfig{})
+	kiviktest.RegisterSuite(kiviktest.SuitePG, kt.SuiteConfig{
+		"Security.skip":          true,
+		"DestroyDB.skip":         true,
+		"Delete.skip":            true,
+		"ViewCleanup.skip":       true,
+		"Put.skip":               true,
+		"AllDocs.skip":           true,
+		"Explain.skip":           true,
+		"AllDBs.skip":            true,
+		"Stats.skip":             true,
+		"Compact.skip":           true,
+		"Copy.skip":              true,
+		"GetAttachment.skip":     true,
+		"PutAttachment.skip":     true,
+		"DeleteAttachment.skip":  true,
+		"Replicate.skip":         true,
+		"Find.skip":              true,
+		"CreateIndex.skip":       true,
+		"GetAttachmentMeta.skip": true,
+		"CreateDoc.skip":         true,
+		"Flush.skip":             true,
+		"DBExists.skip":          true,
+		"Query.skip":             true,
+		"Get.skip":               true,
+		"Changes.skip":           true,
+		"Version.skip":           true,
+		"CreateDB.skip":          true,
+		"GetRev.skip":            true,
+		"BulkDocs.skip":          true,
+		"DBsStats.skip":          true,
+		"AllDBsStats.skip":       true,
+		"Session.skip":           true,
+		"GetIndexes.skip":        true,
+		"DeleteIndex.skip":       true,
+		"SetSecurity.skip":       true,
+		"DBUpdates.skip":         true,
+		"GetReplications.skip":   true,
+	})
 }

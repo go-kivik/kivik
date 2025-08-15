@@ -29,7 +29,8 @@ func registerSuitePG() {
 		"Version.vendor":         `^Kivik$`,
 		"Version.vendor_version": ``, // CouchDB 2.0+ no longer has a vendor version
 
-		// Next TODO
+		// TODO:
+		// - Store db config in *client object and connect to the db
 		"Put.skip":       true,
 		"Get.skip":       true,
 		"Delete.skip":    true,

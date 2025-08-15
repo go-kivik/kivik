@@ -34,17 +34,16 @@ func TestNewClient(t *testing.T) {
 			err:  true,
 		},
 		{
-			name: "valid url with missing dbname",
+			name: "valid dsn with missing dbname",
 			dsn:  "postgres://user:pass@localhost:5432",
 			err:  true,
 		},
+		{
+			name: "valid dsn with dbname",
+			dsn:  "postgres://user:pass@localhost:5432/dbname",
+			err:  false,
+		},
 	}
-
-	/*
-		TODO:
-		- DSN as URL
-		- DSN as key/value pairs
-	*/
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -55,11 +54,10 @@ func TestNewClient(t *testing.T) {
 				t.Errorf("NewClient(%q) error = %v, wantErr %v", tt.dsn, err, tt.err)
 			}
 			if err != nil {
-				return
-			}
-			status := kivik.HTTPStatus(err)
-			if status != http.StatusBadRequest {
-				t.Errorf("NewClient(%q) status = %d, want %d", tt.dsn, status, http.StatusBadRequest)
+				status := kivik.HTTPStatus(err)
+				if status != http.StatusBadRequest {
+					t.Errorf("NewClient(%q) status = %d, want %d", tt.dsn, status, http.StatusBadRequest)
+				}
 			}
 		})
 	}

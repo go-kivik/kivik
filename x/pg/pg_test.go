@@ -23,25 +23,31 @@ func TestNewClient(t *testing.T) {
 	t.Parallel()
 
 	type test struct {
-		dsn string
-		err bool
+		name string
+		dsn  string
+		err  bool
 	}
 	tests := []test{
 		{
-			dsn: "completely invalid dsn",
-			err: true,
+			name: "invalid dsn",
+			dsn:  "completely invalid dsn",
+			err:  true,
+		},
+		{
+			name: "valid url with missing dbname",
+			dsn:  "postgres://user:pass@localhost:5432",
+			err:  true,
 		},
 	}
 
 	/*
 		TODO:
-		- DSN does not include a database name -- should fail
 		- DSN as URL
 		- DSN as key/value pairs
 	*/
 
 	for _, tt := range tests {
-		t.Run(tt.dsn, func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
 			_, err := (&pg{}).NewClient(tt.dsn, nil)

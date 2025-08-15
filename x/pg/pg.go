@@ -13,6 +13,7 @@
 package pg
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/jackc/pgx/v5/pgconn"
@@ -31,11 +32,17 @@ func init() {
 }
 
 func (*pg) NewClient(dsn string, _ driver.Options) (driver.Client, error) {
-	_, err := pgconn.ParseConfigWithOptions(dsn, pgconn.ParseConfigOptions{})
+	config, err := pgconn.ParseConfigWithOptions(dsn, pgconn.ParseConfigOptions{})
 	if err != nil {
 		return nil, &internal.Error{
 			Status: http.StatusBadRequest,
 			Err:    err,
+		}
+	}
+	if config.Database == "" {
+		return nil, &internal.Error{
+			Status: http.StatusBadRequest,
+			Err:    errors.New("database name is required in DSN"),
 		}
 	}
 	return &client{}, nil

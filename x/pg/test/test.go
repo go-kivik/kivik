@@ -25,6 +25,10 @@ func RegisterPGSuites() {
 
 func registerSuitePG() {
 	kiviktest.RegisterSuite(kiviktest.SuitePG, kt.SuiteConfig{
+		"Version.version":        `^0\.0\.`,
+		"Version.vendor":         `^Kivik$`,
+		"Version.vendor_version": ``, // CouchDB 2.0+ no longer has a vendor version
+
 		"Security.skip":          true,
 		"DestroyDB.skip":         true,
 		"Delete.skip":            true,
@@ -49,7 +53,6 @@ func registerSuitePG() {
 		"Query.skip":             true,
 		"Get.skip":               true,
 		"Changes.skip":           true,
-		"Version.skip":           true,
 		"CreateDB.skip":          true,
 		"GetRev.skip":            true,
 		"BulkDocs.skip":          true,

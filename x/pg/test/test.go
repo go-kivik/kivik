@@ -29,11 +29,15 @@ func registerSuitePG() {
 		"Version.vendor":         `^Kivik$`,
 		"Version.vendor_version": ``, // CouchDB 2.0+ no longer has a vendor version
 
+		// Next TODO
+		"Put.skip":       true,
+		"Get.skip":       true,
+		"Delete.skip":    true,
+		"CreateDoc.skip": true,
+
 		"Security.skip":          true,
 		"DestroyDB.skip":         true,
-		"Delete.skip":            true,
 		"ViewCleanup.skip":       true,
-		"Put.skip":               true,
 		"AllDocs.skip":           true,
 		"Explain.skip":           true,
 		"AllDBs.skip":            true,
@@ -47,11 +51,9 @@ func registerSuitePG() {
 		"Find.skip":              true,
 		"CreateIndex.skip":       true,
 		"GetAttachmentMeta.skip": true,
-		"CreateDoc.skip":         true,
 		"Flush.skip":             true,
 		"DBExists.skip":          true,
 		"Query.skip":             true,
-		"Get.skip":               true,
 		"Changes.skip":           true,
 		"CreateDB.skip":          true,
 		"GetRev.skip":            true,

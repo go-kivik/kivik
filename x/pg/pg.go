@@ -13,8 +13,13 @@
 package pg
 
 import (
+	"net/http"
+
+	"github.com/jackc/pgx/v5/pgconn"
+
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
+	internal "github.com/go-kivik/kivik/v4/int/errors"
 )
 
 type pg struct{}
@@ -25,6 +30,13 @@ func init() {
 	kivik.Register("pg", &pg{})
 }
 
-func (d *pg) NewClient(string, driver.Options) (driver.Client, error) {
+func (*pg) NewClient(dsn string, _ driver.Options) (driver.Client, error) {
+	_, err := pgconn.ParseConfigWithOptions(dsn, pgconn.ParseConfigOptions{})
+	if err != nil {
+		return nil, &internal.Error{
+			Status: http.StatusBadRequest,
+			Err:    err,
+		}
+	}
 	return &client{}, nil
 }

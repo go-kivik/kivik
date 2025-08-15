@@ -14,6 +14,7 @@ package pg
 
 import (
 	"context"
+	"errors"
 
 	"github.com/go-kivik/kivik/v4/driver"
 )
@@ -23,55 +24,55 @@ type db struct{}
 var _ driver.DB = &db{}
 
 func (d *db) AllDocs(context.Context, driver.Options) (driver.Rows, error) {
-	return nil, nil
+	return nil, errors.ErrUnsupported
 }
 
 func (d *db) Put(context.Context, string, interface{}, driver.Options) (string, error) {
-	return "", nil
+	return "", errors.ErrUnsupported
 }
 
 func (d *db) Get(context.Context, string, driver.Options) (*driver.Document, error) {
-	return nil, nil
+	return nil, errors.ErrUnsupported
 }
 
 func (d *db) Delete(context.Context, string, driver.Options) (string, error) {
-	return "", nil
+	return "", errors.ErrUnsupported
 }
 
 func (d *db) Stats(context.Context) (*driver.DBStats, error) {
-	return nil, nil
+	return nil, errors.ErrUnsupported
 }
 
 func (d *db) Compact(context.Context) error {
-	return nil
+	return errors.ErrUnsupported
 }
 
 func (d *db) CompactView(context.Context, string) error {
-	return nil
+	return errors.ErrUnsupported
 }
 
 func (d *db) ViewCleanup(context.Context) error {
-	return nil
+	return errors.ErrUnsupported
 }
 
 func (d *db) Changes(context.Context, driver.Options) (driver.Changes, error) {
-	return nil, nil
+	return nil, errors.ErrUnsupported
 }
 
 func (d *db) PutAttachment(context.Context, string, *driver.Attachment, driver.Options) (string, error) {
-	return "", nil
+	return "", errors.ErrUnsupported
 }
 
 func (d *db) GetAttachment(context.Context, string, string, driver.Options) (*driver.Attachment, error) {
-	return nil, nil
+	return nil, errors.ErrUnsupported
 }
 
 func (d *db) DeleteAttachment(context.Context, string, string, driver.Options) (string, error) {
-	return "", nil
+	return "", errors.ErrUnsupported
 }
 
 func (d *db) Query(context.Context, string, string, driver.Options) (driver.Rows, error) {
-	return nil, nil
+	return nil, errors.ErrUnsupported
 }
 
 func (d *db) Close() error {

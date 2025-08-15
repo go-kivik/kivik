@@ -14,6 +14,7 @@ package pg
 
 import (
 	"context"
+	"errors"
 
 	"github.com/go-kivik/kivik/v4/driver"
 )
@@ -22,24 +23,26 @@ type client struct{}
 
 var _ driver.Client = (*client)(nil)
 
-// Version returns nil, nil.
-func (c *client) Version(context.Context) (*driver.Version, error) { return nil, nil }
-
-// AllDBs returns nil, nil.
-func (c *client) AllDBs(context.Context, driver.Options) ([]string, error) { return nil, nil }
-
-// DBExists returns false, nil.
-func (c *client) DBExists(context.Context, string, driver.Options) (bool, error) {
-	return false, nil
+func (c *client) Version(context.Context) (*driver.Version, error) {
+	return nil, errors.ErrUnsupported
 }
 
-// CreateDB is a no-op returning nil.
-func (c *client) CreateDB(context.Context, string, driver.Options) error { return nil }
+func (c *client) AllDBs(context.Context, driver.Options) ([]string, error) {
+	return nil, errors.ErrUnsupported
+}
 
-// DestroyDB is a no-op returning nil.
-func (c *client) DestroyDB(context.Context, string, driver.Options) error { return nil }
+func (c *client) DBExists(context.Context, string, driver.Options) (bool, error) {
+	return false, errors.ErrUnsupported
+}
 
-// DB returns nil, nil.
+func (c *client) CreateDB(context.Context, string, driver.Options) error {
+	return errors.ErrUnsupported
+}
+
+func (c *client) DestroyDB(context.Context, string, driver.Options) error {
+	return errors.ErrUnsupported
+}
+
 func (c *client) DB(string, driver.Options) (driver.DB, error) {
 	return &db{}, nil
 }

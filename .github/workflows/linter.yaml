@@ -5,6 +5,9 @@ on:
     branches: [main]
   pull_request:
 
+env:
+  GOLANGCI_LINT_VERSION: v2.4.0
+
 jobs:
   golangcilint:
     name: golangci-lint
@@ -14,11 +17,11 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.24
+          go-version: "1.25"
       - name: Lint main module
         uses: golangci/golangci-lint-action@v8
         with:
-          version: v2.3.1
+          version: ${{ env.GOLANGCI_LINT_VERSION }}
       - name: Validate generated sources
         run: |
           go generate ./...
@@ -30,7 +33,7 @@ jobs:
         uses: golangci/golangci-lint-action@v8
         with:
           working-directory: ./x/sqlite
-          version: v2.3.1
+          version: ${{ env.GOLANGCI_LINT_VERSION }}
       - name: Validate x/sqlite go.mod
         run: |
           cd x/sqlite && go mod tidy && git diff --exit-code

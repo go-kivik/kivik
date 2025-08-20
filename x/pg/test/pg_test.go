@@ -32,6 +32,7 @@ func TestPG(t *testing.T) {
 		t.Errorf("Failed to connect to PostgreSQL driver: %s", err)
 		return
 	}
+	t.Cleanup(func() { _ = client.Close() })
 	clients := &kt.Context{
 		RW:    true,
 		Admin: client,

@@ -106,6 +106,7 @@ func MemoryTest(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to connect to memory driver: %s\n", err)
 	}
+	t.Cleanup(func() { _ = client.Close() })
 	clients := &kt.Context{
 		RW:    true,
 		Admin: client,

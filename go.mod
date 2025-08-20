@@ -14,7 +14,7 @@ require (
 	github.com/icza/dyno v0.0.0-20230330125955-09f820a8d9c0
 	github.com/monoculum/formam/v3 v3.6.0
 	github.com/spf13/cobra v1.8.1
-	github.com/spf13/pflag v1.0.5
+	github.com/spf13/pflag v1.0.7
 	github.com/spf13/viper v1.16.0
 	github.com/testcontainers/testcontainers-go v0.14.0
 	gitlab.com/flimzy/httpe v0.0.0-20231112220855-6303bcec02b6

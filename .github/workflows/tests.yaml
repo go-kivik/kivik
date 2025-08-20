@@ -82,7 +82,7 @@ jobs:
             gopherjs: v1.18.0-beta3
           - go: "1.19"
             node: "18"
-            gopherjs: v1.19.0-beta1
+            gopherjs: v1.19.0-beta2
 
     container:
       image: golang:${{ matrix.go }}

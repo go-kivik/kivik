@@ -13,7 +13,7 @@ require (
 	github.com/gopherjs/jsbuiltin v0.0.0-20180426082241-50091555e127
 	github.com/icza/dyno v0.0.0-20230330125955-09f820a8d9c0
 	github.com/monoculum/formam/v3 v3.6.0
-	github.com/spf13/cobra v1.8.1
+	github.com/spf13/cobra v1.9.1
 	github.com/spf13/pflag v1.0.7
 	github.com/spf13/viper v1.16.0
 	github.com/testcontainers/testcontainers-go v0.14.0

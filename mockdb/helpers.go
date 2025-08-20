@@ -15,7 +15,7 @@ package mockdb
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"testing"
 
 	"github.com/go-kivik/kivik/v4/driver"
@@ -53,7 +53,7 @@ func Document(i interface{}) (*driver.Document, error) {
 	}
 	return &driver.Document{
 		Rev:         meta.Rev,
-		Body:        ioutil.NopCloser(bytes.NewReader(buf)),
+		Body:        io.NopCloser(bytes.NewReader(buf)),
 		Attachments: nil,
 	}, nil
 }

@@ -87,8 +87,12 @@ func (c *client) AllDBs(ctx context.Context, _ driver.Options) ([]string, error)
 		FROM
 			sqlite_schema
 		WHERE
-			type ='table' AND
-			name NOT LIKE 'sqlite_%'
+			type ='table'
+			AND name NOT LIKE 'sqlite_%'
+			AND name NOT LIKE '%_attachments'
+			AND name NOT LIKE '%_revs'
+			AND name NOT LIKE '%_design'
+			AND name NOT LIKE '%_attachments_bridge'
 		`)
 	if err != nil {
 		return nil, err

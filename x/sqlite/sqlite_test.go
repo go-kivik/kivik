@@ -60,12 +60,10 @@ func TestClientAllDBs(t *testing.T) {
 	}
 
 	c := dClient.(*client)
-
-	if _, err := c.db.Exec("CREATE TABLE foo (id INTEGER)"); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := c.db.Exec("CREATE TABLE bar (id INTEGER)"); err != nil {
-		t.Fatal(err)
+	for _, table := range []string{"foo", "bar", "foo_attachments", "bar_attachments", "foo_attachments_bridge", "foo_design", "bar_design", "foo_revs", "bar_revs"} {
+		if _, err := c.db.Exec("CREATE TABLE " + table + " (id INTEGER)"); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	dbs, err := dClient.AllDBs(context.Background(), mock.NilOption)

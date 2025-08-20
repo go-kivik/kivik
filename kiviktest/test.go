@@ -415,6 +415,7 @@ func ConnectClients(t *testing.T, driverName, dsn string, opts kivik.Option) (*k
 	t.Logf("[Auth] Connecting to %s ...\n", dsn)
 	if client, err := kivik.New(driverName, dsn, opts); err == nil {
 		clients.Admin = client
+		t.Cleanup(func() { _ = client.Close() })
 	} else {
 		return nil, err
 	}
@@ -422,6 +423,7 @@ func ConnectClients(t *testing.T, driverName, dsn string, opts kivik.Option) (*k
 	t.Logf("[NoAuth] Connecting to %s ...\n", noAuthDSN)
 	if client, err := kivik.New(driverName, noAuthDSN, opts); err == nil {
 		clients.NoAuth = client
+		t.Cleanup(func() { _ = client.Close() })
 	} else {
 		return nil, err
 	}

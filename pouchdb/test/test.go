@@ -416,6 +416,7 @@ func PouchLocalTest(t *testing.T) {
 		t.Errorf("Failed to connect to PouchDB driver: %s", err)
 		return
 	}
+	t.Cleanup(func() { _ = client.Close() })
 	clients := &kt.Context{
 		RW:    true,
 		Admin: client,

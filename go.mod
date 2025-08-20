@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/ajg/form v1.5.1
 	github.com/cenkalti/backoff/v4 v4.3.0
-	github.com/go-chi/chi/v5 v5.2.1
+	github.com/go-chi/chi/v5 v5.2.2
 	github.com/go-playground/validator/v10 v10.23.0
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0

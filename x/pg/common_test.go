@@ -14,6 +14,7 @@ package pg
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -21,6 +22,9 @@ import (
 
 func testClient(t *testing.T) *client {
 	t.Helper()
+	if os.Getenv("USETC") == "" {
+		t.Skip("USETC not set, skipping testcontainers")
+	}
 	dsn, err := startPostgres()
 	if err != nil {
 		t.Fatalf("Failed to start PostgreSQL container: %s", err)

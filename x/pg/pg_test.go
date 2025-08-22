@@ -23,25 +23,28 @@ func TestNewClient(t *testing.T) {
 	t.Parallel()
 
 	type test struct {
-		name string
-		dsn  string
-		err  bool
+		name       string
+		dsn        string
+		wantErr    bool
+		wantStatus int
 	}
 	tests := []test{
 		{
-			name: "invalid dsn",
-			dsn:  "completely invalid dsn",
-			err:  true,
+			name:       "invalid dsn",
+			dsn:        "completely invalid dsn",
+			wantErr:    true,
+			wantStatus: http.StatusBadRequest,
 		},
 		{
-			name: "valid dsn with missing dbname",
-			dsn:  "postgres://user:pass@localhost:5432",
-			err:  true,
+			name:       "valid dsn with missing dbname",
+			dsn:        "postgres://user:pass@localhost:5432",
+			wantErr:    true,
+			wantStatus: http.StatusBadRequest,
 		},
 		{
-			name: "valid dsn with dbname",
-			dsn:  "postgres://user:pass@localhost:5432/dbname",
-			err:  false,
+			name:    "valid dsn with dbname",
+			dsn:     "postgres://user:pass@localhost:5432/dbname",
+			wantErr: false,
 		},
 	}
 
@@ -50,14 +53,11 @@ func TestNewClient(t *testing.T) {
 			t.Parallel()
 
 			_, err := (&pg{}).NewClient(tt.dsn, nil)
-			if (err != nil) != tt.err {
-				t.Errorf("NewClient(%q) error = %v, wantErr %v", tt.dsn, err, tt.err)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NewClient(%q) error = %v, wantErr %v", tt.dsn, err, tt.wantErr)
 			}
-			if err != nil {
-				status := kivik.HTTPStatus(err)
-				if status != http.StatusBadRequest {
-					t.Errorf("NewClient(%q) status = %d, want %d", tt.dsn, status, http.StatusBadRequest)
-				}
+			if status := kivik.HTTPStatus(err); status != tt.wantStatus {
+				t.Errorf("NewClient(%q) status = %d, want %d", tt.dsn, status, tt.wantStatus)
 			}
 		})
 	}

@@ -54,11 +54,14 @@ func TestCreateDB(t *testing.T) {
 			wantStatus: http.StatusInternalServerError,
 		}
 	})
+	tests.Add("create db", test{
+		client: testClient(t),
+		dbName: "testdb",
+	})
 
 	/*
 		TODO:
 		- db already exists
-		- db created successfully
 	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {
@@ -70,6 +73,20 @@ func TestCreateDB(t *testing.T) {
 		}
 		if status := kivik.HTTPStatus(err); status != tt.wantStatus {
 			t.Errorf("CreateDB(%s, %s) status = %d, want %d", tt.dbName, tt.options, status, tt.wantStatus)
+		}
+		if err != nil {
+			return
+		}
+		// Verify the database was created
+		var found bool
+		err = tt.client.pool.QueryRow(t.Context(), "SELECT true FROM pg_tables WHERE tablename = $1", tt.dbName).Scan(&found)
+		if err != nil {
+			t.Errorf("Failed to verify database creation: %s", err)
+			return
+		}
+		if !found {
+			t.Errorf("Database %s was not created", tt.dbName)
+			return
 		}
 	})
 }

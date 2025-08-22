@@ -31,6 +31,7 @@ func (c *client) CreateDB(ctx context.Context, dbName string, _ driver.Options) 
 			Message: fmt.Sprintf("invalid database name: %q", dbName),
 		}
 	}
-	_, err := c.pool.Exec(ctx, "CREATE DATABASE "+dbName)
+
+	_, err := c.pool.Exec(ctx, "CREATE TABLE "+dbName+" (id SERIAL PRIMARY KEY, data JSONB)")
 	return err
 }

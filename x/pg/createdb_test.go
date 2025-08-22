@@ -58,11 +58,21 @@ func TestCreateDB(t *testing.T) {
 		client: testClient(t),
 		dbName: "testdb",
 	})
+	tests.Add("db already exists", func(t *testing.T) any {
+		client := testClient(t)
 
-	/*
-		TODO:
-		- db already exists
-	*/
+		// Create the database first
+		if err := client.CreateDB(t.Context(), "testdb", nil); err != nil {
+			t.Fatalf("Failed to create test database: %s", err)
+		}
+
+		return test{
+			client:     client,
+			dbName:     "testdb",
+			wantErr:    "database \"testdb\" already exists",
+			wantStatus: http.StatusConflict,
+		}
+	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()

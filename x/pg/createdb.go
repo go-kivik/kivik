@@ -18,6 +18,9 @@ import (
 	"net/http"
 	"regexp"
 
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
+
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
 )
@@ -33,5 +36,20 @@ func (c *client) CreateDB(ctx context.Context, dbName string, _ driver.Options) 
 	}
 
 	_, err := c.pool.Exec(ctx, "CREATE TABLE "+dbName+" (id SERIAL PRIMARY KEY, data JSONB)")
+	if err != nil {
+		if pgErr, ok := err.(*pgconn.PgError); ok {
+			if pgErr.Code == pgerrcode.DuplicateTable {
+				return &internal.Error{
+					Status:  http.StatusConflict,
+					Message: fmt.Sprintf("database %q already exists", dbName),
+				}
+			}
+		}
+		return &internal.Error{
+			Status:  http.StatusInternalServerError,
+			Err:     err,
+			Message: "failed to create database",
+		}
+	}
 	return err
 }

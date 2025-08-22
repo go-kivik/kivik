@@ -16,10 +16,14 @@ import (
 	"context"
 	"errors"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
-type client struct{}
+type client struct {
+	pool *pgxpool.Pool
+}
 
 var _ driver.Client = (*client)(nil)
 

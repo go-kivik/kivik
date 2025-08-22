@@ -13,10 +13,11 @@
 package pg
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
-	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
@@ -32,18 +33,25 @@ func init() {
 }
 
 func (*pg) NewClient(dsn string, _ driver.Options) (driver.Client, error) {
-	config, err := pgconn.ParseConfigWithOptions(dsn, pgconn.ParseConfigOptions{})
+	config, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
 		return nil, &internal.Error{
 			Status: http.StatusBadRequest,
 			Err:    err,
 		}
 	}
-	if config.Database == "" {
+	if config.ConnConfig.Database == "" {
 		return nil, &internal.Error{
 			Status: http.StatusBadRequest,
 			Err:    errors.New("database name is required in DSN"),
 		}
 	}
-	return &client{}, nil
+	pool, err := pgxpool.NewWithConfig(context.TODO(), config)
+	if err != nil {
+		return nil, &internal.Error{
+			Status: http.StatusInternalServerError,
+			Err:    err,
+		}
+	}
+	return &client{pool: pool}, nil
 }

@@ -37,3 +37,11 @@ jobs:
       - name: Validate x/sqlite go.mod
         run: |
           cd x/sqlite && go mod tidy && git diff --exit-code
+      - name: Lint x/pg module
+        uses: golangci/golangci-lint-action@v8
+        with:
+          working-directory: ./x/pg
+          version: ${{ env.GOLANGCI_LINT_VERSION }}
+      - name: Validate x/pg go.mod
+        run: |
+          cd x/pg && go mod tidy && git diff --exit-code

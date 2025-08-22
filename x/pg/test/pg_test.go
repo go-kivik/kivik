@@ -27,7 +27,7 @@ func init() {
 
 func TestPG(t *testing.T) {
 	t.Parallel()
-	client, err := kivik.New("pg", "")
+	client, err := kivik.New("pg", "postgres://kivik:kivik@localhost:5432/kivik_test?sslmode=disable")
 	if err != nil {
 		t.Errorf("Failed to connect to PostgreSQL driver: %s", err)
 		return

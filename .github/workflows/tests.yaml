@@ -13,8 +13,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        go-version: ["1.17", "1.18", "1.19", "1.20", "1.21", "1.22", "1.23", "1.24", "1.25"]
-    
+        go-version:
+          [
+            "1.17",
+            "1.18",
+            "1.19",
+            "1.20",
+            "1.21",
+            "1.22",
+            "1.23",
+            "1.24",
+            "1.25",
+          ]
+
     env:
       USETC: "1"
 
@@ -141,6 +152,29 @@ jobs:
 
       - name: Run tests
         working-directory: x/sqlite
+        run: |
+          go mod download
+          go test -race -shuffle=on ./...
+
+  test-x-pg:
+    name: "x/pg: Go ${{ matrix.go-version }}"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        go-version: ["1.24", "1.25"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Run tests
+        working-directory: x/pg
         run: |
           go mod download
           go test -race -shuffle=on ./...

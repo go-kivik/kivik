@@ -16,7 +16,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4"
@@ -44,15 +43,14 @@ func TestCreateDB(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("db connection error", func(t *testing.T) any {
-		pool, err := pgxpool.New(t.Context(), "postgres://kivik:kivik@localhost:5432/kivik_test?sslmode=disable")
-		if err != nil {
-			t.Fatalf("Failed to connect to PostgreSQL: %s", err)
-		}
+		client := testClient(t)
+
+		client.pool.Close()
 
 		return test{
-			client:     &client{pool: pool},
+			client:     client,
 			dbName:     "testdb",
-			wantErr:    "connection closed",
+			wantErr:    "closed pool",
 			wantStatus: http.StatusInternalServerError,
 		}
 	})

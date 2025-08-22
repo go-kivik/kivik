@@ -16,10 +16,14 @@ import (
 	"context"
 	"errors"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
-type client struct{}
+type client struct {
+	pool *pgxpool.Pool
+}
 
 var _ driver.Client = (*client)(nil)
 
@@ -41,10 +45,6 @@ func (c *client) AllDBs(context.Context, driver.Options) ([]string, error) {
 
 func (c *client) DBExists(context.Context, string, driver.Options) (bool, error) {
 	return false, errors.ErrUnsupported
-}
-
-func (c *client) CreateDB(context.Context, string, driver.Options) error {
-	return errors.ErrUnsupported
 }
 
 func (c *client) DestroyDB(context.Context, string, driver.Options) error {

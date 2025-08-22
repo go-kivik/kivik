@@ -30,6 +30,14 @@ func registerSuitePG() {
 		"Version.vendor_version": ``, // CouchDB 2.0+ no longer has a vendor version
 
 		// TODO:
+		// - Primitive DB operations
+		"CreateDB.skip":  true,
+		"DestroyDB.skip": true,
+		"DBExists.skip":  true,
+		"AllDBs.skip":    true,
+		"DBsStats.skip":  true,
+		"Stats.skip":     true,
+
 		// - Store db config in *client object and connect to the db
 		"Put.skip":       true,
 		"Get.skip":       true,
@@ -37,12 +45,9 @@ func registerSuitePG() {
 		"CreateDoc.skip": true,
 
 		"Security.skip":          true,
-		"DestroyDB.skip":         true,
 		"ViewCleanup.skip":       true,
 		"AllDocs.skip":           true,
 		"Explain.skip":           true,
-		"AllDBs.skip":            true,
-		"Stats.skip":             true,
 		"Compact.skip":           true,
 		"Copy.skip":              true,
 		"GetAttachment.skip":     true,
@@ -53,13 +58,10 @@ func registerSuitePG() {
 		"CreateIndex.skip":       true,
 		"GetAttachmentMeta.skip": true,
 		"Flush.skip":             true,
-		"DBExists.skip":          true,
 		"Query.skip":             true,
 		"Changes.skip":           true,
-		"CreateDB.skip":          true,
 		"GetRev.skip":            true,
 		"BulkDocs.skip":          true,
-		"DBsStats.skip":          true,
 		"AllDBsStats.skip":       true,
 		"Session.skip":           true,
 		"GetIndexes.skip":        true,

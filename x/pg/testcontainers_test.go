@@ -14,17 +14,22 @@ package pg
 
 import (
 	"context"
+	"net"
+	"net/url"
 	"os"
 	"sync"
 	"testing"
 	"time"
 
+	_ "github.com/jackc/pgx/v5/stdlib" // Postgres driver for pgtestdb
+	"github.com/peterldowns/pgtestdb"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
 const (
+	testDatabase = "kivik"
 	testUser     = "kivik"
 	testPassword = "kivik"
 )
@@ -38,7 +43,33 @@ func newPostgres(t *testing.T) string {
 	if err != nil {
 		t.Fatalf("Failed to start PostgreSQL container: %s", err)
 	}
-	return dsn
+
+	parsedDSN, err := url.Parse(dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	host, portStr, err := net.SplitHostPort(parsedDSN.Host)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	dbconf := pgtestdb.Config{
+		DriverName: "pgx",
+		User:       testUser,
+		Password:   testPassword,
+		Database:   testDatabase,
+		Host:       host,
+		Port:       portStr,
+		Options:    "sslmode=disable",
+		TestRole: &pgtestdb.Role{
+			Username:     "postgres",
+			Password:     "postgres",
+			Capabilities: "SUPERUSER",
+		},
+	}
+	config := pgtestdb.Custom(t, dbconf, pgtestdb.NoopMigrator{})
+
+	return config.URL()
 }
 
 var startPostgresOnce = sync.OnceValues(startPostgresContainer)
@@ -52,6 +83,7 @@ func startPostgres() (string, error) {
 func startPostgresContainer() (string, error) {
 	ctx := context.Background()
 	postgresContainer, err := postgres.Run(ctx, "postgres:17.6-alpine3.21",
+		postgres.WithDatabase(testDatabase),
 		postgres.WithUsername(testUser),
 		postgres.WithPassword(testPassword),
 		testcontainers.WithWaitStrategy(

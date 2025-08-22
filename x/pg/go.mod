@@ -5,6 +5,7 @@ go 1.24
 require (
 	github.com/go-kivik/kivik/v4 v4.4.2-0.20250815203910-ec0589e80eb3
 	github.com/jackc/pgx/v5 v5.7.5
+	github.com/peterldowns/pgtestdb v0.1.1
 	github.com/testcontainers/testcontainers-go v0.38.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.38.0
 	gitlab.com/flimzy/testy v0.14.0

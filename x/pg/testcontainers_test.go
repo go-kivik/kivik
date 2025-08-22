@@ -14,7 +14,9 @@ package pg
 
 import (
 	"context"
+	"os"
 	"sync"
+	"testing"
 	"time"
 
 	"github.com/testcontainers/testcontainers-go"
@@ -26,6 +28,18 @@ const (
 	testUser     = "kivik"
 	testPassword = "kivik"
 )
+
+func newPostgres(t *testing.T) string {
+	t.Helper()
+	if os.Getenv("USETC") == "" {
+		t.Skip("USETC not set, skipping testcontainers")
+	}
+	dsn, err := startPostgres()
+	if err != nil {
+		t.Fatalf("Failed to start PostgreSQL container: %s", err)
+	}
+	return dsn
+}
 
 var startPostgresOnce = sync.OnceValues(startPostgresContainer)
 

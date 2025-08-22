@@ -15,10 +15,22 @@ package pg
 import (
 	"context"
 	"errors"
+	"fmt"
+	"net/http"
+	"regexp"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	internal "github.com/go-kivik/kivik/v4/int/errors"
 )
 
-func (c *client) CreateDB(context.Context, string, driver.Options) error {
+var validDBNameRE = regexp.MustCompile("^[a-z_][a-z0-9_$()+/-]*$")
+
+func (c *client) CreateDB(_ context.Context, dbName string, _ driver.Options) error {
+	if !validDBNameRE.MatchString(dbName) {
+		return &internal.Error{
+			Status:  http.StatusBadRequest,
+			Message: fmt.Sprintf("invalid database name: %q", dbName),
+		}
+	}
 	return errors.ErrUnsupported
 }

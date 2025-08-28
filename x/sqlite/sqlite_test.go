@@ -20,7 +20,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
@@ -86,72 +85,6 @@ func TestClientDBExists(t *testing.T) {
 		}
 		if exists {
 			t.Fatal("foo should not exist")
-		}
-	})
-}
-
-func TestClientCreateDB(t *testing.T) {
-	t.Run("invalid name", func(t *testing.T) {
-		d := drv{}
-		dClient, err := d.NewClient(":memory:", mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		err = dClient.CreateDB(context.Background(), "Foo", mock.NilOption)
-		if err == nil {
-			t.Fatal("err should not be nil")
-		}
-		const wantErr = "invalid database name: Foo"
-		if !testy.ErrorMatches(wantErr, err) {
-			t.Fatalf("Unexpected error: %s", err)
-		}
-		const wantStatus = http.StatusBadRequest
-		if status := kivik.HTTPStatus(err); status != wantStatus {
-			t.Fatalf("status should be %d", wantStatus)
-		}
-	})
-	t.Run("success", func(t *testing.T) {
-		d := drv{}
-		dClient, err := d.NewClient(":memory:", mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if err := dClient.CreateDB(context.Background(), "foo", mock.NilOption); err != nil {
-			t.Fatal(err)
-		}
-
-		exists, err := dClient.DBExists(context.Background(), "foo", mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !exists {
-			t.Fatal("foo should exist")
-		}
-	})
-	t.Run("db already exists", func(t *testing.T) {
-		d := drv{}
-		dClient, err := d.NewClient(":memory:", mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if err := dClient.CreateDB(context.Background(), "foo", mock.NilOption); err != nil {
-			t.Fatal(err)
-		}
-
-		err = dClient.CreateDB(context.Background(), "foo", mock.NilOption)
-		if err == nil {
-			t.Fatal("err should not be nil")
-		}
-		const wantErr = "database already exists"
-		if err.Error() != wantErr {
-			t.Fatalf("err should be %s, got %s", wantErr, err)
-		}
-		const wantStatus = http.StatusPreconditionFailed
-		if status := kivik.HTTPStatus(err); status != wantStatus {
-			t.Fatalf("status should be %d", wantStatus)
 		}
 	})
 }

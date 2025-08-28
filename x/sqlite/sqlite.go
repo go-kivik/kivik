@@ -111,30 +111,6 @@ func validateDBName(name string) error {
 	return nil
 }
 
-func (c *client) CreateDB(ctx context.Context, name string, _ driver.Options) error {
-	if err := validateDBName(name); err != nil {
-		return err
-	}
-	tx, err := c.db.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	d := c.newDB(name)
-	for _, query := range schema {
-		_, err := tx.ExecContext(ctx, d.query(query))
-		if err != nil {
-			if errIsAlreadyExists(err) {
-				return &internal.Error{Status: http.StatusPreconditionFailed, Message: "database already exists"}
-			}
-			return err
-		}
-	}
-
-	return tx.Commit()
-}
-
 func (c *client) DestroyDB(ctx context.Context, name string, _ driver.Options) error {
 	if err := validateDBName(name); err != nil {
 		return err

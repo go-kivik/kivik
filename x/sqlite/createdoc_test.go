@@ -108,7 +108,7 @@ func TestDBCreateDoc(t *testing.T) {
 				var attCount int
 				err := db.underlying().QueryRow(`
 					SELECT COUNT(*)
-					FROM test_attachments
+					FROM "kivik$test$attachments"
 				`).Scan(&attCount)
 				if err != nil {
 					t.Fatalf("Failed to query for doc: %s", err)

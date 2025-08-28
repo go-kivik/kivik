@@ -222,7 +222,7 @@ func TestDBPut(t *testing.T) {
 				var doc string
 				err := d.underlying().QueryRow(`
 					SELECT doc
-					FROM test
+					FROM "kivik$test"
 					WHERE id='foo'
 						AND rev=1
 						AND rev_id=$1`, r.id).Scan(&doc)
@@ -272,7 +272,7 @@ func TestDBPut(t *testing.T) {
 				var deleted bool
 				err := d.underlying().QueryRow(`
 					SELECT deleted
-					FROM test
+					FROM "kivik$test"
 					WHERE id='foo'
 					ORDER BY rev DESC, rev_id DESC
 					LIMIT 1
@@ -307,7 +307,7 @@ func TestDBPut(t *testing.T) {
 				var deleted bool
 				err := d.underlying().QueryRow(`
 					SELECT deleted
-					FROM test
+					FROM "kivik$test"
 					WHERE id='foo'
 					ORDER BY rev DESC, rev_id DESC
 					LIMIT 1
@@ -345,7 +345,7 @@ func TestDBPut(t *testing.T) {
 				var deleted bool
 				err := d.underlying().QueryRow(`
 					SELECT deleted
-					FROM test
+					FROM "kivik$test"
 					WHERE id='foo'
 					ORDER BY rev DESC, rev_id DESC
 					LIMIT 1
@@ -473,10 +473,10 @@ func TestDBPut(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("new_edits=false, with _revisions and some revs already exist without parents", func(t *testing.T) interface{} {
+	tests.Add("new_edits=false, with _revisions and some revs already exist without parents", func(t *testing.T) any {
 		dbc := newDB(t)
 		_, err := dbc.underlying().Exec(`
-		INSERT INTO test_revs (id, rev, rev_id)
+		INSERT INTO "kivik$test$revs" (id, rev, rev_id)
 		VALUES ('foo', 1, 'abc'), ('foo', 2, 'def')
 	`)
 		if err != nil {
@@ -518,7 +518,7 @@ func TestDBPut(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("new_edits=false, with _revisions and some revs already exist with docs", func(t *testing.T) interface{} {
+	tests.Add("new_edits=false, with _revisions and some revs already exist with docs", func(t *testing.T) any {
 		db := newDB(t)
 		_ = db.tPut("foo", map[string]interface{}{
 			"_rev": "2-def",
@@ -573,7 +573,7 @@ func TestDBPut(t *testing.T) {
 		wantStatus: http.StatusConflict,
 		wantErr:    "document update conflict",
 	})
-	tests.Add("new_edits=true, with _revisions should conflict for wrong rev", func(t *testing.T) interface{} {
+	tests.Add("new_edits=true, with _revisions should conflict for wrong rev", func(t *testing.T) any {
 		db := newDB(t)
 		_ = db.tPut("foo", map[string]interface{}{
 			"foo": "bar",
@@ -594,7 +594,7 @@ func TestDBPut(t *testing.T) {
 			wantErr:    "document update conflict",
 		}
 	})
-	tests.Add("new_edits=true, with _revisions should succeed for correct rev", func(t *testing.T) interface{} {
+	tests.Add("new_edits=true, with _revisions should succeed for correct rev", func(t *testing.T) any {
 		db := newDB(t)
 		_ = db.tPut("foo", map[string]interface{}{
 			"foo":  "bar",
@@ -628,7 +628,7 @@ func TestDBPut(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("new_edits=true, with _revisions should succeed for correct history", func(t *testing.T) interface{} {
+	tests.Add("new_edits=true, with _revisions should succeed for correct history", func(t *testing.T) any {
 		db := newDB(t)
 		_ = db.tPut("foo", map[string]interface{}{
 			"foo": "bar",
@@ -679,7 +679,7 @@ func TestDBPut(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("new_edits=true, with _revisions should fail for wrong history", func(t *testing.T) interface{} {
+	tests.Add("new_edits=true, with _revisions should fail for wrong history", func(t *testing.T) any {
 		db := newDB(t)
 		_ = db.tPut("foo", map[string]interface{}{
 			"foo": "bar",
@@ -1163,8 +1163,8 @@ func checkAttachments(t *testing.T, d *sql.DB, want []attachmentRow) {
 	t.Helper()
 	rows, err := d.Query(`
 		SELECT b.id, b.rev, b.rev_id, a.rev_pos, a.filename, a.digest
-		FROM test_attachments AS a
-		JOIN test_attachments_bridge AS b ON b.pk=a.pk
+		FROM "kivik$test$attachments" AS a
+		JOIN "kivik$test$attachments_bridge" AS b ON b.pk=a.pk
 	`)
 	if err != nil {
 		t.Fatal(err)

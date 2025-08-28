@@ -58,7 +58,7 @@ func TestDBDelete(t *testing.T) {
 				var deleted bool
 				err := d.underlying().QueryRow(`
 				SELECT deleted
-				FROM test
+				FROM "kivik$test"
 				WHERE id='foo'
 				ORDER BY rev DESC, rev_id DESC
 				LIMIT 1

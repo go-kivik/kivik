@@ -37,24 +37,26 @@ type tmplFuncs struct {
 	collation           *string
 }
 
+const tablePrefix = "kivik$"
+
 func (t *tmplFuncs) Docs() string {
-	return strconv.Quote(t.db.name)
+	return strconv.Quote(tablePrefix + t.db.name)
 }
 
 func (t *tmplFuncs) Revs() string {
-	return strconv.Quote(t.db.name + "_revs")
+	return strconv.Quote(tablePrefix + t.db.name + "$revs")
 }
 
 func (t *tmplFuncs) Attachments() string {
-	return strconv.Quote(t.db.name + "_attachments")
+	return strconv.Quote(tablePrefix + t.db.name + "$attachments")
 }
 
 func (t *tmplFuncs) AttachmentsBridge() string {
-	return strconv.Quote(t.db.name + "_attachments_bridge")
+	return strconv.Quote(tablePrefix + t.db.name + "$attachments_bridge")
 }
 
 func (t *tmplFuncs) Design() string {
-	return strconv.Quote(t.db.name + "_design")
+	return strconv.Quote(tablePrefix + t.db.name + "$design")
 }
 
 const maxTableLen = 59 // 64 minus the `idx_` prefix, and one more `_` separator
@@ -79,7 +81,7 @@ func (t *tmplFuncs) hashedName(typ string) string {
 }
 
 func (t *tmplFuncs) Map() string {
-	return strconv.Quote(t.hashedName("map"))
+	return strconv.Quote(tablePrefix + t.hashedName("map"))
 }
 
 func (t *tmplFuncs) IndexMap() string {
@@ -101,11 +103,11 @@ func (t *tmplFuncs) Collation() string {
 // query does variable substitution on a query string. The following translations
 // are made:
 //
-//	{{ .Docs }} -> db.name
-//	{{ .Revs }} -> db.name + "_revs"
-//	{{ .Attachments }} -> db.name + "_attachments"
-//	{{ .AttachmentsBridge }} -> db.name + "_attachments_bridge"
-//	{{ .Design }} -> db.name + "_design"
+//	{{ .Docs }}              -> "kivik$" + db.name
+//	{{ .Revs }}              -> "kivik$" + db.name + "$revs"
+//	{{ .Attachments }}       -> "kivik$" + db.name + "$attachments"
+//	{{ .AttachmentsBridge }} -> "kivik$" + db.name + "$attachments_bridge"
+//	{{ .Design }}            -> "kivik$" + db.name + "$design"
 func (d *db) query(format string) string {
 	var buf bytes.Buffer
 	tmpl := getTmpl(format)
@@ -119,7 +121,7 @@ func (d *db) query(format string) string {
 // ddocQuery works just like [db.query], but also enables access to the
 // following translations:
 //
-//	{{ .Map }} -> the view map table name
+//	{{ .Map }}      -> the view map table name
 //	{{ .IndexMap }} -> the view map index name
 func (d *db) ddocQuery(docID, viewOrFuncName, rev, format string) string {
 	var buf bytes.Buffer

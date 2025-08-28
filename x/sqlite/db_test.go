@@ -40,7 +40,7 @@ func readRevisions(t *testing.T, db *sql.DB) []leaf {
 	t.Helper()
 	rows, err := db.Query(`
 		SELECT id, rev, rev_id, parent_rev, parent_rev_id
-		FROM "test_revs"
+		FROM "kivik$test$revs"
 		ORDER BY id, rev, rev_id
 	`)
 	if err != nil {

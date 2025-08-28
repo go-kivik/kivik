@@ -15,7 +15,6 @@ package sqlite
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -80,48 +79,6 @@ func (client) Version(context.Context) (*driver.Version, error) {
 	}, nil
 }
 
-func (c *client) AllDBs(ctx context.Context, _ driver.Options) ([]string, error) {
-	rows, err := c.db.QueryContext(ctx, `
-		SELECT
-			name
-		FROM
-			sqlite_schema
-		WHERE
-			type ='table' AND
-			name NOT LIKE 'sqlite_%'
-		`)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var dbs []string
-	for rows.Next() {
-		var db string
-		if err := rows.Scan(&db); err != nil {
-			return nil, err
-		}
-		dbs = append(dbs, db)
-	}
-	return dbs, rows.Err()
-}
-
-func (c *client) DBExists(ctx context.Context, name string, _ driver.Options) (bool, error) {
-	var exists bool
-	err := c.db.QueryRowContext(ctx, `
-		SELECT
-			TRUE
-		FROM
-			sqlite_schema
-		WHERE
-			type = 'table' AND
-			name = ?
-		`, name).Scan(&exists)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return false, err
-	}
-	return exists, nil
-}
-
 var validDBNameRE = regexp.MustCompile(`^[a-z][a-z0-9_$()+/-]*$`)
 
 func validateDBName(name string) error {
@@ -134,30 +91,6 @@ func validateDBName(name string) error {
 		}
 	}
 	return nil
-}
-
-func (c *client) CreateDB(ctx context.Context, name string, _ driver.Options) error {
-	if err := validateDBName(name); err != nil {
-		return err
-	}
-	tx, err := c.db.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	d := c.newDB(name)
-	for _, query := range schema {
-		_, err := tx.ExecContext(ctx, d.query(query))
-		if err != nil {
-			if errIsAlreadyExists(err) {
-				return &internal.Error{Status: http.StatusPreconditionFailed, Message: "database already exists"}
-			}
-			return err
-		}
-	}
-
-	return tx.Commit()
 }
 
 func (c *client) DestroyDB(ctx context.Context, name string, _ driver.Options) error {

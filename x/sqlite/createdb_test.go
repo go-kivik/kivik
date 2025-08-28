@@ -10,8 +10,6 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-//go:build !js
-
 package sqlite
 
 import (
@@ -19,39 +17,33 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
+	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4"
-	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/int/mock"
 )
 
-func TestNewClient(t *testing.T) {
-	d := drv{}
+func TestClientCreateDB(t *testing.T) {
+	t.Run("invalid name", func(t *testing.T) {
+		d := drv{}
+		dClient, err := d.NewClient(":memory:", mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	client, _ := d.NewClient(":memory:", mock.NilOption)
-	if client == nil {
-		t.Fatal("client should not be nil")
-	}
-}
-
-func TestClientVersion(t *testing.T) {
-	c := client{}
-
-	ver, err := c.Version(context.Background())
-	if err != nil {
-		t.Fatal("err should be nil")
-	}
-	wantVer := &driver.Version{
-		Version: "0.0.1",
-		Vendor:  "Kivik",
-	}
-	if d := cmp.Diff(wantVer, ver); d != "" {
-		t.Fatal(d)
-	}
-}
-
-func TestClientDestroyDB(t *testing.T) {
+		err = dClient.CreateDB(context.Background(), "Foo", mock.NilOption)
+		if err == nil {
+			t.Fatal("err should not be nil")
+		}
+		const wantErr = "invalid database name: Foo"
+		if !testy.ErrorMatches(wantErr, err) {
+			t.Fatalf("Unexpected error: %s", err)
+		}
+		const wantStatus = http.StatusBadRequest
+		if status := kivik.HTTPStatus(err); status != wantStatus {
+			t.Fatalf("status should be %d", wantStatus)
+		}
+	})
 	t.Run("success", func(t *testing.T) {
 		d := drv{}
 		dClient, err := d.NewClient(":memory:", mock.NilOption)
@@ -63,34 +55,34 @@ func TestClientDestroyDB(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if err := dClient.DestroyDB(context.Background(), "foo", mock.NilOption); err != nil {
-			t.Fatal(err)
-		}
-
 		exists, err := dClient.DBExists(context.Background(), "foo", mock.NilOption)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if exists {
-			t.Fatal("foo should not exist")
+		if !exists {
+			t.Fatal("foo should exist")
 		}
 	})
-	t.Run("doesn't exist", func(t *testing.T) {
+	t.Run("db already exists", func(t *testing.T) {
 		d := drv{}
 		dClient, err := d.NewClient(":memory:", mock.NilOption)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		err = dClient.DestroyDB(context.Background(), "foo", nil)
-		if err == nil {
-			t.Fatal("wanted an error")
+		if err := dClient.CreateDB(context.Background(), "foo", mock.NilOption); err != nil {
+			t.Fatal(err)
 		}
-		const wantErr = "database not found"
+
+		err = dClient.CreateDB(context.Background(), "foo", mock.NilOption)
+		if err == nil {
+			t.Fatal("err should not be nil")
+		}
+		const wantErr = "database already exists"
 		if err.Error() != wantErr {
 			t.Fatalf("err should be %s, got %s", wantErr, err)
 		}
-		const wantStatus = http.StatusNotFound
+		const wantStatus = http.StatusPreconditionFailed
 		if status := kivik.HTTPStatus(err); status != wantStatus {
 			t.Fatalf("status should be %d", wantStatus)
 		}

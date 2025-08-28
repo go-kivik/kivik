@@ -15,7 +15,6 @@ package sqlite
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -78,23 +77,6 @@ func (client) Version(context.Context) (*driver.Version, error) {
 		Version: version,
 		Vendor:  vendor,
 	}, nil
-}
-
-func (c *client) DBExists(ctx context.Context, name string, _ driver.Options) (bool, error) {
-	var exists bool
-	err := c.db.QueryRowContext(ctx, `
-		SELECT
-			TRUE
-		FROM
-			sqlite_schema
-		WHERE
-			type = 'table' AND
-			name = ?
-		`, name).Scan(&exists)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return false, err
-	}
-	return exists, nil
 }
 
 var validDBNameRE = regexp.MustCompile(`^[a-z][a-z0-9_$()+/-]*$`)

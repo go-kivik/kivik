@@ -51,44 +51,6 @@ func TestClientVersion(t *testing.T) {
 	}
 }
 
-func TestClientDBExists(t *testing.T) {
-	d := drv{}
-	t.Run("exists", func(t *testing.T) {
-		dClient, err := d.NewClient(":memory:", mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		c := dClient.(*client)
-
-		if _, err := c.db.Exec("CREATE TABLE foo (id INTEGER)"); err != nil {
-			t.Fatal(err)
-		}
-
-		exists, err := dClient.DBExists(context.Background(), "foo", nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !exists {
-			t.Fatal("foo should exist")
-		}
-	})
-	t.Run("does not exist", func(t *testing.T) {
-		dClient, err := d.NewClient(":memory:", mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		exists, err := dClient.DBExists(context.Background(), "foo", nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if exists {
-			t.Fatal("foo should not exist")
-		}
-	})
-}
-
 func TestClientDestroyDB(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		d := drv{}

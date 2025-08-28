@@ -108,7 +108,7 @@ func TestDBPut_designDocs(t *testing.T) {
 					SELECT COUNT(*)
 					FROM sqlite_master
 					WHERE type = 'table'
-						AND name LIKE 'foo_%_bar_map_%'
+						AND name LIKE 'kivik$foo_%_bar_map_%'
 				`).Scan(&viewCount)
 				if err != nil {
 					t.Fatal(err)
@@ -154,7 +154,7 @@ func TestDBPut_designDocs(t *testing.T) {
 				var includeDesign bool
 				err := d.underlying().QueryRow(`
 					SELECT include_design
-					FROM test_design
+					FROM "kivik$test$design"
 					WHERE func_type = 'map'
 					LIMIT 1
 					`).Scan(&includeDesign)
@@ -202,7 +202,7 @@ func TestDBPut_designDocs(t *testing.T) {
 				var includeDesign bool
 				err := d.underlying().QueryRow(`
 					SELECT local_seq
-					FROM test_design
+					FROM "kivik$test$design"
 					WHERE func_type = 'map'
 					LIMIT 1
 					`).Scan(&includeDesign)
@@ -272,7 +272,7 @@ func TestDBPut_designDocs(t *testing.T) {
 				var collation sql.NullString
 				err := d.underlying().QueryRow(`
 					SELECT collation
-					FROM test_design
+					FROM "kivik$test$design"
 					WHERE func_type = 'map'
 					LIMIT 1
 					`).Scan(&collation)
@@ -359,7 +359,7 @@ func checkDDocs(t *testing.T, d *sql.DB, want []ddoc) {
 	t.Helper()
 	rows, err := d.Query(`
 		SELECT id, rev, rev_id, language, func_type, func_name, func_body, auto_update
-		FROM test_design
+		FROM "kivik$test$design"
 	`)
 	if err != nil {
 		t.Fatal(err)

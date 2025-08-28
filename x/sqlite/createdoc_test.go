@@ -67,7 +67,7 @@ func TestDBCreateDoc(t *testing.T) {
 				var docID, doc string
 				err := db.underlying().QueryRow(`
 					SELECT id, doc
-					FROM test
+					FROM "kivik$test"
 					WHERE rev=1
 				`).Scan(&docID, &doc)
 				if err != nil {
@@ -134,7 +134,7 @@ func TestDBCreateDoc(t *testing.T) {
 				var attCount int
 				err := db.underlying().QueryRow(`
 					SELECT COUNT(*)
-					FROM test
+					FROM "kivik$test"
 					WHERE deleted=true
 				`).Scan(&attCount)
 				if err != nil {

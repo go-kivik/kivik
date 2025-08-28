@@ -80,35 +80,6 @@ func (client) Version(context.Context) (*driver.Version, error) {
 	}, nil
 }
 
-func (c *client) AllDBs(ctx context.Context, _ driver.Options) ([]string, error) {
-	rows, err := c.db.QueryContext(ctx, `
-		SELECT
-			name
-		FROM
-			sqlite_schema
-		WHERE
-			type ='table'
-			AND name NOT LIKE 'sqlite_%'
-			AND name NOT LIKE '%_attachments'
-			AND name NOT LIKE '%_revs'
-			AND name NOT LIKE '%_design'
-			AND name NOT LIKE '%_attachments_bridge'
-		`)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var dbs []string
-	for rows.Next() {
-		var db string
-		if err := rows.Scan(&db); err != nil {
-			return nil, err
-		}
-		dbs = append(dbs, db)
-	}
-	return dbs, rows.Err()
-}
-
 func (c *client) DBExists(ctx context.Context, name string, _ driver.Options) (bool, error) {
 	var exists bool
 	err := c.db.QueryRowContext(ctx, `

@@ -52,30 +52,6 @@ func TestClientVersion(t *testing.T) {
 	}
 }
 
-func TestClientAllDBs(t *testing.T) {
-	d := drv{}
-	dClient, err := d.NewClient(":memory:", mock.NilOption)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	c := dClient.(*client)
-	for _, table := range []string{"foo", "bar", "foo_attachments", "bar_attachments", "foo_attachments_bridge", "foo_design", "bar_design", "foo_revs", "bar_revs"} {
-		if _, err := c.db.Exec("CREATE TABLE " + table + " (id INTEGER)"); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	dbs, err := dClient.AllDBs(context.Background(), mock.NilOption)
-	if err != nil {
-		t.Fatal("err should be nil")
-	}
-	wantDBs := []string{"foo", "bar"}
-	if d := cmp.Diff(wantDBs, dbs); d != "" {
-		t.Fatal(d)
-	}
-}
-
 func TestClientDBExists(t *testing.T) {
 	d := drv{}
 	t.Run("exists", func(t *testing.T) {

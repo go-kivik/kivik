@@ -55,7 +55,7 @@ func TestCompareString(t *testing.T) {
 }
 
 func TestCompareObject(t *testing.T) {
-	want := []interface{}{
+	want := []any{
 		nil,
 		false,
 		true,
@@ -77,25 +77,25 @@ func TestCompareObject(t *testing.T) {
 
 		// then arrays. compared element by element until different.
 		// Longer arrays sort after their prefixes
-		[]interface{}{"a"},
-		[]interface{}{"b"},
-		[]interface{}{"b", "c"},
-		[]interface{}{"b", "c", "a"},
-		[]interface{}{"b", "d"},
-		[]interface{}{"b", "d", "e"},
+		[]any{"a"},
+		[]any{"b"},
+		[]any{"b", "c"},
+		[]any{"b", "c", "a"},
+		[]any{"b", "d"},
+		[]any{"b", "d", "e"},
 
 		// then object, compares each key value in the list until different.
 		// larger objects sort after their subset objects.
-		map[string]interface{}{"a": float64(1)},
-		map[string]interface{}{"a": float64(2)},
-		map[string]interface{}{"b": float64(1)},
-		map[string]interface{}{"b": float64(2)},
+		map[string]any{"a": float64(1)},
+		map[string]any{"a": float64(2)},
+		map[string]any{"b": float64(1)},
+		map[string]any{"b": float64(2)},
 		// TODO: See #952
-		// map[string]interface{}{"b": float64(2), "a": float64(1)}, // Member order does matter for collation. CouchDB preserves member order but doesn't require that clients will. this test might fail if used with a js engine that doesn't preserve order.
-		map[string]interface{}{"b": float64(2), "c": float64(2)},
+		// map[string]any{"b": float64(2), "a": float64(1)}, // Member order does matter for collation. CouchDB preserves member order but doesn't require that clients will. this test might fail if used with a js engine that doesn't preserve order.
+		map[string]any{"b": float64(2), "c": float64(2)},
 	}
 
-	input := make([]interface{}, len(want))
+	input := make([]any, len(want))
 	copy(input, want)
 	// Shuffle the input
 	rand.Shuffle(len(input), func(i, j int) { input[i], input[j] = input[j], input[i] })

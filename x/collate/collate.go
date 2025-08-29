@@ -55,7 +55,7 @@ func CompareString(a, b string) int {
 // if it encounters an unexpected type. The comparison is performed recursively,
 // with keys sorted before comparison. The result will be 0 if a==b, -1 if a < b,
 // and +1 if a > b.
-func CompareObject(a, b interface{}) int {
+func CompareObject(a, b any) int {
 	aType := jsonTypeOf(a)
 	switch bType := jsonTypeOf(b); {
 	case aType < bType:
@@ -86,8 +86,8 @@ func CompareObject(a, b interface{}) int {
 	case jsonTypeString:
 		return CompareString(a.(string), b.(string))
 	case jsonTypeArray:
-		aArray := a.([]interface{})
-		bArray := b.([]interface{})
+		aArray := a.([]any)
+		bArray := b.([]any)
 		for i := 0; i < len(aArray) && i < len(bArray); i++ {
 			if cmp := CompareObject(aArray[i], bArray[i]); cmp != 0 {
 				return cmp
@@ -95,8 +95,8 @@ func CompareObject(a, b interface{}) int {
 		}
 		return len(aArray) - len(bArray)
 	case jsonTypeObject:
-		aObject := a.(map[string]interface{})
-		bObject := b.(map[string]interface{})
+		aObject := a.(map[string]any)
+		bObject := b.(map[string]any)
 		keyMap := make(map[string]struct{}, len(aObject))
 		for k := range aObject {
 			keyMap[k] = struct{}{}

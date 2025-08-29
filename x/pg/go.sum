@@ -38,8 +38,8 @@ github.com/ebitengine/purego v0.8.4 h1:CF7LEKg5FFOsASUj0+QwaXf8Ht6TlFxg09+S9wz0o
 github.com/ebitengine/purego v0.8.4/go.mod h1:iIjxzd6CiRiOG0UyXP+V1+jWqUXVjPKLAI0mRfJZTmQ=
 github.com/felixge/httpsnoop v1.0.4 h1:NFTV2Zj1bL4mc9sqWACXbQFVBBg2W3GPvqp8/ESS2Wg=
 github.com/felixge/httpsnoop v1.0.4/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSwevea8zH2U=
-github.com/go-kivik/kivik/v4 v4.4.2-0.20250815203910-ec0589e80eb3 h1:AQe9jn2nls2I4Z6EiGF2jDmt1kJBqOucNuRLSmmNrSY=
-github.com/go-kivik/kivik/v4 v4.4.2-0.20250815203910-ec0589e80eb3/go.mod h1:anxFe8x9Vb1+5MVvH3xBm+QruKbMHQYfqfSq1F2ptyc=
+github.com/go-kivik/kivik/v4 v4.4.2-0.20250829030410-4a4c76895803 h1:wSYYzjoreaRCtOxGBhq8LKuWvsX/+mnoCmhmKUCpP20=
+github.com/go-kivik/kivik/v4 v4.4.2-0.20250829030410-4a4c76895803/go.mod h1:anxFe8x9Vb1+5MVvH3xBm+QruKbMHQYfqfSq1F2ptyc=
 github.com/go-logr/logr v1.2.2/go.mod h1:jdQByPbusPIv2/zmleS9BjJVeZ6kBagPoEUsqbVz/1A=
 github.com/go-logr/logr v1.4.3 h1:CjnDlHq8ikf6E492q6eKboGOC0T8CDaOvkHCIg8idEI=
 github.com/go-logr/logr v1.4.3/go.mod h1:9T104GzyrTigFIr8wt5mBrctHMim0Nb2HLGrmQ40KvY=

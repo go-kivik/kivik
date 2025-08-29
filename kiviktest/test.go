@@ -167,6 +167,9 @@ func cleanupDatabases(ctx context.Context, client *kivik.Client, verbose bool) (
 	}
 	allDBs, err := client.AllDBs(ctx)
 	if err != nil {
+		if kivik.HTTPStatus(err) == http.StatusNotImplemented {
+			return 0, nil
+		}
 		return 0, fmt.Errorf("failed to fetch all DBs: %w", err)
 	}
 	var count int

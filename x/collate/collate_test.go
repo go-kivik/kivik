@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"math/rand"
 	"sort"
+	"strconv"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -109,64 +110,57 @@ func TestCompareObject(t *testing.T) {
 }
 
 func Test_CompareJSON(t *testing.T) {
-	tests := []struct {
-		name string
-		want []string
-	}{
-		{
-			name: "js types", // See https://docs.couchdb.org/en/stable/ddocs/views/collation.html#collation-specification
-			want: []string{
-				`null`,
-				`false`,
-				`true`,
+	want := []string{
+		"",
+		`null`,
+		`false`,
+		`true`,
 
-				// then numbers
-				`1`,
-				`2`,
-				`3.0`,
-				`4`,
+		// then numbers
+		`1`,
+		`2`,
+		`3.0`,
+		`4`,
 
-				// then text, case sensitive
-				`"a"`,
-				`"A"`,
-				`"aa"`,
-				`"b"`,
-				`"B"`,
-				`"ba"`,
-				`"bb"`,
+		// then text, case sensitive
+		`"a"`,
+		`"A"`,
+		`"aa"`,
+		`"b"`,
+		`"B"`,
+		`"ba"`,
+		`"bb"`,
 
-				// then arrays. compared element by element until different.
-				// Longer arrays sort after their prefixes
-				`["a"]`,
-				`["b"]`,
-				`["b","c"]`,
-				`["b","c", "a"]`,
-				`["b","d"]`,
-				`["b","d", "e"]`,
+		// then arrays. compared element by element until different.
+		// Longer arrays sort after their prefixes
+		`["a"]`,
+		`["b"]`,
+		`["b","c"]`,
+		`["b","c", "a"]`,
+		`["b","d"]`,
+		`["b","d", "e"]`,
 
-				// then object, compares each key value in the list until different.
-				// larger objects sort after their subset objects.
-				`{"a":1}`,
-				`{"a":2}`,
-				`{"b":1}`,
-				`{"b":2}`,
-				// TODO: See #952
-				// `{"b":2, "a":1}`, // Member order does matter for collation. CouchDB preserves member order but doesn't require that clients will. this test might fail if used with a js engine that doesn't preserve order.
-				`{"b":2, "c":2}`,
-				`{"za":1, "zb":2, "zc":3, "zd":4}`,
-				`{"za":1, "zb":2, "zd":5, "zc":3}`,
-				`{"za":1, "zb":2, "zd":6, "zc":3}`,
-				`{"zd":7, "zb":2, "za":1, "zc":3}`,
-				`{"za":1, "zd":8, "zb":2, "zc":3}`,
-			},
-		},
+		// then object, compares each key value in the list until different.
+		// larger objects sort after their subset objects.
+		`{"a":1}`,
+		`{"a":2}`,
+		`{"b":1}`,
+		`{"b":2}`,
+		// TODO: See #952
+		// `{"b":2, "a":1}`, // Member order does matter for collation. CouchDB preserves member order but doesn't require that clients will. this test might fail if used with a js engine that doesn't preserve order.
+		`{"b":2, "c":2}`,
+		`{"za":1, "zb":2, "zc":3, "zd":4}`,
+		`{"za":1, "zb":2, "zd":5, "zc":3}`,
+		`{"za":1, "zb":2, "zd":6, "zc":3}`,
+		`{"zd":7, "zb":2, "za":1, "zc":3}`,
+		`{"za":1, "zd":8, "zb":2, "zc":3}`,
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Shuffle the input
-			input := make([]json.RawMessage, len(tt.want))
-			for i, v := range tt.want {
+	for i := 0; i < 10; i++ {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			// Clone and shuffle the input
+			input := make([]json.RawMessage, len(want))
+			for i, v := range want {
 				input[i] = json.RawMessage(v)
 			}
 			rand.Shuffle(len(input), func(i, j int) { input[i], input[j] = input[j], input[i] })
@@ -177,7 +171,7 @@ func Test_CompareJSON(t *testing.T) {
 			for i, v := range input {
 				got[i] = string(v)
 			}
-			if d := cmp.Diff(tt.want, got); d != "" {
+			if d := cmp.Diff(want, got); d != "" {
 				t.Errorf("Unexpected result:\n%s", d)
 			}
 		})

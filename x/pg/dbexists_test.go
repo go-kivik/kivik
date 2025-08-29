@@ -53,11 +53,17 @@ func TestDBExists(t *testing.T) {
 			want:   true,
 		}
 	})
+	tests.Add("db connection error", func(t *testing.T) any {
+		client := testClient(t)
+		client.pool.Close()
 
-	/*
-		TODO:
-		- test for connection error
-	*/
+		return test{
+			client:     client,
+			dbName:     "asdfsadf",
+			wantErr:    "closed pool",
+			wantStatus: http.StatusInternalServerError,
+		}
+	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()

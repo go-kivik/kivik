@@ -16,37 +16,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/jackc/pgx/v5/pgxpool"
-
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
-type client struct {
-	pool *pgxpool.Pool
-}
-
-var _ driver.Client = (*client)(nil)
-
-const (
-	version = "0.0.1"
-	vendor  = "Kivik"
-)
-
-func (c *client) Version(context.Context) (*driver.Version, error) {
-	return &driver.Version{
-		Version: version,
-		Vendor:  vendor,
-	}, nil
-}
-
-func (c *client) AllDBs(context.Context, driver.Options) ([]string, error) {
-	return nil, errors.ErrUnsupported
-}
-
-func (c *client) DestroyDB(context.Context, string, driver.Options) error {
-	return errors.ErrUnsupported
-}
-
-func (c *client) DB(string, driver.Options) (driver.DB, error) {
-	return &db{}, nil
+func (c *client) DBExists(context.Context, string, driver.Options) (bool, error) {
+	return false, errors.ErrUnsupported
 }

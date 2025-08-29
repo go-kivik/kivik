@@ -16,6 +16,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4"
@@ -32,10 +33,13 @@ func TestAllDBs(t *testing.T) {
 	}
 
 	tests := testy.NewTable()
+	tests.Add("no databases found", test{
+		client: testClient(t),
+		want:   []string{},
+	})
 
 	/*
 		TODO:
-		- No databases found
 		- Some databases found
 		- Unrelated tables are excluded
 		- db connection error
@@ -59,7 +63,7 @@ func TestAllDBs(t *testing.T) {
 		if status := kivik.HTTPStatus(err); status != tt.wantStatus {
 			t.Errorf("Unexpected status: %d", status)
 		}
-		if d := cmp.Diff(tt.want, got); d != "" {
+		if d := cmp.Diff(tt.want, got, cmpopts.EquateEmpty()); d != "" {
 			t.Errorf("Unexpected result:\n%s", d)
 		}
 	})

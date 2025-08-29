@@ -14,11 +14,10 @@ package pg
 
 import (
 	"context"
-	"errors"
 
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
 func (c *client) AllDBs(context.Context, driver.Options) ([]string, error) {
-	return nil, errors.ErrUnsupported
+	return nil, nil
 }

@@ -28,7 +28,10 @@
 package collate
 
 import (
+	"bytes"
+	"encoding/json"
 	"sort"
+	"strconv"
 	"sync"
 
 	"golang.org/x/text/collate"
@@ -128,3 +131,168 @@ func CompareObject(a, b interface{}) int {
 	}
 	panic("unexpected JSON type")
 }
+
+// CompareJSON compares two marshaled JSON values according to the CouchDB
+// collation rules. The result will be 0 if a==b, -1 if a < b, and +1 if a > b.
+// See https://docs.couchdb.org/en/stable/ddocs/views/collation.html
+func CompareJSON(a, b json.RawMessage) int {
+	if bytes.Equal(a, b) {
+		return 0
+	}
+	// Literal nothing sorts first
+	if len(a) == 0 {
+		return -1
+	}
+	if len(b) == 0 {
+		return 1
+	}
+
+	at, bt := jsType(a), jsType(b)
+	switch {
+
+	// Null
+	case at == jsTypeNull:
+		return -1
+	case bt == jsTypeNull:
+		return 1
+
+	// Booleans
+	case at == jsTypeBoolean:
+		if bt != jsTypeBoolean {
+			return -1
+		}
+		if bytes.Equal(a, []byte("false")) {
+			return -1
+		}
+		return 1
+	case bt == jsTypeBoolean:
+		return 1
+
+	// Numbers
+	case at == jsTypeNumber:
+		if bt != jsTypeNumber {
+			return -1
+		}
+		av, _ := strconv.ParseFloat(string(a), 64)
+		bv, _ := strconv.ParseFloat(string(b), 64)
+		switch {
+		case av < bv:
+			return -1
+		case av > bv:
+			return 1
+		default:
+			return 0
+		}
+	case bt == jsTypeNumber:
+		return 1
+
+	// Strings
+	case at == jsTypeString:
+		if bt != jsTypeString {
+			return -1
+		}
+		return CompareString(string(a), string(b))
+	case bt == jsTypeString:
+		return 1
+
+	// Arrays
+	case at == jsTypeArray:
+		if bt != jsTypeArray {
+			return -1
+		}
+		var av, bv []json.RawMessage
+		_ = json.Unmarshal(a, &av)
+		_ = json.Unmarshal(b, &bv)
+		for i := 0; i < len(av) && i < len(bv); i++ {
+			if r := CompareJSON(av[i], bv[i]); r != 0 {
+				return r
+			}
+		}
+		return len(av) - len(bv)
+
+	case bt == jsTypeArray:
+		return 1
+
+	// Objects
+	case at == jsTypeObject:
+		if bt != jsTypeObject {
+			return -1
+		}
+
+		var av, bv rawObject
+		_ = json.Unmarshal(a, &av)
+		_ = json.Unmarshal(b, &bv)
+		for i := 0; i < len(av) && i < len(bv); i++ {
+			// First compare keys
+			if r := CompareJSON(av[i][0], bv[i][0]); r != 0 {
+				return r
+			}
+			// Then values
+			if r := CompareJSON(av[i][1], bv[i][1]); r != 0 {
+				return r
+			}
+		}
+
+		return len(av) - len(bv)
+	}
+
+	return 1
+}
+
+// rawObject represents an ordered JSON object.
+type rawObject [][2]json.RawMessage
+
+func (r *rawObject) UnmarshalJSON(b []byte) error {
+	var o map[string]json.RawMessage
+	if err := json.Unmarshal(b, &o); err != nil {
+		return err
+	}
+	*r = make([][2]json.RawMessage, 0, len(o))
+	for k, v := range o {
+		rawKey, _ := json.Marshal(k)
+		*r = append(*r, [2]json.RawMessage{rawKey, v})
+	}
+	// This sort is a hack, to make sorting stable in light of the limitation
+	// outlined in #952. Without this, the order is arbitrary, and the collation
+	// order is unstable.  This could be simplified, but I'm leaving it as-is
+	// for the moment, so that it's easy to revert to CouchDB behavior if #952
+	// is ever implemented. If it is, deleting this sort call should be the
+	// only change needed in the [rawObject] type.
+	sort.Slice(*r, func(i, j int) bool {
+		return CompareJSON((*r)[i][0], (*r)[j][0]) < 0
+	})
+	return nil
+}
+
+const (
+	jsTypeString = iota
+	jsTypeArray
+	jsTypeObject
+	jsTypeNull
+	jsTypeBoolean
+	jsTypeNumber
+)
+
+func jsType(s json.RawMessage) int {
+	switch s[0] {
+	case '"':
+		return jsTypeString
+	case '[':
+		return jsTypeArray
+	case '{':
+		return jsTypeObject
+	case 'n':
+		return jsTypeNull
+	case 't', 'f':
+		return jsTypeBoolean
+	}
+	return jsTypeNumber
+}
+
+type couchdbKeys []json.RawMessage
+
+var _ sort.Interface = &couchdbKeys{}
+
+func (c couchdbKeys) Len() int           { return len(c) }
+func (c couchdbKeys) Less(i, j int) bool { return CompareJSON(c[i], c[j]) < 0 }
+func (c couchdbKeys) Swap(i, j int)      { c[i], c[j] = c[j], c[i] }

@@ -4,6 +4,7 @@ go 1.24
 
 require (
 	github.com/go-kivik/kivik/v4 v4.4.2-0.20250829030410-4a4c76895803
+	github.com/google/go-cmp v0.7.0
 	github.com/jackc/pgerrcode v0.0.0-20240316143900-6e2875d9b438
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/peterldowns/pgtestdb v0.1.1

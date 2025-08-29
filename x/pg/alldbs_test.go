@@ -11,3 +11,56 @@
 // the License.
 
 package pg
+
+import (
+	"testing"
+
+	"github.com/google/go-cmp/cmp"
+	"gitlab.com/flimzy/testy"
+
+	"github.com/go-kivik/kivik/v4"
+)
+
+func TestAllDBs(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		client     *client
+		want       []string
+		wantErr    string
+		wantStatus int
+	}
+
+	tests := testy.NewTable()
+
+	/*
+		TODO:
+		- No databases found
+		- Some databases found
+		- Unrelated tables are excluded
+		- db connection error
+		- options:
+			- descending (boolean) – Return the databases in descending order by key. Default is false.
+			- endkey (json) – Stop returning databases when the specified key is reached.
+			- end_key (json) – Alias for endkey param
+			- limit (number) – Limit the number of the returned databases to the specified number.
+			- skip (number) – Skip this number of databases before starting to return the results. Default is 0.
+			- startkey (json) – Return databases starting with the specified key.
+			- start_key (json) – Alias for startkey.
+	*/
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		t.Parallel()
+
+		got, err := tt.client.AllDBs(t.Context(), nil)
+		if !testy.ErrorMatchesRE(tt.wantErr, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
+		if status := kivik.HTTPStatus(err); status != tt.wantStatus {
+			t.Errorf("Unexpected status: %d", status)
+		}
+		if d := cmp.Diff(tt.want, got); d != "" {
+			t.Errorf("Unexpected result:\n%s", d)
+		}
+	})
+}

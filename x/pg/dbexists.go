@@ -21,7 +21,15 @@ import (
 	internal "github.com/go-kivik/kivik/v4/int/errors"
 )
 
-func (c *client) DBExists(_ context.Context, dbName string, _ driver.Options) (bool, error) {
+func (c *client) DBExists(ctx context.Context, dbName string, _ driver.Options) (bool, error) {
+	var exists bool
+	err := c.pool.QueryRow(ctx, "SELECT to_regclass($1) IS NOT NULL", dbName).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	if exists {
+		return true, nil
+	}
 	return false, &internal.Error{
 		Status:  http.StatusNotFound,
 		Message: fmt.Sprintf("database %q not found", dbName),

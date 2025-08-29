@@ -34,17 +34,29 @@ func TestDBExists(t *testing.T) {
 
 	tests := testy.NewTable()
 	tests.Add("invalid db name", test{
-		client:     &client{},
+		client:     testClient(t),
 		dbName:     "Capitalized",
 		wantErr:    `database "Capitalized" not found`,
 		wantStatus: http.StatusNotFound,
+	})
+	tests.Add("db exists", func(t *testing.T) any {
+		client := testClient(t)
+		const dbName = "testdb"
+
+		if err := client.CreateDB(t.Context(), dbName, nil); err != nil {
+			t.Fatalf("Failed to create test db: %s", err)
+		}
+
+		return test{
+			client: client,
+			dbName: dbName,
+			want:   true,
+		}
 	})
 
 	/*
 		TODO:
 		- test for connection error
-		- test for existing db
-		- test for non-existing db
 	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {

@@ -37,10 +37,25 @@ func TestAllDBs(t *testing.T) {
 		client: testClient(t),
 		want:   []string{},
 	})
+	tests.Add("some dbs exist", func(t *testing.T) any {
+		client := testClient(t)
+
+		const dbName1, dbName2 = "testdb1", "testdb2"
+		if err := client.CreateDB(t.Context(), dbName1, nil); err != nil {
+			t.Fatalf("Failed to create test db: %s", err)
+		}
+		if err := client.CreateDB(t.Context(), dbName2, nil); err != nil {
+			t.Fatalf("Failed to create test db: %s", err)
+		}
+
+		return test{
+			client: client,
+			want:   []string{dbName1, dbName2},
+		}
+	})
 
 	/*
 		TODO:
-		- Some databases found
 		- Unrelated tables are excluded
 		- db connection error
 		- options:

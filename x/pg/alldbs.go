@@ -15,9 +15,20 @@ package pg
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5"
+
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
-func (c *client) AllDBs(context.Context, driver.Options) ([]string, error) {
-	return nil, nil
+func (c *client) AllDBs(ctx context.Context, _ driver.Options) ([]string, error) {
+	rows, err := c.pool.Query(ctx, `
+		SELECT substr(tablename, length($1)+1)
+		FROM pg_tables
+		WHERE tablename LIKE $1 || '%'
+	`, tablePrefix)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return pgx.CollectRows(rows, pgx.RowTo[string])
 }

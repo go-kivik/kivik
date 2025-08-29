@@ -14,24 +14,21 @@ package pg
 
 import (
 	"context"
-	"fmt"
-	"net/http"
+	"errors"
+
+	"github.com/jackc/pgx/v5"
 
 	"github.com/go-kivik/kivik/v4/driver"
-	internal "github.com/go-kivik/kivik/v4/int/errors"
 )
 
 func (c *client) DBExists(ctx context.Context, dbName string, _ driver.Options) (bool, error) {
 	var exists bool
-	err := c.pool.QueryRow(ctx, "SELECT to_regclass($1) IS NOT NULL", dbName).Scan(&exists)
-	if err != nil {
+	err := c.pool.QueryRow(ctx, "SELECT true FROM pg_tables WHERE tablename = $1", tablePrefix+dbName).Scan(&exists)
+	switch {
+	case errors.Is(err, pgx.ErrNoRows):
+		return false, nil
+	case err != nil:
 		return false, err
 	}
-	if exists {
-		return true, nil
-	}
-	return false, &internal.Error{
-		Status:  http.StatusNotFound,
-		Message: fmt.Sprintf("database %q not found", dbName),
-	}
+	return exists, nil
 }

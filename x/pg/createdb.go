@@ -25,6 +25,8 @@ import (
 	internal "github.com/go-kivik/kivik/v4/int/errors"
 )
 
+const tablePrefix = "kivik$"
+
 var validDBNameRE = regexp.MustCompile("^[a-z_][a-z0-9_$()+/-]*$")
 
 func (c *client) CreateDB(ctx context.Context, dbName string, _ driver.Options) error {
@@ -35,7 +37,7 @@ func (c *client) CreateDB(ctx context.Context, dbName string, _ driver.Options) 
 		}
 	}
 
-	_, err := c.pool.Exec(ctx, "CREATE TABLE "+dbName+" (id SERIAL PRIMARY KEY, data JSONB)")
+	_, err := c.pool.Exec(ctx, "CREATE TABLE "+tablePrefix+dbName+" (id SERIAL PRIMARY KEY, data JSONB)")
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok {
 			if pgErr.Code == pgerrcode.DuplicateTable {

@@ -89,7 +89,7 @@ func TestCreateDB(t *testing.T) {
 		}
 		// Verify the database was created
 		var found bool
-		err = tt.client.pool.QueryRow(t.Context(), "SELECT true FROM pg_tables WHERE tablename = $1", tt.dbName).Scan(&found)
+		err = tt.client.pool.QueryRow(t.Context(), "SELECT true FROM pg_tables WHERE tablename = $1", tablePrefix+tt.dbName).Scan(&found)
 		if err != nil {
 			t.Errorf("Failed to verify database creation: %s", err)
 			return

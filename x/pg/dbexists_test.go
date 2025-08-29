@@ -34,10 +34,9 @@ func TestDBExists(t *testing.T) {
 
 	tests := testy.NewTable()
 	tests.Add("invalid db name", test{
-		client:     testClient(t),
-		dbName:     "Capitalized",
-		wantErr:    `database "Capitalized" not found`,
-		wantStatus: http.StatusNotFound,
+		client: testClient(t),
+		dbName: "Capitalized",
+		want:   false,
 	})
 	tests.Add("db exists", func(t *testing.T) any {
 		client := testClient(t)

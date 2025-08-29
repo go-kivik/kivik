@@ -15,6 +15,7 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -25,6 +26,7 @@ import (
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
+	"github.com/go-kivik/kivik/v4/x/collate"
 )
 
 func init() {
@@ -33,6 +35,10 @@ func init() {
 	if err := sqlite.RegisterCollationUtf8("COUCHDB_UCI", couchdbCmpString); err != nil {
 		panic(err)
 	}
+}
+
+func couchdbCmpString(a, b string) int {
+	return collate.CompareJSON(json.RawMessage(a), json.RawMessage(b))
 }
 
 type drv struct{}

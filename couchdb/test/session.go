@@ -17,9 +17,9 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	kivik "github.com/go-kivik/kivik/v4"
@@ -82,7 +82,7 @@ func testSession(ctx *kt.Context, client *chttp.Client) {
 		"info.authenticated":           uCtx.Info.AuthMethod,
 		"info.authentication_db":       uCtx.Info.AuthDB,
 		"info.authentication_handlers": strings.Join(uCtx.Info.AuthHandlers, ","),
-		"ok":                           fmt.Sprintf("%t", uCtx.OK),
+		"ok":                           strconv.FormatBool(uCtx.OK),
 		"userCtx.roles":                strings.Join(uCtx.UserCtx.Roles, ","),
 	}
 	for key, actual := range values {
@@ -324,6 +324,7 @@ func testDeleteSession(ctx *kt.Context, client *chttp.Client) {
 				ctx.Errorf("Failed to establish session: %s", err)
 				return
 			}
+			defer r.Body.Close()
 			for _, c := range r.Cookies() {
 				if c.Name == kivik.SessionCookieName {
 					cookie = c

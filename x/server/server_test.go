@@ -162,7 +162,7 @@ func (s serverTests) Run(t *testing.T) {
 			if body == nil {
 				body = strings.NewReader("")
 			}
-			req, err := http.NewRequest(tt.method, tt.path, body)
+			req, err := http.NewRequestWithContext(context.TODO(), tt.method, tt.path, body)
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -214,7 +214,7 @@ func TestFixPath(t *testing.T) {
 		{Input: "foo%2Fbar", Expected: "/foo%2Fbar"},
 	}
 	for _, test := range tests {
-		req, _ := http.NewRequest("GET", "http://localhost/"+test.Input, nil)
+		req, _ := http.NewRequestWithContext(context.TODO(), http.MethodGet, "http://localhost/"+test.Input, nil)
 		fixPath(req, test.Input)
 		if req.URL.EscapedPath() != test.Expected {
 			t.Errorf("Path for '%s' not fixed.\n\tExpected: %s\n\t  Actual: %s\n", test.Input, test.Expected, req.URL.EscapedPath())
@@ -358,7 +358,7 @@ func TestSetHeaders(t *testing.T) {
 		func(test shTest) {
 			t.Run(test.Name, func(t *testing.T) {
 				t.Parallel()
-				req, err := http.NewRequest("GET", "/", nil)
+				req, err := http.NewRequestWithContext(context.TODO(), http.MethodGet, "/", nil)
 				if err != nil {
 					panic(err)
 				}
@@ -953,11 +953,11 @@ func TestNetError(t *testing.T) {
 				}))
 				ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
 				defer cancel()
-				req, err := http.NewRequest("GET", s.URL, nil)
+				req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.URL, nil)
 				if err != nil {
 					t.Fatal(err)
 				}
-				_, err = http.DefaultClient.Do(req.WithContext(ctx))
+				_, err = http.DefaultClient.Do(req)
 				return err
 			}(),
 			status: http.StatusBadGateway,
@@ -966,7 +966,7 @@ func TestNetError(t *testing.T) {
 		{
 			name: "cannot resolve host",
 			input: func() error {
-				req, err := http.NewRequest("GET", "http://foo.com.invalid.hostname", nil)
+				req, err := http.NewRequestWithContext(context.TODO(), http.MethodGet, "http://foo.com.invalid.hostname", nil)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -979,7 +979,7 @@ func TestNetError(t *testing.T) {
 		{
 			name: "connection refused",
 			input: func() error {
-				req, err := http.NewRequest("GET", "http://localhost:99", nil)
+				req, err := http.NewRequestWithContext(context.TODO(), http.MethodGet, "http://localhost:99", nil)
 				if err != nil {
 					t.Fatal(err)
 				}

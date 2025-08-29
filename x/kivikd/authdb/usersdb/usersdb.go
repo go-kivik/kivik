@@ -16,6 +16,7 @@ package usersdb
 import (
 	"context"
 	"crypto/sha1"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/http"
@@ -71,7 +72,7 @@ func (db *db) Validate(ctx context.Context, username, password string) (*authdb.
 	default:
 		return nil, fmt.Errorf("unsupported password scheme: %s", u.PasswordScheme)
 	}
-	key := fmt.Sprintf("%x", pbkdf2.Key([]byte(password), []byte(u.Salt), u.Iterations, authdb.PBKDF2KeyLength, sha1.New))
+	key := hex.EncodeToString(pbkdf2.Key([]byte(password), []byte(u.Salt), u.Iterations, authdb.PBKDF2KeyLength, sha1.New))
 	if key != u.DerivedKey {
 		return nil, &internal.Error{Status: http.StatusUnauthorized, Message: "unauthorized"}
 	}

@@ -53,10 +53,25 @@ func TestAllDBs(t *testing.T) {
 			want:   []string{dbName1, dbName2},
 		}
 	})
+	tests.Add("exclude non-kivik tables", func(t *testing.T) any {
+		client := testClient(t)
+
+		const dbName = "testdb"
+		if err := client.CreateDB(t.Context(), dbName, nil); err != nil {
+			t.Fatalf("Failed to create test db: %s", err)
+		}
+		if _, err := client.pool.Exec(t.Context(), "CREATE TABLE foo (id TEXT)"); err != nil {
+			t.Fatalf("Failed to create non-kivik table: %s", err)
+		}
+
+		return test{
+			client: client,
+			want:   []string{dbName},
+		}
+	})
 
 	/*
 		TODO:
-		- Unrelated tables are excluded
 		- db connection error
 		- options:
 			- descending (boolean) – Return the databases in descending order by key. Default is false.

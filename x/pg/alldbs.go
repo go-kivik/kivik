@@ -29,6 +29,5 @@ func (c *client) AllDBs(ctx context.Context, _ driver.Options) ([]string, error)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 	return pgx.CollectRows(rows, pgx.RowTo[string])
 }

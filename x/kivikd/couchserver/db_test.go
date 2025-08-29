@@ -18,7 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -201,7 +201,7 @@ func TestGetDB(t *testing.T) {
 			t.Errorf("Content-Type header doesn't match, got %s", contentType)
 		}
 		var body interface{}
-		buf, err := ioutil.ReadAll(resp.Body)
+		buf, err := io.ReadAll(resp.Body)
 		if err != nil {
 			t.Fatal(err)
 		}

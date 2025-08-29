@@ -14,11 +14,16 @@ package pg
 
 import (
 	"context"
-	"errors"
+	"fmt"
+	"net/http"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	internal "github.com/go-kivik/kivik/v4/int/errors"
 )
 
-func (c *client) DBExists(context.Context, string, driver.Options) (bool, error) {
-	return false, errors.ErrUnsupported
+func (c *client) DBExists(_ context.Context, dbName string, _ driver.Options) (bool, error) {
+	return false, &internal.Error{
+		Status:  http.StatusNotFound,
+		Message: fmt.Sprintf("database %q not found", dbName),
+	}
 }

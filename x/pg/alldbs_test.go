@@ -13,6 +13,7 @@
 package pg
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -69,10 +70,20 @@ func TestAllDBs(t *testing.T) {
 			want:   []string{dbName},
 		}
 	})
+	tests.Add("db connection error", func(t *testing.T) any {
+		client := testClient(t)
+
+		client.pool.Close()
+
+		return test{
+			client:     client,
+			wantErr:    "closed pool",
+			wantStatus: http.StatusInternalServerError,
+		}
+	})
 
 	/*
 		TODO:
-		- db connection error
 		- options:
 			- descending (boolean) – Return the databases in descending order by key. Default is false.
 			- endkey (json) – Stop returning databases when the specified key is reached.

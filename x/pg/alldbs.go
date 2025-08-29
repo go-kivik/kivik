@@ -14,18 +14,33 @@ package pg
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jackc/pgx/v5"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/x/options"
 )
 
-func (c *client) AllDBs(ctx context.Context, _ driver.Options) ([]string, error) {
-	rows, err := c.pool.Query(ctx, `
+func (c *client) AllDBs(ctx context.Context, opts driver.Options) ([]string, error) {
+	o := options.New(opts)
+	descending, err := o.Descending()
+	if err != nil {
+		return nil, err
+	}
+	order := "ASC"
+	if descending {
+		order = "DESC"
+	}
+
+	query := fmt.Sprintf(`
 		SELECT substr(tablename, length($1)+1)
 		FROM pg_tables
-		WHERE tablename LIKE $1 || '%'
-	`, tablePrefix)
+		WHERE tablename LIKE $1 || '%%'
+		ORDER BY tablename %s
+	`, order)
+
+	rows, err := c.pool.Query(ctx, query, tablePrefix)
 	if err != nil {
 		return nil, err
 	}

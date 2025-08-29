@@ -21,6 +21,7 @@ import (
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/v4/driver"
 )
 
 func TestAllDBs(t *testing.T) {
@@ -28,6 +29,7 @@ func TestAllDBs(t *testing.T) {
 
 	type test struct {
 		client     *client
+		options    driver.Options
 		want       []string
 		wantErr    string
 		wantStatus int
@@ -81,11 +83,27 @@ func TestAllDBs(t *testing.T) {
 			wantStatus: http.StatusInternalServerError,
 		}
 	})
+	tests.Add("option: descending=true", func(t *testing.T) any {
+		client := testClient(t)
+
+		const dbName1, dbName2 = "testdb1", "testdb2"
+		if err := client.CreateDB(t.Context(), dbName1, nil); err != nil {
+			t.Fatalf("Failed to create test db: %s", err)
+		}
+		if err := client.CreateDB(t.Context(), dbName2, nil); err != nil {
+			t.Fatalf("Failed to create test db: %s", err)
+		}
+
+		return test{
+			client:  client,
+			options: kivik.Param("descending", "true"),
+			want:    []string{dbName2, dbName1},
+		}
+	})
 
 	/*
 		TODO:
 		- options:
-			- descending (boolean) – Return the databases in descending order by key. Default is false.
 			- endkey (json) – Stop returning databases when the specified key is reached.
 			- end_key (json) – Alias for endkey param
 			- limit (number) – Limit the number of the returned databases to the specified number.
@@ -97,7 +115,7 @@ func TestAllDBs(t *testing.T) {
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()
 
-		got, err := tt.client.AllDBs(t.Context(), nil)
+		got, err := tt.client.AllDBs(t.Context(), tt.options)
 		if !testy.ErrorMatchesRE(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}

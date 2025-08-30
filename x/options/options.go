@@ -10,7 +10,10 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-package sqlite
+// Package options implements options handling for standard CouchDB options.
+// This package is not intended for public consumption, and the API is subject
+// to change without warning.
+package options
 
 import (
 	"encoding/base64"
@@ -23,20 +26,24 @@ import (
 
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
+	"github.com/go-kivik/kivik/v4/x/collate"
 	"github.com/go-kivik/kivik/v4/x/mango"
 )
 
 type optsMap map[string]any
 
-func newOpts(options driver.Options) optsMap {
+// New creates a new optsMap from the given driver.Options.
+//
+//nolint:revive // As this is not a public API, I'm happy returning an unexported type here.
+func New(options driver.Options) optsMap {
 	opts := map[string]any{}
 	options.Apply(opts)
 	return opts
 }
 
-// get works like standard map access, but allows for multiple keys to be
+// Get works like standard map access, but allows for multiple keys to be
 // checked in order.
-func (o optsMap) get(key ...string) (string, any, bool) {
+func (o optsMap) Get(key ...string) (string, any, bool) {
 	for _, k := range key {
 		v, ok := o[k]
 		if ok {
@@ -63,16 +70,18 @@ func parseJSONKey(key string, in any) (string, error) {
 	}
 }
 
-func (o optsMap) endKey() (string, error) {
-	key, value, ok := o.get("endkey", "end_key")
+// EndKey returns the endkey option.
+func (o optsMap) EndKey() (string, error) {
+	key, value, ok := o.Get("endkey", "end_key")
 	if !ok {
 		return "", nil
 	}
 	return parseJSONKey(key, value)
 }
 
-func (o optsMap) endkeyDocID() (string, error) {
-	key, value, ok := o.get("endkey_docid", "end_key_doc_id")
+// EndKeyDocID returns the endkey_docid option.
+func (o optsMap) EndKeyDocID() (string, error) {
+	key, value, ok := o.Get("endkey_docid", "end_key_doc_id")
 	if !ok {
 		return "", nil
 	}
@@ -83,8 +92,9 @@ func (o optsMap) endkeyDocID() (string, error) {
 	return v, nil
 }
 
-func (o optsMap) startkeyDocID() (string, error) {
-	key, value, ok := o.get("startkey_docid", "start_key_doc_id")
+// StartKeyDocID returns the startkey_docid option.
+func (o optsMap) StartKeyDocID() (string, error) {
+	key, value, ok := o.Get("startkey_docid", "start_key_doc_id")
 	if !ok {
 		return "", nil
 	}
@@ -95,7 +105,8 @@ func (o optsMap) startkeyDocID() (string, error) {
 	return v, nil
 }
 
-func (o optsMap) key() (string, error) {
+// Key returns the key option.
+func (o optsMap) Key() (string, error) {
 	value, ok := o["key"]
 	if !ok {
 		return "", nil
@@ -103,7 +114,8 @@ func (o optsMap) key() (string, error) {
 	return parseJSONKey("key", value)
 }
 
-func (o optsMap) keys() ([]string, error) {
+// Keys returns the keys option.
+func (o optsMap) Keys() ([]string, error) {
 	raw, ok := o["keys"]
 	if !ok {
 		return nil, nil
@@ -130,7 +142,8 @@ func (o optsMap) keys() ([]string, error) {
 	return keys, nil
 }
 
-func (o optsMap) inclusiveEnd() (bool, error) {
+// InclusiveEnd returns the inclusive_end option. The default is true.
+func (o optsMap) InclusiveEnd() (bool, error) {
 	param, ok := o["inclusive_end"]
 	if !ok {
 		return true, nil
@@ -142,20 +155,23 @@ func (o optsMap) inclusiveEnd() (bool, error) {
 	return v, nil
 }
 
-func (o optsMap) startKey() (string, error) {
-	key, value, ok := o.get("startkey", "start_key")
+// StartKey returns the startkey option.
+func (o optsMap) StartKey() (string, error) {
+	key, value, ok := o.Get("startkey", "start_key")
 	if !ok {
 		return "", nil
 	}
 	return parseJSONKey(key, value)
 }
 
-func (o optsMap) rev() string {
+// Rev returns the rev option.
+func (o optsMap) Rev() string {
 	rev, _ := o["rev"].(string)
 	return rev
 }
 
-func (o optsMap) newEdits() bool {
+// NewEdits returns the new_edits option.
+func (o optsMap) NewEdits() bool {
 	newEdits, ok := o["new_edits"].(bool)
 	if !ok {
 		return true
@@ -163,21 +179,22 @@ func (o optsMap) newEdits() bool {
 	return newEdits
 }
 
-func (o optsMap) feed() (string, error) {
+// Feed returns the feed option.
+func (o optsMap) Feed() (string, error) {
 	feed, ok := o["feed"].(string)
 	if !ok {
 		return "normal", nil
 	}
 	switch feed {
-	case feedNormal, feedLongpoll:
+	case FeedNormal, FeedLongpoll:
 		return feed, nil
 	}
 	return "", &internal.Error{Status: http.StatusBadRequest, Message: "supported `feed` types: normal, longpoll"}
 }
 
-// since returns true if the value is "now", otherwise it returns the sequence
+// Since returns true if the value is "now", otherwise it returns the sequence
 // id as a uint64.
-func (o optsMap) since() (bool, *uint64, error) {
+func (o optsMap) Since() (bool, *uint64, error) {
 	in, ok := o["since"].(string)
 	if !ok {
 		return false, nil, nil
@@ -189,9 +206,9 @@ func (o optsMap) since() (bool, *uint64, error) {
 	return false, &since, err
 }
 
-// changesLimit returns the changesLimit value as a uint64, or 0 if the changesLimit is unset. An
-// explicit changesLimit of 0 is converted to 1, as per CouchDB docs.
-func (o optsMap) changesLimit() (uint64, error) {
+// ChangesLimit returns the ChangesLimit value as a uint64, or 0 if the ChangesLimit is unset. An
+// explicit ChangesLimit of 0 is converted to 1, as per CouchDB docs.
+func (o optsMap) ChangesLimit() (uint64, error) {
 	in, ok := o["limit"]
 	if !ok {
 		return 0, nil
@@ -206,7 +223,8 @@ func (o optsMap) changesLimit() (uint64, error) {
 	return limit, nil
 }
 
-func (o optsMap) changesFilter() (filterType, filterDdoc, filterName string, _ error) {
+// ChangesFilter returns the filter options.
+func (o optsMap) ChangesFilter() (filterType, filterDdoc, filterName string, _ error) {
 	raw, ok := o["filter"]
 	if !ok {
 		return "", "", "", nil
@@ -231,8 +249,9 @@ func (o optsMap) changesFilter() (filterType, filterDdoc, filterName string, _ e
 	return filterType, "_design/" + parts[0], parts[1], nil
 }
 
-func (o optsMap) changesWhere(args *[]any) (string, error) {
-	filterType, _, _, err := o.changesFilter()
+// ChangesWhere returns the WHERE clause for the changes feed.
+func (o optsMap) ChangesWhere(args *[]any) (string, error) {
+	filterType, _, _, err := o.ChangesFilter()
 	if err != nil {
 		return "", err
 	}
@@ -259,9 +278,9 @@ func (o optsMap) changesWhere(args *[]any) (string, error) {
 	return fmt.Sprintf("WHERE results.id IN (%s)", placeholders(start+1, len(*args)-start)), nil
 }
 
-// limit returns the limit value as an int64, or -1 if the limit is unset.
-// If the limit is invalid, an error is returned with status 400.
-func (o optsMap) limit() (int64, error) {
+// Limit returns the Limit value as an int64, or -1 if the Limit is unset.
+// If the Limit is invalid, an error is returned with status 400.
+func (o optsMap) Limit() (int64, error) {
 	in, ok := o["limit"]
 	if !ok {
 		return -1, nil
@@ -269,9 +288,9 @@ func (o optsMap) limit() (int64, error) {
 	return toInt64(in, "invalid value for 'limit'")
 }
 
-// skip returns the skip value as an int64, or 0 if the skip is unset.
-// If the skip is invalid, an error is returned with status 400.
-func (o optsMap) skip() (int64, error) {
+// Skip returns the Skip value as an int64, or 0 if the Skip is unset.
+// If the Skip is invalid, an error is returned with status 400.
+func (o optsMap) Skip() (int64, error) {
 	in, ok := o["skip"]
 	if !ok {
 		return 0, nil
@@ -279,7 +298,8 @@ func (o optsMap) skip() (int64, error) {
 	return toInt64(in, "invalid value for 'skip'")
 }
 
-func (o optsMap) fields() ([]string, error) {
+// Fields returns the Fields option.
+func (o optsMap) Fields() ([]string, error) {
 	raw, ok := o["fields"]
 	if !ok {
 		return nil, nil
@@ -422,7 +442,8 @@ func toBool(in any) (value bool, ok bool) {
 	}
 }
 
-func (o optsMap) sorted() (bool, error) {
+// Sorted returns the sorted option.
+func (o optsMap) Sorted() (bool, error) {
 	param, ok := o["sorted"]
 	if !ok {
 		return true, nil
@@ -439,7 +460,8 @@ func (o optsMap) sorted() (bool, error) {
 	return v, nil
 }
 
-func (o optsMap) descending() (bool, error) {
+// Descending returns the descending option.
+func (o optsMap) Descending() (bool, error) {
 	param, ok := o["descending"]
 	if !ok {
 		return false, nil
@@ -451,7 +473,8 @@ func (o optsMap) descending() (bool, error) {
 	return v, nil
 }
 
-func (o optsMap) includeDocs() (bool, error) {
+// IncludeDocs returns the include_docs option.
+func (o optsMap) IncludeDocs() (bool, error) {
 	param, ok := o["include_docs"]
 	if !ok {
 		return false, nil
@@ -463,7 +486,8 @@ func (o optsMap) includeDocs() (bool, error) {
 	return v, nil
 }
 
-func (o optsMap) attachments() (bool, error) {
+// Attachments returns the attachments option.
+func (o optsMap) Attachments() (bool, error) {
 	param, ok := o["attachments"]
 	if !ok {
 		return false, nil
@@ -475,12 +499,14 @@ func (o optsMap) attachments() (bool, error) {
 	return v, nil
 }
 
-func (o optsMap) latest() bool {
+// Latest returns the latest option.
+func (o optsMap) Latest() bool {
 	v, _ := toBool(o["latest"])
 	return v
 }
 
-func (o optsMap) revs() bool {
+// Revs returns the revs option.
+func (o optsMap) Revs() bool {
 	v, _ := toBool(o["revs"])
 	return v
 }
@@ -491,7 +517,8 @@ const (
 	updateModeLazy  = "lazy"
 )
 
-func (o optsMap) update() (string, error) {
+// Update returns the update option, which may be "true", "false", or "lazy".
+func (o optsMap) Update() (string, error) {
 	v, ok := o["update"]
 	if !ok {
 		return updateModeTrue, nil
@@ -515,8 +542,9 @@ func (o optsMap) update() (string, error) {
 	return "", &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'update': %v", v)}
 }
 
-func (o optsMap) reduce() (*bool, error) {
-	if group, _ := o.group(); group {
+// Reduce returns the reduce option.
+func (o optsMap) Reduce() (*bool, error) {
+	if group, _ := o.Group(); group {
 		return &group, nil
 	}
 	raw, ok := o["reduce"]
@@ -530,7 +558,8 @@ func (o optsMap) reduce() (*bool, error) {
 	return &v, nil
 }
 
-func (o optsMap) group() (bool, error) {
+// Group returns the group option.
+func (o optsMap) Group() (bool, error) {
 	if groupLevel, _ := o.groupLevel(); groupLevel > 0 {
 		return groupLevel > 0, nil
 	}
@@ -553,7 +582,8 @@ func (o optsMap) groupLevel() (uint64, error) {
 	return toUint64(raw, "invalid value for 'group_level'")
 }
 
-func (o optsMap) sort() ([]string, error) {
+// Sort returns the sort option.
+func (o optsMap) Sort() ([]string, error) {
 	raw, ok := o["sort"]
 	if !ok {
 		return nil, nil
@@ -573,7 +603,8 @@ func (o optsMap) sort() ([]string, error) {
 	return sort, nil
 }
 
-func (o optsMap) bookmark() (string, error) {
+// Bookmark returns the bookmark option.
+func (o optsMap) Bookmark() (string, error) {
 	raw, ok := o["bookmark"]
 	if !ok {
 		return "", nil
@@ -589,8 +620,9 @@ func (o optsMap) bookmark() (string, error) {
 	return string(bookmark), nil
 }
 
-func (o optsMap) conflicts() (bool, error) {
-	if o.meta() {
+// Conflicts returns the conflicts option.
+func (o optsMap) Conflicts() (bool, error) {
+	if o.Meta() {
 		return true, nil
 	}
 	param, ok := o["conflicts"]
@@ -604,38 +636,44 @@ func (o optsMap) conflicts() (bool, error) {
 	return v, nil
 }
 
-func (o optsMap) meta() bool {
+// Meta returns the meta option.
+func (o optsMap) Meta() bool {
 	v, _ := toBool(o["meta"])
 	return v
 }
 
-func (o optsMap) deletedConflicts() bool {
-	if o.meta() {
+// DeletedConflicts returns the deleted_conflicts option.
+func (o optsMap) DeletedConflicts() bool {
+	if o.Meta() {
 		return true
 	}
 	v, _ := toBool(o["deleted_conflicts"])
 	return v
 }
 
-func (o optsMap) revsInfo() bool {
-	if o.meta() {
+// RevsInfo returns the revs_info option.
+func (o optsMap) RevsInfo() bool {
+	if o.Meta() {
 		return true
 	}
 	v, _ := toBool(o["revs_info"])
 	return v
 }
 
-func (o optsMap) localSeq() bool {
+// LocalSeq returns the local_seq option.
+func (o optsMap) LocalSeq() bool {
 	v, _ := toBool(o["local_seq"])
 	return v
 }
 
-func (o optsMap) attsSince() []string {
+// AttsSince returns the atts_since option.
+func (o optsMap) AttsSince() []string {
 	attsSince, _ := o["atts_since"].([]string)
 	return attsSince
 }
 
-func (o optsMap) updateSeq() (bool, error) {
+// UpdateSeq returns the update_seq option.
+func (o optsMap) UpdateSeq() (bool, error) {
 	param, ok := o["update_seq"]
 	if !ok {
 		return false, nil
@@ -647,7 +685,8 @@ func (o optsMap) updateSeq() (bool, error) {
 	return v, nil
 }
 
-func (o optsMap) attEncodingInfo() (bool, error) {
+// AttEncodingIInfo returns the att_encoding_info option.
+func (o optsMap) AttEncodingInfo() (bool, error) {
 	param, ok := o["att_encoding_info"]
 	if !ok {
 		return false, nil
@@ -661,9 +700,9 @@ func (o optsMap) attEncodingInfo() (bool, error) {
 
 const defaultWhereCap = 3
 
-// buildReduceCacheWhere returns WHERE conditions for use when querying the
+// BuildReduceCacheWhere returns WHERE conditions for use when querying the
 // reduce cache.
-func (v viewOptions) buildReduceCacheWhere(args *[]any) []string {
+func (v viewOptions) BuildReduceCacheWhere(args *[]any) []string {
 	where := make([]string, 0, defaultWhereCap)
 	if v.endkey != "" {
 		op := endKeyOp(v.descending, v.inclusiveEnd)
@@ -690,8 +729,8 @@ func (v viewOptions) buildReduceCacheWhere(args *[]any) []string {
 	return where
 }
 
-// buildGroupWhere returns WHERE conditions for use with grouping.
-func (v viewOptions) buildGroupWhere(args *[]any) []string {
+// BuildGroupWhere returns WHERE conditions for use with grouping.
+func (v viewOptions) BuildGroupWhere(args *[]any) []string {
 	where := make([]string, 0, defaultWhereCap)
 	if v.endkey != "" {
 		op := endKeyOp(v.descending, v.inclusiveEnd)
@@ -716,23 +755,23 @@ func (v viewOptions) buildGroupWhere(args *[]any) []string {
 	return where
 }
 
-func (v viewOptions) bookmarkWhere() string {
+func (v viewOptions) BookmarkWhere() string {
 	if v.bookmark != "" {
 		return `WHERE main.doc_number > (SELECT doc_number FROM bookmark)`
 	}
 	return ""
 }
 
-// buildWhere returns WHERE conditions based on the provided configuration
+// BuildWhere returns WHERE conditions based on the provided configuration
 // arguments, and may append to args as needed.
-func (v viewOptions) buildWhere(args *[]any) []string {
+func (v viewOptions) BuildWhere(args *[]any) []string {
 	where := make([]string, 0, defaultWhereCap)
 	switch v.view {
-	case viewAllDocs:
+	case ViewAllDocs:
 		where = append(where, `view.key NOT LIKE '"_local/%'`)
-	case viewLocalDocs:
+	case ViewLocalDocs:
 		where = append(where, `view.key LIKE '"_local/%'`)
-	case viewDesignDocs:
+	case ViewDesignDocs:
 		where = append(where, `view.key LIKE '"_design/%'`)
 	}
 	if v.endkey != "" {
@@ -766,7 +805,7 @@ func (v viewOptions) buildWhere(args *[]any) []string {
 	return where
 }
 
-func (v viewOptions) buildOrderBy(moreColumns ...string) string {
+func (v viewOptions) BuildOrderBy(moreColumns ...string) string {
 	if v.sorted {
 		direction := descendingToDirection(v.descending)
 		conditions := make([]string, 0, len(moreColumns)+1)
@@ -778,13 +817,13 @@ func (v viewOptions) buildOrderBy(moreColumns ...string) string {
 	return ""
 }
 
-// reduceGroupLevel returns the calculated groupLevel value to pass to
+// ReduceGroupLevel returns the calculated groupLevel value to pass to
 // [github.com/go-kivik/kivik/v4/x/sqlite/reduce.Reduce].
 //
 //	-1: Maximum grouping, same as group=true
 //	 0: No grouping, same as group=false
 //	1+: Group by the first N elements of the key, same as group_level=N
-func (v viewOptions) reduceGroupLevel() int {
+func (v viewOptions) ReduceGroupLevel() int {
 	if v.groupLevel == 0 && v.group {
 		return -1
 	}
@@ -827,8 +866,10 @@ type viewOptions struct {
 	sort      []string
 }
 
-// findOptions converts a _find query body into a viewOptions struct.
-func findOptions(query any) (*viewOptions, error) {
+// FindOptions converts a _find query body into a viewOptions struct.
+//
+//nolint:revive // As this is not a public API, I'm happy returning an unexported type here.
+func FindOptions(query any) (*viewOptions, error) {
 	input := query.(json.RawMessage)
 	var s struct {
 		Selector *mango.Selector `json:"selector"`
@@ -844,30 +885,30 @@ func findOptions(query any) (*viewOptions, error) {
 		return nil, &internal.Error{Status: http.StatusBadRequest, Err: err}
 	}
 
-	limit, err := o.limit()
+	limit, err := o.Limit()
 	if err != nil {
 		return nil, err
 	}
-	skip, err := o.skip()
+	skip, err := o.Skip()
 	if err != nil {
 		return nil, err
 	}
-	fields, err := o.fields()
+	fields, err := o.Fields()
 	if err != nil {
 		return nil, err
 	}
-	conflicts, err := o.conflicts()
+	conflicts, err := o.Conflicts()
 	if err != nil {
 		return nil, err
 	}
-	bookmark, err := o.bookmark()
+	bookmark, err := o.Bookmark()
 	if err != nil {
 		return nil, err
 	}
 	if bookmark != "" {
 		skip = 0
 	}
-	sort, err := o.sort()
+	sort, err := o.Sort()
 	if err != nil {
 		return nil, err
 	}
@@ -876,7 +917,7 @@ func findOptions(query any) (*viewOptions, error) {
 	}
 
 	v := &viewOptions{
-		view:        viewAllDocs,
+		view:        ViewAllDocs,
 		conflicts:   conflicts,
 		includeDocs: true,
 		limit:       -1,
@@ -888,23 +929,24 @@ func findOptions(query any) (*viewOptions, error) {
 		sort:        sort,
 	}
 
-	return v, v.validate()
+	return v, v.Validate()
 }
 
-func (o optsMap) viewOptions(view string) (*viewOptions, error) {
-	limit, err := o.limit()
+// ViewOptions returns the viewOptions for the given view name.
+func (o optsMap) ViewOptions(view string) (*viewOptions, error) {
+	limit, err := o.Limit()
 	if err != nil {
 		return nil, err
 	}
-	skip, err := o.skip()
+	skip, err := o.Skip()
 	if err != nil {
 		return nil, err
 	}
-	reduce, err := o.reduce()
+	reduce, err := o.Reduce()
 	if err != nil {
 		return nil, err
 	}
-	group, err := o.group()
+	group, err := o.Group()
 	if err != nil {
 		return nil, err
 	}
@@ -920,66 +962,66 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 			return nil, &internal.Error{Status: http.StatusBadRequest, Message: "group is invalid for map-only views"}
 		}
 	}
-	conflicts, err := o.conflicts()
+	conflicts, err := o.Conflicts()
 	if err != nil {
 		return nil, err
 	}
-	descending, err := o.descending()
+	descending, err := o.Descending()
 	if err != nil {
 		return nil, err
 	}
-	endkey, err := o.endKey()
+	endkey, err := o.EndKey()
 	if err != nil {
 		return nil, err
 	}
-	startkey, err := o.startKey()
+	startkey, err := o.StartKey()
 	if err != nil {
 		return nil, err
 	}
-	includeDocs, err := o.includeDocs()
+	includeDocs, err := o.IncludeDocs()
 	if err != nil {
 		return nil, err
 	}
-	attachments, err := o.attachments()
+	attachments, err := o.Attachments()
 	if err != nil {
 		return nil, err
 	}
-	inclusiveEnd, err := o.inclusiveEnd()
+	inclusiveEnd, err := o.InclusiveEnd()
 	if err != nil {
 		return nil, err
 	}
-	update, err := o.update()
+	update, err := o.Update()
 	if err != nil {
 		return nil, err
 	}
-	updateSeq, err := o.updateSeq()
+	updateSeq, err := o.UpdateSeq()
 	if err != nil {
 		return nil, err
 	}
-	endkeyDocID, err := o.endkeyDocID()
+	endkeyDocID, err := o.EndKeyDocID()
 	if err != nil {
 		return nil, err
 	}
-	startkeyDocID, err := o.startkeyDocID()
+	startkeyDocID, err := o.StartKeyDocID()
 	if err != nil {
 		return nil, err
 	}
-	key, err := o.key()
+	key, err := o.Key()
 	if err != nil {
 		return nil, err
 	}
-	keys, err := o.keys()
+	keys, err := o.Keys()
 	if err != nil {
 		return nil, err
 	}
 	if len(keys) > 0 && (key != "" || endkey != "" || startkey != "") {
 		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "`keys` is incompatible with `key`, `start_key` and `end_key`"}
 	}
-	sorted, err := o.sorted()
+	sorted, err := o.Sorted()
 	if err != nil {
 		return nil, err
 	}
-	attEncodingInfo, err := o.attEncodingInfo()
+	attEncodingInfo, err := o.AttEncodingInfo()
 	if err != nil {
 		return nil, err
 	}
@@ -1007,10 +1049,11 @@ func (o optsMap) viewOptions(view string) (*viewOptions, error) {
 		sorted:          sorted,
 		attEncodingInfo: attEncodingInfo,
 	}
-	return v, v.validate()
+	return v, v.Validate()
 }
 
-func (v viewOptions) validate() error {
+// Validate returns an error if the options are invalid.
+func (v viewOptions) Validate() error {
 	descendingModifier := 1
 	if v.descending {
 		descendingModifier = -1
@@ -1033,4 +1076,52 @@ func (v viewOptions) validate() error {
 	}
 
 	return nil
+}
+
+func endKeyOp(descending, inclusive bool) string {
+	switch {
+	case descending && inclusive:
+		return ">="
+	case descending && !inclusive:
+		return ">"
+	case !descending && inclusive:
+		return "<="
+	case !descending && !inclusive:
+		return "<"
+	}
+	panic("unreachable")
+}
+
+func startKeyOp(descending bool) string {
+	if descending {
+		return "<="
+	}
+	return ">="
+}
+
+func descendingToDirection(descending bool) string {
+	if descending {
+		return "DESC"
+	}
+	return "ASC"
+}
+
+func isBuiltinView(view string) bool {
+	switch view {
+	case ViewAllDocs, ViewLocalDocs, ViewDesignDocs:
+		return true
+	}
+	return false
+}
+
+func couchdbCmpString(a, b string) int {
+	return collate.CompareJSON(json.RawMessage(a), json.RawMessage(b))
+}
+
+func placeholders(start, count int) string {
+	result := make([]string, count)
+	for i := range result {
+		result[i] = fmt.Sprintf("$%d", start+i)
+	}
+	return strings.Join(result, ", ")
 }

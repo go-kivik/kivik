@@ -703,7 +703,7 @@ func Test_viewOptions(t *testing.T) {
 		},
 	})
 	tests.Add("sorted: false, but re-enabled by descending=true", test{
-		options: kivik.Params(map[string]interface{}{
+		options: kivik.Params(map[string]any{
 			"sorted":     false,
 			"descending": true,
 		}),
@@ -716,7 +716,7 @@ func Test_viewOptions(t *testing.T) {
 		},
 	})
 	tests.Add("sorted: false, but re-enabled by descending=false", test{
-		options: kivik.Params(map[string]interface{}{
+		options: kivik.Params(map[string]any{
 			"sorted":     false,
 			"descending": false,
 		}), want: &viewOptions{
@@ -768,7 +768,7 @@ func Test_viewOptions(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("keys + key", test{
-		options: kivik.Params(map[string]interface{}{
+		options: kivik.Params(map[string]any{
 			"key":  "a",
 			"keys": []string{"b", "c"},
 		}),
@@ -776,7 +776,7 @@ func Test_viewOptions(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("keys + endkey", test{
-		options: kivik.Params(map[string]interface{}{
+		options: kivik.Params(map[string]any{
 			"endkey": "a",
 			"keys":   []string{"b", "c"},
 		}),
@@ -784,7 +784,7 @@ func Test_viewOptions(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("keys + startkey", test{
-		options: kivik.Params(map[string]interface{}{
+		options: kivik.Params(map[string]any{
 			"startkey": "a",
 			"keys":     []string{"b", "c"},
 		}),
@@ -792,7 +792,7 @@ func Test_viewOptions(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("key & startkey conflict", test{
-		options: kivik.Params(map[string]interface{}{
+		options: kivik.Params(map[string]any{
 			"startkey": "d",
 			"key":      "a",
 		}),
@@ -800,7 +800,7 @@ func Test_viewOptions(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("key & startkey no conflict", test{
-		options: kivik.Params(map[string]interface{}{
+		options: kivik.Params(map[string]any{
 			"startkey": "a",
 			"key":      "a",
 		}),
@@ -814,7 +814,7 @@ func Test_viewOptions(t *testing.T) {
 		},
 	})
 	tests.Add("key & startkey + descending", test{
-		options: kivik.Params(map[string]interface{}{
+		options: kivik.Params(map[string]any{
 			"startkey":   "d",
 			"key":        "a",
 			"descending": true,
@@ -830,7 +830,7 @@ func Test_viewOptions(t *testing.T) {
 		},
 	})
 	tests.Add("key & startkey + descending conflict", test{
-		options: kivik.Params(map[string]interface{}{
+		options: kivik.Params(map[string]any{
 			"startkey":   "a",
 			"key":        "b",
 			"descending": true,
@@ -839,7 +839,7 @@ func Test_viewOptions(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("key & endkey conflict", test{
-		options: kivik.Params(map[string]interface{}{
+		options: kivik.Params(map[string]any{
 			"endkey": "a",
 			"key":    "b",
 		}),
@@ -847,7 +847,7 @@ func Test_viewOptions(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("key & endkey no conflict", test{
-		options: kivik.Params(map[string]interface{}{
+		options: kivik.Params(map[string]any{
 			"endkey": "a",
 			"key":    "a",
 		}),
@@ -861,7 +861,7 @@ func Test_viewOptions(t *testing.T) {
 		},
 	})
 	tests.Add("key & endkey + descending", test{
-		options: kivik.Params(map[string]interface{}{
+		options: kivik.Params(map[string]any{
 			"endkey":     "a",
 			"key":        "b",
 			"descending": true,
@@ -877,7 +877,7 @@ func Test_viewOptions(t *testing.T) {
 		},
 	})
 	tests.Add("key & endkey + descending conflict", test{
-		options: kivik.Params(map[string]interface{}{
+		options: kivik.Params(map[string]any{
 			"endkey":     "b",
 			"key":        "a",
 			"descending": true,
@@ -886,7 +886,7 @@ func Test_viewOptions(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("endkey and startkey conflict", test{
-		options: kivik.Params(map[string]interface{}{
+		options: kivik.Params(map[string]any{
 			"startkey": "z",
 			"endkey":   "a",
 		}),
@@ -894,7 +894,7 @@ func Test_viewOptions(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("endkey and startkey no conflict", test{
-		options: kivik.Params(map[string]interface{}{
+		options: kivik.Params(map[string]any{
 			"startkey": "a",
 			"endkey":   "z",
 		}),
@@ -908,7 +908,7 @@ func Test_viewOptions(t *testing.T) {
 		},
 	})
 	tests.Add("endkey and startkey + descending conflict", test{
-		options: kivik.Params(map[string]interface{}{
+		options: kivik.Params(map[string]any{
 			"startkey":   "a",
 			"endkey":     "z",
 			"descending": true,
@@ -917,7 +917,7 @@ func Test_viewOptions(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("endkey and startkey + descending no conflict", test{
-		options: kivik.Params(map[string]interface{}{
+		options: kivik.Params(map[string]any{
 			"startkey":   "z",
 			"endkey":     "a",
 			"descending": true,
@@ -933,7 +933,7 @@ func Test_viewOptions(t *testing.T) {
 		},
 	})
 	tests.Add("key falls outof range of startkey-endkey", test{
-		options: kivik.Params(map[string]interface{}{
+		options: kivik.Params(map[string]any{
 			"startkey": "a",
 			"endkey":   "q",
 			"key":      "z",
@@ -942,7 +942,7 @@ func Test_viewOptions(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("key falls outof range of startkey-endkey even when descending", test{
-		options: kivik.Params(map[string]interface{}{
+		options: kivik.Params(map[string]any{
 			"startkey":   "a",
 			"endkey":     "q",
 			"key":        "z",

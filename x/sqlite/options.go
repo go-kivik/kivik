@@ -26,17 +26,17 @@ import (
 	"github.com/go-kivik/kivik/v4/x/mango"
 )
 
-type optsMap map[string]interface{}
+type optsMap map[string]any
 
 func newOpts(options driver.Options) optsMap {
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 	return opts
 }
 
 // get works like standard map access, but allows for multiple keys to be
 // checked in order.
-func (o optsMap) get(key ...string) (string, interface{}, bool) {
+func (o optsMap) get(key ...string) (string, any, bool) {
 	for _, k := range key {
 		v, ok := o[k]
 		if ok {
@@ -49,7 +49,7 @@ func (o optsMap) get(key ...string) (string, interface{}, bool) {
 func parseJSONKey(key string, in any) (string, error) {
 	switch t := in.(type) {
 	case json.RawMessage:
-		var v interface{}
+		var v any
 		if err := json.Unmarshal(t, &v); err != nil {
 			return "", &internal.Error{Status: http.StatusBadRequest, Err: fmt.Errorf("invalid value for '%s': %w in key", key, err)}
 		}
@@ -285,7 +285,7 @@ func (o optsMap) fields() ([]string, error) {
 		return nil, nil
 	}
 
-	f, ok := raw.([]interface{})
+	f, ok := raw.([]any)
 	if !ok {
 		return nil, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'fields': %v", raw)}
 	}
@@ -302,7 +302,7 @@ func (o optsMap) fields() ([]string, error) {
 
 // toUint64 converts the input to a uint64. If the input is malformed, it
 // returns an error with msg as the message, and 400 as the status code.
-func toUint64(in interface{}, msg string) (uint64, error) {
+func toUint64(in any, msg string) (uint64, error) {
 	checkSign := func(i int64) (uint64, error) {
 		if i < 0 {
 			return 0, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("%s: %v", msg, in)}
@@ -355,7 +355,7 @@ func toUint64(in interface{}, msg string) (uint64, error) {
 
 // toInt64 converts the input to a int64. If the input is malformed, it
 // returns an error with msg as the message, and 400 as the status code.
-func toInt64(in interface{}, msg string) (int64, error) {
+func toInt64(in any, msg string) (int64, error) {
 	switch t := in.(type) {
 	case int:
 		return int64(t), nil
@@ -405,7 +405,7 @@ func toInt64(in interface{}, msg string) (int64, error) {
 	return 0, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("%s: %v", msg, in)}
 }
 
-func toBool(in interface{}) (value bool, ok bool) {
+func toBool(in any) (value bool, ok bool) {
 	switch t := in.(type) {
 	case bool:
 		return t, true
@@ -558,7 +558,7 @@ func (o optsMap) sort() ([]string, error) {
 	if !ok {
 		return nil, nil
 	}
-	list, ok := raw.([]interface{})
+	list, ok := raw.([]any)
 	if !ok {
 		return nil, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'sort': %v", raw)}
 	}
@@ -828,7 +828,7 @@ type viewOptions struct {
 }
 
 // findOptions converts a _find query body into a viewOptions struct.
-func findOptions(query interface{}) (*viewOptions, error) {
+func findOptions(query any) (*viewOptions, error) {
 	input := query.(json.RawMessage)
 	var s struct {
 		Selector *mango.Selector `json:"selector"`

@@ -10,7 +10,9 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-package sqlite
+//go:build !js
+
+package options
 
 import (
 	"encoding/json"
@@ -25,7 +27,7 @@ import (
 	"github.com/go-kivik/kivik/v4/int/mock"
 )
 
-func Test_viewOptions(t *testing.T) {
+func TestViewOptions(t *testing.T) {
 	type test struct {
 		options    driver.Options
 		view       string
@@ -956,7 +958,7 @@ func Test_viewOptions(t *testing.T) {
 	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {
-		got, err := newOpts(tt.options).viewOptions(tt.view)
+		got, err := New(tt.options).ViewOptions(tt.view)
 		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Errorf("unexpected error: %v", err)
 		}

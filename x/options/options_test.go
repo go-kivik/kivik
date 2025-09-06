@@ -31,7 +31,7 @@ func TestViewOptions(t *testing.T) {
 	type test struct {
 		options    driver.Options
 		view       string
-		want       *viewOptions
+		want       *ViewOptions
 		wantErr    string
 		wantStatus int
 	}
@@ -39,7 +39,7 @@ func TestViewOptions(t *testing.T) {
 	tests := testy.NewTable()
 	tests.Add("all defaults", test{
 		options: mock.NilOption,
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -53,7 +53,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("conflicts: string", test{
 		options: kivik.Param("conflicts", "true"),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -63,7 +63,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("conflicts: bool", test{
 		options: kivik.Param("conflicts", true),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -78,7 +78,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("descending: bool", test{
 		options: kivik.Param("descending", true),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -88,7 +88,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("descending: string", test{
 		options: kivik.Param("descending", "true"),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -113,7 +113,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("endkey: valid json", test{
 		options: kivik.Param("endkey", json.RawMessage(`"oink"`)),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -123,7 +123,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("endkey: plain string", test{
 		options: kivik.Param("endkey", "oink"),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -138,7 +138,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("endkey: slice", test{
 		options: kivik.Param("endkey", []string{"foo", "bar"}),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -153,7 +153,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("end_key: valid json", test{
 		options: kivik.Param("end_key", json.RawMessage(`"oink"`)),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -168,7 +168,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("startkey: valid json", test{
 		options: kivik.Param("startkey", json.RawMessage(`"oink"`)),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -183,7 +183,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("start_key: valid json", test{
 		options: kivik.Param("start_key", json.RawMessage(`"oink"`)),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -193,7 +193,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("group: bool", test{
 		options: kivik.Param("group", true),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			reduce:       &[]bool{true}[0],
@@ -204,7 +204,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("group: valid string", test{
 		options: kivik.Param("group", "true"),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			reduce:       &[]bool{true}[0],
@@ -225,7 +225,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("group_level: int", test{
 		options: kivik.Param("group_level", 3),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			reduce:       &[]bool{true}[0],
@@ -237,7 +237,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("group_level: valid string", test{
 		options: kivik.Param("group_level", "3"),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			reduce:       &[]bool{true}[0],
@@ -254,7 +254,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("group_level: float64", test{
 		options: kivik.Param("group_level", 3.0),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			reduce:       &[]bool{true}[0],
@@ -266,7 +266,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("include_docs: bool", test{
 		options: kivik.Param("include_docs", true),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -276,7 +276,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("include_docs: valid string", test{
 		options: kivik.Param("include_docs", "true"),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -296,7 +296,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("attachments: bool", test{
 		options: kivik.Param("attachments", true),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -306,7 +306,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("attachments: valid string", test{
 		options: kivik.Param("attachments", "true"),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -326,7 +326,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("inclusive_end: bool", test{
 		options: kivik.Param("inclusive_end", false),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: false,
 			update:       "true",
@@ -335,7 +335,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("inclusive_end: valid string", test{
 		options: kivik.Param("inclusive_end", "false"),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: false,
 			update:       "true",
@@ -354,7 +354,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("limit: int", test{
 		options: kivik.Param("limit", 3),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        3,
 			inclusiveEnd: true,
 			update:       "true",
@@ -363,7 +363,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("limit: float64", test{
 		options: kivik.Param("limit", 3.0),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        3,
 			inclusiveEnd: true,
 			update:       "true",
@@ -372,7 +372,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("limit: valid string", test{
 		options: kivik.Param("limit", "3"),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        3,
 			inclusiveEnd: true,
 			update:       "true",
@@ -381,7 +381,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("limit: valid string2", test{
 		options: kivik.Param("limit", "3.0"),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        3,
 			inclusiveEnd: true,
 			update:       "true",
@@ -401,7 +401,7 @@ func TestViewOptions(t *testing.T) {
 
 	tests.Add("skip: int", test{
 		options: kivik.Param("skip", 3),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			skip:         3,
 			inclusiveEnd: true,
@@ -411,7 +411,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("skip: float64", test{
 		options: kivik.Param("skip", 3.0),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			skip:         3,
 			inclusiveEnd: true,
@@ -421,7 +421,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("skip: valid string", test{
 		options: kivik.Param("skip", "3"),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			skip:         3,
 			inclusiveEnd: true,
@@ -431,7 +431,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("skip: valid string2", test{
 		options: kivik.Param("skip", "3.0"),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			skip:         3,
 			inclusiveEnd: true,
@@ -452,7 +452,7 @@ func TestViewOptions(t *testing.T) {
 
 	tests.Add("reduce: bool", test{
 		options: kivik.Param("reduce", true),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -462,7 +462,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("reduce: valid string", test{
 		options: kivik.Param("reduce", "true"),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -483,7 +483,7 @@ func TestViewOptions(t *testing.T) {
 
 	tests.Add("update: bool", test{
 		options: kivik.Param("update", true),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -492,7 +492,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("update: valid string", test{
 		options: kivik.Param("update", "true"),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -501,7 +501,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("update: valid string2", test{
 		options: kivik.Param("update", "lazy"),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "lazy",
@@ -521,7 +521,7 @@ func TestViewOptions(t *testing.T) {
 
 	tests.Add("update_seq: bool", test{
 		options: kivik.Param("update_seq", true),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -531,7 +531,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("update_seq: valid string", test{
 		options: kivik.Param("update_seq", "true"),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -552,7 +552,7 @@ func TestViewOptions(t *testing.T) {
 
 	tests.Add("endkey_docid: string", test{
 		options: kivik.Param("endkey_docid", "oink"),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -568,7 +568,7 @@ func TestViewOptions(t *testing.T) {
 
 	tests.Add("end_key_doc_id: string", test{
 		options: kivik.Param("end_key_doc_id", "oink"),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -584,7 +584,7 @@ func TestViewOptions(t *testing.T) {
 
 	tests.Add("key: valid string", test{
 		options: kivik.Param("key", "oink"),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -594,7 +594,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("key: valid json", test{
 		options: kivik.Param("key", json.RawMessage(`"oink"`)),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -610,7 +610,7 @@ func TestViewOptions(t *testing.T) {
 
 	tests.Add("keys: slice of strings", test{
 		options: kivik.Param("keys", []string{"foo", "bar"}),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -620,7 +620,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("keys: slice of ints", test{
 		options: kivik.Param("keys", []int{1, 2, 3}),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -630,7 +630,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("keys: slice of mixed values", test{
 		options: kivik.Param("keys", []any{"one", 2, [3]int{1, 2, 3}, json.RawMessage(`"foo"`)}),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -640,7 +640,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("keys: valid raw JSON", test{
 		options: kivik.Param("keys", json.RawMessage(`["foo", "bar"]`)),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -666,7 +666,7 @@ func TestViewOptions(t *testing.T) {
 
 	tests.Add("startkey_docid: string", test{
 		options: kivik.Param("startkey_docid", "oink"),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:         -1,
 			inclusiveEnd:  true,
 			update:        "true",
@@ -681,7 +681,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("start_key_doc_id: string", test{
 		options: kivik.Param("start_key_doc_id", "oink"),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:         -1,
 			inclusiveEnd:  true,
 			update:        "true",
@@ -697,7 +697,7 @@ func TestViewOptions(t *testing.T) {
 
 	tests.Add("sorted: bool", test{
 		options: kivik.Param("sorted", false),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -709,7 +709,7 @@ func TestViewOptions(t *testing.T) {
 			"sorted":     false,
 			"descending": true,
 		}),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -721,7 +721,7 @@ func TestViewOptions(t *testing.T) {
 		options: kivik.Params(map[string]any{
 			"sorted":     false,
 			"descending": false,
-		}), want: &viewOptions{
+		}), want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -731,7 +731,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("sorted: valid string", test{
 		options: kivik.Param("sorted", "false"),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -746,7 +746,7 @@ func TestViewOptions(t *testing.T) {
 
 	tests.Add("att_encoding_info: bool", test{
 		options: kivik.Param("att_encoding_info", true),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:           -1,
 			inclusiveEnd:    true,
 			update:          "true",
@@ -756,7 +756,7 @@ func TestViewOptions(t *testing.T) {
 	})
 	tests.Add("att_encoding_info: valid string", test{
 		options: kivik.Param("att_encoding_info", "true"),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:           -1,
 			inclusiveEnd:    true,
 			update:          "true",
@@ -806,7 +806,7 @@ func TestViewOptions(t *testing.T) {
 			"startkey": "a",
 			"key":      "a",
 		}),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -821,7 +821,7 @@ func TestViewOptions(t *testing.T) {
 			"key":        "a",
 			"descending": true,
 		}),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -853,7 +853,7 @@ func TestViewOptions(t *testing.T) {
 			"endkey": "a",
 			"key":    "a",
 		}),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -868,7 +868,7 @@ func TestViewOptions(t *testing.T) {
 			"key":        "b",
 			"descending": true,
 		}),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -900,7 +900,7 @@ func TestViewOptions(t *testing.T) {
 			"startkey": "a",
 			"endkey":   "z",
 		}),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -924,7 +924,7 @@ func TestViewOptions(t *testing.T) {
 			"endkey":     "a",
 			"descending": true,
 		}),
-		want: &viewOptions{
+		want: &ViewOptions{
 			limit:        -1,
 			inclusiveEnd: true,
 			update:       "true",
@@ -968,7 +968,7 @@ func TestViewOptions(t *testing.T) {
 		if err != nil {
 			return
 		}
-		if d := cmp.Diff(tt.want, got, cmp.AllowUnexported(viewOptions{})); d != "" {
+		if d := cmp.Diff(tt.want, got, cmp.AllowUnexported(ViewOptions{})); d != "" {
 			t.Errorf("Unexpected result:\n%s", d)
 		}
 	})

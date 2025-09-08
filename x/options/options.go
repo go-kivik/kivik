@@ -30,12 +30,11 @@ import (
 	"github.com/go-kivik/kivik/v4/x/mango"
 )
 
-type optsMap map[string]any
+// Map is a map of options.
+type Map map[string]any
 
 // New creates a new optsMap from the given driver.Options.
-//
-//nolint:revive // As this is not a public API, I'm happy returning an unexported type here.
-func New(options driver.Options) optsMap {
+func New(options driver.Options) Map {
 	opts := map[string]any{}
 	options.Apply(opts)
 	return opts
@@ -43,7 +42,7 @@ func New(options driver.Options) optsMap {
 
 // Get works like standard map access, but allows for multiple keys to be
 // checked in order.
-func (o optsMap) Get(key ...string) (string, any, bool) {
+func (o Map) Get(key ...string) (string, any, bool) {
 	for _, k := range key {
 		v, ok := o[k]
 		if ok {
@@ -71,7 +70,7 @@ func parseJSONKey(key string, in any) (string, error) {
 }
 
 // EndKey returns the endkey option.
-func (o optsMap) EndKey() (string, error) {
+func (o Map) EndKey() (string, error) {
 	key, value, ok := o.Get("endkey", "end_key")
 	if !ok {
 		return "", nil
@@ -80,7 +79,7 @@ func (o optsMap) EndKey() (string, error) {
 }
 
 // EndKeyDocID returns the endkey_docid option.
-func (o optsMap) EndKeyDocID() (string, error) {
+func (o Map) EndKeyDocID() (string, error) {
 	key, value, ok := o.Get("endkey_docid", "end_key_doc_id")
 	if !ok {
 		return "", nil
@@ -93,7 +92,7 @@ func (o optsMap) EndKeyDocID() (string, error) {
 }
 
 // StartKeyDocID returns the startkey_docid option.
-func (o optsMap) StartKeyDocID() (string, error) {
+func (o Map) StartKeyDocID() (string, error) {
 	key, value, ok := o.Get("startkey_docid", "start_key_doc_id")
 	if !ok {
 		return "", nil
@@ -106,7 +105,7 @@ func (o optsMap) StartKeyDocID() (string, error) {
 }
 
 // Key returns the key option.
-func (o optsMap) Key() (string, error) {
+func (o Map) Key() (string, error) {
 	value, ok := o["key"]
 	if !ok {
 		return "", nil
@@ -115,7 +114,7 @@ func (o optsMap) Key() (string, error) {
 }
 
 // Keys returns the keys option.
-func (o optsMap) Keys() ([]string, error) {
+func (o Map) Keys() ([]string, error) {
 	raw, ok := o["keys"]
 	if !ok {
 		return nil, nil
@@ -143,7 +142,7 @@ func (o optsMap) Keys() ([]string, error) {
 }
 
 // InclusiveEnd returns the inclusive_end option. The default is true.
-func (o optsMap) InclusiveEnd() (bool, error) {
+func (o Map) InclusiveEnd() (bool, error) {
 	param, ok := o["inclusive_end"]
 	if !ok {
 		return true, nil
@@ -156,7 +155,7 @@ func (o optsMap) InclusiveEnd() (bool, error) {
 }
 
 // StartKey returns the startkey option.
-func (o optsMap) StartKey() (string, error) {
+func (o Map) StartKey() (string, error) {
 	key, value, ok := o.Get("startkey", "start_key")
 	if !ok {
 		return "", nil
@@ -165,13 +164,13 @@ func (o optsMap) StartKey() (string, error) {
 }
 
 // Rev returns the rev option.
-func (o optsMap) Rev() string {
+func (o Map) Rev() string {
 	rev, _ := o["rev"].(string)
 	return rev
 }
 
 // NewEdits returns the new_edits option.
-func (o optsMap) NewEdits() bool {
+func (o Map) NewEdits() bool {
 	newEdits, ok := o["new_edits"].(bool)
 	if !ok {
 		return true
@@ -180,7 +179,7 @@ func (o optsMap) NewEdits() bool {
 }
 
 // Feed returns the feed option.
-func (o optsMap) Feed() (string, error) {
+func (o Map) Feed() (string, error) {
 	feed, ok := o["feed"].(string)
 	if !ok {
 		return "normal", nil
@@ -194,7 +193,7 @@ func (o optsMap) Feed() (string, error) {
 
 // Since returns true if the value is "now", otherwise it returns the sequence
 // id as a uint64.
-func (o optsMap) Since() (bool, *uint64, error) {
+func (o Map) Since() (bool, *uint64, error) {
 	in, ok := o["since"].(string)
 	if !ok {
 		return false, nil, nil
@@ -208,7 +207,7 @@ func (o optsMap) Since() (bool, *uint64, error) {
 
 // ChangesLimit returns the ChangesLimit value as a uint64, or 0 if the ChangesLimit is unset. An
 // explicit ChangesLimit of 0 is converted to 1, as per CouchDB docs.
-func (o optsMap) ChangesLimit() (uint64, error) {
+func (o Map) ChangesLimit() (uint64, error) {
 	in, ok := o["limit"]
 	if !ok {
 		return 0, nil
@@ -224,7 +223,7 @@ func (o optsMap) ChangesLimit() (uint64, error) {
 }
 
 // ChangesFilter returns the filter options.
-func (o optsMap) ChangesFilter() (filterType, filterDdoc, filterName string, _ error) {
+func (o Map) ChangesFilter() (filterType, filterDdoc, filterName string, _ error) {
 	raw, ok := o["filter"]
 	if !ok {
 		return "", "", "", nil
@@ -250,7 +249,7 @@ func (o optsMap) ChangesFilter() (filterType, filterDdoc, filterName string, _ e
 }
 
 // ChangesWhere returns the WHERE clause for the changes feed.
-func (o optsMap) ChangesWhere(args *[]any) (string, error) {
+func (o Map) ChangesWhere(args *[]any) (string, error) {
 	filterType, _, _, err := o.ChangesFilter()
 	if err != nil {
 		return "", err
@@ -280,7 +279,7 @@ func (o optsMap) ChangesWhere(args *[]any) (string, error) {
 
 // Limit returns the Limit value as an int64, or -1 if the Limit is unset.
 // If the Limit is invalid, an error is returned with status 400.
-func (o optsMap) Limit() (int64, error) {
+func (o Map) Limit() (int64, error) {
 	in, ok := o["limit"]
 	if !ok {
 		return -1, nil
@@ -290,7 +289,7 @@ func (o optsMap) Limit() (int64, error) {
 
 // Skip returns the Skip value as an int64, or 0 if the Skip is unset.
 // If the Skip is invalid, an error is returned with status 400.
-func (o optsMap) Skip() (int64, error) {
+func (o Map) Skip() (int64, error) {
 	in, ok := o["skip"]
 	if !ok {
 		return 0, nil
@@ -299,7 +298,7 @@ func (o optsMap) Skip() (int64, error) {
 }
 
 // Fields returns the Fields option.
-func (o optsMap) Fields() ([]string, error) {
+func (o Map) Fields() ([]string, error) {
 	raw, ok := o["fields"]
 	if !ok {
 		return nil, nil
@@ -443,7 +442,7 @@ func toBool(in any) (value bool, ok bool) {
 }
 
 // Sorted returns the sorted option.
-func (o optsMap) Sorted() (bool, error) {
+func (o Map) Sorted() (bool, error) {
 	param, ok := o["sorted"]
 	if !ok {
 		return true, nil
@@ -461,7 +460,7 @@ func (o optsMap) Sorted() (bool, error) {
 }
 
 // Descending returns the descending option.
-func (o optsMap) Descending() (bool, error) {
+func (o Map) Descending() (bool, error) {
 	param, ok := o["descending"]
 	if !ok {
 		return false, nil
@@ -474,7 +473,7 @@ func (o optsMap) Descending() (bool, error) {
 }
 
 // IncludeDocs returns the include_docs option.
-func (o optsMap) IncludeDocs() (bool, error) {
+func (o Map) IncludeDocs() (bool, error) {
 	param, ok := o["include_docs"]
 	if !ok {
 		return false, nil
@@ -487,7 +486,7 @@ func (o optsMap) IncludeDocs() (bool, error) {
 }
 
 // Attachments returns the attachments option.
-func (o optsMap) Attachments() (bool, error) {
+func (o Map) Attachments() (bool, error) {
 	param, ok := o["attachments"]
 	if !ok {
 		return false, nil
@@ -500,13 +499,13 @@ func (o optsMap) Attachments() (bool, error) {
 }
 
 // Latest returns the latest option.
-func (o optsMap) Latest() bool {
+func (o Map) Latest() bool {
 	v, _ := toBool(o["latest"])
 	return v
 }
 
 // Revs returns the revs option.
-func (o optsMap) Revs() bool {
+func (o Map) Revs() bool {
 	v, _ := toBool(o["revs"])
 	return v
 }
@@ -518,7 +517,7 @@ const (
 )
 
 // Update returns the update option, which may be "true", "false", or "lazy".
-func (o optsMap) Update() (string, error) {
+func (o Map) Update() (string, error) {
 	v, ok := o["update"]
 	if !ok {
 		return updateModeTrue, nil
@@ -543,7 +542,7 @@ func (o optsMap) Update() (string, error) {
 }
 
 // Reduce returns the reduce option.
-func (o optsMap) Reduce() (*bool, error) {
+func (o Map) Reduce() (*bool, error) {
 	if group, _ := o.Group(); group {
 		return &group, nil
 	}
@@ -559,7 +558,7 @@ func (o optsMap) Reduce() (*bool, error) {
 }
 
 // Group returns the group option.
-func (o optsMap) Group() (bool, error) {
+func (o Map) Group() (bool, error) {
 	if groupLevel, _ := o.groupLevel(); groupLevel > 0 {
 		return groupLevel > 0, nil
 	}
@@ -574,7 +573,7 @@ func (o optsMap) Group() (bool, error) {
 	return v, nil
 }
 
-func (o optsMap) groupLevel() (uint64, error) {
+func (o Map) groupLevel() (uint64, error) {
 	raw, ok := o["group_level"]
 	if !ok {
 		return 0, nil
@@ -583,7 +582,7 @@ func (o optsMap) groupLevel() (uint64, error) {
 }
 
 // Sort returns the sort option.
-func (o optsMap) Sort() ([]string, error) {
+func (o Map) Sort() ([]string, error) {
 	raw, ok := o["sort"]
 	if !ok {
 		return nil, nil
@@ -604,7 +603,7 @@ func (o optsMap) Sort() ([]string, error) {
 }
 
 // Bookmark returns the bookmark option.
-func (o optsMap) Bookmark() (string, error) {
+func (o Map) Bookmark() (string, error) {
 	raw, ok := o["bookmark"]
 	if !ok {
 		return "", nil
@@ -621,7 +620,7 @@ func (o optsMap) Bookmark() (string, error) {
 }
 
 // Conflicts returns the conflicts option.
-func (o optsMap) Conflicts() (bool, error) {
+func (o Map) Conflicts() (bool, error) {
 	if o.Meta() {
 		return true, nil
 	}
@@ -637,13 +636,13 @@ func (o optsMap) Conflicts() (bool, error) {
 }
 
 // Meta returns the meta option.
-func (o optsMap) Meta() bool {
+func (o Map) Meta() bool {
 	v, _ := toBool(o["meta"])
 	return v
 }
 
 // DeletedConflicts returns the deleted_conflicts option.
-func (o optsMap) DeletedConflicts() bool {
+func (o Map) DeletedConflicts() bool {
 	if o.Meta() {
 		return true
 	}
@@ -652,7 +651,7 @@ func (o optsMap) DeletedConflicts() bool {
 }
 
 // RevsInfo returns the revs_info option.
-func (o optsMap) RevsInfo() bool {
+func (o Map) RevsInfo() bool {
 	if o.Meta() {
 		return true
 	}
@@ -661,19 +660,19 @@ func (o optsMap) RevsInfo() bool {
 }
 
 // LocalSeq returns the local_seq option.
-func (o optsMap) LocalSeq() bool {
+func (o Map) LocalSeq() bool {
 	v, _ := toBool(o["local_seq"])
 	return v
 }
 
 // AttsSince returns the atts_since option.
-func (o optsMap) AttsSince() []string {
+func (o Map) AttsSince() []string {
 	attsSince, _ := o["atts_since"].([]string)
 	return attsSince
 }
 
 // UpdateSeq returns the update_seq option.
-func (o optsMap) UpdateSeq() (bool, error) {
+func (o Map) UpdateSeq() (bool, error) {
 	param, ok := o["update_seq"]
 	if !ok {
 		return false, nil
@@ -685,8 +684,8 @@ func (o optsMap) UpdateSeq() (bool, error) {
 	return v, nil
 }
 
-// AttEncodingIInfo returns the att_encoding_info option.
-func (o optsMap) AttEncodingInfo() (bool, error) {
+// AttEncodingInfo returns the att_encoding_info option.
+func (o Map) AttEncodingInfo() (bool, error) {
 	param, ok := o["att_encoding_info"]
 	if !ok {
 		return false, nil
@@ -702,7 +701,7 @@ const defaultWhereCap = 3
 
 // BuildReduceCacheWhere returns WHERE conditions for use when querying the
 // reduce cache.
-func (v viewOptions) BuildReduceCacheWhere(args *[]any) []string {
+func (v ViewOptions) BuildReduceCacheWhere(args *[]any) []string {
 	where := make([]string, 0, defaultWhereCap)
 	if v.endkey != "" {
 		op := endKeyOp(v.descending, v.inclusiveEnd)
@@ -730,7 +729,7 @@ func (v viewOptions) BuildReduceCacheWhere(args *[]any) []string {
 }
 
 // BuildGroupWhere returns WHERE conditions for use with grouping.
-func (v viewOptions) BuildGroupWhere(args *[]any) []string {
+func (v ViewOptions) BuildGroupWhere(args *[]any) []string {
 	where := make([]string, 0, defaultWhereCap)
 	if v.endkey != "" {
 		op := endKeyOp(v.descending, v.inclusiveEnd)
@@ -755,7 +754,8 @@ func (v viewOptions) BuildGroupWhere(args *[]any) []string {
 	return where
 }
 
-func (v viewOptions) BookmarkWhere() string {
+// BookmarkWhere returns a WHERE clause for the bookmark option.
+func (v ViewOptions) BookmarkWhere() string {
 	if v.bookmark != "" {
 		return `WHERE main.doc_number > (SELECT doc_number FROM bookmark)`
 	}
@@ -764,7 +764,7 @@ func (v viewOptions) BookmarkWhere() string {
 
 // BuildWhere returns WHERE conditions based on the provided configuration
 // arguments, and may append to args as needed.
-func (v viewOptions) BuildWhere(args *[]any) []string {
+func (v ViewOptions) BuildWhere(args *[]any) []string {
 	where := make([]string, 0, defaultWhereCap)
 	switch v.view {
 	case ViewAllDocs:
@@ -805,7 +805,8 @@ func (v viewOptions) BuildWhere(args *[]any) []string {
 	return where
 }
 
-func (v viewOptions) BuildOrderBy(moreColumns ...string) string {
+// BuildOrderBy returns an ORDER BY clause based on the provided configuration.
+func (v ViewOptions) BuildOrderBy(moreColumns ...string) string {
 	if v.sorted {
 		direction := descendingToDirection(v.descending)
 		conditions := make([]string, 0, len(moreColumns)+1)
@@ -823,18 +824,18 @@ func (v viewOptions) BuildOrderBy(moreColumns ...string) string {
 //	-1: Maximum grouping, same as group=true
 //	 0: No grouping, same as group=false
 //	1+: Group by the first N elements of the key, same as group_level=N
-func (v viewOptions) ReduceGroupLevel() int {
+func (v ViewOptions) ReduceGroupLevel() int {
 	if v.groupLevel == 0 && v.group {
 		return -1
 	}
 	return int(v.groupLevel)
 }
 
-// viewOptions are all of the options recognized by the view endpoints
+// ViewOptions are all of the options recognized by the view endpoints
 // _design/<ddoc>/_view/<view>, _all_docs, _design_docs, and _local_docs.
 //
 // See https://docs.couchdb.org/en/stable/api/ddoc/views.html#api-ddoc-view
-type viewOptions struct {
+type ViewOptions struct {
 	view            string
 	limit           int64
 	skip            int64
@@ -867,9 +868,7 @@ type viewOptions struct {
 }
 
 // FindOptions converts a _find query body into a viewOptions struct.
-//
-//nolint:revive // As this is not a public API, I'm happy returning an unexported type here.
-func FindOptions(query any) (*viewOptions, error) {
+func FindOptions(query any) (*ViewOptions, error) {
 	input := query.(json.RawMessage)
 	var s struct {
 		Selector *mango.Selector `json:"selector"`
@@ -880,7 +879,7 @@ func FindOptions(query any) (*viewOptions, error) {
 	if s.Selector == nil {
 		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "selector cannot be null"}
 	}
-	var o optsMap
+	var o Map
 	if err := json.Unmarshal(input, &o); err != nil {
 		return nil, &internal.Error{Status: http.StatusBadRequest, Err: err}
 	}
@@ -916,7 +915,7 @@ func FindOptions(query any) (*viewOptions, error) {
 		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "no index exists for this sort, try indexing by the sort fields"}
 	}
 
-	v := &viewOptions{
+	v := &ViewOptions{
 		view:        ViewAllDocs,
 		conflicts:   conflicts,
 		includeDocs: true,
@@ -933,7 +932,7 @@ func FindOptions(query any) (*viewOptions, error) {
 }
 
 // ViewOptions returns the viewOptions for the given view name.
-func (o optsMap) ViewOptions(view string) (*viewOptions, error) {
+func (o Map) ViewOptions(view string) (*ViewOptions, error) {
 	limit, err := o.Limit()
 	if err != nil {
 		return nil, err
@@ -1026,7 +1025,7 @@ func (o optsMap) ViewOptions(view string) (*viewOptions, error) {
 		return nil, err
 	}
 
-	v := &viewOptions{
+	v := &ViewOptions{
 		view:            view,
 		limit:           limit,
 		skip:            skip,
@@ -1053,7 +1052,7 @@ func (o optsMap) ViewOptions(view string) (*viewOptions, error) {
 }
 
 // Validate returns an error if the options are invalid.
-func (v viewOptions) Validate() error {
+func (v ViewOptions) Validate() error {
 	descendingModifier := 1
 	if v.descending {
 		descendingModifier = -1

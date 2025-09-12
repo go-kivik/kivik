@@ -36,7 +36,9 @@ type Map map[string]any
 // New creates a new optsMap from the given driver.Options.
 func New(options driver.Options) Map {
 	opts := map[string]any{}
-	options.Apply(opts)
+	if options != nil {
+		options.Apply(opts)
+	}
 	return opts
 }
 

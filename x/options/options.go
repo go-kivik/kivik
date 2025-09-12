@@ -833,19 +833,6 @@ func (v ViewOptions) ReduceGroupLevel() int {
 	return int(v.groupLevel)
 }
 
-// PaginationOptions are all of the options recognized by [_all_dbs], and
-// views.
-//
-// [_all_dbs]: https://docs.couchdb.org/en/stable/api/server/common.html#all-dbs
-type PaginationOptions struct {
-	limit        int64
-	skip         int64
-	descending   bool
-	endkey       string
-	startkey     string
-	inclusiveEnd bool
-}
-
 // ViewOptions are all of the options recognized by the view endpoints
 // _design/<ddoc>/_view/<view>, _all_docs, _design_docs, and _local_docs.
 //
@@ -945,11 +932,7 @@ func FindOptions(query any) (*ViewOptions, error) {
 
 // ViewOptions returns the viewOptions for the given view name.
 func (o Map) ViewOptions(view string) (*ViewOptions, error) {
-	limit, err := o.Limit()
-	if err != nil {
-		return nil, err
-	}
-	skip, err := o.Skip()
+	pagination, err := o.PaginationOptions()
 	if err != nil {
 		return nil, err
 	}
@@ -977,27 +960,11 @@ func (o Map) ViewOptions(view string) (*ViewOptions, error) {
 	if err != nil {
 		return nil, err
 	}
-	descending, err := o.Descending()
-	if err != nil {
-		return nil, err
-	}
-	endkey, err := o.EndKey()
-	if err != nil {
-		return nil, err
-	}
-	startkey, err := o.StartKey()
-	if err != nil {
-		return nil, err
-	}
 	includeDocs, err := o.IncludeDocs()
 	if err != nil {
 		return nil, err
 	}
 	attachments, err := o.Attachments()
-	if err != nil {
-		return nil, err
-	}
-	inclusiveEnd, err := o.InclusiveEnd()
 	if err != nil {
 		return nil, err
 	}
@@ -1025,7 +992,7 @@ func (o Map) ViewOptions(view string) (*ViewOptions, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(keys) > 0 && (key != "" || endkey != "" || startkey != "") {
+	if len(keys) > 0 && (key != "" || pagination.endkey != "" || pagination.startkey != "") {
 		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "`keys` is incompatible with `key`, `start_key` and `end_key`"}
 	}
 	sorted, err := o.Sorted()
@@ -1038,29 +1005,22 @@ func (o Map) ViewOptions(view string) (*ViewOptions, error) {
 	}
 
 	v := &ViewOptions{
-		PaginationOptions: PaginationOptions{
-			limit:        limit,
-			skip:         skip,
-			descending:   descending,
-			endkey:       endkey,
-			startkey:     startkey,
-			inclusiveEnd: inclusiveEnd,
-		},
-		view:            view,
-		includeDocs:     includeDocs,
-		conflicts:       conflicts,
-		reduce:          reduce,
-		group:           group,
-		groupLevel:      groupLevel,
-		attachments:     attachments,
-		update:          update,
-		updateSeq:       updateSeq,
-		endkeyDocID:     endkeyDocID,
-		startkeyDocID:   startkeyDocID,
-		key:             key,
-		keys:            keys,
-		sorted:          sorted,
-		attEncodingInfo: attEncodingInfo,
+		PaginationOptions: *pagination,
+		view:              view,
+		includeDocs:       includeDocs,
+		conflicts:         conflicts,
+		reduce:            reduce,
+		group:             group,
+		groupLevel:        groupLevel,
+		attachments:       attachments,
+		update:            update,
+		updateSeq:         updateSeq,
+		endkeyDocID:       endkeyDocID,
+		startkeyDocID:     startkeyDocID,
+		key:               key,
+		keys:              keys,
+		sorted:            sorted,
+		attEncodingInfo:   attEncodingInfo,
 	}
 	return v, v.Validate()
 }

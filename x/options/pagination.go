@@ -100,3 +100,11 @@ func (p PaginationOptions) BuildWhere(args *[]any) []string {
 	}
 	return where
 }
+
+// BuildOrderBy returns an ORDER BY clause based on the provided configuration.
+func (p PaginationOptions) BuildOrderBy() string {
+	if p.descending {
+		return "ORDER BY view.key DESC"
+	}
+	return "ORDER BY view.key ASC"
+}

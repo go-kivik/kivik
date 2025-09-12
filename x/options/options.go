@@ -800,19 +800,6 @@ func (v ViewOptions) BuildWhere(args *[]any) []string {
 	return where
 }
 
-// BuildOrderBy returns an ORDER BY clause based on the provided configuration.
-func (v ViewOptions) BuildOrderBy(moreColumns ...string) string {
-	if v.sorted {
-		direction := descendingToDirection(v.descending)
-		conditions := make([]string, 0, len(moreColumns)+1)
-		for _, col := range append([]string{"key"}, moreColumns...) {
-			conditions = append(conditions, "view."+col+" "+direction)
-		}
-		return "ORDER BY " + strings.Join(conditions, ", ")
-	}
-	return ""
-}
-
 // ReduceGroupLevel returns the calculated groupLevel value to pass to
 // [github.com/go-kivik/kivik/v4/x/sqlite/reduce.Reduce].
 //
@@ -1061,13 +1048,6 @@ func startKeyOp(descending bool) string {
 		return "<="
 	}
 	return ">="
-}
-
-func descendingToDirection(descending bool) string {
-	if descending {
-		return "DESC"
-	}
-	return "ASC"
 }
 
 func isBuiltinView(view string) bool {

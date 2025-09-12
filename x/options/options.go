@@ -776,23 +776,16 @@ func (v ViewOptions) BuildWhere(args *[]any) []string {
 	case ViewDesignDocs:
 		where = append(where, `view.key LIKE '"_design/%'`)
 	}
-	if v.endkey != "" {
+	where = append(where, v.PaginationOptions.BuildWhere(args)...)
+	if v.endkey != "" && v.endkeyDocID != "" {
 		op := endKeyOp(v.descending, v.inclusiveEnd)
-		where = append(where, fmt.Sprintf("view.key %s $%d", op, len(*args)+1))
-		*args = append(*args, v.endkey)
-		if v.endkeyDocID != "" {
-			where = append(where, fmt.Sprintf("view.id %s $%d", op, len(*args)+1))
-			*args = append(*args, v.endkeyDocID)
-		}
+		where = append(where, fmt.Sprintf("view.id %s $%d", op, len(*args)+1))
+		*args = append(*args, v.endkeyDocID)
 	}
-	if v.startkey != "" {
+	if v.startkey != "" && v.startkeyDocID != "" {
 		op := startKeyOp(v.descending)
-		where = append(where, fmt.Sprintf("view.key %s $%d", op, len(*args)+1))
-		*args = append(*args, v.startkey)
-		if v.startkeyDocID != "" {
-			where = append(where, fmt.Sprintf("view.id %s $%d", op, len(*args)+1))
-			*args = append(*args, v.startkeyDocID)
-		}
+		where = append(where, fmt.Sprintf("view.id %s $%d", op, len(*args)+1))
+		*args = append(*args, v.startkeyDocID)
 	}
 	if v.key != "" {
 		where = append(where, "view.key = $"+strconv.Itoa(len(*args)+1))
@@ -805,19 +798,6 @@ func (v ViewOptions) BuildWhere(args *[]any) []string {
 		}
 	}
 	return where
-}
-
-// BuildOrderBy returns an ORDER BY clause based on the provided configuration.
-func (v ViewOptions) BuildOrderBy(moreColumns ...string) string {
-	if v.sorted {
-		direction := descendingToDirection(v.descending)
-		conditions := make([]string, 0, len(moreColumns)+1)
-		for _, col := range append([]string{"key"}, moreColumns...) {
-			conditions = append(conditions, "view."+col+" "+direction)
-		}
-		return "ORDER BY " + strings.Join(conditions, ", ")
-	}
-	return ""
 }
 
 // ReduceGroupLevel returns the calculated groupLevel value to pass to
@@ -838,18 +818,13 @@ func (v ViewOptions) ReduceGroupLevel() int {
 //
 // See https://docs.couchdb.org/en/stable/api/ddoc/views.html#api-ddoc-view
 type ViewOptions struct {
+	PaginationOptions
 	view            string
-	limit           int64
-	skip            int64
-	descending      bool
 	includeDocs     bool
 	conflicts       bool
 	reduce          *bool
 	group           bool
 	groupLevel      uint64
-	endkey          string
-	startkey        string
-	inclusiveEnd    bool
 	attachments     bool
 	update          string
 	updateSeq       bool
@@ -918,10 +893,12 @@ func FindOptions(query any) (*ViewOptions, error) {
 	}
 
 	v := &ViewOptions{
+		PaginationOptions: PaginationOptions{
+			limit: -1,
+		},
 		view:        ViewAllDocs,
 		conflicts:   conflicts,
 		includeDocs: true,
-		limit:       -1,
 		findLimit:   limit,
 		findSkip:    skip,
 		selector:    s.Selector,
@@ -935,11 +912,7 @@ func FindOptions(query any) (*ViewOptions, error) {
 
 // ViewOptions returns the viewOptions for the given view name.
 func (o Map) ViewOptions(view string) (*ViewOptions, error) {
-	limit, err := o.Limit()
-	if err != nil {
-		return nil, err
-	}
-	skip, err := o.Skip()
+	pagination, err := o.PaginationOptions(false)
 	if err != nil {
 		return nil, err
 	}
@@ -967,27 +940,11 @@ func (o Map) ViewOptions(view string) (*ViewOptions, error) {
 	if err != nil {
 		return nil, err
 	}
-	descending, err := o.Descending()
-	if err != nil {
-		return nil, err
-	}
-	endkey, err := o.EndKey()
-	if err != nil {
-		return nil, err
-	}
-	startkey, err := o.StartKey()
-	if err != nil {
-		return nil, err
-	}
 	includeDocs, err := o.IncludeDocs()
 	if err != nil {
 		return nil, err
 	}
 	attachments, err := o.Attachments()
-	if err != nil {
-		return nil, err
-	}
-	inclusiveEnd, err := o.InclusiveEnd()
 	if err != nil {
 		return nil, err
 	}
@@ -1015,7 +972,7 @@ func (o Map) ViewOptions(view string) (*ViewOptions, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(keys) > 0 && (key != "" || endkey != "" || startkey != "") {
+	if len(keys) > 0 && (key != "" || pagination.endkey != "" || pagination.startkey != "") {
 		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "`keys` is incompatible with `key`, `start_key` and `end_key`"}
 	}
 	sorted, err := o.Sorted()
@@ -1028,40 +985,33 @@ func (o Map) ViewOptions(view string) (*ViewOptions, error) {
 	}
 
 	v := &ViewOptions{
-		view:            view,
-		limit:           limit,
-		skip:            skip,
-		descending:      descending,
-		includeDocs:     includeDocs,
-		conflicts:       conflicts,
-		reduce:          reduce,
-		group:           group,
-		groupLevel:      groupLevel,
-		endkey:          endkey,
-		startkey:        startkey,
-		inclusiveEnd:    inclusiveEnd,
-		attachments:     attachments,
-		update:          update,
-		updateSeq:       updateSeq,
-		endkeyDocID:     endkeyDocID,
-		startkeyDocID:   startkeyDocID,
-		key:             key,
-		keys:            keys,
-		sorted:          sorted,
-		attEncodingInfo: attEncodingInfo,
+		PaginationOptions: *pagination,
+		view:              view,
+		includeDocs:       includeDocs,
+		conflicts:         conflicts,
+		reduce:            reduce,
+		group:             group,
+		groupLevel:        groupLevel,
+		attachments:       attachments,
+		update:            update,
+		updateSeq:         updateSeq,
+		endkeyDocID:       endkeyDocID,
+		startkeyDocID:     startkeyDocID,
+		key:               key,
+		keys:              keys,
+		sorted:            sorted,
+		attEncodingInfo:   attEncodingInfo,
 	}
 	return v, v.Validate()
 }
 
 // Validate returns an error if the options are invalid.
 func (v ViewOptions) Validate() error {
-	descendingModifier := 1
-	if v.descending {
-		descendingModifier = -1
+	if err := v.PaginationOptions.Validate(); err != nil {
+		return err
 	}
-	if v.endkey != "" && v.startkey != "" && couchdbCmpString(v.startkey, v.endkey)*descendingModifier > 0 {
-		return &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("no rows can match your key range, reverse your start_key and end_key or set descending=%v", !v.descending)}
-	}
+	descendingModifier := v.descendingModifier()
+
 	if v.key != "" {
 		startFail := v.startkey != "" && couchdbCmpString(v.key, v.startkey)*descendingModifier < 0
 		endFail := v.endkey != "" && couchdbCmpString(v.key, v.endkey)*descendingModifier > 0
@@ -1098,13 +1048,6 @@ func startKeyOp(descending bool) string {
 		return "<="
 	}
 	return ">="
-}
-
-func descendingToDirection(descending bool) string {
-	if descending {
-		return "DESC"
-	}
-	return "ASC"
 }
 
 func isBuiltinView(view string) bool {

@@ -40,10 +40,12 @@ func TestViewOptions(t *testing.T) {
 	tests.Add("all defaults", test{
 		options: mock.NilOption,
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+			},
+			update: "true",
+			sorted: true,
 		},
 	})
 	tests.Add("conflicts: invalid string", test{
@@ -54,21 +56,25 @@ func TestViewOptions(t *testing.T) {
 	tests.Add("conflicts: string", test{
 		options: kivik.Param("conflicts", "true"),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
-			conflicts:    true,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+			},
+			update:    "true",
+			sorted:    true,
+			conflicts: true,
 		},
 	})
 	tests.Add("conflicts: bool", test{
 		options: kivik.Param("conflicts", true),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
-			conflicts:    true,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+			},
+			update:    "true",
+			sorted:    true,
+			conflicts: true,
 		},
 	})
 	tests.Add("conflicts: int", test{
@@ -79,21 +85,25 @@ func TestViewOptions(t *testing.T) {
 	tests.Add("descending: bool", test{
 		options: kivik.Param("descending", true),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
-			descending:   true,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+				descending:   true,
+			},
+			update: "true",
+			sorted: true,
 		},
 	})
 	tests.Add("descending: string", test{
 		options: kivik.Param("descending", "true"),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
-			descending:   true,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+				descending:   true,
+			},
+			update: "true",
+			sorted: true,
 		},
 	})
 	tests.Add("descending: invalid string", test{
@@ -114,21 +124,25 @@ func TestViewOptions(t *testing.T) {
 	tests.Add("endkey: valid json", test{
 		options: kivik.Param("endkey", json.RawMessage(`"oink"`)),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
-			endkey:       `"oink"`,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+				endkey:       `"oink"`,
+			},
+			update: "true",
+			sorted: true,
 		},
 	})
 	tests.Add("endkey: plain string", test{
 		options: kivik.Param("endkey", "oink"),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
-			endkey:       `"oink"`,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+				endkey:       `"oink"`,
+			},
+			update: "true",
+			sorted: true,
 		},
 	})
 	tests.Add("endkey: unmarshalable value", test{
@@ -139,11 +153,13 @@ func TestViewOptions(t *testing.T) {
 	tests.Add("endkey: slice", test{
 		options: kivik.Param("endkey", []string{"foo", "bar"}),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
-			endkey:       `["foo","bar"]`,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+				endkey:       `["foo","bar"]`,
+			},
+			update: "true",
+			sorted: true,
 		},
 	})
 	tests.Add("end_key: invalid json", test{
@@ -154,11 +170,13 @@ func TestViewOptions(t *testing.T) {
 	tests.Add("end_key: valid json", test{
 		options: kivik.Param("end_key", json.RawMessage(`"oink"`)),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
-			endkey:       `"oink"`,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+				endkey:       `"oink"`,
+			},
+			update: "true",
+			sorted: true,
 		},
 	})
 	tests.Add("startkey: invalid json", test{
@@ -169,11 +187,13 @@ func TestViewOptions(t *testing.T) {
 	tests.Add("startkey: valid json", test{
 		options: kivik.Param("startkey", json.RawMessage(`"oink"`)),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
-			startkey:     `"oink"`,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+				startkey:     `"oink"`,
+			},
+			update: "true",
+			sorted: true,
 		},
 	})
 	tests.Add("start_key: invalid json", test{
@@ -184,33 +204,39 @@ func TestViewOptions(t *testing.T) {
 	tests.Add("start_key: valid json", test{
 		options: kivik.Param("start_key", json.RawMessage(`"oink"`)),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
-			startkey:     `"oink"`,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+				startkey:     `"oink"`,
+			},
+			update: "true",
+			sorted: true,
 		},
 	})
 	tests.Add("group: bool", test{
 		options: kivik.Param("group", true),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			reduce:       &[]bool{true}[0],
-			update:       "true",
-			sorted:       true,
-			group:        true,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+			},
+			reduce: &[]bool{true}[0],
+			update: "true",
+			sorted: true,
+			group:  true,
 		},
 	})
 	tests.Add("group: valid string", test{
 		options: kivik.Param("group", "true"),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			reduce:       &[]bool{true}[0],
-			update:       "true",
-			sorted:       true,
-			group:        true,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+			},
+			reduce: &[]bool{true}[0],
+			update: "true",
+			sorted: true,
+			group:  true,
 		},
 	})
 	tests.Add("group: invalid string", test{
@@ -226,25 +252,29 @@ func TestViewOptions(t *testing.T) {
 	tests.Add("group_level: int", test{
 		options: kivik.Param("group_level", 3),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			reduce:       &[]bool{true}[0],
-			update:       "true",
-			sorted:       true,
-			group:        true,
-			groupLevel:   3,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+			},
+			reduce:     &[]bool{true}[0],
+			update:     "true",
+			sorted:     true,
+			group:      true,
+			groupLevel: 3,
 		},
 	})
 	tests.Add("group_level: valid string", test{
 		options: kivik.Param("group_level", "3"),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			reduce:       &[]bool{true}[0],
-			update:       "true",
-			sorted:       true,
-			group:        true,
-			groupLevel:   3,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+			},
+			reduce:     &[]bool{true}[0],
+			update:     "true",
+			sorted:     true,
+			group:      true,
+			groupLevel: 3,
 		},
 	})
 	tests.Add("group_level: invalid string", test{
@@ -255,33 +285,39 @@ func TestViewOptions(t *testing.T) {
 	tests.Add("group_level: float64", test{
 		options: kivik.Param("group_level", 3.0),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			reduce:       &[]bool{true}[0],
-			update:       "true",
-			sorted:       true,
-			group:        true,
-			groupLevel:   3,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+			},
+			reduce:     &[]bool{true}[0],
+			update:     "true",
+			sorted:     true,
+			group:      true,
+			groupLevel: 3,
 		},
 	})
 	tests.Add("include_docs: bool", test{
 		options: kivik.Param("include_docs", true),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
-			includeDocs:  true,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+			},
+			update:      "true",
+			sorted:      true,
+			includeDocs: true,
 		},
 	})
 	tests.Add("include_docs: valid string", test{
 		options: kivik.Param("include_docs", "true"),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
-			includeDocs:  true,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+			},
+			update:      "true",
+			sorted:      true,
+			includeDocs: true,
 		},
 	})
 	tests.Add("include_docs: invalid string", test{
@@ -297,21 +333,25 @@ func TestViewOptions(t *testing.T) {
 	tests.Add("attachments: bool", test{
 		options: kivik.Param("attachments", true),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
-			attachments:  true,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+			},
+			update:      "true",
+			sorted:      true,
+			attachments: true,
 		},
 	})
 	tests.Add("attachments: valid string", test{
 		options: kivik.Param("attachments", "true"),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
-			attachments:  true,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+			},
+			update:      "true",
+			sorted:      true,
+			attachments: true,
 		},
 	})
 	tests.Add("attachments: invalid string", test{
@@ -327,19 +367,23 @@ func TestViewOptions(t *testing.T) {
 	tests.Add("inclusive_end: bool", test{
 		options: kivik.Param("inclusive_end", false),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: false,
-			update:       "true",
-			sorted:       true,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: false,
+			},
+			update: "true",
+			sorted: true,
 		},
 	})
 	tests.Add("inclusive_end: valid string", test{
 		options: kivik.Param("inclusive_end", "false"),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: false,
-			update:       "true",
-			sorted:       true,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: false,
+			},
+			update: "true",
+			sorted: true,
 		},
 	})
 	tests.Add("inclusive_end: invalid string", test{
@@ -355,37 +399,45 @@ func TestViewOptions(t *testing.T) {
 	tests.Add("limit: int", test{
 		options: kivik.Param("limit", 3),
 		want: &ViewOptions{
-			limit:        3,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
+			PaginationOptions: PaginationOptions{
+				limit:        3,
+				inclusiveEnd: true,
+			},
+			update: "true",
+			sorted: true,
 		},
 	})
 	tests.Add("limit: float64", test{
 		options: kivik.Param("limit", 3.0),
 		want: &ViewOptions{
-			limit:        3,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
+			PaginationOptions: PaginationOptions{
+				limit:        3,
+				inclusiveEnd: true,
+			},
+			update: "true",
+			sorted: true,
 		},
 	})
 	tests.Add("limit: valid string", test{
 		options: kivik.Param("limit", "3"),
 		want: &ViewOptions{
-			limit:        3,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
+			PaginationOptions: PaginationOptions{
+				limit:        3,
+				inclusiveEnd: true,
+			},
+			update: "true",
+			sorted: true,
 		},
 	})
 	tests.Add("limit: valid string2", test{
 		options: kivik.Param("limit", "3.0"),
 		want: &ViewOptions{
-			limit:        3,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
+			PaginationOptions: PaginationOptions{
+				limit:        3,
+				inclusiveEnd: true,
+			},
+			update: "true",
+			sorted: true,
 		},
 	})
 	tests.Add("limit: invalid string", test{
@@ -402,41 +454,49 @@ func TestViewOptions(t *testing.T) {
 	tests.Add("skip: int", test{
 		options: kivik.Param("skip", 3),
 		want: &ViewOptions{
-			limit:        -1,
-			skip:         3,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				skip:         3,
+				inclusiveEnd: true,
+			},
+			update: "true",
+			sorted: true,
 		},
 	})
 	tests.Add("skip: float64", test{
 		options: kivik.Param("skip", 3.0),
 		want: &ViewOptions{
-			limit:        -1,
-			skip:         3,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				skip:         3,
+				inclusiveEnd: true,
+			},
+			update: "true",
+			sorted: true,
 		},
 	})
 	tests.Add("skip: valid string", test{
 		options: kivik.Param("skip", "3"),
 		want: &ViewOptions{
-			limit:        -1,
-			skip:         3,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				skip:         3,
+				inclusiveEnd: true,
+			},
+			update: "true",
+			sorted: true,
 		},
 	})
 	tests.Add("skip: valid string2", test{
 		options: kivik.Param("skip", "3.0"),
 		want: &ViewOptions{
-			limit:        -1,
-			skip:         3,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				skip:         3,
+				inclusiveEnd: true,
+			},
+			update: "true",
+			sorted: true,
 		},
 	})
 	tests.Add("skip: invalid string", test{
@@ -453,21 +513,25 @@ func TestViewOptions(t *testing.T) {
 	tests.Add("reduce: bool", test{
 		options: kivik.Param("reduce", true),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
-			reduce:       &[]bool{true}[0],
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+			},
+			update: "true",
+			sorted: true,
+			reduce: &[]bool{true}[0],
 		},
 	})
 	tests.Add("reduce: valid string", test{
 		options: kivik.Param("reduce", "true"),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
-			reduce:       &[]bool{true}[0],
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+			},
+			update: "true",
+			sorted: true,
+			reduce: &[]bool{true}[0],
 		},
 	})
 	tests.Add("reduce: invalid string", test{
@@ -484,28 +548,34 @@ func TestViewOptions(t *testing.T) {
 	tests.Add("update: bool", test{
 		options: kivik.Param("update", true),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+			},
+			update: "true",
+			sorted: true,
 		},
 	})
 	tests.Add("update: valid string", test{
 		options: kivik.Param("update", "true"),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+			},
+			update: "true",
+			sorted: true,
 		},
 	})
 	tests.Add("update: valid string2", test{
 		options: kivik.Param("update", "lazy"),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "lazy",
-			sorted:       true,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+			},
+			update: "lazy",
+			sorted: true,
 		},
 	})
 	tests.Add("update: invalid string", test{
@@ -522,21 +592,25 @@ func TestViewOptions(t *testing.T) {
 	tests.Add("update_seq: bool", test{
 		options: kivik.Param("update_seq", true),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
-			updateSeq:    true,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+			},
+			update:    "true",
+			sorted:    true,
+			updateSeq: true,
 		},
 	})
 	tests.Add("update_seq: valid string", test{
 		options: kivik.Param("update_seq", "true"),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
-			updateSeq:    true,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+			},
+			update:    "true",
+			sorted:    true,
+			updateSeq: true,
 		},
 	})
 	tests.Add("update_seq: invalid string", test{
@@ -553,11 +627,13 @@ func TestViewOptions(t *testing.T) {
 	tests.Add("endkey_docid: string", test{
 		options: kivik.Param("endkey_docid", "oink"),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
-			endkeyDocID:  `oink`,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+			},
+			update:      "true",
+			sorted:      true,
+			endkeyDocID: `oink`,
 		},
 	})
 	tests.Add("endkey_docid: raw json", test{
@@ -569,11 +645,13 @@ func TestViewOptions(t *testing.T) {
 	tests.Add("end_key_doc_id: string", test{
 		options: kivik.Param("end_key_doc_id", "oink"),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
-			endkeyDocID:  `oink`,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+			},
+			update:      "true",
+			sorted:      true,
+			endkeyDocID: `oink`,
 		},
 	})
 	tests.Add("end_key_doc_id: raw json", test{
@@ -585,21 +663,25 @@ func TestViewOptions(t *testing.T) {
 	tests.Add("key: valid string", test{
 		options: kivik.Param("key", "oink"),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
-			key:          `"oink"`,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+			},
+			update: "true",
+			sorted: true,
+			key:    `"oink"`,
 		},
 	})
 	tests.Add("key: valid json", test{
 		options: kivik.Param("key", json.RawMessage(`"oink"`)),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
-			key:          `"oink"`,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+			},
+			update: "true",
+			sorted: true,
+			key:    `"oink"`,
 		},
 	})
 	tests.Add("key: invalid json", test{
@@ -611,41 +693,49 @@ func TestViewOptions(t *testing.T) {
 	tests.Add("keys: slice of strings", test{
 		options: kivik.Param("keys", []string{"foo", "bar"}),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
-			keys:         []string{`"foo"`, `"bar"`},
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+			},
+			update: "true",
+			sorted: true,
+			keys:   []string{`"foo"`, `"bar"`},
 		},
 	})
 	tests.Add("keys: slice of ints", test{
 		options: kivik.Param("keys", []int{1, 2, 3}),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
-			keys:         []string{`1`, `2`, `3`},
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+			},
+			update: "true",
+			sorted: true,
+			keys:   []string{`1`, `2`, `3`},
 		},
 	})
 	tests.Add("keys: slice of mixed values", test{
 		options: kivik.Param("keys", []any{"one", 2, [3]int{1, 2, 3}, json.RawMessage(`"foo"`)}),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
-			keys:         []string{`"one"`, `2`, `[1,2,3]`, `"foo"`},
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+			},
+			update: "true",
+			sorted: true,
+			keys:   []string{`"one"`, `2`, `[1,2,3]`, `"foo"`},
 		},
 	})
 	tests.Add("keys: valid raw JSON", test{
 		options: kivik.Param("keys", json.RawMessage(`["foo", "bar"]`)),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
-			keys:         []string{`"foo"`, `"bar"`},
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+			},
+			update: "true",
+			sorted: true,
+			keys:   []string{`"foo"`, `"bar"`},
 		},
 	})
 	tests.Add("keys: invalid raw JSON", test{
@@ -667,8 +757,10 @@ func TestViewOptions(t *testing.T) {
 	tests.Add("startkey_docid: string", test{
 		options: kivik.Param("startkey_docid", "oink"),
 		want: &ViewOptions{
-			limit:         -1,
-			inclusiveEnd:  true,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+			},
 			update:        "true",
 			sorted:        true,
 			startkeyDocID: `oink`,
@@ -682,8 +774,10 @@ func TestViewOptions(t *testing.T) {
 	tests.Add("start_key_doc_id: string", test{
 		options: kivik.Param("start_key_doc_id", "oink"),
 		want: &ViewOptions{
-			limit:         -1,
-			inclusiveEnd:  true,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+			},
 			update:        "true",
 			sorted:        true,
 			startkeyDocID: `oink`,
@@ -698,10 +792,12 @@ func TestViewOptions(t *testing.T) {
 	tests.Add("sorted: bool", test{
 		options: kivik.Param("sorted", false),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       false,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+			},
+			update: "true",
+			sorted: false,
 		},
 	})
 	tests.Add("sorted: false, but re-enabled by descending=true", test{
@@ -710,11 +806,13 @@ func TestViewOptions(t *testing.T) {
 			"descending": true,
 		}),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			descending:   true,
-			sorted:       true,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+				descending:   true,
+			},
+			update: "true",
+			sorted: true,
 		},
 	})
 	tests.Add("sorted: false, but re-enabled by descending=false", test{
@@ -722,20 +820,24 @@ func TestViewOptions(t *testing.T) {
 			"sorted":     false,
 			"descending": false,
 		}), want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			descending:   false,
-			sorted:       true,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+				descending:   false,
+			},
+			update: "true",
+			sorted: true,
 		},
 	})
 	tests.Add("sorted: valid string", test{
 		options: kivik.Param("sorted", "false"),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       false,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+			},
+			update: "true",
+			sorted: false,
 		},
 	})
 	tests.Add("sorted: invalid string", test{
@@ -747,8 +849,10 @@ func TestViewOptions(t *testing.T) {
 	tests.Add("att_encoding_info: bool", test{
 		options: kivik.Param("att_encoding_info", true),
 		want: &ViewOptions{
-			limit:           -1,
-			inclusiveEnd:    true,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+			},
 			update:          "true",
 			sorted:          true,
 			attEncodingInfo: true,
@@ -757,8 +861,10 @@ func TestViewOptions(t *testing.T) {
 	tests.Add("att_encoding_info: valid string", test{
 		options: kivik.Param("att_encoding_info", "true"),
 		want: &ViewOptions{
-			limit:           -1,
-			inclusiveEnd:    true,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+			},
 			update:          "true",
 			sorted:          true,
 			attEncodingInfo: true,
@@ -807,12 +913,14 @@ func TestViewOptions(t *testing.T) {
 			"key":      "a",
 		}),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
-			startkey:     `"a"`,
-			key:          `"a"`,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+				startkey:     `"a"`,
+			},
+			update: "true",
+			sorted: true,
+			key:    `"a"`,
 		},
 	})
 	tests.Add("key & startkey + descending", test{
@@ -822,13 +930,15 @@ func TestViewOptions(t *testing.T) {
 			"descending": true,
 		}),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
-			descending:   true,
-			startkey:     `"d"`,
-			key:          `"a"`,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+				descending:   true,
+				startkey:     `"d"`,
+			},
+			update: "true",
+			sorted: true,
+			key:    `"a"`,
 		},
 	})
 	tests.Add("key & startkey + descending conflict", test{
@@ -854,12 +964,14 @@ func TestViewOptions(t *testing.T) {
 			"key":    "a",
 		}),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
-			endkey:       `"a"`,
-			key:          `"a"`,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+				endkey:       `"a"`,
+			},
+			update: "true",
+			sorted: true,
+			key:    `"a"`,
 		},
 	})
 	tests.Add("key & endkey + descending", test{
@@ -869,13 +981,15 @@ func TestViewOptions(t *testing.T) {
 			"descending": true,
 		}),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
-			descending:   true,
-			endkey:       `"a"`,
-			key:          `"b"`,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+				descending:   true,
+				endkey:       `"a"`,
+			},
+			update: "true",
+			sorted: true,
+			key:    `"b"`,
 		},
 	})
 	tests.Add("key & endkey + descending conflict", test{
@@ -901,12 +1015,14 @@ func TestViewOptions(t *testing.T) {
 			"endkey":   "z",
 		}),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
-			startkey:     `"a"`,
-			endkey:       `"z"`,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+				startkey:     `"a"`,
+				endkey:       `"z"`,
+			},
+			update: "true",
+			sorted: true,
 		},
 	})
 	tests.Add("endkey and startkey + descending conflict", test{
@@ -925,13 +1041,15 @@ func TestViewOptions(t *testing.T) {
 			"descending": true,
 		}),
 		want: &ViewOptions{
-			limit:        -1,
-			inclusiveEnd: true,
-			update:       "true",
-			sorted:       true,
-			descending:   true,
-			startkey:     `"z"`,
-			endkey:       `"a"`,
+			PaginationOptions: PaginationOptions{
+				limit:        -1,
+				inclusiveEnd: true,
+				descending:   true,
+				startkey:     `"z"`,
+				endkey:       `"a"`,
+			},
+			update: "true",
+			sorted: true,
 		},
 	})
 	tests.Add("key falls outof range of startkey-endkey", test{
@@ -968,7 +1086,7 @@ func TestViewOptions(t *testing.T) {
 		if err != nil {
 			return
 		}
-		if d := cmp.Diff(tt.want, got, cmp.AllowUnexported(ViewOptions{})); d != "" {
+		if d := cmp.Diff(tt.want, got, cmp.AllowUnexported(ViewOptions{}, PaginationOptions{})); d != "" {
 			t.Errorf("Unexpected result:\n%s", d)
 		}
 	})

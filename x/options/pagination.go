@@ -13,6 +13,7 @@
 package options
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -32,8 +33,9 @@ type PaginationOptions struct {
 	inclusiveEnd bool
 }
 
-// PaginationOptions returns the pagination options for _all_dbs or a view.
-func (o Map) PaginationOptions() (*PaginationOptions, error) {
+// PaginationOptions returns the pagination options for _all_dbs or a view. If
+// allDBs is true, the options are validated as appropriate for _all_dbs.
+func (o Map) PaginationOptions(allDBs bool) (*PaginationOptions, error) {
 	limit, err := o.Limit()
 	if err != nil {
 		return nil, err
@@ -57,6 +59,23 @@ func (o Map) PaginationOptions() (*PaginationOptions, error) {
 	startkey, err := o.StartKey()
 	if err != nil {
 		return nil, err
+	}
+
+	if allDBs {
+		if endkey != "" {
+			var endkeyStr string
+			if err := json.Unmarshal([]byte(endkey), &endkeyStr); err != nil {
+				return nil, &internal.Error{Status: http.StatusBadRequest, Message: "endkey must be a string"}
+			}
+			endkey = endkeyStr
+		}
+		if startkey != "" {
+			var startkeyStr string
+			if err := json.Unmarshal([]byte(startkey), &startkeyStr); err != nil {
+				return nil, &internal.Error{Status: http.StatusBadRequest, Message: "startkey must be a string"}
+			}
+			startkey = startkeyStr
+		}
 	}
 
 	return &PaginationOptions{

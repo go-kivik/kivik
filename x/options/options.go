@@ -912,7 +912,7 @@ func FindOptions(query any) (*ViewOptions, error) {
 
 // ViewOptions returns the viewOptions for the given view name.
 func (o Map) ViewOptions(view string) (*ViewOptions, error) {
-	pagination, err := o.PaginationOptions()
+	pagination, err := o.PaginationOptions(false)
 	if err != nil {
 		return nil, err
 	}

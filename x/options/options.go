@@ -1030,10 +1030,7 @@ func (v ViewOptions) Validate() error {
 	if err := v.PaginationOptions.Validate(); err != nil {
 		return err
 	}
-	descendingModifier := 1
-	if v.descending {
-		descendingModifier = -1
-	}
+	descendingModifier := v.descendingModifier()
 
 	if v.key != "" {
 		startFail := v.startkey != "" && couchdbCmpString(v.key, v.startkey)*descendingModifier < 0

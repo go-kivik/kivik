@@ -69,13 +69,16 @@ func (o Map) PaginationOptions() (*PaginationOptions, error) {
 	}, nil
 }
 
+func (p PaginationOptions) descendingModifier() int {
+	if p.descending {
+		return -1
+	}
+	return 1
+}
+
 // Validate returns an error if the options are invalid.
 func (p PaginationOptions) Validate() error {
-	descendingModifier := 1
-	if p.descending {
-		descendingModifier = -1
-	}
-	if p.endkey != "" && p.startkey != "" && couchdbCmpString(p.startkey, p.endkey)*descendingModifier > 0 {
+	if p.endkey != "" && p.startkey != "" && couchdbCmpString(p.startkey, p.endkey)*p.descendingModifier() > 0 {
 		return &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("no rows can match your key range, reverse your start_key and end_key or set descending=%v", !p.descending)}
 	}
 	return nil

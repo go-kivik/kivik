@@ -3,7 +3,7 @@ module github.com/go-kivik/kivik/v4/x/pg
 go 1.24
 
 require (
-	github.com/go-kivik/kivik/v4 v4.5.1-0.20250908162731-3857b3e3a9a3
+	github.com/go-kivik/kivik/v4 v4.5.1-0.20250912211825-a7d6df751a7f
 	github.com/google/go-cmp v0.7.0
 	github.com/jackc/pgerrcode v0.0.0-20240316143900-6e2875d9b438
 	github.com/jackc/pgx/v5 v5.7.5

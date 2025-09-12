@@ -14,8 +14,8 @@ package pg
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 
@@ -24,39 +24,25 @@ import (
 )
 
 func (c *client) AllDBs(ctx context.Context, opts driver.Options) ([]string, error) {
-	o := options.New(opts)
-	descending, err := o.Descending()
+	o, err := options.New(opts).PaginationOptions(true)
 	if err != nil {
 		return nil, err
-	}
-	order := "ASC"
-	if descending {
-		order = "DESC"
 	}
 
 	args := []any{tablePrefix}
-
-	endWhere := "true"
-	endkey, err := o.EndKey()
-	if err != nil {
-		return nil, err
-	}
-	if endkey != "" {
-		var endKeyString string
-		if err := json.Unmarshal([]byte(endkey), &endKeyString); err != nil {
-			return nil, fmt.Errorf("endkey must be a JSON string")
-		}
-		endWhere = "tablename <= $2"
-		args = append(args, tablePrefix+endKeyString)
-	}
+	where := append([]string{"TRUE"}, o.BuildWhere(&args)...)
 
 	query := fmt.Sprintf(`
-		SELECT substr(tablename, length($1)+1)
-		FROM pg_tables
-		WHERE tablename LIKE $1 || '%%'
-			AND %s
-		ORDER BY tablename %s
-	`, endWhere, order)
+		WITH view AS (
+			SELECT substr(tablename, length($1)+1) AS key
+			FROM pg_tables
+			WHERE tablename LIKE $1 || '%%'
+		)
+		SELECT key
+		FROM view
+		WHERE %s
+		%s
+	`, strings.Join(where, " AND "), o.BuildOrderBy())
 
 	rows, err := c.pool.Query(ctx, query, args...)
 	if err != nil {

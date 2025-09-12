@@ -14,6 +14,7 @@ package pg
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
@@ -33,14 +34,31 @@ func (c *client) AllDBs(ctx context.Context, opts driver.Options) ([]string, err
 		order = "DESC"
 	}
 
+	args := []any{tablePrefix}
+
+	endWhere := "true"
+	endkey, err := o.EndKey()
+	if err != nil {
+		return nil, err
+	}
+	if endkey != "" {
+		var endKeyString string
+		if err := json.Unmarshal([]byte(endkey), &endKeyString); err != nil {
+			return nil, fmt.Errorf("endkey must be a JSON string")
+		}
+		endWhere = "tablename <= $2"
+		args = append(args, tablePrefix+endKeyString)
+	}
+
 	query := fmt.Sprintf(`
 		SELECT substr(tablename, length($1)+1)
 		FROM pg_tables
 		WHERE tablename LIKE $1 || '%%'
+			AND %s
 		ORDER BY tablename %s
-	`, order)
+	`, endWhere, order)
 
-	rows, err := c.pool.Query(ctx, query, tablePrefix)
+	rows, err := c.pool.Query(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}

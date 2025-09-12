@@ -71,7 +71,7 @@ func parseJSONKey(key string, in any) (string, error) {
 	}
 }
 
-// EndKey returns the endkey option.
+// EndKey returns the endkey option as an encoded JSON value.
 func (o Map) EndKey() (string, error) {
 	key, value, ok := o.Get("endkey", "end_key")
 	if !ok {

@@ -100,16 +100,32 @@ func TestAllDBs(t *testing.T) {
 			want:    []string{dbName2, dbName1},
 		}
 	})
+	tests.AddFunc("end key", func(t *testing.T) test {
+		client := testClient(t)
+
+		const dbName1, dbName2 = "testdb1", "testdb2"
+		if err := client.CreateDB(t.Context(), dbName1, nil); err != nil {
+			t.Fatalf("Failed to create test db: %s", err)
+		}
+		if err := client.CreateDB(t.Context(), dbName2, nil); err != nil {
+			t.Fatalf("Failed to create test db: %s", err)
+		}
+
+		return test{
+			client:  client,
+			options: kivik.Param("endkey", dbName1),
+			want:    []string{dbName1},
+		}
+	})
 
 	/*
 		TODO:
 		- options:
-			- endkey (json) – Stop returning databases when the specified key is reached.
-			- end_key (json) – Alias for endkey param
 			- limit (number) – Limit the number of the returned databases to the specified number.
 			- skip (number) – Skip this number of databases before starting to return the results. Default is 0.
 			- startkey (json) – Return databases starting with the specified key.
 			- start_key (json) – Alias for startkey.
+			- inclusive_end (boolean) – If true, the specified endkey will be included in the result. Default is true.
 	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {

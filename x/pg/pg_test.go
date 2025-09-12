@@ -16,7 +16,7 @@ import (
 	"net/http"
 	"testing"
 
-	"gitlab.com/flimzy/testy"
+	"gitlab.com/flimzy/testy/v2"
 
 	"github.com/go-kivik/kivik/v4"
 )

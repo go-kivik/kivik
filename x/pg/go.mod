@@ -10,7 +10,7 @@ require (
 	github.com/peterldowns/pgtestdb v0.1.1
 	github.com/testcontainers/testcontainers-go v0.38.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.38.0
-	gitlab.com/flimzy/testy v0.14.0
+	gitlab.com/flimzy/testy/v2 v2.0.0-20250904163106-29163c594af6
 )
 
 require (
@@ -64,6 +64,7 @@ require (
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
+	gitlab.com/flimzy/testy v0.14.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.49.0 // indirect
 	go.opentelemetry.io/otel v1.37.0 // indirect

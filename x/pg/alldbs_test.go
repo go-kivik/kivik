@@ -18,7 +18,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"gitlab.com/flimzy/testy"
+	"gitlab.com/flimzy/testy/v2"
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
@@ -35,12 +35,12 @@ func TestAllDBs(t *testing.T) {
 		wantStatus int
 	}
 
-	tests := testy.NewTable()
+	tests := testy.NewTable[test]()
 	tests.Add("no databases found", test{
 		client: testClient(t),
 		want:   []string{},
 	})
-	tests.Add("some dbs exist", func(t *testing.T) any {
+	tests.AddFunc("some dbs exist", func(t *testing.T) test {
 		client := testClient(t)
 
 		const dbName1, dbName2 = "testdb1", "testdb2"
@@ -56,7 +56,7 @@ func TestAllDBs(t *testing.T) {
 			want:   []string{dbName1, dbName2},
 		}
 	})
-	tests.Add("exclude non-kivik tables", func(t *testing.T) any {
+	tests.AddFunc("exclude non-kivik tables", func(t *testing.T) test {
 		client := testClient(t)
 
 		const dbName = "testdb"
@@ -72,7 +72,7 @@ func TestAllDBs(t *testing.T) {
 			want:   []string{dbName},
 		}
 	})
-	tests.Add("db connection error", func(t *testing.T) any {
+	tests.AddFunc("db connection error", func(t *testing.T) test {
 		client := testClient(t)
 
 		client.pool.Close()
@@ -83,7 +83,7 @@ func TestAllDBs(t *testing.T) {
 			wantStatus: http.StatusInternalServerError,
 		}
 	})
-	tests.Add("option: descending=true", func(t *testing.T) any {
+	tests.AddFunc("option: descending=true", func(t *testing.T) test {
 		client := testClient(t)
 
 		const dbName1, dbName2 = "testdb1", "testdb2"

@@ -16,7 +16,7 @@ import (
 	"net/http"
 	"testing"
 
-	"gitlab.com/flimzy/testy"
+	"gitlab.com/flimzy/testy/v2"
 
 	"github.com/go-kivik/kivik/v4"
 )
@@ -32,13 +32,13 @@ func TestDBExists(t *testing.T) {
 		wantStatus int
 	}
 
-	tests := testy.NewTable()
+	tests := testy.NewTable[test]()
 	tests.Add("invalid db name", test{
 		client: testClient(t),
 		dbName: "Capitalized",
 		want:   false,
 	})
-	tests.Add("db exists", func(t *testing.T) any {
+	tests.AddFunc("db exists", func(t *testing.T) test {
 		client := testClient(t)
 		const dbName = "testdb"
 
@@ -52,7 +52,7 @@ func TestDBExists(t *testing.T) {
 			want:   true,
 		}
 	})
-	tests.Add("db connection error", func(t *testing.T) any {
+	tests.AddFunc("db connection error", func(t *testing.T) test {
 		client := testClient(t)
 		client.pool.Close()
 

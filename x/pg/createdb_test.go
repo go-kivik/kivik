@@ -16,7 +16,7 @@ import (
 	"net/http"
 	"testing"
 
-	"gitlab.com/flimzy/testy"
+	"gitlab.com/flimzy/testy/v2"
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
@@ -33,7 +33,7 @@ func TestCreateDB(t *testing.T) {
 		wantStatus int
 	}
 
-	tests := testy.NewTable()
+	tests := testy.NewTable[test]()
 	tests.Add("invalid db name", test{
 		// This test violates the documented database name requirements
 		// found at https://docs.couchdb.org/en/stable/api/database/common.html#put--db
@@ -42,7 +42,7 @@ func TestCreateDB(t *testing.T) {
 		wantErr:    "invalid database name",
 		wantStatus: http.StatusBadRequest,
 	})
-	tests.Add("db connection error", func(t *testing.T) any {
+	tests.AddFunc("db connection error", func(t *testing.T) test {
 		client := testClient(t)
 
 		client.pool.Close()
@@ -58,7 +58,7 @@ func TestCreateDB(t *testing.T) {
 		client: testClient(t),
 		dbName: "testdb",
 	})
-	tests.Add("db already exists", func(t *testing.T) any {
+	tests.AddFunc("db already exists", func(t *testing.T) test {
 		client := testClient(t)
 
 		// Create the database first

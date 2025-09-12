@@ -1027,13 +1027,14 @@ func (o Map) ViewOptions(view string) (*ViewOptions, error) {
 
 // Validate returns an error if the options are invalid.
 func (v ViewOptions) Validate() error {
+	if err := v.PaginationOptions.Validate(); err != nil {
+		return err
+	}
 	descendingModifier := 1
 	if v.descending {
 		descendingModifier = -1
 	}
-	if v.endkey != "" && v.startkey != "" && couchdbCmpString(v.startkey, v.endkey)*descendingModifier > 0 {
-		return &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("no rows can match your key range, reverse your start_key and end_key or set descending=%v", !v.descending)}
-	}
+
 	if v.key != "" {
 		startFail := v.startkey != "" && couchdbCmpString(v.key, v.startkey)*descendingModifier < 0
 		endFail := v.endkey != "" && couchdbCmpString(v.key, v.endkey)*descendingModifier > 0

@@ -12,6 +12,13 @@
 
 package options
 
+import (
+	"fmt"
+	"net/http"
+
+	internal "github.com/go-kivik/kivik/v4/int/errors"
+)
+
 // PaginationOptions are all of the options recognized by [_all_dbs], and
 // views.
 //
@@ -60,4 +67,16 @@ func (o Map) PaginationOptions() (*PaginationOptions, error) {
 		startkey:     startkey,
 		inclusiveEnd: inclusiveEnd,
 	}, nil
+}
+
+// Validate returns an error if the options are invalid.
+func (p PaginationOptions) Validate() error {
+	descendingModifier := 1
+	if p.descending {
+		descendingModifier = -1
+	}
+	if p.endkey != "" && p.startkey != "" && couchdbCmpString(p.startkey, p.endkey)*descendingModifier > 0 {
+		return &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("no rows can match your key range, reverse your start_key and end_key or set descending=%v", !p.descending)}
+	}
+	return nil
 }

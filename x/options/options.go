@@ -776,23 +776,16 @@ func (v ViewOptions) BuildWhere(args *[]any) []string {
 	case ViewDesignDocs:
 		where = append(where, `view.key LIKE '"_design/%'`)
 	}
-	if v.endkey != "" {
+	where = append(where, v.PaginationOptions.BuildWhere(args)...)
+	if v.endkey != "" && v.endkeyDocID != "" {
 		op := endKeyOp(v.descending, v.inclusiveEnd)
-		where = append(where, fmt.Sprintf("view.key %s $%d", op, len(*args)+1))
-		*args = append(*args, v.endkey)
-		if v.endkeyDocID != "" {
-			where = append(where, fmt.Sprintf("view.id %s $%d", op, len(*args)+1))
-			*args = append(*args, v.endkeyDocID)
-		}
+		where = append(where, fmt.Sprintf("view.id %s $%d", op, len(*args)+1))
+		*args = append(*args, v.endkeyDocID)
 	}
-	if v.startkey != "" {
+	if v.startkey != "" && v.startkeyDocID != "" {
 		op := startKeyOp(v.descending)
-		where = append(where, fmt.Sprintf("view.key %s $%d", op, len(*args)+1))
-		*args = append(*args, v.startkey)
-		if v.startkeyDocID != "" {
-			where = append(where, fmt.Sprintf("view.id %s $%d", op, len(*args)+1))
-			*args = append(*args, v.startkeyDocID)
-		}
+		where = append(where, fmt.Sprintf("view.id %s $%d", op, len(*args)+1))
+		*args = append(*args, v.startkeyDocID)
 	}
 	if v.key != "" {
 		where = append(where, "view.key = $"+strconv.Itoa(len(*args)+1))

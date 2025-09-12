@@ -83,3 +83,20 @@ func (p PaginationOptions) Validate() error {
 	}
 	return nil
 }
+
+// BuildWhere returns WHERE conditions based on the provided configuration
+// arguments, and may append to args as needed.
+func (p PaginationOptions) BuildWhere(args *[]any) []string {
+	where := make([]string, 0, defaultWhereCap)
+	if p.endkey != "" {
+		op := endKeyOp(p.descending, p.inclusiveEnd)
+		where = append(where, fmt.Sprintf("view.key %s $%d", op, len(*args)+1))
+		*args = append(*args, p.endkey)
+	}
+	if p.startkey != "" {
+		op := startKeyOp(p.descending)
+		where = append(where, fmt.Sprintf("view.key %s $%d", op, len(*args)+1))
+		*args = append(*args, p.startkey)
+	}
+	return where
+}

@@ -3,13 +3,14 @@ module github.com/go-kivik/kivik/v4/x/pg
 go 1.24
 
 require (
-	github.com/go-kivik/kivik/v4 v4.4.2-0.20250829030410-4a4c76895803
+	github.com/go-kivik/kivik/v4 v4.5.1-0.20250912211825-a7d6df751a7f
+	github.com/google/go-cmp v0.7.0
 	github.com/jackc/pgerrcode v0.0.0-20240316143900-6e2875d9b438
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/peterldowns/pgtestdb v0.1.1
 	github.com/testcontainers/testcontainers-go v0.38.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.38.0
-	gitlab.com/flimzy/testy v0.14.0
+	gitlab.com/flimzy/testy/v2 v2.0.0-20250904163106-29163c594af6
 )
 
 require (
@@ -17,7 +18,7 @@ require (
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/Masterminds/semver/v3 v3.2.1 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
-	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
+	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
@@ -35,7 +36,7 @@ require (
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/gopherjs/gopherjs v1.17.2 // indirect
+	github.com/gopherjs/gopherjs v1.19.0-beta2 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.2 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
@@ -63,6 +64,7 @@ require (
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
+	gitlab.com/flimzy/testy v0.14.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.49.0 // indirect
 	go.opentelemetry.io/otel v1.37.0 // indirect

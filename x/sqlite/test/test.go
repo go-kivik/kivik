@@ -38,7 +38,8 @@ func registerSuiteSQLite() {
 		"SetSecurity.skip":     true,
 		"ViewCleanup.skip":     true,
 
-		"Version.skip":           true,
+		"Version.version":        `^0\.0\.1$`,
+		"Version.vendor":         `^Kivik$`,
 		"Put.skip":               true,
 		"Get.skip":               true,
 		"Delete.skip":            true,

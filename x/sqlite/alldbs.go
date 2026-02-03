@@ -14,6 +14,7 @@ package sqlite
 
 import (
 	"context"
+	"strings"
 
 	"github.com/go-kivik/kivik/v4/driver"
 )
@@ -26,11 +27,11 @@ func (c *client) AllDBs(ctx context.Context, _ driver.Options) ([]string, error)
 			sqlite_schema
 		WHERE
 			type ='table'
-			AND name NOT LIKE 'sqlite_%'
-			AND name NOT LIKE '%_attachments'
-			AND name NOT LIKE '%_revs'
-			AND name NOT LIKE '%_design'
-			AND name NOT LIKE '%_attachments_bridge'
+			AND name LIKE 'kivik$%' ESCAPE '\'
+			AND name NOT LIKE '%$attachments' ESCAPE '\'
+			AND name NOT LIKE '%$revs' ESCAPE '\'
+			AND name NOT LIKE '%$design' ESCAPE '\'
+			AND name NOT LIKE '%$attachments_bridge' ESCAPE '\'
 		`)
 	if err != nil {
 		return nil, err
@@ -38,11 +39,11 @@ func (c *client) AllDBs(ctx context.Context, _ driver.Options) ([]string, error)
 	defer rows.Close()
 	var dbs []string
 	for rows.Next() {
-		var db string
-		if err := rows.Scan(&db); err != nil {
+		var name string
+		if err := rows.Scan(&name); err != nil {
 			return nil, err
 		}
-		dbs = append(dbs, db)
+		dbs = append(dbs, strings.TrimPrefix(name, tablePrefix))
 	}
 	return dbs, rows.Err()
 }

@@ -14,6 +14,8 @@
 package test
 
 import (
+	"net/http"
+
 	"github.com/go-kivik/kivik/v4/kiviktest"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 )
@@ -38,31 +40,31 @@ func registerSuiteSQLite() {
 		"SetSecurity.skip":     true,
 		"ViewCleanup.skip":     true,
 
-		"Version.version":        `^0\.0\.1$`,
-		"Version.vendor":         `^Kivik$`,
-		"Put.skip":               true,
-		"Get.skip":               true,
-		"Delete.skip":            true,
-		"CreateDoc.skip":         true,
-		"DestroyDB.skip":         true,
-		"AllDocs.skip":           true,
-		"AllDBs.skip":            true,
-		"Stats.skip":             true,
-		"Copy.skip":              true,
-		"GetAttachment.skip":     true,
-		"PutAttachment.skip":     true,
-		"DeleteAttachment.skip":  true,
-		"Replicate.skip":         true,
-		"Find.skip":              true,
-		"GetAttachmentMeta.skip": true,
-		"DBExists.skip":          true,
-		"Query.skip":             true,
-		"Changes.skip":           true,
-		"CreateDB.skip":          true,
-		"GetRev.skip":            true,
-		"BulkDocs.skip":          true,
-		"DBsStats.skip":          true,
-		"AllDBsStats.skip":       true,
-		"Session.skip":           true,
+		"Version.version": `^0\.0\.1$`,
+		"Version.vendor":  `^Kivik$`,
+		"Put.skip":        true,
+		"Get.skip":        true,
+		"Delete.skip":     true,
+		"CreateDoc.skip":  true,
+		"DestroyDB/RW/Admin/NonExistantDB.status": http.StatusNotFound,
+		"AllDocs.skip":                      true,
+		"AllDBs.skip":                       true,
+		"Stats.skip":                        true,
+		"Copy.skip":                         true,
+		"GetAttachment.skip":                true,
+		"PutAttachment.skip":                true,
+		"DeleteAttachment.skip":             true,
+		"Replicate.skip":                    true,
+		"Find.skip":                         true,
+		"GetAttachmentMeta.skip":            true,
+		"DBExists.skip":                     true,
+		"Query.skip":                        true,
+		"Changes.skip":                      true,
+		"CreateDB/RW/Admin/Recreate.status": http.StatusPreconditionFailed,
+		"GetRev.skip":                       true,
+		"BulkDocs.skip":                     true,
+		"DBsStats.skip":                     true,
+		"AllDBsStats.skip":                  true,
+		"Session.skip":                      true,
 	})
 }

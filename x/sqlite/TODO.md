@@ -1,10 +1,5 @@
 # SQLite Driver TODO
 
-## Bugs
-
-- [ ] **Purge ignores context** (`purge.go:25`). Uses `d.db.Begin()` instead of
-  `d.db.BeginTx(ctx, nil)`, so the operation cannot be cancelled via context.
-
 ## Missing Features
 
 ### Unimplemented methods (`db.go`)

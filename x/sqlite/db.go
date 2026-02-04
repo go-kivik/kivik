@@ -63,13 +63,9 @@ func (d *db) Compact(ctx context.Context) error {
 	return err
 }
 
-func (db) CompactView(context.Context, string) error {
-	return errors.New("not implemented")
-}
+func (db) CompactView(context.Context, string) error { return nil }
 
-func (db) ViewCleanup(context.Context) error {
-	return errors.New("not implemented")
-}
+func (db) ViewCleanup(context.Context) error { return nil }
 
 func (db) BulkDocs(context.Context, []interface{}, driver.Options) ([]driver.BulkResult, error) {
 	return nil, errors.New("not implemented")

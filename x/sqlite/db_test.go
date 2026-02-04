@@ -255,3 +255,23 @@ func TestDBCompact(t *testing.T) {
 		t.Fatalf("Compact failed: %s", err)
 	}
 }
+
+func TestDBCompactView(t *testing.T) {
+	t.Parallel()
+	d := newDB(t)
+
+	err := d.CompactView(context.Background(), "some_ddoc")
+	if err != nil {
+		t.Fatalf("CompactView failed: %s", err)
+	}
+}
+
+func TestDBViewCleanup(t *testing.T) {
+	t.Parallel()
+	d := newDB(t)
+
+	err := d.ViewCleanup(context.Background())
+	if err != nil {
+		t.Fatalf("ViewCleanup failed: %s", err)
+	}
+}

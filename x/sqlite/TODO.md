@@ -7,14 +7,12 @@
 These return a bare `"not implemented"` error:
 
 - [ ] BulkDocs (low priority — kivik emulates via individual Put/CreateDoc)
-- [ ] CompactView
 - [ ] Copy (low priority — kivik emulates via Get+Put)
 - [ ] CreateIndex
 - [ ] DeleteIndex
 - [ ] Explain
 - [ ] GetIndexes
 - [ ] Stats
-- [ ] ViewCleanup
 
 ### Unimplemented on `client` (`sqlite.go`)
 

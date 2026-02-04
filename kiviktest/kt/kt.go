@@ -323,7 +323,6 @@ func Retry(fn func() error) error {
 		err := fn()
 		if err != nil {
 			if shouldRetry(err) {
-				fmt.Printf("Retrying after error: %s\n", err)
 				i++
 				return fmt.Errorf("attempt #%d failed: %w", i, err)
 			}

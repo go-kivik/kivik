@@ -2777,6 +2777,42 @@ func TestDBQuery_group_without_update_seq(t *testing.T) {
 	_ = rows.Close()
 }
 
+func TestDBQuery_total_rows(t *testing.T) {
+	t.Parallel()
+	d := newDB(t)
+
+	_ = d.tPut("_design/foo", map[string]interface{}{
+		"views": map[string]interface{}{
+			"bar": map[string]string{
+				"map": `function(doc) { emit(doc._id, null); }`,
+			},
+		},
+	})
+	_ = d.tPut("a", map[string]string{"foo": "bar"})
+	_ = d.tPut("b", map[string]string{"foo": "baz"})
+	_ = d.tPut("c", map[string]string{"foo": "qux"})
+
+	rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", mock.NilOption)
+	if err != nil {
+		t.Fatalf("Failed to query view: %s", err)
+	}
+	defer rows.Close()
+
+	// Consume all rows
+	for {
+		row := driver.Row{}
+		if err := rows.Next(&row); err != nil {
+			break
+		}
+	}
+
+	want := int64(3)
+	got := rows.TotalRows()
+	if got != want {
+		t.Errorf("Unexpected TotalRows: got %d, want %d", got, want)
+	}
+}
+
 func TestDBQuery_update_lazy(t *testing.T) {
 	t.Parallel()
 	d := newDB(t)

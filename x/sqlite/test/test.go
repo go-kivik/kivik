@@ -66,9 +66,6 @@ func registerSuiteSQLite() {
 		"DBExists/Admin/chicken.exists":                        false,
 		"DBExists/RW/group/Admin.exists":                       true,
 		"Query/RW/group/Admin/WithoutDocs/ScanDoc.status":      http.StatusBadRequest,
-		// TODO: Query should return TotalRows.
-		"Query/RW/group/Admin/WithDocs.skip":    true,
-		"Query/RW/group/Admin/WithoutDocs.skip": true,
 		// TODO: Continuous changes with longpoll only returns changes after subscription when using since=now.
 		"Changes/Continuous.skip":            true,
 		"CreateDB/RW/Admin/Recreate.status":  http.StatusPreconditionFailed,

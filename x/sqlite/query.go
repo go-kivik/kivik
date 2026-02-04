@@ -138,7 +138,7 @@ func (d *db) performQuery(
 				reduce.reduce_func,
 				IIF($4, last_seq, "") AS update_seq,
 				MAX(last_seq)         AS last_seq,
-				0    AS total_rows, -- TODO: compute actual total rows for custom views
+				(SELECT COUNT(*) FROM {{ .Map }}) AS total_rows,
 				0    AS attachment_count,
 				NULL AS filename,
 				NULL AS content_type,
@@ -280,6 +280,7 @@ func (d *db) performQuery(
 			db:        d,
 			rows:      results,
 			updateSeq: meta.updateSeq,
+			totalRows: meta.totalRows,
 		}, nil
 	}
 }

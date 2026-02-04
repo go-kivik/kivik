@@ -16,6 +16,7 @@ package test
 import (
 	"net/http"
 
+	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/kiviktest"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 )
@@ -66,8 +67,10 @@ func registerSuiteSQLite() {
 		"DBExists/Admin/chicken.exists":                        false,
 		"DBExists/RW/group/Admin.exists":                       true,
 		"Query/RW/group/Admin/WithoutDocs/ScanDoc.status":      http.StatusBadRequest,
-		// TODO: Continuous changes with longpoll only returns changes after subscription when using since=now.
-		"Changes/Continuous.skip":            true,
+		"Changes/Continuous.options": kivik.Params(map[string]interface{}{
+			"feed":  "continuous",
+			"since": "now",
+		}),
 		"CreateDB/RW/Admin/Recreate.status":  http.StatusPreconditionFailed,
 		"GetRev/RW/group/Admin/bogus.status": http.StatusNotFound,
 		"BulkDocs.skip":                      true,

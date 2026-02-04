@@ -169,10 +169,10 @@ func (o optsMap) feed() (string, error) {
 		return "normal", nil
 	}
 	switch feed {
-	case feedNormal, feedLongpoll:
+	case feedNormal, feedLongpoll, feedContinuous:
 		return feed, nil
 	}
-	return "", &internal.Error{Status: http.StatusBadRequest, Message: "supported `feed` types: normal, longpoll"}
+	return "", &internal.Error{Status: http.StatusBadRequest, Message: "supported `feed` types: normal, longpoll, continuous"}
 }
 
 // since returns true if the value is "now", otherwise it returns the sequence

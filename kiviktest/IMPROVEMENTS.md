@@ -4,33 +4,6 @@ Constraint: minimum Go version is 1.19 (`go.mod`).
 
 ---
 
-## Batch 1: Immediate cleanup (each a separate commit, zero behavior change)
-
-### 1a. Delete dead code in kt/kt.go
-- Delete commented-out retry conditions at lines 364-368
-
-### 1b. Remove `fmt.Printf` in Retry
-- `kt/kt.go:326`: `fmt.Printf("Retrying after error: %s\n", err)` bypasses test output capture
-- Delete the line. The error is already wrapped and returned to the caller.
-
-### 1c. Delete `go110testing.go`
-- Build constraint `go1.10 && !go1.18` never compiles with Go 1.19+ minimum
-- Pure dead code
-
-### 1d. Simplify `go118testing.go` build constraint
-- Change `//go:build go1.18 && !go1.23` to `//go:build !go1.23`
-
-### 1e. `interface{}` -> `any` across the package
-- Mechanical replacement in all files under `kiviktest/`
-- Includes `kt/config.go` (`SuiteConfig map[string]interface{}`), `kt/kt.go`, shim files, and test files
-
-### Verification:
-- `golangci-lint run ./kiviktest/...`
-- `go build ./kiviktest/...`
-- Run CouchDB integration tests if available (`USETC=1 go test ./couchdb/test/...`)
-
----
-
 ## Batch 2: Add `ctx.DB()` helper (boilerplate reduction)
 
 Add helper methods to `kt.Context`:

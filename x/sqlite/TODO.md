@@ -6,10 +6,10 @@
 
 These return a bare `"not implemented"` error:
 
-- [ ] BulkDocs
+- [ ] BulkDocs (low priority — kivik emulates via individual Put/CreateDoc)
 - [ ] Compact
 - [ ] CompactView
-- [ ] Copy
+- [ ] Copy (low priority — kivik emulates via Get+Put)
 - [ ] CreateIndex
 - [ ] DeleteIndex
 - [ ] Explain

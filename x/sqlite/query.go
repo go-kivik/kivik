@@ -295,6 +295,10 @@ func (m metaReduced) UpdateSeq() string {
 	return m.meta.updateSeq
 }
 
+func (m metaReduced) TotalRows() int64 {
+	return m.meta.totalRows
+}
+
 func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *viewOptions) (driver.Rows, error) {
 	var (
 		results *sql.Rows
@@ -331,7 +335,7 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 				reduce.reduce_func,
 				IIF($7, last_seq, "") AS update_seq,
 				MAX(last_seq)         AS last_seq,
-				0    AS total_rows, -- TODO: compute actual total rows for custom views
+				(SELECT COUNT(*) FROM {{ .Map }}) AS total_rows,
 				0    AS attachment_count,
 				NULL AS filename,
 				NULL AS content_type,

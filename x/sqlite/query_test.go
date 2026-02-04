@@ -2813,6 +2813,42 @@ func TestDBQuery_total_rows(t *testing.T) {
 	}
 }
 
+func TestDBQuery_total_rows_grouped(t *testing.T) {
+	t.Parallel()
+	d := newDB(t)
+
+	_ = d.tPut("_design/foo", map[string]interface{}{
+		"views": map[string]interface{}{
+			"bar": map[string]string{
+				"map":    `function(doc) { emit(doc._id, 1); }`,
+				"reduce": `_count`,
+			},
+		},
+	})
+	_ = d.tPut("a", map[string]string{"foo": "bar"})
+	_ = d.tPut("b", map[string]string{"foo": "baz"})
+	_ = d.tPut("c", map[string]string{"foo": "qux"})
+
+	rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", kivik.Param("group", true))
+	if err != nil {
+		t.Fatalf("Failed to query view: %s", err)
+	}
+	defer rows.Close()
+
+	for {
+		row := driver.Row{}
+		if err := rows.Next(&row); err != nil {
+			break
+		}
+	}
+
+	want := int64(3)
+	got := rows.TotalRows()
+	if got != want {
+		t.Errorf("Unexpected TotalRows: got %d, want %d", got, want)
+	}
+}
+
 func TestDBQuery_update_lazy(t *testing.T) {
 	t.Parallel()
 	d := newDB(t)

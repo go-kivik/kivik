@@ -29,8 +29,14 @@ func TestClientAllDBs(t *testing.T) {
 	}
 
 	c := dClient.(*client)
-	for _, table := range []string{"foo", "bar", "foo_attachments", "bar_attachments", "foo_attachments_bridge", "foo_design", "bar_design", "foo_revs", "bar_revs"} {
-		if _, err := c.db.Exec("CREATE TABLE " + table + " (id INTEGER)"); err != nil {
+	for _, table := range []string{
+		"kivik$foo", "kivik$bar",
+		"kivik$foo$attachments", "kivik$bar$attachments",
+		"kivik$foo$attachments_bridge", "kivik$bar$attachments_bridge",
+		"kivik$foo$design", "kivik$bar$design",
+		"kivik$foo$revs", "kivik$bar$revs",
+	} {
+		if _, err := c.db.Exec("CREATE TABLE \"" + table + "\" (id INTEGER)"); err != nil {
 			t.Fatal(err)
 		}
 	}

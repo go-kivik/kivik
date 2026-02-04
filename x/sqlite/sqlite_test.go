@@ -16,7 +16,9 @@ package sqlite
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -48,6 +50,70 @@ func TestClientVersion(t *testing.T) {
 	}
 	if d := cmp.Diff(wantVer, ver); d != "" {
 		t.Fatal(d)
+	}
+}
+
+func TestConcurrentPuts(t *testing.T) {
+	t.Parallel()
+	f, err := os.CreateTemp("", "kivik-concurrent-test-*.db")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dsn := f.Name() + "?_txlock=immediate&_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)"
+	_ = f.Close()
+	t.Cleanup(func() { _ = os.Remove(dsn) })
+
+	d := drv{}
+	dClient, err := d.NewClient(dsn, mock.NilOption)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := dClient.CreateDB(context.TODO(), "test", mock.NilOption); err != nil {
+		t.Fatal(err)
+	}
+	db, err := dClient.DB("test", mock.NilOption)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	errs := make(chan error, 5)
+	for i := range 5 {
+		go func() {
+			_, err := db.Put(context.TODO(), fmt.Sprintf("doc%d", i), map[string]string{"key": "val"}, mock.NilOption)
+			if err != nil {
+				t.Logf("g%d error: %v", i, err)
+			}
+			errs <- err
+		}()
+	}
+	for range 5 {
+		if err := <-errs; err != nil {
+			t.Errorf("concurrent put failed: %s", err)
+		}
+	}
+}
+
+func TestMultipleDBs(t *testing.T) {
+	t.Parallel()
+	f, err := os.CreateTemp("", "kivik-multi-*.db")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dsn := f.Name()
+	_ = f.Close()
+	t.Cleanup(func() { _ = os.Remove(dsn) })
+
+	d := drv{}
+	dClient, err := d.NewClient(dsn, mock.NilOption)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := dClient.CreateDB(context.TODO(), "db1", mock.NilOption); err != nil {
+		t.Fatalf("creating db1: %v", err)
+	}
+	if err := dClient.CreateDB(context.TODO(), "db2", mock.NilOption); err != nil {
+		t.Fatalf("creating db2: %v", err)
 	}
 }
 

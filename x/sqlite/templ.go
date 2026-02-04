@@ -59,6 +59,14 @@ func (t *tmplFuncs) Design() string {
 	return strconv.Quote(tablePrefix + t.db.name + "$design")
 }
 
+func (t *tmplFuncs) IndexKey() string {
+	return strconv.Quote("idx_" + tablePrefix + t.db.name + "$key")
+}
+
+func (t *tmplFuncs) IndexParent() string {
+	return strconv.Quote("idx_" + tablePrefix + t.db.name + "$parent")
+}
+
 const maxTableLen = 59 // 64 minus the `idx_` prefix, and one more `_` separator
 
 // hashedName returns a table name in the format "{{db name}}_{{ddoc}}_{{typ}}_{{hash}}"

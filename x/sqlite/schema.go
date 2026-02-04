@@ -24,8 +24,8 @@ var schema = []string{
 		FOREIGN KEY (id, parent_rev, parent_rev_id) REFERENCES {{ .Revs }} (id, rev, rev_id) ON DELETE CASCADE,
 		UNIQUE(id, rev, rev_id)
 	)`,
-	`CREATE INDEX default_key ON {{ .Revs }} (key)`,
-	`CREATE INDEX idx_parent ON {{ .Revs }} (id, parent_rev, parent_rev_id)`,
+	`CREATE INDEX {{ .IndexKey }} ON {{ .Revs }} (key)`,
+	`CREATE INDEX {{ .IndexParent }} ON {{ .Revs }} (id, parent_rev, parent_rev_id)`,
 	// the main db table
 	`CREATE TABLE {{ .Docs }} (
 		seq INTEGER PRIMARY KEY,

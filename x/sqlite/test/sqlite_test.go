@@ -13,6 +13,7 @@
 package test
 
 import (
+	"os"
 	"testing"
 
 	"github.com/go-kivik/kivik/v4"
@@ -27,7 +28,14 @@ func init() {
 
 func TestSQLite(t *testing.T) {
 	t.Parallel()
-	client, err := kivik.New("sqlite", "")
+	f, err := os.CreateTemp("", "kivik-sqlite-test-*.db")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dsn := f.Name() + "?_txlock=immediate&_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)"
+	_ = f.Close()
+	t.Cleanup(func() { _ = os.Remove(dsn) })
+	client, err := kivik.New("sqlite", dsn)
 	if err != nil {
 		t.Errorf("Failed to connect to SQLite driver: %s", err)
 		return

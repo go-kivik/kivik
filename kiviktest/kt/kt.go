@@ -361,10 +361,6 @@ func shouldRetry(err error) bool {
 			strings.HasSuffix(msg, ": broken pipe") // Observed in Go 1.19 & 1.17
 	}
 	return false
-	// msg := strings.TrimSpace(err.Error())
-	// return strings.HasSuffix(msg, "io: read/write on closed pipe") ||
-	// 	strings.HasSuffix(msg, ": EOF") ||
-	// 	strings.HasSuffix(msg, ": http: server closed idle connection")
 }
 
 // Body turns a string into a read closer, useful as a request or attachment

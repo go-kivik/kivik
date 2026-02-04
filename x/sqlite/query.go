@@ -138,7 +138,7 @@ func (d *db) performQuery(
 				reduce.reduce_func,
 				IIF($4, last_seq, "") AS update_seq,
 				MAX(last_seq)         AS last_seq,
-				NULL,
+				(SELECT COUNT(*) FROM {{ .Map }}) AS total_rows,
 				0    AS attachment_count,
 				NULL AS filename,
 				NULL AS content_type,
@@ -280,6 +280,7 @@ func (d *db) performQuery(
 			db:        d,
 			rows:      results,
 			updateSeq: meta.updateSeq,
+			totalRows: meta.totalRows,
 		}, nil
 	}
 }
@@ -292,6 +293,10 @@ type metaReduced struct {
 
 func (m metaReduced) UpdateSeq() string {
 	return m.meta.updateSeq
+}
+
+func (m metaReduced) TotalRows() int64 {
+	return m.meta.totalRows
 }
 
 func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *viewOptions) (driver.Rows, error) {
@@ -330,7 +335,7 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 				reduce.reduce_func,
 				IIF($7, last_seq, "") AS update_seq,
 				MAX(last_seq)         AS last_seq,
-				NULL,
+				(SELECT COUNT(*) FROM {{ .Map }}) AS total_rows,
 				0    AS attachment_count,
 				NULL AS filename,
 				NULL AS content_type,

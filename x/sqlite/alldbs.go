@@ -24,14 +24,15 @@ func (c *client) AllDBs(ctx context.Context, _ driver.Options) ([]string, error)
 		SELECT
 			name
 		FROM
-			sqlite_schema
+			sqlite_schema AS s
 		WHERE
-			type ='table'
+			type = 'table'
 			AND name LIKE 'kivik$%' ESCAPE '\'
-			AND name NOT LIKE '%$attachments' ESCAPE '\'
-			AND name NOT LIKE '%$revs' ESCAPE '\'
-			AND name NOT LIKE '%$design' ESCAPE '\'
-			AND name NOT LIKE '%$attachments_bridge' ESCAPE '\'
+			AND EXISTS (
+				SELECT 1 FROM sqlite_schema
+				WHERE type = 'table'
+					AND name = s.name || '$revs'
+			)
 		`)
 	if err != nil {
 		return nil, err

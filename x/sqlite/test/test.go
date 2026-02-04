@@ -16,6 +16,7 @@ package test
 import (
 	"net/http"
 
+	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/kiviktest"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 )
@@ -42,39 +43,32 @@ func registerSuiteSQLite() {
 
 		"Version.version": `^0\.0\.1$`,
 		"Version.vendor":  `^Kivik$`,
-		// TODO: The driver should reject document IDs with leading underscores (except _design/ and _local/).
-		"Put/RW/Admin/group/LeadingUnderscoreInID.skip": true,
-		"Put/RW/Admin/group/Conflict.status":            http.StatusConflict,
-		"Get/RW/group/Admin/bogus.status":               http.StatusNotFound,
-		"Delete/RW/Admin/group/MissingDoc.status":       http.StatusNotFound,
-		"Delete/RW/Admin/group/InvalidRevFormat.status": http.StatusBadRequest,
-		"Delete/RW/Admin/group/WrongRev.status":         http.StatusConflict,
-		"DestroyDB/RW/Admin/NonExistantDB.status":       http.StatusNotFound,
-		"AllDocs.databases":                             []string{},
-		// TODO: AllDocs should return TotalRows and include rev in the value.
-		"AllDocs/RW/group/Admin/WithDocs.skip":    true,
-		"AllDocs/RW/group/Admin/WithoutDocs.skip": true,
-		// TODO: AllDBs sees databases from concurrent tests and view tables leak through the filter.
-		"AllDBs.skip": true,
-		"Stats.skip":  true,
-		"Copy.skip":   true,
-		"GetAttachment/RW/group/Admin/foo/NotFound.status": http.StatusNotFound,
-		"PutAttachment/RW/group/Admin/Conflict.status":     http.StatusConflict,
-		"DeleteAttachment/RW/group/Admin/NotFound.status":  http.StatusNotFound,
-		"DeleteAttachment/RW/group/Admin/NoDoc.status":     http.StatusNotFound,
-		"Replicate.skip":                      true,
-		"Find.databases":                      []string{},
-		"Find/RW/group/Admin/Warning.warning": "",
+		"Put/RW/Admin/group/LeadingUnderscoreInID.status":      http.StatusBadRequest,
+		"Put/RW/Admin/group/Conflict.status":                   http.StatusConflict,
+		"Get/RW/group/Admin/bogus.status":                      http.StatusNotFound,
+		"Delete/RW/Admin/group/MissingDoc.status":              http.StatusNotFound,
+		"Delete/RW/Admin/group/InvalidRevFormat.status":        http.StatusBadRequest,
+		"Delete/RW/Admin/group/WrongRev.status":                http.StatusConflict,
+		"DestroyDB/RW/Admin/NonExistantDB.status":              http.StatusNotFound,
+		"AllDocs.databases":                                    []string{},
+		"Stats.skip":                                           true,
+		"Copy.skip":                                            true,
+		"GetAttachment/RW/group/Admin/foo/NotFound.status":     http.StatusNotFound,
+		"PutAttachment/RW/group/Admin/Conflict.status":         http.StatusConflict,
+		"DeleteAttachment/RW/group/Admin/NotFound.status":      http.StatusNotFound,
+		"DeleteAttachment/RW/group/Admin/NoDoc.status":         http.StatusNotFound,
+		"Replicate.skip":                                       true,
+		"Find.databases":                                       []string{},
+		"Find/RW/group/Admin/Warning.warning":                  "",
 		"GetAttachmentMeta/RW/group/Admin/foo/NotFound.status": http.StatusNotFound,
 		"DBExists/Admin.databases":                             []string{"chicken"},
 		"DBExists/Admin/chicken.exists":                        false,
 		"DBExists/RW/group/Admin.exists":                       true,
 		"Query/RW/group/Admin/WithoutDocs/ScanDoc.status":      http.StatusBadRequest,
-		// TODO: Query should return TotalRows.
-		"Query/RW/group/Admin/WithDocs.skip":    true,
-		"Query/RW/group/Admin/WithoutDocs.skip": true,
-		// TODO: Continuous changes with longpoll only returns changes after subscription when using since=now.
-		"Changes/Continuous.skip":            true,
+		"Changes/Continuous.options": kivik.Params(map[string]interface{}{
+			"feed":  "continuous",
+			"since": "now",
+		}),
 		"CreateDB/RW/Admin/Recreate.status":  http.StatusPreconditionFailed,
 		"GetRev/RW/group/Admin/bogus.status": http.StatusNotFound,
 		"BulkDocs.skip":                      true,

@@ -33,8 +33,9 @@ import (
 )
 
 const (
-	feedNormal   = "normal"
-	feedLongpoll = "longpoll"
+	feedNormal     = "normal"
+	feedLongpoll   = "longpoll"
+	feedContinuous = "continuous"
 )
 
 type normalChanges struct {
@@ -389,12 +390,12 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 	if err != nil {
 		return nil, err
 	}
-	if sinceNow && feed == feedLongpoll {
+	if sinceNow && (feed == feedLongpoll || feed == feedContinuous) {
 		attachments, err := opts.attachments()
 		if err != nil {
 			return nil, err
 		}
-		return d.newLongpollChanges(ctx, includeDocs, attachments)
+		return d.newLongpollChanges(ctx, includeDocs, attachments, feed == feedContinuous)
 	}
 
 	return d.newNormalChanges(ctx, opts, since, lastSeq, sinceNow, feed)
@@ -405,6 +406,7 @@ type longpollChanges struct {
 	since       uint64
 	includeDocs bool
 	attachments bool
+	continuous  bool
 	lastSeq     string
 	ctx         context.Context
 	cancel      context.CancelFunc
@@ -418,7 +420,7 @@ type longpollChange struct {
 
 var _ driver.Changes = (*longpollChanges)(nil)
 
-func (d *db) newLongpollChanges(ctx context.Context, includeDocs, attachments bool) (*longpollChanges, error) {
+func (d *db) newLongpollChanges(ctx context.Context, includeDocs, attachments, continuous bool) (*longpollChanges, error) {
 	since, err := d.lastSeq(ctx)
 	if err != nil {
 		return nil, err
@@ -479,6 +481,7 @@ func (d *db) newLongpollChanges(ctx context.Context, includeDocs, attachments bo
 		since:       since,
 		attachments: attachments,
 		includeDocs: includeDocs,
+		continuous:  continuous,
 		ctx:         ctx,
 		cancel:      cancel,
 		changes:     changes,
@@ -490,15 +493,40 @@ func (d *db) newLongpollChanges(ctx context.Context, includeDocs, attachments bo
 }
 
 // watch runs in a loop until either the context is cancelled, or a change is
-// detected.
+// detected. In continuous mode, it keeps polling for new changes after each
+// one is sent.
 func (c *longpollChanges) watch(changes chan<- longpollChange) {
 	defer close(changes)
 
+	for {
+		change, err := c.pollForChange()
+		if err != nil {
+			changes <- longpollChange{err: err}
+			return
+		}
+
+		select {
+		case changes <- longpollChange{change: change}:
+		case <-c.ctx.Done():
+			return
+		}
+
+		if !c.continuous {
+			return
+		}
+
+		seq, _ := strconv.ParseUint(change.Seq, 10, 64)
+		c.since = seq
+	}
+}
+
+func (c *longpollChanges) pollForChange() (*driver.Change, error) {
 	bo := backoff.NewExponentialBackOff()
 	bo.InitialInterval = 50 * time.Millisecond
 	bo.MaxInterval = 3 * time.Minute
 	bo.MaxElapsedTime = 0
 
+	var result *driver.Change
 	err := backoff.Retry(func() error {
 		rows, err := c.stmt.QueryContext(c.ctx, c.since, c.attachments, c.includeDocs)
 		if err != nil {
@@ -573,12 +601,11 @@ func (c *longpollChanges) watch(changes chan<- longpollChange) {
 			change.Doc = toMerge.toRaw()
 		}
 
-		changes <- longpollChange{change: &change}
+		result = &change
 		return nil
-	}, bo)
-	if err != nil {
-		changes <- longpollChange{err: err}
-	}
+	}, backoff.WithContext(bo, c.ctx))
+
+	return result, err
 }
 
 func (c *longpollChanges) Next(change *driver.Change) error {
@@ -598,7 +625,8 @@ func (c *longpollChanges) Next(change *driver.Change) error {
 }
 
 func (c *longpollChanges) Close() error {
-	return nil
+	c.cancel()
+	return c.stmt.Close()
 }
 
 func (c *longpollChanges) LastSeq() string {

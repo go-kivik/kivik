@@ -141,6 +141,47 @@ func TestClientDestroyDB(t *testing.T) {
 			t.Fatal("foo should not exist")
 		}
 	})
+	t.Run("with design doc", func(t *testing.T) {
+		d := drv{}
+		dClient, err := d.NewClient(":memory:", mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if err := dClient.CreateDB(context.Background(), "foo", mock.NilOption); err != nil {
+			t.Fatal(err)
+		}
+
+		db, err := dClient.DB("foo", mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		ddoc := map[string]interface{}{
+			"_id":      "_design/testddoc",
+			"language": "javascript",
+			"views": map[string]interface{}{
+				"testview": map[string]interface{}{
+					"map": `function(doc) { emit(doc._id, null); }`,
+				},
+			},
+		}
+		if _, err := db.Put(context.Background(), "_design/testddoc", ddoc, mock.NilOption); err != nil {
+			t.Fatal(err)
+		}
+
+		if err := dClient.DestroyDB(context.Background(), "foo", mock.NilOption); err != nil {
+			t.Fatal(err)
+		}
+
+		exists, err := dClient.DBExists(context.Background(), "foo", mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if exists {
+			t.Fatal("foo should not exist")
+		}
+	})
 	t.Run("doesn't exist", func(t *testing.T) {
 		d := drv{}
 		dClient, err := d.NewClient(":memory:", mock.NilOption)

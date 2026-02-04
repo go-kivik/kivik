@@ -106,7 +106,7 @@ func TestDBChanges(t *testing.T) {
 	})
 	tests.Add("invalid feed type", test{
 		options:    kivik.Param("feed", "invalid"),
-		wantErr:    "supported `feed` types: normal, longpoll",
+		wantErr:    "supported `feed` types: normal, longpoll, continuous",
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("since=1", func(t *testing.T) interface{} {
@@ -1198,7 +1198,7 @@ func Test_longpoll_changes_query(t *testing.T) {
 
 	d := newDB(t)
 
-	changes, err := d.DB.(*db).newLongpollChanges(context.Background(), true, false)
+	changes, err := d.DB.(*db).newLongpollChanges(context.Background(), true, false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1259,7 +1259,7 @@ func Test_longpoll_changes_query_without_docs(t *testing.T) {
 
 	d := newDB(t)
 
-	changes, err := d.DB.(*db).newLongpollChanges(context.Background(), false, false)
+	changes, err := d.DB.(*db).newLongpollChanges(context.Background(), false, false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1307,5 +1307,52 @@ func Test_longpoll_changes_query_without_docs(t *testing.T) {
 
 	if d := cmp.Diff(want, got); d != "" {
 		t.Errorf("Unexpected rows:\n%s", d)
+	}
+}
+
+func TestDBChanges_continuous(t *testing.T) {
+	t.Parallel()
+	db := newDB(t)
+
+	_ = db.tPut("doc1", map[string]string{"foo": "bar"})
+
+	feed, err := db.Changes(context.Background(), kivik.Params(map[string]interface{}{
+		"feed":  "continuous",
+		"since": "now",
+	}))
+	if err != nil {
+		t.Fatalf("Failed to start changes feed: %s", err)
+	}
+	t.Cleanup(func() {
+		_ = feed.Close()
+	})
+
+	rev2 := db.tPut("doc2", map[string]string{"foo": "bar"})
+	rev3 := db.tPut("doc3", map[string]string{"baz": "qux"})
+
+	var got []driver.Change
+	for i := 0; i < 2; i++ {
+		change := driver.Change{}
+		if err := feed.Next(&change); err != nil {
+			t.Fatalf("Next returned error: %s", err)
+		}
+		got = append(got, change)
+	}
+
+	wantChanges := []driver.Change{
+		{
+			ID:      "doc2",
+			Seq:     "2",
+			Changes: driver.ChangedRevs{rev2},
+		},
+		{
+			ID:      "doc3",
+			Seq:     "3",
+			Changes: driver.ChangedRevs{rev3},
+		},
+	}
+
+	if d := cmp.Diff(wantChanges, got); d != "" {
+		t.Errorf("Unexpected changes:\n%s", d)
 	}
 }

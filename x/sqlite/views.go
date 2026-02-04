@@ -105,7 +105,7 @@ func (d *db) queryBuiltinView(
 				SELECT
 					view.id,
 					view.key,
-					'{"value":{"rev":"' || view.rev || '-' || view.rev_id || '"}}' AS value,
+					'{"rev":"' || view.rev || '-' || view.rev_id || '"}' AS value,
 					view.rev || '-' || view.rev_id AS rev,
 					view.doc,
 					view.conflicts,
@@ -160,7 +160,7 @@ func (d *db) queryBuiltinView(
 			""                    AS reduce_func,
 			IIF($3, MAX(seq), "") AS update_seq,
 			NULL,
-			NULL,
+			(SELECT COUNT(DISTINCT id) FROM leaves) AS total_rows,
 			NULL AS attachment_count,
 			NULL AS filename,
 			NULL AS content_type,
@@ -204,6 +204,7 @@ func (d *db) queryBuiltinView(
 		db:        d,
 		rows:      results,
 		updateSeq: meta.updateSeq,
+		totalRows: meta.totalRows,
 		selector:  vopts.selector,
 		findLimit: vopts.findLimit,
 		findSkip:  vopts.findSkip,
@@ -216,6 +217,7 @@ type viewMetadata struct {
 	reducible    bool
 	reduceFuncJS string
 	updateSeq    string
+	totalRows    int64
 	lastSeq      int
 }
 
@@ -230,7 +232,7 @@ func readFirstRow(results *sql.Rows, vopts *viewOptions) (*viewMetadata, error) 
 	var meta viewMetadata
 	var lastSeq *int
 	if err := results.Scan(
-		&meta.upToDate, &meta.reducible, &meta.reduceFuncJS, &meta.updateSeq, &lastSeq, discard{},
+		&meta.upToDate, &meta.reducible, &meta.reduceFuncJS, &meta.updateSeq, &lastSeq, &meta.totalRows,
 		discard{}, discard{}, discard{}, discard{}, discard{}, discard{}, discard{},
 	); err != nil {
 		_ = results.Close() //nolint:sqlclosecheck // Aborting
@@ -265,6 +267,7 @@ type rows struct {
 	db                  *db
 	rows                *sql.Rows
 	updateSeq           string
+	totalRows           int64
 	selector            *mango.Selector
 	findLimit, findSkip int64
 	index               int64
@@ -392,8 +395,8 @@ func (*rows) Offset() int64 {
 	return 0
 }
 
-func (*rows) TotalRows() int64 {
-	return 0
+func (r *rows) TotalRows() int64 {
+	return r.totalRows
 }
 
 func (r *rows) Bookmark() string {

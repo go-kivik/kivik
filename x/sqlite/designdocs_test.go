@@ -50,7 +50,7 @@ func TestDBDesignDocs(t *testing.T) {
 				{
 					ID:    "_design/bar",
 					Key:   `"_design/bar"`,
-					Value: `{"value":{"rev":"` + rev2 + `"}}`,
+					Value: `{"rev":"` + rev2 + `"}`,
 				},
 			},
 		}

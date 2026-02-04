@@ -22,11 +22,11 @@ import (
 // AllDocsIndex is the default index for _all_docs
 var AllDocsIndex = kivik.Index{
 	Name: "_all_docs", Type: "special",
-	Definition: map[string]interface{}{"fields": []map[string]string{{"_id": "asc"}}},
+	Definition: map[string]any{"fields": []map[string]string{{"_id": "asc"}}},
 }
 
 // SuiteConfig represents the configuration for a test suite.
-type SuiteConfig map[string]interface{}
+type SuiteConfig map[string]any
 
 func name(t *testing.T) string {
 	t.Helper()
@@ -36,7 +36,7 @@ func name(t *testing.T) string {
 
 // get looks for the requested key at the current level, and if not found it
 // looks at the parent key.
-func (c SuiteConfig) get(name, key string) interface{} {
+func (c SuiteConfig) get(name, key string) any {
 	var k string
 	if name == "" {
 		k = key
@@ -57,8 +57,8 @@ func (c SuiteConfig) get(name, key string) interface{} {
 	return c.get(name[0:strings.LastIndex(name, "/")], key)
 }
 
-// Interface returns the configuration value as an interface{}.
-func (c SuiteConfig) Interface(t *testing.T, key string) interface{} {
+// Interface returns the configuration value as an any.
+func (c SuiteConfig) Interface(t *testing.T, key string) any {
 	t.Helper()
 	return c.get(name(t), key)
 }

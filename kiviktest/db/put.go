@@ -72,11 +72,11 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 		})
 		ctx.Run("DesignDoc", func(ctx *kt.Context) {
 			ctx.Parallel()
-			doc := map[string]interface{}{
+			doc := map[string]any{
 				"_id":      "_design/testddoc",
 				"language": "javascript",
-				"views": map[string]interface{}{
-					"testview": map[string]interface{}{
+				"views": map[string]any{
+					"testview": map[string]any{
 						"map": `function(doc) {
 			                if (doc.include) {
 			                    emit(doc._id, doc.index);
@@ -93,7 +93,7 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 		})
 		ctx.Run("Local", func(ctx *kt.Context) {
 			ctx.Parallel()
-			doc := map[string]interface{}{
+			doc := map[string]any{
 				"_id":  "_local/foo",
 				"name": "Bob",
 			}
@@ -105,7 +105,7 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 		})
 		ctx.Run("LeadingUnderscoreInID", func(ctx *kt.Context) {
 			ctx.Parallel()
-			doc := map[string]interface{}{
+			doc := map[string]any{
 				"_id":  "_badid",
 				"name": "Bob",
 			}
@@ -117,7 +117,7 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 		})
 		ctx.Run("HeavilyEscapedID", func(ctx *kt.Context) {
 			ctx.Parallel()
-			doc := map[string]interface{}{
+			doc := map[string]any{
 				"_id":  "foo+bar & spáces ?!*,",
 				"name": "Bob",
 			}
@@ -129,7 +129,7 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 		})
 		ctx.Run("SlashInID", func(ctx *kt.Context) {
 			ctx.Parallel()
-			doc := map[string]interface{}{
+			doc := map[string]any{
 				"_id":  "foo/bar",
 				"name": "Bob",
 			}
@@ -142,7 +142,7 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 		ctx.Run("Conflict", func(ctx *kt.Context) {
 			ctx.Parallel()
 			const id = "duplicate"
-			doc := map[string]interface{}{
+			doc := map[string]any{
 				"_id":  id,
 				"name": "Bob",
 			}

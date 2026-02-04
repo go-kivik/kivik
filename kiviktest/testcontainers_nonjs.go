@@ -36,7 +36,7 @@ func startCouchDB(t *testing.T, image string) string { //nolint:thelper // Not a
 
 func tContext(t *testing.T) context.Context {
 	t.Helper()
-	if c, ok := interface{}(t).(interface{ Context() context.Context }); ok {
+	if c, ok := any(t).(interface{ Context() context.Context }); ok {
 		return c.Context()
 	}
 	return context.Background()

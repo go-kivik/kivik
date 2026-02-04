@@ -68,19 +68,19 @@ func (c *Context) Skip() {
 }
 
 // Skipf is a wrapper around t.Skipf()
-func (c *Context) Skipf(format string, args ...interface{}) {
+func (c *Context) Skipf(format string, args ...any) {
 	c.T.Helper()
 	c.T.Skipf(format, args...)
 }
 
 // Logf is a wrapper around t.Logf()
-func (c *Context) Logf(format string, args ...interface{}) {
+func (c *Context) Logf(format string, args ...any) {
 	c.T.Helper()
 	c.T.Logf(format, args...)
 }
 
 // Fatalf is a wrapper around t.Fatalf()
-func (c *Context) Fatalf(format string, args ...interface{}) {
+func (c *Context) Fatalf(format string, args ...any) {
 	c.T.Helper()
 	c.T.Fatalf(format, args...)
 }
@@ -159,8 +159,8 @@ func (c *Context) Bool(key string) bool {
 	return c.Config.Bool(c.T, key)
 }
 
-// Interface returns the configuration value as an interface{}.
-func (c *Context) Interface(key string) interface{} {
+// Interface returns the configuration value as an any.
+func (c *Context) Interface(key string) any {
 	c.T.Helper()
 	return c.Config.get(name(c.T), key)
 }
@@ -180,8 +180,8 @@ func (c *Context) Options(key string) kivik.Option {
 	return o
 }
 
-// MustInterface returns an interface{} from the config, or fails if the value is unset.
-func (c *Context) MustInterface(key string) interface{} {
+// MustInterface returns an any from the config, or fails if the value is unset.
+func (c *Context) MustInterface(key string) any {
 	c.T.Helper()
 	c.MustBeSet(key)
 	return c.Interface(key)
@@ -302,7 +302,7 @@ func (c *Context) RunRO(fn testFunc) {
 }
 
 // Errorf is a wrapper around t.Errorf()
-func (c *Context) Errorf(format string, args ...interface{}) {
+func (c *Context) Errorf(format string, args ...any) {
 	c.T.Helper()
 	c.T.Errorf(format, args...)
 }
@@ -323,7 +323,6 @@ func Retry(fn func() error) error {
 		err := fn()
 		if err != nil {
 			if shouldRetry(err) {
-				fmt.Printf("Retrying after error: %s\n", err)
 				i++
 				return fmt.Errorf("attempt #%d failed: %w", i, err)
 			}
@@ -361,14 +360,10 @@ func shouldRetry(err error) bool {
 			strings.HasSuffix(msg, ": broken pipe") // Observed in Go 1.19 & 1.17
 	}
 	return false
-	// msg := strings.TrimSpace(err.Error())
-	// return strings.HasSuffix(msg, "io: read/write on closed pipe") ||
-	// 	strings.HasSuffix(msg, ": EOF") ||
-	// 	strings.HasSuffix(msg, ": http: server closed idle connection")
 }
 
 // Body turns a string into a read closer, useful as a request or attachment
 // body.
-func Body(str string, args ...interface{}) io.ReadCloser {
+func Body(str string, args ...any) io.ReadCloser {
 	return io.NopCloser(strings.NewReader(fmt.Sprintf(str, args...)))
 }

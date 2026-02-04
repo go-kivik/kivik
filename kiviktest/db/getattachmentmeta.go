@@ -31,10 +31,10 @@ func getAttachmentMeta(ctx *kt.Context) {
 			ctx.Fatalf("Failed to open db: %s", err)
 		}
 
-		doc := map[string]interface{}{
+		doc := map[string]any{
 			"_id": "foo",
-			"_attachments": map[string]interface{}{
-				"foo.txt": map[string]interface{}{
+			"_attachments": map[string]any{
+				"foo.txt": map[string]any{
 					"content_type": "text/plain",
 					"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGVkIHRleHQ=",
 				},
@@ -44,10 +44,10 @@ func getAttachmentMeta(ctx *kt.Context) {
 			ctx.Fatalf("Failed to create doc: %s", err)
 		}
 
-		ddoc := map[string]interface{}{
+		ddoc := map[string]any{
 			"_id": "_design/foo",
-			"_attachments": map[string]interface{}{
-				"foo.txt": map[string]interface{}{
+			"_attachments": map[string]any{
+				"foo.txt": map[string]any{
 					"content_type": "text/plain",
 					"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGVkIHRleHQ=",
 				},

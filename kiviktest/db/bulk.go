@@ -56,7 +56,7 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) { // nolint: gocyclo
 			var updates []kivik.BulkResult
 			err := kt.Retry(func() error {
 				var err error
-				updates, err = db.BulkDocs(context.Background(), []interface{}{doc})
+				updates, err = db.BulkDocs(context.Background(), []any{doc})
 				return err
 			})
 			if !ctx.IsExpectedSuccess(err) {
@@ -85,7 +85,7 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) { // nolint: gocyclo
 			var updates []kivik.BulkResult
 			err = kt.Retry(func() error {
 				var err error
-				updates, err = db.BulkDocs(context.Background(), []interface{}{doc})
+				updates, err = db.BulkDocs(context.Background(), []any{doc})
 				return err
 			})
 			if !ctx.IsExpectedSuccess(err) {
@@ -103,7 +103,7 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) { // nolint: gocyclo
 		ctx.Run("Delete", func(ctx *kt.Context) {
 			ctx.Parallel()
 			id := ctx.TestDBName()
-			doc := map[string]interface{}{
+			doc := map[string]any{
 				"_id":  id,
 				"name": "Alice",
 			}
@@ -116,7 +116,7 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) { // nolint: gocyclo
 			var updates []kivik.BulkResult
 			err = kt.Retry(func() error {
 				var err error
-				updates, err = db.BulkDocs(context.Background(), []interface{}{doc})
+				updates, err = db.BulkDocs(context.Background(), []any{doc})
 				return err
 			})
 			if !ctx.IsExpectedSuccess(err) {
@@ -139,7 +139,7 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) { // nolint: gocyclo
 			}
 
 			id1 := ctx.TestDBName()
-			doc1 := map[string]interface{}{
+			doc1 := map[string]any{
 				"_id":  id1,
 				"name": "Robert",
 			}
@@ -151,7 +151,7 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) { // nolint: gocyclo
 			doc1["_rev"] = rev1
 
 			id2 := ctx.TestDBName()
-			doc2 := map[string]interface{}{
+			doc2 := map[string]any{
 				"_id":  id2,
 				"name": "Alice",
 			}
@@ -175,7 +175,7 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) { // nolint: gocyclo
 
 			err = kt.Retry(func() error {
 				var err error
-				updates, err = db.BulkDocs(context.Background(), []interface{}{doc0, doc1, doc2, doc3})
+				updates, err = db.BulkDocs(context.Background(), []any{doc0, doc1, doc2, doc3})
 				return err
 			})
 			if !ctx.IsExpectedSuccess(err) {
@@ -206,7 +206,7 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) { // nolint: gocyclo
 			ctx.Parallel()
 			id1 := ctx.TestDBName()
 			id2 := ctx.TestDBName()
-			docs := []interface{}{
+			docs := []any{
 				struct {
 					ID   string `json:"_id"`
 					Name string `json:"name"`
@@ -235,11 +235,11 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) { // nolint: gocyclo
 				}
 			}
 			ctx.Run("Retrieve", func(ctx *kt.Context) {
-				var result map[string]interface{}
+				var result map[string]any
 				if err = db.Get(context.Background(), id2).ScanDoc(&result); err != nil {
 					ctx.Fatalf("failed to scan bulk-inserted document: %s", err)
 				}
-				expected := map[string]interface{}{
+				expected := map[string]any{
 					"_id":     id2,
 					"name":    "Alice",
 					"the_age": age,

@@ -10,7 +10,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-//go:build go1.18 && !go1.23
+//go:build !go1.23
 
 package kiviktest
 
@@ -27,7 +27,7 @@ type corpusEntry = struct {
 	Parent     string
 	Path       string
 	Data       []byte
-	Values     []interface{}
+	Values     []any
 	Generation int
 	IsSeed     bool
 }
@@ -45,7 +45,7 @@ type testDeps interface {
 	CoordinateFuzzing(time.Duration, int64, time.Duration, int64, int, []corpusEntry, []reflect.Type, string, string) error
 	RunFuzzWorker(func(corpusEntry) error) error
 	ReadCorpus(string, []reflect.Type) ([]corpusEntry, error)
-	CheckCorpus([]interface{}, []reflect.Type) error
+	CheckCorpus([]any, []reflect.Type) error
 	ResetCoverage()
 	SnapshotCoverage()
 }
@@ -63,7 +63,7 @@ func (*deps) ImportPath() string                                { return "" }
 func (*deps) StartTestLog(io.Writer)                            {}
 func (*deps) StopTestLog() error                                { return nil }
 func (*deps) SetPanicOnExit0(bool)                              {}
-func (*deps) CheckCorpus([]interface{}, []reflect.Type) error   { return nil }
+func (*deps) CheckCorpus([]any, []reflect.Type) error   { return nil }
 func (*deps) CoordinateFuzzing(time.Duration, int64, time.Duration, int64, int, []corpusEntry, []reflect.Type, string, string) error {
 	return nil
 }

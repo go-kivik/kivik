@@ -53,20 +53,20 @@ func registerSuiteCouch23() {
 		"Explain/NoAuth/chicken.status": http.StatusNotFound,
 		"Explain/NoAuth/_duck.status":   http.StatusUnauthorized,
 		"Explain.plan": &kivik.QueryPlan{
-			Index: map[string]interface{}{
+			Index: map[string]any{
 				"ddoc": nil,
 				"name": "_all_docs",
 				"type": "special",
-				"def":  map[string]interface{}{"fields": []interface{}{map[string]string{"_id": "asc"}}},
+				"def":  map[string]any{"fields": []any{map[string]string{"_id": "asc"}}},
 			},
-			Selector: map[string]interface{}{"_id": map[string]interface{}{"$gt": nil}},
-			Options: map[string]interface{}{
+			Selector: map[string]any{"_id": map[string]any{"$gt": nil}},
+			Options: map[string]any{
 				"bookmark":        "nil",
 				"conflicts":       false,
 				"execution_stats": false,
 				"r":               []int{49},
-				"sort":            map[string]interface{}{},
-				"use_index":       []interface{}{},
+				"sort":            map[string]any{},
+				"use_index":       []any{},
 				"stable":          false,
 				"stale":           false,
 				"update":          true,
@@ -225,7 +225,7 @@ func registerSuiteCouch23() {
 				DesignDoc: "_design/foo",
 				Name:      "bar",
 				Type:      "json",
-				Definition: map[string]interface{}{
+				Definition: map[string]any{
 					"fields": []map[string]string{
 						{"foo": "asc"},
 					},
@@ -253,7 +253,7 @@ func registerSuiteCouch23() {
 
 		"ViewCleanup/RW/NoAuth.status": http.StatusUnauthorized,
 
-		"Changes/Continuous.options": kivik.Params(map[string]interface{}{
+		"Changes/Continuous.options": kivik.Params(map[string]any{
 			"feed":      "continuous",
 			"since":     "now",
 			"heartbeat": 6000,

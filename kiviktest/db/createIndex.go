@@ -64,7 +64,7 @@ func testCreateIndex(ctx *kt.Context, client *kivik.Client) {
 	})
 }
 
-func doCreateIndex(ctx *kt.Context, db *kivik.DB, index interface{}) {
+func doCreateIndex(ctx *kt.Context, db *kivik.DB, index any) {
 	ctx.Parallel()
 	err := kt.Retry(func() error {
 		return db.CreateIndex(context.Background(), "", "", index)

@@ -79,10 +79,10 @@ func doDeleteAttachmentTest(ctx *kt.Context, client *kivik.Client, dbname, docID
 	if err := adb.Err(); err != nil {
 		ctx.Fatalf("Failed to open db: %s", err)
 	}
-	doc := map[string]interface{}{
+	doc := map[string]any{
 		"_id": docID,
-		"_attachments": map[string]interface{}{
-			"foo.txt": map[string]interface{}{
+		"_attachments": map[string]any{
+			"foo.txt": map[string]any{
 				"content_type": "text/plain",
 				"data":         "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGVkIHRleHQ=",
 			},
@@ -96,7 +96,7 @@ func doDeleteAttachmentTest(ctx *kt.Context, client *kivik.Client, dbname, docID
 	if !ctx.IsExpectedSuccess(err) {
 		return
 	}
-	var i interface{}
+	var i any
 	if err = db.Get(context.Background(), docID, kivik.Rev(rev)).ScanDoc(&i); err != nil {
 		ctx.Fatalf("Failed to get deleted doc: %s", err)
 	}

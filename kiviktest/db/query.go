@@ -52,11 +52,11 @@ func testQueryRW(ctx *kt.Context) {
 	})
 }
 
-var ddoc = map[string]interface{}{
+var ddoc = map[string]any{
 	"_id":      "_design/testddoc",
 	"language": "javascript",
-	"views": map[string]interface{}{
-		"testview": map[string]interface{}{
+	"views": map[string]any{
+		"testview": map[string]any{
 			"map": `function(doc) {
                 if (doc.include) {
                     emit(doc._id, doc.index);
@@ -127,11 +127,11 @@ func doQueryTestWithoutDocs(ctx *kt.Context, client *kivik.Client, dbName string
 		if !scanTested {
 			scanTested = true
 			ctx.Run("ScanDoc", func(ctx *kt.Context) {
-				var i interface{}
+				var i any
 				ctx.CheckError(rows.ScanDoc(&i))
 			})
 			ctx.Run("ScanValue", func(ctx *kt.Context) {
-				var i interface{}
+				var i any
 				ctx.CheckError(rows.ScanValue(&i))
 			})
 		}
@@ -159,7 +159,7 @@ func doQueryTestWithDocs(ctx *kt.Context, client *kivik.Client, dbName string, e
 	if err := db.Err(); err != nil && !ctx.IsExpectedSuccess(err) {
 		return
 	}
-	opts := kivik.Params(map[string]interface{}{
+	opts := kivik.Params(map[string]any{
 		"include_docs": true,
 		"update_seq":   true,
 	})

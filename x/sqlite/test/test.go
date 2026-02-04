@@ -49,7 +49,6 @@ func registerSuiteSQLite() {
 		"Delete/RW/Admin/group/MissingDoc.status":       http.StatusNotFound,
 		"Delete/RW/Admin/group/InvalidRevFormat.status": http.StatusBadRequest,
 		"Delete/RW/Admin/group/WrongRev.status":         http.StatusConflict,
-		"CreateDoc.skip":                                true,
 		"DestroyDB/RW/Admin/NonExistantDB.status":       http.StatusNotFound,
 		"AllDocs.skip":                       true,
 		"AllDBs.expected":                    []string{},

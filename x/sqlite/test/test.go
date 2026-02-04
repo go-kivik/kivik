@@ -42,15 +42,14 @@ func registerSuiteSQLite() {
 
 		"Version.version": `^0\.0\.1$`,
 		"Version.vendor":  `^Kivik$`,
-		// TODO: The driver should reject document IDs with leading underscores (except _design/ and _local/).
-		"Put/RW/Admin/group/LeadingUnderscoreInID.skip": true,
-		"Put/RW/Admin/group/Conflict.status":            http.StatusConflict,
-		"Get/RW/group/Admin/bogus.status":               http.StatusNotFound,
-		"Delete/RW/Admin/group/MissingDoc.status":       http.StatusNotFound,
-		"Delete/RW/Admin/group/InvalidRevFormat.status": http.StatusBadRequest,
-		"Delete/RW/Admin/group/WrongRev.status":         http.StatusConflict,
-		"DestroyDB/RW/Admin/NonExistantDB.status":       http.StatusNotFound,
-		"AllDocs.databases":                             []string{},
+		"Put/RW/Admin/group/LeadingUnderscoreInID.status": http.StatusBadRequest,
+		"Put/RW/Admin/group/Conflict.status":              http.StatusConflict,
+		"Get/RW/group/Admin/bogus.status":                 http.StatusNotFound,
+		"Delete/RW/Admin/group/MissingDoc.status":         http.StatusNotFound,
+		"Delete/RW/Admin/group/InvalidRevFormat.status":   http.StatusBadRequest,
+		"Delete/RW/Admin/group/WrongRev.status":           http.StatusConflict,
+		"DestroyDB/RW/Admin/NonExistantDB.status":         http.StatusNotFound,
+		"AllDocs.databases":                               []string{},
 		// TODO: AllDocs should return TotalRows and include rev in the value.
 		"AllDocs/RW/group/Admin/WithDocs.skip":    true,
 		"AllDocs/RW/group/Admin/WithoutDocs.skip": true,

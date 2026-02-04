@@ -242,6 +242,15 @@ func TestDBPut(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("leading underscore in ID", test{
+		docID: "_badid",
+		doc: map[string]string{
+			"_id": "_badid",
+			"foo": "bar",
+		},
+		wantStatus: http.StatusBadRequest,
+		wantErr:    "only reserved document ids may start with underscore",
+	})
 	tests.Add("doc id in url and doc differ", test{
 		docID: "foo",
 		doc: map[string]interface{}{

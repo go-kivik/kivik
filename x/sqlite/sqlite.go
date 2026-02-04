@@ -110,38 +110,17 @@ func (c *client) DestroyDB(ctx context.Context, name string, _ driver.Options) e
 	defer tx.Rollback()
 
 	d := c.newDB(name)
-	rows, err := tx.QueryContext(ctx, d.query(`
-		SELECT
-			id,
-			rev,
-			rev_id,
-			func_name
-		FROM {{ .Design }}
-		WHERE func_type = 'map'
-	`))
+	mapDropQueries, err := d.viewMapDropQueries(ctx, tx)
 	if err != nil {
 		if errIsNoSuchTable(err) {
 			return &internal.Error{Status: http.StatusNotFound, Message: "database not found"}
 		}
 		return err
 	}
-
-	defer rows.Close()
-	for rows.Next() {
-		var (
-			id, view string
-			rev      revision
-		)
-		if err := rows.Scan(&id, &rev.rev, &rev.id, &view); err != nil {
+	for _, query := range mapDropQueries {
+		if _, err := tx.ExecContext(ctx, query); err != nil {
 			return err
 		}
-		_, err := tx.ExecContext(ctx, d.ddocQuery(id, view, rev.String(), `DROP TABLE {{ .Map }}`))
-		if err != nil {
-			return err
-		}
-	}
-	if err := rows.Err(); err != nil {
-		return err
 	}
 
 	for _, query := range destroySchema {
@@ -161,4 +140,39 @@ func (c *client) DB(name string, _ driver.Options) (driver.DB, error) {
 		return nil, err
 	}
 	return c.newDB(name), nil
+}
+
+// viewMapDropQueries returns DROP TABLE queries for all view map tables in the
+// database. The rows cursor is closed before returning so that callers can
+// safely DROP the Design table afterward.
+func (d *db) viewMapDropQueries(ctx context.Context, tx *sql.Tx) ([]string, error) {
+	rows, err := tx.QueryContext(ctx, d.query(`
+		SELECT
+			id,
+			rev,
+			rev_id,
+			func_name
+		FROM {{ .Design }}
+		WHERE func_type = 'map'
+	`))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var queries []string
+	for rows.Next() {
+		var (
+			id, view string
+			rev      revision
+		)
+		if err := rows.Scan(&id, &rev.rev, &rev.id, &view); err != nil {
+			return nil, err
+		}
+		queries = append(queries, d.ddocQuery(id, view, rev.String(), `DROP TABLE {{ .Map }}`))
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return queries, nil
 }

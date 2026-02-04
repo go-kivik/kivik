@@ -35,6 +35,7 @@ func TestClientAllDBs(t *testing.T) {
 		"kivik$foo$attachments_bridge", "kivik$bar$attachments_bridge",
 		"kivik$foo$design", "kivik$bar$design",
 		"kivik$foo$revs", "kivik$bar$revs",
+		"kivik$testddoc_1-abc_myview_map_12345678",
 	} {
 		if _, err := c.db.Exec("CREATE TABLE \"" + table + "\" (id INTEGER)"); err != nil {
 			t.Fatal(err)

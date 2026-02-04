@@ -50,7 +50,7 @@ func registerSuiteSQLite() {
 		"Delete/RW/Admin/group/WrongRev.status":           http.StatusConflict,
 		"DestroyDB/RW/Admin/NonExistantDB.status":         http.StatusNotFound,
 		"AllDocs.databases":                               []string{},
-		// TODO: AllDBs sees databases from concurrent tests and view tables leak through the filter.
+		// TODO: AllDBs sees databases from concurrent tests sharing the same SQLite file.
 		"AllDBs.skip": true,
 		"Stats.skip":  true,
 		"Copy.skip":   true,

@@ -91,25 +91,25 @@ func doExplainTest(ctx *kt.Context, client *kivik.Client, dbName string) {
 		*expected = *e // Make a shallow copy
 	} else {
 		expected = &kivik.QueryPlan{
-			Index: map[string]interface{}{
+			Index: map[string]any{
 				"ddoc": nil,
 				"name": "_all_docs",
 				"type": "special",
-				"def":  map[string]interface{}{"fields": []interface{}{map[string]string{"_id": "asc"}}},
+				"def":  map[string]any{"fields": []any{map[string]string{"_id": "asc"}}},
 			},
-			Selector: map[string]interface{}{"_id": map[string]interface{}{"$gt": nil}},
-			Options: map[string]interface{}{
+			Selector: map[string]any{"_id": map[string]any{"$gt": nil}},
+			Options: map[string]any{
 				"bookmark":  "nil",
 				"conflicts": false,
 				"fields":    "all_fields",
 				"limit":     limit,
 				"r":         []int{49},
 				"skip":      0,
-				"sort":      map[string]interface{}{},
-				"use_index": []interface{}{},
+				"sort":      map[string]any{},
+				"use_index": []any{},
 			},
 			Limit: limit,
-			Range: map[string]interface{}{
+			Range: map[string]any{
 				"start_key": nil,
 				"end_key":   "\xef\xbf\xbd",
 			},

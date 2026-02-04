@@ -62,7 +62,7 @@ func getReplications(ctx *kt.Context) {
 	})
 }
 
-func testGetReplications(ctx *kt.Context, client *kivik.Client, expected interface{}) {
+func testGetReplications(ctx *kt.Context, client *kivik.Client, expected any) {
 	reps, err := client.GetReplications(context.Background())
 	if !ctx.IsExpectedSuccess(err) {
 		return

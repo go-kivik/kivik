@@ -75,7 +75,7 @@ func rwGetIndexesTests(ctx *kt.Context, client *kivik.Client) {
 				DesignDoc: "_design/foo",
 				Name:      "bar",
 				Type:      "json",
-				Definition: map[string]interface{}{
+				Definition: map[string]any{
 					"fields": []map[string]string{
 						{"foo": "asc"},
 					},
@@ -86,7 +86,7 @@ func rwGetIndexesTests(ctx *kt.Context, client *kivik.Client) {
 	}
 }
 
-func testGetIndexes(ctx *kt.Context, client *kivik.Client, dbname string, expected interface{}) {
+func testGetIndexes(ctx *kt.Context, client *kivik.Client, dbname string, expected any) {
 	db := client.DB(dbname, ctx.Options("db"))
 	if err := db.Err(); err != nil {
 		ctx.Fatalf("Failed to open db: %s", err)

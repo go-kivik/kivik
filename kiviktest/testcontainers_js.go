@@ -92,14 +92,14 @@ func spawnTCDaemon(t *testing.T) <-chan string {
 	child := spawn.Invoke("go", args, options)
 
 	// Add error event listener for spawn failures
-	child.Call("on", "error", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	child.Call("on", "error", js.FuncOf(func(this js.Value, args []js.Value) any {
 		err := args[0]
 		t.Fatalf("Child process error: %s", err.String())
 		return nil
 	}))
 
 	// Add exit event listener
-	child.Call("on", "exit", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	child.Call("on", "exit", js.FuncOf(func(this js.Value, args []js.Value) any {
 		code := args[0]
 		if !code.IsNull() && code.Int() != 0 {
 			t.Fatalf("Child process exited with code: %d", code.Int())
@@ -110,7 +110,7 @@ func spawnTCDaemon(t *testing.T) <-chan string {
 	ready := make(chan string)
 
 	// Log stdout
-	child.Get("stdout").Call("on", "data", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	child.Get("stdout").Call("on", "data", js.FuncOf(func(this js.Value, args []js.Value) any {
 		buffer := args[0]
 		data := buffer.Call("toString").String()
 		go t.Logf("[STDOUT] %s", data)
@@ -126,7 +126,7 @@ func spawnTCDaemon(t *testing.T) <-chan string {
 	}))
 
 	// Log stderr
-	child.Get("stderr").Call("on", "data", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	child.Get("stderr").Call("on", "data", js.FuncOf(func(this js.Value, args []js.Value) any {
 		buffer := args[0]
 		data := buffer.Call("toString").String()
 		go t.Logf("[STDERR] %s", data)

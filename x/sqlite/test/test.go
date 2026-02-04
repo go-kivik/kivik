@@ -50,9 +50,6 @@ func registerSuiteSQLite() {
 		"Delete/RW/Admin/group/WrongRev.status":           http.StatusConflict,
 		"DestroyDB/RW/Admin/NonExistantDB.status":         http.StatusNotFound,
 		"AllDocs.databases":                               []string{},
-		// TODO: AllDocs should return TotalRows and include rev in the value.
-		"AllDocs/RW/group/Admin/WithDocs.skip":    true,
-		"AllDocs/RW/group/Admin/WithoutDocs.skip": true,
 		// TODO: AllDBs sees databases from concurrent tests and view tables leak through the filter.
 		"AllDBs.skip": true,
 		"Stats.skip":  true,

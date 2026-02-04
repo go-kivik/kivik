@@ -62,7 +62,7 @@ func TestDBAllDocs(t *testing.T) {
 				{
 					ID:    "foo",
 					Key:   `"foo"`,
-					Value: `{"value":{"rev":"` + rev + `"}}`,
+					Value: `{"rev":"` + rev + `"}`,
 				},
 			},
 		}
@@ -78,7 +78,7 @@ func TestDBAllDocs(t *testing.T) {
 				{
 					ID:    "foo",
 					Key:   `"foo"`,
-					Value: `{"value":{"rev":"` + rev + `"}}`,
+					Value: `{"rev":"` + rev + `"}`,
 					Doc:   `{"_id":"foo","_rev":"` + rev + `","cat":"meow"}`,
 				},
 			},
@@ -95,7 +95,7 @@ func TestDBAllDocs(t *testing.T) {
 				{
 					ID:    "foo",
 					Key:   `"foo"`,
-					Value: `{"value":{"rev":"` + rev2 + `"}}`,
+					Value: `{"rev":"` + rev2 + `"}`,
 				},
 			},
 		}
@@ -117,7 +117,7 @@ func TestDBAllDocs(t *testing.T) {
 				{
 					ID:    "foo",
 					Key:   `"foo"`,
-					Value: `{"value":{"rev":"1-xxx"}}`,
+					Value: `{"rev":"1-xxx"}`,
 				},
 			},
 		}
@@ -150,7 +150,7 @@ func TestDBAllDocs(t *testing.T) {
 				{
 					ID:    "foo",
 					Key:   `"foo"`,
-					Value: `{"value":{"rev":"1-xxx"}}`,
+					Value: `{"rev":"1-xxx"}`,
 				},
 			},
 		}
@@ -176,7 +176,7 @@ func TestDBAllDocs(t *testing.T) {
 				{
 					ID:    "foo",
 					Key:   `"foo"`,
-					Value: `{"value":{"rev":"1-xxx"}}`,
+					Value: `{"rev":"1-xxx"}`,
 					Doc:   `{"_id":"foo","_rev":"1-xxx","cat":"meow","_conflicts":["1-aaa"]}`,
 				},
 			},
@@ -202,7 +202,7 @@ func TestDBAllDocs(t *testing.T) {
 				{
 					ID:    "foo",
 					Key:   `"foo"`,
-					Value: `{"value":{"rev":"1-xxx"}}`,
+					Value: `{"rev":"1-xxx"}`,
 				},
 			},
 		}
@@ -225,17 +225,17 @@ func TestDBAllDocs(t *testing.T) {
 				{
 					ID:    "cat",
 					Key:   `"cat"`,
-					Value: `{"value":{"rev":"` + rev1 + `"}}`,
+					Value: `{"rev":"` + rev1 + `"}`,
 				},
 				{
 					ID:    "cow",
 					Key:   `"cow"`,
-					Value: `{"value":{"rev":"` + rev3 + `"}}`,
+					Value: `{"rev":"` + rev3 + `"}`,
 				},
 				{
 					ID:    "dog",
 					Key:   `"dog"`,
-					Value: `{"value":{"rev":"` + rev2 + `"}}`,
+					Value: `{"rev":"` + rev2 + `"}`,
 				},
 			},
 		}
@@ -259,17 +259,17 @@ func TestDBAllDocs(t *testing.T) {
 				{
 					ID:    "dog",
 					Key:   `"dog"`,
-					Value: `{"value":{"rev":"` + rev2 + `"}}`,
+					Value: `{"rev":"` + rev2 + `"}`,
 				},
 				{
 					ID:    "cow",
 					Key:   `"cow"`,
-					Value: `{"value":{"rev":"` + rev3 + `"}}`,
+					Value: `{"rev":"` + rev3 + `"}`,
 				},
 				{
 					ID:    "cat",
 					Key:   `"cat"`,
-					Value: `{"value":{"rev":"` + rev1 + `"}}`,
+					Value: `{"rev":"` + rev1 + `"}`,
 				},
 			},
 		}
@@ -293,12 +293,12 @@ func TestDBAllDocs(t *testing.T) {
 				{
 					ID:    "cat",
 					Key:   `"cat"`,
-					Value: `{"value":{"rev":"` + rev1 + `"}}`,
+					Value: `{"rev":"` + rev1 + `"}`,
 				},
 				{
 					ID:    "cow",
 					Key:   `"cow"`,
-					Value: `{"value":{"rev":"` + rev3 + `"}}`,
+					Value: `{"rev":"` + rev3 + `"}`,
 				},
 			},
 		}
@@ -325,12 +325,12 @@ func TestDBAllDocs(t *testing.T) {
 				{
 					ID:    "dog",
 					Key:   `"dog"`,
-					Value: `{"value":{"rev":"` + rev2 + `"}}`,
+					Value: `{"rev":"` + rev2 + `"}`,
 				},
 				{
 					ID:    "cow",
 					Key:   `"cow"`,
-					Value: `{"value":{"rev":"` + rev3 + `"}}`,
+					Value: `{"rev":"` + rev3 + `"}`,
 				},
 			},
 		}
@@ -354,12 +354,12 @@ func TestDBAllDocs(t *testing.T) {
 				{
 					ID:    "cat",
 					Key:   `"cat"`,
-					Value: `{"value":{"rev":"` + rev1 + `"}}`,
+					Value: `{"rev":"` + rev1 + `"}`,
 				},
 				{
 					ID:    "cow",
 					Key:   `"cow"`,
-					Value: `{"value":{"rev":"` + rev3 + `"}}`,
+					Value: `{"rev":"` + rev3 + `"}`,
 				},
 			},
 		}
@@ -386,7 +386,7 @@ func TestDBAllDocs(t *testing.T) {
 				{
 					ID:    "cat",
 					Key:   `"cat"`,
-					Value: `{"value":{"rev":"` + rev1 + `"}}`,
+					Value: `{"rev":"` + rev1 + `"}`,
 				},
 			},
 		}
@@ -410,12 +410,12 @@ func TestDBAllDocs(t *testing.T) {
 				{
 					ID:    "cow",
 					Key:   `"cow"`,
-					Value: `{"value":{"rev":"` + rev3 + `"}}`,
+					Value: `{"rev":"` + rev3 + `"}`,
 				},
 				{
 					ID:    "dog",
 					Key:   `"dog"`,
-					Value: `{"value":{"rev":"` + rev2 + `"}}`,
+					Value: `{"rev":"` + rev2 + `"}`,
 				},
 			},
 		}
@@ -439,12 +439,12 @@ func TestDBAllDocs(t *testing.T) {
 				{
 					ID:    "cow",
 					Key:   `"cow"`,
-					Value: `{"value":{"rev":"` + rev3 + `"}}`,
+					Value: `{"rev":"` + rev3 + `"}`,
 				},
 				{
 					ID:    "dog",
 					Key:   `"dog"`,
-					Value: `{"value":{"rev":"` + rev2 + `"}}`,
+					Value: `{"rev":"` + rev2 + `"}`,
 				},
 			},
 		}
@@ -471,12 +471,12 @@ func TestDBAllDocs(t *testing.T) {
 				{
 					ID:    "cow",
 					Key:   `"cow"`,
-					Value: `{"value":{"rev":"` + rev3 + `"}}`,
+					Value: `{"rev":"` + rev3 + `"}`,
 				},
 				{
 					ID:    "cat",
 					Key:   `"cat"`,
-					Value: `{"value":{"rev":"` + rev1 + `"}}`,
+					Value: `{"rev":"` + rev1 + `"}`,
 				},
 			},
 		}
@@ -494,12 +494,12 @@ func TestDBAllDocs(t *testing.T) {
 				{
 					ID:    "cat",
 					Key:   `"cat"`,
-					Value: `{"value":{"rev":"` + rev1 + `"}}`,
+					Value: `{"rev":"` + rev1 + `"}`,
 				},
 				{
 					ID:    "cow",
 					Key:   `"cow"`,
-					Value: `{"value":{"rev":"` + rev3 + `"}}`,
+					Value: `{"rev":"` + rev3 + `"}`,
 				},
 			},
 		}
@@ -517,7 +517,7 @@ func TestDBAllDocs(t *testing.T) {
 				{
 					ID:    "dog",
 					Key:   `"dog"`,
-					Value: `{"value":{"rev":"` + rev2 + `"}}`,
+					Value: `{"rev":"` + rev2 + `"}`,
 				},
 			},
 		}
@@ -535,7 +535,7 @@ func TestDBAllDocs(t *testing.T) {
 				{
 					ID:    "cow",
 					Key:   `"cow"`,
-					Value: `{"value":{"rev":"` + rev3 + `"}}`,
+					Value: `{"rev":"` + rev3 + `"}`,
 				},
 			},
 		}
@@ -552,12 +552,12 @@ func TestDBAllDocs(t *testing.T) {
 				{
 					ID:    "cat",
 					Key:   `"cat"`,
-					Value: `{"value":{"rev":"` + rev + `"}}`,
+					Value: `{"rev":"` + rev + `"}`,
 				},
 				{
 					ID:    "cow",
 					Key:   `"cow"`,
-					Value: `{"value":{"rev":"` + rev3 + `"}}`,
+					Value: `{"rev":"` + rev3 + `"}`,
 				},
 			},
 		}
@@ -588,12 +588,12 @@ func TestDBAllDocs(t *testing.T) {
 				{
 					ID:    "~",
 					Key:   `"~"`,
-					Value: `{"value":{"rev":"` + rev + `"}}`,
+					Value: `{"rev":"` + rev + `"}`,
 				},
 				{
 					ID:    "a",
 					Key:   `"a"`,
-					Value: `{"value":{"rev":"` + rev2 + `"}}`,
+					Value: `{"rev":"` + rev2 + `"}`,
 				},
 			},
 		}
@@ -615,9 +615,9 @@ func TestDBAllDocs(t *testing.T) {
 			db:      d,
 			options: kivik.Param("sorted", false),
 			want: []rowResult{
-				{ID: "a", Key: `"a"`, Value: `{"value":{"rev":"` + rev3 + `"}}`},
-				{ID: "b", Key: `"b"`, Value: `{"value":{"rev":"` + rev2 + `"}}`},
-				{ID: "~", Key: `"~"`, Value: `{"value":{"rev":"` + rev1 + `"}}`},
+				{ID: "a", Key: `"a"`, Value: `{"rev":"` + rev3 + `"}`},
+				{ID: "b", Key: `"b"`, Value: `{"rev":"` + rev2 + `"}`},
+				{ID: "~", Key: `"~"`, Value: `{"rev":"` + rev1 + `"}`},
 			},
 		}
 	})
@@ -630,7 +630,7 @@ func TestDBAllDocs(t *testing.T) {
 			db:      d,
 			options: kivik.Param("key", "b"),
 			want: []rowResult{
-				{ID: "b", Key: `"b"`, Value: `{"value":{"rev":"` + rev2 + `"}}`},
+				{ID: "b", Key: `"b"`, Value: `{"rev":"` + rev2 + `"}`},
 			},
 		}
 	})
@@ -644,8 +644,8 @@ func TestDBAllDocs(t *testing.T) {
 			db:      d,
 			options: kivik.Param("keys", []string{"a", "b"}),
 			want: []rowResult{
-				{ID: "a", Key: `"a"`, Value: `{"value":{"rev":"` + rev1 + `"}}`},
-				{ID: "b", Key: `"b"`, Value: `{"value":{"rev":"` + rev2 + `"}}`},
+				{ID: "a", Key: `"a"`, Value: `{"rev":"` + rev1 + `"}`},
+				{ID: "b", Key: `"b"`, Value: `{"rev":"` + rev2 + `"}`},
 			},
 		}
 	})
@@ -675,7 +675,7 @@ func TestDBAllDocs(t *testing.T) {
 				{
 					ID:    "a",
 					Key:   `"a"`,
-					Value: `{"value":{"rev":"` + rev1 + `"}}`,
+					Value: `{"rev":"` + rev1 + `"}`,
 					Doc:   `{"_id":"a","_rev":"` + rev1 + `","_attachments":{"foo.txt":{"content_type":"text/plain","digest":"md5-TmfHxaRgUrE9l3tkAn4s0Q==","length":25,"revpos":1,"data":"VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw=="}}}`,
 				},
 			},
@@ -697,7 +697,7 @@ func TestDBAllDocs(t *testing.T) {
 				{
 					ID:    "a",
 					Key:   `"a"`,
-					Value: `{"value":{"rev":"` + rev1 + `"}}`,
+					Value: `{"rev":"` + rev1 + `"}`,
 					Doc:   `{"_id":"a","_rev":"` + rev1 + `","_attachments":{"foo.txt":{"content_type":"text/plain","digest":"md5-TmfHxaRgUrE9l3tkAn4s0Q==","length":25,"revpos":1,"stub":true}}}`,
 				},
 			},
@@ -720,7 +720,7 @@ func TestDBAllDocs(t *testing.T) {
 				{
 					ID:    "a",
 					Key:   `"a"`,
-					Value: `{"value":{"rev":"` + rev1 + `"}}`,
+					Value: `{"rev":"` + rev1 + `"}`,
 					Doc:   `{"_id":"a","_rev":"` + rev1 + `","_attachments":{"bar.txt":{"content_type":"text/plain","digest":"md5-uLHEKNY+WmubFxerYl5gvA==","length":27,"revpos":1,"stub":true},"foo.txt":{"content_type":"text/plain","digest":"md5-TmfHxaRgUrE9l3tkAn4s0Q==","length":25,"revpos":1,"stub":true}}}`,
 				},
 			},
@@ -835,6 +835,35 @@ func checkRows(t *testing.T, rows driver.Rows, want []rowResult) {
 	got := readRows(t, rows)
 	if d := cmp.Diff(want, got); d != "" {
 		t.Errorf("Unexpected rows:\n%s", d)
+	}
+}
+
+func TestDBAllDocs_total_rows(t *testing.T) {
+	t.Parallel()
+	d := newDB(t)
+
+	_ = d.tPut("a", map[string]string{"foo": "bar"})
+	_ = d.tPut("b", map[string]string{"foo": "baz"})
+	_ = d.tPut("c", map[string]string{"foo": "qux"})
+
+	rows, err := d.AllDocs(context.Background(), mock.NilOption)
+	if err != nil {
+		t.Fatalf("Failed to query AllDocs: %s", err)
+	}
+	defer rows.Close()
+
+	// Consume all rows
+	for {
+		row := driver.Row{}
+		if err := rows.Next(&row); err != nil {
+			break
+		}
+	}
+
+	want := int64(3)
+	got := rows.TotalRows()
+	if got != want {
+		t.Errorf("Unexpected TotalRows: got %d, want %d", got, want)
 	}
 }
 

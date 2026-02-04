@@ -49,7 +49,7 @@ func TestDBLocalDocs(t *testing.T) {
 				{
 					ID:    "_local/bar",
 					Key:   `"_local/bar"`,
-					Value: `{"value":{"rev":"` + rev2 + `"}}`,
+					Value: `{"rev":"` + rev2 + `"}`,
 				},
 			},
 		}

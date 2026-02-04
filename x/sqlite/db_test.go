@@ -244,3 +244,14 @@ func Test_db_not_found(t *testing.T) {
 		}
 	})
 }
+
+func TestDBCompact(t *testing.T) {
+	t.Parallel()
+	d := newDB(t)
+	_ = d.tPut("doc1", map[string]string{"foo": "bar"})
+
+	err := d.Compact(context.Background())
+	if err != nil {
+		t.Fatalf("Compact failed: %s", err)
+	}
+}

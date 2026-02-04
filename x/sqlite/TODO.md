@@ -7,7 +7,6 @@
 These return a bare `"not implemented"` error:
 
 - [ ] BulkDocs (low priority — kivik emulates via individual Put/CreateDoc)
-- [ ] Compact
 - [ ] CompactView
 - [ ] Copy (low priority — kivik emulates via Get+Put)
 - [ ] CreateIndex

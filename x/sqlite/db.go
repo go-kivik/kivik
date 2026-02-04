@@ -58,8 +58,9 @@ func (db) Stats(context.Context) (*driver.DBStats, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (db) Compact(context.Context) error {
-	return errors.New("not implemented")
+func (d *db) Compact(ctx context.Context) error {
+	_, err := d.db.ExecContext(ctx, "VACUUM")
+	return err
 }
 
 func (db) CompactView(context.Context, string) error {

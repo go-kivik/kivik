@@ -53,6 +53,20 @@ func TestDBRevsDiff(t *testing.T) {
 			{ID: "foo", Value: `{"missing":["1-abc","2-def"]}`},
 		},
 	})
+	tests.Add("one rev exists, one missing", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev := d.tPut("foo", map[string]string{"foo": "bar"})
+
+		return test{
+			db: d,
+			revMap: map[string][]string{
+				"foo": {rev, "2-nonexistent"},
+			},
+			want: []rowResult{
+				{ID: "foo", Value: `{"missing":["2-nonexistent"]}`},
+			},
+		}
+	})
 
 	/*
 		TODO:

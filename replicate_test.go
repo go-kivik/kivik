@@ -305,8 +305,8 @@ func TestReplicate(t *testing.T) {
 	tests := testy.NewTable()
 	tests.Add("fs to fs", func(t *testing.T) interface{} {
 		tmpdir := testy.CopyTempDir(t, "testdata/db4", 1)
-		tests.Cleanup(func() error {
-			return os.RemoveAll(tmpdir)
+		t.Cleanup(func() {
+			_ = os.RemoveAll(tmpdir)
 		})
 
 		client, err := kivik.New("fs", tmpdir)

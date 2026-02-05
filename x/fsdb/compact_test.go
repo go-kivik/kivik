@@ -50,8 +50,8 @@ func TestCompact(t *testing.T) {
 	})
 	tests.Add("empty directory", func(t *testing.T) interface{} {
 		tmpdir := tempDir(t)
-		tests.Cleanup(func() error {
-			return os.RemoveAll(tmpdir)
+		t.Cleanup(func() {
+			_ = os.RemoveAll(tmpdir)
 		})
 		if err := os.Mkdir(filepath.Join(tmpdir, "foo"), 0o666); err != nil {
 			t.Fatal(err)
@@ -75,8 +75,8 @@ func TestCompact(t *testing.T) {
 	})
 	tests.Add("no attachments", func(t *testing.T) interface{} {
 		tmpdir := testy.CopyTempDir(t, "testdata/compact_noatt", 1)
-		tests.Cleanup(func() error {
-			return os.RemoveAll(tmpdir)
+		t.Cleanup(func() {
+			_ = os.RemoveAll(tmpdir)
 		})
 
 		return tt{
@@ -86,8 +86,8 @@ func TestCompact(t *testing.T) {
 	})
 	tests.Add("non-winning revs only, no attachments", func(t *testing.T) interface{} {
 		tmpdir := testy.CopyTempDir(t, "testdata/compact_nowinner_noatt", 1)
-		tests.Cleanup(func() error {
-			return os.RemoveAll(tmpdir)
+		t.Cleanup(func() {
+			_ = os.RemoveAll(tmpdir)
 		})
 
 		return tt{
@@ -97,8 +97,8 @@ func TestCompact(t *testing.T) {
 	})
 	tests.Add("clean up old revs", func(t *testing.T) interface{} {
 		tmpdir := testy.CopyTempDir(t, "testdata/compact_oldrevs", 1)
-		tests.Cleanup(func() error {
-			return os.RemoveAll(tmpdir)
+		t.Cleanup(func() {
+			_ = os.RemoveAll(tmpdir)
 		})
 
 		return tt{
@@ -108,8 +108,8 @@ func TestCompact(t *testing.T) {
 	})
 	tests.Add("clean up old revs with atts", func(t *testing.T) interface{} {
 		tmpdir := testy.CopyTempDir(t, "testdata/compact_oldrevsatt", 1)
-		tests.Cleanup(func() error {
-			return os.RemoveAll(tmpdir)
+		t.Cleanup(func() {
+			_ = os.RemoveAll(tmpdir)
 		})
 
 		return tt{

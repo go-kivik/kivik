@@ -18,7 +18,7 @@ require (
 	github.com/spf13/viper v1.19.0
 	github.com/testcontainers/testcontainers-go v0.28.0
 	gitlab.com/flimzy/httpe v0.0.0-20231112220855-6303bcec02b6
-	gitlab.com/flimzy/testy v0.14.0
+	gitlab.com/flimzy/testy v0.15.0
 	golang.org/x/crypto v0.33.0
 	golang.org/x/net v0.35.0
 	golang.org/x/sync v0.11.0

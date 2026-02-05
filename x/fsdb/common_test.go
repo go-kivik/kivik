@@ -33,8 +33,8 @@ func rmdir(t *testing.T, dir string) {
 	}
 }
 
-func cleanTmpdir(path string) func() error {
-	return func() error {
-		return os.RemoveAll(path)
+func cleanTmpdir(path string) func() {
+	return func() {
+		_ = os.RemoveAll(path)
 	}
 }

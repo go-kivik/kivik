@@ -60,7 +60,7 @@ func TestPut(t *testing.T) {
 	})
 	tests.Add("create with revid", func(t *testing.T) interface{} {
 		tmpdir := tempDir(t)
-		tests.Cleanup(cleanTmpdir(tmpdir))
+		t.Cleanup(cleanTmpdir(tmpdir))
 		if err := os.Mkdir(filepath.Join(tmpdir, "foo"), 0o777); err != nil {
 			t.Fatal(err)
 		}
@@ -76,7 +76,7 @@ func TestPut(t *testing.T) {
 	})
 	tests.Add("simple create", func(t *testing.T) interface{} {
 		tmpdir := tempDir(t)
-		tests.Cleanup(cleanTmpdir(tmpdir))
+		t.Cleanup(cleanTmpdir(tmpdir))
 		if err := os.Mkdir(filepath.Join(tmpdir, "foo"), 0o777); err != nil {
 			t.Fatal(err)
 		}
@@ -91,7 +91,7 @@ func TestPut(t *testing.T) {
 	})
 	tests.Add("update conflict, doc key", func(t *testing.T) interface{} {
 		tmpdir := testy.CopyTempDir(t, "testdata/db_put", 1)
-		tests.Cleanup(cleanTmpdir(tmpdir))
+		t.Cleanup(cleanTmpdir(tmpdir))
 
 		return tt{
 			path:   tmpdir,
@@ -104,7 +104,7 @@ func TestPut(t *testing.T) {
 	})
 	tests.Add("update conflict, options", func(t *testing.T) interface{} {
 		tmpdir := testy.CopyTempDir(t, "testdata/db_put", 1)
-		tests.Cleanup(cleanTmpdir(tmpdir))
+		t.Cleanup(cleanTmpdir(tmpdir))
 
 		return tt{
 			path:    tmpdir,
@@ -118,7 +118,7 @@ func TestPut(t *testing.T) {
 	})
 	tests.Add("no explicit rev", func(t *testing.T) interface{} {
 		tmpdir := testy.CopyTempDir(t, "testdata/db_put", 1)
-		tests.Cleanup(cleanTmpdir(tmpdir))
+		t.Cleanup(cleanTmpdir(tmpdir))
 
 		return tt{
 			path:   tmpdir,
@@ -140,7 +140,7 @@ func TestPut(t *testing.T) {
 	})
 	tests.Add("proper update", func(t *testing.T) interface{} {
 		tmpdir := testy.CopyTempDir(t, "testdata/db_put", 1)
-		tests.Cleanup(cleanTmpdir(tmpdir))
+		t.Cleanup(cleanTmpdir(tmpdir))
 
 		return tt{
 			path:     tmpdir,
@@ -152,7 +152,7 @@ func TestPut(t *testing.T) {
 	})
 	tests.Add("design doc", func(t *testing.T) interface{} {
 		tmpdir := tempDir(t)
-		tests.Cleanup(cleanTmpdir(tmpdir))
+		t.Cleanup(cleanTmpdir(tmpdir))
 		if err := os.Mkdir(filepath.Join(tmpdir, "foo"), 0o777); err != nil {
 			t.Fatal(err)
 		}
@@ -186,7 +186,7 @@ func TestPut(t *testing.T) {
 	})
 	tests.Add("attachment", func(t *testing.T) interface{} {
 		tmpdir := tempDir(t)
-		tests.Cleanup(cleanTmpdir(tmpdir))
+		t.Cleanup(cleanTmpdir(tmpdir))
 		if err := os.Mkdir(filepath.Join(tmpdir, "foo"), 0o777); err != nil {
 			t.Fatal(err)
 		}
@@ -209,7 +209,7 @@ func TestPut(t *testing.T) {
 	})
 	tests.Add("new_edits=false, no rev", func(t *testing.T) interface{} {
 		tmpdir := tempDir(t)
-		tests.Cleanup(cleanTmpdir(tmpdir))
+		t.Cleanup(cleanTmpdir(tmpdir))
 		if err := os.Mkdir(filepath.Join(tmpdir, "foo"), 0o777); err != nil {
 			t.Fatal(err)
 		}
@@ -228,7 +228,7 @@ func TestPut(t *testing.T) {
 	})
 	tests.Add("new_edits=false, rev already exists", func(t *testing.T) interface{} {
 		tmpdir := testy.CopyTempDir(t, "testdata/db_put", 1)
-		tests.Cleanup(cleanTmpdir(tmpdir))
+		t.Cleanup(cleanTmpdir(tmpdir))
 
 		return tt{
 			path:   tmpdir,
@@ -244,7 +244,7 @@ func TestPut(t *testing.T) {
 	})
 	tests.Add("new_edits=false", func(t *testing.T) interface{} {
 		tmpdir := testy.CopyTempDir(t, "testdata/db_put", 1)
-		tests.Cleanup(cleanTmpdir(tmpdir))
+		t.Cleanup(cleanTmpdir(tmpdir))
 
 		return tt{
 			path:   tmpdir,

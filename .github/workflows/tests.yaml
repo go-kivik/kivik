@@ -16,6 +16,7 @@ jobs:
         go-version: ["1.20", "1.21", "1.22", "1.23", "1.24", "1.25"]
 
     env:
+      GOWORK: "off"
       USETC: "1"
 
     steps:
@@ -36,6 +37,9 @@ jobs:
   coverage:
     name: Coverage
     runs-on: ubuntu-latest
+
+    env:
+      GOWORK: "off"
 
     steps:
       - name: Set up Go
@@ -82,6 +86,7 @@ jobs:
       image: golang:${{ matrix.go }}
 
     env:
+      GOWORK: "off"
       USETC: "1"
       NPM_PROFILE: pouchdb/pouchdb9-package.json
       GOFLAGS: "-buildvcs=false"
@@ -116,6 +121,10 @@ jobs:
   test-x-sqlite:
     name: "x/sqlite: Go ${{ matrix.go-version }}"
     runs-on: ubuntu-latest
+
+    env:
+      GOWORK: "off"
+
     strategy:
       fail-fast: false
       matrix:
@@ -139,6 +148,10 @@ jobs:
   test-x-pg:
     name: "x/pg: Go ${{ matrix.go-version }}"
     runs-on: ubuntu-latest
+
+    env:
+      GOWORK: "off"
+
     strategy:
       fail-fast: false
       matrix:

@@ -54,8 +54,47 @@ func (d *db) Ping(ctx context.Context) error {
 
 /* -- stub methods -- */
 
-func (db) Stats(context.Context) (*driver.DBStats, error) {
-	return nil, errors.New("not implemented")
+// Stats returns database statistics.
+func (d *db) Stats(ctx context.Context) (*driver.DBStats, error) {
+	var docCount, deletedCount int64
+	err := d.db.QueryRowContext(ctx, d.query(`
+		WITH leaves AS (
+			SELECT
+				rev.id,
+				doc.deleted,
+				ROW_NUMBER() OVER (PARTITION BY rev.id ORDER BY rev.rev DESC, rev.rev_id DESC) AS rank
+			FROM {{ .Revs }} AS rev
+			LEFT JOIN {{ .Revs }} AS child
+				ON child.id = rev.id
+				AND rev.rev = child.parent_rev
+				AND rev.rev_id = child.parent_rev_id
+			JOIN {{ .Docs }} AS doc
+				ON rev.id = doc.id
+				AND rev.rev = doc.rev
+				AND rev.rev_id = doc.rev_id
+			WHERE child.id IS NULL
+		)
+		SELECT
+			COALESCE(SUM(CASE WHEN NOT deleted THEN 1 ELSE 0 END), 0),
+			COALESCE(SUM(CASE WHEN deleted THEN 1 ELSE 0 END), 0)
+		FROM leaves
+		WHERE rank = 1
+	`)).Scan(&docCount, &deletedCount)
+	if err != nil {
+		return nil, d.errDatabaseNotFound(err)
+	}
+
+	lastSeq, err := d.lastSeq(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &driver.DBStats{
+		Name:         d.name,
+		DocCount:     docCount,
+		DeletedCount: deletedCount,
+		UpdateSeq:    fmt.Sprintf("%d", lastSeq),
+	}, nil
 }
 
 func (d *db) Compact(ctx context.Context) error {

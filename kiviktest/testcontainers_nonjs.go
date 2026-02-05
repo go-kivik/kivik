@@ -15,29 +15,98 @@
 package kiviktest
 
 import (
-	"context"
+	"bufio"
+	"bytes"
+	"fmt"
+	"io"
+	"net/http"
 	"os"
+	"os/exec"
+	"strings"
 	"testing"
-
-	tc "github.com/go-kivik/kivik/v4/kiviktest/testcontainers"
 )
 
 func startCouchDB(t *testing.T, image string) string { //nolint:thelper // Not a helper
 	if os.Getenv("USETC") == "" {
 		t.Skip("USETC not set, skipping testcontainers")
 	}
-
-	dsn, err := tc.StartCouchDB(tContext(t), image)
+	addr := startTCDaemon(t)
+	t.Logf("testcontainers: Starting CouchDB with image: %s", image)
+	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://%s?image=%s", addr, image), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		t.Fatalf("Expected status OK, got %s. Response body: %s", resp.Status, string(body))
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dsn := string(bytes.TrimSpace(body))
+	if dsn == "" {
+		t.Fatal("Received empty DSN from CouchDB daemon")
+	}
+	t.Logf("testcontainers: CouchDB started with DSN: %s", dsn)
 	return dsn
 }
 
-func tContext(t *testing.T) context.Context {
+func startTCDaemon(t *testing.T) string {
 	t.Helper()
-	if c, ok := any(t).(interface{ Context() context.Context }); ok {
-		return c.Context()
+	t.Log("Starting testcontainers daemon...")
+
+	cmd := exec.Command("go", "run", "./cmd")
+	cmd.Dir = tcModuleDir(t)
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		t.Fatalf("Failed to get stdout pipe: %v", err)
 	}
-	return context.Background()
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		t.Fatalf("Failed to get stderr pipe: %v", err)
+	}
+
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("Failed to start testcontainers daemon: %v", err)
+	}
+
+	t.Cleanup(func() {
+		if cmd.Process != nil {
+			_ = cmd.Process.Kill()
+		}
+	})
+
+	go func() {
+		scanner := bufio.NewScanner(stderr)
+		for scanner.Scan() {
+			t.Logf("[STDERR] %s", scanner.Text())
+		}
+	}()
+
+	ready := make(chan string, 1)
+	go func() {
+		scanner := bufio.NewScanner(stdout)
+		for scanner.Scan() {
+			line := scanner.Text()
+			t.Logf("[STDOUT] %s", line)
+			if addr, ok := strings.CutPrefix(line, "Listening on "); ok {
+				ready <- addr
+				close(ready)
+				return
+			}
+		}
+	}()
+
+	addr, ok := <-ready
+	if !ok {
+		t.Fatal("testcontainers daemon exited without providing address")
+	}
+	return addr
 }

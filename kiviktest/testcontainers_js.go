@@ -57,6 +57,27 @@ func startCouchDB(t *testing.T, image string) string { //nolint:thelper // Not a
 	return dsn
 }
 
+// tcModuleDirJS returns the path to the kiviktest/testcontainers module directory
+// using Node.js filesystem functions.
+func tcModuleDirJS(t *testing.T) string {
+	t.Helper()
+	path := js.Global().Call("require", "path")
+	fs := js.Global().Call("require", "fs")
+	dir := js.Global().Get("process").Call("cwd").String()
+	for {
+		candidate := path.Call("join", dir, "kiviktest", "testcontainers").String()
+		gomod := path.Call("join", candidate, "go.mod").String()
+		if fs.Call("existsSync", gomod).Bool() {
+			return candidate
+		}
+		parent := path.Call("dirname", dir).String()
+		if parent == dir {
+			t.Fatal("Could not find kiviktest/testcontainers module")
+		}
+		dir = parent
+	}
+}
+
 // startTCDaemon starts the testcontainers daemon in a separate
 // process, and returns the listening address.
 func startTCDaemon(t *testing.T) string {
@@ -83,11 +104,11 @@ func spawnTCDaemon(t *testing.T) <-chan string {
 	stdio.SetIndex(2, "pipe")
 	options.Set("stdio", stdio)
 	options.Set("env", js.Global().Get("process").Get("env"))
-	options.Set("cwd", js.Global().Get("process").Call("cwd"))
+	options.Set("cwd", tcModuleDirJS(t))
 
 	args := js.Global().Get("Array").New(2)
 	args.SetIndex(0, "run")
-	args.SetIndex(1, "github.com/go-kivik/kivik/v4/kiviktest/testcontainers/cmd")
+	args.SetIndex(1, "./cmd")
 
 	child := spawn.Invoke("go", args, options)
 

@@ -37,20 +37,16 @@ func main() {
 	ctx, timeoutCancel := context.WithTimeout(ctx, 20*time.Minute)
 	defer timeoutCancel()
 
-	// choose a random port for the HTTP server
 	l, err := net.Listen("tcp", "127.0.0.1:")
 	if err != nil {
 		panic(err)
 	}
-	addr := l.Addr().String()
-	_ = l.Close()
+	fmt.Printf("Listening on %s\n", l.Addr())
 	s := http.Server{
-		Addr:    addr,
 		Handler: http.HandlerFunc(startCouchDB(ctx)),
 	}
 	go func() {
-		fmt.Printf("Listening on %s\n", addr)
-		if err := s.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := s.Serve(l); err != nil && err != http.ErrServerClosed {
 			panic(err)
 		}
 	}()

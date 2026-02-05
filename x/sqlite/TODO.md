@@ -33,16 +33,33 @@ These return a bare `"not implemented"` error:
 - [ ] **Update functions not evaluated** (`put_test.go:1116`). Stored but never
   invoked.
 
-- [ ] **Attachment compression** (`json.go:244`). Encoding and encoded_length
-  fields are stubbed out.
-
 - [ ] **Reduce caching** (`README.md`). Reduce functions run on-demand with no
   intermediate result caching.
+
+### Ignored or missing options
+
+Many functions accept `driver.Options` but ignore some or all of them.
+
+Note: `batch=ok` is intentionally not implemented for Put, Delete, and CreateDoc.
+It's a CouchDB durability optimization that doesn't apply to SQLite.
+
+- [ ] **Find** (`find.go:21`). The `driver.Options` parameter is completely
+  ignored (underscore placeholder). All options come from JSON query body only.
+
+- [ ] **GetAttachment / PutAttachment / DeleteAttachment**. Only `rev` is
+  handled. Missing: `accept`, `inline`.
+
+- [ ] **Changes** (`changes.go`). Missing: `heartbeat`, `timeout`, `style`,
+  `seq_interval`.
+
+- [ ] **OpenRevs** (`openrevs.go`). Missing: `attachments`, `conflicts`.
+
+- [ ] **AllDBs** (`alldbs.go`). Could support pagination options.
 
 ## Code Quality
 
 - [ ] **Ping placement** (`db.go:50`). TODO in code: "I think Ping belongs on
-  \*client, not \*db".
+  \*client, not \*db". Requires v5 release (breaking API change).
 
 - [ ] **Filter in Go instead of SQL** (`query.go:568`). Local and design
   document filtering during view updates is done in Go after fetching rows,

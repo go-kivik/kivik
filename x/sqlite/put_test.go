@@ -1111,7 +1111,6 @@ func TestDBPut(t *testing.T) {
 
 	/*
 		TODO:
-		- Encoding/compression?
 		- with validate_doc_update function
 		- with updates function
 	*/

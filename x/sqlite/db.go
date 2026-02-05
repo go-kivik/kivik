@@ -47,7 +47,7 @@ func (d *db) Close() error {
 	return d.db.Close()
 }
 
-// TODO: I think Ping belongs on *client, not *db
+// TODO: I think Ping belongs on *client, not *db (requires v5)
 func (d *db) Ping(ctx context.Context) error {
 	return d.db.PingContext(ctx)
 }

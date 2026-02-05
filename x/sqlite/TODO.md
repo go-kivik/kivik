@@ -12,7 +12,6 @@ These return a bare `"not implemented"` error:
 - [ ] DeleteIndex
 - [ ] Explain
 - [ ] GetIndexes
-- [ ] Stats
 
 ### Unimplemented on `client` (`sqlite.go`)
 
@@ -33,9 +32,6 @@ These return a bare `"not implemented"` error:
 
 - [ ] **Update functions not evaluated** (`put_test.go:1116`). Stored but never
   invoked.
-
-- [ ] **RevsDiff: possible_ancestors** (`revsdiff_test.go:59`). The response
-  never populates `possible_ancestors`.
 
 - [ ] **Attachment compression** (`json.go:244`). Encoding and encoded_length
   fields are stubbed out.

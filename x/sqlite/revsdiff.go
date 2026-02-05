@@ -136,8 +136,17 @@ func (r *revsDiffResponse) Next(row *driver.Row) error {
 			missing = append(missing, rev)
 		}
 	}
+	var possibleAncestors []string
+	if len(missing) > 0 {
+		possibleAncestors = make([]string, 0, len(revs))
+		for rev := range revs {
+			possibleAncestors = append(possibleAncestors, rev)
+		}
+		sort.Strings(possibleAncestors)
+	}
 	row.Value = jsonToReader(driver.RevDiff{
-		Missing: missing,
+		Missing:           missing,
+		PossibleAncestors: possibleAncestors,
 	})
 	return nil
 }

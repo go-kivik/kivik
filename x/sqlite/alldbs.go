@@ -19,7 +19,17 @@ import (
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
-func (c *client) AllDBs(ctx context.Context, _ driver.Options) ([]string, error) {
+func (c *client) AllDBs(ctx context.Context, options driver.Options) ([]string, error) {
+	opts := newOpts(options)
+	descending, err := opts.descending()
+	if err != nil {
+		return nil, err
+	}
+	order := "ASC"
+	if descending {
+		order = "DESC"
+	}
+
 	rows, err := c.db.QueryContext(ctx, `
 		SELECT
 			name
@@ -33,7 +43,7 @@ func (c *client) AllDBs(ctx context.Context, _ driver.Options) ([]string, error)
 				WHERE type = 'table'
 					AND name = s.name || '$revs'
 			)
-		`)
+		ORDER BY name `+order)
 	if err != nil {
 		return nil, err
 	}

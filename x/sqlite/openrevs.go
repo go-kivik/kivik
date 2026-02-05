@@ -27,13 +27,22 @@ import (
 
 func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, options driver.Options) (driver.Rows, error) {
 	opts := newOpts(options)
+	attachments, err := opts.attachments()
+	if err != nil {
+		return nil, err
+	}
+	conflicts, err := opts.conflicts()
+	if err != nil {
+		return nil, err
+	}
 	values := make([]string, 0, len(revs))
-	args := make([]any, 5, len(revs)*2+5)
+	args := make([]any, 6, len(revs)*2+6)
 	args[0] = docID
 	args[1] = len(revs) == 0 // open_revs=[]
 	args[2] = false
 	args[3] = opts.latest()
 	args[4] = opts.revs()
+	args[5] = attachments
 	if len(revs) == 1 && revs[0] == "all" {
 		args[2] = true
 		revs = []string{}
@@ -153,7 +162,7 @@ func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, options 
 				att.length,
 				att.digest,
 				att.rev_pos,
-				att.data,
+				IIF($6, att.data, NULL) AS data,
 				SUM(CASE WHEN bridge.pk IS NOT NULL THEN 1 ELSE 0 END) OVER (PARTITION BY open_revs.rev, open_revs.rev_id) AS attachment_count,
 				ROW_NUMBER() OVER (PARTITION BY open_revs.rev, open_revs.rev_id) AS row_number
 			FROM open_revs
@@ -180,20 +189,24 @@ func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, options 
 	}
 
 	return &openRevsRows{
-		id:   docID,
-		ctx:  ctx,
-		pre:  true,
-		rows: rows,
+		d:         d,
+		id:        docID,
+		ctx:       ctx,
+		pre:       true,
+		rows:      rows,
+		conflicts: conflicts,
 	}, nil
 }
 
 type openRevsRows struct {
+	d   *db
 	id  string
 	ctx context.Context
 	// pre is during instantiation to indicate that the first call to Next has
 	// already been done, so Next() should skip the next call to Next()
-	pre  bool
-	rows *sql.Rows
+	pre       bool
+	rows      *sql.Rows
+	conflicts bool
 }
 
 var _ driver.Rows = (*openRevsRows)(nil)
@@ -273,11 +286,23 @@ func (r *openRevsRows) Next(row *driver.Row) error {
 				Length:      *length,
 				RevPos:      *revPos,
 			}
-			att.Data, _ = json.Marshal(*data)
+			if data == nil {
+				att.Stub = true
+			} else {
+				att.Data, _ = json.Marshal(*data)
+			}
 			doc.Attachments[*filename] = att
 		}
 
 		if attachmentCount == len(doc.Attachments) {
+			if r.conflicts {
+				rev, _ := parseRev(doc.Rev)
+				conflictRevs, err := r.d.conflicts(r.ctx, r.d.db, r.id, rev, false)
+				if err != nil {
+					return err
+				}
+				doc.Conflicts = conflictRevs
+			}
 			row.Doc = doc.toReader()
 			return nil
 		}

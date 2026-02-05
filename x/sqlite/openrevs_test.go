@@ -276,7 +276,7 @@ func TestDBOpenRevs(t *testing.T) {
 		}
 	})
 
-	tests.Add("include attachment data", func(t *testing.T) any {
+	tests.Add("attachments=true includes attachment data", func(t *testing.T) any {
 		d := newDB(t)
 		docID := "foo"
 		rev := d.tPut(docID, map[string]any{
@@ -287,11 +287,47 @@ func TestDBOpenRevs(t *testing.T) {
 		})
 
 		return test{
-			db:    d,
-			docID: docID,
-			revs:  []string{rev},
+			db:      d,
+			docID:   docID,
+			revs:    []string{rev},
+			options: kivik.Param("attachments", true),
 			want: []rowResult{
 				{ID: docID, Rev: rev, Doc: `{"_id":"` + docID + `","_rev":"` + rev + `","foo":"bar","_attachments":{"att.txt":{"content_type":"text/plain","digest":"md5-5NfxtO0uQtFYmPSyewGdpA==","length":12,"revpos":1,"data":"aGVsbG8sIHdvcmxk"},"att2.txt":{"content_type":"text/plain","digest":"md5-18/CjiFEUaAYOzOUOD2UPQ==","length":14,"revpos":1,"data":"Z29vZGJ5ZSwgd29ybGQ="}}}`},
+			},
+		}
+	})
+	tests.Add("attachments=false returns stubs only", func(t *testing.T) interface{} {
+		d := newDB(t)
+		docID := "foo"
+		rev := d.tPut(docID, map[string]interface{}{
+			"foo": "bar",
+			"_attachments": newAttachments().
+				add("att.txt", "hello, world"),
+		})
+
+		return test{
+			db:      d,
+			docID:   docID,
+			revs:    []string{rev},
+			options: kivik.Param("attachments", false),
+			want: []rowResult{
+				{ID: docID, Rev: rev, Doc: `{"_id":"` + docID + `","_rev":"` + rev + `","foo":"bar","_attachments":{"att.txt":{"content_type":"text/plain","digest":"md5-5NfxtO0uQtFYmPSyewGdpA==","length":12,"revpos":1,"stub":true}}}`},
+			},
+		}
+	})
+	tests.Add("conflicts=true includes _conflicts", func(t *testing.T) interface{} {
+		d := newDB(t)
+		docID := "foo"
+		rev := d.tPut(docID, map[string]string{"_rev": "1-xyz", "foo": "bar"}, kivik.Param("new_edits", false))
+		rev2 := d.tPut(docID, map[string]string{"_rev": "1-abc", "foo": "baz"}, kivik.Param("new_edits", false))
+
+		return test{
+			db:      d,
+			docID:   docID,
+			revs:    []string{rev},
+			options: kivik.Param("conflicts", true),
+			want: []rowResult{
+				{ID: docID, Rev: rev, Doc: `{"_id":"` + docID + `","_rev":"` + rev + `","foo":"bar","_conflicts":["` + rev2 + `"]}`},
 			},
 		}
 	})

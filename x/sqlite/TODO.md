@@ -46,13 +46,8 @@ It's a CouchDB durability optimization that doesn't apply to SQLite.
 - [ ] **Find** (`find.go:21`). The `driver.Options` parameter is completely
   ignored (underscore placeholder). All options come from JSON query body only.
 
-- [ ] **GetAttachment / PutAttachment / DeleteAttachment**. Only `rev` is
-  handled. Missing: `accept`, `inline`.
-
 - [ ] **Changes** (`changes.go`). Missing: `heartbeat`, `timeout`, `style`,
   `seq_interval`.
-
-- [ ] **OpenRevs** (`openrevs.go`). Missing: `attachments`, `conflicts`.
 
 - [ ] **AllDBs** (`alldbs.go`). Could support pagination options.
 

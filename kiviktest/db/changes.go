@@ -30,25 +30,21 @@ func init() {
 func changes(ctx *kt.Context) {
 	ctx.Run("Normal", func(ctx *kt.Context) {
 		ctx.RunRW(func(ctx *kt.Context) {
-			ctx.Run("group", func(ctx *kt.Context) {
-				ctx.RunAdmin(func(ctx *kt.Context) {
-					testNormalChanges(ctx, ctx.Admin)
-				})
-				ctx.RunNoAuth(func(ctx *kt.Context) {
-					testNormalChanges(ctx, ctx.NoAuth)
-				})
+			ctx.RunAdmin(func(ctx *kt.Context) {
+				testNormalChanges(ctx, ctx.Admin)
+			})
+			ctx.RunNoAuth(func(ctx *kt.Context) {
+				testNormalChanges(ctx, ctx.NoAuth)
 			})
 		})
 	})
 	ctx.Run("Continuous", func(ctx *kt.Context) {
 		ctx.RunRW(func(ctx *kt.Context) {
-			ctx.Run("group", func(ctx *kt.Context) {
-				ctx.RunAdmin(func(ctx *kt.Context) {
-					testContinuousChanges(ctx, ctx.Admin)
-				})
-				ctx.RunNoAuth(func(ctx *kt.Context) {
-					testContinuousChanges(ctx, ctx.NoAuth)
-				})
+			ctx.RunAdmin(func(ctx *kt.Context) {
+				testContinuousChanges(ctx, ctx.Admin)
+			})
+			ctx.RunNoAuth(func(ctx *kt.Context) {
+				testContinuousChanges(ctx, ctx.NoAuth)
 			})
 		})
 	})

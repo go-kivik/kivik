@@ -35,9 +35,9 @@ func RegisterMemoryDBSuite() {
 
 		"AllDocs.skip": true, // FIXME: Unimplemented
 
-		"DBExists/Admin.databases":       []string{"chicken"},
-		"DBExists/Admin/chicken.exists":  false,
-		"DBExists/RW/group/Admin.exists": true,
+		"DBExists/Admin.databases":      []string{"chicken"},
+		"DBExists/Admin/chicken.exists": false,
+		"DBExists/RW/Admin.exists":      true,
 
 		"DestroyDB/RW/Admin/NonExistantDB.status": http.StatusNotFound,
 
@@ -52,16 +52,16 @@ func RegisterMemoryDBSuite() {
 		"GetReplications.skip": true,
 		"Replicate.skip":       true,
 
-		"Get/RW/group/Admin/bogus.status": http.StatusNotFound,
+		"Get/RW/Admin/bogus.status": http.StatusNotFound,
 
-		"GetRev/RW/group/Admin/bogus.status": http.StatusNotFound,
+		"GetRev/RW/Admin/bogus.status": http.StatusNotFound,
 
-		"Put/RW/Admin/group/LeadingUnderscoreInID.status": http.StatusBadRequest,
-		"Put/RW/Admin/group/Conflict.status":              http.StatusConflict,
+		"Put/RW/Admin/LeadingUnderscoreInID.status": http.StatusBadRequest,
+		"Put/RW/Admin/Conflict.status":              http.StatusConflict,
 
-		"Delete/RW/Admin/group/MissingDoc.status":       http.StatusNotFound,
-		"Delete/RW/Admin/group/InvalidRevFormat.status": http.StatusBadRequest,
-		"Delete/RW/Admin/group/WrongRev.status":         http.StatusConflict,
+		"Delete/RW/Admin/MissingDoc.status":       http.StatusNotFound,
+		"Delete/RW/Admin/InvalidRevFormat.status": http.StatusBadRequest,
+		"Delete/RW/Admin/WrongRev.status":         http.StatusConflict,
 
 		"Security.databases":            []string{"_users", "chicken", "_duck"},
 		"Security/Admin/chicken.status": http.StatusNotFound,
@@ -69,16 +69,16 @@ func RegisterMemoryDBSuite() {
 
 		"SetSecurity/RW/Admin/NotExists.status": http.StatusNotFound,
 
-		"BulkDocs/RW/NoAuth/group/Mix/Conflict.status": http.StatusConflict,
-		"BulkDocs/RW/Admin/group/Mix/Conflict.status":  http.StatusConflict,
+		"BulkDocs/RW/NoAuth/Mix/Conflict.status": http.StatusConflict,
+		"BulkDocs/RW/Admin/Mix/Conflict.status":  http.StatusConflict,
 
-		"Find.databases":                       []string{"chicken", "_duck"},
-		"Find/Admin/chicken.status":            http.StatusNotFound,
-		"Find/Admin/_duck.status":              http.StatusNotFound,
-		"Find/NoAuth/chicken.status":           http.StatusNotFound,
-		"Find/NoAuth/_duck.status":             http.StatusUnauthorized,
-		"Find/RW/group/Admin/Warning.warning":  "no matching index found, create an index to optimize query time",
-		"Find/RW/group/NoAuth/Warning.warning": "no matching index found, create an index to optimize query time",
+		"Find.databases":                 []string{"chicken", "_duck"},
+		"Find/Admin/chicken.status":      http.StatusNotFound,
+		"Find/Admin/_duck.status":        http.StatusNotFound,
+		"Find/NoAuth/chicken.status":     http.StatusNotFound,
+		"Find/NoAuth/_duck.status":       http.StatusUnauthorized,
+		"Find/RW/Admin/Warning.warning":  "no matching index found, create an index to optimize query time",
+		"Find/RW/NoAuth/Warning.warning": "no matching index found, create an index to optimize query time",
 
 		"Explain.skip":           true,                      // FIXME: Unimplemented
 		"Stats.skip":             true,                      // FIXME: Unimplemented

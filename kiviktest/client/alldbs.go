@@ -44,13 +44,11 @@ func allDBs(ctx *kt.Context) {
 func testAllDBsRW(ctx *kt.Context) {
 	dbName := ctx.TestDB()
 	expected := append(ctx.StringSlice("expected"), dbName)
-	ctx.Run("group", func(ctx *kt.Context) {
-		ctx.RunAdmin(func(ctx *kt.Context) {
-			testAllDBs(ctx, ctx.Admin, expected)
-		})
-		ctx.RunNoAuth(func(ctx *kt.Context) {
-			testAllDBs(ctx, ctx.NoAuth, expected)
-		})
+	ctx.RunAdmin(func(ctx *kt.Context) {
+		testAllDBs(ctx, ctx.Admin, expected)
+	})
+	ctx.RunNoAuth(func(ctx *kt.Context) {
+		testAllDBs(ctx, ctx.NoAuth, expected)
 	})
 }
 

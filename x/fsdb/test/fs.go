@@ -31,9 +31,9 @@ func registerFSSuite() {
 		// "AllDocs/Admin.databases":  []string{"foo"},
 		// "AllDocs/Admin/foo.status": http.StatusNotFound,
 
-		"DBExists/Admin.databases":       []string{"chicken"},
-		"DBExists/Admin/chicken.exists":  false,
-		"DBExists/RW/group/Admin.exists": true,
+		"DBExists/Admin.databases":      []string{"chicken"},
+		"DBExists/Admin/chicken.exists": false,
+		"DBExists/RW/Admin.exists":      true,
 
 		"DestroyDB/RW/Admin/NonExistantDB.status": http.StatusNotFound,
 
@@ -45,8 +45,8 @@ func registerFSSuite() {
 		"GetReplications.skip": true,
 		"Replicate.skip":       true,
 
-		"Get/RW/group/Admin/bogus.status":  http.StatusNotFound,
-		"Get/RW/group/NoAuth/bogus.status": http.StatusNotFound,
+		"Get/RW/Admin/bogus.status":  http.StatusNotFound,
+		"Get/RW/NoAuth/bogus.status": http.StatusNotFound,
 
 		"GetRev.skip":            true,                      // FIXME: Unimplemented
 		"Flush.skip":             true,                      // FIXME: Unimplemented
@@ -70,11 +70,11 @@ func registerFSSuite() {
 		"GetIndexes.skip":        true,                      // FIXME: Unimplemented
 		"DeleteIndex.skip":       true,                      // FIXME: Unimplemented
 
-		"Put/RW/Admin/group/LeadingUnderscoreInID.status":  http.StatusBadRequest,
-		"Put/RW/Admin/group/Conflict.status":               http.StatusConflict,
-		"Put/RW/NoAuth/group/LeadingUnderscoreInID.status": http.StatusBadRequest,
-		"Put/RW/NoAuth/group/DesignDoc.status":             http.StatusUnauthorized,
-		"Put/RW/NoAuth/group/Conflict.status":              http.StatusConflict,
+		"Put/RW/Admin/LeadingUnderscoreInID.status":  http.StatusBadRequest,
+		"Put/RW/Admin/Conflict.status":               http.StatusConflict,
+		"Put/RW/NoAuth/LeadingUnderscoreInID.status": http.StatusBadRequest,
+		"Put/RW/NoAuth/DesignDoc.status":             http.StatusUnauthorized,
+		"Put/RW/NoAuth/Conflict.status":              http.StatusConflict,
 
 		"SetSecurity.skip": true, // FIXME: Unimplemented
 		"ViewCleanup.skip": true, // FIXME: Unimplemented

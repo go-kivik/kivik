@@ -50,18 +50,16 @@ func testDelIndex(ctx *kt.Context, client *kivik.Client) {
 	if err := db.Err(); err != nil {
 		ctx.Fatalf("Failed to open db: %s", err)
 	}
-	ctx.Run("group", func(ctx *kt.Context) {
-		ctx.Run("ValidIndex", func(ctx *kt.Context) {
-			ctx.Parallel()
-			ctx.CheckError(db.DeleteIndex(context.Background(), "foo", "bar"))
-		})
-		ctx.Run("NotFoundDdoc", func(ctx *kt.Context) {
-			ctx.Parallel()
-			ctx.CheckError(db.DeleteIndex(context.Background(), "notFound", "bar"))
-		})
-		ctx.Run("NotFoundName", func(ctx *kt.Context) {
-			ctx.Parallel()
-			ctx.CheckError(db.DeleteIndex(context.Background(), "foo", "notFound"))
-		})
+	ctx.Run("ValidIndex", func(ctx *kt.Context) {
+		ctx.Parallel()
+		ctx.CheckError(db.DeleteIndex(context.Background(), "foo", "bar"))
+	})
+	ctx.Run("NotFoundDdoc", func(ctx *kt.Context) {
+		ctx.Parallel()
+		ctx.CheckError(db.DeleteIndex(context.Background(), "notFound", "bar"))
+	})
+	ctx.Run("NotFoundName", func(ctx *kt.Context) {
+		ctx.Parallel()
+		ctx.CheckError(db.DeleteIndex(context.Background(), "foo", "notFound"))
 	})
 }

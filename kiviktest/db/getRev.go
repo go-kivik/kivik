@@ -58,29 +58,27 @@ func getRev(ctx *kt.Context) {
 		}
 		local.Rev = rev
 
-		ctx.Run("group", func(ctx *kt.Context) {
-			ctx.RunAdmin(func(ctx *kt.Context) {
-				ctx.Parallel()
-				db := ctx.Admin.DB(dbName, ctx.Options("db"))
-				if err := db.Err(); !ctx.IsExpectedSuccess(err) {
-					return
-				}
-				testGetRev(ctx, db, doc)
-				testGetRev(ctx, db, ddoc)
-				testGetRev(ctx, db, local)
-				testGetRev(ctx, db, &testDoc{ID: "bogus"})
-			})
-			ctx.RunNoAuth(func(ctx *kt.Context) {
-				ctx.Parallel()
-				db := ctx.NoAuth.DB(dbName, ctx.Options("db"))
-				if err := db.Err(); !ctx.IsExpectedSuccess(err) {
-					return
-				}
-				testGetRev(ctx, db, doc)
-				testGetRev(ctx, db, ddoc)
-				testGetRev(ctx, db, local)
-				testGetRev(ctx, db, &testDoc{ID: "bogus"})
-			})
+		ctx.RunAdmin(func(ctx *kt.Context) {
+			ctx.Parallel()
+			db := ctx.Admin.DB(dbName, ctx.Options("db"))
+			if err := db.Err(); !ctx.IsExpectedSuccess(err) {
+				return
+			}
+			testGetRev(ctx, db, doc)
+			testGetRev(ctx, db, ddoc)
+			testGetRev(ctx, db, local)
+			testGetRev(ctx, db, &testDoc{ID: "bogus"})
+		})
+		ctx.RunNoAuth(func(ctx *kt.Context) {
+			ctx.Parallel()
+			db := ctx.NoAuth.DB(dbName, ctx.Options("db"))
+			if err := db.Err(); !ctx.IsExpectedSuccess(err) {
+				return
+			}
+			testGetRev(ctx, db, doc)
+			testGetRev(ctx, db, ddoc)
+			testGetRev(ctx, db, local)
+			testGetRev(ctx, db, &testDoc{ID: "bogus"})
 		})
 	})
 }

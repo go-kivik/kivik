@@ -43,13 +43,11 @@ func testExplainRW(ctx *kt.Context) {
 		return
 	}
 	dbName := ctx.TestDB()
-	ctx.Run("group", func(ctx *kt.Context) {
-		ctx.RunAdmin(func(ctx *kt.Context) {
-			doExplainTest(ctx, ctx.Admin, dbName)
-		})
-		ctx.RunNoAuth(func(ctx *kt.Context) {
-			doExplainTest(ctx, ctx.NoAuth, dbName)
-		})
+	ctx.RunAdmin(func(ctx *kt.Context) {
+		doExplainTest(ctx, ctx.Admin, dbName)
+	})
+	ctx.RunNoAuth(func(ctx *kt.Context) {
+		doExplainTest(ctx, ctx.NoAuth, dbName)
 	})
 }
 

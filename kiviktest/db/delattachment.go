@@ -26,21 +26,19 @@ func init() {
 func delAttachment(ctx *kt.Context) {
 	ctx.RunRW(func(ctx *kt.Context) {
 		dbname := ctx.TestDB()
-		ctx.Run("group", func(ctx *kt.Context) {
-			ctx.RunAdmin(func(ctx *kt.Context) {
-				ctx.Parallel()
-				testDeleteAttachments(ctx, ctx.Admin, dbname, "foo.txt")
-				testDeleteAttachments(ctx, ctx.Admin, dbname, "NotFound")
-				testDeleteAttachmentsDDoc(ctx, ctx.Admin, dbname, "foo.txt")
-				testDeleteAttachmentNoDoc(ctx, ctx.Admin, dbname)
-			})
-			ctx.RunNoAuth(func(ctx *kt.Context) {
-				ctx.Parallel()
-				testDeleteAttachments(ctx, ctx.NoAuth, dbname, "foo.txt")
-				testDeleteAttachments(ctx, ctx.NoAuth, dbname, "NotFound")
-				testDeleteAttachmentsDDoc(ctx, ctx.NoAuth, dbname, "foo.txt")
-				testDeleteAttachmentNoDoc(ctx, ctx.NoAuth, dbname)
-			})
+		ctx.RunAdmin(func(ctx *kt.Context) {
+			ctx.Parallel()
+			testDeleteAttachments(ctx, ctx.Admin, dbname, "foo.txt")
+			testDeleteAttachments(ctx, ctx.Admin, dbname, "NotFound")
+			testDeleteAttachmentsDDoc(ctx, ctx.Admin, dbname, "foo.txt")
+			testDeleteAttachmentNoDoc(ctx, ctx.Admin, dbname)
+		})
+		ctx.RunNoAuth(func(ctx *kt.Context) {
+			ctx.Parallel()
+			testDeleteAttachments(ctx, ctx.NoAuth, dbname, "foo.txt")
+			testDeleteAttachments(ctx, ctx.NoAuth, dbname, "NotFound")
+			testDeleteAttachmentsDDoc(ctx, ctx.NoAuth, dbname, "foo.txt")
+			testDeleteAttachmentNoDoc(ctx, ctx.NoAuth, dbname)
 		})
 	})
 }

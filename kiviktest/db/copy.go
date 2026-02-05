@@ -61,17 +61,15 @@ func _copy(ctx *kt.Context) {
 		}
 		local["_rev"] = rev
 
-		ctx.Run("group", func(ctx *kt.Context) {
-			ctx.RunAdmin(func(ctx *kt.Context) {
-				copyTest(ctx, ctx.Admin, dbname, doc)
-				copyTest(ctx, ctx.Admin, dbname, ddoc)
-				copyTest(ctx, ctx.Admin, dbname, local)
-			})
-			ctx.RunNoAuth(func(ctx *kt.Context) {
-				copyTest(ctx, ctx.NoAuth, dbname, doc)
-				copyTest(ctx, ctx.NoAuth, dbname, ddoc)
-				copyTest(ctx, ctx.NoAuth, dbname, local)
-			})
+		ctx.RunAdmin(func(ctx *kt.Context) {
+			copyTest(ctx, ctx.Admin, dbname, doc)
+			copyTest(ctx, ctx.Admin, dbname, ddoc)
+			copyTest(ctx, ctx.Admin, dbname, local)
+		})
+		ctx.RunNoAuth(func(ctx *kt.Context) {
+			copyTest(ctx, ctx.NoAuth, dbname, doc)
+			copyTest(ctx, ctx.NoAuth, dbname, ddoc)
+			copyTest(ctx, ctx.NoAuth, dbname, local)
 		})
 	})
 }

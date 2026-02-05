@@ -14,20 +14,9 @@ implemented by SQL and NoSQL databases such as CouchDB.
 
 # Versions
 
-You are browsing the current **stable** branch of Kivik, v4. If you are upgrading
-from the previous stable version, v3, [read the list of breaking changes](#changes-from-3x-to-4x).
+You are browsing the current **stable** branch of Kivik, v4. The current version requires Go 1.20 or newer.
 
 Example configuration for common dependency managers follow.
-
-## Go Modules
-
-Kivik 3.x and later supports Go modules, which is the recommended way to use it
-for Go version 1.11 or newer. Kivik 4.x only supports Go 1.17 and later. If your
-project is already using Go modules, simply fetch the desired version:
-
-```shell
-go get github.com/go-kivik/kivik/v4
-```
 
 # Installation
 

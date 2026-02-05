@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4"
@@ -243,4 +244,83 @@ func Test_db_not_found(t *testing.T) {
 			t.Errorf("Unexpected status: %d", status)
 		}
 	})
+}
+
+func TestDBStats(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		setup func(*testDB)
+		want  *driver.DBStats
+	}
+
+	tests := testy.NewTable()
+
+	tests.Add("empty database", test{
+		want: &driver.DBStats{
+			Name:      "test",
+			UpdateSeq: "0",
+		},
+	})
+	tests.Add("with docs and deletions", test{
+		setup: func(d *testDB) {
+			d.tPut("doc1", map[string]string{"foo": "bar"})
+			d.tPut("doc2", map[string]string{"foo": "baz"})
+			rev3 := d.tPut("doc3", map[string]string{"foo": "qux"})
+			d.tDelete("doc3", kivik.Rev(rev3))
+		},
+		want: &driver.DBStats{
+			Name:         "test",
+			DocCount:     2,
+			DeletedCount: 1,
+			UpdateSeq:    "4",
+		},
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		t.Parallel()
+		d := newDB(t)
+		if tt.setup != nil {
+			tt.setup(d)
+		}
+
+		got, err := d.Stats(context.Background())
+		if err != nil {
+			t.Fatalf("Stats failed: %s", err)
+		}
+		if diff := cmp.Diff(tt.want, got); diff != "" {
+			t.Errorf("Unexpected result:\n%s", diff)
+		}
+	})
+}
+
+func TestDBCompact(t *testing.T) {
+	t.Parallel()
+	d := newDB(t)
+	_ = d.tPut("doc1", map[string]string{"foo": "bar"})
+
+	err := d.Compact(context.Background())
+	if err != nil {
+		t.Fatalf("Compact failed: %s", err)
+	}
+}
+
+func TestDBCompactView(t *testing.T) {
+	t.Parallel()
+	d := newDB(t)
+
+	err := d.CompactView(context.Background(), "some_ddoc")
+	if err != nil {
+		t.Fatalf("CompactView failed: %s", err)
+	}
+}
+
+func TestDBViewCleanup(t *testing.T) {
+	t.Parallel()
+	d := newDB(t)
+
+	err := d.ViewCleanup(context.Background())
+	if err != nil {
+		t.Fatalf("ViewCleanup failed: %s", err)
+	}
 }

@@ -118,24 +118,20 @@ func (r *revsDiffResponse) Next(row *driver.Row) error {
 			}
 			return io.EOF
 		}
-		var (
-			rowID *string
-			rev   string
-		)
-		if err := r.rows.Scan(&id, &rev, &rowID, &revCount); err != nil {
+		var rev string
+		if err := r.rows.Scan(&id, &rev, &revCount); err != nil {
 			return err
 		}
-		if rowID != nil {
-			id = *rowID
-		}
-		revs[id] = struct{}{}
+		revs[rev] = struct{}{}
 		if len(revs) == revCount {
 			break
 		}
 	}
 	row.ID = id
-	missing := make([]string, 0, len(r.req[id]))
-	for _, rev := range r.req[id] {
+	reqRevs := r.req[id]
+	delete(r.req, id)
+	missing := make([]string, 0, len(reqRevs))
+	for _, rev := range reqRevs {
 		if _, ok := revs[rev]; !ok {
 			missing = append(missing, rev)
 		}

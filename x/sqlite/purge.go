@@ -22,7 +22,7 @@ import (
 )
 
 func (d *db) Purge(ctx context.Context, request map[string][]string) (*driver.PurgeResult, error) {
-	tx, err := d.db.Begin()
+	tx, err := d.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}

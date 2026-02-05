@@ -28,7 +28,7 @@ jobs:
           git diff --exit-code
       - name: Validate main go.mod
         run: |
-          go mod tidy -compat=1.19 && git diff --exit-code
+          go mod tidy -compat=1.20 && git diff --exit-code
       - name: Lint x/sqlite module
         uses: golangci/golangci-lint-action@v8
         with:

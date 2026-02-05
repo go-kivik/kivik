@@ -34,7 +34,7 @@ func Test_replicate_RunE(t *testing.T) {
 	})
 	tests.Add("fs to fs", func(t *testing.T) interface{} {
 		var tmpdir string
-		tests.Cleanup(testy.TempDir(t, &tmpdir))
+		t.Cleanup(testy.TempDir(t, &tmpdir))
 
 		return cmdTest{
 			args: []string{"replicate", "-O", "source=./testdata/source", "-O", "target=" + tmpdir},

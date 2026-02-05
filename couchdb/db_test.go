@@ -2664,7 +2664,7 @@ func Test_readerSize(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		tests.Cleanup(func() {
+		t.Cleanup(func() {
 			_ = os.Remove(f.Name())
 		})
 		if _, err := f.Write([]byte("foo bar")); err != nil {

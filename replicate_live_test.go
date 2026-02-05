@@ -56,13 +56,13 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 		if err := client.CreateDB(ctx, sourceName); err != nil {
 			t.Fatal(err)
 		}
-		tests.Cleanup(func() {
+		t.Cleanup(func() {
 			_ = client.DestroyDB(ctx, sourceName)
 		})
 		if err := client.CreateDB(ctx, targetName); err != nil {
 			t.Fatal(err)
 		}
-		tests.Cleanup(func() {
+		t.Cleanup(func() {
 			_ = client.DestroyDB(ctx, targetName)
 		})
 		source := client.DB(sourceName)
@@ -99,7 +99,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 		if err := client.CreateDB(ctx, targetName); err != nil {
 			t.Fatal(err)
 		}
-		tests.Cleanup(func() {
+		t.Cleanup(func() {
 			_ = client.DestroyDB(ctx, targetName)
 		})
 		target := client.DB(targetName)
@@ -131,7 +131,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 		if err := client.CreateDB(ctx, targetName); err != nil {
 			t.Fatal(err)
 		}
-		tests.Cleanup(func() {
+		t.Cleanup(func() {
 			_ = client.DestroyDB(ctx, targetName)
 		})
 		target := client.DB(targetName)
@@ -163,13 +163,13 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 		if err := client.CreateDB(ctx, sourceName); err != nil {
 			t.Fatal(err)
 		}
-		tests.Cleanup(func() {
+		t.Cleanup(func() {
 			_ = client.DestroyDB(ctx, sourceName)
 		})
 		if err := client.CreateDB(ctx, targetName); err != nil {
 			t.Fatal(err)
 		}
-		tests.Cleanup(func() {
+		t.Cleanup(func() {
 			_ = client.DestroyDB(ctx, targetName)
 		})
 		source := client.DB(sourceName)
@@ -214,7 +214,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 		if err := client.CreateDB(ctx, targetName); err != nil {
 			t.Fatal(err)
 		}
-		tests.Cleanup(func() {
+		t.Cleanup(func() {
 			_ = client.DestroyDB(ctx, targetName)
 		})
 		target := client.DB(targetName)
@@ -248,7 +248,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 		if err := client.CreateDB(ctx, targetName); err != nil {
 			t.Fatal(err)
 		}
-		tests.Cleanup(func() {
+		t.Cleanup(func() {
 			_ = client.DestroyDB(ctx, targetName)
 		})
 		target := client.DB(targetName)
@@ -269,8 +269,8 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 		if err != nil {
 			t.Fatal(err)
 		}
-		tests.Cleanup(func() error {
-			return os.RemoveAll(tempDir)
+		t.Cleanup(func() {
+			_ = os.RemoveAll(tempDir)
 		})
 		tClient, err := kivik.New("fs", tempDir)
 		if err != nil {
@@ -287,7 +287,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 		if err := client.CreateDB(ctx, dbName); err != nil {
 			t.Fatal(err)
 		}
-		tests.Cleanup(func() {
+		t.Cleanup(func() {
 			_ = client.DestroyDB(ctx, dbName)
 		})
 		if err := tClient.CreateDB(ctx, dbName); err != nil {
@@ -335,7 +335,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 		if err := client.CreateDB(ctx, targetName); err != nil {
 			t.Fatal(err)
 		}
-		tests.Cleanup(func() {
+		t.Cleanup(func() {
 			_ = client.DestroyDB(ctx, targetName)
 		})
 		target := client.DB(targetName)

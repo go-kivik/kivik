@@ -87,7 +87,7 @@ func TestAuthenticate(t *testing.T) {
 		status  int
 	}
 	tests := testy.NewTable()
-	tests.Cleanup(s.Close)
+	t.Cleanup(s.Close)
 	tests.Add("unauthorized", authTest{
 		addr:   s.URL,
 		err:    "Unauthorized",

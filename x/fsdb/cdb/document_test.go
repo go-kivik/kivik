@@ -42,7 +42,7 @@ func TestDocumentPersist(t *testing.T) {
 	tests := testy.NewTable()
 	tests.Add("nil doc", func(t *testing.T) interface{} {
 		var tmpdir string
-		tests.Cleanup(testy.TempDir(t, &tmpdir))
+		t.Cleanup(testy.TempDir(t, &tmpdir))
 
 		return tt{
 			path:   tmpdir,
@@ -52,7 +52,7 @@ func TestDocumentPersist(t *testing.T) {
 	})
 	tests.Add("no revs", func(t *testing.T) interface{} {
 		var tmpdir string
-		tests.Cleanup(testy.TempDir(t, &tmpdir))
+		t.Cleanup(testy.TempDir(t, &tmpdir))
 
 		cdb := New(tmpdir, filesystem.Default())
 
@@ -65,7 +65,7 @@ func TestDocumentPersist(t *testing.T) {
 	})
 	tests.Add("new doc, one rev", func(t *testing.T) interface{} {
 		var tmpdir string
-		tests.Cleanup(testy.TempDir(t, &tmpdir))
+		t.Cleanup(testy.TempDir(t, &tmpdir))
 
 		cdb := New(tmpdir, filesystem.Default())
 		doc := cdb.NewDocument("foo")
@@ -86,8 +86,8 @@ func TestDocumentPersist(t *testing.T) {
 	})
 	tests.Add("update existing doc", func(t *testing.T) interface{} {
 		tmpdir := testy.CopyTempDir(t, "testdata/persist.update", 0)
-		tests.Cleanup(func() error {
-			return os.RemoveAll(tmpdir)
+		t.Cleanup(func() {
+			_ = os.RemoveAll(tmpdir)
 		})
 
 		cdb := New(tmpdir)
@@ -117,8 +117,8 @@ func TestDocumentPersist(t *testing.T) {
 	})
 	tests.Add("update existing doc with attachments", func(t *testing.T) interface{} {
 		tmpdir := testy.CopyTempDir(t, "testdata/persist.att", 0)
-		tests.Cleanup(func() error {
-			return os.RemoveAll(tmpdir)
+		t.Cleanup(func() {
+			_ = os.RemoveAll(tmpdir)
 		})
 
 		cdb := New(tmpdir)
@@ -202,8 +202,8 @@ func TestDocumentAddRevision(t *testing.T) {
 	tests := testy.NewTable()
 	tests.Add("stub with bad digest", func(t *testing.T) interface{} {
 		tmpdir := testy.CopyTempDir(t, "testdata/persist.att", 0)
-		tests.Cleanup(func() error {
-			return os.RemoveAll(tmpdir)
+		t.Cleanup(func() {
+			_ = os.RemoveAll(tmpdir)
 		})
 
 		cdb := New(tmpdir)
@@ -240,8 +240,8 @@ func TestDocumentAddRevision(t *testing.T) {
 	})
 	tests.Add("stub with wrong revpos", func(t *testing.T) interface{} {
 		tmpdir := testy.CopyTempDir(t, "testdata/persist.att", 0)
-		tests.Cleanup(func() error {
-			return os.RemoveAll(tmpdir)
+		t.Cleanup(func() {
+			_ = os.RemoveAll(tmpdir)
 		})
 
 		cdb := New(tmpdir)
@@ -278,8 +278,8 @@ func TestDocumentAddRevision(t *testing.T) {
 	})
 	tests.Add("stub with 0 revpos", func(t *testing.T) interface{} {
 		tmpdir := testy.CopyTempDir(t, "testdata/persist.att", 0)
-		tests.Cleanup(func() error {
-			return os.RemoveAll(tmpdir)
+		t.Cleanup(func() {
+			_ = os.RemoveAll(tmpdir)
 		})
 
 		cdb := New(tmpdir)
@@ -316,7 +316,7 @@ func TestDocumentAddRevision(t *testing.T) {
 	})
 	tests.Add("upload attachment", func(t *testing.T) interface{} {
 		var tmpdir string
-		tests.Cleanup(testy.TempDir(t, &tmpdir))
+		t.Cleanup(testy.TempDir(t, &tmpdir))
 
 		cdb := New(tmpdir)
 		doc := cdb.NewDocument("foo")
@@ -346,8 +346,8 @@ func TestDocumentAddRevision(t *testing.T) {
 	})
 	tests.Add("re-upload identical attachment", func(t *testing.T) interface{} {
 		tmpdir := testy.CopyTempDir(t, "testdata/persist.att", 0)
-		tests.Cleanup(func() error {
-			return os.RemoveAll(tmpdir)
+		t.Cleanup(func() {
+			_ = os.RemoveAll(tmpdir)
 		})
 
 		cdb := New(tmpdir)

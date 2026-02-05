@@ -15,7 +15,6 @@
 package indexeddb
 
 import (
-	"context"
 	"strings"
 	"testing"
 
@@ -52,7 +51,7 @@ func TestPurge(t *testing.T) {
 			return
 		}
 		dbname := kt.TestDBName(t)
-		ctx := context.Background()
+		ctx := t.Context()
 		t.Cleanup(func() {
 			_ = client.DestroyDB(ctx, dbname)
 		})
@@ -72,7 +71,7 @@ func TestPurge(t *testing.T) {
 		}
 		const docID = "test"
 		dbname := kt.TestDBName(t)
-		ctx := context.Background()
+		ctx := t.Context()
 		t.Cleanup(func() {
 			_ = client.DestroyDB(ctx, dbname)
 		})

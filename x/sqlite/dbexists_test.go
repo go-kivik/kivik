@@ -13,7 +13,6 @@
 package sqlite
 
 import (
-	"context"
 	"testing"
 
 	"github.com/go-kivik/kivik/v4/int/mock"
@@ -33,7 +32,7 @@ func TestClientDBExists(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		exists, err := dClient.DBExists(context.Background(), "foo", nil)
+		exists, err := dClient.DBExists(t.Context(), "foo", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -47,7 +46,7 @@ func TestClientDBExists(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		exists, err := dClient.DBExists(context.Background(), "foo", nil)
+		exists, err := dClient.DBExists(t.Context(), "foo", nil)
 		if err != nil {
 			t.Fatal(err)
 		}

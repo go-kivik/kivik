@@ -13,7 +13,6 @@
 package chttp
 
 import (
-	"context"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
@@ -95,7 +94,7 @@ func TestCookieAuthAuthenticate(t *testing.T) {
 		if e := test.auth.Authenticate(c); e != nil {
 			t.Fatal(e)
 		}
-		_, err = c.DoError(context.Background(), "GET", "/foo", nil)
+		_, err = c.DoError(t.Context(), "GET", "/foo", nil)
 		if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
 			t.Error(d)
 		}
@@ -104,7 +103,7 @@ func TestCookieAuthAuthenticate(t *testing.T) {
 		}
 
 		// Do it again; should be idempotent
-		_, err = c.DoError(context.Background(), "GET", "/foo", nil)
+		_, err = c.DoError(t.Context(), "GET", "/foo", nil)
 		if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
 			t.Error(d)
 		}
@@ -333,7 +332,7 @@ func Test401Response(t *testing.T) {
 		Value: "Second",
 	}
 
-	_, err = c.DoError(context.Background(), "GET", "/foo", nil)
+	_, err = c.DoError(t.Context(), "GET", "/foo", nil)
 	if d := internal.StatusErrorDiff("", 0, err); d != "" {
 		t.Error(d)
 	}
@@ -341,7 +340,7 @@ func Test401Response(t *testing.T) {
 		t.Error(d)
 	}
 
-	_, err = c.DoError(context.Background(), "GET", "/foo", nil)
+	_, err = c.DoError(t.Context(), "GET", "/foo", nil)
 
 	// this causes a skip so this won't work for us.
 	// if d := internal.StatusErrorDiff("Unauthorized: You are not authorized to access this db.", 401, err); d != "" { t.Error(d) }
@@ -357,7 +356,7 @@ func Test401Response(t *testing.T) {
 		t.Error(d)
 	}
 
-	_, err = c.DoError(context.Background(), "GET", "/foo", nil)
+	_, err = c.DoError(t.Context(), "GET", "/foo", nil)
 	if d := internal.StatusErrorDiff("", 0, err); d != "" {
 		t.Error(d)
 	}

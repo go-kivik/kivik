@@ -13,7 +13,6 @@
 package couchdb
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -108,7 +107,7 @@ func TestClusterStatus(t *testing.T) {
 		if opts == nil {
 			opts = mock.NilOption
 		}
-		result, err := test.client.ClusterStatus(context.Background(), opts)
+		result, err := test.client.ClusterStatus(t.Context(), opts)
 		if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 			t.Error(d)
 		}
@@ -184,7 +183,7 @@ func TestClusterSetup(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, test tst) {
-		err := test.client.ClusterSetup(context.Background(), test.action)
+		err := test.client.ClusterSetup(t.Context(), test.action)
 		if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 			t.Error(d)
 		}
@@ -235,7 +234,7 @@ func TestMembership(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
-		got, err := tt.client.Membership(context.Background())
+		got, err := tt.client.Membership(t.Context())
 		if d := internal.StatusErrorDiffRE(tt.err, tt.status, err); d != "" {
 			t.Error(d)
 		}

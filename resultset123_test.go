@@ -15,7 +15,6 @@
 package kivik
 
 import (
-	"context"
 	"errors"
 	"io"
 	"testing"
@@ -35,7 +34,7 @@ func TestResultSetIterator(t *testing.T) {
 		&driver.Row{ID: "c"},
 	}
 
-	r := newResultSet(context.Background(), nil, &mock.Rows{
+	r := newResultSet(t.Context(), nil, &mock.Rows{
 		NextFunc: func(r *driver.Row) error {
 			if len(rows) == 0 {
 				return io.EOF
@@ -70,7 +69,7 @@ func TestResultSetIterator(t *testing.T) {
 func TestResultSetIteratorError(t *testing.T) {
 	t.Parallel()
 
-	r := newResultSet(context.Background(), nil, &mock.Rows{
+	r := newResultSet(t.Context(), nil, &mock.Rows{
 		NextFunc: func(*driver.Row) error {
 			return errors.New("failure")
 		},
@@ -88,7 +87,7 @@ func TestResultSetIteratorError(t *testing.T) {
 func TestResultSetIteratorBreak(t *testing.T) {
 	t.Parallel()
 
-	r := newResultSet(context.Background(), nil, &mock.Rows{
+	r := newResultSet(t.Context(), nil, &mock.Rows{
 		NextFunc: func(*driver.Row) error {
 			return nil
 		},
@@ -149,7 +148,7 @@ func TestResultSetNextIterator(t *testing.T) {
 func TestResultSetNextIteratorBreak(t *testing.T) {
 	t.Parallel()
 
-	r := newResultSet(context.Background(), nil, &mock.Rows{
+	r := newResultSet(t.Context(), nil, &mock.Rows{
 		NextFunc: func(*driver.Row) error {
 			return errors.New("failure")
 		},

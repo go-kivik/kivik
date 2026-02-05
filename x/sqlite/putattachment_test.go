@@ -15,7 +15,6 @@
 package sqlite
 
 import (
-	"context"
 	"io"
 	"net/http"
 	"regexp"
@@ -320,7 +319,7 @@ func TestDBPutAttachment(t *testing.T) {
 		if opts == nil {
 			opts = mock.NilOption
 		}
-		rev, err := dbc.PutAttachment(context.Background(), tt.docID, tt.attachment, opts)
+		rev, err := dbc.PutAttachment(t.Context(), tt.docID, tt.attachment, opts)
 		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}

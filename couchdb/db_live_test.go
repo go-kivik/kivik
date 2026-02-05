@@ -13,7 +13,6 @@
 package couchdb_test
 
 import (
-	"context"
 	"os"
 	"runtime"
 	"testing"
@@ -43,7 +42,7 @@ func TestQueries_2_x(t *testing.T) {
 	}
 
 	db := client.DB("_users")
-	rows := db.AllDocs(context.Background(), kivik.Params(map[string]interface{}{
+	rows := db.AllDocs(t.Context(), kivik.Params(map[string]interface{}{
 		"queries": []map[string]interface{}{
 			{},
 			{},
@@ -92,7 +91,7 @@ func TestQueries_3_x(t *testing.T) {
 	}
 
 	db := client.DB("_users")
-	rows := db.AllDocs(context.Background(), kivik.Params(map[string]interface{}{
+	rows := db.AllDocs(t.Context(), kivik.Params(map[string]interface{}{
 		"queries": []map[string]interface{}{
 			{},
 			{},
@@ -144,20 +143,20 @@ func Test_bug509(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		_ = client.DestroyDB(context.Background(), "bug509")
+		_ = client.DestroyDB(t.Context(), "bug509")
 		_ = client.Close()
 	})
-	if err := client.CreateDB(context.Background(), "bug509"); err != nil {
+	if err := client.CreateDB(t.Context(), "bug509"); err != nil {
 		t.Fatal(err)
 	}
 
 	db := client.DB("bug509")
-	if _, err := db.Put(context.Background(), "x", map[string]string{
+	if _, err := db.Put(t.Context(), "x", map[string]string{
 		"_id": "x",
 	}); err != nil {
 		t.Fatal(err)
 	}
-	row := db.Get(context.Background(), "x", kivik.Param("revs_info", true))
+	row := db.Get(t.Context(), "x", kivik.Param("revs_info", true))
 
 	var doc map[string]interface{}
 	if err := row.ScanDoc(&doc); err != nil {

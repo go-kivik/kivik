@@ -16,7 +16,6 @@ package sqlite
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -889,7 +888,7 @@ func TestDBGet(t *testing.T) {
 			Content:     io.NopCloser(strings.NewReader("test")),
 		}
 
-		rev2, err := db.PutAttachment(context.Background(), "foo", &att, kivik.Rev(rev1))
+		rev2, err := db.PutAttachment(t.Context(), "foo", &att, kivik.Rev(rev1))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -929,7 +928,7 @@ func TestDBGet(t *testing.T) {
 		if opts == nil {
 			opts = mock.NilOption
 		}
-		doc, err := db.Get(context.Background(), tt.id, opts)
+		doc, err := db.Get(t.Context(), tt.id, opts)
 		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}

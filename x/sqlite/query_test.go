@@ -15,7 +15,6 @@
 package sqlite
 
 import (
-	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -145,7 +144,7 @@ func TestDBQuery(t *testing.T) {
 		})
 		_ = d.tPut("foo", map[string]string{"_id": "foo"})
 		// Ensure the index is built
-		rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", mock.NilOption)
+		rows, err := d.Query(t.Context(), "_design/foo", "_view/bar", mock.NilOption)
 		if err != nil {
 			t.Fatalf("Failed to query view: %s", err)
 		}
@@ -179,7 +178,7 @@ func TestDBQuery(t *testing.T) {
 		})
 		_ = d.tPut("foo", map[string]string{"_id": "foo"})
 		// Ensure the index is built
-		rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", mock.NilOption)
+		rows, err := d.Query(t.Context(), "_design/foo", "_view/bar", mock.NilOption)
 		if err != nil {
 			t.Fatalf("Failed to query view: %s", err)
 		}
@@ -229,7 +228,7 @@ func TestDBQuery(t *testing.T) {
 			},
 		})
 		// Ensure the index is built
-		rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", mock.NilOption)
+		rows, err := d.Query(t.Context(), "_design/foo", "_view/bar", mock.NilOption)
 		if err != nil {
 			t.Fatalf("Failed to query view: %s", err)
 		}
@@ -2600,7 +2599,7 @@ func TestDBQuery(t *testing.T) {
 		if opts == nil {
 			opts = mock.NilOption
 		}
-		rows, err := db.Query(context.Background(), tt.ddoc, tt.view, opts)
+		rows, err := db.Query(t.Context(), tt.ddoc, tt.view, opts)
 		if !testy.ErrorMatchesRE(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}
@@ -2634,7 +2633,7 @@ func TestDBQuery_reduce_with_update_seq(t *testing.T) {
 	})
 	_ = d.tPut("foo", map[string]string{"_id": "foo"})
 
-	rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", kivik.Param("update_seq", true))
+	rows, err := d.Query(t.Context(), "_design/foo", "_view/bar", kivik.Param("update_seq", true))
 	if err != nil {
 		t.Fatalf("Failed to query view: %s", err)
 	}
@@ -2660,7 +2659,7 @@ func TestDBQuery_reduce_without_update_seq(t *testing.T) {
 	})
 	_ = d.tPut("foo", map[string]string{"_id": "foo"})
 
-	rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", kivik.Param("update_seq", false))
+	rows, err := d.Query(t.Context(), "_design/foo", "_view/bar", kivik.Param("update_seq", false))
 	if err != nil {
 		t.Fatalf("Failed to query view: %s", err)
 	}
@@ -2685,7 +2684,7 @@ func TestDBQuery_update_seq(t *testing.T) {
 	})
 	_ = d.tPut("foo", map[string]string{"_id": "foo"})
 
-	rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", kivik.Param("update_seq", true))
+	rows, err := d.Query(t.Context(), "_design/foo", "_view/bar", kivik.Param("update_seq", true))
 	if err != nil {
 		t.Fatalf("Failed to query view: %s", err)
 	}
@@ -2710,7 +2709,7 @@ func TestDBQuery_no_update_seq(t *testing.T) {
 	})
 	_ = d.tPut("foo", map[string]string{"_id": "foo"})
 
-	rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", mock.NilOption)
+	rows, err := d.Query(t.Context(), "_design/foo", "_view/bar", mock.NilOption)
 	if err != nil {
 		t.Fatalf("Failed to query view: %s", err)
 	}
@@ -2736,7 +2735,7 @@ func TestDBQuery_group_with_update_seq(t *testing.T) {
 	})
 	_ = d.tPut("foo", map[string]string{"_id": "foo"})
 
-	rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", kivik.Params(map[string]interface{}{
+	rows, err := d.Query(t.Context(), "_design/foo", "_view/bar", kivik.Params(map[string]interface{}{
 		"update_seq": true,
 		"group":      true,
 	}))
@@ -2765,7 +2764,7 @@ func TestDBQuery_group_without_update_seq(t *testing.T) {
 	})
 	_ = d.tPut("foo", map[string]string{"_id": "foo"})
 
-	rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", kivik.Param("group", true))
+	rows, err := d.Query(t.Context(), "_design/foo", "_view/bar", kivik.Param("group", true))
 	if err != nil {
 		t.Fatalf("Failed to query view: %s", err)
 	}
@@ -2792,7 +2791,7 @@ func TestDBQuery_total_rows(t *testing.T) {
 	_ = d.tPut("b", map[string]string{"foo": "baz"})
 	_ = d.tPut("c", map[string]string{"foo": "qux"})
 
-	rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", mock.NilOption)
+	rows, err := d.Query(t.Context(), "_design/foo", "_view/bar", mock.NilOption)
 	if err != nil {
 		t.Fatalf("Failed to query view: %s", err)
 	}
@@ -2829,7 +2828,7 @@ func TestDBQuery_total_rows_grouped(t *testing.T) {
 	_ = d.tPut("b", map[string]string{"foo": "baz"})
 	_ = d.tPut("c", map[string]string{"foo": "qux"})
 
-	rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", kivik.Param("group", true))
+	rows, err := d.Query(t.Context(), "_design/foo", "_view/bar", kivik.Param("group", true))
 	if err != nil {
 		t.Fatalf("Failed to query view: %s", err)
 	}
@@ -2866,7 +2865,7 @@ func TestDBQuery_update_lazy(t *testing.T) {
 	func() {
 		// Do a query, with update=lazy, which should return nothing, but trigger
 		// an index build.
-		rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", kivik.Param("update", "lazy"))
+		rows, err := d.Query(t.Context(), "_design/foo", "_view/bar", kivik.Param("update", "lazy"))
 		if err != nil {
 			t.Fatalf("Failed to query view: %s", err)
 		}
@@ -2877,7 +2876,7 @@ func TestDBQuery_update_lazy(t *testing.T) {
 	// Now wait a moment, and query again to see if there are any results
 	time.Sleep(500 * time.Millisecond)
 
-	rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", kivik.Param("update", "false"))
+	rows, err := d.Query(t.Context(), "_design/foo", "_view/bar", kivik.Param("update", "false"))
 	if err != nil {
 		t.Fatalf("Failed to query view: %s", err)
 	}

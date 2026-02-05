@@ -13,7 +13,6 @@
 package pg
 
 import (
-	"context"
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -24,7 +23,7 @@ func testClient(t *testing.T) *client {
 
 	dsn := newPostgres(t)
 
-	pool, err := pgxpool.New(context.Background(), dsn)
+	pool, err := pgxpool.New(t.Context(), dsn)
 	if err != nil {
 		t.Fatalf("Failed to connect to PostgreSQL: %s", err)
 	}

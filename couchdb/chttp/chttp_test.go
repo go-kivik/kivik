@@ -214,7 +214,7 @@ func TestFixPath(t *testing.T) {
 		{Input: "foo%2Fbar", Expected: "/foo%2Fbar"},
 	}
 	for _, test := range tests {
-		req, _ := http.NewRequestWithContext(context.TODO(), http.MethodGet, "http://localhost/"+test.Input, nil)
+		req, _ := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/"+test.Input, nil)
 		fixPath(req, test.Input)
 		if req.URL.EscapedPath() != test.Expected {
 			t.Errorf("Path for '%s' not fixed.\n\tExpected: %s\n\t  Actual: %s\n", test.Input, test.Expected, req.URL.EscapedPath())
@@ -358,7 +358,7 @@ func TestSetHeaders(t *testing.T) {
 		func(test shTest) {
 			t.Run(test.Name, func(t *testing.T) {
 				t.Parallel()
-				req, err := http.NewRequestWithContext(context.TODO(), http.MethodGet, "/", nil)
+				req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 				if err != nil {
 					panic(err)
 				}
@@ -591,7 +591,7 @@ func TestDoJSON(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			var i interface{}
-			err := test.client.DoJSON(context.Background(), test.method, test.path, test.opts, &i)
+			err := test.client.DoJSON(t.Context(), test.method, test.path, test.opts, &i)
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -650,7 +650,7 @@ func TestNewRequest(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			req, err := test.client.NewRequest(context.Background(), test.method, test.path, nil, nil)
+			req, err := test.client.NewRequest(t.Context(), test.method, test.path, nil, nil)
 			statusErrorRE(t, test.err, test.status, err)
 			test.expected = test.expected.WithContext(req.Context()) // determinism
 			if d := testy.DiffInterface(test.expected, req); d != nil {
@@ -865,7 +865,7 @@ func TestDoReq(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
-		ctx := context.Background()
+		ctx := t.Context()
 		traceSuccess := true
 		if tt.trace != nil {
 			traceSuccess = false
@@ -923,7 +923,7 @@ func TestDoError(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			_, err := test.client.DoError(context.Background(), test.method, test.path, test.opts)
+			_, err := test.client.DoError(t.Context(), test.method, test.path, test.opts)
 			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -951,7 +951,7 @@ func TestNetError(t *testing.T) {
 				s := nettest.NewHTTPTestServer(t, http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 					time.Sleep(1 * time.Second)
 				}))
-				ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
+				ctx, cancel := context.WithTimeout(t.Context(), 1*time.Millisecond)
 				defer cancel()
 				req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.URL, nil)
 				if err != nil {
@@ -966,7 +966,7 @@ func TestNetError(t *testing.T) {
 		{
 			name: "cannot resolve host",
 			input: func() error {
-				req, err := http.NewRequestWithContext(context.TODO(), http.MethodGet, "http://foo.com.invalid.hostname", nil)
+				req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://foo.com.invalid.hostname", nil)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -979,7 +979,7 @@ func TestNetError(t *testing.T) {
 		{
 			name: "connection refused",
 			input: func() error {
-				req, err := http.NewRequestWithContext(context.TODO(), http.MethodGet, "http://localhost:99", nil)
+				req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost:99", nil)
 				if err != nil {
 					t.Fatal(err)
 				}

@@ -13,7 +13,6 @@
 package couchdb
 
 import (
-	"context"
 	"errors"
 	"io"
 	"net/http"
@@ -142,7 +141,7 @@ func realDBConnect(t *testing.T) (*db, error) {
 	}
 	dbname := kt.TestDBName(t)
 
-	err = c.CreateDB(context.Background(), dbname, mock.NilOption)
+	err = c.CreateDB(t.Context(), dbname, mock.NilOption)
 	return &db{
 		client: c.(*client),
 		dbName: dbname,

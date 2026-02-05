@@ -13,7 +13,6 @@
 package couchdb
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -271,7 +270,7 @@ func TestReplicate(t *testing.T) {
 			if opts == nil {
 				opts = mock.NilOption
 			}
-			resp, err := test.client.Replicate(context.Background(), test.target, test.source, opts)
+			resp, err := test.client.Replicate(t.Context(), test.target, test.source, opts)
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -342,7 +341,7 @@ func TestLegacyGetReplications(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			reps, err := test.client.legacyGetReplications(context.Background(), test.options)
+			reps, err := test.client.legacyGetReplications(t.Context(), test.options)
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -417,7 +416,7 @@ func TestGetReplications(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			_, err := test.client.GetReplications(context.Background(), mock.NilOption)
+			_, err := test.client.GetReplications(t.Context(), mock.NilOption)
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -484,7 +483,7 @@ func TestReplicationUpdate(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result := new(driver.ReplicationInfo)
-			err := test.rep.Update(context.Background(), result)
+			err := test.rep.Update(t.Context(), result)
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -576,7 +575,7 @@ func TestReplicationDelete(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := test.rep.Delete(context.Background())
+			err := test.rep.Delete(t.Context())
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -657,7 +656,7 @@ func TestUpdateActiveTasks(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.rep.updateActiveTasks(context.Background())
+			result, err := test.rep.updateActiveTasks(t.Context())
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}

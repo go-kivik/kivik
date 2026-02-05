@@ -222,7 +222,7 @@ func TestBulkDocs(t *testing.T) { // nolint: gocyclo
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
-		result, err := tt.db.BulkDocs(context.Background(), tt.docs, tt.options)
+		result, err := tt.db.BulkDocs(t.Context(), tt.docs, tt.options)
 		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
 			t.Error(d)
 		}

@@ -213,7 +213,7 @@ func TestDBChanges(t *testing.T) {
 	})
 	tests.Add("feed=normal, context cancellation", func(t *testing.T) interface{} {
 		d := newDB(t)
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		cancel()
 
 		return test{
@@ -669,7 +669,7 @@ func TestDBChanges(t *testing.T) {
 		}
 		ctx := tt.ctx
 		if ctx == nil {
-			ctx = context.Background()
+			ctx = t.Context()
 		}
 		opts := tt.options
 		if opts == nil {
@@ -744,7 +744,7 @@ func TestDBChanges_longpoll_context_cancellation_during_iteration(t *testing.T) 
 	// First create a single document to seed the changes feed
 	_ = db.tPut("doc1", map[string]string{"foo": "bar"})
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 
 	// Start the changes feed, with feed=longpoll&since=now to block until
 	// another change is made.
@@ -793,7 +793,7 @@ func TestDBChanges_longpoll(t *testing.T) {
 
 	// Start the changes feed, with feed=longpoll&since=now to block until
 	// another change is made.
-	feed, err := db.Changes(context.Background(), kivik.Params(map[string]interface{}{
+	feed, err := db.Changes(t.Context(), kivik.Params(map[string]interface{}{
 		"feed":  "longpoll",
 		"since": "now",
 	}))
@@ -809,7 +809,7 @@ func TestDBChanges_longpoll(t *testing.T) {
 	// Make a change to the database after a short delay
 	go func() {
 		time.Sleep(100 * time.Millisecond)
-		rev, err := db.Put(context.Background(), "doc2", interface{}(map[string]string{"foo": "bar"}), mock.NilOption)
+		rev, err := db.Put(t.Context(), "doc2", interface{}(map[string]string{"foo": "bar"}), mock.NilOption)
 		if err != nil {
 			panic(fmt.Sprintf("Failed to put doc: %s", err))
 		}
@@ -866,7 +866,7 @@ func TestDBChanges_longpoll_include_docs(t *testing.T) {
 
 	// Start the changes feed, with feed=longpoll&since=now to block until
 	// another change is made.
-	feed, err := db.Changes(context.Background(), kivik.Params(map[string]interface{}{
+	feed, err := db.Changes(t.Context(), kivik.Params(map[string]interface{}{
 		"feed":         "longpoll",
 		"since":        "now",
 		"include_docs": true,
@@ -938,7 +938,7 @@ func TestDBChanges_longpoll_include_docs_and_attachments(t *testing.T) {
 
 	// Start the changes feed, with feed=longpoll&since=now to block until
 	// another change is made.
-	feed, err := db.Changes(context.Background(), kivik.Params(map[string]interface{}{
+	feed, err := db.Changes(t.Context(), kivik.Params(map[string]interface{}{
 		"feed":         "longpoll",
 		"attachments":  true,
 		"since":        "now",
@@ -1014,7 +1014,7 @@ func TestDBChanges_longpoll_include_docs_with_attachment_stubs(t *testing.T) {
 
 	// Start the changes feed, with feed=longpoll&since=now to block until
 	// another change is made.
-	feed, err := db.Changes(context.Background(), kivik.Params(map[string]interface{}{
+	feed, err := db.Changes(t.Context(), kivik.Params(map[string]interface{}{
 		"feed":         "longpoll",
 		"since":        "now",
 		"include_docs": true,
@@ -1094,7 +1094,7 @@ func Test_normal_changes_query(t *testing.T) {
 			add(filename2, "more boring text"),
 	})
 
-	changes, err := d.DB.(*db).newNormalChanges(context.Background(), optsMap{"include_docs": true}, nil, nil, false, "normal")
+	changes, err := d.DB.(*db).newNormalChanges(t.Context(), optsMap{"include_docs": true}, nil, nil, false, "normal")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1149,7 +1149,7 @@ func Test_normal_changes_query_without_docs(t *testing.T) {
 			add(filename2, "more boring text"),
 	})
 
-	changes, err := d.DB.(*db).newNormalChanges(context.Background(), nil, nil, nil, false, "normal")
+	changes, err := d.DB.(*db).newNormalChanges(t.Context(), nil, nil, nil, false, "normal")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1198,7 +1198,7 @@ func Test_longpoll_changes_query(t *testing.T) {
 
 	d := newDB(t)
 
-	changes, err := d.DB.(*db).newLongpollChanges(context.Background(), true, false, false)
+	changes, err := d.DB.(*db).newLongpollChanges(t.Context(), true, false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1259,7 +1259,7 @@ func Test_longpoll_changes_query_without_docs(t *testing.T) {
 
 	d := newDB(t)
 
-	changes, err := d.DB.(*db).newLongpollChanges(context.Background(), false, false, false)
+	changes, err := d.DB.(*db).newLongpollChanges(t.Context(), false, false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1316,7 +1316,7 @@ func TestDBChanges_continuous(t *testing.T) {
 
 	_ = db.tPut("doc1", map[string]string{"foo": "bar"})
 
-	feed, err := db.Changes(context.Background(), kivik.Params(map[string]interface{}{
+	feed, err := db.Changes(t.Context(), kivik.Params(map[string]interface{}{
 		"feed":  "continuous",
 		"since": "now",
 	}))

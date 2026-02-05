@@ -14,7 +14,6 @@ package memorydb
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"strings"
 	"testing"
@@ -86,7 +85,7 @@ func TestIndexSpecUnmarshalJSON(t *testing.T) {
 
 func TestCreateIndex(t *testing.T) {
 	d := &db{}
-	err := d.CreateIndex(context.Background(), "foo", "bar", "baz", nil)
+	err := d.CreateIndex(t.Context(), "foo", "bar", "baz", nil)
 	if err != errFindNotImplemented {
 		t.Errorf("Unexpected error: %s", err)
 	}
@@ -94,7 +93,7 @@ func TestCreateIndex(t *testing.T) {
 
 func TestGetIndexes(t *testing.T) {
 	d := &db{}
-	_, err := d.GetIndexes(context.Background(), nil)
+	_, err := d.GetIndexes(t.Context(), nil)
 	if err != errFindNotImplemented {
 		t.Errorf("Unexpected error: %s", err)
 	}
@@ -102,7 +101,7 @@ func TestGetIndexes(t *testing.T) {
 
 func TestDeleteIndex(t *testing.T) {
 	d := &db{}
-	err := d.DeleteIndex(context.Background(), "foo", "bar", nil)
+	err := d.DeleteIndex(t.Context(), "foo", "bar", nil)
 	if err != errFindNotImplemented {
 		t.Errorf("Unexpected error: %s", err)
 	}
@@ -139,7 +138,7 @@ func TestFind(t *testing.T) {
 			db: func() *db {
 				db := setupDB(t)
 				for _, id := range []string{"a", "c", "z", "q", "chicken"} {
-					if _, err := db.Put(context.Background(), id, map[string]string{"value": id}, nil); err != nil {
+					if _, err := db.Put(t.Context(), id, map[string]string{"value": id}, nil); err != nil {
 						t.Fatal(err)
 					}
 				}
@@ -153,7 +152,7 @@ func TestFind(t *testing.T) {
 			db: func() *db {
 				db := setupDB(t)
 				for _, id := range []string{"a", "c", "z", "q", "chicken"} {
-					if _, err := db.Put(context.Background(), id, map[string]string{"value": id}, nil); err != nil {
+					if _, err := db.Put(t.Context(), id, map[string]string{"value": id}, nil); err != nil {
 						t.Fatal(err)
 					}
 				}
@@ -168,7 +167,7 @@ func TestFind(t *testing.T) {
 			if db == nil {
 				db = setupDB(t)
 			}
-			rows, err := db.Find(context.Background(), test.query, nil)
+			rows, err := db.Find(t.Context(), test.query, nil)
 			var msg string
 			if err != nil {
 				msg = err.Error()
@@ -200,7 +199,7 @@ func TestFindDoc(t *testing.T) {
 			db: func() *db {
 				db := setupDB(t)
 				id := "chicken"
-				if _, err := db.Put(context.Background(), id, map[string]string{"value": id}, nil); err != nil {
+				if _, err := db.Put(t.Context(), id, map[string]string{"value": id}, nil); err != nil {
 					t.Fatal(err)
 				}
 				return db
@@ -216,7 +215,7 @@ func TestFindDoc(t *testing.T) {
 			query: `{"selector":{}, "fields":["value","_rev"]}`,
 			db: func() *db {
 				db := setupDB(t)
-				if _, err := db.Put(context.Background(), "foo", map[string]string{"value": "foo"}, nil); err != nil {
+				if _, err := db.Put(t.Context(), "foo", map[string]string{"value": "foo"}, nil); err != nil {
 					t.Fatal(err)
 				}
 				return db
@@ -233,7 +232,7 @@ func TestFindDoc(t *testing.T) {
 			if db == nil {
 				db = setupDB(t)
 			}
-			rows, err := db.Find(context.Background(), test.query, nil)
+			rows, err := db.Find(t.Context(), test.query, nil)
 			if err != nil {
 				t.Fatal(err)
 			}

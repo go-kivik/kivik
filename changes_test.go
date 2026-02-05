@@ -103,7 +103,7 @@ func TestChangesIteratorNext(t *testing.T) {
 }
 
 func TestChangesIteratorNew(t *testing.T) {
-	ch := newChanges(context.Background(), nil, &mock.Changes{})
+	ch := newChanges(t.Context(), nil, &mock.Changes{})
 	expected := &Changes{
 		iter: &iter{
 			feed: &changesIterator{
@@ -128,7 +128,7 @@ func TestChangesGetters(t *testing.T) {
 			Seq:     "2-foo",
 		},
 	}
-	c := newChanges(context.Background(), nil, &mock.Changes{
+	c := newChanges(t.Context(), nil, &mock.Changes{
 		NextFunc: func(c *driver.Change) error {
 			if len(changes) == 0 {
 				return io.EOF
@@ -321,7 +321,7 @@ func TestChanges(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result := test.db.Changes(context.Background(), test.opts)
+			result := test.db.Changes(t.Context(), test.opts)
 			err := result.Err()
 			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
 				t.Error(d)
@@ -346,7 +346,7 @@ func TestChanges(t *testing.T) {
 					},
 				},
 			}
-			rows := db.Changes(context.Background())
+			rows := db.Changes(t.Context())
 			if err := rows.Err(); err == nil {
 				t.Fatal("expected an error, got none")
 			}
@@ -386,7 +386,7 @@ func TestChanges_Next_resets_iterator_value(t *testing.T) {
 		},
 	}
 
-	changes := db.Changes(context.Background())
+	changes := db.Changes(t.Context())
 
 	wantIDs := []string{"1", ""}
 	gotIDs := []string{}

@@ -15,7 +15,6 @@
 package kivik
 
 import (
-	"context"
 	"errors"
 	"io"
 	"testing"
@@ -31,7 +30,7 @@ func TestChangesIterator(t *testing.T) {
 
 	want := []string{"a", "b", "c"}
 	var idx int
-	changes := newChanges(context.Background(), nil, &mock.Changes{
+	changes := newChanges(t.Context(), nil, &mock.Changes{
 		NextFunc: func(ch *driver.Change) error {
 			if idx >= len(want) {
 				return io.EOF
@@ -57,7 +56,7 @@ func TestChangesIterator(t *testing.T) {
 func TestChangesIteratorError(t *testing.T) {
 	t.Parallel()
 
-	changes := newChanges(context.Background(), nil, &mock.Changes{
+	changes := newChanges(t.Context(), nil, &mock.Changes{
 		NextFunc: func(*driver.Change) error {
 			return errors.New("failure")
 		},
@@ -75,7 +74,7 @@ func TestChangesIteratorError(t *testing.T) {
 func TestChangesIteratorBreak(t *testing.T) {
 	t.Parallel()
 
-	changes := newChanges(context.Background(), nil, &mock.Changes{
+	changes := newChanges(t.Context(), nil, &mock.Changes{
 		NextFunc: func(*driver.Change) error {
 			return nil
 		},

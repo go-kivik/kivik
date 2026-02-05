@@ -15,7 +15,6 @@
 package sqlite
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -40,7 +39,7 @@ func TestNewClient(t *testing.T) {
 func TestClientVersion(t *testing.T) {
 	c := client{}
 
-	ver, err := c.Version(context.Background())
+	ver, err := c.Version(t.Context())
 	if err != nil {
 		t.Fatal("err should be nil")
 	}
@@ -69,7 +68,7 @@ func TestConcurrentPuts(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := dClient.CreateDB(context.TODO(), "test", mock.NilOption); err != nil {
+	if err := dClient.CreateDB(t.Context(), "test", mock.NilOption); err != nil {
 		t.Fatal(err)
 	}
 	db, err := dClient.DB("test", mock.NilOption)
@@ -80,7 +79,7 @@ func TestConcurrentPuts(t *testing.T) {
 	errs := make(chan error, 5)
 	for i := range 5 {
 		go func() {
-			_, err := db.Put(context.TODO(), fmt.Sprintf("doc%d", i), map[string]string{"key": "val"}, mock.NilOption)
+			_, err := db.Put(t.Context(), fmt.Sprintf("doc%d", i), map[string]string{"key": "val"}, mock.NilOption)
 			if err != nil {
 				t.Logf("g%d error: %v", i, err)
 			}
@@ -109,10 +108,10 @@ func TestMultipleDBs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := dClient.CreateDB(context.TODO(), "db1", mock.NilOption); err != nil {
+	if err := dClient.CreateDB(t.Context(), "db1", mock.NilOption); err != nil {
 		t.Fatalf("creating db1: %v", err)
 	}
-	if err := dClient.CreateDB(context.TODO(), "db2", mock.NilOption); err != nil {
+	if err := dClient.CreateDB(t.Context(), "db2", mock.NilOption); err != nil {
 		t.Fatalf("creating db2: %v", err)
 	}
 }
@@ -125,15 +124,15 @@ func TestClientDestroyDB(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if err := dClient.CreateDB(context.Background(), "foo", mock.NilOption); err != nil {
+		if err := dClient.CreateDB(t.Context(), "foo", mock.NilOption); err != nil {
 			t.Fatal(err)
 		}
 
-		if err := dClient.DestroyDB(context.Background(), "foo", mock.NilOption); err != nil {
+		if err := dClient.DestroyDB(t.Context(), "foo", mock.NilOption); err != nil {
 			t.Fatal(err)
 		}
 
-		exists, err := dClient.DBExists(context.Background(), "foo", mock.NilOption)
+		exists, err := dClient.DBExists(t.Context(), "foo", mock.NilOption)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -148,7 +147,7 @@ func TestClientDestroyDB(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if err := dClient.CreateDB(context.Background(), "foo", mock.NilOption); err != nil {
+		if err := dClient.CreateDB(t.Context(), "foo", mock.NilOption); err != nil {
 			t.Fatal(err)
 		}
 
@@ -166,15 +165,15 @@ func TestClientDestroyDB(t *testing.T) {
 				},
 			},
 		}
-		if _, err := db.Put(context.Background(), "_design/testddoc", ddoc, mock.NilOption); err != nil {
+		if _, err := db.Put(t.Context(), "_design/testddoc", ddoc, mock.NilOption); err != nil {
 			t.Fatal(err)
 		}
 
-		if err := dClient.DestroyDB(context.Background(), "foo", mock.NilOption); err != nil {
+		if err := dClient.DestroyDB(t.Context(), "foo", mock.NilOption); err != nil {
 			t.Fatal(err)
 		}
 
-		exists, err := dClient.DBExists(context.Background(), "foo", mock.NilOption)
+		exists, err := dClient.DBExists(t.Context(), "foo", mock.NilOption)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -189,7 +188,7 @@ func TestClientDestroyDB(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		err = dClient.DestroyDB(context.Background(), "foo", nil)
+		err = dClient.DestroyDB(t.Context(), "foo", nil)
 		if err == nil {
 			t.Fatal("wanted an error")
 		}

@@ -13,7 +13,6 @@
 package fs
 
 import (
-	"context"
 	"testing"
 
 	"gitlab.com/flimzy/testy"
@@ -59,7 +58,7 @@ func TestSecurity(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		sec, err := db.Security(context.Background())
+		sec, err := db.Security(t.Context())
 		if d := internal.StatusErrorDiffRE(tt.err, tt.status, err); d != "" {
 			t.Error(d)
 		}

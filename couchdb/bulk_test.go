@@ -13,7 +13,6 @@
 package couchdb
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -134,7 +133,7 @@ func TestBulkDocs(t *testing.T) {
 			if opts == nil {
 				opts = mock.NilOption
 			}
-			_, err := test.db.BulkDocs(context.Background(), test.docs, opts)
+			_, err := test.db.BulkDocs(t.Context(), test.docs, opts)
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}

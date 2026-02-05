@@ -15,7 +15,6 @@
 package pouchdb
 
 import (
-	"context"
 	"testing"
 
 	"gitlab.com/flimzy/testy"
@@ -38,7 +37,7 @@ func TestChanges(t *testing.T) {
 	tests := testy.NewTable()
 
 	tests.Run(t, func(t *testing.T, test tst) {
-		ctx := context.Background()
+		ctx := t.Context()
 		client, err := kivik.New("pouch", "")
 		if err != nil {
 			t.Fatalf("Failed to connect to PouchDB/memdown driver: %s", err)

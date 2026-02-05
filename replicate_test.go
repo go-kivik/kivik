@@ -13,7 +13,6 @@
 package kivik_test
 
 import (
-	"context"
 	"io"
 	"net/http"
 	"os"
@@ -186,7 +185,7 @@ func TestReplicateMock(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
-		result, err := kivik.Replicate(context.TODO(), tt.target, tt.source, tt.options)
+		result, err := kivik.Replicate(t.Context(), tt.target, tt.source, tt.options)
 		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
 			t.Error(d)
 		}
@@ -249,7 +248,7 @@ func TestReplicate_with_callback(t *testing.T) {
 
 	events := []kivik.ReplicationEvent{}
 
-	_, err := kivik.Replicate(context.TODO(), target.DB("tgt"), source.DB("src"), kivik.ReplicateCallback(func(e kivik.ReplicationEvent) {
+	_, err := kivik.Replicate(t.Context(), target.DB("tgt"), source.DB("src"), kivik.ReplicateCallback(func(e kivik.ReplicationEvent) {
 		events = append(events, e)
 	}))
 	if err != nil {
@@ -313,7 +312,7 @@ func TestReplicate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if err := client.CreateDB(context.TODO(), "target"); err != nil {
+		if err := client.CreateDB(t.Context(), "target"); err != nil {
 			t.Fatal(err)
 		}
 
@@ -325,7 +324,7 @@ func TestReplicate(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
-		result, err := kivik.Replicate(context.TODO(), tt.target, tt.source, tt.options)
+		result, err := kivik.Replicate(t.Context(), tt.target, tt.source, tt.options)
 		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
 			t.Error(d)
 		}

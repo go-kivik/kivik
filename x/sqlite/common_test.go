@@ -16,7 +16,6 @@ package sqlite
 
 import (
 	"bytes"
-	"context"
 	"crypto/md5"
 	"database/sql"
 	"fmt"
@@ -60,7 +59,7 @@ func (tdb *testDB) tPut(docID string, doc interface{}, options ...driver.Options
 	if len(options) > 0 {
 		opt = options[0]
 	}
-	rev, err := tdb.Put(context.Background(), docID, doc, opt)
+	rev, err := tdb.Put(t.Context(), docID, doc, opt)
 	if err != nil {
 		tdb.t.Fatalf("Failed to put doc: %s", err)
 	}
@@ -73,7 +72,7 @@ func (tdb *testDB) tDelete(docID string, options ...driver.Options) string { //n
 	if len(options) > 0 {
 		opt = options[0]
 	}
-	rev, err := tdb.Delete(context.Background(), docID, opt)
+	rev, err := tdb.Delete(t.Context(), docID, opt)
 	if err != nil {
 		tdb.t.Fatalf("Failed to delete doc: %s", err)
 	}
@@ -123,7 +122,7 @@ func newDB(t *testing.T) *testDB {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := client.CreateDB(context.Background(), "test", nil); err != nil {
+	if err := client.CreateDB(t.Context(), "test", nil); err != nil {
 		t.Fatal(err)
 	}
 	db, err := client.DB("test", mock.NilOption)

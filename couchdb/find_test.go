@@ -13,7 +13,6 @@
 package couchdb
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -102,7 +101,7 @@ func TestExplain(t *testing.T) {
 			if opts == nil {
 				opts = mock.NilOption
 			}
-			result, err := test.db.Explain(context.Background(), test.query, opts)
+			result, err := test.db.Explain(t.Context(), test.query, opts)
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -229,7 +228,7 @@ func TestCreateIndex(t *testing.T) {
 			if opts == nil {
 				opts = mock.NilOption
 			}
-			err := test.db.CreateIndex(context.Background(), test.ddoc, test.indexName, test.index, opts)
+			err := test.db.CreateIndex(t.Context(), test.ddoc, test.indexName, test.index, opts)
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -303,7 +302,7 @@ func TestGetIndexes(t *testing.T) {
 			if opts == nil {
 				opts = mock.NilOption
 			}
-			result, err := test.db.GetIndexes(context.Background(), opts)
+			result, err := test.db.GetIndexes(t.Context(), opts)
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -378,7 +377,7 @@ func TestDeleteIndex(t *testing.T) {
 			if opts == nil {
 				opts = mock.NilOption
 			}
-			err := test.db.DeleteIndex(context.Background(), test.ddoc, test.indexName, opts)
+			err := test.db.DeleteIndex(t.Context(), test.ddoc, test.indexName, opts)
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -462,7 +461,7 @@ func TestFind(t *testing.T) {
 			if opts == nil {
 				opts = mock.NilOption
 			}
-			result, err := test.db.Find(context.Background(), test.query, opts)
+			result, err := test.db.Find(t.Context(), test.query, opts)
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}

@@ -15,7 +15,6 @@
 package kivik
 
 import (
-	"context"
 	"errors"
 	"io"
 	"testing"
@@ -31,7 +30,7 @@ func TestDBUpdatesIterator(t *testing.T) {
 
 	want := []string{"a", "b", "c"}
 	var idx int
-	updates := newDBUpdates(context.Background(), nil, &mock.DBUpdates{
+	updates := newDBUpdates(t.Context(), nil, &mock.DBUpdates{
 		NextFunc: func(u *driver.DBUpdate) error {
 			if idx >= len(want) {
 				return io.EOF
@@ -58,7 +57,7 @@ func TestDBUpdatesIterator(t *testing.T) {
 func TestDBUpdatesIteratorError(t *testing.T) {
 	t.Parallel()
 
-	updates := newDBUpdates(context.Background(), nil, &mock.DBUpdates{
+	updates := newDBUpdates(t.Context(), nil, &mock.DBUpdates{
 		NextFunc: func(*driver.DBUpdate) error {
 			return errors.New("Failure")
 		},
@@ -77,7 +76,7 @@ func TestDBUpdatesIteratorError(t *testing.T) {
 func TestDBUpdatesIteratorBreak(t *testing.T) {
 	t.Parallel()
 
-	updates := newDBUpdates(context.Background(), nil, &mock.DBUpdates{
+	updates := newDBUpdates(t.Context(), nil, &mock.DBUpdates{
 		NextFunc: func(*driver.DBUpdate) error {
 			return nil
 		},

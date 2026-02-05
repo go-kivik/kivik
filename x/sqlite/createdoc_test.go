@@ -13,7 +13,6 @@
 package sqlite
 
 import (
-	"context"
 	"net/http"
 	"regexp"
 	"testing"
@@ -164,7 +163,7 @@ func TestDBCreateDoc(t *testing.T) {
 		if opts == nil {
 			opts = mock.NilOption
 		}
-		docID, rev, err := db.CreateDoc(context.Background(), tt.doc, opts)
+		docID, rev, err := db.CreateDoc(t.Context(), tt.doc, opts)
 		if d := errors.StatusErrorDiff(tt.wantErr, tt.wantStatus, err); d != "" {
 			t.Errorf("Unexpected error: %s", d)
 		}

@@ -102,7 +102,7 @@ func TestDBUpdatesIteratorNext(t *testing.T) {
 }
 
 func TestDBUpdatesIteratorNew(t *testing.T) {
-	u := newDBUpdates(context.Background(), nil, &mock.DBUpdates{})
+	u := newDBUpdates(t.Context(), nil, &mock.DBUpdates{})
 	expected := &DBUpdates{
 		iter: &iter{
 			feed: &updatesIterator{
@@ -247,7 +247,7 @@ func TestDBUpdates(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result := test.client.DBUpdates(context.Background())
+			result := test.client.DBUpdates(t.Context())
 			err := result.Err()
 			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
 				t.Error(d)
@@ -271,7 +271,7 @@ func TestDBUpdates(t *testing.T) {
 					},
 				},
 			}
-			rows := client.DBUpdates(context.Background())
+			rows := client.DBUpdates(t.Context())
 			if err := rows.Err(); err == nil {
 				t.Fatal("expected an error, got none")
 			}
@@ -281,7 +281,7 @@ func TestDBUpdates(t *testing.T) {
 			client := &Client{
 				driverClient: &mock.Client{},
 			}
-			rows := client.DBUpdates(context.Background())
+			rows := client.DBUpdates(t.Context())
 			if err := rows.Err(); err == nil {
 				t.Fatal("expected an error, got none")
 			}
@@ -312,7 +312,7 @@ func TestDBUpdates_Next_resets_iterator_value(t *testing.T) {
 		},
 	}
 
-	updates := client.DBUpdates(context.Background())
+	updates := client.DBUpdates(t.Context())
 
 	wantDBNames := []string{"1", ""}
 	gotDBNames := []string{}
@@ -338,7 +338,7 @@ func TestDBUpdates_LastSeq(t *testing.T) {
 			},
 		}
 
-		updates := client.DBUpdates(context.Background())
+		updates := client.DBUpdates(t.Context())
 		for updates.Next() {
 			/* .. do nothing .. */
 		}
@@ -368,7 +368,7 @@ func TestDBUpdates_LastSeq(t *testing.T) {
 			},
 		}
 
-		updates := client.DBUpdates(context.Background())
+		updates := client.DBUpdates(t.Context())
 		for updates.Next() {
 			/* .. do nothing .. */
 		}

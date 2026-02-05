@@ -111,7 +111,7 @@ func TestFind(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rs := test.db.Find(context.Background(), test.query, test.options...)
+			rs := test.db.Find(t.Context(), test.query, test.options...)
 			err := rs.Err()
 			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
 				t.Error(d)
@@ -136,7 +136,7 @@ func TestFind(t *testing.T) {
 					},
 				},
 			}
-			rows := db.Find(context.Background(), nil)
+			rows := db.Find(t.Context(), nil)
 			if err := rows.Err(); err == nil {
 				t.Fatal("expected an error, got none")
 			}
@@ -147,7 +147,7 @@ func TestFind(t *testing.T) {
 				client:   &Client{},
 				driverDB: &mock.DB{},
 			}
-			rows := db.Find(context.Background(), nil)
+			rows := db.Find(t.Context(), nil)
 			if err := rows.Err(); err == nil {
 				t.Fatal("expected an error, got none")
 			}
@@ -236,7 +236,7 @@ func TestCreateIndex(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.testName, func(t *testing.T) {
-			err := test.db.CreateIndex(context.Background(), test.ddoc, test.name, test.index)
+			err := test.db.CreateIndex(t.Context(), test.ddoc, test.name, test.index)
 			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -317,7 +317,7 @@ func TestDeleteIndex(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.testName, func(t *testing.T) {
-			err := test.db.DeleteIndex(context.Background(), test.ddoc, test.name)
+			err := test.db.DeleteIndex(t.Context(), test.ddoc, test.name)
 			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -399,7 +399,7 @@ func TestGetIndexes(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.testName, func(t *testing.T) {
-			result, err := test.db.GetIndexes(context.Background())
+			result, err := test.db.GetIndexes(t.Context())
 			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -478,7 +478,7 @@ func TestExplain(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
-		result, err := tt.db.Explain(context.Background(), tt.query)
+		result, err := tt.db.Explain(t.Context(), tt.query)
 		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
 			t.Error(d)
 		}

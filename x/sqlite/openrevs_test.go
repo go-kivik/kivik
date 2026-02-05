@@ -15,7 +15,6 @@
 package sqlite
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -311,7 +310,7 @@ func TestDBOpenRevs(t *testing.T) {
 			opts = mock.NilOption
 		}
 
-		rows, err := db.OpenRevs(context.Background(), tt.docID, tt.revs, opts)
+		rows, err := db.OpenRevs(t.Context(), tt.docID, tt.revs, opts)
 		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}

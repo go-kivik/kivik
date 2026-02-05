@@ -77,7 +77,7 @@ func TestSession(t *testing.T) {
 				driverClient: test.client,
 				closed:       test.closed,
 			}
-			session, err := client.Session(context.Background())
+			session, err := client.Session(t.Context())
 			var errMsg string
 			if err != nil {
 				errMsg = err.Error()

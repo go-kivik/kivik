@@ -15,7 +15,6 @@ package cmd
 import (
 	"bytes"
 	"compress/gzip"
-	"context"
 	"io"
 	"net/http"
 	"os/user"
@@ -104,7 +103,7 @@ func (tt *cmdTest) Test(t *testing.T, re ...testy.Replacement) {
 	root.cmd.SetArgs(tt.args)
 	var status int
 	stdout, stderr := testy.RedirIO(strings.NewReader(tt.stdin), func() {
-		status = root.execute(context.Background())
+		status = root.execute(t.Context())
 	})
 	repl := append(standardReplacements, re...) //nolint:gocritic
 	if d := testy.DiffText(testy.Snapshot(t, "_stdout"), stdout, repl...); d != nil {

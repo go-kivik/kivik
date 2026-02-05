@@ -156,7 +156,7 @@ func TestVersion(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.client.Version(context.Background())
+			result, err := test.client.Version(t.Context())
 			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -288,7 +288,7 @@ func TestAllDBs(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.client.AllDBs(context.Background(), test.options)
+			result, err := test.client.AllDBs(t.Context(), test.options)
 			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -355,7 +355,7 @@ func TestDBExists(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.client.DBExists(context.Background(), test.dbName, test.options)
+			result, err := test.client.DBExists(t.Context(), test.dbName, test.options)
 			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -427,7 +427,7 @@ func TestCreateDB(t *testing.T) {
 			if opts == nil {
 				opts = mock.NilOption
 			}
-			err := test.client.CreateDB(context.Background(), test.dbName, opts)
+			err := test.client.CreateDB(t.Context(), test.dbName, opts)
 			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -493,7 +493,7 @@ func TestDestroyDB(t *testing.T) {
 			if opts == nil {
 				opts = mock.NilOption
 			}
-			err := test.client.DestroyDB(context.Background(), test.dbName, opts)
+			err := test.client.DestroyDB(t.Context(), test.dbName, opts)
 			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -642,7 +642,7 @@ func TestDBsStats(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			stats, err := test.client.DBsStats(context.Background(), test.dbnames)
+			stats, err := test.client.DBsStats(t.Context(), test.dbnames)
 			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -694,7 +694,7 @@ func TestPing(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.client.Ping(context.Background())
+			result, err := test.client.Ping(t.Context())
 			if !testy.ErrorMatches(test.err, err) {
 				t.Errorf("Unexpected error: %s", err)
 			}
@@ -759,7 +759,7 @@ func TestClientClose(t *testing.T) {
 				},
 			},
 			work: func(_ *testing.T, c *Client) {
-				_, _ = c.AllDBs(context.Background())
+				_, _ = c.AllDBs(t.Context())
 			},
 		})
 		tests.Add("DBExists", tt{
@@ -770,7 +770,7 @@ func TestClientClose(t *testing.T) {
 				},
 			},
 			work: func(_ *testing.T, c *Client) {
-				_, _ = c.DBExists(context.Background(), "x")
+				_, _ = c.DBExists(t.Context(), "x")
 			},
 		})
 		tests.Add("CreateDB", tt{
@@ -781,7 +781,7 @@ func TestClientClose(t *testing.T) {
 				},
 			},
 			work: func(_ *testing.T, c *Client) {
-				_ = c.CreateDB(context.Background(), "x")
+				_ = c.CreateDB(t.Context(), "x")
 			},
 		})
 		tests.Add("DestroyDB", tt{
@@ -792,7 +792,7 @@ func TestClientClose(t *testing.T) {
 				},
 			},
 			work: func(_ *testing.T, c *Client) {
-				_ = c.DestroyDB(context.Background(), "x")
+				_ = c.DestroyDB(t.Context(), "x")
 			},
 		})
 		tests.Add("DBsStats", tt{
@@ -803,7 +803,7 @@ func TestClientClose(t *testing.T) {
 				},
 			},
 			work: func(_ *testing.T, c *Client) {
-				_, _ = c.DBsStats(context.Background(), nil)
+				_, _ = c.DBsStats(t.Context(), nil)
 			},
 		})
 		tests.Add("Ping", tt{
@@ -814,7 +814,7 @@ func TestClientClose(t *testing.T) {
 				},
 			},
 			work: func(_ *testing.T, c *Client) {
-				_, _ = c.Ping(context.Background())
+				_, _ = c.Ping(t.Context())
 			},
 		})
 		tests.Add("Version", tt{
@@ -825,7 +825,7 @@ func TestClientClose(t *testing.T) {
 				},
 			},
 			work: func(_ *testing.T, c *Client) {
-				_, _ = c.Version(context.Background())
+				_, _ = c.Version(t.Context())
 			},
 		})
 		tests.Add("DBUpdates", tt{
@@ -840,7 +840,7 @@ func TestClientClose(t *testing.T) {
 				},
 			},
 			work: func(t *testing.T, c *Client) { //nolint:thelper // Not a helper
-				u := c.DBUpdates(context.Background())
+				u := c.DBUpdates(t.Context())
 				if err := u.Err(); err != nil {
 					t.Fatal(err)
 				}
@@ -867,7 +867,7 @@ func TestClientClose(t *testing.T) {
 				},
 			},
 			work: func(t *testing.T, c *Client) { //nolint:thelper // Not a helper
-				u := c.DB("foo").AllDocs(context.Background())
+				u := c.DB("foo").AllDocs(t.Context())
 				for u.Next() { //nolint:revive // intentional empty block
 				}
 				if u.Err() != nil {
@@ -887,7 +887,7 @@ func TestClientClose(t *testing.T) {
 				},
 			},
 			work: func(t *testing.T, c *Client) { //nolint:thelper // Not a helper
-				_, err := c.DB("foo").BulkDocs(context.Background(), []interface{}{
+				_, err := c.DB("foo").BulkDocs(t.Context(), []interface{}{
 					map[string]string{"_id": "foo"},
 				})
 				if err != nil {
@@ -911,7 +911,7 @@ func TestClientClose(t *testing.T) {
 				},
 			},
 			work: func(t *testing.T, c *Client) { //nolint:thelper // Not a helper
-				u := c.DB("foo").BulkGet(context.Background(), []BulkGetReference{})
+				u := c.DB("foo").BulkGet(t.Context(), []BulkGetReference{})
 				for u.Next() { //nolint:revive // intentional empty block
 				}
 				if u.Err() != nil {
@@ -935,7 +935,7 @@ func TestClientClose(t *testing.T) {
 				},
 			},
 			work: func(t *testing.T, c *Client) { //nolint:thelper // Not a helper
-				u := c.DB("foo").Changes(context.Background())
+				u := c.DB("foo").Changes(t.Context())
 				if err := u.Err(); err != nil {
 					t.Fatal(err)
 				}
@@ -962,7 +962,7 @@ func TestClientClose(t *testing.T) {
 				},
 			},
 			work: func(t *testing.T, c *Client) { //nolint:thelper // Not a helper
-				u := c.DB("foo").DesignDocs(context.Background())
+				u := c.DB("foo").DesignDocs(t.Context())
 				for u.Next() { //nolint:revive // intentional empty block
 				}
 				if u.Err() != nil {
@@ -986,7 +986,7 @@ func TestClientClose(t *testing.T) {
 				},
 			},
 			work: func(t *testing.T, c *Client) { //nolint:thelper // Not a helper
-				u := c.DB("foo").LocalDocs(context.Background())
+				u := c.DB("foo").LocalDocs(t.Context())
 				for u.Next() { //nolint:revive // intentional empty block
 				}
 				if u.Err() != nil {
@@ -1010,7 +1010,7 @@ func TestClientClose(t *testing.T) {
 				},
 			},
 			work: func(t *testing.T, c *Client) { //nolint:thelper // Not a helper
-				u := c.DB("foo").Query(context.Background(), "", "")
+				u := c.DB("foo").Query(t.Context(), "", "")
 				for u.Next() { //nolint:revive // intentional empty block
 				}
 				if u.Err() != nil {
@@ -1034,7 +1034,7 @@ func TestClientClose(t *testing.T) {
 				},
 			},
 			work: func(t *testing.T, c *Client) { //nolint:thelper // Not a helper
-				u := c.DB("foo").Find(context.Background(), nil)
+				u := c.DB("foo").Find(t.Context(), nil)
 				for u.Next() { //nolint:revive // intentional empty block
 				}
 				if u.Err() != nil {
@@ -1054,7 +1054,7 @@ func TestClientClose(t *testing.T) {
 				},
 			},
 			work: func(t *testing.T, c *Client) { //nolint:thelper // Not a helper
-				u := c.DB("foo").Get(context.Background(), "")
+				u := c.DB("foo").Get(t.Context(), "")
 				if u.Err() != nil {
 					t.Fatal(u.Err())
 				}
@@ -1076,7 +1076,7 @@ func TestClientClose(t *testing.T) {
 				},
 			},
 			work: func(t *testing.T, c *Client) { //nolint:thelper // Not a helper
-				u := c.DB("foo").RevsDiff(context.Background(), "")
+				u := c.DB("foo").RevsDiff(t.Context(), "")
 				for u.Next() { //nolint:revive // intentional empty block
 				}
 				if u.Err() != nil {

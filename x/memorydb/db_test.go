@@ -13,7 +13,6 @@
 package memorydb
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -39,7 +38,7 @@ func TestStats(t *testing.T) {
 			Name:   "NoDBs",
 			DBName: "foo",
 			Setup: func(c driver.Client) {
-				if e := c.CreateDB(context.Background(), "foo", nil); e != nil {
+				if e := c.CreateDB(t.Context(), "foo", nil); e != nil {
 					panic(e)
 				}
 			},
@@ -54,7 +53,7 @@ func TestStats(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				result, err := db.Stats(context.Background())
+				result, err := db.Stats(t.Context())
 				var msg string
 				if err != nil {
 					msg = err.Error()
@@ -76,7 +75,7 @@ func TestStats(t *testing.T) {
 func setupDB(t *testing.T) *db {
 	t.Helper()
 	c := setup(t, nil)
-	if err := c.CreateDB(context.Background(), "foo", nil); err != nil {
+	if err := c.CreateDB(t.Context(), "foo", nil); err != nil {
 		t.Fatal(err)
 	}
 	d, err := c.DB("foo", nil)
@@ -122,7 +121,7 @@ func TestPut(t *testing.T) {
 			Doc:   map[string]string{"_id": "foo", "_rev": "bar"},
 			Setup: func() *db {
 				db := setupDB(t)
-				if _, err := db.Put(context.Background(), "foo", map[string]string{"_id": "foo"}, nil); err != nil {
+				if _, err := db.Put(t.Context(), "foo", map[string]string{"_id": "foo"}, nil); err != nil {
 					t.Fatal(err)
 				}
 				return db
@@ -150,7 +149,7 @@ func TestPut(t *testing.T) {
 		},
 		func() putTest {
 			dbv := setupDB(t)
-			rev, err := dbv.Put(context.Background(), "foo", map[string]string{"_id": "foo", "foo": "bar"}, nil)
+			rev, err := dbv.Put(t.Context(), "foo", map[string]string{"_id": "foo", "foo": "bar"}, nil)
 			if err != nil {
 				panic(err)
 			}
@@ -181,11 +180,11 @@ func TestPut(t *testing.T) {
 			Expected: map[string]string{"_id": "foo", "foo": "bar", "_rev": "3-xxx"},
 			Setup: func() *db {
 				db := setupDB(t)
-				rev, err := db.Put(context.Background(), "foo", map[string]string{"_id": "foo"}, nil)
+				rev, err := db.Put(t.Context(), "foo", map[string]string{"_id": "foo"}, nil)
 				if err != nil {
 					t.Fatal(err)
 				}
-				if _, e := db.Delete(context.Background(), "foo", kivik.Rev(rev)); e != nil {
+				if _, e := db.Delete(t.Context(), "foo", kivik.Rev(rev)); e != nil {
 					t.Fatal(e)
 				}
 				return db
@@ -198,7 +197,7 @@ func TestPut(t *testing.T) {
 			Expected: map[string]string{"_id": "_local/foo", "foo": "baz", "_rev": "1-0"},
 			Setup: func() *db {
 				db := setupDB(t)
-				_, err := db.Put(context.Background(), "_local/foo", map[string]string{"foo": "bar"}, nil)
+				_, err := db.Put(t.Context(), "_local/foo", map[string]string{"foo": "bar"}, nil)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -228,14 +227,14 @@ func TestPut(t *testing.T) {
 			Name: "Deleted DB",
 			Setup: func() *db {
 				c := setup(t, nil)
-				if err := c.CreateDB(context.Background(), "deleted0", nil); err != nil {
+				if err := c.CreateDB(t.Context(), "deleted0", nil); err != nil {
 					t.Fatal(err)
 				}
 				dbv, err := c.DB("deleted0", nil)
 				if err != nil {
 					t.Fatal(err)
 				}
-				if e := c.DestroyDB(context.Background(), "deleted0", nil); e != nil {
+				if e := c.DestroyDB(t.Context(), "deleted0", nil); e != nil {
 					t.Fatal(e)
 				}
 				return dbv.(*db)
@@ -254,14 +253,14 @@ func TestPut(t *testing.T) {
 				} else {
 					db = setupDB(t)
 				}
-				_, err := db.Put(context.Background(), test.DocID, test.Doc, nil)
+				_, err := db.Put(t.Context(), test.DocID, test.Doc, nil)
 				if d := internal.StatusErrorDiff(test.Error, test.Status, err); d != "" {
 					t.Error(d)
 				}
 				if err != nil {
 					return
 				}
-				rows, err := db.Get(context.Background(), test.DocID, kivik.Params(nil))
+				rows, err := db.Get(t.Context(), test.DocID, kivik.Params(nil))
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -302,7 +301,7 @@ func TestGet(t *testing.T) {
 		},
 		func() getTest {
 			db := setupDB(t)
-			_, err := db.Put(context.Background(), "foo", map[string]string{"_id": "foo", "foo": "bar"}, nil)
+			_, err := db.Put(t.Context(), "foo", map[string]string{"_id": "foo", "foo": "bar"}, nil)
 			if err != nil {
 				panic(err)
 			}
@@ -315,7 +314,7 @@ func TestGet(t *testing.T) {
 		}(),
 		func() getTest {
 			db := setupDB(t)
-			rev, err := db.Put(context.Background(), "foo", map[string]string{"_id": "foo", "foo": "Bar"}, nil)
+			rev, err := db.Put(t.Context(), "foo", map[string]string{"_id": "foo", "foo": "Bar"}, nil)
 			if err != nil {
 				panic(err)
 			}
@@ -329,11 +328,11 @@ func TestGet(t *testing.T) {
 		}(),
 		func() getTest {
 			db := setupDB(t)
-			rev, err := db.Put(context.Background(), "foo", map[string]string{"_id": "foo", "foo": "Bar"}, nil)
+			rev, err := db.Put(t.Context(), "foo", map[string]string{"_id": "foo", "foo": "Bar"}, nil)
 			if err != nil {
 				panic(err)
 			}
-			_, err = db.Put(context.Background(), "foo", map[string]string{"_id": "foo", "foo": "baz", "_rev": rev}, nil)
+			_, err = db.Put(t.Context(), "foo", map[string]string{"_id": "foo", "foo": "baz", "_rev": rev}, nil)
 			if err != nil {
 				panic(err)
 			}
@@ -351,7 +350,7 @@ func TestGet(t *testing.T) {
 			options: kivik.Rev("1-4c6114c65e295552ab1019e2b046b10e"),
 			DB: func() *db {
 				db := setupDB(t)
-				_, err := db.Put(context.Background(), "foo", map[string]string{"_id": "foo", "foo": "Bar"}, nil)
+				_, err := db.Put(t.Context(), "foo", map[string]string{"_id": "foo", "foo": "Bar"}, nil)
 				if err != nil {
 					panic(err)
 				}
@@ -362,11 +361,11 @@ func TestGet(t *testing.T) {
 		},
 		func() getTest {
 			db := setupDB(t)
-			rev, err := db.Put(context.Background(), "foo", map[string]string{"_id": "foo"}, nil)
+			rev, err := db.Put(t.Context(), "foo", map[string]string{"_id": "foo"}, nil)
 			if err != nil {
 				panic(err)
 			}
-			if _, e := db.Delete(context.Background(), "foo", kivik.Rev(rev)); e != nil {
+			if _, e := db.Delete(t.Context(), "foo", kivik.Rev(rev)); e != nil {
 				panic(e)
 			}
 			return getTest{
@@ -381,14 +380,14 @@ func TestGet(t *testing.T) {
 			Name: "Deleted DB",
 			DB: func() *db {
 				c := setup(t, nil)
-				if err := c.CreateDB(context.Background(), "deleted0", nil); err != nil {
+				if err := c.CreateDB(t.Context(), "deleted0", nil); err != nil {
 					t.Fatal(err)
 				}
 				dbv, err := c.DB("deleted0", nil)
 				if err != nil {
 					t.Fatal(err)
 				}
-				if e := c.DestroyDB(context.Background(), "deleted0", nil); e != nil {
+				if e := c.DestroyDB(t.Context(), "deleted0", nil); e != nil {
 					t.Fatal(e)
 				}
 				return dbv.(*db)
@@ -409,7 +408,7 @@ func TestGet(t *testing.T) {
 				if opts == nil {
 					opts = kivik.Params(nil)
 				}
-				rows, err := db.Get(context.Background(), test.ID, opts)
+				rows, err := db.Get(t.Context(), test.ID, opts)
 				if d := internal.StatusErrorDiff(test.Error, test.Status, err); d != "" {
 					t.Error(d)
 				}
@@ -452,7 +451,7 @@ func TestDeleteDoc(t *testing.T) {
 		},
 		func() delTest {
 			db := setupDB(t)
-			rev, err := db.Put(context.Background(), "foo", map[string]string{"_id": "foo"}, nil)
+			rev, err := db.Put(t.Context(), "foo", map[string]string{"_id": "foo"}, nil)
 			if err != nil {
 				panic(err)
 			}
@@ -476,7 +475,7 @@ func TestDeleteDoc(t *testing.T) {
 			Rev:  "",
 			DB: func() *db {
 				db := setupDB(t)
-				if _, err := db.Put(context.Background(), "_local/foo", map[string]string{"foo": "bar"}, nil); err != nil {
+				if _, err := db.Put(t.Context(), "_local/foo", map[string]string{"foo": "bar"}, nil); err != nil {
 					panic(err)
 				}
 				return db
@@ -488,7 +487,7 @@ func TestDeleteDoc(t *testing.T) {
 			Rev:  "0-1",
 			DB: func() *db {
 				db := setupDB(t)
-				if _, err := db.Put(context.Background(), "_local/foo", map[string]string{"foo": "bar"}, nil); err != nil {
+				if _, err := db.Put(t.Context(), "_local/foo", map[string]string{"foo": "bar"}, nil); err != nil {
 					panic(err)
 				}
 				return db
@@ -499,14 +498,14 @@ func TestDeleteDoc(t *testing.T) {
 			ID:   "foo",
 			DB: func() *db {
 				c := setup(t, nil)
-				if err := c.CreateDB(context.Background(), "deleted0", nil); err != nil {
+				if err := c.CreateDB(t.Context(), "deleted0", nil); err != nil {
 					t.Fatal(err)
 				}
 				dbv, err := c.DB("deleted0", nil)
 				if err != nil {
 					t.Fatal(err)
 				}
-				if e := c.DestroyDB(context.Background(), "deleted0", nil); e != nil {
+				if e := c.DestroyDB(t.Context(), "deleted0", nil); e != nil {
 					t.Fatal(e)
 				}
 				return dbv.(*db)
@@ -523,7 +522,7 @@ func TestDeleteDoc(t *testing.T) {
 				if db == nil {
 					db = setupDB(t)
 				}
-				rev, err := db.Delete(context.Background(), test.ID, kivik.Rev(test.Rev))
+				rev, err := db.Delete(t.Context(), test.ID, kivik.Rev(test.Rev))
 				var msg string
 				var status int
 				if err != nil {
@@ -539,7 +538,7 @@ func TestDeleteDoc(t *testing.T) {
 				if err != nil {
 					return
 				}
-				result, err := db.Get(context.Background(), test.ID, kivik.Rev(rev))
+				result, err := db.Get(t.Context(), test.ID, kivik.Rev(rev))
 				if err != nil {
 					t.Fatal(err)
 				}

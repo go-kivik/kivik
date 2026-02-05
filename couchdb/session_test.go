@@ -17,7 +17,6 @@
 package couchdb
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -68,7 +67,7 @@ func TestSession(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			session, err := client.Session(context.Background())
+			session, err := client.Session(t.Context())
 			if d := internal.StatusErrorDiffRE(test.err, test.errStatus, err); d != "" {
 				t.Error(d)
 			}

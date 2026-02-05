@@ -13,7 +13,6 @@
 package sqlite
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -31,7 +30,7 @@ func TestClientCreateDB(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		err = dClient.CreateDB(context.Background(), "Foo", mock.NilOption)
+		err = dClient.CreateDB(t.Context(), "Foo", mock.NilOption)
 		if err == nil {
 			t.Fatal("err should not be nil")
 		}
@@ -51,11 +50,11 @@ func TestClientCreateDB(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if err := dClient.CreateDB(context.Background(), "foo", mock.NilOption); err != nil {
+		if err := dClient.CreateDB(t.Context(), "foo", mock.NilOption); err != nil {
 			t.Fatal(err)
 		}
 
-		exists, err := dClient.DBExists(context.Background(), "foo", mock.NilOption)
+		exists, err := dClient.DBExists(t.Context(), "foo", mock.NilOption)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -70,11 +69,11 @@ func TestClientCreateDB(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if err := dClient.CreateDB(context.Background(), "foo", mock.NilOption); err != nil {
+		if err := dClient.CreateDB(t.Context(), "foo", mock.NilOption); err != nil {
 			t.Fatal(err)
 		}
 
-		err = dClient.CreateDB(context.Background(), "foo", mock.NilOption)
+		err = dClient.CreateDB(t.Context(), "foo", mock.NilOption)
 		if err == nil {
 			t.Fatal("err should not be nil")
 		}

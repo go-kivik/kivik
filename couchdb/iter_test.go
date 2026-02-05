@@ -27,7 +27,7 @@ func TestCancelableReadCloser(t *testing.T) {
 	t.Run("no cancellation", func(t *testing.T) {
 		t.Parallel()
 		rc := newCancelableReadCloser(
-			context.Background(),
+			t.Context(),
 			io.NopCloser(strings.NewReader("foo")),
 		)
 		result, err := io.ReadAll(rc)
@@ -40,7 +40,7 @@ func TestCancelableReadCloser(t *testing.T) {
 	})
 	t.Run("pre-cancelled", func(t *testing.T) {
 		t.Parallel()
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		cancel()
 		rc := newCancelableReadCloser(
 			ctx,
@@ -59,7 +59,7 @@ func TestCancelableReadCloser(t *testing.T) {
 	})
 	t.Run("canceled mid-flight", func(t *testing.T) {
 		t.Parallel()
-		ctx, cancel := context.WithTimeout(context.Background(), 150*time.Millisecond)
+		ctx, cancel := context.WithTimeout(t.Context(), 150*time.Millisecond)
 		defer cancel()
 		r := io.MultiReader(
 			strings.NewReader("foo"),
@@ -78,7 +78,7 @@ func TestCancelableReadCloser(t *testing.T) {
 	t.Run("read error, not canceled", func(t *testing.T) {
 		t.Parallel()
 		rc := newCancelableReadCloser(
-			context.Background(),
+			t.Context(),
 			io.NopCloser(testy.ErrorReader("foo", errors.New("read err"))),
 		)
 		_, err := io.ReadAll(rc)
@@ -89,7 +89,7 @@ func TestCancelableReadCloser(t *testing.T) {
 	t.Run("closed early", func(t *testing.T) {
 		t.Parallel()
 		rc := newCancelableReadCloser(
-			context.Background(),
+			t.Context(),
 			io.NopCloser(testy.NeverReader()),
 		)
 		_ = rc.Close()

@@ -13,7 +13,6 @@
 package fs
 
 import (
-	"context"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -276,7 +275,7 @@ func TestPut(t *testing.T) {
 		if opts == nil {
 			opts = kivik.Params(nil)
 		}
-		rev, err := db.Put(context.Background(), tt.id, tt.doc, opts)
+		rev, err := db.Put(t.Context(), tt.id, tt.doc, opts)
 		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
 			t.Error(d)
 		}

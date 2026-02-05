@@ -15,7 +15,6 @@
 package sqlite
 
 import (
-	"context"
 	"io"
 	"net/http"
 	"sort"
@@ -745,7 +744,7 @@ func TestDBAllDocs(t *testing.T) {
 		if opts == nil {
 			opts = mock.NilOption
 		}
-		rows, err := db.AllDocs(context.Background(), opts)
+		rows, err := db.AllDocs(t.Context(), opts)
 		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}
@@ -846,7 +845,7 @@ func TestDBAllDocs_total_rows(t *testing.T) {
 	_ = d.tPut("b", map[string]string{"foo": "baz"})
 	_ = d.tPut("c", map[string]string{"foo": "qux"})
 
-	rows, err := d.AllDocs(context.Background(), mock.NilOption)
+	rows, err := d.AllDocs(t.Context(), mock.NilOption)
 	if err != nil {
 		t.Fatalf("Failed to query AllDocs: %s", err)
 	}
@@ -873,7 +872,7 @@ func TestDBAllDocs_update_seq(t *testing.T) {
 
 	_ = d.tPut("foo", map[string]string{"_id": "foo"})
 
-	rows, err := d.AllDocs(context.Background(), kivik.Param("update_seq", true))
+	rows, err := d.AllDocs(t.Context(), kivik.Param("update_seq", true))
 	if err != nil {
 		t.Fatalf("Failed to query view: %s", err)
 	}
@@ -891,7 +890,7 @@ func TestDBAllDocs_no_update_seq(t *testing.T) {
 
 	_ = d.tPut("foo", map[string]string{"_id": "foo"})
 
-	rows, err := d.AllDocs(context.Background(), mock.NilOption)
+	rows, err := d.AllDocs(t.Context(), mock.NilOption)
 	if err != nil {
 		t.Fatalf("Failed to query view: %s", err)
 	}

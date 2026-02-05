@@ -13,7 +13,6 @@
 package couchdb
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -174,7 +173,7 @@ func TestBulkGet(t *testing.T) {
 		if opts == nil {
 			opts = mock.NilOption
 		}
-		rows, err := test.db.BulkGet(context.Background(), test.docs, opts)
+		rows, err := test.db.BulkGet(t.Context(), test.docs, opts)
 		if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 			t.Error(d)
 		}
@@ -320,7 +319,7 @@ func TestGetBulkRowsIterator(t *testing.T) {
 		{ID: "baz", Err: "not_found: missing"},
 	}
 	results := []result{}
-	rows := newBulkGetRows(context.TODO(), io.NopCloser(strings.NewReader(bulkGetInput)))
+	rows := newBulkGetRows(t.Context(), io.NopCloser(strings.NewReader(bulkGetInput)))
 	var count int
 	for {
 		row := &driver.Row{}

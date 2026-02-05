@@ -13,7 +13,6 @@
 package memorydb
 
 import (
-	"context"
 	"io"
 	"sort"
 	"testing"
@@ -58,7 +57,7 @@ func TestAllDocs(t *testing.T) {
 			Name: "OneDoc",
 			DB: func() *db {
 				db := setupDB(t)
-				if _, err := db.Put(context.Background(), "foo", map[string]string{"foo": "bar"}, nil); err != nil {
+				if _, err := db.Put(t.Context(), "foo", map[string]string{"foo": "bar"}, nil); err != nil {
 					t.Fatal(err)
 				}
 				return db
@@ -70,7 +69,7 @@ func TestAllDocs(t *testing.T) {
 			DB: func() *db {
 				db := setupDB(t)
 				for _, id := range []string{"a", "c", "z", "q", "chicken"} {
-					if _, err := db.Put(context.Background(), id, map[string]string{"value": id}, nil); err != nil {
+					if _, err := db.Put(t.Context(), id, map[string]string{"value": id}, nil); err != nil {
 						t.Fatal(err)
 					}
 				}
@@ -86,7 +85,7 @@ func TestAllDocs(t *testing.T) {
 				if db == nil {
 					db = setupDB(t)
 				}
-				rows, err := db.AllDocs(context.Background(), nil)
+				rows, err := db.AllDocs(t.Context(), nil)
 				var msg string
 				if err != nil {
 					msg = err.Error()

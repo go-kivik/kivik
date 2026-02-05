@@ -13,7 +13,6 @@
 package sqlite
 
 import (
-	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -145,7 +144,7 @@ func TestFind(t *testing.T) {
 		revC := d.tPut("c", map[string]interface{}{})
 		_ = d.tPut("d", map[string]interface{}{})
 
-		rows, err := d.Find(context.Background(), json.RawMessage(`{"selector":{},"limit":1,"skip":1}`), mock.NilOption)
+		rows, err := d.Find(t.Context(), json.RawMessage(`{"selector":{},"limit":1,"skip":1}`), mock.NilOption)
 		if err != nil {
 			t.Fatalf("Failed to get bookmark: %s", err)
 		}
@@ -232,7 +231,7 @@ func TestFind(t *testing.T) {
 		if db == nil {
 			db = newDB(t)
 		}
-		rows, err := db.Find(context.Background(), json.RawMessage(tt.query), mock.NilOption)
+		rows, err := db.Find(t.Context(), json.RawMessage(tt.query), mock.NilOption)
 		if !testy.ErrorMatchesRE(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}

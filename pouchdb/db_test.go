@@ -15,7 +15,6 @@
 package pouchdb
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -44,7 +43,7 @@ func TestPut(t *testing.T) {
 		return
 	}
 	dbname := kt.TestDBName(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	t.Cleanup(func() {
 		_ = client.DestroyDB(ctx, dbname)
 	})
@@ -63,7 +62,7 @@ func TestPurge(t *testing.T) {
 		t.Errorf("Failed to connect to PouchDB/memdown driver: %s", err)
 		return
 	}
-	v, _ := client.Version(context.Background())
+	v, _ := client.Version(t.Context())
 	pouchVer := v.Version
 
 	t.Run("no IndexedDB", func(t *testing.T) {
@@ -77,7 +76,7 @@ func TestPurge(t *testing.T) {
 			return
 		}
 		dbname := kt.TestDBName(t)
-		ctx := context.Background()
+		ctx := t.Context()
 		t.Cleanup(func() {
 			_ = client.DestroyDB(ctx, dbname)
 		})

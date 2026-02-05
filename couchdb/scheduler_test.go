@@ -13,7 +13,6 @@
 package couchdb
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -70,7 +69,7 @@ func TestSRUpdate(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			var result driver.ReplicationInfo
-			err := test.rep.Update(context.Background(), &result)
+			err := test.rep.Update(t.Context(), &result)
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -227,7 +226,7 @@ func TestGetReplicationsFromScheduler(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			reps, err := test.client.getReplicationsFromScheduler(context.Background(), test.options)
+			reps, err := test.client.getReplicationsFromScheduler(t.Context(), test.options)
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -320,7 +319,7 @@ func TestSchedulerReplicationDelete(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := test.rep.Delete(context.Background())
+			err := test.rep.Delete(t.Context())
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -477,7 +476,7 @@ func TestSchedulerSupported(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.client.schedulerSupported(context.Background())
+			result, err := test.client.schedulerSupported(t.Context())
 			if d := testy.DiffInterface(test.expectedState, test.client.schedulerDetected); d != nil {
 				t.Error(d)
 			}
@@ -631,7 +630,7 @@ func TestSRinnerUpdate(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := test.r.update(context.Background())
+			err := test.r.update(t.Context())
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -699,7 +698,7 @@ func TestFetchSchedulerReplication(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.client.fetchSchedulerReplication(context.Background(), test.docID)
+			result, err := test.client.fetchSchedulerReplication(t.Context(), test.docID)
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}

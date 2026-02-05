@@ -15,7 +15,6 @@
 package sqlite
 
 import (
-	"context"
 	"database/sql"
 	"net/http"
 	"regexp"
@@ -333,7 +332,7 @@ func TestDBPut_designDocs(t *testing.T) {
 		if opts == nil {
 			opts = mock.NilOption
 		}
-		rev, err := dbc.Put(context.Background(), tt.docID, tt.doc, opts)
+		rev, err := dbc.Put(t.Context(), tt.docID, tt.doc, opts)
 		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}

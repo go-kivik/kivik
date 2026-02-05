@@ -13,7 +13,6 @@
 package couchdb
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -72,7 +71,7 @@ func TestAllDBs(t *testing.T) {
 		if opts == nil {
 			opts = mock.NilOption
 		}
-		result, err := test.client.AllDBs(context.Background(), opts)
+		result, err := test.client.AllDBs(t.Context(), opts)
 		if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 			t.Error(d)
 		}
@@ -166,7 +165,7 @@ func TestDBExists(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			exists, err := test.client.DBExists(context.Background(), test.dbName, nil)
+			exists, err := test.client.DBExists(t.Context(), test.dbName, nil)
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -223,7 +222,7 @@ func TestCreateDB(t *testing.T) {
 			if opts == nil {
 				opts = mock.NilOption
 			}
-			err := test.client.CreateDB(context.Background(), test.dbName, opts)
+			err := test.client.CreateDB(t.Context(), test.dbName, opts)
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -269,7 +268,7 @@ func TestDestroyDB(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := test.client.DestroyDB(context.Background(), test.dbName, nil)
+			err := test.client.DestroyDB(t.Context(), test.dbName, nil)
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -434,7 +433,7 @@ func TestDBUpdates(t *testing.T) {
 			if opts == nil {
 				opts = mock.NilOption
 			}
-			result, err := tt.client.DBUpdates(context.TODO(), opts)
+			result, err := tt.client.DBUpdates(t.Context(), opts)
 			if d := internal.StatusErrorDiffRE(tt.wantErr, tt.wantStatus, err); d != "" {
 				t.Error(d)
 			}
@@ -463,7 +462,7 @@ func TestDBUpdates(t *testing.T) {
 
 func newTestUpdates(t *testing.T, body io.ReadCloser) driver.DBUpdates {
 	t.Helper()
-	u, err := newUpdates(context.Background(), body)
+	u, err := newUpdates(t.Context(), body)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -481,7 +480,7 @@ func TestUpdatesNext(t *testing.T) {
 	}{
 		{
 			name:     "consumed feed",
-			updates:  newContinuousUpdates(context.TODO(), Body("")),
+			updates:  newContinuousUpdates(t.Context(), Body("")),
 			expected: &driver.DBUpdate{},
 			status:   http.StatusInternalServerError,
 			err:      "EOF",
@@ -513,7 +512,7 @@ func TestUpdatesNext(t *testing.T) {
 func TestUpdatesClose(t *testing.T) {
 	t.Parallel()
 	body := &closeTracker{ReadCloser: Body("")}
-	u := newContinuousUpdates(context.TODO(), body)
+	u := newContinuousUpdates(t.Context(), body)
 	if err := u.Close(); err != nil {
 		t.Fatal(err)
 	}
@@ -537,7 +536,7 @@ func TestUpdatesLastSeq(t *testing.T) {
 		Body: Body(`{"results":[],"last_seq":"99-asdf"}`),
 	}, nil)
 
-	updates, err := client.DBUpdates(context.TODO(), mock.NilOption)
+	updates, err := client.DBUpdates(t.Context(), mock.NilOption)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -612,7 +611,7 @@ func TestPing(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.client.Ping(context.Background())
+			result, err := test.client.Ping(t.Context())
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}

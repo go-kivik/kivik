@@ -69,7 +69,7 @@ func TestClusterStatus(t *testing.T) {
 			driverClient: test.client,
 			closed:       test.closed,
 		}
-		result, err := c.ClusterStatus(context.Background(), test.options)
+		result, err := c.ClusterStatus(t.Context(), test.options)
 		if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
 			t.Error(d)
 		}
@@ -122,7 +122,7 @@ func TestClusterSetup(t *testing.T) {
 			driverClient: test.client,
 			closed:       test.closed,
 		}
-		err := c.ClusterSetup(context.Background(), test.action)
+		err := c.ClusterSetup(t.Context(), test.action)
 		if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
 			t.Error(d)
 		}
@@ -179,7 +179,7 @@ func TestMembership(t *testing.T) {
 			driverClient: tt.client,
 			closed:       tt.closed,
 		}
-		got, err := c.Membership(context.Background())
+		got, err := c.Membership(t.Context())
 		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
 			t.Error(d)
 		}

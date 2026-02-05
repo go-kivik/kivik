@@ -13,7 +13,6 @@
 package mockdb_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/go-kivik/kivik/v4/mockdb"
@@ -26,7 +25,7 @@ func TestDBUpdates(t *testing.T) {
 	}
 	mock.ExpectDBUpdates().WillReturn(mockdb.NewDBUpdates().LastSeq("99-last"))
 
-	updates := client.DBUpdates(context.Background())
+	updates := client.DBUpdates(t.Context())
 	for updates.Next() {
 		/* .. do nothing .. */
 	}

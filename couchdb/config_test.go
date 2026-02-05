@@ -13,7 +13,6 @@
 package couchdb
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -61,7 +60,7 @@ func TestConfig(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, test tst) {
-		result, err := test.client.Config(context.Background(), test.node)
+		result, err := test.client.Config(t.Context(), test.node)
 		if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 			t.Error(d)
 		}
@@ -108,7 +107,7 @@ func TestConfigSection(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, test tst) {
-		result, err := test.client.ConfigSection(context.Background(), test.node, test.section)
+		result, err := test.client.ConfigSection(t.Context(), test.node, test.section)
 		if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 			t.Error(d)
 		}
@@ -158,7 +157,7 @@ func TestConfigValue(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, test tst) {
-		result, err := test.client.ConfigValue(context.Background(), test.node, test.section, test.key)
+		result, err := test.client.ConfigValue(t.Context(), test.node, test.section, test.key)
 		if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 			t.Error(d)
 		}
@@ -217,7 +216,7 @@ func TestSetConfigValue(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, test tst) {
-		result, err := test.client.SetConfigValue(context.Background(), test.node, test.section, test.key, test.value)
+		result, err := test.client.SetConfigValue(t.Context(), test.node, test.section, test.key, test.value)
 		if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 			t.Error(d)
 		}
@@ -264,7 +263,7 @@ func TestDeleteConfigKey(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, test tst) {
-		result, err := test.client.DeleteConfigKey(context.Background(), test.node, test.section, test.key)
+		result, err := test.client.DeleteConfigKey(t.Context(), test.node, test.section, test.key)
 		if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 			t.Error(d)
 		}

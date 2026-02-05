@@ -46,7 +46,7 @@ func (f *TestFeed) Next(ifce interface{}) error {
 }
 
 func TestIterator(t *testing.T) {
-	iter := newIterator(context.Background(), nil, &TestFeed{max: 10}, func() interface{} { var i int64; return &i }())
+	iter := newIterator(t.Context(), nil, &TestFeed{max: 10}, func() interface{} { var i int64; return &i }())
 	expected := []int64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 	result := []int64{}
 	for iter.Next() {
@@ -65,7 +65,7 @@ func TestIterator(t *testing.T) {
 }
 
 func TestCancelledIterator(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Millisecond)
 	defer cancel()
 	iter := newIterator(ctx, nil, &TestFeed{max: 10000}, func() interface{} { var i int64; return &i }())
 	for iter.Next() { //nolint:revive // empty block necessary for loop

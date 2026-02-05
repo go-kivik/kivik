@@ -13,7 +13,6 @@
 package couchdb
 
 import (
-	"context"
 	"errors"
 	"io"
 	"net/http"
@@ -156,7 +155,7 @@ func TestStats(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.db.Stats(context.Background())
+			result, err := test.db.Stats(t.Context())
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -273,7 +272,7 @@ func TestDbsStats(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.client.DBsStats(context.Background(), test.dbnames)
+			result, err := test.client.DBsStats(t.Context(), test.dbnames)
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -352,7 +351,7 @@ func TestPartitionStats(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
-		result, err := tt.db.PartitionStats(context.Background(), tt.name)
+		result, err := tt.db.PartitionStats(t.Context(), tt.name)
 		if d := internal.StatusErrorDiffRE(tt.err, tt.status, err); d != "" {
 			t.Error(d)
 		}

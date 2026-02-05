@@ -15,7 +15,6 @@
 package sqlite
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -133,7 +132,7 @@ func TestDBPurge(t *testing.T) {
 		if db == nil {
 			db = newDB(t)
 		}
-		got, err := db.Purge(context.Background(), tt.arg)
+		got, err := db.Purge(t.Context(), tt.arg)
 		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}

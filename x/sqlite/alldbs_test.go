@@ -13,7 +13,6 @@
 package sqlite
 
 import (
-	"context"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -42,7 +41,7 @@ func TestClientAllDBs(t *testing.T) {
 		}
 	}
 
-	dbs, err := dClient.AllDBs(context.Background(), mock.NilOption)
+	dbs, err := dClient.AllDBs(t.Context(), mock.NilOption)
 	if err != nil {
 		t.Fatal("err should be nil")
 	}

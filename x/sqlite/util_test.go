@@ -15,7 +15,6 @@
 package sqlite
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -30,7 +29,7 @@ func Test_isLeafRev(t *testing.T) {
 			t.Fatal(err)
 		}
 		defer tx.Rollback()
-		_, err = d.DB.(*db).isLeafRev(context.Background(), tx, "foo", 1, "abc")
+		_, err = d.DB.(*db).isLeafRev(t.Context(), tx, "foo", 1, "abc")
 		status := kivik.HTTPStatus(err)
 		if status != http.StatusNotFound {
 			t.Errorf("Expected %d, got %d", http.StatusNotFound, status)
@@ -47,7 +46,7 @@ func Test_isLeafRev(t *testing.T) {
 			t.Fatal(err)
 		}
 		defer tx.Rollback()
-		_, err = d.DB.(*db).isLeafRev(context.Background(), tx, "foo", 3, "abc")
+		_, err = d.DB.(*db).isLeafRev(t.Context(), tx, "foo", 3, "abc")
 		status := kivik.HTTPStatus(err)
 		if status != http.StatusConflict {
 			t.Errorf("Expected %d, got %d", http.StatusConflict, status)
@@ -67,7 +66,7 @@ func Test_isLeafRev(t *testing.T) {
 			t.Fatal(err)
 		}
 		defer tx.Rollback()
-		_, err = d.DB.(*db).isLeafRev(context.Background(), tx, "foo", r.rev, r.id)
+		_, err = d.DB.(*db).isLeafRev(t.Context(), tx, "foo", r.rev, r.id)
 		status := kivik.HTTPStatus(err)
 		if status != http.StatusConflict {
 			t.Errorf("Expected %d, got %d", http.StatusConflict, status)
@@ -87,7 +86,7 @@ func Test_isLeafRev(t *testing.T) {
 			t.Fatal(err)
 		}
 		defer tx.Rollback()
-		_, err = d.DB.(*db).isLeafRev(context.Background(), tx, "foo", r.rev, r.id)
+		_, err = d.DB.(*db).isLeafRev(t.Context(), tx, "foo", r.rev, r.id)
 		if err != nil {
 			t.Fatal(err)
 		}

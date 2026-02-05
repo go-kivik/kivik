@@ -13,7 +13,6 @@
 package couchdb
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -44,7 +43,7 @@ func TestChanges_metadata(t *testing.T) {
 		`),
 	}, nil)
 
-	changes, err := db.Changes(context.Background(), mock.NilOption)
+	changes, err := db.Changes(t.Context(), mock.NilOption)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -211,7 +210,7 @@ func TestChanges(t *testing.T) {
 			if opts == nil {
 				opts = mock.NilOption
 			}
-			ch, err := test.db.Changes(context.Background(), opts)
+			ch, err := test.db.Changes(t.Context(), opts)
 			if ch != nil {
 				t.Cleanup(func() {
 					_ = ch.Close()
@@ -240,13 +239,13 @@ func TestChangesNext(t *testing.T) {
 	}{
 		{
 			name:    "invalid json",
-			changes: newChangesRows(context.TODO(), "", Body("invalid json"), ""),
+			changes: newChangesRows(t.Context(), "", Body("invalid json"), ""),
 			status:  http.StatusBadGateway,
 			err:     "invalid character 'i' looking for beginning of value",
 		},
 		{
 			name: "success",
-			changes: newChangesRows(context.TODO(), "", Body(`{"seq":3,"id":"43734cf3ce6d5a37050c050bb600006b","changes":[{"rev":"2-185ccf92154a9f24a4f4fd12233bf463"}],"deleted":true}
+			changes: newChangesRows(t.Context(), "", Body(`{"seq":3,"id":"43734cf3ce6d5a37050c050bb600006b","changes":[{"rev":"2-185ccf92154a9f24a4f4fd12233bf463"}],"deleted":true}
                 `), ""),
 			expected: &driver.Change{
 				ID:      "43734cf3ce6d5a37050c050bb600006b",
@@ -257,13 +256,13 @@ func TestChangesNext(t *testing.T) {
 		},
 		{
 			name:    "read error",
-			changes: newChangesRows(context.TODO(), "", io.NopCloser(testy.ErrorReader("", errors.New("read error"))), ""),
+			changes: newChangesRows(t.Context(), "", io.NopCloser(testy.ErrorReader("", errors.New("read error"))), ""),
 			status:  http.StatusBadGateway,
 			err:     "read error",
 		},
 		{
 			name:     "end of input",
-			changes:  newChangesRows(context.TODO(), "", Body(``), ""),
+			changes:  newChangesRows(t.Context(), "", Body(``), ""),
 			expected: &driver.Change{},
 			status:   http.StatusInternalServerError,
 			err:      "EOF",
@@ -289,7 +288,7 @@ func TestChangesNext(t *testing.T) {
 func TestChangesClose(t *testing.T) {
 	t.Run("normal", func(t *testing.T) {
 		body := &closeTracker{ReadCloser: Body("foo")}
-		feed := newChangesRows(context.TODO(), "", body, "")
+		feed := newChangesRows(t.Context(), "", body, "")
 		_ = feed.Close()
 		if !body.closed {
 			t.Errorf("Failed to close")
@@ -298,7 +297,7 @@ func TestChangesClose(t *testing.T) {
 
 	t.Run("next in progress", func(t *testing.T) {
 		body := &closeTracker{ReadCloser: io.NopCloser(testy.NeverReader())}
-		feed := newChangesRows(context.TODO(), "", body, "")
+		feed := newChangesRows(t.Context(), "", body, "")
 		row := new(driver.Change)
 		done := make(chan struct{})
 		go func() {

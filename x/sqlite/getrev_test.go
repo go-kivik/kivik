@@ -15,7 +15,6 @@
 package sqlite
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -217,7 +216,7 @@ func TestGetRev(t *testing.T) {
 		if opts == nil {
 			opts = mock.NilOption
 		}
-		rev, err := db.GetRev(context.Background(), tt.id, opts)
+		rev, err := db.GetRev(t.Context(), tt.id, opts)
 		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}

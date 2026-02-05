@@ -13,7 +13,6 @@
 package fs
 
 import (
-	"context"
 	"errors"
 	"net/http"
 	"os"
@@ -128,7 +127,7 @@ func TestCompact(t *testing.T) {
 			dbPath: path.Join(tt.path, tt.dbname),
 			dbName: tt.dbname,
 		}
-		err := db.compact(context.Background(), fs)
+		err := db.compact(t.Context(), fs)
 		if d := internal.StatusErrorDiffRE(tt.err, tt.status, err); d != "" {
 			t.Error(d)
 		}

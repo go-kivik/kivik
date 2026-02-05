@@ -13,7 +13,6 @@
 package fs
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -58,7 +57,7 @@ func Test_db_Stats(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			stats, err := db.Stats(context.Background())
+			stats, err := db.Stats(t.Context())
 			if !testy.ErrorMatchesRE(tt.wantErr, err) {
 				t.Errorf("error = %v, wantErr %v", err, tt.wantErr)
 				return

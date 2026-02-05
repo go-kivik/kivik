@@ -15,7 +15,6 @@
 package sqlite
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -65,7 +64,7 @@ func TestDBRevsDiff(t *testing.T) {
 		if db == nil {
 			db = newDB(t)
 		}
-		rows, err := db.RevsDiff(context.Background(), tt.revMap)
+		rows, err := db.RevsDiff(t.Context(), tt.revMap)
 		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}

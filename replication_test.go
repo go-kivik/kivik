@@ -271,7 +271,7 @@ func TestReplicationDelete(t *testing.T) {
 			DeleteFunc: func(context.Context) error { return errors.New(expected) },
 		},
 	}
-	err := r.Delete(context.Background())
+	err := r.Delete(t.Context())
 	if !testy.ErrorMatches(expected, err) {
 		t.Errorf("Unexpected error: %s", err)
 	}
@@ -287,7 +287,7 @@ func TestReplicationUpdate(t *testing.T) {
 				},
 			},
 		}
-		err := r.Update(context.Background())
+		err := r.Update(t.Context())
 		if !testy.ErrorMatches(expected, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}
@@ -307,7 +307,7 @@ func TestReplicationUpdate(t *testing.T) {
 				},
 			},
 		}
-		err := r.Update(context.Background())
+		err := r.Update(t.Context())
 		if !testy.ErrorMatches("", err) {
 			t.Errorf("Unexpected error: %s", err)
 		}
@@ -389,7 +389,7 @@ func TestGetReplications(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.client.GetReplications(context.Background(), test.options)
+			result, err := test.client.GetReplications(t.Context(), test.options)
 			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -473,7 +473,7 @@ func TestReplicate(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.client.Replicate(context.Background(), test.target, test.source, test.options)
+			result, err := test.client.Replicate(t.Context(), test.target, test.source, test.options)
 			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}

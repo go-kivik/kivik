@@ -15,7 +15,6 @@
 package sqlite
 
 import (
-	"context"
 	"io"
 	"net/http"
 	"testing"
@@ -83,7 +82,7 @@ func TestDBGetAttachment(t *testing.T) {
 			"_id":          "foo",
 			"_attachments": newAttachments().add("foo.txt", "This is a base64 encoding"),
 		})
-		_, err := db.Delete(context.Background(), "foo", kivik.Rev(rev))
+		_, err := db.Delete(t.Context(), "foo", kivik.Rev(rev))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -176,7 +175,7 @@ func TestDBGetAttachment(t *testing.T) {
 		if opts == nil {
 			opts = mock.NilOption
 		}
-		att, err := db.GetAttachment(context.Background(), tt.docID, tt.filename, opts)
+		att, err := db.GetAttachment(t.Context(), tt.docID, tt.filename, opts)
 		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}

@@ -13,7 +13,6 @@
 package memorydb
 
 import (
-	"context"
 	"sort"
 	"testing"
 
@@ -61,7 +60,7 @@ func TestDBExists(t *testing.T) {
 			Name:   "ExistingDB",
 			DBName: "foo",
 			Setup: func(c driver.Client) {
-				if err := c.CreateDB(context.Background(), "foo", nil); err != nil {
+				if err := c.CreateDB(t.Context(), "foo", nil); err != nil {
 					panic(err)
 				}
 			},
@@ -71,7 +70,7 @@ func TestDBExists(t *testing.T) {
 			Name:   "OtherDB",
 			DBName: "foo",
 			Setup: func(c driver.Client) {
-				if err := c.CreateDB(context.Background(), "bar", nil); err != nil {
+				if err := c.CreateDB(t.Context(), "bar", nil); err != nil {
 					panic(err)
 				}
 			},
@@ -82,7 +81,7 @@ func TestDBExists(t *testing.T) {
 		func(test deTest) {
 			t.Run(test.Name, func(t *testing.T) {
 				c := setup(t, test.Setup)
-				result, err := c.DBExists(context.Background(), test.DBName, nil)
+				result, err := c.DBExists(t.Context(), test.DBName, nil)
 				if !testy.ErrorMatches(test.Error, err) {
 					t.Errorf("Unexpected error: %s", err)
 				}
@@ -119,7 +118,7 @@ func TestCreateDB(t *testing.T) {
 			Name:   "Duplicate",
 			DBName: "foo",
 			Setup: func(c driver.Client) {
-				if e := c.CreateDB(context.Background(), "foo", nil); e != nil {
+				if e := c.CreateDB(t.Context(), "foo", nil); e != nil {
 					panic(e)
 				}
 			},
@@ -131,7 +130,7 @@ func TestCreateDB(t *testing.T) {
 			t.Run(test.Name, func(t *testing.T) {
 				c := setup(t, test.Setup)
 				var msg string
-				if e := c.CreateDB(context.Background(), test.DBName, nil); e != nil {
+				if e := c.CreateDB(t.Context(), test.DBName, nil); e != nil {
 					msg = e.Error()
 				}
 				if msg != test.Error {
@@ -157,10 +156,10 @@ func TestAllDBs(t *testing.T) {
 		{
 			Name: "2DBs",
 			Setup: func(c driver.Client) {
-				if err := c.CreateDB(context.Background(), "foo", nil); err != nil {
+				if err := c.CreateDB(t.Context(), "foo", nil); err != nil {
 					panic(err)
 				}
-				if err := c.CreateDB(context.Background(), "bar", nil); err != nil {
+				if err := c.CreateDB(t.Context(), "bar", nil); err != nil {
 					panic(err)
 				}
 			},
@@ -171,7 +170,7 @@ func TestAllDBs(t *testing.T) {
 		func(test adTest) {
 			t.Run(test.Name, func(t *testing.T) {
 				c := setup(t, test.Setup)
-				result, err := c.AllDBs(context.Background(), nil)
+				result, err := c.AllDBs(t.Context(), nil)
 				var msg string
 				if err != nil {
 					msg = err.Error()
@@ -206,7 +205,7 @@ func TestDestroyDB(t *testing.T) {
 			Name:   "ExistingDB",
 			DBName: "foo",
 			Setup: func(c driver.Client) {
-				if err := c.CreateDB(context.Background(), "foo", nil); err != nil {
+				if err := c.CreateDB(t.Context(), "foo", nil); err != nil {
 					panic(err)
 				}
 			},
@@ -215,7 +214,7 @@ func TestDestroyDB(t *testing.T) {
 			Name:   "OtherDB",
 			DBName: "foo",
 			Setup: func(c driver.Client) {
-				if err := c.CreateDB(context.Background(), "bar", nil); err != nil {
+				if err := c.CreateDB(t.Context(), "bar", nil); err != nil {
 					panic(err)
 				}
 			},
@@ -227,7 +226,7 @@ func TestDestroyDB(t *testing.T) {
 			t.Run(test.Name, func(t *testing.T) {
 				c := setup(t, test.Setup)
 				var msg string
-				if e := c.DestroyDB(context.Background(), test.DBName, nil); e != nil {
+				if e := c.DestroyDB(t.Context(), test.DBName, nil); e != nil {
 					msg = e.Error()
 				}
 				if msg != test.Error {
@@ -250,7 +249,7 @@ func TestDB(t *testing.T) {
 			Name:   "ExistingDB",
 			DBName: "foo",
 			Setup: func(c driver.Client) {
-				if err := c.CreateDB(context.Background(), "foo", nil); err != nil {
+				if err := c.CreateDB(t.Context(), "foo", nil); err != nil {
 					panic(err)
 				}
 			},
@@ -276,7 +275,7 @@ func TestDB(t *testing.T) {
 func TestClientVersion(t *testing.T) {
 	expected := &driver.Version{}
 	c := &client{version: expected}
-	result, err := c.Version(context.Background())
+	result, err := c.Version(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}

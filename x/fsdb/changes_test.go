@@ -13,7 +13,6 @@
 package fs
 
 import (
-	"context"
 	"io"
 	"testing"
 
@@ -50,7 +49,7 @@ func TestChanges(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
-		changes, err := tt.db.Changes(context.TODO(), tt.options)
+		changes, err := tt.db.Changes(t.Context(), tt.options)
 		if d := internal.StatusErrorDiffRE(tt.err, tt.status, err); d != "" {
 			t.Error(d)
 		}

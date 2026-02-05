@@ -13,7 +13,6 @@
 package errors
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -64,7 +63,7 @@ func TestFormatError(t *testing.T) {
 			_, err := json.Marshal(func() {}) //nolint:staticcheck
 			return nil, &Error{Status: http.StatusBadRequest, Err: err}
 		})
-		req, _ := http.NewRequestWithContext(context.TODO(), http.MethodGet, "/", nil)
+		req, _ := http.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 		_, err := client.Do(req)
 		return tst{
 			err:  err,

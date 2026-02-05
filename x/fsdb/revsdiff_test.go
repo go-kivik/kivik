@@ -58,7 +58,7 @@ func TestRevsDiff(t *testing.T) {
 		},
 	})
 	tests.Add("cancelled context", func(*testing.T) interface{} {
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		cancel()
 		return tt{
 			ctx:    ctx,
@@ -93,7 +93,7 @@ func TestRevsDiff(t *testing.T) {
 		}
 		ctx := tt.ctx
 		if ctx == nil {
-			ctx = context.Background()
+			ctx = t.Context()
 		}
 		rows, err := db.RevsDiff(ctx, tt.revMap)
 		if d := internal.StatusErrorDiffRE(tt.err, tt.status, err); d != "" {

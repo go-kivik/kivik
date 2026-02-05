@@ -15,7 +15,6 @@
 package sqlite
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -81,7 +80,7 @@ func TestDBGetAttachmentMeta(t *testing.T) {
 		if opts == nil {
 			opts = mock.NilOption
 		}
-		att, err := db.GetAttachmentMeta(context.Background(), tt.docID, tt.filename, opts)
+		att, err := db.GetAttachmentMeta(t.Context(), tt.docID, tt.filename, opts)
 		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}

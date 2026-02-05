@@ -52,7 +52,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 		}
 		sourceName := kt.TestDBName(t)
 		targetName := kt.TestDBName(t)
-		ctx := context.Background()
+		ctx := t.Context()
 		if err := client.CreateDB(ctx, sourceName); err != nil {
 			t.Fatal(err)
 		}
@@ -93,7 +93,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 		if err != nil {
 			t.Fatal(err)
 		}
-		ctx := context.Background()
+		ctx := t.Context()
 		source := fsclient.DB("db1")
 		targetName := kt.TestDBName(t)
 		if err := client.CreateDB(ctx, targetName); err != nil {
@@ -125,7 +125,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 		if err != nil {
 			t.Fatal(err)
 		}
-		ctx := context.Background()
+		ctx := t.Context()
 		source := fsclient.DB("db1")
 		targetName := kt.TestDBName(t)
 		if err := client.CreateDB(ctx, targetName); err != nil {
@@ -159,7 +159,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 		}
 		sourceName := kt.TestDBName(t)
 		targetName := kt.TestDBName(t)
-		ctx := context.Background()
+		ctx := t.Context()
 		if err := client.CreateDB(ctx, sourceName); err != nil {
 			t.Fatal(err)
 		}
@@ -209,7 +209,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 		if err != nil {
 			t.Fatal(err)
 		}
-		ctx := context.Background()
+		ctx := t.Context()
 		targetName := kt.TestDBName(t)
 		if err := client.CreateDB(ctx, targetName); err != nil {
 			t.Fatal(err)
@@ -242,7 +242,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 		if err != nil {
 			t.Fatal(err)
 		}
-		ctx := context.Background()
+		ctx := t.Context()
 		source := fsclient.DB("db4")
 		targetName := kt.TestDBName(t)
 		if err := client.CreateDB(ctx, targetName); err != nil {
@@ -283,7 +283,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 			t.Fatal(err)
 		}
 		dbName := kt.TestDBName(t)
-		ctx := context.Background()
+		ctx := t.Context()
 		if err := client.CreateDB(ctx, dbName); err != nil {
 			t.Fatal(err)
 		}
@@ -329,7 +329,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 		if err != nil {
 			t.Fatal(err)
 		}
-		ctx := context.Background()
+		ctx := t.Context()
 		source := fsclient.DB("dbdelete")
 		targetName := kt.TestDBName(t)
 		if err := client.CreateDB(ctx, targetName); err != nil {
@@ -355,7 +355,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 		}
 	})
 	tests.Run(t, func(t *testing.T, tt tt) {
-		ctx := context.TODO()
+		ctx := t.Context()
 		result, err := kivik.Replicate(ctx, tt.target, tt.source, tt.options)
 		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
 			t.Error(d)

@@ -13,7 +13,6 @@
 package pg
 
 import (
-	"context"
 	"net"
 	"net/url"
 	"os"
@@ -81,7 +80,7 @@ func startPostgres() (string, error) {
 }
 
 func startPostgresContainer() (string, error) {
-	ctx := context.Background()
+	ctx := t.Context()
 	postgresContainer, err := postgres.Run(ctx, "postgres:17.6-alpine3.21",
 		postgres.WithDatabase(testDatabase),
 		postgres.WithUsername(testUser),

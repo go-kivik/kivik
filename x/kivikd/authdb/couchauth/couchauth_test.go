@@ -13,7 +13,6 @@
 package couchauth
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -57,11 +56,11 @@ func TestCouchAuth(t *testing.T) {
 		Roles:    []string{"coolguy"},
 		Password: "abc123",
 	}
-	rev, e := db.Put(context.Background(), user.ID, user)
+	rev, e := db.Put(t.Context(), user.ID, user)
 	if e != nil {
 		t.Fatalf("Failed to create user: %s", e)
 	}
-	defer db.Delete(context.Background(), user.ID, rev) // nolint:errcheck
+	defer db.Delete(t.Context(), user.ID, rev) // nolint:errcheck
 	auth, e := New(kt.NoAuthDSN(t))
 	if e != nil {
 		t.Fatalf("Failed to connect to remote server: %s", e)
@@ -71,7 +70,7 @@ func TestCouchAuth(t *testing.T) {
 			t.Parallel()
 			t.Run("ValidUser", func(t *testing.T) {
 				t.Parallel()
-				uCtx, err := auth.Validate(context.Background(), user.Name, "abc123")
+				uCtx, err := auth.Validate(t.Context(), user.Name, "abc123")
 				if err != nil {
 					t.Errorf("Validation failure for good password: %s", err)
 				}
@@ -81,7 +80,7 @@ func TestCouchAuth(t *testing.T) {
 			})
 			t.Run("WrongPassword", func(t *testing.T) {
 				t.Parallel()
-				uCtx, err := auth.Validate(context.Background(), user.Name, "foobar")
+				uCtx, err := auth.Validate(t.Context(), user.Name, "foobar")
 				if kivik.HTTPStatus(err) != http.StatusUnauthorized {
 					t.Errorf("Expected Unauthorized for bad password, got %s", err)
 				}
@@ -91,7 +90,7 @@ func TestCouchAuth(t *testing.T) {
 			})
 			t.Run("MissingUser", func(t *testing.T) {
 				t.Parallel()
-				uCtx, err := auth.Validate(context.Background(), "nobody", "foo")
+				uCtx, err := auth.Validate(t.Context(), "nobody", "foo")
 				if kivik.HTTPStatus(err) != http.StatusUnauthorized {
 					t.Errorf("Expected Unauthorized for bad username, got %s", err)
 				}
@@ -102,14 +101,14 @@ func TestCouchAuth(t *testing.T) {
 		})
 	})
 
-	// roles, err := auth.Roles(context.Background(), "test")
+	// roles, err := auth.Roles(t.Context(), "test")
 	// if err != nil {
 	// 	t.Errorf("Failed to get roles for valid user: %s", err)
 	// }
 	// if !reflect.DeepEqual(roles, []string{"coolguy"}) {
 	// 	t.Errorf("Got unexpected roles.")
 	// }
-	// _, err = auth.Roles(context.Background(), "nobody")
+	// _, err = auth.Roles(t.Context(), "nobody")
 	// if errors.StatusCode(err) != http.StatusNotFound {
 	// 	var msg string
 	// 	if err != nil {

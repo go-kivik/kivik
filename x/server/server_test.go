@@ -15,7 +15,6 @@
 package server
 
 import (
-	"context"
 	"encoding/base64"
 	"encoding/json"
 	"io"
@@ -162,7 +161,7 @@ func (s serverTests) Run(t *testing.T) {
 			if body == nil {
 				body = strings.NewReader("")
 			}
-			req, err := http.NewRequestWithContext(context.TODO(), tt.method, tt.path, body)
+			req, err := http.NewRequestWithContext(t.Context(), tt.method, tt.path, body)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -170,7 +169,7 @@ func (s serverTests) Run(t *testing.T) {
 				req.Header.Set(k, v)
 			}
 			if tt.authUser != "" {
-				user, err := us.UserCtx(context.Background(), tt.authUser)
+				user, err := us.UserCtx(t.Context(), tt.authUser)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -704,7 +703,7 @@ func TestServer(t *testing.T) {
 			name:   "post document",
 			driver: "memory",
 			init: func(t *testing.T, client *kivik.Client) { //nolint:thelper // not a helper
-				if err := client.CreateDB(context.Background(), "db1", nil); err != nil {
+				if err := client.CreateDB(t.Context(), "db1", nil); err != nil {
 					t.Fatal(err)
 				}
 			},
@@ -819,7 +818,7 @@ func TestServer(t *testing.T) {
 					"ok": true,
 				},
 				check: func(t *testing.T, client *kivik.Client) { //nolint:thelper // Not a helper
-					sec, err := client.DB("db2").Security(context.Background())
+					sec, err := client.DB("db2").Security(t.Context())
 					if err != nil {
 						t.Fatal(err)
 					}

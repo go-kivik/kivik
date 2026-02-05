@@ -15,7 +15,6 @@
 package sqlite
 
 import (
-	"context"
 	"testing"
 
 	"gitlab.com/flimzy/testy"
@@ -65,7 +64,7 @@ func TestDBLocalDocs(t *testing.T) {
 		if opts == nil {
 			opts = mock.NilOption
 		}
-		rows, err := db.LocalDocs(context.Background(), opts)
+		rows, err := db.LocalDocs(t.Context(), opts)
 		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}

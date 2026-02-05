@@ -13,7 +13,6 @@
 package memorydb
 
 import (
-	"context"
 	"testing"
 
 	"gitlab.com/flimzy/testy"
@@ -34,14 +33,14 @@ func TestGetSecurity(t *testing.T) {
 			Error: "database does not exist",
 			DB: func() *db {
 				c := setup(t, nil)
-				if err := c.CreateDB(context.Background(), "foo", nil); err != nil {
+				if err := c.CreateDB(t.Context(), "foo", nil); err != nil {
 					t.Fatal(err)
 				}
 				dbv, err := c.DB("foo", nil)
 				if err != nil {
 					t.Fatal(err)
 				}
-				if e := c.DestroyDB(context.Background(), "foo", nil); e != nil {
+				if e := c.DestroyDB(t.Context(), "foo", nil); e != nil {
 					t.Fatal(e)
 				}
 				return dbv.(*db)
@@ -51,7 +50,7 @@ func TestGetSecurity(t *testing.T) {
 			Name: "EmptySecurity",
 			DB: func() *db {
 				c := setup(t, nil)
-				if err := c.CreateDB(context.Background(), "foo", nil); err != nil {
+				if err := c.CreateDB(t.Context(), "foo", nil); err != nil {
 					t.Fatal(err)
 				}
 				dbv, err := c.DB("foo", nil)
@@ -66,7 +65,7 @@ func TestGetSecurity(t *testing.T) {
 			Name: "AdminsAndMembers",
 			DB: func() *db {
 				c := setup(t, nil)
-				if err := c.CreateDB(context.Background(), "foo", nil); err != nil {
+				if err := c.CreateDB(t.Context(), "foo", nil); err != nil {
 					t.Fatal(err)
 				}
 
@@ -108,7 +107,7 @@ func TestGetSecurity(t *testing.T) {
 				if db == nil {
 					db = setupDB(t)
 				}
-				sec, err := db.Security(context.Background())
+				sec, err := db.Security(t.Context())
 				if !testy.ErrorMatches(test.Error, err) {
 					t.Errorf("Unexpected error: %s", err)
 				}
@@ -134,14 +133,14 @@ func TestSetSecurity(t *testing.T) {
 			Error: "missing",
 			DB: func() *db {
 				c := setup(t, nil)
-				if err := c.CreateDB(context.Background(), "foo", nil); err != nil {
+				if err := c.CreateDB(t.Context(), "foo", nil); err != nil {
 					t.Fatal(err)
 				}
 				dbv, err := c.DB("foo", nil)
 				if err != nil {
 					t.Fatal(err)
 				}
-				if e := c.DestroyDB(context.Background(), "foo", nil); e != nil {
+				if e := c.DestroyDB(t.Context(), "foo", nil); e != nil {
 					t.Fatal(e)
 				}
 				return dbv.(*db)
@@ -179,7 +178,7 @@ func TestSetSecurity(t *testing.T) {
 				if db == nil {
 					db = setupDB(t)
 				}
-				err := db.SetSecurity(context.Background(), test.Security)
+				err := db.SetSecurity(t.Context(), test.Security)
 				var msg string
 				if err != nil {
 					msg = err.Error()
@@ -190,7 +189,7 @@ func TestSetSecurity(t *testing.T) {
 				if err != nil {
 					return
 				}
-				sec, err := db.Security(context.Background())
+				sec, err := db.Security(t.Context())
 				if err != nil {
 					t.Fatal(err)
 				}

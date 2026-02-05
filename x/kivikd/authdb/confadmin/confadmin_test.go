@@ -15,7 +15,6 @@
 package confadmin
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -33,14 +32,14 @@ func TestInvalidHashes(t *testing.T) {
 	c := &conf.Conf{Viper: viper.New()}
 	c.Set("admins.test", "-pbkXXdf2-792221164f257de22ad72a8e94760388233e5714,7897f3451f59da741c87ec5f10fe7abe,10")
 	auth := New(c)
-	if _, err := auth.Validate(context.Background(), "test", "123"); err == nil {
+	if _, err := auth.Validate(t.Context(), "test", "123"); err == nil {
 		t.Errorf("Expected error for invalid scheme")
 	}
-	if _, err := auth.Validate(context.Background(), "test", "123"); err == nil {
+	if _, err := auth.Validate(t.Context(), "test", "123"); err == nil {
 		t.Errorf("Expected error for too many commas")
 	}
 	c.Set("admins.test", "-pbkdf2-792221164f257de22ad72a8e94760388233e5714,7897f3451f59da741c87ec5f10fe7abe,pig")
-	if _, err := auth.Validate(context.Background(), "test", "123"); err == nil {
+	if _, err := auth.Validate(t.Context(), "test", "123"); err == nil {
 		t.Errorf("Expected error for invalid iterations integer")
 	}
 }
@@ -55,7 +54,7 @@ func TestConfAdminAuth(t *testing.T) {
 			t.Parallel()
 			t.Run("ValidUser", func(t *testing.T) {
 				t.Parallel()
-				uCtx, err := auth.Validate(context.Background(), "test", "abc123")
+				uCtx, err := auth.Validate(t.Context(), "test", "abc123")
 				if err != nil {
 					t.Errorf("Validation failure for good password: %s", err)
 				}
@@ -65,7 +64,7 @@ func TestConfAdminAuth(t *testing.T) {
 			})
 			t.Run("WrongPassword", func(t *testing.T) {
 				t.Parallel()
-				uCtx, err := auth.Validate(context.Background(), "test", "foobar")
+				uCtx, err := auth.Validate(t.Context(), "test", "foobar")
 				if kivik.HTTPStatus(err) != http.StatusUnauthorized {
 					t.Errorf("Expected Unauthorized for bad password, got %s", err)
 				}
@@ -75,7 +74,7 @@ func TestConfAdminAuth(t *testing.T) {
 			})
 			t.Run("MissingUser", func(t *testing.T) {
 				t.Parallel()
-				uCtx, err := auth.Validate(context.Background(), "nobody", "foo")
+				uCtx, err := auth.Validate(t.Context(), "nobody", "foo")
 				if kivik.HTTPStatus(err) != http.StatusUnauthorized {
 					t.Errorf("Expected Unauthorized for bad username, got %s", err)
 				}
@@ -88,7 +87,7 @@ func TestConfAdminAuth(t *testing.T) {
 			t.Parallel()
 			t.Run("ValidUser", func(t *testing.T) {
 				t.Parallel()
-				uCtx, err := auth.UserCtx(context.Background(), "test")
+				uCtx, err := auth.UserCtx(t.Context(), "test")
 				if err != nil {
 					t.Errorf("Failed to get roles for valid user: %s", err)
 				}
@@ -97,7 +96,7 @@ func TestConfAdminAuth(t *testing.T) {
 				}
 			})
 			t.Run("MissingUser", func(t *testing.T) {
-				_, err := auth.UserCtx(context.Background(), "nobody")
+				_, err := auth.UserCtx(t.Context(), "nobody")
 				if kivik.HTTPStatus(err) != http.StatusNotFound {
 					var msg string
 					if err != nil {

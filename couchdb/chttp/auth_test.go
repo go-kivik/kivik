@@ -13,7 +13,6 @@
 package chttp
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/cookiejar"
@@ -158,7 +157,7 @@ func TestAuthenticate(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, test authTest) {
-		ctx := context.Background()
+		ctx := t.Context()
 		opts := test.options
 		if opts == nil {
 			opts = mock.NilOption

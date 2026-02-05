@@ -41,7 +41,7 @@ import (
 func TestAllDocs(t *testing.T) {
 	t.Run("standard", func(t *testing.T) {
 		db := newTestDB(nil, errors.New("test error"))
-		_, err := db.AllDocs(context.Background(), mock.NilOption)
+		_, err := db.AllDocs(t.Context(), mock.NilOption)
 		if !testy.ErrorMatchesRE(`Get "?http://example.com/testdb/_all_docs"?: test error`, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}
@@ -49,7 +49,7 @@ func TestAllDocs(t *testing.T) {
 
 	t.Run("partitioned", func(t *testing.T) {
 		db := newTestDB(nil, errors.New("test error"))
-		_, err := db.AllDocs(context.Background(), OptionPartition("a1"))
+		_, err := db.AllDocs(t.Context(), OptionPartition("a1"))
 		if !testy.ErrorMatchesRE(`Get "?http://example.com/testdb/_partition/a1/_all_docs"?: test error`, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}
@@ -58,7 +58,7 @@ func TestAllDocs(t *testing.T) {
 
 func TestDesignDocs(t *testing.T) {
 	db := newTestDB(nil, errors.New("test error"))
-	_, err := db.DesignDocs(context.Background(), mock.NilOption)
+	_, err := db.DesignDocs(t.Context(), mock.NilOption)
 	if !testy.ErrorMatchesRE(`Get "?http://example.com/testdb/_design_docs"?: test error`, err) {
 		t.Errorf("Unexpected error: %s", err)
 	}
@@ -66,7 +66,7 @@ func TestDesignDocs(t *testing.T) {
 
 func TestLocalDocs(t *testing.T) {
 	db := newTestDB(nil, errors.New("test error"))
-	_, err := db.LocalDocs(context.Background(), mock.NilOption)
+	_, err := db.LocalDocs(t.Context(), mock.NilOption)
 	if !testy.ErrorMatchesRE(`Get "?http://example.com/testdb/_local_docs"?: test error`, err) {
 		t.Errorf("Unexpected error: %s", err)
 	}
@@ -75,14 +75,14 @@ func TestLocalDocs(t *testing.T) {
 func TestQuery(t *testing.T) {
 	t.Run("standard", func(t *testing.T) {
 		db := newTestDB(nil, errors.New("test error"))
-		_, err := db.Query(context.Background(), "ddoc", "view", mock.NilOption)
+		_, err := db.Query(t.Context(), "ddoc", "view", mock.NilOption)
 		if !testy.ErrorMatchesRE(`Get "?http://example.com/testdb/_design/ddoc/_view/view"?: test error`, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}
 	})
 	t.Run("partitioned", func(t *testing.T) {
 		db := newTestDB(nil, errors.New("test error"))
-		_, err := db.Query(context.Background(), "ddoc", "view", OptionPartition("a2"))
+		_, err := db.Query(t.Context(), "ddoc", "view", OptionPartition("a2"))
 		if !testy.ErrorMatchesRE(`Get "?http://example.com/testdb/_partition/a2/_design/ddoc/_view/view"?: test error`, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}
@@ -402,7 +402,7 @@ Content-Length: 86
 		if opts == nil {
 			opts = mock.NilOption
 		}
-		result, err := tt.db.Get(context.Background(), tt.id, opts)
+		result, err := tt.db.Get(t.Context(), tt.id, opts)
 		if !testy.ErrorMatchesRE(tt.err, err) {
 			t.Errorf("Unexpected error: \n Got: %s\nWant: /%s/", err, tt.err)
 		}
@@ -622,7 +622,7 @@ Content-Type: application/json; error="true"
 		if opts == nil {
 			opts = mock.NilOption
 		}
-		rows, err := tt.db.OpenRevs(context.Background(), tt.id, tt.revs, opts)
+		rows, err := tt.db.OpenRevs(t.Context(), tt.id, tt.revs, opts)
 		var errMsg string
 		if err != nil {
 			errMsg = err.Error()
@@ -762,7 +762,7 @@ func TestCreateDoc(t *testing.T) {
 			if opts == nil {
 				opts = mock.NilOption
 			}
-			id, rev, err := test.db.CreateDoc(context.Background(), test.doc, opts)
+			id, rev, err := test.db.CreateDoc(t.Context(), test.doc, opts)
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -866,7 +866,7 @@ func TestCompact(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := test.db.Compact(context.Background())
+			err := test.db.Compact(t.Context())
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -917,7 +917,7 @@ func TestCompactView(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := test.db.CompactView(context.Background(), test.id)
+			err := test.db.CompactView(t.Context(), test.id)
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -960,7 +960,7 @@ func TestViewCleanup(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := test.db.ViewCleanup(context.Background())
+			err := test.db.ViewCleanup(t.Context())
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -1073,7 +1073,7 @@ func TestPut(t *testing.T) {
 	tests.Add("real database, multipart attachments", func(t *testing.T) interface{} {
 		db := realDB(t)
 		t.Cleanup(func() {
-			if err := db.DestroyDB(context.Background(), db.dbName, nil); err != nil {
+			if err := db.DestroyDB(t.Context(), db.dbName, nil); err != nil {
 				t.Fatal(err)
 			}
 		})
@@ -1092,7 +1092,7 @@ func TestPut(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 		defer cancel()
 		opts := tt.options
 		if opts == nil {
@@ -1173,7 +1173,7 @@ func TestUpdate(t *testing.T) {
 				}
 			})
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 		defer cancel()
 		opts := tt.options
 		if opts == nil {
@@ -1302,7 +1302,7 @@ func TestDelete(t *testing.T) {
 		if opts == nil {
 			opts = mock.NilOption
 		}
-		newrev, err := tt.db.Delete(context.Background(), tt.id, opts)
+		newrev, err := tt.db.Delete(t.Context(), tt.id, opts)
 		if d := internal.StatusErrorDiffRE(tt.err, tt.status, err); d != "" {
 			t.Error(d)
 		}
@@ -1368,7 +1368,7 @@ func TestFlush(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := test.db.Flush(context.Background())
+			err := test.db.Flush(t.Context())
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -1800,7 +1800,7 @@ func TestRowsQuery(t *testing.T) {
 			if opts == nil {
 				opts = mock.NilOption
 			}
-			rows, err := test.db.rowsQuery(context.Background(), test.path, opts)
+			rows, err := test.db.rowsQuery(t.Context(), test.path, opts)
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -1887,7 +1887,7 @@ func TestSecurity(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.db.Security(context.Background())
+			result, err := test.db.Security(t.Context())
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -1958,7 +1958,7 @@ func TestSetSecurity(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
-		err := tt.db.SetSecurity(context.Background(), tt.security)
+		err := tt.db.SetSecurity(t.Context(), tt.security)
 		if d := internal.StatusErrorDiffRE(tt.err, tt.status, err); d != "" {
 			t.Error(d)
 		}
@@ -2010,7 +2010,7 @@ func TestGetRev(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rev, err := test.db.GetRev(context.Background(), test.id, mock.NilOption)
+			rev, err := test.db.GetRev(t.Context(), test.id, mock.NilOption)
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -2139,7 +2139,7 @@ func TestCopy(t *testing.T) {
 		if opts == nil {
 			opts = mock.NilOption
 		}
-		rev, err := tt.db.Copy(context.Background(), tt.target, tt.source, opts)
+		rev, err := tt.db.Copy(t.Context(), tt.target, tt.source, opts)
 		if d := internal.StatusErrorDiffRE(tt.err, tt.status, err); d != "" {
 			t.Error(d)
 		}
@@ -2405,7 +2405,7 @@ func TestPurge(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.db.Purge(context.Background(), test.docMap)
+			result, err := test.db.Purge(t.Context(), test.docMap)
 			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -2888,7 +2888,7 @@ func TestRevsDiff(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
-		ctx, cancel := context.WithTimeout(context.TODO(), 2*time.Second)
+		ctx, cancel := context.WithTimeout(t.Context(), 2*time.Second)
 		defer cancel()
 		rows, err := tt.db.RevsDiff(ctx, tt.revMap)
 		if d := internal.StatusErrorDiffRE(tt.err, tt.status, err); d != "" {

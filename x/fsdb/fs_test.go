@@ -13,7 +13,6 @@
 package fs
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -64,7 +63,7 @@ func TestAllDBs(t *testing.T) {
 		if opts == nil {
 			opts = mock.NilOption
 		}
-		result, err := c.AllDBs(context.TODO(), opts)
+		result, err := c.AllDBs(t.Context(), opts)
 		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
 			t.Error(d)
 		}

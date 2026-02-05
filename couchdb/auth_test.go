@@ -13,7 +13,6 @@
 package couchdb
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -109,7 +108,7 @@ func TestAuthenticationOptions(t *testing.T) {
 		if tt.setup != nil {
 			tt.setup(t, client)
 		}
-		_, err = client.Version(context.Background())
+		_, err = client.Version(t.Context())
 		if d := internal.StatusErrorDiffRE(tt.err, tt.status, err); d != "" {
 			t.Error(d)
 		}

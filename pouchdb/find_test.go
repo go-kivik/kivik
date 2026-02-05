@@ -15,7 +15,6 @@
 package pouchdb
 
 import (
-	"context"
 	"encoding/json"
 	"strconv"
 	"strings"
@@ -150,7 +149,7 @@ func TestExplain(t *testing.T) {
 		}
 	})
 	tests.Run(t, func(t *testing.T, tt test) {
-		result, err := tt.db.Explain(context.Background(), tt.query, nil)
+		result, err := tt.db.Explain(t.Context(), tt.query, nil)
 		if !testy.ErrorMatchesRE(tt.err, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}

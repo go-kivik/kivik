@@ -13,7 +13,6 @@
 package couchdb
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -251,7 +250,7 @@ func TestPutAttachment(t *testing.T) {
 			if opts == nil {
 				opts = mock.NilOption
 			}
-			newRev, err := test.db.PutAttachment(context.Background(), test.id, test.att, opts)
+			newRev, err := test.db.PutAttachment(t.Context(), test.id, test.att, opts)
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -312,7 +311,7 @@ func TestGetAttachmentMeta(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			att, err := test.db.GetAttachmentMeta(context.Background(), test.id, test.filename, mock.NilOption)
+			att, err := test.db.GetAttachmentMeta(t.Context(), test.id, test.filename, mock.NilOption)
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -417,7 +416,7 @@ func TestGetAttachment(t *testing.T) {
 			if opts == nil {
 				opts = mock.NilOption
 			}
-			att, err := test.db.GetAttachment(context.Background(), test.id, test.filename, opts)
+			att, err := test.db.GetAttachment(t.Context(), test.id, test.filename, opts)
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -535,7 +534,7 @@ func TestFetchAttachment(t *testing.T) {
 			if opts == nil {
 				opts = mock.NilOption
 			}
-			resp, err := test.db.fetchAttachment(context.Background(), test.method, test.id, test.filename, opts)
+			resp, err := test.db.fetchAttachment(t.Context(), test.method, test.id, test.filename, opts)
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}
@@ -737,7 +736,7 @@ func TestDeleteAttachment(t *testing.T) {
 			if opts == nil {
 				opts = mock.NilOption
 			}
-			newRev, err := test.db.DeleteAttachment(context.Background(), test.id, test.filename, opts)
+			newRev, err := test.db.DeleteAttachment(t.Context(), test.id, test.filename, opts)
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)
 			}

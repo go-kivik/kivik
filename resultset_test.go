@@ -179,7 +179,7 @@ func TestScanAllDocs(t *testing.T) {
 		err:  "0-length array passed to ScanAllDocs",
 	})
 	tests.Add("No docs to read", tt{
-		rows: newResultSet(context.Background(), nil, &mock.Rows{}),
+		rows: newResultSet(t.Context(), nil, &mock.Rows{}),
 		dest: func() *[]string { return &[]string{} }(),
 	})
 	tests.Add("Success", func() interface{} {
@@ -187,7 +187,7 @@ func TestScanAllDocs(t *testing.T) {
 			{Doc: strings.NewReader(`{"foo":"bar"}`)},
 		}
 		return tt{
-			rows: newResultSet(context.Background(), nil, &mock.Rows{
+			rows: newResultSet(t.Context(), nil, &mock.Rows{
 				NextFunc: func(r *driver.Row) error {
 					if len(rows) == 0 {
 						return io.EOF
@@ -205,7 +205,7 @@ func TestScanAllDocs(t *testing.T) {
 			{Doc: strings.NewReader(`{"foo":"bar"}`)},
 		}
 		return tt{
-			rows: newResultSet(context.Background(), nil, &mock.Rows{
+			rows: newResultSet(t.Context(), nil, &mock.Rows{
 				NextFunc: func(r *driver.Row) error {
 					if len(rows) == 0 {
 						return io.EOF
@@ -223,7 +223,7 @@ func TestScanAllDocs(t *testing.T) {
 			{Doc: strings.NewReader(`{"foo":"bar"}`)},
 		}
 		return tt{
-			rows: newResultSet(context.Background(), nil, &mock.Rows{
+			rows: newResultSet(t.Context(), nil, &mock.Rows{
 				NextFunc: func(r *driver.Row) error {
 					if len(rows) == 0 {
 						return io.EOF
@@ -243,7 +243,7 @@ func TestScanAllDocs(t *testing.T) {
 			{Doc: strings.NewReader(`{"foo":"bar"}`)},
 		}
 		return tt{
-			rows: newResultSet(context.Background(), nil, &mock.Rows{
+			rows: newResultSet(t.Context(), nil, &mock.Rows{
 				NextFunc: func(r *driver.Row) error {
 					if len(rows) == 0 {
 						return io.EOF
@@ -258,7 +258,7 @@ func TestScanAllDocs(t *testing.T) {
 	})
 	tests.Run(t, func(t *testing.T, tt tt) {
 		if tt.rows == nil {
-			tt.rows = newResultSet(context.Background(), nil, &mock.Rows{})
+			tt.rows = newResultSet(t.Context(), nil, &mock.Rows{})
 		}
 		err := ScanAllDocs(tt.rows, tt.dest)
 		if !testy.ErrorMatches(tt.err, err) {
@@ -272,7 +272,7 @@ func TestScanAllDocs(t *testing.T) {
 
 func TestResultSet_Next_resets_iterator_value(t *testing.T) {
 	idx := 0
-	rows := newResultSet(context.Background(), nil, &mock.Rows{
+	rows := newResultSet(t.Context(), nil, &mock.Rows{
 		NextFunc: func(r *driver.Row) error {
 			idx++
 			switch idx {
@@ -343,7 +343,7 @@ func TestResultSet_Getters(t *testing.T) {
 					return nil
 				},
 			}
-			r := newResultSet(context.Background(), nil, rowsi)
+			r := newResultSet(t.Context(), nil, rowsi)
 
 			_, err := r.ID()
 			if !testy.ErrorMatches("kivik: Iterator access before calling Next", err) {
@@ -358,7 +358,7 @@ func TestResultSet_Getters(t *testing.T) {
 					return nil
 				},
 			}
-			r := newResultSet(context.Background(), nil, rowsi)
+			r := newResultSet(t.Context(), nil, rowsi)
 
 			_, err := r.Key()
 			if !testy.ErrorMatches("kivik: Iterator access before calling Next", err) {
@@ -370,7 +370,7 @@ func TestResultSet_Getters(t *testing.T) {
 
 func TestResultSet_Metadata(t *testing.T) {
 	t.Run("iteration incomplete", func(t *testing.T) {
-		r := newResultSet(context.Background(), nil, &mock.Rows{
+		r := newResultSet(t.Context(), nil, &mock.Rows{
 			OffsetFunc:    func() int64 { return 123 },
 			TotalRowsFunc: func() int64 { return 234 },
 			UpdateSeqFunc: func() string { return "seq" },
@@ -396,7 +396,7 @@ func TestResultSet_Metadata(t *testing.T) {
 	}
 
 	t.Run("Standard", func(t *testing.T) {
-		r := newResultSet(context.Background(), nil, &mock.Rows{
+		r := newResultSet(t.Context(), nil, &mock.Rows{
 			OffsetFunc:    func() int64 { return 123 },
 			TotalRowsFunc: func() int64 { return 234 },
 			UpdateSeqFunc: func() string { return "seq" },
@@ -405,14 +405,14 @@ func TestResultSet_Metadata(t *testing.T) {
 	})
 	t.Run("Bookmarker", func(t *testing.T) {
 		expected := "test bookmark"
-		r := newResultSet(context.Background(), nil, &mock.Bookmarker{
+		r := newResultSet(t.Context(), nil, &mock.Bookmarker{
 			BookmarkFunc: func() string { return expected },
 		})
 		check(t, r)
 	})
 	t.Run("Warner", func(t *testing.T) {
 		const expected = "test warning"
-		r := newResultSet(context.Background(), nil, &mock.RowsWarner{
+		r := newResultSet(t.Context(), nil, &mock.RowsWarner{
 			WarningFunc: func() string { return expected },
 		})
 		check(t, r)
@@ -424,7 +424,7 @@ func TestResultSet_Metadata(t *testing.T) {
 			&driver.Row{Doc: strings.NewReader(`{"foo":"bar"}`)},
 		}
 
-		r := newResultSet(context.Background(), nil, &mock.Rows{
+		r := newResultSet(t.Context(), nil, &mock.Rows{
 			NextFunc: func(r *driver.Row) error {
 				if len(rows) == 0 {
 					return io.EOF
@@ -456,7 +456,7 @@ func TestResultSet_Metadata(t *testing.T) {
 			&driver.Row{Doc: strings.NewReader(`{"foo":"bar"}`)},
 		}
 
-		r := newResultSet(context.Background(), nil, &mock.Rows{
+		r := newResultSet(t.Context(), nil, &mock.Rows{
 			NextFunc: func(r *driver.Row) error {
 				if len(rows) == 0 {
 					return io.EOF
@@ -512,7 +512,7 @@ func TestResultSet_Metadata(t *testing.T) {
 }
 
 func Test_bug576(t *testing.T) {
-	rows := newResultSet(context.Background(), nil, &mock.Rows{
+	rows := newResultSet(t.Context(), nil, &mock.Rows{
 		NextFunc: func(*driver.Row) error {
 			return io.EOF
 		},
@@ -600,7 +600,7 @@ func TestResultSet_Close_blocks(t *testing.T) {
 	tests.Run(t, func(t *testing.T, tt tt) {
 		t.Parallel()
 
-		rs := newResultSet(context.Background(), nil, tt.rows)
+		rs := newResultSet(t.Context(), nil, tt.rows)
 
 		start := time.Now()
 		go tt.work(rs)

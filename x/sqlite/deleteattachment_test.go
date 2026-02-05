@@ -15,7 +15,6 @@
 package sqlite
 
 import (
-	"context"
 	"net/http"
 	"regexp"
 	"testing"
@@ -265,7 +264,7 @@ func TestDBDeleteAttachment(t *testing.T) {
 		if opts == nil {
 			opts = mock.NilOption
 		}
-		rev, err := dbc.DeleteAttachment(context.Background(), tt.docID, tt.filename, opts)
+		rev, err := dbc.DeleteAttachment(t.Context(), tt.docID, tt.filename, opts)
 		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}

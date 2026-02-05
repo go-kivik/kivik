@@ -13,7 +13,6 @@
 package cdb
 
 import (
-	"context"
 	"net/http"
 	"os"
 	"regexp"
@@ -75,7 +74,7 @@ func TestDocumentPersist(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if _, err := doc.AddRevision(context.TODO(), rev, kivik.Params(nil)); err != nil {
+		if _, err := doc.AddRevision(t.Context(), rev, kivik.Params(nil)); err != nil {
 			t.Fatal(err)
 		}
 
@@ -106,7 +105,7 @@ func TestDocumentPersist(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if _, err := doc.AddRevision(context.TODO(), rev, kivik.Params(nil)); err != nil {
+		if _, err := doc.AddRevision(t.Context(), rev, kivik.Params(nil)); err != nil {
 			t.Fatal(err)
 		}
 
@@ -147,7 +146,7 @@ func TestDocumentPersist(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if _, err := doc.addRevision(context.TODO(), rev, kivik.Params(nil)); err != nil {
+		if _, err := doc.addRevision(t.Context(), rev, kivik.Params(nil)); err != nil {
 			t.Fatal(err)
 		}
 
@@ -158,7 +157,7 @@ func TestDocumentPersist(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, tt tt) {
-		err := tt.doc.persist(context.TODO())
+		err := tt.doc.persist(t.Context())
 		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
 			t.Error(d)
 		}
@@ -381,7 +380,7 @@ func TestDocumentAddRevision(t *testing.T) {
 		if opts == nil {
 			opts = kivik.Params(nil)
 		}
-		revid, err := tt.doc.addRevision(context.TODO(), tt.rev, opts)
+		revid, err := tt.doc.addRevision(t.Context(), tt.rev, opts)
 		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
 			t.Error(d)
 		}

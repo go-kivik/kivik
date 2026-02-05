@@ -13,7 +13,6 @@
 package fs
 
 import (
-	"context"
 	"errors"
 	"io"
 	"net/http"
@@ -401,7 +400,7 @@ func TestGet(t *testing.T) {
 		if opts == nil {
 			opts = kivik.Params(nil)
 		}
-		result, err := db.Get(context.Background(), tt.id, opts)
+		result, err := db.Get(t.Context(), tt.id, opts)
 		if d := internal.StatusErrorDiffRE(tt.err, tt.status, err); d != "" {
 			t.Error(d)
 		}

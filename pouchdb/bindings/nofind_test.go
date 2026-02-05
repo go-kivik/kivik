@@ -15,7 +15,6 @@
 package bindings
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -36,7 +35,7 @@ func init() {
 func TestNoFindPlugin(t *testing.T) {
 	t.Run("FindLoaded", func(t *testing.T) {
 		db := GlobalPouchDB().New("foo", nil)
-		_, err := db.Find(context.Background(), "")
+		_, err := db.Find(t.Context(), "")
 		if kivik.HTTPStatus(err) == http.StatusNotImplemented {
 			t.Errorf("Got StatusNotImplemented when pouchdb-find should be loaded")
 		}
@@ -44,7 +43,7 @@ func TestNoFindPlugin(t *testing.T) {
 	t.Run("FindNotLoaded", func(t *testing.T) {
 		db := GlobalPouchDB().New("foo", nil)
 		db.Object.Set("find", nil) // Fake it
-		_, err := db.Find(context.Background(), "")
+		_, err := db.Find(t.Context(), "")
 		if code := kivik.HTTPStatus(err); code != http.StatusNotImplemented {
 			t.Errorf("Expected %d error, got %d/%s\n", http.StatusNotImplemented, code, err)
 		}

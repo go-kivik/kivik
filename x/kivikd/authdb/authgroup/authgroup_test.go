@@ -15,7 +15,6 @@
 package authgroup
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -59,11 +58,11 @@ func TestConfAdminAuth(t *testing.T) {
 		Roles:    []string{"coolguy"},
 		Password: "abc123",
 	}
-	rev, e := db.Put(context.Background(), user.ID, user)
+	rev, e := db.Put(t.Context(), user.ID, user)
 	if e != nil {
 		t.Fatalf("Failed to create user: %s", e)
 	}
-	defer db.Delete(context.Background(), user.ID, rev) // nolint: errcheck
+	defer db.Delete(t.Context(), user.ID, rev) // nolint: errcheck
 	auth2 := usersdb.New(db)
 
 	auth := New(auth1, auth2)
@@ -73,7 +72,7 @@ func TestConfAdminAuth(t *testing.T) {
 			t.Parallel()
 			t.Run("BobValid", func(t *testing.T) {
 				t.Parallel()
-				uCtx, err := auth.Validate(context.Background(), "bob", "abc123")
+				uCtx, err := auth.Validate(t.Context(), "bob", "abc123")
 				if err != nil {
 					t.Errorf("Validation failure for bob/good password: %s", err)
 				}
@@ -83,7 +82,7 @@ func TestConfAdminAuth(t *testing.T) {
 			})
 			t.Run("BobInvalid", func(t *testing.T) {
 				t.Parallel()
-				uCtx, err := auth.Validate(context.Background(), "bob", "foobar")
+				uCtx, err := auth.Validate(t.Context(), "bob", "foobar")
 				if kivik.HTTPStatus(err) != http.StatusUnauthorized {
 					t.Errorf("Expected Unauthorized for bad password, got %s", err)
 				}
@@ -93,7 +92,7 @@ func TestConfAdminAuth(t *testing.T) {
 			})
 			t.Run("TestUserValid", func(t *testing.T) {
 				t.Parallel()
-				uCtx, err := auth.Validate(context.Background(), user.Name, "abc123")
+				uCtx, err := auth.Validate(t.Context(), user.Name, "abc123")
 				if err != nil {
 					t.Errorf("Validation failure for good password: %s", err)
 				}
@@ -103,7 +102,7 @@ func TestConfAdminAuth(t *testing.T) {
 			})
 			t.Run("TestUserInvalid", func(t *testing.T) {
 				t.Parallel()
-				uCtx, err := auth.Validate(context.Background(), user.Name, "foobar")
+				uCtx, err := auth.Validate(t.Context(), user.Name, "foobar")
 				if kivik.HTTPStatus(err) != http.StatusUnauthorized {
 					t.Errorf("Expected Unauthorized for bad password, got %s", err)
 				}
@@ -113,7 +112,7 @@ func TestConfAdminAuth(t *testing.T) {
 			})
 			t.Run("MissingUser", func(t *testing.T) {
 				t.Parallel()
-				uCtx, err := auth.Validate(context.Background(), "nobody", "foo")
+				uCtx, err := auth.Validate(t.Context(), "nobody", "foo")
 				if kivik.HTTPStatus(err) != http.StatusUnauthorized {
 					t.Errorf("Expected Unauthorized for bad username, got %s", err)
 				}
@@ -125,7 +124,7 @@ func TestConfAdminAuth(t *testing.T) {
 		t.Run("Context", func(t *testing.T) {
 			t.Parallel()
 			t.Run("TestUser", func(t *testing.T) {
-				uCtx, err := auth.UserCtx(context.Background(), user.Name)
+				uCtx, err := auth.UserCtx(t.Context(), user.Name)
 				if err != nil {
 					t.Errorf("Failed to get roles for valid user: %s", err)
 				}
@@ -136,7 +135,7 @@ func TestConfAdminAuth(t *testing.T) {
 			})
 			t.Run("Bob", func(t *testing.T) {
 				t.Parallel()
-				uCtx, err := auth.UserCtx(context.Background(), "bob")
+				uCtx, err := auth.UserCtx(t.Context(), "bob")
 				if err != nil {
 					t.Errorf("Failed to get roles for valid user: %s", err)
 				}
@@ -145,7 +144,7 @@ func TestConfAdminAuth(t *testing.T) {
 				}
 			})
 			t.Run("MissingUser", func(t *testing.T) {
-				_, err := auth.UserCtx(context.Background(), "nobody")
+				_, err := auth.UserCtx(t.Context(), "nobody")
 				if kivik.HTTPStatus(err) != http.StatusNotFound {
 					var msg string
 					if err != nil {

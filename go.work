@@ -2,6 +2,7 @@ go 1.24
 
 use (
 	.
+	./kiviktest/testcontainers
 	./x/pg
 	./x/sqlite
 )

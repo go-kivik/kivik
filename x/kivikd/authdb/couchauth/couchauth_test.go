@@ -37,6 +37,9 @@ func TestBadDSN(t *testing.T) {
 	if _, err := New("http://foo:bar@foo.com/"); err == nil {
 		t.Error("Expected error for DSN with credentials.")
 	}
+	if _, err := New("ht\\tp:/! This is really bogus!"); err == nil {
+		t.Errorf("Expected error for invalid URL.")
+	}
 }
 
 func TestCouchAuth(t *testing.T) {

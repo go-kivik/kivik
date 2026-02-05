@@ -1,6 +1,6 @@
 module github.com/go-kivik/kivik/v4
 
-go 1.19
+go 1.20
 
 require (
 	github.com/ajg/form v1.5.1
@@ -9,7 +9,7 @@ require (
 	github.com/go-playground/validator/v10 v10.23.0
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
-	github.com/gopherjs/gopherjs v1.19.0-beta2
+	github.com/gopherjs/gopherjs v1.20.1
 	github.com/gopherjs/jsbuiltin v0.0.0-20180426082241-50091555e127
 	github.com/icza/dyno v0.0.0-20230330125955-09f820a8d9c0
 	github.com/monoculum/formam/v3 v3.6.0

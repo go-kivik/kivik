@@ -1,6 +1,6 @@
 # kiviktest: Gradual Improvement Roadmap
 
-Constraint: minimum Go version is 1.19 (`go.mod`).
+Constraint: minimum Go version is 1.20 (`go.mod`).
 
 ---
 

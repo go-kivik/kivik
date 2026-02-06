@@ -189,9 +189,9 @@ func (a testAttachments) addStub(filename string) testAttachments {
 // tAddValidation installs a validate_doc_update function into the test
 // database by creating a design document and inserting the function body
 // directly into the design table.
-func (tdb *testDB) tAddValidation(funcBody string) {
+func (tdb *testDB) tAddValidation(ddocID, funcBody string) {
 	tdb.t.Helper()
-	rev := tdb.tPut("_design/validation", map[string]interface{}{
+	rev := tdb.tPut(ddocID, map[string]interface{}{
 		"views": map[string]interface{}{},
 	})
 	r, err := parseRev(rev)
@@ -201,7 +201,7 @@ func (tdb *testDB) tAddValidation(funcBody string) {
 	_, err = tdb.underlying().Exec(`
 		INSERT INTO "kivik$test$design" (id, rev, rev_id, language, func_type, func_name, func_body, auto_update, include_design, collation, local_seq)
 		VALUES ($1, $2, $3, 'javascript', 'validate', 'validate_doc_update', $4, TRUE, NULL, NULL, NULL)
-	`, "_design/validation", r.rev, r.id, funcBody)
+	`, ddocID, r.rev, r.id, funcBody)
 	if err != nil {
 		tdb.t.Fatal(err)
 	}

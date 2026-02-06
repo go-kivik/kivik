@@ -177,16 +177,7 @@ func (d *db) Put(ctx context.Context, docID string, doc any, options driver.Opti
 	}
 	newDocMap["_id"] = data.ID
 
-	var oldDoc any
-	if !curRev.IsZero() {
-		doc, _, err := d.getCoreDoc(ctx, tx, docID, curRev, false, false)
-		if err != nil {
-			return "", err
-		}
-		oldDoc = doc.toMap()
-	}
-
-	if err := d.validateDoc(ctx, tx, newDocMap, oldDoc, map[string]any{}, map[string]any{}); err != nil {
+	if err := d.runValidation(ctx, tx, docID, newDocMap, curRev); err != nil {
 		return "", err
 	}
 

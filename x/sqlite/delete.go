@@ -53,6 +53,15 @@ func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (
 	data.Deleted = true
 	data.Doc = []byte("{}")
 
+	newDocMap := map[string]any{
+		"_id":      data.ID,
+		"_deleted": true,
+	}
+
+	if err := d.runValidation(ctx, tx, docID, newDocMap, curRev); err != nil {
+		return "", err
+	}
+
 	r, err := d.createRev(ctx, tx, data, curRev)
 	if err != nil {
 		return "", err

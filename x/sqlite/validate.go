@@ -19,9 +19,36 @@ import (
 	"github.com/go-kivik/kivik/x/sqlite/v4/js"
 )
 
-// validateDoc runs all validate_doc_update functions stored in design documents
-// against the proposed document change.
-func (d *db) validateDoc(ctx context.Context, tx *sql.Tx, newDoc, oldDoc, userCtx, secObj any) error {
+// runValidation runs all validate_doc_update functions against the proposed
+// change. The old document is only fetched if validate functions exist.
+func (d *db) runValidation(ctx context.Context, tx *sql.Tx, docID string, newDoc map[string]any, curRev revision) error {
+	funcs, err := d.getValidateFuncs(ctx, tx)
+	if err != nil || len(funcs) == 0 {
+		return err
+	}
+
+	var oldDoc any
+	if !curRev.IsZero() {
+		doc, _, err := d.getCoreDoc(ctx, tx, docID, curRev, false, false)
+		if err != nil {
+			return err
+		}
+		oldDoc = doc.toMap()
+	}
+
+	userCtx := map[string]any{}
+	secObj := map[string]any{}
+	for _, fn := range funcs {
+		if err := fn(newDoc, oldDoc, userCtx, secObj); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// getValidateFuncs returns all compiled validate_doc_update functions from
+// design document leaf revisions.
+func (d *db) getValidateFuncs(ctx context.Context, tx *sql.Tx) ([]js.ValidateFunc, error) {
 	rows, err := tx.QueryContext(ctx, d.query(`
 		SELECT design.func_body
 		FROM {{ .Design }} AS design
@@ -45,22 +72,21 @@ func (d *db) validateDoc(ctx context.Context, tx *sql.Tx, newDoc, oldDoc, userCt
 		WHERE design.func_type = 'validate'
 	`))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer rows.Close()
 
+	var funcs []js.ValidateFunc
 	for rows.Next() {
 		var funcBody string
 		if err := rows.Scan(&funcBody); err != nil {
-			return err
+			return nil, err
 		}
 		fn, err := js.Validate(funcBody)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		if err := fn(newDoc, oldDoc, userCtx, secObj); err != nil {
-			return err
-		}
+		funcs = append(funcs, fn)
 	}
-	return rows.Err()
+	return funcs, rows.Err()
 }

@@ -1,5 +1,13 @@
 # SQLite Driver TODO
 
+## Bugs
+
+- [ ] **validate_doc_update storage broken** (`designdocs.go:68`). Two issues:
+  `func_type` is set to `"validate_doc_update"` but the schema CHECK constraint
+  only allows `"validate"`, and only 10 arguments are passed for 11 placeholders
+  (missing `local_seq`). Putting a design doc with `validate_doc_update` via the
+  normal path fails at the SQL level.
+
 ## Missing Features
 
 ### Unimplemented methods (`db.go`)
@@ -43,8 +51,9 @@ Many functions accept `driver.Options` but ignore some or all of them.
 Note: `batch=ok` is intentionally not implemented for Put, Delete, and CreateDoc.
 It's a CouchDB durability optimization that doesn't apply to SQLite.
 
-- [ ] **Find** (`find.go:21`). The `driver.Options` parameter is completely
-  ignored (underscore placeholder). All options come from JSON query body only.
+- [ ] **Find** (`find.go:21`). Options `update`, `stale`, and `use_index` are
+  no-ops until index support (CreateIndex/DeleteIndex/GetIndexes) is added.
+  `stable` is permanently a no-op (single-node SQLite has no shards).
 
 - [ ] **Changes** (`changes.go`). Missing: `heartbeat`, `timeout`, `style`,
   `seq_interval`.

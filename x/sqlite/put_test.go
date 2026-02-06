@@ -1109,9 +1109,67 @@ func TestDBPut(t *testing.T) {
 		}
 	})
 
+	tests.Add("validate_doc_update rejects document", func(t *testing.T) interface{} {
+		d := newDB(t)
+		d.tAddValidation(`function(newDoc, oldDoc, userCtx, secObj) { throw({forbidden: "not allowed"}); }`)
+
+		return test{
+			db:    d,
+			docID: "foo",
+			doc: map[string]interface{}{
+				"foo": "bar",
+			},
+			wantStatus: http.StatusForbidden,
+			wantErr:    "not allowed",
+		}
+	})
+	tests.Add("validate_doc_update plain string throw", func(t *testing.T) interface{} {
+		d := newDB(t)
+		d.tAddValidation(`function(newDoc, oldDoc, userCtx, secObj) { throw("plain string error"); }`)
+
+		return test{
+			db:    d,
+			docID: "foo",
+			doc: map[string]interface{}{
+				"foo": "bar",
+			},
+			wantStatus: http.StatusInternalServerError,
+			wantErr:    "plain string error",
+		}
+	})
+	tests.Add("validate_doc_update unknown key throw", func(t *testing.T) interface{} {
+		d := newDB(t)
+		d.tAddValidation(`function(newDoc, oldDoc, userCtx, secObj) { throw({custom_key: "some message"}); }`)
+
+		return test{
+			db:    d,
+			docID: "foo",
+			doc: map[string]interface{}{
+				"foo": "bar",
+			},
+			wantStatus: http.StatusInternalServerError,
+			wantErr:    "some message",
+		}
+	})
+	tests.Add("validate_doc_update receives oldDoc on update", func(t *testing.T) interface{} {
+		d := newDB(t)
+		d.tAddValidation(`function(newDoc, oldDoc, userCtx, secObj) { if (oldDoc && oldDoc.foo === "bar") throw({forbidden: "cannot update foo=bar docs"}); }`)
+		rev := d.tPut("testdoc", map[string]interface{}{"foo": "bar"})
+
+		return test{
+			db:    d,
+			docID: "testdoc",
+			doc: map[string]interface{}{
+				"_rev": rev,
+				"foo":  "baz",
+			},
+			wantStatus: http.StatusForbidden,
+			wantErr:    "cannot update foo=bar docs",
+		}
+	})
+
 	/*
 		TODO:
-		- with validate_doc_update function
 		- with updates function
 	*/
 

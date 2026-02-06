@@ -41,123 +41,121 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 	if err := db.Err(); !ctx.IsExpectedSuccess(err) {
 		return
 	}
-	ctx.Run("group", func(ctx *kt.Context) {
-		ctx.Run("Create", func(ctx *kt.Context) {
-			const age = 32
-			ctx.Parallel()
+	ctx.Run("Create", func(ctx *kt.Context) {
+		const age = 32
+		ctx.Parallel()
 
-			doc := &testDoc{
-				ID:   ctx.TestDBName(),
-				Name: "Alberto",
-				Age:  age,
-			}
-			var rev string
+		doc := &testDoc{
+			ID:   ctx.TestDBName(),
+			Name: "Alberto",
+			Age:  age,
+		}
+		var rev string
+		err := kt.Retry(func() error {
+			var e error
+			rev, e = db.Put(context.Background(), doc.ID, doc)
+			return e
+		})
+		if !ctx.IsExpectedSuccess(err) {
+			return
+		}
+		doc.Rev = rev
+		doc.Age = 40
+		ctx.Run("Update", func(ctx *kt.Context) {
 			err := kt.Retry(func() error {
-				var e error
-				rev, e = db.Put(context.Background(), doc.ID, doc)
+				_, e := db.Put(context.Background(), doc.ID, doc)
 				return e
 			})
-			if !ctx.IsExpectedSuccess(err) {
-				return
-			}
-			doc.Rev = rev
-			doc.Age = 40
-			ctx.Run("Update", func(ctx *kt.Context) {
-				err := kt.Retry(func() error {
-					_, e := db.Put(context.Background(), doc.ID, doc)
-					return e
-				})
-				ctx.CheckError(err)
-			})
+			ctx.CheckError(err)
 		})
-		ctx.Run("DesignDoc", func(ctx *kt.Context) {
-			ctx.Parallel()
-			doc := map[string]any{
-				"_id":      "_design/testddoc",
-				"language": "javascript",
-				"views": map[string]any{
-					"testview": map[string]any{
-						"map": `function(doc) {
+	})
+	ctx.Run("DesignDoc", func(ctx *kt.Context) {
+		ctx.Parallel()
+		doc := map[string]any{
+			"_id":      "_design/testddoc",
+			"language": "javascript",
+			"views": map[string]any{
+				"testview": map[string]any{
+					"map": `function(doc) {
 			                if (doc.include) {
 			                    emit(doc._id, doc.index);
 			                }
 			            }`,
-					},
 				},
-			}
-			err := kt.Retry(func() error {
-				_, err := db.Put(context.Background(), doc["_id"].(string), doc)
-				return err
-			})
-			ctx.CheckError(err)
+			},
+		}
+		err := kt.Retry(func() error {
+			_, err := db.Put(context.Background(), doc["_id"].(string), doc)
+			return err
 		})
-		ctx.Run("Local", func(ctx *kt.Context) {
-			ctx.Parallel()
-			doc := map[string]any{
-				"_id":  "_local/foo",
-				"name": "Bob",
-			}
-			err := kt.Retry(func() error {
-				_, err := db.Put(context.Background(), doc["_id"].(string), doc)
-				return err
-			})
-			ctx.CheckError(err)
+		ctx.CheckError(err)
+	})
+	ctx.Run("Local", func(ctx *kt.Context) {
+		ctx.Parallel()
+		doc := map[string]any{
+			"_id":  "_local/foo",
+			"name": "Bob",
+		}
+		err := kt.Retry(func() error {
+			_, err := db.Put(context.Background(), doc["_id"].(string), doc)
+			return err
 		})
-		ctx.Run("LeadingUnderscoreInID", func(ctx *kt.Context) {
-			ctx.Parallel()
-			doc := map[string]any{
-				"_id":  "_badid",
-				"name": "Bob",
-			}
-			err := kt.Retry(func() error {
-				_, err := db.Put(context.Background(), doc["_id"].(string), doc)
-				return err
-			})
-			ctx.CheckError(err)
+		ctx.CheckError(err)
+	})
+	ctx.Run("LeadingUnderscoreInID", func(ctx *kt.Context) {
+		ctx.Parallel()
+		doc := map[string]any{
+			"_id":  "_badid",
+			"name": "Bob",
+		}
+		err := kt.Retry(func() error {
+			_, err := db.Put(context.Background(), doc["_id"].(string), doc)
+			return err
 		})
-		ctx.Run("HeavilyEscapedID", func(ctx *kt.Context) {
-			ctx.Parallel()
-			doc := map[string]any{
-				"_id":  "foo+bar & spáces ?!*,",
-				"name": "Bob",
-			}
-			err := kt.Retry(func() error {
-				_, err := db.Put(context.Background(), doc["_id"].(string), doc)
-				return err
-			})
-			ctx.CheckError(err)
+		ctx.CheckError(err)
+	})
+	ctx.Run("HeavilyEscapedID", func(ctx *kt.Context) {
+		ctx.Parallel()
+		doc := map[string]any{
+			"_id":  "foo+bar & spáces ?!*,",
+			"name": "Bob",
+		}
+		err := kt.Retry(func() error {
+			_, err := db.Put(context.Background(), doc["_id"].(string), doc)
+			return err
 		})
-		ctx.Run("SlashInID", func(ctx *kt.Context) {
-			ctx.Parallel()
-			doc := map[string]any{
-				"_id":  "foo/bar",
-				"name": "Bob",
-			}
-			err := kt.Retry(func() error {
-				_, err := db.Put(context.Background(), doc["_id"].(string), doc)
-				return err
-			})
-			ctx.CheckError(err)
+		ctx.CheckError(err)
+	})
+	ctx.Run("SlashInID", func(ctx *kt.Context) {
+		ctx.Parallel()
+		doc := map[string]any{
+			"_id":  "foo/bar",
+			"name": "Bob",
+		}
+		err := kt.Retry(func() error {
+			_, err := db.Put(context.Background(), doc["_id"].(string), doc)
+			return err
 		})
-		ctx.Run("Conflict", func(ctx *kt.Context) {
-			ctx.Parallel()
-			const id = "duplicate"
-			doc := map[string]any{
-				"_id":  id,
-				"name": "Bob",
-			}
-			err := kt.Retry(func() error {
-				_, err := ctx.Admin.DB(dbName).Put(context.Background(), id, doc)
-				return err
-			})
-			if err != nil {
-				ctx.Fatalf("Failed to create document for duplicate test: %s", err)
-			}
-			err = kt.Retry(func() error {
-				_, err = db.Put(context.Background(), id, doc)
-				return err
-			})
-			ctx.CheckError(err)
+		ctx.CheckError(err)
+	})
+	ctx.Run("Conflict", func(ctx *kt.Context) {
+		ctx.Parallel()
+		const id = "duplicate"
+		doc := map[string]any{
+			"_id":  id,
+			"name": "Bob",
+		}
+		err := kt.Retry(func() error {
+			_, err := ctx.Admin.DB(dbName).Put(context.Background(), id, doc)
+			return err
 		})
+		if err != nil {
+			ctx.Fatalf("Failed to create document for duplicate test: %s", err)
+		}
+		err = kt.Retry(func() error {
+			_, err = db.Put(context.Background(), id, doc)
+			return err
+		})
+		ctx.CheckError(err)
 	})
 }

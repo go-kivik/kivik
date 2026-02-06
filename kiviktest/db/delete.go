@@ -91,36 +91,34 @@ func testDelete(ctx *kt.Context, client *kivik.Client) {
 	}
 	local.Rev = rev
 
-	ctx.Run("group", func(ctx *kt.Context) {
-		ctx.Run("WrongRev", func(ctx *kt.Context) {
-			ctx.Parallel()
-			_, err := db.Delete(context.Background(), doc2.ID, "1-9c65296036141e575d32ba9c034dd3ee")
-			ctx.CheckError(err)
-		})
-		ctx.Run("InvalidRevFormat", func(ctx *kt.Context) {
-			ctx.Parallel()
-			_, err := db.Delete(context.Background(), doc2.ID, "invalid rev format")
-			ctx.CheckError(err)
-		})
-		ctx.Run("MissingDoc", func(ctx *kt.Context) {
-			ctx.Parallel()
-			_, err := db.Delete(context.Background(), "missing doc", "1-9c65296036141e575d32ba9c034dd3ee")
-			ctx.CheckError(err)
-		})
-		ctx.Run("ValidRev", func(ctx *kt.Context) {
-			ctx.Parallel()
-			_, err := db.Delete(context.Background(), doc.ID, doc.Rev)
-			ctx.CheckError(err)
-		})
-		ctx.Run("DesignDoc", func(ctx *kt.Context) {
-			ctx.Parallel()
-			_, err := db.Delete(context.Background(), ddoc.ID, ddoc.Rev)
-			ctx.CheckError(err)
-		})
-		ctx.Run("Local", func(ctx *kt.Context) {
-			ctx.Parallel()
-			_, err := db.Delete(context.Background(), local.ID, local.Rev)
-			ctx.CheckError(err)
-		})
+	ctx.Run("WrongRev", func(ctx *kt.Context) {
+		ctx.Parallel()
+		_, err := db.Delete(context.Background(), doc2.ID, "1-9c65296036141e575d32ba9c034dd3ee")
+		ctx.CheckError(err)
+	})
+	ctx.Run("InvalidRevFormat", func(ctx *kt.Context) {
+		ctx.Parallel()
+		_, err := db.Delete(context.Background(), doc2.ID, "invalid rev format")
+		ctx.CheckError(err)
+	})
+	ctx.Run("MissingDoc", func(ctx *kt.Context) {
+		ctx.Parallel()
+		_, err := db.Delete(context.Background(), "missing doc", "1-9c65296036141e575d32ba9c034dd3ee")
+		ctx.CheckError(err)
+	})
+	ctx.Run("ValidRev", func(ctx *kt.Context) {
+		ctx.Parallel()
+		_, err := db.Delete(context.Background(), doc.ID, doc.Rev)
+		ctx.CheckError(err)
+	})
+	ctx.Run("DesignDoc", func(ctx *kt.Context) {
+		ctx.Parallel()
+		_, err := db.Delete(context.Background(), ddoc.ID, ddoc.Rev)
+		ctx.CheckError(err)
+	})
+	ctx.Run("Local", func(ctx *kt.Context) {
+		ctx.Parallel()
+		_, err := db.Delete(context.Background(), local.ID, local.Rev)
+		ctx.CheckError(err)
 	})
 }

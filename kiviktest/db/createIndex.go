@@ -42,25 +42,23 @@ func testCreateIndex(ctx *kt.Context, client *kivik.Client) {
 	if err := db.Err(); err != nil {
 		ctx.Fatalf("Failed to open db: %s", err)
 	}
-	ctx.Run("group", func(ctx *kt.Context) {
-		ctx.Run("Valid", func(ctx *kt.Context) {
-			doCreateIndex(ctx, db, `{"fields":["foo"]}`)
-		})
-		ctx.Run("NilIndex", func(ctx *kt.Context) {
-			doCreateIndex(ctx, db, nil)
-		})
-		ctx.Run("BlankIndex", func(ctx *kt.Context) {
-			doCreateIndex(ctx, db, "")
-		})
-		ctx.Run("EmptyIndex", func(ctx *kt.Context) {
-			doCreateIndex(ctx, db, "{}")
-		})
-		ctx.Run("InvalidIndex", func(ctx *kt.Context) {
-			doCreateIndex(ctx, db, `{"oink":true}`)
-		})
-		ctx.Run("InvalidJSON", func(ctx *kt.Context) {
-			doCreateIndex(ctx, db, `chicken`)
-		})
+	ctx.Run("Valid", func(ctx *kt.Context) {
+		doCreateIndex(ctx, db, `{"fields":["foo"]}`)
+	})
+	ctx.Run("NilIndex", func(ctx *kt.Context) {
+		doCreateIndex(ctx, db, nil)
+	})
+	ctx.Run("BlankIndex", func(ctx *kt.Context) {
+		doCreateIndex(ctx, db, "")
+	})
+	ctx.Run("EmptyIndex", func(ctx *kt.Context) {
+		doCreateIndex(ctx, db, "{}")
+	})
+	ctx.Run("InvalidIndex", func(ctx *kt.Context) {
+		doCreateIndex(ctx, db, `{"oink":true}`)
+	})
+	ctx.Run("InvalidJSON", func(ctx *kt.Context) {
+		doCreateIndex(ctx, db, `chicken`)
 	})
 }
 

@@ -82,67 +82,65 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 		}
 	}
 
-	ctx.Run("group", func(ctx *kt.Context) {
-		ctx.Run("ValidReplication", func(ctx *kt.Context) {
-			ctx.Parallel()
-			tries := 3
-			success := false
-			for i := 0; i < tries; i++ {
-				success = doReplicationTest(ctx, client, dbtarget, dbsource)
-				if success {
-					break
-				}
+	ctx.Run("ValidReplication", func(ctx *kt.Context) {
+		ctx.Parallel()
+		tries := 3
+		success := false
+		for i := 0; i < tries; i++ {
+			success = doReplicationTest(ctx, client, dbtarget, dbsource)
+			if success {
+				break
 			}
-			if !success {
-				ctx.Errorf("Replication failed after %d tries", tries)
-			}
-		})
-		ctx.Run("MissingSource", func(ctx *kt.Context) {
-			ctx.Parallel()
-			doReplicationTest(ctx, client, dbtarget, ctx.MustString("NotFoundDB"))
-		})
-		ctx.Run("MissingTarget", func(ctx *kt.Context) {
-			ctx.Parallel()
-			doReplicationTest(ctx, client, ctx.MustString("NotFoundDB"), dbsource)
-		})
-		ctx.Run("Cancel", func(ctx *kt.Context) {
-			ctx.Parallel()
-			replID := ctx.TestDBName()
-			rep, err := callReplicate(ctx, client, dbtarget, "http://foo:foo@192.168.2.254/foo", replID, kivik.Param("continuous", true))
-			if !ctx.IsExpectedSuccess(err) {
+		}
+		if !success {
+			ctx.Errorf("Replication failed after %d tries", tries)
+		}
+	})
+	ctx.Run("MissingSource", func(ctx *kt.Context) {
+		ctx.Parallel()
+		doReplicationTest(ctx, client, dbtarget, ctx.MustString("NotFoundDB"))
+	})
+	ctx.Run("MissingTarget", func(ctx *kt.Context) {
+		ctx.Parallel()
+		doReplicationTest(ctx, client, ctx.MustString("NotFoundDB"), dbsource)
+	})
+	ctx.Run("Cancel", func(ctx *kt.Context) {
+		ctx.Parallel()
+		replID := ctx.TestDBName()
+		rep, err := callReplicate(ctx, client, dbtarget, "http://foo:foo@192.168.2.254/foo", replID, kivik.Param("continuous", true))
+		if !ctx.IsExpectedSuccess(err) {
+			return
+		}
+		ctx.T.Cleanup(func() { _ = rep.Delete(context.Background()) })
+		timeout := time.Duration(ctx.MustInt("timeoutSeconds")) * time.Second
+		cx, cancel := context.WithTimeout(context.Background(), timeout)
+		defer cancel()
+		ctx.CheckError(rep.Delete(context.Background()))
+	loop:
+		for rep.IsActive() {
+			if rep.State() == kivik.ReplicationStarted {
 				return
 			}
-			ctx.T.Cleanup(func() { _ = rep.Delete(context.Background()) })
-			timeout := time.Duration(ctx.MustInt("timeoutSeconds")) * time.Second
-			cx, cancel := context.WithTimeout(context.Background(), timeout)
-			defer cancel()
-			ctx.CheckError(rep.Delete(context.Background()))
-		loop:
-			for rep.IsActive() {
-				if rep.State() == kivik.ReplicationStarted {
-					return
-				}
-				select {
-				case <-cx.Done():
-					break loop
-				default:
-				}
-				if err := rep.Update(cx); err != nil {
-					if kivik.HTTPStatus(err) == http.StatusNotFound {
-						// NotFound expected after the replication is cancelled
-						break
-					}
-					ctx.Fatalf("Failed to read update: %s", err)
+			select {
+			case <-cx.Done():
+				break loop
+			default:
+			}
+			if err := rep.Update(cx); err != nil {
+				if kivik.HTTPStatus(err) == http.StatusNotFound {
+					// NotFound expected after the replication is cancelled
 					break
 				}
+				ctx.Fatalf("Failed to read update: %s", err)
+				break
 			}
-			if err := cx.Err(); err != nil {
-				ctx.Fatalf("context was cancelled: %s", err)
-			}
-			if err := rep.Err(); err != nil {
-				ctx.Fatalf("Replication cancellation failed: %s", err)
-			}
-		})
+		}
+		if err := cx.Err(); err != nil {
+			ctx.Fatalf("context was cancelled: %s", err)
+		}
+		if err := rep.Err(); err != nil {
+			ctx.Fatalf("Replication cancellation failed: %s", err)
+		}
 	})
 }
 

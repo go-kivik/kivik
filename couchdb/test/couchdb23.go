@@ -39,13 +39,13 @@ func registerSuiteCouch23() {
 		"AllDocs/NoAuth/chicken.status":     http.StatusNotFound,
 		"AllDocs/NoAuth/_duck.status":       http.StatusUnauthorized,
 
-		"Find.databases":                       []string{"chicken", "_duck"},
-		"Find/Admin/chicken.status":            http.StatusNotFound,
-		"Find/Admin/_duck.status":              http.StatusNotFound,
-		"Find/NoAuth/chicken.status":           http.StatusNotFound,
-		"Find/NoAuth/_duck.status":             http.StatusUnauthorized,
-		"Find/RW/group/Admin/Warning.warning":  "no matching index found, create an index to optimize query time",
-		"Find/RW/group/NoAuth/Warning.warning": "no matching index found, create an index to optimize query time",
+		"Find.databases":                 []string{"chicken", "_duck"},
+		"Find/Admin/chicken.status":      http.StatusNotFound,
+		"Find/Admin/_duck.status":        http.StatusNotFound,
+		"Find/NoAuth/chicken.status":     http.StatusNotFound,
+		"Find/NoAuth/_duck.status":       http.StatusUnauthorized,
+		"Find/RW/Admin/Warning.warning":  "no matching index found, create an index to optimize query time",
+		"Find/RW/NoAuth/Warning.warning": "no matching index found, create an index to optimize query time",
 
 		"Explain.databases":             []string{"chicken", "_duck"},
 		"Explain/Admin/chicken.status":  http.StatusNotFound,
@@ -78,15 +78,15 @@ func registerSuiteCouch23() {
 			Limit: 25,
 		},
 
-		"DBExists.databases":              []string{"_users", "chicken", "_duck"},
-		"DBExists/Admin/_users.exists":    true,
-		"DBExists/Admin/chicken.exists":   false,
-		"DBExists/Admin/_duck.exists":     false,
-		"DBExists/NoAuth/_users.exists":   true,
-		"DBExists/NoAuth/chicken.exists":  false,
-		"DBExists/NoAuth/_duck.status":    http.StatusUnauthorized,
-		"DBExists/RW/group/Admin.exists":  true,
-		"DBExists/RW/group/NoAuth.exists": true,
+		"DBExists.databases":             []string{"_users", "chicken", "_duck"},
+		"DBExists/Admin/_users.exists":   true,
+		"DBExists/Admin/chicken.exists":  false,
+		"DBExists/Admin/_duck.exists":    false,
+		"DBExists/NoAuth/_users.exists":  true,
+		"DBExists/NoAuth/chicken.exists": false,
+		"DBExists/NoAuth/_duck.status":   http.StatusUnauthorized,
+		"DBExists/RW/Admin.exists":       true,
+		"DBExists/RW/NoAuth.exists":      true,
 
 		// "DBsStats/NoAuth.status": http.StatusUnauthorized,
 
@@ -98,11 +98,11 @@ func registerSuiteCouch23() {
 		"Version.vendor":         `^The Apache Software Foundation$`,
 		"Version.vendor_version": ``, // CouchDB 2.0+ no longer has a vendor version
 
-		"Get/RW/group/Admin/bogus.status":  http.StatusNotFound,
-		"Get/RW/group/NoAuth/bogus.status": http.StatusNotFound,
+		"Get/RW/Admin/bogus.status":  http.StatusNotFound,
+		"Get/RW/NoAuth/bogus.status": http.StatusNotFound,
 
-		"GetRev/RW/group/Admin/bogus.status":  http.StatusNotFound,
-		"GetRev/RW/group/NoAuth/bogus.status": http.StatusNotFound,
+		"GetRev/RW/Admin/bogus.status":  http.StatusNotFound,
+		"GetRev/RW/NoAuth/bogus.status": http.StatusNotFound,
 
 		"Flush.databases":                     []string{"_users", "chicken", "_duck"},
 		"Flush/NoAuth/chicken/DoFlush.status": http.StatusNotFound,
@@ -110,13 +110,13 @@ func registerSuiteCouch23() {
 		"Flush/Admin/_duck/DoFlush.status":    http.StatusNotFound,
 		"Flush/NoAuth/_duck/DoFlush.status":   http.StatusUnauthorized,
 
-		"Delete/RW/Admin/group/MissingDoc.status":        http.StatusNotFound,
-		"Delete/RW/Admin/group/InvalidRevFormat.status":  http.StatusBadRequest,
-		"Delete/RW/Admin/group/WrongRev.status":          http.StatusConflict,
-		"Delete/RW/NoAuth/group/MissingDoc.status":       http.StatusNotFound,
-		"Delete/RW/NoAuth/group/InvalidRevFormat.status": http.StatusBadRequest,
-		"Delete/RW/NoAuth/group/WrongRev.status":         http.StatusConflict,
-		"Delete/RW/NoAuth/group/DesignDoc.status":        http.StatusUnauthorized,
+		"Delete/RW/Admin/MissingDoc.status":        http.StatusNotFound,
+		"Delete/RW/Admin/InvalidRevFormat.status":  http.StatusBadRequest,
+		"Delete/RW/Admin/WrongRev.status":          http.StatusConflict,
+		"Delete/RW/NoAuth/MissingDoc.status":       http.StatusNotFound,
+		"Delete/RW/NoAuth/InvalidRevFormat.status": http.StatusBadRequest,
+		"Delete/RW/NoAuth/WrongRev.status":         http.StatusConflict,
+		"Delete/RW/NoAuth/DesignDoc.status":        http.StatusUnauthorized,
 
 		"Session/Get/Admin.info.authentication_handlers":  "cookie,default",
 		"Session/Get/Admin.info.authentication_db":        "_users",
@@ -162,7 +162,7 @@ func registerSuiteCouch23() {
 		"Security/NoAuth/_global_changes.status": http.StatusUnauthorized,
 		"Security/NoAuth/chicken.status":         http.StatusNotFound,
 		"Security/NoAuth/_duck.status":           http.StatusUnauthorized,
-		"Security/RW/group/NoAuth.status":        http.StatusUnauthorized,
+		"Security/RW/NoAuth.status":              http.StatusUnauthorized,
 
 		"SetSecurity/RW/Admin/NotExists.status":  http.StatusNotFound,
 		"SetSecurity/RW/NoAuth/NotExists.status": http.StatusNotFound,
@@ -170,43 +170,43 @@ func registerSuiteCouch23() {
 
 		"DBUpdates/RW/NoAuth.status": http.StatusUnauthorized,
 
-		"BulkDocs/RW/NoAuth/group/Mix/Conflict.status": http.StatusConflict,
-		"BulkDocs/RW/Admin/group/Mix/Conflict.status":  http.StatusConflict,
+		"BulkDocs/RW/NoAuth/Mix/Conflict.status": http.StatusConflict,
+		"BulkDocs/RW/Admin/Mix/Conflict.status":  http.StatusConflict,
 
-		"GetAttachment/RW/group/Admin/foo/NotFound.status":  http.StatusNotFound,
-		"GetAttachment/RW/group/NoAuth/foo/NotFound.status": http.StatusNotFound,
+		"GetAttachment/RW/Admin/foo/NotFound.status":  http.StatusNotFound,
+		"GetAttachment/RW/NoAuth/foo/NotFound.status": http.StatusNotFound,
 
-		"GetAttachmentMeta/RW/group/Admin/foo/NotFound.status":  http.StatusNotFound,
-		"GetAttachmentMeta/RW/group/NoAuth/foo/NotFound.status": http.StatusNotFound,
+		"GetAttachmentMeta/RW/Admin/foo/NotFound.status":  http.StatusNotFound,
+		"GetAttachmentMeta/RW/NoAuth/foo/NotFound.status": http.StatusNotFound,
 
-		"PutAttachment/RW/group/Admin/Conflict.status":         http.StatusConflict,
-		"PutAttachment/RW/group/NoAuth/Conflict.status":        http.StatusConflict,
-		"PutAttachment/RW/group/NoAuth/UpdateDesignDoc.status": http.StatusUnauthorized,
-		"PutAttachment/RW/group/NoAuth/CreateDesignDoc.status": http.StatusUnauthorized,
+		"PutAttachment/RW/Admin/Conflict.status":         http.StatusConflict,
+		"PutAttachment/RW/NoAuth/Conflict.status":        http.StatusConflict,
+		"PutAttachment/RW/NoAuth/UpdateDesignDoc.status": http.StatusUnauthorized,
+		"PutAttachment/RW/NoAuth/CreateDesignDoc.status": http.StatusUnauthorized,
 
-		// "DeleteAttachment/RW/group/Admin/NotFound.status":  http.StatusNotFound, // COUCHDB-3362
-		// "DeleteAttachment/RW/group/NoAuth/NotFound.status": http.StatusNotFound, // COUCHDB-3362
-		"DeleteAttachment/RW/group/Admin/NoDoc.status":      http.StatusConflict,
-		"DeleteAttachment/RW/group/NoAuth/NoDoc.status":     http.StatusConflict,
-		"DeleteAttachment/RW/group/NoAuth/DesignDoc.status": http.StatusUnauthorized,
+		// "DeleteAttachment/RW/Admin/NotFound.status":  http.StatusNotFound, // COUCHDB-3362
+		// "DeleteAttachment/RW/NoAuth/NotFound.status": http.StatusNotFound, // COUCHDB-3362
+		"DeleteAttachment/RW/Admin/NoDoc.status":      http.StatusConflict,
+		"DeleteAttachment/RW/NoAuth/NoDoc.status":     http.StatusConflict,
+		"DeleteAttachment/RW/NoAuth/DesignDoc.status": http.StatusUnauthorized,
 
-		"Put/RW/Admin/group/LeadingUnderscoreInID.status":  http.StatusBadRequest,
-		"Put/RW/Admin/group/Conflict.status":               http.StatusConflict,
-		"Put/RW/NoAuth/group/LeadingUnderscoreInID.status": http.StatusBadRequest,
-		"Put/RW/NoAuth/group/DesignDoc.status":             http.StatusUnauthorized,
-		"Put/RW/NoAuth/group/Conflict.status":              http.StatusConflict,
+		"Put/RW/Admin/LeadingUnderscoreInID.status":  http.StatusBadRequest,
+		"Put/RW/Admin/Conflict.status":               http.StatusConflict,
+		"Put/RW/NoAuth/LeadingUnderscoreInID.status": http.StatusBadRequest,
+		"Put/RW/NoAuth/DesignDoc.status":             http.StatusUnauthorized,
+		"Put/RW/NoAuth/Conflict.status":              http.StatusConflict,
 
-		"CreateIndex/RW/Admin/group/EmptyIndex.status":    http.StatusBadRequest,
-		"CreateIndex/RW/Admin/group/BlankIndex.status":    http.StatusBadRequest,
-		"CreateIndex/RW/Admin/group/InvalidIndex.status":  http.StatusBadRequest,
-		"CreateIndex/RW/Admin/group/NilIndex.status":      http.StatusBadRequest,
-		"CreateIndex/RW/Admin/group/InvalidJSON.status":   http.StatusBadRequest,
-		"CreateIndex/RW/NoAuth/group/EmptyIndex.status":   http.StatusBadRequest,
-		"CreateIndex/RW/NoAuth/group/BlankIndex.status":   http.StatusBadRequest,
-		"CreateIndex/RW/NoAuth/group/InvalidIndex.status": http.StatusBadRequest,
-		"CreateIndex/RW/NoAuth/group/NilIndex.status":     http.StatusBadRequest,
-		"CreateIndex/RW/NoAuth/group/InvalidJSON.status":  http.StatusBadRequest,
-		"CreateIndex/RW/NoAuth/group/Valid.status":        http.StatusInternalServerError, // COUCHDB-3374
+		"CreateIndex/RW/Admin/EmptyIndex.status":    http.StatusBadRequest,
+		"CreateIndex/RW/Admin/BlankIndex.status":    http.StatusBadRequest,
+		"CreateIndex/RW/Admin/InvalidIndex.status":  http.StatusBadRequest,
+		"CreateIndex/RW/Admin/NilIndex.status":      http.StatusBadRequest,
+		"CreateIndex/RW/Admin/InvalidJSON.status":   http.StatusBadRequest,
+		"CreateIndex/RW/NoAuth/EmptyIndex.status":   http.StatusBadRequest,
+		"CreateIndex/RW/NoAuth/BlankIndex.status":   http.StatusBadRequest,
+		"CreateIndex/RW/NoAuth/InvalidIndex.status": http.StatusBadRequest,
+		"CreateIndex/RW/NoAuth/NilIndex.status":     http.StatusBadRequest,
+		"CreateIndex/RW/NoAuth/InvalidJSON.status":  http.StatusBadRequest,
+		"CreateIndex/RW/NoAuth/Valid.status":        http.StatusInternalServerError, // COUCHDB-3374
 
 		"GetIndexes.databases":                     []string{"_replicator", "_users", "_global_changes", "chicken", "_duck"},
 		"GetIndexes/Admin/_replicator.indexes":     []kivik.Index{kt.AllDocsIndex},
@@ -234,22 +234,22 @@ func registerSuiteCouch23() {
 			},
 		},
 
-		"DeleteIndex/RW/Admin/group/NotFoundDdoc.status":  http.StatusNotFound,
-		"DeleteIndex/RW/Admin/group/NotFoundName.status":  http.StatusNotFound,
-		"DeleteIndex/RW/NoAuth/group/NotFoundDdoc.status": http.StatusNotFound,
-		"DeleteIndex/RW/NoAuth/group/NotFoundName.status": http.StatusNotFound,
+		"DeleteIndex/RW/Admin/NotFoundDdoc.status":  http.StatusNotFound,
+		"DeleteIndex/RW/Admin/NotFoundName.status":  http.StatusNotFound,
+		"DeleteIndex/RW/NoAuth/NotFoundDdoc.status": http.StatusNotFound,
+		"DeleteIndex/RW/NoAuth/NotFoundName.status": http.StatusNotFound,
 
 		"GetReplications/NoAuth.status": http.StatusUnauthorized,
 
-		"Replicate.NotFoundDB":                                  "http://localhost:5984/foo",
-		"Replicate.timeoutSeconds":                              60,
-		"Replicate.prefix":                                      "http://localhost:5984/",
-		"Replicate/RW/NoAuth.status":                            http.StatusForbidden,
-		"Replicate/RW/Admin/group/MissingSource/Results.status": http.StatusNotFound,
-		"Replicate/RW/Admin/group/MissingTarget/Results.status": http.StatusNotFound,
+		"Replicate.NotFoundDB":                            "http://localhost:5984/foo",
+		"Replicate.timeoutSeconds":                        60,
+		"Replicate.prefix":                                "http://localhost:5984/",
+		"Replicate/RW/NoAuth.status":                      http.StatusForbidden,
+		"Replicate/RW/Admin/MissingSource/Results.status": http.StatusNotFound,
+		"Replicate/RW/Admin/MissingTarget/Results.status": http.StatusNotFound,
 
-		"Query/RW/group/Admin/WithoutDocs/ScanDoc.status":  http.StatusBadRequest,
-		"Query/RW/group/NoAuth/WithoutDocs/ScanDoc.status": http.StatusBadRequest,
+		"Query/RW/Admin/WithoutDocs/ScanDoc.status":  http.StatusBadRequest,
+		"Query/RW/NoAuth/WithoutDocs/ScanDoc.status": http.StatusBadRequest,
 
 		"ViewCleanup/RW/NoAuth.status": http.StatusUnauthorized,
 

@@ -49,13 +49,11 @@ func testAllDocsRW(ctx *kt.Context) {
 	if err != nil {
 		ctx.Errorf("Failed to set up temp db: %s", err)
 	}
-	ctx.Run("group", func(ctx *kt.Context) {
-		ctx.RunAdmin(func(ctx *kt.Context) {
-			doTest(ctx, ctx.Admin, dbName, 0, expected, true)
-		})
-		ctx.RunNoAuth(func(ctx *kt.Context) {
-			doTest(ctx, ctx.NoAuth, dbName, 0, expected, true)
-		})
+	ctx.RunAdmin(func(ctx *kt.Context) {
+		doTest(ctx, ctx.Admin, dbName, 0, expected, true)
+	})
+	ctx.RunNoAuth(func(ctx *kt.Context) {
+		doTest(ctx, ctx.NoAuth, dbName, 0, expected, true)
 	})
 }
 

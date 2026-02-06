@@ -42,13 +42,11 @@ func testQueryRW(ctx *kt.Context) {
 	if err != nil {
 		ctx.Errorf("Failed to set up temp db: %s", err)
 	}
-	ctx.Run("group", func(ctx *kt.Context) {
-		ctx.RunAdmin(func(ctx *kt.Context) {
-			doQueryTest(ctx, ctx.Admin, dbName, 0, expected)
-		})
-		ctx.RunNoAuth(func(ctx *kt.Context) {
-			doQueryTest(ctx, ctx.NoAuth, dbName, 0, expected)
-		})
+	ctx.RunAdmin(func(ctx *kt.Context) {
+		doQueryTest(ctx, ctx.Admin, dbName, 0, expected)
+	})
+	ctx.RunNoAuth(func(ctx *kt.Context) {
+		doQueryTest(ctx, ctx.NoAuth, dbName, 0, expected)
 	})
 }
 

@@ -57,19 +57,17 @@ func getAttachment(ctx *kt.Context) {
 			ctx.Fatalf("Failed to create design doc: %s", err)
 		}
 
-		ctx.Run("group", func(ctx *kt.Context) {
-			ctx.RunAdmin(func(ctx *kt.Context) {
-				ctx.Parallel()
-				testGetAttachments(ctx, ctx.Admin, dbname, "foo", "foo.txt")
-				testGetAttachments(ctx, ctx.Admin, dbname, "foo", "NotFound")
-				testGetAttachments(ctx, ctx.Admin, dbname, "_design/foo", "foo.txt")
-			})
-			ctx.RunNoAuth(func(ctx *kt.Context) {
-				ctx.Parallel()
-				testGetAttachments(ctx, ctx.NoAuth, dbname, "foo", "foo.txt")
-				testGetAttachments(ctx, ctx.NoAuth, dbname, "foo", "NotFound")
-				testGetAttachments(ctx, ctx.NoAuth, dbname, "_design/foo", "foo.txt")
-			})
+		ctx.RunAdmin(func(ctx *kt.Context) {
+			ctx.Parallel()
+			testGetAttachments(ctx, ctx.Admin, dbname, "foo", "foo.txt")
+			testGetAttachments(ctx, ctx.Admin, dbname, "foo", "NotFound")
+			testGetAttachments(ctx, ctx.Admin, dbname, "_design/foo", "foo.txt")
+		})
+		ctx.RunNoAuth(func(ctx *kt.Context) {
+			ctx.Parallel()
+			testGetAttachments(ctx, ctx.NoAuth, dbname, "foo", "foo.txt")
+			testGetAttachments(ctx, ctx.NoAuth, dbname, "foo", "NotFound")
+			testGetAttachments(ctx, ctx.NoAuth, dbname, "_design/foo", "foo.txt")
 		})
 	})
 }

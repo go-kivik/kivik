@@ -70,15 +70,13 @@ func security(ctx *kt.Context) {
 		if err != nil {
 			ctx.Fatalf("Failed to set security: %s", err)
 		}
-		ctx.Run("group", func(ctx *kt.Context) {
-			ctx.RunAdmin(func(ctx *kt.Context) {
-				ctx.Parallel()
-				testGetSecurity(ctx, ctx.Admin, dbname, sec)
-			})
-			ctx.RunNoAuth(func(ctx *kt.Context) {
-				ctx.Parallel()
-				testGetSecurity(ctx, ctx.NoAuth, dbname, sec)
-			})
+		ctx.RunAdmin(func(ctx *kt.Context) {
+			ctx.Parallel()
+			testGetSecurity(ctx, ctx.Admin, dbname, sec)
+		})
+		ctx.RunNoAuth(func(ctx *kt.Context) {
+			ctx.Parallel()
+			testGetSecurity(ctx, ctx.NoAuth, dbname, sec)
 		})
 	})
 }

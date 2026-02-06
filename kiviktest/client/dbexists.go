@@ -36,13 +36,11 @@ func dbExists(ctx *kt.Context) {
 	})
 	ctx.RunRW(func(ctx *kt.Context) {
 		dbName := ctx.TestDB()
-		ctx.Run("group", func(ctx *kt.Context) {
-			ctx.RunAdmin(func(ctx *kt.Context) {
-				checkDBExists(ctx, ctx.Admin, dbName)
-			})
-			ctx.RunNoAuth(func(ctx *kt.Context) {
-				checkDBExists(ctx, ctx.NoAuth, dbName)
-			})
+		ctx.RunAdmin(func(ctx *kt.Context) {
+			checkDBExists(ctx, ctx.Admin, dbName)
+		})
+		ctx.RunNoAuth(func(ctx *kt.Context) {
+			checkDBExists(ctx, ctx.NoAuth, dbName)
 		})
 	})
 }

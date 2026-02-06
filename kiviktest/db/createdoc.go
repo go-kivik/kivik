@@ -26,15 +26,13 @@ func init() {
 func createDoc(ctx *kt.Context) {
 	ctx.RunRW(func(ctx *kt.Context) {
 		dbname := ctx.TestDB()
-		ctx.Run("group", func(ctx *kt.Context) {
-			ctx.RunAdmin(func(ctx *kt.Context) {
-				ctx.Parallel()
-				testCreate(ctx, ctx.Admin, dbname)
-			})
-			ctx.RunNoAuth(func(ctx *kt.Context) {
-				ctx.Parallel()
-				testCreate(ctx, ctx.NoAuth, dbname)
-			})
+		ctx.RunAdmin(func(ctx *kt.Context) {
+			ctx.Parallel()
+			testCreate(ctx, ctx.Admin, dbname)
+		})
+		ctx.RunNoAuth(func(ctx *kt.Context) {
+			ctx.Parallel()
+			testCreate(ctx, ctx.NoAuth, dbname)
 		})
 	})
 }

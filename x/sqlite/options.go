@@ -302,6 +302,15 @@ func (o optsMap) attsSince() []string {
 	return attsSince
 }
 
+// style returns the changes feed style. Defaults to "main_only".
+func (o optsMap) style() string {
+	s, _ := o["style"].(string)
+	if s == "all_docs" {
+		return s
+	}
+	return "main_only"
+}
+
 // timeout returns the timeout duration parsed from the "timeout" option
 // (specified in milliseconds). Returns 0 if unset.
 func (o optsMap) timeout() (time.Duration, error) {

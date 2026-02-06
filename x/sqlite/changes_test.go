@@ -663,6 +663,25 @@ func TestDBChanges(t *testing.T) {
 			wantETag:    &[]string{""}[0],
 		}
 	})
+	tests.Add("style=all_docs returns all leaf revisions", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev1 := d.tPut("foo", map[string]string{"_rev": "1-xyz", "foo": "bar"}, kivik.Param("new_edits", false))
+		rev2 := d.tPut("foo", map[string]string{"_rev": "1-abc", "conflict": "true"}, kivik.Param("new_edits", false))
+
+		return test{
+			db:      d,
+			options: kivik.Param("style", "all_docs"),
+			wantChanges: []driver.Change{
+				{
+					ID:      "foo",
+					Seq:     "1",
+					Changes: driver.ChangedRevs{rev1, rev2},
+				},
+			},
+			wantLastSeq: &[]string{"1"}[0],
+			wantETag:    &[]string{"c4ca4238a0b923820dcc509a6f75849b"}[0],
+		}
+	})
 	/*
 		TODO:
 		- Options

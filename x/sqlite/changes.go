@@ -23,6 +23,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -44,6 +45,7 @@ type normalChanges struct {
 	lastSeq     string
 	etag        string
 	includeDocs bool
+	allDocs     bool
 	filter      func(doc any, req any) (bool, error)
 }
 
@@ -67,7 +69,9 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 		}
 	}
 
-	c := &normalChanges{}
+	c := &normalChanges{
+		allDocs: opts.style() == "all_docs",
+	}
 
 	if sinceNow {
 		if lastSeq == nil {
@@ -101,7 +105,7 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 		return nil, err
 	}
 
-	args := []any{since, attachments, c.includeDocs, filterType, filterDdoc, filterName}
+	args := []any{since, attachments, c.includeDocs, filterType, filterDdoc, filterName, c.allDocs}
 	where, err := opts.changesWhere(&args)
 	if err != nil {
 		return nil, err
@@ -183,7 +187,10 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 				results.id,
 				results.seq,
 				results.deleted,
-				results.rev || '-' || results.rev_id AS rev,
+				IIF($7,
+				(SELECT GROUP_CONCAT(rev_str, ',') FROM (SELECT leaves.rev || '-' || leaves.rev_id AS rev_str FROM leaves WHERE leaves.id = results.id ORDER BY leaves.rev DESC, leaves.rev_id DESC)),
+				results.rev || '-' || results.rev_id
+			) AS rev,
 				results.doc,
 				SUM(CASE WHEN bridge.pk IS NOT NULL THEN 1 ELSE 0 END) OVER (PARTITION BY results.id, results.rev, results.rev_id) AS attachment_count,
 				ROW_NUMBER() OVER (PARTITION BY results.id, results.rev, results.rev_id) AS row_number,
@@ -302,7 +309,11 @@ func (c *normalChanges) Next(change *driver.Change) error {
 			change.ID = *rowID
 			change.Seq = *rowSeq
 			change.Deleted = *rowDeleted
-			change.Changes = driver.ChangedRevs{*rowRev}
+			if c.allDocs {
+				change.Changes = driver.ChangedRevs(strings.Split(*rowRev, ","))
+			} else {
+				change.Changes = driver.ChangedRevs{*rowRev}
+			}
 			c.lastSeq = change.Seq
 			rev = *rowRev
 			doc = rowDoc
@@ -411,7 +422,7 @@ type longpollChanges struct {
 	includeDocs bool
 	attachments bool
 	continuous  bool
-	idleTimeout     time.Duration
+	idleTimeout time.Duration
 	lastSeq     string
 	ctx         context.Context
 	cancel      context.CancelFunc
@@ -487,7 +498,7 @@ func (d *db) newLongpollChanges(ctx context.Context, includeDocs, attachments, c
 		attachments: attachments,
 		includeDocs: includeDocs,
 		continuous:  continuous,
-		idleTimeout:     idleTimeout,
+		idleTimeout: idleTimeout,
 		lastSeq:     strconv.FormatUint(since, 10),
 		ctx:         ctx,
 		cancel:      cancel,

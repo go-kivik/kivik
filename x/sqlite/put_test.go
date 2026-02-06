@@ -1184,6 +1184,25 @@ func TestDBPut(t *testing.T) {
 		}
 	})
 
+	tests.Add("validate_doc_update stored via design doc put is enforced", func(t *testing.T) interface{} {
+		d := newDB(t)
+		d.tPut("_design/test", map[string]interface{}{
+			"validate_doc_update": `function(newDoc) { if(newDoc.blocked) throw({forbidden: "blocked"}); }`,
+		})
+
+		d.tPut("ok", map[string]interface{}{})
+
+		return test{
+			db:    d,
+			docID: "bad",
+			doc: map[string]interface{}{
+				"blocked": true,
+			},
+			wantStatus: http.StatusForbidden,
+			wantErr:    "blocked",
+		}
+	})
+
 	/*
 		TODO:
 		- with updates function

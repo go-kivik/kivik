@@ -65,7 +65,7 @@ func (d *db) updateDesignDoc(ctx context.Context, tx *sql.Tx, rev revision, data
 		}
 	}
 	if data.DesignFields.ValidateDocUpdates != "" {
-		if _, err := stmt.ExecContext(ctx, data.ID, rev.rev, rev.id, data.DesignFields.Language, "validate_doc_update", "validate", data.DesignFields.ValidateDocUpdates, data.DesignFields.AutoUpdate, nil, nil); err != nil {
+		if _, err := stmt.ExecContext(ctx, data.ID, rev.rev, rev.id, data.DesignFields.Language, "validate", "validate", data.DesignFields.ValidateDocUpdates, data.DesignFields.AutoUpdate, nil, nil, nil); err != nil {
 			return err
 		}
 	}

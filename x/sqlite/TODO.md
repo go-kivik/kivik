@@ -1,13 +1,5 @@
 # SQLite Driver TODO
 
-## Bugs
-
-- [ ] **validate_doc_update storage broken** (`designdocs.go:68`). Two issues:
-  `func_type` is set to `"validate_doc_update"` but the schema CHECK constraint
-  only allows `"validate"`, and only 10 arguments are passed for 11 placeholders
-  (missing `local_seq`). Putting a design doc with `validate_doc_update` via the
-  normal path fails at the SQL level.
-
 ## Missing Features
 
 ### Unimplemented methods (`db.go`)

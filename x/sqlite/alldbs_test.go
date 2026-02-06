@@ -115,6 +115,66 @@ func TestClientAllDBs(t *testing.T) {
 			want:    []string{"bbb", "ccc"},
 		}
 	})
+	tests.Add("startkey", func(t *testing.T) interface{} {
+		d := drv{}
+		dClient, err := d.NewClient(":memory:", mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+		c := dClient.(*client)
+		ctx := context.Background()
+		for _, name := range []string{"aaa", "bbb", "ccc"} {
+			if err := c.CreateDB(ctx, name, mock.NilOption); err != nil {
+				t.Fatal(err)
+			}
+		}
+		return test{
+			client:  c,
+			options: kivik.Param("startkey", "bbb"),
+			want:    []string{"bbb", "ccc"},
+		}
+	})
+	tests.Add("endkey", func(t *testing.T) interface{} {
+		d := drv{}
+		dClient, err := d.NewClient(":memory:", mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+		c := dClient.(*client)
+		ctx := context.Background()
+		for _, name := range []string{"aaa", "bbb", "ccc"} {
+			if err := c.CreateDB(ctx, name, mock.NilOption); err != nil {
+				t.Fatal(err)
+			}
+		}
+		return test{
+			client:  c,
+			options: kivik.Param("endkey", "bbb"),
+			want:    []string{"aaa", "bbb"},
+		}
+	})
+	tests.Add("inclusive_end=false", func(t *testing.T) interface{} {
+		d := drv{}
+		dClient, err := d.NewClient(":memory:", mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+		c := dClient.(*client)
+		ctx := context.Background()
+		for _, name := range []string{"aaa", "bbb", "ccc"} {
+			if err := c.CreateDB(ctx, name, mock.NilOption); err != nil {
+				t.Fatal(err)
+			}
+		}
+		return test{
+			client: c,
+			options: kivik.Params(map[string]interface{}{
+				"endkey":        "bbb",
+				"inclusive_end": false,
+			}),
+			want: []string{"aaa"},
+		}
+	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()

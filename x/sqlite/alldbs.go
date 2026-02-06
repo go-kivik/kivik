@@ -39,7 +39,7 @@ func (c *client) AllDBs(ctx context.Context, opts driver.Options) ([]string, err
 	rows, err := c.db.QueryContext(ctx, `
 		SELECT view.name
 		FROM (
-			SELECT name, name AS key
+			SELECT name, REPLACE(name, 'kivik$', '') AS key
 			FROM sqlite_schema AS s
 			WHERE type = 'table'
 				AND name LIKE 'kivik$%' ESCAPE '\'

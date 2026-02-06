@@ -34,12 +34,13 @@ var replicationMUs = make(map[*kivik.Client]*sync.Mutex)
 
 func lockReplication(ctx *kt.Context) func() {
 	masterMU.Lock()
-	defer masterMU.Unlock()
 	if _, ok := replicationMUs[ctx.Admin]; !ok {
 		replicationMUs[ctx.Admin] = &sync.Mutex{}
 	}
-	replicationMUs[ctx.Admin].Lock()
-	return func() { replicationMUs[ctx.Admin].Unlock() }
+	mu := replicationMUs[ctx.Admin]
+	masterMU.Unlock()
+	mu.Lock()
+	return mu.Unlock
 }
 
 func getReplications(ctx *kt.Context) {

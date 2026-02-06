@@ -77,6 +77,44 @@ func TestClientAllDBs(t *testing.T) {
 			want:    []string{"ccc", "bbb", "aaa"},
 		}
 	})
+	tests.Add("limit=2", func(t *testing.T) interface{} {
+		d := drv{}
+		dClient, err := d.NewClient(":memory:", mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+		c := dClient.(*client)
+		ctx := context.Background()
+		for _, name := range []string{"aaa", "bbb", "ccc"} {
+			if err := c.CreateDB(ctx, name, mock.NilOption); err != nil {
+				t.Fatal(err)
+			}
+		}
+		return test{
+			client:  c,
+			options: kivik.Param("limit", 2),
+			want:    []string{"aaa", "bbb"},
+		}
+	})
+	tests.Add("skip=1", func(t *testing.T) interface{} {
+		d := drv{}
+		dClient, err := d.NewClient(":memory:", mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+		c := dClient.(*client)
+		ctx := context.Background()
+		for _, name := range []string{"aaa", "bbb", "ccc"} {
+			if err := c.CreateDB(ctx, name, mock.NilOption); err != nil {
+				t.Fatal(err)
+			}
+		}
+		return test{
+			client:  c,
+			options: kivik.Param("skip", 1),
+			want:    []string{"bbb", "ccc"},
+		}
+	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()

@@ -17,33 +17,40 @@ import (
 	"strings"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/x/options"
 )
 
-func (c *client) AllDBs(ctx context.Context, options driver.Options) ([]string, error) {
-	opts := newOpts(options)
-	descending, err := opts.descending()
+func (c *client) AllDBs(ctx context.Context, opts driver.Options) ([]string, error) {
+	pagination, err := options.New(opts).PaginationOptions(true)
 	if err != nil {
 		return nil, err
 	}
-	order := "ASC"
-	if descending {
-		order = "DESC"
+	if err := pagination.Validate(); err != nil {
+		return nil, err
+	}
+
+	var args []any
+	whereClauses := pagination.BuildWhere(&args)
+	extraWhere := ""
+	if len(whereClauses) > 0 {
+		extraWhere = "WHERE " + strings.Join(whereClauses, " AND ")
 	}
 
 	rows, err := c.db.QueryContext(ctx, `
-		SELECT
-			name
-		FROM
-			sqlite_schema AS s
-		WHERE
-			type = 'table'
-			AND name LIKE 'kivik$%' ESCAPE '\'
-			AND EXISTS (
-				SELECT 1 FROM sqlite_schema
-				WHERE type = 'table'
-					AND name = s.name || '$revs'
-			)
-		ORDER BY name `+order)
+		SELECT view.name
+		FROM (
+			SELECT name, name AS key
+			FROM sqlite_schema AS s
+			WHERE type = 'table'
+				AND name LIKE 'kivik$%' ESCAPE '\'
+				AND EXISTS (
+					SELECT 1 FROM sqlite_schema
+					WHERE type = 'table'
+						AND name = s.name || '$revs'
+				)
+		) AS view
+		`+extraWhere+`
+		`+pagination.BuildOrderBy()+` `+pagination.BuildLimit(), args...)
 	if err != nil {
 		return nil, err
 	}

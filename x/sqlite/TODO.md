@@ -34,9 +34,9 @@ These return a bare `"not implemented"` error:
   implemented. Other unimplemented Find options noted at `find_test.go:219-227`:
   stable, update, stale, use_index, execution_stats.
 
-- [ ] **validate_doc_update not evaluated** (`designdocs.go:67-68`). The
-  function body is stored when a design document is written, but never called
-  during Put or CreateDoc. See also `put_test.go:1115`.
+- [x] **validate_doc_update** — Evaluated during Put, CreateDoc, and Delete.
+  `userCtx` and `secObj` are passed as empty objects until Session and Security
+  are implemented.
 
 - [ ] **Update functions not evaluated** (`put_test.go:1116`). Stored but never
   invoked.

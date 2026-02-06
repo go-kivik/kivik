@@ -395,7 +395,11 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 		if err != nil {
 			return nil, err
 		}
-		return d.newLongpollChanges(ctx, includeDocs, attachments, feed == feedContinuous)
+		timeout, err := opts.timeout()
+		if err != nil {
+			return nil, err
+		}
+		return d.newLongpollChanges(ctx, includeDocs, attachments, feed == feedContinuous, timeout)
 	}
 
 	return d.newNormalChanges(ctx, opts, since, lastSeq, sinceNow, feed)
@@ -407,6 +411,7 @@ type longpollChanges struct {
 	includeDocs bool
 	attachments bool
 	continuous  bool
+	idleTimeout     time.Duration
 	lastSeq     string
 	ctx         context.Context
 	cancel      context.CancelFunc
@@ -420,7 +425,7 @@ type longpollChange struct {
 
 var _ driver.Changes = (*longpollChanges)(nil)
 
-func (d *db) newLongpollChanges(ctx context.Context, includeDocs, attachments, continuous bool) (*longpollChanges, error) {
+func (d *db) newLongpollChanges(ctx context.Context, includeDocs, attachments, continuous bool, idleTimeout time.Duration) (*longpollChanges, error) {
 	since, err := d.lastSeq(ctx)
 	if err != nil {
 		return nil, err
@@ -482,6 +487,8 @@ func (d *db) newLongpollChanges(ctx context.Context, includeDocs, attachments, c
 		attachments: attachments,
 		includeDocs: includeDocs,
 		continuous:  continuous,
+		idleTimeout:     idleTimeout,
+		lastSeq:     strconv.FormatUint(since, 10),
 		ctx:         ctx,
 		cancel:      cancel,
 		changes:     changes,
@@ -505,6 +512,10 @@ func (c *longpollChanges) watch(changes chan<- longpollChange) {
 			return
 		}
 
+		if change == nil {
+			return
+		}
+
 		select {
 		case changes <- longpollChange{change: change}:
 		case <-c.ctx.Done():
@@ -521,10 +532,12 @@ func (c *longpollChanges) watch(changes chan<- longpollChange) {
 }
 
 func (c *longpollChanges) pollForChange() (*driver.Change, error) {
+	errNoChange := errors.New("no change")
+
 	bo := backoff.NewExponentialBackOff()
 	bo.InitialInterval = 50 * time.Millisecond
 	bo.MaxInterval = 3 * time.Minute
-	bo.MaxElapsedTime = 0
+	bo.MaxElapsedTime = c.idleTimeout
 
 	var result *driver.Change
 	err := backoff.Retry(func() error {
@@ -584,7 +597,7 @@ func (c *longpollChanges) pollForChange() (*driver.Change, error) {
 		}
 
 		if change.ID == "" {
-			return errors.New("retry")
+			return errNoChange
 		}
 
 		change.Changes = driver.ChangedRevs{rev}
@@ -604,6 +617,10 @@ func (c *longpollChanges) pollForChange() (*driver.Change, error) {
 		result = &change
 		return nil
 	}, backoff.WithContext(bo, c.ctx))
+
+	if errors.Is(err, errNoChange) {
+		return nil, nil
+	}
 
 	return result, err
 }

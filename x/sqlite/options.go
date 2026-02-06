@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
@@ -299,4 +300,18 @@ func (o optsMap) localSeq() bool {
 func (o optsMap) attsSince() []string {
 	attsSince, _ := o["atts_since"].([]string)
 	return attsSince
+}
+
+// timeout returns the timeout duration parsed from the "timeout" option
+// (specified in milliseconds). Returns 0 if unset.
+func (o optsMap) timeout() (time.Duration, error) {
+	in, ok := o["timeout"]
+	if !ok {
+		return 0, nil
+	}
+	ms, err := toUint64(in, "invalid value for 'timeout'")
+	if err != nil {
+		return 0, err
+	}
+	return time.Duration(ms) * time.Millisecond, nil
 }

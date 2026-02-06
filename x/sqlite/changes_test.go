@@ -648,6 +648,21 @@ func TestDBChanges(t *testing.T) {
 			wantETag:    &[]string{"eccbc87e4b5ce2fe28308fd9f2a7baf3"}[0],
 		}
 	})
+	tests.Add("longpoll timeout", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("doc1", map[string]string{"foo": "bar"})
+
+		return test{
+			db: d,
+			options: kivik.Params(map[string]interface{}{
+				"feed":    "longpoll",
+				"since":   "now",
+				"timeout": 200,
+			}),
+			wantLastSeq: &[]string{"1"}[0],
+			wantETag:    &[]string{""}[0],
+		}
+	})
 	/*
 		TODO:
 		- Options
@@ -658,7 +673,6 @@ func TestDBChanges(t *testing.T) {
 				- continuous
 			- att_encoding_info
 			- style
-			- timeout
 	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {
@@ -1198,7 +1212,7 @@ func Test_longpoll_changes_query(t *testing.T) {
 
 	d := newDB(t)
 
-	changes, err := d.DB.(*db).newLongpollChanges(context.Background(), true, false, false)
+	changes, err := d.DB.(*db).newLongpollChanges(context.Background(), true, false, false, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1259,7 +1273,7 @@ func Test_longpoll_changes_query_without_docs(t *testing.T) {
 
 	d := newDB(t)
 
-	changes, err := d.DB.(*db).newLongpollChanges(context.Background(), false, false, false)
+	changes, err := d.DB.(*db).newLongpollChanges(context.Background(), false, false, false, 0)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -49,8 +49,6 @@ It's a CouchDB durability optimization that doesn't apply to SQLite.
 - [ ] **Changes** (`changes.go`). Missing: `heartbeat`, `timeout`, `style`,
   `seq_interval`.
 
-- [ ] **AllDBs** (`alldbs.go`). Could support pagination options.
-
 ## Code Quality
 
 - [ ] **Ping placement** (`db.go:50`). TODO in code: "I think Ping belongs on

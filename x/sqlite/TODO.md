@@ -47,12 +47,6 @@ It's a CouchDB durability optimization that doesn't apply to SQLite.
   no-ops until index support (CreateIndex/DeleteIndex/GetIndexes) is added.
   `stable` is permanently a no-op (single-node SQLite has no shards).
 
-- [ ] **Changes `style=all_docs` + filter + `include_docs`** (`changes.go`).
-  When all three are combined, the filter should only control which revisions
-  appear in the `changes` array — the `doc` field should still include the
-  winning revision's body even if it doesn't pass the filter. Needed for
-  replication.
-
 ## Code Quality
 
 - [ ] **Ping placement** (`db.go:50`). TODO in code: "I think Ping belongs on

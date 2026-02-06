@@ -310,12 +310,14 @@ func (c *normalChanges) Next(change *driver.Change) error {
 			change.Seq = *rowSeq
 			change.Deleted = *rowDeleted
 			if c.allDocs {
-				change.Changes = driver.ChangedRevs(strings.Split(*rowRev, ","))
+				revs := strings.Split(*rowRev, ",")
+				change.Changes = driver.ChangedRevs(revs)
+				rev = revs[0]
 			} else {
 				change.Changes = driver.ChangedRevs{*rowRev}
+				rev = *rowRev
 			}
 			c.lastSeq = change.Seq
-			rev = *rowRev
 			doc = rowDoc
 		}
 		if filename != nil {

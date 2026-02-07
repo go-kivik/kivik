@@ -91,7 +91,7 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) {
 		if !ctx.IsExpectedSuccess(err) {
 			return
 		}
-		failOnBulkErrors(ctx, updates, "delete")
+		failOnBulkErrors(ctx, updates, "update")
 	})
 	ctx.Run("Delete", func(ctx *kt.Context) {
 		ctx.Parallel()
@@ -115,7 +115,7 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) {
 		if !ctx.IsExpectedSuccess(err) {
 			return
 		}
-		failOnBulkErrors(ctx, updates, "update")
+		failOnBulkErrors(ctx, updates, "delete")
 	})
 	ctx.Run("Mix", func(ctx *kt.Context) {
 		ctx.Parallel()

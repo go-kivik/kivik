@@ -14,6 +14,7 @@ package db
 
 import (
 	"context"
+	"testing"
 
 	"gitlab.com/flimzy/testy"
 
@@ -22,41 +23,45 @@ import (
 )
 
 func init() {
-	kt.Register("BulkDocs", bulkDocs)
+	kt.RegisterV2("BulkDocs", bulkDocs)
 }
 
-func bulkDocs(ctx *kt.Context) {
-	ctx.RunRW(func(ctx *kt.Context) {
-		ctx.RunAdmin(func(ctx *kt.Context) {
-			testBulkDocs(ctx, ctx.Admin)
+func bulkDocs(t *testing.T, c *kt.ContextCore) {
+	t.Helper()
+	c.RunRW(t, func(t *testing.T) {
+		t.Helper()
+		c.RunAdmin(t, func(t *testing.T) {
+			t.Helper()
+			testBulkDocs(t, c, c.Admin)
 		})
-		ctx.RunNoAuth(func(ctx *kt.Context) {
-			testBulkDocs(ctx, ctx.NoAuth)
+		c.RunNoAuth(t, func(t *testing.T) {
+			t.Helper()
+			testBulkDocs(t, c, c.NoAuth)
 		})
 	})
 }
 
-func failOnBulkErrors(ctx *kt.Context, updates []kivik.BulkResult, op string) {
+func failOnBulkErrors(t *testing.T, updates []kivik.BulkResult, op string) { //nolint:thelper
 	for _, update := range updates {
 		if update.Error != nil {
-			ctx.Errorf("Bulk %s failed: %s", op, update.Error)
+			t.Errorf("Bulk %s failed: %s", op, update.Error)
 		}
 	}
 }
 
-func testBulkDocs(ctx *kt.Context, client *kivik.Client) {
-	ctx.Parallel()
-	dbname := ctx.TestDB()
-	adb := ctx.Admin.DB(dbname, ctx.Options("db"))
+func testBulkDocs(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:thelper
+	t.Parallel()
+	dbname := c.TestDB(t)
+	adb := c.Admin.DB(dbname, c.Options(t, "db"))
 	if err := adb.Err(); err != nil {
-		ctx.Fatalf("Failed to connect to db as admin: %s", err)
+		t.Fatalf("Failed to connect to db as admin: %s", err)
 	}
-	db := client.DB(dbname, ctx.Options("db"))
+	db := client.DB(dbname, c.Options(t, "db"))
 	if err := db.Err(); err != nil {
-		ctx.Fatalf("Failed to connect to db: %s", err)
+		t.Fatalf("Failed to connect to db: %s", err)
 	}
-	ctx.Run("Create", func(ctx *kt.Context) {
-		ctx.Parallel()
+	c.Run(t, "Create", func(t *testing.T) {
+		t.Parallel()
 		doc := map[string]string{
 			"name": "Robert",
 		}
@@ -66,20 +71,20 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) {
 			updates, err = db.BulkDocs(context.Background(), []any{doc})
 			return err
 		})
-		if !ctx.IsExpectedSuccess(err) {
+		if !c.IsExpectedSuccess(t, err) {
 			return
 		}
-		failOnBulkErrors(ctx, updates, "create")
+		failOnBulkErrors(t, updates, "create")
 	})
-	ctx.Run("Update", func(ctx *kt.Context) {
-		ctx.Parallel()
+	c.Run(t, "Update", func(t *testing.T) {
+		t.Parallel()
 		doc := map[string]string{
-			"_id":  ctx.TestDBName(),
+			"_id":  kt.TestDBName(t),
 			"name": "Alice",
 		}
 		rev, err := adb.Put(context.Background(), doc["_id"], doc)
 		if err != nil {
-			ctx.Fatalf("Failed to create doc: %s", err)
+			t.Fatalf("Failed to create doc: %s", err)
 		}
 		doc["_rev"] = rev
 		var updates []kivik.BulkResult
@@ -88,21 +93,21 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) {
 			updates, err = db.BulkDocs(context.Background(), []any{doc})
 			return err
 		})
-		if !ctx.IsExpectedSuccess(err) {
+		if !c.IsExpectedSuccess(t, err) {
 			return
 		}
-		failOnBulkErrors(ctx, updates, "update")
+		failOnBulkErrors(t, updates, "update")
 	})
-	ctx.Run("Delete", func(ctx *kt.Context) {
-		ctx.Parallel()
-		id := ctx.TestDBName()
+	c.Run(t, "Delete", func(t *testing.T) {
+		t.Parallel()
+		id := kt.TestDBName(t)
 		doc := map[string]any{
 			"_id":  id,
 			"name": "Alice",
 		}
 		rev, err := adb.Put(context.Background(), id, doc)
 		if err != nil {
-			ctx.Fatalf("Failed to create doc: %s", err)
+			t.Fatalf("Failed to create doc: %s", err)
 		}
 		doc["_rev"] = rev
 		doc["_deleted"] = true
@@ -112,19 +117,19 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) {
 			updates, err = db.BulkDocs(context.Background(), []any{doc})
 			return err
 		})
-		if !ctx.IsExpectedSuccess(err) {
+		if !c.IsExpectedSuccess(t, err) {
 			return
 		}
-		failOnBulkErrors(ctx, updates, "delete")
+		failOnBulkErrors(t, updates, "delete")
 	})
-	ctx.Run("Mix", func(ctx *kt.Context) {
-		ctx.Parallel()
+	c.Run(t, "Mix", func(t *testing.T) {
+		t.Parallel()
 
 		doc0 := map[string]string{
 			"name": "Fred",
 		}
 
-		id1 := ctx.TestDBName()
+		id1 := kt.TestDBName(t)
 		doc1 := map[string]any{
 			"_id":  id1,
 			"name": "Robert",
@@ -132,29 +137,29 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) {
 
 		rev1, err := adb.Put(context.Background(), id1, doc1)
 		if err != nil {
-			ctx.Fatalf("Failed to create doc1: %s", err)
+			t.Fatalf("Failed to create doc1: %s", err)
 		}
 		doc1["_rev"] = rev1
 
-		id2 := ctx.TestDBName()
+		id2 := kt.TestDBName(t)
 		doc2 := map[string]any{
 			"_id":  id2,
 			"name": "Alice",
 		}
 		rev2, err := adb.Put(context.Background(), id2, doc2)
 		if err != nil {
-			ctx.Fatalf("Failed to create doc2: %s", err)
+			t.Fatalf("Failed to create doc2: %s", err)
 		}
 		doc2["_rev"] = rev2
 		doc2["_deleted"] = true
 
-		id3 := ctx.TestDBName()
+		id3 := kt.TestDBName(t)
 		doc3 := map[string]string{
 			"_id": id3,
 		}
 		_, err = adb.Put(context.Background(), id3, doc3)
 		if err != nil {
-			ctx.Fatalf("Failed to create doc2: %s", err)
+			t.Fatalf("Failed to create doc2: %s", err)
 		}
 
 		var updates []kivik.BulkResult
@@ -164,7 +169,7 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) {
 			updates, err = db.BulkDocs(context.Background(), []any{doc0, doc1, doc2, doc3})
 			return err
 		})
-		if !ctx.IsExpectedSuccess(err) {
+		if !c.IsExpectedSuccess(t, err) {
 			return
 		}
 		for _, update := range updates {
@@ -179,16 +184,16 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) {
 			default:
 				testName = "Create"
 			}
-			ctx.Run(testName, func(ctx *kt.Context) {
-				ctx.CheckError(update.Error)
+			c.Run(t, testName, func(t *testing.T) {
+				c.CheckError(t, update.Error)
 			})
 		}
 	})
-	ctx.Run("NonJSON", func(ctx *kt.Context) {
+	c.Run(t, "NonJSON", func(t *testing.T) {
 		const age = 32
-		ctx.Parallel()
-		id1 := ctx.TestDBName()
-		id2 := ctx.TestDBName()
+		t.Parallel()
+		id1 := kt.TestDBName(t)
+		id2 := kt.TestDBName(t)
 		docs := []any{
 			struct {
 				ID   string `json:"_id"`
@@ -206,14 +211,14 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) {
 			updates, err = db.BulkDocs(context.Background(), docs)
 			return err
 		})
-		if !ctx.IsExpectedSuccess(err) {
+		if !c.IsExpectedSuccess(t, err) {
 			return
 		}
-		failOnBulkErrors(ctx, updates, "create")
-		ctx.Run("Retrieve", func(ctx *kt.Context) {
+		failOnBulkErrors(t, updates, "create")
+		c.Run(t, "Retrieve", func(t *testing.T) {
 			var result map[string]any
 			if err = db.Get(context.Background(), id2).ScanDoc(&result); err != nil {
-				ctx.Fatalf("failed to scan bulk-inserted document: %s", err)
+				t.Fatalf("failed to scan bulk-inserted document: %s", err)
 			}
 			expected := map[string]any{
 				"_id":     id2,
@@ -222,7 +227,7 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) {
 				"_rev":    result["_rev"],
 			}
 			if d := testy.DiffAsJSON(expected, result); d != nil {
-				ctx.Errorf("Retrieved document differs:\n%s\n", d)
+				t.Errorf("Retrieved document differs:\n%s\n", d)
 			}
 		})
 	})

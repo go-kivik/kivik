@@ -15,36 +15,40 @@ package client
 import (
 	"context"
 	"regexp"
+	"testing"
 
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 )
 
 func init() {
-	kt.Register("Version", version)
+	kt.RegisterV2("Version", version)
 }
 
-func version(ctx *kt.Context) {
-	ctx.RunAdmin(func(ctx *kt.Context) {
-		testServerInfo(ctx, ctx.Admin)
+func version(t *testing.T, c *kt.ContextCore) {
+	t.Helper()
+	c.RunAdmin(t, func(t *testing.T) {
+		t.Helper()
+		testServerInfo(t, c, c.Admin)
 	})
-	ctx.RunNoAuth(func(ctx *kt.Context) {
-		testServerInfo(ctx, ctx.NoAuth)
+	c.RunNoAuth(t, func(t *testing.T) {
+		t.Helper()
+		testServerInfo(t, c, c.NoAuth)
 	})
 }
 
-func testServerInfo(ctx *kt.Context, client *kivik.Client) {
-	ctx.Parallel()
+func testServerInfo(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:thelper
+	t.Parallel()
 	info, err := client.Version(context.Background())
-	if !ctx.IsExpectedSuccess(err) {
+	if !c.IsExpectedSuccess(t, err) {
 		return
 	}
-	version := regexp.MustCompile(ctx.MustString("version"))
-	vendor := regexp.MustCompile(ctx.MustString("vendor"))
+	version := regexp.MustCompile(c.MustString(t, "version"))
+	vendor := regexp.MustCompile(c.MustString(t, "vendor"))
 	if !version.MatchString(info.Version) {
-		ctx.Errorf("Version '%s' does not match /%s/", info.Version, version)
+		t.Errorf("Version '%s' does not match /%s/", info.Version, version)
 	}
 	if !vendor.MatchString(info.Vendor) {
-		ctx.Errorf("Vendor '%s' does not match /%s/", info.Vendor, vendor)
+		t.Errorf("Vendor '%s' does not match /%s/", info.Vendor, vendor)
 	}
 }

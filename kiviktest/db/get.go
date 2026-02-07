@@ -14,6 +14,7 @@ package db
 
 import (
 	"context"
+	"testing"
 
 	"gitlab.com/flimzy/testy"
 
@@ -22,7 +23,7 @@ import (
 )
 
 func init() {
-	kt.Register("Get", get)
+	kt.RegisterV2("Get", get)
 }
 
 type testDoc struct {
@@ -32,13 +33,15 @@ type testDoc struct {
 	Age  int    `json:"age"`
 }
 
-func get(ctx *kt.Context) {
-	ctx.RunRW(func(ctx *kt.Context) {
+func get(t *testing.T, c *kt.ContextCore) {
+	t.Helper()
+	c.RunRW(t, func(t *testing.T) {
+		t.Helper()
 		const age = 32
-		dbName := ctx.TestDB()
-		db := ctx.Admin.DB(dbName, ctx.Options("db"))
+		dbName := c.TestDB(t)
+		db := c.Admin.DB(dbName, c.Options(t, "db"))
 		if err := db.Err(); err != nil {
-			ctx.Fatalf("Failed to connect to test db: %s", err)
+			t.Fatalf("Failed to connect to test db: %s", err)
 		}
 
 		doc := &testDoc{
@@ -48,7 +51,7 @@ func get(ctx *kt.Context) {
 		}
 		rev, err := db.Put(context.Background(), doc.ID, doc)
 		if err != nil {
-			ctx.Fatalf("Failed to create doc in test db: %s", err)
+			t.Fatalf("Failed to create doc in test db: %s", err)
 		}
 		doc.Rev = rev
 
@@ -58,7 +61,7 @@ func get(ctx *kt.Context) {
 		}
 		rev, err = db.Put(context.Background(), ddoc.ID, ddoc)
 		if err != nil {
-			ctx.Fatalf("Failed to create design doc in test db: %s", err)
+			t.Fatalf("Failed to create design doc in test db: %s", err)
 		}
 		ddoc.Rev = rev
 
@@ -68,44 +71,46 @@ func get(ctx *kt.Context) {
 		}
 		rev, err = db.Put(context.Background(), local.ID, local)
 		if err != nil {
-			ctx.Fatalf("Failed to create local doc in test db: %s", err)
+			t.Fatalf("Failed to create local doc in test db: %s", err)
 		}
 		local.Rev = rev
 
-		ctx.RunAdmin(func(ctx *kt.Context) {
-			ctx.Parallel()
-			db := ctx.Admin.DB(dbName, ctx.Options("db"))
-			if err := db.Err(); !ctx.IsExpectedSuccess(err) {
+		c.RunAdmin(t, func(t *testing.T) {
+			t.Helper()
+			t.Parallel()
+			db := c.Admin.DB(dbName, c.Options(t, "db"))
+			if err := db.Err(); !c.IsExpectedSuccess(t, err) {
 				return
 			}
-			testGet(ctx, db, doc)
-			testGet(ctx, db, ddoc)
-			testGet(ctx, db, local)
-			testGet(ctx, db, &testDoc{ID: "bogus"})
+			testGet(t, c, db, doc)
+			testGet(t, c, db, ddoc)
+			testGet(t, c, db, local)
+			testGet(t, c, db, &testDoc{ID: "bogus"})
 		})
-		ctx.RunNoAuth(func(ctx *kt.Context) {
-			ctx.Parallel()
-			db := ctx.NoAuth.DB(dbName, ctx.Options("db"))
-			if err := db.Err(); !ctx.IsExpectedSuccess(err) {
+		c.RunNoAuth(t, func(t *testing.T) {
+			t.Helper()
+			t.Parallel()
+			db := c.NoAuth.DB(dbName, c.Options(t, "db"))
+			if err := db.Err(); !c.IsExpectedSuccess(t, err) {
 				return
 			}
-			testGet(ctx, db, doc)
-			testGet(ctx, db, ddoc)
-			testGet(ctx, db, local)
-			testGet(ctx, db, &testDoc{ID: "bogus"})
+			testGet(t, c, db, doc)
+			testGet(t, c, db, ddoc)
+			testGet(t, c, db, local)
+			testGet(t, c, db, &testDoc{ID: "bogus"})
 		})
 	})
 }
 
-func testGet(ctx *kt.Context, db *kivik.DB, expectedDoc *testDoc) {
-	ctx.Run(expectedDoc.ID, func(ctx *kt.Context) {
-		ctx.Parallel()
+func testGet(t *testing.T, c *kt.ContextCore, db *kivik.DB, expectedDoc *testDoc) { //nolint:thelper
+	c.Run(t, expectedDoc.ID, func(t *testing.T) {
+		t.Parallel()
 		doc := &testDoc{}
-		if !ctx.IsExpectedSuccess(db.Get(context.Background(), expectedDoc.ID).ScanDoc(&doc)) {
+		if !c.IsExpectedSuccess(t, db.Get(context.Background(), expectedDoc.ID).ScanDoc(&doc)) {
 			return
 		}
 		if d := testy.DiffAsJSON(expectedDoc, doc); d != nil {
-			ctx.Errorf("Fetched document not as expected:\n%s\n", d)
+			t.Errorf("Fetched document not as expected:\n%s\n", d)
 		}
 	})
 }

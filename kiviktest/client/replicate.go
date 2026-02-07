@@ -26,23 +26,27 @@ import (
 )
 
 func init() {
-	kt.Register("Replicate", replicate)
+	kt.RegisterV2("Replicate", replicate)
 }
 
-func replicate(ctx *kt.Context) {
-	defer lockReplication(ctx)()
-	ctx.RunRW(func(ctx *kt.Context) {
-		ctx.RunAdmin(func(ctx *kt.Context) {
-			testReplication(ctx, ctx.Admin)
+func replicate(t *testing.T, c *kt.ContextCore) {
+	t.Helper()
+	defer lockReplication(c)()
+	c.RunRW(t, func(t *testing.T) {
+		t.Helper()
+		c.RunAdmin(t, func(t *testing.T) {
+			t.Helper()
+			testReplication(t, c, c.Admin)
 		})
-		ctx.RunNoAuth(func(ctx *kt.Context) {
-			testReplication(ctx, ctx.NoAuth)
+		c.RunNoAuth(t, func(t *testing.T) {
+			t.Helper()
+			testReplication(t, c, c.NoAuth)
 		})
 	})
 }
 
-func callReplicate(ctx *kt.Context, client *kivik.Client, target, source, repID string, options kivik.Option) (*kivik.Replication, error) {
-	options = replicationOptions(ctx, target, source, repID, options)
+func callReplicate(t *testing.T, c *kt.ContextCore, client *kivik.Client, target, source, repID string, options kivik.Option) (*kivik.Replication, error) { //nolint:thelper
+	options = replicationOptions(t, c, target, source, repID, options)
 	var rep *kivik.Replication
 	err := kt.Retry(func() error {
 		var err error
@@ -52,70 +56,70 @@ func callReplicate(ctx *kt.Context, client *kivik.Client, target, source, repID 
 	return rep, err
 }
 
-func testReplication(ctx *kt.Context, client *kivik.Client) {
-	prefix := ctx.String("prefix")
+func testReplication(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:thelper
+	prefix := c.String(t, "prefix")
 	switch prefix {
 	case "":
 		prefix = strings.TrimSuffix(client.DSN(), "/") + "/"
 	case "none":
 		prefix = ""
 	}
-	targetDB, sourceDB := ctx.TestDB(), ctx.TestDB()
+	targetDB, sourceDB := c.TestDB(t), c.TestDB(t)
 	dbtarget := prefix + targetDB
 	dbsource := prefix + sourceDB
 
-	db := ctx.Admin.DB(sourceDB)
+	db := c.Admin.DB(sourceDB)
 	if err := db.Err(); err != nil {
-		ctx.Fatalf("Failed to open db: %s", err)
+		t.Fatalf("Failed to open db: %s", err)
 	}
 
 	// Create 10 docs for testing sync
 	for i := 0; i < 10; i++ {
-		id := ctx.TestDBName()
+		id := kt.TestDBName(t)
 		doc := struct {
 			ID string `json:"id"`
 		}{
 			ID: id,
 		}
 		if _, err := db.Put(context.Background(), doc.ID, doc); err != nil {
-			ctx.Fatalf("Failed to create doc: %s", err)
+			t.Fatalf("Failed to create doc: %s", err)
 		}
 	}
 
-	ctx.Run("ValidReplication", func(ctx *kt.Context) {
-		ctx.Parallel()
+	c.Run(t, "ValidReplication", func(t *testing.T) {
+		t.Parallel()
 		tries := 3
 		success := false
 		for i := 0; i < tries; i++ {
-			success = doReplicationTest(ctx, client, dbtarget, dbsource)
+			success = doReplicationTest(t, c, client, dbtarget, dbsource)
 			if success {
 				break
 			}
 		}
 		if !success {
-			ctx.Errorf("Replication failed after %d tries", tries)
+			t.Errorf("Replication failed after %d tries", tries)
 		}
 	})
-	ctx.Run("MissingSource", func(ctx *kt.Context) {
-		ctx.Parallel()
-		doReplicationTest(ctx, client, dbtarget, ctx.MustString("NotFoundDB"))
+	c.Run(t, "MissingSource", func(t *testing.T) {
+		t.Parallel()
+		doReplicationTest(t, c, client, dbtarget, c.MustString(t, "NotFoundDB"))
 	})
-	ctx.Run("MissingTarget", func(ctx *kt.Context) {
-		ctx.Parallel()
-		doReplicationTest(ctx, client, ctx.MustString("NotFoundDB"), dbsource)
+	c.Run(t, "MissingTarget", func(t *testing.T) {
+		t.Parallel()
+		doReplicationTest(t, c, client, c.MustString(t, "NotFoundDB"), dbsource)
 	})
-	ctx.Run("Cancel", func(ctx *kt.Context) {
-		ctx.Parallel()
-		replID := ctx.TestDBName()
-		rep, err := callReplicate(ctx, client, dbtarget, "http://foo:foo@192.168.2.254/foo", replID, kivik.Param("continuous", true))
-		if !ctx.IsExpectedSuccess(err) {
+	c.Run(t, "Cancel", func(t *testing.T) {
+		t.Parallel()
+		replID := kt.TestDBName(t)
+		rep, err := callReplicate(t, c, client, dbtarget, "http://foo:foo@192.168.2.254/foo", replID, kivik.Param("continuous", true))
+		if !c.IsExpectedSuccess(t, err) {
 			return
 		}
-		ctx.T.Cleanup(func() { _ = rep.Delete(context.Background()) })
-		timeout := time.Duration(ctx.MustInt("timeoutSeconds")) * time.Second
+		t.Cleanup(func() { _ = rep.Delete(context.Background()) })
+		timeout := time.Duration(c.MustInt(t, "timeoutSeconds")) * time.Second
 		cx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
-		ctx.CheckError(rep.Delete(context.Background()))
+		c.CheckError(t, rep.Delete(context.Background()))
 	loop:
 		for rep.IsActive() {
 			if rep.State() == kivik.ReplicationStarted {
@@ -131,35 +135,34 @@ func testReplication(ctx *kt.Context, client *kivik.Client) {
 					// NotFound expected after the replication is cancelled
 					break
 				}
-				ctx.Fatalf("Failed to read update: %s", err)
-				break
+				t.Fatalf("Failed to read update: %s", err)
 			}
 		}
 		if err := cx.Err(); err != nil {
-			ctx.Fatalf("context was cancelled: %s", err)
+			t.Fatalf("context was cancelled: %s", err)
 		}
 		if err := rep.Err(); err != nil {
-			ctx.Fatalf("Replication cancellation failed: %s", err)
+			t.Fatalf("Replication cancellation failed: %s", err)
 		}
 	})
 }
 
-func doReplicationTest(ctx *kt.Context, client *kivik.Client, dbtarget, dbsource string) (success bool) {
+func doReplicationTest(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbtarget, dbsource string) (success bool) { //nolint:thelper
 	success = true
-	replID := ctx.TestDBName()
-	rep, err := callReplicate(ctx, client, dbtarget, dbsource, replID, nil)
-	if !ctx.IsExpectedSuccess(err) {
+	replID := kt.TestDBName(t)
+	rep, err := callReplicate(t, c, client, dbtarget, dbsource, replID, nil)
+	if !c.IsExpectedSuccess(t, err) {
 		return success
 	}
-	ctx.T.Cleanup(func() { _ = rep.Delete(context.Background()) })
-	timeout := time.Duration(ctx.MustInt("timeoutSeconds")) * time.Second
+	t.Cleanup(func() { _ = rep.Delete(context.Background()) })
+	timeout := time.Duration(c.MustInt(t, "timeoutSeconds")) * time.Second
 	cx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	var updateErr error
 	for rep.IsActive() {
 		select {
 		case <-cx.Done():
-			ctx.Fatalf("context cancelled waiting for replication: %s", cx.Err())
+			t.Fatalf("context cancelled waiting for replication: %s", cx.Err())
 			return success
 		default:
 		}
@@ -175,39 +178,39 @@ func doReplicationTest(ctx *kt.Context, client *kivik.Client, dbtarget, dbsource
 		time.Sleep(delay)
 	}
 	if updateErr != nil {
-		ctx.Fatalf("Replication update failed: %s", updateErr)
+		t.Fatalf("Replication update failed: %s", updateErr)
 	}
-	ctx.Run("Results", func(ctx *kt.Context) {
+	c.Run(t, "Results", func(t *testing.T) {
 		err := rep.Err()
 		if kivik.HTTPStatus(err) == http.StatusRequestTimeout {
 			success = false // Allow retrying
 			return
 		}
-		if !ctx.IsExpectedSuccess(err) {
+		if !c.IsExpectedSuccess(t, err) {
 			return
 		}
-		switch ctx.String("mode") {
+		switch c.String(t, "mode") {
 		case "pouchdb":
 			if rep.ReplicationID() != "" {
-				ctx.Errorf("Did not expect replication ID")
+				t.Errorf("Did not expect replication ID")
 			}
 		default:
 			if rep.State() != "completed" && rep.State() != "failed" && // 2.1.x
 				rep.ReplicationID() == "" {
-				ctx.Errorf("Expected a replication ID")
+				t.Errorf("Expected a replication ID")
 			}
 		}
-		checkReplicationURL(ctx.T, "source", dbsource, rep.Source)
-		checkReplicationURL(ctx.T, "target", dbtarget, rep.Target)
+		checkReplicationURL(t, "source", dbsource, rep.Source)
+		checkReplicationURL(t, "target", dbtarget, rep.Target)
 		if rep.State() != kivik.ReplicationComplete {
-			ctx.Errorf("Replication failed to complete. Final state: %s\n", rep.State())
+			t.Errorf("Replication failed to complete. Final state: %s\n", rep.State())
 		}
 		const (
 			pct100  = float64(100)
 			minProg = 0.0001
 		)
 		if (rep.Progress() - pct100) > minProg {
-			ctx.Errorf("Expected 100%% completion, got %%%02.2f", rep.Progress())
+			t.Errorf("Expected 100%% completion, got %%%02.2f", rep.Progress())
 		}
 	})
 	return success

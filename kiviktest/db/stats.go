@@ -15,82 +15,89 @@ package db
 import (
 	"context"
 	"strconv"
+	"testing"
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 )
 
 func init() {
-	kt.Register("Stats", stats)
+	kt.RegisterV2("Stats", stats)
 }
 
-func stats(ctx *kt.Context) {
-	ctx.RunAdmin(func(ctx *kt.Context) {
-		ctx.Parallel()
-		roTests(ctx, ctx.Admin)
+func stats(t *testing.T, c *kt.ContextCore) {
+	t.Helper()
+	c.RunAdmin(t, func(t *testing.T) {
+		t.Helper()
+		t.Parallel()
+		roTests(t, c, c.Admin)
 	})
-	ctx.RunNoAuth(func(ctx *kt.Context) {
-		ctx.Parallel()
-		roTests(ctx, ctx.NoAuth)
+	c.RunNoAuth(t, func(t *testing.T) {
+		t.Helper()
+		t.Parallel()
+		roTests(t, c, c.NoAuth)
 	})
-	ctx.RunRW(func(ctx *kt.Context) {
-		ctx.Parallel()
-		ctx.RunAdmin(func(ctx *kt.Context) {
-			ctx.Parallel()
-			rwTests(ctx, ctx.Admin)
+	c.RunRW(t, func(t *testing.T) {
+		t.Helper()
+		t.Parallel()
+		c.RunAdmin(t, func(t *testing.T) {
+			t.Helper()
+			t.Parallel()
+			rwTests(t, c, c.Admin)
 		})
-		ctx.RunNoAuth(func(ctx *kt.Context) {
-			ctx.Parallel()
-			rwTests(ctx, ctx.NoAuth)
+		c.RunNoAuth(t, func(t *testing.T) {
+			t.Helper()
+			t.Parallel()
+			rwTests(t, c, c.NoAuth)
 		})
 	})
 }
 
-func rwTests(ctx *kt.Context, client *kivik.Client) {
-	dbname := ctx.TestDB()
-	db := ctx.Admin.DB(dbname, ctx.Options("db"))
+func rwTests(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:thelper
+	dbname := c.TestDB(t)
+	db := c.Admin.DB(dbname, c.Options(t, "db"))
 	if err := db.Err(); err != nil {
-		ctx.Fatalf("Failed to connect to db: %s", err)
+		t.Fatalf("Failed to connect to db: %s", err)
 	}
 	for i := 0; i < 10; i++ {
 		id := strconv.Itoa(i)
 		rev, err := db.Put(context.Background(), id, struct{}{})
 		if err != nil {
-			ctx.Fatalf("Failed to create document ID %s: %s", id, err)
+			t.Fatalf("Failed to create document ID %s: %s", id, err)
 		}
 		const deleteThreshold = 5
 		if i > deleteThreshold {
 			if _, err = db.Delete(context.Background(), id, rev); err != nil {
-				ctx.Fatalf("Failed to delete document ID %s: %s", id, err)
+				t.Fatalf("Failed to delete document ID %s: %s", id, err)
 			}
 		}
 	}
 	const docCount = 6
-	testDBInfo(ctx, client, dbname, docCount)
+	testDBInfo(t, c, client, dbname, docCount)
 }
 
-func roTests(ctx *kt.Context, client *kivik.Client) {
-	for _, dbname := range ctx.MustStringSlice("databases") {
+func roTests(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:thelper
+	for _, dbname := range c.MustStringSlice(t, "databases") {
 		func(dbname string) {
-			ctx.Run(dbname, func(ctx *kt.Context) {
-				ctx.Parallel()
-				testDBInfo(ctx, client, dbname, 0)
+			c.Run(t, dbname, func(t *testing.T) {
+				t.Parallel()
+				testDBInfo(t, c, client, dbname, 0)
 			})
 		}(dbname)
 	}
 }
 
-func testDBInfo(ctx *kt.Context, client *kivik.Client, dbname string, docCount int64) {
-	stats, err := client.DB(dbname, ctx.Options("db")).Stats(context.Background())
-	if !ctx.IsExpectedSuccess(err) {
+func testDBInfo(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbname string, docCount int64) { //nolint:thelper
+	stats, err := client.DB(dbname, c.Options(t, "db")).Stats(context.Background())
+	if !c.IsExpectedSuccess(t, err) {
 		return
 	}
 	if stats.Name != dbname {
-		ctx.Errorf("Name: Expected '%s', actual '%s'", dbname, stats.Name)
+		t.Errorf("Name: Expected '%s', actual '%s'", dbname, stats.Name)
 	}
 	if docCount > 0 {
 		if docCount != stats.DocCount {
-			ctx.Errorf("DocCount: Expected %d, actual %d", docCount, stats.DocCount)
+			t.Errorf("DocCount: Expected %d, actual %d", docCount, stats.DocCount)
 		}
 	}
 }

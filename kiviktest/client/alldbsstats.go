@@ -14,29 +14,32 @@ package client
 
 import (
 	"context"
+	"testing"
 
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 )
 
 func init() {
-	kt.Register("AllDBsStats", allDBsStats)
+	kt.RegisterV2("AllDBsStats", allDBsStats)
 }
 
-func allDBsStats(ctx *kt.Context) {
-	ctx.RunAdmin(func(ctx *kt.Context) {
-		testAllDBsStats(ctx, ctx.Admin)
+func allDBsStats(t *testing.T, c *kt.ContextCore) {
+	t.Helper()
+	c.RunAdmin(t, func(t *testing.T) {
+		t.Helper()
+		testAllDBsStats(t, c, c.Admin)
 	})
-	ctx.RunNoAuth(func(ctx *kt.Context) {
-		testAllDBsStats(ctx, ctx.NoAuth)
+	c.RunNoAuth(t, func(t *testing.T) {
+		t.Helper()
+		testAllDBsStats(t, c, c.NoAuth)
 	})
 }
 
-func testAllDBsStats(ctx *kt.Context, client *kivik.Client) {
-	// create a db
-	dbName := ctx.TestDB()
+func testAllDBsStats(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:thelper
+	dbName := c.TestDB(t)
 	stats, err := client.AllDBsStats(context.Background())
-	if !ctx.IsExpectedSuccess(err) {
+	if !c.IsExpectedSuccess(t, err) {
 		return
 	}
 	for _, stat := range stats {
@@ -44,5 +47,5 @@ func testAllDBsStats(ctx *kt.Context, client *kivik.Client) {
 			return
 		}
 	}
-	ctx.Errorf("Expected database %s to be in stats, but it was not found", dbName)
+	t.Errorf("Expected database %s to be in stats, but it was not found", dbName)
 }

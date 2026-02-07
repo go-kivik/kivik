@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"testing"
 
 	"gitlab.com/flimzy/testy"
 
@@ -24,30 +25,7 @@ import (
 )
 
 func init() {
-	kt.Register("Query", query)
-}
-
-func query(ctx *kt.Context) {
-	ctx.RunRW(func(ctx *kt.Context) {
-		testQueryRW(ctx)
-	})
-}
-
-func testQueryRW(ctx *kt.Context) {
-	if ctx.Admin == nil {
-		// Can't do anything here without admin access
-		return
-	}
-	dbName, expected, err := setUpQueryTest(ctx)
-	if err != nil {
-		ctx.Errorf("Failed to set up temp db: %s", err)
-	}
-	ctx.RunAdmin(func(ctx *kt.Context) {
-		doQueryTest(ctx, ctx.Admin, dbName, 0, expected)
-	})
-	ctx.RunNoAuth(func(ctx *kt.Context) {
-		doQueryTest(ctx, ctx.NoAuth, dbName, 0, expected)
-	})
+	kt.RegisterV2("Query", query)
 }
 
 var ddoc = map[string]any{
@@ -64,9 +42,37 @@ var ddoc = map[string]any{
 	},
 }
 
-func setUpQueryTest(ctx *kt.Context) (dbName string, docIDs []string, err error) {
-	dbName = ctx.TestDB()
-	db := ctx.Admin.DB(dbName, ctx.Options("db"))
+func query(t *testing.T, c *kt.ContextCore) {
+	t.Helper()
+	c.RunRW(t, func(t *testing.T) {
+		t.Helper()
+		testQueryRW(t, c)
+	})
+}
+
+func testQueryRW(t *testing.T, c *kt.ContextCore) {
+	t.Helper()
+	if c.Admin == nil {
+		return
+	}
+	dbName, expected, err := setUpQueryTest(t, c)
+	if err != nil {
+		t.Errorf("Failed to set up temp db: %s", err)
+	}
+	c.RunAdmin(t, func(t *testing.T) {
+		t.Helper()
+		doQueryTest(t, c, c.Admin, dbName, 0, expected)
+	})
+	c.RunNoAuth(t, func(t *testing.T) {
+		t.Helper()
+		doQueryTest(t, c, c.NoAuth, dbName, 0, expected)
+	})
+}
+
+func setUpQueryTest(t *testing.T, c *kt.ContextCore) (dbName string, docIDs []string, err error) {
+	t.Helper()
+	dbName = c.TestDB(t)
+	db := c.Admin.DB(dbName, c.Options(t, "db"))
 	if err := db.Err(); err != nil {
 		return dbName, nil, fmt.Errorf("fialed to connect to db: %w", err)
 	}
@@ -76,7 +82,7 @@ func setUpQueryTest(ctx *kt.Context) (dbName string, docIDs []string, err error)
 	const maxDocs = 10
 	docIDs = make([]string, maxDocs)
 	for i := range docIDs {
-		id := ctx.TestDBName()
+		id := kt.TestDBName(t)
 		doc := struct {
 			ID      string `json:"id"`
 			Include bool   `json:"include"`
@@ -95,26 +101,26 @@ func setUpQueryTest(ctx *kt.Context) (dbName string, docIDs []string, err error)
 	return dbName, docIDs, nil
 }
 
-func doQueryTest(ctx *kt.Context, client *kivik.Client, dbName string, expOffset int64, expected []string) {
-	ctx.Run("WithDocs", func(ctx *kt.Context) {
-		doQueryTestWithDocs(ctx, client, dbName, expOffset, expected)
+func doQueryTest(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbName string, expOffset int64, expected []string) { //nolint:thelper
+	c.Run(t, "WithDocs", func(t *testing.T) {
+		doQueryTestWithDocs(t, c, client, dbName, expOffset, expected)
 	})
-	ctx.Run("WithoutDocs", func(ctx *kt.Context) {
-		doQueryTestWithoutDocs(ctx, client, dbName, expOffset, expected)
+	c.Run(t, "WithoutDocs", func(t *testing.T) {
+		doQueryTestWithoutDocs(t, c, client, dbName, expOffset, expected)
 	})
 }
 
-func doQueryTestWithoutDocs(ctx *kt.Context, client *kivik.Client, dbName string, expOffset int64, expected []string) {
-	ctx.Parallel()
-	db := client.DB(dbName, ctx.Options("db"))
+func doQueryTestWithoutDocs(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbName string, expOffset int64, expected []string) { //nolint:thelper
+	t.Parallel()
+	db := client.DB(dbName, c.Options(t, "db"))
 	// Errors may be deferred here, so only return if we actually get
 	// an error.
-	if err := db.Err(); err != nil && !ctx.IsExpectedSuccess(err) {
+	if err := db.Err(); err != nil && !c.IsExpectedSuccess(t, err) {
 		return
 	}
 
 	rows := db.Query(context.Background(), "testddoc", "testview")
-	if !ctx.IsExpectedSuccess(rows.Err()) {
+	if !c.IsExpectedSuccess(t, rows.Err()) {
 		return
 	}
 	docIDs := make([]string, 0, len(expected))
@@ -124,37 +130,37 @@ func doQueryTestWithoutDocs(ctx *kt.Context, client *kivik.Client, dbName string
 		docIDs = append(docIDs, id)
 		if !scanTested {
 			scanTested = true
-			ctx.Run("ScanDoc", func(ctx *kt.Context) {
+			c.Run(t, "ScanDoc", func(t *testing.T) {
 				var i any
-				ctx.CheckError(rows.ScanDoc(&i))
+				c.CheckError(t, rows.ScanDoc(&i))
 			})
-			ctx.Run("ScanValue", func(ctx *kt.Context) {
+			c.Run(t, "ScanValue", func(t *testing.T) {
 				var i any
-				ctx.CheckError(rows.ScanValue(&i))
+				c.CheckError(t, rows.ScanValue(&i))
 			})
 		}
 	}
 	meta, err := rows.Metadata()
 	if err != nil {
-		ctx.Fatalf("Failed to fetch row: %s", rows.Err())
+		t.Fatalf("Failed to fetch row: %s", rows.Err())
 	}
 	if d := testy.DiffTextSlices(expected, docIDs); d != nil {
-		ctx.Errorf("Unexpected document IDs returned:\n%s\n", d)
+		t.Errorf("Unexpected document IDs returned:\n%s\n", d)
 	}
 	if expOffset != meta.Offset {
-		ctx.Errorf("offset: Expected %d, got %d", expOffset, meta.Offset)
+		t.Errorf("offset: Expected %d, got %d", expOffset, meta.Offset)
 	}
 	if int64(len(expected)) != meta.TotalRows {
-		ctx.Errorf("total rows: Expected %d, got %d", len(expected), meta.TotalRows)
+		t.Errorf("total rows: Expected %d, got %d", len(expected), meta.TotalRows)
 	}
 }
 
-func doQueryTestWithDocs(ctx *kt.Context, client *kivik.Client, dbName string, expOffset int64, expected []string) {
-	ctx.Parallel()
-	db := client.DB(dbName, ctx.Options("db"))
+func doQueryTestWithDocs(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbName string, expOffset int64, expected []string) { //nolint:thelper
+	t.Parallel()
+	db := client.DB(dbName, c.Options(t, "db"))
 	// Errors may be deferred here, so only return if we actually get
 	// an error.
-	if err := db.Err(); err != nil && !ctx.IsExpectedSuccess(err) {
+	if err := db.Err(); err != nil && !c.IsExpectedSuccess(t, err) {
 		return
 	}
 	opts := kivik.Params(map[string]any{
@@ -163,7 +169,7 @@ func doQueryTestWithDocs(ctx *kt.Context, client *kivik.Client, dbName string, e
 	})
 
 	rows := db.Query(context.Background(), "testddoc", "testview", opts)
-	if !ctx.IsExpectedSuccess(rows.Err()) {
+	if !c.IsExpectedSuccess(t, rows.Err()) {
 		return
 	}
 	docIDs := make([]string, 0, len(expected))
@@ -174,37 +180,37 @@ func doQueryTestWithDocs(ctx *kt.Context, client *kivik.Client, dbName string, e
 			Index int    `json:"index"`
 		}
 		if err := rows.ScanDoc(&doc); err != nil {
-			ctx.Errorf("Failed to scan doc: %s", err)
+			t.Errorf("Failed to scan doc: %s", err)
 		}
 		var value int
 		if err := rows.ScanValue(&value); err != nil {
-			ctx.Errorf("Failed to scan value: %s", err)
+			t.Errorf("Failed to scan value: %s", err)
 		}
 		if value != doc.Index {
-			ctx.Errorf("doc._rev = %d, but value = %d", doc.Index, value)
+			t.Errorf("doc._rev = %d, but value = %d", doc.Index, value)
 		}
 		id, _ := rows.ID()
 		if doc.ID != id {
-			ctx.Errorf("doc._id = %s, but rows.ID = %s", doc.ID, id)
+			t.Errorf("doc._id = %s, but rows.ID = %s", doc.ID, id)
 		}
 		docIDs = append(docIDs, id)
 	}
 	meta, err := rows.Metadata()
 	if err != nil {
-		ctx.Fatalf("Failed to fetch row: %s", rows.Err())
+		t.Fatalf("Failed to fetch row: %s", rows.Err())
 	}
 	if d := testy.DiffTextSlices(expected, docIDs); d != nil {
-		ctx.Errorf("Unexpected document IDs returned:\n%s\n", d)
+		t.Errorf("Unexpected document IDs returned:\n%s\n", d)
 	}
 	if expOffset != meta.Offset {
-		ctx.Errorf("offset: Expected %d, got %d", expOffset, meta.Offset)
+		t.Errorf("offset: Expected %d, got %d", expOffset, meta.Offset)
 	}
-	ctx.Run("UpdateSeq", func(ctx *kt.Context) {
+	c.Run(t, "UpdateSeq", func(t *testing.T) {
 		if meta.UpdateSeq == "" {
-			ctx.Errorf("Expected updated sequence")
+			t.Errorf("Expected updated sequence")
 		}
 	})
 	if int64(len(expected)) != meta.TotalRows {
-		ctx.Errorf("total rows: Expected %d, got %d", len(expected), meta.TotalRows)
+		t.Errorf("total rows: Expected %d, got %d", len(expected), meta.TotalRows)
 	}
 }

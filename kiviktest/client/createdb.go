@@ -14,36 +14,41 @@ package client
 
 import (
 	"context"
+	"testing"
 
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 )
 
 func init() {
-	kt.Register("CreateDB", createDB)
+	kt.RegisterV2("CreateDB", createDB)
 }
 
-func createDB(ctx *kt.Context) {
-	ctx.RunRW(func(ctx *kt.Context) {
-		ctx.RunAdmin(func(ctx *kt.Context) {
-			testCreateDB(ctx, ctx.Admin)
+func createDB(t *testing.T, c *kt.ContextCore) {
+	t.Helper()
+	c.RunRW(t, func(t *testing.T) {
+		t.Helper()
+		c.RunAdmin(t, func(t *testing.T) {
+			t.Helper()
+			testCreateDB(t, c, c.Admin)
 		})
-		ctx.RunNoAuth(func(ctx *kt.Context) {
-			testCreateDB(ctx, ctx.NoAuth)
+		c.RunNoAuth(t, func(t *testing.T) {
+			t.Helper()
+			testCreateDB(t, c, c.NoAuth)
 		})
 	})
 }
 
-func testCreateDB(ctx *kt.Context, client *kivik.Client) {
-	ctx.Parallel()
-	dbName := ctx.TestDBName()
-	ctx.T.Cleanup(func() { ctx.DestroyDB(dbName) })
-	err := client.CreateDB(context.Background(), dbName, ctx.Options("db"))
-	if !ctx.IsExpectedSuccess(err) {
+func testCreateDB(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:thelper
+	t.Parallel()
+	dbName := kt.TestDBName(t)
+	t.Cleanup(func() { c.DestroyDB(t, dbName) })
+	err := client.CreateDB(context.Background(), dbName, c.Options(t, "db"))
+	if !c.IsExpectedSuccess(t, err) {
 		return
 	}
-	ctx.Run("Recreate", func(ctx *kt.Context) {
-		err := client.CreateDB(context.Background(), dbName, ctx.Options("db"))
-		ctx.CheckError(err)
+	c.Run(t, "Recreate", func(t *testing.T) {
+		err := client.CreateDB(context.Background(), dbName, c.Options(t, "db"))
+		c.CheckError(t, err)
 	})
 }

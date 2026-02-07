@@ -15,6 +15,7 @@ package client
 import (
 	"context"
 	"sync"
+	"testing"
 
 	"gitlab.com/flimzy/testy"
 
@@ -23,7 +24,7 @@ import (
 )
 
 func init() {
-	kt.Register("GetReplications", getReplications)
+	kt.RegisterV2("GetReplications", getReplications)
 }
 
 // masterMU protects the map
@@ -32,43 +33,49 @@ var masterMU sync.Mutex
 // We can only run one set of replication tests at a time
 var replicationMUs = make(map[*kivik.Client]*sync.Mutex)
 
-func lockReplication(ctx *kt.Context) func() {
+func lockReplication(c *kt.ContextCore) func() {
 	masterMU.Lock()
-	if _, ok := replicationMUs[ctx.Admin]; !ok {
-		replicationMUs[ctx.Admin] = &sync.Mutex{}
+	if _, ok := replicationMUs[c.Admin]; !ok {
+		replicationMUs[c.Admin] = &sync.Mutex{}
 	}
-	mu := replicationMUs[ctx.Admin]
+	mu := replicationMUs[c.Admin]
 	masterMU.Unlock()
 	mu.Lock()
 	return mu.Unlock
 }
 
-func getReplications(ctx *kt.Context) {
-	defer lockReplication(ctx)()
-	ctx.RunAdmin(func(ctx *kt.Context) {
-		ctx.Parallel()
-		testGetReplications(ctx, ctx.Admin, []struct{}{})
+func getReplications(t *testing.T, c *kt.ContextCore) {
+	t.Helper()
+	defer lockReplication(c)()
+	c.RunAdmin(t, func(t *testing.T) {
+		t.Helper()
+		t.Parallel()
+		testGetReplications(t, c, c.Admin, []struct{}{})
 	})
-	ctx.RunNoAuth(func(ctx *kt.Context) {
-		ctx.Parallel()
-		testGetReplications(ctx, ctx.NoAuth, []struct{}{})
+	c.RunNoAuth(t, func(t *testing.T) {
+		t.Helper()
+		t.Parallel()
+		testGetReplications(t, c, c.NoAuth, []struct{}{})
 	})
-	ctx.RunRW(func(ctx *kt.Context) {
-		ctx.RunAdmin(func(ctx *kt.Context) {
-			ctx.Parallel()
+	c.RunRW(t, func(t *testing.T) {
+		t.Helper()
+		c.RunAdmin(t, func(t *testing.T) {
+			t.Helper()
+			t.Parallel()
 		})
-		ctx.RunNoAuth(func(ctx *kt.Context) {
-			ctx.Parallel()
+		c.RunNoAuth(t, func(t *testing.T) {
+			t.Helper()
+			t.Parallel()
 		})
 	})
 }
 
-func testGetReplications(ctx *kt.Context, client *kivik.Client, expected any) {
+func testGetReplications(t *testing.T, c *kt.ContextCore, client *kivik.Client, expected any) { //nolint:thelper
 	reps, err := client.GetReplications(context.Background())
-	if !ctx.IsExpectedSuccess(err) {
+	if !c.IsExpectedSuccess(t, err) {
 		return
 	}
 	if d := testy.DiffAsJSON(expected, reps); d != nil {
-		ctx.Errorf("GetReplications results differ:\n%s\n", d)
+		t.Errorf("GetReplications results differ:\n%s\n", d)
 	}
 }

@@ -14,46 +14,53 @@ package client
 
 import (
 	"context"
+	"testing"
 
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 )
 
 func init() {
-	kt.Register("DBExists", dbExists)
+	kt.RegisterV2("DBExists", dbExists)
 }
 
-func dbExists(ctx *kt.Context) {
-	ctx.RunAdmin(func(ctx *kt.Context) {
-		for _, dbName := range ctx.MustStringSlice("databases") {
-			checkDBExists(ctx, ctx.Admin, dbName)
+func dbExists(t *testing.T, c *kt.ContextCore) {
+	t.Helper()
+	c.RunAdmin(t, func(t *testing.T) {
+		t.Helper()
+		for _, dbName := range c.MustStringSlice(t, "databases") {
+			checkDBExists(t, c, c.Admin, dbName)
 		}
 	})
-	ctx.RunNoAuth(func(ctx *kt.Context) {
-		for _, dbName := range ctx.MustStringSlice("databases") {
-			checkDBExists(ctx, ctx.NoAuth, dbName)
+	c.RunNoAuth(t, func(t *testing.T) {
+		t.Helper()
+		for _, dbName := range c.MustStringSlice(t, "databases") {
+			checkDBExists(t, c, c.NoAuth, dbName)
 		}
 	})
-	ctx.RunRW(func(ctx *kt.Context) {
-		dbName := ctx.TestDB()
-		ctx.RunAdmin(func(ctx *kt.Context) {
-			checkDBExists(ctx, ctx.Admin, dbName)
+	c.RunRW(t, func(t *testing.T) {
+		t.Helper()
+		dbName := c.TestDB(t)
+		c.RunAdmin(t, func(t *testing.T) {
+			t.Helper()
+			checkDBExists(t, c, c.Admin, dbName)
 		})
-		ctx.RunNoAuth(func(ctx *kt.Context) {
-			checkDBExists(ctx, ctx.NoAuth, dbName)
+		c.RunNoAuth(t, func(t *testing.T) {
+			t.Helper()
+			checkDBExists(t, c, c.NoAuth, dbName)
 		})
 	})
 }
 
-func checkDBExists(ctx *kt.Context, client *kivik.Client, dbName string) {
-	ctx.Run(dbName, func(ctx *kt.Context) {
-		ctx.Parallel()
+func checkDBExists(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbName string) { //nolint:thelper
+	c.Run(t, dbName, func(t *testing.T) {
+		t.Parallel()
 		exists, err := client.DBExists(context.Background(), dbName)
-		if !ctx.IsExpectedSuccess(err) {
+		if !c.IsExpectedSuccess(t, err) {
 			return
 		}
-		if ctx.MustBool("exists") != exists {
-			ctx.Errorf("Expected: %t, actual: %t", ctx.Bool("exists"), exists)
+		if c.MustBool(t, "exists") != exists {
+			t.Errorf("Expected: %t, actual: %t", c.Bool(t, "exists"), exists)
 		}
 	})
 }

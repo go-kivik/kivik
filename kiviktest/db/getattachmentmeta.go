@@ -14,21 +14,24 @@ package db
 
 import (
 	"context"
+	"testing"
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 )
 
 func init() {
-	kt.Register("GetAttachmentMeta", getAttachmentMeta)
+	kt.RegisterV2("GetAttachmentMeta", getAttachmentMeta)
 }
 
-func getAttachmentMeta(ctx *kt.Context) {
-	ctx.RunRW(func(ctx *kt.Context) {
-		dbname := ctx.TestDB()
-		adb := ctx.Admin.DB(dbname, ctx.Options("db"))
+func getAttachmentMeta(t *testing.T, c *kt.ContextCore) {
+	t.Helper()
+	c.RunRW(t, func(t *testing.T) {
+		t.Helper()
+		dbname := c.TestDB(t)
+		adb := c.Admin.DB(dbname, c.Options(t, "db"))
 		if err := adb.Err(); err != nil {
-			ctx.Fatalf("Failed to open db: %s", err)
+			t.Fatalf("Failed to open db: %s", err)
 		}
 
 		doc := map[string]any{
@@ -41,7 +44,7 @@ func getAttachmentMeta(ctx *kt.Context) {
 			},
 		}
 		if _, err := adb.Put(context.Background(), "foo", doc); err != nil {
-			ctx.Fatalf("Failed to create doc: %s", err)
+			t.Fatalf("Failed to create doc: %s", err)
 		}
 
 		ddoc := map[string]any{
@@ -54,38 +57,40 @@ func getAttachmentMeta(ctx *kt.Context) {
 			},
 		}
 		if _, err := adb.Put(context.Background(), "_design/foo", ddoc); err != nil {
-			ctx.Fatalf("Failed to create design doc: %s", err)
+			t.Fatalf("Failed to create design doc: %s", err)
 		}
 
-		ctx.RunAdmin(func(ctx *kt.Context) {
-			ctx.Parallel()
-			testGetAttachmentMeta(ctx, ctx.Admin, dbname, "foo", "foo.txt")
-			testGetAttachmentMeta(ctx, ctx.Admin, dbname, "foo", "NotFound")
-			testGetAttachmentMeta(ctx, ctx.Admin, dbname, "_design/foo", "foo.txt")
+		c.RunAdmin(t, func(t *testing.T) {
+			t.Helper()
+			t.Parallel()
+			testGetAttachmentMeta(t, c, c.Admin, dbname, "foo", "foo.txt")
+			testGetAttachmentMeta(t, c, c.Admin, dbname, "foo", "NotFound")
+			testGetAttachmentMeta(t, c, c.Admin, dbname, "_design/foo", "foo.txt")
 		})
-		ctx.RunNoAuth(func(ctx *kt.Context) {
-			ctx.Parallel()
-			testGetAttachmentMeta(ctx, ctx.NoAuth, dbname, "foo", "foo.txt")
-			testGetAttachmentMeta(ctx, ctx.NoAuth, dbname, "foo", "NotFound")
-			testGetAttachmentMeta(ctx, ctx.NoAuth, dbname, "_design/foo", "foo.txt")
+		c.RunNoAuth(t, func(t *testing.T) {
+			t.Helper()
+			t.Parallel()
+			testGetAttachmentMeta(t, c, c.NoAuth, dbname, "foo", "foo.txt")
+			testGetAttachmentMeta(t, c, c.NoAuth, dbname, "foo", "NotFound")
+			testGetAttachmentMeta(t, c, c.NoAuth, dbname, "_design/foo", "foo.txt")
 		})
 	})
 }
 
-func testGetAttachmentMeta(ctx *kt.Context, client *kivik.Client, dbname, docID, filename string) {
-	ctx.Run(docID+"/"+filename, func(ctx *kt.Context) {
-		ctx.Parallel()
-		db := client.DB(dbname, ctx.Options("db"))
+func testGetAttachmentMeta(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbname, docID, filename string) { //nolint:thelper
+	c.Run(t, docID+"/"+filename, func(t *testing.T) {
+		t.Parallel()
+		db := client.DB(dbname, c.Options(t, "db"))
 		if err := db.Err(); err != nil {
-			ctx.Fatalf("Failed to connect to db")
+			t.Fatalf("Failed to connect to db")
 		}
 		att, err := db.GetAttachmentMeta(context.Background(), docID, filename)
-		if !ctx.IsExpectedSuccess(err) {
+		if !c.IsExpectedSuccess(t, err) {
 			return
 		}
 		if client.Driver() != "pouch" {
 			if att.ContentType != "text/plain" {
-				ctx.Errorf("Content-Type: Expected %s, Actual %s", "text/plain", att.ContentType)
+				t.Errorf("Content-Type: Expected %s, Actual %s", "text/plain", att.ContentType)
 			}
 		}
 	})

@@ -14,6 +14,7 @@ package db
 
 import (
 	"context"
+	"testing"
 
 	"gitlab.com/flimzy/testy"
 
@@ -22,56 +23,62 @@ import (
 )
 
 func init() {
-	kt.Register("Explain", explain)
+	kt.RegisterV2("Explain", explain)
 }
 
-func explain(ctx *kt.Context) {
-	ctx.RunAdmin(func(ctx *kt.Context) {
-		testExplain(ctx, ctx.Admin)
+func explain(t *testing.T, c *kt.ContextCore) {
+	t.Helper()
+	c.RunAdmin(t, func(t *testing.T) {
+		t.Helper()
+		testExplain(t, c, c.Admin)
 	})
-	ctx.RunNoAuth(func(ctx *kt.Context) {
-		testExplain(ctx, ctx.NoAuth)
+	c.RunNoAuth(t, func(t *testing.T) {
+		t.Helper()
+		testExplain(t, c, c.NoAuth)
 	})
-	ctx.RunRW(func(ctx *kt.Context) {
-		testExplainRW(ctx)
+	c.RunRW(t, func(t *testing.T) {
+		t.Helper()
+		testExplainRW(t, c)
 	})
 }
 
-func testExplainRW(ctx *kt.Context) {
-	if ctx.Admin == nil {
-		// Can't do anything here without admin access
+func testExplainRW(t *testing.T, c *kt.ContextCore) {
+	t.Helper()
+	if c.Admin == nil {
 		return
 	}
-	dbName := ctx.TestDB()
-	ctx.RunAdmin(func(ctx *kt.Context) {
-		doExplainTest(ctx, ctx.Admin, dbName)
+	dbName := c.TestDB(t)
+	c.RunAdmin(t, func(t *testing.T) {
+		t.Helper()
+		doExplainTest(t, c, c.Admin, dbName)
 	})
-	ctx.RunNoAuth(func(ctx *kt.Context) {
-		doExplainTest(ctx, ctx.NoAuth, dbName)
+	c.RunNoAuth(t, func(t *testing.T) {
+		t.Helper()
+		doExplainTest(t, c, c.NoAuth, dbName)
 	})
 }
 
-func testExplain(ctx *kt.Context, client *kivik.Client) {
-	if !ctx.IsSet("databases") {
-		ctx.Errorf("databases not set; Did you configure this test?")
+func testExplain(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:thelper
+	if !c.IsSet(t, "databases") {
+		t.Errorf("databases not set; Did you configure this test?")
 		return
 	}
-	for _, dbName := range ctx.StringSlice("databases") {
+	for _, dbName := range c.StringSlice(t, "databases") {
 		func(dbName string) {
-			ctx.Run(dbName, func(ctx *kt.Context) {
-				doExplainTest(ctx, client, dbName)
+			c.Run(t, dbName, func(t *testing.T) {
+				doExplainTest(t, c, client, dbName)
 			})
 		}(dbName)
 	}
 }
 
-func doExplainTest(ctx *kt.Context, client *kivik.Client, dbName string) {
+func doExplainTest(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbName string) { //nolint:thelper
 	const limit = 25
-	ctx.Parallel()
-	db := client.DB(dbName, ctx.Options("db"))
+	t.Parallel()
+	db := client.DB(dbName, c.Options(t, "db"))
 	// Errors may be deferred here, so only return if we actually get
 	// an error.
-	if err := db.Err(); err != nil && !ctx.IsExpectedSuccess(err) {
+	if err := db.Err(); err != nil && !c.IsExpectedSuccess(t, err) {
 		return
 	}
 
@@ -81,11 +88,11 @@ func doExplainTest(ctx *kt.Context, client *kivik.Client, dbName string) {
 		plan, e = db.Explain(context.Background(), `{"selector":{"_id":{"$gt":null}}}`)
 		return e
 	})
-	if !ctx.IsExpectedSuccess(err) {
+	if !c.IsExpectedSuccess(t, err) {
 		return
 	}
 	expected := new(kivik.QueryPlan)
-	if e, ok := ctx.Interface("plan").(*kivik.QueryPlan); ok {
+	if e, ok := c.Interface(t, "plan").(*kivik.QueryPlan); ok {
 		*expected = *e // Make a shallow copy
 	} else {
 		expected = &kivik.QueryPlan{
@@ -115,6 +122,6 @@ func doExplainTest(ctx *kt.Context, client *kivik.Client, dbName string) {
 	}
 	expected.DBName = dbName
 	if d := testy.DiffAsJSON(expected, plan); d != nil {
-		ctx.Errorf("Unexpected plan returned:\n%s\n", d)
+		t.Errorf("Unexpected plan returned:\n%s\n", d)
 	}
 }

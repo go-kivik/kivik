@@ -14,68 +14,73 @@ package db
 
 import (
 	"context"
+	"testing"
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 )
 
 func init() {
-	kt.Register("DeleteAttachment", delAttachment)
+	kt.RegisterV2("DeleteAttachment", delAttachment)
 }
 
-func delAttachment(ctx *kt.Context) {
-	ctx.RunRW(func(ctx *kt.Context) {
-		dbname := ctx.TestDB()
-		ctx.RunAdmin(func(ctx *kt.Context) {
-			ctx.Parallel()
-			testDeleteAttachments(ctx, ctx.Admin, dbname, "foo.txt")
-			testDeleteAttachments(ctx, ctx.Admin, dbname, "NotFound")
-			testDeleteAttachmentsDDoc(ctx, ctx.Admin, dbname, "foo.txt")
-			testDeleteAttachmentNoDoc(ctx, ctx.Admin, dbname)
+func delAttachment(t *testing.T, c *kt.ContextCore) {
+	t.Helper()
+	c.RunRW(t, func(t *testing.T) {
+		t.Helper()
+		dbname := c.TestDB(t)
+		c.RunAdmin(t, func(t *testing.T) {
+			t.Helper()
+			t.Parallel()
+			testDeleteAttachments(t, c, c.Admin, dbname, "foo.txt")
+			testDeleteAttachments(t, c, c.Admin, dbname, "NotFound")
+			testDeleteAttachmentsDDoc(t, c, c.Admin, dbname, "foo.txt")
+			testDeleteAttachmentNoDoc(t, c, c.Admin, dbname)
 		})
-		ctx.RunNoAuth(func(ctx *kt.Context) {
-			ctx.Parallel()
-			testDeleteAttachments(ctx, ctx.NoAuth, dbname, "foo.txt")
-			testDeleteAttachments(ctx, ctx.NoAuth, dbname, "NotFound")
-			testDeleteAttachmentsDDoc(ctx, ctx.NoAuth, dbname, "foo.txt")
-			testDeleteAttachmentNoDoc(ctx, ctx.NoAuth, dbname)
+		c.RunNoAuth(t, func(t *testing.T) {
+			t.Helper()
+			t.Parallel()
+			testDeleteAttachments(t, c, c.NoAuth, dbname, "foo.txt")
+			testDeleteAttachments(t, c, c.NoAuth, dbname, "NotFound")
+			testDeleteAttachmentsDDoc(t, c, c.NoAuth, dbname, "foo.txt")
+			testDeleteAttachmentNoDoc(t, c, c.NoAuth, dbname)
 		})
 	})
 }
 
-func testDeleteAttachmentNoDoc(ctx *kt.Context, client *kivik.Client, dbname string) {
-	db := client.DB(dbname, ctx.Options("db"))
+func testDeleteAttachmentNoDoc(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbname string) { //nolint:thelper
+	db := client.DB(dbname, c.Options(t, "db"))
 	if err := db.Err(); err != nil {
-		ctx.Fatalf("Failed to connect to db")
+		t.Fatalf("Failed to connect to db")
 	}
-	ctx.Run("NoDoc", func(ctx *kt.Context) {
-		ctx.Parallel()
+	c.Run(t, "NoDoc", func(t *testing.T) {
+		t.Parallel()
 		_, err := db.DeleteAttachment(context.Background(), "nonexistantdoc", "2-4259cd84694a6345d6c534ed65f1b30b", "foo.txt")
-		ctx.CheckError(err)
+		c.CheckError(t, err)
 	})
 }
 
-func testDeleteAttachments(ctx *kt.Context, client *kivik.Client, dbname, filename string) {
-	ctx.Run(filename, func(ctx *kt.Context) {
-		doDeleteAttachmentTest(ctx, client, dbname, ctx.TestDBName(), filename)
+func testDeleteAttachments(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbname, filename string) { //nolint:thelper
+	c.Run(t, filename, func(t *testing.T) {
+		doDeleteAttachmentTest(t, c, client, dbname, kt.TestDBName(t), filename)
 	})
 }
 
-func testDeleteAttachmentsDDoc(ctx *kt.Context, client *kivik.Client, dbname, filename string) {
-	ctx.Run("DesignDoc/"+filename, func(ctx *kt.Context) {
-		doDeleteAttachmentTest(ctx, client, dbname, "_design/"+ctx.TestDBName(), filename)
+func testDeleteAttachmentsDDoc(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbname, filename string) { //nolint:thelper
+	c.Run(t, "DesignDoc/"+filename, func(t *testing.T) {
+		doDeleteAttachmentTest(t, c, client, dbname, "_design/"+kt.TestDBName(t), filename)
 	})
 }
 
-func doDeleteAttachmentTest(ctx *kt.Context, client *kivik.Client, dbname, docID, filename string) {
-	db := client.DB(dbname, ctx.Options("db"))
+func doDeleteAttachmentTest(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbname, docID, filename string) { //nolint:thelper
+	db := client.DB(dbname, c.Options(t, "db"))
 	if err := db.Err(); err != nil {
-		ctx.Fatalf("Failed to connect to db")
+		t.Fatalf("Failed to connect to db")
 	}
-	ctx.Parallel()
-	adb := ctx.Admin.DB(dbname, ctx.Options("db"))
+	t.Parallel()
+	adb := c.Admin.DB(dbname, c.Options(t, "db"))
 	if err := adb.Err(); err != nil {
-		ctx.Fatalf("Failed to open db: %s", err)
+		t.Fatalf("Failed to open db: %s", err)
 	}
 	doc := map[string]any{
 		"_id": docID,
@@ -88,14 +93,14 @@ func doDeleteAttachmentTest(ctx *kt.Context, client *kivik.Client, dbname, docID
 	}
 	rev, err := adb.Put(context.Background(), docID, doc)
 	if err != nil {
-		ctx.Fatalf("Failed to create doc: %s", err)
+		t.Fatalf("Failed to create doc: %s", err)
 	}
 	rev, err = db.DeleteAttachment(context.Background(), docID, rev, filename)
-	if !ctx.IsExpectedSuccess(err) {
+	if !c.IsExpectedSuccess(t, err) {
 		return
 	}
 	var i any
 	if err = db.Get(context.Background(), docID, kivik.Rev(rev)).ScanDoc(&i); err != nil {
-		ctx.Fatalf("Failed to get deleted doc: %s", err)
+		t.Fatalf("Failed to get deleted doc: %s", err)
 	}
 }

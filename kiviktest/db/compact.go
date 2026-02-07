@@ -14,33 +14,38 @@ package db
 
 import (
 	"context"
+	"testing"
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 )
 
 func init() {
-	kt.Register("Compact", compact)
+	kt.RegisterV2("Compact", compact)
 }
 
-func compact(ctx *kt.Context) {
-	ctx.RunRW(func(ctx *kt.Context) {
-		ctx.RunAdmin(func(ctx *kt.Context) {
-			ctx.Parallel()
-			testCompact(ctx, ctx.Admin)
+func compact(t *testing.T, c *kt.ContextCore) {
+	t.Helper()
+	c.RunRW(t, func(t *testing.T) {
+		t.Helper()
+		c.RunAdmin(t, func(t *testing.T) {
+			t.Helper()
+			t.Parallel()
+			testCompact(t, c, c.Admin)
 		})
-		ctx.RunNoAuth(func(ctx *kt.Context) {
-			ctx.Parallel()
-			testCompact(ctx, ctx.NoAuth)
+		c.RunNoAuth(t, func(t *testing.T) {
+			t.Helper()
+			t.Parallel()
+			testCompact(t, c, c.NoAuth)
 		})
 	})
 }
 
-func testCompact(ctx *kt.Context, client *kivik.Client) {
-	dbname := ctx.TestDB()
-	db := client.DB(dbname, ctx.Options("db"))
+func testCompact(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:thelper
+	dbname := c.TestDB(t)
+	db := client.DB(dbname, c.Options(t, "db"))
 	if err := db.Err(); err != nil {
-		ctx.Fatalf("Failed to connect to db: %s", err)
+		t.Fatalf("Failed to connect to db: %s", err)
 	}
-	ctx.CheckError(db.Compact(context.Background()))
+	c.CheckError(t, db.Compact(context.Background()))
 }

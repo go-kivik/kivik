@@ -14,56 +14,61 @@ package db
 
 import (
 	"context"
+	"testing"
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 )
 
 func init() {
-	kt.Register("CreateDoc", createDoc)
+	kt.RegisterV2("CreateDoc", createDoc)
 }
 
-func createDoc(ctx *kt.Context) {
-	ctx.RunRW(func(ctx *kt.Context) {
-		dbname := ctx.TestDB()
-		ctx.RunAdmin(func(ctx *kt.Context) {
-			ctx.Parallel()
-			testCreate(ctx, ctx.Admin, dbname)
+func createDoc(t *testing.T, c *kt.ContextCore) {
+	t.Helper()
+	c.RunRW(t, func(t *testing.T) {
+		t.Helper()
+		dbname := c.TestDB(t)
+		c.RunAdmin(t, func(t *testing.T) {
+			t.Helper()
+			t.Parallel()
+			testCreate(t, c, c.Admin, dbname)
 		})
-		ctx.RunNoAuth(func(ctx *kt.Context) {
-			ctx.Parallel()
-			testCreate(ctx, ctx.NoAuth, dbname)
+		c.RunNoAuth(t, func(t *testing.T) {
+			t.Helper()
+			t.Parallel()
+			testCreate(t, c, c.NoAuth, dbname)
 		})
 	})
 }
 
-func testCreate(ctx *kt.Context, client *kivik.Client, dbname string) {
-	db := client.DB(dbname, ctx.Options("db"))
+func testCreate(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbname string) { //nolint:thelper
+	db := client.DB(dbname, c.Options(t, "db"))
 	if err := db.Err(); err != nil {
-		ctx.Fatalf("Failed to connect to database: %s", err)
+		t.Fatalf("Failed to connect to database: %s", err)
 	}
-	ctx.Run("WithoutID", func(ctx *kt.Context) {
-		ctx.Parallel()
+	c.Run(t, "WithoutID", func(t *testing.T) {
+		t.Parallel()
 		err := kt.Retry(func() error {
 			_, _, err := db.CreateDoc(context.Background(), map[string]string{"foo": "bar"})
 			return err
 		})
-		ctx.CheckError(err)
+		c.CheckError(t, err)
 	})
-	ctx.Run("WithID", func(ctx *kt.Context) {
-		ctx.Parallel()
-		id := ctx.TestDBName()
+	c.Run(t, "WithID", func(t *testing.T) {
+		t.Parallel()
+		id := kt.TestDBName(t)
 		var docID string
 		err := kt.Retry(func() error {
 			var err error
 			docID, _, err = db.CreateDoc(context.Background(), map[string]string{"foo": "bar", "_id": id})
 			return err
 		})
-		if !ctx.IsExpectedSuccess(err) {
+		if !c.IsExpectedSuccess(t, err) {
 			return
 		}
 		if id != docID {
-			ctx.Errorf("CreateDoc didn't honor provided ID. Expected '%s', Got '%s'", id, docID)
+			t.Errorf("CreateDoc didn't honor provided ID. Expected '%s', Got '%s'", id, docID)
 		}
 	})
 }

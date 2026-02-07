@@ -15,6 +15,8 @@
 package client
 
 import (
+	"testing"
+
 	"github.com/gopherjs/gopherjs/js"
 
 	kivik "github.com/go-kivik/kivik/v4"
@@ -31,8 +33,8 @@ func (mo multiOptions) Apply(target any) {
 	}
 }
 
-func replicationOptions(ctx *kt.Context, target, source, repID string, in kivik.Option) kivik.Option {
-	if ctx.String("mode") != "pouchdb" {
+func replicationOptions(t *testing.T, c *kt.ContextCore, target, source, repID string, in kivik.Option) kivik.Option {
+	if c.String(t, "mode") != "pouchdb" {
 		return multiOptions{kivik.Param("_id", repID), in}
 	}
 	return multiOptions{

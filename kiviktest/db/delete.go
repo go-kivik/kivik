@@ -14,22 +14,27 @@ package db
 
 import (
 	"context"
+	"testing"
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 )
 
 func init() {
-	kt.Register("Delete", _delete)
+	kt.RegisterV2("Delete", _delete)
 }
 
-func _delete(ctx *kt.Context) {
-	ctx.RunRW(func(ctx *kt.Context) {
-		ctx.RunAdmin(func(ctx *kt.Context) {
-			testDelete(ctx, ctx.Admin)
+func _delete(t *testing.T, c *kt.ContextCore) {
+	t.Helper()
+	c.RunRW(t, func(t *testing.T) {
+		t.Helper()
+		c.RunAdmin(t, func(t *testing.T) {
+			t.Helper()
+			testDelete(t, c, c.Admin)
 		})
-		ctx.RunNoAuth(func(ctx *kt.Context) {
-			testDelete(ctx, ctx.NoAuth)
+		c.RunNoAuth(t, func(t *testing.T) {
+			t.Helper()
+			testDelete(t, c, c.NoAuth)
 		})
 	})
 }
@@ -40,35 +45,35 @@ type deleteDoc struct {
 	Deleted bool   `json:"_deleted"`
 }
 
-func testDelete(ctx *kt.Context, client *kivik.Client) {
-	ctx.Parallel()
-	dbName := ctx.TestDB()
-	admdb := ctx.Admin.DB(dbName, ctx.Options("db"))
+func testDelete(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:thelper
+	t.Parallel()
+	dbName := c.TestDB(t)
+	admdb := c.Admin.DB(dbName, c.Options(t, "db"))
 	if err := admdb.Err(); err != nil {
-		ctx.Errorf("Failed to connect to db as admin: %s", err)
+		t.Errorf("Failed to connect to db as admin: %s", err)
 	}
-	db := client.DB(dbName, ctx.Options("db"))
+	db := client.DB(dbName, c.Options(t, "db"))
 	if err := db.Err(); err != nil {
-		ctx.Errorf("Failed to connect to db: %s", err)
+		t.Errorf("Failed to connect to db: %s", err)
 		return
 	}
 
 	doc := &deleteDoc{
-		ID: ctx.TestDBName(),
+		ID: kt.TestDBName(t),
 	}
 	rev, err := admdb.Put(context.Background(), doc.ID, doc)
 	if err != nil {
-		ctx.Errorf("Failed to create test doc: %s", err)
+		t.Errorf("Failed to create test doc: %s", err)
 		return
 	}
 	doc.Rev = rev
 
 	doc2 := &deleteDoc{
-		ID: ctx.TestDBName(),
+		ID: kt.TestDBName(t),
 	}
 	rev, err = admdb.Put(context.Background(), doc2.ID, doc2)
 	if err != nil {
-		ctx.Errorf("Failed to create test doc: %s", err)
+		t.Errorf("Failed to create test doc: %s", err)
 		return
 	}
 	doc2.Rev = rev
@@ -78,7 +83,7 @@ func testDelete(ctx *kt.Context, client *kivik.Client) {
 	}
 	rev, err = admdb.Put(context.Background(), ddoc.ID, ddoc)
 	if err != nil {
-		ctx.Fatalf("Failed to create design doc in test db: %s", err)
+		t.Fatalf("Failed to create design doc in test db: %s", err)
 	}
 	ddoc.Rev = rev
 
@@ -87,38 +92,38 @@ func testDelete(ctx *kt.Context, client *kivik.Client) {
 	}
 	rev, err = admdb.Put(context.Background(), local.ID, local)
 	if err != nil {
-		ctx.Fatalf("Failed to create local doc in test db: %s", err)
+		t.Fatalf("Failed to create local doc in test db: %s", err)
 	}
 	local.Rev = rev
 
-	ctx.Run("WrongRev", func(ctx *kt.Context) {
-		ctx.Parallel()
+	c.Run(t, "WrongRev", func(t *testing.T) {
+		t.Parallel()
 		_, err := db.Delete(context.Background(), doc2.ID, "1-9c65296036141e575d32ba9c034dd3ee")
-		ctx.CheckError(err)
+		c.CheckError(t, err)
 	})
-	ctx.Run("InvalidRevFormat", func(ctx *kt.Context) {
-		ctx.Parallel()
+	c.Run(t, "InvalidRevFormat", func(t *testing.T) {
+		t.Parallel()
 		_, err := db.Delete(context.Background(), doc2.ID, "invalid rev format")
-		ctx.CheckError(err)
+		c.CheckError(t, err)
 	})
-	ctx.Run("MissingDoc", func(ctx *kt.Context) {
-		ctx.Parallel()
+	c.Run(t, "MissingDoc", func(t *testing.T) {
+		t.Parallel()
 		_, err := db.Delete(context.Background(), "missing doc", "1-9c65296036141e575d32ba9c034dd3ee")
-		ctx.CheckError(err)
+		c.CheckError(t, err)
 	})
-	ctx.Run("ValidRev", func(ctx *kt.Context) {
-		ctx.Parallel()
+	c.Run(t, "ValidRev", func(t *testing.T) {
+		t.Parallel()
 		_, err := db.Delete(context.Background(), doc.ID, doc.Rev)
-		ctx.CheckError(err)
+		c.CheckError(t, err)
 	})
-	ctx.Run("DesignDoc", func(ctx *kt.Context) {
-		ctx.Parallel()
+	c.Run(t, "DesignDoc", func(t *testing.T) {
+		t.Parallel()
 		_, err := db.Delete(context.Background(), ddoc.ID, ddoc.Rev)
-		ctx.CheckError(err)
+		c.CheckError(t, err)
 	})
-	ctx.Run("Local", func(ctx *kt.Context) {
-		ctx.Parallel()
+	c.Run(t, "Local", func(t *testing.T) {
+		t.Parallel()
 		_, err := db.Delete(context.Background(), local.ID, local.Rev)
-		ctx.CheckError(err)
+		c.CheckError(t, err)
 	})
 }

@@ -60,6 +60,13 @@ source = 'tests\.(Add|Run)\('
 
 [[linters.exclusions.rules]]
 linters = [
+  'thelper'
+]
+text = 'test helper function should start'
+source = 'c\.Run'
+
+[[linters.exclusions.rules]]
+linters = [
   'sqlclosecheck'
 ]
 source = 'tx.Prepare|stmts.prepare'

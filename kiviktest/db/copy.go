@@ -14,21 +14,24 @@ package db
 
 import (
 	"context"
+	"testing"
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 )
 
 func init() {
-	kt.Register("Copy", _copy)
+	kt.RegisterV2("Copy", _copy)
 }
 
-func _copy(ctx *kt.Context) {
-	ctx.RunRW(func(ctx *kt.Context) {
-		dbname := ctx.TestDB()
-		db := ctx.Admin.DB(dbname, ctx.Options("db"))
+func _copy(t *testing.T, c *kt.ContextCore) {
+	t.Helper()
+	c.RunRW(t, func(t *testing.T) {
+		t.Helper()
+		dbname := c.TestDB(t)
+		db := c.Admin.DB(dbname, c.Options(t, "db"))
 		if err := db.Err(); err != nil {
-			ctx.Fatalf("Failed to open db: %s", err)
+			t.Fatalf("Failed to open db: %s", err)
 		}
 
 		doc := map[string]string{
@@ -37,7 +40,7 @@ func _copy(ctx *kt.Context) {
 		}
 		rev, err := db.Put(context.Background(), doc["_id"], doc)
 		if err != nil {
-			ctx.Fatalf("Failed to create source doc: %s", err)
+			t.Fatalf("Failed to create source doc: %s", err)
 		}
 		doc["_rev"] = rev
 
@@ -47,7 +50,7 @@ func _copy(ctx *kt.Context) {
 		}
 		rev, err = db.Put(context.Background(), ddoc["_id"], ddoc)
 		if err != nil {
-			ctx.Fatalf("Failed to create source design doc: %s", err)
+			t.Fatalf("Failed to create source design doc: %s", err)
 		}
 		ddoc["_rev"] = rev
 
@@ -57,54 +60,56 @@ func _copy(ctx *kt.Context) {
 		}
 		rev, err = db.Put(context.Background(), local["_id"], local)
 		if err != nil {
-			ctx.Fatalf("Failed to create source design doc: %s", err)
+			t.Fatalf("Failed to create source design doc: %s", err)
 		}
 		local["_rev"] = rev
 
-		ctx.RunAdmin(func(ctx *kt.Context) {
-			copyTest(ctx, ctx.Admin, dbname, doc)
-			copyTest(ctx, ctx.Admin, dbname, ddoc)
-			copyTest(ctx, ctx.Admin, dbname, local)
+		c.RunAdmin(t, func(t *testing.T) {
+			t.Helper()
+			copyTest(t, c, c.Admin, dbname, doc)
+			copyTest(t, c, c.Admin, dbname, ddoc)
+			copyTest(t, c, c.Admin, dbname, local)
 		})
-		ctx.RunNoAuth(func(ctx *kt.Context) {
-			copyTest(ctx, ctx.NoAuth, dbname, doc)
-			copyTest(ctx, ctx.NoAuth, dbname, ddoc)
-			copyTest(ctx, ctx.NoAuth, dbname, local)
+		c.RunNoAuth(t, func(t *testing.T) {
+			t.Helper()
+			copyTest(t, c, c.NoAuth, dbname, doc)
+			copyTest(t, c, c.NoAuth, dbname, ddoc)
+			copyTest(t, c, c.NoAuth, dbname, local)
 		})
 	})
 }
 
-func copyTest(ctx *kt.Context, client *kivik.Client, dbname string, source map[string]string) {
-	ctx.Run(source["_id"], func(ctx *kt.Context) {
-		ctx.Parallel()
-		db := client.DB(dbname, ctx.Options("db"))
+func copyTest(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbname string, source map[string]string) { //nolint:thelper
+	c.Run(t, source["_id"], func(t *testing.T) {
+		t.Parallel()
+		db := client.DB(dbname, c.Options(t, "db"))
 		if err := db.Err(); err != nil {
-			ctx.Fatalf("Failed to open db: %s", err)
+			t.Fatalf("Failed to open db: %s", err)
 		}
-		targetID := ctx.TestDBName()
+		targetID := kt.TestDBName(t)
 		rev, err := db.Copy(context.Background(), targetID, source["_id"])
-		if !ctx.IsExpectedSuccess(err) {
+		if !c.IsExpectedSuccess(t, err) {
 			return
 		}
-		ctx.Run("RevCopy", func(ctx *kt.Context) {
+		c.Run(t, "RevCopy", func(t *testing.T) {
 			cp := map[string]string{
 				"_id":  targetID,
 				"name": "Bob",
 				"_rev": rev,
 			}
 			if _, e := db.Put(context.Background(), targetID, cp); e != nil {
-				ctx.Fatalf("Failed to update copy: %s", e)
+				t.Fatalf("Failed to update copy: %s", e)
 			}
-			targetID2 := ctx.TestDBName()
+			targetID2 := kt.TestDBName(t)
 			if _, e := db.Copy(context.Background(), targetID2, targetID, kivik.Rev(rev)); e != nil {
-				ctx.Fatalf("Failed to copy doc with rev option: %s", e)
+				t.Fatalf("Failed to copy doc with rev option: %s", e)
 			}
 			var readCopy map[string]string
 			if err = db.Get(context.Background(), targetID2).ScanDoc(&readCopy); err != nil {
-				ctx.Fatalf("Failed to scan copy: %s", err)
+				t.Fatalf("Failed to scan copy: %s", err)
 			}
 			if readCopy["name"] != "Robert" {
-				ctx.Errorf("Copy-with-rev failed. Name = %s, expected %s", readCopy["name"], "Robert")
+				t.Errorf("Copy-with-rev failed. Name = %s, expected %s", readCopy["name"], "Robert")
 			}
 		})
 	})

@@ -4,20 +4,7 @@ Constraint: minimum Go version is 1.20 (`go.mod`).
 
 ---
 
-## Batch 2: Add `ctx.DB()` helper (boilerplate reduction)
-
-Add helper methods to `kt.Context`:
-
-```go
-func (c *Context) DB(client *kivik.Client, dbname string) *kivik.DB
-func (c *Context) AdminDB(dbname string) *kivik.DB
-```
-
-Then update call sites across `client/` and `db/` test files.
-
----
-
-## Batch 3: Shared CouchDB config base
+## Batch 2: Shared CouchDB config base
 
 Extract common config entries into a base map, with per-version overrides.
 
@@ -25,15 +12,7 @@ Add a `SuiteConfig.Merge(other SuiteConfig)` or just use Go maps merge.
 
 ---
 
-## Batch 4: Fix bulk.go complexity
-
-Extract repeated BulkResult checking into a helper in `db/bulk.go`.
-
-Remove `// nolint: gocyclo` after complexity is reduced.
-
----
-
-## Longer-term: Evaluate replacing kt.Context
+## Batch 3: Evaluate replacing kt.Context
 
 `kt.Context` wraps `*testing.T` to provide:
 1. Admin/NoAuth client pair management
@@ -50,3 +29,19 @@ A possible replacement architecture:
 - `TestDB(t)` becomes a method on SuiteHelper
 
 This would be a file-by-file migration, not a big-bang rewrite.
+
+---
+
+## Batch 4: Add `ctx.DB()` helper (boilerplate reduction)
+
+Blocked by Batch 3 — adding more API surface to `kt.Context` is
+counterproductive if we decide to replace it.
+
+Add helper methods to `kt.Context`:
+
+```go
+func (c *Context) DB(client *kivik.Client, dbname string) *kivik.DB
+func (c *Context) AdminDB(dbname string) *kivik.DB
+```
+
+Then update call sites across `client/` and `db/` test files.

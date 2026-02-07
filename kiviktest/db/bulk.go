@@ -66,9 +66,6 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) { // nolint: gocyclo
 				ctx.Errorf("Bulk create failed: %s", update.Error)
 			}
 		}
-		if err != nil {
-			ctx.Errorf("Iteration error: %s", err)
-		}
 	})
 	ctx.Run("Update", func(ctx *kt.Context) {
 		ctx.Parallel()
@@ -94,9 +91,6 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) { // nolint: gocyclo
 			if update.Error != nil {
 				ctx.Errorf("Bulk delete failed: %s", update.Error)
 			}
-		}
-		if err != nil {
-			ctx.Errorf("Iteration error: %s", err)
 		}
 	})
 	ctx.Run("Delete", func(ctx *kt.Context) {
@@ -125,9 +119,6 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) { // nolint: gocyclo
 			if update.Error != nil {
 				ctx.Errorf("Bulk update failed: %s", update.Error)
 			}
-		}
-		if err != nil {
-			ctx.Errorf("Iteration error: %s", err)
 		}
 	})
 	ctx.Run("Mix", func(ctx *kt.Context) {
@@ -180,9 +171,6 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) { // nolint: gocyclo
 		if !ctx.IsExpectedSuccess(err) {
 			return
 		}
-		if err != nil {
-			ctx.Errorf("Iteration error: %s", err)
-		}
 		for _, update := range updates {
 			var testName string
 			switch update.ID {
@@ -224,9 +212,6 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) { // nolint: gocyclo
 		})
 		if !ctx.IsExpectedSuccess(err) {
 			return
-		}
-		if err != nil {
-			ctx.Errorf("Iteration error: %s", err)
 		}
 		for _, update := range updates {
 			if e := update.Error; e != nil {

@@ -14,7 +14,6 @@
 package kt
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -35,14 +34,7 @@ import (
 
 // Context is a collection of client connections with different security access.
 type Context struct {
-	// RW is true if we should run read-write tests.
-	RW bool
-	// Admin is a client connection with database admin privileges.
-	Admin *kivik.Client
-	// NoAuth isa client connection with no authentication.
-	NoAuth *kivik.Client
-	// Config is the suite config
-	Config SuiteConfig
+	*ContextCore
 	// T is the *testing.T value
 	T *testing.T
 }
@@ -51,20 +43,15 @@ type Context struct {
 func (c *Context) Child(t *testing.T) *Context {
 	t.Helper()
 	return &Context{
-		RW:     c.RW,
-		Admin:  c.Admin,
-		NoAuth: c.NoAuth,
-		Config: c.Config,
-		T:      t,
+		ContextCore: c.ContextCore,
+		T:           t,
 	}
 }
 
 // Skip will skip the currently running test if configuration dictates.
 func (c *Context) Skip() {
 	c.T.Helper()
-	if c.Config.Bool(c.T, "skip") {
-		c.T.Skip("Test skipped by suite configuration")
-	}
+	c.ContextCore.Skip(c.T)
 }
 
 // Skipf is a wrapper around t.Skipf()
@@ -88,109 +75,91 @@ func (c *Context) Fatalf(format string, args ...any) {
 // MustBeSet ends the test with a failure if the config key is not set.
 func (c *Context) MustBeSet(key string) {
 	c.T.Helper()
-	if !c.IsSet(key) {
-		c.T.Fatalf("'%s' not set. Please configure this test.", key)
-	}
+	c.ContextCore.MustBeSet(c.T, key)
 }
 
 // MustStringSlice returns a string slice, or fails if the value is unset.
 func (c *Context) MustStringSlice(key string) []string {
 	c.T.Helper()
-	c.MustBeSet(key)
-	return c.StringSlice(key)
+	return c.ContextCore.MustStringSlice(c.T, key)
 }
 
 // MustBool returns a bool, or fails if the value is unset.
 func (c *Context) MustBool(key string) bool {
 	c.T.Helper()
-	c.MustBeSet(key)
-	return c.Bool(key)
+	return c.ContextCore.MustBool(c.T, key)
 }
 
 // IntSlice returns a []int from config.
 func (c *Context) IntSlice(key string) []int {
 	c.T.Helper()
-	v, _ := c.Config.Interface(c.T, key).([]int)
-	return v
+	return c.ContextCore.IntSlice(c.T, key)
 }
 
 // MustIntSlice returns a []int, or fails if the value is unset.
 func (c *Context) MustIntSlice(key string) []int {
 	c.T.Helper()
-	c.MustBeSet(key)
-	return c.IntSlice(key)
+	return c.ContextCore.MustIntSlice(c.T, key)
 }
 
 // StringSlice returns a string slice from the config.
 func (c *Context) StringSlice(key string) []string {
 	c.T.Helper()
-	return c.Config.StringSlice(c.T, key)
+	return c.ContextCore.StringSlice(c.T, key)
 }
 
 // String returns a string from config.
 func (c *Context) String(key string) string {
 	c.T.Helper()
-	return c.Config.String(c.T, key)
+	return c.ContextCore.String(c.T, key)
 }
 
 // MustString returns a string from config, or fails if the value is unset.
 func (c *Context) MustString(key string) string {
 	c.T.Helper()
-	c.MustBeSet(key)
-	return c.String(key)
+	return c.ContextCore.MustString(c.T, key)
 }
 
 // Int returns an int from the config.
 func (c *Context) Int(key string) int {
 	c.T.Helper()
-	return c.Config.Int(c.T, key)
+	return c.ContextCore.Int(c.T, key)
 }
 
 // MustInt returns an int from the config, or fails if the value is unset.
 func (c *Context) MustInt(key string) int {
 	c.T.Helper()
-	c.MustBeSet(key)
-	return c.Int(key)
+	return c.ContextCore.MustInt(c.T, key)
 }
 
 // Bool returns a bool from the config.
 func (c *Context) Bool(key string) bool {
 	c.T.Helper()
-	return c.Config.Bool(c.T, key)
+	return c.ContextCore.Bool(c.T, key)
 }
 
 // Interface returns the configuration value as an any.
 func (c *Context) Interface(key string) any {
 	c.T.Helper()
-	return c.Config.get(name(c.T), key)
+	return c.ContextCore.Interface(c.T, key)
 }
 
 // Options returns an options map value.
 func (c *Context) Options(key string) kivik.Option {
 	c.T.Helper()
-	testName := name(c.T)
-	i := c.Config.get(testName, key)
-	if i == nil {
-		return nil
-	}
-	o, ok := i.(kivik.Option)
-	if !ok {
-		panic(fmt.Sprintf("Options field %s/%s of unsupported type: %T", testName, key, i))
-	}
-	return o
+	return c.ContextCore.Options(c.T, key)
 }
 
 // MustInterface returns an any from the config, or fails if the value is unset.
 func (c *Context) MustInterface(key string) any {
 	c.T.Helper()
-	c.MustBeSet(key)
-	return c.Interface(key)
+	return c.ContextCore.MustInterface(c.T, key)
 }
 
 // IsSet returns true if the value is set in the configuration.
 func (c *Context) IsSet(key string) bool {
 	c.T.Helper()
-	return c.Interface(key) != nil
+	return c.ContextCore.IsSet(c.T, key)
 }
 
 // Run wraps t.Run()
@@ -215,6 +184,16 @@ func Register(name string, fn testFunc) {
 	tests[name] = fn
 }
 
+// TestFunc is the signature for tests that receive *testing.T directly.
+type TestFunc func(*testing.T, *ContextCore)
+
+// RegisterV2 registers a test using the new signature.
+func RegisterV2(name string, fn TestFunc) {
+	Register(name, func(ctx *Context) {
+		fn(ctx.T, ctx.ContextCore)
+	})
+}
+
 // RunSubtests executes the requested suites of tests against the client.
 func RunSubtests(ctx *Context) {
 	for name, fn := range tests {
@@ -234,19 +213,11 @@ func init() {
 // TestDBPrefix is used to prefix temporary database names during tests.
 const TestDBPrefix = "kivik$"
 
-// TestDB creates a test database, regesters a cleanup function to destroy it,
+// TestDB creates a test database, registers a cleanup function to destroy it,
 // and returns its name.
 func (c *Context) TestDB() string {
 	c.T.Helper()
-	dbname := c.TestDBName()
-	err := Retry(func() error {
-		return c.Admin.CreateDB(context.Background(), dbname, c.Options("db"))
-	})
-	if err != nil {
-		c.Fatalf("Failed to create database %q: %s", dbname, err)
-	}
-	c.T.Cleanup(func() { c.DestroyDB(dbname) })
-	return dbname
+	return c.ContextCore.TestDB(c.T)
 }
 
 // TestDBName generates a randomized string suitable for a database name for

@@ -108,9 +108,11 @@ func MemoryTest(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = client.Close() })
 	clients := &kt.Context{
-		RW:    true,
-		Admin: client,
-		T:     t,
+		ContextCore: &kt.ContextCore{
+			RW:    true,
+			Admin: client,
+		},
+		T: t,
 	}
 	if err := client.CreateDB(context.Background(), "_users"); err != nil {
 		t.Fatal(err)

@@ -413,7 +413,8 @@ func ConnectClients(t *testing.T, driverName, dsn string, opts kivik.Option) (*k
 		noAuthDSN = parsed.String()
 	}
 	clients := &kt.Context{
-		T: t,
+		ContextCore: &kt.ContextCore{},
+		T:           t,
 	}
 	t.Logf("[Auth] Connecting to %s ...\n", dsn)
 	if client, err := kivik.New(driverName, dsn, opts); err == nil {

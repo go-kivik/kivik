@@ -34,9 +34,11 @@ func TestPG(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = client.Close() })
 	clients := &kt.Context{
-		RW:    true,
-		Admin: client,
-		T:     t,
+		ContextCore: &kt.ContextCore{
+			RW:    true,
+			Admin: client,
+		},
+		T: t,
 	}
 	kiviktest.RunTestsInternal(clients, kiviktest.SuitePG)
 }

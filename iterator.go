@@ -17,6 +17,7 @@ import (
 	"io"
 	"net/http"
 	"sync"
+	"sync/atomic"
 
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
@@ -57,7 +58,8 @@ type iter struct {
 	err   error // non-nil only if state == stateClosed
 	wg    sync.WaitGroup
 
-	cancel func() // cancel function to exit context goroutine when iterator is closed
+	cancel  func()      // cancel function to exit context goroutine when iterator is closed
+	closing atomic.Bool // set by Close before interrupting a blocked Next
 
 	curVal interface{}
 }
@@ -140,17 +142,18 @@ func (i *iter) next() bool {
 			}
 			continue
 		}
+		if err != nil {
+			i.err = err
+			_ = i.closeErr(nil)
+			return false
+		}
 		switch i.state {
 		case stateResultSetReady, stateResultSetRowReady:
 			i.state = stateResultSetRowReady
 		default:
 			i.state = stateRowReady
 		}
-		i.err = err
-		if i.err != nil {
-			_ = i.closeErr(nil)
-			return false
-		}
+		i.err = nil
 		return true
 	}
 }
@@ -161,10 +164,21 @@ func (i *iter) next() bool {
 // automatically and it will suffice to check the result of [Err]. Close is
 // idempotent and does not affect the result of [Err].
 func (i *iter) Close() error {
+	i.closing.Store(true)
+	if i.cancel != nil {
+		i.cancel()
+	}
+	var feedErr error
+	if i.feed != nil {
+		feedErr = i.feed.Close()
+	}
 	i.mu.Lock()
 	defer i.mu.Unlock()
 	i.wg.Wait()
-	return i.closeErr(nil)
+	if err := i.closeErr(nil); err != nil {
+		return err
+	}
+	return feedErr
 }
 
 func (i *iter) closeErr(err error) error {
@@ -173,7 +187,9 @@ func (i *iter) closeErr(err error) error {
 	}
 	i.state = stateClosed
 
-	if i.err == nil {
+	if i.closing.Load() {
+		i.err = nil
+	} else if i.err == nil {
 		i.err = err
 	}
 

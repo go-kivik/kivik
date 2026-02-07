@@ -75,6 +75,79 @@ func TestCancelledIterator(t *testing.T) {
 	}
 }
 
+// blockingFeed is a feed whose Next blocks until Close is called,
+// simulating a continuous changes feed waiting on network I/O.
+type blockingFeed struct {
+	ready chan struct{}
+	done  chan struct{}
+}
+
+var _ iterator = &blockingFeed{}
+
+func (f *blockingFeed) Close() error {
+	select {
+	case <-f.done:
+	default:
+		close(f.done)
+	}
+	return nil
+}
+
+func (f *blockingFeed) Next(_ interface{}) error {
+	f.ready <- struct{}{}
+	<-f.done
+	return context.Canceled
+}
+
+func TestCloseWhileNextBlocked(t *testing.T) {
+	t.Parallel()
+
+	feed := &blockingFeed{
+		ready: make(chan struct{}),
+		done:  make(chan struct{}),
+	}
+	it := newIterator(context.Background(), nil, feed, new(int64))
+
+	go it.Next()
+
+	<-feed.ready
+
+	closeDone := make(chan struct{})
+	go func() {
+		_ = it.Close()
+		close(closeDone)
+	}()
+
+	select {
+	case <-closeDone:
+	case <-time.After(5 * time.Second):
+		t.Fatal("iter.Close deadlocked while Next was blocked")
+	}
+
+	if err := it.Err(); err != nil {
+		t.Errorf("Err() after Close should be nil, got: %s", err)
+	}
+}
+
+// TestCloseErrSuppressesErrorWhenClosing verifies that closeErr does not
+// store an error when the iterator is being closed by Close. This covers the
+// awaitDone path where closeErr(context.Canceled) is called after Close
+// cancels the context.
+func TestCloseErrSuppressesErrorWhenClosing(t *testing.T) {
+	t.Parallel()
+
+	it := &iter{
+		feed:  &TestFeed{},
+		state: stateRowReady,
+	}
+	it.closing.Store(true)
+	_ = it.closeErr(context.Canceled)
+
+	if it.err != nil {
+		t.Errorf("expected nil err when closing, got: %s", it.err)
+	}
+}
+
 func Test_iter_isReady(t *testing.T) {
 	tests := []struct {
 		name string

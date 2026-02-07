@@ -15,6 +15,8 @@ package test
 
 import (
 	"net/http"
+
+	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 )
 
 const maxConnsPerHost = 90 // 100
@@ -27,6 +29,19 @@ func RegisterCouchDBSuites() {
 	registerSuiteCouch31()
 	registerSuiteCouch32()
 	registerSuiteCouch33()
+}
+
+func mergeSuiteConfig(base kt.SuiteConfig, overrides ...kt.SuiteConfig) kt.SuiteConfig {
+	result := make(kt.SuiteConfig, len(base))
+	for k, v := range base {
+		result[k] = v
+	}
+	for _, o := range overrides {
+		for k, v := range o {
+			result[k] = v
+		}
+	}
+	return result
 }
 
 func httpClient() *http.Client {

@@ -17,17 +17,7 @@ Then update call sites across `client/` and `db/` test files.
 
 ---
 
-## Batch 3: Remove "group" subtest wrappers
-
-Since `TestDB()` already uses `t.Cleanup()` (kt.go:248), the "group" subtest wrapper is unnecessary. It was originally needed so `defer` wouldn't run before parallel subtests completed. With `t.Cleanup`, the testing framework handles this.
-
-Steps:
-1. Remove `ctx.Run("group", ...)` wrappers from all test files, promoting their contents one level up
-2. Update all suite config keys that contain `/group/` (e.g., `"Put/RW/Admin/group/Create.status"` -> `"Put/RW/Admin/Create.status"`)
-
----
-
-## Batch 4: Shared CouchDB config base
+## Batch 3: Shared CouchDB config base
 
 Extract common config entries into a base map, with per-version overrides.
 
@@ -35,7 +25,7 @@ Add a `SuiteConfig.Merge(other SuiteConfig)` or just use Go maps merge.
 
 ---
 
-## Batch 5: Fix bulk.go complexity
+## Batch 4: Fix bulk.go complexity
 
 Extract repeated BulkResult checking into a helper in `db/bulk.go`.
 

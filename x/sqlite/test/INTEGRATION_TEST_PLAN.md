@@ -59,7 +59,7 @@ Remove both `.skip` entries. Add:
 "AllDBs.expected":                   []string{},
 "DBExists/Admin.databases":          []string{"chicken"},
 "DBExists/Admin/chicken.exists":     false,
-"DBExists/RW/group/Admin.exists":    true,
+"DBExists/RW/Admin.exists":    true,
 ```
 
 Verify: `go test ./x/sqlite/test/ -run 'TestSQLite/kivikSQLite/(DBExists|AllDBs)' -v`
@@ -68,8 +68,8 @@ Verify: `go test ./x/sqlite/test/ -run 'TestSQLite/kivikSQLite/(DBExists|AllDBs)
 
 Remove `"Put.skip": true`. Add:
 ```go
-"Put/RW/Admin/group/LeadingUnderscoreInID.status": http.StatusBadRequest,
-"Put/RW/Admin/group/Conflict.status":              http.StatusConflict,
+"Put/RW/Admin/LeadingUnderscoreInID.status": http.StatusBadRequest,
+"Put/RW/Admin/Conflict.status":              http.StatusConflict,
 ```
 
 Verify: `go test ./x/sqlite/test/ -run TestSQLite/kivikSQLite/Put -v`
@@ -78,8 +78,8 @@ Verify: `go test ./x/sqlite/test/ -run TestSQLite/kivikSQLite/Put -v`
 
 Remove both `.skip` entries. Add:
 ```go
-"Get/RW/group/Admin/bogus.status":    http.StatusNotFound,
-"GetRev/RW/group/Admin/bogus.status": http.StatusNotFound,
+"Get/RW/Admin/bogus.status":    http.StatusNotFound,
+"GetRev/RW/Admin/bogus.status": http.StatusNotFound,
 ```
 
 Verify: `go test ./x/sqlite/test/ -run 'TestSQLite/kivikSQLite/(Get|GetRev)/' -v`
@@ -88,9 +88,9 @@ Verify: `go test ./x/sqlite/test/ -run 'TestSQLite/kivikSQLite/(Get|GetRev)/' -v
 
 Remove `"Delete.skip": true`. Add:
 ```go
-"Delete/RW/Admin/group/MissingDoc.status":       http.StatusNotFound,
-"Delete/RW/Admin/group/InvalidRevFormat.status":  http.StatusBadRequest,
-"Delete/RW/Admin/group/WrongRev.status":          http.StatusConflict,
+"Delete/RW/Admin/MissingDoc.status":       http.StatusNotFound,
+"Delete/RW/Admin/InvalidRevFormat.status":  http.StatusBadRequest,
+"Delete/RW/Admin/WrongRev.status":          http.StatusConflict,
 ```
 
 Verify: `go test ./x/sqlite/test/ -run TestSQLite/kivikSQLite/Delete -v`
@@ -115,7 +115,7 @@ Verify: `go test ./x/sqlite/test/ -run TestSQLite/kivikSQLite/AllDocs -v`
 Remove `"Find.skip": true`. Add:
 ```go
 "Find.databases":                      []string{},
-"Find/RW/group/Admin/Warning.warning": "",
+"Find/RW/Admin/Warning.warning": "",
 ```
 
 Verify: `go test ./x/sqlite/test/ -run TestSQLite/kivikSQLite/Find -v`
@@ -124,7 +124,7 @@ Verify: `go test ./x/sqlite/test/ -run TestSQLite/kivikSQLite/Find -v`
 
 Remove `"Query.skip": true`. Add:
 ```go
-"Query/RW/group/Admin/WithoutDocs/ScanDoc.status": http.StatusBadRequest,
+"Query/RW/Admin/WithoutDocs/ScanDoc.status": http.StatusBadRequest,
 ```
 
 Verify: `go test ./x/sqlite/test/ -run TestSQLite/kivikSQLite/Query -v`
@@ -133,7 +133,7 @@ Verify: `go test ./x/sqlite/test/ -run TestSQLite/kivikSQLite/Query -v`
 
 Remove `"PutAttachment.skip": true`. Add:
 ```go
-"PutAttachment/RW/group/Admin/Conflict.status": http.StatusConflict,
+"PutAttachment/RW/Admin/Conflict.status": http.StatusConflict,
 ```
 
 Verify: `go test ./x/sqlite/test/ -run TestSQLite/kivikSQLite/PutAttachment -v`
@@ -142,8 +142,8 @@ Verify: `go test ./x/sqlite/test/ -run TestSQLite/kivikSQLite/PutAttachment -v`
 
 Remove both `.skip` entries. Add:
 ```go
-"GetAttachment/RW/group/Admin/foo/NotFound.status":     http.StatusNotFound,
-"GetAttachmentMeta/RW/group/Admin/foo/NotFound.status":  http.StatusNotFound,
+"GetAttachment/RW/Admin/foo/NotFound.status":     http.StatusNotFound,
+"GetAttachmentMeta/RW/Admin/foo/NotFound.status":  http.StatusNotFound,
 ```
 
 Verify: `go test ./x/sqlite/test/ -run 'TestSQLite/kivikSQLite/(GetAttachment|GetAttachmentMeta)/' -v`
@@ -152,8 +152,8 @@ Verify: `go test ./x/sqlite/test/ -run 'TestSQLite/kivikSQLite/(GetAttachment|Ge
 
 Remove `"DeleteAttachment.skip": true`. Add:
 ```go
-"DeleteAttachment/RW/group/Admin/NotFound.status": http.StatusNotFound,
-"DeleteAttachment/RW/group/Admin/NoDoc.status":    http.StatusConflict,
+"DeleteAttachment/RW/Admin/NotFound.status": http.StatusNotFound,
+"DeleteAttachment/RW/Admin/NoDoc.status":    http.StatusConflict,
 ```
 
 Note: `NoDoc.status` may need adjustment - the driver might return `StatusNotFound`

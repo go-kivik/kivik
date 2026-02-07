@@ -36,6 +36,14 @@ func bulkDocs(ctx *kt.Context) {
 	})
 }
 
+func failOnBulkErrors(ctx *kt.Context, updates []kivik.BulkResult, op string) {
+	for _, update := range updates {
+		if update.Error != nil {
+			ctx.Errorf("Bulk %s failed: %s", op, update.Error)
+		}
+	}
+}
+
 func testBulkDocs(ctx *kt.Context, client *kivik.Client) { // nolint: gocyclo
 	ctx.Parallel()
 	dbname := ctx.TestDB()
@@ -61,11 +69,7 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) { // nolint: gocyclo
 		if !ctx.IsExpectedSuccess(err) {
 			return
 		}
-		for _, update := range updates {
-			if update.Error != nil {
-				ctx.Errorf("Bulk create failed: %s", update.Error)
-			}
-		}
+		failOnBulkErrors(ctx, updates, "create")
 	})
 	ctx.Run("Update", func(ctx *kt.Context) {
 		ctx.Parallel()
@@ -87,11 +91,7 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) { // nolint: gocyclo
 		if !ctx.IsExpectedSuccess(err) {
 			return
 		}
-		for _, update := range updates {
-			if update.Error != nil {
-				ctx.Errorf("Bulk delete failed: %s", update.Error)
-			}
-		}
+		failOnBulkErrors(ctx, updates, "delete")
 	})
 	ctx.Run("Delete", func(ctx *kt.Context) {
 		ctx.Parallel()
@@ -115,11 +115,7 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) { // nolint: gocyclo
 		if !ctx.IsExpectedSuccess(err) {
 			return
 		}
-		for _, update := range updates {
-			if update.Error != nil {
-				ctx.Errorf("Bulk update failed: %s", update.Error)
-			}
-		}
+		failOnBulkErrors(ctx, updates, "update")
 	})
 	ctx.Run("Mix", func(ctx *kt.Context) {
 		ctx.Parallel()
@@ -213,11 +209,7 @@ func testBulkDocs(ctx *kt.Context, client *kivik.Client) { // nolint: gocyclo
 		if !ctx.IsExpectedSuccess(err) {
 			return
 		}
-		for _, update := range updates {
-			if e := update.Error; e != nil {
-				ctx.Errorf("Bulk create failed: %s", e)
-			}
-		}
+		failOnBulkErrors(ctx, updates, "create")
 		ctx.Run("Retrieve", func(ctx *kt.Context) {
 			var result map[string]any
 			if err = db.Get(context.Background(), id2).ScanDoc(&result); err != nil {

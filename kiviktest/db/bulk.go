@@ -44,7 +44,7 @@ func failOnBulkErrors(ctx *kt.Context, updates []kivik.BulkResult, op string) {
 	}
 }
 
-func testBulkDocs(ctx *kt.Context, client *kivik.Client) { // nolint: gocyclo
+func testBulkDocs(ctx *kt.Context, client *kivik.Client) {
 	ctx.Parallel()
 	dbname := ctx.TestDB()
 	adb := ctx.Admin.DB(dbname, ctx.Options("db"))

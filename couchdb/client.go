@@ -131,7 +131,13 @@ func newUpdates(ctx context.Context, r io.ReadCloser) (driver.DBUpdates, error) 
 		return nil, &internal.Error{Status: http.StatusBadGateway, Err: err}
 	}
 
-	switch feedType {
+	return updatesForFeedType(ctx, r, feedType)
+}
+
+// updatesForFeedType returns the appropriate driver.DBUpdates implementation
+// for the given feed type.
+func updatesForFeedType(ctx context.Context, r io.ReadCloser, ft feedType) (driver.DBUpdates, error) {
+	switch ft {
 	case feedTypeContinuous:
 		return newContinuousUpdates(ctx, r), nil
 	case feedTypeNormal:
@@ -139,7 +145,7 @@ func newUpdates(ctx context.Context, r io.ReadCloser) (driver.DBUpdates, error) 
 	case feedTypeEmpty:
 		return newEmptyUpdates(r)
 	}
-	panic("unknown") // TODO: test
+	return nil, &internal.Error{Status: http.StatusBadGateway, Message: "unknown feed type"}
 }
 
 type feedType int

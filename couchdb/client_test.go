@@ -461,6 +461,30 @@ func TestDBUpdates(t *testing.T) {
 	}
 }
 
+func Test_updatesForFeedType(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		ft         feedType
+		wantStatus int
+		wantErr    string
+	}
+
+	tests := testy.NewTable()
+	tests.Add("unknown feed type", test{
+		ft:         feedType(99),
+		wantStatus: http.StatusBadGateway,
+		wantErr:    `unknown feed type`,
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		_, err := updatesForFeedType(t.Context(), Body(""), tt.ft)
+		if d := internal.StatusErrorDiffRE(tt.wantErr, tt.wantStatus, err); d != "" {
+			t.Error(d)
+		}
+	})
+}
+
 func newTestUpdates(t *testing.T, body io.ReadCloser) driver.DBUpdates {
 	t.Helper()
 	u, err := newUpdates(context.Background(), body)

@@ -8,10 +8,6 @@
   or an environment-dependent behavior change. Snapshot needs regeneration
   or test logic needs updating.
 
-- [ ] **Panic instead of error in `couchdb/client.go:142`**
-  `newUpdates()` has `panic("unknown")` as the default case for unrecognized
-  feed types. Should return an error.
-
 - [ ] **Panic instead of error in `couchdb/db.go:59`**
   `d.path()` panics with `"THIS IS A BUG: d.path failed"` on URL parse errors.
   Should return an error.

@@ -22,10 +22,10 @@ import (
 )
 
 func init() {
-	kt.RegisterV2("GetRev", getRev)
+	kt.Register("GetRev", getRev)
 }
 
-func getRev(t *testing.T, c *kt.ContextCore) {
+func getRev(t *testing.T, c *kt.Context) {
 	t.Helper()
 	c.RunRW(t, func(t *testing.T) {
 		t.Helper()
@@ -88,7 +88,7 @@ func getRev(t *testing.T, c *kt.ContextCore) {
 	})
 }
 
-func testGetRev(t *testing.T, c *kt.ContextCore, db *kivik.DB, expectedDoc *testDoc) { //nolint:thelper
+func testGetRev(t *testing.T, c *kt.Context, db *kivik.DB, expectedDoc *testDoc) { //nolint:thelper
 	c.Run(t, expectedDoc.ID, func(t *testing.T) {
 		t.Parallel()
 		rev, err := db.GetRev(context.Background(), expectedDoc.ID)

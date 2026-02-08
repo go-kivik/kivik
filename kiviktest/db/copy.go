@@ -21,10 +21,10 @@ import (
 )
 
 func init() {
-	kt.RegisterV2("Copy", _copy)
+	kt.Register("Copy", _copy)
 }
 
-func _copy(t *testing.T, c *kt.ContextCore) {
+func _copy(t *testing.T, c *kt.Context) {
 	t.Helper()
 	c.RunRW(t, func(t *testing.T) {
 		t.Helper()
@@ -79,7 +79,7 @@ func _copy(t *testing.T, c *kt.ContextCore) {
 	})
 }
 
-func copyTest(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbname string, source map[string]string) { //nolint:thelper
+func copyTest(t *testing.T, c *kt.Context, client *kivik.Client, dbname string, source map[string]string) { //nolint:thelper
 	c.Run(t, source["_id"], func(t *testing.T) {
 		t.Parallel()
 		db := client.DB(dbname, c.Options(t, "db"))

@@ -23,10 +23,10 @@ import (
 )
 
 func init() {
-	kt.RegisterV2("Explain", explain)
+	kt.Register("Explain", explain)
 }
 
-func explain(t *testing.T, c *kt.ContextCore) {
+func explain(t *testing.T, c *kt.Context) {
 	t.Helper()
 	c.RunAdmin(t, func(t *testing.T) {
 		t.Helper()
@@ -42,7 +42,7 @@ func explain(t *testing.T, c *kt.ContextCore) {
 	})
 }
 
-func testExplainRW(t *testing.T, c *kt.ContextCore) {
+func testExplainRW(t *testing.T, c *kt.Context) {
 	t.Helper()
 	if c.Admin == nil {
 		return
@@ -58,7 +58,7 @@ func testExplainRW(t *testing.T, c *kt.ContextCore) {
 	})
 }
 
-func testExplain(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:thelper
+func testExplain(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
 	if !c.IsSet(t, "databases") {
 		t.Errorf("databases not set; Did you configure this test?")
 		return
@@ -72,7 +72,7 @@ func testExplain(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //noli
 	}
 }
 
-func doExplainTest(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbName string) { //nolint:thelper
+func doExplainTest(t *testing.T, c *kt.Context, client *kivik.Client, dbName string) { //nolint:thelper
 	const limit = 25
 	t.Parallel()
 	db := client.DB(dbName, c.Options(t, "db"))

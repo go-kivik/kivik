@@ -21,10 +21,10 @@ import (
 )
 
 func init() {
-	kt.RegisterV2("DeleteIndex", delindex)
+	kt.Register("DeleteIndex", delindex)
 }
 
-func delindex(t *testing.T, c *kt.ContextCore) {
+func delindex(t *testing.T, c *kt.Context) {
 	t.Helper()
 	c.RunRW(t, func(t *testing.T) {
 		t.Helper()
@@ -41,7 +41,7 @@ func delindex(t *testing.T, c *kt.ContextCore) {
 	})
 }
 
-func testDelIndex(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:thelper
+func testDelIndex(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
 	dbname := c.TestDB(t)
 	// t.Cleanup(func() { c.Admin.DestroyDB(context.Background(), dbname, c.Options(t, "db")) }) // nolint: errcheck
 	dba := c.Admin.DB(dbname, c.Options(t, "db"))

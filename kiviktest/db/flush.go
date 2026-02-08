@@ -21,10 +21,10 @@ import (
 )
 
 func init() {
-	kt.RegisterV2("Flush", flush)
+	kt.Register("Flush", flush)
 }
 
-func flush(t *testing.T, c *kt.ContextCore) {
+func flush(t *testing.T, c *kt.Context) {
 	t.Helper()
 	c.RunAdmin(t, func(t *testing.T) {
 		t.Helper()
@@ -36,7 +36,7 @@ func flush(t *testing.T, c *kt.ContextCore) {
 	})
 }
 
-func flushTest(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:thelper
+func flushTest(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
 	t.Parallel()
 	for _, dbName := range c.MustStringSlice(t, "databases") {
 		c.Run(t, dbName, func(t *testing.T) {

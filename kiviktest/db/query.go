@@ -25,7 +25,7 @@ import (
 )
 
 func init() {
-	kt.RegisterV2("Query", query)
+	kt.Register("Query", query)
 }
 
 var ddoc = map[string]any{
@@ -42,7 +42,7 @@ var ddoc = map[string]any{
 	},
 }
 
-func query(t *testing.T, c *kt.ContextCore) {
+func query(t *testing.T, c *kt.Context) {
 	t.Helper()
 	c.RunRW(t, func(t *testing.T) {
 		t.Helper()
@@ -50,7 +50,7 @@ func query(t *testing.T, c *kt.ContextCore) {
 	})
 }
 
-func testQueryRW(t *testing.T, c *kt.ContextCore) {
+func testQueryRW(t *testing.T, c *kt.Context) {
 	t.Helper()
 	if c.Admin == nil {
 		return
@@ -69,7 +69,7 @@ func testQueryRW(t *testing.T, c *kt.ContextCore) {
 	})
 }
 
-func setUpQueryTest(t *testing.T, c *kt.ContextCore) (dbName string, docIDs []string, err error) {
+func setUpQueryTest(t *testing.T, c *kt.Context) (dbName string, docIDs []string, err error) {
 	t.Helper()
 	dbName = c.TestDB(t)
 	db := c.Admin.DB(dbName, c.Options(t, "db"))
@@ -101,7 +101,7 @@ func setUpQueryTest(t *testing.T, c *kt.ContextCore) (dbName string, docIDs []st
 	return dbName, docIDs, nil
 }
 
-func doQueryTest(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbName string, expOffset int64, expected []string) { //nolint:thelper
+func doQueryTest(t *testing.T, c *kt.Context, client *kivik.Client, dbName string, expOffset int64, expected []string) { //nolint:thelper
 	c.Run(t, "WithDocs", func(t *testing.T) {
 		doQueryTestWithDocs(t, c, client, dbName, expOffset, expected)
 	})
@@ -110,7 +110,7 @@ func doQueryTest(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbName s
 	})
 }
 
-func doQueryTestWithoutDocs(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbName string, expOffset int64, expected []string) { //nolint:thelper
+func doQueryTestWithoutDocs(t *testing.T, c *kt.Context, client *kivik.Client, dbName string, expOffset int64, expected []string) { //nolint:thelper
 	t.Parallel()
 	db := client.DB(dbName, c.Options(t, "db"))
 	// Errors may be deferred here, so only return if we actually get
@@ -155,7 +155,7 @@ func doQueryTestWithoutDocs(t *testing.T, c *kt.ContextCore, client *kivik.Clien
 	}
 }
 
-func doQueryTestWithDocs(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbName string, expOffset int64, expected []string) { //nolint:thelper
+func doQueryTestWithDocs(t *testing.T, c *kt.Context, client *kivik.Client, dbName string, expOffset int64, expected []string) { //nolint:thelper
 	t.Parallel()
 	db := client.DB(dbName, c.Options(t, "db"))
 	// Errors may be deferred here, so only return if we actually get

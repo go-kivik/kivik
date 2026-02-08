@@ -21,10 +21,10 @@ import (
 )
 
 func init() {
-	kt.RegisterV2("DeleteAttachment", delAttachment)
+	kt.Register("DeleteAttachment", delAttachment)
 }
 
-func delAttachment(t *testing.T, c *kt.ContextCore) {
+func delAttachment(t *testing.T, c *kt.Context) {
 	t.Helper()
 	c.RunRW(t, func(t *testing.T) {
 		t.Helper()
@@ -48,7 +48,7 @@ func delAttachment(t *testing.T, c *kt.ContextCore) {
 	})
 }
 
-func testDeleteAttachmentNoDoc(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbname string) { //nolint:thelper
+func testDeleteAttachmentNoDoc(t *testing.T, c *kt.Context, client *kivik.Client, dbname string) { //nolint:thelper
 	db := client.DB(dbname, c.Options(t, "db"))
 	if err := db.Err(); err != nil {
 		t.Fatalf("Failed to connect to db")
@@ -60,19 +60,19 @@ func testDeleteAttachmentNoDoc(t *testing.T, c *kt.ContextCore, client *kivik.Cl
 	})
 }
 
-func testDeleteAttachments(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbname, filename string) { //nolint:thelper
+func testDeleteAttachments(t *testing.T, c *kt.Context, client *kivik.Client, dbname, filename string) { //nolint:thelper
 	c.Run(t, filename, func(t *testing.T) {
 		doDeleteAttachmentTest(t, c, client, dbname, kt.TestDBName(t), filename)
 	})
 }
 
-func testDeleteAttachmentsDDoc(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbname, filename string) { //nolint:thelper
+func testDeleteAttachmentsDDoc(t *testing.T, c *kt.Context, client *kivik.Client, dbname, filename string) { //nolint:thelper
 	c.Run(t, "DesignDoc/"+filename, func(t *testing.T) {
 		doDeleteAttachmentTest(t, c, client, dbname, "_design/"+kt.TestDBName(t), filename)
 	})
 }
 
-func doDeleteAttachmentTest(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbname, docID, filename string) { //nolint:thelper
+func doDeleteAttachmentTest(t *testing.T, c *kt.Context, client *kivik.Client, dbname, docID, filename string) { //nolint:thelper
 	db := client.DB(dbname, c.Options(t, "db"))
 	if err := db.Err(); err != nil {
 		t.Fatalf("Failed to connect to db")

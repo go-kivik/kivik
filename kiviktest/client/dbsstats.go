@@ -21,10 +21,10 @@ import (
 )
 
 func init() {
-	kt.RegisterV2("DBsStats", dbsStats)
+	kt.Register("DBsStats", dbsStats)
 }
 
-func dbsStats(t *testing.T, c *kt.ContextCore) {
+func dbsStats(t *testing.T, c *kt.Context) {
 	t.Helper()
 	c.RunAdmin(t, func(t *testing.T) {
 		t.Helper()
@@ -36,7 +36,7 @@ func dbsStats(t *testing.T, c *kt.ContextCore) {
 	})
 }
 
-func testDBsStats(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:thelper
+func testDBsStats(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
 	stats, err := client.DBsStats(context.Background(), []string{"_users", "notfound"})
 	if !c.IsExpectedSuccess(t, err) {
 		return

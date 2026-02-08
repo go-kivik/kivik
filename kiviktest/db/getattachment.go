@@ -21,10 +21,10 @@ import (
 )
 
 func init() {
-	kt.RegisterV2("GetAttachment", getAttachment)
+	kt.Register("GetAttachment", getAttachment)
 }
 
-func getAttachment(t *testing.T, c *kt.ContextCore) {
+func getAttachment(t *testing.T, c *kt.Context) {
 	t.Helper()
 	c.RunRW(t, func(t *testing.T) {
 		t.Helper()
@@ -77,7 +77,7 @@ func getAttachment(t *testing.T, c *kt.ContextCore) {
 	})
 }
 
-func testGetAttachments(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbname, docID, filename string) { //nolint:thelper
+func testGetAttachments(t *testing.T, c *kt.Context, client *kivik.Client, dbname, docID, filename string) { //nolint:thelper
 	c.Run(t, docID+"/"+filename, func(t *testing.T) {
 		t.Parallel()
 		db := client.DB(dbname, c.Options(t, "db"))

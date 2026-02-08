@@ -23,7 +23,7 @@ import (
 )
 
 func init() {
-	kt.RegisterV2("Get", get)
+	kt.Register("Get", get)
 }
 
 type testDoc struct {
@@ -33,7 +33,7 @@ type testDoc struct {
 	Age  int    `json:"age"`
 }
 
-func get(t *testing.T, c *kt.ContextCore) {
+func get(t *testing.T, c *kt.Context) {
 	t.Helper()
 	c.RunRW(t, func(t *testing.T) {
 		t.Helper()
@@ -102,7 +102,7 @@ func get(t *testing.T, c *kt.ContextCore) {
 	})
 }
 
-func testGet(t *testing.T, c *kt.ContextCore, db *kivik.DB, expectedDoc *testDoc) { //nolint:thelper
+func testGet(t *testing.T, c *kt.Context, db *kivik.DB, expectedDoc *testDoc) { //nolint:thelper
 	c.Run(t, expectedDoc.ID, func(t *testing.T) {
 		t.Parallel()
 		doc := &testDoc{}

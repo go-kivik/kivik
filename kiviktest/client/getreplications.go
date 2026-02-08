@@ -24,7 +24,7 @@ import (
 )
 
 func init() {
-	kt.RegisterV2("GetReplications", getReplications)
+	kt.Register("GetReplications", getReplications)
 }
 
 // masterMU protects the map
@@ -33,7 +33,7 @@ var masterMU sync.Mutex
 // We can only run one set of replication tests at a time
 var replicationMUs = make(map[*kivik.Client]*sync.Mutex)
 
-func lockReplication(c *kt.ContextCore) func() {
+func lockReplication(c *kt.Context) func() {
 	masterMU.Lock()
 	if _, ok := replicationMUs[c.Admin]; !ok {
 		replicationMUs[c.Admin] = &sync.Mutex{}
@@ -44,7 +44,7 @@ func lockReplication(c *kt.ContextCore) func() {
 	return mu.Unlock
 }
 
-func getReplications(t *testing.T, c *kt.ContextCore) {
+func getReplications(t *testing.T, c *kt.Context) {
 	t.Helper()
 	defer lockReplication(c)()
 	c.RunAdmin(t, func(t *testing.T) {
@@ -70,7 +70,7 @@ func getReplications(t *testing.T, c *kt.ContextCore) {
 	})
 }
 
-func testGetReplications(t *testing.T, c *kt.ContextCore, client *kivik.Client, expected any) { //nolint:thelper
+func testGetReplications(t *testing.T, c *kt.Context, client *kivik.Client, expected any) { //nolint:thelper
 	reps, err := client.GetReplications(context.Background())
 	if !c.IsExpectedSuccess(t, err) {
 		return

@@ -33,7 +33,7 @@ func (mo multiOptions) Apply(target any) {
 	}
 }
 
-func replicationOptions(t *testing.T, c *kt.ContextCore, target, source, repID string, in kivik.Option) kivik.Option {
+func replicationOptions(t *testing.T, c *kt.Context, target, source, repID string, in kivik.Option) kivik.Option {
 	if c.String(t, "mode") != "pouchdb" {
 		return multiOptions{kivik.Param("_id", repID), in}
 	}

@@ -21,10 +21,10 @@ import (
 )
 
 func init() {
-	kt.RegisterV2("CreateIndex", createIndex)
+	kt.Register("CreateIndex", createIndex)
 }
 
-func createIndex(t *testing.T, c *kt.ContextCore) {
+func createIndex(t *testing.T, c *kt.Context) {
 	t.Helper()
 	c.RunRW(t, func(t *testing.T) {
 		t.Helper()
@@ -41,7 +41,7 @@ func createIndex(t *testing.T, c *kt.ContextCore) {
 	})
 }
 
-func testCreateIndex(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:thelper
+func testCreateIndex(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
 	dbname := c.TestDB(t)
 	db := client.DB(dbname, c.Options(t, "db"))
 	if err := db.Err(); err != nil {
@@ -67,7 +67,7 @@ func testCreateIndex(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //
 	})
 }
 
-func doCreateIndex(t *testing.T, c *kt.ContextCore, db *kivik.DB, index any) { //nolint:thelper
+func doCreateIndex(t *testing.T, c *kt.Context, db *kivik.DB, index any) { //nolint:thelper
 	t.Parallel()
 	err := kt.Retry(func() error {
 		return db.CreateIndex(context.Background(), "", "", index)

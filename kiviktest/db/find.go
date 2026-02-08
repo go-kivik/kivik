@@ -25,10 +25,10 @@ import (
 )
 
 func init() {
-	kt.RegisterV2("Find", find)
+	kt.Register("Find", find)
 }
 
-func find(t *testing.T, c *kt.ContextCore) {
+func find(t *testing.T, c *kt.Context) {
 	t.Helper()
 	c.RunAdmin(t, func(t *testing.T) {
 		t.Helper()
@@ -44,7 +44,7 @@ func find(t *testing.T, c *kt.ContextCore) {
 	})
 }
 
-func testFindRW(t *testing.T, c *kt.ContextCore) {
+func testFindRW(t *testing.T, c *kt.Context) {
 	t.Helper()
 	if c.Admin == nil {
 		return
@@ -63,7 +63,7 @@ func testFindRW(t *testing.T, c *kt.ContextCore) {
 	})
 }
 
-func setUpFindTest(t *testing.T, c *kt.ContextCore) (dbName string, docIDs []string, err error) {
+func setUpFindTest(t *testing.T, c *kt.Context) (dbName string, docIDs []string, err error) {
 	t.Helper()
 	dbName = c.TestDB(t)
 	db := c.Admin.DB(dbName, c.Options(t, "db"))
@@ -88,7 +88,7 @@ func setUpFindTest(t *testing.T, c *kt.ContextCore) (dbName string, docIDs []str
 	return dbName, docIDs, nil
 }
 
-func testFind(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:thelper
+func testFind(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
 	if !c.IsSet(t, "databases") {
 		t.Errorf("databases not set; Did you configure this test?")
 		return
@@ -102,7 +102,7 @@ func testFind(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:
 	}
 }
 
-func doFindTest(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbName string, expOffset int64, expected []string) { //nolint:thelper
+func doFindTest(t *testing.T, c *kt.Context, client *kivik.Client, dbName string, expOffset int64, expected []string) { //nolint:thelper
 	t.Parallel()
 	db := client.DB(dbName, c.Options(t, "db"))
 	// Errors may be deferred here, so only return if we actually get

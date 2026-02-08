@@ -21,10 +21,10 @@ import (
 )
 
 func init() {
-	kt.RegisterV2("Delete", _delete)
+	kt.Register("Delete", _delete)
 }
 
-func _delete(t *testing.T, c *kt.ContextCore) {
+func _delete(t *testing.T, c *kt.Context) {
 	t.Helper()
 	c.RunRW(t, func(t *testing.T) {
 		t.Helper()
@@ -45,7 +45,7 @@ type deleteDoc struct {
 	Deleted bool   `json:"_deleted"`
 }
 
-func testDelete(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:thelper
+func testDelete(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
 	t.Parallel()
 	dbName := c.TestDB(t)
 	admdb := c.Admin.DB(dbName, c.Options(t, "db"))

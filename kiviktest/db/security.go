@@ -23,8 +23,8 @@ import (
 )
 
 func init() {
-	kt.RegisterV2("Security", security)
-	kt.RegisterV2("SetSecurity", setSecurity)
+	kt.Register("Security", security)
+	kt.Register("SetSecurity", setSecurity)
 }
 
 var sec = &kivik.Security{
@@ -38,7 +38,7 @@ var sec = &kivik.Security{
 	},
 }
 
-func security(t *testing.T, c *kt.ContextCore) {
+func security(t *testing.T, c *kt.Context) {
 	t.Helper()
 	c.RunAdmin(t, func(t *testing.T) {
 		t.Helper()
@@ -88,7 +88,7 @@ func security(t *testing.T, c *kt.ContextCore) {
 	})
 }
 
-func setSecurity(t *testing.T, c *kt.ContextCore) {
+func setSecurity(t *testing.T, c *kt.Context) {
 	t.Helper()
 	c.RunRW(t, func(t *testing.T) {
 		t.Helper()
@@ -103,7 +103,7 @@ func setSecurity(t *testing.T, c *kt.ContextCore) {
 	})
 }
 
-func testSetSecurityTests(t *testing.T, c *kt.ContextCore, client *kivik.Client) {
+func testSetSecurityTests(t *testing.T, c *kt.Context, client *kivik.Client) {
 	t.Helper()
 	c.Run(t, "Exists", func(t *testing.T) {
 		t.Parallel()
@@ -117,7 +117,7 @@ func testSetSecurityTests(t *testing.T, c *kt.ContextCore, client *kivik.Client)
 	})
 }
 
-func testSetSecurity(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbname string) { //nolint:thelper
+func testSetSecurity(t *testing.T, c *kt.Context, client *kivik.Client, dbname string) { //nolint:thelper
 	db := client.DB(dbname, c.Options(t, "db"))
 	if err := db.Err(); err != nil {
 		t.Fatalf("Failed to open db: %s", err)
@@ -128,7 +128,7 @@ func testSetSecurity(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbna
 	c.CheckError(t, err)
 }
 
-func testGetSecurity(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbname string, expected *kivik.Security) { //nolint:thelper
+func testGetSecurity(t *testing.T, c *kt.Context, client *kivik.Client, dbname string, expected *kivik.Security) { //nolint:thelper
 	sec, err := func() (*kivik.Security, error) {
 		db := client.DB(dbname, c.Options(t, "db"))
 		if err := db.Err(); err != nil {

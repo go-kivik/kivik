@@ -23,12 +23,12 @@ import (
 )
 
 func init() {
-	kt.RegisterV2("DBUpdates", updates)
+	kt.Register("DBUpdates", updates)
 }
 
 const maxWait = 5 * time.Second
 
-func updates(t *testing.T, c *kt.ContextCore) {
+func updates(t *testing.T, c *kt.Context) {
 	t.Helper()
 	c.RunRW(t, func(t *testing.T) {
 		t.Helper()
@@ -43,7 +43,7 @@ func updates(t *testing.T, c *kt.ContextCore) {
 	})
 }
 
-func testUpdates(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:thelper
+func testUpdates(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
 	t.Parallel()
 	updates := client.DBUpdates(context.TODO())
 	if !c.IsExpectedSuccess(t, updates.Err()) {

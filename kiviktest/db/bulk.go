@@ -23,10 +23,10 @@ import (
 )
 
 func init() {
-	kt.RegisterV2("BulkDocs", bulkDocs)
+	kt.Register("BulkDocs", bulkDocs)
 }
 
-func bulkDocs(t *testing.T, c *kt.ContextCore) {
+func bulkDocs(t *testing.T, c *kt.Context) {
 	t.Helper()
 	c.RunRW(t, func(t *testing.T) {
 		t.Helper()
@@ -49,7 +49,7 @@ func failOnBulkErrors(t *testing.T, updates []kivik.BulkResult, op string) { //n
 	}
 }
 
-func testBulkDocs(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:thelper
+func testBulkDocs(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
 	t.Parallel()
 	dbname := c.TestDB(t)
 	adb := c.Admin.DB(dbname, c.Options(t, "db"))

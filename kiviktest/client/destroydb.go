@@ -21,10 +21,10 @@ import (
 )
 
 func init() {
-	kt.RegisterV2("DestroyDB", destroyDB)
+	kt.Register("DestroyDB", destroyDB)
 }
 
-func destroyDB(t *testing.T, c *kt.ContextCore) {
+func destroyDB(t *testing.T, c *kt.Context) {
 	t.Helper()
 	c.RunRW(t, func(t *testing.T) {
 		t.Helper()
@@ -41,7 +41,7 @@ func destroyDB(t *testing.T, c *kt.ContextCore) {
 	})
 }
 
-func testDestroy(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:thelper
+func testDestroy(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
 	c.Run(t, "ExistingDB", func(t *testing.T) {
 		t.Parallel()
 		dbName := c.TestDB(t)

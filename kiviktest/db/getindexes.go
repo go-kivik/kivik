@@ -23,10 +23,10 @@ import (
 )
 
 func init() {
-	kt.RegisterV2("GetIndexes", getIndexes)
+	kt.Register("GetIndexes", getIndexes)
 }
 
-func getIndexes(t *testing.T, c *kt.ContextCore) {
+func getIndexes(t *testing.T, c *kt.Context) {
 	t.Helper()
 	c.RunAdmin(t, func(t *testing.T) {
 		t.Helper()
@@ -53,7 +53,7 @@ func getIndexes(t *testing.T, c *kt.ContextCore) {
 	})
 }
 
-func roGetIndexesTests(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:thelper
+func roGetIndexesTests(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
 	databases := c.MustStringSlice(t, "databases")
 	for _, dbname := range databases {
 		func(dbname string) {
@@ -65,7 +65,7 @@ func roGetIndexesTests(t *testing.T, c *kt.ContextCore, client *kivik.Client) { 
 	}
 }
 
-func rwGetIndexesTests(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:thelper
+func rwGetIndexesTests(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
 	dbname := c.TestDB(t)
 	dba := c.Admin.DB(dbname, c.Options(t, "db"))
 	if err := dba.Err(); err != nil {
@@ -93,7 +93,7 @@ func rwGetIndexesTests(t *testing.T, c *kt.ContextCore, client *kivik.Client) { 
 	}
 }
 
-func testGetIndexes(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbname string, expected any) { //nolint:thelper
+func testGetIndexes(t *testing.T, c *kt.Context, client *kivik.Client, dbname string, expected any) { //nolint:thelper
 	db := client.DB(dbname, c.Options(t, "db"))
 	if err := db.Err(); err != nil {
 		t.Fatalf("Failed to open db: %s", err)

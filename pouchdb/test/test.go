@@ -418,13 +418,10 @@ func PouchLocalTest(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = client.Close() })
 	clients := &kt.Context{
-		ContextCore: &kt.ContextCore{
-			RW:    true,
-			Admin: client,
-		},
-		T: t,
+		RW:    true,
+		Admin: client,
 	}
-	kiviktest.RunTestsInternal(clients, kiviktest.SuitePouchLocal)
+	kiviktest.RunTestsInternal(t, clients, kiviktest.SuitePouchLocal)
 }
 
 // PouchRemoteTest runs the PouchDB tests against a remote CouchDB database.

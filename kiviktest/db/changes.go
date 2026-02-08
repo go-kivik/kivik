@@ -25,10 +25,10 @@ import (
 )
 
 func init() {
-	kt.RegisterV2("Changes", changes)
+	kt.Register("Changes", changes)
 }
 
-func changes(t *testing.T, c *kt.ContextCore) {
+func changes(t *testing.T, c *kt.Context) {
 	t.Helper()
 	c.Run(t, "Normal", func(t *testing.T) {
 		c.RunRW(t, func(t *testing.T) {
@@ -66,7 +66,7 @@ type cDoc struct {
 	Value string `json:"value"`
 }
 
-func testContinuousChanges(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:thelper
+func testContinuousChanges(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
 	t.Parallel()
 	dbname := c.TestDB(t)
 	db := client.DB(dbname, c.Options(t, "db"))
@@ -141,7 +141,7 @@ func testContinuousChanges(t *testing.T, c *kt.ContextCore, client *kivik.Client
 	}
 }
 
-func testNormalChanges(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:thelper
+func testNormalChanges(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
 	t.Parallel()
 	dbname := c.TestDB(t)
 	db := client.DB(dbname, c.Options(t, "db"))

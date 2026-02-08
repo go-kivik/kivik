@@ -21,10 +21,10 @@ import (
 )
 
 func init() {
-	kt.RegisterV2("DBExists", dbExists)
+	kt.Register("DBExists", dbExists)
 }
 
-func dbExists(t *testing.T, c *kt.ContextCore) {
+func dbExists(t *testing.T, c *kt.Context) {
 	t.Helper()
 	c.RunAdmin(t, func(t *testing.T) {
 		t.Helper()
@@ -52,7 +52,7 @@ func dbExists(t *testing.T, c *kt.ContextCore) {
 	})
 }
 
-func checkDBExists(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbName string) { //nolint:thelper
+func checkDBExists(t *testing.T, c *kt.Context, client *kivik.Client, dbName string) { //nolint:thelper
 	c.Run(t, dbName, func(t *testing.T) {
 		t.Parallel()
 		exists, err := client.DBExists(context.Background(), dbName)

@@ -21,10 +21,10 @@ import (
 )
 
 func init() {
-	kt.RegisterV2("ViewCleanup", viewCleanup)
+	kt.Register("ViewCleanup", viewCleanup)
 }
 
-func viewCleanup(t *testing.T, c *kt.ContextCore) {
+func viewCleanup(t *testing.T, c *kt.Context) {
 	t.Helper()
 	c.RunRW(t, func(t *testing.T) {
 		t.Helper()
@@ -41,7 +41,7 @@ func viewCleanup(t *testing.T, c *kt.ContextCore) {
 	})
 }
 
-func testViewCleanup(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:thelper
+func testViewCleanup(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
 	dbname := c.TestDB(t)
 	db := client.DB(dbname, c.Options(t, "db"))
 	if err := db.Err(); err != nil {

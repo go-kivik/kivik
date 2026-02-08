@@ -22,10 +22,10 @@ import (
 )
 
 func init() {
-	kt.RegisterV2("Stats", stats)
+	kt.Register("Stats", stats)
 }
 
-func stats(t *testing.T, c *kt.ContextCore) {
+func stats(t *testing.T, c *kt.Context) {
 	t.Helper()
 	c.RunAdmin(t, func(t *testing.T) {
 		t.Helper()
@@ -53,7 +53,7 @@ func stats(t *testing.T, c *kt.ContextCore) {
 	})
 }
 
-func rwTests(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:thelper
+func rwTests(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
 	dbname := c.TestDB(t)
 	db := c.Admin.DB(dbname, c.Options(t, "db"))
 	if err := db.Err(); err != nil {
@@ -76,7 +76,7 @@ func rwTests(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:t
 	testDBInfo(t, c, client, dbname, docCount)
 }
 
-func roTests(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:thelper
+func roTests(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
 	for _, dbname := range c.MustStringSlice(t, "databases") {
 		func(dbname string) {
 			c.Run(t, dbname, func(t *testing.T) {
@@ -87,7 +87,7 @@ func roTests(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:t
 	}
 }
 
-func testDBInfo(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbname string, docCount int64) { //nolint:thelper
+func testDBInfo(t *testing.T, c *kt.Context, client *kivik.Client, dbname string, docCount int64) { //nolint:thelper
 	stats, err := client.DB(dbname, c.Options(t, "db")).Stats(context.Background())
 	if !c.IsExpectedSuccess(t, err) {
 		return

@@ -37,7 +37,7 @@ func TestLockReplicationRace(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			cc := &kt.ContextCore{Admin: c}
+			cc := &kt.Context{Admin: c}
 			unlock := lockReplication(cc)
 			unlock()
 		}()

@@ -21,10 +21,10 @@ import (
 )
 
 func init() {
-	kt.RegisterV2("Compact", compact)
+	kt.Register("Compact", compact)
 }
 
-func compact(t *testing.T, c *kt.ContextCore) {
+func compact(t *testing.T, c *kt.Context) {
 	t.Helper()
 	c.RunRW(t, func(t *testing.T) {
 		t.Helper()
@@ -41,7 +41,7 @@ func compact(t *testing.T, c *kt.ContextCore) {
 	})
 }
 
-func testCompact(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:thelper
+func testCompact(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
 	dbname := c.TestDB(t)
 	db := client.DB(dbname, c.Options(t, "db"))
 	if err := db.Err(); err != nil {

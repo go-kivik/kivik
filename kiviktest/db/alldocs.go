@@ -26,10 +26,10 @@ import (
 )
 
 func init() {
-	kt.RegisterV2("AllDocs", allDocs)
+	kt.Register("AllDocs", allDocs)
 }
 
-func allDocs(t *testing.T, c *kt.ContextCore) {
+func allDocs(t *testing.T, c *kt.Context) {
 	t.Helper()
 	c.RunAdmin(t, func(t *testing.T) {
 		t.Helper()
@@ -45,7 +45,7 @@ func allDocs(t *testing.T, c *kt.ContextCore) {
 	})
 }
 
-func testAllDocsRW(t *testing.T, c *kt.ContextCore) {
+func testAllDocsRW(t *testing.T, c *kt.Context) {
 	t.Helper()
 	if c.Admin == nil {
 		return
@@ -64,7 +64,7 @@ func testAllDocsRW(t *testing.T, c *kt.ContextCore) {
 	})
 }
 
-func setUpAllDocsTest(t *testing.T, c *kt.ContextCore) (dbName string, docIDs []string, err error) {
+func setUpAllDocsTest(t *testing.T, c *kt.Context) (dbName string, docIDs []string, err error) {
 	t.Helper()
 	dbName = c.TestDB(t)
 	db := c.Admin.DB(dbName, c.Options(t, "db"))
@@ -89,7 +89,7 @@ func setUpAllDocsTest(t *testing.T, c *kt.ContextCore) (dbName string, docIDs []
 	return dbName, docIDs, nil
 }
 
-func testAllDocs(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:thelper
+func testAllDocs(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
 	if !c.IsSet(t, "databases") {
 		t.Errorf("databases not set; Did you configure this test?")
 		return
@@ -104,7 +104,7 @@ func testAllDocs(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //noli
 	}
 }
 
-func doTest(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbName string, expOffset int64, expected []string, exact bool) { //nolint:thelper
+func doTest(t *testing.T, c *kt.Context, client *kivik.Client, dbName string, expOffset int64, expected []string, exact bool) { //nolint:thelper
 	c.Run(t, "WithDocs", func(t *testing.T) {
 		t.Helper()
 		doTestWithDocs(t, c, client, dbName, expOffset, expected, exact)
@@ -115,7 +115,7 @@ func doTest(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbName string
 	})
 }
 
-func doTestWithoutDocs(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbName string, expOffset int64, expected []string, exact bool) { //nolint:thelper
+func doTestWithoutDocs(t *testing.T, c *kt.Context, client *kivik.Client, dbName string, expOffset int64, expected []string, exact bool) { //nolint:thelper
 	t.Parallel()
 	db := client.DB(dbName, c.Options(t, "db"))
 	// Errors may be deferred here, so only return if we actually get
@@ -148,7 +148,7 @@ func doTestWithoutDocs(t *testing.T, c *kt.ContextCore, client *kivik.Client, db
 	}
 }
 
-func doTestWithDocs(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbName string, expOffset int64, expected []string, exact bool) { //nolint:thelper
+func doTestWithDocs(t *testing.T, c *kt.Context, client *kivik.Client, dbName string, expOffset int64, expected []string, exact bool) { //nolint:thelper
 	t.Parallel()
 	db := client.DB(dbName, c.Options(t, "db"))
 	// Errors may be deferred here, so only return if we actually get

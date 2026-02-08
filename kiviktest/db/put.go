@@ -21,10 +21,10 @@ import (
 )
 
 func init() {
-	kt.RegisterV2("Put", put)
+	kt.Register("Put", put)
 }
 
-func put(t *testing.T, c *kt.ContextCore) {
+func put(t *testing.T, c *kt.Context) {
 	t.Helper()
 	c.RunRW(t, func(t *testing.T) {
 		t.Helper()
@@ -39,7 +39,7 @@ func put(t *testing.T, c *kt.ContextCore) {
 	})
 }
 
-func testPut(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:thelper
+func testPut(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
 	t.Parallel()
 	dbName := c.TestDB(t)
 	db := client.DB(dbName, c.Options(t, "db"))

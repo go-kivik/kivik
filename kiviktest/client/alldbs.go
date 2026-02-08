@@ -25,10 +25,10 @@ import (
 )
 
 func init() {
-	kt.RegisterV2("AllDBs", allDBs)
+	kt.Register("AllDBs", allDBs)
 }
 
-func allDBs(t *testing.T, c *kt.ContextCore) {
+func allDBs(t *testing.T, c *kt.Context) {
 	t.Helper()
 	c.RunAdmin(t, func(t *testing.T) {
 		t.Helper()
@@ -46,7 +46,7 @@ func allDBs(t *testing.T, c *kt.ContextCore) {
 	}
 }
 
-func testAllDBsRW(t *testing.T, c *kt.ContextCore) { //nolint:thelper
+func testAllDBsRW(t *testing.T, c *kt.Context) { //nolint:thelper
 	dbName := c.TestDB(t)
 	expected := append(c.StringSlice(t, "expected"), dbName)
 	c.RunAdmin(t, func(t *testing.T) {
@@ -59,7 +59,7 @@ func testAllDBsRW(t *testing.T, c *kt.ContextCore) { //nolint:thelper
 	})
 }
 
-func testAllDBs(t *testing.T, c *kt.ContextCore, client *kivik.Client, expected []string) { //nolint:thelper
+func testAllDBs(t *testing.T, c *kt.Context, client *kivik.Client, expected []string) { //nolint:thelper
 	t.Parallel()
 	allDBs, err := client.AllDBs(context.Background())
 	if !c.IsExpectedSuccess(t, err) {

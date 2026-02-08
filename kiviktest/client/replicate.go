@@ -26,10 +26,10 @@ import (
 )
 
 func init() {
-	kt.RegisterV2("Replicate", replicate)
+	kt.Register("Replicate", replicate)
 }
 
-func replicate(t *testing.T, c *kt.ContextCore) {
+func replicate(t *testing.T, c *kt.Context) {
 	t.Helper()
 	defer lockReplication(c)()
 	c.RunRW(t, func(t *testing.T) {
@@ -45,7 +45,7 @@ func replicate(t *testing.T, c *kt.ContextCore) {
 	})
 }
 
-func callReplicate(t *testing.T, c *kt.ContextCore, client *kivik.Client, target, source, repID string, options kivik.Option) (*kivik.Replication, error) { //nolint:thelper
+func callReplicate(t *testing.T, c *kt.Context, client *kivik.Client, target, source, repID string, options kivik.Option) (*kivik.Replication, error) { //nolint:thelper
 	options = replicationOptions(t, c, target, source, repID, options)
 	var rep *kivik.Replication
 	err := kt.Retry(func() error {
@@ -56,7 +56,7 @@ func callReplicate(t *testing.T, c *kt.ContextCore, client *kivik.Client, target
 	return rep, err
 }
 
-func testReplication(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:thelper
+func testReplication(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
 	prefix := c.String(t, "prefix")
 	switch prefix {
 	case "":
@@ -147,7 +147,7 @@ func testReplication(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //
 	})
 }
 
-func doReplicationTest(t *testing.T, c *kt.ContextCore, client *kivik.Client, dbtarget, dbsource string) (success bool) { //nolint:thelper
+func doReplicationTest(t *testing.T, c *kt.Context, client *kivik.Client, dbtarget, dbsource string) (success bool) { //nolint:thelper
 	success = true
 	replID := kt.TestDBName(t)
 	rep, err := callReplicate(t, c, client, dbtarget, dbsource, replID, nil)

@@ -21,6 +21,6 @@ import (
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
 )
 
-func replicationOptions(_ *testing.T, _ *kt.ContextCore, _, _, _ string, in kivik.Option) kivik.Option {
+func replicationOptions(_ *testing.T, _ *kt.Context, _, _, _ string, in kivik.Option) kivik.Option {
 	return in
 }

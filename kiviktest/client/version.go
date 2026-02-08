@@ -22,10 +22,10 @@ import (
 )
 
 func init() {
-	kt.RegisterV2("Version", version)
+	kt.Register("Version", version)
 }
 
-func version(t *testing.T, c *kt.ContextCore) {
+func version(t *testing.T, c *kt.Context) {
 	t.Helper()
 	c.RunAdmin(t, func(t *testing.T) {
 		t.Helper()
@@ -37,7 +37,7 @@ func version(t *testing.T, c *kt.ContextCore) {
 	})
 }
 
-func testServerInfo(t *testing.T, c *kt.ContextCore, client *kivik.Client) { //nolint:thelper
+func testServerInfo(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
 	t.Parallel()
 	info, err := client.Version(context.Background())
 	if !c.IsExpectedSuccess(t, err) {

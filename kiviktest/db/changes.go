@@ -75,6 +75,18 @@ func testContinuousChanges(t *testing.T, c *kt.Context, client *kivik.Client) { 
 	}
 	changes := db.Changes(context.Background(), c.Options(t, "options"))
 
+	// Write a canary document and wait for it to appear, confirming the
+	// feed is fully established before proceeding with test operations.
+	if _, err := c.Admin.DB(dbname).Put(context.Background(), "canary", map[string]string{"type": "canary"}); err != nil {
+		t.Fatalf("Failed to create canary doc: %s", err)
+	}
+	if !changes.Next() {
+		if !c.IsExpectedSuccess(t, changes.Err()) {
+			return
+		}
+		t.Fatalf("Changes feed closed before canary arrived: %v", changes.Err())
+	}
+
 	const maxChanges = 3
 	expected := make([]string, 0, maxChanges)
 	doc := cDoc{

@@ -56,7 +56,8 @@ func (c *getDB) RunE(cmd *cobra.Command, _ []string) error {
 			"exists": ok,
 		})
 		if err != nil {
-			panic(err)
+			// unreachable: inputs are always serializable
+			return err
 		}
 		return c.fmt.Output(bytes.NewReader(doc))
 	})

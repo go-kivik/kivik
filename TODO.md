@@ -46,7 +46,6 @@ code should be converted to error returns:
 - [ ] `couchdb/chttp/trace.go:64` — `"nil trace"`
 - [ ] `pouchdb/replicationEvents.go:46,58` — panics on time parse errors
 - [ ] `pouchdb/replicationEvents.go:110` — panics on unexpected replication event
-- [ ] `cmd/kivik/cmd/get_db.go:59` — `panic(err)` on JSON marshal failure
 
 ## Feature Gaps / Incomplete Implementations
 

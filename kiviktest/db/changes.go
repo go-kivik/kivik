@@ -69,10 +69,7 @@ type cDoc struct {
 func testContinuousChanges(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
 	t.Parallel()
 	dbname := c.TestDB(t)
-	db := client.DB(dbname, c.Options(t, "db"))
-	if err := db.Err(); err != nil {
-		t.Fatalf("failed to connect to db: %s", err)
-	}
+	db := c.DB(t, client, dbname)
 	changes := db.Changes(context.Background(), c.Options(t, "options"))
 
 	// Write a canary document and wait for it to appear, confirming the
@@ -156,10 +153,7 @@ func testContinuousChanges(t *testing.T, c *kt.Context, client *kivik.Client) { 
 func testNormalChanges(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
 	t.Parallel()
 	dbname := c.TestDB(t)
-	db := client.DB(dbname, c.Options(t, "db"))
-	if err := db.Err(); err != nil {
-		t.Fatalf("failed to connect to db: %s", err)
-	}
+	db := c.DB(t, client, dbname)
 	adb := c.Admin.DB(dbname)
 	const maxChanges = 3
 	expected := make([]string, 0, maxChanges)

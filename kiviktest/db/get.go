@@ -39,10 +39,7 @@ func get(t *testing.T, c *kt.Context) {
 		t.Helper()
 		const age = 32
 		dbName := c.TestDB(t)
-		db := c.Admin.DB(dbName, c.Options(t, "db"))
-		if err := db.Err(); err != nil {
-			t.Fatalf("Failed to connect to test db: %s", err)
-		}
+		db := c.AdminDB(t, dbName)
 
 		doc := &testDoc{
 			ID:   "bob",

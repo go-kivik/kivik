@@ -49,10 +49,7 @@ func delAttachment(t *testing.T, c *kt.Context) {
 }
 
 func testDeleteAttachmentNoDoc(t *testing.T, c *kt.Context, client *kivik.Client, dbname string) { //nolint:thelper
-	db := client.DB(dbname, c.Options(t, "db"))
-	if err := db.Err(); err != nil {
-		t.Fatalf("Failed to connect to db")
-	}
+	db := c.DB(t, client, dbname)
 	c.Run(t, "NoDoc", func(t *testing.T) {
 		t.Parallel()
 		_, err := db.DeleteAttachment(context.Background(), "nonexistantdoc", "2-4259cd84694a6345d6c534ed65f1b30b", "foo.txt")
@@ -73,15 +70,9 @@ func testDeleteAttachmentsDDoc(t *testing.T, c *kt.Context, client *kivik.Client
 }
 
 func doDeleteAttachmentTest(t *testing.T, c *kt.Context, client *kivik.Client, dbname, docID, filename string) { //nolint:thelper
-	db := client.DB(dbname, c.Options(t, "db"))
-	if err := db.Err(); err != nil {
-		t.Fatalf("Failed to connect to db")
-	}
+	db := c.DB(t, client, dbname)
 	t.Parallel()
-	adb := c.Admin.DB(dbname, c.Options(t, "db"))
-	if err := adb.Err(); err != nil {
-		t.Fatalf("Failed to open db: %s", err)
-	}
+	adb := c.AdminDB(t, dbname)
 	doc := map[string]any{
 		"_id": docID,
 		"_attachments": map[string]any{

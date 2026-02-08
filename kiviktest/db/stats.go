@@ -55,10 +55,7 @@ func stats(t *testing.T, c *kt.Context) {
 
 func rwTests(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
 	dbname := c.TestDB(t)
-	db := c.Admin.DB(dbname, c.Options(t, "db"))
-	if err := db.Err(); err != nil {
-		t.Fatalf("Failed to connect to db: %s", err)
-	}
+	db := c.AdminDB(t, dbname)
 	for i := 0; i < 10; i++ {
 		id := strconv.Itoa(i)
 		rev, err := db.Put(context.Background(), id, struct{}{})

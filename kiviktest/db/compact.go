@@ -43,9 +43,6 @@ func compact(t *testing.T, c *kt.Context) {
 
 func testCompact(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
 	dbname := c.TestDB(t)
-	db := client.DB(dbname, c.Options(t, "db"))
-	if err := db.Err(); err != nil {
-		t.Fatalf("Failed to connect to db: %s", err)
-	}
+	db := c.DB(t, client, dbname)
 	c.CheckError(t, db.Compact(context.Background()))
 }

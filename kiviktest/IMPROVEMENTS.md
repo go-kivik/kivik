@@ -4,44 +4,37 @@ Constraint: minimum Go version is 1.20 (`go.mod`).
 
 ---
 
-## Batch 2: Shared CouchDB config base
-
-Extract common config entries into a base map, with per-version overrides.
-
-Add a `SuiteConfig.Merge(other SuiteConfig)` or just use Go maps merge.
-
----
-
-## Batch 3: Evaluate replacing kt.Context
-
-`kt.Context` wraps `*testing.T` to provide:
-1. Admin/NoAuth client pair management
-2. Config-driven error expectations (`CheckError`/`IsExpectedSuccess`)
-3. Test DB lifecycle helpers (`TestDB`, `DestroyDB`)
-4. Thin delegation (`Errorf`, `Fatalf`, `Parallel`, etc.)
-
-Item 4 adds no value. Items 1 and 3 could be a plain struct without wrapping `*testing.T`. Item 2 is the unique value proposition.
-
-A possible replacement architecture:
-- Tests use `*testing.T` directly
-- A `SuiteHelper` struct holds clients + config (not wrapping T)
-- Error expectation checking becomes `suite.ExpectSuccess(t, err)` instead of `ctx.IsExpectedSuccess(err)`
-- `TestDB(t)` becomes a method on SuiteHelper
-
-This would be a file-by-file migration, not a big-bang rewrite.
-
----
-
-## Batch 4: Add `ctx.DB()` helper (boilerplate reduction)
-
-Blocked by Batch 3 — adding more API surface to `kt.Context` is
-counterproductive if we decide to replace it.
+## Batch 4: Add `c.DB()` helper (boilerplate reduction)
 
 Add helper methods to `kt.Context`:
 
 ```go
-func (c *Context) DB(client *kivik.Client, dbname string) *kivik.DB
-func (c *Context) AdminDB(dbname string) *kivik.DB
+func (c *Context) DB(t *testing.T, client *kivik.Client, dbname string) *kivik.DB
+func (c *Context) AdminDB(t *testing.T, dbname string) *kivik.DB
 ```
 
 Then update call sites across `client/` and `db/` test files.
+
+---
+
+## Batch 5: SuiteConfig redesign
+
+`SuiteConfig map[string]any` uses stringly-typed keys with hierarchical
+dot-separated lookup. Research into prior art suggests alternatives:
+
+- **Go CDK drivertest**: typed `Harness` interface per driver, no config map
+- **K8s Gateway API conformance**: feature flags as typed constants with
+  `SupportedFeatures` sets
+- **SQLAlchemy dialect compliance**: `Requirements` class with typed
+  skip-predicates per capability
+- **W3C WPT / Level ecosystem**: metadata files declaring expected
+  pass/fail per test per backend
+
+Possible directions:
+1. Typed capabilities struct replacing `map[string]any`
+2. Harness interface where drivers declare supported operations
+3. Hybrid: keep config map for error expectations, add typed fields for
+   feature flags and skip conditions
+
+This is orthogonal to the T-extraction (Batch 3, now complete) and can
+be planned separately.

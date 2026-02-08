@@ -3,7 +3,7 @@ module github.com/go-kivik/kivik/v4/x/pg
 go 1.24
 
 require (
-	github.com/go-kivik/kivik/v4 v4.5.1-0.20250912211825-a7d6df751a7f
+	github.com/go-kivik/kivik/v4 v4.5.2-0.20260208025626-d18a953c5a8f
 	github.com/google/go-cmp v0.7.0
 	github.com/jackc/pgerrcode v0.0.0-20240316143900-6e2875d9b438
 	github.com/jackc/pgx/v5 v5.7.5
@@ -80,5 +80,3 @@ require (
 	google.golang.org/protobuf v1.36.7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/go-kivik/kivik/v4 => ../../

@@ -646,6 +646,27 @@ func TestSRinnerUpdate(t *testing.T) {
 	}
 }
 
+func TestSchedulerSupportedClosesBody(t *testing.T) {
+	t.Parallel()
+
+	body := &closeTracker{ReadCloser: Body("")}
+	c := newCustomClient(func(req *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Request:    req,
+			Body:       body,
+		}, nil
+	})
+
+	_, err := c.schedulerSupported(t.Context())
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	if !body.closed {
+		t.Error("response body was not closed")
+	}
+}
+
 func TestFetchSchedulerReplication(t *testing.T) {
 	tests := []struct {
 		name     string

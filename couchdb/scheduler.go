@@ -100,6 +100,7 @@ func (c *client) schedulerSupported(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	defer chttp.CloseBody(resp.Body)
 	var supported bool
 	switch resp.StatusCode {
 	case http.StatusBadRequest:

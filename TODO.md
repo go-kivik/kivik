@@ -2,14 +2,6 @@
 
 ## Confirmed Bugs
 
-- [ ] **Response body leak in `couchdb/scheduler.go:99-119`**
-  `schedulerSupported()` calls `c.DoReq()` but never closes `resp.Body`. Every
-  call to check scheduler support leaks the response body.
-
-- [ ] **Response body leak in `couchdb/client.go:89-90`**
-  In `DBUpdates()`, if `chttp.ResponseError(resp)` returns an error, the
-  function returns without closing `resp.Body`.
-
 - [ ] **Panic instead of error in `couchdb/client.go:142`**
   `newUpdates()` has `panic("unknown")` as the default case for unrecognized
   feed types. Should return an error.

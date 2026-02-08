@@ -176,8 +176,8 @@ func (r *replication) updateActiveTasks(ctx context.Context) (*activeTask, error
 		if task.Type != "replication" {
 			continue
 		}
-		repIDparts := strings.SplitN(task.ReplicationID, "+", 2)
-		if repIDparts[0] != r.replicationID {
+		repID, _, _ := strings.Cut(task.ReplicationID, "+")
+		if repID != r.replicationID {
 			continue
 		}
 		return task, nil

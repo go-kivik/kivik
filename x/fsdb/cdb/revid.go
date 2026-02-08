@@ -35,17 +35,13 @@ func (r *RevID) Changed() bool {
 // UnmarshalText satisfies the json.Unmarshaler interface.
 func (r *RevID) UnmarshalText(p []byte) error {
 	r.original = string(p)
-	if bytes.Contains(p, []byte("-")) {
-		const maxParts = 2
-		parts := bytes.SplitN(p, []byte("-"), maxParts)
-		seq, err := strconv.ParseInt(string(parts[0]), 10, 64)
+	if seqBytes, sumBytes, ok := bytes.Cut(p, []byte("-")); ok {
+		seq, err := strconv.ParseInt(string(seqBytes), 10, 64)
 		if err != nil {
 			return err
 		}
 		r.Seq = seq
-		if len(parts) > 1 {
-			r.Sum = string(parts[1])
-		}
+		r.Sum = string(sumBytes)
 		return nil
 	}
 	r.Sum = ""
@@ -65,15 +61,14 @@ func (r *RevID) UnmarshalJSON(p []byte) error {
 			return e
 		}
 		r.original = str
-		const maxParts = 2
-		parts := strings.SplitN(str, "-", maxParts)
-		seq, err := strconv.ParseInt(parts[0], 10, 64)
+		seqStr, sum, hasSep := strings.Cut(str, "-")
+		seq, err := strconv.ParseInt(seqStr, 10, 64)
 		if err != nil {
 			return err
 		}
 		r.Seq = seq
-		if len(parts) > 1 {
-			r.Sum = parts[1]
+		if hasSep {
+			r.Sum = sum
 		}
 		return nil
 	}

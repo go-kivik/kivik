@@ -101,22 +101,6 @@ Replace `HasPrefix`+`TrimPrefix` and `HasSuffix`+`TrimSuffix` pairs:
 - [ ] `cmd/kivik/config/config.go:106-108` — CutSuffix on "/_design"
 - [ ] `x/fsdb/changes.go:68-69` — CutSuffix on file extension
 
-### `strings.Cut` / `bytes.Cut` (Go 1.18)
-
-Replace `SplitN(s, sep, 2)` with `Cut`:
-
-- [ ] `cmd/kivik/cmd/put_config.go:66` — SplitN(key, "/", 2)
-- [ ] `cmd/kivik/cmd/get_config.go:73` — SplitN(key, "/", 2)
-- [ ] `cmd/kivik/cmd/delete_config.go:61` — SplitN(key, "/", 2)
-- [ ] `cmd/kivik/output/output.go:111` — SplitN(format, "=", 2)
-- [ ] `cmd/kivik/config/config.go:507` — SplitN(dsn, "//", 2)
-- [ ] `x/options/options.go:246` — SplitN(filter, "/", 2)
-- [ ] `x/memorydb/db_test.go:274` — SplitN(rev, "-", 2)
-- [ ] `couchdb/replication.go:179` — SplitN(replicationID, "+", 2)
-- [ ] `x/fsdb/cdb/revid.go:69` — SplitN(rev, "-", 2)
-- [ ] `x/fsdb/cdb/revid.go:38-48` — bytes.SplitN with Contains guard → bytes.Cut
-- [ ] `x/sqlite/options.go:227` — SplitN(filter, "/", 2) *(separate module)*
-- [ ] `x/sqlite/json.go:54` — SplitN(rev, "-", 2) *(separate module)*
 
 ### `os.IsNotExist` → `errors.Is(err, fs.ErrNotExist)` (Go 1.16)
 

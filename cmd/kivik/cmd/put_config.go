@@ -63,8 +63,8 @@ func (c *putConfig) RunE(cmd *cobra.Command, _ []string) error {
 		c.key = key
 	}
 
-	parts := strings.SplitN(c.key, "/", 2)
-	if len(parts) != 2 {
+	section, key, ok := strings.Cut(c.key, "/")
+	if !ok {
 		return errors.Code(errors.ErrUsage, "section/key must contain a slash")
 	}
 
@@ -79,7 +79,7 @@ func (c *putConfig) RunE(cmd *cobra.Command, _ []string) error {
 
 	var oldValue string
 	return c.retry(func() error {
-		oldValue, err = client.SetConfigValue(cmd.Context(), c.node, parts[0], parts[1], string(value))
+		oldValue, err = client.SetConfigValue(cmd.Context(), c.node, section, key, string(value))
 		if err != nil {
 			return err
 		}

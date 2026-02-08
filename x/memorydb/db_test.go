@@ -271,8 +271,8 @@ func TestPut(t *testing.T) {
 				}
 				if !strings.HasPrefix(test.DocID, "_local/") {
 					if rev, ok := result["_rev"].(string); ok {
-						parts := strings.SplitN(rev, "-", 2)
-						result["_rev"] = parts[0] + "-xxx"
+						seq, _, _ := strings.Cut(rev, "-")
+						result["_rev"] = seq + "-xxx"
 					}
 				}
 				if d := testy.DiffAsJSON(test.Expected, result); d != nil {

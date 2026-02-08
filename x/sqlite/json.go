@@ -50,17 +50,16 @@ func parseRev(s string) (revision, error) {
 	if s == "" {
 		return revision{}, &internal.Error{Status: http.StatusBadRequest, Message: "missing _rev"}
 	}
-	const revElements = 2
-	parts := strings.SplitN(s, "-", revElements)
-	id, err := strconv.ParseInt(parts[0], 10, 64)
+	seqStr, idStr, hasSep := strings.Cut(s, "-")
+	id, err := strconv.ParseInt(seqStr, 10, 64)
 	if err != nil {
 		return revision{}, &internal.Error{Status: http.StatusBadRequest, Message: "invalid rev format"}
 	}
-	if len(parts) == 1 {
+	if !hasSep {
 		// A rev that contains only a number is technically valid.
 		return revision{rev: int(id)}, nil
 	}
-	return revision{rev: int(id), id: parts[1]}, nil
+	return revision{rev: int(id), id: idStr}, nil
 }
 
 // docData represents the document id, rev, deleted status, etc.

@@ -44,7 +44,6 @@ func TestFS(t *testing.T) {
 	clients := &kt.Context{
 		RW:    true,
 		Admin: client,
-		T:     t,
 	}
-	kiviktest.RunTestsInternal(clients, kiviktest.SuiteKivikFS)
+	kiviktest.RunTestsInternal(t, clients, kiviktest.SuiteKivikFS)
 }

@@ -14,6 +14,7 @@ package db
 
 import (
 	"context"
+	"testing"
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
@@ -23,24 +24,28 @@ func init() {
 	kt.Register("ViewCleanup", viewCleanup)
 }
 
-func viewCleanup(ctx *kt.Context) {
-	ctx.RunRW(func(ctx *kt.Context) {
-		ctx.RunAdmin(func(ctx *kt.Context) {
-			ctx.Parallel()
-			testViewCleanup(ctx, ctx.Admin)
+func viewCleanup(t *testing.T, c *kt.Context) {
+	t.Helper()
+	c.RunRW(t, func(t *testing.T) {
+		t.Helper()
+		c.RunAdmin(t, func(t *testing.T) {
+			t.Helper()
+			t.Parallel()
+			testViewCleanup(t, c, c.Admin)
 		})
-		ctx.RunNoAuth(func(ctx *kt.Context) {
-			ctx.Parallel()
-			testViewCleanup(ctx, ctx.NoAuth)
+		c.RunNoAuth(t, func(t *testing.T) {
+			t.Helper()
+			t.Parallel()
+			testViewCleanup(t, c, c.NoAuth)
 		})
 	})
 }
 
-func testViewCleanup(ctx *kt.Context, client *kivik.Client) {
-	dbname := ctx.TestDB()
-	db := client.DB(dbname, ctx.Options("db"))
+func testViewCleanup(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
+	dbname := c.TestDB(t)
+	db := client.DB(dbname, c.Options(t, "db"))
 	if err := db.Err(); err != nil {
-		ctx.Fatalf("Failed to connect to db: %s", err)
+		t.Fatalf("Failed to connect to db: %s", err)
 	}
-	ctx.CheckError(db.ViewCleanup(context.Background()))
+	c.CheckError(t, db.ViewCleanup(context.Background()))
 }

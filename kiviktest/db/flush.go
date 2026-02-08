@@ -14,6 +14,7 @@ package db
 
 import (
 	"context"
+	"testing"
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
@@ -23,26 +24,29 @@ func init() {
 	kt.Register("Flush", flush)
 }
 
-func flush(ctx *kt.Context) {
-	ctx.RunAdmin(func(ctx *kt.Context) {
-		flushTest(ctx, ctx.Admin)
+func flush(t *testing.T, c *kt.Context) {
+	t.Helper()
+	c.RunAdmin(t, func(t *testing.T) {
+		t.Helper()
+		flushTest(t, c, c.Admin)
 	})
-	ctx.RunNoAuth(func(ctx *kt.Context) {
-		flushTest(ctx, ctx.NoAuth)
+	c.RunNoAuth(t, func(t *testing.T) {
+		t.Helper()
+		flushTest(t, c, c.NoAuth)
 	})
 }
 
-func flushTest(ctx *kt.Context, client *kivik.Client) {
-	ctx.Parallel()
-	for _, dbName := range ctx.MustStringSlice("databases") {
-		ctx.Run(dbName, func(ctx *kt.Context) {
-			db := client.DB(dbName, ctx.Options("db"))
-			if err := db.Err(); !ctx.IsExpectedSuccess(err) {
+func flushTest(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
+	t.Parallel()
+	for _, dbName := range c.MustStringSlice(t, "databases") {
+		c.Run(t, dbName, func(t *testing.T) {
+			db := client.DB(dbName, c.Options(t, "db"))
+			if err := db.Err(); !c.IsExpectedSuccess(t, err) {
 				return
 			}
-			ctx.Run("DoFlush", func(ctx *kt.Context) {
+			c.Run(t, "DoFlush", func(t *testing.T) {
 				err := db.Flush(context.Background())
-				if !ctx.IsExpectedSuccess(err) {
+				if !c.IsExpectedSuccess(t, err) {
 					return
 				}
 			})

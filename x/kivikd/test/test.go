@@ -183,5 +183,5 @@ func ServerTest(t *testing.T) {
 		t.Fatalf("Failed to initialize client: %s", err)
 	}
 	clients.RW = true
-	kiviktest.RunTestsInternal(clients, kiviktest.SuiteKivikServer)
+	kiviktest.RunTestsInternal(t, clients, kiviktest.SuiteKivikServer)
 }

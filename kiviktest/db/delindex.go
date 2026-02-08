@@ -14,6 +14,7 @@ package db
 
 import (
 	"context"
+	"testing"
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
@@ -23,43 +24,47 @@ func init() {
 	kt.Register("DeleteIndex", delindex)
 }
 
-func delindex(ctx *kt.Context) {
-	ctx.RunRW(func(ctx *kt.Context) {
-		ctx.RunAdmin(func(ctx *kt.Context) {
-			ctx.Parallel()
-			testDelIndex(ctx, ctx.Admin)
+func delindex(t *testing.T, c *kt.Context) {
+	t.Helper()
+	c.RunRW(t, func(t *testing.T) {
+		t.Helper()
+		c.RunAdmin(t, func(t *testing.T) {
+			t.Helper()
+			t.Parallel()
+			testDelIndex(t, c, c.Admin)
 		})
-		ctx.RunNoAuth(func(ctx *kt.Context) {
-			ctx.Parallel()
-			testDelIndex(ctx, ctx.NoAuth)
+		c.RunNoAuth(t, func(t *testing.T) {
+			t.Helper()
+			t.Parallel()
+			testDelIndex(t, c, c.NoAuth)
 		})
 	})
 }
 
-func testDelIndex(ctx *kt.Context, client *kivik.Client) {
-	dbname := ctx.TestDB()
-	// ctx.T.Cleanup(func() { ctx.Admin.DestroyDB(context.Background(), dbname, ctx.Options("db")) }) // nolint: errcheck
-	dba := ctx.Admin.DB(dbname, ctx.Options("db"))
+func testDelIndex(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
+	dbname := c.TestDB(t)
+	// t.Cleanup(func() { c.Admin.DestroyDB(context.Background(), dbname, c.Options(t, "db")) }) // nolint: errcheck
+	dba := c.Admin.DB(dbname, c.Options(t, "db"))
 	if err := dba.Err(); err != nil {
-		ctx.Fatalf("Failed to open db as admin: %s", err)
+		t.Fatalf("Failed to open db as admin: %s", err)
 	}
 	if err := dba.CreateIndex(context.Background(), "foo", "bar", `{"fields":["foo"]}`); err != nil {
-		ctx.Fatalf("Failed to create index: %s", err)
+		t.Fatalf("Failed to create index: %s", err)
 	}
-	db := client.DB(dbname, ctx.Options("db"))
+	db := client.DB(dbname, c.Options(t, "db"))
 	if err := db.Err(); err != nil {
-		ctx.Fatalf("Failed to open db: %s", err)
+		t.Fatalf("Failed to open db: %s", err)
 	}
-	ctx.Run("ValidIndex", func(ctx *kt.Context) {
-		ctx.Parallel()
-		ctx.CheckError(db.DeleteIndex(context.Background(), "foo", "bar"))
+	c.Run(t, "ValidIndex", func(t *testing.T) {
+		t.Parallel()
+		c.CheckError(t, db.DeleteIndex(context.Background(), "foo", "bar"))
 	})
-	ctx.Run("NotFoundDdoc", func(ctx *kt.Context) {
-		ctx.Parallel()
-		ctx.CheckError(db.DeleteIndex(context.Background(), "notFound", "bar"))
+	c.Run(t, "NotFoundDdoc", func(t *testing.T) {
+		t.Parallel()
+		c.CheckError(t, db.DeleteIndex(context.Background(), "notFound", "bar"))
 	})
-	ctx.Run("NotFoundName", func(ctx *kt.Context) {
-		ctx.Parallel()
-		ctx.CheckError(db.DeleteIndex(context.Background(), "foo", "notFound"))
+	c.Run(t, "NotFoundName", func(t *testing.T) {
+		t.Parallel()
+		c.CheckError(t, db.DeleteIndex(context.Background(), "foo", "notFound"))
 	})
 }

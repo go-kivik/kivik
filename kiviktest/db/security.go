@@ -14,6 +14,7 @@ package db
 
 import (
 	"context"
+	"testing"
 
 	"gitlab.com/flimzy/testy"
 
@@ -37,99 +38,110 @@ var sec = &kivik.Security{
 	},
 }
 
-func security(ctx *kt.Context) {
-	ctx.RunAdmin(func(ctx *kt.Context) {
-		for _, dbname := range ctx.MustStringSlice("databases") {
+func security(t *testing.T, c *kt.Context) {
+	t.Helper()
+	c.RunAdmin(t, func(t *testing.T) {
+		t.Helper()
+		for _, dbname := range c.MustStringSlice(t, "databases") {
 			func(dbname string) {
-				ctx.Run(dbname, func(ctx *kt.Context) {
-					ctx.Parallel()
-					testGetSecurity(ctx, ctx.Admin, dbname, nil)
+				c.Run(t, dbname, func(t *testing.T) {
+					t.Parallel()
+					testGetSecurity(t, c, c.Admin, dbname, nil)
 				})
 			}(dbname)
 		}
 	})
-	ctx.RunNoAuth(func(ctx *kt.Context) {
-		for _, dbname := range ctx.MustStringSlice("databases") {
+	c.RunNoAuth(t, func(t *testing.T) {
+		t.Helper()
+		for _, dbname := range c.MustStringSlice(t, "databases") {
 			func(dbname string) {
-				ctx.Run(dbname, func(ctx *kt.Context) {
-					ctx.Parallel()
-					testGetSecurity(ctx, ctx.NoAuth, dbname, nil)
+				c.Run(t, dbname, func(t *testing.T) {
+					t.Parallel()
+					testGetSecurity(t, c, c.NoAuth, dbname, nil)
 				})
 			}(dbname)
 		}
 	})
-	ctx.RunRW(func(ctx *kt.Context) {
-		dbname := ctx.TestDB()
-		db := ctx.Admin.DB(dbname, ctx.Options("db"))
+	c.RunRW(t, func(t *testing.T) {
+		t.Helper()
+		dbname := c.TestDB(t)
+		db := c.Admin.DB(dbname, c.Options(t, "db"))
 		if err := db.Err(); err != nil {
-			ctx.Fatalf("Failed to open db: %s", err)
+			t.Fatalf("Failed to open db: %s", err)
 		}
 		err := kt.Retry(func() error {
 			return db.SetSecurity(context.Background(), sec)
 		})
 		if err != nil {
-			ctx.Fatalf("Failed to set security: %s", err)
+			t.Fatalf("Failed to set security: %s", err)
 		}
-		ctx.RunAdmin(func(ctx *kt.Context) {
-			ctx.Parallel()
-			testGetSecurity(ctx, ctx.Admin, dbname, sec)
+		c.RunAdmin(t, func(t *testing.T) {
+			t.Helper()
+			t.Parallel()
+			testGetSecurity(t, c, c.Admin, dbname, sec)
 		})
-		ctx.RunNoAuth(func(ctx *kt.Context) {
-			ctx.Parallel()
-			testGetSecurity(ctx, ctx.NoAuth, dbname, sec)
-		})
-	})
-}
-
-func setSecurity(ctx *kt.Context) {
-	ctx.RunRW(func(ctx *kt.Context) {
-		ctx.RunAdmin(func(ctx *kt.Context) {
-			testSetSecurityTests(ctx, ctx.Admin)
-		})
-		ctx.RunNoAuth(func(ctx *kt.Context) {
-			testSetSecurityTests(ctx, ctx.NoAuth)
+		c.RunNoAuth(t, func(t *testing.T) {
+			t.Helper()
+			t.Parallel()
+			testGetSecurity(t, c, c.NoAuth, dbname, sec)
 		})
 	})
 }
 
-func testSetSecurityTests(ctx *kt.Context, client *kivik.Client) {
-	ctx.Run("Exists", func(ctx *kt.Context) {
-		ctx.Parallel()
-		dbname := ctx.TestDB()
-		testSetSecurity(ctx, client, dbname)
-	})
-	ctx.Run("NotExists", func(ctx *kt.Context) {
-		ctx.Parallel()
-		dbname := ctx.TestDBName()
-		testSetSecurity(ctx, client, dbname)
+func setSecurity(t *testing.T, c *kt.Context) {
+	t.Helper()
+	c.RunRW(t, func(t *testing.T) {
+		t.Helper()
+		c.RunAdmin(t, func(t *testing.T) {
+			t.Helper()
+			testSetSecurityTests(t, c, c.Admin)
+		})
+		c.RunNoAuth(t, func(t *testing.T) {
+			t.Helper()
+			testSetSecurityTests(t, c, c.NoAuth)
+		})
 	})
 }
 
-func testSetSecurity(ctx *kt.Context, client *kivik.Client, dbname string) {
-	db := client.DB(dbname, ctx.Options("db"))
+func testSetSecurityTests(t *testing.T, c *kt.Context, client *kivik.Client) {
+	t.Helper()
+	c.Run(t, "Exists", func(t *testing.T) {
+		t.Parallel()
+		dbname := c.TestDB(t)
+		testSetSecurity(t, c, client, dbname)
+	})
+	c.Run(t, "NotExists", func(t *testing.T) {
+		t.Parallel()
+		dbname := kt.TestDBName(t)
+		testSetSecurity(t, c, client, dbname)
+	})
+}
+
+func testSetSecurity(t *testing.T, c *kt.Context, client *kivik.Client, dbname string) { //nolint:thelper
+	db := client.DB(dbname, c.Options(t, "db"))
 	if err := db.Err(); err != nil {
-		ctx.Fatalf("Failed to open db: %s", err)
+		t.Fatalf("Failed to open db: %s", err)
 	}
 	err := kt.Retry(func() error {
 		return db.SetSecurity(context.Background(), sec)
 	})
-	ctx.CheckError(err)
+	c.CheckError(t, err)
 }
 
-func testGetSecurity(ctx *kt.Context, client *kivik.Client, dbname string, expected *kivik.Security) {
+func testGetSecurity(t *testing.T, c *kt.Context, client *kivik.Client, dbname string, expected *kivik.Security) { //nolint:thelper
 	sec, err := func() (*kivik.Security, error) {
-		db := client.DB(dbname, ctx.Options("db"))
+		db := client.DB(dbname, c.Options(t, "db"))
 		if err := db.Err(); err != nil {
 			return nil, err
 		}
 		return db.Security(context.Background())
 	}()
-	if !ctx.IsExpectedSuccess(err) {
+	if !c.IsExpectedSuccess(t, err) {
 		return
 	}
 	if expected != nil {
 		if d := testy.DiffAsJSON(expected, sec); d != nil {
-			ctx.Errorf("Security document differs from expected:\n%s\n", d)
+			t.Errorf("Security document differs from expected:\n%s\n", d)
 		}
 	}
 }

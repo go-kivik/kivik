@@ -36,7 +36,6 @@ func TestPG(t *testing.T) {
 	clients := &kt.Context{
 		RW:    true,
 		Admin: client,
-		T:     t,
 	}
-	kiviktest.RunTestsInternal(clients, kiviktest.SuitePG)
+	kiviktest.RunTestsInternal(t, clients, kiviktest.SuitePG)
 }

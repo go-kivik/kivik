@@ -14,6 +14,7 @@ package db
 
 import (
 	"context"
+	"testing"
 
 	"gitlab.com/flimzy/testy"
 
@@ -25,49 +26,55 @@ func init() {
 	kt.Register("GetIndexes", getIndexes)
 }
 
-func getIndexes(ctx *kt.Context) {
-	ctx.RunAdmin(func(ctx *kt.Context) {
-		ctx.Parallel()
-		roGetIndexesTests(ctx, ctx.Admin)
+func getIndexes(t *testing.T, c *kt.Context) {
+	t.Helper()
+	c.RunAdmin(t, func(t *testing.T) {
+		t.Helper()
+		t.Parallel()
+		roGetIndexesTests(t, c, c.Admin)
 	})
-	ctx.RunNoAuth(func(ctx *kt.Context) {
-		ctx.Parallel()
-		roGetIndexesTests(ctx, ctx.NoAuth)
+	c.RunNoAuth(t, func(t *testing.T) {
+		t.Helper()
+		t.Parallel()
+		roGetIndexesTests(t, c, c.NoAuth)
 	})
-	ctx.RunRW(func(ctx *kt.Context) {
-		ctx.RunAdmin(func(ctx *kt.Context) {
-			ctx.Parallel()
-			rwGetIndexesTests(ctx, ctx.Admin)
+	c.RunRW(t, func(t *testing.T) {
+		t.Helper()
+		c.RunAdmin(t, func(t *testing.T) {
+			t.Helper()
+			t.Parallel()
+			rwGetIndexesTests(t, c, c.Admin)
 		})
-		ctx.RunNoAuth(func(ctx *kt.Context) {
-			ctx.Parallel()
-			rwGetIndexesTests(ctx, ctx.NoAuth)
+		c.RunNoAuth(t, func(t *testing.T) {
+			t.Helper()
+			t.Parallel()
+			rwGetIndexesTests(t, c, c.NoAuth)
 		})
 	})
 }
 
-func roGetIndexesTests(ctx *kt.Context, client *kivik.Client) {
-	databases := ctx.MustStringSlice("databases")
+func roGetIndexesTests(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
+	databases := c.MustStringSlice(t, "databases")
 	for _, dbname := range databases {
 		func(dbname string) {
-			ctx.Run(dbname, func(ctx *kt.Context) {
-				ctx.Parallel()
-				testGetIndexes(ctx, client, dbname, ctx.Interface("indexes"))
+			c.Run(t, dbname, func(t *testing.T) {
+				t.Parallel()
+				testGetIndexes(t, c, client, dbname, c.Interface(t, "indexes"))
 			})
 		}(dbname)
 	}
 }
 
-func rwGetIndexesTests(ctx *kt.Context, client *kivik.Client) {
-	dbname := ctx.TestDB()
-	dba := ctx.Admin.DB(dbname, ctx.Options("db"))
+func rwGetIndexesTests(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
+	dbname := c.TestDB(t)
+	dba := c.Admin.DB(dbname, c.Options(t, "db"))
 	if err := dba.Err(); err != nil {
-		ctx.Fatalf("Failed to open db as admin: %s", err)
+		t.Fatalf("Failed to open db as admin: %s", err)
 	}
 	if err := dba.CreateIndex(context.Background(), "foo", "bar", `{"fields":["foo"]}`); err != nil {
-		ctx.Fatalf("Failed to create index: %s", err)
+		t.Fatalf("Failed to create index: %s", err)
 	}
-	indexes := ctx.Interface("indexes")
+	indexes := c.Interface(t, "indexes")
 	if indexes == nil {
 		indexes = []kivik.Index{
 			kt.AllDocsIndex,
@@ -82,20 +89,20 @@ func rwGetIndexesTests(ctx *kt.Context, client *kivik.Client) {
 				},
 			},
 		}
-		testGetIndexes(ctx, client, dbname, indexes)
+		testGetIndexes(t, c, client, dbname, indexes)
 	}
 }
 
-func testGetIndexes(ctx *kt.Context, client *kivik.Client, dbname string, expected any) {
-	db := client.DB(dbname, ctx.Options("db"))
+func testGetIndexes(t *testing.T, c *kt.Context, client *kivik.Client, dbname string, expected any) { //nolint:thelper
+	db := client.DB(dbname, c.Options(t, "db"))
 	if err := db.Err(); err != nil {
-		ctx.Fatalf("Failed to open db: %s", err)
+		t.Fatalf("Failed to open db: %s", err)
 	}
 	indexes, err := db.GetIndexes(context.Background())
-	if !ctx.IsExpectedSuccess(err) {
+	if !c.IsExpectedSuccess(t, err) {
 		return
 	}
 	if d := testy.DiffAsJSON(expected, indexes); d != nil {
-		ctx.Errorf("Indexes differ from expectation:\n%s\n", d)
+		t.Errorf("Indexes differ from expectation:\n%s\n", d)
 	}
 }

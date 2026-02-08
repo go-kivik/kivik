@@ -14,6 +14,7 @@ package db
 
 import (
 	"context"
+	"testing"
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
@@ -23,49 +24,53 @@ func init() {
 	kt.Register("CreateIndex", createIndex)
 }
 
-func createIndex(ctx *kt.Context) {
-	ctx.RunRW(func(ctx *kt.Context) {
-		ctx.RunAdmin(func(ctx *kt.Context) {
-			ctx.Parallel()
-			testCreateIndex(ctx, ctx.Admin)
+func createIndex(t *testing.T, c *kt.Context) {
+	t.Helper()
+	c.RunRW(t, func(t *testing.T) {
+		t.Helper()
+		c.RunAdmin(t, func(t *testing.T) {
+			t.Helper()
+			t.Parallel()
+			testCreateIndex(t, c, c.Admin)
 		})
-		ctx.RunNoAuth(func(ctx *kt.Context) {
-			ctx.Parallel()
-			testCreateIndex(ctx, ctx.NoAuth)
+		c.RunNoAuth(t, func(t *testing.T) {
+			t.Helper()
+			t.Parallel()
+			testCreateIndex(t, c, c.NoAuth)
 		})
 	})
 }
 
-func testCreateIndex(ctx *kt.Context, client *kivik.Client) {
-	dbname := ctx.TestDB()
-	db := client.DB(dbname, ctx.Options("db"))
+func testCreateIndex(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
+	dbname := c.TestDB(t)
+	db := client.DB(dbname, c.Options(t, "db"))
 	if err := db.Err(); err != nil {
-		ctx.Fatalf("Failed to open db: %s", err)
+		t.Fatalf("Failed to open db: %s", err)
 	}
-	ctx.Run("Valid", func(ctx *kt.Context) {
-		doCreateIndex(ctx, db, `{"fields":["foo"]}`)
+	c.Run(t, "Valid", func(t *testing.T) {
+		doCreateIndex(t, c, db, `{"fields":["foo"]}`)
 	})
-	ctx.Run("NilIndex", func(ctx *kt.Context) {
-		doCreateIndex(ctx, db, nil)
+	c.Run(t, "NilIndex", func(t *testing.T) {
+		doCreateIndex(t, c, db, nil)
 	})
-	ctx.Run("BlankIndex", func(ctx *kt.Context) {
-		doCreateIndex(ctx, db, "")
+	c.Run(t, "BlankIndex", func(t *testing.T) {
+		doCreateIndex(t, c, db, "")
 	})
-	ctx.Run("EmptyIndex", func(ctx *kt.Context) {
-		doCreateIndex(ctx, db, "{}")
+	c.Run(t, "EmptyIndex", func(t *testing.T) {
+		doCreateIndex(t, c, db, "{}")
 	})
-	ctx.Run("InvalidIndex", func(ctx *kt.Context) {
-		doCreateIndex(ctx, db, `{"oink":true}`)
+	c.Run(t, "InvalidIndex", func(t *testing.T) {
+		doCreateIndex(t, c, db, `{"oink":true}`)
 	})
-	ctx.Run("InvalidJSON", func(ctx *kt.Context) {
-		doCreateIndex(ctx, db, `chicken`)
+	c.Run(t, "InvalidJSON", func(t *testing.T) {
+		doCreateIndex(t, c, db, `chicken`)
 	})
 }
 
-func doCreateIndex(ctx *kt.Context, db *kivik.DB, index any) {
-	ctx.Parallel()
+func doCreateIndex(t *testing.T, c *kt.Context, db *kivik.DB, index any) { //nolint:thelper
+	t.Parallel()
 	err := kt.Retry(func() error {
 		return db.CreateIndex(context.Background(), "", "", index)
 	})
-	ctx.CheckError(err)
+	c.CheckError(t, err)
 }

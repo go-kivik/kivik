@@ -420,9 +420,8 @@ func PouchLocalTest(t *testing.T) {
 	clients := &kt.Context{
 		RW:    true,
 		Admin: client,
-		T:     t,
 	}
-	kiviktest.RunTestsInternal(clients, kiviktest.SuitePouchLocal)
+	kiviktest.RunTestsInternal(t, clients, kiviktest.SuitePouchLocal)
 }
 
 // PouchRemoteTest runs the PouchDB tests against a remote CouchDB database.

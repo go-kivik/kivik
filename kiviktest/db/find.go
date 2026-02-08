@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"testing"
 
 	"gitlab.com/flimzy/testy"
 
@@ -27,45 +28,52 @@ func init() {
 	kt.Register("Find", find)
 }
 
-func find(ctx *kt.Context) {
-	ctx.RunAdmin(func(ctx *kt.Context) {
-		testFind(ctx, ctx.Admin)
+func find(t *testing.T, c *kt.Context) {
+	t.Helper()
+	c.RunAdmin(t, func(t *testing.T) {
+		t.Helper()
+		testFind(t, c, c.Admin)
 	})
-	ctx.RunNoAuth(func(ctx *kt.Context) {
-		testFind(ctx, ctx.NoAuth)
+	c.RunNoAuth(t, func(t *testing.T) {
+		t.Helper()
+		testFind(t, c, c.NoAuth)
 	})
-	ctx.RunRW(func(ctx *kt.Context) {
-		testFindRW(ctx)
+	c.RunRW(t, func(t *testing.T) {
+		t.Helper()
+		testFindRW(t, c)
 	})
 }
 
-func testFindRW(ctx *kt.Context) {
-	if ctx.Admin == nil {
-		// Can't do anything here without admin access
+func testFindRW(t *testing.T, c *kt.Context) {
+	t.Helper()
+	if c.Admin == nil {
 		return
 	}
-	dbName, expected, err := setUpFindTest(ctx)
+	dbName, expected, err := setUpFindTest(t, c)
 	if err != nil {
-		ctx.Errorf("Failed to set up temp db: %s", err)
+		t.Errorf("Failed to set up temp db: %s", err)
 	}
-	ctx.RunAdmin(func(ctx *kt.Context) {
-		doFindTest(ctx, ctx.Admin, dbName, 0, expected)
+	c.RunAdmin(t, func(t *testing.T) {
+		t.Helper()
+		doFindTest(t, c, c.Admin, dbName, 0, expected)
 	})
-	ctx.RunNoAuth(func(ctx *kt.Context) {
-		doFindTest(ctx, ctx.NoAuth, dbName, 0, expected)
+	c.RunNoAuth(t, func(t *testing.T) {
+		t.Helper()
+		doFindTest(t, c, c.NoAuth, dbName, 0, expected)
 	})
 }
 
-func setUpFindTest(ctx *kt.Context) (dbName string, docIDs []string, err error) {
-	dbName = ctx.TestDB()
-	db := ctx.Admin.DB(dbName, ctx.Options("db"))
+func setUpFindTest(t *testing.T, c *kt.Context) (dbName string, docIDs []string, err error) {
+	t.Helper()
+	dbName = c.TestDB(t)
+	db := c.Admin.DB(dbName, c.Options(t, "db"))
 	if err := db.Err(); err != nil {
 		return dbName, nil, fmt.Errorf("failed to connect to db: %w", err)
 	}
 	const maxDocs = 10
 	docIDs = make([]string, maxDocs)
 	for i := range docIDs {
-		id := ctx.TestDBName()
+		id := kt.TestDBName(t)
 		doc := struct {
 			ID string `json:"id"`
 		}{
@@ -80,26 +88,26 @@ func setUpFindTest(ctx *kt.Context) (dbName string, docIDs []string, err error) 
 	return dbName, docIDs, nil
 }
 
-func testFind(ctx *kt.Context, client *kivik.Client) {
-	if !ctx.IsSet("databases") {
-		ctx.Errorf("databases not set; Did you configure this test?")
+func testFind(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
+	if !c.IsSet(t, "databases") {
+		t.Errorf("databases not set; Did you configure this test?")
 		return
 	}
-	for _, dbName := range ctx.StringSlice("databases") {
+	for _, dbName := range c.StringSlice(t, "databases") {
 		func(dbName string) {
-			ctx.Run(dbName, func(ctx *kt.Context) {
-				doFindTest(ctx, client, dbName, int64(ctx.Int("offset")), ctx.StringSlice("expected"))
+			c.Run(t, dbName, func(t *testing.T) {
+				doFindTest(t, c, client, dbName, int64(c.Int(t, "offset")), c.StringSlice(t, "expected"))
 			})
 		}(dbName)
 	}
 }
 
-func doFindTest(ctx *kt.Context, client *kivik.Client, dbName string, expOffset int64, expected []string) {
-	ctx.Parallel()
-	db := client.DB(dbName, ctx.Options("db"))
+func doFindTest(t *testing.T, c *kt.Context, client *kivik.Client, dbName string, expOffset int64, expected []string) { //nolint:thelper
+	t.Parallel()
+	db := client.DB(dbName, c.Options(t, "db"))
 	// Errors may be deferred here, so only return if we actually get
 	// an error.
-	if err := db.Err(); err != nil && !ctx.IsExpectedSuccess(err) {
+	if err := db.Err(); err != nil && !c.IsExpectedSuccess(t, err) {
 		return
 	}
 
@@ -109,7 +117,7 @@ func doFindTest(ctx *kt.Context, client *kivik.Client, dbName string, expOffset 
 		return rows.Err()
 	})
 
-	if !ctx.IsExpectedSuccess(err) {
+	if !c.IsExpectedSuccess(t, err) {
 		return
 	}
 	docIDs := make([]string, 0, len(expected))
@@ -120,30 +128,30 @@ func doFindTest(ctx *kt.Context, client *kivik.Client, dbName string, expOffset 
 			ID    string `json:"id"`
 		}
 		if err := rows.ScanDoc(&doc); err != nil {
-			ctx.Errorf("Failed to scan doc: %s", err)
+			t.Errorf("Failed to scan doc: %s", err)
 		}
 		docIDs = append(docIDs, doc.DocID)
 	}
 	meta, err := rows.Metadata()
 	if err != nil {
-		ctx.Fatalf("Failed to fetch row: %s", rows.Err())
+		t.Fatalf("Failed to fetch row: %s", rows.Err())
 	}
 	sort.Strings(docIDs) // normalize order
 	if d := testy.DiffTextSlices(expected, docIDs); d != nil {
-		ctx.Errorf("Unexpected document IDs returned:\n%s\n", d)
+		t.Errorf("Unexpected document IDs returned:\n%s\n", d)
 	}
 	if meta.Offset != expOffset {
-		ctx.Errorf("Unexpected offset: %v", meta.Offset)
+		t.Errorf("Unexpected offset: %v", meta.Offset)
 	}
-	ctx.Run("Warning", func(ctx *kt.Context) {
+	c.Run(t, "Warning", func(t *testing.T) {
 		rows := db.Find(context.Background(), `{"selector":{"foo":{"$gt":null}}}`)
-		if !ctx.IsExpectedSuccess(rows.Err()) {
+		if !c.IsExpectedSuccess(t, rows.Err()) {
 			return
 		}
 		for rows.Next() {
 		}
-		if w := ctx.String("warning"); w != meta.Warning {
-			ctx.Errorf("Warning:\nExpected: %s\n  Actual: %s", w, meta.Warning)
+		if w := c.String(t, "warning"); w != meta.Warning {
+			t.Errorf("Warning:\nExpected: %s\n  Actual: %s", w, meta.Warning)
 		}
 	})
 }

@@ -14,6 +14,7 @@ package client
 
 import (
 	"context"
+	"testing"
 
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
@@ -23,28 +24,31 @@ func init() {
 	kt.Register("DestroyDB", destroyDB)
 }
 
-func destroyDB(ctx *kt.Context) {
-	// All DestroyDB tests are RW by nature.
-	ctx.RunRW(func(ctx *kt.Context) {
-		ctx.RunAdmin(func(ctx *kt.Context) {
-			ctx.Parallel()
-			testDestroy(ctx, ctx.Admin)
+func destroyDB(t *testing.T, c *kt.Context) {
+	t.Helper()
+	c.RunRW(t, func(t *testing.T) {
+		t.Helper()
+		c.RunAdmin(t, func(t *testing.T) {
+			t.Helper()
+			t.Parallel()
+			testDestroy(t, c, c.Admin)
 		})
-		ctx.RunNoAuth(func(ctx *kt.Context) {
-			ctx.Parallel()
-			testDestroy(ctx, ctx.NoAuth)
+		c.RunNoAuth(t, func(t *testing.T) {
+			t.Helper()
+			t.Parallel()
+			testDestroy(t, c, c.NoAuth)
 		})
 	})
 }
 
-func testDestroy(ctx *kt.Context, client *kivik.Client) {
-	ctx.Run("ExistingDB", func(ctx *kt.Context) {
-		ctx.Parallel()
-		dbName := ctx.TestDB()
-		ctx.CheckError(client.DestroyDB(context.Background(), dbName, ctx.Options("db")))
+func testDestroy(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
+	c.Run(t, "ExistingDB", func(t *testing.T) {
+		t.Parallel()
+		dbName := c.TestDB(t)
+		c.CheckError(t, client.DestroyDB(context.Background(), dbName, c.Options(t, "db")))
 	})
-	ctx.Run("NonExistantDB", func(ctx *kt.Context) {
-		ctx.Parallel()
-		ctx.CheckError(client.DestroyDB(context.Background(), ctx.TestDBName(), ctx.Options("db")))
+	c.Run(t, "NonExistantDB", func(t *testing.T) {
+		t.Parallel()
+		c.CheckError(t, client.DestroyDB(context.Background(), kt.TestDBName(t), c.Options(t, "db")))
 	})
 }

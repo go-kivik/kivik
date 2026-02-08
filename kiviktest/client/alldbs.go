@@ -16,6 +16,7 @@ package client
 import (
 	"context"
 	"sort"
+	"testing"
 
 	"gitlab.com/flimzy/testy"
 
@@ -27,40 +28,46 @@ func init() {
 	kt.Register("AllDBs", allDBs)
 }
 
-func allDBs(ctx *kt.Context) {
-	ctx.RunAdmin(func(ctx *kt.Context) {
-		testAllDBs(ctx, ctx.Admin, ctx.StringSlice("expected"))
+func allDBs(t *testing.T, c *kt.Context) {
+	t.Helper()
+	c.RunAdmin(t, func(t *testing.T) {
+		t.Helper()
+		testAllDBs(t, c, c.Admin, c.StringSlice(t, "expected"))
 	})
-	ctx.RunNoAuth(func(ctx *kt.Context) {
-		testAllDBs(ctx, ctx.NoAuth, ctx.StringSlice("expected"))
+	c.RunNoAuth(t, func(t *testing.T) {
+		t.Helper()
+		testAllDBs(t, c, c.NoAuth, c.StringSlice(t, "expected"))
 	})
-	if ctx.RW && ctx.Admin != nil {
-		ctx.Run("RW", func(ctx *kt.Context) {
-			testAllDBsRW(ctx)
+	if c.RW && c.Admin != nil {
+		c.Run(t, "RW", func(t *testing.T) {
+			t.Helper()
+			testAllDBsRW(t, c)
 		})
 	}
 }
 
-func testAllDBsRW(ctx *kt.Context) {
-	dbName := ctx.TestDB()
-	expected := append(ctx.StringSlice("expected"), dbName)
-	ctx.RunAdmin(func(ctx *kt.Context) {
-		testAllDBs(ctx, ctx.Admin, expected)
+func testAllDBsRW(t *testing.T, c *kt.Context) { //nolint:thelper
+	dbName := c.TestDB(t)
+	expected := append(c.StringSlice(t, "expected"), dbName)
+	c.RunAdmin(t, func(t *testing.T) {
+		t.Helper()
+		testAllDBs(t, c, c.Admin, expected)
 	})
-	ctx.RunNoAuth(func(ctx *kt.Context) {
-		testAllDBs(ctx, ctx.NoAuth, expected)
+	c.RunNoAuth(t, func(t *testing.T) {
+		t.Helper()
+		testAllDBs(t, c, c.NoAuth, expected)
 	})
 }
 
-func testAllDBs(ctx *kt.Context, client *kivik.Client, expected []string) {
-	ctx.Parallel()
+func testAllDBs(t *testing.T, c *kt.Context, client *kivik.Client, expected []string) { //nolint:thelper
+	t.Parallel()
 	allDBs, err := client.AllDBs(context.Background())
-	if !ctx.IsExpectedSuccess(err) {
+	if !c.IsExpectedSuccess(t, err) {
 		return
 	}
 	sort.Strings(expected)
 	sort.Strings(allDBs)
 	if d := testy.DiffTextSlices(expected, allDBs); d != nil {
-		ctx.Errorf("AllDBs() returned unexpected list:\n%s\n", d)
+		t.Errorf("AllDBs() returned unexpected list:\n%s\n", d)
 	}
 }

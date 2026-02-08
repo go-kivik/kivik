@@ -14,6 +14,7 @@ package db
 
 import (
 	"context"
+	"testing"
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
@@ -23,30 +24,34 @@ func init() {
 	kt.Register("Put", put)
 }
 
-func put(ctx *kt.Context) {
-	ctx.RunRW(func(ctx *kt.Context) {
-		ctx.RunAdmin(func(ctx *kt.Context) {
-			testPut(ctx, ctx.Admin)
+func put(t *testing.T, c *kt.Context) {
+	t.Helper()
+	c.RunRW(t, func(t *testing.T) {
+		t.Helper()
+		c.RunAdmin(t, func(t *testing.T) {
+			t.Helper()
+			testPut(t, c, c.Admin)
 		})
-		ctx.RunNoAuth(func(ctx *kt.Context) {
-			testPut(ctx, ctx.NoAuth)
+		c.RunNoAuth(t, func(t *testing.T) {
+			t.Helper()
+			testPut(t, c, c.NoAuth)
 		})
 	})
 }
 
-func testPut(ctx *kt.Context, client *kivik.Client) {
-	ctx.Parallel()
-	dbName := ctx.TestDB()
-	db := client.DB(dbName, ctx.Options("db"))
-	if err := db.Err(); !ctx.IsExpectedSuccess(err) {
+func testPut(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
+	t.Parallel()
+	dbName := c.TestDB(t)
+	db := client.DB(dbName, c.Options(t, "db"))
+	if err := db.Err(); !c.IsExpectedSuccess(t, err) {
 		return
 	}
-	ctx.Run("Create", func(ctx *kt.Context) {
+	c.Run(t, "Create", func(t *testing.T) {
 		const age = 32
-		ctx.Parallel()
+		t.Parallel()
 
 		doc := &testDoc{
-			ID:   ctx.TestDBName(),
+			ID:   kt.TestDBName(t),
 			Name: "Alberto",
 			Age:  age,
 		}
@@ -56,21 +61,21 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 			rev, e = db.Put(context.Background(), doc.ID, doc)
 			return e
 		})
-		if !ctx.IsExpectedSuccess(err) {
+		if !c.IsExpectedSuccess(t, err) {
 			return
 		}
 		doc.Rev = rev
 		doc.Age = 40
-		ctx.Run("Update", func(ctx *kt.Context) {
+		c.Run(t, "Update", func(t *testing.T) {
 			err := kt.Retry(func() error {
 				_, e := db.Put(context.Background(), doc.ID, doc)
 				return e
 			})
-			ctx.CheckError(err)
+			c.CheckError(t, err)
 		})
 	})
-	ctx.Run("DesignDoc", func(ctx *kt.Context) {
-		ctx.Parallel()
+	c.Run(t, "DesignDoc", func(t *testing.T) {
+		t.Parallel()
 		doc := map[string]any{
 			"_id":      "_design/testddoc",
 			"language": "javascript",
@@ -88,10 +93,10 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 			_, err := db.Put(context.Background(), doc["_id"].(string), doc)
 			return err
 		})
-		ctx.CheckError(err)
+		c.CheckError(t, err)
 	})
-	ctx.Run("Local", func(ctx *kt.Context) {
-		ctx.Parallel()
+	c.Run(t, "Local", func(t *testing.T) {
+		t.Parallel()
 		doc := map[string]any{
 			"_id":  "_local/foo",
 			"name": "Bob",
@@ -100,10 +105,10 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 			_, err := db.Put(context.Background(), doc["_id"].(string), doc)
 			return err
 		})
-		ctx.CheckError(err)
+		c.CheckError(t, err)
 	})
-	ctx.Run("LeadingUnderscoreInID", func(ctx *kt.Context) {
-		ctx.Parallel()
+	c.Run(t, "LeadingUnderscoreInID", func(t *testing.T) {
+		t.Parallel()
 		doc := map[string]any{
 			"_id":  "_badid",
 			"name": "Bob",
@@ -112,10 +117,10 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 			_, err := db.Put(context.Background(), doc["_id"].(string), doc)
 			return err
 		})
-		ctx.CheckError(err)
+		c.CheckError(t, err)
 	})
-	ctx.Run("HeavilyEscapedID", func(ctx *kt.Context) {
-		ctx.Parallel()
+	c.Run(t, "HeavilyEscapedID", func(t *testing.T) {
+		t.Parallel()
 		doc := map[string]any{
 			"_id":  "foo+bar & spáces ?!*,",
 			"name": "Bob",
@@ -124,10 +129,10 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 			_, err := db.Put(context.Background(), doc["_id"].(string), doc)
 			return err
 		})
-		ctx.CheckError(err)
+		c.CheckError(t, err)
 	})
-	ctx.Run("SlashInID", func(ctx *kt.Context) {
-		ctx.Parallel()
+	c.Run(t, "SlashInID", func(t *testing.T) {
+		t.Parallel()
 		doc := map[string]any{
 			"_id":  "foo/bar",
 			"name": "Bob",
@@ -136,26 +141,26 @@ func testPut(ctx *kt.Context, client *kivik.Client) {
 			_, err := db.Put(context.Background(), doc["_id"].(string), doc)
 			return err
 		})
-		ctx.CheckError(err)
+		c.CheckError(t, err)
 	})
-	ctx.Run("Conflict", func(ctx *kt.Context) {
-		ctx.Parallel()
+	c.Run(t, "Conflict", func(t *testing.T) {
+		t.Parallel()
 		const id = "duplicate"
 		doc := map[string]any{
 			"_id":  id,
 			"name": "Bob",
 		}
 		err := kt.Retry(func() error {
-			_, err := ctx.Admin.DB(dbName).Put(context.Background(), id, doc)
+			_, err := c.Admin.DB(dbName).Put(context.Background(), id, doc)
 			return err
 		})
 		if err != nil {
-			ctx.Fatalf("Failed to create document for duplicate test: %s", err)
+			t.Fatalf("Failed to create document for duplicate test: %s", err)
 		}
 		err = kt.Retry(func() error {
 			_, err = db.Put(context.Background(), id, doc)
 			return err
 		})
-		ctx.CheckError(err)
+		c.CheckError(t, err)
 	})
 }

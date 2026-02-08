@@ -15,6 +15,7 @@ package db
 import (
 	"context"
 	"strings"
+	"testing"
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
@@ -24,19 +25,21 @@ func init() {
 	kt.Register("GetRev", getRev)
 }
 
-func getRev(ctx *kt.Context) {
-	ctx.RunRW(func(ctx *kt.Context) {
-		dbName := ctx.TestDB()
-		db := ctx.Admin.DB(dbName, ctx.Options("db"))
+func getRev(t *testing.T, c *kt.Context) {
+	t.Helper()
+	c.RunRW(t, func(t *testing.T) {
+		t.Helper()
+		dbName := c.TestDB(t)
+		db := c.Admin.DB(dbName, c.Options(t, "db"))
 		if err := db.Err(); err != nil {
-			ctx.Fatalf("Failed to connect to test db: %s", err)
+			t.Fatalf("Failed to connect to test db: %s", err)
 		}
 		doc := &testDoc{
 			ID: "bob",
 		}
 		rev, err := db.Put(context.Background(), doc.ID, doc)
 		if err != nil {
-			ctx.Fatalf("Failed to create doc in test db: %s", err)
+			t.Fatalf("Failed to create doc in test db: %s", err)
 		}
 		doc.Rev = rev
 
@@ -45,7 +48,7 @@ func getRev(ctx *kt.Context) {
 		}
 		rev, err = db.Put(context.Background(), ddoc.ID, ddoc)
 		if err != nil {
-			ctx.Fatalf("Failed to create design doc in test db: %s", err)
+			t.Fatalf("Failed to create design doc in test db: %s", err)
 		}
 		ddoc.Rev = rev
 
@@ -54,52 +57,54 @@ func getRev(ctx *kt.Context) {
 		}
 		rev, err = db.Put(context.Background(), local.ID, local)
 		if err != nil {
-			ctx.Fatalf("Failed to create local doc in test db: %s", err)
+			t.Fatalf("Failed to create local doc in test db: %s", err)
 		}
 		local.Rev = rev
 
-		ctx.RunAdmin(func(ctx *kt.Context) {
-			ctx.Parallel()
-			db := ctx.Admin.DB(dbName, ctx.Options("db"))
-			if err := db.Err(); !ctx.IsExpectedSuccess(err) {
+		c.RunAdmin(t, func(t *testing.T) {
+			t.Helper()
+			t.Parallel()
+			db := c.Admin.DB(dbName, c.Options(t, "db"))
+			if err := db.Err(); !c.IsExpectedSuccess(t, err) {
 				return
 			}
-			testGetRev(ctx, db, doc)
-			testGetRev(ctx, db, ddoc)
-			testGetRev(ctx, db, local)
-			testGetRev(ctx, db, &testDoc{ID: "bogus"})
+			testGetRev(t, c, db, doc)
+			testGetRev(t, c, db, ddoc)
+			testGetRev(t, c, db, local)
+			testGetRev(t, c, db, &testDoc{ID: "bogus"})
 		})
-		ctx.RunNoAuth(func(ctx *kt.Context) {
-			ctx.Parallel()
-			db := ctx.NoAuth.DB(dbName, ctx.Options("db"))
-			if err := db.Err(); !ctx.IsExpectedSuccess(err) {
+		c.RunNoAuth(t, func(t *testing.T) {
+			t.Helper()
+			t.Parallel()
+			db := c.NoAuth.DB(dbName, c.Options(t, "db"))
+			if err := db.Err(); !c.IsExpectedSuccess(t, err) {
 				return
 			}
-			testGetRev(ctx, db, doc)
-			testGetRev(ctx, db, ddoc)
-			testGetRev(ctx, db, local)
-			testGetRev(ctx, db, &testDoc{ID: "bogus"})
+			testGetRev(t, c, db, doc)
+			testGetRev(t, c, db, ddoc)
+			testGetRev(t, c, db, local)
+			testGetRev(t, c, db, &testDoc{ID: "bogus"})
 		})
 	})
 }
 
-func testGetRev(ctx *kt.Context, db *kivik.DB, expectedDoc *testDoc) {
-	ctx.Run(expectedDoc.ID, func(ctx *kt.Context) {
-		ctx.Parallel()
+func testGetRev(t *testing.T, c *kt.Context, db *kivik.DB, expectedDoc *testDoc) { //nolint:thelper
+	c.Run(t, expectedDoc.ID, func(t *testing.T) {
+		t.Parallel()
 		rev, err := db.GetRev(context.Background(), expectedDoc.ID)
-		if !ctx.IsExpectedSuccess(err) {
+		if !c.IsExpectedSuccess(t, err) {
 			return
 		}
 		doc := &testDoc{}
 		if err = db.Get(context.Background(), expectedDoc.ID).ScanDoc(&doc); err != nil {
-			ctx.Fatalf("Failed to scan doc: %s\n", err)
+			t.Fatalf("Failed to scan doc: %s\n", err)
 		}
 		if strings.HasPrefix(expectedDoc.ID, "_local/") {
 			// Revisions are meaningless for _local docs
 			return
 		}
 		if rev != doc.Rev {
-			ctx.Errorf("Unexpected rev. Expected: %s, Actual: %s", doc.Rev, rev)
+			t.Errorf("Unexpected rev. Expected: %s, Actual: %s", doc.Rev, rev)
 		}
 	})
 }

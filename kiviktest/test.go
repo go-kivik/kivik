@@ -361,30 +361,30 @@ func Test(t *testing.T, driver, dsn string, testSuites []string, rw bool) {
 	}
 	t.Logf("Running the following test suites: %s\n", strings.Join(testSuites, ", "))
 	for _, suite := range testSuites {
-		RunTestsInternal(clients, suite)
+		RunTestsInternal(t, clients, suite)
 	}
 }
 
 // RunTestsInternal is for internal use only.
-func RunTestsInternal(ctx *kt.Context, suite string) {
+func RunTestsInternal(t *testing.T, c *kt.Context, suite string) { //nolint:thelper
 	conf, ok := suites[suite]
 	if !ok {
-		ctx.Skipf("No configuration found for suite '%s'", suite)
+		t.Skipf("No configuration found for suite '%s'", suite)
 	}
-	ctx.Config = conf
-	// This is run as a sub-test so configuration will work nicely.
-	ctx.Run("PreCleanup", func(ctx *kt.Context) {
-		ctx.RunAdmin(func(ctx *kt.Context) {
-			count, err := doCleanup(ctx.Admin, true)
+	c.Config = conf
+	c.Run(t, "PreCleanup", func(t *testing.T) {
+		t.Helper()
+		c.RunAdmin(t, func(t *testing.T) {
+			count, err := doCleanup(c.Admin, true)
 			if count > 0 {
-				ctx.Logf("Pre-cleanup removed %d databases from previous test runs", count)
+				t.Logf("Pre-cleanup removed %d databases from previous test runs", count)
 			}
 			if err != nil {
-				ctx.Fatalf("Pre-cleanup failed: %s", err)
+				t.Fatalf("Pre-cleanup failed: %s", err)
 			}
 		})
 	})
-	kt.RunSubtests(ctx)
+	kt.RunSubtests(t, c)
 }
 
 func detectCompatibility(client *kivik.Client) ([]string, error) {
@@ -412,9 +412,7 @@ func ConnectClients(t *testing.T, driverName, dsn string, opts kivik.Option) (*k
 		parsed.User = nil
 		noAuthDSN = parsed.String()
 	}
-	clients := &kt.Context{
-		T: t,
-	}
+	clients := &kt.Context{}
 	t.Logf("[Auth] Connecting to %s ...\n", dsn)
 	if client, err := kivik.New(driverName, dsn, opts); err == nil {
 		clients.Admin = client
@@ -451,7 +449,7 @@ func DoTest(t *testing.T, suite, _ string) { //nolint:thelper // Not a helper
 		return
 	}
 	clients.RW = true
-	RunTestsInternal(clients, suite)
+	RunTestsInternal(t, clients, suite)
 }
 
 var imageMap = map[string]string{

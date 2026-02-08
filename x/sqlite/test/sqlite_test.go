@@ -44,7 +44,6 @@ func TestSQLite(t *testing.T) {
 	clients := &kt.Context{
 		RW:    true,
 		Admin: client,
-		T:     t,
 	}
-	kiviktest.RunTestsInternal(clients, kiviktest.SuiteKivikSQLite)
+	kiviktest.RunTestsInternal(t, clients, kiviktest.SuiteKivikSQLite)
 }

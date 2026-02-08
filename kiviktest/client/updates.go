@@ -15,6 +15,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"testing"
 	"time"
 
 	kivik "github.com/go-kivik/kivik/v4"
@@ -25,23 +26,27 @@ func init() {
 	kt.Register("DBUpdates", updates)
 }
 
-func updates(ctx *kt.Context) {
-	ctx.RunRW(func(ctx *kt.Context) {
-		ctx.RunAdmin(func(ctx *kt.Context) {
-			testUpdates(ctx, ctx.Admin)
+const maxWait = 5 * time.Second
+
+func updates(t *testing.T, c *kt.Context) {
+	t.Helper()
+	c.RunRW(t, func(t *testing.T) {
+		t.Helper()
+		c.RunAdmin(t, func(t *testing.T) {
+			t.Helper()
+			testUpdates(t, c, c.Admin)
 		})
-		ctx.RunNoAuth(func(ctx *kt.Context) {
-			testUpdates(ctx, ctx.NoAuth)
+		c.RunNoAuth(t, func(t *testing.T) {
+			t.Helper()
+			testUpdates(t, c, c.NoAuth)
 		})
 	})
 }
 
-const maxWait = 5 * time.Second
-
-func testUpdates(ctx *kt.Context, client *kivik.Client) {
-	ctx.Parallel()
+func testUpdates(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
+	t.Parallel()
 	updates := client.DBUpdates(context.TODO())
-	if !ctx.IsExpectedSuccess(updates.Err()) {
+	if !c.IsExpectedSuccess(t, updates.Err()) {
 		return
 	}
 	// It seems that DBUpdates doesn't always start responding immediately,
@@ -49,7 +54,7 @@ func testUpdates(ctx *kt.Context, client *kivik.Client) {
 	// actually do the updates.
 	const delay = 10 * time.Millisecond
 	time.Sleep(delay)
-	dbname := ctx.TestDBName()
+	dbname := kt.TestDBName(t)
 	eventErrors := make(chan error)
 	go func() {
 		for updates.Next() {
@@ -63,20 +68,20 @@ func testUpdates(ctx *kt.Context, client *kivik.Client) {
 		eventErrors <- updates.Err()
 		close(eventErrors)
 	}()
-	ctx.T.Cleanup(func() { ctx.DestroyDB(dbname) })
-	if err := ctx.Admin.CreateDB(context.Background(), dbname, ctx.Options("db")); err != nil {
-		ctx.Fatalf("Failed to create db: %s", err)
+	t.Cleanup(func() { c.DestroyDB(t, dbname) })
+	if err := c.Admin.CreateDB(context.Background(), dbname, c.Options(t, "db")); err != nil {
+		t.Fatalf("Failed to create db: %s", err)
 	}
 	timer := time.NewTimer(maxWait)
 	select {
 	case err := <-eventErrors:
 		if err != nil {
-			ctx.Fatalf("Error reading event: %s", err)
+			t.Fatalf("Error reading event: %s", err)
 		}
 	case <-timer.C:
-		ctx.Fatalf("Failed to read expected event in %s", maxWait)
+		t.Fatalf("Failed to read expected event in %s", maxWait)
 	}
 	if err := updates.Close(); err != nil {
-		ctx.Errorf("Updates close failed: %s", err)
+		t.Errorf("Updates close failed: %s", err)
 	}
 }

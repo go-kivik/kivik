@@ -14,6 +14,7 @@ package client
 
 import (
 	"context"
+	"testing"
 
 	kivik "github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/kiviktest/kt"
@@ -23,22 +24,25 @@ func init() {
 	kt.Register("DBsStats", dbsStats)
 }
 
-func dbsStats(ctx *kt.Context) {
-	ctx.RunAdmin(func(ctx *kt.Context) {
-		testDBsStats(ctx, ctx.Admin)
+func dbsStats(t *testing.T, c *kt.Context) {
+	t.Helper()
+	c.RunAdmin(t, func(t *testing.T) {
+		t.Helper()
+		testDBsStats(t, c, c.Admin)
 	})
-	ctx.RunNoAuth(func(ctx *kt.Context) {
-		testDBsStats(ctx, ctx.NoAuth)
+	c.RunNoAuth(t, func(t *testing.T) {
+		t.Helper()
+		testDBsStats(t, c, c.NoAuth)
 	})
 }
 
-func testDBsStats(ctx *kt.Context, client *kivik.Client) {
+func testDBsStats(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
 	stats, err := client.DBsStats(context.Background(), []string{"_users", "notfound"})
-	if !ctx.IsExpectedSuccess(err) {
+	if !c.IsExpectedSuccess(t, err) {
 		return
 	}
 	const wantResults = 2
 	if len(stats) != wantResults {
-		ctx.Errorf("Expected %d database stats, got %d", wantResults, len(stats))
+		t.Errorf("Expected %d database stats, got %d", wantResults, len(stats))
 	}
 }

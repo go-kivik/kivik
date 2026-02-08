@@ -15,6 +15,7 @@ package db
 import (
 	"context"
 	"sort"
+	"testing"
 	"time"
 
 	"gitlab.com/flimzy/testy"
@@ -27,24 +28,31 @@ func init() {
 	kt.Register("Changes", changes)
 }
 
-func changes(ctx *kt.Context) {
-	ctx.Run("Normal", func(ctx *kt.Context) {
-		ctx.RunRW(func(ctx *kt.Context) {
-			ctx.RunAdmin(func(ctx *kt.Context) {
-				testNormalChanges(ctx, ctx.Admin)
+func changes(t *testing.T, c *kt.Context) {
+	t.Helper()
+	c.Run(t, "Normal", func(t *testing.T) {
+		c.RunRW(t, func(t *testing.T) {
+			t.Helper()
+			c.RunAdmin(t, func(t *testing.T) {
+				t.Helper()
+				testNormalChanges(t, c, c.Admin)
 			})
-			ctx.RunNoAuth(func(ctx *kt.Context) {
-				testNormalChanges(ctx, ctx.NoAuth)
+			c.RunNoAuth(t, func(t *testing.T) {
+				t.Helper()
+				testNormalChanges(t, c, c.NoAuth)
 			})
 		})
 	})
-	ctx.Run("Continuous", func(ctx *kt.Context) {
-		ctx.RunRW(func(ctx *kt.Context) {
-			ctx.RunAdmin(func(ctx *kt.Context) {
-				testContinuousChanges(ctx, ctx.Admin)
+	c.Run(t, "Continuous", func(t *testing.T) {
+		c.RunRW(t, func(t *testing.T) {
+			t.Helper()
+			c.RunAdmin(t, func(t *testing.T) {
+				t.Helper()
+				testContinuousChanges(t, c, c.Admin)
 			})
-			ctx.RunNoAuth(func(ctx *kt.Context) {
-				testContinuousChanges(ctx, ctx.NoAuth)
+			c.RunNoAuth(t, func(t *testing.T) {
+				t.Helper()
+				testContinuousChanges(t, c, c.NoAuth)
 			})
 		})
 	})
@@ -58,39 +66,39 @@ type cDoc struct {
 	Value string `json:"value"`
 }
 
-func testContinuousChanges(ctx *kt.Context, client *kivik.Client) {
-	ctx.Parallel()
-	dbname := ctx.TestDB()
-	db := client.DB(dbname, ctx.Options("db"))
+func testContinuousChanges(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
+	t.Parallel()
+	dbname := c.TestDB(t)
+	db := client.DB(dbname, c.Options(t, "db"))
 	if err := db.Err(); err != nil {
-		ctx.Fatalf("failed to connect to db: %s", err)
+		t.Fatalf("failed to connect to db: %s", err)
 	}
-	changes := db.Changes(context.Background(), ctx.Options("options"))
+	changes := db.Changes(context.Background(), c.Options(t, "options"))
 
 	const maxChanges = 3
 	expected := make([]string, 0, maxChanges)
 	doc := cDoc{
-		ID:    ctx.TestDBName(),
+		ID:    kt.TestDBName(t),
 		Value: "foo",
 	}
-	rev, err := ctx.Admin.DB(dbname).Put(context.Background(), doc.ID, doc)
+	rev, err := c.Admin.DB(dbname).Put(context.Background(), doc.ID, doc)
 	if err != nil {
-		ctx.Fatalf("Failed to create doc: %s", err)
+		t.Fatalf("Failed to create doc: %s", err)
 	}
 	expected = append(expected, rev)
 	doc.Rev = rev
 	doc.Value = "bar"
-	rev, err = ctx.Admin.DB(dbname).Put(context.Background(), doc.ID, doc)
+	rev, err = c.Admin.DB(dbname).Put(context.Background(), doc.ID, doc)
 	if err != nil {
-		ctx.Fatalf("Failed to update doc: %s", err)
+		t.Fatalf("Failed to update doc: %s", err)
 	}
 	expected = append(expected, rev)
 	doc.Rev = rev
 	const delay = 10 * time.Millisecond
 	time.Sleep(delay) // Pause to ensure that the update counts as a separate rev; especially problematic on PouchDB
-	rev, err = ctx.Admin.DB(dbname).Delete(context.Background(), doc.ID, doc.Rev)
+	rev, err = c.Admin.DB(dbname).Delete(context.Background(), doc.ID, doc.Rev)
 	if err != nil {
-		ctx.Fatalf("Failed to delete doc: %s", err)
+		t.Fatalf("Failed to delete doc: %s", err)
 	}
 	expected = append(expected, rev)
 	const maxRevs = 3
@@ -111,9 +119,9 @@ func testContinuousChanges(ctx *kt.Context, client *kivik.Client) {
 		timer.Stop()
 	case <-timer.C:
 		_ = changes.Close()
-		ctx.Errorf("Failed to read changes in %s", maxWait)
+		t.Errorf("Failed to read changes in %s", maxWait)
 	}
-	if !ctx.IsExpectedSuccess(changes.Err()) {
+	if !c.IsExpectedSuccess(t, changes.Err()) {
 		return
 	}
 	expectedRevs := make(map[string]struct{})
@@ -122,73 +130,73 @@ func testContinuousChanges(ctx *kt.Context, client *kivik.Client) {
 	}
 	for _, rev := range revs {
 		if _, ok := expectedRevs[rev]; !ok {
-			ctx.Errorf("Unexpected rev in changes feed: %s", rev)
+			t.Errorf("Unexpected rev in changes feed: %s", rev)
 		}
 	}
 	if d := testy.DiffTextSlices(expected, revs); d != nil {
-		ctx.Errorf("Unexpected revisions:\n%s", d)
+		t.Errorf("Unexpected revisions:\n%s", d)
 	}
 	if err = changes.Close(); err != nil {
-		ctx.Errorf("Error closing changes feed: %s", err)
+		t.Errorf("Error closing changes feed: %s", err)
 	}
 }
 
-func testNormalChanges(ctx *kt.Context, client *kivik.Client) {
-	ctx.Parallel()
-	dbname := ctx.TestDB()
-	db := client.DB(dbname, ctx.Options("db"))
+func testNormalChanges(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
+	t.Parallel()
+	dbname := c.TestDB(t)
+	db := client.DB(dbname, c.Options(t, "db"))
 	if err := db.Err(); err != nil {
-		ctx.Fatalf("failed to connect to db: %s", err)
+		t.Fatalf("failed to connect to db: %s", err)
 	}
-	adb := ctx.Admin.DB(dbname)
+	adb := c.Admin.DB(dbname)
 	const maxChanges = 3
 	expected := make([]string, 0, maxChanges)
 
 	// Doc: foo
 	doc := cDoc{
-		ID:    ctx.TestDBName(),
+		ID:    kt.TestDBName(t),
 		Value: "foo",
 	}
 	rev, err := adb.Put(context.Background(), doc.ID, doc)
 	if err != nil {
-		ctx.Fatalf("Failed to create doc: %s", err)
+		t.Fatalf("Failed to create doc: %s", err)
 	}
 	expected = append(expected, rev)
 
 	// Doc: bar
 	doc = cDoc{
-		ID:    ctx.TestDBName(),
+		ID:    kt.TestDBName(t),
 		Value: "bar",
 	}
 	rev, err = adb.Put(context.Background(), doc.ID, doc)
 	if err != nil {
-		ctx.Fatalf("Failed to create doc: %s", err)
+		t.Fatalf("Failed to create doc: %s", err)
 	}
 	doc.Rev = rev
 	doc.Value = "baz"
 	rev, err = adb.Put(context.Background(), doc.ID, doc)
 	if err != nil {
-		ctx.Fatalf("Failed to update doc: %s", err)
+		t.Fatalf("Failed to update doc: %s", err)
 	}
 	expected = append(expected, rev)
 
 	// Doc: baz
 	doc = cDoc{
-		ID:    ctx.TestDBName(),
+		ID:    kt.TestDBName(t),
 		Value: "bar",
 	}
 	rev, err = adb.Put(context.Background(), doc.ID, doc)
 	if err != nil {
-		ctx.Fatalf("Failed to create doc: %s", err)
+		t.Fatalf("Failed to create doc: %s", err)
 	}
 	doc.Rev = rev
 	rev, err = adb.Delete(context.Background(), doc.ID, doc.Rev)
 	if err != nil {
-		ctx.Fatalf("Failed to delete doc: %s", err)
+		t.Fatalf("Failed to delete doc: %s", err)
 	}
 	expected = append(expected, rev)
 
-	changes := db.Changes(context.Background(), ctx.Options("options"))
+	changes := db.Changes(context.Background(), c.Options(t, "options"))
 
 	const maxRevs = 3
 	revs := make([]string, 0, maxRevs)
@@ -198,7 +206,7 @@ func testNormalChanges(ctx *kt.Context, client *kivik.Client) {
 			_ = changes.Close()
 		}
 	}
-	if !ctx.IsExpectedSuccess(changes.Err()) {
+	if !c.IsExpectedSuccess(t, changes.Err()) {
 		return
 	}
 	expectedRevs := make(map[string]struct{})
@@ -207,15 +215,15 @@ func testNormalChanges(ctx *kt.Context, client *kivik.Client) {
 	}
 	for _, rev := range revs {
 		if _, ok := expectedRevs[rev]; !ok {
-			ctx.Errorf("Unexpected rev in changes feed: %s", rev)
+			t.Errorf("Unexpected rev in changes feed: %s", rev)
 		}
 	}
 	sort.Strings(expected)
 	sort.Strings(revs)
 	if d := testy.DiffTextSlices(expected, revs); d != nil {
-		ctx.Errorf("Unexpected revisions:\n%s", d)
+		t.Errorf("Unexpected revisions:\n%s", d)
 	}
 	if err = changes.Close(); err != nil {
-		ctx.Errorf("Error closing changes feed: %s", err)
+		t.Errorf("Error closing changes feed: %s", err)
 	}
 }

@@ -97,17 +97,6 @@ code should be converted to error returns:
 Root module is Go 1.20 (GopherJS constraint). Sub-modules `x/sqlite` (1.22)
 and `x/pg` (1.24) can use newer features.
 
-### `strings.CutPrefix` / `strings.CutSuffix` (Go 1.20)
-
-Replace `HasPrefix`+`TrimPrefix` and `HasSuffix`+`TrimSuffix` pairs:
-
-- [ ] `couchdb/chttp/encode.go:33-34` — CutPrefix on docID prefix
-- [ ] `kiviktest/testcontainers_js.go:138-140` — CutPrefix on "Listening on "
-- [ ] `x/kivikd/authdb/confadmin/confadmin.go:68-72` — CutPrefix on hash prefix
-- [ ] `cmd/kivik/config/config.go:106-108` — CutSuffix on "/_design"
-- [ ] `x/fsdb/changes.go:68-69` — CutSuffix on file extension
-
-
 ### `os.IsNotExist` → `errors.Is(err, fs.ErrNotExist)` (Go 1.16)
 
 `errors.Is` correctly unwraps wrapped errors; `os.IsNotExist` does not.

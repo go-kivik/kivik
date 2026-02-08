@@ -65,8 +65,7 @@ func (c *changes) Next(ch *driver.Change) error {
 			continue
 		}
 		for _, ext := range decode.Extensions() {
-			if strings.HasSuffix(candidate.Name(), "."+ext) {
-				base := strings.TrimSuffix(candidate.Name(), "."+ext)
+			if base, ok := strings.CutSuffix(candidate.Name(), "."+ext); ok {
 				docid, err := filename2id(base)
 				if err != nil {
 					// ignore unrecognized files

@@ -135,9 +135,8 @@ func spawnTCDaemon(t *testing.T) <-chan string {
 		buffer := args[0]
 		data := buffer.Call("toString").String()
 		go t.Logf("[STDOUT] %s", data)
-		if strings.HasPrefix(data, "Listening on ") {
-			// Extract the address from the log message
-			addr := strings.TrimSpace(strings.TrimPrefix(data, "Listening on "))
+		if addr, ok := strings.CutPrefix(data, "Listening on "); ok {
+			addr = strings.TrimSpace(addr)
 			go func() {
 				ready <- addr
 				close(ready)

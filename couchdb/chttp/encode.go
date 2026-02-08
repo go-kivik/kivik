@@ -30,8 +30,8 @@ const (
 // explanation.
 func EncodeDocID(docID string) string {
 	for _, prefix := range []string{prefixDesign, prefixLocal} {
-		if strings.HasPrefix(docID, prefix) {
-			return prefix + encodeDocID(strings.TrimPrefix(docID, prefix))
+		if after, ok := strings.CutPrefix(docID, prefix); ok {
+			return prefix + encodeDocID(after)
 		}
 	}
 	return encodeDocID(docID)

@@ -103,8 +103,8 @@ func (c *Context) DBDoc() (db, doc string, err error) {
 		db = strings.Trim(path.Dir(p), "/")
 		doc = strings.Trim(path.Base(p), "/")
 	}
-	if strings.HasSuffix(db, "/_design") {
-		db = strings.TrimSuffix(db, "/_design")
+	if before, ok := strings.CutSuffix(db, "/_design"); ok {
+		db = before
 		doc = "_design/" + doc
 	}
 	if db == "" {

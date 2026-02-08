@@ -65,11 +65,12 @@ func (c *confadmin) getKeySaltIter(username string) (key, salt string, iteration
 		return "", "", 0, &internal.Error{Status: http.StatusNotFound, Message: "user not found"}
 	}
 	hash := c.GetString(confName)
-	if !strings.HasPrefix(hash, hashPrefix) {
+	hash, ok := strings.CutPrefix(hash, hashPrefix)
+	if !ok {
 		return "", "", 0, errors.New("unrecognized password scheme")
 	}
 	const partsWanted = 3
-	parts := strings.Split(strings.TrimPrefix(hash, hashPrefix), ",")
+	parts := strings.Split(hash, ",")
 	if len(parts) != partsWanted {
 		return "", "", 0, errors.New("unrecognized hash format")
 	}

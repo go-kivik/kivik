@@ -2,6 +2,12 @@
 
 ## Confirmed Bugs
 
+- [ ] **`Test_ping_RunE/network_error` failing in `cmd/kivik/cmd`**
+  Test expects a `connection refused` error and exit code 69, but gets
+  `Server down` and exit code 14. Likely something listening on port 9999
+  or an environment-dependent behavior change. Snapshot needs regeneration
+  or test logic needs updating.
+
 - [ ] **Panic instead of error in `couchdb/client.go:142`**
   `newUpdates()` has `panic("unknown")` as the default case for unrecognized
   feed types. Should return an error.

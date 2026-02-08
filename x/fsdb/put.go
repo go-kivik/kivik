@@ -15,6 +15,7 @@ package fs
 import (
 	"context"
 	"errors"
+	"io/fs"
 	"net/http"
 	"net/url"
 	"os"
@@ -38,7 +39,7 @@ type metaDoc struct {
 func (d *db) metadata(docID, ext string) (rev string, deleted bool, err error) {
 	f, err := os.Open(d.path(docID))
 	if err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			err = nil
 		}
 		return "", false, err

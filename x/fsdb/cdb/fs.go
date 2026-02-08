@@ -14,8 +14,8 @@ package cdb
 
 import (
 	"errors"
+	iofs "io/fs"
 	"net/http"
-	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -120,7 +120,7 @@ func (fs *FS) openRevs(docID string, revIDs []string) (Revisions, error) {
 		}
 		dirpath := filepath.Join(fs.root, "."+base)
 		dir, err := fs.fs.Open(dirpath)
-		if err != nil && !os.IsNotExist(err) {
+		if err != nil && !errors.Is(err, iofs.ErrNotExist) {
 			return nil, err
 		}
 		if err == nil {

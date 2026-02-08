@@ -14,6 +14,7 @@ package fs
 
 import (
 	"errors"
+	"io/fs"
 	"net/http"
 	"os"
 )
@@ -26,7 +27,7 @@ func kerr(err error) error {
 		// Error has already been converted
 		return err
 	}
-	if os.IsNotExist(err) {
+	if errors.Is(err, fs.ErrNotExist) {
 		return statusError{status: http.StatusNotFound, error: err}
 	}
 	if os.IsPermission(err) {

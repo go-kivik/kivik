@@ -14,6 +14,7 @@
 package config
 
 import (
+	"io/fs"
 	"net"
 	"net/http"
 	"net/url"
@@ -191,7 +192,7 @@ func (c *Config) readYAML(filename string) error {
 	f, err := os.Open(filename)
 	if err != nil {
 		c.log.Debugf("failed to read config: %s", err)
-		if os.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			err = nil
 		}
 		return err

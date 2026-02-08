@@ -14,9 +14,10 @@
 package decode
 
 import (
+	"errors"
 	"fmt"
 	"io"
-	"os"
+	iofs "io/fs"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -48,7 +49,7 @@ var extensions = func() []string {
 func OpenAny(fs filesystem.Filesystem, base string) (f filesystem.File, ext string, err error) {
 	for ext = range decoders {
 		f, err = fs.Open(base + "." + ext)
-		if err == nil || !os.IsNotExist(err) {
+		if err == nil || !errors.Is(err, iofs.ErrNotExist) {
 			return
 		}
 	}

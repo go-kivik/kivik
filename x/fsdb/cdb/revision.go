@@ -17,7 +17,9 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -158,7 +160,7 @@ func (r *Revision) stubFollows() (bool, bool) {
 func (r *Revision) openAttachment(filename string) (filesystem.File, error) {
 	path := strings.TrimSuffix(r.path, filepath.Ext(r.path))
 	f, err := r.fs.Open(filepath.Join(path, filename))
-	if !os.IsNotExist(err) {
+	if !errors.Is(err, fs.ErrNotExist) {
 		return f, err
 	}
 	basename := filepath.Base(path)
@@ -170,7 +172,7 @@ func (r *Revision) openAttachment(filename string) (filesystem.File, error) {
 	for _, rev := range r.RevHistory.Ancestors() {
 		fullpath := filepath.Join(path, rev, filename)
 		f, err := r.fs.Open(fullpath)
-		if !os.IsNotExist(err) {
+		if !errors.Is(err, fs.ErrNotExist) {
 			return f, err
 		}
 	}

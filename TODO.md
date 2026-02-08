@@ -93,21 +93,6 @@ code should be converted to error returns:
 Root module is Go 1.20 (GopherJS constraint). Sub-modules `x/sqlite` (1.22)
 and `x/pg` (1.24) can use newer features.
 
-### `os.IsNotExist` → `errors.Is(err, fs.ErrNotExist)` (Go 1.16)
-
-`errors.Is` correctly unwraps wrapped errors; `os.IsNotExist` does not.
-
-- [ ] `x/fsdb/fs.go:148`
-- [ ] `x/fsdb/put.go:41`
-- [ ] `x/fsdb/errors.go:29`
-- [ ] `x/fsdb/cdb/errors.go:30, 44`
-- [ ] `x/fsdb/cdb/fs.go:123`
-- [ ] `x/fsdb/cdb/security.go:44, 60`
-- [ ] `x/fsdb/cdb/revision.go:161, 173`
-- [ ] `x/fsdb/cdb/decode/decode.go:51`
-- [ ] `x/kivikd/couchserver/favicon.go:43`
-- [ ] `cmd/kivik/config/config.go:194`
-
 ### `interface{}` → `any` (Go 1.18)
 
 ~2,397 occurrences across ~266 files. Mechanical replacement via

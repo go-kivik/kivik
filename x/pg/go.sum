@@ -38,8 +38,6 @@ github.com/ebitengine/purego v0.8.4 h1:CF7LEKg5FFOsASUj0+QwaXf8Ht6TlFxg09+S9wz0o
 github.com/ebitengine/purego v0.8.4/go.mod h1:iIjxzd6CiRiOG0UyXP+V1+jWqUXVjPKLAI0mRfJZTmQ=
 github.com/felixge/httpsnoop v1.0.4 h1:NFTV2Zj1bL4mc9sqWACXbQFVBBg2W3GPvqp8/ESS2Wg=
 github.com/felixge/httpsnoop v1.0.4/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSwevea8zH2U=
-github.com/go-kivik/kivik/v4 v4.5.1-0.20250912211825-a7d6df751a7f h1:cpUsTexwXQVCqNm2i6KuP2uWRHhRTKUgpB3qoChTfbk=
-github.com/go-kivik/kivik/v4 v4.5.1-0.20250912211825-a7d6df751a7f/go.mod h1:wKakZVqh5Z+uyDlGtlUulmHrNYYboATcdvBlqLARnKs=
 github.com/go-logr/logr v1.2.2/go.mod h1:jdQByPbusPIv2/zmleS9BjJVeZ6kBagPoEUsqbVz/1A=
 github.com/go-logr/logr v1.4.3 h1:CjnDlHq8ikf6E492q6eKboGOC0T8CDaOvkHCIg8idEI=
 github.com/go-logr/logr v1.4.3/go.mod h1:9T104GzyrTigFIr8wt5mBrctHMim0Nb2HLGrmQ40KvY=
@@ -156,8 +154,8 @@ github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9de
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yusufpapurcu/wmi v1.2.4 h1:zFUKzehAFReQwLys1b/iSMl+JQGSCSjtVqQn9bBrPo0=
 github.com/yusufpapurcu/wmi v1.2.4/go.mod h1:SBZ9tNy3G9/m5Oi98Zks0QjeHVDvuK0qfxQmPyzfmi0=
-gitlab.com/flimzy/testy v0.14.0 h1:2nZV4Wa1OSJb3rOKHh0GJqvvhtE03zT+sKnPCI0owfQ=
-gitlab.com/flimzy/testy v0.14.0/go.mod h1:m3aGuwdXc+N3QgnH+2Ar2zf1yg0UxNdIaXKvC5SlfMk=
+gitlab.com/flimzy/testy v0.15.0 h1:69TL12IpxqGUyL8NuRV3Z5OhIDszXLNqLtfBDhOV3ys=
+gitlab.com/flimzy/testy v0.15.0/go.mod h1:KbAJWCwB++0hEFzeeQRbC7vdZYP/yEha94s4X1wVFrw=
 gitlab.com/flimzy/testy/v2 v2.0.0-20250904163106-29163c594af6 h1:753+q2OYVkA9yoG5hIxkKbc6wX1W5y0o1P7QRg/m48A=
 gitlab.com/flimzy/testy/v2 v2.0.0-20250904163106-29163c594af6/go.mod h1:sBCsMlUfnHI36ZJWv+2YatOEj93Ani/w/hNGbMn+UmU=
 go.opentelemetry.io/auto/sdk v1.1.0 h1:cH53jehLUN6UFLY71z+NDOiNJqDdPRaXzTel0sJySYA=

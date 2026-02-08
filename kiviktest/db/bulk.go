@@ -52,14 +52,8 @@ func failOnBulkErrors(t *testing.T, updates []kivik.BulkResult, op string) { //n
 func testBulkDocs(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
 	t.Parallel()
 	dbname := c.TestDB(t)
-	adb := c.Admin.DB(dbname, c.Options(t, "db"))
-	if err := adb.Err(); err != nil {
-		t.Fatalf("Failed to connect to db as admin: %s", err)
-	}
-	db := client.DB(dbname, c.Options(t, "db"))
-	if err := db.Err(); err != nil {
-		t.Fatalf("Failed to connect to db: %s", err)
-	}
+	adb := c.AdminDB(t, dbname)
+	db := c.DB(t, client, dbname)
 	c.Run(t, "Create", func(t *testing.T) {
 		t.Parallel()
 		doc := map[string]string{

@@ -43,10 +43,7 @@ func createIndex(t *testing.T, c *kt.Context) {
 
 func testCreateIndex(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
 	dbname := c.TestDB(t)
-	db := client.DB(dbname, c.Options(t, "db"))
-	if err := db.Err(); err != nil {
-		t.Fatalf("Failed to open db: %s", err)
-	}
+	db := c.DB(t, client, dbname)
 	c.Run(t, "Valid", func(t *testing.T) {
 		doCreateIndex(t, c, db, `{"fields":["foo"]}`)
 	})

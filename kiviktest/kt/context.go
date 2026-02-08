@@ -117,7 +117,7 @@ func (c *Context) Bool(t *testing.T, key string) bool {
 // Interface returns the configuration value as an any.
 func (c *Context) Interface(t *testing.T, key string) any {
 	t.Helper()
-	return c.Config.get(name(t), key)
+	return c.Config.Interface(t, key)
 }
 
 // Options returns an options map value.
@@ -191,6 +191,24 @@ func (c *Context) RunRO(t *testing.T, fn func(*testing.T)) {
 	if !c.RW {
 		fn(t)
 	}
+}
+
+// DB returns a [kivik.DB] handle for the named database using the provided
+// client.
+func (c *Context) DB(t *testing.T, client *kivik.Client, dbname string) *kivik.DB {
+	t.Helper()
+	db := client.DB(dbname, c.Options(t, "db"))
+	if err := db.Err(); err != nil {
+		t.Fatalf("Failed to connect to db %q: %s", dbname, err)
+	}
+	return db
+}
+
+// AdminDB returns a [kivik.DB] handle for the named database using the Admin
+// client.
+func (c *Context) AdminDB(t *testing.T, dbname string) *kivik.DB {
+	t.Helper()
+	return c.DB(t, c.Admin, dbname)
 }
 
 // TestDB creates a test database, registers a cleanup function to destroy it,

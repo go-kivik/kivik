@@ -29,10 +29,7 @@ func getAttachmentMeta(t *testing.T, c *kt.Context) {
 	c.RunRW(t, func(t *testing.T) {
 		t.Helper()
 		dbname := c.TestDB(t)
-		adb := c.Admin.DB(dbname, c.Options(t, "db"))
-		if err := adb.Err(); err != nil {
-			t.Fatalf("Failed to open db: %s", err)
-		}
+		adb := c.AdminDB(t, dbname)
 
 		doc := map[string]any{
 			"_id": "foo",
@@ -80,10 +77,7 @@ func getAttachmentMeta(t *testing.T, c *kt.Context) {
 func testGetAttachmentMeta(t *testing.T, c *kt.Context, client *kivik.Client, dbname, docID, filename string) { //nolint:thelper
 	c.Run(t, docID+"/"+filename, func(t *testing.T) {
 		t.Parallel()
-		db := client.DB(dbname, c.Options(t, "db"))
-		if err := db.Err(); err != nil {
-			t.Fatalf("Failed to connect to db")
-		}
+		db := c.DB(t, client, dbname)
 		att, err := db.GetAttachmentMeta(context.Background(), docID, filename)
 		if !c.IsExpectedSuccess(t, err) {
 			return

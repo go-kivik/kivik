@@ -44,17 +44,11 @@ func delindex(t *testing.T, c *kt.Context) {
 func testDelIndex(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
 	dbname := c.TestDB(t)
 	// t.Cleanup(func() { c.Admin.DestroyDB(context.Background(), dbname, c.Options(t, "db")) }) // nolint: errcheck
-	dba := c.Admin.DB(dbname, c.Options(t, "db"))
-	if err := dba.Err(); err != nil {
-		t.Fatalf("Failed to open db as admin: %s", err)
-	}
+	dba := c.AdminDB(t, dbname)
 	if err := dba.CreateIndex(context.Background(), "foo", "bar", `{"fields":["foo"]}`); err != nil {
 		t.Fatalf("Failed to create index: %s", err)
 	}
-	db := client.DB(dbname, c.Options(t, "db"))
-	if err := db.Err(); err != nil {
-		t.Fatalf("Failed to open db: %s", err)
-	}
+	db := c.DB(t, client, dbname)
 	c.Run(t, "ValidIndex", func(t *testing.T) {
 		t.Parallel()
 		c.CheckError(t, db.DeleteIndex(context.Background(), "foo", "bar"))

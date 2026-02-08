@@ -29,10 +29,7 @@ func _copy(t *testing.T, c *kt.Context) {
 	c.RunRW(t, func(t *testing.T) {
 		t.Helper()
 		dbname := c.TestDB(t)
-		db := c.Admin.DB(dbname, c.Options(t, "db"))
-		if err := db.Err(); err != nil {
-			t.Fatalf("Failed to open db: %s", err)
-		}
+		db := c.AdminDB(t, dbname)
 
 		doc := map[string]string{
 			"_id":  "foo",
@@ -82,10 +79,7 @@ func _copy(t *testing.T, c *kt.Context) {
 func copyTest(t *testing.T, c *kt.Context, client *kivik.Client, dbname string, source map[string]string) { //nolint:thelper
 	c.Run(t, source["_id"], func(t *testing.T) {
 		t.Parallel()
-		db := client.DB(dbname, c.Options(t, "db"))
-		if err := db.Err(); err != nil {
-			t.Fatalf("Failed to open db: %s", err)
-		}
+		db := c.DB(t, client, dbname)
 		targetID := kt.TestDBName(t)
 		rev, err := db.Copy(context.Background(), targetID, source["_id"])
 		if !c.IsExpectedSuccess(t, err) {

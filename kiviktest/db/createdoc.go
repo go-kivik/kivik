@@ -43,10 +43,7 @@ func createDoc(t *testing.T, c *kt.Context) {
 }
 
 func testCreate(t *testing.T, c *kt.Context, client *kivik.Client, dbname string) { //nolint:thelper
-	db := client.DB(dbname, c.Options(t, "db"))
-	if err := db.Err(); err != nil {
-		t.Fatalf("Failed to connect to database: %s", err)
-	}
+	db := c.DB(t, client, dbname)
 	c.Run(t, "WithoutID", func(t *testing.T) {
 		t.Parallel()
 		err := kt.Retry(func() error {

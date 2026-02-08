@@ -45,14 +45,8 @@ func putAttachment(t *testing.T, c *kt.Context) {
 }
 
 func testPutAttachment(t *testing.T, c *kt.Context, client *kivik.Client, dbname string) { //nolint:thelper
-	db := client.DB(dbname, c.Options(t, "db"))
-	if err := db.Err(); err != nil {
-		t.Fatalf("Failed to open db: %s", err)
-	}
-	adb := c.Admin.DB(dbname, c.Options(t, "db"))
-	if err := adb.Err(); err != nil {
-		t.Fatalf("Failed to open admin db: %s", err)
-	}
+	db := c.DB(t, client, dbname)
+	adb := c.AdminDB(t, dbname)
 	c.Run(t, "Update", func(t *testing.T) {
 		t.Parallel()
 		var docID, rev string

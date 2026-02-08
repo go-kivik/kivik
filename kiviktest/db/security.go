@@ -65,10 +65,7 @@ func security(t *testing.T, c *kt.Context) {
 	c.RunRW(t, func(t *testing.T) {
 		t.Helper()
 		dbname := c.TestDB(t)
-		db := c.Admin.DB(dbname, c.Options(t, "db"))
-		if err := db.Err(); err != nil {
-			t.Fatalf("Failed to open db: %s", err)
-		}
+		db := c.AdminDB(t, dbname)
 		err := kt.Retry(func() error {
 			return db.SetSecurity(context.Background(), sec)
 		})
@@ -118,10 +115,7 @@ func testSetSecurityTests(t *testing.T, c *kt.Context, client *kivik.Client) {
 }
 
 func testSetSecurity(t *testing.T, c *kt.Context, client *kivik.Client, dbname string) { //nolint:thelper
-	db := client.DB(dbname, c.Options(t, "db"))
-	if err := db.Err(); err != nil {
-		t.Fatalf("Failed to open db: %s", err)
-	}
+	db := c.DB(t, client, dbname)
 	err := kt.Retry(func() error {
 		return db.SetSecurity(context.Background(), sec)
 	})

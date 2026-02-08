@@ -30,10 +30,7 @@ func getRev(t *testing.T, c *kt.Context) {
 	c.RunRW(t, func(t *testing.T) {
 		t.Helper()
 		dbName := c.TestDB(t)
-		db := c.Admin.DB(dbName, c.Options(t, "db"))
-		if err := db.Err(); err != nil {
-			t.Fatalf("Failed to connect to test db: %s", err)
-		}
+		db := c.AdminDB(t, dbName)
 		doc := &testDoc{
 			ID: "bob",
 		}

@@ -67,10 +67,7 @@ func roGetIndexesTests(t *testing.T, c *kt.Context, client *kivik.Client) { //no
 
 func rwGetIndexesTests(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
 	dbname := c.TestDB(t)
-	dba := c.Admin.DB(dbname, c.Options(t, "db"))
-	if err := dba.Err(); err != nil {
-		t.Fatalf("Failed to open db as admin: %s", err)
-	}
+	dba := c.AdminDB(t, dbname)
 	if err := dba.CreateIndex(context.Background(), "foo", "bar", `{"fields":["foo"]}`); err != nil {
 		t.Fatalf("Failed to create index: %s", err)
 	}
@@ -94,10 +91,7 @@ func rwGetIndexesTests(t *testing.T, c *kt.Context, client *kivik.Client) { //no
 }
 
 func testGetIndexes(t *testing.T, c *kt.Context, client *kivik.Client, dbname string, expected any) { //nolint:thelper
-	db := client.DB(dbname, c.Options(t, "db"))
-	if err := db.Err(); err != nil {
-		t.Fatalf("Failed to open db: %s", err)
-	}
+	db := c.DB(t, client, dbname)
 	indexes, err := db.GetIndexes(context.Background())
 	if !c.IsExpectedSuccess(t, err) {
 		return

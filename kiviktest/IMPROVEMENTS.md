@@ -4,19 +4,6 @@ Constraint: minimum Go version is 1.20 (`go.mod`).
 
 ---
 
-## Batch 4: Add `c.DB()` helper (boilerplate reduction)
-
-Add helper methods to `kt.Context`:
-
-```go
-func (c *Context) DB(t *testing.T, client *kivik.Client, dbname string) *kivik.DB
-func (c *Context) AdminDB(t *testing.T, dbname string) *kivik.DB
-```
-
-Then update call sites across `client/` and `db/` test files.
-
----
-
 ## Batch 4a: Fix `Options()` panic
 
 `kt.Context.Options()` uses `panic()` on type mismatch instead of

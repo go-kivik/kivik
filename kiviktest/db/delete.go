@@ -48,15 +48,8 @@ type deleteDoc struct {
 func testDelete(t *testing.T, c *kt.Context, client *kivik.Client) { //nolint:thelper
 	t.Parallel()
 	dbName := c.TestDB(t)
-	admdb := c.Admin.DB(dbName, c.Options(t, "db"))
-	if err := admdb.Err(); err != nil {
-		t.Errorf("Failed to connect to db as admin: %s", err)
-	}
-	db := client.DB(dbName, c.Options(t, "db"))
-	if err := db.Err(); err != nil {
-		t.Errorf("Failed to connect to db: %s", err)
-		return
-	}
+	admdb := c.AdminDB(t, dbName)
+	db := c.DB(t, client, dbName)
 
 	doc := &deleteDoc{
 		ID: kt.TestDBName(t),

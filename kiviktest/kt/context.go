@@ -14,7 +14,6 @@ package kt
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	kivik "github.com/go-kivik/kivik/v4"
@@ -130,7 +129,7 @@ func (c *Context) Options(t *testing.T, key string) kivik.Option {
 	}
 	o, ok := i.(kivik.Option)
 	if !ok {
-		panic(fmt.Sprintf("Options field %s/%s of unsupported type: %T", testName, key, i))
+		t.Fatalf("Options field %s/%s of unsupported type: %T", testName, key, i)
 	}
 	return o
 }

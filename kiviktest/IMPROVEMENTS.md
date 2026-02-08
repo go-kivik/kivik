@@ -4,21 +4,6 @@ Constraint: minimum Go version is 1.20 (`go.mod`).
 
 ---
 
-## Batch 4a: Fix `Options()` panic
-
-`kt.Context.Options()` uses `panic()` on type mismatch instead of
-`t.Fatalf()`. A test framework should not kill the process on bad config.
-
----
-
-## Batch 4b: Standardize setup error handling
-
-Three different patterns exist for the same kind of error (failed to connect
-to DB): `t.Fatalf`, `t.Errorf`, and `c.IsExpectedSuccess`. Standardize on
-one approach.
-
----
-
 ## Batch 4c: Config key constants
 
 13+ config keys (`"status"`, `"databases"`, `"skip"`, `"db"`, `"expected"`,

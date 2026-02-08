@@ -69,7 +69,7 @@ func (f *Formatter) Register(name string, fmt Format) {
 
 func (f *Formatter) options() []string {
 	if len(f.formats) == 0 {
-		panic("no formatters regiestered")
+		panic("no formatters registered")
 	}
 	return f.formatOpts
 }

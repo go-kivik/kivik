@@ -10,9 +10,6 @@
   In `DBUpdates()`, if `chttp.ResponseError(resp)` returns an error, the
   function returns without closing `resp.Body`.
 
-- [ ] **Typo in `cmd/kivik/output/output.go:72`**
-  `panic("no formatters regiestered")` — "regiestered" should be "registered".
-
 - [ ] **Panic instead of error in `couchdb/client.go:142`**
   `newUpdates()` has `panic("unknown")` as the default case for unrecognized
   feed types. Should return an error.

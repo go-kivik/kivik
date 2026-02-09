@@ -1081,6 +1081,25 @@ func TestUserAgent(t *testing.T) {
 	}
 }
 
+func TestNewRequestCompressBodyGoroutineLeak(t *testing.T) {
+	client := newTestClient(nil, nil)
+
+	before := runtime.NumGoroutine()
+
+	_, err := client.NewRequest(t.Context(), "BAD METHOD", "/foo", Body("some body data"), nil)
+	if err == nil {
+		t.Fatal("expected error from NewRequest with invalid method")
+	}
+
+	runtime.GC()
+	time.Sleep(100 * time.Millisecond)
+
+	after := runtime.NumGoroutine()
+	if after > before {
+		t.Errorf("goroutine leak detected: had %d goroutines before, %d after", before, after)
+	}
+}
+
 func TestExtractRev(t *testing.T) {
 	type tt struct {
 		rc  io.ReadCloser

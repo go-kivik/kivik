@@ -15,11 +15,6 @@
   the main function. While `sync.WaitGroup` provides a happens-before guarantee,
   the pattern is fragile and unconventional.
 
-- [ ] **Goroutine leak in `couchdb/chttp/chttp.go:220-235`**
-  `compressBody()` spawns a goroutine writing to an `io.Pipe`. If the pipe
-  reader is abandoned before the goroutine finishes, the goroutine hangs
-  indefinitely.
-
 - [ ] **Goroutine leak in `couchdb/db.go:813-830`**
   `replaceAttachments()` has the same pipe-writer goroutine leak pattern.
 

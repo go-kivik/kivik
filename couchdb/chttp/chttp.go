@@ -189,9 +189,12 @@ func (c *Client) NewRequest(ctx context.Context, method, path string, body io.Re
 	u := *c.dsn // Make a copy
 	u.Path = reqPath.Path
 	u.RawQuery = reqPath.RawQuery
-	compress, body := c.compressBody(u.String(), body, opts)
-	req, err := http.NewRequestWithContext(ctx, method, u.String(), body)
+	compress, compressedBody := c.compressBody(u.String(), body, opts)
+	req, err := http.NewRequestWithContext(ctx, method, u.String(), compressedBody)
 	if err != nil {
+		if compressedBody != nil {
+			_ = compressedBody.Close()
+		}
 		return nil, &internal.Error{Status: http.StatusBadRequest, Err: err}
 	}
 	if compress {
@@ -217,9 +220,16 @@ func (c *Client) shouldCompressBody(path string, body io.Reader, opts *Options) 
 
 // compressBody compresses body with gzip compression if appropriate. It will
 // return true, and the compressed stream, or false, and the unaltered stream.
-func (c *Client) compressBody(path string, body io.Reader, opts *Options) (bool, io.Reader) {
+// The caller must close the returned io.ReadCloser when done.
+func (c *Client) compressBody(path string, body io.Reader, opts *Options) (bool, io.ReadCloser) {
 	if !c.shouldCompressBody(path, body, opts) {
-		return false, body
+		if body == nil {
+			return false, nil
+		}
+		if rc, ok := body.(io.ReadCloser); ok {
+			return false, rc
+		}
+		return false, io.NopCloser(body)
 	}
 	r, w := io.Pipe()
 	go func() {

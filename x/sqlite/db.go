@@ -31,8 +31,9 @@ type db struct {
 }
 
 var (
-	_ driver.DB     = (*db)(nil)
-	_ driver.Finder = (*db)(nil)
+	_ driver.DB         = (*db)(nil)
+	_ driver.Finder     = (*db)(nil)
+	_ driver.SecurityDB = (*db)(nil)
 )
 
 func (c *client) newDB(name string) *db {

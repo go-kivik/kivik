@@ -8,10 +8,6 @@
   or an environment-dependent behavior change. Snapshot needs regeneration
   or test logic needs updating.
 
-- [ ] **Panic instead of error in `couchdb/db.go:59`**
-  `d.path()` panics with `"THIS IS A BUG: d.path failed"` on URL parse errors.
-  Should return an error.
-
 ## Potential Concurrency Issues
 
 - [ ] **Data race risk in `couchdb/db.go:640-672`**
@@ -36,15 +32,6 @@ check will panic at runtime if the wrong type is passed:
 - [ ] `couchdb/changes.go:67,72` — changes parser
 - [ ] `couchdb/client.go:124` — updates parser
 - [ ] `couchdb/db.go:1112` — allDocs iterator
-
-## Production Panics Worth Addressing
-
-Beyond the confirmed bugs above, these panics in non-test, non-experimental
-code should be converted to error returns:
-
-- [ ] `couchdb/chttp/trace.go:64` — `"nil trace"`
-- [ ] `pouchdb/replicationEvents.go:46,58` — panics on time parse errors
-- [ ] `pouchdb/replicationEvents.go:110` — panics on unexpected replication event
 
 ## Feature Gaps / Incomplete Implementations
 

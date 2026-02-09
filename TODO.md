@@ -12,10 +12,6 @@
   `d.path()` panics with `"THIS IS A BUG: d.path failed"` on URL parse errors.
   Should return an error.
 
-- [ ] **Wrong variable in nil check in `options.go:54`**
-  `multiOptions.String()` checks `o != nil` (the receiver) instead of
-  `opt != nil` (the loop variable). The receiver is never nil at this point.
-
 ## Potential Concurrency Issues
 
 - [ ] **Data race risk in `couchdb/db.go:640-672`**

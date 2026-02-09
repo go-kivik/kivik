@@ -18,7 +18,31 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"gitlab.com/flimzy/testy"
 )
+
+func Test_multiOptions_String(t *testing.T) {
+	t.Parallel()
+
+	type tt struct {
+		input multiOptions
+		want  string
+	}
+
+	tests := testy.NewTable()
+
+	tests.Add("nil element in slice", tt{
+		input: multiOptions{Param("foo", "bar"), nil, Param("baz", "qux")},
+		want:  "map[foo:bar],map[baz:qux]",
+	})
+
+	tests.Run(t, func(t *testing.T, test tt) {
+		got := test.input.String()
+		if d := cmp.Diff(test.want, got); d != "" {
+			t.Errorf("Unexpected result (-want, +got):\n%s", d)
+		}
+	})
+}
 
 func TestDuration(t *testing.T) {
 	o := Duration("heartbeat", 15*time.Second)

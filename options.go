@@ -51,7 +51,7 @@ func (o multiOptions) Apply(t any) {
 func (o multiOptions) String() string {
 	parts := make([]string, 0, len(o))
 	for _, opt := range o {
-		if o != nil {
+		if opt != nil {
 			if part := fmt.Sprintf("%s", opt); part != "" {
 				parts = append(parts, part)
 			}

@@ -185,3 +185,12 @@ func (a testAttachments) addStub(filename string) testAttachments {
 	}
 	return a
 }
+
+// tAddValidation installs a validate_doc_update function into the test
+// database by putting a design document with the given function body.
+func (tdb *testDB) tAddValidation(ddocID, funcBody string) {
+	tdb.t.Helper()
+	tdb.tPut(ddocID, map[string]interface{}{
+		"validate_doc_update": funcBody,
+	})
+}

@@ -16,10 +16,11 @@ import (
 	"context"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/x/options"
 )
 
 func (d *db) Find(ctx context.Context, query any, _ driver.Options) (driver.Rows, error) {
-	vopts, err := findOptions(query)
+	vopts, err := options.FindOptions(query)
 	if err != nil {
 		return nil, err
 	}

@@ -914,11 +914,6 @@ func TestDBGet(t *testing.T) {
 		}
 	})
 
-	/*
-		TODO:
-		att_encoding_info = true
-	*/
-
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()
 		db := tt.db

@@ -16,6 +16,7 @@ package js
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"reflect"
 
 	"github.com/dop251/goja"
@@ -119,14 +120,76 @@ func Reduce(code string) (ReduceFunc, error) {
 	}, nil
 }
 
+// ValidateFunc represents a CouchDB [validate_doc_update function]. The
+// function throws to reject a document update. If the thrown value is an
+// object with a "forbidden" key, the error will have HTTP status 403. If it
+// has an "unauthorized" key, the error will have HTTP status 401.
+//
+// [validate_doc_update function]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#validate-document-update-functions
+type ValidateFunc func(newDoc, oldDoc, userCtx, secObj any) error
+
+// Validate compiles the provided JavaScript code into a ValidateFunc.
+func Validate(code string) (ValidateFunc, error) {
+	vm := goja.New()
+	if _, err := vm.RunString("const validate = " + code); err != nil {
+		return nil, fmt.Errorf("failed to compile validate function: %s", err)
+	}
+	validateFunc, ok := goja.AssertFunction(vm.Get("validate"))
+	if !ok {
+		panic(fmt.Sprintf("expected validate to be a function, got %T", vm.Get("validate")))
+	}
+	return func(newDoc, oldDoc, userCtx, secObj any) error {
+		_, err := validateFunc(goja.Undefined(), vm.ToValue(newDoc), vm.ToValue(oldDoc), vm.ToValue(userCtx), vm.ToValue(secObj))
+		if err != nil {
+			return validateException(err)
+		}
+		return nil
+	}, nil
+}
+
+// validateError represents an error returned by a validate_doc_update function.
+type validateError struct {
+	Status  int
+	Message string
+}
+
+func (e *validateError) Error() string {
+	return e.Message
+}
+
+// HTTPStatus returns the HTTP status code associated with the error.
+func (e *validateError) HTTPStatus() int {
+	return e.Status
+}
+
+func validateException(err error) error {
+	var exc *goja.Exception
+	if !errors.As(err, &exc) {
+		return err
+	}
+	val := exc.Value().Export()
+	if m, ok := val.(map[string]any); ok {
+		if msg, ok := m["forbidden"]; ok {
+			return &validateError{Status: http.StatusForbidden, Message: fmt.Sprint(msg)}
+		}
+		if msg, ok := m["unauthorized"]; ok {
+			return &validateError{Status: http.StatusUnauthorized, Message: fmt.Sprint(msg)}
+		}
+		for _, v := range m {
+			return &validateError{Status: http.StatusInternalServerError, Message: fmt.Sprint(v)}
+		}
+	}
+	return &validateError{Status: http.StatusInternalServerError, Message: fmt.Sprint(val)}
+}
+
 // exception converts a JavaScript exception to a Go error.
 func exception(err error) error {
 	if err == nil {
 		return nil
 	}
-	var exception *goja.Exception
-	if errors.As(err, &exception) {
-		return errors.New(exception.String())
+	var exc *goja.Exception
+	if errors.As(err, &exc) {
+		return errors.New(exc.String())
 	}
 	// should never happen that we get a non-exception error
 	return err

@@ -1109,10 +1109,158 @@ func TestDBPut(t *testing.T) {
 		}
 	})
 
+	tests.Add("validate_doc_update rejects document", func(t *testing.T) interface{} {
+		d := newDB(t)
+		d.tAddValidation("_design/validation", `function(newDoc, oldDoc, userCtx, secObj) { throw({forbidden: "not allowed"}); }`)
+
+		return test{
+			db:    d,
+			docID: "foo",
+			doc: map[string]interface{}{
+				"foo": "bar",
+			},
+			wantStatus: http.StatusForbidden,
+			wantErr:    "not allowed",
+		}
+	})
+	tests.Add("validate_doc_update plain string throw", func(t *testing.T) interface{} {
+		d := newDB(t)
+		d.tAddValidation("_design/validation", `function(newDoc, oldDoc, userCtx, secObj) { throw("plain string error"); }`)
+
+		return test{
+			db:    d,
+			docID: "foo",
+			doc: map[string]interface{}{
+				"foo": "bar",
+			},
+			wantStatus: http.StatusInternalServerError,
+			wantErr:    "plain string error",
+		}
+	})
+	tests.Add("validate_doc_update unknown key throw", func(t *testing.T) interface{} {
+		d := newDB(t)
+		d.tAddValidation("_design/validation", `function(newDoc, oldDoc, userCtx, secObj) { throw({custom_key: "some message"}); }`)
+
+		return test{
+			db:    d,
+			docID: "foo",
+			doc: map[string]interface{}{
+				"foo": "bar",
+			},
+			wantStatus: http.StatusInternalServerError,
+			wantErr:    "some message",
+		}
+	})
+	tests.Add("validate_doc_update receives oldDoc on update", func(t *testing.T) interface{} {
+		d := newDB(t)
+		d.tAddValidation("_design/validation", `function(newDoc, oldDoc, userCtx, secObj) { if (oldDoc && oldDoc.foo === "bar") throw({forbidden: "cannot update foo=bar docs"}); }`)
+		rev := d.tPut("testdoc", map[string]interface{}{"foo": "bar"})
+
+		return test{
+			db:    d,
+			docID: "testdoc",
+			doc: map[string]interface{}{
+				"_rev": rev,
+				"foo":  "baz",
+			},
+			wantStatus: http.StatusForbidden,
+			wantErr:    "cannot update foo=bar docs",
+		}
+	})
+
+	tests.Add("validate_doc_update multiple design docs", func(t *testing.T) interface{} {
+		d := newDB(t)
+		d.tAddValidation("_design/val1", `function(newDoc, oldDoc, userCtx, secObj) { }`)
+		d.tAddValidation("_design/val2", `function(newDoc, oldDoc, userCtx, secObj) { throw({forbidden: "blocked by second"}); }`)
+
+		return test{
+			db:    d,
+			docID: "foo",
+			doc: map[string]interface{}{
+				"foo": "bar",
+			},
+			wantStatus: http.StatusForbidden,
+			wantErr:    "blocked by second",
+		}
+	})
+
+	tests.Add("validate_doc_update stored via design doc put is enforced", func(t *testing.T) interface{} {
+		d := newDB(t)
+		d.tPut("_design/test", map[string]interface{}{
+			"validate_doc_update": `function(newDoc) { if(newDoc.blocked) throw({forbidden: "blocked"}); }`,
+		})
+
+		d.tPut("ok", map[string]interface{}{})
+
+		return test{
+			db:    d,
+			docID: "bad",
+			doc: map[string]interface{}{
+				"blocked": true,
+			},
+			wantStatus: http.StatusForbidden,
+			wantErr:    "blocked",
+		}
+	})
+
+	tests.Add("validate_doc_update receives admin party userCtx", func(t *testing.T) interface{} {
+		d := newDB(t)
+		d.tAddValidation("_design/validation", `function(newDoc, oldDoc, userCtx, secObj) {
+			if (userCtx.roles.indexOf("_admin") === -1) throw({forbidden: "not admin"});
+			if (userCtx.db !== "test") throw({forbidden: "wrong db name"});
+		}`)
+
+		return test{
+			db:    d,
+			docID: "foo",
+			doc: map[string]interface{}{
+				"foo": "bar",
+			},
+			wantRev: "1-.*",
+			wantRevs: []leaf{
+				{
+					ID:  "_design/validation",
+					Rev: 1,
+				},
+				{
+					ID:  "foo",
+					Rev: 1,
+				},
+			},
+		}
+	})
+
+	tests.Add("validate_doc_update receives admin party secObj", func(t *testing.T) interface{} {
+		d := newDB(t)
+		d.tAddValidation("_design/validation", `function(newDoc, oldDoc, userCtx, secObj) {
+			if (!Array.isArray(secObj.admins.names)) throw({forbidden: "admins.names not an array"});
+			if (!Array.isArray(secObj.admins.roles)) throw({forbidden: "admins.roles not an array"});
+			if (!Array.isArray(secObj.members.names)) throw({forbidden: "members.names not an array"});
+			if (!Array.isArray(secObj.members.roles)) throw({forbidden: "members.roles not an array"});
+		}`)
+
+		return test{
+			db:    d,
+			docID: "foo",
+			doc: map[string]interface{}{
+				"foo": "bar",
+			},
+			wantRev: "1-.*",
+			wantRevs: []leaf{
+				{
+					ID:  "_design/validation",
+					Rev: 1,
+				},
+				{
+					ID:  "foo",
+					Rev: 1,
+				},
+			},
+		}
+	})
+
 	/*
 		TODO:
-		- Encoding/compression?
-		- with validate_doc_update function
 		- with updates function
 	*/
 

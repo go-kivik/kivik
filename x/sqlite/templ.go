@@ -16,7 +16,7 @@ package sqlite
 
 import (
 	"bytes"
-	"fmt"
+	"encoding/hex"
 	"hash/fnv"
 	"strconv"
 	"strings"
@@ -39,33 +39,22 @@ type tmplFuncs struct {
 
 const tablePrefix = "kivik$"
 
-func (t *tmplFuncs) Docs() string {
-	return strconv.Quote(tablePrefix + t.db.name)
+func (t *tmplFuncs) tableName(suffix string) string {
+	return strconv.Quote(tablePrefix + t.db.name + suffix)
 }
 
-func (t *tmplFuncs) Revs() string {
-	return strconv.Quote(tablePrefix + t.db.name + "$revs")
+func (t *tmplFuncs) indexName(suffix string) string {
+	return strconv.Quote("idx_" + tablePrefix + t.db.name + suffix)
 }
 
-func (t *tmplFuncs) Attachments() string {
-	return strconv.Quote(tablePrefix + t.db.name + "$attachments")
-}
-
-func (t *tmplFuncs) AttachmentsBridge() string {
-	return strconv.Quote(tablePrefix + t.db.name + "$attachments_bridge")
-}
-
-func (t *tmplFuncs) Design() string {
-	return strconv.Quote(tablePrefix + t.db.name + "$design")
-}
-
-func (t *tmplFuncs) IndexKey() string {
-	return strconv.Quote("idx_" + tablePrefix + t.db.name + "$key")
-}
-
-func (t *tmplFuncs) IndexParent() string {
-	return strconv.Quote("idx_" + tablePrefix + t.db.name + "$parent")
-}
+func (t *tmplFuncs) Docs() string              { return t.tableName("") }
+func (t *tmplFuncs) Revs() string              { return t.tableName("$revs") }
+func (t *tmplFuncs) Attachments() string       { return t.tableName("$attachments") }
+func (t *tmplFuncs) AttachmentsBridge() string { return t.tableName("$attachments_bridge") }
+func (t *tmplFuncs) Design() string            { return t.tableName("$design") }
+func (t *tmplFuncs) Security() string          { return t.tableName("$security") }
+func (t *tmplFuncs) IndexKey() string          { return t.indexName("$key") }
+func (t *tmplFuncs) IndexParent() string       { return t.indexName("$parent") }
 
 const maxTableLen = 59 // 64 minus the `idx_` prefix, and one more `_` separator
 
@@ -108,6 +97,16 @@ func (t *tmplFuncs) Collation() string {
 	}
 }
 
+func executeTmpl(format string, data *tmplFuncs) string {
+	var buf bytes.Buffer
+	tmpl := getTmpl(format)
+
+	if err := tmpl.Execute(&buf, data); err != nil {
+		panic(err)
+	}
+	return buf.String()
+}
+
 // query does variable substitution on a query string. The following translations
 // are made:
 //
@@ -117,13 +116,7 @@ func (t *tmplFuncs) Collation() string {
 //	{{ .AttachmentsBridge }} -> "kivik$" + db.name + "$attachments_bridge"
 //	{{ .Design }}            -> "kivik$" + db.name + "$design"
 func (d *db) query(format string) string {
-	var buf bytes.Buffer
-	tmpl := getTmpl(format)
-
-	if err := tmpl.Execute(&buf, &tmplFuncs{db: d}); err != nil {
-		panic(err)
-	}
-	return buf.String()
+	return executeTmpl(format, &tmplFuncs{db: d})
 }
 
 // ddocQuery works just like [db.query], but also enables access to the
@@ -132,18 +125,12 @@ func (d *db) query(format string) string {
 //	{{ .Map }}      -> the view map table name
 //	{{ .IndexMap }} -> the view map index name
 func (d *db) ddocQuery(docID, viewOrFuncName, rev, format string) string {
-	var buf bytes.Buffer
-	tmpl := getTmpl(format)
-
-	if err := tmpl.Execute(&buf, &tmplFuncs{
+	return executeTmpl(format, &tmplFuncs{
 		db:       d,
 		ddoc:     strings.TrimPrefix(docID, "_design/"),
 		viewName: viewOrFuncName,
 		rev:      rev,
-	}); err != nil {
-		panic(err)
-	}
-	return buf.String()
+	})
 }
 
 // createDdocQuery works just like [db.ddocQuery], but also enables access to the
@@ -151,19 +138,13 @@ func (d *db) ddocQuery(docID, viewOrFuncName, rev, format string) string {
 //
 //	{{ .Collation }} -> the view's collation sequence
 func (d *db) createDdocQuery(docID, viewOrFuncName, rev, format string, collation *string) string {
-	var buf bytes.Buffer
-	tmpl := getTmpl(format)
-
-	if err := tmpl.Execute(&buf, &tmplFuncs{
+	return executeTmpl(format, &tmplFuncs{
 		db:        d,
 		ddoc:      strings.TrimPrefix(docID, "_design/"),
 		viewName:  viewOrFuncName,
 		rev:       rev,
 		collation: collation,
-	}); err != nil {
-		panic(err)
-	}
-	return buf.String()
+	})
 }
 
 func getTmpl(format string) *template.Template {
@@ -184,5 +165,5 @@ func getTmpl(format string) *template.Template {
 func calcTmplName(format string) string {
 	hash := fnv.New128a()
 	hash.Write([]byte(format))
-	return fmt.Sprintf("%x", hash.Sum(nil))
+	return hex.EncodeToString(hash.Sum(nil))
 }

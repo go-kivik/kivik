@@ -15,6 +15,7 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strings"
@@ -168,6 +169,16 @@ func (d *db) Put(ctx context.Context, docID string, doc any, options driver.Opti
 		}
 	case err != nil:
 		return "", d.errDatabaseNotFound(err)
+	}
+
+	var newDocMap map[string]any
+	if err := json.Unmarshal(data.Doc, &newDocMap); err != nil {
+		return "", err
+	}
+	newDocMap["_id"] = data.ID
+
+	if err := d.runValidation(ctx, tx, docID, newDocMap, curRev); err != nil {
+		return "", err
 	}
 
 	r, err := d.createRev(ctx, tx, data, curRev)

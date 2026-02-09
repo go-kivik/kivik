@@ -240,9 +240,6 @@ type attachment struct {
 	Length      int64  `json:"length"`
 	RevPos      int    `json:"revpos"`
 	Stub        bool   `json:"stub,omitempty"`
-	// TODO: Add encoding support to compress certain types of attachments.
-	// Encoding      string `json:"encoding"`
-	// EncodedLength int64  `json:"encoded_length"`
 
 	// Data is the raw JSON representation of the attachment data. It is decoded
 	// into Content by the [attachment.calculate] method.

@@ -648,6 +648,78 @@ func TestDBChanges(t *testing.T) {
 			wantETag:    &[]string{"eccbc87e4b5ce2fe28308fd9f2a7baf3"}[0],
 		}
 	})
+	tests.Add("longpoll timeout", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("doc1", map[string]string{"foo": "bar"})
+
+		return test{
+			db: d,
+			options: kivik.Params(map[string]interface{}{
+				"feed":    "longpoll",
+				"since":   "now",
+				"timeout": 200,
+			}),
+			wantLastSeq: &[]string{"1"}[0],
+			wantETag:    &[]string{""}[0],
+		}
+	})
+	tests.Add("style=all_docs returns all leaf revisions", func(t *testing.T) interface{} {
+		d := newDB(t)
+		rev1 := d.tPut("foo", map[string]string{"_rev": "1-xyz", "foo": "bar"}, kivik.Param("new_edits", false))
+		rev2 := d.tPut("foo", map[string]string{"_rev": "1-abc", "conflict": "true"}, kivik.Param("new_edits", false))
+
+		return test{
+			db:      d,
+			options: kivik.Param("style", "all_docs"),
+			wantChanges: []driver.Change{
+				{
+					ID:      "foo",
+					Seq:     "1",
+					Changes: driver.ChangedRevs{rev1, rev2},
+				},
+			},
+			wantLastSeq: &[]string{"1"}[0],
+			wantETag:    &[]string{"c4ca4238a0b923820dcc509a6f75849b"}[0],
+		}
+	})
+	tests.Add("style=all_docs with filter and include_docs", func(t *testing.T) interface{} {
+		d := newDB(t)
+		_ = d.tPut("_design/mydesign", map[string]interface{}{
+			"filters": map[string]interface{}{
+				"myfilter": "function(doc) { return doc.type === 'important'; }",
+			},
+		})
+		fooRev := d.tPut("foo", map[string]interface{}{"type": "important"})
+		conflictRev := "1-conflict"
+		d.tPut("foo", map[string]interface{}{"_rev": conflictRev, "type": "unimportant"}, kivik.Param("new_edits", false))
+		_ = d.tPut("bar", map[string]interface{}{"type": "boring"})
+
+		winnerRev := fooRev
+		loserRev := conflictRev
+		if conflictRev > fooRev {
+			winnerRev = conflictRev
+			loserRev = fooRev
+		}
+
+		return test{
+			db: d,
+			options: kivik.Params(map[string]interface{}{
+				"style":        "all_docs",
+				"include_docs": true,
+				"filter":       "mydesign/myfilter",
+			}),
+			wantChanges: []driver.Change{
+				{
+					ID:      "foo",
+					Seq:     "2",
+					Changes: driver.ChangedRevs{winnerRev, loserRev},
+					Doc:     []byte(`{"_id":"foo","_rev":"` + winnerRev + `","type":"important"}`),
+				},
+			},
+			wantLastSeq: &[]string{"4"}[0],
+			wantETag:    &[]string{"a87ff679a2f3e71d9181a67b7542122c"}[0],
+		}
+	})
 	/*
 		TODO:
 		- Options
@@ -658,7 +730,6 @@ func TestDBChanges(t *testing.T) {
 				- continuous
 			- att_encoding_info
 			- style
-			- timeout
 	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {
@@ -1198,7 +1269,7 @@ func Test_longpoll_changes_query(t *testing.T) {
 
 	d := newDB(t)
 
-	changes, err := d.DB.(*db).newLongpollChanges(context.Background(), true, false, false)
+	changes, err := d.DB.(*db).newLongpollChanges(context.Background(), true, false, false, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1259,7 +1330,7 @@ func Test_longpoll_changes_query_without_docs(t *testing.T) {
 
 	d := newDB(t)
 
-	changes, err := d.DB.(*db).newLongpollChanges(context.Background(), false, false, false)
+	changes, err := d.DB.(*db).newLongpollChanges(context.Background(), false, false, false, 0)
 	if err != nil {
 		t.Fatal(err)
 	}

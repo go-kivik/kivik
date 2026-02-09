@@ -132,6 +132,19 @@ func TestDBDelete(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 		wantErr:    `invalid rev format`,
 	})
+	tests.Add("validate_doc_update prevents deletion", func(t *testing.T) interface{} {
+		d := newDB(t)
+		d.tAddValidation("_design/validation", `function(newDoc, oldDoc, userCtx, secObj) { if (newDoc._deleted) throw({forbidden: "deletion not allowed"}); }`)
+		rev := d.tPut("foo", map[string]string{"foo": "bar"})
+
+		return test{
+			db:         d,
+			id:         "foo",
+			options:    kivik.Rev(rev),
+			wantStatus: http.StatusForbidden,
+			wantErr:    "deletion not allowed",
+		}
+	})
 
 	/*
 		- _revisions

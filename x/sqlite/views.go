@@ -27,28 +27,8 @@ import (
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
 	"github.com/go-kivik/kivik/v4/x/mango"
+	"github.com/go-kivik/kivik/v4/x/options"
 )
-
-func endKeyOp(descending, inclusive bool) string {
-	switch {
-	case descending && inclusive:
-		return ">="
-	case descending && !inclusive:
-		return ">"
-	case !descending && inclusive:
-		return "<="
-	case !descending && !inclusive:
-		return "<"
-	}
-	panic("unreachable")
-}
-
-func startKeyOp(descending bool) string {
-	if descending {
-		return "<="
-	}
-	return ">="
-}
 
 const (
 	viewAllDocs    = "_all_docs"
@@ -78,11 +58,11 @@ func (d *db) DesignDocs(ctx context.Context, options driver.Options) (driver.Row
 
 func (d *db) queryBuiltinView(
 	ctx context.Context,
-	vopts *viewOptions,
+	vopts *options.ViewOptions,
 ) (driver.Rows, error) {
-	args := []any{vopts.includeDocs, vopts.conflicts, vopts.updateSeq, vopts.attachments, vopts.bookmark}
+	args := []any{vopts.IncludeDocs(), vopts.Conflicts(), vopts.UpdateSeq(), vopts.Attachments(), vopts.Bookmark()}
 
-	where := append([]string{""}, vopts.buildWhere(&args)...)
+	where := append([]string{""}, vopts.BuildWhere(&args)...)
 
 	query := fmt.Sprintf(d.query(leavesCTE+`,
 		main AS (
@@ -141,7 +121,7 @@ func (d *db) queryBuiltinView(
 						%[2]s -- WHERE
 					GROUP BY view.id, view.rev, view.rev_id
 					%[1]s -- ORDER BY
-					LIMIT %[3]d OFFSET %[4]d
+					%[3]s
 				) AS view
 				LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON view.id = bridge.id AND view.rev = bridge.rev AND view.rev_id = bridge.rev_id AND $1
 				LEFT JOIN {{ .Attachments }} AS att ON bridge.pk = att.pk
@@ -187,8 +167,8 @@ func (d *db) queryBuiltinView(
 			rev_pos,
 			data
 		FROM main
-		%[5]s -- bookmark filtering
-	`), vopts.buildOrderBy(), strings.Join(where, " AND "), vopts.limit, vopts.skip, vopts.bookmarkWhere())
+		%[4]s -- bookmark filtering
+	`), vopts.BuildOrderBy(), strings.Join(where, " AND "), vopts.BuildLimit(), vopts.BookmarkWhere())
 	results, err := d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {
 		return nil, d.errDatabaseNotFound(err)
@@ -205,10 +185,10 @@ func (d *db) queryBuiltinView(
 		rows:      results,
 		updateSeq: meta.updateSeq,
 		totalRows: meta.totalRows,
-		selector:  vopts.selector,
-		findLimit: vopts.findLimit,
-		findSkip:  vopts.findSkip,
-		fields:    vopts.fields,
+		selector:  vopts.Selector(),
+		findLimit: vopts.FindLimit(),
+		findSkip:  vopts.FindSkip(),
+		fields:    vopts.Fields(),
 	}, nil
 }
 
@@ -223,7 +203,7 @@ type viewMetadata struct {
 
 // readFirstRow reads the first row from the resultset, which contains. In the
 // case of an error, the result set is closed and an error is returned.
-func readFirstRow(results *sql.Rows, vopts *viewOptions) (*viewMetadata, error) {
+func readFirstRow(results *sql.Rows, vopts *options.ViewOptions) (*viewMetadata, error) {
 	if !results.Next() {
 		// should never happen
 		_ = results.Close() //nolint:sqlclosecheck // Aborting
@@ -238,13 +218,13 @@ func readFirstRow(results *sql.Rows, vopts *viewOptions) (*viewMetadata, error) 
 		_ = results.Close() //nolint:sqlclosecheck // Aborting
 		return nil, err
 	}
-	if vopts.reduce != nil && *vopts.reduce && !meta.reducible {
+	if vopts.Reduce() != nil && *vopts.Reduce() && !meta.reducible {
 		_ = results.Close() //nolint:sqlclosecheck // Aborting
 		opt := "reduce"
 		switch {
-		case vopts.groupLevel > 0:
+		case vopts.GroupLevel() > 0:
 			opt = "group_level"
-		case vopts.group:
+		case vopts.Group():
 			opt = "group"
 		}
 		return nil, &internal.Error{Status: http.StatusBadRequest, Message: opt + " is invalid for map-only views"}

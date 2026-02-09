@@ -31,8 +31,9 @@ type db struct {
 }
 
 var (
-	_ driver.DB     = (*db)(nil)
-	_ driver.Finder = (*db)(nil)
+	_ driver.DB         = (*db)(nil)
+	_ driver.Finder     = (*db)(nil)
+	_ driver.SecurityDB = (*db)(nil)
 )
 
 func (c *client) newDB(name string) *db {
@@ -47,7 +48,7 @@ func (d *db) Close() error {
 	return d.db.Close()
 }
 
-// TODO: I think Ping belongs on *client, not *db
+// TODO: I think Ping belongs on *client, not *db (requires v5)
 func (d *db) Ping(ctx context.Context) error {
 	return d.db.PingContext(ctx)
 }

@@ -26,6 +26,7 @@ import (
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
+	"github.com/go-kivik/kivik/v4/x/options"
 	"github.com/go-kivik/kivik/x/sqlite/v4/js"
 	"github.com/go-kivik/kivik/x/sqlite/v4/reduce"
 )
@@ -42,9 +43,8 @@ func fromJSValue(v any) (*string, error) {
 	return &s, nil
 }
 
-func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Options) (driver.Rows, error) {
-	opts := newOpts(options)
-	vopts, err := opts.viewOptions(ddoc)
+func (d *db) Query(ctx context.Context, ddoc, view string, opts driver.Options) (driver.Rows, error) {
+	vopts, err := options.New(opts).ViewOptions(ddoc)
 	if err != nil {
 		return nil, err
 	}
@@ -66,9 +66,9 @@ func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Option
 		return nil, err
 	}
 
-	if vopts.update == updateModeLazy {
+	if vopts.Update() == options.UpdateModeLazy {
 		go func() {
-			if _, err := d.updateIndex(context.Background(), ddoc, view, updateModeTrue); err != nil {
+			if _, err := d.updateIndex(context.Background(), ddoc, view, options.UpdateModeTrue); err != nil {
 				d.logger.Print("Failed to update index: " + err.Error())
 			}
 		}()
@@ -99,24 +99,24 @@ const (
 func (d *db) performQuery(
 	ctx context.Context,
 	ddoc, view string,
-	vopts *viewOptions,
+	vopts *options.ViewOptions,
 ) (driver.Rows, error) {
-	if vopts.group {
+	if vopts.Group() {
 		return d.performGroupQuery(ctx, ddoc, view, vopts)
 	}
 	for {
-		rev, err := d.updateIndex(ctx, ddoc, view, vopts.update)
+		rev, err := d.updateIndex(ctx, ddoc, view, vopts.Update())
 		if err != nil {
 			return nil, d.errDatabaseNotFound(err)
 		}
 
 		args := []any{
-			vopts.includeDocs, vopts.conflicts, vopts.reduce, vopts.updateSeq,
-			"_design/" + ddoc, rev.rev, rev.id, view, vopts.attachments,
+			vopts.IncludeDocs(), vopts.Conflicts(), vopts.Reduce(), vopts.UpdateSeq(),
+			"_design/" + ddoc, rev.rev, rev.id, view, vopts.Attachments(),
 		}
 
-		where := append([]string{""}, vopts.buildWhere(&args)...)
-		reduceWhere := append([]string{""}, vopts.buildReduceCacheWhere(&args)...)
+		where := append([]string{""}, vopts.BuildWhere(&args)...)
+		reduceWhere := append([]string{""}, vopts.BuildReduceCacheWhere(&args)...)
 
 		query := fmt.Sprintf(d.ddocQuery(ddoc, view, rev.String(), leavesCTE+`,
 			 reduce AS (
@@ -232,13 +232,13 @@ func (d *db) performQuery(
 						%[2]s -- WHERE
 					GROUP BY view.id, view.key, view.value, view.rev, view.rev_id
 					%[1]s -- ORDER BY
-					LIMIT %[3]d OFFSET %[4]d
+					%[3]s
 				) AS view
 				LEFT JOIN {{ .AttachmentsBridge }} AS bridge ON view.id = bridge.id AND view.rev = bridge.rev AND view.rev_id = bridge.rev_id AND $1
 				LEFT JOIN {{ .Attachments }} AS att ON bridge.pk = att.pk
 				%[1]s -- ORDER BY
 			)
-		`), vopts.buildOrderBy("pk"), strings.Join(where, " AND "), vopts.limit, vopts.skip, strings.Join(reduceWhere, " AND "))
+		`), vopts.BuildOrderBy("pk"), strings.Join(where, " AND "), vopts.BuildLimit(), strings.Join(reduceWhere, " AND "))
 		results, err := d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
 		switch {
 		case errIsNoSuchTable(err):
@@ -252,21 +252,21 @@ func (d *db) performQuery(
 			return nil, err
 		}
 
-		if !meta.upToDate && vopts.update == updateModeTrue {
+		if !meta.upToDate && vopts.Update() == options.UpdateModeTrue {
 			_ = results.Close() //nolint:sqlclosecheck // Not up to date, so close the results and try again
 			continue
 		}
 
-		if meta.reducible && (vopts.reduce == nil || *vopts.reduce) {
-			if vopts.includeDocs {
+		if meta.reducible && (vopts.Reduce() == nil || *vopts.Reduce()) {
+			if vopts.IncludeDocs() {
 				_ = results.Close() //nolint:sqlclosecheck // invalid option specified for reduce, so abort the query
 				return nil, &internal.Error{Status: http.StatusBadRequest, Message: "include_docs is invalid for reduce"}
 			}
-			if vopts.conflicts {
+			if vopts.Conflicts() {
 				_ = results.Close() //nolint:sqlclosecheck // invalid option specified for reduce, so abort the query
 				return nil, &internal.Error{Status: http.StatusBadRequest, Message: "conflicts is invalid for reduce"}
 			}
-			result, err := d.reduce(results, meta.reduceFuncJS, vopts.reduceGroupLevel())
+			result, err := d.reduce(results, meta.reduceFuncJS, vopts.ReduceGroupLevel())
 			if err != nil {
 				return nil, err
 			}
@@ -299,7 +299,7 @@ func (m metaReduced) TotalRows() int64 {
 	return m.meta.totalRows
 }
 
-func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *viewOptions) (driver.Rows, error) {
+func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *options.ViewOptions) (driver.Rows, error) {
 	var (
 		results *sql.Rows
 		rev     revision
@@ -307,13 +307,13 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 		meta    *viewMetadata
 	)
 	for {
-		rev, err = d.updateIndex(ctx, ddoc, view, vopts.update)
+		rev, err = d.updateIndex(ctx, ddoc, view, vopts.Update())
 		if err != nil {
 			return nil, d.errDatabaseNotFound(err)
 		}
 
-		args := []any{"_design/" + ddoc, rev.rev, rev.id, view, kivik.EndKeySuffix, true, vopts.updateSeq}
-		where := append([]string{""}, vopts.buildGroupWhere(&args)...)
+		args := []any{"_design/" + ddoc, rev.rev, rev.id, view, kivik.EndKeySuffix, true, vopts.UpdateSeq()}
+		where := append([]string{""}, vopts.BuildGroupWhere(&args)...)
 
 		query := fmt.Sprintf(d.ddocQuery(ddoc, view, rev.String(), `
 			WITH reduce AS (
@@ -375,9 +375,9 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 				WHERE reduce.reducible AND ($6 IS NULL OR $6 == TRUE)
 					%[2]s
 				%[1]s -- ORDER BY
-				LIMIT %[3]d OFFSET %[4]d
+				%[3]s
 			)
-		`), vopts.buildOrderBy("pk"), strings.Join(where, " AND "), vopts.limit, vopts.skip)
+		`), vopts.BuildOrderBy("pk"), strings.Join(where, " AND "), vopts.BuildLimit())
 		results, err = d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in iterator
 
 		switch {
@@ -395,7 +395,7 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 
 		if !meta.reducible {
 			field := "group"
-			if vopts.groupLevel > 0 {
+			if vopts.GroupLevel() > 0 {
 				field = "group_level"
 			}
 			return nil, &internal.Error{Status: http.StatusBadRequest, Message: field + " is invalid for map-only views"}
@@ -405,7 +405,7 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *vi
 		}
 	}
 
-	result, err := d.reduce(results, meta.reduceFuncJS, vopts.reduceGroupLevel())
+	result, err := d.reduce(results, meta.reduceFuncJS, vopts.ReduceGroupLevel())
 	if err != nil {
 		return nil, err
 	}

@@ -23,6 +23,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -44,6 +45,7 @@ type normalChanges struct {
 	lastSeq     string
 	etag        string
 	includeDocs bool
+	allDocs     bool
 	filter      func(doc any, req any) (bool, error)
 }
 
@@ -67,7 +69,9 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 		}
 	}
 
-	c := &normalChanges{}
+	c := &normalChanges{
+		allDocs: opts.style() == "all_docs",
+	}
 
 	if sinceNow {
 		if lastSeq == nil {
@@ -101,7 +105,7 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 		return nil, err
 	}
 
-	args := []any{since, attachments, c.includeDocs, filterType, filterDdoc, filterName}
+	args := []any{since, attachments, c.includeDocs, filterType, filterDdoc, filterName, c.allDocs}
 	where, err := opts.changesWhere(&args)
 	if err != nil {
 		return nil, err
@@ -183,7 +187,10 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 				results.id,
 				results.seq,
 				results.deleted,
-				results.rev || '-' || results.rev_id AS rev,
+				IIF($7,
+				(SELECT GROUP_CONCAT(rev_str, ',') FROM (SELECT leaves.rev || '-' || leaves.rev_id AS rev_str FROM leaves WHERE leaves.id = results.id ORDER BY leaves.rev DESC, leaves.rev_id DESC)),
+				results.rev || '-' || results.rev_id
+			) AS rev,
 				results.doc,
 				SUM(CASE WHEN bridge.pk IS NOT NULL THEN 1 ELSE 0 END) OVER (PARTITION BY results.id, results.rev, results.rev_id) AS attachment_count,
 				ROW_NUMBER() OVER (PARTITION BY results.id, results.rev, results.rev_id) AS row_number,
@@ -302,9 +309,15 @@ func (c *normalChanges) Next(change *driver.Change) error {
 			change.ID = *rowID
 			change.Seq = *rowSeq
 			change.Deleted = *rowDeleted
-			change.Changes = driver.ChangedRevs{*rowRev}
+			if c.allDocs {
+				revs := strings.Split(*rowRev, ",")
+				change.Changes = driver.ChangedRevs(revs)
+				rev = revs[0]
+			} else {
+				change.Changes = driver.ChangedRevs{*rowRev}
+				rev = *rowRev
+			}
 			c.lastSeq = change.Seq
-			rev = *rowRev
 			doc = rowDoc
 		}
 		if filename != nil {
@@ -395,7 +408,11 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 		if err != nil {
 			return nil, err
 		}
-		return d.newLongpollChanges(ctx, includeDocs, attachments, feed == feedContinuous)
+		timeout, err := opts.timeout()
+		if err != nil {
+			return nil, err
+		}
+		return d.newLongpollChanges(ctx, includeDocs, attachments, feed == feedContinuous, timeout)
 	}
 
 	return d.newNormalChanges(ctx, opts, since, lastSeq, sinceNow, feed)
@@ -407,6 +424,7 @@ type longpollChanges struct {
 	includeDocs bool
 	attachments bool
 	continuous  bool
+	idleTimeout time.Duration
 	lastSeq     string
 	ctx         context.Context
 	cancel      context.CancelFunc
@@ -420,7 +438,7 @@ type longpollChange struct {
 
 var _ driver.Changes = (*longpollChanges)(nil)
 
-func (d *db) newLongpollChanges(ctx context.Context, includeDocs, attachments, continuous bool) (*longpollChanges, error) {
+func (d *db) newLongpollChanges(ctx context.Context, includeDocs, attachments, continuous bool, idleTimeout time.Duration) (*longpollChanges, error) {
 	since, err := d.lastSeq(ctx)
 	if err != nil {
 		return nil, err
@@ -482,6 +500,8 @@ func (d *db) newLongpollChanges(ctx context.Context, includeDocs, attachments, c
 		attachments: attachments,
 		includeDocs: includeDocs,
 		continuous:  continuous,
+		idleTimeout: idleTimeout,
+		lastSeq:     strconv.FormatUint(since, 10),
 		ctx:         ctx,
 		cancel:      cancel,
 		changes:     changes,
@@ -505,6 +525,10 @@ func (c *longpollChanges) watch(changes chan<- longpollChange) {
 			return
 		}
 
+		if change == nil {
+			return
+		}
+
 		select {
 		case changes <- longpollChange{change: change}:
 		case <-c.ctx.Done():
@@ -521,10 +545,12 @@ func (c *longpollChanges) watch(changes chan<- longpollChange) {
 }
 
 func (c *longpollChanges) pollForChange() (*driver.Change, error) {
+	errNoChange := errors.New("no change")
+
 	bo := backoff.NewExponentialBackOff()
 	bo.InitialInterval = 50 * time.Millisecond
 	bo.MaxInterval = 3 * time.Minute
-	bo.MaxElapsedTime = 0
+	bo.MaxElapsedTime = c.idleTimeout
 
 	var result *driver.Change
 	err := backoff.Retry(func() error {
@@ -584,7 +610,7 @@ func (c *longpollChanges) pollForChange() (*driver.Change, error) {
 		}
 
 		if change.ID == "" {
-			return errors.New("retry")
+			return errNoChange
 		}
 
 		change.Changes = driver.ChangedRevs{rev}
@@ -604,6 +630,10 @@ func (c *longpollChanges) pollForChange() (*driver.Change, error) {
 		result = &change
 		return nil
 	}, backoff.WithContext(bo, c.ctx))
+
+	if errors.Is(err, errNoChange) {
+		return nil, nil
+	}
 
 	return result, err
 }

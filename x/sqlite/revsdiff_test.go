@@ -63,15 +63,10 @@ func TestDBRevsDiff(t *testing.T) {
 				"foo": {rev, "2-nonexistent"},
 			},
 			want: []rowResult{
-				{ID: "foo", Value: `{"missing":["2-nonexistent"]}`},
+				{ID: "foo", Value: `{"missing":["2-nonexistent"],"possible_ancestors":["` + rev + `"]}`},
 			},
 		}
 	})
-
-	/*
-		TODO:
-		- populate `possible_ancestors`
-	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()

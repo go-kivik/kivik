@@ -1247,7 +1247,7 @@ func TestBulkDocsString(t *testing.T) {
 	- has any options`,
 	})
 	tests.Add("docs", stringerTest{
-		input: &ExpectedBulkDocs{arg0: []interface{}{1, 2, 3}, commonExpectation: commonExpectation{db: &DB{name: "foo"}}},
+		input: &ExpectedBulkDocs{arg0: []any{1, 2, 3}, commonExpectation: commonExpectation{db: &DB{name: "foo"}}},
 		expected: `call to DB(foo#0).BulkDocs() which:
 	- has: 3 docs
 	- has any options`,

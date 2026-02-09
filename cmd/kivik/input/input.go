@@ -62,7 +62,7 @@ func (r *jsonReader) MarshalJSON() ([]byte, error) {
 
 // jsonObject turns an arbitrary object into a json.Marshaler.
 type jsonObject struct {
-	i interface{}
+	i any
 }
 
 var _ json.Marshaler = &jsonObject{}
@@ -77,7 +77,7 @@ func (i *Input) HasInput() bool {
 }
 
 // As unmarshals the data input to target.
-func (i *Input) As(target interface{}) error {
+func (i *Input) As(target any) error {
 	j, err := i.JSONData()
 	if err != nil {
 		return err
@@ -131,7 +131,7 @@ func yaml2json(r io.ReadCloser) (json.Marshaler, error) {
 		return nil, errors.Code(errors.ErrIO, err)
 	}
 
-	var doc interface{}
+	var doc any
 	if err := yaml.Unmarshal(buf, &doc); err != nil {
 		return nil, errors.Code(errors.ErrData, err)
 	}

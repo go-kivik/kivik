@@ -24,7 +24,7 @@ import (
 )
 
 // BindParams binds the request form or JSON body to the provided struct.
-func BindParams(r *http.Request, i interface{}) error {
+func BindParams(r *http.Request, i any) error {
 	mtype, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	switch mtype {
 	case typeJSON:

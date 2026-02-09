@@ -86,7 +86,7 @@ func (c *UserContext) MarshalJSON() ([]byte, error) {
 	if roles == nil {
 		roles = []string{}
 	}
-	output := map[string]interface{}{
+	output := map[string]any{
 		"roles": roles,
 	}
 	if c.Database != "" {

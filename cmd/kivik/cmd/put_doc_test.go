@@ -34,7 +34,7 @@ func Test_put_doc_RunE(t *testing.T) {
 		args:   []string{"--debug", "put", "doc", "http://localhost:1/foo/bar", "-d", "{}"},
 		status: errors.ErrUnavailable,
 	})
-	tests.Add("json data string", func(t *testing.T) interface{} {
+	tests.Add("json data string", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true,"rev":"1-xxx"}`)),
 		}, gunzip(func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
@@ -48,7 +48,7 @@ func Test_put_doc_RunE(t *testing.T) {
 			args: []string{"--debug", "put", "doc", s.URL + "/foo/bar", "--data", `{"foo":"bar"}`},
 		}
 	})
-	tests.Add("json data stdin", func(t *testing.T) interface{} {
+	tests.Add("json data stdin", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true,"rev":"1-xxx"}`)),
 		}, gunzip(func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
@@ -63,7 +63,7 @@ func Test_put_doc_RunE(t *testing.T) {
 			stdin: `{"foo":"bar"}`,
 		}
 	})
-	tests.Add("json data file", func(t *testing.T) interface{} {
+	tests.Add("json data file", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true,"rev":"1-xxx"}`)),
 		}, gunzip(func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
@@ -77,7 +77,7 @@ func Test_put_doc_RunE(t *testing.T) {
 			args: []string{"--debug", "put", "doc", s.URL + "/foo/bar", "--data-file", "./testdata/doc.json"},
 		}
 	})
-	tests.Add("yaml data string", func(t *testing.T) interface{} {
+	tests.Add("yaml data string", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true,"rev":"1-xxx"}`)),
 		}, gunzip(func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper

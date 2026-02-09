@@ -83,7 +83,7 @@ func TestClusterSetup(t *testing.T) {
 	type tst struct {
 		client driver.Client
 		closed bool
-		action interface{}
+		action any
 		status int
 		err    string
 	}
@@ -96,7 +96,7 @@ func TestClusterSetup(t *testing.T) {
 	})
 	tests.Add("client error", tst{
 		client: &mock.Cluster{
-			ClusterSetupFunc: func(context.Context, interface{}) error {
+			ClusterSetupFunc: func(context.Context, any) error {
 				return errors.New("client error")
 			},
 		},
@@ -105,7 +105,7 @@ func TestClusterSetup(t *testing.T) {
 	})
 	tests.Add("success", tst{
 		client: &mock.Cluster{
-			ClusterSetupFunc: func(context.Context, interface{}) error {
+			ClusterSetupFunc: func(context.Context, any) error {
 				return nil
 			},
 		},

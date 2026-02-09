@@ -49,8 +49,8 @@ func (s *Session) MarshalJSON() ([]byte, error) {
 	if user == nil {
 		user = &authdb.UserContext{}
 	}
-	result := map[string]interface{}{
-		"info": map[string]interface{}{
+	result := map[string]any{
+		"info": map[string]any{
 			"authenticated":           s.AuthMethod,
 			"authentication_db":       s.AuthDB,
 			"authentication_handlers": s.Handlers,

@@ -23,9 +23,9 @@ import (
 
 func TestDocument(t *testing.T) {
 	type tst struct {
-		i        interface{}
+		i        any
 		expected *driver.Document
-		content  interface{}
+		content  any
 		err      string
 	}
 	tests := testy.NewTable()

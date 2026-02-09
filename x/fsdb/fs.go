@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"net/url"
 	"os"
@@ -101,7 +102,7 @@ var validDBNameRE = regexp.MustCompile("^[a-z_][a-z0-9_$()+/-]*$")
 
 // AllDBs returns a list of all DBs present in the configured root dir.
 func (c *client) AllDBs(_ context.Context, options driver.Options) ([]string, error) {
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 	if c.root == "" {
 		return nil, statusError{status: http.StatusBadRequest, error: errors.New("no root path provided")}
@@ -145,7 +146,7 @@ func (c *client) DBExists(_ context.Context, dbName string, _ driver.Options) (b
 	if err == nil {
 		return true, nil
 	}
-	if os.IsNotExist(err) {
+	if errors.Is(err, fs.ErrNotExist) {
 		return false, nil
 	}
 	return false, err

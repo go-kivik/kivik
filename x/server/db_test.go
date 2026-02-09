@@ -32,7 +32,7 @@ func Test_dbUpdates(t *testing.T) {
 			method:     http.MethodGet,
 			path:       "/_db_updates",
 			wantStatus: http.StatusUnauthorized,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"error":  "unauthorized",
 				"reason": "User not authenticated",
 			},
@@ -61,14 +61,14 @@ func Test_dbUpdates(t *testing.T) {
 			method:     http.MethodGet,
 			path:       "/_db_updates",
 			wantStatus: http.StatusOK,
-			wantJSON: map[string]interface{}{
-				"results": []interface{}{
-					map[string]interface{}{
+			wantJSON: map[string]any{
+				"results": []any{
+					map[string]any{
 						"db_name": "foo",
 						"type":    "created",
 						"seq":     "1-aaa",
 					},
-					map[string]interface{}{
+					map[string]any{
 						"db_name": "foo",
 						"type":    "deleted",
 						"seq":     "2-aaa",
@@ -83,7 +83,7 @@ func Test_dbUpdates(t *testing.T) {
 			authUser:   userAdmin,
 			path:       "/_db_updates?feed=continuous&heartbeat=chicken",
 			wantStatus: http.StatusBadRequest,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"error":  "bad_request",
 				"reason": "strconv.Atoi: parsing \"chicken\": invalid syntax",
 			},
@@ -147,13 +147,13 @@ func Test_allDocs(t *testing.T) {
 				return client
 			}(),
 			wantStatus: http.StatusOK,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"offset": 0,
-				"rows": []interface{}{
-					map[string]interface{}{
+				"rows": []any{
+					map[string]any{
 						"id":  "foo",
 						"key": "foo",
-						"value": map[string]interface{}{
+						"value": map[string]any{
 							"rev": "1-beea34a62a215ab051862d1e5d93162e",
 						},
 					},
@@ -190,13 +190,13 @@ func Test_allDocs(t *testing.T) {
 				return client
 			}(),
 			wantStatus: http.StatusOK,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"offset": 0,
-				"rows": []interface{}{
-					map[string]interface{}{
+				"rows": []any{
+					map[string]any{
 						"id":  "foo",
 						"key": "foo",
-						"value": map[string]interface{}{
+						"value": map[string]any{
 							"rev": "1-beea34a62a215ab051862d1e5d93162e",
 						},
 					},
@@ -233,13 +233,13 @@ func Test_allDocs(t *testing.T) {
 				return client
 			}(),
 			wantStatus: http.StatusOK,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"offset": 0,
-				"rows": []interface{}{
-					map[string]interface{}{
+				"rows": []any{
+					map[string]any{
 						"id":  "foo",
 						"key": "foo",
-						"value": map[string]interface{}{
+						"value": map[string]any{
 							"rev": "1-beea34a62a215ab051862d1e5d93162e",
 						},
 					},
@@ -279,13 +279,13 @@ func Test_localDocs(t *testing.T) {
 				return client
 			}(),
 			wantStatus: http.StatusOK,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"offset": 0,
-				"rows": []interface{}{
-					map[string]interface{}{
+				"rows": []any{
+					map[string]any{
 						"id":  "foo",
 						"key": "foo",
-						"value": map[string]interface{}{
+						"value": map[string]any{
 							"rev": "1-beea34a62a215ab051862d1e5d93162e",
 						},
 					},
@@ -322,13 +322,13 @@ func Test_localDocs(t *testing.T) {
 				return client
 			}(),
 			wantStatus: http.StatusOK,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"offset": 0,
-				"rows": []interface{}{
-					map[string]interface{}{
+				"rows": []any{
+					map[string]any{
 						"id":  "foo",
 						"key": "foo",
-						"value": map[string]interface{}{
+						"value": map[string]any{
 							"rev": "1-beea34a62a215ab051862d1e5d93162e",
 						},
 					},
@@ -365,13 +365,13 @@ func Test_localDocs(t *testing.T) {
 				return client
 			}(),
 			wantStatus: http.StatusOK,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"offset": 0,
-				"rows": []interface{}{
-					map[string]interface{}{
+				"rows": []any{
+					map[string]any{
 						"id":  "foo",
 						"key": "foo",
-						"value": map[string]interface{}{
+						"value": map[string]any{
 							"rev": "1-beea34a62a215ab051862d1e5d93162e",
 						},
 					},
@@ -411,13 +411,13 @@ func Test_designDocs(t *testing.T) {
 				return client
 			}(),
 			wantStatus: http.StatusOK,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"offset": 0,
-				"rows": []interface{}{
-					map[string]interface{}{
+				"rows": []any{
+					map[string]any{
 						"id":  "foo",
 						"key": "foo",
-						"value": map[string]interface{}{
+						"value": map[string]any{
 							"rev": "1-beea34a62a215ab051862d1e5d93162e",
 						},
 					},
@@ -454,13 +454,13 @@ func Test_designDocs(t *testing.T) {
 				return client
 			}(),
 			wantStatus: http.StatusOK,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"offset": 0,
-				"rows": []interface{}{
-					map[string]interface{}{
+				"rows": []any{
+					map[string]any{
 						"id":  "foo",
 						"key": "foo",
-						"value": map[string]interface{}{
+						"value": map[string]any{
 							"rev": "1-beea34a62a215ab051862d1e5d93162e",
 						},
 					},
@@ -497,13 +497,13 @@ func Test_designDocs(t *testing.T) {
 				return client
 			}(),
 			wantStatus: http.StatusOK,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"offset": 0,
-				"rows": []interface{}{
-					map[string]interface{}{
+				"rows": []any{
+					map[string]any{
 						"id":  "foo",
 						"key": "foo",
-						"value": map[string]interface{}{
+						"value": map[string]any{
 							"rev": "1-beea34a62a215ab051862d1e5d93162e",
 						},
 					},
@@ -543,13 +543,13 @@ func Test_queryView(t *testing.T) {
 				return client
 			}(),
 			wantStatus: http.StatusOK,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"offset": 0,
-				"rows": []interface{}{
-					map[string]interface{}{
+				"rows": []any{
+					map[string]any{
 						"id":  "foo",
 						"key": "foo",
-						"value": map[string]interface{}{
+						"value": map[string]any{
 							"rev": "1-beea34a62a215ab051862d1e5d93162e",
 						},
 					},
@@ -586,13 +586,13 @@ func Test_queryView(t *testing.T) {
 				return client
 			}(),
 			wantStatus: http.StatusOK,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"offset": 0,
-				"rows": []interface{}{
-					map[string]interface{}{
+				"rows": []any{
+					map[string]any{
 						"id":  "foo",
 						"key": "foo",
-						"value": map[string]interface{}{
+						"value": map[string]any{
 							"rev": "1-beea34a62a215ab051862d1e5d93162e",
 						},
 					},
@@ -629,13 +629,13 @@ func Test_queryView(t *testing.T) {
 				return client
 			}(),
 			wantStatus: http.StatusOK,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"offset": 0,
-				"rows": []interface{}{
-					map[string]interface{}{
+				"rows": []any{
+					map[string]any{
 						"id":  "foo",
 						"key": "foo",
-						"value": map[string]interface{}{
+						"value": map[string]any{
 							"rev": "1-beea34a62a215ab051862d1e5d93162e",
 						},
 					},

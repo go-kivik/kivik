@@ -21,12 +21,12 @@ import (
 func Test_version_RunE(t *testing.T) {
 	tests := testy.NewTable()
 
-	tests.Add("version", func(*testing.T) interface{} {
+	tests.Add("version", func(*testing.T) any {
 		return cmdTest{
 			args: []string{"version"},
 		}
 	})
-	tests.Add("version json", func(*testing.T) interface{} {
+	tests.Add("version json", func(*testing.T) any {
 		return cmdTest{
 			args: []string{"version", "-f", "json"},
 		}

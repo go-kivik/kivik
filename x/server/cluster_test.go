@@ -30,7 +30,7 @@ func Test_clusterStatus(t *testing.T) {
 			method:     http.MethodGet,
 			path:       "/_cluster_setup",
 			wantStatus: http.StatusUnauthorized,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"error":  "unauthorized",
 				"reason": "User not authenticated",
 			},

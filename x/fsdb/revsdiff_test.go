@@ -31,7 +31,7 @@ func TestRevsDiff(t *testing.T) {
 		ctx          context.Context
 		fs           filesystem.Filesystem
 		path, dbname string
-		revMap       interface{}
+		revMap       any
 		status       int
 		err          string
 		rowStatus    int
@@ -57,7 +57,7 @@ func TestRevsDiff(t *testing.T) {
 			"newdoc":   {"1-asdf"},
 		},
 	})
-	tests.Add("cancelled context", func(*testing.T) interface{} {
+	tests.Add("cancelled context", func(*testing.T) any {
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
 		return tt{

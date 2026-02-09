@@ -38,7 +38,7 @@ type Document struct {
 	// should never be consulted as authoritative.
 	RevHistory *RevHistory `json:"_revisions,omitempty" yaml:"-"`
 
-	Options map[string]interface{} `json:"-" yaml:"-"`
+	Options map[string]any `json:"-" yaml:"-"`
 
 	cdb *FS
 }
@@ -185,7 +185,7 @@ func (d *Document) addOldEdit(rev *Revision) (string, error) {
 }
 
 func (d *Document) addRevision(ctx context.Context, rev *Revision, options driver.Options) (string, error) {
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 	if newEdits, ok := opts["new_edits"].(bool); ok && !newEdits {
 		return d.addOldEdit(rev)

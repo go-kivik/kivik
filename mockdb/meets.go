@@ -74,10 +74,10 @@ func convertOptions(a kivik.Option) []kivik.Option {
 	return result
 }
 
-func jsonMeets(e, a interface{}) bool {
+func jsonMeets(e, a any) bool {
 	eJSON, _ := json.Marshal(e)
 	aJSON, _ := json.Marshal(a)
-	var eI, aI interface{}
+	var eI, aI any
 	_ = json.Unmarshal(eJSON, &eI)
 	_ = json.Unmarshal(aJSON, &aI)
 	return reflect.DeepEqual(eI, aI)

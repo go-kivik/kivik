@@ -21,7 +21,7 @@ import (
 
 // deJSONify unmarshals a string, []byte, or json.RawMessage. All other types
 // are returned as-is.
-func deJSONify(i interface{}) (interface{}, error) {
+func deJSONify(i any) (any, error) {
 	var data []byte
 	switch t := i.(type) {
 	case string:
@@ -33,7 +33,7 @@ func deJSONify(i interface{}) (interface{}, error) {
 	default:
 		return i, nil
 	}
-	var x interface{}
+	var x any
 	if err := json.Unmarshal(data, &x); err != nil {
 		return nil, &internal.Error{Status: http.StatusBadRequest, Err: err}
 	}

@@ -14,8 +14,8 @@ package cdb
 
 import (
 	"errors"
+	iofs "io/fs"
 	"net/http"
-	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -120,7 +120,7 @@ func (fs *FS) openRevs(docID string, revIDs []string) (Revisions, error) {
 		}
 		dirpath := filepath.Join(fs.root, "."+base)
 		dir, err := fs.fs.Open(dirpath)
-		if err != nil && !os.IsNotExist(err) {
+		if err != nil && !errors.Is(err, iofs.ErrNotExist) {
 			return nil, err
 		}
 		if err == nil {
@@ -160,7 +160,7 @@ func (fs *FS) openRevs(docID string, revIDs []string) (Revisions, error) {
 // same as OpenDocID, however, it honors the open_revs option, to potentially
 // return multiple revisions of the same document.
 func (fs *FS) OpenDocIDOpenRevs(docID string, options driver.Options) ([]*Document, error) {
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 	rev, _ := opts["rev"].(string)
 	revs, err := fs.openRevs(docID, []string{rev})
@@ -191,7 +191,7 @@ func (fs *FS) OpenDocIDOpenRevs(docID string, options driver.Options) ([]*Docume
 
 // OpenDocID opens the requested document by ID (without file extension).
 func (fs *FS) OpenDocID(docID string, options driver.Options) (*Document, error) {
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 	rev, _ := opts["rev"].(string)
 	revs, err := fs.openRevs(docID, []string{rev})

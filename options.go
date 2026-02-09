@@ -31,7 +31,7 @@ import (
 type Option interface {
 	// Apply applies the option to target, if target is of the expected type.
 	// Unexpected/recognized target types should be ignored.
-	Apply(target interface{})
+	Apply(target any)
 }
 
 var _ Option = (driver.Options)(nil)
@@ -40,7 +40,7 @@ type multiOptions []Option
 
 var _ Option = (multiOptions)(nil)
 
-func (o multiOptions) Apply(t interface{}) {
+func (o multiOptions) Apply(t any) {
 	for _, opt := range o {
 		if opt != nil {
 			opt.Apply(t)
@@ -51,7 +51,7 @@ func (o multiOptions) Apply(t interface{}) {
 func (o multiOptions) String() string {
 	parts := make([]string, 0, len(o))
 	for _, opt := range o {
-		if o != nil {
+		if opt != nil {
 			if part := fmt.Sprintf("%s", opt); part != "" {
 				parts = append(parts, part)
 			}
@@ -60,15 +60,15 @@ func (o multiOptions) String() string {
 	return strings.Join(parts, ",")
 }
 
-type params map[string]interface{}
+type params map[string]any
 
 // Apply applies o to target. The following target types are supported:
 //
 //   - map[string]interface{}
 //   - *url.Values
-func (o params) Apply(target interface{}) {
+func (o params) Apply(target any) {
 	switch t := target.(type) {
-	case map[string]interface{}:
+	case map[string]any:
 		for k, v := range o {
 			t[k] = v
 		}
@@ -102,17 +102,17 @@ func (o params) String() string {
 	if len(o) == 0 {
 		return ""
 	}
-	return fmt.Sprintf("%v", map[string]interface{}(o))
+	return fmt.Sprintf("%v", map[string]any(o))
 }
 
 // Params allows passing a collection of key/value pairs as query parameter
 // options.
-func Params(p map[string]interface{}) Option {
+func Params(p map[string]any) Option {
 	return params(p)
 }
 
 // Param sets a single key/value pair as a query parameter.
-func Param(key string, value interface{}) Option {
+func Param(key string, value any) Option {
 	return params{key: value}
 }
 
@@ -136,9 +136,9 @@ type durationParam struct {
 var _ Option = durationParam{}
 
 // Apply supports map[string]interface{} and *url.Values targets.
-func (p durationParam) Apply(target interface{}) {
+func (p durationParam) Apply(target any) {
 	switch t := target.(type) {
-	case map[string]interface{}:
+	case map[string]any:
 		t[p.key] = fmt.Sprintf("%d", p.value/time.Millisecond)
 	case *url.Values:
 		t.Add(p.key, fmt.Sprintf("%d", p.value/time.Millisecond))

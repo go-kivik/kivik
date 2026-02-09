@@ -376,7 +376,7 @@ Content-Length: 86
 			},
 		},
 	})
-	tests.Add("bug268 - complex id", func(*testing.T) interface{} {
+	tests.Add("bug268 - complex id", func(*testing.T) any {
 		return tt{
 			db: newCustomDB(func(*http.Request) (*http.Response, error) {
 				return nil, errors.New("success")
@@ -386,7 +386,7 @@ Content-Length: 86
 			err:    `Get "?http://example.com/testdb/http%3A%2F%2Fexample\.com%2F"?: success`,
 		}
 	})
-	tests.Add("plus sign", func(*testing.T) interface{} {
+	tests.Add("plus sign", func(*testing.T) any {
 		return tt{
 			db: newCustomDB(func(*http.Request) (*http.Response, error) {
 				return nil, errors.New("success")
@@ -471,7 +471,7 @@ func TestOpenRevs(t *testing.T) {
 	}
 
 	tests := testy.NewTable()
-	tests.Add("open_revs", func(*testing.T) interface{} {
+	tests.Add("open_revs", func(*testing.T) any {
 		return tt{
 			db: newCustomDB(func(*http.Request) (*http.Response, error) {
 				return &http.Response{
@@ -496,7 +496,7 @@ Content-Type: application/json
 			},
 		}
 	})
-	tests.Add("open_revs with multiple revs", func(*testing.T) interface{} {
+	tests.Add("open_revs with multiple revs", func(*testing.T) any {
 		return tt{
 			db: newCustomDB(func(*http.Request) (*http.Response, error) {
 				return &http.Response{
@@ -602,7 +602,7 @@ Content-Type: application/json; error="true"
 			},
 		}
 	})
-	tests.Add("not found", func(*testing.T) interface{} {
+	tests.Add("not found", func(*testing.T) any {
 		return tt{
 			db: newCustomDB(func(*http.Request) (*http.Response, error) {
 				return &http.Response{
@@ -666,7 +666,7 @@ func TestCreateDoc(t *testing.T) {
 	tests := []struct {
 		name    string
 		db      *db
-		doc     interface{}
+		doc     any
 		options kivik.Option
 		id, rev string
 		status  int
@@ -687,7 +687,7 @@ func TestCreateDoc(t *testing.T) {
 		},
 		{
 			name: "error response",
-			doc:  map[string]interface{}{"foo": "bar"},
+			doc:  map[string]any{"foo": "bar"},
 			db: newTestDB(&http.Response{
 				StatusCode: http.StatusBadRequest,
 				Body:       io.NopCloser(strings.NewReader("")),
@@ -697,7 +697,7 @@ func TestCreateDoc(t *testing.T) {
 		},
 		{
 			name: "invalid JSON response",
-			doc:  map[string]interface{}{"foo": "bar"},
+			doc:  map[string]any{"foo": "bar"},
 			db: newTestDB(&http.Response{
 				StatusCode: http.StatusOK,
 				Body:       io.NopCloser(strings.NewReader("invalid json")),
@@ -707,7 +707,7 @@ func TestCreateDoc(t *testing.T) {
 		},
 		{
 			name: "success, 1.6.1",
-			doc:  map[string]interface{}{"foo": "bar"},
+			doc:  map[string]any{"foo": "bar"},
 			db: newTestDB(&http.Response{
 				StatusCode: http.StatusOK,
 				Header: map[string][]string{
@@ -776,39 +776,39 @@ func TestCreateDoc(t *testing.T) {
 func TestOptionsToParams(t *testing.T) {
 	type otpTest struct {
 		Name     string
-		Input    map[string]interface{}
+		Input    map[string]any
 		Expected url.Values
 		Error    string
 	}
 	tests := []otpTest{
 		{
 			Name:  "Unmarshalable key",
-			Input: map[string]interface{}{"key": make(chan int)},
+			Input: map[string]any{"key": make(chan int)},
 			Error: "json: unsupported type: chan int",
 		},
 		{
 			Name:     "String",
-			Input:    map[string]interface{}{"foo": "bar"},
+			Input:    map[string]any{"foo": "bar"},
 			Expected: map[string][]string{"foo": {"bar"}},
 		},
 		{
 			Name:     "StringSlice",
-			Input:    map[string]interface{}{"foo": []string{"bar", "baz"}},
+			Input:    map[string]any{"foo": []string{"bar", "baz"}},
 			Expected: map[string][]string{"foo": {"bar", "baz"}},
 		},
 		{
 			Name:     "Bool",
-			Input:    map[string]interface{}{"foo": true},
+			Input:    map[string]any{"foo": true},
 			Expected: map[string][]string{"foo": {"true"}},
 		},
 		{
 			Name:     "Int",
-			Input:    map[string]interface{}{"foo": 123},
+			Input:    map[string]any{"foo": 123},
 			Expected: map[string][]string{"foo": {"123"}},
 		},
 		{
 			Name:  "Error",
-			Input: map[string]interface{}{"foo": []byte("foo")},
+			Input: map[string]any{"foo": []byte("foo")},
 			Error: "kivik: invalid type []uint8 for options",
 		},
 	}
@@ -972,7 +972,7 @@ func TestPut(t *testing.T) {
 	type test struct {
 		db      *db
 		id      string
-		doc     interface{}
+		doc     any
 		options kivik.Option
 		rev     string
 		status  int
@@ -1052,7 +1052,7 @@ func TestPut(t *testing.T) {
 		status:  http.StatusBadGateway,
 		err:     `Put "?http://example.com/testdb/foo"?: success`,
 	})
-	tests.Add("connection refused", func(t *testing.T) interface{} {
+	tests.Add("connection refused", func(t *testing.T) any {
 		return test{
 			db: func() *db {
 				c, err := chttp.New(&http.Client{}, "http://127.0.0.1:1/", mock.NilOption)
@@ -1065,12 +1065,12 @@ func TestPut(t *testing.T) {
 				}
 			}(),
 			id:     "cow",
-			doc:    map[string]interface{}{"feet": 4},
+			doc:    map[string]any{"feet": 4},
 			status: http.StatusBadGateway,
 			err:    `Put "?http://127\.0\.0\.1:1/animals/cow"?: (net/http: XMLHttpRequest failed|dial tcp (\[::1\]|127.0.0.1):1: (getsockopt|connect): connection refused)`,
 		}
 	})
-	tests.Add("real database, multipart attachments", func(t *testing.T) interface{} {
+	tests.Add("real database, multipart attachments", func(t *testing.T) any {
 		db := realDB(t)
 		t.Cleanup(func() {
 			if err := db.DestroyDB(context.Background(), db.dbName, nil); err != nil {
@@ -1081,7 +1081,7 @@ func TestPut(t *testing.T) {
 		return test{
 			db: db,
 			id: "foo",
-			doc: map[string]interface{}{
+			doc: map[string]any{
 				"feet": 4,
 				"_attachments": &kivik.Attachments{
 					"foo.txt": &kivik.Attachment{Filename: "foo.txt", ContentType: "text/plain", Content: Body("test content")},
@@ -1113,7 +1113,7 @@ func TestUpdate(t *testing.T) {
 		db             *db
 		ddoc, funcName string
 		id             string
-		doc            interface{}
+		doc            any
 		options        kivik.Option
 		rev            string
 		status         int
@@ -1261,7 +1261,7 @@ func TestDelete(t *testing.T) {
 			return nil, errors.New("success")
 		}),
 		id: "foo",
-		options: kivik.Params(map[string]interface{}{
+		options: kivik.Params(map[string]any{
 			"batch": "ok",
 			"rev":   "1-xxx",
 		}),
@@ -1271,7 +1271,7 @@ func TestDelete(t *testing.T) {
 	tests.Add("invalid options", tt{
 		db: &db{},
 		id: "foo",
-		options: kivik.Params(map[string]interface{}{
+		options: kivik.Params(map[string]any{
 			"foo": make(chan int),
 			"rev": "1-xxx",
 		}),
@@ -1711,13 +1711,13 @@ func TestRowsQuery(t *testing.T) {
 		{
 			name:    "all docs with object keys",
 			path:    "/_all_docs",
-			options: kivik.Param("keys", []interface{}{"_design/_auth", "foo", []string{"bar", "baz"}}),
+			options: kivik.Param("keys", []any{"_design/_auth", "foo", []string{"bar", "baz"}}),
 			db: newCustomDB(func(r *http.Request) (*http.Response, error) {
 				if r.Method != http.MethodPost {
 					t.Errorf("Unexpected method: %s", r.Method)
 				}
 				defer r.Body.Close() // nolint: errcheck
-				if d := testy.DiffAsJSON(map[string][]interface{}{"keys": {"_design/_auth", "foo", []string{"bar", "baz"}}}, r.Body); d != nil {
+				if d := testy.DiffAsJSON(map[string][]any{"keys": {"_design/_auth", "foo", []string{"bar", "baz"}}}, r.Body); d != nil {
 					t.Error(d)
 				}
 				if keys := r.URL.Query().Get("keys"); keys != "" {
@@ -1912,7 +1912,7 @@ func TestSetSecurity(t *testing.T) {
 		status: http.StatusBadGateway,
 		err:    `Put "?http://example.com/testdb/_security"?: net error`,
 	})
-	tests.Add("1.6.1", func(t *testing.T) interface{} {
+	tests.Add("1.6.1", func(t *testing.T) any {
 		return tt{
 			security: &driver.Security{
 				Admins: driver.Members{
@@ -1927,15 +1927,15 @@ func TestSetSecurity(t *testing.T) {
 				if ct, _, _ := mime.ParseMediaType(req.Header.Get("Content-Type")); ct != typeJSON {
 					return nil, fmt.Errorf("Expected Content-Type: application/json, got %s", ct)
 				}
-				var body interface{}
+				var body any
 				if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
 					return nil, err
 				}
-				expected := map[string]interface{}{
-					"admins": map[string]interface{}{
+				expected := map[string]any{
+					"admins": map[string]any{
 						"names": []string{"bob"},
 					},
-					"members": map[string]interface{}{
+					"members": map[string]any{
 						"roles": []string{"users"},
 					},
 				}
@@ -2344,7 +2344,7 @@ func TestPurge(t *testing.T) {
 					return nil, fmt.Errorf("Unexpected Content-Type: %s", ct)
 				}
 				defer r.Body.Close() // nolint: errcheck
-				var result interface{}
+				var result any
 				if err := json.NewDecoder(r.Body).Decode(&result); err != nil {
 					return nil, err
 				}
@@ -2515,8 +2515,8 @@ func TestAttachmentStubs(t *testing.T) {
 func TestInterfaceToAttachments(t *testing.T) {
 	tests := []struct {
 		name     string
-		input    interface{}
-		output   interface{}
+		input    any
+		output   any
 		expected *kivik.Attachments
 		ok       bool
 	}{
@@ -2659,7 +2659,7 @@ func Test_readerSize(t *testing.T) {
 		size: 7,
 		body: "foo bar",
 	})
-	tests.Add("file", func(t *testing.T) interface{} {
+	tests.Add("file", func(t *testing.T) any {
 		f, err := os.CreateTemp("", "file-reader-*")
 		if err != nil {
 			t.Fatal(err)
@@ -2897,7 +2897,7 @@ func TestRevsDiff(t *testing.T) {
 		if err != nil {
 			return
 		}
-		results := make(map[string]interface{})
+		results := make(map[string]any)
 		drow := new(driver.Row)
 		for {
 			if err := rows.Next(drow); err != nil {
@@ -2906,7 +2906,7 @@ func TestRevsDiff(t *testing.T) {
 				}
 				t.Fatal(err)
 			}
-			var row interface{}
+			var row any
 			if err := json.NewDecoder(drow.Value).Decode(&row); err != nil {
 				t.Fatal(err)
 			}
@@ -2916,4 +2916,42 @@ func TestRevsDiff(t *testing.T) {
 			t.Error(d)
 		}
 	})
+}
+
+func TestCreateMultipartGoroutineLeak(t *testing.T) {
+	t.Parallel()
+
+	closed := make(chan struct{})
+	input := &mockReadCloser{
+		ReadFunc: func(p []byte) (int, error) {
+			return copy(p, `{"_id":"doc1","_attachments":{}}`), io.EOF
+		},
+		CloseFunc: func() error {
+			close(closed)
+			return nil
+		},
+	}
+
+	atts := &kivik.Attachments{
+		"foo.txt": &kivik.Attachment{
+			Filename:    "foo.txt",
+			ContentType: "text/plain",
+			Size:        4,
+			Content:     Body("test"),
+		},
+	}
+
+	ew := &errAfterNWriter{n: 2, err: errors.New("simulated write error")}
+	w := multipart.NewWriter(ew)
+
+	err := createMultipart(w, input, atts)
+	if err == nil {
+		t.Fatal("expected error from createMultipart")
+	}
+
+	select {
+	case <-closed:
+	case <-time.After(time.Second):
+		t.Fatal("goroutine leak: input reader was never closed")
+	}
 }

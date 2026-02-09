@@ -292,7 +292,7 @@ func TestReplicate(t *testing.T) {
 func TestLegacyGetReplications(t *testing.T) {
 	tests := []struct {
 		name     string
-		options  map[string]interface{}
+		options  map[string]any
 		client   *client
 		expected []*replication
 		status   int
@@ -300,7 +300,7 @@ func TestLegacyGetReplications(t *testing.T) {
 	}{
 		{
 			name:    "invalid options",
-			options: map[string]interface{}{"foo": make(chan int)},
+			options: map[string]any{"foo": make(chan int)},
 			status:  http.StatusBadRequest,
 			err:     "kivik: invalid type chan int for options",
 		},

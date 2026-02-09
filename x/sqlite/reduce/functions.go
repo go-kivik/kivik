@@ -29,9 +29,9 @@ import (
 // Count is the built-in reduce function, [_count].
 //
 // [_count]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#count
-func Count(_ [][2]interface{}, values []interface{}, rereduce bool) ([]interface{}, error) {
+func Count(_ [][2]any, values []any, rereduce bool) ([]any, error) {
 	if !rereduce {
-		return []interface{}{float64(len(values))}, nil
+		return []any{float64(len(values))}, nil
 	}
 	var total float64
 	for _, value := range values {
@@ -39,20 +39,20 @@ func Count(_ [][2]interface{}, values []interface{}, rereduce bool) ([]interface
 			total += value.(float64)
 		}
 	}
-	return []interface{}{total}, nil
+	return []any{total}, nil
 }
 
 // Sum is the built-in reduce function, [_sum].
 //
 // [_sum]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#sum
-func Sum(_ [][2]interface{}, values []interface{}, _ bool) ([]interface{}, error) {
+func Sum(_ [][2]any, values []any, _ bool) ([]any, error) {
 	var total float64
 	for _, value := range values {
 		if value != nil {
 			total += value.(float64)
 		}
 	}
-	return []interface{}{total}, nil
+	return []any{total}, nil
 }
 
 type stats struct {
@@ -66,17 +66,17 @@ type stats struct {
 // toFloatValues converts values to a slice of float64 slices, if possible.
 // This is used when a map function returns an array of numbers to be aggregated
 // by the _stats function
-func toFloatValues(values []interface{}, rereduce bool) ([][]float64, bool) {
+func toFloatValues(values []any, rereduce bool) ([][]float64, bool) {
 	if rereduce {
 		return nil, false
 	}
-	_, isSlice := values[0].([]interface{})
+	_, isSlice := values[0].([]any)
 	if !isSlice {
 		return nil, false
 	}
 	floatValues := make([][]float64, 0, len(values))
 	for _, v := range values {
-		fv := v.([]interface{})
+		fv := v.([]any)
 		float := make([]float64, 0, len(fv))
 		for _, f := range fv {
 			floatValue, ok := f.(float64)
@@ -90,7 +90,7 @@ func toFloatValues(values []interface{}, rereduce bool) ([][]float64, bool) {
 	return floatValues, true
 }
 
-func toStatsValues(values []interface{}, rereduce bool) ([][]stats, bool) {
+func toStatsValues(values []any, rereduce bool) ([][]stats, bool) {
 	if !rereduce {
 		return nil, false
 	}
@@ -105,13 +105,13 @@ func toStatsValues(values []interface{}, rereduce bool) ([][]stats, bool) {
 	return statsValues, true
 }
 
-func flattenStats(values []interface{}) []stats {
+func flattenStats(values []any) []stats {
 	statsValues := make([]stats, 0, len(values))
 	for _, v := range values {
 		switch t := v.(type) {
 		case stats:
 			statsValues = append(statsValues, t)
-		case []interface{}:
+		case []any:
 			for _, vv := range t {
 				if stat, ok := vv.(stats); ok {
 					statsValues = append(statsValues, stat)
@@ -125,7 +125,7 @@ func flattenStats(values []interface{}) []stats {
 // Stats is the built-in reduce function, [_stats].
 //
 // [_stats]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#stats
-func Stats(_ [][2]interface{}, values []interface{}, rereduce bool) ([]interface{}, error) {
+func Stats(_ [][2]any, values []any, rereduce bool) ([]any, error) {
 	if floatValues, ok := toFloatValues(values, rereduce); ok {
 		return reduceStatsFloatArray(floatValues), nil
 	}
@@ -147,7 +147,7 @@ func Stats(_ [][2]interface{}, values []interface{}, rereduce bool) ([]interface
 		}
 		result.Min = slices.Min(mins)
 		result.Max = slices.Max(maxs)
-		return []interface{}{result}, nil
+		return []any{result}, nil
 	}
 	result.Count = float64(len(values))
 	nvals := make([]float64, 0, len(values))
@@ -196,10 +196,10 @@ func Stats(_ [][2]interface{}, values []interface{}, rereduce bool) ([]interface
 	}
 	result.Min = slices.Min(slices.Concat(nvals, mins))
 	result.Max = slices.Max(slices.Concat(nvals, maxs))
-	return []interface{}{result}, nil
+	return []any{result}, nil
 }
 
-func reduceStatsFloatArray(values [][]float64) []interface{} {
+func reduceStatsFloatArray(values [][]float64) []any {
 	results := make([]stats, len(values[0]))
 	minmax := make([][]float64, len(values[0]))
 
@@ -216,10 +216,10 @@ func reduceStatsFloatArray(values [][]float64) []interface{} {
 		results[i].Max = slices.Max(mm)
 	}
 
-	return []interface{}{results}
+	return []any{results}
 }
 
-func rereduceStatsFloatArray(values [][]stats) []interface{} {
+func rereduceStatsFloatArray(values [][]stats) []any {
 	result := make([]stats, len(values[0]))
 	mins := make([][]float64, len(values[0]))
 	maxs := make([][]float64, len(values[0]))
@@ -237,7 +237,7 @@ func rereduceStatsFloatArray(values [][]stats) []interface{} {
 		result[i].Max = slices.Max(maxs[i])
 	}
 
-	return []interface{}{result}
+	return []any{result}
 }
 
 // ParseFunc parses the passed javascript string, and returns a Go function that
@@ -260,14 +260,14 @@ func ParseFunc(javascript string, logger *log.Logger) (Func, error) {
 		if err != nil {
 			return nil, err
 		}
-		return func(keys [][2]interface{}, values []interface{}, rereduce bool) ([]interface{}, error) {
+		return func(keys [][2]any, values []any, rereduce bool) ([]any, error) {
 			ret, err := reduceFunc(keys, values, rereduce)
 			// According to CouchDB reference implementation, when a user-defined
 			// reduce function throws an exception, the error is logged and the
 			// return value is set to null.
 			if err != nil {
 				logger.Printf("reduce function threw exception: %s", err)
-				return []interface{}{nil}, nil
+				return []any{nil}, nil
 			}
 			return ret, nil
 		}, nil

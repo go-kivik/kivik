@@ -28,7 +28,7 @@ const (
 	jsonTypeObject
 )
 
-func jsonTypeOf(v interface{}) jsonType {
+func jsonTypeOf(v any) jsonType {
 	if isNil(v) {
 		return jsonTypeNull
 	}
@@ -40,15 +40,15 @@ func jsonTypeOf(v interface{}) jsonType {
 		return jsonTypeNumber
 	case string:
 		return jsonTypeString
-	case []interface{}:
+	case []any:
 		return jsonTypeArray
-	case map[string]interface{}:
+	case map[string]any:
 		return jsonTypeObject
 	}
 	panic(fmt.Sprintf("unexpected JSON type: %T", v))
 }
 
-func isNil(v interface{}) bool {
+func isNil(v any) bool {
 	if v == nil {
 		return true
 	}

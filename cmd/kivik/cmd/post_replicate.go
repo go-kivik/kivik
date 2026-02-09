@@ -53,7 +53,7 @@ func (c *postReplicate) RunE(cmd *cobra.Command, _ []string) error {
 		return errors.Code(errors.ErrUsage, "explicit source or target required")
 	}
 	if len(source) > 0 && source[0] == '{' {
-		var tmp map[string]interface{}
+		var tmp map[string]any
 		if err = json.Unmarshal([]byte(source), &tmp); err != nil {
 			return errors.Code(errors.ErrUsage, fmt.Errorf("invalid source: %w", err))
 		}
@@ -61,7 +61,7 @@ func (c *postReplicate) RunE(cmd *cobra.Command, _ []string) error {
 		source = ""
 	}
 	if len(target) > 0 && target[0] == '{' {
-		var tmp map[string]interface{}
+		var tmp map[string]any
 		if err = json.Unmarshal([]byte(target), &tmp); err != nil {
 			return errors.Code(errors.ErrUsage, fmt.Errorf("invalid target: %w", err))
 		}

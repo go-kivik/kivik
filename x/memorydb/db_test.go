@@ -90,9 +90,9 @@ func TestPut(t *testing.T) {
 	type putTest struct {
 		Name     string
 		DocID    string
-		Doc      interface{}
+		Doc      any
 		Setup    func() *db
-		Expected interface{}
+		Expected any
 		Status   int
 		Error    string
 	}
@@ -133,8 +133,8 @@ func TestPut(t *testing.T) {
 		{
 			Name:  "Unmarshalable",
 			DocID: "foo",
-			Doc: func() interface{} {
-				return map[string]interface{}{
+			Doc: func() any {
+				return map[string]any{
 					"channel": make(chan int),
 				}
 			}(),
@@ -208,10 +208,10 @@ func TestPut(t *testing.T) {
 		{
 			Name:  "WithAttachments",
 			DocID: "duck",
-			Doc: map[string]interface{}{
+			Doc: map[string]any{
 				"_id":   "duck",
 				"value": "quack",
-				"_attachments": []map[string]interface{}{
+				"_attachments": []map[string]any{
 					{"foo.css": map[string]string{
 						"content_type": "text/css",
 						"data":         "LyogYW4gZW1wdHkgQ1NTIGZpbGUgKi8=",
@@ -265,14 +265,14 @@ func TestPut(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				var result map[string]interface{}
+				var result map[string]any
 				if e := json.NewDecoder(rows.Body).Decode(&result); e != nil {
 					t.Fatal(e)
 				}
 				if !strings.HasPrefix(test.DocID, "_local/") {
 					if rev, ok := result["_rev"].(string); ok {
-						parts := strings.SplitN(rev, "-", 2)
-						result["_rev"] = parts[0] + "-xxx"
+						seq, _, _ := strings.Cut(rev, "-")
+						result["_rev"] = seq + "-xxx"
 					}
 				}
 				if d := testy.DiffAsJSON(test.Expected, result); d != nil {
@@ -291,7 +291,7 @@ func TestGet(t *testing.T) {
 		DB       *db
 		Status   int
 		Error    string
-		Expected interface{}
+		Expected any
 	}
 	tests := []getTest{
 		{
@@ -417,7 +417,7 @@ func TestGet(t *testing.T) {
 					return
 				}
 
-				var result map[string]interface{}
+				var result map[string]any
 				if err := json.NewDecoder(rows.Body).Decode(&result); err != nil {
 					t.Fatal(err)
 				}
@@ -543,11 +543,11 @@ func TestDeleteDoc(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				var doc interface{}
+				var doc any
 				if e := json.NewDecoder(result.Body).Decode(&doc); e != nil {
 					t.Fatal(e)
 				}
-				expected := map[string]interface{}{
+				expected := map[string]any{
 					"_id":      test.ID,
 					"_rev":     rev,
 					"_deleted": true,

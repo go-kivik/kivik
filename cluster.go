@@ -39,7 +39,7 @@ func (c *Client) ClusterStatus(ctx context.Context, options ...Option) (string, 
 // object which is marshalable to a JSON object of the expected format.
 //
 // [cluster action]: http://docs.couchdb.org/en/stable/api/server/common.html#post--_cluster_setup
-func (c *Client) ClusterSetup(ctx context.Context, action interface{}) error {
+func (c *Client) ClusterSetup(ctx context.Context, action any) error {
 	endQuery, err := c.startQuery()
 	if err != nil {
 		return err

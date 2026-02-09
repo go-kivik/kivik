@@ -24,7 +24,7 @@ import (
 )
 
 type iterator interface {
-	Next(interface{}) error
+	Next(any) error
 	Close() error
 }
 
@@ -61,7 +61,7 @@ type iter struct {
 	cancel  func()      // cancel function to exit context goroutine when iterator is closed
 	closing atomic.Bool // set by Close before interrupting a blocked Next
 
-	curVal interface{}
+	curVal any
 }
 
 // isReady returns an error if the iterator is not ready, because it has been
@@ -89,7 +89,7 @@ func stateIsReady(state int) bool {
 // ctx is a possibly-cancellable context.  zeroValue is an empty instance of
 // the data type this iterator iterates over feed is the iterator interface,
 // which typically wraps a driver.X iterator
-func newIterator(ctx context.Context, onClose func(), feed iterator, zeroValue interface{}) *iter {
+func newIterator(ctx context.Context, onClose func(), feed iterator, zeroValue any) *iter {
 	i := &iter{
 		onClose: onClose,
 		feed:    feed,

@@ -31,7 +31,7 @@ func TestRenderExpectedType(t *testing.T) {
 		AcceptsContext: true,
 		AcceptsOptions: true,
 		ReturnsError:   true,
-		Accepts:        []reflect.Type{reflect.TypeOf((*interface{})(nil)).Elem()},
+		Accepts:        []reflect.Type{reflect.TypeOf((*any)(nil)).Elem()},
 		Returns:        []reflect.Type{typeString, typeString},
 	})
 

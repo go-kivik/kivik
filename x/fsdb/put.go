@@ -15,6 +15,7 @@ package fs
 import (
 	"context"
 	"errors"
+	"io/fs"
 	"net/http"
 	"net/url"
 	"os"
@@ -38,7 +39,7 @@ type metaDoc struct {
 func (d *db) metadata(docID, ext string) (rev string, deleted bool, err error) {
 	f, err := os.Open(d.path(docID))
 	if err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			err = nil
 		}
 		return "", false, err
@@ -73,7 +74,7 @@ output_format?
 X-Couch-Full-Commit header/option
 */
 
-func (d *db) Put(ctx context.Context, docID string, i interface{}, options driver.Options) (string, error) {
+func (d *db) Put(ctx context.Context, docID string, i any, options driver.Options) (string, error) {
 	if err := validateID(docID); err != nil {
 		return "", err
 	}

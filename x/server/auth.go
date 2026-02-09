@@ -46,7 +46,7 @@ func (s *authService) UserStore() auth.UserStore {
 	return s.s.userStores
 }
 
-func (s *authService) Bind(r *http.Request, v interface{}) error {
+func (s *authService) Bind(r *http.Request, v any) error {
 	return s.s.bind(r, v)
 }
 

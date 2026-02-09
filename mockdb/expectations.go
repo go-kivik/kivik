@@ -70,7 +70,7 @@ func (e *ExpectedMembership) String() string {
 // WithAction specifies the action to be matched. Note that this expectation
 // is compared with the actual action's marshaled JSON output, so it is not
 // essential that the data types match exactly, in a Go sense.
-func (e *ExpectedClusterSetup) WithAction(action interface{}) *ExpectedClusterSetup {
+func (e *ExpectedClusterSetup) WithAction(action any) *ExpectedClusterSetup {
 	e.arg0 = action
 	return e
 }

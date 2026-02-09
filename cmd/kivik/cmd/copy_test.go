@@ -40,7 +40,7 @@ func Test_copy_RunE(t *testing.T) {
 		args:   []string{"copy", "http://example.com/foo/bar", "%xx"},
 		status: errors.ErrUsage,
 	})
-	tests.Add("remote COPY", func(t *testing.T) interface{} {
+	tests.Add("remote COPY", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Header: http.Header{
 				"ETag": {`"2-62e778c9ec09214dd685a981dcc24074"`},
@@ -62,7 +62,7 @@ func Test_copy_RunE(t *testing.T) {
 			args: []string{"--debug", "copy", s.URL + "/jjj/src", "target"},
 		}
 	})
-	tests.Add("emulated COPY", func(t *testing.T) interface{} {
+	tests.Add("emulated COPY", func(t *testing.T) any {
 		ss := testy.ServeResponseValidator(t, &http.Response{
 			Header: http.Header{
 				"Content-Type": {"application/json"},
@@ -98,7 +98,7 @@ func Test_copy_RunE(t *testing.T) {
 			args: []string{"--debug", "copy", ss.URL + "/asdf/src", ts.URL + "/qwerty/target"},
 		}
 	})
-	tests.Add("remote COPY with rev", func(t *testing.T) interface{} {
+	tests.Add("remote COPY with rev", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Header: http.Header{
 				"ETag": {`"2-62e778c9ec09214dd685a981dcc24074"`},
@@ -120,7 +120,7 @@ func Test_copy_RunE(t *testing.T) {
 			args: []string{"--debug", "copy", s.URL + "/jkl/src", "target?rev=3-xxx"},
 		}
 	})
-	tests.Add("remote COPY with --target-rev", func(t *testing.T) interface{} {
+	tests.Add("remote COPY with --target-rev", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Header: http.Header{
 				"ETag": {`"2-62e778c9ec09214dd685a981dcc24074"`},
@@ -142,7 +142,7 @@ func Test_copy_RunE(t *testing.T) {
 			args: []string{"--debug", "copy", s.URL + "/jkl/src", "target", "--target-rev", "3-lkjds"},
 		}
 	})
-	tests.Add("emulated COPY with rev", func(t *testing.T) interface{} {
+	tests.Add("emulated COPY with rev", func(t *testing.T) any {
 		ss := testy.ServeResponseValidator(t, &http.Response{
 			Header: http.Header{
 				"Content-Type": {"application/json"},
@@ -178,7 +178,7 @@ func Test_copy_RunE(t *testing.T) {
 			args: []string{"--debug", "copy", ss.URL + "/asdf/src", ts.URL + "/qwerty/target?rev=7-qhk"},
 		}
 	})
-	tests.Add("from context", func(*testing.T) interface{} {
+	tests.Add("from context", func(*testing.T) any {
 		return cmdTest{
 			args:   []string{"--debug", "copy", "--config", "./testdata/copy.yaml", "--target", "target"},
 			status: errors.ErrUnavailable,

@@ -30,7 +30,7 @@ type optionLogger struct {
 
 var _ kivik.Option = (*optionLogger)(nil)
 
-func (o optionLogger) Apply(target interface{}) {
+func (o optionLogger) Apply(target any) {
 	if client, ok := target.(*client); ok {
 		client.logger = o.Logger
 	}
@@ -109,7 +109,7 @@ type optionQueryLog struct {
 	*log.Logger
 }
 
-func (o optionQueryLog) Apply(target interface{}) {
+func (o optionQueryLog) Apply(target any) {
 	if cn, ok := target.(*connector); ok {
 		cn.queryLogger = o.Logger
 	}

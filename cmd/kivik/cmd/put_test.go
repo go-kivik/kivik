@@ -35,7 +35,7 @@ func Test_put_RunE(t *testing.T) {
 		args:   []string{"--debug", "put", "http://localhost:1/foo/bar", "-d", "{}"},
 		status: errors.ErrUnavailable,
 	})
-	tests.Add("json data string", func(t *testing.T) interface{} {
+	tests.Add("json data string", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true,"rev":"1-xxx"}`)),
 		}, gunzip(func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
@@ -49,7 +49,7 @@ func Test_put_RunE(t *testing.T) {
 			args: []string{"--debug", "put", s.URL + "/foo/bar", "--data", `{"foo":"bar"}`},
 		}
 	})
-	tests.Add("json data stdin", func(t *testing.T) interface{} {
+	tests.Add("json data stdin", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true,"rev":"1-xxx"}`)),
 		}, gunzip(func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
@@ -64,7 +64,7 @@ func Test_put_RunE(t *testing.T) {
 			stdin: `{"foo":"bar"}`,
 		}
 	})
-	tests.Add("json data file", func(t *testing.T) interface{} {
+	tests.Add("json data file", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true,"rev":"1-xxx"}`)),
 		}, gunzip(func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
@@ -79,7 +79,7 @@ func Test_put_RunE(t *testing.T) {
 			stdin: `{"foo":"bar"}`,
 		}
 	})
-	tests.Add("yaml data string", func(t *testing.T) interface{} {
+	tests.Add("yaml data string", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"status":"ok"}`)),
 		}, gunzip(func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
@@ -93,7 +93,7 @@ func Test_put_RunE(t *testing.T) {
 			args: []string{"--debug", "put", s.URL + "/foo/bar", "--yaml", "--data", `foo: bar`},
 		}
 	})
-	tests.Add("auto put config", func(t *testing.T) interface{} {
+	tests.Add("auto put config", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{
@@ -117,7 +117,7 @@ func Test_put_RunE(t *testing.T) {
 			args: []string{"put", s.URL + "/_node/_local/_config/foo/bar", "-d", "baz"},
 		}
 	})
-	tests.Add("auto put security", func(t *testing.T) interface{} {
+	tests.Add("auto put security", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{

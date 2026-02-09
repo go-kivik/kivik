@@ -34,7 +34,7 @@ func TestExplain(t *testing.T) {
 	tests := []struct {
 		name     string
 		db       *db
-		query    interface{}
+		query    any
 		options  kivik.Option
 		expected *driver.QueryPlan
 		status   int
@@ -74,11 +74,11 @@ func TestExplain(t *testing.T) {
 			name: "raw query",
 			db: newCustomDB(func(req *http.Request) (*http.Response, error) {
 				defer req.Body.Close() // nolint: errcheck
-				var result interface{}
+				var result any
 				if err := json.NewDecoder(req.Body).Decode(&result); err != nil {
 					return nil, fmt.Errorf("decode error: %s", err)
 				}
-				expected := map[string]interface{}{"_id": "foo"}
+				expected := map[string]any{"_id": "foo"}
 				if d := testy.DiffInterface(expected, result); d != nil {
 					return nil, fmt.Errorf("unexpected result:\n%s", d)
 				}
@@ -133,16 +133,16 @@ func TestUnmarshalQueryPlan(t *testing.T) {
 		{
 			name:     "simple field list",
 			input:    `{"fields":["foo","bar"],"dbname":"foo"}`,
-			expected: &queryPlan{Fields: []interface{}{"foo", "bar"}, DBName: "foo"},
+			expected: &queryPlan{Fields: []any{"foo", "bar"}, DBName: "foo"},
 		},
 		{
 			name:  "complex field list",
 			input: `{"dbname":"foo", "fields":[{"foo":"asc"},{"bar":"desc"}]}`,
 			expected: &queryPlan{
 				DBName: "foo",
-				Fields: []interface{}{
-					map[string]interface{}{"foo": "asc"},
-					map[string]interface{}{"bar": "desc"},
+				Fields: []any{
+					map[string]any{"foo": "asc"},
+					map[string]any{"bar": "desc"},
 				},
 			},
 		},
@@ -173,7 +173,7 @@ func TestCreateIndex(t *testing.T) {
 	tests := []struct {
 		name            string
 		ddoc, indexName string
-		index           interface{}
+		index           any
 		options         kivik.Option
 		db              *db
 		status          int
@@ -189,7 +189,7 @@ func TestCreateIndex(t *testing.T) {
 		{
 			name:   "invalid raw index",
 			db:     newTestDB(nil, nil),
-			index:  map[string]interface{}{"foo": make(chan int)},
+			index:  map[string]any{"foo": make(chan int)},
 			status: http.StatusBadRequest,
 			err:    `Post "?http://example.com/testdb/_index"?: json: unsupported type: chan int`,
 		},
@@ -271,9 +271,9 @@ func TestGetIndexes(t *testing.T) {
 				{
 					Name: "_all_docs",
 					Type: "special",
-					Definition: map[string]interface{}{
-						"fields": []interface{}{
-							map[string]interface{}{"_id": "asc"},
+					Definition: map[string]any{
+						"fields": []any{
+							map[string]any{"_id": "asc"},
 						},
 					},
 				},
@@ -281,9 +281,9 @@ func TestGetIndexes(t *testing.T) {
 					DesignDoc: "_design/a7ee061f1a2c0c6882258b2f1e148b714e79ccea",
 					Name:      "a7ee061f1a2c0c6882258b2f1e148b714e79ccea",
 					Type:      "json",
-					Definition: map[string]interface{}{
-						"fields": []interface{}{
-							map[string]interface{}{"foo": "asc"},
+					Definition: map[string]any{
+						"fields": []any{
+							map[string]any{"foo": "asc"},
 						},
 					},
 				},
@@ -390,7 +390,7 @@ func TestFind(t *testing.T) {
 	tests := []struct {
 		name    string
 		db      *db
-		query   interface{}
+		query   any
 		options kivik.Option
 		status  int
 		err     string
@@ -429,7 +429,7 @@ func TestFind(t *testing.T) {
 		},
 		{
 			name: "success 2.1.0",
-			query: map[string]interface{}{
+			query: map[string]any{
 				"selector": map[string]string{"_id": "foo"},
 			},
 			db: newTestDB(&http.Response{

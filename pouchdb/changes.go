@@ -147,7 +147,7 @@ func (c *changesFeed) change(change *changeRow) {
 
 func (c *changesFeed) complete(info *js.Object) {
 	if results := info.Get("results"); results != js.Undefined {
-		for _, result := range results.Interface().([]interface{}) {
+		for _, result := range results.Interface().([]any) {
 			c.change(&changeRow{
 				Object: result.(*js.Object),
 			})
@@ -164,7 +164,7 @@ func (c *changesFeed) error(e *js.Object) {
 }
 
 func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Changes, error) {
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 	changes, err := d.db.Changes(ctx, opts)
 	if err != nil {

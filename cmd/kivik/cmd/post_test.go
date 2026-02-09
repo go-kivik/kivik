@@ -52,7 +52,7 @@ func Test_post_RunE(t *testing.T) {
 		args:   []string{"post"},
 		status: errors.ErrUsage,
 	})
-	tests.Add("auto create doc", func(t *testing.T) interface{} {
+	tests.Add("auto create doc", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true,"id":"random","rev":"1-xxx"}`)),
 		}, gunzip(func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
@@ -66,7 +66,7 @@ func Test_post_RunE(t *testing.T) {
 			args: []string{"--debug", "post", s.URL + "/foo", "--data", `{"foo":"bar"}`},
 		}
 	})
-	tests.Add("auto view cleanup", func(t *testing.T) interface{} {
+	tests.Add("auto view cleanup", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true,"id":"random","rev":"1-xxx"}`)),
 		}, func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
@@ -79,7 +79,7 @@ func Test_post_RunE(t *testing.T) {
 			args: []string{"post", s.URL + "/foo/_view_cleanup"},
 		}
 	})
-	tests.Add("auto flush", func(t *testing.T) interface{} {
+	tests.Add("auto flush", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true}`)),
 		}, func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
@@ -95,7 +95,7 @@ func Test_post_RunE(t *testing.T) {
 			args: []string{"post", s.URL + "/foo/_ensure_full_commit"},
 		}
 	})
-	tests.Add("auto compact", func(t *testing.T) interface{} {
+	tests.Add("auto compact", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true}`)),
 		}, func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
@@ -111,7 +111,7 @@ func Test_post_RunE(t *testing.T) {
 			args: []string{"post", s.URL + "/asdf/_compact"},
 		}
 	})
-	tests.Add("auto compact views", func(t *testing.T) interface{} {
+	tests.Add("auto compact views", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true}`)),
 		}, func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
@@ -127,7 +127,7 @@ func Test_post_RunE(t *testing.T) {
 			args: []string{"post", s.URL + "/asdf/_compact/foo"},
 		}
 	})
-	tests.Add("auto purge", func(t *testing.T) interface{} {
+	tests.Add("auto purge", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true}`)),
 		}, gunzip(func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
@@ -146,7 +146,7 @@ func Test_post_RunE(t *testing.T) {
 			args: []string{"post", s.URL + "/db/_purge", "--data", `{"foo":["1-xxx"]}`},
 		}
 	})
-	tests.Add("auto replicate", func(t *testing.T) interface{} {
+	tests.Add("auto replicate", func(t *testing.T) any {
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.Method == http.MethodHead {
 				w.WriteHeader(http.StatusNotFound)
@@ -167,7 +167,7 @@ func Test_post_RunE(t *testing.T) {
 			args: []string{"--debug", "post", s.URL + "/_replicate", "-O", "source=http://example.com/foo", "-O", "target=http://example.com/bar"},
 		}
 	})
-	tests.Add("auto cluster setup", func(t *testing.T) interface{} {
+	tests.Add("auto cluster setup", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{

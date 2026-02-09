@@ -155,12 +155,12 @@ func fromHTTPStatus(status int) int {
 }
 
 // HTTPStatus converts status to an error code, and passes it to Code().
-func HTTPStatus(status int, err ...interface{}) error {
+func HTTPStatus(status int, err ...any) error {
 	return Code(fromHTTPStatus(status), err...)
 }
 
 // HTTPStatusf converts status to an error code, and passes it to Codef().
-func HTTPStatusf(status int, format string, args ...interface{}) error {
+func HTTPStatusf(status int, format string, args ...any) error {
 	return Codef(fromHTTPStatus(status), format, args...)
 }
 
@@ -168,7 +168,7 @@ func HTTPStatusf(status int, format string, args ...interface{}) error {
 // is wrapped with the error code. All other values are passed to fmt.Sprint.
 //
 // If err is a single nil value, nil is returned.
-func Code(code int, err ...interface{}) error {
+func Code(code int, err ...any) error {
 	if len(err) == 1 {
 		if err[0] == nil {
 			return nil
@@ -187,7 +187,7 @@ func Code(code int, err ...interface{}) error {
 }
 
 // Codef wraps the output of fmt.Errorf with a code.
-func Codef(code int, format string, args ...interface{}) error {
+func Codef(code int, format string, args ...any) error {
 	return &statusErr{
 		error: fmt.Errorf(format, args...),
 		code:  code,
@@ -195,7 +195,7 @@ func Codef(code int, format string, args ...interface{}) error {
 }
 
 // As calls errors.As.
-func As(err error, target interface{}) bool {
+func As(err error, target any) bool {
 	return errors.As(err, target)
 }
 

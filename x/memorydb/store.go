@@ -91,7 +91,7 @@ func (d *database) latestRevision(docID string) (*revision, bool) {
 	return nil, false
 }
 
-type couchDoc map[string]interface{}
+type couchDoc map[string]any
 
 func (d couchDoc) ID() string {
 	id, _ := d["_id"].(string)
@@ -103,7 +103,7 @@ func (d couchDoc) Rev() string {
 	return rev
 }
 
-func toCouchDoc(i interface{}) (couchDoc, error) {
+func toCouchDoc(i any) (couchDoc, error) {
 	if d, ok := i.(couchDoc); ok {
 		return d, nil
 	}

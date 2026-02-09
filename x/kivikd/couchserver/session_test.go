@@ -46,14 +46,14 @@ func TestGetSession(t *testing.T) {
 	w := httptest.NewRecorder()
 	handler := h.GetSession()
 	handler(w, req)
-	expected := map[string]interface{}{
-		"info": map[string]interface{}{
+	expected := map[string]any{
+		"info": map[string]any{
 			"authenticated":           "magic",
 			"authentication_db":       "_users",
 			"authentication_handlers": nil,
 		},
 		"ok": true,
-		"userCtx": map[string]interface{}{
+		"userCtx": map[string]any{
 			"name":  "bob",
 			"roles": []string{},
 		},

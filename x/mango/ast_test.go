@@ -69,7 +69,7 @@ func TestParse(t *testing.T) {
 			field: "foo",
 			cond: &conditionNode{
 				op:   OpEqual,
-				cond: map[string]interface{}{},
+				cond: map[string]any{},
 			},
 		},
 	})
@@ -83,7 +83,7 @@ func TestParse(t *testing.T) {
 			field: "foo",
 			cond: &conditionNode{
 				op:   OpEqual,
-				cond: map[string]interface{}{"bar": "baz"},
+				cond: map[string]any{"bar": "baz"},
 			},
 		},
 	})
@@ -171,7 +171,7 @@ func TestParse(t *testing.T) {
 			field: "foo",
 			cond: &conditionNode{
 				op:   OpIn,
-				cond: []interface{}{float64(1), float64(2), float64(3)},
+				cond: []any{float64(1), float64(2), float64(3)},
 			},
 		},
 	})
@@ -185,7 +185,7 @@ func TestParse(t *testing.T) {
 			field: "foo",
 			cond: &conditionNode{
 				op:   OpNotIn,
-				cond: []interface{}{float64(1), float64(2), float64(3)},
+				cond: []any{float64(1), float64(2), float64(3)},
 			},
 		},
 	})
@@ -406,7 +406,7 @@ func TestParse(t *testing.T) {
 			field: "foo",
 			cond: &conditionNode{
 				op:   OpAll,
-				cond: []interface{}{"bar", "baz"},
+				cond: []any{"bar", "baz"},
 			},
 		},
 	})

@@ -36,7 +36,7 @@ const (
 )
 
 // Fields is simple wrapper around logging fields.
-type Fields map[string]interface{}
+type Fields map[string]any
 
 // Exists returns true if the requested key exists in the map.
 func (f Fields) Exists(key string) bool {
@@ -45,7 +45,7 @@ func (f Fields) Exists(key string) bool {
 }
 
 // Get returns the value associated with a key.
-func (f Fields) Get(key string) interface{} {
+func (f Fields) Get(key string) any {
 	return f[key]
 }
 

@@ -24,7 +24,7 @@ import (
 
 // bind binds the request to v if it is of type application/json or
 // application/x-www-form-urlencoded.
-func (s *Server) bind(r *http.Request, v interface{}) error {
+func (s *Server) bind(r *http.Request, v any) error {
 	defer r.Body.Close()
 	switch r.Method {
 	case http.MethodPatch, http.MethodPost, http.MethodPut:
@@ -47,7 +47,7 @@ func (s *Server) bind(r *http.Request, v interface{}) error {
 	}
 }
 
-func (s *Server) bindForm(r *http.Request, v interface{}) error {
+func (s *Server) bindForm(r *http.Request, v any) error {
 	defer r.Body.Close()
 	if err := r.ParseForm(); err != nil {
 		return &internal.Error{Status: http.StatusBadRequest, Err: err}
@@ -59,7 +59,7 @@ func (s *Server) bindForm(r *http.Request, v interface{}) error {
 }
 
 // bindJSON works like bind, but for endpoints that require application/json.
-func (s *Server) bindJSON(r *http.Request, v interface{}) error {
+func (s *Server) bindJSON(r *http.Request, v any) error {
 	defer r.Body.Close()
 	ct, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	switch ct {

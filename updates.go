@@ -30,7 +30,7 @@ type updatesIterator struct{ driver.DBUpdates }
 
 var _ iterator = &updatesIterator{}
 
-func (r *updatesIterator) Next(i interface{}) error {
+func (r *updatesIterator) Next(i any) error {
 	update := i.(*driver.DBUpdate)
 	update.DBName = ""
 	update.Seq = ""

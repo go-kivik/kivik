@@ -31,7 +31,7 @@ func TestFind(t *testing.T) {
 	tests := []struct {
 		name     string
 		db       *DB
-		query    interface{}
+		query    any
 		options  []Option
 		expected *ResultSet
 		status   int
@@ -51,7 +51,7 @@ func TestFind(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.Finder{
-					FindFunc: func(context.Context, interface{}, driver.Options) (driver.Rows, error) {
+					FindFunc: func(context.Context, any, driver.Options) (driver.Rows, error) {
 						return nil, errors.New("db error")
 					},
 				},
@@ -64,7 +64,7 @@ func TestFind(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.Finder{
-					FindFunc: func(_ context.Context, query interface{}, _ driver.Options) (driver.Rows, error) {
+					FindFunc: func(_ context.Context, query any, _ driver.Options) (driver.Rows, error) {
 						expectedQuery := json.RawMessage(`{"limit":3,"selector":{"foo":"bar"},"skip":10}`)
 						if d := testy.DiffInterface(expectedQuery, query); d != nil {
 							return nil, fmt.Errorf("Unexpected query:\n%s", d)
@@ -73,7 +73,7 @@ func TestFind(t *testing.T) {
 					},
 				},
 			},
-			query: map[string]interface{}{"selector": map[string]interface{}{"foo": "bar"}},
+			query: map[string]any{"selector": map[string]any{"foo": "bar"}},
 			options: []Option{
 				Param("limit", 3),
 				Param("skip", 10),
@@ -131,7 +131,7 @@ func TestFind(t *testing.T) {
 			db := &DB{
 				client: &Client{},
 				driverDB: &mock.Finder{
-					FindFunc: func(context.Context, interface{}, driver.Options) (driver.Rows, error) {
+					FindFunc: func(context.Context, any, driver.Options) (driver.Rows, error) {
 						return nil, errors.New("sdfsdf")
 					},
 				},
@@ -161,7 +161,7 @@ func TestCreateIndex(t *testing.T) {
 		testName   string
 		db         *DB
 		ddoc, name string
-		index      interface{}
+		index      any
 		status     int
 		err        string
 	}{
@@ -179,7 +179,7 @@ func TestCreateIndex(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.Finder{
-					CreateIndexFunc: func(context.Context, string, string, interface{}, driver.Options) error {
+					CreateIndexFunc: func(context.Context, string, string, any, driver.Options) error {
 						return errors.New("db error")
 					},
 				},
@@ -192,7 +192,7 @@ func TestCreateIndex(t *testing.T) {
 			db: &DB{
 				client: &Client{},
 				driverDB: &mock.Finder{
-					CreateIndexFunc: func(_ context.Context, ddoc, name string, index interface{}, _ driver.Options) error {
+					CreateIndexFunc: func(_ context.Context, ddoc, name string, index any, _ driver.Options) error {
 						expectedDdoc := "foo"
 						expectedName := "bar"
 						expectedIndex := int(3)
@@ -416,7 +416,7 @@ func TestGetIndexes(t *testing.T) {
 func TestExplain(t *testing.T) {
 	type tt struct {
 		db       *DB
-		query    interface{}
+		query    any
 		expected *QueryPlan
 		status   int
 		err      string
@@ -435,7 +435,7 @@ func TestExplain(t *testing.T) {
 		db: &DB{
 			client: &Client{},
 			driverDB: &mock.Finder{
-				ExplainFunc: func(context.Context, interface{}, driver.Options) (*driver.QueryPlan, error) {
+				ExplainFunc: func(context.Context, any, driver.Options) (*driver.QueryPlan, error) {
 					return nil, errors.New("explain error")
 				},
 			},
@@ -447,7 +447,7 @@ func TestExplain(t *testing.T) {
 		db: &DB{
 			client: &Client{},
 			driverDB: &mock.Finder{
-				ExplainFunc: func(_ context.Context, query interface{}, _ driver.Options) (*driver.QueryPlan, error) {
+				ExplainFunc: func(_ context.Context, query any, _ driver.Options) (*driver.QueryPlan, error) {
 					expectedQuery := int(3)
 					if d := testy.DiffInterface(expectedQuery, query); d != nil {
 						return nil, fmt.Errorf("Unexpected query:\n%s", d)

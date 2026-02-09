@@ -37,7 +37,7 @@ func (c *testClient) WithOptions(string, ...kivik.Option) {}
 
 func TestMethods(t *testing.T) {
 	type tst struct {
-		input    interface{}
+		input    any
 		isClient bool
 		expected []*method
 		err      string

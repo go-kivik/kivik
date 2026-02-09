@@ -25,11 +25,11 @@ func TestDocumentMarshalJSON(t *testing.T) {
 	tests.Add("no attachments", &document{
 		ID:  "foo",
 		Rev: "1-xxx",
-		Data: map[string]interface{}{
+		Data: map[string]any{
 			"foo": "bar",
 		},
 	})
-	tests.Add("attachment", func(t *testing.T) interface{} {
+	tests.Add("attachment", func(t *testing.T) any {
 		f, err := os.Open("testdata/foo.txt")
 		if err != nil {
 			t.Fatal(err)

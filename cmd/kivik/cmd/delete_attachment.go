@@ -50,7 +50,7 @@ func (c *deleteAtt) RunE(cmd *cobra.Command, _ []string) error {
 			return err
 		}
 
-		return c.fmt.Output(output.JSONReader(map[string]interface{}{
+		return c.fmt.Output(output.JSONReader(map[string]any{
 			"ok":  true,
 			"id":  docID,
 			"rev": newRev,

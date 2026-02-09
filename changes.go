@@ -36,7 +36,7 @@ type changesIterator struct {
 
 var _ iterator = &changesIterator{}
 
-func (c *changesIterator) Next(i interface{}) error {
+func (c *changesIterator) Next(i any) error {
 	change := i.(*driver.Change)
 	change.ID = ""
 	change.Seq = ""
@@ -101,7 +101,7 @@ func (c *Changes) ID() string {
 
 // ScanDoc copies the data from the result into dest.  See [ResultSet.ScanValue]
 // for additional details.
-func (c *Changes) ScanDoc(dest interface{}) error {
+func (c *Changes) ScanDoc(dest any) error {
 	if err := c.isReady(); err != nil {
 		return err
 	}
@@ -183,7 +183,7 @@ type Change struct {
 
 // ScanDoc copies the data from the result into dest.  See [Row.ScanValue]
 // for additional details.
-func (c *Change) ScanDoc(dest interface{}) error {
+func (c *Change) ScanDoc(dest any) error {
 	return json.Unmarshal(c.doc, dest)
 }
 

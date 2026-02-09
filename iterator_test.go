@@ -31,7 +31,7 @@ type TestFeed struct {
 var _ iterator = &TestFeed{}
 
 func (f *TestFeed) Close() error { return f.closeErr }
-func (f *TestFeed) Next(ifce interface{}) error {
+func (f *TestFeed) Next(ifce any) error {
 	i, ok := ifce.(*int64)
 	if ok {
 		*i = f.i
@@ -46,7 +46,7 @@ func (f *TestFeed) Next(ifce interface{}) error {
 }
 
 func TestIterator(t *testing.T) {
-	iter := newIterator(context.Background(), nil, &TestFeed{max: 10}, func() interface{} { var i int64; return &i }())
+	iter := newIterator(context.Background(), nil, &TestFeed{max: 10}, func() any { var i int64; return &i }())
 	expected := []int64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 	result := []int64{}
 	for iter.Next() {
@@ -67,7 +67,7 @@ func TestIterator(t *testing.T) {
 func TestCancelledIterator(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 	defer cancel()
-	iter := newIterator(ctx, nil, &TestFeed{max: 10000}, func() interface{} { var i int64; return &i }())
+	iter := newIterator(ctx, nil, &TestFeed{max: 10000}, func() any { var i int64; return &i }())
 	for iter.Next() { //nolint:revive // empty block necessary for loop
 	}
 	if err := iter.Err(); err.Error() != "context deadline exceeded" {
@@ -93,7 +93,7 @@ func (f *blockingFeed) Close() error {
 	return nil
 }
 
-func (f *blockingFeed) Next(_ interface{}) error {
+func (f *blockingFeed) Next(_ any) error {
 	f.ready <- struct{}{}
 	<-f.done
 	return context.Canceled

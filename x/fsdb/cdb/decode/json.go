@@ -19,6 +19,6 @@ import (
 
 type jsonDecoder struct{}
 
-func (d *jsonDecoder) Decode(r io.Reader, i interface{}) error {
+func (d *jsonDecoder) Decode(r io.Reader, i any) error {
 	return json.NewDecoder(r).Decode(i)
 }

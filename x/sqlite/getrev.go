@@ -48,7 +48,7 @@ func (d *db) GetRev(ctx context.Context, id string, options driver.Options) (str
 }
 
 type queryer interface {
-	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 }
 
 func (d *db) getCoreDoc(ctx context.Context, tx queryer, id string, rev revision, latest, metaOnly bool) (*fullDoc, revision, error) {

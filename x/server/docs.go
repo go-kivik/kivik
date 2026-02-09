@@ -25,7 +25,7 @@ import (
 func (s *Server) postDoc() httpe.HandlerWithError {
 	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
 		db := chi.URLParam(r, "db")
-		var doc interface{}
+		var doc any
 		if err := json.NewDecoder(r.Body).Decode(&doc); err != nil {
 			return err
 		}
@@ -33,7 +33,7 @@ func (s *Server) postDoc() httpe.HandlerWithError {
 		if err != nil {
 			return err
 		}
-		return serveJSON(w, http.StatusCreated, map[string]interface{}{
+		return serveJSON(w, http.StatusCreated, map[string]any{
 			"id":  id,
 			"rev": rev,
 			"ok":  true,
@@ -45,7 +45,7 @@ func (s *Server) doc() httpe.HandlerWithError {
 	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
 		db := chi.URLParam(r, "db")
 		id := chi.URLParam(r, "docid")
-		var doc interface{}
+		var doc any
 		err := s.client.DB(db).Get(r.Context(), id, options(r)).ScanDoc(&doc)
 		if err != nil {
 			return err

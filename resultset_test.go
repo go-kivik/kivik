@@ -119,7 +119,7 @@ func TestNextResultSet(t *testing.T) {
 }
 
 func multiResultSet() *ResultSet {
-	rows := []interface{}{
+	rows := []any{
 		&driver.Row{ID: "1", Doc: strings.NewReader(`{"foo":"bar"}`)},
 		&driver.Row{ID: "2", Doc: strings.NewReader(`{"foo":"bar"}`)},
 		&driver.Row{ID: "3", Doc: strings.NewReader(`{"foo":"bar"}`)},
@@ -157,7 +157,7 @@ func multiResultSet() *ResultSet {
 func TestScanAllDocs(t *testing.T) {
 	type tt struct {
 		rows *ResultSet
-		dest interface{}
+		dest any
 		err  string
 	}
 
@@ -182,7 +182,7 @@ func TestScanAllDocs(t *testing.T) {
 		rows: newResultSet(context.Background(), nil, &mock.Rows{}),
 		dest: func() *[]string { return &[]string{} }(),
 	})
-	tests.Add("Success", func() interface{} {
+	tests.Add("Success", func() any {
 		rows := []*driver.Row{
 			{Doc: strings.NewReader(`{"foo":"bar"}`)},
 		}
@@ -200,7 +200,7 @@ func TestScanAllDocs(t *testing.T) {
 			dest: func() *[]json.RawMessage { return &[]json.RawMessage{} }(),
 		}
 	})
-	tests.Add("Success, slice of pointers", func() interface{} {
+	tests.Add("Success, slice of pointers", func() any {
 		rows := []*driver.Row{
 			{Doc: strings.NewReader(`{"foo":"bar"}`)},
 		}
@@ -218,7 +218,7 @@ func TestScanAllDocs(t *testing.T) {
 			dest: func() *[]*json.RawMessage { return &[]*json.RawMessage{} }(),
 		}
 	})
-	tests.Add("Success, long array", func() interface{} {
+	tests.Add("Success, long array", func() any {
 		rows := []*driver.Row{
 			{Doc: strings.NewReader(`{"foo":"bar"}`)},
 		}
@@ -236,7 +236,7 @@ func TestScanAllDocs(t *testing.T) {
 			dest: func() *[5]*json.RawMessage { return &[5]*json.RawMessage{} }(),
 		}
 	})
-	tests.Add("Success, short array", func() interface{} {
+	tests.Add("Success, short array", func() any {
 		rows := []*driver.Row{
 			{Doc: strings.NewReader(`{"foo":"bar"}`)},
 			{Doc: strings.NewReader(`{"foo":"bar"}`)},
@@ -418,7 +418,7 @@ func TestResultSet_Metadata(t *testing.T) {
 		check(t, r)
 	})
 	t.Run("query in progress", func(t *testing.T) {
-		rows := []interface{}{
+		rows := []any{
 			&driver.Row{Doc: strings.NewReader(`{"foo":"bar"}`)},
 			&driver.Row{Doc: strings.NewReader(`{"foo":"bar"}`)},
 			&driver.Row{Doc: strings.NewReader(`{"foo":"bar"}`)},
@@ -450,7 +450,7 @@ func TestResultSet_Metadata(t *testing.T) {
 		check(t, r)
 	})
 	t.Run("no query in progress", func(t *testing.T) {
-		rows := []interface{}{
+		rows := []any{
 			&driver.Row{Doc: strings.NewReader(`{"foo":"bar"}`)},
 			&driver.Row{Doc: strings.NewReader(`{"foo":"bar"}`)},
 			&driver.Row{Doc: strings.NewReader(`{"foo":"bar"}`)},
@@ -518,7 +518,7 @@ func Test_bug576(t *testing.T) {
 		},
 	})
 
-	var result interface{}
+	var result any
 	err := rows.ScanDoc(&result)
 	const wantErr = "kivik: Iterator access before calling Next"
 	wantStatus := http.StatusBadRequest
@@ -552,7 +552,7 @@ func TestResultSet_Close_blocks(t *testing.T) {
 			},
 		},
 		work: func(rs *ResultSet) {
-			var i interface{}
+			var i any
 			rs.Next()
 			_ = rs.ScanDoc(&i)
 		},
@@ -568,7 +568,7 @@ func TestResultSet_Close_blocks(t *testing.T) {
 			},
 		},
 		work: func(rs *ResultSet) {
-			var i interface{}
+			var i any
 			rs.Next()
 			_ = rs.ScanValue(&i)
 		},

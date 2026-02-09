@@ -29,14 +29,14 @@ func TestRandStr(t *testing.T) {
 func TestToCouchDoc(t *testing.T) {
 	type tcdTest struct {
 		Name     string
-		Input    interface{}
+		Input    any
 		Expected couchDoc
 		Error    string
 	}
 	tests := []tcdTest{
 		{
 			Name:     "Map",
-			Input:    map[string]interface{}{"foo": "bar"},
+			Input:    map[string]any{"foo": "bar"},
 			Expected: couchDoc{"foo": "bar"},
 		},
 		{
@@ -93,7 +93,7 @@ func TestAddRevision(t *testing.T) {
 		t.Errorf("rev (%s) is %d chars long, expected 34", r, len(r))
 	}
 	t.Run("NoID", func(t *testing.T) {
-		r := func() (i interface{}) {
+		r := func() (i any) {
 			defer func() {
 				i = recover()
 			}()
@@ -105,7 +105,7 @@ func TestAddRevision(t *testing.T) {
 		}
 	})
 	t.Run("InvalidJSON", func(t *testing.T) {
-		r := func() (i interface{}) {
+		r := func() (i any) {
 			defer func() {
 				i = recover()
 			}()
@@ -146,13 +146,13 @@ func TestGetRevisionFound(t *testing.T) {
 	d := &database{
 		docs: make(map[string]*document),
 	}
-	r := d.addRevision(map[string]interface{}{"_id": "foo", "a": 1})
-	_ = d.addRevision(map[string]interface{}{"_id": "foo", "a": 2})
+	r := d.addRevision(map[string]any{"_id": "foo", "a": 1})
+	_ = d.addRevision(map[string]any{"_id": "foo", "a": 2})
 	result, found := d.getRevision("foo", r)
 	if !found {
 		t.Errorf("Should have found revision")
 	}
-	expected := map[string]interface{}{"_id": "foo", "a": 1, "_rev": r}
+	expected := map[string]any{"_id": "foo", "a": 1, "_rev": r}
 	if d := testy.DiffAsJSON(expected, result.data); d != nil {
 		t.Error(d)
 	}

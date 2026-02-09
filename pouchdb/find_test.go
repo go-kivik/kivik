@@ -30,7 +30,7 @@ import (
 )
 
 func init() {
-	memPouch := js.Global.Get("PouchDB").Call("defaults", map[string]interface{}{
+	memPouch := js.Global.Get("PouchDB").Call("defaults", map[string]any{
 		"db": js.Global.Call("require", "memdown"),
 	})
 	js.Global.Set("PouchDB", memPouch)
@@ -40,7 +40,7 @@ func TestBuildIndex(t *testing.T) {
 	tests := []struct {
 		Ddoc     string
 		Name     string
-		Index    interface{}
+		Index    any
 		Expected string
 	}{
 		{Expected: `{}`},
@@ -69,7 +69,7 @@ func TestExplain(t *testing.T) {
 	}
 	type test struct {
 		db       *db
-		query    interface{}
+		query    any
 		expected *driver.QueryPlan
 		err      string
 	}
@@ -79,13 +79,13 @@ func TestExplain(t *testing.T) {
 		query: nil,
 		err:   "TypeError: Cannot read propert",
 	})
-	tests.Add("simple selector", func(t *testing.T) interface{} {
-		options := map[string]interface{}{
+	tests.Add("simple selector", func(t *testing.T) any {
+		options := map[string]any{
 			"bookmark":  "nil",
 			"conflicts": false,
-			"r":         []interface{}{49},
-			"sort":      map[string]interface{}{},
-			"use_index": []interface{}{},
+			"r":         []any{49},
+			"sort":      map[string]any{},
+			"use_index": []any{},
 		}
 		if defaultLimit > 0 {
 			options["limit"] = defaultLimit
@@ -93,33 +93,33 @@ func TestExplain(t *testing.T) {
 
 		return test{
 			db:    &db{db: bindings.GlobalPouchDB().New("foo", nil)},
-			query: map[string]interface{}{"selector": map[string]interface{}{"_id": "foo"}},
+			query: map[string]any{"selector": map[string]any{"_id": "foo"}},
 			expected: &driver.QueryPlan{
 				DBName: "foo",
 				Limit:  defaultLimit,
-				Index: map[string]interface{}{
+				Index: map[string]any{
 					"ddoc": nil,
-					"def": map[string]interface{}{
-						"fields": []interface{}{map[string]interface{}{"_id": "asc"}},
+					"def": map[string]any{
+						"fields": []any{map[string]any{"_id": "asc"}},
 					},
 					"name": "_all_docs",
 					"type": "special",
 				},
 				Options:  options,
-				Selector: map[string]interface{}{"_id": map[string]interface{}{"$eq": "foo"}},
+				Selector: map[string]any{"_id": map[string]any{"$eq": "foo"}},
 				Fields:   nil,
-				Range:    map[string]interface{}{},
+				Range:    map[string]any{},
 			},
 		}
 	})
-	tests.Add("fields list", func(t *testing.T) interface{} {
-		options := map[string]interface{}{
+	tests.Add("fields list", func(t *testing.T) any {
+		options := map[string]any{
 			"bookmark":  "nil",
 			"conflicts": false,
-			"fields":    []interface{}{"_id", map[string]interface{}{"type": "desc"}},
-			"r":         []interface{}{49},
-			"sort":      map[string]interface{}{},
-			"use_index": []interface{}{},
+			"fields":    []any{"_id", map[string]any{"type": "desc"}},
+			"r":         []any{49},
+			"sort":      map[string]any{},
+			"use_index": []any{},
 		}
 		if defaultLimit > 0 {
 			options["limit"] = defaultLimit
@@ -127,25 +127,25 @@ func TestExplain(t *testing.T) {
 
 		return test{
 			db: &db{db: bindings.GlobalPouchDB().New("foo", nil)},
-			query: map[string]interface{}{
-				"selector": map[string]interface{}{"_id": "foo"},
-				"fields":   []interface{}{"_id", map[string]interface{}{"type": "desc"}},
+			query: map[string]any{
+				"selector": map[string]any{"_id": "foo"},
+				"fields":   []any{"_id", map[string]any{"type": "desc"}},
 			},
 			expected: &driver.QueryPlan{
 				DBName: "foo",
 				Limit:  defaultLimit,
-				Index: map[string]interface{}{
+				Index: map[string]any{
 					"ddoc": nil,
-					"def": map[string]interface{}{
-						"fields": []interface{}{map[string]interface{}{"_id": "asc"}},
+					"def": map[string]any{
+						"fields": []any{map[string]any{"_id": "asc"}},
 					},
 					"name": "_all_docs",
 					"type": "special",
 				},
 				Options:  options,
-				Selector: map[string]interface{}{"_id": map[string]interface{}{"$eq": "foo"}},
-				Fields:   []interface{}{"_id", map[string]interface{}{"type": "desc"}},
-				Range:    map[string]interface{}{},
+				Selector: map[string]any{"_id": map[string]any{"$eq": "foo"}},
+				Fields:   []any{"_id", map[string]any{"type": "desc"}},
+				Range:    map[string]any{},
 			},
 		}
 	})
@@ -183,16 +183,16 @@ func TestUnmarshalQueryPlan(t *testing.T) {
 		{
 			name:     "simple field list",
 			input:    `{"fields":["foo","bar"],"dbname":"foo"}`,
-			expected: &queryPlan{Fields: []interface{}{"foo", "bar"}, DBName: "foo"},
+			expected: &queryPlan{Fields: []any{"foo", "bar"}, DBName: "foo"},
 		},
 		{
 			name:  "complex field list",
 			input: `{"dbname":"foo", "fields":[{"foo":"asc"},{"bar":"desc"}]}`,
 			expected: &queryPlan{
 				DBName: "foo",
-				Fields: []interface{}{
-					map[string]interface{}{"foo": "asc"},
-					map[string]interface{}{"bar": "desc"},
+				Fields: []any{
+					map[string]any{"foo": "asc"},
+					map[string]any{"bar": "desc"},
 				},
 			},
 		},

@@ -22,7 +22,7 @@ import (
 func TestMatch(t *testing.T) {
 	type test struct {
 		sel  Node
-		doc  interface{}
+		doc  any
 		want bool
 	}
 
@@ -133,7 +133,7 @@ func TestMatch(t *testing.T) {
 			field: "foo",
 			cond:  &conditionNode{op: OpExists, cond: true},
 		},
-		doc: map[string]interface{}{
+		doc: map[string]any{
 			"foo": "bar",
 		},
 		want: true,
@@ -143,7 +143,7 @@ func TestMatch(t *testing.T) {
 			field: "baz",
 			cond:  &conditionNode{op: OpExists, cond: true},
 		},
-		doc: map[string]interface{}{
+		doc: map[string]any{
 			"foo": "bar",
 		},
 		want: false,
@@ -153,7 +153,7 @@ func TestMatch(t *testing.T) {
 			field: "baz",
 			cond:  &conditionNode{op: OpExists, cond: false},
 		},
-		doc: map[string]interface{}{
+		doc: map[string]any{
 			"foo": "bar",
 		},
 		want: true,
@@ -163,7 +163,7 @@ func TestMatch(t *testing.T) {
 			field: "baz",
 			cond:  &conditionNode{op: OpExists, cond: true},
 		},
-		doc: map[string]interface{}{
+		doc: map[string]any{
 			"foo": "bar",
 		},
 		want: false,
@@ -237,7 +237,7 @@ func TestMatch(t *testing.T) {
 			op:   OpType,
 			cond: "array",
 		},
-		doc:  []interface{}{"foo"},
+		doc:  []any{"foo"},
 		want: true,
 	})
 	tests.Add("!type, array", test{
@@ -253,7 +253,7 @@ func TestMatch(t *testing.T) {
 			op:   OpType,
 			cond: "object",
 		},
-		doc:  map[string]interface{}{"foo": "bar"},
+		doc:  map[string]any{"foo": "bar"},
 		want: true,
 	})
 	tests.Add("!type, object", test{
@@ -267,7 +267,7 @@ func TestMatch(t *testing.T) {
 	tests.Add("in", test{
 		sel: &conditionNode{
 			op:   OpIn,
-			cond: []interface{}{"foo", "bar"},
+			cond: []any{"foo", "bar"},
 		},
 		doc:  "foo",
 		want: true,
@@ -275,7 +275,7 @@ func TestMatch(t *testing.T) {
 	tests.Add("!in", test{
 		sel: &conditionNode{
 			op:   OpIn,
-			cond: []interface{}{"foo", "bar"},
+			cond: []any{"foo", "bar"},
 		},
 		doc:  "baz",
 		want: false,
@@ -283,7 +283,7 @@ func TestMatch(t *testing.T) {
 	tests.Add("not in", test{
 		sel: &conditionNode{
 			op:   OpNotIn,
-			cond: []interface{}{"foo", "bar"},
+			cond: []any{"foo", "bar"},
 		},
 		doc:  "baz",
 		want: true,
@@ -291,7 +291,7 @@ func TestMatch(t *testing.T) {
 	tests.Add("!not in", test{
 		sel: &conditionNode{
 			op:   OpNotIn,
-			cond: []interface{}{"foo", "bar"},
+			cond: []any{"foo", "bar"},
 		},
 		doc:  "foo",
 		want: false,
@@ -301,7 +301,7 @@ func TestMatch(t *testing.T) {
 			op:   OpSize,
 			cond: float64(3),
 		},
-		doc:  []interface{}{"foo", "bar", "baz"},
+		doc:  []any{"foo", "bar", "baz"},
 		want: true,
 	})
 	tests.Add("!size", test{
@@ -309,7 +309,7 @@ func TestMatch(t *testing.T) {
 			op:   OpSize,
 			cond: float64(3),
 		},
-		doc:  []interface{}{"foo", "bar"},
+		doc:  []any{"foo", "bar"},
 		want: false,
 	})
 	tests.Add("size, non-array", test{
@@ -379,9 +379,9 @@ func TestMatch(t *testing.T) {
 	tests.Add("all", test{
 		sel: &conditionNode{
 			op:   OpAll,
-			cond: []interface{}{"Comedy", "Short"},
+			cond: []any{"Comedy", "Short"},
 		},
-		doc: []interface{}{
+		doc: []any{
 			"Comedy",
 			"Short",
 			"Animation",
@@ -391,9 +391,9 @@ func TestMatch(t *testing.T) {
 	tests.Add("!all", test{
 		sel: &conditionNode{
 			op:   OpAll,
-			cond: []interface{}{"Comedy", "Short"},
+			cond: []any{"Comedy", "Short"},
 		},
-		doc: []interface{}{
+		doc: []any{
 			"Comedy",
 			"Animation",
 		},
@@ -402,7 +402,7 @@ func TestMatch(t *testing.T) {
 	tests.Add("all, non-array", test{
 		sel: &conditionNode{
 			op:   OpAll,
-			cond: []interface{}{"Comedy", "Short"},
+			cond: []any{"Comedy", "Short"},
 		},
 		doc:  "Comedy",
 		want: false,
@@ -415,7 +415,7 @@ func TestMatch(t *testing.T) {
 				cond: "bar",
 			},
 		},
-		doc: map[string]interface{}{
+		doc: map[string]any{
 			"foo": "bar",
 		},
 		want: true,
@@ -428,7 +428,7 @@ func TestMatch(t *testing.T) {
 				cond: "foo",
 			},
 		},
-		doc: map[string]interface{}{
+		doc: map[string]any{
 			"foo": "bar",
 		},
 		want: false,
@@ -452,9 +452,9 @@ func TestMatch(t *testing.T) {
 				cond: "hello",
 			},
 		},
-		doc: map[string]interface{}{
-			"foo": map[string]interface{}{
-				"bar": map[string]interface{}{
+		doc: map[string]any{
+			"foo": map[string]any{
+				"bar": map[string]any{
 					"baz": "hello",
 				},
 			},
@@ -469,7 +469,7 @@ func TestMatch(t *testing.T) {
 				cond: "hello",
 			},
 		},
-		doc: map[string]interface{}{
+		doc: map[string]any{
 			"foo": "hello",
 		},
 		want: false,
@@ -482,9 +482,9 @@ func TestMatch(t *testing.T) {
 				cond: "hello",
 			},
 		},
-		doc: map[string]interface{}{
-			"foo": map[string]interface{}{
-				"bar": map[string]interface{}{
+		doc: map[string]any{
+			"foo": map[string]any{
+				"bar": map[string]any{
 					"buzz": "hello",
 				},
 			},
@@ -502,8 +502,8 @@ func TestMatch(t *testing.T) {
 				},
 			},
 		},
-		doc: map[string]interface{}{
-			"foo": []interface{}{
+		doc: map[string]any{
+			"foo": []any{
 				"Comedy",
 				"Horror",
 			},
@@ -521,8 +521,8 @@ func TestMatch(t *testing.T) {
 				},
 			},
 		},
-		doc: map[string]interface{}{
-			"genre": []interface{}{
+		doc: map[string]any{
+			"genre": []any{
 				"Comedy",
 			},
 		},
@@ -539,7 +539,7 @@ func TestMatch(t *testing.T) {
 				},
 			},
 		},
-		doc: map[string]interface{}{
+		doc: map[string]any{
 			"genre": "Comedy",
 		},
 		want: false,
@@ -555,8 +555,8 @@ func TestMatch(t *testing.T) {
 				},
 			},
 		},
-		doc: map[string]interface{}{
-			"genre": []interface{}{
+		doc: map[string]any{
+			"genre": []any{
 				"Horror",
 				"Horror",
 			},
@@ -574,8 +574,8 @@ func TestMatch(t *testing.T) {
 				},
 			},
 		},
-		doc: map[string]interface{}{
-			"genre": []interface{}{
+		doc: map[string]any{
+			"genre": []any{
 				"Horror",
 				"Comedy",
 			},
@@ -593,7 +593,7 @@ func TestMatch(t *testing.T) {
 				},
 			},
 		},
-		doc: map[string]interface{}{
+		doc: map[string]any{
 			"genre": "Horror",
 		},
 		want: false,
@@ -609,8 +609,8 @@ func TestMatch(t *testing.T) {
 				},
 			},
 		},
-		doc: map[string]interface{}{
-			"cameras": map[string]interface{}{
+		doc: map[string]any{
+			"cameras": map[string]any{
 				"primary":   "Canon",
 				"secondary": "Nikon",
 			},
@@ -628,8 +628,8 @@ func TestMatch(t *testing.T) {
 				},
 			},
 		},
-		doc: map[string]interface{}{
-			"cameras": map[string]interface{}{
+		doc: map[string]any{
+			"cameras": map[string]any{
 				"primary": "Canon",
 			},
 		},
@@ -646,8 +646,8 @@ func TestMatch(t *testing.T) {
 				},
 			},
 		},
-		doc: map[string]interface{}{
-			"cameras": []interface{}{"Canon", "Nikon"},
+		doc: map[string]any{
+			"cameras": []any{"Canon", "Nikon"},
 		},
 		want: false,
 	})
@@ -671,7 +671,7 @@ func TestMatch(t *testing.T) {
 				},
 			},
 		},
-		doc: map[string]interface{}{
+		doc: map[string]any{
 			"foo": "bar",
 			"baz": "qux",
 		},
@@ -697,7 +697,7 @@ func TestMatch(t *testing.T) {
 				},
 			},
 		},
-		doc: map[string]interface{}{
+		doc: map[string]any{
 			"baz": "qux",
 		},
 		want: false,
@@ -722,7 +722,7 @@ func TestMatch(t *testing.T) {
 				},
 			},
 		},
-		doc: map[string]interface{}{
+		doc: map[string]any{
 			"foo": "bar",
 			"baz": "quux",
 		},
@@ -748,7 +748,7 @@ func TestMatch(t *testing.T) {
 				},
 			},
 		},
-		doc: map[string]interface{}{
+		doc: map[string]any{
 			"foo": "baz",
 			"baz": "quux",
 		},
@@ -764,7 +764,7 @@ func TestMatch(t *testing.T) {
 				},
 			},
 		},
-		doc: map[string]interface{}{
+		doc: map[string]any{
 			"foo": "baz",
 		},
 		want: true,
@@ -779,7 +779,7 @@ func TestMatch(t *testing.T) {
 				},
 			},
 		},
-		doc: map[string]interface{}{
+		doc: map[string]any{
 			"foo": "bar",
 		},
 		want: false,
@@ -804,7 +804,7 @@ func TestMatch(t *testing.T) {
 				},
 			},
 		},
-		doc: map[string]interface{}{
+		doc: map[string]any{
 			"foo": "baz",
 			"baz": "quux",
 		},
@@ -830,7 +830,7 @@ func TestMatch(t *testing.T) {
 				},
 			},
 		},
-		doc: map[string]interface{}{
+		doc: map[string]any{
 			"foo": "bar",
 			"baz": "quux",
 		},

@@ -63,7 +63,7 @@ func (*deps) ImportPath() string                                { return "" }
 func (*deps) StartTestLog(io.Writer)                            {}
 func (*deps) StopTestLog() error                                { return nil }
 func (*deps) SetPanicOnExit0(bool)                              {}
-func (*deps) CheckCorpus([]any, []reflect.Type) error   { return nil }
+func (*deps) CheckCorpus([]any, []reflect.Type) error           { return nil }
 func (*deps) CoordinateFuzzing(time.Duration, int64, time.Duration, int64, int, []corpusEntry, []reflect.Type, string, string) error {
 	return nil
 }

@@ -36,7 +36,7 @@ func (c *driverClient) Close() error {
 	return expected.err
 }
 
-func (c *driverClient) ClusterSetup(ctx context.Context, arg0 interface{}) error {
+func (c *driverClient) ClusterSetup(ctx context.Context, arg0 any) error {
 	expected := &ExpectedClusterSetup{
 		arg0: arg0,
 	}

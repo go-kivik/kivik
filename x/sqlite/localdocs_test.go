@@ -38,7 +38,7 @@ func TestDBLocalDocs(t *testing.T) {
 	tests.Add("no docs in db", test{
 		want: nil,
 	})
-	tests.Add("returns only the local docs", func(t *testing.T) interface{} {
+	tests.Add("returns only the local docs", func(t *testing.T) any {
 		db := newDB(t)
 		_ = db.tPut("foo", map[string]string{"cat": "meow"})
 		rev2 := db.tPut("_local/bar", map[string]string{"dog": "woof"})

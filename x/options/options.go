@@ -243,11 +243,11 @@ func (o Map) ChangesFilter() (filterType, filterDdoc, filterName string, _ error
 		filter, _ = raw.(string)
 		field, filterType = "view", "map"
 	}
-	parts := strings.SplitN(filter, "/", 2)
-	if len(parts) != 2 {
+	ddoc, name, ok := strings.Cut(filter, "/")
+	if !ok {
 		return "", "", "", &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf(`'%s' must be of the form 'designname/filtername'`, field)}
 	}
-	return filterType, "_design/" + parts[0], parts[1], nil
+	return filterType, "_design/" + ddoc, name, nil
 }
 
 // ChangesWhere returns the WHERE clause for the changes feed.

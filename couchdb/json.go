@@ -20,7 +20,7 @@ import (
 )
 
 // encodeKey encodes a key to a view query, or similar, to be passed to CouchDB.
-func encodeKey(i interface{}) (string, error) {
+func encodeKey(i any) (string, error) {
 	if raw, ok := i.(json.RawMessage); ok {
 		return string(raw), nil
 	}
@@ -33,7 +33,7 @@ func encodeKey(i interface{}) (string, error) {
 
 var jsonKeys = []string{"endkey", "end_key", "key", "startkey", "start_key", "keys", "doc_ids"}
 
-func encodeKeys(opts map[string]interface{}) error {
+func encodeKeys(opts map[string]any) error {
 	for _, key := range jsonKeys {
 		if v, ok := opts[key]; ok {
 			value, err := encodeKey(v)

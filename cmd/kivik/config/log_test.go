@@ -53,27 +53,27 @@ func (*testLogger) SetOut(io.Writer) {}
 func (*testLogger) SetErr(io.Writer) {}
 func (*testLogger) SetDebug(bool)    {}
 
-func (l *testLogger) Debug(args ...interface{}) {
+func (l *testLogger) Debug(args ...any) {
 	l.log("DEBUG", fmt.Sprint(args...))
 }
 
-func (l *testLogger) Debugf(format string, args ...interface{}) {
+func (l *testLogger) Debugf(format string, args ...any) {
 	l.log("DEBUG", fmt.Sprintf(format, args...))
 }
 
-func (l *testLogger) Info(args ...interface{}) {
+func (l *testLogger) Info(args ...any) {
 	l.log("INFO", fmt.Sprint(args...))
 }
 
-func (l *testLogger) Infof(format string, args ...interface{}) {
+func (l *testLogger) Infof(format string, args ...any) {
 	l.log("INFO", fmt.Sprintf(format, args...))
 }
 
-func (l *testLogger) Error(args ...interface{}) {
+func (l *testLogger) Error(args ...any) {
 	l.log("ERROR", fmt.Sprint(args...))
 }
 
-func (l *testLogger) Errorf(format string, args ...interface{}) {
+func (l *testLogger) Errorf(format string, args ...any) {
 	l.log("ERROR", fmt.Sprintf(format, args...))
 }
 

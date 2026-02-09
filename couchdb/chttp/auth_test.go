@@ -97,7 +97,7 @@ func TestAuthenticate(t *testing.T) {
 		addr:    s.URL,
 		options: BasicAuth("admin", "abc123"),
 	})
-	tests.Add("cookie auth success", func(t *testing.T) interface{} {
+	tests.Add("cookie auth success", func(t *testing.T) any {
 		sv := nettest.NewHTTPTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			h := w.Header()
 			h.Set("Content-Type", "application/json")
@@ -129,7 +129,7 @@ func TestAuthenticate(t *testing.T) {
 		err:     `Get "?` + s.URL + `/foo"?: Unauthorized`,
 		status:  http.StatusUnauthorized,
 	})
-	tests.Add("already authenticated with cookie", func() interface{} {
+	tests.Add("already authenticated with cookie", func() any {
 		jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
 		if err != nil {
 			t.Fatal(err)

@@ -118,7 +118,7 @@ func postSession(w http.ResponseWriter, r *http.Request) error {
 		w.Header().Add("Location", next)
 		w.WriteHeader(http.StatusFound)
 	}
-	return json.NewEncoder(w).Encode(map[string]interface{}{
+	return json.NewEncoder(w).Encode(map[string]any{
 		"ok":    true,
 		"name":  user.Name,
 		"roles": user.Roles,
@@ -154,7 +154,7 @@ func deleteSession(w http.ResponseWriter) error {
 	})
 	w.Header().Add("Content-Type", typeJSON)
 	w.Header().Set("Cache-Control", "must-revalidate")
-	return json.NewEncoder(w).Encode(map[string]interface{}{
+	return json.NewEncoder(w).Encode(map[string]any{
 		"ok": true,
 	})
 }

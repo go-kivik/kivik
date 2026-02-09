@@ -23,13 +23,13 @@ import (
 )
 
 func (d *db) BulkGet(ctx context.Context, docs []driver.BulkGetReference, options driver.Options) (driver.Rows, error) {
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 	query, err := optionsToParams(opts)
 	if err != nil {
 		return nil, err
 	}
-	body := map[string]interface{}{
+	body := map[string]any{
 		"docs": docs,
 	}
 	chttpOpts := &chttp.Options{

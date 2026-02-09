@@ -41,7 +41,7 @@ func (f *format) Arg(arg string) error {
 }
 
 func (f *format) Output(w io.Writer, r io.Reader) error {
-	var obj interface{}
+	var obj any
 	if err := json.NewDecoder(r).Decode(&obj); err != nil {
 		return err
 	}

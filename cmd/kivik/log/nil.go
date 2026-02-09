@@ -21,12 +21,12 @@ var _ Logger = nilLogger{}
 // NewNil returns a new nil logger. All logs are silently discarded.
 func NewNil() Logger { return nilLogger{} }
 
-func (nilLogger) SetOut(io.Writer)              {}
-func (nilLogger) SetErr(io.Writer)              {}
-func (nilLogger) SetDebug(bool)                 {}
-func (nilLogger) Debug(...interface{})          {}
-func (nilLogger) Debugf(string, ...interface{}) {}
-func (nilLogger) Info(...interface{})           {}
-func (nilLogger) Infof(string, ...interface{})  {}
-func (nilLogger) Error(...interface{})          {}
-func (nilLogger) Errorf(string, ...interface{}) {}
+func (nilLogger) SetOut(io.Writer)      {}
+func (nilLogger) SetErr(io.Writer)      {}
+func (nilLogger) SetDebug(bool)         {}
+func (nilLogger) Debug(...any)          {}
+func (nilLogger) Debugf(string, ...any) {}
+func (nilLogger) Info(...any)           {}
+func (nilLogger) Infof(string, ...any)  {}
+func (nilLogger) Error(...any)          {}
+func (nilLogger) Errorf(string, ...any) {}

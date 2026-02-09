@@ -69,7 +69,7 @@ func (f *Formatter) Register(name string, fmt Format) {
 
 func (f *Formatter) options() []string {
 	if len(f.formats) == 0 {
-		panic("no formatters regiestered")
+		panic("no formatters registered")
 	}
 	return f.formatOpts
 }
@@ -108,19 +108,18 @@ func (f *Formatter) Output(r io.Reader) error {
 }
 
 func (f *Formatter) formatter() (Format, error) {
-	args := strings.SplitN(f.format, "=", 2)
-	name := args[0]
+	name, arg, hasArg := strings.Cut(f.format, "=")
 	if format, ok := f.formats[name]; ok {
 		if fmtArg, ok := format.(FormatArg); ok {
-			if fmtArg.Required() && len(args) == 1 {
+			if fmtArg.Required() && !hasArg {
 				return nil, errors.Codef(errors.ErrUsage, "format %s requires an argument", name)
 			}
-			if len(args) > 1 {
-				if err := fmtArg.Arg(args[1]); err != nil {
+			if hasArg {
+				if err := fmtArg.Arg(arg); err != nil {
 					return nil, errors.Code(errors.ErrUsage, err)
 				}
 			}
-		} else if len(args) > 1 {
+		} else if hasArg {
 			return nil, errors.Codef(errors.ErrUsage, "format %s takes no arguments", name)
 		}
 

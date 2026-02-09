@@ -23,9 +23,9 @@ import (
 	internal "github.com/go-kivik/kivik/v4/int/errors"
 )
 
-func (d *db) BulkDocs(ctx context.Context, docs []interface{}, options driver.Options) ([]driver.BulkResult, error) {
+func (d *db) BulkDocs(ctx context.Context, docs []any, options driver.Options) ([]driver.BulkResult, error) {
 	chttpOpts := chttp.NewOptions(options)
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 	opts["docs"] = docs
 	chttpOpts.GetBody = chttp.BodyEncoder(opts)

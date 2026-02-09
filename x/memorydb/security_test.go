@@ -26,7 +26,7 @@ func TestGetSecurity(t *testing.T) {
 		Name     string
 		DB       *db
 		Error    string
-		Expected interface{}
+		Expected any
 	}
 	tests := []secTest{
 		{

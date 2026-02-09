@@ -32,7 +32,7 @@ var _ driver.Finder = &db{}
 
 // buildIndex merges the ddoc and name into the index structure, as required
 // by the PouchDB-find plugin.
-func buildIndex(ddoc, name string, index interface{}) (*js.Object, error) {
+func buildIndex(ddoc, name string, index any) (*js.Object, error) {
 	i, err := bindings.Objectify(index)
 	if err != nil {
 		return nil, err
@@ -47,7 +47,7 @@ func buildIndex(ddoc, name string, index interface{}) (*js.Object, error) {
 	return o, nil
 }
 
-func (d *db) CreateIndex(ctx context.Context, ddoc, name string, index interface{}, _ driver.Options) error {
+func (d *db) CreateIndex(ctx context.Context, ddoc, name string, index any, _ driver.Options) error {
 	indexObj, err := buildIndex(ddoc, name, index)
 	if err != nil {
 		return err
@@ -71,7 +71,7 @@ func (d *db) GetIndexes(ctx context.Context, _ driver.Options) (indexes []driver
 }
 
 // findIndex attempts to find the requested index definition
-func (d *db) findIndex(ctx context.Context, ddoc, name string) (interface{}, error) {
+func (d *db) findIndex(ctx context.Context, ddoc, name string) (any, error) {
 	ddoc = "_design/" + strings.TrimPrefix(ddoc, "_design/")
 	indexes, err := d.GetIndexes(ctx, nil)
 	if err != nil {
@@ -82,7 +82,7 @@ func (d *db) findIndex(ctx context.Context, ddoc, name string) (interface{}, err
 			continue
 		}
 		if idx.DesignDoc == ddoc && idx.Name == name {
-			return map[string]interface{}{
+			return map[string]any{
 				"ddoc": idx.DesignDoc,
 				"name": idx.Name,
 				"type": idx.Type,
@@ -102,7 +102,7 @@ func (d *db) DeleteIndex(ctx context.Context, ddoc, name string, _ driver.Option
 	return err
 }
 
-func (d *db) Find(ctx context.Context, query interface{}, _ driver.Options) (driver.Rows, error) {
+func (d *db) Find(ctx context.Context, query any, _ driver.Options) (driver.Rows, error) {
 	result, err := d.db.Find(ctx, query)
 	if err != nil {
 		return nil, err
@@ -144,34 +144,34 @@ func (r *findRows) Next(row *driver.Row) (err error) {
 }
 
 type queryPlan struct {
-	DBName    string                 `json:"dbname"`
-	Index     map[string]interface{} `json:"index"`
-	Selector  map[string]interface{} `json:"selector"`
-	Options   map[string]interface{} `json:"opts"`
-	Limit     int64                  `json:"limit"`
-	Partition string                 `json:"partition"`
-	Skip      int64                  `json:"skip"`
-	Fields    fields                 `json:"fields"`
-	Range     map[string]interface{} `json:"range"`
+	DBName    string         `json:"dbname"`
+	Index     map[string]any `json:"index"`
+	Selector  map[string]any `json:"selector"`
+	Options   map[string]any `json:"opts"`
+	Limit     int64          `json:"limit"`
+	Partition string         `json:"partition"`
+	Skip      int64          `json:"skip"`
+	Fields    fields         `json:"fields"`
+	Range     map[string]any `json:"range"`
 }
 
-type fields []interface{}
+type fields []any
 
 func (f *fields) UnmarshalJSON(data []byte) error {
 	if string(data) == `"all_fields"` {
 		return nil
 	}
-	var i []interface{}
+	var i []any
 	if err := json.Unmarshal(data, &i); err != nil {
 		return err
 	}
-	newFields := make([]interface{}, len(i))
+	newFields := make([]any, len(i))
 	copy(newFields, i)
 	*f = newFields
 	return nil
 }
 
-func (d *db) Explain(ctx context.Context, query interface{}, _ driver.Options) (*driver.QueryPlan, error) {
+func (d *db) Explain(ctx context.Context, query any, _ driver.Options) (*driver.QueryPlan, error) {
 	result, err := d.db.Explain(ctx, query)
 	if err != nil {
 		return nil, err

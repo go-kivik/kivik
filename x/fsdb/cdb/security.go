@@ -15,7 +15,8 @@ package cdb
 import (
 	"context"
 	"encoding/json"
-	"os"
+	"errors"
+	iofs "io/fs"
 	"path/filepath"
 
 	"gopkg.in/yaml.v3"
@@ -41,7 +42,7 @@ func (fs *FS) ReadSecurity(ctx context.Context, path string) (*driver.Security, 
 		err := decode.Decode(f, ext, sec)
 		return sec, err
 	}
-	if !os.IsNotExist(err) {
+	if !errors.Is(err, iofs.ErrNotExist) {
 		return nil, err
 	}
 
@@ -57,7 +58,7 @@ func (fs *FS) findSecurityExt(ctx context.Context, path string) (string, error) 
 			return "", err
 		}
 		stat, err := fs.fs.Stat(filepath.Join(path, "_security."+ext))
-		if os.IsNotExist(err) {
+		if errors.Is(err, iofs.ErrNotExist) {
 			continue
 		}
 		if err != nil {
@@ -86,7 +87,7 @@ func (fs *FS) WriteSecurity(ctx context.Context, path string, sec *driver.Securi
 		return err
 	}
 	var enc interface {
-		Encode(interface{}) error
+		Encode(any) error
 	}
 	switch ext {
 	case "json":

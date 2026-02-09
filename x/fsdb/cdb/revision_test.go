@@ -22,22 +22,22 @@ import (
 
 func TestNewRevision(t *testing.T) {
 	type tt struct {
-		i      interface{}
+		i      any
 		status int
 		err    string
 	}
 	tests := testy.NewTable()
 	tests.Add("simple", tt{
-		i: map[string]interface{}{
+		i: map[string]any{
 			"_rev":  "1-xxx",
 			"value": "foo",
 		},
 	})
 	tests.Add("with attachments", tt{
-		i: map[string]interface{}{
+		i: map[string]any{
 			"_rev": "3-asdf",
-			"_attachments": map[string]interface{}{
-				"foo.txt": map[string]interface{}{
+			"_attachments": map[string]any{
+				"foo.txt": map[string]any{
 					"content_type": "text/plain",
 					"data":         []byte("This is some content"),
 				},
@@ -51,7 +51,7 @@ func TestNewRevision(t *testing.T) {
 		if d := internal.StatusErrorDiff(tt.err, tt.status, err); d != "" {
 			t.Error(d)
 		}
-		rev.options = map[string]interface{}{
+		rev.options = map[string]any{
 			"revs":          true,
 			"attachments":   true,
 			"header:accept": "application/json",

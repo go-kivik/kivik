@@ -36,7 +36,7 @@ func TestPut(t *testing.T) {
 		path     string
 		dbname   string
 		id       string
-		doc      interface{}
+		doc      any
 		options  kivik.Option
 		status   int
 		err      string
@@ -58,7 +58,7 @@ func TestPut(t *testing.T) {
 		status: http.StatusBadRequest,
 		err:    "json: unsupported type: chan int",
 	})
-	tests.Add("create with revid", func(t *testing.T) interface{} {
+	tests.Add("create with revid", func(t *testing.T) any {
 		tmpdir := tempDir(t)
 		t.Cleanup(cleanTmpdir(tmpdir))
 		if err := os.Mkdir(filepath.Join(tmpdir, "foo"), 0o777); err != nil {
@@ -74,7 +74,7 @@ func TestPut(t *testing.T) {
 			err:    "document update conflict",
 		}
 	})
-	tests.Add("simple create", func(t *testing.T) interface{} {
+	tests.Add("simple create", func(t *testing.T) any {
 		tmpdir := tempDir(t)
 		t.Cleanup(cleanTmpdir(tmpdir))
 		if err := os.Mkdir(filepath.Join(tmpdir, "foo"), 0o777); err != nil {
@@ -89,7 +89,7 @@ func TestPut(t *testing.T) {
 			expected: "1-04edfaf9abdaed3c0accf6c463e78fd4",
 		}
 	})
-	tests.Add("update conflict, doc key", func(t *testing.T) interface{} {
+	tests.Add("update conflict, doc key", func(t *testing.T) any {
 		tmpdir := testy.CopyTempDir(t, "testdata/db_put", 1)
 		t.Cleanup(cleanTmpdir(tmpdir))
 
@@ -102,7 +102,7 @@ func TestPut(t *testing.T) {
 			err:    "document update conflict",
 		}
 	})
-	tests.Add("update conflict, options", func(t *testing.T) interface{} {
+	tests.Add("update conflict, options", func(t *testing.T) any {
 		tmpdir := testy.CopyTempDir(t, "testdata/db_put", 1)
 		t.Cleanup(cleanTmpdir(tmpdir))
 
@@ -116,7 +116,7 @@ func TestPut(t *testing.T) {
 			err:     "document update conflict",
 		}
 	})
-	tests.Add("no explicit rev", func(t *testing.T) interface{} {
+	tests.Add("no explicit rev", func(t *testing.T) any {
 		tmpdir := testy.CopyTempDir(t, "testdata/db_put", 1)
 		t.Cleanup(cleanTmpdir(tmpdir))
 
@@ -138,7 +138,7 @@ func TestPut(t *testing.T) {
 		status:  http.StatusBadRequest,
 		err:     "document rev from request body and query string have different values",
 	})
-	tests.Add("proper update", func(t *testing.T) interface{} {
+	tests.Add("proper update", func(t *testing.T) any {
 		tmpdir := testy.CopyTempDir(t, "testdata/db_put", 1)
 		t.Cleanup(cleanTmpdir(tmpdir))
 
@@ -150,7 +150,7 @@ func TestPut(t *testing.T) {
 			expected: "2-ff3a4f106331244679a6cac83a74ae48",
 		}
 	})
-	tests.Add("design doc", func(t *testing.T) interface{} {
+	tests.Add("design doc", func(t *testing.T) any {
 		tmpdir := tempDir(t)
 		t.Cleanup(cleanTmpdir(tmpdir))
 		if err := os.Mkdir(filepath.Join(tmpdir, "foo"), 0o777); err != nil {
@@ -177,14 +177,14 @@ func TestPut(t *testing.T) {
 		path:   "/tmp",
 		dbname: "doesntmatter",
 		id:     "foo",
-		doc: map[string]interface{}{
+		doc: map[string]any{
 			"foo":          "bar",
 			"_attachments": 123,
 		},
 		status: http.StatusBadRequest,
 		err:    "json: cannot unmarshal number into Go struct field RevMeta._attachments of type map[string]*cdb.Attachment",
 	})
-	tests.Add("attachment", func(t *testing.T) interface{} {
+	tests.Add("attachment", func(t *testing.T) any {
 		tmpdir := tempDir(t)
 		t.Cleanup(cleanTmpdir(tmpdir))
 		if err := os.Mkdir(filepath.Join(tmpdir, "foo"), 0o777); err != nil {
@@ -195,10 +195,10 @@ func TestPut(t *testing.T) {
 			path:   tmpdir,
 			dbname: "foo",
 			id:     "foo",
-			doc: map[string]interface{}{
+			doc: map[string]any{
 				"foo": "bar",
-				"_attachments": map[string]interface{}{
-					"foo.txt": map[string]interface{}{
+				"_attachments": map[string]any{
+					"foo.txt": map[string]any{
 						"content_type": "text/plain",
 						"data":         []byte("Testing"),
 					},
@@ -207,7 +207,7 @@ func TestPut(t *testing.T) {
 			expected: "1-c706e75b505ddddeed04b959cfcb0ace",
 		}
 	})
-	tests.Add("new_edits=false, no rev", func(t *testing.T) interface{} {
+	tests.Add("new_edits=false, no rev", func(t *testing.T) any {
 		tmpdir := tempDir(t)
 		t.Cleanup(cleanTmpdir(tmpdir))
 		if err := os.Mkdir(filepath.Join(tmpdir, "foo"), 0o777); err != nil {
@@ -226,7 +226,7 @@ func TestPut(t *testing.T) {
 			err:     "_rev required with new_edits=false",
 		}
 	})
-	tests.Add("new_edits=false, rev already exists", func(t *testing.T) interface{} {
+	tests.Add("new_edits=false, rev already exists", func(t *testing.T) any {
 		tmpdir := testy.CopyTempDir(t, "testdata/db_put", 1)
 		t.Cleanup(cleanTmpdir(tmpdir))
 
@@ -242,7 +242,7 @@ func TestPut(t *testing.T) {
 			expected: "1-beea34a62a215ab051862d1e5d93162e",
 		}
 	})
-	tests.Add("new_edits=false", func(t *testing.T) interface{} {
+	tests.Add("new_edits=false", func(t *testing.T) any {
 		tmpdir := testy.CopyTempDir(t, "testdata/db_put", 1)
 		t.Cleanup(cleanTmpdir(tmpdir))
 

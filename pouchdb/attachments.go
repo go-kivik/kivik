@@ -28,7 +28,7 @@ import (
 )
 
 func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attachment, options driver.Options) (newRev string, err error) {
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 	rev, _ := opts["rev"].(string)
 	result, err := d.db.PutAttachment(ctx, docID, att.Filename, rev, att.Content, att.ContentType)
@@ -39,7 +39,7 @@ func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attach
 }
 
 func (d *db) GetAttachment(ctx context.Context, docID, filename string, options driver.Options) (*driver.Attachment, error) {
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 	result, err := d.db.GetAttachment(ctx, docID, filename, opts)
 	if err != nil {
@@ -88,7 +88,7 @@ func (b *blobReader) Read(p []byte) (n int, err error) {
 	fileReader := js.Global.Get("FileReader").New()
 	var wg sync.WaitGroup
 	wg.Add(1)
-	fileReader.Set("onload", js.MakeFunc(func(this *js.Object, _ []*js.Object) interface{} {
+	fileReader.Set("onload", js.MakeFunc(func(this *js.Object, _ []*js.Object) any {
 		defer wg.Done()
 		n = copy(p, js.Global.Get("Uint8Array").New(this.Get("result")).Interface().([]uint8))
 		return nil
@@ -106,7 +106,7 @@ func (b *blobReader) Close() (err error) {
 }
 
 func (d *db) DeleteAttachment(ctx context.Context, docID, filename string, options driver.Options) (newRev string, err error) {
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 	rev, _ := opts["rev"].(string)
 	result, err := d.db.RemoveAttachment(ctx, docID, filename, rev)

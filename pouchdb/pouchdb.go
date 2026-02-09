@@ -68,7 +68,7 @@ func (d *pouchDriver) NewClient(dsn string, options driver.Options) (driver.Clie
 
 func (c *client) setAuth(username, password string) {
 	c.opts["authenticator"] = Options{
-		"auth": map[string]interface{}{
+		"auth": map[string]any{
 			"username": username,
 			"password": password,
 		},
@@ -116,7 +116,7 @@ func (c *client) dbURL(db string) string {
 }
 
 // Options is a struct of options, as documented in the PouchDB API.
-type Options map[string]interface{}
+type Options map[string]any
 
 func (c *client) options(options ...Options) Options {
 	o := Options{}
@@ -141,7 +141,7 @@ func (c *client) isRemote() bool {
 // for remote databases. For local databases, it creates the database.
 // Silly PouchDB.
 func (c *client) DBExists(ctx context.Context, dbName string, options driver.Options) (bool, error) {
-	pouchOpts := map[string]interface{}{"skip_setup": true}
+	pouchOpts := map[string]any{"skip_setup": true}
 	options.Apply(pouchOpts)
 	_, err := c.pouch.New(c.dbURL(dbName), c.options(pouchOpts)).Info(ctx)
 	if err == nil {
@@ -159,7 +159,7 @@ func (c *client) CreateDB(ctx context.Context, dbName string, options driver.Opt
 			return &internal.Error{Status: http.StatusPreconditionFailed, Message: "database exists"}
 		}
 	}
-	pouchOpts := map[string]interface{}{}
+	pouchOpts := map[string]any{}
 	options.Apply(pouchOpts)
 	_, err := c.pouch.New(c.dbURL(dbName), c.options(pouchOpts)).Info(ctx)
 	return err
@@ -174,13 +174,13 @@ func (c *client) DestroyDB(ctx context.Context, dbName string, options driver.Op
 		// This will only ever do anything for a remote database
 		return &internal.Error{Status: http.StatusNotFound, Message: "database does not exist"}
 	}
-	pouchOpts := map[string]interface{}{}
+	pouchOpts := map[string]any{}
 	options.Apply(pouchOpts)
 	return c.pouch.New(c.dbURL(dbName), c.options(pouchOpts)).Destroy(ctx, nil)
 }
 
 func (c *client) DB(dbName string, options driver.Options) (driver.DB, error) {
-	pouchOpts := map[string]interface{}{}
+	pouchOpts := map[string]any{}
 	options.Apply(pouchOpts)
 	return &db{
 		// TODO: #68 Consider deferring this pouch.New call until the first use,

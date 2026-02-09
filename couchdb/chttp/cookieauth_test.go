@@ -41,7 +41,7 @@ func TestCookieAuthAuthenticate(t *testing.T) {
 	}
 
 	tests := testy.NewTable()
-	tests.Add("success", func(t *testing.T) interface{} {
+	tests.Add("success", func(t *testing.T) any {
 		var sessCounter int
 		s := nettest.NewHTTPTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			h := w.Header()
@@ -73,7 +73,7 @@ func TestCookieAuthAuthenticate(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("cookie not set", func(t *testing.T) interface{} {
+	tests.Add("cookie not set", func(t *testing.T) any {
 		s := nettest.NewHTTPTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			h := w.Header()
 			h.Set("Content-Type", "application/json")
@@ -197,7 +197,7 @@ func Test_shouldAuth(t *testing.T) {
 		req:  httptest.NewRequest("GET", "/", nil),
 		want: true,
 	})
-	tests.Add("authed request", func() interface{} {
+	tests.Add("authed request", func() any {
 		req := httptest.NewRequest("GET", "/", nil)
 		req.AddCookie(&http.Cookie{Name: kivik.SessionCookieName})
 		return tt{
@@ -206,7 +206,7 @@ func Test_shouldAuth(t *testing.T) {
 			want: false,
 		}
 	})
-	tests.Add("valid session", func() interface{} {
+	tests.Add("valid session", func() any {
 		c, _ := New(&http.Client{}, "http://example.com/", mock.NilOption)
 		c.Jar = &dummyJar{&http.Cookie{
 			Name:    kivik.SessionCookieName,
@@ -220,7 +220,7 @@ func Test_shouldAuth(t *testing.T) {
 			want: false,
 		}
 	})
-	tests.Add("expired session", func() interface{} {
+	tests.Add("expired session", func() any {
 		c, _ := New(&http.Client{}, "http://example.com/", mock.NilOption)
 		c.Jar = &dummyJar{&http.Cookie{
 			Name:    kivik.SessionCookieName,
@@ -234,7 +234,7 @@ func Test_shouldAuth(t *testing.T) {
 			want: true,
 		}
 	})
-	tests.Add("no expiry time", func() interface{} {
+	tests.Add("no expiry time", func() any {
 		c, _ := New(&http.Client{}, "http://example.com/", mock.NilOption)
 		c.Jar = &dummyJar{&http.Cookie{
 			Name: kivik.SessionCookieName,
@@ -247,7 +247,7 @@ func Test_shouldAuth(t *testing.T) {
 			want: false,
 		}
 	})
-	tests.Add("about to expire", func() interface{} {
+	tests.Add("about to expire", func() any {
 		c, _ := New(&http.Client{}, "http://example.com/", mock.NilOption)
 		c.Jar = &dummyJar{&http.Cookie{
 			Name:    kivik.SessionCookieName,

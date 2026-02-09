@@ -27,13 +27,13 @@ import (
 func Test_put_security_RunE(t *testing.T) {
 	tests := testy.NewTable()
 
-	tests.Add("missing database", func(*testing.T) interface{} {
+	tests.Add("missing database", func(*testing.T) any {
 		return cmdTest{
 			args:   []string{"put", "security", "http://example.com/foo/"},
 			status: errors.ErrUsage,
 		}
 	})
-	tests.Add("success", func(t *testing.T) interface{} {
+	tests.Add("success", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{

@@ -46,7 +46,7 @@ func TestFind(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 		wantErr:    "invalid character 'i' looking for beginning of value",
 	})
-	tests.Add("field equality", func(t *testing.T) interface{} {
+	tests.Add("field equality", func(t *testing.T) any {
 		d := newDB(t)
 		rev := d.tPut("foo", map[string]string{"foo": "bar"})
 		_ = d.tPut("bar", map[string]string{"bar": "baz"})
@@ -59,7 +59,7 @@ func TestFind(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("limit", func(t *testing.T) interface{} {
+	tests.Add("limit", func(t *testing.T) any {
 		d := newDB(t)
 		rev := d.tPut("foo", map[string]string{"foo": "bar"})
 		_ = d.tPut("bar", map[string]string{"bar": "baz"})
@@ -75,7 +75,7 @@ func TestFind(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("skip", func(t *testing.T) interface{} {
+	tests.Add("skip", func(t *testing.T) any {
 		d := newDB(t)
 		_ = d.tPut("foo", map[string]string{"foo": "bar"})
 		_ = d.tPut("bar", map[string]string{"bar": "baz"})
@@ -90,12 +90,12 @@ func TestFind(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("fields", func(t *testing.T) interface{} {
+	tests.Add("fields", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("foo", map[string]interface{}{
+		_ = d.tPut("foo", map[string]any{
 			"foo": "bar",
 			"baz": "qux",
-			"deeply": map[string]interface{}{
+			"deeply": map[string]any{
 				"nested": "value",
 				"other":  "value",
 				"yet":    "more",
@@ -110,9 +110,9 @@ func TestFind(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("_attachments field ", func(t *testing.T) interface{} {
+	tests.Add("_attachments field ", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("foo", map[string]interface{}{
+		_ = d.tPut("foo", map[string]any{
 			"foo":          "bar",
 			"_attachments": newAttachments().add("foo.txt", "foo"),
 		})
@@ -125,10 +125,10 @@ func TestFind(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("_conflicts field ", func(t *testing.T) interface{} {
+	tests.Add("_conflicts field ", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("foo", map[string]interface{}{"_rev": "1-foo"}, kivik.Param("new_edits", false))
-		_ = d.tPut("foo", map[string]interface{}{"_rev": "1-bar"}, kivik.Param("new_edits", false))
+		_ = d.tPut("foo", map[string]any{"_rev": "1-foo"}, kivik.Param("new_edits", false))
+		_ = d.tPut("foo", map[string]any{"_rev": "1-bar"}, kivik.Param("new_edits", false))
 
 		return test{
 			db:    d,
@@ -138,12 +138,12 @@ func TestFind(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("bookmark", func(t *testing.T) interface{} {
+	tests.Add("bookmark", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("a", map[string]interface{}{})
-		_ = d.tPut("b", map[string]interface{}{})
-		revC := d.tPut("c", map[string]interface{}{})
-		_ = d.tPut("d", map[string]interface{}{})
+		_ = d.tPut("a", map[string]any{})
+		_ = d.tPut("b", map[string]any{})
+		revC := d.tPut("c", map[string]any{})
+		_ = d.tPut("d", map[string]any{})
 
 		rows, err := d.Find(context.Background(), json.RawMessage(`{"selector":{},"limit":1,"skip":1}`), mock.NilOption)
 		if err != nil {
@@ -180,7 +180,7 @@ func TestFind(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 		wantErr:    "invalid value for 'bookmark': moo",
 	})
-	tests.Add("sort", func(t *testing.T) interface{} {
+	tests.Add("sort", func(t *testing.T) any {
 		d := newDB(t)
 		// revA := d.tPut("a", map[string]interface{}{"name": "Bob"})
 		// revB := d.tPut("b", map[string]interface{}{"name": "Alice"})

@@ -103,7 +103,7 @@ func (*Rows) UpdateSeq() string { return "" }
 // Func is the signature of a [CouchDB reduce function], translated to Go.
 //
 // [CouchDB reduce function]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#reduce-and-rereduce-functions
-type Func func(keys [][2]interface{}, values []interface{}, rereduce bool) ([]interface{}, error)
+type Func func(keys [][2]any, values []any, rereduce bool) ([]any, error)
 
 // Callback is called with the group depth and result of each intermediate
 // reduce call. It can be used to cache intermediate results.
@@ -142,7 +142,7 @@ func reduce(rows Reducer, fn Func, groupLevel int, batchSize int) (*Rows, error)
 		firstPK, lastPK   int
 	)
 
-	callReduce := func(keys [][2]interface{}, values []interface{}, rereduce bool, key any) error {
+	callReduce := func(keys [][2]any, values []any, rereduce bool, key any) error {
 		if len(keys) == 0 {
 			return nil
 		}
@@ -186,8 +186,8 @@ func reduce(rows Reducer, fn Func, groupLevel int, batchSize int) (*Rows, error)
 	}
 
 	const defaultCap = 10
-	keys := make([][2]interface{}, 0, defaultCap)
-	values := make([]interface{}, 0, defaultCap)
+	keys := make([][2]any, 0, defaultCap)
+	values := make([]any, 0, defaultCap)
 	var targetKey any
 	var rereduce bool
 	for {
@@ -226,7 +226,7 @@ func reduce(rows Reducer, fn Func, groupLevel int, batchSize int) (*Rows, error)
 			lastPK = row.FirstPK
 		}
 
-		keys = append(keys, [2]interface{}{row.FirstKey, row.ID})
+		keys = append(keys, [2]any{row.FirstKey, row.ID})
 		values = append(values, row.Value)
 	}
 

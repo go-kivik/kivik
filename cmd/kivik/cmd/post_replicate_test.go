@@ -33,7 +33,7 @@ func Test_post_replicate_RunE(t *testing.T) {
 		args:   []string{"post", "replicate", "http://example.com/db"},
 		status: errors.ErrUsage,
 	})
-	tests.Add("full dsns", func(t *testing.T) interface{} {
+	tests.Add("full dsns", func(t *testing.T) any {
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.Method == http.MethodHead {
 				w.WriteHeader(http.StatusNotFound)
@@ -54,7 +54,7 @@ func Test_post_replicate_RunE(t *testing.T) {
 			args: []string{"--debug", "post", "replicate", s.URL, "-O", "source=http://example.com/foo", "-O", "target=http://example.com/bar"},
 		}
 	})
-	tests.Add("objects", func(t *testing.T) interface{} {
+	tests.Add("objects", func(t *testing.T) any {
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.Method == http.MethodHead {
 				w.WriteHeader(http.StatusNotFound)
@@ -74,7 +74,7 @@ func Test_post_replicate_RunE(t *testing.T) {
 			args: []string{"--debug", "post", "replicate", s.URL, "-O", `source={"url":"http://example.com/foo"}`, "-O", `target={"url":"http://example.com/bar"}`},
 		}
 	})
-	tests.Add("options", func(t *testing.T) interface{} {
+	tests.Add("options", func(t *testing.T) any {
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.Method == http.MethodHead {
 				w.WriteHeader(http.StatusNotFound)

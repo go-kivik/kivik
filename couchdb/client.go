@@ -103,7 +103,7 @@ type updatesMeta struct {
 	lastSeq string
 }
 
-func (u *updatesMeta) parseMeta(key interface{}, dec *json.Decoder) error {
+func (u *updatesMeta) parseMeta(key any, dec *json.Decoder) error {
 	if key == "last_seq" {
 		return dec.Decode(&u.lastSeq)
 	}
@@ -116,11 +116,11 @@ type updatesParser struct{}
 
 var _ parser = &updatesParser{}
 
-func (p *updatesParser) decodeItem(i interface{}, dec *json.Decoder) error {
+func (p *updatesParser) decodeItem(i any, dec *json.Decoder) error {
 	return dec.Decode(i)
 }
 
-func (p *updatesParser) parseMeta(i interface{}, dec *json.Decoder, key string) error {
+func (p *updatesParser) parseMeta(i any, dec *json.Decoder, key string) error {
 	meta := i.(*updatesMeta)
 	return meta.parseMeta(key, dec)
 }
@@ -131,7 +131,13 @@ func newUpdates(ctx context.Context, r io.ReadCloser) (driver.DBUpdates, error) 
 		return nil, &internal.Error{Status: http.StatusBadGateway, Err: err}
 	}
 
-	switch feedType {
+	return updatesForFeedType(ctx, r, feedType)
+}
+
+// updatesForFeedType returns the appropriate driver.DBUpdates implementation
+// for the given feed type.
+func updatesForFeedType(ctx context.Context, r io.ReadCloser, ft feedType) (driver.DBUpdates, error) {
+	switch ft {
 	case feedTypeContinuous:
 		return newContinuousUpdates(ctx, r), nil
 	case feedTypeNormal:
@@ -139,7 +145,7 @@ func newUpdates(ctx context.Context, r io.ReadCloser) (driver.DBUpdates, error) 
 	case feedTypeEmpty:
 		return newEmptyUpdates(r)
 	}
-	panic("unknown") // TODO: test
+	return nil, &internal.Error{Status: http.StatusBadGateway, Message: "unknown feed type"}
 }
 
 type feedType int

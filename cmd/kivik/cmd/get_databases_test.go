@@ -24,7 +24,7 @@ import (
 func Test_get_all_databases_RunE(t *testing.T) {
 	tests := testy.NewTable()
 
-	tests.Add("get all-dbs", func(*testing.T) interface{} {
+	tests.Add("get all-dbs", func(*testing.T) any {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{

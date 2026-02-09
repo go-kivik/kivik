@@ -44,7 +44,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 		result         *kivik.ReplicationResult
 	}
 	tests := testy.NewTable()
-	tests.Add("couch to couch", func(t *testing.T) interface{} {
+	tests.Add("couch to couch", func(t *testing.T) any {
 		dsn := kt.DSN3(t)
 		client, err := kivik.New("couch", dsn)
 		if err != nil {
@@ -83,7 +83,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 			},
 		}
 	})
-	tests.Add("fs to couch", func(t *testing.T) interface{} {
+	tests.Add("fs to couch", func(t *testing.T) any {
 		fsclient, err := kivik.New("fs", "testdata/")
 		if err != nil {
 			t.Fatal(err)
@@ -115,7 +115,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 			},
 		}
 	})
-	tests.Add("fs to couch, no shared history", func(t *testing.T) interface{} {
+	tests.Add("fs to couch, no shared history", func(t *testing.T) any {
 		fsclient, err := kivik.New("fs", "testdata/")
 		if err != nil {
 			t.Fatal(err)
@@ -151,7 +151,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 			},
 		}
 	})
-	tests.Add("couch to couch with sec", func(t *testing.T) interface{} {
+	tests.Add("couch to couch with sec", func(t *testing.T) any {
 		dsn := kt.DSN3(t)
 		client, err := kivik.New("couch", dsn)
 		if err != nil {
@@ -199,7 +199,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 			},
 		}
 	})
-	tests.Add("fs to couch, bad put", func(t *testing.T) interface{} {
+	tests.Add("fs to couch, bad put", func(t *testing.T) any {
 		fsclient, err := kivik.New("fs", "testdata/")
 		if err != nil {
 			t.Fatal(err)
@@ -232,7 +232,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 			err:    "store doc note--XkWjFv13acvjJTt-CGJJ8hXlWE: Bad Request: Bad special document member: _invalid",
 		}
 	})
-	tests.Add("fs to couch with attachment", func(t *testing.T) interface{} {
+	tests.Add("fs to couch with attachment", func(t *testing.T) any {
 		fsclient, err := kivik.New("fs", "testdata/")
 		if err != nil {
 			t.Fatal(err)
@@ -264,7 +264,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 			},
 		}
 	})
-	tests.Add("couch to fs", func(t *testing.T) interface{} {
+	tests.Add("couch to fs", func(t *testing.T) any {
 		tempDir, err := os.MkdirTemp("", "kivik.test.")
 		if err != nil {
 			t.Fatal(err)
@@ -295,10 +295,10 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 		}
 		source := client.DB(dbName)
 		target := tClient.DB(dbName)
-		doc := map[string]interface{}{
+		doc := map[string]any{
 			"foo": "bar",
-			"_attachments": map[string]interface{}{
-				"foo.txt": map[string]interface{}{
+			"_attachments": map[string]any{
+				"foo.txt": map[string]any{
 					"content_type": "application/octet-stream",
 					"data":         []byte("Test content"),
 				},
@@ -319,7 +319,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 			},
 		}
 	})
-	tests.Add("fs to couch with deleted document", func(t *testing.T) interface{} {
+	tests.Add("fs to couch with deleted document", func(t *testing.T) any {
 		fsclient, err := kivik.New("fs", "testdata/")
 		if err != nil {
 			t.Fatal(err)
@@ -376,7 +376,7 @@ func TestReplicate_live(t *testing.T) { //nolint:gocyclo // allowed for subtests
 
 func verifyDoc(ctx context.Context, t *testing.T, target, source *kivik.DB, docID string) {
 	t.Helper()
-	var targetDoc, sourceDoc interface{}
+	var targetDoc, sourceDoc any
 	notFound := false
 	if err := source.Get(ctx, docID).ScanDoc(&sourceDoc); err != nil {
 		if kivik.HTTPStatus(err) == http.StatusNotFound {

@@ -43,7 +43,7 @@ func TestDBPurge(t *testing.T) {
 		},
 		want: &driver.PurgeResult{},
 	})
-	tests.Add("success", func(t *testing.T) interface{} {
+	tests.Add("success", func(t *testing.T) any {
 		d := newDB(t)
 		rev := d.tPut("foo", map[string]string{"foo": "bar"})
 
@@ -67,7 +67,7 @@ func TestDBPurge(t *testing.T) {
 		wantErr:    "invalid rev format",
 		wantStatus: http.StatusBadRequest,
 	})
-	tests.Add("attempt to purge non-leaf rev does nothing", func(t *testing.T) interface{} {
+	tests.Add("attempt to purge non-leaf rev does nothing", func(t *testing.T) any {
 		d := newDB(t)
 		rev := d.tPut("foo", map[string]string{"foo": "bar"})
 		_ = d.tPut("foo", map[string]string{"foo": "baz"}, kivik.Rev(rev))
@@ -84,18 +84,18 @@ func TestDBPurge(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("deleting conflict leaves non-conflicting leaf", func(t *testing.T) interface{} {
+	tests.Add("deleting conflict leaves non-conflicting leaf", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("foo", map[string]interface{}{
+		_ = d.tPut("foo", map[string]any{
 			"version": "one",
-			"_revisions": map[string]interface{}{
+			"_revisions": map[string]any{
 				"start": 3,
 				"ids":   []string{"ccc", "bbb", "aaa"},
 			},
 		}, kivik.Param("new_edits", false))
-		_ = d.tPut("foo", map[string]interface{}{
+		_ = d.tPut("foo", map[string]any{
 			"version": "two",
-			"_revisions": map[string]interface{}{
+			"_revisions": map[string]any{
 				"start": 3,
 				"ids":   []string{"rrr", "qqq", "aaa"},
 			},

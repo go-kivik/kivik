@@ -26,7 +26,7 @@ type Selector struct {
 }
 
 // Match returns true if doc matches the selector.
-func (s *Selector) Match(doc interface{}) bool {
+func (s *Selector) Match(doc any) bool {
 	return s.root.Match(doc)
 }
 
@@ -139,9 +139,9 @@ func Parse(input []byte) (Node, error) {
 // opAndValue is called when the input is an object in a context where a
 // comparison operator is expected. It returns the operator and value,
 // defaulting to [OpEqual] if no operator is specified.
-func opAndValue(input json.RawMessage) (Operator, interface{}, error) {
+func opAndValue(input json.RawMessage) (Operator, any, error) {
 	if input[0] != '{' {
-		var value interface{}
+		var value any
 		if err := json.Unmarshal(input, &value); err != nil {
 			return "", nil, err
 		}
@@ -153,13 +153,13 @@ func opAndValue(input json.RawMessage) (Operator, interface{}, error) {
 	}
 	switch len(tmp) {
 	case 0:
-		return OpEqual, map[string]interface{}{}, nil
+		return OpEqual, map[string]any{}, nil
 	case 1:
 		for k, v := range tmp {
 			switch op := Operator(k); op {
 			case OpEqual, OpLessThan, OpLessThanOrEqual, OpNotEqual,
 				OpGreaterThan, OpGreaterThanOrEqual:
-				var value interface{}
+				var value any
 				err := json.Unmarshal(v, &value)
 				return op, value, err
 			case OpExists:
@@ -175,7 +175,7 @@ func opAndValue(input json.RawMessage) (Operator, interface{}, error) {
 				}
 				return OpType, value, nil
 			case OpIn, OpNotIn:
-				var value []interface{}
+				var value []any
 				if err := json.Unmarshal(v, &value); err != nil {
 					return "", nil, fmt.Errorf("%s: %w", k, err)
 				}
@@ -206,7 +206,7 @@ func opAndValue(input json.RawMessage) (Operator, interface{}, error) {
 				}
 				return OpRegex, re, nil
 			case OpAll:
-				var value []interface{}
+				var value []any
 				if err := json.Unmarshal(v, &value); err != nil {
 					return "", nil, fmt.Errorf("%s: %w", k, err)
 				}

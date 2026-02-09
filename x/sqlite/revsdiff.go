@@ -26,7 +26,7 @@ import (
 	internal "github.com/go-kivik/kivik/v4/int/errors"
 )
 
-func toRevDiffRequest(revMap interface{}) (map[string][]string, error) {
+func toRevDiffRequest(revMap any) (map[string][]string, error) {
 	data, err := json.Marshal(revMap)
 	if err != nil {
 		return nil, &internal.Error{Message: "invalid body", Status: http.StatusBadRequest}
@@ -38,13 +38,13 @@ func toRevDiffRequest(revMap interface{}) (map[string][]string, error) {
 	return req, nil
 }
 
-func (d *db) RevsDiff(ctx context.Context, revMap interface{}) (driver.Rows, error) {
+func (d *db) RevsDiff(ctx context.Context, revMap any) (driver.Rows, error) {
 	req, err := toRevDiffRequest(revMap)
 	if err != nil {
 		return nil, err
 	}
 
-	ids := make([]interface{}, 0, len(req))
+	ids := make([]any, 0, len(req))
 	for id := range req {
 		ids = append(ids, id)
 	}
@@ -147,7 +147,7 @@ type errorReadCloser struct{ error }
 func (e errorReadCloser) Read([]byte) (int, error) { return 0, error(e) }
 func (e errorReadCloser) Close() error             { return error(e) }
 
-func jsonToReader(i interface{}) io.ReadCloser {
+func jsonToReader(i any) io.ReadCloser {
 	value, err := json.Marshal(i)
 	if err != nil {
 		return errorReadCloser{err}

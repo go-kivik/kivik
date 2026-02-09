@@ -15,7 +15,7 @@ package mango
 // Match returns true if the selector matches the input document. doc is
 // expected to be the result of unmarshaling JSON to an empty interface. An
 // invalid document will cause Match to panic.
-func Match(sel Node, doc interface{}) bool {
+func Match(sel Node, doc any) bool {
 	if sel == nil {
 		return true
 	}

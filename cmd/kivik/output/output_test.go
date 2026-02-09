@@ -48,7 +48,7 @@ func Test_ensurenewlineEnding(t *testing.T) {
 
 func TestJSONReader(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
-		in := map[string]interface{}{
+		in := map[string]any{
 			"foo": "bar",
 		}
 		r := JSONReader(in)

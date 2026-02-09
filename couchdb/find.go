@@ -26,8 +26,8 @@ const (
 	pathIndex = "_index"
 )
 
-func (d *db) CreateIndex(ctx context.Context, ddoc, name string, index interface{}, options driver.Options) error {
-	opts := map[string]interface{}{}
+func (d *db) CreateIndex(ctx context.Context, ddoc, name string, index any, options driver.Options) error {
+	opts := map[string]any{}
 	options.Apply(opts)
 	reqPath := partPath(pathIndex)
 	options.Apply(reqPath)
@@ -36,9 +36,9 @@ func (d *db) CreateIndex(ctx context.Context, ddoc, name string, index interface
 		return err
 	}
 	parameters := struct {
-		Index interface{} `json:"index"`
-		Ddoc  string      `json:"ddoc,omitempty"`
-		Name  string      `json:"name,omitempty"`
+		Index any    `json:"index"`
+		Ddoc  string `json:"ddoc,omitempty"`
+		Name  string `json:"name,omitempty"`
 	}{
 		Index: indexObj,
 		Ddoc:  ddoc,
@@ -52,7 +52,7 @@ func (d *db) CreateIndex(ctx context.Context, ddoc, name string, index interface
 }
 
 func (d *db) GetIndexes(ctx context.Context, options driver.Options) ([]driver.Index, error) {
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 	reqPath := partPath(pathIndex)
 	options.Apply(reqPath)
@@ -64,7 +64,7 @@ func (d *db) GetIndexes(ctx context.Context, options driver.Options) ([]driver.I
 }
 
 func (d *db) DeleteIndex(ctx context.Context, ddoc, name string, options driver.Options) error {
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 	if ddoc == "" {
 		return missingArg("ddoc")
@@ -79,8 +79,8 @@ func (d *db) DeleteIndex(ctx context.Context, ddoc, name string, options driver.
 	return err
 }
 
-func (d *db) Find(ctx context.Context, query interface{}, options driver.Options) (driver.Rows, error) {
-	opts := map[string]interface{}{}
+func (d *db) Find(ctx context.Context, query any, options driver.Options) (driver.Rows, error) {
+	opts := map[string]any{}
 	options.Apply(opts)
 	reqPath := partPath("_find")
 	options.Apply(reqPath)
@@ -101,34 +101,34 @@ func (d *db) Find(ctx context.Context, query interface{}, options driver.Options
 }
 
 type queryPlan struct {
-	DBName   string                 `json:"dbname"`
-	Index    map[string]interface{} `json:"index"`
-	Selector map[string]interface{} `json:"selector"`
-	Options  map[string]interface{} `json:"opts"`
-	Limit    int64                  `json:"limit"`
-	Skip     int64                  `json:"skip"`
-	Fields   fields                 `json:"fields"`
-	Range    map[string]interface{} `json:"range"`
+	DBName   string         `json:"dbname"`
+	Index    map[string]any `json:"index"`
+	Selector map[string]any `json:"selector"`
+	Options  map[string]any `json:"opts"`
+	Limit    int64          `json:"limit"`
+	Skip     int64          `json:"skip"`
+	Fields   fields         `json:"fields"`
+	Range    map[string]any `json:"range"`
 }
 
-type fields []interface{}
+type fields []any
 
 func (f *fields) UnmarshalJSON(data []byte) error {
 	if string(data) == `"all_fields"` {
 		return nil
 	}
-	var i []interface{}
+	var i []any
 	if err := json.Unmarshal(data, &i); err != nil {
 		return err
 	}
-	newFields := make([]interface{}, len(i))
+	newFields := make([]any, len(i))
 	copy(newFields, i)
 	*f = newFields
 	return nil
 }
 
-func (d *db) Explain(ctx context.Context, query interface{}, options driver.Options) (*driver.QueryPlan, error) {
-	opts := map[string]interface{}{}
+func (d *db) Explain(ctx context.Context, query any, options driver.Options) (*driver.QueryPlan, error) {
+	opts := map[string]any{}
 	options.Apply(opts)
 	reqPath := partPath("_explain")
 	options.Apply(reqPath)

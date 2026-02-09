@@ -20,6 +20,6 @@ import (
 
 type yamlDecoder struct{}
 
-func (d yamlDecoder) Decode(r io.Reader, i interface{}) error {
+func (d yamlDecoder) Decode(r io.Reader, i any) error {
 	return yaml.NewDecoder(r).Decode(i)
 }

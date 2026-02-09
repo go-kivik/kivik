@@ -78,7 +78,7 @@ func (d *db) ViewCleanup(context.Context) error {
 	return notYetImplemented
 }
 
-func (d *db) BulkDocs(context.Context, []interface{}) ([]driver.BulkResult, error) {
+func (d *db) BulkDocs(context.Context, []any) ([]driver.BulkResult, error) {
 	// FIXME: Unimplemented
 	return nil, notYetImplemented
 }

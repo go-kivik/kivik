@@ -156,7 +156,7 @@ func TestRepInfoUnmarshalJSON(t *testing.T) {
 func TestGetReplicationsFromScheduler(t *testing.T) {
 	tests := []struct {
 		name     string
-		options  map[string]interface{}
+		options  map[string]any
 		client   *client
 		expected []*schedulerReplication
 		status   int
@@ -170,7 +170,7 @@ func TestGetReplicationsFromScheduler(t *testing.T) {
 		},
 		{
 			name:    "invalid options",
-			options: map[string]interface{}{"foo": make(chan int)},
+			options: map[string]any{"foo": make(chan int)},
 			status:  http.StatusBadRequest,
 			err:     "kivik: invalid type chan int for options",
 		},
@@ -643,6 +643,27 @@ func TestSRinnerUpdate(t *testing.T) {
 				t.Error(d)
 			}
 		})
+	}
+}
+
+func TestSchedulerSupportedClosesBody(t *testing.T) {
+	t.Parallel()
+
+	body := &closeTracker{ReadCloser: Body("")}
+	c := newCustomClient(func(req *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Request:    req,
+			Body:       body,
+		}, nil
+	})
+
+	_, err := c.schedulerSupported(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	if !body.closed {
+		t.Error("response body was not closed")
 	}
 }
 

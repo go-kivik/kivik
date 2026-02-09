@@ -38,7 +38,7 @@ func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attach
 
 	chttpOpts := chttp.NewOptions(options)
 
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 	query, err := optionsToParams(opts)
 	if err != nil {
@@ -86,7 +86,7 @@ func (d *db) fetchAttachment(ctx context.Context, method, docID, filename string
 	}
 	chttpOpts := chttp.NewOptions(options)
 
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 	var err error
 	chttpOpts.Query, err = optionsToParams(opts)
@@ -138,7 +138,7 @@ func (d *db) DeleteAttachment(ctx context.Context, docID, filename string, optio
 	if docID == "" {
 		return "", missingArg("docID")
 	}
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 	if rev, _ := opts["rev"].(string); rev == "" {
 		return "", missingArg("rev")

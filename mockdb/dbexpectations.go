@@ -69,7 +69,7 @@ func (e *ExpectedAllDocs) String() string {
 	return dbStringer("AllDocs", &e.commonExpectation, withOptions, nil, rets)
 }
 
-func jsonDoc(i interface{}) string {
+func jsonDoc(i any) string {
 	jsonText, err := json.Marshal(i)
 	if err != nil {
 		return fmt.Sprintf("<invalid json:%s>", err)
@@ -107,7 +107,7 @@ func (e *ExpectedFind) String() string {
 }
 
 // WithQuery sets the expected query for the Find() call.
-func (e *ExpectedFind) WithQuery(query interface{}) *ExpectedFind {
+func (e *ExpectedFind) WithQuery(query any) *ExpectedFind {
 	e.arg0 = query
 	return e
 }
@@ -147,7 +147,7 @@ func (e *ExpectedCreateIndex) WithName(name string) *ExpectedCreateIndex {
 }
 
 // WithIndex sets the expected index value for the DB.CreateIndex() call.
-func (e *ExpectedCreateIndex) WithIndex(index interface{}) *ExpectedCreateIndex {
+func (e *ExpectedCreateIndex) WithIndex(index any) *ExpectedCreateIndex {
 	e.arg2 = index
 	return e
 }
@@ -203,7 +203,7 @@ func (e *ExpectedExplain) String() string {
 }
 
 // WithQuery sets the expected query for the Explain() call.
-func (e *ExpectedExplain) WithQuery(query interface{}) *ExpectedExplain {
+func (e *ExpectedExplain) WithQuery(query any) *ExpectedExplain {
 	e.arg0 = query
 	return e
 }
@@ -228,7 +228,7 @@ func (e *ExpectedCreateDoc) String() string {
 }
 
 // WithDoc sets the expected doc for the call to CreateDoc().
-func (e *ExpectedCreateDoc) WithDoc(doc interface{}) *ExpectedCreateDoc {
+func (e *ExpectedCreateDoc) WithDoc(doc any) *ExpectedCreateDoc {
 	e.arg0 = doc
 	return e
 }
@@ -287,7 +287,7 @@ func (e *ExpectedPut) WithDocID(docID string) *ExpectedPut {
 }
 
 // WithDoc sets the expectation for the doc passed to the DB.Put() call.
-func (e *ExpectedPut) WithDoc(doc interface{}) *ExpectedPut {
+func (e *ExpectedPut) WithDoc(doc any) *ExpectedPut {
 	e.arg1 = doc
 	return e
 }
@@ -336,7 +336,7 @@ func (e *ExpectedUpdate) WithDocID(docID string) *ExpectedUpdate {
 }
 
 // WithDoc sets the expectation for the doc passed to the DB.Update() call.
-func (e *ExpectedUpdate) WithDoc(doc interface{}) *ExpectedUpdate {
+func (e *ExpectedUpdate) WithDoc(doc any) *ExpectedUpdate {
 	e.arg3 = doc
 	return e
 }
@@ -732,7 +732,7 @@ func (e *ExpectedRevsDiff) String() string {
 
 // WithRevLookup sets the expectation for the rev lookup passed to the
 // DB.RevsDiff() call.
-func (e *ExpectedRevsDiff) WithRevLookup(revLookup interface{}) *ExpectedRevsDiff {
+func (e *ExpectedRevsDiff) WithRevLookup(revLookup any) *ExpectedRevsDiff {
 	e.arg0 = revLookup
 	return e
 }

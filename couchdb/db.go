@@ -30,7 +30,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"sync/atomic"
 
 	kivik "github.com/go-kivik/kivik/v4"
@@ -61,7 +60,7 @@ func (d *db) path(path string) string {
 	return url.String()
 }
 
-func optionsToParams(opts ...map[string]interface{}) (url.Values, error) {
+func optionsToParams(opts ...map[string]any) (url.Values, error) {
 	params := url.Values{}
 	for _, optsSet := range opts {
 		if err := encodeKeys(optsSet); err != nil {
@@ -91,9 +90,9 @@ func optionsToParams(opts ...map[string]interface{}) (url.Values, error) {
 
 // rowsQuery performs a query that returns a rows iterator.
 func (d *db) rowsQuery(ctx context.Context, path string, options driver.Options) (driver.Rows, error) {
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
-	payload := make(map[string]interface{})
+	payload := make(map[string]any)
 	if keys := opts["keys"]; keys != nil {
 		delete(opts, "keys")
 		payload["keys"] = keys
@@ -472,7 +471,7 @@ func (d *db) get(ctx context.Context, method, docID string, options driver.Optio
 	var getOpts getOptions
 	options.Apply(&getOpts)
 
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 
 	chttpOpts := chttp.NewOptions(options)
@@ -494,7 +493,7 @@ func (d *db) get(ctx context.Context, method, docID string, options driver.Optio
 	return resp, err
 }
 
-func (d *db) CreateDoc(ctx context.Context, doc interface{}, options driver.Options) (docID, rev string, err error) {
+func (d *db) CreateDoc(ctx context.Context, doc any, options driver.Options) (docID, rev string, err error) {
 	result := struct {
 		ID  string `json:"id"`
 		Rev string `json:"rev"`
@@ -502,7 +501,7 @@ func (d *db) CreateDoc(ctx context.Context, doc interface{}, options driver.Opti
 
 	chttpOpts := chttp.NewOptions(options)
 
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 
 	path := d.dbName
@@ -524,9 +523,9 @@ type putOptions struct {
 	NoMultipartPut bool
 }
 
-func putOpts(doc interface{}, options driver.Options) (*chttp.Options, error) {
+func putOpts(doc any, options driver.Options) (*chttp.Options, error) {
 	chttpOpts := chttp.NewOptions(options)
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 	var err error
 	chttpOpts.Query, err = optionsToParams(opts)
@@ -551,7 +550,7 @@ func putOpts(doc interface{}, options driver.Options) (*chttp.Options, error) {
 	return chttpOpts, nil
 }
 
-func (d *db) Put(ctx context.Context, docID string, doc interface{}, options driver.Options) (rev string, err error) {
+func (d *db) Put(ctx context.Context, docID string, doc any, options driver.Options) (rev string, err error) {
 	if docID == "" {
 		return "", missingArg("docID")
 	}
@@ -570,7 +569,7 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 	return result.Rev, nil
 }
 
-func (d *db) Update(ctx context.Context, ddoc, funcName, docID string, doc interface{}, options driver.Options) (string, error) {
+func (d *db) Update(ctx context.Context, ddoc, funcName, docID string, doc any, options driver.Options) (string, error) {
 	opts, err := putOpts(doc, options)
 	if err != nil {
 		return "", err
@@ -595,7 +594,7 @@ func (d *db) Update(ctx context.Context, ddoc, funcName, docID string, doc inter
 
 const attachmentsKey = "_attachments"
 
-func extractAttachments(doc interface{}) (*kivik.Attachments, bool) {
+func extractAttachments(doc any) (*kivik.Attachments, bool) {
 	if doc == nil {
 		return nil, false
 	}
@@ -603,7 +602,7 @@ func extractAttachments(doc interface{}) (*kivik.Attachments, bool) {
 	if v.Type().Kind() == reflect.Ptr {
 		return extractAttachments(v.Elem().Interface())
 	}
-	if stdMap, ok := doc.(map[string]interface{}); ok {
+	if stdMap, ok := doc.(map[string]any); ok {
 		return interfaceToAttachments(stdMap[attachmentsKey])
 	}
 	if v.Kind() != reflect.Struct {
@@ -617,7 +616,7 @@ func extractAttachments(doc interface{}) (*kivik.Attachments, bool) {
 	return nil, false
 }
 
-func interfaceToAttachments(i interface{}) (*kivik.Attachments, bool) {
+func interfaceToAttachments(i any) (*kivik.Attachments, bool) {
 	switch t := i.(type) {
 	case kivik.Attachments:
 		atts := make(kivik.Attachments, len(t))
@@ -643,17 +642,10 @@ func newMultipartAttachments(in io.ReadCloser, att *kivik.Attachments) (boundary
 		return "", 0, nil, err
 	}
 	body := multipart.NewWriter(tmp)
-	w := sync.WaitGroup{}
-	w.Add(1)
-	go func() {
-		err = createMultipart(body, in, att)
-		e := in.Close()
-		if err == nil {
-			err = e
-		}
-		w.Done()
-	}()
-	w.Wait()
+	err = createMultipart(body, in, att)
+	if e := in.Close(); err == nil {
+		err = e
+	}
 	if e := tmp.Sync(); err == nil {
 		err = e
 	}
@@ -679,6 +671,7 @@ func createMultipart(w *multipart.Writer, r io.ReadCloser, atts *kivik.Attachmen
 		return err
 	}
 	attJSON := replaceAttachments(r, atts)
+	defer attJSON.Close()
 	if _, e := io.Copy(doc, attJSON); e != nil {
 		return e
 	}
@@ -936,7 +929,7 @@ func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (
 	if docID == "" {
 		return "", missingArg("docID")
 	}
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 	if rev, _ := opts["rev"].(string); rev == "" {
 		return "", missingArg("rev")
@@ -1046,7 +1039,7 @@ func (d *db) Copy(ctx context.Context, targetID, sourceID string, options driver
 	}
 	chttpOpts := chttp.NewOptions(options)
 
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 	chttpOpts.Query, err = optionsToParams(opts)
 	if err != nil {
@@ -1081,7 +1074,7 @@ func (d *db) Purge(ctx context.Context, docMap map[string][]string) (*driver.Pur
 
 var _ driver.RevsDiffer = &db{}
 
-func (d *db) RevsDiff(ctx context.Context, revMap interface{}) (driver.Rows, error) {
+func (d *db) RevsDiff(ctx context.Context, revMap any) (driver.Rows, error) {
 	options := &chttp.Options{
 		GetBody: chttp.BodyEncoder(revMap),
 		Header: http.Header{
@@ -1100,7 +1093,7 @@ func (d *db) RevsDiff(ctx context.Context, revMap interface{}) (driver.Rows, err
 
 type revsDiffParser struct{}
 
-func (p *revsDiffParser) decodeItem(i interface{}, dec *json.Decoder) error {
+func (p *revsDiffParser) decodeItem(i any, dec *json.Decoder) error {
 	t, err := dec.Token()
 	if err != nil {
 		return err

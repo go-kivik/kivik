@@ -20,7 +20,7 @@ import (
 	"time"
 )
 
-var testOptions = map[string]interface{}{"foo": 123}
+var testOptions = map[string]any{"foo": 123}
 
 func parseTime(t *testing.T, str string) time.Time {
 	t.Helper()
@@ -48,13 +48,13 @@ func body(s string) io.ReadCloser {
 }
 
 type mockIterator struct {
-	NextFunc  func(interface{}) error
+	NextFunc  func(any) error
 	CloseFunc func() error
 }
 
 var _ iterator = &mockIterator{}
 
-func (i *mockIterator) Next(ifce interface{}) error {
+func (i *mockIterator) Next(ifce any) error {
 	return i.NextFunc(ifce)
 }
 

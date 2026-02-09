@@ -16,7 +16,9 @@ package couchserver
 
 import (
 	"embed"
+	"errors"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
 
@@ -40,7 +42,7 @@ func (h *Handler) GetFavicon() http.HandlerFunc {
 		} else {
 			file, err := os.Open(h.Favicon)
 			if err != nil {
-				if os.IsNotExist(err) {
+				if errors.Is(err, fs.ErrNotExist) {
 					err = &internal.Error{Status: http.StatusNotFound, Message: "not found"}
 				}
 				h.HandleError(w, err)

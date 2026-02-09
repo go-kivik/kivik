@@ -30,7 +30,7 @@ func Test_post_compact_views_RunE(t *testing.T) {
 		args:   []string{"post", "compact-views"},
 		status: errors.ErrUsage,
 	})
-	tests.Add("success", func(t *testing.T) interface{} {
+	tests.Add("success", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true}`)),
 		}, func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
@@ -46,7 +46,7 @@ func Test_post_compact_views_RunE(t *testing.T) {
 			args: []string{"post", "cv", s.URL + "/foo/piggy"},
 		}
 	})
-	tests.Add("success ddoc", func(t *testing.T) interface{} {
+	tests.Add("success ddoc", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true}`)),
 		}, func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper

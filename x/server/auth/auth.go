@@ -54,7 +54,7 @@ func (c *UserContext) HasRole(role string) bool {
 // by auth handlers.
 type Server interface {
 	UserStore() UserStore
-	Bind(*http.Request, interface{}) error
+	Bind(*http.Request, any) error
 }
 
 // AuthenticateFunc authenticates the HTTP request. On success, a user context

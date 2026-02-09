@@ -192,7 +192,7 @@ func (d *db) Changes(context.Context, driver.Options) (driver.Changes, error) {
 	return nil, notYetImplemented
 }
 
-func (d *db) BulkDocs(_ context.Context, _ []interface{}) ([]driver.BulkResult, error) {
+func (d *db) BulkDocs(_ context.Context, _ []any) ([]driver.BulkResult, error) {
 	// FIXME: Unimplemented
 	return nil, notYetImplemented
 }
@@ -210,7 +210,7 @@ func (d *db) GetAttachmentMeta(_ context.Context, _, _, _ string, _ driver.Optio
 	return nil, notYetImplemented
 }
 
-func (d *db) CreateDoc(_ context.Context, _ interface{}, _ driver.Options) (string, string, error) {
+func (d *db) CreateDoc(_ context.Context, _ any, _ driver.Options) (string, string, error) {
 	panic("CreateDoc should never be called")
 }
 
@@ -222,6 +222,6 @@ func (d *db) DeleteAttachment(_ context.Context, _, _ string, _ driver.Options) 
 	panic("DeleteAttachment should never be called")
 }
 
-func (d *db) Put(_ context.Context, _ string, _ interface{}, _ driver.Options) (string, error) {
+func (d *db) Put(_ context.Context, _ string, _ any, _ driver.Options) (string, error) {
 	panic("Put should never be called")
 }

@@ -67,11 +67,11 @@ func (c *getConfig) RunE(cmd *cobra.Command, _ []string) error {
 	}
 
 	return c.retry(func() error {
-		var conf interface{}
+		var conf any
 		var err error
 		if c.key != "" {
-			if parts := strings.SplitN(c.key, "/", 2); len(parts) > 1 {
-				conf, err = client.ConfigValue(cmd.Context(), c.node, parts[0], parts[1])
+			if section, key, ok := strings.Cut(c.key, "/"); ok {
+				conf, err = client.ConfigValue(cmd.Context(), c.node, section, key)
 			} else {
 				conf, err = client.ConfigSection(cmd.Context(), c.node, c.key)
 			}

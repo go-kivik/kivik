@@ -172,7 +172,7 @@ func TestDbsStats(t *testing.T) {
 		name     string
 		client   *client
 		dbnames  []string
-		expected interface{}
+		expected any
 		status   int
 		err      string
 	}{

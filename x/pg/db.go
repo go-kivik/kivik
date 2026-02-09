@@ -27,7 +27,7 @@ func (d *db) AllDocs(context.Context, driver.Options) (driver.Rows, error) {
 	return nil, errors.ErrUnsupported
 }
 
-func (d *db) Put(context.Context, string, interface{}, driver.Options) (string, error) {
+func (d *db) Put(context.Context, string, any, driver.Options) (string, error) {
 	return "", errors.ErrUnsupported
 }
 

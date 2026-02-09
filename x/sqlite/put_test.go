@@ -44,7 +44,7 @@ func TestDBPut(t *testing.T) {
 	type test struct {
 		db              *testDB
 		docID           string
-		doc             interface{}
+		doc             any
 		options         driver.Options
 		check           func(*testing.T)
 		wantRev         string
@@ -69,7 +69,7 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("doc rev & option rev mismatch", test{
 		docID: "foo",
-		doc: map[string]interface{}{
+		doc: map[string]any{
 			"_rev": "1-1234567890abcdef1234567890abcdef",
 			"foo":  "bar",
 		},
@@ -79,7 +79,7 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("attempt to create doc with rev in doc should conflict", test{
 		docID: "foo",
-		doc: map[string]interface{}{
+		doc: map[string]any{
 			"_rev": "1-1234567890abcdef1234567890abcdef",
 			"foo":  "bar",
 		},
@@ -88,35 +88,35 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("attempt to create doc with rev in params should conflict", test{
 		docID: "foo",
-		doc: map[string]interface{}{
+		doc: map[string]any{
 			"foo": "bar",
 		},
 		options:    kivik.Rev("1-1234567890abcdef1234567890abcdef"),
 		wantStatus: http.StatusConflict,
 		wantErr:    "document update conflict",
 	})
-	tests.Add("attempt to update doc without rev should conflict", func(t *testing.T) interface{} {
+	tests.Add("attempt to update doc without rev should conflict", func(t *testing.T) any {
 		db := newDB(t)
 		_ = db.tPut("foo", map[string]string{"foo": "bar"})
 
 		return test{
 			db:    db,
 			docID: "foo",
-			doc: map[string]interface{}{
+			doc: map[string]any{
 				"foo": "bar",
 			},
 			wantStatus: http.StatusConflict,
 			wantErr:    "document update conflict",
 		}
 	})
-	tests.Add("attempt to update doc with wrong rev should conflict", func(t *testing.T) interface{} {
+	tests.Add("attempt to update doc with wrong rev should conflict", func(t *testing.T) any {
 		db := newDB(t)
 		_ = db.tPut("foo", map[string]string{"foo": "bar"})
 
 		return test{
 			db:    db,
 			docID: "foo",
-			doc: map[string]interface{}{
+			doc: map[string]any{
 				"_rev": "2-1234567890abcdef1234567890abcdef",
 				"foo":  "bar",
 			},
@@ -124,14 +124,14 @@ func TestDBPut(t *testing.T) {
 			wantErr:    "document update conflict",
 		}
 	})
-	tests.Add("update doc with correct rev", func(t *testing.T) interface{} {
+	tests.Add("update doc with correct rev", func(t *testing.T) any {
 		db := newDB(t)
 		rev := db.tPut("foo", map[string]string{"foo": "bar"})
 
 		return test{
 			db:    db,
 			docID: "foo",
-			doc: map[string]interface{}{
+			doc: map[string]any{
 				"_rev": rev,
 				"foo":  "baz",
 			},
@@ -151,7 +151,7 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("update doc with new_edits=false, no existing doc", test{
 		docID: "foo",
-		doc: map[string]interface{}{
+		doc: map[string]any{
 			"_rev": "1-6fe51f74859f3579abaccc426dd5104f",
 			"foo":  "baz",
 		},
@@ -167,14 +167,14 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("update doc with new_edits=false, no rev", test{
 		docID: "foo",
-		doc: map[string]interface{}{
+		doc: map[string]any{
 			"foo": "baz",
 		},
 		options:    kivik.Param("new_edits", false),
 		wantStatus: http.StatusBadRequest,
 		wantErr:    "When `new_edits: false`, the document needs `_rev` or `_revisions` specified",
 	})
-	tests.Add("update doc with new_edits=false, existing doc", func(t *testing.T) interface{} {
+	tests.Add("update doc with new_edits=false, existing doc", func(t *testing.T) any {
 		db := newDB(t)
 		rev := db.tPut("foo", map[string]string{"foo": "bar"})
 
@@ -183,7 +183,7 @@ func TestDBPut(t *testing.T) {
 		return test{
 			db:    db,
 			docID: "foo",
-			doc: map[string]interface{}{
+			doc: map[string]any{
 				"_rev": "1-asdf",
 				"foo":  "baz",
 			},
@@ -203,7 +203,7 @@ func TestDBPut(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("update doc with new_edits=false, existing doc and rev", func(t *testing.T) interface{} {
+	tests.Add("update doc with new_edits=false, existing doc and rev", func(t *testing.T) any {
 		d := newDB(t)
 		rev := d.tPut("foo", map[string]string{"foo": "bar"})
 
@@ -212,7 +212,7 @@ func TestDBPut(t *testing.T) {
 		return test{
 			db:    d,
 			docID: "foo",
-			doc: map[string]interface{}{
+			doc: map[string]any{
 				"_rev": rev,
 				"foo":  "baz",
 			},
@@ -253,20 +253,20 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("doc id in url and doc differ", test{
 		docID: "foo",
-		doc: map[string]interface{}{
+		doc: map[string]any{
 			"_id": "bar",
 			"foo": "baz",
 		},
 		wantStatus: http.StatusBadRequest,
 		wantErr:    "Document ID must match _id in document",
 	})
-	tests.Add("set _deleted=true", func(t *testing.T) interface{} {
+	tests.Add("set _deleted=true", func(t *testing.T) any {
 		d := newDB(t)
 
 		return test{
 			db:    d,
 			docID: "foo",
-			doc: map[string]interface{}{
+			doc: map[string]any{
 				"_deleted": true,
 				"foo":      "bar",
 			},
@@ -295,13 +295,13 @@ func TestDBPut(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("set _deleted=false", func(t *testing.T) interface{} {
+	tests.Add("set _deleted=false", func(t *testing.T) any {
 		d := newDB(t)
 
 		return test{
 			db:    d,
 			docID: "foo",
-			doc: map[string]interface{}{
+			doc: map[string]any{
 				"_deleted": false,
 				"foo":      "bar",
 			},
@@ -330,13 +330,13 @@ func TestDBPut(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("set _deleted=true and new_edits=false", func(t *testing.T) interface{} {
+	tests.Add("set _deleted=true and new_edits=false", func(t *testing.T) any {
 		d := newDB(t)
 
 		return test{
 			db:    d,
 			docID: "foo",
-			doc: map[string]interface{}{
+			doc: map[string]any{
 				"_deleted": true,
 				"foo":      "bar",
 				"_rev":     "1-abc",
@@ -370,8 +370,8 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("new_edits=false, with _revisions", test{
 		docID: "foo",
-		doc: map[string]interface{}{
-			"_revisions": map[string]interface{}{
+		doc: map[string]any{
+			"_revisions": map[string]any{
 				"ids":   []string{"ghi", "def", "abc"},
 				"start": 3,
 			},
@@ -403,8 +403,8 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("new_edits=false, with _revisions and _rev, _revisions wins", test{
 		docID: "foo",
-		doc: map[string]interface{}{
-			"_revisions": map[string]interface{}{
+		doc: map[string]any{
+			"_revisions": map[string]any{
 				"ids":   []string{"ghi"},
 				"start": 1,
 			},
@@ -423,24 +423,24 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("new_edits=false, with _revisions and query rev, conflict", test{
 		docID: "foo",
-		doc: map[string]interface{}{
-			"_revisions": map[string]interface{}{
+		doc: map[string]any{
+			"_revisions": map[string]any{
 				"ids":   []string{"ghi"},
 				"start": 1,
 			},
 			"foo": "bar",
 		},
-		options: kivik.Params(map[string]interface{}{
+		options: kivik.Params(map[string]any{
 			"new_edits": false,
 			"rev":       "1-abc",
 		}),
 		wantStatus: http.StatusBadRequest,
 		wantErr:    "document rev and option have different values",
 	})
-	tests.Add("new_edits=false, with _revisions replayed", func(t *testing.T) interface{} {
+	tests.Add("new_edits=false, with _revisions replayed", func(t *testing.T) any {
 		db := newDB(t)
-		_ = db.tPut("foo", map[string]interface{}{
-			"_revisions": map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{
+			"_revisions": map[string]any{
 				"ids":   []string{"ghi", "def", "abc"},
 				"start": 3,
 			},
@@ -450,8 +450,8 @@ func TestDBPut(t *testing.T) {
 		return test{
 			db:    db,
 			docID: "foo",
-			doc: map[string]interface{}{
-				"_revisions": map[string]interface{}{
+			doc: map[string]any{
+				"_revisions": map[string]any{
 					"ids":   []string{"ghi", "def", "abc"},
 					"start": 3,
 				},
@@ -495,8 +495,8 @@ func TestDBPut(t *testing.T) {
 		return test{
 			db:    dbc,
 			docID: "foo",
-			doc: map[string]interface{}{
-				"_revisions": map[string]interface{}{
+			doc: map[string]any{
+				"_revisions": map[string]any{
 					"ids":   []string{"ghi", "def", "abc"},
 					"start": 3,
 				},
@@ -529,7 +529,7 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("new_edits=false, with _revisions and some revs already exist with docs", func(t *testing.T) any {
 		db := newDB(t)
-		_ = db.tPut("foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{
 			"_rev": "2-def",
 			"moo":  "oink",
 		}, kivik.Param("new_edits", false))
@@ -537,8 +537,8 @@ func TestDBPut(t *testing.T) {
 		return test{
 			db:    db,
 			docID: "foo",
-			doc: map[string]interface{}{
-				"_revisions": map[string]interface{}{
+			doc: map[string]any{
+				"_revisions": map[string]any{
 					"ids":   []string{"ghi", "def", "abc"},
 					"start": 3,
 				},
@@ -571,8 +571,8 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("new_edits=true, with _revisions should conflict for new doc", test{
 		docID: "foo",
-		doc: map[string]interface{}{
-			"_revisions": map[string]interface{}{
+		doc: map[string]any{
+			"_revisions": map[string]any{
 				"ids":   []string{"ghi", "def", "abc"},
 				"start": 3,
 			},
@@ -584,15 +584,15 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("new_edits=true, with _revisions should conflict for wrong rev", func(t *testing.T) any {
 		db := newDB(t)
-		_ = db.tPut("foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{
 			"foo": "bar",
 		})
 
 		return test{
 			db:    db,
 			docID: "foo",
-			doc: map[string]interface{}{
-				"_revisions": map[string]interface{}{
+			doc: map[string]any{
+				"_revisions": map[string]any{
 					"ids":   []string{"ghi"},
 					"start": 1,
 				},
@@ -605,7 +605,7 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("new_edits=true, with _revisions should succeed for correct rev", func(t *testing.T) any {
 		db := newDB(t)
-		_ = db.tPut("foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{
 			"foo":  "bar",
 			"_rev": "1-abc",
 		}, kivik.Param("new_edits", false))
@@ -613,8 +613,8 @@ func TestDBPut(t *testing.T) {
 		return test{
 			db:    db,
 			docID: "foo",
-			doc: map[string]interface{}{
-				"_revisions": map[string]interface{}{
+			doc: map[string]any{
+				"_revisions": map[string]any{
 					"ids":   []string{"abc"},
 					"start": 1,
 				},
@@ -639,9 +639,9 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("new_edits=true, with _revisions should succeed for correct history", func(t *testing.T) any {
 		db := newDB(t)
-		_ = db.tPut("foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{
 			"foo": "bar",
-			"_revisions": map[string]interface{}{
+			"_revisions": map[string]any{
 				"ids":   []string{"ghi", "def", "abc"},
 				"start": 3,
 			},
@@ -650,8 +650,8 @@ func TestDBPut(t *testing.T) {
 		return test{
 			db:    db,
 			docID: "foo",
-			doc: map[string]interface{}{
-				"_revisions": map[string]interface{}{
+			doc: map[string]any{
+				"_revisions": map[string]any{
 					"ids":   []string{"ghi", "def", "abc"},
 					"start": 3,
 				},
@@ -690,9 +690,9 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("new_edits=true, with _revisions should fail for wrong history", func(t *testing.T) any {
 		db := newDB(t)
-		_ = db.tPut("foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{
 			"foo": "bar",
-			"_revisions": map[string]interface{}{
+			"_revisions": map[string]any{
 				"ids":   []string{"ghi", "def", "abc"},
 				"start": 3,
 			},
@@ -701,8 +701,8 @@ func TestDBPut(t *testing.T) {
 		return test{
 			db:    db,
 			docID: "foo",
-			doc: map[string]interface{}{
-				"_revisions": map[string]interface{}{
+			doc: map[string]any{
+				"_revisions": map[string]any{
 					"ids":   []string{"ghi", "xyz", "abc"},
 					"start": 3,
 				},
@@ -715,9 +715,9 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("with attachment, no data", test{
 		docID: "foo",
-		doc: map[string]interface{}{
-			"_attachments": map[string]interface{}{
-				"foo.txt": map[string]interface{}{},
+		doc: map[string]any{
+			"_attachments": map[string]any{
+				"foo.txt": map[string]any{},
 			},
 			"foo": "bar",
 		},
@@ -726,9 +726,9 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("with attachment, data is not base64", test{
 		docID: "foo",
-		doc: map[string]interface{}{
-			"_attachments": map[string]interface{}{
-				"foo.txt": map[string]interface{}{
+		doc: map[string]any{
+			"_attachments": map[string]any{
+				"foo.txt": map[string]any{
 					"data": "This is not base64",
 				},
 			},
@@ -739,9 +739,9 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("with attachment, data is not a string", test{
 		docID: "foo",
-		doc: map[string]interface{}{
-			"_attachments": map[string]interface{}{
-				"foo.txt": map[string]interface{}{
+		doc: map[string]any{
+			"_attachments": map[string]any{
+				"foo.txt": map[string]any{
 					"data": 1234,
 				},
 			},
@@ -752,7 +752,7 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("with attachment", test{
 		docID: "foo",
-		doc: map[string]interface{}{
+		doc: map[string]any{
 			"_attachments": newAttachments().add("foo.txt", "This is a base64 encoding"),
 			"foo":          "bar",
 		},
@@ -775,9 +775,9 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("with attachment, no content-type", test{
 		docID: "foo",
-		doc: map[string]interface{}{
-			"_attachments": map[string]interface{}{
-				"foo.txt": map[string]interface{}{
+		doc: map[string]any{
+			"_attachments": map[string]any{
+				"foo.txt": map[string]any{
 					"data": "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGluZw==",
 				},
 			},
@@ -800,9 +800,9 @@ func TestDBPut(t *testing.T) {
 			},
 		},
 	})
-	tests.Add("update doc with attachments without deleting them", func(t *testing.T) interface{} {
+	tests.Add("update doc with attachments without deleting them", func(t *testing.T) any {
 		db := newDB(t)
-		rev := db.tPut("foo", map[string]interface{}{
+		rev := db.tPut("foo", map[string]any{
 			"foo":          "bar",
 			"_attachments": newAttachments().add("foo.txt", "This is a base64 encoding"),
 		})
@@ -810,11 +810,11 @@ func TestDBPut(t *testing.T) {
 		return test{
 			db:    db,
 			docID: "foo",
-			doc: map[string]interface{}{
+			doc: map[string]any{
 				"_rev": rev,
 				"foo":  "baz",
-				"_attachments": map[string]interface{}{
-					"foo.txt": map[string]interface{}{
+				"_attachments": map[string]any{
+					"foo.txt": map[string]any{
 						"stub": true,
 					},
 				},
@@ -849,9 +849,9 @@ func TestDBPut(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("update doc with attachments, delete one", func(t *testing.T) interface{} {
+	tests.Add("update doc with attachments, delete one", func(t *testing.T) any {
 		db := newDB(t)
-		rev := db.tPut("foo", map[string]interface{}{
+		rev := db.tPut("foo", map[string]any{
 			"foo": "bar",
 			"_attachments": newAttachments().
 				add("foo.txt", "This is a base64 encoding").
@@ -861,11 +861,11 @@ func TestDBPut(t *testing.T) {
 		return test{
 			db:    db,
 			docID: "foo",
-			doc: map[string]interface{}{
+			doc: map[string]any{
 				"_rev": rev,
 				"foo":  "baz",
-				"_attachments": map[string]interface{}{
-					"foo.txt": map[string]interface{}{
+				"_attachments": map[string]any{
+					"foo.txt": map[string]any{
 						"stub": true,
 					},
 				},
@@ -907,9 +907,9 @@ func TestDBPut(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("put with invalid attachment stub returns 412", func(t *testing.T) interface{} {
+	tests.Add("put with invalid attachment stub returns 412", func(t *testing.T) any {
 		d := newDB(t)
-		rev := d.tPut("foo", map[string]interface{}{
+		rev := d.tPut("foo", map[string]any{
 			"foo": "aaa",
 			"_attachments": newAttachments().
 				add("att.txt", "att.txt"),
@@ -919,19 +919,19 @@ func TestDBPut(t *testing.T) {
 			db:      d,
 			docID:   "foo",
 			options: kivik.Rev(rev),
-			doc: map[string]interface{}{
+			doc: map[string]any{
 				"_attachments": newAttachments().addStub("invalid.png"),
 			},
 			wantStatus: http.StatusPreconditionFailed,
 			wantErr:    "invalid attachment stub in foo for invalid.png",
 		}
 	})
-	tests.Add("update to conflicting leaf updates the proper branch", func(t *testing.T) interface{} {
+	tests.Add("update to conflicting leaf updates the proper branch", func(t *testing.T) any {
 		d := newDB(t)
-		rev1 := d.tPut("foo", map[string]interface{}{
+		rev1 := d.tPut("foo", map[string]any{
 			"cat": "meow",
 		})
-		rev2 := d.tPut("foo", map[string]interface{}{
+		rev2 := d.tPut("foo", map[string]any{
 			"dog": "woof",
 		}, kivik.Rev(rev1))
 
@@ -939,19 +939,19 @@ func TestDBPut(t *testing.T) {
 		r2, _ := parseRev(rev2)
 
 		// Create a conflict
-		_ = d.tPut("foo", map[string]interface{}{
+		_ = d.tPut("foo", map[string]any{
 			"pig": "oink",
-			"_revisions": map[string]interface{}{
+			"_revisions": map[string]any{
 				"start": 3,
 				"ids":   []string{"abc", "def", r1.id},
 			},
-		}, kivik.Params(map[string]interface{}{"new_edits": false}))
+		}, kivik.Params(map[string]any{"new_edits": false}))
 
 		return test{
 			db:      d,
 			docID:   "foo",
 			options: kivik.Rev(rev2),
-			doc: map[string]interface{}{
+			doc: map[string]any{
 				"cow": "moo",
 			},
 			wantRev: "3-.*",
@@ -994,7 +994,7 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("new_edits=false with an attachment", test{
 		docID: "foo",
-		doc: map[string]interface{}{
+		doc: map[string]any{
 			"_rev":         "1-abc",
 			"_attachments": newAttachments().add("foo.txt", "This is a base64 encoding"),
 			"foo":          "bar",
@@ -1019,7 +1019,7 @@ func TestDBPut(t *testing.T) {
 	})
 	tests.Add("new_edits=false with an attachment stub and no parent rev results in 412", test{
 		docID: "foo",
-		doc: map[string]interface{}{
+		doc: map[string]any{
 			"_rev":         "1-abc",
 			"_attachments": newAttachments().addStub("foo.txt"),
 			"foo":          "bar",
@@ -1028,9 +1028,9 @@ func TestDBPut(t *testing.T) {
 		wantStatus: http.StatusPreconditionFailed,
 		wantErr:    "invalid attachment stub in foo for foo.txt",
 	})
-	tests.Add("new_edits=false with attachment stub and parent in _revisions works", func(t *testing.T) interface{} {
+	tests.Add("new_edits=false with attachment stub and parent in _revisions works", func(t *testing.T) any {
 		d := newDB(t)
-		rev := d.tPut("foo", map[string]interface{}{
+		rev := d.tPut("foo", map[string]any{
 			"_attachments": newAttachments().add("foo.txt", "This is a base64 encoding"),
 		})
 
@@ -1039,8 +1039,8 @@ func TestDBPut(t *testing.T) {
 		return test{
 			db:    d,
 			docID: "foo",
-			doc: map[string]interface{}{
-				"_revisions": map[string]interface{}{
+			doc: map[string]any{
+				"_revisions": map[string]any{
 					"ids":   []string{"ghi", "def", r.id},
 					"start": 3,
 				},
@@ -1087,17 +1087,17 @@ func TestDBPut(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("new_edits=false with attachment stub and no parent in _revisions returns 412", func(t *testing.T) interface{} {
+	tests.Add("new_edits=false with attachment stub and no parent in _revisions returns 412", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("foo", map[string]interface{}{
+		_ = d.tPut("foo", map[string]any{
 			"_attachments": newAttachments().add("foo.txt", "This is a base64 encoding"),
 		})
 
 		return test{
 			db:    d,
 			docID: "foo",
-			doc: map[string]interface{}{
-				"_revisions": map[string]interface{}{
+			doc: map[string]any{
+				"_revisions": map[string]any{
 					"ids":   []string{"ghi", "def"},
 					"start": 6,
 				},

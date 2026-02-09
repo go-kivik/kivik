@@ -32,7 +32,7 @@ import (
 // - meta
 // - open_revs
 func (d *db) Get(_ context.Context, docID string, options driver.Options) (*driver.Document, error) {
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 	if docID == "" {
 		return nil, statusError{status: http.StatusBadRequest, error: errors.New("no docid specified")}

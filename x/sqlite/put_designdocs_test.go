@@ -45,7 +45,7 @@ func TestDBPut_designDocs(t *testing.T) {
 	type test struct {
 		db              *testDB
 		docID           string
-		doc             interface{}
+		doc             any
 		options         driver.Options
 		check           func(*testing.T)
 		wantRev         string
@@ -58,7 +58,7 @@ func TestDBPut_designDocs(t *testing.T) {
 	tests := testy.NewTable()
 	tests.Add("design doc with non-string language returns 400", test{
 		docID: "_design/foo",
-		doc: map[string]interface{}{
+		doc: map[string]any{
 			"language": 1234,
 		},
 		wantStatus: http.StatusBadRequest,
@@ -66,7 +66,7 @@ func TestDBPut_designDocs(t *testing.T) {
 	})
 	tests.Add("non-design doc with non-string language value is ok", test{
 		docID: "foo",
-		doc: map[string]interface{}{
+		doc: map[string]any{
 			"language": 1234,
 		},
 		wantRev: "1-.*",
@@ -74,15 +74,15 @@ func TestDBPut_designDocs(t *testing.T) {
 			{ID: "foo", Rev: 1},
 		},
 	})
-	tests.Add("design doc with view function creates .Design entries and map table", func(t *testing.T) interface{} {
+	tests.Add("design doc with view function creates .Design entries and map table", func(t *testing.T) any {
 		d := newDB(t)
 		return test{
 			db:    d,
 			docID: "_design/foo",
-			doc: map[string]interface{}{
+			doc: map[string]any{
 				"language": "javascript",
-				"views": map[string]interface{}{
-					"bar": map[string]interface{}{
+				"views": map[string]any{
+					"bar": map[string]any{
 						"map": "function(doc) { emit(doc._id, null); }",
 					},
 				},
@@ -119,19 +119,19 @@ func TestDBPut_designDocs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("options.include_design=true", func(t *testing.T) interface{} {
+	tests.Add("options.include_design=true", func(t *testing.T) any {
 		d := newDB(t)
 		return test{
 			db:    d,
 			docID: "_design/foo",
-			doc: map[string]interface{}{
+			doc: map[string]any{
 				"language": "javascript",
-				"views": map[string]interface{}{
-					"bar": map[string]interface{}{
+				"views": map[string]any{
+					"bar": map[string]any{
 						"map": "function(doc) { emit(doc._id, null); }",
 					},
 				},
-				"options": map[string]interface{}{
+				"options": map[string]any{
 					"include_design": true,
 				},
 			},
@@ -167,19 +167,19 @@ func TestDBPut_designDocs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("options.local_seq=true", func(t *testing.T) interface{} {
+	tests.Add("options.local_seq=true", func(t *testing.T) any {
 		d := newDB(t)
 		return test{
 			db:    d,
 			docID: "_design/foo",
-			doc: map[string]interface{}{
+			doc: map[string]any{
 				"language": "javascript",
-				"views": map[string]interface{}{
-					"bar": map[string]interface{}{
+				"views": map[string]any{
+					"bar": map[string]any{
 						"map": "function(doc) { emit(doc._id, null); }",
 					},
 				},
-				"options": map[string]interface{}{
+				"options": map[string]any{
 					"local_seq": true,
 				},
 			},
@@ -215,19 +215,19 @@ func TestDBPut_designDocs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("options.collation=chicken", func(t *testing.T) interface{} {
+	tests.Add("options.collation=chicken", func(t *testing.T) any {
 		d := newDB(t)
 		return test{
 			db:    d,
 			docID: "_design/foo",
-			doc: map[string]interface{}{
+			doc: map[string]any{
 				"language": "javascript",
-				"views": map[string]interface{}{
-					"bar": map[string]interface{}{
+				"views": map[string]any{
+					"bar": map[string]any{
 						"map": "function(doc) { emit(doc._id, null); }",
 					},
 				},
-				"options": map[string]interface{}{
+				"options": map[string]any{
 					"collation": "chicken",
 				},
 			},
@@ -237,19 +237,19 @@ func TestDBPut_designDocs(t *testing.T) {
 			wantStatus: http.StatusBadRequest,
 		}
 	})
-	tests.Add("options.local_seq=ascii", func(t *testing.T) interface{} {
+	tests.Add("options.local_seq=ascii", func(t *testing.T) any {
 		d := newDB(t)
 		return test{
 			db:    d,
 			docID: "_design/foo",
-			doc: map[string]interface{}{
+			doc: map[string]any{
 				"language": "javascript",
-				"views": map[string]interface{}{
-					"bar": map[string]interface{}{
+				"views": map[string]any{
+					"bar": map[string]any{
 						"map": "function(doc) { emit(doc._id, null); }",
 					},
 				},
-				"options": map[string]interface{}{
+				"options": map[string]any{
 					"collation": "ascii",
 				},
 			},
@@ -286,15 +286,15 @@ func TestDBPut_designDocs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("Add a filter function", func(t *testing.T) interface{} {
+	tests.Add("Add a filter function", func(t *testing.T) any {
 		d := newDB(t)
 
 		return test{
 			db:    d,
 			docID: "_design/foo",
-			doc: map[string]interface{}{
+			doc: map[string]any{
 				"language": "javascript",
-				"filters": map[string]interface{}{
+				"filters": map[string]any{
 					"bar": "function(doc, req) { return true; }",
 				},
 			},

@@ -24,7 +24,7 @@ import (
 func Test_describe_version_RunE(t *testing.T) {
 	tests := testy.NewTable()
 
-	tests.Add("describe version", func(*testing.T) interface{} {
+	tests.Add("describe version", func(*testing.T) any {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{
@@ -39,7 +39,7 @@ func Test_describe_version_RunE(t *testing.T) {
 			args: []string{"describe", "version", s.URL},
 		}
 	})
-	tests.Add("describe version json", func(*testing.T) interface{} {
+	tests.Add("describe version json", func(*testing.T) any {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{

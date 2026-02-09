@@ -46,7 +46,7 @@ func TestDBUpdatesNext(t *testing.T) {
 			updates: &DBUpdates{
 				iter: &iter{
 					feed: &mockIterator{
-						NextFunc: func(_ interface{}) error { return nil },
+						NextFunc: func(_ any) error { return nil },
 					},
 				},
 			},

@@ -43,7 +43,7 @@ var (
 	typeString        = reflect.TypeOf("")
 )
 
-func parseMethods(input interface{}, isClient bool, skip map[string]struct{}) ([]*method, error) {
+func parseMethods(input any, isClient bool, skip map[string]struct{}) ([]*method, error) {
 	var hasReceiver bool
 	t := reflect.TypeOf(input)
 	if t.Kind() != reflect.Struct {

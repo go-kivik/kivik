@@ -47,7 +47,7 @@ func TestChangesNext(t *testing.T) {
 			changes: &Changes{
 				iter: &iter{
 					feed: &mockIterator{
-						NextFunc: func(_ interface{}) error { return nil },
+						NextFunc: func(_ any) error { return nil },
 					},
 				},
 			},
@@ -210,7 +210,7 @@ func TestChangesScanDoc(t *testing.T) {
 	tests := []struct {
 		name     string
 		changes  *Changes
-		expected interface{}
+		expected any
 		status   int
 		err      string
 	}{
@@ -224,7 +224,7 @@ func TestChangesScanDoc(t *testing.T) {
 					},
 				},
 			},
-			expected: map[string]interface{}{"foo": 123.4},
+			expected: map[string]any{"foo": 123.4},
 		},
 		{
 			name: "closed",
@@ -239,7 +239,7 @@ func TestChangesScanDoc(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			var result interface{}
+			var result any
 			err := test.changes.ScanDoc(&result)
 			if d := internal.StatusErrorDiff(test.err, test.status, err); d != "" {
 				t.Error(d)
@@ -279,8 +279,8 @@ func TestChanges(t *testing.T) {
 				client: &Client{},
 				driverDB: &mock.DB{
 					ChangesFunc: func(_ context.Context, options driver.Options) (driver.Changes, error) {
-						expectedOpts := map[string]interface{}{"foo": 123.4}
-						gotOpts := map[string]interface{}{}
+						expectedOpts := map[string]any{"foo": 123.4}
+						gotOpts := map[string]any{}
 						options.Apply(gotOpts)
 						if d := testy.DiffInterface(expectedOpts, gotOpts); d != nil {
 							return nil, fmt.Errorf("Unexpected options:\n%s", d)

@@ -26,7 +26,7 @@ import (
 type delayedJSONReader struct {
 	mu sync.Mutex
 	r  io.Reader
-	i  interface{}
+	i  any
 }
 
 func (d *delayedJSONReader) Read(p []byte) (int, error) {
@@ -44,7 +44,7 @@ func (d *delayedJSONReader) Read(p []byte) (int, error) {
 }
 
 // JSONReader marshals i as JSON.
-func JSONReader(i interface{}) io.Reader {
+func JSONReader(i any) io.Reader {
 	return &delayedJSONReader{i: i}
 }
 
@@ -56,14 +56,14 @@ type FriendlyOutput interface {
 
 type tmplReader struct {
 	io.Reader
-	data interface{}
+	data any
 	tmpl *template.Template
 }
 
 var _ FriendlyOutput = &tmplReader{}
 
 // TemplateReader ...
-func TemplateReader(tmpl string, data interface{}, r io.Reader) FriendlyOutput {
+func TemplateReader(tmpl string, data any, r io.Reader) FriendlyOutput {
 	return &tmplReader{
 		Reader: r,
 		data:   data,

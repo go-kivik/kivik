@@ -48,7 +48,7 @@ func TestCompact(t *testing.T) {
 		status: http.StatusNotFound,
 		err:    "^open testdata/notfound: [Nn]o such file or directory$",
 	})
-	tests.Add("empty directory", func(t *testing.T) interface{} {
+	tests.Add("empty directory", func(t *testing.T) any {
 		tmpdir := tempDir(t)
 		t.Cleanup(func() {
 			_ = os.RemoveAll(tmpdir)
@@ -73,7 +73,7 @@ func TestCompact(t *testing.T) {
 		status: http.StatusForbidden,
 		err:    "permission denied$",
 	})
-	tests.Add("no attachments", func(t *testing.T) interface{} {
+	tests.Add("no attachments", func(t *testing.T) any {
 		tmpdir := testy.CopyTempDir(t, "testdata/compact_noatt", 1)
 		t.Cleanup(func() {
 			_ = os.RemoveAll(tmpdir)
@@ -84,7 +84,7 @@ func TestCompact(t *testing.T) {
 			dbname: "compact_noatt",
 		}
 	})
-	tests.Add("non-winning revs only, no attachments", func(t *testing.T) interface{} {
+	tests.Add("non-winning revs only, no attachments", func(t *testing.T) any {
 		tmpdir := testy.CopyTempDir(t, "testdata/compact_nowinner_noatt", 1)
 		t.Cleanup(func() {
 			_ = os.RemoveAll(tmpdir)
@@ -95,7 +95,7 @@ func TestCompact(t *testing.T) {
 			dbname: "compact_nowinner_noatt",
 		}
 	})
-	tests.Add("clean up old revs", func(t *testing.T) interface{} {
+	tests.Add("clean up old revs", func(t *testing.T) any {
 		tmpdir := testy.CopyTempDir(t, "testdata/compact_oldrevs", 1)
 		t.Cleanup(func() {
 			_ = os.RemoveAll(tmpdir)
@@ -106,7 +106,7 @@ func TestCompact(t *testing.T) {
 			dbname: "compact_oldrevs",
 		}
 	})
-	tests.Add("clean up old revs with atts", func(t *testing.T) interface{} {
+	tests.Add("clean up old revs with atts", func(t *testing.T) any {
 		tmpdir := testy.CopyTempDir(t, "testdata/compact_oldrevsatt", 1)
 		t.Cleanup(func() {
 			_ = os.RemoveAll(tmpdir)

@@ -14,6 +14,7 @@
 package config
 
 import (
+	"io/fs"
 	"net"
 	"net/http"
 	"net/url"
@@ -103,8 +104,8 @@ func (c *Context) DBDoc() (db, doc string, err error) {
 		db = strings.Trim(path.Dir(p), "/")
 		doc = strings.Trim(path.Base(p), "/")
 	}
-	if strings.HasSuffix(db, "/_design") {
-		db = strings.TrimSuffix(db, "/_design")
+	if before, ok := strings.CutSuffix(db, "/_design"); ok {
+		db = before
 		doc = "_design/" + doc
 	}
 	if db == "" {
@@ -191,7 +192,7 @@ func (c *Config) readYAML(filename string) error {
 	f, err := os.Open(filename)
 	if err != nil {
 		c.log.Debugf("failed to read config: %s", err)
-		if os.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			err = nil
 		}
 		return err
@@ -504,9 +505,9 @@ func expandDSN(addr *url.URL) (dsn, db, doc, filename string) {
 // be used to specify the end of the root element, when disambiguation is
 // required.
 func splitPath(p string) []string {
-	if parts := strings.SplitN(p, "//", 2); len(parts) == 2 {
-		result := splitPath(parts[1])
-		result[0] = parts[0] + "/" + result[0]
+	if before, after, ok := strings.Cut(p, "//"); ok {
+		result := splitPath(after)
+		result[0] = before + "/" + result[0]
 		return result
 	}
 	const maxElements = 4

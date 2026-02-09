@@ -294,7 +294,7 @@ func TestDBUpdates(t *testing.T) {
 		},
 		{
 			name: "CouchDB defaults, network error",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"feed":  "",
 				"since": "",
 			}),
@@ -397,7 +397,7 @@ func TestDBUpdates(t *testing.T) {
 					"last_seq": "2-g1AAAAFR"
 				}`),
 			}, nil),
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"feed":  "",
 				"since": "",
 			}),
@@ -408,7 +408,7 @@ func TestDBUpdates(t *testing.T) {
 		},
 		{
 			name: "eventsource",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"feed":  "eventsource",
 				"since": "",
 			}),
@@ -459,6 +459,30 @@ func TestDBUpdates(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_updatesForFeedType(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		ft         feedType
+		wantStatus int
+		wantErr    string
+	}
+
+	tests := testy.NewTable()
+	tests.Add("unknown feed type", test{
+		ft:         feedType(99),
+		wantStatus: http.StatusBadGateway,
+		wantErr:    `unknown feed type`,
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		_, err := updatesForFeedType(context.Background(), Body(""), tt.ft)
+		if d := internal.StatusErrorDiffRE(tt.wantErr, tt.wantStatus, err); d != "" {
+			t.Error(d)
+		}
+	})
 }
 
 func newTestUpdates(t *testing.T, body io.ReadCloser) driver.DBUpdates {

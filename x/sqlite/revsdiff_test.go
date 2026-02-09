@@ -28,7 +28,7 @@ func TestDBRevsDiff(t *testing.T) {
 	t.Parallel()
 	type test struct {
 		db         *testDB
-		revMap     interface{}
+		revMap     any
 		want       []rowResult
 		wantErr    string
 		wantStatus int
@@ -53,7 +53,7 @@ func TestDBRevsDiff(t *testing.T) {
 			{ID: "foo", Value: `{"missing":["1-abc","2-def"]}`},
 		},
 	})
-	tests.Add("one rev exists, one missing", func(t *testing.T) interface{} {
+	tests.Add("one rev exists, one missing", func(t *testing.T) any {
 		d := newDB(t)
 		rev := d.tPut("foo", map[string]string{"foo": "bar"})
 

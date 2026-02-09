@@ -30,7 +30,7 @@ func Test_post_purge_RunE(t *testing.T) {
 		args:   []string{"post", "purge"},
 		status: errors.ErrUsage,
 	})
-	tests.Add("one rev", func(t *testing.T) interface{} {
+	tests.Add("one rev", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true}`)),
 		}, gunzip(func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
@@ -49,7 +49,7 @@ func Test_post_purge_RunE(t *testing.T) {
 			args: []string{"post", "purge", s.URL + "/qwerty/doc", "--revs", "1-xxx"},
 		}
 	})
-	tests.Add("two revs", func(t *testing.T) interface{} {
+	tests.Add("two revs", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true}`)),
 		}, gunzip(func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper
@@ -68,7 +68,7 @@ func Test_post_purge_RunE(t *testing.T) {
 			args: []string{"post", "purge", s.URL + "/xxx/doc", "--revs", "1-xxx,2-xxx"},
 		}
 	})
-	tests.Add("from --data", func(t *testing.T) interface{} {
+	tests.Add("from --data", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true}`)),
 		}, gunzip(func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper

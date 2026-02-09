@@ -26,7 +26,7 @@ import (
 
 // Changes returns the changes stream for the database.
 func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Changes, error) {
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 	key := "results"
 	if f, ok := opts["feed"]; ok {
@@ -40,7 +40,7 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 	chttpOpts := new(chttp.Options)
 	if ids := opts["doc_ids"]; ids != nil {
 		delete(opts, "doc_ids")
-		chttpOpts.GetBody = chttp.BodyEncoder(map[string]interface{}{
+		chttpOpts.GetBody = chttp.BodyEncoder(map[string]any{
 			"doc_ids": ids,
 		})
 	}
@@ -63,12 +63,12 @@ func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Change
 
 type continuousChangesParser struct{}
 
-func (p *continuousChangesParser) parseMeta(i interface{}, dec *json.Decoder, key string) error {
+func (p *continuousChangesParser) parseMeta(i any, dec *json.Decoder, key string) error {
 	meta := i.(*changesMeta)
 	return meta.parseMeta(key, dec)
 }
 
-func (p *continuousChangesParser) decodeItem(i interface{}, dec *json.Decoder) error {
+func (p *continuousChangesParser) decodeItem(i any, dec *json.Decoder) error {
 	row := i.(*driver.Change)
 	ch := &change{Change: row}
 	if err := dec.Decode(ch); err != nil {

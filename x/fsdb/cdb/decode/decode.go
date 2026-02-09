@@ -14,9 +14,10 @@
 package decode
 
 import (
+	"errors"
 	"fmt"
 	"io"
-	"os"
+	iofs "io/fs"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -25,7 +26,7 @@ import (
 )
 
 type decoder interface {
-	Decode(io.Reader, interface{}) error
+	Decode(io.Reader, any) error
 }
 
 var decoders = map[string]decoder{
@@ -48,7 +49,7 @@ var extensions = func() []string {
 func OpenAny(fs filesystem.Filesystem, base string) (f filesystem.File, ext string, err error) {
 	for ext = range decoders {
 		f, err = fs.Open(base + "." + ext)
-		if err == nil || !os.IsNotExist(err) {
+		if err == nil || !errors.Is(err, iofs.ErrNotExist) {
 			return
 		}
 	}
@@ -56,7 +57,7 @@ func OpenAny(fs filesystem.Filesystem, base string) (f filesystem.File, ext stri
 }
 
 // Decode decodes r according to ext's registered decoder, into i.
-func Decode(r io.Reader, ext string, i interface{}) error {
+func Decode(r io.Reader, ext string, i any) error {
 	ext = strings.TrimPrefix(ext, ".")
 	dec, ok := decoders[ext]
 	if !ok {

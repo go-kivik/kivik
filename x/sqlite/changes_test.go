@@ -51,7 +51,7 @@ func TestDBChanges(t *testing.T) {
 		wantLastSeq: &[]string{""}[0],
 		wantETag:    &[]string{"cfcd208495d565ef66e7dff9f98764da"}[0],
 	})
-	tests.Add("one change", func(t *testing.T) interface{} {
+	tests.Add("one change", func(t *testing.T) any {
 		d := newDB(t)
 		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
 		return test{
@@ -67,7 +67,7 @@ func TestDBChanges(t *testing.T) {
 			wantETag:    &[]string{"c4ca4238a0b923820dcc509a6f75849b"}[0],
 		}
 	})
-	tests.Add("deleted event", func(t *testing.T) interface{} {
+	tests.Add("deleted event", func(t *testing.T) any {
 		d := newDB(t)
 		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
 		rev2 := d.tDelete("doc1", kivik.Rev(rev))
@@ -86,7 +86,7 @@ func TestDBChanges(t *testing.T) {
 			wantETag:    &[]string{"c81e728d9d4c2f636f067f89cc14862c"}[0],
 		}
 	})
-	tests.Add("longpoll", func(t *testing.T) interface{} {
+	tests.Add("longpoll", func(t *testing.T) any {
 		d := newDB(t)
 		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
 
@@ -109,7 +109,7 @@ func TestDBChanges(t *testing.T) {
 		wantErr:    "supported `feed` types: normal, longpoll, continuous",
 		wantStatus: http.StatusBadRequest,
 	})
-	tests.Add("since=1", func(t *testing.T) interface{} {
+	tests.Add("since=1", func(t *testing.T) any {
 		d := newDB(t)
 		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
 		rev2 := d.tDelete("doc1", kivik.Rev(rev))
@@ -134,7 +134,7 @@ func TestDBChanges(t *testing.T) {
 		wantErr:    "malformed sequence supplied in 'since' parameter: invalid",
 		wantStatus: http.StatusBadRequest,
 	})
-	tests.Add("future since value returns only latest change", func(t *testing.T) interface{} {
+	tests.Add("future since value returns only latest change", func(t *testing.T) any {
 		d := newDB(t)
 		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
 		rev2 := d.tDelete("doc1", kivik.Rev(rev))
@@ -154,14 +154,14 @@ func TestDBChanges(t *testing.T) {
 			wantETag:    &[]string{"c81e728d9d4c2f636f067f89cc14862c"}[0],
 		}
 	})
-	tests.Add("future since value returns only latest change, longpoll mode", func(t *testing.T) interface{} {
+	tests.Add("future since value returns only latest change, longpoll mode", func(t *testing.T) any {
 		d := newDB(t)
 		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
 		rev2 := d.tDelete("doc1", kivik.Rev(rev))
 
 		return test{
 			db: d,
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"since": "9000",
 				"feed":  "longpoll",
 			}),
@@ -182,7 +182,7 @@ func TestDBChanges(t *testing.T) {
 		wantErr:    "invalid value for 'limit': invalid",
 		wantStatus: http.StatusBadRequest,
 	})
-	tests.Add("longpoll + since in past should return all historical changes since that seqid", func(t *testing.T) interface{} {
+	tests.Add("longpoll + since in past should return all historical changes since that seqid", func(t *testing.T) any {
 		d := newDB(t)
 		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
 		rev2 := d.tDelete("doc1", kivik.Rev(rev))
@@ -190,7 +190,7 @@ func TestDBChanges(t *testing.T) {
 
 		return test{
 			db: d,
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"since": "1",
 				"feed":  "longpoll",
 			}),
@@ -211,7 +211,7 @@ func TestDBChanges(t *testing.T) {
 			wantETag:    &[]string{""}[0],
 		}
 	})
-	tests.Add("feed=normal, context cancellation", func(t *testing.T) interface{} {
+	tests.Add("feed=normal, context cancellation", func(t *testing.T) any {
 		d := newDB(t)
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
@@ -219,21 +219,21 @@ func TestDBChanges(t *testing.T) {
 		return test{
 			db:  d,
 			ctx: ctx,
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"feed": "normal",
 			}),
 			wantErr:    "context canceled",
 			wantStatus: http.StatusInternalServerError,
 		}
 	})
-	tests.Add("feed=normal, since=now", func(t *testing.T) interface{} {
+	tests.Add("feed=normal, since=now", func(t *testing.T) any {
 		d := newDB(t)
 		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
 		_ = d.tDelete("doc1", kivik.Rev(rev))
 
 		return test{
 			db: d,
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"since": "now",
 			}),
 			wantChanges: nil,
@@ -241,7 +241,7 @@ func TestDBChanges(t *testing.T) {
 			wantETag:    &[]string{"cfcd208495d565ef66e7dff9f98764da"}[0],
 		}
 	})
-	tests.Add("limit=0 acts the same as limit=1", func(t *testing.T) interface{} {
+	tests.Add("limit=0 acts the same as limit=1", func(t *testing.T) any {
 		d := newDB(t)
 		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
 		_ = d.tPut("doc2", map[string]string{"foo": "bar"})
@@ -261,7 +261,7 @@ func TestDBChanges(t *testing.T) {
 			wantPending: &[]int64{1}[0],
 		}
 	})
-	tests.Add("limit=1", func(t *testing.T) interface{} {
+	tests.Add("limit=1", func(t *testing.T) any {
 		d := newDB(t)
 		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
 		_ = d.tPut("doc2", map[string]string{"foo": "bar"})
@@ -281,7 +281,7 @@ func TestDBChanges(t *testing.T) {
 			wantPending: &[]int64{1}[0],
 		}
 	})
-	tests.Add("limit=1 as int", func(t *testing.T) interface{} {
+	tests.Add("limit=1 as int", func(t *testing.T) any {
 		d := newDB(t)
 		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
 		_ = d.tPut("doc2", map[string]string{"foo": "bar"})
@@ -301,14 +301,14 @@ func TestDBChanges(t *testing.T) {
 			wantPending: &[]int64{1}[0],
 		}
 	})
-	tests.Add("feed=longpoll, limit=1, pending is set", func(t *testing.T) interface{} {
+	tests.Add("feed=longpoll, limit=1, pending is set", func(t *testing.T) any {
 		d := newDB(t)
 		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
 		_ = d.tPut("doc2", map[string]string{"foo": "bar"})
 
 		return test{
 			db: d,
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"feed":  "longpoll",
 				"limit": 1,
 			}),
@@ -324,7 +324,7 @@ func TestDBChanges(t *testing.T) {
 			wantPending: &[]int64{1}[0],
 		}
 	})
-	tests.Add("Descending order", func(t *testing.T) interface{} {
+	tests.Add("Descending order", func(t *testing.T) any {
 		d := newDB(t)
 		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
 		rev2 := d.tPut("doc2", map[string]string{"foo": "bar"})
@@ -348,7 +348,7 @@ func TestDBChanges(t *testing.T) {
 			wantETag:    &[]string{"c81e728d9d4c2f636f067f89cc14862c"}[0],
 		}
 	})
-	tests.Add("include docs, normal feed", func(t *testing.T) interface{} {
+	tests.Add("include docs, normal feed", func(t *testing.T) any {
 		d := newDB(t)
 		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
 
@@ -367,9 +367,9 @@ func TestDBChanges(t *testing.T) {
 			wantETag:    &[]string{"c4ca4238a0b923820dcc509a6f75849b"}[0],
 		}
 	})
-	tests.Add("include docs, attachment stubs, normal feed", func(t *testing.T) interface{} {
+	tests.Add("include docs, attachment stubs, normal feed", func(t *testing.T) any {
 		d := newDB(t)
-		rev := d.tPut("doc1", map[string]interface{}{
+		rev := d.tPut("doc1", map[string]any{
 			"foo": "bar",
 			"_attachments": newAttachments().
 				add("text.txt", "boring text").
@@ -391,9 +391,9 @@ func TestDBChanges(t *testing.T) {
 			wantETag:    &[]string{"c4ca4238a0b923820dcc509a6f75849b"}[0],
 		}
 	})
-	tests.Add("include docs and attachments, normal feed", func(t *testing.T) interface{} {
+	tests.Add("include docs and attachments, normal feed", func(t *testing.T) any {
 		d := newDB(t)
-		rev := d.tPut("doc1", map[string]interface{}{
+		rev := d.tPut("doc1", map[string]any{
 			"foo": "bar",
 			"_attachments": newAttachments().
 				add("text.txt", "boring text").
@@ -402,7 +402,7 @@ func TestDBChanges(t *testing.T) {
 
 		return test{
 			db: d,
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"include_docs": true,
 				"attachments":  true,
 			}),
@@ -419,14 +419,14 @@ func TestDBChanges(t *testing.T) {
 		}
 	})
 	tests.Add("filter=_doc_ids without doc_ids", test{
-		options: kivik.Params(map[string]interface{}{
+		options: kivik.Params(map[string]any{
 			"filter": "_doc_ids",
 		}),
 		wantStatus: http.StatusBadRequest,
 		wantErr:    "filter=_doc_ids requires 'doc_ids' parameter",
 	})
 	tests.Add("filter=_doc_ids with invalid doc_ids", test{
-		options: kivik.Params(map[string]interface{}{
+		options: kivik.Params(map[string]any{
 			"filter":  "_doc_ids",
 			"doc_ids": 3,
 		}),
@@ -434,23 +434,23 @@ func TestDBChanges(t *testing.T) {
 		wantErr:    "invalid value for 'doc_ids': 3",
 	})
 	tests.Add("filter=_doc_ids with invalid doc_ids field", test{
-		options: kivik.Params(map[string]interface{}{
+		options: kivik.Params(map[string]any{
 			"filter":  "_doc_ids",
-			"doc_ids": []interface{}{"foo", 3},
+			"doc_ids": []any{"foo", 3},
 		}),
 		wantStatus: http.StatusBadRequest,
 		wantErr:    "invalid 'doc_ids' field: 3",
 	})
-	tests.Add("normal feed, doc_ids", func(t *testing.T) interface{} {
+	tests.Add("normal feed, doc_ids", func(t *testing.T) any {
 		d := newDB(t)
 		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
 		_ = d.tPut("doc2", map[string]string{"foo": "bar"})
 
 		return test{
 			db: d,
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"filter":  "_doc_ids",
-				"doc_ids": []interface{}{"doc1"},
+				"doc_ids": []any{"doc1"},
 			}),
 			wantChanges: []driver.Change{
 				{
@@ -463,17 +463,17 @@ func TestDBChanges(t *testing.T) {
 			wantETag:    &[]string{"c81e728d9d4c2f636f067f89cc14862c"}[0],
 		}
 	})
-	tests.Add("normal feed with docs, doc_ids", func(t *testing.T) interface{} {
+	tests.Add("normal feed with docs, doc_ids", func(t *testing.T) any {
 		d := newDB(t)
 		rev := d.tPut("doc1", map[string]string{"foo": "bar"})
 		_ = d.tPut("doc2", map[string]string{"foo": "bar"})
 
 		return test{
 			db: d,
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"include_docs": true,
 				"filter":       "_doc_ids",
-				"doc_ids":      []interface{}{"doc1"},
+				"doc_ids":      []any{"doc1"},
 			}),
 			wantChanges: []driver.Change{
 				{
@@ -493,7 +493,7 @@ func TestDBChanges(t *testing.T) {
 		wantErr:    `'filter' must be of the form 'designname/filtername'`,
 	})
 	tests.Add("filter ddoc does not exist", test{
-		options: kivik.Params(map[string]interface{}{
+		options: kivik.Params(map[string]any{
 			"filter": "foo/qux",
 		}),
 		wantStatus: http.StatusNotFound,
@@ -502,14 +502,14 @@ func TestDBChanges(t *testing.T) {
 	tests.Add("filter function does not exist", func(t *testing.T) any {
 		d := newDB(t)
 		_ = d.tPut("_design/foo", map[string]any{
-			"filters": map[string]interface{}{
+			"filters": map[string]any{
 				"bar": "function(doc, req) { return doc.foo; }",
 			},
 		})
 
 		return test{
 			db: d,
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"filter": "foo/qux",
 			}),
 			wantStatus: http.StatusNotFound,
@@ -519,14 +519,14 @@ func TestDBChanges(t *testing.T) {
 	tests.Add("filter function does not compile", func(t *testing.T) any {
 		d := newDB(t)
 		_ = d.tPut("_design/foo", map[string]any{
-			"filters": map[string]interface{}{
+			"filters": map[string]any{
 				"bar": "function(doc, req) { return",
 			},
 		})
 
 		return test{
 			db: d,
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"filter": "foo/bar",
 			}),
 			wantStatus: http.StatusInternalServerError,
@@ -536,14 +536,14 @@ func TestDBChanges(t *testing.T) {
 	tests.Add("filter function throws an exception", func(t *testing.T) any {
 		d := newDB(t)
 		_ = d.tPut("_design/foo", map[string]any{
-			"filters": map[string]interface{}{
+			"filters": map[string]any{
 				"bar": "function() { throw('exceptional!'); }",
 			},
 		})
 
 		return test{
 			db: d,
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"filter": "foo/bar",
 			}),
 			wantNextErr: `^exceptional!`,
@@ -552,7 +552,7 @@ func TestDBChanges(t *testing.T) {
 	tests.Add("with filter function", func(t *testing.T) any {
 		d := newDB(t)
 		_ = d.tPut("_design/foo", map[string]any{
-			"filters": map[string]interface{}{
+			"filters": map[string]any{
 				"bar": "function(doc, req) { return doc.foo; }",
 			},
 		})
@@ -561,7 +561,7 @@ func TestDBChanges(t *testing.T) {
 
 		return test{
 			db: d,
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"filter": "foo/bar",
 			}),
 			wantChanges: []driver.Change{
@@ -581,7 +581,7 @@ func TestDBChanges(t *testing.T) {
 		wantErr:    `filter=_view requires 'view' parameter`,
 	})
 	tests.Add("filter=_view with invalid view", test{
-		options: kivik.Params(map[string]interface{}{
+		options: kivik.Params(map[string]any{
 			"filter": "_view",
 			"view":   3,
 		}),
@@ -589,7 +589,7 @@ func TestDBChanges(t *testing.T) {
 		wantErr:    `'view' must be of the form 'designname/filtername'`,
 	})
 	tests.Add("filter=_view ddoc does not exist", test{
-		options: kivik.Params(map[string]interface{}{
+		options: kivik.Params(map[string]any{
 			"filter": "_view",
 			"view":   "foo/qux",
 		}),
@@ -599,14 +599,14 @@ func TestDBChanges(t *testing.T) {
 	tests.Add("filter=_view, view function does not exist", func(t *testing.T) any {
 		d := newDB(t)
 		_ = d.tPut("_design/foo", map[string]any{
-			"filters": map[string]interface{}{
+			"filters": map[string]any{
 				"bar": "function(doc, req) { return doc.foo; }",
 			},
 		})
 
 		return test{
 			db: d,
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"filter": "_view",
 				"view":   "foo/qux",
 			}),
@@ -617,7 +617,7 @@ func TestDBChanges(t *testing.T) {
 	tests.Add("filter=_view with view function", func(t *testing.T) any {
 		d := newDB(t)
 		_ = d.tPut("_design/foo", map[string]any{
-			"views": map[string]interface{}{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -633,7 +633,7 @@ func TestDBChanges(t *testing.T) {
 
 		return test{
 			db: d,
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"filter": "_view",
 				"view":   "foo/bar",
 			}),
@@ -748,7 +748,7 @@ func TestDBChanges_longpoll_context_cancellation_during_iteration(t *testing.T) 
 
 	// Start the changes feed, with feed=longpoll&since=now to block until
 	// another change is made.
-	feed, err := db.Changes(ctx, kivik.Params(map[string]interface{}{
+	feed, err := db.Changes(ctx, kivik.Params(map[string]any{
 		"feed":  "longpoll",
 		"since": "now",
 	}))
@@ -793,7 +793,7 @@ func TestDBChanges_longpoll(t *testing.T) {
 
 	// Start the changes feed, with feed=longpoll&since=now to block until
 	// another change is made.
-	feed, err := db.Changes(context.Background(), kivik.Params(map[string]interface{}{
+	feed, err := db.Changes(context.Background(), kivik.Params(map[string]any{
 		"feed":  "longpoll",
 		"since": "now",
 	}))
@@ -809,7 +809,7 @@ func TestDBChanges_longpoll(t *testing.T) {
 	// Make a change to the database after a short delay
 	go func() {
 		time.Sleep(100 * time.Millisecond)
-		rev, err := db.Put(context.Background(), "doc2", interface{}(map[string]string{"foo": "bar"}), mock.NilOption)
+		rev, err := db.Put(context.Background(), "doc2", any(map[string]string{"foo": "bar"}), mock.NilOption)
 		if err != nil {
 			panic(fmt.Sprintf("Failed to put doc: %s", err))
 		}
@@ -866,7 +866,7 @@ func TestDBChanges_longpoll_include_docs(t *testing.T) {
 
 	// Start the changes feed, with feed=longpoll&since=now to block until
 	// another change is made.
-	feed, err := db.Changes(context.Background(), kivik.Params(map[string]interface{}{
+	feed, err := db.Changes(context.Background(), kivik.Params(map[string]any{
 		"feed":         "longpoll",
 		"since":        "now",
 		"include_docs": true,
@@ -938,7 +938,7 @@ func TestDBChanges_longpoll_include_docs_and_attachments(t *testing.T) {
 
 	// Start the changes feed, with feed=longpoll&since=now to block until
 	// another change is made.
-	feed, err := db.Changes(context.Background(), kivik.Params(map[string]interface{}{
+	feed, err := db.Changes(context.Background(), kivik.Params(map[string]any{
 		"feed":         "longpoll",
 		"attachments":  true,
 		"since":        "now",
@@ -957,7 +957,7 @@ func TestDBChanges_longpoll_include_docs_and_attachments(t *testing.T) {
 	go func() {
 		time.Sleep(100 * time.Millisecond)
 		mu.Lock()
-		rev2 = db.tPut("doc1", map[string]interface{}{
+		rev2 = db.tPut("doc1", map[string]any{
 			"_attachments": newAttachments().
 				add("text.txt", "boring text").
 				add("text2.txt", "more boring text"),
@@ -1014,7 +1014,7 @@ func TestDBChanges_longpoll_include_docs_with_attachment_stubs(t *testing.T) {
 
 	// Start the changes feed, with feed=longpoll&since=now to block until
 	// another change is made.
-	feed, err := db.Changes(context.Background(), kivik.Params(map[string]interface{}{
+	feed, err := db.Changes(context.Background(), kivik.Params(map[string]any{
 		"feed":         "longpoll",
 		"since":        "now",
 		"include_docs": true,
@@ -1032,7 +1032,7 @@ func TestDBChanges_longpoll_include_docs_with_attachment_stubs(t *testing.T) {
 	go func() {
 		time.Sleep(100 * time.Millisecond)
 		mu.Lock()
-		rev2 = db.tPut("doc1", map[string]interface{}{
+		rev2 = db.tPut("doc1", map[string]any{
 			"_attachments": newAttachments().
 				add("text.txt", "boring text").
 				add("text2.txt", "more boring text"),
@@ -1088,7 +1088,7 @@ func Test_normal_changes_query(t *testing.T) {
 	filename1, filename2 := "text.txt", "text2.txt"
 
 	d := newDB(t)
-	rev := d.tPut("doc1", map[string]interface{}{
+	rev := d.tPut("doc1", map[string]any{
 		"_attachments": newAttachments().
 			add(filename1, "boring text").
 			add(filename2, "more boring text"),
@@ -1143,7 +1143,7 @@ func Test_normal_changes_query_without_docs(t *testing.T) {
 	filename1, filename2 := "text.txt", "text2.txt"
 
 	d := newDB(t)
-	rev := d.tPut("doc1", map[string]interface{}{
+	rev := d.tPut("doc1", map[string]any{
 		"_attachments": newAttachments().
 			add(filename1, "boring text").
 			add(filename2, "more boring text"),
@@ -1204,7 +1204,7 @@ func Test_longpoll_changes_query(t *testing.T) {
 	}
 
 	// Create a change
-	rev := d.tPut("doc1", map[string]interface{}{
+	rev := d.tPut("doc1", map[string]any{
 		"_attachments": newAttachments().
 			add(filename1, "boring text").
 			add(filename2, "more boring text"),
@@ -1265,7 +1265,7 @@ func Test_longpoll_changes_query_without_docs(t *testing.T) {
 	}
 
 	// Create a change
-	rev := d.tPut("doc1", map[string]interface{}{
+	rev := d.tPut("doc1", map[string]any{
 		"_attachments": newAttachments().
 			add(filename1, "boring text").
 			add(filename2, "more boring text"),
@@ -1316,7 +1316,7 @@ func TestDBChanges_continuous(t *testing.T) {
 
 	_ = db.tPut("doc1", map[string]string{"foo": "bar"})
 
-	feed, err := db.Changes(context.Background(), kivik.Params(map[string]interface{}{
+	feed, err := db.Changes(context.Background(), kivik.Params(map[string]any{
 		"feed":  "continuous",
 		"since": "now",
 	}))

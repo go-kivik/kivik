@@ -17,7 +17,9 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -48,9 +50,9 @@ type Revision struct {
 	RevMeta
 
 	// Data is the normal payload
-	Data map[string]interface{} `json:"-" yaml:"-"`
+	Data map[string]any `json:"-" yaml:"-"`
 
-	options map[string]interface{}
+	options map[string]any
 }
 
 // UnmarshalJSON satisfies the json.Unmarshaler interface.
@@ -65,14 +67,14 @@ func (r *Revision) UnmarshalJSON(p []byte) error {
 }
 
 // UnmarshalYAML satisfies the yaml.Unmarshaler interface.
-func (r *Revision) UnmarshalYAML(u func(interface{}) error) error {
+func (r *Revision) UnmarshalYAML(u func(any) error) error {
 	if err := u(&r.RevMeta); err != nil {
 		return err
 	}
 	if err := u(&r.Data); err != nil {
 		return err
 	}
-	r.Data = dyno.ConvertMapI2MapS(r.Data).(map[string]interface{})
+	r.Data = dyno.ConvertMapI2MapS(r.Data).(map[string]any)
 	return r.finalizeUnmarshal()
 }
 
@@ -110,7 +112,7 @@ func (r *Revision) finalizeUnmarshal() error {
 
 // MarshalJSON satisfies the json.Marshaler interface
 func (r *Revision) MarshalJSON() ([]byte, error) {
-	var meta interface{} = r.RevMeta
+	var meta any = r.RevMeta
 	revs, _ := r.options["revs"].(bool)
 	if _, ok := r.options["rev"]; ok {
 		revs = false
@@ -158,7 +160,7 @@ func (r *Revision) stubFollows() (bool, bool) {
 func (r *Revision) openAttachment(filename string) (filesystem.File, error) {
 	path := strings.TrimSuffix(r.path, filepath.Ext(r.path))
 	f, err := r.fs.Open(filepath.Join(path, filename))
-	if !os.IsNotExist(err) {
+	if !errors.Is(err, fs.ErrNotExist) {
 		return f, err
 	}
 	basename := filepath.Base(path)
@@ -170,7 +172,7 @@ func (r *Revision) openAttachment(filename string) (filesystem.File, error) {
 	for _, rev := range r.RevHistory.Ancestors() {
 		fullpath := filepath.Join(path, rev, filename)
 		f, err := r.fs.Open(fullpath)
-		if !os.IsNotExist(err) {
+		if !errors.Is(err, fs.ErrNotExist) {
 			return f, err
 		}
 	}
@@ -215,7 +217,7 @@ func (r *Revision) Delete(context.Context) error {
 }
 
 // NewRevision creates a new revision from i, according to opts.
-func (fs *FS) NewRevision(i interface{}) (*Revision, error) {
+func (fs *FS) NewRevision(i any) (*Revision, error) {
 	data, err := json.Marshal(i)
 	if err != nil {
 		return nil, statusError{status: http.StatusBadRequest, error: err}
@@ -259,7 +261,7 @@ func (r *Revision) persist(ctx context.Context, path string) error {
 	}
 	f := atomicFileWriter(r.fs, path+".json")
 	defer f.Close() // nolint: errcheck
-	r.options = map[string]interface{}{"revs": true}
+	r.options = map[string]any{"revs": true}
 	if err := json.NewEncoder(f).Encode(r); err != nil {
 		return err
 	}

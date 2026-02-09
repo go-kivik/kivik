@@ -243,7 +243,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.mux.ServeHTTP(w, r)
 }
 
-func serveJSON(w http.ResponseWriter, status int, payload interface{}) error {
+func serveJSON(w http.ResponseWriter, status int, payload any) error {
 	body, err := json.Marshal(payload)
 	if err != nil {
 		return err
@@ -262,7 +262,7 @@ func (s *Server) notImplemented() httpe.HandlerWithError {
 
 func options(r *http.Request) kivik.Option {
 	query := r.URL.Query()
-	params := make(map[string]interface{}, len(query))
+	params := make(map[string]any, len(query))
 	for k := range query {
 		params[k] = query.Get(k)
 	}
@@ -280,7 +280,7 @@ func (s *Server) allDBs() httpe.HandlerWithError {
 	})
 }
 
-func (s *Server) conf(ctx context.Context, section, key string, target interface{}) error {
+func (s *Server) conf(ctx context.Context, section, key string, target any) error {
 	value, err := s.config.Key(ctx, section, key)
 	if err != nil {
 		return err

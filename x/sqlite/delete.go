@@ -30,7 +30,7 @@ func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (
 		return "", &internal.Error{Status: http.StatusConflict, Message: "document update conflict"}
 	}
 
-	data, err := prepareDoc(docID, map[string]interface{}{"_deleted": true})
+	data, err := prepareDoc(docID, map[string]any{"_deleted": true})
 	if err != nil {
 		return "", err
 	}

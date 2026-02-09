@@ -18,10 +18,10 @@ import (
 
 // document represents any CouchDB document.
 type document struct {
-	ID          string                 `json:"_id"`
-	Rev         string                 `json:"_rev"`
-	Attachments *Attachments           `json:"_attachments,omitempty"`
-	Data        map[string]interface{} `json:"-"`
+	ID          string         `json:"_id"`
+	Rev         string         `json:"_rev"`
+	Attachments *Attachments   `json:"_attachments,omitempty"`
+	Data        map[string]any `json:"-"`
 }
 
 // MarshalJSON satisfies the json.Marshaler interface
@@ -49,7 +49,7 @@ func (d *document) UnmarshalJSON(p []byte) error {
 	if err := json.Unmarshal(p, &doc); err != nil {
 		return err
 	}
-	data := make(map[string]interface{})
+	data := make(map[string]any)
 	if err := json.Unmarshal(p, &data); err != nil {
 		return err
 	}

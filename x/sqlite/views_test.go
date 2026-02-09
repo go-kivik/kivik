@@ -52,7 +52,7 @@ func TestDBAllDocs(t *testing.T) {
 	tests.Add("no docs in db", test{
 		want: nil,
 	})
-	tests.Add("single doc", func(t *testing.T) interface{} {
+	tests.Add("single doc", func(t *testing.T) any {
 		db := newDB(t)
 		rev := db.tPut("foo", map[string]string{"cat": "meow"})
 
@@ -67,7 +67,7 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("include_docs=true", func(t *testing.T) interface{} {
+	tests.Add("include_docs=true", func(t *testing.T) any {
 		db := newDB(t)
 		rev := db.tPut("foo", map[string]string{"cat": "meow"})
 
@@ -84,7 +84,7 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("single doc multiple revisions", func(t *testing.T) interface{} {
+	tests.Add("single doc multiple revisions", func(t *testing.T) any {
 		db := newDB(t)
 		rev := db.tPut("foo", map[string]string{"cat": "meow"})
 		rev2 := db.tPut("foo", map[string]string{"cat": "purr"}, kivik.Rev(rev))
@@ -100,7 +100,7 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("conflicting document, select winning rev", func(t *testing.T) interface{} {
+	tests.Add("conflicting document, select winning rev", func(t *testing.T) any {
 		db := newDB(t)
 		_ = db.tPut("foo", map[string]string{
 			"cat":  "meow",
@@ -122,7 +122,7 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("deleted doc", func(t *testing.T) interface{} {
+	tests.Add("deleted doc", func(t *testing.T) any {
 		db := newDB(t)
 		rev := db.tPut("foo", map[string]string{"cat": "meow"})
 		_ = db.tDelete("foo", kivik.Rev(rev))
@@ -132,7 +132,7 @@ func TestDBAllDocs(t *testing.T) {
 			want: nil,
 		}
 	})
-	tests.Add("select lower revision number when higher rev in winning branch has been deleted", func(t *testing.T) interface{} {
+	tests.Add("select lower revision number when higher rev in winning branch has been deleted", func(t *testing.T) any {
 		db := newDB(t)
 		_ = db.tPut("foo", map[string]string{
 			"cat":  "meow",
@@ -155,7 +155,7 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("conflicts=true", func(t *testing.T) interface{} {
+	tests.Add("conflicts=true", func(t *testing.T) any {
 		db := newDB(t)
 		_ = db.tPut("foo", map[string]string{
 			"cat":  "meow",
@@ -168,7 +168,7 @@ func TestDBAllDocs(t *testing.T) {
 
 		return test{
 			db: db,
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"conflicts":    true,
 				"include_docs": true,
 			}),
@@ -182,7 +182,7 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("conflicts=true ignored without include_docs", func(t *testing.T) interface{} {
+	tests.Add("conflicts=true ignored without include_docs", func(t *testing.T) any {
 		db := newDB(t)
 		_ = db.tPut("foo", map[string]string{
 			"cat":  "meow",
@@ -195,7 +195,7 @@ func TestDBAllDocs(t *testing.T) {
 
 		return test{
 			db: db,
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"conflicts": true,
 			}),
 			want: []rowResult{
@@ -207,7 +207,7 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("default sorting", func(t *testing.T) interface{} {
+	tests.Add("default sorting", func(t *testing.T) any {
 		db := newDB(t)
 		rev1 := db.tPut("cat", map[string]string{
 			"cat": "meow",
@@ -240,7 +240,7 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("descending=true", func(t *testing.T) interface{} {
+	tests.Add("descending=true", func(t *testing.T) any {
 		db := newDB(t)
 		rev1 := db.tPut("cat", map[string]string{
 			"cat": "meow",
@@ -274,7 +274,7 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("endkey", func(t *testing.T) interface{} {
+	tests.Add("endkey", func(t *testing.T) any {
 		db := newDB(t)
 		rev1 := db.tPut("cat", map[string]string{
 			"cat": "meow",
@@ -303,7 +303,7 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("descending=true, endkey", func(t *testing.T) interface{} {
+	tests.Add("descending=true, endkey", func(t *testing.T) any {
 		db := newDB(t)
 		_ = db.tPut("cat", map[string]string{
 			"cat": "meow",
@@ -317,7 +317,7 @@ func TestDBAllDocs(t *testing.T) {
 
 		return test{
 			db: db,
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"endkey":     "cow",
 				"descending": true,
 			}),
@@ -335,7 +335,7 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("end_key", func(t *testing.T) interface{} {
+	tests.Add("end_key", func(t *testing.T) any {
 		db := newDB(t)
 		rev1 := db.tPut("cat", map[string]string{
 			"cat": "meow",
@@ -364,7 +364,7 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("endkey, inclusive_end=false", func(t *testing.T) interface{} {
+	tests.Add("endkey, inclusive_end=false", func(t *testing.T) any {
 		db := newDB(t)
 		rev1 := db.tPut("cat", map[string]string{
 			"cat": "meow",
@@ -378,7 +378,7 @@ func TestDBAllDocs(t *testing.T) {
 
 		return test{
 			db: db,
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"endkey":        "cow",
 				"inclusive_end": false,
 			}),
@@ -391,7 +391,7 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("startkey", func(t *testing.T) interface{} {
+	tests.Add("startkey", func(t *testing.T) any {
 		db := newDB(t)
 		_ = db.tPut("cat", map[string]string{
 			"cat": "meow",
@@ -420,7 +420,7 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("start_key", func(t *testing.T) interface{} {
+	tests.Add("start_key", func(t *testing.T) any {
 		db := newDB(t)
 		_ = db.tPut("cat", map[string]string{
 			"cat": "meow",
@@ -449,7 +449,7 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("startkey, descending", func(t *testing.T) interface{} {
+	tests.Add("startkey, descending", func(t *testing.T) any {
 		db := newDB(t)
 		rev1 := db.tPut("cat", map[string]string{
 			"cat": "meow",
@@ -463,7 +463,7 @@ func TestDBAllDocs(t *testing.T) {
 
 		return test{
 			db: db,
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"startkey":   "cow",
 				"descending": true,
 			}),
@@ -481,7 +481,7 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("limit=2 returns first two documents only", func(t *testing.T) interface{} {
+	tests.Add("limit=2 returns first two documents only", func(t *testing.T) any {
 		d := newDB(t)
 		rev1 := d.tPut("cat", map[string]string{"cat": "meow"})
 		_ = d.tPut("dog", map[string]string{"dog": "woof"})
@@ -504,7 +504,7 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("skip=2 skips first two documents", func(t *testing.T) interface{} {
+	tests.Add("skip=2 skips first two documents", func(t *testing.T) any {
 		d := newDB(t)
 		_ = d.tPut("cat", map[string]string{"cat": "meow"})
 		rev2 := d.tPut("dog", map[string]string{"dog": "woof"})
@@ -522,7 +522,7 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("limit=1,skip=1 skips 1, limits 1", func(t *testing.T) interface{} {
+	tests.Add("limit=1,skip=1 skips 1, limits 1", func(t *testing.T) any {
 		d := newDB(t)
 		_ = d.tPut("cat", map[string]string{"cat": "meow"})
 		_ = d.tPut("dog", map[string]string{"dog": "woof"})
@@ -530,7 +530,7 @@ func TestDBAllDocs(t *testing.T) {
 
 		return test{
 			db:      d,
-			options: kivik.Params(map[string]interface{}{"limit": 1, "skip": 1}),
+			options: kivik.Params(map[string]any{"limit": 1, "skip": 1}),
 			want: []rowResult{
 				{
 					ID:    "cow",
@@ -540,7 +540,7 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("local docs excluded", func(t *testing.T) interface{} {
+	tests.Add("local docs excluded", func(t *testing.T) any {
 		d := newDB(t)
 		rev := d.tPut("cat", map[string]string{"cat": "meow"})
 		_ = d.tPut("_local/dog", map[string]string{"dog": "woof"})
@@ -563,12 +563,12 @@ func TestDBAllDocs(t *testing.T) {
 		}
 	})
 	tests.Add("invalid limit value", test{
-		options:    kivik.Params(map[string]interface{}{"limit": "chicken"}),
+		options:    kivik.Params(map[string]any{"limit": "chicken"}),
 		wantErr:    "invalid value for 'limit': chicken",
 		wantStatus: http.StatusBadRequest,
 	})
 	tests.Add("invalid skip value", test{
-		options:    kivik.Params(map[string]interface{}{"skip": "chicken"}),
+		options:    kivik.Params(map[string]any{"skip": "chicken"}),
 		wantErr:    "invalid value for 'skip': chicken",
 		wantStatus: http.StatusBadRequest,
 	})
@@ -577,7 +577,7 @@ func TestDBAllDocs(t *testing.T) {
 		wantErr:    "reduce is invalid for map-only views",
 		wantStatus: http.StatusBadRequest,
 	})
-	tests.Add("test collation order", func(t *testing.T) interface{} {
+	tests.Add("test collation order", func(t *testing.T) any {
 		d := newDB(t)
 		rev := d.tPut("~", map[string]string{})
 		rev2 := d.tPut("a", map[string]string{})
@@ -598,7 +598,7 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("return unsorted results", func(t *testing.T) interface{} {
+	tests.Add("return unsorted results", func(t *testing.T) any {
 		d := newDB(t)
 		// Returned results are implicitly ordered, due to the ordering of
 		// the index on the `id` column for joins. So we need to insert
@@ -607,9 +607,9 @@ func TestDBAllDocs(t *testing.T) {
 		// ASCII, ~ comes after the alphabet, in UCI it comes first.  So we
 		// expect it to come after, with implicit ordering, or after, with
 		// explicit. Comment out the options line below to see the difference.
-		rev1 := d.tPut("~", map[string]interface{}{"key": "~", "value": 3})
-		rev2 := d.tPut("b", map[string]interface{}{"key": "b", "value": 2})
-		rev3 := d.tPut("a", map[string]interface{}{"key": "a", "value": 1})
+		rev1 := d.tPut("~", map[string]any{"key": "~", "value": 3})
+		rev2 := d.tPut("b", map[string]any{"key": "b", "value": 2})
+		rev3 := d.tPut("a", map[string]any{"key": "a", "value": 1})
 
 		return test{
 			db:      d,
@@ -621,10 +621,10 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("support fetching specific key", func(t *testing.T) interface{} {
+	tests.Add("support fetching specific key", func(t *testing.T) any {
 		d := newDB(t)
-		rev2 := d.tPut("b", map[string]interface{}{"key": "b", "value": 2})
-		_ = d.tPut("a", map[string]interface{}{"key": "a", "value": 1})
+		rev2 := d.tPut("b", map[string]any{"key": "b", "value": 2})
+		_ = d.tPut("a", map[string]any{"key": "a", "value": 1})
 
 		return test{
 			db:      d,
@@ -634,11 +634,11 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("support fetching multiple specific keys", func(t *testing.T) interface{} {
+	tests.Add("support fetching multiple specific keys", func(t *testing.T) any {
 		d := newDB(t)
-		rev1 := d.tPut("a", map[string]interface{}{"key": "a", "value": 1})
-		rev2 := d.tPut("b", map[string]interface{}{"key": "b", "value": 2})
-		_ = d.tPut("c", map[string]interface{}{"key": "c", "value": 3})
+		rev1 := d.tPut("a", map[string]any{"key": "a", "value": 1})
+		rev2 := d.tPut("b", map[string]any{"key": "b", "value": 2})
+		_ = d.tPut("c", map[string]any{"key": "c", "value": 3})
 
 		return test{
 			db:      d,
@@ -659,15 +659,15 @@ func TestDBAllDocs(t *testing.T) {
 		wantErr:    "group_level is invalid for map-only views",
 		wantStatus: http.StatusBadRequest,
 	})
-	tests.Add("fetch attachments", func(t *testing.T) interface{} {
+	tests.Add("fetch attachments", func(t *testing.T) any {
 		d := newDB(t)
-		rev1 := d.tPut("a", map[string]interface{}{
+		rev1 := d.tPut("a", map[string]any{
 			"_attachments": newAttachments().add("foo.txt", "This is a base64 encoding"),
 		})
 
 		return test{
 			db: d,
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"include_docs": true,
 				"attachments":  true,
 			}),
@@ -681,15 +681,15 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("document has attachment, but attachments=false", func(t *testing.T) interface{} {
+	tests.Add("document has attachment, but attachments=false", func(t *testing.T) any {
 		d := newDB(t)
-		rev1 := d.tPut("a", map[string]interface{}{
+		rev1 := d.tPut("a", map[string]any{
 			"_attachments": newAttachments().add("foo.txt", "This is a base64 encoding"),
 		})
 
 		return test{
 			db: d,
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"include_docs": true,
 				"attachments":  false,
 			}),
@@ -703,9 +703,9 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("doc with two attachments", func(t *testing.T) interface{} {
+	tests.Add("doc with two attachments", func(t *testing.T) any {
 		d := newDB(t)
-		rev1 := d.tPut("a", map[string]interface{}{
+		rev1 := d.tPut("a", map[string]any{
 			"_attachments": newAttachments().
 				add("foo.txt", "This is a base64 encoding").
 				add("bar.txt", "This is also base64 encoded"),
@@ -713,7 +713,7 @@ func TestDBAllDocs(t *testing.T) {
 
 		return test{
 			db: d,
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"include_docs": true,
 			}),
 			want: []rowResult{

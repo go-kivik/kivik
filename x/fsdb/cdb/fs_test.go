@@ -112,7 +112,7 @@ func TestFSOpenDocID(t *testing.T) {
 		if err != nil {
 			return
 		}
-		result.Options = map[string]interface{}{
+		result.Options = map[string]any{
 			"revs":          true,
 			"attachments":   true,
 			"header:accept": "application/json",
@@ -132,7 +132,7 @@ func TestRestoreAttachments(t *testing.T) {
 	tests := testy.NewTable()
 	tests.Add("missing attachment", tt{
 		r: &Revision{
-			options: map[string]interface{}{
+			options: map[string]any{
 				"attachments": true,
 			},
 			RevMeta: RevMeta{

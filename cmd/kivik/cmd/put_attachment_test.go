@@ -34,7 +34,7 @@ func Test_put_attachment_RunE(t *testing.T) {
 		args:   []string{"--debug", "put", "att", "http://localhost:1/foo/bar/foo.txt", "-d", "Testing"},
 		status: errors.ErrUnavailable,
 	})
-	tests.Add("json data string", func(t *testing.T) interface{} {
+	tests.Add("json data string", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"status":"ok"}`)),
 		}, gunzip(checkRequest))
@@ -43,7 +43,7 @@ func Test_put_attachment_RunE(t *testing.T) {
 			args: []string{"--debug", "put", "att", s.URL + "/foo/bar/foo.txt", "--data", `Testing`},
 		}
 	})
-	tests.Add("stdin", func(t *testing.T) interface{} {
+	tests.Add("stdin", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"status":"ok"}`)),
 		}, gunzip(checkRequest))
@@ -53,7 +53,7 @@ func Test_put_attachment_RunE(t *testing.T) {
 			stdin: `Testing`,
 		}
 	})
-	tests.Add("data file", func(t *testing.T) interface{} {
+	tests.Add("data file", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"status":"ok"}`)),
 		}, gunzip(checkRequest))

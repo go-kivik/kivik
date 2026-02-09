@@ -14,6 +14,7 @@ package cdb
 
 import (
 	"errors"
+	"io/fs"
 	"net/http"
 	"os"
 )
@@ -27,7 +28,7 @@ var (
 // missing transforms a NotExist error into a standard CouchDBesque 'missing'
 // error. All other values are passed through unaltered.
 func missing(err error) error {
-	if !os.IsNotExist(err) {
+	if !errors.Is(err, fs.ErrNotExist) {
 		return err
 	}
 	return errNotFound
@@ -41,7 +42,7 @@ func kerr(err error) error {
 		// Error has already been converted
 		return err
 	}
-	if os.IsNotExist(err) {
+	if errors.Is(err, fs.ErrNotExist) {
 		return statusError{status: http.StatusNotFound, error: err}
 	}
 	if os.IsPermission(err) {

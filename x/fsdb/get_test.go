@@ -52,7 +52,7 @@ func TestGet(t *testing.T) {
 		status: http.StatusNotFound,
 		err:    `^missing$`,
 	})
-	tests.Add("forbidden", func(*testing.T) interface{} {
+	tests.Add("forbidden", func(*testing.T) any {
 		return tt{
 			fs: &filesystem.MockFS{
 				OpenFunc: func(_ string) (filesystem.File, error) {
@@ -94,7 +94,7 @@ func TestGet(t *testing.T) {
 		path:   "testdata",
 		dbname: "db_foo",
 		id:     "withattach",
-		options: kivik.Params(map[string]interface{}{
+		options: kivik.Params(map[string]any{
 			"attachments":   true,
 			"header:accept": "application/json",
 		}),
@@ -268,7 +268,7 @@ func TestGet(t *testing.T) {
 		path:   "testdata",
 		dbname: "db_foo",
 		id:     "yamltest",
-		options: kivik.Params(map[string]interface{}{
+		options: kivik.Params(map[string]any{
 			"rev":       "3-",
 			"revs_info": true,
 		}),
@@ -280,7 +280,7 @@ func TestGet(t *testing.T) {
 		path:   "testdata",
 		dbname: "db_foo",
 		id:     "yamltest",
-		options: kivik.Params(map[string]interface{}{
+		options: kivik.Params(map[string]any{
 			"rev":       "2-xxx",
 			"revs_info": true,
 		}),
@@ -292,7 +292,7 @@ func TestGet(t *testing.T) {
 		path:   "testdata",
 		dbname: "db_foo",
 		id:     "withrevs",
-		options: kivik.Params(map[string]interface{}{
+		options: kivik.Params(map[string]any{
 			"rev":  "8-asdf",
 			"revs": true,
 		}),

@@ -100,6 +100,7 @@ func (c *client) schedulerSupported(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	defer chttp.CloseBody(resp.Body)
 	var supported bool
 	switch resp.StatusCode {
 	case http.StatusBadRequest:
@@ -224,7 +225,7 @@ func (r *schedulerReplication) update(ctx context.Context) error {
 	return nil
 }
 
-func (c *client) getReplicationsFromScheduler(ctx context.Context, opts map[string]interface{}) ([]driver.Replication, error) {
+func (c *client) getReplicationsFromScheduler(ctx context.Context, opts map[string]any) ([]driver.Replication, error) {
 	params, err := optionsToParams(opts)
 	if err != nil {
 		return nil, err

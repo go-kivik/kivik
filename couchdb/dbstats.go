@@ -100,7 +100,7 @@ func (c *client) DBsStats(_ context.Context, dbnames []string) ([]*driver.DBStat
 }
 
 func (c *client) AllDBsStats(ctx context.Context, options driver.Options) ([]*driver.DBStats, error) {
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 	chttpOpts := &chttp.Options{
 		Header: http.Header{

@@ -35,7 +35,7 @@ func TestDBGet(t *testing.T) {
 		db         driver.DB
 		id         string
 		options    driver.Options
-		wantDoc    interface{}
+		wantDoc    any
 		wantStatus int
 		wantErr    string
 	}
@@ -45,7 +45,7 @@ func TestDBGet(t *testing.T) {
 		wantStatus: http.StatusNotFound,
 		wantErr:    "not found",
 	})
-	tests.Add("success", func(t *testing.T) interface{} {
+	tests.Add("success", func(t *testing.T) any {
 		db := newDB(t)
 		rev := db.tPut("foo", map[string]string{"foo": "bar"})
 
@@ -59,7 +59,7 @@ func TestDBGet(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("get specific rev", func(t *testing.T) interface{} {
+	tests.Add("get specific rev", func(t *testing.T) any {
 		db := newDB(t)
 		rev := db.tPut("foo", map[string]string{"foo": "bar"})
 		_ = db.tPut("foo", map[string]string{"foo": "baz"}, kivik.Rev(rev))
@@ -81,13 +81,13 @@ func TestDBGet(t *testing.T) {
 		wantStatus: http.StatusNotFound,
 		wantErr:    "not found",
 	})
-	tests.Add("include conflicts", func(t *testing.T) interface{} {
+	tests.Add("include conflicts", func(t *testing.T) any {
 		db := newDB(t)
-		_ = db.tPut("foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]any{
 			"new_edits": false,
 			"rev":       "1-abc",
 		}))
-		_ = db.tPut("foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]any{
 			"new_edits": false,
 			"rev":       "1-xyz",
 		}))
@@ -96,7 +96,7 @@ func TestDBGet(t *testing.T) {
 			db:      db,
 			id:      "foo",
 			options: kivik.Param("conflicts", true),
-			wantDoc: map[string]interface{}{
+			wantDoc: map[string]any{
 				"_id":        "foo",
 				"_rev":       "1-xyz",
 				"foo":        "baz",
@@ -104,13 +104,13 @@ func TestDBGet(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("include only leaf conflicts", func(t *testing.T) interface{} {
+	tests.Add("include only leaf conflicts", func(t *testing.T) any {
 		db := newDB(t)
-		_ = db.tPut("foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]any{
 			"new_edits": false,
 			"rev":       "1-abc",
 		}))
-		_ = db.tPut("foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]any{
 			"new_edits": false,
 			"rev":       "1-xyz",
 		}))
@@ -120,7 +120,7 @@ func TestDBGet(t *testing.T) {
 			db:      db,
 			id:      "foo",
 			options: kivik.Param("conflicts", true),
-			wantDoc: map[string]interface{}{
+			wantDoc: map[string]any{
 				"_id":        "foo",
 				"_rev":       rev,
 				"foo":        "qux",
@@ -128,7 +128,7 @@ func TestDBGet(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("deleted document", func(t *testing.T) interface{} {
+	tests.Add("deleted document", func(t *testing.T) any {
 		db := newDB(t)
 		rev := db.tPut("foo", map[string]string{"foo": "bar"})
 		_ = db.tDelete("foo", kivik.Rev(rev))
@@ -140,7 +140,7 @@ func TestDBGet(t *testing.T) {
 			wantErr:    "not found",
 		}
 	})
-	tests.Add("deleted document by rev", func(t *testing.T) interface{} {
+	tests.Add("deleted document by rev", func(t *testing.T) any {
 		db := newDB(t)
 		rev := db.tPut("foo", map[string]string{"foo": "bar"})
 		rev = db.tDelete("foo", kivik.Rev(rev))
@@ -149,22 +149,22 @@ func TestDBGet(t *testing.T) {
 			db:      db,
 			id:      "foo",
 			options: kivik.Rev(rev),
-			wantDoc: map[string]interface{}{
+			wantDoc: map[string]any{
 				"_id":      "foo",
 				"_rev":     rev,
 				"_deleted": true,
 			},
 		}
 	})
-	tests.Add("deleted document with data by rev", func(t *testing.T) interface{} {
+	tests.Add("deleted document with data by rev", func(t *testing.T) any {
 		db := newDB(t)
-		rev := db.tPut("foo", map[string]interface{}{"_deleted": true, "foo": "bar"})
+		rev := db.tPut("foo", map[string]any{"_deleted": true, "foo": "bar"})
 
 		return test{
 			db:      db,
 			id:      "foo",
 			options: kivik.Rev(rev),
-			wantDoc: map[string]interface{}{
+			wantDoc: map[string]any{
 				"_id":      "foo",
 				"_rev":     rev,
 				"_deleted": true,
@@ -172,17 +172,17 @@ func TestDBGet(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("include conflicts, skip deleted conflicts", func(t *testing.T) interface{} {
+	tests.Add("include conflicts, skip deleted conflicts", func(t *testing.T) any {
 		db := newDB(t)
-		_ = db.tPut("foo", map[string]interface{}{"foo": "moo", "_deleted": true}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{"foo": "moo", "_deleted": true}, kivik.Params(map[string]any{
 			"new_edits": false,
 			"rev":       "1-qwe",
 		}))
-		_ = db.tPut("foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]any{
 			"new_edits": false,
 			"rev":       "1-abc",
 		}))
-		_ = db.tPut("foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]any{
 			"new_edits": false,
 			"rev":       "1-xyz",
 		}))
@@ -192,7 +192,7 @@ func TestDBGet(t *testing.T) {
 			db:      db,
 			id:      "foo",
 			options: kivik.Param("conflicts", true),
-			wantDoc: map[string]interface{}{
+			wantDoc: map[string]any{
 				"_id":        "foo",
 				"_rev":       rev,
 				"foo":        "qux",
@@ -200,17 +200,17 @@ func TestDBGet(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("include deleted conflicts", func(t *testing.T) interface{} {
+	tests.Add("include deleted conflicts", func(t *testing.T) any {
 		db := newDB(t)
-		_ = db.tPut("foo", map[string]interface{}{"foo": "moo", "_deleted": true}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{"foo": "moo", "_deleted": true}, kivik.Params(map[string]any{
 			"new_edits": false,
 			"rev":       "1-qwe",
 		}))
-		_ = db.tPut("foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]any{
 			"new_edits": false,
 			"rev":       "1-abc",
 		}))
-		_ = db.tPut("foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]any{
 			"new_edits": false,
 			"rev":       "1-xyz",
 		}))
@@ -220,7 +220,7 @@ func TestDBGet(t *testing.T) {
 			db:      db,
 			id:      "foo",
 			options: kivik.Param("deleted_conflicts", true),
-			wantDoc: map[string]interface{}{
+			wantDoc: map[string]any{
 				"_id":                "foo",
 				"_rev":               rev,
 				"foo":                "qux",
@@ -228,17 +228,17 @@ func TestDBGet(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("include all conflicts", func(t *testing.T) interface{} {
+	tests.Add("include all conflicts", func(t *testing.T) any {
 		db := newDB(t)
-		_ = db.tPut("foo", map[string]interface{}{"foo": "moo", "_deleted": true}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{"foo": "moo", "_deleted": true}, kivik.Params(map[string]any{
 			"new_edits": false,
 			"rev":       "1-qwe",
 		}))
-		_ = db.tPut("foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]any{
 			"new_edits": false,
 			"rev":       "1-abc",
 		}))
-		_ = db.tPut("foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]any{
 			"new_edits": false,
 			"rev":       "1-xyz",
 		}))
@@ -247,11 +247,11 @@ func TestDBGet(t *testing.T) {
 		return test{
 			db: db,
 			id: "foo",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"conflicts":         true,
 				"deleted_conflicts": true,
 			}),
-			wantDoc: map[string]interface{}{
+			wantDoc: map[string]any{
 				"_id":                "foo",
 				"_rev":               rev,
 				"foo":                "qux",
@@ -260,17 +260,17 @@ func TestDBGet(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("include revs_info", func(t *testing.T) interface{} {
+	tests.Add("include revs_info", func(t *testing.T) any {
 		db := newDB(t)
-		_ = db.tPut("foo", map[string]interface{}{"foo": "moo", "_deleted": true}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{"foo": "moo", "_deleted": true}, kivik.Params(map[string]any{
 			"new_edits": false,
 			"rev":       "1-qwe",
 		}))
-		_ = db.tPut("foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]any{
 			"new_edits": false,
 			"rev":       "1-abc",
 		}))
-		_ = db.tPut("foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]any{
 			"new_edits": false,
 			"rev":       "1-xyz",
 		}))
@@ -279,10 +279,10 @@ func TestDBGet(t *testing.T) {
 		return test{
 			db: db,
 			id: "foo",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"revs_info": true,
 			}),
-			wantDoc: map[string]interface{}{
+			wantDoc: map[string]any{
 				"_id":  "foo",
 				"_rev": rev,
 				"foo":  "qux",
@@ -293,17 +293,17 @@ func TestDBGet(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("include meta", func(t *testing.T) interface{} {
+	tests.Add("include meta", func(t *testing.T) any {
 		db := newDB(t)
-		_ = db.tPut("foo", map[string]interface{}{"foo": "moo", "_deleted": true}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{"foo": "moo", "_deleted": true}, kivik.Params(map[string]any{
 			"new_edits": false,
 			"rev":       "1-qwe",
 		}))
-		_ = db.tPut("foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]string{"foo": "bar"}, kivik.Params(map[string]any{
 			"new_edits": false,
 			"rev":       "1-abc",
 		}))
-		_ = db.tPut("foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]string{"foo": "baz"}, kivik.Params(map[string]any{
 			"new_edits": false,
 			"rev":       "1-xyz",
 		}))
@@ -313,7 +313,7 @@ func TestDBGet(t *testing.T) {
 			db:      db,
 			id:      "foo",
 			options: kivik.Param("meta", true),
-			wantDoc: map[string]interface{}{
+			wantDoc: map[string]any{
 				"_id":  "foo",
 				"_rev": rev,
 				"foo":  "qux",
@@ -326,175 +326,175 @@ func TestDBGet(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("get latest winning leaf", func(t *testing.T) interface{} {
+	tests.Add("get latest winning leaf", func(t *testing.T) any {
 		db := newDB(t)
-		_ = db.tPut("foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]any{
 			"new_edits": false,
 		}))
-		_ = db.tPut("foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{
 			"foo": "bbb",
-			"_revisions": map[string]interface{}{
+			"_revisions": map[string]any{
 				"ids":   []string{"bbb", "aaa"},
 				"start": 2,
 			},
-		}, kivik.Params(map[string]interface{}{
+		}, kivik.Params(map[string]any{
 			"new_edits": false,
 		}))
-		_ = db.tPut("foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{
 			"foo": "ddd",
-			"_revisions": map[string]interface{}{
+			"_revisions": map[string]any{
 				"ids":   []string{"yyy", "aaa"},
 				"start": 2,
 			},
-		}, kivik.Params(map[string]interface{}{
+		}, kivik.Params(map[string]any{
 			"new_edits": false,
 		}))
 
 		return test{
 			db: db,
 			id: "foo",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"latest": true,
 				"rev":    "1-aaa",
 			}),
-			wantDoc: map[string]interface{}{
+			wantDoc: map[string]any{
 				"_id":  "foo",
 				"_rev": "2-yyy",
 				"foo":  "ddd",
 			},
 		}
 	})
-	tests.Add("get latest non-winning leaf", func(t *testing.T) interface{} {
+	tests.Add("get latest non-winning leaf", func(t *testing.T) any {
 		db := newDB(t)
 		// common root doc
-		_ = db.tPut("foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]any{
 			"new_edits": false,
 		}))
 		// losing branch
-		_ = db.tPut("foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{
 			"foo": "bbb",
-			"_revisions": map[string]interface{}{
+			"_revisions": map[string]any{
 				"ids":   []string{"ccc", "bbb", "aaa"},
 				"start": 3,
 			},
-		}, kivik.Params(map[string]interface{}{
+		}, kivik.Params(map[string]any{
 			"new_edits": false,
 		}))
 
 		// winning branch
-		_ = db.tPut("foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{
 			"foo": "ddd",
-			"_revisions": map[string]interface{}{
+			"_revisions": map[string]any{
 				"ids":   []string{"xxx", "yyy", "aaa"},
 				"start": 3,
 			},
-		}, kivik.Params(map[string]interface{}{
+		}, kivik.Params(map[string]any{
 			"new_edits": false,
 		}))
 
 		return test{
 			db: db,
 			id: "foo",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"latest": true,
 				"rev":    "2-bbb",
 			}),
-			wantDoc: map[string]interface{}{
+			wantDoc: map[string]any{
 				"_id":  "foo",
 				"_rev": "3-ccc",
 				"foo":  "bbb",
 			},
 		}
 	})
-	tests.Add("get latest rev with deleted leaf, reverts to the winning branch", func(t *testing.T) interface{} {
+	tests.Add("get latest rev with deleted leaf, reverts to the winning branch", func(t *testing.T) any {
 		db := newDB(t)
 		// common root doc
-		_ = db.tPut("foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]any{
 			"new_edits": false,
 		}))
 		// losing branch
-		_ = db.tPut("foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{
 			"foo": "bbb",
-			"_revisions": map[string]interface{}{
+			"_revisions": map[string]any{
 				"ids":   []string{"ccc", "bbb", "aaa"},
 				"start": 3,
 			},
-		}, kivik.Params(map[string]interface{}{
+		}, kivik.Params(map[string]any{
 			"new_edits": false,
 		}))
 		// now delete the losing leaf
 		_ = db.tDelete("foo", kivik.Rev("3-ccc"))
 
 		// winning branch
-		_ = db.tPut("foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{
 			"foo": "ddd",
-			"_revisions": map[string]interface{}{
+			"_revisions": map[string]any{
 				"ids":   []string{"xxx", "yyy", "aaa"},
 				"start": 3,
 			},
-		}, kivik.Params(map[string]interface{}{
+		}, kivik.Params(map[string]any{
 			"new_edits": false,
 		}))
 
 		return test{
 			db: db,
 			id: "foo",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"latest": true,
 				"rev":    "2-bbb",
 			}),
-			wantDoc: map[string]interface{}{
+			wantDoc: map[string]any{
 				"_id":  "foo",
 				"_rev": "3-xxx",
 				"foo":  "ddd",
 			},
 		}
 	})
-	tests.Add("revs=true, losing leaf", func(t *testing.T) interface{} {
+	tests.Add("revs=true, losing leaf", func(t *testing.T) any {
 		db := newDB(t)
-		_ = db.tPut("foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]any{
 			"new_edits": false,
 		}))
-		_ = db.tPut("foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{
 			"foo": "bbb",
-			"_revisions": map[string]interface{}{
+			"_revisions": map[string]any{
 				"ids":   []string{"bbb", "aaa"},
 				"start": 2,
 			},
-		}, kivik.Params(map[string]interface{}{
+		}, kivik.Params(map[string]any{
 			"new_edits": false,
 		}))
-		_ = db.tPut("foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{
 			"foo": "ddd",
-			"_revisions": map[string]interface{}{
+			"_revisions": map[string]any{
 				"ids":   []string{"yyy", "aaa"},
 				"start": 2,
 			},
-		}, kivik.Params(map[string]interface{}{
+		}, kivik.Params(map[string]any{
 			"new_edits": false,
 		}))
 
 		return test{
 			db: db,
 			id: "foo",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"revs": true,
 				"rev":  "2-bbb",
 			}),
-			wantDoc: map[string]interface{}{
+			wantDoc: map[string]any{
 				"_id":  "foo",
 				"_rev": "2-bbb",
 				"foo":  "bbb",
-				"_revisions": map[string]interface{}{
+				"_revisions": map[string]any{
 					"start": 2,
 					"ids":   []string{"bbb", "aaa"},
 				},
 			},
 		}
 	})
-	tests.Add("local_seq=true", func(t *testing.T) interface{} {
+	tests.Add("local_seq=true", func(t *testing.T) any {
 		db := newDB(t)
-		_ = db.tPut("foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]any{
 			"new_edits": false,
 		}))
 
@@ -502,7 +502,7 @@ func TestDBGet(t *testing.T) {
 			db:      db,
 			id:      "foo",
 			options: kivik.Param("local_seq", true),
-			wantDoc: map[string]interface{}{
+			wantDoc: map[string]any{
 				"_id":        "foo",
 				"_rev":       "1-aaa",
 				"foo":        "aaa",
@@ -510,17 +510,17 @@ func TestDBGet(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("local_seq=true & specified rev", func(t *testing.T) interface{} {
+	tests.Add("local_seq=true & specified rev", func(t *testing.T) any {
 		db := newDB(t)
-		_ = db.tPut("foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]any{
 			"new_edits": false,
 		}))
 
 		return test{
 			db:      db,
 			id:      "foo",
-			options: kivik.Params(map[string]interface{}{"local_seq": true, "rev": "1-aaa"}),
-			wantDoc: map[string]interface{}{
+			options: kivik.Params(map[string]any{"local_seq": true, "rev": "1-aaa"}),
+			wantDoc: map[string]any{
 				"_id":        "foo",
 				"_rev":       "1-aaa",
 				"foo":        "aaa",
@@ -528,21 +528,21 @@ func TestDBGet(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("local_seq=true & specified rev & latest=true", func(t *testing.T) interface{} {
+	tests.Add("local_seq=true & specified rev & latest=true", func(t *testing.T) any {
 		db := newDB(t)
-		_ = db.tPut("foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]any{
 			"new_edits": false,
 		}))
 
 		return test{
 			db: db,
 			id: "foo",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"local_seq": true,
 				"rev":       "1-aaa",
 				"latest":    true,
 			}),
-			wantDoc: map[string]interface{}{
+			wantDoc: map[string]any{
 				"_id":        "foo",
 				"_rev":       "1-aaa",
 				"foo":        "aaa",
@@ -550,9 +550,9 @@ func TestDBGet(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("attachments=false, doc with attachments", func(t *testing.T) interface{} {
+	tests.Add("attachments=false, doc with attachments", func(t *testing.T) any {
 		db := newDB(t)
-		rev := db.tPut("foo", map[string]interface{}{
+		rev := db.tPut("foo", map[string]any{
 			"foo":          "aaa",
 			"_attachments": newAttachments().add("att.txt", "att.txt"),
 		})
@@ -561,12 +561,12 @@ func TestDBGet(t *testing.T) {
 			db:      db,
 			id:      "foo",
 			options: kivik.Param("attachments", false),
-			wantDoc: map[string]interface{}{
+			wantDoc: map[string]any{
 				"_id":  "foo",
 				"_rev": rev,
 				"foo":  "aaa",
-				"_attachments": map[string]interface{}{
-					"att.txt": map[string]interface{}{
+				"_attachments": map[string]any{
+					"att.txt": map[string]any{
 						"content_type": "text/plain",
 						"digest":       "md5-a4NyknGw7YOh+a5ezPdZ4A==",
 						"length":       float64(7),
@@ -577,9 +577,9 @@ func TestDBGet(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("attachments=true, doc with attachments", func(t *testing.T) interface{} {
+	tests.Add("attachments=true, doc with attachments", func(t *testing.T) any {
 		db := newDB(t)
-		rev := db.tPut("foo", map[string]interface{}{
+		rev := db.tPut("foo", map[string]any{
 			"foo":          "aaa",
 			"_attachments": newAttachments().add("att.txt", "att.txt"),
 		})
@@ -588,12 +588,12 @@ func TestDBGet(t *testing.T) {
 			db:      db,
 			id:      "foo",
 			options: kivik.Param("attachments", true),
-			wantDoc: map[string]interface{}{
+			wantDoc: map[string]any{
 				"_id":  "foo",
 				"_rev": rev,
 				"foo":  "aaa",
-				"_attachments": map[string]interface{}{
-					"att.txt": map[string]interface{}{
+				"_attachments": map[string]any{
+					"att.txt": map[string]any{
 						"content_type": "text/plain",
 						"digest":       "md5-a4NyknGw7YOh+a5ezPdZ4A==",
 						"length":       float64(7),
@@ -604,9 +604,9 @@ func TestDBGet(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("attachments=true, doc without attachments", func(t *testing.T) interface{} {
+	tests.Add("attachments=true, doc without attachments", func(t *testing.T) any {
 		db := newDB(t)
-		rev := db.tPut("foo", map[string]interface{}{
+		rev := db.tPut("foo", map[string]any{
 			"foo": "aaa",
 		})
 
@@ -614,22 +614,22 @@ func TestDBGet(t *testing.T) {
 			db:      db,
 			id:      "foo",
 			options: kivik.Param("attachments", true),
-			wantDoc: map[string]interface{}{
+			wantDoc: map[string]any{
 				"_id":  "foo",
 				"_rev": rev,
 				"foo":  "aaa",
 			},
 		}
 	})
-	tests.Add("attachments=false, do not return deleted attachments", func(t *testing.T) interface{} {
+	tests.Add("attachments=false, do not return deleted attachments", func(t *testing.T) any {
 		db := newDB(t)
-		rev1 := db.tPut("foo", map[string]interface{}{
+		rev1 := db.tPut("foo", map[string]any{
 			"foo": "aaa",
 			"_attachments": newAttachments().
 				add("att.txt", "att.txt").
 				add("att2.txt", "att2.txt"),
 		})
-		rev2 := db.tPut("foo", map[string]interface{}{
+		rev2 := db.tPut("foo", map[string]any{
 			"foo":          "aaa",
 			"_attachments": newAttachments().addStub("att.txt"),
 		}, kivik.Rev(rev1))
@@ -638,12 +638,12 @@ func TestDBGet(t *testing.T) {
 			db:      db,
 			id:      "foo",
 			options: kivik.Param("attachments", false),
-			wantDoc: map[string]interface{}{
+			wantDoc: map[string]any{
 				"_id":  "foo",
 				"_rev": rev2,
 				"foo":  "aaa",
-				"_attachments": map[string]interface{}{
-					"att.txt": map[string]interface{}{
+				"_attachments": map[string]any{
+					"att.txt": map[string]any{
 						"content_type": "text/plain",
 						"digest":       "md5-a4NyknGw7YOh+a5ezPdZ4A==",
 						"revpos":       float64(1),
@@ -654,13 +654,13 @@ func TestDBGet(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("attachments=false, fetch atts added at different revs", func(t *testing.T) interface{} {
+	tests.Add("attachments=false, fetch atts added at different revs", func(t *testing.T) any {
 		db := newDB(t)
-		rev1 := db.tPut("foo", map[string]interface{}{
+		rev1 := db.tPut("foo", map[string]any{
 			"foo":          "aaa",
 			"_attachments": newAttachments().add("att.txt", "att.txt"),
 		})
-		rev2 := db.tPut("foo", map[string]interface{}{
+		rev2 := db.tPut("foo", map[string]any{
 			"foo": "aaa",
 			"_attachments": newAttachments().
 				addStub("att.txt").
@@ -671,19 +671,19 @@ func TestDBGet(t *testing.T) {
 			db:      db,
 			id:      "foo",
 			options: kivik.Param("attachments", false),
-			wantDoc: map[string]interface{}{
+			wantDoc: map[string]any{
 				"_id":  "foo",
 				"_rev": rev2,
 				"foo":  "aaa",
-				"_attachments": map[string]interface{}{
-					"att.txt": map[string]interface{}{
+				"_attachments": map[string]any{
+					"att.txt": map[string]any{
 						"content_type": "text/plain",
 						"digest":       "md5-a4NyknGw7YOh+a5ezPdZ4A==",
 						"revpos":       float64(1),
 						"length":       float64(7),
 						"stub":         true,
 					},
-					"att2.txt": map[string]interface{}{
+					"att2.txt": map[string]any{
 						"content_type": "text/plain",
 						"digest":       "md5-a4NyknGw7YOh+a5ezPdZ4A==",
 						"revpos":       float64(2),
@@ -694,13 +694,13 @@ func TestDBGet(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("attachments=false, fetch only atts that existed at time of specific rev", func(t *testing.T) interface{} {
+	tests.Add("attachments=false, fetch only atts that existed at time of specific rev", func(t *testing.T) any {
 		db := newDB(t)
-		rev1 := db.tPut("foo", map[string]interface{}{
+		rev1 := db.tPut("foo", map[string]any{
 			"foo":          "aaa",
 			"_attachments": newAttachments().add("att.txt", "att.txt"),
 		})
-		_ = db.tPut("foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{
 			"foo": "aaa",
 			"_attachments": newAttachments().
 				addStub("att.txt").
@@ -710,16 +710,16 @@ func TestDBGet(t *testing.T) {
 		return test{
 			db: db,
 			id: "foo",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"attachments": false,
 				"rev":         rev1,
 			}),
-			wantDoc: map[string]interface{}{
+			wantDoc: map[string]any{
 				"_id":  "foo",
 				"_rev": rev1,
 				"foo":  "aaa",
-				"_attachments": map[string]interface{}{
-					"att.txt": map[string]interface{}{
+				"_attachments": map[string]any{
+					"att.txt": map[string]any{
 						"content_type": "text/plain",
 						"digest":       "md5-a4NyknGw7YOh+a5ezPdZ4A==",
 						"revpos":       float64(1),
@@ -730,16 +730,16 @@ func TestDBGet(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("attachments=false, fetch updated attachment", func(t *testing.T) interface{} {
+	tests.Add("attachments=false, fetch updated attachment", func(t *testing.T) any {
 		db := newDB(t)
-		rev1 := db.tPut("foo", map[string]interface{}{
+		rev1 := db.tPut("foo", map[string]any{
 			"foo":          "aaa",
 			"_attachments": newAttachments().add("att.txt", "att.txt"),
 		})
-		rev2 := db.tPut("foo", map[string]interface{}{
+		rev2 := db.tPut("foo", map[string]any{
 			"foo": "aaa",
-			"_attachments": map[string]interface{}{
-				"att.txt": map[string]interface{}{
+			"_attachments": map[string]any{
+				"att.txt": map[string]any{
 					"data": "dmVyc2lvbiAyCg==",
 				},
 			},
@@ -748,15 +748,15 @@ func TestDBGet(t *testing.T) {
 		return test{
 			db: db,
 			id: "foo",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"attachments": false,
 			}),
-			wantDoc: map[string]interface{}{
+			wantDoc: map[string]any{
 				"_id":  "foo",
 				"_rev": rev2,
 				"foo":  "aaa",
-				"_attachments": map[string]interface{}{
-					"att.txt": map[string]interface{}{
+				"_attachments": map[string]any{
+					"att.txt": map[string]any{
 						"content_type": "application/octet-stream",
 						"digest":       "md5-sE0LKdS6wHgf6ETjKMXirA==",
 						"revpos":       float64(2),
@@ -767,26 +767,26 @@ func TestDBGet(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("atts_since", func(t *testing.T) interface{} {
+	tests.Add("atts_since", func(t *testing.T) any {
 		db := newDB(t)
-		rev1 := db.tPut("foo", map[string]interface{}{
+		rev1 := db.tPut("foo", map[string]any{
 			"foo":          "aaa",
 			"_attachments": newAttachments().add("att.txt", "att.txt"),
 		})
-		rev2 := db.tPut("foo", map[string]interface{}{
+		rev2 := db.tPut("foo", map[string]any{
 			"foo": "aaa",
 			"_attachments": newAttachments().
 				addStub("att.txt").
 				add("att2.txt", "second\n"),
 		}, kivik.Rev(rev1))
-		rev3 := db.tPut("foo", map[string]interface{}{
+		rev3 := db.tPut("foo", map[string]any{
 			"foo": "aaa",
 			"_attachments": newAttachments().
 				addStub("att.txt").
 				addStub("att2.txt").
 				add("att3.txt", "THREE\n"),
 		}, kivik.Rev(rev2))
-		rev4 := db.tPut("foo", map[string]interface{}{
+		rev4 := db.tPut("foo", map[string]any{
 			"foo": "aaa",
 			"_attachments": newAttachments().
 				addStub("att.txt").
@@ -799,33 +799,33 @@ func TestDBGet(t *testing.T) {
 			db:      db,
 			id:      "foo",
 			options: kivik.Param("atts_since", []string{rev1}),
-			wantDoc: map[string]interface{}{
+			wantDoc: map[string]any{
 				"_id":  "foo",
 				"_rev": rev4,
 				"foo":  "aaa",
-				"_attachments": map[string]interface{}{
-					"att.txt": map[string]interface{}{
+				"_attachments": map[string]any{
+					"att.txt": map[string]any{
 						"content_type": "text/plain",
 						"digest":       "md5-a4NyknGw7YOh+a5ezPdZ4A==",
 						"revpos":       float64(1),
 						"length":       float64(7),
 						"stub":         true,
 					},
-					"att2.txt": map[string]interface{}{
+					"att2.txt": map[string]any{
 						"content_type": "text/plain",
 						"digest":       "md5-WdDRn8RcppIw2Fj2ClVX+A==",
 						"revpos":       float64(2),
 						"length":       float64(7),
 						"data":         "c2Vjb25kCg==",
 					},
-					"att3.txt": map[string]interface{}{
+					"att3.txt": map[string]any{
 						"content_type": "text/plain",
 						"digest":       "md5-+kNHBLBGcQJJi0WTQ1EEsA==",
 						"revpos":       float64(3),
 						"length":       float64(6),
 						"data":         "VEhSRUUK",
 					},
-					"att4.txt": map[string]interface{}{
+					"att4.txt": map[string]any{
 						"content_type": "text/plain",
 						"digest":       "md5-CVDeT3sXzxU0dMLAuMJKXA==",
 						"revpos":       float64(4),
@@ -836,9 +836,9 @@ func TestDBGet(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("atts_since with invalid rev format", func(t *testing.T) interface{} {
+	tests.Add("atts_since with invalid rev format", func(t *testing.T) any {
 		db := newDB(t)
-		_ = db.tPut("foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{
 			"foo":          "aaa",
 			"_attachments": newAttachments().add("att.txt", "att.txt"),
 		})
@@ -851,9 +851,9 @@ func TestDBGet(t *testing.T) {
 			wantErr:    `invalid rev format`,
 		}
 	})
-	tests.Add("atts_since with non-existent rev", func(t *testing.T) interface{} {
+	tests.Add("atts_since with non-existent rev", func(t *testing.T) any {
 		db := newDB(t)
-		rev := db.tPut("foo", map[string]interface{}{
+		rev := db.tPut("foo", map[string]any{
 			"foo":          "aaa",
 			"_attachments": newAttachments().add("att.txt", "att.txt"),
 		})
@@ -862,12 +862,12 @@ func TestDBGet(t *testing.T) {
 			db:      db,
 			id:      "foo",
 			options: kivik.Param("atts_since", []string{"1-asdfasdf"}),
-			wantDoc: map[string]interface{}{
+			wantDoc: map[string]any{
 				"_id":  "foo",
 				"_rev": rev,
 				"foo":  "aaa",
-				"_attachments": map[string]interface{}{
-					"att.txt": map[string]interface{}{
+				"_attachments": map[string]any{
+					"att.txt": map[string]any{
 						"content_type": "text/plain",
 						"digest":       "md5-a4NyknGw7YOh+a5ezPdZ4A==",
 						"revpos":       float64(1),
@@ -878,7 +878,7 @@ func TestDBGet(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("after PutAttachment", func(t *testing.T) interface{} {
+	tests.Add("after PutAttachment", func(t *testing.T) any {
 		db := newDB(t)
 		rev1 := db.tPut("foo", map[string]string{
 			"foo": "aaa",
@@ -897,12 +897,12 @@ func TestDBGet(t *testing.T) {
 		return test{
 			db: db,
 			id: "foo",
-			wantDoc: map[string]interface{}{
+			wantDoc: map[string]any{
 				"_id":  "foo",
 				"_rev": rev2,
 				"foo":  "aaa",
-				"_attachments": map[string]interface{}{
-					"att.txt": map[string]interface{}{
+				"_attachments": map[string]any{
+					"att.txt": map[string]any{
 						"content_type": "text/plain",
 						"digest":       "md5-CY9rzUYh03PK3k6DJie09g==",
 						"revpos":       float64(2),
@@ -940,7 +940,7 @@ func TestDBGet(t *testing.T) {
 			return
 		}
 		body, _ := io.ReadAll(doc.Body)
-		var gotDoc interface{}
+		var gotDoc any
 		if err := json.NewDecoder(bytes.NewReader(body)).Decode(&gotDoc); err != nil {
 			t.Fatal(err)
 		}

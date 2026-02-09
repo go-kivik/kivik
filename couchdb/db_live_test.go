@@ -43,8 +43,8 @@ func TestQueries_2_x(t *testing.T) {
 	}
 
 	db := client.DB("_users")
-	rows := db.AllDocs(context.Background(), kivik.Params(map[string]interface{}{
-		"queries": []map[string]interface{}{
+	rows := db.AllDocs(context.Background(), kivik.Params(map[string]any{
+		"queries": []map[string]any{
 			{},
 			{},
 		},
@@ -55,10 +55,10 @@ func TestQueries_2_x(t *testing.T) {
 	t.Cleanup(func() {
 		_ = rows.Close()
 	})
-	result := make([]interface{}, 0)
+	result := make([]any, 0)
 	for rows.Next() {
 		id, _ := rows.ID()
-		result = append(result, map[string]interface{}{
+		result = append(result, map[string]any{
 			"_id": id,
 		})
 	}
@@ -92,8 +92,8 @@ func TestQueries_3_x(t *testing.T) {
 	}
 
 	db := client.DB("_users")
-	rows := db.AllDocs(context.Background(), kivik.Params(map[string]interface{}{
-		"queries": []map[string]interface{}{
+	rows := db.AllDocs(context.Background(), kivik.Params(map[string]any{
+		"queries": []map[string]any{
 			{},
 			{},
 		},
@@ -104,10 +104,10 @@ func TestQueries_3_x(t *testing.T) {
 	t.Cleanup(func() {
 		_ = rows.Close()
 	})
-	result := make([]interface{}, 0)
+	result := make([]any, 0)
 	for rows.Next() {
 		id, _ := rows.ID()
-		result = append(result, map[string]interface{}{
+		result = append(result, map[string]any{
 			"_id": id,
 		})
 	}
@@ -159,7 +159,7 @@ func Test_bug509(t *testing.T) {
 	}
 	row := db.Get(context.Background(), "x", kivik.Param("revs_info", true))
 
-	var doc map[string]interface{}
+	var doc map[string]any
 	if err := row.ScanDoc(&doc); err != nil {
 		t.Fatal(err)
 	}

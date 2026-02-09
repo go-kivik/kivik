@@ -106,7 +106,7 @@ func (db) CompactView(context.Context, string) error { return nil }
 
 func (db) ViewCleanup(context.Context) error { return nil }
 
-func (db) BulkDocs(context.Context, []interface{}, driver.Options) ([]driver.BulkResult, error) {
+func (db) BulkDocs(context.Context, []any, driver.Options) ([]driver.BulkResult, error) {
 	return nil, errors.New("not implemented")
 }
 
@@ -114,7 +114,7 @@ func (db) Copy(context.Context, string, string, driver.Options) (string, error) 
 	return "", errors.New("not implemented")
 }
 
-func (db) CreateIndex(context.Context, string, string, interface{}, driver.Options) error {
+func (db) CreateIndex(context.Context, string, string, any, driver.Options) error {
 	return errors.New("not implemented")
 }
 
@@ -126,7 +126,7 @@ func (db) DeleteIndex(context.Context, string, string, driver.Options) error {
 	return errors.New("not implemented")
 }
 
-func (db) Explain(context.Context, interface{}, driver.Options) (*driver.QueryPlan, error) {
+func (db) Explain(context.Context, any, driver.Options) (*driver.QueryPlan, error) {
 	return nil, errors.New("not implemented")
 }
 

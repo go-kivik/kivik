@@ -40,7 +40,7 @@ func TestDocumentPersist(t *testing.T) {
 		err    string
 	}
 	tests := testy.NewTable()
-	tests.Add("nil doc", func(t *testing.T) interface{} {
+	tests.Add("nil doc", func(t *testing.T) any {
 		var tmpdir string
 		t.Cleanup(testy.TempDir(t, &tmpdir))
 
@@ -50,7 +50,7 @@ func TestDocumentPersist(t *testing.T) {
 			err:    "document has no revisions",
 		}
 	})
-	tests.Add("no revs", func(t *testing.T) interface{} {
+	tests.Add("no revs", func(t *testing.T) any {
 		var tmpdir string
 		t.Cleanup(testy.TempDir(t, &tmpdir))
 
@@ -63,7 +63,7 @@ func TestDocumentPersist(t *testing.T) {
 			err:    "document has no revisions",
 		}
 	})
-	tests.Add("new doc, one rev", func(t *testing.T) interface{} {
+	tests.Add("new doc, one rev", func(t *testing.T) any {
 		var tmpdir string
 		t.Cleanup(testy.TempDir(t, &tmpdir))
 
@@ -84,7 +84,7 @@ func TestDocumentPersist(t *testing.T) {
 			doc:  doc,
 		}
 	})
-	tests.Add("update existing doc", func(t *testing.T) interface{} {
+	tests.Add("update existing doc", func(t *testing.T) any {
 		tmpdir := testy.CopyTempDir(t, "testdata/persist.update", 0)
 		t.Cleanup(func() {
 			_ = os.RemoveAll(tmpdir)
@@ -95,10 +95,10 @@ func TestDocumentPersist(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		rev, err := cdb.NewRevision(map[string]interface{}{
+		rev, err := cdb.NewRevision(map[string]any{
 			"_rev":  "1-xxx",
 			"value": "bar",
-			"_revisions": map[string]interface{}{
+			"_revisions": map[string]any{
 				"start": 2,
 				"ids":   []string{"yyy", "xxx"},
 			},
@@ -115,7 +115,7 @@ func TestDocumentPersist(t *testing.T) {
 			doc:  doc,
 		}
 	})
-	tests.Add("update existing doc with attachments", func(t *testing.T) interface{} {
+	tests.Add("update existing doc with attachments", func(t *testing.T) any {
 		tmpdir := testy.CopyTempDir(t, "testdata/persist.att", 0)
 		t.Cleanup(func() {
 			_ = os.RemoveAll(tmpdir)
@@ -126,19 +126,19 @@ func TestDocumentPersist(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		rev, err := cdb.NewRevision(map[string]interface{}{
+		rev, err := cdb.NewRevision(map[string]any{
 			"_rev":  "1-xxx",
 			"value": "bar",
-			"_revisions": map[string]interface{}{
+			"_revisions": map[string]any{
 				"start": 2,
 				"ids":   []string{"yyy", "xxx"},
 			},
-			"_attachments": map[string]interface{}{
-				"bar.txt": map[string]interface{}{
+			"_attachments": map[string]any{
+				"bar.txt": map[string]any{
 					"content_type": "text/plain",
 					"data":         []byte("Additional content"),
 				},
-				"foo.txt": map[string]interface{}{
+				"foo.txt": map[string]any{
 					"content_type": "text/plain",
 					"stub":         true,
 				},
@@ -200,7 +200,7 @@ func TestDocumentAddRevision(t *testing.T) {
 		expected string
 	}
 	tests := testy.NewTable()
-	tests.Add("stub with bad digest", func(t *testing.T) interface{} {
+	tests.Add("stub with bad digest", func(t *testing.T) any {
 		tmpdir := testy.CopyTempDir(t, "testdata/persist.att", 0)
 		t.Cleanup(func() {
 			_ = os.RemoveAll(tmpdir)
@@ -211,15 +211,15 @@ func TestDocumentAddRevision(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		rev, err := cdb.NewRevision(map[string]interface{}{
+		rev, err := cdb.NewRevision(map[string]any{
 			"_rev":  "1-xxx",
 			"value": "bar",
-			"_revisions": map[string]interface{}{
+			"_revisions": map[string]any{
 				"start": 2,
 				"ids":   []string{"yyy", "xxx"},
 			},
-			"_attachments": map[string]interface{}{
-				"foo.txt": map[string]interface{}{
+			"_attachments": map[string]any{
+				"foo.txt": map[string]any{
 					"content_type": "text/plain",
 					"stub":         true,
 					"digest":       "md5-asdf",
@@ -238,7 +238,7 @@ func TestDocumentAddRevision(t *testing.T) {
 			err:    "invalid attachment data for foo.txt",
 		}
 	})
-	tests.Add("stub with wrong revpos", func(t *testing.T) interface{} {
+	tests.Add("stub with wrong revpos", func(t *testing.T) any {
 		tmpdir := testy.CopyTempDir(t, "testdata/persist.att", 0)
 		t.Cleanup(func() {
 			_ = os.RemoveAll(tmpdir)
@@ -249,15 +249,15 @@ func TestDocumentAddRevision(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		rev, err := cdb.NewRevision(map[string]interface{}{
+		rev, err := cdb.NewRevision(map[string]any{
 			"_rev":  "1-xxx",
 			"value": "bar",
-			"_revisions": map[string]interface{}{
+			"_revisions": map[string]any{
 				"start": 2,
 				"ids":   []string{"yyy", "xxx"},
 			},
-			"_attachments": map[string]interface{}{
-				"foo.txt": map[string]interface{}{
+			"_attachments": map[string]any{
+				"foo.txt": map[string]any{
 					"content_type": "text/plain",
 					"stub":         true,
 					"revpos":       6,
@@ -276,7 +276,7 @@ func TestDocumentAddRevision(t *testing.T) {
 			err:    "invalid attachment data for foo.txt",
 		}
 	})
-	tests.Add("stub with 0 revpos", func(t *testing.T) interface{} {
+	tests.Add("stub with 0 revpos", func(t *testing.T) any {
 		tmpdir := testy.CopyTempDir(t, "testdata/persist.att", 0)
 		t.Cleanup(func() {
 			_ = os.RemoveAll(tmpdir)
@@ -287,15 +287,15 @@ func TestDocumentAddRevision(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		rev, err := cdb.NewRevision(map[string]interface{}{
+		rev, err := cdb.NewRevision(map[string]any{
 			"_rev":  "1-xxx",
 			"value": "bar",
-			"_revisions": map[string]interface{}{
+			"_revisions": map[string]any{
 				"start": 2,
 				"ids":   []string{"yyy", "xxx"},
 			},
-			"_attachments": map[string]interface{}{
-				"foo.txt": map[string]interface{}{
+			"_attachments": map[string]any{
+				"foo.txt": map[string]any{
 					"content_type": "text/plain",
 					"stub":         true,
 					"revpos":       0,
@@ -314,20 +314,20 @@ func TestDocumentAddRevision(t *testing.T) {
 			err:    "invalid attachment data for foo.txt",
 		}
 	})
-	tests.Add("upload attachment", func(t *testing.T) interface{} {
+	tests.Add("upload attachment", func(t *testing.T) any {
 		var tmpdir string
 		t.Cleanup(testy.TempDir(t, &tmpdir))
 
 		cdb := New(tmpdir)
 		doc := cdb.NewDocument("foo")
-		rev, err := cdb.NewRevision(map[string]interface{}{
+		rev, err := cdb.NewRevision(map[string]any{
 			"value": "bar",
-			"_revisions": map[string]interface{}{
+			"_revisions": map[string]any{
 				"start": 2,
 				"ids":   []string{"yyy", "xxx"},
 			},
-			"_attachments": map[string]interface{}{
-				"!foo.txt": map[string]interface{}{
+			"_attachments": map[string]any{
+				"!foo.txt": map[string]any{
 					"content_type": "text/plain",
 					"data":         []byte("some test content"),
 				},
@@ -344,7 +344,7 @@ func TestDocumentAddRevision(t *testing.T) {
 			expected: "1-1472ad25836971f236294ad7b19d9f65",
 		}
 	})
-	tests.Add("re-upload identical attachment", func(t *testing.T) interface{} {
+	tests.Add("re-upload identical attachment", func(t *testing.T) any {
 		tmpdir := testy.CopyTempDir(t, "testdata/persist.att", 0)
 		t.Cleanup(func() {
 			_ = os.RemoveAll(tmpdir)
@@ -355,10 +355,10 @@ func TestDocumentAddRevision(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		rev, err := cdb.NewRevision(map[string]interface{}{
+		rev, err := cdb.NewRevision(map[string]any{
 			"_rev": "1-xxx",
-			"_attachments": map[string]interface{}{
-				"foo.txt": map[string]interface{}{
+			"_attachments": map[string]any{
+				"foo.txt": map[string]any{
 					"content_type": "text/plain",
 					"data":         []byte("Test content\n"),
 				},

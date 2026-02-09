@@ -67,7 +67,7 @@ type Handler struct {
 	// Favicon is the path to a favicon.ico to serve.
 	Favicon string
 	// SessionKey is a temporary solution to avoid import cycles. Soon I will move the key to another package.
-	SessionKey interface{}
+	SessionKey any
 }
 
 // NewHandler returns a CouchDB server handler.

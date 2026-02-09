@@ -31,7 +31,7 @@ import (
 //
 // [_find interface]: https://docs.couchdb.org/en/stable/api/database/find.html
 // [issue #1014]: https://github.com/go-kivik/kivik/issues/1014
-func (db *DB) Find(ctx context.Context, query interface{}, options ...Option) *ResultSet {
+func (db *DB) Find(ctx context.Context, query any, options ...Option) *ResultSet {
 	if db.err != nil {
 		return &ResultSet{iter: errIterator(db.err)}
 	}
@@ -59,7 +59,7 @@ func (db *DB) Find(ctx context.Context, query interface{}, options ...Option) *R
 
 // toQuery combines query and options into a final JSON query to be sent to the
 // driver.
-func toQuery(query interface{}, options ...Option) (json.RawMessage, error) {
+func toQuery(query any, options ...Option) (json.RawMessage, error) {
 	var queryJSON []byte
 	switch t := query.(type) {
 	case string:
@@ -75,12 +75,12 @@ func toQuery(query interface{}, options ...Option) (json.RawMessage, error) {
 			return nil, &errors.Error{Status: http.StatusBadRequest, Err: err}
 		}
 	}
-	var queryObject map[string]interface{}
+	var queryObject map[string]any
 	if err := json.Unmarshal(queryJSON, &queryObject); err != nil {
 		return nil, &errors.Error{Status: http.StatusBadRequest, Err: err}
 	}
 
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	multiOptions(options).Apply(opts)
 
 	for k, v := range opts {
@@ -95,7 +95,7 @@ func toQuery(query interface{}, options ...Option) (json.RawMessage, error) {
 // marshalable to a valid index object, as described in the [CouchDB documentation].
 //
 // [CouchDB documentation]: http://docs.couchdb.org/en/stable/api/database/find.html#db-index
-func (db *DB) CreateIndex(ctx context.Context, ddoc, name string, index interface{}, options ...Option) error {
+func (db *DB) CreateIndex(ctx context.Context, ddoc, name string, index any, options ...Option) error {
 	if db.err != nil {
 		return db.err
 	}
@@ -128,10 +128,10 @@ func (db *DB) DeleteIndex(ctx context.Context, ddoc, name string, options ...Opt
 
 // Index is a MonboDB-style index definition.
 type Index struct {
-	DesignDoc  string      `json:"ddoc,omitempty"`
-	Name       string      `json:"name"`
-	Type       string      `json:"type"`
-	Definition interface{} `json:"def"`
+	DesignDoc  string `json:"ddoc,omitempty"`
+	Name       string `json:"name"`
+	Type       string `json:"type"`
+	Definition any    `json:"def"`
 }
 
 // GetIndexes returns the indexes defined on the current database.
@@ -158,23 +158,23 @@ func (db *DB) GetIndexes(ctx context.Context, options ...Option) ([]Index, error
 // QueryPlan is the query execution plan for a query, as returned by
 // [DB.Explain].
 type QueryPlan struct {
-	DBName    string                 `json:"dbname"`
-	Index     map[string]interface{} `json:"index"`
-	Selector  map[string]interface{} `json:"selector"`
-	Options   map[string]interface{} `json:"opts"`
-	Limit     int64                  `json:"limit"`
-	Partition string                 `json:"partition"`
-	Skip      int64                  `json:"skip"`
+	DBName    string         `json:"dbname"`
+	Index     map[string]any `json:"index"`
+	Selector  map[string]any `json:"selector"`
+	Options   map[string]any `json:"opts"`
+	Limit     int64          `json:"limit"`
+	Partition string         `json:"partition"`
+	Skip      int64          `json:"skip"`
 
 	// Fields is the list of fields to be returned in the result set, or
 	// an empty list if all fields are to be returned.
-	Fields []interface{}          `json:"fields"`
-	Range  map[string]interface{} `json:"range"`
+	Fields []any          `json:"fields"`
+	Range  map[string]any `json:"range"`
 }
 
 // Explain returns the query plan for a given query. Explain takes the same
 // arguments as [DB.Find].
-func (db *DB) Explain(ctx context.Context, query interface{}, options ...Option) (*QueryPlan, error) {
+func (db *DB) Explain(ctx context.Context, query any, options ...Option) (*QueryPlan, error) {
 	if db.err != nil {
 		return nil, db.err
 	}

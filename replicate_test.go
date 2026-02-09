@@ -44,7 +44,7 @@ func TestReplicateMock(t *testing.T) {
 		result         *kivik.ReplicationResult
 	}
 	tests := testy.NewTable()
-	tests.Add("no changes", func(t *testing.T) interface{} {
+	tests.Add("no changes", func(t *testing.T) any {
 		source, mock := kivikmock.NewT(t)
 		db := mock.NewDB()
 		mock.ExpectDB().WillReturn(db)
@@ -56,7 +56,7 @@ func TestReplicateMock(t *testing.T) {
 			result: &kivik.ReplicationResult{},
 		}
 	})
-	tests.Add("up to date", func(t *testing.T) interface{} {
+	tests.Add("up to date", func(t *testing.T) any {
 		source, smock := kivikmock.NewT(t)
 		sdb := smock.NewDB()
 		smock.ExpectDB().WillReturn(sdb)
@@ -84,7 +84,7 @@ func TestReplicateMock(t *testing.T) {
 			result: &kivik.ReplicationResult{},
 		}
 	})
-	tests.Add("one update", func(t *testing.T) interface{} {
+	tests.Add("one update", func(t *testing.T) any {
 		source, smock := kivikmock.NewT(t)
 		sdb := smock.NewDB()
 		smock.ExpectDB().WillReturn(sdb)
@@ -110,7 +110,7 @@ func TestReplicateMock(t *testing.T) {
 		sdb.ExpectOpenRevs().WillReturnError(&internal.Error{Status: http.StatusNotImplemented})
 		sdb.ExpectGet().
 			WithDocID("foo").
-			WithOptions(kivik.Params(map[string]interface{}{
+			WithOptions(kivik.Params(map[string]any{
 				"rev":         "2-7051cbe5c8faecd085a3fa619e6e6337",
 				"revs":        true,
 				"attachments": true,
@@ -136,7 +136,7 @@ func TestReplicateMock(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("one update with OpenRevs", func(t *testing.T) interface{} {
+	tests.Add("one update with OpenRevs", func(t *testing.T) any {
 		source, smock := kivikmock.NewT(t)
 		sdb := smock.NewDB()
 		smock.ExpectDB().WillReturn(sdb)
@@ -234,7 +234,7 @@ func TestReplicate_with_callback(t *testing.T) {
 	sdb.ExpectOpenRevs().WillReturnError(&internal.Error{Status: http.StatusNotImplemented})
 	sdb.ExpectGet().
 		WithDocID("foo").
-		WithOptions(kivik.Params(map[string]interface{}{
+		WithOptions(kivik.Params(map[string]any{
 			"rev":         "2-7051cbe5c8faecd085a3fa619e6e6337",
 			"revs":        true,
 			"attachments": true,
@@ -303,7 +303,7 @@ func TestReplicate(t *testing.T) {
 		err            string
 	}
 	tests := testy.NewTable()
-	tests.Add("fs to fs", func(t *testing.T) interface{} {
+	tests.Add("fs to fs", func(t *testing.T) any {
 		tmpdir := testy.CopyTempDir(t, "testdata/db4", 1)
 		t.Cleanup(func() {
 			_ = os.RemoveAll(tmpdir)

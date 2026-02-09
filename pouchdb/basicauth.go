@@ -39,7 +39,7 @@ type basicAuth struct {
 
 var _ kivik.Option = basicAuth{}
 
-func (a basicAuth) Apply(target interface{}) {
+func (a basicAuth) Apply(target any) {
 	if client, ok := target.(*client); ok {
 		client.setAuth(a.username, a.password)
 	}

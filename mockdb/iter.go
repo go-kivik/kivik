@@ -20,7 +20,7 @@ import (
 
 type item struct {
 	delay time.Duration
-	item  interface{}
+	item  any
 }
 
 type iter struct {
@@ -35,7 +35,7 @@ func (i *iter) push(item *item) {
 	i.items = append(i.items, item)
 }
 
-func (i *iter) unshift(ctx context.Context) (interface{}, error) {
+func (i *iter) unshift(ctx context.Context) (any, error) {
 	if len(i.items) == 0 {
 		if i.resultErr != nil {
 			return nil, i.resultErr

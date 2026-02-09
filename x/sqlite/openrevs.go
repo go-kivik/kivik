@@ -28,7 +28,7 @@ import (
 func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, options driver.Options) (driver.Rows, error) {
 	opts := newOpts(options)
 	values := make([]string, 0, len(revs))
-	args := make([]interface{}, 5, len(revs)*2+5)
+	args := make([]any, 5, len(revs)*2+5)
 	args[0] = docID
 	args[1] = len(revs) == 0 // open_revs=[]
 	args[2] = false

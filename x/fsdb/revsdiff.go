@@ -25,7 +25,7 @@ import (
 
 var _ driver.RevsDiffer = &db{}
 
-func toRevmap(i interface{}) (map[string][]string, error) {
+func toRevmap(i any) (map[string][]string, error) {
 	if t, ok := i.(map[string][]string); ok {
 		return t, nil
 	}
@@ -38,7 +38,7 @@ func toRevmap(i interface{}) (map[string][]string, error) {
 	return revmap, statusError{status: http.StatusBadRequest, error: err}
 }
 
-func (d *db) RevsDiff(ctx context.Context, revMap interface{}) (driver.Rows, error) {
+func (d *db) RevsDiff(ctx context.Context, revMap any) (driver.Rows, error) {
 	revmap, err := toRevmap(revMap)
 	if err != nil {
 		return nil, err

@@ -57,9 +57,9 @@ func TestDBGetAttachment(t *testing.T) {
 		wantStatus: http.StatusNotFound,
 		wantErr:    "missing",
 	})
-	tests.Add("return an attachment when it exists", func(t *testing.T) interface{} {
+	tests.Add("return an attachment when it exists", func(t *testing.T) any {
 		db := newDB(t)
-		_ = db.tPut("foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{
 			"_id":          "foo",
 			"_attachments": newAttachments().add("foo.txt", "This is a base64 encoding"),
 		})
@@ -77,9 +77,9 @@ func TestDBGetAttachment(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("document has been deleted, should return not-found", func(t *testing.T) interface{} {
+	tests.Add("document has been deleted, should return not-found", func(t *testing.T) any {
 		db := newDB(t)
-		rev := db.tPut("foo", map[string]interface{}{
+		rev := db.tPut("foo", map[string]any{
 			"_id":          "foo",
 			"_attachments": newAttachments().add("foo.txt", "This is a base64 encoding"),
 		})
@@ -96,13 +96,13 @@ func TestDBGetAttachment(t *testing.T) {
 			wantErr:    "missing",
 		}
 	})
-	tests.Add("document has been been updated since attachment was added, should succeed", func(t *testing.T) interface{} {
+	tests.Add("document has been been updated since attachment was added, should succeed", func(t *testing.T) any {
 		db := newDB(t)
-		rev := db.tPut("foo", map[string]interface{}{
+		rev := db.tPut("foo", map[string]any{
 			"_id":          "foo",
 			"_attachments": newAttachments().add("foo.txt", "This is a base64 encoding"),
 		})
-		_ = db.tPut("foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{
 			"_id":          "foo",
 			"updated":      true,
 			"_attachments": newAttachments().addStub("foo.txt"),
@@ -121,18 +121,18 @@ func TestDBGetAttachment(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("returns old attachment content for revision that predates attachment update", func(t *testing.T) interface{} {
+	tests.Add("returns old attachment content for revision that predates attachment update", func(t *testing.T) any {
 		d := newDB(t)
 		const (
 			id          = "foo"
 			filename    = "foo.txt"
 			wantContent = "Hello World"
 		)
-		rev := d.tPut("foo", map[string]interface{}{
+		rev := d.tPut("foo", map[string]any{
 			"_id":          id,
 			"_attachments": newAttachments().add(filename, wantContent),
 		})
-		_ = d.tPut("foo", map[string]interface{}{
+		_ = d.tPut("foo", map[string]any{
 			"_id":          "foo",
 			"_attachments": newAttachments().add(filename, wantContent+" [after update]"),
 		}, kivik.Rev(rev))

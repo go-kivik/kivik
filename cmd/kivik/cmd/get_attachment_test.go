@@ -30,7 +30,7 @@ func Test_get_attachment_RunE(t *testing.T) {
 		args:   []string{"get", "attachment"},
 		status: errors.ErrUsage,
 	})
-	tests.Add("not found", func(*testing.T) interface{} {
+	tests.Add("not found", func(*testing.T) any {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusNotFound,
 			Header: http.Header{
@@ -45,7 +45,7 @@ func Test_get_attachment_RunE(t *testing.T) {
 			status: errors.ErrNotFound,
 		}
 	})
-	tests.Add("success", func(*testing.T) interface{} {
+	tests.Add("success", func(*testing.T) any {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{
@@ -60,7 +60,7 @@ func Test_get_attachment_RunE(t *testing.T) {
 			args: []string{"get", "attachment", s.URL + "/db/doc/foo.txt"},
 		}
 	})
-	tests.Add("success json", func(*testing.T) interface{} {
+	tests.Add("success json", func(*testing.T) any {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{

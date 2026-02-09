@@ -33,7 +33,7 @@ func TestSession(t *testing.T) {
 		name      string
 		status    int
 		body      string
-		expected  interface{}
+		expected  any
 		errStatus int
 		err       string
 	}{

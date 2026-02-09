@@ -80,7 +80,7 @@ func (d *db) queryBuiltinView(
 	ctx context.Context,
 	vopts *viewOptions,
 ) (driver.Rows, error) {
-	args := []interface{}{vopts.includeDocs, vopts.conflicts, vopts.updateSeq, vopts.attachments, vopts.bookmark}
+	args := []any{vopts.includeDocs, vopts.conflicts, vopts.updateSeq, vopts.attachments, vopts.bookmark}
 
 	where := append([]string{""}, vopts.buildWhere(&args)...)
 

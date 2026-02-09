@@ -47,7 +47,7 @@ type Options struct {
 	// for large JSON payloads, it can be beneficial to do your own JSON stream
 	// encoding, so that the request can be live on the wire during JSON
 	// encoding.
-	JSON interface{}
+	JSON any
 
 	// FullCommit adds the X-Couch-Full-Commit: true header to requests
 	FullCommit bool
@@ -79,7 +79,7 @@ type optionNoRequestCompression struct{}
 
 var _ kivik.Option = optionNoRequestCompression{}
 
-func (optionNoRequestCompression) Apply(target interface{}) {
+func (optionNoRequestCompression) Apply(target any) {
 	if client, ok := target.(*Client); ok {
 		client.noGzip = true
 	}
@@ -96,7 +96,7 @@ func OptionNoRequestCompression() kivik.Option {
 
 type optionUserAgent string
 
-func (a optionUserAgent) Apply(target interface{}) {
+func (a optionUserAgent) Apply(target any) {
 	if client, ok := target.(*Client); ok {
 		client.UserAgents = append(client.UserAgents, string(a))
 	}
@@ -114,7 +114,7 @@ func OptionUserAgent(ua string) kivik.Option {
 
 type optionFullCommit struct{}
 
-func (optionFullCommit) Apply(target interface{}) {
+func (optionFullCommit) Apply(target any) {
 	if o, ok := target.(*Options); ok {
 		o.FullCommit = true
 	}
@@ -132,7 +132,7 @@ func OptionFullCommit() kivik.Option {
 
 type optionIfNoneMatch string
 
-func (o optionIfNoneMatch) Apply(target interface{}) {
+func (o optionIfNoneMatch) Apply(target any) {
 	if opts, ok := target.(*Options); ok {
 		opts.IfNoneMatch = string(o)
 	}

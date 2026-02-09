@@ -52,7 +52,7 @@ func TestOutput(t *testing.T) {
 	tests.Add("defaults", tt{
 		obj: `{"x":"y"}`,
 	})
-	tests.Add("output file", func(t *testing.T) interface{} {
+	tests.Add("output file", func(t *testing.T) any {
 		var dir string
 		t.Cleanup(testy.TempDir(t, &dir))
 		path := filepath.Join(dir, "test.json")
@@ -71,7 +71,7 @@ func TestOutput(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("overwrite fail", func(t *testing.T) interface{} {
+	tests.Add("overwrite fail", func(t *testing.T) any {
 		var dir string
 		t.Cleanup(testy.TempDir(t, &dir))
 		path := filepath.Join(dir, "test.json")
@@ -88,7 +88,7 @@ func TestOutput(t *testing.T) {
 			err:  "open " + path + ": file exists",
 		}
 	})
-	tests.Add("overwrite success", func(t *testing.T) interface{} {
+	tests.Add("overwrite success", func(t *testing.T) any {
 		var dir string
 		t.Cleanup(testy.TempDir(t, &dir))
 		path := filepath.Join(dir, "test.json")

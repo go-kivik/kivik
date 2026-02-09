@@ -29,17 +29,17 @@ type Logger interface {
 	// SetDebug turns debug mode on or off.
 	SetDebug(bool)
 	// Debug logs debug output.
-	Debug(...interface{})
+	Debug(...any)
 	// Debug logs formatted debug output.
-	Debugf(string, ...interface{})
+	Debugf(string, ...any)
 	// Info logs normal priority messages.
-	Info(...interface{})
+	Info(...any)
 	// Infof logs formatted normal priority messages.
-	Infof(string, ...interface{})
+	Infof(string, ...any)
 	// Error logs error messages.
-	Error(...interface{})
+	Error(...any)
 	// Errorf logs formatted error messages.
-	Errorf(string, ...interface{})
+	Errorf(string, ...any)
 }
 
 type logger struct {
@@ -70,30 +70,30 @@ func (l *logger) out(line string) {
 	_, _ = fmt.Fprintln(l.stdout, strings.TrimSpace(line))
 }
 
-func (l *logger) Debug(args ...interface{}) {
+func (l *logger) Debug(args ...any) {
 	if l.debug {
 		l.err(fmt.Sprint(args...))
 	}
 }
 
-func (l *logger) Debugf(format string, args ...interface{}) {
+func (l *logger) Debugf(format string, args ...any) {
 	if l.debug {
 		l.err(fmt.Sprintf(format, args...))
 	}
 }
 
-func (l *logger) Info(args ...interface{}) {
+func (l *logger) Info(args ...any) {
 	l.out(fmt.Sprint(args...))
 }
 
-func (l *logger) Infof(format string, args ...interface{}) {
+func (l *logger) Infof(format string, args ...any) {
 	l.out(fmt.Sprintf(format, args...))
 }
 
-func (l *logger) Error(args ...interface{}) {
+func (l *logger) Error(args ...any) {
 	l.err(fmt.Sprint(args...))
 }
 
-func (l *logger) Errorf(format string, args ...interface{}) {
+func (l *logger) Errorf(format string, args ...any) {
 	l.err(fmt.Sprintf(format, args...))
 }

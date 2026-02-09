@@ -32,7 +32,7 @@ func TestContextDB(t *testing.T) {
 
 	tests := testy.NewTable()
 
-	tests.Add("success", func(t *testing.T) interface{} {
+	tests.Add("success", func(t *testing.T) any {
 		client, mock, err := mockdb.New()
 		if err != nil {
 			t.Fatal(err)
@@ -45,7 +45,7 @@ func TestContextDB(t *testing.T) {
 			dbname: "testdb",
 		}
 	})
-	tests.Add("passes options from config", func(t *testing.T) interface{} {
+	tests.Add("passes options from config", func(t *testing.T) any {
 		client, mock, err := mockdb.New()
 		if err != nil {
 			t.Fatal(err)
@@ -79,7 +79,7 @@ func TestContextAdminDB(t *testing.T) {
 
 	tests := testy.NewTable()
 
-	tests.Add("success", func(t *testing.T) interface{} {
+	tests.Add("success", func(t *testing.T) any {
 		client, mock, err := mockdb.New()
 		if err != nil {
 			t.Fatal(err)

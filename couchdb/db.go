@@ -30,7 +30,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"sync/atomic"
 
 	kivik "github.com/go-kivik/kivik/v4"
@@ -643,17 +642,10 @@ func newMultipartAttachments(in io.ReadCloser, att *kivik.Attachments) (boundary
 		return "", 0, nil, err
 	}
 	body := multipart.NewWriter(tmp)
-	w := sync.WaitGroup{}
-	w.Add(1)
-	go func() {
-		err = createMultipart(body, in, att)
-		e := in.Close()
-		if err == nil {
-			err = e
-		}
-		w.Done()
-	}()
-	w.Wait()
+	err = createMultipart(body, in, att)
+	if e := in.Close(); err == nil {
+		err = e
+	}
 	if e := tmp.Sync(); err == nil {
 		err = e
 	}

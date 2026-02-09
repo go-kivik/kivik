@@ -8,13 +8,6 @@
   or an environment-dependent behavior change. Snapshot needs regeneration
   or test logic needs updating.
 
-## Potential Concurrency Issues
-
-- [ ] **Data race risk in `couchdb/db.go:640-672`**
-  `newMultipartAttachments()` shares an `err` variable between a goroutine and
-  the main function. While `sync.WaitGroup` provides a happens-before guarantee,
-  the pattern is fragile and unconventional.
-
 ## Feature Gaps / Incomplete Implementations
 
 - [ ] **ProxyDB has unimplemented methods that panic**

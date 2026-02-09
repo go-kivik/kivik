@@ -23,16 +23,6 @@
 - [ ] **Goroutine leak in `couchdb/db.go:813-830`**
   `replaceAttachments()` has the same pipe-writer goroutine leak pattern.
 
-## Unsafe Type Assertions (Panic Risk)
-
-Internal interfaces, so low risk, but bare type assertions without the `ok`
-check will panic at runtime if the wrong type is passed:
-
-- [ ] `couchdb/rows.go:45,56,95,115` — parser methods
-- [ ] `couchdb/changes.go:67,72` — changes parser
-- [ ] `couchdb/client.go:124` — updates parser
-- [ ] `couchdb/db.go:1112` — allDocs iterator
-
 ## Feature Gaps / Incomplete Implementations
 
 - [ ] **ProxyDB has unimplemented methods that panic**

@@ -2917,3 +2917,41 @@ func TestRevsDiff(t *testing.T) {
 		}
 	})
 }
+
+func TestCreateMultipartGoroutineLeak(t *testing.T) {
+	t.Parallel()
+
+	closed := make(chan struct{})
+	input := &mockReadCloser{
+		ReadFunc: func(p []byte) (int, error) {
+			return copy(p, `{"_id":"doc1","_attachments":{}}`), io.EOF
+		},
+		CloseFunc: func() error {
+			close(closed)
+			return nil
+		},
+	}
+
+	atts := &kivik.Attachments{
+		"foo.txt": &kivik.Attachment{
+			Filename:    "foo.txt",
+			ContentType: "text/plain",
+			Size:        4,
+			Content:     Body("test"),
+		},
+	}
+
+	ew := &errAfterNWriter{n: 2, err: errors.New("simulated write error")}
+	w := multipart.NewWriter(ew)
+
+	err := createMultipart(w, input, atts)
+	if err == nil {
+		t.Fatal("expected error from createMultipart")
+	}
+
+	select {
+	case <-closed:
+	case <-time.After(time.Second):
+		t.Fatal("goroutine leak: input reader was never closed")
+	}
+}

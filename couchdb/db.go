@@ -679,6 +679,7 @@ func createMultipart(w *multipart.Writer, r io.ReadCloser, atts *kivik.Attachmen
 		return err
 	}
 	attJSON := replaceAttachments(r, atts)
+	defer attJSON.Close()
 	if _, e := io.Copy(doc, attJSON); e != nil {
 		return e
 	}

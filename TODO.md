@@ -15,9 +15,6 @@
   the main function. While `sync.WaitGroup` provides a happens-before guarantee,
   the pattern is fragile and unconventional.
 
-- [ ] **Goroutine leak in `couchdb/db.go:813-830`**
-  `replaceAttachments()` has the same pipe-writer goroutine leak pattern.
-
 ## Feature Gaps / Incomplete Implementations
 
 - [ ] **ProxyDB has unimplemented methods that panic**

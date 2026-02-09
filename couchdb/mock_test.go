@@ -100,6 +100,21 @@ func consume(r io.ReadCloser) error {
 	return e
 }
 
+// errAfterNWriter succeeds for the first n Write calls, then returns err.
+type errAfterNWriter struct {
+	n     int
+	count int
+	err   error
+}
+
+func (w *errAfterNWriter) Write(p []byte) (int, error) {
+	w.count++
+	if w.count > w.n {
+		return 0, w.err
+	}
+	return len(p), nil
+}
+
 type mockReadCloser struct {
 	ReadFunc  func([]byte) (int, error)
 	CloseFunc func() error

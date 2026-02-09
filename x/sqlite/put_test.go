@@ -1230,6 +1230,35 @@ func TestDBPut(t *testing.T) {
 		}
 	})
 
+	tests.Add("validate_doc_update receives admin party secObj", func(t *testing.T) interface{} {
+		d := newDB(t)
+		d.tAddValidation("_design/validation", `function(newDoc, oldDoc, userCtx, secObj) {
+			if (!Array.isArray(secObj.admins.names)) throw({forbidden: "admins.names not an array"});
+			if (!Array.isArray(secObj.admins.roles)) throw({forbidden: "admins.roles not an array"});
+			if (!Array.isArray(secObj.members.names)) throw({forbidden: "members.names not an array"});
+			if (!Array.isArray(secObj.members.roles)) throw({forbidden: "members.roles not an array"});
+		}`)
+
+		return test{
+			db:    d,
+			docID: "foo",
+			doc: map[string]interface{}{
+				"foo": "bar",
+			},
+			wantRev: "1-.*",
+			wantRevs: []leaf{
+				{
+					ID:  "_design/validation",
+					Rev: 1,
+				},
+				{
+					ID:  "foo",
+					Rev: 1,
+				},
+			},
+		}
+	})
+
 	/*
 		TODO:
 		- with updates function

@@ -512,32 +512,33 @@ func (o Map) Revs() bool {
 	return v
 }
 
+// Update mode constants for view queries.
 const (
-	updateModeTrue  = "true"
-	updateModeFalse = "false"
-	updateModeLazy  = "lazy"
+	UpdateModeTrue  = "true"
+	UpdateModeFalse = "false"
+	UpdateModeLazy  = "lazy"
 )
 
 // Update returns the update option, which may be "true", "false", or "lazy".
 func (o Map) Update() (string, error) {
 	v, ok := o["update"]
 	if !ok {
-		return updateModeTrue, nil
+		return UpdateModeTrue, nil
 	}
 	switch t := v.(type) {
 	case bool:
 		if t {
-			return updateModeTrue, nil
+			return UpdateModeTrue, nil
 		}
-		return updateModeFalse, nil
+		return UpdateModeFalse, nil
 	case string:
 		switch t {
 		case "true":
-			return updateModeTrue, nil
+			return UpdateModeTrue, nil
 		case "false":
-			return updateModeFalse, nil
+			return UpdateModeFalse, nil
 		case "lazy":
-			return updateModeLazy, nil
+			return UpdateModeLazy, nil
 		}
 	}
 	return "", &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'update': %v", v)}
@@ -1027,6 +1028,62 @@ func (v ViewOptions) Validate() error {
 	}
 
 	return nil
+}
+
+// IncludeDocs returns the include_docs option.
+func (v ViewOptions) IncludeDocs() bool { return v.includeDocs }
+
+// Conflicts returns the conflicts option.
+func (v ViewOptions) Conflicts() bool { return v.conflicts }
+
+// Attachments returns the attachments option.
+func (v ViewOptions) Attachments() bool { return v.attachments }
+
+// Update returns the update option.
+func (v ViewOptions) Update() string { return v.update }
+
+// UpdateSeq returns the update_seq option.
+func (v ViewOptions) UpdateSeq() bool { return v.updateSeq }
+
+// Reduce returns the reduce option.
+func (v ViewOptions) Reduce() *bool { return v.reduce }
+
+// Group returns the group option.
+func (v ViewOptions) Group() bool { return v.group }
+
+// GroupLevel returns the group_level option.
+func (v ViewOptions) GroupLevel() uint64 { return v.groupLevel }
+
+// Selector returns the selector option for _find queries.
+func (v ViewOptions) Selector() *mango.Selector { return v.selector }
+
+// Fields returns the fields option for _find queries.
+func (v ViewOptions) Fields() []string { return v.fields }
+
+// FindLimit returns the limit option for _find queries.
+func (v ViewOptions) FindLimit() int64 { return v.findLimit }
+
+// FindSkip returns the skip option for _find queries.
+func (v ViewOptions) FindSkip() int64 { return v.findSkip }
+
+// Bookmark returns the bookmark option for _find queries.
+func (v ViewOptions) Bookmark() string { return v.bookmark }
+
+// BuildOrderBy returns an ORDER BY clause based on the provided configuration.
+// Additional columns can be specified to include in the ORDER BY clause.
+func (v ViewOptions) BuildOrderBy(moreColumns ...string) string {
+	if !v.sorted {
+		return ""
+	}
+	direction := "ASC"
+	if v.descending {
+		direction = "DESC"
+	}
+	conditions := make([]string, 0, len(moreColumns)+1)
+	for _, col := range append([]string{"key"}, moreColumns...) {
+		conditions = append(conditions, "view."+col+" "+direction)
+	}
+	return "ORDER BY " + strings.Join(conditions, ", ")
 }
 
 func endKeyOp(descending, inclusive bool) string {

@@ -127,3 +127,17 @@ func (p PaginationOptions) BuildOrderBy() string {
 	}
 	return "ORDER BY view.key ASC"
 }
+
+// BuildLimit returns a LIMIT/OFFSET clause based on the provided configuration.
+func (p PaginationOptions) BuildLimit() string {
+	switch {
+	case p.limit >= 0 && p.skip > 0:
+		return fmt.Sprintf("LIMIT %d OFFSET %d", p.limit, p.skip)
+	case p.limit >= 0:
+		return fmt.Sprintf("LIMIT %d", p.limit)
+	case p.skip > 0:
+		return fmt.Sprintf("LIMIT -1 OFFSET %d", p.skip)
+	default:
+		return ""
+	}
+}

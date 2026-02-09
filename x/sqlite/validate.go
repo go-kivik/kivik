@@ -36,8 +36,15 @@ func (d *db) runValidation(ctx context.Context, tx *sql.Tx, docID string, newDoc
 		oldDoc = doc.toMap()
 	}
 
-	userCtx := map[string]any{}
-	secObj := map[string]any{}
+	userCtx := map[string]any{
+		"name":  nil,
+		"roles": []string{"_admin"},
+		"db":    d.name,
+	}
+	secObj := map[string]any{
+		"admins":  map[string]any{"names": []string{}, "roles": []string{}},
+		"members": map[string]any{"names": []string{}, "roles": []string{}},
+	}
 	for _, fn := range funcs {
 		if err := fn(newDoc, oldDoc, userCtx, secObj); err != nil {
 			return err

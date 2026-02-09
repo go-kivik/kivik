@@ -17,8 +17,6 @@ These return a bare `"not implemented"` error:
 
 - [ ] Replicate / GetReplications
 - [ ] DBUpdates
-- [ ] Session
-- [ ] Security / SetSecurity
 
 ### Incomplete features
 
@@ -27,8 +25,9 @@ These return a bare `"not implemented"` error:
   stable, update, stale, use_index, execution_stats.
 
 - [x] **validate_doc_update** — Evaluated during Put, CreateDoc, and Delete.
-  `userCtx` and `secObj` are passed as empty objects until Session and Security
-  are implemented.
+  `userCtx` and `secObj` are passed as empty objects. There is no permission
+  model in this driver — Security stores an opaque JSON blob for replication
+  fidelity only.
 
 - [ ] **Update functions not evaluated** (`put_test.go:1116`). Stored but never
   invoked.

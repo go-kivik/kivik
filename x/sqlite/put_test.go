@@ -1203,6 +1203,33 @@ func TestDBPut(t *testing.T) {
 		}
 	})
 
+	tests.Add("validate_doc_update receives admin party userCtx", func(t *testing.T) interface{} {
+		d := newDB(t)
+		d.tAddValidation("_design/validation", `function(newDoc, oldDoc, userCtx, secObj) {
+			if (userCtx.roles.indexOf("_admin") === -1) throw({forbidden: "not admin"});
+			if (userCtx.db !== "test") throw({forbidden: "wrong db name"});
+		}`)
+
+		return test{
+			db:    d,
+			docID: "foo",
+			doc: map[string]interface{}{
+				"foo": "bar",
+			},
+			wantRev: "1-.*",
+			wantRevs: []leaf{
+				{
+					ID:  "_design/validation",
+					Rev: 1,
+				},
+				{
+					ID:  "foo",
+					Rev: 1,
+				},
+			},
+		}
+	})
+
 	/*
 		TODO:
 		- with updates function

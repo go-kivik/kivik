@@ -1086,7 +1086,7 @@ func TestNewRequestCompressBodyGoroutineLeak(t *testing.T) {
 
 	before := runtime.NumGoroutine()
 
-	_, err := client.NewRequest(t.Context(), "BAD METHOD", "/foo", Body("some body data"), nil)
+	_, err := client.NewRequest(context.Background(), "BAD METHOD", "/foo", Body("some body data"), nil)
 	if err == nil {
 		t.Fatal("expected error from NewRequest with invalid method")
 	}

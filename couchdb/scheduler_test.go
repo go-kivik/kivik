@@ -658,7 +658,7 @@ func TestSchedulerSupportedClosesBody(t *testing.T) {
 		}, nil
 	})
 
-	_, err := c.schedulerSupported(t.Context())
+	_, err := c.schedulerSupported(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}

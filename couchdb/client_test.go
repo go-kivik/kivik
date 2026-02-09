@@ -478,7 +478,7 @@ func Test_updatesForFeedType(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
-		_, err := updatesForFeedType(t.Context(), Body(""), tt.ft)
+		_, err := updatesForFeedType(context.Background(), Body(""), tt.ft)
 		if d := internal.StatusErrorDiffRE(tt.wantErr, tt.wantStatus, err); d != "" {
 			t.Error(d)
 		}

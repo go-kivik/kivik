@@ -124,7 +124,7 @@ func (c *Pinger) Ping(ctx context.Context) (bool, error) {
 type Cluster struct {
 	*Client
 	ClusterStatusFunc func(context.Context, driver.Options) (string, error)
-	ClusterSetupFunc  func(context.Context, interface{}) error
+	ClusterSetupFunc  func(context.Context, any) error
 	MembershipFunc    func(context.Context) (*driver.ClusterMembership, error)
 }
 
@@ -136,7 +136,7 @@ func (c *Cluster) ClusterStatus(ctx context.Context, options driver.Options) (st
 }
 
 // ClusterSetup calls c.ClusterSetupFunc
-func (c *Cluster) ClusterSetup(ctx context.Context, action interface{}) error {
+func (c *Cluster) ClusterSetup(ctx context.Context, action any) error {
 	return c.ClusterSetupFunc(ctx, action)
 }
 

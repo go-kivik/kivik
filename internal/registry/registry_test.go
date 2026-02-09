@@ -32,7 +32,7 @@ func TestRegister(t *testing.T) {
 		t.Cleanup(func() {
 			drivers = make(map[string]driver.Driver)
 		})
-		p := func() (p interface{}) {
+		p := func() (p any) {
 			defer func() {
 				p = recover()
 			}()
@@ -48,7 +48,7 @@ func TestRegister(t *testing.T) {
 		t.Cleanup(func() {
 			drivers = make(map[string]driver.Driver)
 		})
-		p := func() (p interface{}) {
+		p := func() (p any) {
 			defer func() {
 				p = recover()
 			}()
@@ -65,7 +65,7 @@ func TestRegister(t *testing.T) {
 		t.Cleanup(func() {
 			drivers = make(map[string]driver.Driver)
 		})
-		p := func() (p interface{}) {
+		p := func() (p any) {
 			defer func() {
 				p = recover()
 			}()

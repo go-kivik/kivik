@@ -147,7 +147,7 @@ func (r *ResultSet) Metadata() (*ResultMetadata, error) {
 //
 // Refer to the documentation for [encoding/json.Unmarshal] for unmarshaling
 // details.
-func (r *ResultSet) ScanValue(dest interface{}) error {
+func (r *ResultSet) ScanValue(dest any) error {
 	runlock, err := r.makeReady()
 	if err != nil {
 		return err
@@ -169,7 +169,7 @@ func (r *ResultSet) ScanValue(dest interface{}) error {
 //
 // If the row returned an error, it will be returned rather than
 // unmarshaling the doc, as error rows do not include docs.
-func (r *ResultSet) ScanDoc(dest interface{}) error {
+func (r *ResultSet) ScanDoc(dest any) error {
 	runlock, err := r.makeReady()
 	if err != nil {
 		return err
@@ -191,7 +191,7 @@ func (r *ResultSet) ScanDoc(dest interface{}) error {
 //
 // Unlike [ResultSet.ScanValue] and [ResultSet.ScanDoc], this may successfully
 // scan the key, and also return an error, if the row itself represents an error.
-func (r *ResultSet) ScanKey(dest interface{}) error {
+func (r *ResultSet) ScanKey(dest any) error {
 	runlock, err := r.makeReady()
 	if err != nil {
 		return err
@@ -295,7 +295,7 @@ type rowsIterator struct {
 
 var _ iterator = &rowsIterator{}
 
-func (r *rowsIterator) Next(i interface{}) error {
+func (r *rowsIterator) Next(i any) error {
 	row := i.(*driver.Row)
 	row.ID = ""
 	row.Rev = ""
@@ -330,16 +330,16 @@ func (r *rowsIterator) Next(i interface{}) error {
 // once the array is filled.  The iterator is closed by this method. It is
 // possible that an error will be returned, and that one or more documents were
 // successfully scanned.
-func ScanAllDocs(r *ResultSet, dest interface{}) error {
+func ScanAllDocs(r *ResultSet, dest any) error {
 	return scanAll(r, dest, r.ScanDoc)
 }
 
 // ScanAllValues works like [ScanAllDocs], but scans the values rather than docs.
-func ScanAllValues(r *ResultSet, dest interface{}) error {
+func ScanAllValues(r *ResultSet, dest any) error {
 	return scanAll(r, dest, r.ScanValue)
 }
 
-func scanAll(r *ResultSet, dest interface{}, scan func(interface{}) error) (err error) {
+func scanAll(r *ResultSet, dest any, scan func(any) error) (err error) {
 	defer func() {
 		closeErr := r.Close()
 		if err == nil {
@@ -425,7 +425,7 @@ func (r *Row) Key() (json.RawMessage, error) {
 //
 // If the row returned an error, it will be returned rather than
 // unmarshaling the doc, as error rows do not include values.
-func (r *Row) ScanValue(dest interface{}) error {
+func (r *Row) ScanValue(dest any) error {
 	if err := r.dRow.Error; err != nil {
 		return err
 	}
@@ -438,7 +438,7 @@ func (r *Row) ScanValue(dest interface{}) error {
 //
 // Unlike [Row.ScanValue] and [Row.ScanDoc], this may successfully scan the key,
 // and also return an error, if the row itself represents an error.
-func (r *Row) ScanKey(dest interface{}) error {
+func (r *Row) ScanKey(dest any) error {
 	if err := r.dRow.Error; err != nil {
 		return err
 	}
@@ -450,7 +450,7 @@ func (r *Row) ScanKey(dest interface{}) error {
 //
 // If the row returned an error, it will be returned rather than
 // unmarshaling the doc, as error rows do not include docs.
-func (r *Row) ScanDoc(dest interface{}) error {
+func (r *Row) ScanDoc(dest any) error {
 	if err := r.dRow.Error; err != nil {
 		return err
 	}

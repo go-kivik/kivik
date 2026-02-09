@@ -26,13 +26,13 @@ import (
 func Test_put_config_RunE(t *testing.T) {
 	tests := testy.NewTable()
 
-	tests.Add("missing key", func(*testing.T) interface{} {
+	tests.Add("missing key", func(*testing.T) any {
 		return cmdTest{
 			args:   []string{"delete", "config", "http://example.com/foo/"},
 			status: errors.ErrUsage,
 		}
 	})
-	tests.Add("named node", func(t *testing.T) interface{} {
+	tests.Add("named node", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{

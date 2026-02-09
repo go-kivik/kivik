@@ -43,7 +43,7 @@ type db struct {
 var _ driver.DB = (*db)(nil)
 
 func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, error) {
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 	result, err := d.db.AllDocs(ctx, opts)
 	if err != nil {
@@ -55,7 +55,7 @@ func (d *db) AllDocs(ctx context.Context, options driver.Options) (driver.Rows, 
 }
 
 func (d *db) Query(ctx context.Context, ddoc, view string, options driver.Options) (driver.Rows, error) {
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 	result, err := d.db.Query(ctx, ddoc, view, opts)
 	if err != nil {
@@ -94,7 +94,7 @@ func (d *document) Offset() int64     { return 0 }
 func (d *document) TotalRows() int64  { return 0 }
 
 func (d *db) Get(ctx context.Context, docID string, options driver.Options) (*driver.Document, error) {
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 	doc, rev, err := d.db.Get(ctx, docID, opts)
 	if err != nil {
@@ -106,18 +106,18 @@ func (d *db) Get(ctx context.Context, docID string, options driver.Options) (*dr
 	}, nil
 }
 
-func (d *db) CreateDoc(ctx context.Context, doc interface{}, options driver.Options) (docID, rev string, err error) {
+func (d *db) CreateDoc(ctx context.Context, doc any, options driver.Options) (docID, rev string, err error) {
 	jsonDoc, err := json.Marshal(doc)
 	if err != nil {
 		return "", "", err
 	}
 	jsDoc := js.Global.Get("JSON").Call("parse", string(jsonDoc))
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 	return d.db.Post(ctx, jsDoc, opts)
 }
 
-func (d *db) Put(ctx context.Context, docID string, doc interface{}, options driver.Options) (rev string, err error) {
+func (d *db) Put(ctx context.Context, docID string, doc any, options driver.Options) (rev string, err error) {
 	jsonDoc, err := json.Marshal(doc)
 	if err != nil {
 		return "", err
@@ -128,14 +128,14 @@ func (d *db) Put(ctx context.Context, docID string, doc interface{}, options dri
 			return "", &internal.Error{Status: http.StatusBadRequest, Message: "id argument must match _id field in document"}
 		}
 	}
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 	jsDoc.Set("_id", docID)
 	return d.db.Put(ctx, jsDoc, opts)
 }
 
 func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (newRev string, err error) {
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 	rev, _ := opts["rev"].(string)
 	return d.db.Delete(ctx, docID, rev, opts)

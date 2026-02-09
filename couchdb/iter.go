@@ -26,11 +26,11 @@ import (
 )
 
 type parser interface {
-	decodeItem(interface{}, *json.Decoder) error
+	decodeItem(any, *json.Decoder) error
 }
 
 type metaParser interface {
-	parseMeta(interface{}, *json.Decoder, string) error
+	parseMeta(any, *json.Decoder, string) error
 }
 
 type cancelableReadCloser struct {
@@ -119,7 +119,7 @@ func (r *cancelableReadCloser) Close() error {
 }
 
 type iter struct {
-	meta        interface{}
+	meta        any
 	expectedKey string
 	body        io.ReadCloser
 	parser      parser
@@ -132,7 +132,7 @@ type iter struct {
 	closed int32
 }
 
-func newIter(ctx context.Context, meta interface{}, expectedKey string, body io.ReadCloser, parser parser) *iter {
+func newIter(ctx context.Context, meta any, expectedKey string, body io.ReadCloser, parser parser) *iter {
 	return &iter{
 		meta:        meta,
 		expectedKey: expectedKey,
@@ -141,7 +141,7 @@ func newIter(ctx context.Context, meta interface{}, expectedKey string, body io.
 	}
 }
 
-func (i *iter) next(row interface{}) error {
+func (i *iter) next(row any) error {
 	if atomic.LoadInt32(&i.closed) == 1 {
 		return io.EOF
 	}
@@ -262,7 +262,7 @@ func (i *iter) finish() (err error) {
 	// return nil
 }
 
-func (i *iter) nextRow(row interface{}) error {
+func (i *iter) nextRow(row any) error {
 	if !i.dec.More() {
 		return io.EOF
 	}

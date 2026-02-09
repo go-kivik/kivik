@@ -21,12 +21,12 @@ import (
 // BulkDocer mocks a driver.DB and driver.BulkDocer
 type BulkDocer struct {
 	*DB
-	BulkDocsFunc func(ctx context.Context, docs []interface{}, options driver.Options) ([]driver.BulkResult, error)
+	BulkDocsFunc func(ctx context.Context, docs []any, options driver.Options) ([]driver.BulkResult, error)
 }
 
 var _ driver.BulkDocer = &BulkDocer{}
 
 // BulkDocs calls db.BulkDocsFunc
-func (db *BulkDocer) BulkDocs(ctx context.Context, docs []interface{}, options driver.Options) ([]driver.BulkResult, error) {
+func (db *BulkDocer) BulkDocs(ctx context.Context, docs []any, options driver.Options) ([]driver.BulkResult, error) {
 	return db.BulkDocsFunc(ctx, docs, options)
 }

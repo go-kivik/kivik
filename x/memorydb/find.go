@@ -62,7 +62,7 @@ func (i *indexSpec) UnmarshalJSON(data []byte) error {
 
 var _ driver.Finder = &db{}
 
-func (d *db) CreateIndex(context.Context, string, string, interface{}, driver.Options) error {
+func (d *db) CreateIndex(context.Context, string, string, any, driver.Options) error {
 	return errFindNotImplemented
 }
 
@@ -74,7 +74,7 @@ func (d *db) DeleteIndex(context.Context, string, string, driver.Options) error 
 	return errFindNotImplemented
 }
 
-func (d *db) Find(ctx context.Context, query interface{}, _ driver.Options) (driver.Rows, error) {
+func (d *db) Find(ctx context.Context, query any, _ driver.Options) (driver.Rows, error) {
 	if exists, _ := d.DBExists(ctx, d.dbName, nil); !exists {
 		return nil, statusError{status: http.StatusNotFound, error: errors.New("database does not exist")}
 	}
@@ -106,7 +106,7 @@ func (d *db) Find(ctx context.Context, query interface{}, _ driver.Options) (dri
 			if err := json.Unmarshal(doc.data, &cd); err != nil {
 				panic(err)
 			}
-			if fq.Selector.Match(map[string]interface{}(cd)) {
+			if fq.Selector.Match(map[string]any(cd)) {
 				rows.docIDs = append(rows.docIDs, docID)
 				rows.revs = append(rows.revs, doc)
 			}
@@ -117,7 +117,7 @@ func (d *db) Find(ctx context.Context, query interface{}, _ driver.Options) (dri
 	return rows, nil
 }
 
-func (d *db) Explain(context.Context, interface{}, driver.Options) (*driver.QueryPlan, error) {
+func (d *db) Explain(context.Context, any, driver.Options) (*driver.QueryPlan, error) {
 	return nil, errFindNotImplemented
 }
 
@@ -153,7 +153,7 @@ func (r *findResults) filterDoc(data []byte) ([]byte, error) {
 	if len(r.fields) == 0 {
 		return data, nil
 	}
-	var intermediateDoc map[string]interface{}
+	var intermediateDoc map[string]any
 	if err := json.Unmarshal(data, &intermediateDoc); err != nil {
 		return nil, err
 	}
@@ -167,7 +167,7 @@ func (r *findResults) filterDoc(data []byte) ([]byte, error) {
 
 // toJSON converts a string, []byte, json.RawMessage, or an arbitrary type into
 // an io.Reader of JSON marshaled data.
-func toJSON(i interface{}) (io.Reader, error) {
+func toJSON(i any) (io.Reader, error) {
 	switch t := i.(type) {
 	case string:
 		return strings.NewReader(t), nil

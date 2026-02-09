@@ -84,7 +84,7 @@ func Filter(code string) (FilterFunc, error) {
 // before being returned to the caller.
 //
 // [reduce function]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#reduce-and-rereduce-functions
-type ReduceFunc func(keys [][2]interface{}, values []interface{}, rereduce bool) ([]interface{}, error)
+type ReduceFunc func(keys [][2]any, values []any, rereduce bool) ([]any, error)
 
 // Reduce compiles the provided JavaScript code into a ReduceFunc.
 func Reduce(code string) (ReduceFunc, error) {
@@ -98,7 +98,7 @@ func Reduce(code string) (ReduceFunc, error) {
 		return nil, fmt.Errorf("expected reduce to be a function, got %T", vm.Get("reduce"))
 	}
 
-	return func(keys [][2]interface{}, values []interface{}, rereduce bool) ([]interface{}, error) {
+	return func(keys [][2]any, values []any, rereduce bool) ([]any, error) {
 		reduceValue, err := reduceFunc(goja.Undefined(), vm.ToValue(keys), vm.ToValue(values), vm.ToValue(rereduce))
 		if err != nil {
 			return nil, exception(err)
@@ -108,14 +108,14 @@ func Reduce(code string) (ReduceFunc, error) {
 		// If rv is a slice, convert it to a []interface{} before returning it.
 		v := reflect.ValueOf(rv)
 		if v.Kind() == reflect.Slice {
-			out := make([]interface{}, v.Len())
+			out := make([]any, v.Len())
 			for i := 0; i < v.Len(); i++ {
 				out[i] = v.Index(i).Interface()
 			}
 			return out, nil
 		}
 
-		return []interface{}{rv}, nil
+		return []any{rv}, nil
 	}, nil
 }
 

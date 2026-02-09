@@ -32,7 +32,7 @@ func Test_replicate_RunE(t *testing.T) {
 		args:   []string{"replicate", "-O", "source=./foo"},
 		status: errors.ErrUsage,
 	})
-	tests.Add("fs to fs", func(t *testing.T) interface{} {
+	tests.Add("fs to fs", func(t *testing.T) any {
 		var tmpdir string
 		t.Cleanup(testy.TempDir(t, &tmpdir))
 

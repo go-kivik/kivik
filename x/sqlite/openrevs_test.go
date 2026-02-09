@@ -44,7 +44,7 @@ func TestDBOpenRevs(t *testing.T) {
 		wantErr:    "missing",
 		wantStatus: http.StatusNotFound,
 	})
-	tests.Add("invalid rev format", func(t *testing.T) interface{} {
+	tests.Add("invalid rev format", func(t *testing.T) any {
 		d := newDB(t)
 		docID := "foo"
 		_ = d.tPut(docID, map[string]string{"foo": "bar"})
@@ -57,7 +57,7 @@ func TestDBOpenRevs(t *testing.T) {
 			wantStatus: http.StatusBadRequest,
 		}
 	})
-	tests.Add("all, with single rev", func(t *testing.T) interface{} {
+	tests.Add("all, with single rev", func(t *testing.T) any {
 		d := newDB(t)
 		docID := "foo"
 		rev := d.tPut(docID, map[string]string{"foo": "bar"})
@@ -71,7 +71,7 @@ func TestDBOpenRevs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("all, with deleted rev", func(t *testing.T) interface{} {
+	tests.Add("all, with deleted rev", func(t *testing.T) any {
 		d := newDB(t)
 		docID := "foo"
 		rev := d.tPut(docID, map[string]string{"foo": "bar"})
@@ -86,7 +86,7 @@ func TestDBOpenRevs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("all, with conflicting leaves", func(t *testing.T) interface{} {
+	tests.Add("all, with conflicting leaves", func(t *testing.T) any {
 		d := newDB(t)
 		docID := "foo"
 		rev := d.tPut(docID, map[string]string{"_rev": "1-xyz", "foo": "bar"}, kivik.Param("new_edits", false))
@@ -102,7 +102,7 @@ func TestDBOpenRevs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("no revs provided returns winning leaf", func(t *testing.T) interface{} {
+	tests.Add("no revs provided returns winning leaf", func(t *testing.T) any {
 		d := newDB(t)
 		docID := "foo"
 		rev := d.tPut(docID, map[string]string{"_rev": "1-xyz", "foo": "bar"}, kivik.Param("new_edits", false))
@@ -117,7 +117,7 @@ func TestDBOpenRevs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("specific rev", func(t *testing.T) interface{} {
+	tests.Add("specific rev", func(t *testing.T) any {
 		d := newDB(t)
 		docID := "foo"
 		rev := d.tPut(docID, map[string]string{"foo": "bar"})
@@ -132,7 +132,7 @@ func TestDBOpenRevs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("specific revs, including non-leaf revs", func(t *testing.T) interface{} {
+	tests.Add("specific revs, including non-leaf revs", func(t *testing.T) any {
 		d := newDB(t)
 		docID := "foo"
 		rev := d.tPut(docID, map[string]string{"foo": "bar"})
@@ -148,7 +148,7 @@ func TestDBOpenRevs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("specific revs, including one that doesn't exist", func(t *testing.T) interface{} {
+	tests.Add("specific revs, including one that doesn't exist", func(t *testing.T) any {
 		d := newDB(t)
 		docID := "foo"
 		rev := d.tPut(docID, map[string]string{"foo": "bar"})
@@ -165,28 +165,28 @@ func TestDBOpenRevs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("latest=true returns latest leaf of conflicting branch", func(t *testing.T) interface{} {
+	tests.Add("latest=true returns latest leaf of conflicting branch", func(t *testing.T) any {
 		d := newDB(t)
 		docID := "foo"
 		rev := d.tPut(docID, map[string]string{"step": "one"})
 		r, _ := parseRev(rev)
-		_ = d.tPut(docID, map[string]interface{}{
+		_ = d.tPut(docID, map[string]any{
 			"step": "two",
-			"_revisions": map[string]interface{}{
+			"_revisions": map[string]any{
 				"start": 2,
 				"ids":   []string{"abc", r.id},
 			},
 		}, kivik.Param("new_edits", false))
-		_ = d.tPut(docID, map[string]interface{}{
+		_ = d.tPut(docID, map[string]any{
 			"step": "three",
-			"_revisions": map[string]interface{}{
+			"_revisions": map[string]any{
 				"start": 3,
 				"ids":   []string{"def", "abc"},
 			},
 		}, kivik.Param("new_edits", false))
-		_ = d.tPut(docID, map[string]interface{}{
+		_ = d.tPut(docID, map[string]any{
 			"step": "four",
-			"_revisions": map[string]interface{}{
+			"_revisions": map[string]any{
 				"start": 3,
 				"ids":   []string{"jkl", "ghi", r.id},
 			},
@@ -203,21 +203,21 @@ func TestDBOpenRevs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("latest=true returns multiple leaves when requested ancestor has them", func(t *testing.T) interface{} {
+	tests.Add("latest=true returns multiple leaves when requested ancestor has them", func(t *testing.T) any {
 		d := newDB(t)
 		docID := "foo"
 		rev := d.tPut(docID, map[string]string{"step": "one"})
 		r, _ := parseRev(rev)
-		_ = d.tPut(docID, map[string]interface{}{
+		_ = d.tPut(docID, map[string]any{
 			"step": "three",
-			"_revisions": map[string]interface{}{
+			"_revisions": map[string]any{
 				"start": 3,
 				"ids":   []string{"def", "abc", r.id},
 			},
 		}, kivik.Param("new_edits", false))
-		_ = d.tPut(docID, map[string]interface{}{
+		_ = d.tPut(docID, map[string]any{
 			"step": "four",
-			"_revisions": map[string]interface{}{
+			"_revisions": map[string]any{
 				"start": 3,
 				"ids":   []string{"jkl", "ghi", r.id},
 			},
@@ -235,7 +235,7 @@ func TestDBOpenRevs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("specific rev and revs=true", func(t *testing.T) interface{} {
+	tests.Add("specific rev and revs=true", func(t *testing.T) any {
 		d := newDB(t)
 		docID := "foo"
 		rev := d.tPut(docID, map[string]string{"foo": "bar"})
@@ -256,10 +256,10 @@ func TestDBOpenRevs(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("revs=true with a single rev only", func(t *testing.T) interface{} {
+	tests.Add("revs=true with a single rev only", func(t *testing.T) any {
 		d := newDB(t)
 		docID := "foo"
-		rev := d.tPut(docID, map[string]interface{}{
+		rev := d.tPut(docID, map[string]any{
 			"foo": "bar",
 		})
 
@@ -276,10 +276,10 @@ func TestDBOpenRevs(t *testing.T) {
 		}
 	})
 
-	tests.Add("include attachment data", func(t *testing.T) interface{} {
+	tests.Add("include attachment data", func(t *testing.T) any {
 		d := newDB(t)
 		docID := "foo"
-		rev := d.tPut(docID, map[string]interface{}{
+		rev := d.tPut(docID, map[string]any{
 			"foo": "bar",
 			"_attachments": newAttachments().
 				add("att.txt", "hello, world").

@@ -45,7 +45,7 @@ func TestDBDelete(t *testing.T) {
 		wantStatus: http.StatusNotFound,
 		wantErr:    "document not found",
 	})
-	tests.Add("success", func(t *testing.T) interface{} {
+	tests.Add("success", func(t *testing.T) any {
 		d := newDB(t)
 		rev := d.tPut("foo", map[string]string{"foo": "bar"})
 
@@ -72,7 +72,7 @@ func TestDBDelete(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("replay delete should conflict", func(t *testing.T) interface{} {
+	tests.Add("replay delete should conflict", func(t *testing.T) any {
 		db := newDB(t)
 		rev := db.tPut("foo", map[string]string{"foo": "bar"})
 		_ = db.tDelete("foo", kivik.Rev(rev))
@@ -85,7 +85,7 @@ func TestDBDelete(t *testing.T) {
 			wantErr:    "document update conflict",
 		}
 	})
-	tests.Add("delete deleted doc should succeed", func(t *testing.T) interface{} {
+	tests.Add("delete deleted doc should succeed", func(t *testing.T) any {
 		db := newDB(t)
 		rev := db.tPut("foo", map[string]string{"foo": "bar"})
 		rev2 := db.tDelete("foo", kivik.Rev(rev))
@@ -97,7 +97,7 @@ func TestDBDelete(t *testing.T) {
 			wantRev: "3-.*",
 		}
 	})
-	tests.Add("delete without rev", func(t *testing.T) interface{} {
+	tests.Add("delete without rev", func(t *testing.T) any {
 		db := newDB(t)
 		_ = db.tPut("foo", map[string]string{"foo": "bar"})
 
@@ -108,7 +108,7 @@ func TestDBDelete(t *testing.T) {
 			wantErr:    "document update conflict",
 		}
 	})
-	tests.Add("delete losing rev for conflict should succeed", func(t *testing.T) interface{} {
+	tests.Add("delete losing rev for conflict should succeed", func(t *testing.T) any {
 		db := newDB(t)
 		_ = db.tPut("foo", map[string]string{
 			"cat":  "meow",

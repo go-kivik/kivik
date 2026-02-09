@@ -84,7 +84,7 @@ func New(client *http.Client, dsn string, options driver.Options) (*Client, erro
 			Password: password,
 		}
 	}
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 	options.Apply(c)
 	options.Apply(&auth)
@@ -131,7 +131,7 @@ type Response struct {
 
 // DecodeJSON unmarshals the response body into i. This method consumes and
 // closes the response body.
-func DecodeJSON(r *http.Response, i interface{}) error {
+func DecodeJSON(r *http.Response, i any) error {
 	defer CloseBody(r.Body)
 	if err := json.NewDecoder(r.Body).Decode(i); err != nil {
 		return &internal.Error{Status: http.StatusBadGateway, Err: err}
@@ -141,7 +141,7 @@ func DecodeJSON(r *http.Response, i interface{}) error {
 
 // DoJSON combines [Client.DoReq], [Client.ResponseError], and
 // [Response.DecodeJSON], and closes the response body.
-func (c *Client) DoJSON(ctx context.Context, method, path string, opts *Options, i interface{}) error {
+func (c *Client) DoJSON(ctx context.Context, method, path string, opts *Options, i any) error {
 	res, err := c.DoReq(ctx, method, path, opts)
 	if err != nil {
 		return err
@@ -309,7 +309,7 @@ func fixPath(req *http.Request, path string) {
 
 // BodyEncoder returns a function which returns the encoded body. It is meant
 // to be used as a http.Request.GetBody value.
-func BodyEncoder(i interface{}) func() (io.ReadCloser, error) {
+func BodyEncoder(i any) func() (io.ReadCloser, error) {
 	return func() (io.ReadCloser, error) {
 		return EncodeBody(i), nil
 	}
@@ -317,7 +317,7 @@ func BodyEncoder(i interface{}) func() (io.ReadCloser, error) {
 
 // EncodeBody JSON encodes i to an io.ReadCloser. If an encoding error
 // occurs, it will be returned on the next read.
-func EncodeBody(i interface{}) io.ReadCloser {
+func EncodeBody(i any) io.ReadCloser {
 	done := make(chan struct{})
 	r, w := io.Pipe()
 	go func() {

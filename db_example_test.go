@@ -91,10 +91,10 @@ func ExampleDB_Get() {
 //
 // Store your document normally, formatted with your views (or other functions).
 func ExampleDB_Put_updateView() {
-	_, err := db.Put(context.TODO(), "_design/foo", map[string]interface{}{
+	_, err := db.Put(context.TODO(), "_design/foo", map[string]any{
 		"_id": "_design/foo",
-		"views": map[string]interface{}{
-			"foo_view": map[string]interface{}{
+		"views": map[string]any{
+			"foo_view": map[string]any{
 				"map": "function(doc) { emit(doc._id) }",
 			},
 		},
@@ -105,13 +105,13 @@ func ExampleDB_Put_updateView() {
 }
 
 func ExampleDB_Query() {
-	rs := db.Query(context.TODO(), "_design/foo", "_view/bar", kivik.Params(map[string]interface{}{
+	rs := db.Query(context.TODO(), "_design/foo", "_view/bar", kivik.Params(map[string]any{
 		"startkey": `foo`,
 		"endkey":   `foo` + kivik.EndKeySuffix,
 	}))
 	defer rs.Close()
 	for rs.Next() {
-		var doc interface{}
+		var doc any
 		if err := rs.ScanDoc(&doc); err != nil {
 			panic(err)
 		}
@@ -123,13 +123,13 @@ func ExampleDB_Query() {
 }
 
 func ExampleDB_Query_compoundKey() {
-	rs := db.Query(context.TODO(), "_design/foo", "_view/bar", kivik.Params(map[string]interface{}{
+	rs := db.Query(context.TODO(), "_design/foo", "_view/bar", kivik.Params(map[string]any{
 		"startkey": []string{"foo", "bar"},
 		"endkey":   []string{"foo", "bar" + kivik.EndKeySuffix},
 	}))
 	defer rs.Close()
 	for rs.Next() {
-		var doc interface{}
+		var doc any
 		if err := rs.ScanDoc(&doc); err != nil {
 			panic(err)
 		}
@@ -146,7 +146,7 @@ func ExampleDB_Query_literalJSONKeys() {
 	))
 	defer rs.Close()
 	for rs.Next() {
-		var doc interface{}
+		var doc any
 		if err := rs.ScanDoc(&doc); err != nil {
 			panic(err)
 		}
@@ -159,13 +159,13 @@ func ExampleDB_Query_literalJSONKeys() {
 
 func ExampleDB_Query_multiple() {
 	rs := db.Query(context.TODO(), "_design/foo", "_view/bar", kivik.Param(
-		"queries", []interface{}{
-			map[string]interface{}{
+		"queries", []any{
+			map[string]any{
 				"startkey":     []string{"foo", "bar"},
 				"endkey":       []string{"foo", "bar" + kivik.EndKeySuffix},
 				"include_docs": true,
 			},
-			map[string]interface{}{
+			map[string]any{
 				"startkey":     []string{"baz", "bar"},
 				"endkey":       []string{"baz", "bar" + kivik.EndKeySuffix},
 				"include_docs": true,
@@ -176,7 +176,7 @@ func ExampleDB_Query_multiple() {
 	for rs.NextResultSet() {
 		rsIndex++
 		for rs.Next() {
-			var doc interface{}
+			var doc any
 			if err := rs.ScanDoc(&doc); err != nil {
 				panic(err)
 			}

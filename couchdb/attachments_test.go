@@ -168,7 +168,7 @@ func TestPutAttachment(t *testing.T) {
 				ContentType: "text/plain",
 				Content:     Body("x"),
 			},
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"foo": "oink",
 				"rev": "1-xxx",
 			}),
@@ -691,7 +691,7 @@ func TestDeleteAttachment(t *testing.T) {
 			}),
 			id:       "foo",
 			filename: "foo.txt",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"rev": "1-xxx",
 				"foo": "oink",
 			}),
@@ -703,7 +703,7 @@ func TestDeleteAttachment(t *testing.T) {
 			db:       &db{},
 			id:       "foo",
 			filename: "foo.txt",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"rev": "1-xxx",
 				"foo": make(chan int),
 			}),

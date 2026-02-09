@@ -30,7 +30,7 @@ func Test_get_sec_RunE(t *testing.T) {
 		args:   []string{"get", "sec"},
 		status: errors.ErrUsage,
 	})
-	tests.Add("success", func(*testing.T) interface{} {
+	tests.Add("success", func(*testing.T) any {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{

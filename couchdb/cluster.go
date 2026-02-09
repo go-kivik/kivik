@@ -21,7 +21,7 @@ import (
 )
 
 func (c *client) ClusterStatus(ctx context.Context, options driver.Options) (string, error) {
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 	var result struct {
 		State string `json:"state"`
@@ -34,7 +34,7 @@ func (c *client) ClusterStatus(ctx context.Context, options driver.Options) (str
 	return result.State, err
 }
 
-func (c *client) ClusterSetup(ctx context.Context, action interface{}) error {
+func (c *client) ClusterSetup(ctx context.Context, action any) error {
 	options := &chttp.Options{
 		Body: chttp.EncodeBody(action),
 	}

@@ -74,7 +74,7 @@ output_format?
 X-Couch-Full-Commit header/option
 */
 
-func (d *db) Put(ctx context.Context, docID string, i interface{}, options driver.Options) (string, error) {
+func (d *db) Put(ctx context.Context, docID string, i any, options driver.Options) (string, error) {
 	if err := validateID(docID); err != nil {
 		return "", err
 	}

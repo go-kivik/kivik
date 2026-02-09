@@ -75,7 +75,7 @@ func TestClusterStatus(t *testing.T) {
 		status:  http.StatusBadRequest,
 		err:     `Get "?http://example.com/_cluster_setup\?ensure_dbs_exist=foo%2Cbar%2Cbaz"?: invalid character 'o' in literal false \(expecting 'a'\)`,
 	})
-	tests.Add("ensure dbs", func(t *testing.T) interface{} {
+	tests.Add("ensure dbs", func(t *testing.T) any {
 		return tst{
 			client: newCustomClient(func(r *http.Request) (*http.Response, error) {
 				input := r.URL.Query().Get(optionEnsureDBsExist)
@@ -121,7 +121,7 @@ func TestClusterStatus(t *testing.T) {
 func TestClusterSetup(t *testing.T) {
 	type tst struct {
 		client *client
-		action interface{}
+		action any
 		status int
 		err    string
 	}
@@ -137,13 +137,13 @@ func TestClusterSetup(t *testing.T) {
 		status: http.StatusBadRequest,
 		err:    `Post "?http://example.com/_cluster_setup"?: json: unsupported type: func()`,
 	})
-	tests.Add("success", func(t *testing.T) interface{} {
+	tests.Add("success", func(t *testing.T) any {
 		return tst{
 			client: newCustomClient(func(r *http.Request) (*http.Response, error) {
-				expected := map[string]interface{}{
+				expected := map[string]any{
 					"action": "finish_cluster",
 				}
-				result := map[string]interface{}{}
+				result := map[string]any{}
 				if err := json.NewDecoder(r.Body).Decode(&result); err != nil {
 					t.Fatal(err)
 				}
@@ -160,7 +160,7 @@ func TestClusterSetup(t *testing.T) {
 					Body: io.NopCloser(strings.NewReader(`{"ok":true}`)),
 				}, nil
 			}),
-			action: map[string]interface{}{
+			action: map[string]any{
 				"action": "finish_cluster",
 			},
 		}
@@ -176,7 +176,7 @@ func TestClusterSetup(t *testing.T) {
 			},
 			Body: io.NopCloser(strings.NewReader(`{"error":"bad_request","reason":"Cluster is already finished"}`)),
 		}, nil),
-		action: map[string]interface{}{
+		action: map[string]any{
 			"action": "finish_cluster",
 		},
 		status: http.StatusBadRequest,
@@ -205,7 +205,7 @@ func TestMembership(t *testing.T) {
 		status: http.StatusBadGateway,
 		err:    `Get "?http://example.com/_membership"?: network error`,
 	})
-	tests.Add("success 2.3.1", func(*testing.T) interface{} {
+	tests.Add("success 2.3.1", func(*testing.T) any {
 		return tt{
 			client: newTestClient(&http.Response{
 				StatusCode: http.StatusOK,

@@ -26,7 +26,7 @@ func (h *Handler) PutDB() http.HandlerFunc {
 			h.HandleError(w, err)
 			return
 		}
-		h.HandleError(w, json.NewEncoder(w).Encode(map[string]interface{}{
+		h.HandleError(w, json.NewEncoder(w).Encode(map[string]any{
 			"ok": true,
 		}))
 	}
@@ -85,7 +85,7 @@ func (h *Handler) Flush() http.HandlerFunc {
 			return
 		}
 		w.Header().Set("Content-Type", typeJSON)
-		h.HandleError(w, json.NewEncoder(w).Encode(map[string]interface{}{
+		h.HandleError(w, json.NewEncoder(w).Encode(map[string]any{
 			"instance_start_time": 0,
 			"ok":                  true,
 		}))

@@ -25,7 +25,7 @@ import (
 func Test_get_config_RunE(t *testing.T) {
 	tests := testy.NewTable()
 
-	tests.Add("get config", func(t *testing.T) interface{} {
+	tests.Add("get config", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{
@@ -43,7 +43,7 @@ func Test_get_config_RunE(t *testing.T) {
 			args: []string{"get", "config", s.URL},
 		}
 	})
-	tests.Add("named node", func(t *testing.T) interface{} {
+	tests.Add("named node", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{
@@ -61,7 +61,7 @@ func Test_get_config_RunE(t *testing.T) {
 			args: []string{"get", "config", s.URL, "--node", "foo"},
 		}
 	})
-	tests.Add("section", func(t *testing.T) interface{} {
+	tests.Add("section", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{
@@ -79,7 +79,7 @@ func Test_get_config_RunE(t *testing.T) {
 			args: []string{"get", "config", s.URL, "--key", "chttpd"},
 		}
 	})
-	tests.Add("key", func(t *testing.T) interface{} {
+	tests.Add("key", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{

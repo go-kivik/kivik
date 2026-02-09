@@ -24,7 +24,7 @@ import (
 func Test_describe_RunE(t *testing.T) {
 	tests := testy.NewTable()
 
-	tests.Add("auto describe doc", func(*testing.T) interface{} {
+	tests.Add("auto describe doc", func(*testing.T) any {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{
@@ -43,7 +43,7 @@ func Test_describe_RunE(t *testing.T) {
 			args: []string{"describe", s.URL + "/foo/bar"},
 		}
 	})
-	tests.Add("auto describe version", func(*testing.T) interface{} {
+	tests.Add("auto describe version", func(*testing.T) any {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{
@@ -58,7 +58,7 @@ func Test_describe_RunE(t *testing.T) {
 			args: []string{"describe", s.URL},
 		}
 	})
-	tests.Add("auto attachment", func(*testing.T) interface{} {
+	tests.Add("auto attachment", func(*testing.T) any {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{

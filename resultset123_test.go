@@ -29,7 +29,7 @@ import (
 func TestResultSetIterator(t *testing.T) {
 	t.Parallel()
 
-	rows := []interface{}{
+	rows := []any{
 		&driver.Row{ID: "a"},
 		&driver.Row{ID: "b"},
 		&driver.Row{ID: "c"},

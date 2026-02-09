@@ -68,7 +68,7 @@ type ReplicationEvent struct {
 // eventCallback is a function that receives replication events.
 type eventCallback func(ReplicationEvent)
 
-func (c eventCallback) Apply(target interface{}) {
+func (c eventCallback) Apply(target any) {
 	if r, ok := target.(*replicator); ok {
 		r.cb = c
 	}
@@ -82,7 +82,7 @@ func ReplicateCallback(callback func(ReplicationEvent)) Option {
 
 type replicateCopySecurityOption struct{}
 
-func (r replicateCopySecurityOption) Apply(target interface{}) {
+func (r replicateCopySecurityOption) Apply(target any) {
 	if r, ok := target.(*replicator); ok {
 		r.withSecurity = true
 	}
@@ -371,7 +371,7 @@ func (r *replicator) readDoc(ctx context.Context, id string, revs []string, resu
 }
 
 func (r *replicator) readOpenRevs(ctx context.Context, id string, revs []string, results chan<- *document) error {
-	rs := r.source.OpenRevs(ctx, id, revs, Params(map[string]interface{}{
+	rs := r.source.OpenRevs(ctx, id, revs, Params(map[string]any{
 		"revs":   true,
 		"latest": true,
 	}))
@@ -485,7 +485,7 @@ func prepareAttachments(doc *document, atts *AttachmentsIterator) error {
 
 func readDoc(ctx context.Context, db *DB, docID, rev string) (*document, error) {
 	doc := new(document)
-	row := db.Get(ctx, docID, Params(map[string]interface{}{
+	row := db.Get(ctx, docID, Params(map[string]any{
 		"rev":         rev,
 		"revs":        true,
 		"attachments": true,

@@ -51,6 +51,6 @@ func (c *putDB) RunE(cmd *cobra.Command, _ []string) error {
 			return err
 		}
 
-		return c.fmt.Output(output.TemplateReader("OK", nil, output.JSONReader(map[string]interface{}{"ok": true})))
+		return c.fmt.Output(output.TemplateReader("OK", nil, output.JSONReader(map[string]any{"ok": true})))
 	})
 }

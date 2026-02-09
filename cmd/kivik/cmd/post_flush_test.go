@@ -30,7 +30,7 @@ func Test_post_flush_RunE(t *testing.T) {
 		args:   []string{"post", "flush"},
 		status: errors.ErrUsage,
 	})
-	tests.Add("success", func(t *testing.T) interface{} {
+	tests.Add("success", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"ok":true}`)),
 		}, func(t *testing.T, req *http.Request) { //nolint:thelper // Not a helper

@@ -26,7 +26,7 @@ import (
 type Options interface {
 	// Apply applies the option to target, if target is of the expected type.
 	// Unexpected/recognized target types should be ignored.
-	Apply(target interface{})
+	Apply(target any)
 }
 
 // Driver is the interface that must be implemented by a database driver.
@@ -197,7 +197,7 @@ type DB interface {
 	// options provided.
 	AllDocs(ctx context.Context, options Options) (Rows, error)
 	// Put writes the document in the database.
-	Put(ctx context.Context, docID string, doc interface{}, options Options) (rev string, err error)
+	Put(ctx context.Context, docID string, doc any, options Options) (rev string, err error)
 	// Get fetches the requested document from the database.
 	Get(ctx context.Context, docID string, options Options) (*Document, error)
 	// Delete marks the specified document as deleted.
@@ -234,7 +234,7 @@ type DB interface {
 // emulate the functionality, with missing document IDs generated as V4 UUIDs.
 type DocCreator interface {
 	// CreateDoc creates a new doc, with a server-generated ID.
-	CreateDoc(ctx context.Context, doc interface{}, options Options) (docID, rev string, err error)
+	CreateDoc(ctx context.Context, doc any, options Options) (docID, rev string, err error)
 }
 
 // OpenRever is an optional interface that extends a [DB] to support the open_revs
@@ -261,7 +261,7 @@ type SecurityDB interface {
 // update functions.
 type Updater interface {
 	// Update calls the named update function with the provided document.
-	Update(ctx context.Context, ddoc, funcName, docID string, doc interface{}, options Options) (rev string, err error)
+	Update(ctx context.Context, ddoc, funcName, docID string, doc any, options Options) (rev string, err error)
 }
 
 // Document represents a single document returned by [DB.Get].
@@ -311,7 +311,7 @@ type PurgeResult struct {
 type BulkDocer interface {
 	// BulkDocs alls bulk create, update and/or delete operations. It returns an
 	// iterator over the results.
-	BulkDocs(ctx context.Context, docs []interface{}, options Options) ([]BulkResult, error)
+	BulkDocs(ctx context.Context, docs []any, options Options) ([]BulkResult, error)
 }
 
 // Finder is an optional interface which may be implemented by a [DB]. It
@@ -323,44 +323,44 @@ type Finder interface {
 	// will change with Kivik 5.x. See [issue #1015] for details.
 	//
 	// [issue #1014]: https://github.com/go-kivik/kivik/issues/1015
-	Find(ctx context.Context, query interface{}, options Options) (Rows, error)
+	Find(ctx context.Context, query any, options Options) (Rows, error)
 	// CreateIndex creates an index if it doesn't already exist. If the index
 	// already exists, it should do nothing. ddoc and name may be empty, in
 	// which case they should be provided by the backend. If index is a string,
 	// []byte, or [encoding/json.RawMessage], it should be treated as a raw
 	// JSON payload. Any other type should be marshaled to JSON.
-	CreateIndex(ctx context.Context, ddoc, name string, index interface{}, options Options) error
+	CreateIndex(ctx context.Context, ddoc, name string, index any, options Options) error
 	// GetIndexes returns a list of all indexes in the database.
 	GetIndexes(ctx context.Context, options Options) ([]Index, error)
 	// Delete deletes the requested index.
 	DeleteIndex(ctx context.Context, ddoc, name string, options Options) error
 	// Explain returns the query plan for a given query. Explain takes the same
 	// arguments as [Finder.Find].
-	Explain(ctx context.Context, query interface{}, options Options) (*QueryPlan, error)
+	Explain(ctx context.Context, query any, options Options) (*QueryPlan, error)
 }
 
 // QueryPlan is the response of an Explain query.
 type QueryPlan struct {
-	DBName    string                 `json:"dbname"`
-	Index     map[string]interface{} `json:"index"`
-	Selector  map[string]interface{} `json:"selector"`
-	Options   map[string]interface{} `json:"opts"`
-	Limit     int64                  `json:"limit"`
-	Partition string                 `json:"partition"`
-	Skip      int64                  `json:"skip"`
+	DBName    string         `json:"dbname"`
+	Index     map[string]any `json:"index"`
+	Selector  map[string]any `json:"selector"`
+	Options   map[string]any `json:"opts"`
+	Limit     int64          `json:"limit"`
+	Partition string         `json:"partition"`
+	Skip      int64          `json:"skip"`
 
 	// Fields is the list of fields to be returned in the result set, or
 	// an empty list if all fields are to be returned.
-	Fields []interface{}          `json:"fields"`
-	Range  map[string]interface{} `json:"range"`
+	Fields []any          `json:"fields"`
+	Range  map[string]any `json:"range"`
 }
 
 // Index is a MonboDB-style index definition.
 type Index struct {
-	DesignDoc  string      `json:"ddoc,omitempty"`
-	Name       string      `json:"name"`
-	Type       string      `json:"type"`
-	Definition interface{} `json:"def"`
+	DesignDoc  string `json:"ddoc,omitempty"`
+	Name       string `json:"name"`
+	Type       string `json:"type"`
+	Definition any    `json:"def"`
 }
 
 // Attachment represents a file attachment to a document.
@@ -459,7 +459,7 @@ type Cluster interface {
 	// ClusterStatus returns the current cluster status.
 	ClusterStatus(ctx context.Context, options Options) (string, error)
 	// ClusterSetup performs the action specified by action.
-	ClusterSetup(ctx context.Context, action interface{}) error
+	ClusterSetup(ctx context.Context, action any) error
 	// Membership returns a list of all known nodes, and all nodes configured as
 	// part of the cluster.
 	Membership(ctx context.Context) (*ClusterMembership, error)
@@ -482,5 +482,5 @@ type RevDiff struct {
 type RevsDiffer interface {
 	// RevsDiff returns a Rows iterator, which should populate the ID and Value
 	// fields, and nothing else.
-	RevsDiff(ctx context.Context, revMap interface{}) (Rows, error)
+	RevsDiff(ctx context.Context, revMap any) (Rows, error)
 }

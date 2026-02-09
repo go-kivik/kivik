@@ -145,12 +145,12 @@ const multipleQueries = `{
 
 func TestMultiQueriesRowsIterator(t *testing.T) {
 	rows := newMultiQueriesRows(context.TODO(), io.NopCloser(strings.NewReader(multipleQueries)))
-	results := make([]interface{}, 0, 8)
+	results := make([]any, 0, 8)
 	for {
 		row := &driver.Row{}
 		err := rows.Next(row)
 		if err == driver.EOQ {
-			results = append(results, map[string]interface{}{
+			results = append(results, map[string]any{
 				"EOQ":        true,
 				"total_rows": rows.TotalRows(),
 				"offset":     rows.Offset(),
@@ -158,7 +158,7 @@ func TestMultiQueriesRowsIterator(t *testing.T) {
 			continue
 		}
 		if err == io.EOF {
-			results = append(results, map[string]interface{}{
+			results = append(results, map[string]any{
 				"EOF":        true,
 				"total_rows": rows.TotalRows(),
 				"offset":     rows.Offset(),
@@ -168,7 +168,7 @@ func TestMultiQueriesRowsIterator(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Next() failed: %s", err)
 		}
-		results = append(results, map[string]interface{}{
+		results = append(results, map[string]any{
 			"key": row.Key,
 		})
 	}

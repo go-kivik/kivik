@@ -42,7 +42,7 @@ func TestGetRev(t *testing.T) {
 		wantStatus: http.StatusNotFound,
 		wantErr:    "not found",
 	})
-	tests.Add("success", func(t *testing.T) interface{} {
+	tests.Add("success", func(t *testing.T) any {
 		db := newDB(t)
 		rev := db.tPut("foo", map[string]string{"foo": "bar"})
 
@@ -52,7 +52,7 @@ func TestGetRev(t *testing.T) {
 			want: rev,
 		}
 	})
-	tests.Add("get specific rev", func(t *testing.T) interface{} {
+	tests.Add("get specific rev", func(t *testing.T) any {
 		db := newDB(t)
 		rev := db.tPut("foo", map[string]string{"foo": "bar"})
 		_ = db.tPut("foo", map[string]string{"foo": "baz"}, kivik.Rev(rev))
@@ -70,7 +70,7 @@ func TestGetRev(t *testing.T) {
 		wantStatus: http.StatusNotFound,
 		wantErr:    "not found",
 	})
-	tests.Add("deleted document", func(t *testing.T) interface{} {
+	tests.Add("deleted document", func(t *testing.T) any {
 		db := newDB(t)
 		rev := db.tPut("foo", map[string]string{"foo": "bar"})
 		_ = db.tDelete("foo", kivik.Rev(rev))
@@ -82,7 +82,7 @@ func TestGetRev(t *testing.T) {
 			wantErr:    "not found",
 		}
 	})
-	tests.Add("deleted document by rev", func(t *testing.T) interface{} {
+	tests.Add("deleted document by rev", func(t *testing.T) any {
 		db := newDB(t)
 		rev := db.tPut("foo", map[string]string{"foo": "bar"})
 		rev = db.tDelete("foo", kivik.Rev(rev))
@@ -94,112 +94,112 @@ func TestGetRev(t *testing.T) {
 			want:    rev,
 		}
 	})
-	tests.Add("get latest winning leaf", func(t *testing.T) interface{} {
+	tests.Add("get latest winning leaf", func(t *testing.T) any {
 		db := newDB(t)
-		_ = db.tPut("foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]any{
 			"new_edits": false,
 		}))
-		_ = db.tPut("foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{
 			"foo": "bbb",
-			"_revisions": map[string]interface{}{
+			"_revisions": map[string]any{
 				"ids":   []string{"bbb", "aaa"},
 				"start": 2,
 			},
-		}, kivik.Params(map[string]interface{}{
+		}, kivik.Params(map[string]any{
 			"new_edits": false,
 		}))
-		_ = db.tPut("foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{
 			"foo": "ddd",
-			"_revisions": map[string]interface{}{
+			"_revisions": map[string]any{
 				"ids":   []string{"yyy", "aaa"},
 				"start": 2,
 			},
-		}, kivik.Params(map[string]interface{}{
+		}, kivik.Params(map[string]any{
 			"new_edits": false,
 		}))
 
 		return test{
 			db: db,
 			id: "foo",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"latest": true,
 				"rev":    "1-aaa",
 			}),
 			want: "2-yyy",
 		}
 	})
-	tests.Add("get latest non-winning leaf", func(t *testing.T) interface{} {
+	tests.Add("get latest non-winning leaf", func(t *testing.T) any {
 		db := newDB(t)
 		// common root doc
-		_ = db.tPut("foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]any{
 			"new_edits": false,
 		}))
 		// losing branch
-		_ = db.tPut("foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{
 			"foo": "bbb",
-			"_revisions": map[string]interface{}{
+			"_revisions": map[string]any{
 				"ids":   []string{"ccc", "bbb", "aaa"},
 				"start": 3,
 			},
-		}, kivik.Params(map[string]interface{}{
+		}, kivik.Params(map[string]any{
 			"new_edits": false,
 		}))
 
 		// winning branch
-		_ = db.tPut("foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{
 			"foo": "ddd",
-			"_revisions": map[string]interface{}{
+			"_revisions": map[string]any{
 				"ids":   []string{"xxx", "yyy", "aaa"},
 				"start": 3,
 			},
-		}, kivik.Params(map[string]interface{}{
+		}, kivik.Params(map[string]any{
 			"new_edits": false,
 		}))
 
 		return test{
 			db: db,
 			id: "foo",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"latest": true,
 				"rev":    "2-bbb",
 			}),
 			want: "3-ccc",
 		}
 	})
-	tests.Add("get latest rev with deleted leaf, reverts to the winning branch", func(t *testing.T) interface{} {
+	tests.Add("get latest rev with deleted leaf, reverts to the winning branch", func(t *testing.T) any {
 		db := newDB(t)
 		// common root doc
-		_ = db.tPut("foo", map[string]interface{}{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{"foo": "aaa", "_rev": "1-aaa"}, kivik.Params(map[string]any{
 			"new_edits": false,
 		}))
 		// losing branch
-		_ = db.tPut("foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{
 			"foo": "bbb",
-			"_revisions": map[string]interface{}{
+			"_revisions": map[string]any{
 				"ids":   []string{"ccc", "bbb", "aaa"},
 				"start": 3,
 			},
-		}, kivik.Params(map[string]interface{}{
+		}, kivik.Params(map[string]any{
 			"new_edits": false,
 		}))
 		// now delete the losing leaf
 		_ = db.tDelete("foo", kivik.Rev("3-ccc"))
 
 		// winning branch
-		_ = db.tPut("foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{
 			"foo": "ddd",
-			"_revisions": map[string]interface{}{
+			"_revisions": map[string]any{
 				"ids":   []string{"xxx", "yyy", "aaa"},
 				"start": 3,
 			},
-		}, kivik.Params(map[string]interface{}{
+		}, kivik.Params(map[string]any{
 			"new_edits": false,
 		}))
 
 		return test{
 			db: db,
 			id: "foo",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"latest": true,
 				"rev":    "2-bbb",
 			}),

@@ -69,7 +69,7 @@ func TestDBPutAttachment(t *testing.T) {
 			},
 		},
 	})
-	tests.Add("add attachment to existing doc", func(t *testing.T) interface{} {
+	tests.Add("add attachment to existing doc", func(t *testing.T) any {
 		db := newDB(t)
 		rev := db.tPut("foo", map[string]string{"foo": "bar"})
 
@@ -116,7 +116,7 @@ func TestDBPutAttachment(t *testing.T) {
 		wantStatus: http.StatusConflict,
 		wantErr:    "document update conflict",
 	})
-	tests.Add("existing doc, wrong rev", func(t *testing.T) interface{} {
+	tests.Add("existing doc, wrong rev", func(t *testing.T) any {
 		db := newDB(t)
 		_ = db.tPut("foo", map[string]string{"foo": "bar"})
 
@@ -133,9 +133,9 @@ func TestDBPutAttachment(t *testing.T) {
 			wantErr:    "document update conflict",
 		}
 	})
-	tests.Add("don't delete existing attachment", func(t *testing.T) interface{} {
+	tests.Add("don't delete existing attachment", func(t *testing.T) any {
 		db := newDB(t)
-		rev := db.tPut("foo", map[string]interface{}{
+		rev := db.tPut("foo", map[string]any{
 			"foo":          "bar",
 			"_attachments": newAttachments().add("foo.txt", "Hello, world!"),
 		})
@@ -179,9 +179,9 @@ func TestDBPutAttachment(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("update existing attachment", func(t *testing.T) interface{} {
+	tests.Add("update existing attachment", func(t *testing.T) any {
 		db := newDB(t)
-		rev := db.tPut("foo", map[string]interface{}{
+		rev := db.tPut("foo", map[string]any{
 			"foo":          "bar",
 			"_attachments": newAttachments().add("foo.txt", "Hello, world!"),
 		})
@@ -225,12 +225,12 @@ func TestDBPutAttachment(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("updating attachments on non-winning leaf only alters that revision branch", func(t *testing.T) interface{} {
+	tests.Add("updating attachments on non-winning leaf only alters that revision branch", func(t *testing.T) any {
 		d := newDB(t)
-		rev1 := d.tPut("foo", map[string]interface{}{
+		rev1 := d.tPut("foo", map[string]any{
 			"cat": "meow",
 		})
-		rev2 := d.tPut("foo", map[string]interface{}{
+		rev2 := d.tPut("foo", map[string]any{
 			"dog":          "woof",
 			"_attachments": newAttachments().add("foo.txt", "This is a base64 encoding"),
 		}, kivik.Rev(rev1))
@@ -239,13 +239,13 @@ func TestDBPutAttachment(t *testing.T) {
 		r2, _ := parseRev(rev2)
 
 		// Create a conflict
-		_ = d.tPut("foo", map[string]interface{}{
+		_ = d.tPut("foo", map[string]any{
 			"pig": "oink",
-			"_revisions": map[string]interface{}{
+			"_revisions": map[string]any{
 				"start": 3,
 				"ids":   []string{"abc", "def", r1.id},
 			},
-		}, kivik.Params(map[string]interface{}{"new_edits": false}))
+		}, kivik.Params(map[string]any{"new_edits": false}))
 
 		return test{
 			db:    d,

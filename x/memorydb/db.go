@@ -47,7 +47,7 @@ func (d *db) Get(ctx context.Context, docID string, options driver.Options) (*dr
 	if !d.db.docExists(docID) {
 		return nil, statusError{status: http.StatusNotFound, error: errors.New("missing")}
 	}
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 	if rev, ok := opts["rev"].(string); ok {
 		if doc, found := d.db.getRevision(docID, rev); found {
@@ -68,7 +68,7 @@ func (d *db) Get(ctx context.Context, docID string, options driver.Options) (*dr
 	}, nil
 }
 
-func (d *db) Put(ctx context.Context, docID string, doc interface{}, _ driver.Options) (rev string, err error) {
+func (d *db) Put(ctx context.Context, docID string, doc any, _ driver.Options) (rev string, err error) {
 	if exists, _ := d.DBExists(ctx, d.dbName, nil); !exists {
 		return "", statusError{status: http.StatusPreconditionFailed, error: errors.New("database does not exist")}
 	}
@@ -108,7 +108,7 @@ func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (
 	if exists, _ := d.DBExists(ctx, d.dbName, kivik.Params(nil)); !exists {
 		return "", statusError{status: http.StatusPreconditionFailed, error: errors.New("database does not exist")}
 	}
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 	rev, _ := opts["rev"].(string)
 	if !strings.HasPrefix(docID, "_local/") && !validRev(rev) {
@@ -117,7 +117,7 @@ func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (
 	if !d.db.docExists(docID) {
 		return "", statusError{status: http.StatusNotFound, error: errors.New("missing")}
 	}
-	return d.Put(ctx, docID, map[string]interface{}{
+	return d.Put(ctx, docID, map[string]any{
 		"_id":      docID,
 		"_rev":     rev,
 		"_deleted": true,

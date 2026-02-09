@@ -67,7 +67,7 @@ func (c *getConfig) RunE(cmd *cobra.Command, _ []string) error {
 	}
 
 	return c.retry(func() error {
-		var conf interface{}
+		var conf any
 		var err error
 		if c.key != "" {
 			if section, key, ok := strings.Cut(c.key, "/"); ok {

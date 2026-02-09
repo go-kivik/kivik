@@ -50,7 +50,7 @@ func TestDBDeleteAttachment(t *testing.T) {
 		wantErr:    "document not found",
 		wantStatus: http.StatusNotFound,
 	})
-	tests.Add("doc exists, but no rev provided", func(t *testing.T) interface{} {
+	tests.Add("doc exists, but no rev provided", func(t *testing.T) any {
 		db := newDB(t)
 		_ = db.tPut("foo", map[string]string{"foo": "bar"})
 
@@ -62,7 +62,7 @@ func TestDBDeleteAttachment(t *testing.T) {
 			wantStatus: http.StatusConflict,
 		}
 	})
-	tests.Add("doc exists, but wrong rev provided", func(t *testing.T) interface{} {
+	tests.Add("doc exists, but wrong rev provided", func(t *testing.T) any {
 		db := newDB(t)
 		_ = db.tPut("foo", map[string]string{"foo": "bar"})
 
@@ -75,9 +75,9 @@ func TestDBDeleteAttachment(t *testing.T) {
 			wantStatus: http.StatusConflict,
 		}
 	})
-	tests.Add("success", func(t *testing.T) interface{} {
+	tests.Add("success", func(t *testing.T) any {
 		d := newDB(t)
-		rev := d.tPut("foo", map[string]interface{}{
+		rev := d.tPut("foo", map[string]any{
 			"cat":          "meow",
 			"_attachments": newAttachments().add("foo.txt", "This is a base64 encoding"),
 		})
@@ -110,9 +110,9 @@ func TestDBDeleteAttachment(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("when attempting to delete an attachment that does not exist, a 404 is returned", func(t *testing.T) interface{} {
+	tests.Add("when attempting to delete an attachment that does not exist, a 404 is returned", func(t *testing.T) any {
 		d := newDB(t)
-		rev := d.tPut("foo", map[string]interface{}{
+		rev := d.tPut("foo", map[string]any{
 			"cat": "meow",
 		})
 
@@ -126,9 +126,9 @@ func TestDBDeleteAttachment(t *testing.T) {
 			wantRevs:   []leaf{}, // skip checking leaves
 		}
 	})
-	tests.Add("when attempting to delete an attachment, unspecified attachments are unaltered", func(t *testing.T) interface{} {
+	tests.Add("when attempting to delete an attachment, unspecified attachments are unaltered", func(t *testing.T) any {
 		d := newDB(t)
-		rev := d.tPut("foo", map[string]interface{}{
+		rev := d.tPut("foo", map[string]any{
 			"cat": "meow",
 			"_attachments": newAttachments().
 				add("foo.txt", "This is a base64 encoding").
@@ -176,12 +176,12 @@ func TestDBDeleteAttachment(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("deleting attachments on non-winning leaf only alters that revision branch", func(t *testing.T) interface{} {
+	tests.Add("deleting attachments on non-winning leaf only alters that revision branch", func(t *testing.T) any {
 		d := newDB(t)
-		rev1 := d.tPut("foo", map[string]interface{}{
+		rev1 := d.tPut("foo", map[string]any{
 			"cat": "meow",
 		})
-		rev2 := d.tPut("foo", map[string]interface{}{
+		rev2 := d.tPut("foo", map[string]any{
 			"dog":          "woof",
 			"_attachments": newAttachments().add("foo.txt", "This is a base64 encoding"),
 		}, kivik.Rev(rev1))
@@ -190,13 +190,13 @@ func TestDBDeleteAttachment(t *testing.T) {
 		r2, _ := parseRev(rev2)
 
 		// Create a conflict
-		_ = d.tPut("foo", map[string]interface{}{
+		_ = d.tPut("foo", map[string]any{
 			"pig": "oink",
-			"_revisions": map[string]interface{}{
+			"_revisions": map[string]any{
 				"start": 3,
 				"ids":   []string{"abc", "def", r1.id},
 			},
-		}, kivik.Params(map[string]interface{}{"new_edits": false}))
+		}, kivik.Params(map[string]any{"new_edits": false}))
 
 		return test{
 			db:       d,

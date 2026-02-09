@@ -52,7 +52,7 @@ type root struct {
 	connectTimeout       string
 	parsedConnectTimeout time.Duration
 	retryTimeout         string
-	options              map[string]interface{}
+	options              map[string]any
 	stringOptions        map[string]string
 	boolOptions          map[string]string
 
@@ -223,7 +223,7 @@ func (r *root) init(cmd *cobra.Command, args []string) error {
 	}
 
 	if r.options == nil {
-		r.options = map[string]interface{}{}
+		r.options = map[string]any{}
 	}
 	if len(args) > 0 {
 		opts, err := r.conf.SetURL(args[0])

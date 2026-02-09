@@ -24,7 +24,7 @@ import (
 
 func TestEncodeKey(t *testing.T) {
 	type tst struct {
-		input    interface{}
+		input    any
 		expected string
 		status   int
 		err      string
@@ -61,14 +61,14 @@ func TestEncodeKey(t *testing.T) {
 
 func TestEncodeKeys(t *testing.T) {
 	type tst struct {
-		input    map[string]interface{}
-		expected map[string]interface{}
+		input    map[string]any
+		expected map[string]any
 		status   int
 		err      string
 	}
 	type keyStruct struct {
 		Foo string
-		Bar interface{} `json:",omitempty"`
+		Bar any `json:",omitempty"`
 	}
 	tests := testy.NewTable()
 	tests.Add("nil", tst{
@@ -76,69 +76,69 @@ func TestEncodeKeys(t *testing.T) {
 		expected: nil,
 	})
 	tests.Add("unmarshalable", tst{
-		input: map[string]interface{}{
+		input: map[string]any{
 			"key": make(chan int),
 		},
 		status: http.StatusBadRequest,
 		err:    "json: unsupported type: chan int",
 	})
 	tests.Add("unaltered", tst{
-		input: map[string]interface{}{
+		input: map[string]any{
 			"foo": 123,
 		},
-		expected: map[string]interface{}{
+		expected: map[string]any{
 			"foo": 123,
 		},
 	})
 	tests.Add("key", tst{
-		input: map[string]interface{}{
+		input: map[string]any{
 			"key": 123,
 		},
-		expected: map[string]interface{}{
+		expected: map[string]any{
 			"key": "123",
 		},
 	})
 	tests.Add("keys []interface{}", tst{
-		input: map[string]interface{}{
+		input: map[string]any{
 			"foo":  123,
-			"keys": []interface{}{"foo", 123},
+			"keys": []any{"foo", 123},
 		},
-		expected: map[string]interface{}{
+		expected: map[string]any{
 			"foo":  123,
 			"keys": `["foo",123]`,
 		},
 	})
 	tests.Add("keys []interface{} invalid", tst{
-		input: map[string]interface{}{
+		input: map[string]any{
 			"foo":  123,
-			"keys": []interface{}{"foo", 123, make(chan int)},
+			"keys": []any{"foo", 123, make(chan int)},
 		},
 		status: http.StatusBadRequest,
 		err:    "json: unsupported type: chan int",
 	})
 	tests.Add("keys string", tst{
-		input: map[string]interface{}{
+		input: map[string]any{
 			"foo":  123,
 			"keys": []string{"foo", "123"},
 		},
-		expected: map[string]interface{}{
+		expected: map[string]any{
 			"foo":  123,
 			"keys": `["foo","123"]`,
 		},
 	})
 	tests.Add("keys structs", tst{
-		input: map[string]interface{}{
+		input: map[string]any{
 			"keys": []keyStruct{
 				{Foo: "abc"},
 				{Foo: "xyz"},
 			},
 		},
-		expected: map[string]interface{}{
+		expected: map[string]any{
 			"keys": `[{"Foo":"abc"},{"Foo":"xyz"}]`,
 		},
 	})
 	tests.Add("keys structs invalid", tst{
-		input: map[string]interface{}{
+		input: map[string]any{
 			"keys": []keyStruct{
 				{Foo: "abc", Bar: make(chan int)},
 				{Foo: "xyz"},

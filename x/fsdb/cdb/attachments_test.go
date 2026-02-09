@@ -31,7 +31,7 @@ func TestAttachmentsIterator(t *testing.T) {
 	tests := testy.NewTable()
 	tests.Add("missing attachment", tt{
 		r: &Revision{
-			options: map[string]interface{}{
+			options: map[string]any{
 				"attachments": true,
 			},
 			RevMeta: RevMeta{

@@ -351,9 +351,9 @@ func TestGetReplications(t *testing.T) {
 			client: &Client{
 				driverClient: &mock.ClientReplicator{
 					GetReplicationsFunc: func(_ context.Context, options driver.Options) ([]driver.Replication, error) {
-						gotOpts := map[string]interface{}{}
+						gotOpts := map[string]any{}
 						options.Apply(gotOpts)
-						wantOpts := map[string]interface{}{"foo": 123}
+						wantOpts := map[string]any{"foo": 123}
 						if d := testy.DiffInterface(wantOpts, gotOpts); d != nil {
 							return nil, fmt.Errorf("Unexpected options:\n%v", d)
 						}
@@ -437,9 +437,9 @@ func TestReplicate(t *testing.T) {
 					ReplicateFunc: func(_ context.Context, target, source string, options driver.Options) (driver.Replication, error) {
 						expectedTarget := "foo"
 						expectedSource := "bar"
-						gotOpts := map[string]interface{}{}
+						gotOpts := map[string]any{}
 						options.Apply(gotOpts)
-						wantOpts := map[string]interface{}{"foo": 123}
+						wantOpts := map[string]any{"foo": 123}
 						if target != expectedTarget {
 							return nil, fmt.Errorf("Unexpected target: %s", target)
 						}

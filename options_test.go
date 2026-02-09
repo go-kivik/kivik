@@ -30,7 +30,7 @@ func TestDuration(t *testing.T) {
 		t.Errorf("Unexpected url query value: %s", got)
 	}
 
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	o.Apply(opts)
 	if got := opts["heartbeat"]; got != want {
 		t.Errorf("Unexpected map value: %s", got)
@@ -40,19 +40,19 @@ func TestDuration(t *testing.T) {
 func Test_params_Apply(t *testing.T) {
 	tests := []struct {
 		name   string
-		target interface{}
-		want   interface{}
+		target any
+		want   any
 		option params
 	}{
 		{
 			name:   "no options",
-			target: map[string]interface{}{},
-			want:   map[string]interface{}{},
+			target: map[string]any{},
+			want:   map[string]any{},
 		},
 		{
 			name:   "map option",
-			target: map[string]interface{}{},
-			want:   map[string]interface{}{"foo": "bar"},
+			target: map[string]any{},
+			want:   map[string]any{"foo": "bar"},
 			option: params{"foo": "bar"},
 		},
 		{

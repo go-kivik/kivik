@@ -26,7 +26,7 @@ import (
 func Test_get_version_RunE(t *testing.T) {
 	tests := testy.NewTable()
 
-	tests.Add("get version", func(*testing.T) interface{} {
+	tests.Add("get version", func(*testing.T) any {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{
@@ -41,7 +41,7 @@ func Test_get_version_RunE(t *testing.T) {
 			args: []string{"get", "version", s.URL},
 		}
 	})
-	tests.Add("get version json", func(*testing.T) interface{} {
+	tests.Add("get version json", func(*testing.T) any {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{
@@ -56,7 +56,7 @@ func Test_get_version_RunE(t *testing.T) {
 			args: []string{"get", "version", s.URL, "-f", "json"},
 		}
 	})
-	tests.Add("get version no url", func(*testing.T) interface{} {
+	tests.Add("get version no url", func(*testing.T) any {
 		return cmdTest{
 			args:   []string{"get", "version"},
 			status: errors.ErrUsage,

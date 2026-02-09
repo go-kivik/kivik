@@ -255,7 +255,7 @@ func (c *client) GetReplications(ctx context.Context, options driver.Options) ([
 	if err != nil {
 		return nil, err
 	}
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 	if scheduler {
 		return c.getReplicationsFromScheduler(ctx, opts)
@@ -263,9 +263,9 @@ func (c *client) GetReplications(ctx context.Context, options driver.Options) ([
 	return c.legacyGetReplications(ctx, opts)
 }
 
-func (c *client) legacyGetReplications(ctx context.Context, opts map[string]interface{}) ([]driver.Replication, error) {
+func (c *client) legacyGetReplications(ctx context.Context, opts map[string]any) ([]driver.Replication, error) {
 	if opts == nil {
-		opts = map[string]interface{}{}
+		opts = map[string]any{}
 	}
 	delete(opts, "conflicts")
 	delete(opts, "update_seq")
@@ -296,7 +296,7 @@ func (c *client) legacyGetReplications(ctx context.Context, opts map[string]inte
 }
 
 func (c *client) Replicate(ctx context.Context, targetDSN, sourceDSN string, options driver.Options) (driver.Replication, error) {
-	opts := map[string]interface{}{}
+	opts := map[string]any{}
 	options.Apply(opts)
 	// Allow overriding source and target with options, i.e. for auth options
 	if _, ok := opts["source"]; !ok {

@@ -51,7 +51,7 @@ func (c *getDB) RunE(cmd *cobra.Command, _ []string) error {
 		if err != nil {
 			return err
 		}
-		doc, err := json.Marshal(map[string]interface{}{
+		doc, err := json.Marshal(map[string]any{
 			"name":   db,
 			"exists": ok,
 		})

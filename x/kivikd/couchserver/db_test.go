@@ -52,7 +52,7 @@ func TestPutDB(t *testing.T) {
 		if resp.StatusCode != http.StatusOK {
 			t.Errorf("Expected 200, got %s", resp.Status)
 		}
-		expected := map[string]interface{}{
+		expected := map[string]any{
 			"ok": true,
 		}
 		if d := testy.DiffAsJSON(expected, resp.Body); d != nil {
@@ -200,7 +200,7 @@ func TestGetDB(t *testing.T) {
 		if contentType := resp.Header.Get("Content-Type"); contentType != "application/json" {
 			t.Errorf("Content-Type header doesn't match, got %s", contentType)
 		}
-		var body interface{}
+		var body any
 		buf, err := io.ReadAll(resp.Body)
 		if err != nil {
 			t.Fatal(err)

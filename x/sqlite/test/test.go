@@ -65,7 +65,7 @@ func registerSuiteSQLite() {
 		"DBExists/Admin/chicken.exists":                  false,
 		"DBExists/RW/Admin.exists":                       true,
 		"Query/RW/Admin/WithoutDocs/ScanDoc.status":      http.StatusBadRequest,
-		"Changes/Continuous.options": kivik.Params(map[string]interface{}{
+		"Changes/Continuous.options": kivik.Params(map[string]any{
 			"feed":  "continuous",
 			"since": "now",
 		}),

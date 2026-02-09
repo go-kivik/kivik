@@ -113,7 +113,7 @@ func TestFind(t *testing.T) {
 	type findTest struct {
 		name        string
 		db          *db
-		query       interface{}
+		query       any
 		expectedIDs []string
 		err         string
 		rowsErr     string
@@ -190,8 +190,8 @@ func TestFindDoc(t *testing.T) {
 	type fdTest struct {
 		name     string
 		db       *db
-		query    interface{}
-		expected interface{}
+		query    any
+		expected any
 	}
 	tests := []fdTest{
 		{
@@ -205,7 +205,7 @@ func TestFindDoc(t *testing.T) {
 				}
 				return db
 			}(),
-			expected: map[string]interface{}{
+			expected: map[string]any{
 				"_id":   "chicken",
 				"_rev":  "1-xxx",
 				"value": "chicken",
@@ -221,7 +221,7 @@ func TestFindDoc(t *testing.T) {
 				}
 				return db
 			}(),
-			expected: map[string]interface{}{
+			expected: map[string]any{
 				"value": "foo",
 				"_rev":  "1-xxx",
 			},
@@ -242,7 +242,7 @@ func TestFindDoc(t *testing.T) {
 				t.Fatal(e)
 			}
 			_ = rows.Close()
-			var result map[string]interface{}
+			var result map[string]any
 			if e := json.NewDecoder(row.Doc).Decode(&result); e != nil {
 				t.Fatal(e)
 			}
@@ -314,7 +314,7 @@ func TestFilterDoc(t *testing.T) {
 func TestToJSON(t *testing.T) {
 	type tjTest struct {
 		Name     string
-		Input    interface{}
+		Input    any
 		Expected string
 	}
 	tests := []tjTest{

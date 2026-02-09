@@ -157,11 +157,11 @@ func TestClientDestroyDB(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		ddoc := map[string]interface{}{
+		ddoc := map[string]any{
 			"_id":      "_design/testddoc",
 			"language": "javascript",
-			"views": map[string]interface{}{
-				"testview": map[string]interface{}{
+			"views": map[string]any{
+				"testview": map[string]any{
 					"map": `function(doc) { emit(doc._id, null); }`,
 				},
 			},

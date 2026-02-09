@@ -109,12 +109,12 @@ type serverTest struct {
 	body         io.Reader
 	wantStatus   int
 	wantBodyRE   string
-	wantJSON     interface{}
+	wantJSON     any
 	check        func(t *testing.T, client *kivik.Client)
 
 	// if target is specified, it is expected to be a struct into which the
 	// response body will be unmarshaled, then validated.
-	target interface{}
+	target any
 }
 
 type serverTests []serverTest
@@ -225,9 +225,9 @@ func TestServer(t *testing.T) {
 			method:     http.MethodGet,
 			path:       "/",
 			wantStatus: http.StatusOK,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"couchdb": "Welcome",
-				"vendor": map[string]interface{}{
+				"vendor": map[string]any{
 					"name":    "Kivik",
 					"version": kivik.Version,
 				},
@@ -240,7 +240,7 @@ func TestServer(t *testing.T) {
 			path:       "/_active_tasks",
 			headers:    map[string]string{"Authorization": basicAuth(userAdmin)},
 			wantStatus: http.StatusOK,
-			wantJSON:   []interface{}{},
+			wantJSON:   []any{},
 		},
 		{
 			name:       "all dbs",
@@ -264,7 +264,7 @@ func TestServer(t *testing.T) {
 			path:       "/_all_dbs",
 			headers:    map[string]string{"Authorization": basicAuth(userBob)},
 			wantStatus: http.StatusForbidden,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"error":  "forbidden",
 				"reason": "Admin privileges required",
 			},
@@ -283,7 +283,7 @@ func TestServer(t *testing.T) {
 			path:       "/db2",
 			headers:    map[string]string{"Authorization": basicAuth(userAdmin)},
 			wantStatus: http.StatusOK,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"db_name":         "db2",
 				"compact_running": false,
 				"data_size":       0,
@@ -306,7 +306,7 @@ func TestServer(t *testing.T) {
 			path:       "/_session",
 			body:       strings.NewReader(`name=root&password=abc123`),
 			wantStatus: http.StatusUnsupportedMediaType,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"error":  "bad_content_type",
 				"reason": "Content-Type must be 'application/x-www-form-urlencoded' or 'application/json'",
 			},
@@ -318,7 +318,7 @@ func TestServer(t *testing.T) {
 			body:       strings.NewReader(`name=root&password=abc123`),
 			headers:    map[string]string{"Content-Type": "application/xml"},
 			wantStatus: http.StatusUnsupportedMediaType,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"error":  "bad_content_type",
 				"reason": "Content-Type must be 'application/x-www-form-urlencoded' or 'application/json'",
 			},
@@ -330,7 +330,7 @@ func TestServer(t *testing.T) {
 			body:       strings.NewReader(`{}`),
 			headers:    map[string]string{"Content-Type": "application/json"},
 			wantStatus: http.StatusBadRequest,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"error":  "bad_request",
 				"reason": "request body must contain a username",
 			},
@@ -342,7 +342,7 @@ func TestServer(t *testing.T) {
 			body:       strings.NewReader(`{"name":"admin","password":"abc123"}`),
 			headers:    map[string]string{"Content-Type": "application/json"},
 			wantStatus: http.StatusOK,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"ok":    true,
 				"name":  userAdmin,
 				"roles": []string{"_admin"},
@@ -354,7 +354,7 @@ func TestServer(t *testing.T) {
 			path:       "/_session",
 			authUser:   userAdmin,
 			wantStatus: http.StatusOK,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"ok": true,
 			},
 		},
@@ -363,7 +363,7 @@ func TestServer(t *testing.T) {
 			method:     http.MethodGet,
 			path:       "/_up",
 			wantStatus: http.StatusOK,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"status": "ok",
 			},
 		},
@@ -373,8 +373,8 @@ func TestServer(t *testing.T) {
 			path:       "/_node/_local/_config",
 			authUser:   userAdmin,
 			wantStatus: http.StatusOK,
-			wantJSON: map[string]interface{}{
-				"couchdb": map[string]interface{}{
+			wantJSON: map[string]any{
+				"couchdb": map[string]any{
 					"users_db_suffix": "_users",
 				},
 			},
@@ -385,7 +385,7 @@ func TestServer(t *testing.T) {
 			path:       "/_node/_local/_config",
 			authUser:   userBob,
 			wantStatus: http.StatusForbidden,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"error":  "forbidden",
 				"reason": "Admin privileges required",
 			},
@@ -396,7 +396,7 @@ func TestServer(t *testing.T) {
 			path:       "/_node/asdf/_config",
 			authUser:   userAdmin,
 			wantStatus: http.StatusNotFound,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"error":  "not_found",
 				"reason": "no such node: asdf",
 			},
@@ -407,7 +407,7 @@ func TestServer(t *testing.T) {
 			path:       "/_node/_local/_config/couchdb",
 			authUser:   userAdmin,
 			wantStatus: http.StatusOK,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"users_db_suffix": "_users",
 			},
 		},
@@ -459,7 +459,7 @@ func TestServer(t *testing.T) {
 			path:       "/_node/_local/_config/foo/bar",
 			authUser:   userAdmin,
 			wantStatus: http.StatusNotFound,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"error":  "not_found",
 				"reason": "unknown_config_value",
 			},
@@ -476,7 +476,7 @@ func TestServer(t *testing.T) {
 			body:       strings.NewReader(`"oink"`),
 			authUser:   userAdmin,
 			wantStatus: http.StatusMethodNotAllowed,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"error":  "method_not_allowed",
 				"reason": "configuration is read-only",
 			},
@@ -492,7 +492,7 @@ func TestServer(t *testing.T) {
 			path:       "/_node/_local/_config/foo/bar",
 			authUser:   userAdmin,
 			wantStatus: http.StatusMethodNotAllowed,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"error":  "method_not_allowed",
 				"reason": "configuration is read-only",
 			},
@@ -507,7 +507,7 @@ func TestServer(t *testing.T) {
 			method:     http.MethodGet,
 			path:       "/_uuids?count=99999",
 			wantStatus: http.StatusBadRequest,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"error":  "bad_request",
 				"reason": "count must not exceed 1000",
 			},
@@ -522,7 +522,7 @@ func TestServer(t *testing.T) {
 			method:     http.MethodGet,
 			path:       "/_uuids?count=chicken",
 			wantStatus: http.StatusBadRequest,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"error":  "bad_request",
 				"reason": "count must be a positive integer",
 			},
@@ -675,7 +675,7 @@ func TestServer(t *testing.T) {
 			path:       "/db3",
 			authUser:   userAdmin,
 			wantStatus: http.StatusCreated,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"ok": true,
 			},
 		},
@@ -685,7 +685,7 @@ func TestServer(t *testing.T) {
 			path:       "/db3",
 			authUser:   userAdmin,
 			wantStatus: http.StatusNotFound,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"error":  "not_found",
 				"reason": "database does not exist",
 			},
@@ -696,7 +696,7 @@ func TestServer(t *testing.T) {
 			path:       "/db2",
 			authUser:   userAdmin,
 			wantStatus: http.StatusOK,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"ok": true,
 			},
 		},
@@ -725,7 +725,7 @@ func TestServer(t *testing.T) {
 			path:       "/db1/foo",
 			authUser:   userAdmin,
 			wantStatus: http.StatusOK,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"_id":  "foo",
 				"_rev": "1-beea34a62a215ab051862d1e5d93162e",
 				"foo":  "bar",
@@ -737,7 +737,7 @@ func TestServer(t *testing.T) {
 			path:       "/_dbs_info",
 			authUser:   userAdmin,
 			wantStatus: http.StatusOK,
-			wantJSON: []map[string]interface{}{
+			wantJSON: []map[string]any{
 				{
 					"compact_running": false,
 					"data_size":       0,
@@ -775,7 +775,7 @@ func TestServer(t *testing.T) {
 			headers:    map[string]string{"Content-Type": "application/json"},
 			body:       strings.NewReader(`{"keys":["db1","notfound"]}`),
 			wantStatus: http.StatusOK,
-			wantJSON: []map[string]interface{}{
+			wantJSON: []map[string]any{
 				{
 					"compact_running": false,
 					"data_size":       0,
@@ -794,12 +794,12 @@ func TestServer(t *testing.T) {
 			path:       "/db1/_security",
 			authUser:   userAdmin,
 			wantStatus: http.StatusOK,
-			wantJSON: map[string]interface{}{
-				"admins": map[string]interface{}{
+			wantJSON: map[string]any{
+				"admins": map[string]any{
 					"names": []string{"superuser"},
 					"roles": []string{"admins"},
 				},
-				"members": map[string]interface{}{
+				"members": map[string]any{
 					"names": []string{"user1", "user2"},
 					"roles": []string{"developers"},
 				},
@@ -815,7 +815,7 @@ func TestServer(t *testing.T) {
 				headers:    map[string]string{"Content-Type": "application/json"},
 				body:       strings.NewReader(want),
 				wantStatus: http.StatusOK,
-				wantJSON: map[string]interface{}{
+				wantJSON: map[string]any{
 					"ok": true,
 				},
 				check: func(t *testing.T, client *kivik.Client) { //nolint:thelper // Not a helper
@@ -836,7 +836,7 @@ func TestServer(t *testing.T) {
 			headers:    map[string]string{"Content-Type": "application/json"},
 			body:       strings.NewReader(`{"admins":{"names":["bob"]}}`),
 			wantStatus: http.StatusUnauthorized,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"error":  "unauthorized",
 				"reason": "User not authenticated",
 			},
@@ -849,7 +849,7 @@ func TestServer(t *testing.T) {
 			headers:    map[string]string{"Content-Type": "application/json"},
 			body:       strings.NewReader(`{"admins":{"names":["bob"]}}`),
 			wantStatus: http.StatusForbidden,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"error":  "forbidden",
 				"reason": "User lacks sufficient privileges",
 			},
@@ -862,7 +862,7 @@ func TestServer(t *testing.T) {
 			headers:    map[string]string{"Content-Type": "application/json"},
 			body:       strings.NewReader(`{"admins":{"names":["bob"]}}`),
 			wantStatus: http.StatusOK,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"ok": true,
 			},
 		},
@@ -874,7 +874,7 @@ func TestServer(t *testing.T) {
 			headers:    map[string]string{"Content-Type": "application/json"},
 			body:       strings.NewReader(`{"admins":{"names":["bob"]}}`),
 			wantStatus: http.StatusOK,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"ok": true,
 			},
 		},
@@ -883,7 +883,7 @@ func TestServer(t *testing.T) {
 			method:     http.MethodHead,
 			path:       "/bobsdb",
 			wantStatus: http.StatusUnauthorized,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"error":  "unauthorized",
 				"reason": "User not authenticated",
 			},
@@ -894,7 +894,7 @@ func TestServer(t *testing.T) {
 			authUser:   userAlice,
 			path:       "/bobsdb",
 			wantStatus: http.StatusForbidden,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"error":  "forbidden",
 				"reason": "User lacks sufficient privileges",
 			},
@@ -912,7 +912,7 @@ func TestServer(t *testing.T) {
 			authUser:   userCharlie,
 			path:       "/bobsdb",
 			wantStatus: http.StatusForbidden,
-			wantJSON: map[string]interface{}{
+			wantJSON: map[string]any{
 				"error":  "forbidden",
 				"reason": "User lacks sufficient privileges",
 			},

@@ -34,7 +34,7 @@ func Test_prepareDoc(t *testing.T) {
 	tests := []struct {
 		name    string
 		docID   string
-		doc     interface{}
+		doc     any
 		want    *docData
 		wantErr string
 	}{
@@ -48,7 +48,7 @@ func Test_prepareDoc(t *testing.T) {
 		},
 		{
 			name: "rev in document",
-			doc: map[string]interface{}{
+			doc: map[string]any{
 				"_rev": "1-1234567890abcdef1234567890abcdef",
 				"foo":  "bar",
 			},
@@ -69,7 +69,7 @@ func Test_prepareDoc(t *testing.T) {
 		},
 		{
 			name: "deleted true",
-			doc: map[string]interface{}{
+			doc: map[string]any{
 				"_rev":     "1-1234567890abcdef1234567890abcdef",
 				"_deleted": true,
 				"foo":      "bar",
@@ -82,7 +82,7 @@ func Test_prepareDoc(t *testing.T) {
 		},
 		{
 			name: "wrong type for _deleted",
-			doc: map[string]interface{}{
+			doc: map[string]any{
 				"_rev":     "1-1234567890abcdef1234567890abcdef",
 				"_deleted": "oink",
 				"foo":      "bar",
@@ -107,7 +107,7 @@ func Test_prepareDoc(t *testing.T) {
 func Test_extractRev(t *testing.T) {
 	tests := []struct {
 		name    string
-		doc     interface{}
+		doc     any
 		wantRev string
 		wantErr string
 	}{
@@ -133,7 +133,7 @@ func Test_extractRev(t *testing.T) {
 		},
 		{
 			name:    "rev in interface",
-			doc:     map[string]interface{}{"_rev": "1-1234567890abcdef1234567890abcdef"},
+			doc:     map[string]any{"_rev": "1-1234567890abcdef1234567890abcdef"},
 			wantRev: "1-1234567890abcdef1234567890abcdef",
 		},
 		{

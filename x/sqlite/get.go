@@ -160,7 +160,7 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 }
 
 type dbOrTx interface {
-	QueryContext(context.Context, string, ...interface{}) (*sql.Rows, error)
+	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
 }
 
 func (d *db) conflicts(ctx context.Context, tx dbOrTx, id string, r revision, deleted bool) ([]string, error) {
@@ -202,7 +202,7 @@ func (d *db) getAttachments(ctx context.Context, tx *sql.Tx, id string, rev revi
 			return nil, err
 		}
 	}
-	args := []interface{}{id, rev.rev, rev.id, includeAttachments}
+	args := []any{id, rev.rev, rev.id, includeAttachments}
 	for _, s := range since {
 		args = append(args, s)
 	}

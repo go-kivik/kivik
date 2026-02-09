@@ -67,7 +67,7 @@ func TestResponseError(t *testing.T) {
 		resp     *http.Response
 		status   int
 		err      string
-		expected interface{}
+		expected any
 	}{
 		{
 			name:     "non error",

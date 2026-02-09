@@ -18,7 +18,7 @@ import (
 	"github.com/go-kivik/kivik/v4/driver"
 )
 
-func (d *db) Find(ctx context.Context, query interface{}, _ driver.Options) (driver.Rows, error) {
+func (d *db) Find(ctx context.Context, query any, _ driver.Options) (driver.Rows, error) {
 	vopts, err := findOptions(query)
 	if err != nil {
 		return nil, err

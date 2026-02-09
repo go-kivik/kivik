@@ -30,7 +30,7 @@ func Test_delete_RunE(t *testing.T) {
 		args:   []string{"delete"},
 		status: errors.ErrUsage,
 	})
-	tests.Add("auto delete doc", func(*testing.T) interface{} {
+	tests.Add("auto delete doc", func(*testing.T) any {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{
@@ -45,7 +45,7 @@ func Test_delete_RunE(t *testing.T) {
 			args: []string{"delete", s.URL + "/db/doc", "-O", "rev=1-xxx"},
 		}
 	})
-	tests.Add("auto delete db", func(*testing.T) interface{} {
+	tests.Add("auto delete db", func(*testing.T) any {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{
@@ -59,7 +59,7 @@ func Test_delete_RunE(t *testing.T) {
 			args: []string{"delete", s.URL + "/db"},
 		}
 	})
-	tests.Add("auto delete attachment", func(*testing.T) interface{} {
+	tests.Add("auto delete attachment", func(*testing.T) any {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{
@@ -74,7 +74,7 @@ func Test_delete_RunE(t *testing.T) {
 			args: []string{"delete", s.URL + "/db/doc/filename.txt", "-O", "rev=1-xxx"},
 		}
 	})
-	tests.Add("auto delete config", func(*testing.T) interface{} {
+	tests.Add("auto delete config", func(*testing.T) any {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{

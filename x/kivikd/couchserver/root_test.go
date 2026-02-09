@@ -33,7 +33,7 @@ func TestGetRoot(t *testing.T) {
 	handler(w, req)
 	resp := w.Result()
 	defer resp.Body.Close()
-	expected := map[string]interface{}{
+	expected := map[string]any{
 		"couchdb": "Välkommen",
 		"version": "1.6.1",
 		"vendor": map[string]string{

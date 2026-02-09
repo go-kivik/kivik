@@ -74,7 +74,7 @@ func TestNew(t *testing.T) {
 			},
 		},
 	})
-	tests.Add("auth success", func(t *testing.T) interface{} {
+	tests.Add("auth success", func(t *testing.T) any {
 		h := func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusOK)
 			_, _ = fmt.Fprintf(w, `{"userCtx":{"name":"user"}}`)
@@ -114,7 +114,7 @@ func TestNew(t *testing.T) {
 			},
 		},
 	})
-	tests.Add("auth as option", func(t *testing.T) interface{} {
+	tests.Add("auth as option", func(t *testing.T) any {
 		h := func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusOK)
 			_, _ = fmt.Fprintf(w, `{"userCtx":{"name":"user"}}`)
@@ -225,7 +225,7 @@ func TestFixPath(t *testing.T) {
 func TestEncodeBody(t *testing.T) {
 	type encodeTest struct {
 		name  string
-		input interface{}
+		input any
 
 		expected string
 		status   int
@@ -529,7 +529,7 @@ func TestDoJSON(t *testing.T) {
 		method, path string
 		opts         *Options
 		client       *Client
-		expected     interface{}
+		expected     any
 		status       int
 		err          string
 	}{
@@ -585,12 +585,12 @@ func TestDoJSON(t *testing.T) {
 				Body:          Body(`{"foo":"bar"}`),
 				Request:       &http.Request{Method: "GET"},
 			}, nil),
-			expected: map[string]interface{}{"foo": "bar"},
+			expected: map[string]any{"foo": "bar"},
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			var i interface{}
+			var i any
 			err := test.client.DoJSON(context.Background(), test.method, test.path, test.opts, &i)
 			if d := internal.StatusErrorDiffRE(test.err, test.status, err); d != "" {
 				t.Error(d)

@@ -42,4 +42,4 @@ func (c *canceledContext) Done() <-chan struct{} {
 
 func (c *canceledContext) Err() error { return context.Canceled }
 
-func (c *canceledContext) Value(_ interface{}) interface{} { return nil }
+func (c *canceledContext) Value(_ any) any { return nil }

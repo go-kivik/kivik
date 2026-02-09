@@ -30,7 +30,7 @@ func Test_put_database_RunE(t *testing.T) {
 		args:   []string{"put", "db"},
 		status: errors.ErrUsage,
 	})
-	tests.Add("success", func(t *testing.T) interface{} {
+	tests.Add("success", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			Body: io.NopCloser(strings.NewReader(`{"status":"ok"}`)),
 		}, func(_ *testing.T, req *http.Request) {

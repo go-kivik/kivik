@@ -294,7 +294,7 @@ func TestDBUpdates(t *testing.T) {
 		},
 		{
 			name: "CouchDB defaults, network error",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"feed":  "",
 				"since": "",
 			}),
@@ -397,7 +397,7 @@ func TestDBUpdates(t *testing.T) {
 					"last_seq": "2-g1AAAAFR"
 				}`),
 			}, nil),
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"feed":  "",
 				"since": "",
 			}),
@@ -408,7 +408,7 @@ func TestDBUpdates(t *testing.T) {
 		},
 		{
 			name: "eventsource",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"feed":  "eventsource",
 				"since": "",
 			}),

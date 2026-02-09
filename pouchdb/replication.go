@@ -122,7 +122,7 @@ func (r *replication) Delete(context.Context) (err error) {
 	return &internal.Error{Status: http.StatusNotFound, Message: "replication not found"}
 }
 
-func replicationEndpoint(dsn string, object interface{}) (name string, obj interface{}, err error) {
+func replicationEndpoint(dsn string, object any) (name string, obj any, err error) {
 	defer bindings.RecoverError(&err)
 	if object == nil {
 		return dsn, dsn, nil
@@ -141,7 +141,7 @@ func replicationEndpoint(dsn string, object interface{}) (name string, obj inter
 }
 
 func (c *client) Replicate(_ context.Context, targetDSN, sourceDSN string, options driver.Options) (driver.Replication, error) {
-	pouchOpts := map[string]interface{}{}
+	pouchOpts := map[string]any{}
 	options.Apply(pouchOpts)
 	// Allow overriding source and target with options, i.e. for PouchDB objects
 	sourceName, sourceObj, err := replicationEndpoint(sourceDSN, pouchOpts["source"])

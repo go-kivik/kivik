@@ -87,7 +87,7 @@ func (fs *FS) WriteSecurity(ctx context.Context, path string, sec *driver.Securi
 		return err
 	}
 	var enc interface {
-		Encode(interface{}) error
+		Encode(any) error
 	}
 	switch ext {
 	case "json":

@@ -59,7 +59,7 @@ func (db *driverDB) Copy(ctx context.Context, arg0 string, arg1 string, options 
 	return expected.ret0, expected.wait(ctx)
 }
 
-func (db *driverDB) CreateDoc(ctx context.Context, arg0 interface{}, options driver.Options) (string, string, error) {
+func (db *driverDB) CreateDoc(ctx context.Context, arg0 any, options driver.Options) (string, string, error) {
 	expected := &ExpectedCreateDoc{
 		arg0: arg0,
 		commonExpectation: commonExpectation{
@@ -76,7 +76,7 @@ func (db *driverDB) CreateDoc(ctx context.Context, arg0 interface{}, options dri
 	return expected.ret0, expected.ret1, expected.wait(ctx)
 }
 
-func (db *driverDB) CreateIndex(ctx context.Context, arg0 string, arg1 string, arg2 interface{}, options driver.Options) error {
+func (db *driverDB) CreateIndex(ctx context.Context, arg0 string, arg1 string, arg2 any, options driver.Options) error {
 	expected := &ExpectedCreateIndex{
 		arg0: arg0,
 		arg1: arg1,
@@ -145,7 +145,7 @@ func (db *driverDB) GetRev(ctx context.Context, arg0 string, options driver.Opti
 	return expected.ret0, expected.wait(ctx)
 }
 
-func (db *driverDB) Put(ctx context.Context, arg0 string, arg1 interface{}, options driver.Options) (string, error) {
+func (db *driverDB) Put(ctx context.Context, arg0 string, arg1 any, options driver.Options) (string, error) {
 	expected := &ExpectedPut{
 		arg0: arg0,
 		arg1: arg1,
@@ -163,7 +163,7 @@ func (db *driverDB) Put(ctx context.Context, arg0 string, arg1 interface{}, opti
 	return expected.ret0, expected.wait(ctx)
 }
 
-func (db *driverDB) Update(ctx context.Context, arg0 string, arg1 string, arg2 string, arg3 interface{}, options driver.Options) (string, error) {
+func (db *driverDB) Update(ctx context.Context, arg0 string, arg1 string, arg2 string, arg3 any, options driver.Options) (string, error) {
 	expected := &ExpectedUpdate{
 		arg0: arg0,
 		arg1: arg1,
@@ -315,7 +315,7 @@ func (db *driverDB) DesignDocs(ctx context.Context, options driver.Options) (dri
 	return &driverRows{Context: ctx, Rows: coalesceRows(expected.ret0)}, expected.wait(ctx)
 }
 
-func (db *driverDB) Explain(ctx context.Context, arg0 interface{}, options driver.Options) (*driver.QueryPlan, error) {
+func (db *driverDB) Explain(ctx context.Context, arg0 any, options driver.Options) (*driver.QueryPlan, error) {
 	expected := &ExpectedExplain{
 		arg0: arg0,
 		commonExpectation: commonExpectation{
@@ -332,7 +332,7 @@ func (db *driverDB) Explain(ctx context.Context, arg0 interface{}, options drive
 	return expected.ret0, expected.wait(ctx)
 }
 
-func (db *driverDB) Find(ctx context.Context, arg0 interface{}, options driver.Options) (driver.Rows, error) {
+func (db *driverDB) Find(ctx context.Context, arg0 any, options driver.Options) (driver.Rows, error) {
 	expected := &ExpectedFind{
 		arg0: arg0,
 		commonExpectation: commonExpectation{
@@ -520,7 +520,7 @@ func (db *driverDB) Query(ctx context.Context, arg0 string, arg1 string, options
 	return &driverRows{Context: ctx, Rows: coalesceRows(expected.ret0)}, expected.wait(ctx)
 }
 
-func (db *driverDB) RevsDiff(ctx context.Context, arg0 interface{}) (driver.Rows, error) {
+func (db *driverDB) RevsDiff(ctx context.Context, arg0 any) (driver.Rows, error) {
 	expected := &ExpectedRevsDiff{
 		arg0: arg0,
 		commonExpectation: commonExpectation{

@@ -54,7 +54,7 @@ func (tdb *testDB) underlying() *sql.DB {
 	return tdb.DB.(*db).db
 }
 
-func (tdb *testDB) tPut(docID string, doc interface{}, options ...driver.Options) string {
+func (tdb *testDB) tPut(docID string, doc any, options ...driver.Options) string {
 	tdb.t.Helper()
 	opt := driver.Options(mock.NilOption)
 	if len(options) > 0 {
@@ -84,7 +84,7 @@ type multiOptions []kivik.Option
 
 var _ kivik.Option = (multiOptions)(nil)
 
-func (o multiOptions) Apply(t interface{}) {
+func (o multiOptions) Apply(t any) {
 	for _, opt := range o {
 		if opt != nil {
 			opt.Apply(t)
@@ -163,7 +163,7 @@ func (tdb *testDB) checkLogs(want []string) {
 	}
 }
 
-type testAttachments map[string]interface{}
+type testAttachments map[string]any
 
 // newAttachments returns a new testAttachments map. Use [add] to add one or
 // more attachments.
@@ -172,7 +172,7 @@ func newAttachments() testAttachments {
 }
 
 func (a testAttachments) add(filename, content string) testAttachments {
-	a[filename] = map[string]interface{}{
+	a[filename] = map[string]any{
 		"content_type": "text/plain",
 		"data":         []byte(content),
 	}
@@ -180,7 +180,7 @@ func (a testAttachments) add(filename, content string) testAttachments {
 }
 
 func (a testAttachments) addStub(filename string) testAttachments {
-	a[filename] = map[string]interface{}{
+	a[filename] = map[string]any{
 		"stub": true,
 	}
 	return a

@@ -487,7 +487,7 @@ func TestFind(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) { //nolint:thelper // Not a helper
 			db := c.DB("foo")
-			rows := db.Find(context.TODO(), map[string]interface{}{"selector": map[string]interface{}{"foo": "123"}})
+			rows := db.Find(context.TODO(), map[string]any{"selector": map[string]any{"foo": "123"}})
 			if err := rows.Err(); !testy.ErrorMatchesRE("has query: 123", err) {
 				t.Errorf("Unexpected error: %s", err)
 			}
@@ -505,7 +505,7 @@ func TestFind(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) { //nolint:thelper // Not a helper
 			db := c.DB("foo")
-			rows := db.Find(context.TODO(), map[string]interface{}{})
+			rows := db.Find(context.TODO(), map[string]any{})
 			if err := rows.Err(); !testy.ErrorMatches("", err) {
 				t.Errorf("Unexpected error: %s", err)
 			}
@@ -524,7 +524,7 @@ func TestFind(t *testing.T) {
 		setup: func(m *Client) {
 			db := m.NewDB()
 			m.ExpectDB().WillReturn(db)
-			db.ExpectFind().WithQuery(map[string]interface{}{"foo": "123"})
+			db.ExpectFind().WithQuery(map[string]any{"foo": "123"})
 		},
 		test: func(t *testing.T, c *kivik.Client) { //nolint:thelper // Not a helper
 			db := c.DB("foo")
@@ -543,7 +543,7 @@ func TestFind(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) { //nolint:thelper // Not a helper
 			db := c.DB("foo")
-			rows := db.Find(newCanceledContext(), map[string]interface{}{})
+			rows := db.Find(newCanceledContext(), map[string]any{})
 			if err := rows.Err(); !testy.ErrorMatches("context canceled", err) {
 				t.Errorf("Unexpected error: %s", err)
 			}
@@ -561,7 +561,7 @@ func TestFind(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) { //nolint:thelper // Not a helper
 			foo := c.DB("foo")
 			_ = c.DB("bar")
-			rows := foo.Find(context.TODO(), map[string]interface{}{})
+			rows := foo.Find(context.TODO(), map[string]any{})
 			if err := rows.Err(); !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
 				t.Errorf("Unexpected error: %s", err)
 			}
@@ -873,7 +873,7 @@ func TestExplain(t *testing.T) {
 			db.ExpectExplain().WithQuery(map[string]string{"foo": "bar"})
 		},
 		test: func(t *testing.T, c *kivik.Client) { //nolint:thelper // Not a helper
-			_, err := c.DB("foo").Explain(context.TODO(), map[string]interface{}{"foo": "bar"})
+			_, err := c.DB("foo").Explain(context.TODO(), map[string]any{"foo": "bar"})
 			if !testy.ErrorMatches("", err) {
 				t.Errorf("Unexpected error: %s", err)
 			}
@@ -886,7 +886,7 @@ func TestExplain(t *testing.T) {
 			db.ExpectExplain().WillReturn(&driver.QueryPlan{DBName: "foo"})
 		},
 		test: func(t *testing.T, c *kivik.Client) { //nolint:thelper // Not a helper
-			plan, err := c.DB("foo").Explain(context.TODO(), map[string]interface{}{"foo": "bar"})
+			plan, err := c.DB("foo").Explain(context.TODO(), map[string]any{"foo": "bar"})
 			if !testy.ErrorMatches("", err) {
 				t.Errorf("Unexpected error: %s", err)
 			}
@@ -946,7 +946,7 @@ func TestCreateDoc(t *testing.T) {
 			}
 		},
 	})
-	tests.Add("return", func() interface{} {
+	tests.Add("return", func() any {
 		docID, rev := "foo", "1-xxx"
 		return mockTest{
 			setup: func(m *Client) {
@@ -2774,7 +2774,7 @@ func TestBulkDocs(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) { //nolint:thelper // Not a helper
 			db := c.DB("foo")
-			_, err := db.BulkDocs(context.TODO(), []interface{}{1})
+			_, err := db.BulkDocs(context.TODO(), []any{1})
 			if !testy.ErrorMatches("foo err", err) {
 				t.Errorf("Unexpected error: %s", err)
 			}
@@ -2787,7 +2787,7 @@ func TestBulkDocs(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) { //nolint:thelper // Not a helper
 			db := c.DB("foo")
-			_, err := db.BulkDocs(context.TODO(), []interface{}{1})
+			_, err := db.BulkDocs(context.TODO(), []any{1})
 			if !testy.ErrorMatches("call to DB.BulkDocs() was not expected, all expectations already fulfilled", err) {
 				t.Errorf("Unexpected error: %s", err)
 			}
@@ -2805,7 +2805,7 @@ func TestBulkDocs(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) { //nolint:thelper // Not a helper
 			db := c.DB("foo")
-			rows, err := db.BulkDocs(context.TODO(), []interface{}{1})
+			rows, err := db.BulkDocs(context.TODO(), []any{1})
 			if !testy.ErrorMatches("", err) {
 				t.Errorf("Unexpected error: %s", err)
 			}
@@ -2830,7 +2830,7 @@ func TestBulkDocs(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) { //nolint:thelper // Not a helper
 			db := c.DB("foo")
-			rows, err := db.BulkDocs(context.TODO(), []interface{}{1})
+			rows, err := db.BulkDocs(context.TODO(), []any{1})
 			if !testy.ErrorMatches("", err) {
 				t.Errorf("Unexpected error: %s", err)
 			}
@@ -2860,7 +2860,7 @@ func TestBulkDocs(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) { //nolint:thelper // Not a helper
 			db := c.DB("foo")
-			_, err := db.BulkDocs(context.TODO(), []interface{}{1})
+			_, err := db.BulkDocs(context.TODO(), []any{1})
 			if !testy.ErrorMatchesRE(`map\[foo:123]`, err) {
 				t.Errorf("Unexpected error: %s", err)
 			}
@@ -2875,7 +2875,7 @@ func TestBulkDocs(t *testing.T) {
 		},
 		test: func(t *testing.T, c *kivik.Client) { //nolint:thelper // Not a helper
 			db := c.DB("foo")
-			_, err := db.BulkDocs(newCanceledContext(), []interface{}{1})
+			_, err := db.BulkDocs(newCanceledContext(), []any{1})
 			if !testy.ErrorMatches("context canceled", err) {
 				t.Errorf("Unexpected error: %s", err)
 			}
@@ -2893,7 +2893,7 @@ func TestBulkDocs(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) { //nolint:thelper // Not a helper
 			foo := c.DB("foo")
 			_ = c.DB("bar")
-			_, err := foo.BulkDocs(context.TODO(), []interface{}{1})
+			_, err := foo.BulkDocs(context.TODO(), []any{1})
 			if !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
 				t.Errorf("Unexpected error: %s", err)
 			}
@@ -3304,7 +3304,7 @@ func TestChanges(t *testing.T) {
 }
 
 func TestRevsDiff(t *testing.T) {
-	revMap := map[string]interface{}{"foo": []string{"1", "2"}}
+	revMap := map[string]any{"foo": []string{"1", "2"}}
 	tests := testy.NewTable()
 	tests.Add("error", mockTest{
 		setup: func(m *Client) {
@@ -3342,7 +3342,7 @@ func TestRevsDiff(t *testing.T) {
 			if err := rows.Err(); !testy.ErrorMatches("", err) {
 				t.Errorf("Unexpected error: %s", err)
 			}
-			results := map[string]interface{}{}
+			results := map[string]any{}
 			for rows.Next() {
 				var val map[string][]string
 				if err := rows.ScanValue(&val); err != nil {

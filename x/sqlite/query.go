@@ -110,7 +110,7 @@ func (d *db) performQuery(
 			return nil, d.errDatabaseNotFound(err)
 		}
 
-		args := []interface{}{
+		args := []any{
 			vopts.includeDocs, vopts.conflicts, vopts.reduce, vopts.updateSeq,
 			"_design/" + ddoc, rev.rev, rev.id, view, vopts.attachments,
 		}
@@ -731,7 +731,7 @@ func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc
 
 	// Clear any stale entries
 	if len(batch.entries) > 0 || len(batch.deleted) > 0 {
-		ids := make([]interface{}, 0, len(batch.entries)+len(batch.deleted))
+		ids := make([]any, 0, len(batch.entries)+len(batch.deleted))
 		for mapKey := range batch.entries {
 			ids = append(ids, mapKey.id)
 		}
@@ -748,7 +748,7 @@ func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc
 	}
 
 	if batch.insertCount > 0 {
-		args := make([]interface{}, 0, batch.insertCount*5)
+		args := make([]any, 0, batch.insertCount*5)
 		values := make([]string, 0, batch.insertCount)
 		mapKeys := make([]docRev, 0, len(batch.entries))
 		for mapKey := range batch.entries {
@@ -778,7 +778,7 @@ func (d *db) writeMapIndexBatch(ctx context.Context, seq int, rev revision, ddoc
 	docRev:
 		for _, mapKey := range mapKeys {
 			newValues := make([]string, 0, len(batch.entries[mapKey]))
-			newArgs := make([]interface{}, 0, len(batch.entries[mapKey])*5)
+			newArgs := make([]any, 0, len(batch.entries[mapKey])*5)
 			for _, entry := range batch.entries[mapKey] {
 				key, err := fromJSValue(entry.Key)
 				if err != nil {

@@ -111,7 +111,7 @@ func TestAllDBs(t *testing.T) {
 			}
 		},
 	})
-	tests.Add("success", func() interface{} {
+	tests.Add("success", func() any {
 		expected := []string{"a", "b", "c"}
 		return mockTest{
 			setup: func(m *Client) {
@@ -211,7 +211,7 @@ func TestClusterSetup(t *testing.T) {
 	})
 	tests.Add("callback", mockTest{
 		setup: func(m *Client) {
-			m.ExpectClusterSetup().WillExecute(func(context.Context, interface{}) error {
+			m.ExpectClusterSetup().WillExecute(func(context.Context, any) error {
 				return errors.New("custom error")
 			})
 		},
@@ -250,7 +250,7 @@ func TestClusterStatus(t *testing.T) {
 		},
 		err: "there is a remaining unmet expectation",
 	})
-	tests.Add("success", func() interface{} {
+	tests.Add("success", func() any {
 		const expected = "oink"
 		return mockTest{
 			setup: func(m *Client) {
@@ -463,7 +463,7 @@ func TestDBsStats(t *testing.T) {
 		},
 		err: "there is a remaining unmet expectation",
 	})
-	tests.Add("success", func() interface{} {
+	tests.Add("success", func() any {
 		return mockTest{
 			setup: func(m *Client) {
 				m.ExpectDBsStats().WillReturn([]*driver.DBStats{
@@ -565,7 +565,7 @@ func TestPing(t *testing.T) {
 
 func TestSession(t *testing.T) {
 	tests := testy.NewTable()
-	tests.Add("session", func() interface{} {
+	tests.Add("session", func() any {
 		return mockTest{
 			setup: func(m *Client) {
 				m.ExpectSession().WillReturn(&driver.Session{
@@ -621,7 +621,7 @@ func TestSession(t *testing.T) {
 
 func TestVersion(t *testing.T) {
 	tests := testy.NewTable()
-	tests.Add("version", func() interface{} {
+	tests.Add("version", func() any {
 		return mockTest{
 			setup: func(m *Client) {
 				m.ExpectVersion().WillReturn(&driver.Version{Version: "1.2"})
@@ -968,7 +968,7 @@ func TestConfig(t *testing.T) {
 			}
 		},
 	})
-	tests.Add("success", func() interface{} {
+	tests.Add("success", func() any {
 		expected := kivik.Config{"foo": kivik.ConfigSection{"bar": "baz"}}
 		return mockTest{
 			setup: func(m *Client) {
@@ -1023,7 +1023,7 @@ func TestConfigSection(t *testing.T) {
 			}
 		},
 	})
-	tests.Add("success", func() interface{} {
+	tests.Add("success", func() any {
 		expected := kivik.ConfigSection{"bar": "baz"}
 		return mockTest{
 			setup: func(m *Client) {
@@ -1079,7 +1079,7 @@ func TestConfigValue(t *testing.T) {
 			}
 		},
 	})
-	tests.Add("success", func() interface{} {
+	tests.Add("success", func() any {
 		expected := "baz"
 		return mockTest{
 			setup: func(m *Client) {
@@ -1136,7 +1136,7 @@ func TestSetConfigValue(t *testing.T) {
 			}
 		},
 	})
-	tests.Add("success", func() interface{} {
+	tests.Add("success", func() any {
 		expected := "old"
 		return mockTest{
 			setup: func(m *Client) {
@@ -1194,7 +1194,7 @@ func TestDeleteConfigKey(t *testing.T) {
 			}
 		},
 	})
-	tests.Add("success", func() interface{} {
+	tests.Add("success", func() any {
 		expected := "old"
 		return mockTest{
 			setup: func(m *Client) {

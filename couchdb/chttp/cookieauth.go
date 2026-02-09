@@ -44,7 +44,7 @@ var (
 	_ kivik.Option  = (*cookieAuth)(nil)
 )
 
-func (a *cookieAuth) Apply(target interface{}) {
+func (a *cookieAuth) Apply(target any) {
 	if auth, ok := target.(*authenticator); ok {
 		// Clone this so that it's safe to re-use the same option to multiple
 		// client connections. TODO: This can no doubt be refactored.

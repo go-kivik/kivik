@@ -258,7 +258,7 @@ func (d *db) lastSeq(ctx context.Context) (uint64, error) {
 // value. Useful when your query returns rows you don't always need.
 type discard struct{}
 
-func (discard) Scan(interface{}) error {
+func (discard) Scan(any) error {
 	return nil
 }
 

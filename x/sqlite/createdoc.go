@@ -24,7 +24,7 @@ import (
 	kerrors "github.com/go-kivik/kivik/v4/int/errors"
 )
 
-func (d *db) CreateDoc(ctx context.Context, doc interface{}, _ driver.Options) (string, string, error) {
+func (d *db) CreateDoc(ctx context.Context, doc any, _ driver.Options) (string, string, error) {
 	data, err := prepareDoc("", doc)
 	if err != nil {
 		return "", "", err

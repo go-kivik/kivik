@@ -30,7 +30,7 @@ func Test_delete_doc_RunE(t *testing.T) {
 		args:   []string{"delete", "doc"},
 		status: errors.ErrUsage,
 	})
-	tests.Add("success", func(*testing.T) interface{} {
+	tests.Add("success", func(*testing.T) any {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{
@@ -45,7 +45,7 @@ func Test_delete_doc_RunE(t *testing.T) {
 			args: []string{"delete", "doc", s.URL + "/db/doc", "-O", "rev=1-xxx"},
 		}
 	})
-	tests.Add("no rev", func(*testing.T) interface{} {
+	tests.Add("no rev", func(*testing.T) any {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusConflict,
 			Header: http.Header{
@@ -61,7 +61,7 @@ func Test_delete_doc_RunE(t *testing.T) {
 			status: errors.ErrBadRequest,
 		}
 	})
-	tests.Add("rev in url", func(t *testing.T) interface{} {
+	tests.Add("rev in url", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{

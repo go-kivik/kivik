@@ -246,7 +246,7 @@ func typeName(t reflect.Type) string {
 	name := t.String()
 	switch name {
 	case "interface {}":
-		return "interface{}"
+		return "any"
 	case "driver.Rows":
 		return "*Rows"
 	case "driver.Changes":

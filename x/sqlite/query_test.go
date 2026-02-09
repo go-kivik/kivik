@@ -45,7 +45,7 @@ func TestDBQuery(t *testing.T) {
 		wantErr:    "missing",
 		wantStatus: http.StatusNotFound,
 	})
-	tests.Add("ddoc does exist but view does not", func(t *testing.T) interface{} {
+	tests.Add("ddoc does exist but view does not", func(t *testing.T) any {
 		d := newDB(t)
 		_ = d.tPut("_design/foo", map[string]string{"cat": "meow"})
 
@@ -57,9 +57,9 @@ func TestDBQuery(t *testing.T) {
 			wantStatus: http.StatusNotFound,
 		}
 	})
-	tests.Add("ddoc does exist but only non-view functions exist", func(t *testing.T) interface{} {
+	tests.Add("ddoc does exist but only non-view functions exist", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{"updates": map[string]string{"update1": "function() {}"}})
+		_ = d.tPut("_design/foo", map[string]any{"updates": map[string]string{"update1": "function() {}"}})
 
 		return test{
 			db:         d,
@@ -69,10 +69,10 @@ func TestDBQuery(t *testing.T) {
 			wantStatus: http.StatusNotFound,
 		}
 	})
-	tests.Add("simple view with a single document", func(t *testing.T) interface{} {
+	tests.Add("simple view with a single document", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) { emit(doc._id, null); }`,
 				},
@@ -94,10 +94,10 @@ func TestDBQuery(t *testing.T) {
 		wantErr:    "invalid value for 'update'",
 		wantStatus: http.StatusBadRequest,
 	})
-	tests.Add("with update=false", func(t *testing.T) interface{} {
+	tests.Add("with update=false", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) { emit(doc._id, null); }`,
 				},
@@ -113,10 +113,10 @@ func TestDBQuery(t *testing.T) {
 			want:    nil,
 		}
 	})
-	tests.Add("explicit update=true", func(t *testing.T) interface{} {
+	tests.Add("explicit update=true", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) { emit(doc._id, null); }`,
 				},
@@ -134,10 +134,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("Updating ddoc renders index obsolete", func(t *testing.T) interface{} {
+	tests.Add("Updating ddoc renders index obsolete", func(t *testing.T) any {
 		d := newDB(t)
-		rev := d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		rev := d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) { emit(doc._id, null); }`,
 				},
@@ -152,8 +152,8 @@ func TestDBQuery(t *testing.T) {
 		_ = rows.Close()
 
 		// Update the ddoc
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(x) { emit(x._id, null); }`,
 				},
@@ -168,10 +168,10 @@ func TestDBQuery(t *testing.T) {
 			want:    nil,
 		}
 	})
-	tests.Add("incremental update", func(t *testing.T) interface{} {
+	tests.Add("incremental update", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) { emit(doc._id, null); }`,
 				},
@@ -186,7 +186,7 @@ func TestDBQuery(t *testing.T) {
 		_ = rows.Close()
 
 		// Add a new doc to trigger an incremental update
-		_ = d.tPut("bar", map[string]interface{}{"_id": "bar"})
+		_ = d.tPut("bar", map[string]any{"_id": "bar"})
 
 		return test{
 			db:   d,
@@ -204,7 +204,7 @@ func TestDBQuery(t *testing.T) {
 		wantErr:    "missing",
 		wantStatus: http.StatusNotFound,
 	})
-	tests.Add("ddoc does exist but view does not with update=false", func(t *testing.T) interface{} {
+	tests.Add("ddoc does exist but view does not with update=false", func(t *testing.T) any {
 		d := newDB(t)
 		_ = d.tPut("_design/foo", map[string]string{"cat": "meow"})
 
@@ -217,12 +217,12 @@ func TestDBQuery(t *testing.T) {
 			wantStatus: http.StatusNotFound,
 		}
 	})
-	tests.Add("deleting doc deindexes it", func(t *testing.T) interface{} {
+	tests.Add("deleting doc deindexes it", func(t *testing.T) any {
 		d := newDB(t)
 		rev := d.tPut("foo", map[string]string{"cat": "meow"})
 
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) { emit(doc._id, null); }`,
 				},
@@ -245,10 +245,10 @@ func TestDBQuery(t *testing.T) {
 			want: nil,
 		}
 	})
-	tests.Add("doc deleted before index creation", func(t *testing.T) interface{} {
+	tests.Add("doc deleted before index creation", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) { emit(doc._id, null); }`,
 				},
@@ -264,11 +264,11 @@ func TestDBQuery(t *testing.T) {
 			want: nil,
 		}
 	})
-	tests.Add("map function throws exception", func(t *testing.T) interface{} {
+	tests.Add("map function throws exception", func(t *testing.T) any {
 		d := newDB(t)
 		_ = d.tPut("foo", map[string]string{"cat": "meow"})
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 						emit(doc._id, null);
@@ -288,11 +288,11 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("emit function throws exception", func(t *testing.T) interface{} {
+	tests.Add("emit function throws exception", func(t *testing.T) any {
 		d := newDB(t)
 		_ = d.tPut("foo", map[string]string{"cat": "meow"})
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 						emit(doc._id, function() {});
@@ -310,10 +310,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("map that references attachments", func(t *testing.T) interface{} {
+	tests.Add("map that references attachments", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 						if (doc._attachments) { // Check if there are attachments
@@ -326,7 +326,7 @@ func TestDBQuery(t *testing.T) {
 			},
 		})
 		_ = d.tPut("no_attachments", map[string]string{"foo": "bar"})
-		_ = d.tPut("with_attachments", map[string]interface{}{
+		_ = d.tPut("with_attachments", map[string]any{
 			"_attachments": newAttachments().
 				add("foo.txt", "Hello, World!").
 				add("bar.txt", "Goodbye, World!"),
@@ -342,11 +342,11 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("default CouchDB collation", func(t *testing.T) interface{} {
+	tests.Add("default CouchDB collation", func(t *testing.T) any {
 		// See https://docs.couchdb.org/en/stable/ddocs/views/collation.html
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key !== undefined) {
@@ -356,31 +356,31 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("null", map[string]interface{}{"key": nil})
-		_ = d.tPut("bool: false", map[string]interface{}{"key": false})
-		_ = d.tPut("bool: true", map[string]interface{}{"key": true})
-		_ = d.tPut("numbers: 1", map[string]interface{}{"key": int(1)})
-		_ = d.tPut("numbers: 2", map[string]interface{}{"key": int(2)})
-		_ = d.tPut("numbers: 3.0", map[string]interface{}{"key": float64(3)})
-		_ = d.tPut("numbers: 4", map[string]interface{}{"key": int(4)})
-		_ = d.tPut("text: a", map[string]interface{}{"key": "a"})
-		_ = d.tPut("text: A", map[string]interface{}{"key": "A"})
-		_ = d.tPut("text: aa", map[string]interface{}{"key": "aa"})
-		_ = d.tPut("text: b", map[string]interface{}{"key": "b"})
-		_ = d.tPut("text: B", map[string]interface{}{"key": "B"})
-		_ = d.tPut("text: ba", map[string]interface{}{"key": "ba"})
-		_ = d.tPut("text: bb", map[string]interface{}{"key": "bb"})
-		_ = d.tPut("array: [a]", map[string]interface{}{"key": []string{"a"}})
-		_ = d.tPut("array: [b]", map[string]interface{}{"key": []string{"b"}})
-		_ = d.tPut("array: [b, c]", map[string]interface{}{"key": []string{"b", "c"}})
-		_ = d.tPut("array: [b, c, a]", map[string]interface{}{"key": []string{"b", "c", "a"}})
-		_ = d.tPut("array: [b, d]", map[string]interface{}{"key": []string{"b", "d"}})
-		_ = d.tPut("array: [b, d, e]", map[string]interface{}{"key": []string{"b", "d", "e"}})
-		_ = d.tPut("object: {a:1}", map[string]interface{}{"key": map[string]interface{}{"a": 1}})
-		_ = d.tPut("object: {a:2}", map[string]interface{}{"key": map[string]interface{}{"a": 2}})
-		_ = d.tPut("object: {b:1}", map[string]interface{}{"key": map[string]interface{}{"b": 1}})
+		_ = d.tPut("null", map[string]any{"key": nil})
+		_ = d.tPut("bool: false", map[string]any{"key": false})
+		_ = d.tPut("bool: true", map[string]any{"key": true})
+		_ = d.tPut("numbers: 1", map[string]any{"key": int(1)})
+		_ = d.tPut("numbers: 2", map[string]any{"key": int(2)})
+		_ = d.tPut("numbers: 3.0", map[string]any{"key": float64(3)})
+		_ = d.tPut("numbers: 4", map[string]any{"key": int(4)})
+		_ = d.tPut("text: a", map[string]any{"key": "a"})
+		_ = d.tPut("text: A", map[string]any{"key": "A"})
+		_ = d.tPut("text: aa", map[string]any{"key": "aa"})
+		_ = d.tPut("text: b", map[string]any{"key": "b"})
+		_ = d.tPut("text: B", map[string]any{"key": "B"})
+		_ = d.tPut("text: ba", map[string]any{"key": "ba"})
+		_ = d.tPut("text: bb", map[string]any{"key": "bb"})
+		_ = d.tPut("array: [a]", map[string]any{"key": []string{"a"}})
+		_ = d.tPut("array: [b]", map[string]any{"key": []string{"b"}})
+		_ = d.tPut("array: [b, c]", map[string]any{"key": []string{"b", "c"}})
+		_ = d.tPut("array: [b, c, a]", map[string]any{"key": []string{"b", "c", "a"}})
+		_ = d.tPut("array: [b, d]", map[string]any{"key": []string{"b", "d"}})
+		_ = d.tPut("array: [b, d, e]", map[string]any{"key": []string{"b", "d", "e"}})
+		_ = d.tPut("object: {a:1}", map[string]any{"key": map[string]any{"a": 1}})
+		_ = d.tPut("object: {a:2}", map[string]any{"key": map[string]any{"a": 2}})
+		_ = d.tPut("object: {b:1}", map[string]any{"key": map[string]any{"b": 1}})
 		// _ = d.tPut("object: {b:2, a:1}", map[string]interface{}{"key": map[string]interface{}{"b": 2, "a": 1}})
-		_ = d.tPut("object: {b:2, c:2}", map[string]interface{}{"key": map[string]interface{}{"b": 2, "c": 2}})
+		_ = d.tPut("object: {b:2, c:2}", map[string]any{"key": map[string]any{"b": 2, "c": 2}})
 
 		return test{
 			db:      d,
@@ -416,11 +416,11 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("ASCII collation", func(t *testing.T) interface{} {
+	tests.Add("ASCII collation", func(t *testing.T) any {
 		// See https://docs.couchdb.org/en/stable/ddocs/views/collation.html
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key !== undefined) {
@@ -429,35 +429,35 @@ func TestDBQuery(t *testing.T) {
 						}`,
 				},
 			},
-			"options": map[string]interface{}{
+			"options": map[string]any{
 				"collation": "ascii",
 			},
 		})
-		_ = d.tPut("null", map[string]interface{}{"key": nil})
-		_ = d.tPut("bool: false", map[string]interface{}{"key": false})
-		_ = d.tPut("bool: true", map[string]interface{}{"key": true})
-		_ = d.tPut("numbers: 1", map[string]interface{}{"key": int(1)})
-		_ = d.tPut("numbers: 2", map[string]interface{}{"key": int(2)})
-		_ = d.tPut("numbers: 3.0", map[string]interface{}{"key": float64(3)})
-		_ = d.tPut("numbers: 4", map[string]interface{}{"key": int(4)})
-		_ = d.tPut("text: a", map[string]interface{}{"key": "a"})
-		_ = d.tPut("text: A", map[string]interface{}{"key": "A"})
-		_ = d.tPut("text: aa", map[string]interface{}{"key": "aa"})
-		_ = d.tPut("text: b", map[string]interface{}{"key": "b"})
-		_ = d.tPut("text: B", map[string]interface{}{"key": "B"})
-		_ = d.tPut("text: ba", map[string]interface{}{"key": "ba"})
-		_ = d.tPut("text: bb", map[string]interface{}{"key": "bb"})
-		_ = d.tPut("array: [a]", map[string]interface{}{"key": []string{"a"}})
-		_ = d.tPut("array: [b]", map[string]interface{}{"key": []string{"b"}})
-		_ = d.tPut("array: [b, c]", map[string]interface{}{"key": []string{"b", "c"}})
-		_ = d.tPut("array: [b, c, a]", map[string]interface{}{"key": []string{"b", "c", "a"}})
-		_ = d.tPut("array: [b, d]", map[string]interface{}{"key": []string{"b", "d"}})
-		_ = d.tPut("array: [b, d, e]", map[string]interface{}{"key": []string{"b", "d", "e"}})
-		_ = d.tPut("object: {a:1}", map[string]interface{}{"key": map[string]interface{}{"a": 1}})
-		_ = d.tPut("object: {a:2}", map[string]interface{}{"key": map[string]interface{}{"a": 2}})
-		_ = d.tPut("object: {b:1}", map[string]interface{}{"key": map[string]interface{}{"b": 1}})
+		_ = d.tPut("null", map[string]any{"key": nil})
+		_ = d.tPut("bool: false", map[string]any{"key": false})
+		_ = d.tPut("bool: true", map[string]any{"key": true})
+		_ = d.tPut("numbers: 1", map[string]any{"key": int(1)})
+		_ = d.tPut("numbers: 2", map[string]any{"key": int(2)})
+		_ = d.tPut("numbers: 3.0", map[string]any{"key": float64(3)})
+		_ = d.tPut("numbers: 4", map[string]any{"key": int(4)})
+		_ = d.tPut("text: a", map[string]any{"key": "a"})
+		_ = d.tPut("text: A", map[string]any{"key": "A"})
+		_ = d.tPut("text: aa", map[string]any{"key": "aa"})
+		_ = d.tPut("text: b", map[string]any{"key": "b"})
+		_ = d.tPut("text: B", map[string]any{"key": "B"})
+		_ = d.tPut("text: ba", map[string]any{"key": "ba"})
+		_ = d.tPut("text: bb", map[string]any{"key": "bb"})
+		_ = d.tPut("array: [a]", map[string]any{"key": []string{"a"}})
+		_ = d.tPut("array: [b]", map[string]any{"key": []string{"b"}})
+		_ = d.tPut("array: [b, c]", map[string]any{"key": []string{"b", "c"}})
+		_ = d.tPut("array: [b, c, a]", map[string]any{"key": []string{"b", "c", "a"}})
+		_ = d.tPut("array: [b, d]", map[string]any{"key": []string{"b", "d"}})
+		_ = d.tPut("array: [b, d, e]", map[string]any{"key": []string{"b", "d", "e"}})
+		_ = d.tPut("object: {a:1}", map[string]any{"key": map[string]any{"a": 1}})
+		_ = d.tPut("object: {a:2}", map[string]any{"key": map[string]any{"a": 2}})
+		_ = d.tPut("object: {b:1}", map[string]any{"key": map[string]any{"b": 1}})
 		// _ = d.tPut("object: {b:2, a:1}", map[string]interface{}{"key": map[string]interface{}{"b": 2, "a": 1}})
-		_ = d.tPut("object: {b:2, c:2}", map[string]interface{}{"key": map[string]interface{}{"b": 2, "c": 2}})
+		_ = d.tPut("object: {b:2, c:2}", map[string]any{"key": map[string]any{"b": 2, "c": 2}})
 
 		return test{
 			db:      d,
@@ -493,10 +493,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("simple reduce function", func(t *testing.T) interface{} {
+	tests.Add("simple reduce function", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, [1]);
@@ -530,10 +530,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("reduce=true for map-only view returns 400", func(t *testing.T) interface{} {
+	tests.Add("reduce=true for map-only view returns 400", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, [1]);
@@ -553,10 +553,10 @@ func TestDBQuery(t *testing.T) {
 			wantStatus: http.StatusBadRequest,
 		}
 	})
-	tests.Add("simple reduce function with reduce=true", func(t *testing.T) interface{} {
+	tests.Add("simple reduce function with reduce=true", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, [1]);
@@ -591,10 +591,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("simple reduce function with reduce=false", func(t *testing.T) interface{} {
+	tests.Add("simple reduce function with reduce=false", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, [1]);
@@ -627,10 +627,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("reduce function throws an exception", func(t *testing.T) interface{} {
+	tests.Add("reduce function throws an exception", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, [1]);
@@ -660,10 +660,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("built-in _count reduce function", func(t *testing.T) interface{} {
+	tests.Add("built-in _count reduce function", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, [1]);
@@ -687,10 +687,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("built-in _sum reduce function", func(t *testing.T) interface{} {
+	tests.Add("built-in _sum reduce function", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, 3);
@@ -729,10 +729,10 @@ func TestDBQuery(t *testing.T) {
 		wantErr:    "invalid value for 'group_level'",
 		wantStatus: http.StatusBadRequest,
 	})
-	tests.Add("group=true for map-only view returns 400", func(t *testing.T) interface{} {
+	tests.Add("group=true for map-only view returns 400", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, [1]);
@@ -752,10 +752,10 @@ func TestDBQuery(t *testing.T) {
 			wantStatus: http.StatusBadRequest,
 		}
 	})
-	tests.Add("simple group=true case", func(t *testing.T) interface{} {
+	tests.Add("simple group=true case", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -781,10 +781,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("group=true with null key", func(t *testing.T) interface{} {
+	tests.Add("group=true with null key", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -809,10 +809,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("group_level=2 for map-only view returns 400", func(t *testing.T) interface{} {
+	tests.Add("group_level=2 for map-only view returns 400", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, [1]);
@@ -832,10 +832,10 @@ func TestDBQuery(t *testing.T) {
 			wantStatus: http.StatusBadRequest,
 		}
 	})
-	tests.Add("group_level above maximum", func(t *testing.T) interface{} {
+	tests.Add("group_level above maximum", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -848,8 +848,8 @@ func TestDBQuery(t *testing.T) {
 		})
 		_ = d.tPut("a", map[string]string{"key": "a"})
 		_ = d.tPut("A", map[string]string{"key": "a"})
-		_ = d.tPut("ab", map[string]interface{}{"key": []string{"a", "b"}})
-		_ = d.tPut("aa", map[string]interface{}{"key": []string{"a", "a"}})
+		_ = d.tPut("ab", map[string]any{"key": []string{"a", "b"}})
+		_ = d.tPut("aa", map[string]any{"key": []string{"a", "a"}})
 
 		return test{
 			db:      d,
@@ -863,10 +863,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("group_level=1", func(t *testing.T) interface{} {
+	tests.Add("group_level=1", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -879,8 +879,8 @@ func TestDBQuery(t *testing.T) {
 		})
 		_ = d.tPut("a", map[string]string{"key": "a"})
 		_ = d.tPut("A", map[string]string{"key": "a"})
-		_ = d.tPut("ab", map[string]interface{}{"key": []string{"a", "b"}})
-		_ = d.tPut("aa", map[string]interface{}{"key": []string{"a", "a"}})
+		_ = d.tPut("ab", map[string]any{"key": []string{"a", "b"}})
+		_ = d.tPut("aa", map[string]any{"key": []string{"a", "a"}})
 
 		return test{
 			db:      d,
@@ -893,10 +893,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("group_level=0 works same as no grouping", func(t *testing.T) interface{} {
+	tests.Add("group_level=0 works same as no grouping", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -909,8 +909,8 @@ func TestDBQuery(t *testing.T) {
 		})
 		_ = d.tPut("a", map[string]string{"key": "a"})
 		_ = d.tPut("A", map[string]string{"key": "a"})
-		_ = d.tPut("ab", map[string]interface{}{"key": []string{"a", "b"}})
-		_ = d.tPut("aa", map[string]interface{}{"key": []string{"a", "a"}})
+		_ = d.tPut("ab", map[string]any{"key": []string{"a", "b"}})
+		_ = d.tPut("aa", map[string]any{"key": []string{"a", "a"}})
 
 		return test{
 			db:      d,
@@ -922,10 +922,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("_stats with single numeric value from map function", func(t *testing.T) interface{} {
+	tests.Add("_stats with single numeric value from map function", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -948,10 +948,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("_stats with negative and positive values", func(t *testing.T) interface{} {
+	tests.Add("_stats with negative and positive values", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -962,8 +962,8 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{"key": "a", "value": 1})
-		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": -1})
+		_ = d.tPut("a", map[string]any{"key": "a", "value": 1})
+		_ = d.tPut("b", map[string]any{"key": "b", "value": -1})
 
 		return test{
 			db:   d,
@@ -974,10 +974,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("_stats with floating point values", func(t *testing.T) interface{} {
+	tests.Add("_stats with floating point values", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -988,8 +988,8 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{"key": "a", "value": 1.23})
-		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": -1.23})
+		_ = d.tPut("a", map[string]any{"key": "a", "value": 1.23})
+		_ = d.tPut("b", map[string]any{"key": "b", "value": -1.23})
 
 		return test{
 			db:   d,
@@ -1000,10 +1000,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("_stats with non numeric values", func(t *testing.T) interface{} {
+	tests.Add("_stats with non numeric values", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -1014,8 +1014,8 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{"key": "a", "value": 1.23})
-		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": "dog"})
+		_ = d.tPut("a", map[string]any{"key": "a", "value": 1.23})
+		_ = d.tPut("b", map[string]any{"key": "b", "value": "dog"})
 
 		return test{
 			db:         d,
@@ -1025,10 +1025,10 @@ func TestDBQuery(t *testing.T) {
 			wantStatus: http.StatusInternalServerError,
 		}
 	})
-	tests.Add("_stats with null value", func(t *testing.T) interface{} {
+	tests.Add("_stats with null value", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -1039,7 +1039,7 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": nil})
+		_ = d.tPut("b", map[string]any{"key": "b", "value": nil})
 
 		return test{
 			db:         d,
@@ -1049,10 +1049,10 @@ func TestDBQuery(t *testing.T) {
 			wantStatus: http.StatusInternalServerError,
 		}
 	})
-	tests.Add("_stats with array of strings value", func(t *testing.T) interface{} {
+	tests.Add("_stats with array of strings value", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -1063,7 +1063,7 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": []string{"dog", "cat", "cow"}})
+		_ = d.tPut("b", map[string]any{"key": "b", "value": []string{"dog", "cat", "cow"}})
 
 		return test{
 			db:         d,
@@ -1073,10 +1073,10 @@ func TestDBQuery(t *testing.T) {
 			wantStatus: http.StatusInternalServerError,
 		}
 	})
-	tests.Add("_stats with pre-aggregated value", func(t *testing.T) interface{} {
+	tests.Add("_stats with pre-aggregated value", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -1087,8 +1087,8 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{"key": "b", "value": 100})
-		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": map[string]float64{
+		_ = d.tPut("a", map[string]any{"key": "b", "value": 100})
+		_ = d.tPut("b", map[string]any{"key": "b", "value": map[string]float64{
 			"sum":     5,
 			"min":     5,
 			"max":     5,
@@ -1106,10 +1106,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("_stats with partial pre-aggregated value, no count", func(t *testing.T) interface{} {
+	tests.Add("_stats with partial pre-aggregated value, no count", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -1120,7 +1120,7 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": map[string]float64{
+		_ = d.tPut("b", map[string]any{"key": "b", "value": map[string]float64{
 			"sum": 5,
 		}})
 
@@ -1132,10 +1132,10 @@ func TestDBQuery(t *testing.T) {
 			wantStatus: http.StatusInternalServerError,
 		}
 	})
-	tests.Add("_stats with partial pre-aggregated value, no min", func(t *testing.T) interface{} {
+	tests.Add("_stats with partial pre-aggregated value, no min", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -1146,7 +1146,7 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": map[string]float64{
+		_ = d.tPut("b", map[string]any{"key": "b", "value": map[string]float64{
 			"sum":   5,
 			"max":   5,
 			"count": 5,
@@ -1160,10 +1160,10 @@ func TestDBQuery(t *testing.T) {
 			wantStatus: http.StatusInternalServerError,
 		}
 	})
-	tests.Add("_stats with partial pre-aggregated value, no max", func(t *testing.T) interface{} {
+	tests.Add("_stats with partial pre-aggregated value, no max", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -1174,7 +1174,7 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": map[string]float64{
+		_ = d.tPut("b", map[string]any{"key": "b", "value": map[string]float64{
 			"sum":   5,
 			"count": 5,
 			"min":   5,
@@ -1188,10 +1188,10 @@ func TestDBQuery(t *testing.T) {
 			wantStatus: http.StatusInternalServerError,
 		}
 	})
-	tests.Add("_stats with partial pre-aggregated value, no sumsqr", func(t *testing.T) interface{} {
+	tests.Add("_stats with partial pre-aggregated value, no sumsqr", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -1202,7 +1202,7 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": map[string]float64{
+		_ = d.tPut("b", map[string]any{"key": "b", "value": map[string]float64{
 			"sum":   5,
 			"count": 5,
 			"min":   5,
@@ -1217,10 +1217,10 @@ func TestDBQuery(t *testing.T) {
 			wantStatus: http.StatusInternalServerError,
 		}
 	})
-	tests.Add("_stats with empty pre-aggregated value", func(t *testing.T) interface{} {
+	tests.Add("_stats with empty pre-aggregated value", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -1231,7 +1231,7 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": map[string]float64{}})
+		_ = d.tPut("b", map[string]any{"key": "b", "value": map[string]float64{}})
 
 		return test{
 			db:         d,
@@ -1241,10 +1241,10 @@ func TestDBQuery(t *testing.T) {
 			wantStatus: http.StatusInternalServerError,
 		}
 	})
-	tests.Add("_stats with arrays of numbers", func(t *testing.T) interface{} {
+	tests.Add("_stats with arrays of numbers", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -1255,9 +1255,9 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{"key": "a", "value": map[string]float64{}})
-		_ = d.tPut("b", map[string]interface{}{"key": "a", "value": map[string]float64{}})
-		_ = d.tPut("c", map[string]interface{}{"key": "a", "value": map[string]float64{}})
+		_ = d.tPut("a", map[string]any{"key": "a", "value": map[string]float64{}})
+		_ = d.tPut("b", map[string]any{"key": "a", "value": map[string]float64{}})
+		_ = d.tPut("c", map[string]any{"key": "a", "value": map[string]float64{}})
 
 		return test{
 			db:   d,
@@ -1268,10 +1268,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("limit=1", func(t *testing.T) interface{} {
+	tests.Add("limit=1", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -1281,8 +1281,8 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{"key": "a", "value": 1})
-		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": 2})
+		_ = d.tPut("a", map[string]any{"key": "a", "value": 1})
+		_ = d.tPut("b", map[string]any{"key": "b", "value": 2})
 
 		return test{
 			db:      d,
@@ -1294,10 +1294,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("limit=1, skip=1", func(t *testing.T) interface{} {
+	tests.Add("limit=1, skip=1", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -1307,15 +1307,15 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{"key": "a", "value": 1})
-		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": 2})
-		_ = d.tPut("c", map[string]interface{}{"key": "c", "value": 3})
+		_ = d.tPut("a", map[string]any{"key": "a", "value": 1})
+		_ = d.tPut("b", map[string]any{"key": "b", "value": 2})
+		_ = d.tPut("c", map[string]any{"key": "c", "value": 3})
 
 		return test{
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"limit": 1,
 				"skip":  1,
 			}),
@@ -1324,10 +1324,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("include_docs=true", func(t *testing.T) interface{} {
+	tests.Add("include_docs=true", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -1337,7 +1337,7 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		rev := d.tPut("a", map[string]interface{}{"key": "a", "value": 1})
+		rev := d.tPut("a", map[string]any{"key": "a", "value": 1})
 
 		return test{
 			db:      d,
@@ -1349,10 +1349,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("views should only include winning rev in case of conflict", func(t *testing.T) interface{} {
+	tests.Add("views should only include winning rev in case of conflict", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -1362,12 +1362,12 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{
+		_ = d.tPut("a", map[string]any{
 			"key":   "a",
 			"value": 1,
 			"_rev":  "1-abc",
 		}, kivik.Param("new_edits", false))
-		_ = d.tPut("a", map[string]interface{}{
+		_ = d.tPut("a", map[string]any{
 			"key":   "a",
 			"value": 2,
 			"_rev":  "1-xyz",
@@ -1382,10 +1382,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("conflicts=true", func(t *testing.T) interface{} {
+	tests.Add("conflicts=true", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -1395,12 +1395,12 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{
+		_ = d.tPut("a", map[string]any{
 			"key":   "a",
 			"value": 1,
 			"_rev":  "1-abc",
 		}, kivik.Param("new_edits", false))
-		_ = d.tPut("a", map[string]interface{}{
+		_ = d.tPut("a", map[string]any{
 			"key":   "a",
 			"value": 2,
 			"_rev":  "1-xyz",
@@ -1410,7 +1410,7 @@ func TestDBQuery(t *testing.T) {
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"include_docs": true,
 				"conflicts":    true,
 			}),
@@ -1419,10 +1419,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("endkey", func(t *testing.T) interface{} {
+	tests.Add("endkey", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -1432,15 +1432,15 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{"key": "a", "value": 1})
-		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": 2})
-		_ = d.tPut("c", map[string]interface{}{"key": "c", "value": 3})
+		_ = d.tPut("a", map[string]any{"key": "a", "value": 1})
+		_ = d.tPut("b", map[string]any{"key": "b", "value": 2})
+		_ = d.tPut("c", map[string]any{"key": "c", "value": 3})
 
 		return test{
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"endkey": "b",
 			}),
 			want: []rowResult{
@@ -1449,10 +1449,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("startkey", func(t *testing.T) interface{} {
+	tests.Add("startkey", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -1462,15 +1462,15 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{"key": "a", "value": 1})
-		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": 2})
-		_ = d.tPut("c", map[string]interface{}{"key": "c", "value": 3})
+		_ = d.tPut("a", map[string]any{"key": "a", "value": 1})
+		_ = d.tPut("b", map[string]any{"key": "b", "value": 2})
+		_ = d.tPut("c", map[string]any{"key": "c", "value": 3})
 
 		return test{
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"startkey": "b",
 			}),
 			want: []rowResult{
@@ -1479,10 +1479,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("return unsorted results", func(t *testing.T) interface{} {
+	tests.Add("return unsorted results", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -1499,9 +1499,9 @@ func TestDBQuery(t *testing.T) {
 		// ASCII, ~ comes after the alphabet, in UCI it comes first.  So we
 		// expect it to come after, with implicit ordering, or after, with
 		// explicit. Comment out the options line below to see the difference.
-		_ = d.tPut("~", map[string]interface{}{"key": "~", "value": 3})
-		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": 2})
-		_ = d.tPut("a", map[string]interface{}{"key": "a", "value": 1})
+		_ = d.tPut("~", map[string]any{"key": "~", "value": 3})
+		_ = d.tPut("b", map[string]any{"key": "b", "value": 2})
+		_ = d.tPut("a", map[string]any{"key": "a", "value": 1})
 
 		return test{
 			db:      d,
@@ -1515,10 +1515,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("group=true, unordered results", func(t *testing.T) interface{} {
+	tests.Add("group=true, unordered results", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, [1]);
@@ -1527,14 +1527,14 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("~", map[string]interface{}{})
-		_ = d.tPut("a", map[string]interface{}{})
+		_ = d.tPut("~", map[string]any{})
+		_ = d.tPut("a", map[string]any{})
 
 		return test{
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"sorted": false,
 				"group":  true,
 			}),
@@ -1545,10 +1545,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("group=true, ascending order", func(t *testing.T) interface{} {
+	tests.Add("group=true, ascending order", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, [1]);
@@ -1557,14 +1557,14 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("~", map[string]interface{}{})
-		_ = d.tPut("a", map[string]interface{}{})
+		_ = d.tPut("~", map[string]any{})
+		_ = d.tPut("a", map[string]any{})
 
 		return test{
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"group": true,
 			}),
 			want: []rowResult{
@@ -1573,10 +1573,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("group=true, descending order", func(t *testing.T) interface{} {
+	tests.Add("group=true, descending order", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, [1]);
@@ -1585,14 +1585,14 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("~", map[string]interface{}{})
-		_ = d.tPut("a", map[string]interface{}{})
+		_ = d.tPut("~", map[string]any{})
+		_ = d.tPut("a", map[string]any{})
 
 		return test{
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"group":      true,
 				"descending": true,
 			}),
@@ -1602,10 +1602,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("support fetching specific key", func(t *testing.T) interface{} {
+	tests.Add("support fetching specific key", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -1615,15 +1615,15 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{"key": "a", "value": 1})
-		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": 2})
-		_ = d.tPut("c", map[string]interface{}{"key": "c", "value": 3})
+		_ = d.tPut("a", map[string]any{"key": "a", "value": 1})
+		_ = d.tPut("b", map[string]any{"key": "b", "value": 2})
+		_ = d.tPut("c", map[string]any{"key": "c", "value": 3})
 
 		return test{
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"key": "b",
 			}),
 			want: []rowResult{
@@ -1631,10 +1631,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("support fetching multiple specific keys", func(t *testing.T) interface{} {
+	tests.Add("support fetching multiple specific keys", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -1644,15 +1644,15 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{"key": "a", "value": 1})
-		_ = d.tPut("b", map[string]interface{}{"key": "b", "value": 2})
-		_ = d.tPut("c", map[string]interface{}{"key": "c", "value": 3})
+		_ = d.tPut("a", map[string]any{"key": "a", "value": 1})
+		_ = d.tPut("b", map[string]any{"key": "b", "value": 2})
+		_ = d.tPut("c", map[string]any{"key": "c", "value": 3})
 
 		return test{
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"keys": []string{"a", "b"},
 			}),
 			want: []rowResult{
@@ -1661,10 +1661,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("endkey_docid", func(t *testing.T) interface{} {
+	tests.Add("endkey_docid", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -1674,15 +1674,15 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{"key": "a"})
-		_ = d.tPut("b", map[string]interface{}{"key": "a"})
-		_ = d.tPut("c", map[string]interface{}{"key": "a"})
+		_ = d.tPut("a", map[string]any{"key": "a"})
+		_ = d.tPut("b", map[string]any{"key": "a"})
+		_ = d.tPut("c", map[string]any{"key": "a"})
 
 		return test{
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"endkey":       "a",
 				"endkey_docid": "b",
 			}),
@@ -1692,10 +1692,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("startkey_docid", func(t *testing.T) interface{} {
+	tests.Add("startkey_docid", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -1705,15 +1705,15 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{"key": "a"})
-		_ = d.tPut("b", map[string]interface{}{"key": "a"})
-		_ = d.tPut("c", map[string]interface{}{"key": "a"})
+		_ = d.tPut("a", map[string]any{"key": "a"})
+		_ = d.tPut("b", map[string]any{"key": "a"})
+		_ = d.tPut("c", map[string]any{"key": "a"})
 
 		return test{
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"startkey":       "a",
 				"startkey_docid": "b",
 			}),
@@ -1723,11 +1723,11 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("include design docs in view output", func(t *testing.T) interface{} {
+	tests.Add("include design docs in view output", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
 			"key": "design",
-			"views": map[string]interface{}{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -1736,11 +1736,11 @@ func TestDBQuery(t *testing.T) {
 						}`,
 				},
 			},
-			"options": map[string]interface{}{
+			"options": map[string]any{
 				"include_design": true,
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{"key": "a"})
+		_ = d.tPut("a", map[string]any{"key": "a"})
 
 		return test{
 			db:   d,
@@ -1752,11 +1752,11 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("options.local_seq=true", func(t *testing.T) interface{} {
+	tests.Add("options.local_seq=true", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
 			"key": "design",
-			"views": map[string]interface{}{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -1765,11 +1765,11 @@ func TestDBQuery(t *testing.T) {
 						}`,
 				},
 			},
-			"options": map[string]interface{}{
+			"options": map[string]any{
 				"local_seq": true,
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{"key": "a"})
+		_ = d.tPut("a", map[string]any{"key": "a"})
 
 		return test{
 			db:   d,
@@ -1780,11 +1780,11 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("attachments=false, one attachment", func(t *testing.T) interface{} {
+	tests.Add("attachments=false, one attachment", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
 			"key": "design",
-			"views": map[string]interface{}{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -1794,7 +1794,7 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		rev := d.tPut("a", map[string]interface{}{
+		rev := d.tPut("a", map[string]any{
 			"key":          "a",
 			"_attachments": newAttachments().add("foo.txt", "foo"),
 		})
@@ -1803,7 +1803,7 @@ func TestDBQuery(t *testing.T) {
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"attachments":  false,
 				"include_docs": true,
 			}),
@@ -1817,11 +1817,11 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("attachments=true, one attachment", func(t *testing.T) interface{} {
+	tests.Add("attachments=true, one attachment", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
 			"key": "design",
-			"views": map[string]interface{}{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -1831,7 +1831,7 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		rev := d.tPut("a", map[string]interface{}{
+		rev := d.tPut("a", map[string]any{
 			"key":          "a",
 			"_attachments": newAttachments().add("foo.txt", "foo"),
 		})
@@ -1840,7 +1840,7 @@ func TestDBQuery(t *testing.T) {
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"attachments":  true,
 				"include_docs": true,
 			}),
@@ -1854,11 +1854,11 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("attachments=true, two attachment", func(t *testing.T) interface{} {
+	tests.Add("attachments=true, two attachment", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
 			"key": "design",
-			"views": map[string]interface{}{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							if (doc.key) {
@@ -1868,7 +1868,7 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		rev := d.tPut("a", map[string]interface{}{
+		rev := d.tPut("a", map[string]any{
 			"key": "a",
 			"_attachments": newAttachments().
 				add("foo.txt", "foo").
@@ -1879,7 +1879,7 @@ func TestDBQuery(t *testing.T) {
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"attachments":  true,
 				"include_docs": true,
 			}),
@@ -1893,10 +1893,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("include_docs is invalid for reduce=true", func(t *testing.T) interface{} {
+	tests.Add("include_docs is invalid for reduce=true", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, [1]);
@@ -1910,7 +1910,7 @@ func TestDBQuery(t *testing.T) {
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"reduce":       true,
 				"include_docs": true,
 			}),
@@ -1918,10 +1918,10 @@ func TestDBQuery(t *testing.T) {
 			wantStatus: http.StatusBadRequest,
 		}
 	})
-	tests.Add("include_docs is invalid for implicit reduce", func(t *testing.T) interface{} {
+	tests.Add("include_docs is invalid for implicit reduce", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, [1]);
@@ -1935,17 +1935,17 @@ func TestDBQuery(t *testing.T) {
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"include_docs": true,
 			}),
 			wantErr:    "include_docs is invalid for reduce",
 			wantStatus: http.StatusBadRequest,
 		}
 	})
-	tests.Add("conflicts is invalid for reduce=true", func(t *testing.T) interface{} {
+	tests.Add("conflicts is invalid for reduce=true", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, [1]);
@@ -1959,7 +1959,7 @@ func TestDBQuery(t *testing.T) {
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"reduce":    true,
 				"conflicts": true,
 			}),
@@ -1967,10 +1967,10 @@ func TestDBQuery(t *testing.T) {
 			wantStatus: http.StatusBadRequest,
 		}
 	})
-	tests.Add("conflicts is invalid for implicit reduce", func(t *testing.T) interface{} {
+	tests.Add("conflicts is invalid for implicit reduce", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, [1]);
@@ -1984,17 +1984,17 @@ func TestDBQuery(t *testing.T) {
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"conflicts": true,
 			}),
 			wantErr:    "conflicts is invalid for reduce",
 			wantStatus: http.StatusBadRequest,
 		}
 	})
-	tests.Add("endkey with reduce", func(t *testing.T) interface{} {
+	tests.Add("endkey with reduce", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, [1]);
@@ -2003,9 +2003,9 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{})
-		_ = d.tPut("b", map[string]interface{}{})
-		_ = d.tPut("c", map[string]interface{}{})
+		_ = d.tPut("a", map[string]any{})
+		_ = d.tPut("b", map[string]any{})
+		_ = d.tPut("c", map[string]any{})
 
 		return test{
 			db:      d,
@@ -2015,10 +2015,10 @@ func TestDBQuery(t *testing.T) {
 			want:    []rowResult{{Key: `null`, Value: `2`}},
 		}
 	})
-	tests.Add("startkey with reduce", func(t *testing.T) interface{} {
+	tests.Add("startkey with reduce", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, [1]);
@@ -2027,10 +2027,10 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{})
-		_ = d.tPut("b", map[string]interface{}{})
-		_ = d.tPut("c", map[string]interface{}{})
-		_ = d.tPut("d", map[string]interface{}{})
+		_ = d.tPut("a", map[string]any{})
+		_ = d.tPut("b", map[string]any{})
+		_ = d.tPut("c", map[string]any{})
+		_ = d.tPut("d", map[string]any{})
 
 		return test{
 			db:      d,
@@ -2040,10 +2040,10 @@ func TestDBQuery(t *testing.T) {
 			want:    []rowResult{{Key: `null`, Value: `3`}},
 		}
 	})
-	tests.Add("startkey with reduce and descending", func(t *testing.T) interface{} {
+	tests.Add("startkey with reduce and descending", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, [1]);
@@ -2052,26 +2052,26 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{})
-		_ = d.tPut("b", map[string]interface{}{})
-		_ = d.tPut("c", map[string]interface{}{})
-		_ = d.tPut("d", map[string]interface{}{})
+		_ = d.tPut("a", map[string]any{})
+		_ = d.tPut("b", map[string]any{})
+		_ = d.tPut("c", map[string]any{})
+		_ = d.tPut("d", map[string]any{})
 
 		return test{
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"startkey":   "b",
 				"descending": true,
 			}),
 			want: []rowResult{{Key: `null`, Value: `2`}},
 		}
 	})
-	tests.Add("key with reduce", func(t *testing.T) interface{} {
+	tests.Add("key with reduce", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, [1]);
@@ -2080,10 +2080,10 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{})
-		_ = d.tPut("b", map[string]interface{}{})
-		_ = d.tPut("c", map[string]interface{}{})
-		_ = d.tPut("d", map[string]interface{}{})
+		_ = d.tPut("a", map[string]any{})
+		_ = d.tPut("b", map[string]any{})
+		_ = d.tPut("c", map[string]any{})
+		_ = d.tPut("d", map[string]any{})
 
 		return test{
 			db:      d,
@@ -2093,10 +2093,10 @@ func TestDBQuery(t *testing.T) {
 			want:    []rowResult{{Key: `null`, Value: `1`}},
 		}
 	})
-	tests.Add("keys with reduce", func(t *testing.T) interface{} {
+	tests.Add("keys with reduce", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, [1]);
@@ -2105,10 +2105,10 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{})
-		_ = d.tPut("b", map[string]interface{}{})
-		_ = d.tPut("c", map[string]interface{}{})
-		_ = d.tPut("d", map[string]interface{}{})
+		_ = d.tPut("a", map[string]any{})
+		_ = d.tPut("b", map[string]any{})
+		_ = d.tPut("c", map[string]any{})
+		_ = d.tPut("d", map[string]any{})
 
 		return test{
 			db:      d,
@@ -2118,10 +2118,10 @@ func TestDBQuery(t *testing.T) {
 			want:    []rowResult{{Key: `null`, Value: `2`}},
 		}
 	})
-	tests.Add("endkey with group=true", func(t *testing.T) interface{} {
+	tests.Add("endkey with group=true", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, [1]);
@@ -2130,16 +2130,16 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{})
-		_ = d.tPut("b", map[string]interface{}{})
-		_ = d.tPut("c", map[string]interface{}{})
-		_ = d.tPut("d", map[string]interface{}{})
+		_ = d.tPut("a", map[string]any{})
+		_ = d.tPut("b", map[string]any{})
+		_ = d.tPut("c", map[string]any{})
+		_ = d.tPut("d", map[string]any{})
 
 		return test{
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"endkey": "b",
 				"group":  true,
 			}),
@@ -2149,10 +2149,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("endkey with group=true and descending", func(t *testing.T) interface{} {
+	tests.Add("endkey with group=true and descending", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, [1]);
@@ -2161,16 +2161,16 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{})
-		_ = d.tPut("b", map[string]interface{}{})
-		_ = d.tPut("c", map[string]interface{}{})
-		_ = d.tPut("d", map[string]interface{}{})
+		_ = d.tPut("a", map[string]any{})
+		_ = d.tPut("b", map[string]any{})
+		_ = d.tPut("c", map[string]any{})
+		_ = d.tPut("d", map[string]any{})
 
 		return test{
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"endkey":     "b",
 				"group":      true,
 				"descending": true,
@@ -2182,10 +2182,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("startkey with group=true", func(t *testing.T) interface{} {
+	tests.Add("startkey with group=true", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, [1]);
@@ -2194,16 +2194,16 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{})
-		_ = d.tPut("b", map[string]interface{}{})
-		_ = d.tPut("c", map[string]interface{}{})
-		_ = d.tPut("d", map[string]interface{}{})
+		_ = d.tPut("a", map[string]any{})
+		_ = d.tPut("b", map[string]any{})
+		_ = d.tPut("c", map[string]any{})
+		_ = d.tPut("d", map[string]any{})
 
 		return test{
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"startkey": "b",
 				"group":    true,
 			}),
@@ -2214,10 +2214,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("startkey with group=true and descending", func(t *testing.T) interface{} {
+	tests.Add("startkey with group=true and descending", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, [1]);
@@ -2226,16 +2226,16 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{})
-		_ = d.tPut("b", map[string]interface{}{})
-		_ = d.tPut("c", map[string]interface{}{})
-		_ = d.tPut("d", map[string]interface{}{})
+		_ = d.tPut("a", map[string]any{})
+		_ = d.tPut("b", map[string]any{})
+		_ = d.tPut("c", map[string]any{})
+		_ = d.tPut("d", map[string]any{})
 
 		return test{
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"startkey":   "b",
 				"group":      true,
 				"descending": true,
@@ -2246,10 +2246,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("endkey with reduce=true, descending, and inclusive_end=false", func(t *testing.T) interface{} {
+	tests.Add("endkey with reduce=true, descending, and inclusive_end=false", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, [1]);
@@ -2258,16 +2258,16 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{})
-		_ = d.tPut("b", map[string]interface{}{})
-		_ = d.tPut("c", map[string]interface{}{})
-		_ = d.tPut("d", map[string]interface{}{})
+		_ = d.tPut("a", map[string]any{})
+		_ = d.tPut("b", map[string]any{})
+		_ = d.tPut("c", map[string]any{})
+		_ = d.tPut("d", map[string]any{})
 
 		return test{
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"endkey":        "b",
 				"descending":    true,
 				"inclusive_end": false,
@@ -2277,10 +2277,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("endkey with reduce=true and inclusive_end=false", func(t *testing.T) interface{} {
+	tests.Add("endkey with reduce=true and inclusive_end=false", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, [1]);
@@ -2289,16 +2289,16 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{})
-		_ = d.tPut("b", map[string]interface{}{})
-		_ = d.tPut("c", map[string]interface{}{})
-		_ = d.tPut("d", map[string]interface{}{})
+		_ = d.tPut("a", map[string]any{})
+		_ = d.tPut("b", map[string]any{})
+		_ = d.tPut("c", map[string]any{})
+		_ = d.tPut("d", map[string]any{})
 
 		return test{
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"endkey":        "b",
 				"inclusive_end": false,
 			}),
@@ -2307,10 +2307,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("key with group=true", func(t *testing.T) interface{} {
+	tests.Add("key with group=true", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, [1]);
@@ -2319,16 +2319,16 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{})
-		_ = d.tPut("b", map[string]interface{}{})
-		_ = d.tPut("c", map[string]interface{}{})
-		_ = d.tPut("d", map[string]interface{}{})
+		_ = d.tPut("a", map[string]any{})
+		_ = d.tPut("b", map[string]any{})
+		_ = d.tPut("c", map[string]any{})
+		_ = d.tPut("d", map[string]any{})
 
 		return test{
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"key":   "b",
 				"group": true,
 			}),
@@ -2337,10 +2337,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("keys with group=true", func(t *testing.T) interface{} {
+	tests.Add("keys with group=true", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, [1]);
@@ -2349,16 +2349,16 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{})
-		_ = d.tPut("b", map[string]interface{}{})
-		_ = d.tPut("c", map[string]interface{}{})
-		_ = d.tPut("d", map[string]interface{}{})
+		_ = d.tPut("a", map[string]any{})
+		_ = d.tPut("b", map[string]any{})
+		_ = d.tPut("c", map[string]any{})
+		_ = d.tPut("d", map[string]any{})
 
 		return test{
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"keys":  []string{"b", "c"},
 				"group": true,
 			}),
@@ -2368,10 +2368,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("keys with group=true, descending=true", func(t *testing.T) interface{} {
+	tests.Add("keys with group=true, descending=true", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, [1]);
@@ -2380,16 +2380,16 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{})
-		_ = d.tPut("b", map[string]interface{}{})
-		_ = d.tPut("c", map[string]interface{}{})
-		_ = d.tPut("d", map[string]interface{}{})
+		_ = d.tPut("a", map[string]any{})
+		_ = d.tPut("b", map[string]any{})
+		_ = d.tPut("c", map[string]any{})
+		_ = d.tPut("d", map[string]any{})
 
 		return test{
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"keys":       []string{"b", "c"},
 				"group":      true,
 				"descending": true,
@@ -2400,10 +2400,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("limit with group=true", func(t *testing.T) interface{} {
+	tests.Add("limit with group=true", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, [1]);
@@ -2412,16 +2412,16 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{})
-		_ = d.tPut("b", map[string]interface{}{})
-		_ = d.tPut("c", map[string]interface{}{})
-		_ = d.tPut("d", map[string]interface{}{})
+		_ = d.tPut("a", map[string]any{})
+		_ = d.tPut("b", map[string]any{})
+		_ = d.tPut("c", map[string]any{})
+		_ = d.tPut("d", map[string]any{})
 
 		return test{
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"group": true,
 				"limit": 3,
 			}),
@@ -2432,10 +2432,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("skip with group=true", func(t *testing.T) interface{} {
+	tests.Add("skip with group=true", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, [1]);
@@ -2444,16 +2444,16 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{})
-		_ = d.tPut("b", map[string]interface{}{})
-		_ = d.tPut("c", map[string]interface{}{})
-		_ = d.tPut("d", map[string]interface{}{})
+		_ = d.tPut("a", map[string]any{})
+		_ = d.tPut("b", map[string]any{})
+		_ = d.tPut("c", map[string]any{})
+		_ = d.tPut("d", map[string]any{})
 
 		return test{
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"group": true,
 				"skip":  3,
 			}),
@@ -2462,10 +2462,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("limit with group=true and descending", func(t *testing.T) interface{} {
+	tests.Add("limit with group=true and descending", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, [1]);
@@ -2474,16 +2474,16 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{})
-		_ = d.tPut("b", map[string]interface{}{})
-		_ = d.tPut("c", map[string]interface{}{})
-		_ = d.tPut("d", map[string]interface{}{})
+		_ = d.tPut("a", map[string]any{})
+		_ = d.tPut("b", map[string]any{})
+		_ = d.tPut("c", map[string]any{})
+		_ = d.tPut("d", map[string]any{})
 
 		return test{
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"group":      true,
 				"limit":      3,
 				"descending": true,
@@ -2495,10 +2495,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("skip with group=true and descending", func(t *testing.T) interface{} {
+	tests.Add("skip with group=true and descending", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, [1]);
@@ -2507,16 +2507,16 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("a", map[string]interface{}{})
-		_ = d.tPut("b", map[string]interface{}{})
-		_ = d.tPut("c", map[string]interface{}{})
-		_ = d.tPut("d", map[string]interface{}{})
+		_ = d.tPut("a", map[string]any{})
+		_ = d.tPut("b", map[string]any{})
+		_ = d.tPut("c", map[string]any{})
+		_ = d.tPut("d", map[string]any{})
 
 		return test{
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"group":      true,
 				"skip":       3,
 				"descending": true,
@@ -2526,10 +2526,10 @@ func TestDBQuery(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("sorted=false with group=true", func(t *testing.T) interface{} {
+	tests.Add("sorted=false with group=true", func(t *testing.T) any {
 		d := newDB(t)
-		_ = d.tPut("_design/foo", map[string]interface{}{
-			"views": map[string]interface{}{
+		_ = d.tPut("_design/foo", map[string]any{
+			"views": map[string]any{
 				"bar": map[string]string{
 					"map": `function(doc) {
 							emit(doc._id, [1]);
@@ -2538,16 +2538,16 @@ func TestDBQuery(t *testing.T) {
 				},
 			},
 		})
-		_ = d.tPut("c", map[string]interface{}{})
-		_ = d.tPut("a", map[string]interface{}{})
-		_ = d.tPut("d", map[string]interface{}{})
-		_ = d.tPut("b", map[string]interface{}{})
+		_ = d.tPut("c", map[string]any{})
+		_ = d.tPut("a", map[string]any{})
+		_ = d.tPut("d", map[string]any{})
+		_ = d.tPut("b", map[string]any{})
 
 		return test{
 			db:   d,
 			ddoc: "_design/foo",
 			view: "_view/bar",
-			options: kivik.Params(map[string]interface{}{
+			options: kivik.Params(map[string]any{
 				"group":  true,
 				"sorted": false,
 			}),
@@ -2624,8 +2624,8 @@ func TestDBQuery_reduce_with_update_seq(t *testing.T) {
 	t.Parallel()
 	d := newDB(t)
 
-	_ = d.tPut("_design/foo", map[string]interface{}{
-		"views": map[string]interface{}{
+	_ = d.tPut("_design/foo", map[string]any{
+		"views": map[string]any{
 			"bar": map[string]string{
 				"map":    `function(doc) { emit(doc._id, null); }`,
 				"reduce": "_count",
@@ -2650,8 +2650,8 @@ func TestDBQuery_reduce_without_update_seq(t *testing.T) {
 	t.Parallel()
 	d := newDB(t)
 
-	_ = d.tPut("_design/foo", map[string]interface{}{
-		"views": map[string]interface{}{
+	_ = d.tPut("_design/foo", map[string]any{
+		"views": map[string]any{
 			"bar": map[string]string{
 				"map":    `function(doc) { emit(doc._id, null); }`,
 				"reduce": "_count",
@@ -2676,8 +2676,8 @@ func TestDBQuery_update_seq(t *testing.T) {
 	t.Parallel()
 	d := newDB(t)
 
-	_ = d.tPut("_design/foo", map[string]interface{}{
-		"views": map[string]interface{}{
+	_ = d.tPut("_design/foo", map[string]any{
+		"views": map[string]any{
 			"bar": map[string]string{
 				"map": `function(doc) { emit(doc._id, null); }`,
 			},
@@ -2701,8 +2701,8 @@ func TestDBQuery_no_update_seq(t *testing.T) {
 	t.Parallel()
 	d := newDB(t)
 
-	_ = d.tPut("_design/foo", map[string]interface{}{
-		"views": map[string]interface{}{
+	_ = d.tPut("_design/foo", map[string]any{
+		"views": map[string]any{
 			"bar": map[string]string{
 				"map": `function(doc) { emit(doc._id, null); }`,
 			},
@@ -2726,8 +2726,8 @@ func TestDBQuery_group_with_update_seq(t *testing.T) {
 	t.Parallel()
 	d := newDB(t)
 
-	_ = d.tPut("_design/foo", map[string]interface{}{
-		"views": map[string]interface{}{
+	_ = d.tPut("_design/foo", map[string]any{
+		"views": map[string]any{
 			"bar": map[string]string{
 				"map":    `function(doc) { emit(doc._id, null); }`,
 				"reduce": "_count",
@@ -2736,7 +2736,7 @@ func TestDBQuery_group_with_update_seq(t *testing.T) {
 	})
 	_ = d.tPut("foo", map[string]string{"_id": "foo"})
 
-	rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", kivik.Params(map[string]interface{}{
+	rows, err := d.Query(context.Background(), "_design/foo", "_view/bar", kivik.Params(map[string]any{
 		"update_seq": true,
 		"group":      true,
 	}))
@@ -2755,8 +2755,8 @@ func TestDBQuery_group_without_update_seq(t *testing.T) {
 	t.Parallel()
 	d := newDB(t)
 
-	_ = d.tPut("_design/foo", map[string]interface{}{
-		"views": map[string]interface{}{
+	_ = d.tPut("_design/foo", map[string]any{
+		"views": map[string]any{
 			"bar": map[string]string{
 				"map":    `function(doc) { emit(doc._id, null); }`,
 				"reduce": "_count",
@@ -2781,8 +2781,8 @@ func TestDBQuery_total_rows(t *testing.T) {
 	t.Parallel()
 	d := newDB(t)
 
-	_ = d.tPut("_design/foo", map[string]interface{}{
-		"views": map[string]interface{}{
+	_ = d.tPut("_design/foo", map[string]any{
+		"views": map[string]any{
 			"bar": map[string]string{
 				"map": `function(doc) { emit(doc._id, null); }`,
 			},
@@ -2817,8 +2817,8 @@ func TestDBQuery_total_rows_grouped(t *testing.T) {
 	t.Parallel()
 	d := newDB(t)
 
-	_ = d.tPut("_design/foo", map[string]interface{}{
-		"views": map[string]interface{}{
+	_ = d.tPut("_design/foo", map[string]any{
+		"views": map[string]any{
 			"bar": map[string]string{
 				"map":    `function(doc) { emit(doc._id, 1); }`,
 				"reduce": `_count`,
@@ -2853,8 +2853,8 @@ func TestDBQuery_update_lazy(t *testing.T) {
 	t.Parallel()
 	d := newDB(t)
 
-	_ = d.tPut("_design/foo", map[string]interface{}{
-		"views": map[string]interface{}{
+	_ = d.tPut("_design/foo", map[string]any{
+		"views": map[string]any{
 			"bar": map[string]string{
 				"map": `function(doc) { emit(doc._id, null); }`,
 			},

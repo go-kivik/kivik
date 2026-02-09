@@ -24,9 +24,9 @@ import (
 // Node represents a node in the Mango Selector.
 type Node interface {
 	Op() Operator
-	Value() interface{}
+	Value() any
 	String() string
-	Match(interface{}) bool
+	Match(any) bool
 }
 
 type notNode struct {
@@ -39,7 +39,7 @@ func (*notNode) Op() Operator {
 	return OpNot
 }
 
-func (n *notNode) Value() interface{} {
+func (n *notNode) Value() any {
 	return n.sel
 }
 
@@ -47,7 +47,7 @@ func (n *notNode) String() string {
 	return fmt.Sprintf("%s %s", OpNot, n.sel)
 }
 
-func (n *notNode) Match(doc interface{}) bool {
+func (n *notNode) Match(doc any) bool {
 	return !n.sel.Match(doc)
 }
 
@@ -62,7 +62,7 @@ func (c *combinationNode) Op() Operator {
 	return c.op
 }
 
-func (c *combinationNode) Value() interface{} {
+func (c *combinationNode) Value() any {
 	return c.sel
 }
 
@@ -80,7 +80,7 @@ func (c *combinationNode) String() string {
 	return sb.String()
 }
 
-func (c *combinationNode) Match(doc interface{}) bool {
+func (c *combinationNode) Match(doc any) bool {
 	switch c.op {
 	case OpAnd:
 		for _, sel := range c.sel {
@@ -118,7 +118,7 @@ func (f *fieldNode) Op() Operator {
 	return f.cond.Op()
 }
 
-func (f *fieldNode) Value() interface{} {
+func (f *fieldNode) Value() any {
 	return f.cond.Value()
 }
 
@@ -126,13 +126,13 @@ func (f *fieldNode) String() string {
 	return fmt.Sprintf("%s %s", f.field, f.cond.String())
 }
 
-func (f *fieldNode) Match(doc interface{}) bool {
+func (f *fieldNode) Match(doc any) bool {
 	val := doc
 
 	// Traverse nested fields (e.g. "foo.bar.baz")
 	segments := SplitKeys(f.field)
 	for _, segment := range segments {
-		m, ok := val.(map[string]interface{})
+		m, ok := val.(map[string]any)
 		if !ok {
 			return false
 		}
@@ -146,7 +146,7 @@ func (f *fieldNode) Match(doc interface{}) bool {
 
 type conditionNode struct {
 	op   Operator
-	cond interface{}
+	cond any
 }
 
 var _ Node = (*conditionNode)(nil)
@@ -155,7 +155,7 @@ func (e *conditionNode) Op() Operator {
 	return e.op
 }
 
-func (e *conditionNode) Value() interface{} {
+func (e *conditionNode) Value() any {
 	return e.cond
 }
 
@@ -163,7 +163,7 @@ func (e *conditionNode) String() string {
 	return fmt.Sprintf("%s %v", e.op, e.cond)
 }
 
-func (e *conditionNode) Match(doc interface{}) bool {
+func (e *conditionNode) Match(doc any) bool {
 	switch e.op {
 	case OpEqual:
 		return collate.CompareObject(doc, e.cond) == 0
@@ -193,30 +193,30 @@ func (e *conditionNode) Match(doc interface{}) bool {
 			_, ok := doc.(string)
 			return ok
 		case "array":
-			_, ok := doc.([]interface{})
+			_, ok := doc.([]any)
 			return ok
 		case "object":
-			_, ok := doc.(map[string]interface{})
+			_, ok := doc.(map[string]any)
 			return ok
 		default:
 			panic("unexpected $type value: " + tp)
 		}
 	case OpIn:
-		for _, v := range e.cond.([]interface{}) {
+		for _, v := range e.cond.([]any) {
 			if collate.CompareObject(doc, v) == 0 {
 				return true
 			}
 		}
 		return false
 	case OpNotIn:
-		for _, v := range e.cond.([]interface{}) {
+		for _, v := range e.cond.([]any) {
 			if collate.CompareObject(doc, v) == 0 {
 				return false
 			}
 		}
 		return true
 	case OpSize:
-		array, ok := doc.([]interface{})
+		array, ok := doc.([]any)
 		if !ok {
 			return false
 		}
@@ -238,11 +238,11 @@ func (e *conditionNode) Match(doc interface{}) bool {
 		}
 		return e.cond.(*regexp.Regexp).MatchString(str)
 	case OpAll:
-		array, ok := doc.([]interface{})
+		array, ok := doc.([]any)
 		if !ok {
 			return false
 		}
-		for _, v := range e.cond.([]interface{}) {
+		for _, v := range e.cond.([]any) {
 			if !contains(array, v) {
 				return false
 			}
@@ -252,7 +252,7 @@ func (e *conditionNode) Match(doc interface{}) bool {
 	return false
 }
 
-func contains(haystack []interface{}, needle interface{}) bool {
+func contains(haystack []any, needle any) bool {
 	for _, v := range haystack {
 		if collate.CompareObject(v, needle) == 0 {
 			return true
@@ -272,7 +272,7 @@ func (e *elementNode) Op() Operator {
 	return e.op
 }
 
-func (e *elementNode) Value() interface{} {
+func (e *elementNode) Value() any {
 	return e.cond
 }
 
@@ -280,10 +280,10 @@ func (e *elementNode) String() string {
 	return fmt.Sprintf("%s {%s}", e.op, e.cond)
 }
 
-func (e *elementNode) Match(doc interface{}) bool {
+func (e *elementNode) Match(doc any) bool {
 	switch e.op {
 	case OpElemMatch:
-		array, ok := doc.([]interface{})
+		array, ok := doc.([]any)
 		if !ok {
 			return false
 		}
@@ -294,7 +294,7 @@ func (e *elementNode) Match(doc interface{}) bool {
 		}
 		return false
 	case OpAllMatch:
-		array, ok := doc.([]interface{})
+		array, ok := doc.([]any)
 		if !ok {
 			return false
 		}
@@ -305,7 +305,7 @@ func (e *elementNode) Match(doc interface{}) bool {
 		}
 		return true
 	case OpKeyMapMatch:
-		object, ok := doc.(map[string]interface{})
+		object, ok := doc.(map[string]any)
 		if !ok {
 			return false
 		}
@@ -320,7 +320,7 @@ func (e *elementNode) Match(doc interface{}) bool {
 }
 
 // cmpValues compares two arbitrary values by converting them to strings.
-func cmpValues(a, b interface{}) int {
+func cmpValues(a, b any) int {
 	return strings.Compare(fmt.Sprintf("%v", a), fmt.Sprintf("%v", b))
 }
 
@@ -352,12 +352,12 @@ func cmpSelectors(a, b Node) int {
 		u := b.(*conditionNode)
 		switch t.op {
 		case OpIn, OpNotIn:
-			for i := 0; i < len(t.cond.([]interface{})) && i < len(u.cond.([]interface{})); i++ {
-				if c := cmpValues(t.cond.([]interface{})[i], u.cond.([]interface{})[i]); c != 0 {
+			for i := 0; i < len(t.cond.([]any)) && i < len(u.cond.([]any)); i++ {
+				if c := cmpValues(t.cond.([]any)[i], u.cond.([]any)[i]); c != 0 {
 					return c
 				}
 			}
-			return len(t.cond.([]interface{})) - len(u.cond.([]interface{}))
+			return len(t.cond.([]any)) - len(u.cond.([]any))
 		case OpMod:
 			tm := t.cond.([2]int)
 			um := u.cond.([2]int)

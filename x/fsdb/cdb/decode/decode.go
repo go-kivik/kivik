@@ -26,7 +26,7 @@ import (
 )
 
 type decoder interface {
-	Decode(io.Reader, interface{}) error
+	Decode(io.Reader, any) error
 }
 
 var decoders = map[string]decoder{
@@ -57,7 +57,7 @@ func OpenAny(fs filesystem.Filesystem, base string) (f filesystem.File, ext stri
 }
 
 // Decode decodes r according to ext's registered decoder, into i.
-func Decode(r io.Reader, ext string, i interface{}) error {
+func Decode(r io.Reader, ext string, i any) error {
 	ext = strings.TrimPrefix(ext, ".")
 	dec, ok := decoders[ext]
 	if !ok {

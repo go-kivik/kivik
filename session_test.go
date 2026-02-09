@@ -29,7 +29,7 @@ func TestSession(t *testing.T) {
 		name     string
 		client   driver.Client
 		closed   bool
-		expected interface{}
+		expected any
 		status   int
 		err      string
 	}{

@@ -26,7 +26,7 @@ type optionHTTPClient struct {
 	*http.Client
 }
 
-func (c optionHTTPClient) Apply(target interface{}) {
+func (c optionHTTPClient) Apply(target any) {
 	if client, ok := target.(*http.Client); ok {
 		*client = *c.Client
 	}
@@ -86,7 +86,7 @@ func (pp partitionedPath) String() string {
 
 type optionPartition string
 
-func (o optionPartition) Apply(target interface{}) {
+func (o optionPartition) Apply(target any) {
 	if ppath, ok := target.(*partitionedPath); ok {
 		ppath.part = string(o)
 	}
@@ -109,7 +109,7 @@ func OptionPartition(partition string) kivik.Option {
 
 type optionNoMultipartPut struct{}
 
-func (optionNoMultipartPut) Apply(target interface{}) {
+func (optionNoMultipartPut) Apply(target any) {
 	if putOpts, ok := target.(*putOptions); ok {
 		putOpts.NoMultipartPut = true
 	}
@@ -129,7 +129,7 @@ func OptionNoMultipartPut() kivik.Option {
 
 type optionNoMultipartGet struct{}
 
-func (optionNoMultipartGet) Apply(target interface{}) {
+func (optionNoMultipartGet) Apply(target any) {
 	if getOpts, ok := target.(*getOptions); ok {
 		getOpts.noMultipartGet = true
 	}
@@ -151,7 +151,7 @@ type multiOptions []kivik.Option
 
 var _ kivik.Option = (multiOptions)(nil)
 
-func (o multiOptions) Apply(t interface{}) {
+func (o multiOptions) Apply(t any) {
 	for _, opt := range o {
 		if opt != nil {
 			opt.Apply(t)

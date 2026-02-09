@@ -64,7 +64,7 @@ func (s *Server) createDB() httpe.HandlerWithError {
 		if err := s.client.CreateDB(r.Context(), db, options(r)); err != nil {
 			return err
 		}
-		return serveJSON(w, http.StatusCreated, map[string]interface{}{
+		return serveJSON(w, http.StatusCreated, map[string]any{
 			"ok": true,
 		})
 	})
@@ -76,7 +76,7 @@ func (s *Server) deleteDB() httpe.HandlerWithError {
 		if err := s.client.DestroyDB(r.Context(), db, options(r)); err != nil {
 			return err
 		}
-		return serveJSON(w, http.StatusOK, map[string]interface{}{
+		return serveJSON(w, http.StatusOK, map[string]any{
 			"ok": true,
 		})
 	})
@@ -245,10 +245,10 @@ func whichView(r *http.Request) (ddoc, view string, isQueries bool) {
 func (s *Server) query() httpe.HandlerWithError {
 	return httpe.HandlerWithErrorFunc(func(w http.ResponseWriter, r *http.Request) error {
 		ddoc, view, isQueries := whichView(r)
-		req := map[string]interface{}{}
+		req := map[string]any{}
 		if isQueries {
 			var jsonReq struct {
-				Queries []map[string]interface{} `json:"queries"`
+				Queries []map[string]any `json:"queries"`
 			}
 			if err := s.bind(r, &jsonReq); err != nil {
 				return err

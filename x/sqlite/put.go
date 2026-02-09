@@ -24,7 +24,7 @@ import (
 	internal "github.com/go-kivik/kivik/v4/int/errors"
 )
 
-func (d *db) Put(ctx context.Context, docID string, doc interface{}, options driver.Options) (string, error) {
+func (d *db) Put(ctx context.Context, docID string, doc any, options driver.Options) (string, error) {
 	if len(docID) > 0 && docID[0] == '_' && !strings.HasPrefix(docID, "_design/") && !strings.HasPrefix(docID, "_local/") {
 		return "", &internal.Error{Status: http.StatusBadRequest, Message: "only reserved document ids may start with underscore"}
 	}

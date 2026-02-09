@@ -175,7 +175,7 @@ func Test_db_not_found(t *testing.T) {
 	tests.Add("Put, new_edits=false + _revisions", test{
 		call: func(d *db) error {
 			_, err := d.Put(context.Background(), "doc", map[string]any{
-				"_revisions": map[string]interface{}{
+				"_revisions": map[string]any{
 					"start": 1,
 					"ids":   []string{"x"},
 				},
@@ -186,7 +186,7 @@ func Test_db_not_found(t *testing.T) {
 	tests.Add("Put, _revisoins + new_edits=true", test{
 		call: func(d *db) error {
 			_, err := d.Put(context.Background(), "doc", map[string]any{
-				"_revisions": map[string]interface{}{
+				"_revisions": map[string]any{
 					"start": 1,
 					"ids":   []string{"x", "y", "z"},
 				},

@@ -32,7 +32,7 @@ func TestHandleError(t *testing.T) {
 	type eTest struct {
 		Name     string
 		Err      error
-		Expected interface{}
+		Expected any
 	}
 	tests := []eTest{
 		{

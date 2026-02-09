@@ -25,25 +25,25 @@ import (
 func TestDeJSONify(t *testing.T) {
 	tests := []struct {
 		name     string
-		input    interface{}
-		expected interface{}
+		input    any
+		expected any
 		status   int
 		err      string
 	}{
 		{
 			name:     "string",
 			input:    `{"foo":"bar"}`,
-			expected: map[string]interface{}{"foo": "bar"},
+			expected: map[string]any{"foo": "bar"},
 		},
 		{
 			name:     "[]byte",
 			input:    []byte(`{"foo":"bar"}`),
-			expected: map[string]interface{}{"foo": "bar"},
+			expected: map[string]any{"foo": "bar"},
 		},
 		{
 			name:     "json.RawMessage",
 			input:    json.RawMessage(`{"foo":"bar"}`),
-			expected: map[string]interface{}{"foo": "bar"},
+			expected: map[string]any{"foo": "bar"},
 		},
 		{
 			name:     "map",

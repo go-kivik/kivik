@@ -92,9 +92,3 @@ code should be converted to error returns:
 
 Root module is Go 1.20 (GopherJS constraint). Sub-modules `x/sqlite` (1.22)
 and `x/pg` (1.24) can use newer features.
-
-### `interface{}` → `any` (Go 1.18)
-
-~2,397 occurrences across ~266 files. Mechanical replacement via
-`gofmt -r 'interface{} -> any' -w .`. Verify generated code templates in
-`mockdb/gen/` are also updated so regeneration doesn't revert the change.

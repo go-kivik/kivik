@@ -38,7 +38,7 @@ type BulkResult struct {
 // a raw JSON string in a [encoding/json.RawMessage], or [io.Reader].
 //
 // [CouchDB documentation]: https://docs.couchdb.org/en/stable/api/database/bulk-api.html#db-bulk-docs
-func (db *DB) BulkDocs(ctx context.Context, docs []interface{}, options ...Option) ([]BulkResult, error) {
+func (db *DB) BulkDocs(ctx context.Context, docs []any, options ...Option) ([]BulkResult, error) {
 	if db.err != nil {
 		return nil, db.err
 	}
@@ -85,7 +85,7 @@ func (db *DB) BulkDocs(ctx context.Context, docs []interface{}, options ...Optio
 	return results, nil
 }
 
-func docsInterfaceSlice(docsi []interface{}) ([]interface{}, error) {
+func docsInterfaceSlice(docsi []any) ([]any, error) {
 	for i, doc := range docsi {
 		x, err := normalizeFromJSON(doc)
 		if err != nil {

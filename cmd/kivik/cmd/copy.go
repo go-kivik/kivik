@@ -92,7 +92,7 @@ func (c *_copy) RunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	var doc map[string]interface{}
+	var doc map[string]any
 	var rev kivik.Option
 	if c.targetRev != "" {
 		rev = kivik.Rev(c.targetRev)

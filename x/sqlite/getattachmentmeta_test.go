@@ -51,9 +51,9 @@ func TestDBGetAttachmentMeta(t *testing.T) {
 		wantStatus: http.StatusNotFound,
 		wantErr:    "missing",
 	})
-	tests.Add("return an attachment when it exists", func(t *testing.T) interface{} {
+	tests.Add("return an attachment when it exists", func(t *testing.T) any {
 		db := newDB(t)
-		_ = db.tPut("foo", map[string]interface{}{
+		_ = db.tPut("foo", map[string]any{
 			"_id":          "foo",
 			"_attachments": newAttachments().add("foo.txt", "This is a base64 encoding"),
 		})

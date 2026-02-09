@@ -206,7 +206,7 @@ func reportError(w http.ResponseWriter, err error) {
 	} else {
 		short = strings.ToLower(http.StatusText(status))
 	}
-	_ = json.NewEncoder(w).Encode(map[string]interface{}{
+	_ = json.NewEncoder(w).Encode(map[string]any{
 		"error":  short,
 		"reason": reason,
 	})

@@ -39,7 +39,7 @@ func TestPurge(t *testing.T) {
 	indexedDBPlugin := js.Global.Call("require", "pouchdb-adapter-indexeddb")
 	pouchDB := js.Global.Get("PouchDB")
 	pouchDB.Call("plugin", indexedDBPlugin)
-	idbPouch := pouchDB.Call("defaults", map[string]interface{}{
+	idbPouch := pouchDB.Call("defaults", map[string]any{
 		"adapter": "indexeddb",
 	})
 	js.Global.Set("PouchDB", idbPouch)

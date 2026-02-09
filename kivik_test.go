@@ -195,9 +195,9 @@ func TestDB(t *testing.T) {
 				driverClient: &mock.Client{
 					DBFunc: func(dbName string, opts driver.Options) (driver.DB, error) {
 						expectedDBName := "foo"
-						gotOpts := map[string]interface{}{}
+						gotOpts := map[string]any{}
 						opts.Apply(gotOpts)
-						wantOpts := map[string]interface{}{"foo": 123}
+						wantOpts := map[string]any{"foo": 123}
 						if dbName != expectedDBName {
 							return nil, fmt.Errorf("Unexpected dbname: %s", dbName)
 						}
@@ -264,9 +264,9 @@ func TestAllDBs(t *testing.T) {
 			client: &Client{
 				driverClient: &mock.Client{
 					AllDBsFunc: func(_ context.Context, options driver.Options) ([]string, error) {
-						gotOptions := map[string]interface{}{}
+						gotOptions := map[string]any{}
 						options.Apply(gotOptions)
-						expectedOptions := map[string]interface{}{"foo": 123}
+						expectedOptions := map[string]any{"foo": 123}
 						if d := testy.DiffInterface(expectedOptions, gotOptions); d != nil {
 							return nil, fmt.Errorf("Unexpected options:\n%s", d)
 						}
@@ -327,9 +327,9 @@ func TestDBExists(t *testing.T) {
 				driverClient: &mock.Client{
 					DBExistsFunc: func(_ context.Context, dbName string, opts driver.Options) (bool, error) {
 						expectedDBName := "foo"
-						gotOpts := map[string]interface{}{}
+						gotOpts := map[string]any{}
 						opts.Apply(gotOpts)
-						expectedOpts := map[string]interface{}{"foo": 123}
+						expectedOpts := map[string]any{"foo": 123}
 						if dbName != expectedDBName {
 							return false, fmt.Errorf("Unexpected db name: %s", dbName)
 						}
@@ -393,8 +393,8 @@ func TestCreateDB(t *testing.T) {
 				driverClient: &mock.Client{
 					CreateDBFunc: func(_ context.Context, dbName string, options driver.Options) error {
 						expectedDBName := "foo"
-						wantOpts := map[string]interface{}{"foo": 123}
-						gotOpts := map[string]interface{}{}
+						wantOpts := map[string]any{"foo": 123}
+						gotOpts := map[string]any{}
 						options.Apply(gotOpts)
 						if dbName != expectedDBName {
 							return fmt.Errorf("Unexpected dbname: %s", dbName)
@@ -462,9 +462,9 @@ func TestDestroyDB(t *testing.T) {
 				driverClient: &mock.Client{
 					DestroyDBFunc: func(_ context.Context, dbName string, options driver.Options) error {
 						expectedDBName := "foo"
-						gotOpts := map[string]interface{}{}
+						gotOpts := map[string]any{}
 						options.Apply(gotOpts)
-						expectedOpts := map[string]interface{}{"foo": 123}
+						expectedOpts := map[string]any{"foo": 123}
 						if dbName != expectedDBName {
 							return fmt.Errorf("Unexpected dbname: %s", dbName)
 						}
@@ -879,7 +879,7 @@ func TestClientClose(t *testing.T) {
 			client: &mock.Client{
 				DBFunc: func(string, driver.Options) (driver.DB, error) {
 					return &mock.BulkDocer{
-						BulkDocsFunc: func(context.Context, []interface{}, driver.Options) ([]driver.BulkResult, error) {
+						BulkDocsFunc: func(context.Context, []any, driver.Options) ([]driver.BulkResult, error) {
 							time.Sleep(delay)
 							return nil, nil
 						},
@@ -887,7 +887,7 @@ func TestClientClose(t *testing.T) {
 				},
 			},
 			work: func(t *testing.T, c *Client) { //nolint:thelper // Not a helper
-				_, err := c.DB("foo").BulkDocs(context.Background(), []interface{}{
+				_, err := c.DB("foo").BulkDocs(context.Background(), []any{
 					map[string]string{"_id": "foo"},
 				})
 				if err != nil {
@@ -1022,7 +1022,7 @@ func TestClientClose(t *testing.T) {
 			client: &mock.Client{
 				DBFunc: func(string, driver.Options) (driver.DB, error) {
 					return &mock.Finder{
-						FindFunc: func(context.Context, interface{}, driver.Options) (driver.Rows, error) {
+						FindFunc: func(context.Context, any, driver.Options) (driver.Rows, error) {
 							return &mock.Rows{
 								NextFunc: func(*driver.Row) error {
 									time.Sleep(delay)
@@ -1064,7 +1064,7 @@ func TestClientClose(t *testing.T) {
 			client: &mock.Client{
 				DBFunc: func(string, driver.Options) (driver.DB, error) {
 					return &mock.RevsDiffer{
-						RevsDiffFunc: func(context.Context, interface{}) (driver.Rows, error) {
+						RevsDiffFunc: func(context.Context, any) (driver.Rows, error) {
 							return &mock.Rows{
 								NextFunc: func(*driver.Row) error {
 									time.Sleep(delay)

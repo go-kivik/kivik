@@ -24,7 +24,7 @@ type DB struct {
 	ID                   string
 	AllDocsFunc          func(ctx context.Context, options driver.Options) (driver.Rows, error)
 	GetFunc              func(ctx context.Context, docID string, options driver.Options) (*driver.Document, error)
-	PutFunc              func(ctx context.Context, docID string, doc interface{}, options driver.Options) (rev string, err error)
+	PutFunc              func(ctx context.Context, docID string, doc any, options driver.Options) (rev string, err error)
 	DeleteFunc           func(ctx context.Context, docID string, options driver.Options) (newRev string, err error)
 	StatsFunc            func(ctx context.Context) (*driver.DBStats, error)
 	CompactFunc          func(ctx context.Context) error
@@ -41,26 +41,26 @@ type DB struct {
 // Updater is a stub for a [github.com/go-kivik/v4/driver.Updater].
 type Updater struct {
 	DB
-	UpdateFunc func(ctx context.Context, ddocID, funcName, docID string, doc interface{}, options driver.Options) (string, error)
+	UpdateFunc func(ctx context.Context, ddocID, funcName, docID string, doc any, options driver.Options) (string, error)
 }
 
 var _ driver.Updater = &Updater{}
 
 // Update calls db.UpdateFunc
-func (db *Updater) Update(ctx context.Context, ddocID, funcName, docID string, doc interface{}, options driver.Options) (string, error) {
+func (db *Updater) Update(ctx context.Context, ddocID, funcName, docID string, doc any, options driver.Options) (string, error) {
 	return db.UpdateFunc(ctx, ddocID, funcName, docID, doc, options)
 }
 
 // DocCreator is a stub for a [github.com/go-kivik/v4/driver.DocCreator].
 type DocCreator struct {
 	DB
-	CreateDocFunc func(ctx context.Context, doc interface{}, options driver.Options) (docID, rev string, err error)
+	CreateDocFunc func(ctx context.Context, doc any, options driver.Options) (docID, rev string, err error)
 }
 
 var _ driver.DocCreator = &DocCreator{}
 
 // CreateDoc calls db.CreateDocFunc
-func (db *DocCreator) CreateDoc(ctx context.Context, doc interface{}, opts driver.Options) (string, string, error) {
+func (db *DocCreator) CreateDoc(ctx context.Context, doc any, opts driver.Options) (string, string, error) {
 	return db.CreateDocFunc(ctx, doc, opts)
 }
 
@@ -84,7 +84,7 @@ func (db *DB) AllDocs(ctx context.Context, options driver.Options) (driver.Rows,
 }
 
 // Put calls db.PutFunc
-func (db *DB) Put(ctx context.Context, docID string, doc interface{}, opts driver.Options) (string, error) {
+func (db *DB) Put(ctx context.Context, docID string, doc any, opts driver.Options) (string, error) {
 	return db.PutFunc(ctx, docID, doc, opts)
 }
 
@@ -164,17 +164,17 @@ func (db *OpenRever) OpenRevs(ctx context.Context, docID string, revs []string, 
 // Finder mocks a driver.DB and driver.Finder
 type Finder struct {
 	*DB
-	CreateIndexFunc func(context.Context, string, string, interface{}, driver.Options) error
+	CreateIndexFunc func(context.Context, string, string, any, driver.Options) error
 	DeleteIndexFunc func(context.Context, string, string, driver.Options) error
-	FindFunc        func(context.Context, interface{}, driver.Options) (driver.Rows, error)
+	FindFunc        func(context.Context, any, driver.Options) (driver.Rows, error)
 	GetIndexesFunc  func(context.Context, driver.Options) ([]driver.Index, error)
-	ExplainFunc     func(context.Context, interface{}, driver.Options) (*driver.QueryPlan, error)
+	ExplainFunc     func(context.Context, any, driver.Options) (*driver.QueryPlan, error)
 }
 
 var _ driver.Finder = &Finder{}
 
 // CreateIndex calls db.CreateIndexFunc
-func (db *Finder) CreateIndex(ctx context.Context, ddoc, name string, index interface{}, options driver.Options) error {
+func (db *Finder) CreateIndex(ctx context.Context, ddoc, name string, index any, options driver.Options) error {
 	return db.CreateIndexFunc(ctx, ddoc, name, index, options)
 }
 
@@ -184,7 +184,7 @@ func (db *Finder) DeleteIndex(ctx context.Context, ddoc, name string, opts drive
 }
 
 // Find calls db.FindFunc
-func (db *Finder) Find(ctx context.Context, query interface{}, opts driver.Options) (driver.Rows, error) {
+func (db *Finder) Find(ctx context.Context, query any, opts driver.Options) (driver.Rows, error) {
 	return db.FindFunc(ctx, query, opts)
 }
 
@@ -194,7 +194,7 @@ func (db *Finder) GetIndexes(ctx context.Context, opts driver.Options) ([]driver
 }
 
 // Explain calls db.ExplainFunc
-func (db *Finder) Explain(ctx context.Context, query interface{}, opts driver.Options) (*driver.QueryPlan, error) {
+func (db *Finder) Explain(ctx context.Context, query any, opts driver.Options) (*driver.QueryPlan, error) {
 	return db.ExplainFunc(ctx, query, opts)
 }
 
@@ -313,13 +313,13 @@ func (db *DB) Close() error {
 // RevsDiffer mocks a driver.DB and driver.RevsDiffer.
 type RevsDiffer struct {
 	*BulkDocer
-	RevsDiffFunc func(context.Context, interface{}) (driver.Rows, error)
+	RevsDiffFunc func(context.Context, any) (driver.Rows, error)
 }
 
 var _ driver.RevsDiffer = &RevsDiffer{}
 
 // RevsDiff calls db.RevsDiffFunc
-func (db *RevsDiffer) RevsDiff(ctx context.Context, revMap interface{}) (driver.Rows, error) {
+func (db *RevsDiffer) RevsDiff(ctx context.Context, revMap any) (driver.Rows, error) {
 	return db.RevsDiffFunc(ctx, revMap)
 }
 

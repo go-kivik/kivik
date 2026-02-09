@@ -29,7 +29,7 @@ func TestDBCreateDoc(t *testing.T) {
 	t.Parallel()
 	type test struct {
 		db   *testDB
-		doc  interface{}
+		doc  any
 		opts driver.Options
 
 		wantDocID  string
@@ -55,12 +55,12 @@ func TestDBCreateDoc(t *testing.T) {
 		wantErr:    "json: unsupported type: chan int",
 		wantStatus: http.StatusBadRequest,
 	})
-	tests.Add("doc without ID", func(t *testing.T) interface{} {
+	tests.Add("doc without ID", func(t *testing.T) any {
 		db := newDB(t)
 
 		return test{
 			db:        db,
-			doc:       map[string]interface{}{"foo": "bar"},
+			doc:       map[string]any{"foo": "bar"},
 			wantDocID: "(?i)^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$",
 			wantRev:   "1-.*",
 			check: func(t *testing.T) {
@@ -82,7 +82,7 @@ func TestDBCreateDoc(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("creating doc with existing id causes conflict", func(t *testing.T) interface{} {
+	tests.Add("creating doc with existing id causes conflict", func(t *testing.T) any {
 		db := newDB(t)
 		_ = db.tPut("foo", map[string]string{"foo": "bar"})
 
@@ -93,12 +93,12 @@ func TestDBCreateDoc(t *testing.T) {
 			wantStatus: http.StatusConflict,
 		}
 	})
-	tests.Add("create doc with attachment", func(t *testing.T) interface{} {
+	tests.Add("create doc with attachment", func(t *testing.T) any {
 		db := newDB(t)
 
 		return test{
 			db: db,
-			doc: map[string]interface{}{
+			doc: map[string]any{
 				"foo":          "bar",
 				"_attachments": newAttachments().add("foo.txt", "bar"),
 			},
@@ -119,12 +119,12 @@ func TestDBCreateDoc(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("create a deleted document", func(t *testing.T) interface{} {
+	tests.Add("create a deleted document", func(t *testing.T) any {
 		db := newDB(t)
 
 		return test{
 			db: db,
-			doc: map[string]interface{}{
+			doc: map[string]any{
 				"foo":      "bar",
 				"_deleted": true,
 			},

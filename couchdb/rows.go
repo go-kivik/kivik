@@ -41,7 +41,7 @@ var _ driver.Rows = &rows{}
 
 type rowsMetaParser struct{}
 
-func (p *rowsMetaParser) parseMeta(i interface{}, dec *json.Decoder, key string) error {
+func (p *rowsMetaParser) parseMeta(i any, dec *json.Decoder, key string) error {
 	meta := i.(*rowsMeta)
 	return meta.parseMeta(key, dec)
 }
@@ -52,7 +52,7 @@ type rowParser struct {
 
 var _ parser = &rowParser{}
 
-func (p *rowParser) decodeItem(i interface{}, dec *json.Decoder) error {
+func (p *rowParser) decodeItem(i any, dec *json.Decoder) error {
 	row := i.(*driver.Row)
 	target := struct {
 		*driver.Row
@@ -87,7 +87,7 @@ type findParser struct {
 
 var _ parser = &findParser{}
 
-func (p *findParser) decodeItem(i interface{}, dec *json.Decoder) error {
+func (p *findParser) decodeItem(i any, dec *json.Decoder) error {
 	var doc json.RawMessage
 	if err := dec.Decode(&doc); err != nil {
 		return err
@@ -111,7 +111,7 @@ type bulkParser struct {
 
 var _ parser = &bulkParser{}
 
-func (p *bulkParser) decodeItem(i interface{}, dec *json.Decoder) error {
+func (p *bulkParser) decodeItem(i any, dec *json.Decoder) error {
 	row := i.(*driver.Row)
 	var result bulkResult
 	if err := dec.Decode(&result); err != nil {

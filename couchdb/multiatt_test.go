@@ -39,20 +39,20 @@ type wrongTagStruct struct {
 func TestExtractAttachments(t *testing.T) {
 	tests := []struct {
 		name string
-		doc  interface{}
+		doc  any
 
 		expected *kivik.Attachments
 		ok       bool
 	}{
 		{
 			name:     "no attachments",
-			doc:      map[string]interface{}{"foo": "bar"},
+			doc:      map[string]any{"foo": "bar"},
 			expected: nil,
 			ok:       false,
 		},
 		{
 			name: "in map",
-			doc: map[string]interface{}{"_attachments": kivik.Attachments{
+			doc: map[string]any{"_attachments": kivik.Attachments{
 				"foo.txt": &kivik.Attachment{Filename: "foo.txt", ContentType: "text/plain", Content: Body("test content")},
 			}},
 			expected: &kivik.Attachments{
@@ -62,7 +62,7 @@ func TestExtractAttachments(t *testing.T) {
 		},
 		{
 			name:     "wrong type in map",
-			doc:      map[string]interface{}{"_attachments": "oink"},
+			doc:      map[string]any{"_attachments": "oink"},
 			expected: nil,
 			ok:       false,
 		},
@@ -128,7 +128,7 @@ func TestExtractAttachments(t *testing.T) {
 		},
 		{
 			name: "pointer to map with attachments",
-			doc: &(map[string]interface{}{"_attachments": kivik.Attachments{
+			doc: &(map[string]any{"_attachments": kivik.Attachments{
 				"foo.txt": &kivik.Attachment{Filename: "foo.txt", ContentType: "text/plain", Content: Body("test content")},
 			}}),
 			expected: &kivik.Attachments{
@@ -138,7 +138,7 @@ func TestExtractAttachments(t *testing.T) {
 		},
 		{
 			name: "pointer in map",
-			doc: map[string]interface{}{"_attachments": &kivik.Attachments{
+			doc: map[string]any{"_attachments": &kivik.Attachments{
 				"foo.txt": &kivik.Attachment{Filename: "foo.txt", ContentType: "text/plain", Content: Body("test content")},
 			}},
 			expected: &kivik.Attachments{

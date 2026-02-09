@@ -30,7 +30,7 @@ func TestBulkDocs(t *testing.T) {
 	tests := []struct {
 		name    string
 		db      *db
-		docs    []interface{}
+		docs    []any
 		options kivik.Option
 		status  int
 		err     string
@@ -47,7 +47,7 @@ func TestBulkDocs(t *testing.T) {
 				StatusCode: http.StatusOK,
 				Body:       io.NopCloser(strings.NewReader("")),
 			}, nil),
-			docs:   []interface{}{make(chan int)},
+			docs:   []any{make(chan int)},
 			status: http.StatusBadRequest,
 			err:    `Post "?http://example.com/testdb/_bulk_docs"?: json: unsupported type: chan int`,
 		},
@@ -57,7 +57,7 @@ func TestBulkDocs(t *testing.T) {
 				StatusCode: http.StatusExpectationFailed,
 				Body:       io.NopCloser(strings.NewReader("[]")),
 			}, nil),
-			docs:   []interface{}{1, 2, 3},
+			docs:   []any{1, 2, 3},
 			status: http.StatusExpectationFailed,
 			err:    "Expectation Failed: one or more document was rejected",
 		},
@@ -67,7 +67,7 @@ func TestBulkDocs(t *testing.T) {
 				StatusCode: http.StatusBadRequest,
 				Body:       io.NopCloser(strings.NewReader("")),
 			}, nil),
-			docs:   []interface{}{1, 2, 3},
+			docs:   []any{1, 2, 3},
 			status: http.StatusBadRequest,
 			err:    "Bad Request",
 		},
@@ -77,7 +77,7 @@ func TestBulkDocs(t *testing.T) {
 				StatusCode: http.StatusCreated,
 				Body:       io.NopCloser(strings.NewReader("invalid json")),
 			}, nil),
-			docs:   []interface{}{1, 2, 3},
+			docs:   []any{1, 2, 3},
 			status: http.StatusBadGateway,
 			err:    "invalid character 'i' looking for beginning of value",
 		},
@@ -87,7 +87,7 @@ func TestBulkDocs(t *testing.T) {
 				StatusCode: http.StatusOK,
 				Body:       io.NopCloser(strings.NewReader("[]")),
 			}, nil),
-			docs: []interface{}{1, 2, 3},
+			docs: []any{1, 2, 3},
 		},
 		{
 			name:    "new_edits",
@@ -114,7 +114,7 @@ func TestBulkDocs(t *testing.T) {
 			options: OptionFullCommit(),
 			db: newCustomDB(func(req *http.Request) (*http.Response, error) {
 				defer req.Body.Close() // nolint: errcheck
-				var body map[string]interface{}
+				var body map[string]any
 				if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
 					return nil, err
 				}

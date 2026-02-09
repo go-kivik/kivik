@@ -32,7 +32,7 @@ import (
 
 func init() {
 	if pouchDB := js.Global.Get("PouchDB"); pouchDB != js.Undefined {
-		memPouch := js.Global.Get("PouchDB").Call("defaults", map[string]interface{}{
+		memPouch := js.Global.Get("PouchDB").Call("defaults", map[string]any{
 			"db": js.Global.Call("require", "memdown"),
 		})
 		js.Global.Set("PouchDB", memPouch)
@@ -64,26 +64,26 @@ func RegisterPouchDBSuites() {
 
 		"Explain.databases": []string{},
 		"Explain.plan": &kivik.QueryPlan{
-			Index: map[string]interface{}{
+			Index: map[string]any{
 				"ddoc": nil,
 				"name": "_all_docs",
 				"type": "special",
-				"def":  map[string]interface{}{"fields": []interface{}{map[string]interface{}{"_id": "asc"}}},
+				"def":  map[string]any{"fields": []any{map[string]any{"_id": "asc"}}},
 			},
-			Selector: map[string]interface{}{"_id": map[string]interface{}{"$gt": nil}},
+			Selector: map[string]any{"_id": map[string]any{"$gt": nil}},
 			Limit: func() int64 {
 				if strings.HasPrefix(internal.MustPouchDBVersion(), "9.") {
 					return 25
 				}
 				return 0
 			}(),
-			Options: func() map[string]interface{} {
-				options := map[string]interface{}{
+			Options: func() map[string]any {
+				options := map[string]any{
 					"bookmark":  "nil",
 					"conflicts": false,
 					"r":         []int{49},
-					"sort":      map[string]interface{}{},
-					"use_index": []interface{}{},
+					"sort":      map[string]any{},
+					"use_index": []any{},
 				}
 				if strings.HasPrefix(internal.MustPouchDBVersion(), "9.") {
 					options["limit"] = float64(25)
@@ -91,7 +91,7 @@ func RegisterPouchDBSuites() {
 				return options
 			}(),
 			Fields: nil,
-			Range: map[string]interface{}{
+			Range: map[string]any{
 				"start_key": nil,
 			},
 		},
@@ -143,7 +143,7 @@ func RegisterPouchDBSuites() {
 
 		"Query/RW/Admin/WithoutDocs/ScanDoc.status": http.StatusBadRequest,
 
-		"Changes/Continuous.options": kivik.Params(map[string]interface{}{
+		"Changes/Continuous.options": kivik.Params(map[string]any{
 			"live":    true,
 			"timeout": false,
 		}),
@@ -209,21 +209,21 @@ func RegisterPouchDBSuites() {
 		"Explain/NoAuth/chicken.status": http.StatusUnauthorized,
 		"Explain/NoAuth/_duck.status":   http.StatusUnauthorized,
 		"Explain.plan": &kivik.QueryPlan{
-			Index: map[string]interface{}{
+			Index: map[string]any{
 				"ddoc": nil,
 				"name": "_all_docs",
 				"type": "special",
-				"def":  map[string]interface{}{"fields": []interface{}{map[string]interface{}{"_id": "asc"}}},
+				"def":  map[string]any{"fields": []any{map[string]any{"_id": "asc"}}},
 			},
-			Selector: map[string]interface{}{"_id": map[string]interface{}{"$gt": nil}},
-			Options: map[string]interface{}{
+			Selector: map[string]any{"_id": map[string]any{"$gt": nil}},
+			Options: map[string]any{
 				"bookmark":        "nil",
 				"conflicts":       false,
 				"execution_stats": false,
 				"partition":       "",
-				"r":               []interface{}{float64(49)},
-				"sort":            map[string]interface{}{},
-				"use_index":       []interface{}{},
+				"r":               []any{float64(49)},
+				"sort":            map[string]any{},
+				"use_index":       []any{},
 				"stable":          false,
 				"stale":           false,
 				"update":          true,
@@ -264,7 +264,7 @@ func RegisterPouchDBSuites() {
 				DesignDoc: "_design/foo",
 				Name:      "bar",
 				Type:      "json",
-				Definition: map[string]interface{}{
+				Definition: map[string]any{
 					"fields": []map[string]string{
 						{"foo": "asc"},
 					},
@@ -375,7 +375,7 @@ func RegisterPouchDBSuites() {
 
 		"ViewCleanup/RW/NoAuth.status": http.StatusUnauthorized,
 
-		"Changes/Continuous.options": kivik.Params(map[string]interface{}{
+		"Changes/Continuous.options": kivik.Params(map[string]any{
 			"live":    true,
 			"timeout": false,
 		}),

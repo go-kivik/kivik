@@ -198,7 +198,7 @@ func (m md5sum) Value() (driver.Value, error) {
 	return m[:], nil
 }
 
-func (m *md5sum) Scan(src interface{}) error {
+func (m *md5sum) Scan(src any) error {
 	x, ok := src.([]byte)
 	if !ok {
 		return fmt.Errorf("unsupported type: %T", src)
@@ -304,7 +304,7 @@ func (r *revsInfo) leaf() revision {
 
 // prepareDoc prepares the doc for insertion. It returns the new docID, rev, and
 // marshaled doc with rev and id removed.
-func prepareDoc(docID string, doc interface{}) (*docData, error) {
+func prepareDoc(docID string, doc any) (*docData, error) {
 	tmpJSON, err := json.Marshal(doc)
 	if err != nil {
 		return nil, &internal.Error{Status: http.StatusBadRequest, Err: err}
@@ -321,7 +321,7 @@ func prepareDoc(docID string, doc interface{}) (*docData, error) {
 			ddocData.AutoUpdate = &[]bool{true}[0]
 		}
 	}
-	var tmp map[string]interface{}
+	var tmp map[string]any
 	if err := json.Unmarshal(tmpJSON, &tmp); err != nil {
 		return nil, err
 	}
@@ -360,9 +360,9 @@ func prepareDoc(docID string, doc interface{}) (*docData, error) {
 }
 
 // extractRev extracts the rev from the document.
-func extractRev(doc interface{}) (string, error) {
+func extractRev(doc any) (string, error) {
 	switch t := doc.(type) {
-	case map[string]interface{}:
+	case map[string]any:
 		r, _ := t["_rev"].(string)
 		return r, nil
 	case map[string]string:
@@ -449,8 +449,8 @@ func (d *fullDoc) toRaw(fields ...string) json.RawMessage {
 			_, _ = buf.Write(d.Doc[1 : len(d.Doc)-1]) // Omit opening and closing braces
 			_ = buf.WriteByte(',')
 		} else {
-			var doc map[string]interface{}
-			tmp := map[string]interface{}{}
+			var doc map[string]any
+			tmp := map[string]any{}
 			_ = json.Unmarshal(d.Doc, &doc)
 			for _, f := range fields {
 				if f == "_id" || f == "_rev" {
@@ -495,14 +495,14 @@ func (d *fullDoc) toRaw(fields ...string) json.RawMessage {
 	return result
 }
 
-func extractValue(obj map[string]interface{}, keys ...string) (interface{}, bool) {
+func extractValue(obj map[string]any, keys ...string) (any, bool) {
 	for i, key := range keys {
 		if i == len(keys)-1 {
 			o, ok := obj[key]
 			return o, ok
 		}
 		if v, ok := obj[key]; ok {
-			if m, ok := v.(map[string]interface{}); ok {
+			if m, ok := v.(map[string]any); ok {
 				obj = m
 			} else {
 				return nil, false
@@ -514,21 +514,21 @@ func extractValue(obj map[string]interface{}, keys ...string) (interface{}, bool
 	return nil, false
 }
 
-func insertValue(obj map[string]interface{}, value interface{}, keys []string) {
+func insertValue(obj map[string]any, value any, keys []string) {
 	for i, key := range keys {
 		if i == len(keys)-1 {
 			obj[key] = value
 			return
 		}
 		if v, ok := obj[key]; ok {
-			m, ok := v.(map[string]interface{})
+			m, ok := v.(map[string]any)
 			if !ok {
 				return
 			}
 
 			obj = m
 		} else {
-			m := make(map[string]interface{}, 1)
+			m := make(map[string]any, 1)
 			obj[key] = m
 			obj = m
 		}
@@ -539,7 +539,7 @@ func (d *fullDoc) toReader(fields ...string) io.ReadCloser {
 	return io.NopCloser(bytes.NewReader(d.toRaw(fields...)))
 }
 
-func jsonMarshal(s interface{}) []byte {
+func jsonMarshal(s any) []byte {
 	j, _ := json.Marshal(s)
 	return j
 }
@@ -551,8 +551,8 @@ func jsonMarshal(s interface{}) []byte {
 // - _rev
 // - _deleted
 // - _attachments
-func (d *fullDoc) toMap() map[string]interface{} {
-	var result map[string]interface{}
+func (d *fullDoc) toMap() map[string]any {
+	var result map[string]any
 	if err := json.Unmarshal(d.Doc, &result); err != nil {
 		panic(err)
 	}
@@ -562,9 +562,9 @@ func (d *fullDoc) toMap() map[string]interface{} {
 		result["_deleted"] = true
 	}
 	if len(d.Attachments) > 0 {
-		attachments := make(map[string]interface{}, len(d.Attachments))
+		attachments := make(map[string]any, len(d.Attachments))
 		for name, att := range d.Attachments {
-			attachments[name] = map[string]interface{}{
+			attachments[name] = map[string]any{
 				"content_type": att.ContentType,
 				"digest":       att.Digest.Digest(),
 				"length":       att.Length,

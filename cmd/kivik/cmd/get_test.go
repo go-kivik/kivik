@@ -50,7 +50,7 @@ func Test_get_RunE(t *testing.T) {
 		args:   []string{"--debug", "--config", "./testdata/localhost.yaml", "get", "bar"},
 		status: errors.ErrUnavailable,
 	})
-	tests.Add("not found", func(*testing.T) interface{} {
+	tests.Add("not found", func(*testing.T) any {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusNotFound,
 		})
@@ -60,7 +60,7 @@ func Test_get_RunE(t *testing.T) {
 			status: errors.ErrNotFound,
 		}
 	})
-	tests.Add("invalid JSON response", func(*testing.T) interface{} {
+	tests.Add("invalid JSON response", func(*testing.T) any {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{
@@ -75,7 +75,7 @@ func Test_get_RunE(t *testing.T) {
 			status: errors.ErrProtocol,
 		}
 	})
-	tests.Add("success", func(*testing.T) interface{} {
+	tests.Add("success", func(*testing.T) any {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{
@@ -93,7 +93,7 @@ func Test_get_RunE(t *testing.T) {
 			args: []string{"get", s.URL + "/db/doc"},
 		}
 	})
-	tests.Add("get database", func(*testing.T) interface{} {
+	tests.Add("get database", func(*testing.T) any {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{
@@ -107,7 +107,7 @@ func Test_get_RunE(t *testing.T) {
 			args: []string{"get", "database", s.URL + "/foo"},
 		}
 	})
-	tests.Add("auto get database", func(*testing.T) interface{} {
+	tests.Add("auto get database", func(*testing.T) any {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{
@@ -121,7 +121,7 @@ func Test_get_RunE(t *testing.T) {
 			args: []string{"--debug", "get", s.URL + "/foo"},
 		}
 	})
-	tests.Add("describe database", func(*testing.T) interface{} {
+	tests.Add("describe database", func(*testing.T) any {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{
@@ -135,7 +135,7 @@ func Test_get_RunE(t *testing.T) {
 			args: []string{"describe", "database", s.URL + "/foo"},
 		}
 	})
-	tests.Add("auto version", func(*testing.T) interface{} {
+	tests.Add("auto version", func(*testing.T) any {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{
@@ -150,7 +150,7 @@ func Test_get_RunE(t *testing.T) {
 			args: []string{"get", s.URL},
 		}
 	})
-	tests.Add("auto attachment", func(*testing.T) interface{} {
+	tests.Add("auto attachment", func(*testing.T) any {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{
@@ -165,7 +165,7 @@ func Test_get_RunE(t *testing.T) {
 			args: []string{"get", s.URL + "/db/doc/foo.txt"},
 		}
 	})
-	tests.Add("auto all-dbs", func(*testing.T) interface{} {
+	tests.Add("auto all-dbs", func(*testing.T) any {
 		s := testy.ServeResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{
@@ -180,7 +180,7 @@ func Test_get_RunE(t *testing.T) {
 			args: []string{"get", s.URL + "/_all_dbs"},
 		}
 	})
-	tests.Add("auto config key", func(t *testing.T) interface{} {
+	tests.Add("auto config key", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{
@@ -198,7 +198,7 @@ func Test_get_RunE(t *testing.T) {
 			args: []string{"get", s.URL + "/_node/_local/_config/chttpd/backlog"},
 		}
 	})
-	tests.Add("auto security", func(t *testing.T) interface{} {
+	tests.Add("auto security", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{
@@ -216,7 +216,7 @@ func Test_get_RunE(t *testing.T) {
 			args: []string{"get", s.URL + "/foo/_security"},
 		}
 	})
-	tests.Add("auto cluster-setup", func(t *testing.T) interface{} {
+	tests.Add("auto cluster-setup", func(t *testing.T) any {
 		s := testy.ServeResponseValidator(t, &http.Response{
 			StatusCode: http.StatusOK,
 			Header: http.Header{

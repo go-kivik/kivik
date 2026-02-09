@@ -117,7 +117,7 @@ type multiOptions []kivik.Option
 
 var _ kivik.Option = (multiOptions)(nil)
 
-func (mo multiOptions) Apply(t interface{}) {
+func (mo multiOptions) Apply(t any) {
 	if mo == nil {
 		return
 	}

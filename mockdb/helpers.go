@@ -22,7 +22,7 @@ import (
 )
 
 // DocumentT calls Document, and passes any error to t.Fatal.
-func DocumentT(t *testing.T, i interface{}) *driver.Document {
+func DocumentT(t *testing.T, i any) *driver.Document {
 	t.Helper()
 	doc, err := Document(i)
 	if err != nil {
@@ -40,7 +40,7 @@ func DocumentT(t *testing.T, i interface{}) *driver.Document {
 //   - string, []byte, or json.RawMessage (interpreted as a JSON string)
 //   - io.Reader (assumes JSON can be read from the stream)
 //   - any other JSON-marshalable object
-func Document(i interface{}) (*driver.Document, error) {
+func Document(i any) (*driver.Document, error) {
 	buf, err := toJSON(i)
 	if err != nil {
 		return nil, err
@@ -58,7 +58,7 @@ func Document(i interface{}) (*driver.Document, error) {
 	}, nil
 }
 
-func toJSON(i interface{}) ([]byte, error) {
+func toJSON(i any) ([]byte, error) {
 	switch t := i.(type) {
 	case string:
 		return []byte(t), nil

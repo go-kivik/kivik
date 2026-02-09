@@ -192,7 +192,7 @@ func (r *Document) Rev() (string, error) {
 }
 
 // ScanDoc unmarshals the document into i.
-func (r *Document) ScanDoc(i interface{}) error {
+func (r *Document) ScanDoc(i any) error {
 	if r.err != nil {
 		return r.err
 	}
@@ -300,7 +300,7 @@ func (db *DB) GetRev(ctx context.Context, docID string, options ...Option) (rev 
 
 // CreateDoc creates a new doc with an auto-generated unique ID. The generated
 // docID and new rev are returned.
-func (db *DB) CreateDoc(ctx context.Context, doc interface{}, options ...Option) (docID, rev string, err error) {
+func (db *DB) CreateDoc(ctx context.Context, doc any, options ...Option) (docID, rev string, err error) {
 	if db.err != nil {
 		return "", "", db.err
 	}
@@ -323,7 +323,7 @@ func (db *DB) CreateDoc(ctx context.Context, doc interface{}, options ...Option)
 
 // normalizeFromJSON unmarshals a []byte, json.RawMessage or io.Reader to a
 // map[string]interface{}, or passed through any other types.
-func normalizeFromJSON(i interface{}) (interface{}, error) {
+func normalizeFromJSON(i any) (any, error) {
 	switch t := i.(type) {
 	case json.Marshaler:
 		return t, nil
@@ -338,14 +338,14 @@ func normalizeFromJSON(i interface{}) (interface{}, error) {
 	}
 }
 
-func extractDocID(i interface{}) (string, bool) {
+func extractDocID(i any) (string, bool) {
 	if i == nil {
 		return "", false
 	}
 	var id string
 	var ok bool
 	switch t := i.(type) {
-	case map[string]interface{}:
+	case map[string]any:
 		id, ok = t["_id"].(string)
 	case map[string]string:
 		id, ok = t["_id"]
@@ -380,7 +380,7 @@ func extractDocID(i interface{}) (string, bool) {
 //     conform to CouchDB standards.
 //   - An [encoding/json.RawMessage] value containing a valid JSON document
 //   - An [io.Reader], from which a valid JSON document may be read.
-func (db *DB) Put(ctx context.Context, docID string, doc interface{}, options ...Option) (rev string, err error) {
+func (db *DB) Put(ctx context.Context, docID string, doc any, options ...Option) (rev string, err error) {
 	if db.err != nil {
 		return "", db.err
 	}
@@ -409,7 +409,7 @@ func (db *DB) Put(ctx context.Context, docID string, doc interface{}, options ..
 // [update function]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#updatefun
 // [standard updates]: https://docs.couchdb.org/en/stable/api/ddoc/render.html#put--db-_design-ddoc-_update-func-docid
 // [update of null documents]: https://docs.couchdb.org/en/stable/api/ddoc/render.html#post--db-_design-ddoc-_update-func
-func (db *DB) Update(ctx context.Context, ddoc, funcName, docID string, doc interface{}, options ...Option) (newRev string, err error) {
+func (db *DB) Update(ctx context.Context, ddoc, funcName, docID string, doc any, options ...Option) (newRev string, err error) {
 	if db.err != nil {
 		return "", db.err
 	}
@@ -708,13 +708,13 @@ func (db *DB) Copy(ctx context.Context, targetID, sourceID string, options ...Op
 		defer endQuery()
 		return copier.Copy(ctx, targetID, sourceID, opts)
 	}
-	var doc map[string]interface{}
+	var doc map[string]any
 	if err = db.Get(ctx, sourceID, options...).ScanDoc(&doc); err != nil {
 		return "", err
 	}
 	delete(doc, "_rev")
 	doc["_id"] = targetID
-	opts2 := map[string]interface{}{}
+	opts2 := map[string]any{}
 	opts.Apply(opts2)
 	delete(opts2, "rev") // rev has a completely different meaning for Copy and Put
 	return db.Put(ctx, targetID, doc, Params(opts2))
@@ -953,7 +953,7 @@ type Diffs map[string]RevDiff
 //	}
 //
 // [expected format]: http://docs.couchdb.org/en/stable/api/database/misc.html#db-revs-diff
-func (db *DB) RevsDiff(ctx context.Context, revMap interface{}) *ResultSet {
+func (db *DB) RevsDiff(ctx context.Context, revMap any) *ResultSet {
 	if db.err != nil {
 		return &ResultSet{iter: errIterator(db.err)}
 	}

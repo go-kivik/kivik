@@ -12,6 +12,10 @@
   `d.path()` panics with `"THIS IS A BUG: d.path failed"` on URL parse errors.
   Should return an error.
 
+- [ ] **Wrong variable in nil check in `options.go:54`**
+  `multiOptions.String()` checks `o != nil` (the receiver) instead of
+  `opt != nil` (the loop variable). The receiver is never nil at this point.
+
 ## Potential Concurrency Issues
 
 - [ ] **Data race risk in `couchdb/db.go:640-672`**
@@ -42,7 +46,6 @@ check will panic at runtime if the wrong type is passed:
 Beyond the confirmed bugs above, these panics in non-test, non-experimental
 code should be converted to error returns:
 
-- [ ] `options.go:92` — `"kivik: unknown option type: %T"`
 - [ ] `couchdb/chttp/trace.go:64` — `"nil trace"`
 - [ ] `pouchdb/replicationEvents.go:46,58` — panics on time parse errors
 - [ ] `pouchdb/replicationEvents.go:110` — panics on unexpected replication event

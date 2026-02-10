@@ -88,6 +88,15 @@ func (d *db) CreateIndex(ctx context.Context, ddoc, name string, index any, _ dr
 	return err
 }
 
+// DeleteIndex deletes a Mango index.
+func (d *db) DeleteIndex(ctx context.Context, ddoc, name string, _ driver.Options) error {
+	_, err := d.db.ExecContext(ctx, d.query(`
+		DELETE FROM {{ .MangoIndexes }}
+		WHERE ddoc = $1 AND name = $2
+	`), ddoc, name)
+	return err
+}
+
 // normalizeIndexFields parses a stored JSON index definition and expands
 // shorthand field names (e.g. "name") into the explicit {"name": "asc"} form
 // returned by GetIndexes.

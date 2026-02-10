@@ -115,10 +115,6 @@ func (db) Copy(context.Context, string, string, driver.Options) (string, error) 
 	return "", errors.New("not implemented")
 }
 
-func (db) DeleteIndex(context.Context, string, string, driver.Options) error {
-	return errors.New("not implemented")
-}
-
 func (db) Explain(context.Context, any, driver.Options) (*driver.QueryPlan, error) {
 	return nil, errors.New("not implemented")
 }

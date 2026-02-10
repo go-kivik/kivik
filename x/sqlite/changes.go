@@ -30,13 +30,8 @@ import (
 
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
+	"github.com/go-kivik/kivik/v4/x/options"
 	"github.com/go-kivik/kivik/x/sqlite/v4/js"
-)
-
-const (
-	feedNormal     = "normal"
-	feedLongpoll   = "longpoll"
-	feedContinuous = "continuous"
 )
 
 type normalChanges struct {
@@ -51,8 +46,8 @@ type normalChanges struct {
 
 var _ driver.Changes = &normalChanges{}
 
-func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq *uint64, sinceNow bool, feed string) (*normalChanges, error) {
-	limit, err := opts.changesLimit()
+func (d *db) newNormalChanges(ctx context.Context, opts options.Map, since, lastSeq *uint64, sinceNow bool, feed string) (*normalChanges, error) {
+	limit, err := opts.ChangesLimit()
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +65,7 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 	}
 
 	c := &normalChanges{
-		allDocs: opts.style() == "all_docs",
+		allDocs: opts.Style() == options.StyleAllDocs,
 	}
 
 	if sinceNow {
@@ -86,27 +81,27 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 		c.lastSeq = strconv.FormatUint(*lastSeq, 10)
 	}
 
-	descending, err := opts.descending()
+	descending, err := opts.Descending()
 	if err != nil {
 		return nil, err
 	}
 
-	c.includeDocs, err = opts.includeDocs()
+	c.includeDocs, err = opts.IncludeDocs()
 	if err != nil {
 		return nil, err
 	}
-	attachments, err := opts.attachments()
+	attachments, err := opts.Attachments()
 	if err != nil {
 		return nil, err
 	}
 
-	filterType, filterDdoc, filterName, err := opts.changesFilter()
+	filterType, filterDdoc, filterName, err := opts.ChangesFilter()
 	if err != nil {
 		return nil, err
 	}
 
 	args := []any{since, attachments, c.includeDocs, filterType, filterDdoc, filterName, c.allDocs}
-	where, err := opts.changesWhere(&args)
+	where, err := opts.ChangesWhere(&args)
 	if err != nil {
 		return nil, err
 	}
@@ -266,7 +261,7 @@ func (d *db) newNormalChanges(ctx context.Context, opts optsMap, since, lastSeq 
 		}
 	}
 
-	if feed == feedNormal {
+	if feed == options.FeedNormal {
 		h := md5.New()
 		_, _ = h.Write([]byte(summary))
 		c.etag = hex.EncodeToString(h.Sum(nil))
@@ -387,35 +382,35 @@ func (c *normalChanges) ETag() string {
 	return c.etag
 }
 
-func (d *db) Changes(ctx context.Context, options driver.Options) (driver.Changes, error) {
-	opts := newOpts(options)
+func (d *db) Changes(ctx context.Context, opts driver.Options) (driver.Changes, error) {
+	o := options.New(opts)
 
 	var lastSeq *uint64
-	sinceNow, since, err := opts.since()
+	sinceNow, since, err := o.Since()
 	if err != nil {
 		return nil, err
 	}
-	feed, err := opts.feed()
+	feed, err := o.Feed()
 	if err != nil {
 		return nil, err
 	}
-	includeDocs, err := opts.includeDocs()
+	includeDocs, err := o.IncludeDocs()
 	if err != nil {
 		return nil, err
 	}
-	if sinceNow && (feed == feedLongpoll || feed == feedContinuous) {
-		attachments, err := opts.attachments()
+	if sinceNow && (feed == options.FeedLongpoll || feed == options.FeedContinuous) {
+		attachments, err := o.Attachments()
 		if err != nil {
 			return nil, err
 		}
-		timeout, err := opts.timeout()
+		timeout, err := o.Timeout()
 		if err != nil {
 			return nil, err
 		}
-		return d.newLongpollChanges(ctx, includeDocs, attachments, feed == feedContinuous, timeout)
+		return d.newLongpollChanges(ctx, includeDocs, attachments, feed == options.FeedContinuous, timeout)
 	}
 
-	return d.newNormalChanges(ctx, opts, since, lastSeq, sinceNow, feed)
+	return d.newNormalChanges(ctx, o, since, lastSeq, sinceNow, feed)
 }
 
 type longpollChanges struct {

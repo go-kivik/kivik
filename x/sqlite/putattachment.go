@@ -20,10 +20,11 @@ import (
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
+	"github.com/go-kivik/kivik/v4/x/options"
 )
 
-func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attachment, options driver.Options) (string, error) {
-	opts := newOpts(options)
+func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attachment, opts driver.Options) (string, error) {
+	o := options.New(opts)
 
 	tx, err := d.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -36,7 +37,7 @@ func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attach
 	}
 
 	var curRev revision
-	rev := opts.rev()
+	rev := o.Rev()
 	if rev != "" {
 		curRev, err = parseRev(rev)
 		if err != nil {

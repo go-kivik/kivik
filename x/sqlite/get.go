@@ -21,10 +21,11 @@ import (
 	"io"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/x/options"
 )
 
-func (d *db) Get(ctx context.Context, id string, options driver.Options) (*driver.Document, error) {
-	opts := newOpts(options)
+func (d *db) Get(ctx context.Context, id string, opts driver.Options) (*driver.Document, error) {
+	o := options.New(opts)
 
 	var r revision
 
@@ -34,22 +35,22 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 	}
 	defer tx.Rollback()
 
-	if opts.rev() != "" {
-		r, err = parseRev(opts.rev())
+	if o.Rev() != "" {
+		r, err = parseRev(o.Rev())
 		if err != nil {
 			return nil, err
 		}
 	}
-	toMerge, r, err := d.getCoreDoc(ctx, tx, id, r, opts.latest(), false)
+	toMerge, r, err := d.getCoreDoc(ctx, tx, id, r, o.Latest(), false)
 	if err != nil {
 		return nil, err
 	}
 
-	if !opts.localSeq() {
+	if !o.LocalSeq() {
 		toMerge.LocalSeq = 0
 	}
 
-	conflicts, err := opts.conflicts()
+	conflicts, err := o.Conflicts()
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +63,7 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 		toMerge.Conflicts = revs
 	}
 
-	if opts.deletedConflicts() {
+	if o.DeletedConflicts() {
 		revs, err := d.conflicts(ctx, tx, id, r, true)
 		if err != nil {
 			return nil, err
@@ -71,7 +72,7 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 		toMerge.DeletedConflicts = revs
 	}
 
-	if opts.revsInfo() || opts.revs() {
+	if o.RevsInfo() || o.Revs() {
 		rows, err := tx.QueryContext(ctx, d.query(`
 			WITH RECURSIVE Ancestors AS (
 				-- Base case: Select the starting node for ancestors
@@ -118,7 +119,7 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 		if err := rows.Err(); err != nil {
 			return nil, err
 		}
-		if opts.revsInfo() {
+		if o.RevsInfo() {
 			info := make([]map[string]string, 0, len(revs))
 			for _, r := range revs {
 				info = append(info, map[string]string{
@@ -140,11 +141,11 @@ func (d *db) Get(ctx context.Context, id string, options driver.Options) (*drive
 		}
 	}
 
-	attachments, err := opts.attachments()
+	attachments, err := o.Attachments()
 	if err != nil {
 		return nil, err
 	}
-	atts, err := d.getAttachments(ctx, tx, id, r, attachments, opts.attsSince())
+	atts, err := d.getAttachments(ctx, tx, id, r, attachments, o.AttsSince())
 	if err != nil {
 		return nil, err
 	}

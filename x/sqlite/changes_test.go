@@ -29,6 +29,7 @@ import (
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/int/mock"
+	"github.com/go-kivik/kivik/v4/x/options"
 )
 
 func TestDBChanges(t *testing.T) {
@@ -1165,7 +1166,7 @@ func Test_normal_changes_query(t *testing.T) {
 			add(filename2, "more boring text"),
 	})
 
-	changes, err := d.DB.(*db).newNormalChanges(context.Background(), optsMap{"include_docs": true}, nil, nil, false, "normal")
+	changes, err := d.DB.(*db).newNormalChanges(context.Background(), options.Map{"include_docs": true}, nil, nil, false, "normal")
 	if err != nil {
 		t.Fatal(err)
 	}

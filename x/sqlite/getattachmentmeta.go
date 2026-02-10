@@ -20,10 +20,11 @@ import (
 
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
+	"github.com/go-kivik/kivik/v4/x/options"
 )
 
-func (d *db) GetAttachmentMeta(ctx context.Context, docID, filename string, options driver.Options) (*driver.Attachment, error) {
-	opts := newOpts(options)
+func (d *db) GetAttachmentMeta(ctx context.Context, docID, filename string, opts driver.Options) (*driver.Attachment, error) {
+	o := options.New(opts)
 
 	tx, err := d.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -32,7 +33,7 @@ func (d *db) GetAttachmentMeta(ctx context.Context, docID, filename string, opti
 	defer tx.Rollback()
 
 	var requestedRev revision
-	if rev := opts.rev(); rev != "" {
+	if rev := o.Rev(); rev != "" {
 		requestedRev, err = parseRev(rev)
 		if err != nil {
 			return nil, &internal.Error{Message: err.Error(), Status: http.StatusBadRequest}

@@ -50,10 +50,6 @@ It's a CouchDB durability optimization that doesn't apply to SQLite.
   document filtering during view updates is done in Go after fetching rows,
   rather than in the SQL query.
 
-- [ ] **Consolidate options into `x/options`** (`options.go`). The local
-  `optsMap` duplicates many parsers that now exist on `x/options.Map` (`feed`,
-  `since`, `changesLimit`, `timeout`, etc.). Migrate remaining local methods
-  to `x/options.Map` and have the SQLite driver delegate to it.
 
 ## Integration Tests
 

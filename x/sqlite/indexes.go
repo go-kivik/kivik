@@ -15,10 +15,15 @@ package sqlite
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/x/mango"
 )
+
+func mangoIndexName(dbName, ddoc, indexName string) string {
+	return strconv.Quote("idx_" + tablePrefix + dbName + "$mango_" + md5sumString(ddoc + "/" + indexName)[:8])
+}
 
 // GetIndexes returns the list of all indexes in the database.
 func (d *db) GetIndexes(ctx context.Context, _ driver.Options) ([]driver.Index, error) {

@@ -89,6 +89,12 @@ var schema = []string{
 		id INTEGER PRIMARY KEY CHECK (id = 1),
 		security TEXT NOT NULL DEFAULT '{}'
 	)`,
+	`CREATE TABLE {{ .MangoIndexes }} (
+		ddoc TEXT NOT NULL,
+		name TEXT NOT NULL,
+		index_def TEXT NOT NULL,
+		UNIQUE(ddoc, name)
+	)`,
 }
 
 var viewSchema = []string{
@@ -105,6 +111,7 @@ var viewSchema = []string{
 }
 
 var destroySchema = []string{
+	`DROP TABLE {{ .MangoIndexes }}`,
 	`DROP TABLE {{ .Security }}`,
 	`DROP TABLE {{ .Design }}`,
 	`DROP TABLE {{ .AttachmentsBridge }}`,

@@ -53,6 +53,7 @@ func (t *tmplFuncs) Attachments() string       { return t.tableName("$attachment
 func (t *tmplFuncs) AttachmentsBridge() string { return t.tableName("$attachments_bridge") }
 func (t *tmplFuncs) Design() string            { return t.tableName("$design") }
 func (t *tmplFuncs) Security() string          { return t.tableName("$security") }
+func (t *tmplFuncs) MangoIndexes() string      { return t.tableName("$mango_indexes") }
 func (t *tmplFuncs) IndexKey() string          { return t.indexName("$key") }
 func (t *tmplFuncs) IndexParent() string       { return t.indexName("$parent") }
 

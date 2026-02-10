@@ -16,7 +16,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"regexp"
@@ -93,7 +92,7 @@ func validateDBName(name string) error {
 		return nil
 	default:
 		if !validDBNameRE.MatchString(name) {
-			return &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid database name: %s", name)}
+			return &internal.Error{Status: http.StatusBadRequest, Message: "invalid database name: " + name}
 		}
 	}
 	return nil

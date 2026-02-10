@@ -215,7 +215,7 @@ func Test_revsInfo_revs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := []string{}
+			got := make([]string, 0, len(tt.want))
 			for _, r := range tt.ri.revs() {
 				got = append(got, r.String())
 			}

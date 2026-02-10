@@ -43,7 +43,7 @@ func TestAttachmentsIterator(t *testing.T) {
 		},
 	}
 
-	ids := []string{}
+	ids := make([]string, 0, len(want))
 	for att, err := range atts.Iterator() {
 		if err != nil {
 			t.Fatalf("Unexpected error: %s", err)

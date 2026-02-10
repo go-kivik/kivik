@@ -15,6 +15,7 @@ package mockdb
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/go-kivik/kivik/v4/driver"
 )
@@ -239,16 +240,17 @@ const (
 
 func dbStringer(methodName string, e *commonExpectation, flags int, opts []string, rets []string) string {
 	msg := fmt.Sprintf("call to DB(%s#%d).%s()", e.db.name, e.db.id, methodName)
-	var extra string
+	parts := make([]string, 0, len(opts)+len(rets)+1)
 	for _, c := range opts {
-		extra += "\n\t- " + c
+		parts = append(parts, "\n\t- "+c)
 	}
 	if flags&withOptions > 0 {
-		extra += optionsString(e.options)
+		parts = append(parts, optionsString(e.options))
 	}
 	for _, c := range rets {
-		extra += "\n\t- " + c
+		parts = append(parts, "\n\t- "+c)
 	}
+	extra := strings.Join(parts, "")
 	extra += delayString(e.delay)
 	extra += errorString(e.err)
 	if extra != "" {

@@ -42,7 +42,7 @@ func TestDBUpdatesIterator(t *testing.T) {
 		},
 	})
 
-	ids := []string{}
+	ids := make([]string, 0, len(want))
 	for update, err := range updates.Iterator() {
 		if err != nil {
 			t.Fatalf("Unexpected error: %s", err)

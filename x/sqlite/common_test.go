@@ -95,6 +95,7 @@ func (o multiOptions) Apply(t any) {
 // newDB creates a new driver.DB instance backed by an in-memory SQLite database,
 // and registers a cleanup function to close the database when the test is done.
 func newDB(t *testing.T) *testDB {
+	t.Helper()
 	var dsn string
 	if os.Getenv("KEEP_TEST_DB") != "" {
 		file, err := os.CreateTemp("", "kivik-sqlite-test-*.db")

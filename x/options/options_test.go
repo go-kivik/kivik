@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"gitlab.com/flimzy/testy"
@@ -1139,6 +1140,53 @@ func TestViewOptions(t *testing.T) {
 		}
 		if d := cmp.Diff(tt.want, got, cmp.AllowUnexported(ViewOptions{}, PaginationOptions{})); d != "" {
 			t.Errorf("Unexpected result:\n%s", d)
+		}
+	})
+}
+
+func TestTimeout(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		input      Map
+		want       time.Duration
+		wantErr    string
+		wantStatus int
+	}
+
+	tests := testy.NewTable()
+
+	tests.Add("unset", test{
+		input: Map{},
+		want:  0,
+	})
+	tests.Add("valid int", test{
+		input: Map{"timeout": 5000},
+		want:  5000 * time.Millisecond,
+	})
+	tests.Add("valid string", test{
+		input: Map{"timeout": "3000"},
+		want:  3000 * time.Millisecond,
+	})
+	tests.Add("invalid string", test{
+		input:      Map{"timeout": "chicken"},
+		wantErr:    "invalid value for 'timeout': chicken",
+		wantStatus: http.StatusBadRequest,
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		got, err := tt.input.Timeout()
+		if !testy.ErrorMatches(tt.wantErr, err) {
+			t.Errorf("unexpected error: %v", err)
+		}
+		if status := kivik.HTTPStatus(err); status != tt.wantStatus {
+			t.Errorf("unexpected status: %d", status)
+		}
+		if err != nil {
+			return
+		}
+		if got != tt.want {
+			t.Errorf("got %v, want %v", got, tt.want)
 		}
 	})
 }

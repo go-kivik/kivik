@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
@@ -191,6 +192,20 @@ func (o Map) Feed() (string, error) {
 		return feed, nil
 	}
 	return "", &internal.Error{Status: http.StatusBadRequest, Message: "supported `feed` types: normal, longpoll, continuous"}
+}
+
+// Timeout returns the timeout option as a time.Duration. The value is
+// interpreted as milliseconds.
+func (o Map) Timeout() (time.Duration, error) {
+	in, ok := o["timeout"]
+	if !ok {
+		return 0, nil
+	}
+	ms, err := toUint64(in, "invalid value for 'timeout'")
+	if err != nil {
+		return 0, err
+	}
+	return time.Duration(ms) * time.Millisecond, nil
 }
 
 // Since returns true if the value is "now", otherwise it returns the sequence

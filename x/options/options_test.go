@@ -27,6 +27,57 @@ import (
 	"github.com/go-kivik/kivik/v4/int/mock"
 )
 
+func TestFeed(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		input      Map
+		want       string
+		wantErr    string
+		wantStatus int
+	}
+
+	tests := testy.NewTable()
+
+	tests.Add("default", test{
+		input: Map{},
+		want:  FeedNormal,
+	})
+	tests.Add("normal", test{
+		input: Map{"feed": FeedNormal},
+		want:  FeedNormal,
+	})
+	tests.Add("longpoll", test{
+		input: Map{"feed": FeedLongpoll},
+		want:  FeedLongpoll,
+	})
+	tests.Add("continuous", test{
+		input: Map{"feed": FeedContinuous},
+		want:  FeedContinuous,
+	})
+	tests.Add("invalid", test{
+		input:      Map{"feed": "chicken"},
+		wantErr:    "supported `feed` types: normal, longpoll, continuous",
+		wantStatus: http.StatusBadRequest,
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		got, err := tt.input.Feed()
+		if !testy.ErrorMatches(tt.wantErr, err) {
+			t.Errorf("unexpected error: %v", err)
+		}
+		if status := kivik.HTTPStatus(err); status != tt.wantStatus {
+			t.Errorf("unexpected status: %d", status)
+		}
+		if err != nil {
+			return
+		}
+		if got != tt.want {
+			t.Errorf("got %q, want %q", got, tt.want)
+		}
+	})
+}
+
 func TestViewOptions(t *testing.T) {
 	type test struct {
 		options    driver.Options

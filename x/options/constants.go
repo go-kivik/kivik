@@ -14,8 +14,9 @@ package options
 
 // Supported Changes feed modes.
 const (
-	FeedNormal   = "normal"
-	FeedLongpoll = "longpoll"
+	FeedNormal     = "normal"
+	FeedLongpoll   = "longpoll"
+	FeedContinuous = "continuous"
 )
 
 // System defined views.

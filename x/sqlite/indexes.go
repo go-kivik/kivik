@@ -126,9 +126,25 @@ func (d *db) CreateIndex(ctx context.Context, ddoc, name string, index any, _ dr
 
 // DeleteIndex deletes a Mango index.
 func (d *db) DeleteIndex(ctx context.Context, ddoc, name string, _ driver.Options) error {
-	_, err := d.db.ExecContext(ctx, d.query(`
+	tx, err := d.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	indexName := mangoIndexName(d.name, ddoc, name)
+	_, err = tx.ExecContext(ctx, "DROP INDEX IF EXISTS "+indexName)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.ExecContext(ctx, d.query(`
 		DELETE FROM {{ .MangoIndexes }}
 		WHERE ddoc = $1 AND name = $2
 	`), ddoc, name)
-	return err
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }

@@ -19,10 +19,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"gitlab.com/flimzy/testy"
 
-	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/int/mock"
 )
 
@@ -32,27 +30,45 @@ func TestDeleteIndex(t *testing.T) {
 		db      *testDB
 		ddoc    string
 		name    string
-		want    []driver.Index
 		wantErr string
+		check   func()
 	}
 
 	tests := testy.NewTable()
-	tests.Add("delete existing index", func(t *testing.T) interface{} {
+	tests.Add("drops the real SQLite index", func(t *testing.T) any {
 		db := newDB(t)
 		err := db.CreateIndex(context.Background(), "_design/my-index", "my-index", json.RawMessage(`{"fields":["name"]}`), mock.NilOption)
 		if err != nil {
-			t.Fatalf("CreateIndex failed: %s", err)
+			t.Fatalf("creating index: %s", err)
 		}
+
 		return test{
 			db:   db,
 			ddoc: "_design/my-index",
 			name: "my-index",
-			want: []driver.Index{
-				{
-					Name:       "_all_docs",
-					Type:       "special",
-					Definition: map[string]interface{}{"fields": []map[string]string{{"_id": "asc"}}},
-				},
+			check: func() {
+				rows, err := db.underlying().Query(
+					`SELECT name FROM sqlite_master WHERE type='index' AND name LIKE 'idx_kivik$test$mango_%'`,
+				)
+				if err != nil {
+					t.Fatalf("querying sqlite_master: %s", err)
+				}
+				defer rows.Close()
+
+				var names []string
+				for rows.Next() {
+					var name string
+					if err := rows.Scan(&name); err != nil {
+						t.Fatalf("scanning index name: %s", err)
+					}
+					names = append(names, name)
+				}
+				if err := rows.Err(); err != nil {
+					t.Fatalf("iterating rows: %s", err)
+				}
+				if len(names) != 0 {
+					t.Errorf("expected 0 SQLite indexes matching idx_kivik$test$mango_*, got %d: %v", len(names), names)
+				}
 			},
 		}
 	})
@@ -67,15 +83,8 @@ func TestDeleteIndex(t *testing.T) {
 		if !testy.ErrorMatchesRE(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %s", err)
 		}
-		if err != nil {
-			return
-		}
-		got, err := db.GetIndexes(context.Background(), mock.NilOption)
-		if err != nil {
-			t.Fatalf("GetIndexes failed: %s", err)
-		}
-		if d := cmp.Diff(tt.want, got); d != "" {
-			t.Errorf("Unexpected indexes:\n%s", d)
+		if tt.check != nil {
+			tt.check()
 		}
 	})
 }

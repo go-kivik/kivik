@@ -194,6 +194,18 @@ func (o Map) Feed() (string, error) {
 	return "", &internal.Error{Status: http.StatusBadRequest, Message: "supported `feed` types: normal, longpoll, continuous"}
 }
 
+// Style returns the style option. Unrecognized values default to
+// [StyleMainOnly].
+func (o Map) Style() string {
+	style, _ := o["style"].(string)
+	switch style {
+	case StyleAllDocs:
+		return StyleAllDocs
+	default:
+		return StyleMainOnly
+	}
+}
+
 // Timeout returns the timeout option as a time.Duration. The value is
 // interpreted as milliseconds.
 func (o Map) Timeout() (time.Duration, error) {

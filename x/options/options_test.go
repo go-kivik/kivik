@@ -1190,3 +1190,38 @@ func TestTimeout(t *testing.T) {
 		}
 	})
 }
+
+func TestStyle(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		input Map
+		want  string
+	}
+
+	tests := testy.NewTable()
+
+	tests.Add("unset", test{
+		input: Map{},
+		want:  StyleMainOnly,
+	})
+	tests.Add("main_only", test{
+		input: Map{"style": "main_only"},
+		want:  StyleMainOnly,
+	})
+	tests.Add("all_docs", test{
+		input: Map{"style": "all_docs"},
+		want:  StyleAllDocs,
+	})
+	tests.Add("unrecognized", test{
+		input: Map{"style": "chicken"},
+		want:  StyleMainOnly,
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		got := tt.input.Style()
+		if got != tt.want {
+			t.Errorf("got %q, want %q", got, tt.want)
+		}
+	})
+}

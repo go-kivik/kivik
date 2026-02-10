@@ -25,3 +25,9 @@ const (
 	ViewLocalDocs  = "_local_docs"
 	ViewDesignDocs = "_design_docs"
 )
+
+// Changes feed style options.
+const (
+	StyleMainOnly = "main_only"
+	StyleAllDocs  = "all_docs"
+)

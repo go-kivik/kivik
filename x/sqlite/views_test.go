@@ -761,6 +761,7 @@ func TestDBAllDocs(t *testing.T) {
 }
 
 func readRows(t *testing.T, rows driver.Rows) []rowResult {
+	t.Helper()
 	// iterate over rows
 	var got []rowResult
 

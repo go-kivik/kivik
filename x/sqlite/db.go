@@ -16,9 +16,9 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
@@ -94,7 +94,7 @@ func (d *db) Stats(ctx context.Context) (*driver.DBStats, error) {
 		Name:         d.name,
 		DocCount:     docCount,
 		DeletedCount: deletedCount,
-		UpdateSeq:    fmt.Sprintf("%d", lastSeq),
+		UpdateSeq:    strconv.FormatUint(lastSeq, 10),
 	}, nil
 }
 
@@ -140,7 +140,7 @@ func (d *db) errDatabaseNotFound(err error) error {
 	if errIsNoSuchTable(err) {
 		return &internal.Error{
 			Status:  http.StatusNotFound,
-			Message: fmt.Sprintf("database not found: %s", d.name),
+			Message: "database not found: " + d.name,
 		}
 	}
 	return err

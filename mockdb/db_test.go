@@ -2809,7 +2809,7 @@ func TestBulkDocs(t *testing.T) {
 			if !testy.ErrorMatches("", err) {
 				t.Errorf("Unexpected error: %s", err)
 			}
-			ids := []string{}
+			ids := make([]string, 0, len(rows))
 			for _, row := range rows {
 				ids = append(ids, row.ID)
 			}

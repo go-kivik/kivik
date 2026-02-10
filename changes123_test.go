@@ -42,7 +42,7 @@ func TestChangesIterator(t *testing.T) {
 		},
 	})
 
-	ids := []string{}
+	ids := make([]string, 0, len(want))
 	for change, err := range changes.Iterator() {
 		if err != nil {
 			t.Fatalf("Unexpected error: %s", err)

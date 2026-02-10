@@ -23,6 +23,11 @@ enable = [
 ]
 
 [linters.settings]
+[linters.settings.revive]
+[[linters.settings.revive.rules]]
+name = 'var-naming'
+disabled = true
+
 [linters.settings.goheader]
 template = """
 Licensed under the Apache License, Version 2.0 (the \"License\"); you may not
@@ -56,7 +61,7 @@ linters = [
   'thelper'
 ]
 text = 'test helper function should start'
-source = 'tests\.(Add|Run)\('
+source = 'tests\.(Add|AddFunc|Run)\('
 
 [[linters.exclusions.rules]]
 linters = [
@@ -64,6 +69,13 @@ linters = [
 ]
 text = 'test helper function should start'
 source = 'c\.Run'
+
+[[linters.exclusions.rules]]
+linters = [
+  'thelper'
+]
+text = 'test helper function should start'
+source = 'check.*func\(t \*testing\.T\)'
 
 [[linters.exclusions.rules]]
 linters = [

@@ -50,7 +50,7 @@ func TestResultSetIterator(t *testing.T) {
 	})
 
 	want := []string{"a", "b", "c"}
-	ids := []string{}
+	ids := make([]string, 0, len(want))
 
 	for row, err := range r.Iterator() {
 		if err != nil {
@@ -109,7 +109,7 @@ func TestResultSetNextIterator(t *testing.T) {
 	t.Parallel()
 	r := multiResultSet()
 
-	ids := []string{}
+	ids := make([]string, 0, 5)
 	for range r.NextIterator() {
 		for row, err := range r.Iterator() {
 			if err != nil {

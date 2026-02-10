@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/v4/x/mango"
 )
 
 // GetIndexes returns the list of all indexes in the database.
@@ -43,7 +44,7 @@ func (d *db) GetIndexes(ctx context.Context, _ driver.Options) ([]driver.Index, 
 			return nil, err
 		}
 
-		normalizedFields, err := normalizeIndexFields(indexDef)
+		normalizedFields, err := mango.NormalizeIndexFields(indexDef)
 		if err != nil {
 			return nil, err
 		}
@@ -95,32 +96,4 @@ func (d *db) DeleteIndex(ctx context.Context, ddoc, name string, _ driver.Option
 		WHERE ddoc = $1 AND name = $2
 	`), ddoc, name)
 	return err
-}
-
-// normalizeIndexFields parses a stored JSON index definition and expands
-// shorthand field names (e.g. "name") into the explicit {"name": "asc"} form
-// returned by GetIndexes.
-func normalizeIndexFields(indexDef string) ([]map[string]string, error) {
-	var def struct {
-		Fields []any `json:"fields"`
-	}
-	if err := json.Unmarshal([]byte(indexDef), &def); err != nil {
-		return nil, err
-	}
-
-	normalized := make([]map[string]string, 0, len(def.Fields))
-	for _, f := range def.Fields {
-		switch v := f.(type) {
-		case string:
-			normalized = append(normalized, map[string]string{v: "asc"})
-		case map[string]interface{}:
-			m := make(map[string]string)
-			for k, val := range v {
-				m[k] = val.(string)
-			}
-			normalized = append(normalized, m)
-		}
-	}
-
-	return normalized, nil
 }

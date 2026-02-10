@@ -34,6 +34,7 @@ func TestCreateIndex(t *testing.T) {
 		index   any
 		opts    driver.Options
 		wantErr string
+		check   func()
 	}
 
 	tests := testy.NewTable()
@@ -41,6 +42,39 @@ func TestCreateIndex(t *testing.T) {
 		ddoc:  "_design/my-index",
 		name:  "my-index",
 		index: json.RawMessage(`{"fields":["name"]}`),
+	})
+	tests.Add("creates a real SQLite index", func(t *testing.T) any {
+		db := newDB(t)
+		return test{
+			db:    db,
+			ddoc:  "_design/my-index",
+			name:  "my-index",
+			index: json.RawMessage(`{"fields":["name"]}`),
+			check: func() {
+				rows, err := db.underlying().Query(
+					`SELECT name FROM sqlite_master WHERE type='index' AND name LIKE 'idx_kivik$test$mango_%'`,
+				)
+				if err != nil {
+					t.Fatalf("querying sqlite_master: %s", err)
+				}
+				defer rows.Close()
+
+				var names []string
+				for rows.Next() {
+					var name string
+					if err := rows.Scan(&name); err != nil {
+						t.Fatalf("scanning index name: %s", err)
+					}
+					names = append(names, name)
+				}
+				if err := rows.Err(); err != nil {
+					t.Fatalf("iterating rows: %s", err)
+				}
+				if len(names) != 1 {
+					t.Errorf("expected 1 SQLite index matching idx_kivik$test$mango_*, got %d: %v", len(names), names)
+				}
+			},
+		}
 	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
@@ -56,6 +90,9 @@ func TestCreateIndex(t *testing.T) {
 		err := db.CreateIndex(context.Background(), tt.ddoc, tt.name, tt.index, opts)
 		if !testy.ErrorMatchesRE(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %s", err)
+		}
+		if tt.check != nil {
+			tt.check()
 		}
 	})
 }

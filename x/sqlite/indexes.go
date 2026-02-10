@@ -16,6 +16,7 @@ import (
 	"context"
 	"encoding/json"
 	"strconv"
+	"strings"
 
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/x/mango"
@@ -87,11 +88,40 @@ func (d *db) CreateIndex(ctx context.Context, ddoc, name string, index any, _ dr
 		}
 	}
 
-	_, err := d.db.ExecContext(ctx, d.query(`
+	fields, err := mango.ExtractIndexFields(indexDef)
+	if err != nil {
+		return err
+	}
+
+	columns := make([]string, 0, len(fields))
+	for _, field := range fields {
+		columns = append(columns, "json_extract(doc, '"+mango.FieldToJSONPath(field)+"')")
+	}
+
+	indexName := mangoIndexName(d.name, ddoc, name)
+	tableName := d.query("{{ .Docs }}")
+
+	tx, err := d.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	_, err = tx.ExecContext(ctx, d.query(`
 		INSERT INTO {{ .MangoIndexes }} (ddoc, name, index_def)
 		VALUES ($1, $2, $3)
 	`), ddoc, name, string(indexDef))
-	return err
+	if err != nil {
+		return err
+	}
+
+	createSQL := "CREATE INDEX IF NOT EXISTS " + indexName + " ON " + tableName + " (" + strings.Join(columns, ", ") + ")"
+	_, err = tx.ExecContext(ctx, createSQL)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 // DeleteIndex deletes a Mango index.

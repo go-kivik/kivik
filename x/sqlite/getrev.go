@@ -20,10 +20,11 @@ import (
 
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
+	"github.com/go-kivik/kivik/v4/x/options"
 )
 
-func (d *db) GetRev(ctx context.Context, id string, options driver.Options) (string, error) {
-	opts := newOpts(options)
+func (d *db) GetRev(ctx context.Context, id string, opts driver.Options) (string, error) {
+	o := options.New(opts)
 
 	var r revision
 
@@ -33,13 +34,13 @@ func (d *db) GetRev(ctx context.Context, id string, options driver.Options) (str
 	}
 	defer tx.Rollback()
 
-	if opts.rev() != "" {
-		r, err = parseRev(opts.rev())
+	if o.Rev() != "" {
+		r, err = parseRev(o.Rev())
 		if err != nil {
 			return "", err
 		}
 	}
-	_, r, err = d.getCoreDoc(ctx, d.db, id, r, opts.latest(), true)
+	_, r, err = d.getCoreDoc(ctx, d.db, id, r, o.Latest(), true)
 	if err != nil {
 		return "", err
 	}

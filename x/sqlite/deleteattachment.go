@@ -18,11 +18,12 @@ import (
 
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
+	"github.com/go-kivik/kivik/v4/x/options"
 )
 
-func (d *db) DeleteAttachment(ctx context.Context, docID, filename string, options driver.Options) (string, error) {
-	opts := newOpts(options)
-	if opts.rev() == "" {
+func (d *db) DeleteAttachment(ctx context.Context, docID, filename string, opts driver.Options) (string, error) {
+	o := options.New(opts)
+	if o.Rev() == "" {
 		// Special case: No rev for DELETE is always a conflict, since you can't
 		// delete a doc without a rev.
 		return "", &internal.Error{Status: http.StatusConflict, Message: "document update conflict"}
@@ -38,7 +39,7 @@ func (d *db) DeleteAttachment(ctx context.Context, docID, filename string, optio
 		Attachments: map[string]attachment{},
 	}
 
-	curRev, err := parseRev(opts.rev())
+	curRev, err := parseRev(o.Rev())
 	if err != nil {
 		return "", err
 	}

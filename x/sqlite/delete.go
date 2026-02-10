@@ -18,12 +18,12 @@ import (
 
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
+	"github.com/go-kivik/kivik/v4/x/options"
 )
 
-func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (string, error) {
-	opts := newOpts(options)
-	options.Apply(opts)
-	optRev := opts.rev()
+func (d *db) Delete(ctx context.Context, docID string, opts driver.Options) (string, error) {
+	o := options.New(opts)
+	optRev := o.Rev()
 	if optRev == "" {
 		// Special case: No rev for DELETE is always a conflict, since you can't
 		// delete a doc without a rev.
@@ -41,7 +41,7 @@ func (d *db) Delete(ctx context.Context, docID string, options driver.Options) (
 	}
 	defer tx.Rollback()
 
-	curRev, err := parseRev(opts.rev())
+	curRev, err := parseRev(o.Rev())
 	if err != nil {
 		return "", err
 	}

@@ -23,9 +23,10 @@ import (
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
+	"github.com/go-kivik/kivik/v4/x/options"
 )
 
-func (d *db) Put(ctx context.Context, docID string, doc any, options driver.Options) (string, error) {
+func (d *db) Put(ctx context.Context, docID string, doc any, opts driver.Options) (string, error) {
 	if len(docID) > 0 && docID[0] == '_' && !strings.HasPrefix(docID, "_design/") && !strings.HasPrefix(docID, "_local/") {
 		return "", &internal.Error{Status: http.StatusBadRequest, Message: "only reserved document ids may start with underscore"}
 	}
@@ -33,9 +34,9 @@ func (d *db) Put(ctx context.Context, docID string, doc any, options driver.Opti
 	if err != nil {
 		return "", err
 	}
-	opts := newOpts(options)
-	optsRev := opts.rev()
-	newEdits := opts.newEdits()
+	o := options.New(opts)
+	optsRev := o.Rev()
+	newEdits := o.NewEdits()
 	data, err := prepareDoc(docID, doc)
 	if err != nil {
 		return "", err

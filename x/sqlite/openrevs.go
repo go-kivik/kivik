@@ -23,15 +23,16 @@ import (
 
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
+	"github.com/go-kivik/kivik/v4/x/options"
 )
 
-func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, options driver.Options) (driver.Rows, error) {
-	opts := newOpts(options)
-	attachments, err := opts.attachments()
+func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, opts driver.Options) (driver.Rows, error) {
+	o := options.New(opts)
+	attachments, err := o.Attachments()
 	if err != nil {
 		return nil, err
 	}
-	conflicts, err := opts.conflicts()
+	conflicts, err := o.Conflicts()
 	if err != nil {
 		return nil, err
 	}
@@ -40,8 +41,8 @@ func (d *db) OpenRevs(ctx context.Context, docID string, revs []string, options 
 	args[0] = docID
 	args[1] = len(revs) == 0 // open_revs=[]
 	args[2] = false
-	args[3] = opts.latest()
-	args[4] = opts.revs()
+	args[3] = o.Latest()
+	args[4] = o.Revs()
 	args[5] = attachments
 	if len(revs) == 1 && revs[0] == "all" {
 		args[2] = true

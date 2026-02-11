@@ -330,14 +330,25 @@ func TestFind(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("use_index with sort, wrong index", func(t *testing.T) any {
+		d := newDB(t)
+		err := d.CreateIndex(context.Background(), "_design/nameIdx", "byName", json.RawMessage(`{"fields":["name"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		err = d.CreateIndex(context.Background(), "_design/ageIdx", "byAge", json.RawMessage(`{"fields":["age"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		d.tPut("doc1", map[string]any{"name": "Alice", "age": 30})
 
-	/*
-		TODO:
-		- stable
-		- update
-		- stale
-		- execution_stats -- Not currently supported by Kivik
-	*/
+		return test{
+			db:         d,
+			query:      `{"selector":{},"sort":["name"],"use_index":"_design/ageIdx"}`,
+			wantStatus: http.StatusBadRequest,
+			wantErr:    "no index exists for this sort, try indexing by the sort fields",
+		}
+	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()

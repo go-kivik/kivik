@@ -34,27 +34,18 @@ func (d *db) Find(ctx context.Context, query any, _ driver.Options) (driver.Rows
 
 	var sortOrderBy string
 	if sortFields := vopts.SortFields(); len(sortFields) > 0 {
-		sortOrderBy, err = d.sortOrderByFromIndex(ctx, sortFields)
+		sortOrderBy, err = d.sortOrderByFromIndex(ctx, sortFields, vopts.UseIndexDdoc(), vopts.UseIndexName())
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	if ddoc := vopts.UseIndexDdoc(); ddoc != "" {
+		where, args := mangoIndexWhere(ddoc, vopts.UseIndexName())
 		var count int
-		indexName := vopts.UseIndexName()
-		if indexName != "" {
-			if err := d.db.QueryRowContext(ctx, d.query(`
-				SELECT COUNT(*) FROM {{ .MangoIndexes }} WHERE ddoc = $1 AND name = $2
-			`), ddoc, indexName).Scan(&count); err != nil {
-				return nil, err
-			}
-		} else {
-			if err := d.db.QueryRowContext(ctx, d.query(`
-				SELECT COUNT(*) FROM {{ .MangoIndexes }} WHERE ddoc = $1
-			`), ddoc).Scan(&count); err != nil {
-				return nil, err
-			}
+		if err := d.db.QueryRowContext(ctx, d.query(`
+			SELECT COUNT(*) FROM {{ .MangoIndexes }} WHERE `)+where, args...).Scan(&count); err != nil {
+			return nil, err
 		}
 		if count == 0 {
 			return nil, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("index %q not found", ddoc)}
@@ -73,10 +64,14 @@ func (d *db) Find(ctx context.Context, query any, _ driver.Options) (driver.Rows
 	return d.queryBuiltinView(ctx, vopts, selector, sortOrderBy)
 }
 
-func (d *db) sortOrderByFromIndex(ctx context.Context, sortFields []options.SortField) (string, error) {
-	rows, err := d.db.QueryContext(ctx, d.query(`
-		SELECT index_def FROM {{ .MangoIndexes }}
-	`))
+func (d *db) sortOrderByFromIndex(ctx context.Context, sortFields []options.SortField, useIndexDdoc, useIndexName string) (string, error) {
+	q := d.query(`SELECT index_def FROM {{ .MangoIndexes }}`)
+	var args []any
+	if where, whereArgs := mangoIndexWhere(useIndexDdoc, useIndexName); where != "" {
+		q += " WHERE " + where
+		args = whereArgs
+	}
+	rows, err := d.db.QueryContext(ctx, q, args...)
 	if err != nil {
 		return "", err
 	}
@@ -120,6 +115,18 @@ func coversSort(indexFields []string, sortFields []options.SortField) bool {
 		}
 	}
 	return true
+}
+
+// mangoIndexWhere builds a WHERE clause and args for querying the mango
+// indexes table, filtering by ddoc and optionally by name.
+func mangoIndexWhere(ddoc, name string) (string, []any) {
+	if ddoc == "" {
+		return "", nil
+	}
+	if name != "" {
+		return "ddoc = $1 AND name = $2", []any{ddoc, name}
+	}
+	return "ddoc = $1", []any{ddoc}
 }
 
 // selectorToSQL translates a Mango selector JSON object into parameterized SQL

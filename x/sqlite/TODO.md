@@ -25,14 +25,6 @@ These return a bare `"not implemented"` error:
 
 ## Bugs
 
-- [ ] **Single quotes in JSON field names break queries**. `selectorToSQL()`,
-  `fieldCondition()`, `inequalityCondition()` (`find.go`), and `CreateIndex()`
-  (`indexes.go`) embed `mango.FieldToJSONPath()` output directly into
-  single-quoted SQL string literals. A field name containing `'` (e.g.
-  `foo'bar`) causes a syntax error. Not SQL injection — the query fails before
-  executing — but prevents legitimate use of such field names. Fix by switching
-  to double-quoted path strings or parameterizing the path argument.
-
 - [ ] **Potential panic on empty json.RawMessage** (`find.go`).
   `fieldCondition()` accesses `val[0]` without a length check. An empty
   `json.RawMessage` would panic. Unlikely in practice since `json.Unmarshal`

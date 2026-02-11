@@ -95,7 +95,7 @@ func (d *db) CreateIndex(ctx context.Context, ddoc, name string, index any, _ dr
 
 	columns := make([]string, 0, len(fields))
 	for _, field := range fields {
-		columns = append(columns, "json_extract(doc, '"+mango.FieldToJSONPath(field)+"')")
+		columns = append(columns, jsonExtract("doc", mango.FieldToJSONPath(field)))
 	}
 
 	indexName := mangoIndexName(d.name, ddoc, name)

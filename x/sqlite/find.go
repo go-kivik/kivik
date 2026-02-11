@@ -93,7 +93,7 @@ func (d *db) sortOrderByFromIndex(ctx context.Context, sortFields []options.Sort
 				if sf.Desc {
 					dir = "DESC"
 				}
-				parts[i] = "json_extract(view.doc, '" + mango.FieldToJSONPath(sf.Field) + "') " + dir
+				parts[i] = jsonExtract("view.doc", mango.FieldToJSONPath(sf.Field)) + " " + dir
 			}
 			return "ORDER BY " + strings.Join(parts, ", "), nil
 		}
@@ -200,8 +200,16 @@ func combineSelectors(val json.RawMessage, sep string, wrap bool, argOffset int)
 	return []string{joined}, args
 }
 
+func jsonExtract(col, jsonPath string) string {
+	return `json_extract(` + col + `, "` + jsonPath + `")`
+}
+
+func jsonType(col, jsonPath string) string {
+	return `json_type(` + col + `, "` + jsonPath + `")`
+}
+
 func fieldCondition(jsonPath string, val json.RawMessage, argOffset int) (string, []any) {
-	expr := "json_extract(doc.doc, '" + jsonPath + "')"
+	expr := jsonExtract("doc.doc", jsonPath)
 	if val[0] != '{' {
 		return comparisonCondition(expr, "=", val, argOffset)
 	}
@@ -265,7 +273,7 @@ func inequalityCondition(expr, jsonPath, op string, val json.RawMessage, argOffs
 	}
 
 	decoded := decodeValue(val)
-	typeExpr := "json_type(doc.doc, '" + jsonPath + "')"
+	typeExpr := jsonType("doc.doc", jsonPath)
 
 	var typeGuard string
 	switch decoded.(type) {

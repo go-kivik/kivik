@@ -183,17 +183,12 @@ func TestFind(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 		wantErr:    "invalid value for 'bookmark': moo",
 	})
-	tests.Add("sort", func(t *testing.T) any {
+	tests.Add("sort without matching index", func(t *testing.T) any {
 		d := newDB(t)
-		// revA := d.tPut("a", map[string]interface{}{"name": "Bob"})
-		// revB := d.tPut("b", map[string]interface{}{"name": "Alice"})
-		// revC := d.tPut("c", map[string]interface{}{"name": "Charlie"})
-		// revD := d.tPut("d", map[string]interface{}{"name": "Dick"})
 
 		return test{
-			db:    d,
-			query: `{"selector":{},"sort":["name"]}`,
-			// TODO: Support sorting
+			db:         d,
+			query:      `{"selector":{},"sort":["name"]}`,
 			wantStatus: http.StatusBadRequest,
 			wantErr:    "no index exists for this sort, try indexing by the sort fields",
 		}
@@ -299,7 +294,6 @@ func TestFind(t *testing.T) {
 
 	/*
 		TODO:
-		- sort
 		- stable
 		- update
 		- stale

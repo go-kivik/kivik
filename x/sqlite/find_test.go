@@ -238,6 +238,21 @@ func TestFind(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("sort mixed directions rejects without matching index", func(t *testing.T) any {
+		d := newDB(t)
+		err := d.CreateIndex(context.Background(), "", "", json.RawMessage(`{"fields":["a","b"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		d.tPut("doc1", map[string]string{"a": "x", "b": "y"})
+
+		return test{
+			db:         d,
+			query:      `{"selector":{},"sort":[{"a":"asc"},{"b":"desc"}]}`,
+			wantStatus: http.StatusBadRequest,
+			wantErr:    "no index exists for this sort, try indexing by the sort fields",
+		}
+	})
 	tests.Add("sort, non-array", test{
 		query:      `{"selector":{},"sort":"x"}`,
 		wantStatus: http.StatusBadRequest,

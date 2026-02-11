@@ -94,7 +94,7 @@ func coversSort(indexFields []string, sortFields []options.SortField) bool {
 		return false
 	}
 	for i, sf := range sortFields {
-		if indexFields[i] != sf.Field {
+		if indexFields[i] != sf.Field || sf.Desc != sortFields[0].Desc {
 			return false
 		}
 	}

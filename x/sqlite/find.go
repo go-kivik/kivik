@@ -16,10 +16,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"sort"
 	"strings"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	internal "github.com/go-kivik/kivik/v4/int/errors"
 	"github.com/go-kivik/kivik/v4/x/mango"
 	"github.com/go-kivik/kivik/v4/x/options"
 )
@@ -28,6 +30,14 @@ func (d *db) Find(ctx context.Context, query any, _ driver.Options) (driver.Rows
 	vopts, err := options.FindOptions(query)
 	if err != nil {
 		return nil, err
+	}
+
+	var sortOrderBy string
+	if sortFields := vopts.SortFields(); len(sortFields) > 0 {
+		sortOrderBy, err = d.sortOrderByFromIndex(ctx, sortFields)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	var selector json.RawMessage
@@ -39,7 +49,52 @@ func (d *db) Find(ctx context.Context, query any, _ driver.Options) (driver.Rows
 		selector = raw.Selector
 	}
 
-	return d.queryBuiltinView(ctx, vopts, selector)
+	return d.queryBuiltinView(ctx, vopts, selector, sortOrderBy)
+}
+
+func (d *db) sortOrderByFromIndex(ctx context.Context, sortFields []string) (string, error) {
+	rows, err := d.db.QueryContext(ctx, d.query(`
+		SELECT index_def FROM {{ .MangoIndexes }}
+	`))
+	if err != nil {
+		return "", err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var indexDef string
+		if err := rows.Scan(&indexDef); err != nil {
+			return "", err
+		}
+		idxFields, err := mango.ExtractIndexFields([]byte(indexDef))
+		if err != nil {
+			continue
+		}
+		if coversSort(idxFields, sortFields) {
+			parts := make([]string, len(sortFields))
+			for i, f := range sortFields {
+				parts[i] = "json_extract(view.doc, '" + mango.FieldToJSONPath(f) + "') ASC"
+			}
+			return "ORDER BY " + strings.Join(parts, ", "), nil
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return "", err
+	}
+
+	return "", &internal.Error{Status: http.StatusBadRequest, Message: "no index exists for this sort, try indexing by the sort fields"}
+}
+
+func coversSort(indexFields, sortFields []string) bool {
+	if len(sortFields) > len(indexFields) {
+		return false
+	}
+	for i, sf := range sortFields {
+		if indexFields[i] != sf {
+			return false
+		}
+	}
+	return true
 }
 
 // selectorToSQL translates a Mango selector JSON object into parameterized SQL

@@ -15,8 +15,10 @@ package sqlite
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -196,6 +198,26 @@ func TestFind(t *testing.T) {
 			wantErr:    "no index exists for this sort, try indexing by the sort fields",
 		}
 	})
+	tests.Add("sort ascending with index", func(t *testing.T) any {
+		d := newDB(t)
+		err := d.CreateIndex(context.Background(), "_design/idx", "byName", json.RawMessage(`{"fields":["name"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		revAlice := d.tPut("alice", map[string]string{"name": "Charlie"})
+		revBob := d.tPut("bob", map[string]string{"name": "Alice"})
+		revCharlie := d.tPut("charlie", map[string]string{"name": "Bob"})
+
+		return test{
+			db:    d,
+			query: `{"selector":{},"sort":["name"]}`,
+			want: []rowResult{
+				{Doc: `{"_id":"bob","_rev":"` + revBob + `","name":"Alice"}`},
+				{Doc: `{"_id":"charlie","_rev":"` + revCharlie + `","name":"Bob"}`},
+				{Doc: `{"_id":"alice","_rev":"` + revAlice + `","name":"Charlie"}`},
+			},
+		}
+	})
 	tests.Add("sort, non-array", test{
 		query:      `{"selector":{},"sort":"x"}`,
 		wantStatus: http.StatusBadRequest,
@@ -263,6 +285,66 @@ func TestFind(t *testing.T) {
 		}
 		checkRows(t, rows, tt.want)
 	})
+}
+
+func TestFindUsesIndex(t *testing.T) {
+	t.Parallel()
+	d := newDB(t)
+
+	err := d.CreateIndex(context.Background(), "_design/idx", "idx", json.RawMessage(`{"fields":["name"]}`), mock.NilOption)
+	if err != nil {
+		t.Fatalf("CreateIndex failed: %s", err)
+	}
+
+	for i := 0; i < 100; i++ {
+		id := fmt.Sprintf("doc%03d", i)
+		_ = d.tPut(id, map[string]string{"name": fmt.Sprintf("Name%03d", i)})
+	}
+
+	underlying := d.underlying()
+	tableName := `"kivik$test"`
+	indexName := mangoIndexName("test", "_design/idx", "idx")
+
+	// Verify the index exists.
+	var count int
+	err = underlying.QueryRow(`SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name=` + indexName).Scan(&count)
+	if err != nil {
+		t.Fatalf("Failed to query sqlite_master: %s", err)
+	}
+	if count != 1 {
+		t.Fatalf("Expected 1 index, got %d", count)
+	}
+
+	// Run EXPLAIN QUERY PLAN on a query that mirrors what leavesCTE generates.
+	query := `EXPLAIN QUERY PLAN
+		SELECT *
+		FROM ` + tableName + ` AS doc
+		WHERE json_extract(doc.doc, '$.name') = 'Name050'`
+
+	rows, err := underlying.Query(query)
+	if err != nil {
+		t.Fatalf("EXPLAIN QUERY PLAN failed: %s", err)
+	}
+	defer rows.Close()
+
+	var found bool
+	for rows.Next() {
+		var id, parent, notused int
+		var detail string
+		if err := rows.Scan(&id, &parent, &notused, &detail); err != nil {
+			t.Fatalf("Scan failed: %s", err)
+		}
+		t.Logf("EXPLAIN: %s", detail)
+		if strings.Contains(detail, "USING INDEX") && strings.Contains(detail, "mango") {
+			found = true
+		}
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+	if !found {
+		t.Error("Expression index was not used by query plan")
+	}
 }
 
 func Test_selectorToSQL(t *testing.T) {

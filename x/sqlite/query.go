@@ -50,7 +50,7 @@ func (d *db) Query(ctx context.Context, ddoc, view string, opts driver.Options) 
 	}
 
 	if isBuiltinView(ddoc) {
-		return d.queryBuiltinView(ctx, vopts, nil)
+		return d.queryBuiltinView(ctx, vopts, nil, "")
 	}
 
 	// Normalize the ddoc and view values

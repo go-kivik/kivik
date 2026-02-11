@@ -60,6 +60,7 @@ func (d *db) queryBuiltinView(
 	ctx context.Context,
 	vopts *options.ViewOptions,
 	selector json.RawMessage,
+	sortOrderBy string,
 ) (driver.Rows, error) {
 	args := []any{vopts.IncludeDocs(), vopts.Conflicts(), vopts.UpdateSeq(), vopts.Attachments(), vopts.Bookmark()}
 
@@ -178,7 +179,7 @@ func (d *db) queryBuiltinView(
 			data
 		FROM main
 		%[4]s -- bookmark filtering
-	`), vopts.BuildOrderBy(), strings.Join(where, " AND "), vopts.BuildLimit(), vopts.BookmarkWhere())
+	`), orderByClause(vopts, sortOrderBy), strings.Join(where, " AND "), vopts.BuildLimit(), vopts.BookmarkWhere())
 	results, err := d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {
 		return nil, d.errDatabaseNotFound(err)
@@ -243,6 +244,13 @@ func readFirstRow(results *sql.Rows, vopts *options.ViewOptions) (*viewMetadata,
 		meta.lastSeq = *lastSeq
 	}
 	return &meta, nil
+}
+
+func orderByClause(vopts *options.ViewOptions, sortOrderBy string) string {
+	if sortOrderBy != "" {
+		return sortOrderBy
+	}
+	return vopts.BuildOrderBy()
 }
 
 func descendingToDirection(descending bool) string {

@@ -313,6 +313,23 @@ func TestFind(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 		wantErr:    `index "_design/nonexistent" not found`,
 	})
+	tests.Add("use_index, array form", func(t *testing.T) any {
+		d := newDB(t)
+		err := d.CreateIndex(context.Background(), "_design/myidx", "byName", json.RawMessage(`{"fields":["name"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		revBob := d.tPut("bob", map[string]string{"name": "Bob"})
+		_ = d.tPut("alice", map[string]string{"name": "Alice"})
+
+		return test{
+			db:    d,
+			query: `{"selector":{"name":"Bob"},"use_index":["_design/myidx","byName"]}`,
+			want: []rowResult{
+				{Doc: `{"_id":"bob","_rev":"` + revBob + `","name":"Bob"}`},
+			},
+		}
+	})
 
 	/*
 		TODO:

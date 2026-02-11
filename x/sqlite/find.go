@@ -42,10 +42,19 @@ func (d *db) Find(ctx context.Context, query any, _ driver.Options) (driver.Rows
 
 	if ddoc := vopts.UseIndexDdoc(); ddoc != "" {
 		var count int
-		if err := d.db.QueryRowContext(ctx, d.query(`
-			SELECT COUNT(*) FROM {{ .MangoIndexes }} WHERE ddoc = $1
-		`), ddoc).Scan(&count); err != nil {
-			return nil, err
+		indexName := vopts.UseIndexName()
+		if indexName != "" {
+			if err := d.db.QueryRowContext(ctx, d.query(`
+				SELECT COUNT(*) FROM {{ .MangoIndexes }} WHERE ddoc = $1 AND name = $2
+			`), ddoc, indexName).Scan(&count); err != nil {
+				return nil, err
+			}
+		} else {
+			if err := d.db.QueryRowContext(ctx, d.query(`
+				SELECT COUNT(*) FROM {{ .MangoIndexes }} WHERE ddoc = $1
+			`), ddoc).Scan(&count); err != nil {
+				return nil, err
+			}
 		}
 		if count == 0 {
 			return nil, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("index %q not found", ddoc)}

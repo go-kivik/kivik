@@ -216,6 +216,24 @@ func TestFind(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 		wantErr:    "invalid 'fields' field: 3",
 	})
+	tests.Add("find with index", func(t *testing.T) any {
+		d := newDB(t)
+		err := d.CreateIndex(context.Background(), "_design/idx", "idx", json.RawMessage(`{"fields":["name"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		_ = d.tPut("alice", map[string]string{"name": "Alice"})
+		revBob := d.tPut("bob", map[string]string{"name": "Bob"})
+		_ = d.tPut("charlie", map[string]string{"name": "Charlie"})
+
+		return test{
+			db:    d,
+			query: `{"selector":{"name":"Bob"}}`,
+			want: []rowResult{
+				{Doc: `{"_id":"bob","_rev":"` + revBob + `","name":"Bob"}`},
+			},
+		}
+	})
 
 	/*
 		TODO:

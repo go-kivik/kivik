@@ -59,12 +59,22 @@ func (d *db) DesignDocs(ctx context.Context, options driver.Options) (driver.Row
 func (d *db) queryBuiltinView(
 	ctx context.Context,
 	vopts *options.ViewOptions,
+	selector json.RawMessage,
 ) (driver.Rows, error) {
 	args := []any{vopts.IncludeDocs(), vopts.Conflicts(), vopts.UpdateSeq(), vopts.Attachments(), vopts.Bookmark()}
 
 	where := append([]string{""}, vopts.BuildWhere(&args)...)
 
-	query := fmt.Sprintf(d.query(leavesCTE+`,
+	var selectorWhere string
+	if len(selector) > 0 {
+		conds, selectorArgs := selectorToSQL(selector, len(args))
+		if len(conds) > 0 {
+			selectorWhere = "AND " + strings.Join(conds, " AND ")
+			args = append(args, selectorArgs...)
+		}
+	}
+
+	query := fmt.Sprintf(d.query(leavesCTE(selectorWhere)+`,
 		main AS (
 			SELECT
 				CASE WHEN row_number = 1 THEN id        END AS id,

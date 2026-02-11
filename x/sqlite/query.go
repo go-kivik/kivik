@@ -50,7 +50,7 @@ func (d *db) Query(ctx context.Context, ddoc, view string, opts driver.Options) 
 	}
 
 	if isBuiltinView(ddoc) {
-		return d.queryBuiltinView(ctx, vopts)
+		return d.queryBuiltinView(ctx, vopts, nil)
 	}
 
 	// Normalize the ddoc and view values
@@ -77,8 +77,8 @@ func (d *db) Query(ctx context.Context, ddoc, view string, opts driver.Options) 
 	return results, nil
 }
 
-const (
-	leavesCTE = `
+func leavesCTE(extraWhere string) string {
+	return `
 	WITH leaves AS (
 		SELECT
 			rev.id,
@@ -92,9 +92,10 @@ const (
 		JOIN {{ .Docs }} AS doc ON rev.id = doc.id AND rev.rev = doc.rev AND rev.rev_id = doc.rev_id
 		WHERE child.id IS NULL
 			AND NOT doc.deleted
+			` + extraWhere + `
 	)
 `
-)
+}
 
 func (d *db) performQuery(
 	ctx context.Context,
@@ -118,7 +119,7 @@ func (d *db) performQuery(
 		where := append([]string{""}, vopts.BuildWhere(&args)...)
 		reduceWhere := append([]string{""}, vopts.BuildReduceCacheWhere(&args)...)
 
-		query := fmt.Sprintf(d.ddocQuery(ddoc, view, rev.String(), leavesCTE+`,
+		query := fmt.Sprintf(d.ddocQuery(ddoc, view, rev.String(), leavesCTE("")+`,
 			 reduce AS (
 				SELECT
 					CASE WHEN MAX(id) IS NOT NULL THEN TRUE ELSE FALSE END AS reducible,

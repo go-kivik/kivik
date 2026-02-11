@@ -30,7 +30,16 @@ func (d *db) Find(ctx context.Context, query any, _ driver.Options) (driver.Rows
 		return nil, err
 	}
 
-	return d.queryBuiltinView(ctx, vopts)
+	var selector json.RawMessage
+	input := query.(json.RawMessage)
+	var raw struct {
+		Selector json.RawMessage `json:"selector"`
+	}
+	if err := json.Unmarshal(input, &raw); err == nil {
+		selector = raw.Selector
+	}
+
+	return d.queryBuiltinView(ctx, vopts, selector)
 }
 
 // selectorToSQL translates a Mango selector JSON object into parameterized SQL

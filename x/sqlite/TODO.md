@@ -17,32 +17,26 @@ These return a bare `"not implemented"` error:
 
 ### Incomplete features
 
-- [ ] **Mango indexes are metadata-only**. CreateIndex/DeleteIndex/GetIndexes
-  store and retrieve index definitions but do not create actual SQLite indexes
-  or influence `_find` query planning. Making them functional requires creating
-  expression indexes (e.g. on `json_extract(doc, '$.field')`) and updating the
-  Find query path to use them.
-
-- [ ] **Find: sort** (`find_test.go:193`). Sort returns an error; not
-  implemented. Other unimplemented Find options noted at `find_test.go:219-227`:
-  stable, update, stale, use_index, execution_stats.
-
-- [ ] **Update functions not evaluated** (`put_test.go:1116`). Stored but never
-  invoked.
+- [ ] **validate_doc_update not evaluated** (`put_test.go:1116`). Stored but
+  never invoked.
 
 - [ ] **Reduce caching** (`README.md`). Reduce functions run on-demand with no
   intermediate result caching.
 
-### Ignored or missing options
+## Bugs
 
-Many functions accept `driver.Options` but ignore some or all of them.
+- [ ] **Single quotes in JSON field names break queries**. `selectorToSQL()`,
+  `fieldCondition()`, `inequalityCondition()` (`find.go`), and `CreateIndex()`
+  (`indexes.go`) embed `mango.FieldToJSONPath()` output directly into
+  single-quoted SQL string literals. A field name containing `'` (e.g.
+  `foo'bar`) causes a syntax error. Not SQL injection — the query fails before
+  executing — but prevents legitimate use of such field names. Fix by switching
+  to double-quoted path strings or parameterizing the path argument.
 
-Note: `batch=ok` is intentionally not implemented for Put, Delete, and CreateDoc.
-It's a CouchDB durability optimization that doesn't apply to SQLite.
-
-- [ ] **Find** (`find.go:21`). Options `update`, `stale`, and `use_index` are
-  no-ops until Mango indexes are functional (not just metadata-only).
-  `stable` is permanently a no-op (single-node SQLite has no shards).
+- [ ] **Potential panic on empty json.RawMessage** (`find.go`).
+  `fieldCondition()` accesses `val[0]` without a length check. An empty
+  `json.RawMessage` would panic. Unlikely in practice since `json.Unmarshal`
+  won't produce one, but a defensive check is cheap.
 
 ## Code Quality
 
@@ -52,7 +46,6 @@ It's a CouchDB durability optimization that doesn't apply to SQLite.
 - [ ] **Filter in Go instead of SQL** (`query.go:568`). Local and design
   document filtering during view updates is done in Go after fetching rows,
   rather than in the SQL query.
-
 
 ## Integration Tests
 

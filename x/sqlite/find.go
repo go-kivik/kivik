@@ -40,6 +40,18 @@ func (d *db) Find(ctx context.Context, query any, _ driver.Options) (driver.Rows
 		}
 	}
 
+	if ddoc := vopts.UseIndexDdoc(); ddoc != "" {
+		var count int
+		if err := d.db.QueryRowContext(ctx, d.query(`
+			SELECT COUNT(*) FROM {{ .MangoIndexes }} WHERE ddoc = $1
+		`), ddoc).Scan(&count); err != nil {
+			return nil, err
+		}
+		if count == 0 {
+			return nil, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("index %q not found", ddoc)}
+		}
+	}
+
 	var selector json.RawMessage
 	input := query.(json.RawMessage)
 	var raw struct {

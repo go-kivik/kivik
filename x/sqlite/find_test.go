@@ -291,13 +291,34 @@ func TestFind(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("use_index", func(t *testing.T) any {
+		d := newDB(t)
+		err := d.CreateIndex(context.Background(), "_design/myidx", "byName", json.RawMessage(`{"fields":["name"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		revBob := d.tPut("bob", map[string]string{"name": "Bob"})
+		_ = d.tPut("alice", map[string]string{"name": "Alice"})
+
+		return test{
+			db:    d,
+			query: `{"selector":{"name":"Bob"},"use_index":"_design/myidx"}`,
+			want: []rowResult{
+				{Doc: `{"_id":"bob","_rev":"` + revBob + `","name":"Bob"}`},
+			},
+		}
+	})
+	tests.Add("use_index, not found", test{
+		query:      `{"selector":{},"use_index":"_design/nonexistent"}`,
+		wantStatus: http.StatusBadRequest,
+		wantErr:    `index "_design/nonexistent" not found`,
+	})
 
 	/*
 		TODO:
 		- stable
 		- update
 		- stale
-		- use_index
 		- execution_stats -- Not currently supported by Kivik
 	*/
 

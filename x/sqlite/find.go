@@ -209,6 +209,9 @@ func jsonType(col, jsonPath string) string {
 }
 
 func fieldCondition(jsonPath string, val json.RawMessage, argOffset int) (string, []any) {
+	if len(val) == 0 {
+		return "", nil
+	}
 	expr := jsonExtract("doc.doc", jsonPath)
 	if val[0] != '{' {
 		return comparisonCondition(expr, "=", val, argOffset)

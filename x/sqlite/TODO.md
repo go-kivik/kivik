@@ -23,13 +23,6 @@ These return a bare `"not implemented"` error:
 - [ ] **Reduce caching** (`README.md`). Reduce functions run on-demand with no
   intermediate result caching.
 
-## Bugs
-
-- [ ] **Potential panic on empty json.RawMessage** (`find.go`).
-  `fieldCondition()` accesses `val[0]` without a length check. An empty
-  `json.RawMessage` would panic. Unlikely in practice since `json.Unmarshal`
-  won't produce one, but a defensive check is cheap.
-
 ## Code Quality
 
 - [ ] **Ping placement** (`db.go:50`). TODO in code: "I think Ping belongs on

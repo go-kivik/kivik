@@ -546,12 +546,56 @@ func Test_selectorToSQL(t *testing.T) {
 		wantConds: []string{`json_extract(doc.doc, '$."active"') = $1`},
 		wantArgs:  []any{1},
 	})
-
+	tests.Add("implicit null", test{
+		selector:  json.RawMessage(`{"name": null}`),
+		argOffset: 0,
+		wantConds: []string{`json_extract(doc.doc, '$."name"') IS NULL`},
+		wantArgs:  nil,
+	})
+	tests.Add("empty selector", test{
+		selector:  json.RawMessage(`{}`),
+		argOffset: 0,
+		wantConds: nil,
+		wantArgs:  nil,
+	})
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()
 		gotConds, gotArgs := selectorToSQL(tt.selector, tt.argOffset)
 		if d := cmp.Diff(tt.wantConds, gotConds); d != "" {
 			t.Errorf("conditions mismatch (-want +got):\n%s", d)
+		}
+		if d := cmp.Diff(tt.wantArgs, gotArgs); d != "" {
+			t.Errorf("args mismatch (-want +got):\n%s", d)
+		}
+	})
+}
+
+func Test_fieldCondition(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		jsonPath  string
+		val       json.RawMessage
+		argOffset int
+		wantCond  string
+		wantArgs  []any
+	}
+
+	tests := testy.NewTable()
+
+	tests.Add("empty RawMessage", test{
+		jsonPath:  `$."name"`,
+		val:       json.RawMessage{},
+		argOffset: 0,
+		wantCond:  "",
+		wantArgs:  nil,
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		t.Parallel()
+		gotCond, gotArgs := fieldCondition(tt.jsonPath, tt.val, tt.argOffset)
+		if gotCond != tt.wantCond {
+			t.Errorf("condition mismatch: got %q, want %q", gotCond, tt.wantCond)
 		}
 		if d := cmp.Diff(tt.wantArgs, gotArgs); d != "" {
 			t.Errorf("args mismatch (-want +got):\n%s", d)

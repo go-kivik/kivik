@@ -52,7 +52,7 @@ func (d *db) Find(ctx context.Context, query any, _ driver.Options) (driver.Rows
 	return d.queryBuiltinView(ctx, vopts, selector, sortOrderBy)
 }
 
-func (d *db) sortOrderByFromIndex(ctx context.Context, sortFields []string) (string, error) {
+func (d *db) sortOrderByFromIndex(ctx context.Context, sortFields []options.SortField) (string, error) {
 	rows, err := d.db.QueryContext(ctx, d.query(`
 		SELECT index_def FROM {{ .MangoIndexes }}
 	`))
@@ -72,8 +72,12 @@ func (d *db) sortOrderByFromIndex(ctx context.Context, sortFields []string) (str
 		}
 		if coversSort(idxFields, sortFields) {
 			parts := make([]string, len(sortFields))
-			for i, f := range sortFields {
-				parts[i] = "json_extract(view.doc, '" + mango.FieldToJSONPath(f) + "') ASC"
+			for i, sf := range sortFields {
+				dir := "ASC"
+				if sf.Desc {
+					dir = "DESC"
+				}
+				parts[i] = "json_extract(view.doc, '" + mango.FieldToJSONPath(sf.Field) + "') " + dir
 			}
 			return "ORDER BY " + strings.Join(parts, ", "), nil
 		}
@@ -85,12 +89,12 @@ func (d *db) sortOrderByFromIndex(ctx context.Context, sortFields []string) (str
 	return "", &internal.Error{Status: http.StatusBadRequest, Message: "no index exists for this sort, try indexing by the sort fields"}
 }
 
-func coversSort(indexFields, sortFields []string) bool {
+func coversSort(indexFields []string, sortFields []options.SortField) bool {
 	if len(sortFields) > len(indexFields) {
 		return false
 	}
 	for i, sf := range sortFields {
-		if indexFields[i] != sf {
+		if indexFields[i] != sf.Field {
 			return false
 		}
 	}
@@ -197,13 +201,11 @@ func fieldCondition(jsonPath string, val json.RawMessage, argOffset int) (string
 			if err := json.Unmarshal(opVal, &values); err != nil {
 				return "", nil
 			}
-			placeholders := make([]string, len(values))
-			var args []any
+			args := make([]any, len(values))
 			for i, v := range values {
-				placeholders[i] = fmt.Sprintf("$%d", argOffset+i+1)
-				args = append(args, decodeValue(v))
+				args[i] = decodeValue(v)
 			}
-			return expr + " IN (" + strings.Join(placeholders, ", ") + ")", args
+			return expr + " IN (" + placeholders(argOffset+1, len(values)) + ")", args
 
 		case "$gt", "$gte", "$lt", "$lte":
 			return inequalityCondition(expr, jsonPath, op, opVal, argOffset)

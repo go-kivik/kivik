@@ -218,6 +218,26 @@ func TestFind(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("sort descending with index", func(t *testing.T) any {
+		d := newDB(t)
+		err := d.CreateIndex(context.Background(), "_design/idx", "byName", json.RawMessage(`{"fields":["name"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		revAlice := d.tPut("alice", map[string]string{"name": "Charlie"})
+		revBob := d.tPut("bob", map[string]string{"name": "Alice"})
+		revCharlie := d.tPut("charlie", map[string]string{"name": "Bob"})
+
+		return test{
+			db:    d,
+			query: `{"selector":{},"sort":[{"name":"desc"}]}`,
+			want: []rowResult{
+				{Doc: `{"_id":"alice","_rev":"` + revAlice + `","name":"Charlie"}`},
+				{Doc: `{"_id":"charlie","_rev":"` + revCharlie + `","name":"Bob"}`},
+				{Doc: `{"_id":"bob","_rev":"` + revBob + `","name":"Alice"}`},
+			},
+		}
+	})
 	tests.Add("sort, non-array", test{
 		query:      `{"selector":{},"sort":"x"}`,
 		wantStatus: http.StatusBadRequest,

@@ -466,106 +466,124 @@ func Test_selectorToSQL(t *testing.T) {
 	t.Parallel()
 
 	type test struct {
-		selector  json.RawMessage
-		argOffset int
-		wantConds []string
-		wantArgs  []any
+		selector     json.RawMessage
+		argOffset    int
+		wantConds    []string
+		wantArgs     []any
+		wantComplete bool
 	}
 
 	tests := testy.NewTable()
 
 	tests.Add("implicit eq", test{
-		selector:  json.RawMessage(`{"name": "Bob"}`),
-		argOffset: 0,
-		wantConds: []string{`json_extract(doc.doc, '$."name"') = $1`},
-		wantArgs:  []any{"Bob"},
+		selector:     json.RawMessage(`{"name": "Bob"}`),
+		argOffset:    0,
+		wantConds:    []string{`json_extract(doc.doc, '$."name"') = $1`},
+		wantArgs:     []any{"Bob"},
+		wantComplete: true,
 	})
 	tests.Add("$gt with number", test{
-		selector:  json.RawMessage(`{"age": {"$gt": 21}}`),
-		argOffset: 0,
-		wantConds: []string{`json_type(doc.doc, '$."age"') NOT IN ('integer', 'real') OR json_extract(doc.doc, '$."age"') > $1`},
-		wantArgs:  []any{float64(21)},
+		selector:     json.RawMessage(`{"age": {"$gt": 21}}`),
+		argOffset:    0,
+		wantConds:    []string{`json_type(doc.doc, '$."age"') NOT IN ('integer', 'real') OR json_extract(doc.doc, '$."age"') > $1`},
+		wantArgs:     []any{float64(21)},
+		wantComplete: true,
 	})
 	tests.Add("$lt with string", test{
-		selector:  json.RawMessage(`{"name": {"$lt": "M"}}`),
-		argOffset: 0,
-		wantConds: []string{`json_type(doc.doc, '$."name"') != 'text' OR json_extract(doc.doc, '$."name"') < $1`},
-		wantArgs:  []any{"M"},
+		selector:     json.RawMessage(`{"name": {"$lt": "M"}}`),
+		argOffset:    0,
+		wantConds:    []string{`json_type(doc.doc, '$."name"') != 'text' OR json_extract(doc.doc, '$."name"') < $1`},
+		wantArgs:     []any{"M"},
+		wantComplete: true,
 	})
 	tests.Add("$gte with number", test{
-		selector:  json.RawMessage(`{"score": {"$gte": 90.5}}`),
-		argOffset: 0,
-		wantConds: []string{`json_type(doc.doc, '$."score"') NOT IN ('integer', 'real') OR json_extract(doc.doc, '$."score"') >= $1`},
-		wantArgs:  []any{float64(90.5)},
+		selector:     json.RawMessage(`{"score": {"$gte": 90.5}}`),
+		argOffset:    0,
+		wantConds:    []string{`json_type(doc.doc, '$."score"') NOT IN ('integer', 'real') OR json_extract(doc.doc, '$."score"') >= $1`},
+		wantArgs:     []any{float64(90.5)},
+		wantComplete: true,
 	})
 	tests.Add("$exists true", test{
-		selector:  json.RawMessage(`{"name": {"$exists": true}}`),
-		argOffset: 0,
-		wantConds: []string{`json_extract(doc.doc, '$."name"') IS NOT NULL`},
-		wantArgs:  nil,
+		selector:     json.RawMessage(`{"name": {"$exists": true}}`),
+		argOffset:    0,
+		wantConds:    []string{`json_extract(doc.doc, '$."name"') IS NOT NULL`},
+		wantArgs:     nil,
+		wantComplete: true,
 	})
 	tests.Add("$in", test{
-		selector:  json.RawMessage(`{"status": {"$in": ["active", "pending"]}}`),
-		argOffset: 0,
-		wantConds: []string{`json_extract(doc.doc, '$."status"') IN ($1, $2)`},
-		wantArgs:  []any{"active", "pending"},
+		selector:     json.RawMessage(`{"status": {"$in": ["active", "pending"]}}`),
+		argOffset:    0,
+		wantConds:    []string{`json_extract(doc.doc, '$."status"') IN ($1, $2)`},
+		wantArgs:     []any{"active", "pending"},
+		wantComplete: true,
 	})
 	tests.Add("argOffset", test{
-		selector:  json.RawMessage(`{"name": "Bob"}`),
-		argOffset: 5,
-		wantConds: []string{`json_extract(doc.doc, '$."name"') = $6`},
-		wantArgs:  []any{"Bob"},
+		selector:     json.RawMessage(`{"name": "Bob"}`),
+		argOffset:    5,
+		wantConds:    []string{`json_extract(doc.doc, '$."name"') = $6`},
+		wantArgs:     []any{"Bob"},
+		wantComplete: true,
 	})
 	tests.Add("unsupported operator skipped", test{
-		selector:  json.RawMessage(`{"name": {"$regex": "^B"}}`),
-		argOffset: 0,
-		wantConds: nil,
-		wantArgs:  nil,
+		selector:     json.RawMessage(`{"name": {"$regex": "^B"}}`),
+		argOffset:    0,
+		wantConds:    nil,
+		wantArgs:     nil,
+		wantComplete: false,
 	})
 	tests.Add("$and", test{
-		selector:  json.RawMessage(`{"$and": [{"name": "Bob"}, {"age": {"$eq": 21}}]}`),
-		argOffset: 0,
-		wantConds: []string{`json_extract(doc.doc, '$."name"') = $1 AND json_extract(doc.doc, '$."age"') = $2`},
-		wantArgs:  []any{"Bob", float64(21)},
+		selector:     json.RawMessage(`{"$and": [{"name": "Bob"}, {"age": {"$eq": 21}}]}`),
+		argOffset:    0,
+		wantConds:    []string{`json_extract(doc.doc, '$."name"') = $1 AND json_extract(doc.doc, '$."age"') = $2`},
+		wantArgs:     []any{"Bob", float64(21)},
+		wantComplete: true,
 	})
 	tests.Add("$or", test{
-		selector:  json.RawMessage(`{"$or": [{"name": "Bob"}, {"name": "Alice"}]}`),
-		argOffset: 0,
-		wantConds: []string{`(json_extract(doc.doc, '$."name"') = $1 OR json_extract(doc.doc, '$."name"') = $2)`},
-		wantArgs:  []any{"Bob", "Alice"},
+		selector:     json.RawMessage(`{"$or": [{"name": "Bob"}, {"name": "Alice"}]}`),
+		argOffset:    0,
+		wantConds:    []string{`(json_extract(doc.doc, '$."name"') = $1 OR json_extract(doc.doc, '$."name"') = $2)`},
+		wantArgs:     []any{"Bob", "Alice"},
+		wantComplete: true,
 	})
 	tests.Add("null eq", test{
-		selector:  json.RawMessage(`{"name": {"$eq": null}}`),
-		argOffset: 0,
-		wantConds: []string{`json_extract(doc.doc, '$."name"') IS NULL`},
-		wantArgs:  nil,
+		selector:     json.RawMessage(`{"name": {"$eq": null}}`),
+		argOffset:    0,
+		wantConds:    []string{`json_extract(doc.doc, '$."name"') IS NULL`},
+		wantArgs:     nil,
+		wantComplete: true,
 	})
 	tests.Add("boolean true", test{
-		selector:  json.RawMessage(`{"active": true}`),
-		argOffset: 0,
-		wantConds: []string{`json_extract(doc.doc, '$."active"') = $1`},
-		wantArgs:  []any{1},
+		selector:     json.RawMessage(`{"active": true}`),
+		argOffset:    0,
+		wantConds:    []string{`json_extract(doc.doc, '$."active"') = $1`},
+		wantArgs:     []any{1},
+		wantComplete: true,
 	})
 	tests.Add("implicit null", test{
-		selector:  json.RawMessage(`{"name": null}`),
-		argOffset: 0,
-		wantConds: []string{`json_extract(doc.doc, '$."name"') IS NULL`},
-		wantArgs:  nil,
+		selector:     json.RawMessage(`{"name": null}`),
+		argOffset:    0,
+		wantConds:    []string{`json_extract(doc.doc, '$."name"') IS NULL`},
+		wantArgs:     nil,
+		wantComplete: true,
 	})
 	tests.Add("empty selector", test{
-		selector:  json.RawMessage(`{}`),
-		argOffset: 0,
-		wantConds: nil,
-		wantArgs:  nil,
+		selector:     json.RawMessage(`{}`),
+		argOffset:    0,
+		wantConds:    nil,
+		wantArgs:     nil,
+		wantComplete: true,
 	})
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()
-		gotConds, gotArgs := selectorToSQL(tt.selector, tt.argOffset)
+		gotConds, gotArgs, gotComplete := selectorToSQL(tt.selector, tt.argOffset)
 		if d := cmp.Diff(tt.wantConds, gotConds); d != "" {
 			t.Errorf("conditions mismatch (-want +got):\n%s", d)
 		}
 		if d := cmp.Diff(tt.wantArgs, gotArgs); d != "" {
 			t.Errorf("args mismatch (-want +got):\n%s", d)
+		}
+		if gotComplete != tt.wantComplete {
+			t.Errorf("complete mismatch: got %v, want %v", gotComplete, tt.wantComplete)
 		}
 	})
 }

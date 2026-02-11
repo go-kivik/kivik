@@ -67,8 +67,11 @@ func (d *db) queryBuiltinView(
 	where := append([]string{""}, vopts.BuildWhere(&args)...)
 
 	var selectorWhere string
+	var selectorComplete bool
 	if len(selector) > 0 {
-		conds, selectorArgs := selectorToSQL(selector, len(args))
+		var conds []string
+		var selectorArgs []any
+		conds, selectorArgs, selectorComplete = selectorToSQL(selector, len(args))
 		if len(conds) > 0 {
 			selectorWhere = "AND " + strings.Join(conds, " AND ")
 			args = append(args, selectorArgs...)
@@ -191,15 +194,16 @@ func (d *db) queryBuiltinView(
 	}
 
 	return &rows{
-		ctx:       ctx,
-		db:        d,
-		rows:      results,
-		updateSeq: meta.updateSeq,
-		totalRows: meta.totalRows,
-		selector:  vopts.Selector(),
-		findLimit: vopts.FindLimit(),
-		findSkip:  vopts.FindSkip(),
-		fields:    vopts.Fields(),
+		ctx:              ctx,
+		db:               d,
+		rows:             results,
+		updateSeq:        meta.updateSeq,
+		totalRows:        meta.totalRows,
+		selector:         vopts.Selector(),
+		selectorComplete: selectorComplete,
+		findLimit:        vopts.FindLimit(),
+		findSkip:         vopts.FindSkip(),
+		fields:           vopts.Fields(),
 	}, nil
 }
 
@@ -267,6 +271,7 @@ type rows struct {
 	updateSeq           string
 	totalRows           int64
 	selector            *mango.Selector
+	selectorComplete    bool
 	findLimit, findSkip int64
 	index               int64
 	fields              []string
@@ -357,9 +362,7 @@ func (r *rows) Next(row *driver.Row) error {
 	}
 	if full != nil {
 		if r.selector != nil {
-			// This means we're responding to a _find query, which requires
-			// filtering the results, and a different format.
-			if !r.selector.Match(full.toMap()) {
+			if !r.selectorComplete && !r.selector.Match(full.toMap()) {
 				return r.Next(row)
 			}
 			r.index++

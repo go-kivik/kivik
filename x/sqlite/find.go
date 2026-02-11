@@ -135,27 +135,34 @@ func mangoIndexWhere(ddoc, name string) (string, []any) {
 // placeholder number so conditions can be appended to an existing argument list.
 // Unsupported operators are silently skipped, broadening the result set for the
 // in-memory selector.Match() safety net to correct.
-func selectorToSQL(selector json.RawMessage, argOffset int) ([]string, []any) {
+func selectorToSQL(selector json.RawMessage, argOffset int) ([]string, []any, bool) {
 	var fields map[string]json.RawMessage
 	if err := json.Unmarshal(selector, &fields); err != nil {
-		return nil, nil
+		return nil, nil, true
 	}
 
 	var conds []string
 	var args []any
+	complete := true
 
 	for _, key := range sortedKeys(fields) {
 		val := fields[key]
 		switch {
 		case key == "$and":
-			c, a := combineSelectors(val, " AND ", false, argOffset+len(args))
+			c, a, ok := combineSelectors(val, " AND ", false, argOffset+len(args))
 			conds = append(conds, c...)
 			args = append(args, a...)
+			if !ok {
+				complete = false
+			}
 
 		case key == "$or":
-			c, a := combineSelectors(val, " OR ", true, argOffset+len(args))
+			c, a, ok := combineSelectors(val, " OR ", true, argOffset+len(args))
 			conds = append(conds, c...)
 			args = append(args, a...)
+			if !ok {
+				complete = false
+			}
 
 		case strings.HasPrefix(key, "$"):
 			continue
@@ -166,38 +173,44 @@ func selectorToSQL(selector json.RawMessage, argOffset int) ([]string, []any) {
 			if c != "" {
 				conds = append(conds, c)
 				args = append(args, a...)
+			} else if len(val) > 0 && val[0] == '{' {
+				complete = false
 			}
 		}
 	}
 
 	if len(conds) == 0 {
-		return nil, nil
+		return nil, nil, complete
 	}
-	return conds, args
+	return conds, args, complete
 }
 
 // combineSelectors unmarshals val as an array of sub-selectors, converts each
 // to SQL, and joins them with sep. If wrap is true, the result is parenthesized.
-func combineSelectors(val json.RawMessage, sep string, wrap bool, argOffset int) ([]string, []any) {
+func combineSelectors(val json.RawMessage, sep string, wrap bool, argOffset int) ([]string, []any, bool) {
 	var elements []json.RawMessage
 	if err := json.Unmarshal(val, &elements); err != nil {
-		return nil, nil
+		return nil, nil, true
 	}
 	var parts []string
 	var args []any
+	complete := true
 	for _, elem := range elements {
-		subConds, subArgs := selectorToSQL(elem, argOffset+len(args))
+		subConds, subArgs, ok := selectorToSQL(elem, argOffset+len(args))
 		parts = append(parts, subConds...)
 		args = append(args, subArgs...)
+		if !ok {
+			complete = false
+		}
 	}
 	if len(parts) == 0 {
-		return nil, nil
+		return nil, nil, complete
 	}
 	joined := strings.Join(parts, sep)
 	if wrap {
 		joined = "(" + joined + ")"
 	}
-	return []string{joined}, args
+	return []string{joined}, args, complete
 }
 
 func jsonExtract(col, jsonPath string) string {

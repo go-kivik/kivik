@@ -12,7 +12,6 @@ These return a bare `"not implemented"` error:
 
 ### Unimplemented on `client` (`sqlite.go`)
 
-- [ ] Replicate / GetReplications
 - [ ] DBUpdates
 
 ### Incomplete features
@@ -24,9 +23,6 @@ These return a bare `"not implemented"` error:
   intermediate result caching.
 
 ## Code Quality
-
-- [ ] **Ping placement** (`db.go:50`). TODO in code: "I think Ping belongs on
-  \*client, not \*db". Requires v5 release (breaking API change).
 
 - [ ] **Filter in Go instead of SQL** (`query.go:568`). Local and design
   document filtering during view updates is done in Go after fetching rows,

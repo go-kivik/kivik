@@ -59,12 +59,26 @@ func (d *db) DesignDocs(ctx context.Context, options driver.Options) (driver.Row
 func (d *db) queryBuiltinView(
 	ctx context.Context,
 	vopts *options.ViewOptions,
+	selector json.RawMessage,
+	sortOrderBy string,
 ) (driver.Rows, error) {
 	args := []any{vopts.IncludeDocs(), vopts.Conflicts(), vopts.UpdateSeq(), vopts.Attachments(), vopts.Bookmark()}
 
 	where := append([]string{""}, vopts.BuildWhere(&args)...)
 
-	query := fmt.Sprintf(d.query(leavesCTE+`,
+	var selectorWhere string
+	var selectorComplete bool
+	if len(selector) > 0 {
+		var conds []string
+		var selectorArgs []any
+		conds, selectorArgs, selectorComplete = selectorToSQL(selector, len(args))
+		if len(conds) > 0 {
+			selectorWhere = "AND " + strings.Join(conds, " AND ")
+			args = append(args, selectorArgs...)
+		}
+	}
+
+	query := fmt.Sprintf(d.query(leavesCTE(selectorWhere)+`,
 		main AS (
 			SELECT
 				CASE WHEN row_number = 1 THEN id        END AS id,
@@ -168,7 +182,7 @@ func (d *db) queryBuiltinView(
 			data
 		FROM main
 		%[4]s -- bookmark filtering
-	`), vopts.BuildOrderBy(), strings.Join(where, " AND "), vopts.BuildLimit(), vopts.BookmarkWhere())
+	`), orderByClause(vopts, sortOrderBy), strings.Join(where, " AND "), vopts.BuildLimit(), vopts.BookmarkWhere())
 	results, err := d.db.QueryContext(ctx, query, args...) //nolint:rowserrcheck // Err checked in Next
 	if err != nil {
 		return nil, d.errDatabaseNotFound(err)
@@ -180,15 +194,16 @@ func (d *db) queryBuiltinView(
 	}
 
 	return &rows{
-		ctx:       ctx,
-		db:        d,
-		rows:      results,
-		updateSeq: meta.updateSeq,
-		totalRows: meta.totalRows,
-		selector:  vopts.Selector(),
-		findLimit: vopts.FindLimit(),
-		findSkip:  vopts.FindSkip(),
-		fields:    vopts.Fields(),
+		ctx:              ctx,
+		db:               d,
+		rows:             results,
+		updateSeq:        meta.updateSeq,
+		totalRows:        meta.totalRows,
+		selector:         vopts.Selector(),
+		selectorComplete: selectorComplete,
+		findLimit:        vopts.FindLimit(),
+		findSkip:         vopts.FindSkip(),
+		fields:           vopts.Fields(),
 	}, nil
 }
 
@@ -235,6 +250,13 @@ func readFirstRow(results *sql.Rows, vopts *options.ViewOptions) (*viewMetadata,
 	return &meta, nil
 }
 
+func orderByClause(vopts *options.ViewOptions, sortOrderBy string) string {
+	if sortOrderBy != "" {
+		return sortOrderBy
+	}
+	return vopts.BuildOrderBy()
+}
+
 func descendingToDirection(descending bool) string {
 	if descending {
 		return "DESC"
@@ -249,6 +271,7 @@ type rows struct {
 	updateSeq           string
 	totalRows           int64
 	selector            *mango.Selector
+	selectorComplete    bool
 	findLimit, findSkip int64
 	index               int64
 	fields              []string
@@ -339,9 +362,7 @@ func (r *rows) Next(row *driver.Row) error {
 	}
 	if full != nil {
 		if r.selector != nil {
-			// This means we're responding to a _find query, which requires
-			// filtering the results, and a different format.
-			if !r.selector.Match(full.toMap()) {
+			if !r.selectorComplete && !r.selector.Match(full.toMap()) {
 				return r.Next(row)
 			}
 			r.index++

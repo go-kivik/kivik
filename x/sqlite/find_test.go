@@ -15,10 +15,13 @@ package sqlite
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4"
@@ -180,17 +183,67 @@ func TestFind(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 		wantErr:    "invalid value for 'bookmark': moo",
 	})
-	tests.Add("sort", func(t *testing.T) any {
+	tests.Add("sort without matching index", func(t *testing.T) any {
 		d := newDB(t)
-		// revA := d.tPut("a", map[string]interface{}{"name": "Bob"})
-		// revB := d.tPut("b", map[string]interface{}{"name": "Alice"})
-		// revC := d.tPut("c", map[string]interface{}{"name": "Charlie"})
-		// revD := d.tPut("d", map[string]interface{}{"name": "Dick"})
+
+		return test{
+			db:         d,
+			query:      `{"selector":{},"sort":["name"]}`,
+			wantStatus: http.StatusBadRequest,
+			wantErr:    "no index exists for this sort, try indexing by the sort fields",
+		}
+	})
+	tests.Add("sort ascending with index", func(t *testing.T) any {
+		d := newDB(t)
+		err := d.CreateIndex(context.Background(), "_design/idx", "byName", json.RawMessage(`{"fields":["name"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		revAlice := d.tPut("alice", map[string]string{"name": "Charlie"})
+		revBob := d.tPut("bob", map[string]string{"name": "Alice"})
+		revCharlie := d.tPut("charlie", map[string]string{"name": "Bob"})
 
 		return test{
 			db:    d,
 			query: `{"selector":{},"sort":["name"]}`,
-			// TODO: Support sorting
+			want: []rowResult{
+				{Doc: `{"_id":"bob","_rev":"` + revBob + `","name":"Alice"}`},
+				{Doc: `{"_id":"charlie","_rev":"` + revCharlie + `","name":"Bob"}`},
+				{Doc: `{"_id":"alice","_rev":"` + revAlice + `","name":"Charlie"}`},
+			},
+		}
+	})
+	tests.Add("sort descending with index", func(t *testing.T) any {
+		d := newDB(t)
+		err := d.CreateIndex(context.Background(), "_design/idx", "byName", json.RawMessage(`{"fields":["name"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		revAlice := d.tPut("alice", map[string]string{"name": "Charlie"})
+		revBob := d.tPut("bob", map[string]string{"name": "Alice"})
+		revCharlie := d.tPut("charlie", map[string]string{"name": "Bob"})
+
+		return test{
+			db:    d,
+			query: `{"selector":{},"sort":[{"name":"desc"}]}`,
+			want: []rowResult{
+				{Doc: `{"_id":"alice","_rev":"` + revAlice + `","name":"Charlie"}`},
+				{Doc: `{"_id":"charlie","_rev":"` + revCharlie + `","name":"Bob"}`},
+				{Doc: `{"_id":"bob","_rev":"` + revBob + `","name":"Alice"}`},
+			},
+		}
+	})
+	tests.Add("sort mixed directions rejects without matching index", func(t *testing.T) any {
+		d := newDB(t)
+		err := d.CreateIndex(context.Background(), "", "", json.RawMessage(`{"fields":["a","b"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		d.tPut("doc1", map[string]string{"a": "x", "b": "y"})
+
+		return test{
+			db:         d,
+			query:      `{"selector":{},"sort":[{"a":"asc"},{"b":"desc"}]}`,
 			wantStatus: http.StatusBadRequest,
 			wantErr:    "no index exists for this sort, try indexing by the sort fields",
 		}
@@ -205,6 +258,11 @@ func TestFind(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 		wantErr:    "invalid 'sort' field: 3",
 	})
+	tests.Add("sort, invalid direction", test{
+		query:      `{"selector":{},"sort":[{"name":"foo"}]}`,
+		wantStatus: http.StatusBadRequest,
+		wantErr:    "invalid sort direction",
+	})
 	tests.Add("fields, non-array", test{
 		query:      `{"selector":{},"fields":"x"}`,
 		wantStatus: http.StatusBadRequest,
@@ -215,16 +273,114 @@ func TestFind(t *testing.T) {
 		wantStatus: http.StatusBadRequest,
 		wantErr:    "invalid 'fields' field: 3",
 	})
+	tests.Add("find with index", func(t *testing.T) any {
+		d := newDB(t)
+		err := d.CreateIndex(context.Background(), "_design/idx", "idx", json.RawMessage(`{"fields":["name"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		_ = d.tPut("alice", map[string]string{"name": "Alice"})
+		revBob := d.tPut("bob", map[string]string{"name": "Bob"})
+		_ = d.tPut("charlie", map[string]string{"name": "Charlie"})
 
-	/*
-		TODO:
-		- sort
-		- stable
-		- update
-		- stale
-		- use_index
-		- execution_stats -- Not currently supported by Kivik
-	*/
+		return test{
+			db:    d,
+			query: `{"selector":{"name":"Bob"}}`,
+			want: []rowResult{
+				{Doc: `{"_id":"bob","_rev":"` + revBob + `","name":"Bob"}`},
+			},
+		}
+	})
+	tests.Add("use_index", func(t *testing.T) any {
+		d := newDB(t)
+		err := d.CreateIndex(context.Background(), "_design/myidx", "byName", json.RawMessage(`{"fields":["name"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		revBob := d.tPut("bob", map[string]string{"name": "Bob"})
+		_ = d.tPut("alice", map[string]string{"name": "Alice"})
+
+		return test{
+			db:    d,
+			query: `{"selector":{"name":"Bob"},"use_index":"_design/myidx"}`,
+			want: []rowResult{
+				{Doc: `{"_id":"bob","_rev":"` + revBob + `","name":"Bob"}`},
+			},
+		}
+	})
+	tests.Add("use_index, not found", test{
+		query:      `{"selector":{},"use_index":"_design/nonexistent"}`,
+		wantStatus: http.StatusBadRequest,
+		wantErr:    `index "_design/nonexistent" not found`,
+	})
+	tests.Add("use_index, array form", func(t *testing.T) any {
+		d := newDB(t)
+		err := d.CreateIndex(context.Background(), "_design/myidx", "byName", json.RawMessage(`{"fields":["name"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		revBob := d.tPut("bob", map[string]string{"name": "Bob"})
+		_ = d.tPut("alice", map[string]string{"name": "Alice"})
+
+		return test{
+			db:    d,
+			query: `{"selector":{"name":"Bob"},"use_index":["_design/myidx","byName"]}`,
+			want: []rowResult{
+				{Doc: `{"_id":"bob","_rev":"` + revBob + `","name":"Bob"}`},
+			},
+		}
+	})
+	tests.Add("use_index with sort, wrong index", func(t *testing.T) any {
+		d := newDB(t)
+		err := d.CreateIndex(context.Background(), "_design/nameIdx", "byName", json.RawMessage(`{"fields":["name"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		err = d.CreateIndex(context.Background(), "_design/ageIdx", "byAge", json.RawMessage(`{"fields":["age"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		d.tPut("doc1", map[string]any{"name": "Alice", "age": 30})
+
+		return test{
+			db:         d,
+			query:      `{"selector":{},"sort":["name"],"use_index":"_design/ageIdx"}`,
+			wantStatus: http.StatusBadRequest,
+			wantErr:    "no index exists for this sort, try indexing by the sort fields",
+		}
+	})
+	tests.Add("field name with double quote", func(t *testing.T) any {
+		d := newDB(t)
+		err := d.CreateIndex(context.Background(), "_design/idx", "byDQ", json.RawMessage(`{"fields":["say\"hello"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		rev := d.tPut("doc1", map[string]any{`say"hello`: "world"})
+
+		return test{
+			db:    d,
+			query: `{"selector":{"say\"hello":"world"}}`,
+			want: []rowResult{
+				{Doc: `{"_id":"doc1","_rev":"` + rev + `","say\"hello":"world"}`},
+			},
+		}
+	})
+	tests.Add("field name with single quote", func(t *testing.T) any {
+		d := newDB(t)
+		err := d.CreateIndex(context.Background(), "_design/idx", "byQuote", json.RawMessage(`{"fields":["o'brian"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		rev := d.tPut("doc1", map[string]any{"o'brian": "yes"})
+
+		return test{
+			db:    d,
+			query: `{"selector":{"o'brian":"yes"}}`,
+			want: []rowResult{
+				{Doc: `{"_id":"doc1","_rev":"` + rev + `","o'brian":"yes"}`},
+			},
+		}
+	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()
@@ -243,5 +399,224 @@ func TestFind(t *testing.T) {
 			return
 		}
 		checkRows(t, rows, tt.want)
+	})
+}
+
+func TestFindUsesIndex(t *testing.T) {
+	t.Parallel()
+	d := newDB(t)
+
+	err := d.CreateIndex(context.Background(), "_design/idx", "idx", json.RawMessage(`{"fields":["name"]}`), mock.NilOption)
+	if err != nil {
+		t.Fatalf("CreateIndex failed: %s", err)
+	}
+
+	for i := 0; i < 100; i++ {
+		id := fmt.Sprintf("doc%03d", i)
+		_ = d.tPut(id, map[string]string{"name": fmt.Sprintf("Name%03d", i)})
+	}
+
+	underlying := d.underlying()
+	tableName := `"kivik$test"`
+	indexName := mangoIndexName("test", "_design/idx", "idx")
+
+	// Verify the index exists.
+	var count int
+	err = underlying.QueryRow(`SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name=` + indexName).Scan(&count)
+	if err != nil {
+		t.Fatalf("Failed to query sqlite_master: %s", err)
+	}
+	if count != 1 {
+		t.Fatalf("Expected 1 index, got %d", count)
+	}
+
+	// Run EXPLAIN QUERY PLAN on a query that mirrors what leavesCTE generates.
+	query := `EXPLAIN QUERY PLAN
+		SELECT *
+		FROM ` + tableName + ` AS doc
+		WHERE json_extract(doc.doc, '$."name"') = 'Name050'`
+
+	rows, err := underlying.Query(query)
+	if err != nil {
+		t.Fatalf("EXPLAIN QUERY PLAN failed: %s", err)
+	}
+	defer rows.Close()
+
+	var found bool
+	for rows.Next() {
+		var id, parent, notused int
+		var detail string
+		if err := rows.Scan(&id, &parent, &notused, &detail); err != nil {
+			t.Fatalf("Scan failed: %s", err)
+		}
+		t.Logf("EXPLAIN: %s", detail)
+		if strings.Contains(detail, "USING INDEX") && strings.Contains(detail, "mango") {
+			found = true
+		}
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+	if !found {
+		t.Error("Expression index was not used by query plan")
+	}
+}
+
+func Test_selectorToSQL(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		selector     json.RawMessage
+		argOffset    int
+		wantConds    []string
+		wantArgs     []any
+		wantComplete bool
+	}
+
+	tests := testy.NewTable()
+
+	tests.Add("implicit eq", test{
+		selector:     json.RawMessage(`{"name": "Bob"}`),
+		argOffset:    0,
+		wantConds:    []string{`json_extract(doc.doc, '$."name"') = $1`},
+		wantArgs:     []any{"Bob"},
+		wantComplete: true,
+	})
+	tests.Add("$gt with number", test{
+		selector:     json.RawMessage(`{"age": {"$gt": 21}}`),
+		argOffset:    0,
+		wantConds:    []string{`json_type(doc.doc, '$."age"') NOT IN ('integer', 'real') OR json_extract(doc.doc, '$."age"') > $1`},
+		wantArgs:     []any{float64(21)},
+		wantComplete: true,
+	})
+	tests.Add("$lt with string", test{
+		selector:     json.RawMessage(`{"name": {"$lt": "M"}}`),
+		argOffset:    0,
+		wantConds:    []string{`json_type(doc.doc, '$."name"') != 'text' OR json_extract(doc.doc, '$."name"') < $1`},
+		wantArgs:     []any{"M"},
+		wantComplete: true,
+	})
+	tests.Add("$gte with number", test{
+		selector:     json.RawMessage(`{"score": {"$gte": 90.5}}`),
+		argOffset:    0,
+		wantConds:    []string{`json_type(doc.doc, '$."score"') NOT IN ('integer', 'real') OR json_extract(doc.doc, '$."score"') >= $1`},
+		wantArgs:     []any{float64(90.5)},
+		wantComplete: true,
+	})
+	tests.Add("$exists true", test{
+		selector:     json.RawMessage(`{"name": {"$exists": true}}`),
+		argOffset:    0,
+		wantConds:    []string{`json_extract(doc.doc, '$."name"') IS NOT NULL`},
+		wantArgs:     nil,
+		wantComplete: true,
+	})
+	tests.Add("$in", test{
+		selector:     json.RawMessage(`{"status": {"$in": ["active", "pending"]}}`),
+		argOffset:    0,
+		wantConds:    []string{`json_extract(doc.doc, '$."status"') IN ($1, $2)`},
+		wantArgs:     []any{"active", "pending"},
+		wantComplete: true,
+	})
+	tests.Add("argOffset", test{
+		selector:     json.RawMessage(`{"name": "Bob"}`),
+		argOffset:    5,
+		wantConds:    []string{`json_extract(doc.doc, '$."name"') = $6`},
+		wantArgs:     []any{"Bob"},
+		wantComplete: true,
+	})
+	tests.Add("unsupported operator skipped", test{
+		selector:     json.RawMessage(`{"name": {"$regex": "^B"}}`),
+		argOffset:    0,
+		wantConds:    nil,
+		wantArgs:     nil,
+		wantComplete: false,
+	})
+	tests.Add("$and", test{
+		selector:     json.RawMessage(`{"$and": [{"name": "Bob"}, {"age": {"$eq": 21}}]}`),
+		argOffset:    0,
+		wantConds:    []string{`json_extract(doc.doc, '$."name"') = $1 AND json_extract(doc.doc, '$."age"') = $2`},
+		wantArgs:     []any{"Bob", float64(21)},
+		wantComplete: true,
+	})
+	tests.Add("$or", test{
+		selector:     json.RawMessage(`{"$or": [{"name": "Bob"}, {"name": "Alice"}]}`),
+		argOffset:    0,
+		wantConds:    []string{`(json_extract(doc.doc, '$."name"') = $1 OR json_extract(doc.doc, '$."name"') = $2)`},
+		wantArgs:     []any{"Bob", "Alice"},
+		wantComplete: true,
+	})
+	tests.Add("null eq", test{
+		selector:     json.RawMessage(`{"name": {"$eq": null}}`),
+		argOffset:    0,
+		wantConds:    []string{`json_extract(doc.doc, '$."name"') IS NULL`},
+		wantArgs:     nil,
+		wantComplete: true,
+	})
+	tests.Add("boolean true", test{
+		selector:     json.RawMessage(`{"active": true}`),
+		argOffset:    0,
+		wantConds:    []string{`json_extract(doc.doc, '$."active"') = $1`},
+		wantArgs:     []any{1},
+		wantComplete: true,
+	})
+	tests.Add("implicit null", test{
+		selector:     json.RawMessage(`{"name": null}`),
+		argOffset:    0,
+		wantConds:    []string{`json_extract(doc.doc, '$."name"') IS NULL`},
+		wantArgs:     nil,
+		wantComplete: true,
+	})
+	tests.Add("empty selector", test{
+		selector:     json.RawMessage(`{}`),
+		argOffset:    0,
+		wantConds:    nil,
+		wantArgs:     nil,
+		wantComplete: true,
+	})
+	tests.Run(t, func(t *testing.T, tt test) {
+		t.Parallel()
+		gotConds, gotArgs, gotComplete := selectorToSQL(tt.selector, tt.argOffset)
+		if d := cmp.Diff(tt.wantConds, gotConds); d != "" {
+			t.Errorf("conditions mismatch (-want +got):\n%s", d)
+		}
+		if d := cmp.Diff(tt.wantArgs, gotArgs); d != "" {
+			t.Errorf("args mismatch (-want +got):\n%s", d)
+		}
+		if gotComplete != tt.wantComplete {
+			t.Errorf("complete mismatch: got %v, want %v", gotComplete, tt.wantComplete)
+		}
+	})
+}
+
+func Test_fieldCondition(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		jsonPath  string
+		val       json.RawMessage
+		argOffset int
+		wantCond  string
+		wantArgs  []any
+	}
+
+	tests := testy.NewTable()
+
+	tests.Add("empty RawMessage", test{
+		jsonPath:  `$."name"`,
+		val:       json.RawMessage{},
+		argOffset: 0,
+		wantCond:  "",
+		wantArgs:  nil,
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		t.Parallel()
+		gotCond, gotArgs := fieldCondition(tt.jsonPath, tt.val, tt.argOffset)
+		if gotCond != tt.wantCond {
+			t.Errorf("condition mismatch: got %q, want %q", gotCond, tt.wantCond)
+		}
+		if d := cmp.Diff(tt.wantArgs, gotArgs); d != "" {
+			t.Errorf("args mismatch (-want +got):\n%s", d)
+		}
 	})
 }

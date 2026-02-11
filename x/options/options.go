@@ -611,8 +611,16 @@ func (o Map) groupLevel() (uint64, error) {
 	return toUint64(raw, "invalid value for 'group_level'")
 }
 
-// Sort returns the sort option.
-func (o Map) Sort() ([]string, error) {
+// SortField represents a single field in a Mango sort specification, carrying
+// both the field name and sort direction.
+type SortField struct {
+	Field string
+	Desc  bool
+}
+
+// Sort returns the sort option. Each element may be a string (ascending by
+// default) or a single-key object like {"field": "desc"}.
+func (o Map) Sort() ([]SortField, error) {
 	raw, ok := o["sort"]
 	if !ok {
 		return nil, nil
@@ -621,15 +629,56 @@ func (o Map) Sort() ([]string, error) {
 	if !ok {
 		return nil, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'sort': %v", raw)}
 	}
-	sort := make([]string, len(list))
+	result := make([]SortField, len(list))
 	for i, v := range list {
-		s, ok := v.(string)
-		if !ok {
+		switch t := v.(type) {
+		case string:
+			result[i] = SortField{Field: t}
+		case map[string]any:
+			for k, dir := range t {
+				d, _ := dir.(string)
+				d = strings.ToLower(d)
+				if d != "asc" && d != "desc" {
+					return nil, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid sort direction: %v", dir)}
+				}
+				result[i] = SortField{
+					Field: k,
+					Desc:  d == "desc",
+				}
+			}
+		default:
 			return nil, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid 'sort' field: %v", v)}
 		}
-		sort[i] = s
 	}
-	return sort, nil
+	return result, nil
+}
+
+// UseIndex returns the design document name and optional index name from the
+// use_index option. CouchDB accepts either a string (ddoc only) or a
+// two-element array [ddoc, indexName].
+func (o Map) UseIndex() (string, string, error) {
+	raw, ok := o["use_index"]
+	if !ok {
+		return "", "", nil
+	}
+	switch v := raw.(type) {
+	case string:
+		return v, "", nil
+	case []any:
+		switch len(v) {
+		case 1:
+			if ddoc, ok := v[0].(string); ok {
+				return ddoc, "", nil
+			}
+		case 2:
+			ddoc, ok1 := v[0].(string)
+			indexName, ok2 := v[1].(string)
+			if ok1 && ok2 {
+				return ddoc, indexName, nil
+			}
+		}
+	}
+	return "", "", &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("invalid value for 'use_index': %v", raw)}
 }
 
 // Bookmark returns the bookmark option.
@@ -864,12 +913,14 @@ type ViewOptions struct {
 	attEncodingInfo bool
 
 	// Find-specific options
-	selector  *mango.Selector
-	findLimit int64
-	findSkip  int64
-	fields    []string
-	bookmark  string
-	sort      []string
+	selector     *mango.Selector
+	findLimit    int64
+	findSkip     int64
+	fields       []string
+	bookmark     string
+	sort         []SortField
+	useIndexDdoc string
+	useIndexName string
 }
 
 // FindOptions converts a _find query body into a viewOptions struct.
@@ -916,23 +967,26 @@ func FindOptions(query any) (*ViewOptions, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(sort) > 0 {
-		return nil, &internal.Error{Status: http.StatusBadRequest, Message: "no index exists for this sort, try indexing by the sort fields"}
+	useIndexDdoc, useIndexName, err := o.UseIndex()
+	if err != nil {
+		return nil, err
 	}
 
 	v := &ViewOptions{
 		PaginationOptions: PaginationOptions{
 			limit: -1,
 		},
-		view:        ViewAllDocs,
-		conflicts:   conflicts,
-		includeDocs: true,
-		findLimit:   limit,
-		findSkip:    skip,
-		selector:    s.Selector,
-		fields:      fields,
-		bookmark:    bookmark,
-		sort:        sort,
+		view:         ViewAllDocs,
+		conflicts:    conflicts,
+		includeDocs:  true,
+		findLimit:    limit,
+		findSkip:     skip,
+		selector:     s.Selector,
+		fields:       fields,
+		bookmark:     bookmark,
+		sort:         sort,
+		useIndexDdoc: useIndexDdoc,
+		useIndexName: useIndexName,
 	}
 
 	return v, v.Validate()
@@ -1095,6 +1149,15 @@ func (v ViewOptions) FindSkip() int64 { return v.findSkip }
 
 // Bookmark returns the bookmark option for _find queries.
 func (v ViewOptions) Bookmark() string { return v.bookmark }
+
+// SortFields returns the sort fields for _find queries.
+func (v ViewOptions) SortFields() []SortField { return v.sort }
+
+// UseIndexDdoc returns the design document specified by use_index for _find queries.
+func (v ViewOptions) UseIndexDdoc() string { return v.useIndexDdoc }
+
+// UseIndexName returns the index name specified by use_index for _find queries.
+func (v ViewOptions) UseIndexName() string { return v.useIndexName }
 
 // BuildOrderBy returns an ORDER BY clause based on the provided configuration.
 // Additional columns can be specified to include in the ORDER BY clause.

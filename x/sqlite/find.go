@@ -201,11 +201,11 @@ func combineSelectors(val json.RawMessage, sep string, wrap bool, argOffset int)
 }
 
 func jsonExtract(col, jsonPath string) string {
-	return `json_extract(` + col + `, "` + jsonPath + `")`
+	return `json_extract(` + col + `, '` + strings.ReplaceAll(jsonPath, "'", "''") + `')`
 }
 
 func jsonType(col, jsonPath string) string {
-	return `json_type(` + col + `, "` + jsonPath + `")`
+	return `json_type(` + col + `, '` + strings.ReplaceAll(jsonPath, "'", "''") + `')`
 }
 
 func fieldCondition(jsonPath string, val json.RawMessage, argOffset int) (string, []any) {

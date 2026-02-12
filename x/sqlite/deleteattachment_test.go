@@ -250,6 +250,24 @@ func TestDBDeleteAttachment(t *testing.T) {
 		}
 	})
 
+	tests.Add("validate_doc_update rejects attachment deletion", func(t *testing.T) any {
+		d := newDB(t)
+		rev := d.tPut("foo", map[string]any{
+			"cat":          "meow",
+			"_attachments": newAttachments().add("foo.txt", "This is a base64 encoding"),
+		})
+		d.tAddValidation("_design/validation", `function(newDoc, oldDoc, userCtx, secObj) { throw({forbidden: "not allowed"}); }`)
+
+		return test{
+			db:         d,
+			docID:      "foo",
+			filename:   "foo.txt",
+			options:    kivik.Rev(rev),
+			wantErr:    "not allowed",
+			wantStatus: http.StatusForbidden,
+		}
+	})
+
 	/*
 		TODO:
 		- db missing => db not found

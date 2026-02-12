@@ -58,6 +58,10 @@ func (d *db) CreateDoc(ctx context.Context, doc any, _ driver.Options) (string, 
 		return "", "", &kerrors.Error{Status: http.StatusConflict, Message: "document update conflict"}
 	}
 
+	if err := d.runValidation(ctx, tx, data, revision{}); err != nil {
+		return "", "", err
+	}
+
 	rev := revision{rev: 1, id: data.RevID()}
 	_, err = tx.ExecContext(ctx, d.query(`
 		INSERT INTO {{ .Revs }} (id, rev, rev_id)

@@ -87,6 +87,10 @@ func (d *db) DeleteAttachment(ctx context.Context, docID, filename string, opts 
 		data.Attachments[att] = attachment{Stub: true}
 	}
 
+	if err := d.runValidation(ctx, tx, data, curRev); err != nil {
+		return "", err
+	}
+
 	r, err := d.createRev(ctx, tx, data, curRev)
 	if err != nil {
 		return "", err

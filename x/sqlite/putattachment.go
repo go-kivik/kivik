@@ -72,6 +72,10 @@ func (d *db) PutAttachment(ctx context.Context, docID string, att *driver.Attach
 		att.Filename: file,
 	}
 
+	if err := d.runValidation(ctx, tx, data, curRev); err != nil {
+		return "", err
+	}
+
 	r, err := d.createRev(ctx, tx, data, curRev)
 	if err != nil {
 		return "", err

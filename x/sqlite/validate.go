@@ -15,21 +15,33 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 
 	"github.com/go-kivik/kivik/x/sqlite/v4/js"
 )
 
 // runValidation runs all validate_doc_update functions against the proposed
-// change. The old document is only fetched if validate functions exist.
-func (d *db) runValidation(ctx context.Context, tx *sql.Tx, docID string, newDoc map[string]any, curRev revision) error {
+// change. The new document map is built from data.Doc, with _id and (if
+// applicable) _deleted injected. The old document is only fetched if validate
+// functions exist.
+func (d *db) runValidation(ctx context.Context, tx *sql.Tx, data *docData, curRev revision) error {
 	funcs, err := d.getValidateFuncs(ctx, tx)
 	if err != nil || len(funcs) == 0 {
 		return err
 	}
 
+	var newDoc map[string]any
+	if err := json.Unmarshal(data.Doc, &newDoc); err != nil {
+		return err
+	}
+	newDoc["_id"] = data.ID
+	if data.Deleted {
+		newDoc["_deleted"] = true
+	}
+
 	var oldDoc any
 	if !curRev.IsZero() {
-		doc, _, err := d.getCoreDoc(ctx, tx, docID, curRev, false, false)
+		doc, _, err := d.getCoreDoc(ctx, tx, data.ID, curRev, false, false)
 		if err != nil {
 			return err
 		}

@@ -146,6 +146,20 @@ func TestDBCreateDoc(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("validate_doc_update rejects document", func(t *testing.T) any {
+		d := newDB(t)
+		d.tAddValidation("_design/validation", `function(newDoc, oldDoc, userCtx, secObj) { throw({forbidden: "not allowed"}); }`)
+
+		return test{
+			db: d,
+			doc: map[string]any{
+				"_id": "foo",
+				"foo": "bar",
+			},
+			wantStatus: http.StatusForbidden,
+			wantErr:    "not allowed",
+		}
+	})
 	/*
 		TODO:
 		- nil doc

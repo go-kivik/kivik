@@ -16,9 +16,6 @@ These return a bare `"not implemented"` error:
 
 ### Incomplete features
 
-- [ ] **validate_doc_update not evaluated** (`put_test.go:1116`). Stored but
-  never invoked.
-
 - [ ] **Reduce caching** (`README.md`). Reduce functions run on-demand with no
   intermediate result caching.
 

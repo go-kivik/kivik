@@ -30,8 +30,12 @@ func (d *db) runValidation(ctx context.Context, tx *sql.Tx, data *docData, curRe
 		return err
 	}
 
+	doc := data.Doc
+	if len(doc) == 0 {
+		doc = []byte("{}")
+	}
 	var newDoc map[string]any
-	if err := json.Unmarshal(data.Doc, &newDoc); err != nil {
+	if err := json.Unmarshal(doc, &newDoc); err != nil {
 		return err
 	}
 	newDoc["_id"] = data.ID

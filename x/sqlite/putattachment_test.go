@@ -310,6 +310,25 @@ func TestDBPutAttachment(t *testing.T) {
 		}
 	})
 
+	tests.Add("validate_doc_update rejects attachment", func(t *testing.T) any {
+		d := newDB(t)
+		rev := d.tPut("foo", map[string]any{"foo": "bar"})
+		d.tAddValidation("_design/validation", `function(newDoc, oldDoc, userCtx, secObj) { throw({forbidden: "not allowed"}); }`)
+
+		return test{
+			db:    d,
+			docID: "foo",
+			attachment: &driver.Attachment{
+				Filename:    "foo.txt",
+				ContentType: "text/plain",
+				Content:     io.NopCloser(strings.NewReader("Hello, world!")),
+			},
+			options:    kivik.Rev(rev),
+			wantStatus: http.StatusForbidden,
+			wantErr:    "not allowed",
+		}
+	})
+
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()
 		dbc := tt.db

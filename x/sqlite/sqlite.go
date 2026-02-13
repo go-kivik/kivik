@@ -139,6 +139,10 @@ func (c *client) DestroyDB(ctx context.Context, name string, _ driver.Options) e
 			return err
 		}
 	}
+
+	if err := c.logDBUpdate(ctx, tx, name, "deleted"); err != nil {
+		return err
+	}
 	return tx.Commit()
 }
 

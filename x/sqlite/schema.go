@@ -95,6 +95,11 @@ var schema = []string{
 		index_def TEXT NOT NULL,
 		UNIQUE(ddoc, name)
 	)`,
+	`CREATE TABLE IF NOT EXISTS {{ .DBUpdatesLog }} (
+		seq INTEGER PRIMARY KEY AUTOINCREMENT,
+		db_name TEXT NOT NULL,
+		type TEXT NOT NULL
+	)`,
 }
 
 var viewSchema = []string{

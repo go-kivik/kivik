@@ -61,6 +61,10 @@ func (drv) NewClient(dsn string, options driver.Options) (driver.Client, error) 
 	}
 	options.Apply(c)
 
+	if err := c.ensureDBUpdatesLog(context.Background()); err != nil {
+		return nil, err
+	}
+
 	return c, nil
 }
 
@@ -82,6 +86,10 @@ func (client) Version(context.Context) (*driver.Version, error) {
 		Version: version,
 		Vendor:  vendor,
 	}, nil
+}
+
+func (c *client) query(format string) string {
+	return c.newDB("").query(format)
 }
 
 var validDBNameRE = regexp.MustCompile(`^[a-z][a-z0-9_$()+/-]*$`)
@@ -130,6 +138,10 @@ func (c *client) DestroyDB(ctx context.Context, name string, _ driver.Options) e
 			}
 			return err
 		}
+	}
+
+	if err := c.logDBUpdate(ctx, tx, name, "deleted"); err != nil {
+		return err
 	}
 	return tx.Commit()
 }

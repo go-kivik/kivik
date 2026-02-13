@@ -80,6 +80,21 @@ func TestClientDBUpdates(t *testing.T) {
 		}
 	})
 
+	tests.Add("invalid feed value is rejected", func(t *testing.T) interface{} {
+		d := drv{}
+		dClient, err := d.NewClient(":memory:", mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return test{
+			client:     dClient.(*client),
+			options:    kivik.Param("feed", "invalid"),
+			wantStatus: 400,
+			wantErr:    "supported `feed` types: normal, longpoll, continuous",
+		}
+	})
+
 	tests.Run(t, func(t *testing.T, tt test) {
 		ctx := context.Background()
 		updates, err := tt.client.DBUpdates(ctx, tt.options)

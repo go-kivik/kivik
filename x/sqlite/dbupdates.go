@@ -49,6 +49,10 @@ func (u *dbUpdates) Close() error {
 func (c *client) DBUpdates(ctx context.Context, opts driver.Options) (driver.DBUpdates, error) {
 	optMap := options.New(opts)
 
+	if _, err := optMap.Feed(); err != nil {
+		return nil, err
+	}
+
 	var queryArgs []interface{}
 	query := c.query(`
 		SELECT seq, db_name, type

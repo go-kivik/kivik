@@ -341,7 +341,9 @@ func EncodeBody(i any) io.ReadCloser {
 		case string:
 			_, err = w.Write([]byte(t))
 		default:
-			err = json.NewEncoder(w).Encode(i)
+			encoder := json.NewEncoder(w)
+			encoder.SetEscapeHTML(false)
+			err = encoder.Encode(i)
 			switch err.(type) {
 			case *json.MarshalerError, *json.UnsupportedTypeError, *json.UnsupportedValueError:
 				err = &internal.Error{Status: http.StatusBadRequest, Err: err}

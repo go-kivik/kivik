@@ -24,6 +24,7 @@ func (c *client) CreateDB(ctx context.Context, name string, _ driver.Options) er
 	if err := validateDBName(name); err != nil {
 		return err
 	}
+
 	tx, err := c.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -39,6 +40,10 @@ func (c *client) CreateDB(ctx context.Context, name string, _ driver.Options) er
 			}
 			return err
 		}
+	}
+
+	if err := c.logDBUpdate(ctx, tx, name, "created"); err != nil {
+		return err
 	}
 
 	return tx.Commit()

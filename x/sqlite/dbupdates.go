@@ -17,6 +17,9 @@ import (
 	"database/sql"
 	"io"
 	"strconv"
+	"time"
+
+	"github.com/cenkalti/backoff/v4"
 
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/x/options"
@@ -34,12 +37,7 @@ func (u *dbUpdates) Next(update *driver.DBUpdate) error {
 		return io.EOF
 	}
 
-	var seq int64
-	if err := u.rows.Scan(&seq, &update.DBName, &update.Type); err != nil {
-		return err
-	}
-	update.Seq = strconv.FormatInt(seq, 10)
-	return nil
+	return u.rows.Scan(&update.Seq, &update.DBName, &update.Type)
 }
 
 func (u *dbUpdates) Close() error {
@@ -49,8 +47,31 @@ func (u *dbUpdates) Close() error {
 func (c *client) DBUpdates(ctx context.Context, opts driver.Options) (driver.DBUpdates, error) {
 	optMap := options.New(opts)
 
-	if _, err := optMap.Feed(); err != nil {
+	feed, err := optMap.Feed()
+	if err != nil {
 		return nil, err
+	}
+
+	if feed == "longpoll" || feed == "continuous" {
+		return c.newLongpollDBUpdates(ctx, optMap, feed == "continuous")
+	}
+
+	sinceNow, sinceVal, err := optMap.Since()
+	if err != nil {
+		return nil, err
+	}
+
+	var since uint64
+	if sinceNow {
+		row := c.db.QueryRowContext(ctx, c.query(`
+			SELECT COALESCE(MAX(seq), 0)
+			FROM {{ .DBUpdatesLog }}
+		`))
+		if err := row.Scan(&since); err != nil {
+			return nil, err
+		}
+	} else if sinceVal != nil {
+		since = *sinceVal
 	}
 
 	var queryArgs []interface{}
@@ -59,9 +80,9 @@ func (c *client) DBUpdates(ctx context.Context, opts driver.Options) (driver.DBU
 		FROM {{ .DBUpdatesLog }}
 	`)
 
-	if _, sinceVal, ok := optMap.Get("since"); ok {
+	if sinceNow || sinceVal != nil {
 		query += ` WHERE seq > ?`
-		queryArgs = append(queryArgs, sinceVal)
+		queryArgs = append(queryArgs, since)
 	}
 
 	query += ` ORDER BY seq`
@@ -92,4 +113,140 @@ func (c *client) logDBUpdate(ctx context.Context, tx *sql.Tx, dbName, eventType 
 		VALUES (?, ?)
 	`), dbName, eventType)
 	return err
+}
+
+type longpollDBUpdates struct {
+	stmt        *sql.Stmt
+	since       uint64
+	continuous  bool
+	ctx         context.Context
+	done        bool
+	currentRows *sql.Rows
+	backoff     *backoff.ExponentialBackOff
+}
+
+var _ driver.DBUpdates = (*longpollDBUpdates)(nil)
+
+func (c *client) newLongpollDBUpdates(ctx context.Context, optMap options.Map, continuous bool) (*longpollDBUpdates, error) {
+	sinceNow, sinceVal, err := optMap.Since()
+	if err != nil {
+		return nil, err
+	}
+
+	var since uint64
+	if sinceNow {
+		row := c.db.QueryRowContext(ctx, c.query(`
+			SELECT COALESCE(MAX(seq), 0)
+			FROM {{ .DBUpdatesLog }}
+		`))
+		if err := row.Scan(&since); err != nil {
+			return nil, err
+		}
+	} else if sinceVal != nil {
+		since = *sinceVal
+	}
+
+	stmt, err := c.db.PrepareContext(ctx, c.query(`
+		SELECT seq, db_name, type
+		FROM {{ .DBUpdatesLog }}
+		WHERE seq > ?
+		ORDER BY seq
+	`))
+	if err != nil {
+		return nil, err
+	}
+
+	idleTimeout, err := optMap.Timeout()
+	if err != nil {
+		return nil, err
+	}
+
+	bo := backoff.NewExponentialBackOff()
+	bo.InitialInterval = 100 * time.Millisecond
+	bo.MaxInterval = 10 * time.Second
+	bo.MaxElapsedTime = idleTimeout
+
+	return &longpollDBUpdates{
+		stmt:       stmt,
+		since:      since,
+		continuous: continuous,
+		ctx:        ctx,
+		backoff:    bo,
+	}, nil
+}
+
+func (u *longpollDBUpdates) Next(update *driver.DBUpdate) error {
+	if u.done {
+		return io.EOF
+	}
+
+	for {
+		if u.currentRows != nil {
+			if u.currentRows.Next() {
+				if err := u.currentRows.Scan(&update.Seq, &update.DBName, &update.Type); err != nil {
+					return err
+				}
+				seq, _ := strconv.ParseUint(update.Seq, 10, 64)
+				u.since = seq
+				return nil
+			}
+
+			if err := u.currentRows.Err(); err != nil {
+				return err
+			}
+			u.currentRows.Close()
+			u.currentRows = nil
+
+			if !u.continuous {
+				u.done = true
+				return io.EOF
+			}
+
+			u.backoff.Reset()
+		}
+
+		rows, err := u.stmt.QueryContext(u.ctx, u.since)
+		if err != nil {
+			return err
+		}
+
+		if rows.Next() {
+			if err := rows.Scan(&update.Seq, &update.DBName, &update.Type); err != nil {
+				rows.Close()
+				return err
+			}
+			seq, _ := strconv.ParseUint(update.Seq, 10, 64)
+			u.since = seq
+			u.currentRows = rows
+			return nil
+		}
+
+		if err := rows.Err(); err != nil {
+			rows.Close()
+			return err
+		}
+		rows.Close()
+
+		next := u.backoff.NextBackOff()
+		if next == backoff.Stop {
+			if !u.continuous {
+				return io.EOF
+			}
+			u.backoff.Reset()
+			next = u.backoff.NextBackOff()
+		}
+
+		select {
+		case <-time.After(next):
+		case <-u.ctx.Done():
+			return u.ctx.Err()
+		}
+	}
+}
+
+func (u *longpollDBUpdates) Close() error {
+	if u.currentRows != nil {
+		u.currentRows.Close()
+	}
+	return u.stmt.Close()
 }

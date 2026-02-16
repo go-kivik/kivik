@@ -16,7 +16,10 @@ package sqlite
 
 import (
 	"context"
+	"fmt"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"gitlab.com/flimzy/testy"
@@ -163,4 +166,69 @@ func TestClientDBUpdates(t *testing.T) {
 			t.Errorf("Unexpected result: %s", d)
 		}
 	})
+}
+
+func TestClientDBUpdates_longpoll(t *testing.T) {
+	t.Parallel()
+
+	d := drv{}
+	driverClient, err := d.NewClient(":memory:", mock.NilOption)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dClient := driverClient.(*client)
+
+	ctx := context.Background()
+	if err := dClient.CreateDB(ctx, "db1", mock.NilOption); err != nil {
+		t.Fatal(err)
+	}
+
+	updates, err := dClient.DBUpdates(context.Background(), kivik.Params(map[string]any{
+		"feed":  "longpoll",
+		"since": "now",
+	}))
+	if err != nil {
+		t.Fatalf("Failed to start DBUpdates feed: %s", err)
+	}
+	t.Cleanup(func() {
+		_ = updates.Close()
+	})
+
+	var mu sync.Mutex
+	var createdDB string
+
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		if err := dClient.CreateDB(context.Background(), "db2", mock.NilOption); err != nil {
+			panic(fmt.Sprintf("Failed to create db: %s", err))
+		}
+		mu.Lock()
+		createdDB = "db2"
+		mu.Unlock()
+	}()
+
+	start := time.Now()
+
+	var update driver.DBUpdate
+	if err := updates.Next(&update); err != nil {
+		t.Fatalf("Failed to get next update: %s", err)
+	}
+
+	elapsed := time.Since(start)
+	if elapsed < 50*time.Millisecond {
+		t.Errorf("Expected feed to block, but returned in %v", elapsed)
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	want := driver.DBUpdate{
+		DBName: createdDB,
+		Type:   "created",
+		Seq:    "2",
+	}
+
+	if d := cmp.Diff(want, update); d != "" {
+		t.Errorf("Unexpected update: %s", d)
+	}
 }

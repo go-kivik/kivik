@@ -16,6 +16,7 @@ import (
 	"context"
 	"database/sql"
 	"io"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -23,6 +24,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	internal "github.com/go-kivik/kivik/v4/int/errors"
 	"github.com/go-kivik/kivik/v4/x/options"
 )
 
@@ -46,6 +48,17 @@ func (u *dbUpdates) Close() error {
 }
 
 func (c *client) DBUpdates(ctx context.Context, opts driver.Options) (driver.DBUpdates, error) {
+	var exists bool
+	if err := c.db.QueryRowContext(ctx, `
+		SELECT COUNT(*) > 0 FROM sqlite_master
+		WHERE type = 'table' AND name = 'kivik$_global_changes'
+	`).Scan(&exists); err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, &internal.Error{Status: http.StatusServiceUnavailable, Message: "Service Unavailable"}
+	}
+
 	optMap := options.New(opts)
 
 	feed, err := optMap.Feed()
@@ -135,10 +148,8 @@ func (c *client) logGlobalChange(ctx context.Context, tx *sql.Tx, dbName, eventT
 
 	var exists bool
 	if err := tx.QueryRowContext(ctx, `
-		SELECT EXISTS (
-			SELECT 1 FROM sqlite_master
-			WHERE type = 'table' AND name = 'kivik$_global_changes'
-		)
+		SELECT COUNT(*) > 0 FROM sqlite_master
+		WHERE type = 'table' AND name = 'kivik$_global_changes'
 	`).Scan(&exists); err != nil {
 		return err
 	}

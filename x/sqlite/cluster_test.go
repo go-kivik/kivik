@@ -26,7 +26,6 @@ import (
 	"github.com/go-kivik/kivik/v4/int/mock"
 )
 
-
 func TestClientMembership(t *testing.T) {
 	t.Parallel()
 

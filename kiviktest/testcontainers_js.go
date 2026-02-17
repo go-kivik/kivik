@@ -21,9 +21,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"testing"
-
 	"syscall/js"
+	"testing"
 )
 
 func startCouchDB(t *testing.T, image string) string { //nolint:thelper // Not a helper

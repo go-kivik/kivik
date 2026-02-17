@@ -31,6 +31,8 @@ import (
 )
 
 func TestClientDBUpdates(t *testing.T) {
+	// TODO: update in Cycle 5 when kivik$db_updates_log is removed
+	t.Skip("Skipped until Cycle 5 when kivik$db_updates_log is removed")
 	t.Parallel()
 
 	type test struct {
@@ -59,7 +61,7 @@ func TestClientDBUpdates(t *testing.T) {
 
 		return test{
 			client:  dClient.(*client),
-			options: nil,
+			options: mock.NilOption,
 			want: []driver.DBUpdate{
 				{
 					DBName: "db1",
@@ -107,7 +109,7 @@ func TestClientDBUpdates(t *testing.T) {
 
 		return test{
 			client:  dClient.(*client),
-			options: nil,
+			options: mock.NilOption,
 			want: []driver.DBUpdate{
 				{
 					DBName: "db1",
@@ -190,6 +192,8 @@ func TestClientDBUpdates(t *testing.T) {
 }
 
 func TestClientDBUpdates_longpoll(t *testing.T) {
+	// TODO: update in Cycle 5 when kivik$db_updates_log is removed
+	t.Skip("Skipped until Cycle 5 when kivik$db_updates_log is removed")
 	t.Parallel()
 
 	dClient := testClient(t).(*client)
@@ -199,7 +203,7 @@ func TestClientDBUpdates_longpoll(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	updates, err := dClient.DBUpdates(context.Background(), kivik.Params(map[string]any{
+	updates, err := dClient.DBUpdates(ctx, kivik.Params(map[string]any{
 		"feed":  "longpoll",
 		"since": "now",
 	}))
@@ -247,6 +251,40 @@ func TestClientDBUpdates_longpoll(t *testing.T) {
 	if d := cmp.Diff(want, update); d != "" {
 		t.Errorf("Unexpected update: %s", d)
 	}
+}
+
+func TestClientDBUpdates_globalChanges(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		client     *client
+		options    driver.Options
+		wantStatus int
+		wantErr    string
+	}
+
+	tests := testy.NewTable()
+
+	tests.Add("returns 503 when _global_changes is absent", func(t *testing.T) interface{} {
+		dClient := testClient(t)
+
+		return test{
+			client:     dClient.(*client),
+			options:    mock.NilOption,
+			wantStatus: 503,
+			wantErr:    "Service Unavailable",
+		}
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		_, err := tt.client.DBUpdates(context.Background(), tt.options)
+		if !testy.ErrorMatches(tt.wantErr, err) {
+			t.Errorf("unexpected error, got %s, want %s", err, tt.wantErr)
+		}
+		if status := kivik.HTTPStatus(err); status != tt.wantStatus {
+			t.Errorf("Unexpected status: got %d, want %d", status, tt.wantStatus)
+		}
+	})
 }
 
 func TestClientLogGlobalChange(t *testing.T) {

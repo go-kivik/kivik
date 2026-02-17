@@ -26,6 +26,39 @@ import (
 	"github.com/go-kivik/kivik/v4/int/mock"
 )
 
+func TestClientClusterStatus(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		want    string
+		wantErr string
+	}
+
+	tests := testy.NewTable()
+
+	tests.Add("cluster_disabled when _global_changes tables are absent", test{
+		want: "cluster_disabled",
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		d := drv{}
+		dClient, err := d.NewClient(":memory:", mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		c := dClient.(driver.Cluster)
+
+		got, err := c.ClusterStatus(context.Background(), mock.NilOption)
+		if !testy.ErrorMatches(tt.wantErr, err) {
+			t.Errorf("unexpected error, got %s, want %s", err, tt.wantErr)
+		}
+		if got != tt.want {
+			t.Errorf("unexpected status, got %q, want %q", got, tt.want)
+		}
+	})
+}
+
 func TestClientClusterSetup(t *testing.T) {
 	t.Parallel()
 

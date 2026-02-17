@@ -69,8 +69,19 @@ func (c *client) ClusterSetup(ctx context.Context, action any) error {
 	}
 }
 
-func (c *client) ClusterStatus(context.Context, driver.Options) (string, error) {
-	return "", errors.New("not implemented")
+func (c *client) ClusterStatus(ctx context.Context, _ driver.Options) (string, error) {
+	var exists bool
+	err := c.db.QueryRowContext(ctx, `
+		SELECT COUNT(*) > 0 FROM sqlite_master
+		WHERE type = 'table' AND name = 'kivik$_global_changes'
+	`).Scan(&exists)
+	if err != nil {
+		return "", err
+	}
+	if exists {
+		return "single_node_enabled", nil
+	}
+	return "cluster_disabled", nil
 }
 
 func (c *client) Membership(context.Context) (*driver.ClusterMembership, error) {

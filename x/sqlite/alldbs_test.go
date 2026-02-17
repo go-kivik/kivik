@@ -35,11 +35,7 @@ func TestClientAllDBs(t *testing.T) {
 	tests := testy.NewTable()
 
 	tests.Add("returns databases in ascending order", func(t *testing.T) interface{} {
-		d := drv{}
-		dClient, err := d.NewClient(":memory:", mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		dClient := testClient(t)
 		c := dClient.(*client)
 		for _, table := range []string{
 			"kivik$foo", "kivik$bar",
@@ -59,11 +55,7 @@ func TestClientAllDBs(t *testing.T) {
 		}
 	})
 	tests.Add("descending=true", func(t *testing.T) interface{} {
-		d := drv{}
-		dClient, err := d.NewClient(":memory:", mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		dClient := testClient(t)
 		c := dClient.(*client)
 		ctx := context.Background()
 		for _, name := range []string{"aaa", "bbb", "ccc"} {
@@ -78,11 +70,7 @@ func TestClientAllDBs(t *testing.T) {
 		}
 	})
 	tests.Add("limit=2", func(t *testing.T) interface{} {
-		d := drv{}
-		dClient, err := d.NewClient(":memory:", mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		dClient := testClient(t)
 		c := dClient.(*client)
 		ctx := context.Background()
 		for _, name := range []string{"aaa", "bbb", "ccc"} {
@@ -97,11 +85,7 @@ func TestClientAllDBs(t *testing.T) {
 		}
 	})
 	tests.Add("skip=1", func(t *testing.T) interface{} {
-		d := drv{}
-		dClient, err := d.NewClient(":memory:", mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		dClient := testClient(t)
 		c := dClient.(*client)
 		ctx := context.Background()
 		for _, name := range []string{"aaa", "bbb", "ccc"} {
@@ -116,11 +100,7 @@ func TestClientAllDBs(t *testing.T) {
 		}
 	})
 	tests.Add("startkey", func(t *testing.T) interface{} {
-		d := drv{}
-		dClient, err := d.NewClient(":memory:", mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		dClient := testClient(t)
 		c := dClient.(*client)
 		ctx := context.Background()
 		for _, name := range []string{"aaa", "bbb", "ccc"} {
@@ -135,11 +115,7 @@ func TestClientAllDBs(t *testing.T) {
 		}
 	})
 	tests.Add("endkey", func(t *testing.T) interface{} {
-		d := drv{}
-		dClient, err := d.NewClient(":memory:", mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		dClient := testClient(t)
 		c := dClient.(*client)
 		ctx := context.Background()
 		for _, name := range []string{"aaa", "bbb", "ccc"} {
@@ -154,11 +130,7 @@ func TestClientAllDBs(t *testing.T) {
 		}
 	})
 	tests.Add("inclusive_end=false", func(t *testing.T) interface{} {
-		d := drv{}
-		dClient, err := d.NewClient(":memory:", mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		dClient := testClient(t)
 		c := dClient.(*client)
 		ctx := context.Background()
 		for _, name := range []string{"aaa", "bbb", "ccc"} {

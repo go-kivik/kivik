@@ -92,6 +92,17 @@ func (o multiOptions) Apply(t any) {
 	}
 }
 
+// testClient creates a new in-memory SQLite driver client for testing.
+func testClient(t *testing.T) driver.Client {
+	t.Helper()
+	d := drv{}
+	client, err := d.NewClient(":memory:", mock.NilOption)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return client
+}
+
 // newDB creates a new driver.DB instance backed by an in-memory SQLite database,
 // and registers a cleanup function to close the database when the test is done.
 func newDB(t *testing.T) *testDB {

@@ -44,11 +44,7 @@ func TestClientDBUpdates(t *testing.T) {
 	tests := testy.NewTable()
 
 	tests.Add("no since parameter returns all events", func(t *testing.T) interface{} {
-		d := drv{}
-		dClient, err := d.NewClient(":memory:", mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		dClient := testClient(t)
 
 		ctx := context.Background()
 		if err := dClient.CreateDB(ctx, "db1", mock.NilOption); err != nil {
@@ -85,11 +81,7 @@ func TestClientDBUpdates(t *testing.T) {
 	})
 
 	tests.Add("invalid feed value is rejected", func(t *testing.T) interface{} {
-		d := drv{}
-		dClient, err := d.NewClient(":memory:", mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		dClient := testClient(t)
 
 		return test{
 			client:     dClient.(*client),
@@ -100,11 +92,7 @@ func TestClientDBUpdates(t *testing.T) {
 	})
 
 	tests.Add("database deletion events are logged", func(t *testing.T) interface{} {
-		d := drv{}
-		dClient, err := d.NewClient(":memory:", mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		dClient := testClient(t)
 
 		ctx := context.Background()
 		if err := dClient.CreateDB(ctx, "db1", mock.NilOption); err != nil {
@@ -141,11 +129,7 @@ func TestClientDBUpdates(t *testing.T) {
 	})
 
 	tests.Add("string sequence value in since parameter", func(t *testing.T) interface{} {
-		d := drv{}
-		dClient, err := d.NewClient(":memory:", mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		dClient := testClient(t)
 
 		ctx := context.Background()
 		if err := dClient.CreateDB(ctx, "db1", mock.NilOption); err != nil {
@@ -208,12 +192,7 @@ func TestClientDBUpdates(t *testing.T) {
 func TestClientDBUpdates_longpoll(t *testing.T) {
 	t.Parallel()
 
-	d := drv{}
-	driverClient, err := d.NewClient(":memory:", mock.NilOption)
-	if err != nil {
-		t.Fatal(err)
-	}
-	dClient := driverClient.(*client)
+	dClient := testClient(t).(*client)
 
 	ctx := context.Background()
 	if err := dClient.CreateDB(ctx, "db1", mock.NilOption); err != nil {
@@ -286,11 +265,7 @@ func TestClientLogGlobalChange(t *testing.T) {
 
 	newSingleNodeClient := func(t *testing.T) driver.Client {
 		t.Helper()
-		d := drv{}
-		dClient, err := d.NewClient(":memory:", mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		dClient := testClient(t)
 		cluster := dClient.(driver.Cluster)
 		if err := cluster.ClusterSetup(context.Background(), map[string]any{"action": "enable_single_node"}); err != nil {
 			t.Fatal(err)

@@ -26,15 +26,6 @@ import (
 	"github.com/go-kivik/kivik/v4/int/mock"
 )
 
-func newClusterClient(t *testing.T) driver.Cluster {
-	t.Helper()
-	d := drv{}
-	dClient, err := d.NewClient(":memory:", mock.NilOption)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return dClient.(driver.Cluster)
-}
 
 func TestClientMembership(t *testing.T) {
 	t.Parallel()
@@ -54,7 +45,7 @@ func TestClientMembership(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
-		c := newClusterClient(t)
+		c := testClient(t).(driver.Cluster)
 
 		got, err := c.Membership(context.Background())
 		if !testy.ErrorMatches(tt.wantErr, err) {
@@ -81,7 +72,7 @@ func TestClientClusterStatus(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
-		c := newClusterClient(t)
+		c := testClient(t).(driver.Cluster)
 
 		got, err := c.ClusterStatus(context.Background(), mock.NilOption)
 		if !testy.ErrorMatches(tt.wantErr, err) {
@@ -114,15 +105,10 @@ func TestClientClusterSetup(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
-		d := drv{}
-		dClient, err := d.NewClient(":memory:", mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-
+		dClient := testClient(t)
 		c := dClient.(driver.Cluster)
 
-		err = c.ClusterSetup(context.Background(), tt.action)
+		err := c.ClusterSetup(context.Background(), tt.action)
 		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Errorf("unexpected error, got %s, want %s", err, tt.wantErr)
 		}

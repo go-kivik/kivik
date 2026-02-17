@@ -23,22 +23,51 @@ import (
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
+	"github.com/go-kivik/kivik/v4/x/options"
 )
 
-func (c *client) DBUpdates(ctx context.Context, opts driver.Options) (driver.DBUpdates, error) {
+type queryRunner interface {
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+}
+
+func (c *client) globalChangesExists(ctx context.Context, qr queryRunner) (bool, error) {
 	var exists bool
-	if err := c.db.QueryRowContext(ctx, `
+	if err := qr.QueryRowContext(ctx, `
 		SELECT COUNT(*) > 0 FROM sqlite_master
 		WHERE type = 'table' AND name = 'kivik$_global_changes'
 	`).Scan(&exists); err != nil {
+		return false, err
+	}
+	return exists, nil
+}
+
+func (c *client) DBUpdates(ctx context.Context, opts driver.Options) (driver.DBUpdates, error) {
+	exists, err := c.globalChangesExists(ctx, c.db)
+	if err != nil {
 		return nil, err
 	}
 	if !exists {
 		return nil, &internal.Error{Status: http.StatusServiceUnavailable, Message: "Service Unavailable"}
 	}
 
+	o := options.New(opts)
+	feed, err := o.Feed()
+	if err != nil {
+		return nil, err
+	}
+
+	changeOpts := map[string]any{"include_docs": true}
+	if _, feedRaw, ok := o.Get("feed"); ok {
+		changeOpts["feed"] = feedRaw
+	}
+	if _, sinceRaw, ok := o.Get("since"); ok {
+		changeOpts["since"] = sinceRaw
+	} else if feed == options.FeedLongpoll || feed == options.FeedContinuous {
+		changeOpts["since"] = "now"
+	}
+
 	globalDB := c.newDB("_global_changes")
-	ch, err := globalDB.Changes(ctx, kivik.Param("include_docs", true))
+	ch, err := globalDB.Changes(ctx, kivik.Params(changeOpts))
 	if err != nil {
 		return nil, err
 	}
@@ -78,11 +107,8 @@ func (c *client) logGlobalChange(ctx context.Context, tx *sql.Tx, dbName, eventT
 		return nil
 	}
 
-	var exists bool
-	if err := tx.QueryRowContext(ctx, `
-		SELECT COUNT(*) > 0 FROM sqlite_master
-		WHERE type = 'table' AND name = 'kivik$_global_changes'
-	`).Scan(&exists); err != nil {
+	exists, err := c.globalChangesExists(ctx, tx)
+	if err != nil {
 		return err
 	}
 	if !exists {

@@ -18,7 +18,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sync"
 	"testing"
 	"time"
 
@@ -192,18 +191,19 @@ func TestClientDBUpdates(t *testing.T) {
 }
 
 func TestClientDBUpdates_longpoll(t *testing.T) {
-	// TODO: update in Cycle 5 when kivik$db_updates_log is removed
-	t.Skip("Skipped until Cycle 5 when kivik$db_updates_log is removed")
 	t.Parallel()
 
-	dClient := testClient(t).(*client)
-
+	dClient := testClient(t)
+	cluster := dClient.(driver.Cluster)
 	ctx := context.Background()
+	if err := cluster.ClusterSetup(ctx, map[string]any{"action": "enable_single_node"}); err != nil {
+		t.Fatal(err)
+	}
 	if err := dClient.CreateDB(ctx, "db1", mock.NilOption); err != nil {
 		t.Fatal(err)
 	}
 
-	updates, err := dClient.DBUpdates(ctx, kivik.Params(map[string]any{
+	updates, err := dClient.(*client).DBUpdates(ctx, kivik.Params(map[string]any{
 		"feed":  "longpoll",
 		"since": "now",
 	}))
@@ -214,17 +214,11 @@ func TestClientDBUpdates_longpoll(t *testing.T) {
 		_ = updates.Close()
 	})
 
-	var mu sync.Mutex
-	var createdDB string
-
 	go func() {
 		time.Sleep(100 * time.Millisecond)
 		if err := dClient.CreateDB(context.Background(), "db2", mock.NilOption); err != nil {
 			panic(fmt.Sprintf("Failed to create db: %s", err))
 		}
-		mu.Lock()
-		createdDB = "db2"
-		mu.Unlock()
 	}()
 
 	start := time.Now()
@@ -239,17 +233,11 @@ func TestClientDBUpdates_longpoll(t *testing.T) {
 		t.Errorf("Expected feed to block, but returned in %v", elapsed)
 	}
 
-	mu.Lock()
-	defer mu.Unlock()
-
-	want := driver.DBUpdate{
-		DBName: createdDB,
-		Type:   "created",
-		Seq:    "2",
+	if update.DBName != "db2" {
+		t.Errorf("Unexpected DBName: got %q, want %q", update.DBName, "db2")
 	}
-
-	if d := cmp.Diff(want, update); d != "" {
-		t.Errorf("Unexpected update: %s", d)
+	if update.Type != "created" {
+		t.Errorf("Unexpected Type: got %q, want %q", update.Type, "created")
 	}
 }
 

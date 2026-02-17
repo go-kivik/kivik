@@ -42,10 +42,6 @@ func (c *client) CreateDB(ctx context.Context, name string, _ driver.Options) er
 		}
 	}
 
-	if err := c.logDBUpdate(ctx, tx, name, "created"); err != nil {
-		return err
-	}
-
 	if err := c.logGlobalChange(ctx, tx, name, "created"); err != nil {
 		return err
 	}

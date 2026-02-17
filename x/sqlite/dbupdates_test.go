@@ -279,37 +279,60 @@ func TestClientLogGlobalChange(t *testing.T) {
 	}
 
 	type test struct {
+		dClient     driver.Client
 		wantChanges []changeDoc
 		wantErr     string
 	}
 
-	tests := testy.NewTable()
-
-	tests.Add("creating a db after enable_single_node logs a change to _global_changes", func(t *testing.T) interface{} {
-		return test{
-			wantChanges: []changeDoc{
-				{DBName: "testdb", Type: "created"},
-			},
-		}
-	})
-
-	tests.Run(t, func(t *testing.T, tt test) {
+	newSingleNodeClient := func(t *testing.T) driver.Client {
+		t.Helper()
 		d := drv{}
 		dClient, err := d.NewClient(":memory:", mock.NilOption)
 		if err != nil {
 			t.Fatal(err)
 		}
-
-		ctx := context.Background()
 		cluster := dClient.(driver.Cluster)
-		if err := cluster.ClusterSetup(ctx, map[string]any{"action": "enable_single_node"}); err != nil {
+		if err := cluster.ClusterSetup(context.Background(), map[string]any{"action": "enable_single_node"}); err != nil {
 			t.Fatal(err)
 		}
+		return dClient
+	}
+
+	tests := testy.NewTable()
+
+	tests.Add("creating a db after enable_single_node logs a change to _global_changes", func(t *testing.T) interface{} {
+		dClient := newSingleNodeClient(t)
+		if err := dClient.CreateDB(context.Background(), "testdb", mock.NilOption); err != nil {
+			t.Fatal(err)
+		}
+		return test{
+			dClient:     dClient,
+			wantChanges: []changeDoc{{DBName: "testdb", Type: "created"}},
+		}
+	})
+
+	tests.Add("destroying a db after enable_single_node logs a deleted change to _global_changes", func(t *testing.T) interface{} {
+		dClient := newSingleNodeClient(t)
+		ctx := context.Background()
 		if err := dClient.CreateDB(ctx, "testdb", mock.NilOption); err != nil {
 			t.Fatal(err)
 		}
+		if err := dClient.DestroyDB(ctx, "testdb", mock.NilOption); err != nil {
+			t.Fatal(err)
+		}
+		return test{
+			dClient: dClient,
+			wantChanges: []changeDoc{
+				{DBName: "testdb", Type: "created"},
+				{DBName: "testdb", Type: "deleted"},
+			},
+		}
+	})
 
-		globalDB, err := dClient.DB("_global_changes", mock.NilOption)
+	tests.Run(t, func(t *testing.T, tt test) {
+		ctx := context.Background()
+
+		globalDB, err := tt.dClient.DB("_global_changes", mock.NilOption)
 		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Errorf("unexpected error opening _global_changes, got %s, want %s", err, tt.wantErr)
 		}

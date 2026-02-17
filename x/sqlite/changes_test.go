@@ -1166,7 +1166,7 @@ func Test_normal_changes_query(t *testing.T) {
 			add(filename2, "more boring text"),
 	})
 
-	changes, err := d.DB.(*db).newNormalChanges(context.Background(), options.Map{"include_docs": true}, nil, nil, false, "normal")
+	changes, err := d.DB.(*db).newNormalChanges(context.Background(), options.Map{"include_docs": true}, 0, nil, false, "normal")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1221,7 +1221,7 @@ func Test_normal_changes_query_without_docs(t *testing.T) {
 			add(filename2, "more boring text"),
 	})
 
-	changes, err := d.DB.(*db).newNormalChanges(context.Background(), nil, nil, nil, false, "normal")
+	changes, err := d.DB.(*db).newNormalChanges(context.Background(), nil, 0, nil, false, "normal")
 	if err != nil {
 		t.Fatal(err)
 	}

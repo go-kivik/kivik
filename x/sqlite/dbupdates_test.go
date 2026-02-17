@@ -139,6 +139,42 @@ func TestClientDBUpdates(t *testing.T) {
 		}
 	})
 
+	tests.Add("string sequence value in since parameter", func(t *testing.T) interface{} {
+		d := drv{}
+		dClient, err := d.NewClient(":memory:", mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		ctx := context.Background()
+		if err := dClient.CreateDB(ctx, "db1", mock.NilOption); err != nil {
+			t.Fatal(err)
+		}
+		if err := dClient.CreateDB(ctx, "db2", mock.NilOption); err != nil {
+			t.Fatal(err)
+		}
+		if err := dClient.CreateDB(ctx, "db3", mock.NilOption); err != nil {
+			t.Fatal(err)
+		}
+
+		return test{
+			client:  dClient.(*client),
+			options: kivik.Param("since", "1-foo"),
+			want: []driver.DBUpdate{
+				{
+					DBName: "db2",
+					Type:   "created",
+					Seq:    "2",
+				},
+				{
+					DBName: "db3",
+					Type:   "created",
+					Seq:    "3",
+				},
+			},
+		}
+	})
+
 	tests.Run(t, func(t *testing.T, tt test) {
 		ctx := context.Background()
 		updates, err := tt.client.DBUpdates(ctx, tt.options)

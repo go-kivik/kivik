@@ -46,20 +46,21 @@ type normalChanges struct {
 
 var _ driver.Changes = &normalChanges{}
 
-func (d *db) newNormalChanges(ctx context.Context, opts options.Map, since, lastSeq *uint64, sinceNow bool, feed string) (*normalChanges, error) {
+// TODO: since, sinceNow, and feed are all derivable from opts; consider removing the redundant parameters.
+func (d *db) newNormalChanges(ctx context.Context, opts options.Map, since uint64, lastSeq *uint64, sinceNow bool, feed string) (*normalChanges, error) {
 	limit, err := opts.ChangesLimit()
 	if err != nil {
 		return nil, err
 	}
 
-	if since != nil {
+	if since > 0 {
 		last, err := d.lastSeq(ctx)
 		if err != nil {
 			return nil, err
 		}
 		lastSeq = &last
-		if last <= *since {
-			*since = last - 1
+		if last <= since {
+			since = last - 1
 			limit = uint64(1)
 		}
 	}
@@ -76,7 +77,7 @@ func (d *db) newNormalChanges(ctx context.Context, opts options.Map, since, last
 			}
 			lastSeq = &last
 		}
-		since = lastSeq
+		since = *lastSeq
 		limit = 0
 		c.lastSeq = strconv.FormatUint(*lastSeq, 10)
 	}
@@ -386,10 +387,11 @@ func (d *db) Changes(ctx context.Context, opts driver.Options) (driver.Changes, 
 	o := options.New(opts)
 
 	var lastSeq *uint64
-	sinceNow, since, err := o.Since()
+	sinceNow, sinceSeq, _, err := o.Since()
 	if err != nil {
 		return nil, err
 	}
+	since := sinceSeq
 	feed, err := o.Feed()
 	if err != nil {
 		return nil, err

@@ -56,7 +56,7 @@ func (c *client) DBUpdates(ctx context.Context, opts driver.Options) (driver.DBU
 		return c.newLongpollDBUpdates(ctx, optMap, feed == "continuous")
 	}
 
-	sinceNow, sinceVal, err := optMap.Since()
+	sinceNow, sinceSeq, _, err := optMap.Since()
 	if err != nil {
 		return nil, err
 	}
@@ -70,8 +70,8 @@ func (c *client) DBUpdates(ctx context.Context, opts driver.Options) (driver.DBU
 		if err := row.Scan(&since); err != nil {
 			return nil, err
 		}
-	} else if sinceVal != nil {
-		since = *sinceVal
+	} else {
+		since = sinceSeq
 	}
 
 	var queryArgs []interface{}
@@ -80,7 +80,7 @@ func (c *client) DBUpdates(ctx context.Context, opts driver.Options) (driver.DBU
 		FROM {{ .DBUpdatesLog }}
 	`)
 
-	if sinceNow || sinceVal != nil {
+	if sinceNow || sinceSeq > 0 {
 		query += ` WHERE seq > ?`
 		queryArgs = append(queryArgs, since)
 	}
@@ -128,7 +128,7 @@ type longpollDBUpdates struct {
 var _ driver.DBUpdates = (*longpollDBUpdates)(nil)
 
 func (c *client) newLongpollDBUpdates(ctx context.Context, optMap options.Map, continuous bool) (*longpollDBUpdates, error) {
-	sinceNow, sinceVal, err := optMap.Since()
+	sinceNow, sinceSeq, _, err := optMap.Since()
 	if err != nil {
 		return nil, err
 	}
@@ -142,8 +142,8 @@ func (c *client) newLongpollDBUpdates(ctx context.Context, optMap options.Map, c
 		if err := row.Scan(&since); err != nil {
 			return nil, err
 		}
-	} else if sinceVal != nil {
-		since = *sinceVal
+	} else {
+		since = sinceSeq
 	}
 
 	stmt, err := c.db.PrepareContext(ctx, c.query(`

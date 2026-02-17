@@ -46,13 +46,21 @@ type normalChanges struct {
 
 var _ driver.Changes = &normalChanges{}
 
-// TODO: since, sinceNow, and feed are all derivable from opts; consider removing the redundant parameters.
-func (d *db) newNormalChanges(ctx context.Context, opts options.Map, since uint64, lastSeq *uint64, sinceNow bool, feed string) (*normalChanges, error) {
+func (d *db) newNormalChanges(ctx context.Context, opts options.Map) (*normalChanges, error) {
+	sinceNow, since, _, err := opts.Since()
+	if err != nil {
+		return nil, err
+	}
+	feed, err := opts.Feed()
+	if err != nil {
+		return nil, err
+	}
 	limit, err := opts.ChangesLimit()
 	if err != nil {
 		return nil, err
 	}
 
+	var lastSeq *uint64
 	if since > 0 {
 		last, err := d.lastSeq(ctx)
 		if err != nil {
@@ -386,12 +394,10 @@ func (c *normalChanges) ETag() string {
 func (d *db) Changes(ctx context.Context, opts driver.Options) (driver.Changes, error) {
 	o := options.New(opts)
 
-	var lastSeq *uint64
-	sinceNow, sinceSeq, _, err := o.Since()
+	sinceNow, _, _, err := o.Since()
 	if err != nil {
 		return nil, err
 	}
-	since := sinceSeq
 	feed, err := o.Feed()
 	if err != nil {
 		return nil, err
@@ -412,7 +418,7 @@ func (d *db) Changes(ctx context.Context, opts driver.Options) (driver.Changes, 
 		return d.newLongpollChanges(ctx, includeDocs, attachments, feed == options.FeedContinuous, timeout)
 	}
 
-	return d.newNormalChanges(ctx, o, since, lastSeq, sinceNow, feed)
+	return d.newNormalChanges(ctx, o)
 }
 
 type longpollChanges struct {

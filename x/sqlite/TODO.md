@@ -10,13 +10,6 @@ These return a bare `"not implemented"` error:
 - [ ] Copy (low priority — kivik emulates via Get+Put)
 - [ ] Explain
 
-### Unimplemented on `client` (`sqlite.go`)
-
-- [ ] **DBUpdates** — Needs:
-  - Database deletion events: Log "deleted" type in addition to "created"
-  - Live notifications: Implement channel-based streaming for `feed=continuous`
-  - See `dbupdates.go` and `createdb.go` for current implementation
-
 ### Incomplete features
 
 - [ ] **Reduce caching** (`README.md`). Reduce functions run on-demand with no
@@ -30,24 +23,38 @@ These return a bare `"not implemented"` error:
 
 ## Design Notes
 
-### DBUpdates Architecture
+### DBUpdates Redesign: Use `_global_changes` as backing store
 
-**Current implementation (v0.1):**
-1. ✅ **Persistence:** `kivik$db_updates_log` table with seq, db_name, type
-2. ✅ **Sequence management:** Global auto-incrementing counter via AUTOINCREMENT
-3. ✅ **Historical query:** `DBUpdates(since=N)` filters with `WHERE seq > N`
-4. ⏳ **Live notification:** Stub implementation; channels not yet connected
-5. ✅ **Multi-instance:** Persisted data queryable from any `Client` instance
-6. ✅ **Feed types:** Validates feed parameter (normal, longpoll, continuous)
+Align with CouchDB spec: `_db_updates` reads from the `_global_changes` database
+(a real, user-visible database), not a private internal table. Like CouchDB,
+`_global_changes` is not created automatically — callers must run `ClusterSetup`
+first (mirroring the CouchDB setup wizard).
 
-**Remaining for v0.2:**
-- Log "deleted" events in addition to "created" events
-- Implement channel-based live streaming for `feed=continuous`
+**Key design decisions:**
+- `_global_changes` is NOT auto-created at init (matching CouchDB pre-wizard state)
+- `logGlobalChange` silently no-ops if `_global_changes` tables are absent
+- `DBUpdates` returns HTTP 503 if `_global_changes` is absent
+- Each DB event → one new append-only document: `{"db_name": "...", "type": "created|updated|deleted"}`
+- `DBUpdates` wraps `db.Changes(include_docs=true)` on `_global_changes`
+
+**Implementation cycles (TDD):**
+
+- [ ] **Cycle 1:** Implement `driver.Cluster`: `ClusterSetup` creates `_users`/`_replicator`/`_global_changes` for `"enable_single_node"`; `ClusterStatus` returns `"cluster_disabled"`/`"single_node_enabled"`; `Membership` returns single fake node
+- [ ] **Cycle 2:** DB creation logs to `_global_changes` (silently no-ops if absent)
+- [ ] **Cycle 3:** DB deletion logs to `_global_changes` (silently no-ops if absent)
+- [ ] **Cycle 4:** `DBUpdates` reads `_global_changes/_changes`; returns 503 if absent
+- [ ] **Cycle 5:** Remove `kivik$db_updates_log` (table, log function, template func, old structs)
+
+**Critical files:**
+- `dbupdates.go` — rewrite `DBUpdates`; add `globalChangesDBUpdates` adapter; add `logGlobalChange`
+- `createdb.go` — replace `logDBUpdate` with `logGlobalChange`
+- `sqlite.go` — replace `logDBUpdate` with `logGlobalChange` in `DestroyDB`; remove `ensureDBUpdatesLog`
+- `schema.go` — remove `kivik$db_updates_log` from schema
+- `templ.go` — remove `DBUpdatesLog()` template func
 
 **Constraints:**
-- Single-process access assumed (SQLite limitation); multi-process access possible but not tested
-- Testing-only use case (per README), so can be simpler than full CouchDB clustering
-- DBUpdates is a replication feature, not just a test helper
+- Single-process access assumed (SQLite limitation)
+- `_global_changes` sequences are incompatible with old `kivik$db_updates_log` sequences (acceptable)
 
 ## Integration Tests
 

@@ -13,6 +13,7 @@
 package test
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -41,6 +42,9 @@ func TestSQLite(t *testing.T) {
 		return
 	}
 	t.Cleanup(func() { _ = client.Close() })
+	if err := client.ClusterSetup(context.Background(), map[string]interface{}{"action": "enable_single_node"}); err != nil {
+		t.Fatalf("ClusterSetup failed: %s", err)
+	}
 	clients := &kt.Context{
 		RW:    true,
 		Admin: client,

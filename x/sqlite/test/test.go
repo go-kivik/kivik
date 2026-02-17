@@ -31,7 +31,6 @@ func registerSuiteSQLite() {
 		// Skip all tests that are not applicable to SQLite
 		"Compact.skip":         true,
 		"CreateIndex.skip":     true,
-		"DBUpdates.skip":       true,
 		"DeleteIndex.skip":     true,
 		"Explain.skip":         true,
 		"Flush.skip":           true,
@@ -40,6 +39,8 @@ func registerSuiteSQLite() {
 		"Security.skip":        true,
 		"SetSecurity.skip":     true,
 		"ViewCleanup.skip":     true,
+
+		"AllDBs.expected": []string{"_global_changes", "_replicator", "_users"},
 
 		"Version.version": `^0\.0\.1$`,
 		"Version.vendor":  `^Kivik$`,

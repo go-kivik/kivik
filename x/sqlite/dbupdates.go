@@ -194,7 +194,9 @@ func (u *longpollDBUpdates) Next(update *driver.DBUpdate) error {
 			if err := u.currentRows.Err(); err != nil {
 				return err
 			}
-			u.currentRows.Close()
+			if err := u.currentRows.Close(); err != nil {
+				return err
+			}
 			u.currentRows = nil
 
 			if !u.continuous {
@@ -212,7 +214,7 @@ func (u *longpollDBUpdates) Next(update *driver.DBUpdate) error {
 
 		if rows.Next() {
 			if err := rows.Scan(&update.Seq, &update.DBName, &update.Type); err != nil {
-				rows.Close()
+				_ = rows.Close() //nolint:sqlclosecheck
 				return err
 			}
 			seq, _ := strconv.ParseUint(update.Seq, 10, 64)
@@ -222,10 +224,12 @@ func (u *longpollDBUpdates) Next(update *driver.DBUpdate) error {
 		}
 
 		if err := rows.Err(); err != nil {
-			rows.Close()
+			_ = rows.Close() //nolint:sqlclosecheck
 			return err
 		}
-		rows.Close()
+		if err := rows.Close(); err != nil {
+			return err
+		}
 
 		next := u.backoff.NextBackOff()
 		if next == backoff.Stop {
@@ -246,7 +250,10 @@ func (u *longpollDBUpdates) Next(update *driver.DBUpdate) error {
 
 func (u *longpollDBUpdates) Close() error {
 	if u.currentRows != nil {
-		u.currentRows.Close()
+		if err := u.currentRows.Close(); err != nil {
+			_ = u.stmt.Close()
+			return err
+		}
 	}
 	return u.stmt.Close()
 }

@@ -41,6 +41,10 @@ func TestClientClusterSetup(t *testing.T) {
 		action: map[string]any{"action": "enable_single_node"},
 		want:   []string{"_global_changes", "_replicator", "_users"},
 	})
+	tests.Add("finish_cluster creates system databases", test{
+		action: map[string]any{"action": "finish_cluster"},
+		want:   []string{"_global_changes", "_replicator", "_users"},
+	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		d := drv{}

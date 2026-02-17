@@ -52,7 +52,7 @@ func (c *client) ClusterSetup(ctx context.Context, action any) error {
 		return err
 	}
 	switch parsed.Action {
-	case "enable_single_node":
+	case "enable_single_node", "finish_cluster":
 		for _, name := range systemDatabases {
 			if err := c.CreateDB(ctx, name, nil); err != nil {
 				if kivik.HTTPStatus(err) == http.StatusPreconditionFailed {
@@ -61,6 +61,8 @@ func (c *client) ClusterSetup(ctx context.Context, action any) error {
 				return err
 			}
 		}
+		return nil
+	case "enable_cluster", "add_node":
 		return nil
 	default:
 		return fmt.Errorf("unknown action: %s", parsed.Action)

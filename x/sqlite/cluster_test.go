@@ -26,6 +26,46 @@ import (
 	"github.com/go-kivik/kivik/v4/int/mock"
 )
 
+func newClusterClient(t *testing.T) driver.Cluster {
+	t.Helper()
+	d := drv{}
+	dClient, err := d.NewClient(":memory:", mock.NilOption)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return dClient.(driver.Cluster)
+}
+
+func TestClientMembership(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		want    *driver.ClusterMembership
+		wantErr string
+	}
+
+	tests := testy.NewTable()
+
+	tests.Add("fresh client returns sqlite@localhost in both lists", test{
+		want: &driver.ClusterMembership{
+			AllNodes:     []string{"sqlite@localhost"},
+			ClusterNodes: []string{"sqlite@localhost"},
+		},
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		c := newClusterClient(t)
+
+		got, err := c.Membership(context.Background())
+		if !testy.ErrorMatches(tt.wantErr, err) {
+			t.Errorf("unexpected error, got %s, want %s", err, tt.wantErr)
+		}
+		if d := cmp.Diff(tt.want, got); d != "" {
+			t.Errorf("Unexpected membership: %s", d)
+		}
+	})
+}
+
 func TestClientClusterStatus(t *testing.T) {
 	t.Parallel()
 
@@ -41,13 +81,7 @@ func TestClientClusterStatus(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
-		d := drv{}
-		dClient, err := d.NewClient(":memory:", mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		c := dClient.(driver.Cluster)
+		c := newClusterClient(t)
 
 		got, err := c.ClusterStatus(context.Background(), mock.NilOption)
 		if !testy.ErrorMatches(tt.wantErr, err) {

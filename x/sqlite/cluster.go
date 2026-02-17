@@ -17,7 +17,6 @@ package sqlite
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -84,6 +83,11 @@ func (c *client) ClusterStatus(ctx context.Context, _ driver.Options) (string, e
 	return "cluster_disabled", nil
 }
 
+// Membership returns the cluster membership for the SQLite driver, which
+// always reports a single node.
 func (c *client) Membership(context.Context) (*driver.ClusterMembership, error) {
-	return nil, errors.New("not implemented")
+	return &driver.ClusterMembership{
+		AllNodes:     []string{"sqlite@localhost"},
+		ClusterNodes: []string{"sqlite@localhost"},
+	}, nil
 }

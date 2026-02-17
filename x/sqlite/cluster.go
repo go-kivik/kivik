@@ -26,7 +26,7 @@ import (
 
 var _ driver.Cluster = (*client)(nil)
 
-var systemDatabases = []string{"_users", "_replicator", "_global_changes"}
+var systemDatabases = []string{"_global_changes", "_users", "_replicator"}
 
 func (c *client) ClusterSetup(ctx context.Context, action any) error {
 	var data []byte

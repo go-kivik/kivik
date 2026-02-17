@@ -259,6 +259,7 @@ func TestClientDBUpdates_globalChanges(t *testing.T) {
 	type test struct {
 		client     *client
 		options    driver.Options
+		want       []driver.DBUpdate
 		wantStatus int
 		wantErr    string
 	}
@@ -276,13 +277,55 @@ func TestClientDBUpdates_globalChanges(t *testing.T) {
 		}
 	})
 
+	tests.Add("returns events from _global_changes after ClusterSetup", func(t *testing.T) interface{} {
+		dClient := testClient(t)
+		cluster := dClient.(driver.Cluster)
+		ctx := context.Background()
+		if err := cluster.ClusterSetup(ctx, map[string]any{"action": "enable_single_node"}); err != nil {
+			t.Fatal(err)
+		}
+		if err := dClient.CreateDB(ctx, "db1", mock.NilOption); err != nil {
+			t.Fatal(err)
+		}
+		if err := dClient.CreateDB(ctx, "db2", mock.NilOption); err != nil {
+			t.Fatal(err)
+		}
+		return test{
+			client:  dClient.(*client),
+			options: mock.NilOption,
+			want: []driver.DBUpdate{
+				{DBName: "_users", Type: "created", Seq: "1"},
+				{DBName: "_replicator", Type: "created", Seq: "2"},
+				{DBName: "db1", Type: "created", Seq: "3"},
+				{DBName: "db2", Type: "created", Seq: "4"},
+			},
+		}
+	})
+
 	tests.Run(t, func(t *testing.T, tt test) {
-		_, err := tt.client.DBUpdates(context.Background(), tt.options)
+		updates, err := tt.client.DBUpdates(context.Background(), tt.options)
 		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Errorf("unexpected error, got %s, want %s", err, tt.wantErr)
 		}
 		if status := kivik.HTTPStatus(err); status != tt.wantStatus {
 			t.Errorf("Unexpected status: got %d, want %d", status, tt.wantStatus)
+		}
+		if err != nil {
+			return
+		}
+		defer updates.Close()
+
+		var got []driver.DBUpdate
+		for {
+			var update driver.DBUpdate
+			if err := updates.Next(&update); err != nil {
+				break
+			}
+			got = append(got, update)
+		}
+
+		if d := cmp.Diff(tt.want, got); d != "" {
+			t.Errorf("Unexpected result: %s", d)
 		}
 	})
 }
@@ -319,8 +362,12 @@ func TestClientLogGlobalChange(t *testing.T) {
 			t.Fatal(err)
 		}
 		return test{
-			dClient:     dClient,
-			wantChanges: []changeDoc{{DBName: "testdb", Type: "created"}},
+			dClient: dClient,
+			wantChanges: []changeDoc{
+				{DBName: "_users", Type: "created"},
+				{DBName: "_replicator", Type: "created"},
+				{DBName: "testdb", Type: "created"},
+			},
 		}
 	})
 
@@ -336,6 +383,8 @@ func TestClientLogGlobalChange(t *testing.T) {
 		return test{
 			dClient: dClient,
 			wantChanges: []changeDoc{
+				{DBName: "_users", Type: "created"},
+				{DBName: "_replicator", Type: "created"},
 				{DBName: "testdb", Type: "created"},
 				{DBName: "testdb", Type: "deleted"},
 			},

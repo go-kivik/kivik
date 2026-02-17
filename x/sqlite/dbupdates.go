@@ -15,6 +15,7 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"io"
 	"net/http"
 	"strconv"
@@ -23,29 +24,10 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"github.com/google/uuid"
 
+	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
-	"github.com/go-kivik/kivik/v4/x/options"
 )
-
-type dbUpdates struct {
-	rows *sql.Rows
-}
-
-func (u *dbUpdates) Next(update *driver.DBUpdate) error {
-	if !u.rows.Next() {
-		if err := u.rows.Err(); err != nil {
-			return err
-		}
-		return io.EOF
-	}
-
-	return u.rows.Scan(&update.Seq, &update.DBName, &update.Type)
-}
-
-func (u *dbUpdates) Close() error {
-	return u.rows.Close()
-}
 
 func (c *client) DBUpdates(ctx context.Context, opts driver.Options) (driver.DBUpdates, error) {
 	var exists bool
@@ -59,67 +41,40 @@ func (c *client) DBUpdates(ctx context.Context, opts driver.Options) (driver.DBU
 		return nil, &internal.Error{Status: http.StatusServiceUnavailable, Message: "Service Unavailable"}
 	}
 
-	optMap := options.New(opts)
-
-	feed, err := optMap.Feed()
+	globalDB := c.newDB("_global_changes")
+	ch, err := globalDB.Changes(ctx, kivik.Param("include_docs", true))
 	if err != nil {
 		return nil, err
 	}
-
-	if feed == "longpoll" || feed == "continuous" {
-		return c.newLongpollDBUpdates(ctx, optMap, feed == "continuous")
-	}
-
-	since, hasSince, err := c.resolveSince(ctx, optMap)
-	if err != nil {
-		return nil, err
-	}
-
-	var queryArgs []interface{}
-	query := c.query(`
-		SELECT seq, db_name, type
-		FROM {{ .DBUpdatesLog }}
-	`)
-
-	if hasSince {
-		query += ` WHERE seq > ?`
-		queryArgs = append(queryArgs, since)
-	}
-
-	query += ` ORDER BY seq`
-
-	//nolint:rowserrcheck // Err checked in Next
-	rows, err := c.db.QueryContext(ctx, query, queryArgs...)
-	if err != nil {
-		return nil, err
-	}
-
-	return &dbUpdates{rows: rows}, nil
+	return &globalChangesDBUpdates{changes: ch}, nil
 }
 
-// resolveSince resolves the "since" option to a concrete sequence number and
-// a boolean indicating whether filtering should be applied.
-func (c *client) resolveSince(ctx context.Context, optMap options.Map) (since uint64, hasSince bool, err error) {
-	sinceNow, sinceSeq, _, err := optMap.Since()
-	if err != nil {
-		return 0, false, err
-	}
+type globalChangesDBUpdates struct {
+	changes driver.Changes
+}
 
-	switch {
-	case sinceNow:
-		row := c.db.QueryRowContext(ctx, c.query(`
-			SELECT COALESCE(MAX(seq), 0)
-			FROM {{ .DBUpdatesLog }}
-		`))
-		if err := row.Scan(&since); err != nil {
-			return 0, false, err
-		}
-		return since, true, nil
-	case sinceSeq > 0:
-		return sinceSeq, true, nil
-	default:
-		return 0, false, nil
+func (u *globalChangesDBUpdates) Next(update *driver.DBUpdate) error {
+	var change driver.Change
+	if err := u.changes.Next(&change); err != nil {
+		return err
 	}
+	var doc struct {
+		DBName string `json:"db_name"`
+		Type   string `json:"type"`
+	}
+	if err := json.Unmarshal(change.Doc, &doc); err != nil {
+		return err
+	}
+	update.DBName = doc.DBName
+	update.Type = doc.Type
+	update.Seq = change.Seq
+	return nil
+}
+
+func (u *globalChangesDBUpdates) Close() error { return u.changes.Close() }
+
+func (u *globalChangesDBUpdates) LastSeq() (string, error) {
+	return u.changes.LastSeq(), nil
 }
 
 func (c *client) ensureDBUpdatesLog(ctx context.Context) error {
@@ -194,41 +149,6 @@ type longpollDBUpdates struct {
 }
 
 var _ driver.DBUpdates = (*longpollDBUpdates)(nil)
-
-func (c *client) newLongpollDBUpdates(ctx context.Context, optMap options.Map, continuous bool) (*longpollDBUpdates, error) {
-	since, _, err := c.resolveSince(ctx, optMap)
-	if err != nil {
-		return nil, err
-	}
-
-	stmt, err := c.db.PrepareContext(ctx, c.query(`
-		SELECT seq, db_name, type
-		FROM {{ .DBUpdatesLog }}
-		WHERE seq > ?
-		ORDER BY seq
-	`))
-	if err != nil {
-		return nil, err
-	}
-
-	idleTimeout, err := optMap.Timeout()
-	if err != nil {
-		return nil, err
-	}
-
-	bo := backoff.NewExponentialBackOff()
-	bo.InitialInterval = 100 * time.Millisecond
-	bo.MaxInterval = 10 * time.Second
-	bo.MaxElapsedTime = idleTimeout
-
-	return &longpollDBUpdates{
-		stmt:       stmt,
-		since:      since,
-		continuous: continuous,
-		ctx:        ctx,
-		backoff:    bo,
-	}, nil
-}
 
 func (u *longpollDBUpdates) scanAndUpdateSince(rows *sql.Rows, update *driver.DBUpdate) error {
 	if err := rows.Scan(&update.Seq, &update.DBName, &update.Type); err != nil {

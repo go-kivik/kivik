@@ -46,5 +46,9 @@ func (c *client) CreateDB(ctx context.Context, name string, _ driver.Options) er
 		return err
 	}
 
+	if err := c.logGlobalChange(ctx, tx, name, "created"); err != nil {
+		return err
+	}
+
 	return tx.Commit()
 }

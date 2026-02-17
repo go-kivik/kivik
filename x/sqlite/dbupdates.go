@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	"github.com/google/uuid"
 
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/x/options"
@@ -56,22 +57,9 @@ func (c *client) DBUpdates(ctx context.Context, opts driver.Options) (driver.DBU
 		return c.newLongpollDBUpdates(ctx, optMap, feed == "continuous")
 	}
 
-	sinceNow, sinceSeq, _, err := optMap.Since()
+	since, hasSince, err := c.resolveSince(ctx, optMap)
 	if err != nil {
 		return nil, err
-	}
-
-	var since uint64
-	if sinceNow {
-		row := c.db.QueryRowContext(ctx, c.query(`
-			SELECT COALESCE(MAX(seq), 0)
-			FROM {{ .DBUpdatesLog }}
-		`))
-		if err := row.Scan(&since); err != nil {
-			return nil, err
-		}
-	} else {
-		since = sinceSeq
 	}
 
 	var queryArgs []interface{}
@@ -80,7 +68,7 @@ func (c *client) DBUpdates(ctx context.Context, opts driver.Options) (driver.DBU
 		FROM {{ .DBUpdatesLog }}
 	`)
 
-	if sinceNow || sinceSeq > 0 {
+	if hasSince {
 		query += ` WHERE seq > ?`
 		queryArgs = append(queryArgs, since)
 	}
@@ -94,6 +82,31 @@ func (c *client) DBUpdates(ctx context.Context, opts driver.Options) (driver.DBU
 	}
 
 	return &dbUpdates{rows: rows}, nil
+}
+
+// resolveSince resolves the "since" option to a concrete sequence number and
+// a boolean indicating whether filtering should be applied.
+func (c *client) resolveSince(ctx context.Context, optMap options.Map) (since uint64, hasSince bool, err error) {
+	sinceNow, sinceSeq, _, err := optMap.Since()
+	if err != nil {
+		return 0, false, err
+	}
+
+	switch {
+	case sinceNow:
+		row := c.db.QueryRowContext(ctx, c.query(`
+			SELECT COALESCE(MAX(seq), 0)
+			FROM {{ .DBUpdatesLog }}
+		`))
+		if err := row.Scan(&since); err != nil {
+			return 0, false, err
+		}
+		return since, true, nil
+	case sinceSeq > 0:
+		return sinceSeq, true, nil
+	default:
+		return 0, false, nil
+	}
 }
 
 func (c *client) ensureDBUpdatesLog(ctx context.Context) error {
@@ -115,6 +128,50 @@ func (c *client) logDBUpdate(ctx context.Context, tx *sql.Tx, dbName, eventType 
 	return err
 }
 
+func (c *client) logGlobalChange(ctx context.Context, tx *sql.Tx, dbName, eventType string) error {
+	if dbName == "_global_changes" {
+		return nil
+	}
+
+	var exists bool
+	if err := tx.QueryRowContext(ctx, `
+		SELECT EXISTS (
+			SELECT 1 FROM sqlite_master
+			WHERE type = 'table' AND name = 'kivik$_global_changes'
+		)
+	`).Scan(&exists); err != nil {
+		return err
+	}
+	if !exists {
+		return nil
+	}
+
+	docID := uuid.NewString()
+	data, err := prepareDoc(docID, map[string]any{"db_name": dbName, "type": eventType})
+	if err != nil {
+		return err
+	}
+
+	d := c.newDB("_global_changes")
+	rev := revision{rev: 1, id: data.RevID()}
+
+	if _, err := tx.ExecContext(ctx, d.query(`
+		INSERT INTO {{ .Revs }} (id, rev, rev_id)
+		VALUES ($1, 1, $2)
+	`), data.ID, rev.id); err != nil {
+		return err
+	}
+
+	if _, err := tx.ExecContext(ctx, d.query(`
+		INSERT INTO {{ .Docs }} (id, rev, rev_id, doc, md5sum, deleted)
+		VALUES ($1, 1, $2, $3, $4, $5)
+	`), data.ID, rev.id, data.Doc, data.MD5sum, data.Deleted); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 type longpollDBUpdates struct {
 	stmt        *sql.Stmt
 	since       uint64
@@ -128,22 +185,9 @@ type longpollDBUpdates struct {
 var _ driver.DBUpdates = (*longpollDBUpdates)(nil)
 
 func (c *client) newLongpollDBUpdates(ctx context.Context, optMap options.Map, continuous bool) (*longpollDBUpdates, error) {
-	sinceNow, sinceSeq, _, err := optMap.Since()
+	since, _, err := c.resolveSince(ctx, optMap)
 	if err != nil {
 		return nil, err
-	}
-
-	var since uint64
-	if sinceNow {
-		row := c.db.QueryRowContext(ctx, c.query(`
-			SELECT COALESCE(MAX(seq), 0)
-			FROM {{ .DBUpdatesLog }}
-		`))
-		if err := row.Scan(&since); err != nil {
-			return nil, err
-		}
-	} else {
-		since = sinceSeq
 	}
 
 	stmt, err := c.db.PrepareContext(ctx, c.query(`
@@ -175,6 +219,14 @@ func (c *client) newLongpollDBUpdates(ctx context.Context, optMap options.Map, c
 	}, nil
 }
 
+func (u *longpollDBUpdates) scanAndUpdateSince(rows *sql.Rows, update *driver.DBUpdate) error {
+	if err := rows.Scan(&update.Seq, &update.DBName, &update.Type); err != nil {
+		return err
+	}
+	u.since, _ = strconv.ParseUint(update.Seq, 10, 64)
+	return nil
+}
+
 func (u *longpollDBUpdates) Next(update *driver.DBUpdate) error {
 	if u.done {
 		return io.EOF
@@ -183,11 +235,9 @@ func (u *longpollDBUpdates) Next(update *driver.DBUpdate) error {
 	for {
 		if u.currentRows != nil {
 			if u.currentRows.Next() {
-				if err := u.currentRows.Scan(&update.Seq, &update.DBName, &update.Type); err != nil {
+				if err := u.scanAndUpdateSince(u.currentRows, update); err != nil {
 					return err
 				}
-				seq, _ := strconv.ParseUint(update.Seq, 10, 64)
-				u.since = seq
 				return nil
 			}
 
@@ -213,12 +263,10 @@ func (u *longpollDBUpdates) Next(update *driver.DBUpdate) error {
 		}
 
 		if rows.Next() {
-			if err := rows.Scan(&update.Seq, &update.DBName, &update.Type); err != nil {
+			if err := u.scanAndUpdateSince(rows, update); err != nil {
 				_ = rows.Close() //nolint:sqlclosecheck
 				return err
 			}
-			seq, _ := strconv.ParseUint(update.Seq, 10, 64)
-			u.since = seq
 			u.currentRows = rows
 			return nil
 		}

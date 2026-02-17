@@ -16,6 +16,7 @@ package sqlite
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync"
 	"testing"
@@ -267,4 +268,77 @@ func TestClientDBUpdates_longpoll(t *testing.T) {
 	if d := cmp.Diff(want, update); d != "" {
 		t.Errorf("Unexpected update: %s", d)
 	}
+}
+
+func TestClientLogGlobalChange(t *testing.T) {
+	t.Parallel()
+
+	type changeDoc struct {
+		DBName string `json:"db_name"`
+		Type   string `json:"type"`
+	}
+
+	type test struct {
+		wantChanges []changeDoc
+		wantErr     string
+	}
+
+	tests := testy.NewTable()
+
+	tests.Add("creating a db after enable_single_node logs a change to _global_changes", func(t *testing.T) interface{} {
+		return test{
+			wantChanges: []changeDoc{
+				{DBName: "testdb", Type: "created"},
+			},
+		}
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		d := drv{}
+		dClient, err := d.NewClient(":memory:", mock.NilOption)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		ctx := context.Background()
+		cluster := dClient.(driver.Cluster)
+		if err := cluster.ClusterSetup(ctx, map[string]any{"action": "enable_single_node"}); err != nil {
+			t.Fatal(err)
+		}
+		if err := dClient.CreateDB(ctx, "testdb", mock.NilOption); err != nil {
+			t.Fatal(err)
+		}
+
+		globalDB, err := dClient.DB("_global_changes", mock.NilOption)
+		if !testy.ErrorMatches(tt.wantErr, err) {
+			t.Errorf("unexpected error opening _global_changes, got %s, want %s", err, tt.wantErr)
+		}
+		if err != nil {
+			return
+		}
+		t.Cleanup(func() { _ = globalDB.Close() })
+
+		feed, err := globalDB.Changes(ctx, kivik.Param("include_docs", true))
+		if err != nil {
+			t.Fatalf("unexpected error starting changes feed: %s", err)
+		}
+		t.Cleanup(func() { _ = feed.Close() })
+
+		var got []changeDoc
+		for {
+			var change driver.Change
+			if err := feed.Next(&change); err != nil {
+				break
+			}
+			var doc changeDoc
+			if err := json.Unmarshal(change.Doc, &doc); err != nil {
+				t.Fatalf("failed to unmarshal doc: %s", err)
+			}
+			got = append(got, doc)
+		}
+
+		if d := cmp.Diff(tt.wantChanges, got); d != "" {
+			t.Errorf("Unexpected changes in _global_changes: %s", d)
+		}
+	})
 }

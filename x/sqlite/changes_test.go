@@ -929,6 +929,89 @@ loop:
 	}
 }
 
+func TestDBChanges_longpoll_with_explicit_since(t *testing.T) {
+	t.Parallel()
+	db := newDB(t)
+
+	// Seed the database with one document so we have a non-zero sequence.
+	_ = db.tPut("doc1", map[string]string{"foo": "bar"})
+
+	// Obtain the current last sequence by draining a normal changes feed.
+	normalFeed, err := db.Changes(context.Background(), mock.NilOption)
+	if err != nil {
+		t.Fatalf("Failed to open normal changes feed: %s", err)
+	}
+	for {
+		change := driver.Change{}
+		if err := normalFeed.Next(&change); err == io.EOF {
+			break
+		} else if err != nil {
+			t.Fatalf("Normal feed Next() error: %s", err)
+		}
+	}
+	lastSeq := normalFeed.LastSeq()
+	_ = normalFeed.Close()
+
+	// Start the changes feed with feed=longpoll and since=<lastSeq> (non-"now").
+	// This should block waiting for a new change, just like since=now.
+	feed, err := db.Changes(context.Background(), kivik.Params(map[string]any{
+		"feed":  "longpoll",
+		"since": lastSeq,
+	}))
+	if err != nil {
+		t.Fatalf("Failed to start changes feed: %s", err)
+	}
+	t.Cleanup(func() {
+		_ = feed.Close()
+	})
+
+	var mu sync.Mutex
+	var rev2 string
+	go func() {
+		time.Sleep(50 * time.Millisecond)
+		rev, err := db.Put(context.Background(), "doc2", any(map[string]string{"foo": "bar"}), mock.NilOption)
+		if err != nil {
+			panic(fmt.Sprintf("Failed to put doc: %s", err))
+		}
+		mu.Lock()
+		rev2 = rev
+		mu.Unlock()
+	}()
+
+	start := time.Now()
+	var got []driver.Change
+
+	for {
+		change := driver.Change{}
+		err := feed.Next(&change)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			t.Fatalf("iteration failed: %s", err)
+		}
+		got = append(got, change)
+	}
+
+	if time.Since(start) < 50*time.Millisecond {
+		t.Errorf("Changes feed returned too quickly (did not block)")
+	}
+
+	mu.Lock()
+	wantChanges := []driver.Change{
+		{
+			ID:      "doc2",
+			Seq:     "2",
+			Changes: driver.ChangedRevs{rev2},
+		},
+	}
+	mu.Unlock()
+
+	if d := cmp.Diff(wantChanges, got); d != "" {
+		t.Errorf("Unexpected changes:\n%s", d)
+	}
+}
+
 func TestDBChanges_longpoll_include_docs(t *testing.T) {
 	t.Parallel()
 	db := newDB(t)

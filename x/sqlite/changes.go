@@ -394,7 +394,7 @@ func (c *normalChanges) ETag() string {
 func (d *db) Changes(ctx context.Context, opts driver.Options) (driver.Changes, error) {
 	o := options.New(opts)
 
-	sinceNow, _, _, err := o.Since()
+	sinceNow, since, _, err := o.Since()
 	if err != nil {
 		return nil, err
 	}
@@ -406,7 +406,17 @@ func (d *db) Changes(ctx context.Context, opts driver.Options) (driver.Changes, 
 	if err != nil {
 		return nil, err
 	}
-	if sinceNow && (feed == options.FeedLongpoll || feed == options.FeedContinuous) {
+
+	useLongpoll := sinceNow && (feed == options.FeedLongpoll || feed == options.FeedContinuous)
+	if !useLongpoll && feed == options.FeedLongpoll {
+		currentLastSeq, err := d.lastSeq(ctx)
+		if err != nil {
+			return nil, err
+		}
+		useLongpoll = since == currentLastSeq
+	}
+
+	if useLongpoll {
 		attachments, err := o.Attachments()
 		if err != nil {
 			return nil, err

@@ -30,8 +30,6 @@ import (
 )
 
 func TestClientDBUpdates(t *testing.T) {
-	// TODO: update in Cycle 5 when kivik$db_updates_log is removed
-	t.Skip("Skipped until Cycle 5 when kivik$db_updates_log is removed")
 	t.Parallel()
 
 	type test struct {
@@ -42,11 +40,20 @@ func TestClientDBUpdates(t *testing.T) {
 		wantErr    string
 	}
 
+	newSingleNodeClient := func(t *testing.T) driver.Client {
+		t.Helper()
+		dClient := testClient(t)
+		if err := dClient.(driver.Cluster).ClusterSetup(context.Background(), map[string]any{"action": "enable_single_node"}); err != nil {
+			t.Fatal(err)
+		}
+		return dClient
+	}
+
 	tests := testy.NewTable()
 
+	// After ClusterSetup: _users(1), _replicator(2); db1(3), db2(4), db3(5)
 	tests.Add("no since parameter returns all events", func(t *testing.T) interface{} {
-		dClient := testClient(t)
-
+		dClient := newSingleNodeClient(t)
 		ctx := context.Background()
 		if err := dClient.CreateDB(ctx, "db1", mock.NilOption); err != nil {
 			t.Fatal(err)
@@ -62,28 +69,17 @@ func TestClientDBUpdates(t *testing.T) {
 			client:  dClient.(*client),
 			options: mock.NilOption,
 			want: []driver.DBUpdate{
-				{
-					DBName: "db1",
-					Type:   "created",
-					Seq:    "1",
-				},
-				{
-					DBName: "db2",
-					Type:   "created",
-					Seq:    "2",
-				},
-				{
-					DBName: "db3",
-					Type:   "created",
-					Seq:    "3",
-				},
+				{DBName: "_users", Type: "created", Seq: "1"},
+				{DBName: "_replicator", Type: "created", Seq: "2"},
+				{DBName: "db1", Type: "created", Seq: "3"},
+				{DBName: "db2", Type: "created", Seq: "4"},
+				{DBName: "db3", Type: "created", Seq: "5"},
 			},
 		}
 	})
 
 	tests.Add("invalid feed value is rejected", func(t *testing.T) interface{} {
-		dClient := testClient(t)
-
+		dClient := newSingleNodeClient(t)
 		return test{
 			client:     dClient.(*client),
 			options:    kivik.Param("feed", "invalid"),
@@ -92,9 +88,9 @@ func TestClientDBUpdates(t *testing.T) {
 		}
 	})
 
+	// After ClusterSetup: _users(1), _replicator(2); db1(3), db2(4); db1 deleted(5)
 	tests.Add("database deletion events are logged", func(t *testing.T) interface{} {
-		dClient := testClient(t)
-
+		dClient := newSingleNodeClient(t)
 		ctx := context.Background()
 		if err := dClient.CreateDB(ctx, "db1", mock.NilOption); err != nil {
 			t.Fatal(err)
@@ -110,28 +106,19 @@ func TestClientDBUpdates(t *testing.T) {
 			client:  dClient.(*client),
 			options: mock.NilOption,
 			want: []driver.DBUpdate{
-				{
-					DBName: "db1",
-					Type:   "created",
-					Seq:    "1",
-				},
-				{
-					DBName: "db2",
-					Type:   "created",
-					Seq:    "2",
-				},
-				{
-					DBName: "db1",
-					Type:   "deleted",
-					Seq:    "3",
-				},
+				{DBName: "_users", Type: "created", Seq: "1"},
+				{DBName: "_replicator", Type: "created", Seq: "2"},
+				{DBName: "db1", Type: "created", Seq: "3"},
+				{DBName: "db2", Type: "created", Seq: "4"},
+				{DBName: "db1", Type: "deleted", Seq: "5"},
 			},
 		}
 	})
 
+	// since=1-foo means seq > 1; after ClusterSetup + db1+db2+db3:
+	// _users(1), _replicator(2), db1(3), db2(4), db3(5) → filter seq > 1
 	tests.Add("string sequence value in since parameter", func(t *testing.T) interface{} {
-		dClient := testClient(t)
-
+		dClient := newSingleNodeClient(t)
 		ctx := context.Background()
 		if err := dClient.CreateDB(ctx, "db1", mock.NilOption); err != nil {
 			t.Fatal(err)
@@ -147,16 +134,10 @@ func TestClientDBUpdates(t *testing.T) {
 			client:  dClient.(*client),
 			options: kivik.Param("since", "1-foo"),
 			want: []driver.DBUpdate{
-				{
-					DBName: "db2",
-					Type:   "created",
-					Seq:    "2",
-				},
-				{
-					DBName: "db3",
-					Type:   "created",
-					Seq:    "3",
-				},
+				{DBName: "_replicator", Type: "created", Seq: "2"},
+				{DBName: "db1", Type: "created", Seq: "3"},
+				{DBName: "db2", Type: "created", Seq: "4"},
+				{DBName: "db3", Type: "created", Seq: "5"},
 			},
 		}
 	})

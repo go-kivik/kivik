@@ -15,81 +15,128 @@ package sqlite
 import (
 	"context"
 	"database/sql"
-	"io"
-	"strconv"
+	"encoding/json"
+	"net/http"
 
+	"github.com/google/uuid"
+
+	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
+	internal "github.com/go-kivik/kivik/v4/int/errors"
 	"github.com/go-kivik/kivik/v4/x/options"
 )
 
-type dbUpdates struct {
-	rows *sql.Rows
+type queryRunner interface {
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 }
 
-func (u *dbUpdates) Next(update *driver.DBUpdate) error {
-	if !u.rows.Next() {
-		if err := u.rows.Err(); err != nil {
-			return err
-		}
-		return io.EOF
+func (c *client) globalChangesExists(ctx context.Context, qr queryRunner) (bool, error) {
+	var exists bool
+	if err := qr.QueryRowContext(ctx, `
+		SELECT COUNT(*) > 0 FROM sqlite_master
+		WHERE type = 'table' AND name = 'kivik$_global_changes'
+	`).Scan(&exists); err != nil {
+		return false, err
 	}
-
-	var seq int64
-	if err := u.rows.Scan(&seq, &update.DBName, &update.Type); err != nil {
-		return err
-	}
-	update.Seq = strconv.FormatInt(seq, 10)
-	return nil
-}
-
-func (u *dbUpdates) Close() error {
-	return u.rows.Close()
+	return exists, nil
 }
 
 func (c *client) DBUpdates(ctx context.Context, opts driver.Options) (driver.DBUpdates, error) {
-	optMap := options.New(opts)
-
-	if _, err := optMap.Feed(); err != nil {
+	exists, err := c.globalChangesExists(ctx, c.db)
+	if err != nil {
 		return nil, err
 	}
-
-	var queryArgs []interface{}
-	query := c.query(`
-		SELECT seq, db_name, type
-		FROM {{ .DBUpdatesLog }}
-	`)
-
-	if _, sinceVal, ok := optMap.Get("since"); ok {
-		query += ` WHERE seq > ?`
-		queryArgs = append(queryArgs, sinceVal)
+	if !exists {
+		return nil, &internal.Error{Status: http.StatusServiceUnavailable, Message: "Service Unavailable"}
 	}
 
-	query += ` ORDER BY seq`
-
-	//nolint:rowserrcheck // Err checked in Next
-	rows, err := c.db.QueryContext(ctx, query, queryArgs...)
+	o := options.New(opts)
+	feed, err := o.Feed()
 	if err != nil {
 		return nil, err
 	}
 
-	return &dbUpdates{rows: rows}, nil
+	changeOpts := map[string]any{"include_docs": true}
+	if _, feedRaw, ok := o.Get("feed"); ok {
+		changeOpts["feed"] = feedRaw
+	}
+	if _, sinceRaw, ok := o.Get("since"); ok {
+		changeOpts["since"] = sinceRaw
+	} else if feed == options.FeedLongpoll || feed == options.FeedContinuous {
+		changeOpts["since"] = "now"
+	}
+
+	globalDB := c.newDB("_global_changes")
+	ch, err := globalDB.Changes(ctx, kivik.Params(changeOpts))
+	if err != nil {
+		return nil, err
+	}
+	return &globalChangesDBUpdates{changes: ch}, nil
 }
 
-func (c *client) ensureDBUpdatesLog(ctx context.Context) error {
-	_, err := c.db.ExecContext(ctx, c.query(`
-		CREATE TABLE IF NOT EXISTS {{ .DBUpdatesLog }} (
-			seq INTEGER PRIMARY KEY AUTOINCREMENT,
-			db_name TEXT NOT NULL,
-			type TEXT NOT NULL
-		)
-	`))
-	return err
+type globalChangesDBUpdates struct {
+	changes driver.Changes
 }
 
-func (c *client) logDBUpdate(ctx context.Context, tx *sql.Tx, dbName, eventType string) error {
-	_, err := tx.ExecContext(ctx, c.query(`
-		INSERT INTO {{ .DBUpdatesLog }} (db_name, type)
-		VALUES (?, ?)
-	`), dbName, eventType)
-	return err
+func (u *globalChangesDBUpdates) Next(update *driver.DBUpdate) error {
+	var change driver.Change
+	if err := u.changes.Next(&change); err != nil {
+		return err
+	}
+	var doc struct {
+		DBName string `json:"db_name"`
+		Type   string `json:"type"`
+	}
+	if err := json.Unmarshal(change.Doc, &doc); err != nil {
+		return err
+	}
+	update.DBName = doc.DBName
+	update.Type = doc.Type
+	update.Seq = change.Seq
+	return nil
+}
+
+func (u *globalChangesDBUpdates) Close() error { return u.changes.Close() }
+
+func (u *globalChangesDBUpdates) LastSeq() (string, error) {
+	return u.changes.LastSeq(), nil
+}
+
+func (c *client) logGlobalChange(ctx context.Context, tx *sql.Tx, dbName, eventType string) error {
+	if dbName == "_global_changes" {
+		return nil
+	}
+
+	exists, err := c.globalChangesExists(ctx, tx)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return nil
+	}
+
+	docID := uuid.NewString()
+	data, err := prepareDoc(docID, map[string]any{"db_name": dbName, "type": eventType})
+	if err != nil {
+		return err
+	}
+
+	d := c.newDB("_global_changes")
+	rev := revision{rev: 1, id: data.RevID()}
+
+	if _, err := tx.ExecContext(ctx, d.query(`
+		INSERT INTO {{ .Revs }} (id, rev, rev_id)
+		VALUES ($1, 1, $2)
+	`), data.ID, rev.id); err != nil {
+		return err
+	}
+
+	if _, err := tx.ExecContext(ctx, d.query(`
+		INSERT INTO {{ .Docs }} (id, rev, rev_id, doc, md5sum, deleted)
+		VALUES ($1, 1, $2, $3, $4, $5)
+	`), data.ID, rev.id, data.Doc, data.MD5sum, data.Deleted); err != nil {
+		return err
+	}
+
+	return nil
 }

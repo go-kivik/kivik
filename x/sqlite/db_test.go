@@ -224,10 +224,7 @@ func Test_db_not_found(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()
-		client, err := (drv{}).NewClient(":memory:", mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		client := testClient(t)
 		d, err := client.DB("db_not_found", mock.NilOption)
 		if err != nil {
 			t.Fatal(err)

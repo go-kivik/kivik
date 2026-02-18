@@ -15,18 +15,11 @@ package sqlite
 import (
 	"context"
 	"testing"
-
-	"github.com/go-kivik/kivik/v4/int/mock"
 )
 
 func TestClientDBExists(t *testing.T) {
-	d := drv{}
 	t.Run("exists", func(t *testing.T) {
-		dClient, err := d.NewClient(":memory:", mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
-
+		dClient := testClient(t)
 		c := dClient.(*client)
 
 		if _, err := c.db.Exec(`CREATE TABLE "kivik$foo" (id INTEGER)`); err != nil {
@@ -42,10 +35,7 @@ func TestClientDBExists(t *testing.T) {
 		}
 	})
 	t.Run("does not exist", func(t *testing.T) {
-		dClient, err := d.NewClient(":memory:", mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		dClient := testClient(t)
 
 		exists, err := dClient.DBExists(context.Background(), "foo", nil)
 		if err != nil {

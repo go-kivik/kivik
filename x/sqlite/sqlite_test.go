@@ -119,11 +119,7 @@ func TestMultipleDBs(t *testing.T) {
 
 func TestClientDestroyDB(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
-		d := drv{}
-		dClient, err := d.NewClient(":memory:", mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		dClient := testClient(t)
 
 		if err := dClient.CreateDB(context.Background(), "foo", mock.NilOption); err != nil {
 			t.Fatal(err)
@@ -142,11 +138,7 @@ func TestClientDestroyDB(t *testing.T) {
 		}
 	})
 	t.Run("with design doc", func(t *testing.T) {
-		d := drv{}
-		dClient, err := d.NewClient(":memory:", mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		dClient := testClient(t)
 
 		if err := dClient.CreateDB(context.Background(), "foo", mock.NilOption); err != nil {
 			t.Fatal(err)
@@ -183,13 +175,9 @@ func TestClientDestroyDB(t *testing.T) {
 		}
 	})
 	t.Run("doesn't exist", func(t *testing.T) {
-		d := drv{}
-		dClient, err := d.NewClient(":memory:", mock.NilOption)
-		if err != nil {
-			t.Fatal(err)
-		}
+		dClient := testClient(t)
 
-		err = dClient.DestroyDB(context.Background(), "foo", nil)
+		err := dClient.DestroyDB(context.Background(), "foo", nil)
 		if err == nil {
 			t.Fatal("wanted an error")
 		}

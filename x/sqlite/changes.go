@@ -46,20 +46,29 @@ type normalChanges struct {
 
 var _ driver.Changes = &normalChanges{}
 
-func (d *db) newNormalChanges(ctx context.Context, opts options.Map, since, lastSeq *uint64, sinceNow bool, feed string) (*normalChanges, error) {
+func (d *db) newNormalChanges(ctx context.Context, opts options.Map) (*normalChanges, error) {
+	sinceNow, since, _, err := opts.Since()
+	if err != nil {
+		return nil, err
+	}
+	feed, err := opts.Feed()
+	if err != nil {
+		return nil, err
+	}
 	limit, err := opts.ChangesLimit()
 	if err != nil {
 		return nil, err
 	}
 
-	if since != nil {
+	var lastSeq *uint64
+	if since > 0 {
 		last, err := d.lastSeq(ctx)
 		if err != nil {
 			return nil, err
 		}
 		lastSeq = &last
-		if last <= *since {
-			*since = last - 1
+		if last <= since {
+			since = last - 1
 			limit = uint64(1)
 		}
 	}
@@ -76,7 +85,7 @@ func (d *db) newNormalChanges(ctx context.Context, opts options.Map, since, last
 			}
 			lastSeq = &last
 		}
-		since = lastSeq
+		since = *lastSeq
 		limit = 0
 		c.lastSeq = strconv.FormatUint(*lastSeq, 10)
 	}
@@ -385,8 +394,7 @@ func (c *normalChanges) ETag() string {
 func (d *db) Changes(ctx context.Context, opts driver.Options) (driver.Changes, error) {
 	o := options.New(opts)
 
-	var lastSeq *uint64
-	sinceNow, since, err := o.Since()
+	sinceNow, since, _, err := o.Since()
 	if err != nil {
 		return nil, err
 	}
@@ -398,7 +406,17 @@ func (d *db) Changes(ctx context.Context, opts driver.Options) (driver.Changes, 
 	if err != nil {
 		return nil, err
 	}
-	if sinceNow && (feed == options.FeedLongpoll || feed == options.FeedContinuous) {
+
+	useLongpoll := sinceNow && (feed == options.FeedLongpoll || feed == options.FeedContinuous)
+	if !useLongpoll && feed == options.FeedLongpoll {
+		currentLastSeq, err := d.lastSeq(ctx)
+		if err != nil {
+			return nil, err
+		}
+		useLongpoll = since == currentLastSeq
+	}
+
+	if useLongpoll {
 		attachments, err := o.Attachments()
 		if err != nil {
 			return nil, err
@@ -410,7 +428,7 @@ func (d *db) Changes(ctx context.Context, opts driver.Options) (driver.Changes, 
 		return d.newLongpollChanges(ctx, includeDocs, attachments, feed == options.FeedContinuous, timeout)
 	}
 
-	return d.newNormalChanges(ctx, o, since, lastSeq, sinceNow, feed)
+	return d.newNormalChanges(ctx, o)
 }
 
 type longpollChanges struct {

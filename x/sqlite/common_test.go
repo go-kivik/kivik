@@ -17,19 +17,21 @@ package sqlite
 import (
 	"bytes"
 	"context"
-	"crypto/md5"
 	"database/sql"
 	"fmt"
 	"log"
 	"os"
 	"regexp"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/int/mock"
 )
+
+var dbSeq atomic.Uint64
 
 type DB interface {
 	driver.DB
@@ -92,6 +94,21 @@ func (o multiOptions) Apply(t any) {
 	}
 }
 
+// testClient creates a new in-memory SQLite driver client for testing.
+func testClient(t *testing.T) driver.Client {
+	t.Helper()
+	d := drv{}
+	dsn := fmt.Sprintf("file:testclient%d?mode=memory&cache=shared", dbSeq.Add(1))
+	c, err := d.NewClient(dsn, mock.NilOption)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = c.(*client).db.Close()
+	})
+	return c
+}
+
 // newDB creates a new driver.DB instance backed by an in-memory SQLite database,
 // and registers a cleanup function to close the database when the test is done.
 func newDB(t *testing.T) *testDB {
@@ -108,10 +125,7 @@ func newDB(t *testing.T) *testDB {
 		}
 		t.Logf("Test database: %s", dsn)
 	} else {
-		// calculate md5sum of test name
-		md5sum := md5.New()
-		_, _ = md5sum.Write([]byte(t.Name()))
-		dsn = fmt.Sprintf("file:%x?mode=memory&cache=shared", md5sum.Sum(nil))
+		dsn = fmt.Sprintf("file:newdb%d?mode=memory&cache=shared", dbSeq.Add(1))
 	}
 	d := drv{}
 	buf := &bytes.Buffer{}
@@ -120,14 +134,17 @@ func newDB(t *testing.T) *testDB {
 	if os.Getenv("QUERY_LOG") != "" {
 		options = multiOptions{options, OptionQueryLogger(log.New(os.Stderr, "", 0))}
 	}
-	client, err := d.NewClient(dsn, options)
+	c, err := d.NewClient(dsn, options)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := client.CreateDB(context.Background(), "test", nil); err != nil {
+	t.Cleanup(func() {
+		_ = c.(*client).db.Close()
+	})
+	if err := c.CreateDB(context.Background(), "test", nil); err != nil {
 		t.Fatal(err)
 	}
-	db, err := client.DB("test", mock.NilOption)
+	db, err := c.DB("test", mock.NilOption)
 	if err != nil {
 		t.Fatal(err)
 	}

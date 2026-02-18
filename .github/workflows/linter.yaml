@@ -31,17 +31,25 @@ jobs:
           go mod tidy -compat=1.20 && git diff --exit-code
       - name: Lint x/sqlite module
         uses: golangci/golangci-lint-action@v8
+        env:
+          GOWORK: "off"
         with:
           working-directory: ./x/sqlite
           version: ${{ env.GOLANGCI_LINT_VERSION }}
       - name: Validate x/sqlite go.mod
+        env:
+          GOWORK: "off"
         run: |
           cd x/sqlite && go mod tidy && git diff --exit-code
       - name: Lint x/pg module
         uses: golangci/golangci-lint-action@v8
+        env:
+          GOWORK: "off"
         with:
           working-directory: ./x/pg
           version: ${{ env.GOLANGCI_LINT_VERSION }}
       - name: Validate x/pg go.mod
+        env:
+          GOWORK: "off"
         run: |
           cd x/pg && go mod tidy && git diff --exit-code

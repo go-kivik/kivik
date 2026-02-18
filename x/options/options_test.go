@@ -1225,3 +1225,53 @@ func TestStyle(t *testing.T) {
 		}
 	})
 }
+
+func TestSince(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		input      Map
+		wantNow    bool
+		wantSeq    uint64
+		wantSince  string
+		wantErr    string
+		wantStatus int
+	}
+
+	tests := testy.NewTable()
+
+	tests.Add("string sequence value", test{
+		input:     Map{"since": "123"},
+		wantNow:   false,
+		wantSeq:   123,
+		wantSince: "",
+	})
+	tests.Add("numeric prefix with suffix", test{
+		input:     Map{"since": "42-foo"},
+		wantNow:   false,
+		wantSeq:   42,
+		wantSince: "foo",
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		gotNow, gotSeq, gotSince, err := tt.input.Since()
+		if !testy.ErrorMatches(tt.wantErr, err) {
+			t.Errorf("unexpected error: %v", err)
+		}
+		if status := kivik.HTTPStatus(err); status != tt.wantStatus {
+			t.Errorf("unexpected status: %d", status)
+		}
+		if err != nil {
+			return
+		}
+		if gotNow != tt.wantNow {
+			t.Errorf("got now=%v, want now=%v", gotNow, tt.wantNow)
+		}
+		if gotSeq != tt.wantSeq {
+			t.Errorf("got seq=%d, want seq=%d", gotSeq, tt.wantSeq)
+		}
+		if gotSince != tt.wantSince {
+			t.Errorf("got since=%q, want since=%q", gotSince, tt.wantSince)
+		}
+	})
+}

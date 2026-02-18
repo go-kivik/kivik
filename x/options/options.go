@@ -220,18 +220,29 @@ func (o Map) Timeout() (time.Duration, error) {
 	return time.Duration(ms) * time.Millisecond, nil
 }
 
-// Since returns true if the value is "now", otherwise it returns the sequence
-// id as a uint64.
-func (o Map) Since() (bool, *uint64, error) {
+// Since returns whether the since value is "now", the parsed numeric sequence,
+// the sequence suffix (the portion after the first '-'), and any error.
+// For example, "42-foo" returns (false, 42, "foo", nil), and "42" returns
+// (false, 42, "", nil).
+func (o Map) Since() (bool, uint64, string, error) {
 	in, ok := o["since"].(string)
 	if !ok {
-		return false, nil, nil
+		return false, 0, "", nil
 	}
 	if in == "now" {
-		return true, nil, nil
+		return true, 0, "", nil
 	}
-	since, err := toUint64(in, "malformed sequence supplied in 'since' parameter")
-	return false, &since, err
+	s := in
+	var suffix string
+	if idx := strings.IndexByte(s, '-'); idx > 0 {
+		suffix = s[idx+1:]
+		s = s[:idx]
+	}
+	seq, err := strconv.ParseUint(s, 10, 64)
+	if err != nil {
+		return false, 0, "", &internal.Error{Status: http.StatusBadRequest, Message: "malformed sequence supplied in 'since' parameter: " + in}
+	}
+	return false, seq, suffix, nil
 }
 
 // ChangesLimit returns the ChangesLimit value as a uint64, or 0 if the ChangesLimit is unset. An

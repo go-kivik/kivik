@@ -900,7 +900,11 @@ func (r *bulkGetFallback) Next(row *driver.Row) error {
 	}
 	ref := r.refs[r.i]
 	r.i++
-	doc, err := r.db.Get(r.ctx, ref.ID, r.opts)
+	opts := r.opts
+	if ref.Rev != "" {
+		opts = multiOptions{r.opts, params{"rev": ref.Rev}}
+	}
+	doc, err := r.db.Get(r.ctx, ref.ID, opts)
 	if err != nil {
 		row.ID = ref.ID
 		row.Error = err

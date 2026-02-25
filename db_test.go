@@ -3041,6 +3041,27 @@ func TestBulkGet(t *testing.T) {
 				t.Errorf("Next() after Close() = %v, want io.EOF", err)
 			}
 		})
+		t.Run("fallback forwards Rev to Get", func(t *testing.T) {
+			var gotOpts driver.Options
+			rows := &bulkGetFallback{
+				ctx: context.Background(),
+				db: &mock.DB{
+					GetFunc: func(_ context.Context, _ string, opts driver.Options) (*driver.Document, error) {
+						gotOpts = opts
+						return &driver.Document{Rev: "2-abc", Body: io.NopCloser(strings.NewReader(`{}`))}, nil
+					},
+				},
+				refs: []driver.BulkGetReference{{ID: "doc1", Rev: "2-abc"}},
+			}
+			if err := rows.Next(&driver.Row{}); err != nil {
+				t.Fatalf("Next() error: %v", err)
+			}
+			got := map[string]any{}
+			gotOpts.Apply(got)
+			if got["rev"] != "2-abc" {
+				t.Errorf("Get called with rev=%v, want 2-abc", got["rev"])
+			}
+		})
 	})
 }
 

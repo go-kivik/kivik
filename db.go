@@ -904,6 +904,9 @@ func (r *bulkGetFallback) Next(row *driver.Row) error {
 	if ref.Rev != "" {
 		opts = multiOptions{r.opts, params{"rev": ref.Rev}}
 	}
+	if ref.AttsSince != "" {
+		opts = multiOptions{opts, params{"atts_since": []string{ref.AttsSince}}}
+	}
 	doc, err := r.db.Get(r.ctx, ref.ID, opts)
 	if err != nil {
 		row.ID = ref.ID

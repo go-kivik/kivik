@@ -3023,6 +3023,24 @@ func TestBulkGet(t *testing.T) {
 			}
 			_ = db.Close() // Should not block
 		})
+		t.Run("fallback close stops iteration", func(t *testing.T) {
+			rows := &bulkGetFallback{
+				ctx: context.Background(),
+				db: &mock.DB{
+					GetFunc: func(context.Context, string, driver.Options) (*driver.Document, error) {
+						t.Error("Get should not be called after Close")
+						return nil, nil
+					},
+				},
+				refs: []driver.BulkGetReference{{ID: "doc1"}},
+			}
+			if err := rows.Close(); err != nil {
+				t.Fatalf("Close() error: %v", err)
+			}
+			if err := rows.Next(&driver.Row{}); err != io.EOF {
+				t.Errorf("Next() after Close() = %v, want io.EOF", err)
+			}
+		})
 	})
 }
 

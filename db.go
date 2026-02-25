@@ -883,14 +883,18 @@ type BulkGetReference struct {
 // bulkGetFallback implements driver.Rows by calling driver.DB.Get for each
 // reference, used when the driver does not implement driver.BulkGetter.
 type bulkGetFallback struct {
-	ctx  context.Context
-	db   driver.DB
-	opts driver.Options
-	refs []driver.BulkGetReference
-	i    int
+	ctx    context.Context
+	db     driver.DB
+	opts   driver.Options
+	refs   []driver.BulkGetReference
+	i      int
+	closed bool
 }
 
 func (r *bulkGetFallback) Next(row *driver.Row) error {
+	if r.closed {
+		return io.EOF
+	}
 	if r.i >= len(r.refs) {
 		return io.EOF
 	}
@@ -909,7 +913,7 @@ func (r *bulkGetFallback) Next(row *driver.Row) error {
 	return nil
 }
 
-func (r *bulkGetFallback) Close() error      { return nil }
+func (r *bulkGetFallback) Close() error      { r.closed = true; return nil }
 func (r *bulkGetFallback) UpdateSeq() string { return "" }
 func (r *bulkGetFallback) Offset() int64     { return 0 }
 func (r *bulkGetFallback) TotalRows() int64  { return 0 }

@@ -2886,15 +2886,45 @@ func TestBulkGet(t *testing.T) {
 		err      string
 	}
 
+	nonBulkGetterDB := &mock.DB{}
+	fallbackDB := &mock.DB{
+		GetFunc: func(_ context.Context, docID string, _ driver.Options) (*driver.Document, error) {
+			return &driver.Document{
+				Rev:  "1-abc",
+				Body: io.NopCloser(strings.NewReader(`{"_id":"` + docID + `","_rev":"1-abc"}`)),
+			}, nil
+		},
+	}
+	fallbackRefs := []driver.BulkGetReference{{ID: "doc1"}}
+	fallbackRows := &bulkGetFallback{
+		ctx:  context.Background(),
+		db:   fallbackDB,
+		opts: multiOptions{nil},
+		refs: fallbackRefs,
+	}
+	nonBulkGetterRows := &bulkGetFallback{
+		ctx:  context.Background(),
+		db:   nonBulkGetterDB,
+		opts: multiOptions{nil},
+		refs: []driver.BulkGetReference{},
+	}
+
 	tests := []bulkGetTest{
 		{
 			name: "non-bulkGetter",
 			db: &DB{
 				client:   &Client{},
-				driverDB: &mock.DB{},
+				driverDB: nonBulkGetterDB,
 			},
-			status: http.StatusNotImplemented,
-			err:    "kivik: bulk get not supported by driver",
+			expected: &ResultSet{
+				iter: &iter{
+					feed: &rowsIterator{
+						Rows: nonBulkGetterRows,
+					},
+					curVal: &driver.Row{},
+				},
+				rowsi: nonBulkGetterRows,
+			},
 		},
 		{
 			name: "query error",
@@ -2940,6 +2970,23 @@ func TestBulkGet(t *testing.T) {
 			status: http.StatusServiceUnavailable,
 			err:    "kivik: client closed",
 		},
+		{
+			name: "fallback via Get",
+			db: &DB{
+				client:   &Client{},
+				driverDB: fallbackDB,
+			},
+			docs: []BulkGetReference{{ID: "doc1"}},
+			expected: &ResultSet{
+				iter: &iter{
+					feed: &rowsIterator{
+						Rows: fallbackRows,
+					},
+					curVal: &driver.Row{},
+				},
+				rowsi: fallbackRows,
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -2959,6 +3006,7 @@ func TestBulkGet(t *testing.T) {
 			}
 		})
 	}
+
 	t.Run("standalone", func(t *testing.T) {
 		t.Run("after err, close doesn't block", func(t *testing.T) {
 			db := &DB{

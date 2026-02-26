@@ -66,6 +66,46 @@ func TestDBUpdate(t *testing.T) {
 		}
 	})
 
+	tests.Add("update function returns null doc", func(t *testing.T) any {
+		d := newDB(t)
+		d.tPut("_design/myddoc", map[string]any{
+			"updates": map[string]any{
+				"myfunc": `function(doc, req) { return [null, "no change"]; }`,
+			},
+		})
+		d.tPut("foo", map[string]any{"_id": "foo"})
+		return test{
+			db:       d,
+			ddoc:     "_design/myddoc",
+			funcName: "myfunc",
+			docID:    "foo",
+			wantRev:  "",
+		}
+	})
+
+	tests.Add("update function compilation error", func(t *testing.T) any {
+		d := newDB(t)
+		d.tPut("_design/myddoc", map[string]any{
+			"updates": map[string]any{
+				"myfunc": `not valid javascript`,
+			},
+		})
+		d.tPut("foo", map[string]any{"_id": "foo"})
+		return test{
+			db:         d,
+			ddoc:       "_design/myddoc",
+			funcName:   "myfunc",
+			docID:      "foo",
+			wantStatus: http.StatusInternalServerError,
+			wantErr:    "failed to compile update function",
+		}
+	})
+
+	/*
+		TODO:
+		- document doesn't exist
+	*/
+
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()
 		dbc := tt.db

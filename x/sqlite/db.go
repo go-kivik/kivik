@@ -34,6 +34,7 @@ var (
 	_ driver.DB         = (*db)(nil)
 	_ driver.Finder     = (*db)(nil)
 	_ driver.SecurityDB = (*db)(nil)
+	_ driver.Updater    = (*db)(nil)
 )
 
 func (c *client) newDB(name string) *db {

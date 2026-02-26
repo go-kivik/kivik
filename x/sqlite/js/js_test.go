@@ -58,10 +58,33 @@ func TestUpdate(t *testing.T) {
 		req:     map[string]any{},
 		wantErr: "something went wrong",
 	})
-	// TODO: JS function returns non-array (e.g. a string)
-	// TODO: JS function returns array with wrong length (e.g. [doc])
-	// TODO: response element is non-string (e.g. numeric) — should coerce or error?
-	// TODO: null doc input (doc parameter is nil)
+	tests.Add("returns non-array", test{
+		code:    `function(doc, req) { return "oops"; }`,
+		doc:     map[string]any{},
+		req:     map[string]any{},
+		wantErr: `update function must return \[doc, response\]`,
+	})
+	tests.Add("returns wrong length array", test{
+		code:    `function(doc, req) { return [doc]; }`,
+		doc:     map[string]any{},
+		req:     map[string]any{},
+		wantErr: `update function must return \[doc, response\]`,
+	})
+	tests.Add("non-string response", test{
+		// TODO: non-string response is silently lost; should coerce via fmt.Sprint
+		code:       `function(doc, req) { return [doc, 42]; }`,
+		doc:        map[string]any{"_id": "foo"},
+		req:        map[string]any{},
+		wantNewDoc: map[string]any{"_id": "foo"},
+		wantResp:   "",
+	})
+	tests.Add("null doc input", test{
+		code:       `function(doc, req) { return [{"created": true}, "created"]; }`,
+		doc:        nil,
+		req:        map[string]any{},
+		wantNewDoc: map[string]any{"created": true},
+		wantResp:   "created",
+	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		fn, err := Update(tt.code)

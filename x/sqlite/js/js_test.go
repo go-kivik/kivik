@@ -47,7 +47,10 @@ func TestUpdate(t *testing.T) {
 		wantResp:   "no change",
 	})
 
-	// TODO: compile error (invalid JavaScript syntax)
+	tests.Add("compile error", test{
+		code:    `not valid javascript`,
+		wantErr: "failed to compile update function",
+	})
 	// TODO: JS function throws an exception
 	// TODO: JS function returns non-array (e.g. a string)
 	// TODO: JS function returns array with wrong length (e.g. [doc])

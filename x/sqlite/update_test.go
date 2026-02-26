@@ -101,10 +101,21 @@ func TestDBUpdate(t *testing.T) {
 		}
 	})
 
-	/*
-		TODO:
-		- document doesn't exist
-	*/
+	tests.Add("document does not exist", func(t *testing.T) any {
+		d := newDB(t)
+		d.tPut("_design/myddoc", map[string]any{
+			"updates": map[string]any{
+				"myfunc": `function(doc, req) { return [{"_id": "foo", "created": true}, "created"]; }`,
+			},
+		})
+		return test{
+			db:       d,
+			ddoc:     "_design/myddoc",
+			funcName: "myfunc",
+			docID:    "foo",
+			wantRev:  `^1-`,
+		}
+	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()

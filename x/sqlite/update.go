@@ -63,11 +63,16 @@ func (d *db) Update(ctx context.Context, ddoc, funcName, docID string, doc any, 
 	}
 
 	existingDoc, _, err := d.getCoreDoc(ctx, d.db, docID, revision{}, false, false)
-	if err != nil {
+	if err != nil && internal.HTTPStatus(err) != http.StatusNotFound {
 		return "", err
 	}
 
-	updatedDoc, _, err := updateFunc(existingDoc.toMap(), map[string]any{})
+	var existingDocMap map[string]any
+	if err == nil {
+		existingDocMap = existingDoc.toMap()
+	}
+
+	updatedDoc, _, err := updateFunc(existingDocMap, map[string]any{})
 	if err != nil {
 		return "", err
 	}

@@ -23,12 +23,13 @@ func TestUpdate(t *testing.T) {
 	t.Parallel()
 
 	type test struct {
-		code       string
-		doc        any
-		req        any
-		wantNewDoc any
-		wantResp   string
-		wantErr    string
+		code           string
+		doc            any
+		req            any
+		wantNewDoc     any
+		wantResp       string
+		wantCompileErr string
+		wantErr        string
 	}
 
 	tests := testy.NewTable()
@@ -48,10 +49,15 @@ func TestUpdate(t *testing.T) {
 	})
 
 	tests.Add("compile error", test{
-		code:    `not valid javascript`,
-		wantErr: "failed to compile update function",
+		code:           `not valid javascript`,
+		wantCompileErr: "failed to compile update function",
 	})
-	// TODO: JS function throws an exception
+	tests.Add("JS exception", test{
+		code:    `function(doc, req) { throw "something went wrong"; }`,
+		doc:     map[string]any{},
+		req:     map[string]any{},
+		wantErr: "something went wrong",
+	})
 	// TODO: JS function returns non-array (e.g. a string)
 	// TODO: JS function returns array with wrong length (e.g. [doc])
 	// TODO: response element is non-string (e.g. numeric) — should coerce or error?
@@ -59,8 +65,8 @@ func TestUpdate(t *testing.T) {
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		fn, err := Update(tt.code)
-		if !testy.ErrorMatchesRE(tt.wantErr, err) {
-			t.Fatalf("Update() error = %v, wantErr /%s/", err, tt.wantErr)
+		if !testy.ErrorMatchesRE(tt.wantCompileErr, err) {
+			t.Fatalf("Update() error = %v, wantCompileErr /%s/", err, tt.wantCompileErr)
 		}
 		if err != nil {
 			return
@@ -68,7 +74,7 @@ func TestUpdate(t *testing.T) {
 
 		gotNewDoc, gotResp, err := fn(tt.doc, tt.req)
 		if !testy.ErrorMatchesRE(tt.wantErr, err) {
-			t.Errorf("unexpected error: %v, want /%s/", err, tt.wantErr)
+			t.Fatalf("fn() error = %v, wantErr /%s/", err, tt.wantErr)
 		}
 		if err != nil {
 			return

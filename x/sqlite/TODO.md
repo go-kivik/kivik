@@ -2,8 +2,6 @@
 
 ## Missing Implementations
 
-- [ ] **ClientCloser** (`sqlite.go`) — Client should implement `Close()` to
-  close the underlying `sql.DB`.
 - [ ] **Updater** (`db.go`) — Design docs store update functions but they can't
   be invoked via the `Update()` method.
 - [ ] **Explain** (`db.go`) — Currently returns "not implemented"; useful for

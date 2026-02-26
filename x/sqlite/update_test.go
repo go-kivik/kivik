@@ -49,6 +49,22 @@ func TestDBUpdate(t *testing.T) {
 		wantStatus: http.StatusNotFound,
 		wantErr:    "missing",
 	})
+	tests.Add("update existing document", func(t *testing.T) any {
+		d := newDB(t)
+		d.tPut("_design/myddoc", map[string]any{
+			"updates": map[string]any{
+				"myfunc": `function(doc, req) { doc.updated = true; return [doc, "OK"]; }`,
+			},
+		})
+		d.tPut("foo", map[string]any{"_id": "foo"})
+		return test{
+			db:       d,
+			ddoc:     "_design/myddoc",
+			funcName: "myfunc",
+			docID:    "foo",
+			wantRev:  `^2-`,
+		}
+	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()

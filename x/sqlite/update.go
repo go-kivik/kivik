@@ -15,8 +15,12 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
+
+	"github.com/google/uuid"
 
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
@@ -72,7 +76,27 @@ func (d *db) Update(ctx context.Context, ddoc, funcName, docID string, doc any, 
 		existingDocMap = existingDoc.toMap()
 	}
 
-	updatedDoc, _, err := updateFunc(existingDocMap, map[string]any{})
+	ddocParts := strings.SplitN(strings.TrimPrefix(ddoc, "_design/"), "/", 2)
+	ddocName := ddocParts[0]
+
+	bodyBytes, _ := json.Marshal(doc)
+	req := map[string]any{
+		"id":     docID,
+		"body":   string(bodyBytes),
+		"uuid":   uuid.NewString(),
+		"method": http.MethodPut,
+		"userCtx": map[string]any{
+			"name":  nil,
+			"roles": []string{"_admin"},
+			"db":    d.name,
+		},
+		"secObj": map[string]any{
+			"admins":  map[string]any{"names": []string{}, "roles": []string{}},
+			"members": map[string]any{"names": []string{}, "roles": []string{}},
+		},
+		"path": []string{d.name, "_design", ddocName, "_update", funcName, docID},
+	}
+	updatedDoc, _, err := updateFunc(existingDocMap, req)
 	if err != nil {
 		return "", err
 	}

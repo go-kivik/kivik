@@ -101,6 +101,41 @@ func TestDBUpdate(t *testing.T) {
 		}
 	})
 
+	tests.Add("req object contains id and body", func(t *testing.T) any {
+		d := newDB(t)
+		d.tPut("_design/myddoc", map[string]any{
+			"updates": map[string]any{
+				"myfunc": `function(doc, req) { doc.from_body = JSON.parse(req.body).message; doc.from_id = req.id; return [doc, "OK"]; }`,
+			},
+		})
+		d.tPut("foo", map[string]any{"_id": "foo"})
+		return test{
+			db:       d,
+			ddoc:     "_design/myddoc",
+			funcName: "myfunc",
+			docID:    "foo",
+			doc:      map[string]any{"message": "hello"},
+			wantRev:  `^2-`,
+		}
+	})
+
+	tests.Add("req object contains method userCtx secObj and path", func(t *testing.T) any {
+		d := newDB(t)
+		d.tPut("_design/myddoc", map[string]any{
+			"updates": map[string]any{
+				"myfunc": `function(doc, req) { if (req.userCtx.roles.indexOf("_admin") === -1) throw("not admin"); if (typeof req.secObj.admins !== "object") throw("missing secObj.admins"); doc.method = req.method; doc.db = req.userCtx.db; doc.path_len = req.path.length; return [doc, "OK"]; }`,
+			},
+		})
+		d.tPut("foo", map[string]any{"_id": "foo"})
+		return test{
+			db:       d,
+			ddoc:     "_design/myddoc",
+			funcName: "myfunc",
+			docID:    "foo",
+			wantRev:  `^2-`,
+		}
+	})
+
 	tests.Add("document does not exist", func(t *testing.T) any {
 		d := newDB(t)
 		d.tPut("_design/myddoc", map[string]any{

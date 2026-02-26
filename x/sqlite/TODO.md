@@ -2,8 +2,6 @@
 
 ## Missing Implementations
 
-- [ ] **Updater** (`db.go`) — Design docs store update functions but they can't
-  be invoked via the `Update()` method.
 - [ ] **Explain** (`db.go`) — Currently returns "not implemented"; useful for
   Mango query debugging.
 - [ ] **Missing options**:

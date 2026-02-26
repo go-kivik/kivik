@@ -2886,15 +2886,45 @@ func TestBulkGet(t *testing.T) {
 		err      string
 	}
 
+	nonBulkGetterDB := &mock.DB{}
+	fallbackDB := &mock.DB{
+		GetFunc: func(_ context.Context, docID string, _ driver.Options) (*driver.Document, error) {
+			return &driver.Document{
+				Rev:  "1-abc",
+				Body: io.NopCloser(strings.NewReader(`{"_id":"` + docID + `","_rev":"1-abc"}`)),
+			}, nil
+		},
+	}
+	fallbackRefs := []driver.BulkGetReference{{ID: "doc1"}}
+	fallbackRows := &bulkGetFallback{
+		ctx:  context.Background(),
+		db:   fallbackDB,
+		opts: multiOptions{nil},
+		refs: fallbackRefs,
+	}
+	nonBulkGetterRows := &bulkGetFallback{
+		ctx:  context.Background(),
+		db:   nonBulkGetterDB,
+		opts: multiOptions{nil},
+		refs: []driver.BulkGetReference{},
+	}
+
 	tests := []bulkGetTest{
 		{
 			name: "non-bulkGetter",
 			db: &DB{
 				client:   &Client{},
-				driverDB: &mock.DB{},
+				driverDB: nonBulkGetterDB,
 			},
-			status: http.StatusNotImplemented,
-			err:    "kivik: bulk get not supported by driver",
+			expected: &ResultSet{
+				iter: &iter{
+					feed: &rowsIterator{
+						Rows: nonBulkGetterRows,
+					},
+					curVal: &driver.Row{},
+				},
+				rowsi: nonBulkGetterRows,
+			},
 		},
 		{
 			name: "query error",
@@ -2940,6 +2970,23 @@ func TestBulkGet(t *testing.T) {
 			status: http.StatusServiceUnavailable,
 			err:    "kivik: client closed",
 		},
+		{
+			name: "fallback via Get",
+			db: &DB{
+				client:   &Client{},
+				driverDB: fallbackDB,
+			},
+			docs: []BulkGetReference{{ID: "doc1"}},
+			expected: &ResultSet{
+				iter: &iter{
+					feed: &rowsIterator{
+						Rows: fallbackRows,
+					},
+					curVal: &driver.Row{},
+				},
+				rowsi: fallbackRows,
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -2959,6 +3006,7 @@ func TestBulkGet(t *testing.T) {
 			}
 		})
 	}
+
 	t.Run("standalone", func(t *testing.T) {
 		t.Run("after err, close doesn't block", func(t *testing.T) {
 			db := &DB{
@@ -2974,6 +3022,66 @@ func TestBulkGet(t *testing.T) {
 				t.Fatal("expected an error, got none")
 			}
 			_ = db.Close() // Should not block
+		})
+		t.Run("fallback close stops iteration", func(t *testing.T) {
+			rows := &bulkGetFallback{
+				ctx: context.Background(),
+				db: &mock.DB{
+					GetFunc: func(context.Context, string, driver.Options) (*driver.Document, error) {
+						t.Error("Get should not be called after Close")
+						return nil, nil
+					},
+				},
+				refs: []driver.BulkGetReference{{ID: "doc1"}},
+			}
+			if err := rows.Close(); err != nil {
+				t.Fatalf("Close() error: %v", err)
+			}
+			if err := rows.Next(&driver.Row{}); err != io.EOF {
+				t.Errorf("Next() after Close() = %v, want io.EOF", err)
+			}
+		})
+		t.Run("fallback forwards Rev to Get", func(t *testing.T) {
+			var gotOpts driver.Options
+			rows := &bulkGetFallback{
+				ctx: context.Background(),
+				db: &mock.DB{
+					GetFunc: func(_ context.Context, _ string, opts driver.Options) (*driver.Document, error) {
+						gotOpts = opts
+						return &driver.Document{Rev: "2-abc", Body: io.NopCloser(strings.NewReader(`{}`))}, nil
+					},
+				},
+				refs: []driver.BulkGetReference{{ID: "doc1", Rev: "2-abc"}},
+			}
+			if err := rows.Next(&driver.Row{}); err != nil {
+				t.Fatalf("Next() error: %v", err)
+			}
+			got := map[string]any{}
+			gotOpts.Apply(got)
+			if got["rev"] != "2-abc" {
+				t.Errorf("Get called with rev=%v, want 2-abc", got["rev"])
+			}
+		})
+		t.Run("fallback forwards AttsSince to Get", func(t *testing.T) {
+			var gotOpts driver.Options
+			rows := &bulkGetFallback{
+				ctx: context.Background(),
+				db: &mock.DB{
+					GetFunc: func(_ context.Context, _ string, opts driver.Options) (*driver.Document, error) {
+						gotOpts = opts
+						return &driver.Document{Rev: "1-abc", Body: io.NopCloser(strings.NewReader(`{}`))}, nil
+					},
+				},
+				refs: []driver.BulkGetReference{{ID: "doc1", AttsSince: "1-abc"}},
+			}
+			if err := rows.Next(&driver.Row{}); err != nil {
+				t.Fatalf("Next() error: %v", err)
+			}
+			got := map[string]any{}
+			gotOpts.Apply(got)
+			if d := cmp.Diff([]string{"1-abc"}, got["atts_since"]); d != "" {
+				t.Errorf("unexpected atts_since: %s", d)
+			}
 		})
 	})
 }

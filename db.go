@@ -880,6 +880,51 @@ type BulkGetReference struct {
 	AttsSince string `json:"atts_since,omitempty"`
 }
 
+// bulkGetFallback implements driver.Rows by calling driver.DB.Get for each
+// reference, used when the driver does not implement driver.BulkGetter.
+type bulkGetFallback struct {
+	ctx    context.Context
+	db     driver.DB
+	opts   driver.Options
+	refs   []driver.BulkGetReference
+	i      int
+	closed bool
+}
+
+func (r *bulkGetFallback) Next(row *driver.Row) error {
+	if r.closed {
+		return io.EOF
+	}
+	if r.i >= len(r.refs) {
+		return io.EOF
+	}
+	ref := r.refs[r.i]
+	r.i++
+	opts := r.opts
+	if ref.Rev != "" {
+		opts = multiOptions{r.opts, params{"rev": ref.Rev}}
+	}
+	if ref.AttsSince != "" {
+		opts = multiOptions{opts, params{"atts_since": []string{ref.AttsSince}}}
+	}
+	doc, err := r.db.Get(r.ctx, ref.ID, opts)
+	if err != nil {
+		row.ID = ref.ID
+		row.Error = err
+		return nil
+	}
+	row.ID = ref.ID
+	row.Rev = doc.Rev
+	row.Doc = doc.Body
+	row.Attachments = doc.Attachments
+	return nil
+}
+
+func (r *bulkGetFallback) Close() error      { r.closed = true; return nil }
+func (r *bulkGetFallback) UpdateSeq() string { return "" }
+func (r *bulkGetFallback) Offset() int64     { return 0 }
+func (r *bulkGetFallback) TotalRows() int64  { return 0 }
+
 // BulkGet can be called to query several documents in bulk. It is well suited
 // for fetching a specific revision of documents, as replicators do for example,
 // or for getting revision history.
@@ -891,10 +936,6 @@ func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...O
 	if db.err != nil {
 		return &ResultSet{iter: errIterator(db.err)}
 	}
-	bulkGetter, ok := db.driverDB.(driver.BulkGetter)
-	if !ok {
-		return &ResultSet{iter: errIterator(&internal.Error{Status: http.StatusNotImplemented, Message: "kivik: bulk get not supported by driver"})}
-	}
 
 	endQuery, err := db.startQuery()
 	if err != nil {
@@ -904,7 +945,20 @@ func (db *DB) BulkGet(ctx context.Context, docs []BulkGetReference, options ...O
 	for i, ref := range docs {
 		refs[i] = driver.BulkGetReference(ref)
 	}
-	rowsi, err := bulkGetter.BulkGet(ctx, refs, multiOptions(options))
+	opts := multiOptions(options)
+
+	bulkGetter, ok := db.driverDB.(driver.BulkGetter)
+	if !ok {
+		rowsi := &bulkGetFallback{
+			ctx:  ctx,
+			db:   db.driverDB,
+			opts: opts,
+			refs: refs,
+		}
+		return newResultSet(ctx, endQuery, rowsi)
+	}
+
+	rowsi, err := bulkGetter.BulkGet(ctx, refs, opts)
 	if err != nil {
 		endQuery()
 		return &ResultSet{iter: errIterator(err)}

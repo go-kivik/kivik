@@ -39,6 +39,20 @@ func TestUpdate(t *testing.T) {
 		wantNewDoc: map[string]any{"_id": "foo", "updated": true},
 		wantResp:   "OK",
 	})
+	tests.Add("returns null doc", test{
+		code:       `function(doc, req) { return [null, "no change"]; }`,
+		doc:        map[string]any{"_id": "foo"},
+		req:        map[string]any{},
+		wantNewDoc: nil,
+		wantResp:   "no change",
+	})
+
+	// TODO: compile error (invalid JavaScript syntax)
+	// TODO: JS function throws an exception
+	// TODO: JS function returns non-array (e.g. a string)
+	// TODO: JS function returns array with wrong length (e.g. [doc])
+	// TODO: response element is non-string (e.g. numeric) — should coerce or error?
+	// TODO: null doc input (doc parameter is nil)
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		fn, err := Update(tt.code)

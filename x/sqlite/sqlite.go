@@ -70,7 +70,15 @@ type client struct {
 	logger *log.Logger
 }
 
-var _ driver.Client = (*client)(nil)
+var (
+	_ driver.Client       = (*client)(nil)
+	_ driver.ClientCloser = (*client)(nil)
+)
+
+// Close closes the underlying sql.DB connection.
+func (c *client) Close() error {
+	return c.db.Close()
+}
 
 const (
 	version = "0.0.1"

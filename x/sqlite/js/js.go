@@ -182,6 +182,37 @@ func validateException(err error) error {
 	return &validateError{Status: http.StatusInternalServerError, Message: fmt.Sprint(val)}
 }
 
+// UpdateFunc represents a CouchDB [update function]. It accepts a document and
+// a request object and returns the updated document and a response string.
+//
+// [update function]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#update-functions
+type UpdateFunc func(doc, req any) (any, string, error)
+
+// Update compiles the provided JavaScript code into an UpdateFunc.
+func Update(code string) (UpdateFunc, error) {
+	vm := goja.New()
+	if _, err := vm.RunString("const update = " + code); err != nil {
+		return nil, fmt.Errorf("failed to compile update function: %s", err)
+	}
+	updateFunc, ok := goja.AssertFunction(vm.Get("update"))
+	if !ok {
+		panic(fmt.Sprintf("expected update to be a function, got %T", vm.Get("update")))
+	}
+	return func(doc, req any) (any, string, error) {
+		result, err := updateFunc(goja.Undefined(), vm.ToValue(doc), vm.ToValue(req))
+		if err != nil {
+			return nil, "", exception(err)
+		}
+		rv := result.Export()
+		arr, _ := rv.([]any)
+		if len(arr) != 2 {
+			return nil, "", fmt.Errorf("update function must return [doc, response], got %v", rv)
+		}
+		resp, _ := arr[1].(string)
+		return arr[0], resp, nil
+	}, nil
+}
+
 // exception converts a JavaScript exception to a Go error.
 func exception(err error) error {
 	if err == nil {

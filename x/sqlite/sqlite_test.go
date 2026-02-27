@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
@@ -114,6 +115,22 @@ func TestMultipleDBs(t *testing.T) {
 	}
 	if err := dClient.CreateDB(context.TODO(), "db2", mock.NilOption); err != nil {
 		t.Fatalf("creating db2: %v", err)
+	}
+}
+
+func TestClientClose(t *testing.T) {
+	t.Parallel()
+	dClient := testClient(t)
+	closer := dClient.(driver.ClientCloser)
+
+	if err := closer.Close(); err != nil {
+		t.Fatalf("Close() returned error: %s", err)
+	}
+
+	err := dClient.CreateDB(context.Background(), "test", mock.NilOption)
+	const wantErr = "sql: database is closed"
+	if !testy.ErrorMatches(wantErr, err) {
+		t.Fatalf("Unexpected error: %s", err)
 	}
 }
 

@@ -1,22 +1,28 @@
 # SQLite Driver TODO
 
-## Missing Features
+## Missing Implementations
 
-### Unimplemented methods (`db.go`)
+- [ ] **Explain** (`db.go`) — Currently returns "not implemented"; useful for
+  Mango query debugging.
+- [ ] **Missing options**:
+  - `att_encoding_info` (Get/Changes/Views)
+  - `batch` (Put)
+  - `heartbeat` (Changes)
+  - `execution_stats` (Find)
 
-These return a bare `"not implemented"` error:
+## Low Priority (polyfilled by kivik)
 
-- [ ] BulkDocs (low priority — kivik emulates via individual Put/CreateDoc)
-- [ ] Copy (low priority — kivik emulates via Get+Put)
-- [ ] Explain
+- [ ] **BulkDocs** (`db.go`) — kivik emulates via individual Put/CreateDoc.
+- [ ] **Copy** (`db.go`) — kivik emulates via Get+Put.
 
-### Incomplete features
+## Performance / Code Quality
 
-- [ ] **Reduce caching** (`README.md`). Reduce functions run on-demand with no
+- [ ] **Reduce caching** (`README.md`) — Reduce functions run on-demand with no
   intermediate result caching.
-
-## Code Quality
-
-- [ ] **Filter in Go instead of SQL** (`query.go:568`). Local and design
+- [ ] **Mango SQL optimization** (`find.go`) — These selectors work via
+  in-memory fallback but aren't translated to SQL: `$not`, `$nor`, `$nin`,
+  `$regex`, `$mod`, `$all`, `$elemMatch`, `$type`, `$size`, `$allMatch`,
+  `$keyMapMatch`.
+- [ ] **Filter in Go instead of SQL** (`query.go:569`) — Local and design
   document filtering during view updates is done in Go after fetching rows,
   rather than in the SQL query.

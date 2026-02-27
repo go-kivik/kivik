@@ -537,9 +537,38 @@ func TestExplain(t *testing.T) {
 		}
 	})
 
+	tests.Add("use_index selects specified index", func(t *testing.T) any {
+		d := newDB(t)
+		// Create two indexes; auto-selection (without use_index) would pick the
+		// first one (_design/age/byAge) because coversSort returns true for empty
+		// sort fields. use_index must override and select the second one.
+		err := d.CreateIndex(context.Background(), "_design/age", "byAge", json.RawMessage(`{"fields":["age"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		err = d.CreateIndex(context.Background(), "_design/idx", "idx", json.RawMessage(`{"fields":["name"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		return test{
+			db:    d,
+			query: `{"selector":{},"use_index":["_design/idx","idx"]}`,
+			want: &driver.QueryPlan{
+				DBName:   "test",
+				Selector: map[string]any{},
+				Limit:    25,
+				Index: map[string]any{
+					"ddoc": "_design/idx",
+					"name": "idx",
+					"type": "json",
+					"def":  map[string]any{"fields": []any{map[string]any{"name": "asc"}}},
+				},
+			},
+		}
+	})
+
 	// TODO: index ranking — when multiple indexes match, prefer json over
 	// special, then fewer fields, then alphabetical (matching CouchDB behavior).
-	// TODO: use_index — honor explicit index hints in the query.
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()

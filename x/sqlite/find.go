@@ -14,7 +14,9 @@ package sqlite
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"sort"
@@ -57,9 +59,18 @@ func (d *db) Explain(ctx context.Context, query any, _ driver.Options) (*driver.
 		limit = defaultFindLimit
 	}
 
-	index, err := d.selectMangoIndex(ctx, raw.Selector, vopts.SortFields())
-	if err != nil {
-		return nil, err
+	var index map[string]any
+	if ddoc := vopts.UseIndexDdoc(); ddoc != "" {
+		index, err = d.lookupMangoIndex(ctx, ddoc, vopts.UseIndexName())
+		if err != nil {
+			return nil, err
+		}
+	}
+	if index == nil {
+		index, err = d.selectMangoIndex(ctx, raw.Selector, vopts.SortFields())
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &driver.QueryPlan{
@@ -90,23 +101,49 @@ func (d *db) selectMangoIndex(ctx context.Context, selector map[string]any, sort
 			continue
 		}
 		if coversSelector(idxFields, selector) || coversSort(idxFields, sortFields) {
-			normalizedFields, err := mango.NormalizeIndexFields(indexDef)
+			index, err := buildMangoIndexMap(ddoc, name, indexDef)
 			if err != nil {
 				return nil, err
 			}
-			anyFields := mapFieldsToAny(normalizedFields)
-			return map[string]any{
-				"ddoc": ddoc,
-				"name": name,
-				"type": "json",
-				"def":  map[string]any{"fields": anyFields},
-			}, nil
+			return index, nil
 		}
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 	return allDocsIndex, nil
+}
+
+// lookupMangoIndex retrieves a specific index from the MangoIndexes table by ddoc
+// and optionally by name. Returns nil if no matching index is found.
+func (d *db) lookupMangoIndex(ctx context.Context, ddoc, name string) (map[string]any, error) {
+	where, args := mangoIndexWhere(ddoc, name)
+	q := d.query(`SELECT ddoc, name, index_def FROM {{ .MangoIndexes }} WHERE `) + where
+	row := d.db.QueryRowContext(ctx, q, args...)
+	var rowDdoc, rowName, indexDef string
+	if err := row.Scan(&rowDdoc, &rowName, &indexDef); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return buildMangoIndexMap(rowDdoc, rowName, indexDef)
+}
+
+// buildMangoIndexMap builds a map representing a Mango index result from its
+// components (ddoc, name, and index definition JSON).
+func buildMangoIndexMap(ddoc, name, indexDef string) (map[string]any, error) {
+	normalizedFields, err := mango.NormalizeIndexFields(indexDef)
+	if err != nil {
+		return nil, err
+	}
+	anyFields := mapFieldsToAny(normalizedFields)
+	return map[string]any{
+		"ddoc": ddoc,
+		"name": name,
+		"type": "json",
+		"def":  map[string]any{"fields": anyFields},
+	}, nil
 }
 
 // coversSelector reports whether the index fields cover all top-level selector keys.
@@ -145,6 +182,9 @@ func (d *db) Find(ctx context.Context, query any, _ driver.Options) (driver.Rows
 		}
 	}
 
+	// TODO: CouchDB treats use_index as a hint, falling back with a warning
+	// if the index doesn't exist or doesn't match the selector. This errors
+	// instead. Should fall back gracefully and return a warning.
 	if ddoc := vopts.UseIndexDdoc(); ddoc != "" {
 		where, args := mangoIndexWhere(ddoc, vopts.UseIndexName())
 		var count int

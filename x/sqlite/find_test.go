@@ -538,6 +538,23 @@ func TestExplain(t *testing.T) {
 		}
 	})
 
+	tests.Add("skip and fields are populated", test{
+		query: `{"selector":{}, "skip":5, "fields":["name","age"]}`,
+		want: &driver.QueryPlan{
+			DBName:   "test",
+			Selector: map[string]any{},
+			Limit:    25,
+			Skip:     5,
+			Fields:   []any{"name", "age"},
+			Index: map[string]any{
+				"ddoc": nil,
+				"name": "_all_docs",
+				"type": "special",
+				"def":  map[string]any{"fields": []any{map[string]any{"_id": "asc"}}},
+			},
+		},
+	})
+
 	tests.Add("use_index selects specified index", func(t *testing.T) any {
 		d := newDB(t)
 		// Create two indexes; auto-selection (without use_index) would pick the

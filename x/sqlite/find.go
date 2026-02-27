@@ -73,10 +73,20 @@ func (d *db) Explain(ctx context.Context, query any, _ driver.Options) (*driver.
 		}
 	}
 
+	var fields []any
+	if f := vopts.Fields(); len(f) > 0 {
+		fields = make([]any, 0, len(f))
+		for _, f := range f {
+			fields = append(fields, f)
+		}
+	}
+
 	return &driver.QueryPlan{
 		DBName:   d.name,
 		Selector: raw.Selector,
 		Limit:    limit,
+		Skip:     vopts.FindSkip(),
+		Fields:   fields,
 		Index:    index,
 	}, nil
 }

@@ -4,12 +4,6 @@
 
 - [ ] **Explain** (`db.go`) — Currently returns "not implemented"; useful for
   Mango query debugging.
-- [ ] **Missing options**:
-  - `att_encoding_info` (Get/Changes/Views)
-  - `batch` (Put)
-  - `heartbeat` (Changes)
-  - `execution_stats` (Find)
-
 ## Low Priority (polyfilled by kivik)
 
 - [ ] **BulkDocs** (`db.go`) — kivik emulates via individual Put/CreateDoc.
